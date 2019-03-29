@@ -102,6 +102,8 @@ field $K$.
 
 @inline ismaximal_known(O::NfAbsOrd) = O.ismaximal != 0
 
+@inline ismaximal_known_and_maximal(O::NfAbsOrd) = isone(O.ismaximal)
+
 @doc Markdown.doc"""
     ismaximal(R::NfAbsOrd) -> Bool
 > Tests if the order $R$ is maximal. This might trigger the 
@@ -262,7 +264,7 @@ function show(io::IO, S::NfOrdSet)
 end
 
 function show(io::IO, O::NfAbsOrd)
-  if ismaximal_known(O) && O.ismaximal == 1
+  if ismaximal_known_and_maximal(O)
     show_maximal(io, O)
   else
     show_gen(io, O)
@@ -915,51 +917,69 @@ end
 equation_order(M::NfAbsOrd) = equation_order(nf(M))
 
 function _order(K::S, elt::Array{T, 1}; cached::Bool = true, check::Bool = true) where {S, T}
-  o = one(K)
-  
   n = degree(K)
 
-  bas = [K(1)]
+  bas = elem_type(K)[one(K)]
   phase = 1
   local B::FakeFmpqMat
-  @show "start"
+
   for e = elt
     if phase == 2
       if denominator(B) % denominator(e) == 0
         C = basis_mat([e])
         fl, _ = cansolve(B.num, div(B.den, denominator(e))*C.num, side = :left)
-        fl || continue
+#        fl && println("elt known:", e)
+        fl && continue
       end 
     end
     if check
-      @show f = minpoly(e)
+      f = minpoly(e)
       isone(denominator(f)) || error("data does not define an order, $e is non-integral")
       df = degree(f)-1
     else
       df = n-1
     end
-    b = copy(bas)
+    f = one(K)
     for i=1:df
-      b = [e*x for x = b]
+      mul!(f, f, e)
+      if phase == 2
+        if denominator(B) % denominator(f) == 0
+          C = basis_mat(elem_type(K)[f])
+          fl = iszero_mod_hnf!(div(B.den, denominator(f))*C.num, B.num)
+#          fl && println("inner abort: ", e, " ^ ", i)
+          fl && break
+        end 
+      end
+      b = elem_type(K)[e*x for x in bas]
       append!(bas, b)
       if length(bas) >= n
-        B = hnf(basis_mat(bas))
-        rk = findlast(i -> iszero_row(B.num, i), 1:nrows(B))
-        if rk === nothing
-          rk = 0
+        B = basis_mat(bas)
+        hnf!(B)
+        rk = nrows(B) - n + 1
+        while iszero_row(B, rk)
+          rk += 1
         end
-        B = sub(B, rk+1:nrows(B), 1:n)
+        B = sub(B, rk:nrows(B), 1:n)
         phase = 2
-        bas = [ elem_from_mat_row(K, B.num, i, B.den) for i = 1:nrows(B) ]
-        b = copy(bas)
+        bas = elem_type(K)[ elem_from_mat_row(K, B.num, i, B.den) for i = 1:nrows(B) ]
+        @assert isone(bas[1])
       end
     end
   end
 
-  length(bas) == n || error("data does not define an order: dimension to small")
+  if length(bas) >= n
+    B = basis_mat(bas)
+    hnf!(B)
+    rk = nrows(B) - n + 1
+    if iszero_row(B.num, rk)
+      error("data does not define an order: dimension to small")
+    end
+    B = sub(B, rk:nrows(B), 1:n)
+    bas = elem_type(K)[ elem_from_mat_row(K, B.num, i, B.den) for i = 1:nrows(B) ]
+  end
+  
   # Make an explicit check
   @hassert :NfOrd 1 defines_order(K, B)[1]
-  @show "stop", K, B
   return Order(K, B, cached = cached, check = check)
 end
 
@@ -1262,13 +1282,15 @@ end
 #       a modular HNF algorithm.
 @doc Markdown.doc"""
     conductor(R::NfOrd, S::NfOrd) -> NfAbsOrdIdl
-> The conductor $\{x \in S | xS\subseteq R\}$
+> The conductor $\{x \in R | xS\subseteq R\}$
 > for orders $R\subseteq S$.
 """
 function conductor(R::NfOrd, S::NfOrd)
   n = degree(R)
   t = basis_mat(R, copy = false) * basis_mat_inv(S, copy = false)
-  @assert isone(t.den)
+  if !isone(t.den)
+    error("The first order is not contained in the second!")
+  end
   basis_mat_R_in_S_inv_num, d = pseudo_inv(t.num)
   M = zero_matrix(FlintZZ, n^2, n)
   B = basis(S, copy = false)
@@ -1281,7 +1303,8 @@ function conductor(R::NfOrd, S::NfOrd)
       end
     end
   end
-  H = sub(hnf(M), 1:n, 1:n)
+  hnf!(M)
+  H = sub(M, 1:n, 1:n)
   Hinv, new_den = pseudo_inv(transpose(H))
   Hinv = Hinv * basis_mat_R_in_S_inv_num
   return ideal(R, divexact(Hinv, new_den))

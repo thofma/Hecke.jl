@@ -137,35 +137,7 @@ function lowerconvexhull(points::Array{Tuple{Int, Int},1})
     push!(l, Line(pointsconvexhull[n-i], pointsconvexhull[n-i-1]))
   end
   return Polygon(l, sorted = true)
-  #=
-  #This thing clearly cannot work, I don't know how to fix it
-  i = 1
-  while points[i][2] !=0
-    i += 1
-  end
-  
-  pointsonconvexhull = [ points[i-1], points[i] ]
 
-  n = length(points)-2
-  
-
-  oldslope = slope(pointsonconvexhull[1],pointsonconvexhull[2])
-
-  for i = 1:n
-    newslope = slope(points[n-i+1], pointsonconvexhull[1])
-    if newslope >= oldslope
-      pointsonconvexhull[1] = points[n-i+1]
-    else
-      unshift!(pointsonconvexhull, points[n-i+1])
-    end
-    oldslope = newslope
-  end
-  =#
-  t = Line[]
-  for i=1:length(pointsonconvexhull)-1
-    push!(t,Line((pointsonconvexhull[i], pointsonconvexhull[i+1])))
-  end
-  return Polygon(t)
 end
 
 ###############################################################################
@@ -332,7 +304,8 @@ function gens_overorder_polygons(O::NfOrd, p::fmpz)
     end
   end
   B = basis_mat(l)
-  B = sub(hnf!(B), nrows(B)-degree(K)+1:nrows(B), 1:degree(K))
+  hnf!(B)
+  B = sub(B, nrows(B)-degree(K)+1:nrows(B), 1:degree(K))
   if !regular
     elt = nf_elem[]
     for i in 1:nrows(B) 
@@ -425,7 +398,8 @@ function _order_for_polygon_overorder(K::S, elt::Array{T, 1}) where {S, T}
       end
     end
     
-    B = hnf(basis_mat(prods))
+    B = basis_mat(prods) 
+    hnf!(B)
     
     dd = B.num[nrows(B) - degree(K) + 1, 1]
     for i in 2:degree(K)

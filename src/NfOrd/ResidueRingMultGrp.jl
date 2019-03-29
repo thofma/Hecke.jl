@@ -22,7 +22,7 @@ export multiplicative_group, multiplicative_group_generators
 """
 function multiplicative_group(Q::NfOrdQuoRing)
   if !isdefined(Q, :multiplicative_group)
-    if ismaximal_known(base_ring(Q)) && ismaximal(base_ring(Q))
+    if ismaximal_known_and_maximal(base_ring(Q))
       G, GtoQ = _multgrp(Q)
     else
       G, GtoQ = _multgrp_non_maximal(Q)

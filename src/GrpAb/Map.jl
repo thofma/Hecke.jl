@@ -209,7 +209,6 @@ Let $G$ be the domain of $h$. This functions returns an abelian group $A$ and an
 injective morphism $f \colon A \to G$, such that the image of $f$ is the kernel
 of $h$.
 """
-
 function kernel(h::GrpAbFinGenMap, add_to_lattice::Bool = true)
   G = domain(h)
   H = codomain(h)
@@ -339,5 +338,144 @@ function compose(f::GrpAbFinGenMap, g::GrpAbFinGenMap)
   M=f.map*g.map
   return GrpAbFinGenMap(domain(f), codomain(g), M)
 
+end
+
+###############################################################################
+mutable struct MapParent
+  dom
+  codom
+  typ::String
+end
+
+elem_type(::Type{MapParent}) = Map 
+
+function show(io::IO, MP::MapParent)
+  print(io, "Set of all $(MP.typ) from $(MP.dom) to $(MP.codom)")
+end
+
+function cyclic_hom(a::fmpz, b::fmpz)
+  #hom from Z/a -> Z/b
+  if iszero(a) 
+    return (b, fmpz(1))
+  end
+  if iszero(b)
+    return (fmpz(1), fmpz(1))
+  end
+  g = gcd(a, b)
+  return (g, divexact(b, g))
+end
+
+function hom(G::GrpAbFinGen, H::GrpAbFinGen)
+  sG, mG = snf(G)  # mG : sG -> G
+  sH, mH = snf(H)  # mH : sH -> G
+  n = ngens(sG)
+  m = ngens(sH)
+  @show r = [cyclic_hom(x, y) for x = sG.snf for y = sH.snf]
+  R = GrpAbFinGen([x[1] for x = r])
+  c = [x[2] for x = r]
+
+  function phi(r::GrpAbFinGenElem)
+    return GrpAbFinGenMap(inv(mG) * hom(sG, sH, matrix(FlintZZ, n, m, [r[i]*c[i] for i=1:ngens(R)]), true) * mH)
+  end
+
+  function ihp(r::GrpAbFinGenMap)
+    #transpose is due to linear indexing being wrong order
+    local m = vcat([preimage(mH, r(mG(sG[i]))).coeff for i = 1:ngens(sG)])'
+    return R([divexact(m[i], c[i]) for i = 1:ngens(R)])
+  end
+  return R, MapFromFunc(phi, ihp, R, MapParent(G, H, "homomorphisms"))
+  return R, phi, ihp
+end
+
+#TODO: snf is wrong.... GrpAbFinGen([2,3,4]) is NOT in snf, however snf will not do anything
+
+
+######################################################################
+# Dual
+######################################################################
+
+struct QmodZ <: GrpAb
+end
+
+function show(io::IO, G::QmodZ)
+  print(io, "Q mod Z")
+end
+
+struct QmodZElem <: GrpAbElem
+  elt::fmpq
+  function QmodZElem(a::fmpq)
+    return new(fmpq(mod(numerator(a), denominator(a)), denominator(a)))
+  end
+end
+
+function show(io::IO, a::QmodZElem)
+  print(io, "$(a.elt) + Z")
+end
+
+function +(a::QmodZElem, b::QmodZElem)
+  return QmodZElem(a.elt + b.elt)
+end
+
+function *(a::fmpz, b::QmodZElem)
+  return QmodZElem(a*b.elt)
+end
+
+function *(a::Integer, b::QmodZElem)
+  return QmodZElem(a*b.elt)
+end
+
+function divexact(a::QmodZElem, b::fmpz)
+  iszero(b) && throw(DivideError())
+  return QmodZElem(a.elt // b)
+end
+
+function divexact(a::QmodZElem, b::Integer)
+  iszero(b) && throw(DivideError())
+  return QmodZElem(a.elt // b)
+end
+
+function root_of_one(::Type{QmodZ}, n::fmpz)
+  return QmodZElem(fmpq(1, n))
+end
+
+function inv(a::QmodZElem)
+  return QmodZElem(-(a.elt))
+end
+
+function parent(::QmodZElem)
+  return QmodZ()
+end
+
+elem_type(::Type{QmodZ}) = QmodZElem
+
+function order(a::QmodZElem)
+  return denominator(a.elt)
+end
+
+(::QmodZ)(a::fmpz) = QmodZ(fmpq(a))
+(::QmodZ)(a::Integer) = QmodZ(fmpq(a))
+(::QmodZ)(a::fmpq) = QmodZ(a)
+(::QmodZ)(a::Rational) = QmodZ(fmpq(a))
+
+function dual(G::GrpAbFinGen)
+  T, mT = torsion_subgroup(G)
+  u = root_of_one(QmodZ, order(T))
+  return dual(G, u)
+end
+
+function dual(G::GrpAbFinGen, u::QmodZElem)
+  o = order(u)
+  H = GrpAbFinGen([o])
+  R, phi = hom(G, H)
+  ex = MapFromFunc(x -> x[1]*u, y -> H([numerator(y.elt) * div(o, denominator(y.elt))]), H, parent(u))
+  function mu(r::GrpAbFinGenElem)
+    f = phi(r)
+    return f*ex
+  end
+  function nu(f::Map)
+    g = GrpAbFinGenMap(f*inv(ex))
+    return preimage(phi, g)
+  end
+  return R, MapFromFunc(mu, nu, R, MapParent(R, parent(u), "homomorphisms"))
 end
 

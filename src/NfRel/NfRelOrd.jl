@@ -32,7 +32,21 @@ isequation_order(O::NfRelOrd) = O.isequation_order
 
 ismaximal_known(O::NfRelOrd) = O.ismaximal != 0
 
-ismaximal(O::NfRelOrd) = O.ismaximal == 1
+ismaximal_known_and_maximal(O::NfRelOrd) = O.ismaximal == 1
+
+function ismaximal(O::NfRelOrd)
+  if ismaximal_known(O)
+    return ismaximal_known_and_maximal(O)
+  end
+  OK = maximal_order(O)
+  if discriminant(OK) == discriminant(O)
+    O.ismaximal = 1
+    return true
+  else
+    O.ismaximal = 2
+    return false
+  end
+end
 
 issimple(O::NfRelOrd) = issimple(nf(O))
 
@@ -239,7 +253,7 @@ end
 function show(io::IO, O::NfRelOrd)
   compact = get(io, :compact, false)
   if compact
-    if ismaximal_known(O) && ismaximal(O)
+    if ismaximal_known_and_maximal(O) 
       print(io, "Relative maximal order with pseudo-basis ")
     else
       print(io, "Relative order with pseudo-basis ")
@@ -253,7 +267,7 @@ function show(io::IO, O::NfRelOrd)
       end
     end
   else
-    if ismaximal_known(O) && ismaximal(O)
+    if ismaximal_known_and_maximal(O)
       print(io, "Relative maximal order of ")
     else
       print(io, "Relative order of ")

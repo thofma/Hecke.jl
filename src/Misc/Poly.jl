@@ -357,12 +357,12 @@ function hensel_lift(f::fmpz_poly, g::fmpz_poly, h::fmpz_poly, p::fmpz, k::Int)
   # to reach p^10, one should do p, p^2, p^3, p^5, p^10
   # rather than p, p^2, p^4, p^8, p^10
   # the chain has the same length, but smaller entries.
-  l = [k]
+  l = Int[k]
   while k>1
     k = div(k+1, 2)
     push!(l, k)
   end
-  ll = []
+  ll = Int[]
   for i=length(l)-1:-1:1
     push!(ll, l[i] - l[i+1])
   end

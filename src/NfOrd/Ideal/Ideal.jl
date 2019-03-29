@@ -124,7 +124,7 @@ function show(io::IO, a::NfAbsOrdIdlSet)
 end
 
 function show(io::IO, a::NfAbsOrdIdl)
-  if ismaximal_known(order(a)) && order(a).ismaximal == 1
+  if ismaximal_known_and_maximal(order(a))
     return show_maximal(io, a)
   else
     return show_gen(io, a)
@@ -767,7 +767,7 @@ in(x::Integer, y::NfAbsOrdIdl) = in(order(y)(x),y)
 """
 function inv(A::NfAbsOrdIdl)
   @assert !iszero(A)
-  if ismaximal_known(order(A)) && ismaximal(order(A))
+  if ismaximal_known_and_maximal(order(A))
     return inv_maximal(A)
   else
     return inv_generic(A)
@@ -839,7 +839,7 @@ function isinvertible(A::NfAbsOrdIdl)
     return false, A
   end
 
-  if ismaximal_known(order(A)) && ismaximal(order(A))
+  if ismaximal_known_and_maximal(order(A))
     return true, inv(A)
   end
 
@@ -1549,8 +1549,9 @@ function colon(a::NfAbsOrdIdl, b::NfAbsOrdIdl, contains::Bool = false)
         d = l
       end
     end
-    m = hnf(transpose(m))
-    # n is upper right HNF
+    m = transpose(m)
+    hnf!(m)
+    # m is upper right HNF
     m = transpose(sub(m, 1:degree(O), 1:degree(O)))
     b, l = pseudo_inv(m)
     return ideal(O, b)//l

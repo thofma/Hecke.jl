@@ -42,8 +42,7 @@ export PrimeIdealsSet, prime_ideals_over
 > It is assumed that $p$ is prime.
 """
 function isramified(O::NfAbsOrd, p::Union{Int, fmpz})
-  @assert ismaximal_known(O) && ismaximal(O)
-
+  @assert ismaximal_known_and_maximal(O)
   return mod(discriminant(O), p) == 0
 end
 
@@ -412,11 +411,11 @@ function uniformizer(P::NfOrdIdl)
 end
 
 function _lift(T::Array{Generic.Res{fmpz}, 1})
-  return [ z.data for z in T ]
+  return fmpz[ z.data for z in T ]
 end
 
 function _lift(T::Array{Generic.ResF{fmpz}, 1})
-  return [ z.data for z in T ]
+  return fmpz[ z.data for z in T ]
 end
 
 function _lift(T::Array{Nemo.nmod, 1})
@@ -464,7 +463,7 @@ end
 
 function prime_decomposition_type(O::NfOrd, p::Integer)
   if !isdefining_polynomial_nice(nf(O))
-    return [(degree(x[1]), x[2]) for x = prime_decomposition(O, p)]
+    return Tuple{Int, Int}[(degree(x[1]), x[2]) for x = prime_decomposition(O, p)]
   end
   if (mod(discriminant(O), p)) != 0 && (mod(fmpz(index(O)), p) != 0)
     K = nf(O)
@@ -628,7 +627,7 @@ function coprime_base(A::Array{NfOrdIdl, 1}, p::fmpz)
   #however using the p-part of the norm, the coprime basis becomes A, B...
   if iseven(p)
     lp = prime_decomposition(order(A[1]), 2)
-    Ap = [x[1] for x = lp if any(y->divides(y, x[1]) > 0, A)]
+    Ap = NfOrdIdl[x[1] for x = lp if any(y->divides(y, x[1]) > 0, A)]
     a = remove(p, 2)[2]
     if !isone(a)
       Bp = coprime_base(A, a)

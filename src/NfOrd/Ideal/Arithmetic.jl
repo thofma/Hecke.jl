@@ -104,7 +104,7 @@ function *(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
   @hassert :NfOrd 1 isconsistent(x)
   @hassert :NfOrd 1 isconsistent(y)
   OK = order(x)
-  if ismaximal_known(OK) && OK.ismaximal == 1 && issimple(nf(OK))#ismaximal(order(x)) && issimple(nf(order(x)))
+  if ismaximal_known_and_maximal(OK) && issimple(nf(OK))
     z = mul_maximal(x, y)
   else
     z = mul_gen(x, y)
@@ -372,7 +372,7 @@ end
 @doc Markdown.doc"""
 ***
   gcd(A::NfOrdIdl, p::fmpz) -> NfOrdIdl
-> The gcd or sum (A+ pO).
+> The gcd or sum (A + pO).
 """
 function gcd(A::NfOrdIdl, p::fmpz)
   if isdefined(A, :minimum)
@@ -387,7 +387,6 @@ function gcd(A::NfOrdIdl, p::fmpz)
   end
   if has_2_elem(A)
     g = gcd(A.gen_one, p)
-    @assert !isone(g)
     return ideal(order(A), g, A.gen_two)
   else
     @assert isdefined(A, :basis_mat)
@@ -463,7 +462,7 @@ end
 > Returns the ideal $x \cdot y$.
 """
 function *(x::NfOrdIdl, y::fmpz)
-  if ismaximal_known(order(x)) && order(x).ismaximal == 1#ismaximal(order(x))
+  if ismaximal_known_and_maximal(order(x))
     return mul_maximal(x, y)
   else
     return mul_gen(x, y)
@@ -472,7 +471,7 @@ end
 
 function mul_maximal(x::NfOrdIdl, y::fmpz)
   if y == 0
-    z = ideal(order(x), zero_matrix(FlintZZ, degree(order(x)), degree(order(x))))
+    z = ideal(order(x), 0)
     z.iszero = 1
     return z
   end
