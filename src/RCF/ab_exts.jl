@@ -89,10 +89,9 @@ function _action_on_quo(mq::GrpAbFinGenMap, act::Array{GrpAbFinGenMap,1})
   S,mS=snf(q)
   n=Int(S.snf[end])
   R=ResidueField(FlintZZ, n, cached=false)
-  W=MatrixSpace(R, ngens(S), ngens(S), false)
   quo_action=Array{nmod_mat,1}(undef, length(act))
   for s=1:length(act)
-    quo_action[s]=W(mS.map*act[i].map*mS.imap)
+    quo_action[s]= change_base_ring(mS.map*act[i].map*mS.imap, R)
   end
   return ZpnGModule(S, quo_action)
 

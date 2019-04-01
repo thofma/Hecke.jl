@@ -28,6 +28,12 @@ nf(a::NfRelOrdIdl) = nf(order(a))
 
 parent(a::NfRelOrdIdl) = a.parent
 
+function check_parent(x::NfRelOrdIdl, y::NfRelOrdIdl)
+   if order(x) !== order(y)
+     error("Ideals do not have the same order.")
+   end
+end
+
 ################################################################################
 #
 #  "Assure" functions for fields
@@ -392,7 +398,7 @@ end
 > Returns whether $a$ and $b$ are equal.
 """
 function ==(a::NfRelOrdIdl, b::NfRelOrdIdl)
-  order(a) != order(b) && return false
+  order(a) !== order(b) && return false
   return basis_pmat(a, copy = false) == basis_pmat(b, copy = false)
 end
 
@@ -469,6 +475,7 @@ end
 > Returns $a + b$.
 """
 function +(a::NfRelOrdIdl{T, S}, b::NfRelOrdIdl{T, S}) where {T, S}
+  check_parent(a, b)
   d = degree(order(a))
   H = vcat(basis_pmat(a), basis_pmat(b))
   if T == nf_elem
@@ -492,6 +499,7 @@ end
 > Returns $a \cdot b$.
 """
 function *(a::NfRelOrdIdl{T, S}, b::NfRelOrdIdl{T, S}) where {T, S}
+  check_parent(a, b)
   if iszero(a) || iszero(b)
     return order(a)()*order(a)
   end
@@ -578,6 +586,7 @@ end
 > Returns $a \cap b$.
 """
 function intersect(a::NfRelOrdIdl{T, S}, b::NfRelOrdIdl{T, S}) where {T, S}
+  check_parent(a, b)
   d = degree(order(a))
   Ma = basis_pmat(a)
   Mb = basis_pmat(b)
@@ -1114,7 +1123,7 @@ end
 > If the ideals are not coprime, an error is raised.
 """
 function idempotents(x::NfRelOrdIdl{T, S}, y::NfRelOrdIdl{T, S}) where {T, S}
-  !(order(x) == order(y)) && error("Parent mismatch")
+  check_parent(x, y)
 
   O = order(x)
   mx = minimum(x, copy = false)
@@ -1190,7 +1199,7 @@ end
 > Returns whether $x$ is contained in $y$.
 """
 function in(x::NfRelOrdElem, y::NfRelOrdIdl)
-  parent(x) != order(y) && error("Order of element and ideal must be equal")
+  parent(x) !== order(y) && error("Order of element and ideal must be equal")
   O = order(y)
   b_pmat = basis_pmat(y, copy = false)
   t = transpose(matrix(base_ring(nf(O)), degree(O), 1, elem_in_basis(x)))
@@ -1204,7 +1213,7 @@ function in(x::NfRelOrdElem, y::NfRelOrdIdl)
 end
 
 function in(x::RelativeElement, y::NfRelOrdIdl)
-  parent(x) != nf(order(y)) && error("Number field of element and ideal must be equal")
+  parent(x) !== nf(order(y)) && error("Number field of element and ideal must be equal")
   return in(order(y)(x),y)
 end
 

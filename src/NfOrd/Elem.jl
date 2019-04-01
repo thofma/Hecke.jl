@@ -43,12 +43,12 @@ export ==, +, -, *, ^, add!, conjugates_arb, conjugates_arb_log, discriminant,
 #
 ################################################################################
 
-function Base.deepcopy_internal(x::NfAbsOrdElem, dict::IdDict)
+function Base.deepcopy_internal(x::NfAbsOrdElem{S, T}, dict::IdDict) where {S, T}
   z = parent(x)()
   z.elem_in_nf = Base.deepcopy_internal(x.elem_in_nf, dict)
   if x.has_coord
     z.has_coord = true
-    z.elem_in_basis = Base.deepcopy_internal(x.elem_in_basis, dict)
+    z.elem_in_basis = Base.deepcopy_internal(x.elem_in_basis, dict)::Vector{fmpz}
   end
   return z
 end

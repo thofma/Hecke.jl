@@ -155,7 +155,7 @@ end
 """
 
 function quo(O::Union{NfAbsOrd, AlgAssAbsOrd}, I::Union{NfAbsOrdIdl, AlgAssAbsOrdIdl})
-  @assert order(I) == O
+  @assert order(I) === O
   # We should check that I is not zero
   Q = AbsOrdQuoRing(O, I)
   f = AbsOrdQuoMap(O, Q)
@@ -180,17 +180,30 @@ end
 
 ################################################################################
 #
+#  Parent check
+#
+################################################################################
+
+function check_parent(x::AbsOrdQuoRingElem, y::AbsOrdQuoRingElem)
+  if parent(x) !== parent(y)
+    error("Elements must have same parents")
+  end
+  return true
+end
+
+################################################################################
+#
 #  Arithmetic
 #
 ################################################################################
 
 function +(x::AbsOrdQuoRingElem, y::AbsOrdQuoRingElem)
-  parent(x) != parent(y) && error("Elements must have same parents")
+  check_parent(x, y)
   return parent(x)(x.elem + y.elem)
 end
 
 function -(x::AbsOrdQuoRingElem, y::AbsOrdQuoRingElem)
-  parent(x) != parent(y) && error("Elements must have same parents")
+  check_parent(x, y)
   return parent(x)(x.elem - y.elem)
 end
 
@@ -199,7 +212,7 @@ function -(x::AbsOrdQuoRingElem)
 end
 
 function *(x::AbsOrdQuoRingElem, y::AbsOrdQuoRingElem)
-  parent(x) != parent(y) && error("Elements must have same parents")
+  check_parent(x, y)
   return parent(x)(x.elem * y.elem)
 end
 
@@ -323,7 +336,7 @@ function divexact(x::AbsOrdQuoRingElem, y::AbsOrdQuoRingElem)
 end
 
 function isdivisible(x::AbsOrdQuoRingElem, y::AbsOrdQuoRingElem)
-  parent(x) != parent(y) && error("Elements must have same parents")
+  check_parent(x, y)
 
   iszero(y) && error("Dividing by zero")
 

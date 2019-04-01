@@ -31,7 +31,8 @@ function iszero_mod_hnf!(a::fmpz_mat, H::fmpz_mat)
 end
 
 function defines_minimal_overorder(B::Vector{nf_elem}, l::Vector{nf_elem})
-  M = hnf(basis_mat(B))
+  M = basis_mat(B)
+  hnf!(M)
   x = M.den * l[1]^2
   if denominator(x) != 1
     return false, M

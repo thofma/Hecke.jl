@@ -109,6 +109,14 @@ function matrix(A::Array{T, 1}) where T <: RingElem
   return matrix(reshape(A,length(A),1))
 end
 
+function scalar_matrix(R::Ring, n::Int, a::RingElement)
+  b = R(a)
+  z = zero_matrix(R, n, n)
+  for i in 1:n
+    z[i, i] = b
+  end
+end
+
 function Array(a::fmpz_mat; S::Type{T} = fmpz) where T
   A = Array{T}(undef, nrows(a), ncols(a))
   for i = 1:nrows(a)
@@ -138,7 +146,6 @@ function iszero_row(M::nmod_mat, i::Int)
   end
   return true
 end
-
 
 function iszero_row(M::MatElem{T}, i::Int) where T
   for j in 1:ncols(M)

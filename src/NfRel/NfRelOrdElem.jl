@@ -264,7 +264,7 @@ end
 > Returns $a \cdot b$.
 """
 function *(a::NfRelOrdElem, b::NfRelOrdElem)
-  parent(a) != parent(b) && error("Parents don't match.")
+  check_parent(a, b)
   c = parent(a)()
   c.elem_in_nf = a.elem_in_nf*b.elem_in_nf
   return c
@@ -277,7 +277,7 @@ end
 > Returns $a + b$.
 """
 function +(a::NfRelOrdElem, b::NfRelOrdElem)
-  parent(a) != parent(b) && error("Parents don't match.")
+  check_parent(a, b)
   c = parent(a)()
   c.elem_in_nf = a.elem_in_nf + b.elem_in_nf
   if a.has_coord && b.has_coord
@@ -294,7 +294,7 @@ end
 > Returns $a - b$.
 """
 function -(a::NfRelOrdElem, b::NfRelOrdElem)
-  parent(a) != parent(b) && error("Parents don't match.")
+  check_parent(a, b)
   c = parent(a)()
   c.elem_in_nf = a.elem_in_nf - b.elem_in_nf
   if a.has_coord && b.has_coord

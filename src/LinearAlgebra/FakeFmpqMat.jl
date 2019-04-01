@@ -4,7 +4,7 @@
 #
 ################################################################################
 
-export num, den
+iszero(x::FakeFmpqMat) = iszero(x.num)
 
 numerator(x::FakeFmpqMat) = deepcopy(x.num)
 
@@ -17,7 +17,7 @@ ncols(x::FakeFmpqMat) = ncols(x.num)
 function simplify_content!(x::FakeFmpqMat)
   c = content(x.num)
   c = gcd(c, x.den)
-  if c != 1 
+  if !isone(c) 
     divexact!(x.num, x.num, c)
     divexact!(x.den, x.den, c)
   end
@@ -136,9 +136,20 @@ isequal(x::FakeFmpqMat, y::FakeFmpqMat) = (x.num == y.num) && (x.den == y.den)
 to_array(x::FakeFmpqMat) = (x.num, x.den)
 
 function to_fmpz_mat(x::FakeFmpqMat)
-  x.den != 1 && error("Denominator has to be 1")
+  !isone(x.den) && error("Denominator has to be 1")
   return numerator(x)
 end
+
+function FakeFmpqMat(x::Vector{fmpq})
+  dens = fmpz[denominator(x[i]) for i=1:length(x)]
+  den = lcm(dens)
+  M = zero_matrix(FlintZZ, 1, length(x))
+  for i in 1:length(x)
+    M[1,i] = numerator(x[i])*divexact(den, dens[i])
+  end
+  return FakeFmpqMat(M,den)
+end
+
 
 ################################################################################
 #
@@ -181,6 +192,16 @@ function Base.deepcopy_internal(x::FakeFmpqMat, dict::IdDict)
     z.parent = x.parent
   end
   return z
+end
+
+################################################################################
+#
+#  Zero row
+#
+################################################################################
+
+function iszero_row(M::FakeFmpqMat, i::Int)
+  return iszero_row(M.num, i)
 end
 
 ################################################################################

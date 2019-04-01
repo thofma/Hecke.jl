@@ -81,13 +81,22 @@ function Base.:(==)(f::NfToNfMor, g::NfToNfMor)
   return f.prim_img == g.prim_img
 end
 
+#_D = Dict()
+
 function *(f::NfToNfMor, g::NfToNfMor)
-  domain(f) == codomain(g) || throw("Maps not compatible")
+#  global _D
+#  _s = Base.stacktrace()[2:3]
+#  if !(_s in keys(_D))
+#    _D[_s] = true
+#    println("Called ...")
+#    Base.show_backtrace(stdout, Base.stacktrace()[2:3])
+#  end
+  codomain(f) == domain(g) || throw("Maps not compatible")
 
-  a = gen(domain(g))
-  y = f(g(a))
+  a = gen(domain(f))
+  y = g(f(a))
 
-  return NfToNfMor(domain(g), codomain(f), y)
+  return NfToNfMor(domain(f), codomain(g), y)
 end
 
 function ^(f::NfToNfMor, b::Int)

@@ -218,22 +218,30 @@ function ==(x::NfRelToNfRelMor{T}, y::NfRelToNfRelMor{T}) where T
 end
 
 function *(x::NfRelToNfRelMor{T}, y::NfRelToNfRelMor{T}) where T
-  @assert codomain(y) == domain(x)
-  new_prim_img = x(y.prim_img)
+  @assert domain(y) == codomain(x)
+  #global _D
+  #_s = Base.stacktrace()[2:3]
+  #if !(_s in keys(_D))
+  #  _D[_s] = true
+  #  println("Relative called ...")
+  #  Base.show_backtrace(stdout, Base.stacktrace()[2:3])
+  #end
+
+  new_prim_img = y(x.prim_img)
   
-  if isdefined(x, :coeff_aut)
-    if !isdefined(y, :coeff_aut)
-      new_coeff_aut = x.coeff_aut
+  if isdefined(y, :coeff_aut)
+    if !isdefined(x, :coeff_aut)
+      new_coeff_aut = y.coeff_aut
     else
       new_coeff_aut = x.coeff_aut * y.coeff_aut
     end
     return NfRelToNfRelMor(domain(y), codomain(x), new_coeff_aut, new_prim_img)
   else
-    if isdefined(y, :coeff_aut)
-      new_coeff_aut = y.coeff_aut
-      return NfRelToNfRelMor(domain(y), codomain(x), new_coeff_aut, new_prim_img)
+    if isdefined(x, :coeff_aut)
+      new_coeff_aut = x.coeff_aut
+      return NfRelToNfRelMor(domain(x), codomain(y), new_coeff_aut, new_prim_img)
     else
-      return NfRelToNfRelMor(domain(y), codomain(x), new_prim_img)
+      return NfRelToNfRelMor(domain(x), codomain(y), new_prim_img)
     end
   end
 end

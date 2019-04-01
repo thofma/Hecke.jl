@@ -477,7 +477,7 @@ function norm(f::PolyElem{T}) where T <: NfRelElem
   K = base_ring(f)
 
   P = polynomial_to_power_sums(f, degree(f)*degree(K))
-  PQ = [tr(x) for x=P]
+  PQ = [tr(x) for x = P]
   return power_sums_to_polynomial(PQ)
 end
 
@@ -859,7 +859,7 @@ function roots(a::nf_elem, n::Int)
   Ky, y = PolynomialRing(parent(a), "y", cached = false)
   rt = roots(y^n - a*d^n, ispure = true)
 
-  return [x//d for x = rt]
+  return nf_elem[x//d for x = rt]
 end
 
 function root(a::NfOrdElem, n::Int)
