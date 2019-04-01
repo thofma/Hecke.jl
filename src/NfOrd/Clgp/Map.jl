@@ -11,7 +11,7 @@ export isprincipal
 function power_class(A::NfOrdIdl, e::fmpz)
   if e == 0
     O = order(A)
-    return ideal(O, parent(basis_mat(O).num)(1))
+    return ideal(O, 1)
   end
 
   if e < 0

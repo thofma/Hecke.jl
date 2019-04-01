@@ -588,6 +588,7 @@ function ring_of_multipliers(a::NfAbsOrdIdl)
   else
     B = basis(a, copy = false)
   end
+  @assert length(B) > 0
   bmatinv = basis_mat_inv(a, copy = false)
   m = zero_matrix(FlintZZ, n*length(B), n)
   for i = 1:length(B)

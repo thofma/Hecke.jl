@@ -192,7 +192,7 @@ end
 ################################################################################
 
 function ==(A::AlgAssAbsOrdFracIdl, B::AlgAssAbsOrdFracIdl)
-  order(A) != order(B) && return false
+  order(A) !== order(B) && return false
   return basis_mat(A, false) == basis_mat(B, false)
 end
 

@@ -213,7 +213,7 @@ end
 > Returns whether $a$ and $b$ are equal.
 """
 function ==(a::NfRelOrdFracIdl, b::NfRelOrdFracIdl)
-  order(a) != order(b) && return false
+  order(a) !== order(b) && return false
   return basis_pmat(a, copy = false) == basis_pmat(b, copy = false)
 end
 

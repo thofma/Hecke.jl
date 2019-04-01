@@ -672,52 +672,37 @@ hasroot(a...) = ispower(a...)  # catch all... needs revisiting:
 
 ################################################################################
 #
-# examples
+#  Trace function calls
 #
 ################################################################################
-export example
 
-function example(s::String)
-  Base.include(Main, joinpath(dirname(pathof(Hecke)), "..", "examples", s))
+_trace_cache = Dict()
+
+function _trace_call(;cache = _trace_cache, depth = 2, print = false)
+  s = Base.stacktrace()[4:4 + depth - 1]
+  if !haskey(cache, s)
+    if print
+      println("\n Trace call ... \n ")
+      Base.show_backtrace(stdout, s)
+    end
+    cache[s] = true
+  end
+end
+
+function _print_traces(;cache = _trace_cache)
+  println(cache)
 end
 
 ################################################################################
 #
-#  An update function 
+# examples
 #
 ################################################################################
 
-function update()
+export example
 
-  olddir = pwd()
-
-  println("Updating Hecke ... ")
-  cd(Pkg.dir("Hecke"))
-  run(`git pull`)
-  
-  pkgdir = Pkg.dir("Nemo")
-
-  println("Updating Nemo ... ")
-  cd("$pkgdir")
-  run(`git pull`)
-
-  println("Updating antic ... ")
-  cd("$pkgdir/deps/antic")
-  run(`git pull`)
-
-  println("Updating flint ... ")
-  cd("$pkgdir/deps/flint2")
-  run(`git pull`)
-  run(`make -j`)
-  run(`make install`)
-
-  println("Updating arb ... ")
-  cd("$pkgdir/deps/arb")
-  run(`git pull`)
-  run(`make -j`)
-  run(`make install`)
- 
-  cd(olddir)
+function example(s::String)
+  Base.include(Main, joinpath(dirname(pathof(Hecke)), "..", "examples", s))
 end
 
 #same (copyed) as in stdlib/v1.0/InteractiveUtils/src/InteractiveUtils.jl

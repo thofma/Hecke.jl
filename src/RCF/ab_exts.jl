@@ -89,10 +89,9 @@ function _action_on_quo(mq::GrpAbFinGenMap, act::Array{GrpAbFinGenMap,1})
   S,mS=snf(q)
   n=Int(S.snf[end])
   R=ResidueField(FlintZZ, n, cached=false)
-  W=MatrixSpace(R, ngens(S), ngens(S), false)
   quo_action=Array{nmod_mat,1}(undef, length(act))
   for s=1:length(act)
-    quo_action[s]=W(mS.map*act[i].map*mS.imap)
+    quo_action[s]= change_base_ring(mS.map*act[i].map*mS.imap, R)
   end
   return ZpnGModule(S, quo_action)
 
@@ -1643,7 +1642,7 @@ function _from_relative_to_abs(L::NfRel_ns{T}, auts::Array{NfRel_nsToNfRel_nsMor
   end
   #Now, we compute the maximal order. Then we simplify.
   #PO = _order_for_polygon_overorder(K, B)
-  PO = Order(K, B, check = false, cached = false)
+  PO = Order(K, B, check = false, cached = false, isbasis = true)
   @vtime :AbExt 2 O1 = MaximalOrder(PO)
   O1.ismaximal = 1
   _set_maximal_order_of_nf(K, O1)

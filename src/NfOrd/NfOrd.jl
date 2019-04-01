@@ -691,13 +691,13 @@ end
     Order(B::Array{nf_elem, 1}; check::Bool = true, cached::Bool = true) -> NfOrd
 
 Returns the order generated $B$. If `check` is set, it is checked
-whether $B$ defines an order. If `is_basis` is set, then elements are assumed to form
+whether $B$ defines an order. If `isbasis` is set, then elements are assumed to form
 a $\Z$-basis.
 """
-function Order(::S, a::Array{T, 1}; check::Bool = true, is_basis::Bool = true,
+function Order(::S, a::Array{T, 1}; check::Bool = true, isbasis::Bool = false,
                cached::Bool = true) where {S <: Union{AnticNumberField, NfAbsNS}, T <: Union{nf_elem, NfAbsNSElem}}
   K = parent(a[1])
-  if is_basis
+  if isbasis
     if check
       b, bmat, bmat_inv, _ = defines_order(K, a)
       if !b
@@ -713,7 +713,7 @@ function Order(::S, a::Array{T, 1}; check::Bool = true, is_basis::Bool = true,
   end
 end
 
-function Order(K, a::Vector; check::Bool = true, is_basis::Bool = true,
+function Order(K, a::Vector; check::Bool = true, isbasis::Bool = false,
                cached::Bool = true)
   local b
   try
@@ -721,7 +721,7 @@ function Order(K, a::Vector; check::Bool = true, is_basis::Bool = true,
   catch
     error("Cannot coerce elements from array into the number field")
   end
-  return Order(K, b, check = check, cached = cached, is_basis = is_basis)
+  return Order(K, b, check = check, cached = cached, isbasis = isbasis)
 end
 
 @doc Markdown.doc"""
@@ -994,6 +994,7 @@ function Base.isequal(R::NfOrd, S::NfOrd)
   return R === S
 end
 
+# Todo: Improve this
 function ==(R::NfAbsOrd, S::NfAbsOrd)
   nf(R) != nf(S) && return false
   assure_has_basis_mat(R)

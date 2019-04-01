@@ -47,8 +47,11 @@
 
     #@test O7 == O77
     #@test !(O7 === O77)
+    
+    O8 = Order(K6, [a1])
+    @test O8 == EquationOrder(K1)
 
-    @test_throws ErrorException Order(K1, [a1, a1, a1])
+    @test_throws ErrorException Order(K1, [a1, a1, a1], isbasis = true)
     #@test_throws ErrorException Order(K1, [1, a1, a1])
     #@test_throws ErrorException Order(K1, [1.0, a1, a1])
     @test_throws ErrorException Order(K6, Hecke.FakeFmpqMat(FlintZZ[0 0; 0 0], FlintZZ(6)))

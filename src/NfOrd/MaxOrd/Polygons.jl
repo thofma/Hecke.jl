@@ -423,7 +423,7 @@ function _order_for_polygon_overorder(K::S, elt::Array{T, 1}) where {S, T}
 
   # Make an explicit check
   @hassert :NfOrd 1 defines_order(K, elt)[1]
-  return Order(K, elt, check = false, cached = false)
+  return Order(K, elt, check = false, cached = false, isbasis = true)
 end
 
 ###############################################################################
