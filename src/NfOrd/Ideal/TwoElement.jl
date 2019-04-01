@@ -48,12 +48,12 @@ function isconsistent(A::NfAbsOrdIdl)
       return false
     end
   end
-  #if has_norm(A)
-  #  b = basis_mat(A, copy = false)
-  #  if det(b) != A.norm
-  #    return false
-  #  end
-  #end
+  if has_norm(A)
+    b = basis_mat(A, copy = false)
+    if det(b) != A.norm
+      return false
+    end
+  end
   return true
 end
 
@@ -85,7 +85,7 @@ end
 
 function _assure_weakly_normal_presentation(A::NfAbsOrdIdl)
   if has_2_elem(A) && has_weakly_normal(A)
-    return
+    return nothing
   end
 
   if isdefined(A, :princ_gen)
@@ -98,7 +98,7 @@ function _assure_weakly_normal_presentation(A::NfAbsOrdIdl)
     A.minimum = A.gen_one
     A.gen_two = x
     if !isdefined(A, :norm)
-      A.norm = abs(numerator(norm(b)))
+      A.norm = abs(_normmod(A.gen_one^degree(order(A)), b))
     end
     @hassert :NfOrd 1 gcd(A.gen_one^degree(order(A)),
                     FlintZZ(norm(A.gen_two))) == A.norm
@@ -237,7 +237,9 @@ function is_2_normal_difficult(A::NfAbsOrdIdl)
   return true
 end
 
+
 function assure_2_normal_difficult(A::NfAbsOrdIdl)
+
   m = minimum(A)
   ZK = order(A)
   n = degree(ZK)
@@ -246,49 +248,53 @@ function assure_2_normal_difficult(A::NfAbsOrdIdl)
     assure_2_normal(A)
     return nothing
   end
+
   if n < 12
-    d = 2 * 3
+    d = Int[2, 3]
   elseif n < 20
-    d = 2 * 3 * 5
+    d = Int[2, 3, 5]
   else
-    d = 2 * 3 * 5 * 7
+    d = Int[2, 3, 5, 7]
   end
-
-  m1, m2 = ppio(m, fmpz(d))
-  A1 = gcd(A, m1)
-  A2 = gcd(A, m2)
-  assure_2_normal(A2)
-
-  lp = append!(prime_decomposition(ZK, 2), prime_decomposition(ZK, 3))
-  if n >= 12
-    lp = append!(lp, prime_decomposition(ZK, 5))
-  end
-  if n >= 20
-    lp = append!(lp, prime_decomposition(ZK, 7))
-  end
-
-  v = Int[valuation(A1, p[1]) for p = lp]
-
-  B1 = ideal(ZK, 1)
-  for i = 1:length(v)
-    if v[i] > 0 
-      B1 *= lp[i][1]^v[i]
+  
+  I = ideal(ZK, 1)
+  for i = 1:length(d)
+    m1, m = ppio(m, d[i])
+    if isone(m1)
+      continue
+    end
+    A1 = gcd(A, m1)
+    lp = prime_decomposition(ZK, d[i])
+    v = Int[valuation(A1, p[1]) for p = lp]
+    for i = 1:length(v)
+      if v[i] > 0 
+        I *= lp[i][1]^v[i]
+      end
     end
   end
-  C = B1 * A2
+  #Now the ideal I has a 2 normal presentation
+  if isone(m)
+    A.gen_one = I.gen_one
+    A.gen_two = I.gen_two
+    A.gens_normal = I.gens_normal
+    A.gens_weakly_normal = I.gens_weakly_normal
+    A.gens_short = I.gens_short
+  end
+  J = gcd(A, m)
+  assure_2_normal(J)
+  C = I * J
   A.gen_one = C.gen_one
   A.gen_two = C.gen_two
   A.gens_normal = C.gens_normal
   A.gens_weakly_normal = C.gens_weakly_normal
   A.gens_short = C.gens_short
-
   return nothing
 end
 
 function assure_2_normal(A::NfAbsOrdIdl)
   if has_2_elem(A) && has_2_elem_normal(A)
     @hassert :NfOrd 1 isconsistent(A)
-    return
+    return nothing
   end
   O = order(A)
   K = nf(O)
@@ -381,7 +387,6 @@ function assure_2_normal(A::NfAbsOrdIdl)
     end
 
     mg = _minmod(m^2, gen)
-#    @assert mg == gcd(m, denominator(inv(gen.elem_in_nf), O))
     if gcd(m, div(mg, gcd(mg, m))) == 1
       if gcd(m^n, norm(gen)) != norm(A)
         @vprint :NfOrd 1 "\n\noffending ideal $A \ngen is $gen\nWrong ideal\n"
@@ -396,6 +401,6 @@ function assure_2_normal(A::NfAbsOrdIdl)
   A.gen_two = gen
   A.gens_normal = m
   @hassert :NfOrd 1 isconsistent(A)
-  return
+  return nothing
 end
 

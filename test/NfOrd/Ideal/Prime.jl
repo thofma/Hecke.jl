@@ -46,7 +46,10 @@
   P = prime_decomposition(O, 2)[1][1]
   S = @inferred PrimeIdealsSet(O, fmpz(2), fmpz(100), coprimeto = P)
   @test @inferred length(collect(S)) == 50 
-
+  
+  el = Hecke.find_elem_of_valuation_1(P, P^2)
+  @test valuation(el, P) == 1
+  
   S = @inferred PrimeIdealsSet(O, fmpz(2), fmpz(100), coprimeto = 2)
   @test @inferred length(collect(S)) == 49
 
@@ -59,4 +62,7 @@
   @test_throws ErrorException PrimeIdealsSet(O, fmpz(-1), fmpz(1))
   @test_throws ErrorException PrimeIdealsSet(O, fmpz(1), -2)
   @test_throws ErrorException PrimeIdealsSet(O, fmpz(1), 2, coprimeto = "bla")
+  
+  
+  
 end

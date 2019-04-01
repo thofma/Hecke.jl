@@ -227,14 +227,6 @@ function ideal_from_poly(O::NfOrd, p::Int, fi::Zmodn_poly, ei::Int)
   idl.gens_normal = p
   idl.gens_weakly_normal = true
 
-  # Find an "anti-uniformizer" in case P is unramified
-  # We don't call it anti-unfiformizer anymore
-
-  #if ideal.splitting_type[1] == 1
-  #  t = parent(f)(lift(Zx, divexact(fmodp, fi)))
-  #  ideal.anti_uniformizer = O(K(t), false)
-  #end
-
   if idl.splitting_type[2] == degree(O)
     # Prime number is inert, in particular principal
     idl.is_principal = 1
@@ -368,14 +360,6 @@ function prime_dec_nonindex(O::NfOrd, p::Union{Integer, fmpz}, degree_limit::Int
 
     ideal.gens_normal = fmpz(p)
     ideal.gens_weakly_normal = true
-
-    # Find an "anti-uniformizer" in case P is unramified
-    # We don't call it anti-unfiformizer anymore
-
-    #if ideal.splitting_type[1] == 1
-    #  t = parent(f)(lift(Zx, divexact(fmodp, fi)))
-    #  ideal.anti_uniformizer = O(K(t), false)
-    #end
 
     if length(fac) == 1 && ideal.splitting_type[2] == degree(f)
       # Prime number is inert, in particular principal
@@ -1506,14 +1490,6 @@ function prime_dec_nonindex(O::NfAbsOrd{NfAbsNS,NfAbsNSElem}, p::Union{Integer, 
 
     ideal.gens_normal = fmpz(p)
     ideal.gens_weakly_normal = true
-
-    # Find an "anti-uniformizer" in case P is unramified
-    # We don't call it anti-unfiformizer anymore
-
-    #if ideal.splitting_type[1] == 1
-    #  t = parent(f)(lift(Zx, divexact(fmodp, fi)))
-    #  ideal.anti_uniformizer = O(K(t), false)
-    #end
 
     if length(fac) == 1 && ideal.splitting_type[2] == degree(f)
       # Prime number is inert, in particular principal

@@ -358,7 +358,7 @@ function _dec_com_finite(A::AbsAlgAss{T}) where T
   end
   
   A.issimple = 2
-
+  
   while true
     c = elem_type(F)[ rand(F) for i = 1:k ]
     a = dot(c, V)
@@ -385,11 +385,13 @@ function _dec_com_finite(A::AbsAlgAss{T}) where T
       sols[i] = s
       max_deg = max(max_deg, degree(s))
     end
-    x = one(A)
-    powers = Vector{elem_type(A)}()
-    for i = 1:max_deg + 1
-      push!(powers, x)
+    powers = Vector{elem_type(A)}(undef, max_deg+1)
+    powers[1] = one(A)
+    powers[2] = a
+    x = a
+    for i = 3:max_deg + 1
       x *= a
+      powers[i] = x
     end
     idems = Vector{elem_type(A)}()
     for s in sols

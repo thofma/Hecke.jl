@@ -132,9 +132,9 @@ function lowerconvexhull(points::Array{Tuple{Int, Int},1})
   end
   
   n=length(pointsconvexhull)
-  l= Line[]
+  l = Vector{Line}(undef, n-1)
   for i=0:n-2
-    push!(l, Line(pointsconvexhull[n-i], pointsconvexhull[n-i-1]))
+    l[i + 1] = Line(pointsconvexhull[n-i], pointsconvexhull[n-i-1])
   end
   return Polygon(l, sorted = true)
 
@@ -435,11 +435,11 @@ end
 function _from_algs_to_ideals(A::AlgAss{T}, OtoA::Map, AtoO::Map, Ip1, p::fmpz) where {T}
   
   O = order(Ip1)
+  n = degree(O)
   @vprint :NfOrd 1 "Splitting the algebra\n" 
-  AA = decompose(A)
+  @vtime :NfOrd 3 AA = decompose(A)
   @vprint :NfOrd 1 "Done \n"
   ideals = Array{Tuple{typeof(Ip1), Int}, 1}(undef, length(AA))
-  m = zero_matrix(FlintZZ, 1, degree(O))
   for i = 1:length(AA)
     B = AA[i][1]
     BtoA = AA[i][2]
@@ -448,14 +448,14 @@ function _from_algs_to_ideals(A::AlgAss{T}, OtoA::Map, AtoO::Map, Ip1, p::fmpz) 
     M = representation_matrix(idem)
     ker = left_kernel_basis(M)
     N = basis_mat(Ip1, copy = false)
+    N = vcat(N, zero_matrix(FlintZZ, length(ker), n))
     for s = 1:length(ker)
       b = elem_in_basis(AtoO(A(ker[s])))
       for j = 1:degree(O)
-        m[1, j] = b[j]
+        N[n + s, j] = b[j]
       end
-      N = vcat(N, m)
     end
-    @vtime :NfOrd 1 N = view(_hnf_modular_eldiv(N, p, :lowerleft), nrows(N) - degree(O) + 1:nrows(N), 1:degree(O))
+    N = view(_hnf_modular_eldiv(N, p, :lowerleft), nrows(N) - degree(O) + 1:nrows(N), 1:degree(O))
     P = ideal(O, N)
     P.minimum = p
     P.norm = p^f
@@ -463,7 +463,6 @@ function _from_algs_to_ideals(A::AlgAss{T}, OtoA::Map, AtoO::Map, Ip1, p::fmpz) 
     P.is_prime = 1
     fromOtosimplealgebra = compose(OtoA, inv(BtoA))
     compute_residue_field_data!(P, fromOtosimplealgebra)
-
     ideals[i] = (P, 0)
   end
   return ideals, AA
@@ -471,13 +470,14 @@ end
 
 function _decomposition(O::NfAbsOrd, I::NfAbsOrdIdl, Ip::NfAbsOrdIdl, T::NfAbsOrdIdl, p::fmpz)
   #I is an ideal lying over p
-  #T is the product of all the prime ideals lying over p that do not appear in the factorization of I
+  #T is contained in the product of all the prime ideals lying over p that do not appear in the factorization of I
   #Ip is the p-radical
   Ip1 = Ip + I
   A, OtoA = AlgAss(O, Ip1, p)
   
   if dim(A) == 1
     Ip1.norm = p
+    Ip1.minimum = p
     Ip1.splitting_type = (0, 1)
     Ip1.is_prime = 1
     ideals = Array{Tuple{ideal_type(O), Int}, 1}(undef, 1)
@@ -487,13 +487,60 @@ function _decomposition(O::NfAbsOrd, I::NfAbsOrdIdl, Ip::NfAbsOrdIdl, T::NfAbsOr
     @vtime :NfOrd 3 ideals , AA = _from_algs_to_ideals(A, OtoA, AtoO, Ip1, p)
   end
   k = (1-1/BigInt(p))^degree(O) < 0.1
-  for j in 1:length(ideals)
-    P = ideals[j][1]
-    f = P.splitting_type[2]
+
+  if !k
+    #The probability of finding a random generator is high
+    for j in 1:length(ideals)
+      P = ideals[j][1]
+      f = P.splitting_type[2]
+      @vprint :NfOrd 1 "Chances for finding second generator: ~$((1-1/BigInt(p)))\n"
+      @vtime :NfOrd 3 find_random_second_gen(P)
+      u = P.gen_two
+      modulo = norm(P)*p
+      x = zero(parent(u))
+      
+      if !is_norm_divisible(u.elem_in_nf, modulo)
+        x = u
+      elseif !is_norm_divisible(u.elem_in_nf+p, modulo)
+        x = u + p
+      elseif !is_norm_divisible(u.elem_in_nf-p, modulo)
+        x = u - p
+      else
+        Ba = basis(P, copy = false)
+        for i in 1:degree(O)
+          if !is_norm_divisible((v*Ba[i] + u).elem_in_nf, modulo)
+            x = v*Ba[i] + u
+            break
+          end
+        end
+      end
+
+      @hassert :NfOrd 1 !iszero(x)
+      @hassert :NfOrd 2 O*O(p) + O*x == P
+      P.gen_two = x
+      P.gens_normal = p
+      if length(ideals) == 1
+        e = Int(divexact(valuation(norm(I), p), f))
+      else
+        anti_uni = anti_uniformizer(P)
+        e = 1
+        xyz = anti_uni^2*p
+        while xyz in O
+          e += 1
+          mul!(xyz, xyz, anti_uni)
+        end
+        @hassert :NfOrd 3 e == Int(valuation(nf(O)(p), P))
+      end
+      P.splitting_type = e, f
+      @hassert :NfOrd 3 isconsistent(P)
+      ideals[j] = (P, e)
+    end
+  elseif length(ideals) > 1
+    for j in 1:length(ideals)
+      P = ideals[j][1]
+      f = P.splitting_type[2]
     
-    @vprint :NfOrd 1 "Searching for 2-element presentation \n"
-    
-    if length(ideals) > 1 && k
+      @vprint :NfOrd 1 "Searching for 2-element presentation \n"    
       # The following does not work if there is only one prime ideal
       # This is roughly Algorithm 6.4 of Belabas' "Topics in computational algebraic
       # number theory".
@@ -501,7 +548,6 @@ function _decomposition(O::NfAbsOrd, I::NfAbsOrdIdl, Ip::NfAbsOrdIdl, T::NfAbsOr
 
       B, BtoA = AA[j]
       v1 = AtoO(BtoA(one(B)))
-      #u1 = AtoO(sum([AA[i][2](AA[i][1][1]) for i=1:length(ideals) if i != j]))
       u1 = 1 - v1
       @hassert :NfOrd 1 isone(u1+v1)
       @hassert :NfOrd 1 u1 in P
@@ -536,48 +582,137 @@ function _decomposition(O::NfAbsOrd, I::NfAbsOrdIdl, Ip::NfAbsOrdIdl, T::NfAbsOr
       P.gen_two = x
       P.gens_normal = p
       P.gens_weakly_normal = 1
-      @vtime :NfOrd 3 e = Int(valuation(nf(O)(p), P)) #I can probably do something just looking at the Newton polygon.
-      P.splitting_type = e, f
-      ideals[j] = (P, e)
-    else
-      @vprint :NfOrd 1 "Chances for finding second generator: ~$((1-1/BigInt(p)))\n"
-      @vtime :NfOrd 3 _assure_weakly_normal_presentation(P)
-      u = P.gen_two
-      modulo = norm(P)*p
-      x = zero(parent(u))
-      
-      if !is_norm_divisible(u.elem_in_nf, modulo)
-        x = u
-      elseif !is_norm_divisible(u.elem_in_nf+p, modulo)
-        x = u + p
-      elseif !is_norm_divisible(u.elem_in_nf-p, modulo)
-        x = u - p
-      else
-        Ba = basis(P, copy = false)
-        for i in 1:degree(O)
-          if !is_norm_divisible((v*Ba[i] + u).elem_in_nf, modulo)
-            x = v*Ba[i] + u
-            break
-          end
-        end
+      anti_uni = anti_uniformizer(P)
+      e = 1
+      xyz = anti_uni^2*p
+      while xyz in O
+        e += 1
+        mul!(xyz, xyz, anti_uni)
       end
-
-      @hassert :NfOrd 1 !iszero(x)
-      @hassert :NfOrd 2 O*O(p) + O*x == P
-      P.gen_two = x
-      P.gens_normal = p
-      if length(ideals) == 1
-        e = Int(divexact(valuation(norm(I), p), f))
-      else
-        @vtime :NfOrd 3 e = Int(valuation(nf(O)(p), P))
-      end
+      @hassert :NfOrd 3 e == Int(valuation(nf(O)(p), P))
+      @hassert :NfOrd 3 isconsistent(P)
       P.splitting_type = e, f
       ideals[j] = (P, e)
     end
+  elseif !isone(T)
+    P = ideals[1][1]
+    f = P.splitting_type[2]
+    u, e2 = idempotents(P, T)
+    x = zero(parent(u))
+    modulo = norm(P)*p
+
+    if !is_norm_divisible(u.elem_in_nf, modulo)
+      x = u
+    elseif !is_norm_divisible(u.elem_in_nf+p, modulo)
+      x = u + p
+    elseif !is_norm_divisible(u.elem_in_nf-p, modulo)
+      x = u - p
+    else
+      Ba = basis(P, copy = false)
+      for i in 1:degree(O)
+        if !is_norm_divisible((v*Ba[i] + u).elem_in_nf, modulo)
+          x = v*Ba[i] + u
+          break
+        end
+      end
+    end
+    @hassert :NfOrd 1 !iszero(x)
+    @hassert :NfOrd 2 O*O(p) + O*x == P
+    P.gen_one = p
+    P.gen_two = x
+    P.gens_normal = p
+    P.gens_weakly_normal = 1
+    e = Int(divexact(valuation(norm(I), p), f))
+    P.splitting_type = e, f
+    @hassert :NfOrd 3 isconsistent(P)
+    ideals[1] = (P, e)
+  else
+    P = ideals[1][1]
+    f = P.splitting_type[2]
+    #There is only one prime ideal and the probability of finding a random generator is low.
+    #I need one element of valuation 1. Then, using the idempotents, I can get a generator easily.
+    P2 = P*P
+    x = find_elem_of_valuation_1(P, P2)
+    @hassert :NfOrd 1 !iszero(x)
+    @hassert :NfOrd 2 O*O(p) + O*x == P
+    P.gen_one = p
+    P.gen_two = x
+    P.gens_normal = p
+    P.gens_weakly_normal = 1
+    e = Int(divexact(valuation(norm(I), p), f))
+    P.splitting_type = e, f
+    @hassert :NfOrd 3 isconsistent(P)
+    ideals[1] = (P, e)
   end
   return ideals
 
 end
+
+function find_random_second_gen(A::NfAbsOrdIdl{S, T}) where {S, T}
+  O = order(A)
+  Amin2 = minimum(A)^2
+  Amind = gcd(minimum(A)^degree(O), minimum(A)*norm(A))
+
+  B = Array{fmpz}(undef, degree(O))
+
+  gen = O()
+
+  r = -Amin2:Amin2
+
+  m = zero_matrix(FlintZZ, 1, degree(O))
+
+  cnt = 0
+  while true
+    cnt += 1
+    if cnt > 1000
+      println("Having a hard time find weak generators for $A")
+    end
+
+    rand!(B, r)
+
+    # Put the entries of B into the (1 x d)-Matrix m
+    for i in 1:degree(O)
+      s = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ref{fmpz_mat}, Int, Int), m, 0, i - 1)
+      ccall((:fmpz_set, :libflint), Nothing, (Ptr{fmpz}, Ref{fmpz}), s, B[i])
+    end
+
+    if iszero(m)
+      continue
+    end
+
+    mul!(m, m, basis_mat(A, copy = false))
+    d = denominator(basis_mat(O, copy = false))
+    mul!(m, m, basis_mat(O, copy = false).num)
+    gen = elem_from_mat_row(nf(O), m, 1, d)
+    d = denominator(gen)
+    f, e = ppio(d, minimum(A, copy = false))
+    gen = mod(numerator(gen), f*minimum(A)^2)//f
+    if iszero(gen)
+      continue
+    end
+
+    if norm(A) == _normmod(Amind, O(gen, false))
+      A.gen_one = minimum(A)
+      A.gen_two = O(gen, false)
+      A.gens_weakly_normal = true
+      break
+    end
+  end
+  return nothing
+end
+
+function find_elem_of_valuation_1(P::NfAbsOrdIdl{S, T}, P2::NfAbsOrdIdl{S, T}) where {S, T}
+  B = basis(P, copy = false)
+  el = B[1]
+  for i = 2:length(B)
+    if !(B[i] in P2)
+      el = B[i]
+      break
+    end
+  end
+  return el
+end
+
 
 function decomposition_type_polygon(O::NfOrd, p::Union{fmpz, Int})
   K = nf(O)
@@ -645,7 +780,7 @@ end
 #
 ###############################################################################
 
-function prime_decomposition_polygons(O::NfAbsOrd{S, T}, p::Union{fmpz, Int}, degree_limit::Int = 0, lower_limit::Int = 0) where {S, T}
+function prime_decomposition_polygons(O::NfOrd, p::Union{fmpz, Int}, degree_limit::Int = 0, lower_limit::Int = 0) where {S, T}
   if degree_limit == 0
     degree_limit = degree(O)
   end
@@ -660,7 +795,7 @@ function prime_decomposition_polygons(O::NfAbsOrd{S, T}, p::Union{fmpz, Int}, de
   res = Tuple{NfOrdIdl, Int}[]
   l = Tuple{NfOrdIdl, NfOrdIdl}[]
   @vtime :NfOrd 3 for (g, m) in fac
-    if degree(g) > degree_limit || lower_limit > degree(g)
+    if degree(g) > degree_limit
       continue
     end
     @vprint :NfOrd 1 "Doing $((g, m)) \n"

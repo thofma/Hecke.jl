@@ -881,11 +881,12 @@ function _minmod_easy(a::fmpz, b::NfOrdElem)
   return gcd(a, m)
 end
 
-
 function _minmod(a::fmpz, b::NfOrdElem)
-
   if isone(a) 
     return a
+  end
+  if iszero(a)
+    return fmpz(0)
   end
   
   if !isdefining_polynomial_nice(nf(parent(b)))
@@ -1044,6 +1045,9 @@ function _normmod_comp(a::fmpz, b::NfOrdElem)
 end
 
 function simplify(A::NfAbsOrdIdl)
+  if iszero(A)
+    return A
+  end
   @hassert :NfOrd 1 isconsistent(A)
   if has_2_elem(A) && has_weakly_normal(A)
     #if maximum(element_to_sequence(A.gen_two)) > A.gen_one^2
@@ -1056,12 +1060,9 @@ function simplify(A::NfAbsOrdIdl)
       @hassert :NfOrd 1 isconsistent(A)
       return A
     end
-    if true
-      A.minimum = _minmod(A.gen_one, A.gen_two)
-      @hassert :Rres 1 A.minimum == gcd(A.gen_one, denominator(inv(A.gen_two.elem_in_nf), order(A)))
-    else  
-      A.minimum = gcd(A.gen_one, denominator(inv(A.gen_two.elem_in_nf), order(A)))
-    end  
+    A.minimum = _minmod(A.gen_one, A.gen_two)
+    @hassert :Rres 1 A.minimum == gcd(A.gen_one, denominator(inv(A.gen_two.elem_in_nf), order(A)))
+
     A.gen_one = A.minimum
     if !isdefined(A, :norm)
       if false 

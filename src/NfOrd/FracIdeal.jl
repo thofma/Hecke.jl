@@ -348,6 +348,7 @@ function simplify_exact!(A::NfOrdFracIdl)
   A.num = divexact(A.num, g)
 end
 
+
 function simplify(A::NfOrdFracIdl)
   simplify(A.num)
 
