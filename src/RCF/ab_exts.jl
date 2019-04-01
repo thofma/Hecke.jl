@@ -1642,7 +1642,7 @@ function _from_relative_to_abs(L::NfRel_ns{T}, auts::Array{NfRel_nsToNfRel_nsMor
   end
   #Now, we compute the maximal order. Then we simplify.
   #PO = _order_for_polygon_overorder(K, B)
-  PO = Order(K, B, check = false, cached = false)
+  PO = Order(K, B, check = false, cached = false, isbasis = true)
   @vtime :AbExt 2 O1 = MaximalOrder(PO)
   O1.ismaximal = 1
   _set_maximal_order_of_nf(K, O1)
