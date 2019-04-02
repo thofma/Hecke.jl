@@ -269,7 +269,7 @@ function prime_decomposition(O::NfOrd, p::Union{Integer, fmpz}, degree_limit::In
     if isindex_divisor(O, p)
       if cached
         if haskey(O.index_div, fmpz(p))
-          lp = O.index_div[fmpz(p)]::Tuple{NfOrdIdl, Int}
+          lp = O.index_div[fmpz(p)]::Vector{Tuple{NfOrdIdl, Int}}
           z = Tuple{NfOrdIdl, Int}[]
           for (Q, e) in lp
             if degree_limit == 0 || degree(Q) <= degree_limit

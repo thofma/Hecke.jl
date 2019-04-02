@@ -344,11 +344,23 @@ function dot(c::Vector{T}, V::Vector{AlgAssElem{T, AlgAss{T}}}) where T <: Gener
   aux = zero(A)
   for i = 1:length(c)
     aux = mul!(aux, V[i], c[i])
-    @assert aux == V[i]*c[i]
     res = add!(res, res, aux)
   end
   return res
 end
+
+function dot(c::Vector{gfp_elem}, V::Vector{AlgAssElem{gfp_elem, AlgAss{gfp_elem}}})
+  @assert length(c) == length(V)
+  A = parent(V[1])
+  res = zero(A)
+  aux = zero(A)
+  for i = 1:length(c)
+    aux = mul!(aux, V[i], c[i])
+    res = add!(res, res, aux)
+  end
+  return res
+end
+
 
 
 function _dec_com_finite(A::AbsAlgAss{T}) where T
@@ -375,8 +387,6 @@ function _dec_com_finite(A::AbsAlgAss{T}) where T
   a = dot(c, V)
   representation_matrix!(a, M)
   f = minpoly(M)
-  g = minpoly(a)
-  @assert [coeff(f, i) for i = 0:degree(f)] == [coeff(g, i) for i = 0:degree(g)]
   while degree(f) < 2
     for i = 1:length(c)
       c[i] = rand(F)

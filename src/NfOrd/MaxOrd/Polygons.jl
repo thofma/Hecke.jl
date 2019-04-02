@@ -501,7 +501,7 @@ function _decomposition(O::NfAbsOrd, I::NfAbsOrdIdl, Ip::NfAbsOrdIdl, T::NfAbsOr
     ideals , AA = _from_algs_to_ideals(A, OtoA, AtoO, Ip1, p)
   end
   k = (1-1/BigInt(p))^degree(O) < 0.1
-  
+
   if !k
     #The probability of finding a random generator is high
     for j in 1:length(ideals)
@@ -689,7 +689,7 @@ function find_random_second_gen(A::NfAbsOrdIdl{S, T}) where {S, T}
   while true
     cnt += 1
     if cnt > 1000
-      println("Having a hard time find weak generators for $A")
+      error("Having a hard time find weak generators for $A")
     end
 
     rand!(B, r)
@@ -699,7 +699,6 @@ function find_random_second_gen(A::NfAbsOrdIdl{S, T}) where {S, T}
       s = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ref{fmpz_mat}, Int, Int), m, 0, i - 1)
       ccall((:fmpz_set, :libflint), Nothing, (Ptr{fmpz}, Ref{fmpz}), s, B[i])
     end
-
     if iszero(m)
       continue
     end
@@ -714,7 +713,7 @@ function find_random_second_gen(A::NfAbsOrdIdl{S, T}) where {S, T}
     if iszero(gen)
       continue
     end
-
+    
     if norm(A) == _normmod(Amind, O(gen, false))
       A.gen_one = minimum(A)
       A.gen_two = O(gen, false)
