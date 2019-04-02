@@ -475,8 +475,8 @@ function _from_algs_to_ideals(A::AlgAss{T}, OtoA::Map, AtoO::Map, Ip1, p::Union{
     P.norm = fmpz(p)^f
     P.splitting_type = (0, f)
     P.is_prime = 1
-    #fromOtosimplealgebra = compose(OtoA, inv(BtoA))
-    #compute_residue_field_data!(P, fromOtosimplealgebra)
+    fromOtosimplealgebra = compose(OtoA, inv(BtoA))
+    compute_residue_field_data!(P, fromOtosimplealgebra)
     ideals[i] = (P, 0)
   end
   return ideals, AA
