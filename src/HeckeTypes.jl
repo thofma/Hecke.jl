@@ -488,6 +488,15 @@ mutable struct FakeFmpqMat
 
   function FakeFmpqMat(x::fmpq_mat)
     z = new()
+    z.rows = nrows(x)
+    z.cols = ncols(x)
+
+    if nrows(x) == 0 || ncols(x) == 0
+      z.num = zero_matrix(FlintZZ, nrows(x), ncols(x))
+      z.den = one(fmpz)
+      return z
+    end
+
     d = denominator(x[1, 1])
     for i in 1:nrows(x)
       for j in 1:ncols(x)
@@ -500,8 +509,6 @@ mutable struct FakeFmpqMat
         n[i, j] = FlintZZ(d*x[i, j])
       end
     end
-    z.rows = nrows(x)
-    z.cols = ncols(x)
     z.num = n
     z.den = d
     return z

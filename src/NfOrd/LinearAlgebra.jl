@@ -1674,6 +1674,6 @@ function istriangular(M::MatElem, shape::Symbol = :lowerleft)
     end
     return true
   elseif shape == :upperright
-    return ispseudo_hnf(transpose(M), :lowerleft)
+    return istriangular(transpose(M), :lowerleft)
   end
 end

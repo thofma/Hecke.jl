@@ -113,6 +113,7 @@ end
 ################################################################################
 
 @inline Nemo.base_ring(a::NfRel{T}) where {T} = a.base_ring::parent_type(T)
+
 @inline base_field(a::NfRel{T}) where {T} = a.base_ring::parent_type(T)
 
 @inline Nemo.data(a::NfRelElem) = a.data
@@ -377,6 +378,12 @@ function Nemo.mul!(c::NfRelElem{T}, a::NfRelElem{T}, b::NfRelElem{T}) where {T}
   return c
 end
 
+function mul!(c::NfRelElem{T}, a::NfRelElem{T}, b::T) where {T}
+  mul!(c.data, a.data, b)
+  c = reduce!(c)
+  return c
+end
+
 function Nemo.addeq!(b::NfRelElem{T}, a::NfRelElem{T}) where {T}
   addeq!(b.data, a.data)
   b = reduce!(b)
@@ -492,6 +499,7 @@ Nemo.canonical_unit(a::NfRelElem) = a
 #*(a::NfRelElem{T}, b::NfRelElem{NfRelElem{T}}) where T = b*a
 
 @inline coeff(a::NfRelElem{T}, i::Int) where {T} = coeff(a.data, i)
+
 @inline setcoeff!(a::NfRelElem{T}, i::Int, c::T) where {T} = setcoeff!(a.data, i, c)
 
 @inline degree(L::Hecke.NfRel) = degree(L.pol)
@@ -554,6 +562,18 @@ end
 #
 ################################################################################
 
+function basis_mat(v::Vector{<: NfRelElem})
+  K = parent(v[1])
+  k = base_field(K)
+  z = zero_matrix(k, length(v), degree(K))
+  for i in 1:length(v)
+    for j in 0:(degree(K) - 1)
+      z[i, j + 1] = coeff(v[i], j)
+    end
+  end
+  return z
+end
+
 function elem_to_mat_row!(M::Generic.Mat{T}, i::Int, a::NfRelElem{T}) where T
   for c = 1:ncols(M)
     M[i, c] = deepcopy(coeff(a, c - 1))
@@ -605,6 +625,28 @@ end
 function tr(a::NfRelElem)
   M = representation_matrix(a)
   return tr(M)
+end
+
+################################################################################
+#
+#  Random elements from arrays
+#
+################################################################################
+
+function rand!(c::NfRelElem, b::Vector{<: NfRelElem}, r::UnitRange)
+  K = parent(b[1])
+  length(b) == 0 && error("Array must not be empty")
+
+  # TODO: Avoid promotion to K
+  mul!(c, b[1], K(rand(r)))
+  t = zero(K)
+
+  for i = 2:length(b)
+    mul!(t, b[i], K(rand(r)))
+    add!(c, t, c)
+  end
+
+  return c
 end
 
 ######################################################################
