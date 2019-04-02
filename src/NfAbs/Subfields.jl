@@ -192,7 +192,7 @@ end
 #
 ################################################################################
 
-function _principal_subfields_basis(K)
+function _principal_subfields_basis(K::AnticNumberField)
   f = K.pol
   Kx, x = PolynomialRing(K, "x", cached = false)
   n = degree(K)
@@ -234,7 +234,8 @@ function _principal_subfields_basis(K)
     # This might be expensive for bigger fields?
     ker_rref = matrix(FlintQQ, lll(saturate(FakeFmpqMat(rref(ker)[2]).num)))
 
-    if ker_rref in principal_subfields_ar
+    # TODO: Remove this madness once we switched to Nemo >=0.13.2
+    if ker_rref in [ b for b in principal_subfields_ar if nrows(b) == nrows(ker_rref)]
       continue
     else
       push!(principal_subfields_ar, ker_rref)
