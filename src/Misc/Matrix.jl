@@ -48,6 +48,21 @@ coefficient_type(::Type{Generic.Mat{T}}) where {T} = T
 
 ################################################################################
 #
+#  Zero! for generic matrices
+#
+################################################################################
+
+function zero!(a::MatElem)
+  for i in 1:nrows(a)
+    for j in 1:ncols(a)
+      a[i, j] = zero!(a[i, j])
+    end
+  end
+  return a
+end
+
+################################################################################
+#
 #  Saturation
 #
 ################################################################################
@@ -1045,7 +1060,7 @@ end
 > Forms a big matrix my vertically concatenating the matrices in $A$.
 > All component matrices need to have the same number of columns.
 """
-function vcat(A::Array{Generic.Mat{T}, 1}) where T
+function vcat(A::Array{T, 1})  where {S <: RingElem, T <: MatElem{S}}
   if any(x->ncols(x) != ncols(A[1]), A)
     error("Matrices must have same number of columns")
   end
@@ -1116,6 +1131,22 @@ function Base.vcat(A::MatElem...)
   return X
 end
 
+function Base.hcat(A::Array{T, 1}) where {S <: RingElem, T <: MatElem{S}}
+  if any(x->nrows(x) != nrows(A[1]), A)
+    error("Matrices must have same number of columns")
+  end
+  M = zero_matrix(base_ring(A[1]), nrows(A[1]), sum(ncols, A))
+  s = 0
+  for i = A
+    for j=1:ncols(i)
+      for k=1:nrows(i)
+        M[k, s + j] = i[k,j]
+      end
+    end
+    s += ncols(i)
+  end
+  return M
+end
 
 function Base.hcat(A::MatElem...)
   r = nrows(A[1])
@@ -1507,14 +1538,23 @@ getindex(A::MatElem, ::Colon, i::Int) = A[1:nrows(A), i:i]
 > columns will be zero afterwards.
 """
 function reduce_mod!(A::MatElem{T}, B::MatElem{T}) where T <: FieldElem
-  @assert isrref(B)
+  if isrref(B)
+    scale = false
+  else
+    scale = true
+  end
+
   for h=1:nrows(A)
     j = 1
     for i=1:nrows(B)
       while iszero(B[i, j])
         j += 1
       end
-      A[h, :] -= A[h, j] * B[i, :]
+      if scale
+        A[h, :] -= A[h, j] * (inv(B[i, j]) * B[i, :])
+      else
+        A[h, :] -= A[h, j] * B[i, :]
+      end
     end
   end
   return A
