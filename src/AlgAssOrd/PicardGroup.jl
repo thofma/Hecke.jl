@@ -169,6 +169,7 @@ function _picard_group_non_maximal(O::AlgAssAbsOrd, prepare_ref_disc_log::Bool =
     for i = 1:ngens(S)
       r = RtoP\StoP(S[i])
       # Contraction does not commute with multiplication, so we have to evaluate.
+      # TODO: Can we make this work?
       gens_snf[i] = contract(evaluate(mR(r)), O)
     end
 

@@ -193,13 +193,6 @@ function *(a::AbsAlgAssIdl{S, T, U}, b::AbsAlgAssIdl{S, T, U}) where {S, T, U}
     return deepcopy(b)
   end
 
-  if !isright_ideal(a)
-    error("First argument is not a right ideal")
-  end
-  if !isleft_ideal(b)
-    error("Second argument is not a left ideal")
-  end
-
   A = algebra(a)
   ba = basis(a, copy = false)
   bb = basis(b, copy = false)
