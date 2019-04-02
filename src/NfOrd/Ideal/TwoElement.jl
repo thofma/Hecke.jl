@@ -237,6 +237,18 @@ function is_2_normal_difficult(A::NfAbsOrdIdl)
   return true
 end
 
+function valuation_of_ideal_difficult(A::NfAbsOrdIdl, P::NfAbsOrdIdl)
+  B = basis(A, copy = false)
+  res = valuation(B[1], P)
+  for i = 2:length(B)
+    if iszero(res)
+      break
+    end
+    res = min(res, valuation(B[i], P))
+  end
+  return res
+end
+
 
 function assure_2_normal_difficult(A::NfAbsOrdIdl)
 
@@ -259,13 +271,13 @@ function assure_2_normal_difficult(A::NfAbsOrdIdl)
   
   I = ideal(ZK, 1)
   for i = 1:length(d)
-    m1, m = ppio(m, d[i])
+    m1, m = ppio(m, fmpz(d[i]))
     if isone(m1)
       continue
     end
     A1 = gcd(A, m1)
     lp = prime_decomposition(ZK, d[i])
-    v = Int[valuation(A1, p[1]) for p = lp]
+    v = Int[valuation_of_ideal_difficult(A1, p[1]) for p = lp]
     for i = 1:length(v)
       if v[i] > 0 
         I *= lp[i][1]^v[i]
@@ -279,6 +291,7 @@ function assure_2_normal_difficult(A::NfAbsOrdIdl)
     A.gens_normal = I.gens_normal
     A.gens_weakly_normal = I.gens_weakly_normal
     A.gens_short = I.gens_short
+    return nothing
   end
   J = gcd(A, m)
   assure_2_normal(J)
@@ -290,6 +303,12 @@ function assure_2_normal_difficult(A::NfAbsOrdIdl)
   A.gens_short = C.gens_short
   return nothing
 end
+
+################################################################################
+#
+#  Assure 2 normal
+#
+################################################################################
 
 function assure_2_normal(A::NfAbsOrdIdl)
   if has_2_elem(A) && has_2_elem_normal(A)
