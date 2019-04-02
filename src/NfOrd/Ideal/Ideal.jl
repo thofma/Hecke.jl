@@ -1046,13 +1046,25 @@ function _normmod_comp(a::fmpz, b::NfOrdElem)
   k = number_field(Zk)
   d = denominator(b.elem_in_nf)
   com, uncom = ppio(d, a)
-  S = ResidueRing(FlintZZ, a*com^degree(k), cached=false)
-  St = PolynomialRing(S, cached=false)[1]
-  B = St(d*b.elem_in_nf)
-  F = St(k.pol)
-  m = resultant_ideal(B, F)  # u*B + v*F = m mod modulus(S)
-  m1 = gcd(modulus(S), lift(m))
-  return divexact(m1, com^degree(parent(b)))
+  mod = a*com^degree(k)
+  if nbits(mod) < 64
+    R = ResidueRing(FlintZZ, Int(mod), cached=false)
+    Rt = PolynomialRing(R, cached=false)[1]
+    B1 = Rt(d*b.elem_in_nf)
+    F1 = Rt(k.pol)
+    m2 = resultant_ideal(B1, F1)  # u*B + v*F = m mod modulus(S)
+    m3 = gcd(modulus(R), lift(m2))
+    return divexact(m3, com^degree(parent(b)))
+  else
+    S = ResidueRing(FlintZZ, mod, cached=false)
+    St = PolynomialRing(S, cached=false)[1]
+    B = St(d*b.elem_in_nf)
+    F = St(k.pol)
+    m = resultant_ideal(B, F)  # u*B + v*F = m mod modulus(S)
+    m1 = gcd(modulus(S), lift(m))
+    return divexact(m1, com^degree(parent(b)))
+  end
+  
 end
 
 function simplify(A::NfAbsOrdIdl)

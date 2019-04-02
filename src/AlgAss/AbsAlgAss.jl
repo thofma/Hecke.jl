@@ -159,16 +159,15 @@ function kernel_of_frobenius(A::AbsAlgAss)
   q = order(F)
 
   b = A()
-  c = A()
   B = zero_matrix(F, dim(A), dim(A))
   for i = 1:dim(A)
-    b.coeffs[i] = F(1)
+    b.coeffs[i] = one(F)
     if i > 1
-      b.coeffs[i - 1] = F()
+      b.coeffs[i - 1] = zero(F)
     end
     c = b^q - b
     for j = 1:dim(A)
-      B[j, i] = deepcopy(c.coeffs[j])
+      B[j, i] = c.coeffs[j]
     end
   end
 
@@ -338,12 +337,25 @@ function _dec_com_gen(A::AbsAlgAss{T}) where {T <: FieldElem}
   end
 end
 
+function dot(c::Vector{T}, V::Vector{AlgAssElem{T, AlgAss{T}}}) where T <: Generic.ResF{S} where S <: Union{Int, fmpz}
+  @assert length(c) == length(V)
+  A = parent(V[1])
+  res = zero(A)
+  aux = zero(A)
+  for i = 1:length(c)
+    aux = mul!(aux, V[i], c[i])
+    @assert aux == V[i]*c[i]
+    res = add!(res, res, aux)
+  end
+  return res
+end
+
 
 function _dec_com_finite(A::AbsAlgAss{T}) where T
   if dim(A) == 1
     A.issimple = 1
     B, mB = AlgAss(A)
-    return [(B, mB)]
+    return Tuple{AlgAss{T}, morphism_type(AlgAss{T}, typeof(A))}[(B, mB)]
   end
 
   F = base_ring(A)
@@ -354,65 +366,71 @@ function _dec_com_finite(A::AbsAlgAss{T}) where T
   if k == 1
     A.issimple = 1
     B, mB = AlgAss(A)
-    return [(B, mB)]
+    return Tuple{AlgAss{T}, morphism_type(AlgAss{T}, typeof(A))}[(B, mB)]
   end
   
   A.issimple = 2
-  
-  while true
-    c = elem_type(F)[ rand(F) for i = 1:k ]
+  c = elem_type(F)[ rand(F) for i = 1:k ]
+  M = zero_matrix(F, dim(A), dim(A))
+  a = dot(c, V)
+  representation_matrix!(a, M)
+  f = minpoly(M)
+  g = minpoly(a)
+  @assert [coeff(f, i) for i = 0:degree(f)] == [coeff(g, i) for i = 0:degree(g)]
+  while degree(f) < 2
+    for i = 1:length(c)
+      c[i] = rand(F)
+    end
     a = dot(c, V)
-    f = minpoly(a)
-
-    if degree(f) < 2
-      continue
-    end
-
-    @assert issquarefree(f)
-
-    fac = factor(f)
-    R = parent(f)
-    factorss = collect(keys(fac.fac))
-    sols = Vector{typeof(f)}(undef, length(factorss))
-    right_side = typeof(f)[ zero(R) for i = 1:length(factorss) ]
-    max_deg = 0
-    for i = 1:length(factorss)
-      right_side[i] = one(R)
-      if 1 != i
-        right_side[i - 1] = zero(R)
-      end
-      s = crt(right_side, factorss)
-      sols[i] = s
-      max_deg = max(max_deg, degree(s))
-    end
-    powers = Vector{elem_type(A)}(undef, max_deg+1)
-    powers[1] = one(A)
-    powers[2] = a
-    x = a
-    for i = 3:max_deg + 1
-      x *= a
-      powers[i] = x
-    end
-    idems = Vector{elem_type(A)}()
-    for s in sols
-      idem = A()
-      for i = 0:degree(s)
-        idem += coeff(s, i)*powers[i + 1]
-      end
-      push!(idems, idem)
-    end
-
-    res = Vector{Tuple{AlgAss{T}, morphism_type(AlgAss{T}, typeof(A))}}()
-    for idem in idems
-      S, StoA = subalgebra(A, idem, true)
-      decS = _dec_com_finite(S)
-      for (B, BtoS) in decS
-        BtoA = compose_and_squash(StoA, BtoS)
-        push!(res, (B, BtoA))
-      end
-    end
-    return res
+    zero!(M)
+    representation_matrix!(a, M)
+    f = minpoly(M)
   end
+
+  #@assert issquarefree(f)
+  fac = factor(f)
+  R = parent(f)
+  factorss = collect(keys(fac.fac))
+  sols = Vector{typeof(f)}(undef, length(factorss))
+  right_side = typeof(f)[ zero(R) for i = 1:length(factorss) ]
+  max_deg = 0
+  for i = 1:length(factorss)
+    right_side[i] = one(R)
+    if 1 != i
+      right_side[i - 1] = zero(R)
+    end
+    sols[i] = crt(right_side, factorss)
+    max_deg = max(max_deg, degree(sols[i]))
+  end
+  powers = Vector{elem_type(A)}(undef, max_deg+1)
+  powers[1] = one(A)
+  powers[2] = a
+  x = a
+  for i = 3:max_deg + 1
+    x *= a
+    powers[i] = x
+  end
+
+  idems = Vector{elem_type(A)}()
+  for s in sols
+    idem = A()
+    for i = 0:degree(s)
+      idem += coeff(s, i)*powers[i + 1]
+    end
+    push!(idems, idem)
+  end
+
+  res = Vector{Tuple{AlgAss{T}, morphism_type(AlgAss{T}, typeof(A))}}()
+  for idem in idems
+    S, StoA = subalgebra(A, idem, true)
+    decS = _dec_com_finite(S)
+    for (B, BtoS) in decS
+      BtoA = compose_and_squash(StoA, BtoS)
+      push!(res, (B, BtoA))
+    end
+  end
+  return res
+  
 end
 
 ################################################################################

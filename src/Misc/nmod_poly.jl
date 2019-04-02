@@ -105,8 +105,8 @@ function resultant_ideal(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} w
     R1 = ResidueRing(FlintZZ, S(lg), cached = false)
     R1t = PolynomialRing(R1, cached = false)[1]
     #g is bad in R1, so factor it
-    gR1 = R1t(Generic.Res{fmpz}[R1(lift(coeff(g, i))) for i = 0:degree(g)])
-    fR1 = R1t(Generic.Res{fmpz}[R1(lift(coeff(f, i))) for i = 0:degree(f)])
+    gR1 = R1t(T[R1(lift(coeff(g, i))) for i = 0:degree(g)])
+    fR1 = R1t(T[R1(lift(coeff(f, i))) for i = 0:degree(f)])
 
     if degree(fR1) < degree(f) && degree(gR1) < degree(g)
       res1 = R1(0)
@@ -210,7 +210,7 @@ function resultant_ideal_pp(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S
         z = resultant_ideal_pp(f2, g2)
         return mul!(res, res, R(lift(z)))
       end
-      g = fun_factor(g)[2] 
+      g = fun_factor(g)[2]
       if degree(g) < 1
         res = mul!(res, res, lead(g)^degree(f))
         return res

@@ -269,7 +269,7 @@ function prime_decomposition(O::NfOrd, p::Union{Integer, fmpz}, degree_limit::In
     if isindex_divisor(O, p)
       if cached
         if haskey(O.index_div, fmpz(p))
-          lp = O.index_div[fmpz(p)]
+          lp = O.index_div[fmpz(p)]::Tuple{NfOrdIdl, Int}
           z = Tuple{NfOrdIdl, Int}[]
           for (Q, e) in lp
             if degree_limit == 0 || degree(Q) <= degree_limit
@@ -280,7 +280,7 @@ function prime_decomposition(O::NfOrd, p::Union{Integer, fmpz}, degree_limit::In
         end
       end
       @assert O.ismaximal == 1 || p in O.primesofmaximality
-      lp = prime_decomposition_polygons(O, fmpz(p), degree_limit, lower_limit)
+      lp = prime_decomposition_polygons(O, p, degree_limit, lower_limit)
       if degree_limit == degree(O) && lower_limit == 0
         O.index_div[fmpz(p)] = lp
       end
@@ -459,7 +459,7 @@ function prime_decomposition_type(O::NfOrd, p::Integer)
     return _prime_decomposition_type(fmodp)
   else
     @assert O.ismaximal == 1 || p in O.primesofmaximality
-    return decomposition_type_polygon(O, fmpz(p))
+    return decomposition_type_polygon(O, p)
   end
   
 end
@@ -781,41 +781,45 @@ end
 
 # CF:
 # Classical algorithm of Cohen, but take a valuation element with smaller (?)
-# coefficients. Core idea is that the valuation elementt is, originally, den*gen_two(p)^-1
+# coefficients. Core idea is that the valuation element is, originally, den*gen_two(p)^-1
 # where gen_two(p) is "small". Actually, we don't care about gen_two, we
 # need gen_two^-1 to be small, hence this version.
 function val_func_no_index(p::NfOrdIdl)
   P = p.gen_one
   K = nf(order(p))
   pi = inv(p)
-  d = denominator(K(pi.num.gen_two))
-  @assert gcd(d, P) == 1
-  e = K(pi.num.gen_two)*d
+  d1 = denominator(K(pi.num.gen_two))
+  @assert gcd(d1, P) == 1
+  e = K(pi.num.gen_two)*d1
   M = zero_matrix(FlintZZ, 1, degree(K))
-  elem_to_mat_row!(M, 1, d, e)
-  @assert d == 1
+  elem_to_mat_row!(M, 1, d1, e)
+  @assert d1 == 1
   P2 = P^2
   P22 = div(P2, 2)
   for i=1:degree(K)
-    x = M[1,i] % P2
-    if x>P22
-      x -= P2
+    x1 = M[1,i] % P2
+    if x1 > P22
+      x1 -= P2
     end
-    M[1,i] = x
+    M[1,i] = x1
   end
   e = elem_from_mat_row(K, M, 1, P)
   # e is still a valuation element, but with smaller coefficients.
-  return function(x::nf_elem, no::fmpq = fmpq(0))
-    v = 0
-    d = denominator(x)
-    x *= d
-    x = x*e
-    while denominator(x) % P != 0
-      v += 1
-      mul!(x, x, e)
+  local val
+  let e = e, P = P, p = p
+    function val(x::nf_elem, no::fmpq = fmpq(0))
+      v = 0
+      d = denominator(x)
+      x *= d
+      x = x*e
+      while denominator(x) % P != 0
+        v += 1
+        mul!(x, x, e)
+      end
+      return v-valuation(d, P)*p.splitting_type[1]
     end
-    return v-valuation(d, P)*p.splitting_type[1]
   end
+  return val
 end
 
 # CF:
@@ -850,18 +854,22 @@ function val_func_no_index_small(p::NfOrdIdl)
   g = Sx(g)
   h = Sx()
   uP = UInt(P)
-  return function(x::nf_elem, no::fmpq = fmpq(0))
-    d = denominator(x)
-    nf_elem_to_nmod_poly!(h, x, false) # ignores the denominator
-    h = rem!(h, h, g)
-    c = Nemo.coeff_raw(h, 0)
-    v = c==0 ? typemax(Int) : valuation(c, uP)
-    for i=1:degree(h)
-      c = Nemo.coeff_raw(h, i)
-      v = min(v, c==0 ? typemax(Int) : valuation(c, uP))
+  local vfunc
+  let h = h, g = g, P = P, uP = uP
+    function vfunc(x::nf_elem, no::fmpq = fmpq(0))
+      d = denominator(x)
+      nf_elem_to_nmod_poly!(h, x, false) # ignores the denominator
+      h = rem!(h, h, g)
+      c = Nemo.coeff_raw(h, 0)
+      v = c==0 ? typemax(Int) : valuation(c, uP)
+      for i=1:degree(h)
+        c = Nemo.coeff_raw(h, i)
+        v = min(v, c==0 ? typemax(Int) : valuation(c, uP))
+      end
+      return v-valuation(d, P)::Int
     end
-    return v-valuation(d, P)
   end
+  return vfunc
 end
 
 function val_func_index(p::NfOrdIdl)
@@ -874,17 +882,22 @@ function val_func_index(p::NfOrdIdl)
   M = representation_matrix(pi.num.gen_two)
   O = order(p)
   P = p.gen_one
-  return function(x::nf_elem, no::fmpq = fmpq(0))
-    v = 0
-    d, x_mat = integral_split(x, O)
-    Nemo.mul!(x_mat, x_mat, M)
-    while gcd(content(x_mat), P) == P  # should divide and test in place
-      divexact!(x_mat, x_mat, P)
+  local val
+  let P = P, O = O, M = M, p = p
+    function val(x::nf_elem, no::fmpq = fmpq(0))
+      v = 0
+      d, x_mat = integral_split(x, O)
       Nemo.mul!(x_mat, x_mat, M)
-      v += 1
+      while gcd(content(x_mat), P) == P  # should divide and test in place
+        divexact!(x_mat, x_mat, P)
+        Nemo.mul!(x_mat, x_mat, M)
+        v += 1
+      end
+      return v-valuation(d, P)*p.splitting_type[1] ::Int
     end
-    return v-valuation(d, P)*p.splitting_type[1]
   end
+  
+  return val
 end
 
 @doc Markdown.doc"""
@@ -918,33 +931,45 @@ function valuation(a::nf_elem, p::NfOrdIdl, no::fmpq = fmpq(0))
   # for generic ideals
   if p.splitting_type[2] == 0
     #global bad_ideal = p
-    p.valuation = function(s::nf_elem, no::fmpq = fmpq(0))
-      d = denominator(s, O)
-      x = O(d*s)
-      return valuation_naive(x, p)::Int - valuation_naive(O(d), p)::Int
+    local val2
+    let O = O, p = p
+      function val2(s::nf_elem, no::fmpq = fmpq(0))
+        d = denominator(s, O)
+        x = O(d*s)
+        return valuation_naive(x, p)::Int - valuation_naive(O(d), p)::Int
+      end
     end
+    p.valuation = val2
     return valnumden + p.valuation(b)::Int
   end
 
   P = p.gen_one
 
   if p.splitting_type[1]*p.splitting_type[2] == degree(O)
-    p.valuation = function(s::nf_elem, no::fmpq = fmpq(0))
-      return divexact(valuation(iszero(no) ? norm(s) : no, P)[1], p.splitting_type[2])::Int
+    local val3
+    let P = P, p = p
+      function val3(s::nf_elem, no::fmpq = fmpq(0))
+        return divexact(valuation(iszero(no) ? norm(s) : no, P)[1], p.splitting_type[2])::Int
+      end
     end
+    p.valuation = val3
   elseif mod(index(O), P) != 0 && p.splitting_type[1] == 1
     if p.gen_one^2 <= typemax(UInt) 
       f1 = val_func_no_index_small(p)
       f2 = val_func_no_index(p)
-      p.valuation = function(x::nf_elem, no::fmpq = fmpq(0))
-        v = f1(x)
-        if v > 100  # can happen ONLY if the precision in the .._small function
-                    # was too small.
-          return f2(x)::Int
-        else
-          return v::Int
+      local val1
+      let f1 = f1, f2 = f2
+        function val1(x::nf_elem, no::fmpq = fmpq(0))
+          v = f1(x)
+          if v > 100  # can happen ONLY if the precision in the .._small function
+                      # was too small.
+            return f2(x)::Int
+          else
+            return v::Int
+          end
         end
       end
+      p.valuation = val1
     else
       p.valuation = val_func_no_index(p)
     end

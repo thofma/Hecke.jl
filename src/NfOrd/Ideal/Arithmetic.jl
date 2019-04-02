@@ -601,9 +601,7 @@ function idempotents(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
     V[1 + i, d + 1 + i] = 1
   end
   
-  # H = hnf(V)
-   H = _hnf_modular_eldiv(V, lcm(mx, my)) # upper right
-  # H = hnf_modular(V, g) # upper right
+  H = hnf_modular_eldiv!(V, lcm(mx, my)) # upper right
 
   for i in 2:(1 + d)
     if H[1, i] != 0
@@ -613,10 +611,11 @@ function idempotents(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
 
   basisofx = basis(x, copy = false)
 
+  aux = O()
   z = basisofx[1]*H[1, d + 2]
-
   for i in 2:d
-    z = z + basisofx[i]*H[1, d + 1 + i]
+    mul!(aux, basisofx[i], H[1, d + 1 + i])
+    add!(z, z, aux)
   end
 
   @hassert :NfOrd 2 -z in x
