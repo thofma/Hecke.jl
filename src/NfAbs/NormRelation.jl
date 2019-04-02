@@ -55,10 +55,16 @@ function Base.hash(x::AlgGrpElem, h::UInt)
   return Base.hash(x.coeffs, h)
 end
 
-function _norm_relation_setup_abelian(K::AnticNumberField; small_degree::Bool = true, pure::Bool = true)
+function _norm_relation_setup_abelian(K::AnticNumberField; small_degree::Bool = true, pure::Bool = true, index::fmpz = zero(fmpz))
   G = automorphisms(K)
   A, GtoA, AtoG = find_isomorphism_with_abelian_group(G, *);
-  b, den, ls = _has_norm_relation_abstract(A, [f for f in subgroups(A) if order(f[1]) > 1], large_index = !small_degree, pure = pure)
+  if iszero(index)
+    subs = [f for f in subgroups(A) if order(f[1]) > 1]
+  else
+    subs = [f for f in subgroups(A) if order(f[1]) > 1 && order(f[1]) == index || order(f[1]) == index^2]
+  end
+
+  b, den, ls = _has_norm_relation_abstract(A, subs, large_index = !small_degree, pure = pure)
   n = length(ls)
 
   z = NormRelation{Int}()
@@ -66,12 +72,15 @@ function _norm_relation_setup_abelian(K::AnticNumberField; small_degree::Bool = 
   z.subfields = Vector{Tuple{AnticNumberField, NfToNfMor}}(undef, n)
   z.denominator = den
   z.ispure = false
+
+  println("Computing the subfields ... ")
  
   for i in 1:n
-    F, mF = FixedField(K, NfToNfMor[AtoG[f] for f in ls[i][2]])
+    println("$i/$n")
+    F, mF = fixed_field(K, NfToNfMor[AtoG[f] for f in ls[i][2]])
     S, mS = simplify(F)
     L = S
-    mL = mF * mS
+    mL = mS * mF
     z.subfields[i] = L, mL
   end
 
@@ -113,7 +122,7 @@ function _norm_relation_setup_generic(K::AnticNumberField; small_degree::Bool = 
   z.ispure = false
  
   for i in 1:n
-    F, mF = FixedField(K, NfToNfMor[GtoA[f] for f in ls[i][1]])
+    F, mF = fixed_field(K, NfToNfMor[GtoA[f] for f in ls[i][1]])
     S, mS = simplify(F)
     L = S
     mL = mF * mS
@@ -675,182 +684,3 @@ function _has_norm_relation_abstract(G::GrpGen, H::Vector{Tuple{GrpGen, GrpGenTo
   return true, den, solutions
 end
 
-################################################################################
-#
-#  Code from Erec, Fabian and Jannick
-#
-################################################################################
-
-#returns array with base elems for Q(A)
-function get_fieldbase(K::T, A::Array{S,1}) where {T <: Union{AnticNumberField, Hecke.NfRel}, S <: Union{nf_elem, Hecke.NfRelElem}}
-    if length(A)<1
-        return res=[K(1)]
-    end
-    f = minpoly(A[1]);
-    res = Array{S,1}(undef,degree(f));
-    ar_deg = Array{Int64,1}(undef,length(A));
-    for i in 1:degree(f)
-        res[i]=A[1]^(i-1)
-    end
-    ar_deg[1] = degree(f);
-    matA = create_mat(K,res);
-    for l in 2:length(A)
-        matB = create_mat(K,[A[l]]);
-        k=1;
-        temp_k = A[l];
-        while !cansolve(matA,matB)[1]
-            res = vcat(res,[temp_k]);
-            matA = hcat(matA,create_mat(K,[temp_k]));
-            k=k+1;
-            temp_k *= A[l];
-            matB = create_mat(K,[temp_k]);
-        end
-        #println(res);
-        ar_deg[l] = k;
-        #println(ar_deg);
-        deg_curr = 1;
-        for i in 1:l
-        deg_curr *= ar_deg[i];
-        end
-        indx = 1;
-        while length(res) < deg_curr && indx < 2^length(res)-1
-            temp_prod = digits(indx, base=2);
-            xn = K(1);
-            for i in 1:length(temp_prod)
-                if temp_prod[i] == 1
-                    xn *= res[i];
-                end
-            end
-            matB = create_mat(K,[xn]);
-            if !cansolve(matA,matB)[1]
-                temp = [xn];
-                res = vcat(res,temp);
-                matA = hcat(matA,create_mat(K,temp));
-            end
-            indx += 1;
-        end
-    end
-    return res
-end
-
-#returns minimal subfield of K containing Q and a
-function subfield(K::T, a::S, b::String = "b") where {T <: Union{AnticNumberField, Hecke.NfRel}, S <: Union{nf_elem, Hecke.NfRelElem}}
-    f = minpoly(a);
-    L,b = NumberField(f,b, cached = false);
-    return(L,hom(L,K,a));
-end
-
-
-#returns minimal subfield of K containing Q and A
-function subfield(K::T, A::Array{P, 1}; alg::String = "Z", base::Bool = false) where {T <: Union{AnticNumberField, Hecke.NfRel}, P <: Union{nf_elem, Hecke.NfRelElem}}
- #use input array as base
-    if base
-        for i in 1:2^(length(A))-1
-            temp = digits(i,base=2)
-            s = K(0);
-            for j in 1:length(temp)
-                s += temp[j] * A[j];
-            end
-            #test primitive elem
-            if (degree(minpoly(s))==length(A))
-                return subfield(K,s)
-            end
-        end
-        @error("Doch keine Basis");
-    end
-
-    B = get_fieldbase(K,A);
-    #Zassenhaus
-    if alg=="Z"
-            for i in 1:2^(length(B))-1
-                temp = digits(i,base=2)
-                s = K(0);
-                for j in 1:length(temp)
-                    s += temp[j] * B[j];
-                end
-                #test primitive elem
-                if (degree(minpoly(s))==length(B))
-                    #println(s);
-                    return subfield(K,s)
-                end
-            end
-    end
-
-    #Lenstra
-    if alg=="L"
-        G_ar = [minpoly(B[i]) for i in 1:length(B)];
-        K_ar = Array{fmpz,1}(undef,length(B));
-        D_ar = Array{fmpz,1}(undef,length(B)+1);
-        D_ar[1] = 1;
-        for i in 1:length(B)
-            k = ZZ(1);
-            for j in 1:degree(G_ar[i])
-                k *= denominator(coeff(G_ar[1],j));
-            end
-            K_ar[i]=k;
-            fi = G_ar[i]*x*K_ar[i]^(degree(G_ar[i])-1);
-            dfi = ZZ(discriminant(fi));
-            d=2
-            while gcd(dfi,d^2)!=1
-                d=d+1;
-            end
-            D_ar[i+1]=d;
-        end
-        D_ar = D_ar[1:length(B)];
-        Al = [B[i]*K_ar[i] for i in 1:length(B)];
-        D_ar = accumulate(*,D_ar);
-        return subfield(K,Al'*D_ar)
-    end
-end
-
-
-FixedField(K::T,S::M...) where {T <: Union{AnticNumberField, Hecke.NfRel}, M <: Union{NfToNfMor, Hecke.NfRelToNfRelMor}} = FixedField(K,[f for f in S])
-
-function FixedField(K::T,S::Array{M,1}) where {T <: Union{AnticNumberField, Hecke.NfRel}, M <: Union{NfToNfMor, Hecke.NfRelToNfRelMor}}
-    # calculates the fixed field of an field K corresponding to morphisms sigma
-
-    if length(S)==0
-        return K,M(K,K,gen(K))
-    end
-    F = base_field(K)
-    a = gen(K);
-    n = degree(K);
-    ar_mat = Array{MatElem,1}(undef,length(S));
-    for index in 1:length(S)
-        as = S[index](a);
-        ar_bs = [as^i for i in 0:n-1];
-        ar_mat[index] = create_mat(K,ar_bs);
-    end
-    mat_ones = matrix(F,n,n,[F(0) for i in 1:n^2]);
-    for i in 1:n
-        mat_ones[i,i] = F(1);
-    end
-    mat_nulls = ar_mat[1] - mat_ones;
-    for i in 2:length(S)
-        mat_nulls = vcat(mat_nulls, ar_mat[i]-mat_ones);
-    end
-    nulls = nullspace(mat_nulls);
-    nn = nulls[2]
-    d = one(FlintZZ)
-    for i in 1:nrows(nn)
-      for j in 1:ncols(nn)
-        d = lcm(d, denominator(nn[i, j]))
-      end
-    end
-    nn = d * nn
-    nn = matrix(FlintZZ, nn)
-    #@show nn
-    #@show nrows(nn), ncols(nn)
-    nn = transpose(saturate(transpose(nn)))
-    nn = lll(nn')'
-    ar_fixed = Array{typeof(gen(K)),1}(undef,nulls[1]);
-    for i in 1:nulls[1]
-        ar_fixed[i] = K(0);
-        for j in 1:degree(K)
-            ar_fixed[i] += nn[j,i] * a^(j-1); #ident vectors with nf_elems
-        end
-    end
-    return subfield(K,ar_fixed,alg = "Z",base = true) #ar_fixed is already base
-end
-
-base_field(K::AnticNumberField) = QQ

@@ -115,6 +115,7 @@ function show(io::IO, h::NfRelRelToNfRel)
   println(io, "Isomorphism between ", domain(h), "\nand ", codomain(h))
 end
 
+hom(K::NfRel, L::NfRel, a::NfRelElem) = NfRelToNfRelMor(K, L, a)
 
 mutable struct NfRelToNfRelMor{T, S} <: Map{NfRel{T}, NfRel{S}, HeckeMap, NfRelToNfRelMor}
   header::MapHeader{NfRel{T}, NfRel{S}}
@@ -212,6 +213,7 @@ end
 
 id_hom(K::NfRel) = NfRelToNfRelMor(K, K, gen(K))
 
+morphism_type(::Type{NfRel{T}}) where {T} = NfRelToNfRel{T}
 
 function ==(x::NfRelToNfRelMor{T}, y::NfRelToNfRelMor{T}) where T
   return (x.coeff_aut == y.coeff_aut) && (x.prim_img == y.prim_img) 
