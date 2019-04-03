@@ -1,4 +1,4 @@
-export iszero_row, modular_hnf, howell_form, _hnf_modular, kernel_basis
+export iszero_row, howell_form, kernel_basis
 
 import Nemo.matrix
 
@@ -208,25 +208,6 @@ function mul!(a::fmpz_mat, b::fmpz_mat, c::fmpz)
                   (Ref{fmpz_mat}, Ref{fmpz_mat}, Ref{fmpz}), a, b, c)
 end                  
 
-#computes (hopefully) the hnf for vcat(a*I, m) and returns ONLY the
-#non-singular part. By definition, the result will have full rank
-#
-#Should be rewritten to use Howell and lifting rather the big HNF
-#
-function modular_hnf(m::fmpz, a::fmpz_mat, shape::Symbol = :upperright)
-  c = vcat(parent(a)(m), a)
-  n = ncols(a)
-  w = view(c, n+1, 1, 2*n, n)
-  ccall((:fmpz_mat_scalar_mod_fmpz, :libflint), Nothing, (Ref{fmpz_mat}, Ref{fmpz_mat}, Ref{fmpz}), w, w, m)
-  if shape == :lowerleft
-    c = _hnf(c, shape)
-    return sub(c, n+1:2*n, 1:n)
-  else
-    c = hnf(c)
-    c = sub(c, 1:n, 1:n)
-  end
-end
-
 function _hnf(x::fmpz_mat, shape::Symbol = :upperright)
   if shape == :lowerleft
     h = hnf(invert_cols(x))
@@ -239,10 +220,10 @@ end
 
 function _hnf!(x::fmpz_mat, shape::Symbol = :upperright)
   if shape == :lowerleft
-    _swapcols!(x)
+    invert_cols!(x)
     hnf!(x)
-    _swapcols!(x)
-    _swaprows!(x)
+    invert_cols!(x)
+    invert_rows!(x)
     return x::fmpz_mat
   end
   hnf!(x)
@@ -263,7 +244,7 @@ function _hnf_modular_eldiv(x::fmpz_mat, m::fmpz, shape::Symbol = :upperright)
   elseif shape == :upperright
     return hnf_modular_eldiv(x, m)
   else
-    error("shape $shape not supported")
+    error("Shape $shape not supported")
   end
 end
 
@@ -319,283 +300,6 @@ function ishnf(x::fmpz_mat, shape::Symbol)
     end
     return true
   end
-end
-
-################################################################################
-#
-#  Inversion of rows and columns
-#
-################################################################################
-
-@doc Markdown.doc"""
-    invert_rows(x::fmpz_mat) -> fmpz_mat
-
-> Swap rows $i$ and $n -i$ for $1 \leq i \leq n/2$, where $n$ is the number of
-> rows of $x$.
-"""
-function invert_rows(x::fmpz_mat)
-  y = deepcopy(x)
-  invert_rows!(y)
-  return y
-end
-
-@doc Markdown.doc"""
-    invert_columns(x::fmpz_mat) -> fmpz_mat
-
-> Swap columns $i$ and $n -i$ for $1 \leq i \leq n/2$, where $n$ is the number of
-> columns of $x$.
-"""
-function invert_cols(x::fmpz_mat)
-  y = deepcopy(x)
-  invert_cols!(y)
-  return y
-end
-
-@doc Markdown.doc"""
-    invert_rows!(x::fmpz_mat) -> fmpz_mat
-
-> Swap rows $i$ and $n -i$ for $1 \leq i \leq n/2$, where $n$ is the number of
-> rows of $x$. The operations are done inplace.
-"""
-function invert_rows!(x::fmpz_mat)
-  r = nrows(x)
-  c = ncols(x)
-
-  if r == 1
-    return x
-  end
-
-  if r % 2 == 0
-    for i in 1:div(r,2)
-      for j = 1:c
-        # we swap x[i,j] <-> x[r-i+1,j]
-        s = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ref{fmpz_mat}, Int, Int), x, i - 1, j - 1)
-        t = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ref{fmpz_mat}, Int, Int), x, (r - i + 1) - 1, j - 1)
-        ccall((:fmpz_swap, :libflint), Nothing, (Ptr{fmpz}, Ptr{fmpz}), t, s)
-      end
-    end
-  else
-    for i in 1:div(r-1,2)
-      for j = 1:c
-        # we swap x[i,j] <-> x[r-i+1,j]
-        s = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ref{fmpz_mat}, Int, Int), x, i - 1, j - 1)
-        t = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ref{fmpz_mat}, Int, Int), x, (r - i + 1) - 1, j - 1)
-        ccall((:fmpz_swap, :libflint), Nothing, (Ptr{fmpz}, Ptr{fmpz}), t, s)
-      end
-    end
-  end
-  return x
-end
-
-function _swaprows!(x::fmpz_mat, i::Int, j::Int)
-  ccall((:_fmpz_mat_swap_rows, :libflint), Nothing, (Ref{fmpz_mat}, Int, Int), x, i-1, j-1)
-  return x
-end
-
-function _swaprows!(x::nmod_mat, i::Int, j::Int)
-  ccall((:_nmod_mat_swap_rows, :libflint), Nothing, (Ref{nmod_mat}, Int, Int), x, i-1, j-1)
-  return x
-end
-  
-@doc Markdown.doc"""
-    invert_rows!(x::nmod_mat) -> nmod_mat
-
-> Swap rows $i$ and $n -i$ for $1 \leq i \leq n/2$, where $n$ is the number of
-> rows of $x$. The operations are done inplace.
-"""
-function invert_rows!(x::nmod_mat)
-  r = nrows(x)
-  c = ncols(x)
-
-  if r == 1
-    return nothing
-  end
-
-  if r % 2 == 0
-    for i in 1:div(r,2)
-      for j = 1:c
-        # we swap x[i,j] <-> x[r-i+1,j]
-        s = ccall((:nmod_mat_get_entry, :libflint), Base.GMP.Limb, (Ref{nmod_mat}, Int, Int), x, i - 1, j - 1)
-        t = ccall((:nmod_mat_get_entry, :libflint), Base.GMP.Limb, (Ref{nmod_mat}, Int, Int), x, (r - i + 1) - 1, j - 1)
-        set_entry!(x, r - i + 1, j, s)
-        set_entry!(x, i, j, t)
-      end
-    end
-  else
-    for i in 1:div(r-1,2)
-      for j = 1:c
-        # we swap x[i,j] <-> x[r-i+1,j]
-        s = ccall((:nmod_mat_get_entry, :libflint), Base.GMP.Limb, (Ref{nmod_mat}, Int, Int), x, i - 1, j - 1)
-        t = ccall((:nmod_mat_get_entry, :libflint), Base.GMP.Limb, (Ref{nmod_mat}, Int, Int), x, (r - i + 1) - 1, j - 1)
-        set_entry!(x, i, j, t)
-        set_entry!(x, r - i + 1, j, s)
-      end
-    end
-  end
-  x
-end
-
-@doc Markdown.doc"""
-    invert_cols!(x::nmod_mat) -> nmod_mat
-
-> Swap columns $i$ and $n -i$ for $1 \leq i \leq n/2$, where $n$ is the number of
-> columns of $x$. The operations are done inplace.
-"""
-function invert_cols!(x::nmod_mat)
-  r = nrows(x)
-  c = ncols(x)
-
-  if c == 1
-    return nothing
-  end
-
-  if c % 2 == 0
-    for i in 1:div(c,2)
-      for j = 1:r
-        # swap x[j,i] <-> x[j,c-i+1]
-        s = ccall((:nmod_mat_get_entry, :libflint), Base.GMP.Limb, (Ref{nmod_mat}, Int, Int), x, j - 1, i - 1)
-        t = ccall((:nmod_mat_get_entry, :libflint), Base.GMP.Limb, (Ref{nmod_mat}, Int, Int), x, j - 1, (c - i + 1 ) - 1)
-        set_entry!(x, j, i, t)
-        set_entry!(x, j, c - i + 1, s)
-      end
-    end
-  else
-    for i in 1:div(c-1,2)
-      for j = 1:r
-        # swap x[j,i] <-> x[j,c-i+1]
-        s = ccall((:nmod_mat_get_entry, :libflint), Base.GMP.Limb, (Ref{nmod_mat}, Int, Int), x, j - 1, i - 1)
-        t = ccall((:nmod_mat_get_entry, :libflint), Base.GMP.Limb, (Ref{nmod_mat}, Int, Int), x, j - 1, (c - i + 1 ) - 1)
-        set_entry!(x, j, i, t)
-        set_entry!(x, j, c - i + 1, s)
-      end
-    end
-  end
-  return x
-end
-
-@doc Markdown.doc"""
-    invert_cols!(x::fmpz_mat) -> fmpz_mat
-
-> Swap columns $i$ and $n -i$ for $1 \leq i \leq n/2$, where $n$ is the number of
-> columns of $x$. The operations are done inplace.
-"""
-function invert_cols!(x::fmpz_mat)
-  r = nrows(x)
-  c = ncols(x)
-
-  if c == 1
-    return x
-  end
-
-  if c % 2 == 0
-    for i in 1:div(c,2)
-      for j = 1:r
-        # swap x[j,i] <-> x[j,c-i+1]
-        s = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ref{fmpz_mat}, Int, Int), x, j - 1, i - 1)
-        t = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ref{fmpz_mat}, Int, Int), x, j - 1, (c - i + 1 ) - 1)
-        ccall((:fmpz_swap, :libflint), Nothing, (Ptr{fmpz}, Ptr{fmpz}), t, s)
-      end
-    end
-  else
-    for i in 1:div(c-1,2)
-      for j = 1:r
-        # swap x[j,i] <-> x[j,c-i+1]
-        s = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ref{fmpz_mat}, Int, Int), x, j - 1, i - 1)
-        t = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ref{fmpz_mat}, Int, Int), x, j - 1, (c - i + 1 ) - 1)
-        ccall((:fmpz_swap, :libflint), Nothing, (Ptr{fmpz}, Ptr{fmpz}), t, s)
-      end
-    end
-  end
-  return x
-end
-
-@doc Markdown.doc"""
-    invert_cols(x::Mat) -> Mat
-
-> Swap columns $i$ and $n -i$ for $1 \leq i \leq n/2$, where $n$ is the number of
-> columns of $x$.
-"""
-function invert_cols(x::Generic.Mat)
-  z = deepcopy(x)
-  invert_cols!(z)
-  return z
-end
-
-@doc Markdown.doc"""
-    invert_cols!(x::Mat) -> Mat
-
-> Swap columns $i$ and $n -i$ for $1 \leq i \leq n/2$, where $n$ is the number of
-> columns of $x$. The operations are done inplace.
-"""
-function invert_cols!(x::Generic.Mat)
-  r = nrows(x)
-  c = ncols(x)
-  t = base_ring(x)(0)
-
-  if c == 1
-    return x
-  end
-
-  if c % 2 == 0
-    for i in 1:div(c,2)
-      for j = 1:r
-        # swap x[j,i] <-> x[j,c-i+1]
-        x[j, i], x[j, c - i + 1] = x[j, c - i + 1], x[j, i]
-      end
-    end
-  else
-    for i in 1:div(c-1,2)
-      for j = 1:r
-        # swap x[j,i] <-> x[j,c-i+1]
-        x[j, i], x[j, c - i + 1] = x[j, c - i + 1], x[j, i]
-      end
-    end
-  end
-  return x
-end
-
-@doc Markdown.doc"""
-    invert_rows(x::Mat) -> Mat
-
-> Swap rows $i$ and $n -i$ for $1 \leq i \leq n/2$, where $n$ is the number of
-> rows of $x$.
-"""
-function invert_rows(x::Generic.Mat)
-  z = deepcopy(x)
-  invert_rows(z)
-  return z
-end
-
-@doc Markdown.doc"""
-    invert_rows!(x::Mat) -> Mat
-
-> Swap rows $i$ and $n -i$ for $1 \leq i \leq n/2$, where $n$ is the number of
-> rows of $x$. The operations are done inplace.
-"""
-function invert_rows!(x::Generic.Mat)
-  r = nrows(x)
-  c = ncols(x)
-
-  if r == 1
-    return x
-  end
-
-  if r % 2 == 0
-    for i in 1:div(r,2)
-      for j = 1:c
-        # we swap x[i,j] <-> x[r-i+1,j]
-        x[i, j], x[r - i + 1, j] = x[r - i + 1, j], x[i, j]
-      end
-    end
-  else
-    for i in 1:div(r-1,2)
-      for j = 1:c
-        x[i, j], x[r - i + 1, j] = x[r - i + 1, j], x[i, j]
-        # we swap x[i,j] <-> x[r-i+1,j]
-      end
-    end
-  end
-  return x
 end
 
 ################################################################################
