@@ -60,8 +60,7 @@ end
 
 function ==(A::NfOrdIdl, B::NfOrdFracIdl)
   C = simplify(B)
-  if C.den != 1 ||
-     C.num != A
+  if C.den != 1 || C.num != A
     return false
   else
     return true
@@ -83,7 +82,7 @@ function reduce_ideal2(I::FacElem{NfOrdIdl, NfOrdIdlSet})
   A = ideal(O, 1)
 
   for (k,v) = I.fac
-    @assert order(k) == O
+    @assert order(k) === O
     if iszero(v)
       continue
     end

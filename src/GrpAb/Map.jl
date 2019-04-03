@@ -271,7 +271,7 @@ a morphism $f \colon G \to A$, such that $A$ is the quotient of $G$ with
 respect to the image of $h$.
 """
 function cokernel(h::GrpAbFinGenMap, add_to_lattice::Bool = true)
-  S, mS = image(h)
+  S, mS = image(h, false)
   return quo(codomain(h), GrpAbFinGenElem[mS(g) for g in gens(S)], add_to_lattice)
 end
 

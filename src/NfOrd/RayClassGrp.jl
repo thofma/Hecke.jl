@@ -994,8 +994,8 @@ function ray_class_group_fac_elem(m::NfOrdIdl, inf_plc::Array{InfPlc, 1} = Array
 # First of all, we compute all these groups with their own maps
 #  
 
-  O=parent(m).order
-  K=nf(O)
+  O = parent(m).order
+  K = nf(O)
   
   C, mC = class_group(O, GRH = GRH)
   _assure_princ_gen(mC)

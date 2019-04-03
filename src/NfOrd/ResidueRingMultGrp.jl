@@ -154,10 +154,10 @@ function _multgrp(Q::NfOrdQuoRing, save_tame_wild::Bool = false; method = nothin
   maps = Vector{GrpAbFinGenToAbsOrdQuoRingMultMap}()
   for (p, vp) in fac
     pvp = p^vp
-    G, mG = _multgrp_mod_pv(p, vp, pvp; method = method)
+    G1, mG1 = _multgrp_mod_pv(p, vp, pvp; method = method)
     push!(prime_powers, pvp)
-    push!(groups, G)
-    push!(maps, mG)
+    push!(groups, G1)
+    push!(maps, mG1)
   end
 
   G, GtoQ = _direct_product(groups, maps, prime_powers, Q, save_tame_wild)
@@ -533,7 +533,7 @@ function _artin_hasse_method(p::NfOrdIdl, u::Int, v::Int; pu::NfOrdIdl=p^u, pv::
 end
 
 function artin_hasse_exp(x::NfOrdQuoRingElem, pnum::fmpz)
-  Q=parent(x)
+  Q = parent(x)
   s = Q(1)
   fac_i = Q(1)
   t = Q(1)
@@ -1177,7 +1177,7 @@ function snf(G::GrpAbFinGen, GtoR::Union{GrpAbFinGenToAbsOrdQuoRingMultMap, GrpA
   end
 
   function disclog(x)
-    @assert parent(x) == R
+    @assert parent(x) === R
     y = GtoR.discrete_logarithm(x)
     a = StoG\(G(y))
     return fmpz[ a[j] for j = 1:ngens(S) ]
@@ -1186,7 +1186,6 @@ function snf(G::GrpAbFinGen, GtoR::Union{GrpAbFinGenToAbsOrdQuoRingMultMap, GrpA
   modulo = (length(modulo_map) == 1)
   if modulo
     RtoQ = modulo_map[1]
-    @assert domain(RtoQ) == codomain(GtoR)
   end
 
   gens_snf = Vector{elem_type(R)}(undef, ngens(S))
@@ -1282,7 +1281,7 @@ function _direct_product(groups::Vector{GrpAbFinGen}, maps::Vector{U}, ideals::V
   @assert length(ideals) >= length(groups)
 
   if length(groups) == 1 && length(ideals) == 1
-    if codomain(maps[1]) == Q
+    if codomain(maps[1]) === Q
       return groups[1], maps[1]
     end
 

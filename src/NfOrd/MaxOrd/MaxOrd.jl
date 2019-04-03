@@ -44,9 +44,9 @@ julia> K, a = NumberField(x^3 + 2, "a");
 julia> O = MaximalOrder(K);
 ```
 """
-function MaximalOrder(K::T; discriminant::fmpz = fmpz(-1), ramified_primes::Vector{fmpz} = fmpz[]) where T <: Union{AnticNumberField, NfAbsNS}
+function MaximalOrder(K::AnticNumberField; discriminant::fmpz = fmpz(-1), ramified_primes::Vector{fmpz} = fmpz[])
   try
-    c = _get_maximal_order(K)::NfAbsOrd{T, elem_type(T)}
+    c = _get_maximal_order(K)::NfAbsOrd{AnticNumberField, nf_elem}
     return c
   catch e
     if !isa(e, AccessorNotSetError)
@@ -74,48 +74,6 @@ end
 function maximal_order(f::T) where T <: Union{fmpz_poly, fmpq_poly}
   K = number_field(f, cached = false)[1]
   return maximal_order(K)
-end
-
-###############################################################################
-#
-#  Generic code for orders
-#
-###############################################################################
-
-function new_maximal_order(O::NfAbsOrd{S, T}; index_divisors::Vector{fmpz} = fmpz[], disc::fmpz = fmpz(-1), ramified_primes::Vector{fmpz} = fmpz[]) where {S, T}
-  return maximal_order_round_four(O, index_divisors= index_divisors, disc = disc, ramified_primes = ramified_primes)
-end
-
-function maximal_order_round_four(O::NfAbsOrd; index_divisors::Vector{fmpz} = fmpz[], disc::fmpz = fmpz(-1), ramified_primes::Vector{fmpz} = fmpz[])
-  OO = deepcopy(O)
-  M = trace_matrix(O)
-  l = divisors(M, discriminant(O))
-  if !isempty(index_divisors)
-    push!(l, index_divisors)
-  end
-  if !isempty(ramified_primes)
-    push!(l, ramified_primes)
-  end
-  l = coprime_base(l)
-  for s in l
-    if disc != -1
-      u = divexact(discriminant(OO), disc)
-      if isone(gcd(u, s))
-        continue
-      end
-    end
-    @vtime :NfOrd fac = factor(s)
-    for (p, j) in fac
-      @vprint :NfOrd 1 "Computing p-maximal overorder for $p ..."
-      O1 = pmaximal_overorder(O, p)
-      if valuation(discriminant(O1), p) < valuation(discriminant(OO),p)
-        OO += O1
-      end 
-      @vprint :NfOrd 1 "done\n"
-    end
-  end
-  OO.ismaximal = 1
-  return OO
 end
 
 ################################################################################

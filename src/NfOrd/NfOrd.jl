@@ -816,9 +816,11 @@ function any_order(K::NfAbsNS)
     end
   end
 
-  b = NfAbsNSElem[]
+  b = Vector{NfAbsNSElem}(undef, degree(K))
+  ind = 1
   for i in CartesianIndices(Tuple(1:degrees(K)[i] for i in 1:ngens(K)))
-    push!(b, prod(normalized_gens[j]^(i[j] - 1) for j=1:length(i)))
+    b[ind] = prod(normalized_gens[j]^(i[j] - 1) for j=1:length(i))
+    ind += 1
   end
   return Order(K, b, check = false, cached = false)
 end
@@ -997,6 +999,9 @@ end
 # Todo: Improve this
 function ==(R::NfAbsOrd, S::NfAbsOrd)
   nf(R) != nf(S) && return false
+  if discriminant(R) != discriminant(S)
+    return false
+  end
   assure_has_basis_mat(R)
   assure_has_basis_mat(S)
   return hnf(R.basis_mat) == hnf(S.basis_mat)
@@ -1057,7 +1062,7 @@ Given two orders $R$, $S$ of $K$, this function returns the smallest order
 containing both $R$ and $S$. It is assumed that $R$, $S$ contain the ambient
 equation order and have coprime index.
 """
-function +(a::NfAbsOrd, b::NfAbsOrd; cached::Bool = true)
+function +(a::NfAbsOrd, b::NfAbsOrd; cached::Bool = false)
   nf(a) != nf(b) && error("Orders must have same ambient number field")
   if contains_equation_order(a) && contains_equation_order(b) &&
           isone(gcd(index(a), index(b)))
@@ -1081,7 +1086,7 @@ function +(a::NfAbsOrd, b::NfAbsOrd; cached::Bool = true)
     end
     return O
   else
-    return _order(nf(a), vcat(a.basis_nf, b.basis_nf), cached = cached)
+    return _order(nf(a), vcat(a.basis_nf, b.basis_nf), cached = cached, check = false)
   end
 end
 

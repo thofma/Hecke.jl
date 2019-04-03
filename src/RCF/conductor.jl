@@ -369,7 +369,7 @@ function isconductor(C::Hecke.ClassField, m::NfOrdIdl, inf_plc::Array{InfPlc,1}=
   #Finite part of the modulus
   for (p,v) in L
     if v==1
-      Q,mQ=quo(G,[preimage(mp, ideal(O,tmg[p].generators[1]))])
+      Q,mQ=quo(G,[preimage(mp, ideal(O,tmg[p].generators[1]))], false)
       if order(Q)==E
         return false
       end  
@@ -472,7 +472,7 @@ function discriminant(C::ClassField)
         ap-=1
       else
         el=mp\ideal(O,tmg[p].generators[1]) #The generator is totally positive, we modified it before
-        q,mq=quo(R,[el])
+        q,mq=quo(R,GrpAbFinGenElem[el], false)
         ap-= order(q)
       end
       qw=divexact(degree(O), prime_decomposition_type(O,Int(p.minimum))[1][2])*ap
@@ -501,13 +501,13 @@ function discriminant(C::ClassField)
           for i=1:length(gens)
             push!(els,mp\ideal(O,gens[i]))
           end
-          ap-=order(quo(R,els)[1])
+          ap-=order(quo(R,els, false)[1])
           @hassert :AbExt 1 ap>0
         end
         if haskey(tmg, p)
           push!(els, mp\ideal(O,tmg[p].generators[1]))
         end
-        ap-=order(quo(R,els)[1])
+        ap-=order(quo(R, els, false)[1])
         @hassert :AbExt 1 ap>0
       end
       td=prime_decomposition_type(O,Int(p.minimum))
@@ -711,7 +711,7 @@ function discriminant_conductor(C::ClassField, bound::fmpz; lwp::Dict{Tuple{Int,
       else
         el=mp\ideal(O,tmg[p].generators[1]) #The generator is totally positive, we modified it before
       end
-      q,mq=quo(R,[el])
+      q,mq=quo(R,GrpAbFinGenElem[el], false)
       ap-= order(q)
     end
     qw = divexact(d, p.splitting_type[1])*ap
@@ -771,7 +771,7 @@ function discriminant_conductor(C::ClassField, bound::fmpz; lwp::Dict{Tuple{Int,
           for i = 1:length(gens)
             push!(els, C.quotientmap(gens[i]))
           end
-          o = order(quo(R,els)[1])
+          o = order(quo(R,els, false)[1])
           ap -= o
           tentative_ap = ap - (lp[p] - k + 1)*o
           tentative_discr = discr * (np^tentative_ap)
@@ -787,7 +787,7 @@ function discriminant_conductor(C::ClassField, bound::fmpz; lwp::Dict{Tuple{Int,
             push!(els, mp\ideal(O, tmg[p].generators[1]))
           end
         end
-        ap -= order(quo(R,els)[1])
+        ap -= order(quo(R, els, false)[1])
         @hassert :AbExt 1 ap>0
       end
       np1 = np^ap
@@ -841,7 +841,7 @@ function discriminant_conductorQQ(O::NfOrd, C::ClassField, m::Int, bound::fmpz, 
         d,a,b=gcdx(s, Int(p))
         l=Int((R(x)*a*s+b*Int(p)).data)
         el=mp\ideal(O,l)
-        q,mq=quo(G,[el])
+        q,mq=quo(G, GrpAbFinGenElem[el], false)
         ap-= order(q)
       end
       discr*=p^ap
@@ -865,20 +865,20 @@ function discriminant_conductorQQ(O::NfOrd, C::ClassField, m::Int, bound::fmpz, 
           el=G[1]
           if v==2
             el=mp\ideal(O,Int((b*s*R(s1)+a*pow).data))
-            ap-=order(quo(G,[el])[1])
+            ap-=order(quo(G,GrpAbFinGenElem[el], false)[1])
           else
             for k=0:v-2      
               el=mp\ideal(O,Int((b*s*R(s1)^(p^k)+a*pow).data))
-              ap-=order(quo(G,[el])[1])
+              ap-=order(quo(G, GrpAbFinGenElem[el], false)[1])
               @hassert :AbExt 1 ap>0
             end
           end
           if gcd(n,p-1)==1
-            ap-=order(quo(G,[mp\(ideal(O,fmpz((b*s*R(s1)+a*pow).data)))])[1])
+            ap-=order(quo(G, GrpAbFinGenElem[mp\(ideal(O,fmpz((b*s*R(s1)+a*pow).data)))], false)[1])
           else
             x=_unit_grp_residue_field_mod_n(Int(p),n)[1]
             el1=mp\ideal(O,Int((R(x)*b*s+a*pow).data))
-            ap-=order(quo(G,[mp\(ideal(O,Int((b*s*R(s1)+a*pow).data))), el1])[1])
+            ap-=order(quo(G, GrpAbFinGenElem[mp\(ideal(O,Int((b*s*R(s1)+a*pow).data))), el1], false)[1])
           end
         else
           s=divexact(m,2^v)
@@ -886,10 +886,10 @@ function discriminant_conductorQQ(O::NfOrd, C::ClassField, m::Int, bound::fmpz, 
           el=0*G[1]
           for k=v-3:-1:0
             el=mp\ideal(O,Int((R(5)^(2^k)*b*s+a*2^v).data))
-            ap-=order(quo(G,[el])[1])
+            ap-=order(quo(G, GrpAbFinGenElem[el], false)[1])
           end
           el1=mp\ideal(O,Int((R(-1)*b*s+a*p^v).data))
-          ap-=2*order(quo(G,[el, el1])[1])
+          ap-=2*order(quo(G, GrpAbFinGenElem[el, el1], false)[1])
         end
       end
       discr*=p^ap

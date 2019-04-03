@@ -354,7 +354,7 @@ function find_gens(KK::KummerExt, gens_imgs::Array{Array{FacElem{nf_elem, AnticN
   K = base_field(KK)
   O = maximal_order(K)
   els = GrpAbFinGenElem[]
-  Q, mQ = quo(KK.AutG, els)
+  Q, mQ = quo(KK.AutG, els, false)
   Sp = Hecke.PrimesSet(200, -1)
   cp = lcm(discriminant(O), m)
   frob_gens = NfOrdIdl[]
@@ -382,7 +382,7 @@ function find_gens(KK::KummerExt, gens_imgs::Array{Array{FacElem{nf_elem, AnticN
         end
         continue
       end
-      Q, mQ = quo(KK.AutG, els)
+      Q, mQ = quo(KK.AutG, els, false)
       if order(Q) == 1
         break
       end

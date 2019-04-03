@@ -746,7 +746,12 @@ end
 > Returns whether $x$ is contained in $y$.
 """
 function in(x::NfAbsOrdElem, y::NfAbsOrdIdl)
+  OK = order(y)
   parent(x) !== order(y) && error("Order of element and ideal must be equal")
+  if ismaximal_known_and_maximal(OK) && y.is_prime == 1 && has_2_elem(y) && has_2_elem_normal(y)
+    ant = anti_uniformizer(y)
+    return (elem_in_nf(x) * ant) in OK
+  end
   v = matrix(FlintZZ, 1, degree(parent(x)), elem_in_basis(x))
   t = FakeFmpqMat(v, fmpz(1))*basis_mat_inv(y, copy = false)
   return isone(t.den) 
@@ -884,12 +889,21 @@ end
 function _minmod_easy(a::fmpz, b::NfOrdElem)
   Zk = parent(b)
   k = number_field(Zk)
-  S1 = ResidueRing(FlintZZ, a, cached = false)
-  St1 = PolynomialRing(S1, cached=false)[1]
-  B = St1(b.elem_in_nf)
-  F = St1(k.pol)
-  m = lift(rres(B, F))
-  return gcd(a, m)
+  if nbits(a) < 64
+    S = ResidueRing(FlintZZ, Int(a), cached = false)
+    St = PolynomialRing(S, cached=false)[1]
+    B = St(b.elem_in_nf)
+    F = St(k.pol)
+    m = lift(rres(B, F))
+    return gcd(a, m)
+  else
+    S1 = ResidueRing(FlintZZ, a, cached = false)
+    St1 = PolynomialRing(S1, cached=false)[1]
+    B1 = St1(b.elem_in_nf)
+    F1 = St1(k.pol)
+    m1 = lift(rres(B1, F1))
+    return gcd(a, m1)
+  end
 end
 
 function _minmod(a::fmpz, b::NfOrdElem)
@@ -938,20 +952,38 @@ function _minmod_comp(a::fmpz, b::NfOrdElem)
   #e, _ = ppio(index(Zk), acom)
   d = denominator(b.elem_in_nf)
   d, _ = ppio(d, acom)  
-  S = ResidueRing(FlintZZ, acom*d*e, cached = false)
-  St = PolynomialRing(S, cached=false)[1]
-  B = St(d*b.elem_in_nf)
-  F = St(k.pol)
-  m, u, v = rresx(B, F)  # u*B + v*F = m mod modulus(S)
-  U = lift(FlintZZ["x"][1], u)
-  # m can be zero...
-  m1 = lift(m)
-  if iszero(m1)
-    m1 = acom*d*e
+  mod = acom*d*e
+  if nbits(mod) < 64
+    S1 = ResidueRing(FlintZZ, Int(mod), cached = false)
+    St1 = PolynomialRing(S1, cached=false)[1]
+    B1 = St1(d*b.elem_in_nf)
+    F1 = St1(k.pol)
+    m1, u1, v1 = rresx(B1, F1)  # u*B + v*F = m mod modulus(S)
+    U1 = lift(FlintZZ["x"][1], u1)
+    # m can be zero...
+    m2 = lift(m1)
+    if iszero(m2)
+      m2 = mod
+    end
+    bi = k(U1)//m2*d # at this point, bi*d*b = m mod a*d*idx
+    d = denominator(bi, Zk)
+    return min_uncom*gcd(d, acom)
+  else
+    S = ResidueRing(FlintZZ, mod, cached = false)
+    St = PolynomialRing(S, cached=false)[1]
+    B = St(d*b.elem_in_nf)
+    F = St(k.pol)
+    m, u, v = rresx(B, F)  # u*B + v*F = m mod modulus(S)
+    U = lift(FlintZZ["x"][1], u)
+    # m can be zero...
+    m3 = lift(m)
+    if iszero(m3)
+      m3 = mod
+    end
+    bi = k(U)//m3*d # at this point, bi*d*b = m mod a*d*idx
+    d = denominator(bi, Zk)
+    return min_uncom*gcd(d, acom)
   end
-  bi = k(U)//m1*d # at this point, bi*d*b = m mod a*d*idx
-  d = denominator(bi, Zk)
-  return min_uncom*gcd(d, acom)
   # min(<a, b>) = min(<ad, bd>)/d and bd is in the equation order, hence max as well
   # min(a, b) = gcd(a, denominator(b))
   # rres(b, f) = <b, f> meet Z = <r> and
@@ -1729,7 +1761,7 @@ end
 Test if ideals $I,J$ are coprime.
 """
 function iscoprime(I::NfAbsOrdIdl, J::NfAbsOrdIdl)
-  @assert order(I) == order(J)
+  @assert order(I) === order(J)
   if gcd(minimum(I), minimum(J)) == 1
     return true
   else 

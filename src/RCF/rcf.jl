@@ -401,7 +401,7 @@ function _rcf_find_kummer(CF::ClassField_pp{S, T}) where {S, T}
   @vtime :ClassField 2 h = build_map(CF, KK, C)
   @vprint :ClassField 2 "... done\n"
 
-  k, mk = kernel(h) 
+  k, mk = kernel(h, false) 
   G = domain(h)
   
   # Now, we find the kummer generator by considering the action 
@@ -699,7 +699,7 @@ function _rcf_descent(CF::ClassField_pp)
     imgs = GrpAbFinGenElem[image(CF.quotientmap, preimage(CF.rayclassgroupmap, p1)) for p1 = lp]
     h = hom(f1, imgs)
     @hassert :ClassField 1 issurjective(h)
-    s, ms = kernel(h)
+    s, ms = kernel(h, false)
     @vprint :ClassField 2 "... done, have subgroup!\n"
     @vprint :ClassField 2 "computing orbit of primitive element\n"
     os = NfRelElem{nf_elem}[Auto[ms(j)] for j in s]

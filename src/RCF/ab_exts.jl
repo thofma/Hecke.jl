@@ -1464,42 +1464,25 @@ end
 
 function _from_relative_to_absQQ(L::NfRel_ns{T}, auts::Array{NfRel_nsToNfRel_nsMor{T}, 1}) where T
 
-  
   @vprint :AbExt 2 "Computing maximal orders of subfields\n"
   Qx, x = PolynomialRing(FlintQQ, "x")
-  fields = Vector{AnticNumberField}(undef, length(L.pol))
+  polys = Vector{fmpq_poly}(undef, length(L.pol))
   for i = 1:length(L.pol)
     fK = is_univariate(L.pol[i])[2]
     f = Qx([coeff(coeff(fK, j), 0) for j = 0:degree(fK)])
-    K = NumberField(f, cached = false)[1];
-    OK = maximal_order(K)::NfOrd
-    fields[i] = K
+    polys[i] = f
   end
-  NS, gNS = number_field(fmpq_poly[fields[i].pol for i = 1:length(fields)])
-  mvpolring = parent(NS.pol[1])
-  gpols = gens(mvpolring)
-  #Now, bring the maximal order of every component in NS
-  B = Vector{Vector{NfAbsNSElem}}(undef, length(fields))
-  for i = 1:length(fields)
-    OK = maximal_order(fields[i])
-    BOK = OK.basis_nf
-    BK = Vector{NfAbsNSElem}(undef, degree(OK))
-    for j = 1:length(BK)
-      polel = Qx(BOK[j])
-      polm = evaluate(polel, gpols[i])
-      BK[j] = NS(polm)
-    end
-    B[i] = BK
-  end
-  
+  NS, gNS = number_field(polys)
+  gpols = gens(parent(gNS[1]))
+  B, lp = maximal_order_of_components(NS)
   K, mK = simple_extension(NS, check = false)
   BKK = Array{nf_elem, 1}(undef, degree(K))
-  ind = degree(fields[1])
+  ind = degree(polys[1])
   for i = 1:ind
     BKK[i] = mK\(B[1][i])
   end
-  for jj = 2:length(fields)
-    new_deg = degree(fields[jj])
+  for jj = 2:length(polys)
+    new_deg = degree(polys[jj])
     for i = 2:new_deg
       el = mK\(B[jj][i])
       for j = 1:ind
@@ -1508,30 +1491,19 @@ function _from_relative_to_absQQ(L::NfRel_ns{T}, auts::Array{NfRel_nsToNfRel_nsM
     end
     ind *= new_deg
   end
-  O1 = Order(K, BKK, check = false, cached = false)
-  #Now, I set some basic properties. In particular, discriminant, trace matrix.
-  disc = fmpz(1)
-  for i = 1:length(fields)
-    mul!(disc, disc, discriminant(maximal_order(fields[i]))^(divexact(degree(K), degree(fields[i]))))
-  end
-  M = trace_matrix(maximal_order(fields[1]))
-  for i = 2:length(fields)
-    M = kronecker_product(trace_matrix(maximal_order(fields[i])), M)
-  end
-  O1.disc = disc
-  O1.trace_mat = M
-  
-  #Now, compute the primes at which I have to compute the maximal order
-  
-  d = fmpz(1)
-  for i = 1:length(fields)
-    for j = i+1:length(fields)
-      d1 = gcd(discriminant(maximal_order(fields[i])), discriminant(maximal_order(fields[j])))
-      d = lcm(d, d1)
+  O1 = NfAbsOrd(BKK)
+  for p in lp
+    if isprime(p)
+      O1 = pmaximal_overorder(O1, p)
+    else
+      fac = factor(p)
+      for (k, v) in fac
+        O1 = pmaximal_overorder(O1, k)
+      end
     end
   end
-  lp = collect(keys(factor(d).fac))
-  @vtime :AbExt 2 O1 = pmaximal_overorder_at(O1, lp)
+  #@vtime :AbExt 2 O1 = pmaximal_overorder_at(O1, lp)
+  
   _set_maximal_order(K, O1)
   #Now, we translate the automorphisms.
   imgs = Vector{NfAbsNSElem}(undef, length(auts))
@@ -1542,8 +1514,8 @@ function _from_relative_to_absQQ(L::NfRel_ns{T}, auts::Array{NfRel_nsToNfRel_nsM
   end
   autsNS = Vector{NfAbsNSToNfAbsNS}(undef, length(auts))
   for t = 1:length(auts)
-    imgs = Vector{NfAbsNSElem}(undef, length(fields))
-    for s = 1:length(fields)
+    imgs = Vector{NfAbsNSElem}(undef, length(polys))
+    for s = 1:length(polys)
       fK = is_univariate(auts[t].emb[s].data)[2]
       f = Qx([coeff(coeff(fK, j), 0) for j = 0:degree(fK)])
       imgs[s] = NS(evaluate(f, gpols[s]))
@@ -1568,6 +1540,7 @@ function _from_relative_to_absQQ(L::NfRel_ns{T}, auts::Array{NfRel_nsToNfRel_nsM
     arr_prim_img[i] = arr_prim_img[i-1]*mKs.prim_img
   end
   M1 = inv(basis_mat(arr_prim_img))
+  
   basisO2 = Array{nf_elem, 1}(undef, degree(Ks))
   M = zero_matrix(FlintZZ, 1, degree(Ks))
   for i=1:length(basisO2)
@@ -1575,7 +1548,7 @@ function _from_relative_to_absQQ(L::NfRel_ns{T}, auts::Array{NfRel_nsToNfRel_nsM
     mul!(M, M, M1.num)
     basisO2[i] = elem_from_mat_row(Ks, M, 1, M1.den*denominator(O1.basis_nf[i]))
   end
-  O2 = Order(Ks, basisO2, check = false, cached = false)
+  O2 = Order(Ks, basis_mat(O1, copy = false)*M1, cached = false, check = true)
   O2.ismaximal = 1
   _set_maximal_order_of_nf(Ks, O2)
 

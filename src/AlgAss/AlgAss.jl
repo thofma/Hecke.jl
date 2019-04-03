@@ -161,7 +161,7 @@ function AlgAss(f::PolyElem)
 end
 
 function AlgAss(O::Union{NfAbsOrd, AlgAssAbsOrd}, I::Union{NfAbsOrdIdl, AlgAssAbsOrdIdl}, p::Union{Integer, fmpz})
-  @assert order(I) == O
+  @assert order(I) === O
 
   n = degree(O)
   BO = basis(O, copy = false)

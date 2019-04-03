@@ -20,7 +20,7 @@ end
 function preimage(M::Map{D, C}, a) where {D, C}
   if isdefined(M.header, :preimage)
     p = M.header.preimage(a)::elem_type(D)
-    @assert parent(p) == domain(M)
+    @assert parent(p) === domain(M)
     return p
   end
   error("No preimage function known")

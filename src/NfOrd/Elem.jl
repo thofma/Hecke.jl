@@ -286,7 +286,7 @@ Base.hash(x::NfAbsOrdElem, h::UInt) = Base.hash(x.elem_in_nf, h)
 
 > Returns whether $x$ and $y$ are equal.
 """
- ==(x::NfAbsOrdElem, y::NfAbsOrdElem) = parent(x) == parent(y) &&
+ ==(x::NfAbsOrdElem, y::NfAbsOrdElem) = parent(x) === parent(y) &&
                                             x.elem_in_nf == y.elem_in_nf
 
 ################################################################################
