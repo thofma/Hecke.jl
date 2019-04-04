@@ -59,6 +59,14 @@ function _subfield_primitive_element_from_basis(K, elt)
   end
 
   s = zero(K)
+
+  # First check basis elements
+  for i in 1:length(elt)
+    if degree(minpoly(elt[i])) == length(elt)
+      return elt[i]
+    end
+  end
+
   while true
     rand!(s, elt, 0:1)
     if (degree(minpoly(s)) == length(elt))

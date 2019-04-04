@@ -173,19 +173,22 @@ function _roots(x::Union{fmpq_poly, fmpz_poly}, abs_tol = 32, initial_prec = 0, 
       end
     end
 
-  wp = wp * 2
+    wp = wp * 2
     if wp > 2^17
       error("Something wrong")
     end
   end
-         ccall((:_acb_vec_sort_pretty, :libarb), Nothing,
-            (Ptr{acb_struct}, Int), roots, deg)
-        res = array(AcbField(wp, false), roots, deg)
+
+  ccall((:_acb_vec_sort_pretty, :libarb), Nothing,
+        (Ptr{acb_struct}, Int), roots, deg)
+  res = array(AcbField(wp, false), roots, deg)
   acb_vec_clear(roots, deg)
   return res
 end
 
 
+# It is assumed that roots contain approximation to the roots
+# TODO: consolidate this with roots
 function _roots(x::Union{fmpq_poly, fmpz_poly}, roots::Ptr{acb_struct}, abs_tol = 32, initial_prec = 0, max_iter = 0)
   deg = degree(x)
 
@@ -240,14 +243,16 @@ function _roots(x::Union{fmpq_poly, fmpz_poly}, roots::Ptr{acb_struct}, abs_tol 
       end
     end
 
-  wp = wp * 2
+    wp = wp * 2
     if wp > 2^18
       error("Aborting since required precision is > 2^18")
     end
   end
-         ccall((:_acb_vec_sort_pretty, :libarb), Nothing,
-            (Ptr{acb_struct}, Int), roots, deg)
-        res = array(AcbField(wp, false), roots, deg)
+
+  ccall((:_acb_vec_sort_pretty, :libarb), Nothing,
+        (Ptr{acb_struct}, Int), roots, deg)
+
+  res = array(AcbField(wp, false), roots, deg)
   return res
 end
 
