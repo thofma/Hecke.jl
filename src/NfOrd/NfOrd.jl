@@ -360,7 +360,7 @@ function index(O::NfAbsOrd)
   else
     i = gen_index(O)
     !isone(denominator(i)) && error("Order does not contain the equation order")
-    O.index = numerator(i)
+    O.index = abs(numerator(i))
     return deepcopy(O.index)
   end
 end

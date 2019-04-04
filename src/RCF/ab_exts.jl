@@ -1548,7 +1548,7 @@ function _from_relative_to_absQQ(L::NfRel_ns{T}, auts::Array{NfRel_nsToNfRel_nsM
     mul!(M, M, M1.num)
     basisO2[i] = elem_from_mat_row(Ks, M, 1, M1.den*denominator(O1.basis_nf[i]))
   end
-  O2 = Order(Ks, basis_mat(O1, copy = false)*M1, cached = false, check = true)
+  O2 = NfAbsOrd(Ks, basis_mat(O1, copy = false)*M1)
   O2.ismaximal = 1
   _set_maximal_order_of_nf(Ks, O2)
 
