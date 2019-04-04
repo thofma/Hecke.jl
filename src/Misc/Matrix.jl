@@ -1402,7 +1402,7 @@ end
 #maybe (definitely!) agree on one name and combine?
 
 @doc Markdown.doc"""
-    cansolve(A::MatElem{T}, B::MatElem{T}) where T <: RingElem -> Bool, MatElem
+    cansolve(A::MatElem{T}, B::MatElem{T}, side = :right) where T <: RingElem -> Bool, MatElem
     
 Tries to solve $Ax = B$ for $x$ if `side = :right` or $Ax = B$ if `side = :left`
 over a euclidean ring.
