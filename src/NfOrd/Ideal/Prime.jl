@@ -1385,7 +1385,7 @@ function _fac_and_lift(f::fmpq_mpoly, p, degree_limit, lower_limit)
   return lifted_fac
 end
 
-function is_pairwise_coprime(A::Array{T, 1}) where {T <: PolyElem}
+function ispairwise_coprime(A::Array{T, 1}) where {T <: PolyElem}
   return issquarefree(prod(A))
 end
 
