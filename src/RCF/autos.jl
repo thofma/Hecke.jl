@@ -62,7 +62,7 @@ function rel_auto_easy(A::ClassField_pp)
     b *= A.pe
     push!(M, SRow(b))
   end
-  tau = NfRelToNfRelMor(A.K, A.K, A.bigK.zeta*gen(A.K))
+  tau = hom(A.K, A.K, A.bigK.zeta*gen(A.K), check = false)
   N = SRow(tau(A.pe))
   C = cyclotomic_extension(base_field(A), degree(A))
   Mk = _expand(M, C.mp[1])
@@ -73,7 +73,7 @@ function rel_auto_easy(A::ClassField_pp)
   for (i, c) = s
     setcoeff!(im, i-1, c)
   end
-  return NfRelToNfRelMor(A.A, A.A, im)
+  return hom(A.A, A.A, im, check = false)
   
 end
 
@@ -119,7 +119,7 @@ function rel_auto_intersect(A::ClassField_pp)
     for (i, c) = s
       setcoeff!(im, i-1, c)
     end
-    return NfRelToNfRelMor(A.A, A.A, im)
+    return hom(A.A, A.A, im, check = false)
   end
   error("I can't find the automorphism!")
  
@@ -460,7 +460,7 @@ function extend_aut_pp(A::ClassField, autos::Array{NfToNfMor, 1}, p::fmpz)
       abs_emb[i] = id_hom(KC)
     else
       Cs = cyclotomic_extension(k, dCp)
-      emb = NfRelToNfRelMor(Cs.Kr, C.Kr, gen(C.Kr)^div(d, dCp))
+      emb = hom(Cs.Kr, C.Kr, gen(C.Kr)^div(d, dCp), check = false)
       img = C.mp[1](emb(Cs.mp[1]\(gen(Cs.Ka))))
       abs_emb[i] = hom(Cs.Ka, KC, img, check = false)
     end
@@ -724,7 +724,7 @@ function extend_aut(A::ClassField, tau::T) where T <: Map
     for c in Cp
 #      println("om: $om -> ", degree(c), " vs ", c.o)
       Cs = cyclotomic_extension(k, Int(degree(c)))
-      Emb = NfRelToNfRelMor(Cs.Kr, C.Kr, gen(C.Kr)^div(om, degree(c)))
+      Emb = hom(Cs.Kr, C.Kr, gen(C.Kr)^div(om, degree(c)), check = false)
       emb = inv(Cs.mp[1]) * Emb * C.mp[1]
       a = FacElem(Dict(emb(k) => v for (k,v) = c.a.fac))
       tau_a = FacElem(Dict(tau_Ka(k) => v for (k,v) = a.fac))
@@ -958,7 +958,7 @@ function extend_hom(C::ClassField_pp, D::Array{ClassField_pp, 1}, tau)
     for c in D
 #      println("om: $om -> ", degree(c), " vs ", c.o)
       Cs = cyclotomic_extension(k2, Int(degree(c)))
-      Emb = NfRelToNfRelMor(Cs.Kr, Dy.Kr, gen(Dy.Kr)^div(om, degree(c)))
+      Emb = hom(Cs.Kr, Dy.Kr, gen(Dy.Kr)^div(om, degree(c)), check = false)
       emb = inv(Cs.mp[1]) * Emb * Dy.mp[1]
       a = FacElem(Dict(emb(k) => v for (k,v) = c.a.fac))
       push!(all_emb, (a, emb, divexact(om, c.o)))

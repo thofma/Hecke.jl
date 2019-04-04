@@ -190,7 +190,7 @@ function automorphisms(C::CyclotomicExt; gens::Vector{NfToNfMor} = small_generat
   if iscyclic(U)
     k = degree(C.Kr)
     expo = divexact(eulerphi(fmpz(C.n)), k)
-    l = Hecke.NfRelToNfRelMor(C.Kr, C.Kr, gen(C.Kr)^Int(lift(mU(U[1])^expo)))
+    l = hom(C.Kr, C.Kr, gen(C.Kr)^Int(lift(mU(U[1])^expo)), check = false)
     l1 = hom(C.Ka, C.Ka, C.mp[1](l(C.mp[1]\gen(C.Ka))), check = false)
     #@assert iszero(Kc.Ka.pol(l1(gen(Kc.Ka)))) 
     push!(gnew, l1)
@@ -199,7 +199,7 @@ function automorphisms(C::CyclotomicExt; gens::Vector{NfToNfMor} = small_generat
     s, ms = sub(U, [x for x in U if iszero(f(gen(C.Kr)^Int(lift(mU(x)))))], false)
     S, mS = snf(s)
     for t = 1:ngens(S)
-      l = Hecke.NfRelToNfRelMor(C.Kr, C.Kr, gen(C.Kr)^Int(lift(mU(ms(mS(S[t]))))))
+      l = hom(C.Kr, C.Kr, gen(C.Kr)^Int(lift(mU(ms(mS(S[t]))))), check = false)
       push!(gnew, hom(C.Ka, C.Ka, C.mp[1](l(genK)), check = false))
     end
   end

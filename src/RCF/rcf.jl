@@ -525,7 +525,7 @@ function _aut_A_over_k(C::CyclotomicExt, CF::ClassField_pp)
   @assert e % n == 0
 
   @vprint :ClassField 2 "... the trivial one (Kummer)\n"
-  tau = Hecke.NfRelToNfRelMor{nf_elem,  nf_elem}(A, A, zeta^div(e, n)*gen(A))
+  tau = hom(A, A, zeta^div(e, n)*gen(A), check = false)
   AutA_gen[1] = tau
 
   AutA_rel[1,1] = n  # the order of tau
@@ -533,7 +533,7 @@ function _aut_A_over_k(C::CyclotomicExt, CF::ClassField_pp)
   
   @vprint :ClassField 2 "... need to extend $(ngens(g)) from the cyclo ext\n"
   for i = 1:ngens(g)
-    si = Hecke.NfRelToNfRelMor{nf_elem, nf_elem}(Kr, Kr, gen(Kr)^Int(lift(mg(g[i]))))
+    si = hom(Kr, Kr, gen(Kr)^Int(lift(mg(g[i]))), check = false)
     @vprint :ClassField 2 "... extending zeta -> zeta^$(mg(g[i]))\n"
     to_be_ext = hom(K, K, C.mp[1](si(preimage(C.mp[1], gen(K)))), check = false)
     sigma = _extend_auto(A, to_be_ext)
