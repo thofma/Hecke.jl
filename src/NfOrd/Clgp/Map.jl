@@ -4,6 +4,71 @@
 
 export isprincipal
 
+################################################################################
+#
+#  Finding small representatives in class of ideal powers
+#
+################################################################################
+
+# TODO: Ask Claus what the bound is.
+@doc Markdown.doc"""
+    power_reduce2(A::NfOrdIdl, e::fmpz) -> NfOrdIdl, FacElem{nf_elem}
+Computes $B$ and $\alpha$ in factored form, such that $\alpha B = A^e$
+$B$ has small norm.
+"""
+function power_reduce2(A::NfOrdIdl, e::fmpz)
+  A_orig = deepcopy(A)
+  e_orig = e
+
+  O = order(A)
+  K= nf(O)
+  if norm(A) > abs(discriminant(O))
+    A, a = reduce_ideal2(A)
+    @hassert :PID_Test 1 a*A_orig == A
+    # A_old * inv(a) = A_new
+    #so a^e A_old^e = A_new^e
+    al = FacElem(Dict(a=>-e))
+  else
+    al = FacElem(Dict(K(1) => fmpz(1)))
+  end
+
+  #we have A_orig^e = (A*a)^e = A^e*a^e = A^e*al and A is now small
+
+  if e < 0
+    B = inv(A)
+    A = numerator(B)
+    al *= FacElem(Dict(K(denominator(B)) => fmpz(e)))
+    e = -e
+  end
+  # A^e = A^(e/2)^2 A or A^(e/2)^2
+  # al * A^old^(e/2) = A_new
+  if e>1
+    C, cl = power_reduce2(A, div(e, 2))
+    @hassert :PID_Test 1 C*evaluate(cl) == A^Int(div(e, 2))
+
+    C2 = C^2
+    al = al*cl^2
+    if norm(C2) > abs(discriminant(O))
+      C2, a = reduce_ideal2(C2)
+      al *= inv(a)
+    end
+
+    if isodd(e)
+      A = C2*A
+      if norm(A) > abs(discriminant(O))
+        A, a = reduce_ideal2(A)
+        al *= inv(a)
+      end
+    else
+      A = C2
+    end
+    return A, al
+  else
+    @assert e==1
+    return A, al
+  end
+end
+
 @doc Markdown.doc"""
     power_class(A::NfOrdIdl, e::fmpz) -> NfOrdIdl
 > Computes a (small) ideal in the same class as $A^e$
@@ -589,7 +654,7 @@ function sunit_mod_units_group_fac_elem(I::Array{NfOrdIdl, 1})
     push!(rr, r)
     v = SRow(FlintZZ)
     # We only track the valuation of the prime ideals in S.
-    # Even though S might interset the class group factor base
+    # Even though S might intersect the class group factor base
     # non-trivially, this should still be correct.
     push!(vals_of_rels, sparse_row(FlintZZ, [(i, fmpz(-1))]))
   end
