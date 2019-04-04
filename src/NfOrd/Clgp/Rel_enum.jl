@@ -9,13 +9,15 @@
 ################################################################################
 
 function enum_ctx_from_ideal(A::NfOrdIdl,
-                v::fmpz_mat;prec::Int = 100, limit::Int = 0, Tx::DataType = Int, TU::DataType = Float64, TC::DataType = Float64)
+                v::fmpz_mat; prec::Int = 100, limit::Int = 0, Tx::DataType = Int, TU::DataType = Float64, TC::DataType = Float64)
 
   l, t = lll(A, v, prec = prec)
-  temp = FakeFmpqMat(basis_mat(A))*basis_mat(order(A))
+  OK = order(A)
+  K = nf(OK)
+  temp = FakeFmpqMat(basis_mat(A, copy = false))*basis_mat(OK, copy = false)
   b = temp.num
   b_den = temp.den
-  K = nf(order(A))
+
   if limit == 0
     limit = nrows(l)
   end
@@ -30,10 +32,10 @@ function enum_ctx_from_ideal(A::NfOrdIdl,
   ## then |N(x)| <= D^(1/2)
   #d = abs(discriminant(order(A))) * norm(A)^2
   #due to limit, the lattice is smaller and the disc as well.
-  d = fmpz(ceil(abs(prod([E.C[i,i] for i=1:E.limit]))))
+  d = fmpz(ceil(abs(prod(TC[TC(E.C[i,i]) for i=1:E.limit]))))
   ## but we don't want to overshoot too much the length of the last
   ## basis element.
-  den = basis_mat(order(A)).den ## we ignore the den above, but this
+  den = basis_mat(OK, copy = false).den ## we ignore the den above, but this
                                 ## changes the discriminant!!!
   b = min(den^2 * (root(d, E.limit)+1)*E.limit * E.d, E.G[E.limit, E.limit]*E.limit)
   @v_do :ClassGroup 3 println("T_2 from disc ", (root(d, E.limit)+1)*E.limit * E.d)

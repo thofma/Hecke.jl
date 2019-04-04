@@ -111,17 +111,19 @@ end
 function enum_ctx_from_gram(G::fmpz_mat, den = 1; Tx = BigInt, TC = Rational{BigInt}, TU = Rational{BigInt}, limit = nrows(G))
   E = enum_ctx{Tx, TC, TU}()
   E.G = G
-  n = E.n =nrows(G) 
-  E.limit = limit = min(limit, n)
+  n = nrows(G)
+  E.n = n 
+  limit = min(limit, n)
+  E.limit = limit
   E.d = den
   E.C = pseudo_cholesky(E.G, den, TC = TC, limit = limit)
   E.x = zero_matrix(FlintZZ, 1, n)
     #coeffs limit+1:n are going to be zero, always
-  E.L = Array{TU}(undef, limit) #lower and
-  E.U = Array{TU}(undef, limit) #upper bounds for the coordinates
+  E.L = Vector{TU}(undef, limit) #lower and
+  E.U = Vector{TU}(undef, limit) #upper bounds for the coordinates
 
-  E.l = Array{TU}(undef, limit) #current length
-  E.tail = Array{TU}(undef, limit)
+  E.l = Vector{TU}(undef, limit) #current length
+  E.tail = Vector{TU}(undef, limit)
   return E
 end
 
