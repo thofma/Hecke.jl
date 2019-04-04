@@ -1078,7 +1078,7 @@ end
 #
 ################################################################################
 
-function sum_as_Z_modules(O1::NfOrd, O2::NfOrd, z::fmpz_mat = zero_matrix(FlintZZ, 2 * degree(O1), degree(O1)); triangular::Bool = false)
+function sum_as_Z_modules(O1::NfAbsOrd, O2::NfAbsOrd, z::fmpz_mat = zero_matrix(FlintZZ, 2 * degree(O1), degree(O1)); triangular::Bool = false)
   K = nf(O1)
   R1 = basis_mat(O1, copy = false)
   S1 = basis_mat(O2, copy = false)
