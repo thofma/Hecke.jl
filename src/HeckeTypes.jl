@@ -373,7 +373,7 @@ end
 mutable struct enum_ctx{Tx, TC, TU}
   G::fmpz_mat
   n::Int
-  limit :: Int # stop recursion at level limit, defaults to n
+  limit::Int # stop recursion at level limit, defaults to n
   d::Union{Integer, fmpz} #we actually want G/d
   C::Array{TC, 2} # the pseudo-cholesky form - we don't have fmpq_mat
   last_non_zero::Int
@@ -662,6 +662,8 @@ mutable struct NfAbsOrd{S, T} <: Ring
   index_div::Dict{fmpz, Any}       # the index divisor splitting
                                    # Any = Array{NfAbsOrdIdl, Int}
                                    # but forward references are illegal
+
+  lllO                             # the same order with a lll-reduced basis
 
    function NfAbsOrd{S, T}(a::S) where {S, T}
     # "Default" constructor with default values.

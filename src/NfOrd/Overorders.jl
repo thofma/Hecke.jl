@@ -469,6 +469,7 @@ function sum_as_Z_modules(O1::NfOrd, O2::NfOrd, z::fmpz_mat = zero_matrix(FlintZ
   #@assert M == MMM
   #@assert M == MM
   M1 = sub(M, (nrows(M)-ncols(M)+1):nrows(M), 1:ncols(M))
+  @hassert :NfOrd 1 defines_order(K, M1)[1]
   return NfAbsOrd(K, M1, false)
 end
 

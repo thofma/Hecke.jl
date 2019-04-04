@@ -181,7 +181,7 @@ function new_maximal_order(O::NfOrd; index_divisors::Vector{fmpz} = fmpz[], disc
     end
     @vprint :NfOrd 1 "Computing the maximal order at $(collect(keys(fac)))\n "
     O1 = pmaximal_overorder_at(O, collect(keys(fac)))
-    OO += O1
+    OO  = sum_as_Z_modules(OO, O1)
     rem = abs(rem)
     if !isone(rem)
       if disc != -1

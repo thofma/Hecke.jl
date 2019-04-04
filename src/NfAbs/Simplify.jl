@@ -101,6 +101,8 @@ function _block(a::nf_elem, R::Array{fq_nmod, 1}, ap::fq_nmod_poly)
   return b
 end
 
+
+
 #given 2 block systems b1, b2 for elements a1, a2, this computes the
 #system for Q(a1, a2), the compositum of Q(a1) and Q(a2) as subfields of K
 function _meet(b1::Vector{Vector{Int}}, b2::Vector{Vector{Int}})
@@ -139,6 +141,7 @@ function _find_prime(f::fmpz_poly)
   return p, d
 end
 
+
 function polredabs(K::AnticNumberField)
   #intended to implement 
   # http://beta.lmfdb.org/knowledge/show/nf.polredabs
@@ -171,11 +174,10 @@ function polredabs(K::AnticNumberField)
 #  println("need to use at least the first $i basis elements...")
   pr = 100
   old = precision(BigFloat)
-  E = 1
+  E = enum_ctx_from_ideal(ideal(ZK, 1), zero_matrix(FlintZZ, 1, 1), prec = pr, TU = BigFloat, TC = BigFloat)
+  setprecision(BigFloat, pr)
   while true
-    setprecision(BigFloat, pr)
     try
-      E = enum_ctx_from_ideal(ideal(ZK, 1), zero_matrix(FlintZZ, 1, 1), prec = pr, TU = BigFloat, TC = BigFloat)
       if E.C[end] + 0.0001 == E.C[end]  # very very crude...
         pr *= 2
         continue
@@ -188,6 +190,8 @@ function polredabs(K::AnticNumberField)
       end
       rethrow(e)
     end
+    setprecision(BigFloat, pr)
+    E = enum_ctx_from_ideal(ideal(ZK, 1), zero_matrix(FlintZZ, 1, 1), prec = pr, TU = BigFloat, TC = BigFloat)
   end
 
   l = zeros(FlintZZ, n)
