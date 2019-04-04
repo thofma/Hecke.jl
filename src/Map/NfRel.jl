@@ -32,8 +32,6 @@
 #
 ################################################################################
 
-#why only simple relative?
-
 mutable struct NfRelToNf <: Map{NfRel{nf_elem}, AnticNumberField, HeckeMap, NfRelToNf}
   header::MapHeader{NfRel{nf_elem}, AnticNumberField}
 
@@ -115,7 +113,18 @@ function show(io::IO, h::NfRelRelToNfRel)
   println(io, "Isomorphism between ", domain(h), "\nand ", codomain(h))
 end
 
-hom(K::NfRel, L::NfRel, a::NfRelElem) = NfRelToNfRelMor(K, L, a)
+function hom(K::NfRel, L::NfRel, a::NfRelElem; check::Bool = false)
+   if base_field(K) != base_field(L)
+     error("The base fields do not coincide!")
+   end
+   if check 
+     if !iszero(evaluate(K.pol, a))
+       error("Data does not define a homomorphism")
+     end
+   end
+   return NfRelToNfRelMor(K, L, a)
+end
+
 
 mutable struct NfRelToNfRelMor{T, S} <: Map{NfRel{T}, NfRel{S}, HeckeMap, NfRelToNfRelMor}
   header::MapHeader{NfRel{T}, NfRel{S}}
@@ -149,7 +158,7 @@ function ^(f::NfRelToNfRelMor, b::Int)
   d = absolute_degree(K)
   b = mod(b, d)
   if b == 0
-    return NfRelToNfRelMor(K, K, gen(K))
+    return id_hom(K)
   elseif b == 1
     return f
   else
