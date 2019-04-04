@@ -426,47 +426,6 @@ end
 
 ################################################################################
 #
-#  Sum as Z modules of orders
-#
-################################################################################
-
-function sum_as_Z_modules(O1::NfOrd, O2::NfOrd, z::fmpz_mat = zero_matrix(FlintZZ, 2 * degree(O1), degree(O1)); triangular::Bool = false)
-  K = nf(O1)
-  R1 = basis_mat(O1, copy = false)
-  S1 = basis_mat(O2, copy = false)
-  d = degree(K)
-  z1 = view(z, 1:d, 1:d)
-  mul!(z1, R1.num, S1.den)
-  # Assume that R1 and S1 are triangular
-  d1 = deepcopy(S1.den)
-  d2 = deepcopy(R1.den)
-
-  if triangular
-    for i in 1:degree(K)
-      mul!(d1, d1, R1.num[i, i])
-    end
-    for i in 1:degree(K)
-      mul!(d2, d2, S1.num[i, i])
-    end
-  else
-    mul!(d1, d1, det(R1.num))
-    mul!(d2, d2, det(S1.num))
-  end
-
-  d1 = gcd!(d1, d1, d2)
-
-  z2 = view(z, (d + 1):2*d, 1:d)
-  mul!(z2, S1.num, R1.den)
-  hnf_modular_eldiv!(z, d1, :lowerleft)
-  M = FakeFmpqMat(z, S1.den * R1.den)
-  M1 = sub(M, (nrows(M)-ncols(M)+1):nrows(M), 1:ncols(M))
-  @hassert :NfOrd 1 defines_order(K, M1)[1]
-  return NfAbsOrd(K, M1, false)
-end
-
-
-################################################################################
-#
 #  Primary overorders
 #
 ################################################################################
