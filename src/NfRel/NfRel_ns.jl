@@ -791,7 +791,7 @@ function simple_extension(K::NfRel_ns{T}) where {T}
   n = ngens(K)
   g = gens(K)
   if n == 1
-    fl, p = is_univariate(K.pol[1])
+    fl, p = isunivariate(K.pol[1])
     Ks, gKs = number_field(p, cached = false, check = false)
     return Ks, NfRelToNfRel_nsMor(Ks, K, g[1], [gKs])
   end
@@ -876,7 +876,7 @@ function Base.copy(a::NfRelElem)
 end
 
 function Nemo.discriminant(K::NfRel_ns)
-  p = [is_univariate(x)[2] for x = K.pol]
+  p = [isunivariate(x)[2] for x = K.pol]
   d = discriminant(p[1])
   n = degree(p[1])
   for i=2:length(p)
