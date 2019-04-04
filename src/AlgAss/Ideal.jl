@@ -438,7 +438,7 @@ function quo(a::AbsAlgAssIdl{S, T, U}, b::AbsAlgAssIdl{S, T, U}) where { S, T, U
 
   N = transpose(vcat(MM, Mb)) # Another basis matrix for a
   function _image(x::AbsAlgAssElem)
-    t, y = cansolve(N, matrix(K, dim(A), 1, coeffs(x, copy = false)))
+    t, y = can_solve(N, matrix(K, dim(A), 1, coeffs(x, copy = false)))
     if t
       return B([ y[i, 1] for i = 1:dim(B) ])
     else

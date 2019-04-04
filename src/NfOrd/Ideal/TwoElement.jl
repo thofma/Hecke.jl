@@ -162,7 +162,7 @@ function _assure_weakly_normal_presentation(A::NfAbsOrdIdl)
   while true
     cnt += 1
 
-    if cnt > 100 && is_2_normal_difficult(A)
+    if cnt > 100 && is2_normal_difficult(A)
       assure_2_normal_difficult(A)
       return nothing
     end
@@ -212,7 +212,7 @@ end
 # 13 - 20 | 2 * 3 * 5
 #  >= 21  | 2 * 3 * 5 * 7
 
-function is_2_normal_difficult(A::NfAbsOrdIdl)
+function is2_normal_difficult(A::NfAbsOrdIdl)
   d = 2
   m = minimum(A)
   ZK = order(A)
@@ -256,7 +256,7 @@ function assure_2_normal_difficult(A::NfAbsOrdIdl)
   ZK = order(A)
   n = degree(ZK)
 
-  if !is_2_normal_difficult(A)
+  if !is2_normal_difficult(A)
     assure_2_normal(A)
     return nothing
   end
@@ -342,7 +342,7 @@ function assure_2_normal(A::NfAbsOrdIdl)
     cnt = 0
     while true
       cnt += 1
-      if cnt > 100 && is_2_normal_difficult(A)
+      if cnt > 100 && is2_normal_difficult(A)
         assure_2_normal_difficult(A)
         @hassert :NfOrd 1 isconsistent(A)
         return  
@@ -390,7 +390,7 @@ function assure_2_normal(A::NfAbsOrdIdl)
   cnt = 0
   while true
     cnt += 1
-    if cnt > 100 && is_2_normal_difficult(A)
+    if cnt > 100 && is2_normal_difficult(A)
       assure_2_normal_difficult(A)
       @hassert :NfOrd 1 isconsistent(A)
       return  

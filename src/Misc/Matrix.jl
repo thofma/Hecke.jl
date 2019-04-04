@@ -1302,21 +1302,21 @@ function find_pivot(A::MatElem{<:RingElem})
 end
 
 @doc Markdown.doc"""
-    cansolve(A::MatElem{T}, B::MatElem{T}; side = :right) where T <: FieldElem -> Bool, MatElem
+    can_solve(A::MatElem{T}, B::MatElem{T}; side = :right) where T <: FieldElem -> Bool, MatElem
 
 Tries to solve $Ax = B$ for $x$ if `side = :right` and $xA = B$ if `side =
 :left`.
 """
-function cansolve(A::MatElem{T}, B::MatElem{T};
+function can_solve(A::MatElem{T}, B::MatElem{T};
                                   side = :right) where T <: FieldElem
   @assert base_ring(A) == base_ring(B)
 
   if side === :right
     @assert nrows(A) == nrows(B)
-    return _cansolve(A, B)
+    return _can_solve(A, B)
   elseif side === :left
     @assert ncols(A) == ncols(B)
-    b, C = _cansolve(transpose(A), transpose(B))
+    b, C = _can_solve(transpose(A), transpose(B))
     if b
       return true, transpose(C)
     else
@@ -1327,7 +1327,7 @@ function cansolve(A::MatElem{T}, B::MatElem{T};
   end
 end
 
-function _cansolve(A::MatElem{T}, B::MatElem{T}) where T <: FieldElem
+function _can_solve(A::MatElem{T}, B::MatElem{T}) where T <: FieldElem
   R = base_ring(A)
   mu = [A B]
   rk, mu = rref(mu)
@@ -1345,18 +1345,18 @@ function _cansolve(A::MatElem{T}, B::MatElem{T}) where T <: FieldElem
 end
 
 @doc Markdown.doc"""
-    cansolve_with_kernel(A::MatElem{T}, B::MatElem{T}; side = :right) where T <: FieldElem -> Bool, MatElem, MatElem
+    can_solve_with_kernel(A::MatElem{T}, B::MatElem{T}; side = :right) where T <: FieldElem -> Bool, MatElem, MatElem
 
 Tries to solve $Ax = B$ for $x$ if `side = :right` or $Ax = B$ if `side = :left`.
 It returns the solution and the right respectively left kernel of $A$.
 """
-function cansolve_with_kernel(A::MatElem{T}, B::MatElem{T}; side = :right) where T <: FieldElem
+function can_solve_with_kernel(A::MatElem{T}, B::MatElem{T}; side = :right) where T <: FieldElem
   @assert base_ring(A) == base_ring(B)
   if side === :right
     @assert nrows(A) == nrows(B)
-    return _cansolve_with_kernel(A, B)
+    return _can_solve_with_kernel(A, B)
   elseif side === :left
-    b, C, K = _cansolve_with_kernel(transpose(A), transpose(B))
+    b, C, K = _can_solve_with_kernel(transpose(A), transpose(B))
     @assert ncols(A) == ncols(B)
     if b
       return b, transpose(C), transpose(K)
@@ -1368,7 +1368,7 @@ function cansolve_with_kernel(A::MatElem{T}, B::MatElem{T}; side = :right) where
   end
 end
 
-function _cansolve_with_kernel(A::MatElem{T}, B::MatElem{T}) where T <: FieldElem
+function _can_solve_with_kernel(A::MatElem{T}, B::MatElem{T}) where T <: FieldElem
   R = base_ring(A)
   mu = [A B]
   rk, mu = rref(mu)
@@ -1398,25 +1398,25 @@ function _cansolve_with_kernel(A::MatElem{T}, B::MatElem{T}) where T <: FieldEle
   return true, sol, n
 end
 
-#TODO: different to cansolve*(fmpz_mat) is hnf_with_tranformation -> hnf_with_trafo
+#TODO: different to can_solve*(fmpz_mat) is hnf_with_tranformation -> hnf_with_trafo
 #maybe (definitely!) agree on one name and combine?
 
 @doc Markdown.doc"""
-    cansolve(A::MatElem{T}, B::MatElem{T}, side = :right) where T <: RingElem -> Bool, MatElem
+    can_solve(A::MatElem{T}, B::MatElem{T}, side = :right) where T <: RingElem -> Bool, MatElem
     
 Tries to solve $Ax = B$ for $x$ if `side = :right` or $Ax = B$ if `side = :left`
 over a euclidean ring.
 """
-function cansolve(A::MatElem{T}, B::MatElem{T};
+function can_solve(A::MatElem{T}, B::MatElem{T};
                                   side = :right) where T <: RingElem
   @assert base_ring(A) == base_ring(B)
 
   if side === :right
     @assert nrows(A) == nrows(B)
-    return _cansolve(A, B)
+    return _can_solve(A, B)
   elseif side === :left
     @assert ncols(A) == ncols(B)
-    b, C = _cansolve(transpose(A), transpose(B))
+    b, C = _can_solve(transpose(A), transpose(B))
     if b
       return true, transpose(C)
     else
@@ -1427,7 +1427,7 @@ function cansolve(A::MatElem{T}, B::MatElem{T};
   end
 end
 
-function _cansolve(a::MatElem{S}, b::MatElem{S}, side = :left) where S <: RingElem
+function _can_solve(a::MatElem{S}, b::MatElem{S}, side = :left) where S <: RingElem
   H, T = hnf_with_trafo(transpose(a))
   b = deepcopy(b)
   z = similar(a, ncols(b), ncols(a))
@@ -1458,18 +1458,18 @@ function _cansolve(a::MatElem{S}, b::MatElem{S}, side = :left) where S <: RingEl
 end
 
 @doc Markdown.doc"""
-    cansolve_with_kernel(A::MatElem{T}, B::MatElem{T}) where T <: RingElem -> Bool, MatElem, MatElem
+    can_solve_with_kernel(A::MatElem{T}, B::MatElem{T}) where T <: RingElem -> Bool, MatElem, MatElem
 
 Tries to solve $Ax = B$ for $x$ if `side = :right` or $Ax = B$ if `side = :left`.
 It returns the solution and the right respectively left kernel of $A$.
 """
-function cansolve_with_kernel(A::MatElem{T}, B::MatElem{T}; side = :right) where T <: RingElem
+function can_solve_with_kernel(A::MatElem{T}, B::MatElem{T}; side = :right) where T <: RingElem
   @assert base_ring(A) == base_ring(B)
   if side === :right
     @assert nrows(A) == nrows(B)
-    return _cansolve_with_kernel(A, B)
+    return _can_solve_with_kernel(A, B)
   elseif side === :left
-    b, C, K = _cansolve_with_kernel(transpose(A), transpose(B))
+    b, C, K = _can_solve_with_kernel(transpose(A), transpose(B))
     @assert ncols(A) == ncols(B)
     if b
       return b, transpose(C), transpose(K)
@@ -1481,7 +1481,7 @@ function cansolve_with_kernel(A::MatElem{T}, B::MatElem{T}; side = :right) where
   end
 end
 
-function _cansolve_with_kernel(a::MatElem{S}, b::MatElem{S}) where S <: RingElem
+function _can_solve_with_kernel(a::MatElem{S}, b::MatElem{S}) where S <: RingElem
   H, T = hnf_with_trafo(transpose(a))
   z = similar(a, ncols(b), ncols(a))
   l = min(nrows(a), ncols(a))

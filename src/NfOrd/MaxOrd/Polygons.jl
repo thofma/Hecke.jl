@@ -514,9 +514,9 @@ function _decomposition(O::NfAbsOrd, I::NfAbsOrdIdl, Ip::NfAbsOrdIdl, T::NfAbsOr
       modulo = norm(P)*p
       x = zero(parent(u))
       
-      if !is_norm_divisible(u.elem_in_nf, modulo)
+      if !isnorm_divisible(u.elem_in_nf, modulo)
         x = u
-      elseif !is_norm_divisible(u.elem_in_nf+p, modulo)
+      elseif !isnorm_divisible(u.elem_in_nf+p, modulo)
         x = u + p
       end
 
@@ -572,16 +572,16 @@ function _decomposition(O::NfAbsOrd, I::NfAbsOrdIdl, Ip::NfAbsOrdIdl, T::NfAbsOr
       
       @hassert :NfOrd 1 u in P
       modulo = norm(P)*p
-      #if iszero(_normmod(modulo, u))#is_norm_divisible(u.elem_in_nf, modulo)
+      #if iszero(_normmod(modulo, u))#isnorm_divisible(u.elem_in_nf, modulo)
       if iszero(mod(norm(u), modulo))
         if !iszero(mod(norm(u+p), modulo))
           add!(u, u, p)
-        elseif !iszero(mod(norm(u-p), modulo))#!is_norm_divisible(u.elem_in_nf-p, modulo)
+        elseif !iszero(mod(norm(u-p), modulo))#!isnorm_divisible(u.elem_in_nf-p, modulo)
           sub!(u, u, p)
         else
           Ba = basis(P, copy = false)
           for i in 1:degree(O)
-            if !is_norm_divisible((v*Ba[i] + u).elem_in_nf, modulo)
+            if !isnorm_divisible((v*Ba[i] + u).elem_in_nf, modulo)
               u = v*Ba[i] + u
               break
             end
@@ -617,16 +617,16 @@ function _decomposition(O::NfAbsOrd, I::NfAbsOrdIdl, Ip::NfAbsOrdIdl, T::NfAbsOr
     x = zero(parent(u))
     modulo = norm(P)*p
 
-    if !is_norm_divisible(u.elem_in_nf, modulo)
+    if !isnorm_divisible(u.elem_in_nf, modulo)
       x = u
-    elseif !is_norm_divisible(u.elem_in_nf+p, modulo)
+    elseif !isnorm_divisible(u.elem_in_nf+p, modulo)
       x = u + p
-    elseif !is_norm_divisible(u.elem_in_nf-p, modulo)
+    elseif !isnorm_divisible(u.elem_in_nf-p, modulo)
       x = u - p
     else
       Ba = basis(P, copy = false)
       for i in 1:degree(O)
-        if !is_norm_divisible((v*Ba[i] + u).elem_in_nf, modulo)
+        if !isnorm_divisible((v*Ba[i] + u).elem_in_nf, modulo)
           x = v*Ba[i] + u
           break
         end
@@ -844,7 +844,7 @@ function prime_decomposition_polygons(O::NfOrd, p::Union{fmpz, Int}, degree_limi
       # otherwise we need to take p+b
       # I SHOULD CHECK THAT THIS WORKS
 
-      if !(!is_norm_divisible(b, (J.norm)^2) || (ei > 1))
+      if !(!isnorm_divisible(b, (J.norm)^2) || (ei > 1))
         J.gen_two = J.gen_two + O(p)
       end
 

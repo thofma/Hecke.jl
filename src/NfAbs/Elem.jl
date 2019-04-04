@@ -353,10 +353,10 @@ end
 
 
 @doc Markdown.doc"""
-   is_norm_divisible(a::nf_elem, n::fmpz) -> Bool
+   isnorm_divisible(a::nf_elem, n::fmpz) -> Bool
 > Checks if the norm of $a$ is divisible by $n$, assuming that the norm of $a$ is an integer.
 """
-function is_norm_divisible(a::nf_elem, n::fmpz)
+function isnorm_divisible(a::nf_elem, n::fmpz)
   
   K = parent(a)
   s, t = ppio(denominator(a), n)

@@ -354,7 +354,7 @@ function prime_dec_nonindex(O::NfOrd, p::Union{Integer, fmpz}, degree_limit::Int
     # otherwise we need to take p+b
     # I SHOULD CHECK THAT THIS WORKS
 
-    if ei == 1 && is_norm_divisible(b,(ideal.norm)^2) 
+    if ei == 1 && isnorm_divisible(b,(ideal.norm)^2) 
       ideal.gen_two = ideal.gen_two + O(p)
     end
 
@@ -1385,7 +1385,7 @@ function _fac_and_lift(f::fmpq_mpoly, p, degree_limit, lower_limit)
   return lifted_fac
 end
 
-function is_pairwise_coprime(A::Array{T, 1}) where {T <: PolyElem}
+function ispairwise_coprime(A::Array{T, 1}) where {T <: PolyElem}
   return issquarefree(prod(A))
 end
 

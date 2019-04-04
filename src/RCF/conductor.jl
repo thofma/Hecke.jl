@@ -1035,7 +1035,7 @@ function norm_group(K::NfRel{nf_elem}, mR::Hecke.MapRayClassGrp, isabelian::Bool
 end
 function norm_group(K::NfRel_ns{nf_elem}, mR::Hecke.MapRayClassGrp, isabelian::Bool = true; of_closure::Bool = false)
   base_ring(K) == nf(mR.modulus_fin.order) || error("field has to be over the same field as the ray class group")
-  return norm_group([is_univariate(x)[2] for x = K.pol], mR, isabelian, of_closure = of_closure)
+  return norm_group([isunivariate(x)[2] for x = K.pol], mR, isabelian, of_closure = of_closure)
 end
  
 @doc Markdown.doc"""
@@ -1377,7 +1377,7 @@ function isnormal_easy(C::ClassField)
   act = induce_action(mR, new_aut)
   mk = kernel(GrpAbFinGenMap(C.quotientmap), true)[2]
   #normal iff kernel is invariant
-  return is_stable(act, mk)
+  return isstable(act, mk)
 end
 
 function isnormal_difficult(C::ClassField)
@@ -1471,10 +1471,10 @@ function lcm(A::AbstractArray{<:NfAbsOrdIdl})
 end
 
 @doc Markdown.doc"""
-    is_univariate(f::Generic.MPoly{nf_elem}) -> Bool, PolyElem{nf_elem}
+    isunivariate(f::Generic.MPoly{nf_elem}) -> Bool, PolyElem{nf_elem}
 > Tests if $f$ involves only one variable. If so, return a corresponding univariate polynomial.
 """
-function is_univariate(f::Generic.MPoly{nf_elem})
+function isunivariate(f::Generic.MPoly{nf_elem})
   kx, x = PolynomialRing(base_ring(f), "x", cached = false)
   if ngens(parent(f)) == 1
     f1 = kx()

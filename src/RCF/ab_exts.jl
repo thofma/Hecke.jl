@@ -1468,7 +1468,7 @@ function _from_relative_to_absQQ(L::NfRel_ns{T}, auts::Array{NfRel_nsToNfRel_nsM
   Qx, x = PolynomialRing(FlintQQ, "x")
   polys = Vector{fmpq_poly}(undef, length(L.pol))
   for i = 1:length(L.pol)
-    fK = is_univariate(L.pol[i])[2]
+    fK = isunivariate(L.pol[i])[2]
     f = Qx([coeff(coeff(fK, j), 0) for j = 0:degree(fK)])
     polys[i] = f
   end
@@ -1508,7 +1508,7 @@ function _from_relative_to_absQQ(L::NfRel_ns{T}, auts::Array{NfRel_nsToNfRel_nsM
   #Now, we translate the automorphisms.
   imgs = Vector{NfAbsNSElem}(undef, length(auts))
   for i = 1:length(auts)
-    fK = is_univariate(auts[i].emb[i].data)[2]
+    fK = isunivariate(auts[i].emb[i].data)[2]
     f = Qx([coeff(coeff(fK, j), 0) for j = 0:degree(fK)])
     imgs[i] = NS(evaluate(f, gpols[i]))
   end
@@ -1516,7 +1516,7 @@ function _from_relative_to_absQQ(L::NfRel_ns{T}, auts::Array{NfRel_nsToNfRel_nsM
   for t = 1:length(auts)
     imgs = Vector{NfAbsNSElem}(undef, length(polys))
     for s = 1:length(polys)
-      fK = is_univariate(auts[t].emb[s].data)[2]
+      fK = isunivariate(auts[t].emb[s].data)[2]
       f = Qx([coeff(coeff(fK, j), 0) for j = 0:degree(fK)])
       imgs[s] = NS(evaluate(f, gpols[s]))
     end
