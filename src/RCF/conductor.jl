@@ -1377,7 +1377,7 @@ function isnormal_easy(C::ClassField)
   act = induce_action(mR, new_aut)
   mk = kernel(GrpAbFinGenMap(C.quotientmap), true)[2]
   #normal iff kernel is invariant
-  return is_stable(act, mk)
+  return isstable(act, mk)
 end
 
 function isnormal_difficult(C::ClassField)

@@ -101,7 +101,7 @@ function Nemo.snf(M::ZpnGModule)
     
 end
 
-function is_stable(act::Array{T, 1}, mS::GrpAbFinGenMap) where T <: Map{GrpAbFinGen, GrpAbFinGen} 
+function isstable(act::Array{T, 1}, mS::GrpAbFinGenMap) where T <: Map{GrpAbFinGen, GrpAbFinGen} 
 
   S=mS.header.domain
   for s in gens(S)
