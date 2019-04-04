@@ -53,6 +53,28 @@ function _subfield_basis(K, elt)
   return bas
 end
 
+function _improve_subfield_basis(K, bas)
+  # First compute the maximal order of <bas> by intersecting and saturating
+  # Then B_Ok = N * B_LLL_OK
+  # Then B' defined as lllN * B_LLL_OK will hopefully be small
+  OK = maximal_order(K)
+  OKbmatinv = basis_mat_inv(OK, copy = false)
+  basinOK = bas * matrix(FlintQQ, OKbmatinv.num) * fmpq(1, OKbmatinv.den)
+  deno = fmpz(1)
+  for i in 1:nrows(basinOK)
+    for j in 1:ncols(basinOK)
+      deno = lcm(deno, denominator(basinOK[i, j]))
+    end
+  end
+  S = saturate(matrix(FlintZZ, basinOK * deno))
+  SS = S * basis_mat(OK, copy = false)
+  lllOK = lll(OK)
+  N = (SS * basis_mat_inv(lllOK)).num
+  lllN = lll(N)
+  maybesmaller = lllN * basis_mat(lllOK)
+  return maybesmaller
+end
+
 function _subfield_primitive_element_from_basis(K, elt)
   if length(elt) == 0
     return gen(K)
@@ -128,11 +150,11 @@ end
 #
 ################################################################################
 
-function fixed_field(K::S, auto::T) where {S <: Union{AnticNumberField, NfRel}, T <: Union{NfToNfMor, NfRelToNfRelMor}}
-  return fixed_field(K, T[auto])
+function fixed_field(K::S, auto::T; simplify::Bool = true) where {S <: Union{AnticNumberField, NfRel}, T <: Union{NfToNfMor, NfRelToNfRelMor}}
+  return fixed_field(K, T[auto], simplify = simplify)
 end
 
-function fixed_field(K::S, autos::Array{T, 1}) where {S <: Union{AnticNumberField, NfRel}, T <: Union{NfToNfMor, NfRelToNfRelMor}}
+function fixed_field(K::S, autos::Array{T, 1}; simplify::Bool = true) where {S <: Union{AnticNumberField, NfRel}, T <: Union{NfToNfMor, NfRelToNfRelMor}}
 
   if length(autos) == 0
     return K, id_hom(K)
@@ -177,12 +199,19 @@ function fixed_field(K::S, autos::Array{T, 1}) where {S <: Union{AnticNumberFiel
     bas = Vector{elem_type(K)}(undef, k)
     if S === AnticNumberField
       # Try to find a small basis for absolute simple number fields
-      KasFMat = FakeFmpqMat(Ker)
-      Ksat = saturate(KasFMat.num)
-      Ksat = lll(Ksat)
-      onee = one(fmpz)
-      for i in 1:k
-        bas[i] = elem_from_mat_row(K, Ksat, i, onee)
+      if simplify
+        KasFMat = _improve_subfield_basis(K, Ker)
+        for i in 1:k
+          bas[i] = elem_from_mat_row(K, KasFMat.num, i, KasFMat.den)
+        end
+      else
+        KasFMat = FakeFmpqMat(Ker)
+        Ksat = saturate(KasFMat.num)
+        Ksat = lll(Ksat)
+        onee = one(fmpz)
+        for i in 1:k
+          bas[i] = elem_from_mat_row(K, Ksat, i, onee)
+        end
       end
     else
       for i in 1:k

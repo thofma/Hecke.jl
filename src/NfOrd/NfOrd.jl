@@ -1124,10 +1124,16 @@ end
 > The same order, but with the basis now being LLL reduced wrt. the Minkowski metric.
 """
 function lll(M::NfOrd)
+  if isdefined(M, :lllO)
+    return M.lllO::NfOrd
+  end
+
   K = nf(M)
 
   if istotally_real(K)
-    return _lll_gram(M)
+    On =  _lll_gram(M)
+    M.lllO = On
+    return On::NfOrd
   end
 
   I = ideal(M, 1)
@@ -1138,7 +1144,8 @@ function lll(M::NfOrd)
       q,w = lll(I, parent(basis_mat(M, copy = false).num)(0), prec = prec)
       On = NfOrd(K, FakeFmpqMat(w*basis_mat(M, copy = false).num, denominator(basis_mat(M, copy = false))))
       On.ismaximal = M.ismaximal
-      return On
+      M.lllO = On
+      return On::NfOrd
     catch e
       if isa(e, LowPrecisionLLL) || isa(e, InexactError)
         prec = Int(round(prec*1.2))

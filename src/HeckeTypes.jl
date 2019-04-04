@@ -663,6 +663,8 @@ mutable struct NfAbsOrd{S, T} <: Ring
                                    # Any = Array{NfAbsOrdIdl, Int}
                                    # but forward references are illegal
 
+  lllO                             # the same order with a lll-reduced basis
+
    function NfAbsOrd{S, T}(a::S) where {S, T}
     # "Default" constructor with default values.
     r = new{S, elem_type(S)}()

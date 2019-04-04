@@ -174,7 +174,7 @@ function _roots(x::Union{fmpq_poly, fmpz_poly}, abs_tol = 32, initial_prec = 0, 
     end
 
     wp = wp * 2
-    if wp > 2^17
+    if wp > 2^18
       error("Something wrong")
     end
   end
