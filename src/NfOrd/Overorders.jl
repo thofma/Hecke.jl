@@ -430,7 +430,7 @@ end
 #
 ################################################################################
 
-function sum_as_Z_modules(O1::NfOrd, O2::NfOrd, z::fmpz_mat = zero_matrix(FlintZZ, 2 * degree(O1), degree(O1)))
+function sum_as_Z_modules(O1::NfOrd, O2::NfOrd, z::fmpz_mat = zero_matrix(FlintZZ, 2 * degree(O1), degree(O1)); triangular::Bool = false)
   K = nf(O1)
   R1 = basis_mat(O1, copy = false)
   S1 = basis_mat(O2, copy = false)
@@ -439,35 +439,26 @@ function sum_as_Z_modules(O1::NfOrd, O2::NfOrd, z::fmpz_mat = zero_matrix(FlintZ
   mul!(z1, R1.num, S1.den)
   # Assume that R1 and S1 are triangular
   d1 = deepcopy(S1.den)
-  for i in 1:degree(K)
-    mul!(d1, d1, R1.num[i, i])
-  end
   d2 = deepcopy(R1.den)
-  for i in 1:degree(K)
-    mul!(d2, d2, S1.num[i, i])
+
+  if triangular
+    for i in 1:degree(K)
+      mul!(d1, d1, R1.num[i, i])
+    end
+    for i in 1:degree(K)
+      mul!(d2, d2, S1.num[i, i])
+    end
+  else
+    mul!(d1, d1, det(R1.num))
+    mul!(d2, d2, det(S1.num))
   end
+
   d1 = gcd!(d1, d1, d2)
 
   z2 = view(z, (d + 1):2*d, 1:d)
   mul!(z2, S1.num, R1.den)
-  #MM = FakeFmpqMat(vcat(S1.den * R1.num, R1.den * S1.num), S1.den * R1.den)
-  #@assert MM == FakeFmpqMat(z, S1.den * R1.den)
   hnf_modular_eldiv!(z, d1, :lowerleft)
-  #MM = hnf!(MM)
-  #@assert MM == FakeFmpqMat(z, S1.den * R1.den)
-  #hnf!!(MM)
-  #MM = hnf!(MM)
-  #@assert MM == MMM
-  #M = MM
   M = FakeFmpqMat(z, S1.den * R1.den)
-
-  #M = FakeFmpqMat(vcat(S1.den*R1.num, R1.den*S1.num), S1.den*R1.den)
-  #M = hnf!(MM)
-  #@show MMM
-  #@show M
-  #@show M.num == MMM.num
-  #@assert M == MMM
-  #@assert M == MM
   M1 = sub(M, (nrows(M)-ncols(M)+1):nrows(M), 1:ncols(M))
   @hassert :NfOrd 1 defines_order(K, M1)[1]
   return NfAbsOrd(K, M1, false)
@@ -494,7 +485,7 @@ function new_poverorders(O::NfOrd, p::fmpz)
       for S in res
         #@show S
         #@show sum_as_Z_modules(R, S)
-        push!(nres, sum_as_Z_modules(R, S, tz))
+        push!(nres, sum_as_Z_modules(R, S, tz), triangular = true)
       end
     end
     println("time for recombination: $trec")
@@ -533,7 +524,7 @@ function bass_overorders(O::NfOrd)
         kk = 1
         for O1 in orders
           @time for O2 in bassP
-            orders1[kk] = sum_as_Z_modules(O1, O2, z)
+            orders1[kk] = sum_as_Z_modules(O1, O2, z, triangular = true)
             kk += 1
           end
         end
@@ -579,7 +570,7 @@ function gorenstein_overorders(O::NfOrd)
         kk = 1
         for O1 in orders
           @time for O2 in gorP
-            orders1[kk] = sum_as_Z_modules(O1, O2, z)
+            orders1[kk] = sum_as_Z_modules(O1, O2, z, triangular = true)
             kk += 1
           end
         end
@@ -610,7 +601,7 @@ function new_overorders(O::NfOrd)
       kk = 1
       for O1 in orders
         @time for O2 in new_p
-          orders1[kk] = sum_as_Z_modules(O1, O2, z)
+          orders1[kk] = sum_as_Z_modules(O1, O2, z, triangular = true)
           kk += 1
         end
       end
