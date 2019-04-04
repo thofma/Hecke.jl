@@ -929,7 +929,7 @@ function _order(K::S, elt::Array{T, 1}; cached::Bool = true, check::Bool = true)
     if phase == 2
       if denominator(B) % denominator(e) == 0
         C = basis_mat([e])
-        fl, _ = cansolve(B.num, div(B.den, denominator(e))*C.num, side = :left)
+        fl, _ = can_solve(B.num, div(B.den, denominator(e))*C.num, side = :left)
 #        fl && println("elt known:", e)
         fl && continue
       end 

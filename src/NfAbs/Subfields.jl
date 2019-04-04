@@ -9,7 +9,7 @@ function _subfield_basis(K, elt)
   for e = elt
     if phase == 2
       C = basis_mat([e])
-      fl, _ = cansolve(matrix(FlintQQ, B.num), matrix(FlintQQ, C.num), side = :left)
+      fl, _ = can_solve(matrix(FlintQQ, B.num), matrix(FlintQQ, C.num), side = :left)
       fl && continue
     end
     df = n-1

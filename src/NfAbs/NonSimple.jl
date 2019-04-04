@@ -510,7 +510,7 @@ function minpoly_sparse(a::NfAbsNSElem)
   while true
     if n % i == 0
       echelon!(M)
-      fl, so = cansolve_ut(sub(M, 1:i, 1:n), sz)
+      fl, so = can_solve_ut(sub(M, 1:i, 1:n), sz)
       if fl
         so = mul(so, sub(M, 1:i, n+1:ncols(M)))
         # TH: If so is the zero vector, we cannot use the iteration,

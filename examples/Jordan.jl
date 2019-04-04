@@ -15,7 +15,7 @@ end
 function quo_gens(A, B)
   n, B = rref(B')
   B = sub(B, 1:n, 1:ncols(B))'
-  fl, T = cansolve(A, B)  # A T = B
+  fl, T = can_solve(A, B)  # A T = B
   d, r = rref(T')
   t = sub(r, 1:d, 1:ncols(r))
   t = Hecke.reduce_mod(identity_matrix(base_ring(t), ncols(t)), t)

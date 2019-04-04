@@ -1,4 +1,4 @@
-function cansolve_ut(A::SMat{T}, g::SRow{T}) where T <: Union{FieldElem, nmod}
+function can_solve_ut(A::SMat{T}, g::SRow{T}) where T <: Union{FieldElem, nmod}
   # Works also for non-square matrices
   #@hassert :HNF 1  ncols(A) == nrows(A)
   @hassert :HNF 2  isupper_triangular(A)
@@ -42,7 +42,7 @@ function cansolve_ut(A::SMat{T}, g::SRow{T}) where T <: Union{FieldElem, nmod}
 end
 
 function solve_ut(A::SMat{T}, g::SRow{T}) where T <: Union{FieldElem, nmod}
-  fl, sol = cansolve_ut(A, g)
+  fl, sol = can_solve_ut(A, g)
   @assert fl
   return sol
 end
@@ -376,15 +376,15 @@ function echelon!(S::SMat{T}) where T <: FieldElem
 end
 
 function solve(a::SMat{T}, b::SRow{T}) where T <: FieldElem
-  fl, sol = cansolve(a, b)
+  fl, sol = can_solve(a, b)
   @assert fl
   return sol
 end
 
-function cansolve(a::SMat{T}, b::SRow{T}) where T <: FieldElem
+function can_solve(a::SMat{T}, b::SRow{T}) where T <: FieldElem
   c = hcat(a, identity_matrix(SMat, base_ring(a), a.r))
   echelon!(c)
-  fl, sol = cansolve_ut(sub(c, 1:nrows(c), 1:a.c), b)
+  fl, sol = can_solve_ut(sub(c, 1:nrows(c), 1:a.c), b)
   if fl
     return fl, mul(sol, sub(c, 1:nrows(c), a.c+1:c.c))
   else
@@ -392,5 +392,5 @@ function cansolve(a::SMat{T}, b::SRow{T}) where T <: FieldElem
   end  
 end
 
-#TODO: cansolve using Dixon for Q, NF
+#TODO: can_solve using Dixon for Q, NF
 #      for SMat rather than SRow only

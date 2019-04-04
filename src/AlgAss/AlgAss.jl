@@ -640,7 +640,7 @@ function subalgebra(A::AlgAss{T}, basis::Array{AlgAssElem{T, AlgAss{T}},1}) wher
     for j=1:length(basis)
       x=basis[i]*basis[j]
       N1=matrix(base_ring(A), dim(A), 1, x.coeffs)
-      b, N = cansolve(B, N1)
+      b, N = can_solve(B, N1)
       @assert b
       for k=1:length(basis)
         M[i,j,k]=N[k,1]
@@ -1431,7 +1431,7 @@ function _matrix_basis(A::AlgAss{T}, idempotents::Vector{S}) where { T <: Union{
     NN = zero_matrix(base_ring(A), 4*dim(eAe), 1)
     NN = vcat(NN, matrix(base_ring(A), dim(eAe), 1, coeffs(bb)))
     NN = vcat(NN, matrix(base_ring(A), dim(eAe), 1, coeffs(aa)))
-    b, yy = cansolve(transpose(N), NN)
+    b, yy = can_solve(transpose(N), NN)
     @assert b
     y = m1(m2(eAe([ yy[i, 1] for i = 1:dim(eAe) ])))
 
