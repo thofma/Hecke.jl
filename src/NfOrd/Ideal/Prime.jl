@@ -354,7 +354,7 @@ function prime_dec_nonindex(O::NfOrd, p::Union{Integer, fmpz}, degree_limit::Int
     # otherwise we need to take p+b
     # I SHOULD CHECK THAT THIS WORKS
 
-    if ei == 1 && is_norm_divisible(b,(ideal.norm)^2) 
+    if ei == 1 && isnorm_divisible(b,(ideal.norm)^2) 
       ideal.gen_two = ideal.gen_two + O(p)
     end
 

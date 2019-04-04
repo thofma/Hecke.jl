@@ -998,7 +998,7 @@ function minpoly_via_trace(a::NfAbsNSElem)
   error("cannot happen")
 end
 
-function is_norm_divisible(a::NfAbsNSElem, n::fmpz)
+function isnorm_divisible(a::NfAbsNSElem, n::fmpz)
   return iszero(mod(norm(a), n))
 end
 
