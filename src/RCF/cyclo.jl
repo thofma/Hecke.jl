@@ -171,10 +171,10 @@ base_field(C::CyclotomicExt) = C.k
 > Computes the automorphisms of the absolute field defined by the cyclotomic extension, i.e. of absolute_field(C).
 > gens must be a set of generators for the automorphism group of the base field of C
 """
-function automorphisms(C::CyclotomicExt; gens::Vector{NfToNfMor} = small_generating_set(automorphisms(base_field(C))), copyval::Type{Val{T}} = Val{true}) where {T}
+function automorphisms(C::CyclotomicExt; gens::Vector{NfToNfMor} = small_generating_set(automorphisms(base_field(C))), copy::Bool = true)
 
   if degree(absolute_field(C)) == degree(base_field(C))
-    return automorphisms(C.Ka, copyval)
+    return automorphisms(C.Ka, copy = copy)
   end
   genK = C.mp[1]\gen(C.Ka)
   gnew = Hecke.NfToNfMor[]
@@ -205,8 +205,8 @@ function automorphisms(C::CyclotomicExt; gens::Vector{NfToNfMor} = small_generat
   end
   auts = closure(gnew, degree(C.Ka))
   Hecke._set_automorphisms_nf(C.Ka, auts)
-  if copyval == Val{true}
-    return copy(auts)
+  if copy
+    return Base.copy(auts)
   else
     return auts
   end
