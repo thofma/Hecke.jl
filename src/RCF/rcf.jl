@@ -535,7 +535,7 @@ function _aut_A_over_k(C::CyclotomicExt, CF::ClassField_pp)
   for i = 1:ngens(g)
     si = Hecke.NfRelToNfRelMor{nf_elem, nf_elem}(Kr, Kr, gen(Kr)^Int(lift(mg(g[i]))))
     @vprint :ClassField 2 "... extending zeta -> zeta^$(mg(g[i]))\n"
-    to_be_ext = NfToNfMor(K, K, C.mp[1](si(preimage(C.mp[1], gen(K)))))
+    to_be_ext = hom(K, K, C.mp[1](si(preimage(C.mp[1], gen(K)))), check = false)
     sigma = _extend_auto(A, to_be_ext)
     AutA_gen[i+1] = sigma
 

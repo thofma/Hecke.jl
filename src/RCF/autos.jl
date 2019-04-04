@@ -450,19 +450,19 @@ function extend_aut_pp(A::ClassField, autos::Array{NfToNfMor, 1}, p::fmpz)
   Autos_abs = Array{NfToNfMor, 1}(undef, length(autos))
   for i = 1:length(autos)
     aut = extend_to_cyclotomic(C, autos[i])
-    Autos_abs[i] = NfToNfMor(KC, KC, C.mp[1](aut(C.mp[1]\gen(KC))))
+    Autos_abs[i] = hom(KC, KC, C.mp[1](aut(C.mp[1]\gen(KC))), check = false)
   end
   #I compute the embeddings of the small cyclotomic extensions into the others
   abs_emb = Array{NfToNfMor, 1}(undef, length(Cp))
   for i = 1:length(Cp)
     dCp = degree(Cp[i])
     if dCp == d
-      abs_emb[i] = NfToNfMor(KC, KC, gen(KC))
+      abs_emb[i] = id_hom(KC)
     else
       Cs = cyclotomic_extension(k, dCp)
       emb = NfRelToNfRelMor(Cs.Kr, C.Kr, gen(C.Kr)^div(d, dCp))
       img = C.mp[1](emb(Cs.mp[1]\(gen(Cs.Ka))))
-      abs_emb[i] = NfToNfMor(Cs.Ka, KC, img)
+      abs_emb[i] = hom(Cs.Ka, KC, img, check = false)
     end
   end
 
@@ -707,7 +707,7 @@ function extend_aut(A::ClassField, tau::T) where T <: Map
     
     C = cyclotomic_extension(k, Int(om))
     Tau = extend_to_cyclotomic(C, tau)
-    tau_Ka = NfToNfMor(C.Ka, C.Ka, C.mp[1](Tau(C.mp[1]\gen(C.Ka))))
+    tau_Ka = hom(C.Ka, C.Ka, C.mp[1](Tau(C.mp[1]\gen(C.Ka))), check = false)
     
     #TODO: need the inverse of this or similar...
     # currently, this is not used as it did not work.
@@ -944,7 +944,7 @@ function extend_hom(C::ClassField_pp, D::Array{ClassField_pp, 1}, tau)
     z_i_inv = invmod(z_i, om)
 
     Tau = NfRelToNfRelMor(Cy.Kr, Dy.Kr, tau, z)
-    @show tau_Ka = NfToNfMor(Cy.Ka, Dy.Ka, Dy.mp[1](Tau(Cy.mp[1]\gen(Cy.Ka))))
+    @show tau_Ka = hom(Cy.Ka, Dy.Ka, Dy.mp[1](Tau(Cy.mp[1]\gen(Cy.Ka))), check = false)
 
     lp = collect(keys(D[im].bigK.frob_cache))
     pp = maximum(minimum(x) for x = lp)

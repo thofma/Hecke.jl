@@ -132,13 +132,13 @@ function auto_of_maximal_real(K::AnticNumberField, n::Int)
   # zeta + 1/zeta = 2 cos(2pi/n)
   T = tschebyschew(parent(K.pol), n)
   i = evaluate(T, gen(K)*1//fmpz(2))*2
-  return Mor(K, K, i)
+  return hom(K, K, i, check = false)
 end
 
 function auto_simplify(A::Map, K::AnticNumberField)
   Qx = parent(K.pol)
   b = A(gen(K))
-  return Mor(K, K, b)
+  return hom(K, K, b, check = false)
 end
 
 function auto_power(A::Map, n::Int) 
