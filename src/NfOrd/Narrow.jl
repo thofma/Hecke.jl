@@ -7,7 +7,7 @@ function ==(A::NfOrdIdl, B::NfOrdFracIdl)
   end
 end
 
-==(A::NfOrdFracIdl, B::NfOrdIdl) = B==A
+==(A::NfOrdFracIdl, B::NfOrdIdl) = B == A
 
 @doc Markdown.doc"""
 ***
@@ -21,14 +21,14 @@ function reduce_ideal2(I::FacElem{NfOrdIdl, NfOrdIdlSet})
   a = FacElem(Dict(K(1) => fmpz(1)))
   A = ideal(O, 1)
 
-  for (k,v) = I.fac
+  for (k, v) = I.fac
     @assert order(k) === O
     if iszero(v)
       continue
     end
     if fst
       A, a = power_reduce2(k, v)
-      @hassert :PID_Test 1 (v>0 ? k^Int(v) : inv(k)^Int(-v)) == A*evaluate(a)
+      @hassert :PID_Test 1 (v > 0 ? k^Int(v) : inv(k)^Int(-v)) == A*evaluate(a)
       fst = false
     else
       B, b = power_reduce2(k, v)

@@ -1066,28 +1066,56 @@ function +(a::NfAbsOrd, b::NfAbsOrd; cached::Bool = false)
   nf(a) != nf(b) && error("Orders must have same ambient number field")
   if contains_equation_order(a) && contains_equation_order(b) &&
           isone(gcd(index(a), index(b)))
-    aB = basis_mat(a, copy = false)
-    bB = basis_mat(b, copy = false)
-    d = degree(a)
-    m = zero_matrix(FlintZZ, 2*d, d)
-    for i=1:d
-      for j=1:d
-        m[i,j]=bB.den*aB.num[i,j]
-        m[i+d,j]= aB.den*bB.num[i,j]
-      end
-    end
-    mat = _hnf_modular_eldiv(m, bB.den*aB.den, :lowerleft)
-    c = view(mat, d + 1:2*d, 1:d)
-    O = Order(nf(a), FakeFmpqMat(c, aB.den*bB.den), check = false, cached = cached)
-    O.primesofmaximality = union(a.primesofmaximality, b.primesofmaximality)
-    O.disc = gcd(discriminant(a), discriminant(b))
-    if a.disc<0 || b.disc<0
-      O.disc=-O.disc
-    end
-    return O
+    return sum_as_Z_modules(a, b, triangular = false)
   else
     return _order(nf(a), vcat(a.basis_nf, b.basis_nf), cached = cached, check = false)
   end
+end
+
+################################################################################
+#
+#  Sum as Z modules of orders
+#
+################################################################################
+
+function sum_as_Z_modules(O1::NfOrd, O2::NfOrd, z::fmpz_mat = zero_matrix(FlintZZ, 2 * degree(O1), degree(O1)); triangular::Bool = false)
+  K = nf(O1)
+  R1 = basis_mat(O1, copy = false)
+  S1 = basis_mat(O2, copy = false)
+  d = degree(K)
+  z1 = view(z, 1:d, 1:d)
+  mul!(z1, R1.num, S1.den)
+  # Assume that R1 and S1 are triangular
+  d1 = deepcopy(S1.den)
+  d2 = deepcopy(R1.den)
+
+  if triangular
+    for i in 1:degree(K)
+      mul!(d1, d1, R1.num[i, i])
+    end
+    for i in 1:degree(K)
+      mul!(d2, d2, S1.num[i, i])
+    end
+  else
+    mul!(d1, d1, det(R1.num))
+    mul!(d2, d2, det(S1.num))
+  end
+
+  d1 = gcd!(d1, d1, d2)
+
+  z2 = view(z, (d + 1):2*d, 1:d)
+  mul!(z2, S1.num, R1.den)
+  hnf_modular_eldiv!(z, d1, :lowerleft)
+  M = FakeFmpqMat(z, S1.den * R1.den)
+  M1 = sub(M, (nrows(M)-ncols(M)+1):nrows(M), 1:ncols(M))
+  @hassert :NfOrd 1 defines_order(K, M1)[1]
+  O = NfAbsOrd(K, M1, false)
+  O.primesofmaximality = union(O1.primesofmaximality, O2.primesofmaximality)
+  O.disc = gcd(discriminant(O1), discriminant(O2))
+  if O1.disc<0 || O2.disc<0
+    O.disc = -O.disc
+  end
+  return O
 end
 
 ###############################################################################
