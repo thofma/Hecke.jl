@@ -56,7 +56,7 @@ function cyclotomic_extension(k::AnticNumberField, n::Int)
     #Easy, just return the field
     Kr = number_field(t+1, cached = false, check = false)[1]
     rel2abs = NfRelToNf(Kr, k, gen(k), k(-1), Kr(gen(k)))
-    small2abs = NfToNfMor(k, k, gen(k))
+    small2abs = id_hom(k)
     c.Kr = Kr
     c.Ka = k
     c.mp = (rel2abs, small2abs)
@@ -77,7 +77,7 @@ function cyclotomic_extension(k::AnticNumberField, n::Int)
       #The polynomial splits completely!
       Kr, gKr = number_field(t - rt[1], cached = false, check = false)
       rel2abs = NfRelToNf(Kr, k, gen(k), rt[1], Kr(gen(k)))
-      small2abs = NfToNfMor(k, k, gen(k))
+      small2abs = id_hom(k)
       c.Kr = Kr
       c.Ka = k
       c.mp = (rel2abs, small2abs)
@@ -143,7 +143,7 @@ function cyclotomic_extension(k::AnticNumberField, n::Int)
   else
     Ka = k
     rel2abs = NfRelToNf(Kr, Ka, gen(Ka), -coeff(fk, 0), Kr(gen(Ka)))
-    small2abs = NfToNfMor(k, k, gen(k))
+    small2abs = id_hom(k)
     ZKa = maximal_order(k)
   end
 
@@ -181,7 +181,7 @@ function automorphisms(C::CyclotomicExt; gens::Vector{NfToNfMor} = small_generat
   #First extend the old generators
   for g in gens
     ng = Hecke.extend_to_cyclotomic(C, g)
-    na = NfToNfMor(C.Ka, C.Ka, C.mp[1](ng(genK)))
+    na = hom(C.Ka, C.Ka, C.mp[1](ng(genK)), check = false)
     push!(gnew, na)
   end 
   #Now add the automorphisms of the relative extension
@@ -191,7 +191,7 @@ function automorphisms(C::CyclotomicExt; gens::Vector{NfToNfMor} = small_generat
     k = degree(C.Kr)
     expo = divexact(eulerphi(fmpz(C.n)), k)
     l = Hecke.NfRelToNfRelMor(C.Kr, C.Kr, gen(C.Kr)^Int(lift(mU(U[1])^expo)))
-    l1 = NfToNfMor(C.Ka, C.Ka, C.mp[1](l(C.mp[1]\gen(C.Ka))))
+    l1 = hom(C.Ka, C.Ka, C.mp[1](l(C.mp[1]\gen(C.Ka))), check = false)
     #@assert iszero(Kc.Ka.pol(l1(gen(Kc.Ka)))) 
     push!(gnew, l1)
   else
@@ -200,7 +200,7 @@ function automorphisms(C::CyclotomicExt; gens::Vector{NfToNfMor} = small_generat
     S, mS = snf(s)
     for t = 1:ngens(S)
       l = Hecke.NfRelToNfRelMor(C.Kr, C.Kr, gen(C.Kr)^Int(lift(mU(ms(mS(S[t]))))))
-      push!(gnew, Hecke.NfToNfMor(C.Ka, C.Ka, C.mp[1](l(genK))))
+      push!(gnew, hom(C.Ka, C.Ka, C.mp[1](l(genK)), check = false))
     end
   end
   auts = closure(gnew, degree(C.Ka))

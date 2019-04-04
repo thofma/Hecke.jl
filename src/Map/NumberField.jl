@@ -96,7 +96,7 @@ function *(f::NfToNfMor, g::NfToNfMor)
   a = gen(domain(f))
   y = g(f(a))
 
-  return NfToNfMor(domain(f), codomain(g), y)
+  return hom(domain(f), codomain(g), y, check = false)
 end
 
 function ^(f::NfToNfMor, b::Int)
@@ -161,9 +161,9 @@ function automorphisms(K::AnticNumberField; copy::Bool = true)
   lr = roots(f1, max_roots = div(degree(K), 2))
   Aut1 = Vector{NfToNfMor}(undef, length(lr)+1)
   for i = 1:length(lr)
-    Aut1[i] = NfToNfMor(K, K, lr[i])
+    Aut1[i] = hom(K, K, lr[i], check = false)
   end
-  Aut1[end] = NfToNfMor(K, K, gen(K))
+  Aut1[end] = id_hom(K)
   auts = closure(Aut1, degree(K))
   _set_automorphisms_nf(K, auts)
   if copy
@@ -173,8 +173,16 @@ function automorphisms(K::AnticNumberField; copy::Bool = true)
   end
 end
 
-hom(K::AnticNumberField, L::AnticNumberField, a::nf_elem) = NfToNfMor(K, L, a)
+function hom(K::AnticNumberField, L::AnticNumberField, a::nf_elem; check::Bool = true, compute_inverse::Bool = false)
+ if check
+   if !iszero(evaluate(K.pol, a))
+     error("The data does not define a homomorphism")
+   end
+ end
+ return NfToNfMor(K, L, a, compute_inverse)
+end
 
-id_hom(K::AnticNumberField) = NfToNfMor(K, K, gen(K))
+
+id_hom(K::AnticNumberField) = hom(K, K, gen(K), check = false)
 
 morphism_type(::Type{AnticNumberField}) = NfToNfMor

@@ -452,7 +452,7 @@ function closure(S::Vector{NfToNfMor}, final_order::Int = -1)
   
   t = length(S)
   order = 1
-  elements = [NfToNfMor(K, K, gen(K))]
+  elements = [id_hom(K)]
   pols = gfp_poly[x]
   gpol = Rx(S[1].prim_img)
   if gpol != x

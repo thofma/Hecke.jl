@@ -40,7 +40,7 @@ function simplify(K::AnticNumberField; canonical::Bool = false)
     f = minpoly(Qx, a)
   end
   L = NumberField(f, cached = false, check = false)[1]
-  m = NfToNfMor(L, K, a)
+  m = hom(L, K, a, check = false)
   return L, m
 end
 

@@ -34,8 +34,6 @@
 
 export absolute_field
 
-# In case the code has stabilized, the type definition should go into
-# src/HeckeTypes.jl 
 
 ################################################################################
 #
@@ -408,7 +406,7 @@ end
 """
 function absolute_field(K::NfRel{nf_elem}, cached::Bool = false)
   Ka, a, b, c = _absolute_field(K, cached)
-  return Ka, NfRelToNf(K, Ka, a, b, c), NfToNfMor(base_ring(K), Ka, a)
+  return Ka, NfRelToNf(K, Ka, a, b, c), hom(base_ring(K), Ka, a, check = false)
 end
 
 @doc Markdown.doc"""

@@ -204,11 +204,6 @@ function evaluate!(z::fq_nmod, f::fmpz_poly, r::fq_nmod)
   return z
 end
 
-function Mor(K::AnticNumberField, L::AnticNumberField, y::nf_elem)
-  z = NfToNfMor(K, L, y)
-  return z
-end
-
 function _get_coeff_raw(x::fq_nmod, i::Int)
   u = ccall((:nmod_poly_get_coeff_ui, :libflint), UInt, (Ref{fq_nmod}, Int), x, i)
   return u
