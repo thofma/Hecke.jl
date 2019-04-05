@@ -715,20 +715,55 @@ princ_gen_special(A::NfAbsOrdIdl) = A.princ_gen_special[A.princ_gen_special[1] +
 > Returns whether $x$ and $y$ are equal.
 """
 function ==(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
+  if x === y
+    return true
+  end
   if has_2_elem(x) && has_2_elem(y)
     if x.gen_one == y.gen_one && x.gen_two == y.gen_two
       return true
     end
   end
-  m1 = minimum(x)
-  m2 = minimum(y)
-  if m1 != m2
-    return false
+  if isdefined(x, :norm) && isdefined(y, :norm)
+    if x.norm != y.norm
+      return false
+    end
   end
-  if isone(m1)
-    return true
+  if isdefined(x, :minimum) && isdefined(y, :minimum)
+    if x.minimum != y.minimum
+      return false
+    end
   end
-  return basis_mat(x, copy = false) == basis_mat(y, copy = false)
+  if isprime_known(x) && isprime_known(y)
+    if isprime(x) != isprime(y)
+      return false
+    end
+  end
+  if isdefined(x, :basis_mat) && isdefined(y, :basis_mat)
+    if ishnf(basis_mat(x, copy = false), :lowerleft) && ishnf(basis_mat(y, copy = false), :lowerleft)
+      return basis_mat(x, copy = false) == basis_mat(y, copy = false)
+    end
+  end
+  if isdefined(x, :basis_mat) && has_2_elem(y)
+    if !divisible(y.gen_one, minimum(x, copy = false))
+      return false
+    end
+    if !(y.gen_two in x)
+      return false
+    end 
+    return norm(x) == norm(y)
+  end
+  if isdefined(y, :basis_mat) && has_2_elem(y)
+    if !divisible(x.gen_one, minimum(y, copy = false))
+      return false
+    end
+    if !(x.gen_two in y)
+      return false
+    end 
+    return norm(x) == norm(y)
+  end
+  
+  
+  return _hnf(basis_mat(x, copy = false), :lowerleft) == _hnf(basis_mat(y, copy = false), :lowerleft)
 end
 
 ################################################################################
@@ -752,8 +787,12 @@ function in(x::NfAbsOrdElem, y::NfAbsOrdIdl)
     ant = anti_uniformizer(y)
     return (elem_in_nf(x) * ant) in OK
   end
+  return containment_by_matrices(x, y)
+end
+
+function containment_by_matrices(x::NfAbsOrdElem, y::NfAbsOrdIdl)
   v = matrix(FlintZZ, 1, degree(parent(x)), elem_in_basis(x))
-  t = FakeFmpqMat(v, fmpz(1))*basis_mat_inv(y, copy = false)
+  t = v*basis_mat_inv(y, copy = false)
   return isone(t.den) 
 end
 
