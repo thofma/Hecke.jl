@@ -519,8 +519,9 @@ end
 function set_special(G, data::Pair{Symbol, <:Any}...)
   if isa(G, Map{<:Any, <:Any, HeckeMap, <:Any})
     if !isdefined(G.header, :other)
-      D = G.header.other = Dict{Symbol, Any}()
+      G.header.other = Dict{Symbol, Any}()
     end
+    D = G.header.other
   elseif !isdefined(G, :other)
     D = G.other = Dict{Symbol, Any}()
   else
