@@ -1010,7 +1010,7 @@ function ray_class_group_fac_elem(m::NfOrdIdl, inf_plc::Array{InfPlc, 1} = Array
   if !isempty(p)
     H, eH, lH = Hecke._infinite_primes(O, p, m)
     T = G
-    G = direct_product(G, H)[1]
+    G = direct_product(G, H, task = :none)
   end
   
   @vprint :RayFacElem 1 "The multiplicative group is $G \n"
@@ -1369,7 +1369,7 @@ function ray_class_group_quo(n::Integer, m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2
     if !isempty(pr)
       @vtime :RayFacElem 1 H, eH, lH = Hecke._infinite_primes(O, pr, I)
       T = G
-      G = Hecke.direct_product(G, H)[1]
+      G = Hecke.direct_product(G, H, task = :none)
     end
   end
   
@@ -1968,7 +1968,7 @@ function has_principal_gen_1_mod_m(I::NfOrdIdl, m::NfOrdIdl, inf_plc::Array{InfP
   else
     #I have to take into account the signs!
     H, eH, lH = Hecke._infinite_primes(O, inf_plc, m)
-    GH, iG, iH = direct_product(G, H)
+    GH, (iG, iH) = direct_product(G, H)
     els_inf = GrpAbFinGenElem[lH(mU(U[i])) for i = 1:ngens(U)]
     els_tot = [iG(els[i]) + iH(els_inf[i]) for i = 1:ngens(U)]
     S, mS = sub(GH, els_tot)
@@ -2017,7 +2017,7 @@ function has_principal_gen_1_mod_m(I::FacElem{NfOrdIdl, NfOrdIdlSet}, m::NfOrdId
   else
     #I have to take into account the signs!
     H, eH, lH = Hecke._infinite_primes(O, inf_plc, m)
-    GH, iG, iH = direct_product(G, H)
+    GH, (iG, iH) = direct_product(G, H)
     els_inf = GrpAbFinGenElem[lH(mU(U[i])) for i = 1:ngens(U)]
     els_tot = [iG(els[i]) + iH(els_inf[i]) for i = 1:ngens(U)]
     S, mS = sub(GH, els_tot)
@@ -2155,7 +2155,7 @@ function ray_class_group_quo(n::Int, I::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Di
   if iszero(mod(n,2)) && !isempty(inf_plc)
     H, lH = Hecke.log_infinite_primes(O, inf_plc)
     T = G
-    G = Hecke.direct_product(G, H)[1]
+    G = Hecke.direct_product(G, H, task = :none)
   end
   expo = exponent(G)
   

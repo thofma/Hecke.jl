@@ -370,7 +370,7 @@ function hom(G::GrpAbFinGen, H::GrpAbFinGen)
   sH, mH = snf(H)  # mH : sH -> G
   n = ngens(sG)
   m = ngens(sH)
-  @show r = [cyclic_hom(x, y) for x = sG.snf for y = sH.snf]
+  r = [cyclic_hom(x, y) for x = sG.snf for y = sH.snf]
   R = GrpAbFinGen([x[1] for x = r])
   c = [x[2] for x = r]
 
@@ -386,9 +386,6 @@ function hom(G::GrpAbFinGen, H::GrpAbFinGen)
   return R, MapFromFunc(phi, ihp, R, MapParent(G, H, "homomorphisms"))
   return R, phi, ihp
 end
-
-#TODO: snf is wrong.... GrpAbFinGen([2,3,4]) is NOT in snf, however snf will not do anything
-
 
 ######################################################################
 # Dual
@@ -457,6 +454,7 @@ end
 (::QmodZ)(a::fmpq) = QmodZ(a)
 (::QmodZ)(a::Rational) = QmodZ(fmpq(a))
 
+#TODO: technically, dual Z could be Q/Z ...
 function dual(G::GrpAbFinGen)
   T, mT = torsion_subgroup(G)
   u = root_of_one(QmodZ, order(T))

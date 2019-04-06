@@ -210,7 +210,7 @@ function _multgrp_mod_pv(p::NfOrdIdl, v::Int, pv::NfOrdIdl; method=nothing)
     G1toO.generators[1] = gen1_obcs
     tame_part[p] = G1toO
 
-    G = direct_product(G1, G2)[1]
+    G = direct_product(G1, G2, task = :none)
 
     obcs_inv = gcdx(G2.snf[end], rel1)[2]
     function disc_log2(x::NfOrdQuoRingElem)
@@ -1301,10 +1301,7 @@ function _direct_product(groups::Vector{GrpAbFinGen}, maps::Vector{U}, ideals::V
     return groups[1], m
   end
 
-  G = groups[1]
-  for i = 2:length(groups)
-    G = direct_product(G, groups[i])[1]
-  end
+  G = direct_product(groups..., task = :none)
 
   if tame_wild
     tame = Dict{T, GrpAbFinGenToAbsOrdMap{S}}()
@@ -1395,10 +1392,7 @@ function _direct_product!(ideals_and_maps::Vector{Tuple{NfOrdIdl, Vector{GrpAbFi
   end
 
   @assert !isempty(groups)
-  G = groups[1]
-  for i = 2:length(groups)
-    G = direct_product(G, groups[i])[1]
-  end
+  G = direct_product(groups..., task = :none)
 
   function disc_log(a::NfOrdQuoRingElem)
     result = Vector{fmpz}()
@@ -1443,10 +1437,7 @@ function _direct_product!(ideals_and_maps::Dict{NfOrdIdl, Vector{GrpAbFinGenToNf
   end
 
   @assert !isempty(groups)
-  G = groups[1]
-  for i = 2:length(groups)
-    G = direct_product(G, groups[i])[1]
-  end
+  G = direct_product(groups..., task = :none)
 
   function disc_log(a::NfOrdQuoRingElem)
     result = Vector{fmpz}()
