@@ -1397,8 +1397,10 @@ function _can_solve_with_kernel(A::MatElem{T}, B::MatElem{T}) where T <: FieldEl
   return true, sol, n
 end
 
-#TODO: different to can_solve*(fmpz_mat) is hnf_with_tranformation -> hnf_with_trafo
+#TODO !!!: different to can_solve*(fmpz_mat) is hnf_with_tranformation -> hnf_with_trafo
 #maybe (definitely!) agree on one name and combine?
+
+hnf_with_trafo(x::fmpz_mat) = hnf_with_transform(x)
 
 @doc Markdown.doc"""
     can_solve(A::MatElem{T}, B::MatElem{T}, side = :right) where T <: RingElem -> Bool, MatElem

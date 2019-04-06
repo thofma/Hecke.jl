@@ -51,7 +51,7 @@ end
 #
 ################################################################################
 
-# TODO: Ask Claus what the bound is.
+# The bound should be sqrt(disc) (something from LLL)
 @doc Markdown.doc"""
     power_reduce2(A::NfOrdIdl, e::fmpz) -> NfOrdIdl, FacElem{nf_elem}
 Computes $B$ and $\alpha$ in factored form, such that $\alpha B = A^e$

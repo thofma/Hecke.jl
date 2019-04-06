@@ -94,7 +94,6 @@ function _norm_relation_setup_abelian(K::AnticNumberField; small_degree::Bool = 
     for i in 1:n
       z.pure_coefficients[i] = ls[i][1]
     end
-
   else
     z.coefficients = Vector{Vector{Tuple{NfToNfMor, Int}}}(undef, n)
     for i in 1:n
@@ -113,13 +112,17 @@ function _norm_relation_setup_abelian(K::AnticNumberField; small_degree::Bool = 
 end
 
 function _norm_relation_setup_generic(K::AnticNumberField; small_degree::Bool = true, target_den::fmpz = zero(fmpz))
+  println("Compute isomorphism ...")
   A = automorphisms(K)
+  println("Compute group table ...")
   G, AtoG, GtoA = generic_group(A, *);
+  println("Compute the abstract norm relation")
   if iszero(target_den)
     b, den, ls = _has_norm_relation_abstract(G, [f for f in subgroups(G, conjugacy_classes = true) if order(f[1]) > 1])
   else
     b, den, ls = _has_norm_relation_abstract(G, [f for f in subgroups(G, conjugacy_classes = true) if order(f[1]) > 1], target_den = target_den)
   end
+  println("done")
   @assert b
   n = length(ls)
 
@@ -130,14 +133,20 @@ function _norm_relation_setup_generic(K::AnticNumberField; small_degree::Bool = 
   z.ispure = false
  
   for i in 1:n
+    println("Computing fixed fields ...")
     F, mF = fixed_field(K, NfToNfMor[GtoA[f] for f in ls[i][1]])
+    println("Simplifying ...")
     S, mS = simplify(F)
     L = S
+    println("done")
+    @show L
     mL = mS * mF
     z.subfields[i] = L, mL
   end
 
-  z.coefficients_gen = Vector{Vector{Tuple{NfToNfMor, Int}}}(undef, n)
+  z.coefficients_gen = Vector{Vector{Tuple{Int, NfToNfMor, NfToNfMor}}}(undef, n)
+
+  @show ls
 
   for i in 1:n
     w = Vector{Tuple{Int, NfToNfMor, NfToNfMor}}(undef, length(ls[i][2]))
@@ -147,7 +156,7 @@ function _norm_relation_setup_generic(K::AnticNumberField; small_degree::Bool = 
     z.coefficients_gen[i] = w
   end
 
-  z.isabelian = true
+  z.isabelian = false
 
   return z
 end
@@ -175,11 +184,20 @@ end
 
 function check_relation(N::NormRelation, a::nf_elem)
   @assert !iszero(a)
-  z = one(field(N))
-  for i in 1:length(N)
-    z = z * N(norm(embedding(N, i), a), i)
+  if ispure(N)
+    z = one(field(N))
+    for i in 1:length(N)
+      z = z * N(norm(embedding(N, i), a), i)
+    end
+    return a^index(N) == z
+  else
+    # I applied the exponent when embedding
+    z = one(field(N))
+    for i in 1:length(N)
+      z = z * N([ norm(embedding(N, i), auto(a)^exp) for  (exp, auto, _) in N.coefficients_gen[i]], i)
+    end
+    return a^index(N) == z
   end
-  return a^index(N) == z
 end
 
 function (N::NormRelation)(x::Union{nf_elem, FacElem{nf_elem, AnticNumberField}}, i::Int)
@@ -188,12 +206,69 @@ function (N::NormRelation)(x::Union{nf_elem, FacElem{nf_elem, AnticNumberField}}
   y = mk(x)
   if ispure(N)
     return y^N.pure_coefficients[i]
-  else
-    for (auto, expo) in N.coefficients[i]
-      z = z * auto(y)^expo
-    end
-    return z
   end
+end
+
+function (N::NormRelation)(x::Union{nf_elem, FacElem{nf_elem, AnticNumberField}}, i::Int, j::Int)
+  @assert (1 <= j) && (j <= length(N.coefficients_gen[i]))
+  _, mk = subfield(N, i)
+  y = mk(x)
+  exp, _, auto = N.coefficients_gen[i][j]
+  return auto(mk(x))
+end
+
+function (N::NormRelation)(x::Vector{<:Union{nf_elem, FacElem{nf_elem, AnticNumberField}}}, i::Int)
+  @assert length(x) == length(N.coefficients_gen[i])
+  z = one(N.K)
+  for j in 1:length(N.coefficients_gen[i])
+    z = z * N(x[j], i, j)
+  end
+  return z
+end
+
+function induce_action(N::NormRelation, i, j, s, FB)
+  S = FB.ideals
+  ZK = order(S[1])
+  z = zero_matrix(SMat, FlintZZ, 0, length(S))
+  mk = embedding(N, i)
+  
+  _ , _, auto = N.coefficients_gen[i][j]
+  #@show auto
+  p = induce(FB, auto) 
+  #@show p
+
+  for l in 1:length(s)
+    v = Tuple{Int, fmpz}[]
+    for k in 1:length(S)
+      Q = S[k]
+      if minimum(Q, copy = false) == minimum(s[l], copy = false)
+        ant = anti_uniformizer(Q)
+        if (elem_in_nf(mk(s[l].gen_two.elem_in_nf)) * ant) in ZK
+          push!(v, (k, divexact(splitting_type(Q)[1], splitting_type(s[l])[1])))
+        end
+      end
+    end
+
+    # We still need to sort the positions of the non-zero entries
+    #@show l, v
+    sort!(v, by = x -> x[1])
+    #@show l, v
+    # Now apply the automorphism
+    r = [(p[i], e) for (i, e) in v]
+    sort!(r, lt = (a,b)->a[1]<b[1])
+    #@show l, r
+    push!(z, sparse_row(FlintZZ, r))
+  end
+
+  #for l in 1:length(s)
+  #  @show l
+  #  a = uniformizer(s[l])
+  #  @show [ valuation(a, Q) for Q in s]
+  #  @show [ valuation(auto(mk(a.elem_in_nf)), Q) for Q in FB.ideals]
+  #  @show [ z.rows[l][m] for m in 1:length(FB.ideals) ]
+  #  @assert [ valuation(auto(mk(a.elem_in_nf)), Q) for Q in FB.ideals] == [ z.rows[l][m] for m in 1:length(FB.ideals) ]
+  #end
+  return z
 end
 
 function induce_action(N::NormRelation, i, s::Vector, S::Vector)
@@ -247,31 +322,65 @@ function _add_sunits_from_norm_relation!(c, N)
     println("Now computing the S-unit group for lp of length $(length(lpk))")
     @assert length(lpk) > 0
     @time Szk, mS = Hecke.sunit_mod_units_group_fac_elem(lpk)
-    @time z = induce_action(N, i, lpk, c.FB.ideals) # Careful, don't use S instead of FB.ideals
+    
 
-    # Embedding is expensive, so let us build a cache
-    D = Dict{nf_elem, nf_elem}()
-    function N_mk(x, D, i)
+    function N_mk(x, D, i, j)
       if haskey(D, x)
         return D[x]
       else
-        y = N(x, i)
+        y = N(x, i, j)
         D[x] = y
         return y
       end
     end
 
-    print("Feeding in the S-units of the small field ... ")
 
-    for j=1:ngens(Szk)
-      print(j, " ")
-      u = mS(Szk[j])  #do compact rep here???
-      #@show z.rows
-      valofnewelement = mul(mS.valuations[j], z)
-      #v = zeros(fmpz, length(FB.ideals))
-      #v[valofnewelement.pos] = valofnewelement.values
-      #@assert [valuation((FacElem(Dict((N_mk(x, D, i), v) for (x,v) = u.fac))), P) for P in FB.ideals] == v
-      Hecke.class_group_add_relation(c, FacElem(Dict((N_mk(x, D, i), v) for (x,v) = u.fac)), valofnewelement)
+    if ispure(N)
+      @time z = induce_action(N, i, lpk, c.FB.ideals) # Careful, don't use S instead of FB.ideals
+
+      # Embedding is expensive, so let us build a cache
+      D = Dict{nf_elem, nf_elem}()
+      function N_mk(x, D, i)
+        if haskey(D, x)
+          return D[x]
+        else
+          y = N(x, i)
+          D[x] = y
+          return y
+        end
+      end
+
+      print("Feeding in the S-units of the small field ... ")
+
+      for j=1:ngens(Szk)
+        print(j, " ")
+        u = mS(Szk[j])  #do compact rep here???
+        #@show z.rows
+        valofnewelement = mul(mS.valuations[j], z)
+        #v = zeros(fmpz, length(FB.ideals))
+        #v[valofnewelement.pos] = valofnewelement.values
+        #@assert [valuation((FacElem(Dict((N_mk(x, D, i), v) for (x,v) = u.fac))), P) for P in FB.ideals] == v
+        Hecke.class_group_add_relation(c, FacElem(Dict((N_mk(x, D, i), v) for (x,v) = u.fac)), valofnewelement)
+      end
+    else
+      for j in 1:length(N.coefficients_gen[i])
+        z = induce_action(N, i, j, lpk, c.FB)
+
+        print("Feeding in the S-units of the small field ... ")
+
+        D = Dict{nf_elem, nf_elem}()
+
+        for l=1:ngens(Szk)
+          print(l, " ")
+          u = mS(Szk[l])  #do compact rep here???
+          #@show z.rows
+          valofnewelement = mul(mS.valuations[l], z)
+          #v = zeros(fmpz, length(c.FB.ideals))
+          #v[valofnewelement.pos] = valofnewelement.values
+          #@assert [valuation((FacElem(Dict((N_mk(x, D, i, j), v) for (x,v) = u.fac))), P) for P in c.FB.ideals] == v
+          Hecke.class_group_add_relation(c, FacElem(Dict((N_mk(x, D, i, j), v) for (x,v) = u.fac)), valofnewelement)
+        end
+      end
     end
 
     println("done")
@@ -726,7 +835,6 @@ function _has_norm_relation_abstract(G::GrpGen, H::Vector{Tuple{GrpGen, GrpGenTo
 
     b, w, K = can_solve_with_kernel(m, onee, side = :left)
     v = 1//target_den * change_base_ring(w, FlintQQ)
-    @show v
   end
 
   @assert b
@@ -772,6 +880,9 @@ function _has_norm_relation_abstract(G::GrpGen, H::Vector{Tuple{GrpGen, GrpGenTo
           push!(vv, (FlintZZ(den * v[1, (i - 1)*n^2 + (k - 1) * n + l]), g, h))
         end
       end
+    end
+    if length(vv) == 0
+      continue
     end
     push!(solutions, (sgroup, vv))
   end
