@@ -617,6 +617,7 @@ const NfOrdSet = NfAbsOrdSet
 export NfOrd, NfAbsOrd
 
 mutable struct NfAbsOrd{S, T} <: Ring
+  @declare_other
   nf::S
   basis_nf::Vector{T}        # Basis as array of number field elements
   basis_ord#::Vector{NfAbsOrdElem}    # Basis as array of order elements
@@ -1693,6 +1694,7 @@ mutable struct GrpAbFinGen <: GrpAb
   snf::Array{fmpz, 1}
   snf_map::Map{GrpAbFinGen, GrpAbFinGen}
   isfinalized::Bool
+  @declare_other
 
   function GrpAbFinGen(R::fmpz_mat, ishnf::Bool = false)
     r = new()
@@ -1798,6 +1800,7 @@ mutable struct NfRel{T} <: RelativeExtension{T}
   pol::Generic.Poly{T}
   S::Symbol
   auxilliary_data::Array{Any, 1}
+  @declare_other
 
   function NfRel{T}(f::Generic.Poly{T}, s::Symbol, cached::Bool = false) where {T}
     if haskey(NfRelID, (parent(f), f, s))
@@ -1950,6 +1953,7 @@ mutable struct NfAbsNS <: Field
   O#::NfAbsOrd{NfAbsNS, NfAbsNSElem}
   equation_order
   traces::Array{Array{fmpq, 1}, 1}
+  @declare_other
 
   function NfAbsNS(f::Array{fmpq_mpoly, 1}, S::Array{Symbol, 1}, cached::Bool = false)
     r = new()

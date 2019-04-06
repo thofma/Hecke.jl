@@ -233,6 +233,8 @@ end
 ################################################################################
 
 function Base.show(io::IO, a::NfAbsNS)
+  @show_name(io, a)
+  @show_special(io, a)
   print(io, "Non-simple number field with defining polynomials ", a.pol)
 end
 

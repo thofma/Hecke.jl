@@ -264,6 +264,8 @@ function show(io::IO, S::NfOrdSet)
 end
 
 function show(io::IO, O::NfAbsOrd)
+  @show_name(io, O)
+  @show_special(io, O)
   if ismaximal_known_and_maximal(O)
     show_maximal(io, O)
   else

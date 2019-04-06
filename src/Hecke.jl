@@ -465,6 +465,105 @@ macro hassert(args...)
   end
 end
 
+######################################################################
+# named printing support
+######################################################################
+# to use:
+# in HeckeMap
+#   in the show function, start with @show_name(io, map)
+# for other objetcs
+#   add @declare_other to the struct
+#   add @show_name(io, obj) to show
+#   optionally, add @show_special(io, obj) as well
+# on creation, or whenever, call set_name!(obj, string)
+# @show_name will set on printing if bound in the REPL
+
+macro declare_other()
+  esc(quote other::Dict{Symbol, Any} end )
+end
+
+
+function set_name!(G, name::String)
+  set_special(G, :name => name)
+end
+
+function hasspecial(G)
+  if isa(G, Map{<:Any, <:Any, HeckeMap, <:Any})
+    if isdefined(G.header, :other)
+      return true, G.header.other
+    else
+      return false, nothing
+    end
+  end
+  if !isdefined(G, :other)
+    return false, nothing
+  else
+    return true, G.other
+  end
+end
+
+function get_special(G, s::Symbol)
+  fl, D = hasspecial(G)
+  fl && get(D, s, nothing)
+  nothing
+end
+
+function set_name!(G)
+  s = get_special(G, :name)
+  s === nothing || return
+  sy = find_name(G)
+  sy === nothing || return
+  set_name!(G, string(sy))
+end
+
+function set_special(G, data::Pair{Symbol, <:Any}...)
+  if isa(G, Map{<:Any, <:Any, HeckeMap, <:Any})
+    if !isdefined(G.header, :other)
+      D = G.header.other = Dict{Symbol, Any}()
+    end
+  elseif !isdefined(G, :other)
+    D = G.other = Dict{Symbol, Any}()
+  else
+    D = G.other
+  end
+
+  for d in data
+    push!(D, d)
+  end
+end
+
+macro show_name(io, O)
+  return :( begin
+    local i = $(esc(io))
+    local o = $(esc(O))
+    s = get_special(o, :name)
+    if s === nothing
+      sy = find_name(o)
+      if sy !== nothing
+        s = string(sy)
+        set_name!(o, s)
+      end
+    end
+    if get(i, :compact, false) &&
+       s !== nothing
+      print(i, s)
+      return
+    end
+  end )
+end
+
+macro show_special(io, O)
+  return :( begin
+    local i = $(esc(io))
+    local o = $(esc(O))
+    s = get_special(o, :show)
+    if s !== nothing
+      s(i, o)
+      return
+    end
+  end )
+end
+
 ################################################################################
 #
 #  Custom test function
@@ -807,3 +906,4 @@ end
 #end
 
 end # module
+
