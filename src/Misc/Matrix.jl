@@ -1182,13 +1182,12 @@ function Base.cat(A::MatElem...;dims)
     end
   end
 
-  z = [similar(x) for x = A]
-  X = z[1]
+  local X
   for i=1:length(A)
     if i==1
-      X = hcat(A[1], z[2:end]...)
+      X = hcat(A[1], zero_matrix(base_ring(A[1]), nrows(A[1]), sum(Int[ncols(A[j]) for j=2:length(A)])))
     else
-      X = vcat(X, hcat(z[1:i-1]..., A[i], z[i+1:end]...))
+      X = vcat(X, hcat(zero_matrix(base_ring(A[1]), nrows(A[i]), sum(ncols(A[j]) for j=1:i-1)), A[i], zero_matrix(base_ring(A[1]), nrows(A[i]), sum(Int[ncols(A[j]) for j=i+1:length(A)]))))
     end
   end
   return X
