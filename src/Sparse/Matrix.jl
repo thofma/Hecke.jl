@@ -1007,6 +1007,9 @@ end
   Finds the largest, in absolute value, entry of $A$.
 """
 function maximum(::typeof(abs), A::SMat{fmpz})
+  if length(A.rows) == 0
+    return zero(FlintZZ)
+  end
   m = abs(A.rows[1].values[1])
   for i in A.rows
     for j in i.values

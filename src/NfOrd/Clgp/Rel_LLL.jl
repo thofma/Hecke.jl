@@ -142,15 +142,12 @@ function class_group_small_lll_elements_relation_start(clg::ClassGrpCtx{T},
   global _start = A
   O = order(A)
   K = nf(O)
-  local rt::UInt
-  @v_do :ClassGroup_time 2 rt = time_ns()
 
   local I, S, bd
 
   while true
     try
     L::FakeFmpqMat, Tr::fmpz_mat = lll(A, prec = prec)
-    @v_do :ClassGroup_time 2 _start += time_ns()-rt
     I = SmallLLLRelationsCtx(zero_matrix(FlintZZ, 1, 1))
     S::FakeFmpqMat = FakeFmpqMat(Tr)*basis_mat(A, copy = false)
     bd::fmpz = abs(discriminant(order(A)))*norm(A)^2
