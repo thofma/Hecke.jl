@@ -61,6 +61,7 @@ mutable struct MapHeader{D, C}
   image::Function
   preimage::Function
   cache::MapCache
+  @declare_other
 
   function MapHeader{D, C}() where {D, C}
     z = new{D, C}()
@@ -204,9 +205,18 @@ mutable struct MapFromFunc{R, T} <: Map{R, T, HeckeMap, MapFromFunc}
 end
 
 function Base.show(io::IO, M::MapFromFunc)
-  println(io, "Map from the $(M.f) julia-function")
+  @show_name(io, M)
+
+  io = IOContext(io, :compact => true)
+#  println(io, "Map from the $(M.f) julia-function")
+  println(io, "Map from")
+  show(io, domain(M)) 
+  print(io, " to ")
+  show(io, codomain(M))
+  print(io, " defined by a julia-function")
   if isdefined(M, :g)
-    println(io, "with inverse by $(M.g)")
+#    println(io, "with inverse by $(M.g)")
+    println(io, " with inverse")
   end
 end
 
@@ -219,3 +229,5 @@ function MapFromFunc(f::Function, g::Function, D, C)
 end
 
 export MapFromFunc
+
+

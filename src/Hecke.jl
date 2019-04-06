@@ -502,9 +502,11 @@ function hasspecial(G)
   end
 end
 
+import Nemo: get_special, set_special
+
 function get_special(G, s::Symbol)
   fl, D = hasspecial(G)
-  fl && get(D, s, nothing)
+  fl && return get(D, s, nothing)
   nothing
 end
 
@@ -512,7 +514,7 @@ function set_name!(G)
   s = get_special(G, :name)
   s === nothing || return
   sy = find_name(G)
-  sy === nothing || return
+  sy === nothing && return
   set_name!(G, string(sy))
 end
 
@@ -533,6 +535,8 @@ function set_special(G, data::Pair{Symbol, <:Any}...)
   end
 end
 
+extra_name(G) = G
+
 macro show_name(io, O)
   return :( begin
     local i = $(esc(io))
@@ -540,6 +544,9 @@ macro show_name(io, O)
     s = get_special(o, :name)
     if s === nothing
       sy = find_name(o)
+      if sy === nothing 
+        sy = extra_name(o)
+      end
       if sy !== nothing
         s = string(sy)
         set_name!(o, s)

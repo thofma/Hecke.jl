@@ -8,6 +8,8 @@
 #end
 
 function show(io::IO, M::Map)
+  @show_name(io, M)
+  io = Base.IOContext(io, :compact => true)
   print(io, "Map with following data\n")
   print(io, "Domain:\n")
   print(io, "=======\n")
@@ -39,6 +41,7 @@ function image(M::Map{D, C}, a) where {D, C}
 end
 
 function show(io::IO, M::InverseMap)
+  @show_name(io, M)
   println(io, "inverse of")
   println(io, " ", M.origin)
 end
