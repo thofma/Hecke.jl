@@ -258,18 +258,6 @@ end
 #
 ################################################################################
 
-function set_name!(K::AnticNumberField)
-  s = get_special(K, :name)
-  s !== nothing && return
-  sy = find_name(K)
-  sy === nothing && return
-  set_special(K, :name => string(sy))
-end
-
-function set_name!(K::AnticNumberField, s::String)
-  set_special(K, :name => s)
-end
-
 function show(io::IO, S::NfOrdSet)
   print(io, "Set of orders of the number field ")
   print(io, S.nf)
