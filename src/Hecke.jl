@@ -535,7 +535,7 @@ function set_special(G, data::Pair{Symbol, <:Any}...)
   end
 end
 
-extra_name(G) = G
+extra_name(G) = nothing
 
 macro show_name(io, O)
   return :( begin
