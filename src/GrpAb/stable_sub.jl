@@ -101,7 +101,7 @@ function Nemo.snf(M::ZpnGModule)
     
 end
 
-function is_stable(act::Array{T, 1}, mS::GrpAbFinGenMap) where T <: Map{GrpAbFinGen, GrpAbFinGen} 
+function isstable(act::Array{T, 1}, mS::GrpAbFinGenMap) where T <: Map{GrpAbFinGen, GrpAbFinGen} 
 
   S=mS.header.domain
   for s in gens(S)
@@ -249,7 +249,7 @@ end
 
 function sub(M::ZpnGModule, S::nmod_mat)
 
-  sg, msg=sub(M.V, lift(S))
+  sg, msg=sub(M.V, lift(S), false)
   G=Array{nmod_mat,1}(undef, length(M.G))
   for k=1:length(M.G)
     A=zero_matrix(M.R, ngens(sg), ngens(sg))
@@ -269,7 +269,7 @@ end
 
 function sub(M::ZpnGModule, n::Int)
   
-  sg,msg=sub(M.V,n)
+  sg,msg=sub(M.V, n, false)
   G=Array{nmod_mat,1}(undef, length(M.G))
   for k=1:length(M.G)
     A=zero_matrix(M.R, ngens(sg), ngens(sg))

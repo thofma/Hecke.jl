@@ -318,7 +318,7 @@ end
 ################################################################################
 
 function ==(x::AbsOrdQuoRing, y::AbsOrdQuoRing)
-  return base_ring(x) == base_ring(y) && ideal(x) == ideal(y)
+  return base_ring(x) === base_ring(y) && ideal(x) == ideal(y)
 end
 
 ==(x::AbsOrdQuoRingElem, y::AbsOrdQuoRingElem) = x.elem == y.elem

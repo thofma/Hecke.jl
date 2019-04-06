@@ -1,5 +1,5 @@
 
-export ray_class_group
+export ray_class_group, narrow_class_group
 
 add_verbose_scope(:RayFacElem)
 add_assert_scope(:RayFacElem)
@@ -56,14 +56,26 @@ end
 
 """
 function ray_class_group(m::NfOrdIdl, inf_plc::Array{InfPlc,1}=InfPlc[]; n_quo=0, GRH::Bool = true)
-
   if n_quo!=0
     return ray_class_group_quo(n_quo, m, inf_plc, GRH = GRH)
   else 
     return ray_class_group_fac_elem(m, inf_plc, GRH = GRH)
   end
-
 end
+
+@doc Markdown.doc"""
+***
+    narrow_class_group(L::NfOrd) -> GrpAbFinGen, Map
+> Compute the narrow (or strict) class group of $L$, ie. the
+> group of invertable ideals modulo the group of totally positive elements.
+> In case the field has no real embedding, this is just the class group.
+"""
+function narrow_class_group(OK::NfOrd)
+  I = ideal(OK, 1)
+  K = nf(OK)
+  return ray_class_group(I, real_places(K))
+end
+
 
 ###############################################################################
 #
@@ -994,8 +1006,8 @@ function ray_class_group_fac_elem(m::NfOrdIdl, inf_plc::Array{InfPlc, 1} = Array
 # First of all, we compute all these groups with their own maps
 #  
 
-  O=parent(m).order
-  K=nf(O)
+  O = parent(m).order
+  K = nf(O)
   
   C, mC = class_group(O, GRH = GRH)
   _assure_princ_gen(mC)

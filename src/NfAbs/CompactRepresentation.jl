@@ -225,7 +225,7 @@ function evaluate_mod(a::FacElem{nf_elem, AnticNumberField}, B::NfOrdFracIdl)
   @hassert :CompactPresentation 1 factored_norm(B) == abs(factored_norm(a))
   @hassert :CompactPresentation 2 B == ideal(order(B), a)
 
-  @assert order(B) == ZK
+  @assert order(B) === ZK
   pp = fmpz(1)
   re = K(0)
   while (true)

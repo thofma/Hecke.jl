@@ -442,10 +442,10 @@ end
 function issubfield(K::AnticNumberField, L::AnticNumberField)
   fl = _issubfield_first_checks(K, L)
   if !fl
-    return false, NfToNfMor(K, L, L())
+    return false, hom(K, L, zero(L), check = false)
   end
   b, prim_img = _issubfield(K, L)
-  return b, NfToNfMor(K, L, prim_img)
+  return b, hom(K, L, prim_img, check = false)
 end
 
 
@@ -472,10 +472,10 @@ end
 function issubfield_normal(K::AnticNumberField, L::AnticNumberField)
   fl = _issubfield_first_checks(K, L)
   if !fl
-    return false, NfToNfMor(K, L, L())
+    return false, hom(K, L, zero(L), check = false)
   end
   b, prim_img = _issubfield_normal(K, L)
-  return b, NfToNfMor(K, L, prim_img)
+  return b, hom(K, L, prim_img, check = false)
 
 end
 
@@ -495,16 +495,16 @@ function isisomorphic(K::AnticNumberField, L::AnticNumberField)
   f = K.pol
   g = L.pol
   if degree(f) != degree(g)
-    return false, NfToNfMor(K, L, L())
+    return false, hom(K, L, zero(L), check = false)
   end
   if signature(K) != signature(L)
-    return false, NfToNfMor(K, L, L())
+    return false, hom(K, L, zero(L), check = false)
   end
   try
     OK = _get_maximal_order_of_nf(K)
     OL = _get_maximal_order_of_nf(L)
     if discriminant(OK) != discriminant(OL)
-      return false, NfToNfMor(K, L, L())
+      return false, hom(K, L, zero(L), check = false)
     end
   catch e
     if !isa(e, AccessorNotSetError)
@@ -512,14 +512,14 @@ function isisomorphic(K::AnticNumberField, L::AnticNumberField)
     end
     t = discriminant(f)//discriminant(g)
     if !issquare(numerator(t)) || !issquare(denominator(t))
-      return false, NfToNfMor(K, L, L())
+      return false, hom(K, L, zero(L), check = false)
     end
   end
   b, prim_img = _issubfield(K, L)
   if !b
-    return b, NfToNfMor(K, L, L())
+    return b, hom(K, L, zero(L), check = false)
   else
-    return b, NfToNfMor(K, L, prim_img, true)
+    return b, hom(K, L, prim_img, check = false, compute_inverse = true)
   end
 end
 
@@ -812,7 +812,25 @@ The normal closure of $K$ together with the embedding map.
 function normal_closure(K::AnticNumberField)
   s = splitting_field(K.pol)
   r = roots(K.pol, s)[1]
-  return s, hom(K, s, r)
+  return s, hom(K, s, r, check = false)
 end
 
+function show_name(io::IO, K::AnticNumberField)
+  if get(io, :compact, false)
+    n = Nemo.get_special(K, :name)
+    print(io, n)
+  else
+    print(io, "Number field over Rational Field")
+    print(io, " with defining polynomial ", K.pol)
+  end
+end
+
+function set_name!(K::AnticNumberField, s::String)
+  Nemo.set_special(K, :name => s, :show => show_name)
+end
+
+function set_name!(K::AnticNumberField)
+  s = find_name(K)
+  s === nothing || set_name!(K, string(s))
+end
 

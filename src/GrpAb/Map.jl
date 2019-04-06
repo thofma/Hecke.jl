@@ -55,7 +55,7 @@ function haspreimage(M::GrpAbFinGenMap, a::GrpAbFinGenElem)
   end
 
   m = vcat(M.map, rels(codomain(M)))
-  fl, p = cansolve(m, a.coeff, side = :left)
+  fl, p = can_solve(m, a.coeff, side = :left)
   if fl
     return true, domain(M)(view(p, 1:1, 1:ngens(domain(M))))
   else
@@ -77,7 +77,7 @@ function hasimage(M::GrpAbFinGenMap, a::GrpAbFinGenElem)
   end
 
   m = vcat(M.imap, rels(domain(M)))
-  fl, p = cansolve(m, a.coeff, side = :left)
+  fl, p = can_solve(m, a.coeff, side = :left)
   if fl
     return true, codomain(M)(view(p, 1:1, 1:ngens(codomain(M))))
   else
@@ -111,7 +111,7 @@ function hom(A::Array{GrpAbFinGenElem, 1}, B::Array{GrpAbFinGenElem, 1}; check::
     T = sub(T, 1:nrows(T), 1:length(A))
     n = vcat([x.coeff for x in B])
     n = T*n
-    if !cansolve(rels(parent(B[1])), n, side = :left)[1]
+    if !can_solve(rels(parent(B[1])), n, side = :left)[1]
       error("Data does not define a homomorphism")
     end
   end
@@ -271,7 +271,7 @@ a morphism $f \colon G \to A$, such that $A$ is the quotient of $G$ with
 respect to the image of $h$.
 """
 function cokernel(h::GrpAbFinGenMap, add_to_lattice::Bool = true)
-  S, mS = image(h)
+  S, mS = image(h, false)
   return quo(codomain(h), GrpAbFinGenElem[mS(g) for g in gens(S)], add_to_lattice)
 end
 

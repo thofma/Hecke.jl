@@ -193,13 +193,6 @@ function *(a::AbsAlgAssIdl{S, T, U}, b::AbsAlgAssIdl{S, T, U}) where {S, T, U}
     return deepcopy(b)
   end
 
-  if !isright_ideal(a)
-    error("First argument is not a right ideal")
-  end
-  if !isleft_ideal(b)
-    error("Second argument is not a left ideal")
-  end
-
   A = algebra(a)
   ba = basis(a, copy = false)
   bb = basis(b, copy = false)
@@ -445,7 +438,7 @@ function quo(a::AbsAlgAssIdl{S, T, U}, b::AbsAlgAssIdl{S, T, U}) where { S, T, U
 
   N = transpose(vcat(MM, Mb)) # Another basis matrix for a
   function _image(x::AbsAlgAssElem)
-    t, y = cansolve(N, matrix(K, dim(A), 1, coeffs(x, copy = false)))
+    t, y = can_solve(N, matrix(K, dim(A), 1, coeffs(x, copy = false)))
     if t
       return B([ y[i, 1] for i = 1:dim(B) ])
     else

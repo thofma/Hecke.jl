@@ -544,9 +544,8 @@ function representation_matrix(a::AlgGrpElem, action::Symbol=:left)
   return M
 end
 
-function representation_matrix(a::AlgAssElem, action::Symbol=:left)
+function representation_matrix!(a::AlgAssElem, M::MatElem, action::Symbol = :left)
   A = parent(a)
-  M = zero_matrix(base_ring(A), dim(A), dim(A))
   if action==:left
     for i = 1:dim(A)
       if iszero(a.coeffs[i])
@@ -572,6 +571,13 @@ function representation_matrix(a::AlgAssElem, action::Symbol=:left)
   else
     error("Not yet implemented")
   end
+  return nothing
+end
+
+function representation_matrix(a::AlgAssElem, action::Symbol = :left)
+  A = parent(a)
+  M = zero_matrix(base_ring(A), dim(A), dim(A))
+  representation_matrix!(a, M, action)
   return M
 end
 

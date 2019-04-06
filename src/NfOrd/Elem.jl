@@ -286,7 +286,7 @@ Base.hash(x::NfAbsOrdElem, h::UInt) = Base.hash(x.elem_in_nf, h)
 
 > Returns whether $x$ and $y$ are equal.
 """
- ==(x::NfAbsOrdElem, y::NfAbsOrdElem) = parent(x) == parent(y) &&
+ ==(x::NfAbsOrdElem, y::NfAbsOrdElem) = parent(x) === parent(y) &&
                                             x.elem_in_nf == y.elem_in_nf
 
 ################################################################################
@@ -931,6 +931,18 @@ for T in [Integer, fmpz]
     end
 
     add!(z::NfAbsOrdElem, x::$T, y::NfAbsOrdElem) = add!(z, y, x)
+  end
+end
+
+for T in [Integer, fmpz]
+  @eval begin
+    @inline function sub!(z::NfAbsOrdElem, x::NfAbsOrdElem, y::$T)
+      z.elem_in_nf = sub!(z.elem_in_nf, x.elem_in_nf, y)
+      z.has_coord = false
+      return z
+    end
+
+    sub!(z::NfAbsOrdElem, x::$T, y::NfAbsOrdElem) = add!(z, y, x)
   end
 end
 

@@ -302,7 +302,7 @@ end
 
 # Iteratively built up subgroups from cyclic groups.
 # Any subgroup is of the form <C_1,...C_k>, where k are cyclic subgroups.
-function _subgroups(G::GrpGen; normal::Bool = false)
+function _subgroups_all(G::GrpGen; normal::Bool = false)
   res = Vector{GrpGenElem}[]
   res_gens = Vector{GrpGenElem}[]
   cur_grps, Cgen = _cyclic_subgroups(G)
@@ -339,22 +339,40 @@ end
 
 # TODO: Once the subfield code is merged, make subgroups return proper
 # subgroups
-function subgroups(G::GrpGen; order::Int = 0, index::Int = 0, normal::Bool = false)
-  H = _subgroups(G, normal = normal)
+function subgroups(G::GrpGen; order::Int = 0,
+                              index::Int = 0,
+                              normal::Bool = false,
+                              conjugacy_classes::Bool = false)
+  H = _subgroups_all(G, normal = normal)
   if order > 0
-    return [h for h in H if length(h) == order]
+    HH = Vector{Vector{GrpGenElem}}[h for h in H if length(h) == order]
   elseif index > 0
-    return [h for h in H if divexact(length(G), length(h)) == index]
+    HH = [Vector{Vector{GrpGenElem}}h for h in H if divexact(length(G), length(h)) == index]
   else
-    return H
+    HH = H
   end
-end
 
-function _proper_subgroups(G::GrpGen; kw...)
-  subs = subgroups(G; kw...)
-  res = Vector{Tuple{GrpGen, GrpGenToGrpGenMor}}(undef, length(subs))
-  for i in 1:length(subs)
-    res[i] = subgroup(G, subs[i])
+  if conjugacy_classes
+    HHH = Vector{Vector{GrpGenElem}}()
+    for S in HH
+      new = true
+      for g in G
+        Sg = sort!(GrpGenElem[g * s * inv(g) for s in S], by = x -> x.i)
+        if any(isequal(Sg), HHH)
+          new = false
+          break
+        end
+      end
+      if new
+        push!(HHH, S)
+      end
+    end
+    HH = HHH
+  end
+  
+  res = Vector{Tuple{GrpGen, GrpGenToGrpGenMor}}(undef, length(HH))
+  for i in 1:length(HH)
+    res[i] = subgroup(G, HH[i])
   end
   return res
 end
@@ -411,7 +429,7 @@ function image(f::GrpGenToGrpGenMor, g::GrpGenElem)
 end
 
 function Base.show(io::IO, f::GrpGenToGrpGenMor)
-  println(io, "Morphism from group\n", f.domain, "to\n", f.codomain)
+  println(io, "Morphism from group\n", f.domain, " to\n", f.codomain)
 end
 
 ###############################################################################
@@ -434,7 +452,7 @@ function closure(S::Vector{NfToNfMor}, final_order::Int = -1)
   
   t = length(S)
   order = 1
-  elements = [NfToNfMor(K, K, gen(K))]
+  elements = [id_hom(K)]
   pols = gfp_poly[x]
   gpol = Rx(S[1].prim_img)
   if gpol != x
@@ -499,8 +517,8 @@ function closure(S::Vector{NfToNfMor}, final_order::Int = -1)
 end
 
 function small_generating_set(Aut::Array{NfToNfMor, 1})
-  K=Aut[1].header.domain
-  a=gen(K)
+  K = domain(Aut[1])
+  a = gen(K)
   Identity = Aut[1]
   for i in 1:length(Aut)
     Au = Aut[i]
@@ -509,7 +527,7 @@ function small_generating_set(Aut::Array{NfToNfMor, 1})
       break
     end
   end
-  return  Hecke.small_generating_set(Aut, *, Identity)
+  return small_generating_set(Aut, *, Identity)
 end
 
 ################################################################################
@@ -518,6 +536,8 @@ end
 #
 ################################################################################
 
+# TODO: Cache the orders of the generators of the small_groups.
+#       Do not recompute it here.
 function find_small_group(G::GrpGen)
   l = order(G)
 
@@ -537,8 +557,8 @@ function find_small_group(G::GrpGen)
 
   local ordershape
 
-  for j in 1:length(groups_from_magma[order(G)])
-    ordershape = groups_from_magma[order(G)][j][4]
+  for j in 1:length(small_groups_1_63[order(G)])
+    ordershape = small_groups_1_63[order(G)][j][4]
 
     candidate = true
     for (o, no) in ordershape
@@ -567,13 +587,13 @@ function find_small_group(G::GrpGen)
   idG = id(G)
 
   for j in candidates
-    H = groups_from_magma[order(G)][j]
+    H = small_groups_1_63[order(G)][j]
 
-    elbyord = [elements_by_orders[o] for o in H[2]]
+    elbyord = [elements_by_orders[order(o)] for o in H[1]]
 
     it = Iterators.product(elbyord...)
 
-    words = H[3]
+    words = H[2]
     
     for poss in it
       is_hom = true
@@ -586,13 +606,12 @@ function find_small_group(G::GrpGen)
 
       if is_hom
         if length(closure(collect(poss), *, idG)) == order(G)
-          return true, j, poss
+          return order(G), j
         end
       end
     end
   end
-
-  return false
+  throw(error("Could not identify group"))
 end
 
 function eval_word(S, w::Vector{Int})
@@ -608,9 +627,9 @@ function eval_word(S, w::Vector{Int})
 end
 
 function automorphisms(i, j)
-  Gdata = groups_from_magma[i][j]
+  Gdata = small_groups_1_63[i][j]
   P = PermGroup(i)
-  G = generic_group(closure([P(p) for p in Gdata[1]], *), *)
+  G, _  = generic_group(closure([P(p) for p in Gdata[1]], *), *)
 
   l = order(G)
 
@@ -626,11 +645,11 @@ function automorphisms(i, j)
     end
   end
 
-  elbyord = [elements_by_orders[o] for o in Gdata[2]]
+  elbyord = [elements_by_orders[order(o)] for o in Gdata[1]]
 
   it = Iterators.product(elbyord...)
 
-  words::Vector{Vector{Int}} = Gdata[3]
+  words::Vector{Vector{Int}} = Gdata[2]
 
   idG = id(G)
 

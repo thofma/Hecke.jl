@@ -30,6 +30,14 @@ end
 
 ################################################################################
 #
+#  Getindex
+#
+################################################################################
+
+Base.getindex(a::FakeFmpqMat, i::Int, j::Int) = fmpq(a.num[i, j], a.den)
+
+################################################################################
+#
 #  Hashing
 #
 ################################################################################
@@ -63,11 +71,16 @@ end
 
 function inv(x::FakeFmpqMat)
   i, d_i = pseudo_inv(x.num) 
-  #TODO gcd d_i and x.den 1st!!!
-  i *= x.den
-  z = FakeFmpqMat(i,d_i)
-  simplify_content!(z)
-  return z
+  g = gcd(d_i, x.den)
+  if isone(g)
+    return FakeFmpqMat(i * x.den, d_i, true)
+  elseif g == d_i
+    return FakeFmpqMat(i * divexact(x.den, d_i))
+  elseif g == x.den
+    return FakeFmpqMat(i, divexact(d_i, x.den), true)
+  else
+    return FakeFmpqMat(i * divexact(x.den, g), divexact(d_i, g), true)
+  end
 end
 
 ################################################################################
@@ -77,14 +90,14 @@ end
 ################################################################################
 
 function +(x::FakeFmpqMat, y::FakeFmpqMat)
-  t = y.den*x.num + x.den*y.num
-  d = x.den*y.den
-  z = FakeFmpqMat(t,d)
+  t = y.den * x.num + x.den * y.num
+  d = x.den * y.den
+  z = FakeFmpqMat(t, d)
   return z
 end
 
 function *(x::FakeFmpqMat, y::FakeFmpqMat)
-  t = x.num*y.num
+  t = x.num * y.num
   d = x.den * y.den
   z = FakeFmpqMat(t, d)
   return z
@@ -104,18 +117,55 @@ end
 ################################################################################
 
 function *(x::FakeFmpqMat, y::fmpz_mat)
-  t = x.num*y
+  t = x.num * y
   z = FakeFmpqMat(t, denominator(x))
-  simplify_content!(z)
   return z
 end
 
 function *(x::fmpz_mat, y::FakeFmpqMat)
-  t = x*y.num
+  t = x * y.num
   z = FakeFmpqMat(t, denominator(y))
-  simplify_content!(z)
   return z
 end
+
+function *(x::Integer, y::FakeFmpqMat)
+  g = gcd(x, y.den)
+  if isone(g)
+    return FakeFmpqMat(y.num * x, y, true)
+  else
+    return FakeFmpqMat(y.num * divexact(x, g), divexact(y.den, g), true)
+  end
+end
+
+function *(x::fmpz, y::FakeFmpqMat)
+  g = gcd(x, y.den)
+  if isone(g)
+    return FakeFmpqMat(y.num * x, y, true)
+  else
+    return FakeFmpqMat(y.num * divexact(x, g), divexact(y.den, g), true)
+  end
+end
+
+*(x::FakeFmpqMat, y::Integer) = y * x
+
+*(x::FakeFmpqMat, y::fmpz) = y * x
+
+function *(x::fmpq, y::FakeFmpqMat)
+  n = numerator(x)
+  d = denominator(x)
+  g = gcd(n, y.den)
+  if isone(g)
+    return FakeFmpqMat(y.num * n, y.den * d, true)
+  else
+    return FakeFmpqMat(y.num * divexact(n, g), d * divexact(y.den, d), true)
+  end
+end
+
+*(x::FakeFmpqMat, y::fmpq) = y * x
+
+*(x::FakeFmpqMat, y::Rational{<:Integer}) = x * fmpq(y)
+
+*(x::Rational{<:Integer}, y::FakeFmpqMat) = y * x
 
 ################################################################################
 #
@@ -150,6 +200,23 @@ function FakeFmpqMat(x::Vector{fmpq})
   return FakeFmpqMat(M,den)
 end
 
+function fmpq_mat(x::FakeFmpqMat)
+  z = fmpq(1, x.den) * matrix(FlintQQ, x.num)
+  return z
+end
+
+function fmpq_mat(x::fmpz_mat)
+  z = zero_matrix(FlintQQ, nrows(x), ncols(x))
+  ccall((:fmpq_mat_set_fmpz_mat, :libflint), Nothing, (Ref{fmpq_mat}, Ref{fmpz_mat}), z, x)
+  return z
+end
+
+function _fmpq_mat_to_fmpz_mat_den(x::fmpq_mat)
+  z = zero_matrix(FlintZZ, nrows(x), ncols(x))
+  d = fmpz()
+  ccall((:fmpq_mat_get_fmpz_mat_matwise, :libflint), Nothing, (Ref{fmpz_mat}, Ref{fmpz}, Ref{fmpq_mat}), z, d, x)
+  return z, d
+end
 
 ################################################################################
 #
@@ -188,9 +255,6 @@ function Base.deepcopy_internal(x::FakeFmpqMat, dict::IdDict)
   z.den = Base.deepcopy_internal(x.den, dict)
   z.rows = nrows(x)
   z.cols = ncols(x)
-  if isdefined(x, :parent)
-    z.parent = x.parent
-  end
   return z
 end
 

@@ -161,15 +161,15 @@ function AlgAss(f::PolyElem)
 end
 
 function AlgAss(O::Union{NfAbsOrd, AlgAssAbsOrd}, I::Union{NfAbsOrdIdl, AlgAssAbsOrdIdl}, p::Union{Integer, fmpz})
-  @assert order(I) == O
+  @assert order(I) === O
 
   n = degree(O)
-  BO = basis(O)
-  BOmod = elem_type(O)[ mod(O(v), I) for v in BO ]
+  BO = basis(O, copy = false)
+  BOmod = elem_type(O)[ mod(v, I) for v in BO ]
   Fp = GF(p, cached=false)
   B = zero_matrix(Fp, n, n)
   for i = 1:n
-    _b = elem_in_basis(BOmod[i])
+    _b = elem_in_basis(BOmod[i], copy = false)
     for j = 1:n
       B[i, j] = Fp(_b[j])
     end
@@ -195,13 +195,16 @@ function AlgAss(O::Union{NfAbsOrd, AlgAssAbsOrd}, I::Union{NfAbsOrdIdl, AlgAssAb
   if O isa AlgAssAbsOrd
     iscom = iscommutative(O)
   end
+  
+  aux = O()
 
   for i = 1:r
     for j = 1:r
       if iscom && j < i
         continue
       end
-      c = elem_in_basis(mod(bbasis[i]*bbasis[j], I))
+      mul!(aux, bbasis[i], bbasis[j])
+      c = elem_in_basis(mod(aux, I))
       for k = 1:n
         d[perm[k], 1] = c[k]
       end
@@ -229,8 +232,8 @@ function AlgAss(O::Union{NfAbsOrd, AlgAssAbsOrd}, I::Union{NfAbsOrdIdl, AlgAssAb
 
   local _image
 
-  let n = n, r = r, d = d, I = I, A = A, L = L, U = U
-    function _image(a::Union{NfAbsOrdElem, AlgAssAbsOrdElem })
+  let n = n, r = r, d = d, I = I, A = A, L = L, U = U, perm = perm
+    function _image(a::Union{NfAbsOrdElem, AlgAssAbsOrdElem})
       c = elem_in_basis(mod(a, I))
       for k = 1:n
         d[perm[k], 1] = c[k]
@@ -637,7 +640,7 @@ function subalgebra(A::AlgAss{T}, basis::Array{AlgAssElem{T, AlgAss{T}},1}) wher
     for j=1:length(basis)
       x=basis[i]*basis[j]
       N1=matrix(base_ring(A), dim(A), 1, x.coeffs)
-      b, N = cansolve(B, N1)
+      b, N = can_solve(B, N1)
       @assert b
       for k=1:length(basis)
         M[i,j,k]=N[k,1]
@@ -1428,7 +1431,7 @@ function _matrix_basis(A::AlgAss{T}, idempotents::Vector{S}) where { T <: Union{
     NN = zero_matrix(base_ring(A), 4*dim(eAe), 1)
     NN = vcat(NN, matrix(base_ring(A), dim(eAe), 1, coeffs(bb)))
     NN = vcat(NN, matrix(base_ring(A), dim(eAe), 1, coeffs(aa)))
-    b, yy = cansolve(transpose(N), NN)
+    b, yy = can_solve(transpose(N), NN)
     @assert b
     y = m1(m2(eAe([ yy[i, 1] for i = 1:dim(eAe) ])))
 

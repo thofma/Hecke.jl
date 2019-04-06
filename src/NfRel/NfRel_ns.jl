@@ -516,7 +516,7 @@ function minpoly_sparse(a::NfRel_nsElem)
   while true
     if n % i == 0
       echelon!(M)
-      fl, so = cansolve_ut(sub(M, 1:i, 1:n), sz)
+      fl, so = can_solve_ut(sub(M, 1:i, 1:n), sz)
       if fl
         so = mul(so, sub(M, 1:i, n+1:ncols(M)))
         # TH: If so is the zero vector, we cannot use the iteration,
@@ -678,7 +678,7 @@ mutable struct NfRel_nsToNfRel_nsMor{T} <: Map{NfRel_ns{T}, NfRel_ns{T}, HeckeMa
     end
 
     z = new{T}()
-    z.coeff_aut = NfToNfMor(K.base_ring, K.base_ring, gen(K.base_ring))
+    z.coeff_aut = id_hom(K.base_ring)
     z.emb = emb
     z.header = MapHeader(K, L, image)
     return z
@@ -730,12 +730,12 @@ function Base.:(==)(f::NfRel_nsToNfRel_nsMor{T}, g::NfRel_nsToNfRel_nsMor{T}) wh
   L = domain(f)
   K = base_ring(L)
 
-  if f(L(gen(K))) != g(L(gen(K)))
+  if f.coeff_aut.prim_img != g.coeff_aut.prim_img
     return false
   end
 
-  for a in gens(L)
-    if f(a) != g(a)
+  for i = 1:ngens(L)
+    if f.emb[i] != g.emb[i]
       return false
     end
   end
@@ -791,7 +791,7 @@ function simple_extension(K::NfRel_ns{T}) where {T}
   n = ngens(K)
   g = gens(K)
   if n == 1
-    fl, p = is_univariate(K.pol[1])
+    fl, p = isunivariate(K.pol[1])
     Ks, gKs = number_field(p, cached = false, check = false)
     return Ks, NfRelToNfRel_nsMor(Ks, K, g[1], [gKs])
   end
@@ -876,7 +876,7 @@ function Base.copy(a::NfRelElem)
 end
 
 function Nemo.discriminant(K::NfRel_ns)
-  p = [is_univariate(x)[2] for x = K.pol]
+  p = [isunivariate(x)[2] for x = K.pol]
   d = discriminant(p[1])
   n = degree(p[1])
   for i=2:length(p)

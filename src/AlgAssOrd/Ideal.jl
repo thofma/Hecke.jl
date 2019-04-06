@@ -154,13 +154,6 @@ function *(a::AlgAssAbsOrdIdl{S, T}, b::AlgAssAbsOrdIdl{S, T}) where {S, T}
     return deepcopy(b)
   end
 
-  if !isright_ideal(a)
-    error("First argument is not a right ideal")
-  end
-  if !isleft_ideal(b)
-    error("Second argument is not a left ideal")
-  end
-
   d = degree(order(a))
   ba = basis(a, copy = false)
   bb = basis(b, copy = false)
@@ -319,9 +312,6 @@ function extend(A::AlgAssAbsOrdIdl, O::AlgAssAbsOrd, action::Symbol = :twosided)
       for j = 1:d
         t = Y[i]*X[j]
         elem_to_mat_row!(M, ii + j, t)
-        #for k = 1:d
-        #  M[(i - 1)*d + j, k] = elem_in_basis(t, copy = false)[k]
-        #end
       end
     end
     M = sub(_hnf(M, :lowerleft), nrows(M) - d + 1: nrows(M), 1:d)
@@ -340,9 +330,6 @@ function extend(A::AlgAssAbsOrdIdl, O::AlgAssAbsOrd, action::Symbol = :twosided)
       for j = 1:d
         t = X[i]*Y[j]
         elem_to_mat_row!(M, ii + j, t)
-        #for k = 1:d
-        #  M[(i - 1)*d + j, k] = elem_in_basis(t, copy = false)[k]
-        #end
       end
     end
     M = sub(_hnf(M, :lowerleft), nrows(M) - d + 1: nrows(M), 1:d)

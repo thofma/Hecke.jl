@@ -386,7 +386,7 @@ function index(O::NfAbsOrd)
   else
     i = gen_index(O)
     !isone(denominator(i)) && error("Order does not contain the equation order")
-    O.index = numerator(i)
+    O.index = abs(numerator(i))
     return deepcopy(O.index)
   end
 end
@@ -842,9 +842,11 @@ function any_order(K::NfAbsNS)
     end
   end
 
-  b = NfAbsNSElem[]
+  b = Vector{NfAbsNSElem}(undef, degree(K))
+  ind = 1
   for i in CartesianIndices(Tuple(1:degrees(K)[i] for i in 1:ngens(K)))
-    push!(b, prod(normalized_gens[j]^(i[j] - 1) for j=1:length(i)))
+    b[ind] = prod(normalized_gens[j]^(i[j] - 1) for j=1:length(i))
+    ind += 1
   end
   return Order(K, b, check = false, cached = false)
 end
@@ -953,7 +955,7 @@ function _order(K::S, elt::Array{T, 1}; cached::Bool = true, check::Bool = true)
     if phase == 2
       if denominator(B) % denominator(e) == 0
         C = basis_mat([e])
-        fl, _ = cansolve(B.num, div(B.den, denominator(e))*C.num, side = :left)
+        fl, _ = can_solve(B.num, div(B.den, denominator(e))*C.num, side = :left)
 #        fl && println("elt known:", e)
         fl && continue
       end 
@@ -1023,6 +1025,9 @@ end
 # Todo: Improve this
 function ==(R::NfAbsOrd, S::NfAbsOrd)
   nf(R) != nf(S) && return false
+  if discriminant(R) != discriminant(S)
+    return false
+  end
   assure_has_basis_mat(R)
   assure_has_basis_mat(S)
   return hnf(R.basis_mat) == hnf(S.basis_mat)
@@ -1083,32 +1088,60 @@ Given two orders $R$, $S$ of $K$, this function returns the smallest order
 containing both $R$ and $S$. It is assumed that $R$, $S$ contain the ambient
 equation order and have coprime index.
 """
-function +(a::NfAbsOrd, b::NfAbsOrd; cached::Bool = true)
+function +(a::NfAbsOrd, b::NfAbsOrd; cached::Bool = false)
   nf(a) != nf(b) && error("Orders must have same ambient number field")
   if contains_equation_order(a) && contains_equation_order(b) &&
           isone(gcd(index(a), index(b)))
-    aB = basis_mat(a, copy = false)
-    bB = basis_mat(b, copy = false)
-    d = degree(a)
-    m = zero_matrix(FlintZZ, 2*d, d)
-    for i=1:d
-      for j=1:d
-        m[i,j]=bB.den*aB.num[i,j]
-        m[i+d,j]= aB.den*bB.num[i,j]
-      end
-    end
-    mat = _hnf_modular_eldiv(m, bB.den*aB.den, :lowerleft)
-    c = view(mat, d + 1:2*d, 1:d)
-    O = Order(nf(a), FakeFmpqMat(c, aB.den*bB.den), check = false, cached = cached)
-    O.primesofmaximality = union(a.primesofmaximality, b.primesofmaximality)
-    O.disc = gcd(discriminant(a), discriminant(b))
-    if a.disc<0 || b.disc<0
-      O.disc=-O.disc
-    end
-    return O
+    return sum_as_Z_modules(a, b, triangular = false)
   else
-    return _order(nf(a), vcat(a.basis_nf, b.basis_nf), cached = cached)
+    return _order(nf(a), vcat(a.basis_nf, b.basis_nf), cached = cached, check = false)
   end
+end
+
+################################################################################
+#
+#  Sum as Z modules of orders
+#
+################################################################################
+
+function sum_as_Z_modules(O1::NfAbsOrd, O2::NfAbsOrd, z::fmpz_mat = zero_matrix(FlintZZ, 2 * degree(O1), degree(O1)); triangular::Bool = false)
+  K = nf(O1)
+  R1 = basis_mat(O1, copy = false)
+  S1 = basis_mat(O2, copy = false)
+  d = degree(K)
+  z1 = view(z, 1:d, 1:d)
+  mul!(z1, R1.num, S1.den)
+  # Assume that R1 and S1 are triangular
+  d1 = deepcopy(S1.den)
+  d2 = deepcopy(R1.den)
+
+  if triangular
+    for i in 1:degree(K)
+      mul!(d1, d1, R1.num[i, i])
+    end
+    for i in 1:degree(K)
+      mul!(d2, d2, S1.num[i, i])
+    end
+  else
+    mul!(d1, d1, det(R1.num))
+    mul!(d2, d2, det(S1.num))
+  end
+
+  d1 = gcd!(d1, d1, d2)
+
+  z2 = view(z, (d + 1):2*d, 1:d)
+  mul!(z2, S1.num, R1.den)
+  hnf_modular_eldiv!(z, d1, :lowerleft)
+  M = FakeFmpqMat(z, S1.den * R1.den)
+  M1 = sub(M, (nrows(M)-ncols(M)+1):nrows(M), 1:ncols(M))
+  @hassert :NfOrd 1 defines_order(K, M1)[1]
+  O = NfAbsOrd(K, M1, false)
+  O.primesofmaximality = union(O1.primesofmaximality, O2.primesofmaximality)
+  O.disc = gcd(discriminant(O1), discriminant(O2))
+  if O1.disc<0 || O2.disc<0
+    O.disc = -O.disc
+  end
+  return O
 end
 
 ###############################################################################
@@ -1145,10 +1178,16 @@ end
 > The same order, but with the basis now being LLL reduced wrt. the Minkowski metric.
 """
 function lll(M::NfOrd)
+  if isdefined(M, :lllO)
+    return M.lllO::NfOrd
+  end
+
   K = nf(M)
 
   if istotally_real(K)
-    return _lll_gram(M)
+    On =  _lll_gram(M)
+    M.lllO = On
+    return On::NfOrd
   end
 
   I = ideal(M, 1)
@@ -1159,7 +1198,8 @@ function lll(M::NfOrd)
       q,w = lll(I, parent(basis_mat(M, copy = false).num)(0), prec = prec)
       On = NfOrd(K, FakeFmpqMat(w*basis_mat(M, copy = false).num, denominator(basis_mat(M, copy = false))))
       On.ismaximal = M.ismaximal
-      return On
+      M.lllO = On
+      return On::NfOrd
     catch e
       if isa(e, LowPrecisionLLL) || isa(e, InexactError)
         prec = Int(round(prec*1.2))

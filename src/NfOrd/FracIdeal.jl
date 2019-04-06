@@ -537,6 +537,29 @@ function *(x::nf_elem, y::NfOrd)
   b, z = _check_elem_in_order(denominator(x, y)*x, y)
   return NfOrdFracIdl(ideal(y, y(z)), denominator(x, y))
 end
+
+################################################################################
+#
+#  Ad hoc comparison
+#
+################################################################################
+
+function ==(A::NfOrdIdl, B::NfOrdFracIdl)
+  if order(A) !== order(B)
+    return false
+  end
+
+  C = simplify(B)
+
+  if C.den != 1 || C.num != A
+    return false
+  else
+    return true
+  end
+end
+
+==(A::NfOrdFracIdl, B::NfOrdIdl) = B == A
+
 ################################################################################
 #
 #  Conversion

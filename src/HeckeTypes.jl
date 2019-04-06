@@ -373,7 +373,7 @@ end
 mutable struct enum_ctx{Tx, TC, TU}
   G::fmpz_mat
   n::Int
-  limit :: Int # stop recursion at level limit, defaults to n
+  limit::Int # stop recursion at level limit, defaults to n
   d::Union{Integer, fmpz} #we actually want G/d
   C::Array{TC, 2} # the pseudo-cholesky form - we don't have fmpq_mat
   last_non_zero::Int
@@ -443,7 +443,6 @@ end
 mutable struct FakeFmpqMat
   num::fmpz_mat
   den::fmpz
-  parent::FakeFmpqMatSpace
   rows::Int
   cols::Int
 
@@ -461,28 +460,28 @@ mutable struct FakeFmpqMat
     if !simplified
       simplify_content!(z)
     end
-#    z.parent = FakeFmpqMatSpace(z.rows, z.cols)
     return z
   end
 
-  function FakeFmpqMat(x::Tuple{fmpz_mat, fmpz})
+  function FakeFmpqMat(x::Tuple{fmpz_mat, fmpz}, simplified::Bool = false)
     z = new()
     z.num = x[1]
     z.den = x[2]
     z.rows = nrows(x[1])
     z.cols = ncols(x[1])
-    simplify_content!(z)
-#    z.parent = FakeFmpqMatSpace(z.rows, z.cols)
+    if !simplified
+      simplify_content!(z)
+    end
     return z
   end
 
+  # TODO: Maybe this should be a copy option
   function FakeFmpqMat(x::fmpz_mat)
     z = new()
     z.num = x
-    z.den = fmpz(1)
+    z.den = one(FlintZZ)
     z.rows = nrows(x)
     z.cols = ncols(x)
-#    z.parent = FakeFmpqMatSpace(z.rows, z.cols)
     return z
   end
 
@@ -491,26 +490,11 @@ mutable struct FakeFmpqMat
     z.rows = nrows(x)
     z.cols = ncols(x)
 
-    if nrows(x) == 0 || ncols(x) == 0
-      z.num = zero_matrix(FlintZZ, nrows(x), ncols(x))
-      z.den = one(fmpz)
-      return z
-    end
+    n, d = _fmpq_mat_to_fmpz_mat_den(x)
 
-    d = denominator(x[1, 1])
-    for i in 1:nrows(x)
-      for j in 1:ncols(x)
-        d = lcm(d, denominator(x[i, j]))
-      end
-    end
-    n = zero_matrix(FlintZZ, nrows(x), ncols(x))
-    for i in 1:nrows(x)
-      for j in 1:ncols(x)
-        n[i, j] = FlintZZ(d*x[i, j])
-      end
-    end
     z.num = n
     z.den = d
+
     return z
   end
 end
@@ -663,6 +647,8 @@ mutable struct NfAbsOrd{S, T} <: Ring
   index_div::Dict{fmpz, Any}       # the index divisor splitting
                                    # Any = Array{NfAbsOrdIdl, Int}
                                    # but forward references are illegal
+
+  lllO                             # the same order with a lll-reduced basis
 
    function NfAbsOrd{S, T}(a::S) where {S, T}
     # "Default" constructor with default values.

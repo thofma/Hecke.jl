@@ -1268,7 +1268,8 @@ function conductor(R::AlgAssAbsOrd, S::AlgAssAbsOrd, action::Symbol)
   B = basis(S, copy = false)
   for k in 1:n
     a = B[k]
-    N = representation_matrix(S(elem_in_algebra(a, copy = false)), action)*basis_mat_R_in_S_inv_num
+    #N = representation_matrix(S(elem_in_algebra(a, copy = false)), action)*basis_mat_R_in_S_inv_num
+    N = representation_matrix(a, action)*basis_mat_R_in_S_inv_num
     for i in 1:n
       for j in 1:n
         M[(k - 1)*n + i, j] = N[j, i]
@@ -1278,5 +1279,9 @@ function conductor(R::AlgAssAbsOrd, S::AlgAssAbsOrd, action::Symbol)
   H = sub(hnf(M), 1:n, 1:n)
   Hinv, new_den = pseudo_inv(transpose(H))
   Hinv = Hinv*basis_mat_R_in_S_inv_num
-  return ideal(R, divexact(Hinv, new_den), action)
+  if action == :left
+    return ideal(R, divexact(Hinv, new_den), :right)
+  else
+    return ideal(R, divexact(Hinv, new_den), :left)
+  end
 end

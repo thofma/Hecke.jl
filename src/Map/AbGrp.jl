@@ -150,7 +150,7 @@ mutable struct GrpAbFinGenToAbsOrdMap{S, T} <: Map{GrpAbFinGen, S, HeckeMap, Grp
     end
 
     function _image(a::GrpAbFinGenElem)
-      @assert parent(a) == G
+      @assert parent(a) === G
       y = one(O)
       for i in 1:length(generators)
         a[i] == 0 && continue
@@ -164,7 +164,7 @@ mutable struct GrpAbFinGenToAbsOrdMap{S, T} <: Map{GrpAbFinGen, S, HeckeMap, Grp
     end
 
     function _preimage(a::T)
-      @assert parent(a) == O
+      @assert parent(a) === O
       return G(disc_log(a))
     end
 
@@ -231,13 +231,13 @@ mutable struct GrpAbFinGenToAbsOrdQuoRingMultMap{S, T, U} <: Map{GrpAbFinGen, Ab
       y = one(Q)
       for i in 1:length(generators)
         a[i] == 0 && continue
-        y *= generators[i]^a[i]
+        mul!(y, y, generators[i]^a[i])
       end
       return y
     end
 
     function _preimage(a::AbsOrdQuoRingElem)
-      @assert parent(a) == Q
+      @assert parent(a) === Q
       return G(disc_log(a))
     end
 

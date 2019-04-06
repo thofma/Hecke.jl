@@ -34,8 +34,6 @@
 
 export absolute_field
 
-# In case the code has stabilized, the type definition should go into
-# src/HeckeTypes.jl 
 
 ################################################################################
 #
@@ -408,7 +406,7 @@ end
 """
 function absolute_field(K::NfRel{nf_elem}, cached::Bool = false)
   Ka, a, b, c = _absolute_field(K, cached)
-  return Ka, NfRelToNf(K, Ka, a, b, c), NfToNfMor(base_ring(K), Ka, a)
+  return Ka, NfRelToNf(K, Ka, a, b, c), hom(base_ring(K), Ka, a, check = false)
 end
 
 @doc Markdown.doc"""
@@ -418,7 +416,7 @@ end
 """
 function absolute_field(K::NfRel{NfRelElem{T}}, cached::Bool = false) where T
   Ka, a, b, c = _absolute_field(K)
-  return Ka, NfRelRelToNfRel(K, Ka, a, b, c), NfRelToNfRelMor(base_ring(K), Ka, a)
+  return Ka, NfRelRelToNfRel(K, Ka, a, b, c), hom(base_ring(K), Ka, a, check = false)
 end
 
 
@@ -821,7 +819,7 @@ function issubfield(K::NfRel, L::NfRel)
   f = K.pol
   g = L.pol
   if mod(degree(g), degree(f)) != 0
-    return false, NfRelToNfRelMor(K, L, L())
+    return false, hom(K, L, zero(L), check = false)
   end
   Lx, x = PolynomialRing(L, "x", cached = false)
   fL = Lx()
@@ -834,10 +832,10 @@ function issubfield(K::NfRel, L::NfRel)
       c1 = coeff(a, 0)
       c2 = coeff(a, 1)
       h = parent(K.pol)(-c1*inv(c2))
-      return true, NfRelToNfRelMor(K, L, h(gen(L)))
+      return true, hom(K, L, h(gen(L)), check = false)
     end
   end
-  return false, NfRelToNfRelMor(K, L, L())
+  return false, hom(K, L, zero(L), check = false)
 end
 
 @doc Markdown.doc"""
@@ -851,7 +849,7 @@ function isisomorphic(K::NfRel, L::NfRel)
   f = K.pol
   g = L.pol
   if degree(f) != degree(g)
-    return false, NfRelToNfRelMor(K, L, L())
+    return false, hom(K, L, zero(L), check = false)
   end
   return issubfield(K, L)
 end

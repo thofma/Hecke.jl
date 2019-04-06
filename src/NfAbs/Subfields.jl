@@ -9,7 +9,7 @@ function _subfield_basis(K, elt)
   for e = elt
     if phase == 2
       C = basis_mat([e])
-      fl, _ = cansolve(matrix(FlintQQ, B.num), matrix(FlintQQ, C.num), side = :left)
+      fl, _ = can_solve(matrix(FlintQQ, B.num), matrix(FlintQQ, C.num), side = :left)
       fl && continue
     end
     df = n-1
@@ -53,12 +53,42 @@ function _subfield_basis(K, elt)
   return bas
 end
 
+function _improve_subfield_basis(K, bas)
+  # First compute the maximal order of <bas> by intersecting and saturating
+  # Then B_Ok = N * B_LLL_OK
+  # Then B' defined as lllN * B_LLL_OK will hopefully be small
+  OK = maximal_order(K)
+  OKbmatinv = basis_mat_inv(OK, copy = false)
+  basinOK = bas * matrix(FlintQQ, OKbmatinv.num) * fmpq(1, OKbmatinv.den)
+  deno = fmpz(1)
+  for i in 1:nrows(basinOK)
+    for j in 1:ncols(basinOK)
+      deno = lcm(deno, denominator(basinOK[i, j]))
+    end
+  end
+  S = saturate(matrix(FlintZZ, basinOK * deno))
+  SS = S * basis_mat(OK, copy = false)
+  lllOK = lll(OK)
+  N = (SS * basis_mat_inv(lllOK)).num
+  lllN = lll(N)
+  maybesmaller = lllN * basis_mat(lllOK)
+  return maybesmaller
+end
+
 function _subfield_primitive_element_from_basis(K, elt)
   if length(elt) == 0
     return gen(K)
   end
 
   s = zero(K)
+
+  # First check basis elements
+  for i in 1:length(elt)
+    if degree(minpoly(elt[i])) == length(elt)
+      return elt[i]
+    end
+  end
+
   while true
     rand!(s, elt, 0:1)
     if (degree(minpoly(s)) == length(elt))
@@ -120,11 +150,11 @@ end
 #
 ################################################################################
 
-function fixed_field(K::S, auto::T) where {S <: Union{AnticNumberField, NfRel}, T <: Union{NfToNfMor, NfRelToNfRelMor}}
-  return fixed_field(K, T[auto])
+function fixed_field(K::S, auto::T; simplify::Bool = true) where {S <: Union{AnticNumberField, NfRel}, T <: Union{NfToNfMor, NfRelToNfRelMor}}
+  return fixed_field(K, T[auto], simplify = simplify)
 end
 
-function fixed_field(K::S, autos::Array{T, 1}) where {S <: Union{AnticNumberField, NfRel}, T <: Union{NfToNfMor, NfRelToNfRelMor}}
+function fixed_field(K::S, autos::Array{T, 1}; simplify::Bool = true) where {S <: Union{AnticNumberField, NfRel}, T <: Union{NfToNfMor, NfRelToNfRelMor}}
 
   if length(autos) == 0
     return K, id_hom(K)
@@ -169,12 +199,19 @@ function fixed_field(K::S, autos::Array{T, 1}) where {S <: Union{AnticNumberFiel
     bas = Vector{elem_type(K)}(undef, k)
     if S === AnticNumberField
       # Try to find a small basis for absolute simple number fields
-      KasFMat = FakeFmpqMat(Ker)
-      Ksat = saturate(KasFMat.num)
-      Ksat = lll(Ksat)
-      onee = one(fmpz)
-      for i in 1:k
-        bas[i] = elem_from_mat_row(K, Ksat, i, onee)
+      if simplify
+        KasFMat = _improve_subfield_basis(K, Ker)
+        for i in 1:k
+          bas[i] = elem_from_mat_row(K, KasFMat.num, i, KasFMat.den)
+        end
+      else
+        KasFMat = FakeFmpqMat(Ker)
+        Ksat = saturate(KasFMat.num)
+        Ksat = lll(Ksat)
+        onee = one(fmpz)
+        for i in 1:k
+          bas[i] = elem_from_mat_row(K, Ksat, i, onee)
+        end
       end
     else
       for i in 1:k
@@ -336,7 +373,7 @@ function intersect_spaces(A::Vector{T}) where T
 end
 
 # Returns true if A is subspace of B,otherwise false, for A,B k-VS
-function is_subspace(A::Hecke.AbstractAlgebra.Generic.MatElem, B::Hecke.AbstractAlgebra.Generic.MatElem,proper_subspace::Bool = false)     #or cmpr remark7
+function issubspace(A::Hecke.AbstractAlgebra.Generic.MatElem, B::Hecke.AbstractAlgebra.Generic.MatElem,proper_subspace::Bool = false)     #or cmpr remark7
   intersectAB = intersect_spaces(A, B)
   Bol = rank(intersectAB) == rank(A)
   if proper_subspace
@@ -352,7 +389,7 @@ function generating_subfields(S, len::Int64 = -1)
     if nrows(S[i]) >= len
       ar_intersection = typeof(S)()
       for j in 1:length(S)
-        if is_subspace(S[i],S[j],true)
+        if issubspace(S[i],S[j],true)
           push!(ar_intersection, S[j])
         end
       end
@@ -361,7 +398,7 @@ function generating_subfields(S, len::Int64 = -1)
         ar_2delete[i] = true
       else
         intersection = intersect_spaces(ar_intersection)
-        if is_subspace(intersection, S[i]) && is_subspace(S[i], intersection)
+        if issubspace(intersection, S[i]) && issubspace(S[i], intersection)
           ar_2delete[i] == true
         end
       end
@@ -405,7 +442,7 @@ function nextSubfields(ListSubfields, Kx, S::Vector{T}, L::T, e::Array{Int64,1},
         #constr associated tuple of M
         ee = Int[0 for j in 1:length(S)]
         for j in 1:length(S)
-          #    if is_subspace(M,S[j])
+          #    if issubspace(M,S[j])
           if iszero(mod(_get_sfpoly(Kx, M),sf_ar[j]))
             ee[j] = 1
           end

@@ -66,7 +66,7 @@ import Nemo
 
 exclude = [:Nemo, :AbstractAlgebra, :RealField, :zz, :qq, :factor, :call,
            :factors, :parseint, :strongequal, :window, :xgcd, :rows, :cols,
-           :cansolve]
+           :can_solve]
 
 for i in names(Nemo)
   i in exclude && continue

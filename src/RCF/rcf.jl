@@ -401,7 +401,7 @@ function _rcf_find_kummer(CF::ClassField_pp{S, T}) where {S, T}
   @vtime :ClassField 2 h = build_map(CF, KK, C)
   @vprint :ClassField 2 "... done\n"
 
-  k, mk = kernel(h) 
+  k, mk = kernel(h, false) 
   G = domain(h)
   
   # Now, we find the kummer generator by considering the action 
@@ -525,7 +525,7 @@ function _aut_A_over_k(C::CyclotomicExt, CF::ClassField_pp)
   @assert e % n == 0
 
   @vprint :ClassField 2 "... the trivial one (Kummer)\n"
-  tau = Hecke.NfRelToNfRelMor{nf_elem,  nf_elem}(A, A, zeta^div(e, n)*gen(A))
+  tau = hom(A, A, zeta^div(e, n)*gen(A), check = false)
   AutA_gen[1] = tau
 
   AutA_rel[1,1] = n  # the order of tau
@@ -533,9 +533,9 @@ function _aut_A_over_k(C::CyclotomicExt, CF::ClassField_pp)
   
   @vprint :ClassField 2 "... need to extend $(ngens(g)) from the cyclo ext\n"
   for i = 1:ngens(g)
-    si = Hecke.NfRelToNfRelMor{nf_elem, nf_elem}(Kr, Kr, gen(Kr)^Int(lift(mg(g[i]))))
+    si = hom(Kr, Kr, gen(Kr)^Int(lift(mg(g[i]))), check = false)
     @vprint :ClassField 2 "... extending zeta -> zeta^$(mg(g[i]))\n"
-    to_be_ext = NfToNfMor(K, K, C.mp[1](si(preimage(C.mp[1], gen(K)))))
+    to_be_ext = hom(K, K, C.mp[1](si(preimage(C.mp[1], gen(K)))), check = false)
     sigma = _extend_auto(A, to_be_ext)
     AutA_gen[i+1] = sigma
 
@@ -699,7 +699,7 @@ function _rcf_descent(CF::ClassField_pp)
     imgs = GrpAbFinGenElem[image(CF.quotientmap, preimage(CF.rayclassgroupmap, p1)) for p1 = lp]
     h = hom(f1, imgs)
     @hassert :ClassField 1 issurjective(h)
-    s, ms = kernel(h)
+    s, ms = kernel(h, false)
     @vprint :ClassField 2 "... done, have subgroup!\n"
     @vprint :ClassField 2 "computing orbit of primitive element\n"
     os = NfRelElem{nf_elem}[Auto[ms(j)] for j in s]

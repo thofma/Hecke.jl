@@ -979,14 +979,14 @@ function _quad_ext(bound::Int, only_real::Bool = false)
   for i = 1:length(final_list)
     if mod(final_list[i],4) != 1
       L, gL = number_field(x^2-final_list[i], cached=false, check = false)
-      auts = [NfToNfMor(L, L, -gL)]
-      emb = NfToNfMor(K, L, L(1))
-      fields_list[i] = (L, auts, [emb])
+      auts = NfToNfMor[hom(L, L, -gL, check = false)]
+      emb = NfToNfMor[hom(K, L, one(L), check = false)]
+      fields_list[i] = (L, auts, emb)
     else
       L, gL = number_field(x^2-x+divexact(1-final_list[i], 4), cached=false, check = false)
-      auts = [NfToNfMor(L, L, 1-gL)]
-      emb = NfToNfMor(K, L, L(1))
-      fields_list[i] = (L, auts, [emb])
+      auts = NfToNfMor[hom(L, L, 1-gL, check = false)]
+      emb = NfToNfMor[hom(K, L, one(L), check = false)]
+      fields_list[i] = (L, auts, emb)
     end
   end
   return fields_list
@@ -1103,22 +1103,22 @@ function _C22_with_max_ord(l)
     coord2 = __get_term(mS.prim_img.data, UInt[0, 1])
     auts = Vector{NfToNfMor}(undef, 2)
     if iszero(coeff(p1, 1))
-      auts[1] = NfToNfMor(S, S, (-coord1)*B[2]+coord2*B[3])
+      auts[1] = hom(S, S, (-coord1)*B[2]+coord2*B[3], check = false)
     else
-      auts[1] = NfToNfMor(S, S, 1+(-coord1)*B[2]+coord2*B[3])
+      auts[1] = hom(S, S, 1+(-coord1)*B[2]+coord2*B[3], check = false)
     end
     if iszero(coeff(p2, 1))
-      auts[2] = NfToNfMor(S, S, coord1*B[2]+(-coord2)*B[3])
+      auts[2] = hom(S, S, coord1*B[2]+(-coord2)*B[3], check = false)
     else      
-      auts[2] = NfToNfMor(S, S, coord1*B[2]+1+(-coord2)*B[3])
+      auts[2] = hom(S, S, coord1*B[2]+1+(-coord2)*B[3], check = false)
     end
     cl_auts = Vector{NfToNfMor}(undef, 4)
-    cl_auts[1] = NfToNfMor(S, S, gen(S))
+    cl_auts[1] = id_hom(S)
     cl_auts[2] = auts[1]
     cl_auts[3] = auts[2]
     cl_auts[4] = auts[1] * auts[2]
     Hecke._set_automorphisms_nf(S, cl_auts)
-    push!(list, (S, auts, [Hecke.NfToNfMor(K, S, S(1))]))
+    push!(list, (S, auts, NfToNfMor[hom(K, S, S(1), check = false)]))
   end
   return list
 end
@@ -1464,42 +1464,25 @@ end
 
 function _from_relative_to_absQQ(L::NfRel_ns{T}, auts::Array{NfRel_nsToNfRel_nsMor{T}, 1}) where T
 
-  
   @vprint :AbExt 2 "Computing maximal orders of subfields\n"
   Qx, x = PolynomialRing(FlintQQ, "x")
-  fields = Vector{AnticNumberField}(undef, length(L.pol))
+  polys = Vector{fmpq_poly}(undef, length(L.pol))
   for i = 1:length(L.pol)
-    fK = is_univariate(L.pol[i])[2]
+    fK = isunivariate(L.pol[i])[2]
     f = Qx([coeff(coeff(fK, j), 0) for j = 0:degree(fK)])
-    K = NumberField(f, cached = false)[1];
-    OK = maximal_order(K)::NfOrd
-    fields[i] = K
+    polys[i] = f
   end
-  NS, gNS = number_field(fmpq_poly[fields[i].pol for i = 1:length(fields)])
-  mvpolring = parent(NS.pol[1])
-  gpols = gens(mvpolring)
-  #Now, bring the maximal order of every component in NS
-  B = Vector{Vector{NfAbsNSElem}}(undef, length(fields))
-  for i = 1:length(fields)
-    OK = maximal_order(fields[i])
-    BOK = OK.basis_nf
-    BK = Vector{NfAbsNSElem}(undef, degree(OK))
-    for j = 1:length(BK)
-      polel = Qx(BOK[j])
-      polm = evaluate(polel, gpols[i])
-      BK[j] = NS(polm)
-    end
-    B[i] = BK
-  end
-  
+  NS, gNS = number_field(polys)
+  gpols = gens(parent(gNS[1]))
+  B, lp = maximal_order_of_components(NS)
   K, mK = simple_extension(NS, check = false)
   BKK = Array{nf_elem, 1}(undef, degree(K))
-  ind = degree(fields[1])
+  ind = degree(polys[1])
   for i = 1:ind
     BKK[i] = mK\(B[1][i])
   end
-  for jj = 2:length(fields)
-    new_deg = degree(fields[jj])
+  for jj = 2:length(polys)
+    new_deg = degree(polys[jj])
     for i = 2:new_deg
       el = mK\(B[jj][i])
       for j = 1:ind
@@ -1508,43 +1491,32 @@ function _from_relative_to_absQQ(L::NfRel_ns{T}, auts::Array{NfRel_nsToNfRel_nsM
     end
     ind *= new_deg
   end
-  O1 = Order(K, BKK, check = false, cached = false)
-  #Now, I set some basic properties. In particular, discriminant, trace matrix.
-  disc = fmpz(1)
-  for i = 1:length(fields)
-    mul!(disc, disc, discriminant(maximal_order(fields[i]))^(divexact(degree(K), degree(fields[i]))))
-  end
-  M = trace_matrix(maximal_order(fields[1]))
-  for i = 2:length(fields)
-    M = kronecker_product(trace_matrix(maximal_order(fields[i])), M)
-  end
-  O1.disc = disc
-  O1.trace_mat = M
-  
-  #Now, compute the primes at which I have to compute the maximal order
-  
-  d = fmpz(1)
-  for i = 1:length(fields)
-    for j = i+1:length(fields)
-      d1 = gcd(discriminant(maximal_order(fields[i])), discriminant(maximal_order(fields[j])))
-      d = lcm(d, d1)
+  O1 = NfAbsOrd(BKK)
+  for p in lp
+    if isprime(p)
+      O1 = pmaximal_overorder(O1, p)
+    else
+      fac = factor(p)
+      for (k, v) in fac
+        O1 = pmaximal_overorder(O1, k)
+      end
     end
   end
-  lp = collect(keys(factor(d).fac))
-  @vtime :AbExt 2 O1 = pmaximal_overorder_at(O1, lp)
+  #@vtime :AbExt 2 O1 = pmaximal_overorder_at(O1, lp)
+  
   _set_maximal_order(K, O1)
   #Now, we translate the automorphisms.
   imgs = Vector{NfAbsNSElem}(undef, length(auts))
   for i = 1:length(auts)
-    fK = is_univariate(auts[i].emb[i].data)[2]
+    fK = isunivariate(auts[i].emb[i].data)[2]
     f = Qx([coeff(coeff(fK, j), 0) for j = 0:degree(fK)])
     imgs[i] = NS(evaluate(f, gpols[i]))
   end
   autsNS = Vector{NfAbsNSToNfAbsNS}(undef, length(auts))
   for t = 1:length(auts)
-    imgs = Vector{NfAbsNSElem}(undef, length(fields))
-    for s = 1:length(fields)
-      fK = is_univariate(auts[t].emb[s].data)[2]
+    imgs = Vector{NfAbsNSElem}(undef, length(polys))
+    for s = 1:length(polys)
+      fK = isunivariate(auts[t].emb[s].data)[2]
       f = Qx([coeff(coeff(fK, j), 0) for j = 0:degree(fK)])
       imgs[s] = NS(evaluate(f, gpols[s]))
     end
@@ -1554,12 +1526,12 @@ function _from_relative_to_absQQ(L::NfRel_ns{T}, auts::Array{NfRel_nsToNfRel_nsM
   auts_abs = Vector{NfToNfMor}(undef, length(autsNS))
   gK = mK(gen(K))
   for i = 1:length(auts_abs)
-    auts_abs[i] = NfToNfMor(K, K, mK\(autsNS[i](gK)))
+    auts_abs[i] = hom(K, K, mK\(autsNS[i](gK)), check = false)
   end
   
   
   @vprint :AbExt 2 "Done. Now simplify and translate information\n"
-  @vtime :AbExt 2 Ks, mKs = simplify(K)::Tuple{AnticNumberField, NfToNfMor}
+  @vtime :AbExt 2 Ks, mKs = simplify(K)
   #Now, we have to construct the maximal order of this field.
   #I am computing the preimages of mKs by hand, by inverting the matrix.
   arr_prim_img = Array{nf_elem, 1}(undef, degree(Ks))
@@ -1568,6 +1540,7 @@ function _from_relative_to_absQQ(L::NfRel_ns{T}, auts::Array{NfRel_nsToNfRel_nsM
     arr_prim_img[i] = arr_prim_img[i-1]*mKs.prim_img
   end
   M1 = inv(basis_mat(arr_prim_img))
+  
   basisO2 = Array{nf_elem, 1}(undef, degree(Ks))
   M = zero_matrix(FlintZZ, 1, degree(Ks))
   for i=1:length(basisO2)
@@ -1575,7 +1548,7 @@ function _from_relative_to_absQQ(L::NfRel_ns{T}, auts::Array{NfRel_nsToNfRel_nsM
     mul!(M, M, M1.num)
     basisO2[i] = elem_from_mat_row(Ks, M, 1, M1.den*denominator(O1.basis_nf[i]))
   end
-  O2 = Order(Ks, basisO2, check = false, cached = false)
+  O2 = NfAbsOrd(Ks, basis_mat(O1, copy = false)*M1)
   O2.ismaximal = 1
   _set_maximal_order_of_nf(Ks, O2)
 
@@ -1588,7 +1561,7 @@ function _from_relative_to_absQQ(L::NfRel_ns{T}, auts::Array{NfRel_nsToNfRel_nsM
     mul!(M, M, M1.num)
     y=Hecke.elem_from_mat_row(Ks, M, 1, M1.den*denominator(x))
     @assert iszero(Ks.pol(y))
-    autos[i] = NfToNfMor(Ks, Ks, y)
+    autos[i] = hom(Ks, Ks, y, check = false)
   end
   _set_automorphisms_nf(Ks, closure(autos, degree(Ks)))
   
@@ -1599,8 +1572,8 @@ end
 
 function _from_relative_to_abs(L::NfRel_ns{T}, auts::Array{NfRel_nsToNfRel_nsMor{T}, 1}) where T
 
-  S, mS = simple_extension(L)::Tuple{NfRel{nf_elem}, NfRelToNfRel_nsMor{nf_elem}}
-  K, mK, mK2 = absolute_field(S, false)::Tuple{AnticNumberField, Hecke.NfRelToNf, NfToNfMor}
+  S, mS = simple_extension(L)
+  K, mK, mK2 = absolute_field(S, false)
   #First, we compute the maximal order of the absolute field.
   #Since the computation of the relative maximal order is slow, I bring to the absolute field the elements
   # generating the equation order.
@@ -1647,7 +1620,7 @@ function _from_relative_to_abs(L::NfRel_ns{T}, auts::Array{NfRel_nsToNfRel_nsMor
   O1.ismaximal = 1
   _set_maximal_order_of_nf(K, O1)
   @vprint :AbExt 2 "Done. Now simplify and translate information\n"
-  @vtime :AbExt 2 Ks, mKs = simplify(K)::Tuple{AnticNumberField, NfToNfMor}
+  @vtime :AbExt 2 Ks, mKs = simplify(K)
   #Now, we have to construct the maximal order of this field.
   #I am computing the preimages of mKs by hand, by inverting the matrix.
   arr_prim_img = Array{nf_elem, 1}(undef, degree(Ks))
@@ -1675,7 +1648,7 @@ function _from_relative_to_abs(L::NfRel_ns{T}, auts::Array{NfRel_nsToNfRel_nsMor
     elem_to_mat_row!(M, 1, denominator(x), x)
     mul!(M, M, M1.num)
     y=Hecke.elem_from_mat_row(Ks, M, 1, M1.den*denominator(x))
-    autos[i] = NfToNfMor(Ks,Ks,y)
+    autos[i] = hom(Ks, Ks, y, check = false)
   end
   _set_automorphisms_nf(Ks, closure(autos, degree(Ks)))
   
