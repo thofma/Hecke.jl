@@ -119,6 +119,8 @@ function show(io::IO, a::GrpAbFinGenElem)
   if get(io, :compact, false)
     print(io, "Element of\n$(a.parent)\n with components\n$(a.coeff)")
   else
+    s = get_special(parent(a), :name)
+    s === nothing || print(io, s)
     print(io, "$(a.coeff)")
   end
 end
