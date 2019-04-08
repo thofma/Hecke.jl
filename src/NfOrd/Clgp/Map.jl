@@ -51,7 +51,7 @@ end
 #
 ################################################################################
 
-# TODO: Ask Claus what the bound is.
+# The bound should be sqrt(disc) (something from LLL)
 @doc Markdown.doc"""
     power_reduce2(A::NfOrdIdl, e::fmpz) -> NfOrdIdl, FacElem{nf_elem}
 Computes $B$ and $\alpha$ in factored form, such that $\alpha B = A^e$
@@ -326,7 +326,9 @@ mutable struct MapClassGrp{T} <: Map{T, NfOrdIdlSet, HeckeMap, MapClassGrp}
 end
 
 function show(io::IO, mC::MapClassGrp)
-  println(io, "ClassGroup map of $(codomain(mC))")
+  @show_name(io, mC)
+  println(io, "ClassGroup map of ")
+  show(IOContext(io, :compact => true), codomain(mC))
 end
 
 function class_group(c::ClassGrpCtx; redo::Bool = false)
@@ -650,7 +652,11 @@ mutable struct MapSUnitModUnitGrpFacElem{T} <: Map{T, FacElemMon{AnticNumberFiel
 end
 
 function show(io::IO, mC::MapSUnitModUnitGrpFacElem)
-  println(io, "SUnits (in factored form) mod Units map of $(codomain(mC)) for $(mC.idl)")
+  @show_name(io, mC)
+  io = IOContext(io, :compact => true)
+  println(io, "SUnits (in factored form) mod Units map of ")
+  show(io, codomain(mC)) 
+  println(io, "for $(mC.idl)")
 end
 
 #Plan:
@@ -806,7 +812,10 @@ mutable struct MapSUnitGrpFacElem{T} <: Map{T, FacElemMon{AnticNumberField}, Hec
 end
 
 function show(io::IO, mC::MapSUnitGrpFacElem)
-  println(io, "SUnits (in factored form) map of $(codomain(mC)) for $(mC.idl)")
+  @show_name(io, mC)
+  print(io, "SUnits (in factored form) map of ")
+  show(IOContext(io, :compact => true), codomain(mC))
+  println(io, " for $(mC.idl)")
 end
 
 @doc Markdown.doc"""
@@ -858,7 +867,10 @@ mutable struct MapSUnitGrp{T} <: Map{T, AnticNumberField, HeckeMap, MapSUnitGrp}
 end
 
 function show(io::IO, mC::MapSUnitGrp)
-  println(io, "SUnits  map of $(codomain(mC)) for $(mC.idl)")
+  @show_name(io, mC)
+  print(io, "SUnits  map of ")
+  show(IOContext(io, :compact => true), codomain(mC))
+  println(io, " for $(mC.idl)")
 end
 
 @doc Markdown.doc"""

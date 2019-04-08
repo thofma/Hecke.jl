@@ -169,21 +169,10 @@ function prod_via_2_elem_normal(a::NfOrdIdl, b::NfOrdIdl)
     # CRT: the 2nd gen of a needs to stay the same at a
     # and should be  1 at f
 
-
     #a2 = a.gen_two*f + a1^2
-    if !false
-      mul!(e, a1, a1)
-      a2 = f*a.gen_two
-      add!(a2, a2, e)
-    else
-      g, x, y = gcdx(f, e)
-
-      mul!(e, a1, a1)
-      mul!(x, x, f)
-      a2 = x*a.gen_two
-      mul!(y, y, e)
-      add!(a2, a2, y)
-     end
+    mul!(e, a1, a1)
+    a2 = f*a.gen_two
+    add!(a2, a2, e)
     # now (a1, a2) should be m-normal for a
   end
 
@@ -191,22 +180,10 @@ function prod_via_2_elem_normal(a::NfOrdIdl, b::NfOrdIdl)
   if f == 1
     b2 = b.gen_two
   else
-
     #b2 = b.gen_two*f + b1^2
-    if !false #Carlo's new method
-      mul!(e, b1, b1)
-      b2 = f*b.gen_two
-      add!(b2, b2, e)
-     else
-      g, x, y = gcdx(f, e)
-
-      #b2 = b.gen_two*f*x + y*b1^2
-      mul!(e, b1, b1)
-      mul!(x, x, f)
-      b2 = x*b.gen_two
-      mul!(y, y, e)
-      add!(b2, b2, y)
-    end
+    mul!(e, b1, b1)
+    b2 = f*b.gen_two
+    add!(b2, b2, e)
   end
   C = ideal(O, a1*b1, a2*b2)
   C.norm = norm(a) * norm(b)
@@ -413,7 +390,69 @@ end
 #
 ################################################################################
 
-Base.:(^)(A::NfAbsOrdIdl, e::Int) = Base.power_by_squaring(A, e)
+function Base.:(^)(A::NfAbsOrdIdl, e::Int)
+  @hassert :NfOrd 1 isconsistent(A)
+  OK = order(A)
+  if e == 0
+    return ideal(OK, 1)
+  elseif e == 1
+    return A
+  end
+  if ismaximal_known_and_maximal(OK) && issimple(nf(OK)) && has_2_elem(A)
+    return pow_2_elem(A, e)
+  else
+    return Base.power_by_squaring(A, e)
+  end
+end
+
+function pow_2_elem(A::NfAbsOrdIdl, e::Int)
+  OK = order(A)
+  if A.is_principal == 1
+    gen = (A.princ_gen)^e
+    I = ideal(OK, gen)
+    if isdefined(A, :norm)
+      I.norm = norm(A, copy = false)^e
+    end
+    if isprime_known(A) && isprime(A)
+      eA = A.splitting_type[1]
+      I.minimum = minimum(A)^(div(e-1, eA)+1)
+    end
+    I.is_prime = 2
+    return I
+  elseif isprime_known(A) && isprime(A)
+    eA = A.splitting_type[1]
+    minim = minimum(A)^(div(e-1, eA)+1)
+    gen1 = minim
+    gen2 = A.gen_two^e
+    I = ideal(OK, gen1, gen2)
+    I.minimum = deepcopy(minim)
+    if isdefined(A, :norm)
+      I.norm = norm(A, copy = false)^e
+    end
+    if has_2_elem_normal(A)
+      I.gens_normal = A.gens_normal
+    end
+    I.gens_weakly_normal = has_weakly_normal(A) 
+    I.is_prime = 2
+    return I
+  else
+    gen1 = A.gen_one^e
+    gen2 = A.gen_two^e
+    I = ideal(OK, gen1, gen2)
+    if isdefined(A, :norm)
+      I.norm = norm(A, copy = false)^e
+    end
+    if has_2_elem_normal(A)
+      I.gens_normal = A.gens_normal
+    end
+    I.gens_weakly_normal = has_weakly_normal(A)    
+    I.is_prime = 2
+    return I
+  end
+end
+
+# To stop the wrong julia behavior for I^2 and I^-2
+Base.literal_pow(::typeof(^), A::NfAbsOrdIdl, ::Val{p}) where {p} = A^p
 
 ################################################################################
 #

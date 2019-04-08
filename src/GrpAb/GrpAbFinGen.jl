@@ -35,7 +35,8 @@
 export AbelianGroup, DiagonalGroup, issnf, ngens, nrels, rels, snf, isfinite,
        isinfinite, rank, order, exponent, istrivial, isisomorphic,
        direct_product, istorsion, torsion_subgroup, sub, quo, iscyclic,
-       psylow_subgroup, issubgroup, abelian_groups
+       psylow_subgroup, issubgroup, abelian_groups, flat, tensor_product,
+       dual
 
 import Base.+, Nemo.snf, Nemo.parent, Base.rand, Nemo.issnf
 
@@ -56,7 +57,6 @@ parent_type(::Type{GrpAbFinGenElem}) = GrpAbFinGen
 #  Constructors
 #
 ##############################################################################
-
 # We do we have AbelianGroup and DiagonalGroup?
 @doc Markdown.doc"""
 ***
@@ -65,8 +65,12 @@ parent_type(::Type{GrpAbFinGenElem}) = GrpAbFinGen
 > Creates the abelian group with relation matrix `M`. That is, the group will
 > have `ncols(M)` generators and each row of `M` describes one relation.
 """
-function AbelianGroup(M::fmpz_mat)
-  return GrpAbFinGen(M)
+function AbelianGroup(M::fmpz_mat; name :: String = "")
+  G = GrpAbFinGen(M)
+  if name != ""
+    set_name!(G, name)
+  end
+  return G
 end
 
 @doc Markdown.doc"""
@@ -76,8 +80,12 @@ end
 > Creates the abelian group with relation matrix `M`. That is, the group will
 > have `ncols(M)` generators and each row of `M` describes one relation.
 """
-function AbelianGroup(M::Array{fmpz, 2})
-  return AbelianGroup(matrix(FlintZZ, M))
+function AbelianGroup(M::Array{fmpz, 2}; name :: String = "")
+  G = AbelianGroup(matrix(FlintZZ, M))
+  if name != ""
+    set_name!(G, name)
+  end
+  return G
 end
 
 @doc Markdown.doc"""
@@ -87,8 +95,12 @@ end
 > Creates the abelian group with relation matrix `M`. That is, the group will
 > have `ncols(M)` generators and each row of `M` describes one relation.
 """
-function AbelianGroup(M::Array{T, 2}) where T <: Integer
-  return AbelianGroup(matrix(FlintZZ, M))
+function AbelianGroup(M::Array{T, 2}; name :: String = "") where T <: Integer
+  G = AbelianGroup(matrix(FlintZZ, M))
+  if name != ""
+    set_name!(G, name)
+  end
+  return G
 end
 
 @doc Markdown.doc"""
@@ -98,8 +110,12 @@ end
 > Creates the abelian group with relation matrix `M`. That is, the group will
 > have `length(M)` generators and one relation.
 """
-function AbelianGroup(M::Array{fmpz, 1})
-  return AbelianGroup(matrix(FlintZZ, 1, length(M), M))
+function AbelianGroup(M::Array{fmpz, 1}; name :: String = "")
+  G = AbelianGroup(matrix(FlintZZ, 1, length(M), M))
+  if name != ""
+    set_name!(G, name)
+  end
+  return G
 end
 
 @doc Markdown.doc"""
@@ -109,8 +125,12 @@ end
 > Creates the abelian group with relation matrix `M`. That is, the group will
 > have `length(M)` generators and one relation.
 """
-function AbelianGroup(M::Array{T, 1}) where T <: Integer
-  return AbelianGroup(matrix(FlintZZ, 1, length(M), M))
+function AbelianGroup(M::Array{T, 1}; name :: String = "") where T <: Integer
+  G = AbelianGroup(matrix(FlintZZ, 1, length(M), M))
+  if name != ""
+    set_name!(G, name)
+  end
+  return G
 end
 
 @doc Markdown.doc"""
@@ -120,7 +140,7 @@ end
 Assuming that $M$ has only one row, this function creates the direct product of
 the cyclic groups $\mathbf{Z}/m_i$, where $m_i$ is the $i$th entry of `M`.
 """
-function DiagonalGroup(M::fmpz_mat)
+function DiagonalGroup(M::fmpz_mat; name :: String = "")
   if nrows(M) != 1
     error("The argument must have only one row")
   end
@@ -130,10 +150,12 @@ function DiagonalGroup(M::fmpz_mat)
     N[i,i] = M[1, i]
   end
   if issnf(N)
-    return GrpAbFinGen(fmpz[M[1, i] for i = 1:ncols(M)])
+    G = GrpAbFinGen(fmpz[M[1, i] for i = 1:ncols(M)])
   else
-    return GrpAbFinGen(N)
+    G = GrpAbFinGen(N)
   end
+  name == "" || set_name!(G, name)
+  return G
 end
 
 @doc Markdown.doc"""
@@ -143,16 +165,18 @@ end
 Creates the direct product of the cyclic groups $\mathbf{Z}/m_i$,
 where $m_i$ is the $i$th entry of `M`.
 """
-function DiagonalGroup(M::Array{T, 1}) where T <: Union{Integer, fmpz}
+function DiagonalGroup(M::Array{T, 1}; name :: String = "") where T <: Union{Integer, fmpz}
   N = zero_matrix(FlintZZ, length(M), length(M))
   for i = 1:length(M)
     N[i,i] = M[i]
   end
   if issnf(N)
-    return GrpAbFinGen(M)
+    G = GrpAbFinGen(M)
   else
-    return GrpAbFinGen(N)
+    G = GrpAbFinGen(N)
   end
+  name == "" || set_name!(G, name)
+  return G
 end
 
 ################################################################################
@@ -160,13 +184,29 @@ end
 #  String I/O
 #
 ################################################################################
-
 function show(io::IO, A::GrpAbFinGen)
+  @show_name(io, A)
+  @show_special(io, A)
+
   if issnf(A)
     show_snf(io, A)
   else
     show_gen(io, A)
   end
+end
+
+function show_direct_product(io::IO, G::GrpAbFinGen)
+  D = get_special(G, :direct_product)
+  D === nothing && error("only for direct products")
+  print(io, "direct product of ")
+  show(IOContext(io, :compact => true), D)
+end
+
+function show_tensor_product(io::IO, G::GrpAbFinGen)
+  D = get_special(G, :tensor_product)
+  D === nothing && error("only for tensor products")
+  print(io, "tensor product of ")
+  show(IOContext(io, :compact => true), D)
 end
 
 function show_gen(io::IO, A::GrpAbFinGen)
@@ -502,21 +542,223 @@ end
 #  Direct product
 #
 ################################################################################
-
+#TODO: check the universal properties here!!!
 @doc Markdown.doc"""
 ***
-    direct_product(G::GrpAbFinGen, H::GrpAbFinGen) -> GrpAbFinGen, GrpAbFinGenMap, GrpAbFinGenMap
+    direct_product(G::GrpAbFinGen...; task::Symbol = :sum) -> GrpAbFinGen, GrpAbFinGenMap, GrpAbFinGenMap
 
-> Returns the abelian group $G\times H$ and the injections $G -> G\times \{0\}$, 
-  $H -> \{0\} \times H$ .
+> Returns the direct product $D$ of the abelian groups $G_i$ and the injections $G_i -> D$, 
 """
-function direct_product(G::GrpAbFinGen, H::GrpAbFinGen)
-  A = vcat(rels(G), zero_matrix(FlintZZ, nrows(rels(H)), ncols(rels(G))))
-  B = vcat(zero_matrix(FlintZZ, nrows(rels(G)), ncols(rels(H))), rels(H))
-  Dp = AbelianGroup(hcat(A,B))
-  m1 = hom(G, Dp, [Dp[i] for i=1:ngens(G)])
-  m2 = hom(H, Dp, [Dp[i+ngens(G)] for i = 1:ngens(H)])
-  return Dp, m1, m2
+function direct_product(G::GrpAbFinGen...
+             ; add_to_lattice::Bool = false, L::GrpAbLattice = GroupLattice, task::Symbol = :sum)
+  @assert task in [:prod, :sum, :both, :none]
+
+  Dp = AbelianGroup(cat([rels(x) for x = G]..., dims = (1,2)))
+
+  set_special(Dp, :direct_product =>G, :show => show_direct_product)
+  inj = []
+  pro = []
+  j = 0
+  for g = G
+    if task in [:sum, :both]
+      m = hom(g, Dp, GrpAbFinGenElem[Dp[j+i] for i = 1:ngens(g)])
+      append!(L, m)
+      push!(inj, m)
+    end
+    if task in [:prod, :both] 
+      m = hom(Dp, g, vcat(GrpAbFinGenElem[g[0] for i = 1:j], gens(g), GrpAbFinGenElem[g[0] for i=j+ngens(g)+1:ngens(Dp)]))
+      append!(L, m)
+      push!(pro, m)
+    end
+    j += ngens(g)
+  end
+  if task == :none
+    return Dp
+  elseif task == :prod
+    return Dp, pro
+  elseif task == :sum
+    return Dp, inj
+  else
+    return Dp, pro, inj
+  end
+end
+
+⊕(A::GrpAbFinGen...) = direct_product(A..., task = :none)
+export ⊕
+
+function canonical_injection(G::GrpAbFinGen, i::Int)
+  D = get_special(G, :direct_product)
+  D === nothing && error("1st argument must be a direct product")
+  s = sum(ngens(D[j]) for j = 1:i-1)
+  h = hom(D[i], G, [G[s+j] for j = 1:ngens(D[i])])
+  return h
+end
+
+function canonical_projection(G::GrpAbFinGen, i::Int)
+  D = get_special(G, :direct_product)
+  D === nothing && error("1st argument must be a direct product")
+  H = D[i]
+  h = hom(G, H, vcat( [GrpAbFinGenElem[H[0] for j = 1:ngens(D[h])] for h = 1:i-1]...,
+                         gens(H),
+                      [GrpAbFinGenElem[H[0] for j = 1:ngens(D[h])] for h = i+1:length(D)]...))
+  return h
+end
+
+function matrix(M::Map{GrpAbFinGen, GrpAbFinGen})
+  if typeof(M) == GrpAbFinGenMap
+    return M.map
+  end
+  G = domain(M)
+  return vcat([M(g).coeff for g = gens(G)])
+end
+
+function Hecke.matrix(M::Generic.IdentityMap{GrpAbFinGen})
+  return identity_matrix(FlintZZ, ngens(domain(M)))
+end
+
+function hom(G::GrpAbFinGen, H::GrpAbFinGen, A::Array{ <: Map{GrpAbFinGen, GrpAbFinGen}, 2})
+  r, c = size(A)
+  if c == 1
+    dG = [G]
+  else
+    dG = get_special(G, :direct_product)
+  end
+  if r == 1
+    dH = [H]
+  else
+    dH = get_special(H, :direct_product)
+  end
+  if dG === nothing || dH === nothing
+    error("both groups need to be direct products")
+  end
+  @assert all(i -> domain(A[i[1], i[2]]) == dG[i[1]] && codomain(A[i[1], i[2]]) == dH[i[2]], Base.Iterators.ProductIterator((1:r, 1:c)))
+  h = hom(G, H, vcat([hcat([matrix(A[i,j]) for j=1:c]) for i=1:r]))
+  return h    
+end
+
+function _flat(G::GrpAbFinGen) 
+  s = get_special(G, :direct_product)
+  if s === nothing
+    return [G]
+  end
+  return vcat([_flat(x) for x = s]...)
+end
+
+function flat(G::GrpAbFinGen)
+  H = direct_product(_flat(G)..., task = :none)
+  return hom(G, H, identity_matrix(FlintZZ, ngens(G)), identity_matrix(FlintZZ, ngens(G)))
+end
+######################################################################
+# Lift of homomorphisms
+######################################################################
+#=
+  G
+  | phi
+  V
+  F <- H
+    psi
+ and Im(phi) subset Im(psi), then G -> H can be constructed   
+=#
+
+function lift(phi::Map, psi::Map)
+  return hom(domain(phi), codomain(psi), [haspreimage(psi, image(phi, g))[2] for g = gens(domain(phi))])
+end
+
+function zero_map(G::GrpAbFinGen)
+  Z = AbelianGroup([1])
+  return hom(G, Z, [Z[0] for i=1:ngens(G)])
+end
+
+######################################################################
+# complex/ free resolution
+######################################################################
+function Hecke.complex(A::Map{GrpAbFinGen, GrpAbFinGen, <:Any, <:Any}...)
+  return A
+end
+
+function free_resolution(G::GrpAbFinGen)
+  A = DiagonalGroup(zeros(FlintZZ, ngens(G)))
+  R = rels(G)
+  B = DiagonalGroup(zeros(FlintZZ, nrows(R)))
+  h_A_G = hom(A, G, gens(G))
+  h_B_A = hom(B, A, [A(R[i, :]) for i=1:ngens(B)])
+  Z = AbelianGroup([1])
+  return complex(hom(Z, B, [B[0]]), h_B_A, h_A_G, hom(G, Z, [Z[0] for i = 1:ngens(G)]))
+end
+
+################################################################################
+#Tensor product
+################################################################################
+
+function tensor_product2(G::GrpAbFinGen, H::GrpAbFinGen)
+  RG = rels(G)
+  RH = rels(H)
+  R = vcat(kronecker_product(RG, identity_matrix(FlintZZ, ngens(H))),
+           kronecker_product(identity_matrix(FlintZZ, ngens(G)), RH))
+  G = AbelianGroup(R)
+end
+
+struct TupleParent{T <: Tuple}
+  function TupleParent(t::T) where {T}
+    return new{T}()
+  end
+end
+
+function show(io::IO, P::TupleParent{T}) where {T}
+  print(io, "parent of tuples of type $T")
+end
+
+elem_type(::Type{TupleParent{T}}) where {T} = T
+elem_type(::TupleParent{T}) where {T} = T
+
+parent(t::Tuple) = TupleParent(t)
+
+function tensor_product(G::GrpAbFinGen...)
+  local T
+  if length(G) == 1
+    T = G[1]
+  else
+    T = tensor_product2(G[2], G[1])
+    for i = 3:length(G)
+      T = tensor_product2(G[i], T)
+    end
+  end
+  set_special(T, :tensor_product => G, :show => show_tensor_product)
+  g = vec(collect(Base.Iterators.ProductIterator(Tuple(gens(g) for g = reverse(G)))))
+  function pure(g::GrpAbFinGenElem...)
+    @assert length(g) == length(G)
+    @assert all(i-> parent(g[i]) == G[i], 1:length(G))
+
+    return T(vec(collect(prod(x) for x = Base.Iterators.product([h.coeff for h = reverse(g)]...))))
+  end
+  function pure(T::Tuple)
+    return pure(T...)
+  end
+  function inv_pure(t::GrpAbFinGenElem)
+    p = Base.findall(i -> !iszero(t[i]), 1:ngens(T))
+    if length(p) == 0
+      return Tuple(collect(g[0] for g = G))
+    end
+    @assert length(p) == 1
+    @assert t[p[1]] == 1
+    return reverse(g[p[1]])
+  end
+
+  return T, MapFromFunc(pure, inv_pure, TupleParent(Tuple([g[0] for g = G])), T)
+end
+
+function hom(G::GrpAbFinGen, H::GrpAbFinGen, A::Array{ <: Map{GrpAbFinGen, GrpAbFinGen}, 1})
+  tG = get_special(G, :tensor_product)
+  tG === nothing && error("both groups must be tensor products")
+  tH = get_special(H, :tensor_product)
+  tH === nothing && error("both groups must be tensor products")
+  @assert length(tG) == length(tH) == length(A)
+  @assert all(i-> domain(A[i]) == tG[i] && codomain(A[i]) == tH[i], 1:length(A))
+  M = A[1].map
+  for i=2:length(A)
+    M = kronecker_product(A[i].map, M)
+  end
+  return hom(G, H, M)
 end
 
 ################################################################################
@@ -1132,7 +1374,7 @@ function abelian_groups(n::Int)
   for c in C
     G = c[1]
     for i in 2:length(fac)
-      G = snf(direct_product(G, c[i])[1])[1]
+      G = snf(direct_product(G, c[i], task = :none))[1]
     end
     push!(grps, G)
   end

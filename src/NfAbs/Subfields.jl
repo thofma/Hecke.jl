@@ -1,5 +1,6 @@
 export fixed_field, subfields
 
+# TODO !!!: Claus says this is wrong :(
 function _subfield_basis(K, elt)
   n = degree(K)
   bas = elem_type(K)[one(K)]
@@ -112,31 +113,6 @@ function subfield(K::S, elt::Array{T, 1}; isbasis::Bool = false) where {S <: Uni
 
   return _subfield_from_primitive_element(K, s)
 end
-# There is a deterministic version due to Lenstra--Silverberg
-#    if alg=="L"
-#        G_ar = [minpoly(B[i]) for i in 1:length(B)];
-#        K_ar = Array{fmpz,1}(undef,length(B));
-#        D_ar = Array{fmpz,1}(undef,length(B)+1);
-#        D_ar[1] = 1;
-#        for i in 1:length(B)
-#            k = ZZ(1);
-#            for j in 1:degree(G_ar[i])
-#                k *= denominator(coeff(G_ar[1],j));
-#            end
-#            K_ar[i]=k;
-#            fi = G_ar[i]*x*K_ar[i]^(degree(G_ar[i])-1);
-#            dfi = ZZ(discriminant(fi));
-#            d=2
-#            while gcd(dfi,d^2)!=1
-#                d=d+1;
-#            end
-#            D_ar[i+1]=d;
-#        end
-#        D_ar = D_ar[1:length(B)];
-#        Al = [B[i]*K_ar[i] for i in 1:length(B)];
-#        D_ar = accumulate(*,D_ar);
-#        return subfield(K,Al'*D_ar)
-#    end
 
 function _subfield_from_primitive_element(K, s)
   f = minpoly(s)
@@ -150,12 +126,36 @@ end
 #
 ################################################################################
 
-function fixed_field(K::S, auto::T; simplify::Bool = true) where {S <: Union{AnticNumberField, NfRel}, T <: Union{NfToNfMor, NfRelToNfRelMor}}
-  return fixed_field(K, T[auto], simplify = simplify)
+@doc Markdown.doc"""
+    fixed_field(K::NumberField, sigma::NfToNfMor;
+                                simplify::Bool = true) -> NumberField, NfToNfMor
+
+Given a number field $K$ and an automorphisms $\sigma$ of $K$, this function
+returns the fixed field of $\sigma$ as a pair $(L, i)$ consisting of a number
+field $L$ and an embedding of $L$ into $K$.
+
+By default, the function tries to find a small defining polynomial of $L$. This
+can be disabled by setting `simplify = false`.
+"""
+function fixed_field(K::S, sigma::T; simplify::Bool = true) where {S <: Union{AnticNumberField, NfRel}, T <: Union{NfToNfMor, NfRelToNfRelMor}}
+  return fixed_field(K, T[sigma], simplify = simplify)
 end
 
-function fixed_field(K::S, autos::Array{T, 1}; simplify::Bool = true) where {S <: Union{AnticNumberField, NfRel}, T <: Union{NfToNfMor, NfRelToNfRelMor}}
+@doc Markdown.doc"""
+    fixed_field(K::NumberField, A::Vector{NfToNfMor}) -> NumberField, NfToNfMor
 
+Given a number field $K$ and a set $A$ of automorphisms of $K$, this function
+returns the fixed field of $A$ as a pair $(L, i)$ consisting of a number
+field $L$ and an embedding of $L$ into $K$.
+
+By default, the function tries to find a small defining polynomial of $L$. This
+can be disabled by setting `simplify = false`.
+"""
+function fixed_field(K::S, A::Array{T, 1}; simplify::Bool = true) where {S <: Union{AnticNumberField, NfRel}, T <: Union{NfToNfMor, NfRelToNfRelMor}}
+
+  autos = A
+
+  # Everything is fixed by nothing :)
   if length(autos) == 0
     return K, id_hom(K)
   end
@@ -166,7 +166,12 @@ function fixed_field(K::S, autos::Array{T, 1}; simplify::Bool = true) where {S <
   ar_mat = Vector{dense_matrix_type(elem_type(F))}()
   v = Vector{elem_type(K)}(undef, n)
   for i in 1:length(autos)
+    domain(autos[i]) !== codomain(autos[i]) && throw(error("Maps must be automorphisms"))
+    domain(autos[i]) !== K && throw(error("Maps must be automorphisms of K"))
     o = one(K)
+    # Compute the image of the basis 1,a,...,a^(n - 1) under autos[i] and write
+    # the coordinates in a matrix. This is the matrix of autos[i] with respect
+    # to 1,a,...a^(n - 1).
     as = autos[i](a)
     if a == as
       continue
@@ -180,11 +185,15 @@ function fixed_field(K::S, autos::Array{T, 1}; simplify::Bool = true) where {S <
     bm = basis_mat(v)
     
     if S === AnticNumberField
+      # We have to be a bit careful (clever) since in the absolute case the
+      # basis matrix is a FakeFmpqMat
+
       m = matrix(FlintQQ, bm.num)
       for j in 1:n
-        m[j, j] = m[j, j] - bm.den # This is - identity
+        m[j, j] = m[j, j] - bm.den # This is autos[i] - identity
       end
     else
+      # In the generic case just subtract the identity
       m = bm - identity_matrix(F, degree(K))
     end
 
@@ -344,36 +353,38 @@ end
 # - Maybe also cache the pivots
 
 # Computes the intersection of subfields A,B of K/k, represented as k-VS
+# TODO (easy): Get rid of the transpose :)
 function intersect_spaces(A::Hecke.AbstractAlgebra.Generic.MatElem, B::Hecke.AbstractAlgebra.Generic.MatElem)
   A = transpose(A)
   B = transpose(B)
   M = nullspace(hcat(A,-B))[2][1:size(A)[2],:]
-  intersect_mat = MatrixSpace(base_ring(A),size(A)[1],size(M)[2])()
-  for i in 1:size(intersect_mat)[2]
-      intersect_mat[:,i] = A * M[:,i]
+  intersect_mat = zero_matrix(base_ring(A), nrows(A), ncols(M))
+  for i in 1:ncols(intersect_mat)
+    intersect_mat[:,i] = A * M[:,i]
   end
   return transpose(intersect_mat)
 end
 
 # Computes the intersection of subfields A = [a1,...,an] of K/k, represented as k-VS
 function intersect_spaces(A::Vector{T}) where T
-    if length(A) < 1
-        @error("empty array")
-    elseif length(A) == 1
-        return A[1]
-    elseif length(A) == 2
-        return intersect_spaces(A[1],A[2])
-    else
-        intersection_temp = intersect_spaces(A[1],A[2])
-        for i in 3:length(A)
-            intersection_temp = intersect_spaces(intersection_temp,A[i])
-        end
-        return intersection_temp
+  if length(A) < 1
+    throw(error("Number of spaces must be non-zero"))
+  elseif length(A) == 1
+    return A[1]
+  elseif length(A) == 2
+    return intersect_spaces(A[1],A[2])
+  else
+    intersection_temp = intersect_spaces(A[1],A[2])
+    for i in 3:length(A)
+      intersection_temp = intersect_spaces(intersection_temp,A[i])
     end
+    return intersection_temp
+  end
 end
 
 # Returns true if A is subspace of B,otherwise false, for A,B k-VS
-function issubspace(A::Hecke.AbstractAlgebra.Generic.MatElem, B::Hecke.AbstractAlgebra.Generic.MatElem,proper_subspace::Bool = false)     #or cmpr remark7
+# TODO (easy): Make this great again :)
+function issubspace(A::MatElem, B::MatElem, proper_subspace::Bool = false)     #or cmpr remark7
   intersectAB = intersect_spaces(A, B)
   Bol = rank(intersectAB) == rank(A)
   if proper_subspace
@@ -384,6 +395,10 @@ function issubspace(A::Hecke.AbstractAlgebra.Generic.MatElem, B::Hecke.AbstractA
 end
 
 function generating_subfields(S, len::Int64 = -1)
+  # I don't know (yet) why it is necessary, but we have to do it
+  if length(S) == 1
+    return S
+  end
   ar_2delete = Bool[false for i in 1:length(S)]
   for i in 1:length(S)
     if nrows(S[i]) >= len
@@ -482,6 +497,14 @@ function subfields(K::T; degree::Int64 = -1) where {T <: Union{AnticNumberField,
   k = base_field(K)
   #K = k[x]/f
   # K no generating subfield
+
+  # TODO (medium)
+  # I don't know why we have to do this.
+  # This needs to be fixed properly
+  if n == 1
+    return Tuple{T, morphism_type(T)}[(K, id_hom(K))]
+  end
+
   if degree == n
     return Tuple{T, morphism_type(T)}[(K, id_hom(K))]
   else

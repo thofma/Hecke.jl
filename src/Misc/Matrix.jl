@@ -886,13 +886,12 @@ function Base.cat(A::MatElem...;dims)
     end
   end
 
-  z = [similar(x) for x = A]
-  X = z[1]
+  local X
   for i=1:length(A)
     if i==1
-      X = hcat(A[1], z[2:end]...)
+      X = hcat(A[1], zero_matrix(base_ring(A[1]), nrows(A[1]), sum(Int[ncols(A[j]) for j=2:length(A)])))
     else
-      X = vcat(X, hcat(z[1:i-1]..., A[i], z[i+1:end]...))
+      X = vcat(X, hcat(zero_matrix(base_ring(A[1]), nrows(A[i]), sum(ncols(A[j]) for j=1:i-1)), A[i], zero_matrix(base_ring(A[1]), nrows(A[i]), sum(Int[ncols(A[j]) for j=i+1:length(A)]))))
     end
   end
   return X
@@ -1398,8 +1397,10 @@ function _can_solve_with_kernel(A::MatElem{T}, B::MatElem{T}) where T <: FieldEl
   return true, sol, n
 end
 
-#TODO: different to can_solve*(fmpz_mat) is hnf_with_tranformation -> hnf_with_trafo
+#TODO !!!: different to can_solve*(fmpz_mat) is hnf_with_tranformation -> hnf_with_trafo
 #maybe (definitely!) agree on one name and combine?
+
+hnf_with_trafo(x::fmpz_mat) = hnf_with_transform(x)
 
 @doc Markdown.doc"""
     can_solve(A::MatElem{T}, B::MatElem{T}, side = :right) where T <: RingElem -> Bool, MatElem

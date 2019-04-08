@@ -366,4 +366,14 @@ end
     @test length(subfields(K_27, degree =2)) == 0
     @test length(subfields(K_27, degree =1)) == 1
   end
+
+  @testset "Trivial fields" begin
+    f = x - 1
+    K, a = NumberField(f, "a")
+    l = subfields(K)
+    @test length(l) == 1
+    @test degree(l[1][1]) == 1
+    @test isisomorphic(l[1][1], K)[1]
+  end
+
 end

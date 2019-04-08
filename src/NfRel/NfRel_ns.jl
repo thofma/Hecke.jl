@@ -678,7 +678,7 @@ mutable struct NfRel_nsToNfRel_nsMor{T} <: Map{NfRel_ns{T}, NfRel_ns{T}, HeckeMa
     end
 
     z = new{T}()
-    z.coeff_aut = NfToNfMor(K.base_ring, K.base_ring, gen(K.base_ring))
+    z.coeff_aut = id_hom(K.base_ring)
     z.emb = emb
     z.header = MapHeader(K, L, image)
     return z
@@ -730,12 +730,12 @@ function Base.:(==)(f::NfRel_nsToNfRel_nsMor{T}, g::NfRel_nsToNfRel_nsMor{T}) wh
   L = domain(f)
   K = base_ring(L)
 
-  if f(L(gen(K))) != g(L(gen(K)))
+  if f.coeff_aut.prim_img != g.coeff_aut.prim_img
     return false
   end
 
-  for a in gens(L)
-    if f(a) != g(a)
+  for i = 1:ngens(L)
+    if f.emb[i] != g.emb[i]
       return false
     end
   end

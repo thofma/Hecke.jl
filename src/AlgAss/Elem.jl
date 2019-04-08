@@ -457,6 +457,10 @@ function (A::AlgAss)(a::Int)
   return a*one(A)
 end
 
+function (A::AlgGrp)(a::Int)
+  return a*one(A)
+end
+
 function (A::AlgAss{T})(a::T) where T
   return a*one(A)
 end
@@ -472,11 +476,19 @@ end
 ################################################################################
 
 function show(io::IO, a::AbsAlgAssElem)
-  print(io, "Element of ")
-  print(io, parent(a))
-  print(io, " with coefficients ")
-  print(io, a.coeffs)
+  if get(io, :compact, false)
+    print(io, a.coeffs)
+  else
+    print(io, "Element of ")
+    print(io, parent(a))
+    print(io, " with coefficients ")
+    print(io, a.coeffs)
+  end
 end
+
+needs_parentheses(::AbsAlgAssElem) = true
+
+isnegative(::AbsAlgAssElem) = false
 
 ################################################################################
 #
