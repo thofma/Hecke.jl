@@ -321,6 +321,27 @@ function _1_plus_p_mod_1_plus_q(p::AlgAssAbsOrdIdl, q::AlgAssAbsOrdIdl)
   return S, StoO
 end
 
+function _1_plus_p_mod_1_plus_q_generators(p::AlgAssAbsOrdIdl, q::AlgAssAbsOrdIdl)
+  @assert p != q
+
+  O = order(p)
+  g = Vector{elem_type(O)}()
+
+  l = 1
+  pl = p
+  plq = pl + q
+  while plq != q
+    k = l
+    pk, pkq = pl, plq
+    l = 2*k
+    pl = pl^2
+    plq = pl + q
+    append!(g, _1_plus_pu_plus_q_mod_1_plus_pv_plus_q(pkq, plq, Val{true}))
+  end
+
+  return g
+end
+
 # Given the groups (1 + p)/(1 + p^k + q) (via g and M) and
 # (1 + p^k + q)/(1 + p^(2*k) + q) (via h and N) and a discrete logarithm in the
 # second group this function computes the group (1 + p)/(1 + p^(2*k) + q).
@@ -357,7 +378,7 @@ end
 # Compute the group (1 + puq)/(1 + pvq), where it should hold puq = p^u + q and
 # pvq = p^v + q with v <= 2*u.
 # Cohen "Advanced Topics in Computational Number Theory" Algorithm 4.2.15.
-function _1_plus_pu_plus_q_mod_1_plus_pv_plus_q(puq::AlgAssAbsOrdIdl, pvq::AlgAssAbsOrdIdl)
+function _1_plus_pu_plus_q_mod_1_plus_pv_plus_q(puq::AlgAssAbsOrdIdl, pvq::AlgAssAbsOrdIdl, only_generators::Type{Val{T}} = Val{false}) where T
   O = order(puq)
   b = basis(puq, copy = false)
 
@@ -378,6 +399,10 @@ function _1_plus_pu_plus_q_mod_1_plus_pv_plus_q(puq::AlgAssAbsOrdIdl, pvq::AlgAs
 
   # We want generators of (1 + p^u + q)/(1 + p^v + q)
   map!(x -> x + one(O), gens, gens)
+
+  if only_generators == Val{true}
+    return gens
+  end
 
   # The first part of Algorithm 4.2.16 in Cohen "Advanced Topics..."
   M = basis_mat_inv(puq, copy = false)*StoG.imap

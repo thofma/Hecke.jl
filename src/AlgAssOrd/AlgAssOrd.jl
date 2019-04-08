@@ -500,9 +500,8 @@ function check_pradical(I::AlgAssAbsOrdIdl, p::Int)
   O= order(I)
   for i=1:O.dim
     x=elem_from_mat_row(O,I.basis_mat, i)
-    assure_elem_in_algebra(x)
     for j=1:O.dim
-      @assert divisible(numerator(tr(x.elem_in_algebra*O.basis_alg[j])), p)
+      @assert divisible(numerator(tr(elem_in_algebra(x; copy = false)*O.basis_alg[j])), p)
     end
   end
   #=
