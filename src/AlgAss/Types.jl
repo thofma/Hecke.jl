@@ -264,7 +264,6 @@ mutable struct AlgAssAbsOrd{S, T} <: Ring
     @assert length(basis) == r.dim
     r.basis_alg = basis
     r.basis_mat = basis_mat(basis)
-    r.basis_mat_inv = inv(r.basis_mat)
     return r
   end
 
@@ -276,7 +275,6 @@ mutable struct AlgAssAbsOrd{S, T} <: Ring
     for i in 1:d
       r.basis_alg[i] = elem_from_mat_row(A, basis_mat.num, i, basis_mat.den)
     end
-    r.basis_mat_inv = inv(basis_mat)
     return r
   end
 end
@@ -305,20 +303,20 @@ mutable struct AlgAssAbsOrdElem{S, T} <: RingElem
     return z
   end
 
-  function AlgAssAbsOrdElem{S, T}(O::AlgAssAbsOrd{S, T}, a::T, arr::Vector{fmpz}) where {S, T}
-    z = new{S, T}()
-    z.parent = O
-    z.elem_in_algebra = a
-    z.elem_in_basis = arr
-    z.has_coord = true
-    return z
-  end
-
   function AlgAssAbsOrdElem{S, T}(O::AlgAssAbsOrd{S, T}, arr::Vector{fmpz}) where {S, T}
     z = new{S, T}()
     z.elem_in_algebra = dot(O.basis_alg, arr)
     z.elem_in_basis = arr
     z.parent = O
+    z.has_coord = true
+    return z
+  end
+
+  function AlgAssAbsOrdElem{S, T}(O::AlgAssAbsOrd{S, T}, a::T, arr::Vector{fmpz}) where {S, T}
+    z = new{S, T}()
+    z.parent = O
+    z.elem_in_algebra = a
+    z.elem_in_basis = arr
     z.has_coord = true
     return z
   end
@@ -351,10 +349,6 @@ mutable struct AlgAssAbsOrdIdl{S, T}
     r = new{S, T}()
     r.order = O
     d = O.dim
-    r.basis = Vector{AlgAssAbsOrdElem{S, T}}(undef, d)
-    for i = 1:d
-      r.basis[i] = elem_from_mat_row(O, M, i)
-    end
     r.basis_mat = M
     r.isleft = 0
     r.isright = 0

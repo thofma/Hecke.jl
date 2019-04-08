@@ -123,32 +123,7 @@ end
 
 ################################################################################
 #
-#  Trace matrix
-#
-################################################################################
-
-function trace_matrix(A::AlgAss)
-  _assure_trace_basis(A)
-  F = base_ring(A)
-  n = dim(A)
-  M = zero_matrix(F, n, n)
-  for i = 1:n
-    M[i,i] = tr(A[i]^2)  
-  end
-  for i = 1:n
-    for j = i+1:n
-      x = tr(A[i]*A[j])
-      M[i,j] = x
-      M[j,i] = x
-    end
-  end
-  return M
-end
-
-
-################################################################################
-#
-#  Decomposition of algebras
+#  Decomposition
 #
 ################################################################################
 
@@ -174,13 +149,6 @@ function kernel_of_frobenius(A::AbsAlgAss)
   V = right_kernel_basis(B)
   return [ A(v) for v in V ]
 end
-
-
-################################################################################
-#
-#  Decomposition
-#
-################################################################################
 
 @doc Markdown.doc"""
 ***
@@ -243,7 +211,14 @@ function _dec_via_center(A::S) where {T, S <: AbsAlgAss{T}}
       s = res[i][2]\t
       elem_to_mat_row!(M, j, s)
     end
-    res[i][1].center = (B, hom(B, res[i][1], M))
+    if dim(res[i][1]) != dim(B)
+      res[i][1].center = (B, hom(B, res[i][1], M))
+    else
+      # res[i][1] is commutative, so we do not cache the centre
+      iM = inv(M)
+      BtoA = hom(B, A, M*res[i][2].mat, res[i][2].imat*iM)
+      res[i] = (B, BtoA)
+    end
   end
   A.decomposition = res
   return res
@@ -337,32 +312,6 @@ function _dec_com_gen(A::AbsAlgAss{T}) where {T <: FieldElem}
   end
 end
 
-function dot(c::Vector{T}, V::Vector{AlgAssElem{T, AlgAss{T}}}) where T <: Generic.ResF{S} where S <: Union{Int, fmpz}
-  @assert length(c) == length(V)
-  A = parent(V[1])
-  res = zero(A)
-  aux = zero(A)
-  for i = 1:length(c)
-    aux = mul!(aux, V[i], c[i])
-    res = add!(res, res, aux)
-  end
-  return res
-end
-
-function dot(c::Vector{gfp_elem}, V::Vector{AlgAssElem{gfp_elem, AlgAss{gfp_elem}}})
-  @assert length(c) == length(V)
-  A = parent(V[1])
-  res = zero(A)
-  aux = zero(A)
-  for i = 1:length(c)
-    aux = mul!(aux, V[i], c[i])
-    res = add!(res, res, aux)
-  end
-  return res
-end
-
-
-
 function _dec_com_finite(A::AbsAlgAss{T}) where T
   if dim(A) == 1
     A.issimple = 1
@@ -449,6 +398,13 @@ end
 #
 ################################################################################
 
+@doc Markdown.doc"""
+***
+    as_number_fields(A::AbsAlgAss{fmpq})
+
+> Given a commutative algebra over QQ, this function returns a decomposition
+> of A as direct sum of number fields.
+"""
 function as_number_fields(A::AbsAlgAss{fmpq})
   if isdefined(A, :maps_to_numberfields)
     return A.maps_to_numberfields::Vector{Tuple{AnticNumberField, AbsAlgAssToNfAbsMor{typeof(A), elem_type(A)}}}
@@ -645,4 +601,86 @@ function gens(A::AbsAlgAss)
   return cur_gen
 end
 
+################################################################################
+#
+#  Primitive elements
+#
+################################################################################
 
+function primitive_element(A::AbsAlgAss)
+  a, _ = _primitive_element(A)
+  return a
+end
+
+function _primitive_element(A::AbsAlgAss)
+  error("Not implemented yet")
+  return nothing
+end
+
+function _primitive_element(A::AbsAlgAss{T}) where T <: Union{nmod, fq, fq_nmod, Generic.Res{fmpz}, fmpq, Generic.ResF{fmpz}, gfp_elem}
+  d = dim(A)
+  a = rand(A)
+  f = minpoly(a)
+  while degree(f) < d
+    a = rand(A)
+    f = minpoly(a)
+  end
+  return a, f
+end
+
+function _as_field(A::AbsAlgAss{T}) where T
+  d = dim(A)
+  a, mina = _primitive_element(A)
+  b = one(A)
+  M = zero_matrix(base_ring(A), d, d)
+  elem_to_mat_row!(M, 1, b)
+  for i in 1:(d - 1)
+    b = mul!(b, b, a)
+    elem_to_mat_row!(M, i + 1, b)
+  end
+  B = inv(M)
+  N = zero_matrix(base_ring(A), 1, d)
+  local f
+  let N = N, B = B
+    f = function(x)
+      for i in 1:d
+        N[1, i] = x.coeffs[i]
+      end
+      return N * B
+    end
+  end
+  return a, mina, f
+end
+
+function _as_field_with_isomorphism(A::AbsAlgAss{S}) where { S <: Union{fmpq, gfp_elem, Generic.ResF{fmpz}, fq_nmod, fq} }
+  return _as_field_with_isomorphism(A, _primitive_element(A)...)
+end
+
+# Assuming a is a primitive element of A and mina its minimal polynomial, this
+# functions constructs the field base_ring(A)/mina and the isomorphism between
+# A and this field.
+function _as_field_with_isomorphism(A::AbsAlgAss{S}, a::AbsAlgAssElem{S}, mina::T) where { S <: Union{fmpq, gfp_elem, Generic.ResF{fmpz}, fq_nmod, fq}, T <: Union{fmpq_poly, gfp_poly, gfp_fmpz_poly, fq_nmod_poly, fq_poly} }
+  s = one(A)
+  M = zero_matrix(base_ring(A), dim(A), dim(A))
+  elem_to_mat_row!(M, 1, s)
+  for i = 2:dim(A)
+    s = mul!(s, s, a)
+    elem_to_mat_row!(M, i, s)
+  end
+
+  if base_ring(A) == FlintQQ
+    K = number_field(mina, cached = false)[1]
+    return K, AbsAlgAssToNfAbsMor(A, K, inv(M), M)
+  elseif base_ring(A) isa GaloisField
+    Fq = FqNmodFiniteField(mina, Symbol("a"), false)
+    return Fq, AbsAlgAssToFqMor(A, Fq, inv(M), M, parent(mina))
+  elseif base_ring(A) isa Generic.ResField{fmpz}
+    Fq = FqFiniteField(mina, Symbol("a"), false)
+    return Fq, AbsAlgAssToFqMor(A, Fq, inv(M), M, parent(mina))
+  elseif base_ring(A) isa FqNmodFiniteField || base_ring(A) isa FqFiniteField
+    Fr, RtoFr = field_extension(mina)
+    return Fr, AbsAlgAssToFqMor(A, Fr, inv(M), M, parent(mina), RtoFr)
+  else
+    error("Not implemented")
+  end
+end
