@@ -1163,6 +1163,52 @@ end
 #
 ################################################################################
 
+# For an element x of elements[i] this computes an element y with
+# x \equiv y mod ideals[i] and x \equiv 1 mod ideals[j] for all j not equal i.
+function make_coprime(elements::Vector{Vector{S}}, ideals::Vector{T}) where { S <: Union{ NfAbsOrdElem, AlgAssAbsOrdElem }, T <: Union{ NfAbsOrdIdl, AlgAssAbsOrdIdl } }
+  @assert !isempty(ideals)
+  @assert length(elements) == length(ideals)
+
+  n = length(ideals)
+  if n == 1
+    return elements[1]
+  end
+
+  products = _compute_products_for_make_coprime(ideals)
+
+  One = one(order(ideals[1]))
+  result = Vector{S}()
+  for i = 1:n
+    for j = 1:length(elements[i])
+      t = crt(elements[i][j], ideals[i], One, products[i])
+      push!(result, t)
+    end
+  end
+  return result
+end
+
+# Build the products \prod_{j\neq i} ideals[j] for all i
+function _compute_products_for_make_coprime(ideals::Vector{T}) where { T <: Union{ NfAbsOrdIdl, AlgAssAbsOrdIdl } }
+  n = length(ideals)
+  @assert n >= 2
+
+  left_halves = Vector{T}(undef, n - 1)
+  right_halves = Vector{T}(undef, n - 1)
+  left_halves[1] = ideals[1]
+  right_halves[1] = ideals[n]
+  for i = 2:(n - 1)
+    left_halves[i] = left_halves[i - 1]*ideals[i]
+    right_halves[i] = right_halves[i - 1]*ideals[n - i + 1]
+  end
+  products = Vector{T}(undef, n)
+  products[1] = right_halves[n - 1]
+  products[n] = left_halves[n - 1]
+  for i = 2:(n - 1)
+    products[i] = left_halves[i - 1]*right_halves[n - i]
+  end
+  return products
+end
+
 # Returns the SNF S of G and a map from S to G and one from S to codomain(GtoR).
 # If RtoQ is given, then the generators of S are computed modulo codomain(RtoQ).
 # It is assumed, that codomain(GtoR) == domain(RtoQ) in this case.
@@ -1310,7 +1356,7 @@ function _direct_product(groups::Vector{GrpAbFinGen}, maps::Vector{U}, ideals::V
   O = base_ring(Q)
   oneO = one(O)
   generators = Vector{elem_type(Q)}()
-  t = [ oneO for i = 1:length(ideals) ]
+  moduli = _compute_products_for_make_coprime(ideals)
   for i = 1:length(groups)
     if tame_wild
       @assert length(keys(maps[i].tame)) == 1
@@ -1318,8 +1364,7 @@ function _direct_product(groups::Vector{GrpAbFinGen}, maps::Vector{U}, ideals::V
       wild_generators = Vector{elem_type(O)}()
     end
     for j = 1:ngens(groups[i])
-      t[i] = maps[i].generators[j].elem
-      g = crt(t, ideals)
+      g = crt(maps[i].generators[j].elem, ideals[i], oneO, moduli[i])
       push!(generators, Q(g))
       if tame_wild
         if j == 1
@@ -1328,7 +1373,6 @@ function _direct_product(groups::Vector{GrpAbFinGen}, maps::Vector{U}, ideals::V
           push!(wild_generators, g)
         end
       end
-      t[i] = oneO
     end
     if tame_wild && haskey(maps[i].wild, p)
       wild[p] = GrpAbFinGenToAbsOrdMap(domain(maps[i].wild[p]), O, wild_generators, maps[i].wild[p].discrete_logarithm)
@@ -1375,17 +1419,20 @@ function _direct_product!(ideals_and_maps::Vector{Tuple{NfOrdIdl, Vector{GrpAbFi
   O = base_ring(Q)
   oneO = O(1)
   generators = Vector{NfOrdQuoRingElem}()
-  t = [ oneO for i = 1:length(ideals) ]
+  if length(ideals) != 1
+    moduli = _compute_products_for_make_coprime(ideals)
+  end
   for i = 1:length(ideals)
     for map in ideals_and_maps[i][2]
-
       push!(groups, domain(map))
       for j = 1:length(map.generators)
-        t[i] = map.generators[j]
-        g = crt(t, ideals)
-        push!(generators, Q(g))
-        map.generators[j] = g
-        t[i] = oneO
+        if length(ideals) == 1
+          push!(generators, Q(map.generators[j]))
+        else
+          g = crt(map.generators[j], ideals[i], oneO, moduli[i])
+          push!(generators, Q(g))
+          map.generators[j] = g
+        end
       end
     end
   end
@@ -1419,18 +1466,20 @@ function _direct_product!(ideals_and_maps::Dict{NfOrdIdl, Vector{GrpAbFinGenToNf
   O = base_ring(Q)
   oneO = O(1)
   generators = Vector{NfOrdQuoRingElem}()
-  t = [ oneO for i = 1:length(ideals) ]
+  if length(ideals) != 1
+    moduli = _compute_products_for_make_coprime(ideals)
+  end
   for i = 1:length(ideals)
     for map in ideals_and_maps[ideals[i]]
-
       push!(groups, domain(map))
-
       for j = 1:length(map.generators)
-        t[i] = map.generators[j]
-        g = crt(t, ideals)
-        push!(generators, Q(g))
-        map.generators[j] = g
-        t[i] = oneO
+        if length(ideals) == 1
+          push!(generators, Q(map.generators[j]))
+        else
+          g = crt(map.generators[j], ideals[i], oneO, moduli[i])
+          push!(generators, Q(g))
+          map.generators[j] = g
+        end
       end
     end
   end

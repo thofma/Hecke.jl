@@ -128,8 +128,14 @@ end
 #
 ################################################################################
 
+@doc Markdown.doc"""
+***
+    center(A::AlgGrp{T}) where T
+
+> Returns the center C of A and the inclusion C \to A.
+"""
 function center(A::AlgGrp{T}) where {T}
-  if iscommutative_known(A) && A.iscommutative==1
+  if iscommutative(A)
     B, mB = AlgAss(A)
     return B, mB
   end

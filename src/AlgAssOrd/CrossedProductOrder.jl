@@ -142,7 +142,7 @@ function pradical_crossed_product(O::AlgAssAbsOrd, I1::AlgAssAbsOrdIdl, p::Int)
   M1 = view(M1, 1:r, 1:dim(A1))
   dM = transpose(nullspace(M1)[2])
   gens = Vector{elem_type(O)}(undef, nrows(dM))
-  m = zero_matrix(FlintZZ, nrows(dM)+O.dim, O.dim)
+  m = zero_matrix(FlintZZ, nrows(dM)+degree(O), degree(O))
   for i=1:nrows(dM)
     el = elem_in_basis(mA1(elem_from_mat_row(A1, dM, i)))
     for j=1:ncols(dM)
@@ -150,8 +150,8 @@ function pradical_crossed_product(O::AlgAssAbsOrd, I1::AlgAssAbsOrdIdl, p::Int)
     end
     gens[i]= elem_from_mat_row(O, m, i)
   end
-  for i = 1:O.dim
-    for j = 1:O.dim
+  for i = 1:degree(O)
+    for j = 1:degree(O)
       m[nrows(dM)+i, j] = I1.basis_mat[i,j]
     end
   end
@@ -161,7 +161,7 @@ function pradical_crossed_product(O::AlgAssAbsOrd, I1::AlgAssAbsOrdIdl, p::Int)
   else
     append!(gens, basis(I1, copy = false))
   end
-  J=ideal(O, view(m, 1:O.dim, 1:O.dim))
+  J=ideal(O, view(m, 1:degree(O), 1:degree(O)))
   J.gens=gens
   return J
 
@@ -169,12 +169,12 @@ end
 
 function _ideal_in_radical(OL::NfOrd, G::Array{NfToNfMor, 1}, O::AlgAssAbsOrd, p::Int)
   
-  A = O.algebra
+  A = algebra(O)
   I = pradical(OL, p)
   I.minimum = fmpz(p)
   _assure_weakly_normal_presentation(I)
   B = basis(I, copy = false)
-  M = zero_matrix(FlintZZ, O.dim, O.dim)
+  M = zero_matrix(FlintZZ, degree(O), degree(O))
   l = 0
   for i = 1:length(B)
     el = elem_in_basis(B[i])
@@ -191,12 +191,12 @@ function _ideal_in_radical(OL::NfOrd, G::Array{NfToNfMor, 1}, O::AlgAssAbsOrd, p
   #I need to save the generators of the ideal!
   gens = Array{AlgAssElem, 1}(undef, 2)
   el1 = elem_in_basis(OL(p))
-  a = fmpq[0 for i=1:O.dim]
+  a = fmpq[0 for i=1:degree(O)]
   for k = 1:degree(OL)
     a[j+(k-1)*length(G)] = fmpq(el1[k])
   end
   gens[1] = A(a)
-  a2 = fmpq[0 for i=1:O.dim]
+  a2 = fmpq[0 for i=1:degree(O)]
   el2 = elem_in_basis(I.gen_two)
   for k = 1:degree(OL)
     a2[j+(k-1)*length(G)] = fmpq(el2[k])
@@ -214,7 +214,7 @@ function pmaximal_overorder_crossed_product(OL::NfOrd, G::Array{NfToNfMor, 1}, O
     return O
   end
   
-  A = O.algebra
+  A = algebra(O)
   extend = false
   #The p-radical of OL generates an ideal which is contained in the p-radical of the algebra. 
   #Therefore, to compute the maximal ideals, I can factor out the algebra by it.

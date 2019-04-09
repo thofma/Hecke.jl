@@ -128,6 +128,15 @@ function basis_mat_inv(a::AlgAssAbsOrdIdl; copy::Bool = true)
   end
 end
 
+function det_of_basis_mat(a::AlgAssAbsOrdIdl)
+  d = fmpz(1)
+  M = basis_mat(a, copy = false)
+  for i = 1:nrows(M)
+    d = mul!(d, d, M[i, i])
+  end
+  return d
+end
+
 ################################################################################
 #
 #  Arithmetic
@@ -143,7 +152,10 @@ function +(a::AlgAssAbsOrdIdl{S, T}, b::AlgAssAbsOrdIdl{S, T}) where {S, T}
 
   d = degree(order(a))
   M = vcat(basis_mat(a), basis_mat(b))
-  M = view(_hnf(M, :lowerleft), (d + 1):2*d, 1:d)
+  deta = det_of_basis_mat(a)
+  detb = det_of_basis_mat(b)
+  M = hnf_modular_eldiv!(M, gcd(deta, detb), :lowerleft)
+  M = sub(M, (d + 1):2*d, 1:d)
   return ideal(order(a), M, :nothing, true)
 end
 
@@ -157,16 +169,23 @@ function *(a::AlgAssAbsOrdIdl{S, T}, b::AlgAssAbsOrdIdl{S, T}) where {S, T}
   d = degree(order(a))
   ba = basis(a, copy = false)
   bb = basis(b, copy = false)
-  M = zero_matrix(FlintZZ, d^2, d)
+  d2 = d^2
+
+  M = zero_matrix(FlintZZ, d2, d)
+  t = one(order(a))
   for i = 1:d
     for j = 1:d
-      t = ba[i]*bb[j]
+      t = mul!(t, ba[i], bb[j])
       for k = 1:d
-        M[(i - 1)*d + j, k] = elem_in_basis(t)[k]
+        M[(i - 1)*d + j, k] = elem_in_basis(t; copy = false)[k]
       end
     end
   end
-  M = view(_hnf(M, :lowerleft), (d^2 - d + 1):d^2, 1:d)
+
+  deta = det_of_basis_mat(a)
+  detb = det_of_basis_mat(b)
+  M = hnf_modular_eldiv!(M, deta*detb, :lowerleft)
+  M = sub(M, (d2 - d + 1):d2, 1:d)
   return ideal(order(a), M, :nothing, true)
 end
 
@@ -190,14 +209,14 @@ end
 *(a::AlgAssAbsOrdIdl, x::fmpz) = ideal(order(a), basis_mat(a, copy = false)*x, :nothing, true)
 
 function *(x::AlgAssAbsOrdElem, a::AlgAssAbsOrdIdl)
-  @assert parent(x) == order(a)
+  @assert parent(x) === order(a)
   @assert isleft_ideal(a)
   O = order(a)
   return ideal(O, x)*a
 end
 
 function *(a::AlgAssAbsOrdIdl, x::AlgAssAbsOrdElem)
-  @assert parent(x) == order(a)
+  @assert parent(x) === order(a)
   @assert isright_ideal(a)
   O = order(a)
   return a*ideal(O, x)
