@@ -139,6 +139,17 @@ function add!(c::AbsAlgAssElem{T}, a::AbsAlgAssElem{T}, b::AbsAlgAssElem{T}) whe
   return c
 end
 
+function addeq!(b::AbsAlgAssElem{T}, a::AbsAlgAssElem{T}) where {T}
+  parent(a) != parent(b) && error("Parents don't match.")
+  A = parent(a)
+
+  for i = 1:dim(A)
+    b.coeffs[i] = addeq!(b.coeffs[i], a.coeffs[i])
+  end
+
+  return b
+end
+
 function mul!(c::AbsAlgAssElem{T}, a::AbsAlgAssElem{T}, b::T) where {T}
   parent(a) != parent(c) && error("Parents don't match.")
 
@@ -304,6 +315,30 @@ dot(a::AbsAlgAssElem{T}, b::fmpz) where {T} = a*b
 
 dot(b::fmpz, a::AbsAlgAssElem{T}) where {T} = b*a
 
+function dot(c::Vector{T}, V::Vector{AlgAssElem{T, AlgAss{T}}}) where T <: Generic.ResF{S} where S <: Union{Int, fmpz}
+  @assert length(c) == length(V)
+  A = parent(V[1])
+  res = zero(A)
+  aux = zero(A)
+  for i = 1:length(c)
+    aux = mul!(aux, V[i], c[i])
+    res = add!(res, res, aux)
+  end
+  return res
+end
+
+function dot(c::Vector{gfp_elem}, V::Vector{AlgAssElem{gfp_elem, AlgAss{gfp_elem}}})
+  @assert length(c) == length(V)
+  A = parent(V[1])
+  res = zero(A)
+  aux = zero(A)
+  for i = 1:length(c)
+    aux = mul!(aux, V[i], c[i])
+    res = add!(res, res, aux)
+  end
+  return res
+end
+
 ################################################################################
 #
 #  Inverse
@@ -422,6 +457,10 @@ function (A::AlgAss)(a::Int)
   return a*one(A)
 end
 
+function (A::AlgGrp)(a::Int)
+  return a*one(A)
+end
+
 function (A::AlgAss{T})(a::T) where T
   return a*one(A)
 end
@@ -437,11 +476,19 @@ end
 ################################################################################
 
 function show(io::IO, a::AbsAlgAssElem)
-  print(io, "Element of ")
-  print(io, parent(a))
-  print(io, " with coefficients ")
-  print(io, a.coeffs)
+  if get(io, :compact, false)
+    print(io, a.coeffs)
+  else
+    print(io, "Element of ")
+    print(io, parent(a))
+    print(io, " with coefficients ")
+    print(io, a.coeffs)
+  end
 end
+
+needs_parentheses(::AbsAlgAssElem) = true
+
+isnegative(::AbsAlgAssElem) = false
 
 ################################################################################
 #
@@ -688,13 +735,6 @@ function trred_matrix(A::Vector{<: AlgAssElem})
   end
   return M
 end
-
-################################################################################
-#
-#  Characteristic polynomial
-#
-################################################################################
-
 
 ################################################################################
 #

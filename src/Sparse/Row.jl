@@ -11,7 +11,17 @@ function SRowSpace(R::Ring; cached = true)
   return SRowSpace{T}(R)
 end
 
-base_ring(A::SRow) = parent(A.values[1])
+base_ring(A::SRow{fmpz}) = FlintZZ
+
+base_ring(A::SRow{fmpq}) = FlintQQ
+
+function base_ring(A::SRow)
+  if length(A.values) == 0
+    throw(error("Base ring of empty row not defined"))
+  else
+    return parent(A.values[1])
+  end
+end
 
 @doc Markdown.doc"""
     ==(x::SRow, y::SRow)

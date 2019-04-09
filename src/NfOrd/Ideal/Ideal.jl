@@ -134,7 +134,9 @@ end
 ################################################################################
 
 function show(io::IO, a::NfAbsOrdIdlSet)
-  print(io, "Set of ideals of $(order(a))\n")
+  print(io, "Set of ideals of ")
+  show(Base.IOContext(io, :compact => true), order(a))
+  print(io, "\n")
 end
 
 function show(io::IO, a::NfAbsOrdIdl)
@@ -147,7 +149,8 @@ end
 
 function show_gen(io::IO, a::NfAbsOrdIdl)
   print(io, "Ideal of (")
-  print(io, order(a), ")\n")
+  show(IOContext(io, :compact => true), order(a))
+  print(io, ")\n")
   print(io, "with basis matrix\n")
   print(io, basis_mat(a, copy = false))
 end

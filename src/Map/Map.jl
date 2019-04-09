@@ -8,13 +8,20 @@
 #end
 
 function show(io::IO, M::Map)
+  @show_name(io, M)
+  if get(io, :compact, false)
+    print(io, domain(M), " --> ", codomain(M), "\n")
+    return
+  end
+  io = Base.IOContext(io, :compact => true)
   print(io, "Map with following data\n")
   print(io, "Domain:\n")
   print(io, "=======\n")
-  print(io, "$(domain(M))\n\n")
-  print(io, "Codomain:\n")
+  print(io, domain(M))
+  print(io, "\nCodomain:\n")
   print(io, "=========\n")
-  print(io, "$(codomain(M))\n")
+  print(io, codomain(M))
+  print(io, "\n")
 end
 
 function preimage(M::Map{D, C}, a) where {D, C}
@@ -39,6 +46,7 @@ function image(M::Map{D, C}, a) where {D, C}
 end
 
 function show(io::IO, M::InverseMap)
+  @show_name(io, M)
   println(io, "inverse of")
   println(io, " ", M.origin)
 end

@@ -41,10 +41,14 @@ end
 end
 
 (O::AlgAssAbsOrd{S, T})(arr::Vector{fmpz}) where {S, T} = begin
-  return AlgAssAbsOrdElem{S, T}(O, deepcopy(arr))
+  M = basis_mat(O, copy = false)
+  N = matrix(FlintZZ, 1, degree(O), arr)
+  NM = N*M
+  x = elem_from_mat_row(algebra(O), NM.num, 1, NM.den)
+  return AlgAssAbsOrdElem{S, T}(O, x, deepcopy(arr))
 end
 
-(O::AlgAssAbsOrd{S, T})(a::AlgAssAbsOrdElem{S, T}, check::Bool = true) where {S, T} =begin
+(O::AlgAssAbsOrd{S, T})(a::AlgAssAbsOrdElem{S, T}, check::Bool = true) where {S, T} = begin
   b = elem_in_algebra(a) # already a copy
   if check
     (x, y) = _check_elem_in_order(b, O)
@@ -106,17 +110,11 @@ function assure_has_coord(x::AlgAssAbsOrdElem)
   if x.has_coord
     return nothing
   end
+
   a, b = _check_elem_in_order(elem_in_algebra(x, copy = false), parent(x))
   !a && error("Not a valid order element")
   x.elem_in_basis = b
-  return nothing
-end
-
-function assure_elem_in_algebra(x::AlgAssAbsOrdElem)
-  if !isdefined(x, :elem_in_algebra)
-    O = parent(x)
-    x.elem_in_algebra = dot(O.basis_alg, x.elem_in_basis)
-  end
+  x.has_coord = true
   return nothing
 end
 
@@ -210,12 +208,12 @@ divexact_left(a::AlgAssAbsOrdElem, b::AlgAssAbsOrdElem, check::Bool = true) = di
 ################################################################################
 
 function elem_from_mat_row(O::AlgAssAbsOrd, M::fmpz_mat, i::Int)
-  return O(fmpz[ deepcopy(M[i, j]) for j = 1:degree(O) ])
+  return O(fmpz[ M[i, j] for j = 1:degree(O) ])
 end
 
 function elem_to_mat_row!(M::fmpz_mat, i::Int, a::AlgAssAbsOrdElem)
   for c = 1:ncols(M)
-    M[i, c] = elem_in_basis(a)[c]
+    M[i, c] = deepcopy(elem_in_basis(a; copy = false))[c]
   end
   return nothing
 end

@@ -141,18 +141,18 @@ function test_mat_alg_morphism(AtoB::Hecke.AbsAlgAssMor, n::Int)
   end
   @test isone(sum_of_diag)
 
-  # B[(i - 1)*n + j]*B[(k - 1)*n + l] == B[(i - 1)*n + l], if j == k, and 0, otherwise
-  for i = 1:n
-    iN = (i - 1)*n
-    for j = 1:n
-      ij = iN + j
-      for k = 1:n
-        kn = (k - 1)*n
-        for l = 1:n
+  # B[i + (j - 1)*n]*B[k + (l - 1)*n] == B[i + (l - 1)*n], if j == k, and 0, otherwise
+  for j = 1:n
+    jN = (j - 1)*n
+    for i = 1:n
+      ji = jN + i
+      for l = 1:n
+        lN = (l - 1)*n
+        for k = 1:n
           if j == k
-            @test AtoB\(B[ij]*B[kn + l]) == AtoB\B[iN + l]
+            @test AtoB\(B[ji]*B[k + lN]) == AtoB\B[i + lN]
           else
-            @test iszero(AtoB\(B[ij]*B[kn + l]))
+            @test iszero(AtoB\(B[ji]*B[k + lN]))
           end
         end
       end

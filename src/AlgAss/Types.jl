@@ -1,4 +1,4 @@
-export AlgAss, AlgAssElem, AlgGrp, AlgGrpElem
+export AlgAss, AlgAssElem, AlgGrp, AlgGrpElem, AlgMat, AlgMatElem
 
 abstract type AbsAlgAss{T} <: Ring end
 
@@ -264,7 +264,6 @@ mutable struct AlgAssAbsOrd{S, T} <: Ring
     @assert length(basis) == r.dim
     r.basis_alg = basis
     r.basis_mat = basis_mat(basis)
-    r.basis_mat_inv = inv(r.basis_mat)
     return r
   end
 
@@ -276,7 +275,6 @@ mutable struct AlgAssAbsOrd{S, T} <: Ring
     for i in 1:d
       r.basis_alg[i] = elem_from_mat_row(A, basis_mat.num, i, basis_mat.den)
     end
-    r.basis_mat_inv = inv(basis_mat)
     return r
   end
 end
@@ -305,20 +303,20 @@ mutable struct AlgAssAbsOrdElem{S, T} <: RingElem
     return z
   end
 
-  function AlgAssAbsOrdElem{S, T}(O::AlgAssAbsOrd{S, T}, a::T, arr::Vector{fmpz}) where {S, T}
-    z = new{S, T}()
-    z.parent = O
-    z.elem_in_algebra = a
-    z.elem_in_basis = arr
-    z.has_coord = true
-    return z
-  end
-
   function AlgAssAbsOrdElem{S, T}(O::AlgAssAbsOrd{S, T}, arr::Vector{fmpz}) where {S, T}
     z = new{S, T}()
     z.elem_in_algebra = dot(O.basis_alg, arr)
     z.elem_in_basis = arr
     z.parent = O
+    z.has_coord = true
+    return z
+  end
+
+  function AlgAssAbsOrdElem{S, T}(O::AlgAssAbsOrd{S, T}, a::T, arr::Vector{fmpz}) where {S, T}
+    z = new{S, T}()
+    z.parent = O
+    z.elem_in_algebra = a
+    z.elem_in_basis = arr
     z.has_coord = true
     return z
   end
@@ -351,10 +349,6 @@ mutable struct AlgAssAbsOrdIdl{S, T}
     r = new{S, T}()
     r.order = O
     d = O.dim
-    r.basis = Vector{AlgAssAbsOrdElem{S, T}}(undef, d)
-    for i = 1:d
-      r.basis[i] = elem_from_mat_row(O, M, i)
-    end
     r.basis_mat = M
     r.isleft = 0
     r.isright = 0
@@ -409,3 +403,54 @@ end
 const AlgAssAbsOrdQuoRing{S, T} = AbsOrdQuoRing{AlgAssAbsOrd{S, T}, AlgAssAbsOrdIdl{S, T}} where {S, T}
 
 const AlgAssAbsOrdQuoRingElem{S, T} = AbsOrdQuoRingElem{AlgAssAbsOrd{S, T}, AlgAssAbsOrdIdl{S, T}, AlgAssAbsOrdElem{S, T}} where {S, T}
+
+################################################################################
+#
+#  AlgMat / AlgMatElem
+#
+################################################################################
+
+# T == elem_type(base_ring), S == dense_matrix_type(coefficient_ring)
+mutable struct AlgMat{T, S} <: AbsAlgAss{T}
+  base_ring::Ring
+  coefficient_ring::Ring
+  one
+  has_one::Bool
+  basis
+  basis_mat # matrix over the base_ring
+  basis_mat_trp
+  dim::Int
+  degree::Int
+  issimple::Int
+  decomposition
+
+  function AlgMat{T, S}(R::Ring) where {T, S}
+    A = new{T, S}()
+    A.base_ring = R
+    A.issimple = 0
+    return A
+  end
+end
+
+mutable struct AlgMatElem{T, S, Mat} <: AbsAlgAssElem{T}
+  parent::S
+  matrix::Mat # over the coefficient ring of the parent
+  coeffs::Vector{T} # over the base ring of the parent
+  has_coeffs::Bool
+
+  function AlgMatElem{T, S, Mat}(A::S) where {T, S, Mat}
+    z = new{T, S, Mat}()
+    z.parent = A
+    z.matrix = zero_matrix(base_ring(A), degree(A), degree(A))
+    z.has_coeffs = false
+    return z
+  end
+
+  function AlgMatElem{T, S, Mat}(A::S, M::Mat) where {T, S, Mat}
+    z = new{T, S, Mat}()
+    z.parent = A
+    z.matrix = M
+    z.has_coeffs = false
+    return z
+  end
+end
