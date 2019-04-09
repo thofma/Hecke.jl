@@ -376,6 +376,11 @@ end
 #  Random elements
 #
 ##############################################################################
+#this allows some more complicated rand(G, (2,2)) and similar.
+#TODO: figure out how this SHOULD be done
+using Random
+rand(rng::AbstractRNG, a::Random.SamplerTrivial{GrpAbFinGen, GrpAbFinGenElem}) = rand(a.self)
+
 
 @doc Markdown.doc"""
 ***

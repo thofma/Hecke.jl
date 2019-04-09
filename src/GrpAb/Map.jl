@@ -90,14 +90,13 @@ end
 #
 ################################################################################
 
-id_hom(G::GrpAbFinGen) = hom(G, G, identity_matrix(FlintZZ, ngens(G)), identity_matrix(FlintZZ, ngens(G)), false)
+id_hom(G::GrpAbFinGen) = hom(G, G, identity_matrix(FlintZZ, ngens(G)), identity_matrix(FlintZZ, ngens(G)), check = false)
 
-#TODO: Should check consistency
 @doc Markdown.doc"""
     hom(A::Array{GrpAbFinGenElem, 1}, B::Array{GrpAbFinGenElem, 1}) -> Map
 > Creates the homomorphism $A[i] \mapsto B[i]$
 """
-function hom(A::Array{GrpAbFinGenElem, 1}, B::Array{GrpAbFinGenElem, 1}; check::Bool = false)
+function hom(A::Array{GrpAbFinGenElem, 1}, B::Array{GrpAbFinGenElem, 1}; check::Bool = true)
   GA = parent(A[1])
   GB = parent(B[1])
   @assert length(B) == length(A)
@@ -120,10 +119,10 @@ function hom(A::Array{GrpAbFinGenElem, 1}, B::Array{GrpAbFinGenElem, 1}; check::
   M = vcat(M, hcat(RA, zero_matrix(FlintZZ, nrows(RA), ncols(B[1].coeff))))
   H = hnf(M)
   if ngens(GB) == 0
-    return GrpAbFinGenMap(GA, GB, matrix(FlintZZ, ngens(GA), 0, fmpz[]))
+    return hom(GA, GB, matrix(FlintZZ, ngens(GA), 0, fmpz[]), check = check)
   end
   H = sub(H, 1:ngens(GA), ngens(GA)+1:ngens(GA)+ngens(GB))
-  h = GrpAbFinGenMap(GA, GB, H)
+  h = hom(GA, GB, H, check = check)
   return h
 end
 
@@ -132,11 +131,11 @@ end
 
 > Creates the homomorphism which maps `G[i]` to `B[i]`.
 """
-function hom(G::GrpAbFinGen, B::Array{GrpAbFinGenElem, 1})
+function hom(G::GrpAbFinGen, B::Array{GrpAbFinGenElem, 1}; check::Bool = true)
   GB = parent(B[1])
   @assert length(B) == ngens(G)
   M = vcat([B[i].coeff for i = 1:length(B)])
-  h = GrpAbFinGenMap(G, GB, M)
+  h = hom(G, GB, M, check = check)
   return h
 end
 
@@ -149,7 +148,7 @@ function hom(G::GrpAbFinGen, H::GrpAbFinGen, B::Array{GrpAbFinGenElem, 1}; check
       M[i, j] = B[i][j]
     end
   end
-  h = hom(G, H, M, check)
+  h = hom(G, H, M, check = check)
   return h
 end
 
@@ -165,7 +164,7 @@ function check_mat(A::GrpAbFinGen, B::GrpAbFinGen, M::fmpz_mat)
   return all(x -> iszero(B(R[x, :])), 1:nrows(R))
 end
 
-function hom(A::GrpAbFinGen, B::GrpAbFinGen, M::fmpz_mat, check::Bool = true)
+function hom(A::GrpAbFinGen, B::GrpAbFinGen, M::fmpz_mat; check::Bool = true)
   if check 
     check_mat(A, B, M) || error("Matrix does not define a morphism of abelian groups")
   end
@@ -173,10 +172,10 @@ function hom(A::GrpAbFinGen, B::GrpAbFinGen, M::fmpz_mat, check::Bool = true)
   return GrpAbFinGenMap(A, B, M)::GrpAbFinGenMap
 end
 
-function hom(A::GrpAbFinGen, B::GrpAbFinGen, M::fmpz_mat, Minv, check::Bool = true)
+function hom(A::GrpAbFinGen, B::GrpAbFinGen, M::fmpz_mat, Minv; check::Bool = true)
   if check
     check_mat(A, B, M) || error("Matrix does not define a morphism of abelian groups")
-    check_mat(A, B, Minv) || error("Matrix does not define a morphism of abelian groups")
+    check_mat(B, A, Minv) || error("Matrix does not define a morphism of abelian groups")
     h = GrpAbFinGenMap(A, B, M, Minv)
     all(x -> x == inv(h)(h(x)), gens(A)) || error("Matrix does not define a morphism of abelian groups")
     return h::GrpAbFinGenMap
@@ -380,7 +379,7 @@ function hom(G::GrpAbFinGen, H::GrpAbFinGen; task::Symbol = :map)
   c = [x[2] for x = r]
 
   function phi(r::GrpAbFinGenElem)
-    return GrpAbFinGenMap(inv(mG) * hom(sG, sH, matrix(FlintZZ, n, m, [r[i]*c[i] for i=1:ngens(R)]), true) * mH)
+    return GrpAbFinGenMap(inv(mG) * hom(sG, sH, matrix(FlintZZ, n, m, [r[i]*c[i] for i=1:ngens(R)]), check = true) * mH)
   end
 
   function ihp(r::GrpAbFinGenMap)
