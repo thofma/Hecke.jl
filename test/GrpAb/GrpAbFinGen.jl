@@ -288,4 +288,34 @@
     l = collect(abelian_groups(2^6 * 3^3 * 5^2 * 7))
     @test length(l) == 66
   end
+
+  @testset "HomAlg" begin
+    G = AbelianGroup([3 1; 0 3])
+    S, mS = snf(G)
+    H, mH = hom(G,G)
+    T, p = tensor_product(G, G)
+    D = direct_product(G, G, task = :none)
+    for i=1:5
+      Th = hom(T, T, map(mH, [rand(H) for x = 1:2])) #induced map in tensor product
+      Dh = hom(D, D, map(mH, rand(H, (2,2)))) #induced map on direct prod
+    end
+    C = free_resolution(G)
+    D = free_resolution(S)
+    @test isexact(C)
+    hom(D, C, mS)
+    E = hom(D, T)
+    @test 9 == prod(order(x) for x = homology(E))
+    @test !isexact(E)
+    E = hom(T, C)
+    @test !isexact(E)
+    E = tensor_product(C, T)
+    @test !isexact(E)
+
+    A = AbelianGroup([3 1; 0 3])
+    B = AbelianGroup([9 2 1; 0 12 1; 0 0 25])
+    C = DiagonalGroup([3, 4, 0])
+    @test isisomorphic(hom(tensor_product(A, B, task = :none), C)[1], 
+                       hom(A, hom(B, C)[1])[1])
+  end
+
 end
