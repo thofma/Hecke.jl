@@ -244,17 +244,17 @@ function _multgrp_mod_p(p::NfOrdIdl, pnumv::fmpz = fmpz(0))
   gen_quo = mQ(gen)
   discrete_logarithm = function (x::NfOrdElem)
     y=mQ(x)
-    if y==Q(1)
+    if isone(y)
       return 0
-    elseif y==Q(-1) && mod(n,2)==0
-      return divexact(n,2)
+    elseif y==Q(-1) && mod(n, 2)==0
+      return divexact(n, 2)
     end
-    if n<11
-      res=1
-      el=gen_quo
-      while el!=y
-        el*=gen_quo
-        res+=1
+    if n < 11
+      res = 1
+      el = gen_quo
+      while el != y
+        el *= gen_quo
+        res += 1
       end
       return res
     else 
@@ -279,7 +279,7 @@ function _primitive_element_mod_p(p::NfOrdIdl)
     x == 0 && continue
     order_too_small = false
     for l in primefactors_n
-      if x^div(n, l) == 1
+      if isone(x^div(n, l))
         order_too_small = true
         break
       end
@@ -384,7 +384,7 @@ function _iterative_method(p::NfOrdIdl, u::Int, v::Int; base_method = nothing, u
     k1 = 1
     for i in 1:length(dlogs)
       a_ = dlogs[i](b1.elem)
-      prod = Q(1)
+      prod = one(Q)
       for j in 1:length(a_)
         mul!(prod, prod, Q(g[k1])^a_[j])
         k1 += 1
@@ -420,7 +420,7 @@ function _expand(g::Array{NfOrdElem,1}, M::fmpz_mat, h::Array{NfOrdElem,1}, N::f
     Z[i+nrows(M),i+nrows(M)]=N[i,i]
   end
   for i in 1:nrows(M)
-    el = Q(1)
+    el = one(Q)
     for j = 1:ncols(M)
       if !iszero(M[i, j])
         mul!(el, el, Q(g[j])^M[i, j])
@@ -455,16 +455,16 @@ function _pu_mod_pv(pu::NfOrdIdl, pv::NfOrdIdl)
   gens=Array{NfOrdElem,1}(undef, ngens(S))
   for i=1:ngens(S)
     x=mS(S[i])
-    gens[i]=O(0)
+    gens[i]= zero(O)
     for j=1:ngens(G)
       add!(gens[i], gens[i], mod(x[j], S.snf[end])*b[j])
     end
   end
   
   #Disclog  
-  M=basis_mat_inv(pu, copy = false)*mS.imap
+  M = basis_mat_inv(pu, copy = false)*mS.imap
   function disclog(x::NfOrdElem)
-    x_fakemat = FakeFmpqMat(matrix(FlintZZ, 1, degree(O), elem_in_basis(x)), fmpz(1))
+    x_fakemat = FakeFmpqMat(matrix(FlintZZ, 1, degree(O), elem_in_basis(x, copy = false)))
     mul!(x_fakemat, x_fakemat, M)
     denominator(x_fakemat) != 1 && error("Element is in the ideal")
     return vec(Array(x_fakemat.num))
@@ -535,15 +535,18 @@ end
 function artin_hasse_exp(x::NfOrdQuoRingElem, pnum::fmpz)
   Q = parent(x)
   s = Q(1)
-  fac_i = Q(1)
+  fac_i = fmpz(1)
   t = Q(1)
+  m = minimum(Q.ideal)
   for i=1:pnum-1
     mul!(t, t, x)
     if iszero(t)
       break
     end
-    mul!(fac_i, fac_i, Q(i))
-    add!(s, s, divexact(t, fac_i))
+    mul!(fac_i, fac_i, i)
+    mod!(fac_i, fac_i, m)
+    invfac_i = invmod(fac_i, m)
+    add!(s, s, invfac_i*t)
   end
   return s.elem
 end
@@ -554,6 +557,7 @@ function artin_hasse_log(y::NfOrdQuoRingElem, pnum::fmpz)
   if iszero(x)
     return x.elem
   end
+  m = minimum(Q.ideal)
   s = Q(0)
   t = Q(1)
   for i in 1:pnum-1
@@ -561,10 +565,11 @@ function artin_hasse_log(y::NfOrdQuoRingElem, pnum::fmpz)
     if iszero(t)
       break
     end
+    invi = invmod(fmpz(i), m)
     if iseven(i)
-      sub!(s, s, divexact(t, Q(i)))
+      sub!(s, s, invi*t)
     else 
-      add!(s, s, divexact(t, Q(i)))
+      add!(s, s, invi*t)
     end
   end
   return s.elem
@@ -602,19 +607,30 @@ function _p_adic_method(p::NfOrdIdl, u::Int, v::Int; pu::NfOrdIdl=p^u, pv::NfOrd
   return g, M, discrete_logarithm
 end
 
+function _divexact(x::AbsOrdQuoRingElem, y::fmpz)
+  Q = parent(x)
+  I = ideal(Q)
+  OK = order(I)
+  m = minimum(I, copy = false)
+  s = invmod(y, m)
+  res = s*x
+  #@assert res == divexact(x, Q(y))
+  return res
+end
+
 
 function p_adic_exp(Q::NfOrdQuoRing, p::NfOrdIdl, v::Int, x::NfOrdElem)
   O = parent(x)
-  iszero(x) && return O(1)
+  iszero(x) && return one(O)
   pnum = p.minimum
   e = ramification_index(p)
   val_p_x = valuation(x, p)
   max_i = floor(Int, v / (val_p_x - (e/(Float64(pnum)-1)))) + 1
   val_p_maximum = Int(max_i*val_p_x) + 1
   Q_ = NfOrdQuoRing(O, p^val_p_maximum)
-  x = Q_(x)
+  x1 = Q_(x)
   s = one(Q)
-  inc = Q_(1)
+  inc = one(Q_)
   val_p_xi = 0
   val_p_fac_i = 0
   i_old = 0
@@ -628,10 +644,13 @@ function p_adic_exp(Q::NfOrdQuoRing, p::NfOrdIdl, v::Int, x::NfOrdElem)
     @hassert :NfOrdQuoRing 1 val_p_xi< val_p_maximum
     @hassert :NfOrdQuoRing 1 val_p_fac_i< val_p_maximum
     i_prod = prod((i_old+1):i)
-    deltax = inc*x^(i-i_old)
+    deltax = inc*x1^(i-i_old)
     @hassert :NfOrdQuoRing 1 !iszero(deltax)
-    @hassert :NfOrdQuoRing 1 !iszero(Q_(i_prod))
-    inc = divexact(deltax,Q_(i_prod))
+    if isone(gcd(i_prod, pnum))
+      inc = _divexact(deltax, fmpz(i_prod))
+    else
+      inc = divexact(deltax, Q_(i_prod))
+    end
     add!(s, s, Q(inc.elem))
     i_old = i
   end
@@ -670,10 +689,14 @@ function p_adic_log(Q::NfOrdQuoRing, p::NfOrdIdl, v::Int, y::NfOrdElem)
     val_p_xi += val_p_x
     val_p_xi - val_p_i >= v && continue
     mul!(xi, xi, x^(i-i_old))
-    el = anti_uni^val_p_i
-    numer = O(xi.elem_in_nf*el, false)
-    denom = O(i*el, false)
-    inc = divexact(Q(numer),Q(denom))
+    if iszero(val_pnum_i) 
+      inc = _divexact(Q(xi), fmpz(i))
+    else  
+      el = anti_uni^val_p_i
+      numer = O(xi.elem_in_nf*el, false)
+      denom = O(i*el, false)
+      inc = divexact(Q(numer),Q(denom))
+    end
     if isodd(i) 
       add!(s, s, inc)
     else
@@ -687,10 +710,14 @@ function p_adic_log(Q::NfOrdQuoRing, p::NfOrdIdl, v::Int, y::NfOrdElem)
     val_p_xi += val_p_x
     val_p_xi - val_p_i >= v && continue
     mul!(xi, xi, x^(i-i_old))
-    el = anti_uni^val_p_i
-    numer = O(xi.elem_in_nf*el, false)
-    denom = O(i*el, false)
-    inc = divexact(Q(numer),Q(denom))
+    if iszero(val_pnum_i) 
+      inc = _divexact(Q(xi), fmpz(i))
+    else  
+      el = anti_uni^val_p_i
+      numer = O(xi.elem_in_nf*el, false)
+      denom = O(i*el, false)
+      inc = divexact(Q(numer),Q(denom))
+    end
     if isodd(i) 
       add!(s, s, inc)
     else

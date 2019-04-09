@@ -442,6 +442,9 @@ function pow_2_elem(A::NfAbsOrdIdl, e::Int)
     if isdefined(A, :norm)
       I.norm = norm(A, copy = false)^e
     end
+    if isdefined(A, :minimum) && isone(gcd(minimum(A, copy = false), discriminant(OK)))
+      I.minimum = A.minimum^e
+    end
     if has_2_elem_normal(A)
       I.gens_normal = A.gens_normal
     end

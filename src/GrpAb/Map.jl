@@ -178,8 +178,11 @@ function hom(A::GrpAbFinGen, B::GrpAbFinGen, M::fmpz_mat, Minv, check::Bool = tr
   if check
     if A == B
       G = A
-      images = [ G([M[i, j] for j in 1:ngens(G)]) for i in 1:ngens(G) ]
-      a = 0 * G[1]
+      images = Vector{GrpAbFinGen}(undef, ngens(G))
+      for i = 1:length(images)
+        images[i] = G(fmpz[M[i, j] for j in 1:ngens(G)])
+      end
+      a = G[0]
       for i in 1:nrels(G)
         for j in 1:ngens(G)
           a = a + G.rels[i, j] * images[j]

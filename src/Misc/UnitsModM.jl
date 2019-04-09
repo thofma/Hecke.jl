@@ -460,12 +460,12 @@ end
 
 function unit_group_mod(R::Nemo.NmodRing, n::Int)
 
-  fm = factor(fmpz(R.n)).fac
+  fm = factor(fmpz(R.n))
   gens = Array{Int,1}(undef, 0)
   structt = Int[]
   disclogs = Function[]
 
-  for (p,v) in fm
+  for (p, v) in fm
     gensp, structp, disclog_p = _unit_pk_mod_n(Int(p), v, n)
     if length(fm)>1
       e=Int(p)^v
@@ -480,26 +480,31 @@ function unit_group_mod(R::Nemo.NmodRing, n::Int)
     push!(disclogs, disclog_p)
   end
 
-  G=DiagonalGroup(structt)
-  
-  function disclog(x::nmod)
-    res=Int[]
-    for i=1:length(disclogs)
-      append!(res, disclogs[i](Int(x.data)))
-    end
-    return G(res)
-  end
-  
-  function expon(a::GrpAbFinGenElem)
-    res=R(1)
-    for i=1:ngens(G)
-      if a[i]!=0
-        res*=R(gens[i])^Int(a[i])
+  G = DiagonalGroup(structt)
+  local disclog
+  let G = G, disclogs = disclogs
+    function disclog(x::nmod)
+      res = Int[]
+      for i = 1:length(disclogs)
+        append!(res, disclogs[i](Int(x.data)))
       end
+      return G(res)
     end
-    return res
   end
-
+  
+  local expon 
+  let G = G, R = R  
+    function expon(a::GrpAbFinGenElem)
+      res = one(R)
+      for i=1:ngens(G)
+        if !iszero(a[i])
+          res *= R(gens[i])^Int(a[i])
+        end
+      end
+      return res
+    end
+  end
+  
   return G, MapUnitGroupModM{typeof(G)}(G, R, expon, disclog)
 
 end
@@ -509,49 +514,61 @@ function _unit_pk_mod_n(p::Int, v::Int, n::Int)
 
   #First, multiplicative group mod p
   if isodd(p)
-    g, ord, disclog=_unit_grp_residue_field_mod_n(p,n)
+    g, ord, disclog = _unit_grp_residue_field_mod_n(p,n)
     if v>=2 && n % p==0
       #We know that (1+p)^(p-1) generates the p-Sylow of Z/p^vZ
       #We only need the quotient by p^valuation(n,p)
-      R=ResidueRing(FlintZZ, p^v, cached=false)
+      R = ResidueRing(FlintZZ, p^v, cached=false)
       gen = R(1+p)^(p-1)
       ord1 = gcd(p^(v-1), n)
       aux1 = div(p^(v-1), ord1)
       expg = (p-1)*aux1
       z = gen^aux1
       inv = invmod(p-1,ord1)
-      function disc_log(x::Int)
-        y=R(x)^expg
-        if aux1<100
-          c=1
-          el=z
-          while el!=y
-            c+=1
-            el*=z
+      local disc_log
+      let R = R, aux1 = aux1, z = z, inv = inv, ord1 = ord1
+        function disc_log(x::Int)
+          y=R(x)^expg
+          if aux1<100
+            c=1
+            el=z
+            while el!=y
+              c+=1
+              el*=z
+            end
+            return mod(c*inv, ord1)
+          else
+            return mod(inv*disc_log_bs_gs(z, y, aux1), ord1)
           end
-          return mod(c*inv, ord1)
-        else
-          return mod(inv*disc_log_bs_gs(z, y, aux1), ord1)
         end
       end
       if iszero(g)
-        function disc_log2(x::Int)
-          return Int[disc_log(x)]
+        local disclog2 
+        let disc_log = disc_log
+          function disc_log2(x::Int)
+            return Int[disc_log(x)]
+          end
         end
-        return [Int(gen.data)], [ord1], disc_log
+        return Int[Int(gen.data)], Int[ord1], disc_log
       else
-        g=Int((R(g)^(p^v)).data)
-        inv1=invmod(p^v, ord)
-        function disc_log1(x::Int)
-          return [inv1*disclog(x), disc_log(x)]
+        g = Int((R(g)^(p^v)).data)
+        inv1 = invmod(p^v, ord)
+        local disc_log1
+        let inv1 = inv1, disclog = disclog, disc_log = disc_log
+          function disc_log1(x::Int)
+            return Int[inv1*disclog(x), disc_log(x)]
+          end
         end
       end
       return [g, Int(gen.data)], Int[ord, ord1], disc_log1
     else 
-      function disc_log3(x::Int)
-        return [disclog(x)]
+      local disc_log3
+      let disclog = disclog
+        function disc_log3(x::Int)
+          return Int[disclog(x)]
+        end
       end
-      return [g], [ord], disc_log3
+      return Int[g], Int[ord], disc_log3
     end
   else
     # p=2
@@ -563,22 +580,27 @@ function _unit_pk_mod_n(p::Int, v::Int, n::Int)
       return Int[], Int[], disclog4
     end 
     if v==2
-      R=ResidueRing(FlintZZ, 4, cached=false)
-      function disclog5(x::Int)
-        y=R(x)
-        if isone(y)
-          return 0
-        else
-          return 1
+      R = ResidueRing(FlintZZ, 4, cached=false)
+      local disclog5
+      let R = R
+        function disclog5(x::Int)
+          y=R(x)
+          if isone(y)
+            return 0
+          else
+            return 1
+          end
         end
       end
-      return [-1], [2], disclog5
+      return Int[-1], Int[2], disclog5
     else 
       R = ResidueRing(FlintZZ, 2^v, cached=false)
       ord = gcd(2^(v-2), n)
-      gens = [-1,5]
+      gens = Int[-1,5]
       exps = divexact(2^(v-2), ord)
       z = 5^exps
+      local disc_log6
+      let R = R, exps = exps, ord = ord, z = z
       function disc_log6(x::Int)
         if x % 4 ==1
           y=R(x)^exps
@@ -589,9 +611,9 @@ function _unit_pk_mod_n(p::Int, v::Int, n::Int)
               c+=1
               el*=z
             end
-            return [0, c]
+            return Int[0, c]
           else
-            return [0, disc_log_bs_gs(z, y, ord)]
+            return Int[0, disc_log_bs_gs(z, y, ord)]
           end
         elseif x%4==3
           y=R(-x)^exps
@@ -602,15 +624,16 @@ function _unit_pk_mod_n(p::Int, v::Int, n::Int)
               c+=1
               el*=z
             end
-            return [1,c]
+            return Int[1,c]
           else
-            return [1, disc_log_bs_gs(z, y, ord)]
+            return Int[1, disc_log_bs_gs(z, y, ord)]
           end
         else 
           error("Not coprime")
         end
       end
-      return gens, [2,ord], disc_log6
+      end
+      return gens, Int[2,ord], disc_log6
     end
   end
 
@@ -619,54 +642,48 @@ end
 
 function _unit_grp_residue_field_mod_n(p::Int, n::Int)
   
-  m=gcd(p-1,n)
-  if m!=1
-    R=ResidueRing(FlintZZ, p, cached=false)
-    s=factor(m).fac
-    lp=Int[Int(q)^Int(valuation(p-1,q)) for q in keys(s)]
-    npart=prod(lp)
-    lp1=Int[div(npart, Int(q)) for q in keys(s)]
+  npart = ppio(p-1, n)[1]
+  if isone(npart)
+    function disclog1(x::Int)
+      return 0
+    end
+    return 1, 1, disclog1
+  end
+  R = GF(p, cached = false)
+  s = factor(npart)
+  lp1 = Int[div(npart, Int(q)) for (q, v) in s]
+  s1 = div(p-1, npart)
     
-    s1=div(p-1, npart)
-    
-    g=R(1)
-    found=true
-    while true
-      g=rand(R)
-      if iszero(g)
-        continue
-      else
-        g=g^s1
-      end
-      for a in lp1
-        if isone(g^a)
-          found=false
-          break
-        end
-      end
-      if found
+  g = one(R)
+  found = true
+  while found
+    g = rand(R)
+    iszero(g) && continue
+    g = g^s1
+    for a in lp1
+      if isone(g^a)
+        found = false
         break
-      else
-        found=true
       end
     end
+    found = !found
+  end
     
-    k =gcd(npart, n)
-    inv=Int(invmod(s1,npart))
-    quot=divexact(npart, k)
-    w= g^quot
-    
+  k = gcd(npart, n)
+  inv = invmod(s1, npart)
+  quot = divexact(npart, k)
+  w = g^quot
+  
+  local disc_log
+  let R = R, s1 = s1, quot = quot, w = w, inv = inv, k = k, npart = npart
     function disc_log(x::Int)
-      y=R(x)^(s1*quot)
-      iszero(y)  && error("Not coprime!")
-      if isone(y)
-        return 0
-      end
-      
-      if k<100
+      y = R(x)^(s1*quot)
+      iszero(y) && error("Not coprime!")
+      isone(y) && return 0
+      if k < 100
         c = 1
         el = w
-        while el!=y
+        while el != y
           c += 1
           el *= w
         end
@@ -674,16 +691,9 @@ function _unit_grp_residue_field_mod_n(p::Int, n::Int)
       else
         return mod(inv*disc_log_bs_gs(w, y, npart), k)
       end
-    end     
-    return (Int(g.data), k, disc_log)::Tuple{Int,Int,Function}
-
-  else
-    function disclog1(x::Int)
-      return 0
-    end
-    return (1, 1, disclog1)::Tuple{Int,Int,Function}
-  
-  end
+    end    
+  end 
+  return Int(g.data), k, disc_log
   
 end
 

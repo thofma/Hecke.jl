@@ -167,6 +167,7 @@ function new_maximal_order(O::NfOrd; index_divisors::Vector{fmpz} = fmpz[], disc
   l1 = fmpz[]
   OO = O
   @vprint :NfOrd 1 "Trial division of the discriminant\n "
+  auxmat = zero_matrix(FlintZZ, 2*degree(K), degree(K))
   for d in l
     if disc != -1
       u = divexact(discriminant(OO), disc)
@@ -181,7 +182,7 @@ function new_maximal_order(O::NfOrd; index_divisors::Vector{fmpz} = fmpz[], disc
     end
     @vprint :NfOrd 1 "Computing the maximal order at $(collect(keys(fac)))\n "
     O1 = pmaximal_overorder_at(O, collect(keys(fac)))
-    OO  = sum_as_Z_modules(OO, O1)
+    OO = sum_as_Z_modules(OO, O1, auxmat)
     rem = abs(rem)
     if !isone(rem)
       if disc != -1
@@ -208,7 +209,7 @@ function new_maximal_order(O::NfOrd; index_divisors::Vector{fmpz} = fmpz[], disc
     @vprint :NfOrd 1 "I have to factor $Q\n "
     for el in Q
       d = factor(el).fac
-      O1 += pmaximal_overorder_at(O1, collect(keys(d)))
+      O1 = pmaximal_overorder_at(O1, collect(keys(d)))
     end
   end
   O1.ismaximal = 1

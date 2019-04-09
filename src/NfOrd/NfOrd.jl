@@ -532,7 +532,7 @@ function _check_elem_in_order(a::T, O::NfAbsOrd{S, T},
     else
       v = Vector{fmpz}(undef, degree(O))
       for i in 1:degree(O)
-        v[i] = deepcopy(t.num[1, i])
+        v[i] = t.num[1, i]
       end
       return true, v
     end

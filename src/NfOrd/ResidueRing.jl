@@ -618,7 +618,7 @@ function xxgcd(x::NfOrdQuoRingElem, y::NfOrdQuoRingElem)
   # ( 0  M_f  0  I )
   # ( 0  M_I  0  0 )
 
-  a = elem_in_basis(Q(O(1)).elem, copy = false)
+  a = elem_in_basis(one(O), copy = false)
 
   V = parent(x).tmp_xxgcd
 
@@ -638,7 +638,7 @@ function xxgcd(x::NfOrdQuoRingElem, y::NfOrdQuoRingElem)
 
   #U = V
 
-  hnf_modular_eldiv!(V, minimum(Q.ideal))::fmpz_mat
+  hnf_modular_eldiv!(V, minimum(Q.ideal))
 
   u = Q(-O([ V[1,i] for i in (d + 2):(2*d + 1)]))
   v = Q(-O([ V[1,i] for i in (2*d + 2):(3*d + 1)]))

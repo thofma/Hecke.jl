@@ -2386,6 +2386,8 @@ function ray_class_group_quo(n::Int, I::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Di
   return X::GrpAbFinGen, mp
   
 end
+
+
 #
 #  Find small primes that generate the ray class group (or a quotient)
 #  It needs a map GrpAbFinGen -> NfOrdIdlSet
@@ -2468,14 +2470,11 @@ function find_gens_for_action(mR::MapRayClassGrp)
     end
   end
   
-  if isdefined(mR, :prime_ideal_cache)
-    S = mR.prime_ideal_cache
-  else
-    S = prime_ideals_up_to(O, max(1000,4*clog(discriminant(O),10)^2), degree_limit = 1, index_divisors = false)
-    mR.prime_ideal_cache = S
-  end
-
-  for P in S
+  ctx = _get_ClassGrpCtx_of_order(O)
+  fb = ctx.FB.ideals
+  l = length(fb)
+  for i = l:-1:1
+    P = fb[i]
     if gcd(minimum(P), mm) != 1
       continue
     end

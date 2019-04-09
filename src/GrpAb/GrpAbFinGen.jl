@@ -557,11 +557,11 @@ function sub(G::GrpAbFinGen, s::Array{GrpAbFinGenElem, 1},
   if length(s) == 0
     S = GrpAbFinGen(fmpz[1])
     I = zero_matrix(FlintZZ, ngens(S), ngens(G))
-    m = hom(S, G, I, false)
+    mp = hom(S, G, I, false)
     if add_to_lattice
-      append!(L, m)
+      append!(L, mp)
     end
-    return S, m
+    return S, mp
   end
 
   p = s[1].parent

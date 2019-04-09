@@ -230,7 +230,7 @@ end
 
 > Returns the coefficient vector of $a$.
 """
-function elem_in_basis(a::NfAbsOrdElem; copy::Bool = true) where {T}
+function elem_in_basis(a::NfAbsOrdElem; copy::Bool = true)
   assure_has_coord(a)
   @hassert :NfOrd 2 a == dot(a.elem_in_basis, basis(parent(a)))
   if copy
@@ -259,8 +259,12 @@ function discriminant(B::Array{NfAbsOrdElem{S, T}, 1}) where {S, T}
   O = parent(B[1])
   A = zero_matrix(FlintZZ, degree(O), degree(O))
   for i in 1:degree(O)
+    el = tr(B[i]^2)
+    A[i, i] = el
     for j in 1:degree(O)
-      A[i,j] = FlintZZ(tr(B[i] * B[j]))
+      el = tr(B[i] * B[j])
+      A[i, j] = el
+      A[j, i] = el
     end
   end
   return det(A)

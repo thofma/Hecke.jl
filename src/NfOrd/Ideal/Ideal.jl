@@ -281,8 +281,9 @@ function ideal_from_z_gens(O::NfOrd, b::Vector{NfOrdElem}, check::Bool = false)
 
   M = zero_matrix(FlintZZ, length(b), d)
   for i = 1:length(b)
+    el = elem_in_basis(b[i])
     for j = 1:d
-      M[i, j] = elem_in_basis(b[i])[j]
+      M[i, j] = el[j]
     end
   end
   M = _hnf(M, :lowerleft)
@@ -791,7 +792,7 @@ function in(x::NfAbsOrdElem, y::NfAbsOrdIdl)
 end
 
 function containment_by_matrices(x::NfAbsOrdElem, y::NfAbsOrdIdl)
-  v = matrix(FlintZZ, 1, degree(parent(x)), elem_in_basis(x))
+  v = matrix(FlintZZ, 1, degree(parent(x)), elem_in_basis(x, copy = false))
   t = v*basis_mat_inv(y, copy = false)
   return isone(t.den) 
 end
@@ -1422,9 +1423,6 @@ function mod(x::S, y::T) where { S <: Union{NfAbsOrdElem, AlgAssAbsOrdElem}, T <
 
   O = order(y)
   a = elem_in_basis(x)
-  #a = deepcopy(b)
-  
-  #dump(y, maxdepth = 1)
 
   if isdefined(y, :princ_gen_special) && y.princ_gen_special[1] != 0
     for i in 1:length(a)

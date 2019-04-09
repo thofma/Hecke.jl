@@ -558,7 +558,7 @@ function _decomposition(O::NfAbsOrd, I::NfAbsOrdIdl, Ip::NfAbsOrdIdl, T::NfAbsOr
       v1 = AtoO(BtoA(one(B)))
       u1 = 1 - v1
       @hassert :NfOrd 1 isone(u1+v1)
-      @hassert :NfOrd 1 u1 in P
+      @hassert :NfOrd 1 containment_by_matrices(u1, P)
       u = O()
       v = O()
       add!(u, u2, v2)
@@ -570,7 +570,7 @@ function _decomposition(O::NfAbsOrd, I::NfAbsOrdIdl, Ip::NfAbsOrdIdl, T::NfAbsOr
       #v = v1*v2
       @hassert :NfOrd 1 isone(u + v)
       
-      @hassert :NfOrd 1 u in P
+      @hassert :NfOrd 1 containment_by_matrices(u, P)
       modulo = norm(P)*p
       #if iszero(_normmod(modulo, u))#isnorm_divisible(u.elem_in_nf, modulo)
       if iszero(mod(norm(u), modulo))

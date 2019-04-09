@@ -31,7 +31,6 @@
 #  Copyright (C) 2017 Tommy Hofmann, Claus Fieker
 #
 ################################################################################
-
 mutable struct NfRelToNf <: Map{NfRel{nf_elem}, AnticNumberField, HeckeMap, NfRelToNf}
   header::MapHeader{NfRel{nf_elem}, AnticNumberField}
 
@@ -61,7 +60,8 @@ mutable struct NfRelToNf <: Map{NfRel{nf_elem}, AnticNumberField, HeckeMap, NfRe
     function preimage(x::nf_elem)
       # x is an element of L
       f = S(x)
-      return evaluate(f, c)
+      res = evaluate(f, c)
+      return res
     end
 
     z = new()
