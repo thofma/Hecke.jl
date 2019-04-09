@@ -435,21 +435,21 @@ function AlgAss(A::Generic.MatAlgebra{T}) where { T <: FieldElem }
   K = base_ring(A)
   n2 = n^2
   # We use the matrices M_{ij} with a 1 at row i and column j and zeros everywhere else as the basis for A.
-  # We sort "row major", so A[(i - 1)*n + j] corresponds to the matrix M_{ij}.
+  # We sort "column major", so A[i + (j - 1)*n] corresponds to the matrix M_{ij}.
   # M_{ik}*M_{lj} = 0, if k != l, and M_{ik}*M_{kj} = M_{ij}
   mult_table = zeros(K, n2, n2, n2)
   oneK = one(K)
-  for i = 0:n:(n2 - n)
+  for j = 0:n:(n2 - n)
     for k = 1:n
       kn = (k - 1)*n
-      for j = 1:n
-        mult_table[i + k, kn + j, i + j] = oneK
+      for i = 1:n
+        mult_table[i + kn, k + j, i + j] = oneK
       end
     end
   end
   oneA = zeros(K, n2)
   for i = 1:n
-    oneA[(i - 1)*n + i] = oneK
+    oneA[i + (i - 1)*n] = oneK
   end
   A = AlgAss(K, mult_table, oneA)
   A.iscommutative = ( n == 1 ? 1 : 2 )
@@ -1333,9 +1333,9 @@ function _matrix_basis(A::AlgAss{T}, idempotents::Vector{S}) where { T <: Union{
   k = length(idempotents)
   # Compute a basis e_ij of A (1 <= i, j <= k) with
   # e_11 + e_22 + ... + e_kk = 1 and e_rs*e_tu = \delta_st*e_ru.
-  new_basis = Vector{elem_type(A)}(undef, k^2) # saved row major: new_basis[(i - 1)*k + j] = e_ij
+  new_basis = Vector{elem_type(A)}(undef, k^2) # saved column major: new_basis[i + (j - 1)*k] = e_ij
   for i = 1:k
-    new_basis[(i - 1)*k + i] = idempotents[i]
+    new_basis[i + (i - 1)*k] = idempotents[i]
   end
 
   a = idempotents[1]
@@ -1359,7 +1359,7 @@ function _matrix_basis(A::AlgAss{T}, idempotents::Vector{S}) where { T <: Union{
     xx = eAe(left_kernel_basis(M)[1])
     x = m1(m2(xx))
 
-    new_basis[i] = x # this is e_1i
+    new_basis[1 + (i - 1)*k] = x # this is e_1i
 
     # We compute an element y of eAe which fulfils
     # aa*y == 0, bb*y == y, y*aa == y, y*bb == 0, y*xx == bb, xx*y == aa.
@@ -1377,14 +1377,14 @@ function _matrix_basis(A::AlgAss{T}, idempotents::Vector{S}) where { T <: Union{
     @assert b
     y = m1(m2(eAe([ yy[i, 1] for i = 1:dim(eAe) ])))
 
-    new_basis[(i - 1)*k + 1] = y # this is e_i1
+    new_basis[i] = y # this is e_i1
   end
 
-  for i = 2:k
-    ik = (i - 1)*k
-    ei1 = new_basis[ik + 1]
-    for j = 2:k
-      new_basis[ik + j] = ei1*new_basis[j] # this is e_ij
+  for j = 2:k
+    jk = (j - 1)*k
+    e1j = new_basis[1 + jk]
+    for i = 2:k
+      new_basis[i + jk] = new_basis[i]*e1j # this is e_ij
     end
   end
   return new_basis
@@ -1397,7 +1397,7 @@ function _as_matrix_algebra(A::AlgAss{T}) where { T <: Union{gfp_elem, Generic.R
   @assert length(idempotents)^2 == dim(A)
   Fq = base_ring(A)
 
-  B = AlgAss(MatrixAlgebra(Fq, length(idempotents)))
+  B = AlgMat(Fq, length(idempotents))
 
   matrix_basis = _matrix_basis(A, idempotents)
 

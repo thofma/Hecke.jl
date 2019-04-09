@@ -1,4 +1,4 @@
-export AlgAss, AlgAssElem, AlgGrp, AlgGrpElem
+export AlgAss, AlgAssElem, AlgGrp, AlgGrpElem, AlgMat, AlgMatElem
 
 abstract type AbsAlgAss{T} <: Ring end
 
@@ -403,3 +403,54 @@ end
 const AlgAssAbsOrdQuoRing{S, T} = AbsOrdQuoRing{AlgAssAbsOrd{S, T}, AlgAssAbsOrdIdl{S, T}} where {S, T}
 
 const AlgAssAbsOrdQuoRingElem{S, T} = AbsOrdQuoRingElem{AlgAssAbsOrd{S, T}, AlgAssAbsOrdIdl{S, T}, AlgAssAbsOrdElem{S, T}} where {S, T}
+
+################################################################################
+#
+#  AlgMat / AlgMatElem
+#
+################################################################################
+
+# T == elem_type(base_ring), S == dense_matrix_type(coefficient_ring)
+mutable struct AlgMat{T, S} <: AbsAlgAss{T}
+  base_ring::Ring
+  coefficient_ring::Ring
+  one
+  has_one::Bool
+  basis
+  basis_mat # matrix over the base_ring
+  basis_mat_trp
+  dim::Int
+  degree::Int
+  issimple::Int
+  decomposition
+
+  function AlgMat{T, S}(R::Ring) where {T, S}
+    A = new{T, S}()
+    A.base_ring = R
+    A.issimple = 0
+    return A
+  end
+end
+
+mutable struct AlgMatElem{T, S, Mat} <: AbsAlgAssElem{T}
+  parent::S
+  matrix::Mat # over the coefficient ring of the parent
+  coeffs::Vector{T} # over the base ring of the parent
+  has_coeffs::Bool
+
+  function AlgMatElem{T, S, Mat}(A::S) where {T, S, Mat}
+    z = new{T, S, Mat}()
+    z.parent = A
+    z.matrix = zero_matrix(base_ring(A), degree(A), degree(A))
+    z.has_coeffs = false
+    return z
+  end
+
+  function AlgMatElem{T, S, Mat}(A::S, M::Mat) where {T, S, Mat}
+    z = new{T, S, Mat}()
+    z.parent = A
+    z.matrix = M
+    z.has_coeffs = false
+    return z
+  end
+end

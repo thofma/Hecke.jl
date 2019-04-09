@@ -172,7 +172,7 @@ function decompose(A::AbsAlgAss{T}) where {T}
     return D
   end
 
-  if A isa AlgGrp
+  if A isa AlgGrp || A isa AlgMat
     B, mB = AlgAss(A)
     D = _decompose(B)
     res = Tuple{AlgAss{T}, morphism_type(AlgAss{T}, typeof(A))}[]

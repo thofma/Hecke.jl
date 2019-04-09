@@ -208,17 +208,17 @@ end
 function basis_mat(A::Array{S, 1}) where {S <: AbsAlgAssElem}
   @assert length(A) > 0
   n = length(A)
-  d = size(parent(A[1]).mult_table,1)
+  d = dim(parent(A[1]))
 
   M = zero_matrix(FlintZZ, n, d)
 
-  dens = [lcm([denominator(A[i].coeffs[j]) for j=1:d]) for i=1:n]
+  dens = [lcm([denominator(coeffs(A[i], copy = false)[j]) for j=1:d]) for i=1:n]
   deno = lcm(dens)
 
   for i in 1:n
     for j in 1:d
-      temp_den = divexact(deno, denominator(A[i].coeffs[j]))
-      M[i, j] = numerator(A[i].coeffs[j]) * temp_den
+      temp_den = divexact(deno, denominator(coeffs(A[i], copy = false)[j]))
+      M[i, j] = numerator(coeffs(A[i])[j]) * temp_den
     end
   end
   return FakeFmpqMat(M, deno)

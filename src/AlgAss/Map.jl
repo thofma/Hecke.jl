@@ -20,7 +20,7 @@ mutable struct AbsAlgAssMor{R, S, T} <: Map{R, S, HeckeMap, AbsAlgAssMor}
 
     function image(a)
       for i in 1:dim(A)
-        z.c_t[1, i] = a.coeffs[i]
+        z.c_t[1, i] = coeffs(a, copy = false)[i]
       end
       s = Vector{elem_type(base_ring(B))}(undef, dim(B))
       #mul!(z.d_t, z.c_t, M) # there is no mul! for Generic.Mat
@@ -46,7 +46,7 @@ mutable struct AbsAlgAssMor{R, S, T} <: Map{R, S, HeckeMap, AbsAlgAssMor}
 
     function image(a)
       for i in 1:dim(A)
-        z.c_t[1, i] = a.coeffs[i]
+        z.c_t[1, i] = coeffs(a, copy = false)[i]
       end
       s = Vector{elem_type(base_ring(B))}(undef, dim(B))
       #mul!(z.d_t, z.c_t, M) # there is no mul! for Generic.Mat
@@ -60,7 +60,7 @@ mutable struct AbsAlgAssMor{R, S, T} <: Map{R, S, HeckeMap, AbsAlgAssMor}
 
     function preimage(a)
       for i in 1:dim(B)
-        z.d_t[1, i] = a.coeffs[i]
+        z.d_t[1, i] = coeffs(a, copy = false)[i]
       end
       s = Vector{elem_type(base_ring(A))}(undef, dim(A))
       z.c_t = z.d_t * N
@@ -209,7 +209,7 @@ mutable struct AbsAlgAssToNfAbsMor{S, T} <: Map{S, AnticNumberField, HeckeMap, A
 
     function _image(x::T)
       for i = 1:dim(A)
-        z.t[1, i] = x.coeffs[i]
+        z.t[1, i] = coeffs(x, copy = false)[i]
       end
       s = z.t*M
       return K(parent(K.pol)([ s[1, i] for i = 1:degree(K) ]))
@@ -274,7 +274,7 @@ mutable struct AbsAlgAssToFqMor{S, T, MatType, PolyRingType} <: Map{S, T, HeckeM
     function _image(x::AlgAssElem)
       @assert typeof(x) == elem_type(A)
       for i = 1:dim(A)
-        z.t[1, i] = x.coeffs[i]
+        z.t[1, i] = coeffs(x, copy = false)[i]
       end
       s = z.t*M
       sR = z.R([ s[1, i] for i = 1:dim(A) ])
