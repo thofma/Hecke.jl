@@ -143,7 +143,7 @@ function _check_elem_in_order(a::T, O::AlgAssAbsOrd{S, T}, short::Type{Val{U}} =
 end
 
 function in(x::T, O::AlgAssAbsOrd{S, T}) where {S, T}
-  return _check_elem_in_order(a, O, Val{true})
+  return _check_elem_in_order(x, O, Val{true})
 end
 
 function denominator(a::AbsAlgAssElem, O::AlgAssAbsOrd)
