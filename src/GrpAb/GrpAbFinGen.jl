@@ -752,7 +752,7 @@ mutable struct ChainComplex{T}
 end
 
 length(C::ChainComplex) = length(C.maps)
-map(C::ChainComplex, i::Int) = C.maps[i]
+Base.map(C::ChainComplex, i::Int) = C.maps[i]
 obj(C::ChainComplex, i::Int) = (i==0 ? domain(C.maps[1]) : codomain(C.maps[i]))
 
 function show(io::IO, C::ChainComplex)
