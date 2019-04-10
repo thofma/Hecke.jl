@@ -1,4 +1,4 @@
-export Localization
+export Localization, LocElem, Loc
 
 ###############################################################################
 
@@ -52,6 +52,7 @@ end
 #
 ###############################################################################
 
+# TODO (easy): Do this properly
 AbstractAlgebra.add!(c::LocElem, a::LocElem, b::LocElem) = a + b
 
 AbstractAlgebra.mul!(c::LocElem, a::LocElem, b::LocElem) = a * b
@@ -75,7 +76,7 @@ base_ring(a::LocElem{T}) where {T <: RingElem} = base_ring(parent(a))
 parent(a::LocElem{T})  where {T <: RingElem} = a.parent
 
 function check_parent(a::LocElem{T}, b::LocElem{T})  where {T <: RingElem}
-    parent(a) != parent(b) && error("Parent objects do not match")
+    parent(a) !== parent(b) && error("Parent objects do not match")
 end
 
 
