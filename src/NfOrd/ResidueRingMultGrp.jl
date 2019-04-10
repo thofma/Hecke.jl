@@ -653,7 +653,7 @@ function p_adic_exp(Q::NfOrdQuoRing, p::NfOrdIdl, v::Int, x::NfOrdElem)
     end
     add!(s, s, Q(inc.elem))
     i_old = i
-  end
+  end  
   return s.elem
 end
 
@@ -985,8 +985,8 @@ function _n_part_multgrp_mod_p(p::NfOrdIdl, n::Int)
   np = norm(p) - fmpz(1)
   @assert !isone(gcd(fmpz(n), np))
   npart, m = ppio(np, fmpz(n))
-  k = gcd(npart, fmpz(n))::fmpz
-  fac = factor(k)::Fac{fmpz}
+  k = gcd(npart, fmpz(n))
+  fac = factor(k)
   powm = fmpz[divexact(npart, x) for x in keys(fac.fac)]
   
   #
@@ -997,24 +997,27 @@ function _n_part_multgrp_mod_p(p::NfOrdIdl, n::Int)
   quot = divexact(npart, k)
 
   w=g^quot
-  function disclog(x::NfOrdElem)
-    t = mQ(x)^(m*quot)
-    if iszero(t)
-      error("Not coprime!")
-    end
-    if isone(t)
-      return fmpz[fmpz(0)]
-    end
-    if k < 20
-      s = 1
-      el = deepcopy(w)
-      while el != t
-        s += 1
-        mul!(el, el, w)
+  local disclog
+  let m = m, quot = quot, k = k, w = w, inv = inv
+    function disclog(x::NfOrdElem)
+      t = mQ(x)^(m*quot)
+      if iszero(t)
+        error("Not coprime!")
       end
-      return fmpz[mod(fmpz(s)*inv, k)]
-    else 
-      return fmpz[pohlig_hellman(g^quot, k, t)*inv] 
+      if isone(t)
+        return fmpz[fmpz(0)]
+      end
+      if k < 20
+        s = 1
+        el = deepcopy(w)
+        while el != t
+          s += 1
+          mul!(el, el, w)
+        end
+        return fmpz[mod(fmpz(s)*inv, k)]
+      else 
+        return fmpz[pohlig_hellman(w, k, t)*inv] 
+      end
     end
   end
   G = DiagonalGroup([k])

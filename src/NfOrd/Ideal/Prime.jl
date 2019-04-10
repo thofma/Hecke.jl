@@ -95,8 +95,8 @@ function intersect_prime(f::Map, P::NfOrdIdl, Ok::NfOrd = maximal_order(domain(f
   k = domain(f)
   K = codomain(f)
   OK = maximal_order(K)
-  if !divisible(index(Ok)*index(OK), fmpz(p))
-    return intersect_nonindex(f, P)
+  if !isindex_divisor(Ok, p) && !isindex_divisor(OK, p)
+    return intersect_nonindex(f, P, Ok)
   end
   d = degree(P)
   lp = prime_decomposition(Ok, p, d, 1)
@@ -111,7 +111,7 @@ function intersect_prime(f::Map, P::NfOrdIdl, Ok::NfOrd = maximal_order(domain(f
 end
 
 function intersect_nonindex(f::Map, P::NfOrdIdl, Zk = maximal_order(domain(f)))
-  @assert P.is_prime == 1
+  @assert isprime(P)
   #let g be minpoly of k, G minpoly of K and h in Qt the primitive
   #element of k in K (image of gen(k))
   #then
@@ -120,7 +120,7 @@ function intersect_nonindex(f::Map, P::NfOrdIdl, Zk = maximal_order(domain(f)))
   K = codomain(f)
   G = K.pol
   Qx = parent(G)
-  g = k.pol(gen(Qx))
+  g = change_ring(k.pol, Qx)
   h = Qx(f(gen(k)))
 
   Fp, xp = PolynomialRing(GF(Int(minimum(P)), cached=false), cached=false)
@@ -128,7 +128,7 @@ function intersect_nonindex(f::Map, P::NfOrdIdl, Zk = maximal_order(domain(f)))
   hp = Fp(h)
   Gp = gcd(Fp(K(P.gen_two)), Fp(G))
   for (f, e) = gp.fac
-    if f(hp) % Gp == 0
+    if iszero(f(hp) % Gp)
       p = ideal_from_poly(Zk, Int(minimum(P)), f, 1)
       return p
     end
@@ -252,41 +252,47 @@ end
 > Note that in this case it may happen that $p\mathcal O$ is not the product of the
 > $\mathfrak p_i^{e_i}$.
 """
-function prime_decomposition(O::NfAbsOrd{S, T}, p::Union{Integer, fmpz}, degree_limit::Int = 0, lower_limit::Int = 0, cached::Bool = true) where {S, T}
+function prime_decomposition(O::NfAbsOrd{S, T}, p::Union{Integer, fmpz}, degree_limit::Int = 0, lower_limit::Int = 0; cached::Bool = true) where {S, T}
   if typeof(p) == fmpz && nbits(p) < 64
     return prime_decomposition(O, Int(p), degree_limit, lower_limit)
   end
-
   return prime_dec_nonindex(O, p, degree_limit, lower_limit)
 end
 
-function prime_decomposition(O::NfOrd, p::Union{Integer, fmpz}, degree_limit::Int = degree(O), lower_limit::Int = 0, cached::Bool = true)
+function prime_decomposition(O::NfOrd, p::Union{Integer, fmpz}, degree_limit::Int = degree(O), lower_limit::Int = 0; cached::Bool = false)
   if typeof(p) == fmpz && nbits(p) < 64
     return prime_decomposition(O, Int(p), degree_limit, lower_limit)
   end
-
   if isdefining_polynomial_nice(nf(O))
-    if isindex_divisor(O, p)
-      if cached
-        if haskey(O.index_div, fmpz(p))
-          lp = O.index_div[fmpz(p)]::Vector{Tuple{NfOrdIdl, Int}}
-          z = Tuple{NfOrdIdl, Int}[]
-          for (Q, e) in lp
-            if degree_limit == 0 || degree(Q) <= degree_limit
-              push!(z, (Q, e))
-            end
+    if cached || isindex_divisor(O, p)
+      if haskey(O.index_div, fmpz(p))
+        lp = O.index_div[fmpz(p)]::Vector{Tuple{NfOrdIdl, Int}}
+        z = Tuple{NfOrdIdl, Int}[]
+        for (Q, e) in lp
+          if degree_limit == 0 || degree(Q) <= degree_limit
+            push!(z, (Q, e))
           end
-          return z
         end
+        return z
       end
-      @assert O.ismaximal == 1 || p in O.primesofmaximality
+    end
+    @assert O.ismaximal == 1 || p in O.primesofmaximality
+    if isindex_divisor(O, p)
       lp = prime_decomposition_polygons(O, p, degree_limit, lower_limit)
       if degree_limit == degree(O) && lower_limit == 0
         O.index_div[fmpz(p)] = lp
+        return copy(lp)
+      else
+        return lp
       end
-      return copy(lp)
     else
-      return prime_dec_nonindex(O, p, degree_limit, lower_limit)
+      lp = prime_dec_nonindex(O, p, degree_limit, lower_limit)
+      if cached && degree_limit == degree(O) && lower_limit == 0
+        O.index_div[fmpz(p)] = lp
+        return copy(lp)
+      else
+        return lp
+      end
     end
   end
   return prime_dec_gen(O, p, degree_limit, lower_limit)
@@ -479,6 +485,7 @@ end
 function prime_ideals_up_to(O::NfOrd, B::Int;
                             complete::Bool = false,
                             degree_limit::Int = 0, index_divisors::Bool = true)
+
   p = 1
   r = NfOrdIdl[]
   while p < B

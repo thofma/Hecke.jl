@@ -7,7 +7,7 @@
 mutable struct MapRayClassGroupAlg{S, T} <: Map{S, T, HeckeMap, MapRayClassGroupAlg}
   header::MapHeader{S, T}
   modulus#::AlgAssAbsOrdIdl{...}
-  groups_in_number_fields::Vector{Tuple{S, MapRayClassGrp{S}}}
+  groups_in_number_fields::Vector{Tuple{S, MapRayClassGrp}}
   into_product_of_groups::GrpAbFinGenMap # the isomorphism between the domain and the product of the groups in groups_in_number_fields
 
   function MapRayClassGroupAlg{S, T}() where {S, T}
@@ -593,7 +593,7 @@ function _make_disc_exp_deterministic(mR::MapRayClassGrp)
     return StoR\(mR\x)
   end
 
-  mRR = MapRayClassGrp{typeof(S)}()
+  mRR = MapRayClassGrp()
   mRR.header = MapHeader(S, fac_elem_mon, disc_exp, disc_log)
   for x in fieldnames(typeof(mR))
     if x != :header && isdefined(mR, x)

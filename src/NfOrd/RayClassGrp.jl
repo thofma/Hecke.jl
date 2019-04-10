@@ -11,8 +11,8 @@ add_assert_scope(:RayFacElem)
 ###############################################################################
 
 
-mutable struct MapRayClassGrp{T} <: Map{T, FacElemMon{Hecke.NfOrdIdlSet}, HeckeMap, MapRayClassGrp}
-  header::Hecke.MapHeader{T, FacElemMon{Hecke.NfOrdIdlSet}}
+mutable struct MapRayClassGrp <: Map{GrpAbFinGen, FacElemMon{Hecke.NfOrdIdlSet}, HeckeMap, MapRayClassGrp}
+  header::Hecke.MapHeader{GrpAbFinGen, FacElemMon{Hecke.NfOrdIdlSet}}
   defining_modulus::Tuple{NfOrdIdl, Array{InfPlc, 1}}
   modulus_fin::NfOrdIdl #The finite part of the modulus
   modulus_inf::Array{InfPlc,1} #The infinite part of the modulus
@@ -33,8 +33,8 @@ mutable struct MapRayClassGrp{T} <: Map{T, FacElemMon{Hecke.NfOrdIdlSet}, HeckeM
   wild_mult_grp::Dict{NfOrdIdl, GrpAbFinGenToNfAbsOrdMap} #Multiplicative group, wild part
   disc_log_inf_plc::Dict{InfPlc, GrpAbFinGenElem} #The infinite places and the corresponding discrete logarithm.
   
-  function MapRayClassGrp{T}() where {T}
-    z = new{T}()
+  function MapRayClassGrp()
+    z = new()
     z.prime_ideal_preimage_cache = Dict{NfOrdIdl, GrpAbFinGenElem}()
     return z
   end
@@ -923,7 +923,7 @@ function empty_ray_class(m::NfOrdIdl)
     end
   end
   
-  mp = Hecke.MapRayClassGrp{GrpAbFinGen}()
+  mp = Hecke.MapRayClassGrp()
   mp.header = Hecke.MapHeader(X, FacElemMon(parent(m)) , exp, disclog)
   mp.modulus_fin = ideal(O,1)
   mp.modulus_inf = InfPlc[]
@@ -932,7 +932,7 @@ function empty_ray_class(m::NfOrdIdl)
 
 end
 
-function class_as_ray_class(C::GrpAbFinGen, mC::MapClassGrp{GrpAbFinGen}, exp_class::Function,  m::NfOrdIdl, n::Integer)
+function class_as_ray_class(C::GrpAbFinGen, mC::MapClassGrp, exp_class::Function,  m::NfOrdIdl, n::Integer)
 
   O = order(m)
   X, _ = quo(C, n, false)
@@ -953,7 +953,7 @@ function class_as_ray_class(C::GrpAbFinGen, mC::MapClassGrp{GrpAbFinGen}, exp_cl
     end
   end
     
-  mp=Hecke.MapRayClassGrp{GrpAbFinGen}()
+  mp=Hecke.MapRayClassGrp()
   mp.header = Hecke.MapHeader(X, FacElemMon(parent(m)), exp_class, disclog)
   mp.modulus_fin=ideal(O,1)
   mp.modulus_inf=Array{InfPlc, 1}()
@@ -962,7 +962,7 @@ function class_as_ray_class(C::GrpAbFinGen, mC::MapClassGrp{GrpAbFinGen}, exp_cl
   return X, mp
 end
 
-function class_as_ray_class(C::GrpAbFinGen, mC::MapClassGrp{GrpAbFinGen}, exp_class::Function,  m::NfOrdIdl)
+function class_as_ray_class(C::GrpAbFinGen, mC::MapClassGrp, exp_class::Function,  m::NfOrdIdl)
 
   local disclog
   O = order(m)
@@ -983,7 +983,7 @@ function class_as_ray_class(C::GrpAbFinGen, mC::MapClassGrp{GrpAbFinGen}, exp_cl
     end
   end
     
-  mp = Hecke.MapRayClassGrp{GrpAbFinGen}()
+  mp = Hecke.MapRayClassGrp()
   mp.header = Hecke.MapHeader(X, FacElemMon(parent(m)), exp_class, disclog)
   mp.modulus_fin = ideal(O,1)
   mp.modulus_inf = Array{InfPlc, 1}()
@@ -1178,7 +1178,7 @@ function ray_class_group_fac_elem(m::NfOrdIdl, inf_plc::Array{InfPlc, 1} = Array
     end
   end 
 
-  mp = MapRayClassGrp{typeof(X)}()
+  mp = MapRayClassGrp()
   mp.header = Hecke.MapHeader(X, FacElemMon(parent(m)), expo, disclog)
   mp.modulus_fin = m
   mp.modulus_inf = p
@@ -1223,22 +1223,20 @@ function _class_group_mod_n(C::GrpAbFinGen, mC::Hecke.MapClassGrp, n::Integer)
       end
     end
     
-    mp=Hecke.MapClassGrp{typeof(G)}()
-    mp.header=Hecke.MapHeader(G, mC.header.codomain,exp1,disclog1)
+    mp=Hecke.MapClassGrp()
+    mp.header=Hecke.MapHeader(G, mC.header.codomain, exp1, disclog1)
     mp.princ_gens = Tuple{FacElem{NfOrdIdl, NfOrdIdlSet}, FacElem{nf_elem, AnticNumberField}}[(FacElem(Dict(ideal(O,1)=> fmpz(1))), FacElem(Dict(K(1)=> 1)))]
     return G, mp, fmpz[]
   
   else
     
     ind=1
-    while gcd(order(C[ind]),n)==1
+    while isone(gcd(C.snf[ind], n))
       ind+=1
     end
     
     vect=fmpz[gcd(C.snf[ind+j], fmpz(n)) for j=0:ngens(C)-ind]
     G = DiagonalGroup(vect)
-    G.issnf = true
-    G.snf = vect
     princ_gens = Vector{Tuple{FacElem{NfOrdIdl, NfOrdIdlSet}, FacElem{nf_elem, AnticNumberField}}}(undef, length(vect))
     if isdefined(mC, :princ_gens)
       for i = 1:length(princ_gens)
@@ -1280,12 +1278,12 @@ function _class_group_mod_n(C::GrpAbFinGen, mC::Hecke.MapClassGrp, n::Integer)
       end
     end
     
-    mp=Hecke.MapClassGrp{typeof(G)}()
+    mp=Hecke.MapClassGrp()
     mp.header=Hecke.MapHeader(G, mC.header.codomain, exp2, disclog2)
     mp.princ_gens = princ_gens
 
     
-    return G,mp, [divexact(C.snf[ind+j],gcd(C.snf[ind+j],n)) for j=0:ngens(C)-ind]
+    return G, mp, fmpz[divexact(C.snf[ind+j], vect[j+1]) for j=0:ngens(C)-ind]
   end
 end 
 
@@ -1632,7 +1630,7 @@ function ray_class_group_quo(n::Integer, m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2
     mprim.disc_log = X(dis)
   end
 
-  mp = Hecke.MapRayClassGrp{typeof(X)}()
+  mp = Hecke.MapRayClassGrp()
   mp.header = Hecke.MapHeader(X, FacElemMon(parent(m)) , expon, disclog)
   mp.modulus_fin = I
   mp.quots_nquo = quots
@@ -1674,7 +1672,7 @@ function ray_class_groupQQ(O::NfOrd, modulus::Int, inf_plc::Bool, n_quo::Int)
       return FacElem(Dict{NfOrdIdl, fmpz}(ideal(O,lift(x)) => 1))
     end
     
-    mp=Hecke.MapRayClassGrp{typeof(U)}()
+    mp=Hecke.MapRayClassGrp()
     mp.header = Hecke.MapHeader(U, FacElemMon(parent(ideal(O,1))) , expon1, disc_log1)
     mp.modulus_fin = ideal(O,modulus)
     mp.modulus_inf = real_places(nf(O))
@@ -1695,7 +1693,7 @@ function ray_class_groupQQ(O::NfOrd, modulus::Int, inf_plc::Bool, n_quo::Int)
       return FacElem(Dict{NfOrdIdl, fmpz}(ideal(O,lift(x)) => 1))
     end
     
-    mp = Hecke.MapRayClassGrp{typeof(U)}()
+    mp = Hecke.MapRayClassGrp()
     mp.header = Hecke.MapHeader(U, FacElemMon(parent(ideal(O,1))) , expon2, disc_log2)
     mp.modulus_fin = ideal(O, modulus)
     mp.modulus_inf = InfPlc[]
@@ -1717,7 +1715,7 @@ function ray_class_groupQQ(O::NfOrd, modulus::Int, inf_plc::Bool, n_quo::Int)
       return FacElem(Dict{NfOrdIdl, fmpz}(ideal(O,x) => 1))
     end
     
-    mp=Hecke.MapRayClassGrp{typeof(Q)}()
+    mp=Hecke.MapRayClassGrp()
     mp.header = Hecke.MapHeader(Q, FacElemMon(parent(ideal(O,1))) , expon, disc_log)
     mp.modulus_fin=ideal(O,modulus)
     mp.modulus_inf=[]
@@ -1832,7 +1830,6 @@ function find_gens(mR::MapRayClassGrp; coprime_to::fmpz = fmpz(-1))
     end
   end
   
-  
   if !isempty(mR.modulus_inf)
     S, ex, lo=carlos_units(O)
     for i=1:length(mR.modulus_inf)      
@@ -1857,14 +1854,13 @@ function find_gens(mR::MapRayClassGrp; coprime_to::fmpz = fmpz(-1))
   
   end
   
-  if isdefined(mR, :prime_ideal_cache)
-    S = mR.prime_ideal_cache
-  else
-    S = prime_ideals_up_to(O, max(1000,4*clog(discriminant(O),10)^2), degree_limit = 1, index_divisors = false)
-    mR.prime_ideal_cache = S
-  end
+  ctx = _get_ClassGrpCtx_of_order(O)
+  fb = ctx.FB.ideals
+  l = length(fb)
+  
   q, mq = quo(R, sR, false)
-  for P in S
+  for i = l:-1:1
+    P = fb[i]
     if gcd(minimum(P), mm) != 1
       continue
     end
@@ -2072,6 +2068,19 @@ end
 #
 ###############################################################################
 
+mutable struct ctx_rayclassgrp
+  mC::MapClassGrp
+  n::Int
+  vect::Vector{fmpz}
+  units::Vector{Tuple{NfOrdElem, Dict{fmpz, Int}}}
+  princ_gens::Vector{Tuple{NfOrdElem, Dict{fmpz, Int}}}
+  
+  function ctx_rayclassgrp()
+    z = new()
+    return z
+  end
+end
+
 function _minimum(wprimes::Dict{NfOrdIdl, Int})
   mins = Dict{fmpz, Int}()
   for (P, v) in wprimes
@@ -2090,7 +2099,7 @@ function _minimum(wprimes::Dict{NfOrdIdl, Int})
   return prod(x^v for (x, v) in mins)
 end
 
-function ray_class_group_quo(O::NfOrd, n_quo::Int, m::Int, wprimes::Dict{NfOrdIdl,Int}, inf_plc::Array{InfPlc,1}, units::Vector{Tuple{NfOrdElem, Dict{fmpz, Int}}}, mC::MapClassGrp, princ_gens::Vector{Tuple{NfOrdElem, Dict{fmpz, Int}}}, vect::Vector{fmpz}; GRH::Bool = true)
+function ray_class_group_quo(O::NfOrd, m::Int, wprimes::Dict{NfOrdIdl,Int}, inf_plc::Array{InfPlc,1}, ctx::ctx_rayclassgrp; GRH::Bool = true)
   
   d1 = Dict{NfOrdIdl, Int}()
   lp = factor(m)
@@ -2110,7 +2119,7 @@ function ray_class_group_quo(O::NfOrd, n_quo::Int, m::Int, wprimes::Dict{NfOrdId
     I.minimum = m*_minimum(wprimes)
   end
   
-  return ray_class_group_quo(n_quo, I, d1, wprimes, inf_plc, units, mC, princ_gens, vect, GRH = GRH)
+  return ray_class_group_quo(I, d1, wprimes, inf_plc, ctx, GRH = GRH)
   
 end
 
@@ -2146,12 +2155,71 @@ function log_infinite_primes(O::NfOrd, p::Array{InfPlc,1})
   
 end
 
-function ray_class_group_quo(n::Int, I::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Dict{NfOrdIdl,Int}, inf_plc::Vector{InfPlc}, units::Vector{Tuple{NfOrdElem, Dict{fmpz, Int}}}, mC::MapClassGrp{GrpAbFinGen}, princ_gens::Vector{Tuple{NfOrdElem, Dict{fmpz, Int}}}, vect::Vector{fmpz}; GRH::Bool = true)
+function rayclassgrp_ctx(O::NfOrd, expo::Int)
+
+  C1, mC1 = class_group(O)
+  valclass = ppio(exponent(C1), fmpz(expo))[1]
+  C, mC, vect = Hecke._class_group_mod_n(C1, mC1, Int(valclass))
+  U, mU = unit_group_fac_elem(O)
+  units_to_be_eval = FacElem{nf_elem, AnticNumberField}[mU(U[i]) for i = 1:ngens(U)]
+  Hecke._assure_princ_gen(mC)
+  princgens_to_be_eval = FacElem{nf_elem, AnticNumberField}[mC.princ_gens[i][2] for i = 1:length(mC.princ_gens)]
+  preproc, ints1 = Hecke._new_preproc(units_to_be_eval, fmpz(expo))
+  units = Vector{Tuple{NfOrdElem, Dict{fmpz, Int}}}(undef, length(preproc))
+  for i = 1:length(units)
+    units[i] = (O(evaluate(preproc[i])), ints1[i])
+  end
+  preproc1, ints2 = Hecke._new_preproc(princgens_to_be_eval, fmpz(expo))
+  princ_gens = Vector{Tuple{NfOrdElem, Dict{fmpz, Int}}}(undef, length(preproc1))
+  for i = 1:length(princ_gens)
+    princ_gens[i] = (O(evaluate(preproc1[i])), ints2[i])
+  end
+  ctx = ctx_rayclassgrp()
+  ctx.mC = mC
+  ctx.n = expo
+  ctx.vect = vect
+  ctx.units = units
+  ctx.princ_gens = princ_gens
+  return ctx
+
+end
+
+
+function ray_class_group_quo(O::NfOrd, y::Dict{NfOrdIdl, Int}, inf_plc::Array{InfPlc, 1}, ctx::ctx_rayclassgrp; GRH::Bool = true)
+  
+  y1=Dict{NfOrdIdl,Int}()
+  y2=Dict{NfOrdIdl,Int}()
+  n = ctx.n
+  for (q,e) in y
+    if gcd(norm(q)-1, n) != 1
+      y1[q] = Int(1)
+      if gcd(norm(q), n) != 1 && e >= 2
+        y2[q] = Int(e)
+      end
+    elseif gcd(norm(q), n) != 1 && e >= 2
+      y2[q] = Int(e)
+    end
+  end
+  I=ideal(O,1)
+  for (q,vq) in y1
+    I*=q
+  end
+  for (q,vq) in y2
+    I*=q^vq
+  end
+  return ray_class_group_quo(I, y1, y2, inf_plc, ctx, GRH = GRH)
+
+end
+
+
+function ray_class_group_quo(I::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Dict{NfOrdIdl,Int}, inf_plc::Vector{InfPlc}, ctx::ctx_rayclassgrp; GRH::Bool = true)
 
   O = order(I)
   K = nf(O)
   #@assert (!(isempty(y1) && isempty(y2))) || isone(I)
-  
+  vect = ctx.vect
+  n = ctx.n
+  mC = ctx.mC
   lp = Dict{NfOrdIdl, Int}()
   for (p, v) in y1
     lp[p] = 1
@@ -2172,17 +2240,17 @@ function ray_class_group_quo(n::Int, I::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Di
   expo = exponent(G)
   
   if exponent(C)*expo < n
-    return empty_ray_class(I)::Tuple{GrpAbFinGen, MapRayClassGrp{GrpAbFinGen}}
+    return empty_ray_class(I)::Tuple{GrpAbFinGen, MapRayClassGrp}
   end
   
-  C1, mC1 = class_group(O, GRH = GRH)::Tuple{GrpAbFinGen, MapClassGrp{GrpAbFinGen}}
+  C1, mC1 = class_group(O, GRH = GRH)::Tuple{GrpAbFinGen, MapClassGrp}
   valclass, nonnclass = ppio(exponent(C1), fmpz(n))
   U, mU = unit_group_fac_elem(O, GRH = GRH)
 
   exp_class, Kel = Hecke._elements_to_coprime_ideal(C, mC, I)
   
   if order(G) == 1
-    return class_as_ray_class(C, mC, exp_class, I, n)::Tuple{GrpAbFinGen, MapRayClassGrp{GrpAbFinGen}}  
+    return class_as_ray_class(C, mC, exp_class, I, n)  
   end
   
 #
@@ -2213,6 +2281,8 @@ function ray_class_group_quo(n::Int, I::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Di
 #
 
   @hassert :RayFacElem 1 issnf(U)
+  units = ctx.units
+  princ_gens = ctx.princ_gens
   @vprint :RayFacElem 1 "Collecting elements to be evaluated; first, units \n"
   to_be_eval = Vector{NfOrdElem}(undef, ngens(C) + ngens(U))
   to_be_eval_int = Vector{Dict{fmpz, Int}}(undef, ngens(C) + ngens(U))
@@ -2244,7 +2314,7 @@ function ray_class_group_quo(n::Int, I::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Di
     if iszero(mod(n, 2)) && !isempty(inf_plc)
       if i==1
         for j = 1:length(inf_plc)
-          R[i+ngens(G)+ngens(C), ngens(C)+ncols(a.coeff)+j] = fmpz(1)
+          R[i+ngens(G)+ngens(C), ngens(C)+ncols(a.coeff)+j] = 1
         end
       else
         b = lH(mU(U[i]))
@@ -2258,6 +2328,8 @@ function ray_class_group_quo(n::Int, I::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Di
   # 
   # We compute the relation between generators of Cl and (O/m)^* in Cl^m
   #
+  
+
   for i=1:ngens(C)
     @vprint :RayFacElem 1 "Disclog of class group element $i \n"
     invn = invmod(vect[i], expo)
@@ -2370,7 +2442,7 @@ function ray_class_group_quo(n::Int, I::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Di
     mprim.disc_log = X(dis)
   end
 
-  mp = Hecke.MapRayClassGrp{GrpAbFinGen}()
+  mp = Hecke.MapRayClassGrp()
   mp.header = Hecke.MapHeader(X, FacElemMon(parent(I)))
   mp.header.preimage = disclog
   mp.modulus_fin = I

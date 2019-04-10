@@ -66,9 +66,8 @@ function analytic_eval(a::analytic_func{T}, b::T) where T<:Number
 end
 
 @doc Markdown.doc"""
-***
-   dickman_rho(x::Number, prec::Int=55) Number
-> Evaluates the Dickman-$\rho$ function at $x$.
+    dickman_rho(x::Number, prec::Int=55) Number
+Evaluates the Dickman-$\rho$ function at $x$.
 """
 function dickman_rho(x::Number, prec::Int=55)
   if x < 0
@@ -288,13 +287,13 @@ end
 > of $B$-smooth integers bounded by $x^i$ for $i \in e$.
 """
 function psi_guess(x::Number, B::Int, e::UnitRange)
-  val = [x^e.start]
+  val = typeof(x)[x^e.start]
   for i=(e.start + 1):e.stop
     push!(val, val[end]*x)
   end
   d = dickman_rho(log(x)/log(B), e)
   @assert length(val) == length(d)
-  return [d[i]*val[i] for i = 1:length(e)]
+  return typeof(x)[d[i]*val[i] for i = 1:length(e)]
 end
 
 
@@ -322,12 +321,12 @@ function class_group_expected(d::fmpz, deg::Int, B::Int, samples::Int = 100)
   # 1/sum (delta(psi)/delta(x)) * delta(vol)
 
   d = max(d, fmpz(100))
-  d = BigFloat(d)
+  d1 = BigFloat(d)
   
-  pg = psi_guess(d^(1/samples), B, 1:samples)
-  x = log(d)/samples
+  pg = psi_guess(d1^(1/samples), B, 1:samples)
+  x = log(d1)/samples
   xi = [ exp(i*x) for i=1:samples]
-  vo = [vol(deg, exp(i*x)/d) for i=1:samples]
+  vo = [vol(deg, exp(i*x)/d1) for i=1:samples]
   @assert length(pg) == samples
   @assert length(xi) == samples
   @assert length(vo) == samples

@@ -294,7 +294,7 @@ function _picard_group(O::NfOrd)
     return s
   end
 
-  StoIdl = MapClassGrp{typeof(S)}() # Technically, it is a MapPicardGrp...
+  StoIdl = MapClassGrp() # Technically, it is a MapPicardGrp...
   StoIdl.header = MapHeader(S, IdealSet(O), disc_exp_picard_group, disc_log_picard_group)
 
   return S, StoIdl

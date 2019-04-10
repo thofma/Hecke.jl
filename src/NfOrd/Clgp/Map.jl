@@ -316,12 +316,12 @@ function class_group_disc_log(I::NfOrdIdl, c::ClassGrpCtx)
   return class_group_disc_log(w, c)
 end
 
-mutable struct MapClassGrp{T} <: Map{T, NfOrdIdlSet, HeckeMap, MapClassGrp}
-  header::MapHeader{T, NfOrdIdlSet}
+mutable struct MapClassGrp <: Map{GrpAbFinGen, NfOrdIdlSet, HeckeMap, MapClassGrp}
+  header::MapHeader{GrpAbFinGen, NfOrdIdlSet}
   princ_gens::Array{Tuple{FacElem{NfOrdIdl,NfOrdIdlSet}, FacElem{nf_elem, AnticNumberField}},1}
   
-  function MapClassGrp{T}() where {T}
-    return new{T}()
+  function MapClassGrp()
+    return new()
   end
 end
 
@@ -334,14 +334,14 @@ end
 function class_group(c::ClassGrpCtx; redo::Bool = false)
   if !redo
     if isdefined(c, :cl_map)
-      mC = c.cl_map::MapClassGrp{GrpAbFinGen}
+      mC = c.cl_map::MapClassGrp
       C = domain(mC)
       return C, mC
     end
   end  
   
   C = class_group_grp(c, redo = redo)
-  r = MapClassGrp{typeof(C)}()
+  r = MapClassGrp()
   
   local disclog 
   let c = c
@@ -365,7 +365,7 @@ end
 function class_group_grp(c::ClassGrpCtx; redo::Bool = false)
 
   if !redo && isdefined(c, :dl_data)
-    return c.dl_data[3]
+    return c.dl_data[3]::GrpAbFinGen
   end
 
   h, p = class_group_get_pivot_info(c)
