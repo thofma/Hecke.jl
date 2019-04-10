@@ -752,19 +752,58 @@ mutable struct ChainComplex{T}
 end
 
 length(C::ChainComplex) = length(C.maps)
+map(C::ChainComplex, i::Int) = C.maps[i]
+obj(C::ChainComplex, i::Int) = (i==0 ? domain(C.maps[1]) : codomain(C.maps[i]))
 
 function show(io::IO, C::ChainComplex)
   @show_name(io, C)
   @show_special(io, C)
 
-  io = IOContext(io, :compact => true)
-  show(io, domain(C.maps[1]))
-  for i=2:length(C)
-    print(io, " --> ")
-    show(io, domain(C.maps[i]))
+  Cn = get_special(C, :name)
+  if Cn === nothing
+    Cn = "C"
   end
-  print(io, " --> ")
-  show(io, codomain(C.maps[end]))
+  name_mod = String[]
+  name_map = String[]
+  mis_map = Tuple{Int, <:Map}[]
+  mis_mod = Tuple{Int, <:Any}[]
+  for i=1:length(C)
+    phi = map(C, i)
+    if get_special(phi, :name) !== nothing
+      push!(name_map, get_special(phi, :name))
+    else
+      push!(name_map, "")
+      push!(mis_map, (i, phi))
+    end
+  end
+  for i=0:length(C)
+    M = obj(C, i)
+    if get_special(M, :name) !== nothing
+      push!(name_mod, get_special(M, :name))
+    else
+      push!(name_mod, "$(Cn)_$i")
+      push!(mis_mod, (i, M))
+    end
+  end
+
+  io = IOContext(io, :compact => true)
+  print(io, name_mod[1])
+  for i=1:length(C)
+    if name_map[i] != ""
+      print(io, " -- $(name_map[i]) --> ", name_mod[i+1])
+    else
+      print(io, " ----> ", name_mod[i+1])
+    end
+  end
+  if length(mis_mod) > 0 # || length(mis_map) > 0
+    print(io, "\nwhere:\n")
+    for (i, M) = mis_mod
+      print(io, "\t$(Cn)_$i = ", M, "\n")
+    end
+#    for (i, phi) = mis_map
+#      print(io, "\tphi_$i = ", phi, "\n")
+#    end
+  end
 end
 
 @doc Markdown.doc"""
@@ -779,6 +818,9 @@ end
 function chain_complex(A::Array{<:Map{GrpAbFinGen, GrpAbFinGen, <:Any, <:Any}, 1})
   return ChainComplex(A)
 end
+
+lastindex(C::ChainComplex) = length(C)
+getindex(C::ChainComplex, u::UnitRange) = ChainComplex(C.maps[u], check = false)
 
 @doc Markdown.doc"""
     isexact(C::ChainComplex) -> Bool
@@ -831,7 +873,7 @@ function hom(C::ChainComplex{T}, D::ChainComplex{T}, phi::Map{<:T, <:T}) where {
   for i=length(C)-1:-1:1
     push!(h, lift(C.maps[i]*h[end], D.maps[i]))
   end
-  return ChainComplexMap(C, D, h)
+  return ChainComplexMap(C, D, reverse(h))
 end
 
 @doc Markdown.doc"""
@@ -907,6 +949,31 @@ function homology(C::ChainComplex{GrpAbFinGen})
     push!(H, snf(quo(kernel(C.maps[i+1])[1], image(C.maps[i])[1])[1])[1])
   end
   return H
+end
+
+function snake_lemma(C::ChainComplex{T}, D::ChainComplex{T}, A::Array{<:Map{T, T}, 1}) where {T}
+  @assert length(C) == length(D) == 3
+  @assert length(A) == 3
+  @assert domain(A[1]) == obj(C,0) && codomain(A[1]) == obj(D, 1)
+  @assert domain(A[2]) == obj(C,1) && codomain(A[2]) == obj(D, 2)
+  @assert domain(A[3]) == obj(C,2) && codomain(A[3]) == obj(D, 3)
+
+  ka, mka = kernel(A[1])
+  kb, mkb = kernel(A[2])
+  kc, mkc = kernel(A[3])
+  ca, mca = cokernel(A[1])
+  cb, mcb = cokernel(A[2])
+  cc, mcc = cokernel(A[3])
+
+  res = GrpAbFinGenMap[]
+  push!(res, GrpAbFinGenMap(mka * map(C, 1) * inv(mkb)))
+  push!(res, GrpAbFinGenMap(mkb * map(C, 2) * inv(mkc)))
+  #now the snake
+  push!(res, GrpAbFinGenMap(mkc * inv(map(C, 2)) * A[2] * inv(map(D, 2)) * mca))
+  #and the boring rest
+  push!(res, GrpAbFinGenMap(inv(mca) * map(D, 2) * mcb))
+  push!(res, GrpAbFinGenMap(inv(mcb) * map(D, 3) * mcc))
+  return chain_complex(res...)
 end
 
 ################################################################################
