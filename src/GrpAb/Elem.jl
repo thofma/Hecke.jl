@@ -100,7 +100,6 @@ gens(G::GrpAbFinGen) = GrpAbFinGenElem[G[i] for i = 1:ngens(G)]
 ################################################################################
 
 @doc Markdown.doc"""
-***
     parent(x::GrpAbFinGenElem) -> GrpAbFinGen
 
 Returns the parent of $x$.
@@ -148,7 +147,6 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
     getindex(x::GrpAbFinGenElem, i::Int) -> fmpz
 
 Returns the $i$-th component of the element $x$.
@@ -164,7 +162,6 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
     ==(a::GrpFinGenElem, b::GrpAbFinGenElem) -> Bool
 
 Returns whether $a$ and $b$ are equal.
@@ -181,7 +178,6 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
     +(x::GrpAbFinGenElem, y::GrpAbFinGenElem) -> GrpAbFinGenElem
 
 Returns $x + y$.
@@ -211,7 +207,6 @@ function +(x::GrpAbFinGenElem, y::GrpAbFinGenElem, L::GrpAbLattice = GroupLattic
 end
 
 @doc Markdown.doc"""
-***
     -(x::GrpAbFinGenElem, y::GrpAbFinGenElem) -> GrpAbFinGenElem
 
 Returns $x - y$.
@@ -223,7 +218,6 @@ function -(x::GrpAbFinGenElem, y::GrpAbFinGenElem)
 end
 
 @doc Markdown.doc"""
-***
     -(x::GrpAbFinGenElem) -> GrpAbFinGenElem
 
 Computes $-x$.
@@ -234,7 +228,6 @@ function -(x::GrpAbFinGenElem)
 end
 
 @doc Markdown.doc"""
-***
     *(x::fmpz, y::GrpAbFinGenElem) -> GrpAbFinGenElem
 
 Returns $x \cdot y$.
@@ -245,7 +238,6 @@ function *(x::fmpz, y::GrpAbFinGenElem)
 end
 
 @doc Markdown.doc"""
-***
     *(x::Integer, y::GrpAbFinGenElem) -> GrpAbFinGenElem
 
 Computes $x \cdot y$.
@@ -276,7 +268,6 @@ isone(a::GrpAbFinGenElem) = iszero(a.coeff)
 ################################################################################
 
 @doc Markdown.doc"""
-***
     (A::GrpAbFinGen)(x::Array{fmpz, 1}) -> GrpAbFinGenElem
 
 Given an array `x` of elements of type `fmpz` of the same length as ngens($A$),
@@ -290,7 +281,6 @@ function (A::GrpAbFinGen)(x::Array{fmpz, 1})
 end
 
 @doc Markdown.doc"""
-***
     (A::GrpAbFinGen)(x::Array{Integer, 1}) -> GrpAbFinGenElem
 
 Given an array `x` of elements of type `Integer` of the same length as
@@ -303,7 +293,6 @@ function (A::GrpAbFinGen)(x::Array{T, 1}) where T <: Integer
 end
 
 @doc Markdown.doc"""
-***
     (A::GrpAbFinGen)(x::fmpz_mat) -> GrpAbFinGenElem
 
 Given a matrix over the integers with $1$ row and `ngens(A)` columns,
@@ -323,7 +312,6 @@ function (A::GrpAbFinGen)()
 end
 
 @doc Markdown.doc"""
-***
     getindex(A::GrpAbFinGen, i::Int) -> GrpAbFinGenElem
 
 Returns the element of $A$ with components $(0,\dotsc,0,1,0,\dotsc,0)$,
@@ -349,7 +337,6 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
     order(A::GrpAbFinGenElem) -> fmpz
 
 Returns the order of $A$. It is assumed that the order is finite.
@@ -383,7 +370,6 @@ end
 rand(rng::AbstractRNG, a::Random.SamplerTrivial{GrpAbFinGen, GrpAbFinGenElem}) = rand(a.self)
 
 @doc Markdown.doc"""
-***
     rand(G::GrpAbFinGen) -> GrpAbFinGenElem
 
 Returns an element of $G$ chosen uniformly at random.
@@ -403,7 +389,6 @@ function rand_gen(G::GrpAbFinGen)
 end
 
 @doc Markdown.doc"""
-***
     rand(G::GrpAbFinGen, B::fmpz) -> GrpAbFinGenElem
 
 For a (potentially infinite) abelian group $G$, return an element
@@ -412,7 +397,6 @@ chosen uniformly at random with coefficients bounded by B.
 rand(G::GrpAbFinGen, B::fmpz) = issnf(G) ? rand_snf(G, B) : rand_gen(G, B)
 
 @doc Markdown.doc"""
-***
     rand(G::GrpAbFinGen, B::Integer) -> GrpAbFinGenElem
 
 For a (potentially infinite) abelian group $G$, return an element

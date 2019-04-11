@@ -137,7 +137,6 @@ function _psi_lower(N::fmpz, pr, a::Int=776, cl = ceil)
 end
 
 @doc Markdown.doc"""
-***
     psi_lower(N::Integer, B::Int) -> Array{Int, 1}, fmpz_abs_series
     psi_lower(N::fmpz, B::Int) -> Array{Int, 1}, fmpz_abs_series
 
@@ -159,7 +158,6 @@ function psi_lower(N::Integer, B::Int, a::Int = 776)
 end
 
 @doc Markdown.doc"""
-***
     psi_upper(N::Integer, B::Int) -> Array{Int, 1}, fmpz_abs_series
     psi_upper(N::fmpz, B::Int) -> Array{Int, 1}, fmpz_abs_series
 
@@ -181,9 +179,8 @@ function psi_upper(N::Integer, B::Int, a::Int=771)
 end
 
 @doc Markdown.doc"""
-***
-   show_psi(N::Integer, B::Int)
-   show_psi(N::fmpz, B::Int)
+    show_psi(N::Integer, B::Int)
+    show_psi(N::fmpz, B::Int)
 
 Uses \code{psi_lower} and \code{psi_upper} to find intervalls for
 $\psi(2^i, B)$ to be in for $0\le i\le \log_2(N)$.
@@ -211,7 +208,6 @@ function show_psi(N::fmpz, B::Int)
 end
 
 @doc Markdown.doc"""
-***
     psi_lower(N::Integer, B::NfFactorBase) -> Array{Int, 1}, fmpz_abs_series
     psi_lower(N::fmpz, B::NfFactorBase) -> Array{Int, 1}, fmpz_abs_series
 

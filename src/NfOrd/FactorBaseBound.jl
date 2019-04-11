@@ -43,7 +43,6 @@
 # Belabas, Diaz y Diaz, Friedmann: "Small generators for the ideal class group"
 
 @doc Markdown.doc"""
-***
     factor_base_bound_bdf(O::NfOrd) -> Int
 
 Use the algorithm of Belabas, Diaz y Diaz and Friedmann to find $B$ such that
@@ -174,7 +173,6 @@ end
 # Bach: "Explicit bounds for primality testing and related problems"
 
 @doc Markdown.doc"""
-***
     factor_base_bound_bach(O::NfOrd) -> Int
 
 Use the theorem of Bach to find $B$ such that
@@ -202,7 +200,6 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
     factor_base_bound_grh(O::NfOrd) -> Int
 
 Returns an integer $B$, such that
@@ -214,7 +211,6 @@ function factor_base_bound_grh(O::NfOrd)
 end
 
 @doc Markdown.doc"""
-***
     factor_base_bound_minkowski(O::NfOrd) -> Int
 
 Returns an integer $B$, such that

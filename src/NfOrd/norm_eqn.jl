@@ -14,7 +14,6 @@ function norm_1_generators(A::Array{NfOrdIdl, 1})
 end
 
 @doc Markdown.doc"""
-***
     norm_equation(K::AnticNumerField, a) -> nf_elem
 For $a$ an integer or rational, try to find $T \in K$ s.th. 
 $N(T) = a$. Raises an error if unsuccessful.
@@ -28,8 +27,8 @@ function norm_equation(K::AnticNumberField, a)
 end
 
 @doc Markdown.doc"""
-***
-   isnorm(K::AnticNumberField, a) -> Bool, nf_elem
+    isnorm(K::AnticNumberField, a) -> Bool, nf_elem
+
 For $a$ an integer or rational, try to find $T \in K$ s.th. $N(T) = a$
 holds. If successful, return true and $T$, otherwise false and some element.
 The element will be returned in factored form.
@@ -46,8 +45,8 @@ function isnorm(K::AnticNumberField, a::Rational)
 end
 
 @doc Markdown.doc"""
-***
-   isnorm(K::AnticNumberField, a::fmpz; extra::Array{fmpz, 1}) -> Bool, nf_elem
+    isnorm(K::AnticNumberField, a::fmpz; extra::Array{fmpz, 1}) -> Bool, nf_elem
+
 For a fmpz $a$, try to find $T \in K$ s.th. $N(T) = a$
 holds. If successful, return true and $T$, otherwise false and some element.
 In \testtt{extra} one gave pass in additional prime numbers that

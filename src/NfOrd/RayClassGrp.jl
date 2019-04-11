@@ -64,7 +64,6 @@ function ray_class_group(m::NfOrdIdl, inf_plc::Array{InfPlc,1}=InfPlc[]; n_quo=0
 end
 
 @doc Markdown.doc"""
-***
     narrow_class_group(L::NfOrd) -> GrpAbFinGen, Map
 Compute the narrow (or strict) class group of $L$, ie. the
 group of invertable ideals modulo the group of totally positive elements.

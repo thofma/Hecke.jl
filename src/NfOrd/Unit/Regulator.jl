@@ -5,7 +5,6 @@
 ################################################################################
 
 @doc Markdown.doc"""
-***
     regulator(x::Array{T, 1}, abs_tol::Int) -> arb
 
 Compute the regulator $r$ of the elements in $x$, such that the radius of $r$

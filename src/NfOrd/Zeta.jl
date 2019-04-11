@@ -337,7 +337,6 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
     zeta_log_residue(O::NfOrd, error::Float64) -> arb
 
 Computes the residue of the zeta function of $\mathcal O$ at $1$.

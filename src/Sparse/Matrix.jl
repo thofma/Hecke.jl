@@ -951,7 +951,6 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
     fmpz_mat{T <: Integer}(A::SMat{T})
 
 The same matix $A$, but as an fmpz_mat.
@@ -969,7 +968,6 @@ function fmpz_mat(A::SMat{T}) where T <: Integer
 end
 
 @doc Markdown.doc"""
-***
     fmpz_mat(A::SMat{fmpz})
 
 The same matix $A$, but as an fmpz_mat.
@@ -1001,7 +999,6 @@ function hadamard_bound2(A::SMat)
 end
 
 @doc Markdown.doc"""
-***
     maximum(abs, A::SMat{fmpz}) -> fmpz
 
   Finds the largest, in absolute value, entry of $A$.
@@ -1113,7 +1110,7 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-   identity_matrix(::Type{SMat}, R::Ring, n::Int)
+    identity_matrix(::Type{SMat}, R::Ring, n::Int)
 
 Return a sparse $n$ times $n$ identity matrix over $R$.   
 """
@@ -1131,7 +1128,7 @@ function identity_matrix(::Type{MatElem}, R::Ring, n::Int)
 end
 
 @doc Markdown.doc"""
-   zero_matrix(::Type{SMat}, R::Ring, n::Int)
+    zero_matrix(::Type{SMat}, R::Ring, n::Int)
 
 Return a sparse $n$ times $n$ zero matrix over $R$.   
 """
@@ -1143,7 +1140,7 @@ function zero_matrix(::Type{SMat}, R::Ring, n::Int)
 end
 
 @doc Markdown.doc"""
-   zero_matrix(::Type{SMat}, R::Ring, n::Int, m::Int)
+    zero_matrix(::Type{SMat}, R::Ring, n::Int, m::Int)
 
 Return a sparse $n$ times $m$ zero matrix over $R$.   
 """
@@ -1316,7 +1313,6 @@ function SparseArrays.sparse(A::SMat{T}) where T
 end
 
 @doc Markdown.doc"""
-***
     Array(A::SMat{T}) -> Array{T, 2}
 
 The same matrix, but as a two-dimensional julia array.

@@ -860,7 +860,6 @@ end
 ##################################################################################
 
 @doc Markdown.doc"""
-***
     stable_subgroups(R::GrpAbFinGen, quotype::Array{Int,1}, act::Array{T, 1}; op=sub)
     
 Given a group R, an array of endomorphisms of the group and the type of the quotient, it returns all the stable 

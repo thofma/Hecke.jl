@@ -70,7 +70,6 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
       (O::NfOrd)(a::nf_elem, check::Bool = true) -> NfAbsOrdElem
 
 Given an element $a$ of the ambient number field of $\mathcal O$, this
@@ -88,7 +87,6 @@ is contained in $\mathcal O$ if and only if `check` is `true`.
 end
 
 @doc Markdown.doc"""
-***
       (O::NfOrd)(a::NfAbsOrdElem, check::Bool = true) -> NfAbsOrdElem
 
 Given an element $a$ of some order in the ambient number field of
@@ -118,7 +116,6 @@ end
 end
 
 @doc Markdown.doc"""
-***
       (O::NfOrd)(a::Union{fmpz, Integer}) -> NfAbsOrdElem
 
 Given an element $a$ of type `fmpz` or `Integer`, this
@@ -130,7 +127,6 @@ is contained in $\mathcal O$ if and only if `check` is `true`.
 end
 
 @doc Markdown.doc"""
-***
       (O::NfOrd)(arr::Array{fmpz, 1})
 
 Returns the element of $\mathcal O$ with coefficient vector `arr`.
@@ -140,7 +136,6 @@ Returns the element of $\mathcal O$ with coefficient vector `arr`.
 end
 
 @doc Markdown.doc"""
-***
       (O::NfOrd)(arr::Array{Integer, 1})
 
 Returns the element of $\mathcal O$ with coefficient vector `arr`.
@@ -150,7 +145,6 @@ Returns the element of $\mathcal O$ with coefficient vector `arr`.
 end
 
 @doc Markdown.doc"""
-***
       (O::NfOrd)() -> NfAbsOrdElem
 
 This function constructs a new element of $\mathcal O$ which is set to $0$.
@@ -164,7 +158,6 @@ This function constructs a new element of $\mathcal O$ which is set to $0$.
 ################################################################################
 
 @doc Markdown.doc"""
-***
     parent(a::NfAbsOrdElem) -> NfOrd
 
 Returns the order of which $a$ is an element.
@@ -188,7 +181,6 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
     elem_in_nf(a::NfAbsOrdElem) -> nf_elem
 
 Returns the element $a$ considered as an element of the ambient number field.
@@ -225,7 +217,6 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
     coordinates(a::NfAbsOrdElem) -> Array{fmpz, 1}
 
 Returns the coefficient vector of $a$.
@@ -247,7 +238,6 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
     discriminant(B::Array{NfAbsOrdElem, 1}) -> fmpz
 
 Returns the discriminant of the family $B$.
@@ -285,7 +275,6 @@ Base.hash(x::NfAbsOrdElem, h::UInt) = Base.hash(x.elem_in_nf, h)
 ################################################################################
 
 @doc Markdown.doc"""
-***
     ==(x::NfAbsOrdElem, y::NfAbsOrdElem) -> Bool
 
 Returns whether $x$ and $y$ are equal.
@@ -325,7 +314,6 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
     zero(O::NfOrd) -> NfAbsOrdElem
 
 Returns the zero element of $\mathcal O$.
@@ -333,7 +321,6 @@ Returns the zero element of $\mathcal O$.
 zero(O::NfAbsOrd) = O(fmpz(0))
 
 @doc Markdown.doc"""
-***
     one(O::NfOrd) -> NfAbsOrdElem
 
 Returns the one element of $\mathcal O$.
@@ -341,7 +328,6 @@ Returns the one element of $\mathcal O$.
 one(O::NfAbsOrd) = O(fmpz(1))
 
 @doc Markdown.doc"""
-***
     zero(a::NfAbsOrdElem) -> NfAbsOrdElem
 
 Returns the zero element of the parent of $a$.
@@ -349,7 +335,6 @@ Returns the zero element of the parent of $a$.
 zero(a::NfAbsOrdElem) = parent(a)(0)
 
 @doc Markdown.doc"""
-***
     one(O::NfOrd) -> NfAbsOrdElem
 
 Returns the one element of the parent of $a$.
@@ -363,7 +348,6 @@ one(a::NfAbsOrdElem) = one(parent(a))
 ################################################################################
 
 @doc Markdown.doc"""
-***
     isone(a::NfOrd) -> Bool
 
 Tests if $a$ is one.
@@ -371,7 +355,6 @@ Tests if $a$ is one.
 isone(a::NfAbsOrdElem) = isone(a.elem_in_nf)
 
 @doc Markdown.doc"""
-***
     iszero(a::NfOrd) -> Bool
 
 Tests if $a$ is zero.
@@ -395,7 +378,6 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
     -(x::NfAbsOrdElem) -> NfAbsOrdElem
 
 Returns the additive inverse of $x$.
@@ -417,7 +399,6 @@ end
 ###############################################################################
 
 @doc Markdown.doc"""
-***
     *(x::NfAbsOrdElem, y::NfAbsOrdElem) -> NfAbsOrdElem
 
 Returns $x \cdot y$.
@@ -430,7 +411,6 @@ function *(x::NfAbsOrdElem{S, T}, y::NfAbsOrdElem{S, T}) where {S, T}
 end
 
 @doc Markdown.doc"""
-***
     +(x::NfAbsOrdElem, y::NfAbsOrdElem) -> NfAbsOrdElem
 
 Returns $x + y$.
@@ -448,7 +428,6 @@ function +(x::NfAbsOrdElem, y::NfAbsOrdElem)
 end
 
 @doc Markdown.doc"""
-***
     -(x::NfAbsOrdElem, y::NfAbsOrdElem) -> NfAbsOrdElem
 
 Returns $x - y$.
@@ -466,7 +445,6 @@ function -(x::NfAbsOrdElem, y::NfAbsOrdElem)
 end
 
 @doc Markdown.doc"""
-***
     divexact(x::NfAbsOrdElem, y::NfAbsOrdElem, check::Bool) -> NfAbsOrdElem
 
 Returns $x/y$. It is assumed that $x/y$ is an element of the same order
@@ -579,7 +557,6 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
     ^(x::NfAbsOrdElem, y::Union{fmpz, Int})
 
 Returns $x^y$.
@@ -597,7 +574,6 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
     mod(a::NfAbsOrdElem, m::Union{fmpz, Int}) -> NfAbsOrdElem
 
 Reduces the coefficient vector of $a$ modulo $m$ and returns the corresponding
@@ -621,7 +597,6 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
     powermod(a::NfAbsOrdElem, i::fmpz, m::Union{fmpz, Int}) -> NfAbsOrdElem
 
 Returns an element $a^i$ modulo $m$.
@@ -712,7 +687,6 @@ function mod(a::NfAbsNSElem, p::fmpz)
 end
 
 @doc Markdown.doc"""
-***
     powermod(a::NfAbsOrdElem, i::Integer, m::Integer) -> NfAbsOrdElem
 
 Returns the element $a^i$ modulo $m$.
@@ -720,7 +694,6 @@ Returns the element $a^i$ modulo $m$.
 powermod(a::NfAbsOrdElem, i::Integer, m::Integer) = powermod(a, fmpz(i), fmpz(m))
 
 @doc Markdown.doc"""
-***
     powermod(a::NfAbsOrdElem, i::fmpz, m::Integer) -> NfAbsOrdElem
 
 Returns the element $a^i$ modulo $m$.
@@ -728,7 +701,6 @@ Returns the element $a^i$ modulo $m$.
 powermod(a::NfAbsOrdElem, i::fmpz, m::Integer)  = powermod(a, i, fmpz(m))
 
 @doc Markdown.doc"""
-***
     powermod(a::NfAbsOrdElem, i::Integer, m::fmpz) -> NfAbsOrdElem
 
 Returns the element $a^i$ modulo $m$.
@@ -742,7 +714,6 @@ powermod(a::NfAbsOrdElem, i::Integer, m::fmpz)  = powermod(a, fmpz(i), m)
 ################################################################################
 
 @doc Markdown.doc"""
-***
     representation_matrix(a::NfAbsOrdElem) -> fmpz_mat
 
 Returns the representation matrix of the element $a$.
@@ -759,7 +730,6 @@ function representation_matrix(a::NfAbsOrdElem)
 end
 
 @doc Markdown.doc"""
-***
     representation_matrix(a::NfAbsOrdElem, K::AnticNumberField) -> FakeFmpqMat
 
 Returns the representation matrix of the element $a$ considered as an element
@@ -781,7 +751,6 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
     tr(a::NfAbsOrdElem) -> fmpz
 
 Returns the trace of $a$.
@@ -797,7 +766,6 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
     norm(a::NfAbsOrdElem) -> fmpz
 
 Returns the norm of $a$.
@@ -835,7 +803,6 @@ function rand!(z::NfAbsOrdElem, O::NfAbsOrd, R::UnitRange{T}) where T <: Integer
 end
 
 @doc Markdown.doc"""
-***
     rand(O::NfOrd, R::UnitRange{Integer}) -> NfAbsOrdElem
 
 Computes a coefficient vector with entries uniformly distributed in `R` and returns
@@ -852,7 +819,6 @@ function rand!(z::NfAbsOrdElem, O::NfOrd, n::Union{Integer, fmpz})
 end
 
 @doc Markdown.doc"""
-***
     rand(O::NfOrd, n::Union{Integer, fmpz}) -> NfAbsOrdElem
 
 Computes a coefficient vector with entries uniformly distributed in
@@ -981,7 +947,6 @@ dot(x::fmpz, y::NfAbsOrdElem) = y * x
 ################################################################################
 
 @doc Markdown.doc"""
-***
     minkowski_map(a::NfAbsOrdElem, abs_tol::Int) -> Array{arb, 1}
 
 Returns the image of $a$ under the Minkowski embedding.
@@ -1001,7 +966,6 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
     conjugates_arb(x::NfAbsOrdElem, abs_tol::Int) -> Array{acb, 1}
 
 Compute the the conjugates of `x` as elements of type `acb`.
@@ -1019,7 +983,6 @@ function conjugates_arb(x::NfAbsOrdElem, abs_tol::Int = 32)
 end
 
 @doc Markdown.doc"""
-***
     conjugates_arb_log(x::NfAbsOrdElem, abs_tol::Int) -> Array{arb, 1}
 
 Returns the elements
@@ -1039,7 +1002,6 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
     t2(x::NfAbsOrdElem, abs_tol::Int = 32) -> arb
 
 Return the $T_2$-norm of $x$. The radius of the result will be less than

@@ -61,7 +61,6 @@ function MaximalOrder(K::AnticNumberField; discriminant::fmpz = fmpz(-1), ramifi
 end
 
 @doc Markdown.doc"""
-***
     ring_of_integers(K::AnticNumberField) -> NfAbsOrd
 
 This function returns the ring of integers of $K$.
@@ -82,7 +81,6 @@ end
 #
 ################################################################################
 @doc Markdown.doc"""
-***
     pmaximal_overorder_at(O::NfOrd, primes::Array{fmpz, 1}) - > NfOrd
 
 Given a set of prime numbers, this function returns an overorder of $O$ which
@@ -533,7 +531,6 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
     ring_of_multipliers(I::NfAbsOrdIdl) -> NfOrd
 
 Computes the order $(I : I)$, which is the set of all $x \in K$

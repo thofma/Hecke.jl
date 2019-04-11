@@ -58,7 +58,6 @@ end
 # 3 = ARF_RND_CEIL = round towards +infinity
 
 @doc Markdown.doc"""
-***
     abs_upper_bound(x::arb, ::Type{fmpz}) -> fmpz
 
 Returns a positive integer $b$ of type `fmpz` such that $\lvert x \rvert \leq
@@ -83,7 +82,6 @@ function abs_upper_bound(x::arb, ::Type{fmpz})
 end
 
 @doc Markdown.doc"""
-***
     abs_upper_bound(x::arb, ::Type{Float64}) -> Float64
 
 Returns a positive double $b$ such that $\lvert x \rvert \leq b$. It is not
@@ -107,7 +105,6 @@ function abs_upper_bound(x::arb, ::Type{Float64})
 end
 
 @doc Markdown.doc"""
-***
     upper_bound(x::arb, ::Type{fmpz}) -> fmpz
 
 Returns an integer $b$ of type `fmpz` such that $x \leq
@@ -132,7 +129,6 @@ function upper_bound(x::arb, ::Type{fmpz})
 end
 
 @doc Markdown.doc"""
-***
     lower_bound(x::arb, ::Type{fmpz}) -> fmpz
 
 Returns an integer $b$ of type `fmpz` such that $x \geq

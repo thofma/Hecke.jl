@@ -382,7 +382,6 @@ end
 # (some more for Bernstein: FactorBase, gcd, divexact)
 
 @doc Markdown.doc"""
-***
     coprime_base{E}(S::Array{E, 1}) -> Array{E, 1}
 
 Returns a coprime base for S, ie. the resulting array contains pairwise coprime objects that multiplicatively generate the same set as the input array.
@@ -390,7 +389,6 @@ Returns a coprime base for S, ie. the resulting array contains pairwise coprime 
 coprime_base(x) = coprime_base_steel(x)
 
 @doc Markdown.doc"""
-***
     coprime_base_insert{E}(S::Array{E, 1}, a::E) -> Array{E, 1}
 
 Given a coprime array S, insert a new element, ie. find a coprime base for push(S, a)

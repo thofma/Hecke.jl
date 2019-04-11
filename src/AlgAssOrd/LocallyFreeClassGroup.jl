@@ -5,7 +5,6 @@
 ################################################################################
 
 @doc Markdown.doc"""
-***
     locally_free_class_group(O::AlgAssAbsOrd)
 
 Given an order O in a semisimple algebra over QQ, this function returns the
@@ -195,7 +194,6 @@ function K1_order_mod_conductor(O::AlgAssAbsOrd, F::AlgAssAbsOrdIdl, FinZ::AlgAs
 end
 
 @doc Markdown.doc"""
-***
      K1(A::AlgAss{T}) where { T <: Union{gfp_elem, Generic.ResF{fmpz}, fq, fq_nmod } }
 
 Given an algebra over a finite field, this function returns generators for K_1(A).

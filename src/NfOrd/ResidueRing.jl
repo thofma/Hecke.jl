@@ -683,7 +683,6 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
     group_structure(Q::NfOrdQuoRing) -> GrpAbFinGenSnf
 
 Returns an abelian group with the structure of (Q,+).

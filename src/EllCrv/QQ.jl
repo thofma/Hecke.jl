@@ -45,7 +45,6 @@ export integral_model, istorsion_point, laska_kraus_connell, minimal_model,
 ################################################################################
 
 @doc Markdown.doc"""
-***
     order(P::EllCrvPt{fmpq}) -> fmpz
 
 Returns the order of the point $P$ or $0$ if the order is infinite.
@@ -86,7 +85,6 @@ end
 
 # via theorem of Lutz-Nagell
 @doc Markdown.doc"""
-***
     torsion_points_lutz_nagell(E::EllCrv{fmpq}) -> Array{EllCrvPt, 1}
 
 Computes the rational torsion points of an elliptic curve using the
@@ -160,7 +158,6 @@ end
 
 # via division polynomials
 @doc Markdown.doc"""
-***
     torsion_points_division_poly(E::EllCrv{fmpq}) -> Array{EllCrvPt}
 
 Computes the rational torsion points of an rational elliptic $E$ curve using
@@ -274,7 +271,6 @@ end
 
 # function for users
 @doc Markdown.doc"""
-***
     torsion_points(E::EllCrv{fmpq}) -> Array{EllCrvPt{fmpq}, 1}
 
 Returns the rational torsion points of $E$.
@@ -296,7 +292,6 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
     torsion_structure(E::EllCrv{fmpq}) -> (A::Array{fmpz, 1},
                                            B::Array{EllCrvPt{fmpq}, 1}
 
@@ -347,7 +342,6 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
 integral_model(E::EllCrv{fmpq}) -> (F::EllCrv{fmpz}, function, function)
 
 Given an elliptic curve $E$ over $\mathbf Q$ in short form, returns an
@@ -396,7 +390,6 @@ end
 
 # algorithm of Laska-Kraus-Connell
 @doc Markdown.doc"""
-***
     laska_kraus_connell(E::EllCrv{fmpz}) -> Array{Nemo.fmpz}
 
 Given an elliptic curve over $\mathbf Q$ with integral model, this returns an
@@ -528,7 +521,6 @@ end
 
 # tate's algorithm, see Cremona, p. 66
 @doc Markdown.doc"""
-***
     tates_algorithm_local(E::EllCrv{fmpz}, p::Int) -> EllipticCurve{fmpq}, String, fmpz, fmpz
 
 Returns a tuple $(\tilde E, K, f, c)$, where $\tilde E$ is a minimal model
@@ -855,7 +847,6 @@ function tates_algorithm_local(E::EllCrv{fmpq}, p)
 end
 
 @doc Markdown.doc"""
-***
     tates_algorithm_global(E::EllCrv{fmpq}) -> EllCrv{fmpq}
 
 Returns a global reduced minimal model for $E$ using Tate's algorithm.
@@ -887,7 +878,6 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
     minimal_model(E::EllCrv{fmpq}) -> EllCrv{fmpq}
 
 Returns the reduced global minimal model of $E$.
@@ -897,7 +887,6 @@ function minimal_model(E::EllCrv{fmpq})
 end
 
 @doc Markdown.doc"""
-***
     minimal_model(E::EllCrv{fmpq}) -> EllCrv{fmpq}
 
 Returns a model of $E$, which is minimal at $p$. It is assumed that $p$
@@ -909,7 +898,6 @@ function minimal_model(E::EllCrv{fmpq}, p::Int)
 end
 
 @doc Markdown.doc"""
-***
     tidy_model(E::EllCrv{fmpz}) -> EllCrv{fmpz}
 Given an elliptic curve with minimal model, this functions returns an
 isomorphic curve with reduced minimal model, that is, $a_1, a_3 \in \{0, 1\}$

@@ -52,7 +52,6 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
     frac_ideal(O::NfOrd, A::FakeFmpqMat, A_in_hnf::Bool = false) -> NfOrdFracIdl
 
 Creates the fractional ideal of $\mathcal O$ with basis matrix $A$. If A_in_hnf
@@ -66,7 +65,6 @@ function frac_ideal(O::NfOrd, x::FakeFmpqMat, x_in_hnf::Bool = false)
 end
 
 @doc Markdown.doc"""
-***
     frac_ideal(O::NfOrd, A::fmpz_mat, b::fmpz, A_in_hnf::Bool = false) -> NfOrdFracIdl
 
 Creates the fractional ideal of $\mathcal O$ with basis matrix $A/b$. If
@@ -82,7 +80,6 @@ end
 frac_ideal(O::NfOrd, x::fmpz_mat, y::Integer) = frac_ideal(O, x, fmpz(y))
 
 @doc Markdown.doc"""
-***
     frac_ideal(O::NfOrd, I::NfOrdIdl) -> NfOrdFracIdl
 
 Turns the ideal $I$ into a fractional ideal of $\mathcal O$.
@@ -93,7 +90,6 @@ function frac_ideal(O::NfOrd, x::NfOrdIdl)
 end
 
 @doc Markdown.doc"""
-***
     frac_ideal(O::NfOrd, I::NfOrdIdl, b::fmpz) -> NfOrdFracIdl
 
 Creates the fractional ideal $I/b$ of $\mathcal O$.
@@ -106,7 +102,6 @@ end
 frac_ideal(O::NfOrd, x::NfOrdIdl, y::Integer) = frac_ideal(O, x, fmpz(y))
 
 @doc Markdown.doc"""
-***
     frac_ideal(O::NfOrd, a::nf_elem) -> NfOrdFracIdl
 
 Creates the principal fractional ideal $(a)$ of $\mathcal O$.
@@ -117,7 +112,6 @@ function frac_ideal(O::NfOrd, x::nf_elem)
 end
 
 @doc Markdown.doc"""
-***
     frac_ideal(O::NfOrd, a::NfOrdElem) -> NfOrdFracIdl
 
 Creates the principal fractional ideal $(a)$ of $\mathcal O$.
@@ -172,7 +166,6 @@ order(a::NfOrdFracIdl) = a.order
 ################################################################################
 
 @doc Markdown.doc"""
-***
     basis_mat_inv(I::NfOrdFracIdl) -> FakeFmpqMat
 
 Returns the inverse of the basis matrix of $I$.
@@ -193,7 +186,6 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
     basis(I::NfOrdFracIdl) -> Array{nf_elem, 1}
 
 Returns the $\mathbf Z$-basis of $I$.
@@ -239,7 +231,6 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
     basis_mat(I::NfOrdFracIdl) -> FakeFmpqMat
 
 Returns the basis matrix of $I$ with respect to the basis of the order.
@@ -291,7 +282,6 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
     norm(I::NfOrdFracIdl) -> fmpq
 
 Returns the norm of $I$
@@ -322,7 +312,6 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
     inv(A::NfOrdFracIdl) -> NfOrdFracIdl
 
 Returns the fractional ideal $B$ such that $AB = \mathcal O$.
@@ -385,7 +374,6 @@ isprime_known(A::NfOrdFracIdl) = isprime_known(A.num)
 ################################################################################
 
 @doc Markdown.doc"""
-***
     ==(x::NfOrdFracIdl, y::NfOrdFracIdl) -> Bool
 
 Returns whether $x$ and $y$ are equal.
@@ -417,7 +405,6 @@ function prod(a::NfOrdFracIdl, b::NfOrdFracIdl)
 end
 
 @doc Markdown.doc"""
-***
     *(I::NfOrdFracIdl, J::NfOrdFracIdl) -> NfOrdFracIdl
 
 Returns $IJ$.
@@ -576,7 +563,6 @@ function ideal(O::NfOrd, a::nf_elem)
 end
 
 @doc Markdown.doc"""
-***
     integral_split(A::NfOrdFracIdl) -> NfOrdIdl, NfOrdIdl
 Computes the unique coprime integral ideals $N$ and $D$ s.th. $A = ND^{-1}$
 """

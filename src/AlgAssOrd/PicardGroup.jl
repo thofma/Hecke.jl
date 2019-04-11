@@ -36,7 +36,6 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
     picard_group(O::AlgAssAbsOrd)
 
 Given an order O in a commutative algebra over QQ, this function returns the

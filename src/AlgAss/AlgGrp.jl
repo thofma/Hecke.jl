@@ -129,7 +129,6 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
     center(A::AlgGrp{T}) where T
 
 Returns the center C of A and the inclusion C \to A.

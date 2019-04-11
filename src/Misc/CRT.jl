@@ -67,12 +67,11 @@ mutable struct crt_env{T}
 end
 
 @doc Markdown.doc"""
-***
-   crt_env(p::Array{T, 1}) -> crt_env{T}
+    crt_env(p::Array{T, 1}) -> crt_env{T}
 
 Given coprime moduli in some euclidean ring (FlintZZ, nmod_poly, 
- fmpz\_mod_poly), prepare data for fast application of the chinese
- remander theorem for those moduli.
+fmpz\_mod_poly), prepare data for fast application of the chinese
+remander theorem for those moduli.
 """
 function crt_env(p::Array{T, 1}) where T
   return crt_env{T}(p)
@@ -83,8 +82,7 @@ function show(io::IO, c::crt_env{T}) where T
 end
 
 @doc Markdown.doc"""
-***
-   crt{T}(b::Array{T, 1}, a::crt_env{T}) -> T
+    crt{T}(b::Array{T, 1}, a::crt_env{T}) -> T
 
 Given values in b and the environment prepared by crt\_env, return the 
 unique (modulo the product) solution to $x \equiv b_i \bmod p_i$.
@@ -290,7 +288,6 @@ end
 
 
 @doc Markdown.doc"""
-***
   crt(r1::PolyElem, m1::PolyElem, r2::PolyElem, m2::PolyElem) -> PolyElem
 
 Find $r$ such that $r \equiv r_1 \pmod m_1$ and $r \equiv r_2 \pmod m_2$
@@ -302,7 +299,6 @@ function crt(r1::PolyElem{T}, m1::PolyElem{T}, r2::PolyElem{T}, m2::PolyElem{T})
 end
 
 @doc Markdown.doc"""
-***
   crt_iterative(r::Array{T, 1}, m::Array{T,1}) -> T
 
 Find $r$ such that $r \equiv r_i \pmod m_i$ for all $i$.
@@ -319,7 +315,6 @@ function crt_iterative(r::Array{T, 1}, m::Array{T, 1}) where T
 end
 
 @doc Markdown.doc"""
-***
   crt_tree(r::Array{T, 1}, m::Array{T,1}) -> T
 
 Find $r$ such that $r \equiv r_i \pmod m_i$ for all $i$.
@@ -349,7 +344,6 @@ function crt_tree(r::Array{T, 1}, m::Array{T, 1}) where T
 end
 
 @doc Markdown.doc"""
-***
   crt(r::Array{T, 1}, m::Array{T,1}) -> T
 
 Find $r$ such that $r \equiv r_i \pmod m_i$ for all $i$.
@@ -438,7 +432,6 @@ function induce_crt(L::Array{T, 1}, c::crt_env{fmpz}) where {T <: PolyElem}
 end
 
 @doc Markdown.doc"""
-***
   _num_setcoeff!(a::nf_elem, n::Int, c::fmpz)
   _num_setcoeff!(a::nf_elem, n::Int, c::Integer)
 
@@ -537,7 +530,6 @@ function show(io::IO, me::modular_env)
 end
 
 @doc Markdown.doc"""
-***
   modular_init(K::AnticNumberField, p::fmpz) -> modular_env
   modular_init(K::AnticNumberField, p::Integer) -> modular_env
 
@@ -586,7 +578,6 @@ function modular_init(K::AnticNumberField, p::Integer; deg_limit::Int=0, max_spl
 end
 
 @doc Markdown.doc"""
-***
   modular_proj(a::nf_elem, me::modular_env) -> Array{fq_nmod, 1}
 
 Given an algebraic number $a$ and data \code{me} as computed by
@@ -611,7 +602,6 @@ function modular_proj(a::nf_elem, me::modular_env)
 end
 
 @doc Markdown.doc"""
-***
   modular_proj(a::FacElem{nf_elem, AnticNumberField}, me::modular_env) -> Array{fq_nmod, 1}
 
 Given an algebraic number $a$ in factored form and data \code{me} as computed by
@@ -639,7 +629,6 @@ end
 
 
 @doc Markdown.doc"""
-***
   modular_lift(a::Array{fq_nmod}, me::modular_env) -> nf_elem
 
 Given an array of elements as computed by \code{modular_proj},
@@ -659,7 +648,6 @@ function modular_lift(a::Array{fq_nmod, 1}, me::modular_env)
 end
 
 @doc Markdown.doc"""
-***
   modular_proj(a::Generic.Poly{nf_elem}, me::modular_env) -> Array
 
 Apply the \code{modular_proj} function to each coeficient of $a$.
@@ -697,7 +685,6 @@ function modular_proj(a::Generic.Poly{nf_elem}, me::modular_env)
 end
 
 @doc Markdown.doc"""
-***
   modular_lift(a::Array{fq_nmod_poly}, me::modular_env) -> Generic.Poly{nf_elem}
 
 Apply the \code{modular_lift} function to each coeficient of $a$.
@@ -722,7 +709,6 @@ function modular_lift(a::Array{fq_nmod_poly, 1}, me::modular_env)
 end
 
 @doc Markdown.doc"""
-***
   modular_proj(a::Generic.Mat{nf_elem}, me::modular_env) -> Array{Matrix}
   modular_proj(a::Generic.Mat{NfOrdElem}, me::modular_env) -> Array{Matrix}
 
