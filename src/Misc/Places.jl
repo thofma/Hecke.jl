@@ -52,7 +52,7 @@ end
 ***
     isreal(P::InfPlc) -> Bool
 
-> Returns whether the embedding into $\mathbf{C}$ defined by P is real or not.
+Returns whether the embedding into $\mathbf{C}$ defined by P is real or not.
 """
 function Base.isreal(P::InfPlc)
   return P.isreal
@@ -62,7 +62,7 @@ end
 ***
     iscomplex(P::InfPlc) -> Bool
 
-> Returns whether the embedding into $\mathbf{C}$ defined by P is complex or not.
+Returns whether the embedding into $\mathbf{C}$ defined by P is complex or not.
 """
 function iscomplex(P::InfPlc)
   return !isreal(P)
@@ -78,8 +78,8 @@ end
 ***
     infinite_place(K::AnticNumberField, i::Int) -> InfPlc
 
-> This function returns the infinite place of $K$ corresponding to the root
-> `conjugates_arb(a)[i]`, where `a` is the primitive element of $K$.
+This function returns the infinite place of $K$ corresponding to the root
+`conjugates_arb(a)[i]`, where `a` is the primitive element of $K$.
 """
 function infinite_place(K::AnticNumberField, i::Int)
   !(1 <= i <= degree(K)) && error("Index must be between 1 and $(degree(K))")
@@ -90,7 +90,7 @@ end
 ***
     infinite_places(K::AnticNumberField) -> Vector{InfPlc}
 
-> This function returns all infinite places of $K$.
+This function returns all infinite places of $K$.
 """
 function infinite_places(K::AnticNumberField)
   r1, r2 = signature(K)
@@ -101,7 +101,7 @@ end
 ***
     real_places(K::AnticNumberField) -> Vector{InfPlc}
 
-> This function returns all infinite real places of $K$.
+This function returns all infinite real places of $K$.
 """
 function real_places(K::AnticNumberField)
   r1, r2 = signature(K)
@@ -112,7 +112,7 @@ end
 ***
     complex_places(K::AnticNumberField) -> Vector{InfPlc}
 
-> This function returns all infinite complex places of $K$.
+This function returns all infinite complex places of $K$.
 """
 function complex_places(K::AnticNumberField)
   r1, r2 = signature(K)
@@ -130,10 +130,10 @@ end
     signs(a::nf_elem)          -> Dict{InfPlc, Int}
     signs(a::FacElem{nf_elem}) -> Dict{InfPlc, Int}
 
-> This function returns a dictionary of the signs of $a$ at all infinite places
-> of the ambient number field. The keys are infinite places of the ambient
-> number field. The value is $1$ if the sign is positive and $-1$ if the sign
-> is negative.
+This function returns a dictionary of the signs of $a$ at all infinite places
+of the ambient number field. The keys are infinite places of the ambient
+number field. The value is $1$ if the sign is positive and $-1$ if the sign
+is negative.
 """
 function signs(a::Union{nf_elem, FacElem{nf_elem, AnticNumberField}})
   K = _base_ring(a)
@@ -152,8 +152,8 @@ end
     sign(a::nf_elem, P::InfPlc)          -> Int
     sign(a::FacElem{nf_elem}, P::InfPlc) -> Int
 
-> This function returns the sign of $a$ at the place $P$. The value is $1$ if
-> the sign is positive and $-1$ if the sign is negative.
+This function returns the sign of $a$ at the place $P$. The value is $1$ if
+the sign is positive and $-1$ if the sign is negative.
 
 """
 function sign(a::Union{nf_elem, FacElem{nf_elem, AnticNumberField}}, P::InfPlc)
@@ -166,10 +166,10 @@ end
     signs(a::nf_elem, l::Vector{InfPlc})          -> Dict{InfPlc, Int}
     signs(a::FacElem{nf_elem}, l::Vector{InfPlc}) -> Dict{InfPlc, Int}
 
-> This function returns a dictionary of the signs of $a$ at places in $l$. The
-> keys are the elements of $l$. The value is $1$ if the sign is positive and
-> $-1$ if the sign is negative. The result will contain as many signs as there
-> are real places contained in $l$.
+This function returns a dictionary of the signs of $a$ at places in $l$. The
+keys are the elements of $l$. The value is $1$ if the sign is positive and
+$-1$ if the sign is negative. The result will contain as many signs as there
+are real places contained in $l$.
 """
 function signs(a::Union{nf_elem, FacElem{nf_elem, AnticNumberField}}, l::Array{InfPlc, 1})
   K = _base_ring(a)
@@ -206,8 +206,8 @@ end
     ispositive(a::nf_elem, P::InfPlc)          -> Bool
     ispositive(a::FacElem{nf_elem}, P::InfPlc) -> Bool
 
-> Returns whether the element $a$ is positive at the embedding corresponding to
-> $P$. The place $P$ must be real.
+Returns whether the element $a$ is positive at the embedding corresponding to
+$P$. The place $P$ must be real.
 """
 function ispositive(a::Union{nf_elem, FacElem{nf_elem, AnticNumberField}}, P::InfPlc)
   !isreal(P) && error("Place must be real")
@@ -219,8 +219,8 @@ end
     ispositive(a::nf_elem, l::Vector{InfPlc})          -> Bool
     ispositive(a::FacElem{nf_elem}, l::Vector{InfPlc}) -> Bool
 
-> Returns whether the element $a$ is positive at the embeddings corresponding to
-> the real places of $l$.
+Returns whether the element $a$ is positive at the embeddings corresponding to
+the real places of $l$.
 """
 function ispositive(a::Union{nf_elem, FacElem{nf_elem, AnticNumberField}}, l::Array{InfPlc, 1})
   return all(x -> ispositive(a, x), (y for y in l if isreal(y)))
@@ -231,8 +231,8 @@ end
     istotally_positive(a::nf_elem)          -> Bool
     istotally_positive(a::FacElem{nf_elem}) -> Bool
 
-> Returns whether the element $a$ is totally positive, that is, whether it is
-> positive at all places of the ambient number field.
+Returns whether the element $a$ is totally positive, that is, whether it is
+positive at all places of the ambient number field.
 """
 function istotally_positive(a::Union{nf_elem, FacElem{nf_elem, AnticNumberField}})
   K = _base_ring(a)
@@ -260,8 +260,8 @@ end
 
 @doc Markdown.doc"""
     induce_image(P::InfPlc, m::NfToNfMor) -> InfPlc
-> Find a place in the image of $P$ under $m$. If $m$ is an automorphism,
-> this is unique.
+Find a place in the image of $P$ under $m$. If $m$ is an automorphism,
+this is unique.
 """
 function induce_image(P::InfPlc, m::NfToNfMor)
   k = number_field(P)

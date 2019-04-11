@@ -94,7 +94,7 @@ function CrossedProductAlgebra(O::NfOrd, G::Array{T,1}, cocval::Array{nf_elem, 2
           # B[i]*G[j]* B[k]*G[h]=B[i]*G[j](B[k])*c[j,h]*(G[j]*G[h])
           mul!(el, B[i], l)
           mul!(el, el, t)
-          y = elem_in_basis(el)
+          y = coordinates(el)
           for s=0:n-1
             M[j+(i-1)*m, h+(k-1)*m, ind+s*m] = y[s+1]
           end
@@ -144,7 +144,7 @@ function pradical_crossed_product(O::AlgAssAbsOrd, I1::AlgAssAbsOrdIdl, p::Int)
   gens = Vector{elem_type(O)}(undef, nrows(dM))
   m = zero_matrix(FlintZZ, nrows(dM)+degree(O), degree(O))
   for i=1:nrows(dM)
-    el = elem_in_basis(mA1(elem_from_mat_row(A1, dM, i)))
+    el = coordinates(mA1(elem_from_mat_row(A1, dM, i)))
     for j=1:ncols(dM)
       m[i,j] = el[j]
     end
@@ -177,7 +177,7 @@ function _ideal_in_radical(OL::NfOrd, G::Array{NfToNfMor, 1}, O::AlgAssAbsOrd, p
   M = zero_matrix(FlintZZ, degree(O), degree(O))
   l = 0
   for i = 1:length(B)
-    el = elem_in_basis(B[i])
+    el = coordinates(B[i])
     for j = 1:length(G)
       l += 1
       for k = 1:degree(OL)       
@@ -190,14 +190,14 @@ function _ideal_in_radical(OL::NfOrd, G::Array{NfToNfMor, 1}, O::AlgAssAbsOrd, p
   j = find_elem(G, phi)
   #I need to save the generators of the ideal!
   gens = Array{AlgAssElem, 1}(undef, 2)
-  el1 = elem_in_basis(OL(p))
+  el1 = coordinates(OL(p))
   a = fmpq[0 for i=1:degree(O)]
   for k = 1:degree(OL)
     a[j+(k-1)*length(G)] = fmpq(el1[k])
   end
   gens[1] = A(a)
   a2 = fmpq[0 for i=1:degree(O)]
-  el2 = elem_in_basis(I.gen_two)
+  el2 = coordinates(I.gen_two)
   for k = 1:degree(OL)
     a2[j+(k-1)*length(G)] = fmpq(el2[k])
   end

@@ -44,11 +44,11 @@ export torsion_unit_group
 ***
     istorsion_unit(x::NfOrdElem, checkisunit::Bool = false) -> Bool
 
-> Returns whether $x$ is a torsion unit, that is, whether there exists $n$ such
-> that $x^n = 1$.
-> 
-> If `checkisunit` is `true`, it is first checked whether $x$ is a unit of the
-> maximal order of the number field $x$ is lying in.
+Returns whether $x$ is a torsion unit, that is, whether there exists $n$ such
+that $x^n = 1$.
+
+If `checkisunit` is `true`, it is first checked whether $x$ is a unit of the
+maximal order of the number field $x$ is lying in.
 """
 function istorsion_unit(x::NfOrdElem, checkisunit::Bool = false)
   return istorsion_unit(x.elem_in_nf, checkisunit)
@@ -64,11 +64,11 @@ end
 ***
     torsion_unit_order(x::NfOrdElem, n::Int)
 
-> Given a torsion unit $x$ together with a multiple $n$ of its order, compute
-> the order of $x$, that is, the smallest $k \in \mathbb Z_{\geq 1}$ such
-> that $x^k = 1$.
+Given a torsion unit $x$ together with a multiple $n$ of its order, compute
+the order of $x$, that is, the smallest $k \in \mathbb Z_{\geq 1}$ such
+that $x^k = 1$.
 >
-> It is not checked whether $x$ is a torsion unit.
+It is not checked whether $x$ is a torsion unit.
 """
 function torsion_unit_order(x::NfOrdElem, n::Int)
   return torsion_unit_order(x.elem_in_nf, n)
@@ -84,7 +84,7 @@ end
 ***
     torsion_units(O::NfOrd) -> Array{NfOrdElem, 1}
 
-> Given an order $O$, compute the torsion units of $O$.
+Given an order $O$, compute the torsion units of $O$.
 """
 function torsion_units(O::NfOrd)
   ord, g = _torsion_units(O)
@@ -101,7 +101,7 @@ end
 ***
     torsion_units_gen(O::NfOrd) -> NfOrdElem
 
-> Given an order $O$, compute a generator of the torsion units of $O$.
+Given an order $O$, compute a generator of the torsion units of $O$.
 """
 function torsion_units_gen(O::NfOrd)
   return _torsion_units(O)[2]
@@ -111,7 +111,7 @@ end
 ***
     torsion_units_gen_order(O::NfOrd) -> NfOrdElem
 
-> Given an order $O$, compute a generator of the torsion units of $O$ as well as its order.
+Given an order $O$, compute a generator of the torsion units of $O$ as well as its order.
 """
 function torsion_units_gen_order(O::NfOrd)
   ord, g = _torsion_units(O)
@@ -122,8 +122,8 @@ end
 ***
     torsion_unit_group(O::NfOrd) -> GrpAb, Map
 
-> Given an order $O$, returns the torsion units as an abelian group $G$
-> together with a map $G \to \mathcal O^\times$.
+Given an order $O$, returns the torsion units as an abelian group $G$
+together with a map $G \to \mathcal O^\times$.
 """
 function torsion_unit_group(O::NfOrd)
   ord, g = _torsion_units(O)

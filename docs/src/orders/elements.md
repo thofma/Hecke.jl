@@ -31,7 +31,7 @@ NfAbsOrd
 ```@docs
 parent(::NfOrdElem)
 elem_in_nf(::NfOrdElem)
-elem_in_basis(::NfOrdElem)
+coordinates(::NfOrdElem)
 discriminant(::Array{NfOrdElem, 1})
 ==(::NfOrdElem, ::NfOrdElem)
 zero(::NfOrd)

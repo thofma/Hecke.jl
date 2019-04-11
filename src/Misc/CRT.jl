@@ -70,9 +70,9 @@ end
 ***
    crt_env(p::Array{T, 1}) -> crt_env{T}
 
-> Given coprime moduli in some euclidean ring (FlintZZ, nmod_poly, 
->  fmpz\_mod_poly), prepare data for fast application of the chinese
->  remander theorem for those moduli.
+Given coprime moduli in some euclidean ring (FlintZZ, nmod_poly, 
+ fmpz\_mod_poly), prepare data for fast application of the chinese
+ remander theorem for those moduli.
 """
 function crt_env(p::Array{T, 1}) where T
   return crt_env{T}(p)
@@ -86,8 +86,8 @@ end
 ***
    crt{T}(b::Array{T, 1}, a::crt_env{T}) -> T
 
-> Given values in b and the environment prepared by crt\_env, return the 
-> unique (modulo the product) solution to $x \equiv b_i \bmod p_i$.
+Given values in b and the environment prepared by crt\_env, return the 
+unique (modulo the product) solution to $x \equiv b_i \bmod p_i$.
 """  
 function crt(b::Array{T, 1}, a::crt_env{T}) where T
   res = zero(b[1])
@@ -229,9 +229,9 @@ end
 ***
    crt_inv(a::T, crt_env{T}) -> Array{T, 1}
 
-> Given a \code{crt_env} and an element a, return
-> the modular data $a \bmod pr_i$ for all $i$.
-> This is essentially the inverse to the \code{crt} function.  
+Given a \code{crt_env} and an element a, return
+the modular data $a \bmod pr_i$ for all $i$.
+This is essentially the inverse to the \code{crt} function.  
 """
 function crt_inv(a::T, c::crt_env{T}) where T
   res = Array{T}(undef, c.n)
@@ -294,7 +294,7 @@ end
 ***
   crt(r1::PolyElem, m1::PolyElem, r2::PolyElem, m2::PolyElem) -> PolyElem
 
-> Find $r$ such that $r \equiv r_1 \pmod m_1$ and $r \equiv r_2 \pmod m_2$
+Find $r$ such that $r \equiv r_1 \pmod m_1$ and $r \equiv r_2 \pmod m_2$
 """
 function crt(r1::PolyElem{T}, m1::PolyElem{T}, r2::PolyElem{T}, m2::PolyElem{T}) where T
   g, u, v = gcdx(m1, m2)
@@ -306,8 +306,8 @@ end
 ***
   crt_iterative(r::Array{T, 1}, m::Array{T,1}) -> T
 
-> Find $r$ such that $r \equiv r_i \pmod m_i$ for all $i$.
-> A plain iteration is performed.
+Find $r$ such that $r \equiv r_i \pmod m_i$ for all $i$.
+A plain iteration is performed.
 """
 function crt_iterative(r::Array{T, 1}, m::Array{T, 1}) where T
   p = crt(r[1], m[1], r[2], m[2])
@@ -323,8 +323,8 @@ end
 ***
   crt_tree(r::Array{T, 1}, m::Array{T,1}) -> T
 
-> Find $r$ such that $r \equiv r_i \pmod m_i$ for all $i$.
-> A tree based strategy is used that is asymptotically fast.
+Find $r$ such that $r \equiv r_i \pmod m_i$ for all $i$.
+A tree based strategy is used that is asymptotically fast.
 """
 function crt_tree(r::Array{T, 1}, m::Array{T, 1}) where T
   if isodd(length(m))
@@ -353,7 +353,7 @@ end
 ***
   crt(r::Array{T, 1}, m::Array{T,1}) -> T
 
-> Find $r$ such that $r \equiv r_i \pmod m_i$ for all $i$.
+Find $r$ such that $r \equiv r_i \pmod m_i$ for all $i$.
 """
 function crt(r::Array{T, 1}, m::Array{T, 1}) where T 
   length(r) == length(m) || error("Arrays need to be of same size")
@@ -401,10 +401,10 @@ end
 
 @doc Markdown.doc"""
     induce_crt(a::fmpz_poly, p::fmpz, b::fmpz_poly, q::fmpz, signed::Bool = false) -> fmpz_poly
-> Given integral polynomials $a$ and $b$ as well as coprime integer moduli
-> $p$ and $q$, find $f = a \bmod p$ and $f=b \bmod q$.
-> If signed is set, the symmetric representative is used, the positive one
-> otherwise.
+Given integral polynomials $a$ and $b$ as well as coprime integer moduli
+$p$ and $q$, find $f = a \bmod p$ and $f=b \bmod q$.
+If signed is set, the symmetric representative is used, the positive one
+otherwise.
 """
 function induce_crt(a::fmpz_poly, p::fmpz, b::fmpz_poly, q::fmpz, signed::Bool = false)
   c = parent(a)()
@@ -424,8 +424,8 @@ end
 
 @doc Markdown.doc"""
     induce_crt(L::Array{PolyElem, 1}, c::crt_env{fmpz}) -> fmpz_poly
-> Given fmpz\_poly polynomials $L[i]$ and a {{{crt\_env}}}, apply the
-> {{{crt}}} function to each coefficient resulting in a polynomial $f = L[i] \bmod p[i]$.
+Given fmpz\_poly polynomials $L[i]$ and a {{{crt\_env}}}, apply the
+{{{crt}}} function to each coefficient resulting in a polynomial $f = L[i] \bmod p[i]$.
 """
 function induce_crt(L::Array{T, 1}, c::crt_env{fmpz}) where {T <: PolyElem}
   Zx, x = FlintZZ["x"]
@@ -443,8 +443,8 @@ end
   _num_setcoeff!(a::nf_elem, n::Int, c::fmpz)
   _num_setcoeff!(a::nf_elem, n::Int, c::Integer)
 
-> Sets the $n$-th coefficient in $a$ to $c$. No checks performed, use
-> only if you know what you're doing.
+Sets the $n$-th coefficient in $a$ to $c$. No checks performed, use
+only if you know what you're doing.
 """
 function _num_setcoeff!(a::nf_elem, n::Int, c::fmpz)
   K = parent(a)
@@ -484,8 +484,8 @@ end
 
 @doc Markdown.doc"""
     induce_crt(L::Array{MatElem, 1}, c::crt_env{fmpz}) -> fmpz_mat
-> Given matrices $L[i]$ and a {{{crt\_env}}}, apply the
-> {{{crt}}} function to each coefficient resulting in a matrix $M = L[i] \bmod p[i]$.
+Given matrices $L[i]$ and a {{{crt\_env}}}, apply the
+{{{crt}}} function to each coefficient resulting in a matrix $M = L[i] \bmod p[i]$.
 """
 function induce_crt(L::Array{T, 1}, c::crt_env{fmpz}, signed::Bool = false) where {T <: MatElem}
   res = zero_matrix(FlintZZ, nrows(L[1]), ncols(L[1]))
@@ -542,10 +542,10 @@ end
   modular_init(K::AnticNumberField, p::fmpz) -> modular_env
   modular_init(K::AnticNumberField, p::Integer) -> modular_env
 
-> Given a number field $K$ and an ``easy'' prime $p$ (ie. fits into an 
-> \code{Int} and is coprime to the polynomial discriminant), compute
-> the residue class fields of the associated primes ideals above $p$.
-> Returns data that can be used by \code{modular_proj} and \code{modular_lift}.
+Given a number field $K$ and an ``easy'' prime $p$ (ie. fits into an 
+\code{Int} and is coprime to the polynomial discriminant), compute
+the residue class fields of the associated primes ideals above $p$.
+Returns data that can be used by \code{modular_proj} and \code{modular_lift}.
 """
 function modular_init(K::AnticNumberField, p::fmpz; deg_limit::Int=0, max_split::Int = 0)
   @assert isprime(p)
@@ -590,8 +590,8 @@ end
 ***
   modular_proj(a::nf_elem, me::modular_env) -> Array{fq_nmod, 1}
 
-> Given an algebraic number $a$ and data \code{me} as computed by
-> \code{modular_init}, project $a$ onto the residue class fields.
+Given an algebraic number $a$ and data \code{me} as computed by
+\code{modular_init}, project $a$ onto the residue class fields.
 """
 function modular_proj(a::nf_elem, me::modular_env)
   ap = me.Fpx(a)
@@ -615,8 +615,8 @@ end
 ***
   modular_proj(a::FacElem{nf_elem, AnticNumberField}, me::modular_env) -> Array{fq_nmod, 1}
 
-> Given an algebraic number $a$ in factored form and data \code{me} as computed by
-> \code{modular_init}, project $a$ onto the residue class fields.
+Given an algebraic number $a$ in factored form and data \code{me} as computed by
+\code{modular_init}, project $a$ onto the residue class fields.
 """
 function modular_proj(A::FacElem{nf_elem, AnticNumberField}, me::modular_env)
   for i=1:me.ce.n
@@ -643,8 +643,8 @@ end
 ***
   modular_lift(a::Array{fq_nmod}, me::modular_env) -> nf_elem
 
-> Given an array of elements as computed by \code{modular_proj},
-> compute a global pre-image using some efficient CRT.
+Given an array of elements as computed by \code{modular_proj},
+compute a global pre-image using some efficient CRT.
 """
 function modular_lift(a::Array{fq_nmod, 1}, me::modular_env)
   for i=1:me.ce.n
@@ -663,8 +663,8 @@ end
 ***
   modular_proj(a::Generic.Poly{nf_elem}, me::modular_env) -> Array
 
-> Apply the \code{modular_proj} function to each coeficient of $a$.
-> Computes an array of polynomials over the respective residue class fields.
+Apply the \code{modular_proj} function to each coeficient of $a$.
+Computes an array of polynomials over the respective residue class fields.
 """
 function modular_proj(a::Generic.Poly{nf_elem}, me::modular_env)
 
@@ -701,8 +701,8 @@ end
 ***
   modular_lift(a::Array{fq_nmod_poly}, me::modular_env) -> Generic.Poly{nf_elem}
 
-> Apply the \code{modular_lift} function to each coeficient of $a$.
-> Computes a polynomial over the number field.
+Apply the \code{modular_lift} function to each coeficient of $a$.
+Computes a polynomial over the number field.
 """
 function modular_lift(a::Array{fq_nmod_poly, 1}, me::modular_env)
   res = me.Kx()
@@ -727,8 +727,8 @@ end
   modular_proj(a::Generic.Mat{nf_elem}, me::modular_env) -> Array{Matrix}
   modular_proj(a::Generic.Mat{NfOrdElem}, me::modular_env) -> Array{Matrix}
 
-> Apply the \code{modular_proj} function to each entry of $a$.
-> Computes an array of matrices over the respective residue class fields.
+Apply the \code{modular_proj} function to each entry of $a$.
+Computes an array of matrices over the respective residue class fields.
 """
 function modular_proj(a::Generic.Mat{nf_elem}, me::modular_env)
   Mp = fq_nmod_mat[]

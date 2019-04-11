@@ -7,10 +7,10 @@
 @doc Markdown.doc"""
     induce_crt(a::Generic.Poly{nf_elem}, p::fmpz, b::Generic.Poly{nf_elem}, q::fmpz) -> Generic.Poly{nf_elem}, fmpz
 
-> Given polynomials $a$ defined modulo $p$ and $b$ modulo $q$, apply the CRT
-> to all coefficients recursively.
-> Implicitly assumes that $a$ and $b$ have integral coefficients (ie. no
-> denominators).
+Given polynomials $a$ defined modulo $p$ and $b$ modulo $q$, apply the CRT
+to all coefficients recursively.
+Implicitly assumes that $a$ and $b$ have integral coefficients (ie. no
+denominators).
 """
 function induce_crt(a::Generic.Poly{nf_elem}, p::fmpz, b::Generic.Poly{nf_elem}, q::fmpz, signed::Bool = false)
   c = parent(a)()
@@ -31,9 +31,9 @@ end
 @doc Markdown.doc"""
   induce_rational_reconstruction(a::Generic.Poly{nf_elem}, M::fmpz) -> bool, Generic.Poly{nf_elem}
 
-> Apply rational reconstruction to the coefficients of $a$. Implicitly assumes
-> the coefficients to be integral (no checks done)
-> returns true iff this is successful for all coefficients.
+Apply rational reconstruction to the coefficients of $a$. Implicitly assumes
+the coefficients to be integral (no checks done)
+returns true iff this is successful for all coefficients.
 """
 function induce_rational_reconstruction(a::Generic.Poly{nf_elem}, M::fmpz)
   b = parent(a)()
@@ -57,7 +57,7 @@ end
 @doc Markdown.doc"""
   gcd(a::Generic.Poly{nf_elem}, b::Generic.Poly{nf_elem}) -> Generic.Poly{nf_elem}
 
-> A modular $\gcd$
+A modular $\gcd$
 """
 function gcd(a::Generic.Poly{nf_elem}, b::Generic.Poly{nf_elem}, test_sqfr::Bool = false)
   # modular kronnecker assumes a, b !=n 0

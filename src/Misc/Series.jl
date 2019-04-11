@@ -57,7 +57,7 @@ end
 
 @doc Markdown.doc"""
     derivative(f::RelSeriesElem{T}) -> RelSeriesElem
-> Return the derivative of the power series $f$.
+Return the derivative of the power series $f$.
 """
 function derivative(f::RelSeriesElem{T}) where T
   g = parent(f)()
@@ -83,7 +83,7 @@ Nemo.fit!(::fmpq_rel_series, Int) = nothing
 
 @doc Markdown.doc"""
     integral(f::RelSeriesElem{T}) -> RelSeriesElem
-> Return the integral of the power series $f$.
+Return the integral of the power series $f$.
 """
 function Nemo.integral(f::RelSeriesElem{T}) where T
   g = parent(f)()

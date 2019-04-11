@@ -46,8 +46,8 @@ export hasse_interval, order, order_via_bsgs, order_via_legendre,
 @doc Markdown.doc"""
 ***
     rand(E::EllCrv) -> EllCrvPt
-> Returns a random point on the elliptic curve $E$ defined over a finite field.
-> It is assumed that $E$ is given in short form.
+Returns a random point on the elliptic curve $E$ defined over a finite field.
+It is assumed that $E$ is given in short form.
 """
 function rand(E::EllCrv)
   R = base_field(E)
@@ -126,9 +126,9 @@ end
 ***
     hasse_interval(E::EllCrv) -> Array{fmpz, 1}
 
-> Given an elliptic curve $E$ over a finite field $\mathbf F$, returns an array
-> `[l, b]` > of integers, such that $l \leq \#E(\mathbf F) \leq b$ using
-> Hasse's theorem.
+Given an elliptic curve $E$ over a finite field $\mathbf F$, returns an array
+`[l, b]` > of integers, such that $l \leq \#E(\mathbf F) \leq b$ using
+Hasse's theorem.
 """
 function hasse_interval(E::EllCrv)
   R = base_field(E)
@@ -147,8 +147,8 @@ end
 ***
     elem_order_bsgs(P::EllCrvPt) -> fmpz
 
-> Calculates the order of a point P on an elliptic curve given over a finite
-> field using BSGS.
+Calculates the order of a point P on an elliptic curve given over a finite
+field using BSGS.
 """
 function elem_order_bsgs(P::EllCrvPt)
   R = base_field(P.parent)

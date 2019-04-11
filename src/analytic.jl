@@ -89,7 +89,7 @@ end
 @doc Markdown.doc"""
 ***
    dickman_rho(x::Number, e::UnitRange{Int}, prec::Int=55) Number[]
-> Evaluates the Dickman-$\rho$ function at $i*x$ for all $i\in e$.
+Evaluates the Dickman-$\rho$ function at $i*x$ for all $i\in e$.
 """
 function dickman_rho(b::Number, e::UnitRange{Int}, prec::Int = 55)
   if b < 0
@@ -178,7 +178,7 @@ end
   exponential_integral(x::AbstractFloat) AbstractFloat
   ei(x::AbstractFloat) AbstractFloat
 
->  Compute the exponential integral function
+ Compute the exponential integral function
 """
 function exponential_integral(x::BigFloat)
   z = BigFloat()
@@ -197,8 +197,8 @@ end
   logarithmic_integral(x::AbstractFloat) AbstractFloat
   li(x::AbstractFloat) AbstractFloat
 
->  Compute the logarithmic integral function. Used as an approximation
->  for the number of primes up to x
+ Compute the logarithmic integral function. Used as an approximation
+ for the number of primes up to x
 """
 function logarithmic_integral(x::AbstractFloat)
   return exponential_integral(log(x))
@@ -243,8 +243,8 @@ Then
 @doc Markdown.doc"""
   euler_phi(n::Int) Int
 
->  The Euler ϕ function of n
->  ie. the number of integers 0<= i = n coprime to n
+ The Euler ϕ function of n
+ ie. the number of integers 0<= i = n coprime to n
 """
 function euler_phi(a::Int)
   f = factor(a)
@@ -274,8 +274,8 @@ end
 
 @doc Markdown.doc"""
     psi_guess(x::Number, B::Int) Number
-> Uses the dickman_rho function to estimate $\psi(x, B)$ the number
-> of $B$-smooth integers bounded by $x$.
+Uses the dickman_rho function to estimate $\psi(x, B)$ the number
+of $B$-smooth integers bounded by $x$.
 """
 function psi_guess(x::Number, B::Int)
   return x*dickman_rho(log(x)/log(B))
@@ -283,8 +283,8 @@ end
 
 @doc Markdown.doc"""
     psi_guess(x::Number, e::UnitRange, B::Int) Number
-> Uses the dickman_rho function to estimate $\psi(x^i, B)$ the number
-> of $B$-smooth integers bounded by $x^i$ for $i \in e$.
+Uses the dickman_rho function to estimate $\psi(x^i, B)$ the number
+of $B$-smooth integers bounded by $x^i$ for $i \in e$.
 """
 function psi_guess(x::Number, B::Int, e::UnitRange)
   val = typeof(x)[x^e.start]

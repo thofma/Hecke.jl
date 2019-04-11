@@ -368,7 +368,7 @@ end
 @doc Markdown.doc"""
     ispower(a::fmpz) -> Int, fmpz
     ispower(a::Integer) -> Int, Integer
-> Writes $a = r^e$ with $e$ maximal. Note: $1 = 1^0$.
+Writes $a = r^e$ with $e$ maximal. Note: $1 = 1^0$.
 """
 function ispower(a::fmpz)
   if iszero(a)
@@ -405,7 +405,7 @@ end
 @doc Markdown.doc"""
     ispower(a::fmpq) -> Int, fmpq
     ispower(a::Rational) -> Int, Rational
-> Writes $a = r^e$ with $e$ maximal. Note: $1 = 1^0$.
+Writes $a = r^e$ with $e$ maximal. Note: $1 = 1^0$.
 """
 function ispower(a::fmpq)
   e, r = ispower(numerator(a))
@@ -427,7 +427,7 @@ end
     ispower(a::fmpz, n::Int) -> Bool, fmpz
     ispower(a::fmpq, n::Int) -> Bool, fmpq
     ispower(a::Integer, n::Int) -> Bool, Integer
-> Tests if $a$ is an $n$-th power. Return {{{true}}} and the root if successful.
+Tests if $a$ is an $n$-th power. Return {{{true}}} and the root if successful.
 """    
 function ispower(a::fmpz, n::Int)
   b = root(a, n)
@@ -563,7 +563,7 @@ end
 @doc Markdown.doc"""
     isinteger(a::fmpq) -> Bool
 
-> Returns true iff the denominator of $a$ is one.
+Returns true iff the denominator of $a$ is one.
 """
 function isinteger(a::fmpq)
   return isone(denominator(a))
@@ -605,10 +605,10 @@ end
 ***
     sunit_group_fac_elem(S::Array{fmpz, 1}) -> GrpAbFinGen, Map
     sunit_group_fac_elem(S::Array{Integer, 1}) -> GrpAbFinGen, Map
-> The $S$-unit group of $Z$ supported at $S$: the group of
-> rational numbers divisible only by primes in $S$.
-> The second return value is the map mapping group elements to rationals
-> in factored form or rationals back to group elements.
+The $S$-unit group of $Z$ supported at $S$: the group of
+rational numbers divisible only by primes in $S$.
+The second return value is the map mapping group elements to rationals
+in factored form or rationals back to group elements.
 """
 function sunit_group_fac_elem(S::Array{T, 1}) where T <: Integer
   return sunit_group_fac_elem(fmpz[x for x=S])
@@ -659,10 +659,10 @@ end
 ***
     sunit_group(S::Array{fmpz, 1}) -> GrpAbFinGen, Map
     sunit_group(S::Array{Integer, 1}) -> GrpAbFinGen, Map
-> The $S$-unit group of $Z$ supported at $S$: the group of
-> rational numbers divisible only by primes in $S$.
-> The second return value is the map mapping group elements to rationals
-> or rationals back to group elements.
+The $S$-unit group of $Z$ supported at $S$: the group of
+rational numbers divisible only by primes in $S$.
+The second return value is the map mapping group elements to rationals
+or rationals back to group elements.
 """
 function sunit_group(S::Array{T, 1}) where T <: Integer
   return sunit_group(fmpz[x for x=S])
@@ -691,7 +691,7 @@ lcm(a::Integer, b::fmpz) = lcm(fmpz(a), b)
 @doc Markdown.doc"""
     isprime_power(n::fmpz) -> Bool
     isprime_power(n::Integer) -> Bool
-> Tests is $n$ is the exact power of a prime number.
+Tests is $n$ is the exact power of a prime number.
 """
 function isprime_power(n::fmpz)
   e, p = ispower(n)
@@ -1037,7 +1037,7 @@ end
 @doc Markdown.doc"""
     unit_group(::FlintIntegerRing) -> GrpAbFinGen, Map
 
-> The unit group of Z, ie. C_2 and the map translating between the group and Z.    
+The unit group of Z, ie. C_2 and the map translating between the group and Z.    
 """
 function unit_group(::FlintIntegerRing)
   G = DiagonalGroup([2])
@@ -1053,7 +1053,7 @@ end
 @doc Markdown.doc"""
     unit_group(::Integers{T}) -> GrpAbFinGen, Map
 
-> The unit group of , ie. C_2 and the map translating between the group and Z.    
+The unit group of , ie. C_2 and the map translating between the group and Z.    
 """
 function unit_group(R::AbstractAlgebra.Integers{T}) where {T}
   G = DiagonalGroup([2])
@@ -1074,8 +1074,8 @@ end
 #Contini, Croot, Shparlinski: Complexity of inverting the Euler function
 @doc Markdown.doc"""
     eulerphi_inv_fac_elem(n::fmpz)
-> The inverse of the Euler totient functions: find all $x$ s.th. $phi(x) = n$
-> holde. The elements are returned in factored form.
+The inverse of the Euler totient functions: find all $x$ s.th. $phi(x) = n$
+holde. The elements are returned in factored form.
 """
 function eulerphi_inv_fac_elem(n::fmpz)
   lp = []
@@ -1140,8 +1140,8 @@ end
 
 @doc Markdown.doc"""
     eulerphi_inv(n::Integer) -> Array{fmpz, 1}
-> The inverse of the Euler totient functions: find all $x$ s.th. $phi(x) = n$
-> holds.
+The inverse of the Euler totient functions: find all $x$ s.th. $phi(x) = n$
+holds.
 """
 function eulerphi_inv(n::Integer)
   return eulerphi_inv(fmpz(n))
@@ -1149,8 +1149,8 @@ end
 
 @doc Markdown.doc"""
     eulerphi_inv(n::fmpz) -> Array{fmpz, 1}
-> The inverse of the Euler totient functions: find all $x$ s.th. $phi(x) = n$
-> holds.
+The inverse of the Euler totient functions: find all $x$ s.th. $phi(x) = n$
+holds.
 """
 function eulerphi_inv(n::fmpz)
   return [ evaluate(x) for x = eulerphi_inv_fac_elem(n)]

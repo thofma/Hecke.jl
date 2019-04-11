@@ -15,16 +15,17 @@ It is written in [julia](http://www.julialang.org) and is based on the computer 
 - [http://thofma.github.io/Hecke.jl/latest/](http://thofma.github.io/Hecke.jl/latest/) (Online documentation)
 
 So far, Hecke provides the following features:
-
-  - Orders (including element and ideal arithmetic) in relative and absolute number fields
-  - Class and unit group computation
-  - Computation of maximal orders
-  - Extensions of number Fields (relative fields)
-  - Non-simple fields
+  
+  - Number fields (absolute, relative, simple and non-simple)
+  - Orders and ideals in number fields
+  - Class and unit group computations of orders
   - Lattice enumeration
   - Sparse linear algebra
   - Class field theory
-  - Abelian Groups
+  - Abelian groups
+  - Associative algebras
+  - Ideals and orders in (semsimple) associative algebras
+  - Locally free class groups of orders in semisimple algebras
 
 ## Installation
 
@@ -56,7 +57,7 @@ Welcome to
   
 Version 0.6.1 ... 
  ... which comes with absolutely no warrant whatsoever
-(c) 2015-2018 by Claus Fieker, Tommy Hofmann and Carlo Sircana
+(c) 2015-2019 by Claus Fieker, Tommy Hofmann and Carlo Sircana
 
 julia> Qx, x = PolynomialRing(FlintQQ, "x");
 julia> f = x^3 + 2;

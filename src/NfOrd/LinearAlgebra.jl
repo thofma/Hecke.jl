@@ -14,7 +14,7 @@ function _max_max(M::Generic.Mat{NfOrdElem})
   for i in 1:nrows(M)
     for j in 1:ncols(M)
       if !iszero(M[i, j])
-        v = elem_in_basis(M[i, j])
+        v = coordinates(M[i, j])
         for k in degree(base_ring(M))
           d = max(d, abs(v[k]))
         end
@@ -64,7 +64,7 @@ end
 
 @doc Markdown.doc"""
     det(M::Generic.Mat{NfOrdElem}) -> NfOrdElem
-> Uses a modular algorithm to compute the determinant.    
+Uses a modular algorithm to compute the determinant.    
 """   
 function det(M::Generic.Mat{NfOrdElem})
   O = base_ring(M)::NfOrd
@@ -172,10 +172,10 @@ end
 
 @doc Markdown.doc"""
     mod_sym(a::NfOrdElem, m)
-> Reduces the coefficients of $a$ modulo $m$, using the symmetric residue system.    
+Reduces the coefficients of $a$ modulo $m$, using the symmetric residue system.    
 """
 function mod_sym(x::NfOrdElem, m)
-  z = elem_in_basis(x)
+  z = coordinates(x)
   for i in 1:length(z)
     z[i] = mod(z[i], m)
     if 2*z[i] > m
@@ -186,7 +186,7 @@ function mod_sym(x::NfOrdElem, m)
 end
 
 function _basis_coord_nonneg(x::NfOrdElem)
-  b = elem_in_basis(x)
+  b = coordinates(x)
   for i in 1:length(b)
     if b[i] < 0
       return false
@@ -249,9 +249,9 @@ end
 @doc Markdown.doc"""
     PseudoMatrix(m::Generic.Mat{nf_elem}, c::Array{NfOrdIdl, 1}) -> PMat{nf_elem, NfOrdFracIdl}
 
-> Returns the (row) pseudo matrix representing the Z\_k-module 
->  $$\sum c_i m_i$$
->  where $c_i$ are the ideals in $c$ and $m_i$ the rows of $M$. 
+Returns the (row) pseudo matrix representing the Z\_k-module 
+ $$\sum c_i m_i$$
+ where $c_i$ are the ideals in $c$ and $m_i$ the rows of $M$. 
 """
 function PseudoMatrix(m::Generic.Mat{nf_elem}, c::Array{NfOrdIdl, 1})
   @assert nrows(m) == length(c)
@@ -261,9 +261,9 @@ end
 
 @doc Markdown.doc"""
     PseudoMatrix(m::Generic.Mat{NfOrdElem}, c::Array{NfOrdIdl, 1}) -> PMat{nf_elem, NfOrdFracIdl}
-> Returns the (row) pseudo matrix representing the $Z_k$-module 
->  $$\sum c_i m_i$$
->  where $c_i$ are the ideals in $c$ and $m_i$ the rows of $M$. 
+Returns the (row) pseudo matrix representing the $Z_k$-module 
+ $$\sum c_i m_i$$
+ where $c_i$ are the ideals in $c$ and $m_i$ the rows of $M$. 
 """
 function PseudoMatrix(m::Generic.Mat{NfOrdElem}, c::Array{NfOrdIdl, 1})
   @assert nrows(m) == length(c)
@@ -274,9 +274,9 @@ end
 
 @doc Markdown.doc"""
     PseudoMatrix(m::Generic.Mat{NfOrdElem}, c::Array{NfOrdIdl, 1}) -> PMat{nf_elem, NfOrdFracIdl}
-> Returns the free (row) pseudo matrix representing the $Z_k$-module 
->  $$\sum Z_k m_i$$
->  where $m_i$ the rows of $M$. 
+Returns the free (row) pseudo matrix representing the $Z_k$-module 
+ $$\sum Z_k m_i$$
+ where $m_i$ the rows of $M$. 
 """
 function PseudoMatrix(m::Generic.Mat{nf_elem})
    K = base_ring(m)
@@ -650,13 +650,13 @@ end
 
 (::NfOrdQuoRing)(a::NfOrdQuoRingElem) = a
 
-_check(a) = a.has_coord ? dot(a.elem_in_basis, basis(parent(a))) == a : true
+_check(a) = a.has_coord ? dot(a.coordinates, basis(parent(a))) == a : true
 
 function _check(m::Generic.Mat{NfOrdElem})
   for i in 1:nrows(m)
     for j in 1:ncols(m)
       if !_check(m[i, j].elem)
-        println("$i $j not consistent: $(m[i, j]) : $(m[i, j].elem_in_basis)")
+        println("$i $j not consistent: $(m[i, j]) : $(m[i, j].coordinates)")
         error("dasdsad")
       end
     end
@@ -667,7 +667,7 @@ function _check(m::Generic.Mat{NfOrdQuoRingElem})
   for i in 1:nrows(m)
     for j in 1:ncols(m)
       if !_check(m[i, j].elem)
-        println("$i $j not consistent: $(m[i, j].elem) : $(m[i, j].elem.elem_in_basis)")
+        println("$i $j not consistent: $(m[i, j].elem) : $(m[i, j].elem.coordinates)")
         error("dasdsad")
       end
     end

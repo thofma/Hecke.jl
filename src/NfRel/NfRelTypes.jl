@@ -75,14 +75,14 @@ end
 mutable struct NfRelOrdElem{T} <: RingElem
   parent#::NfRelOrd{T, S} # I don't want to drag the S around
   elem_in_nf::RelativeElement{T}
-  elem_in_basis::Vector{T}
+  coordinates::Vector{T}
   has_coord::Bool
 
   function NfRelOrdElem{T}(O::NfRelOrd{T}) where {T}
     z = new{T}()
     z.parent = O
     z.elem_in_nf = zero(nf(O))
-    z.elem_in_basis = Vector{T}(undef, degree(O))
+    z.coordinates = Vector{T}(undef, degree(O))
     z.has_coord = false
     return z
   end
@@ -91,7 +91,7 @@ mutable struct NfRelOrdElem{T} <: RingElem
     z = new{T}()
     z.parent = O
     z.elem_in_nf = a
-    z.elem_in_basis = Vector{T}(undef, degree(O))
+    z.coordinates = Vector{T}(undef, degree(O))
     z.has_coord = false
     return z
   end
@@ -100,7 +100,7 @@ mutable struct NfRelOrdElem{T} <: RingElem
     z = new{T}()
     z.parent = O
     z.elem_in_nf = a
-    z.elem_in_basis = arr
+    z.coordinates = arr
     z.has_coord = true
     return z
   end

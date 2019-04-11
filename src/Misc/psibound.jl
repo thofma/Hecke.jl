@@ -141,14 +141,14 @@ end
     psi_lower(N::Integer, B::Int) -> Array{Int, 1}, fmpz_abs_series
     psi_lower(N::fmpz, B::Int) -> Array{Int, 1}, fmpz_abs_series
 
-> Uses Bernstein's ideas: https://cr.yp.to/papers/psi.pdf
-> to compute lower bounds on the psi function counting smooth numbers.
-> An array L is returned s.th $\psi(2^{i-1}, B) \ge L_i$ for
-> $1\le i\le \rceil \log_2(B)\lceil$.
-> The second return value is Bernstein's power series.
+Uses Bernstein's ideas: https://cr.yp.to/papers/psi.pdf
+to compute lower bounds on the psi function counting smooth numbers.
+An array L is returned s.th $\psi(2^{i-1}, B) \ge L_i$ for
+$1\le i\le \rceil \log_2(B)\lceil$.
+The second return value is Bernstein's power series.
 >
-> The optional other parameter $a$ controls the precision of the result,
-> it defaults to 776.
+The optional other parameter $a$ controls the precision of the result,
+it defaults to 776.
 """
 function psi_lower(N::fmpz, B::Int, a::Int = 776)
   return _psi_lower(fmpz(N), PrimesSet{Int}(2, B), a, ceil)
@@ -163,14 +163,14 @@ end
     psi_upper(N::Integer, B::Int) -> Array{Int, 1}, fmpz_abs_series
     psi_upper(N::fmpz, B::Int) -> Array{Int, 1}, fmpz_abs_series
 
-> Uses Bernstein's ideas: https://cr.yp.to/papers/psi.pdf
-> to compute upper bounds on the psi function counting smooth numbers.
-> An array U is returned s.th $\psi(2^{i-1}, B) \ge U_i$ for
-> $1\le i\le \rceil \log_2(B)\lceil$.
-> The second return value is Bernstein's power series.
+Uses Bernstein's ideas: https://cr.yp.to/papers/psi.pdf
+to compute upper bounds on the psi function counting smooth numbers.
+An array U is returned s.th $\psi(2^{i-1}, B) \ge U_i$ for
+$1\le i\le \rceil \log_2(B)\lceil$.
+The second return value is Bernstein's power series.
 >
-> The optional other parameter $a$ controls the precision of the result,
-> it defaults to 771.
+The optional other parameter $a$ controls the precision of the result,
+it defaults to 771.
 """
 function psi_upper(N::fmpz, B::Int, a::Int=771)
   return _psi_lower(N, PrimesSet{Int}(2, B), a, floor)
@@ -185,9 +185,9 @@ end
    show_psi(N::Integer, B::Int)
    show_psi(N::fmpz, B::Int)
 
-> Uses \code{psi_lower} and \code{psi_upper} to find intervalls for
-> $\psi(2^i, B)$ to be in for $0\le i\le \log_2(N)$.
-> Where $\psi(N, B) = \#\{1\le i\le N | \text{$i$ is $B$-smooth}\}$  
+Uses \code{psi_lower} and \code{psi_upper} to find intervalls for
+$\psi(2^i, B)$ to be in for $0\le i\le \log_2(N)$.
+Where $\psi(N, B) = \#\{1\le i\le N | \text{$i$ is $B$-smooth}\}$  
 """
 function show_psi(N::Integer, B::Int)
   gl = psi_lower(N, B)[1]
@@ -218,8 +218,8 @@ end
     psi_upper(N::Integer, B::NfFactorBase) -> Array{Int, 1}, fmpz_abs_series
     psi_upper(N::fmpz, B::NfFactorBase) -> Array{Int, 1}, fmpz_abs_series
 
-> Uses Bernstein's techniques to bound the number of ideals $A$
-> of norm bounded by $N$ that are smooth over the factor base $B$.
+Uses Bernstein's techniques to bound the number of ideals $A$
+of norm bounded by $N$ that are smooth over the factor base $B$.
 """
 function psi_lower(N::Integer, B::NfFactorBase, a::Int=776)
   lp = sort(fmpz[norm(x) for x=B.ideals])

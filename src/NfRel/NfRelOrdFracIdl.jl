@@ -10,7 +10,7 @@
 ***
     order(a::NfRelOrdFracIdl) -> NfRelOrd
 
-> Returns the order of $a$.
+Returns the order of $a$.
 """
 order(a::NfRelOrdFracIdl) = a.order
 
@@ -18,7 +18,7 @@ order(a::NfRelOrdFracIdl) = a.order
 ***
     nf(a::NfRelOrdFracIdl) -> RelativeExtension
 
-> Returns the number field, of which $a$ is an fractional ideal.
+Returns the number field, of which $a$ is an fractional ideal.
 """
 nf(a::NfRelOrdFracIdl) = nf(order(a))
 
@@ -81,8 +81,8 @@ end
 ***
     denominator(a::NfRelOrdFracIdl) -> fmpz
 
-> Returns the smallest positive integer $d$ such that $da$ is contained in
-> the order of $a$.
+Returns the smallest positive integer $d$ such that $da$ is contained in
+the order of $a$.
 """
 function denominator(a::NfRelOrdFracIdl)
   assure_has_denominator(a)
@@ -93,7 +93,7 @@ end
 ***
     numerator(a::NfRelOrdFracIdl) -> NfRelOrdIdl
 
-> Returns the ideal $d*a$ where $d$ is the denominator of $a$.
+Returns the ideal $d*a$ where $d$ is the denominator of $a$.
 """
 function numerator(a::NfRelOrdFracIdl)
   d = denominator(a)
@@ -142,9 +142,9 @@ end
 ***
     frac_ideal(O::NfRelOrd, M::PMat, M_in_hnf::Bool = false) -> NfRelOrdFracIdl
 
-> Creates the fractional ideal of $\mathcal O$ with basis pseudo-matrix $M$. If
-> M_in_hnf is set, then it is assumed that $M$ is already in lower left pseudo
-> HNF.
+Creates the fractional ideal of $\mathcal O$ with basis pseudo-matrix $M$. If
+M_in_hnf is set, then it is assumed that $M$ is already in lower left pseudo
+HNF.
 """
 function frac_ideal(O::NfRelOrd{T, S}, M::PMat{T, S}, M_in_hnf::Bool = false) where {T, S}
   !M_in_hnf ? M = pseudo_hnf(M, :lowerleft, true) : nothing
@@ -155,7 +155,7 @@ end
 ***
     frac_ideal(O::NfRelOrd, M::Generic.Mat) -> NfRelOrdFracIdl
 
-> Creates the fractional ideal of $\mathcal O$ with basis matrix $M$.
+Creates the fractional ideal of $\mathcal O$ with basis matrix $M$.
 """
 function frac_ideal(O::NfRelOrd{T, S}, M::Generic.Mat{T}) where {T, S}
   coeffs = deepcopy(basis_pmat(O, copy = false)).coeffs
@@ -210,7 +210,7 @@ end
 ***
     ==(a::NfOrdRelFracIdl, b::NfRelOrdFracIdl) -> Bool
 
-> Returns whether $a$ and $b$ are equal.
+Returns whether $a$ and $b$ are equal.
 """
 function ==(a::NfRelOrdFracIdl, b::NfRelOrdFracIdl)
   order(a) !== order(b) && return false
@@ -250,7 +250,7 @@ end
 ***
     norm(a::NfRelOrdFracIdl{T, S}) -> S
 
-> Returns the norm of $a$
+Returns the norm of $a$
 """
 function norm(a::NfRelOrdFracIdl, copy::Type{Val{T}} = Val{true}) where T
   assure_has_norm(a)
@@ -271,7 +271,7 @@ end
 ***
     +(a::NfRelOrdFracIdl, b::NfRelOrdFracIdl) -> NfRelOrdFracIdl
 
-> Returns $a + b$.
+Returns $a + b$.
 """
 function +(a::NfRelOrdFracIdl{T, S}, b::NfRelOrdFracIdl{T, S}) where {T, S}
   d = degree(order(a))
@@ -307,7 +307,7 @@ end
 @doc Markdown.doc"""
     *(a::NfRelOrdFracIdl, b::NfRelOrdFracIdl) -> NfRelOrdFracIdl
 
-> Returns $a \cdot b$.
+Returns $a \cdot b$.
 """
 function *(a::NfRelOrdFracIdl{T, S}, b::NfRelOrdFracIdl{T, S}) where {T, S}
   if iszero(a) || iszero(b)
@@ -364,7 +364,7 @@ Base.:(^)(A::NfRelOrdFracIdl, b::Int) = Base.power_by_squaring(A, p)
       divexact(a::NfRelOrdFracIdl, b::NfRelOrdIdl) -> NfRelOrdFracIdl
       divexact(a::NfRelOrdIdl, b::NfRelOrdFracIdl) -> NfRelOrdFracIdl
 
-> Returns $ab^{-1}$.
+Returns $ab^{-1}$.
 """
 divexact(a::NfRelOrdFracIdl{T, S}, b::NfRelOrdFracIdl{T, S}) where {T, S} = a*inv(b)
 
@@ -448,7 +448,7 @@ end
 ***
     in(x::RelativeElement, y::NfRelOrdFracIdl)
 
-> Returns whether $x$ is contained in $y$.
+Returns whether $x$ is contained in $y$.
 """
 function in(x::RelativeElement, y::NfRelOrdFracIdl)
   parent(x) != nf(order(y)) && error("Number field of element and ideal must be equal")

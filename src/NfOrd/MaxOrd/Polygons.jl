@@ -445,7 +445,7 @@ function _from_algs_to_ideals(A::AlgAss{T}, OtoA::Map, AtoO::Map, Ip1, p::Union{
   for i = 1:length(AA)
     l = Vector{Vector{fmpz}}(undef, dim(AA[i][1]))
     for j = 1:length(l)
-      l[j] = elem_in_basis(AtoO(AA[i][2](AA[i][1][j])))
+      l[j] = coordinates(AtoO(AA[i][2](AA[i][1][j])))
     end
     list_bases[i] = l
   end

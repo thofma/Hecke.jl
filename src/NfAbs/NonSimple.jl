@@ -752,8 +752,8 @@ end
 ################################################################################
 @doc Markdown.doc"""
     simple_extension(K::NfAbsNS) -> AnticNumberField, Map
-> For a non-simple extension $K$ of $Q$, find a primitive element and thus
-> an isomorphic simple extension of $Q$. The map realises this isomorphism.
+For a non-simple extension $K$ of $Q$, find a primitive element and thus
+an isomorphic simple extension of $Q$. The map realises this isomorphism.
 """
 function simple_extension(K::NfAbsNS; check = true)
   n = ngens(K)
@@ -866,10 +866,10 @@ end
 
 @doc Markdown.doc"""
     number_field(f::Array{fmpq_poly, 1}, s::String="_\$") -> NfAbsNS
-> Let $f = (f_1, \ldots, f_n)$ be univariate rational polynomials, then
-> we construct 
+Let $f = (f_1, \ldots, f_n)$ be univariate rational polynomials, then
+we construct 
  $$K = Q[t_1, \ldots, t_n]/\langle f_1(t_1), \ldots, f_n(t_n)\rangle$$
-> The ideal bust be maximal, however, this is not tested.
+The ideal bust be maximal, however, this is not tested.
 """
 function NumberField(f::Array{fmpq_poly, 1}, s::String="_\$"; cached::Bool = false, check::Bool = false)
   S = Symbol(s)
@@ -1049,7 +1049,7 @@ end
 @doc Markdown.doc"""
   factor(f::PolyElem{NfAbsNSElem}) -> Fac{Generic.Poly{NfAbsNSElem}}
 
-> The factorisation of f (using Trager's method).
+The factorisation of f (using Trager's method).
 """
 function factor(f::PolyElem{NfAbsNSElem})
   Kx = parent(f)

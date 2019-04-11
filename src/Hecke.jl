@@ -743,7 +743,7 @@ end
 ***
     vshow(A) -> Nothing
 
-> Prints all fields of $A$.
+Prints all fields of $A$.
 """
 function vshow(A)
   for i in fieldnames(typeof(A))

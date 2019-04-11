@@ -376,7 +376,7 @@ end
 ***
     infinity(E::EllCrv) -> EllCrvPt
 
-> Creates the point at infinity.
+Creates the point at infinity.
 """
 function infinity(E::EllCrv{T}) where T
   infi = EllCrvPt{T}(E)
@@ -393,8 +393,8 @@ end
 ***
     ison_curve(E::EllCrv{T}, coords::Array{T, 1}) -> Bool
 
-> Returns true if `coords` defines a point  on E and false otherwise. The array
-> `coords` must have length 2.
+Returns true if `coords` defines a point  on E and false otherwise. The array
+`coords` must have length 2.
 """
 function ison_curve(E::EllCrv{T}, coords::Array{T, 1}) where T
   length(coords) != 2 && error("Array must be of length 2")
@@ -428,7 +428,7 @@ end
 ***
     disc(E::EllCrv{T}) -> T
 
-> Computes the discriminant of $E$.
+Computes the discriminant of $E$.
 """
 function disc(E::EllCrv{T}) where T
   if isdefined(E, :disc)
@@ -468,7 +468,7 @@ end
 @doc Markdown.doc"""
 ***
     j(E::EllCrv{T}) -> T
-> Computes the j-invariant of $E$.
+Computes the j-invariant of $E$.
 """
 function j_invariant(E::EllCrv{T}) where T
   if isdefined(E, :j)
@@ -513,8 +513,8 @@ end
 @doc Markdown.doc"""
 ***
     +(P::EllCrvPt, Q::EllCrvPt) -> EllCrvPt
-> Adds two points on an elliptic curve.
-> does not work in characteristic 2
+Adds two points on an elliptic curve.
+does not work in characteristic 2
 """
 function +(P::EllCrvPt{T}, Q::EllCrvPt{T}) where T
   parent(P) != parent(Q) && error("Points must live on the same curve")
@@ -591,7 +591,7 @@ end
 ***
     -(P::EllCrvPt) -> EllCrvPt
 
-> Computes the inverse of the point $P$ on an elliptic curve.
+Computes the inverse of the point $P$ on an elliptic curve.
 """
 function -(P::EllCrvPt)
   E = P.parent
@@ -613,8 +613,8 @@ end
 ***
     ==(P::EllCrvPt, Q::EllCrvPt) -> Bool
 
-> Returns true if $P$ and $Q$ are equal and live over the same elliptic curve
-> $E$.
+Returns true if $P$ and $Q$ are equal and live over the same elliptic curve
+$E$.
 """
 function ==(P::EllCrvPt{T}, Q::EllCrvPt{T}) where T
   # both are infinite
@@ -646,7 +646,7 @@ end
 ***
     *(n::Int, P::EllCrvPt) -> EllCrvPt
 
-> Computes the point $nP$.
+Computes the point $nP$.
 """
 function *(n::Int, P::EllCrvPt)
   B = infinity(P.parent)

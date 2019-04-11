@@ -150,8 +150,8 @@ end
 @doc Markdown.doc"""
     quo(O::NfOrd, I::NfOrdIdl) -> NfOrdQuoRing, Map
     quo(O::AlgAssAbsOrd, I::AlgAssAbsOrdIdl) -> AbsOrdQuoRing, Map
-> The quotient ring $O/I$ as a ring together with the section $M: O/I \to O$.
-> The pointwise inverse of $M$ is the canonical projection $O\to O/I$.
+The quotient ring $O/I$ as a ring together with the section $M: O/I \to O$.
+The pointwise inverse of $M$ is the canonical projection $O\to O/I$.
 """
 
 function quo(O::Union{NfAbsOrd, AlgAssAbsOrd}, I::Union{NfAbsOrdIdl, AlgAssAbsOrdIdl})
@@ -165,13 +165,13 @@ end
 @doc Markdown.doc"""
     ResidueRing(O::NfOrd, I::NfOrdIdl) -> NfOrdQuoRing
     ResidueRing(O::AlgAssAbsOrd, I::AlgAssAbsOrdIdl) -> AbsOrdQuoRing
-> The quotient ring $O$ modulo $I$ as a new ring.
+The quotient ring $O$ modulo $I$ as a new ring.
 """
 Nemo.ResidueRing(O::Union{NfAbsOrd, AlgAssAbsOrd}, I::Union{NfAbsOrdIdl, AlgAssAbsOrdIdl}) = AbsOrdQuoRing(O, I)
 
 @doc Markdown.doc"""
     lift(O::NfOrd, a::NfOrdQuoRingElem) -> NfOrdElem
-> Returns a lift of $a$ back to $O$.
+Returns a lift of $a$ back to $O$.
 """
 function lift(O::NfOrd, a::NfOrdQuoRingElem)
   f = NfOrdQuoMap(O, parent(a))
@@ -362,7 +362,7 @@ function isdivisible(x::AbsOrdQuoRingElem, y::AbsOrdQuoRingElem)
 
   V[1, 1] = 1
 
-  a = elem_in_basis(x.elem, copy = false)
+  a = coordinates(x.elem, copy = false)
 
   for i in 1:d
     V[1, 1 + i] = a[i]
@@ -618,7 +618,7 @@ function xxgcd(x::NfOrdQuoRingElem, y::NfOrdQuoRingElem)
   # ( 0  M_f  0  I )
   # ( 0  M_I  0  0 )
 
-  a = elem_in_basis(one(O), copy = false)
+  a = coordinates(one(O), copy = false)
 
   V = parent(x).tmp_xxgcd
 
@@ -686,7 +686,7 @@ end
 ***
     group_structure(Q::NfOrdQuoRing) -> GrpAbFinGenSnf
 
-> Returns an abelian group with the structure of (Q,+).
+Returns an abelian group with the structure of (Q,+).
 """
 function group_structure(Q::NfOrdQuoRing)
   i = ideal(Q)
