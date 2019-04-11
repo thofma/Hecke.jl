@@ -340,9 +340,9 @@ end
 ***
     zeta_log_residue(O::NfOrd, error::Float64) -> arb
 
-> Computes the residue of the zeta function of $\mathcal O$ at $1$.
-> The output will be an element of type `arb` with radius less then
-> `error`.
+Computes the residue of the zeta function of $\mathcal O$ at $1$.
+The output will be an element of type `arb` with radius less then
+`error`.
 """
 function zeta_log_residue(O::NfOrd, abs_error::Float64)
   degree(O) == 1 && error("Number field must be of degree 1")

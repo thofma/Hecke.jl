@@ -42,8 +42,8 @@
 @doc Markdown.doc"""
     divisors(n::fmpz) -> Iterator
 
-> Computes the divisors of a given number $n$. It is assumed that $n$ is not
-> zero.
+Computes the divisors of a given number $n$. It is assumed that $n$ is not
+zero.
 """
 function divisors(n)
   n == 0 && error("The number must be nonzero")
@@ -53,8 +53,8 @@ end
 @doc Markdown.doc"""
     squaredivisors(n::fmpz) -> Iterator
 
-> Computes the numbers whose square divides a given number $n$. It is assumed
-> that $n$ is not zero.
+Computes the numbers whose square divides a given number $n$. It is assumed
+that $n$ is not zero.
 """
 function squaredivisors(n)
   n == 0 && error("The number must be nonzero")  
@@ -71,7 +71,7 @@ end
 ***
   zeros(f::fmpz_poly) -> Array{fmpz, 1}
 
-> Computes the integer zeros of a given polynomial $f$.
+Computes the integer zeros of a given polynomial $f$.
 """
 function zeros(f::fmpz_poly)
 
@@ -98,8 +98,8 @@ end
 ***
   issquare(x::ResElem{fmpz}) -> (Bool, ResElem)
 
-> Checks if an element x of a ResidueRing of $Z$ is a square, say of y
-> returns (true, y) in that case and (false, 0) otherwise 
+Checks if an element x of a ResidueRing of $Z$ is a square, say of y
+returns (true, y) in that case and (false, 0) otherwise 
 """
 function issquare(x::ResElem{fmpz})
     R = parent(x)
@@ -138,8 +138,8 @@ end
 ***
     issquare(x::FinFieldElem) -> (Bool, FinFieldElem)
 
-> Checks if an element $x$ of $\mathbf F_q$ is a square, say of $y$.
-> Returns `(true, y)` in that case and `(false, 0)` otherwise 
+Checks if an element $x$ of $\mathbf F_q$ is a square, say of $y$.
+Returns `(true, y)` in that case and `(false, 0)` otherwise 
 """
 function issquare(x::FinFieldElem)
     R = parent(x)
@@ -167,8 +167,8 @@ end
 ***
   quadroots(a::fmpz, b::fmpz, c::fmpz, p::fmpz) -> Bool
 
-> Returns true if the quadratic congruence if the quadratic polynomial
-> $ax^2 + bx + c = 0$ has a root modulo $p$.
+Returns true if the quadratic congruence if the quadratic polynomial
+$ax^2 + bx + c = 0$ has a root modulo $p$.
 """
 function quadroots(a, b, c, p)
   F_p = GF(p, cached = false)
@@ -199,8 +199,8 @@ end
 ***
     nrootscubic(b::fmpz, c::fmpz, d::fmpz, p::fmpz) -> fmpz
 
-> Returns the number of roots of the polynomial $x^3 + bx^2 + cx + d = 0$
-> modulo $p$.
+Returns the number of roots of the polynomial $x^3 + bx^2 + cx + d = 0$
+modulo $p$.
 """
 function nrootscubic(b, c, d, p)
   F_p = GF(p, cached = false)
@@ -239,7 +239,7 @@ end
 @doc Markdown.doc"""
 ***
 		order(R::ResRing{fmpz}) -> Nemo.fmpz
-> Returns the order of a finite field of a residue ring of $\mathbf Z$.
+Returns the order of a finite field of a residue ring of $\mathbf Z$.
 """ 
 function order(R::ResRing{fmpz})
   return abs(modulus(R))
@@ -247,7 +247,7 @@ end
 
 @doc Markdown.doc"""
 characteristic(R::ResRing{fmpz}) -> Nemo.fmpz
-> Returns the characteristic of R
+Returns the characteristic of R
 """
 function characteristic(R::ResRing{fmpz})
   return abs(modulus(R))

@@ -180,9 +180,9 @@ end
 
 @doc Markdown.doc"""
      inv(a::LocElem{T}, checked::Bool = true)  where {T <: RingElem}
-> Returns the inverse element of $a$ if $a$ is a unit.
-> If 'checked = false' the invertibility of $a$ is not checked and the corresponding inverse element
-> of the Fraction Field is returned.
+Returns the inverse element of $a$ if $a$ is a unit.
+If 'checked = false' the invertibility of $a$ is not checked and the corresponding inverse element
+of the Fraction Field is returned.
 """
 function inv(a::LocElem{T}, checked::Bool = true)  where {T <: RingElem}
    checked && !isunit(a) && error("$a not invertible in given localization")
@@ -197,9 +197,9 @@ end
 
 @doc Markdown.doc"""
      divides(a::LocElem{T}, b::LocElem{T}, checked::Bool = true) where {T <: RingElem}
-> Returns tuple (`true`,`c`) if $b$ divides $a$ where `c`*$b$ = $a$.
-> If 'checked = false' the corresponding element of the Fraction Field is returned and it is not
-> checked whether it is an element of the given localization.
+Returns tuple (`true`,`c`) if $b$ divides $a$ where `c`*$b$ = $a$.
+If 'checked = false' the corresponding element of the Fraction Field is returned and it is not
+checked whether it is an element of the given localization.
 """
 function divides(a::LocElem{T}, b::LocElem{T}, checked::Bool = true) where {T <: RingElem}
    check_parent(a,b)
@@ -212,9 +212,9 @@ end
 
 @doc Markdown.doc"""
      divexact(a::LocElem{T}, b::LocElem{T}, checked::Bool = true)  where {T <: RingElem}
-> Returns element 'c' of given localization s.th. `c`*$b$ = $a$ if such element exists.
-> If 'checked = false' the corresponding element of the Fraction Field is returned and it is not
-> checked whether it is an element of the given localization.
+Returns element 'c' of given localization s.th. `c`*$b$ = $a$ if such element exists.
+If 'checked = false' the corresponding element of the Fraction Field is returned and it is not
+checked whether it is an element of the given localization.
 """
 function divexact(a::LocElem{T}, b::LocElem{T}, checked::Bool = true)  where {T <: RingElem}
    d = divides(a, b, checked)
@@ -223,10 +223,10 @@ end
 
 @doc Markdown.doc"""
      div(a::LocElem{T}, b::LocElem{T}, checked::Bool = true)  where {T <: RingElem}
-> Returns element `c` if $b$ divides $a$ where `c`* $b$ = $a$.
-> If $b$ does not divide $a$, `0`is returned.
-> If 'checked = false' the corresponding element of the Fraction Field is returned and it is not
-> checked whether it is an element of the given localization.
+Returns element `c` if $b$ divides $a$ where `c`* $b$ = $a$.
+If $b$ does not divide $a$, `0`is returned.
+If 'checked = false' the corresponding element of the Fraction Field is returned and it is not
+checked whether it is an element of the given localization.
 """
 function div(a::LocElem{T}, b::LocElem{T}, checked::Bool = true)  where {T <: RingElem}
    d = divides(a, b, checked)
@@ -241,7 +241,7 @@ end
 
 @doc Markdown.doc"""
     gcd(a::LocElem{T}, b::LocElem{T}) where {T <: RingElement}
-> Returns gcd of $a$ and $b$ in canonical representation.
+Returns gcd of $a$ and $b$ in canonical representation.
 """
 function gcd(a::LocElem{T}, b::LocElem{T}) where {T <: RingElement}
    check_parent(a,b)
@@ -254,7 +254,7 @@ end
 
 @doc Markdown.doc"""
     lcm(a::LocElem{T}, b::LocElem{T}) where {T <: RingElement}
-> Returns lcm of $a$ and $b$ in canonical representation.
+Returns lcm of $a$ and $b$ in canonical representation.
 """
 function lcm(a::LocElem{T}, b::LocElem{T}) where {T <: RingElement}
    check_parent(a,b)
@@ -272,8 +272,8 @@ end
 
 @doc Markdown.doc"""
     gcdx(a::LocElem{T}, b::LocElem{T}) where {T <: RingElement}
-> Returns tuple `(g,u,v)` s.th. `g` = gcd($a$,$b$) and `g` = `u` * $a$ + `v` * $b$.
-> Requires method gcdx for ring that is localized.
+Returns tuple `(g,u,v)` s.th. `g` = gcd($a$,$b$) and `g` = `u` * $a$ + `v` * $b$.
+Requires method gcdx for ring that is localized.
 """
 function gcdx(a::LocElem{T}, b::LocElem{T}) where {T <: RingElement}
    check_parent(a,b)
@@ -356,7 +356,7 @@ end
 
 @doc Markdown.doc"""
     valuation(a::LocElem{T}) where {T <: RingElement}
-> Returns the valuation of $a$ at the prime localized at. Only implemented for localizations at one prime ideal.
+Returns the valuation of $a$ at the prime localized at. Only implemented for localizations at one prime ideal.
 """
 function valuation(a::LocElem{T}) where {T <: RingElement}
    length(primes(parent(a))) != 1 && error("Only implemented for localizations at one prime ideal")
@@ -365,7 +365,7 @@ end
 
 @doc Markdown.doc"""
     valuation(a::LocElem{T}, p::T) where {T <: RingElement}
-> Returns the valuation `n` of $a$ at $p$, i.e. the integer `n` s.th $a$ = $p$^`n` * x, where x has valuation 0 at $p$
+Returns the valuation `n` of $a$ at $p$, i.e. the integer `n` s.th $a$ = $p$^`n` * x, where x has valuation 0 at $p$
 """
 valuation(a::LocElem{T}, p::T) where {T <: RingElement} = valuation(data(a), p)
 
@@ -377,7 +377,7 @@ valuation(a::LocElem{T}, p::T) where {T <: RingElement} = valuation(data(a), p)
 
 @doc Markdown.doc"""
     canonical_unit(a::LocElem{T}) where {T <: RingElem}
-> Returns unit `b`::LocElem{T} s.th. $a$ * `b` only consists of powers of primes localized at.
+Returns unit `b`::LocElem{T} s.th. $a$ * `b` only consists of powers of primes localized at.
 """
 function canonical_unit(a::LocElem{T}) where {T <: RingElem}
    temp = data(a)
@@ -395,11 +395,11 @@ end
 
 @doc Markdown.doc"""
     Localization(R::AbstractAlgebra.Ring, prime::T; cached=true) where {T <: RingElement}
-> Returns the localization of the ring $R$ at the ideal generated by the ring element $prime$. Requires $R$ to
-> be an euclidean domain and $prime$ to be a prime element, both not checked.
-> If `cached == true` (the default) then the resulting
-> localization parent object is cached and returned for any subsequent calls
-> to the constructor with the same base ring $R$ and element $prime$.
+Returns the localization of the ring $R$ at the ideal generated by the ring element $prime$. Requires $R$ to
+be an euclidean domain and $prime$ to be a prime element, both not checked.
+If `cached == true` (the default) then the resulting
+localization parent object is cached and returned for any subsequent calls
+to the constructor with the same base ring $R$ and element $prime$.
 """
 function Localization(R::AbstractAlgebra.Ring, prime::T; cached=true) where {T <: RingElement}
    primes = [R(prime)]
@@ -408,11 +408,11 @@ end
 
 @doc Markdown.doc"""
      Localization(R::AbstractAlgebra.Ring, primes::Array{T,1}; cached=true) where {T <: RingElement}
-> Returns the localization of the ring $R$ at the union of principal ideals that are generated by the ring elements in $primes$.
-> Requires $R$ to be an euclidean domain and $primes$ to be prime elements, both not checked.
-> If `cached == true` (the default) then the resulting
-> localization parent object is cached and returned for any subsequent calls
-> to the constructor with the same base ring $R$ and elements $primes$.
+Returns the localization of the ring $R$ at the union of principal ideals that are generated by the ring elements in $primes$.
+Requires $R$ to be an euclidean domain and $primes$ to be prime elements, both not checked.
+If `cached == true` (the default) then the resulting
+localization parent object is cached and returned for any subsequent calls
+to the constructor with the same base ring $R$ and elements $primes$.
 """
 function Localization(R::AbstractAlgebra.Ring, primes::Array{T,1}; cached=true) where {T <: RingElement}
    prime = R(prod(primes))

@@ -361,7 +361,7 @@ end
 @doc Markdown.doc"""
     lift(a::Generic.Mat{Generic.Res{fmpz}}) -> fmpz_mat
 
-> It returns a lift of the matrix to the integers.
+It returns a lift of the matrix to the integers.
 """
 function lift(a::Generic.Mat{Generic.Res{fmpz}})
   z = zero_matrix(FlintZZ, nrows(a), ncols(a))
@@ -388,8 +388,8 @@ end
 @doc Markdown.doc"""
     kernel_basis(a::MatElem{T}, side:: Symbol) -> Vector{Vector{T}} where {T <: AbstractAlgebra.FieldElem}
 
-> It returns a basis for the kernel of the matrix defined over a field. If side is $:right$ or not
-> specified, the right kernel is computed. If side is $:left$, the left kernel is computed.
+It returns a basis for the kernel of the matrix defined over a field. If side is $:right$ or not
+specified, the right kernel is computed. If side is $:left$, the left kernel is computed.
 """
 function kernel_basis(A::MatElem{T}, side::Symbol = :right) where T<: AbstractAlgebra.FieldElem
   if side == :right
@@ -404,7 +404,7 @@ end
 @doc Markdown.doc"""
     right_kernel_basis(a::MatElem{T}) -> Vector{Vector{T}} where {T <: AbstractAlgebra.FieldElem}
 
-> It returns a basis for the right kernel of the matrix defined over a field
+It returns a basis for the right kernel of the matrix defined over a field
 """
 function right_kernel_basis(a::MatElem{T}) where T <: AbstractAlgebra.FieldElem
   R = base_ring(a)
@@ -423,7 +423,7 @@ end
 @doc Markdown.doc"""
     left_kernel_basis(a::MatElem{T}) -> Vector{Vector{T}}
 
-> It returns a basis for the left kernel of the matrix
+It returns a basis for the left kernel of the matrix
 """
 left_kernel_basis(a::MatElem{T}) where T <: AbstractAlgebra.FieldElem = right_kernel_basis(transpose(a))
 
@@ -431,8 +431,8 @@ left_kernel_basis(a::MatElem{T}) where T <: AbstractAlgebra.FieldElem = right_ke
 @doc Markdown.doc"""
     kernel(a::MatElem{T}; side::Symbol = :right) -> Int, MatElem{T}
 
-> It returns a tuple $(n, M)$, where n is the rank of the kernel and $M$ is a basis for it. If side is $:right$ or not
-> specified, the right kernel is computed. If side is $:left$, the left kernel is computed.
+It returns a tuple $(n, M)$, where n is the rank of the kernel and $M$ is a basis for it. If side is $:right$ or not
+specified, the right kernel is computed. If side is $:left$, the left kernel is computed.
 """
 function kernel(A::MatElem; side::Symbol = :right)
   if side == :right
@@ -447,8 +447,8 @@ end
 @doc Markdown.doc"""
     right_kernel(a::gfp_mat) ->  Int, gfp_mat
 
-> It returns a tuple (n, M) where M is a matrix whose columns generate 
-> the kernel and n is the dimension of the kernel.
+It returns a tuple (n, M) where M is a matrix whose columns generate 
+the kernel and n is the dimension of the kernel.
 """
 function right_kernel(x::gfp_mat) 
   z = zero_matrix(base_ring(x), ncols(x), max(nrows(x),ncols(x)))
@@ -464,8 +464,8 @@ end
 @doc Markdown.doc"""
     left_kernel(a::fmpz_mat) -> Int, fmpz_mat
 
-> It returns a tuple (n, M) where M is a matrix whose rows generate 
-> the kernel of M and n is the rank of the kernel.
+It returns a tuple (n, M) where M is a matrix whose rows generate 
+the kernel of M and n is the rank of the kernel.
 """
 function left_kernel(x::fmpz_mat)
   H, U = hnf_with_transform(x)
@@ -492,8 +492,8 @@ end
 @doc Markdown.doc"""
     right_kernel(a::fmpz_mat) -> Int, fmpz_mat
 
-> It returns a tuple (n, M) where M is a matrix whose rows generate 
-> the kernel of M and n is the rank of the kernel.
+It returns a tuple (n, M) where M is a matrix whose rows generate 
+the kernel of M and n is the rank of the kernel.
 """
 function right_kernel(x::fmpz_mat)
   n, M = left_kernel(transpose(x))
@@ -503,8 +503,8 @@ end
 @doc Markdown.doc"""
     right_kernel(a::nmod_mat) -> Int, nmod_mat
 
-> It returns a tuple (n, M) where M is a matrix whose rows generate 
-> the kernel of M and n is the rank of the kernel.
+It returns a tuple (n, M) where M is a matrix whose rows generate 
+the kernel of M and n is the rank of the kernel.
 """
 function right_kernel(M::nmod_mat)
   R = base_ring(M)
@@ -574,8 +574,8 @@ end
 @doc Markdown.doc"""
     kernel(a::MatElem{T}, R::Ring; side::Symbol = :right) -> n, MatElem{elem_type(R)}
 
-> It returns a tuple $(n, M)$, where n is the rank of the kernel over $R$ and $M$ is a basis for it. If side is $:right$ or not
-> specified, the right kernel is computed. If side is $:left$, the left kernel is computed.
+It returns a tuple $(n, M)$, where n is the rank of the kernel over $R$ and $M$ is a basis for it. If side is $:right$ or not
+specified, the right kernel is computed. If side is $:left$, the left kernel is computed.
 """
 function kernel(M::MatElem, R::Ring; side::Symbol = :right)
   MP = change_base_ring(M, R)
@@ -591,8 +591,8 @@ end
 @doc Markdown.doc"""
     change_base_ring(M::MatElem, R::Ring) -> MatElem{elem_type(R)} 
 
-> Given a $m\times n$ matrix M over a ring S and another ring R, return the $m \times n$
-> matrix over R obtained by coercing the entries of M from S into R. 
+Given a $m\times n$ matrix M over a ring S and another ring R, return the $m \times n$
+matrix over R obtained by coercing the entries of M from S into R. 
 """
 function change_base_ring(M::MatElem, R::Ring)
   MP = zero_matrix(R, nrows(M), ncols(M))
@@ -626,8 +626,8 @@ end
 @doc Markdown.doc"""
     isposdef(a::fmpz_mat) -> Bool
 
-> Tests if $a$ positive definite by testing if all principal minors
-> have positive determinant.
+Tests if $a$ positive definite by testing if all principal minors
+have positive determinant.
 """
 function isposdef(a::fmpz_mat)
   for i=1:nrows(a)
@@ -728,7 +728,7 @@ end
 @doc Markdown.doc"""
 ***
     mod!(M::fmpz_mat, p::fmpz) 
-> Reduces every entry modulo $p$ in-place, ie. applies the mod function to every entry.
+Reduces every entry modulo $p$ in-place, ie. applies the mod function to every entry.
 """
 function mod!(M::fmpz_mat, p::fmpz)
   for i=1:nrows(M)
@@ -743,7 +743,7 @@ end
 @doc Markdown.doc"""
 ***
     mod(M::fmpz_mat, p::fmpz) -> fmpz_mat
-> Reduces every entry modulo $p$, ie. applies the mod function to every entry.
+Reduces every entry modulo $p$, ie. applies the mod function to every entry.
 """
 function mod(M::fmpz_mat, p::fmpz)
   N = deepcopy(M)
@@ -761,8 +761,8 @@ end
 ***
     vcat(A::Array{Generic.Mat, 1}) -> Generic.Mat
     vcat(A::Array{fmpz_mat}, 1}) -> fmpz_mat
-> Forms a big matrix my vertically concatenating the matrices in $A$.
-> All component matrices need to have the same number of columns.
+Forms a big matrix my vertically concatenating the matrices in $A$.
+All component matrices need to have the same number of columns.
 """
 function vcat(A::Array{T, 1})  where {S <: RingElem, T <: MatElem{S}}
   if any(x->ncols(x) != ncols(A[1]), A)
@@ -925,9 +925,9 @@ then U*[ a 0; 0 b] * V = [g 0 ; 0 l]
 ***
   snf_with_transform(A::fmpz_mat, l::Bool = true, r::Bool = true) -> fmpz_mat, fmpz_mat, fmpz_mat
 
-> Given some integer matrix A, compute the Smith normal form (elementary
-> divisor normal form) of A. If l and/ or r are true, then the corresponding
-> left and/ or right transformation matrices are computed as well.
+Given some integer matrix A, compute the Smith normal form (elementary
+divisor normal form) of A. If l and/ or r are true, then the corresponding
+left and/ or right transformation matrices are computed as well.
 """
 function snf_with_transform(A::fmpz_mat, l::Bool = true, r::Bool = true)
   if r
@@ -1026,7 +1026,7 @@ end
 ***
   isdiag(A::fmpz_mat)
 
-> Tests if A is diagonal.
+Tests if A is diagonal.
 """
 function isdiag(A::fmpz_mat)
   for i = 1:ncols(A)
@@ -1237,8 +1237,8 @@ getindex(A::MatElem, ::Colon, i::Int) = A[1:nrows(A), i:i]
 @doc Markdown.doc"""
     reduce_mod!(A::MatElem{T}, B::MatElem{T}) where T <: FieldElem
 
-> For a reduced row echelon matrix $B$, reduce $A$ modulo $B$, ie. all the pivot
-> columns will be zero afterwards.
+For a reduced row echelon matrix $B$, reduce $A$ modulo $B$, ie. all the pivot
+columns will be zero afterwards.
 """
 function reduce_mod!(A::MatElem{T}, B::MatElem{T}) where T <: FieldElem
   if isrref(B)

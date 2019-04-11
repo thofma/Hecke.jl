@@ -38,8 +38,8 @@ export PrimeIdealsSet, prime_ideals_over
 ***
     isramified(O::NfOrd, p::Int) -> Bool
 
-> Returns whether the integer $p$ is ramified in $\mathcal O$.
-> It is assumed that $p$ is prime.
+Returns whether the integer $p$ is ramified in $\mathcal O$.
+It is assumed that $p$ is prime.
 """
 function isramified(O::NfAbsOrd, p::Union{Int, fmpz})
   @assert ismaximal_known_and_maximal(O)
@@ -49,7 +49,7 @@ end
 @doc Markdown.doc"""
 ***
     degree(P::NfOrdIdl) -> Int
-> The inertia degree of the prime-ideal $P$.
+The inertia degree of the prime-ideal $P$.
 """
 function degree(A::NfAbsOrdIdl)
   @assert isprime(A)
@@ -59,7 +59,7 @@ end
 @doc Markdown.doc"""
 ***
     ramification_index(P::NfOrdIdl) -> Int
-> The ramification index of the prime-ideal $P$.
+The ramification index of the prime-ideal $P$.
 """
 function ramification_index(A::NfAbsOrdIdl)
   @assert isprime(A)
@@ -69,8 +69,8 @@ end
 @doc Markdown.doc"""
 ***
     splitting_type(P::NfOrdIdl) -> Int, Int
-> The ramification index and inertia degree of the prime ideal $P$.
-> First value is the ramificatio index, the second the degree of $P$.
+The ramification index and inertia degree of the prime ideal $P$.
+First value is the ramificatio index, the second the degree of $P$.
 """
 function splitting_type(A::NfAbsOrdIdl)
   @assert isprime(A)
@@ -84,9 +84,9 @@ end
 ################################################################################
 @doc Markdown.doc"""
     intersect_prime(f::Map, P::NfOrdIdl, O_k::NfOrd) -> NfOrdIdl
-> Given a prime ideal $P$ in $K$ and the inclusion map $f:k \to K$ 
-> of number fields, find the unique prime $p$ in $k$ below.
-> $p$ will be in the order $O_k$ which defaults to "the" maximal order of $k$.
+Given a prime ideal $P$ in $K$ and the inclusion map $f:k \to K$ 
+of number fields, find the unique prime $p$ in $k$ below.
+$p$ will be in the order $O_k$ which defaults to "the" maximal order of $k$.
 """
 function intersect_prime(f::Map, P::NfOrdIdl, Ok::NfOrd = maximal_order(domain(f)))
   
@@ -138,10 +138,10 @@ end
 
 @doc Markdown.doc"""
     prime_decomposition_nonindex(f::Map, p::NfOrdIdl, Z_K::NfOrd) -> Array{Tuple{NfOrdIdl, Int}, 1}
-> Given a map $f: k\to K$ of number fields defined over $\mathbb Q$ and
-> a prime ideal in the maximal order of $k$, find all prime ideals in
-> the maximal order of $K$ above.
-> The ideals will belong to $Z_K$ which defaults to "the" maximal order of $K$.
+Given a map $f: k\to K$ of number fields defined over $\mathbb Q$ and
+a prime ideal in the maximal order of $k$, find all prime ideals in
+the maximal order of $K$ above.
+The ideals will belong to $Z_K$ which defaults to "the" maximal order of $K$.
 """
 function prime_decomposition(f::Map, p::NfOrdIdl, ZK::NfOrd = maximal_order(codomain(f)))
   
@@ -188,9 +188,9 @@ end
 
 @doc Markdown.doc"""
     lift(K::AnticNumberField, f::nmod_poly) -> nf_elem
-> Given a polynomial $f$ over a finite field, lift it to an element of the
-> number field $K$. The lift if given by the element represented by the
-> canonical lift of $f$ to a polynomial over the integers.
+Given a polynomial $f$ over a finite field, lift it to an element of the
+number field $K$. The lift if given by the element represented by the
+canonical lift of $f$ to a polynomial over the integers.
 """
 function lift(K::AnticNumberField, f::T) where {T <: Zmodn_poly}
   if degree(f)>=degree(K)
@@ -242,15 +242,15 @@ end
                         degree_limit::Int = 0,
                         lower_limit::Int = 0) -> Array{Tuple{NfOrdIdl, Int}, 1}
 
-> Returns an array of tuples $(\mathfrak p_i,e_i)$ such that $p \mathcal O$ is the product of
-> the $\mathfrak p_i^{e_i}$ and $\mathfrak p_i \neq \mathfrak p_j$ for $i \neq j$.
+Returns an array of tuples $(\mathfrak p_i,e_i)$ such that $p \mathcal O$ is the product of
+the $\mathfrak p_i^{e_i}$ and $\mathfrak p_i \neq \mathfrak p_j$ for $i \neq j$.
 >
-> If `degree_limit` is a nonzero integer $k > 0$, then only those prime ideals
-> $\mathfrak p$ with $\deg(\mathfrak p) \leq k$ will be returned.
-> Similarly if `\lower_limit` is a nonzero integer $l > 0$, then only those prime ideals
-> $\mathfrak p$ with $l \leq \deg(\mathfrak p)$ will be returned.
-> Note that in this case it may happen that $p\mathcal O$ is not the product of the
-> $\mathfrak p_i^{e_i}$.
+If `degree_limit` is a nonzero integer $k > 0$, then only those prime ideals
+$\mathfrak p$ with $\deg(\mathfrak p) \leq k$ will be returned.
+Similarly if `\lower_limit` is a nonzero integer $l > 0$, then only those prime ideals
+$\mathfrak p$ with $l \leq \deg(\mathfrak p)$ will be returned.
+Note that in this case it may happen that $p\mathcal O$ is not the product of the
+$\mathfrak p_i^{e_i}$.
 """
 function prime_decomposition(O::NfAbsOrd{S, T}, p::Union{Integer, fmpz}, degree_limit::Int = 0, lower_limit::Int = 0; cached::Bool = true) where {S, T}
   if typeof(p) == fmpz && nbits(p) < 64
@@ -476,11 +476,11 @@ end
                        B::Int;
                        degree_limit::Int = 0, index_divisors::Bool = true) -> Array{NfOrdIdl, 1}
 
-> Computes the prime ideals $\mathcal O$ with norm up to $B$.
+Computes the prime ideals $\mathcal O$ with norm up to $B$.
 >
-> If `degree_limit` is a nonzero integer $k$, then prime ideals $\mathfrak p$
-> with $\deg(\mathfrak p) > k$ will be discarded.
-> If 'index_divisors' is set to false, only primes not dividing the index of the order will be computed.
+If `degree_limit` is a nonzero integer $k$, then prime ideals $\mathfrak p$
+with $\deg(\mathfrak p) > k$ will be discarded.
+If 'index_divisors' is set to false, only primes not dividing the index of the order will be computed.
 """
 function prime_ideals_up_to(O::NfOrd, B::Int;
                             complete::Bool = false,
@@ -519,10 +519,10 @@ end
                        lp::AbstractArray{Int, 1};
                        degree_limit::Int = 0) -> Array{NfOrdIdl, 1}
 
-> Computes the prime ideals $\mathcal O$ over prime numbers in $lp$.
+Computes the prime ideals $\mathcal O$ over prime numbers in $lp$.
 >
-> If `degree_limit` is a nonzero integer $k$, then prime ideals $\mathfrak p$
-> with $\deg(\mathfrak p) > k$ will be discarded.
+If `degree_limit` is a nonzero integer $k$, then prime ideals $\mathfrak p$
+with $\deg(\mathfrak p) > k$ will be discarded.
 """
 function prime_ideals_over(O::NfOrd,
                            lp::AbstractArray{T};
@@ -549,13 +549,13 @@ end
                        F::Function,
                        bad::fmpz)
 
-> Computes the prime ideals $\mathcal O$ with norm up to $B$.
+Computes the prime ideals $\mathcal O$ with norm up to $B$.
 >
-> If `degree_limit` is a nonzero integer $k$, then prime ideals $\mathfrak p$
-> with $\deg(\mathfrak p) > k$ will be discarded.
+If `degree_limit` is a nonzero integer $k$, then prime ideals $\mathfrak p$
+with $\deg(\mathfrak p) > k$ will be discarded.
 >
-> The function $F$ must be a function on prime numbers not dividing `bad` such that
-> $F(p) = \deg(\mathfrak p)$ for all prime ideals $\mathfrak p$ lying above $p$.
+The function $F$ must be a function on prime numbers not dividing `bad` such that
+$F(p) = \deg(\mathfrak p)$ for all prime ideals $\mathfrak p$ lying above $p$.
 """
 function prime_ideals_up_to(O::NfOrd, B::Int, F::Function, bad::fmpz = discriminant(O);
                             complete::Bool = false,
@@ -605,7 +605,7 @@ end
 ***
     divides(A::NfOrdIdl, B::NfOrdIdl)
     
-> Checks if B divides A
+Checks if B divides A
 """
 function divides(A::NfOrdIdl, B::NfOrdIdl)
   minimum(A) % minimum(B) == 0 || return false
@@ -636,9 +636,9 @@ end
 ***
     coprime_base(A::Array{NfOrdIdl, 1}) -> Array{NfOrdIdl, 1}
     coprime_base(A::Array{NfOrdElem, 1}) -> Array{NfOrdIdl, 1}
-> A coprime base for the (principal) ideals in $A$, ie. the returned array
-> generated multiplicatively the same ideals as the input and are pairwise
-> coprime.
+A coprime base for the (principal) ideals in $A$, ie. the returned array
+generated multiplicatively the same ideals as the input and are pairwise
+coprime.
 """
 function coprime_base(A::Array{NfOrdIdl, 1})
   a = collect(Set(map(minimum, A)))
@@ -675,10 +675,10 @@ end
 ***
     factor(A::NfOrdIdl) -> Dict{NfOrdIdl, Int}
 
-> Computes the prime ideal factorization $A$ as a dictionary, the keys being
-> the prime ideal divisors:
-> If `lp = factor_dict(A)`, then `keys(lp)` are the prime ideal divisors of A
-> and `lp[P]` is the `P`-adic valuation of `A` for all `P` in `keys(lp)`.
+Computes the prime ideal factorization $A$ as a dictionary, the keys being
+the prime ideal divisors:
+If `lp = factor_dict(A)`, then `keys(lp)` are the prime ideal divisors of A
+and `lp[P]` is the `P`-adic valuation of `A` for all `P` in `keys(lp)`.
 """
 factor(A::NfOrdIdl) = factor_dict(A)
 
@@ -714,7 +714,7 @@ end
 ***
     isprime_known(A::NfOrdIdl) -> Bool
 
-> Returns whether $A$ knows if it is prime.
+Returns whether $A$ knows if it is prime.
 """
 function isprime_known(A::NfAbsOrdIdl)
   return A.is_prime != 0
@@ -724,7 +724,7 @@ end
 ***
     isprime(A::NfOrdIdl) -> Bool
 
-> Returns whether $A$ is a prime ideal.
+Returns whether $A$ is a prime ideal.
 """
 function isprime(A::NfAbsOrdIdl)
   if isprime_known(A)
@@ -913,8 +913,8 @@ end
     valuation(a::NfOrdElem, p::NfOrdIdl) -> fmpz
     valuation(a::fmpz, p::NfOrdIdl) -> fmpz
 
-> Computes the $\mathfrak p$-adic valuation of $a$, that is, the largest $i$
-> such that $a$ is contained in $\mathfrak p^i$.
+Computes the $\mathfrak p$-adic valuation of $a$, that is, the largest $i$
+such that $a$ is contained in $\mathfrak p^i$.
 """
 function valuation(a::nf_elem, p::NfOrdIdl, no::fmpq = fmpq(0))
   if !isdefining_polynomial_nice(parent(a)) || order(p).ismaximal != 1
@@ -994,8 +994,8 @@ end
     valuation(a::NfOrdElem, p::NfOrdIdl) -> fmpz
     valuation(a::fmpz, p::NfOrdIdl) -> fmpz
 
-> Computes the $\mathfrak p$-adic valuation of $a$, that is, the largest $i$
-> such that $a$ is contained in $\mathfrak p^i$.
+Computes the $\mathfrak p$-adic valuation of $a$, that is, the largest $i$
+such that $a$ is contained in $\mathfrak p^i$.
 """
 valuation(a::NfOrdElem, p::NfOrdIdl) = valuation(a.elem_in_nf, p)
 
@@ -1005,8 +1005,8 @@ valuation(a::NfOrdElem, p::NfOrdIdl) = valuation(a.elem_in_nf, p)
     valuation(a::NfOrdElem, p::NfOrdIdl) -> fmpz
     valuation(a::fmpz, p::NfOrdIdl) -> fmpz
 
-> Computes the $\mathfrak p$-adic valuation of $a$, that is, the largest $i$
-> such that $a$ is contained in $\mathfrak p^i$.
+Computes the $\mathfrak p$-adic valuation of $a$, that is, the largest $i$
+such that $a$ is contained in $\mathfrak p^i$.
 """
 function valuation(a::fmpz, p::NfOrdIdl)
   if p.splitting_type[1] == 0
@@ -1017,8 +1017,8 @@ function valuation(a::fmpz, p::NfOrdIdl)
 end
 @doc Markdown.doc"""
     valuation(a::Integer, p::NfOrdIdl) -> fmpz
-> Computes the $\mathfrak p$-adic valuation of $a$, that is, the largest $i$
-> such that $a$ is contained in $\mathfrak p^i$.
+Computes the $\mathfrak p$-adic valuation of $a$, that is, the largest $i$
+such that $a$ is contained in $\mathfrak p^i$.
 """
 valuation(a::Integer, p::NfOrdIdl) = valuation(fmpz(a), p)
 
@@ -1067,8 +1067,8 @@ end
 ***
     valuation(A::NfOrdIdl, p::NfOrdIdl) -> fmpz
 
-> Computes the $\mathfrak p$-adic valuation of $A$, that is, the largest $i$
-> such that $A$ is contained in $\mathfrak p^i$.
+Computes the $\mathfrak p$-adic valuation of $A$, that is, the largest $i$
+such that $A$ is contained in $\mathfrak p^i$.
 """
 function valuation(A::NfOrdIdl, p::NfOrdIdl)
   _assure_weakly_normal_presentation(A)

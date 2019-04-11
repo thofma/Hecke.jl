@@ -132,7 +132,7 @@ end
 ***
     center(A::AlgGrp{T}) where T
 
-> Returns the center C of A and the inclusion C \to A.
+Returns the center C of A and the inclusion C \to A.
 """
 function center(A::AlgGrp{T}) where {T}
   if iscommutative(A)

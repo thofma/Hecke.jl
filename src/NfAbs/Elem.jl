@@ -189,7 +189,7 @@ end
 ***
     minpoly(a::nf_elem) -> fmpq_poly
 
-> The minimal polynomial of a.
+The minimal polynomial of a.
 """
 function minpoly(Qx::FmpqPolyRing, a::nf_elem)
   f = minpoly(Qx, representation_matrix(a))
@@ -354,7 +354,7 @@ end
 
 @doc Markdown.doc"""
    isnorm_divisible(a::nf_elem, n::fmpz) -> Bool
-> Checks if the norm of $a$ is divisible by $n$, assuming that the norm of $a$ is an integer.
+Checks if the norm of $a$ is divisible by $n$, assuming that the norm of $a$ is an integer.
 """
 function isnorm_divisible(a::nf_elem, n::fmpz)
   
@@ -381,9 +381,9 @@ end
 ################################################################################
 @doc Markdown.doc"""
     numerator(a::nf_elem) -> nf_elem
-> For an element $a\in K = Q[t]/f$ write $a$ as $b/d$ with
-> $b\in Z[t]$, $\deg(a) = \deg(b)$ and $d>0$ minimal in $Z$.
-> This function returns $b$.
+For an element $a\in K = Q[t]/f$ write $a$ as $b/d$ with
+$b\in Z[t]$, $\deg(a) = \deg(b)$ and $d>0$ minimal in $Z$.
+This function returns $b$.
 """
 function numerator(a::nf_elem)
    _one = one(FlintZZ)
@@ -491,7 +491,7 @@ end
   factor(f::fmpz_poly, K::NumberField) -> Fac{Generic.Poly{nf_elem}}
   factor(f::fmpq_poly, K::NumberField) -> Fac{Generic.Poly{nf_elem}}
 
-> The factorisation of f over K (using Trager's method).
+The factorisation of f over K (using Trager's method).
 """
 function factor(f::fmpq_poly, K::AnticNumberField)
   f1 = change_base_ring(f, K)
@@ -506,7 +506,7 @@ end
 @doc Markdown.doc"""
   factor(f::PolyElem{nf_elem}) -> Fac{Generic.Poly{nf_elem}}
 
-> The factorisation of f (using Trager's method).
+The factorisation of f (using Trager's method).
 """
 function factor(f::PolyElem{nf_elem})
   Kx = parent(f)
@@ -749,7 +749,7 @@ end
 
 @doc Markdown.doc"""
     hasroot(f::PolyElem{nf_elem}) -> Bool, nf_elem
-> Tests if $f$ has a root and return it.    
+Tests if $f$ has a root and return it.    
 """
 function hasroot(f::PolyElem{nf_elem})
   rt = roots(f, max_roots = 1)
@@ -764,7 +764,7 @@ end
     hasroot(f::fmpz_poly, K::AnticNumberField) -> Bool, nf_elem
     hasroot(f::fmpq_poly, K::AnticNumberField) -> Bool, nf_elem
 
-> Tests if $f$ has a root in $K$, and return it.
+Tests if $f$ has a root in $K$, and return it.
 """
 function hasroot(f::fmpz_poly, K::AnticNumberField)
   f1 = change_base_ring(f, K)
@@ -786,11 +786,11 @@ end
 ***
     ispower(a::nf_elem, n::Int; with_roots_unity::Bool = false) -> Bool, nf_elem
 
-> Determines whether $a$ has an $n$-th root. If this is the case,
-> the root is returned.
+Determines whether $a$ has an $n$-th root. If this is the case,
+the root is returned.
 >
-> If the field $K$ is known to contain the $n$-th roots of unity,
-> one can set `with_roots_unity` to `true`.
+If the field $K$ is known to contain the $n$-th roots of unity,
+one can set `with_roots_unity` to `true`.
 """
 function ispower(a::nf_elem, n::Int; with_roots_unity::Bool = false)
   @assert n > 0
@@ -820,13 +820,13 @@ end
 
 @doc Markdown.doc"""
     issquare(a::nf_elem) -> Bool, nf_elem
-> Tests if $a$ is a square and return the root if possible.
+Tests if $a$ is a square and return the root if possible.
 """
 Nemo.issquare(a::nf_elem) = ispower(a, 2)
 
 @doc Markdown.doc"""
     sqrt(a::nf_elem) -> nf_elem
-> The square-root of $a$ or an error if this is not possible.
+The square-root of $a$ or an error if this is not possible.
  """
 Nemo.sqrt(a::nf_elem) = root(a, 2)
 
@@ -834,7 +834,7 @@ Nemo.sqrt(a::nf_elem) = root(a, 2)
 ***
     root(a::nf_elem, n::Int) -> nf_elem
 
-> Computes the $n$-th root of $a$. Throws an error if this is not possible.
+Computes the $n$-th root of $a$. Throws an error if this is not possible.
 """
 function root(a::nf_elem, n::Int)
   fl, rt = ispower(a, n)
@@ -847,7 +847,7 @@ end
 
 @doc Markdown.doc"""
     roots(a::nf_elem, n::Int) -> Array{nf_elem, 1}
-> Compute all $n$-th roots of $a$, possibly none.
+Compute all $n$-th roots of $a$, possibly none.
 """
 function roots(a::nf_elem, n::Int)
   @assert n > 0

@@ -64,7 +64,7 @@ end
 
 @doc Markdown.doc"""
     det(M::Generic.Mat{NfOrdElem}) -> NfOrdElem
-> Uses a modular algorithm to compute the determinant.    
+Uses a modular algorithm to compute the determinant.    
 """   
 function det(M::Generic.Mat{NfOrdElem})
   O = base_ring(M)::NfOrd
@@ -172,7 +172,7 @@ end
 
 @doc Markdown.doc"""
     mod_sym(a::NfOrdElem, m)
-> Reduces the coefficients of $a$ modulo $m$, using the symmetric residue system.    
+Reduces the coefficients of $a$ modulo $m$, using the symmetric residue system.    
 """
 function mod_sym(x::NfOrdElem, m)
   z = coordinates(x)
@@ -249,9 +249,9 @@ end
 @doc Markdown.doc"""
     PseudoMatrix(m::Generic.Mat{nf_elem}, c::Array{NfOrdIdl, 1}) -> PMat{nf_elem, NfOrdFracIdl}
 
-> Returns the (row) pseudo matrix representing the Z\_k-module 
->  $$\sum c_i m_i$$
->  where $c_i$ are the ideals in $c$ and $m_i$ the rows of $M$. 
+Returns the (row) pseudo matrix representing the Z\_k-module 
+ $$\sum c_i m_i$$
+ where $c_i$ are the ideals in $c$ and $m_i$ the rows of $M$. 
 """
 function PseudoMatrix(m::Generic.Mat{nf_elem}, c::Array{NfOrdIdl, 1})
   @assert nrows(m) == length(c)
@@ -261,9 +261,9 @@ end
 
 @doc Markdown.doc"""
     PseudoMatrix(m::Generic.Mat{NfOrdElem}, c::Array{NfOrdIdl, 1}) -> PMat{nf_elem, NfOrdFracIdl}
-> Returns the (row) pseudo matrix representing the $Z_k$-module 
->  $$\sum c_i m_i$$
->  where $c_i$ are the ideals in $c$ and $m_i$ the rows of $M$. 
+Returns the (row) pseudo matrix representing the $Z_k$-module 
+ $$\sum c_i m_i$$
+ where $c_i$ are the ideals in $c$ and $m_i$ the rows of $M$. 
 """
 function PseudoMatrix(m::Generic.Mat{NfOrdElem}, c::Array{NfOrdIdl, 1})
   @assert nrows(m) == length(c)
@@ -274,9 +274,9 @@ end
 
 @doc Markdown.doc"""
     PseudoMatrix(m::Generic.Mat{NfOrdElem}, c::Array{NfOrdIdl, 1}) -> PMat{nf_elem, NfOrdFracIdl}
-> Returns the free (row) pseudo matrix representing the $Z_k$-module 
->  $$\sum Z_k m_i$$
->  where $m_i$ the rows of $M$. 
+Returns the free (row) pseudo matrix representing the $Z_k$-module 
+ $$\sum Z_k m_i$$
+ where $m_i$ the rows of $M$. 
 """
 function PseudoMatrix(m::Generic.Mat{nf_elem})
    K = base_ring(m)

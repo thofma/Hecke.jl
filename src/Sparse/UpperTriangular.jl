@@ -352,8 +352,8 @@ end
 @doc Markdown.doc"""
     elementary_divisors(A::SMat{fmpz}) -> Array{fmpz, 1}
 
-> The elementary divisors of $A$, ie. the diagonal elements of the Smith normal
-> form of $A$. $A$ needs to be of full rank - currently.
+The elementary divisors of $A$, ie. the diagonal elements of the Smith normal
+form of $A$. $A$ needs to be of full rank - currently.
 """
 function elementary_divisors(A::SMat{fmpz})
   A = copy(A)

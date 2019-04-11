@@ -315,7 +315,7 @@ end
 ***
     meataxe(M::ModAlgAss) -> Bool, MatElem
 
-> Given module M, returns true if the module is irreducible (and the identity matrix) and false if the space is reducible, togheter with a basis of a submodule
+Given module M, returns true if the module is irreducible (and the identity matrix) and false if the space is reducible, togheter with a basis of a submodule
 
 """
 function meataxe(M::ModAlgAss{S, T, V}) where {S, T, V}
@@ -439,7 +439,7 @@ end
 ***
     composition_series(M::ModAlgAss) -> Array{MatElem,1}
 
-> Given a Fq[G]-module M, it returns a composition series for M, i.e. a sequence of submodules such that the quotient of two consecutive element is irreducible.
+Given a Fq[G]-module M, it returns a composition series for M, i.e. a sequence of submodules such that the quotient of two consecutive element is irreducible.
 
 """
 function composition_series(M::ModAlgAss{S, T, V}) where {S, T, V}
@@ -494,8 +494,8 @@ end
 ***
     composition_factors(M::ModAlgAss)
 
-> Given a Fq[G]-module M, it returns, up to isomorphism, the composition factors of M with their multiplicity,
-> i.e. the isomorphism classes of modules appearing in a composition series of M
+Given a Fq[G]-module M, it returns, up to isomorphism, the composition factors of M with their multiplicity,
+i.e. the isomorphism classes of modules appearing in a composition series of M
 
 """
 function composition_factors(M::ModAlgAss{S, T, V}; dimension::Int=-1) where {S, T, V}
@@ -661,7 +661,7 @@ end
 ***
     minimal_submodules(M::ModAlgAss)
 
-> Given a Fq[G]-module M, it returns all the minimal submodules of M
+Given a Fq[G]-module M, it returns all the minimal submodules of M
 
 """
 function minimal_submodules(M::ModAlgAss{S, T, V}, dim::Int=M.dimension+1, lf = Tuple{ModAlgAss{S, T, V}, Int}[]) where {S, T, V}
@@ -701,7 +701,7 @@ end
 ***
     maximal_submodules(M::ModAlgAss)
 
-> Given a $G$-module $M$, it returns all the maximal submodules of M
+Given a $G$-module $M$, it returns all the maximal submodules of M
 
 """
 
@@ -721,7 +721,7 @@ end
 ***
     submodules(M::ModAlgAss)
 
-> Given a $G$-module $M$, it returns all the submodules of M
+Given a $G$-module $M$, it returns all the submodules of M
 
 """
 
@@ -781,7 +781,7 @@ end
 ***
     submodules(M::ModAlgAss, index::Int)
 
-> Given a $G$-module $M$, it returns all the submodules of M of index q^index, where q is the order of the field
+Given a $G$-module $M$, it returns all the submodules of M of index q^index, where q is the order of the field
 
 """
 

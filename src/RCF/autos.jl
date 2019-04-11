@@ -6,7 +6,7 @@
 @doc Markdown.doc"""
     absolute_automorphism_group(C::ClassField)
   
->  Computes a generating set for the automorphisms of the 
+ Computes a generating set for the automorphisms of the 
    number field corresponding to C. It assumes that the base field is normal.
    if "check" is true, the function checks if the extension is normal.
 """
@@ -159,7 +159,7 @@ end
 @doc Markdown.doc"""
     extend_to_cyclotomic(C::CyclotomicExt, tau::NfToNfMor) -> NfRelToNfRelMor
     
-> Given a cyclotomic extension $C$ of a number field $K$ and an automorphism $\tau$ of $K$,
+Given a cyclotomic extension $C$ of a number field $K$ and an automorphism $\tau$ of $K$,
   computes an extension of tau to $C$.
 
 """

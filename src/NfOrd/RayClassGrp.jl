@@ -50,9 +50,9 @@ end
 @doc Markdown.doc"""
     ray_class_group(m::NfOrdIdl, inf_plc::Array{InfPlc,1}=InfPlc[]; n_quo)
     
-> Given a modulus with finite part $m$ and infinite part $inf_plc$, it returns
-> the Ray Class Group $Cl_m$. If $n_quo$ is given,
->  it will return the quotient of the Ray Class Group by n
+Given a modulus with finite part $m$ and infinite part $inf_plc$, it returns
+the Ray Class Group $Cl_m$. If $n_quo$ is given,
+ it will return the quotient of the Ray Class Group by n
 
 """
 function ray_class_group(m::NfOrdIdl, inf_plc::Array{InfPlc,1}=InfPlc[]; n_quo=0, GRH::Bool = true)
@@ -66,9 +66,9 @@ end
 @doc Markdown.doc"""
 ***
     narrow_class_group(L::NfOrd) -> GrpAbFinGen, Map
-> Compute the narrow (or strict) class group of $L$, ie. the
-> group of invertable ideals modulo the group of totally positive elements.
-> In case the field has no real embedding, this is just the class group.
+Compute the narrow (or strict) class group of $L$, ie. the
+group of invertable ideals modulo the group of totally positive elements.
+In case the field has no real embedding, this is just the class group.
 """
 function narrow_class_group(OK::NfOrd)
   I = ideal(OK, 1)
@@ -1942,7 +1942,7 @@ end
 @doc Markdown.doc"""
     has_principal_gen_1_mod_m(I::NfOrdIdl, m::NfOrdIdl, inf_plc::Array{InfPlc, 1} = InfPlc[]) -> Bool, NfOrdElem
     
-> Given an ideal I, this function checks if the ideal is trivial in the ray class group mod ($m$, inf_plc).
+Given an ideal I, this function checks if the ideal is trivial in the ray class group mod ($m$, inf_plc).
   If this is the case, we also return a generator which is 1 mod $m$. If not, the second return value is wrong.
 
 """

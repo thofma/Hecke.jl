@@ -87,8 +87,8 @@ end
 
 @doc Markdown.doc"""
     defining_modulus(CF::ClassField)
-> The modulus, ie. an ideal the the set of real places, used to create the
-> class field.
+The modulus, ie. an ideal the the set of real places, used to create the
+class field.
 """
 function defining_modulus(CF::ClassField)
   return _modulus(CF.rayclassgroupmap)
@@ -114,7 +114,7 @@ end
 
 @doc Markdown.doc"""
   base_ring(A::ClassField)
-> The maximal order of the field that $A$ is defined over.
+The maximal order of the field that $A$ is defined over.
 """
 function base_ring(A::ClassField)
   return order(defining_modulus(A)[1])
@@ -122,7 +122,7 @@ end
 
 @doc Markdown.doc"""
   base_field(A::ClassField)
-> The number field that $A$ is defined over.
+The number field that $A$ is defined over.
 """
 function base_field(A::ClassField)
   return number_field(base_ring(A))
@@ -144,7 +144,7 @@ end
 
 @doc Markdown.doc"""
   degree(A::ClassField)
-> The degree of $A$ over its base field, ie. the size of the defining ideal group.
+The degree of $A$ over its base field, ie. the size of the defining ideal group.
 """
 function degree(A::ClassField{S, T}) where {S, T}
   if A.degree == -1
@@ -169,7 +169,7 @@ end
 @doc Markdown.doc"""
     compositum(a::ClassField, b::ClassField) -> ClassField
              *(a::ClassField, b::ClassField) -> ClassField
-> The compositum of $a$ and $b$ as a (formal) class field.
+The compositum of $a$ and $b$ as a (formal) class field.
 """
 function compositum(a::ClassField, b::ClassField)
   @assert base_ring(a) == base_ring(b)
@@ -187,7 +187,7 @@ end
 
 @doc Markdown.doc"""
   *(A::ClassField, B::ClassField) -> ClassField
-> The compositum of $a$ and $b$ as a (formal) class field.
+The compositum of $a$ and $b$ as a (formal) class field.
 """
 *(a::ClassField, b::ClassField) = compositum(a, b)
 
@@ -199,7 +199,7 @@ end
 
 @doc Markdown.doc"""
     intersect(a::ClassField, b::ClassField) -> ClassField
-> The intersect of $a$ and $b$ as a class field.
+The intersect of $a$ and $b$ as a class field.
 """
 function Base.intersect(a::ClassField, b::ClassField)
   @assert base_ring(a) == base_ring(b)
@@ -223,7 +223,7 @@ end
 
 @doc Markdown.doc"""
     issubfield(a::ClassField, b::ClassField) -> Bool
-> Determines of $a$ is a subfield of $b$.
+Determines of $a$ is a subfield of $b$.
 """
 function issubfield(a::ClassField, b::ClassField)
   @assert base_ring(a) == base_ring(b)
@@ -245,7 +245,7 @@ end
 
 @doc Markdown.doc"""
     ==(a::ClassField, b::ClassField)
-> Tests if $a$ and $b$ are equal.
+Tests if $a$ and $b$ are equal.
 """
 function ==(a::ClassField, b::ClassField)
   @assert base_ring(a) == base_ring(b)
@@ -273,8 +273,8 @@ end
 
 @doc Markdown.doc"""
     iscyclic(C::ClassField)
-> Tests if the (relative) automorphism group of $C$ is cyclic (by checking
-> the defining ideal group).
+Tests if the (relative) automorphism group of $C$ is cyclic (by checking
+the defining ideal group).
 """
 function iscyclic(C::ClassField)
   mp = C.quotientmap
@@ -289,8 +289,8 @@ end
 
 @doc Markdown.doc"""
     maximal_p_subfield(C::ClassField, p::Int)
-> Returns the class field corresponding to the maximal subextension of
-> prime power degree
+Returns the class field corresponding to the maximal subextension of
+prime power degree
 """
 function maximal_p_subfield(C::ClassField, p::Int)
   mg = C.quotientmap

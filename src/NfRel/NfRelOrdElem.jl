@@ -24,9 +24,9 @@ end
 ***
       (O::NfRelOrd)(a::RelativeElement, check::Bool = true) -> NfRelOrdElem
 
-> Given an element $a$ of the ambient number field of $\mathcal O$, this
-> function coerces the element into $\mathcal O$. If `check` is `true`
-> it will be checked that $a$ is contained in $\mathcal O$.
+Given an element $a$ of the ambient number field of $\mathcal O$, this
+function coerces the element into $\mathcal O$. If `check` is `true`
+it will be checked that $a$ is contained in $\mathcal O$.
 """
 function (O::NfRelOrd)(a::RelativeElement{T}, check::Bool = true) where T
   if check
@@ -42,10 +42,10 @@ end
 ***
       (O::NfRelOrd)(a::NfRelOrdElem, check::Bool = true) -> NfRelOrdElem
 
-> Given an element $a$ of some order in the ambient number field of
-> $\mathcal O$, this function coerces the element into $\mathcal O$.
-> If `check` is `true` it will be checked that $a$ is contained in
-> $\mathcal O$.
+Given an element $a$ of some order in the ambient number field of
+$\mathcal O$, this function coerces the element into $\mathcal O$.
+If `check` is `true` it will be checked that $a$ is contained in
+$\mathcal O$.
 """
 (O::NfRelOrd)(a::NfRelOrdElem{T}, check::Bool = true) where {T} = O(nf(O)(a.elem_in_nf), check)
 
@@ -69,7 +69,7 @@ end
 ***
       (O::NfRelOrd)() -> NfRelOrdElem
 
-> Constructs a new element of $\mathcal O$ which is set to $0$.
+Constructs a new element of $\mathcal O$ which is set to $0$.
 """
 (O::NfRelOrd{T, S})() where {T, S} = NfRelOrdElem{T}(O)
 
@@ -83,7 +83,7 @@ end
 ***
       parent(a::NfRelOrdElem) -> NfRelOrd
 
-> Returns the order of which $a$ is an element.
+Returns the order of which $a$ is an element.
 """
 parent(x::NfRelOrdElem{T}) where {T <: RelativeElement{S} where {S}} = x.parent
 
@@ -99,7 +99,7 @@ parent(x::NfRelOrdElem{nf_elem}) = x.parent
 ***
       elem_in_nf(a::NfRelOrdElem) -> RelativeElement
 
-> Returns the element $a$ considered as an element of the ambient number field.
+Returns the element $a$ considered as an element of the ambient number field.
 """
 
 function elem_in_nf(a::NfRelOrdElem)
@@ -137,7 +137,7 @@ end
 ***
       coordinates(a::NfRelOrdElem{T}) -> Vector{T}
 
-> Returns the coefficient vector of $a$.
+Returns the coefficient vector of $a$.
 """
 function coordinates(a::NfRelOrdElem, copy::Type{Val{T}} = Val{true}) where T
   assure_has_coord(a)
@@ -166,7 +166,7 @@ end
 ***
       zero(O::NfRelOrd) -> NfRelOrdElem
 
-> Returns the zero element of $\mathcal O$.
+Returns the zero element of $\mathcal O$.
 """
 zero(O::NfRelOrd) = O(0)
 
@@ -174,7 +174,7 @@ zero(O::NfRelOrd) = O(0)
 ***
       one(O::NfRelOrd) -> NfRelOrdElem
 
-> Returns the one element of $\mathcal O$.
+Returns the one element of $\mathcal O$.
 """
 one(O::NfRelOrd) = O(1)
 
@@ -182,7 +182,7 @@ one(O::NfRelOrd) = O(1)
 ***
       zero(a::NfRelOrdElem) -> NfRelOrdElem
 
-> Returns the zero element of the parent of $a$.
+Returns the zero element of the parent of $a$.
 """
 zero(a::NfRelOrdElem) = parent(a)(0)
 
@@ -190,7 +190,7 @@ zero(a::NfRelOrdElem) = parent(a)(0)
 ***
       one(a::NfRelOrdElem) -> NfRelOrdElem
 
-> Returns the one element of the parent of $a$.
+Returns the one element of the parent of $a$.
 """
 
 one(a::NfRelOrdElem) = parent(a)(1)
@@ -205,7 +205,7 @@ one(a::NfRelOrdElem) = parent(a)(1)
 ***
       isone(a::NfRelOrd) -> Bool
 
-> Tests if $a$ is one.
+Tests if $a$ is one.
 """
 
 isone(a::NfRelOrdElem) = isone(a.elem_in_nf)
@@ -214,7 +214,7 @@ isone(a::NfRelOrdElem) = isone(a.elem_in_nf)
 ***
       iszero(a::NfRelOrd) -> Bool
 
-> Tests if $a$ is zero.
+Tests if $a$ is zero.
 """
 
 iszero(a::NfRelOrdElem) = iszero(a.elem_in_nf)
@@ -239,7 +239,7 @@ end
 ***
       -(a::NfRelOrdElem) -> NfRelOrdElem
 
-> Returns the additive inverse of $a$.
+Returns the additive inverse of $a$.
 """
 function -(a::NfRelOrdElem)
   b = parent(a)()
@@ -261,7 +261,7 @@ end
 ***
       *(a::NfRelOrdElem, b::NfRelOrdElem) -> NfRelOrdElem
 
-> Returns $a \cdot b$.
+Returns $a \cdot b$.
 """
 function *(a::NfRelOrdElem, b::NfRelOrdElem)
   check_parent(a, b)
@@ -274,7 +274,7 @@ end
 ***
       +(a::NfRelOrdElem, b::NfRelOrdElem) -> NfRelOrdElem
 
-> Returns $a + b$.
+Returns $a + b$.
 """
 function +(a::NfRelOrdElem, b::NfRelOrdElem)
   check_parent(a, b)
@@ -291,7 +291,7 @@ end
 ***
       -(a::NfRelOrdElem, b::NfRelOrdElem) -> NfRelOrdElem
 
-> Returns $a - b$.
+Returns $a - b$.
 """
 function -(a::NfRelOrdElem, b::NfRelOrdElem)
   check_parent(a, b)
@@ -308,8 +308,8 @@ end
 ***
       divexact(a::NfRelOrdElem, b::NfRelOrdElem, check::Bool) -> NfRelOrdElem
 
-> Returns $a/b$. It is assumed that $a/b$ is an element of the same order
-> as $a$.
+Returns $a/b$. It is assumed that $a/b$ is an element of the same order
+as $a$.
 """
 function divexact(a::NfRelOrdElem, b::NfRelOrdElem, check::Bool = true)
   t = divexact(a.elem_in_nf, b.elem_in_nf)
@@ -378,7 +378,7 @@ end
 ***
     ^(a::NfRelOrdElem, b::Union{fmpz, Int}) -> NfRelOrdElem
 
-> Returns $a^b$.
+Returns $a^b$.
 """
 function ^(a::NfRelOrdElem, b::Union{fmpz, Int})
   c = parent(a)()
@@ -396,7 +396,7 @@ end
 ***
       tr(a::NfRelOrdElem{T}) -> T
 
-> Returns the trace of $a$.
+Returns the trace of $a$.
 """
 tr(a::NfRelOrdElem) = tr(a.elem_in_nf)
 
@@ -410,7 +410,7 @@ tr(a::NfRelOrdElem) = tr(a.elem_in_nf)
 ***
       norm(a::NfRelOrdElem{T}) -> T
 
-> Returns the norm of $a$.
+Returns the norm of $a$.
 """
 norm(a::NfRelOrdElem) = norm(a.elem_in_nf)
 

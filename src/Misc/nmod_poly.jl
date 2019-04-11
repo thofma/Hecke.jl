@@ -8,8 +8,8 @@ export rres, rresx
 ################################################################################
 @doc Markdown.doc"""
     resultant_ideal(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where S <: Union{fmpz, Integer} -> T
-> A generator for the ideal of the resultant of $f$ anf $g$ using a quadratic-time algorithm.
-> One of the two polynomials must be monic.
+A generator for the ideal of the resultant of $f$ anf $g$ using a quadratic-time algorithm.
+One of the two polynomials must be monic.
 """
 function resultant_ideal(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where S <: Union{fmpz, Integer}
   #The algorithm is the same as the resultant. We assume that one fo the 2 polynomials is monic. Under this assumption, at every
@@ -229,8 +229,8 @@ end
 @doc Markdown.doc"""
     xxgcd(a::ResElem{fmpz}, b::ResElem{fmpz}) -> g, e, f, u, v
     xxgcd(a::ResElem{Integer}, b::ResElem{Integer}) -> g, e, f, u, v
-> Coputes $g = \gcd(a, b)$, the Bezout coefficients, $e$, $f$ s.th.
-> $g = ea+fb$ and $u$, $v$ s.th. $ev-fu = 1$, $gu = a$ and $gv = b$
+Coputes $g = \gcd(a, b)$, the Bezout coefficients, $e$, $f$ s.th.
+$g = ea+fb$ and $u$, $v$ s.th. $ev-fu = 1$, $gu = a$ and $gv = b$
 """
 function xxgcd(a::ResElem{S}, b::ResElem{S}) where S <: Union{fmpz, Integer}
   g, e, f = gcdx(a, b)
@@ -307,8 +307,8 @@ end
 @doc Markdown.doc"""
     annihilator(a::ResElem{fmpz}) -> r
     annihilator(a::ResElem{Integer}) -> r
-> The annihilator of $a$, ie. a generator for the annihilator ideal
-> $\{x | xa = 0\} = \langle r\rangle$
+The annihilator of $a$, ie. a generator for the annihilator ideal
+$\{x | xa = 0\} = \langle r\rangle$
 """
 function annihilator(a::ResElem{T}) where T <: Union{Integer, fmpz}
   R = parent(a)
@@ -318,9 +318,9 @@ end
 
 @doc Markdown.doc"""
     isunit(f::Union{fmpz_mod_poly,nmod_poly}) -> Bool
-> Tests if $f$ is a unit in the polynomial ring, ie. if 
-> $f = u + n$ where $u$ is a unit in the coeff. ring
-> and $n$ is nilpotent.
+Tests if $f$ is a unit in the polynomial ring, ie. if 
+$f = u + n$ where $u$ is a unit in the coeff. ring
+and $n$ is nilpotent.
 """
 function Nemo.isunit(f::T) where T <: Union{fmpz_mod_poly,nmod_poly}
   if !isunit(constant_coefficient(f))
@@ -337,7 +337,7 @@ end
 @doc Markdown.doc"""
     isnilpotent(a::ResElem{fmpz}) -> Bool
     isnilpotent(a::ResElem{Integer}) -> Bool
-> Tests if $a$ is nilpotent.
+Tests if $a$ is nilpotent.
 """
 function isnilpotent(a::ResElem{T}) where T <: Union{Integer, fmpz}
   #a is nilpontent if it is divisible by all primes divising the modulus
@@ -578,8 +578,8 @@ end
 
 @doc Markdown.doc"""
     rresx(f::PolyElem{ResElem{fmpz}}, g::PolyElem{ResElem{fmpz}}) -> r, u, v
-> The reduced resultant $r$ and polynomials $u$ and $v$ s.th.
-> $r = uf+vg$ and $\langle r\rangle = \langle f, g\rangle\cap \mathbb Z$.
+The reduced resultant $r$ and polynomials $u$ and $v$ s.th.
+$r = uf+vg$ and $\langle r\rangle = \langle f, g\rangle\cap \mathbb Z$.
 """
 function rresx(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where S <: Union{fmpz, Integer}
   Nemo.check_parent(f, g)
@@ -818,8 +818,8 @@ end
 #Thus rres(f,g ) = rres(f, b).... and the division can continue
 @doc Markdown.doc"""
     rres(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where S <: Union{fmpz, Integer} -> T
-> The reduced resultant of $f$ and $g$ using a quadratic-time algorithm.
-> That is a generator for the $(f, g) \cap Z$
+The reduced resultant of $f$ and $g$ using a quadratic-time algorithm.
+That is a generator for the $(f, g) \cap Z$
 """
 function rres(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where S <: Union{fmpz, Integer}
   Nemo.check_parent(f, g)
@@ -834,7 +834,7 @@ end
 
 @doc Markdown.doc"""
     gcd_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where S <: Union{fmpz, Integer} -> T
-> The 'gcd' of $f$ anf $g$ using a quadratic-time algorithm.
+The 'gcd' of $f$ anf $g$ using a quadratic-time algorithm.
 """
 function gcd_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where S <: Union{fmpz, Integer}
   Nemo.check_parent(f, g)
@@ -871,7 +871,7 @@ end
 
 @doc Markdown.doc"""
     resultant_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where S <: Union{fmpz, Integer} -> T
-> The resultant of $f$ anf $g$ using a quadratic-time algorithm.
+The resultant of $f$ anf $g$ using a quadratic-time algorithm.
 """
 function resultant_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where S <: Union{fmpz, Integer}
   Nemo.check_parent(f, g)
@@ -1166,7 +1166,7 @@ end
 @doc Markdown.doc"""
     primsplit!(f::PolyElem{ResElem{fmpz}}) -> c, f
     primsplit!(f::PolyElem{ResElem{Integer}}) -> c, f
-> Computes the contents $c$ and the primitive part of $f$ destructively.   
+Computes the contents $c$ and the primitive part of $f$ destructively.   
 """
 function primsplit!(f::PolyElem{T}) where T <: ResElem{S} where S <: Union{fmpz, Integer}
   
@@ -1203,7 +1203,7 @@ end
 @doc Markdown.doc"""
     primsplit(f::PolyElem{ResElem{fmpz}}}) -> c, f
     primsplit(f::PolyElem{ResElem{Integer}}}) -> c, f
-> Computes the contents $c$ and the primitive part of $f$.
+Computes the contents $c$ and the primitive part of $f$.
 """
 function primsplit(f::PolyElem{T}) where T <: ResElem{S} where S <: Union{fmpz, Integer}
   g = deepcopy(f)

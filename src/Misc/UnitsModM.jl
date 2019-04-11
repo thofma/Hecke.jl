@@ -9,8 +9,8 @@ end
 @doc Markdown.doc"""
   isprimitive_root(x::Generic.Res{fmpz}, M::fmpz, fM::Dict{fmpz, Int64}) Bool
 
->  Given x in Z/MZ, the factorisation of M (in fM), decide if x is primitive.
->  Intrinsically, only makes sense if the units of Z/MZ are cyclic.
+ Given x in Z/MZ, the factorisation of M (in fM), decide if x is primitive.
+ Intrinsically, only makes sense if the units of Z/MZ are cyclic.
 """
 function isprimitive_root(x::Generic.Res{fmpz}, M::fmpz, fM::Fac{fmpz})
   for (p, l) in fM
@@ -49,7 +49,7 @@ end
 @doc Markdown.doc"""
   gen_mod_pk(p::fmpz, mod::fmpz=0) fmpz
 
->  Find an integer x s.th. x is a primtive root for all powers of the (odd) prime p. If mod is non zero, it finds a generator for Z/p^kZ modulo mod powers only.
+ Find an integer x s.th. x is a primtive root for all powers of the (odd) prime p. If mod is non zero, it finds a generator for Z/p^kZ modulo mod powers only.
 """
 function gen_mod_pk(p::fmpz, mod::fmpz=fmpz(0))
   @assert isodd(p)
@@ -106,7 +106,7 @@ end
 @doc Markdown.doc"""
   UnitGroup(R::Generic.ResRing{fmpz}) GrpAbFinGen, Map
 
->  The unit group of R = Z/nZ together with the apropriate map.
+ The unit group of R = Z/nZ together with the apropriate map.
 """
 function UnitGroup(R::Generic.ResRing{fmpz}, mod::fmpz=fmpz(0))
 
@@ -247,7 +247,7 @@ end
 @doc Markdown.doc"""
   solvemod(a::fmpz, b::fmpz, M::fmpz)
 
->  Finds x s.th. ax == b mod M.
+ Finds x s.th. ax == b mod M.
 """
 function solvemod(a::fmpz, b::fmpz, M::fmpz)
   #solve ax = b (mod M)
@@ -265,8 +265,8 @@ end
 @doc Markdown.doc"""
   disc_log_mod(a::fmpz, b::fmpz, M::fmpz)
 
->  Computes g s.th. a^g == b mod M. M has to be a power of an odd prime
->  and a a generator for the multiplicative group mod M
+ Computes g s.th. a^g == b mod M. M has to be a power of an odd prime
+ and a a generator for the multiplicative group mod M
 """
 function disc_log_mod(a::fmpz, b::fmpz, M::fmpz)
   fM = factor(M).fac
@@ -363,8 +363,8 @@ end
 @doc Markdown.doc"""
   disc_log_bs_gs{T}(a::Generic.Res{T}, b::Generic.Res{T}, o::fmpz)
 
->  Tries to find g s.th. a^g == b under the assumption that g <= o.
->  Uses Baby-Step-Giant-Step
+ Tries to find g s.th. a^g == b under the assumption that g <= o.
+ Uses Baby-Step-Giant-Step
 """
 function disc_log_bs_gs(a::Generic.Res{T}, b::Generic.Res{T}, o::fmpz) where {T <: Union{PolyElem, fmpz, fq_nmod_poly, fq_poly, nmod_poly}}
   b==1 && return fmpz(0)  
@@ -440,8 +440,8 @@ end
   disc_log_ph(a::Residue{fq_poly}, b::Residue{fq_poly}, o::fmpz, r::Int)
   disc_log_ph(a::Residue{nmod_poly}, b::Residue{nmod_poly}, o::fmpz, r::Int)
 
->  Tries to find g s.th. a^g == b under the assumption that ord(a) | o^r
->  Uses Pohlig-Hellmann and Baby-Step-Giant-Step for the size(o) steps.
+ Tries to find g s.th. a^g == b under the assumption that ord(a) | o^r
+ Uses Pohlig-Hellmann and Baby-Step-Giant-Step for the size(o) steps.
   """
 function disc_log_ph(a::Generic.Res{T}, b::Generic.Res{T}, o::fmpz, r::Int) where {T <: Union{PolyElem, fmpz, fq_nmod_poly, fq_poly, nmod_poly}}
   #searches for g sth. a^g = b
