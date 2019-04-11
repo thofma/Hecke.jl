@@ -193,6 +193,9 @@ end
 ################################################################################
 
 function inv(f::GrpAbFinGenMap)
+  if isdefined(f, :imap)
+    return hom(codomain(f), domain(f), f.imap, f.map)
+  end
   if !isinjective(f)
     error("The map is not invertible")
   end
@@ -354,14 +357,17 @@ function compose(f::GrpAbFinGenMap, g::GrpAbFinGenMap)
   M = f.map*g.map
   C = codomain(g)
   if issnf(C)
-    for i = 1:nrows(M)
-      for j = 1:ncols(M)
+    for j = 1:ncols(M)
+      if iszero(C.snf[j])
+        break
+      end
+      for i = 1:nrows(M)
         M[i, j] = mod(M[i, j], C.snf[j])
       end
     end
   else
     assure_has_hnf(C)
-    reduce_mod_hnf!(M, C.hnf)
+    reduce_mod_hnf_ur!(M, C.hnf)
   end
   return hom(domain(f), codomain(g), M, check = false)
 

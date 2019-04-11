@@ -351,6 +351,56 @@ function minimum(a::fmpz_mat)
   return r
 end
 
+################################################################################
+#
+#  Reduce mod hnf
+#
+################################################################################
+
+# H must be in upper right HNF form
+function reduce_mod_hnf_ur!(a::fmpz_mat, H::fmpz_mat)
+  for c = 1:nrows(a)
+    j = 1
+    for i=1:min(nrows(H), ncols(H))
+      while j <= ncols(H) && iszero(H[i, j])
+        j += 1
+      end
+      if j > ncols(H)
+        break
+      end
+      q = fdiv(a[c, j], H[i, j])
+      if iszero(q)
+        continue
+      end
+      for k=j:ncols(a)
+        a[c, k] = a[c, k] - q * H[i, k]
+      end
+    end
+  end
+  return nothing
+end
+
+function reduce_mod_hnf_ll!(a::fmpz_mat, H::fmpz_mat)
+  for c = 1:nrows(a)
+    j = ncols(H)
+    for i = nrows(H):-1:1
+      while j > 0 && iszero(H[i, j])
+        j -= 1
+      end
+      if iszero(j)
+        break
+      end
+      q = fdiv(a[c, j], H[i, j])
+      if iszero(q)
+        continue
+      end
+      for k = 1:j
+        a[c, k] = a[c, k] - q * H[i, k]
+      end
+    end
+  end
+  return nothing
+end
 
 ################################################################################
 #

@@ -226,12 +226,11 @@ function crt_inv_tree!(res::Array{T,1}, a::T, c::crt_env{T}) where T
 end
 
 @doc Markdown.doc"""
-***
-   crt_inv(a::T, crt_env{T}) -> Array{T, 1}
+    crt_inv(a::T, crt_env{T}) -> Array{T, 1}
 
-Given a \code{crt_env} and an element a, return
+Given a $\code{crt_env}$ and an element a, return
 the modular data $a \bmod pr_i$ for all $i$.
-This is essentially the inverse to the \code{crt} function.  
+This is essentially the inverse to the $\code{crt}$ function.  
 """
 function crt_inv(a::T, c::crt_env{T}) where T
   res = Array{T}(undef, c.n)

@@ -61,7 +61,7 @@ end
 
 function elem_gen(A::GrpAbFinGen, a::fmpz_mat)
   assure_has_hnf(A)
-  reduce_mod_hnf!(a, A.hnf)
+  reduce_mod_hnf_ur!(a, A.hnf)
   z = GrpAbFinGenElem()
   z.parent = A
   z.coeff = a
@@ -481,30 +481,3 @@ Base.IteratorSize(::Type{GrpAbFinGen}) = Base.HasLength()
 Base.length(G::GrpAbFinGen) = Int(order(G))
 
 Base.eltype(::Type{GrpAbFinGen}) = GrpAbFinGenElem
-
-################################################################################
-#
-#  Helper
-#
-################################################################################
-
-# Helper function
-# H must be in upper right HNF form
-function reduce_mod_hnf!(a::fmpz_mat, H::fmpz_mat)
-  for c = 1:nrows(a)
-    j = 1
-    for i=1:min(nrows(H), ncols(H))
-      while j <= ncols(H) && iszero(H[i, j])
-        j+=1
-      end
-      if j > ncols(H)
-        break
-      end
-      q = fdiv(a[c, j], H[i, j])
-      for k=j:ncols(a)
-        a[c, k] = a[c, k] - q * H[i, k]
-      end
-    end
-  end
-  return nothing
-end

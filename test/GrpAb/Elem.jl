@@ -185,17 +185,17 @@
     @testset "Reduce mod Hermite normal form" begin
       a = FlintZZ[21 32 43]
       H = FlintZZ[2 0 0 ; 0 3 0 ; 0 0 5]
-      Hecke.reduce_mod_hnf!(a, H)
+      Hecke.reduce_mod_hnf_ur!(a, H)
       @test a == FlintZZ[1 2 3]
 
       a = FlintZZ[1 3 42]
       H = FlintZZ[1 1 14 ; 0 2 11 ; 0 0 17]
-      Hecke.reduce_mod_hnf!(a, H)
+      Hecke.reduce_mod_hnf_ur!(a, H)
       @test a == FlintZZ[0 0 0]
 
       a = FlintZZ[0 0 1]
       H = FlintZZ[1 32 62 ; 0 45 90 ; 0 0 0]
-      Hecke.reduce_mod_hnf!(a, H)
+      Hecke.reduce_mod_hnf_ur!(a, H)
       @test a == FlintZZ[0 0 1]
     end
     

@@ -784,7 +784,7 @@ function factor(f::Generic.Poly{NfRelElem{T}}) where T
 
   fa = map_poly(PolynomialRing(Ka, "T", cached=false)[1], rel_abs, f)
   lf = factor(fa)
-  res = Fac(map_poly(parent(f), inv(rel_abs), lf.unit), Dict(map_poly(parent(f), inv(rel_abs), k)=>v for (k,v) = lf.fac))
+  res = Fac(map_poly(parent(f), pseudo_inv(rel_abs), lf.unit), Dict(map_poly(parent(f), pseudo_inv(rel_abs), k)=>v for (k,v) = lf.fac))
 
   return res
 end
