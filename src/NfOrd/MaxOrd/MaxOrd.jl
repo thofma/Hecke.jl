@@ -644,7 +644,7 @@ function pradical_frobenius(O::NfAbsOrd, p::Union{Integer, fmpz})
   B = basis(O, copy = false)
   for i in 1:d
     t = powermod(B[i], p^j, p)
-    ar = elem_in_basis(t)
+    ar = coordinates(t)
     for k in 1:d
       A[k, i] = ar[k]
     end

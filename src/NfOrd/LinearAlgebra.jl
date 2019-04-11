@@ -14,7 +14,7 @@ function _max_max(M::Generic.Mat{NfOrdElem})
   for i in 1:nrows(M)
     for j in 1:ncols(M)
       if !iszero(M[i, j])
-        v = elem_in_basis(M[i, j])
+        v = coordinates(M[i, j])
         for k in degree(base_ring(M))
           d = max(d, abs(v[k]))
         end
@@ -175,7 +175,7 @@ end
 > Reduces the coefficients of $a$ modulo $m$, using the symmetric residue system.    
 """
 function mod_sym(x::NfOrdElem, m)
-  z = elem_in_basis(x)
+  z = coordinates(x)
   for i in 1:length(z)
     z[i] = mod(z[i], m)
     if 2*z[i] > m
@@ -186,7 +186,7 @@ function mod_sym(x::NfOrdElem, m)
 end
 
 function _basis_coord_nonneg(x::NfOrdElem)
-  b = elem_in_basis(x)
+  b = coordinates(x)
   for i in 1:length(b)
     if b[i] < 0
       return false
@@ -650,13 +650,13 @@ end
 
 (::NfOrdQuoRing)(a::NfOrdQuoRingElem) = a
 
-_check(a) = a.has_coord ? dot(a.elem_in_basis, basis(parent(a))) == a : true
+_check(a) = a.has_coord ? dot(a.coordinates, basis(parent(a))) == a : true
 
 function _check(m::Generic.Mat{NfOrdElem})
   for i in 1:nrows(m)
     for j in 1:ncols(m)
       if !_check(m[i, j].elem)
-        println("$i $j not consistent: $(m[i, j]) : $(m[i, j].elem_in_basis)")
+        println("$i $j not consistent: $(m[i, j]) : $(m[i, j].coordinates)")
         error("dasdsad")
       end
     end
@@ -667,7 +667,7 @@ function _check(m::Generic.Mat{NfOrdQuoRingElem})
   for i in 1:nrows(m)
     for j in 1:ncols(m)
       if !_check(m[i, j].elem)
-        println("$i $j not consistent: $(m[i, j].elem) : $(m[i, j].elem.elem_in_basis)")
+        println("$i $j not consistent: $(m[i, j].elem) : $(m[i, j].elem.coordinates)")
         error("dasdsad")
       end
     end

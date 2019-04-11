@@ -281,7 +281,7 @@ end
 
 mutable struct AlgAssAbsOrdElem{S, T} <: RingElem
   elem_in_algebra::T
-  elem_in_basis::Vector{fmpz}
+  coordinates::Vector{fmpz}
   has_coord::Bool # needed for mul!
   parent::AlgAssAbsOrd{S, T}
 
@@ -289,7 +289,7 @@ mutable struct AlgAssAbsOrdElem{S, T} <: RingElem
     z = new{S, T}()
     z.parent = O
     z.elem_in_algebra = algebra(O)()
-    z.elem_in_basis = Vector{fmpz}(undef, degree(O))
+    z.coordinates = Vector{fmpz}(undef, degree(O))
     z.has_coord = false
     return z
   end
@@ -298,7 +298,7 @@ mutable struct AlgAssAbsOrdElem{S, T} <: RingElem
     z = new{S, T}()
     z.elem_in_algebra = a
     z.parent = O
-    z.elem_in_basis = Vector{fmpz}(undef, degree(O))
+    z.coordinates = Vector{fmpz}(undef, degree(O))
     z.has_coord = false
     return z
   end
@@ -306,7 +306,7 @@ mutable struct AlgAssAbsOrdElem{S, T} <: RingElem
   function AlgAssAbsOrdElem{S, T}(O::AlgAssAbsOrd{S, T}, arr::Vector{fmpz}) where {S, T}
     z = new{S, T}()
     z.elem_in_algebra = dot(O.basis_alg, arr)
-    z.elem_in_basis = arr
+    z.coordinates = arr
     z.parent = O
     z.has_coord = true
     return z
@@ -316,7 +316,7 @@ mutable struct AlgAssAbsOrdElem{S, T} <: RingElem
     z = new{S, T}()
     z.parent = O
     z.elem_in_algebra = a
-    z.elem_in_basis = arr
+    z.coordinates = arr
     z.has_coord = true
     return z
   end

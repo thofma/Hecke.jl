@@ -354,7 +354,7 @@ function simplify(A::NfOrdFracIdl)
 
   if has_2_elem(A.num)
     ZK = order(A)
-    g = Base.reduce(gcd, elem_in_basis(ZK(A.num.gen_two)))
+    g = Base.reduce(gcd, coordinates(ZK(A.num.gen_two)))
     g = gcd(g, A.den)
     g = gcd(g, A.num.gen_one)
   else  

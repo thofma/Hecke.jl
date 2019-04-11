@@ -408,7 +408,7 @@ function _1_plus_pu_plus_q_mod_1_plus_pv_plus_q(puq::AlgAssAbsOrdIdl, pvq::AlgAs
   M = basis_mat_inv(puq, copy = false)*StoG.imap
   function disc_log(x::AlgAssAbsOrdElem)
     y = mod(x - one(O), pvq)
-    y_fakemat = FakeFmpqMat(matrix(FlintZZ, 1, degree(O), elem_in_basis(y)), fmpz(1))
+    y_fakemat = FakeFmpqMat(matrix(FlintZZ, 1, degree(O), coordinates(y)), fmpz(1))
     mul!(y_fakemat, y_fakemat, M)
     denominator(y_fakemat) != 1 && error("Element is in the ideal")
     return vec(Array(numerator(y_fakemat)))

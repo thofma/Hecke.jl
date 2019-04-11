@@ -33,7 +33,7 @@
 ################################################################################
 
 export ==, +, -, *, ^, add!, conjugates_arb, conjugates_arb_log, discriminant,
-       divexact, elem_in_nf, elem_in_basis, isone, iszero, minkowski_map, mod,
+       divexact, elem_in_nf, coordinates, isone, iszero, minkowski_map, mod,
        mul!, norm, one, parent, powermod, rand, rand!, representation_matrix,
        show, trace, t2, zero
 
@@ -48,7 +48,7 @@ function Base.deepcopy_internal(x::NfAbsOrdElem{S, T}, dict::IdDict) where {S, T
   z.elem_in_nf = Base.deepcopy_internal(x.elem_in_nf, dict)
   if x.has_coord
     z.has_coord = true
-    z.elem_in_basis = Base.deepcopy_internal(x.elem_in_basis, dict)::Vector{fmpz}
+    z.coordinates = Base.deepcopy_internal(x.coordinates, dict)::Vector{fmpz}
   end
   return z
 end
@@ -212,7 +212,7 @@ function assure_has_coord(a::NfAbsOrdElem)
   else
     (x, y) = _check_elem_in_order(a.elem_in_nf, parent(a))
     !x && error("Not a valid order element")
-    a.elem_in_basis = y
+    a.coordinates = y
     a.has_coord = true
     return nothing
   end
@@ -226,17 +226,17 @@ end
 
 @doc Markdown.doc"""
 ***
-    elem_in_basis(a::NfAbsOrdElem) -> Array{fmpz, 1}
+    coordinates(a::NfAbsOrdElem) -> Array{fmpz, 1}
 
 > Returns the coefficient vector of $a$.
 """
-function elem_in_basis(a::NfAbsOrdElem; copy::Bool = true)
+function coordinates(a::NfAbsOrdElem; copy::Bool = true)
   assure_has_coord(a)
-  @hassert :NfOrd 2 a == dot(a.elem_in_basis, basis(parent(a)))
+  @hassert :NfOrd 2 a == dot(a.coordinates, basis(parent(a)))
   if copy
-    return deepcopy(a.elem_in_basis)
+    return deepcopy(a.coordinates)
   else
-    return a.elem_in_basis
+    return a.coordinates
   end
 end
 
@@ -404,7 +404,7 @@ function -(x::NfAbsOrdElem)
   z = parent(x)()
   z.elem_in_nf = - x.elem_in_nf
   if x.has_coord
-    z.elem_in_basis = map(y -> -y, x.elem_in_basis)
+    z.coordinates = map(y -> -y, x.coordinates)
     z.has_coord = true
   end
   return z
@@ -440,8 +440,8 @@ function +(x::NfAbsOrdElem, y::NfAbsOrdElem)
   z = parent(x)()
   z.elem_in_nf = x.elem_in_nf + y.elem_in_nf
   if x.has_coord && y.has_coord
-    z.elem_in_basis =
-      [ x.elem_in_basis[i] + y.elem_in_basis[i] for i = 1:degree(parent(x))]
+    z.coordinates =
+      [ x.coordinates[i] + y.coordinates[i] for i = 1:degree(parent(x))]
     z.has_coord = true
   end
   return z
@@ -458,8 +458,8 @@ function -(x::NfAbsOrdElem, y::NfAbsOrdElem)
   z = parent(x)()
   z.elem_in_nf = x.elem_in_nf - y.elem_in_nf
   if x.has_coord && y.has_coord
-    z.elem_in_basis =
-      [ x.elem_in_basis[i] - y.elem_in_basis[i] for i = 1:degree(parent(x))]
+    z.coordinates =
+      [ x.coordinates[i] - y.coordinates[i] for i = 1:degree(parent(x))]
     z.has_coord = true
   end
   return z
@@ -495,7 +495,7 @@ function *(x::NfAbsOrdElem, y::Integer)
   z = parent(x)()
   z.elem_in_nf = x.elem_in_nf * y
   if x.has_coord
-    z.elem_in_basis = map(z -> y*z, x.elem_in_basis)
+    z.coordinates = map(z -> y*z, x.coordinates)
     z.has_coord = true
   end
   return z
@@ -507,7 +507,7 @@ function *(x::NfAbsOrdElem, y::fmpz)
   z = parent(x)()
   z.elem_in_nf = x.elem_in_nf * y
   if x.has_coord
-    z.elem_in_basis = map(z -> y*z, x.elem_in_basis)
+    z.coordinates = map(z -> y*z, x.coordinates)
     z.has_coord = true
   end
   return z
@@ -609,7 +609,7 @@ function mod(a::NfAbsOrdElem, m::Union{fmpz, Int})
   d = degree(parent(a))
   ar = Vector{fmpz}(undef, d)
   for i in 1:d
-    ar[i] = mod(a.elem_in_basis[i], m)
+    ar[i] = mod(a.coordinates[i], m)
   end
   return NfAbsOrdElem(parent(a), ar) # avoid making a copy of ar
 end
@@ -901,7 +901,7 @@ function addeq!(z::NfAbsOrdElem, x::NfAbsOrdElem)
   addeq!(z.elem_in_nf, x.elem_in_nf)
   if x.has_coord && z.has_coord
     for i in 1:degree(parent(z))
-      add!(z.elem_in_basis[i], z.elem_in_basis[i], x.elem_in_basis[i])
+      add!(z.coordinates[i], z.coordinates[i], x.coordinates[i])
     end
   end
   return z

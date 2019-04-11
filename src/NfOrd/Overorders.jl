@@ -69,7 +69,7 @@ mutable struct GrpAbFinGenToNfOrdQuoNfOrd <: Map{GrpAbFinGen, NfOrd, HeckeMap, G
     K = nf(O)
     B = zero_matrix(FlintZZ, d, d)
     for i in 1:d
-      v = elem_in_basis(M(elem_in_nf(basis(O)[i])))
+      v = coordinates(M(elem_in_nf(basis(O)[i])))
       for j in 1:d
         B[i, j] = v[j]
       end
@@ -688,7 +688,7 @@ function overorders_naive(O::NfOrd, M::NfOrd = maximal_order(nf(O)))
   K = nf(O)
   B = zero_matrix(FlintZZ, d, d)
   for i in 1:d
-    v = elem_in_basis(M(elem_in_nf(basis(O)[i])))
+    v = coordinates(M(elem_in_nf(basis(O)[i])))
     for j in 1:d
       B[i, j] = v[j]
     end
@@ -808,7 +808,7 @@ function _overorders_meataxe(O::NfOrd, M::NfOrd)
   B = zero_matrix(FlintZZ, d, d)
   orders = Vector{typeof(O)}()
   for i in 1:d
-    v = elem_in_basis(M(elem_in_nf(basis(O)[i])))
+    v = coordinates(M(elem_in_nf(basis(O)[i])))
     for j in 1:d
       B[i, j] = v[j]
     end
@@ -906,7 +906,7 @@ function poverorders_meataxe(O::NfOrd, p::fmpz, N::NfOrd = pmaximal_overorder(O,
   #B = zero_matrix(FlintZZ, d, d)
   #orders = Vector{typeof(O)}()
   #for i in 1:d
-  #  v = elem_in_basis(M(elem_in_nf(basis(O)[i])))
+  #  v = coordinates(M(elem_in_nf(basis(O)[i])))
   #  for j in 1:d
   #    B[i, j] = v[j]
   #  end
@@ -1284,7 +1284,7 @@ function abelian_group(Q::NfOrdQuoRing)
   S, mS = snf(A)
   B = basis(Q.base_ring, copy = false)
   f = a -> begin aa = mS(a); Q(sum(aa.coeff[i] * B[i] for i in 1:degree(Q.base_ring))) end
-  g = b -> mS\A(elem_in_basis(b.elem))
+  g = b -> mS\A(coordinates(b.elem))
   return S, f, g
 end
 
@@ -1358,7 +1358,7 @@ function isisomorphic(Q1::NfOrdQuoRing, Q2::NfOrdQuoRing)
     if multiplicative
       M = Array{fmpz}(degree(O1), degree(O2))
       for i in 1:degree(O1)
-        v = elem_in_basis(Q2_mA(h(Q1_mA_inv(Q1(basis_O1[i])))).elem)
+        v = coordinates(Q2_mA(h(Q1_mA_inv(Q1(basis_O1[i])))).elem)
         for j in 1:degree(O2)
           M[i, j] = v[j]
         end

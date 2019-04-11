@@ -464,7 +464,7 @@ function _pu_mod_pv(pu::NfOrdIdl, pv::NfOrdIdl)
   #Disclog  
   M = basis_mat_inv(pu, copy = false)*mS.imap
   function disclog(x::NfOrdElem)
-    x_fakemat = FakeFmpqMat(matrix(FlintZZ, 1, degree(O), elem_in_basis(x, copy = false)))
+    x_fakemat = FakeFmpqMat(matrix(FlintZZ, 1, degree(O), coordinates(x, copy = false)))
     mul!(x_fakemat, x_fakemat, M)
     denominator(x_fakemat) != 1 && error("Element is in the ideal")
     return vec(Array(x_fakemat.num))

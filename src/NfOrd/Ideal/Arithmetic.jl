@@ -142,7 +142,7 @@ function mul_gen(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
       mul!(t, X[i], Y[j])
       assure_has_coord(t)
       for k in 1:d
-        z[(i - 1)*d + j, k] = t.elem_in_basis[k]
+        z[(i - 1)*d + j, k] = t.coordinates[k]
       end
     end
   end
@@ -628,7 +628,7 @@ function idempotents(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
 
   V = O.tidempotents
 
-  u = elem_in_basis(one(O))
+  u = coordinates(one(O))
 
   V[1, 1] = 1
 
@@ -819,7 +819,7 @@ function extend(A::NfOrdIdl, O::NfOrd)
     for j = 1:d
       mul!(t, X[i], Y[j])
       for k = 1:d
-        M[(i - 1)*d + j, k] = elem_in_basis(t, copy = false)[k]
+        M[(i - 1)*d + j, k] = coordinates(t, copy = false)[k]
       end
     end
   end

@@ -284,7 +284,7 @@ function ideal_from_z_gens(O::NfOrd, b::Vector{NfOrdElem}, check::Bool = false)
 
   M = zero_matrix(FlintZZ, length(b), d)
   for i = 1:length(b)
-    el = elem_in_basis(b[i])
+    el = coordinates(b[i])
     for j = 1:d
       M[i, j] = el[j]
     end
@@ -795,7 +795,7 @@ function in(x::NfAbsOrdElem, y::NfAbsOrdIdl)
 end
 
 function containment_by_matrices(x::NfAbsOrdElem, y::NfAbsOrdIdl)
-  v = matrix(FlintZZ, 1, degree(parent(x)), elem_in_basis(x, copy = false))
+  v = matrix(FlintZZ, 1, degree(parent(x)), coordinates(x, copy = false))
   t = v*basis_mat_inv(y, copy = false)
   return isone(t.den) 
 end
@@ -1425,7 +1425,7 @@ function mod(x::S, y::T) where { S <: Union{NfAbsOrdElem, AlgAssAbsOrdElem}, T <
   # !!! This must be changed as soon as HNF has a different shape
 
   O = order(y)
-  a = elem_in_basis(x)
+  a = coordinates(x)
 
   if isdefined(y, :princ_gen_special) && y.princ_gen_special[1] != 0
     for i in 1:length(a)
@@ -1452,7 +1452,7 @@ function mod(x::NfOrdElem, y::NfAbsOrdIdl, preinv::Array{fmpz_preinvn_struct, 1}
   # !!! This must be changed as soon as HNF has a different shape
 
   O = order(y)
-  a = elem_in_basis(x) # this is already a copy
+  a = coordinates(x) # this is already a copy
 
   if isdefined(y, :princ_gen_special) && y.princ_gen_special[1] != 0
     for i in 1:length(a)
@@ -1469,7 +1469,7 @@ function mod(x::Union{NfOrdElem, AlgAssAbsOrdElem}, c::Union{fmpz_mat, Array{fmp
   # !!! This must be changed as soon as HNF has a different shape
 
   O = parent(x)
-  a = elem_in_basis(x) # this is already a copy
+  a = coordinates(x) # this is already a copy
 
   q = fmpz()
   r = fmpz()
@@ -1489,7 +1489,7 @@ function mod!(x::NfOrdElem, c::Union{fmpz_mat, Array{fmpz, 2}}, preinv::Array{fm
   # !!! This must be changed as soon as HNF has a different shape
 
   O = parent(x)
-  a = elem_in_basis(x, copy = false) # this is already a copy
+  a = coordinates(x, copy = false) # this is already a copy
 
   q = fmpz()
   r = fmpz()
@@ -1519,7 +1519,7 @@ end
 function mod!(x::AlgAssAbsOrdElem, c::Union{fmpz_mat, Array{fmpz, 2}}, preinv::Array{fmpz_preinvn_struct, 1})
 
   O = parent(x)
-  a = elem_in_basis(x, copy = false)
+  a = coordinates(x, copy = false)
 
   q = fmpz()
   r = fmpz()
@@ -1546,7 +1546,7 @@ end
 
 function mod(x::Union{NfOrdElem, AlgAssAbsOrdElem}, Q::AbsOrdQuoRing)
   O = parent(x)
-  a = elem_in_basis(x) # this is already a copy
+  a = coordinates(x) # this is already a copy
 
   y = ideal(Q)
 
@@ -1562,7 +1562,7 @@ end
 
 function mod!(x::Union{NfOrdElem, AlgAssAbsOrdElem}, Q::AbsOrdQuoRing)
   O = parent(x)
-  a = elem_in_basis(x, copy = false) # this is already a copy
+  a = coordinates(x, copy = false) # this is already a copy
 
   y = ideal(Q)
 

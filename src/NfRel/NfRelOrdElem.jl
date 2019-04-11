@@ -9,7 +9,7 @@ function Base.deepcopy_internal(x::NfRelOrdElem, dict::IdDict)
   z.elem_in_nf = Base.deepcopy_internal(x.elem_in_nf, dict)
   if x.has_coord
     z.has_coord = true
-    z.elem_in_basis = Base.deepcopy_internal(x.elem_in_basis, dict)
+    z.coordinates = Base.deepcopy_internal(x.coordinates, dict)
   end
   return z
 end
@@ -56,7 +56,7 @@ function (O::NfRelOrd)(a::Vector{T}, check::Bool = true) where T
     t += a[i]*basis[i]
   end
   s = O(t, check)
-  s.elem_in_basis = a
+  s.coordinates = a
   s.has_coord = true
   return s
 end
@@ -121,7 +121,7 @@ function assure_has_coord(a::NfRelOrdElem)
   else
     x, y = _check_elem_in_order(a.elem_in_nf, parent(a))
     !x && error("Not a valid order element.")
-    a.elem_in_basis = y
+    a.coordinates = y
     a.has_coord = true
     return nothing
   end
@@ -135,16 +135,16 @@ end
 
 @doc Markdown.doc"""
 ***
-      elem_in_basis(a::NfRelOrdElem{T}) -> Vector{T}
+      coordinates(a::NfRelOrdElem{T}) -> Vector{T}
 
 > Returns the coefficient vector of $a$.
 """
-function elem_in_basis(a::NfRelOrdElem, copy::Type{Val{T}} = Val{true}) where T
+function coordinates(a::NfRelOrdElem, copy::Type{Val{T}} = Val{true}) where T
   assure_has_coord(a)
   if copy == Val{true}
-    return deepcopy(a.elem_in_basis)
+    return deepcopy(a.coordinates)
   else
-    return a.elem_in_basis
+    return a.coordinates
   end
 end
 
@@ -245,7 +245,7 @@ function -(a::NfRelOrdElem)
   b = parent(a)()
   b.elem_in_nf = - a.elem_in_nf
   if a.has_coord
-    b.elem_in_basis = map(x -> -x, a.elem_in_basis)
+    b.coordinates = map(x -> -x, a.coordinates)
     b.has_coord = true
   end
   return b
@@ -281,7 +281,7 @@ function +(a::NfRelOrdElem, b::NfRelOrdElem)
   c = parent(a)()
   c.elem_in_nf = a.elem_in_nf + b.elem_in_nf
   if a.has_coord && b.has_coord
-    c.elem_in_basis = [ a.elem_in_basis[i] + b.elem_in_basis[i] for i = 1:degree(parent(a))]
+    c.coordinates = [ a.coordinates[i] + b.coordinates[i] for i = 1:degree(parent(a))]
     c.has_coord = true
   end
   return c
@@ -298,7 +298,7 @@ function -(a::NfRelOrdElem, b::NfRelOrdElem)
   c = parent(a)()
   c.elem_in_nf = a.elem_in_nf - b.elem_in_nf
   if a.has_coord && b.has_coord
-    c.elem_in_basis = [ a.elem_in_basis[i] - b.elem_in_basis[i] for i = 1:degree(parent(a))]
+    c.coordinates = [ a.coordinates[i] - b.coordinates[i] for i = 1:degree(parent(a))]
     c.has_coord = true
   end
   return c
@@ -340,7 +340,7 @@ for T in [Integer, fmpz]
       c = parent(a)()
       c.elem_in_nf = a.elem_in_nf*b
       if a.has_coord
-        c.elem_in_basis = map(x -> b*x, a.elem_in_basis)
+        c.coordinates = map(x -> b*x, a.coordinates)
         c.has_coord = true
       end
       return c

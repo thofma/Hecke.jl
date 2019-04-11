@@ -362,7 +362,7 @@ function isdivisible(x::AbsOrdQuoRingElem, y::AbsOrdQuoRingElem)
 
   V[1, 1] = 1
 
-  a = elem_in_basis(x.elem, copy = false)
+  a = coordinates(x.elem, copy = false)
 
   for i in 1:d
     V[1, 1 + i] = a[i]
@@ -618,7 +618,7 @@ function xxgcd(x::NfOrdQuoRingElem, y::NfOrdQuoRingElem)
   # ( 0  M_f  0  I )
   # ( 0  M_I  0  0 )
 
-  a = elem_in_basis(one(O), copy = false)
+  a = coordinates(one(O), copy = false)
 
   V = parent(x).tmp_xxgcd
 

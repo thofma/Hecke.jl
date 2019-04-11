@@ -756,7 +756,7 @@ function pradical(O::NfRelOrd, P::Union{NfOrdIdl, NfRelOrdIdl})
     k = clog(fmpz(degree(Oint)), q)
     for i = 1:d
       t = Oint((L(K(elts_with_val[i]))*pbint[i][1])^(q^k))
-      ar = elem_in_basis(t)
+      ar = coordinates(t)
       for j = 1:d
         A[j, i] = mmF(divexact(ar[j], K(elts_with_val[j])))
       end
@@ -959,7 +959,7 @@ function prime_dec_index(O::NfRelOrd, p::Union{NfOrdIdl, NfRelOrdIdl})
     ker = left_kernel_basis(M)
     N = basis_pmat(Ip)
     for i = 1:length(ker)
-      b = elem_in_basis(AtoO(A(ker[i])))
+      b = coordinates(AtoO(A(ker[i])))
       for j = 1:degree(O)
         m.matrix[1, j] = b[j]
       end
@@ -985,7 +985,7 @@ end
 
 function mod(a::NfRelOrdElem, I::NfRelOrdIdl)
   O = order(I)
-  b = elem_in_basis(a)
+  b = coordinates(a)
   PM = basis_pmat(I, copy = false) # PM is assumed to be in pseudo hnf
   for i = degree(O):-1:1
     t = b[i] - mod(b[i], PM.coeffs[i])
@@ -1141,7 +1141,7 @@ function idempotents(x::NfRelOrdIdl{T, S}, y::NfRelOrdIdl{T, S}) where {T, S}
   M = zero_matrix(K, 2*d + 1, 2*d + 1)
 
   M[1, 1] = K(1)
-  z = elem_in_basis(one(O))
+  z = coordinates(one(O))
   for i = 1:d
     M[1, i + 1] = z[i]
   end
@@ -1202,7 +1202,7 @@ function in(x::NfRelOrdElem, y::NfRelOrdIdl)
   parent(x) !== order(y) && error("Order of element and ideal must be equal")
   O = order(y)
   b_pmat = basis_pmat(y, copy = false)
-  t = transpose(matrix(base_ring(nf(O)), degree(O), 1, elem_in_basis(x)))
+  t = transpose(matrix(base_ring(nf(O)), degree(O), 1, coordinates(x)))
   t = t*basis_mat_inv(y, copy = false)
   for i = 1:degree(O)
     if !(t[1, i] in b_pmat.coeffs[i])

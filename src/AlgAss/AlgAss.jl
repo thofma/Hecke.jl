@@ -167,7 +167,7 @@ function AlgAss(O::Union{NfAbsOrd, AlgAssAbsOrd}, I::Union{NfAbsOrdIdl, AlgAssAb
   Fp = GF(p, cached=false)
   B = zero_matrix(Fp, n, n)
   for i = 1:n
-    _b = elem_in_basis(BOmod[i], copy = false)
+    _b = coordinates(BOmod[i], copy = false)
     for j = 1:n
       B[i, j] = Fp(_b[j])
     end
@@ -202,7 +202,7 @@ function AlgAss(O::Union{NfAbsOrd, AlgAssAbsOrd}, I::Union{NfAbsOrdIdl, AlgAssAb
         continue
       end
       mul!(aux, bbasis[i], bbasis[j])
-      c = elem_in_basis(mod(aux, I))
+      c = coordinates(mod(aux, I))
       for k = 1:n
         d[perm[k], 1] = c[k]
       end
@@ -232,7 +232,7 @@ function AlgAss(O::Union{NfAbsOrd, AlgAssAbsOrd}, I::Union{NfAbsOrdIdl, AlgAssAb
 
   let n = n, r = r, d = d, I = I, A = A, L = L, U = U, perm = perm
     function _image(a::Union{NfAbsOrdElem, AlgAssAbsOrdElem})
-      c = elem_in_basis(mod(a, I))
+      c = coordinates(mod(a, I))
       for k = 1:n
         d[perm[k], 1] = c[k]
       end

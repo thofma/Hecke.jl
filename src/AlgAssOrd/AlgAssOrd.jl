@@ -221,7 +221,7 @@ function basis_mat(A::Array{AlgAssAbsOrdElem{S, T}, 1}) where S where T
   M = zero_matrix(FlintZZ, n, d)
 
   for i in 1:n
-    el = elem_in_basis(A[i])
+    el = coordinates(A[i])
     for j in 1:d
       M[i, j] = el[j]
     end
@@ -349,7 +349,7 @@ function quo(O::AlgAssAbsOrd, p::Int)
     end
     x[i] = 0
   end
-  oneO = elem_in_basis(O(one(algebra(O))))
+  oneO = coordinates(O(one(algebra(O))))
   oneQ = gfp_elem[R(s) for s in oneO]
   return AlgAss(R, M, oneQ)
 end
@@ -396,7 +396,7 @@ function quo(O::AlgAssAbsOrd, I::AlgAssAbsOrdIdl, p::Int)
     end
     x[pivots[i]] = 0
   end
-  oneO = elem_in_basis(O(one(algebra(O))))
+  oneO = coordinates(O(one(algebra(O))))
   #I reduce the entry of the element
   for i=1:dim(algebra(O))
     z = div(x[i], basis_mat(I, copy = false)[i,i])
@@ -437,11 +437,11 @@ function check_ideal(I::AlgAssAbsOrdIdl)
   for i = 1:length(B)
     for j = 1:length(B1)
       if !(B[i]*B1[j] in I)
-        @show elem_in_basis(B[i]*B1[j])
+        @show coordinates(B[i]*B1[j])
         error("Ideal not closed under multiplication")
       end 
       if !(B1[j]*B[i] in I)
-        @show elem_in_basis(B1[j]*B[i])
+        @show coordinates(B1[j]*B[i])
         error("Ideal not closed under multiplication")
       end 
     end 
@@ -925,7 +925,7 @@ function _from_submodules_to_ideals(M::ModAlgAss, O::AlgAssAbsOrd, I::AlgAssAbsO
   for i = 1:nrows(x)
     el = A1toO(elem_from_mat_row(A1, x, i))
     for j = 1:degree(O)
-      m[i,j] = elem_in_basis(el, copy = false)[j]
+      m[i,j] = coordinates(el, copy = false)[j]
     end
     gens[i] = elem_from_mat_row(O, m, i)
   end

@@ -95,7 +95,7 @@ mutable struct NfOrdToFqNmodMor <: Map{NfOrd, FqNmodFiniteField, HeckeMap, NfOrd
     tempF = F()
 
     function _image(x::NfOrdElem)
-      v = elem_in_basis(x, copy = false)
+      v = coordinates(x, copy = false)
       zz = zero(F)
       for i in 1:n
         ccall((:fq_nmod_mul_fmpz, :libflint), Nothing,
@@ -321,7 +321,7 @@ function NfOrdToFqMor(O::NfOrd, P::NfOrdIdl)#, g::fmpz_poly, a::NfOrdElem, b::Ve
   tempF = F()
 
   function _image(x::NfOrdElem)
-    v = elem_in_basis(x, copy = false)
+    v = coordinates(x, copy = false)
     zz = zero(F)
     for i in 1:n
       ccall((:fq_mul_fmpz, :libflint), Nothing,

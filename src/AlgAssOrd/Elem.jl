@@ -68,8 +68,8 @@ end
 function Base.deepcopy_internal(a::AlgAssAbsOrdElem, dict::IdDict)
   b = parent(a)()
   b.elem_in_algebra = Base.deepcopy_internal(a.elem_in_algebra, dict)
-  if isdefined(a, :elem_in_basis)
-    b.elem_in_basis = Base.deepcopy_internal(a.elem_in_basis, dict)
+  if isdefined(a, :coordinates)
+    b.coordinates = Base.deepcopy_internal(a.coordinates, dict)
   end
   return b
 end
@@ -113,7 +113,7 @@ function assure_has_coord(x::AlgAssAbsOrdElem)
 
   a, b = _check_elem_in_order(elem_in_algebra(x, copy = false), parent(x))
   !a && error("Not a valid order element")
-  x.elem_in_basis = b
+  x.coordinates = b
   x.has_coord = true
   return nothing
 end
@@ -124,12 +124,12 @@ end
 #
 ################################################################################
 
-function elem_in_basis(x::AlgAssAbsOrdElem; copy::Bool = true)
+function coordinates(x::AlgAssAbsOrdElem; copy::Bool = true)
   assure_has_coord(x)
   if copy
-    return deepcopy(x.elem_in_basis)
+    return deepcopy(x.coordinates)
   else
-    return x.elem_in_basis
+    return x.coordinates
   end
 end
 
@@ -158,7 +158,7 @@ function +(x::AlgAssAbsOrdElem, y::AlgAssAbsOrdElem)
   !check_parent(x, y) && error("Wrong parents")
   z = parent(x)(elem_in_algebra(x, copy = false) + elem_in_algebra(y, copy = false))
   if x.has_coord && y.has_coord
-    z.elem_in_basis = [ x.elem_in_basis[i] + y.elem_in_basis[i] for i = 1:degree(parent(x)) ]
+    z.coordinates = [ x.coordinates[i] + y.coordinates[i] for i = 1:degree(parent(x)) ]
     z.has_coord = true
   end
   return z
@@ -168,7 +168,7 @@ function -(x::AlgAssAbsOrdElem, y::AlgAssAbsOrdElem)
   !check_parent(x, y) && error("Wrong parents")
   z = parent(x)(elem_in_algebra(x, copy = false) - elem_in_algebra(y, copy = false))
   if x.has_coord && y.has_coord
-    z.elem_in_basis = [ x.elem_in_basis[i] - y.elem_in_basis[i] for i = 1:degree(parent(x)) ]
+    z.coordinates = [ x.coordinates[i] - y.coordinates[i] for i = 1:degree(parent(x)) ]
     z.has_coord = true
   end
   return z
@@ -177,7 +177,7 @@ end
 function *(n::Union{Integer, fmpz}, x::AlgAssAbsOrdElem)
   O=x.parent
   y=Array{fmpz,1}(undef, O.dim)
-  z=elem_in_basis(x, copy = false)
+  z=coordinates(x, copy = false)
   for i=1:O.dim
     y[i] = z[i] * n
   end
@@ -213,7 +213,7 @@ end
 
 function elem_to_mat_row!(M::fmpz_mat, i::Int, a::AlgAssAbsOrdElem)
   for c = 1:ncols(M)
-    M[i, c] = deepcopy(elem_in_basis(a; copy = false))[c]
+    M[i, c] = deepcopy(coordinates(a; copy = false))[c]
   end
   return nothing
 end
@@ -348,7 +348,7 @@ function isdivisible_mod_ideal(x::AlgAssAbsOrdElem, y::AlgAssAbsOrdElem, a::AlgA
   V[1, 1] = fmpz(1)
 
   for i = 1:d
-    V[1, 1 + i] = elem_in_basis(x, copy = false)[i]
+    V[1, 1 + i] = coordinates(x, copy = false)[i]
   end
 
   A = representation_matrix(y)
