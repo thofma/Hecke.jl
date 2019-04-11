@@ -337,8 +337,6 @@ function _subgroups_all(G::GrpGen; normal::Bool = false)
   end
 end
 
-# TODO: Once the subfield code is merged, make subgroups return proper
-# subgroups
 function subgroups(G::GrpGen; order::Int = 0,
                               index::Int = 0,
                               normal::Bool = false,
