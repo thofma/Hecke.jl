@@ -16,7 +16,7 @@
 
 @{parent(::NfOrderElem)}
 @{elem_in_nf(::NfOrderElem)}
-@{elem_in_basis(::NfOrderElem)}
+@{coordinates(::NfOrderElem)}
 @{==(::NfOrderElem, ::NfOrderElem)}
 @{deepcopy(::NfOrderElem)}
 @{in(::nf_elem, ::NfMaximalOrder)}

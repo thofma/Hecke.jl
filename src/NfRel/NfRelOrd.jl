@@ -10,7 +10,7 @@ export pseudo_basis, basis_pmat
 ***
       nf(O::NfRelOrd) -> RelativeExtension
 
-> Returns the ambient number field of $\mathcal O$.
+Returns the ambient number field of $\mathcal O$.
 """
 nf(O::NfRelOrd) = O.nf
 
@@ -25,8 +25,8 @@ parent(O::NfRelOrd) = O.parent
 @doc Markdown.doc"""
     isequation_order(O::NfRelOrd) -> Bool
 
-> Returns whether $\mathcal O$ is the equation order of the ambient number
-> field.
+Returns whether $\mathcal O$ is the equation order of the ambient number
+field.
 """
 isequation_order(O::NfRelOrd) = O.isequation_order
 
@@ -144,7 +144,7 @@ end
 ***
       pseudo_basis(O::NfRelOrd{T, S}) -> Vector{Tuple{RelativeElement{T}{T}, S}}
 
-> Returns the pseudo-basis of $\mathcal O$.
+Returns the pseudo-basis of $\mathcal O$.
 """
 function pseudo_basis(O::NfRelOrd; copy = true)
   assure_has_pseudo_basis(O)
@@ -159,8 +159,8 @@ end
 ***
       basis_pmat(O::NfRelOrd) -> PMat
 
-> Returns the basis pseudo-matrix of $\mathcal O$ with respect to the power basis
-> of the ambient number field.
+Returns the basis pseudo-matrix of $\mathcal O$ with respect to the power basis
+of the ambient number field.
 """
 function basis_pmat(O::NfRelOrd; copy::Bool = true)
   assure_has_basis_pmat(O)
@@ -175,7 +175,7 @@ end
 ***
       inv_coeff_ideals(O::NfRelOrd{T, S}) -> Vector{S}
 
-> Returns the inverses of the coefficient ideals of the pseudo basis of $O$.
+Returns the inverses of the coefficient ideals of the pseudo basis of $O$.
 """
 function inv_coeff_ideals(O::NfRelOrd; copy::Bool = true)
   assure_has_inv_coeff_ideals(O)
@@ -196,8 +196,8 @@ end
 ***
       basis_nf(O::NfRelOrd) -> Array{RelativeElement, 1}
 
-> Returns the elements of the pseudo-basis of $\mathcal O$ as elements of the
-> ambient number field.
+Returns the elements of the pseudo-basis of $\mathcal O$ as elements of the
+ambient number field.
 """
 function basis_nf(O::NfRelOrd; copy::Bool = true)
   assure_has_basis_nf(O)
@@ -212,8 +212,8 @@ end
 ***
       basis_mat(O::NfRelOrd{T, S}) -> Generic.Mat{T}
 
-> Returns the basis matrix of $\mathcal O$ with respect to the power basis
-> of the ambient number field.
+Returns the basis matrix of $\mathcal O$ with respect to the power basis
+of the ambient number field.
 """
 function basis_mat(O::NfRelOrd; copy::Bool = true)
   assure_has_basis_mat(O)
@@ -228,7 +228,7 @@ end
 ***
       basis_mat_inv(O::NfRelOrd{T, S}) -> Generic.Mat{T}
 
-> Returns the inverse of the basis matrix of $\mathcal O$.
+Returns the inverse of the basis matrix of $\mathcal O$.
 """
 function basis_mat_inv(O::NfRelOrd; copy::Bool = true)
   assure_has_basis_mat_inv(O)
@@ -331,7 +331,7 @@ end
 ***
       degree(O::NfRelOrd) -> Int
 
-> Returns the degree of $\mathcal O$.
+Returns the degree of $\mathcal O$.
 """
 degree(O::NfRelOrd) = degree(nf(O))
 
@@ -345,7 +345,7 @@ degree(O::NfRelOrd) = degree(nf(O))
 ***
       deepcopy(O::NfRelOrd) -> NfRelOrd
 
-> Makes a copy of $\mathcal O$.
+Makes a copy of $\mathcal O$.
 """
 function Base.deepcopy_internal(O::NfRelOrd{T, S}, dict::IdDict) where {T, S}
   z = NfRelOrd{T, S}(O.nf)
@@ -395,7 +395,7 @@ end
 ***
       in(a::RelativeElement, O::NfRelOrd) -> Bool
 
-> Checks whether $a$ lies in $\mathcal O$.
+Checks whether $a$ lies in $\mathcal O$.
 """
 function in(a::RelativeElement{T}, O::NfRelOrd{T, S}) where {T, S}
   return _check_elem_in_order(a, O, Val{true})
@@ -411,8 +411,8 @@ end
 ***
       Order(K::RelativeExtension{T}, M::Generic.Mat{T}) -> NfRelOrd
 
-> Returns the order which has basis matrix $M$ with respect to the power basis
-> of $K$.
+Returns the order which has basis matrix $M$ with respect to the power basis
+of $K$.
 """
 function Order(L::RelativeExtension{nf_elem}, M::Generic.Mat{nf_elem})
   # checks
@@ -428,8 +428,8 @@ end
 ***
       Order(K::RelativeExtension, M::PMat) -> NfRelOrd
 
-> Returns the order which has basis pseudo-matrix $M$ with respect to the power basis
-> of $K$.
+Returns the order which has basis pseudo-matrix $M$ with respect to the power basis
+of $K$.
 """
 function Order(L::RelativeExtension{T}, M::PMat{T, S}) where {T, S}
   # checks
@@ -440,7 +440,7 @@ end
 ***
       EquationOrder(L::RelativeExtension) -> NfRelOrd
 
-> Returns the equation order of the number field $L$.
+Returns the equation order of the number field $L$.
 """
 function EquationOrder(L::RelativeExtension)
   M = identity_matrix(base_ring(L), degree(L))
@@ -455,7 +455,7 @@ end
 ***
       maximal_order(L::RelativeExtension) -> NfRelOrd
 
-> Returns the maximal order of $L$.
+Returns the maximal order of $L$.
 """
 function MaximalOrder(L::RelativeExtension)
   try
@@ -514,7 +514,7 @@ end
 ***
       trace_matrix(O::NfRelOrd{T, S}) -> Generic.Mat{T}
 
-> Returns the trace matrix of $\mathcal O$.
+Returns the trace matrix of $\mathcal O$.
 """
 function trace_matrix(O::NfRelOrd)
   if isdefined(O, :trace_mat)
@@ -601,7 +601,7 @@ function dedekind_test(O::NfRelOrd, p::Union{NfOrdIdl, NfRelOrdIdl}, compute_ord
   OK = maximal_order(K)
   F, mF = ResidueField(OK, p)
   mmF = extend(mF, K)
-  immF = inv(mmF)
+  immF = pseudo_inv(mmF)
   Fy, y = PolynomialRing(F,"y", cached=false)
 
   Tmodp = nf_elem_poly_to_fq_poly(Fy, mmF, T)
@@ -651,8 +651,8 @@ dedekind_poverorder(O::NfRelOrd, p::Union{NfOrdIdl, NfRelOrdIdl}) = dedekind_tes
 ***
       poverorder(O::NfRelOrd, p::Union{NfOrdIdl, NfRelOrdIdl}) -> NfRelOrd
 
-> This function tries to find an order that is locally larger than $\mathcal O$
-> at the prime $p$.
+This function tries to find an order that is locally larger than $\mathcal O$
+at the prime $p$.
 """
 function poverorder(O::NfRelOrd, p::Union{NfOrdIdl, NfRelOrdIdl})
   if isequation_order(O) && issimple(O)
@@ -672,7 +672,7 @@ end
 ***
       pmaximal_overorder(O::NfRelOrd, p::Union{NfOrdIdl, NfRelOrdIdl}) -> NfRelOrd
 
-> This function finds a $p$-maximal order $R$ containing $\mathcal O$.
+This function finds a $p$-maximal order $R$ containing $\mathcal O$.
 """
 function pmaximal_overorder(O::NfRelOrd, p::Union{NfOrdIdl, NfRelOrdIdl})
   d = discriminant(O)
@@ -710,8 +710,8 @@ end
 ***
       +(R::NfRelOrd, S::NfRelOrd) -> NfRelOrd
 
-> Given two orders $R$, $S$ of $K$, this function returns the smallest order
-> containing both $R$ and $S$.
+Given two orders $R$, $S$ of $K$, this function returns the smallest order
+containing both $R$ and $S$.
 """
 function +(a::NfRelOrd{T, S}, b::NfRelOrd{T, S}) where {T, S}
   # checks
@@ -735,7 +735,7 @@ function relative_order(O::NfOrd, m::NfRelToNf)
   @assert nf(O) == Labs
   K = base_ring(L)
   OK = maximal_order(K)
-  mm = inv(m)
+  mm = pseudo_inv(m)
   B = basis(O, copy = false)
   d = degree(L)
   dabs = degree(Labs)

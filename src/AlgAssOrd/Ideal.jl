@@ -177,7 +177,7 @@ function *(a::AlgAssAbsOrdIdl{S, T}, b::AlgAssAbsOrdIdl{S, T}) where {S, T}
     for j = 1:d
       t = mul!(t, ba[i], bb[j])
       for k = 1:d
-        M[(i - 1)*d + j, k] = elem_in_basis(t; copy = false)[k]
+        M[(i - 1)*d + j, k] = coordinates(t; copy = false)[k]
       end
     end
   end
@@ -488,7 +488,7 @@ end
 ################################################################################
 
 function in(x::AlgAssAbsOrdElem, I::AlgAssAbsOrdIdl)
-  el = elem_in_basis(x)
+  el = coordinates(x)
   y = matrix(FlintZZ, 1, length(el), el)
   M1, d =pseudo_inv(I.basis_mat)
   if FakeFmpqMat(y*M1, d).den==1

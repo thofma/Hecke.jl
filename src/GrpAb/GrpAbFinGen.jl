@@ -62,8 +62,8 @@ parent_type(::Type{GrpAbFinGenElem}) = GrpAbFinGen
 ***
     AbelianGroup(M::fmpz_mat) -> GrpAbFinGen
 
-> Creates the abelian group with relation matrix `M`. That is, the group will
-> have `ncols(M)` generators and each row of `M` describes one relation.
+Creates the abelian group with relation matrix `M`. That is, the group will
+have `ncols(M)` generators and each row of `M` describes one relation.
 """
 function AbelianGroup(M::fmpz_mat; name :: String = "")
   G = GrpAbFinGen(M)
@@ -77,8 +77,8 @@ end
 ***
     AbelianGroup(M::Array{fmpz, 2}) -> GrpAbFinGen
 
-> Creates the abelian group with relation matrix `M`. That is, the group will
-> have `ncols(M)` generators and each row of `M` describes one relation.
+Creates the abelian group with relation matrix `M`. That is, the group will
+have `ncols(M)` generators and each row of `M` describes one relation.
 """
 function AbelianGroup(M::Array{fmpz, 2}; name :: String = "")
   G = AbelianGroup(matrix(FlintZZ, M))
@@ -92,8 +92,8 @@ end
 ***
     AbelianGroup(M::Array{Integer, 2}) -> GrpAbFinGen
 
-> Creates the abelian group with relation matrix `M`. That is, the group will
-> have `ncols(M)` generators and each row of `M` describes one relation.
+Creates the abelian group with relation matrix `M`. That is, the group will
+have `ncols(M)` generators and each row of `M` describes one relation.
 """
 function AbelianGroup(M::Array{T, 2}; name :: String = "") where T <: Integer
   G = AbelianGroup(matrix(FlintZZ, M))
@@ -107,8 +107,8 @@ end
 ***
     AbelianGroup(M::Array{fmpz, 1}) -> GrpAbFinGen
 
-> Creates the abelian group with relation matrix `M`. That is, the group will
-> have `length(M)` generators and one relation.
+Creates the abelian group with relation matrix `M`. That is, the group will
+have `length(M)` generators and one relation.
 """
 function AbelianGroup(M::Array{fmpz, 1}; name :: String = "")
   G = AbelianGroup(matrix(FlintZZ, 1, length(M), M))
@@ -122,8 +122,8 @@ end
 ***
     AbelianGroup(M::Array{Integer, 1}) -> GrpAbFinGen
 
-> Creates the abelian group with relation matrix `M`. That is, the group will
-> have `length(M)` generators and one relation.
+Creates the abelian group with relation matrix `M`. That is, the group will
+have `length(M)` generators and one relation.
 """
 function AbelianGroup(M::Array{T, 1}; name :: String = "") where T <: Integer
   G = AbelianGroup(matrix(FlintZZ, 1, length(M), M))
@@ -281,8 +281,8 @@ end
 ***
     issnf(G::GrpAbFinGen) -> Bool
 
-> Returns whether the current relation matrix of the group $G$ is in Smith
-> normal form.
+Returns whether the current relation matrix of the group $G$ is in Smith
+normal form.
 """
 issnf(A::GrpAbFinGen) = A.issnf
 
@@ -290,7 +290,7 @@ issnf(A::GrpAbFinGen) = A.issnf
 ***
     ngens(G::GrpAbFinGen) -> Int
 
-> Returns the number of generators of $G$ in the current representation.
+Returns the number of generators of $G$ in the current representation.
 """
 function ngens(A::GrpAbFinGen)
   if issnf(A)
@@ -304,7 +304,7 @@ end
 ***
     nrels(G::GrpAbFinGen) -> Int
 
-> Returns the number of relations of $G$ in the current representation.
+Returns the number of relations of $G$ in the current representation.
 """
 function nrels(A::GrpAbFinGen)
   if issnf(A)
@@ -318,7 +318,7 @@ end
 ***
     rels(A::GrpAbFinGen) -> fmpz_mat
 
-> Returns the currently used relations of $G$ as a single matrix.
+Returns the currently used relations of $G$ as a single matrix.
 """
 function rels(A::GrpAbFinGen)
   if issnf(A)
@@ -361,8 +361,8 @@ end
 ***
     snf(A::GrpAbFinGen) -> GrpAbFinGen, Map
 
-> Returns a pair $(G, f)$, where $G$ is an abelian group in canonical Smith
-> normal form isomorphic to $G$ and an isomorphism $f : G \to A$.
+Returns a pair $(G, f)$, where $G$ is an abelian group in canonical Smith
+normal form isomorphic to $G$ and an isomorphism $f : G \to A$.
 """
 function snf(G::GrpAbFinGen)
   if isdefined(G, :snf_map)
@@ -435,7 +435,7 @@ end
 ***
     isfinite(A::GrpAbFinGen) -> Bool
 
-> Returns whether $A$ is finite.
+Returns whether $A$ is finite.
 """
 isfinite(A::GrpAbFinGen) = issnf(A) ? isfinite_snf(A) : isfinite_gen(A)
 
@@ -447,7 +447,7 @@ isfinite_gen(A::GrpAbFinGen) = isfinite(snf(A)[1])
 ***
     isinfinite(A::GrpAbFinGen) -> Bool
 
-> Returns whether $A$ is infinite.
+Returns whether $A$ is infinite.
 """
 isinfinite(A::GrpAbFinGen) = !isfinite(A)
 
@@ -461,8 +461,8 @@ isinfinite(A::GrpAbFinGen) = !isfinite(A)
 ***
     rank(A::GrpAbFinGenGen) -> Int
 
-> Returns the rank of $A$, that is, the dimension of the
-> $\mathbf{Q}$-vectorspace $A \otimes_{\mathbf Z} \mathbf Q$.
+Returns the rank of $A$, that is, the dimension of the
+$\mathbf{Q}$-vectorspace $A \otimes_{\mathbf Z} \mathbf Q$.
 """
 rank(A::GrpAbFinGen) = issnf(A) ? rank_snf(A) : rank_gen(A)
 
@@ -480,7 +480,7 @@ rank_gen(A::GrpAbFinGen) = rank(snf(A)[1])
 ***
     order(A::GrpAbFinGen) -> fmpz
 
-> Returns the order of $A$. It is assumed that $A$ is finite.
+Returns the order of $A$. It is assumed that $A$ is finite.
 """
 order(A::GrpAbFinGen) = issnf(A) ? order_snf(A) : order_gen(A)
 
@@ -501,7 +501,7 @@ order_gen(A::GrpAbFinGen) = order(snf(A)[1])
 ***
     exponent(A::GrpAbFinGen) -> fmpz
 
-> Returns the exponent of $A$. It is assumed that $A$ is finite.
+Returns the exponent of $A$. It is assumed that $A$ is finite.
 """
 exponent(A::GrpAbFinGen) = issnf(A) ? exponent_snf(A) : exponent_gen(A)
 
@@ -523,7 +523,7 @@ exponent_gen(A::GrpAbFinGen) = exponent(snf(A)[1])
 ***
     istrivial(A::GrpAbFinGen) -> Bool
 
-> Checks if $A$ is the trivial group.
+Checks if $A$ is the trivial group.
 """
 istrivial(A::GrpAbFinGen) = isfinite(A) && order(A) == 1
 
@@ -537,7 +537,7 @@ istrivial(A::GrpAbFinGen) = isfinite(A) && order(A) == 1
 ***
     isisomorphic(G::GrpAbFinGen, H::GrpAbFinGen) -> Bool
 
-> Checks if $G$ and $H$ are isomorphic.
+Checks if $G$ and $H$ are isomorphic.
 """
 function isisomorphic(G::GrpAbFinGen, H::GrpAbFinGen)
   b = filter(x -> x != 1, snf(G)[1].snf) == filter(x -> x != 1, snf(H)[1].snf)
@@ -554,10 +554,10 @@ end
 ***
     direct_product(G::GrpAbFinGen...; task::Symbol = :sum) -> GrpAbFinGen, GrpAbFinGenMap, GrpAbFinGenMap
 
-> Returns the direct product $D$ of the abelian groups $G_i$. {{{task}}} can be
-> ":sum", ":prod", ":both" or ":none" and determines which canonical maps
-> are computed as well: ":sum" for the injections, ":prod" for the 
->    projections.
+Returns the direct product $D$ of the abelian groups $G_i$. {{{task}}} can be
+":sum", ":prod", ":both" or ":none" and determines which canonical maps
+are computed as well: ":sum" for the injections, ":prod" for the 
+   projections.
 """
 function direct_product(G::GrpAbFinGen...
              ; add_to_lattice::Bool = false, L::GrpAbLattice = GroupLattice, task::Symbol = :sum)
@@ -598,8 +598,8 @@ export ⊕
 
 @doc Markdown.doc"""
     canonical_injection(G::GrpAbFinGen, i::Int) -> Map
-> Given a group $G$ that was created as a direct product, return the 
-> injection from the $i$th component.
+Given a group $G$ that was created as a direct product, return the 
+injection from the $i$th component.
 """
 function canonical_injection(G::GrpAbFinGen, i::Int)
   D = get_special(G, :direct_product)
@@ -611,8 +611,8 @@ end
 
 @doc Markdown.doc"""
     canonical_projection(G::GrpAbFinGen, i::Int) -> Map
-> Given a group $G$ that was created as a direct product, return the 
-> projection onto the $i$th component.
+Given a group $G$ that was created as a direct product, return the 
+projection onto the $i$th component.
 """
 function canonical_projection(G::GrpAbFinGen, i::Int)
   D = get_special(G, :direct_product)
@@ -638,9 +638,9 @@ end
 
 @doc Markdown.doc"""
     hom(G::GrpAbFinGen, H::GrpAbFinGen, A::Array{ <: Map{GrpAbFinGen, GrpAbFinGen}, 2}) -> Map
-> Given groups $G$ and $H$ that are created as direct products as well
-> as a matrix $A$ containing maps $A[i,j] : G_i \to H_j$, return
-> the induced homomorphism.
+Given groups $G$ and $H$ that are created as direct products as well
+as a matrix $A$ containing maps $A[i,j] : G_i \to H_j$, return
+the induced homomorphism.
 """
 function hom(G::GrpAbFinGen, H::GrpAbFinGen, A::Array{ <: Map{GrpAbFinGen, GrpAbFinGen}, 2})
   r, c = size(A)
@@ -681,11 +681,11 @@ end
 
 @doc Markdown.doc"""
     flat(G::GrpAbFinGen) -> GrpAbFinGen, Map
-> Given a group $G$ that is created using (iterated) direct products, or
-> (iterated) tensor product, 
-> return a group that is a flat product: $(A \oplus B) \oplus C$
-> is returned as $A \oplus B \oplus C$, (resp. $\otimes$) 
-> together with the  isomorphism.
+Given a group $G$ that is created using (iterated) direct products, or
+(iterated) tensor product, 
+return a group that is a flat product: $(A \oplus B) \oplus C$
+is returned as $A \oplus B \oplus C$, (resp. $\otimes$) 
+together with the  isomorphism.
 """
 function flat(G::GrpAbFinGen)
   s = get_special(G, :direct_product)
@@ -712,8 +712,8 @@ end
 
 @doc Markdown.doc"""
     lift(phi::Map, psi::Map) -> Map
-> Given $\phi: G\to F$ and $\psi:H \to F$ s.th. $\Im(\phi) \subseteq \Im(\psi)$
-> return the map $G\to H$ to make the diagram commute.
+Given $\phi: G\to F$ and $\psi:H \to F$ s.th. $\Im(\phi) \subseteq \Im(\psi)$
+return the map $G\to H$ to make the diagram commute.
 """
 function lift(phi::Map, psi::Map)
   x = [haspreimage(psi, image(phi, g)) for g = gens(domain(phi))]
@@ -723,7 +723,7 @@ end
 
 @doc Markdown.doc"""
     zero_map(G::GrpAbFinGen) -> Map
-> Create the map $G \to \{0\}$.
+Create the map $G \to \{0\}$.
 """
 function zero_map(G::GrpAbFinGen)
   Z = AbelianGroup([1])
@@ -769,8 +769,8 @@ end
 
 @doc Markdown.doc"""
     chain_complex(A::Map{GrpAbFinGen, GrpAbFinGen, <:Any, <:Any}...) -> ChainComplex{GrpAbFinGen}
-> Given maps $A_i$ s.th. $\Im(A_i) \subseteq \Kern(A_{i+1})$, this creates
-> the chain complex.
+Given maps $A_i$ s.th. $\Im(A_i) \subseteq \Kern(A_{i+1})$, this creates
+the chain complex.
 """
 function chain_complex(A::Map{GrpAbFinGen, GrpAbFinGen, <:Any, <:Any}...)
   return ChainComplex(collect(A))
@@ -782,8 +782,8 @@ end
 
 @doc Markdown.doc"""
     isexact(C::ChainComplex) -> Bool
-> Tests is the complex $A_i: G_i \to G_{i+1}$ 
-> is exact, ie. if $\Im(A_i) = \Kern(A_{i+1})$.
+Tests is the complex $A_i: G_i \to G_{i+1}$ 
+is exact, ie. if $\Im(A_i) = \Kern(A_{i+1})$.
 """
 function isexact(C::ChainComplex)
   return all(i->iseq(image(C.maps[i])[1], kernel(C.maps[i+1])[1]), 1:length(C)-1)
@@ -791,8 +791,8 @@ end
 
 @doc Markdown.doc"""
     free_resolution(G::GrpAbFinGen) -> ChainComplex{GrpAbFinGen}
-> A free resultion for $G$, ie. a chain complex terminating in 
-> $G \to \{0\}$ that is exact.
+A free resultion for $G$, ie. a chain complex terminating in 
+$G \to \{0\}$ that is exact.
 """
 function free_resolution(G::GrpAbFinGen)
   A = DiagonalGroup(zeros(FlintZZ, ngens(G)))
@@ -818,9 +818,9 @@ end
 
 @doc Markdown.doc"""
     hom(C::ChainComplex{T}, D::ChainComplex{T}, phi::Map{<:T, <:T}) where {T} -> ChainComplexMap
-> Given chain complexes $C_i: G_i \to G_{i+1}$ and $D_i: H_i \to H_{i+1}$
-> as well as a map $\phi = \phi_n: G_n \to H_n$, lift $\phi$ to
-> the entire complex: $\phi_i: G_i \to H_i$ s.th. all squares commute.
+Given chain complexes $C_i: G_i \to G_{i+1}$ and $D_i: H_i \to H_{i+1}$
+as well as a map $\phi = \phi_n: G_n \to H_n$, lift $\phi$ to
+the entire complex: $\phi_i: G_i \to H_i$ s.th. all squares commute.
 """
 function hom(C::ChainComplex{T}, D::ChainComplex{T}, phi::Map{<:T, <:T}) where {T}
   @assert length(C) == length(D)
@@ -836,8 +836,8 @@ end
 
 @doc Markdown.doc"""
     hom(C::ChainComplex{T}, G::T) -> ChainComplex{T}
-> Given a complex $A_i: G_i \to G_{i+1}$ and a module $G$,
-> compute the derived complex $\hom(G_i, G)$.
+Given a complex $A_i: G_i \to G_{i+1}$ and a module $G$,
+compute the derived complex $\hom(G_i, G)$.
 """
 function hom(C::ChainComplex{GrpAbFinGen}, G::GrpAbFinGen)
   A = GrpAbFinGenMap[]
@@ -867,8 +867,8 @@ end
 
 @doc Markdown.doc"""
     hom(C::ChainComplex{T}, G::T) -> ChainComplex{T}
-> Given a complex $A_i: G_i \to G_{i+1}$ and a module $G$,
-> compute the derived complex $\hom(G, G_i)$.
+Given a complex $A_i: G_i \to G_{i+1}$ and a module $G$,
+compute the derived complex $\hom(G, G_i)$.
 """
 function hom(G::GrpAbFinGen, C::ChainComplex)
   A = GrpAbFinGenMap[]
@@ -898,8 +898,8 @@ end
 
 @doc Markdown.doc"""
     homology(C::ChainComplex{GrpAbFinGen}) -> Array{GrpAbFinGen, 1}
-> Given a complex $A_i: G_i \to G_{i+1}$, 
-> compute the homology, ie. the modules $H_i = \Kern A_{i+1}/\Im A_i$
+Given a complex $A_i: G_i \to G_{i+1}$, 
+compute the homology, ie. the modules $H_i = \Kern A_{i+1}/\Im A_i$
 """
 function homology(C::ChainComplex{GrpAbFinGen})
   H = GrpAbFinGen[]
@@ -938,10 +938,10 @@ parent(t::Tuple) = TupleParent(t)
 
 @doc Markdown.doc"""
     tensor_product(G::GrpAbFinGen...; task::Symbol = :map) -> GrpAbFinGen, Map
-> Given groups $G_i$ compute the tensor product $G_1\otimes \cdots \otimes G_n$.
-> If {{{task}}} is set to ":map", a map $\phi$ is returned that
-> maps tuples in $G_1 \times \cdots \times G_n$ to pure tensors
-> $g_1 \otimes \cdots \otimes g_n$. The map admits a preimage as well.
+Given groups $G_i$ compute the tensor product $G_1\otimes \cdots \otimes G_n$.
+If {{{task}}} is set to ":map", a map $\phi$ is returned that
+maps tuples in $G_1 \times \cdots \times G_n$ to pure tensors
+$g_1 \otimes \cdots \otimes g_n$. The map admits a preimage as well.
 """
 function tensor_product(G::GrpAbFinGen...; task::Symbol = :map)
   @assert task in [:map, :none]
@@ -988,9 +988,9 @@ export ⊗
 
 @doc Markdown.doc"""
     hom(G::GrpAbFinGen, H::GrpAbFinGen, A::Array{ <: Map{GrpAbFinGen, GrpAbFinGen}, 1}) -> Map
-> Given groups $G = G_1 \otimes \cdots \otimes G_n$ and
-> $H = H_1 \otimes \cdot \otimes H_n$ as well as maps
-> $\phi_i: G_i\to H_i$, compute the tensor product of the maps.
+Given groups $G = G_1 \otimes \cdots \otimes G_n$ and
+$H = H_1 \otimes \cdot \otimes H_n$ as well as maps
+$\phi_i: G_i\to H_i$, compute the tensor product of the maps.
 """
 function hom(G::GrpAbFinGen, H::GrpAbFinGen, A::Array{ <: Map{GrpAbFinGen, GrpAbFinGen}, 1})
   tG = get_special(G, :tensor_product)
@@ -1008,8 +1008,8 @@ end
 
 @doc Markdown.doc"""
     tensor_product(C::ChainComplex{T}, G::T) -> ChainComplex{T}
-> Given a complex $A_i: G_i \to G_{i+1}$ and a module $G$,
-> compute the derived complex $G_i \otimes G$.
+Given a complex $A_i: G_i \to G_{i+1}$ and a module $G$,
+compute the derived complex $G_i \otimes G$.
 """
 function tensor_product(C::ChainComplex, G::GrpAbFinGen)
   A = GrpAbFinGenMap[]
@@ -1053,8 +1053,8 @@ end
 ***
     sub(G::GrpAbFinGen, s::Array{GrpAbFinGenElem, 1}) -> GrpAbFinGen, Map
 
-> Create the subgroup $H$ of $G$ generated by the elements in `s` together
-> with the injection $\iota : H \to G$.
+Create the subgroup $H$ of $G$ generated by the elements in `s` together
+with the injection $\iota : H \to G$.
 """
 function sub(G::GrpAbFinGen, s::Array{GrpAbFinGenElem, 1},
              add_to_lattice::Bool = true, L::GrpAbLattice = GroupLattice)
@@ -1113,9 +1113,9 @@ end
 ***
     sub(s::Array{GrpAbFinGenElem, 1}) -> GrpAbFinGen, Map
 
-> Assuming that the non-empty array `s` contains elements of an abelian group
+Assuming that the non-empty array `s` contains elements of an abelian group
 $G$, this functions returns the subgroup $H$ of $G$ generated by the elements
-> in `s` together with the injection $\iota : H \to G$.
+in `s` together with the injection $\iota : H \to G$.
 """
 function sub(s::Array{GrpAbFinGenElem, 1},
              add_to_lattice::Bool = true, L::GrpAbLattice = GroupLattice)
@@ -1127,8 +1127,8 @@ end
 ***
     sub(G::GrpAbFinGen, M::fmpz_mat) -> GrpAbFinGen, Map
 
-> Create the subgroup $H$ of $G$ generated by the elements corresponding to the
-> rows of $M$ together with the injection $\iota : H \to G$.
+Create the subgroup $H$ of $G$ generated by the elements corresponding to the
+rows of $M$ together with the injection $\iota : H \to G$.
 """
 function sub(G::GrpAbFinGen, M::fmpz_mat,
              add_to_lattice::Bool = true, L::GrpAbLattice = GroupLattice)
@@ -1174,8 +1174,8 @@ end
 ***
     sub(G::GrpAbFinGen, n::fmpz) -> GrpAbFinGen, Map
 
-> Create the subgroup $n \cdot G$ of $G$ together
-> with the injection $\iota : n\cdot G \to G$.
+Create the subgroup $n \cdot G$ of $G$ together
+with the injection $\iota : n\cdot G \to G$.
 """
 function sub(G::GrpAbFinGen, n::fmpz,
              add_to_lattice::Bool = true, L::GrpAbLattice = GroupLattice)
@@ -1187,8 +1187,8 @@ end
 ***
     sub(G::GrpAbFinGen, n::Integer) -> GrpAbFinGen, Map
 
-> Create the subgroup $n \cdot G$ of $G$ together
-> with the injection $\iota : n \cdot G \to G$.
+Create the subgroup $n \cdot G$ of $G$ together
+with the injection $\iota : n \cdot G \to G$.
 """
 function sub(G::GrpAbFinGen, n::Integer,
              add_to_lattice::Bool = true, L::GrpAbLattice = GroupLattice)
@@ -1205,8 +1205,8 @@ end
 ***
   quo(G::GrpAbFinGen, s::Array{GrpAbFinGenElem, 1}) -> GrpAbFinGen, Map
 
-> Create the quotient $H$ of $G$ by the subgroup generated by the elements in
-> $s$, together with the projection $p : G \to H$.
+Create the quotient $H$ of $G$ by the subgroup generated by the elements in
+$s$, together with the projection $p : G \to H$.
 """
 function quo(G::GrpAbFinGen, s::Array{GrpAbFinGenElem, 1},
              add_to_lattice::Bool = true, L::GrpAbLattice = GroupLattice)
@@ -1252,8 +1252,8 @@ end
 ***
   quo(G::GrpAbFinGen, M::fmpz_mat) -> GrpAbFinGen, Map
 
-> Create the quotient $H$ of $G$ by the subgroup generated by the elements
-> corresponding to the rows of $M$. together with the projection $p : G \to H$.
+Create the quotient $H$ of $G$ by the subgroup generated by the elements
+corresponding to the rows of $M$. together with the projection $p : G \to H$.
 """
 function quo(G::GrpAbFinGen, M::fmpz_mat,
              add_to_lattice::Bool = true, L::GrpAbLattice = GroupLattice)
@@ -1272,7 +1272,7 @@ end
     quo(G::GrpAbFinGen, n::Integer}) -> GrpAbFinGen, Map
     quo(G::GrpAbFinGen, n::fmpz}) -> GrpAbFinGen, Map
 
-> Returns the quotient $H = G/nG$ together with the projection $p : G \to H$.
+Returns the quotient $H = G/nG$ together with the projection $p : G \to H$.
 """
 function quo(G::GrpAbFinGen, n::Union{fmpz, Integer},
              add_to_lattice::Bool = true, L::GrpAbLattice = GroupLattice)
@@ -1418,7 +1418,7 @@ end
 @doc Markdown.doc"""
     iscyclic(G::GrpAbFinGen) -> Bool
 
-> Returns whether $G$ is cyclic.
+Returns whether $G$ is cyclic.
 """
 function iscyclic(G::GrpAbFinGen)
   if !issnf(G)
@@ -1467,7 +1467,7 @@ end
 ***
     multgrp_of_cyclic_grp(n::fmpz) -> GrpAbFinGen
 
-> Returns the multiplicative group of the cyclic group with $n$ elements.
+Returns the multiplicative group of the cyclic group with $n$ elements.
 """
 function multgrp_of_cyclic_grp(n::fmpz)
   composition = Array{fmpz,1}()

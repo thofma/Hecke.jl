@@ -464,8 +464,8 @@ end
 
 @doc Markdown.doc"""
     submodules(M::ZpnGModule; typequo, typesub, order)
-> Given a ZpnGModule M, the function returns all the submodules of M. 
-> 
+Given a ZpnGModule M, the function returns all the submodules of M. 
+
 """
 function submodules(M::ZpnGModule; typequo=Int[-1], typesub=Int[-1], ord=-1)
 
@@ -863,8 +863,8 @@ end
 ***
     stable_subgroups(R::GrpAbFinGen, quotype::Array{Int,1}, act::Array{T, 1}; op=sub)
     
-> Given a group R, an array of endomorphisms of the group and the type of the quotient, it returns all the stable 
-> subgroups of R such that the corresponding quotient has the required type.
+Given a group R, an array of endomorphisms of the group and the type of the quotient, it returns all the stable 
+subgroups of R such that the corresponding quotient has the required type.
 """
 function stable_subgroups(R::GrpAbFinGen, act::Array{T, 1}; op = sub, quotype::Array{Int,1}=Int[-1], minimal::Bool = false) where T <: Map{GrpAbFinGen, GrpAbFinGen} 
 

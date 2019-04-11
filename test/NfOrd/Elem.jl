@@ -57,11 +57,11 @@
     b = @inferred elem_in_nf(b1)
     @test b == K1(2)
 
-    b = @inferred elem_in_basis(b1)
+    b = @inferred coordinates(b1)
     @test b == [ FlintZZ(2), FlintZZ(0), FlintZZ(0) ]
 
     b = O1(a1//2, false)
-    @test_throws ErrorException elem_in_basis(b)
+    @test_throws ErrorException coordinates(b)
     
     b = O1(a1)
     c = @inferred K1(b)
@@ -231,26 +231,26 @@
     B = 10
     b = @inferred rand(O1, -B:B)
     for i in 1:degree(O1)
-      @test -B <= elem_in_basis(b)[i] && elem_in_basis(b)[i] <= B
+      @test -B <= coordinates(b)[i] && coordinates(b)[i] <= B
     end
 
     B = BigInt(10)
     b = @inferred rand(O1, -B:B)
     B = fmpz(B)
     for i in 1:degree(O1)
-      @test -B <= elem_in_basis(b)[i] && elem_in_basis(b)[i] <= B
+      @test -B <= coordinates(b)[i] && coordinates(b)[i] <= B
     end
 
     B = 10
     b = @inferred rand(O1, B)
     for i in 1:degree(O1)
-      @test -B <= elem_in_basis(b)[i] && elem_in_basis(b)[i] <= B
+      @test -B <= coordinates(b)[i] && coordinates(b)[i] <= B
     end
 
     B = FlintZZ(10)
     b = @inferred rand(O1, B)
     for i in 1:degree(O1)
-      @test -B <= elem_in_basis(b)[i] && elem_in_basis(b)[i] <= B
+      @test -B <= coordinates(b)[i] && coordinates(b)[i] <= B
     end
   end
 

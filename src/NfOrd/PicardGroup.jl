@@ -9,8 +9,8 @@ export picard_group
 @doc Markdown.doc"""
       picard_group(O::NfOrd) -> GrpAbFinGen, MapClassGrp
 
-> Returns the Picard group of O and a map from the group in the set of
-> (invertible) ideals of O.
+Returns the Picard group of O and a map from the group in the set of
+(invertible) ideals of O.
 """
 function picard_group(O::NfOrd)
   try

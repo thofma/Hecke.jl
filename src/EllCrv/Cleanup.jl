@@ -43,7 +43,7 @@
 ***
     local_height_finite(P::EllCrvPt{fmpq}, p::Int) -> Float64
 
-> Computes the local height of $P$ at the prime $p$.
+Computes the local height of $P$ at the prime $p$.
 """
 function local_height_finite(P, p)
     
@@ -101,9 +101,9 @@ end
 ***
     local_height_infinite(P::EllCrvPt{fmpq}, d = 20) -> Float64
 
-> Given a rational elliptic curve $E$ and a point $P$ on $E$, this functions computes
-> the real local height of $P$. It is assumed that $E$ is given by a minimal mode.
-> The parameter $d$ controls the number of decimal places.
+Given a rational elliptic curve $E$ and a point $P$ on $E$, this functions computes
+the real local height of $P$. It is assumed that $E$ is given by a minimal mode.
+The parameter $d$ controls the number of decimal places.
 """
 function local_height_infinite(P, d = 20)
   E = P.parent
@@ -173,7 +173,7 @@ end
 ***
     canonical_height(P::EllCrvPt) -> Float64
 
-> Computes the canonical height of a point $P$. 
+Computes the canonical height of a point $P$. 
 """
 function canonical_height(P)
     
@@ -211,9 +211,9 @@ end
 ***
     isindependent(S::Array{EllCrvPt{fmpq}}) -> Bool
 
-> Tests whether a given set of points $S$ on a rational elliptic curve
-> is linearly independent. Returns true if they are independent, otherwise false.
-> This function may return false results.
+Tests whether a given set of points $S$ on a rational elliptic curve
+is linearly independent. Returns true if they are independent, otherwise false.
+This function may return false results.
 """
 function isindependent(P)
   epsilon = 10.0^(-8)
@@ -243,7 +243,7 @@ end
 
 @doc Markdown.doc"""
     agm(x::Float64, y::Float64, e::Int) -> Float64
->   Returns the arithmetic-geometric mean of x and y.
+  Returns the arithmetic-geometric mean of x and y.
 """
 function agm(x::Float64, y::Float64, e::Int = 5)
     0 < y && 0 < y && 0 < e || throw(DomainError())
@@ -266,7 +266,7 @@ end
 # see Cohen
 @doc Markdown.doc"""
     real_period(E::EllCrv{fmpz}) -> Float64
->   Returns the real period of an elliptic curve E with integer coefficients.
+  Returns the real period of an elliptic curve E with integer coefficients.
 """
 function real_period(E)
   a1 = numerator(E.coeff[1])
@@ -306,7 +306,7 @@ end
 
 @doc Markdown.doc"""
     height(x::fmpq) -> Float64
-> Computes the height of a rational number x.
+Computes the height of a rational number x.
 """
 function log_height(x::fmpq) 
   a = Float64(numerator(x))
@@ -318,7 +318,7 @@ end
 # but is it always in this form?
 @doc Markdown.doc"""
     naive_height(P::EllCrvPt{fmpq}) -> Float64
-> Computes the naive height of a point $P$.
+Computes the naive height of a point $P$.
 """
 function naive_height(P)
   x = P.coordx
@@ -332,7 +332,7 @@ end
 # p.75 Cremona
 @doc Markdown.doc"""
     points_with_bounded_naive_height(E:EllCrv, B::Int) -> Array{EllCrvPt}
-> Computes all rational points on a curve E with integer coefficients which have naive height <= B.
+Computes all rational points on a curve E with integer coefficients which have naive height <= B.
 """
 function points_with_bounded_naive_height(E, B)
   a1 = numerator(E.coeff[1])
@@ -374,7 +374,7 @@ end
 
 @doc Markdown.doc"""
 torsion_points_via_height(E::EllCrv{fmpz}) ->  Array{EllCrvPt}
-> Returns the rational torsion points of a curve E with integer coefficients. 
+Returns the rational torsion points of a curve E with integer coefficients. 
 """
 function torsion_points_via_height(E::EllCrv{fmpq})
   
@@ -423,7 +423,7 @@ end
 
 @doc Markdown.doc"""
 independent_points_up_to(E::EllCrv{fmpq}, B::Int) -> Array{EllCrvPt}
-> Returns a maximal set of independent points with naive height <= B
+Returns a maximal set of independent points with naive height <= B
 """
 function independent_points_up_to(E::EllCrv{fmpq},B::Union{Integer, fmpz})
   
@@ -483,8 +483,8 @@ end
 
 @doc Markdown.doc"""
 mod_red(E::EllCrv, B::Int) -> (P::Array{Int}, N::Array{Nemo.fmpz})
-> input: E elliptic curve given in long form over ZZ
-> output: arrays P, N, where
+input: E elliptic curve given in long form over ZZ
+output: arrays P, N, where
   P contains all primes smaller than B (for which E/F_p is non-singular)
   N[i] = #E(F_P[i])
 """
@@ -513,8 +513,8 @@ end
 
 @doc Markdown.doc"""
 check_weak_bsd(E::EllCrv, B::Int) -> (a::Float64, b::Float64)
-> checks weak bsd-conjecture for elliptic curve E given in long form over ZZ, positive integer B
-> returns linear regression values for log(log(B)) and sum of log(N_p/p) for p <= B
+checks weak bsd-conjecture for elliptic curve E given in long form over ZZ, positive integer B
+returns linear regression values for log(log(B)) and sum of log(N_p/p) for p <= B
 """
 function check_weak_bsd(E, B)
     

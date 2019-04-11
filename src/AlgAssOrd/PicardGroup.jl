@@ -39,8 +39,8 @@ end
 ***
     picard_group(O::AlgAssAbsOrd)
 
-> Given an order O in a commutative algebra over QQ, this function returns the
-> picard group of O.
+Given an order O in a commutative algebra over QQ, this function returns the
+picard group of O.
 """
 # If prepare_ref_disc_log is true, then (possibly expensive) preparations for
 # the computation of refined discrete logarithms in non maximal orders are done.
@@ -170,7 +170,7 @@ function _picard_group_non_maximal(O::AlgAssAbsOrd, prepare_ref_disc_log::Bool =
     P, RtoP = quo(R, GinR)
     S, StoP = snf(P)
 
-    StoR = compose(StoP, inv(RtoP))
+    StoR = compose(StoP, pseudo_inv(RtoP))
 
     gens_snf = Vector{ideal_type(O)}(undef, ngens(S))
     for i = 1:ngens(S)

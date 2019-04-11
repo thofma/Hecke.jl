@@ -19,7 +19,7 @@ end
   G, FqytoG = Hecke.field_extension(g)
   @test characteristic(G) == 2
   @test degree(G) == 9
-  GtoFqy = inv(FqytoG)
+  GtoFqy = pseudo_inv(FqytoG)
 
   # Check if FqytoG does something reasonable with constant polynomials
   @test iszero(FqytoG(Fqy(1))^8 - FqytoG(Fqy(1)))
@@ -48,7 +48,7 @@ end
   G, FqytoG = Hecke.field_extension(g)
   @test characteristic(G) == 2
   @test degree(G) == 9
-  GtoFqy = inv(FqytoG)
+  GtoFqy = pseudo_inv(FqytoG)
 
   # Check if FqytoG does something reasonable with constant polynomials
   @test iszero(FqytoG(Fqy(1))^8 - FqytoG(Fqy(1)))

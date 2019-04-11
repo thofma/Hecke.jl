@@ -741,7 +741,7 @@ export NfAbsOrdElem
 
 mutable struct NfAbsOrdElem{S, T} <: RingElem
   elem_in_nf::T
-  elem_in_basis::Vector{fmpz}
+  coordinates::Vector{fmpz}
   has_coord::Bool
   parent::NfAbsOrd{S, T}
 
@@ -749,7 +749,7 @@ mutable struct NfAbsOrdElem{S, T} <: RingElem
     z = new{S, T}()
     z.parent = O
     z.elem_in_nf = nf(O)()
-    z.elem_in_basis = Vector{fmpz}(undef, degree(O))
+    z.coordinates = Vector{fmpz}(undef, degree(O))
     z.has_coord = false
     return z
   end
@@ -757,7 +757,7 @@ mutable struct NfAbsOrdElem{S, T} <: RingElem
   function NfAbsOrdElem{S, T}(O::NfAbsOrd{S, T}, a::T) where {S, T}
     z = new{S, T}()
     z.elem_in_nf = a
-    z.elem_in_basis = Vector{fmpz}(undef, degree(O))
+    z.coordinates = Vector{fmpz}(undef, degree(O))
     z.parent = O
     z.has_coord = false
     return z
@@ -768,7 +768,7 @@ mutable struct NfAbsOrdElem{S, T} <: RingElem
     z.parent = O
     z.elem_in_nf = a
     z.has_coord = true
-    z.elem_in_basis = arr
+    z.coordinates = arr
     return z
   end
 
@@ -776,7 +776,7 @@ mutable struct NfAbsOrdElem{S, T} <: RingElem
     z = new{S, T}()
     z.elem_in_nf = dot(O.basis_nf, arr)
     z.has_coord = true
-    z.elem_in_basis = arr
+    z.coordinates = arr
     z.parent = O
     return z
   end

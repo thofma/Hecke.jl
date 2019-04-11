@@ -38,7 +38,7 @@
       Hecke.mul_row!(z, i, K(norm(Apseudohnf.coeffs[i])))
     end
 
-    zinZ = MatrixSpace(FlintZZ, 5, 5)(map(zz -> numerator(elem_in_basis(O(zz))[1]), z.entries))
+    zinZ = MatrixSpace(FlintZZ, 5, 5)(map(zz -> numerator(coordinates(O(zz))[1]), z.entries))
     c = parent(zinZ)(Ahnf) - zinZ
 
     @test all([ mod(c[i,j], de) == 0 for i in 1:5, j in 1:5])

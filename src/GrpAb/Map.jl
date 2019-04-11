@@ -45,8 +45,8 @@ export haspreimage, hasimage, hom, kernel, cokernel, image, isinjective, issurje
 @doc Markdown.doc"""
     haspreimage(M::GrpAbFinGenMap, a::GrpAbFinGenElem) -> Bool, GrpAbFinGenElem
 
-> Returns whether $a$ is in the image of $M$. If so, the second return value is
-> an element $b$ with $M(b) = a$.
+Returns whether $a$ is in the image of $M$. If so, the second return value is
+an element $b$ with $M(b) = a$.
 """
 function haspreimage(M::GrpAbFinGenMap, a::GrpAbFinGenElem)
   if isdefined(M, :imap)
@@ -68,7 +68,7 @@ end
 #
 # Here is an example:
 # S, mS = sub(...), so ms: S -> G
-# h = inv(mS)
+# h = pseudo_inv(mS)
 # Now h is a partial function on G with domain of definition the image of mS.
 # Then hasimage(h, x) would check if x is in the image of mS.
 function hasimage(M::GrpAbFinGenMap, a::GrpAbFinGenElem)
@@ -95,7 +95,7 @@ id_hom(G::GrpAbFinGen) = hom(G, G, identity_matrix(FlintZZ, ngens(G)), identity_
 
 @doc Markdown.doc"""
     hom(A::Array{GrpAbFinGenElem, 1}, B::Array{GrpAbFinGenElem, 1}) -> Map
-> Creates the homomorphism $A[i] \mapsto B[i]$
+Creates the homomorphism $A[i] \mapsto B[i]$
 """
 function hom(A::Array{GrpAbFinGenElem, 1}, B::Array{GrpAbFinGenElem, 1}; check::Bool = true)
   GA = parent(A[1])
@@ -130,7 +130,7 @@ end
 @doc Markdown.doc"""
     hom(G::GrpAbFinGen, B::Array{GrpAbFinGenElem, 1}) -> Map
 
-> Creates the homomorphism which maps `G[i]` to `B[i]`.
+Creates the homomorphism which maps `G[i]` to `B[i]`.
 """
 function hom(G::GrpAbFinGen, B::Array{GrpAbFinGenElem, 1}; check::Bool = true)
   GB = parent(B[1])
@@ -178,7 +178,8 @@ function hom(A::GrpAbFinGen, B::GrpAbFinGen, M::fmpz_mat, Minv; check::Bool = tr
     check_mat(A, B, M) || error("Matrix does not define a morphism of abelian groups")
     check_mat(B, A, Minv) || error("Matrix does not define a morphism of abelian groups")
     h = GrpAbFinGenMap(A, B, M, Minv)
-    all(x -> x == inv(h)(h(x)), gens(A)) || error("Matrix does not define a morphism of abelian groups")
+    ph = pseudo_inv(h)
+    all(x -> x == ph(h(x)), gens(A)) || error("Matrix does not define a morphism of abelian groups")
     return h::GrpAbFinGenMap
   end
 
@@ -394,10 +395,10 @@ end
 
 @doc Markdown.doc"""
     hom(G::GrpAbFinGen, H::GrpAbFinGen; task::Symbol = :map) -> GrpAbFinGen, Map
-> Computes the group of all homomorpisms from $G$ to $H$ as an abstract group.
-> If {{{task}}} is ":map", then a map $\phi$ is computed that can be used
-> to obtain actual homomorphisms. This map also allows preimages.
-> Set {{{task}}} to ":none" to not compute the map.
+Computes the group of all homomorpisms from $G$ to $H$ as an abstract group.
+If {{{task}}} is ":map", then a map $\phi$ is computed that can be used
+to obtain actual homomorphisms. This map also allows preimages.
+Set {{{task}}} to ":none" to not compute the map.
 """
 function hom(G::GrpAbFinGen, H::GrpAbFinGen; task::Symbol = :map)
   @assert task in [:map, :none]
@@ -499,8 +500,8 @@ end
 #TODO: technically, dual Z could be Q/Z ...
 @doc Markdown.doc"""
     dual(G::GrpAbFinGen) -> GrpAbFinGen, Map
-> Computes the dual group, ie. $hom(G, Q/Z)$ as an
-> abstract group. The map can be used to obtain actual homomorphisms.
+Computes the dual group, ie. $hom(G, Q/Z)$ as an
+abstract group. The map can be used to obtain actual homomorphisms.
 """
 function dual(G::GrpAbFinGen)
   T, mT = torsion_subgroup(G)

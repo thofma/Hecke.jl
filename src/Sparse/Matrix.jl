@@ -954,8 +954,8 @@ end
 ***
     fmpz_mat{T <: Integer}(A::SMat{T})
 
-> The same matix $A$, but as an fmpz_mat.
-> Requires a conversion from the base ring of $A$ to $\mathbf ZZ$.
+The same matix $A$, but as an fmpz_mat.
+Requires a conversion from the base ring of $A$ to $\mathbf ZZ$.
 """
 function fmpz_mat(A::SMat{T}) where T <: Integer
   B = zero_matrix(FlintZZ, A.r, A.c)
@@ -972,7 +972,7 @@ end
 ***
     fmpz_mat(A::SMat{fmpz})
 
-> The same matix $A$, but as an fmpz_mat.
+The same matix $A$, but as an fmpz_mat.
 """
 function fmpz_mat(A::SMat{fmpz})
   B = zero_matrix(FlintZZ, A.r, A.c)
