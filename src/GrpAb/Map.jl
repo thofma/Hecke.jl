@@ -62,6 +62,7 @@ function haspreimage(M::GrpAbFinGenMap, a::GrpAbFinGenElem)
   end
 end
 
+
 # Note that a map can be a partial function. The following function
 # checks if an element is in the domain of definition.
 #
@@ -186,6 +187,28 @@ end
 
 ################################################################################
 #
+#  Inverse of a map
+#
+################################################################################
+
+function inv(f::GrpAbFinGenMap)
+  if !isinjective(f)
+    error("The map is not invertible")
+  end
+  gB = gens(codomain(f))
+  imgs = Vector{GrpAbFinGenElem}(undef, length(gB))
+  for i = 1:length(imgs)
+    fl, el = haspreimage(f, gB[i])
+    if !fl
+      error("The map is not invertible")
+    end
+    imgs[i] = el
+  end
+  return hom(gB, imgs, check = false)
+end
+
+################################################################################
+#
 #  Kernel, image, cokernel
 #
 ################################################################################
@@ -291,6 +314,7 @@ end
 #
 ################################################################################
 
+#TODO: Improve in the finite case
 @doc Markdown.doc"""
     isinjective(h::GrpAbFinGenMap) -> Bool
 
@@ -307,6 +331,7 @@ end
 #
 ################################################################################
 
+#TODO: Improve in the finite case
 @doc Markdown.doc"""
     isbijective(h::GrpAbFinGenMap) -> Bool
 
@@ -323,10 +348,21 @@ end
 ###############################################################################
 
 function compose(f::GrpAbFinGenMap, g::GrpAbFinGenMap)
-  @assert domain(g)==codomain(f)
+  @assert domain(g) == codomain(f)
   
-  M=f.map*g.map
-  return GrpAbFinGenMap(domain(f), codomain(g), M)
+  M = f.map*g.map
+  C = codomain(g)
+  if issnf(C)
+    for i = 1:nrows(M)
+      for j = 1:ncols(M)
+        M[i, j] = mod(M[i, j], C.snf[j])
+      end
+    end
+  else
+    assure_has_hnf(C)
+    reduce_mod_hnf!(M, C.hnf)
+  end
+  return hom(domain(f), codomain(g), M, check = false)
 
 end
 

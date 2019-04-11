@@ -489,18 +489,22 @@ Base.eltype(::Type{GrpAbFinGen}) = GrpAbFinGenElem
 ################################################################################
 
 # Helper function
+# H must be in upper right HNF form
 function reduce_mod_hnf!(a::fmpz_mat, H::fmpz_mat)
-  j = 1
-  for i=1:min(nrows(H), ncols(H))
-    while j <= ncols(H) && iszero(H[i, j])
-      j+=1
-    end
-    if j > ncols(H)
-      return
-    end
-    q = fdiv(a[1, j], H[i, j])
-    for k=j:ncols(a)
-      a[1, k] = a[1, k] - q * H[i, k]
+  for c = 1:nrows(a)
+    j = 1
+    for i=1:min(nrows(H), ncols(H))
+      while j <= ncols(H) && iszero(H[i, j])
+        j+=1
+      end
+      if j > ncols(H)
+        break
+      end
+      q = fdiv(a[c, j], H[i, j])
+      for k=j:ncols(a)
+        a[c, k] = a[c, k] - q * H[i, k]
+      end
     end
   end
+  return nothing
 end
