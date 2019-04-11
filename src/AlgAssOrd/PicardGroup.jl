@@ -170,7 +170,7 @@ function _picard_group_non_maximal(O::AlgAssAbsOrd, prepare_ref_disc_log::Bool =
     P, RtoP = quo(R, GinR)
     S, StoP = snf(P)
 
-    StoR = compose(StoP, inv(RtoP))
+    StoR = compose(StoP, pseudo_inv(RtoP))
 
     gens_snf = Vector{ideal_type(O)}(undef, ngens(S))
     for i = 1:ngens(S)

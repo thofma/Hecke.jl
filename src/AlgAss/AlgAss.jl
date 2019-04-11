@@ -319,7 +319,7 @@ function AlgAss(O::NfRelOrd{T, S}, I::NfRelOrdIdl{T, S}, p::Union{NfOrdIdl, NfRe
 
   Fp, mF = ResidueField(order(p), p)
   mmF = extend(mF, base_ring(nf(O)))
-  invmmF = inv(mmF)
+  invmmF = pseudo_inv(mmF)
 
   basis_elts = Int[]
   reducers = Int[]

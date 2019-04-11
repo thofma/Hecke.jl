@@ -725,7 +725,7 @@ function extend_aut(A::ClassField, tau::T) where T <: Map
 #      println("om: $om -> ", degree(c), " vs ", c.o)
       Cs = cyclotomic_extension(k, Int(degree(c)))
       Emb = hom(Cs.Kr, C.Kr, gen(C.Kr)^div(om, degree(c)), check = false)
-      emb = inv(Cs.mp[1]) * Emb * C.mp[1]
+      emb = pseudo_inv(Cs.mp[1]) * Emb * C.mp[1]
       a = FacElem(Dict(emb(k) => v for (k,v) = c.a.fac))
       tau_a = FacElem(Dict(tau_Ka(k) => v for (k,v) = a.fac))
       push!(all_emb, (a, tau_a, emb, divexact(om, c.o)))
@@ -959,7 +959,7 @@ function extend_hom(C::ClassField_pp, D::Array{ClassField_pp, 1}, tau)
 #      println("om: $om -> ", degree(c), " vs ", c.o)
       Cs = cyclotomic_extension(k2, Int(degree(c)))
       Emb = hom(Cs.Kr, Dy.Kr, gen(Dy.Kr)^div(om, degree(c)), check = false)
-      emb = inv(Cs.mp[1]) * Emb * Dy.mp[1]
+      emb = pseudo_inv(Cs.mp[1]) * Emb * Dy.mp[1]
       a = FacElem(Dict(emb(k) => v for (k,v) = c.a.fac))
       push!(all_emb, (a, emb, divexact(om, c.o)))
     end

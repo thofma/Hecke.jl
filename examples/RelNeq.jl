@@ -202,7 +202,7 @@ mutable struct Norm1Group
     U, mU = Hecke.unit_group_fac_elem(maximal_order(A.K))
     u, mu = Hecke.unit_group_fac_elem(maximal_order(A.k))
     q, mq = quo(u, [mu\norm(A.m_k_K, mU(U[i])) for i=1:ngens(U)])
-    r.U = q, inv(mq)*mu
+    r.U = q, pseudo_inv(mq)*mu
     r.sU = sub(u, elem_type(u)[])
     r.gC = [(ideal(maximal_order(A.K), 1)//1, 0*c[1])]
     r.gU = [(FacElem(A.k(1)), 0*q[1])] 

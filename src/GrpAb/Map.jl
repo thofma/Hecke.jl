@@ -67,7 +67,7 @@ end
 #
 # Here is an example:
 # S, mS = sub(...), so ms: S -> G
-# h = inv(mS)
+# h = pseudo_inv(mS)
 # Now h is a partial function on G with domain of definition the image of mS.
 # Then hasimage(h, x) would check if x is in the image of mS.
 function hasimage(M::GrpAbFinGenMap, a::GrpAbFinGenElem)
@@ -177,7 +177,8 @@ function hom(A::GrpAbFinGen, B::GrpAbFinGen, M::fmpz_mat, Minv; check::Bool = tr
     check_mat(A, B, M) || error("Matrix does not define a morphism of abelian groups")
     check_mat(B, A, Minv) || error("Matrix does not define a morphism of abelian groups")
     h = GrpAbFinGenMap(A, B, M, Minv)
-    all(x -> x == inv(h)(h(x)), gens(A)) || error("Matrix does not define a morphism of abelian groups")
+    ph = pseudo_inv(h)
+    all(x -> x == ph(h(x)), gens(A)) || error("Matrix does not define a morphism of abelian groups")
     return h::GrpAbFinGenMap
   end
 

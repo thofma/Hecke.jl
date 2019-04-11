@@ -851,7 +851,7 @@ end
 function simple_extension(K::NfRel_ns{nf_elem}, ::FlintRationalField)
   Ks, mp = simple_extension(K)
   Ka, m1, m2 = absolute_field(Ks)
-  return Ka, inv(m1)*mp, m2
+  return Ka, pseudo_inv(m1)*mp, m2
 end
 
 absolute_field(K::NfRel_ns{nf_elem}) = simple_extension(K, FlintQQ)

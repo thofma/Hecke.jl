@@ -475,7 +475,7 @@ function _from_algs_to_ideals(A::AlgAss{T}, OtoA::Map, AtoO::Map, Ip1, p::Union{
     P.norm = fmpz(p)^f
     P.splitting_type = (0, f)
     P.is_prime = 1
-    fromOtosimplealgebra = compose(OtoA, inv(BtoA))
+    fromOtosimplealgebra = compose(OtoA, pseudo_inv(BtoA))
     compute_residue_field_data!(P, fromOtosimplealgebra)
     ideals[i] = (P, 0)
   end
@@ -497,7 +497,7 @@ function _decomposition(O::NfAbsOrd, I::NfAbsOrdIdl, Ip::NfAbsOrdIdl, T::NfAbsOr
     ideals = Array{Tuple{ideal_type(O), Int}, 1}(undef, 1)
     ideals[1] = (Ip1, Int(0))
   else
-    AtoO = inv(OtoA)
+    AtoO = pseudo_inv(OtoA)
     ideals , AA = _from_algs_to_ideals(A, OtoA, AtoO, Ip1, p)
   end
   k = (1-1/BigInt(p))^degree(O) < 0.1

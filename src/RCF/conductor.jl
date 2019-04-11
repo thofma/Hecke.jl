@@ -21,7 +21,7 @@ function _norm_group_gens_small(C::ClassField)
   expo=Int(exponent(domain(mp)))
   K=O.nf
   
-  mS=inv(mS)
+  mS=pseudo_inv(mS)
   dom=domain(mS)
   M=zero_matrix(FlintZZ,ngens(dom), ngens(codomain(mS)))
   for i=1:ngens(dom)
@@ -152,7 +152,7 @@ function conductor(C::Hecke.ClassField)
   end
   mR = C.rayclassgroupmap
   mS = C.quotientmap
-  mp = inv(mS)* mR
+  mp = pseudo_inv(mS)* mR
   G = domain(mp)
   #
   #  First, we need to find the subgroup
@@ -293,7 +293,7 @@ function isconductor(C::Hecke.ClassField, m::NfOrdIdl, inf_plc::Array{InfPlc,1}=
   mR = C.rayclassgroupmap
   mS = C.quotientmap
   G = codomain(mS)
-  mp = inv(mS) * mR
+  mp = pseudo_inv(mS) * mR
   
   R = domain(mR)
   cond = mR.modulus_fin
@@ -306,7 +306,7 @@ function isconductor(C::Hecke.ClassField, m::NfOrdIdl, inf_plc::Array{InfPlc,1}=
   wild=mR.wild_mult_grp
   
   if check 
-    mS=inv(mS)
+    mS=pseudo_inv(mS)
     dom=domain(mS)
     M=zero_matrix(FlintZZ,ngens(dom), ngens(codomain(mS)))
     for i=1:ngens(dom)
@@ -437,7 +437,7 @@ function discriminant(C::ClassField)
   end
   @assert typeof(m)==NfOrdIdl
   
-  mp = inv(C.quotientmap) * C.rayclassgroupmap
+  mp = pseudo_inv(C.quotientmap) * C.rayclassgroupmap
   R = domain(mp)
   n = order(R)
   
@@ -542,7 +542,7 @@ function _is_conductor_min_normal(C::Hecke.ClassField; lwp::Dict{Int, Array{GrpA
   end
   
   a = minimum(mr.modulus_fin)
-  mp = inv(C.quotientmap) * mr 
+  mp = pseudo_inv(C.quotientmap) * mr 
   R = domain(mp)
   
   O = base_ring(C)
@@ -616,7 +616,7 @@ end
 function _is_conductor_minQQ(C::Hecke.ClassField, n::Int)
 
   mr = C.rayclassgroupmap
-  mp = inv(C.quotientmap) * mr
+  mp = pseudo_inv(C.quotientmap) * mr
   m = mr.modulus_fin
   mm = Int(minimum(m))
   lp = factor(m.minimum)
@@ -689,7 +689,7 @@ function discriminant_conductor(C::ClassField, bound::fmpz; lwp::Dict{Tuple{Int,
   K = nf(O)
   d = degree(K)
   discr = fmpz(1)
-  mp = inv(C.quotientmap) * mr
+  mp = pseudo_inv(C.quotientmap) * mr
   R = domain(mp)
   a = minimum(mr.modulus_fin)
   cyc_prime = isprime(n)
@@ -820,7 +820,7 @@ end
 function discriminant_conductorQQ(O::NfOrd, C::ClassField, m::Int, bound::fmpz, n::Int)
   
   discr=fmpz(1)
-  mp = inv(C.quotientmap) * C.rayclassgroupmap
+  mp = pseudo_inv(C.quotientmap) * C.rayclassgroupmap
   G=domain(mp)
   
   cyc_prime= isprime(n)==true
@@ -1159,13 +1159,13 @@ function norm_group_map(R::ClassField{S, T}, r::Vector{<:ClassField}, map = fals
   mR = defining_modulus(R)[1]
   @assert map != false || all(x->mR+defining_modulus(x)[1] == defining_modulus(x)[1], r)
 
-  fR = compose(inv(R.quotientmap), R.rayclassgroupmap)
+  fR = compose(pseudo_inv(R.quotientmap), R.rayclassgroupmap)
   lp, sR = find_gens(MapFromFunc(x->preimage(fR, x), IdealSet(base_ring(R)), domain(fR)),
                              PrimesSet(100, -1), minimum(mR))
   if map == false                           
-    h = [hom(sR, [preimage(compose(inv(x.quotientmap), x.rayclassgroupmap), p) for p = lp]) for x = r]
+    h = [hom(sR, [preimage(compose(pseudo_inv(x.quotientmap), x.rayclassgroupmap), p) for p = lp]) for x = r]
   else
-    h = [hom(sR, [preimage(compose(inv(x.quotientmap), x.rayclassgroupmap), map(p)) for p = lp]) for x = r]
+    h = [hom(sR, [preimage(compose(pseudo_inv(x.quotientmap), x.rayclassgroupmap), map(p)) for p = lp]) for x = r]
   end
   return h
 end
@@ -1214,7 +1214,7 @@ function maximal_abelian_subfield(A::ClassField, k::AnticNumberField)
   # I think for now, I cheat
   d = div(discriminant(ZK), discriminant(zk)^div(degree(K), degree(k)))
   mR1 = A.rayclassgroupmap
-  mC = inv(A.quotientmap)*mR1
+  mC = pseudo_inv(A.quotientmap)*mR1
   f_M0 = mR1.fact_mod
   # want m0 meet zk:
   f_m0 = typeof(f_M0)()
@@ -1413,7 +1413,7 @@ function isnormal_difficult(C::ClassField)
   ld = (ceil(fmpz, log(d)))
   n = degree(C1)*nK
   bound = (4*ld + 2*n +5)^2
-  mp = inv(C.quotientmap) * C.rayclassgroupmap
+  mp = pseudo_inv(C.quotientmap) * C.rayclassgroupmap
   while p < bound 
     p = next_prime(p)
     if divisible(discriminant(O), p)
@@ -1706,7 +1706,7 @@ function lorenz_module_pp(k::AnticNumberField, p::Int, l::Int; containing=false)
   end
   Q, mQ = quo(c, [mc\P for P = S])
 
-  a, _ = find_gens(inv(mc)*mQ, PrimesSet(degree(k), -1), p*numerator(discriminant(Ka)))
+  a, _ = find_gens(pseudo_inv(mc)*mQ, PrimesSet(degree(k), -1), p*numerator(discriminant(Ka)))
   S = Set(intersect_nonindex(C.mp[2], P) for P = a)
   union!(S, s)
 

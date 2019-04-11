@@ -75,6 +75,8 @@ mutable struct AbsAlgAssMor{R, S, T} <: Map{R, S, HeckeMap, AbsAlgAssMor}
   end
 end
 
+inv(a::AbsAlgAssMor) = pseudo_inv(a)
+
 #mutable struct AlgAssMor{R, S, T} <: Map{AlgAss{R}, AlgAss{S}, HeckeMap, AlgAssMor}
 #  header::MapHeader{AlgAss{R}, AlgAss{S}}
 #

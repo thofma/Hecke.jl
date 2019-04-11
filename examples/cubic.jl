@@ -118,7 +118,7 @@ function s3_with_discriminant(I::NfOrdIdl)
     r, mr = ray_class_group(D, n_quo = 2)
     
     for s in index_p_subgroups(r, fmpz(2), (A,x) -> quo(A, x)[2])
-      a = ray_class_field(mr*inv(s))
+      a = ray_class_field(mr*pseudo_inv(s))
 #      println(a, " with cond ", conductor(a))
       if conductor(a)[1] != D
         continue
@@ -155,7 +155,7 @@ function s3_with_discriminant(I::NfOrdIdl)
           println("action is trivial, no S3")
           continue
         end
-        A = ray_class_field(mR*inv(S[2]))
+        A = ray_class_field(mR*pseudo_inv(S[2]))
 #        println(A, " with cond ", conductor(A))
         if conductor(A)[1] != FF
           println("wrong conductor")

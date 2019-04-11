@@ -329,7 +329,7 @@ function _s_unit_for_kummer(C::CyclotomicExt, f::fmpz)
   allow_cache!(mc)
   @vprint :ClassField 2 "... $c\n"
   c, mq = quo(c, e, false)
-  mc = compose(inv(mq), mc)
+  mc = compose(pseudo_inv(mq), mc)
   
   lP = Hecke.NfOrdIdl[]
   if f != 1
@@ -350,9 +350,9 @@ function _s_unit_for_kummer(C::CyclotomicExt, f::fmpz)
   end
 
   q, mq = quo(c, g, false)
-  mc = compose(inv(mq), mc)
+  mc = compose(pseudo_inv(mq), mc)
   
-  @vtime :ClassField 3 lP = vcat(lP, find_gens(inv(mc), PrimesSet(100, -1))[1])::Vector{NfOrdIdl}
+  @vtime :ClassField 3 lP = vcat(lP, find_gens(pseudo_inv(mc), PrimesSet(100, -1))[1])::Vector{NfOrdIdl}
   @vprint :ClassField 2 "using $lP of length $(length(lP)) for S-units\n"
   if isempty(lP)
     U, mU = unit_group_fac_elem(ZK)

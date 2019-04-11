@@ -396,13 +396,6 @@ function sub(M::Nemo.MatElem{T}, r::UnitRange{<:Integer}, c::UnitRange{<:Integer
   return z
 end
 
-_inv(a::nmod_mat) = inv(a)
-
-function _inv(a::MatElem{Generic.Res{fmpz}})
-  b, d = inv(a)
-  return divexact(b, d)
-end
-
 mutable struct NfToFqNmodMor <: Map{AnticNumberField, FqNmodFiniteField, HeckeMap, NfToFqNmodMor}
   header::MapHeader{AnticNumberField, FqNmodFiniteField}
 

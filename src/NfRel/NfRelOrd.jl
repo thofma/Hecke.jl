@@ -601,7 +601,7 @@ function dedekind_test(O::NfRelOrd, p::Union{NfOrdIdl, NfRelOrdIdl}, compute_ord
   OK = maximal_order(K)
   F, mF = ResidueField(OK, p)
   mmF = extend(mF, K)
-  immF = inv(mmF)
+  immF = pseudo_inv(mmF)
   Fy, y = PolynomialRing(F,"y", cached=false)
 
   Tmodp = nf_elem_poly_to_fq_poly(Fy, mmF, T)
@@ -735,7 +735,7 @@ function relative_order(O::NfOrd, m::NfRelToNf)
   @assert nf(O) == Labs
   K = base_ring(L)
   OK = maximal_order(K)
-  mm = inv(m)
+  mm = pseudo_inv(m)
   B = basis(O, copy = false)
   d = degree(L)
   dabs = degree(Labs)
