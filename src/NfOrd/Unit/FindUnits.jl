@@ -17,7 +17,7 @@ end
 # find r independent units, where r is the unit rank.
 # In the second round, try to enlarge the unit group with some random kernel
 # elements.
-function _unit_group_find_units_with_trafo(u::UnitGrpCtx, x::ClassGrpCtx)
+function _unit_group_find_units_with_transform(u::UnitGrpCtx, x::ClassGrpCtx)
   @vprint :UnitGroup 1 "Processing ClassGrpCtx to find units ... \n"
 
   @vprint :UnitGroup 1 "Relation module  $(x.M)\n"

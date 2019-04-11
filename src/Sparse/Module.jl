@@ -5,7 +5,7 @@
 #       Hecke.rank, Hecke.det
 
 export det_mc, id, isid, isupper_triangular, norm2, hadamard_bound2, 
-       hnf, hnf!, echelon_with_trafo
+       hnf, hnf!, echelon_with_transform
 
 const p = next_prime(2^20)
 

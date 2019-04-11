@@ -209,12 +209,12 @@ function det(A::SMat{fmpz})
 end
 
 @doc Markdown.doc"""
-    echelon_with_trafo(A::SMat{nmod}) -> SMat, SMat
+    echelon_with_transform(A::SMat{nmod}) -> SMat, SMat
 
 Find a unimodular matrix $T$ and an upper-triangular $E$ s.th.
 $TA = E$ holds.
 """
-function echelon_with_trafo(A::SMat{nmod})
+function echelon_with_transform(A::SMat{nmod})
   z = hcat(A, identity_matrix(SMat, base_ring(A), A.r))
   M = Hecke.ModuleCtxNmod(base_ring(A), z.c)
   for i=z
@@ -259,7 +259,7 @@ function solve_dixon_sf(A::SMat{fmpz}, B::SMat{fmpz}, is_int::Bool = false)
   Bp = copy(Ap)
   invert_rows!(Bp)
   Bp = Bp'
-  Ep, Tp = echelon_with_trafo(Bp)
+  Ep, Tp = echelon_with_transform(Bp)
   @hassert :HNF 1  Ep.c == Ep.r
 #  @hassert :HNF 1  nmod_mat(Tp) * nmod_mat(Bp) == nmod_mat(Ep)
 

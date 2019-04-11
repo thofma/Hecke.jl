@@ -1442,10 +1442,10 @@ function _can_solve_with_kernel(A::MatElem{T}, B::MatElem{T}) where T <: FieldEl
   return true, sol, n
 end
 
-#TODO !!!: different to can_solve*(fmpz_mat) is hnf_with_tranformation -> hnf_with_trafo
-#maybe (definitely!) agree on one name and combine?
-
+# TODO (easy): Remove this once the name is changed in AbstractAlgebra
 hnf_with_trafo(x::fmpz_mat) = hnf_with_transform(x)
+
+hnf_with_transform(x) = hnf_with_trafo(x)
 
 @doc Markdown.doc"""
     can_solve(A::MatElem{T}, B::MatElem{T}, side = :right) where T <: RingElem -> Bool, MatElem
@@ -1528,7 +1528,7 @@ function can_solve_with_kernel(A::MatElem{T}, B::MatElem{T}; side = :right) wher
 end
 
 function _can_solve_with_kernel(a::MatElem{S}, b::MatElem{S}) where S <: RingElem
-  H, T = hnf_with_trafo(transpose(a))
+  H, T = hnf_with_transform(transpose(a))
   z = similar(a, ncols(b), ncols(a))
   l = min(nrows(a), ncols(a))
   for i=1:ncols(b)

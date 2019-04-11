@@ -1,4 +1,4 @@
-export pseudo_matrix, pseudo_hnf, PseudoMatrix, pseudo_hnf_with_trafo
+export pseudo_matrix, pseudo_hnf, PseudoMatrix, pseudo_hnf_with_transform
 
 function _det_bound(M::Generic.Mat{NfOrdElem})
   n = nrows(M)
@@ -415,11 +415,11 @@ function pseudo_hnf(P::PMat{nf_elem, NfOrdFracIdl}, shape::Symbol = :upperright,
   end
 end
 
-pseudo_hnf_with_trafo(P::PMat{nf_elem, NfOrdFracIdl}, shape::Symbol = :upperright, full_rank::Bool = false) = pseudo_hnf_kb_with_trafo(P, shape)
+pseudo_hnf_with_transform(P::PMat{nf_elem, NfOrdFracIdl}, shape::Symbol = :upperright, full_rank::Bool = false) = pseudo_hnf_kb_with_transform(P, shape)
 
 pseudo_hnf(P::PMat{T, S}, shape::Symbol = :upperright, full_rank::Bool = false) where {T <: RelativeElement, S} = pseudo_hnf_kb(P, shape)
 
-pseudo_hnf_with_trafo(P::PMat{T, S}, shape::Symbol = :upperright, full_rank::Bool = false) where {T <: RelativeElement, S} = pseudo_hnf_kb_with_trafo(P, shape)
+pseudo_hnf_with_transform(P::PMat{T, S}, shape::Symbol = :upperright, full_rank::Bool = false) where {T <: RelativeElement, S} = pseudo_hnf_kb_with_transform(P, shape)
 
 function pseudo_hnf_full_rank(P::PMat, shape::Symbol = :upperright)
   PP = deepcopy(P)
@@ -821,7 +821,7 @@ function pseudo_hnf_cohen(P::PMat)
    return _pseudo_hnf_cohen(P, Val{false})
 end
 
-function pseudo_hnf_cohen_with_trafo(P::PMat)
+function pseudo_hnf_cohen_with_transform(P::PMat)
    return _pseudo_hnf_cohen(P, Val{true})
 end
 
@@ -843,7 +843,7 @@ end
 Algorithm 2.6 in "Hermite and Smith normal form algorithms over Dedekind domains"
 by H. Cohen.
 =#
-function pseudo_hnf_cohen!(H::PMat, U::Generic.Mat{T}, with_trafo::Bool = false) where T <: nf_elem
+function pseudo_hnf_cohen!(H::PMat, U::Generic.Mat{T}, with_transform::Bool = false) where T <: nf_elem
    m = nrows(H)
    n = ncols(H)
    A = H.matrix
@@ -862,11 +862,11 @@ function pseudo_hnf_cohen!(H::PMat, U::Generic.Mat{T}, with_trafo::Bool = false)
       end
       if j > k
          swap_rows!(H, j, k)
-         with_trafo ? swap_rows!(U, j, k) : nothing
+         with_transform ? swap_rows!(U, j, k) : nothing
       end
       H.coeffs[k] = H.coeffs[k]*A[k, i]
       simplify(H.coeffs[k])
-      with_trafo ? divide_row!(U, k, A[k, i]) : nothing
+      with_transform ? divide_row!(U, k, A[k, i]) : nothing
       divide_row!(A, k, A[k, i])
       for j = k+1:m
          if iszero(A[j, i])
@@ -894,7 +894,7 @@ function pseudo_hnf_cohen!(H::PMat, U::Generic.Mat{T}, with_trafo::Bool = false)
             mul!(t2, A[k, c], v)
             add!(A[k, c], t1, t2)
          end
-         if with_trafo
+         if with_transform
             for c = 1:m
                t = deepcopy(U[j, c])
                mul!(t1, U[k, c], -Aji)
@@ -923,7 +923,7 @@ function pseudo_hnf_cohen!(H::PMat, U::Generic.Mat{T}, with_trafo::Bool = false)
             mul!(t, q, A[k, c])
             addeq!(A[j, c], t)
          end
-         if with_trafo
+         if with_transform
             for c = 1:m
                mul!(t, q, U[k, c])
                addeq!(U[j, c], t)
@@ -988,7 +988,7 @@ function pseudo_hnf_kb(P::PMat, shape::Symbol = :upperright)
   end
 end
 
-function pseudo_hnf_kb_with_trafo(P::PMat, shape::Symbol = :upperright)
+function pseudo_hnf_kb_with_transform(P::PMat, shape::Symbol = :upperright)
   if shape == :lowerleft
     H, U = _pseudo_hnf_kb(PseudoMatrix(invert_cols(P.matrix), P.coeffs), Val{true})
     invert_cols!(H.matrix)
@@ -1028,7 +1028,7 @@ function kb_search_first_pivot(H::PMat, start_element::Int = 1)
    return 0, 0
 end
 
-function kb_reduce_row!(H::PMat{T, S}, U::Generic.Mat{T}, pivot::Array{Int, 1}, c::Int, with_trafo::Bool) where {T <: Union{nf_elem, RelativeElement}, S}
+function kb_reduce_row!(H::PMat{T, S}, U::Generic.Mat{T}, pivot::Array{Int, 1}, c::Int, with_transform::Bool) where {T <: Union{nf_elem, RelativeElement}, S}
    r = pivot[c]
    A = H.matrix
    t = base_ring(A)()
@@ -1044,7 +1044,7 @@ function kb_reduce_row!(H::PMat{T, S}, U::Generic.Mat{T}, pivot::Array{Int, 1}, 
          mul!(t, q, A[p,j])
          addeq!(A[r,j], t)
       end
-      if with_trafo
+      if with_transform
          for j = 1:ncols(U)
             mul!(t, q, U[p,j])
             addeq!(U[r,j], t)
@@ -1054,7 +1054,7 @@ function kb_reduce_row!(H::PMat{T, S}, U::Generic.Mat{T}, pivot::Array{Int, 1}, 
    return nothing
 end
 
-function kb_reduce_column!(H::PMat{T, S}, U::Generic.Mat{T}, pivot::Array{Int, 1}, c::Int, with_trafo::Bool, start_element::Int = 1) where {T <: Union{nf_elem, RelativeElement}, S}
+function kb_reduce_column!(H::PMat{T, S}, U::Generic.Mat{T}, pivot::Array{Int, 1}, c::Int, with_transform::Bool, start_element::Int = 1) where {T <: Union{nf_elem, RelativeElement}, S}
    r = pivot[c]
    A = H.matrix
    t = base_ring(A)()
@@ -1070,7 +1070,7 @@ function kb_reduce_column!(H::PMat{T, S}, U::Generic.Mat{T}, pivot::Array{Int, 1
          mul!(t, q, A[r,j])
          addeq!(A[p,j], t)
       end
-      if with_trafo
+      if with_transform
          for j = 1:ncols(U)
             mul!(t, q, U[r,j])
             addeq!(U[p,j], t)
@@ -1080,7 +1080,7 @@ function kb_reduce_column!(H::PMat{T, S}, U::Generic.Mat{T}, pivot::Array{Int, 1
    return nothing
 end
 
-function kb_sort_rows!(H::PMat{T, S}, U::Generic.Mat{T}, pivot::Array{Int, 1}, with_trafo::Bool, start_element::Int = 1) where {T <: Union{nf_elem, RelativeElement}, S}
+function kb_sort_rows!(H::PMat{T, S}, U::Generic.Mat{T}, pivot::Array{Int, 1}, with_transform::Bool, start_element::Int = 1) where {T <: Union{nf_elem, RelativeElement}, S}
    m = nrows(H)
    n = ncols(H)
    pivot2 = zeros(Int, m)
@@ -1099,7 +1099,7 @@ function kb_sort_rows!(H::PMat{T, S}, U::Generic.Mat{T}, pivot::Array{Int, 1}, w
       end
       if r1 != r2
          swap_rows!(H, r1, r2)
-         with_trafo ? swap_rows!(U, r1, r2) : nothing
+         with_transform ? swap_rows!(U, r1, r2) : nothing
          p = pivot2[r1]
          pivot[i] = r1
          if p != 0
@@ -1118,7 +1118,7 @@ end
 
 const PRINT_PSEUDOHNF_SIZE = Ref{Bool}(false)
 
-function pseudo_hnf_kb!(H::PMat{T, S}, U::Generic.Mat{T}, with_trafo::Bool = false, start_element::Int = 1) where {T <: Union{nf_elem, RelativeElement}, S}
+function pseudo_hnf_kb!(H::PMat{T, S}, U::Generic.Mat{T}, with_transform::Bool = false, start_element::Int = 1) where {T <: Union{nf_elem, RelativeElement}, S}
    m = nrows(H)
    n = ncols(H)
    A = H.matrix
@@ -1132,7 +1132,7 @@ function pseudo_hnf_kb!(H::PMat{T, S}, U::Generic.Mat{T}, with_trafo::Bool = fal
    pivot_max = col1
    H.coeffs[row1] = H.coeffs[row1]*A[row1, col1]
    simplify(H.coeffs[row1])
-   with_trafo ? divide_row!(U, row1, A[row1, col1]) : nothing
+   with_transform ? divide_row!(U, row1, A[row1, col1]) : nothing
    divide_row!(A, row1, A[row1, col1])
    t = K()
    t1 = K()
@@ -1153,9 +1153,9 @@ function pseudo_hnf_kb!(H::PMat{T, S}, U::Generic.Mat{T}, with_trafo::Bool = fal
             new_pivot = true
             H.coeffs[i+1] = H.coeffs[i+1]*A[i+1, j]
             simplify(H.coeffs[i+1])
-            with_trafo ? divide_row!(U, i+1, A[i+1, j]) : nothing
+            with_transform ? divide_row!(U, i+1, A[i+1, j]) : nothing
             divide_row!(A, i+1, A[i+1, j])
-            kb_reduce_row!(H, U, pivot, j, with_trafo)
+            kb_reduce_row!(H, U, pivot, j, with_transform)
          else
             p = pivot[j]
             Aij = deepcopy(A[i+1, j])
@@ -1195,7 +1195,7 @@ function pseudo_hnf_kb!(H::PMat{T, S}, U::Generic.Mat{T}, with_trafo::Bool = fal
                #A[p, c] = add!(A[p, c], t1, t2)
                add!(A[p, c], t1, t2)
             end
-            if with_trafo
+            if with_transform
                for c = 1:m
                   t = deepcopy(U[i+1, c])
                   #t1 = mul!(t1, U[p, c], -Aij)
@@ -1215,7 +1215,7 @@ function pseudo_hnf_kb!(H::PMat{T, S}, U::Generic.Mat{T}, with_trafo::Bool = fal
             H.coeffs[p] = d
             simplify(H.coeffs[p])
          end
-         kb_reduce_column!(H, U, pivot, j, with_trafo, start_element)
+         kb_reduce_column!(H, U, pivot, j, with_transform, start_element)
          if new_pivot
             break
          end
@@ -1227,15 +1227,15 @@ function pseudo_hnf_kb!(H::PMat{T, S}, U::Generic.Mat{T}, with_trafo::Bool = fal
                pivot_max = max(pivot_max, c)
                H.coeffs[i+1] = H.coeffs[i+1]*A[i+1, c]
                simplify(H.coeffs[i+1])
-               with_trafo ? divide_row!(U, i+1, A[i+1, c]) : nothing
+               with_transform ? divide_row!(U, i+1, A[i+1, c]) : nothing
                divide_row!(A, i+1, A[i+1, c])
-               kb_reduce_column!(H, U, pivot, c, with_trafo, start_element)
+               kb_reduce_column!(H, U, pivot, c, with_transform, start_element)
                break
             end
          end
       end
    end
-   kb_sort_rows!(H, U, pivot, with_trafo, start_element)
+   kb_sort_rows!(H, U, pivot, with_transform, start_element)
    return nothing
 end
 
@@ -1294,7 +1294,7 @@ function pseudo_snf_kb(P::PMat2)
    return _pseudo_snf_kb(P, Val{false})
 end
 
-function pseudo_snf_kb_with_trafo(P::PMat2)
+function pseudo_snf_kb_with_transform(P::PMat2)
    return _pseudo_snf_kb(P, Val{true})
 end
 
@@ -1315,7 +1315,7 @@ function _pseudo_snf_kb(P::PMat2, trafo::Type{Val{T}} = Val{false}) where T
    end
 end
 
-function kb_clear_row!(S::PMat2, K::Generic.Mat{nf_elem}, i::Int, with_trafo::Bool)
+function kb_clear_row!(S::PMat2, K::Generic.Mat{nf_elem}, i::Int, with_transform::Bool)
    m = nrows(S)
    n = ncols(S)
    A = S.matrix
@@ -1352,7 +1352,7 @@ function kb_clear_row!(S::PMat2, K::Generic.Mat{nf_elem}, i::Int, with_trafo::Bo
          mul!(t2, A[r, i], v)
          add!(A[r, i], t1, t2)
       end
-      if with_trafo
+      if with_transform
          for r = 1:n
             t = deepcopy(K[r, j])
             mul!(t1, K[r, i], -Aij)
@@ -1370,7 +1370,7 @@ function kb_clear_row!(S::PMat2, K::Generic.Mat{nf_elem}, i::Int, with_trafo::Bo
    return nothing
 end
 
-function pseudo_snf_kb!(S::PMat2, U::Generic.Mat{nf_elem}, K::Generic.Mat{nf_elem}, with_trafo::Bool = false)
+function pseudo_snf_kb!(S::PMat2, U::Generic.Mat{nf_elem}, K::Generic.Mat{nf_elem}, with_transform::Bool = false)
    m = nrows(S)
    n = ncols(S)
    A = S.matrix
@@ -1383,12 +1383,12 @@ function pseudo_snf_kb!(S::PMat2, U::Generic.Mat{nf_elem}, K::Generic.Mat{nf_ele
    if !iszero(A[1, 1])
       S.row_coeffs[1] = S.row_coeffs[1]*A[1, 1]
       simplify(S.row_coeffs[1])
-      with_trafo ? divide_row!(U, 1, A[1, 1]) : nothing
+      with_transform ? divide_row!(U, 1, A[1, 1]) : nothing
       divide_row!(A, 1, A[1, 1])
    end
    while i<=l
-      !iszero(A[i, i]) ? kb_clear_row!(S, K, i, with_trafo) : nothing
-      pseudo_hnf_kb!(H, U, with_trafo, i)
+      !iszero(A[i, i]) ? kb_clear_row!(S, K, i, with_transform) : nothing
+      pseudo_hnf_kb!(H, U, with_transform, i)
       c = i + 1
       while c <= n && iszero(A[i, c])
          c += 1
