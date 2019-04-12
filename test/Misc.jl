@@ -6,5 +6,5 @@
   include("Misc/stable_subgroups.jl")
   include("Misc/NumberField.jl")
   include("Misc/Poly.jl")
+  include("Misc/Localization.jl")
 end
-  

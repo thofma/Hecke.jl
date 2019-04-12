@@ -44,10 +44,9 @@ export hasse_interval, order, order_via_bsgs, order_via_legendre,
 
 # only works for short form
 @doc Markdown.doc"""
-***
     rand(E::EllCrv) -> EllCrvPt
-> Returns a random point on the elliptic curve $E$ defined over a finite field.
-> It is assumed that $E$ is given in short form.
+Returns a random point on the elliptic curve $E$ defined over a finite field.
+It is assumed that $E$ is given in short form.
 """
 function rand(E::EllCrv)
   R = base_field(E)
@@ -79,7 +78,6 @@ end
 
 # Th. 4.14
 @doc Markdown.doc"""
-***
     order_via_legendre(E::EllCrv{Generic.Res{fmpz}) -> fmpz
 
 Calculates the number of points on an elliptic curve $E$ over a finite field
@@ -123,12 +121,11 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
     hasse_interval(E::EllCrv) -> Array{fmpz, 1}
 
-> Given an elliptic curve $E$ over a finite field $\mathbf F$, returns an array
-> `[l, b]` > of integers, such that $l \leq \#E(\mathbf F) \leq b$ using
-> Hasse's theorem.
+Given an elliptic curve $E$ over a finite field $\mathbf F$, returns an array
+`[l, b]` > of integers, such that $l \leq \#E(\mathbf F) \leq b$ using
+Hasse's theorem.
 """
 function hasse_interval(E::EllCrv)
   R = base_field(E)
@@ -144,11 +141,10 @@ end
 
 # section 4.3.4
 @doc Markdown.doc"""
-***
     elem_order_bsgs(P::EllCrvPt) -> fmpz
 
-> Calculates the order of a point P on an elliptic curve given over a finite
-> field using BSGS.
+Calculates the order of a point P on an elliptic curve given over a finite
+field using BSGS.
 """
 function elem_order_bsgs(P::EllCrvPt)
   R = base_field(P.parent)
@@ -236,7 +232,6 @@ function elem_order_bsgs(P::EllCrvPt)
 end
 
 @doc Markdown.doc"""
-***
     order(P::EllCrvPt) -> fmpz
 
 Given a point on an elliptic curve over a finite field, returns the order
@@ -251,7 +246,6 @@ order(P::EllCrvPt) = elem_order_bsgs(P)
 ################################################################################
 
 @doc Markdown.doc"""
-***
     order_via_bsgs(E::EllCrv) -> Array{fmpz, 1}
 
 Calculates candidates for the number of points on an elliptic curve $E$ given
@@ -369,7 +363,6 @@ function fn_from_schoof(E::EllCrv, n::Int, x)
 end
 
 @doc Markdown.doc"""
-***
     order_via_schoof(E::EllCrv) -> fmpz
 
 Given an elliptic curve $E$ elliptic curve given a finite field $\mathbf F$,
@@ -669,7 +662,6 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
     order(E::EllCrv{NemoResidue}) -> Nemo.fmpz
 
 Given an elliptic curve $E$ over a finite field $\mathbf F$, computes

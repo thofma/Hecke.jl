@@ -5,10 +5,9 @@
 ################################################################################
 
 @doc Markdown.doc"""
-***
     isunit(x::NfOrdElem) -> Bool
 
-> Returns whether $x$ is invertible or not.
+Returns whether $x$ is invertible or not.
 """
 function isunit(x::NfOrdElem)
   return abs(norm(x)) == 1 

@@ -10,10 +10,9 @@ export rational_reconstruction, farey_lift, berlekamp_massey
 
 
 @doc Markdown.doc"""
-***
     rational_reconstruction(a::PolyElem{S}, b::PolyElem{S}, n::Int, m::Int)
 
->  Returns true and x, y s.th. ay = x mod b and degree(x) <= n, degree(y) <= m
+ Returns true and x, y s.th. ay = x mod b and degree(x) <= n, degree(y) <= m
    or false (and garbage) if this is not possible.
 """
 function rational_reconstruction(a::PolyElem{S}, b::PolyElem{S}, n::Int, m::Int) where S
@@ -41,10 +40,9 @@ function rational_reconstruction(a::PolyElem{S}, b::PolyElem{S}, n::Int, m::Int)
 end
 
 @doc Markdown.doc"""
-***
   rational_reconstruction{S}(a::PolyElem{S}, b::PolyElem{S})
 
->  Returns true and x/y s.th. ay = x mod b and degree(x), degree(y) <= degree(b)/2
+ Returns true and x/y s.th. ay = x mod b and degree(x), degree(y) <= degree(b)/2
    or false (and garbage) if this is not possible. Shortcut to the more general function.
 """
 function rational_reconstruction(a::PolyElem{T}, b::PolyElem{T}) where T
@@ -60,11 +58,10 @@ end
 #However: for now it works.
 
 @doc Markdown.doc"""
-***
     rational_reconstruction(a::fmpz, b::fmpz)
     rational_reconstruction(a::Integer, b::Integer)
 
-> Tries to solve ay=x mod b for x,y < sqrt(M/2). If possible, returns
+Tries to solve ay=x mod b for x,y < sqrt(M/2). If possible, returns
   (true, x, y) or (false, garbage) if not possible.
 """
 function rational_reconstruction(a::fmpz, b::fmpz)
@@ -80,8 +77,8 @@ end
 
 @doc Markdown.doc"""
     rational_reconstruction(a::fmpz, b::fmpz, N::fmpz, D::fmpz) -> Bool, fmpz, fmpz
-> Given $a$ modulo $b$ and $N>0$, $D>0$ such that $2ND<b$, find $|x|\le N$, $0<y\le D$
-> satisfying $x/y \equiv a \bmod b$ or $a \equiv ya \bmod b$.
+Given $a$ modulo $b$ and $N>0$, $D>0$ such that $2ND<b$, find $|x|\le N$, $0<y\le D$
+satisfying $x/y \equiv a \bmod b$ or $a \equiv ya \bmod b$.
 """
 function rational_reconstruction(a::fmpz, b::fmpz, N::fmpz, D::fmpz)
   res = fmpq()
@@ -94,10 +91,9 @@ end
 #Note: missing reconstruction modulo a true ideal. W/o denominators
 
 @doc Markdown.doc"""
-***
     rational_reconstruction(a::nf_elem, b::fmpz)
 
-> Applies the rational_reconstruction function to each coefficient.
+Applies the rational_reconstruction function to each coefficient.
 """
 function rational_reconstruction(a::nf_elem, b::fmpz)
   K= parent(a)

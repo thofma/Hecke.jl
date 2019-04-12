@@ -101,14 +101,15 @@
     for i = 1:1
       c = rand(OL, 100)
       d = rand(OL, 100)
-      @test mod(inv(mF)(mF(c)), P) == mod(c, P)
-      @test mod(inv(mF)(mF(d)), P) == mod(d, P)
+      pinv = pseudo_inv(mF)
+      @test mod(pinv(mF(c)), P) == mod(c, P)
+      @test mod(pinv(mF(d)), P) == mod(d, P)
       @test mF(c + d) == mF(c) + mF(d)
       @test mF(c*d) == mF(c)*mF(d)
       e = mF(c)
       f = mF(d)
-      @test mod(inv(mF)(e + f), P) == mod(inv(mF)(e) + inv(mF)(f), P)
-      @test mod(inv(mF)(e*f), P) == mod(inv(mF)(e)*inv(mF)(f), P)
+      @test mod(pinv(e + f), P) == mod(pinv(e) + pinv(f), P)
+      @test mod(pinv(e*f), P) == mod(pinv(e)*pinv(f), P)
     end
 
     # p is a index divisor
@@ -130,14 +131,15 @@
     for i = 1:1
       c = rand(OL, 100)
       d = rand(OL, 100)
-      @test mod(inv(mF)(mF(c)), P) == mod(c, P)
-      @test mod(inv(mF)(mF(d)), P) == mod(d, P)
+      pinv = pseudo_inv(mF)
+      @test mod(pinv(mF(c)), P) == mod(c, P)
+      @test mod(pinv(mF(d)), P) == mod(d, P)
       @test mF(c + d) == mF(c) + mF(d)
       @test mF(c*d) == mF(c)*mF(d)
       e = mF(c)
       f = mF(d)
-      @test mod(inv(mF)(e + f), P) == mod(inv(mF)(e) + inv(mF)(f), P)
-      @test mod(inv(mF)(e*f), P) == mod(inv(mF)(e)*inv(mF)(f), P)
+      @test mod(pinv(e + f), P) == mod(pinv(e) + pinv(f), P)
+      @test mod(pinv(e*f), P) == mod(pinv(e)*pinv(f), P)
     end
 
   end

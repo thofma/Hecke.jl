@@ -20,7 +20,7 @@ function (x::FacElemMon{S})() where S
 end
 @doc Markdown.doc"""
     FacElem{B}(base::Array{B, 1}, exp::Array{fmpz, 1}) -> FacElem{B}
-> Returns the element $\prod b_i^{e_i}$, un-expanded.
+Returns the element $\prod b_i^{e_i}$, un-expanded.
 """
 function FacElem(base::Array{B, 1}, exp::Array{fmpz, 1}) where B
 
@@ -48,7 +48,7 @@ end
 @doc Markdown.doc"""
     FacElem{B}(d::Dict{B, fmpz}) -> FacElem{B}
     FacElem{B}(d::Dict{B, Integer}) -> FacElem{B}
-> Returns the element $\prod b^{d[p]}$, un-expanded.
+Returns the element $\prod b^{d[p]}$, un-expanded.
 """
 function FacElem(d::Dict{B, fmpz}) where B
 
@@ -468,26 +468,24 @@ function ^(A::NfOrdFracIdl, d::fmpz)
 end
 
 @doc Markdown.doc"""
-***
   evaluate{T}(x::FacElem{T}) -> T
 
-> Expands or evaluates the factored element, i.e. actually computes the
-> value. 
-> Does "square-and-multiply" on the exponent vectors.
+Expands or evaluates the factored element, i.e. actually computes the
+value. 
+Does "square-and-multiply" on the exponent vectors.
 """
 function evaluate(x::FacElem{T}) where T
   return _ev(x.fac, one(base_ring(x)))
 end
 
 @doc Markdown.doc"""
-***
     evaluate(x::FacElem{fmpq}) -> fmpq
     evaluate(x::FacElem{fmpz}) -> fmpz
 
-> Expands or evaluates the factored element, i.e. actually computes the
-> the element. 
-> Works by first obtaining a simplified version of the power product
-> into coprime base elements.
+Expands or evaluates the factored element, i.e. actually computes the
+the element. 
+Works by first obtaining a simplified version of the power product
+into coprime base elements.
 """
 function evaluate(x::FacElem{fmpq})
   return evaluate_naive(simplify(x))
@@ -500,7 +498,7 @@ end
     simplify(x::FacElem{fmpq}) -> FacElem{fmpq}
     simplify(x::FacElem{fmpz}) -> FacElem{fmpz}
 
-> Simplfies the factored element, i.e. arranges for the base to be coprime.
+Simplfies the factored element, i.e. arranges for the base to be coprime.
 """
 function simplify(x::FacElem{fmpq})
   y = deepcopy(x)
@@ -597,7 +595,7 @@ end
 @doc Markdown.doc"""
     isone(x::FacElem{fmpq}) -> Bool
     isone(x::FacElem{fmpz}) -> Bool
-> Tests if $x$ represents $1$ without an evaluation.
+Tests if $x$ represents $1$ without an evaluation.
 """
 function isone(x::FacElem{fmpq})
   y = simplify(x)
@@ -615,9 +613,9 @@ end
     simplify(x::FacElem{NfOrdIdl, NfOrdIdlSet}) -> FacElem
     simplify(x::FacElem{NfOrdFracIdl, NfOrdFracIdlSet}) -> FacElem
 
-> Uses ```coprime_base``` to obtain a simplified version of $x$, ie.
-> in the simplified version all base ideals will be pariwise coprime
-> but not neccessarily prime!.
+Uses ```coprime_base``` to obtain a simplified version of $x$, ie.
+in the simplified version all base ideals will be pariwise coprime
+but not neccessarily prime!.
 """
 function simplify(x::FacElem{NfOrdIdl, NfOrdIdlSet})
   z = deepcopy(x)
@@ -665,8 +663,8 @@ end
 
 @doc Markdown.doc"""
     factor_coprime(x::FacElem{NfOrdIdl, NfOrdIdlSet}) -> Dict{NfOrdIdl, Int}
-> Computed a partial factorisation of $x$, ie. writes $x$ as a product
-> of pariwise coprime integral ideals.
+Computed a partial factorisation of $x$, ie. writes $x$ as a product
+of pariwise coprime integral ideals.
 """
 function factor_coprime(x::FacElem{NfOrdIdl, NfOrdIdlSet})
   x = deepcopy(x)
@@ -676,8 +674,8 @@ end
 
 @doc Markdown.doc"""
     factor_coprime(x::FacElem{fmpz}) -> Fac{fmpz}
-> Computed a partial factorisation of $x$, ie. writes $x$ as a product
-> of pariwise coprime integers.
+Computed a partial factorisation of $x$, ie. writes $x$ as a product
+of pariwise coprime integers.
 """
 function factor_coprime(x::FacElem{fmpz})
   x = deepcopy(x)
@@ -692,11 +690,10 @@ function factor_coprime(x::FacElem{fmpz})
 end
 
 @doc Markdown.doc"""
-***
   evaluate_naive{T}(x::FacElem{T}) -> T
 
-> Expands or evaluates the factored element, i.e. actually computes the
-> value. Uses the obvious naive algorithm. Faster for input in finite rings.
+Expands or evaluates the factored element, i.e. actually computes the
+value. Uses the obvious naive algorithm. Faster for input in finite rings.
 """
 function evaluate_naive(x::FacElem{T}) where T
   z = one(base_ring(x))
@@ -757,7 +754,7 @@ end
 #################################################################################
 @doc Markdown.doc"""
     max_exp(a::FacElem)
-> Finds the largest exponent in the factored element $a$
+Finds the largest exponent in the factored element $a$
 """
 function max_exp(a::FacElem)
   return maximum(values(a.fac))
@@ -765,7 +762,7 @@ end
 
 @doc Markdown.doc"""
     min_exp(a::FacElem)
-> Finds the smallest exponent in the factored element $a$
+Finds the smallest exponent in the factored element $a$
 """
 function min_exp(a::FacElem)
   return minimum(values(a.fac))
@@ -773,7 +770,7 @@ end
 
 @doc Markdown.doc"""
     maxabs_exp(a::FacElem)
-> Finds the largest exponent by absolute value the factored element $a$
+Finds the largest exponent by absolute value the factored element $a$
 """
 function maxabs_exp(a::FacElem)
   return maximum(abs, values(a.fac))

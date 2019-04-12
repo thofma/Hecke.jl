@@ -5,11 +5,10 @@
 ################################################################################
 
 @doc Markdown.doc"""
-***
     locally_free_class_group(O::AlgAssAbsOrd)
 
-> Given an order O in a semisimple algebra over QQ, this function returns the
-> locally free class group of O.
+Given an order O in a semisimple algebra over QQ, this function returns the
+locally free class group of O.
 """
 # Bley, Boltje "Computation of Locally Free Class Groups"
 # If the left and right conductor of O in a maximal order coincide (which is the
@@ -195,10 +194,9 @@ function K1_order_mod_conductor(O::AlgAssAbsOrd, F::AlgAssAbsOrdIdl, FinZ::AlgAs
 end
 
 @doc Markdown.doc"""
-***
      K1(A::AlgAss{T}) where { T <: Union{gfp_elem, Generic.ResF{fmpz}, fq, fq_nmod } }
 
-> Given an algebra over a finite field, this function returns generators for K_1(A).
+Given an algebra over a finite field, this function returns generators for K_1(A).
 """
 function K1(A::AlgAss{T}) where { T <: Union{gfp_elem, Generic.ResF{fmpz}, fq, fq_nmod } }
   # We use the exact sequence 1 + J -> K_1(A) -> K_1(B/J) -> 1

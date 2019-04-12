@@ -205,9 +205,9 @@ end
 
 @doc Markdown.doc"""
     NumberField(f::Generic.Poly{T}, s::String; cached::Bool = false, check::Bool = false) where T
-> Given an irreducible polynomial $f$ over some number field $K$,
-> create the field $K[t]/f$.
-> $f$ must be irreducible - although this is not tested.
+Given an irreducible polynomial $f$ over some number field $K$,
+create the field $K[t]/f$.
+$f$ must be irreducible - although this is not tested.
 """
 function NumberField(f::Generic.Poly{T}, s::String; cached::Bool = false, check::Bool = false) where T
   S = Symbol(s)
@@ -218,9 +218,9 @@ end
 
 @doc Markdown.doc"""
     NumberField(f::Generic.Poly{T}; cached::Bool = false, check::Bool = false) where T
-> Given an irreducible polynomial $f$ over some number field $K$,
-> create the field $K[t]/f$.
-> $f$ must be irreducible - although this is not tested.
+Given an irreducible polynomial $f$ over some number field $K$,
+create the field $K[t]/f$.
+$f$ must be irreducible - although this is not tested.
 """
 function NumberField(f::Generic.Poly{T}; cached::Bool = false, check::Bool = false) where T
   return NumberField(f, "_\$", cached = cached, check = check)
@@ -402,7 +402,7 @@ end
 
 @doc Markdown.doc"""
     absolute_field(K::NfRel{nf_elem}, cached::Bool = false) -> AnticNumberField, Map, Map
-> Given an extension $K/k/Q$, find an isomorphic extensino of $Q$.
+Given an extension $K/k/Q$, find an isomorphic extensino of $Q$.
 """
 function absolute_field(K::NfRel{nf_elem}, cached::Bool = false)
   Ka, a, b, c = _absolute_field(K, cached)
@@ -411,8 +411,8 @@ end
 
 @doc Markdown.doc"""
     absolute_field(K::NfRel{NfRelElem}, cached::Bool = false) -> NfRel, Map, Map
-> Given an extension $E/K/k$, find an isomorphic extension of $k$.
-> In a tower, only the top-most steps are collapsed.
+Given an extension $E/K/k$, find an isomorphic extension of $k$.
+In a tower, only the top-most steps are collapsed.
 """
 function absolute_field(K::NfRel{NfRelElem{T}}, cached::Bool = false) where T
   Ka, a, b, c = _absolute_field(K)
@@ -507,7 +507,7 @@ Nemo.canonical_unit(a::NfRelElem) = a
 #######################################################################
 @doc Markdown.doc"""
     ispure_extension(K::NfRel) -> Bool
-> Tests if $K$ is pure, ie. if the defining polynomial is $x^n-g$.
+Tests if $K$ is pure, ie. if the defining polynomial is $x^n-g$.
 """
 function ispure_extension(K::NfRel)
   if !ismonic(K.pol)
@@ -518,8 +518,8 @@ end
 
 @doc Markdown.doc"""
     iskummer_extension(K::Hecke.NfRel{nf_elem}) -> Bool
-> Tests if $K$ is Kummer, ie. if the defining polynomial is $x^n-g$ and
-> if the coefficient field contains the $n$-th roots of unity.
+Tests if $K$ is Kummer, ie. if the defining polynomial is $x^n-g$ and
+if the coefficient field contains the $n$-th roots of unity.
 """
 function iskummer_extension(K::Hecke.NfRel{nf_elem})
   if !ispure_extension(K)
@@ -538,7 +538,7 @@ end
 @doc Markdown.doc"""
     pure_extension(n::Int, gen::FacElem{nf_elem, AnticNumberField}) -> NfRel{nf_elem}, NfRelElem
     pure_extension(n::Int, gen::nf_elem) -> NfRel{nf_elem}, NfRelElem
-> Create the field extension with the defining polynomial $x^n-gen$.
+Create the field extension with the defining polynomial $x^n-gen$.
 """
 function pure_extension(n::Int, gen::FacElem{nf_elem, AnticNumberField})
   return pure_extension(n, evaluate(gen))
@@ -784,7 +784,7 @@ function factor(f::Generic.Poly{NfRelElem{T}}) where T
 
   fa = map_poly(PolynomialRing(Ka, "T", cached=false)[1], rel_abs, f)
   lf = factor(fa)
-  res = Fac(map_poly(parent(f), inv(rel_abs), lf.unit), Dict(map_poly(parent(f), inv(rel_abs), k)=>v for (k,v) = lf.fac))
+  res = Fac(map_poly(parent(f), pseudo_inv(rel_abs), lf.unit), Dict(map_poly(parent(f), pseudo_inv(rel_abs), k)=>v for (k,v) = lf.fac))
 
   return res
 end
@@ -857,8 +857,8 @@ end
 @doc Markdown.doc"""
     discriminant(K::AnticNumberField) -> fmpq
     discriminant(K::NfRel) -> 
-> The discriminant of the defining polynomial of $K$ {\bf not} the discriminant 
-> of the maximal order.
+The discriminant of the defining polynomial of $K$ {\bf not} the discriminant 
+of the maximal order.
 """
 function Nemo.discriminant(K::AnticNumberField)
   return discriminant(K.pol)
@@ -872,9 +872,9 @@ end
 @doc Markdown.doc"""
     discriminant(K::AnticNumberField, FlintQQ) -> fmpq
     discriminant(K::NfRel, FlintQQ) -> 
-> The absolute discriminant of the defining polynomial of $K$ {\bf not} the discriminant 
-> of the maximal order. Ie the norm of the discriminant time the power of the discriminant
-> of the base field.
+The absolute discriminant of the defining polynomial of $K$ {\bf not} the discriminant 
+of the maximal order. Ie the norm of the discriminant time the power of the discriminant
+of the base field.
 """
 function Nemo.discriminant(K::AnticNumberField, ::FlintRationalField)
   return discriminant(K)

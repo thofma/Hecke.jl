@@ -7,7 +7,7 @@
 mutable struct MapRayClassGroupAlg{S, T} <: Map{S, T, HeckeMap, MapRayClassGroupAlg}
   header::MapHeader{S, T}
   modulus#::AlgAssAbsOrdIdl{...}
-  groups_in_number_fields::Vector{Tuple{S, MapRayClassGrp{S}}}
+  groups_in_number_fields::Vector{Tuple{S, MapRayClassGrp}}
   into_product_of_groups::GrpAbFinGenMap # the isomorphism between the domain and the product of the groups in groups_in_number_fields
 
   function MapRayClassGroupAlg{S, T}() where {S, T}
@@ -36,11 +36,10 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
     picard_group(O::AlgAssAbsOrd)
 
-> Given an order O in a commutative algebra over QQ, this function returns the
-> picard group of O.
+Given an order O in a commutative algebra over QQ, this function returns the
+picard group of O.
 """
 # If prepare_ref_disc_log is true, then (possibly expensive) preparations for
 # the computation of refined discrete logarithms in non maximal orders are done.
@@ -170,7 +169,7 @@ function _picard_group_non_maximal(O::AlgAssAbsOrd, prepare_ref_disc_log::Bool =
     P, RtoP = quo(R, GinR)
     S, StoP = snf(P)
 
-    StoR = compose(StoP, inv(RtoP))
+    StoR = compose(StoP, pseudo_inv(RtoP))
 
     gens_snf = Vector{ideal_type(O)}(undef, ngens(S))
     for i = 1:ngens(S)
@@ -593,7 +592,7 @@ function _make_disc_exp_deterministic(mR::MapRayClassGrp)
     return StoR\(mR\x)
   end
 
-  mRR = MapRayClassGrp{typeof(S)}()
+  mRR = MapRayClassGrp()
   mRR.header = MapHeader(S, fac_elem_mon, disc_exp, disc_log)
   for x in fieldnames(typeof(mR))
     if x != :header && isdefined(mR, x)

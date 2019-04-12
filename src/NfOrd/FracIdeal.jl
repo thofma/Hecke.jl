@@ -52,12 +52,11 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
     frac_ideal(O::NfOrd, A::FakeFmpqMat, A_in_hnf::Bool = false) -> NfOrdFracIdl
 
-> Creates the fractional ideal of $\mathcal O$ with basis matrix $A$. If A_in_hnf
-> is set, then it is assumed that the numerator of $A$ is already in lower left
-> HNF.
+Creates the fractional ideal of $\mathcal O$ with basis matrix $A$. If A_in_hnf
+is set, then it is assumed that the numerator of $A$ is already in lower left
+HNF.
 """
 function frac_ideal(O::NfOrd, x::FakeFmpqMat, x_in_hnf::Bool = false)
   !x_in_hnf ? x = hnf(x) : nothing
@@ -66,11 +65,10 @@ function frac_ideal(O::NfOrd, x::FakeFmpqMat, x_in_hnf::Bool = false)
 end
 
 @doc Markdown.doc"""
-***
     frac_ideal(O::NfOrd, A::fmpz_mat, b::fmpz, A_in_hnf::Bool = false) -> NfOrdFracIdl
 
-> Creates the fractional ideal of $\mathcal O$ with basis matrix $A/b$. If
-> A_in_hnf is set, then it is assumed that $A$ is already in lower left HNF.
+Creates the fractional ideal of $\mathcal O$ with basis matrix $A/b$. If
+A_in_hnf is set, then it is assumed that $A$ is already in lower left HNF.
 """
 function frac_ideal(O::NfOrd, x::fmpz_mat, y::fmpz=fmpz(1), x_in_hnf::Bool = false)
   !x_in_hnf ? x = _hnf(x, :lowerleft) : nothing
@@ -82,10 +80,9 @@ end
 frac_ideal(O::NfOrd, x::fmpz_mat, y::Integer) = frac_ideal(O, x, fmpz(y))
 
 @doc Markdown.doc"""
-***
     frac_ideal(O::NfOrd, I::NfOrdIdl) -> NfOrdFracIdl
 
-> Turns the ideal $I$ into a fractional ideal of $\mathcal O$.
+Turns the ideal $I$ into a fractional ideal of $\mathcal O$.
 """
 function frac_ideal(O::NfOrd, x::NfOrdIdl)
   z = NfOrdFracIdl(O, x, fmpz(1))
@@ -93,10 +90,9 @@ function frac_ideal(O::NfOrd, x::NfOrdIdl)
 end
 
 @doc Markdown.doc"""
-***
     frac_ideal(O::NfOrd, I::NfOrdIdl, b::fmpz) -> NfOrdFracIdl
 
-> Creates the fractional ideal $I/b$ of $\mathcal O$.
+Creates the fractional ideal $I/b$ of $\mathcal O$.
 """
 function frac_ideal(O::NfOrd, x::NfOrdIdl, y::fmpz)
   z = NfOrdFracIdl(O, x, deepcopy(y)) # deepcopy x?
@@ -106,10 +102,9 @@ end
 frac_ideal(O::NfOrd, x::NfOrdIdl, y::Integer) = frac_ideal(O, x, fmpz(y))
 
 @doc Markdown.doc"""
-***
     frac_ideal(O::NfOrd, a::nf_elem) -> NfOrdFracIdl
 
-> Creates the principal fractional ideal $(a)$ of $\mathcal O$.
+Creates the principal fractional ideal $(a)$ of $\mathcal O$.
 """
 function frac_ideal(O::NfOrd, x::nf_elem)
   z = NfOrdFracIdl(O, deepcopy(x))
@@ -117,10 +112,9 @@ function frac_ideal(O::NfOrd, x::nf_elem)
 end
 
 @doc Markdown.doc"""
-***
     frac_ideal(O::NfOrd, a::NfOrdElem) -> NfOrdFracIdl
 
-> Creates the principal fractional ideal $(a)$ of $\mathcal O$.
+Creates the principal fractional ideal $(a)$ of $\mathcal O$.
 """
 function frac_ideal(O::NfOrd, x::NfOrdElem)
   z = NfOrdFracIdl(O, elem_in_nf(x))
@@ -161,7 +155,7 @@ order(a::NfOrdFracIdlSet) = a.order
 
 @doc Markdown.doc"""
     order(a::NfOrdFracIdl) -> NfOrd
-> The order that was used to define the ideal $a$.
+The order that was used to define the ideal $a$.
 """
 order(a::NfOrdFracIdl) = a.order
 
@@ -172,10 +166,9 @@ order(a::NfOrdFracIdl) = a.order
 ################################################################################
 
 @doc Markdown.doc"""
-***
     basis_mat_inv(I::NfOrdFracIdl) -> FakeFmpqMat
 
-> Returns the inverse of the basis matrix of $I$.
+Returns the inverse of the basis matrix of $I$.
 """
 function basis_mat_inv(a::NfOrdFracIdl)
   if isdefined(a, :basis_mat_inv)
@@ -193,10 +186,9 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
     basis(I::NfOrdFracIdl) -> Array{nf_elem, 1}
 
-> Returns the $\mathbf Z$-basis of $I$.
+Returns the $\mathbf Z$-basis of $I$.
 """
 function basis(a::NfOrdFracIdl)
   B = basis_mat(a)
@@ -239,10 +231,9 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
     basis_mat(I::NfOrdFracIdl) -> FakeFmpqMat
 
-> Returns the basis matrix of $I$ with respect to the basis of the order.
+Returns the basis matrix of $I$ with respect to the basis of the order.
 """
 function basis_mat(x::NfOrdFracIdl)
   if isdefined(x, :basis_mat)
@@ -291,10 +282,9 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
     norm(I::NfOrdFracIdl) -> fmpq
 
-> Returns the norm of $I$
+Returns the norm of $I$
 """
 function norm(A::NfOrdFracIdl)
   if isdefined(A, :norm)
@@ -322,10 +312,9 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
     inv(A::NfOrdFracIdl) -> NfOrdFracIdl
 
-> Returns the fractional ideal $B$ such that $AB = \mathcal O$.
+Returns the fractional ideal $B$ such that $AB = \mathcal O$.
 """
 function inv(A::NfOrdFracIdl)
   B = inv(A.num)
@@ -354,7 +343,7 @@ function simplify(A::NfOrdFracIdl)
 
   if has_2_elem(A.num)
     ZK = order(A)
-    g = Base.reduce(gcd, elem_in_basis(ZK(A.num.gen_two)))
+    g = Base.reduce(gcd, coordinates(ZK(A.num.gen_two)))
     g = gcd(g, A.den)
     g = gcd(g, A.num.gen_one)
   else  
@@ -385,10 +374,9 @@ isprime_known(A::NfOrdFracIdl) = isprime_known(A.num)
 ################################################################################
 
 @doc Markdown.doc"""
-***
     ==(x::NfOrdFracIdl, y::NfOrdFracIdl) -> Bool
 
-> Returns whether $x$ and $y$ are equal.
+Returns whether $x$ and $y$ are equal.
 """
 function ==(A::NfOrdFracIdl, B::NfOrdFracIdl)
   #return B.den * basis_mat(A.num) == A.den * basis_mat(B.num)
@@ -417,10 +405,9 @@ function prod(a::NfOrdFracIdl, b::NfOrdFracIdl)
 end
 
 @doc Markdown.doc"""
-***
     *(I::NfOrdFracIdl, J::NfOrdFracIdl) -> NfOrdFracIdl
 
-> Returns $IJ$.
+Returns $IJ$.
 """
 *(A::NfOrdFracIdl, B::NfOrdFracIdl) = prod(A, B)
 
@@ -576,9 +563,8 @@ function ideal(O::NfOrd, a::nf_elem)
 end
 
 @doc Markdown.doc"""
-***
     integral_split(A::NfOrdFracIdl) -> NfOrdIdl, NfOrdIdl
-> Computes the unique coprime integral ideals $N$ and $D$ s.th. $A = ND^{-1}$
+Computes the unique coprime integral ideals $N$ and $D$ s.th. $A = ND^{-1}$
 """
 function integral_split(A::NfOrdFracIdl)
   d = simplify(inv(A + ideal(order(A), fmpz(1))))
@@ -590,7 +576,7 @@ end
 
 @doc Markdown.doc"""
     factor(I::NfOrdFracIdl) -> Dict{NfOrdIdl, Int}
-> The factorisation of $I$.
+The factorisation of $I$.
 """
 function factor(I::NfOrdFracIdl)
   if iszero(norm(I))
@@ -615,7 +601,7 @@ end
 
 @doc Markdown.doc"""
     valuation(A::NfOrdFracIdl, p::NfOrdIdl)
-> The valuation of $A$ at $p$.
+The valuation of $A$ at $p$.
 """
 function valuation(A::NfOrdFracIdl, p::NfOrdIdl)
   return valuation(A.num, p) - valuation(A.den, p)

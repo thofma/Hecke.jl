@@ -51,9 +51,9 @@ end
 @doc Markdown.doc"""
     rational_reconstruction(A::SRow{fmpz}, M::fmpz) -> Bool, SRow{fmpz}, fmpz
 
-> Apply rational reconstruction to the entries of $A$. Returns true iff 
-> successful. In this case, the numerator is returned as a matrix and the 
-> common denominator in the third value.
+Apply rational reconstruction to the entries of $A$. Returns true iff 
+successful. In this case, the numerator is returned as a matrix and the 
+common denominator in the third value.
 """
 function rational_reconstruction(A::SRow{fmpz}, M::fmpz)
   B = SRow{fmpz}()
@@ -140,9 +140,9 @@ end
 @doc Markdown.doc"""
     det_mc(A::SMat{fmpz}
 
-> Computes the determinant of $A$ using a LasVegas style algorithm,
-> ie. the result is not proven to be correct.
-> Uses the dense (nmod_mat) determinant on $A$ for various primes $p$.
+Computes the determinant of $A$ using a LasVegas style algorithm,
+ie. the result is not proven to be correct.
+Uses the dense (nmod_mat) determinant on $A$ for various primes $p$.
 """
 function det_mc(A::SMat{fmpz})
 
@@ -183,8 +183,8 @@ end
 @doc Markdown.doc"""
     det(A::SMat{fmpz})
 
-> The determinant of $A$ using a modular algorithm.
-> Uses the dense (nmod_mat) determinant on $A$ for various primes $p$.
+The determinant of $A$ using a modular algorithm.
+Uses the dense (nmod_mat) determinant on $A$ for various primes $p$.
 """
 function det(A::SMat{fmpz})
   @hassert :HNF 1  A.r == A.c
@@ -209,12 +209,12 @@ function det(A::SMat{fmpz})
 end
 
 @doc Markdown.doc"""
-    echelon_with_trafo(A::SMat{nmod}) -> SMat, SMat
+    echelon_with_transform(A::SMat{nmod}) -> SMat, SMat
 
-> Find a unimodular matrix $T$ and an upper-triangular $E$ s.th.
-> $TA = E$ holds.
+Find a unimodular matrix $T$ and an upper-triangular $E$ s.th.
+$TA = E$ holds.
 """
-function echelon_with_trafo(A::SMat{nmod})
+function echelon_with_transform(A::SMat{nmod})
   z = hcat(A, identity_matrix(SMat, base_ring(A), A.r))
   M = Hecke.ModuleCtxNmod(base_ring(A), z.c)
   for i=z
@@ -227,13 +227,13 @@ end
     solve_dixon_sf(A::SMat{fmpz}, b::SRow{fmpz}, is_int::Bool = false) -> SRow{fmpz}, fmpz
     solve_dixon_sf(A::SMat{fmpz}, B::SMat{fmpz}, is_int::Bool = false) -> SMat{fmpz}, fmpz
 
-> For an sparse square matrix $A$ or full rank and a sparse matrix (row), find
-> a sparse matrix (row) $x$ and an integer $d$ s.th.
-> $$x A = bd$$
-> holds.
-> The algorithm is a Dixon-based linear p-adic lifting method.
-> If \code{is_int} is given, then $d$ is assumed to be $1$. In this case
-> rational reconstriction is avoided.
+For an sparse square matrix $A$ or full rank and a sparse matrix (row), find
+a sparse matrix (row) $x$ and an integer $d$ s.th.
+$$x A = bd$$
+holds.
+The algorithm is a Dixon-based linear p-adic lifting method.
+If \code{is_int} is given, then $d$ is assumed to be $1$. In this case
+rational reconstriction is avoided.
 """
 function solve_dixon_sf(A::SMat{fmpz}, b::SRow{fmpz}, is_int::Bool = false)
   B = sparse_matrix(FlintZZ)
@@ -259,7 +259,7 @@ function solve_dixon_sf(A::SMat{fmpz}, B::SMat{fmpz}, is_int::Bool = false)
   Bp = copy(Ap)
   invert_rows!(Bp)
   Bp = Bp'
-  Ep, Tp = echelon_with_trafo(Bp)
+  Ep, Tp = echelon_with_transform(Bp)
   @hassert :HNF 1  Ep.c == Ep.r
 #  @hassert :HNF 1  nmod_mat(Tp) * nmod_mat(Bp) == nmod_mat(Ep)
 

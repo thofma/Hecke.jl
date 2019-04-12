@@ -66,9 +66,8 @@ function analytic_eval(a::analytic_func{T}, b::T) where T<:Number
 end
 
 @doc Markdown.doc"""
-***
-   dickman_rho(x::Number, prec::Int=55) Number
-> Evaluates the Dickman-$\rho$ function at $x$.
+    dickman_rho(x::Number, prec::Int=55) Number
+Evaluates the Dickman-$\rho$ function at $x$.
 """
 function dickman_rho(x::Number, prec::Int=55)
   if x < 0
@@ -88,9 +87,8 @@ function dickman_rho(x::Number, prec::Int=55)
 end
 
 @doc Markdown.doc"""
-***
-   dickman_rho(x::Number, e::UnitRange{Int}, prec::Int=55) Number[]
-> Evaluates the Dickman-$\rho$ function at $i*x$ for all $i\in e$.
+    dickman_rho(x::Number, e::UnitRange{Int}, prec::Int=55) Number[]
+Evaluates the Dickman-$\rho$ function at $i*x$ for all $i\in e$.
 """
 function dickman_rho(b::Number, e::UnitRange{Int}, prec::Int = 55)
   if b < 0
@@ -175,11 +173,10 @@ end
 #the function Ei = -integral(-x, infty, exp(-t)/t dt)
 
 @doc Markdown.doc"""
-***
-  exponential_integral(x::AbstractFloat) AbstractFloat
-  ei(x::AbstractFloat) AbstractFloat
+    exponential_integral(x::AbstractFloat) -> AbstractFloat
+    ei(x::AbstractFloat) -> AbstractFloat
 
->  Compute the exponential integral function
+Compute the exponential integral function
 """
 function exponential_integral(x::BigFloat)
   z = BigFloat()
@@ -194,12 +191,11 @@ end
 #the function li = integral(0, x, dt/log(t))
 #             li(x) = Ei(log(x)) according to wiki and ?
 @doc Markdown.doc"""
-***
-  logarithmic_integral(x::AbstractFloat) AbstractFloat
-  li(x::AbstractFloat) AbstractFloat
+    logarithmic_integral(x::AbstractFloat) AbstractFloat
+    li(x::AbstractFloat) AbstractFloat
 
->  Compute the logarithmic integral function. Used as an approximation
->  for the number of primes up to x
+Compute the logarithmic integral function. Used as an approximation
+for the number of primes up to x
 """
 function logarithmic_integral(x::AbstractFloat)
   return exponential_integral(log(x))
@@ -217,11 +213,11 @@ The formula (for n=365) is in the solutions.
 =#
 
 @doc Markdown.doc"""
-  rels_from_partial(n::Int, k::Int) Int
+    rels_from_partial(n::Int, k::Int) -> Int
 
-  Estimates the number of collision in k samples among n possibilities. Used 
-  to estimate the number of full relations to be expected from k partial
-  relations involving n (large) primes
+Estimates the number of collision in k samples among n possibilities. Used 
+to estimate the number of full relations to be expected from k partial
+relations involving n (large) primes
 """
 function rels_from_partial(n::Int, k::Int) 
   N = fmpz(n)
@@ -242,10 +238,10 @@ Then
 =#  
 
 @doc Markdown.doc"""
-  euler_phi(n::Int) Int
+    euler_phi(n::Int) -> Int
 
->  The Euler ϕ function of n
->  ie. the number of integers 0<= i = n coprime to n
+The Euler ϕ function of n
+ie. the number of integers 0<= i = n coprime to n
 """
 function euler_phi(a::Int)
   f = factor(a)
@@ -275,8 +271,8 @@ end
 
 @doc Markdown.doc"""
     psi_guess(x::Number, B::Int) Number
-> Uses the dickman_rho function to estimate $\psi(x, B)$ the number
-> of $B$-smooth integers bounded by $x$.
+Uses the dickman_rho function to estimate $\psi(x, B)$ the number
+of $B$-smooth integers bounded by $x$.
 """
 function psi_guess(x::Number, B::Int)
   return x*dickman_rho(log(x)/log(B))
@@ -284,17 +280,17 @@ end
 
 @doc Markdown.doc"""
     psi_guess(x::Number, e::UnitRange, B::Int) Number
-> Uses the dickman_rho function to estimate $\psi(x^i, B)$ the number
-> of $B$-smooth integers bounded by $x^i$ for $i \in e$.
+Uses the dickman_rho function to estimate $\psi(x^i, B)$ the number
+of $B$-smooth integers bounded by $x^i$ for $i \in e$.
 """
 function psi_guess(x::Number, B::Int, e::UnitRange)
-  val = [x^e.start]
+  val = typeof(x)[x^e.start]
   for i=(e.start + 1):e.stop
     push!(val, val[end]*x)
   end
   d = dickman_rho(log(x)/log(B), e)
   @assert length(val) == length(d)
-  return [d[i]*val[i] for i = 1:length(e)]
+  return typeof(x)[d[i]*val[i] for i = 1:length(e)]
 end
 
 
@@ -322,12 +318,12 @@ function class_group_expected(d::fmpz, deg::Int, B::Int, samples::Int = 100)
   # 1/sum (delta(psi)/delta(x)) * delta(vol)
 
   d = max(d, fmpz(100))
-  d = BigFloat(d)
+  d1 = BigFloat(d)
   
-  pg = psi_guess(d^(1/samples), B, 1:samples)
-  x = log(d)/samples
+  pg = psi_guess(d1^(1/samples), B, 1:samples)
+  x = log(d1)/samples
   xi = [ exp(i*x) for i=1:samples]
-  vo = [vol(deg, exp(i*x)/d) for i=1:samples]
+  vo = [vol(deg, exp(i*x)/d1) for i=1:samples]
   @assert length(pg) == samples
   @assert length(xi) == samples
   @assert length(vo) == samples

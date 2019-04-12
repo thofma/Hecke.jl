@@ -12,7 +12,7 @@ mutable struct NfRelOrdToFqMor{T, S} <: Map{NfRelOrd{T, S}, FqFiniteField, Hecke
     Fx = F["x"][1]
     if isindex_divisor(O, p)
       A, OtoA = AlgAss(O, P, p)
-      AtoO = inv(OtoA)
+      AtoO = pseudo_inv(OtoA)
       x = rand(A)
       h = minpoly(x)
       while degree(h) != dim(A)
@@ -48,7 +48,7 @@ mutable struct NfRelOrdToFqMor{T, S} <: Map{NfRelOrd{T, S}, FqFiniteField, Hecke
       end
 
       function _preimage_index_div(a::fq)
-        g = inv(mFF)(a)
+        g = pseudo_inv(mFF)(a)
         c = zero_matrix(F, dim(A), 1)
         for i = 1:dim(A)
           c[i, 1] = coeff(g, i - 1)
@@ -78,7 +78,7 @@ mutable struct NfRelOrdToFqMor{T, S} <: Map{NfRelOrd{T, S}, FqFiniteField, Hecke
 
       function _preimage(x::fq)
         f = preimage(mFF, x)
-        immF = inv(mmF)
+        immF = pseudo_inv(mmF)
         y = nf(O)([ immF(coeff(f, i)) for i = 0:degree(f) ])
         return O(y)
       end

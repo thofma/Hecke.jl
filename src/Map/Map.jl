@@ -51,7 +51,7 @@ function show(io::IO, M::InverseMap)
   println(io, " ", M.origin)
 end
 
-function inv(a::Map)
+function pseudo_inv(a::Map)
   return InverseMap(a)
 end
 

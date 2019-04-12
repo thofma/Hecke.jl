@@ -38,7 +38,7 @@
       Hecke.mul_row!(z, i, K(norm(Apseudohnf.coeffs[i])))
     end
 
-    zinZ = MatrixSpace(FlintZZ, 5, 5)(map(zz -> numerator(elem_in_basis(O(zz))[1]), z.entries))
+    zinZ = MatrixSpace(FlintZZ, 5, 5)(map(zz -> numerator(coordinates(O(zz))[1]), z.entries))
     c = parent(zinZ)(Ahnf) - zinZ
 
     @test all([ mod(c[i,j], de) == 0 for i in 1:5, j in 1:5])
@@ -68,7 +68,7 @@
         ppm = Hecke.pseudo_hnf(pm)
         @test Hecke._spans_subset_of_pseudohnf(pm, ppm)
         @test d == det(ppm)
-        ppmkb, trafo = Hecke.pseudo_hnf_kb_with_trafo(pm)
+        ppmkb, trafo = Hecke.pseudo_hnf_kb_with_transform(pm)
         @test Hecke._spans_subset_of_pseudohnf(pm, ppmkb)
         @test ppmkb.matrix == trafo*pm.matrix
       end
@@ -83,12 +83,12 @@
 
       t = rand(-1000:1000, 3, 3)
       PM = Hecke.PseudoMatrix(matrix(K, t))
-      G, U = Hecke.pseudo_hnf_kb_with_trafo(PM)
+      G, U = Hecke.pseudo_hnf_kb_with_transform(PM)
       @test Hecke._spans_subset_of_pseudohnf(PM, G)
       @test !iszero(det(U))
       @test G.matrix == U*PM.matrix
 
-      G2, U2 = Hecke.pseudo_hnf_kb_with_trafo(PM, :lowerleft)
+      G2, U2 = Hecke.pseudo_hnf_kb_with_transform(PM, :lowerleft)
       @test Hecke._spans_subset_of_pseudohnf(PM, G2, :lowerleft)
       @test !iszero(det(U2))
       @test G2.matrix == U2*PM.matrix
@@ -97,12 +97,12 @@
       h = z^2 + 4*z + 10
       M, c = NumberField(h, "c")
       PN = Hecke.PseudoMatrix(matrix(L, t))
-      H, V = Hecke.pseudo_hnf_kb_with_trafo(PN)
+      H, V = Hecke.pseudo_hnf_kb_with_transform(PN)
       @test Hecke._spans_subset_of_pseudohnf(PN, H)
       @test !iszero(det(V))
       @test H.matrix == V*PN.matrix
 
-      H2, V2 = Hecke.pseudo_hnf_kb_with_trafo(PN, :lowerleft)
+      H2, V2 = Hecke.pseudo_hnf_kb_with_transform(PN, :lowerleft)
       @test Hecke._spans_subset_of_pseudohnf(PN, H2, :lowerleft)
       @test !iszero(det(V2))
       @test H2.matrix == V2*PN.matrix

@@ -209,9 +209,9 @@ end
 @doc Markdown.doc"""
     number_field(f::Array{Generic.Poly{T}, 1}, s::String="_\$") where T -> NfRel_ns
 
-> Given polynomials $f = (f_1, \ldots, f_n)$ over some number field $k$, construct
-> $K = k[t_1, \ldots, t_n]/\langle f_1(t_1), \ldots, f_n(t_n)\rangle$
-> The ideal in the quotient must be maximal - although this is not tested.
+Given polynomials $f = (f_1, \ldots, f_n)$ over some number field $k$, construct
+$K = k[t_1, \ldots, t_n]/\langle f_1(t_1), \ldots, f_n(t_n)\rangle$
+The ideal in the quotient must be maximal - although this is not tested.
 """
 function Nemo.NumberField(f::Array{Generic.Poly{T}, 1}, s::String="_\$"; cached::Bool = false, check::Bool = false) where T
   S = Symbol(s)
@@ -783,8 +783,8 @@ end
 @doc Markdown.doc"""
     simple_extension(K::NfRel_ns{nf_elem}) -> NfRel, Map
 
-> Compute a simple field L as an extension of the base field of K and an isomorphism
-> between L and K 
+Compute a simple field L as an extension of the base field of K and an isomorphism
+between L and K 
 
 """
 function simple_extension(K::NfRel_ns{T}) where {T}
@@ -845,13 +845,13 @@ end
 
     absolute_field(K::NfRel_ns{nf_elem}) -> AnticNumberField, Map, Map
 
-> Compute an isomorphic field as an extension of $Q$ together with the isomorphism 
-> (1st map) and the embedding of the base field (2nd map).
+Compute an isomorphic field as an extension of $Q$ together with the isomorphism 
+(1st map) and the embedding of the base field (2nd map).
 """
 function simple_extension(K::NfRel_ns{nf_elem}, ::FlintRationalField)
   Ks, mp = simple_extension(K)
   Ka, m1, m2 = absolute_field(Ks)
-  return Ka, inv(m1)*mp, m2
+  return Ka, pseudo_inv(m1)*mp, m2
 end
 
 absolute_field(K::NfRel_ns{nf_elem}) = simple_extension(K, FlintQQ)

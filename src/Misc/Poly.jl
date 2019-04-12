@@ -56,10 +56,9 @@ function ismonic(a::PolyElem)
 end
 
 @doc Markdown.doc"""
-***
   valence(f::PolyElem) -> RingElem
 
->  The last non-zero coefficient of f
+ The last non-zero coefficient of f
 """
 function valence(f::PolyElem)
   for i=0:degree(f)
@@ -72,19 +71,17 @@ function valence(f::PolyElem)
 end
 
 @doc Markdown.doc"""
-***
   leading_coefficient(f::PolyElem) -> RingElem
 
->  The last leading coefficient of f.
+ The last leading coefficient of f.
 """
 leading_coefficient(f::PolyElem) = lead(f)
 
 @doc Markdown.doc"""
-***
   trailing_coefficient(f::PolyElem) -> RingElem
   constant_coefficient(f::PolyElem) -> RingElem
 
->  The constant coefficient of f.
+ The constant coefficient of f.
 """
 function trailing_coefficient(f::PolyElem)
   if iszero(f)
@@ -95,9 +92,9 @@ end
 
 @doc Markdown.doc"""
     induce_rational_reconstruction(a::fmpz_poly, M::fmpz) -> fmpq_poly
-> Apply {{{rational_reconstruction}}} to each coefficient of $a$, resulting
-> in either a fail (return (false, s.th.)) or (true, g) for some rational
-> polynomial $g$ s.th. $g \equiv a \bmod M$.
+Apply {{{rational_reconstruction}}} to each coefficient of $a$, resulting
+in either a fail (return (false, s.th.)) or (true, g) for some rational
+polynomial $g$ s.th. $g \equiv a \bmod M$.
 """
 function induce_rational_reconstruction(a::fmpz_poly, M::fmpz) 
   b = PolynomialRing(FlintQQ, parent(a).S, cached = false)[1]()
@@ -131,7 +128,7 @@ end
 
 @doc Markdown.doc"""
     Base.rand(Rt::PolyRing{T}, n::Int) where T <: ResElem{S} where S <: Union{fmpz, Integer} -> PolElem{T}
-> Find a random polynomial of degree(n)
+Find a random polynomial of degree(n)
 """
 function Base.rand(Rt::PolyRing{T}, n::Int) where T <: ResElem{S} where S <: Union{fmpz, Integer}
   f = Rt()
@@ -282,10 +279,9 @@ function continue_lift(a::HenselCtx, N::Int)
 end
 
 @doc Markdown.doc"""
-***
   factor_mod_pk(f::fmpz_poly, p::Int, k::Int) -> Dict{fmpz_poly, Int}
 
->  For f that is square-free modulo p, return the factorisation modulo p^k.
+ For f that is square-free modulo p, return the factorisation modulo p^k.
 """
 function factor_mod_pk(f::fmpz_poly, p::Int, k::Int)
   H = HenselCtx(f, fmpz(p))
@@ -294,11 +290,10 @@ function factor_mod_pk(f::fmpz_poly, p::Int, k::Int)
 end
 
 @doc Markdown.doc"""
-***
   factor_mod_pk_init(f::fmpz_poly, p::Int) -> HenselCtx
 
->  For f that is square-free modulo p, return a structure that allows to compute
->  the factorisation modulo p^k for any k
+ For f that is square-free modulo p, return a structure that allows to compute
+ the factorisation modulo p^k for any k
 """
 function factor_mod_pk_init(f::fmpz_poly, p::Int)
   H = HenselCtx(f, fmpz(p))
@@ -306,10 +301,9 @@ function factor_mod_pk_init(f::fmpz_poly, p::Int)
 end
 
 @doc Markdown.doc"""
-***
   factor_mod_pk(H::HenselCtx, k::Int) -> RingElem
 
->  Using the result of factor_mod_pk_init, return a factorisation modulo p^k
+ Using the result of factor_mod_pk_init, return a factorisation modulo p^k
 """
 function factor_mod_pk(H::HenselCtx, k::Int)
   @assert k>= H.N
@@ -327,11 +321,10 @@ function hensel_lift!(G::fmpz_poly, H::fmpz_poly, A::fmpz_poly, B::fmpz_poly, f:
 end
 
 @doc Markdown.doc"""
-***
   hensel_lift(f::fmpz_poly, g::fmpz_poly, h::fmpz_poly, p::fmpz, k::Int) -> (fmpz_poly, fmpz_poly)
 
->  Given f = gh modulo p for g, h coprime modulo p, compute G, H s.th. f = GH mod p^k and
->  G = g mod p, H = h mod p.
+ Given f = gh modulo p for g, h coprime modulo p, compute G, H s.th. f = GH mod p^k and
+ G = g mod p, H = h mod p.
 """
 function hensel_lift(f::fmpz_poly, g::fmpz_poly, h::fmpz_poly, p::fmpz, k::Int)
   Rx, x = PolynomialRing(ResidueField(FlintZZ, p, cached=false), cached=false)
@@ -380,10 +373,9 @@ function hensel_lift(f::fmpz_poly, g::fmpz_poly, h::fmpz_poly, p::fmpz, k::Int)
 end  
 
 @doc Markdown.doc"""
-***
   hensel_lift(f::fmpz_poly, g::fmpz_poly, p::fmpz, k::Int) -> (fmpz_poly, fmpz_poly)
 
->  Given f and g such that g is a divisor of f mod p and g and f/g are coprime, compute a hensel lift of g modulo p^k.
+ Given f and g such that g is a divisor of f mod p and g and f/g are coprime, compute a hensel lift of g modulo p^k.
 """
 function hensel_lift(f::fmpz_poly, g::fmpz_poly, p::fmpz, k::Int)
   Rx, x = PolynomialRing(ResidueField(FlintZZ, p, cached=false), cached=false)
@@ -484,8 +476,8 @@ end
 
 @doc Markdown.doc"""
     inflate(f::PolyElem, n::Int64) -> PolyElem
-> Given a polynomial $f$ in $x$, return $f(x^n)$, ie. multiply 
-> all exponents by $n$.
+Given a polynomial $f$ in $x$, return $f(x^n)$, ie. multiply 
+all exponents by $n$.
 """
 function inflate(x::PolyElem, n::Int64)
   y = parent(x)()
@@ -497,8 +489,8 @@ end
 
 @doc Markdown.doc"""
     deflate(f::PolyElem, n::Int64) -> PolyElem
-> Given a polynomial $f$ in $x^n$, write it as a polynomial in $x$, ie. divide
-> all exponents by $n$.
+Given a polynomial $f$ in $x^n$, write it as a polynomial in $x$, ie. divide
+all exponents by $n$.
 """
 function deflate(x::PolyElem, n::Int64)
   y = parent(x)()
@@ -510,8 +502,8 @@ end
 
 @doc Markdown.doc"""
     deflate(x::PolyElem) -> PolyElem
-> Deflate the polynomial $f$ maximally, ie. find the largest $n$ s.th.
-> $f$ can be deflated by $n$, ie. $f$ is actually a polynomial in $x^n$.
+Deflate the polynomial $f$ maximally, ie. find the largest $n$ s.th.
+$f$ can be deflated by $n$, ie. $f$ is actually a polynomial in $x^n$.
 """
 function deflate(x::PolyElem)
   g = 0
@@ -534,8 +526,8 @@ end
 
 @doc Markdown.doc"""
     change_ring(f::PolyElem, Rx::PolyRing) -> PolyElem{elem_type(base_ring(Rx))}
-> Given a polynomial $f$ in $S[x]$, returns a polynomial in $Rx$ whose coefficient
-> are the coefficient of $f$ coerced to the base ring of $Rx$
+Given a polynomial $f$ in $S[x]$, returns a polynomial in $Rx$ whose coefficient
+are the coefficient of $f$ coerced to the base ring of $Rx$
 """
 function change_ring(f::PolyElem, Rx::PolyRing)
   R = base_ring(Rx)
@@ -549,8 +541,8 @@ end
 
 @doc Markdown.doc"""
     change_base_ring(f::PolyElem, R::Ring) -> PolyElem{elem_type(R)}
-> Given a polynomial $f$ over a ring $S$, returns a polynomial whose coefficient
-> are the coefficient of $f$ coerced to $R$
+Given a polynomial $f$ over a ring $S$, returns a polynomial whose coefficient
+are the coefficient of $f$ coerced to $R$
 """
 function change_base_ring(f::PolyElem, R::Ring)
   Rx, x = PolynomialRing(R, "_\$", cached = false)
@@ -564,8 +556,8 @@ end
 
 @doc Markdown.doc"""
     rres(f::fmpz_poly, g::fmpz_poly) -> fmpz
-> The reduced resultant of $f$ and $g$,
-> that is a generator for the ideal $(f, g) \cap Z$
+The reduced resultant of $f$ and $g$,
+that is a generator for the ideal $(f, g) \cap Z$
 """
 function rres(f::fmpz_poly, g::fmpz_poly)
   return rres_bez(f,g)
@@ -614,10 +606,10 @@ end
 
 @doc Markdown.doc"""
     rresx(f::fmpz_poly, g::fmpz_poly) -> r, u, v
-> The reduced resultant, ie. a generator for the intersect
-> of the ideal generated by $f$ and $g$ with the integers.
-> As well as polynomials $u$ and $v$ s.th. $r = uf+vg$, 
-> $\deg u < \deg g$ and $\deg v < \deg f$.
+The reduced resultant, ie. a generator for the intersect
+of the ideal generated by $f$ and $g$ with the integers.
+As well as polynomials $u$ and $v$ s.th. $r = uf+vg$, 
+$\deg u < \deg g$ and $\deg v < \deg f$.
 """
 function rresx(f::fmpz_poly, g::fmpz_poly)
   Nemo.check_parent(f, g)
@@ -683,8 +675,8 @@ end
 
 @doc Markdown.doc"""
     polynomial_to_power_sums(f::PolyElem{T}, n::Int=degree(f)) -> Array{T, 1}
-> Uses Newton (or Newton-Girard) formulas to compute the first $n$
-> power sums from the coefficients of $f$.
+Uses Newton (or Newton-Girard) formulas to compute the first $n$
+power sums from the coefficients of $f$.
 """
 function polynomial_to_power_sums(f::PolyElem{T}, n::Int=degree(f)) where T <: FieldElem
   d = degree(f)
@@ -722,8 +714,8 @@ end
 
 @doc Markdown.doc"""
     power_sums_to_polynomial(P::Array{T, 1}) -> PolyElem{T}
-> Uses the Newton (or Newton-Girard) identities to obtain the polynomial
-> coefficients (the elementary symmetric functions) from the power sums.
+Uses the Newton (or Newton-Girard) identities to obtain the polynomial
+coefficients (the elementary symmetric functions) from the power sums.
 """
 function power_sums_to_polynomial(P::Array{T, 1}) where T <: FieldElem
   d = length(P)
@@ -1005,7 +997,7 @@ end
 
 @doc Markdown.doc"""
     factor_squarefree(x::fmpq_poly)
-> Returns the squarefree factorization of $x$.
+Returns the squarefree factorization of $x$.
 """
 function factor_squarefree(x::fmpq_poly)
    res, z = _factor_squarefree(x)

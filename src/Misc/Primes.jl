@@ -125,26 +125,24 @@ struct PrimesSet{T}
 end
 
 @doc Markdown.doc"""
-***
     PrimesSet(f::Integer, t::Integer) -> PrimesSet
     PrimesSet(f::fmpz, t::fmpz) -> PrimesSet
 
-> Returns an iterable object $S$ representing the prime numbers $p$
-> for $f \le p \le t$. If $t=-1$, then the upper bound is infinite.
+Returns an iterable object $S$ representing the prime numbers $p$
+for $f \le p \le t$. If $t=-1$, then the upper bound is infinite.
 """  
 function PrimesSet(f::T, t::T) where T
   return PrimesSet{T}(f, t)
 end
 
 @doc Markdown.doc"""
-***
     PrimesSet(f::Integer, t::Integer, mod::Integer, val::Integer)  
     PrimesSet(f::fmpz, t::fmpz, mod::fmpz, val::fmpz) 
 
-> Returns an iterable object $S$ representing the prime numbers $p$
-> for $f \le p \le t$ and $p\equiv val \bmod mod$ (primes in arithmetic
-> progression).  
->  If $t=-1$, then the upper bound is infinite.
+Returns an iterable object $S$ representing the prime numbers $p$
+for $f \le p \le t$ and $p\equiv val \bmod mod$ (primes in arithmetic
+progression).  
+ If $t=-1$, then the upper bound is infinite.
 """  
 function PrimesSet(f::T, t::T, mod::T, val::T) where {T}
   return PrimesSet{T}(f, t, mod, val)

@@ -217,7 +217,7 @@ function _class_unit_group(O::NfOrd; bound::Int = -1, method::Int = 3, large::In
     U = _get_UnitGrpCtx_of_order(O)
     @assert U.finished
     @vprint :UnitGroup 1 "... done (retrieved).\n"
-    return c, U, 1
+    return c, U, fmpz(1)
   end
 
   @vprint :UnitGroup 1 "Tentative class number is now $(c.h)\n"
@@ -238,15 +238,15 @@ function _class_unit_group(O::NfOrd; bound::Int = -1, method::Int = 3, large::In
         @vtime_add_elapsed :UnitGroup 1 c :unit_time r = _unit_group_find_units(U, c)
       else
         @vtime_add_elapsed :UnitGroup 1 c :unit_hnf_time module_trafo_assure(c.M)
-        @vtime_add_elapsed :UnitGroup 1 c :unit_time r = _unit_group_find_units_with_trafo(U, c)
+        @vtime_add_elapsed :UnitGroup 1 c :unit_time r = _unit_group_find_units_with_transform(U, c)
       end
       @v_do :UnitGroup 1 popindent()
     end
-    if r == 1  # use saturation!!!!
+    if isone(r)  # use saturation!!!!
       idx = _validate_class_unit_group(c, U) 
       @assert idx == _validate_class_unit_group(c, U)
       stable = 3.5
-      if c.sat_done == 0
+      if iszero(c.sat_done)
         @vprint :ClassGroup 1 "Finite index, saturating at 2\n"
         while saturate!(c, U, 2, stable)
           @vtime_add_elapsed :UnitGroup 1 c :unit_time r = _unit_group_find_units(U, c)
@@ -256,10 +256,15 @@ function _class_unit_group(O::NfOrd; bound::Int = -1, method::Int = 3, large::In
       end
       while idx < 20 && idx > 1
         @vprint :ClassGroup 1 "Finishing by saturating up to $idx\n"
-        fl = any(p->saturate!(c, U, p, stable), PrimesSet(1, 2*Int(idx)))
+        fl = false
+        p = 2
+        while !fl && p < 2*Int(idx)
+          fl = saturate!(c, U, p, stable)
+          p = next_prime(p)
+        end
+        #fl = any(p->saturate!(c, U, p, stable), PrimesSet(1, 2*Int(idx)))
         @assert fl  # so I can switch assertions off...
         c.sat_done = 2*Int(idx)
-
         @vtime_add_elapsed :UnitGroup 1 c :unit_time r = _unit_group_find_units(U, c)
         n_idx = _validate_class_unit_group(c, U) 
         @vprint :ClassGroup 1 "index estimate down to $n_idx from $idx\n"
@@ -398,7 +403,7 @@ end
 
 @doc Markdown.doc"""
     regulator(O::NfOrd)
-> Computes the regulator of $O$, ie. the discriminant of the unit lattice.    
+Computes the regulator of $O$, ie. the discriminant of the unit lattice.    
 """
 function regulator(O::NfOrd; method::Int = 3, unit_method::Int = 1, use_aut::Bool = false, GRH::Bool = true)
   c, U, b = _class_unit_group(O, method = method, unit_method = unit_method, use_aut = use_aut, GRH = GRH)
@@ -409,8 +414,8 @@ end
 
 @doc Markdown.doc"""
     regulator(K::AnticNumberField)
-> Computes the regulator of $K$, ie. the discriminant of the unit lattice 
-> for the maximal order of $K$
+Computes the regulator of $K$, ie. the discriminant of the unit lattice 
+for the maximal order of $K$
 """
 function regulator(K::AnticNumberField)
   return regulator(maximal_order(K))

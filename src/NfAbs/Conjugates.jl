@@ -8,7 +8,6 @@ export istotally_real, istotally_complex, conjugates, conjugates_real,
 ################################################################################
 
 @doc Markdown.doc"""
-***
     istotally_real(K::AnticNumberField) -> Bool
 
 Returns true if and only if $K$ is totally real, that is, if all roots of the
@@ -19,7 +18,6 @@ function istotally_real(K::AnticNumberField)
 end
 
 @doc Markdown.doc"""
-***
     istotally_complex(K::AnticNumberField) -> Bool
 
 Returns true if and only if $K$ is totally real, that is, if all roots of the
@@ -36,16 +34,15 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
     conjugates(x::nf_elem, abs_tol::Int) -> Vector{acb}
 
-> Compute the the conjugates of `x` as elements of type `acb`.
-> Recall that we order the complex conjugates
-> $\sigma_{r+1}(x),...,\sigma_{r+2s}(x)$ such that
-> $\sigma_{i}(x) = \overline{sigma_{i + s}(x)}$ for $r + 1 \leq i \leq r + s$.
+Compute the the conjugates of `x` as elements of type `acb`.
+Recall that we order the complex conjugates
+$\sigma_{r+1}(x),...,\sigma_{r+2s}(x)$ such that
+$\sigma_{i}(x) = \overline{sigma_{i + s}(x)}$ for $r + 1 \leq i \leq r + s$.
 >
-> Every entry `y` of the vector returned satisfies
-> `radius(real(y)) < 2^-abs_tol` and `radius(imag(y)) < 2^-abs_tol` respectively.
+Every entry `y` of the vector returned satisfies
+`radius(real(y)) < 2^-abs_tol` and `radius(imag(y)) < 2^-abs_tol` respectively.
 """
 function conjugates(x::nf_elem, abs_tol::Int = 32, T = arb)
   if T === arb
@@ -164,13 +161,12 @@ function conjugates_arb(x::nf_elem, abs_tol::Int = 32)
 end
 
 @doc Markdown.doc"""
-***
     conjugates_arb_real(x::nf_elem, abs_tol::Int) -> Vector{arb}
 
-> Compute the the real conjugates of `x` as elements of type `arb`.
+Compute the the real conjugates of `x` as elements of type `arb`.
 >
-> Every entry `y` of the array returned satisfies
-> `radius(y) < 2^-abs_tol`.
+Every entry `y` of the array returned satisfies
+`radius(y) < 2^-abs_tol`.
 """
 function conjugates_real(x::nf_elem, abs_tol::Int = 32, T = arb)
   if T === arb
@@ -193,16 +189,15 @@ function conjugates_arb_real(x::nf_elem, abs_tol::Int = 32)
 end
 
 @doc Markdown.doc"""
-***
     conjugates_complex(x::nf_elem, abs_tol::Int) -> Vector{acb}
 
-> Compute the the complex conjugates of `x` as elements of type `acb`.
-> Recall that we order the complex conjugates
-> $\sigma_{r+1}(x),...,\sigma_{r+2s}(x)$ such that
-> $\sigma_{i}(x) = \overline{sigma_{i + s}(x)}$ for $r + 1 \leq i \leq r + s$.
+Compute the the complex conjugates of `x` as elements of type `acb`.
+Recall that we order the complex conjugates
+$\sigma_{r+1}(x),...,\sigma_{r+2s}(x)$ such that
+$\sigma_{i}(x) = \overline{sigma_{i + s}(x)}$ for $r + 1 \leq i \leq r + s$.
 >
-> Every entry `y` of the array returned satisfies
-> `radius(real(y)) < 2^-abs_tol` and `radius(imag(y)) < 2^-abs_tol`.
+Every entry `y` of the array returned satisfies
+`radius(real(y)) < 2^-abs_tol` and `radius(imag(y)) < 2^-abs_tol`.
 """
 function conjugates_complex(x::nf_elem, abs_tol::Int = 32, T = arb)
   if T === arb
@@ -231,14 +226,13 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
     conjugates_arb_log(x::nf_elem, abs_tol::Int) -> Array{arb, 1}
 
-> Returns the elements
-> $(\log(\lvert \sigma_1(x) \rvert),\dotsc,\log(\lvert\sigma_r(x) \rvert),
-> \dotsc,2\log(\lvert \sigma_{r+1}(x) \rvert),\dotsc,
-> 2\log(\lvert \sigma_{r+s}(x)\rvert))$ as elements of type `arb` radius
-> less then `2^-abs_tol`.
+Returns the elements
+$(\log(\lvert \sigma_1(x) \rvert),\dotsc,\log(\lvert\sigma_r(x) \rvert),
+\dotsc,2\log(\lvert \sigma_{r+1}(x) \rvert),\dotsc,
+2\log(\lvert \sigma_{r+s}(x)\rvert))$ as elements of type `arb` radius
+less then `2^-abs_tol`.
 """
 function conjugates_log(x::nf_elem, abs_tol::Int = 32, T = arb)
   if T === arb
@@ -330,12 +324,11 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
     minkowski_map(a::nf_elem, abs_tol::Int) -> Array{arb, 1}
 
-> Returns the image of $a$ under the Minkowski embedding.
-> Every entry of the array returned is of type `arb` with radius less then
-> `2^(-abs_tol)`.
+Returns the image of $a$ under the Minkowski embedding.
+Every entry of the array returned is of type `arb` with radius less then
+`2^(-abs_tol)`.
 """
 function minkowski_map(a::nf_elem, abs_tol::Int = 32)
   # TODO: Rewrite this using conjugates_arb
@@ -402,8 +395,7 @@ end
 ############################################################################
 
 #@doc Markdown.doc"""
-#***
-#    _signs(a::nf_elem) -> Array{Int, 1}
+##    _signs(a::nf_elem) -> Array{Int, 1}
 #> For a non-zero elements $a$ return the signs of all real embeddings.
 #"""
 function _signs(a::nf_elem)
@@ -437,8 +429,7 @@ function _signs(a::nf_elem)
 end
 
 #@doc Markdown.doc"""
-#***
-#    signs(a::FacElem{nf_elem, AnticNumberField}) -> Array{Int, 1}
+##    signs(a::FacElem{nf_elem, AnticNumberField}) -> Array{Int, 1}
 #> For a non-zero elements $a$ in factored form,
 #> return the signs of all real embeddings.
 #"""

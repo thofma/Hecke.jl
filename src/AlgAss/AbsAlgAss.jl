@@ -151,11 +151,10 @@ function kernel_of_frobenius(A::AbsAlgAss)
 end
 
 @doc Markdown.doc"""
-***
     decompose(A::AbsAlgAss{T}) -> AlgAss{T}
 
-> Given a semisimple algebra over a field, this function 
-> returns a decomposition of A as a direct sum of simple algebras.
+Given a semisimple algebra over a field, this function 
+returns a decomposition of A as a direct sum of simple algebras.
 """
 function decompose(A::AbsAlgAss{T}) where {T}
   if isdefined(A, :decomposition)
@@ -399,11 +398,10 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
     as_number_fields(A::AbsAlgAss{fmpq})
 
-> Given a commutative algebra over QQ, this function returns a decomposition
-> of A as direct sum of number fields.
+Given a commutative algebra over QQ, this function returns a decomposition
+of A as direct sum of number fields.
 """
 function as_number_fields(A::AbsAlgAss{fmpq})
   if isdefined(A, :maps_to_numberfields)

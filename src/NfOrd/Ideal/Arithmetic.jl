@@ -46,10 +46,9 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
     +(x::NfOrdIdl, y::NfOrdIdl)
 
-> Returns $x + y$.
+Returns $x + y$.
 """
 function +(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
   check_parent(x, y)
@@ -73,7 +72,7 @@ end
     intersect(x::NfOrdIdl, y::NfOrdIdl) -> NfOrdIdl
     lcm(x::NfOrdIdl, y::NfOrdIdl) -> NfOrdIdl
 
-> Returns $x \cap y$.
+Returns $x \cap y$.
 """
 function intersect(x::NfOrdIdl, y::NfOrdIdl)
   check_parent(x, y)
@@ -93,7 +92,7 @@ end
     intersect(x::NfOrdIdl, y::NfOrdIdl) -> NfOrdIdl
     lcm(x::NfOrdIdl, y::NfOrdIdl) -> NfOrdIdl
 
-> Returns $x \cap y$.
+Returns $x \cap y$.
 """
 lcm(x::NfOrdIdl, y::NfOrdIdl) = intersect(x, y)
 
@@ -106,7 +105,7 @@ lcm(x::NfOrdIdl, y::NfOrdIdl) = intersect(x, y)
 @doc Markdown.doc"""
     *(x::NfOrdIdl, y::NfOrdIdl)
 
-> Returns $x \cdot y$.
+Returns $x \cdot y$.
 """
 function *(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
   check_parent(x, y)
@@ -142,7 +141,7 @@ function mul_gen(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
       mul!(t, X[i], Y[j])
       assure_has_coord(t)
       for k in 1:d
-        z[(i - 1)*d + j, k] = t.elem_in_basis[k]
+        z[(i - 1)*d + j, k] = t.coordinates[k]
       end
     end
   end
@@ -307,10 +306,9 @@ end
 
 # dispatching
 @doc Markdown.doc"""
-***
   *(x::NfMaxIdl, y::NfOrdIdl)
 
-> Returns the ideal x*y.
+Returns the ideal x*y.
 """
 function mul_maximal(x::NfOrdIdl, y::NfOrdIdl)
   check_parent(x, y)
@@ -345,9 +343,8 @@ end
 #for ideals in the maximal order, the gcd is well defined...
 
 @doc Markdown.doc"""
-***
   gcd(A::NfOrdIdl, B::NfOrdIdl) -> NfOrdIdl
-> The gcd or sum (A+B).
+The gcd or sum (A+B).
 """
 function gcd(A::NfOrdIdl, B::NfOrdIdl)
   check_parent(A, B)
@@ -360,9 +357,8 @@ end
 
 #TODO: write a ppio version that allows for p-powers as well
 @doc Markdown.doc"""
-***
   gcd(A::NfOrdIdl, p::fmpz) -> NfOrdIdl
-> The gcd or sum (A + pO).
+The gcd or sum (A + pO).
 """
 function gcd(A::NfOrdIdl, p::fmpz)
   if isdefined(A, :minimum)
@@ -517,10 +513,9 @@ function prod_by_int_2_elem(A::NfOrdIdl, a::fmpz)
 end
 
 @doc Markdown.doc"""
-***
     *(x::NfOrdIdl, y::fmpz) -> NfOrdIdl
 
-> Returns the ideal $x \cdot y$.
+Returns the ideal $x \cdot y$.
 """
 function *(x::NfOrdIdl, y::fmpz)
   if ismaximal_known_and_maximal(order(x))
@@ -556,10 +551,9 @@ end
 *(x::fmpz, y::NfOrdIdl) = y * x
 
 @doc Markdown.doc"""
-***
     *(x::NfOrdIdl, y::Integer) -> NfOrdIdl
 
-> Returns the ideal $x \cdot y$.
+Returns the ideal $x \cdot y$.
 """
 *(x::NfOrdIdl, y::Integer) = x * fmpz(y)
 
@@ -598,10 +592,10 @@ end
 @doc Markdown.doc"""
     idempotents(x::NfOrdIdl, y::NfOrdIdl) -> NfOrdElem, NfOrdElem
 
-> Returns a tuple `(e, f)` consisting of elements `e in x`, `f in y` such that
-> `1 = e + f`.
+Returns a tuple `(e, f)` consisting of elements `e in x`, `f in y` such that
+`1 = e + f`.
 >
-> If the ideals are not coprime, an error is raised.
+If the ideals are not coprime, an error is raised.
 """
 function idempotents(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
   check_parent(x, y)
@@ -628,7 +622,7 @@ function idempotents(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
 
   V = O.tidempotents
 
-  u = elem_in_basis(one(O))
+  u = coordinates(one(O))
 
   V[1, 1] = 1
 
@@ -675,10 +669,9 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
-   crt(r1::NfOrdElem, i1::NfOrdIdl, r2::NfOrdElem, i2::NfOrdIdl) -> NfOrdElem
-> Find $x$ s.th $x \equiv r1 \bmod i1$ and $x \equiv r2 \bmod i2$
-> using (((idempotents)))
+    crt(r1::NfOrdElem, i1::NfOrdIdl, r2::NfOrdElem, i2::NfOrdIdl) -> NfOrdElem
+Find $x$ s.th $x \equiv r1 \bmod i1$ and $x \equiv r2 \bmod i2$
+using (((idempotents)))
 """
 function crt(r1::S, i1::T, r2::S, i2::T) where { S <: Union{NfOrdElem, AlgAssAbsOrdElem}, T <: Union{NfOrdIdl, AlgAssAbsOrdIdl} }
   u, v = idempotents(i1, i2)
@@ -713,11 +706,10 @@ divexact(A::NfOrdIdl, b::Integer) = divexact(A, fmpz(b))
 #  difficult due to Julia's inability to unset entries...
 
 @doc Markdown.doc"""
-***
     divexact(A::NfOrdIdl, y::fmpz) -> NfOrdIdl
     divexact(A::NfOrdIdl, y::Integer) -> NfOrdIdl
 
-> Returns $A/y$ assuming that $A/y$ is again an integral ideal.
+Returns $A/y$ assuming that $A/y$ is again an integral ideal.
 """
 function divexact(A::NfOrdIdl, b::fmpz)
   zk = order(A)
@@ -756,10 +748,9 @@ function divexact(A::NfOrdIdl, b::fmpz)
 end
 
 @doc Markdown.doc"""
-***
     divexact(A::NfOrdIdl, B::NfOrdIdl) -> NfOrdIdl
 
-> Returns $AB^{-1}$ assuming that $AB^{-1}$ is again an integral ideal.
+Returns $AB^{-1}$ assuming that $AB^{-1}$ is again an integral ideal.
 """
 function divexact(A::NfOrdIdl, B::NfOrdIdl)
   check_parent(A, B)
@@ -819,7 +810,7 @@ function extend(A::NfOrdIdl, O::NfOrd)
     for j = 1:d
       mul!(t, X[i], Y[j])
       for k = 1:d
-        M[(i - 1)*d + j, k] = elem_in_basis(t, copy = false)[k]
+        M[(i - 1)*d + j, k] = coordinates(t, copy = false)[k]
       end
     end
   end

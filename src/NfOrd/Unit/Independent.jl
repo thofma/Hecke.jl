@@ -5,11 +5,10 @@
 ################################################################################
 
 @doc Markdown.doc"""
-***
     unit_rank(O::NfOrd) -> Int
 
-> Returns the unit rank of $\mathcal O$, that is, the rank of the unit group
-> $\mathcal O^\times$.
+Returns the unit rank of $\mathcal O$, that is, the rank of the unit group
+$\mathcal O^\times$.
 """
 function unit_rank(O::NfOrd)
   r1, r2 = signature(nf(O))
@@ -23,11 +22,10 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
     isindependent{T}(x::Array{T, 1})
 
-> Given an array of non-zero elements in a number field, returns whether they
-> are multiplicatively independent.
+Given an array of non-zero elements in a number field, returns whether they
+are multiplicatively independent.
 """
 function isindependent(x::Array{T, 1}, p::Int = 32) where T
   return _isindependent(x, p)

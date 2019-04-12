@@ -6,7 +6,7 @@
 @doc Markdown.doc"""
     absolute_automorphism_group(C::ClassField)
   
->  Computes a generating set for the automorphisms of the 
+ Computes a generating set for the automorphisms of the 
    number field corresponding to C. It assumes that the base field is normal.
    if "check" is true, the function checks if the extension is normal.
 """
@@ -159,7 +159,7 @@ end
 @doc Markdown.doc"""
     extend_to_cyclotomic(C::CyclotomicExt, tau::NfToNfMor) -> NfRelToNfRelMor
     
-> Given a cyclotomic extension $C$ of a number field $K$ and an automorphism $\tau$ of $K$,
+Given a cyclotomic extension $C$ of a number field $K$ and an automorphism $\tau$ of $K$,
   computes an extension of tau to $C$.
 
 """
@@ -725,7 +725,7 @@ function extend_aut(A::ClassField, tau::T) where T <: Map
 #      println("om: $om -> ", degree(c), " vs ", c.o)
       Cs = cyclotomic_extension(k, Int(degree(c)))
       Emb = hom(Cs.Kr, C.Kr, gen(C.Kr)^div(om, degree(c)), check = false)
-      emb = inv(Cs.mp[1]) * Emb * C.mp[1]
+      emb = pseudo_inv(Cs.mp[1]) * Emb * C.mp[1]
       a = FacElem(Dict(emb(k) => v for (k,v) = c.a.fac))
       tau_a = FacElem(Dict(tau_Ka(k) => v for (k,v) = a.fac))
       push!(all_emb, (a, tau_a, emb, divexact(om, c.o)))
@@ -959,7 +959,7 @@ function extend_hom(C::ClassField_pp, D::Array{ClassField_pp, 1}, tau)
 #      println("om: $om -> ", degree(c), " vs ", c.o)
       Cs = cyclotomic_extension(k2, Int(degree(c)))
       Emb = hom(Cs.Kr, Dy.Kr, gen(Dy.Kr)^div(om, degree(c)), check = false)
-      emb = inv(Cs.mp[1]) * Emb * Dy.mp[1]
+      emb = pseudo_inv(Cs.mp[1]) * Emb * Dy.mp[1]
       a = FacElem(Dict(emb(k) => v for (k,v) = c.a.fac))
       push!(all_emb, (a, emb, divexact(om, c.o)))
     end

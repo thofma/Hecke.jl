@@ -5,18 +5,16 @@
 ################################################################################
 
 @doc Markdown.doc"""
-***
     order(a::NfRelOrdIdl) -> NfRelOrd
 
-> Returns the order of $a$.
+Returns the order of $a$.
 """
 order(a::NfRelOrdIdl) = a.order
 
 @doc Markdown.doc"""
-***
     nf(a::NfRelOrdIdl) -> RelativeExtension
 
-> Returns the number field, of which $a$ is an integral ideal.
+Returns the number field, of which $a$ is an integral ideal.
 """
 nf(a::NfRelOrdIdl) = nf(order(a))
 
@@ -106,11 +104,10 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
       pseudo_basis(a::NfRelOrdIdl{T, S}) -> Vector{Tuple{RelativeElement{T}, S}}
       pseudo_basis(a::NfRelOrdFracIdl{T, S}) -> Vector{Tuple{RelativeElement{T}, S}}
 
-> Returns the pseudo-basis of $a$.
+Returns the pseudo-basis of $a$.
 """
 function pseudo_basis(a::Union{NfRelOrdIdl, NfRelOrdFracIdl}; copy::Bool = true)
   assure_has_pseudo_basis(a)
@@ -122,11 +119,10 @@ function pseudo_basis(a::Union{NfRelOrdIdl, NfRelOrdFracIdl}; copy::Bool = true)
 end
 
 @doc Markdown.doc"""
-***
       basis_pmat(a::NfRelOrdIdl) -> PMat
       basis_pmat(a::NfRelOrdFracIdl) -> PMat
 
-> Returns the basis pseudo-matrix of $a$.
+Returns the basis pseudo-matrix of $a$.
 """
 function basis_pmat(a::Union{NfRelOrdIdl, NfRelOrdFracIdl}; copy::Bool = true)
   assure_has_basis_pmat(a)
@@ -144,11 +140,10 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
       basis_mat(a::NfRelOrdIdl{T, S}) -> Generic.Mat{T}
       basis_mat(a::NfRelOrdFracIdl{T, S}) -> Generic.Mat{T}
 
-> Returns the basis matrix of $a$.
+Returns the basis matrix of $a$.
 """
 function basis_mat(a::Union{NfRelOrdIdl, NfRelOrdFracIdl}; copy::Bool = true)
   assure_has_basis_mat(a)
@@ -160,11 +155,10 @@ function basis_mat(a::Union{NfRelOrdIdl, NfRelOrdFracIdl}; copy::Bool = true)
 end
 
 @doc Markdown.doc"""
-***
       basis_mat_inv(a::NfRelOrdIdl{T, S}) -> Generic.Mat{T}
       basis_mat_inv(a::NfRelOrdFracIdl{T, S}) -> Generic.Mat{T}
 
-> Returns the inverse of the basis matrix of $a$.
+Returns the inverse of the basis matrix of $a$.
 """
 function basis_mat_inv(a::Union{NfRelOrdIdl, NfRelOrdFracIdl}; copy::Bool = true)
   assure_has_basis_mat_inv(a)
@@ -213,12 +207,11 @@ function defines_ideal(O::NfRelOrd{T, S}, M::PMat{T, S}) where {T, S}
 end
 
 @doc Markdown.doc"""
-***
     ideal(O::NfRelOrd, M::PMat, check::Bool = true, M_in_hnf::Bool = false) -> NfRelOrdIdl
 
-> Creates the ideal of $\mathcal O$ with basis pseudo-matrix $M$. If check is set,
-> then it is checked whether $M$ defines an ideal. If M_in_hnf is set, then it is
-> assumed that $M$ is already in lower left pseudo HNF.
+Creates the ideal of $\mathcal O$ with basis pseudo-matrix $M$. If check is set,
+then it is checked whether $M$ defines an ideal. If M_in_hnf is set, then it is
+assumed that $M$ is already in lower left pseudo HNF.
 """
 function ideal(O::NfRelOrd{T, S}, M::PMat{T, S}, check::Bool = true, M_in_hnf::Bool = false) where {T, S}
   if check
@@ -229,11 +222,10 @@ function ideal(O::NfRelOrd{T, S}, M::PMat{T, S}, check::Bool = true, M_in_hnf::B
 end
 
 @doc Markdown.doc"""
-***
     ideal(O::NfRelOrd, M::Generic.Mat, check::Bool = true) -> NfRelOrdIdl
 
-> Creates the ideal of $\mathcal O$ with basis matrix $M$. If check is set,
-> then it is checked whether $M$ defines an ideal.
+Creates the ideal of $\mathcal O$ with basis matrix $M$. If check is set,
+then it is checked whether $M$ defines an ideal.
 """
 function ideal(O::NfRelOrd{T, S}, M::Generic.Mat{T}, check::Bool = true) where {T, S}
   coeffs = deepcopy(basis_pmat(O, copy = false)).coeffs
@@ -241,11 +233,10 @@ function ideal(O::NfRelOrd{T, S}, M::Generic.Mat{T}, check::Bool = true) where {
 end
 
 @doc Markdown.doc"""
-***
     ideal(O::NfRelOrd{T, S}, x::NfRelElem{T}, y::NfRelElem{T}, a::S, b::S, check::Bool = true) -> NfRelOrdIdl{T, S}
 
-> Creates the ideal $x\cdot a + y\cdot b$ of $\mathcal O$. If check is set,
-> then it is checked whether these elements define an ideal.
+Creates the ideal $x\cdot a + y\cdot b$ of $\mathcal O$. If check is set,
+then it is checked whether these elements define an ideal.
 """
 function ideal(O::NfRelOrd{T, S}, x::RelativeElement{T}, y::RelativeElement{T}, a::S, b::S, check::Bool = true) where {T, S}
   d = degree(O)
@@ -282,12 +273,11 @@ function ideal(O::NfRelOrd{T, S}, x::RelativeElement{T}, y::RelativeElement{T}, 
 end
 
 @doc Markdown.doc"""
-***
     ideal(O::NfRelOrd{T, S}, x::NfRelOrdElem{T}) -> NfRelOrdIdl{T, S}
     *(O::NfRelOrd{T, S}, x::NfRelOrdElem{T}) -> NfRelOrdIdl{T, S}
     *(x::NfRelOrdElem{T}, O::NfRelOrd{T, S}) -> NfRelOrdIdl{T, S}
 
-> Creates the ideal $x\cdot \mathcal O$ of $\mathcal O$.
+Creates the ideal $x\cdot \mathcal O$ of $\mathcal O$.
 """
 function ideal(O::NfRelOrd{T, S}, x::NfRelOrdElem{T}) where {T, S}
   parent(x) != O && error("Order of element does not coincide with order")
@@ -312,11 +302,10 @@ end
 *(x::NfRelOrdElem, O::NfRelOrd) = ideal(O, x)
 
 @doc Markdown.doc"""
-***
     ideal(O::NfRelOrd{T, S}, a::S, check::Bool = true) -> NfRelOrdIdl{T, S}
 
-> Creates the ideal $a \cdot \mathcal O$ of $\mathcal O$. If check is set,
-> then it is checked whether $a$ defines an (integral) ideal.
+Creates the ideal $a \cdot \mathcal O$ of $\mathcal O$. If check is set,
+then it is checked whether $a$ defines an (integral) ideal.
 """
 function ideal(O::NfRelOrd{T, S}, a::S, check::Bool = true) where {T, S}
   d = degree(O)
@@ -343,11 +332,10 @@ function ideal(O::NfRelOrd, a::NfRelOrdIdl, check::Bool = true)
 end
 
 @doc Markdown.doc"""
-***
     *(O::NfRelOrd{T, S}, a::S) -> NfRelOrdIdl{T, S}
     *(a::S, O::NfRelOrd{T, S}) -> NfRelOrdIdl{T, S}
 
-> Creates the ideal $a \cdot \mathcal O$ of $\mathcal O$.
+Creates the ideal $a \cdot \mathcal O$ of $\mathcal O$.
 """
 *(O::NfRelOrd{T, S}, a::S) where {T, S} = ideal(O, a)
 
@@ -392,10 +380,9 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
     ==(a::NfRelOrdIdl, b::NfRelOrdIdl) -> Bool
 
-> Returns whether $a$ and $b$ are equal.
+Returns whether $a$ and $b$ are equal.
 """
 function ==(a::NfRelOrdIdl, b::NfRelOrdIdl)
   order(a) !== order(b) && return false
@@ -448,10 +435,9 @@ function assure_has_norm(a::NfRelOrdIdl{T, S}) where {T, S}
 end
 
 @doc Markdown.doc"""
-***
     norm(a::NfRelOrdIdl) -> NfOrdIdl
 
-> Returns the norm of $a$.
+Returns the norm of $a$.
 """
 function norm(a::NfRelOrdIdl; copy::Bool = true)
   assure_has_norm(a)
@@ -469,10 +455,9 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
     +(a::NfRelOrdIdl, b::NfRelOrdIdl) -> NfRelOrdIdl
 
-> Returns $a + b$.
+Returns $a + b$.
 """
 function +(a::NfRelOrdIdl{T, S}, b::NfRelOrdIdl{T, S}) where {T, S}
   check_parent(a, b)
@@ -496,7 +481,7 @@ end
 @doc Markdown.doc"""
     *(a::NfRelOrdIdl, b::NfRelOrdIdl) -> NfRelOrdIdl
 
-> Returns $a \cdot b$.
+Returns $a \cdot b$.
 """
 function *(a::NfRelOrdIdl{T, S}, b::NfRelOrdIdl{T, S}) where {T, S}
   check_parent(a, b)
@@ -544,10 +529,9 @@ Base.:(^)(A::NfRelOrdIdl, e::Int) = Base.power_by_squaring(A, e)
 ################################################################################
 
 @doc Markdown.doc"""
-***
     *(a:NfRelOrdIdl{T, S}, x::T) -> NfRelOrdIdl{T, S}
 
-> Returns the ideal $x\cdot a$.
+Returns the ideal $x\cdot a$.
 """
 function *(a::NfRelOrdIdl{T, S}, x::T) where {T, S}
   if iszero(x)
@@ -583,7 +567,7 @@ end
 @doc Markdown.doc"""
     intersect(a::NfRelOrdIdl, b::NfRelOrdIdl) -> NfRelOrdIdl
 
-> Returns $a \cap b$.
+Returns $a \cap b$.
 """
 function intersect(a::NfRelOrdIdl{T, S}, b::NfRelOrdIdl{T, S}) where {T, S}
   check_parent(a, b)
@@ -610,12 +594,11 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
       inv(a::NfRelOrdIdl) -> NfRelOrdFracIdl
       inv(a::NfRelOrdFracIdl) -> NfRelOrdFracIdl
 
-> Computes the inverse of $a$, that is, the fractional ideal $b$ such that
-> $ab = O$, where $O$ is the ambient order of $a$. $O$ must be maximal.
+Computes the inverse of $a$, that is, the fractional ideal $b$ such that
+$ab = O$, where $O$ is the ambient order of $a$. $O$ must be maximal.
 """
 function inv(a::Union{NfRelOrdIdl{T, S}, NfRelOrdFracIdl{T, S}}) where {T, S}
   if !ismaximal(order(a))
@@ -653,10 +636,9 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
       divexact(a::NfRelOrdIdl, b::NfRelOrdIdl) -> NfRelOrdFracIdl
 
-> Returns $ab^{-1}$.
+Returns $ab^{-1}$.
 """
 function divexact(a::NfRelOrdIdl{T, S}, b::NfRelOrdIdl{T, S}) where {T, S}
   O = order(a)
@@ -695,13 +677,12 @@ end
 # Algorithm V.8. and VI.8. in "Berechnung relativer Ganzheitsbasen mit dem
 # Round-2-Algorithmus" by C. Friedrichs.
 @doc Markdown.doc"""
-***
       pradical(O::NfRelOrd, P::NfOrdIdl) -> NfRelOrdIdl
 
-> Given a prime ideal $P$, this function returns the $P$-radical
-> $\sqrt{P\mathcal O}$ of $\mathcal O$, which is
-> just $\{ x \in \mathcal O \mid \exists k \in \mathbf Z_{\geq 0} \colon x^k
-> \in P\mathcal O \}$. It is not checked that $P$ is prime.
+Given a prime ideal $P$, this function returns the $P$-radical
+$\sqrt{P\mathcal O}$ of $\mathcal O$, which is
+just $\{ x \in \mathcal O \mid \exists k \in \mathbf Z_{\geq 0} \colon x^k
+\in P\mathcal O \}$. It is not checked that $P$ is prime.
 """
 function pradical(O::NfRelOrd, P::Union{NfOrdIdl, NfRelOrdIdl})
   d = degree(O)
@@ -756,7 +737,7 @@ function pradical(O::NfRelOrd, P::Union{NfOrdIdl, NfRelOrdIdl})
     k = clog(fmpz(degree(Oint)), q)
     for i = 1:d
       t = Oint((L(K(elts_with_val[i]))*pbint[i][1])^(q^k))
-      ar = elem_in_basis(t)
+      ar = coordinates(t)
       for j = 1:d
         A[j, i] = mmF(divexact(ar[j], K(elts_with_val[j])))
       end
@@ -773,7 +754,7 @@ function pradical(O::NfRelOrd, P::Union{NfOrdIdl, NfRelOrdIdl})
 
   B = nullspace(A)[2]
   M1 = zero_matrix(K, d, d)
-  imF = inv(mF)
+  imF = pseudo_inv(mF)
   # Write a basis of the kernel of A in the rows of M1.
   for i = 1:ncols(B)
     for j = 1:nrows(B)
@@ -807,12 +788,11 @@ end
 # Algorithm VII.1. in "Berechnung relativer Ganzheitsbasen mit dem
 # Round-2-Algorithmus" by C. Friedrichs.
 @doc Markdown.doc"""
-***
     ring_of_multipliers(a::NfRelOrdIdl) -> NfRelOrd
 
-> Computes the order $(a : a)$, which is the set of all $x \in K$
-> with $xa \subseteq a$, where $K$ is the ambient number field
-> of $a$.
+Computes the order $(a : a)$, which is the set of all $x \in K$
+with $xa \subseteq a$, where $K$ is the ambient number field
+of $a$.
 """
 function ring_of_multipliers(a::NfRelOrdIdl{T1, T2}) where {T1, T2}
   O = order(a)
@@ -855,7 +835,7 @@ function relative_ideal(a::NfOrdIdl, m::NfRelToNf)
   @assert nf(order(a)) == Labs
   K = base_ring(L)
   O = relative_order(order(a), m)
-  mm = inv(m)
+  mm = pseudo_inv(m)
   B = basis(a, copy = false)
   d = degree(L)
   dabs = degree(Labs)
@@ -905,7 +885,7 @@ function prime_dec_nonindex(O::NfRelOrd, p::Union{NfOrdIdl, NfRelOrdIdl})
   Kx = parent(f)
   Fp, mF = ResidueField(OK, p)
   mmF = extend(mF, K)
-  immF = inv(mmF)
+  immF = pseudo_inv(mmF)
   Fy, y = PolynomialRing(Fp,"y", cached=false)
   fmodp = Hecke.nf_elem_poly_to_fq_poly(Fy, mmF, f)
   fac = factor(fmodp)
@@ -947,7 +927,7 @@ function prime_dec_index(O::NfRelOrd, p::Union{NfOrdIdl, NfRelOrdIdl})
 
   Ip = pradical(O, p)
   A, OtoA = AlgAss(O, Ip, p)
-  AtoO = inv(OtoA)
+  AtoO = pseudo_inv(OtoA)
   AA = decompose(A)
 
   result = Vector{Tuple{NfRelOrdIdl{typeof(O).parameters...}, Int}}()
@@ -959,7 +939,7 @@ function prime_dec_index(O::NfRelOrd, p::Union{NfOrdIdl, NfRelOrdIdl})
     ker = left_kernel_basis(M)
     N = basis_pmat(Ip)
     for i = 1:length(ker)
-      b = elem_in_basis(AtoO(A(ker[i])))
+      b = coordinates(AtoO(A(ker[i])))
       for j = 1:degree(O)
         m.matrix[1, j] = b[j]
       end
@@ -985,7 +965,7 @@ end
 
 function mod(a::NfRelOrdElem, I::NfRelOrdIdl)
   O = order(I)
-  b = elem_in_basis(a)
+  b = coordinates(a)
   PM = basis_pmat(I, copy = false) # PM is assumed to be in pseudo hnf
   for i = degree(O):-1:1
     t = b[i] - mod(b[i], PM.coeffs[i])
@@ -1066,12 +1046,11 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
       minimum(A::NfRelOrdIdl) -> NfOrdIdl
       minimum(A::NfRelOrdIdl) -> NfRelOrdIdl
 
-> Returns the ideal $A \cap O$ where $O$ is the maximal order of the coefficient
-> ideals of $A$.
+Returns the ideal $A \cap O$ where $O$ is the maximal order of the coefficient
+ideals of $A$.
 """
 function minimum(A::NfRelOrdIdl; copy::Bool = true)
   assure_has_minimum(A)
@@ -1117,10 +1096,10 @@ end
 @doc Markdown.doc"""
     idempotents(x::NfRelOrdIdl, y::NfRelOrdIdl) -> NfRelOrdElem, NfRelOrdElem
 
-> Returns a tuple `(e, f)` consisting of elements `e in x`, `f in y` such that
-> `1 = e + f`.
+Returns a tuple `(e, f)` consisting of elements `e in x`, `f in y` such that
+`1 = e + f`.
 >
-> If the ideals are not coprime, an error is raised.
+If the ideals are not coprime, an error is raised.
 """
 function idempotents(x::NfRelOrdIdl{T, S}, y::NfRelOrdIdl{T, S}) where {T, S}
   check_parent(x, y)
@@ -1141,7 +1120,7 @@ function idempotents(x::NfRelOrdIdl{T, S}, y::NfRelOrdIdl{T, S}) where {T, S}
   M = zero_matrix(K, 2*d + 1, 2*d + 1)
 
   M[1, 1] = K(1)
-  z = elem_in_basis(one(O))
+  z = coordinates(one(O))
   for i = 1:d
     M[1, i + 1] = z[i]
   end
@@ -1191,18 +1170,17 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
     in(x::NfRelOrdElem, y::NfRelOrdIdl)
     in(x::RelativeElement, y::NfRelOrdIdl)
     in(x::fmpz, y::NfRelOrdIdl)
 
-> Returns whether $x$ is contained in $y$.
+Returns whether $x$ is contained in $y$.
 """
 function in(x::NfRelOrdElem, y::NfRelOrdIdl)
   parent(x) !== order(y) && error("Order of element and ideal must be equal")
   O = order(y)
   b_pmat = basis_pmat(y, copy = false)
-  t = transpose(matrix(base_ring(nf(O)), degree(O), 1, elem_in_basis(x)))
+  t = transpose(matrix(base_ring(nf(O)), degree(O), 1, coordinates(x)))
   t = t*basis_mat_inv(y, copy = false)
   for i = 1:degree(O)
     if !(t[1, i] in b_pmat.coeffs[i])
@@ -1226,10 +1204,9 @@ in(x::fmpz, y::NfRelOrdIdl) = in(order(y)(x),y)
 ################################################################################
 
 @doc Markdown.doc"""
-***
     uniformizer(P::NfRelOrdIdl) -> NfRelOrdElem
 
-> Returns an element $u \in P$ with valuation(u, P) == 1.
+Returns an element $u \in P$ with valuation(u, P) == 1.
 """
 function uniformizer(P::NfRelOrdIdl)
   @assert P.is_prime == 1
@@ -1265,11 +1242,10 @@ function _is_p_uniformizer(z::NfRelOrdElem, P::T, primes::Vector{T}) where {T <:
 end
 
 @doc Markdown.doc"""
-***
     p_uniformizer(P::NfRelOrdIdl) -> NfRelOrdElem
 
-> Returns an element $u \in P$ with valuation(u, P) == 1 and valuation 0 at all
-> other prime ideals lying over minimum(P).
+Returns an element $u \in P$ with valuation(u, P) == 1 and valuation 0 at all
+other prime ideals lying over minimum(P).
 """
 function p_uniformizer(P::NfRelOrdIdl)
   @assert P.is_prime == 1
@@ -1296,11 +1272,10 @@ function p_uniformizer(P::NfRelOrdIdl)
 end
 
 @doc Markdown.doc"""
-***
     anti_uniformizer(P::NfRelOrdIdl) -> RelativeElement
 
-> Returns an element $a$ in the number field containing $P$ with valuation(a, P) == -1
-> and non-negative valuation at all other prime ideals.
+Returns an element $a$ in the number field containing $P$ with valuation(a, P) == -1
+and non-negative valuation at all other prime ideals.
 """
 function anti_uniformizer(P::NfRelOrdIdl{T, S}) where {T, S}
   @assert P.is_prime == 1
@@ -1334,7 +1309,7 @@ function anti_uniformizer(P::NfRelOrdIdl{T, S}) where {T, S}
 
   F, mF = ResidueField(order(p), p)
   mmF = extend(mF, nf(order(p)))
-  immF = inv(mmF)
+  immF = pseudo_inv(mmF)
   Mp = zero_matrix(F, nrows(M), ncols(M))
   for i = 1:nrows(M)
     for j = 1:ncols(M)

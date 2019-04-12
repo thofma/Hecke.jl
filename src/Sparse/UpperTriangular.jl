@@ -10,11 +10,11 @@
 # elements below.
 # sr = starting row
 function _one_step(A::SMat{T}, sr = 1) where T
-  nr, trafo = _one_step_with_trafo(A, sr)
+  nr, trafo = _one_step_with_transform(A, sr)
   return nr
 end
 
-function _one_step_with_trafo(A::SMat{T}, sr = 1) where T
+function _one_step_with_transform(A::SMat{T}, sr = 1) where T
   trafos = SparseTrafoElem[]
   i = sr
   @assert i > 0
@@ -111,7 +111,7 @@ function echelonize_via_dense(h::SMat{nmod})
   return sparse_matrix(hdense)
 end
 
-function echelonize_via_dense_with_trafo(h::SMat{fmpz})
+function echelonize_via_dense_with_transform(h::SMat{fmpz})
   hdense = matrix(h)
   # echelonize
   hdense, U = hnf_with_transform(hdense)
@@ -169,32 +169,32 @@ end
 # will be invoked
 #
 
-function upper_triangular_with_trafo(M::SMat, density_limit = 0.5)
+function upper_triangular_with_transform(M::SMat, density_limit = 0.5)
   B = deepcopy(M)
-  T = upper_triangular_with_trafo!(B, density_limit)
+  T = upper_triangular_with_transform!(B, density_limit)
   return B, T
 end
 
-function upper_triangular_with_trafo!(M::SMat, density_limit::Float64 = 0.5)
+function upper_triangular_with_transform!(M::SMat, density_limit::Float64 = 0.5)
   f = (A, i) -> (A.nnz > (A.r-i) * (A.c-i) * density_limit)
-  return _upper_triangular_with_trafo!(M, f)
+  return _upper_triangular_with_transform!(M, f)
 end
 
-function upper_triangular_with_trafo!(M::SMat{fmpz},
+function upper_triangular_with_transform!(M::SMat{fmpz},
                                       density_limit::Float64 = 0.5,
                                       size_limit::Int = 200)
   f =  (A, i) -> (A.nnz > (A.r-i) * (A.c-i) * density_limit || nbits(maximum(abs, A)) > size_limit)
-  return _upper_triangular_with_trafo!(M, f)
+  return _upper_triangular_with_transform!(M, f)
 end
 
 # is_dense_enough is a function (::SMat{T}, i::Int) -> Bool
 # At each level i, is_dense_enough(A, i) is called.
 # If it evaluates to true, then dense echelonization will be called.
-function _upper_triangular_with_trafo!(A::SMat{T}, is_dense_enough::Function) where T
+function _upper_triangular_with_transform!(A::SMat{T}, is_dense_enough::Function) where T
   trafo = SparseTrafoElem[]
 
   for i = 1:min(nrows(A), ncols(A))
-    x, t = _one_step_with_trafo(A, i)
+    x, t = _one_step_with_transform(A, i)
     append!(trafo, t)
 
     if x > A.r
@@ -204,7 +204,7 @@ function _upper_triangular_with_trafo!(A::SMat{T}, is_dense_enough::Function) wh
     if is_dense_enough(A, i)
       h = sub(A, i:A.r, i:A.c)
 
-      h, U = echelonize_via_dense_with_trafo(h)
+      h, U = echelonize_via_dense_with_transform(h)
 
       # h will have zero rows
 
@@ -313,7 +313,7 @@ end
 #
 ################################################################################
 
-function _snf_upper_triangular_with_trafo(A::SMat{fmpz})
+function _snf_upper_triangular_with_transform(A::SMat{fmpz})
   # We assume that A is quadratic and upper triangular
   essential_index = 1
 
@@ -352,8 +352,8 @@ end
 @doc Markdown.doc"""
     elementary_divisors(A::SMat{fmpz}) -> Array{fmpz, 1}
 
-> The elementary divisors of $A$, ie. the diagonal elements of the Smith normal
-> form of $A$. $A$ needs to be of full rank - currently.
+The elementary divisors of $A$, ie. the diagonal elements of the Smith normal
+form of $A$. $A$ needs to be of full rank - currently.
 """
 function elementary_divisors(A::SMat{fmpz})
   A = copy(A)

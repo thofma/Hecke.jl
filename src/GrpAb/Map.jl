@@ -45,8 +45,8 @@ export haspreimage, hasimage, hom, kernel, cokernel, image, isinjective, issurje
 @doc Markdown.doc"""
     haspreimage(M::GrpAbFinGenMap, a::GrpAbFinGenElem) -> Bool, GrpAbFinGenElem
 
-> Returns whether $a$ is in the image of $M$. If so, the second return value is
-> an element $b$ with $M(b) = a$.
+Returns whether $a$ is in the image of $M$. If so, the second return value is
+an element $b$ with $M(b) = a$.
 """
 function haspreimage(M::GrpAbFinGenMap, a::GrpAbFinGenElem)
   if isdefined(M, :imap)
@@ -62,12 +62,13 @@ function haspreimage(M::GrpAbFinGenMap, a::GrpAbFinGenElem)
   end
 end
 
+
 # Note that a map can be a partial function. The following function
 # checks if an element is in the domain of definition.
 #
 # Here is an example:
 # S, mS = sub(...), so ms: S -> G
-# h = inv(mS)
+# h = pseudo_inv(mS)
 # Now h is a partial function on G with domain of definition the image of mS.
 # Then hasimage(h, x) would check if x is in the image of mS.
 function hasimage(M::GrpAbFinGenMap, a::GrpAbFinGenElem)
@@ -94,7 +95,7 @@ id_hom(G::GrpAbFinGen) = hom(G, G, identity_matrix(FlintZZ, ngens(G)), identity_
 
 @doc Markdown.doc"""
     hom(A::Array{GrpAbFinGenElem, 1}, B::Array{GrpAbFinGenElem, 1}) -> Map
-> Creates the homomorphism $A[i] \mapsto B[i]$
+Creates the homomorphism $A[i] \mapsto B[i]$
 """
 function hom(A::Array{GrpAbFinGenElem, 1}, B::Array{GrpAbFinGenElem, 1}; check::Bool = true)
   GA = parent(A[1])
@@ -129,7 +130,7 @@ end
 @doc Markdown.doc"""
     hom(G::GrpAbFinGen, B::Array{GrpAbFinGenElem, 1}) -> Map
 
-> Creates the homomorphism which maps `G[i]` to `B[i]`.
+Creates the homomorphism which maps `G[i]` to `B[i]`.
 """
 function hom(G::GrpAbFinGen, B::Array{GrpAbFinGenElem, 1}; check::Bool = true)
   GB = parent(B[1])
@@ -177,7 +178,8 @@ function hom(A::GrpAbFinGen, B::GrpAbFinGen, M::fmpz_mat, Minv; check::Bool = tr
     check_mat(A, B, M) || error("Matrix does not define a morphism of abelian groups")
     check_mat(B, A, Minv) || error("Matrix does not define a morphism of abelian groups")
     h = GrpAbFinGenMap(A, B, M, Minv)
-    all(x -> x == inv(h)(h(x)), gens(A)) || error("Matrix does not define a morphism of abelian groups")
+    ph = pseudo_inv(h)
+    all(x -> x == ph(h(x)), gens(A)) || error("Matrix does not define a morphism of abelian groups")
     return h::GrpAbFinGenMap
   end
 
@@ -186,6 +188,31 @@ end
 
 
 ==(f::GrpAbFinGenMap, g::GrpAbFinGenMap) = domain(f) === domain(g) && codomain(f) === codomain(g) && all(x -> f(x) == g(x), gens(domain(f)))
+################################################################################
+#
+#  Inverse of a map
+#
+################################################################################
+
+function inv(f::GrpAbFinGenMap)
+  if isdefined(f, :imap)
+    return hom(codomain(f), domain(f), f.imap, f.map)
+  end
+  if !isinjective(f)
+    error("The map is not invertible")
+  end
+  gB = gens(codomain(f))
+  imgs = Vector{GrpAbFinGenElem}(undef, length(gB))
+  for i = 1:length(imgs)
+    fl, el = haspreimage(f, gB[i])
+    if !fl
+      error("The map is not invertible")
+    end
+    imgs[i] = el
+  end
+  return hom(gB, imgs, check = false)
+end
+
 ################################################################################
 #
 #  Kernel, image, cokernel
@@ -293,6 +320,7 @@ end
 #
 ################################################################################
 
+#TODO: Improve in the finite case
 @doc Markdown.doc"""
     isinjective(h::GrpAbFinGenMap) -> Bool
 
@@ -309,6 +337,7 @@ end
 #
 ################################################################################
 
+#TODO: Improve in the finite case
 @doc Markdown.doc"""
     isbijective(h::GrpAbFinGenMap) -> Bool
 
@@ -325,10 +354,24 @@ end
 ###############################################################################
 
 function compose(f::GrpAbFinGenMap, g::GrpAbFinGenMap)
-  @assert domain(g)==codomain(f)
+  @assert domain(g) == codomain(f)
   
-  M=f.map*g.map
-  return GrpAbFinGenMap(domain(f), codomain(g), M)
+  M = f.map*g.map
+  C = codomain(g)
+  if issnf(C)
+    for j = 1:ncols(M)
+      if iszero(C.snf[j])
+        break
+      end
+      for i = 1:nrows(M)
+        M[i, j] = mod(M[i, j], C.snf[j])
+      end
+    end
+  else
+    assure_has_hnf(C)
+    reduce_mod_hnf_ur!(M, C.hnf)
+  end
+  return hom(domain(f), codomain(g), M, check = false)
 
 end
 
@@ -360,10 +403,10 @@ end
 
 @doc Markdown.doc"""
     hom(G::GrpAbFinGen, H::GrpAbFinGen; task::Symbol = :map) -> GrpAbFinGen, Map
-> Computes the group of all homomorpisms from $G$ to $H$ as an abstract group.
-> If {{{task}}} is ":map", then a map $\phi$ is computed that can be used
-> to obtain actual homomorphisms. This map also allows preimages.
-> Set {{{task}}} to ":none" to not compute the map.
+Computes the group of all homomorpisms from $G$ to $H$ as an abstract group.
+If {{{task}}} is ":map", then a map $\phi$ is computed that can be used
+to obtain actual homomorphisms. This map also allows preimages.
+Set {{{task}}} to ":none" to not compute the map.
 """
 function hom(G::GrpAbFinGen, H::GrpAbFinGen; task::Symbol = :map)
   @assert task in [:map, :none]
@@ -465,8 +508,8 @@ end
 #TODO: technically, dual Z could be Q/Z ...
 @doc Markdown.doc"""
     dual(G::GrpAbFinGen) -> GrpAbFinGen, Map
-> Computes the dual group, ie. $hom(G, Q/Z)$ as an
-> abstract group. The map can be used to obtain actual homomorphisms.
+Computes the dual group, ie. $hom(G, Q/Z)$ as an
+abstract group. The map can be used to obtain actual homomorphisms.
 """
 function dual(G::GrpAbFinGen)
   T, mT = torsion_subgroup(G)

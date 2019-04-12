@@ -10,8 +10,8 @@ export maximal_order, pmaximal_order,poverorder, MaximalOrder, ring_of_integers
 @doc Markdown.doc"""
     maximal_order(O::NfAbsOrd; index_divisors::Vector{fmpz}, discriminant::fmpz, ramified_primes::Vector{fmpz}) -> NfAbsOrd
 
-> Returns the maximal order of the number field that contains $O$. Additional information can be supplied if they are already known, as the ramified primes,
-> the discriminant of the maximal order or a set of integers dividing the index of $O$ in the maximal order.
+Returns the maximal order of the number field that contains $O$. Additional information can be supplied if they are already known, as the ramified primes,
+the discriminant of the maximal order or a set of integers dividing the index of $O$ in the maximal order.
 """
 function MaximalOrder(O::NfAbsOrd{S, T}; index_divisors::Vector{fmpz} = fmpz[], discriminant::fmpz = fmpz(-1), ramified_primes::Vector{fmpz} = fmpz[]) where {S, T}
   K = nf(O)
@@ -33,8 +33,8 @@ end
 @doc Markdown.doc"""
     maximal_order(K::Union{AnticNumberField, NfAbsNS}; discriminant::fmpz, ramified_primes::Vector{fmpz}) -> NfAbsOrd
 
-> Returns the maximal order of $K$. Additional information can be supplied if they are already known, as the ramified primes
-> or the discriminant of the maximal order.  
+Returns the maximal order of $K$. Additional information can be supplied if they are already known, as the ramified primes
+or the discriminant of the maximal order.  
 
 # Example
 
@@ -61,10 +61,9 @@ function MaximalOrder(K::AnticNumberField; discriminant::fmpz = fmpz(-1), ramifi
 end
 
 @doc Markdown.doc"""
-***
     ring_of_integers(K::AnticNumberField) -> NfAbsOrd
 
-> This function returns the ring of integers of $K$.
+This function returns the ring of integers of $K$.
 """
 function ring_of_integers(x::T; kw...) where T
   return maximal_order(x; kw...)
@@ -82,11 +81,10 @@ end
 #
 ################################################################################
 @doc Markdown.doc"""
-***
     pmaximal_overorder_at(O::NfOrd, primes::Array{fmpz, 1}) - > NfOrd
 
-> Given a set of prime numbers, this function returns an overorder of $O$ which
-> is maximal at those primes.
+Given a set of prime numbers, this function returns an overorder of $O$ which
+is maximal at those primes.
 """
 function pmaximal_overorder_at(O::NfOrd, primes::Array{fmpz, 1})
   if length(primes) == 0
@@ -533,11 +531,10 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
     ring_of_multipliers(I::NfAbsOrdIdl) -> NfOrd
 
-> Computes the order $(I : I)$, which is the set of all $x \in K$
-> with $xI \subseteq I$.
+Computes the order $(I : I)$, which is the set of all $x \in K$
+with $xI \subseteq I$.
 """
 function ring_of_multipliers(a::NfAbsOrdIdl)
   O = order(a) 
@@ -644,7 +641,7 @@ function pradical_frobenius(O::NfAbsOrd, p::Union{Integer, fmpz})
   B = basis(O, copy = false)
   for i in 1:d
     t = powermod(B[i], p^j, p)
-    ar = elem_in_basis(t)
+    ar = coordinates(t)
     for k in 1:d
       A[k, i] = ar[k]
     end
@@ -682,10 +679,10 @@ end
 @doc Markdown.doc"""
     pradical(O::NfOrd, p::{fmpz|Integer}) -> NfAbsOrdIdl
 
-> Given a prime number $p$, this function returns the $p$-radical
-> $\sqrt{p\mathcal O}$ of $\mathcal O$, which is
-> just $\{ x \in \mathcal O \mid \exists k \in \mathbf Z_{\geq 0} \colon x^k
-> \in p\mathcal O \}$. It is not checked that $p$ is prime.
+Given a prime number $p$, this function returns the $p$-radical
+$\sqrt{p\mathcal O}$ of $\mathcal O$, which is
+just $\{ x \in \mathcal O \mid \exists k \in \mathbf Z_{\geq 0} \colon x^k
+\in p\mathcal O \}$. It is not checked that $p$ is prime.
 """
 function pradical(O::NfAbsOrd, p::Union{Integer, fmpz})
   if p isa fmpz

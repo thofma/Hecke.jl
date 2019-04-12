@@ -20,7 +20,7 @@ function induce_image(A::NfOrdIdl, S::Map)
 end
 
 @doc Markdown.doc"""
-  compose_mod(x::nmod_poly, y::nmod_poly, z::nmod_poly) -> nmod_poly
+    compose_mod(x::nmod_poly, y::nmod_poly, z::nmod_poly) -> nmod_poly
 
   Compute x(y) mod z
 """
@@ -44,7 +44,7 @@ end
 
 
 @doc Markdown.doc"""
-  taylor_shift(x::nmod_poly, r::UInt) -> nmod_poly
+    taylor_shift(x::nmod_poly, r::UInt) -> nmod_poly
 
   Compute x(t-c)
 """
@@ -57,7 +57,7 @@ end
 
 function induce(FB::Hecke.NfFactorBase, A::Map) 
   K = domain(A)
-  f = A(gen(K)) # esentially a polynomial in the primitive element
+  f = A(gen(K)) # essentially a polynomial in the primitive element
 
   O = order(FB.ideals[1])
   prm = Array{Tuple{Int, Int}, 1}()

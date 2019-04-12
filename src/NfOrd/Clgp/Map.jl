@@ -12,7 +12,7 @@ export isprincipal
 
 @doc Markdown.doc"""
     reduce_ideal2(A::FacElem{NfOrdIdl}) -> NfOrdIdl, FacElem{nf_elem}
-> Computes $B$ and $\alpha$ in factored form, such that $\alpha B = A$.
+Computes $B$ and $\alpha$ in factored form, such that $\alpha B = A$.
 """
 function reduce_ideal2(I::FacElem{NfOrdIdl, NfOrdIdlSet})
   O = order(first(keys(I.fac)))
@@ -113,7 +113,7 @@ end
 # TODO: Agree on a name for power_class vs power_reduce2
 @doc Markdown.doc"""
     power_class(A::NfOrdIdl, e::fmpz) -> NfOrdIdl
-> Computes a (small) ideal in the same class as $A^e$
+Computes a (small) ideal in the same class as $A^e$
 """
 function power_class(A::NfOrdIdl, e::fmpz)
   if e == 0
@@ -146,7 +146,7 @@ end
 
 @doc Markdown.doc"""
     power_product_class(A::Array{NfOrdIdl, 1}, e::Array{fmpz, 1}) -> NfOrdIdl
-> Computes a (small) ideal in the same class as $\prod A_i^{e_i}$.
+Computes a (small) ideal in the same class as $\prod A_i^{e_i}$.
 """
 function power_product_class(A::Array{NfOrdIdl, 1}, e::Array{fmpz, 1})
   i = 1
@@ -211,8 +211,8 @@ end
 
 @doc Markdown.doc"""
     class_group_ideal_relation(I::NfOrdIdl, c::ClassGrpCtx) -> nf_elem, SRow{fmpz}
-> Finds a number field element $\alpha$ such that $\alpha I$ factors over
-> the factor base in $c$.
+Finds a number field element $\alpha$ such that $\alpha I$ factors over
+the factor base in $c$.
 """
 function class_group_ideal_relation(I::NfOrdIdl, c::ClassGrpCtx)
   #easy case: I factors over the FB...
@@ -316,12 +316,12 @@ function class_group_disc_log(I::NfOrdIdl, c::ClassGrpCtx)
   return class_group_disc_log(w, c)
 end
 
-mutable struct MapClassGrp{T} <: Map{T, NfOrdIdlSet, HeckeMap, MapClassGrp}
-  header::MapHeader{T, NfOrdIdlSet}
+mutable struct MapClassGrp <: Map{GrpAbFinGen, NfOrdIdlSet, HeckeMap, MapClassGrp}
+  header::MapHeader{GrpAbFinGen, NfOrdIdlSet}
   princ_gens::Array{Tuple{FacElem{NfOrdIdl,NfOrdIdlSet}, FacElem{nf_elem, AnticNumberField}},1}
   
-  function MapClassGrp{T}() where {T}
-    return new{T}()
+  function MapClassGrp()
+    return new()
   end
 end
 
@@ -334,14 +334,14 @@ end
 function class_group(c::ClassGrpCtx; redo::Bool = false)
   if !redo
     if isdefined(c, :cl_map)
-      mC = c.cl_map::MapClassGrp{GrpAbFinGen}
+      mC = c.cl_map::MapClassGrp
       C = domain(mC)
       return C, mC
     end
   end  
   
   C = class_group_grp(c, redo = redo)
-  r = MapClassGrp{typeof(C)}()
+  r = MapClassGrp()
   
   local disclog 
   let c = c
@@ -365,7 +365,7 @@ end
 function class_group_grp(c::ClassGrpCtx; redo::Bool = false)
 
   if !redo && isdefined(c, :dl_data)
-    return c.dl_data[3]
+    return c.dl_data[3]::GrpAbFinGen
   end
 
   h, p = class_group_get_pivot_info(c)
@@ -397,9 +397,9 @@ end
 #TODO: if an ideal is principal, store it on the ideal!!!
 @doc Markdown.doc"""
     isprincipal_fac_elem(I::FacElem{NfOrdIdl, NfOrdIdlSet}) -> Bool, FacElem{nf_elem, NumberField}
-> Tests if $A$ is principal and returns $(\mathtt{true}, \alpha)$ if $A =
-> \langle \alpha\rangle$ of $(\mathtt{false}, 1)$ otherwise.  
-> The generator will be in factored form.
+Tests if $A$ is principal and returns $(\mathtt{true}, \alpha)$ if $A =
+\langle \alpha\rangle$ of $(\mathtt{false}, 1)$ otherwise.  
+The generator will be in factored form.
 """
 function isprincipal_fac_elem(I::FacElem{NfOrdIdl, NfOrdIdlSet})
   J, a = reduce_ideal2(I)
@@ -412,7 +412,7 @@ end
 
 @doc Markdown.doc"""
     principal_gen_fac_elem(A::NfOrdIdl) -> FacElem{nf_elem, NumberField}
-> For a principal ideal $A$, find a generator in factored form.
+For a principal ideal $A$, find a generator in factored form.
 """
 function principal_gen_fac_elem(A::NfOrdIdl)
   fl, e = isprincipal_fac_elem(A)
@@ -424,7 +424,7 @@ end
 
 @doc Markdown.doc"""
     principal_gen_fac_elem(I::FacElem) -> FacElem{nf_elem, NumberField}
-> For a principal ideal $A$ in factored form, find a generator in factored form.
+For a principal ideal $A$ in factored form, find a generator in factored form.
 """
 
 function principal_gen_fac_elem(I::FacElem{NfOrdIdl, NfOrdIdlSet})
@@ -440,7 +440,7 @@ end
 
 @doc Markdown.doc"""
     principal_gen(A::NfOrdIdl) -> NfOrdElem
-> For a principal ideal $A$, find a generator.
+For a principal ideal $A$, find a generator.
 """
 function principal_gen(A::NfOrdIdl)
   O = order(A)
@@ -453,9 +453,9 @@ end
 
 @doc Markdown.doc"""
     isprincipal_fac_elem(A::NfOrdIdl) -> Bool, FacElem{nf_elem, NumberField}
-> Tests if $A$ is principal and returns $(\mathtt{true}, \alpha)$ if $A =
-> \langle \alpha\rangle$ of $(\mathtt{false}, 1)$ otherwise.  
-> The generator will be in factored form.
+Tests if $A$ is principal and returns $(\mathtt{true}, \alpha)$ if $A =
+\langle \alpha\rangle$ of $(\mathtt{false}, 1)$ otherwise.  
+The generator will be in factored form.
 """
 function isprincipal_fac_elem(A::NfOrdIdl)
   O = order(A)
@@ -497,8 +497,8 @@ end
 @doc Markdown.doc"""
     isprincipal(A::NfOrdIdl) -> Bool, NfOrdElem
     isprincipal(A::NfOrdFracIdl) -> Bool, NfOrdElem
-> Tests if $A$ is principal and returns $(\mathtt{true}, \alpha)$ if $A =
-> \langle \alpha\rangle$ of $(\mathtt{false}, 1)$ otherwise.  
+Tests if $A$ is principal and returns $(\mathtt{true}, \alpha)$ if $A =
+\langle \alpha\rangle$ of $(\mathtt{false}, 1)$ otherwise.  
 """
 function isprincipal(A::NfOrdIdl)
   O = order(A)
@@ -666,10 +666,10 @@ end
 
 @doc Markdown.doc"""
     sunit_mod_units_group_fac_elem(I::Array{NfOrdIdl, 1}) -> GrpAb, Map
-> For an array $I$ of (coprime prime) ideals, find the $S$-unit group defined
-> by $I$, ie. the group of non-zero field elements which are only divisible
-> by ideals in $I$ modulo the units of the field.
-> The map will return elements in factored form.
+For an array $I$ of (coprime prime) ideals, find the $S$-unit group defined
+by $I$, ie. the group of non-zero field elements which are only divisible
+by ideals in $I$ modulo the units of the field.
+The map will return elements in factored form.
 """
 function sunit_mod_units_group_fac_elem(I::Array{NfOrdIdl, 1})
   #deal with trivial case somehow!!!
@@ -820,10 +820,10 @@ end
 
 @doc Markdown.doc"""
     sunit_group_fac_elem(I::Array{NfOrdIdl, 1}) -> GrpAb, Map
-> For an array $I$ of (coprime prime) ideals, find the $S$-unit group defined
-> by $I$, ie. the group of non-zero field elements which are only divisible
-> by ideals in $I$.
-> The map will return elements in factored form.
+For an array $I$ of (coprime prime) ideals, find the $S$-unit group defined
+by $I$, ie. the group of non-zero field elements which are only divisible
+by ideals in $I$.
+The map will return elements in factored form.
 """
 function sunit_group_fac_elem(I::Array{NfOrdIdl, 1})
   O = order(I[1])
@@ -875,9 +875,9 @@ end
 
 @doc Markdown.doc"""
     sunit_group(I::Array{NfOrdIdl, 1}) -> GrpAb, Map
-> For an array $I$ of (coprime prime) ideals, find the $S$-unit group defined
-> by $I$, ie. the group of non-zero field elements which are only divisible
-> by ideals in $I$.
+For an array $I$ of (coprime prime) ideals, find the $S$-unit group defined
+by $I$, ie. the group of non-zero field elements which are only divisible
+by ideals in $I$.
 """
 function sunit_group(I::Array{NfOrdIdl, 1})
   O = order(I[1])

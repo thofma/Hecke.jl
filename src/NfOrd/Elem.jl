@@ -33,7 +33,7 @@
 ################################################################################
 
 export ==, +, -, *, ^, add!, conjugates_arb, conjugates_arb_log, discriminant,
-       divexact, elem_in_nf, elem_in_basis, isone, iszero, minkowski_map, mod,
+       divexact, elem_in_nf, coordinates, isone, iszero, minkowski_map, mod,
        mul!, norm, one, parent, powermod, rand, rand!, representation_matrix,
        show, trace, t2, zero
 
@@ -48,7 +48,7 @@ function Base.deepcopy_internal(x::NfAbsOrdElem{S, T}, dict::IdDict) where {S, T
   z.elem_in_nf = Base.deepcopy_internal(x.elem_in_nf, dict)
   if x.has_coord
     z.has_coord = true
-    z.elem_in_basis = Base.deepcopy_internal(x.elem_in_basis, dict)::Vector{fmpz}
+    z.coordinates = Base.deepcopy_internal(x.coordinates, dict)::Vector{fmpz}
   end
   return z
 end
@@ -70,12 +70,11 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
       (O::NfOrd)(a::nf_elem, check::Bool = true) -> NfAbsOrdElem
 
-> Given an element $a$ of the ambient number field of $\mathcal O$, this
-> function coerces the element into $\mathcal O$. It will be checked that $a$
-> is contained in $\mathcal O$ if and only if `check` is `true`.
+Given an element $a$ of the ambient number field of $\mathcal O$, this
+function coerces the element into $\mathcal O$. It will be checked that $a$
+is contained in $\mathcal O$ if and only if `check` is `true`.
 """
 (O::NfAbsOrd{S, T})(a::T, check::Bool = true) where {S, T} = begin
   if check
@@ -88,13 +87,12 @@ end
 end
 
 @doc Markdown.doc"""
-***
       (O::NfOrd)(a::NfAbsOrdElem, check::Bool = true) -> NfAbsOrdElem
 
-> Given an element $a$ of some order in the ambient number field of
-> $\mathcal O$, this function coerces the element into $\mathcal O$. It
-> will be checked that $a$ is contained in $\mathcal O$ if and only if
-> `check` is `true`.
+Given an element $a$ of some order in the ambient number field of
+$\mathcal O$, this function coerces the element into $\mathcal O$. It
+will be checked that $a$ is contained in $\mathcal O$ if and only if
+`check` is `true`.
 """
 (O::NfAbsOrd{S, T})(a::NfAbsOrdElem{S, T}, check::Bool = true) where {S, T} = begin
   b = nf(parent(a))(a)
@@ -118,42 +116,38 @@ end
 end
 
 @doc Markdown.doc"""
-***
       (O::NfOrd)(a::Union{fmpz, Integer}) -> NfAbsOrdElem
 
-> Given an element $a$ of type `fmpz` or `Integer`, this
-> function coerces the element into $\mathcal O$. It will be checked that $a$
-> is contained in $\mathcal O$ if and only if `check` is `true`.
+Given an element $a$ of type `fmpz` or `Integer`, this
+function coerces the element into $\mathcal O$. It will be checked that $a$
+is contained in $\mathcal O$ if and only if `check` is `true`.
 """
 (O::NfAbsOrd)(a::Union{fmpz, Integer}) = begin
   return NfAbsOrdElem(O, nf(O)(a))
 end
 
 @doc Markdown.doc"""
-***
       (O::NfOrd)(arr::Array{fmpz, 1})
 
-> Returns the element of $\mathcal O$ with coefficient vector `arr`.
+Returns the element of $\mathcal O$ with coefficient vector `arr`.
 """
 (O::NfAbsOrd)(arr::Array{fmpz, 1}) = begin
   return NfAbsOrdElem(O, deepcopy(arr))
 end
 
 @doc Markdown.doc"""
-***
       (O::NfOrd)(arr::Array{Integer, 1})
 
-> Returns the element of $\mathcal O$ with coefficient vector `arr`.
+Returns the element of $\mathcal O$ with coefficient vector `arr`.
 """
 (O::NfAbsOrd)(arr::Array{S, 1}) where {S <: Integer} = begin
   return NfAbsOrdElem(O, deepcopy(arr))
 end
 
 @doc Markdown.doc"""
-***
       (O::NfOrd)() -> NfAbsOrdElem
 
-> This function constructs a new element of $\mathcal O$ which is set to $0$.
+This function constructs a new element of $\mathcal O$ which is set to $0$.
 """
 (O::NfAbsOrd)() = NfAbsOrdElem(O)
 
@@ -164,7 +158,6 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
     parent(a::NfAbsOrdElem) -> NfOrd
 
 Returns the order of which $a$ is an element.
@@ -188,10 +181,9 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
     elem_in_nf(a::NfAbsOrdElem) -> nf_elem
 
-> Returns the element $a$ considered as an element of the ambient number field.
+Returns the element $a$ considered as an element of the ambient number field.
 """
 function elem_in_nf(a::NfAbsOrdElem)
   if isdefined(a, :elem_in_nf)
@@ -212,7 +204,7 @@ function assure_has_coord(a::NfAbsOrdElem)
   else
     (x, y) = _check_elem_in_order(a.elem_in_nf, parent(a))
     !x && error("Not a valid order element")
-    a.elem_in_basis = y
+    a.coordinates = y
     a.has_coord = true
     return nothing
   end
@@ -225,18 +217,17 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
-    elem_in_basis(a::NfAbsOrdElem) -> Array{fmpz, 1}
+    coordinates(a::NfAbsOrdElem) -> Array{fmpz, 1}
 
-> Returns the coefficient vector of $a$.
+Returns the coefficient vector of $a$.
 """
-function elem_in_basis(a::NfAbsOrdElem; copy::Bool = true)
+function coordinates(a::NfAbsOrdElem; copy::Bool = true)
   assure_has_coord(a)
-  @hassert :NfOrd 2 a == dot(a.elem_in_basis, basis(parent(a)))
+  @hassert :NfOrd 2 a == dot(a.coordinates, basis(parent(a)))
   if copy
-    return deepcopy(a.elem_in_basis)
+    return deepcopy(a.coordinates)
   else
-    return a.elem_in_basis
+    return a.coordinates
   end
 end
 
@@ -247,10 +238,9 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
     discriminant(B::Array{NfAbsOrdElem, 1}) -> fmpz
 
-> Returns the discriminant of the family $B$.
+Returns the discriminant of the family $B$.
 """
 function discriminant(B::Array{NfAbsOrdElem{S, T}, 1}) where {S, T}
   length(B) == 0 && error("Number of elements must be non-zero")
@@ -285,10 +275,9 @@ Base.hash(x::NfAbsOrdElem, h::UInt) = Base.hash(x.elem_in_nf, h)
 ################################################################################
 
 @doc Markdown.doc"""
-***
     ==(x::NfAbsOrdElem, y::NfAbsOrdElem) -> Bool
 
-> Returns whether $x$ and $y$ are equal.
+Returns whether $x$ and $y$ are equal.
 """
  ==(x::NfAbsOrdElem, y::NfAbsOrdElem) = parent(x) === parent(y) &&
                                             x.elem_in_nf == y.elem_in_nf
@@ -302,7 +291,7 @@ Base.hash(x::NfAbsOrdElem, h::UInt) = Base.hash(x.elem_in_nf, h)
     charpoly(a::NfAbsOrdElem) -> fmpz_poly
 
     charpoly(a::NfAbsOrdElem, FlintZZ) -> fmpz_poly
-> The characteristic polynomial of $a$.    
+The characteristic polynomial of $a$.    
 """
 function charpoly(a::NfAbsOrdElem, Zx::FmpzPolyRing = FmpzPolyRing(:x, false))
   return Zx(charpoly(elem_in_nf(a)))
@@ -312,7 +301,7 @@ end
     minpoly(a::NfAbsOrdElem) -> fmpz_poly
 
     minpoly(a::NfAbsOrdElem, FlintZZ) -> fmpz_poly
-> The minimal polynomial of $a$.    
+The minimal polynomial of $a$.    
 """
 function minpoly(a::NfAbsOrdElem, Zx::FmpzPolyRing = FmpzPolyRing(:x, false))
   return Zx(minpoly(elem_in_nf(a)))
@@ -325,34 +314,30 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
     zero(O::NfOrd) -> NfAbsOrdElem
 
-> Returns the zero element of $\mathcal O$.
+Returns the zero element of $\mathcal O$.
 """
 zero(O::NfAbsOrd) = O(fmpz(0))
 
 @doc Markdown.doc"""
-***
     one(O::NfOrd) -> NfAbsOrdElem
 
-> Returns the one element of $\mathcal O$.
+Returns the one element of $\mathcal O$.
 """
 one(O::NfAbsOrd) = O(fmpz(1))
 
 @doc Markdown.doc"""
-***
     zero(a::NfAbsOrdElem) -> NfAbsOrdElem
 
-> Returns the zero element of the parent of $a$.
+Returns the zero element of the parent of $a$.
 """
 zero(a::NfAbsOrdElem) = parent(a)(0)
 
 @doc Markdown.doc"""
-***
     one(O::NfOrd) -> NfAbsOrdElem
 
-> Returns the one element of the parent of $a$.
+Returns the one element of the parent of $a$.
 """
 one(a::NfAbsOrdElem) = one(parent(a))
 
@@ -363,18 +348,16 @@ one(a::NfAbsOrdElem) = one(parent(a))
 ################################################################################
 
 @doc Markdown.doc"""
-***
     isone(a::NfOrd) -> Bool
 
-> Tests if $a$ is one.
+Tests if $a$ is one.
 """
 isone(a::NfAbsOrdElem) = isone(a.elem_in_nf)
 
 @doc Markdown.doc"""
-***
     iszero(a::NfOrd) -> Bool
 
-> Tests if $a$ is zero.
+Tests if $a$ is zero.
 """
 iszero(a::NfAbsOrdElem) = iszero(a.elem_in_nf)
 
@@ -395,16 +378,15 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
     -(x::NfAbsOrdElem) -> NfAbsOrdElem
 
-> Returns the additive inverse of $x$.
+Returns the additive inverse of $x$.
 """
 function -(x::NfAbsOrdElem)
   z = parent(x)()
   z.elem_in_nf = - x.elem_in_nf
   if x.has_coord
-    z.elem_in_basis = map(y -> -y, x.elem_in_basis)
+    z.coordinates = map(y -> -y, x.coordinates)
     z.has_coord = true
   end
   return z
@@ -417,10 +399,9 @@ end
 ###############################################################################
 
 @doc Markdown.doc"""
-***
     *(x::NfAbsOrdElem, y::NfAbsOrdElem) -> NfAbsOrdElem
 
-> Returns $x \cdot y$.
+Returns $x \cdot y$.
 """
 function *(x::NfAbsOrdElem{S, T}, y::NfAbsOrdElem{S, T}) where {S, T}
   !check_parent(x, y) && error("Wrong parents")
@@ -430,47 +411,44 @@ function *(x::NfAbsOrdElem{S, T}, y::NfAbsOrdElem{S, T}) where {S, T}
 end
 
 @doc Markdown.doc"""
-***
     +(x::NfAbsOrdElem, y::NfAbsOrdElem) -> NfAbsOrdElem
 
-> Returns $x + y$.
+Returns $x + y$.
 """
 function +(x::NfAbsOrdElem, y::NfAbsOrdElem)
   !check_parent(x, y) && error("Wrong parents")
   z = parent(x)()
   z.elem_in_nf = x.elem_in_nf + y.elem_in_nf
   if x.has_coord && y.has_coord
-    z.elem_in_basis =
-      [ x.elem_in_basis[i] + y.elem_in_basis[i] for i = 1:degree(parent(x))]
+    z.coordinates =
+      [ x.coordinates[i] + y.coordinates[i] for i = 1:degree(parent(x))]
     z.has_coord = true
   end
   return z
 end
 
 @doc Markdown.doc"""
-***
     -(x::NfAbsOrdElem, y::NfAbsOrdElem) -> NfAbsOrdElem
 
-> Returns $x - y$.
+Returns $x - y$.
 """
 function -(x::NfAbsOrdElem, y::NfAbsOrdElem)
   !check_parent(x, y) && error("Wrong parents")
   z = parent(x)()
   z.elem_in_nf = x.elem_in_nf - y.elem_in_nf
   if x.has_coord && y.has_coord
-    z.elem_in_basis =
-      [ x.elem_in_basis[i] - y.elem_in_basis[i] for i = 1:degree(parent(x))]
+    z.coordinates =
+      [ x.coordinates[i] - y.coordinates[i] for i = 1:degree(parent(x))]
     z.has_coord = true
   end
   return z
 end
 
 @doc Markdown.doc"""
-***
     divexact(x::NfAbsOrdElem, y::NfAbsOrdElem, check::Bool) -> NfAbsOrdElem
 
-> Returns $x/y$. It is assumed that $x/y$ is an element of the same order
-> as $x$.
+Returns $x/y$. It is assumed that $x/y$ is an element of the same order
+as $x$.
 """
 function divexact(x::NfAbsOrdElem, y::NfAbsOrdElem, check::Bool = true)
   !check_parent(x, y) && error("Wrong parents")
@@ -495,7 +473,7 @@ function *(x::NfAbsOrdElem, y::Integer)
   z = parent(x)()
   z.elem_in_nf = x.elem_in_nf * y
   if x.has_coord
-    z.elem_in_basis = map(z -> y*z, x.elem_in_basis)
+    z.coordinates = map(z -> y*z, x.coordinates)
     z.has_coord = true
   end
   return z
@@ -507,7 +485,7 @@ function *(x::NfAbsOrdElem, y::fmpz)
   z = parent(x)()
   z.elem_in_nf = x.elem_in_nf * y
   if x.has_coord
-    z.elem_in_basis = map(z -> y*z, x.elem_in_basis)
+    z.coordinates = map(z -> y*z, x.coordinates)
     z.has_coord = true
   end
   return z
@@ -579,10 +557,9 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
     ^(x::NfAbsOrdElem, y::Union{fmpz, Int})
 
-> Returns $x^y$.
+Returns $x^y$.
 """
 function ^(x::NfAbsOrdElem, y::Union{fmpz, Int})
   z = parent(x)()
@@ -597,19 +574,18 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
     mod(a::NfAbsOrdElem, m::Union{fmpz, Int}) -> NfAbsOrdElem
 
-> Reduces the coefficient vector of $a$ modulo $m$ and returns the corresponding
-> element. The coefficient vector of the result will have entries $x$ with
-> $0 \leq x \leq m$.
+Reduces the coefficient vector of $a$ modulo $m$ and returns the corresponding
+element. The coefficient vector of the result will have entries $x$ with
+$0 \leq x \leq m$.
 """
 function mod(a::NfAbsOrdElem, m::Union{fmpz, Int})
   assure_has_coord(a)
   d = degree(parent(a))
   ar = Vector{fmpz}(undef, d)
   for i in 1:d
-    ar[i] = mod(a.elem_in_basis[i], m)
+    ar[i] = mod(a.coordinates[i], m)
   end
   return NfAbsOrdElem(parent(a), ar) # avoid making a copy of ar
 end
@@ -621,7 +597,6 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
     powermod(a::NfAbsOrdElem, i::fmpz, m::Union{fmpz, Int}) -> NfAbsOrdElem
 
 Returns an element $a^i$ modulo $m$.
@@ -712,26 +687,23 @@ function mod(a::NfAbsNSElem, p::fmpz)
 end
 
 @doc Markdown.doc"""
-***
     powermod(a::NfAbsOrdElem, i::Integer, m::Integer) -> NfAbsOrdElem
 
-> Returns the element $a^i$ modulo $m$.
+Returns the element $a^i$ modulo $m$.
 """
 powermod(a::NfAbsOrdElem, i::Integer, m::Integer) = powermod(a, fmpz(i), fmpz(m))
 
 @doc Markdown.doc"""
-***
     powermod(a::NfAbsOrdElem, i::fmpz, m::Integer) -> NfAbsOrdElem
 
-> Returns the element $a^i$ modulo $m$.
+Returns the element $a^i$ modulo $m$.
 """
 powermod(a::NfAbsOrdElem, i::fmpz, m::Integer)  = powermod(a, i, fmpz(m))
 
 @doc Markdown.doc"""
-***
     powermod(a::NfAbsOrdElem, i::Integer, m::fmpz) -> NfAbsOrdElem
 
-> Returns the element $a^i$ modulo $m$.
+Returns the element $a^i$ modulo $m$.
 """
 powermod(a::NfAbsOrdElem, i::Integer, m::fmpz)  = powermod(a, fmpz(i), m)
 
@@ -742,10 +714,9 @@ powermod(a::NfAbsOrdElem, i::Integer, m::fmpz)  = powermod(a, fmpz(i), m)
 ################################################################################
 
 @doc Markdown.doc"""
-***
     representation_matrix(a::NfAbsOrdElem) -> fmpz_mat
 
-> Returns the representation matrix of the element $a$.
+Returns the representation matrix of the element $a$.
 """
 function representation_matrix(a::NfAbsOrdElem)
   O = parent(a)
@@ -759,12 +730,11 @@ function representation_matrix(a::NfAbsOrdElem)
 end
 
 @doc Markdown.doc"""
-***
     representation_matrix(a::NfAbsOrdElem, K::AnticNumberField) -> FakeFmpqMat
 
-> Returns the representation matrix of the element $a$ considered as an element
-> of the ambient number field $K$. It is assumed that $K$ is the ambient number
-> field of the order of $a$.
+Returns the representation matrix of the element $a$ considered as an element
+of the ambient number field $K$. It is assumed that $K$ is the ambient number
+field of the order of $a$.
 """
 function representation_matrix(a::NfAbsOrdElem{S, T}, K::S) where {S, T}
   nf(parent(a)) != K && error("Element not in this field")
@@ -781,10 +751,9 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
     tr(a::NfAbsOrdElem) -> fmpz
 
-> Returns the trace of $a$.
+Returns the trace of $a$.
 """
 function tr(a::NfAbsOrdElem)
   return FlintZZ(tr(a.elem_in_nf))
@@ -797,10 +766,9 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
     norm(a::NfAbsOrdElem) -> fmpz
 
-> Returns the norm of $a$.
+Returns the norm of $a$.
 """
 function norm(a::NfAbsOrdElem)
   return FlintZZ(norm(a.elem_in_nf))
@@ -835,11 +803,10 @@ function rand!(z::NfAbsOrdElem, O::NfAbsOrd, R::UnitRange{T}) where T <: Integer
 end
 
 @doc Markdown.doc"""
-***
     rand(O::NfOrd, R::UnitRange{Integer}) -> NfAbsOrdElem
 
-> Computes a coefficient vector with entries uniformly distributed in `R` and returns
-> the corresponding element of the order.
+Computes a coefficient vector with entries uniformly distributed in `R` and returns
+the corresponding element of the order.
 """
 function rand(O::NfOrd, R::UnitRange{T}) where T <: Integer
   z = O()
@@ -852,12 +819,11 @@ function rand!(z::NfAbsOrdElem, O::NfOrd, n::Union{Integer, fmpz})
 end
 
 @doc Markdown.doc"""
-***
     rand(O::NfOrd, n::Union{Integer, fmpz}) -> NfAbsOrdElem
 
-> Computes a coefficient vector with entries uniformly distributed in
-> $\{-n,\dotsc,-1,0,1,\dotsc,n\}$ and returns the corresponding element of the
-> order $\mathcal O$.
+Computes a coefficient vector with entries uniformly distributed in
+$\{-n,\dotsc,-1,0,1,\dotsc,n\}$ and returns the corresponding element of the
+order $\mathcal O$.
 """
 function rand(O::NfOrd, n::Integer)
   return rand(O, -n:n)
@@ -901,7 +867,7 @@ function addeq!(z::NfAbsOrdElem, x::NfAbsOrdElem)
   addeq!(z.elem_in_nf, x.elem_in_nf)
   if x.has_coord && z.has_coord
     for i in 1:degree(parent(z))
-      add!(z.elem_in_basis[i], z.elem_in_basis[i], x.elem_in_basis[i])
+      add!(z.coordinates[i], z.coordinates[i], x.coordinates[i])
     end
   end
   return z
@@ -981,12 +947,11 @@ dot(x::fmpz, y::NfAbsOrdElem) = y * x
 ################################################################################
 
 @doc Markdown.doc"""
-***
     minkowski_map(a::NfAbsOrdElem, abs_tol::Int) -> Array{arb, 1}
 
-> Returns the image of $a$ under the Minkowski embedding.
-> Every entry of the array returned is of type `arb` with radius less then
-> `2^-abs_tol`.
+Returns the image of $a$ under the Minkowski embedding.
+Every entry of the array returned is of type `arb` with radius less then
+`2^-abs_tol`.
 """
 function minkowski_map(a::NfAbsOrdElem, abs_tol::Int = 32)
   # Use a.elem_in_nf instead of elem_in_nf(a) to avoid copying the data.
@@ -1001,16 +966,15 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
     conjugates_arb(x::NfAbsOrdElem, abs_tol::Int) -> Array{acb, 1}
 
-> Compute the the conjugates of `x` as elements of type `acb`.
-> Recall that we order the complex conjugates
-> $\sigma_{r+1}(x),...,\sigma_{r+2s}(x)$ such that
-> $\sigma_{i}(x) = \overline{\sigma_{i + s}(x)}$ for $r + 2 \leq i \leq r + s$.
+Compute the the conjugates of `x` as elements of type `acb`.
+Recall that we order the complex conjugates
+$\sigma_{r+1}(x),...,\sigma_{r+2s}(x)$ such that
+$\sigma_{i}(x) = \overline{\sigma_{i + s}(x)}$ for $r + 2 \leq i \leq r + s$.
 >
-> Every entry `y` of the array returned satisfies `radius(real(y)) < 2^-abs_tol`,
-> `radius(imag(y)) < 2^-abs_tol` respectively.
+Every entry `y` of the array returned satisfies `radius(real(y)) < 2^-abs_tol`,
+`radius(imag(y)) < 2^-abs_tol` respectively.
 """
 function conjugates_arb(x::NfAbsOrdElem, abs_tol::Int = 32)
   # Use a.elem_in_nf instead of elem_in_nf(a) to avoid copying the data.
@@ -1019,14 +983,13 @@ function conjugates_arb(x::NfAbsOrdElem, abs_tol::Int = 32)
 end
 
 @doc Markdown.doc"""
-***
     conjugates_arb_log(x::NfAbsOrdElem, abs_tol::Int) -> Array{arb, 1}
 
-> Returns the elements
-> $(\log(\lvert \sigma_1(x) \rvert),\dotsc,\log(\lvert\sigma_r(x) \rvert),
-> \dotsc,2\log(\lvert \sigma_{r+1}(x) \rvert),\dotsc,
-> 2\log(\lvert \sigma_{r+s}(x)\rvert))$ as elements of type `arb` radius
-> less then `2^-abs_tol`.
+Returns the elements
+$(\log(\lvert \sigma_1(x) \rvert),\dotsc,\log(\lvert\sigma_r(x) \rvert),
+\dotsc,2\log(\lvert \sigma_{r+1}(x) \rvert),\dotsc,
+2\log(\lvert \sigma_{r+s}(x)\rvert))$ as elements of type `arb` radius
+less then `2^-abs_tol`.
 """
 function conjugates_arb_log(x::NfAbsOrdElem, abs_tol::Int = 32)
   return conjugates_arb_log(x.elem_in_nf, abs_tol)
@@ -1039,11 +1002,10 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
     t2(x::NfAbsOrdElem, abs_tol::Int = 32) -> arb
 
-> Return the $T_2$-norm of $x$. The radius of the result will be less than
-> `2^-abs_tol`.
+Return the $T_2$-norm of $x$. The radius of the result will be less than
+`2^-abs_tol`.
 """
 function t2(x::NfAbsOrdElem, abs_tol::Int = 32)
   return t2(x.elem_in_nf, abs_tol)

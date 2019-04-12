@@ -45,7 +45,6 @@ export integral_model, istorsion_point, laska_kraus_connell, minimal_model,
 ################################################################################
 
 @doc Markdown.doc"""
-***
     order(P::EllCrvPt{fmpq}) -> fmpz
 
 Returns the order of the point $P$ or $0$ if the order is infinite.
@@ -71,7 +70,7 @@ end
 @doc Markdown.doc"""
     istorsion_point(P::EllCrvPt{fmpq}) -> fmpz
 
-> Returns whether the point $P$ is a torsion point.
+Returns whether the point $P$ is a torsion point.
 """
 function istorsion_point(P::EllCrvPt{fmpq})
   o = order(P)
@@ -86,10 +85,9 @@ end
 
 # via theorem of Lutz-Nagell
 @doc Markdown.doc"""
-***
     torsion_points_lutz_nagell(E::EllCrv{fmpq}) -> Array{EllCrvPt, 1}
 
-> Computes the rational torsion points of an elliptic curve using the
+Computes the rational torsion points of an elliptic curve using the
 >Lutz-Nagell theorem.
 """
 function torsion_points_lutz_nagell(F::EllCrv{fmpq})
@@ -160,11 +158,10 @@ end
 
 # via division polynomials
 @doc Markdown.doc"""
-***
     torsion_points_division_poly(E::EllCrv{fmpq}) -> Array{EllCrvPt}
 
-> Computes the rational torsion points of an rational elliptic $E$ curve using
-> division polynomials.
+Computes the rational torsion points of an rational elliptic $E$ curve using
+division polynomials.
 """
 function torsion_points_division_poly(F::EllCrv{fmpq})
 
@@ -274,10 +271,9 @@ end
 
 # function for users
 @doc Markdown.doc"""
-***
     torsion_points(E::EllCrv{fmpq}) -> Array{EllCrvPt{fmpq}, 1}
 
-> Returns the rational torsion points of $E$.
+Returns the rational torsion points of $E$.
 """
 function torsion_points(E::EllCrv{fmpq})
   if isdefined(E, :torsion_points)
@@ -296,16 +292,15 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
     torsion_structure(E::EllCrv{fmpq}) -> (A::Array{fmpz, 1},
                                            B::Array{EllCrvPt{fmpq}, 1}
 
-> Computes the structure of the rational torsion group of an elliptic curve $E$.
-> Then `A` is an array with `A = [n]` resp. `A = [n,m]` such that the
-> rational torsion of $E$ is isomorphic to $\mathbf Z/n\mathbf Z$ resp.
-> $\mathbf Z/n\mathbf Z \times \mathbf Z/m\mathbf Z$.
-> And `B` is an array of points with `B = [P]` and $P$ has order $n$ resp.
-> `B = [P, Q]` and $P$ has order $n$, $Q$ has order $m$.
+Computes the structure of the rational torsion group of an elliptic curve $E$.
+Then `A` is an array with `A = [n]` resp. `A = [n,m]` such that the
+rational torsion of $E$ is isomorphic to $\mathbf Z/n\mathbf Z$ resp.
+$\mathbf Z/n\mathbf Z \times \mathbf Z/m\mathbf Z$.
+And `B` is an array of points with `B = [P]` and $P$ has order $n$ resp.
+`B = [P, Q]` and $P$ has order $n$, $Q$ has order $m$.
 """
 function torsion_structure(E::EllCrv{fmpq})
   T = torsion_points(E)
@@ -347,12 +342,11 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
 integral_model(E::EllCrv{fmpq}) -> (F::EllCrv{fmpz}, function, function)
 
-> Given an elliptic curve $E$ over $\mathbf Q$ in short form, returns an
-> isomorphic curve $F$ with model over $\mathbf Z$. The second and third
-> return values are the isomorpisms $E \to F$ and $F \to E$.
+Given an elliptic curve $E$ over $\mathbf Q$ in short form, returns an
+isomorphic curve $F$ with model over $\mathbf Z$. The second and third
+return values are the isomorpisms $E \to F$ and $F \to E$.
 """
 function integral_model(E::EllCrv{fmpq})
   A = E.coeff[1]
@@ -396,11 +390,10 @@ end
 
 # algorithm of Laska-Kraus-Connell
 @doc Markdown.doc"""
-***
     laska_kraus_connell(E::EllCrv{fmpz}) -> Array{Nemo.fmpz}
 
-> Given an elliptic curve over $\mathbf Q$ with integral model, this returns an
-> isomorphic elliptic curve over $\mathbf Q$ with minimal discriminant.
+Given an elliptic curve over $\mathbf Q$ with integral model, this returns an
+isomorphic elliptic curve over $\mathbf Q$ with minimal discriminant.
 """
 function laska_kraus_connell(E::EllCrv{fmpq})
   a1 = numerator(E.coeff[1])
@@ -528,12 +521,11 @@ end
 
 # tate's algorithm, see Cremona, p. 66
 @doc Markdown.doc"""
-***
     tates_algorithm_local(E::EllCrv{fmpz}, p::Int) -> EllipticCurve{fmpq}, String, fmpz, fmpz
 
-> Returns a tuple $(\tilde E, K, f, c)$, where $\tilde E$ is a minimal model
-> for $E$ at the prime $p$, $K$ is the Kodaira symbol, $f$ is the conduator
-> valuation at $p$ and $c$ is the local Tamagawa number at $p$.
+Returns a tuple $(\tilde E, K, f, c)$, where $\tilde E$ is a minimal model
+for $E$ at the prime $p$, $K$ is the Kodaira symbol, $f$ is the conduator
+valuation at $p$ and $c$ is the local Tamagawa number at $p$.
 """
 function tates_algorithm_local(E::EllCrv{fmpq}, p)
 
@@ -855,10 +847,9 @@ function tates_algorithm_local(E::EllCrv{fmpq}, p)
 end
 
 @doc Markdown.doc"""
-***
     tates_algorithm_global(E::EllCrv{fmpq}) -> EllCrv{fmpq}
 
-> Returns a global reduced minimal model for $E$ using Tate's algorithm.
+Returns a global reduced minimal model for $E$ using Tate's algorithm.
 """
 function tates_algorithm_global(E)
   delta = abs(numerator(disc(E)))
@@ -887,21 +878,19 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
     minimal_model(E::EllCrv{fmpq}) -> EllCrv{fmpq}
 
-> Returns the reduced global minimal model of $E$.
+Returns the reduced global minimal model of $E$.
 """
 function minimal_model(E::EllCrv{fmpq})
   return tates_algorithm_global(E)
 end
 
 @doc Markdown.doc"""
-***
     minimal_model(E::EllCrv{fmpq}) -> EllCrv{fmpq}
 
-> Returns a model of $E$, which is minimal at $p$. It is assumed that $p$
-> is prime.
+Returns a model of $E$, which is minimal at $p$. It is assumed that $p$
+is prime.
 """
 function minimal_model(E::EllCrv{fmpq}, p::Int)
   Ep = tates_algorithm_local(E, p)
@@ -909,11 +898,10 @@ function minimal_model(E::EllCrv{fmpq}, p::Int)
 end
 
 @doc Markdown.doc"""
-***
     tidy_model(E::EllCrv{fmpz}) -> EllCrv{fmpz}
-> Given an elliptic curve with minimal model, this functions returns an
-> isomorphic curve with reduced minimal model, that is, $a_1, a_3 \in \{0, 1\}$
-> and $a_2 \in \{-1,0,1\}$.
+Given an elliptic curve with minimal model, this functions returns an
+isomorphic curve with reduced minimal model, that is, $a_1, a_3 \in \{0, 1\}$
+and $a_2 \in \{-1,0,1\}$.
 """
 function tidy_model(E::EllCrv{fmpq})
 
@@ -957,7 +945,7 @@ end
 # this needs to be rewritten
 @doc Markdown.doc"""
     get_b_integral(E::EllCrv{fmpz}) -> Nemo.fmpz
-> Computes the invariants b2, b4, b6, b8 of an elliptic curve E with integer coefficients.
+Computes the invariants b2, b4, b6, b8 of an elliptic curve E with integer coefficients.
 """
 function get_b_integral(E)
   a1 = numerator(E.coeff[1])
@@ -976,7 +964,7 @@ end
 
 @doc Markdown.doc"""
     get_b_c_integral(E::EllCrv{fmpz}) -> Nemo.fmpz
-> Computes the invariants b2, b4, b6, b8, c4, c6 of an elliptic curve E with integer coefficients.
+Computes the invariants b2, b4, b6, b8, c4, c6 of an elliptic curve E with integer coefficients.
 """
 function get_b_c_integral(E)
     a1 = numerator(E.coeff[1])
