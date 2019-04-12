@@ -10,7 +10,6 @@ export rational_reconstruction, farey_lift, berlekamp_massey
 
 
 @doc Markdown.doc"""
-***
     rational_reconstruction(a::PolyElem{S}, b::PolyElem{S}, n::Int, m::Int)
 
  Returns true and x, y s.th. ay = x mod b and degree(x) <= n, degree(y) <= m
@@ -41,7 +40,6 @@ function rational_reconstruction(a::PolyElem{S}, b::PolyElem{S}, n::Int, m::Int)
 end
 
 @doc Markdown.doc"""
-***
   rational_reconstruction{S}(a::PolyElem{S}, b::PolyElem{S})
 
  Returns true and x/y s.th. ay = x mod b and degree(x), degree(y) <= degree(b)/2
@@ -60,7 +58,6 @@ end
 #However: for now it works.
 
 @doc Markdown.doc"""
-***
     rational_reconstruction(a::fmpz, b::fmpz)
     rational_reconstruction(a::Integer, b::Integer)
 
@@ -94,7 +91,6 @@ end
 #Note: missing reconstruction modulo a true ideal. W/o denominators
 
 @doc Markdown.doc"""
-***
     rational_reconstruction(a::nf_elem, b::fmpz)
 
 Applies the rational_reconstruction function to each coefficient.

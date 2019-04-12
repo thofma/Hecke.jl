@@ -312,7 +312,6 @@ end
 #################################################################
 
 @doc Markdown.doc"""
-***
     meataxe(M::ModAlgAss) -> Bool, MatElem
 
 Given module M, returns true if the module is irreducible (and the identity matrix) and false if the space is reducible, togheter with a basis of a submodule
@@ -436,7 +435,6 @@ function meataxe(M::ModAlgAss{S, T, V}) where {S, T, V}
 end
 
 @doc Markdown.doc"""
-***
     composition_series(M::ModAlgAss) -> Array{MatElem,1}
 
 Given a Fq[G]-module M, it returns a composition series for M, i.e. a sequence of submodules such that the quotient of two consecutive element is irreducible.
@@ -491,7 +489,6 @@ function composition_series(M::ModAlgAss{S, T, V}) where {S, T, V}
 end
 
 @doc Markdown.doc"""
-***
     composition_factors(M::ModAlgAss)
 
 Given a Fq[G]-module M, it returns, up to isomorphism, the composition factors of M with their multiplicity,
@@ -658,7 +655,6 @@ function _irrsubs(M::ModAlgAss{S, T}, N::ModAlgAss{S, T}) where {S, T}
 end
 
 @doc Markdown.doc"""
-***
     minimal_submodules(M::ModAlgAss)
 
 Given a Fq[G]-module M, it returns all the minimal submodules of M
@@ -698,7 +694,6 @@ end
 
 
 @doc Markdown.doc"""
-***
     maximal_submodules(M::ModAlgAss)
 
 Given a $G$-module $M$, it returns all the maximal submodules of M
@@ -718,7 +713,6 @@ function maximal_submodules(M::ModAlgAss{S, T, V}, index::Int=M.dimension, lf = 
 end
 
 @doc Markdown.doc"""
-***
     submodules(M::ModAlgAss)
 
 Given a $G$-module $M$, it returns all the submodules of M
@@ -778,7 +772,6 @@ function submodules(M::ModAlgAss{S, T, V}) where {S, T, V}
 end
 
 @doc Markdown.doc"""
-***
     submodules(M::ModAlgAss, index::Int)
 
 Given a $G$-module $M$, it returns all the submodules of M of index q^index, where q is the order of the field

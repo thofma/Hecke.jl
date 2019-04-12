@@ -7,7 +7,6 @@ export pseudo_basis, basis_pmat
 ################################################################################
 
 @doc Markdown.doc"""
-***
       nf(O::NfRelOrd) -> RelativeExtension
 
 Returns the ambient number field of $\mathcal O$.
@@ -141,7 +140,6 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
       pseudo_basis(O::NfRelOrd{T, S}) -> Vector{Tuple{RelativeElement{T}{T}, S}}
 
 Returns the pseudo-basis of $\mathcal O$.
@@ -156,7 +154,6 @@ function pseudo_basis(O::NfRelOrd; copy = true)
 end
 
 @doc Markdown.doc"""
-***
       basis_pmat(O::NfRelOrd) -> PMat
 
 Returns the basis pseudo-matrix of $\mathcal O$ with respect to the power basis
@@ -172,7 +169,6 @@ function basis_pmat(O::NfRelOrd; copy::Bool = true)
 end
 
 @doc Markdown.doc"""
-***
       inv_coeff_ideals(O::NfRelOrd{T, S}) -> Vector{S}
 
 Returns the inverses of the coefficient ideals of the pseudo basis of $O$.
@@ -193,7 +189,6 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
       basis_nf(O::NfRelOrd) -> Array{RelativeElement, 1}
 
 Returns the elements of the pseudo-basis of $\mathcal O$ as elements of the
@@ -209,7 +204,6 @@ function basis_nf(O::NfRelOrd; copy::Bool = true)
 end
 
 @doc Markdown.doc"""
-***
       basis_mat(O::NfRelOrd{T, S}) -> Generic.Mat{T}
 
 Returns the basis matrix of $\mathcal O$ with respect to the power basis
@@ -225,7 +219,6 @@ function basis_mat(O::NfRelOrd; copy::Bool = true)
 end
 
 @doc Markdown.doc"""
-***
       basis_mat_inv(O::NfRelOrd{T, S}) -> Generic.Mat{T}
 
 Returns the inverse of the basis matrix of $\mathcal O$.
@@ -328,7 +321,6 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
       degree(O::NfRelOrd) -> Int
 
 Returns the degree of $\mathcal O$.
@@ -342,7 +334,6 @@ degree(O::NfRelOrd) = degree(nf(O))
 ################################################################################
 
 @doc Markdown.doc"""
-***
       deepcopy(O::NfRelOrd) -> NfRelOrd
 
 Makes a copy of $\mathcal O$.
@@ -392,7 +383,6 @@ function _check_elem_in_order(a::RelativeElement{T}, O::NfRelOrd{T, S}, short::T
 end
 
 @doc Markdown.doc"""
-***
       in(a::RelativeElement, O::NfRelOrd) -> Bool
 
 Checks whether $a$ lies in $\mathcal O$.
@@ -408,7 +398,6 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
       Order(K::RelativeExtension{T}, M::Generic.Mat{T}) -> NfRelOrd
 
 Returns the order which has basis matrix $M$ with respect to the power basis
@@ -425,7 +414,6 @@ function Order(L::RelativeExtension{S}, M::Generic.Mat{S}) where S <: RelativeEl
 end
 
 @doc Markdown.doc"""
-***
       Order(K::RelativeExtension, M::PMat) -> NfRelOrd
 
 Returns the order which has basis pseudo-matrix $M$ with respect to the power basis
@@ -437,7 +425,6 @@ function Order(L::RelativeExtension{T}, M::PMat{T, S}) where {T, S}
 end
 
 @doc Markdown.doc"""
-***
       EquationOrder(L::RelativeExtension) -> NfRelOrd
 
 Returns the equation order of the number field $L$.
@@ -452,7 +439,6 @@ function EquationOrder(L::RelativeExtension)
 end
 
 @doc Markdown.doc"""
-***
       maximal_order(L::RelativeExtension) -> NfRelOrd
 
 Returns the maximal order of $L$.
@@ -511,7 +497,6 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
       trace_matrix(O::NfRelOrd{T, S}) -> Generic.Mat{T}
 
 Returns the trace matrix of $\mathcal O$.
@@ -648,7 +633,6 @@ dedekind_poverorder(O::NfRelOrd, p::Union{NfOrdIdl, NfRelOrdIdl}) = dedekind_tes
 ################################################################################
 
 @doc Markdown.doc"""
-***
       poverorder(O::NfRelOrd, p::Union{NfOrdIdl, NfRelOrdIdl}) -> NfRelOrd
 
 This function tries to find an order that is locally larger than $\mathcal O$
@@ -669,7 +653,6 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
       pmaximal_overorder(O::NfRelOrd, p::Union{NfOrdIdl, NfRelOrdIdl}) -> NfRelOrd
 
 This function finds a $p$-maximal order $R$ containing $\mathcal O$.
@@ -707,7 +690,6 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
       +(R::NfRelOrd, S::NfRelOrd) -> NfRelOrd
 
 Given two orders $R$, $S$ of $K$, this function returns the smallest order

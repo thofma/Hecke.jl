@@ -327,9 +327,9 @@ end
 
 #TODO: compute differently in equation orders, this is the rres...
 @doc Markdown.doc"""
-   reduced_discriminant(O::NfOrd) -> fmpz
-Returns the reduced discriminant, ie. the largest elementary divisor of the 
-trace matrix of $\mathcal O$.
+    reduced_discriminant(O::NfOrd) -> fmpz
+Returns the reduced discriminant, that is, the largest elementary divisor of
+the trace matrix of $\mathcal O$.
 """
 function reduced_discriminant(O::NfOrd)
   if isequation_order(O)

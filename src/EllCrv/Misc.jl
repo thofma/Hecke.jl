@@ -68,7 +68,6 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
   zeros(f::fmpz_poly) -> Array{fmpz, 1}
 
 Computes the integer zeros of a given polynomial $f$.
@@ -95,7 +94,6 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
   issquare(x::ResElem{fmpz}) -> (Bool, ResElem)
 
 Checks if an element x of a ResidueRing of $Z$ is a square, say of y
@@ -135,7 +133,6 @@ end
 
 
 @doc Markdown.doc"""
-***
     issquare(x::FinFieldElem) -> (Bool, FinFieldElem)
 
 Checks if an element $x$ of $\mathbf F_q$ is a square, say of $y$.
@@ -164,7 +161,6 @@ function issquare(x::FinFieldElem)
 end
 
 @doc Markdown.doc"""
-***
   quadroots(a::fmpz, b::fmpz, c::fmpz, p::fmpz) -> Bool
 
 Returns true if the quadratic congruence if the quadratic polynomial
@@ -196,7 +192,6 @@ function quadroots(a, b, c, p)
 end
 
 @doc Markdown.doc"""
-***
     nrootscubic(b::fmpz, c::fmpz, d::fmpz, p::fmpz) -> fmpz
 
 Returns the number of roots of the polynomial $x^3 + bx^2 + cx + d = 0$
@@ -237,7 +232,6 @@ end
 
 
 @doc Markdown.doc"""
-***
 		order(R::ResRing{fmpz}) -> Nemo.fmpz
 Returns the order of a finite field of a residue ring of $\mathbf Z$.
 """ 

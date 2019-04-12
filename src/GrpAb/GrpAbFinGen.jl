@@ -59,7 +59,6 @@ parent_type(::Type{GrpAbFinGenElem}) = GrpAbFinGen
 ##############################################################################
 # We do we have AbelianGroup and DiagonalGroup?
 @doc Markdown.doc"""
-***
     AbelianGroup(M::fmpz_mat) -> GrpAbFinGen
 
 Creates the abelian group with relation matrix `M`. That is, the group will
@@ -74,7 +73,6 @@ function AbelianGroup(M::fmpz_mat; name :: String = "")
 end
 
 @doc Markdown.doc"""
-***
     AbelianGroup(M::Array{fmpz, 2}) -> GrpAbFinGen
 
 Creates the abelian group with relation matrix `M`. That is, the group will
@@ -89,7 +87,6 @@ function AbelianGroup(M::Array{fmpz, 2}; name :: String = "")
 end
 
 @doc Markdown.doc"""
-***
     AbelianGroup(M::Array{Integer, 2}) -> GrpAbFinGen
 
 Creates the abelian group with relation matrix `M`. That is, the group will
@@ -104,7 +101,6 @@ function AbelianGroup(M::Array{T, 2}; name :: String = "") where T <: Integer
 end
 
 @doc Markdown.doc"""
-***
     AbelianGroup(M::Array{fmpz, 1}) -> GrpAbFinGen
 
 Creates the abelian group with relation matrix `M`. That is, the group will
@@ -119,7 +115,6 @@ function AbelianGroup(M::Array{fmpz, 1}; name :: String = "")
 end
 
 @doc Markdown.doc"""
-***
     AbelianGroup(M::Array{Integer, 1}) -> GrpAbFinGen
 
 Creates the abelian group with relation matrix `M`. That is, the group will
@@ -134,7 +129,6 @@ function AbelianGroup(M::Array{T, 1}; name :: String = "") where T <: Integer
 end
 
 @doc Markdown.doc"""
-***
     DiagonalGroup(M::fmpz_mat) -> GrpAbFinGen
 
 Assuming that $M$ has only one row, this function creates the direct product of
@@ -159,7 +153,6 @@ function DiagonalGroup(M::fmpz_mat; name :: String = "")
 end
 
 @doc Markdown.doc"""
-***
     DiagonalGroup(M::Array{Union{fmpz, Integer}, 1}) -> GrpAbFinGen
 
 Creates the direct product of the cyclic groups $\mathbf{Z}/m_i$,
@@ -278,7 +271,6 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
     issnf(G::GrpAbFinGen) -> Bool
 
 Returns whether the current relation matrix of the group $G$ is in Smith
@@ -287,7 +279,6 @@ normal form.
 issnf(A::GrpAbFinGen) = A.issnf
 
 @doc Markdown.doc"""
-***
     ngens(G::GrpAbFinGen) -> Int
 
 Returns the number of generators of $G$ in the current representation.
@@ -301,7 +292,6 @@ function ngens(A::GrpAbFinGen)
 end
 
 @doc Markdown.doc"""
-***
     nrels(G::GrpAbFinGen) -> Int
 
 Returns the number of relations of $G$ in the current representation.
@@ -315,7 +305,6 @@ function nrels(A::GrpAbFinGen)
 end
 
 @doc Markdown.doc"""
-***
     rels(A::GrpAbFinGen) -> fmpz_mat
 
 Returns the currently used relations of $G$ as a single matrix.
@@ -358,7 +347,6 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
     snf(A::GrpAbFinGen) -> GrpAbFinGen, Map
 
 Returns a pair $(G, f)$, where $G$ is an abelian group in canonical Smith
@@ -432,7 +420,6 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
     isfinite(A::GrpAbFinGen) -> Bool
 
 Returns whether $A$ is finite.
@@ -444,7 +431,6 @@ isfinite_snf(A::GrpAbFinGen) = length(A.snf) == 0 || !iszero(A.snf[end])
 isfinite_gen(A::GrpAbFinGen) = isfinite(snf(A)[1])
 
 @doc Markdown.doc"""
-***
     isinfinite(A::GrpAbFinGen) -> Bool
 
 Returns whether $A$ is infinite.
@@ -458,7 +444,6 @@ isinfinite(A::GrpAbFinGen) = !isfinite(A)
 ################################################################################
 
 @doc Markdown.doc"""
-***
     rank(A::GrpAbFinGenGen) -> Int
 
 Returns the rank of $A$, that is, the dimension of the
@@ -477,7 +462,6 @@ rank_gen(A::GrpAbFinGen) = rank(snf(A)[1])
 ################################################################################
 
 @doc Markdown.doc"""
-***
     order(A::GrpAbFinGen) -> fmpz
 
 Returns the order of $A$. It is assumed that $A$ is finite.
@@ -498,7 +482,6 @@ order_gen(A::GrpAbFinGen) = order(snf(A)[1])
 ################################################################################
 
 @doc Markdown.doc"""
-***
     exponent(A::GrpAbFinGen) -> fmpz
 
 Returns the exponent of $A$. It is assumed that $A$ is finite.
@@ -520,7 +503,6 @@ exponent_gen(A::GrpAbFinGen) = exponent(snf(A)[1])
 ################################################################################
 
 @doc Markdown.doc"""
-***
     istrivial(A::GrpAbFinGen) -> Bool
 
 Checks if $A$ is the trivial group.
@@ -534,7 +516,6 @@ istrivial(A::GrpAbFinGen) = isfinite(A) && order(A) == 1
 ################################################################################
 
 @doc Markdown.doc"""
-***
     isisomorphic(G::GrpAbFinGen, H::GrpAbFinGen) -> Bool
 
 Checks if $G$ and $H$ are isomorphic.
@@ -551,7 +532,6 @@ end
 ################################################################################
 #TODO: check the universal properties here!!!
 @doc Markdown.doc"""
-***
     direct_product(G::GrpAbFinGen...; task::Symbol = :sum) -> GrpAbFinGen, GrpAbFinGenMap, GrpAbFinGenMap
 
 Returns the direct product $D$ of the abelian groups $G_i$. {{{task}}} can be
@@ -1050,7 +1030,6 @@ end
 ##############################################################################
 
 @doc Markdown.doc"""
-***
     sub(G::GrpAbFinGen, s::Array{GrpAbFinGenElem, 1}) -> GrpAbFinGen, Map
 
 Create the subgroup $H$ of $G$ generated by the elements in `s` together
@@ -1110,7 +1089,6 @@ function sub(G::GrpAbFinGen, s::Array{GrpAbFinGenElem, 1},
 end
 
 @doc Markdown.doc"""
-***
     sub(s::Array{GrpAbFinGenElem, 1}) -> GrpAbFinGen, Map
 
 Assuming that the non-empty array `s` contains elements of an abelian group
@@ -1124,7 +1102,6 @@ function sub(s::Array{GrpAbFinGenElem, 1},
 end
 
 @doc Markdown.doc"""
-***
     sub(G::GrpAbFinGen, M::fmpz_mat) -> GrpAbFinGen, Map
 
 Create the subgroup $H$ of $G$ generated by the elements corresponding to the
@@ -1171,7 +1148,6 @@ function sub(G::GrpAbFinGen, M::fmpz_mat,
 end
 
 @doc Markdown.doc"""
-***
     sub(G::GrpAbFinGen, n::fmpz) -> GrpAbFinGen, Map
 
 Create the subgroup $n \cdot G$ of $G$ together
@@ -1184,7 +1160,6 @@ function sub(G::GrpAbFinGen, n::fmpz,
 end
 
 @doc Markdown.doc"""
-***
     sub(G::GrpAbFinGen, n::Integer) -> GrpAbFinGen, Map
 
 Create the subgroup $n \cdot G$ of $G$ together
@@ -1202,7 +1177,6 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
   quo(G::GrpAbFinGen, s::Array{GrpAbFinGenElem, 1}) -> GrpAbFinGen, Map
 
 Create the quotient $H$ of $G$ by the subgroup generated by the elements in
@@ -1249,7 +1223,6 @@ function quo(G::GrpAbFinGen, s::Array{GrpAbFinGenElem, 1},
 end
 
 @doc Markdown.doc"""
-***
   quo(G::GrpAbFinGen, M::fmpz_mat) -> GrpAbFinGen, Map
 
 Create the quotient $H$ of $G$ by the subgroup generated by the elements
@@ -1268,7 +1241,6 @@ function quo(G::GrpAbFinGen, M::fmpz_mat,
 end
 
 @doc Markdown.doc"""
-***
     quo(G::GrpAbFinGen, n::Integer}) -> GrpAbFinGen, Map
     quo(G::GrpAbFinGen, n::fmpz}) -> GrpAbFinGen, Map
 
@@ -1460,7 +1432,6 @@ end
 # TH: Isn't this the same as UnitsModM.jl?
 # TODO: remove this from here. It does not belong here
 @doc Markdown.doc"""
-***
     multgrp_of_cyclic_grp(n::fmpz) -> GrpAbFinGen
 
 Returns the multiplicative group of the cyclic group with $n$ elements.

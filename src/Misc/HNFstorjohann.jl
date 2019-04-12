@@ -4,7 +4,7 @@ HNF algorithm due to Arne Storjohann
 =#
 
 # This function only changes CC, zero_cols and N but not T.
-function conditioning_with_trafo!(T::MatElem{S}, N::MatElem{S}, CC::Array{S}, zero_cols::BitArray, row::Int, col1::Int) where S <: Nemo.RingElement
+function conditioning_with_transform!(T::MatElem{S}, N::MatElem{S}, CC::Array{S}, zero_cols::BitArray, row::Int, col1::Int) where S <: Nemo.RingElement
   @assert col1 < ncols(T)
   @assert T[row, col1] > 0
   R = base_ring(T)
@@ -101,7 +101,7 @@ function conditioning_with_trafo!(T::MatElem{S}, N::MatElem{S}, CC::Array{S}, ze
 end
 
 # This function only changes N and QC, but not T.
-function column_reduction_with_trafo!(T::MatElem{S}, N::MatElem{S}, QC::MatElem{S}, row::Int, col1::Int, col2::Int) where S <: Nemo.RingElement
+function column_reduction_with_transform!(T::MatElem{S}, N::MatElem{S}, QC::MatElem{S}, row::Int, col1::Int, col2::Int) where S <: Nemo.RingElement
   @assert T[ row, col1] > 0
   @assert nrows(T) == nrows(QC)
   R = base_ring(T)
@@ -184,7 +184,7 @@ function column_reduction_with_trafo!(T::MatElem{S}, N::MatElem{S}, QC::MatElem{
   return nothing
 end
 
-function hnf_storjohann_with_trafo(A::MatElem{S}) where S <: Nemo.RingElement
+function hnf_storjohann_with_transform(A::MatElem{S}) where S <: Nemo.RingElement
   #timeRed = 0
   #timeProdC = 0
   #timeBuildQC = 0
@@ -256,8 +256,8 @@ function hnf_storjohann_with_trafo(A::MatElem{S}) where S <: Nemo.RingElement
     row1 = row + 1
     row2 = row + 2
     #tic()
-    col2 = conditioning_with_trafo!(T, N, CC, zero_cols, row, col1)
-    column_reduction_with_trafo!(T, N, QC, row, col1, col2)
+    col2 = conditioning_with_transform!(T, N, CC, zero_cols, row, col1)
+    column_reduction_with_transform!(T, N, QC, row, col1, col2)
     col1 = col2
     #timeRed += toq();
     # C = CC*C

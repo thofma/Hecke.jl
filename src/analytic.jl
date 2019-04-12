@@ -87,8 +87,7 @@ function dickman_rho(x::Number, prec::Int=55)
 end
 
 @doc Markdown.doc"""
-***
-   dickman_rho(x::Number, e::UnitRange{Int}, prec::Int=55) Number[]
+    dickman_rho(x::Number, e::UnitRange{Int}, prec::Int=55) Number[]
 Evaluates the Dickman-$\rho$ function at $i*x$ for all $i\in e$.
 """
 function dickman_rho(b::Number, e::UnitRange{Int}, prec::Int = 55)
@@ -174,11 +173,10 @@ end
 #the function Ei = -integral(-x, infty, exp(-t)/t dt)
 
 @doc Markdown.doc"""
-***
-  exponential_integral(x::AbstractFloat) AbstractFloat
-  ei(x::AbstractFloat) AbstractFloat
+    exponential_integral(x::AbstractFloat) -> AbstractFloat
+    ei(x::AbstractFloat) -> AbstractFloat
 
- Compute the exponential integral function
+Compute the exponential integral function
 """
 function exponential_integral(x::BigFloat)
   z = BigFloat()
@@ -193,12 +191,11 @@ end
 #the function li = integral(0, x, dt/log(t))
 #             li(x) = Ei(log(x)) according to wiki and ?
 @doc Markdown.doc"""
-***
-  logarithmic_integral(x::AbstractFloat) AbstractFloat
-  li(x::AbstractFloat) AbstractFloat
+    logarithmic_integral(x::AbstractFloat) AbstractFloat
+    li(x::AbstractFloat) AbstractFloat
 
- Compute the logarithmic integral function. Used as an approximation
- for the number of primes up to x
+Compute the logarithmic integral function. Used as an approximation
+for the number of primes up to x
 """
 function logarithmic_integral(x::AbstractFloat)
   return exponential_integral(log(x))
@@ -216,11 +213,11 @@ The formula (for n=365) is in the solutions.
 =#
 
 @doc Markdown.doc"""
-  rels_from_partial(n::Int, k::Int) Int
+    rels_from_partial(n::Int, k::Int) -> Int
 
-  Estimates the number of collision in k samples among n possibilities. Used 
-  to estimate the number of full relations to be expected from k partial
-  relations involving n (large) primes
+Estimates the number of collision in k samples among n possibilities. Used 
+to estimate the number of full relations to be expected from k partial
+relations involving n (large) primes
 """
 function rels_from_partial(n::Int, k::Int) 
   N = fmpz(n)
@@ -241,10 +238,10 @@ Then
 =#  
 
 @doc Markdown.doc"""
-  euler_phi(n::Int) Int
+    euler_phi(n::Int) -> Int
 
- The Euler ϕ function of n
- ie. the number of integers 0<= i = n coprime to n
+The Euler ϕ function of n
+ie. the number of integers 0<= i = n coprime to n
 """
 function euler_phi(a::Int)
   f = factor(a)

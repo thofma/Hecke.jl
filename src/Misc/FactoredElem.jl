@@ -468,7 +468,6 @@ function ^(A::NfOrdFracIdl, d::fmpz)
 end
 
 @doc Markdown.doc"""
-***
   evaluate{T}(x::FacElem{T}) -> T
 
 Expands or evaluates the factored element, i.e. actually computes the
@@ -480,7 +479,6 @@ function evaluate(x::FacElem{T}) where T
 end
 
 @doc Markdown.doc"""
-***
     evaluate(x::FacElem{fmpq}) -> fmpq
     evaluate(x::FacElem{fmpz}) -> fmpz
 
@@ -692,7 +690,6 @@ function factor_coprime(x::FacElem{fmpz})
 end
 
 @doc Markdown.doc"""
-***
   evaluate_naive{T}(x::FacElem{T}) -> T
 
 Expands or evaluates the factored element, i.e. actually computes the

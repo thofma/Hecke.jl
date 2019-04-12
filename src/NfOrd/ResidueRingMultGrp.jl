@@ -13,7 +13,6 @@ export multiplicative_group, multiplicative_group_generators
 ################################################################################
 
 @doc Markdown.doc"""
-***
     multiplicative_group(Q::NfOrdQuoRing) -> GrpAbFinGen, Map{GrpAbFinGen, NfOrdQuoRing}
     unit_group(Q::NfOrdQuoRing) -> GrpAbFinGen, Map{GrpAbFinGen, NfOrdQuoRing}
 
@@ -36,7 +35,6 @@ end
 unit_group(Q::NfOrdQuoRing) = multiplicative_group(Q)
 
 @doc Markdown.doc"""
-***
     multiplicative_group_generators(Q::NfOrdQuoRing) -> Vector{NfOrdQuoRingElem}
 
 Return a set of generators for $Q^\times$.
@@ -132,7 +130,6 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
     _multgrp(Q::NfOrdQuoRing) -> (GrpAbFinGen, GrpAbFinGenToAbsOrdQuoRingMultMap)
 
 Returns the group $Q^\times$ and a map from this group to $Q$.
@@ -175,7 +172,6 @@ _multgrp_ray(Q::NfOrdQuoRing; method = nothing) = _multgrp(Q, true; method = met
 ################################################################################
 
 @doc Markdown.doc"""
-***
     _multgrp_mod_pv(p::NfOrdIdl, v::Int, pv::NfOrdIdl) -> (GrpAbFinGen, GrpAbFinGenToAbsOrdQuoRingMultMap)
 
 Given a prime ideal $p$ in a maximal order $\mathcal O$, an integer $v > 0$ and
@@ -740,7 +736,6 @@ function root(a::T, n::Int) where T <: Integer
 end  
 
 @doc Markdown.doc"""
-***
     baby_step_giant_step(g, n, h) -> fmpz
     baby_step_giant_step(g, n, h, cache::Dict) -> fmpz
 
@@ -785,7 +780,6 @@ function baby_step_giant_step(gen, n, a)
 end
 
 @doc Markdown.doc"""
-***
     pohlig_hellman(g, n, h; factor_n=factor(n)) -> fmpz
 
 Computes the discrete logarithm $x$ such that $h = g^x$.

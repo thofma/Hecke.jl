@@ -602,7 +602,6 @@ function show(io::IO, mC::MapSUnitGrpZ)
 end
 
 @doc Markdown.doc"""
-***
     sunit_group_fac_elem(S::Array{fmpz, 1}) -> GrpAbFinGen, Map
     sunit_group_fac_elem(S::Array{Integer, 1}) -> GrpAbFinGen, Map
 The $S$-unit group of $Z$ supported at $S$: the group of
@@ -656,7 +655,6 @@ function sunit_group_fac_elem(S::Array{fmpz, 1})
 end
 
 @doc Markdown.doc"""
-***
     sunit_group(S::Array{fmpz, 1}) -> GrpAbFinGen, Map
     sunit_group(S::Array{Integer, 1}) -> GrpAbFinGen, Map
 The $S$-unit group of $Z$ supported at $S$: the group of

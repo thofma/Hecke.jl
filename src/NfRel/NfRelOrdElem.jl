@@ -21,7 +21,6 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
       (O::NfRelOrd)(a::RelativeElement, check::Bool = true) -> NfRelOrdElem
 
 Given an element $a$ of the ambient number field of $\mathcal O$, this
@@ -39,7 +38,6 @@ function (O::NfRelOrd)(a::RelativeElement{T}, check::Bool = true) where T
 end
 
 @doc Markdown.doc"""
-***
       (O::NfRelOrd)(a::NfRelOrdElem, check::Bool = true) -> NfRelOrdElem
 
 Given an element $a$ of some order in the ambient number field of
@@ -66,7 +64,6 @@ end
 (O::NfRelOrd)(a::Union{fmpz, Integer}) = O(nf(O)(a))
 
 @doc Markdown.doc"""
-***
       (O::NfRelOrd)() -> NfRelOrdElem
 
 Constructs a new element of $\mathcal O$ which is set to $0$.
@@ -80,7 +77,6 @@ Constructs a new element of $\mathcal O$ which is set to $0$.
 ################################################################################
 
 @doc Markdown.doc"""
-***
       parent(a::NfRelOrdElem) -> NfRelOrd
 
 Returns the order of which $a$ is an element.
@@ -96,7 +92,6 @@ parent(x::NfRelOrdElem{nf_elem}) = x.parent
 ################################################################################
 
 @doc Markdown.doc"""
-***
       elem_in_nf(a::NfRelOrdElem) -> RelativeElement
 
 Returns the element $a$ considered as an element of the ambient number field.
@@ -134,7 +129,6 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
       coordinates(a::NfRelOrdElem{T}) -> Vector{T}
 
 Returns the coefficient vector of $a$.
@@ -163,7 +157,6 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
       zero(O::NfRelOrd) -> NfRelOrdElem
 
 Returns the zero element of $\mathcal O$.
@@ -171,7 +164,6 @@ Returns the zero element of $\mathcal O$.
 zero(O::NfRelOrd) = O(0)
 
 @doc Markdown.doc"""
-***
       one(O::NfRelOrd) -> NfRelOrdElem
 
 Returns the one element of $\mathcal O$.
@@ -179,7 +171,6 @@ Returns the one element of $\mathcal O$.
 one(O::NfRelOrd) = O(1)
 
 @doc Markdown.doc"""
-***
       zero(a::NfRelOrdElem) -> NfRelOrdElem
 
 Returns the zero element of the parent of $a$.
@@ -187,7 +178,6 @@ Returns the zero element of the parent of $a$.
 zero(a::NfRelOrdElem) = parent(a)(0)
 
 @doc Markdown.doc"""
-***
       one(a::NfRelOrdElem) -> NfRelOrdElem
 
 Returns the one element of the parent of $a$.
@@ -202,7 +192,6 @@ one(a::NfRelOrdElem) = parent(a)(1)
 ################################################################################
 
 @doc Markdown.doc"""
-***
       isone(a::NfRelOrd) -> Bool
 
 Tests if $a$ is one.
@@ -211,7 +200,6 @@ Tests if $a$ is one.
 isone(a::NfRelOrdElem) = isone(a.elem_in_nf)
 
 @doc Markdown.doc"""
-***
       iszero(a::NfRelOrd) -> Bool
 
 Tests if $a$ is zero.
@@ -236,7 +224,6 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
       -(a::NfRelOrdElem) -> NfRelOrdElem
 
 Returns the additive inverse of $a$.
@@ -258,7 +245,6 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
       *(a::NfRelOrdElem, b::NfRelOrdElem) -> NfRelOrdElem
 
 Returns $a \cdot b$.
@@ -271,7 +257,6 @@ function *(a::NfRelOrdElem, b::NfRelOrdElem)
 end
 
 @doc Markdown.doc"""
-***
       +(a::NfRelOrdElem, b::NfRelOrdElem) -> NfRelOrdElem
 
 Returns $a + b$.
@@ -288,7 +273,6 @@ function +(a::NfRelOrdElem, b::NfRelOrdElem)
 end
 
 @doc Markdown.doc"""
-***
       -(a::NfRelOrdElem, b::NfRelOrdElem) -> NfRelOrdElem
 
 Returns $a - b$.
@@ -305,7 +289,6 @@ function -(a::NfRelOrdElem, b::NfRelOrdElem)
 end
 
 @doc Markdown.doc"""
-***
       divexact(a::NfRelOrdElem, b::NfRelOrdElem, check::Bool) -> NfRelOrdElem
 
 Returns $a/b$. It is assumed that $a/b$ is an element of the same order
@@ -331,8 +314,7 @@ end
 for T in [Integer, fmpz]
   @eval begin
     @doc Markdown.doc"""
-    ***
-          *(a::NfRelOrdElem, b::Union{Integer, fmpz}) -> NfRelOrdElem
+              *(a::NfRelOrdElem, b::Union{Integer, fmpz}) -> NfRelOrdElem
 
     > Returns $a \cdot b$.
     """
@@ -349,8 +331,7 @@ for T in [Integer, fmpz]
     *(a::$T, b::NfRelOrdElem) = b*a
 
     @doc Markdown.doc"""
-    ***
-          divexact(a::NfRelOrdElem, b::Union{Integer, fmpz}, check::Bool) -> NfRelOrdElem
+              divexact(a::NfRelOrdElem, b::Union{Integer, fmpz}, check::Bool) -> NfRelOrdElem
 
     > Returns $a/b$. It is assumed that $a/b$ is an element of the same order
     > as $a$.
@@ -375,7 +356,6 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
     ^(a::NfRelOrdElem, b::Union{fmpz, Int}) -> NfRelOrdElem
 
 Returns $a^b$.
@@ -393,7 +373,6 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
       tr(a::NfRelOrdElem{T}) -> T
 
 Returns the trace of $a$.
@@ -407,7 +386,6 @@ tr(a::NfRelOrdElem) = tr(a.elem_in_nf)
 ################################################################################
 
 @doc Markdown.doc"""
-***
       norm(a::NfRelOrdElem{T}) -> T
 
 Returns the norm of $a$.

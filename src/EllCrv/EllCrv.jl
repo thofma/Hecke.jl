@@ -247,7 +247,6 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
     short_weierstrass_model(E::EllCrv{fmpq}) -> (EE::EllCrv, function(EllCrvPt), function(EllCrvPt))
 
 Transforms a curve given in long Weierstrass form over QQ to short Weierstrass form
@@ -373,7 +372,6 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
     infinity(E::EllCrv) -> EllCrvPt
 
 Creates the point at infinity.
@@ -390,7 +388,6 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
     ison_curve(E::EllCrv{T}, coords::Array{T, 1}) -> Bool
 
 Returns true if `coords` defines a point  on E and false otherwise. The array
@@ -425,7 +422,6 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
     disc(E::EllCrv{T}) -> T
 
 Computes the discriminant of $E$.
@@ -466,7 +462,6 @@ end
 
 # p. 46 Washington, p. 72 Cohen
 @doc Markdown.doc"""
-***
     j(E::EllCrv{T}) -> T
 Computes the j-invariant of $E$.
 """
@@ -511,7 +506,6 @@ end
 
 # washington p. 14, cohen p. 270
 @doc Markdown.doc"""
-***
     +(P::EllCrvPt, Q::EllCrvPt) -> EllCrvPt
 Adds two points on an elliptic curve.
 does not work in characteristic 2
@@ -588,7 +582,6 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
     -(P::EllCrvPt) -> EllCrvPt
 
 Computes the inverse of the point $P$ on an elliptic curve.
@@ -610,7 +603,6 @@ function -(P::EllCrvPt)
 end
 
 @doc Markdown.doc"""
-***
     ==(P::EllCrvPt, Q::EllCrvPt) -> Bool
 
 Returns true if $P$ and $Q$ are equal and live over the same elliptic curve
@@ -643,7 +635,6 @@ end
 
 # algorithm 'integer times a point', [Washington, p. 18]
 @doc Markdown.doc"""
-***
     *(n::Int, P::EllCrvPt) -> EllCrvPt
 
 Computes the point $nP$.

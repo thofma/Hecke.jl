@@ -56,7 +56,6 @@ function ismonic(a::PolyElem)
 end
 
 @doc Markdown.doc"""
-***
   valence(f::PolyElem) -> RingElem
 
  The last non-zero coefficient of f
@@ -72,7 +71,6 @@ function valence(f::PolyElem)
 end
 
 @doc Markdown.doc"""
-***
   leading_coefficient(f::PolyElem) -> RingElem
 
  The last leading coefficient of f.
@@ -80,7 +78,6 @@ end
 leading_coefficient(f::PolyElem) = lead(f)
 
 @doc Markdown.doc"""
-***
   trailing_coefficient(f::PolyElem) -> RingElem
   constant_coefficient(f::PolyElem) -> RingElem
 
@@ -282,7 +279,6 @@ function continue_lift(a::HenselCtx, N::Int)
 end
 
 @doc Markdown.doc"""
-***
   factor_mod_pk(f::fmpz_poly, p::Int, k::Int) -> Dict{fmpz_poly, Int}
 
  For f that is square-free modulo p, return the factorisation modulo p^k.
@@ -294,7 +290,6 @@ function factor_mod_pk(f::fmpz_poly, p::Int, k::Int)
 end
 
 @doc Markdown.doc"""
-***
   factor_mod_pk_init(f::fmpz_poly, p::Int) -> HenselCtx
 
  For f that is square-free modulo p, return a structure that allows to compute
@@ -306,7 +301,6 @@ function factor_mod_pk_init(f::fmpz_poly, p::Int)
 end
 
 @doc Markdown.doc"""
-***
   factor_mod_pk(H::HenselCtx, k::Int) -> RingElem
 
  Using the result of factor_mod_pk_init, return a factorisation modulo p^k
@@ -327,7 +321,6 @@ function hensel_lift!(G::fmpz_poly, H::fmpz_poly, A::fmpz_poly, B::fmpz_poly, f:
 end
 
 @doc Markdown.doc"""
-***
   hensel_lift(f::fmpz_poly, g::fmpz_poly, h::fmpz_poly, p::fmpz, k::Int) -> (fmpz_poly, fmpz_poly)
 
  Given f = gh modulo p for g, h coprime modulo p, compute G, H s.th. f = GH mod p^k and
@@ -380,7 +373,6 @@ function hensel_lift(f::fmpz_poly, g::fmpz_poly, h::fmpz_poly, p::fmpz, k::Int)
 end  
 
 @doc Markdown.doc"""
-***
   hensel_lift(f::fmpz_poly, g::fmpz_poly, p::fmpz, k::Int) -> (fmpz_poly, fmpz_poly)
 
  Given f and g such that g is a divisor of f mod p and g and f/g are coprime, compute a hensel lift of g modulo p^k.

@@ -40,7 +40,6 @@
 ################################################################################
 
 @doc Markdown.doc"""
-***
     local_height_finite(P::EllCrvPt{fmpq}, p::Int) -> Float64
 
 Computes the local height of $P$ at the prime $p$.
@@ -98,7 +97,6 @@ end
 
 # p. 74 in cremona's book
 @doc Markdown.doc"""
-***
     local_height_infinite(P::EllCrvPt{fmpq}, d = 20) -> Float64
 
 Given a rational elliptic curve $E$ and a point $P$ on $E$, this functions computes
@@ -170,7 +168,6 @@ end
 
 # see Cremona, p. 75
 @doc Markdown.doc"""
-***
     canonical_height(P::EllCrvPt) -> Float64
 
 Computes the canonical height of a point $P$. 
@@ -208,7 +205,6 @@ end
 
 # see Robledo, p. 47
 @doc Markdown.doc"""
-***
     isindependent(S::Array{EllCrvPt{fmpq}}) -> Bool
 
 Tests whether a given set of points $S$ on a rational elliptic curve

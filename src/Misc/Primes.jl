@@ -125,7 +125,6 @@ struct PrimesSet{T}
 end
 
 @doc Markdown.doc"""
-***
     PrimesSet(f::Integer, t::Integer) -> PrimesSet
     PrimesSet(f::fmpz, t::fmpz) -> PrimesSet
 
@@ -137,7 +136,6 @@ function PrimesSet(f::T, t::T) where T
 end
 
 @doc Markdown.doc"""
-***
     PrimesSet(f::Integer, t::Integer, mod::Integer, val::Integer)  
     PrimesSet(f::fmpz, t::fmpz, mod::fmpz, val::fmpz) 
 

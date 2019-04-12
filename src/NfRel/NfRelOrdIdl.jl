@@ -5,7 +5,6 @@
 ################################################################################
 
 @doc Markdown.doc"""
-***
     order(a::NfRelOrdIdl) -> NfRelOrd
 
 Returns the order of $a$.
@@ -13,7 +12,6 @@ Returns the order of $a$.
 order(a::NfRelOrdIdl) = a.order
 
 @doc Markdown.doc"""
-***
     nf(a::NfRelOrdIdl) -> RelativeExtension
 
 Returns the number field, of which $a$ is an integral ideal.
@@ -106,7 +104,6 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
       pseudo_basis(a::NfRelOrdIdl{T, S}) -> Vector{Tuple{RelativeElement{T}, S}}
       pseudo_basis(a::NfRelOrdFracIdl{T, S}) -> Vector{Tuple{RelativeElement{T}, S}}
 
@@ -122,7 +119,6 @@ function pseudo_basis(a::Union{NfRelOrdIdl, NfRelOrdFracIdl}; copy::Bool = true)
 end
 
 @doc Markdown.doc"""
-***
       basis_pmat(a::NfRelOrdIdl) -> PMat
       basis_pmat(a::NfRelOrdFracIdl) -> PMat
 
@@ -144,7 +140,6 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
       basis_mat(a::NfRelOrdIdl{T, S}) -> Generic.Mat{T}
       basis_mat(a::NfRelOrdFracIdl{T, S}) -> Generic.Mat{T}
 
@@ -160,7 +155,6 @@ function basis_mat(a::Union{NfRelOrdIdl, NfRelOrdFracIdl}; copy::Bool = true)
 end
 
 @doc Markdown.doc"""
-***
       basis_mat_inv(a::NfRelOrdIdl{T, S}) -> Generic.Mat{T}
       basis_mat_inv(a::NfRelOrdFracIdl{T, S}) -> Generic.Mat{T}
 
@@ -213,7 +207,6 @@ function defines_ideal(O::NfRelOrd{T, S}, M::PMat{T, S}) where {T, S}
 end
 
 @doc Markdown.doc"""
-***
     ideal(O::NfRelOrd, M::PMat, check::Bool = true, M_in_hnf::Bool = false) -> NfRelOrdIdl
 
 Creates the ideal of $\mathcal O$ with basis pseudo-matrix $M$. If check is set,
@@ -229,7 +222,6 @@ function ideal(O::NfRelOrd{T, S}, M::PMat{T, S}, check::Bool = true, M_in_hnf::B
 end
 
 @doc Markdown.doc"""
-***
     ideal(O::NfRelOrd, M::Generic.Mat, check::Bool = true) -> NfRelOrdIdl
 
 Creates the ideal of $\mathcal O$ with basis matrix $M$. If check is set,
@@ -241,7 +233,6 @@ function ideal(O::NfRelOrd{T, S}, M::Generic.Mat{T}, check::Bool = true) where {
 end
 
 @doc Markdown.doc"""
-***
     ideal(O::NfRelOrd{T, S}, x::NfRelElem{T}, y::NfRelElem{T}, a::S, b::S, check::Bool = true) -> NfRelOrdIdl{T, S}
 
 Creates the ideal $x\cdot a + y\cdot b$ of $\mathcal O$. If check is set,
@@ -282,7 +273,6 @@ function ideal(O::NfRelOrd{T, S}, x::RelativeElement{T}, y::RelativeElement{T}, 
 end
 
 @doc Markdown.doc"""
-***
     ideal(O::NfRelOrd{T, S}, x::NfRelOrdElem{T}) -> NfRelOrdIdl{T, S}
     *(O::NfRelOrd{T, S}, x::NfRelOrdElem{T}) -> NfRelOrdIdl{T, S}
     *(x::NfRelOrdElem{T}, O::NfRelOrd{T, S}) -> NfRelOrdIdl{T, S}
@@ -312,7 +302,6 @@ end
 *(x::NfRelOrdElem, O::NfRelOrd) = ideal(O, x)
 
 @doc Markdown.doc"""
-***
     ideal(O::NfRelOrd{T, S}, a::S, check::Bool = true) -> NfRelOrdIdl{T, S}
 
 Creates the ideal $a \cdot \mathcal O$ of $\mathcal O$. If check is set,
@@ -343,7 +332,6 @@ function ideal(O::NfRelOrd, a::NfRelOrdIdl, check::Bool = true)
 end
 
 @doc Markdown.doc"""
-***
     *(O::NfRelOrd{T, S}, a::S) -> NfRelOrdIdl{T, S}
     *(a::S, O::NfRelOrd{T, S}) -> NfRelOrdIdl{T, S}
 
@@ -392,7 +380,6 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
     ==(a::NfRelOrdIdl, b::NfRelOrdIdl) -> Bool
 
 Returns whether $a$ and $b$ are equal.
@@ -448,7 +435,6 @@ function assure_has_norm(a::NfRelOrdIdl{T, S}) where {T, S}
 end
 
 @doc Markdown.doc"""
-***
     norm(a::NfRelOrdIdl) -> NfOrdIdl
 
 Returns the norm of $a$.
@@ -469,7 +455,6 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
     +(a::NfRelOrdIdl, b::NfRelOrdIdl) -> NfRelOrdIdl
 
 Returns $a + b$.
@@ -544,7 +529,6 @@ Base.:(^)(A::NfRelOrdIdl, e::Int) = Base.power_by_squaring(A, e)
 ################################################################################
 
 @doc Markdown.doc"""
-***
     *(a:NfRelOrdIdl{T, S}, x::T) -> NfRelOrdIdl{T, S}
 
 Returns the ideal $x\cdot a$.
@@ -610,7 +594,6 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
       inv(a::NfRelOrdIdl) -> NfRelOrdFracIdl
       inv(a::NfRelOrdFracIdl) -> NfRelOrdFracIdl
 
@@ -653,7 +636,6 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
       divexact(a::NfRelOrdIdl, b::NfRelOrdIdl) -> NfRelOrdFracIdl
 
 Returns $ab^{-1}$.
@@ -695,7 +677,6 @@ end
 # Algorithm V.8. and VI.8. in "Berechnung relativer Ganzheitsbasen mit dem
 # Round-2-Algorithmus" by C. Friedrichs.
 @doc Markdown.doc"""
-***
       pradical(O::NfRelOrd, P::NfOrdIdl) -> NfRelOrdIdl
 
 Given a prime ideal $P$, this function returns the $P$-radical
@@ -807,7 +788,6 @@ end
 # Algorithm VII.1. in "Berechnung relativer Ganzheitsbasen mit dem
 # Round-2-Algorithmus" by C. Friedrichs.
 @doc Markdown.doc"""
-***
     ring_of_multipliers(a::NfRelOrdIdl) -> NfRelOrd
 
 Computes the order $(a : a)$, which is the set of all $x \in K$
@@ -1066,7 +1046,6 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
       minimum(A::NfRelOrdIdl) -> NfOrdIdl
       minimum(A::NfRelOrdIdl) -> NfRelOrdIdl
 
@@ -1191,7 +1170,6 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
     in(x::NfRelOrdElem, y::NfRelOrdIdl)
     in(x::RelativeElement, y::NfRelOrdIdl)
     in(x::fmpz, y::NfRelOrdIdl)
@@ -1226,7 +1204,6 @@ in(x::fmpz, y::NfRelOrdIdl) = in(order(y)(x),y)
 ################################################################################
 
 @doc Markdown.doc"""
-***
     uniformizer(P::NfRelOrdIdl) -> NfRelOrdElem
 
 Returns an element $u \in P$ with valuation(u, P) == 1.
@@ -1265,7 +1242,6 @@ function _is_p_uniformizer(z::NfRelOrdElem, P::T, primes::Vector{T}) where {T <:
 end
 
 @doc Markdown.doc"""
-***
     p_uniformizer(P::NfRelOrdIdl) -> NfRelOrdElem
 
 Returns an element $u \in P$ with valuation(u, P) == 1 and valuation 0 at all
@@ -1296,7 +1272,6 @@ function p_uniformizer(P::NfRelOrdIdl)
 end
 
 @doc Markdown.doc"""
-***
     anti_uniformizer(P::NfRelOrdIdl) -> RelativeElement
 
 Returns an element $a$ in the number field containing $P$ with valuation(a, P) == -1

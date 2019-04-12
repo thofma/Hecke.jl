@@ -46,7 +46,6 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
     +(x::NfOrdIdl, y::NfOrdIdl)
 
 Returns $x + y$.
@@ -307,7 +306,6 @@ end
 
 # dispatching
 @doc Markdown.doc"""
-***
   *(x::NfMaxIdl, y::NfOrdIdl)
 
 Returns the ideal x*y.
@@ -345,7 +343,6 @@ end
 #for ideals in the maximal order, the gcd is well defined...
 
 @doc Markdown.doc"""
-***
   gcd(A::NfOrdIdl, B::NfOrdIdl) -> NfOrdIdl
 The gcd or sum (A+B).
 """
@@ -360,7 +357,6 @@ end
 
 #TODO: write a ppio version that allows for p-powers as well
 @doc Markdown.doc"""
-***
   gcd(A::NfOrdIdl, p::fmpz) -> NfOrdIdl
 The gcd or sum (A + pO).
 """
@@ -517,7 +513,6 @@ function prod_by_int_2_elem(A::NfOrdIdl, a::fmpz)
 end
 
 @doc Markdown.doc"""
-***
     *(x::NfOrdIdl, y::fmpz) -> NfOrdIdl
 
 Returns the ideal $x \cdot y$.
@@ -556,7 +551,6 @@ end
 *(x::fmpz, y::NfOrdIdl) = y * x
 
 @doc Markdown.doc"""
-***
     *(x::NfOrdIdl, y::Integer) -> NfOrdIdl
 
 Returns the ideal $x \cdot y$.
@@ -675,8 +669,7 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
-   crt(r1::NfOrdElem, i1::NfOrdIdl, r2::NfOrdElem, i2::NfOrdIdl) -> NfOrdElem
+    crt(r1::NfOrdElem, i1::NfOrdIdl, r2::NfOrdElem, i2::NfOrdIdl) -> NfOrdElem
 Find $x$ s.th $x \equiv r1 \bmod i1$ and $x \equiv r2 \bmod i2$
 using (((idempotents)))
 """
@@ -713,7 +706,6 @@ divexact(A::NfOrdIdl, b::Integer) = divexact(A, fmpz(b))
 #  difficult due to Julia's inability to unset entries...
 
 @doc Markdown.doc"""
-***
     divexact(A::NfOrdIdl, y::fmpz) -> NfOrdIdl
     divexact(A::NfOrdIdl, y::Integer) -> NfOrdIdl
 
@@ -756,7 +748,6 @@ function divexact(A::NfOrdIdl, b::fmpz)
 end
 
 @doc Markdown.doc"""
-***
     divexact(A::NfOrdIdl, B::NfOrdIdl) -> NfOrdIdl
 
 Returns $AB^{-1}$ assuming that $AB^{-1}$ is again an integral ideal.

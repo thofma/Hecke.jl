@@ -238,7 +238,7 @@ function _class_unit_group(O::NfOrd; bound::Int = -1, method::Int = 3, large::In
         @vtime_add_elapsed :UnitGroup 1 c :unit_time r = _unit_group_find_units(U, c)
       else
         @vtime_add_elapsed :UnitGroup 1 c :unit_hnf_time module_trafo_assure(c.M)
-        @vtime_add_elapsed :UnitGroup 1 c :unit_time r = _unit_group_find_units_with_trafo(U, c)
+        @vtime_add_elapsed :UnitGroup 1 c :unit_time r = _unit_group_find_units_with_transform(U, c)
       end
       @v_do :UnitGroup 1 popindent()
     end

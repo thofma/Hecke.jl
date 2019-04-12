@@ -35,7 +35,6 @@
 export PrimeIdealsSet, prime_ideals_over
 
 @doc Markdown.doc"""
-***
     isramified(O::NfOrd, p::Int) -> Bool
 
 Returns whether the integer $p$ is ramified in $\mathcal O$.
@@ -47,7 +46,6 @@ function isramified(O::NfAbsOrd, p::Union{Int, fmpz})
 end
 
 @doc Markdown.doc"""
-***
     degree(P::NfOrdIdl) -> Int
 The inertia degree of the prime-ideal $P$.
 """
@@ -57,7 +55,6 @@ function degree(A::NfAbsOrdIdl)
 end
 
 @doc Markdown.doc"""
-***
     ramification_index(P::NfOrdIdl) -> Int
 The ramification index of the prime-ideal $P$.
 """
@@ -67,7 +64,6 @@ function ramification_index(A::NfAbsOrdIdl)
 end
 
 @doc Markdown.doc"""
-***
     splitting_type(P::NfOrdIdl) -> Int, Int
 The ramification index and inertia degree of the prime ideal $P$.
 First value is the ramificatio index, the second the degree of $P$.
@@ -236,7 +232,6 @@ function ideal_from_poly(O::NfOrd, p::Int, fi::Zmodn_poly, ei::Int)
 end
 
 @doc Markdown.doc"""
-***
     prime_decomposition(O::NfAbsOrd,
                         p::Integer,
                         degree_limit::Int = 0,
@@ -471,7 +466,6 @@ function prime_decomposition_type(O::NfOrd, p::Integer)
 end
 
 @doc Markdown.doc"""
-***
     prime_ideals_up_to(O::NfOrd,
                        B::Int;
                        degree_limit::Int = 0, index_divisors::Bool = true) -> Array{NfOrdIdl, 1}
@@ -514,7 +508,6 @@ function prime_ideals_up_to(O::NfOrd, B::Int;
 end
 
 @doc Markdown.doc"""
-***
     prime_ideals_over(O::NfOrd,
                        lp::AbstractArray{Int, 1};
                        degree_limit::Int = 0) -> Array{NfOrdIdl, 1}
@@ -541,7 +534,6 @@ end
 
 
 @doc Markdown.doc"""
-***
     prime_ideals_up_to(O::NfOrd,
                        B::Int;
                        complete::Bool = false,
@@ -602,7 +594,6 @@ end
 #TODO: do sth. useful here!!!
 
 @doc Markdown.doc"""
-***
     divides(A::NfOrdIdl, B::NfOrdIdl)
     
 Checks if B divides A
@@ -633,7 +624,6 @@ function coprime_base(A::Array{NfOrdIdl, 1}, p::fmpz)
 end
 
 @doc Markdown.doc"""
-***
     coprime_base(A::Array{NfOrdIdl, 1}) -> Array{NfOrdIdl, 1}
     coprime_base(A::Array{NfOrdElem, 1}) -> Array{NfOrdIdl, 1}
 A coprime base for the (principal) ideals in $A$, ie. the returned array
@@ -672,7 +662,6 @@ end
 
 #TODO: factoring type??? (with unit)
 @doc Markdown.doc"""
-***
     factor(A::NfOrdIdl) -> Dict{NfOrdIdl, Int}
 
 Computes the prime ideal factorization $A$ as a dictionary, the keys being
@@ -711,7 +700,6 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
     isprime_known(A::NfOrdIdl) -> Bool
 
 Returns whether $A$ knows if it is prime.
@@ -721,7 +709,6 @@ function isprime_known(A::NfAbsOrdIdl)
 end
 
 @doc Markdown.doc"""
-***
     isprime(A::NfOrdIdl) -> Bool
 
 Returns whether $A$ is a prime ideal.
@@ -908,7 +895,6 @@ function val_func_index(p::NfOrdIdl)
 end
 
 @doc Markdown.doc"""
-***
     valuation(a::nf_elem, p::NfOrdIdl) -> fmpz
     valuation(a::NfOrdElem, p::NfOrdIdl) -> fmpz
     valuation(a::fmpz, p::NfOrdIdl) -> fmpz
@@ -989,7 +975,6 @@ function valuation(a::nf_elem, p::NfOrdIdl, no::fmpq = fmpq(0))
 end
 
 @doc Markdown.doc"""
-***
     valuation(a::nf_elem, p::NfOrdIdl) -> fmpz
     valuation(a::NfOrdElem, p::NfOrdIdl) -> fmpz
     valuation(a::fmpz, p::NfOrdIdl) -> fmpz
@@ -1000,7 +985,6 @@ such that $a$ is contained in $\mathfrak p^i$.
 valuation(a::NfOrdElem, p::NfOrdIdl) = valuation(a.elem_in_nf, p)
 
 @doc Markdown.doc"""
-***
     valuation(a::nf_elem, p::NfOrdIdl) -> fmpz
     valuation(a::NfOrdElem, p::NfOrdIdl) -> fmpz
     valuation(a::fmpz, p::NfOrdIdl) -> fmpz
@@ -1064,7 +1048,6 @@ function valuation_naive(x::nf_elem, B::NfOrdIdl)
 end
 
 @doc Markdown.doc"""
-***
     valuation(A::NfOrdIdl, p::NfOrdIdl) -> fmpz
 
 Computes the $\mathfrak p$-adic valuation of $A$, that is, the largest $i$
@@ -1114,7 +1097,6 @@ mutable struct PrimeIdealsSet
 end
 
 @doc Markdown.doc"""
-***
     PrimeIdealsSet(O::NfOrd, f, t; proof = false,
                                    indexdivisors = true,
                                    ramified = true,

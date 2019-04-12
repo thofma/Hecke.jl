@@ -7,7 +7,6 @@
 ################################################################################
 
 @doc Markdown.doc"""
-***
     order(a::NfRelOrdFracIdl) -> NfRelOrd
 
 Returns the order of $a$.
@@ -15,7 +14,6 @@ Returns the order of $a$.
 order(a::NfRelOrdFracIdl) = a.order
 
 @doc Markdown.doc"""
-***
     nf(a::NfRelOrdFracIdl) -> RelativeExtension
 
 Returns the number field, of which $a$ is an fractional ideal.
@@ -78,7 +76,6 @@ function assure_has_denominator(a::NfRelOrdFracIdl)
 end
 
 @doc Markdown.doc"""
-***
     denominator(a::NfRelOrdFracIdl) -> fmpz
 
 Returns the smallest positive integer $d$ such that $da$ is contained in
@@ -90,7 +87,6 @@ function denominator(a::NfRelOrdFracIdl)
 end
 
 @doc Markdown.doc"""
-***
     numerator(a::NfRelOrdFracIdl) -> NfRelOrdIdl
 
 Returns the ideal $d*a$ where $d$ is the denominator of $a$.
@@ -139,7 +135,6 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
     frac_ideal(O::NfRelOrd, M::PMat, M_in_hnf::Bool = false) -> NfRelOrdFracIdl
 
 Creates the fractional ideal of $\mathcal O$ with basis pseudo-matrix $M$. If
@@ -152,7 +147,6 @@ function frac_ideal(O::NfRelOrd{T, S}, M::PMat{T, S}, M_in_hnf::Bool = false) wh
 end
 
 @doc Markdown.doc"""
-***
     frac_ideal(O::NfRelOrd, M::Generic.Mat) -> NfRelOrdFracIdl
 
 Creates the fractional ideal of $\mathcal O$ with basis matrix $M$.
@@ -207,7 +201,6 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
     ==(a::NfOrdRelFracIdl, b::NfRelOrdFracIdl) -> Bool
 
 Returns whether $a$ and $b$ are equal.
@@ -247,7 +240,6 @@ function assure_has_norm(a::NfRelOrdFracIdl)
 end
 
 @doc Markdown.doc"""
-***
     norm(a::NfRelOrdFracIdl{T, S}) -> S
 
 Returns the norm of $a$
@@ -268,7 +260,6 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
     +(a::NfRelOrdFracIdl, b::NfRelOrdFracIdl) -> NfRelOrdFracIdl
 
 Returns $a + b$.
@@ -359,7 +350,6 @@ Base.:(^)(A::NfRelOrdFracIdl, b::Int) = Base.power_by_squaring(A, p)
 ################################################################################
 
 @doc Markdown.doc"""
-***
       divexact(a::NfRelOrdFracIdl, b::NfRelOrdFracIdl) -> NfRelOrdFracIdl
       divexact(a::NfRelOrdFracIdl, b::NfRelOrdIdl) -> NfRelOrdFracIdl
       divexact(a::NfRelOrdIdl, b::NfRelOrdFracIdl) -> NfRelOrdFracIdl
@@ -445,7 +435,6 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
     in(x::RelativeElement, y::NfRelOrdFracIdl)
 
 Returns whether $x$ is contained in $y$.

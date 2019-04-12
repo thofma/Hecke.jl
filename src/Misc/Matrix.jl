@@ -776,7 +776,6 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
     mod!(M::fmpz_mat, p::fmpz) 
 Reduces every entry modulo $p$ in-place, ie. applies the mod function to every entry.
 """
@@ -791,7 +790,6 @@ function mod!(M::fmpz_mat, p::fmpz)
 end
 
 @doc Markdown.doc"""
-***
     mod(M::fmpz_mat, p::fmpz) -> fmpz_mat
 Reduces every entry modulo $p$, ie. applies the mod function to every entry.
 """
@@ -808,7 +806,6 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
     vcat(A::Array{Generic.Mat, 1}) -> Generic.Mat
     vcat(A::Array{fmpz_mat}, 1}) -> fmpz_mat
 Forms a big matrix my vertically concatenating the matrices in $A$.
@@ -972,7 +969,6 @@ V = [e -divexact(b, g) ; f divexact(a, g)];
 then U*[ a 0; 0 b] * V = [g 0 ; 0 l]
 =#
 @doc Markdown.doc"""
-***
   snf_with_transform(A::fmpz_mat, l::Bool = true, r::Bool = true) -> fmpz_mat, fmpz_mat, fmpz_mat
 
 Given some integer matrix A, compute the Smith normal form (elementary
@@ -1073,7 +1069,6 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
   isdiag(A::fmpz_mat)
 
 Tests if A is diagonal.
@@ -1447,10 +1442,10 @@ function _can_solve_with_kernel(A::MatElem{T}, B::MatElem{T}) where T <: FieldEl
   return true, sol, n
 end
 
-#TODO !!!: different to can_solve*(fmpz_mat) is hnf_with_tranformation -> hnf_with_trafo
-#maybe (definitely!) agree on one name and combine?
-
+# TODO (easy): Remove this once the name is changed in AbstractAlgebra
 hnf_with_trafo(x::fmpz_mat) = hnf_with_transform(x)
+
+hnf_with_transform(x) = hnf_with_trafo(x)
 
 @doc Markdown.doc"""
     can_solve(A::MatElem{T}, B::MatElem{T}, side = :right) where T <: RingElem -> Bool, MatElem
@@ -1533,7 +1528,7 @@ function can_solve_with_kernel(A::MatElem{T}, B::MatElem{T}; side = :right) wher
 end
 
 function _can_solve_with_kernel(a::MatElem{S}, b::MatElem{S}) where S <: RingElem
-  H, T = hnf_with_trafo(transpose(a))
+  H, T = hnf_with_transform(transpose(a))
   z = similar(a, ncols(b), ncols(a))
   l = min(nrows(a), ncols(a))
   for i=1:ncols(b)
@@ -1584,7 +1579,7 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-   elementary_divisors(A::fmpz_mat) -> Vector{fmpz}
+    elementary_divisors(A::fmpz_mat) -> Vector{fmpz}
 
 The elementary divisors of $A$, that is, the diagonal entries of the Smith
 normal form of $A$.
@@ -1595,7 +1590,7 @@ function elementary_divisors(A::fmpz_mat)
 end
 
 @doc Markdown.doc"""
-   maximal_elementary_divisors(A::fmpz_mat) -> fmpz
+    maximal_elementary_divisors(A::fmpz_mat) -> fmpz
 
 The largest elementary divisor of $A$, that is, the last diagonal entry of the
 Smith normal form of $A$.
@@ -1605,7 +1600,7 @@ function maximal_elementary_divisor(A::fmpz_mat)
 end
 
 @doc Markdown.doc"""
-   divisors(A::fmpz_mat, d::fmpz) -> fmpz
+    divisors(A::fmpz_mat, d::fmpz) -> fmpz
 
 Returns the diagonal entries of a diagonal form of A. We assume that all the elementary
 divisors are divisors of d.
@@ -1626,7 +1621,7 @@ function divisors(M::fmpz_mat, d::fmpz)
 end
 
 @doc Markdown.doc"""
-   largest_elementary_divisor(A::fmpz_mat) -> fmpz
+    largest_elementary_divisor(A::fmpz_mat) -> fmpz
 
 The largest elementary divisor of $A$, that is, the last diagonal entry of the
 Smith normal form of $A$.

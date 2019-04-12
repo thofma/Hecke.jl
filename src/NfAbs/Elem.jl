@@ -47,7 +47,6 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
     rand(b::Array{nf_elem,1}, r::UnitRange)
 
 A random linear combination of elements in `b` with coefficients in `r`.
@@ -60,7 +59,6 @@ function rand(b::Array{nf_elem,1}, r::UnitRange)
 end
 
 @doc Markdown.doc"""
-***
     rand(b::Array{nf_elem,1}, r::UnitRange, terms::Int) -> nf_elem
 
 A random linear combination (with repetitions) of \code{terms} elements of `b`
@@ -148,7 +146,6 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
     charpoly(a::nf_elem) -> fmpq_poly
 
 The characteristic polynomial of a.
@@ -186,7 +183,6 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
     minpoly(a::nf_elem) -> fmpq_poly
 
 The minimal polynomial of a.
@@ -304,8 +300,7 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
-   norm_div(a::nf_elem, d::fmpz, nb::Int) -> fmpq
+    norm_div(a::nf_elem, d::fmpz, nb::Int) -> fmpq
 
 Computes divexact(norm(a), d) provided the result has at most `nb` bits.
 Typically, $a$ is in some ideal and $d$ is the norm of the ideal.
@@ -353,8 +348,9 @@ end
 
 
 @doc Markdown.doc"""
-   isnorm_divisible(a::nf_elem, n::fmpz) -> Bool
-Checks if the norm of $a$ is divisible by $n$, assuming that the norm of $a$ is an integer.
+    isnorm_divisible(a::nf_elem, n::fmpz) -> Bool
+Checks if the norm of $a$ is divisible by $n$, assuming that the norm of $a$ is
+an integer.
 """
 function isnorm_divisible(a::nf_elem, n::fmpz)
   
@@ -783,7 +779,6 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
     ispower(a::nf_elem, n::Int; with_roots_unity::Bool = false) -> Bool, nf_elem
 
 Determines whether $a$ has an $n$-th root. If this is the case,
@@ -831,7 +826,6 @@ The square-root of $a$ or an error if this is not possible.
 Nemo.sqrt(a::nf_elem) = root(a, 2)
 
 @doc Markdown.doc"""
-***
     root(a::nf_elem, n::Int) -> nf_elem
 
 Computes the $n$-th root of $a$. Throws an error if this is not possible.

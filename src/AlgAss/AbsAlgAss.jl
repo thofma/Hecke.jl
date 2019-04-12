@@ -151,7 +151,6 @@ function kernel_of_frobenius(A::AbsAlgAss)
 end
 
 @doc Markdown.doc"""
-***
     decompose(A::AbsAlgAss{T}) -> AlgAss{T}
 
 Given a semisimple algebra over a field, this function 
@@ -399,7 +398,6 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
     as_number_fields(A::AbsAlgAss{fmpq})
 
 Given a commutative algebra over QQ, this function returns a decomposition
