@@ -310,7 +310,7 @@ end
 
 @doc Markdown.doc"""
     minpoly(a::NfAbsOrdElem) -> fmpz_poly
-
+::NfAbsOrdElem) in Hecke at /home/sircana/.julia/dev/Hecke/src/NfOrd/Elem.jl:751
     minpoly(a::NfAbsOrdElem, FlintZZ) -> fmpz_poly
 The minimal polynomial of $a$.    
 """
@@ -772,6 +772,34 @@ function representation_matrix(a::NfAbsOrdElem{S, T}, K::S) where {S, T}
   A.base_ring = FlintZZ
   z = FakeFmpqMat(A, d)
   return z
+end
+
+@doc Markdown.doc"""
+***
+    representation_matrix_mod(a::NfAbsOrdElem, d::fmpz) -> fmpz_mat
+
+Returns the representation matrix of the element $a$ with entries reduced mod d.
+"""
+function representation_matrix_mod(a::NfAbsOrdElem, d::fmpz)
+  O = parent(a)
+  assure_has_basis_mat(O)
+  assure_has_basis_mat_inv(O)
+  A = representation_matrix(a, nf(O))
+  d2 = O.basis_mat.den * O.basis_mat_inv.den*A.den
+  d2c, d2nc = ppio(d2, d)
+  d1 = d * d2c
+  A1 = A.num 
+  mod!(A.num, d1)
+  M1 = mod(O.basis_mat.num, d1)
+  mul!(A1, M1, A1)
+  M2 = mod(O.basis_mat_inv.num, d1)
+  mul!(A1, A1, M2)
+  mod!(A1, d1)
+  divexact!(A1, A1, d2c)
+  inver = invmod(d2nc, d1)
+  mul!(A1, A1, inver)
+  mod!(A1, d)
+  return A1
 end
 
 ################################################################################

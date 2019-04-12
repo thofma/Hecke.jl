@@ -295,17 +295,25 @@ that $x^`k` = 1$.
 It is not checked whether $x$ is a torsion unit.
 """
 function torsion_unit_order(x::nf_elem, n::Int)
-  # TODO:
-  # This is lazy
-  # Someone please change this
-  y = deepcopy(x)
-  for i in 1:n
-    if isone(y)
-      return i
+  ord = 1
+  fac = factor(n)
+  for (p, v) in fac
+    p1 = Int(p)
+    s = x^divexact(n, p1^v)
+    if isone(s)
+      continue
     end
-    mul!(y, y, x)
+    cnt = 0
+    while !isone(s) && cnt < v+1
+      s = s^p1
+      ord *= p1
+      cnt += 1
+    end
+    if cnt > v+1
+      error("The element is not a torsion unit")
+    end
   end
-  error("Something odd in the torsion unit order computation")
+  return ord
 end
 
 #################################################################################################
@@ -732,17 +740,6 @@ function splitting_field(fl::Array{fmpq_poly, 1}; coprime::Bool = false, do_root
   end
 end
 
-function change_base_ring(f::PolyElem, g::T) where T <: Union{Function, Map, Ring}
-  h0 = g(coeff(f, 0))
-  R = parent(h0)
-  Rt, t = PolynomialRing(R, cached = false)
-  h = Rt()
-  setcoeff!(h, 0, h0)
-  for i=1:degree(f)
-    setcoeff!(h, i, g(coeff(f, i)))
-  end
-  return h
-end  
 
 copy(f::fmpq_poly) = parent(f)(f)
 gcd_into!(a::fmpq_poly, b::fmpq_poly, c::fmpq_poly) = gcd(b, c)

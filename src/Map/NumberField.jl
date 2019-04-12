@@ -133,6 +133,21 @@ end
 
 #_D = Dict()
 
+function evaluate1(f::fmpq_poly, a::nf_elem)
+  R = parent(a)
+  if iszero(f)
+    return zero(R)
+  end
+  l = length(f) - 1
+  s = R(coeff(f, l))
+  for i in l-1:-1:0
+    #s = s*a + R(coeff(f, i))
+    mul!(s, s, a)
+    add!(s, s, R(coeff(f, i)))
+  end
+  return s
+end
+
 function *(f::NfToNfMor, g::NfToNfMor)
 #  global _D
 #  _s = Base.stacktrace()[2:3]
@@ -232,7 +247,25 @@ function hom(K::AnticNumberField, L::AnticNumberField, a::nf_elem; check::Bool =
  return NfToNfMor(K, L, a, compute_inverse)
 end
 
+function hom(K::AnticNumberField, L::AnticNumberField, a::nf_elem, a_inv::nf_elem; check::Bool = true)
+ if check
+   if !iszero(evaluate(K.pol, a))
+     error("The data does not define a homomorphism")
+   end
+   if !iszero(evaluate(L.pol, a_inv))
+     error("The data does not define a homomorphism")
+   end
+ end
+ return NfToNfMor(K, L, a, a_inv)
+end
+
 
 id_hom(K::AnticNumberField) = hom(K, K, gen(K), check = false)
 
 morphism_type(::Type{AnticNumberField}) = NfToNfMor
+
+isinjective(m::NfToNfMor) = true
+
+issurjective(m::NfToNfMor) = (degree(domain(m)) == degree(codomain(m)))
+
+isbijective(m::NfToNfMor) = issurjective(m)

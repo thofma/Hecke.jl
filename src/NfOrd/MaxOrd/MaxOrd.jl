@@ -109,11 +109,12 @@ function pmaximal_overorder_at(O::NfOrd, primes::Array{fmpz, 1})
 
   ind = index(O)
   EO = EquationOrder(nf(O))
+  M = zero_matrix(FlintZZ, 2 * degree(O), degree(O))
   for i in 1:length(primes)
     p = primes[i]
     @vprint :NfOrd 1 "Computing p-maximal overorder for $p ..."
     if divisible(ind, p)
-      OO = pmaximal_overorder(OO, p)
+      OO = sum_as_Z_modules(OO, pmaximal_overorder(O, p), M)
     else
       O1 = pmaximal_overorder(EO, p)
       if divisible(index(O1), p)
@@ -533,8 +534,7 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
-    ring_of_multipliers(I::NfAbsOrdIdl) -> NfOrd
+    ring_of_multipliers(I::NfAbsOrdIdl) -> NfAbsOrd
 
 Computes the order $(I : I)$, which is the set of all $x \in K$
 with $xI \subseteq I$.
@@ -542,46 +542,48 @@ with $xI \subseteq I$.
 function ring_of_multipliers(a::NfAbsOrdIdl)
   O = order(a) 
   n = degree(O)
+  bmatinv = basis_mat_inv(a, copy = false)
   if isdefined(a, :gens) && length(a.gens) < n
     B = a.gens
   else
     B = basis(a, copy = false)
   end
   @assert length(B) > 0
-  bmatinv = basis_mat_inv(a, copy = false)
+  id_gen = zero_matrix(FlintZZ, 2*n, n) 
   m = zero_matrix(FlintZZ, n*length(B), n)
+  ind = 1
   for i = 1:length(B)
-    M = representation_matrix(B[i])
-    mul!(M, M, bmatinv.num)
-    if bmatinv.den == 1
-      for j=1:n
-        for k=1:n
-          m[j+(i-1)*n,k] = M[k,j]
-        end
-      end
-    else
-      for j=1:n
-        for k=1:n
-          m[j+(i-1)*n,k] = divexact(M[k,j], bmatinv.den)
-        end
+    if i != 1
+      c = matrix(FlintZZ, 1, n, coordinates(B[i]))
+      reduce_mod_hnf_ll!(c, id_gen)
+      if iszero(c)
+        continue
       end
     end
+    M = representation_matrix_mod(B[i], minimum(a)*bmatinv.den) 
+    _copy_matrix_into_matrix(id_gen, 1, 1, M)
+    hnf_modular_eldiv!(id_gen, minimum(a), :lowerleft)
+    mod!(M, minimum(a)*bmatinv.den)
+    mul!(M, M, bmatinv.num)
+    M = transpose(M)
+    _copy_matrix_into_matrix(m, n*(ind-1)+1, 1, M)
+    if view(id_gen, n+1:2*n, 1:n) == basis_mat(a, copy = false)
+      m = view(m, 1:n*ind, 1:n)
+      break
+    end
+    ind += 1
   end
+  if !isone(bmatinv.den)
+    divexact!(m, m, bmatinv.den)
+  end 
   mhnf = hnf_modular_eldiv!(m, minimum(a))
   s = prod(mhnf[i,i] for i = 1:n)
   if isone(s)
     return O
   end
   # mhnf is upper right HNF
-  # mhnftrans = transpose(view(mhnf, 1:n, 1:n))
-  for i = 1:n
-    for j = i+1:n
-      mhnf[j, i] = mhnf[i, j]
-      mhnf[i, j] = 0
-    end
-  end
-  mhnftrans = view(mhnf, 1:n, 1:n)
-  b = FakeFmpqMat(pseudo_inv(mhnftrans))
+  mhnf = transpose(view(mhnf, 1:n, 1:n))
+  b = FakeFmpqMat(pseudo_inv(mhnf))
   mul!(b, b, basis_mat(O, copy = false))
   @hassert :NfOrd 1 defines_order(nf(O), b)[1]
   O1 = NfAbsOrd(nf(O), b)
@@ -592,7 +594,7 @@ function ring_of_multipliers(a::NfAbsOrdIdl)
     O1.index = s*O.index
   end
   if isdefined(O, :basis_mat_inv)
-    O1.basis_mat_inv = O.basis_mat_inv * mhnftrans
+    O1.basis_mat_inv = O.basis_mat_inv * mhnf
   end
   return O1
 end

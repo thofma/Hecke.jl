@@ -1399,14 +1399,10 @@ end
 #
 ################################################################################
 
-# TODO: This is type unstable
-function make_snf(m::Map{GrpAbFinGen, T}) where T
+function make_domain_snf(m::Map{GrpAbFinGen, T}) where T
   G = domain(m)
-  if issnf(G)
-    return m
-  end
   S, mS = snf(G)
-  return compose(mS, m)
+  return mS*m
 end
 
 ################################################################################

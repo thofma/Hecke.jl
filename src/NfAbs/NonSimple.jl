@@ -639,9 +639,7 @@ end
 
 function representation_matrix_q(a::NfAbsNSElem)
   M = representation_matrix(a)
-  # TODO: This is suboptimal.
-  Mf = FakeFmpqMat(M)
-  return Mf.num, Mf.den
+  return _fmpq_mat_to_fmpz_mat_den(M)
 end
 
 ################################################################################
@@ -819,7 +817,6 @@ end
 ################################################################################
 
 function islinearly_disjoint(K1::AnticNumberField, K2::AnticNumberField)
-  
   if gcd(degree(K1), degree(K2)) == 1
     return true
   end
@@ -828,19 +825,8 @@ function islinearly_disjoint(K1::AnticNumberField, K2::AnticNumberField)
   if gcd(d1, d2) == 1
     return true
   end
-  #= 
-  #TODO: if the maximal orders are known, this is a better condition 
-  O1 = maximal_order(K1)
-  O2 = maximal_order(K2)
-  if gcd(discriminant(O1), discriminant(O2)) == 1
-    return true
-  end
-  =#
-  
-  K2t, t = PolynomialRing(K2, "t", cached= false)
-  ft = K2t(K1.pol)
-  return isirreducible(ft)
-  
+  f = change_base_ring(K1.pol, K2)
+  return isirreducible(f)
 end
 
 
@@ -1029,6 +1015,7 @@ function degree(a::nf_elem)
   return degree(minpoly(a))
 end
 
+#TODO: Improve the algorithm
 function primitive_element(K::NfAbsNS)
   g = gens(K)
   pe = g[1]
