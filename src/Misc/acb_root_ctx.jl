@@ -84,7 +84,7 @@ function refine(x::acb_root_ctx, target_prec::Int = 2*prec(x))
     return nothing
   end
 
-  x.roots = _roots(x.poly, x._roots, target_prec, target_prec)
+  x.roots = _refine_roots!(x.poly, x._roots, target_prec, target_prec)
   x.prec = target_prec
 
   r, s = x.signature
@@ -118,78 +118,72 @@ end
 #
 ################################################################################
 
-function _roots(x::Union{fmpq_poly, fmpz_poly}, abs_tol = 32, initial_prec = 0, max_iter = 0)
-  roots = acb_vec(degree(x))
-  deg = degree(x)
-
-  initial_prec = (initial_prec >= 2) ? initial_prec : 32
-
-  wp = initial_prec
-
-  while true
-    in_roots = (wp == initial_prec) ? C_NULL : roots
-    step_max_iter = (max_iter >= 1) ? max_iter : min(max(deg, 32), wp)
-    y = acb_poly(x, wp) 
-    isolated = ccall((:acb_poly_find_roots, :libarb), Int,
-            (Ptr{acb_struct}, Ref{acb_poly}, Ptr{acb_struct}, Int, Int),
-            roots, y, in_roots, step_max_iter, wp)
-
-
-    if isolated == deg
-      ok = true
-      if abs_tol > 0
-        for i = 0 : deg-1
-          re = ccall((:acb_real_ptr, :libarb), Ptr{Nemo.arb_struct},
-                (Ptr{acb}, ), roots + i * sizeof(acb_struct))
-          im = ccall((:acb_imag_ptr, :libarb), Ptr{Nemo.arb_struct},
-                (Ptr{acb}, ), roots + i * sizeof(acb_struct))
-          t = ccall((:arb_rad_ptr, :libarb), Ptr{Nemo.mag_struct}, (Ptr{arb}, ), re)
-          u = ccall((:arb_rad_ptr, :libarb), Ptr{Nemo.mag_struct}, (Ptr{arb}, ), im)
-          ok = ok && (ccall((:mag_cmp_2exp_si, :libarb), Cint,
-              (Ptr{Nemo.mag_struct}, Int), t, -abs_tol) <= 0)
-          ok = ok && (ccall((:mag_cmp_2exp_si, :libarb), Cint,
-              (Ptr{Nemo.mag_struct}, Int), u, -abs_tol) <= 0)
-        end
-      end
-      real_ok = ccall((:acb_poly_validate_real_roots, :libarb),
-          Bool, (Ptr{acb_struct}, Ref{acb_poly}, Int), roots, y, wp)
-
-      if !real_ok
-          ok = false
-      end
-
-      if real_ok
-          for i = 0 : deg - 1
-              im = ccall((:acb_imag_ptr, :libarb), Ptr{Nemo.arb_struct},
-                  (Ptr{acb}, ), roots + i * sizeof(acb_struct))
-              if ccall((:arb_contains_zero, :libarb), Bool, (Ptr{Nemo.arb_struct}, ), im)
-                  ccall((:arb_zero, :libarb), Nothing, (Ptr{Nemo.arb_struct}, ), im)
-              end
-          end
-      end
-
-      if ok
-        break
-      end
-    end
-
-    wp = wp * 2
-    if wp > 2^18
-      error("Something wrong")
-    end
+# Assume that roots points to an array of deg many acb's.
+# This function checks if the radius of the real and imaginary parts
+# are smaller then 2^(-abs_tol).
+function _validate_size_of_zeros(roots::Ptr{acb_struct}, deg::Int, abs_tol::Int)
+  ok = true
+  if abs_tol < 0 
+    return true
   end
 
-  ccall((:_acb_vec_sort_pretty, :libarb), Nothing,
-        (Ptr{acb_struct}, Int), roots, deg)
-  res = array(AcbField(wp, false), roots, deg)
-  acb_vec_clear(roots, deg)
+  for i = 0 : deg-1
+    re = ccall((:acb_real_ptr, :libarb), Ptr{Nemo.arb_struct},
+          (Ptr{acb}, ), roots + i * sizeof(acb_struct))
+    im = ccall((:acb_imag_ptr, :libarb), Ptr{Nemo.arb_struct},
+          (Ptr{acb}, ), roots + i * sizeof(acb_struct))
+    t = ccall((:arb_rad_ptr, :libarb), Ptr{Nemo.mag_struct}, (Ptr{arb}, ), re)
+    u = ccall((:arb_rad_ptr, :libarb), Ptr{Nemo.mag_struct}, (Ptr{arb}, ), im)
+    ok = ok && (ccall((:mag_cmp_2exp_si, :libarb), Cint,
+        (Ptr{Nemo.mag_struct}, Int), t, -abs_tol) <= 0)
+    ok = ok && (ccall((:mag_cmp_2exp_si, :libarb), Cint,
+        (Ptr{Nemo.mag_struct}, Int), u, -abs_tol) <= 0)
+    if !ok
+      break
+    end
+  end
+  if !ok 
+    return false
+  end
+  return true
+end
+
+# Return the roots of x with radii < 2^(-abs_tol) as Vector{acb}.
+# It is assumed that x is squarefree
+function _roots(x::Union{fmpq_poly, fmpz_poly}, abs_tol::Int = 32, initial_prec::Int = 0, max_iter = 0::Int)
+  d = degree(x)
+  roots = acb_vec(d)
+
+  wp = _roots!(roots, x, abs_tol, initial_prec, max_iter, false)
+
+  res = array(AcbField(wp, false), roots, d)
+  acb_vec_clear(roots, d)
   return res
 end
 
+# Assume that roots points to approximations of the roots of x.
+# This function updates roots inplace to radii <= 2^(-abs_tol) and returns
+# the roots as Vector{acb}.
+# It is assumed that x is squarefree
+function _refine_roots!(x::Union{fmpq_poly, fmpz_poly}, roots::Ptr{acb_struct},
+                                                        abs_tol::Int = 32,
+                                                        initial_prec::Int = 0,
+                                                        max_iter::Int = 0)
+  wp = _roots!(roots, x, abs_tol, initial_prec, max_iter, true)
+  res = array(AcbField(wp, false), roots, degree(x))
+  return res
+end
 
-# It is assumed that roots contain approximation to the roots
-# TODO: consolidate this with roots
-function _roots(x::Union{fmpq_poly, fmpz_poly}, roots::Ptr{acb_struct}, abs_tol = 32, initial_prec = 0, max_iter = 0)
+# This is the workhorse. 
+# It computes the roots of x with with radii <= 2^(-abs_tol)
+# The result will be stored in roots
+# If have_approx = true, it is assumed that roots contains approximations
+# to the roots.
+function _roots!(roots::Ptr{acb_struct}, x::Union{fmpq_poly, fmpz_poly},
+                                         abs_tol::Int = 32,
+                                         initial_prec::Int = 0,
+                                         max_iter::Int = 0,
+                                         have_approx::Bool = false)
   deg = degree(x)
 
   initial_prec = (initial_prec >= 2) ? initial_prec : 32
@@ -200,42 +194,34 @@ function _roots(x::Union{fmpq_poly, fmpz_poly}, roots::Ptr{acb_struct}, abs_tol 
     in_roots = roots
     step_max_iter = (max_iter >= 1) ? max_iter : min(max(deg, 32), wp)
     y = acb_poly(x, wp) 
-    isolated = ccall((:acb_poly_find_roots, :libarb), Int,
-            (Ptr{acb_struct}, Ref{acb_poly}, Ptr{acb_struct}, Int, Int),
-            roots, y, in_roots, step_max_iter, wp)
 
+    if have_approx
+      isolated = ccall((:acb_poly_find_roots, :libarb), Int,
+              (Ptr{acb_struct}, Ref{acb_poly}, Ptr{acb_struct}, Int, Int),
+              roots, y, in_roots, step_max_iter, wp)
+    else
+      isolated = ccall((:acb_poly_find_roots, :libarb), Int,
+              (Ptr{acb_struct}, Ref{acb_poly}, Ptr{acb_struct}, Int, Int),
+              roots, y, C_NULL, step_max_iter, wp)
+    end
+
+    have_approx = true
 
     if isolated == deg
-      ok = true
-      if abs_tol > 0
-        for i = 0 : deg-1
-          re = ccall((:acb_real_ptr, :libarb), Ptr{Nemo.arb_struct},
-                (Ptr{acb}, ), roots + i * sizeof(acb_struct))
-          im = ccall((:acb_imag_ptr, :libarb), Ptr{Nemo.arb_struct},
-                (Ptr{acb}, ), roots + i * sizeof(acb_struct))
-          t = ccall((:arb_rad_ptr, :libarb), Ptr{Nemo.mag_struct}, (Ptr{arb}, ), re)
-          u = ccall((:arb_rad_ptr, :libarb), Ptr{Nemo.mag_struct}, (Ptr{arb}, ), im)
-          ok = ok && (ccall((:mag_cmp_2exp_si, :libarb), Cint,
-              (Ptr{Nemo.mag_struct}, Int), t, -abs_tol) <= 0)
-          ok = ok && (ccall((:mag_cmp_2exp_si, :libarb), Cint,
-              (Ptr{Nemo.mag_struct}, Int), u, -abs_tol) <= 0)
-        end
-      end
+      ok = _validate_size_of_zeros(roots, deg, abs_tol)
       real_ok = ccall((:acb_poly_validate_real_roots, :libarb),
           Bool, (Ptr{acb_struct}, Ref{acb_poly}, Int), roots, y, wp)
-
+      
       if !real_ok
           ok = false
-      end
-
-      if real_ok
-          for i = 0 : deg - 1
-              im = ccall((:acb_imag_ptr, :libarb), Ptr{Nemo.arb_struct},
-                  (Ptr{acb}, ), roots + i * sizeof(acb_struct))
-              if ccall((:arb_contains_zero, :libarb), Bool, (Ptr{Nemo.arb_struct}, ), im)
-                  ccall((:arb_zero, :libarb), Nothing, (Ptr{Nemo.arb_struct}, ), im)
-              end
-          end
+      else
+        for i = 0 : deg - 1
+            im = ccall((:acb_imag_ptr, :libarb), Ptr{Nemo.arb_struct},
+                (Ptr{acb}, ), roots + i * sizeof(acb_struct))
+            if ccall((:arb_contains_zero, :libarb), Bool, (Ptr{Nemo.arb_struct}, ), im)
+                ccall((:arb_zero, :libarb), Nothing, (Ptr{Nemo.arb_struct}, ), im)
+            end
+        end
       end
 
       if ok
@@ -252,8 +238,7 @@ function _roots(x::Union{fmpq_poly, fmpz_poly}, roots::Ptr{acb_struct}, abs_tol 
   ccall((:_acb_vec_sort_pretty, :libarb), Nothing,
         (Ptr{acb_struct}, Int), roots, deg)
 
-  res = array(AcbField(wp, false), roots, deg)
-  return res
+  return wp
 end
 
 function radiuslttwopower(x::arb, e::Int)
