@@ -133,7 +133,7 @@ end
 
 #_D = Dict()
 
-function evaluate1(f::fmpq_poly, a::nf_elem)
+function evaluate(f::fmpq_poly, a::nf_elem)
   R = parent(a)
   if iszero(f)
     return zero(R)
@@ -143,6 +143,7 @@ function evaluate1(f::fmpq_poly, a::nf_elem)
   for i in l-1:-1:0
     #s = s*a + R(coeff(f, i))
     mul!(s, s, a)
+    # TODO (easy): Once fmpq_poly_add_fmpq is improved in flint, remove the R(..)
     add!(s, s, R(coeff(f, i)))
   end
   return s
