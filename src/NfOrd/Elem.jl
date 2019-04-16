@@ -656,6 +656,9 @@ function powermod_fast(a::NfAbsOrdElem, i::fmpz, p::fmpz)
 
   y = one(parent(b))
   while i > 1
+    if iszero(b)
+      return zero(parent(a))
+    end
     if iseven(i)
       b = _mod(b*b, p)
     else
@@ -667,6 +670,37 @@ function powermod_fast(a::NfAbsOrdElem, i::fmpz, p::fmpz)
   b = _mod(b*y, p)
 
   return mod(parent(a)(b)*e, p)
+end
+
+@doc Markdown.doc"""
+    powermod(a::NfAbsOrdElem, i::fmpz, m::Union{fmpz, Int}) -> NfAbsOrdElem
+
+Returns an element $a^i$ modulo $m$.
+"""
+function powermod(a::NfOrdElem, i::fmpz, I::NfOrdIdl)
+  if i == 0
+    return one(parent(a))
+  end
+  b = mod(a, I)
+  if i == 1
+    return b
+  end
+  if iszero(b)
+    return b
+  end
+  y = one(parent(b))
+  while i > 1
+    if iseven(i)
+      b = mod(b*b, I)
+    else
+      y = mod(b*y, I)
+      b = mod(b*b, I)
+    end
+    i = div(i, 2)
+  end
+  b = mod(b*y, I)
+
+  return mod(b, I)
 end
 
 denominator(a::NfAbsNSElem) = denominator(a.data)

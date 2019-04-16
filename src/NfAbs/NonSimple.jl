@@ -652,8 +652,9 @@ end
 function msubst(f::fmpq_mpoly, v::Array{T, 1}) where {T}
   n = length(v)
   @assert n == nvars(parent(f))
-  r = FlintQQ()
-  for i=1:length(f)
+  exps = exponent_vector(f, 1)
+  r = coeff(f, 1) * prod(v[j]^exps[j] for j=1:n)
+  for i = 2:length(f)
     exps = exponent_vector(f, i)
     r += coeff(f, i) * prod(v[j]^exps[j] for j=1:n)
   end
