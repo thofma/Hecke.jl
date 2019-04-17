@@ -111,7 +111,7 @@ field $K$.
 @doc Markdown.doc"""
     ismaximal(R::NfAbsOrd) -> Bool
 Tests if the order $R$ is maximal. This might trigger the 
-the computation if the maximal order.
+computation of the maximal order.
 """
 function ismaximal(R::NfAbsOrd)
   if R.ismaximal == 1

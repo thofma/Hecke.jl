@@ -3,16 +3,63 @@ add_verbose_scope(:AlgAssOrd)
 
 export issplit
 
-elem_type(::Type{AlgAssAbsOrd{S, T}}) where {S, T} = AlgAssAbsOrdElem{S, T}
-
 elem_type(::AlgAssAbsOrd{S, T}) where {S, T} = AlgAssAbsOrdElem{S, T}
 
-ideal_type(O::AlgAssAbsOrd{S, T}) where {S, T} = AlgAssAbsOrdIdl{S, T}
-frac_ideal_type(O::AlgAssAbsOrd{S, T}) where {S, T} = AlgAssAbsOrdFracIdl{S, T}
+elem_type(::Type{AlgAssAbsOrd{S, T}}) where {S, T} = AlgAssAbsOrdElem{S, T}
+
+ideal_type(::AlgAssAbsOrd{S, T}) where {S, T} = AlgAssAbsOrdIdl{S, T}
+
+ideal_type(::Type{AlgAssAbsOrd{S, T}}) where {S, T} = AlgAssAbsOrdIdl{S, T}
+
+frac_ideal_type(::AlgAssAbsOrd{S, T}) where {S, T} = AlgAssAbsOrdFracIdl{S, T}
+
+frac_ideal_type(::Type{AlgAssAbsOrd{S, T}}) where {S, T} = AlgAssAbsOrdFracIdl{S, T}
 
 algebra(O::AlgAssAbsOrd) = O.algebra
 
 iscommutative(O::AlgAssAbsOrd) = iscommutative(algebra(O))
+
+ismaximal_known(O::AlgAssAbsOrd) = O.ismaximal != 0
+
+function ismaximal(O::AlgAssAbsOrd)
+  if O.ismaximal == 1
+    return true
+  end
+  if O.ismaximal == 2
+    return false
+  end
+
+  A = algebra(O)
+  d = discriminant(O)
+  if isdefined(A, :maximal_order)
+    if d == discriminant(maximal_order(A))
+      O.ismaximal = 1
+      return true
+    else
+      O.ismaximal = 2
+      return false
+    end
+  end
+
+  if typeof(A) <: AlgGrp
+    fac = factor(degree(O))
+  else
+    fac = factor(abs(d))
+  end
+
+  for (p, j) in fac
+    if mod(d, p^2) != 0
+      continue
+    end
+    d2 = discriminant(pmaximal_overorder(O, Int(p)))
+    if d != d2
+      O.ismaximal = 2
+      return false
+    end
+  end
+  O.ismaximal = 1
+  return true
+end
 
 ################################################################################
 #
@@ -208,7 +255,7 @@ function basis_mat(A::Array{S, 1}) where {S <: AbsAlgAssElem}
   for i in 1:n
     for j in 1:d
       temp_den = divexact(deno, denominator(coeffs(A[i], copy = false)[j]))
-      M[i, j] = numerator(coeffs(A[i])[j]) * temp_den
+      M[i, j] = numerator(coeffs(A[i], copy = false)[j]) * temp_den
     end
   end
   return FakeFmpqMat(M, deno)
@@ -1099,6 +1146,11 @@ Given an order O, this function returns a maximal order containing O
 """
 
 function MaximalOrder(O::AlgAssAbsOrd)
+  A = algebra(O)
+  if isdefined(A, :maximal_order)
+    return A.maximal_order
+  end
+
   d = discriminant(O)
   @vtime :NfOrd fac = factor(abs(d))
 
@@ -1110,10 +1162,16 @@ function MaximalOrder(O::AlgAssAbsOrd)
     OO += pmaximal_overorder(O, Int(p))
   end
   OO.ismaximal = 1
+  A.maximal_order = OO
   return OO
 end
 
 function MaximalOrder(O::AlgAssAbsOrd{S, T}) where { S <: AlgGrp, T <: AlgGrpElem }
+  A = algebra(O)
+  if isdefined(A, :maximal_order)
+    return A.maximal_order
+  end
+
   d = discriminant(O)
   fac = factor(degree(O)) # the order of the group
 
@@ -1125,6 +1183,7 @@ function MaximalOrder(O::AlgAssAbsOrd{S, T}) where { S <: AlgGrp, T <: AlgGrpEle
     OO += pmaximal_overorder(O, Int(p))
   end
   OO.ismaximal = 1
+  A.maximal_order = OO
   return OO
 end
 
