@@ -25,13 +25,11 @@ function simplify(K::AnticNumberField; canonical::Bool = false)
       I = divexact(numerator(discriminant(K.pol)), discriminant(ZK))
     end
     B = basis(ZK, copy = false)
-    
     for i = 1:length(B)
       if isone(denominator(B[i].elem_in_nf))
         continue
       end 
-      el = OK(B[i].elem_in_nf)
-      ind_a = _index(el)
+      ind_a = _index(B[i])
       if !iszero(ind_a) && ind_a < I
         a = B[i].elem_in_nf
         I = ind_a
@@ -46,23 +44,19 @@ end
 
 function _index(a::NfOrdElem)
   O = parent(a)
+  K = nf(O)
   d = degree(O)
-  M = zero_matrix(FlintZZ, d, d)
-  c = coordinates(one(O), copy = false)
-  for i = 1:d
-    M[1, i] = c[i]
+  pows = Vector{nf_elem}(undef, d)
+  pows[1] = one(K)
+  pows[2] = a.elem_in_nf
+  for i = 3:d
+    pows[i] = pows[i-1]*a.elem_in_nf
   end
-  a1 = deepcopy(a)
-  for i = 2:d
-    c = coordinates(a1, copy = false)
-    for j = 1:d
-      M[i, j] = c[j]
-    end
-    mul!(a1, a1, a)
-  end
-  return abs(det(M))
+  M = basis_mat(pows)
+  hnf!(M)
+  res = prod(M[i, i] for i = 1:degree(K)) 
+  return numerator(res*index(O))
 end
-
 
  #a block is a partition of 1:n
  #given by the subfield of parent(a) defined by a
