@@ -10,6 +10,16 @@ base_field(K::AnticNumberField) = FlintQQ
 
 ################################################################################
 #
+#  Order type
+#
+################################################################################
+
+order_type(::AnticNumberField) = NfAbsOrd{AnticNumberField, nf_elem}
+
+order_type(::Type{AnticNumberField}) = NfAbsOrd{AnticNumberField, nf_elem}
+
+################################################################################
+#
 #  Predicates
 #
 ################################################################################

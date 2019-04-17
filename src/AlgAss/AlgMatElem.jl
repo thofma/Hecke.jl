@@ -20,31 +20,10 @@ function assure_has_coeffs(a::AlgMatElem)
   end
 
   A = parent(a)
-  d2 = degree(A)^2
-  M = basis_mat_trp(A, copy = false)
   Ma = matrix(a)
-  if !isdefined(A, :coefficient_ring)
-    t = zero_matrix(base_ring(A), d2, 1)
-    for i = 1:d2
-      t[i, 1] = Ma[i]
-    end
-  else
-    dcr = dim(coefficient_ring(A))
-    t = zero_matrix(base_ring(A), d2*dcr, 1)
-    for i = 1:d2
-      ii = (i - 1)*dcr
-      for j = 1:dcr
-        t[ii + j, 1] = coeffs(Ma[i], copy = false)[j]
-      end
-    end
-  end
-  b, N = can_solve(M, t)
-  @assert b "This should not happen. (Maybe the element is not in the algebra?)"
-  s = Vector{elem_type(base_ring(A))}(undef, dim(A))
-  for i = 1:dim(A)
-    s[i] = N[i, 1]
-  end
-  a.coeffs = s
+  b, c = _check_matrix_in_algebra(Ma, A)
+  @assert b "The element is not in the algebra."
+  a.coeffs = c
   a.has_coeffs = true
   return nothing
 end
@@ -160,7 +139,7 @@ end
 
 function *(a::AlgMatElem, b::T) where {T <: RingElem}
   A = parent(a)
-  if isdefined(A, :coefficient_ring) && parent(b) == base_ring(A)
+  if parent(b) == base_ring(A)
     b = coefficient_ring(A)(b)
   end
   return A(matrix(a, copy = false)*b)
@@ -168,7 +147,7 @@ end
 
 function *(b::T, a::AlgMatElem) where {T <: RingElem}
   A = parent(a)
-  if isdefined(A, :coefficient_ring) && parent(b) == base_ring(A)
+  if parent(b) == base_ring(A)
     b = coefficient_ring(A)(b)
   end
   return A(b*matrix(a, copy = false))

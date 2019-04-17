@@ -10,12 +10,7 @@ dim(A::AlgMat) = A.dim
 
 base_ring(A::AlgMat) = A.base_ring
 
-function coefficient_ring(A::AlgMat)
-  if isdefined(A, :coefficient_ring)
-    return A.coefficient_ring
-  end
-  return base_ring(A)
-end
+coefficient_ring(A::AlgMat) = A.coefficient_ring
 
 basis(A::AlgMat) = A.basis
 
@@ -39,7 +34,7 @@ function assure_has_basis_mat(A::AlgMat)
   end
 
   d2 = degree(A)^2
-  if !isdefined(A, :coefficient_ring)
+  if coefficient_ring(A) == base_ring(A)
     M = zero_matrix(base_ring(A), dim(A), d2)
     for i = 1:dim(A)
       N = matrix(A[i])
@@ -65,32 +60,12 @@ function assure_has_basis_mat(A::AlgMat)
   return nothing
 end
 
-function assure_has_basis_mat_trp(A::AlgMat)
-  if isdefined(A, :basis_mat_trp)
-    return nothing
-  end
-
-  M = basis_mat(A, copy = false)
-  N = transpose(M)
-  A.basis_mat_trp = N
-  return nothing
-end
-
 function basis_mat(A::AlgMat; copy::Bool = true)
   assure_has_basis_mat(A)
   if copy
     return deepcopy(A.basis_mat)
   else
     return A.basis_mat
-  end
-end
-
-function basis_mat_trp(A::AlgMat; copy::Bool = true)
-  assure_has_basis_mat_trp(A)
-  if copy
-    return deepcopy(A.basis_mat_trp)
-  else
-    return A.basis_mat_trp
   end
 end
 
@@ -122,11 +97,10 @@ end
 
 # Constructs Mat_n(S) as an R-algebra
 function AlgMat(R::Ring, S::AbsAlgAss, n::Int)
-  A = AlgMat{elem_type(R), dense_matrix_type(elem_type(S))}(R)
+  A = AlgMat{elem_type(R), dense_matrix_type(elem_type(S))}(R, S)
   n2 = n^2
   A.dim = n2*dim(S)
   A.degree = n
-  A.coefficient_ring = S
   B = Vector{elem_type(A)}(undef, dim(A))
   for k = 1:dim(S)
     n2k = n2*(k - 1)
@@ -145,30 +119,116 @@ function AlgMat(R::Ring, S::AbsAlgAss, n::Int)
   return A
 end
 
-function AlgMat(R::Ring, basis::Vector{<:MatElem})
-  @assert length(basis) > 0
+function AlgMat(R::Ring, gens::Vector{<:MatElem}; check::Bool = true, isbasis::Bool = false)
+  @assert length(gens) > 0
   A = AlgMat{elem_type(R), dense_matrix_type(elem_type(R))}(R)
-  A.dim = length(basis)
-  A.degree = nrows(basis[1])
-  basis2 = Vector{elem_type(A)}(undef, dim(A))
-  for i = 1:dim(A)
-    basis2[i] = A(basis[i])
+  A.degree = nrows(gens[1])
+  if isbasis
+    A.dim = length(gens)
+    bas = Vector{elem_type(A)}(undef, dim(A))
+    for i = 1:dim(A)
+      bas[i] = A(gens[i])
+    end
+    A.basis = bas
+  else
+    d = degree(A)
+    d2 = degree(A)^2
+    M = zero_matrix(R, length(gens), d2)
+    for i = 1:length(gens)
+      for j = 1:d2
+        M[i, j] = gens[i][j]
+      end
+    end
+    r = rref!(M)
+    A.dim = r
+    A.basis_mat = M
+    bas = Vector{elem_type(A)}(undef, r)
+    for i = 1:r
+      N = zero_matrix(R, degree(A), degree(A))
+      for j = 1:d
+        jd = (j - 1)*d
+        for k = 1:d
+          N[k, j] = M[i, jd + k]
+        end
+      end
+      bas[i] = A(N)
+    end
+    A.basis = bas
   end
-  A.basis = basis2
+
+  if check
+    for i = 1:dim(A)
+      for j = 1:dim(A)
+        t = basis(A)[i]*basis(A)[j]
+        b = _check_matrix_in_algebra(matrix(t), A, Val{true})
+        if !b
+          error("The elements do not define an algebra")
+        end
+      end
+    end
+  end
+
   return A
 end
 
-function AlgMat(R::Ring, S::Ring, basis::Vector{<:MatElem})
-  @assert length(basis) > 0
-  A = AlgMat{elem_type(R), dense_matrix_type(elem_type(S))}(R)
-  A.coefficient_ring = S
-  A.dim = length(basis)
-  A.degree = nrows(basis[1])
-  basis2 = Vector{elem_type(A)}(undef, dim(A))
-  for i = 1:dim(A)
-    basis2[i] = A(basis[i])
+function AlgMat(R::Ring, S::AbsAlgAss, gens::Vector{<:MatElem}; check::Bool = true, isbasis::Bool = false)
+  @assert length(gens) > 0
+  A = AlgMat{elem_type(R), dense_matrix_type(elem_type(S))}(R, S)
+  A.degree = nrows(gens[1])
+  if isbasis
+    A.dim = length(gens)
+    bas = Vector{elem_type(A)}(undef, dim(A))
+    for i = 1:dim(A)
+      bas[i] = A(gens[i])
+    end
+    A.basis = bas
+  else
+    d = degree(A)
+    d2 = degree(A)^2
+    dcr = dim(S)
+    M = zero_matrix(R, length(gens), d2*dcr)
+    for i = 1:length(gens)
+      for j = 1:d2
+        jj = (j - 1)*dcr
+        for k = 1:dcr
+          M[i, jj + k] = coeffs(gens[i][j], copy = false)[k]
+        end
+      end
+    end
+    r = rref!(M)
+    A.dim = r
+    A.basis_mat = M
+    bas = Vector{elem_type(A)}(undef, r)
+    for i = 1:r
+      N = zero_matrix(S, degree(A), degree(A))
+      for j = 1:d
+        jd = (j - 1)*d
+        for k = 1:d
+          jkd = (jd + k - 1)*dcr
+          t = Vector{elem_type(base_ring(S))}(undef, dcr)
+          for l = 1:dcr
+            t[l] = M[i, jkd + l]
+          end
+          N[k, j] = S(t)
+        end
+      end
+      bas[i] = A(N)
+    end
+    A.basis = bas
   end
-  A.basis = basis2
+
+  if check
+    for i = 1:dim(A)
+      for j = 1:dim(A)
+        t = basis(A)[i]*basis(A)[j]
+        b = _check_matrix_in_algebra(matrix(t), A, Val{true})
+        if !b
+          error("The elements do not define an algebra")
+        end
+      end
+    end
+  end
+
   return A
 end
 
@@ -196,9 +256,7 @@ function deepcopy_internal(A::AlgMat{T, S}, dict::IdDict) where { T, S }
     end
   end
   B.base_ring = A.base_ring
-  if isdefined(A, :coefficient_ring)
-    B.coefficient_ring = A.coefficient_ring
-  end
+  B.coefficient_ring = A.coefficient_ring
   return B
 end
 
@@ -210,6 +268,45 @@ end
 
 # So far we don't have a canonical basis
 ==(A::AlgMat, B::AlgMat) = A === B
+
+################################################################################
+#
+#  Inclusion of matrices
+#
+################################################################################
+
+function _check_matrix_in_algebra(M::S, A::AlgMat{T, S}, short::Type{Val{U}} = Val{false}) where {S, T, U}
+  if nrows(M) != degree(A) || ncols(M) != degree(A)
+    if short == Val{true}
+      return false
+    end
+    return false, zeros(base_ring(A), dim(A))
+  end
+
+  d2 = degree(A)^2
+  B = basis_mat(A, copy = false)
+  if coefficient_ring(A) == base_ring(A)
+    t = zero_matrix(base_ring(A), 1, d2)
+    for i = 1:d2
+      t[1, i] = M[i]
+    end
+  else
+    dcr = dim(coefficient_ring(A))
+    t = zero_matrix(base_ring(A), 1, d2*dcr)
+    for i = 1:d2
+      ii = (i - 1)*dcr
+      for j = 1:dcr
+        t[1, ii + j] = coeffs(M[i], copy = false)[j]
+      end
+    end
+  end
+  b, N = can_solve(B, t, side = :left)
+  if short == Val{true}
+    return b
+  end
+  s = elem_type(base_ring(A))[ N[1, i] for i = 1:dim(A) ]
+  return b, s
+end
 
 ################################################################################
 #

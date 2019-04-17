@@ -69,7 +69,7 @@ function assure_has_pseudo_basis(a::Union{NfRelOrdIdl, NfRelOrdFracIdl})
   B = basis_nf(order(a), copy = false)
   L = nf(order(a))
   K = base_ring(L)
-  pseudo_basis = Vector{Tuple{elem_type(L), typeof(a).parameters[2]}}()
+  pseudo_basis = Vector{Tuple{elem_type(L), frac_ideal_type(order_type(K))}}()
   for i = 1:degree(L)
     t = L()
     for j = 1:degree(L)
@@ -428,7 +428,7 @@ function assure_has_norm(a::NfRelOrdIdl{T, S}) where {T, S}
     a.norm = n.num
   else
     @assert denominator(n) == 1
-    a.norm = NfRelOrdIdl{typeof(n).parameters...}(order(n), basis_pmat(n, copy = false))
+    a.norm = ideal_type(order(n))(order(n), basis_pmat(n, copy = false))
   end
   a.has_norm = true
   return nothing
@@ -496,7 +496,7 @@ function *(a::NfRelOrdIdl{T, S}, b::NfRelOrdIdl{T, S}) where {T, S}
   K = base_ring(L)
   d = degree(order(a))
   M = zero_matrix(K, d^2, d)
-  C = Array{typeof(a).parameters[2], 1}(undef, d^2)
+  C = Array{frac_ideal_type(order_type(K)), 1}(undef, d^2)
   t = L()
   for i = 1:d
     for j = 1:d
@@ -889,7 +889,7 @@ function prime_dec_nonindex(O::NfRelOrd, p::Union{NfOrdIdl, NfRelOrdIdl})
   Fy, y = PolynomialRing(Fp,"y", cached=false)
   fmodp = Hecke.nf_elem_poly_to_fq_poly(Fy, mmF, f)
   fac = factor(fmodp)
-  result = Array{Tuple{NfRelOrdIdl{typeof(O).parameters...}, Int}, 1}()
+  result = Array{Tuple{ideal_type(O), Int}, 1}()
   for (q, e) in fac
     g = Hecke.fq_poly_to_nf_elem_poly(Kx, immF, q)
     ga = g(a)
@@ -930,7 +930,7 @@ function prime_dec_index(O::NfRelOrd, p::Union{NfOrdIdl, NfRelOrdIdl})
   AtoO = pseudo_inv(OtoA)
   AA = decompose(A)
 
-  result = Vector{Tuple{NfRelOrdIdl{typeof(O).parameters...}, Int}}()
+  result = Vector{Tuple{ideal_type(O), Int}}()
   m = PseudoMatrix(zero_matrix(K, 1, degree(O)))
   for (B, BtoA) in AA
     f = dim(B)

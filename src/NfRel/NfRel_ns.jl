@@ -114,6 +114,10 @@ Nemo.elem_type(::NfRel_ns{T}) where {T} = NfRel_nsElem{T}
 
 Nemo.parent_type(::Type{NfRel_nsElem{T}}) where {T} = NfRel_ns{T}
 
+order_type(K::NfRel_ns{T}) where {T} = NfRelOrd{T, frac_ideal_type(order_type(base_field(K)))}
+
+order_type(::Type{NfRel_ns{T}}) where {T} = NfRelOrd{T, frac_ideal_type(order_type(parent_type(T)))}
+
 Nemo.needs_parentheses(::NfRel_nsElem) = true
 
 Nemo.isnegative(x::NfRel_nsElem) = Nemo.isnegative(data(x))

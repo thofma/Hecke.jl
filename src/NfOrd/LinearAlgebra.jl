@@ -1116,8 +1116,6 @@ function kb_sort_rows!(H::PMat{T, S}, U::Generic.Mat{T}, pivot::Array{Int, 1}, w
    return nothing
 end
 
-const PRINT_PSEUDOHNF_SIZE = Ref{Bool}(false)
-
 function pseudo_hnf_kb!(H::PMat{T, S}, U::Generic.Mat{T}, with_transform::Bool = false, start_element::Int = 1) where {T <: Union{nf_elem, RelativeElement}, S}
    m = nrows(H)
    n = ncols(H)
@@ -1138,10 +1136,6 @@ function pseudo_hnf_kb!(H::PMat{T, S}, U::Generic.Mat{T}, with_transform::Bool =
    t1 = K()
    t2 = K()
    for i=row1:m-1
-      if Hecke.PRINT_PSEUDOHNF_SIZE[]
-        println(" Extending to $(i + 1) x $(i + 1)")
-         Hecke.size(H)
-      end
       new_pivot = false
       for j = start_element:pivot_max
          if iszero(A[i+1,j])
@@ -1177,8 +1171,8 @@ function pseudo_hnf_kb!(H::PMat{T, S}, U::Generic.Mat{T}, with_transform::Bool =
                 error("Ideals are not integral.")
               end
               # numerator(ad) would make a deepcopy...
-              adint = NfRelOrdIdl{typeof(ad).parameters...}(order(ad), basis_pmat(ad, copy = false))
-              bdint = NfRelOrdIdl{typeof(bd).parameters...}(order(bd), basis_pmat(bd, copy = false))
+              adint = ideal_type(order(ad))(order(ad), basis_pmat(ad, copy = false))
+              bdint = ideal_type(order(bd))(order(bd), basis_pmat(bd, copy = false))
               u, v = map(K, idempotents(adint, bdint))
             end
             u = divexact(u, Aij)
