@@ -49,7 +49,17 @@ end
 
 issimple(O::NfRelOrd) = issimple(nf(O))
 
+elem_type(::NfRelOrd{T, S}) where {T, S} = NfRelOrdElem{T}
+
 elem_type(::Type{NfRelOrd{T, S}}) where {T, S} = NfRelOrdElem{T}
+
+ideal_type(::NfRelOrd{T, S}) where {T, S} = NfRelOrdIdl{T, S}
+
+ideal_type(::Type{NfRelOrd{T, S}}) where {T, S} = NfRelOrdIdl{T, S}
+
+frac_ideal_type(::NfRelOrd{T, S}) where {T, S} = NfRelOrdFracIdl{T, S}
+
+frac_ideal_type(::Type{NfRelOrd{T, S}}) where {T, S} = NfRelOrdFracIdl{T, S}
 
 ################################################################################
 #

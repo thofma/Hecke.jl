@@ -99,6 +99,10 @@ elem_type(::NfAbsNS) = NfAbsNSElem
 
 parent_type(::Type{NfAbsNSElem}) = NfAbsNS
 
+order_type(::NfAbsNS) = NfAbsOrd{NfAbsNS, NfAbsNSElem}
+
+order_type(::Type{NfAbsNS}) = NfAbsOrd{NfAbsNS, NfAbsNSElem}
+
 needs_parentheses(::NfAbsNSElem) = true
 
 isnegative(x::NfAbsNSElem) = Nemo.isnegative(data(x))
