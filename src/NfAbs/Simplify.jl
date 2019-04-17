@@ -10,7 +10,7 @@ export simplify
  > in http://beta.lmfdb.org/knowledge/show/nf.polredabs.
  > Both version require a LLL reduced basis for the maximal order.
 """
-function simplify(K::AnticNumberField; canonical::Bool = false)
+function simplify(K::AnticNumberField; canonical::Bool = false, cached = false)
   Qx, x = PolynomialRing(FlintQQ)
   if canonical
     a, f1 = polredabs(K)
@@ -37,7 +37,7 @@ function simplify(K::AnticNumberField; canonical::Bool = false)
     end
     f = minpoly(Qx, a)
   end
-  L = NumberField(f, cached = false, check = false)[1]
+  L = NumberField(f, cached = cached, check = false)[1]
   m = hom(L, K, a, check = false)
   return L, m
 end
