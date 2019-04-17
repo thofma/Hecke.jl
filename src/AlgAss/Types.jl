@@ -418,7 +418,6 @@ mutable struct AlgMat{T, S} <: AbsAlgAss{T}
   has_one::Bool
   basis
   basis_mat # matrix over the base_ring
-  basis_mat_trp
   dim::Int
   degree::Int
   issimple::Int
@@ -427,6 +426,15 @@ mutable struct AlgMat{T, S} <: AbsAlgAss{T}
   function AlgMat{T, S}(R::Ring) where {T, S}
     A = new{T, S}()
     A.base_ring = R
+    A.coefficient_ring = R
+    A.issimple = 0
+    return A
+  end
+
+  function AlgMat{T, S}(R1::Ring, R2::Ring) where {T, S}
+    A = new{T, S}()
+    A.base_ring = R1
+    A.coefficient_ring = R2
     A.issimple = 0
     return A
   end
