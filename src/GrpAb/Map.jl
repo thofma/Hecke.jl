@@ -186,6 +186,8 @@ function hom(A::GrpAbFinGen, B::GrpAbFinGen, M::fmpz_mat, Minv; check::Bool = tr
   return GrpAbFinGenMap(A, B, M, Minv)::GrpAbFinGenMap
 end
 
+
+==(f::GrpAbFinGenMap, g::GrpAbFinGenMap) = domain(f) === domain(g) && codomain(f) === codomain(g) && all(x -> f(x) == g(x), gens(domain(f)))
 ################################################################################
 #
 #  Inverse of a map

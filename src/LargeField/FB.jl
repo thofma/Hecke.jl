@@ -168,7 +168,8 @@ function generated_subgroup(op::Array) #pairs: permutations and Map
   while g[2] != parent(op[1][2])()
     let c_g = g
       push!(elt, c_g)
-      g = (x->op[1][1](c_g[1](x)), op[1][2]*c_g[2])
+#      g = (x->op[1][1](c_g[1](x)), op[1][2]*c_g[2])
+      g = (x->op[1][1](c_g[1](x)), c_g[2]*op[1][2])
     end  
   end
   ord = length(elt)
@@ -182,14 +183,16 @@ function generated_subgroup(op::Array) #pairs: permutations and Map
     push!(elt, op[i])
     for j=2:pord
       c_j = j
-      push!(elt, (x->elt[c_j][1](op[c_i][1](x)), elt[c_j][2]*op[c_i][2]))
+#      push!(elt, (x->elt[c_j][1](op[c_i][1](x)), elt[c_j][2]*op[c_i][2]))
+      push!(elt, (x->elt[c_j][1](op[c_i][1](x)), op[c_i][2]*elt[c_j][2]))
     end
     ord = length(elt)
     rpos = pord + 1
     while true
       for s in op
         let c_rpos = rpos, c_s = s
-          g = (x->elt[c_rpos][1](c_s[1](x)), elt[c_rpos][2]*c_s[2])
+#          g = (x->elt[c_rpos][1](c_s[1](x)), elt[c_rpos][2]*c_s[2])
+          g = (x->elt[c_rpos][1](c_s[1](x)), c_s[2]*elt[c_rpos][2])
           if g[2] in [x[2] for x=elt]
             continue
           end
@@ -198,7 +201,8 @@ function generated_subgroup(op::Array) #pairs: permutations and Map
           push!(elt, c_g)
           for j = 2:pord
             c_j = j
-            push!(elt, (x->elt[c_j][1](c_g[1](x)), elt[c_j][2]*c_g[2]))
+#            push!(elt, (x->elt[c_j][1](c_g[1](x)), elt[c_j][2]*c_g[2]))
+            push!(elt, (x->elt[c_j][1](c_g[1](x)), c_g[2]*elt[c_j][2]))
           end
         end  
         ord = length(elt)

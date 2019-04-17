@@ -86,6 +86,9 @@ mutable struct GrpAbFinGenMap <: Map{GrpAbFinGen, GrpAbFinGen,
 end
 
 function image(f::Map(GrpAbFinGenMap), a::GrpAbFinGenElem)
+  if !isdefined(f, :map)
+    return hasimage(f, a)[2]
+  end
   return GrpAbFinGenElem(codomain(f), a.coeff * f.map)
 end
 
@@ -96,6 +99,9 @@ function image(phi::GrpAbFinGenMap, U::GrpAbFinGen, add_to_lattice::Bool = !fals
 end
 
 function preimage(f::Map(GrpAbFinGenMap), a::GrpAbFinGenElem)
+  if !isdefined(f, :imap)
+    return haspreimage(f, a)[2]
+  end
   return GrpAbFinGenElem(domain(f), a.coeff * f.imap)
 end
 
