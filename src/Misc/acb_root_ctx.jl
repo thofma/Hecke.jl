@@ -230,8 +230,8 @@ function _roots!(roots::Ptr{acb_struct}, x::Union{fmpq_poly, fmpz_poly},
     end
 
     wp = wp * 2
-    if wp > 2^18
-      error("Aborting since required precision is > 2^18")
+    if wp > 2^22
+      error("Aborting since required precision is > 2^22")
     end
   end
 
