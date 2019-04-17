@@ -114,8 +114,10 @@ function cyclotomic_extension(k::AnticNumberField, n::Int)
     Hecke._set_cyclotomic_ext_nf(k, Ac)
     return c
   end
-  lf = factor(fk)
-  fk = first(keys(lf.fac))
+  if !isone(gcd(numerator(discriminant(k)), n))
+    lf = factor(fk)
+    fk = first(keys(lf.fac))
+  end
 
   Kr, Kr_gen = number_field(fk, "z_$n", cached = false, check = false)
   if degree(fk) != 1

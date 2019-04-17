@@ -434,7 +434,7 @@ function TameOverorderBL(O::NfOrd, lp::Array{fmpz,1}=fmpz[])
     q=M[1]
     if isprime(q)
       OO1=pmaximal_overorder(O, q)
-      if valuation(discriminant(OO1), q)<valuation(discriminant(OO), q)
+      if valuation(discriminant(OO1), q)< valuation(discriminant(OO), q)
         OO+=OO1
       end
       filter!(x-> x!=q, M)

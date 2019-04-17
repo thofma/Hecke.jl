@@ -181,15 +181,16 @@ function find_gens(mR::Map, S::PrimesSet, cp::fmpz=fmpz(1))
 end
 
 #Computes a set of prime ideals of the base field of K such that the corresponding Frobenius
-#generate the automorphism group
+#automorphisms generate the automorphism group
 function find_gens(K::KummerExt, S::PrimesSet, cp::fmpz=fmpz(1))
   ZK = maximal_order(base_field(K))
   R = K.AutG 
-  sR = GrpAbFinGenElem[]
-  lp = NfOrdIdl[]
+  sR = Vector{GrpAbFinGenElem}(undef, length(K.gen))
+  lp = Vector{NfOrdIdl}(undef, length(K.gen))
 
-  q, mq = quo(R, sR, false)
+  q, mq = quo(R, GrpAbFinGenElem[], false)
   s, ms = snf(q)
+  ind = 1
   for p in S
     if cp % p == 0 || index(ZK) % p == 0
       continue
@@ -223,9 +224,10 @@ function find_gens(K::KummerExt, S::PrimesSet, cp::fmpz=fmpz(1))
       if !to_be
         continue
       end
-      push!(sR, f)
-      push!(lp, P)
-      q, mq = quo(R, sR, false)
+      sR[ind] = f
+      lp[ind] = P
+      ind += 1
+      q, mq = quo(R, sR[1:ind-1], false)
       s, ms = snf(q)
     end
     if order(q) == 1   
