@@ -430,6 +430,65 @@ function Base.show(io::IO, f::GrpGenToGrpGenMor)
   println(io, "Morphism from group\n", f.domain, " to\n", f.codomain)
 end
 
+domain(f::GrpGenToGrpGenMor) = f.domain
+
+codomain(f::GrpGenToGrpGenMor) = f.codomain
+
+################################################################################
+#
+#  Normalizer
+#
+################################################################################
+
+function normalizer(G::GrpGen, mH::GrpGenToGrpGenMor)
+  C = left_cosets(G, mH)
+  H = GrpGenElem[mH(h) for h in domain(mH)]
+  ge = GrpGenElem[mH(h) for h in gens(domain(mH))]
+  norm = GrpGenElem[]
+  for c in C
+    isnorm = true
+    for h in ge
+      if !(inv(c) * h * c in H)
+        isnorm = false
+        break
+      end
+    end
+    if isnorm
+      push!(norm, c)
+    end
+  end
+  append!(H, norm)
+  unique!(H)
+  H = closure(H, *)
+  return subgroup(G, H)
+end
+
+function left_cosets(G::GrpGen, mH::GrpGenToGrpGenMor)
+  H = GrpGenElem[mH(h) for h in domain(mH)]
+  GG = collect(G)
+  cosets = GrpGenElem[id(G)]
+  setdiff!(GG, H)
+  while !isempty(GG)
+    h = pop!(GG)
+    push!(cosets, h)
+    setdiff!(GG, (h * hh for hh in H))
+  end
+  return cosets
+end
+
+function right_cosets(G::GrpGen, mH::GrpGenToGrpGenMor)
+  H = GrpGenElem[mH(h) for h in domain(mH)]
+  GG = collect(G)
+  cosets = GrpGenElem[id(G)]
+  setdiff!(GG, H)
+  while !isempty(GG)
+    h = pop!(GG)
+    push!(cosets, h)
+    setdiff!(GG, (hh * h for hh in H))
+  end
+  return cosets
+end
+
 ###############################################################################
 #
 #  NfToNfMor closure
