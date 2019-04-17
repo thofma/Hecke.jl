@@ -420,7 +420,7 @@ function _rcf_find_kummer(CF::ClassField_pp{S, T}) where {S, T}
   e1 = degree(CF)
   N = GrpAbFinGen(fmpz[fmpz(e1) for j=1:nrows(n)])
   s, ms = sub(N, GrpAbFinGenElem[N(fmpz[n[j, ind] for j=1:nrows(n)]) for ind=1:i], false)
-  ms = Hecke.make_snf(ms)
+  ms = Hecke.make_domain_snf(ms)
   H = domain(ms)
   @hassert :ClassField 1 iscyclic(H)
   o = Int(order(H))
@@ -444,7 +444,6 @@ function _rcf_find_kummer(CF::ClassField_pp{S, T}) where {S, T}
   CF.sup_known = true
   CF.o = o
   CF.defect = c
-#  CF.K = pure_extension(Int(o), a)[1] #needs to evaluate a - too expensive!
   return nothing
 end
 

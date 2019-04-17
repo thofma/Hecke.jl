@@ -402,7 +402,7 @@ end
 
 @doc Markdown.doc"""
     absolute_field(K::NfRel{nf_elem}, cached::Bool = false) -> AnticNumberField, Map, Map
-Given an extension $K/k/Q$, find an isomorphic extensino of $Q$.
+Given an extension $K/k/Q$, find an isomorphic extension of $Q$.
 """
 function absolute_field(K::NfRel{nf_elem}, cached::Bool = false)
   Ka, a, b, c = _absolute_field(K, cached)

@@ -133,6 +133,22 @@ end
 
 #_D = Dict()
 
+function evaluate(f::fmpq_poly, a::nf_elem)
+  R = parent(a)
+  if iszero(f)
+    return zero(R)
+  end
+  l = length(f) - 1
+  s = R(coeff(f, l))
+  for i in l-1:-1:0
+    #s = s*a + R(coeff(f, i))
+    mul!(s, s, a)
+    # TODO (easy): Once fmpq_poly_add_fmpq is improved in flint, remove the R(..)
+    add!(s, s, R(coeff(f, i)))
+  end
+  return s
+end
+
 function *(f::NfToNfMor, g::NfToNfMor)
 #  global _D
 #  _s = Base.stacktrace()[2:3]
@@ -203,18 +219,22 @@ function automorphisms(K::AnticNumberField; copy::Bool = true)
       rethrow(e)
     end
   end
-  f = K.pol
-  Kt, t = PolynomialRing(K, "t", cached = false)
-  f1 = change_ring(f, Kt)
-  divpol = Kt(nf_elem[-gen(K), K(1)])
-  f1 = divexact(f1, divpol)
-  lr = roots(f1, max_roots = div(degree(K), 2))
-  Aut1 = Vector{NfToNfMor}(undef, length(lr)+1)
-  for i = 1:length(lr)
-    Aut1[i] = hom(K, K, lr[i], check = false)
+  if degree(K) == 1
+    auts = NfToNfMor[hom(K, K, one(K))]
+  else
+    f = K.pol
+    Kt, t = PolynomialRing(K, "t", cached = false)
+    f1 = change_ring(f, Kt)
+    divpol = Kt(nf_elem[-gen(K), K(1)])
+    f1 = divexact(f1, divpol)
+    lr = roots(f1, max_roots = div(degree(K), 2))
+    Aut1 = Vector{NfToNfMor}(undef, length(lr)+1)
+    for i = 1:length(lr)
+      Aut1[i] = hom(K, K, lr[i], check = false)
+    end
+    Aut1[end] = id_hom(K)
+    auts = closure(Aut1, degree(K))
   end
-  Aut1[end] = id_hom(K)
-  auts = closure(Aut1, degree(K))
   _set_automorphisms_nf(K, auts)
   if copy
     return Base.copy(auts)
@@ -232,7 +252,25 @@ function hom(K::AnticNumberField, L::AnticNumberField, a::nf_elem; check::Bool =
  return NfToNfMor(K, L, a, compute_inverse)
 end
 
+function hom(K::AnticNumberField, L::AnticNumberField, a::nf_elem, a_inv::nf_elem; check::Bool = true)
+ if check
+   if !iszero(evaluate(K.pol, a))
+     error("The data does not define a homomorphism")
+   end
+   if !iszero(evaluate(L.pol, a_inv))
+     error("The data does not define a homomorphism")
+   end
+ end
+ return NfToNfMor(K, L, a, a_inv)
+end
+
 
 id_hom(K::AnticNumberField) = hom(K, K, gen(K), check = false)
 
 morphism_type(::Type{AnticNumberField}) = NfToNfMor
+
+isinjective(m::NfToNfMor) = true
+
+issurjective(m::NfToNfMor) = (degree(domain(m)) == degree(codomain(m)))
+
+isbijective(m::NfToNfMor) = issurjective(m)

@@ -108,6 +108,18 @@ function product_basis(l::Vector{Vector{T}}) where T <: Union{NfAbsOrdElem, nf_e
   return B
 end
 
+function product_basis(l1::Vector{T}, l2::Vector{T}) where T <: Union{NfAbsOrdElem, nf_elem, NfAbsNSElem}
+  B = Vector{T}(undef, length(l1)*length(l2))
+  for i = 1:length(l1)
+    B[i] = l1[i]
+  end
+  for i = 1:length(l2)
+    for j = 1:length(l1)
+      B[(i-1)* length(l1) + j] = B[j] * l2[i]
+    end
+  end
+  return B
+end
 
 function maximal_order_of_components(L::NfAbsNS) where {S, T}
   Qx, x = PolynomialRing(FlintQQ, "x")

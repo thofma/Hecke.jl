@@ -87,21 +87,24 @@ function cyclotomic_extension(k::AnticNumberField, n::Int)
 
       Zk = maximal_order(k)
       b_k = basis(Zk, k)
-      B_k = nf_elem[small2abs(x) for x = b_k]
+      B_k = Vector{nf_elem}(undef, degree(Ka))
+      for i = 1:length(b_k)
+        B_k[i] = small2abs(b_k[i])
+      end
       g = rel2abs(Kr_gen)
-      g1 = one(Ka)
-      for i = 1:degree(fk)-1
-        mul!(g1, g1, g)
-        for j = 1:degree(k)
-          push!(B_k, B_k[j]*g1)
-        end
+      for j = 1:length(b_k)
+        B_k[j+length(b_k)] = B_k[j]*g
       end
       ZKa = Hecke.NfOrd(B_k)
+      ZKa.disc = discriminant(f)^degree(k)*discriminant(Zk)^degree(fk)
+      ZKa.index = root(divexact(numerator(discriminant(Ka)), ZKa.disc), 2)
+      ZKa.gen_index = fmpq(ZKa.index)
       for (p,v) = factor(gcd(discriminant(Zk), fmpz(n))).fac
         ZKa = pmaximal_overorder(ZKa, p)
       end
-      ZKa = lll(ZKa)
       ZKa.ismaximal = 1
+      ZKa = lll(ZKa)
+      
       Hecke._set_maximal_order_of_nf(Ka, ZKa)
       c.Kr = Kr
       c.Ka = Ka

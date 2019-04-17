@@ -58,8 +58,12 @@ function +(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
   end
   d = degree(order(x))
   H = vcat(basis_mat(x, copy = false), basis_mat(y, copy = false))
-  H = view(_hnf_modular_eldiv(H, g, :lowerleft), (d + 1):2*d, 1:d)
-  return ideal(order(x), H, false, true)
+  hnf_modular_eldiv!(H, g, :lowerleft)
+  H = view(H, (d + 1):2*d, 1:d)
+  res = ideal(order(x), H, false, true)
+  res.minimum = H[1, 1]
+  res.norm = prod(H[i, i] for i = 1:d)
+  return res
 end
 
 ################################################################################
@@ -579,6 +583,12 @@ function mul_gen(x::NfOrdIdl, y::fmpz)
   end
   if isdefined(x, :princ_gen_special)
     z.princ_gen_special = (2, 0, x.princ_gen_special[x.princ_gen_special[1] + 1] * y)
+  end
+  if isdefined(x, :norm)
+    z.norm = x.norm*y^degree(order(x))
+  end
+  if isdefined(x, :minimum)
+    z.minimum = x.minimum*y
   end
   return z
 end

@@ -1048,24 +1048,26 @@ function _ext_with_autos(Qx, x, i::Int, j::Int)
     end
   end
   y1 = mod(first, 4)
-  pol1 = Qx()
-  setcoeff!(pol1, 2, fmpz(1))
+  cp1 = Vector{fmpz}(undef, 3)
+  cp1[3] = fmpz(1)
   if y1 != 1
-    setcoeff!(pol1, 0 , fmpz(-first))
+    cp1[1] = fmpz(-first)
+    cp1[2] = fmpz(0)
   else
-    setcoeff!(pol1, 0, fmpz(divexact(1-first,4)))
-    setcoeff!(pol1, 1, fmpz(-1))
+    cp1[1] = fmpz(divexact(1-first,4))
+    cp1[2] = fmpz(-1)
   end
   y2 = mod(second, 4)
-  pol2 = Qx()
-  setcoeff!(pol2, 2, fmpz(1))
+  cp2 = Vector{fmpz}(undef, 3)
+  cp2[3] = fmpz(1)
   if y2 != 1
-    setcoeff!(pol2, 0 , fmpz(-second))
+    cp2[1] = fmpz(-second)
+    cp2[2] = fmpz(0)
   else
-    setcoeff!(pol2, 0 , fmpz(divexact(1-second, 4)))
-    setcoeff!(pol2, 1 , fmpz(-1))
+    cp2[1] = fmpz(divexact(1-second, 4))
+    cp2[2] = fmpz(-1)
   end
-  return pol1, pol2
+  return Qx(cp1), Qx(cp2)
 end
 
 function __get_term(a::fmpq_mpoly, exps::Vector{UInt})
@@ -1081,16 +1083,25 @@ function _C22_with_max_ord(l)
   Qx, x = PolynomialRing(FlintQQ, "x", cached = false)
   K = NumberField(x-1, cached = false)[1]
   for (p1, p2) in l
-    Kns, g = number_field([p1, p2])
+    Kns, g = number_field(fmpz_poly[p1, p2])
     S, mS = simple_extension(Kns, check = false)
-    cf = gcd(discriminant(p1), discriminant(p2))
+    d1 = discriminant(p1)
+    d2 = discriminant(p2)
+    cf = gcd(d1, d2)
     B = Vector{nf_elem}(undef, degree(S))
     B[1] = S(1)
     B[2] = mS\(g[1])
     B[3] = mS\(g[2])
     B[4] = B[2] * B[3]
-    M = hnf(basis_mat(B))
-    O = Order(S, M, check = false, cached = false)
+    M = basis_mat(B)
+    hnf_modular_eldiv!(M.num, M.den, :lowerleft)
+    O = NfAbsOrd(S, FakeFmpqMat(M.num, M.den))
+    O.disc = d1^2*d2^2
+    d3 = numerator(discriminant(S))
+    if d3 < 0 
+      O.disc = -O.disc
+    end
+    O.index = divexact(d3, O.disc)
     if cf != 1
       fac = factor(cf)
       for (p, v) in fac
@@ -1614,7 +1625,6 @@ function _from_relative_to_abs(L::NfRel_ns{T}, auts::Array{NfRel_nsToNfRel_nsMor
     end
   end
   #Now, we compute the maximal order. Then we simplify.
-  #PO = _order_for_polygon_overorder(K, B)
   PO = Order(K, B, check = false, cached = false, isbasis = true)
   @vtime :AbExt 2 O1 = MaximalOrder(PO)
   O1.ismaximal = 1

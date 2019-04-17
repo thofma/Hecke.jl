@@ -125,7 +125,15 @@ function ismaximal(R::NfAbsOrd)
   return R.ismaximal == 1
 end
  
-contains_equation_order(O::NfAbsOrd) = isinteger(gen_index(O))
+function contains_equation_order(O::NfAbsOrd)
+  if isdefined(O, :index)
+    return true
+  end
+  if isdefined(O, :basis_mat_inv)
+    return isone(O.basis_mat_inv.den)
+  end
+  return isinteger(gen_index(O))
+end
 
 ################################################################################
 #
@@ -1080,7 +1088,7 @@ function +(a::NfAbsOrd, b::NfAbsOrd; cached::Bool = false)
   nf(a) != nf(b) && error("Orders must have same ambient number field")
   if contains_equation_order(a) && contains_equation_order(b) &&
           isone(gcd(index(a), index(b)))
-    return sum_as_Z_modules(a, b, triangular = false)
+    return sum_as_Z_modules(a, b)
   else
     return _order(nf(a), vcat(a.basis_nf, b.basis_nf), cached = cached, check = false)
   end
@@ -1092,43 +1100,32 @@ end
 #
 ################################################################################
 
-function sum_as_Z_modules(O1::NfAbsOrd, O2::NfAbsOrd, z::fmpz_mat = zero_matrix(FlintZZ, 2 * degree(O1), degree(O1)); triangular::Bool = false)
+function sum_as_Z_modules(O1::NfAbsOrd, O2::NfAbsOrd, z::fmpz_mat = zero_matrix(FlintZZ, 2 * degree(O1), degree(O1)))
   K = nf(O1)
   R1 = basis_mat(O1, copy = false)
   S1 = basis_mat(O2, copy = false)
   d = degree(K)
+  g = gcd(R1.den, S1.den)
+  r1 = divexact(R1.den, g)
+  s1 = divexact(S1.den, g)
+  
   z1 = view(z, 1:d, 1:d)
-  mul!(z1, R1.num, S1.den)
-  # Assume that R1 and S1 are triangular
-  d1 = deepcopy(S1.den)
-  d2 = deepcopy(R1.den)
-
-  if triangular
-    for i in 1:degree(K)
-      mul!(d1, d1, R1.num[i, i])
-    end
-    for i in 1:degree(K)
-      mul!(d2, d2, S1.num[i, i])
-    end
-  else
-    mul!(d1, d1, det(R1.num))
-    mul!(d2, d2, det(S1.num))
-  end
-
-  d1 = gcd!(d1, d1, d2)
-
+  mul!(z1, R1.num, s1)
   z2 = view(z, (d + 1):2*d, 1:d)
-  mul!(z2, S1.num, R1.den)
-  hnf_modular_eldiv!(z, d1, :lowerleft)
-  M = FakeFmpqMat(z, S1.den * R1.den)
-  M1 = sub(M, (nrows(M)-ncols(M)+1):nrows(M), 1:ncols(M))
-  @hassert :NfOrd 1 defines_order(K, M1)[1]
-  O = NfAbsOrd(K, M1, false)
+  mul!(z2, S1.num, r1)
+  hnf_modular_eldiv!(z, lcm(R1.den,S1.den), :lowerleft)
+  M = FakeFmpqMat(view(z, (nrows(z)-ncols(z)+1):nrows(z), 1:ncols(z)), lcm(R1.den, S1.den))
+  @hassert :NfOrd 1 defines_order(K, M)[1]
+  O = NfAbsOrd(K, M, false)
   O.primesofmaximality = union(O1.primesofmaximality, O2.primesofmaximality)
   O.disc = gcd(discriminant(O1), discriminant(O2))
   if O1.disc<0 || O2.disc<0
     O.disc = -O.disc
   end
+  if isdefined(O1, :index) && isdefined(O2, :index)
+    O.index = lcm(index(O1), index(O2))
+  end
+  
   return O
 end
 
@@ -1149,6 +1146,15 @@ function _lll_gram(M::NfOrd)
   q,w = lll_gram_with_transform(g)
   On = NfOrd(K, FakeFmpqMat(w*basis_mat(M, copy = false).num, denominator(basis_mat(M, copy = false))))
   On.ismaximal = M.ismaximal
+  if isdefined(M, :index)
+    On.index = M.index
+  end
+  if isdefined(M, :disc)
+    On.disc = M.disc
+  end
+  if isdefined(M, :gen_index)
+    On.gen_index = M.gen_index
+  end
   return On
 end
 
@@ -1186,6 +1192,15 @@ function lll(M::NfOrd)
       q,w = lll(I, parent(basis_mat(M, copy = false).num)(0), prec = prec)
       On = NfOrd(K, FakeFmpqMat(w*basis_mat(M, copy = false).num, denominator(basis_mat(M, copy = false))))
       On.ismaximal = M.ismaximal
+      if isdefined(M, :index)
+        On.index = M.index
+      end
+      if isdefined(M, :disc)
+        On.disc = M.disc
+      end
+      if isdefined(M, :gen_index)
+        On.gen_index = M.gen_index
+      end
       M.lllO = On
       return On::NfOrd
     catch e

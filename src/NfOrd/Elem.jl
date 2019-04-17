@@ -299,7 +299,7 @@ end
 
 @doc Markdown.doc"""
     minpoly(a::NfAbsOrdElem) -> fmpz_poly
-
+::NfAbsOrdElem) in Hecke at /home/sircana/.julia/dev/Hecke/src/NfOrd/Elem.jl:751
     minpoly(a::NfAbsOrdElem, FlintZZ) -> fmpz_poly
 The minimal polynomial of $a$.    
 """
@@ -656,6 +656,9 @@ function powermod_fast(a::NfAbsOrdElem, i::fmpz, p::fmpz)
 
   y = one(parent(b))
   while i > 1
+    if iszero(b)
+      return zero(parent(a))
+    end
     if iseven(i)
       b = _mod(b*b, p)
     else
@@ -667,6 +670,37 @@ function powermod_fast(a::NfAbsOrdElem, i::fmpz, p::fmpz)
   b = _mod(b*y, p)
 
   return mod(parent(a)(b)*e, p)
+end
+
+@doc Markdown.doc"""
+    powermod(a::NfAbsOrdElem, i::fmpz, m::Union{fmpz, Int}) -> NfAbsOrdElem
+
+Returns an element $a^i$ modulo $m$.
+"""
+function powermod(a::NfOrdElem, i::fmpz, I::NfOrdIdl)
+  if i == 0
+    return one(parent(a))
+  end
+  b = mod(a, I)
+  if i == 1
+    return b
+  end
+  if iszero(b)
+    return b
+  end
+  y = one(parent(b))
+  while i > 1
+    if iseven(i)
+      b = mod(b*b, I)
+    else
+      y = mod(b*y, I)
+      b = mod(b*b, I)
+    end
+    i = div(i, 2)
+  end
+  b = mod(b*y, I)
+
+  return mod(b, I)
 end
 
 denominator(a::NfAbsNSElem) = denominator(a.data)
@@ -742,6 +776,34 @@ function representation_matrix(a::NfAbsOrdElem{S, T}, K::S) where {S, T}
   A.base_ring = FlintZZ
   z = FakeFmpqMat(A, d)
   return z
+end
+
+@doc Markdown.doc"""
+***
+    representation_matrix_mod(a::NfAbsOrdElem, d::fmpz) -> fmpz_mat
+
+Returns the representation matrix of the element $a$ with entries reduced mod d.
+"""
+function representation_matrix_mod(a::NfAbsOrdElem, d::fmpz)
+  O = parent(a)
+  assure_has_basis_mat(O)
+  assure_has_basis_mat_inv(O)
+  A = representation_matrix(a, nf(O))
+  d2 = O.basis_mat.den * O.basis_mat_inv.den*A.den
+  d2c, d2nc = ppio(d2, d)
+  d1 = d * d2c
+  A1 = A.num 
+  mod!(A.num, d1)
+  M1 = mod(O.basis_mat.num, d1)
+  mul!(A1, M1, A1)
+  M2 = mod(O.basis_mat_inv.num, d1)
+  mul!(A1, A1, M2)
+  mod!(A1, d1)
+  divexact!(A1, A1, d2c)
+  inver = invmod(d2nc, d1)
+  mul!(A1, A1, inver)
+  mod!(A1, d)
+  return A1
 end
 
 ################################################################################

@@ -224,6 +224,8 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx)
       y = FacElem(ge[s[i].pos], s[i].values)
       @hassert :UnitGroup 2 _isunit(y)
 
+      @hassert :UnitGroup 8000 denominator(minpoly(evaluate(y))) == 1
+
       if u.full_rank
         @vprint :UnitGroup 2 "have full rank, can reduce unit first...\n"
         y = reduce_mod_units([y], u)[1]
@@ -236,6 +238,7 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx)
       @vprint :UnitGroup 1 "Test if kernel element yields torsion unit ... \n"
       @v_do :UnitGroup 2 pushindent()
       time_torsion += @elapsed is_tors, p = istorsion_unit(y, false, u.tors_prec)
+
       u.tors_prec = max(p, u.tors_prec)
       if is_tors
         @v_do :UnitGroup 2 popindent()
@@ -250,6 +253,7 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx)
       @v_do :UnitGroup 2 popindent()
 
       @v_do :UnitGroup 2 pushindent()
+
       if u.full_rank
         time_add_dep_unit += @elapsed m = _add_dependent_unit(u, y)
         if m

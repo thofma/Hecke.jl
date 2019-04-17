@@ -304,17 +304,18 @@ function gens_overorder_polygons(O::NfOrd, p::fmpz)
     end
   end
   B = basis_mat(l)
-  hnf!(B)
-  B = sub(B, nrows(B)-degree(K)+1:nrows(B), 1:degree(K))
+  hnf_modular_eldiv!(B.num, B.den, :lowerleft)
+  B = FakeFmpqMat(view(B.num, nrows(B)-degree(K)+1:nrows(B), 1:degree(K)), B.den)
   if !regular
-    elt = nf_elem[]
+    elt = Vector{nf_elem}(undef, nrows(B))
     for i in 1:nrows(B) 
-      push!(elt, elem_from_mat_row(K, B.num, i, B.den))
+      elt[i] = elem_from_mat_row(K, B.num, i, B.den)
     end
     O1 = _order_for_polygon_overorder(K, elt)
   else
-    O1 = Order(K, B, check = false)
+    O1 = NfAbsOrd(K, B)
     O1.disc = divexact(O.disc, p^(2*vdisc))
+    O1.index = p^vdisc
     push!(O1.primesofmaximality, p)
   end
   return O1
@@ -360,19 +361,20 @@ function polygons_overorder(O::NfOrd, p::fmpz)
     U = divexact(fmodp, U)
 
     @hassert :NfOrd 1 rem(O.disc, p^2) == 0
-    alpha = nf(O)(parent(f)(lift(Zy,U)))
+    alpha = nf(O)(parent(f)(lift(Zy, U)))
 
     # build the new basis matrix
     # we have to take the representation matrix of alpha!
     # concatenating the coefficient vector won't help
     Malpha, d = representation_matrix_q(alpha)
     @assert isone(d)
-    n = _hnf_modular_eldiv(Malpha, p, :lowerleft)
-    b = FakeFmpqMat(n, p)
+    hnf_modular_eldiv!(Malpha, p, :lowerleft)
+    b = FakeFmpqMat(Malpha, p)
     @hassert :NfOrd 1 defines_order(nf(O), b)[1]
-    OO = Order(nf(O), b, check = false)
+    OO = NfAbsOrd(nf(O), b)
     OO.isequation_order = false
     OO.disc = divexact(O.disc, p^(2*(degree(O)-degree(U))))
+    OO.index = p^(degree(O)-degree(U))
     push!(OO.primesofmaximality, p)
     return OO
   end
@@ -390,7 +392,12 @@ function _order_for_polygon_overorder(K::S, elt::Array{T, 1}) where {S, T}
   while !closed
     prods = T[elt[i] for i=1:length(elt)]
     for i = 2:length(elt)
+      d = denominator(elt[i])
       for j = i:length(elt)
+        d1 = denominator(elt[j])
+        if isone(d) && isone(d1)
+          continue
+        end
         el = elt[i]*elt[j]
         if denominator(el) != 1
           push!(prods, elt[i]*elt[j])
@@ -399,7 +406,7 @@ function _order_for_polygon_overorder(K::S, elt::Array{T, 1}) where {S, T}
     end
     
     B = basis_mat(prods) 
-    hnf!(B)
+    hnf_modular_eldiv!(B.num, B.den, :lowerleft)
     
     dd = B.num[nrows(B) - degree(K) + 1, 1]
     for i in 2:degree(K)
@@ -423,7 +430,11 @@ function _order_for_polygon_overorder(K::S, elt::Array{T, 1}) where {S, T}
 
   # Make an explicit check
   @hassert :NfOrd 1 defines_order(K, elt)[1]
-  return Order(K, elt, check = false, cached = false, isbasis = true)
+  res = Order(K, elt, check = false, isbasis = true, cached = false)
+  res.gen_index = inv(dold)
+  res.index = numerator(res.gen_index)
+  res.disc = divexact(numerator(discriminant(K)), res.index^2)
+  return res
 end
 
 ###############################################################################
@@ -776,7 +787,17 @@ function decomposition_type_polygon(O::NfOrd, p::Union{fmpz, Int})
       end
     end  
     if length(N.lines) != length(pols)
-      push!(l, (ideal(O, fmpz(p), O(K(parent(K.pol)(lift(Zx, g^m))))), ideal(O, fmpz(p), O(K(parent(K.pol)(lift(Zx, divexact(f1, g^m)))))))) 
+      I1 = ideal(O, fmpz(p), O(K(parent(K.pol)(lift(Zx, g^m)))))
+      I1.minimum = fmpz(p)
+      I1.norm = fmpz(p)^(degree(g)*m)
+      I2 = ideal(O, fmpz(p), O(K(parent(K.pol)(lift(Zx, divexact(f1, g^m))))))
+      if isone(I2.gen_two)
+        I2.minimum = fmpz(1)
+      else
+        I2.minimum = fmpz(p)
+      end
+      
+      push!(l, (I1, I2)) 
     else
       for i=1:length(pols)
         fact = factor(pols[i])
