@@ -168,7 +168,7 @@ function _unit_group_non_maximal(O::NfOrd)
     return s
   end
 
-  StoO = MapUnitGrp{typeof(S), typeof(O)}()
+  StoO = MapUnitGrp{typeof(O)}()
   StoO.header = MapHeader(S, O, _image, _preimage)
 
   return S, StoO

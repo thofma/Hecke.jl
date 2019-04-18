@@ -359,20 +359,25 @@ function compose(f::GrpAbFinGenMap, g::GrpAbFinGenMap)
   M = f.map*g.map
   C = codomain(g)
   if issnf(C)
-    for j = 1:ncols(M)
-      if iszero(C.snf[j])
-        break
-      end
-      for i = 1:nrows(M)
-        M[i, j] = mod(M[i, j], C.snf[j])
-      end
-    end
+    reduce_mod_snf!(M, C.snf)
   else
     assure_has_hnf(C)
     reduce_mod_hnf_ur!(M, C.hnf)
   end
   return hom(domain(f), codomain(g), M, check = false)
 
+end
+
+function reduce_mod_snf!(M::fmpz_mat, vect::Vector{fmpz})
+  for j = 1:ncols(M)
+    if iszero(vect[j])
+      break
+    end
+    for i = 1:nrows(M)
+      M[i, j] = mod(M[i, j], vect[j])
+    end
+  end
+  return nothing
 end
 
 ###############################################################################

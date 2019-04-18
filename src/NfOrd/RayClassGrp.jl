@@ -2184,7 +2184,7 @@ function rayclassgrp_ctx(O::NfOrd, expo::Int)
 end
 
 
-function ray_class_group_quo(O::NfOrd, y::Dict{NfOrdIdl, Int}, inf_plc::Array{InfPlc, 1}, ctx::ctx_rayclassgrp; GRH::Bool = true)
+function ray_class_group_quo(O::NfOrd, y::Dict{NfOrdIdl, Int}, inf_plc::Array{InfPlc, 1}, ctx::ctx_rayclassgrp; GRH::Bool = true, check::Bool = true)
   
   y1=Dict{NfOrdIdl,Int}()
   y2=Dict{NfOrdIdl,Int}()
@@ -2206,12 +2206,12 @@ function ray_class_group_quo(O::NfOrd, y::Dict{NfOrdIdl, Int}, inf_plc::Array{In
   for (q,vq) in y2
     I*=q^vq
   end
-  return ray_class_group_quo(I, y1, y2, inf_plc, ctx, GRH = GRH)
+  return ray_class_group_quo(I, y1, y2, inf_plc, ctx, GRH = GRH, check = check)
 
 end
 
 
-function ray_class_group_quo(I::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Dict{NfOrdIdl,Int}, inf_plc::Vector{InfPlc}, ctx::ctx_rayclassgrp; GRH::Bool = true)
+function ray_class_group_quo(I::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Dict{NfOrdIdl,Int}, inf_plc::Vector{InfPlc}, ctx::ctx_rayclassgrp; check::Bool = true, GRH::Bool = true)
 
   O = order(I)
   K = nf(O)
@@ -2238,7 +2238,7 @@ function ray_class_group_quo(I::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Dict{NfOrd
   end
   expo = exponent(G)
   
-  if exponent(C)*expo < n
+  if exponent(C)*expo < n && check
     return empty_ray_class(I)::Tuple{GrpAbFinGen, MapRayClassGrp}
   end
   

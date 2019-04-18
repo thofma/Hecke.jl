@@ -346,7 +346,7 @@ function unit_group(c::ClassGrpCtx, U::UnitGrpCtx)
   K = nf(O)
   U, mU = unit_group_fac_elem(c, U)
 
-  r = MapUnitGrp{typeof(U), typeof(O)}()
+  r = MapUnitGrp{typeof(O)}()
   r.header = Hecke.MapHeader(U, O,
     x->O(evaluate(image(mU, x))),
     x->preimage(mU, FacElem([K(x)], fmpz[1])))
