@@ -1882,7 +1882,37 @@ function find_gens(mR::MapRayClassGrp; coprime_to::fmpz = fmpz(-1))
       break
     end
   end
-  @assert order(q) == 1
+  
+  if order(q) != 1
+    p1 = minimum(fb[1])
+    while order(q) != 1
+      p1 = next_prime(p1)
+      if gcd(p1, mm) != 1
+        continue
+      end
+      if coprime_to != -1 &&  gcd(p1, coprime_to) != 1
+        continue
+      end
+      lp1 = prime_decomposition(O, p1)
+      for (P, e) in lp1
+        if haskey(mR.prime_ideal_preimage_cache, P)
+          f = mR.prime_ideal_preimage_cache[P]
+        else
+          f = mR\P
+          mR.prime_ideal_preimage_cache[P] = f
+        end
+        if iszero(mq(f))
+          continue
+        end
+        push!(sR, f)
+        push!(lp, P)
+        q, mq = quo(R, sR, false)
+        if order(q) == 1 
+          break
+        end
+      end
+    end
+  end
   return lp, sR
 end
 
