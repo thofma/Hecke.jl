@@ -16,8 +16,8 @@ locally free class group of O.
 # be speeded up be setting cond = :left.
 function locally_free_class_group(O::AlgAssAbsOrd, cond::Symbol = :center)
   A = algebra(O)
+  OA = maximal_order(O)
   Z, ZtoA = center(A)
-  OA = maximal_order(A)
   Fl = conductor(O, OA, :left)
   if cond == :left
     F = Fl
