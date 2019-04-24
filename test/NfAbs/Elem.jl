@@ -13,7 +13,7 @@
   @test_throws ErrorException rand(basis(K), -10:10, 100)
 
   @inferred rand!(b, basis(K), 1:100, 20)
-  @test count!(iszero, (Coeff(b, i) for i in 0:31)) <= 20
+  @test count(!iszero, (coeff(b, i) for i in 0:31)) <= 20
   @test_throws ErrorException rand!(b, basis(K), 1:100, 120)
   @test_throws ErrorException rand!(b, basis(K), 1:100, -100)
 
@@ -33,4 +33,19 @@ end
   Ky, y = K["y"]
   h = y^3+(15037//140*a^2 - 109//40*a - 915//14)*y^2+(16375724527//78400*a^2 - 993527643//4900*a + 393774209//11200)*y+(107296943419277//878080*a^2 - 2594040461688323//21952000*a + 17784340885567//878080)
   @assert isirreducible(h)
+end
+
+@testset "Is integral" begin
+  Qx, x = FlintQQ["x"]
+  f = x^2 + 1
+  K, a = number_field(f, "a")
+
+  @test Hecke.isintegral(a) == true
+  @test Hecke.isintegral(fmpq(1, 2)*a) == false
+
+  g = x^3 + 3
+  L, b = number_field([f, g], "b")
+
+  @test Hecke.isintegral(b[1]) == true
+  @test Hecke.isintegral(fmpq(1, 2)*b[1]) == false
 end

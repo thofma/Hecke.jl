@@ -42,6 +42,24 @@ end
 
 ################################################################################
 #
+#  Is integral
+#
+################################################################################
+
+isintegral(a::fmpq) = isone(denominator(a))
+
+function isintegral(a::Union{ nf_elem, NfAbsNSElem, NfRelElem, NfRel_nsElem })
+  f = minpoly(a)
+  for i = 0:(degree(f) - 1)
+    if !isintegral(coeff(f, i))
+      return false
+    end
+  end
+  return true
+end
+
+################################################################################
+#
 #  Random elements from arrays of nf_elem
 #
 ################################################################################
