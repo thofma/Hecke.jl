@@ -226,3 +226,25 @@ end
 isone(a::AlgMatElem) = isone(matrix(a, copy = false))
 
 iszero(a::AlgMatElem) = iszero(matrix(a, copy = false))
+
+################################################################################
+#
+#  elem_from_mat_row
+#
+################################################################################
+
+function elem_from_mat_row(A::AlgMat{T, S}, M::MatElem{T}, i::Int) where { T, S }
+  v = Vector{T}(undef, dim(A))
+  for c = 1:ncols(M)
+    v[c] = deepcopy(M[i, c])
+  end
+  return A(v)
+end
+
+function elem_from_mat_row(A::AlgMat, M::fmpz_mat, i::Int, d::fmpz = fmpz(1))
+  v = Vector{fmpq}(undef, dim(A))
+  for j in 1:ncols(M)
+    v[j] = fmpq(M[i, j], d)
+  end
+  return A(v)
+end

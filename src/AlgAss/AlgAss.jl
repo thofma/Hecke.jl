@@ -16,12 +16,20 @@ function Generic.dim(A::AlgAss)
   if iszero(A)
     return 0
   end
-  return size(A.mult_table, 1)
+  return size(multiplication_table(A, copy = false), 1)
 end
 
 degree(A::AlgAss) = dim(A)
 
 elem_type(::Type{AlgAss{T}}) where {T} = AlgAssElem{T, AlgAss{T}}
+
+function multiplication_table(A::AlgAss; copy::Bool = true)
+  if copy
+    return deepcopy(A.mult_table)
+  else
+    return A.mult_table
+  end
+end
 
 ################################################################################
 #
@@ -37,7 +45,7 @@ function iscommutative(A::AlgAss)
   end
   for i = 1:dim(A)
     for j = i + 1:dim(A)
-      if A.mult_table[i, j, :] != A.mult_table[j, i, :]
+      if multiplication_table(A, copy = false)[i, j, :] != multiplication_table(A, copy = false)[j, i, :]
         A.iscommutative = 2
         return false
       end
@@ -67,7 +75,7 @@ function find_one(A::AlgAss)
     c[kn + k, 1] = base_ring(A)(1)
     for i = 1:n
       for j = 1:n
-        M[i + kn, j] = deepcopy(A.mult_table[j, k, i])
+        M[i + kn, j] = deepcopy(multiplication_table(A, copy = false)[j, k, i])
       end
     end
   end
@@ -509,7 +517,7 @@ function ==(A::AlgAss, B::AlgAss)
   if has_one(A) && has_one(B) && A.one != B.one
     return false
   end
-  return A.mult_table == B.mult_table
+  return multiplication_table(A, copy = false) == multiplication_table(B, copy = false)
 end
 
 ################################################################################
@@ -664,7 +672,7 @@ function _assure_trace_basis(A::AlgAss{T}) where T
   if !isdefined(A, :trace_basis_elem)
     A.trace_basis_elem = Array{T, 1}(undef, dim(A))
     for i=1:length(A.trace_basis_elem)
-      A.trace_basis_elem[i]=sum(A.mult_table[i,j,j] for j= 1:dim(A))
+      A.trace_basis_elem[i]=sum(multiplication_table(A, copy = false)[i,j,j] for j= 1:dim(A))
     end
   end
   return nothing
@@ -778,7 +786,7 @@ function _rep_for_center(M::T, A::AlgAss) where T<: MatElem
   for i=1:n
     for j = 1:n
       for k = 1:n
-        M[k+(i-1)*n, j] = A.mult_table[i, j, k]-A.mult_table[j, i, k]
+        M[k+(i-1)*n, j] = multiplication_table(A, copy = false)[i, j, k]-multiplication_table(A, copy = false)[j, i, k]
       end
     end
   end
@@ -1049,7 +1057,7 @@ function _as_algebra_over_center(A::AlgAss{T}) where { T <: Union{fmpq, gfp_elem
     for i = 1:dim(A)
       for j = 1:dim(A)
         for k = 1:dim(A)
-          mult_table_B[i, j, k] = L(A.mult_table[i, j, k])
+          mult_table_B[i, j, k] = L(multiplication_table(A, copy = false)[i, j, k])
         end
       end
     end

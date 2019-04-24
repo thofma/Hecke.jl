@@ -6,7 +6,7 @@
 
 base_ring(A::AlgGrp{T}) where {T} = A.base_ring::parent_type(T)
 
-Generic.dim(A::AlgGrp) = size(A.mult_table, 1)
+Generic.dim(A::AlgGrp) = size(multiplication_table(A, copy = false), 1)
 
 elem_type(::Type{AlgGrp{T, S, R}}) where {T, S, R} = AlgGrpElem{T, AlgGrp{T, S, R}}
 
@@ -17,6 +17,14 @@ has_one(A::AlgGrp) = true
 function (A::AlgGrp{T, S, R})(c::Array{T, 1}) where {T, S, R}
   length(c) != dim(A) && error("Dimensions don't match.")
   return AlgGrpElem{T, typeof(A)}(A, c)
+end
+
+function multiplication_table(A::AlgGrp; copy::Bool = true)
+  if copy
+    return deepcopy(A.mult_table)
+  else
+    return A.mult_table
+  end
 end
 
 ################################################################################
@@ -33,7 +41,7 @@ function iscommutative(A::AlgGrp)
   end
   for i in 1:dim(A)
     for j in 1:dim(A)
-      if A.mult_table[i, j] != A.mult_table[j, i]
+      if multiplication_table(A, copy = false)[i, j] != multiplication_table(A, copy = false)[j, i]
         A.iscommutative = 2
         return false
       end
@@ -163,7 +171,7 @@ function AlgAss(A::AlgGrp{T, S, R}) where {T, S, R}
   d = dim(A)
   for i in 1:d
     for j in 1:d
-      l = A.mult_table[i, j]
+      l = multiplication_table(A, copy = false)[i, j]
       for k in 1:d
         if k == l
           mult[i, j, k] = one(K)
