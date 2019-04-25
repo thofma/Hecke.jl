@@ -422,6 +422,8 @@ mutable struct AlgMat{T, S} <: AbsAlgAss{T}
   degree::Int
   issimple::Int
   decomposition
+  maximal_order
+  mult_table::Array{T, 3} # e_i*e_j = sum_k mult_table[i, j, k]*e_k
 
   function AlgMat{T, S}(R::Ring) where {T, S}
     A = new{T, S}()

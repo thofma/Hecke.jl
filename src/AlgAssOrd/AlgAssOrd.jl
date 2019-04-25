@@ -1190,28 +1190,18 @@ end
 function _denominator_of_mult_table(A::AlgAss{fmpq})
   @assert !iszero(A)
 
-  l = denominator(A.mult_table[1, 1, 1])
+  l = denominator(multiplication_table(A, copy = false)[1, 1, 1])
   for i = 1:dim(A)
     for j = 1:dim(A)
       for k = 1:dim(A)
-        l = lcm(l, denominator(A.mult_table[i, j, k]))
+        l = lcm(l, denominator(multiplication_table(A, copy = false)[i, j, k]))
       end
     end
   end
   return l
 end
 
-function _denominator_of_mult_table(A::AlgGrp{fmpq})
-  @assert !iszero(A)
-
-  l = denominator(A.mult_table[1, 1])
-  for i = 1:dim(A)
-    for j = 1:dim(A)
-      l = lcm(l, denominator(A.mult_table[i, j]))
-    end
-  end
-  return l
-end
+_denominator_of_mult_table(A::AlgGrp{fmpq}) = fmpz(1)
 
 function any_order(A::AbsAlgAss{fmpq})
   d = _denominator_of_mult_table(A)
@@ -1224,6 +1214,12 @@ function any_order(A::AbsAlgAss{fmpq})
   M = FakeFmpqMat(M)
   M = hnf!(M, :lowerleft)
   O = Order(A, sub(M, 2:dim(A) + 1, 1:dim(A)))
+  return O
+end
+
+function any_order(A::AlgMat)
+  O = Order(A, basis(A))
+  check_order(O)
   return O
 end
 

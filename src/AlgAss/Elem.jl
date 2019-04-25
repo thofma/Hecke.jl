@@ -27,13 +27,29 @@ end
 
 ################################################################################
 #
+#  Is integral
+#
+################################################################################
+
+function isintegral(a::AbsAlgAssElem)
+  f = minpoly(a)
+  for i = 0:(degree(f) - 1)
+    if !isintegral(coeff(f, i))
+      return false
+    end
+  end
+  return true
+end
+
+################################################################################
+#
 #  Unary operations
 #
 ################################################################################
 
 function -(a::AbsAlgAssElem{T}) where {T}
-  coeffs = T[ -a.coeffs[i] for i = 1:dim(parent(a)) ]
-  return parent(a)(coeffs)
+  v = T[ -coeffs(a, copy = false)[i] for i = 1:dim(parent(a)) ]
+  return parent(a)(v)
 end
 
 ################################################################################
@@ -44,20 +60,20 @@ end
 
 function +(a::AbsAlgAssElem{T}, b::AbsAlgAssElem{T}) where {T}
   parent(a) != parent(b) && error("Parents don't match.")
-  coeffs = Array{T, 1}(undef, dim(parent(a)))
+  v = Array{T, 1}(undef, dim(parent(a)))
   for i = 1:dim(parent(a))
-    coeffs[i] = a.coeffs[i] + b.coeffs[i]
+    v[i] = coeffs(a, copy = false)[i] + coeffs(b, copy = false)[i]
   end
-  return parent(a)(coeffs)
+  return parent(a)(v)
 end
 
 function -(a::AbsAlgAssElem{T}, b::AbsAlgAssElem{T}) where {T}
   parent(a) != parent(b) && error("Parents don't match.")
-  coeffs = Array{T, 1}(undef, dim(parent(a)))
+  v = Array{T, 1}(undef, dim(parent(a)))
   for i = 1:dim(parent(a))
-    coeffs[i] = a.coeffs[i] - b.coeffs[i]
+    v[i] = coeffs(a, copy = false)[i] - coeffs(b, copy = false)[i]
   end
-  return parent(a)(coeffs)
+  return parent(a)(v)
 end
 
 function *(a::AlgAssElem{T}, b::AlgAssElem{T}) where {T}
@@ -68,16 +84,16 @@ function *(a::AlgAssElem{T}, b::AlgAssElem{T}) where {T}
   c = A()
   t = base_ring(A)()
   for i = 1:n
-    if iszero(a.coeffs[i])
+    if iszero(coeffs(a, copy = false)[i])
       continue
     end
     for j = 1:n
-      t = a.coeffs[i]*b.coeffs[j]
+      t = coeffs(a, copy = false)[i]*coeffs(b, copy = false)[j]
       if iszero(t)
         continue
       end
       for k = 1:n
-        c.coeffs[k] += A.mult_table[i, j, k]*t
+        c.coeffs[k] += multiplication_table(A, copy = false)[i, j, k]*t
       end
     end
   end
@@ -88,16 +104,16 @@ function *(a::AlgGrpElem{T, S}, b::AlgGrpElem{T, S}) where {T, S}
   parent(a) != parent(b) && error("Parents don't match.")
   A = parent(a)
   d = dim(A)
-  coeffs = Vector{T}(undef, d)
+  v = Vector{T}(undef, d)
   for i in 1:d
-    coeffs[i] = zero(base_ring(A))
+    v[i] = zero(base_ring(A))
   end
   for i in 1:d
     for j in 1:d
-      coeffs[A.mult_table[i, j]] += a.coeffs[i] * b.coeffs[j]
+      v[multiplication_table(A, copy = false)[i, j]] += coeffs(a, copy = false)[i] * coeffs(b, copy = false)[j]
     end
   end
-  return A(coeffs)
+  return A(v)
 end
 
 ################################################################################
@@ -107,15 +123,15 @@ end
 ################################################################################
 
 function zero!(a::AlgGrpElem)
-  for i = 1:length(a.coeffs)
-    a.coeffs[i] = zero!(a.coeffs[i])
+  for i = 1:length(coeffs(a, copy = false))
+    a.coeffs[i] = zero!(coeffs(a, copy = false)[i])
   end
   return a
 end
 
 function zero!(a::AlgAssElem)
-  for i = 1:length(a.coeffs)
-    a.coeffs[i] = zero!(a.coeffs[i])
+  for i = 1:length(coeffs(a, copy = false))
+    a.coeffs[i] = zero!(coeffs(a, copy = false)[i])
   end
   return a
 end
@@ -133,7 +149,7 @@ function add!(c::AbsAlgAssElem{T}, a::AbsAlgAssElem{T}, b::AbsAlgAssElem{T}) whe
   end
 
   for i = 1:d
-    c.coeffs[i] = add!(c.coeffs[i], a.coeffs[i], b.coeffs[i])
+    c.coeffs[i] = add!(coeffs(c, copy = false)[i], coeffs(a, copy = false)[i], coeffs(b, copy = false)[i])
   end
 
   return c
@@ -144,7 +160,7 @@ function addeq!(b::AbsAlgAssElem{T}, a::AbsAlgAssElem{T}) where {T}
   A = parent(a)
 
   for i = 1:dim(A)
-    b.coeffs[i] = addeq!(b.coeffs[i], a.coeffs[i])
+    b.coeffs[i] = addeq!(coeffs(b, copy = false)[i], coeffs(a, copy = false)[i])
   end
 
   return b
@@ -160,7 +176,7 @@ function mul!(c::AbsAlgAssElem{T}, a::AbsAlgAssElem{T}, b::T) where {T}
   end
 
   for i = 1:dim(parent(a))
-    c.coeffs[i] = mul!(c.coeffs[i], a.coeffs[i], b)
+    c.coeffs[i] = mul!(coeffs(c, copy = false)[i], coeffs(a, copy = false)[i], b)
   end
   return c
 end
@@ -178,7 +194,7 @@ function mul!(c::AbsAlgAssElem{T}, a::AbsAlgAssElem{T}, b::fmpz) where {T}
 
   bfmpq = fmpq(b, 1)
   for i = 1:dim(parent(a))
-    c.coeffs[i] = mul!(c.coeffs[i], a.coeffs[i], bfmpq)
+    c.coeffs[i] = mul!(coeffs(c, copy = false)[i], coeffs(a, copy = false)[i], bfmpq)
   end
   return c
 end
@@ -196,15 +212,15 @@ function mul!(c::AlgGrpElem{T, S}, a::AlgGrpElem{T, S}, b::AlgGrpElem{T, S}) whe
     return z
   end
 
-  coeffs = c.coeffs
+  v = coeffs(c, copy = false)
 
   for i in 1:d
-    coeffs[i] = zero(base_ring(A))
+    v[i] = zero(base_ring(A))
   end
 
   for i in 1:d
     for j in 1:d
-      coeffs[A.mult_table[i, j]] += a.coeffs[i] * b.coeffs[j]
+      v[multiplication_table(A, copy = false)[i, j]] += coeffs(a, copy = false)[i] * coeffs(b, copy = false)[j]
     end
   end
 
@@ -224,21 +240,21 @@ function mul!(c::AlgAssElem{T}, a::AlgAssElem{T}, b::AlgAssElem{T}) where {T}
   end
 
   for k in 1:n
-    c.coeffs[k] = zero!(c.coeffs[k])
+    c.coeffs[k] = zero!(coeffs(c, copy = false)[k])
   end
 
   for i = 1:n
-    if iszero(a.coeffs[i])
+    if iszero(coeffs(a, copy = false)[i])
       continue
     end
     for j = 1:n
-      t = a.coeffs[i]*b.coeffs[j]
+      t = coeffs(a, copy = false)[i]*coeffs(b, copy = false)[j]
       if iszero(t)
         continue
       end
       for k = 1:n
-        s = mul!(s, A.mult_table[i, j, k], t)
-        c.coeffs[k] = add!(c.coeffs[k], c.coeffs[k], s)
+        s = mul!(s, multiplication_table(A, copy = false)[i, j, k], t)
+        c.coeffs[k] = add!(coeffs(c, copy = false)[k], coeffs(c, copy = false)[k], s)
         #c.coeffs[k] += A.mult_table[i, j, k]*t
       end
     end
@@ -294,7 +310,7 @@ divexact_left(a::AbsAlgAssElem, b::AbsAlgAssElem) = divexact(a, b, :left)
 ################################################################################
 
 function *(a::AbsAlgAssElem{S}, b::T) where {T <: RingElem, S <: RingElem}
-  return typeof(a)(parent(a), a.coeffs.* Ref(b))
+  return typeof(a)(parent(a), coeffs(a, copy = false).* Ref(b))
 end
 
 *(b::T, a::AbsAlgAssElem{S}) where {T <: RingElem,  S <: RingElem } = a*b
@@ -477,12 +493,12 @@ end
 
 function show(io::IO, a::AbsAlgAssElem)
   if get(io, :compact, false)
-    print(io, a.coeffs)
+    print(io, coeffs(a, copy = false))
   else
     print(io, "Element of ")
     print(io, parent(a))
     print(io, " with coefficients ")
-    print(io, a.coeffs)
+    print(io, coeffs(a, copy = false))
   end
 end
 
@@ -526,7 +542,7 @@ end
 
 function ==(a::AbsAlgAssElem{T}, b::AbsAlgAssElem{T}) where {T}
   parent(a) != parent(b) && return false
-  return a.coeffs == b.coeffs
+  return coeffs(a, copy = false) == coeffs(b, copy = false)
 end
 
 ################################################################################
@@ -549,7 +565,7 @@ end
 
 function elem_to_mat_row!(M::MatElem{T}, i::Int, a::AbsAlgAssElem{T}) where T
   for c = 1:ncols(M)
-    M[i, c] = deepcopy(a.coeffs[c])
+    M[i, c] = deepcopy(coeffs(a, copy = false)[c])
   end
   return nothing
 end
@@ -576,13 +592,13 @@ function representation_matrix(a::AlgGrpElem, action::Symbol=:left)
   if action==:left
     for i = 1:dim(A)
       for j = 1:dim(A)
-        M[i, A.mult_table[j, i]] = a.coeffs[j]
+        M[i, multiplication_table(A, copy = false)[j, i]] = coeffs(a, copy = false)[j]
       end
     end
   elseif action==:right
     for i = 1:dim(A)
       for j = 1:dim(A)
-        M[i, A.mult_table[i, j]] = a.coeffs[j]
+        M[i, multiplication_table(A, copy = false)[i, j]] = coeffs(a, copy = false)[j]
       end
     end
   else
@@ -591,27 +607,27 @@ function representation_matrix(a::AlgGrpElem, action::Symbol=:left)
   return M
 end
 
-function representation_matrix!(a::AlgAssElem, M::MatElem, action::Symbol = :left)
+function representation_matrix!(a::Union{ AlgAssElem, AlgMatElem }, M::MatElem, action::Symbol = :left)
   A = parent(a)
   if action==:left
     for i = 1:dim(A)
-      if iszero(a.coeffs[i])
+      if iszero(coeffs(a, copy = false)[i])
         continue
       end
       for j = 1:dim(A)
         for k = 1:dim(A)
-          M[j, k] += a.coeffs[i]*A.mult_table[i, j, k]
+          M[j, k] += coeffs(a, copy = false)[i]*multiplication_table(A, copy = false)[i, j, k]
         end
       end
     end
   elseif action==:right
     for i = 1:dim(A)
-      if iszero(a.coeffs[i])
+      if iszero(coeffs(a, copy = false)[i])
         continue
       end
       for j = 1:dim(A)
         for k = 1:dim(A)
-          M[j, k] += a.coeffs[i]*A.mult_table[j, i, k]
+          M[j, k] += coeffs(a, copy = false)[i]*multiplication_table(A, copy = false)[j, i, k]
         end
       end
     end
@@ -621,7 +637,7 @@ function representation_matrix!(a::AlgAssElem, M::MatElem, action::Symbol = :lef
   return nothing
 end
 
-function representation_matrix(a::AlgAssElem, action::Symbol = :left)
+function representation_matrix(a::Union{ AlgAssElem, AlgMatElem }, action::Symbol = :left)
   A = parent(a)
   M = zero_matrix(base_ring(A), dim(A), dim(A))
   representation_matrix!(a, M, action)
@@ -637,7 +653,7 @@ end
 isone(a::AbsAlgAssElem) = a == one(parent(a))
 
 function iszero(a::AbsAlgAssElem)
-  return all(i -> iszero(i), a.coeffs)
+  return all(i -> iszero(i), coeffs(a, copy = false))
 end
 
 ################################################################################
@@ -655,7 +671,7 @@ function tr(x::AbsAlgAssElem{T}) where T
   _assure_trace_basis(A)
   tr=zero(base_ring(A))
   for i=1:dim(A)
-    tr = add!(tr, tr, x.coeffs[i]*A.trace_basis_elem[i])
+    tr = add!(tr, tr, coeffs(x, copy = false)[i]*A.trace_basis_elem[i])
   end
   return tr
 end

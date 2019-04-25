@@ -71,6 +71,38 @@ end
 
 ################################################################################
 #
+#  Multiplication Table
+#
+################################################################################
+
+function assure_has_multiplication_table(A::AlgMat{T, S}) where { T, S }
+  if isdefined(A, :mult_table)
+    return nothing
+  end
+
+  B = basis(A)
+  d = dim(A)
+  mt = Array{T, 3}(undef, d, d, d)
+  for i in 1:d
+    for j in 1:d
+      mt[i, j, :] = coeffs(B[i]*B[j], copy = false)
+    end
+  end
+  A.mult_table = mt
+  return nothing
+end
+
+function multiplication_table(A::AlgMat; copy::Bool = true)
+  assure_has_multiplication_table(A)
+  if copy
+    return deepcopy(A.mult_table)
+  else
+    return A.mult_table
+  end
+end
+
+################################################################################
+#
 #  Construction
 #
 ################################################################################
@@ -316,14 +348,6 @@ end
 
 function AlgAss(A::AlgMat{T, S}) where {T, S}
   K = base_ring(A)
-  B = basis(A)
-  d = dim(A)
-  mt = Array{T, 3}(undef, d, d, d)
-  for i in 1:d
-    for j in 1:d
-      mt[i, j, :] = coeffs(B[i]*B[j], copy = false)
-    end
-  end
-  B = AlgAss(K, mt)
+  B = AlgAss(K, multiplication_table(A))
   return B, hom(B, A, identity_matrix(K, dim(A)), identity_matrix(K, dim(A)))
 end

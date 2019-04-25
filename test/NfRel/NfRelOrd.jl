@@ -9,17 +9,6 @@ function monic_randpoly(S::PolyRing, dmin::Int, dmax::Int, n::Int)
   return r
 end
 
-function isirreducible(f::PolyElem)
-  fac = factor(f)
-  if length(fac) != 1
-    return false
-  end
-  if first(values(fac.fac)) != 1
-    return false
-  end
-  return true
-end
-
 @testset "Relative maximal orders of simple extensions" begin
    Qx, x = FlintQQ["x"]
   f = x^2 + 36*x + 16
