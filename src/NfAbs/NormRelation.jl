@@ -35,6 +35,7 @@ mutable struct NormRelation{T}
   coefficients_gen::Vector{Vector{Tuple{Int, NfToNfMor, NfToNfMor}}}
   embed_cache::Dict{Tuple{Int, Int}, Dict{nf_elem, nf_elem}}
   mor_cache::Dict{NfToNfMor, Dict{nf_elem, nf_elem}}
+  induced::Dict{NfToNfMor, perm{Int}}
 
   function NormRelation{T}() where {T}
     z = new{T}()
@@ -44,6 +45,7 @@ mutable struct NormRelation{T}
     z.denominator = 0
     z.embed_cache = Dict{Tuple{Int, Int}, Dict{nf_elem, nf_elem}}()
     z.mor_cache = Dict{NfToNfMor, Dict{nf_elem, nf_elem}}()
+    z.induced = Dict{NfToNfMor, perm{Int}}()
     return z
   end
 end
@@ -263,7 +265,12 @@ function induce_action(N::NormRelation, i, j, s, FB, cache)
   _ , _, auto = N.coefficients_gen[i][j]
   #@show auto
   println("Call to induce(FB, auto)...")
-  @time p = induce(FB, auto) 
+  @time if haskey(N.induced, auto)
+    p = N.induced[auto]
+  else
+    p = induce(FB, auto) 
+    N.induced[auto] = p
+  end
   #@show p
 
   if length(cache) == 0
@@ -379,7 +386,7 @@ function _add_sunits_from_norm_relation!(c, N)
     @show k
     @time zk = lll(zk)
     print("Computing class group of $k... ")
-    @time class_group(zk, redo = true, use_aut = false)
+    @time class_group(zk, redo = true, use_aut = true)
     println("done")
     lpk = NfOrdIdl[ P[1] for p in cp for P = prime_decomposition(zk, p)]
     println("Now computing the S-unit group for lp of length $(length(lpk))")
