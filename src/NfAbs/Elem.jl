@@ -954,7 +954,7 @@ end
 #
 ################################################################################
 
-function _mod(a::nf_elem, b::fmpz, fl::Bool = true)
+function __mod(a::nf_elem, b::fmpz, fl::Bool = true)
   z = parent(a)()
   ccall((:nf_elem_mod_fmpz_den, :libantic), Nothing, (Ref{nf_elem}, Ref{nf_elem}, Ref{fmpz}, Ref{AnticNumberField}, Cint), z, a, b, parent(a), Cint(fl))
   return z
