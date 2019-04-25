@@ -235,9 +235,7 @@ function find_gens(K::KummerExt, S::PrimesSet, cp::fmpz=fmpz(1))
     end
   end
   return lp, sR
-  
 end
-
 
 ###############################################################################
 #

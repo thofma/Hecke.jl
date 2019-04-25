@@ -330,7 +330,9 @@ function _crt_normalization(O::NfOrd, Q::NfOrdQuoRing, elems::Vector{NfOrdElem},
       add!(el[i], el[i], aux)
       #el[i]=Q(y[i])*Q(a)+el[i]*Q(b)
     end
+    new_minimum = lcm(minimum(I), minimum(q))
     I = I*q
+    I.minimum = new_minimum    
   end
   return el, quots, idemps
 
@@ -354,6 +356,7 @@ function _new_preproc(elems::Array{FacElem{nf_elem, AnticNumberField},1}, expone
   
   FacElemParent = parent(elems[1])
   K = base_ring(FacElemParent)
+  Qx = parent(K.pol)
   newelems = Vector{FacElem{nf_elem, AnticNumberField}}(undef, length(elems))
   new_elems_int = Vector{Dict{fmpz, Int}}(undef, length(elems))
   for i = 1:length(newelems)
@@ -366,16 +369,26 @@ function _new_preproc(elems::Array{FacElem{nf_elem, AnticNumberField},1}, expone
       end
       d = denominator(f)
       n = numerator(f)
-      if haskey(x, n)
-        x[n] = mod(x[n] + l, exponent)
+      c = content(Qx(n))
+      n1 = divexact(n, c)
+      if haskey(x, n1)
+        x[n1] = mod(x[n1] + l, exponent)
       else
-        x[n] = l
+        x[n1] = l
       end
       if !isone(d)
         if haskey(x_int, d)
           x_int[d] = mod(x_int[d] - l, exponent)
         else
           x_int[d] = mod(-l, exponent)
+        end
+      end
+      if !isone(c)
+        c1 = numerator(c)
+        if haskey(x_int, c1)
+          x_int[c1] = mod(x_int[c1] + l, exponent)
+        else
+          x_int[c1] = mod(l, exponent)
         end
       end
     end
@@ -477,11 +490,12 @@ function _new_eval_quo(O::NfOrd, elems::Array{NfOrdElem, 1}, elems_int::Vector{D
             res = powmod(k, v, minimum(q))
             mul!(el[i], el[i], O(res))
           else
-            valk = valuation(k, p)
-            antival = anti_uni^valk
-            mul!(antival, antival, k)
+            kcom, kuncom = ppio(k, minimum(p))
+            kuncompow = powmod(kuncom, v, minimum(q)) 
+            v1 = valuation(kcom, minimum(p))
+            antival = (anti_uni^ramification_index(p))*minimum(p)
             prod_el = O(antival, false)
-            res = powermod(prod_el, v, minimum(q))
+            res = powermod(prod_el, v*v1, minimum(q))*kuncompow
             mul!(el[i], el[i], res)
           end
         end
@@ -2595,7 +2609,34 @@ function find_gens_for_action(mR::MapRayClassGrp)
       break
     end
   end
-  @assert order(q) == 1
+  
+  if order(q) != 1
+    p1 = minimum(fb[1])
+    while order(q) != 1
+      p1 = next_prime(p1)
+      if gcd(p1, mm) != 1
+        continue
+      end
+      lp1 = prime_decomposition(O, p1)
+      for (P, e) in lp1
+        if haskey(mR.prime_ideal_preimage_cache, P)
+          f = mR.prime_ideal_preimage_cache[P]
+        else
+          f = mR\P
+          mR.prime_ideal_preimage_cache[P] = f
+        end
+        if iszero(mq(f))
+          continue
+        end
+        push!(sR, f)
+        push!(lp, P)
+        q, mq = quo(R, sR, false)
+        if order(q) == 1 
+          break
+        end
+      end
+    end
+  end
   return lp, ip, sR, sR1
 end
 
