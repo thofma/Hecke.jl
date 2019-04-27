@@ -512,91 +512,91 @@ end
 
 ################################################################################
 #
-#  Compute generators
+#  Generators
 #
 ################################################################################
 
-function _reduce(M, v)
-  cur_ind = 0
-  for outer cur_ind in 1:ncols(M)
-    if !iszero(v[cur_ind])
-      break
-    end
-  end
-end
-
-function gens(A::AbsAlgAss)
-  d = dim(A)
+function gens(A::AbsAlgAss, return_full_basis::Type{Val{T}} = Val{false}) where T
   K = base_ring(A)
+  d = dim(A)
 
-  b = rand(A)
-  while iszero(b)
-    b = rand(A)
-  end
+  rfb = return_full_basis == Val{true}
 
-  cur_gen = elem_type(A)[b]
+  # Sort the basis by the degree of the minpolys (hopefully those with higher
+  # degree generate a "bigger" subalgebra)
+  minpoly_degrees = [ (i, degree(minpoly(A[i]))) for i = 1:d ]
+  sort!(minpoly_degrees, by = x -> x[2], rev = true)
 
-  current_dim = -1
-
+  generators = Vector{elem_type(A)}()
+  full_basis = elem_type(A)[ one(A) ] # Contains products of generators which form a full basis
+  rfb ? full_basis_indices = Vector{Tuple{Int, Int}}[ Tuple{Int, Int}[] ] : nothing
   B = zero_matrix(K, d, d)
 
-  for k in 1:d
-    B[1, k] = b.coeffs[k]
-  end
-
-  cur_dim = 1
-
-  new_dim = 0
-
-  if d == 1
-    return cur_gen
-  end
-
-  l = 0
-
-  t_gens = copy(cur_gen)
-
-  while true
-    l = l + 1
-    while true
-      t_gens = copy(cur_gen)
-      t = length(t_gens)
-      for i in 1:t
-        for j in 1:t
-          c = t_gens[i] * t_gens[j]
-          for k in 1:d
-            B[d, k] = c.coeffs[k]
-          end
-          new_dim = rref!(B)
-          if new_dim == d
-            return cur_gen
-          elseif new_dim > cur_dim
-            cur_dim = new_dim
-            push!(t_gens, c)
-          end
-        end
-      end
-
-      if cur_dim == new_dim
-        break
-      else
-        cur_dim = new_dim
-        B = new_B
-      end
-    end
-
+  cur_dim = 0
+  for i = 1:d
     if cur_dim == d
       break
-    else
-      b = rand(A)
-      while iszero(b)
-        b = rand(A)
+    end
+
+    n = length(full_basis)
+    b = A[minpoly_degrees[i][1]]
+    power = 1
+    while cur_dim < d
+      for k = 1:d
+        B[d, k] = coeffs(b, copy = false)[k]
       end
-      push!(cur_gen, b)
+      new_dim = rref!(B)
+      if cur_dim == new_dim
+        break
+      end
+      if power == 1
+        push!(generators, b)
+      end
+      push!(full_basis, b)
+      if rfb
+        ind = Tuple{Int, Int}[ (length(generators), power) ]
+        push!(full_basis_indices, ind)
+      end
+      cur_dim = new_dim
+      cur_dim == d ? break : nothing
+
+      for r = 1:n
+        bb = b*full_basis[r]
+        for l = 1:n
+          t = full_basis[l]*bb
+          for k = 1:d
+            B[d, k] = coeffs(t, copy = false)[k]
+          end
+          new_dim = rref!(B)
+          if cur_dim == new_dim
+            continue
+          end
+          push!(full_basis, t)
+          cur_dim = new_dim
+          if rfb
+            ind2 = deepcopy(ind)
+            prepend!(ind2, full_basis_indices[l])
+            append!(ind2, full_basis_indices[r])
+            push!(full_basis_indices, ind2)
+          end
+          cur_dim == d ? break : nothing
+        end
+        cur_dim == d ? break : nothing
+      end
+      b *= A[minpoly_degrees[i][1]]
+      power += 1
     end
   end
 
-  return cur_gen
+  # Remove the one
+  popfirst!(full_basis)
+  rfb ? popfirst!(full_basis_indices) : nothing
+
+  if rfb
+    return generators, full_basis, full_basis_indices
+  else
+    return generators
+  end
 end
 
 ################################################################################
