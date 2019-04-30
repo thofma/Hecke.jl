@@ -75,6 +75,39 @@ function Order(A::S, basis_mat::FakeFmpqMat) where {S <: AbsAlgAss}
   return AlgAssAbsOrd{S}(A, basis_mat)
 end
 
+function _Order(A::S, gens::Vector{T}; check::Bool = true) where {S <: AbsAlgAss, T <: AbsAlgAssElem}
+  B_A = basis(A)
+
+  if one(A) in gens
+    cur = gens
+  else
+    cur = append!([one(A)], gens)
+  end
+  Bmat = basis_mat(cur)
+  while true
+    k = length(cur)
+    prods = Vector{elem_type(A)}(undef, k^2)
+    for i = 1:k
+      ik = (i - 1)*k
+      for j = 1:k
+        prods[ik + j] = cur[i]*cur[j]
+      end
+    end
+    Ml = hnf(basis_mat(prods))
+    r = findfirst(i -> !iszero_row(Ml.num, i), 1:k^2)
+    nBmat = sub(Ml, r:nrows(Ml), 1:ncols(Ml))
+    if nrows(nBmat) == nrows(Bmat) && Bmat == nBmat
+      break
+    end
+    Bmat = nBmat
+  end
+  if nrows(Bmat) != dim(A)
+    error("Elements do not generate an order")
+  end
+
+  return Order(A, Bmat)
+end
+
 ################################################################################
 #
 #  Index
