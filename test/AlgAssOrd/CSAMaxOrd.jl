@@ -29,7 +29,7 @@
         d = discriminant(O1)
         fac = factor(d)
         for p in keys(fac.fac)
-          On = Hecke.pmaximal_overorder_crossed_product(O, G, O1, Int(p))
+          On = Hecke.pmaximal_overorder(O1, Int(p))
           @test valuation(discriminant(On), p) == 0
         end
         @test sum_of_two_squares(fmpz(b))
@@ -72,10 +72,8 @@
     fac2 = factor(d)
     @test Set(collect(keys(fac1.fac))) == Set(collect(keys(fac2.fac)))
     for p in keys(fac1.fac)
-      O2 = Hecke.pmaximal_overorder_crossed_product(O, Autos, O1, Int(p))
       O3 = Hecke.pmaximal_overorder(O1, Int(p))
       @test valuation(discriminant(O3), p) == 0
-      @test valuation(discriminant(O2), p) == 0
     end
   end
 

@@ -700,3 +700,157 @@ function regular_matrix_algebra(A::Union{ AlgAss, AlgGrp })
   B = AlgMat(K, [ representation_matrix(A[i], :right) for i = 1:dim(A) ], isbasis = true, check = false)
   return B, hom(B, A, identity_matrix(K, dim(A)), identity_matrix(K, dim(A)))
 end
+
+###############################################################################
+#
+#  Construction of a crossed product algebra
+#
+###############################################################################
+
+function find_elem(G::Array{T,1}, el::T) where T
+  i=1
+  while true
+    if el.prim_img==G[i].prim_img
+      return i
+    end
+    i+=1
+  end
+end
+
+
+#K/Q is a Galois extension.
+function CrossedProductAlgebra(K::AnticNumberField, G::Array{T,1}, cocval::Array{nf_elem, 2}) where T
+
+  n=degree(K)
+  m=length(G)
+  #=
+  Multiplication table
+  I order the basis in this way:
+  First, I put the basis of the Galois Group, then the product of them with the first
+  element of basis of the order and so on...
+  =#
+  
+  M=Array{fmpq,3}(undef, n*m, n*m, n*m)
+  for i=1:n*m
+    for j=1:n*m
+      for s=1:n*m
+        M[i,j,s]=fmpq(0)
+      end
+    end
+  end
+  B=basis(K)
+  for i=1:n
+    for j=1:m
+      #I have the element B[i]*G[j]
+      for k=1:n
+        for h=1:m
+          # I take the element B[k]*G[h]
+          # and I take the product 
+          # B[i]*G[j]* B[k]*G[h]=B[i]*G[j](B[k])*c[j,h]*(G[j]*G[h])
+          ind=find_elem(G,G[h] * G[j]) 
+          x=B[i]*G[j](B[k])*cocval[j,h]
+          #@show i, j, k,h,  ind,B[i],G[j](B[k]),cocval[j,h],  x
+          for s=0:n-1
+            M[j+(i-1)*n, h+(k-1)*n, ind+s*n]=coeff(x,s)
+          end
+          #@show M
+        end
+      end
+    end
+  end
+  return AlgAss(FlintQQ, M)
+
+end
+
+function CrossedProductAlgebra(O::NfOrd, G::Array{T,1}, cocval::Array{nf_elem, 2}) where T
+
+  n=degree(O)
+  m=length(G)
+  K=nf(O)
+  #=
+  Multiplication table
+  I order the basis in this way:
+  First, I put the basis of the Galois Group, then the product of them with the first
+  element of basis of the order and so on...
+  =#
+  
+  M=Array{fmpq,3}(undef, n*m, n*m, n*m)
+  for i=1:n*m
+    for j=1:n*m
+      for s=1:n*m
+        M[i,j,s]=fmpq(0)
+      end
+    end
+  end
+  B = basis(O, copy = false)
+  el = O(0)
+  for j=1:m
+    for k=1:n
+      l =O(G[j](K(B[k])), false)
+      for h=1:m
+        ind = find_elem(G, G[h] * G[j]) 
+        t = O(cocval[j,h], false)
+        for i=1:n
+          #I have the element B[i]*G[j]
+          # I take the element B[k]*G[h]
+          # and I take the product 
+          # B[i]*G[j]* B[k]*G[h]=B[i]*G[j](B[k])*c[j,h]*(G[j]*G[h])
+          mul!(el, B[i], l)
+          mul!(el, el, t)
+          y = coordinates(el)
+          for s=0:n-1
+            M[j+(i-1)*m, h+(k-1)*m, ind+s*m] = y[s+1]
+          end
+        end
+      end
+    end
+  end
+  j1 = find_identity(G, *)
+  j = find_elem(G, j1)
+  O1 = fmpq[0 for i=1:n*m]
+  O1[j] = fmpq(1)
+  A = AlgAss(FlintQQ, M, O1)
+  A.issimple = 1
+  return A
+
+end
+
+################################################################################
+#
+#  Quaternion algebras
+#
+################################################################################
+
+function quaternion_algebra(a::Int, b::Int)
+  
+  M = Array{fmpq,3}(undef, 4,4,4)
+  for i = 1:4
+    for j = 1:4
+      for k = 1:4
+        M[i,j,k] = 0
+      end
+    end
+  end  
+  M[1,1,1] = 1 # 1*1=1
+  M[1,2,2] = 1 # 1*i=i
+  M[1,3,3] = 1 # 1*j=j
+  M[1,4,4] = 1 # 1*ij=1
+  
+  M[2,1,2] = 1
+  M[2,2,1] = a
+  M[2,3,4] = 1
+  M[2,4,3] = a
+  
+  M[3,1,3] = 1
+  M[3,2,4] = -1
+  M[3,3,1] = b
+  M[3,4,2] = -b
+  
+  M[4,1,4] = 1
+  M[4,2,3] = -a
+  M[4,3,2] = b
+  M[4,4,1] = -a*b
+  O = fmpq[1, 0, 0, 0]
+  return AlgAss(FlintQQ, M, O)
+  
+end

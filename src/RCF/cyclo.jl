@@ -173,7 +173,7 @@ base_field(C::CyclotomicExt) = C.k
 @doc Markdown.doc"""
     automorphisms(C::CyclotomicExt; gens::Vector{NfToNfMor}) -> Vector{NfToNfMor}
 Computes the automorphisms of the absolute field defined by the cyclotomic extension, i.e. of absolute_field(C).
-gens must be a set of generators for the automorphism group of the base field of C
+It assumes that the base field is normal. gens must be a set of generators for the automorphism group of the base field of C
 """
 function automorphisms(C::CyclotomicExt; gens::Vector{NfToNfMor} = small_generating_set(automorphisms(base_field(C))), copy::Bool = true)
 
