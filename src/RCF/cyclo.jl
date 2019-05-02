@@ -11,6 +11,10 @@ mutable struct CyclotomicExt
   Kr::Hecke.NfRel{nf_elem}
   Ka::AnticNumberField
   mp::Tuple{NfRelToNf, NfToNfMor}
+  
+  kummer_exts::Dict{Set{fmpz}, Tuple{Vector{NfOrdIdl}, KummerExt}}
+                      #I save the kummer extensions used in the class field construction
+                      #The keys are the factors of the minimum of the conductor
   function CyclotomicExt()
     return new()
   end
@@ -49,6 +53,7 @@ function cyclotomic_extension(k::AnticNumberField, n::Int)
   
   kt, t = PolynomialRing(k, "t", cached = false)
   c = CyclotomicExt()
+  c.kummer_exts = Dict{Set{fmpz}, Tuple{Vector{NfOrdIdl}, KummerExt}}()
   c.k = k
   c.n = n
   

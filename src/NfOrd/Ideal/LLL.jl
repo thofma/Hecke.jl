@@ -113,7 +113,7 @@ function lll(A::NfOrdIdl, v::fmpz_mat = zero_matrix(FlintZZ, 1, 1); prec::Int = 
     fmpz_mat_entry_add_ui!(d, i, i, UInt(nrows(d)))
   end
 
-  ctx=Nemo.lll_ctx(0.99, 0.51, :gram)
+  ctx = Nemo.lll_ctx(0.99, 0.51, :gram)
 
   ccall((:fmpz_mat_one, :libflint), Nothing, (Ref{fmpz_mat}, ), g)
   ccall((:fmpz_lll, :libflint), Nothing, (Ref{fmpz_mat}, Ref{fmpz_mat}, Ref{Nemo.lll_ctx}), d, g, ctx)

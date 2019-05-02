@@ -1208,6 +1208,7 @@ function lll(M::NfOrd)
         On.gen_index = M.gen_index
       end
       M.lllO = On
+      On.lllO = On
       return On::NfOrd
     catch e
       if isa(e, LowPrecisionLLL) || isa(e, InexactError)
@@ -1216,10 +1217,6 @@ function lll(M::NfOrd)
           @show "having a hard time computing the LLL basis"
         end
         prec = Int(round(prec*1.2*i))
-        #prec = Int(round(prec*1.2))
-        #if prec>1000
-        #  error("precision too large in LLL");
-        #end
         continue;
       else
         rethrow(e)

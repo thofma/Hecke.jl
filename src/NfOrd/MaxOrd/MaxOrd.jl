@@ -676,7 +676,7 @@ function pradical_frobenius1(O::NfOrd, p::Union{Integer, fmpz})
   R = GF(p, cached = false)
   d = degree(O)
   K = nf(O)
-  Rx = PolynomialRing(R, "x", cached = true)[1]
+  Rx = PolynomialRing(R, "x", cached = false)[1]
   res = factor_shape_refined(Rx(K.pol))
   md = 1
   for i = 1:length(res)
