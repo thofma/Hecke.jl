@@ -512,7 +512,7 @@ function _new_eval_quo(O::NfOrd, elems::Array{NfOrdElem, 1}, elems_int::Vector{D
         val = valuation(f, p)
         ant_val = anti_uni^val 
         mul!(ant_val, ant_val, f.elem_in_nf)
-        ant_val = ___mod(ant_val, minimum(q))
+        ant_val = mod(ant_val, minimum(q))
         act_el = O(ant_val, false)
         el[i] = mod(act_el, q)
       end
@@ -537,14 +537,6 @@ function _new_eval_quo(O::NfOrd, elems::Array{NfOrdElem, 1}, elems_int::Vector{D
   end
   return el
   
-end
-
-function ___mod(b::nf_elem, p::fmpz)
-  de = denominator(b)
-  f, e = ppio(de, p)
-  e1 = invmod(e, p*f)
-  b1 = mod(de*b*e1, p*f)//f
-  return b
 end
 
 function _fac_elem_evaluation(O::NfOrd, Q::NfOrdQuoRing, quots::Vector{Tuple{NfOrdIdl, NfOrdIdl}}, idemps::Vector{Tuple{NfOrdQuoRingElem, NfOrdQuoRingElem}}, J::FacElem{nf_elem,AnticNumberField}, exponent::fmpz)
@@ -967,7 +959,7 @@ function coprime_deterministic(a::NfOrdIdl, m::NfOrdIdl, lp::Dict{NfOrdIdl, Int}
     end
     mo = mo*moduli[i]
   end
-  res = ___mod(res, minimum(m))
+  res = mod(res, minimum(m))
   I = res*a
   I = simplify(I)
   return I.num, res*I.den

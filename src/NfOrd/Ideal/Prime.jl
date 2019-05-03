@@ -419,7 +419,7 @@ function anti_uniformizer(P::NfOrdIdl)
   end
   if has_2_elem_normal(P)
     Pinv = inv(P)
-    P.anti_uniformizer = ___mod(divexact(Pinv.num.gen_two.elem_in_nf, Pinv.den), minimum(P))
+    P.anti_uniformizer = mod(divexact(Pinv.num.gen_two.elem_in_nf, Pinv.den), minimum(P))
     return P.anti_uniformizer
   end
   p = minimum(P)
