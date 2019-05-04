@@ -516,84 +516,168 @@ end
 #
 ################################################################################
 
-function gens(A::AbsAlgAss, return_full_basis::Type{Val{T}} = Val{false}) where T
-  K = base_ring(A)
+# Reduces the vector v w. r. t. M and writes it in the i-th row of M.
+# M should look like this:
+#     (0 1 * * *)
+#     (1 * * * *)
+# M = (0 0 0 1 *)
+#     (0 0 0 0 0)
+#     (0 0 0 0 0),
+# i. e. "almost" in rref, but the rows do not have to be sorted.
+# For a column i of M pivot_rows[i] should be the row with the pivot or 0.
+# The function changes M, v, and pivot_rows in place!
+function _add_row_to_rref!(M::MatElem{T}, v::Vector{T}, pivot_rows::Vector{Int}, i::Int) where { T <: FieldElem }
+  @assert ncols(M) == length(v)
+  @assert ncols(M) == length(pivot_rows)
+  @assert 1 <= i && i <= nrows(M)
+
+  rank_increases = false
+  new_pivot = 0
+  for c = 1:ncols(M)
+    if iszero(v[c])
+      continue
+    end
+
+    r = pivot_rows[c]
+    if r == 0
+      if !rank_increases
+        pivot_rows[c] = i
+        new_pivot = c
+        rank_increases = true
+      end
+      continue
+    end
+
+    p = M[r, c]
+    t = -divexact(v[c], p)
+    v[c] = zero(base_ring(M))
+
+    s = one(base_ring(M))
+    for j = (c + 1):ncols(M)
+      s = mul!(s, t, M[r, j])
+      v[j] = add!(v[j], v[j], s)
+    end
+  end
+
+  if rank_increases
+    t = divexact(one(base_ring(M)), v[new_pivot])
+    for j = (new_pivot + 1):ncols(M)
+      M[i, j] = mul!(M[i, j], v[j], t)
+    end
+    M[i, new_pivot] = one(base_ring(M))
+  end
+
+  return rank_increases
+end
+
+# Returns a subset of the basis, which generates A as an algebra over the base ring.
+# If torough_search is true, the number of returned generators is possibly smaller.
+# This will in general increase the runtime.
+function gens(A::AbsAlgAss, return_full_basis::Type{Val{T}} = Val{false}, thorough_search::Bool = false) where T
   d = dim(A)
 
-  rfb = return_full_basis == Val{true}
-
-  # Sort the basis by the degree of the minpolys (hopefully those with higher
-  # degree generate a "bigger" subalgebra)
-  minpoly_degrees = [ (i, degree(minpoly(A[i]))) for i = 1:d ]
-  sort!(minpoly_degrees, by = x -> x[2], rev = true)
+  if thorough_search
+    # Sort the basis by the degree of the minpolys (hopefully those with higher
+    # degree generate a "bigger" subalgebra)
+    minpoly_degrees = [ (i, degree(minpoly(A[i]))) for i = 1:d ]
+    sort!(minpoly_degrees, by = x -> x[2], rev = true)
+  else
+    is_gen = falses(d)
+  end
 
   generators = Vector{elem_type(A)}()
   full_basis = elem_type(A)[ one(A) ] # Contains products of generators which form a full basis
-  rfb ? full_basis_indices = Vector{Tuple{Int, Int}}[ Tuple{Int, Int}[] ] : nothing
-  B = zero_matrix(K, d, d)
+  elts_in_gens = Vector{Tuple{Int, Int}}[ Tuple{Int, Int}[] ]
+  B = zero_matrix(base_ring(A), d, d)
+  pivot_rows = zeros(Int, d)
+  new_elements = Set{Int}()
+
+  s = one(A)
+  t = one(A)
 
   cur_dim = 0
-  for i = 1:d
-    if cur_dim == d
-      break
+  cur_basis_elt = 1
+  while cur_dim != d
+    if isempty(new_elements)
+      # We have to add a generator
+      new_gen = A()
+      new_elt = false
+      while true
+        if thorough_search
+          i = minpoly_degrees[cur_basis_elt][1]
+        else
+          i = rand(1:dim(A))
+          while is_gen[i]
+            i = rand(1:dim(A))
+          end
+          is_gen[i] = true
+        end
+        new_gen = A[i]
+        cur_basis_elt += 1
+        new_elt = _add_row_to_rref!(B, coeffs(new_gen), pivot_rows, cur_dim + 1)
+        if new_elt
+          break
+        end
+      end
+      push!(generators, new_gen)
+      b = new_gen
+      power = 1
+      # Compute the powers of new_gen
+      while new_elt
+        cur_dim += 1
+        push!(full_basis, b)
+        if power == 1 && length(generators) != 1
+          push!(new_elements, length(full_basis))
+        end
+        ind = Tuple{Int, Int}[ (length(generators), power) ]
+        push!(elts_in_gens, ind)
+        cur_dim == d ? break : nothing
+        b *= new_gen
+        power += 1
+        new_elt = _add_row_to_rref!(B, coeffs(b), pivot_rows, cur_dim + 1)
+      end
+      continue
+    else
+      i = pop!(new_elements)
+      b = full_basis[i]
     end
 
+    # Compute all possible productes involving b
     n = length(full_basis)
-    b = A[minpoly_degrees[i][1]]
-    power = 1
-    while cur_dim < d
-      for k = 1:d
-        B[d, k] = coeffs(b, copy = false)[k]
-      end
-      new_dim = rref!(B)
-      if cur_dim == new_dim
-        break
-      end
-      if power == 1
-        push!(generators, b)
-      end
-      push!(full_basis, b)
-      if rfb
-        ind = Tuple{Int, Int}[ (length(generators), power) ]
-        push!(full_basis_indices, ind)
-      end
-      cur_dim = new_dim
-      cur_dim == d ? break : nothing
-
-      for r = 1:n
-        bb = b*full_basis[r]
-        for l = 1:n
-          t = full_basis[l]*bb
-          for k = 1:d
-            B[d, k] = coeffs(t, copy = false)[k]
-          end
-          new_dim = rref!(B)
-          if cur_dim == new_dim
-            continue
-          end
-          push!(full_basis, t)
-          cur_dim = new_dim
-          if rfb
-            ind2 = deepcopy(ind)
-            prepend!(ind2, full_basis_indices[l])
-            append!(ind2, full_basis_indices[r])
-            push!(full_basis_indices, ind2)
-          end
-          cur_dim == d ? break : nothing
+    for r = 1:n
+      s = mul!(s, b, full_basis[r])
+      for l = 1:n
+        if !iscommutative(A)
+          t = mul!(t, full_basis[l], s)
+        else
+          t = s
+        end
+        new_elt = _add_row_to_rref!(B, coeffs(t), pivot_rows, cur_dim + 1)
+        if !new_elt
+          continue
+        end
+        push!(full_basis, deepcopy(t))
+        cur_dim += 1
+        coord = _merge_elts_in_gens!(elts_in_gens[l], deepcopy(elts_in_gens[i]), elts_in_gens[r])
+        push!(elts_in_gens, coord)
+        if thorough_search && coord[1][2] == 1 && coord[end][2] == 1
+          push!(new_elements, length(full_basis))
+        end
+        if iscommutative(A)
+          break
         end
         cur_dim == d ? break : nothing
       end
-      b *= A[minpoly_degrees[i][1]]
-      power += 1
+      cur_dim == d ? break : nothing
     end
   end
 
   # Remove the one
   popfirst!(full_basis)
-  rfb ? popfirst!(full_basis_indices) : nothing
+  popfirst!(elts_in_gens)
 
-  if rfb
-    return generators, full_basis, full_basis_indices
+  if return_full_basis == Val{true}
+    return generators, full_basis, elts_in_gens
   else
     return generators
   end
