@@ -192,3 +192,96 @@ end
 ################################################################################
 
 Base.enumerate(G::Generic.PermGroup) = enumerate(AllPerms(G.n))
+
+################################################################################
+#
+#  Generators
+#
+################################################################################
+
+# Helper function for gens, changes mid in place
+function _merge_elts_in_gens!(left::Vector{Tuple{Int, Int}}, mid::Vector{Tuple{Int, Int}}, right::Vector{Tuple{Int, Int}})
+  nl = length(left)
+  if length(mid) == 0
+    mid = deepcopy(left)
+  elseif nl != 0
+    if left[nl][1] == mid[1][1]
+      t = popfirst!(mid)
+      prepend!(mid, left)
+      tt = (t[1], mid[nl][2] + t[2])
+      mid[nl] = tt
+    else
+      prepend!(mid, left)
+    end
+  end
+  nm = length(mid)
+  if nm == 0
+    return deepcopy(right)
+  end
+  if length(right) == 0
+    return mid
+  end
+  if mid[nm][1] == right[1][1]
+    t = pop!(mid)
+    append!(mid, right)
+    tt = (t[1], mid[nm][2] + t[2])
+    mid[nm] = tt
+  else
+    append!(mid, right)
+  end
+  return mid
+end
+
+function gens(A::AlgGrp, return_full_basis::Type{Val{T}} = Val{false}) where T
+  G = group(A)
+  group_gens = gens(G)
+
+  return_full_basis == Val{true} ? nothing : return map(A, group_gens)
+
+  full_group = elem_type(G)[ id(G) ]
+  elts_in_gens = Vector{Tuple{Int, Int}}[ Tuple{Int, Int}[] ]
+  constructed_elements = falses(BigInt(order(G)))
+  constructed_elements[A.group_to_base[id(G)]] = true
+  new_elements = Set{Int}()
+  for i = 1:length(group_gens)
+    g = group_gens[i]
+    push!(full_group, g)
+    push!(elts_in_gens, Tuple{Int, Int}[ (i, 1) ])
+    constructed_elements[A.group_to_base[g]] = true
+    push!(new_elements, length(full_group))
+  end
+  k = 1 + length(group_gens) # == number of constructed elements, i. e. #{ i | constructed_elements[i] == true }
+
+  while k != dim(A) || !isempty(new_elements)
+    i = pop!(new_elements)
+    g = full_group[i]
+
+    n = length(full_group)
+    for r = 1:n
+      s = op(g, full_group[r])
+      for l = 1:n
+        if !iscommutative(A)
+          t = op(full_group[l], s)
+        else
+          t = s
+        end
+        if constructed_elements[A.group_to_base[t]]
+          continue
+        end
+        constructed_elements[A.group_to_base[t]] = true
+        k += 1
+        push!(full_group, t)
+        coord = _merge_elts_in_gens!(elts_in_gens[l], deepcopy(elts_in_gens[i]), elts_in_gens[r])
+        push!(elts_in_gens, coord)
+        push!(new_elements, length(full_group))
+        if iscommutative(A)
+          break
+        end
+        k == dim(A) ? break : nothing
+      end
+      k == dim(A) ? break : nothing
+    end
+  end
+
+  return map(A, group_gens), map(A, full_group), elts_in_gens
+end
