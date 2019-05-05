@@ -48,7 +48,7 @@ coefficient_type(::Type{Generic.Mat{T}}) where {T} = T
 
 ################################################################################
 #
-#  Zero! for generic matrices
+#  Unsafe functions for generic matrices
 #
 ################################################################################
 
@@ -60,6 +60,8 @@ function zero!(a::MatElem)
   end
   return a
 end
+
+mul!(c::MatElem, a::MatElem, b::MatElem) = a*b
 
 ################################################################################
 #

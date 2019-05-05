@@ -414,8 +414,7 @@ const AlgAssAbsOrdQuoRingElem{S, T} = AbsOrdQuoRingElem{AlgAssAbsOrd{S, T}, AlgA
 mutable struct AlgMat{T, S} <: AbsAlgAss{T}
   base_ring::Ring
   coefficient_ring::Ring
-  one
-  has_one::Bool
+  one::S
   basis
   basis_mat # matrix over the base_ring
   dim::Int

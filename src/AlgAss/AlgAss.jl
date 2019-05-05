@@ -24,6 +24,7 @@ degree(A::AlgAss) = dim(A)
 elem_type(::Type{AlgAss{T}}) where {T} = AlgAssElem{T, AlgAss{T}}
 
 function multiplication_table(A::AlgAss; copy::Bool = true)
+  @assert !iszero(A)
   if copy
     return deepcopy(A.mult_table)
   else

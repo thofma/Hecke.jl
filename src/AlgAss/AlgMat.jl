@@ -14,9 +14,7 @@ coefficient_ring(A::AlgMat) = A.coefficient_ring
 
 basis(A::AlgMat) = A.basis
 
-has_one(A::AlgMat) = A.has_one
-
-one(A::AlgMat) = deepcopy(A.one)
+has_one(A::AlgMat) = true
 
 elem_type(A::AlgMat{T, S}) where { T, S } = AlgMatElem{T, AlgMat{T, S}, S}
 
@@ -122,8 +120,7 @@ function AlgMat(R::Ring, n::Int)
     end
   end
   A.basis = B
-  A.one = A(identity_matrix(R, n))
-  A.has_one = true
+  A.one = identity_matrix(R, n)
   return A
 end
 
@@ -146,8 +143,7 @@ function AlgMat(R::Ring, S::AbsAlgAss, n::Int)
     end
   end
   A.basis = B
-  A.one = A(identity_matrix(S, n))
-  A.has_one = true
+  A.one = identity_matrix(S, n)
   return A
 end
 
@@ -155,6 +151,7 @@ function AlgMat(R::Ring, gens::Vector{<:MatElem}; check::Bool = true, isbasis::B
   @assert length(gens) > 0
   A = AlgMat{elem_type(R), dense_matrix_type(elem_type(R))}(R)
   A.degree = nrows(gens[1])
+  A.one = identity_matrix(R, degree(A))
   if isbasis
     A.dim = length(gens)
     bas = Vector{elem_type(A)}(undef, dim(A))
@@ -165,6 +162,7 @@ function AlgMat(R::Ring, gens::Vector{<:MatElem}; check::Bool = true, isbasis::B
   else
     d = degree(A)
     d2 = degree(A)^2
+    push!(gens, identity_matrix(R, d))
     M = zero_matrix(R, length(gens), d2)
     for i = 1:length(gens)
       for j = 1:d2
@@ -207,6 +205,7 @@ function AlgMat(R::Ring, S::AbsAlgAss, gens::Vector{<:MatElem}; check::Bool = tr
   @assert length(gens) > 0
   A = AlgMat{elem_type(R), dense_matrix_type(elem_type(S))}(R, S)
   A.degree = nrows(gens[1])
+  A.one = identity_matrix(S, degree(A))
   if isbasis
     A.dim = length(gens)
     bas = Vector{elem_type(A)}(undef, dim(A))
@@ -217,6 +216,7 @@ function AlgMat(R::Ring, S::AbsAlgAss, gens::Vector{<:MatElem}; check::Bool = tr
   else
     d = degree(A)
     d2 = degree(A)^2
+    push!(gens, identity_matrix(S, d))
     dcr = dim(S)
     M = zero_matrix(R, length(gens), d2*dcr)
     for i = 1:length(gens)

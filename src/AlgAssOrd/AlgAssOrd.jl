@@ -1180,9 +1180,7 @@ function MaximalOrder(O::AlgAssAbsOrd{S, T}) where { S <: AlgGrp, T <: AlgGrpEle
   return OO
 end
 
-function _denominator_of_mult_table(A::AlgAss{fmpq})
-  @assert !iszero(A)
-
+function _denominator_of_mult_table(A::AbsAlgAss{fmpq})
   l = denominator(multiplication_table(A, copy = false)[1, 1, 1])
   for i = 1:dim(A)
     for j = 1:dim(A)
@@ -1207,12 +1205,6 @@ function any_order(A::AbsAlgAss{fmpq})
   M = FakeFmpqMat(M)
   M = hnf!(M, :lowerleft)
   O = Order(A, sub(M, 2:dim(A) + 1, 1:dim(A)))
-  return O
-end
-
-function any_order(A::AlgMat)
-  O = Order(A, basis(A))
-  check_order(O)
   return O
 end
 
