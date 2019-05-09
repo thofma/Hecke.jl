@@ -54,6 +54,10 @@ ideal_type(::NfAbsOrd{S, T}) where {S, T} = NfAbsOrdIdl{S, T}
 
 ideal_type(::Type{NfAbsOrd{S, T}}) where {S, T} = NfAbsOrdIdl{S, T}
 
+frac_ideal_type(::NfAbsOrd{S, T}) where {S, T} = NfOrdFracIdl
+
+frac_ideal_type(::Type{NfAbsOrd{S, T}}) where {S, T} = NfOrdFracIdl
+
 Nemo.show_minus_one(::Type{NfAbsOrdElem{S, T}}) where {S, T} = true
 
 Nemo.base_ring(::NfAbsOrd) = Union{}
@@ -107,7 +111,7 @@ field $K$.
 @doc Markdown.doc"""
     ismaximal(R::NfAbsOrd) -> Bool
 Tests if the order $R$ is maximal. This might trigger the 
-the computation if the maximal order.
+computation of the maximal order.
 """
 function ismaximal(R::NfAbsOrd)
   if R.ismaximal == 1
@@ -1144,7 +1148,7 @@ function _lll_gram(M::NfOrd)
   g = trace_matrix(M)
 
   q,w = lll_gram_with_transform(g)
-  On = NfOrd(K, FakeFmpqMat(w*basis_mat(M, copy = false).num, denominator(basis_mat(M, copy = false))))
+  On = NfOrd(K, w*basis_mat(M, copy = false))
   On.ismaximal = M.ismaximal
   if isdefined(M, :index)
     On.index = M.index
@@ -1185,12 +1189,14 @@ function lll(M::NfOrd)
   end
 
   I = ideal(M, 1)
-
-  prec = 100
+  #TODO HARD: find proper parameters
+  prec = 100 + 25*div(degree(M), 3) + Int(round(log(abs(discriminant(K)))))
+  #prec = 100
+  i = 0
   while true
     try
-      q,w = lll(I, parent(basis_mat(M, copy = false).num)(0), prec = prec)
-      On = NfOrd(K, FakeFmpqMat(w*basis_mat(M, copy = false).num, denominator(basis_mat(M, copy = false))))
+      q, w = lll(I, zero_matrix(FlintZZ, degree(K), degree(K)), prec = prec)
+      On = NfOrd(K, w*basis_mat(M, copy = false))
       On.ismaximal = M.ismaximal
       if isdefined(M, :index)
         On.index = M.index
@@ -1202,13 +1208,15 @@ function lll(M::NfOrd)
         On.gen_index = M.gen_index
       end
       M.lllO = On
+      On.lllO = On
       return On::NfOrd
     catch e
       if isa(e, LowPrecisionLLL) || isa(e, InexactError)
-        prec = Int(round(prec*1.2))
-        #if prec>1000
-        #  error("precision too large in LLL");
-        #end
+        i += 1
+        if i > 3
+          @show "having a hard time computing the LLL basis"
+        end
+        prec = Int(round(prec*1.2*i))
         continue;
       else
         rethrow(e)

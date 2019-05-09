@@ -9,7 +9,8 @@ mutable struct NfOrdToFqNmodMor <: Map{NfOrd, FqNmodFiniteField, HeckeMap, NfOrd
   header::MapHeader{NfOrd, FqNmodFiniteField}
   poly_of_the_field::gfp_poly
   P::NfOrdIdl
-
+  powers::Vector{nf_elem}
+  
   function NfOrdToFqNmodMor()
     r = new()
     r.header = MapHeader{NfOrd, FqNmodFiniteField}()
@@ -32,6 +33,7 @@ mutable struct NfOrdToFqNmodMor <: Map{NfOrd, FqNmodFiniteField, HeckeMap, NfOrd
     for i in 2:d
       powers[i] = powers[i - 1] * a
     end
+    z.powers = powers
 
     function _image(x::NfOrdElem)
       u = F()
@@ -55,7 +57,7 @@ mutable struct NfOrdToFqNmodMor <: Map{NfOrd, FqNmodFiniteField, HeckeMap, NfOrd
       for i in 2:d
         add!(zz.elem_in_nf, zz.elem_in_nf, powers[i - 1] * coeff(y, i - 1))
       end
-      _mod!(zz.elem_in_nf, p)
+      zz.elem_in_nf = mod(zz.elem_in_nf, p)
       return zz
     end
 
@@ -91,6 +93,7 @@ mutable struct NfOrdToFqNmodMor <: Map{NfOrd, FqNmodFiniteField, HeckeMap, NfOrd
     for i in 2:d
       powers[i] = powers[i - 1] * a.elem_in_nf
     end
+    z.powers = powers
 
     tempF = F()
 
@@ -112,7 +115,7 @@ mutable struct NfOrdToFqNmodMor <: Map{NfOrd, FqNmodFiniteField, HeckeMap, NfOrd
       for i in 2:d
         add!(zz.elem_in_nf, zz.elem_in_nf, powers[i - 1] * coeff(y, i - 1))
       end
-      _mod!(zz.elem_in_nf, p)
+      zz.elem_in_nf = mod(zz.elem_in_nf, p)
       return zz
     end
 
@@ -121,17 +124,20 @@ mutable struct NfOrdToFqNmodMor <: Map{NfOrd, FqNmodFiniteField, HeckeMap, NfOrd
   end
 end
 
-_mod!(x::nf_elem, y::Integer) = _mod!(x, fmpz(y))
-
-function _mod!(x::nf_elem, y::fmpz)
-  zden = denominator(x)
-  zden2 = denominator(x)
-  mul!(x, x, zden)
-  mul!(zden, zden, y)
-  mod!(x, zden)
-  divexact!(x, x, zden2)
-  return x
+function preimage(f::NfOrdToFqNmodMor, y::fq_nmod)
+  O = domain(f)
+  p = minimum(f.P)
+  powers = f.powers
+  d = length(powers)
+  zz = O()
+  zz.elem_in_nf = nf(O)(coeff(y, 0))
+  for i in 2:d
+    add!(zz.elem_in_nf, zz.elem_in_nf, powers[i - 1] * coeff(y, i - 1))
+  end
+  zz.elem_in_nf = mod(zz.elem_in_nf, p)
+  return zz
 end
+
 
 # S is the type of the order, T the type of the ideal and U the elem_type of the order, which define the quotient ring
 mutable struct AbsOrdQuoMap{S, T, U} <: Map{S, AbsOrdQuoRing{S, T}, HeckeMap, AbsOrdQuoMap}
@@ -338,7 +344,7 @@ function NfOrdToFqMor(O::NfOrd, P::NfOrdIdl)#, g::fmpz_poly, a::NfOrdElem, b::Ve
     for i in 2:d
       add!(zz.elem_in_nf, zz.elem_in_nf, powers[i - 1] * coeff(y, i - 1))
     end
-    _mod!(zz.elem_in_nf, p)
+    zz.elem_in_nf = mod(zz.elem_in_nf, p)
     return zz
   end
 

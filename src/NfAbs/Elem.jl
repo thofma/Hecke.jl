@@ -42,6 +42,24 @@ end
 
 ################################################################################
 #
+#  Is integral
+#
+################################################################################
+
+isintegral(a::fmpq) = isone(denominator(a))
+
+function isintegral(a::Union{ nf_elem, NfAbsNSElem, NfRelElem, NfRel_nsElem })
+  f = minpoly(a)
+  for i = 0:(degree(f) - 1)
+    if !isintegral(coeff(f, i))
+      return false
+    end
+  end
+  return true
+end
+
+################################################################################
+#
 #  Random elements from arrays of nf_elem
 #
 ################################################################################
@@ -932,9 +950,15 @@ end
 
 ################################################################################
 #
-#  Modular reduction
+#  Mod function
 #
 ################################################################################
+
+function __mod(a::nf_elem, b::fmpz, fl::Bool = true)
+  z = parent(a)()
+  ccall((:nf_elem_mod_fmpz_den, :libantic), Nothing, (Ref{nf_elem}, Ref{nf_elem}, Ref{fmpz}, Ref{AnticNumberField}, Cint), z, a, b, parent(a), Cint(fl))
+  return z
+end
 
 import Hecke.mod_sym!, Hecke.rem!, Hecke.mod!, Hecke.mod, Hecke.rem
 
@@ -954,12 +978,22 @@ function mod_sym!(a::nf_elem, b::fmpz, b2::fmpz)
   end
 end
 
-function mod!(z::fmpz, x::fmpz, y::fmpz)
-  ccall((:fmpz_mod, :libflint), Nothing, (Ref{fmpz}, Ref{fmpz}, Ref{fmpz}), z, x, y)
-  return z
+function mod(b::nf_elem, p::fmpz)
+  db = denominator(b)
+  nb = numerator(b)
+  f, e = ppio(db, p)
+  e1 = invmod(e, p*f)
+  mul!(nb, nb, e1)
+  _mod!(nb, p*f)
+  divexact!(nb, nb, f)
+  return nb
 end
 
-function mod!(a::nf_elem, b::fmpz)
+mod(x::nf_elem, y::Integer) = mod(x, fmpz(y))
+
+#Assuming that the denominator of a is one, reduces all the coefficients modulo p
+function _mod!(a::nf_elem, b::fmpz)
+  @hassert :NfOrd 1 isone(denominator(a))
   z = fmpz()
   d = degree(parent(a))
   if d == 1
@@ -980,12 +1014,7 @@ function mod!(a::nf_elem, b::fmpz)
       _num_setcoeff!(a, i, z)
     end
   end
-end
-
-function mod(a::nf_elem, b::fmpz)
-  c = deepcopy(a)
-  mod!(c, b)
-  return c
+  return nothing
 end
 
 function rem!(a::nf_elem, b::fmpz)

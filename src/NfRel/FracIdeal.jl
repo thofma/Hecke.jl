@@ -95,13 +95,13 @@ function numerator(a::NfRelOrdFracIdl)
   d = denominator(a)
   PM = basis_pmat(a)
   if isone(d)
-    return NfRelOrdIdl{typeof(a).parameters...}(order(a), PM)
+    return ideal_type(order(a))(order(a), PM)
   end
   for i = 1:degree(order(a))
     PM.coeffs[i] = PM.coeffs[i]*d
     PM.coeffs[i] = simplify(PM.coeffs[i])
   end
-  return NfRelOrdIdl{typeof(a).parameters...}(order(a), PM)
+  return ideal_type(order(a))(order(a), PM)
 end
 
 ################################################################################
@@ -313,7 +313,7 @@ function *(a::NfRelOrdFracIdl{T, S}, b::NfRelOrdFracIdl{T, S}) where {T, S}
   K = base_ring(L)
   d = degree(order(a))
   M = zero_matrix(K, d^2, d)
-  C = Array{typeof(a).parameters[2], 1}(undef, d^2)
+  C = Array{frac_ideal_type(order_type(K)), 1}(undef, d^2)
   t = L()
   for i = 1:d
     for j = 1:d
@@ -421,7 +421,7 @@ function mod(x::S, y::T) where {S <: Union{nf_elem, RelativeElement}, T <: Union
     dy = simplify(dy)
     dynum = numerator(dy)
   else
-    dynum = NfRelOrdIdl{T.parameters...}(O, basis_pmat(dy, copy = false))
+    dynum = ideal_type(O)(O, basis_pmat(dy, copy = false))
   end
   dz = mod(O(dx), dynum)
   z = divexact(K(dz), d)

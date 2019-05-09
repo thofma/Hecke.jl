@@ -432,7 +432,7 @@ function assure_has_basis_mat(A::NfAbsOrdIdl)
   end
 
   if !isdefining_polynomial_nice(nf(order(A)))
-    c = _hnf_modular_eldiv(representation_matrix(A.gen_two), A.gen_one, :lowerleft)
+    c = hnf_modular_eldiv!(representation_matrix(A.gen_two), A.gen_one, :lowerleft)
     A.basis_mat = c
     return nothing
   end
@@ -445,7 +445,7 @@ function assure_has_basis_mat(A::NfAbsOrdIdl)
   end
 
   if has_princ_gen(A)
-    A.basis_mat = _hnf_modular_eldiv(representation_matrix(A.princ_gen), minimum(A), :lowerleft)
+    A.basis_mat = hnf_modular_eldiv!(representation_matrix_mod(A.princ_gen, minimum(A)), minimum(A), :lowerleft)
     return nothing
   end
 
@@ -455,12 +455,9 @@ function assure_has_basis_mat(A::NfAbsOrdIdl)
 
   m = abs(A.gen_one)
   be = elem_in_nf(A.gen_two)
-  d = denominator(be)
-  f, e = ppio(d, m)
-  be *= e
-  be = mod(be*f, m*f)//f
+  be = mod(be, m)
 
-  c = _hnf_modular_eldiv(representation_matrix(order(A)(be)), m, :lowerleft)
+  c = hnf_modular_eldiv!(representation_matrix_mod(order(A)(be), m), m, :lowerleft)
   A.basis_mat = c
   return nothing
 end
@@ -1606,11 +1603,11 @@ function colon(a::NfAbsOrdIdl, b::NfAbsOrdIdl, contains::Bool = false)
     b, l = pseudo_inv(m)
     return NfAbsOrdIdl(O, b)//l
   else 
-    n = FakeFmpqMat(representation_matrix(B[1]),FlintZZ(1))*bmatinv
+    n = representation_matrix(B[1])*bmatinv
     m = numerator(n)
     d = denominator(n)
     for i in 2:length(B)
-      n = FakeFmpqMat(representation_matrix(B[i]),FlintZZ(1))*bmatinv
+      n = representation_matrix(B[i])*bmatinv
       l = lcm(denominator(n), d)
       if l==d
         m = hcat(m, n.num)

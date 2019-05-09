@@ -981,8 +981,6 @@ end
 function overorders_meataxe(O::NfOrd, M::NfOrd = maximal_order(O))
   orders = Vector{typeof(O)}[]
 
-  k = 1
-
   for (p, ) in factor(div(index(M), index(O)))
     push!(orders, poverorders_meataxe(O, p, M))
   end

@@ -255,7 +255,7 @@ function conjugates_arb_log(x::nf_elem, abs_tol::Int)
   while true
     prec_too_low = false
     c = conjugate_data_arb_roots(K, abs_tol)
-    if abs_tol > 2^18
+    if abs_tol > 2^20
       error("Something wrong in conjugates_arb_log")
     end
     xpoly = arb_poly(parent(K.pol)(x), abs_tol)

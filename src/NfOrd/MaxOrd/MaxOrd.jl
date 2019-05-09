@@ -434,7 +434,7 @@ function TameOverorderBL(O::NfOrd, lp::Array{fmpz,1}=fmpz[])
     q=M[1]
     if isprime(q)
       OO1=pmaximal_overorder(O, q)
-      if valuation(discriminant(OO1), q)<valuation(discriminant(OO), q)
+      if valuation(discriminant(OO1), q)< valuation(discriminant(OO), q)
         OO+=OO1
       end
       filter!(x-> x!=q, M)
@@ -676,7 +676,7 @@ function pradical_frobenius1(O::NfOrd, p::Union{Integer, fmpz})
   R = GF(p, cached = false)
   d = degree(O)
   K = nf(O)
-  Rx = PolynomialRing(R, "x", cached = true)[1]
+  Rx = PolynomialRing(R, "x", cached = false)[1]
   res = factor_shape_refined(Rx(K.pol))
   md = 1
   for i = 1:length(res)

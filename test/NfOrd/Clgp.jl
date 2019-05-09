@@ -158,6 +158,16 @@
 
       @test order(Cl)== 36
     end
+    
+    @testset "S3 field" begin
+      Qx, x = PolynomialRing(FlintQQ, "x");
+      f = x^6-24*x^4+157*x^2-162;
+      K, a = NumberField(f);
+      OK = maximal_order(K);
+      OK = lll(OK);
+      C, mC = class_group(OK, redo = true, use_aut = true);
+      @test order(C) == 3
+    end
 
   end
 

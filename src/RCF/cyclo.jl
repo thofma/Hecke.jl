@@ -11,6 +11,10 @@ mutable struct CyclotomicExt
   Kr::Hecke.NfRel{nf_elem}
   Ka::AnticNumberField
   mp::Tuple{NfRelToNf, NfToNfMor}
+  
+  kummer_exts::Dict{Set{fmpz}, Tuple{Vector{NfOrdIdl}, KummerExt}}
+                      #I save the kummer extensions used in the class field construction
+                      #The keys are the factors of the minimum of the conductor
   function CyclotomicExt()
     return new()
   end
@@ -49,6 +53,7 @@ function cyclotomic_extension(k::AnticNumberField, n::Int)
   
   kt, t = PolynomialRing(k, "t", cached = false)
   c = CyclotomicExt()
+  c.kummer_exts = Dict{Set{fmpz}, Tuple{Vector{NfOrdIdl}, KummerExt}}()
   c.k = k
   c.n = n
   
@@ -114,8 +119,10 @@ function cyclotomic_extension(k::AnticNumberField, n::Int)
     Hecke._set_cyclotomic_ext_nf(k, Ac)
     return c
   end
-  lf = factor(fk)
-  fk = first(keys(lf.fac))
+  if !isone(gcd(numerator(discriminant(k)), n))
+    lf = factor(fk)
+    fk = first(keys(lf.fac))
+  end
 
   Kr, Kr_gen = number_field(fk, "z_$n", cached = false, check = false)
   if degree(fk) != 1
@@ -171,7 +178,7 @@ base_field(C::CyclotomicExt) = C.k
 @doc Markdown.doc"""
     automorphisms(C::CyclotomicExt; gens::Vector{NfToNfMor}) -> Vector{NfToNfMor}
 Computes the automorphisms of the absolute field defined by the cyclotomic extension, i.e. of absolute_field(C).
-gens must be a set of generators for the automorphism group of the base field of C
+It assumes that the base field is normal. gens must be a set of generators for the automorphism group of the base field of C
 """
 function automorphisms(C::CyclotomicExt; gens::Vector{NfToNfMor} = small_generating_set(automorphisms(base_field(C))), copy::Bool = true)
 

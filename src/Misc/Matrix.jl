@@ -48,7 +48,7 @@ coefficient_type(::Type{Generic.Mat{T}}) where {T} = T
 
 ################################################################################
 #
-#  Zero! for generic matrices
+#  Unsafe functions for generic matrices
 #
 ################################################################################
 
@@ -60,6 +60,8 @@ function zero!(a::MatElem)
   end
   return a
 end
+
+mul!(c::MatElem, a::MatElem, b::MatElem) = a*b
 
 ################################################################################
 #
@@ -300,6 +302,18 @@ function ishnf(x::fmpz_mat, shape::Symbol)
     end
     return true
   end
+end
+
+################################################################################
+#
+#  Is LLL?
+#
+################################################################################
+
+function islll_reduced(x::fmpz_mat, ctx::lll_ctx = lll_ctx(0.99, 0.51))
+  b = ccall((:fmpz_lll_is_reduced_d, :libflint), Cint, 
+            (Ref{fmpz_mat}, Ref{lll_ctx}), x, ctx)
+  return Bool(b)
 end
 
 ################################################################################

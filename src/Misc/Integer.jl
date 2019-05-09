@@ -8,6 +8,7 @@ function rem(a::fmpz, b::UInt)
   return ccall((:fmpz_fdiv_ui, :libflint), UInt, (Ref{fmpz}, UInt), a, b)
 end
 
+
 function isless(a::BigFloat, b::Nemo.fmpz)
   if _fmpz_is_small(b)
     c = ccall((:mpfr_cmp_si, :libmpfr), Int32, (Ref{BigFloat}, Int), a, b.d)
@@ -320,11 +321,17 @@ one(::Type{fmpq}) = fmpq(1)
 # more unsafe function that Bill does not want to have....
 ############################################################
 
+
+function mod!(z::fmpz, x::fmpz, y::fmpz)
+  ccall((:fmpz_mod, :libflint), Nothing, (Ref{fmpz}, Ref{fmpz}, Ref{fmpz}), z, x, y)
+  return z
+end
+
 function divexact!(z::fmpz, x::fmpz, y::fmpz)
-    y == 0 && throw(DivideError())
-    ccall((:fmpz_divexact, :libflint), Nothing, 
-          (Ref{fmpz}, Ref{fmpz}, Ref{fmpz}), z, x, y)
-    return z
+  iszero(y) && throw(DivideError())
+  ccall((:fmpz_divexact, :libflint), Nothing, 
+        (Ref{fmpz}, Ref{fmpz}, Ref{fmpz}), z, x, y)
+  return z
 end
 
 function lcm!(z::fmpz, x::fmpz, y::fmpz)

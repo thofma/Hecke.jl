@@ -181,15 +181,19 @@ function find_gens(mR::Map, S::PrimesSet, cp::fmpz=fmpz(1))
 end
 
 #Computes a set of prime ideals of the base field of K such that the corresponding Frobenius
-#generate the automorphism group
+#automorphisms generate the automorphism group
 function find_gens(K::KummerExt, S::PrimesSet, cp::fmpz=fmpz(1))
+  if isdefined(K, :frob_gens)
+    return K.frob_gens[1], K.frob_gens[2]
+  end
   ZK = maximal_order(base_field(K))
   R = K.AutG 
-  sR = GrpAbFinGenElem[]
-  lp = NfOrdIdl[]
+  sR = Vector{GrpAbFinGenElem}(undef, length(K.gen))
+  lp = Vector{NfOrdIdl}(undef, length(K.gen))
 
-  q, mq = quo(R, sR, false)
+  q, mq = quo(R, GrpAbFinGenElem[], false)
   s, ms = snf(q)
+  ind = 1
   for p in S
     if cp % p == 0 || index(ZK) % p == 0
       continue
@@ -223,19 +227,19 @@ function find_gens(K::KummerExt, S::PrimesSet, cp::fmpz=fmpz(1))
       if !to_be
         continue
       end
-      push!(sR, f)
-      push!(lp, P)
-      q, mq = quo(R, sR, false)
+      sR[ind] = f
+      lp[ind] = P
+      ind += 1
+      q, mq = quo(R, sR[1:ind-1], false)
       s, ms = snf(q)
     end
     if order(q) == 1   
       break
     end
   end
+  K.frob_gens = (lp, sR)
   return lp, sR
-  
 end
-
 
 ###############################################################################
 #
@@ -301,7 +305,7 @@ function build_map(CF::ClassField_pp, K::KummerExt, c::CyclotomicExt)
   @vtime :ClassField 2 lp, sG = find_gens(K, Sp, cp)
   G = K.AutG
   sR = Array{GrpAbFinGenElem, 1}(undef, length(lp))
-  @vtime :ClassField 3 for i=1:length(lp)
+  @vtime :ClassField 3 for i = 1:length(lp)
     p = intersect_nonindex(mp, lp[i])
     #Since the prime are totally split in the cyclotomic extension by our choice, we can ignore the valuation of the norm
     #sR[i] = valuation(norm(lp[i]), norm(p))*CF.quotientmap(preimage(CF.rayclassgroupmap, p))
@@ -321,6 +325,13 @@ end
 function _s_unit_for_kummer(C::CyclotomicExt, f::fmpz)
   
   e = C.n
+  lf = factor(f)
+  lfs = Set(collect(keys(lf.fac)))
+  for (k, v) in C.kummer_exts
+    if issubset(lfs, k)
+      return v
+    end
+  end  
   K = absolute_field(C)
   @vprint :ClassField 2 "Maximal order of cyclotomic extension\n"
   ZK = maximal_order(K)
@@ -332,18 +343,17 @@ function _s_unit_for_kummer(C::CyclotomicExt, f::fmpz)
   mc = compose(pseudo_inv(mq), mc)
   
   lP = Hecke.NfOrdIdl[]
-  if f != 1
-    lf = factor(f)  
-    for p = keys(lf.fac)
-       #I remove the primes that can't be in the conductor
-       lp = prime_decomposition(ZK, p)
-       for (P, s) in lp
-         if gcd(norm(P), e) != 1 || gcd(norm(P)-1, e) != 1
-           push!(lP, P)
-         end 
-       end
-    end
+
+  for p = keys(lf.fac)
+     #I remove the primes that can't be in the conductor
+     lp = prime_decomposition(ZK, p)
+     for (P, s) in lp
+       if gcd(norm(P), e) != 1 || gcd(norm(P)-1, e) != 1
+         push!(lP, P)
+       end 
+     end
   end
+
   g = Array{GrpAbFinGenElem, 1}(undef, length(lP))
   for i = 1:length(lP)
     g[i] = preimage(mc, lP[i])
@@ -376,7 +386,7 @@ function _s_unit_for_kummer(C::CyclotomicExt, f::fmpz)
   end
   KK.gen_mod_nth_power = gens_mod_nth
   @vtime :ClassField 3 KK.eval_mod_nth = nf_elem[evaluate(x) for x in gens_mod_nth]
-
+  C.kummer_exts[lfs] = (lP, KK)
   return lP, KK
 end
 
@@ -460,11 +470,14 @@ function _find_prim_elem(AutA::GrpAbFinGen, AutA_gen::Array{NfRelToNfRelMor{nf_e
   
   A = domain(AutA_gen[1])
   pe = gen(A)
-  Auto = Dict{Hecke.GrpAbFinGenElem, NfRelElem{nf_elem}}()
+  auto_v = Vector{Tuple{Hecke.GrpAbFinGenElem, NfRelElem{nf_elem}}}(undef, Int(order(AutA)))
+  i = 1
   for j in AutA
     im = grp_elem_to_map(AutA_gen, j, pe)
-    Auto[j] = im
+    auto_v[i] = (j, im)
+    i += 1
   end
+  Auto = Dict{Hecke.GrpAbFinGenElem, NfRelElem{nf_elem}}(auto_v)
   @vprint :ClassField 2 "have action on the primitive element!!!\n"  
   return pe, Auto
 end
@@ -661,8 +674,8 @@ function _rcf_descent(CF::ClassField_pp)
         mFp = extend_easy(mF, CE.Ka)
         ap = image(mFp, CF.a)
         pol = Ft()
-        setcoeff!(pol, 0, -ap)
         setcoeff!(pol, n, one(F))
+        setcoeff!(pol, 0, -ap)
         Ap = ResidueRing(Ft, pol, cached = false)
         xpe = zero(Ft)
         for i = 0:n-1
@@ -671,11 +684,12 @@ function _rcf_descent(CF::ClassField_pp)
         imF = Ap(xpe)^norm(p)
         res = GrpAbFinGenElem[]
         for (ky, v) in Auto
-          xp = zero(Ft)
-          @assert coeff(v, n) == 0
+          cfs = Vector{fq_nmod}(undef, n)
+          @assert iszero(coeff(v, n))
           for i = 0:n-1
-            setcoeff!(xp, i, image(mFp, coeff(v, i)))
+            cfs[i+1] = image(mFp, coeff(v, i))
           end
+          xp = Ft(cfs)
           kp = Ap(xp)
           if kp == imF
             push!(res, ky)

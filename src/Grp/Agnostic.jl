@@ -54,6 +54,8 @@ function small_generating_set(G::Vector, op, id)
 
   firsttry = 10
   secondtry = 20
+  thirdtry = 30
+
   # First try one element
   for i in 1:firsttry
     gen = _non_trivial_randelem(G, id)
@@ -64,6 +66,13 @@ function small_generating_set(G::Vector, op, id)
 
   for i in 1:secondtry
     gens = typeof(id)[_non_trivial_randelem(G, id), _non_trivial_randelem(G, id)]
+    if length(closure(gens, op, id)) == orderG
+      return unique(gens)
+    end
+  end
+
+  for i in 1:thirdtry
+    gens = typeof(id)[_non_trivial_randelem(G, id), _non_trivial_randelem(G, id), _non_trivial_randelem(G, id)]
     if length(closure(gens, op, id)) == orderG
       return unique(gens)
     end

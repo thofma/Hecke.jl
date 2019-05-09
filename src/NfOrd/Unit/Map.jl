@@ -1,8 +1,8 @@
-mutable struct MapUnitGrp{T, S} <: Map{T, S, HeckeMap, MapUnitGrp}
+mutable struct MapUnitGrp{T} <: Map{GrpAbFinGen, T, HeckeMap, MapUnitGrp}
   header::Hecke.MapHeader
 
-  function MapUnitGrp{T, S}() where {T, S}
-    return new{T, S}()
+  function MapUnitGrp{T}() where {T}
+    return new{T}()
   end
 end
 
@@ -10,17 +10,7 @@ function show(io::IO, mC::MapUnitGrp)
   println(io, "UnitGroup map of $(codomain(mC))")
 end
 
-mutable struct MapUnitGrpFacElem{T} <: Map{T, FacElemMon{AnticNumberField}, HeckeMap, MapUnitGrpFacElem}
-  header::Hecke.MapHeader
 
-  function MapUnitGrpFacElem{T}() where {T}
-    return new{T}()
-  end
-end
-
-function show(io::IO, mC::MapUnitGrpFacElem)
-  println(io, "Unit group map of $(codomain(mC)) in factored presentation")
-end
 
 function unit_group_disc_exp(x::GrpAbFinGenElem, U::UnitGrpCtx)
   K = nf(order(U))
@@ -100,7 +90,7 @@ function unit_group_fac_elem(c::ClassGrpCtx, u::UnitGrpCtx)
   end
   U = DiagonalGroup(d)
 
-  r = MapUnitGrpFacElem{typeof(U)}()
+  r = MapUnitGrp{typeof(FacElemMon(nf(O)))}()
 
   r.header = MapHeader(U, FacElemMon(nf(O)),
     x->unit_group_disc_exp(x, u),

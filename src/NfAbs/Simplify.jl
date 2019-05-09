@@ -10,14 +10,19 @@ export simplify
  > in http://beta.lmfdb.org/knowledge/show/nf.polredabs.
  > Both version require a LLL reduced basis for the maximal order.
 """
-function simplify(K::AnticNumberField; canonical::Bool = false)
+function simplify(K::AnticNumberField; canonical::Bool = false, cached = false)
   Qx, x = PolynomialRing(FlintQQ)
   if canonical
     a, f1 = polredabs(K)
     f = Qx(f1)
   else
     OK = maximal_order(K)
-    ZK = lll(OK)
+    if isdefined(OK, :lllO)
+      ZK = OK.lllO
+    else
+      prec = 100 + 25*div(degree(K), 3) + Int(round(log(abs(discriminant(K)))))
+      ZK = _lll(OK, prec = prec)[2]
+    end
     a = gen(K)
     if isdefining_polynomial_nice(K)
       I = index(OK)
@@ -25,13 +30,11 @@ function simplify(K::AnticNumberField; canonical::Bool = false)
       I = divexact(numerator(discriminant(K.pol)), discriminant(ZK))
     end
     B = basis(ZK, copy = false)
-    
     for i = 1:length(B)
       if isone(denominator(B[i].elem_in_nf))
         continue
       end 
-      el = OK(B[i].elem_in_nf)
-      ind_a = _index(el)
+      ind_a = _index(B[i])
       if !iszero(ind_a) && ind_a < I
         a = B[i].elem_in_nf
         I = ind_a
@@ -39,30 +42,26 @@ function simplify(K::AnticNumberField; canonical::Bool = false)
     end
     f = minpoly(Qx, a)
   end
-  L = NumberField(f, cached = false, check = false)[1]
+  L = NumberField(f, cached = cached, check = false)[1]
   m = hom(L, K, a, check = false)
   return L, m
 end
 
 function _index(a::NfOrdElem)
   O = parent(a)
+  K = nf(O)
   d = degree(O)
-  M = zero_matrix(FlintZZ, d, d)
-  c = coordinates(one(O), copy = false)
-  for i = 1:d
-    M[1, i] = c[i]
+  pows = Vector{nf_elem}(undef, d)
+  pows[1] = one(K)
+  pows[2] = a.elem_in_nf
+  for i = 3:d
+    pows[i] = pows[i-1]*a.elem_in_nf
   end
-  a1 = deepcopy(a)
-  for i = 2:d
-    c = coordinates(a1, copy = false)
-    for j = 1:d
-      M[i, j] = c[j]
-    end
-    mul!(a1, a1, a)
-  end
-  return abs(det(M))
+  M = basis_mat(pows)
+  hnf!(M)
+  res = prod(M[i, i] for i = 1:degree(K)) 
+  return numerator(res*index(O))
 end
-
 
  #a block is a partition of 1:n
  #given by the subfield of parent(a) defined by a
@@ -312,5 +311,122 @@ function il(F, G)
   end
   return int_cmp(coeff(f, i), coeff(g, i))<0
 end
+
+################################################################################
+#
+#  LLL for simplify
+#
+################################################################################
+
+function _lll(M::NfOrd; prec = 100)
+
+  K = nf(M)
+
+  if istotally_real(K)
+    #in this case the gram-matrix of the minkowski lattice is the trace-matrix
+    #which is exact. 
+    BM = _lll_gram(ideal(M, 1))[2]
+    O1 = NfOrd(K, BM*basis_mat(M, copy = false))
+    O1.ismaximal = M.ismaximal
+    if isdefined(M, :index)
+      O1.index = M.index
+    end
+    if isdefined(M, :disc)
+      O1.disc = M.disc
+    end
+    if isdefined(M, :gen_index)
+      O1.gen_index = M.gen_index
+    end
+    M.lllO = O1
+    return true, O1
+  end
+
+  if degree(K) == 2 && discriminant(M) < 0
+    #in this case the gram-matrix of the minkowski lattice is related to the
+    #trace-matrix which is exact.
+    #could be extended to CM-fields
+    BM = _lll_quad(ideal(M, 1))[2]
+    O1 = NfOrd(K, BM*basis_mat(M, copy = false))
+    O1.ismaximal = M.ismaximal
+    if isdefined(M, :index)
+      O1.index = M.index
+    end
+    if isdefined(M, :disc)
+      O1.disc = M.disc
+    end
+    if isdefined(M, :gen_index)
+      O1.gen_index = M.gen_index
+    end
+    M.lllO = O1
+    return true, O1
+  end
+
+  n = degree(M)
+  prec = max(prec, 4*n)
+  local d::fmpz_mat
+  while true
+    try
+      d = minkowski_gram_mat_scaled(M, prec)
+      break
+    catch e
+      prec = prec*2
+    end
+  end
+  g = zero_matrix(FlintZZ, n, n)
+  
+  prec = div(prec, 2)
+  shift!(d, -prec)  #TODO: remove?
+
+  for i=1:n
+    fmpz_mat_entry_add_ui!(d, i, i, UInt(nrows(d)))
+  end
+
+  ctx = Nemo.lll_ctx(0.99, 0.51, :gram)
+
+  ccall((:fmpz_mat_one, :libflint), Nothing, (Ref{fmpz_mat}, ), g)
+  ccall((:fmpz_lll, :libflint), Nothing, (Ref{fmpz_mat}, Ref{fmpz_mat}, Ref{Nemo.lll_ctx}), d, g, ctx)
+
+  fl = true
+  ## test if entries in l are small enough, if not: increase precision
+  ## or signal that prec was too low
+
+  if nbits(maximum(abs, g)) >  div(prec, 2)
+    fl = false
+  else
+    ## lattice has lattice disc = order_disc * norm^2
+    ## lll needs to yield a basis sth
+    ## l[1,1] = |b_i|^2 <= 2^((n-1)/2) disc^(1/n)  
+    ## and prod(l[i,i]) <= 2^(n(n-1)/2) disc
+    n = nrows(d)
+    disc = abs(discriminant(M))
+    di = root(disc, n)+1
+    di *= fmpz(2)^(div(n+1,2)) * fmpz(2)^prec
+
+    if cmpindex(d, 1, 1, di) > 0 
+      fl = false
+    else
+      pr = prod_diag(d)
+      if pr > fmpz(2)^(div(n*(n-1), 2)) * disc * fmpz(2)^(n*prec)
+        fl = false
+      end
+    end
+  end
+  On = NfOrd(K, g*basis_mat(M, copy = false))
+  On.ismaximal = M.ismaximal
+  if isdefined(M, :index)
+    On.index = M.index
+  end
+  if isdefined(M, :disc)
+    On.disc = M.disc
+  end
+  if isdefined(M, :gen_index)
+    On.gen_index = M.gen_index
+  end
+  if fl
+    M.lllO = On
+  end
+  return fl, On
+end
+
 
 

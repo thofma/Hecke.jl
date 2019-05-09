@@ -113,7 +113,7 @@ function lll(A::NfOrdIdl, v::fmpz_mat = zero_matrix(FlintZZ, 1, 1); prec::Int = 
     fmpz_mat_entry_add_ui!(d, i, i, UInt(nrows(d)))
   end
 
-  ctx=Nemo.lll_ctx(0.99, 0.51, :gram)
+  ctx = Nemo.lll_ctx(0.99, 0.51, :gram)
 
   ccall((:fmpz_mat_one, :libflint), Nothing, (Ref{fmpz_mat}, ), g)
   ccall((:fmpz_lll, :libflint), Nothing, (Ref{fmpz_mat}, Ref{fmpz_mat}, Ref{Nemo.lll_ctx}), d, g, ctx)
@@ -166,7 +166,7 @@ end
 function short_elem(A::NfOrdIdl,
                 v::fmpz_mat = zero_matrix(FlintZZ, 1,1); prec::Int = 100)
   K = nf(order(A))
-  temp = FakeFmpqMat(basis_mat(A))*basis_mat(order(A))
+  temp = basis_mat(A, copy = false)*basis_mat(order(A), copy = false)
   b = temp.num
   b_den = temp.den
   local t
@@ -185,7 +185,7 @@ function short_elem(A::NfOrdIdl,
     prec = 2 * prec
   end
 
-  w = view(t, 1,1, 1, ncols(t))
+  w = view(t, 1:1, 1:ncols(t))
   c = w*b
   q = elem_from_mat_row(K, c, 1, b_den)
   return q

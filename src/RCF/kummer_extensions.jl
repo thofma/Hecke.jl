@@ -7,6 +7,7 @@ mutable struct KummerExt <: AbelianExt
 
   AutG::GrpAbFinGen
   frob_cache::Dict{NfOrdIdl, GrpAbFinGenElem}
+  frob_gens::Tuple{Vector{NfOrdIdl}, Vector{GrpAbFinGenElem}}
   gen_mod_nth_power::Vector{FacElem{nf_elem, AnticNumberField}}
   eval_mod_nth::Vector{nf_elem}
   

@@ -185,6 +185,7 @@ function decompose(A::AbsAlgAss{T}) where {T}
 end
 
 function _decompose(A::AbsAlgAss{T}) where {T}
+  @assert _issemisimple(A) != 2 "Algebra is not semisimple"
   if iscommutative(A)
     res = _dec_com(A)
   else
@@ -512,91 +513,192 @@ end
 
 ################################################################################
 #
-#  Compute generators
+#  Generators
 #
 ################################################################################
 
-function _reduce(M, v)
-  cur_ind = 0
-  for outer cur_ind in 1:ncols(M)
-    if !iszero(v[cur_ind])
-      break
+# Reduces the vector v w. r. t. M and writes it in the i-th row of M.
+# M should look like this:
+#     (0 1 * 0 *)
+#     (1 0 * 0 *)
+# M = (0 0 0 1 *)
+#     (0 0 0 0 0)
+#     (0 0 0 0 0),
+# i. e. "almost" in rref, but the rows do not have to be sorted.
+# For a column c of M pivot_rows[c] should be the row with the pivot or 0.
+# The function changes M, and pivot_rows in place!
+function _add_row_to_rref!(M::MatElem{T}, v::Vector{T}, pivot_rows::Vector{Int}, i::Int) where { T <: FieldElem }
+  @assert ncols(M) == length(v)
+  @assert ncols(M) == length(pivot_rows)
+  @assert 1 <= i && i <= nrows(M)
+
+  for c = 1:ncols(M)
+    M[i, c] = deepcopy(v[c])
+  end
+
+  rank_increases = false
+  s = one(base_ring(M))
+  for c = 1:ncols(M)
+    if iszero(M[i, c])
+      continue
     end
-  end
-end
 
-function gens(A::AbsAlgAss)
-  d = dim(A)
-  K = base_ring(A)
+    r = pivot_rows[c]
+    if r == 0
+      if !rank_increases
+        pivot_rows[c] = i
+        rank_increases = true
+        t = divexact(one(base_ring(M)), M[i, c])
+        for j = (c + 1):ncols(M)
+          M[i, j] = mul!(M[i, j], M[i, j], t)
+        end
+        M[i, c] = one(base_ring(M))
 
-  b = rand(A)
-  while iszero(b)
-    b = rand(A)
-  end
-
-  cur_gen = elem_type(A)[b]
-
-  current_dim = -1
-
-  B = zero_matrix(K, d, d)
-
-  for k in 1:d
-    B[1, k] = b.coeffs[k]
-  end
-
-  cur_dim = 1
-
-  new_dim = 0
-
-  if d == 1
-    return cur_gen
-  end
-
-  l = 0
-
-  t_gens = copy(cur_gen)
-
-  while true
-    l = l + 1
-    while true
-      t_gens = copy(cur_gen)
-      t = length(t_gens)
-      for i in 1:t
-        for j in 1:t
-          c = t_gens[i] * t_gens[j]
-          for k in 1:d
-            B[d, k] = c.coeffs[k]
+        for j = 1:nrows(M)
+          if i == j
+            continue
           end
-          new_dim = rref!(B)
-          if new_dim == d
-            return cur_gen
-          elseif new_dim > cur_dim
-            cur_dim = new_dim
-            push!(t_gens, c)
+          if iszero(M[j, c])
+            continue
           end
+
+          t = -M[j, c]
+          for k = (c + 1):ncols(M)
+            if iszero(M[i, k])
+              continue
+            end
+
+            s = mul!(s, t, M[i, k])
+            M[j, k] = add!(M[j, k], M[j, k], s)
+          end
+          M[j, c] = zero(base_ring(M))
         end
       end
-
-      if cur_dim == new_dim
-        break
-      else
-        cur_dim = new_dim
-        B = new_B
-      end
+      continue
     end
 
-    if cur_dim == d
-      break
-    else
-      b = rand(A)
-      while iszero(b)
-        b = rand(A)
+    t = -M[i, c] # we assume M[r, c] == 1 (M[r, c] is the pivot)
+    for j = (c + 1):ncols(M)
+      s = mul!(s, t, M[r, j])
+      M[i, j] = add!(M[i, j], M[i, j], s)
+    end
+    M[i, c] = zero(base_ring(M))
+  end
+
+  return rank_increases
+end
+
+# Returns a subset of the basis, which generates A as an algebra over the base ring.
+# If torough_search is true, the number of returned generators is possibly smaller.
+# This will in general increase the runtime.
+function gens(A::AbsAlgAss, return_full_basis::Type{Val{T}} = Val{false}, thorough_search::Bool = false) where T
+  d = dim(A)
+
+  if thorough_search
+    # Sort the basis by the degree of the minpolys (hopefully those with higher
+    # degree generate a "bigger" subalgebra)
+    minpoly_degrees = [ (i, degree(minpoly(A[i]))) for i = 1:d ]
+    sort!(minpoly_degrees, by = x -> x[2], rev = true)
+  else
+    is_gen = falses(d)
+  end
+
+  generators = Vector{elem_type(A)}()
+  full_basis = elem_type(A)[ one(A) ] # Contains products of generators which form a full basis
+  elts_in_gens = Vector{Tuple{Int, Int}}[ Tuple{Int, Int}[] ]
+  B = zero_matrix(base_ring(A), d, d)
+  pivot_rows = zeros(Int, d)
+  new_elements = Set{Int}()
+
+  s = one(A)
+  t = one(A)
+
+  cur_dim = 0
+  cur_basis_elt = 1
+  while cur_dim != d
+    if isempty(new_elements)
+      # We have to add a generator
+      new_gen = A()
+      new_elt = false
+      while true
+        if thorough_search
+          i = minpoly_degrees[cur_basis_elt][1]
+        else
+          i = rand(1:dim(A))
+          while is_gen[i]
+            i = rand(1:dim(A))
+          end
+          is_gen[i] = true
+        end
+        new_gen = A[i]
+        cur_basis_elt += 1
+        new_elt = _add_row_to_rref!(B, coeffs(new_gen, copy = false), pivot_rows, cur_dim + 1)
+        if new_elt
+          break
+        end
       end
-      push!(cur_gen, b)
+      push!(generators, new_gen)
+      b = new_gen
+      power = 1
+      # Compute the powers of new_gen
+      while new_elt
+        cur_dim += 1
+        push!(full_basis, b)
+        if power == 1 && length(generators) != 1
+          push!(new_elements, length(full_basis))
+        end
+        ind = Tuple{Int, Int}[ (length(generators), power) ]
+        push!(elts_in_gens, ind)
+        cur_dim == d ? break : nothing
+        b *= new_gen
+        power += 1
+        new_elt = _add_row_to_rref!(B, coeffs(b, copy = false), pivot_rows, cur_dim + 1)
+      end
+      continue
+    else
+      i = pop!(new_elements)
+      b = full_basis[i]
+    end
+
+    # Compute all possible productes involving b
+    n = length(full_basis)
+    for r = 1:n
+      s = mul!(s, b, full_basis[r])
+      for l = 1:n
+        if !iscommutative(A)
+          t = mul!(t, full_basis[l], s)
+        else
+          t = s
+        end
+        new_elt = _add_row_to_rref!(B, coeffs(t, copy = false), pivot_rows, cur_dim + 1)
+        if !new_elt
+          continue
+        end
+        push!(full_basis, deepcopy(t))
+        cur_dim += 1
+        coord = _merge_elts_in_gens!(elts_in_gens[l], deepcopy(elts_in_gens[i]), elts_in_gens[r])
+        push!(elts_in_gens, coord)
+        if thorough_search && coord[1][2] == 1 && coord[end][2] == 1
+          push!(new_elements, length(full_basis))
+        end
+        if iscommutative(A)
+          break
+        end
+        cur_dim == d ? break : nothing
+      end
+      cur_dim == d ? break : nothing
     end
   end
 
-  return cur_gen
+  # Remove the one
+  popfirst!(full_basis)
+  popfirst!(elts_in_gens)
+
+  if return_full_basis == Val{true}
+    return generators, full_basis, elts_in_gens
+  else
+    return generators
+  end
 end
 
 ################################################################################
@@ -681,4 +783,176 @@ function _as_field_with_isomorphism(A::AbsAlgAss{S}, a::AbsAlgAssElem{S}, mina::
   else
     error("Not implemented")
   end
+end
+
+################################################################################
+#
+#  Regular matrix algebra
+#
+################################################################################
+
+@doc Markdown.doc"""
+    regular_matrix_algebra(A::Union{ AlgAss, AlgGrp })
+
+Returns the matrix algebra B generated by the right representation matrices of
+the basis elements of A and a map from B to A.
+"""
+function regular_matrix_algebra(A::Union{ AlgAss, AlgGrp })
+  K = base_ring(A)
+  B = matrix_algebra(K, [ representation_matrix(A[i], :right) for i = 1:dim(A) ], isbasis = true, check = false)
+  return B, hom(B, A, identity_matrix(K, dim(A)), identity_matrix(K, dim(A)))
+end
+
+###############################################################################
+#
+#  Construction of a crossed product algebra
+#
+###############################################################################
+
+function find_elem(G::Array{T,1}, el::T) where T
+  i=1
+  while true
+    if el.prim_img==G[i].prim_img
+      return i
+    end
+    i+=1
+  end
+end
+
+
+#K/Q is a Galois extension.
+function CrossedProductAlgebra(K::AnticNumberField, G::Array{T,1}, cocval::Array{nf_elem, 2}) where T
+
+  n=degree(K)
+  m=length(G)
+  #=
+  Multiplication table
+  I order the basis in this way:
+  First, I put the basis of the Galois Group, then the product of them with the first
+  element of basis of the order and so on...
+  =#
+  
+  M=Array{fmpq,3}(undef, n*m, n*m, n*m)
+  for i=1:n*m
+    for j=1:n*m
+      for s=1:n*m
+        M[i,j,s]=fmpq(0)
+      end
+    end
+  end
+  B=basis(K)
+  for i=1:n
+    for j=1:m
+      #I have the element B[i]*G[j]
+      for k=1:n
+        for h=1:m
+          # I take the element B[k]*G[h]
+          # and I take the product 
+          # B[i]*G[j]* B[k]*G[h]=B[i]*G[j](B[k])*c[j,h]*(G[j]*G[h])
+          ind=find_elem(G,G[h] * G[j]) 
+          x=B[i]*G[j](B[k])*cocval[j,h]
+          #@show i, j, k,h,  ind,B[i],G[j](B[k]),cocval[j,h],  x
+          for s=0:n-1
+            M[j+(i-1)*n, h+(k-1)*n, ind+s*n]=coeff(x,s)
+          end
+          #@show M
+        end
+      end
+    end
+  end
+  return AlgAss(FlintQQ, M)
+
+end
+
+function CrossedProductAlgebra(O::NfOrd, G::Array{T,1}, cocval::Array{nf_elem, 2}) where T
+
+  n=degree(O)
+  m=length(G)
+  K=nf(O)
+  #=
+  Multiplication table
+  I order the basis in this way:
+  First, I put the basis of the Galois Group, then the product of them with the first
+  element of basis of the order and so on...
+  =#
+  
+  M=Array{fmpq,3}(undef, n*m, n*m, n*m)
+  for i=1:n*m
+    for j=1:n*m
+      for s=1:n*m
+        M[i,j,s]=fmpq(0)
+      end
+    end
+  end
+  B = basis(O, copy = false)
+  el = O(0)
+  for j=1:m
+    for k=1:n
+      l =O(G[j](K(B[k])), false)
+      for h=1:m
+        ind = find_elem(G, G[h] * G[j]) 
+        t = O(cocval[j,h], false)
+        for i=1:n
+          #I have the element B[i]*G[j]
+          # I take the element B[k]*G[h]
+          # and I take the product 
+          # B[i]*G[j]* B[k]*G[h]=B[i]*G[j](B[k])*c[j,h]*(G[j]*G[h])
+          mul!(el, B[i], l)
+          mul!(el, el, t)
+          y = coordinates(el)
+          for s=0:n-1
+            M[j+(i-1)*m, h+(k-1)*m, ind+s*m] = y[s+1]
+          end
+        end
+      end
+    end
+  end
+  j1 = find_identity(G, *)
+  j = find_elem(G, j1)
+  O1 = fmpq[0 for i=1:n*m]
+  O1[j] = fmpq(1)
+  A = AlgAss(FlintQQ, M, O1)
+  A.issimple = 1
+  return A
+
+end
+
+################################################################################
+#
+#  Quaternion algebras
+#
+################################################################################
+
+function quaternion_algebra(a::Int, b::Int)
+  
+  M = Array{fmpq,3}(undef, 4,4,4)
+  for i = 1:4
+    for j = 1:4
+      for k = 1:4
+        M[i,j,k] = 0
+      end
+    end
+  end  
+  M[1,1,1] = 1 # 1*1=1
+  M[1,2,2] = 1 # 1*i=i
+  M[1,3,3] = 1 # 1*j=j
+  M[1,4,4] = 1 # 1*ij=1
+  
+  M[2,1,2] = 1
+  M[2,2,1] = a
+  M[2,3,4] = 1
+  M[2,4,3] = a
+  
+  M[3,1,3] = 1
+  M[3,2,4] = -1
+  M[3,3,1] = b
+  M[3,4,2] = -b
+  
+  M[4,1,4] = 1
+  M[4,2,3] = -a
+  M[4,3,2] = b
+  M[4,4,1] = -a*b
+  O = fmpq[1, 0, 0, 0]
+  return AlgAss(FlintQQ, M, O)
+  
 end

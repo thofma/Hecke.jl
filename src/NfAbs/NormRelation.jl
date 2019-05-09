@@ -33,6 +33,9 @@ mutable struct NormRelation{T}
   isabelian::Bool
   isgeneric::Bool
   coefficients_gen::Vector{Vector{Tuple{Int, NfToNfMor, NfToNfMor}}}
+  embed_cache::Dict{Tuple{Int, Int}, Dict{nf_elem, nf_elem}}
+  mor_cache::Dict{NfToNfMor, Dict{nf_elem, nf_elem}}
+  induced::Dict{NfToNfMor, perm{Int}}
 
   function NormRelation{T}() where {T}
     z = new{T}()
@@ -40,6 +43,9 @@ mutable struct NormRelation{T}
     z.isabelian = false
     z.isgeneric = false
     z.denominator = 0
+    z.embed_cache = Dict{Tuple{Int, Int}, Dict{nf_elem, nf_elem}}()
+    z.mor_cache = Dict{NfToNfMor, Dict{nf_elem, nf_elem}}()
+    z.induced = Dict{NfToNfMor, perm{Int}}()
     return z
   end
 end
@@ -112,10 +118,10 @@ function _norm_relation_setup_abelian(K::AnticNumberField; small_degree::Bool = 
 end
 
 function _norm_relation_setup_generic(K::AnticNumberField; small_degree::Bool = true, target_den::fmpz = zero(fmpz))
-  println("Compute isomorphism ...")
+  println("Compute automorphisms ...")
   A = automorphisms(K)
   println("Compute group table ...")
-  G, AtoG, GtoA = generic_group(A, *);
+  G, AtoG, GtoA = generic_group(A, *)
   println("Compute the abstract norm relation")
   if iszero(target_den)
     b, den, ls = _has_norm_relation_abstract(G, [f for f in subgroups(G, conjugacy_classes = true) if order(f[1]) > 1])
@@ -136,17 +142,14 @@ function _norm_relation_setup_generic(K::AnticNumberField; small_degree::Bool = 
     println("Computing fixed fields ...")
     F, mF = fixed_field(K, NfToNfMor[GtoA[f] for f in ls[i][1]])
     println("Simplifying ...")
-    S, mS = simplify(F)
+    S, mS = simplify(F, cached = true)
     L = S
     println("done")
-    @show L
     mL = mS * mF
     z.subfields[i] = L, mL
   end
 
   z.coefficients_gen = Vector{Vector{Tuple{Int, NfToNfMor, NfToNfMor}}}(undef, n)
-
-  @show ls
 
   for i in 1:n
     w = Vector{Tuple{Int, NfToNfMor, NfToNfMor}}(undef, length(ls[i][2]))
@@ -209,12 +212,38 @@ function (N::NormRelation)(x::Union{nf_elem, FacElem{nf_elem, AnticNumberField}}
   end
 end
 
+function _apply_auto(N::NormRelation, auto::NfToNfMor, x::nf_elem)
+  if haskey(N.mor_cache, auto)
+    d = N.mor_cache[auto]
+    if haskey(d, x)
+      return d[x]
+    else
+      y = auto(x)
+      d[x] = y
+      return y
+    end
+  else
+    d = Dict{nf_elem, nf_elem}()
+    y = auto(x)
+    d[x] = y
+    N.mor_cache[auto] = d
+    return y
+  end
+end
+
 function (N::NormRelation)(x::Union{nf_elem, FacElem{nf_elem, AnticNumberField}}, i::Int, j::Int)
   @assert (1 <= j) && (j <= length(N.coefficients_gen[i]))
+  if haskey(N.embed_cache, (i, j)) && haskey(N.embed_cache[i, j], x)
+    return N.embed_cache[i, j][x]
+  end
+
   _, mk = subfield(N, i)
-  y = mk(x)
+  y = _apply_auto(N, mk, x)
+
   exp, _, auto = N.coefficients_gen[i][j]
-  return auto(mk(x))
+
+  z = _apply_auto(N, auto, y)
+  return z
 end
 
 function (N::NormRelation)(x::Vector{<:Union{nf_elem, FacElem{nf_elem, AnticNumberField}}}, i::Int)
@@ -226,27 +255,66 @@ function (N::NormRelation)(x::Vector{<:Union{nf_elem, FacElem{nf_elem, AnticNumb
   return z
 end
 
-function induce_action(N::NormRelation, i, j, s, FB)
+function induce_action(N::NormRelation, i, j, s, FB, cache)
   S = FB.ideals
   ZK = order(S[1])
   z = zero_matrix(SMat, FlintZZ, 0, length(S))
   mk = embedding(N, i)
+  zk = order(s[1])
   
   _ , _, auto = N.coefficients_gen[i][j]
   #@show auto
-  p = induce(FB, auto) 
+  println("Call to induce(FB, auto)...")
+  @time if haskey(N.induced, auto)
+    p = N.induced[auto]
+  else
+    p = induce(FB, auto) 
+    N.induced[auto] = p
+  end
   #@show p
 
+  if length(cache) == 0
+    cache = resize!(cache, length(s))
+    cached = false
+  else
+    cached = true
+  end
+
+  @show cached
+
+  @assert mod(degree(ZK), degree(zk)) == 0
+  reldeg = divexact(degree(ZK), degree(zk))
+
   for l in 1:length(s)
-    v = Tuple{Int, fmpz}[]
-    for k in 1:length(S)
-      Q = S[k]
-      if minimum(Q, copy = false) == minimum(s[l], copy = false)
-        ant = anti_uniformizer(Q)
-        if (elem_in_nf(mk(s[l].gen_two.elem_in_nf)) * ant) in ZK
-          push!(v, (k, divexact(splitting_type(Q)[1], splitting_type(s[l])[1])))
+    if cached
+      v = cache[l]
+    else
+      v = Tuple{Int, fmpz}[]
+      P = s[l]
+      genofsl = elem_in_nf(_apply_auto(N, mk, P.gen_two.elem_in_nf))
+      pmin = minimum(P, copy = false)
+      # Compute the number of ideals
+      # Assume that L/K and L/Q are normal
+      rele = divexact(splitting_type((FB.fb[pmin].lp)[1][2])[1], splitting_type(P)[1])
+      relf = divexact(splitting_type((FB.fb[pmin].lp)[1][2])[2], splitting_type(P)[2])
+      @assert mod(reldeg, rele * relf) == 0
+      numb_ideal = divexact(reldeg, rele * relf)
+      found = 0
+      for k in 1:length(S)
+        Q = S[k]
+        if minimum(Q, copy = false) == pmin
+          ant = anti_uniformizer(Q)
+          if (genofsl * ant) in ZK
+            found += 1
+            @assert mod(splitting_type(Q)[1], splitting_type(s[l])[1]) == 0
+            push!(v, (k, divexact(splitting_type(Q)[1], splitting_type(s[l])[1])))
+          end
+        end
+        if found == numb_ideal
+          break
         end
       end
+      cache[l] = v
     end
 
     # We still need to sort the positions of the non-zero entries
@@ -268,6 +336,7 @@ function induce_action(N::NormRelation, i, j, s, FB)
   #  @show [ z.rows[l][m] for m in 1:length(FB.ideals) ]
   #  @assert [ valuation(auto(mk(a.elem_in_nf)), Q) for Q in FB.ideals] == [ z.rows[l][m] for m in 1:length(FB.ideals) ]
   #end
+  @show z
   return z
 end
 
@@ -308,6 +377,7 @@ end
 
 function _add_sunits_from_norm_relation!(c, N)
   cp = sort!(collect(Set(minimum(x) for x = c.FB.ideals)))
+  K = N.K
   for i = 1:length(N)
     k, mk = subfield(N, i)
     println("Computing maximal order ...")
@@ -316,24 +386,13 @@ function _add_sunits_from_norm_relation!(c, N)
     @show k
     @time zk = lll(zk)
     print("Computing class group of $k... ")
-    @time class_group(zk, redo = true, use_aut = false)
+    @time class_group(zk, redo = true, use_aut = true)
     println("done")
     lpk = NfOrdIdl[ P[1] for p in cp for P = prime_decomposition(zk, p)]
     println("Now computing the S-unit group for lp of length $(length(lpk))")
     @assert length(lpk) > 0
     @time Szk, mS = Hecke.sunit_mod_units_group_fac_elem(lpk)
-    
-
-    function N_mk(x, D, i, j)
-      if haskey(D, x)
-        return D[x]
-      else
-        y = N(x, i, j)
-        D[x] = y
-        return y
-      end
-    end
-
+    @show length(N.coefficients_gen[i])
 
     if ispure(N)
       @time z = induce_action(N, i, lpk, c.FB.ideals) # Careful, don't use S instead of FB.ideals
@@ -363,12 +422,14 @@ function _add_sunits_from_norm_relation!(c, N)
         Hecke.class_group_add_relation(c, FacElem(Dict((N_mk(x, D, i), v) for (x,v) = u.fac)), valofnewelement)
       end
     else
+      #D = Dict{nf_elem, nf_elem}()
+      cc = Vector{Tuple{Int, fmpz}}[]
       for j in 1:length(N.coefficients_gen[i])
-        z = induce_action(N, i, j, lpk, c.FB)
+        println("Inducing the action ... ")
+        @time z = induce_action(N, i, j, lpk, c.FB, cc)
 
         print("Feeding in the S-units of the small field ... ")
 
-        D = Dict{nf_elem, nf_elem}()
 
         for l=1:ngens(Szk)
           print(l, " ")
@@ -376,10 +437,13 @@ function _add_sunits_from_norm_relation!(c, N)
           #@show z.rows
           valofnewelement = mul(mS.valuations[l], z)
           #v = zeros(fmpz, length(c.FB.ideals))
+          #@show valofnewelement
           #v[valofnewelement.pos] = valofnewelement.values
-          #@assert [valuation((FacElem(Dict((N_mk(x, D, i, j), v) for (x,v) = u.fac))), P) for P in c.FB.ideals] == v
-          Hecke.class_group_add_relation(c, FacElem(Dict((N_mk(x, D, i, j), v) for (x,v) = u.fac)), valofnewelement)
+          #@assert [valuation((FacElem(Dict((N(x, i, j), v) for (x,v) = u.fac))), P) for P in c.FB.ideals] == v
+          Hecke.class_group_add_relation(c, FacElem(Dict((N(x, i, j), v) for (x,v) = u.fac)), valofnewelement)
+          #Hecke.class_group_add_relation(c, FacElem(Dict(K(1) => fmpz(1))), valofnewelement)
         end
+        println("")
       end
     end
 
@@ -794,98 +858,132 @@ function _has_norm_relation_abstract(G::GrpGen, H::Vector{Tuple{GrpGen, GrpGenTo
   # Now solve the equation to find a representation 1 = sum_{H} x_H N_H y_H
   n = Int(order(G))
 
+  # We use the following trick to reduce the number of equations
+  # Instead of working with the Q-basis (g N_H h)_(H, g in G, h in H), we take
+  # (g N_H h)_(H, g in G/H, h in G\N_G(H))
+  
+  left_cosets_for_sub = Vector{GrpGenElem}[]
+  right_cosets_for_normalizer = Vector{GrpGenElem}[]
+
+  for i in 1:length(subgroups_needed)
+    lc = left_cosets(G, H[subgroups_needed[i]][2])
+    push!(left_cosets_for_sub, lc)
+    NGH = normalizer(G, H[subgroups_needed[i]][2])
+    push!(right_cosets_for_normalizer, right_cosets(G, NGH[2]))
+  end
+
   if iszero(target_den)
     onee = matrix(FlintQQ, 1, n, coeffs(one(QG)))
 
-    m = zero_matrix(FlintQQ, length(subgroups_needed) * n * n, n)
+    m = zero_matrix(FlintQQ, dot(length.(left_cosets_for_sub), length.(right_cosets_for_normalizer)), n)
 
     B = basis(QG)
 
+    help_with_indicies = Vector{Tuple{Int, Int, Int}}(undef, nrows(m))
+    cc = 1
     for i in 1:length(subgroups_needed)
-      for k in 1:n
-        for l in 1:n
+      lcosub = length(left_cosets_for_sub[i])
+      lconor = length(right_cosets_for_normalizer[i])
+      for (k, g) in enumerate(left_cosets_for_sub[i])
+        for (l, h) in enumerate(right_cosets_for_normalizer[i])
           for j in 1:n
-            m[(i - 1)*n^2 + n * (k - 1) + l, j] = (B[k] * norms[subgroups_needed[i]] * B[l]).coeffs[j]
+            m[cc, j] = (QG(g) * norms[subgroups_needed[i]] * QG(h)).coeffs[j]
           end
+          help_with_indicies[cc] = (i, k, l)
+          cc += 1
         end
       end
     end
-
 
     b, w, K = can_solve_with_kernel(m, onee, side = :left)
     v = w
   elseif true
     onee = matrix(FlintZZ, 1, n, coeffs(target_den * one(QG)))
 
-    m = zero_matrix(FlintZZ, length(subgroups_needed) * n * n, n)
+    m = zero_matrix(FlintZZ, dot(length.(left_cosets_for_sub), length.(right_cosets_for_normalizer)), n)
 
-    B = basis(QG)
-
+    help_with_indicies = Vector{Tuple{Int, Int, Int}}(undef, nrows(m))
+    cc = 1
     for i in 1:length(subgroups_needed)
-      for k in 1:n
-        for l in 1:n
+      for (k, g) in enumerate(left_cosets_for_sub[i])
+        for (l, h) in enumerate(right_cosets_for_normalizer[i])
           for j in 1:n
-            m[(i - 1)*n^2 + n * (k - 1) + l, j] = FlintZZ((B[k] * norms[subgroups_needed[i]] * B[l]).coeffs[j])
+            m[cc, j] = FlintZZ((QG(g) * norms[subgroups_needed[i]] * QG(h)).coeffs[j])
           end
+          help_with_indicies[cc] = (i, k, l)
+          cc += 1
         end
       end
     end
 
-    @show size(m)
-
     b, w, K = can_solve_with_kernel(m, onee, side = :left)
+
     v = 1//target_den * change_base_ring(w, FlintQQ)
   end
 
   @assert b
 
-  # Now collect the coefficients again as elements of Q[G]
-  sol = Vector{Tuple{Int, Int, Int, fmpq}}()
-  for i in 1:length(subgroups_needed)
-    for k in 1:n
-      for l in 1:n
-        if iszero(v[1, (i - 1)*n^2 + (k - 1) * n + l])
-          continue
-        else
-          push!(sol, (i, k, l, v[1, (i - 1)*n^2 + (k - 1) * n + l]))
-        end
-      end
-    end
-  end
+  @show v
 
   z = zero(QG)
-  for (i, k, l, x) in sol
-    z = z + x * B[k] * norms[subgroups_needed[i]] * B[l]
+  for cc in 1:ncols(v)
+    if iszero(v[1, cc])
+      continue
+    else
+      i, k, l = help_with_indicies[cc]
+      z = z + v[1, cc] *  QG(left_cosets_for_sub[i][k]) * norms[subgroups_needed[i]] * QG(right_cosets_for_normalizer[i][l])
+    end
   end
 
   @assert isone(z)
 
   den = one(FlintZZ)
 
-  for (_,_,_,x) in sol
-    den = lcm(den, denominator(x))
+  for i in 1:ncols(v)
+    den = lcm(den, denominator(v[1, i]))
   end
 
   solutions = Vector{Tuple{Vector{GrpGenElem}, Vector{Tuple{fmpz, GrpGenElem, GrpGenElem}}}}()
   solutions_as_group_element_arrays = Vector{Tuple{Vector{Tuple{fmpz, GrpAbFinGenElem}}, Vector{GrpAbFinGenElem}}}(undef, length(subgroups_needed))
 
-  for i in 1:length(subgroups_needed)
-    sgroup = [H[subgroups_needed[i]][2](h) for h in H[subgroups_needed[i]][1]]
-    vv = Vector{Tuple{fmpz, GrpGenElem, GrpGenElem}}()
-    for (k, g) in enumerate(group(QG))
-      for (l, h) in enumerate(group(QG))
-        if iszero(v[1, (i - 1)*n^2 + (k - 1) * n + l])
-          continue
-        else
-          push!(vv, (FlintZZ(den * v[1, (i - 1)*n^2 + (k - 1) * n + l]), g, h))
-        end
-      end
-    end
-    if length(vv) == 0
-      continue
-    end
-    push!(solutions, (sgroup, vv))
+  vvv = Vector{Vector{Tuple{fmpz, GrpGenElem, GrpGenElem}}}(undef, length(subgroups_needed))
+  for i in 1:length(vvv)
+    vvv[i] = Vector{Tuple{fmpz, GrpGenElem, GrpGenElem}}()
   end
+
+  for cc in 1:ncols(v)
+    if iszero(v[1, cc])
+      continue
+    else
+      i, k, l = help_with_indicies[cc]
+      push!(vvv[i], (FlintZZ(den * v[1, cc]), left_cosets_for_sub[i][k], right_cosets_for_normalizer[i][l]))
+    end
+  end
+
+  for i in 1:length(vvv)
+    sgroup = [H[subgroups_needed[i]][2](h) for h in H[subgroups_needed[i]][1]]
+    if length(vvv[i]) > 0
+      push!(solutions, (sgroup, vvv[i]))
+    end
+  end
+
+  #for i in 1:length(subgroups_needed)
+  #  sgroup = [H[subgroups_needed[i]][2](h) for h in H[subgroups_needed[i]][1]]
+  #  vv = Vector{Tuple{fmpz, GrpGenElem, GrpGenElem}}()
+  #  for (k, g) in enumerate(group(QG))
+  #    for (l, h) in enumerate(group(QG))
+  #      if iszero(v[1, (i - 1)*n^2 + (k - 1) * n + l])
+  #        continue
+  #      else
+  #        push!(vv, (FlintZZ(den * v[1, (i - 1)*n^2 + (k - 1) * n + l]), g, h))
+  #      end
+  #    end
+  #  end
+  #  if length(vv) == 0
+  #    continue
+  #  end
+  #  push!(solutions, (sgroup, vv))
+  #end
 
   if !iszero(target_den)
     @assert iszero(mod(target_den, den))
