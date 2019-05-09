@@ -3,10 +3,16 @@ module MultDep
 using Hecke
 import Base.*
 
-function multiplicative_group_mod_units_fac_elem(A::Array{nf_elem, 1})
+function multiplicative_group_mod_units_fac_elem(A::Array{nf_elem, 1}; use_max_ord::Bool = false)
   k = parent(A[1])
   @assert all(i->parent(i) === k, A)
-  cp = coprime_base(A)
+  if use_max_ord
+    zk = maximal_order(k)
+    cp = coprime_base(A, zk)
+  else
+    cp = coprime_base(A)
+  end
+  sort!(cp, lt = (a,b) -> norm(a) > norm(b))
   M = sparse_matrix(FlintZZ)
   for a = A
     T = Tuple{Int, fmpz}[]
@@ -108,6 +114,8 @@ function divexact(a::GeIdeal, b::GeIdeal)
   return GeIdeal(divexact(a.a, b.a))
 end
 
+Hecke.norm(a::GeIdeal) = norm(a.a)
+
 function coprime_base(A::Array{nf_elem, 1})
   c = Array{GeIdeal, 1}()
   for a = A
@@ -117,6 +125,17 @@ function coprime_base(A::Array{nf_elem, 1})
   end
   return coprime_base(c)
 end
+
+function coprime_base(A::Array{nf_elem, 1}, O::NfAbsOrd)
+  c = Array{NfAbsOrdIdl, 1}()
+  for a = A
+    n,d = integral_split(a*O)
+    isone(n) || push!(c, n)
+    isone(d) || push!(c, d)
+  end
+  return coprime_base(c)
+end
+
 
 function valuation(a::nf_elem, p::GeIdeal)
   return valuation(a, p.a)
