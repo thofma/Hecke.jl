@@ -1,3 +1,5 @@
+export group_algebra
+
 ################################################################################
 #
 #  Basic field access
@@ -26,6 +28,14 @@ function multiplication_table(A::AlgGrp; copy::Bool = true)
     return A.mult_table
   end
 end
+
+################################################################################
+#
+#  Construction
+#
+################################################################################
+
+group_algebra(K::Ring, G; op = *) = AlgGrp(K, G, op = op)
 
 ################################################################################
 #
@@ -182,6 +192,9 @@ function AlgAss(A::AlgGrp{T, S, R}) where {T, S, R}
     end
   end
   B = AlgAss(K, mult, one(A).coeffs)
+  B.iscommutative = A.iscommutative
+  B.issimple = A.issimple
+  B.issemisimple = A.issemisimple
   return B, hom(B, A, identity_matrix(K, dim(A)), identity_matrix(K, dim(A)))
 end
 

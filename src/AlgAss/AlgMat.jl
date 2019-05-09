@@ -1,3 +1,5 @@
+export matrix_algebra
+
 ################################################################################
 #
 #  Basic field access
@@ -105,7 +107,7 @@ end
 #
 ################################################################################
 
-function AlgMat(R::Ring, n::Int)
+function matrix_algebra(R::Ring, n::Int)
   A = AlgMat{elem_type(R), dense_matrix_type(elem_type(R))}(R)
   n2 = n^2
   A.dim = n2
@@ -125,7 +127,7 @@ function AlgMat(R::Ring, n::Int)
 end
 
 # Constructs Mat_n(S) as an R-algebra
-function AlgMat(R::Ring, S::AbsAlgAss, n::Int)
+function matrix_algebra(R::Ring, S::AbsAlgAss, n::Int)
   A = AlgMat{elem_type(R), dense_matrix_type(elem_type(S))}(R, S)
   n2 = n^2
   A.dim = n2*dim(S)
@@ -147,7 +149,7 @@ function AlgMat(R::Ring, S::AbsAlgAss, n::Int)
   return A
 end
 
-function AlgMat(R::Ring, gens::Vector{<:MatElem}; check::Bool = true, isbasis::Bool = false)
+function matrix_algebra(R::Ring, gens::Vector{<:MatElem}; check::Bool = true, isbasis::Bool = false)
   @assert length(gens) > 0
   A = AlgMat{elem_type(R), dense_matrix_type(elem_type(R))}(R)
   A.degree = nrows(gens[1])
@@ -201,7 +203,7 @@ function AlgMat(R::Ring, gens::Vector{<:MatElem}; check::Bool = true, isbasis::B
   return A
 end
 
-function AlgMat(R::Ring, S::AbsAlgAss, gens::Vector{<:MatElem}; check::Bool = true, isbasis::Bool = false)
+function matrix_algebra(R::Ring, S::AbsAlgAss, gens::Vector{<:MatElem}; check::Bool = true, isbasis::Bool = false)
   @assert length(gens) > 0
   A = AlgMat{elem_type(R), dense_matrix_type(elem_type(S))}(R, S)
   A.degree = nrows(gens[1])
@@ -349,5 +351,7 @@ end
 function AlgAss(A::AlgMat{T, S}) where {T, S}
   K = base_ring(A)
   B = AlgAss(K, multiplication_table(A))
+  B.issimple = A.issimple
+  B.issemisimple = A.issemisimple
   return B, hom(B, A, identity_matrix(K, dim(A)), identity_matrix(K, dim(A)))
 end

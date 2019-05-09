@@ -185,6 +185,7 @@ function decompose(A::AbsAlgAss{T}) where {T}
 end
 
 function _decompose(A::AbsAlgAss{T}) where {T}
+  @assert _issemisimple(A) != 2 "Algebra is not semisimple"
   if iscommutative(A)
     res = _dec_com(A)
   else
@@ -781,7 +782,7 @@ the basis elements of A and a map from B to A.
 """
 function regular_matrix_algebra(A::Union{ AlgAss, AlgGrp })
   K = base_ring(A)
-  B = AlgMat(K, [ representation_matrix(A[i], :right) for i = 1:dim(A) ], isbasis = true, check = false)
+  B = matrix_algebra(K, [ representation_matrix(A[i], :right) for i = 1:dim(A) ], isbasis = true, check = false)
   return B, hom(B, A, identity_matrix(K, dim(A)), identity_matrix(K, dim(A)))
 end
 
