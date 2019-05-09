@@ -169,6 +169,20 @@ function *(g::GrpGenElem, h::GrpGenElem)
   return GrpGenElem(G, G.mult_table[g.i, h.i])
 end
 
+op(g::GrpGenElem, h::GrpGenElem) = g*h
+
+################################################################################
+#
+#  Neutral element
+#
+################################################################################
+
+iszero(a::GrpGenElem) = a == id(parent(a))
+
+isone(a::GrpGenElem) = a == id(parent(a))
+
+isidentity(a::GrpGenElem) = a == id(parent(a))
+
 ################################################################################
 #
 #  Inverse

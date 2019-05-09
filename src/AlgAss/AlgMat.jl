@@ -1,3 +1,5 @@
+export matrix_algebra
+
 ################################################################################
 #
 #  Basic field access
@@ -14,9 +16,7 @@ coefficient_ring(A::AlgMat) = A.coefficient_ring
 
 basis(A::AlgMat) = A.basis
 
-has_one(A::AlgMat) = A.has_one
-
-one(A::AlgMat) = deepcopy(A.one)
+has_one(A::AlgMat) = true
 
 elem_type(A::AlgMat{T, S}) where { T, S } = AlgMatElem{T, AlgMat{T, S}, S}
 
@@ -107,7 +107,7 @@ end
 #
 ################################################################################
 
-function AlgMat(R::Ring, n::Int)
+function matrix_algebra(R::Ring, n::Int)
   A = AlgMat{elem_type(R), dense_matrix_type(elem_type(R))}(R)
   n2 = n^2
   A.dim = n2
@@ -122,13 +122,12 @@ function AlgMat(R::Ring, n::Int)
     end
   end
   A.basis = B
-  A.one = A(identity_matrix(R, n))
-  A.has_one = true
+  A.one = identity_matrix(R, n)
   return A
 end
 
 # Constructs Mat_n(S) as an R-algebra
-function AlgMat(R::Ring, S::AbsAlgAss, n::Int)
+function matrix_algebra(R::Ring, S::AbsAlgAss, n::Int)
   A = AlgMat{elem_type(R), dense_matrix_type(elem_type(S))}(R, S)
   n2 = n^2
   A.dim = n2*dim(S)
@@ -146,15 +145,15 @@ function AlgMat(R::Ring, S::AbsAlgAss, n::Int)
     end
   end
   A.basis = B
-  A.one = A(identity_matrix(S, n))
-  A.has_one = true
+  A.one = identity_matrix(S, n)
   return A
 end
 
-function AlgMat(R::Ring, gens::Vector{<:MatElem}; check::Bool = true, isbasis::Bool = false)
+function matrix_algebra(R::Ring, gens::Vector{<:MatElem}; check::Bool = true, isbasis::Bool = false)
   @assert length(gens) > 0
   A = AlgMat{elem_type(R), dense_matrix_type(elem_type(R))}(R)
   A.degree = nrows(gens[1])
+  A.one = identity_matrix(R, degree(A))
   if isbasis
     A.dim = length(gens)
     bas = Vector{elem_type(A)}(undef, dim(A))
@@ -165,27 +164,60 @@ function AlgMat(R::Ring, gens::Vector{<:MatElem}; check::Bool = true, isbasis::B
   else
     d = degree(A)
     d2 = degree(A)^2
-    M = zero_matrix(R, length(gens), d2)
-    for i = 1:length(gens)
-      for j = 1:d2
-        M[i, j] = gens[i][j]
+    span = deepcopy(gens)
+    push!(span, identity_matrix(R, d))
+    M = zero_matrix(R, max(d2, length(span)), d2) # the maximal possible dimension will is d^2
+    pivot_rows = zeros(Int, d2)
+    new_elements = Set{Int}()
+    cur_rank = 0
+    for i = 1:length(span)
+      cur_rank == d2 ? break : nothing
+      new_elt = _add_row_to_rref!(M, [ span[i][j] for j = 1:d2 ], pivot_rows, cur_rank + 1)
+      if new_elt
+        push!(new_elements, i)
+        cur_rank += 1
       end
     end
-    r = rref!(M)
-    A.dim = r
-    A.basis_mat = M
-    bas = Vector{elem_type(A)}(undef, r)
-    for i = 1:r
+
+    # Build all possible products
+    while !isempty(new_elements)
+      cur_rank == d2 ? break : nothing
+      i = pop!(new_elements)
+      b = span[i]
+
+      n = length(span)
+      for r = 1:n
+        s = b*span[r]
+        for l = 1:n
+          t = span[l]*s
+          new_elt = _add_row_to_rref!(M, [ t[j] for j = 1:d2 ], pivot_rows, cur_rank + 1)
+          if !new_elt
+            continue
+          end
+          push!(span, t)
+          cur_rank += 1
+          push!(new_elements, length(span))
+          cur_rank == d2 ? break : nothing
+        end
+        cur_rank == d2 ? break : nothing
+      end
+    end
+
+    A.dim = cur_rank
+    A.basis_mat = sub(M, 1:cur_rank, 1:d2)
+    bas = Vector{elem_type(A)}(undef, dim(A))
+    for i = 1:dim(A)
       N = zero_matrix(R, degree(A), degree(A))
       for j = 1:d
         jd = (j - 1)*d
         for k = 1:d
-          N[k, j] = M[i, jd + k]
+          N[k, j] = basis_mat(A, copy = false)[i, jd + k]
         end
       end
       bas[i] = A(N)
     end
     A.basis = bas
+    check = false
   end
 
   if check
@@ -203,10 +235,11 @@ function AlgMat(R::Ring, gens::Vector{<:MatElem}; check::Bool = true, isbasis::B
   return A
 end
 
-function AlgMat(R::Ring, S::AbsAlgAss, gens::Vector{<:MatElem}; check::Bool = true, isbasis::Bool = false)
+function matrix_algebra(R::Ring, S::AbsAlgAss, gens::Vector{<:MatElem}; check::Bool = true, isbasis::Bool = false)
   @assert length(gens) > 0
   A = AlgMat{elem_type(R), dense_matrix_type(elem_type(S))}(R, S)
   A.degree = nrows(gens[1])
+  A.one = identity_matrix(S, degree(A))
   if isbasis
     A.dim = length(gens)
     bas = Vector{elem_type(A)}(undef, dim(A))
@@ -217,21 +250,64 @@ function AlgMat(R::Ring, S::AbsAlgAss, gens::Vector{<:MatElem}; check::Bool = tr
   else
     d = degree(A)
     d2 = degree(A)^2
+    span = deepcopy(gens)
+    push!(span, identity_matrix(S, d))
     dcr = dim(S)
-    M = zero_matrix(R, length(gens), d2*dcr)
-    for i = 1:length(gens)
+    max_dim = d2*dcr
+    M = zero_matrix(R, max(length(gens), max_dim), max_dim)
+    pivot_rows = zeros(Int, max_dim)
+    new_elements = Set{Int}()
+    cur_rank = 0
+    v = Vector{elem_type(R)}(undef, max_dim)
+    for i = 1:length(span)
+      cur_rank == max_dim ? break : nothing
       for j = 1:d2
         jj = (j - 1)*dcr
         for k = 1:dcr
-          M[i, jj + k] = coeffs(gens[i][j], copy = false)[k]
+          v[jj + k] = coeffs(span[i][j], copy = false)[k]
         end
       end
+      new_elt = _add_row_to_rref!(M, v, pivot_rows, cur_rank + 1)
+      if new_elt
+        push!(new_elements, i)
+        cur_rank += 1
+      end
     end
-    r = rref!(M)
-    A.dim = r
-    A.basis_mat = M
-    bas = Vector{elem_type(A)}(undef, r)
-    for i = 1:r
+
+    # Build all possible products
+    while !isempty(new_elements)
+      cur_rank == max_dim ? break : nothing
+      i = pop!(new_elements)
+      b = span[i]
+
+      n = length(span)
+      for r = 1:n
+        s = b*span[r]
+        for l = 1:n
+          t = span[l]*s
+          for j = 1:d2
+            jj = (j - 1)*dcr
+            for k = 1:dcr
+              v[jj + k] = coeffs(t[j], copy = false)[k]
+            end
+          end
+          new_elt = _add_row_to_rref!(M, v, pivot_rows, cur_rank + 1)
+          if !new_elt
+            continue
+          end
+          push!(span, t)
+          cur_rank += 1
+          push!(new_elements, length(span))
+          cur_rank == max_dim ? break : nothing
+        end
+        cur_rank == max_dim ? break : nothing
+      end
+    end
+
+    A.dim = cur_rank
+    A.basis_mat = sub(M, 1:cur_rank, 1:max_dim)
+    bas = Vector{elem_type(A)}(undef, dim(A))
+    for i = 1:dim(A)
       N = zero_matrix(S, degree(A), degree(A))
       for j = 1:d
         jd = (j - 1)*d
@@ -239,7 +315,7 @@ function AlgMat(R::Ring, S::AbsAlgAss, gens::Vector{<:MatElem}; check::Bool = tr
           jkd = (jd + k - 1)*dcr
           t = Vector{elem_type(base_ring(S))}(undef, dcr)
           for l = 1:dcr
-            t[l] = M[i, jkd + l]
+            t[l] = basis_mat(A, copy = false)[i, jkd + l]
           end
           N[k, j] = S(t)
         end
@@ -247,6 +323,7 @@ function AlgMat(R::Ring, S::AbsAlgAss, gens::Vector{<:MatElem}; check::Bool = tr
       bas[i] = A(N)
     end
     A.basis = bas
+    check = false
   end
 
   if check
@@ -349,5 +426,7 @@ end
 function AlgAss(A::AlgMat{T, S}) where {T, S}
   K = base_ring(A)
   B = AlgAss(K, multiplication_table(A))
+  B.issimple = A.issimple
+  B.issemisimple = A.issemisimple
   return B, hom(B, A, identity_matrix(K, dim(A)), identity_matrix(K, dim(A)))
 end

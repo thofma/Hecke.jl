@@ -24,6 +24,7 @@ degree(A::AlgAss) = dim(A)
 elem_type(::Type{AlgAss{T}}) where {T} = AlgAssElem{T, AlgAss{T}}
 
 function multiplication_table(A::AlgAss; copy::Bool = true)
+  @assert !iszero(A)
   if copy
     return deepcopy(A.mult_table)
   else
@@ -53,6 +54,30 @@ function iscommutative(A::AlgAss)
   end
   A.iscommutative = 1
   return true
+end
+
+################################################################################
+#
+#  Is semisimple
+#
+################################################################################
+
+# TODO: Make sure this always returns 1 or 2. So far we only have _radical for
+# algebras over Fp, QQ, and number fields
+function _issemisimple(A::AlgAss)
+  return A.issemisimple
+end
+
+function _issemisimple(A::AlgAss{T}) where { T <: Union{ gfp_elem, Generic.ResF{fmpz}, fmpq, nf_elem } }
+  if A.issemisimple == 0
+    if isempty(_radical(A))
+      A.issemisimple = 1
+    else
+      A.issemisimple = 2
+    end
+  end
+
+  return A.issemisimple
 end
 
 ################################################################################
@@ -1400,7 +1425,7 @@ function _as_matrix_algebra(A::AlgAss{T}) where { T <: Union{gfp_elem, Generic.R
   @assert length(idempotents)^2 == dim(A)
   Fq = base_ring(A)
 
-  B = AlgMat(Fq, length(idempotents))
+  B = matrix_algebra(Fq, length(idempotents))
 
   matrix_basis = _matrix_basis(A, idempotents)
 

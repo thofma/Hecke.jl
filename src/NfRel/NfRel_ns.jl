@@ -176,7 +176,7 @@ end
 #TODO: this is a terrible show func.
 function Base.show(io::IO, a::NfRel_nsElem)
   f = data(a)
-  show(io, f, [string(s) for s = a.parent.S])
+  AbstractAlgebra.Generic._show(io, f, [string(s) for s = a.parent.S])
   return nothing
 end
 

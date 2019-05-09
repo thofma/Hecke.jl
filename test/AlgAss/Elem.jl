@@ -6,11 +6,11 @@
   @test Hecke.isintegral(A[1]) == true
   @test Hecke.isintegral(fmpq(1, 2)*A[1]) == false
 
-  B = AlgGrp(FlintQQ, small_group(2, 1))
+  B = group_algebra(FlintQQ, small_group(2, 1))
   @test Hecke.isintegral(B[1]) == true
   @test Hecke.isintegral(fmpq(1, 2)*B[1]) == false
 
-  C = AlgMat(FlintQQ, B, 2)
+  C = matrix_algebra(FlintQQ, B, 2)
   @test Hecke.isintegral(C[1]) == true
   @test Hecke.isintegral(fmpq(1, 2)*C[1]) == false
 end

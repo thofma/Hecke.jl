@@ -547,7 +547,7 @@ end
 
 ################################################################################
 #
-#  Minpoly
+#  Minpoly / (reduced) charpoly
 #
 ################################################################################
 
@@ -555,6 +555,45 @@ function Generic.minpoly(a::AbsAlgAssElem)
   M = representation_matrix(a)
   R = PolynomialRing(base_ring(parent(a)), "x", cached=false)[1]
   return minpoly(R, M)
+end
+
+function charpoly(a::AbsAlgAssElem)
+  M = representation_matrix(a)
+  R = PolynomialRing(base_ring(parent(a)), "x", cached = false)[1]
+  return charpoly(R, M)
+end
+
+function _reduced_charpoly_simple(a::AbsAlgAssElem, R::PolyRing)
+  A = parent(a)
+  @assert issimple_known(A) && A.issimple == 1
+
+  M = representation_matrix(a)
+  f = charpoly(R, M)
+  sf_fac = squarefree_factorization(f)
+
+  d = dimension_of_center(A)
+  n = divexact(dim(A), d)
+  m = isqrt(n)
+  @assert m^2 == n
+
+  g = one(R)
+  for (h, e) in sf_fac
+    q, r = divrem(e, m)
+    @assert iszero(r)
+    g = mul!(g, g, h^q)
+  end
+  return g
+end
+
+function reduced_charpoly(a::AbsAlgAssElem)
+  A = parent(a)
+  R = PolynomialRing(base_ring(A), "x", cached = false)[1]
+  W = decompose(A)
+  f = one(R)
+  for (B, BtoA) in W
+    f *= _reduced_charpoly_simple(BtoA\a, R)
+  end
+  return f
 end
 
 ################################################################################

@@ -560,50 +560,32 @@ end
 Given an ideal I, it returns the ring (I : I)
 """
 
-function ring_of_multipliers(I::AlgAssAbsOrdIdl, p::fmpz=fmpz(1))
+function ring_of_multipliers(I::AlgAssAbsOrdIdl, p::fmpz=fmpz(1), action::Symbol = :left)
   O = order(I)
   @hassert :AlgAssOrd 1 Hecke.check_associativity(algebra(O))
   @hassert :AlgAssOrd 1 Hecke.check_distributivity(algebra(O))
   @hassert :AlgAssOrd 1 check_ideal(I)
   bmatinv = basis_mat_inv(I, copy = false)
-  if isdefined(I, :gens) && length(I.gens)<degree(O)
-    m=zero_matrix(FlintZZ, degree(O)*length(I.gens), degree(O))
-    for i=1:length(I.gens)
-      M=representation_matrix(I.gens[i])
-      mul!(M, M, bmatinv.num)
-      if bmatinv.den == 1
-        for s=1:degree(O)
-          for t=1:degree(O)
-            m[t+(i-1)*(degree(O)),s]=M[s,t]
-          end
-        end
-      else
-        for s=1:degree(O)
-          for t=1:degree(O)
-            @hassert :AlgAssOrd 1 divisible(M[s,t], bmatinv.den)
-            m[t+(i-1)*(degree(O)),s] = divexact(M[s,t], bmatinv.den)
-          end
-        end
-      end
-    end
+  if isdefined(I, :gens) && length(I.gens) < degree(O)
+    B = I.gens
   else
     B = basis(I, copy = false)
-    m = zero_matrix(FlintZZ, degree(O)^2, degree(O))
-    for i=1:degree(O)
-      M = representation_matrix(B[i])
-      mul!(M, M, bmatinv.num)
-      if bmatinv.den == 1
-        for s=1:degree(O)
-          for t=1:degree(O)
-            m[t+(i-1)*(degree(O)),s]=M[s,t]
-          end
+  end
+  m = zero_matrix(FlintZZ, degree(O)*length(B), degree(O))
+  for i = 1:length(B)
+    M = representation_matrix(B[i], action)
+    mul!(M, M, bmatinv.num)
+    if bmatinv.den == 1
+      for s = 1:degree(O)
+        for t = 1:degree(O)
+          m[t + (i - 1)*degree(O), s] = M[s, t]
         end
-      else
-        for s=1:degree(O)
-          for t=1:degree(O)
-            @hassert :AlgAssOrd 1 divisible(M[s,t], bmatinv.den)
-            m[t+(i-1)*(degree(O)),s] = divexact(M[s,t], bmatinv.den)
-          end
+      end
+    else
+      for s = 1:degree(O)
+        for t = 1:degree(O)
+          @hassert :AlgAssOrd 1 divisible(M[s, t], bmatinv.den)
+          m[t + (i - 1)*degree(O), s] = divexact(M[s, t], bmatinv.den)
         end
       end
     end
@@ -1180,9 +1162,7 @@ function MaximalOrder(O::AlgAssAbsOrd{S, T}) where { S <: AlgGrp, T <: AlgGrpEle
   return OO
 end
 
-function _denominator_of_mult_table(A::AlgAss{fmpq})
-  @assert !iszero(A)
-
+function _denominator_of_mult_table(A::AbsAlgAss{fmpq})
   l = denominator(multiplication_table(A, copy = false)[1, 1, 1])
   for i = 1:dim(A)
     for j = 1:dim(A)
@@ -1207,12 +1187,6 @@ function any_order(A::AbsAlgAss{fmpq})
   M = FakeFmpqMat(M)
   M = hnf!(M, :lowerleft)
   O = Order(A, sub(M, 2:dim(A) + 1, 1:dim(A)))
-  return O
-end
-
-function any_order(A::AlgMat)
-  O = Order(A, basis(A))
-  check_order(O)
   return O
 end
 

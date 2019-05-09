@@ -24,6 +24,7 @@ mutable struct AlgAss{T} <: AbsAlgAss{T}
   gens#::Vector{AlgAssElem{T, AlgAss{T}} # "Small" number of algebra generators
   trace_basis_elem::Vector{T}
   issimple::Int
+  issemisimple::Int
 
   decomposition#::Vector{Tuple{AlgAss{T}, mor(AlgAss{T}, AlgAss{T})}
   center#Tuple{AlgAss{T}, mor(AlgAss{T}, AlgAss{T})
@@ -36,6 +37,7 @@ mutable struct AlgAss{T} <: AbsAlgAss{T}
     A.base_ring = R
     A.iscommutative = 0
     A.issimple = 0
+    A.issemisimple = 0
     return A
   end
 
@@ -107,6 +109,7 @@ mutable struct AlgGrp{T, S, R} <: AbsAlgAss{T}
   iscommutative::Int
   trace_basis_elem::Array{T, 1}
   issimple::Int
+  issemisimple::Int
 
   decomposition
   center
@@ -123,6 +126,14 @@ mutable struct AlgGrp{T, S, R} <: AbsAlgAss{T}
     A = new{elem_type(K), typeof(G), elem_type(G)}()
     A.iscommutative = 0
     A.issimple = 0
+    A.issemisimple = 0
+    if K isa Field
+      if iszero(characteristic(K))
+        A.issemisimple = 1
+      else
+        A.issemisimple = isone(gcd(characteristic(K), order(G))) ? 1 : 2
+      end
+    end
     A.base_ring = K
     A.group = G
     d = Int(order(G))
@@ -414,13 +425,13 @@ const AlgAssAbsOrdQuoRingElem{S, T} = AbsOrdQuoRingElem{AlgAssAbsOrd{S, T}, AlgA
 mutable struct AlgMat{T, S} <: AbsAlgAss{T}
   base_ring::Ring
   coefficient_ring::Ring
-  one
-  has_one::Bool
+  one::S
   basis
   basis_mat # matrix over the base_ring
   dim::Int
   degree::Int
   issimple::Int
+  issemisimple::Int
   decomposition
   maximal_order
   mult_table::Array{T, 3} # e_i*e_j = sum_k mult_table[i, j, k]*e_k
@@ -430,6 +441,7 @@ mutable struct AlgMat{T, S} <: AbsAlgAss{T}
     A.base_ring = R
     A.coefficient_ring = R
     A.issimple = 0
+    A.issemisimple = 0
     return A
   end
 
@@ -438,6 +450,7 @@ mutable struct AlgMat{T, S} <: AbsAlgAss{T}
     A.base_ring = R1
     A.coefficient_ring = R2
     A.issimple = 0
+    A.issemisimple = 0
     return A
   end
 end
