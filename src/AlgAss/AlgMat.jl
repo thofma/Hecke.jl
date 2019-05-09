@@ -164,28 +164,60 @@ function matrix_algebra(R::Ring, gens::Vector{<:MatElem}; check::Bool = true, is
   else
     d = degree(A)
     d2 = degree(A)^2
-    push!(gens, identity_matrix(R, d))
-    M = zero_matrix(R, length(gens), d2)
-    for i = 1:length(gens)
-      for j = 1:d2
-        M[i, j] = gens[i][j]
+    span = deepcopy(gens)
+    push!(span, identity_matrix(R, d))
+    M = zero_matrix(R, max(d2, length(span)), d2) # the maximal possible dimension will is d^2
+    pivot_rows = zeros(Int, d2)
+    new_elements = Set{Int}()
+    cur_rank = 0
+    for i = 1:length(span)
+      cur_rank == d2 ? break : nothing
+      new_elt = _add_row_to_rref!(M, [ span[i][j] for j = 1:d2 ], pivot_rows, cur_rank + 1)
+      if new_elt
+        push!(new_elements, i)
+        cur_rank += 1
       end
     end
-    r = rref!(M)
-    A.dim = r
-    A.basis_mat = M
-    bas = Vector{elem_type(A)}(undef, r)
-    for i = 1:r
+
+    # Build all possible products
+    while !isempty(new_elements)
+      cur_rank == d2 ? break : nothing
+      i = pop!(new_elements)
+      b = span[i]
+
+      n = length(span)
+      for r = 1:n
+        s = b*span[r]
+        for l = 1:n
+          t = span[l]*s
+          new_elt = _add_row_to_rref!(M, [ t[j] for j = 1:d2 ], pivot_rows, cur_rank + 1)
+          if !new_elt
+            continue
+          end
+          push!(span, t)
+          cur_rank += 1
+          push!(new_elements, length(span))
+          cur_rank == d2 ? break : nothing
+        end
+        cur_rank == d2 ? break : nothing
+      end
+    end
+
+    A.dim = cur_rank
+    A.basis_mat = sub(M, 1:cur_rank, 1:d2)
+    bas = Vector{elem_type(A)}(undef, dim(A))
+    for i = 1:dim(A)
       N = zero_matrix(R, degree(A), degree(A))
       for j = 1:d
         jd = (j - 1)*d
         for k = 1:d
-          N[k, j] = M[i, jd + k]
+          N[k, j] = basis_mat(A, copy = false)[i, jd + k]
         end
       end
       bas[i] = A(N)
     end
     A.basis = bas
+    check = false
   end
 
   if check
@@ -218,22 +250,64 @@ function matrix_algebra(R::Ring, S::AbsAlgAss, gens::Vector{<:MatElem}; check::B
   else
     d = degree(A)
     d2 = degree(A)^2
-    push!(gens, identity_matrix(S, d))
+    span = deepcopy(gens)
+    push!(span, identity_matrix(S, d))
     dcr = dim(S)
-    M = zero_matrix(R, length(gens), d2*dcr)
-    for i = 1:length(gens)
+    max_dim = d2*dcr
+    M = zero_matrix(R, max(length(gens), max_dim), max_dim)
+    pivot_rows = zeros(Int, max_dim)
+    new_elements = Set{Int}()
+    cur_rank = 0
+    v = Vector{elem_type(R)}(undef, max_dim)
+    for i = 1:length(span)
+      cur_rank == max_dim ? break : nothing
       for j = 1:d2
         jj = (j - 1)*dcr
         for k = 1:dcr
-          M[i, jj + k] = coeffs(gens[i][j], copy = false)[k]
+          v[jj + k] = coeffs(span[i][j], copy = false)[k]
         end
       end
+      new_elt = _add_row_to_rref!(M, v, pivot_rows, cur_rank + 1)
+      if new_elt
+        push!(new_elements, i)
+        cur_rank += 1
+      end
     end
-    r = rref!(M)
-    A.dim = r
-    A.basis_mat = M
-    bas = Vector{elem_type(A)}(undef, r)
-    for i = 1:r
+
+    # Build all possible products
+    while !isempty(new_elements)
+      cur_rank == max_dim ? break : nothing
+      i = pop!(new_elements)
+      b = span[i]
+
+      n = length(span)
+      for r = 1:n
+        s = b*span[r]
+        for l = 1:n
+          t = span[l]*s
+          for j = 1:d2
+            jj = (j - 1)*dcr
+            for k = 1:dcr
+              v[jj + k] = coeffs(t[j], copy = false)[k]
+            end
+          end
+          new_elt = _add_row_to_rref!(M, v, pivot_rows, cur_rank + 1)
+          if !new_elt
+            continue
+          end
+          push!(span, t)
+          cur_rank += 1
+          push!(new_elements, length(span))
+          cur_rank == max_dim ? break : nothing
+        end
+        cur_rank == max_dim ? break : nothing
+      end
+    end
+
+    A.dim = cur_rank
+    A.basis_mat = sub(M, 1:cur_rank, 1:max_dim)
+    bas = Vector{elem_type(A)}(undef, dim(A))
+    for i = 1:dim(A)
       N = zero_matrix(S, degree(A), degree(A))
       for j = 1:d
         jd = (j - 1)*d
@@ -241,7 +315,7 @@ function matrix_algebra(R::Ring, S::AbsAlgAss, gens::Vector{<:MatElem}; check::B
           jkd = (jd + k - 1)*dcr
           t = Vector{elem_type(base_ring(S))}(undef, dcr)
           for l = 1:dcr
-            t[l] = M[i, jkd + l]
+            t[l] = basis_mat(A, copy = false)[i, jkd + l]
           end
           N[k, j] = S(t)
         end
@@ -249,6 +323,7 @@ function matrix_algebra(R::Ring, S::AbsAlgAss, gens::Vector{<:MatElem}; check::B
       bas[i] = A(N)
     end
     A.basis = bas
+    check = false
   end
 
   if check
