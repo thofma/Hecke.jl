@@ -1192,3 +1192,20 @@ end
 
 =# 
 
+radical(a::fmpz) = prod(keys(factor(a).fac))
+function radical(a::T) where {T <: Integer}
+  return T(radical(fmpz(a)))
+end
+
+function quo(::FlintIntegerRing, a::fmpz)
+  R = ResidueRing(FlintZZ, a)
+  f = MapFromFunc(x -> R(x), y->lift(y), FlintZZ, R)
+  return R, f
+end
+
+function quo(::FlintIntegerRing, a::Integer)
+  R = ResidueRing(FlintZZ, a)
+  f = MapFromFunc(x -> R(x), y->lift(y), FlintZZ, R)
+  return R, f
+end
+
