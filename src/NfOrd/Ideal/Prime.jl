@@ -996,7 +996,7 @@ function valuation(a::fmpz, p::NfOrdIdl)
   if p.splitting_type[1] == 0
     return valuation_naive(order(p)(a), p)
   end
-  P = p.gen_one
+  P = minimum(p)
   return valuation(a, P)* p.splitting_type[1]
 end
 @doc Markdown.doc"""
