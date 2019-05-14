@@ -77,7 +77,11 @@ function cyclotomic_extension(k::AnticNumberField, n::Int)
   if n < 5
     #For n = 3, 4 the cyclotomic polynomial has degree 2,
     #so we can just ask for the roots.
-    rt = _roots_hensel(fk, max_roots = 1, isnormal = true)
+    if !isone(gcd(discriminant(maximal_order(k)), n))
+      rt = _roots_hensel(fk, max_roots = 1, isnormal = true)
+    else
+      rt = nf_elem[]
+    end
     if length(rt) == 1
       #The polynomial splits completely!
       Kr, gKr = number_field(t - rt[1], cached = false, check = false)
@@ -109,7 +113,6 @@ function cyclotomic_extension(k::AnticNumberField, n::Int)
       end
       ZKa.ismaximal = 1
       ZKa = lll(ZKa)
-      
       Hecke._set_maximal_order_of_nf(Ka, ZKa)
       c.Kr = Kr
       c.Ka = Ka
@@ -119,7 +122,7 @@ function cyclotomic_extension(k::AnticNumberField, n::Int)
     Hecke._set_cyclotomic_ext_nf(k, Ac)
     return c
   end
-  if !isone(gcd(numerator(discriminant(k)), n))
+  if !isone(gcd(discriminant(maximal_order(k)), n))
     lf = factor(fk)
     fk = first(keys(lf.fac))
   end
@@ -201,7 +204,6 @@ function automorphisms(C::CyclotomicExt; gens::Vector{NfToNfMor} = small_generat
     expo = divexact(eulerphi(fmpz(C.n)), k)
     l = hom(C.Kr, C.Kr, gen(C.Kr)^Int(lift(mU(U[1])^expo)), check = false)
     l1 = hom(C.Ka, C.Ka, C.mp[1](l(C.mp[1]\gen(C.Ka))), check = false)
-    #@assert iszero(Kc.Ka.pol(l1(gen(Kc.Ka)))) 
     push!(gnew, l1)
   else
     f = C.Kr.pol

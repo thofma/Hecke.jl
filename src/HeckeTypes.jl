@@ -951,8 +951,8 @@ mutable struct NfAbsOrdIdl{S, T}
     if iszero(x)
       C.iszero = 1
     end
-
-    C.gen_one = abs(norm(x))
+    C.norm = abs(norm(x))
+    C.gen_one = C.norm
     C.gen_two = x
 
     C.gens_normal = C.gen_one

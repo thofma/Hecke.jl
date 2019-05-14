@@ -426,9 +426,7 @@ end
     principal_gen_fac_elem(I::FacElem) -> FacElem{nf_elem, NumberField}
 For a principal ideal $A$ in factored form, find a generator in factored form.
 """
-
 function principal_gen_fac_elem(I::FacElem{NfOrdIdl, NfOrdIdlSet})
-
   J, a= reduce_ideal2(I)
   #@hassert :PID_Test 1 evaluate(a)*J == evaluate(I)
   x = Hecke.principal_gen_fac_elem(J)

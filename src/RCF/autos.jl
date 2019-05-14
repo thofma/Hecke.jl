@@ -305,53 +305,11 @@ function find_frob(A::ClassField_pp)
   error("Something strange is happening")
 end
 
-function find_gens(A::ClassField, cp::fmpz = fmpz(1))
-  
-  mR = A.rayclassgroupmap
-  mQ = A.quotientmap
-  O = order(codomain(mR))
-  R = codomain(mQ) 
-  m = mR.defining_modulus[1]
-  mm = lcm(minimum(m), cp)
-
-  sR = GrpAbFinGenElem[]
-  lp = NfOrdIdl[]
-  q, mq = quo(R, sR, false)
-  if isdefined(mR, :prime_ideal_cache)
-    S = mR.prime_ideal_cache
-  else
-    S = prime_ideals_up_to(O, max(1000,100*clog(discriminant(O),10)^2))
-    mR.prime_ideal_cache = S
-  end
-  for P in S
-    if gcd(minimum(P), mm) != 1
-      continue
-    end
-    if haskey(mR.prime_ideal_preimage_cache, P)
-      f = mR.prime_ideal_preimage_cache[P]
-    else
-      f = mR\P
-      mR.prime_ideal_preimage_cache[P] = f
-    end
-    f1 = mQ(f)
-    if iszero(mq(f1))
-      continue
-    end
-    push!(sR, f1)
-    push!(lp, P)
-    q, mq = quo(R, sR, false)
-    if order(q) == 1 
-      break
-    end
-  end
-  @assert order(q)==1
-  return lp, sR
-end
-
 #Finds prime such that the Frobenius automorphisms generate the automorphism group of the kummer extension
-function find_gens(KK::KummerExt, gens_imgs::Array{Array{FacElem{nf_elem, AnticNumberField}, 1}, 1}, m::fmpz)
+function find_gens(KK::KummerExt, gens_imgs::Array{Array{FacElem{nf_elem, AnticNumberField}, 1}, 1}, A::ClassField)
 
   K = base_field(KK)
+  m = minimum(defining_modulus(A)[1])
   O = maximal_order(K)
   els = GrpAbFinGenElem[]
   Q, mQ = quo(KK.AutG, els, false)
@@ -408,7 +366,7 @@ function extend_aut2(A::ClassField, autos::Array{NfToNfMor, 1})
     end
     act_on_gens[i] = act_on_gen_i
   end
-  frob_gens = find_gens(KK, act_on_gens, minimum(defining_modulus(A)[1]))
+  frob_gens = find_gens(KK, act_on_gens, A)
   autos_extended = Vector{Vector{NfRel_nsElem{nf_elem}}}(undef, length(autos))
   #I will compute a possible image cyclic component by cyclic component
   for w = 1:length(autos)
@@ -513,7 +471,7 @@ function extend_aut_pp(A::ClassField, autos::Array{NfToNfMor, 1}, p::fmpz)
     end
     act_on_gens[i] = act_on_gen_i
   end
-  frob_gens = find_gens(KK, act_on_gens, m)
+  frob_gens = find_gens(KK, act_on_gens, A)
   
   autos_extended = Array{NfRel_nsToNfRel_nsMor, 1}(undef, length(autos))
   #I will compute a possible image cyclic component by cyclic component

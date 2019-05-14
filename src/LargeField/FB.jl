@@ -44,7 +44,7 @@ end
 
 
 @doc Markdown.doc"""
-    taylor_shift(x::nmod_poly, r::UInt) -> nmod_poly
+    taylor_shift(x::nmod_poly, c::UInt) -> nmod_poly
 
   Compute x(t-c)
 """
@@ -73,6 +73,7 @@ function induce(FB::Hecke.NfFactorBase, A::Map)
       for (i, P) in FP.lp
         Q = induce_image(P, A)
         id = findfirst(isequal(Q), lp)
+        @assert id !== nothing        
         push!(prm, (i, FP.lp[id][1]))
       end
       #anti_ = [anti_uniformizer(x[2]) for x in FP.lp]
