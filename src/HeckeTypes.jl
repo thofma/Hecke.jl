@@ -644,7 +644,7 @@ mutable struct NfAbsOrd{S, T} <: Ring
                                    # and den.
   tidempotents::fmpz_mat           # Temporary variable for idempotents()
 
-  index_div::Dict{fmpz, Any}       # the index divisor splitting
+  index_div::Dict{fmpz, Vector}       # the index divisor splitting
                                    # Any = Array{NfAbsOrdIdl, Int}
                                    # but forward references are illegal
 
@@ -951,8 +951,8 @@ mutable struct NfAbsOrdIdl{S, T}
     if iszero(x)
       C.iszero = 1
     end
-
-    C.gen_one = abs(norm(x))
+    C.norm = abs(norm(x))
+    C.gen_one = C.norm
     C.gen_two = x
 
     C.gens_normal = C.gen_one

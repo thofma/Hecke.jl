@@ -11,6 +11,10 @@ mutable struct CyclotomicExt
   Kr::Hecke.NfRel{nf_elem}
   Ka::AnticNumberField
   mp::Tuple{NfRelToNf, NfToNfMor}
+  
+  kummer_exts::Dict{Set{fmpz}, Tuple{Vector{NfOrdIdl}, KummerExt}}
+                      #I save the kummer extensions used in the class field construction
+                      #The keys are the factors of the minimum of the conductor
   function CyclotomicExt()
     return new()
   end
@@ -49,6 +53,7 @@ function cyclotomic_extension(k::AnticNumberField, n::Int)
   
   kt, t = PolynomialRing(k, "t", cached = false)
   c = CyclotomicExt()
+  c.kummer_exts = Dict{Set{fmpz}, Tuple{Vector{NfOrdIdl}, KummerExt}}()
   c.k = k
   c.n = n
   
@@ -72,7 +77,11 @@ function cyclotomic_extension(k::AnticNumberField, n::Int)
   if n < 5
     #For n = 3, 4 the cyclotomic polynomial has degree 2,
     #so we can just ask for the roots.
-    rt = _roots_hensel(fk, max_roots = 1, isnormal = true)
+    if !isone(gcd(discriminant(maximal_order(k)), n))
+      rt = _roots_hensel(fk, max_roots = 1, isnormal = true)
+    else
+      rt = nf_elem[]
+    end
     if length(rt) == 1
       #The polynomial splits completely!
       Kr, gKr = number_field(t - rt[1], cached = false, check = false)
@@ -104,7 +113,6 @@ function cyclotomic_extension(k::AnticNumberField, n::Int)
       end
       ZKa.ismaximal = 1
       ZKa = lll(ZKa)
-      
       Hecke._set_maximal_order_of_nf(Ka, ZKa)
       c.Kr = Kr
       c.Ka = Ka
@@ -114,7 +122,7 @@ function cyclotomic_extension(k::AnticNumberField, n::Int)
     Hecke._set_cyclotomic_ext_nf(k, Ac)
     return c
   end
-  if !isone(gcd(numerator(discriminant(k)), n))
+  if !isone(gcd(discriminant(maximal_order(k)), n))
     lf = factor(fk)
     fk = first(keys(lf.fac))
   end
@@ -173,7 +181,7 @@ base_field(C::CyclotomicExt) = C.k
 @doc Markdown.doc"""
     automorphisms(C::CyclotomicExt; gens::Vector{NfToNfMor}) -> Vector{NfToNfMor}
 Computes the automorphisms of the absolute field defined by the cyclotomic extension, i.e. of absolute_field(C).
-gens must be a set of generators for the automorphism group of the base field of C
+It assumes that the base field is normal. gens must be a set of generators for the automorphism group of the base field of C
 """
 function automorphisms(C::CyclotomicExt; gens::Vector{NfToNfMor} = small_generating_set(automorphisms(base_field(C))), copy::Bool = true)
 
@@ -196,7 +204,6 @@ function automorphisms(C::CyclotomicExt; gens::Vector{NfToNfMor} = small_generat
     expo = divexact(eulerphi(fmpz(C.n)), k)
     l = hom(C.Kr, C.Kr, gen(C.Kr)^Int(lift(mU(U[1])^expo)), check = false)
     l1 = hom(C.Ka, C.Ka, C.mp[1](l(C.mp[1]\gen(C.Ka))), check = false)
-    #@assert iszero(Kc.Ka.pol(l1(gen(Kc.Ka)))) 
     push!(gnew, l1)
   else
     f = C.Kr.pol

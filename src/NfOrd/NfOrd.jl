@@ -1190,8 +1190,9 @@ function lll(M::NfOrd)
 
   I = ideal(M, 1)
   #TODO HARD: find proper parameters
-  prec = max(100, 100*div(degree(M), 10))
+  prec = 100 + 25*div(degree(M), 3) + Int(round(log(abs(discriminant(K)))))
   #prec = 100
+  i = 0
   while true
     try
       q, w = lll(I, zero_matrix(FlintZZ, degree(K), degree(K)), prec = prec)
@@ -1207,14 +1208,15 @@ function lll(M::NfOrd)
         On.gen_index = M.gen_index
       end
       M.lllO = On
+      On.lllO = On
       return On::NfOrd
     catch e
       if isa(e, LowPrecisionLLL) || isa(e, InexactError)
-        prec = Int(round(prec*1.5))
-        #prec = Int(round(prec*1.2))
-        #if prec>1000
-        #  error("precision too large in LLL");
-        #end
+        i += 1
+        if i > 3
+          @show "having a hard time computing the LLL basis"
+        end
+        prec = Int(round(prec*1.2*i))
         continue;
       else
         rethrow(e)

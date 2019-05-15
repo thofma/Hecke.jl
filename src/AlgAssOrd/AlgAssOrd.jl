@@ -75,6 +75,39 @@ function Order(A::S, basis_mat::FakeFmpqMat) where {S <: AbsAlgAss}
   return AlgAssAbsOrd{S}(A, basis_mat)
 end
 
+function _Order(A::S, gens::Vector{T}; check::Bool = true) where {S <: AbsAlgAss, T <: AbsAlgAssElem}
+  B_A = basis(A)
+
+  if one(A) in gens
+    cur = gens
+  else
+    cur = append!([one(A)], gens)
+  end
+  Bmat = basis_mat(cur)
+  while true
+    k = length(cur)
+    prods = Vector{elem_type(A)}(undef, k^2)
+    for i = 1:k
+      ik = (i - 1)*k
+      for j = 1:k
+        prods[ik + j] = cur[i]*cur[j]
+      end
+    end
+    Ml = hnf(basis_mat(prods))
+    r = findfirst(i -> !iszero_row(Ml.num, i), 1:k^2)
+    nBmat = sub(Ml, r:nrows(Ml), 1:ncols(Ml))
+    if nrows(nBmat) == nrows(Bmat) && Bmat == nBmat
+      break
+    end
+    Bmat = nBmat
+  end
+  if nrows(Bmat) != dim(A)
+    error("Elements do not generate an order")
+  end
+
+  return Order(A, Bmat)
+end
+
 ################################################################################
 #
 #  Index
@@ -336,46 +369,6 @@ end
 
 ################################################################################
 #
-#  Quaternion algebras
-#
-################################################################################
-
-function quaternion_algebra(a::Int, b::Int)
-  
-  M = Array{fmpq,3}(undef, 4,4,4)
-  for i = 1:4
-    for j = 1:4
-      for k = 1:4
-        M[i,j,k] = 0
-      end
-    end
-  end  
-  M[1,1,1] = 1 # 1*1=1
-  M[1,2,2] = 1 # 1*i=i
-  M[1,3,3] = 1 # 1*j=j
-  M[1,4,4] = 1 # 1*ij=1
-  
-  M[2,1,2] = 1
-  M[2,2,1] = a
-  M[2,3,4] = 1
-  M[2,4,3] = a
-  
-  M[3,1,3] = 1
-  M[3,2,4] = -1
-  M[3,3,1] = b
-  M[3,4,2] = -b
-  
-  M[4,1,4] = 1
-  M[4,2,3] = -a
-  M[4,3,2] = b
-  M[4,4,1] = -a*b
-  O = fmpq[1, 0, 0, 0]
-  return AlgAss(FlintQQ, M, O)
-  
-end
-
-################################################################################
-#
 #  Quotient
 #
 ################################################################################
@@ -567,50 +560,32 @@ end
 Given an ideal I, it returns the ring (I : I)
 """
 
-function ring_of_multipliers(I::AlgAssAbsOrdIdl, p::fmpz=fmpz(1))
+function ring_of_multipliers(I::AlgAssAbsOrdIdl, p::fmpz=fmpz(1), action::Symbol = :left)
   O = order(I)
   @hassert :AlgAssOrd 1 Hecke.check_associativity(algebra(O))
   @hassert :AlgAssOrd 1 Hecke.check_distributivity(algebra(O))
   @hassert :AlgAssOrd 1 check_ideal(I)
   bmatinv = basis_mat_inv(I, copy = false)
-  if isdefined(I, :gens) && length(I.gens)<degree(O)
-    m=zero_matrix(FlintZZ, degree(O)*length(I.gens), degree(O))
-    for i=1:length(I.gens)
-      M=representation_matrix(I.gens[i])
-      mul!(M, M, bmatinv.num)
-      if bmatinv.den == 1
-        for s=1:degree(O)
-          for t=1:degree(O)
-            m[t+(i-1)*(degree(O)),s]=M[s,t]
-          end
-        end
-      else
-        for s=1:degree(O)
-          for t=1:degree(O)
-            @hassert :AlgAssOrd 1 divisible(M[s,t], bmatinv.den)
-            m[t+(i-1)*(degree(O)),s] = divexact(M[s,t], bmatinv.den)
-          end
-        end
-      end
-    end
+  if isdefined(I, :gens) && length(I.gens) < degree(O)
+    B = I.gens
   else
     B = basis(I, copy = false)
-    m = zero_matrix(FlintZZ, degree(O)^2, degree(O))
-    for i=1:degree(O)
-      M = representation_matrix(B[i])
-      mul!(M, M, bmatinv.num)
-      if bmatinv.den == 1
-        for s=1:degree(O)
-          for t=1:degree(O)
-            m[t+(i-1)*(degree(O)),s]=M[s,t]
-          end
+  end
+  m = zero_matrix(FlintZZ, degree(O)*length(B), degree(O))
+  for i = 1:length(B)
+    M = representation_matrix(B[i], action)
+    mul!(M, M, bmatinv.num)
+    if bmatinv.den == 1
+      for s = 1:degree(O)
+        for t = 1:degree(O)
+          m[t + (i - 1)*degree(O), s] = M[s, t]
         end
-      else
-        for s=1:degree(O)
-          for t=1:degree(O)
-            @hassert :AlgAssOrd 1 divisible(M[s,t], bmatinv.den)
-            m[t+(i-1)*(degree(O)),s] = divexact(M[s,t], bmatinv.den)
-          end
+      end
+    else
+      for s = 1:degree(O)
+        for t = 1:degree(O)
+          @hassert :AlgAssOrd 1 divisible(M[s, t], bmatinv.den)
+          m[t + (i - 1)*degree(O), s] = divexact(M[s, t], bmatinv.den)
         end
       end
     end
@@ -1187,31 +1162,19 @@ function MaximalOrder(O::AlgAssAbsOrd{S, T}) where { S <: AlgGrp, T <: AlgGrpEle
   return OO
 end
 
-function _denominator_of_mult_table(A::AlgAss{fmpq})
-  @assert !iszero(A)
-
-  l = denominator(A.mult_table[1, 1, 1])
+function _denominator_of_mult_table(A::AbsAlgAss{fmpq})
+  l = denominator(multiplication_table(A, copy = false)[1, 1, 1])
   for i = 1:dim(A)
     for j = 1:dim(A)
       for k = 1:dim(A)
-        l = lcm(l, denominator(A.mult_table[i, j, k]))
+        l = lcm(l, denominator(multiplication_table(A, copy = false)[i, j, k]))
       end
     end
   end
   return l
 end
 
-function _denominator_of_mult_table(A::AlgGrp{fmpq})
-  @assert !iszero(A)
-
-  l = denominator(A.mult_table[1, 1])
-  for i = 1:dim(A)
-    for j = 1:dim(A)
-      l = lcm(l, denominator(A.mult_table[i, j]))
-    end
-  end
-  return l
-end
+_denominator_of_mult_table(A::AlgGrp{fmpq}) = fmpz(1)
 
 function any_order(A::AbsAlgAss{fmpq})
   d = _denominator_of_mult_table(A)

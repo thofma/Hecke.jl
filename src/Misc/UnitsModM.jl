@@ -474,9 +474,14 @@ function unit_group_mod(R::Nemo.NmodRing, n::Int)
   local disclog
   let G = G, disclogs = disclogs
     function disclog(x::nmod)
-      res = Int[]
+      res = Vector{Int}(undef, ngens(G))
+      ind = 1
       for i = 1:length(disclogs)
-        append!(res, disclogs[i](Int(x.data)))
+        res1 = disclogs[i](Int(x.data))
+        for j = 1:length(res1)
+          res[ind] = res1[j]
+          ind += 1
+        end
       end
       return G(res)
     end
@@ -574,11 +579,11 @@ function _unit_pk_mod_n(p::Int, v::Int, n::Int)
       local disclog5
       let R = R
         function disclog5(x::Int)
-          y=R(x)
+          y = R(x)
           if isone(y)
-            return 0
+            return Int[0]
           else
-            return 1
+            return Int[1]
           end
         end
       end
@@ -687,10 +692,5 @@ function _unit_grp_residue_field_mod_n(p::Int, n::Int)
   
 end
 
-
 unit_group(A::Generic.ResRing{fmpz}) = UnitGroup(A)
 unit_group(A::Nemo.NmodRing) = UnitGroup(A)
-
-
-
-

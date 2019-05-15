@@ -557,10 +557,10 @@ function change_base_ring(f::PolyElem, g::T) where T <: Union{Function, Map}
   h0 = g(coeff(f, 0))
   R = parent(h0)
   Rt, t = PolynomialRing(R, cached = false)
-  coeffs = Vector{typeof(h0)}(undef, degree(f)+1)
-  coeffs[0] = h0
+  coeffs = Vector{typeof(h0)}(undef, degree(f) + 1)
+  coeffs[1] = h0
   for i=1:degree(f)
-    coeffs[i] = g(coeff(f, i))
+    coeffs[i + 1] = g(coeff(f, i))
   end
   return Rt(coeffs)
 end  

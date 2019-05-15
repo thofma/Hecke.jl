@@ -723,3 +723,21 @@ function isinvertible(a::AlgAssAbsOrdIdl)
   c = a*b
   return isone(c), b
 end
+
+################################################################################
+#
+#  Left / right order
+#
+################################################################################
+
+left_order(a::AlgAssAbsOrdIdl) = ring_of_multipliers(a, fmpz(1), :left)
+
+right_order(a::AlgAssAbsOrdIdl) = ring_of_multipliers(a, fmpz(1), :right)
+
+################################################################################
+#
+#  Normal ideals
+#
+################################################################################
+
+isnormal(a::AlgAssAbsOrdIdl) = ismaximal(left_order(a))

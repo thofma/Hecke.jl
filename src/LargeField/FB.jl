@@ -44,7 +44,7 @@ end
 
 
 @doc Markdown.doc"""
-    taylor_shift(x::nmod_poly, r::UInt) -> nmod_poly
+    taylor_shift(x::nmod_poly, c::UInt) -> nmod_poly
 
   Compute x(t-c)
 """
@@ -62,15 +62,34 @@ function induce(FB::Hecke.NfFactorBase, A::Map)
   O = order(FB.ideals[1])
   prm = Array{Tuple{Int, Int}, 1}()
 
+  if f == gen(K)
+    return PermutationGroup(length(FB.ideals))()
+  end
+
   for p in FB.fb_int.base
     FP = FB.fb[p]
     if length(FP.lp) < 3 || isindex_divisor(O, p) || p > 2^60
       lp = [x[2] for x = FP.lp]
-      for (i, P) in FP.lp 
+      for (i, P) in FP.lp
         Q = induce_image(P, A)
         id = findfirst(isequal(Q), lp)
+        @assert id !== nothing        
         push!(prm, (i, FP.lp[id][1]))
       end
+      #anti_ = [anti_uniformizer(x[2]) for x in FP.lp]
+      #for (i, P) in FP.lp 
+      #  b = A(P.gen_two.elem_in_nf)
+      #  id = -1
+      #  for j in 1:length(FP.lp)
+      #    if elem_in_nf(b * anti_[j]) in O
+      #      id = j
+      #      break
+      #    end
+      #  end
+      #  #Q = induce_image(P, A)
+      #  #id = findfirst(isequal(Q), lp)
+      #  push!(prm, (i, FP.lp[id][1]))
+      #end
     else
       px = PolynomialRing(GF(Int(p), cached=false), "x", cached=false)[1]
       fpx = px(f)

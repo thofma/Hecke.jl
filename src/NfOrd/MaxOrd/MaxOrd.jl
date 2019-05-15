@@ -1,5 +1,5 @@
 
-export maximal_order, pmaximal_order,poverorder, MaximalOrder, ring_of_integers
+export maximal_order, pmaximal_order, poverorder, MaximalOrder, ring_of_integers
 
 
 ###############################################################################
@@ -87,10 +87,11 @@ Given a set of prime numbers, this function returns an overorder of $O$ which
 is maximal at those primes.
 """
 function pmaximal_overorder_at(O::NfOrd, primes::Array{fmpz, 1})
-  if isempty(primes)
+
+  primes1 = setdiff(primes, O.primesofmaximality)
+  if isempty(primes1)
     return O
   end
-
   OO = O
 
   if !isdefining_polynomial_nice(nf(O)) || !isinteger(gen_index(O))
@@ -108,11 +109,14 @@ function pmaximal_overorder_at(O::NfOrd, primes::Array{fmpz, 1})
   ind = index(O)
   EO = EquationOrder(nf(O))
   M = zero_matrix(FlintZZ, 2 * degree(O), degree(O))
-  for i in 1:length(primes)
+  for i in 1:length(primes1)
     p = primes[i]
     @vprint :NfOrd 1 "Computing p-maximal overorder for $p ..."
     if divisible(ind, p)
-      OO = sum_as_Z_modules(OO, pmaximal_overorder(O, p), M)
+      O1 = pmaximal_overorder(O, p)
+      if discriminant(O1) != discriminant(OO)
+        OO = sum_as_Z_modules(OO, O1, M)
+      end
     else
       O1 = pmaximal_overorder(EO, p)
       if divisible(index(O1), p)
@@ -140,14 +144,15 @@ function new_maximal_order(O::NfOrd; index_divisors::Vector{fmpz} = fmpz[], disc
     O.ismaximal = 1
     return O  
   end
-
+  
   if isdefining_polynomial_nice(K) && (isequation_order(O) || isinteger(gen_index(O)))
     Zx, x = PolynomialRing(FlintZZ, "x", cached = false)
     f1 = Zx(K.pol)
-    ds = rres(f1, derivative(f1))
+    ds = gcd(rres(f1, derivative(f1)), discriminant(O))
   else
     ds = discriminant(O)
   end
+
 
   #First, factorization of the discriminant given by the snf of the trace matrix
   M = trace_matrix(O)
@@ -180,13 +185,16 @@ function new_maximal_order(O::NfOrd; index_divisors::Vector{fmpz} = fmpz[], disc
     for (p,v) in fac
       rem = divexact(rem, p^v)
     end
-    @vprint :NfOrd 1 "Computing the maximal order at $(collect(keys(fac)))\n "
-    O1 = pmaximal_overorder_at(O, collect(keys(fac)))
-    if first
-      OO = O1
-      first = false
-    else
-      @vtime :NfOrd 3 OO = sum_as_Z_modules(OO, O1, auxmat)
+    pps = collect(keys(fac))
+    @vprint :NfOrd 1 "Computing the maximal order at $(pps)\n "
+    O1 = pmaximal_overorder_at(O, pps)
+    if discriminant(O1) != discriminant(O)
+      if first
+        OO = O1
+        first = false
+      else
+        @vtime :NfOrd 3 OO = sum_as_Z_modules(OO, O1, auxmat)
+      end
     end
     rem = abs(rem)
     if !isone(rem)
@@ -266,6 +274,36 @@ function _TameOverorderBL(O::NfOrd, lp::Array{fmpz,1})
 end
 
 
+function _gcd_with_failure(a::fmpz_mod_poly, b::fmpz_mod_poly)
+  Rx = parent(a)
+  R = Rx.base_ring
+  f = deepcopy(a)
+  g = deepcopy(b)
+  while true
+    if degree(f)<degree(g)
+      f, g = g, f
+    end
+    
+    for i = 0:degree(g)
+      if !isunit(coeff(g, i))
+        return coeff(g, i), g
+      end
+    end
+    rem!(f, f, g)
+    
+    if degree(f) < 1
+      if iszero(f)
+        return R(1), g
+      end
+      if isunit(coeff(f,0))
+        return R(1), Rx(1)
+      end
+      return coeff(f,0), g
+    end
+  end
+
+end
+
 function _qradical(O::NfOrd, q::fmpz)
   
   d = degree(O)
@@ -339,9 +377,10 @@ function _cycleBL(O::NfOrd, q::fmpz)
     @vprint :NfOrd 1 "ring of multipliers\n"
     O1 = ring_of_multipliers(I)
   end
-  @vprint :NfOrd 1 "couldn't enlarge\n"
+  @vprint :NfOrd 1 "The ring of multipliers was the ring itself\n"
   # (I:I)=OO. Now, we want to prove tameness (or get a factor of q)
   # We have to test that (OO:a)/B is a free Z/qZ module.
+  #TODO: Check, I am doing something stupid here
   inva = colon(ideal(O, 1), I, true)
   M1 = basis_mat_inv(inva)
   @assert isone(M1.den)
@@ -353,7 +392,7 @@ function _cycleBL(O::NfOrd, q::fmpz)
       return O, q1
     end
   end
-  @vprint :NfOrd 1 "...is free\n"
+  @vprint :NfOrd 1 "(OO:I)/OO is free\n"
   return _cycleBL2(O, q, I)
 
 end
@@ -431,7 +470,7 @@ function TameOverorderBL(O::NfOrd, lp::Array{fmpz,1}=fmpz[])
   Q=fmpz[]
   while !isempty(M)
     @vprint :NfOrd 1 M
-    q=M[1]
+    q = M[1]
     if isprime(q)
       OO1=pmaximal_overorder(O, q)
       if valuation(discriminant(OO1), q)< valuation(discriminant(OO), q)
@@ -485,6 +524,9 @@ $v_p([ \mathcal O_K : R]) < v_p([ \mathcal O_K : \mathcal O])$. Otherwise
 $\mathcal O$ is returned.
 """
 function poverorder(O::NfAbsOrd, p::fmpz)
+  if p in O.primesofmaximality
+    return O
+  end
   if isequation_order(O) && issimple(nf(O))
     #return dedekind_poverorder(O, p)
     return polygons_overorder(O, p)
@@ -508,7 +550,7 @@ end
     pmaximal_overorder(O::NfOrd, p::Integer) -> NfOrd
 
 This function finds a $p$-maximal order $R$ containing $\mathcal O$. That is,
-the index $[ \mathcal O_K : R]$ is not dividible by $p$.
+the index $[ \mathcal O_K : R]$ is not divisible by $p$.
 """
 function pmaximal_overorder(O::NfAbsOrd, p::fmpz)
   @vprint :NfOrd 1 "computing p-maximal overorder for $p ... \n"
@@ -520,7 +562,6 @@ function pmaximal_overorder(O::NfAbsOrd, p::fmpz)
     push!(O.primesofmaximality, p)
     return O
   end
-
   @vprint :NfOrd 1 "extending the order at $p for the first time ... \n"
   i = 1
   OO = poverorder(O, p)
@@ -567,6 +608,7 @@ function ring_of_multipliers(a::NfAbsOrdIdl)
   id_gen = zero_matrix(FlintZZ, 2*n, n) 
   m = zero_matrix(FlintZZ, n*length(B), n)
   ind = 1
+  modu = minimum(a)*bmatinv.den
   for i = 1:length(B)
     if i != 1
       c = matrix(FlintZZ, 1, n, coordinates(B[i]))
@@ -575,7 +617,7 @@ function ring_of_multipliers(a::NfAbsOrdIdl)
         continue
       end
     end
-    M = representation_matrix_mod(B[i], minimum(a)*bmatinv.den) 
+    M = representation_matrix_mod(B[i], modu) 
     _copy_matrix_into_matrix(id_gen, 1, 1, M)
     hnf_modular_eldiv!(id_gen, minimum(a), :lowerleft)
     mod!(M, minimum(a)*bmatinv.den)
@@ -612,6 +654,7 @@ function ring_of_multipliers(a::NfAbsOrdIdl)
   if isdefined(O, :basis_mat_inv)
     O1.basis_mat_inv = O.basis_mat_inv * mhnf
   end
+  O1.primesofmaximality = O.primesofmaximality
   return O1
 end
 
@@ -676,7 +719,7 @@ function pradical_frobenius1(O::NfOrd, p::Union{Integer, fmpz})
   R = GF(p, cached = false)
   d = degree(O)
   K = nf(O)
-  Rx = PolynomialRing(R, "x", cached = true)[1]
+  Rx = PolynomialRing(R, "x", cached = false)[1]
   res = factor_shape_refined(Rx(K.pol))
   md = 1
   for i = 1:length(res)
@@ -726,7 +769,7 @@ function pradical_frobenius1(O::NfOrd, p::Union{Integer, fmpz})
   X = right_kernel_basis(A)
   gens = elem_type(O)[O(p), gen2]
   if isempty(X)
-    I = ideal(O, p)
+    I = ideal(O, p, gen2)
     I.gens = gens
     return I
   end
@@ -741,19 +784,21 @@ function pradical_frobenius1(O::NfOrd, p::Union{Integer, fmpz})
     end
   end
   #Then, construct the basis matrix of the ideal
-  m = zero_matrix(FlintZZ, nr + d, d)
-  for i = 1:length(X)
+  m1 = zero_matrix(FlintZZ, length(gens) - 2 + d, d)
+  for i = 3:length(gens)
+    el = coordinates(gens[i], copy = false)
     for j = 1:nr
-      m[i, indices[j]] = lift(X[i][j])
+      m1[i-2, indices[j]] = el[indices[j]]
     end
   end
   for i = 1:d
-    for s = 1:d
-      m[i+nr, s] = M1[i, s]
+    for s = 1:i
+      m1[i+length(gens)-2, s] = M1[i, s]
     end
   end
-  hnf_modular_eldiv!(m, fmpz(p), :lowerleft)
-  I = NfAbsOrdIdl(O, view(m, nr+1:nr+d, 1:d))
+  hnf_modular_eldiv!(m1, fmpz(p), :lowerleft)
+  m1 = view(m1, length(gens) - 1:nrows(m1), 1:d)
+  I = NfAbsOrdIdl(O, m1)
   I.minimum = p
   I.gens = gens
   return I

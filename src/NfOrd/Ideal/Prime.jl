@@ -126,6 +126,8 @@ function intersect_nonindex(f::Map, P::NfOrdIdl, Zk = maximal_order(domain(f)))
   for (f, e) = gp.fac
     if iszero(f(hp) % Gp)
       p = ideal_from_poly(Zk, Int(minimum(P)), f, 1)
+      P.is_prime = 1
+      P.minimum = minimum(P)
       return p
     end
   end
@@ -419,7 +421,7 @@ function anti_uniformizer(P::NfOrdIdl)
   end
   if has_2_elem_normal(P)
     Pinv = inv(P)
-    P.anti_uniformizer = divexact(Pinv.num.gen_two.elem_in_nf, Pinv.den)
+    P.anti_uniformizer = mod(divexact(Pinv.num.gen_two.elem_in_nf, Pinv.den), minimum(P))
     return P.anti_uniformizer
   end
   p = minimum(P)

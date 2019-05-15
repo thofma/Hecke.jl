@@ -721,12 +721,15 @@ end
 mutable struct ChainComplex{T}
   @declare_other
   maps::Array{<:Map{<:T, <:T}, 1}
-  function ChainComplex(A::S; check::Bool = true) where {S <:Array{<:Map{<:T, <:T}, 1}} where {T}
+  direction::Symbol
+  exact::Array{Bool, 1}
+  function ChainComplex(A::S; check::Bool = true, direction:: Symbol = :left) where {S <:Array{<:Map{<:T, <:T}, 1}} where {T}
     if check
       @assert all(i-> iszero(A[i]*A[i+1]), 1:length(A)-1)
     end
     r = new{T}()
     r.maps = A
+    r.direction = direction
     return r
   end
 end
@@ -747,6 +750,17 @@ function show(io::IO, C::ChainComplex)
   name_map = String[]
   mis_map = Tuple{Int, <:Map}[]
   mis_mod = Tuple{Int, <:Any}[]
+
+  if C.direction == :left
+    rng = 0:length(C)
+    arr = ("--", "-->")
+    dir = 1
+  else
+    rng = length(C)+1:-1:1
+    arr = ("<--", "--")
+    dir = 0
+  end
+
   for i=1:length(C)
     phi = map(C, i)
     if get_special(phi, :name) !== nothing
@@ -767,12 +781,15 @@ function show(io::IO, C::ChainComplex)
   end
 
   io = IOContext(io, :compact => true)
-  print(io, name_mod[1])
-  for i=1:length(C)
+  for i=rng
+    if i == first(rng)
+      print(io, name_mod[i+dir])
+      continue
+    end
     if name_map[i] != ""
-      print(io, " -- $(name_map[i]) --> ", name_mod[i+1])
+      print(io, " ", arr[1], " ", name_map[i], " ", arr[2], " ", name_mod[i+dir])
     else
-      print(io, " ----> ", name_mod[i+1])
+      print(io, " ", arr[1], arr[2], " ", name_mod[i+dir])
     end
   end
   if length(mis_mod) > 0 # || length(mis_map) > 0
@@ -799,7 +816,7 @@ function chain_complex(A::Array{<:Map{GrpAbFinGen, GrpAbFinGen, <:Any, <:Any}, 1
   return ChainComplex(A)
 end
 
-lastindex(C::ChainComplex) = length(C)
+Base.lastindex(C::ChainComplex) = length(C)
 getindex(C::ChainComplex, u::UnitRange) = ChainComplex(C.maps[u], check = false)
 
 @doc Markdown.doc"""
@@ -1679,3 +1696,11 @@ function abelian_groups(n::Int)
   end
   return grps
 end
+
+################################################################################
+#
+#  Identity
+#
+################################################################################
+
+id(G::GrpAbFinGen) = G(zeros(fmpz, ngens(G)))

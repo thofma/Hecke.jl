@@ -301,19 +301,20 @@ function principal_subfields(K::T) where {T}
 end
 
 # Computes the minpoly of a over M if k(a)=K/M/k
-# TODO: Improve this. Don't call rank so often
+# TODO: Improve this.
 function _get_sfpoly(Kx, M)
   K = base_ring(Kx)
   k = base_field(K)
   n = degree(K)
   @assert k === base_ring(M)
   M = transpose(M)
-  if rank(M) == 1
+  rk = rank(M)
+  if rk == 1
       return Kx([K(coeff(minpoly(gen(K)),i)) for i in 0:degree(minpoly(gen(K)))])
   end
-  my = div(n, rank(M))
-  ar_basis = Vector{elem_type(K)}(undef, rank(M))
-  for i in 1:rank(M)
+  my = div(n, rk)
+  ar_basis = Vector{elem_type(K)}(undef, rk)
+  for i in 1:rk
     elem_basis = zero(K)
     for j in 1:n
       elem_basis += M[j,i] * gen(K)^(j-1)
@@ -507,11 +508,10 @@ function subfields(K::T; degree::Int64 = -1) where {T <: Union{AnticNumberField,
 
   if degree == n
     return Tuple{T, morphism_type(T)}[(K, id_hom(K))]
-  else
-    princ_subfields = _principal_subfields_basis(K)
-    gg = generating_subfields(princ_subfields)
-    sf_asmat_ar = allSubfields(K, gg, degree)
   end
+  princ_subfields = _principal_subfields_basis(K)
+  gg = generating_subfields(princ_subfields)
+  sf_asmat_ar = allSubfields(K, gg, degree)
   #compute embedding
   Res = Vector{Tuple{typeof(K), morphism_type(typeof(K))}}()
   #get minimal polynomial of primitive elem k(pe) = M, over k
@@ -528,7 +528,7 @@ function subfields(K::T; degree::Int64 = -1) where {T <: Union{AnticNumberField,
       #end
       #basis_ar[i] = field_elem
     end
-    push!(Res,subfield(K, basis_ar, isbasis = true))
+    push!(Res, subfield(K, basis_ar, isbasis = true))
   end
   return Res
 end

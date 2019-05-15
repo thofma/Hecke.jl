@@ -97,7 +97,6 @@ function istorsion_unit(x::FacElem{T}, checkisunit::Bool = false, p::Int = 16) w
     return true, p
   end
   error("precision was not sufficient")
-
 end
 
 function factored_norm(x::FacElem{nf_elem})

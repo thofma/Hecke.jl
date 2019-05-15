@@ -335,6 +335,36 @@ function divexact(x::AbsOrdQuoRingElem, y::AbsOrdQuoRingElem)
   return z
 end
 
+function isdivisible2(x::AbsOrdQuoRingElem, y::AbsOrdQuoRingElem)
+  check_parent(x, y)
+
+  iszero(y) && error("Dividing by zero")
+
+  if iszero(x)
+    return true, zero(parent(x))
+  end
+
+  R = parent(x)
+  O = base_ring(R)
+  d = degree(O)
+
+  
+  A = representation_matrix_mod(y.elem, minimum(R.ideal))
+  B = parent(x).basis_mat
+  V = hcat(A', B')
+
+  a = coordinates(x.elem, copy = false)
+  rhs = matrix(FlintZZ, d, 1, a)
+  
+  fl, sol = cansolve(V, rhs)
+  if !fl
+    return fl, zero(R)
+  end
+  z = R(O(fmpz[sol[i, 1] for i = 1:degree(O)]))
+  @hassert :NfOrdQuoRing 1 z*y == x
+  return true, z
+end
+
 function isdivisible(x::AbsOrdQuoRingElem, y::AbsOrdQuoRingElem)
   check_parent(x, y)
 
@@ -357,7 +387,7 @@ function isdivisible(x::AbsOrdQuoRingElem, y::AbsOrdQuoRingElem)
   # u will be the coefficient vector of the quotient
 
   V = R.tmp_div
-  A = representation_matrix(y.elem)
+  A = representation_matrix_mod(y.elem, minimum(R.ideal))
   B = parent(x).basis_mat
 
   V[1, 1] = 1
@@ -376,9 +406,9 @@ function isdivisible(x::AbsOrdQuoRingElem, y::AbsOrdQuoRingElem)
   end
 
   if typeof(base_ring(parent(x))) <: NfOrd
-    hnf_modular_eldiv!(V, minimum(parent(x).ideal))
+    hnf_modular_eldiv!(V, minimum(R.ideal))
   else
-    V = hnf(V)
+    hnf!(V)
   end
 
   for i in 2:(d + 1)

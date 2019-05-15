@@ -206,6 +206,8 @@ function +(x::GrpAbFinGenElem, y::GrpAbFinGenElem, L::GrpAbLattice = GroupLattic
   error("Cannot coerce elements into common structure")
 end
 
+op(x::GrpAbFinGenElem, y::GrpAbFinGenElem, L::GrpAbLattice = GroupLattice) = +(x, y, L)
+
 @doc Markdown.doc"""
     -(x::GrpAbFinGenElem, y::GrpAbFinGenElem) -> GrpAbFinGenElem
 
@@ -260,6 +262,8 @@ end
 iszero(a::GrpAbFinGenElem) = iszero(a.coeff)
 
 isone(a::GrpAbFinGenElem) = iszero(a.coeff)
+
+isidentity(a::GrpAbFinGenElem) = iszero(a.coeff)
 
 ################################################################################
 #
