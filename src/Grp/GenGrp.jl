@@ -1,9 +1,11 @@
-
 ################################################################################
 #
 #  Generic group given by multiplication table
 #
 ################################################################################
+
+export generic_group, isabelian, iscyclic, order, elements, get_index, is_bijective, is_injective, is_surjective, subgroups,
+       subgroup, quotient, image, kernel, elem_type, parent, psylow_subgroup, GrpGenToGrpGenMor, commutator_subgroup, derived_series
 
 ################################################################################
 #
@@ -11,7 +13,6 @@
 #
 ################################################################################
 
-# The elements are just 1..n and i * j = G.mult_table[i, j]
 mutable struct GrpGen
   identity::Int
   order::Int
@@ -51,6 +52,13 @@ end
 struct GrpGenElem
   group::GrpGen
   i::Int
+  function GrpGenElem(group::GrpGen, i::Int)
+    og = order(group)
+    if i > og
+      @error("There are only $og elements in $group")
+    end
+    return z = new(group, i)
+  end
 end
 
 ################################################################################
@@ -58,7 +66,11 @@ end
 #  Compute generic group from anything
 #
 ################################################################################
-
+@doc Markdown.doc"""
+     generic_group(G, op)
+Computes group of $G$ with operation $op$, implemented with multiplication table 'G.mult_table'.
+The elements are just 1..n and i * j = 'G.mult_table'[i, j].
+"""
 function generic_group(G, op)
   Gen = GrpGen(_multiplication_table(G, op))
   GentoG = Dict{GrpGenElem, eltype(G)}(Gen[i] => G[i] for i in 1:length(G))
@@ -97,7 +109,10 @@ end
 #  Construct the ith element
 #
 ################################################################################
-
+@doc Markdown.doc"""
+     getindex(G::GrpGen, i::Int)
+Returns the $i$ th element of $G$.
+"""
 function getindex(G::GrpGen, i::Int)
   return GrpGenElem(G, i)
 end
@@ -154,6 +169,10 @@ function _find_identity(m::Array{Int, 2})
   return find_identity([1], (i, j) -> m[i, j])
 end
 
+@doc Markdown.doc"""
+     id(G::GrpGen)
+Returns the identity element of $G$.
+"""
 function id(G::GrpGen)
   return GrpGenElem(G, G.identity)
 end
@@ -241,7 +260,10 @@ end
 #
 ################################################################################
 
-# Check if H is invariant under conjugaction by the generators of the group.
+@doc Markdown.doc"""
+     _isnormal(H::Vector{GrpGenElem}) -> Bool
+Check if $H$ is invariant under conjugaction by the generators of the group.
+"""
 function _isnormal(H::Vector{GrpGenElem})
   S = gens(parent(H[1]))
   for s in S
@@ -255,8 +277,11 @@ function _isnormal(H::Vector{GrpGenElem})
   return true
 end
 
-# Check if the cyclic group H with generator gen is invariant under
-# conjugaction by the generators of the group.
+@doc Markdown.doc"""
+     _isnormal(H::Vector{GrpGenElem}, gen::GrpGenElem) -> Bool
+Check if the cyclic group $H$ with generator $gen$ is invariant under
+conjugaction by the generators of the group.
+"""
 function _isnormal(H::Vector{GrpGenElem}, gen::GrpGenElem)
   S = gens(parent(H[1]))
   for s in S
@@ -300,8 +325,11 @@ end
 #
 ################################################################################
 
-# Iteratively built up subgroups from cyclic groups.
-# Any subgroup is of the form <C_1,...C_k>, where k are cyclic subgroups.
+@doc Markdown.doc"""
+     _subgroups_all(G::GrpGen; normal::Bool = false)
+Iteratively built up subgroups from cyclic groups.
+Any subgroup is of the form <C_1,...C_k>, where k are cyclic subgroups.
+"""
 function _subgroups_all(G::GrpGen; normal::Bool = false)
   res = Vector{GrpGenElem}[]
   res_gens = Vector{GrpGenElem}[]
@@ -311,7 +339,7 @@ function _subgroups_all(G::GrpGen; normal::Bool = false)
   ngenext = Vector{GrpGenElem}[]
   while true
     new = Vector{GrpGenElem}[]
-    for c in old 
+    for c in old
       for cy in Cgen
         n = push!(copy(c), cy)
         S = sort!(closure(n, *), by = x -> x.i)
@@ -337,15 +365,22 @@ function _subgroups_all(G::GrpGen; normal::Bool = false)
   end
 end
 
+@doc Markdown.doc"""
+     subgroups(G::GrpGen; order::Int = 0,
+                              index::Int = 0,
+                              normal::Bool = false,
+                              conjugacy_classes::Bool = false)
+Returns subgroups of $G$ with embedding.
+"""
 function subgroups(G::GrpGen; order::Int = 0,
                               index::Int = 0,
                               normal::Bool = false,
                               conjugacy_classes::Bool = false)
   H = _subgroups_all(G, normal = normal)
   if order > 0
-    HH = Vector{Vector{GrpGenElem}}[h for h in H if length(h) == order]
+    HH = Vector{Vector{GrpGenElem}}([h for h in H if length(h) == order])
   elseif index > 0
-    HH = [Vector{Vector{GrpGenElem}}h for h in H if divexact(length(G), length(h)) == index]
+    HH = Vector{Vector{GrpGenElem}}([h for h in H if divexact(length(G), length(h)) == index])
   else
     HH = H
   end
@@ -367,7 +402,7 @@ function subgroups(G::GrpGen; order::Int = 0,
     end
     HH = HHH
   end
-  
+
   res = Vector{Tuple{GrpGen, GrpGenToGrpGenMor}}(undef, length(HH))
   for i in 1:length(HH)
     res[i] = subgroup(G, HH[i])
@@ -375,7 +410,10 @@ function subgroups(G::GrpGen; order::Int = 0,
   return res
 end
 
-# Assume that H is a subgroup of G, compute a generic group and an embedding.
+@doc Markdown.doc"""
+    subgroup(G::GrpGen, H::Vector{GrpGenElem})
+Assume that $H$ is a subgroup of $G$, compute a generic group and an embedding.
+"""
 function subgroup(G::GrpGen, H::Vector{GrpGenElem})
   Hgen, = generic_group(H, *)
   m = GrpGenToGrpGenMor(Hgen, G, H)
@@ -388,6 +426,10 @@ end
 #
 ################################################################################
 
+@doc Markdown.doc"""
+    isabelian(G::GrpGen) -> Bool
+Returns whether $G$ is abelian.
+"""
 function isabelian(G::GrpGen)
   return G.isabelian
 end
@@ -396,6 +438,10 @@ function defines_abelian_group(m)
   return issymmetric(m)
 end
 
+@doc Markdown.doc"""
+    iscyclic(G::GrpGen) -> Bool
+Returns whether $G$ is cyclic.
+"""
 function iscyclic(G::GrpGen)
   return G.isscyclic
 end
@@ -422,6 +468,10 @@ mutable struct GrpGenToGrpGenMor <: Map{GrpGen, GrpGen, HeckeMap, GrpGen}
   end
 end
 
+@doc Markdown.doc"""
+    image(f::GrpGenToGrpGenMor, g::GrpGenElem) -> h::GrpGenElem
+Returns the image of $g$ under $f$.
+"""
 function image(f::GrpGenToGrpGenMor, g::GrpGenElem)
   return f.img[g.i]
 end
@@ -447,7 +497,7 @@ function closure(S::Vector{NfToNfMor}, final_order::Int = -1)
   R = GF(p, cached = false)
   Rx, x = PolynomialRing(R, "x", cached = false)
   fmod = Rx(K.pol)
-  
+
   t = length(S)
   order = 1
   elements = [id_hom(K)]
@@ -457,7 +507,7 @@ function closure(S::Vector{NfToNfMor}, final_order::Int = -1)
     push!(pols, gpol)
     push!(elements, S[1])
     order += 1
-  
+
     gpol = compose_mod(gpol, pols[2], fmod)
 
     while gpol != x
@@ -470,7 +520,7 @@ function closure(S::Vector{NfToNfMor}, final_order::Int = -1)
   if order == final_order
     return elements
   end
-  
+
   for i in 2:t
     if !(S[i] in elements)
       pi = Rx(S[i].prim_img)
@@ -571,14 +621,14 @@ function find_small_group(G::GrpGen)
         end
       end
      end
-     
+
      if candidate
         push!(candidates, j)
      end
   end
 
   @assert length(candidates) > 0
-  println("Candidate groups are $candidates")
+
 
   sort!(candidates, rev = true)
 
@@ -592,7 +642,7 @@ function find_small_group(G::GrpGen)
     it = Iterators.product(elbyord...)
 
     words = H[2]
-    
+
     for poss in it
       is_hom = true
       for w in words
@@ -655,7 +705,7 @@ function automorphisms(i, j)
 
   return auts
 end
-  
+
 @noinline function _aut_group(it, words, idG, n)
   auts = Vector{GrpGenElem}[]
   for poss in it
@@ -676,4 +726,172 @@ end
   end
 
   return auts
+end
+
+function getindex(G::GrpGenElem)
+  return G.i
+end
+
+function elements(G::GrpGen)
+  return [G[i] for i in 1:order(G)]
+end
+
+function elements(G::GrpGen, H::GrpGen, HtoG::GrpGenToGrpGenMor)
+  return [HtoG(H[i]) for i in 1:order(H)]
+end
+
+function ==(G::GrpGen, H::GrpGen)
+  return G.mult_table == H.mult_table
+end
+
+@doc Markdown.doc"""
+     quotient(G::GrpGen, H::GrpGen, HtoG::GrpGenToGrpGenMor)
+Returns the quotient group 'Q' = $G$/$H$ with canonical map $G$ -> $Q$.
+"""
+function quotient(G::GrpGen, H::GrpGen, HtoG::GrpGenToGrpGenMor)
+  elems = elements(G, H, HtoG)
+  if !_isnormal(elems)
+      return @error("Subgroup is not normal")
+  end
+  elements_indx = [getindex(i) for i in elems]
+  M = G.mult_table
+  rows_2delete = Array{Int64,1}()
+  cols_2delete = Array{Int64,1}()
+  for i in 1:order(G)
+    if !(i in elements_indx)
+       pushfirst!(rows_2delete,i)
+    end
+  end
+  for i in rows_2delete
+    M = M[vcat(1:i-1,i+1:end),:]
+  end
+  for j in 1:order(G)
+    if j in M[:,1:j-1]
+      pushfirst!(cols_2delete,j)
+    end
+  end
+  for j in cols_2delete
+      M = M[:,vcat(1:j-1,j+1:end)]
+  end
+
+  function quotient_op(A::Array{GrpGenElem,1}, B::Array{GrpGenElem,1})
+     i = getindex(A[1]*B[1])
+     j = findfirst(x->x == i, M)[2]
+     return getindex.([G],M[:,j])
+  end
+
+  Q,SetGtoQ,QtoSetG = generic_group([getindex.([G],M[:,i]) for i in 1:size(M)[2]], quotient_op)
+
+  image = Array{GrpGenElem,1}(undef, order(G))
+  for i in 1:order(G)
+    j = findfirst(x->x == i, M)[2]
+    image[i] = SetGtoQ[getindex.([G],M[:,j])]
+  end
+
+  return Q, GrpGenToGrpGenMor(G, Q, image)
+end
+
+#mainly for testing
+function quotient_indx(a::Int64,b::Int64)
+  G = Hecke.small_group(a,b)
+  subgroups = Hecke.subgroups(G, normal=true)
+  return Res = sort([Hecke.find_small_group(Hecke.quotient(G, subgroups[i][1], subgroups[i][2])[1]) for i in 1:length(subgroups)])
+  end
+
+function commutator_subgroup(G::GrpGen)
+  normal_subgroups = subgroups(G,normal = true)
+  #sort groups w.r.t order
+  normal_subgroups = normal_subgroups[sortperm([order(i[1]) for i in normal_subgroups])]
+  for (subgroup,StoG) in normal_subgroups
+    if isabelian(quotient(G, subgroup, StoG)[1])
+      return (subgroup,StoG)
+    end
+  end
+end
+
+function derived_series(G::GrpGen, n::Int64 = 2 * order(G))
+  Res = Array{Tuple{GrpGen, GrpGenToGrpGenMor},1}()
+  push!(Res,(G, GrpGenToGrpGenMor(G,G,elements(G))))
+  Gtemp = G
+  indx = 1
+  while true
+    Gtemp, GtempToGtemp = commutator_subgroup(Gtemp)
+    if Gtemp == Res[indx][1]
+      break
+    end
+    push!(Res,(Gtemp, GtempToGtemp))
+    indx += 1
+  end
+  return Res
+end
+
+function image(GtoH::GrpGenToGrpGenMor)
+  Im = GtoH.img
+  Htemp = Array{GrpGenElem,1}()
+  for h in Im
+    if !(h in Htemp)
+      push!(Htemp,h)
+    end
+  end
+  return subgroup(GtoH.codomain, Htemp)
+end
+
+function kernel(GtoH::GrpGenToGrpGenMor)
+  G = GtoH.domain
+  H = GtoH.codomain
+  Gtemp = Array{GrpGenElem,1}()
+  for g in G
+    if image(GtoH, g) == id(H)
+      push!(Gtemp,g)
+    end
+  end
+  return subgroup(G, Gtemp)
+end
+
+function is_surjective(GtoH::GrpGenToGrpGenMor)
+  if order(GtoH.domain) < order(GtoH.codomain)
+    return false
+  end
+  H = GtoH.codomain
+  Im = GtoH.img
+  for h in H
+    if !(h in Im)
+      return false
+    end
+  end
+  return true
+end
+
+function is_injective(GtoH::GrpGenToGrpGenMor)
+  if order(GtoH.domain) > order(GtoH.codomain)
+    return false
+  end
+  G = GtoH.domain
+  H = GtoH.domain
+  Im = GtoH.img
+  for g in G
+    if image(GtoH, g) == id(H) && g != id(G)
+      return false
+    end
+  end
+  return true
+end
+
+function is_bijective(GtoH::GrpGenToGrpGenMor)
+  G = GtoH.domain
+  H = GtoH.codomain
+  if order(G) != order(H) || isabelian(G) != isabelian(H)
+    return false
+  end
+  #finite groups
+  return is_surjective(GtoH)
+end
+
+function psylow_subgroup(G::GrpGen, p::Union{fmpz, Integer})
+  if !isprime(p)
+    error("$p not prime")
+  end
+  n = order(G)
+  b = remove(n,p)[1]
+  return subgroups(G, order=p^b)[1]
 end
