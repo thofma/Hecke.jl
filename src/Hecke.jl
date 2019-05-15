@@ -721,7 +721,8 @@ include("LargeField.jl")
 include("RCF.jl")
 include("ModAlgAss.jl")
 include("AlgAss.jl")
-include("AlgAssOrd.jl")
+include("AlgAssAbsOrd.jl")
+include("AlgAssRelOrd.jl")
 
 ################################################################################
 #

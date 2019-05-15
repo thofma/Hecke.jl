@@ -774,7 +774,7 @@ function trred_matrix(O::AlgAssAbsOrd)
   end
   for i = 1:m
     for j = i+1:m
-      mul!(a, x[i], x[j])
+      a = mul!(a, x[i], x[j])
       b = FlintZZ(trred(a))
       M[i,j] = b
       M[j,i] = b

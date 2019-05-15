@@ -293,8 +293,8 @@ function ideal(O::AlgAssAbsOrd{S, T}, x::AlgAssAbsOrdElem{S, T}, action::Symbol)
   return a
 end
 
-*(O::AlgAssAbsOrd{S, T}, x::AlgAssAbsOrdElem{S, T}) where {S, T} = ideal(O, x, :left)
-*(x::AlgAssAbsOrdElem{S, T}, O::AlgAssAbsOrd{S, T}) where {S, T} = ideal(O, x, :right)
+*(O::AlgAssAbsOrd{S, T}, x::AlgAssAbsOrdElem{S, T}) where {S, T} = ideal(O, x, :right)
+*(x::AlgAssAbsOrdElem{S, T}, O::AlgAssAbsOrd{S, T}) where {S, T} = ideal(O, x, :left)
 
 function ideal_from_z_gens(O::AlgAssAbsOrd, b::Vector{T}, side::Symbol = :nothing) where { T <: AlgAssAbsOrdElem }
   d = degree(O)

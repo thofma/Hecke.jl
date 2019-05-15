@@ -68,7 +68,8 @@ end
 function Base.deepcopy_internal(a::AlgAssAbsOrdElem, dict::IdDict)
   b = parent(a)()
   b.elem_in_algebra = Base.deepcopy_internal(a.elem_in_algebra, dict)
-  if isdefined(a, :coordinates)
+  if a.has_coord
+    b.has_coord = true
     b.coordinates = Base.deepcopy_internal(a.coordinates, dict)
   end
   return b
@@ -92,7 +93,7 @@ zero(O::AlgAssAbsOrd) = O(algebra(O)())
 #
 ################################################################################
 
-function elem_in_algebra(x::AlgAssAbsOrdElem; copy::Bool = true) where T
+function elem_in_algebra(x::Union{ AlgAssAbsOrdElem, AlgAssRelOrdElem }; copy::Bool = true) where T
   if copy
     return deepcopy(x.elem_in_algebra)
   else
@@ -106,7 +107,7 @@ end
 #
 ################################################################################
 
-function assure_has_coord(x::AlgAssAbsOrdElem)
+function assure_has_coord(x::Union{ AlgAssAbsOrdElem, AlgAssRelOrdElem })
   if x.has_coord
     return nothing
   end
@@ -124,7 +125,7 @@ end
 #
 ################################################################################
 
-function coordinates(x::AlgAssAbsOrdElem; copy::Bool = true)
+function coordinates(x::Union{ AlgAssAbsOrdElem, AlgAssRelOrdElem }; copy::Bool = true)
   assure_has_coord(x)
   if copy
     return deepcopy(x.coordinates)
@@ -139,7 +140,7 @@ end
 #
 ################################################################################
 
-function -(x::AlgAssAbsOrdElem)
+function -(x::Union{ AlgAssAbsOrdElem, AlgAssRelOrdElem })
   return parent(x)(-elem_in_algebra(x, copy = false))
 end
 
@@ -149,12 +150,12 @@ end
 #
 ###############################################################################
 
-function *(x::AlgAssAbsOrdElem, y::AlgAssAbsOrdElem)
+function *(x::T, y::T) where { T <: Union{ AlgAssAbsOrdElem, AlgAssRelOrdElem } }
   !check_parent(x, y) && error("Wrong parents")
   return parent(x)(elem_in_algebra(x, copy = false)*elem_in_algebra(y, copy = false))
 end
 
-function +(x::AlgAssAbsOrdElem, y::AlgAssAbsOrdElem)
+function +(x::T, y::T) where { T <: Union{ AlgAssAbsOrdElem, AlgAssRelOrdElem } }
   !check_parent(x, y) && error("Wrong parents")
   z = parent(x)(elem_in_algebra(x, copy = false) + elem_in_algebra(y, copy = false))
   if x.has_coord && y.has_coord
@@ -164,7 +165,7 @@ function +(x::AlgAssAbsOrdElem, y::AlgAssAbsOrdElem)
   return z
 end
 
-function -(x::AlgAssAbsOrdElem, y::AlgAssAbsOrdElem)
+function -(x::T, y::T) where { T <: Union{ AlgAssAbsOrdElem, AlgAssRelOrdElem } }
   !check_parent(x, y) && error("Wrong parents")
   z = parent(x)(elem_in_algebra(x, copy = false) - elem_in_algebra(y, copy = false))
   if x.has_coord && y.has_coord
@@ -185,7 +186,7 @@ function *(n::Union{Integer, fmpz}, x::AlgAssAbsOrdElem)
 end
 
 # Computes a/b if action is :right and b\a if action is :left (and if this is possible)
-function divexact(a::AlgAssAbsOrdElem, b::AlgAssAbsOrdElem, action::Symbol, check::Bool = true)
+function divexact(a::T, b::T, action::Symbol, check::Bool = true) where { T <: Union{ AlgAssAbsOrdElem, AlgAssRelOrdElem } }
   !check_parent(a, b) && error("Wrong parents")
   O = parent(a)
   c = divexact(elem_in_algebra(a, copy = false), elem_in_algebra(b, copy = false), action)
@@ -197,9 +198,9 @@ function divexact(a::AlgAssAbsOrdElem, b::AlgAssAbsOrdElem, action::Symbol, chec
   return typeof(a)(O, c)
 end
 
-divexact_right(a::AlgAssAbsOrdElem, b::AlgAssAbsOrdElem, check::Bool = true) = divexact(a, b, :right, check)
+divexact_right(a::T, b::T, action::Symbol, check::Bool = true) where { T <: Union{ AlgAssAbsOrdElem, AlgAssRelOrdElem } } = divexact(a, b, :right, check)
 
-divexact_left(a::AlgAssAbsOrdElem, b::AlgAssAbsOrdElem, check::Bool = true) = divexact(a, b, :left, check)
+divexact_left(a::T, b::T, action::Symbol, check::Bool = true) where { T <: Union{ AlgAssAbsOrdElem, AlgAssRelOrdElem } } = divexact(a, b, :left, check)
 
 ################################################################################
 #
@@ -224,7 +225,7 @@ end
 #
 ################################################################################
 
-function ^(x::AlgAssAbsOrdElem, y::Union{fmpz, Int})
+function ^(x::Union{ AlgAssAbsOrdElem, AlgAssRelOrdElem }, y::Union{fmpz, Int})
   z = parent(x)()
   z.elem_in_algebra = elem_in_algebra(x, copy = false)^y
   return z
@@ -236,7 +237,7 @@ end
 #
 ################################################################################
 
-function ==(a::AlgAssAbsOrdElem, b::AlgAssAbsOrdElem)
+function ==(a::T, b::T) where { T <: Union{ AlgAssAbsOrdElem, AlgAssRelOrdElem } }
   if parent(a) !== parent(b)
     return false
   end
@@ -249,7 +250,7 @@ end
 #
 ################################################################################
 
-function mul!(z::AlgAssAbsOrdElem, x::AlgAssAbsOrdElem, y::AlgAssAbsOrdElem)
+function mul!(z::T, x::T, y::T) where { T <: Union{ AlgAssAbsOrdElem, AlgAssRelOrdElem } }
   z.elem_in_algebra = mul!(elem_in_algebra(z, copy = false), elem_in_algebra(x, copy = false), elem_in_algebra(y, copy = false))
   z.has_coord = false
   return z
