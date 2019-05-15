@@ -153,6 +153,16 @@ function *(b::T, a::AlgMatElem) where {T <: RingElem}
   return A(b*matrix(a, copy = false))
 end
 
+function *(a::AlgMatElem{S, T, U}, b::U) where { S, T, U }
+  A = parent(a)
+  return A(matrix(a, copy = false)*b)
+end
+
+function *(b::U, a::AlgMatElem{S, T, U}) where { S, T, U }
+  A = parent(a)
+  return A(b*matrix(a, copy = false))
+end
+
 ################################################################################
 #
 #  Inverse

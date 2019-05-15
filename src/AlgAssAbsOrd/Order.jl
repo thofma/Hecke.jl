@@ -1226,6 +1226,63 @@ function maximal_order_via_decomposition(A::AbsAlgAss{fmpq})
   return OO
 end
 
+# Requires that O is maximal and A = QQ^(n\times n).
+# Computes a maximal order of type
+#  (O ... O a^(-1))
+#  (:     :   :   )
+#  (O ... O a^(-1))
+#  (a ... a   O   )
+# for an ideal a of O.
+# See Bley, Johnston "Computing generators of free modules over orders in group
+# algebras", Prop. 5.1.
+function _simple_maximal_order(O::AlgAssAbsOrd)
+  A = algebra(O)
+  @assert A isa AlgMat
+  n = degree(A)
+
+  # Build a matrix with the first columns of basis elements of O
+  M = zero_matrix(FlintQQ, n, degree(O))
+  for j = 1:degree(O)
+    for i = 1:n
+      M[i, j] = deepcopy(matrix(elem_in_algebra(basis(O, copy = false)[j], copy = false), copy = false)[i, 1])
+    end
+  end
+  M = FakeFmpqMat(M)
+  M = hnf!(M, :upperright)
+
+  # Remove the zero columns from M
+  N = zero_matrix(FlintQQ, n, n)
+  c = 1
+  zero_col = true
+  for j = 1:degree(O)
+    for i = 1:n
+      if !iszero(M[i, j])
+        zero_col = false
+      else
+        continue
+      end
+
+      N[i, c] = M[i, j]
+    end
+    if !zero_col
+      c += 1
+      zero_col = true
+    end
+    if c > n
+      break
+    end
+  end
+  @assert c == n + 1
+
+  # Compute N^(-1)*O*N
+  iN = inv(N)
+  bb = Vector{elem_type(A)}()
+  for i = 1:degree(O)
+    push!(bb, iN*elem_in_algebra(basis(O, copy = false)[i], copy = false)*N)
+  end
+  return Order(A, bb)
+end
+
 ################################################################################
 #
 #  IsSplit
