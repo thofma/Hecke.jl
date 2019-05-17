@@ -48,7 +48,7 @@ function assure_has_basis_pmat(a::Union{NfRelOrdIdl, NfRelOrdFracIdl})
   pb = pseudo_basis(a, copy = false)
   L = nf(order(a))
   M = zero_matrix(base_ring(L), degree(L), degree(L))
-  C = Vector{S}()
+  C = Vector{frac_ideal_type(order_type(base_ring(L)))}()
   for i = 1:degree(L)
     elem_to_mat_row!(M, i, pb[i][1])
     push!(C, deepcopy(pb[i][2]))
@@ -135,7 +135,7 @@ end
 
 ################################################################################
 #
-#  Basis / (inverse) basis matrix
+#  (Inverse) basis matrix
 #
 ################################################################################
 
@@ -228,7 +228,7 @@ Creates the ideal of $\mathcal O$ with basis matrix $M$. If check is set,
 then it is checked whether $M$ defines an ideal.
 """
 function ideal(O::NfRelOrd{T, S}, M::Generic.Mat{T}, check::Bool = true) where {T, S}
-  coeffs = deepcopy(basis_pmat(O, copy = false)).coeffs
+  coeffs = deepcopy(basis_pmat(O, copy = false).coeffs)
   return ideal(O, PseudoMatrix(M, coeffs), check)
 end
 
@@ -500,7 +500,7 @@ function *(a::NfRelOrdIdl{T, S}, b::NfRelOrdIdl{T, S}) where {T, S}
   t = L()
   for i = 1:d
     for j = 1:d
-      mul!(t, pba[i][1], pbb[j][1])
+      t = mul!(t, pba[i][1], pbb[j][1])
       elem_to_mat_row!(M, (i - 1)*d + j, t)
       C[(i - 1)*d + j] = simplify(pba[i][2]*pbb[j][2])
     end
@@ -1180,7 +1180,7 @@ function in(x::NfRelOrdElem, y::NfRelOrdIdl)
   parent(x) !== order(y) && error("Order of element and ideal must be equal")
   O = order(y)
   b_pmat = basis_pmat(y, copy = false)
-  t = transpose(matrix(base_ring(nf(O)), degree(O), 1, coordinates(x)))
+  t = matrix(base_ring(nf(O)), 1, degree(O), coordinates(x))
   t = t*basis_mat_inv(y, copy = false)
   for i = 1:degree(O)
     if !(t[1, i] in b_pmat.coeffs[i])

@@ -154,7 +154,7 @@ end
 
 Returns the pseudo-basis of $\mathcal O$.
 """
-function pseudo_basis(O::NfRelOrd; copy = true)
+function pseudo_basis(O::NfRelOrd; copy::Bool = true)
   assure_has_pseudo_basis(O)
   if copy
     return deepcopy(O.pseudo_basis)
@@ -736,7 +736,7 @@ function relative_order(O::NfOrd, m::NfRelToNf)
     elem_to_mat_row!(M, i, mm(Labs(B[i])))
   end
   PM = sub(pseudo_hnf(PseudoMatrix(M), :lowerleft, true), (dabs - d + 1):dabs, 1:d)
-  return NfRelOrd{typeof(PM.matrix[1, 1]), typeof(PM.coeffs[1])}(L, PM)
+  return NfRelOrd{elem_type(K), frac_ideal_type(OK)}(L, PM)
 end
 
 ################################################################################
