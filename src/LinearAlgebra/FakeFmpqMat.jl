@@ -69,17 +69,19 @@ function -(x::FakeFmpqMat)
   return FakeFmpqMat(-x.num, x.den, true)
 end
 
+#TODO: may be possible to simplify more efficiently. 
+#The content of the numerator of the inverse may be non trivial!
 function inv(x::FakeFmpqMat)
   i, d_i = pseudo_inv(x.num) 
   g = gcd(d_i, x.den)
   if isone(g)
-    return FakeFmpqMat(i * x.den, d_i, true)
+    return FakeFmpqMat(i * x.den, d_i)
   elseif g == d_i
     return FakeFmpqMat(i * divexact(x.den, d_i))
   elseif g == x.den
-    return FakeFmpqMat(i, divexact(d_i, x.den), true)
+    return FakeFmpqMat(i, divexact(d_i, x.den))
   else
-    return FakeFmpqMat(i * divexact(x.den, g), divexact(d_i, g), true)
+    return FakeFmpqMat(i * divexact(x.den, g), divexact(d_i, g))
   end
 end
 

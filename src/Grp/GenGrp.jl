@@ -23,6 +23,8 @@ mutable struct GrpGen
   iscyclic::Bool
   issolvable::Int
   isnilpotent::Int
+  isfromdb::Bool
+  small_group_id::Tuple{Int, Int}
 
   function GrpGen(M::Array{Int, 2})
     z = new()
@@ -38,6 +40,9 @@ mutable struct GrpGen
     # There are e generators in case it is cyclic
     # If I find n - e + 1 elements of the wrong order, we are done
     z.iscyclic = false
+    z.isfromdb = false
+    z.small_group_id = (0, 0)
+
     for i in 1:(n - e + 1)
       if order(z[i]) == n
         z.iscyclic = true
@@ -744,7 +749,9 @@ function find_small_group(G::GrpGen)
 
       if is_hom
         if length(closure(collect(poss), *, idG)) == order(G)
-          return order(G), j
+          # Found it!
+          H = small_group(order(G), j)
+          return (order(G), j), H, _spin_up_morphism(gens(H), collect(poss))
         end
       end
     end
@@ -764,15 +771,16 @@ function eval_word(S, w::Vector{Int})
   return g
 end
 
-function automorphisms(i, j)
+function _automorphisms(G::GrpGen)
+  @assert isfrom_db(G)
+  i, j = G.small_group_id
   Gdata = small_groups_1_63[i][j]
-  P = PermGroup(i)
-  G, _  = generic_group(closure([P(p) for p in Gdata[1]], *), *)
 
   l = order(G)
 
   elements_by_orders = Dict{Int, Array{GrpGenElem, 1}}()
 
+  # TODO: I think the following is cached somewhere (in the database)
   for i in 1:l
     g = G[i]
     o = order(g)
@@ -792,8 +800,35 @@ function automorphisms(i, j)
   idG = id(G)
 
   auts = _aut_group(it, words, idG, order(G))::Vector{Vector{GrpGenElem}}
+  
+  # Any element A of auts determines an isomorphism by mapping gens(G)[i] to A[i]
+  
+  Ggens = gens(G)
 
-  return auts
+  # TODO: preallocate
+  return [_spin_up_morphism(Ggens, a) for a in auts]
+end
+
+function _spin_up_morphism(domain::Vector{GrpGenElem}, codomain::Vector{GrpGenElem})
+  @assert length(domain) > 0
+  @assert length(domain) == length(codomain)
+  G = parent(domain[1])
+  H = parent(codomain[1])
+  pairs = [(domain[i], codomain[i]) for i in 1:length(domain)]
+  cl = closure(pairs, (x, y) -> (x[1]*y[1], x[2]*y[2]), (id(G), id(H)))
+  img = Vector{GrpGenElem}(undef, length(G))
+  for i in 1:length(G)
+    img[cl[i][1][]] = cl[i][2]
+  end
+  phi = GrpGenToGrpGenMor(G, H, img)
+
+  # TODO: Remove this assertion once this is battle tested
+  for g in G
+    for h in G
+      @assert phi(g * h) == phi(g) * phi(h)
+    end
+  end
+  return phi
 end
 
 @noinline function _aut_group(it, words, idG, n)
@@ -875,7 +910,7 @@ end
 function quotient_indx(a::Int64,b::Int64)
   G = Hecke.small_group(a,b)
   subgroups = Hecke.subgroups(G, normal=true)
-  return Res = sort([Hecke.find_small_group(Hecke.quotient(G, subgroups[i][1], subgroups[i][2])[1]) for i in 1:length(subgroups)])
+  return Res = sort([tuple(Hecke.find_small_group(Hecke.quotient(G, subgroups[i][1], subgroups[i][2])[1])[1]...) for i in 1:length(subgroups)])
   end
 
   function direct_product(G1::GrpGen, G2::GrpGen)

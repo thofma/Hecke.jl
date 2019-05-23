@@ -7,14 +7,6 @@ export OrdLoc, OrdLocElem
 #
 ###############################################################################
 
-import Base: ==, inv, ^, promote_rule, parent, numerator, denominator, zero, one,
-       iszero, isone, show, -, +, *, deepcopy_internal, gcd, gcdx, lcm, rand, in
-import Nemo.Generic: divides, div, divexact, check_parent, data, isunit,
-       needs_parentheses, displayed_with_minus_in_front, show_minus_one,
-       parent_type, elem_type, valuation, canonical_unit, order
-import Nemo: prime
-import Hecke: nf, mul!, add!, addeq!
-
 mutable struct OrdLoc{T<:nf_elem} <: Hecke.Ring
    OK::NfAbsOrd{AnticNumberField,T}
    prime::NfAbsOrdIdl{AnticNumberField,T}
@@ -39,9 +31,10 @@ OrdLocDict = Dict{Tuple{NfAbsOrd{AnticNumberField,nf_elem}, NfAbsOrdIdl{AnticNum
 mutable struct OrdLocElem{T<:nf_elem} <: RingElem
    data::T
    parent::OrdLoc{T}
+
    function OrdLocElem{T}(data::T, par::OrdLoc, checked::Bool = true) where {T <:nf_elem}
       data == zero(parent(data)) && return new{T}(data,par)
-      checked && valuation(data,prime(L))<0 && error("No valid element of localization")
+      checked && valuation(data, prime(par))<0 && error("No valid element of localization")
       return new{T}(data,par)
    end
 end
@@ -68,11 +61,11 @@ elem_type(::Type{OrdLoc{T}}) where {T <: nf_elem} = OrdLocElem{T}
 
 parent_type(::Type{OrdLocElem{T}}) where {T <: nf_elem} = OrdLoc{T}
 
-order(L::OrdLoc{T})  where {T <: nf_elem}  = L.OK
+order(L::OrdLoc{T}) where {T <: nf_elem}  = L.OK
 
-order(a::OrdLocElem{T})  where {T <: nf_elem}  = order(parent(a))
+order(a::OrdLocElem{T}) where {T <: nf_elem}  = order(parent(a))
 
-nf(L::OrdLoc{T})  where {T <: nf_elem}  = nf(OK)::parent_type(T)
+nf(L::OrdLoc{T}) where {T <: nf_elem}  = nf(L.OK)::parent_type(T)
 
 nf(a::OrdLocElem{T}) where {T <: nf_elem} = nf(parent(a))
 
@@ -212,6 +205,15 @@ end
 """
 function divides(a::OrdLocElem{T}, b::OrdLocElem{T}, checked::Bool = true) where {T <: nf_elem}
    check_parent(a,b)
+
+   if iszero(b)
+     if iszero(a)
+       return true, parent(a)()
+     else
+       return false, parent(a)()
+     end
+   end
+
    elem = divexact(data(a), data(b))
    if !checked
       return true, parent(a)(elem, checked)
@@ -401,7 +403,7 @@ function canonical_unit(a::OrdLocElem{T}) where {T <: nf_elem}
    if a == parent(a)()
       return parent(a)(1)
    end
-   u = L(uniformizer(prime(a)))
+   u = parent(a)(uniformizer(prime(a)))
    n = valuation(a)
    return divexact(u^n,a)
 end
