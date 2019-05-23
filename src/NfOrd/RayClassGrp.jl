@@ -21,6 +21,9 @@ mutable struct MapRayClassGrp <: Map{GrpAbFinGen, FacElemMon{Hecke.NfOrdIdlSet},
   prime_ideal_preimage_cache::Dict{NfOrdIdl, GrpAbFinGenElem} 
   prime_ideal_cache::Array{NfOrdIdl, 1}
   
+  small_gens::Vector{NfOrdIdl}
+  small_gens_action::Tuple{Vector{NfOrdIdl}, Vector{InfPlc}}
+  
   
   quots::Array  #Quotients of the ring by p^n for p dividing the modulus
   quots_nquo::Vector{Tuple{NfOrdIdl, NfOrdIdl}}
@@ -1868,6 +1871,10 @@ end
 #  It needs a map GrpAbFinGen -> NfOrdIdlSet
 #
 function find_gens(mR::MapRayClassGrp; coprime_to::fmpz = fmpz(-1))
+
+  if isdefined(mR, :small_gens)
+    return mR.small_gens
+  end
   
   O = order(codomain(mR))
   R = domain(mR) 
@@ -2209,6 +2216,8 @@ mutable struct ctx_rayclassgrp
   vect::Vector{fmpz}
   units::Vector{Tuple{NfOrdElem, Dict{fmpz, Int}}}
   princ_gens::Vector{Tuple{NfOrdElem, Dict{fmpz, Int}}}
+  
+  computed::Vector{Tuple{Dict{NfOrdIdl, Int}, Bool, MapRayClassGrp}}
   
   function ctx_rayclassgrp()
     z = new()

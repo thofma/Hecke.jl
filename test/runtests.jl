@@ -13,7 +13,7 @@ end
 #end
 
 @time include("AlgAss.jl")
-@time include("AlgAssOrd.jl")
+@time include("AlgAssAbsOrd.jl")
 @time include("EllCrv.jl")
 @time include("GrpAb.jl")
 @time include("LinearAlgebra.jl")

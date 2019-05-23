@@ -203,33 +203,3 @@ function dedekind_test_composite(O::NfOrd, p::fmpz)
 
   return fmpz(1), false, OO
 end
-
-
-function _gcd_with_failure(a::fmpz_mod_poly, b::fmpz_mod_poly)
-  Rx=parent(a)
-  R=Rx.base_ring
-  f=deepcopy(a)
-  g=deepcopy(b)
-  while true
-    if degree(f)<degree(g)
-      f, g = g, f
-    end
-    
-    if !isunit(lead(g))
-      return lead(g), g
-    end
-    
-    f=rem(f,g)
-    
-    if degree(f)<1
-      if iszero(f)
-        return R(1), g
-      end
-      if isunit(coeff(f,0))
-        return R(1), Rx(1)
-      end
-      return coeff(f,0), g
-    end
-  end
-
-end

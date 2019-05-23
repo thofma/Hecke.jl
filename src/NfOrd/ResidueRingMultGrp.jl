@@ -341,30 +341,15 @@ function _iterative_method(p::NfOrdIdl, u::Int, v::Int; base_method = nothing, u
     pk = pl
     if use_p_adic && k>=k0
       l = v
-      d = div(l, k)
-      if l == d*k
-        pl = pk^d
-      else
-        pl = p^l
-      end
+      pl = p^l
       h, N, disc_log = _p_adic_method(p, k, l; pu = pk, pv = pl)::Tuple{Vector{NfOrdElem}, Vector{fmpz}, Function}
     elseif base_method == :quadratic
       l = min(2*k, v)
-      d = div(l, k)
-      if l == d*k
-        pl = pk^d
-      else
-        pl = p^l
-      end
+      pl = p^l
       h, N, disc_log = _quadratic_method(p, k, l; pu = pk, pv = pl)::Tuple{Vector{NfOrdElem}, Vector{fmpz}, Function}
     else
       l = Int(min(pnum*k, v))
-      d = div(l, k)
-      if l == d*k
-        pl = pk^d
-      else
-        pl = p^l
-      end
+      pl = p^l
       h, N, disc_log = _artin_hasse_method(p, k, l; pu = pk, pv = pl)::Tuple{Vector{NfOrdElem}, Vector{fmpz}, Function}
     end
     g, M = _expand(g, M, h, N, disc_log, pl)
@@ -449,7 +434,7 @@ function _pu_mod_pv(pu::NfOrdIdl, pv::NfOrdIdl)
   O=order(pu)
   b=basis(pu)
   N = basis_mat(pv, copy = false)*basis_mat_inv(pu, copy = false)
-  @assert denominator(N) == 1
+  @assert isone(N.den)
   G = AbelianGroup(N.num)
   S, mS=snf(G)
   
@@ -531,9 +516,10 @@ function _artin_hasse_method(p::NfOrdIdl, u::Int, v::Int; pu::NfOrdIdl=p^u, pv::
   pnum = minimum(p)
   @assert pnum*u >= v >= u >= 1
   @assert fmpz(v) <= pnum*fmpz(u)
+  @assert has_minimum(pv)
   Q, mQ = quo(order(p), pv)
   g, M, dlog = _pu_mod_pv(pu,pv)
-  map!(x->artin_hasse_exp(Q(x),pnum), g, g)
+  map!(x -> artin_hasse_exp(Q(x), pnum), g, g)
   local discrete_logarithm
   let Q = Q, pnum = pnum, dlog = dlog
     function discrete_logarithm(x::NfOrdElem)

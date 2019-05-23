@@ -89,7 +89,6 @@ end
 ################################################################################
 
 function _test_ideal_sidedness(a::AbsAlgAssIdl, side::Symbol)
-
   A = algebra(a)
   ba = basis(a, copy = false)
   t = A()
@@ -111,7 +110,6 @@ function _test_ideal_sidedness(a::AbsAlgAssIdl, side::Symbol)
 end
 
 function _test_ideal_sidedness(a::AlgAssAbsOrdIdl, side::Symbol)
-
   O = order(a)
   ba = basis(a, copy = false)
   bO = basis(O, copy = false)
@@ -133,7 +131,7 @@ function _test_ideal_sidedness(a::AlgAssAbsOrdIdl, side::Symbol)
   return true
 end
 
-function isright_ideal(a::Union{ AbsAlgAssIdl, AlgAssAbsOrdIdl })
+function isright_ideal(a::Union{ AbsAlgAssIdl, AlgAssAbsOrdIdl, AlgAssRelOrdIdl })
   if a.isright == 1
     return true
   elseif a.isright == 2
@@ -149,7 +147,7 @@ function isright_ideal(a::Union{ AbsAlgAssIdl, AlgAssAbsOrdIdl })
   return false
 end
 
-function isleft_ideal(a::Union{ AbsAlgAssIdl, AlgAssAbsOrdIdl })
+function isleft_ideal(a::Union{ AbsAlgAssIdl, AlgAssAbsOrdIdl, AlgAssRelOrdIdl })
   if a.isleft == 1
     return true
   elseif a.isleft == 2
@@ -308,7 +306,7 @@ end
 
 # Helper function to set the side-flags
 # side can be :right, :left or :twosided
-function _set_sidedness(a::Union{ AbsAlgAssIdl, AlgAssAbsOrdIdl }, side::Symbol)
+function _set_sidedness(a::Union{ AbsAlgAssIdl, AlgAssAbsOrdIdl, AlgAssRelOrdIdl }, side::Symbol)
   if side == :right
     a.isleft = 0
     a.isright = 1

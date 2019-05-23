@@ -180,8 +180,161 @@ function find_gens(mR::Map, S::PrimesSet, cp::fmpz=fmpz(1))
   
 end
 
+function find_gens_descent(mR::Map, A::ClassField_pp, cp::fmpz)
+
+  ZK = order(domain(mR))
+  C = cyclotomic_extension(nf(ZK), degree(A))
+  R = codomain(mR) 
+  sR = GrpAbFinGenElem[]
+  lp = elem_type(domain(mR))[]
+  q, mq = quo(R, sR, false)
+  s, ms = snf(q)
+  
+  PPS = A.bigK.frob_gens[1]
+  for p in PPS
+    P = intersect_prime(C.mp[2], p)
+    local f::GrpAbFinGenElem
+    try
+      f = mR(P)
+    catch e
+      if !isa(e, BadPrime)
+        rethrow(e)
+      end
+      break # try new prime number
+    end
+    if iszero(mq(f))
+      continue
+    end
+    #At least one of the coefficient of the element 
+    #must be invertible in the snf form.
+    el = ms\f
+    to_be = false
+    for w = 1:ngens(s)
+      if gcd(s.snf[w], el.coeff[w]) == 1
+        to_be = true
+        break
+      end
+    end
+    if !to_be
+      continue
+    end
+    push!(sR, f)
+    push!(lp, P)
+    q, mq = quo(R, sR, false)
+    s, ms = snf(q)
+    if order(s) == divexact(order(R), degree(A.K))
+      break
+    end
+  end
+  
+  if degree(C.Kr) != 1  
+    RR = ResidueRing(FlintZZ, degree(A))
+    U, mU = unit_group(RR)
+    if degree(C.Kr) < order(U)  # there was a common subfield, we
+                              # have to pass to a subgroup
+
+      f = C.Kr.pol
+      # Can do better. If the group is cyclic (e.g. if p!=2), we already know the subgroup!
+      s, ms = sub(U, GrpAbFinGenElem[x for x in U if iszero(f(gen(C.Kr)^Int(lift(mU(x)))))], false)
+      ss, mss = snf(s)
+      U = ss
+      #mg = mg*ms*mss
+      mU = mss * ms * mU
+    end
+    for i = 1:ngens(U)
+      l = Int(lift(mU(U[i])))
+      S = PrimesSet(100, -1, degree(A), l)
+      found = false
+      for p in S
+        if mod(cp, p) == 0 || mod(index(ZK), p) == 0
+          continue
+        end
+        @vprint :ClassField 2 "doin` $p\n"
+        lP = prime_decomposition(ZK, p)
+  
+        f = R[1]
+        for (P, e) = lP
+          lpp = prime_decomposition(C.mp[2], P)
+          if divexact(splitting_type(lpp[1][1])[2], splitting_type(P)[2]) != U.snf[i]
+            continue
+          end
+          try
+            f = mR(P)
+          catch e
+            if !isa(e, BadPrime)
+              rethrow(e)
+            end
+            break
+          end
+          push!(sR, f)
+          push!(lp, P)
+          q, mq = quo(R, sR, false)
+          s, ms = snf(q)
+          found = true
+          break
+        end
+        if found
+          break
+        end
+      end
+    end
+  end
+  
+  if order(q) == 1   
+    return lp, sR
+  end
+  
+  @show "Bad Case in Descent"
+  S = PrimesSet(300, -1)
+  for p in S
+    if cp % p == 0 || index(ZK) % p == 0
+      continue
+    end
+    @vprint :ClassField 2 "doin` $p\n"
+    lP = prime_decomposition(ZK, p)
+
+    f=R[1]
+    for (P, e) = lP
+      try
+        f = mR(P)
+      catch e
+        if !isa(e, BadPrime)
+          rethrow(e)
+        end
+        break # try new prime number
+      end
+      if iszero(mq(f))
+        continue
+      end
+      #At least one of the coefficient of the element 
+      #must be invertible in the snf form.
+      el = ms\f
+      to_be = false
+      for w = 1:ngens(s)
+        if gcd(s.snf[w], el.coeff[w]) == 1
+          to_be = true
+          break
+        end
+      end
+      if !to_be
+        continue
+      end
+      push!(sR, f)
+      push!(lp, P)
+      q, mq = quo(R, sR, false)
+      s, ms = snf(q)
+    end
+    if order(q) == 1   
+      break
+    end
+  end
+  return lp, sR
+  
+end
+
 #Computes a set of prime ideals of the base field of K such that the corresponding Frobenius
 #automorphisms generate the automorphism group
+
 function find_gens(K::KummerExt, S::PrimesSet, cp::fmpz=fmpz(1))
   if isdefined(K, :frob_gens)
     return K.frob_gens[1], K.frob_gens[2]
@@ -190,10 +343,60 @@ function find_gens(K::KummerExt, S::PrimesSet, cp::fmpz=fmpz(1))
   R = K.AutG 
   sR = Vector{GrpAbFinGenElem}(undef, length(K.gen))
   lp = Vector{NfOrdIdl}(undef, length(K.gen))
-
+  
+  
   q, mq = quo(R, GrpAbFinGenElem[], false)
   s, ms = snf(q)
   ind = 1
+  
+
+  ctx = _get_ClassGrpCtx_of_order(ZK)
+  fb = ctx.FB.ideals
+  
+  for P in fb
+    p = minimum(P)
+    if p % K.n != 1 || cp % p == 0 || index(ZK) % p == 0
+      continue
+    end
+    local f::GrpAbFinGenElem
+    try
+      f = can_frobenius1(P, K)
+    catch e
+      if !isa(e, BadPrime)
+        rethrow(e)
+      end
+      continue
+    end
+    if iszero(mq(f))
+      continue
+    end
+      #At least one of the coefficient of the element 
+      #must be invertible in the snf form.
+    el = ms\f
+    to_be = false
+    for w = 1:ngens(s)
+      if gcd(s.snf[w], el.coeff[w]) == 1
+        to_be = true
+        break
+      end
+    end
+    if !to_be
+      continue
+    end
+    sR[ind] = f
+    lp[ind] = P
+    ind += 1
+    q, mq = quo(R, sR[1:ind-1], false)
+    s, ms = snf(q)
+    if order(q) == 1   
+      break
+    end
+  end
+  if order(q) == 1
+    K.frob_gens = (lp, sR)
+    return lp, sR
+  end
+
   for p in S
     if cp % p == 0 || index(ZK) % p == 0
       continue
@@ -302,10 +505,12 @@ function build_map(CF::ClassField_pp, K::KummerExt, c::CyclotomicExt)
   Zk = order(m)
   Sp = Hecke.PrimesSet(100, -1, c.n, 1) #primes = 1 mod n, so totally split in cyclo
 
-  @vtime :ClassField 2 lp, sG = find_gens(K, Sp, cp)
+  #@vtime :ClassField 3 
+  lp, sG = find_gens(K, Sp, cp)
   G = K.AutG
   sR = Array{GrpAbFinGenElem, 1}(undef, length(lp))
-  @vtime :ClassField 3 for i = 1:length(lp)
+  #@vtime :ClassField 3 
+  for i = 1:length(lp)
     p = intersect_nonindex(mp, lp[i])
     #Since the prime are totally split in the cyclotomic extension by our choice, we can ignore the valuation of the norm
     #sR[i] = valuation(norm(lp[i]), norm(p))*CF.quotientmap(preimage(CF.rayclassgroupmap, p))
@@ -336,7 +541,8 @@ function _s_unit_for_kummer(C::CyclotomicExt, f::fmpz)
   @vprint :ClassField 2 "Maximal order of cyclotomic extension\n"
   ZK = maximal_order(K)
   @vprint :ClassField 2 "Class group of cyclotomic extension\n"
-  @vtime :ClassField 2 c, mc = class_group(ZK)
+  #@vtime :ClassField 2 
+  c, mc = class_group(ZK)
   allow_cache!(mc)
   @vprint :ClassField 2 "... $c\n"
   c, mq = quo(c, e, false)
@@ -362,14 +568,17 @@ function _s_unit_for_kummer(C::CyclotomicExt, f::fmpz)
   q, mq = quo(c, g, false)
   mc = compose(pseudo_inv(mq), mc)
   
-  @vtime :ClassField 3 lP = vcat(lP, find_gens(pseudo_inv(mc), PrimesSet(100, -1))[1])::Vector{NfOrdIdl}
+  #@vtime :ClassField 3 
+  lP = vcat(lP, find_gens(pseudo_inv(mc), PrimesSet(100, -1))[1])::Vector{NfOrdIdl}
   @vprint :ClassField 2 "using $lP of length $(length(lP)) for S-units\n"
   if isempty(lP)
     U, mU = unit_group_fac_elem(ZK)
     KK = kummer_extension(e, FacElem{nf_elem, AnticNumberField}[mU(U[i]) for i = 1:ngens(U)])
   else
-    @vtime :ClassField 2 S, mS = Hecke.sunit_group_fac_elem(lP)
-    @vtime :ClassField 2 KK = kummer_extension(e, FacElem{nf_elem, AnticNumberField}[mS(S[i]) for i=1:ngens(S)])
+    #@vtime :ClassField 2 
+    S, mS = Hecke.sunit_group_fac_elem(lP)
+    #@vtime :ClassField 2 
+    KK = kummer_extension(e, FacElem{nf_elem, AnticNumberField}[mS(S[i]) for i=1:ngens(S)])
   end
   #gens mod n-th power - to speed up the frobenius computation
   gens = KK.gen
@@ -385,7 +594,8 @@ function _s_unit_for_kummer(C::CyclotomicExt, f::fmpz)
     gens_mod_nth[i] = FacElem(el)
   end
   KK.gen_mod_nth_power = gens_mod_nth
-  @vtime :ClassField 3 KK.eval_mod_nth = nf_elem[evaluate(x) for x in gens_mod_nth]
+  #@vtime :ClassField 3 
+  KK.eval_mod_nth = nf_elem[evaluate(x) for x in gens_mod_nth]
   C.kummer_exts[lfs] = (lP, KK)
   return lP, KK
 end
@@ -708,7 +918,7 @@ function _rcf_descent(CF::ClassField_pp)
     cp = lcm([minimum(defining_modulus(CF)[1]), index(Zk), index(ZK)])
     #@vtime :ClassField 2 lp, f1 = find_gens(MapFromFunc(canFrob, IdealSet(Zk), AutA),
     #                  PrimesSet(200, -1), cp)
-    lp, f1 = find_gens(MapFromFunc(canFrob, IdealSet(Zk), AutA), PrimesSet(200, -1), cp)
+    lp, f1 = find_gens_descent(MapFromFunc(canFrob, IdealSet(Zk), AutA), CF, cp)
     imgs = GrpAbFinGenElem[image(CF.quotientmap, preimage(CF.rayclassgroupmap, p1)) for p1 = lp]
     h = hom(f1, imgs)
     @hassert :ClassField 1 issurjective(h)
@@ -779,6 +989,7 @@ function _rcf_descent(CF::ClassField_pp)
   CF.A = number_field(f2, check = false)[1]
   return nothing
 end
+
 
 function grp_elem_to_map(A::Array{NfRelToNfRelMor{nf_elem, nf_elem}, 1}, b::GrpAbFinGenElem, pe::NfRelElem{nf_elem})
   res = pe

@@ -10,12 +10,16 @@ end
 ###############################################################################
 
 function howell_form(A::Generic.Mat{Nemo.Generic.Res{Nemo.fmpz}})
-  B = deepcopy(A)
-  if nrows(B)<ncols(B)
-    B=vcat(B, zero_matrix(base_ring(B), ncols(B)-nrows(B), ncols(B)))
+  local B::fmpz_mat
+  if nrows(A) < ncols(A)
+    B = vcat(lift(A), zero_matrix(FlintZZ, ncols(A)-nrows(A), ncols(A)))
+  else
+    B = lift(A)
   end
-  howell_form!(B)
-  return B
+  R = base_ring(A)
+  ccall((:fmpz_mat_howell_form_mod, :libflint), Nothing,
+              (Ref{fmpz_mat}, Ref{fmpz}), B, modulus(R))
+  return change_base_ring(B, R)
 end
 
 #

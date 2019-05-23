@@ -1620,12 +1620,21 @@ Returns the diagonal entries of a diagonal form of A. We assume that all the ele
 divisors are divisors of d.
 """
 function divisors(M::fmpz_mat, d::fmpz)
+  sp = fmpz[2, 3, 5, 7, 11, 13, 17, 19, 23]
+  l = fmpz[]
+  for p in sp
+    c, d = ppio(d, p)
+    if !isone(c)
+      push!(l, p)
+    end
+  end
+  d = ispower(d)[2]
   M1 = _hnf_modular_eldiv(M, d)
   while !isdiag(M1)
     M1 = M1'
     hnf_modular_eldiv!(M1, d)
   end
-  l = fmpz[]
+  
   for j = 1:nrows(M1)
     if !isone(M1[j,j])
       push!(l, M1[j, j])

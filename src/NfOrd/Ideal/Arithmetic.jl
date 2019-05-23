@@ -52,6 +52,12 @@ Returns $x + y$.
 """
 function +(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
   check_parent(x, y)
+  if isdefined(x, :gen_one) && isdefined(y, :gen_one) && isone(gcd(x.gen_one, y.gen_one))
+    return ideal(order(x), 1)
+  end
+  if isdefined(x, :norm) && isdefined(y, :norm) && isone(gcd(x.norm, y.norm))
+    return ideal(order(x), 1)
+  end
   g = gcd(minimum(x), minimum(y))
   if isone(g)
     return ideal(order(x), g)

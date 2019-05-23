@@ -133,9 +133,9 @@ end
 
 Returns the coefficient vector of $a$.
 """
-function coordinates(a::NfRelOrdElem, copy::Type{Val{T}} = Val{true}) where T
+function coordinates(a::NfRelOrdElem; copy::Bool = true)
   assure_has_coord(a)
-  if copy == Val{true}
+  if copy
     return deepcopy(a.coordinates)
   else
     return a.coordinates
