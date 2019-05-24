@@ -1,4 +1,4 @@
-using Documenter, Hecke, Nemo, AbstractAlgebra, Markdown, Pkg
+using Documenter, DocumenterMarkdown, Hecke, Nemo, AbstractAlgebra, Pkg
 
 makedocs(
     doctest= false,
