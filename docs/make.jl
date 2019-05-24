@@ -7,7 +7,7 @@ makedocs(
 )
 
 deploydocs(
-  repo = "github.com/shipengcheng1230/GmshTools.jl.git",
+  repo = "github.com/thofma/Hecke.jl.git",
   deps = Deps.pip("pymdown-extensions", "pygments", "mkdocs", "python-markdown-math", "mkdocs-material"),
   target = "site",
   make = () -> run(`mkdocs build`),
