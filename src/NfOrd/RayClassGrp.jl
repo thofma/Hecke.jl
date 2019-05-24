@@ -24,6 +24,7 @@ mutable struct MapRayClassGrp <: Map{GrpAbFinGen, FacElemMon{Hecke.NfOrdIdlSet},
   small_gens::Vector{NfOrdIdl}
   small_gens_action::Tuple{Vector{NfOrdIdl}, Vector{InfPlc}}
   
+  clgrpmap::MapClassGrp
   
   quots::Array  #Quotients of the ring by p^n for p dividing the modulus
   quots_nquo::Vector{Tuple{NfOrdIdl, NfOrdIdl}}
@@ -1966,6 +1967,7 @@ function find_gens(mR::MapRayClassGrp; coprime_to::fmpz = fmpz(-1))
   
   end
   
+  
   ctx = _get_ClassGrpCtx_of_order(O)
   fb = ctx.FB.ideals
   l = length(fb)
@@ -2478,7 +2480,9 @@ function ray_class_group_quo(I::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Dict{NfOrd
   exp_class, Kel = Hecke._elements_to_coprime_ideal(mC, I, lp)
   
   if order(G) == 1
-    return class_as_ray_class(C, mC, exp_class, I, n)  
+    RR, mRR = class_as_ray_class(C, mC, exp_class, I, n) 
+    mRR.clgrpmap = mC
+    return RR, mRR 
   end
   
 #
@@ -2663,6 +2667,7 @@ function ray_class_group_quo(I::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Dict{NfOrd
   mp.wild_mult_grp = wild
   mp.defining_modulus = (I, inf_plc)
   mp.disc_log_inf_plc = disc_log_inf
+  mp.clgrpmap = mC
   return X::GrpAbFinGen, mp
   
 end
@@ -2749,59 +2754,15 @@ function find_gens_for_action(mR::MapRayClassGrp)
       end
     end
   end
-  
-  ctx = _get_ClassGrpCtx_of_order(O)
-  fb = ctx.FB.ideals
-  l = length(fb)
-  for i = l:-1:1
-    P = fb[i]
-    if gcd(minimum(P), mm) != 1
-      continue
-    end
-    if haskey(mR.prime_ideal_preimage_cache, P)
-      f = mR.prime_ideal_preimage_cache[P]
-    else
-      f = mR\P
-      mR.prime_ideal_preimage_cache[P] = f
-    end
-    if iszero(mq(f))
-      continue
-    end
-    push!(sR, f)
+  #Now, gens of class group. Those are cached in the class group map
+
+  mC = mR.clgrpmap
+  for P in mC.small_gens
     push!(lp, P)
-    q, mq = quo(R, vcat(sR, sR1), false)
-    if order(q) == 1 
-      break
-    end
+    push!(sR, mR\P)
   end
-  
-  if order(q) != 1
-    p1 = minimum(fb[1])
-    while order(q) != 1
-      p1 = next_prime(p1)
-      if gcd(p1, mm) != 1
-        continue
-      end
-      lp1 = prime_decomposition(O, p1)
-      for (P, e) in lp1
-        if haskey(mR.prime_ideal_preimage_cache, P)
-          f = mR.prime_ideal_preimage_cache[P]
-        else
-          f = mR\P
-          mR.prime_ideal_preimage_cache[P] = f
-        end
-        if iszero(mq(f))
-          continue
-        end
-        push!(sR, f)
-        push!(lp, P)
-        q, mq = quo(R, sR, false)
-        if order(q) == 1 
-          break
-        end
-      end
-    end
-  end
+  q, mq = quo(R, vcat(sR, sR1), false)
+  @assert order(q) == 1 
   return lp, ip, sR, sR1
 end
 

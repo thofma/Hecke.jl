@@ -134,11 +134,14 @@ function find_gens(mR::Map, S::PrimesSet, cp::fmpz=fmpz(1))
 
   q, mq = quo(R, sR, false)
   s, ms = snf(q)
+  if order(s) == 1
+    return lp, sR
+  end
   for p in S
     if cp % p == 0 || index(ZK) % p == 0
       continue
     end
-    @vprint :ClassField 2 "doin` $p\n"
+    @vprint :ClassField 2 "doing $p\n"
     lP = prime_decomposition(ZK, p)
 
     f=R[1]
@@ -443,6 +446,7 @@ function find_gens(K::KummerExt, S::PrimesSet, cp::fmpz=fmpz(1))
   K.frob_gens = (lp, sR)
   return lp, sR
 end
+
 
 ###############################################################################
 #
