@@ -8,7 +8,7 @@ makedocs(
 
 deploydocs(
   repo = "github.com/thofma/Hecke.jl.git",
-  deps = Deps.pip("pymdown-extensions", "pygments", "mkdocs", "python-markdown-math", "mkdocs-material"),
+  deps = Deps.pip("pymdown-extensions", "pygments", "mkdocs", "python-markdown-math", "mkdocs-material", "mkdocs-cinder"),
   target = "site",
   make = () -> run(`mkdocs build`),
 )
