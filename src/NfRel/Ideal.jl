@@ -279,9 +279,8 @@ end
 
 Creates the ideal $x\cdot \mathcal O$ of $\mathcal O$.
 """
-function ideal(O::NfRelOrd{T, S}, x::NfRelOrdElem{T}) where {T, S}
-  parent(x) != O && error("Order of element does not coincide with order")
-
+function ideal(O::NfRelOrd{T, S}, x::NfRelOrdElem) where {T, S}
+  x = O(x)
   d = degree(O)
   pb = pseudo_basis(O, copy = false)
   M = zero_matrix(base_ring(nf(O)), d, d)
@@ -297,9 +296,13 @@ function ideal(O::NfRelOrd{T, S}, x::NfRelOrdElem{T}) where {T, S}
   return NfRelOrdIdl{T, S}(O, PM)
 end
 
-*(O::NfRelOrd, x::NfRelOrdElem) = ideal(O, x)
+function ideal(O::NfRelOrd, x::Union{ Int, fmpz, NfOrdElem })
+  return ideal(O, O(x))
+end
 
-*(x::NfRelOrdElem, O::NfRelOrd) = ideal(O, x)
+*(O::NfRelOrd, x::T) where { T <: Union{ Int, fmpz, NfOrdElem, NfRelOrdElem } } = ideal(O, x)
+
+*(x::T, O::NfRelOrd) where { T <: Union{ Int, fmpz, NfOrdElem, NfRelOrdElem } } = ideal(O, x)
 
 @doc Markdown.doc"""
     ideal(O::NfRelOrd{T, S}, a::S, check::Bool = true) -> NfRelOrdIdl{T, S}

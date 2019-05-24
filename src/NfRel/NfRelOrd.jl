@@ -21,6 +21,8 @@ number field.
 """
 parent(O::NfRelOrd) = O.parent
 
+base_ring(O::NfRelOrd) = order(pseudo_basis(O, copy = false)[1][2])
+
 @doc Markdown.doc"""
     isequation_order(O::NfRelOrd) -> Bool
 
