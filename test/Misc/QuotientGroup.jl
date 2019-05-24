@@ -30,23 +30,23 @@ using Test
     end
 
     @testset "derived series" begin
-        @test [Hecke.find_small_group(i[1]) for i in Hecke.derived_series(Hecke.small_group(1,1))] == [(1,1)]
-        @test [Hecke.find_small_group(i[1]) for i in Hecke.derived_series(Hecke.small_group(8,3))] == [(8,3), (2,1), (1,1)]
-        @test [Hecke.find_small_group(i[1]) for i in Hecke.derived_series(Hecke.small_group(18,1))] == [(18,1), (9,1), (1,1)]
-        @test [Hecke.find_small_group(i[1]) for i in Hecke.derived_series(Hecke.small_group(24,5))] == [(24,5), (3,1), (1,1)]
-        @test [Hecke.find_small_group(i[1]) for i in Hecke.derived_series(Hecke.small_group(24,6))] == [(24,6), (6,2), (1,1)]
-        @test [Hecke.find_small_group(i[1]) for i in Hecke.derived_series(Hecke.small_group(24,10))] == [(24,10), (2,1), (1,1)]
-        @test [Hecke.find_small_group(i[1]) for i in Hecke.derived_series(Hecke.small_group(27,4))] == [(27,4), (3,1), (1,1)]
-        @test [Hecke.find_small_group(i[1]) for i in Hecke.derived_series(Hecke.small_group(36,10))] == [(36,10), (9,2), (1,1)]
-        @test [Hecke.find_small_group(i[1]) for i in Hecke.derived_series(Hecke.small_group(38,2))] == [(38,2), (1,1)]
-        @test [Hecke.find_small_group(i[1]) for i in Hecke.derived_series(Hecke.small_group(40,13))] == [(40,13), (5,1), (1,1)]
-        @test [Hecke.find_small_group(i[1]) for i in Hecke.derived_series(Hecke.small_group(43,1))] == [(43,1), (1,1)]
-        @test [Hecke.find_small_group(i[1]) for i in Hecke.derived_series(Hecke.small_group(46,1))] == [(46,1), (23,1), (1,1)]
-        @test [Hecke.find_small_group(i[1]) for i in Hecke.derived_series(Hecke.small_group(48,37))] == [(48,37), (6,2), (1,1)]
-        @test [Hecke.find_small_group(i[1]) for i in Hecke.derived_series(Hecke.small_group(51,1))] == [(51,1), (1,1)]
-        @test [Hecke.find_small_group(i[1]) for i in Hecke.derived_series(Hecke.small_group(54,14))] == [(54,14), (27,5), (1,1)]
-        @test [Hecke.find_small_group(i[1]) for i in Hecke.derived_series(Hecke.small_group(56,13))] == [(56,13), (1,1)]
-        @test [Hecke.find_small_group(i[1]) for i in Hecke.derived_series(Hecke.small_group(59,1))] == [(59,1), (1,1)]
+        @test [tuple(Hecke.find_small_group(i[1])[1]...) for i in Hecke.derived_series(Hecke.small_group(1,1))] == [(1,1)]
+        @test [tuple(Hecke.find_small_group(i[1])[1]...) for i in Hecke.derived_series(Hecke.small_group(8,3))] == [(8,3), (2,1), (1,1)]
+        @test [tuple(Hecke.find_small_group(i[1])[1]...) for i in Hecke.derived_series(Hecke.small_group(18,1))] == [(18,1), (9,1), (1,1)]
+        @test [tuple(Hecke.find_small_group(i[1])[1]...) for i in Hecke.derived_series(Hecke.small_group(24,5))] == [(24,5), (3,1), (1,1)]
+        @test [tuple(Hecke.find_small_group(i[1])[1]...) for i in Hecke.derived_series(Hecke.small_group(24,6))] == [(24,6), (6,2), (1,1)]
+        @test [tuple(Hecke.find_small_group(i[1])[1]...) for i in Hecke.derived_series(Hecke.small_group(24,10))] == [(24,10), (2,1), (1,1)]
+        @test [tuple(Hecke.find_small_group(i[1])[1]...) for i in Hecke.derived_series(Hecke.small_group(27,4))] == [(27,4), (3,1), (1,1)]
+        @test [tuple(Hecke.find_small_group(i[1])[1]...) for i in Hecke.derived_series(Hecke.small_group(36,10))] == [(36,10), (9,2), (1,1)]
+        @test [tuple(Hecke.find_small_group(i[1])[1]...) for i in Hecke.derived_series(Hecke.small_group(38,2))] == [(38,2), (1,1)]
+        @test [tuple(Hecke.find_small_group(i[1])[1]...) for i in Hecke.derived_series(Hecke.small_group(40,13))] == [(40,13), (5,1), (1,1)]
+        @test [tuple(Hecke.find_small_group(i[1])[1]...) for i in Hecke.derived_series(Hecke.small_group(43,1))] == [(43,1), (1,1)]
+        @test [tuple(Hecke.find_small_group(i[1])[1]...) for i in Hecke.derived_series(Hecke.small_group(46,1))] == [(46,1), (23,1), (1,1)]
+        @test [tuple(Hecke.find_small_group(i[1])[1]...) for i in Hecke.derived_series(Hecke.small_group(48,37))] == [(48,37), (6,2), (1,1)]
+        @test [tuple(Hecke.find_small_group(i[1])[1]...) for i in Hecke.derived_series(Hecke.small_group(51,1))] == [(51,1), (1,1)]
+        @test [tuple(Hecke.find_small_group(i[1])[1]...) for i in Hecke.derived_series(Hecke.small_group(54,14))] == [(54,14), (27,5), (1,1)]
+        @test [tuple(Hecke.find_small_group(i[1])[1]...) for i in Hecke.derived_series(Hecke.small_group(56,13))] == [(56,13), (1,1)]
+        @test [tuple(Hecke.find_small_group(i[1])[1]...) for i in Hecke.derived_series(Hecke.small_group(59,1))] == [(59,1), (1,1)]
     end
 
     @testset "psylow" begin
@@ -61,16 +61,16 @@ using Test
         Hom = GrpGenToGrpGenMor(G,G,[G[1],G[1],G[1],G[1]])
         @test order(image(Hom)[1]) == 1
         @test order(kernel(Hom)[1]) == 4
-        @test is_surjective(Hom) == false
-        @test is_injective(Hom) == false
-        @test is_bijective(Hom) == false
+        @test issurjective(Hom) == false
+        @test isinjective(Hom) == false
+        @test isbijective(Hom) == false
 
         Hom = GrpGenToGrpGenMor(G,G,[G[1],G[2],G[3],G[4]])
         @test order(image(Hom)[1]) == 4
         @test order(kernel(Hom)[1]) == 1
-        @test is_surjective(Hom) == true
-        @test is_injective(Hom) == true
-        @test is_bijective(Hom) == true
+        @test issurjective(Hom) == true
+        @test isinjective(Hom) == true
+        @test isbijective(Hom) == true
     end
 
 
