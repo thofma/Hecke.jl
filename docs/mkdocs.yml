@@ -9,6 +9,8 @@ theme:
   palette:
     primary: 'blue grey'
     accent: 'bluey grey'
+  feature:
+    tabs: true
 
 extra:
   search:
@@ -56,18 +58,19 @@ docs_dir: 'build'
 
 nav:
   - Home: 'index.md'
-  - Number fields: 'number_fields/intro.md'
-  - Orders:
-    - Introduction: 'orders/introduction.md'
-    - Basics:           orders/orders.md
-    - Elements:         orders/elements.md
-    - Ideals:           orders/ideals.md
-    - Fractional Ideals: orders/frac_ideals.md
-  - Abelian groups:
-    - Introduction:     abelian/introduction.md
-  - Class fields:
-    - Introduction:     class_fields/intro.md
-  - Misc:
-    - Factored Elements: FacElem.md
-    - Sparse Linear Algebra: sparse/intro.md
+  - Documentation:
+    - Number fields: 'number_fields/intro.md'
+    - Orders:
+      - Introduction: 'orders/introduction.md'
+      - Basics:           orders/orders.md
+      - Elements:         orders/elements.md
+      - Ideals:           orders/ideals.md
+      - Fractional Ideals: orders/frac_ideals.md
+    - Abelian groups:
+      - Introduction:     abelian/introduction.md
+    - Class fields:
+      - Introduction:     class_fields/intro.md
+    - Misc:
+      - Factored Elements: FacElem.md
+      - Sparse Linear Algebra: sparse/intro.md
 
