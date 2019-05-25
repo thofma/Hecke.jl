@@ -1,6 +1,6 @@
 site_name:           'Hecke'
 repo_name:           'Hecke.jl'
-repo_url:            'https://github.com/thofma/Hecke.jl'
+#repo_url:            'https://github.com/thofma/Hecke.jl'
 site_description:    'Hecke'
 site_author:         'Tommy Hofmann'
 
@@ -57,7 +57,7 @@ markdown_extensions:
 docs_dir: 'build'
 
 nav:
-  - Home: 'index.md'
+  - About: 'index.md'
   - Documentation:
     - Number fields: 'number_fields/intro.md'
     - Orders:
@@ -73,4 +73,5 @@ nav:
     - Misc:
       - Factored Elements: FacElem.md
       - Sparse Linear Algebra: sparse/intro.md
-
+  - Source:
+      - 'https://www.github.com/thofma/Hecke.jl'
