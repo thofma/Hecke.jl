@@ -1560,6 +1560,115 @@ end
 
 ################################################################################
 #
+#  p-radical
+#
+################################################################################
+
+
+function pradical_trace(O::NfAbsOrd, p::Union{Integer, fmpz})
+  d = degree(O)
+  M = trace_matrix(O)
+  F = GF(p, cached = false)
+  M1 = change_base_ring(M, F)
+  k, B = nullspace(M1)
+  if iszero(k)
+    return ideal(O, p)
+  end
+  M2 = zero_matrix(FlintZZ, d, d)
+  for i = 1:ncols(B)
+    for j = 1:d
+      M2[i, j] = FlintZZ(B[j, i].data)
+    end
+  end
+  gens = elem_type(O)[O(p)]
+  for i=1:ncols(B)
+    if !iszero_row(M2,i)
+      push!(gens, elem_from_mat_row(O, M2, i))
+    end
+  end
+  M2 = hnf_modular_eldiv!(M2, fmpz(p), :lowerleft)
+  I = ideal(O, M2)
+  I.minimum = p
+  I.gens = gens
+  return I
+end
+
+function pradical_frobenius(O::NfAbsOrd, p::Union{Integer, fmpz})
+  
+  #First, I need an exponent for the maximum of the nilpotency indices.
+  R = GF(p, cached = false)
+  d = degree(O)
+  K = nf(O)
+  j = clog(fmpz(d), p)
+  @assert p^(j-1) < d
+  @assert d <= p^j
+    
+  A = zero_matrix(R, degree(O), degree(O))
+  B = basis(O, copy = false)
+  for i in 1:d
+    t = powermod(B[i], p^j, p)
+    if iszero(t)
+      continue
+    end
+    ar = coordinates(t)
+    for k in 1:d
+      A[k, i] = ar[k]
+    end
+  end
+  X = right_kernel_basis(A)
+  gens = elem_type(O)[O(p)]
+  if isempty(X)
+    I = ideal(O, p)
+    I.gens = gens
+    return I
+  end
+  #First, find the generators
+  for i = 1:length(X)
+    coords = Array{fmpz,1}(undef, d)
+    for j=1:d
+      coords[j] = lift(X[i][j])
+    end
+    push!(gens, O(coords))
+  end
+  #Then, construct the basis matrix of the ideal
+  m = zero_matrix(FlintZZ, d, d)
+  for i = 1:length(X)
+    for j = 1:d
+      m[i, j] = lift(X[i][j])
+    end
+  end
+  mm = hnf_modular_eldiv!(m, fmpz(p), :lowerleft)
+  I = NfAbsOrdIdl(O, mm)
+  I.minimum = p
+  I.gens = gens
+  return I
+
+end
+
+@doc Markdown.doc"""
+    pradical(O::NfOrd, p::{fmpz|Integer}) -> NfAbsOrdIdl
+
+Given a prime number $p$, this function returns the $p$-radical
+$\sqrt{p\mathcal O}$ of $\mathcal O$, which is
+just $\{ x \in \mathcal O \mid \exists k \in \mathbf Z_{\geq 0} \colon x^k
+\in p\mathcal O \}$. It is not checked that $p$ is prime.
+"""
+function pradical(O::NfAbsOrd, p::Union{Integer, fmpz})
+  if p isa fmpz
+    if nbits(p) < 64
+      return pradical(O, Int(p))
+    end
+  end
+  #Trace method if the prime is large enough
+  if p > degree(O)
+    return pradical_trace(O, p)
+  else
+    return pradical_frobenius(O, p)
+  end
+end
+
+################################################################################
+#
 #  Colon, conductor: it's the same(?) method
 #
 ################################################################################

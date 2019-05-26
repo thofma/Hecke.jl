@@ -280,34 +280,48 @@ function squarefree_for_conductors(O::NfOrd, n::Int, deg::Int; coprime_to::Array
   b=Base.sqrt(n)
   while i<=b
     if primes[i]
-      dt = prime_decomposition_type(O, i)
-      if gcd(deg, i^dt[1][1]-1) == 1
-        @inbounds primes[i] = false
-        @inbounds sqf[i] = false
+      if gcd(i-1, deg) != 1
         j = i
         while j <= n
-         @inbounds primes[j] = false
-         @inbounds sqf[j] = false
-         j+=i
-        end
-      else 
-        j=i
-        while j <= n
           @inbounds primes[j]=false
-          j+=i
+          j += i
         end
-        j=i^2
-        t=j
-        while j<= n
+        j = i^2
+        t = j
+        while j <= n
           @inbounds sqf[j]=false
-          j+=t
+          j += t
+        end
+      else
+        dt = prime_decomposition_type(O, i)
+        if gcd(deg, i^dt[1][1]-1) == 1
+          @inbounds primes[i] = false
+          @inbounds sqf[i] = false
+          j = i
+          while j <= n
+           @inbounds primes[j] = false
+           @inbounds sqf[j] = false
+           j+=i
+          end
+        else 
+          j=i
+          while j <= n
+            @inbounds primes[j]=false
+            j+=i
+          end
+          j=i^2
+          t=j
+          while j<= n
+            @inbounds sqf[j]=false
+            j+=t
+          end
         end
       end
     end
     i+=2
   end
   while i<=n
-    if primes[i]
+    if primes[i] && gcd(i-1, deg) == 1
       dt=prime_decomposition_type(O,i)
       if gcd(deg,i^dt[1][1]-1)==1
         @inbounds sqf[i]=false
@@ -327,9 +341,7 @@ function squarefree_for_conductors(O::NfOrd, n::Int, deg::Int; coprime_to::Array
       @inbounds sqf[i]=false
       i+=4
     end
-    
   end
-   
   return Int[i for i=1:length(sqf) if sqf[i]]
   
 end
@@ -352,7 +364,7 @@ function conductors_tame(O::NfOrd, n::Int, bound::fmpz)
   sort!(ram_primes)
   m=minimum(wild_ram)
   k=divexact(n,m)
-  b1=Int(root(fmpz(bound),Int(degree(O)*(m-1)*k))) 
+  b1=Int(root(fmpz(bound), Int(degree(O)*(m-1)*k)))
   list = squarefree_for_conductors(O, b1, n, coprime_to=coprime_to)
   e = Int((m-1)*k)
   extra_list = Tuple{Int, fmpz}[(1, fmpz(1))]

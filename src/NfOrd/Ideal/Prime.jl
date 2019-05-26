@@ -126,8 +126,6 @@ function intersect_nonindex(f::Map, P::NfOrdIdl, Zk = maximal_order(domain(f)))
   for (f, e) = gp.fac
     if iszero(f(hp) % Gp)
       p = ideal_from_poly(Zk, Int(minimum(P)), f, 1)
-      P.is_prime = 1
-      P.minimum = minimum(P)
       return p
     end
   end
