@@ -121,12 +121,16 @@ function extend(f::NfRelOrdToFqMor{T, S}, K::NfRel{T}) where {T, S}
   return g
 end
 
-mutable struct NfRelOrdToAlgAssMor{T1, T2, T3} <: Map{NfRelOrd{T1, T2}, AlgAss{T3}, HeckeMap, NfRelOrdToAlgAssMor}
+mutable struct RelOrdToAlgAssMor{S, T} <: Map{S, AlgAss{T}, HeckeMap, RelOrdToAlgAssMor}
   header::MapHeader
 
-  function NfRelOrdToAlgAssMor{T1, T2, T3}(O::NfRelOrd{T1, T2}, A::AlgAss{T3}, _image::Function, _preimage::Function) where {T1, T2, T3}
-    z = new{T1, T2, T3}()
+  function RelOrdToAlgAssMor{S, T}(O::S, A::AlgAss{T}, _image::Function, _preimage::Function) where { S <: Union{ NfRelOrd, AlgAssRelOrd }, T }
+    z = new{S, T}()
     z.header = MapHeader(O, A, _image, _preimage)
     return z
   end
+end
+
+function RelOrdToAlgAssMor(O::Union{ NfRelOrd, AlgAssRelOrd }, A::AlgAss{T}, _image, _preimage) where {T}
+  return RelOrdToAlgAssMor{typeof(O), T}(O, A, _image, _preimage)
 end

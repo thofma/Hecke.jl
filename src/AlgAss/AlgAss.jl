@@ -322,7 +322,12 @@ p = prime_decomposition(OK, 2)[1][1]
 # The idea is to compute pseudo-basis of O and I respectively, for which the
 # coefficient ideals have zero p-adic valuation. Then we can think in the
 # localization at p and do as in the case of principal ideal domains.
-function AlgAss(O::NfRelOrd{T, S}, I::NfRelOrdIdl{T, S}, p::Union{NfOrdIdl, NfRelOrdIdl}) where {T, S}
+function AlgAss(O::Union{ NfRelOrd{T, S}, AlgAssRelOrd{T, S} }, I::Union{ NfRelOrdIdl{T, S}, AlgAssRelOrdIdl{T, S} }, p::Union{NfOrdIdl, NfRelOrdIdl}) where {T, S}
+
+  isalgass = ( O isa AlgAssRelOrd )
+
+  K = isalgass ? algebra(O) : nf(O)
+
   basis_pmatI = basis_pmat(I, copy = false)
   basis_pmatO = basis_pmat(O, copy = false)
 
@@ -334,7 +339,7 @@ function AlgAss(O::NfRelOrd{T, S}, I::NfRelOrdIdl{T, S}, p::Union{NfOrdIdl, NfRe
   new_basis_coeffs = S[]
 
   for i in 1:degree(O)
-    a = pi^valuation(basis_pmat(O).coeffs[i], p)
+    a = pi^valuation(basis_pmatO.coeffs[i], p)
     push!(new_basis_coeffs, a * basis_pmatO.coeffs[i])
     mul_row!(new_basis_mat, i, inv(a))
     for j in 1:degree(O)
@@ -351,7 +356,7 @@ function AlgAss(O::NfRelOrd{T, S}, I::NfRelOrdIdl{T, S}, p::Union{NfOrdIdl, NfRe
   end
 
   Fp, mF = ResidueField(order(p), p)
-  mmF = extend(mF, base_ring(nf(O)))
+  mmF = extend(mF, base_ring(K))
   invmmF = pseudo_inv(mmF)
 
   basis_elts = Int[]
@@ -372,7 +377,7 @@ function AlgAss(O::NfRelOrd{T, S}, I::NfRelOrdIdl{T, S}, p::Union{NfOrdIdl, NfRe
 
   reverse!(reducers)
 
-  OLL = Order(nf(O), PseudoMatrix(new_basis_mat, new_basis_coeffs))
+  OLL = Order(K, PseudoMatrix(new_basis_mat, new_basis_coeffs))
 
   newI = ideal(OLL, PseudoMatrix(new_basis_mat_I, new_coeff_I))
 
@@ -380,13 +385,19 @@ function AlgAss(O::NfRelOrd{T, S}, I::NfRelOrdIdl{T, S}, p::Union{NfOrdIdl, NfRe
 
   pseudo_basis_newI = pseudo_basis(newI)
 
-  tmp_matrix = zero_matrix(base_ring(nf(O)), 1, degree(O))
+  tmp_matrix = zero_matrix(base_ring(K), 1, degree(O))
 
   basis_mat_inv_OLL = basis_mat_inv(OLL)
 
-  function _coeff(c) 
-    for i in 0:degree(O) - 1
-      tmp_matrix[1, i + 1] = coeff(c, i)
+  function _coeff(c)
+    if isalgass
+      for i = 1:degree(O)
+        tmp_matrix[1, i] = coeffs(c, copy = false)[i]
+      end
+    else
+      for i in 0:degree(O) - 1
+        tmp_matrix[1, i + 1] = coeff(c, i)
+      end
     end
     return tmp_matrix * basis_mat_inv_OLL
   end
@@ -423,10 +434,16 @@ function AlgAss(O::NfRelOrd{T, S}, I::NfRelOrdIdl{T, S}, p::Union{NfOrdIdl, NfRe
   else
     A = AlgAss(Fp, mult_table)
   end
-  A.iscommutative = 1
+  if !isalgass || iscommutative(O)
+    A.iscommutative = 1
+  end
 
-  function _image(a::NfRelOrdElem)
-    c = a.elem_in_nf
+  function _image(a::Union{ NfRelOrdElem, AlgAssRelOrdElem })
+    if isalgass
+      c = elem_in_algebra(a, copy = false)
+    else
+      c = a.elem_in_nf
+    end
     coeffs = _coeff(c)
     for k in reducers
       d = -coeffs[k]//new_basis_mat_I[k, k]
@@ -458,7 +475,7 @@ function AlgAss(O::NfRelOrd{T, S}, I::NfRelOrdIdl{T, S}, p::Union{NfOrdIdl, NfRe
     return O(sum((invmmF(v.coeffs[i])) * lifted_basis_of_A[i] for i in 1:r))
   end
 
-  OtoA = NfRelOrdToAlgAssMor{T, S, elem_type(Fp)}(O, A, _image, _preimage)
+  OtoA = RelOrdToAlgAssMor(O, A, _image, _preimage)
 
   return A, OtoA
 end
