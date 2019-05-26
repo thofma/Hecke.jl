@@ -4,9 +4,12 @@
 #
 ################################################################################
 
-export generic_group, GrpGen, GrpGenElem, isabelian, iscyclic, order, elements, getindex, isbijective, isinjective, issurjective, subgroups,
-       subgroup, quotient, image, kernel, elem_type, parent, psylow_subgroup, GrpGenToGrpGenMor, commutator_subgroup, derived_series,
-       id_hom, find_small_group, order, direct_product, conjugancy_classes
+export generic_group, GrpGen, GrpGenElem, isabelian, iscyclic, order, elements,
+getindex, isbijective, isinjective, issurjective, subgroups,subgroup, quotient,
+image, preimage, inv, kernel, elem_type, parent, psylow_subgroup,
+GrpGenToGrpGenMor, commutator_subgroup, derived_series, id_hom,
+find_small_group, order, direct_product, conjugancy_classes, ischaracteristic,
+induces_to_subgroup, induces_to_quotient, automorphisms, has_preimage
 
 ################################################################################
 #
@@ -61,7 +64,10 @@ struct GrpGenElem
   function GrpGenElem(group::GrpGen, i::Int)
     og = order(group)
     if i > og
-      @error("There are only $og elements in $group")
+      error("There are only $og elements in $group")
+    end
+    if i < 1
+      error("The index has to be positive but is $i")
     end
     return z = new(group, i)
   end
@@ -74,7 +80,8 @@ end
 ################################################################################
 @doc Markdown.doc"""
      generic_group(G, op)
-Computes group of $G$ with operation $op$, implemented with multiplication table 'G.mult_table'.
+Computes group of $G$ with operation $op$, implemented with multiplication
+table 'G.mult_table'.
 The elements are just 1..n and i * j = 'G.mult_table'[i, j].
 """
 function generic_group(G, op)
@@ -496,8 +503,47 @@ end
     image(f::GrpGenToGrpGenMor, g::GrpGenElem) -> h::GrpGenElem
 Returns the image of $g$ under $f$.
 """
-function image(f::GrpGenToGrpGenMor, g::GrpGenElem)
-  return f.img[g.i]
+image(f::GrpGenToGrpGenMor, g::GrpGenElem) = f.img[g.i]
+
+@doc Markdown.doc"""
+    preimage(f::GrpGenToGrpGenMor, g::GrpGenElem) -> h::GrpGenElem
+Returns one element of the preimage of $g$ under $f$.
+"""
+function preimage(f::GrpGenToGrpGenMor, g::GrpGenElem)
+  h = findfirst(x -> f(x) == g, collect(f.domain))
+   if h == nothing
+     error("$g has no preimage under $f")
+   end
+   return f.domain[h]
+end
+
+@doc Markdown.doc"""
+    has_preimage(f::GrpGenToGrpGenMor, g::GrpGenElem) -> (b::Bool, h::GrpGenElem)
+Returns whether $f$ has a preimage. If so, the second return value is an
+element $h$ with $f(h) = g$.
+"""
+function has_preimage(f::GrpGenToGrpGenMor, g::GrpGenElem)
+  h = findfirst(x -> f(x) == g, collect(f.domain))
+   if h == nothing
+     error("$g has no preimage under $f")
+   end
+   return h
+end
+
+@doc Markdown.doc"""
+    *(f::GrpGenToGrpGenMor, g::GrpGenToGrpGenMor) -> h::GrpGenToGrpGenMor
+Returns the composition (f * g) = g(f)$.
+"""
+function *(f::GrpGenToGrpGenMor, g::GrpGenToGrpGenMor)
+  return GrpGenToGrpGenMor(f.domain, g.codomain, [g(f(x)) for x in collect(f.domain)])
+end
+
+@doc Markdown.doc"""
+    inv(f::GrpGenToGrpGenMor) -> h::GrpGenToGrpGenMor
+Assumes that $f$ is an isomorphism. Returns the inverse of $f$.
+"""
+function inv(f::GrpGenToGrpGenMor)
+  return GrpGenToGrpGenMor(f.codomain, f.domain, collect(f.domain)[sortperm(getindex.(f.img))])
 end
 
 function Base.show(io::IO, f::GrpGenToGrpGenMor)
@@ -512,9 +558,15 @@ id_hom(G::GrpGen) = GrpGenToGrpGenMor(G, G, collect(G))
 
 image(GtoH::GrpGenToGrpGenMor) = subgroup(GtoH.codomain, unique(GtoH.img))
 
-kernel(GtoH::GrpGenToGrpGenMor) = subgroup(GtoH.domain, getindex.([GtoH.domain], findall(x->image(GtoH, x) == id(GtoH.codomain), collect(GtoH.domain))))
+function kernel(GtoH::GrpGenToGrpGenMor)
+  G = GtoH.domain
+  H = GtoH.codomain
+  return subgroup(G, getindex.(Ref(G), findall(x-> GtoH(x) == id(H), collect(G))))
+end
 
-issurjective(GtoH::GrpGenToGrpGenMor) = order(GtoH.codomain) == length(unique(GtoH.img)) ? true : false
+function issurjective(GtoH::GrpGenToGrpGenMor)
+  return order(GtoH.codomain) == length(unique(GtoH.img)) ? true : false
+end
 #finite groups
 isinjective(GtoH::GrpGenToGrpGenMor) = issurjective(GtoH)
 
@@ -771,6 +823,12 @@ function eval_word(S, w::Vector{Int})
   return g
 end
 
+function automorphisms(G::GrpGen)
+  Gn, GntoG = find_small_group(G)[2:3]
+  auts = _automorphisms(Gn)
+  return [inv(GntoG) * aut * GntoG for aut in auts]
+end
+
 function _automorphisms(G::GrpGen)
   @assert isfrom_db(G)
   i, j = G.small_group_id
@@ -791,6 +849,7 @@ function _automorphisms(G::GrpGen)
     end
   end
 
+
   elbyord = [elements_by_orders[order(o)] for o in Gdata[1]]
 
   it = Iterators.product(elbyord...)
@@ -800,9 +859,9 @@ function _automorphisms(G::GrpGen)
   idG = id(G)
 
   auts = _aut_group(it, words, idG, order(G))::Vector{Vector{GrpGenElem}}
-  
+
   # Any element A of auts determines an isomorphism by mapping gens(G)[i] to A[i]
-  
+
   Ggens = gens(G)
 
   # TODO: preallocate
@@ -895,7 +954,7 @@ function quotient(G::GrpGen, H::GrpGen, HtoG::GrpGenToGrpGenMor)
      return getindex.([G],M[:,j])
   end
 
-  Q,SetGtoQ,QtoSetG = generic_group([getindex.([G],M[:,i]) for i in 1:size(M)[2]], quotient_op)
+  Q,SetGtoQ,QtoSetG = generic_group([getindex.(Ref(G),M[:,i]) for i in 1:size(M)[2]], quotient_op)
 
   image = Array{GrpGenElem,1}(undef, order(G))
   for i in 1:order(G)
@@ -910,13 +969,16 @@ end
 function quotient_indx(a::Int64,b::Int64)
   G = Hecke.small_group(a,b)
   subgroups = Hecke.subgroups(G, normal=true)
-  return Res = sort([tuple(Hecke.find_small_group(Hecke.quotient(G, subgroups[i][1], subgroups[i][2])[1])[1]...) for i in 1:length(subgroups)])
+  return Res = sort([tuple(find_small_group(quotient(G, subgroups[i][1], subgroups[i][2])[1])[1]...) for i in 1:length(subgroups)])
   end
 
   function direct_product(G1::GrpGen, G2::GrpGen)
     S = [(g1,g2) for g1 in collect(G1), g2 in collect(G2)]
     directproduct_op(g1::Tuple{GrpGenElem,GrpGenElem}, g2::Tuple{GrpGenElem,GrpGenElem}) = (g1[1] * g2[1], g1[2] * g2[2])
-    return generic_group(S, directproduct_op)
+    DP, GprodtoDP, DPtoGprod = generic_group(S, directproduct_op)
+    DPtoG1 = [DPtoGprod[DP[i]][1] for i in 1:length(DP)]
+    DPtoG2 = [DPtoGprod[DP[i]][2] for i in 1:length(DP)]
+    return (DP, GrpGenToGrpGenMor(DP, G1, DPtoG1), GrpGenToGrpGenMor(DP, G2, DPtoG2))
   end
 
 function commutator_subgroup(G::GrpGen)
@@ -972,7 +1034,7 @@ end
 function conjugancy_classes(G::GrpGen)
   CC = Array{Array{GrpGenElem,1},1}()
   for x in collect(G)
-    if true in in.([x], CC)
+    if true in in.(Ref(x), CC)##immer
       break
     end
     new_cc = Array{GrpGenElem,1}()
@@ -985,4 +1047,30 @@ function conjugancy_classes(G::GrpGen)
     push!(CC, new_cc)
   end
   return CC
+end
+
+################################################################################
+#
+#  characteristic groups
+#
+################################################################################
+
+function ischaracteristic(G::GrpGen, mH::GrpGenToGrpGenMor)
+  auts = automorphisms(G)
+  for aut in auts
+    if !issubset(aut.img, mH.img)
+      return false
+    end
+  end
+  return true
+end
+
+function induces_to_subgroup(G::GrpGen, mH::GrpGenToGrpGenMor, aut::GrpGenToGrpGenMor)
+  H = mH.domain
+  return GrpGenToGrpGenMor(H, H, [preimage(mH, aut(mH(h))) for h in collect(H)])
+end
+
+function induces_to_quotient(G::GrpGen, mQ::GrpGenToGrpGenMor, aut::GrpGenToGrpGenMor)
+  Q = mQ.domain
+  return GrpGenToGrpGenMor(Q, Q, [mQ(aut(preimage(mQ, q))) for q in collect(Q)])
 end
