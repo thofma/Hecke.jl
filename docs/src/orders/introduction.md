@@ -26,12 +26,14 @@ call $(1,\alpha,\alpha^2,\dotsc,\alpha^{d-1})$, where $d$ is the degree $[K :
 the *representation matrix* of $\beta$ is the matrix representing $K \to K,
 \gamma \mapsto \beta \gamma$ with respect to the power basis, that is,
 
-\\[ \beta \cdot (1,\alpha,\dotsc,\alpha^{d-1}) = M_\alpha (1, \alpha, \dotsc, \alpha^{d-1}). \\]
+$$\beta \cdot (1,\alpha,\dotsc,\alpha^{d-1}) = M_\alpha (1, \alpha, \dotsc, \alpha^{d-1}).$$
 
 Let $(r,s)$ be the signature of $K$, that is, $K$ has $r$ real embeddings $\sigma_i \colon K \to \mathbf{R}$, $1 \leq i \leq r$, and $2s$ complex embeddings $\sigma_i \colon K \to \mathbf{C}$, $1 \leq i \leq 2s$.
 In Hecke the complex embeddings are always ordered such that $\sigma_i = \overline{\sigma_{i+s}}$ for $r + 1 \leq i \leq r + s$.
 The $\mathbf{Q}$-linear function
-\\[ K \longrightarrow \mathbf R^{d}, \ \alpha \longmapsto (\sigma_1(\alpha),\dotsc,\sigma_r(\alpha),\sqrt{2}\operatorname{Re}(\sigma_{r+1}(\alpha)),\sqrt{2}\operatorname{Im}(\sigma_{r+1}(\alpha)),\dotsc,\sqrt{2}\operatorname{Re}(\sigma_{r+s}(\alpha)),\sqrt{2}\operatorname{Im}(\sigma_{r+s}(\alpha)) \\]
+```math
+K \longrightarrow \mathbf R^{d}, \ \alpha \longmapsto (\sigma_1(\alpha),\dotsc,\sigma_r(\alpha),\sqrt{2}\operatorname{Re}(\sigma_{r+1}(\alpha)),\sqrt{2}\operatorname{Im}(\sigma_{r+1}(\alpha)),\dotsc,\sqrt{2}\operatorname{Re}(\sigma_{r+s}(\alpha)),\sqrt{2}\operatorname{Im}(\sigma_{r+s}(\alpha))
+```
 is called the *Minkowski map* (or *Minkowski embedding*).
 
 ### Orders

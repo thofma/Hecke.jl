@@ -16,6 +16,9 @@ function simplify(K::AnticNumberField; canonical::Bool = false, cached = false)
     a, f1 = polredabs(K)
     f = Qx(f1)
   else
+    Zx = PolynomialRing(FlintZZ, "x", cached = false)[1]
+    f = Zx(K.pol)
+    p, d = _find_prime(f)
     OK = maximal_order(K)
     if isdefined(OK, :lllO)
       ZK = OK.lllO
@@ -24,20 +27,33 @@ function simplify(K::AnticNumberField; canonical::Bool = false, cached = false)
       ZK = _lll(OK, prec = prec)[2]
     end
     a = gen(K)
-    if isdefining_polynomial_nice(K)
-      I = index(OK)
-    else
-      I = divexact(numerator(discriminant(K.pol)), discriminant(ZK))
-    end
+
     B = basis(ZK, copy = false)
+    #First, we search for elements that are primitive using block systems
+    F = FlintFiniteField(p, d, "w", cached = false)[1]
+    Ft = PolynomialRing(F, "t", cached = false)[1]
+    ap = zero(Ft)
+    fit!(ap, degree(K)+1)
+    rt = roots(f, F)
+  
+    n = degree(K)
+    indices = Int[]
     for i = 1:length(B)
-      if isone(denominator(B[i].elem_in_nf))
+      b = _block(B[i].elem_in_nf, rt, ap)
+      if length(b) == n
+        push!(indices, i)
+      end
+    end
+    #Now, we select the one of smallest T2 norm
+    I = t2(a)    
+    for i = 1:length(indices)
+      if isone(denominator(B[indices[i]].elem_in_nf))
         continue
       end 
-      ind_a = _index(B[i])
-      if !iszero(ind_a) && ind_a < I
-        a = B[i].elem_in_nf
-        I = ind_a
+      t2n = t2(B[indices[i]].elem_in_nf)
+      if t2n < I
+        a = B[indices[i]].elem_in_nf
+        I = t2n
       end
     end
     f = minpoly(Qx, a)
@@ -45,6 +61,26 @@ function simplify(K::AnticNumberField; canonical::Bool = false, cached = false)
   L = NumberField(f, cached = cached, check = false)[1]
   m = hom(L, K, a, check = false)
   return L, m
+end
+
+function _index_via_discriminant(a::NfOrdElem)
+  O = parent(a)
+  d = degree(O)
+  el = one(O)
+  traces = Vector{fmpz}(undef, 2*d-1)
+  traces[1] = d
+  for i = 2:(2*d-1)
+    el *= a
+    traces[i] = tr(el)
+  end
+  M = zero_matrix(FlintZZ, d, d)
+  for i = 1:d
+    for j = 1:d
+      M[i, j] = traces[i+j-1]
+    end
+  end
+  res = det_given_divisor(M, discriminant(O))
+  return root(divexact(res, discriminant(O)), 2)
 end
 
 function _index(a::NfOrdElem)
@@ -362,7 +398,7 @@ function _lll(M::NfOrd; prec = 100)
   end
 
   n = degree(M)
-  prec = max(prec, 4*n)
+  prec = max(prec, 10*n)
   local d::fmpz_mat
   while true
     try

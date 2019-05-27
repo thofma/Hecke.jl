@@ -733,4 +733,3 @@ function group_structure(Q::NfOrdQuoRing)
   S, Smap = snf(G)
   return S
 end
-

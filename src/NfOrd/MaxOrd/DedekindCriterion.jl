@@ -156,7 +156,7 @@ function dedekind_test_composite(O::NfOrd, p::fmpz)
     return gcd(lift(divs), p), false, O
   end
   
-  sqff=divexact(fmodp,gcdfderf)
+  sqff = divexact(fmodp,gcdfderf)
   
 
   # first build 1/p ( f - g*h)
