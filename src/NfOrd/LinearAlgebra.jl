@@ -327,6 +327,24 @@ function det(m::PMat)
   return det(m.matrix)*z
 end
 
+function *(P::PMat{T, S}, x::U) where { T, S, U <: Union{Int, fmpz, FieldElem } }
+  if nrows(P) == 0 || ncols(P) == 0
+    return P
+  end
+
+  K = parent(P.matrix[1, 1])
+  x = K(x)
+
+  PP = deepcopy(P)
+  for i = 1:nrows(PP)
+    PP.coeffs[i] = PP.coeffs[i]*x
+    PP.coeffs[i] = simplify(PP.coeffs[i])
+  end
+  return PP
+end
+
+*(x::U, P::PMat{T, S}) where { T, S, U <: Union{Int, fmpz, FieldElem } } = P*x
+
 # this is slow
 function _coprime_integral_ideal_class(x::Union{NfOrdFracIdl, NfOrdIdl}, y::NfOrdIdl)
   O = order(y)
@@ -1670,4 +1688,9 @@ function istriangular(M::MatElem, shape::Symbol = :lowerleft)
   elseif shape == :upperright
     return istriangular(transpose(M), :lowerleft)
   end
+end
+
+function Base.hash(P::PMat, h::UInt)
+  h = Base.hash(P.matrix, h)
+  return Base.hash(P.coeffs, h)
 end

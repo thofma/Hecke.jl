@@ -176,6 +176,16 @@ end
 
 *(x::RelativeElement{T}, O::NfRelOrd{T, S}) where {T, S} = frac_ideal(O, x)
 
+function frac_ideal(O::NfRelOrd{T, S}, a::NfRelOrdIdl{T, S}) where {T, S}
+  return frac_ideal(O, basis_pmat(a), true)
+end
+
+function frac_ideal(O::NfRelOrd{T, S}, a::NfRelOrdIdl{T, S}, d::U) where { T, S, U <: Union{ fmpz, NfAbsOrdElem, NfRelOrdElem } }
+  K = base_ring(nf(O))
+  dd = inv(K(d))
+  return frac_ideal(O, dd*basis_pmat(a), true)
+end
+
 ################################################################################
 #
 #  Deepcopy
@@ -253,6 +263,26 @@ function norm(a::NfRelOrdFracIdl, copy::Type{Val{T}} = Val{true}) where T
   end
 end
 
+function norm(a::NfRelOrdFracIdl, k::Union{ NfRel, AnticNumberField, NfRel_ns })
+  n = norm(a)
+  while nf(order(n)) != k
+    n = norm(n)
+  end
+  return n
+end
+
+function norm(a::NfRelOrdFracIdl, k::FlintRationalField)
+  n = norm(a)
+  while !(n isa fmpq)
+    n = norm(n)
+  end
+  return n
+end
+
+function absolute_norm(a::NfRelOrdFracIdl)
+  return norm(a, FlintQQ)
+end
+
 ################################################################################
 #
 #  Ideal addition / GCD
@@ -288,6 +318,10 @@ function +(a::NfRelOrdFracIdl{T, S}, b::NfRelOrdFracIdl{T, S}) where {T, S}
   end
   return frac_ideal(order(a), H, true)
 end
+
++(a::NfRelOrdIdl{T, S}, b::NfRelOrdFracIdl{T, S}) where {T, S} = frac_ideal(order(a), a) + b
+
++(a::NfRelOrdFracIdl{T, S}, b::NfRelOrdIdl{T, S}) where {T, S} = a + frac_ideal(order(b), b)
 
 ################################################################################
 #
@@ -341,7 +375,11 @@ function *(a::NfRelOrdFracIdl{T, S}, b::NfRelOrdFracIdl{T, S}) where {T, S}
   return frac_ideal(order(a), H, true)
 end
 
-Base.:(^)(A::NfRelOrdFracIdl, b::Int) = Base.power_by_squaring(A, p)
+*(a::NfRelOrdIdl{T, S}, b::NfRelOrdFracIdl{T, S}) where {T, S} = frac_ideal(order(a), a)*b
+
+*(a::NfRelOrdFracIdl{T, S}, b::NfRelOrdIdl{T, S}) where {T, S} = a*frac_ideal(order(b), b)
+
+Base.:(^)(A::NfRelOrdFracIdl, b::Int) = Base.power_by_squaring(A, b)
 
 ################################################################################
 #
@@ -486,4 +524,37 @@ function rand(a::NfRelOrdFracIdl, B::Int)
     z += t*pb[i][1]
   end
   return z
+end
+
+################################################################################
+#
+#  Factorization
+#
+################################################################################
+
+function integral_split(a::NfRelOrdFracIdl)
+  O = order(a)
+  K = nf(O)
+  d = inv(a + K(1)*O)
+  @assert denominator(d) == 1
+  n = a*d
+  @assert denominator(n) == 1
+  return numerator(n), numerator(d)
+end
+
+function factor(I::NfRelOrdFracIdl)
+  if iszero(I)
+    error("Cannot factor zero ideal")
+  end
+  n, d = integral_split(I)
+  fn = factor(n)
+  fd = factor(d)
+  for (k, v) = fd
+    if haskey(fn, k)
+      fn[k] -= v
+    else
+      fn[k] = -v
+    end
+  end
+  return fn
 end

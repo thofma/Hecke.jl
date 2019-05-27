@@ -451,6 +451,26 @@ function norm(a::NfRelOrdIdl; copy::Bool = true)
   end
 end
 
+function norm(a::NfRelOrdIdl, k::Union{ NfRel, AnticNumberField, NfRel_ns })
+  n = norm(a)
+  while nf(order(n)) != k
+    n = norm(n)
+  end
+  return n
+end
+
+function norm(a::NfRelOrdIdl, k::FlintRationalField)
+  n = norm(a)
+  while !(n isa fmpz)
+    n = norm(n)
+  end
+  return n
+end
+
+function absolute_norm(a::NfRelOrdIdl)
+  return norm(a, FlintQQ)
+end
+
 ################################################################################
 #
 #  Ideal addition / GCD
@@ -540,26 +560,21 @@ function *(a::NfRelOrdIdl{T, S}, x::T) where {T, S}
   if iszero(x)
     return order(a)()*order(a)
   end
-  bp = basis_pmat(a)
-  P = PseudoMatrix(bp.matrix, Ref(x) .* bp.coeffs)
-  return ideal(order(a), P, true, true)
+
+  return ideal(order(a), x*basis_pmat(a), true, true)
 end
 
 *(x::T, a::NfRelOrdIdl{T, S}) where {T, S} = a*x
 
-function *(a::Union{NfRelOrdIdl, NfRelOrdFracIdl}, b::fmpz)
-  if iszero(b)
+function *(a::Union{NfRelOrdIdl, NfRelOrdFracIdl}, x::Union{ Int, fmpz })
+  if iszero(x)
     return order(a)()*order(a)
   end
-  PM = basis_pmat(a)
-  for i = 1:degree(order(a))
-    PM.coeffs[i] = PM.coeffs[i]*b
-    PM.coeffs[i] = simplify(PM.coeffs[i])
-  end
-  return typeof(a)(order(a), PM)
+
+  return typeof(a)(order(a), x*basis_pmat(a))
 end
 
-*(b::fmpz, a::Union{NfRelOrdIdl, NfRelOrdFracIdl}) = a*b
+*(x::Union{ Int, fmpz}, a::Union{NfRelOrdIdl, NfRelOrdFracIdl}) = a*x
 
 ################################################################################
 #
@@ -1377,4 +1392,14 @@ function coprime_to(I::NfRelOrdFracIdl, p::NfRelOrdIdl)
   end
   @assert valuation(a, p) == 0
   return a
+end
+
+################################################################################
+#
+#  Hashing
+#
+################################################################################
+
+function Base.hash(A::NfRelOrdIdl, h::UInt)
+  return Base.hash(basis_pmat(A, copy = false), h)
 end
