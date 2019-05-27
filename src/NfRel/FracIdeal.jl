@@ -558,3 +558,13 @@ function factor(I::NfRelOrdFracIdl)
   end
   return fn
 end
+
+################################################################################
+#
+#  Hashing
+#
+################################################################################
+
+function Base.hash(A::NfRelOrdFracIdl, h::UInt)
+  return Base.hash(basis_pmat(A, copy = false), h)
+end

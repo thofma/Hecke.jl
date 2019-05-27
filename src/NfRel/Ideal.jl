@@ -975,6 +975,24 @@ function prime_dec_index(O::NfRelOrd, p::Union{NfOrdIdl, NfRelOrdIdl})
   return result
 end
 
+# Returns all prime ideals in O containing the prime number p
+function primes_ideals_over(O::NfRelOrd, p::Union{ Int, fmpz })
+  if base_ring(O) isa NfAbsOrd
+    pdec = prime_decomposition(base_ring(O), p)
+    pdec = [ pdec[i][1] for i = 1:length(pdec) ]
+  else
+    pdec = primes_ideals_over(base_ring(O), p)
+  end
+
+  primes = Vector{ideal_type(O)}()
+  for q in pdec
+    qdec = prime_decomposition(O, q)
+    append!(primes, [ qdec[i][1] for i = 1:length(qdec) ])
+  end
+
+  return primes
+end
+
 ################################################################################
 #
 #  Reduction of element modulo ideal
@@ -1402,4 +1420,57 @@ end
 
 function Base.hash(A::NfRelOrdIdl, h::UInt)
   return Base.hash(basis_pmat(A, copy = false), h)
+end
+
+################################################################################
+#
+#  Approximation
+#
+################################################################################
+
+# See also approximate_nonnegative and approximate_simple in NfOrd/Ideal/Prime.jl
+
+# Returns x in K such that v_p(x) = v[i] for p = primes[i] and v_p(x) \geq 0 for all other primes p.
+# Algorithm 1.7.8 in Hoppe: Normal forms over Dedekind domains
+function approximate(v::Vector{Int}, primes::Vector{ <: NfRelOrdIdl })
+  @assert length(v) == length(primes)
+  @assert length(primes) > 0
+
+  O = order(primes[1])
+
+  # Make the set primes complete: add all prime ideals lying over the same prime numbers
+  prime_numbers = Set{fmpz}()
+  for p in primes
+    push!(prime_numbers, prime_number(p))
+  end
+
+  primes2 = Vector{ideal_type(O)}()
+  for p in prime_numbers
+    pdec = primes_ideals_over(O, p)
+    append!(primes2, pdec)
+  end
+
+  v2 = zeros(Int, length(primes2))
+
+  D = Dict([ (primes[i], v[i]) for i = 1:length(primes) ])
+
+  for i = 1:length(primes2)
+    if haskey(D, primes2[i])
+      v2[i] = D[primes2[i]]
+    end
+  end
+
+  a_pos, a_neg = _approximate_simple(v2, primes2)
+
+  # Take care of the additional negative valuations coming from a_neg^(-1)
+  c = fmpq(absolute_norm(a_neg))
+  for i = 1:length(primes)
+    if v[i] >= 0
+      continue
+    end
+
+    c *= fmpq(absolute_norm(primes[i]))^v[i]
+  end
+
+  return divexact(c*elem_in_nf(a_pos), elem_in_nf(a_neg))
 end
