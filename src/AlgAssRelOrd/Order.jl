@@ -369,3 +369,51 @@ function maximal_order(A::AbsAlgAss{T}) where { T <: NumFieldElem }
   A.maximal_order = O
   return O
 end
+
+# Requires that O is maximal and A = K^(n\times n) for a number field K.
+# Computes a maximal order of type
+#  (O ... O a^(-1))
+#  (:     :   :   )
+#  (O ... O a^(-1))
+#  (a ... a   O   )
+# for an ideal a of O.
+# See Bley, Johnston "Computing generators of free modules over orders in group
+# algebras", Prop. 5.1.
+function _simple_maximal_order(O::AlgAssRelOrd, with_trafo::Type{Val{T}} = Val{false}) where T
+  A = algebra(O)
+  @assert A isa AlgMat
+  n = degree(A)
+  K = coefficient_ring(A)
+
+  # Build a matrix with the first rows of basis elements of O
+  M = zero_matrix(K, dim(A), n)
+  for i = 1:dim(A)
+    for j = 1:n
+      M[i, j] = deepcopy(matrix(pseudo_basis(O, copy = false)[i][1], copy = false)[1, j])
+    end
+  end
+  PM = PseudoMatrix(M, deepcopy(basis_pmat(O, copy = false).coeffs))
+  PM = pseudo_hnf(PM, :upperright)
+
+  M = sub(PM.matrix, 1:n, 1:n)
+  PM = PseudoMatrix(M, PM.coeffs[1:n])
+  U = similar(PM.matrix, 0, 0)
+  steinitz_form!(PM, U, false)
+
+  # Compute M^(-1)*O*M
+  M = PM.matrix
+  iM = inv(M)
+  N = zero_matrix(K, dim(A), dim(A))
+  for i = 1:dim(A)
+    elem_to_mat_row!(N, i, iM*pseudo_basis(O, copy = false)[i][1]*M)
+  end
+
+  PN = PseudoMatrix(N, deepcopy(basis_pmat(O, copy = false).coeffs))
+  PN = pseudo_hnf(PN, :lowerleft)
+
+  if with_trafo == Val{true}
+    return Order(A, PN), M
+  else
+    return Order(A, PN)
+  end
+end

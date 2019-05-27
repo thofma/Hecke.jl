@@ -1235,52 +1235,34 @@ end
 # for an ideal a of O.
 # See Bley, Johnston "Computing generators of free modules over orders in group
 # algebras", Prop. 5.1.
-function _simple_maximal_order(O::AlgAssAbsOrd)
+function _simple_maximal_order(O::AlgAssAbsOrd, with_trafo::Type{Val{T}} = Val{false}) where T
   A = algebra(O)
   @assert A isa AlgMat
   n = degree(A)
 
-  # Build a matrix with the first columns of basis elements of O
-  M = zero_matrix(FlintQQ, n, degree(O))
-  for j = 1:degree(O)
-    for i = 1:n
-      M[i, j] = deepcopy(matrix(elem_in_algebra(basis(O, copy = false)[j], copy = false), copy = false)[i, 1])
+  # Build a matrix with the first rows of basis elements of O
+  M = zero_matrix(FlintQQ, dim(A), n)
+  for i = 1:dim(A)
+    for j = 1:n
+      M[i, j] = deepcopy(matrix(elem_in_algebra(basis(O, copy = false)[i], copy = false), copy = false)[1, j])
     end
   end
   M = FakeFmpqMat(M)
   M = hnf!(M, :upperright)
+  M = fmpq_mat(sub(M, 1:n, 1:n))
 
-  # Remove the zero columns from M
-  N = zero_matrix(FlintQQ, n, n)
-  c = 1
-  zero_col = true
-  for j = 1:degree(O)
-    for i = 1:n
-      if !iszero(M[i, j])
-        zero_col = false
-      else
-        continue
-      end
-
-      N[i, c] = M[i, j]
-    end
-    if !zero_col
-      c += 1
-      zero_col = true
-    end
-    if c > n
-      break
-    end
-  end
-  @assert c == n + 1
-
-  # Compute N^(-1)*O*N
-  iN = inv(N)
+  # Compute M^(-1)*O*M
+  iM = inv(M)
   bb = Vector{elem_type(A)}()
   for i = 1:degree(O)
-    push!(bb, iN*elem_in_algebra(basis(O, copy = false)[i], copy = false)*N)
+    push!(bb, iM*elem_in_algebra(basis(O, copy = false)[i], copy = false)*M)
   end
-  return Order(A, bb)
+
+  if with_trafo == Val{true}
+    return Order(A, bb), M
+  else
+    return Order(A, bb)
+  end
 end
 
 ################################################################################
