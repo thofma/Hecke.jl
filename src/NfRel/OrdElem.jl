@@ -392,6 +392,10 @@ Returns the norm of $a$.
 """
 norm(a::NfRelOrdElem) = norm(a.elem_in_nf)
 
+norm(a::NfRelOrdElem, k::Union{ NfRel, AnticNumberField, NfRel_ns, FlintRationalField }) = norm(a.elem_in_nf, k)
+
+absolute_norm(a::NfRelOrdElem) = absolute_norm(a.elem_in_nf)
+
 ################################################################################
 #
 #  Conversion

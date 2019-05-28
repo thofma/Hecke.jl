@@ -689,12 +689,12 @@ end
 Find $x$ s.th $x \equiv r1 \bmod i1$ and $x \equiv r2 \bmod i2$
 using (((idempotents)))
 """
-function crt(r1::S, i1::T, r2::S, i2::T) where { S <: Union{NfOrdElem, AlgAssAbsOrdElem}, T <: Union{NfOrdIdl, AlgAssAbsOrdIdl} }
+function crt(r1::S, i1::T, r2::S, i2::T) where { S <: Union{NfOrdElem, NfRelOrdElem, AlgAssAbsOrdElem}, T <: Union{NfOrdIdl, NfRelOrdIdl, AlgAssAbsOrdIdl} }
   u, v = idempotents(i1, i2)
   return r1*v + r2*u
 end
 
-function crt(a::Vector{S}, I::Vector{T}) where { S <: Union{NfOrdElem, AlgAssAbsOrdElem}, T <: Union{NfOrdIdl, AlgAssAbsOrdIdl} }
+function crt(a::Vector{S}, I::Vector{T}) where { S <: Union{NfOrdElem, NfRelOrdElem, AlgAssAbsOrdElem}, T <: Union{NfOrdIdl, NfRelOrdIdl, AlgAssAbsOrdIdl} }
   if length(a) == 1
     return a[1]
   end
