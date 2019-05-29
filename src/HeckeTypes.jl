@@ -1,5 +1,19 @@
 ################################################################################
 #
+#  Abstract types for number fields
+#
+################################################################################
+
+abstract type RelativeExtension{T} <: SimpleNumField{T} end
+
+abstract type RelativeElement{T} <: SimpleNumFieldElem{T} end
+
+abstract type NonSimpleNumField{T} <: NumField{T} end
+
+abstract type NonSimpleNumFieldElem{T} <: NumFieldElem{T} end
+
+################################################################################
+#
 #  Z/nZ modelled with UInt's
 #
 ################################################################################
@@ -1779,7 +1793,6 @@ end
 #
 ################################################################################
 
-abstract type RelativeExtension{T} <: Nemo.Field end
 
 mutable struct NfRel{T} <: RelativeExtension{T}
   base_ring::Nemo.Field
@@ -1808,7 +1821,6 @@ end
 const NfRelID = Dict{Tuple{Generic.PolyRing, Generic.Poly, Symbol},
                      NfRel}()
 
-abstract type RelativeElement{T} <: Nemo.FieldElem end
 
 mutable struct NfRelElem{T} <: RelativeElement{T}
   data::Generic.Poly{T}
