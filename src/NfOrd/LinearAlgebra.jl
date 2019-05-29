@@ -1253,11 +1253,11 @@ end
 
 mutable struct PMat2
    parent
-   matrix::Generic.Mat{nf_elem}
+   matrix::Generic.MatSpaceElem{nf_elem}
    row_coeffs::Array{NfOrdFracIdl, 1}
    col_coeffs::Array{NfOrdFracIdl, 1}
 
-   function PMat2(m::Generic.Mat{nf_elem}, r::Array{NfOrdFracIdl, 1}, c::Array{NfOrdFracIdl, 1})
+   function PMat2(m::Generic.MatSpaceElem{nf_elem}, r::Array{NfOrdFracIdl, 1}, c::Array{NfOrdFracIdl, 1})
       z = new()
       z.matrix = m
       z.row_coeffs = r

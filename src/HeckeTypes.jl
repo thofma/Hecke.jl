@@ -1908,10 +1908,10 @@ const GroupLattice = GrpAbLatticeCreate()
 
 mutable struct PMat{T, S}
   parent
-  matrix::Generic.Mat{T}
+  matrix::Generic.MatSpaceElem{T}
   coeffs::Array{S, 1}
 
-  function PMat{T, S}(m::Generic.Mat{T}, c::Array{S, 1}) where {T, S}
+  function PMat{T, S}(m::Generic.MatSpaceElem{T}, c::Array{S, 1}) where {T, S}
     z = new{T, S}()
     z.matrix = m
     z.coeffs = c
