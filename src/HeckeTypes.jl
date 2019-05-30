@@ -1942,7 +1942,7 @@ end
 #
 ################################################################################
 
-mutable struct NfAbsNS <: Field
+mutable struct NfAbsNS <: NonSimpleNumField{fmpq}
   pol::Array{fmpq_mpoly, 1}
   S::Array{Symbol, 1}
   basis#::Vector{NfAbsNSElem}
@@ -1961,7 +1961,7 @@ mutable struct NfAbsNS <: Field
   end
 end
 
-mutable struct NfAbsNSElem <: FieldElem
+mutable struct NfAbsNSElem <: NonSimpleNumFieldElem{fmpq}
   data::fmpq_mpoly
   parent::NfAbsNS
 

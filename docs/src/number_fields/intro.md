@@ -156,6 +156,11 @@ discriminant(::AnticNumberField)
 ```@docs
 AnticNumberField
 ```
+### Predicates
+
+```@docs
+isintegral(::NumFieldElem)
+```
 
 ### Invariants
 
