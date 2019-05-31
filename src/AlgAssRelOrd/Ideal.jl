@@ -296,6 +296,38 @@ end
 *(O::AlgAssRelOrd{S, T}, x::AlgAssRelOrdElem{S, T}) where {S, T} = ideal(O, x, :right)
 *(x::AlgAssRelOrdElem{S, T}, O::AlgAssRelOrd{S, T}) where {S, T} = ideal(O, x, :left)
 
+function ideal(O::AlgAssRelOrd{S, T}, a::T, check::Bool = true) where {S, T}
+  d = degree(O)
+  pb = pseudo_basis(O, copy = false)
+  M = identity_matrix(base_ring(algebra(O)), d)
+  PM = PseudoMatrix(M, [ a*pb[i][2] for i = 1:d ])
+  if check
+    !defines_ideal(O, PM) && error("The coefficient ideal does not define an ideal.")
+  end
+  PM = pseudo_hnf(PM, :lowerleft)
+  return ideal(O, PM, :twosided, false, true)
+end
+
+function ideal(O::AlgAssRelOrd{nf_elem, NfOrdFracIdl}, a::NfOrdIdl, check::Bool = true)
+  aa = frac_ideal(order(a), a, fmpz(1))
+  return ideal(O, aa, check)
+end
+
+function ideal(O::AlgAssRelOrd, a::NfRelOrdIdl, check::Bool = true)
+  @assert order(a) == order(pseudo_basis(O, copy = false)[1][2])
+
+  aa = frac_ideal(order(a), basis_pmat(a), true)
+  return ideal(O, aa, check)
+end
+
+*(O::AlgAssRelOrd{S, T}, a::T) where {S, T} = ideal(O, a)
+
+*(a::T, O::AlgAssRelOrd{S, T}) where {S, T} = ideal(O, a)
+
+*(O::AlgAssRelOrd, a::Union{NfOrdIdl, NfRelOrdIdl}) = ideal(O, a)
+
+*(a::Union{NfOrdIdl, NfRelOrdIdl}, O::AlgAssRelOrd) = ideal(O, a)
+
 ################################################################################
 #
 #  Inclusion of elements in ideals
@@ -349,3 +381,42 @@ function _test_ideal_sidedness(a::AlgAssRelOrdIdl, side::Symbol)
 
   return _spans_subset_of_pseudohnf(basis_pmat(c, copy = false), basis_pmat(a, copy = false), :lowerleft)
 end
+
+################################################################################
+#
+#  Ring of multipliers, left and right order
+#
+################################################################################
+
+function ring_of_multipliers(a::AlgAssRelOrdIdl{T1, T2}, action::Symbol = :left) where {T1, T2}
+  O = order(a)
+  K = base_ring(algebra(O))
+  d = degree(O)
+  pb = pseudo_basis(a, copy = false)
+  S = basis_mat_inv(O, copy = false)*basis_mat_inv(a, copy = false)
+  M = basis_mat(O, copy = false)*representation_matrix(pb[1][1], action)*S
+  for i = 2:d
+    M = hcat(M, basis_mat(O, copy = false)*representation_matrix(pb[i][1], action)*S)
+  end
+  invcoeffs = [ simplify(inv(pb[i][2])) for i = 1:d ]
+  C = Array{T2}(undef, d^2)
+  for i = 1:d
+    for j = 1:d
+      if i == j
+        C[(i - 1)*d + j] = K(1)*order(pb[i][2])
+      else
+        C[(i - 1)*d + j] = simplify(pb[i][2]*invcoeffs[j])
+      end
+    end
+  end
+  PM = PseudoMatrix(transpose(M), C)
+  PM = sub(pseudo_hnf(PM, :upperright, true), 1:d, 1:d)
+  N = inv(transpose(PM.matrix))*basis_mat(O, copy = false)
+  PN = PseudoMatrix(N, [ simplify(inv(I)) for I in PM.coeffs ])
+  PN = pseudo_hnf(PN, :lowerleft, true)
+  return typeof(O)(algebra(O), PN)
+end
+
+left_order(a::AlgAssRelOrdIdl) = ring_of_multipliers(a, :right)
+
+right_order(a::AlgAssRelOrdIdl) = ring_of_multipliers(a, :left)
