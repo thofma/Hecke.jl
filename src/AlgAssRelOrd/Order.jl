@@ -8,6 +8,8 @@ ideal_type(::Type{AlgAssRelOrd{S, T}}) where {S, T} = AlgAssRelOrdIdl{S, T}
 
 algebra(O::AlgAssRelOrd) = O.algebra
 
+base_ring(O::AlgAssRelOrd) = order(basis_pmat(O, copy = false).coeffs[1])
+
 iscommutative(O::AlgAssRelOrd) = iscommutative(algebra(O))
 
 ismaximal_known(O::AlgAssRelOrd) = O.ismaximal != 0
@@ -412,7 +414,7 @@ function _simple_maximal_order(O::AlgAssRelOrd, with_trafo::Type{Val{T}} = Val{f
   PN = pseudo_hnf(PN, :lowerleft)
 
   if with_trafo == Val{true}
-    return Order(A, PN), M
+    return Order(A, PN), A(M)
   else
     return Order(A, PN)
   end

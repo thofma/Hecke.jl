@@ -1259,7 +1259,7 @@ function _simple_maximal_order(O::AlgAssAbsOrd, with_trafo::Type{Val{T}} = Val{f
   end
 
   if with_trafo == Val{true}
-    return Order(A, bb), M
+    return Order(A, bb), A(M)
   else
     return Order(A, bb)
   end
