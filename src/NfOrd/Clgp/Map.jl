@@ -319,7 +319,7 @@ end
 mutable struct MapClassGrp <: Map{GrpAbFinGen, NfOrdIdlSet, HeckeMap, MapClassGrp}
   header::MapHeader{GrpAbFinGen, NfOrdIdlSet}
   princ_gens::Array{Tuple{FacElem{NfOrdIdl,NfOrdIdlSet}, FacElem{nf_elem, AnticNumberField}},1}
-  
+  small_gens::Vector{NfOrdIdl}
   function MapClassGrp()
     return new()
   end

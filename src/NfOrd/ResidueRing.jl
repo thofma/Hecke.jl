@@ -680,9 +680,9 @@ function xxgcd(x::NfOrdQuoRingElem, y::NfOrdQuoRingElem)
   return g, u, v, -f, e
 end
 
-function (M::Generic.MatSpace{NfOrdQuoRingElem})(x::Generic.Mat{NfOrdElem})
+function (M::Generic.MatSpace{NfOrdQuoRingElem})(x::Generic.MatSpaceElem{NfOrdElem})
   z = map(base_ring(M), x.entries)::Array{NfOrdQuoRingElem, 2}
-  return M(z)::Generic.Mat{NfOrdQuoRingElem}
+  return M(z)::Generic.MatSpaceElem{NfOrdQuoRingElem}
 end
 
 ################################################################################
@@ -733,4 +733,3 @@ function group_structure(Q::NfOrdQuoRing)
   S, Smap = snf(G)
   return S
 end
-

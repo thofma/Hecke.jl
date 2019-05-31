@@ -327,6 +327,24 @@ function det(m::PMat)
   return det(m.matrix)*z
 end
 
+function *(P::PMat{T, S}, x::U) where { T, S, U <: Union{Int, fmpz, FieldElem } }
+  if nrows(P) == 0 || ncols(P) == 0
+    return P
+  end
+
+  K = parent(P.matrix[1, 1])
+  x = K(x)
+
+  PP = deepcopy(P)
+  for i = 1:nrows(PP)
+    PP.coeffs[i] = PP.coeffs[i]*x
+    PP.coeffs[i] = simplify(PP.coeffs[i])
+  end
+  return PP
+end
+
+*(x::U, P::PMat{T, S}) where { T, S, U <: Union{Int, fmpz, FieldElem } } = P*x
+
 # this is slow
 function _coprime_integral_ideal_class(x::Union{NfOrdFracIdl, NfOrdIdl}, y::NfOrdIdl)
   O = order(y)
@@ -1235,11 +1253,11 @@ end
 
 mutable struct PMat2
    parent
-   matrix::Generic.Mat{nf_elem}
+   matrix::Generic.MatSpaceElem{nf_elem}
    row_coeffs::Array{NfOrdFracIdl, 1}
    col_coeffs::Array{NfOrdFracIdl, 1}
 
-   function PMat2(m::Generic.Mat{nf_elem}, r::Array{NfOrdFracIdl, 1}, c::Array{NfOrdFracIdl, 1})
+   function PMat2(m::Generic.MatSpaceElem{nf_elem}, r::Array{NfOrdFracIdl, 1}, c::Array{NfOrdFracIdl, 1})
       z = new()
       z.matrix = m
       z.row_coeffs = r
@@ -1670,4 +1688,153 @@ function istriangular(M::MatElem, shape::Symbol = :lowerleft)
   elseif shape == :upperright
     return istriangular(transpose(M), :lowerleft)
   end
+end
+
+function Base.hash(P::PMat, h::UInt)
+  h = Base.hash(P.matrix, h)
+  return Base.hash(P.coeffs, h)
+end
+
+# Returns x in K with xa integral and coprime to m
+function integral_and_coprime_to(a::Union{ NfOrdFracIdl, NfRelOrdFracIdl }, m::Union{ NfAbsOrdIdl, NfRelOrdIdl })
+  O = order(m)
+
+  facm = factor(m)
+  faca = factor(a)
+
+  primes = Vector{ideal_type(O)}()
+  v = Vector{Int}()
+  for (p, e) in faca
+    if e < 0
+      push!(primes, p)
+      push!(v, -e)
+    end
+  end
+
+  for (p, e) in facm
+    if haskey(faca, p)
+      if faca[p] >= 0
+        push!(primes, p)
+        push!(v, -faca[p])
+      end
+    else
+      push!(primes, p)
+      push!(v, fmpz(0))
+    end
+  end
+
+  if isempty(primes)
+    return one(nf(O))
+  end
+
+  return approximate(v, primes)
+end
+
+function steinitz_form(P::PMat)
+  return _steinitz_form(P, Val{false})
+end
+
+function steinitz_form_with_transform(P::PMat)
+  return _steinitz_form(P, Val{true})
+end
+
+function _steinitz_form(P::PMat, trafo::Type{Val{T}} = Val{false}) where T
+  if trafo == Val{true}
+    S, U = pseudo_hnf_with_transform(P, :lowerleft)
+  else
+    S = pseudo_hnf(P, :lowerleft)
+  end
+
+  K = base_ring(S.matrix)
+  oneK = one(K)
+  O = order(S.coeffs[1])
+  start_row = 1
+  for i = 1:nrows(S)
+    if !iszero(S.matrix[i, 1])
+      start_row = i
+      break
+    end
+    S.coeffs[i] = oneK*O
+  end
+  if trafo == Val{true}
+    steinitz_form!(S, U, true, start_row)
+    return S, U
+  else
+    U = similar(S.matrix, 0, 0)
+    steinitz_form!(S, U, false, start_row)
+    return S
+  end
+end
+
+# Algorithm 4.6.2 in Hoppe: Normal forms over Dedekind domains
+function steinitz_form!(M::PMat{T, S}, U::Generic.Mat{T}, with_transform::Bool = false, start_row::Int = 1) where { T <: Union{ nf_elem, RelativeElement }, S }
+  if nrows(M) < start_row
+    return nothing
+  end
+
+  A = M.matrix
+  K = base_ring(A)
+  oneK = one(K)
+  t = K()
+  t1 = K()
+  O = order(M.coeffs[1])
+  for r = start_row:nrows(M) - 1
+    a = M.coeffs[r]
+    if a isa NfOrdFracIdl && a.num.is_principal == 1
+      x = divexact(K(a.num.princ_gen), K(a.den))
+      divide_row!(A, r, x)
+      with_transform ? divide_row!(U, r, x) : nothing
+      M.coeffs[r] = oneK*O
+      continue
+    end
+
+    b = M.coeffs[r + 1]
+    # Hoppe, Algorithm 1.8.5
+    d = lcm(denominator(a), denominator(b))
+    ad = simplify(a*d)
+    bd = simplify(b*d)
+    @assert denominator(ad) == 1 && denominator(bd) == 1
+    ad = numerator(ad)
+    bd = numerator(bd)
+    iad = inv(ad)
+    m1 = integral_and_coprime_to(iad, bd)
+    mad = simplify(m1*iad)
+    @assert denominator(mad) == 1
+    x, m2 = idempotents(numerator(mad), bd)
+    m1 = divexact(m1, d)
+    m2 = divexact(elem_in_nf(m2), d)
+    n1 = divexact(x, m1)*d
+    n2 = K(-1)*d
+    # We now have m1 in a, m2 in b and n1 in a^-1, n2 in b^-1 with m1n1 - m2n2 = 1
+
+    for c = 1:ncols(M)
+      t = deepcopy(A[r, c])
+
+      A[r, c] = mul!(A[r, c], A[r, c], m1)
+      t1 = mul!(t1, A[r + 1, c], m2)
+      A[r, c] = add!(A[r, c], A[r, c], t1)
+
+      t1 = mul!(t1, t, n2)
+      A[r + 1, c] = mul!(A[r + 1, c], A[r + 1, c], n1)
+      A[r + 1, c] = add!(A[r + 1, c], A[r + 1, c], t1)
+    end
+
+    if with_transform
+      for c = 1:ncols(U)
+        t = deepcopy(U[r, c])
+
+        U[r, c] = mul!(U[r, c], U[r, c], m1)
+        t1 = mul!(t1, U[r + 1, c], m2)
+        U[r, c] = add!(U[r, c], U[r, c], t1)
+
+        t1 = mul!(t1, t, n2)
+        U[r + 1, c] = mul!(U[r + 1, c], U[r + 1, c], n1)
+        U[r + 1, c] = add!(U[r + 1, c], U[r + 1, c], t1)
+      end
+    end
+
+    M.coeffs[r] = oneK*O
+    M.coeffs[r + 1] = a*b
+  end
+  return nothing
 end

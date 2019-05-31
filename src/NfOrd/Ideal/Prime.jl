@@ -126,8 +126,6 @@ function intersect_nonindex(f::Map, P::NfOrdIdl, Zk = maximal_order(domain(f)))
   for (f, e) = gp.fac
     if iszero(f(hp) % Gp)
       p = ideal_from_poly(Zk, Int(minimum(P)), f, 1)
-      P.is_prime = 1
-      P.minimum = minimum(P)
       return p
     end
   end
@@ -1517,4 +1515,104 @@ function prime_dec_nonindex(O::NfAbsOrd{NfAbsNS,NfAbsNSElem}, p::Union{Integer, 
   end
   return result
 
+end
+
+################################################################################
+#
+#  Approximation
+#
+################################################################################
+
+# Returns x in O such that v_p(x) = v[i] for p = primes[i] and v_p(x) \geq 0 for all other primes.
+# Assumes v[i] \geq 0 for all i.
+# Algorithm 1.7.5 in Hoppe: Normal forms over Dedekind domains
+function approximate_nonnegative(v::Vector{Int}, primes::Vector{T}) where { T <: Union{ NfAbsOrdIdl, NfRelOrdIdl } }
+  @assert length(v) == length(primes)
+  @assert length(primes) > 0
+
+  O = order(primes[1])
+  right_sides = Vector{elem_type(O)}(undef, length(primes))
+  moduli = Vector{ideal_type(O)}(undef, length(primes))
+  for i = 1:length(primes)
+    @assert v[i] >= 0
+
+    u = uniformizer(primes[i])
+    right_sides[i] = u^v[i]
+    moduli[i] = primes[i]^(v[i] + 1)
+  end
+
+  return crt(right_sides, moduli)
+end
+
+# Returns x in K such that v_p(x) = v[i] for p = primes[i].
+# Valuations at other primes may be negative.
+# Algorithm 1.7.6 in Hoppe: Normal forms over Dedekind domains
+function approximate_simple(v::Vector{Int}, primes::Vector{T}) where { T <: Union{ NfAbsOrdIdl, NfRelOrdIdl } }
+  a_pos, a_neg = _approximate_simple(v, primes)
+  return divexact(elem_in_nf(a_pos), elem_in_nf(a_neg))
+end
+
+function _approximate_simple(v::Vector{Int}, primes::Vector{T}) where { T <: Union{ NfAbsOrdIdl, NfRelOrdIdl } }
+  @assert length(v) == length(primes)
+  @assert length(primes) > 0
+
+  v_pos = zeros(Int, length(v))
+  v_neg = zeros(Int, length(v))
+  for i = 1:length(v)
+    if v[i] < 0
+      v_neg[i] = -v[i]
+    else
+      v_pos[i] = v[i]
+    end
+  end
+
+  a_pos = approximate_nonnegative(v_pos, primes)
+  a_neg = approximate_nonnegative(v_neg, primes)
+
+  return a_pos, a_neg
+end
+
+# Returns x in K such that v_p(x) = v[i] for p = primes[i] and v_p(x) \geq 0 for all other primes p.
+# Algorithm 1.7.8 in Hoppe: Normal forms over Dedekind domains
+function approximate(v::Vector{Int}, primes::Vector{ <: NfAbsOrdIdl })
+  @assert length(v) == length(primes)
+  @assert length(primes) > 0
+
+  O = order(primes[1])
+
+  # Make the set primes complete: add all prime ideals lying over the same prime numbers
+  prime_numbers = Set{fmpz}()
+  for p in primes
+    push!(prime_numbers, minimum(p, copy = false))
+  end
+
+  primes2 = Vector{ideal_type(O)}()
+  for p in prime_numbers
+    pdec = prime_decomposition(O, p)
+    append!(primes2, [ pdec[i][1] for i = 1:length(pdec) ])
+  end
+
+  v2 = zeros(Int, length(primes2))
+
+  D = Dict([ (primes[i], v[i]) for i = 1:length(primes) ])
+
+  for i = 1:length(primes2)
+    if haskey(D, primes2[i])
+      v2[i] = D[primes2[i]]
+    end
+  end
+
+  a_pos, a_neg = _approximate_simple(v2, primes2)
+
+  # Take care of the additional negative valuations coming from a_neg^(-1)
+  c = fmpq(norm(a_neg))
+  for i = 1:length(primes)
+    if v[i] >= 0
+      continue
+    end
+
+    c *= fmpq(norm(primes[i]))^v[i]
+  end
+
+  return divexact(c*elem_in_nf(a_pos), elem_in_nf(a_neg))
 end

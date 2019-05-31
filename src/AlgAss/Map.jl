@@ -257,7 +257,7 @@ mutable struct AbsAlgAssToFqMor{S, T, MatType, PolyRingType} <: Map{S, T, HeckeM
   function AbsAlgAssToFqMor{S, T, MatType, PolyRingType}(A::S, Fq::T, M::MatType, N::MatType, R::PolyRingType, RtoFq::FqPolyRingToFqMor...) where {
            S <: AbsAlgAss{S1} where { S1 <: Union{ gfp_elem, Generic.ResF{fmpz}, fq, fq_nmod} },
            T <: Union{ FqNmodFiniteField, FqFiniteField },
-           MatType <: Union{ gfp_mat, Generic.Mat{Generic.ResF{fmpz}}, fq_nmod_mat, fq_mat },
+           MatType <: Union{ gfp_mat, Generic.MatSpaceElem{Generic.ResF{fmpz}}, fq_nmod_mat, fq_mat },
            PolyRingType <: Union{ GFPPolyRing, GFPFmpzPolyRing, FqNmodPolyRing, FqPolyRing }
     }
 
@@ -312,8 +312,8 @@ function AbsAlgAssToFqMor(A::AbsAlgAss{fq_nmod}, Fq::FqNmodFiniteField, M::fq_nm
   return AbsAlgAssToFqMor{typeof(A), FqNmodFiniteField, fq_nmod_mat, FqNmodPolyRing}(A, Fq, M, N, R, RtoFq)
 end
 
-function AbsAlgAssToFqMor(A::AbsAlgAss{Generic.ResF{fmpz}}, Fq::FqFiniteField, M::Generic.Mat{Generic.ResF{fmpz}}, N::Generic.Mat{Generic.ResF{fmpz}}, R::GFPFmpzPolyRing)
-  return AbsAlgAssToFqMor{typeof(A), FqFiniteField, Generic.Mat{Generic.ResF{fmpz}}, GFPFmpzPolyRing}(A, Fq, M, N, R)
+function AbsAlgAssToFqMor(A::AbsAlgAss{Generic.ResF{fmpz}}, Fq::FqFiniteField, M::Generic.MatSpaceElem{Generic.ResF{fmpz}}, N::Generic.MatSpaceElem{Generic.ResF{fmpz}}, R::GFPFmpzPolyRing)
+  return AbsAlgAssToFqMor{typeof(A), FqFiniteField, Generic.MatSpaceElem{Generic.ResF{fmpz}}, GFPFmpzPolyRing}(A, Fq, M, N, R)
 end
 
 function AbsAlgAssToFqMor(A::AbsAlgAss{fq}, Fq::FqFiniteField, M::fq_mat, N::fq_mat, R::FqPolyRing, RtoFq::FqPolyRingToFqMor)

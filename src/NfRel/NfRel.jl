@@ -506,6 +506,13 @@ Nemo.canonical_unit(a::NfRelElem) = a
 
 @inline degree(L::Hecke.NfRel) = degree(L.pol)
 
+@doc Markdown.doc"""
+    degree(K::NumField) -> Int
+
+> Return the degree of the number field over its base field.
+"""
+degree(::NumField)
+
 #######################################################################
 # convenience constructions
 #######################################################################

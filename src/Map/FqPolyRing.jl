@@ -15,7 +15,7 @@ mutable struct FqPolyRingToFqMor{S, T, PolyType, MatType} <: Map{S, T, HeckeMap,
            S <: Union{ FqNmodPolyRing, FqPolyRing },
            T <: Union{ FqNmodFiniteField, FqFiniteField },
            PolyType <: Union{ fq_nmod_poly, fq_poly },
-           MatType <: Union{ gfp_mat, Generic.Mat{Generic.ResF{fmpz}} }
+           MatType <: Union{ gfp_mat, Generic.MatSpaceElem{Generic.ResF{fmpz}} }
     }
 
     z = new{S, T, PolyType, MatType}()
@@ -136,7 +136,7 @@ end
 
 
 function FqPolyRingToFqMor(h::fq_poly)
-  return FqPolyRingToFqMor{FqPolyRing, FqFiniteField, fq_poly, Generic.Mat{Generic.ResF{fmpz}}}(h)
+  return FqPolyRingToFqMor{FqPolyRing, FqFiniteField, fq_poly, Generic.MatSpaceElem{Generic.ResF{fmpz}}}(h)
 end
 
 function FqPolyRingToFqMor(h::fq_nmod_poly)

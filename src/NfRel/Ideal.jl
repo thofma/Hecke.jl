@@ -279,9 +279,8 @@ end
 
 Creates the ideal $x\cdot \mathcal O$ of $\mathcal O$.
 """
-function ideal(O::NfRelOrd{T, S}, x::NfRelOrdElem{T}) where {T, S}
-  parent(x) != O && error("Order of element does not coincide with order")
-
+function ideal(O::NfRelOrd{T, S}, x::NfRelOrdElem) where {T, S}
+  x = O(x)
   d = degree(O)
   pb = pseudo_basis(O, copy = false)
   M = zero_matrix(base_ring(nf(O)), d, d)
@@ -297,9 +296,13 @@ function ideal(O::NfRelOrd{T, S}, x::NfRelOrdElem{T}) where {T, S}
   return NfRelOrdIdl{T, S}(O, PM)
 end
 
-*(O::NfRelOrd, x::NfRelOrdElem) = ideal(O, x)
+function ideal(O::NfRelOrd, x::Union{ Int, fmpz, NfOrdElem })
+  return ideal(O, O(x))
+end
 
-*(x::NfRelOrdElem, O::NfRelOrd) = ideal(O, x)
+*(O::NfRelOrd, x::T) where { T <: Union{ Int, fmpz, NfOrdElem, NfRelOrdElem } } = ideal(O, x)
+
+*(x::T, O::NfRelOrd) where { T <: Union{ Int, fmpz, NfOrdElem, NfRelOrdElem } } = ideal(O, x)
 
 @doc Markdown.doc"""
     ideal(O::NfRelOrd{T, S}, a::S, check::Bool = true) -> NfRelOrdIdl{T, S}
@@ -448,6 +451,26 @@ function norm(a::NfRelOrdIdl; copy::Bool = true)
   end
 end
 
+function norm(a::NfRelOrdIdl, k::Union{ NfRel, AnticNumberField, NfRel_ns })
+  n = norm(a)
+  while nf(order(n)) != k
+    n = norm(n)
+  end
+  return n
+end
+
+function norm(a::NfRelOrdIdl, k::FlintRationalField)
+  n = norm(a)
+  while !(n isa fmpz)
+    n = norm(n)
+  end
+  return n
+end
+
+function absolute_norm(a::NfRelOrdIdl)
+  return norm(a, FlintQQ)
+end
+
 ################################################################################
 #
 #  Ideal addition / GCD
@@ -537,26 +560,21 @@ function *(a::NfRelOrdIdl{T, S}, x::T) where {T, S}
   if iszero(x)
     return order(a)()*order(a)
   end
-  bp = basis_pmat(a)
-  P = PseudoMatrix(bp.matrix, Ref(x) .* bp.coeffs)
-  return ideal(order(a), P, true, true)
+
+  return ideal(order(a), x*basis_pmat(a), true, true)
 end
 
 *(x::T, a::NfRelOrdIdl{T, S}) where {T, S} = a*x
 
-function *(a::Union{NfRelOrdIdl, NfRelOrdFracIdl}, b::fmpz)
-  if iszero(b)
+function *(a::Union{NfRelOrdIdl, NfRelOrdFracIdl}, x::Union{ Int, fmpz })
+  if iszero(x)
     return order(a)()*order(a)
   end
-  PM = basis_pmat(a)
-  for i = 1:degree(order(a))
-    PM.coeffs[i] = PM.coeffs[i]*b
-    PM.coeffs[i] = simplify(PM.coeffs[i])
-  end
-  return typeof(a)(order(a), PM)
+
+  return typeof(a)(order(a), x*basis_pmat(a))
 end
 
-*(b::fmpz, a::Union{NfRelOrdIdl, NfRelOrdFracIdl}) = a*b
+*(x::Union{ Int, fmpz}, a::Union{NfRelOrdIdl, NfRelOrdFracIdl}) = a*x
 
 ################################################################################
 #
@@ -955,6 +973,24 @@ function prime_dec_index(O::NfRelOrd, p::Union{NfOrdIdl, NfRelOrdIdl})
   end
 
   return result
+end
+
+# Returns all prime ideals in O containing the prime number p
+function primes_ideals_over(O::NfRelOrd, p::Union{ Int, fmpz })
+  if base_ring(O) isa NfAbsOrd
+    pdec = prime_decomposition(base_ring(O), p)
+    pdec = [ pdec[i][1] for i = 1:length(pdec) ]
+  else
+    pdec = primes_ideals_over(base_ring(O), p)
+  end
+
+  primes = Vector{ideal_type(O)}()
+  for q in pdec
+    qdec = prime_decomposition(O, q)
+    append!(primes, [ qdec[i][1] for i = 1:length(qdec) ])
+  end
+
+  return primes
 end
 
 ################################################################################
@@ -1374,4 +1410,67 @@ function coprime_to(I::NfRelOrdFracIdl, p::NfRelOrdIdl)
   end
   @assert valuation(a, p) == 0
   return a
+end
+
+################################################################################
+#
+#  Hashing
+#
+################################################################################
+
+function Base.hash(A::NfRelOrdIdl, h::UInt)
+  return Base.hash(basis_pmat(A, copy = false), h)
+end
+
+################################################################################
+#
+#  Approximation
+#
+################################################################################
+
+# See also approximate_nonnegative and approximate_simple in NfOrd/Ideal/Prime.jl
+
+# Returns x in K such that v_p(x) = v[i] for p = primes[i] and v_p(x) \geq 0 for all other primes p.
+# Algorithm 1.7.8 in Hoppe: Normal forms over Dedekind domains
+function approximate(v::Vector{Int}, primes::Vector{ <: NfRelOrdIdl })
+  @assert length(v) == length(primes)
+  @assert length(primes) > 0
+
+  O = order(primes[1])
+
+  # Make the set primes complete: add all prime ideals lying over the same prime numbers
+  prime_numbers = Set{fmpz}()
+  for p in primes
+    push!(prime_numbers, prime_number(p))
+  end
+
+  primes2 = Vector{ideal_type(O)}()
+  for p in prime_numbers
+    pdec = primes_ideals_over(O, p)
+    append!(primes2, pdec)
+  end
+
+  v2 = zeros(Int, length(primes2))
+
+  D = Dict([ (primes[i], v[i]) for i = 1:length(primes) ])
+
+  for i = 1:length(primes2)
+    if haskey(D, primes2[i])
+      v2[i] = D[primes2[i]]
+    end
+  end
+
+  a_pos, a_neg = _approximate_simple(v2, primes2)
+
+  # Take care of the additional negative valuations coming from a_neg^(-1)
+  c = fmpq(absolute_norm(a_neg))
+  for i = 1:length(primes)
+    if v[i] >= 0
+      continue
+    end
+
+    c *= fmpq(absolute_norm(primes[i]))^v[i]
+  end
+
+  return divexact(c*elem_in_nf(a_pos), elem_in_nf(a_neg))
 end

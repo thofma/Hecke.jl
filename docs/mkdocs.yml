@@ -1,49 +1,77 @@
-site_name:           Hecke
-repo_name:           thofma/Hecke
-repo_url:            https://github.com/thofma/Hecke.jl
-site_description:    Hecke
-site_author:         Tommy Hofmann
-theme:               cinder
+site_name:           'Hecke'
+repo_name:           'Hecke.jl'
+#repo_url:            'https://github.com/thofma/Hecke.jl'
+site_description:    'Hecke'
+site_author:         'Tommy Hofmann'
 
-#extra:
-#  palette:
-#    primary: 'indigo'
-#    accent: 'light blue'
+theme:
+  name: 'material'
+  palette:
+    primary: 'blue grey'
+    accent: 'bluey grey'
+  feature:
+    tabs: true
 
-pages:
-- Home:                 index.md
-- Documentation:
-  #- Table of contents:  toc.md
-  - Introduction:       number_fields/intro.md
-  - Orders and number fields:
-    - Introduction:     orders/introduction.md
-    - Basics:           orders/orders.md
-    - Elements:         orders/elements.md
-    - Ideals:           orders/ideals.md
-    - Fractional Ideals: orders/frac_ideals.md
-  - Abelian groups:
-    - Introduction:     abelian/introduction.md
-  - Class fields:
-    - Introduction:     class_fields/intro.md
-  - Factored Elements:
-    - Introduction:     FacElem.md
+extra:
+  search:
+    tokenizer: '[\s\-\.]+'
+  social:
+    - type: 'github'
+      link: 'https://github.com/thofma'
+
 extra_css:
-    - assets/Documenter.css
-# This are tricks to get syntax highlighting working
-# Copied from the Currencies gh-pages in latest/assets
-    - application-e2807e330f.css
-    - application-f78e5cb881.palette.css
+  - 'assets/Documenter.css'
+  - 'css/extra.css'
+
+extra_javascript:
+  - https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS_HTML
+  - assets/mathjaxhelper.js
 
 markdown_extensions:
-- codehilite
-- extra
-- tables
-- fenced_code
-- mdx_math:
-    enable_dollar_delimiter: True
-- admonition
+  - toc:
+      permalink: false
+  - extra
+  - tables
+  - fenced_code
+  - mdx_math:
+      enable_dollar_delimiter: true
+  - admonition
+  - pymdownx.highlight:
+      css_class: codehilite
+      #linenums: true
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.superfences:
+      preserve_tabs: true
+      custom_fences:
+        - name: flow
+          class: uml-flowchart
+          format: !!python/name:pymdownx.superfences.fence_code_format
+        - name: sequence
+          class: uml-sequence-diagram
+          format: !!python/name:pymdownx.superfences.fence_code_format
+        - name: math
+          class: arithmatex
+          format: !!python/name:pymdownx.arithmatex.fence_mathjax_format
 
 docs_dir: 'build'
 
-extra_javascript: ['mathjaxhelper.js', 'https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML']
-
+nav:
+  - About: 'index.md'
+  - Documentation:
+    - Number fields: 'number_fields/intro.md'
+    - Orders:
+      - Introduction: 'orders/introduction.md'
+      - Basics:           orders/orders.md
+      - Elements:         orders/elements.md
+      - Ideals:           orders/ideals.md
+      - Fractional Ideals: orders/frac_ideals.md
+    - Abelian groups:
+      - Introduction:     abelian/introduction.md
+    - Class fields:
+      - Introduction:     class_fields/intro.md
+    - Misc:
+      - Factored Elements: FacElem.md
+      - Sparse Linear Algebra: sparse/intro.md
+  - Source:
+      - 'https://www.github.com/thofma/Hecke.jl'

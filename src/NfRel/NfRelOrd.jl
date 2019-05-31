@@ -21,6 +21,8 @@ number field.
 """
 parent(O::NfRelOrd) = O.parent
 
+base_ring(O::NfRelOrd) = order(pseudo_basis(O, copy = false)[1][2])
+
 @doc Markdown.doc"""
     isequation_order(O::NfRelOrd) -> Bool
 
@@ -436,6 +438,7 @@ end
 
 @doc Markdown.doc"""
       EquationOrder(L::RelativeExtension) -> NfRelOrd
+      equation_order(L::RelativeExtension) -> NfRelOrd
 
 Returns the equation order of the number field $L$.
 """
@@ -447,6 +450,8 @@ function EquationOrder(L::RelativeExtension)
   O.isequation_order = true
   return O
 end
+
+equation_order(L::RelativeExtension) = EquationOrder(L)
 
 @doc Markdown.doc"""
       maximal_order(L::RelativeExtension) -> NfRelOrd

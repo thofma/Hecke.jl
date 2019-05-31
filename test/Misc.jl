@@ -7,6 +7,5 @@
   include("Misc/NumberField.jl")
   include("Misc/Poly.jl")
   include("Misc/Localization.jl")
-  include("Misc/QuotientGroup.jl")
   include("Misc/OrdLocalization.jl")
 end

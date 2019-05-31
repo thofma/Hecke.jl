@@ -250,6 +250,39 @@ end
 
 ###############################################################################
 #
+#  IsRegular (In the sense of Newton polygons) for fields at prime p
+#
+###############################################################################
+
+function isregular_at(f::fmpz_poly, p::fmpz)
+  Zx = parent(f)
+  R = GF(p, cached = false)
+  Rx = PolynomialRing(R, "y", cached = false)[1]
+  f1 = Rx(f)
+  sqf = factor_squarefree(f1)
+  for (g, v) in sqf
+    isone(v) && continue
+    fac = factor(g)
+    for (gg, v1) in fac
+      F, a = FiniteField(gg, "a", cached = false)
+      phi = lift(Zx, gg)
+      dev, quos = phi_development_with_quos(f, phi)#, R1x)
+      N = newton_polygon(dev, p)
+      for lin in N.lines
+        if slope(lin) < 0 && degree(lin) != 1
+          rp = residual_polynomial(F, lin, dev, p)
+          if !issquarefree(rp)
+            return false
+          end
+        end
+      end
+    end
+  end
+  return true
+end
+
+###############################################################################
+#
 #  p-overorder using Polygons
 #
 ###############################################################################
@@ -258,14 +291,11 @@ function gens_overorder_polygons(O::NfOrd, p::fmpz)
 
   K = nf(O)
   f = K.pol
-  
-  els = nf_elem[]
   Zx, x = PolynomialRing(FlintZZ, "x", cached = false)
-  modu = valuation(rres(Zx(f), derivative(Zx(f))), p) 
   R = GF(p, cached = false)
   Rx, y = PolynomialRing(R, "y", cached = false)
   f1 = Rx(K.pol)
-  fac = factor(f1)
+  sqf = factor_squarefree(f1)
   l = Vector{nf_elem}(undef, degree(K))
   l[1] = one(K)
   l[2] = gen(K)
@@ -274,31 +304,33 @@ function gens_overorder_polygons(O::NfOrd, p::fmpz)
   end
   regular = true
   vdisc = 0
-  for (g, m) in fac
-    if m == 1
-      continue
-    end
-    F, a = FiniteField(g, "a", cached = false)
-    phi = lift(Zx, g)
-    dev, quos = phi_development_with_quos(Zx(f), phi)#, R1x)
-    N = newton_polygon(dev, p)
-    if regular
-      for lin in N.lines
-        if slope(lin) < 0 && degree(lin) != 1
-          rp = residual_polynomial(F, lin, dev, p)
-          if !issquarefree(rp)
-            regular = false
-            break
+  for (gg, m) in sqf
+    isone(m) && continue
+    fac = factor(gg)
+    for (g, m1) in fac
+      F, a = FiniteField(g, "a", cached = false)
+      phi = lift(Zx, g)
+      dev, quos = phi_development_with_quos(Zx(f), phi)
+      N = newton_polygon(dev, p)
+      if regular
+        for lin in N.lines
+          if slope(lin) < 0 && degree(lin) != 1
+            rp = residual_polynomial(F, lin, dev, p)
+            if !issquarefree(rp)
+              regular = false
+              break
+            end
           end
         end
       end
-    end
-    for i = 1:m
-      v = _floor_newton_polygon(N, i)
-      if v > 0
-        vdisc += v*degree(phi)
-        for j = 1:degree(phi)
-          push!(l, divexact(K(x^(j-1)*quos[i]), p^v))
+      for i = 1:m
+        v = _floor_newton_polygon(N, i)
+        if v > 0
+          vdisc += v*degree(phi)
+          for j = 1:degree(phi)
+            q1 = shift_left(quos[i], j-1)
+            push!(l, divexact(K(q1), p^v))
+          end
         end
       end
     end
@@ -327,7 +359,7 @@ function polygons_overorder(O::NfOrd, p::fmpz)
   #First, Dedekind criterion. If the Dedekind criterion says that we are p-maximal,
   # or it can produce an order which is p-maximal, we are done.
   Zy, y = PolynomialRing(FlintZZ, "y", cached = false)
-  Kx, x = PolynomialRing(Nemo.GF(p, cached=false), "x", cached=false)
+  Kx, x = PolynomialRing(GF(p, cached=false), "x", cached=false)
 
   f = nf(O).pol
 
@@ -400,7 +432,7 @@ function _order_for_polygon_overorder(K::S, elt::Array{T, 1}) where {S, T}
         end
         el = elt[i]*elt[j]
         if denominator(el) != 1
-          push!(prods, elt[i]*elt[j])
+          push!(prods, el)
         end
       end
     end
@@ -410,7 +442,7 @@ function _order_for_polygon_overorder(K::S, elt::Array{T, 1}) where {S, T}
     
     dd = B.num[nrows(B) - degree(K) + 1, 1]
     for i in 2:degree(K)
-      dd *= B.num[nrows(B) - degree(K) + i, i]
+      dd = mul!(dd, dd, B.num[nrows(B) - degree(K) + i, i])
     end
     if iszero(dd)
       error("Elements do not define a module of full rank")
@@ -423,7 +455,7 @@ function _order_for_polygon_overorder(K::S, elt::Array{T, 1}) where {S, T}
       dold = d
       elt = T[]
       for i in 1:n
-        push!(elt, elem_from_mat_row(K, B.num, nrows(B) - degree(K) + i, B.den))
+        push!(elt, elem_from_mat_row(K, B.num, nrows(B) - n + i, B.den))
       end
     end
   end
@@ -809,7 +841,7 @@ function decomposition_type_polygon(O::NfOrd, p::Union{fmpz, Int})
     end
   end
   if !isempty(l)
-    Ip = pradical(O, p)
+    Ip = pradical1(O, p)
     for (I, J) in l
       lp = _decomposition(O, I, Ip, J, p)
       for (P, e) in lp
@@ -878,7 +910,7 @@ function prime_decomposition_polygons(O::NfOrd, p::Union{fmpz, Int}, degree_limi
     push!(l, (ideal(O, fmpz(p), O(K(parent(f)(lift(Zx, g^m))))), ideal(O, fmpz(p), O(K(parent(f)(lift(Zx, divexact(f1, g^m))))))))
   end
   if !isempty(l)
-    @vtime :NfOrd 3 Ip = pradical(O, p)
+    @vtime :NfOrd 3 Ip = pradical1(O, p)
     for (I, Q) in l
       @vtime :NfOrd 3 lp = _decomposition(O, I, Ip, Q, p)
       for (P, e) in lp
