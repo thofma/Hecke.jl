@@ -143,10 +143,11 @@ end
 ###############################################################################
 
 @doc Markdown.doc"""
-  degree(A::ClassField)
-The degree of $A$ over its base field, ie. the size of the defining ideal group.
+    degree(A::ClassField)
+
+> The degree of $A$ over its base field, ie. the size of the defining ideal group.
 """
-function degree(A::ClassField{S, T}) where {S, T}
+function degree(A::ClassField)
   if A.degree == -1
     A.degree = Int(order(codomain(A.quotientmap)))
   end
@@ -168,8 +169,7 @@ end
 
 @doc Markdown.doc"""
     compositum(a::ClassField, b::ClassField) -> ClassField
-             *(a::ClassField, b::ClassField) -> ClassField
-The compositum of $a$ and $b$ as a (formal) class field.
+> The compositum of $a$ and $b$ as a (formal) class field.
 """
 function compositum(a::ClassField, b::ClassField)
   @assert base_ring(a) == base_ring(b)

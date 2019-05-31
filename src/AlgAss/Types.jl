@@ -491,8 +491,8 @@ mutable struct AlgAssRelOrd{S, T} <: Ring
   dim::Int
   pseudo_basis::Vector{Tuple{AbsAlgAssElem{S}, T}}
   basis_alg::Vector{AbsAlgAssElem{S}}
-  basis_mat::Generic.Mat{S}
-  basis_mat_inv::Generic.Mat{S}
+  basis_mat::Generic.MatSpaceElem{S}
+  basis_mat_inv::Generic.MatSpaceElem{S}
   basis_pmat::PMat{S, T}
 
   disc # an integral ideal in the base field
@@ -501,7 +501,7 @@ mutable struct AlgAssRelOrd{S, T} <: Ring
                                    # 1 Known to be maximal
                                    # 2 Known to not be maximal
 
-  trred_matrix::Generic.Mat{S}
+  trred_matrix::Generic.MatSpaceElem{S}
 
   inv_coeff_ideals::Vector{T}
 
@@ -520,7 +520,7 @@ mutable struct AlgAssRelOrd{S, T} <: Ring
     return z
   end
 
-  function AlgAssRelOrd{S, T}(A::AbsAlgAss{S}, M::Generic.Mat{S}) where {S, T}
+  function AlgAssRelOrd{S, T}(A::AbsAlgAss{S}, M::Generic.MatSpaceElem{S}) where {S, T}
     z = AlgAssRelOrd{S, T}(A)
     z.basis_mat = M
     z.basis_pmat = pseudo_matrix(M)
@@ -578,8 +578,8 @@ mutable struct AlgAssRelOrdIdl{S, T}
   order::AlgAssRelOrd{S, T}
   pseudo_basis::Vector{Tuple{AbsAlgAssElem{S}, T}}
   basis_pmat::PMat{S, T}
-  basis_mat::Generic.Mat{S}
-  basis_mat_inv::Generic.Mat{S}
+  basis_mat::Generic.MatSpaceElem{S}
+  basis_mat_inv::Generic.MatSpaceElem{S}
 
   isleft::Int                      # 0 Not known
                                    # 1 Known to be a left ideal

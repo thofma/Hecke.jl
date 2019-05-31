@@ -42,7 +42,7 @@ issimple(::AnticNumberField) = true
 function NumberField(S::Generic.ResRing{fmpq_poly}; cached::Bool = true, check::Bool = true)
   Qx = parent(modulus(S))
   K, a = NumberField(modulus(S), "_a", cached = cached, check = check)
-  mp = MapFromFunc(y -> S(Qx(y)), x->K(lift(x)), K, S)
+  mp = MapFromFunc(y -> S(Qx(y)), x -> K(lift(x)), K, S)
   return K, mp
 end
 

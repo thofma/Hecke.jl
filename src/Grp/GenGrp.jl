@@ -4,9 +4,10 @@
 #
 ################################################################################
 
-export generic_group, GrpGen, GrpGenElem, isabelian, iscyclic, order, elements, getindex, isbijective, isinjective, issurjective, subgroups,
-       subgroup, quotient, image, kernel, elem_type, parent, psylow_subgroup, GrpGenToGrpGenMor, commutator_subgroup, derived_series,
-       id_hom, find_small_group, order, direct_product, conjugancy_classes
+export GrpGen, GrpGenElem, GrpGenToGrpGenMor, generic_group, GrpGen, GrpGenElem, isabelian, iscyclic, order, elements,
+getindex, subgroups, subgroup, quotient, inv, kernel, elem_type, parent, *,
+psylow_subgroup, commutator_subgroup, derived_series, order, direct_product,
+conjugancy_classes, ischaracteristic, induces_to_subgroup, induces_to_quotient
 
 ################################################################################
 #
@@ -61,11 +62,37 @@ struct GrpGenElem
   function GrpGenElem(group::GrpGen, i::Int)
     og = order(group)
     if i > og
-      @error("There are only $og elements in $group")
+      error("There are only $og elements in $group")
+    end
+    if i < 1
+      error("The index has to be positive but is $i")
     end
     return z = new(group, i)
   end
 end
+
+################################################################################
+#
+#  Morphism type
+#
+################################################################################
+
+mutable struct GrpGenToGrpGenMor <: Map{GrpGen, GrpGen, HeckeMap, GrpGen}
+
+  domain::GrpGen
+  codomain::GrpGen
+  img::Vector{GrpGenElem}
+  preimg::Vector{GrpGenElem}
+
+  function GrpGenToGrpGenMor(G::GrpGen, H::GrpGen, image::Vector{GrpGenElem})
+    z = new()
+    z.domain = G
+    z.codomain = H
+    z.img = image
+    return z
+  end
+end
+
 
 ################################################################################
 #
@@ -74,7 +101,8 @@ end
 ################################################################################
 @doc Markdown.doc"""
      generic_group(G, op)
-Computes group of $G$ with operation $op$, implemented with multiplication table 'G.mult_table'.
+Computes group of $G$ with operation $op$, implemented with multiplication
+table 'G.mult_table'.
 The elements are just 1..n and i * j = 'G.mult_table'[i, j].
 """
 function generic_group(G, op)
@@ -135,6 +163,10 @@ end
 
 function ==(g::GrpGenElem, h::GrpGenElem)
   return parent(g) === parent(h) && g.i == h.i
+end
+
+function ==(g::GrpGenToGrpGenMor, h::GrpGenToGrpGenMor)
+  return g.domain == h.domain && g.codomain == h.codomain && g.img == h.img
 end
 
 ################################################################################
@@ -472,56 +504,6 @@ end
 
 ################################################################################
 #
-#  Morphism type
-#
-################################################################################
-
-mutable struct GrpGenToGrpGenMor <: Map{GrpGen, GrpGen, HeckeMap, GrpGen}
-
-  domain::GrpGen
-  codomain::GrpGen
-  img::Vector{GrpGenElem}
-  preimg::Vector{GrpGenElem}
-
-  function GrpGenToGrpGenMor(G::GrpGen, H::GrpGen, image::Vector{GrpGenElem})
-    z = new()
-    z.domain = G
-    z.codomain = H
-    z.img = image
-    return z
-  end
-end
-
-@doc Markdown.doc"""
-    image(f::GrpGenToGrpGenMor, g::GrpGenElem) -> h::GrpGenElem
-Returns the image of $g$ under $f$.
-"""
-function image(f::GrpGenToGrpGenMor, g::GrpGenElem)
-  return f.img[g.i]
-end
-
-function Base.show(io::IO, f::GrpGenToGrpGenMor)
-  println(io, "Morphism from group\n", f.domain, " to\n", f.codomain)
-end
-
-domain(f::GrpGenToGrpGenMor) = f.domain
-
-codomain(f::GrpGenToGrpGenMor) = f.codomain
-
-id_hom(G::GrpGen) = GrpGenToGrpGenMor(G, G, collect(G))
-
-image(GtoH::GrpGenToGrpGenMor) = subgroup(GtoH.codomain, unique(GtoH.img))
-
-kernel(GtoH::GrpGenToGrpGenMor) = subgroup(GtoH.domain, getindex.([GtoH.domain], findall(x->image(GtoH, x) == id(GtoH.codomain), collect(GtoH.domain))))
-
-issurjective(GtoH::GrpGenToGrpGenMor) = order(GtoH.codomain) == length(unique(GtoH.img)) ? true : false
-#finite groups
-isinjective(GtoH::GrpGenToGrpGenMor) = issurjective(GtoH)
-
-isbijective(GtoH::GrpGenToGrpGenMor) = issurjective(GtoH)
-
-################################################################################
-#
 #  Normalizer
 #
 ################################################################################
@@ -575,284 +557,6 @@ function right_cosets(G::GrpGen, mH::GrpGenToGrpGenMor)
   return cosets
 end
 
-###############################################################################
-#
-#  NfToNfMor closure
-#
-###############################################################################
-
-function closure(S::Vector{NfToNfMor}, final_order::Int = -1)
-
-  K = domain(S[1])
-  d = numerator(discriminant(K.pol))
-  p = 11
-  while mod(d, p) == 0
-    p = next_prime(p)
-  end
-  R = GF(p, cached = false)
-  Rx, x = PolynomialRing(R, "x", cached = false)
-  fmod = Rx(K.pol)
-
-  t = length(S)
-  order = 1
-  elements = [id_hom(K)]
-  pols = gfp_poly[x]
-  gpol = Rx(S[1].prim_img)
-  if gpol != x
-    push!(pols, gpol)
-    push!(elements, S[1])
-    order += 1
-
-    gpol = compose_mod(gpol, pols[2], fmod)
-
-    while gpol != x
-      order = order +1
-      push!(elements, S[1]*elements[end])
-      push!(pols, gpol)
-      gpol = compose_mod(gpol, pols[2], fmod)
-    end
-  end
-  if order == final_order
-    return elements
-  end
-
-  for i in 2:t
-    if !(S[i] in elements)
-      pi = Rx(S[i].prim_img)
-      previous_order = order
-      order = order + 1
-      push!(elements, S[i])
-      push!(pols, Rx(S[i].prim_img))
-      for j in 2:previous_order
-        order = order + 1
-        push!(pols, compose_mod(pols[j], pi, fmod))
-        push!(elements, elements[j]*S[i])
-      end
-      if order == final_order
-        return elements
-      end
-      rep_pos = previous_order + 1
-      while rep_pos <= order
-        for k in 1:i
-          s = S[k]
-          po = Rx(s.prim_img)
-          att = compose_mod(pols[rep_pos], po, fmod)
-          if !(att in pols)
-            elt = elements[rep_pos]*s
-            order = order + 1
-            push!(elements, elt)
-            push!(pols, att)
-            for j in 2:previous_order
-              order = order + 1
-              push!(pols, compose_mod(pols[j], att, fmod))
-              push!(elements, elements[j] *elt)
-            end
-            if order == final_order
-              return elements
-            end
-          end
-        end
-        rep_pos = rep_pos + previous_order
-      end
-    end
-  end
-  return elements
-end
-
-function small_generating_set(Aut::Array{NfToNfMor, 1})
-  K = domain(Aut[1])
-  a = gen(K)
-  Identity = Aut[1]
-  for i in 1:length(Aut)
-    Au = Aut[i]
-    if Au.prim_img == a
-      Identity = Aut[i]
-      break
-    end
-  end
-  return small_generating_set(Aut, *, Identity)
-end
-
-################################################################################
-#
-#  Automorphisms
-#
-################################################################################
-
-# TODO: Cache the orders of the generators of the small_groups.
-#       Do not recompute it here.
-function find_small_group(G::GrpGen)
-  l = order(G)
-
-  elements_by_orders = Dict{Int, Array{GrpGenElem, 1}}()
-
-  for i in 1:l
-    g = G[i]
-    o = order(g)
-    if haskey(elements_by_orders, o)
-      push!(elements_by_orders[o], g)
-    else
-      elements_by_orders[o] = [g]
-    end
-  end
-
-  candidates = Int[]
-
-  local ordershape
-
-  for j in 1:length(small_groups_1_63[order(G)])
-    ordershape = small_groups_1_63[order(G)][j][4]
-
-    candidate = true
-    for (o, no) in ordershape
-      if !haskey(elements_by_orders, o)
-        candidate = false
-        break
-      else
-        elts = elements_by_orders[o]
-        if length(elts) != no
-          candidate = false
-          break
-        end
-      end
-     end
-
-     if candidate
-        push!(candidates, j)
-     end
-  end
-
-  @assert length(candidates) > 0
-
-
-  sort!(candidates, rev = true)
-
-  idG = id(G)
-
-  for j in candidates
-    H = small_groups_1_63[order(G)][j]
-
-    elbyord = [elements_by_orders[order(o)] for o in H[1]]
-
-    it = Iterators.product(elbyord...)
-
-    words = H[2]
-
-    for poss in it
-      is_hom = true
-      for w in words
-        if eval_word(collect(poss), w) != idG
-          is_hom = false
-          break
-        end
-      end
-
-      if is_hom
-        if length(closure(collect(poss), *, idG)) == order(G)
-          # Found it!
-          H = small_group(order(G), j)
-          return (order(G), j), H, _spin_up_morphism(gens(H), collect(poss))
-        end
-      end
-    end
-  end
-  throw(error("Could not identify group"))
-end
-
-function eval_word(S, w::Vector{Int})
-  g = id(parent(S[1]))
-  for i in 1:length(w)
-    if w[i] > 0
-      g = g * S[w[i]]
-    else
-      g = g * inv(S[-w[i]])
-    end
-  end
-  return g
-end
-
-function _automorphisms(G::GrpGen)
-  @assert isfrom_db(G)
-  i, j = G.small_group_id
-  Gdata = small_groups_1_63[i][j]
-
-  l = order(G)
-
-  elements_by_orders = Dict{Int, Array{GrpGenElem, 1}}()
-
-  # TODO: I think the following is cached somewhere (in the database)
-  for i in 1:l
-    g = G[i]
-    o = order(g)
-    if haskey(elements_by_orders, o)
-      push!(elements_by_orders[o], g)
-    else
-      elements_by_orders[o] = [g]
-    end
-  end
-
-  elbyord = [elements_by_orders[order(o)] for o in Gdata[1]]
-
-  it = Iterators.product(elbyord...)
-
-  words::Vector{Vector{Int}} = Gdata[2]
-
-  idG = id(G)
-
-  auts = _aut_group(it, words, idG, order(G))::Vector{Vector{GrpGenElem}}
-  
-  # Any element A of auts determines an isomorphism by mapping gens(G)[i] to A[i]
-  
-  Ggens = gens(G)
-
-  # TODO: preallocate
-  return [_spin_up_morphism(Ggens, a) for a in auts]
-end
-
-function _spin_up_morphism(domain::Vector{GrpGenElem}, codomain::Vector{GrpGenElem})
-  @assert length(domain) > 0
-  @assert length(domain) == length(codomain)
-  G = parent(domain[1])
-  H = parent(codomain[1])
-  pairs = [(domain[i], codomain[i]) for i in 1:length(domain)]
-  cl = closure(pairs, (x, y) -> (x[1]*y[1], x[2]*y[2]), (id(G), id(H)))
-  img = Vector{GrpGenElem}(undef, length(G))
-  for i in 1:length(G)
-    img[cl[i][1][]] = cl[i][2]
-  end
-  phi = GrpGenToGrpGenMor(G, H, img)
-
-  # TODO: Remove this assertion once this is battle tested
-  for g in G
-    for h in G
-      @assert phi(g * h) == phi(g) * phi(h)
-    end
-  end
-  return phi
-end
-
-@noinline function _aut_group(it, words, idG, n)
-  auts = Vector{GrpGenElem}[]
-  for poss in it
-    is_hom = true
-    for w in words
-      if eval_word(poss, w) != idG
-        is_hom = false
-        break
-      end
-    end
-
-    if is_hom
-      cposs = collect(poss)
-      if length(closure(cposs, *, idG)) == n
-        push!(auts, cposs)
-      end
-    end
-  end
-
-  return auts
-end
-
 ################################################################################
 #
 #  GroupsofGroups
@@ -895,7 +599,7 @@ function quotient(G::GrpGen, H::GrpGen, HtoG::GrpGenToGrpGenMor)
      return getindex.([G],M[:,j])
   end
 
-  Q,SetGtoQ,QtoSetG = generic_group([getindex.([G],M[:,i]) for i in 1:size(M)[2]], quotient_op)
+  Q,SetGtoQ,QtoSetG = generic_group([getindex.(Ref(G),M[:,i]) for i in 1:size(M)[2]], quotient_op)
 
   image = Array{GrpGenElem,1}(undef, order(G))
   for i in 1:order(G)
@@ -910,13 +614,16 @@ end
 function quotient_indx(a::Int64,b::Int64)
   G = Hecke.small_group(a,b)
   subgroups = Hecke.subgroups(G, normal=true)
-  return Res = sort([tuple(Hecke.find_small_group(Hecke.quotient(G, subgroups[i][1], subgroups[i][2])[1])[1]...) for i in 1:length(subgroups)])
+  return Res = sort([tuple(find_small_group(quotient(G, subgroups[i][1], subgroups[i][2])[1])[1]...) for i in 1:length(subgroups)])
   end
 
   function direct_product(G1::GrpGen, G2::GrpGen)
     S = [(g1,g2) for g1 in collect(G1), g2 in collect(G2)]
     directproduct_op(g1::Tuple{GrpGenElem,GrpGenElem}, g2::Tuple{GrpGenElem,GrpGenElem}) = (g1[1] * g2[1], g1[2] * g2[2])
-    return generic_group(S, directproduct_op)
+    DP, GprodtoDP, DPtoGprod = generic_group(S, directproduct_op)
+    DPtoG1 = [DPtoGprod[DP[i]][1] for i in 1:length(DP)]
+    DPtoG2 = [DPtoGprod[DP[i]][2] for i in 1:length(DP)]
+    return (DP, GrpGenToGrpGenMor(DP, G1, DPtoG1), GrpGenToGrpGenMor(DP, G2, DPtoG2))
   end
 
 function commutator_subgroup(G::GrpGen)
@@ -972,7 +679,7 @@ end
 function conjugancy_classes(G::GrpGen)
   CC = Array{Array{GrpGenElem,1},1}()
   for x in collect(G)
-    if true in in.([x], CC)
+    if true in in.(Ref(x), CC)##immer
       break
     end
     new_cc = Array{GrpGenElem,1}()
@@ -985,4 +692,30 @@ function conjugancy_classes(G::GrpGen)
     push!(CC, new_cc)
   end
   return CC
+end
+
+################################################################################
+#
+#  characteristic groups
+#
+################################################################################
+
+function ischaracteristic(G::GrpGen, mH::GrpGenToGrpGenMor)
+  auts = automorphisms(G)
+  for aut in auts
+    if !issubset(aut.img, mH.img)
+      return false
+    end
+  end
+  return true
+end
+
+function induces_to_subgroup(G::GrpGen, mH::GrpGenToGrpGenMor, aut::GrpGenToGrpGenMor)
+  H = mH.domain
+  return GrpGenToGrpGenMor(H, H, [preimage(mH, aut(mH(h))) for h in collect(H)])
+end
+
+function induces_to_quotient(G::GrpGen, mQ::GrpGenToGrpGenMor, aut::GrpGenToGrpGenMor)
+  Q = mQ.domain
+  return GrpGenToGrpGenMor(Q, Q, [mQ(aut(preimage(mQ, q))) for q in collect(Q)])
 end

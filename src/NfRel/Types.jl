@@ -19,8 +19,8 @@ end
 mutable struct NfRelOrd{T, S} <: Ring
   nf::RelativeExtension{T}
   basis_nf::Vector{RelativeElement{T}}
-  basis_mat::Generic.Mat{T}
-  basis_mat_inv::Generic.Mat{T}
+  basis_mat::Generic.MatSpaceElem{T}
+  basis_mat_inv::Generic.MatSpaceElem{T}
   basis_pmat::PMat{T, S}
   pseudo_basis::Vector{Tuple{RelativeElement{T}, S}}
 
@@ -34,7 +34,7 @@ mutable struct NfRelOrd{T, S} <: Ring
                                    # 1 Known to be maximal
                                    # 2 Known to not be maximal
 
-  trace_mat::Generic.Mat{T}
+  trace_mat::Generic.MatSpaceElem{T}
 
   inv_coeff_ideals::Vector{S}
 
@@ -56,7 +56,7 @@ mutable struct NfRelOrd{T, S} <: Ring
     return z
   end
 
-  function NfRelOrd{T, S}(K::RelativeExtension{T}, M::Generic.Mat{T}) where {T, S}
+  function NfRelOrd{T, S}(K::RelativeExtension{T}, M::Generic.MatSpaceElem{T}) where {T, S}
     z = NfRelOrd{T, S}(K)
     z.nf = K
     z.parent = NfRelOrdSet{T}(K)
@@ -126,8 +126,8 @@ mutable struct NfRelOrdFracIdl{T, S}
   parent::NfRelOrdFracIdlSet{T, S}
   basis_pmat::PMat{T, S}
   pseudo_basis::Vector{Tuple{RelativeElement{T}, S}}
-  basis_mat::Generic.Mat{T}
-  basis_mat_inv::Generic.Mat{T}
+  basis_mat::Generic.MatSpaceElem{T}
+  basis_mat_inv::Generic.MatSpaceElem{T}
   den::fmpz
 
   norm
@@ -175,8 +175,8 @@ mutable struct NfRelOrdIdl{T, S}
   parent::NfRelOrdIdlSet{T, S}
   basis_pmat::PMat{T, S}
   pseudo_basis::Vector{Tuple{RelativeElement{T}, S}}
-  basis_mat::Generic.Mat{T}
-  basis_mat_inv::Generic.Mat{T}
+  basis_mat::Generic.MatSpaceElem{T}
+  basis_mat_inv::Generic.MatSpaceElem{T}
 
   norm
   has_norm::Bool

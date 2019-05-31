@@ -299,8 +299,6 @@ end
 
 @doc Markdown.doc"""
     minpoly(a::NfAbsOrdElem) -> fmpz_poly
-::NfAbsOrdElem) in Hecke at /home/sircana/.julia/dev/Hecke/src/NfOrd/Elem.jl:751
-    minpoly(a::NfAbsOrdElem, FlintZZ) -> fmpz_poly
 The minimal polynomial of $a$.    
 """
 function minpoly(a::NfAbsOrdElem, Zx::FmpzPolyRing = FmpzPolyRing(:x, false))
