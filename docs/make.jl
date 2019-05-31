@@ -6,7 +6,7 @@ makedocs(
     format = Markdown(),
 )
 
-docsdir = joinpath(dirname(pathof(Hecke)), "../docs/build/")
+docsdir = joinpath(@__DIR__, "build/")
 
 for (root, dirs, files) in walkdir(docsdir)
   for file in files

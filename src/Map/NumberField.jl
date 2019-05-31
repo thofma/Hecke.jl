@@ -4,10 +4,6 @@ struct NfMorSet{T}
   field::T
 end
 
-function NfMorSet(K)
-  return NfMorSet{typeof(K)}(K)
-end
-
 function show(io::IO, S::NfMorSet{T}) where {T}
   print(io, "Set of automorphisms of ", S.field)
 end
