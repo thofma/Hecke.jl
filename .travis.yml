@@ -38,6 +38,6 @@ jobs:
         - conda info -a
        script:
          - while sleep 30; do echo "still alive"; done &
-         - julia --project=docs/ -e 'using Pkg; Pkg.instantiate(); Pkg.add(PackageSpec(path=pwd()))'
+         - julia --project=docs/ -e 'using Pkg; Pkg.add(PackageSpec(path=pwd())); Pkg.instantiate();'
          - julia --project=docs/ docs/make.jl
        after_success: skip

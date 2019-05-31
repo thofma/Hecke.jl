@@ -1,3 +1,5 @@
+export isintegral
+
 ################################################################################
 #
 #  Base case for dot products
@@ -48,7 +50,12 @@ end
 
 isintegral(a::fmpq) = isone(denominator(a))
 
-function isintegral(a::Union{ nf_elem, NfAbsNSElem, NfRelElem, NfRel_nsElem })
+@doc Markdown.doc"""
+    isintegral(a::NumFieldElem) -> Bool
+> Returns whether $a$ is integral, that is, whether the minimal polynomial
+> of $a$ has integral coefficients.
+"""
+function isintegral(a::NumFieldElem)
   f = minpoly(a)
   for i = 0:(degree(f) - 1)
     if !isintegral(coeff(f, i))
@@ -65,11 +72,11 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    rand(b::Array{nf_elem,1}, r::UnitRange)
+    rand(b::Vector{NumFieldElem}, r::UnitRange) -> NumFieldElem
 
-A random linear combination of elements in `b` with coefficients in `r`.
+> A random linear combination of elements in `b` with coefficients in `r`.
 """
-function rand(b::Array{nf_elem,1}, r::UnitRange)
+function rand(b::Vector{<: NumFieldElem}, r::UnitRange)
   length(b) == 0 && error("Array must not be empty")
   s = zero(parent(b[1]))
   rand!(s, b, r)
@@ -77,23 +84,24 @@ function rand(b::Array{nf_elem,1}, r::UnitRange)
 end
 
 @doc Markdown.doc"""
-    rand(b::Array{nf_elem,1}, r::UnitRange, terms::Int) -> nf_elem
+    rand(b::Vector{NumFieldElem}, r::UnitRange, terms::Int) -> NumFieldElem
 
-A random linear combination (with repetitions) of \code{terms} elements of `b`
-with coefficients in `r`.
+> A random linear combination (with repetitions) of \code{terms} elements of `b`
+> with coefficients in `r`.
 """
-function rand(b::Array{nf_elem,1}, r::UnitRange, terms::Int)
+function rand(b::Vector{<: NumFieldElem}, r::UnitRange, terms::Int)
   length(b) == 0 && error("Array must not be empty")
   s = zero(parent(b[1]))
   rand!(s, b, r, terms)
   return s
 end
 
-function rand!(c::nf_elem, b::Array{nf_elem,1}, r::UnitRange, terms::Int)
+function rand!(c::T, b::Vector{T}, r::UnitRange,
+               terms::Int) where {T <: NumFieldElem}
   length(b) == 0 && error("Array must not be empty")
   (terms<=0 || terms > length(b)) && error("Number of terms should be at least 1 and cannot exceed the length of the array")
 
-  t = zero(parent(b[1]))
+  t = zero(parent(c))
 
   terms = min(terms, length(b))
   mul!(c, rand(b), rand(r))
@@ -105,11 +113,11 @@ function rand!(c::nf_elem, b::Array{nf_elem,1}, r::UnitRange, terms::Int)
   return c
 end
 
-function rand!(c::nf_elem, b::Array{nf_elem,1}, r::UnitRange)
+function rand!(c::T, b::Vector{T}, r::UnitRange) where {T <: NumFieldElem}
   length(b) == 0 && error("Array must not be empty")
 
   mul!(c, b[1], rand(r))
-  t = zero(b[1].parent)
+  t = zero(parent(c))
 
   for i = 2:length(b)
     mul!(t, b[i], rand(r))

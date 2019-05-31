@@ -6,6 +6,19 @@ makedocs(
     format = Markdown(),
 )
 
+docsdir = joinpath(dirname(pathof(Hecke)), "../docs/build/")
+
+for (root, dirs, files) in walkdir(docsdir)
+  for file in files
+    filename = joinpath(root, file) # path to files
+    run(`sed -i 's/.*dash; \*Method.*/---/g' $filename`)
+    run(`sed -i 's/.*dash; \*Type.*/---/g' $filename`)
+    run(`sed -i 's/.*dash; \*Function.*/---/g' $filename`)
+    run(`sed -i '/>source<\/a>/d' $filename`)
+    run(`sed -i '/>\#<\/a>/d' $filename`)
+  end
+end
+
 deploydocs(
   repo = "github.com/thofma/Hecke.jl.git",
   deps = Deps.pip("pymdown-extensions", "pygments", "mkdocs", "python-markdown-math", "mkdocs-material", "mkdocs-cinder"),
