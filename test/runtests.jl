@@ -16,6 +16,7 @@ end
 @time include("AlgAssAbsOrd.jl")
 @time include("EllCrv.jl")
 @time include("GrpAb.jl")
+@time include("Grp.jl")
 @time include("LinearAlgebra.jl")
 @time include("Map.jl")
 @time include("Misc.jl")

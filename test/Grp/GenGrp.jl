@@ -1,6 +1,5 @@
-using Test
 
-@testset "quotients" begin
+@testset "Generic Group" begin
     @testset "QuotientGroup" begin
         @test Hecke.quotient_indx(1,1) == [(1,1)]
         @test Hecke.quotient_indx(2,1) == [(1,1), (2,1)]
@@ -55,24 +54,5 @@ using Test
         @test order(psylow_subgroup(G,3)[1]) == 1
         @test_throws ErrorException psylow_subgroup(G,10)
     end
-
-    @testset "morphisms" begin
-        G,AtoG,GtoA = generic_group([1, -1, im, -im], *)
-        Hom = GrpGenToGrpGenMor(G,G,[G[1],G[1],G[1],G[1]])
-        @test order(image(Hom)[1]) == 1
-        @test order(kernel(Hom)[1]) == 4
-        @test issurjective(Hom) == false
-        @test isinjective(Hom) == false
-        @test isbijective(Hom) == false
-
-        Hom = GrpGenToGrpGenMor(G,G,[G[1],G[2],G[3],G[4]])
-        @test order(image(Hom)[1]) == 4
-        @test order(kernel(Hom)[1]) == 1
-        @test issurjective(Hom) == true
-        @test isinjective(Hom) == true
-        @test isbijective(Hom) == true
-    end
-
-
 
 end

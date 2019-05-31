@@ -4,12 +4,10 @@
 #
 ################################################################################
 
-export generic_group, GrpGen, GrpGenElem, isabelian, iscyclic, order, elements,
-getindex, isbijective, isinjective, issurjective, subgroups,subgroup, quotient,
-image, preimage, inv, kernel, elem_type, parent, psylow_subgroup,
-GrpGenToGrpGenMor, commutator_subgroup, derived_series, id_hom,
-find_small_group, order, direct_product, conjugancy_classes, ischaracteristic,
-induces_to_subgroup, induces_to_quotient, automorphisms, has_preimage
+export GrpGen, GrpGenElem, GrpGenToGrpGenMor, generic_group, GrpGen, GrpGenElem, isabelian, iscyclic, order, elements,
+getindex, subgroups, subgroup, quotient, inv, kernel, elem_type, parent, *,
+psylow_subgroup, commutator_subgroup, derived_series, order, direct_product,
+conjugancy_classes, ischaracteristic, induces_to_subgroup, induces_to_quotient
 
 ################################################################################
 #
@@ -72,6 +70,29 @@ struct GrpGenElem
     return z = new(group, i)
   end
 end
+
+################################################################################
+#
+#  Morphism type
+#
+################################################################################
+
+mutable struct GrpGenToGrpGenMor <: Map{GrpGen, GrpGen, HeckeMap, GrpGen}
+
+  domain::GrpGen
+  codomain::GrpGen
+  img::Vector{GrpGenElem}
+  preimg::Vector{GrpGenElem}
+
+  function GrpGenToGrpGenMor(G::GrpGen, H::GrpGen, image::Vector{GrpGenElem})
+    z = new()
+    z.domain = G
+    z.codomain = H
+    z.img = image
+    return z
+  end
+end
+
 
 ################################################################################
 #
@@ -142,6 +163,10 @@ end
 
 function ==(g::GrpGenElem, h::GrpGenElem)
   return parent(g) === parent(h) && g.i == h.i
+end
+
+function ==(g::GrpGenToGrpGenMor, h::GrpGenToGrpGenMor)
+  return g.domain == h.domain && g.codomain == h.codomain && g.img == h.img
 end
 
 ################################################################################
@@ -479,101 +504,6 @@ end
 
 ################################################################################
 #
-#  Morphism type
-#
-################################################################################
-
-mutable struct GrpGenToGrpGenMor <: Map{GrpGen, GrpGen, HeckeMap, GrpGen}
-
-  domain::GrpGen
-  codomain::GrpGen
-  img::Vector{GrpGenElem}
-  preimg::Vector{GrpGenElem}
-
-  function GrpGenToGrpGenMor(G::GrpGen, H::GrpGen, image::Vector{GrpGenElem})
-    z = new()
-    z.domain = G
-    z.codomain = H
-    z.img = image
-    return z
-  end
-end
-
-@doc Markdown.doc"""
-    image(f::GrpGenToGrpGenMor, g::GrpGenElem) -> h::GrpGenElem
-Returns the image of $g$ under $f$.
-"""
-image(f::GrpGenToGrpGenMor, g::GrpGenElem) = f.img[g.i]
-
-@doc Markdown.doc"""
-    preimage(f::GrpGenToGrpGenMor, g::GrpGenElem) -> h::GrpGenElem
-Returns one element of the preimage of $g$ under $f$.
-"""
-function preimage(f::GrpGenToGrpGenMor, g::GrpGenElem)
-  h = findfirst(x -> f(x) == g, collect(f.domain))
-   if h == nothing
-     error("$g has no preimage under $f")
-   end
-   return f.domain[h]
-end
-
-@doc Markdown.doc"""
-    has_preimage(f::GrpGenToGrpGenMor, g::GrpGenElem) -> (b::Bool, h::GrpGenElem)
-Returns whether $f$ has a preimage. If so, the second return value is an
-element $h$ with $f(h) = g$.
-"""
-function has_preimage(f::GrpGenToGrpGenMor, g::GrpGenElem)
-  h = findfirst(x -> f(x) == g, collect(f.domain))
-   if h == nothing
-     error("$g has no preimage under $f")
-   end
-   return h
-end
-
-@doc Markdown.doc"""
-    *(f::GrpGenToGrpGenMor, g::GrpGenToGrpGenMor) -> h::GrpGenToGrpGenMor
-Returns the composition (f * g) = g(f)$.
-"""
-function *(f::GrpGenToGrpGenMor, g::GrpGenToGrpGenMor)
-  return GrpGenToGrpGenMor(f.domain, g.codomain, [g(f(x)) for x in collect(f.domain)])
-end
-
-@doc Markdown.doc"""
-    inv(f::GrpGenToGrpGenMor) -> h::GrpGenToGrpGenMor
-Assumes that $f$ is an isomorphism. Returns the inverse of $f$.
-"""
-function inv(f::GrpGenToGrpGenMor)
-  return GrpGenToGrpGenMor(f.codomain, f.domain, collect(f.domain)[sortperm(getindex.(f.img))])
-end
-
-function Base.show(io::IO, f::GrpGenToGrpGenMor)
-  println(io, "Morphism from group\n", f.domain, " to\n", f.codomain)
-end
-
-domain(f::GrpGenToGrpGenMor) = f.domain
-
-codomain(f::GrpGenToGrpGenMor) = f.codomain
-
-id_hom(G::GrpGen) = GrpGenToGrpGenMor(G, G, collect(G))
-
-image(GtoH::GrpGenToGrpGenMor) = subgroup(GtoH.codomain, unique(GtoH.img))
-
-function kernel(GtoH::GrpGenToGrpGenMor)
-  G = GtoH.domain
-  H = GtoH.codomain
-  return subgroup(G, getindex.(Ref(G), findall(x-> GtoH(x) == id(H), collect(G))))
-end
-
-function issurjective(GtoH::GrpGenToGrpGenMor)
-  return order(GtoH.codomain) == length(unique(GtoH.img)) ? true : false
-end
-#finite groups
-isinjective(GtoH::GrpGenToGrpGenMor) = issurjective(GtoH)
-
-isbijective(GtoH::GrpGenToGrpGenMor) = issurjective(GtoH)
-
-################################################################################
-#
 #  Normalizer
 #
 ################################################################################
@@ -723,193 +653,6 @@ function small_generating_set(Aut::Array{NfToNfMor, 1})
     end
   end
   return small_generating_set(Aut, *, Identity)
-end
-
-################################################################################
-#
-#  Automorphisms
-#
-################################################################################
-
-# TODO: Cache the orders of the generators of the small_groups.
-#       Do not recompute it here.
-function find_small_group(G::GrpGen)
-  l = order(G)
-
-  elements_by_orders = Dict{Int, Array{GrpGenElem, 1}}()
-
-  for i in 1:l
-    g = G[i]
-    o = order(g)
-    if haskey(elements_by_orders, o)
-      push!(elements_by_orders[o], g)
-    else
-      elements_by_orders[o] = [g]
-    end
-  end
-
-  candidates = Int[]
-
-  local ordershape
-
-  for j in 1:length(small_groups_1_63[order(G)])
-    ordershape = small_groups_1_63[order(G)][j][4]
-
-    candidate = true
-    for (o, no) in ordershape
-      if !haskey(elements_by_orders, o)
-        candidate = false
-        break
-      else
-        elts = elements_by_orders[o]
-        if length(elts) != no
-          candidate = false
-          break
-        end
-      end
-     end
-
-     if candidate
-        push!(candidates, j)
-     end
-  end
-
-  @assert length(candidates) > 0
-
-
-  sort!(candidates, rev = true)
-
-  idG = id(G)
-
-  for j in candidates
-    H = small_groups_1_63[order(G)][j]
-
-    elbyord = [elements_by_orders[order(o)] for o in H[1]]
-
-    it = Iterators.product(elbyord...)
-
-    words = H[2]
-
-    for poss in it
-      is_hom = true
-      for w in words
-        if eval_word(collect(poss), w) != idG
-          is_hom = false
-          break
-        end
-      end
-
-      if is_hom
-        if length(closure(collect(poss), *, idG)) == order(G)
-          # Found it!
-          H = small_group(order(G), j)
-          return (order(G), j), H, _spin_up_morphism(gens(H), collect(poss))
-        end
-      end
-    end
-  end
-  throw(error("Could not identify group"))
-end
-
-function eval_word(S, w::Vector{Int})
-  g = id(parent(S[1]))
-  for i in 1:length(w)
-    if w[i] > 0
-      g = g * S[w[i]]
-    else
-      g = g * inv(S[-w[i]])
-    end
-  end
-  return g
-end
-
-function automorphisms(G::GrpGen)
-  Gn, GntoG = find_small_group(G)[2:3]
-  auts = _automorphisms(Gn)
-  return [inv(GntoG) * aut * GntoG for aut in auts]
-end
-
-function _automorphisms(G::GrpGen)
-  @assert isfrom_db(G)
-  i, j = G.small_group_id
-  Gdata = small_groups_1_63[i][j]
-
-  l = order(G)
-
-  elements_by_orders = Dict{Int, Array{GrpGenElem, 1}}()
-
-  # TODO: I think the following is cached somewhere (in the database)
-  for i in 1:l
-    g = G[i]
-    o = order(g)
-    if haskey(elements_by_orders, o)
-      push!(elements_by_orders[o], g)
-    else
-      elements_by_orders[o] = [g]
-    end
-  end
-
-
-  elbyord = [elements_by_orders[order(o)] for o in Gdata[1]]
-
-  it = Iterators.product(elbyord...)
-
-  words::Vector{Vector{Int}} = Gdata[2]
-
-  idG = id(G)
-
-  auts = _aut_group(it, words, idG, order(G))::Vector{Vector{GrpGenElem}}
-
-  # Any element A of auts determines an isomorphism by mapping gens(G)[i] to A[i]
-
-  Ggens = gens(G)
-
-  # TODO: preallocate
-  return [_spin_up_morphism(Ggens, a) for a in auts]
-end
-
-function _spin_up_morphism(domain::Vector{GrpGenElem}, codomain::Vector{GrpGenElem})
-  @assert length(domain) > 0
-  @assert length(domain) == length(codomain)
-  G = parent(domain[1])
-  H = parent(codomain[1])
-  pairs = [(domain[i], codomain[i]) for i in 1:length(domain)]
-  cl = closure(pairs, (x, y) -> (x[1]*y[1], x[2]*y[2]), (id(G), id(H)))
-  img = Vector{GrpGenElem}(undef, length(G))
-  for i in 1:length(G)
-    img[cl[i][1][]] = cl[i][2]
-  end
-  phi = GrpGenToGrpGenMor(G, H, img)
-
-  # TODO: Remove this assertion once this is battle tested
-  for g in G
-    for h in G
-      @assert phi(g * h) == phi(g) * phi(h)
-    end
-  end
-  return phi
-end
-
-@noinline function _aut_group(it, words, idG, n)
-  auts = Vector{GrpGenElem}[]
-  for poss in it
-    is_hom = true
-    for w in words
-      if eval_word(poss, w) != idG
-        is_hom = false
-        break
-      end
-    end
-
-    if is_hom
-      cposs = collect(poss)
-      if length(closure(cposs, *, idG)) == n
-        push!(auts, cposs)
-      end
-    end
-  end
-
-  return auts
 end
 
 ################################################################################
