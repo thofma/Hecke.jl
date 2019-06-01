@@ -420,3 +420,46 @@ end
 left_order(a::AlgAssRelOrdIdl) = ring_of_multipliers(a, :right)
 
 right_order(a::AlgAssRelOrdIdl) = ring_of_multipliers(a, :left)
+
+################################################################################
+#
+#  Reduction of element modulo ideal
+#
+################################################################################
+
+function mod!(a::AlgAssRelOrdElem, I::AlgAssRelOrdIdl)
+  O = order(I)
+  b = coordinates(a, copy = false)
+  PM = basis_pmat(I, copy = false) # PM is assumed to be in lower left pseudo hnf
+  t = parent(b[1])()
+  t1 = parent(b[1])()
+  for i = degree(O):-1:1
+    t = add!(t, mod(b[i], PM.coeffs[i]), -b[i])
+    for j = 1:i
+      t1 = mul!(t1, t, PM.matrix[i, j])
+      b[j] = add!(b[j], b[j], t1)
+    end
+  end
+
+  t = algebra(O)()
+  B = basis_alg(O, copy = false)
+  zero!(a.elem_in_algebra)
+  for i = 1:degree(O)
+    t = mul!(t, B[i], algebra(O)(b[i]))
+    a.elem_in_algebra = add!(a.elem_in_algebra, a.elem_in_algebra, t)
+  end
+
+  return a
+end
+
+function mod(a::AlgAssRelOrdElem, I::AlgAssRelOrdIdl)
+  return mod!(deepcopy(a), I)
+end
+
+function mod!(a::AlgAssRelOrdElem, Q::RelOrdQuoRing)
+  return mod!(a, ideal(Q))
+end
+
+function mod(a::AlgAssRelOrdElem, Q::RelOrdQuoRing)
+  return mod(a, ideal(Q))
+end

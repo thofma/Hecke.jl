@@ -999,17 +999,41 @@ end
 #
 ################################################################################
 
-function mod(a::NfRelOrdElem, I::NfRelOrdIdl)
+function mod!(a::NfRelOrdElem, I::NfRelOrdIdl)
   O = order(I)
-  b = coordinates(a)
-  PM = basis_pmat(I, copy = false) # PM is assumed to be in pseudo hnf
+  b = coordinates(a, copy = false)
+  PM = basis_pmat(I, copy = false) # PM is assumed to be in lower left pseudo hnf
+  t = parent(b[1])()
+  t1 = parent(b[1])()
   for i = degree(O):-1:1
-    t = b[i] - mod(b[i], PM.coeffs[i])
+    t = add!(t, mod(b[i], PM.coeffs[i]), -b[i])
     for j = 1:i
-      b[j] = b[j] - t*PM.matrix[i, j]
+      t1 = mul!(t1, t, PM.matrix[i, j])
+      b[j] = add!(b[j], b[j], t1)
     end
   end
-  return O(b)
+
+  t = nf(O)()
+  B = basis_nf(O, copy = false)
+  zero!(a.elem_in_nf)
+  for i = 1:degree(O)
+    t = mul!(t, B[i], nf(O)(b[i]))
+    a.elem_in_nf = add!(a.elem_in_nf, a.elem_in_nf, t)
+  end
+
+  return a
+end
+
+function mod(a::NfRelOrdElem, I::NfRelOrdIdl)
+  return mod!(deepcopy(a), I)
+end
+
+function mod!(a::NfRelOrdElem, Q::RelOrdQuoRing)
+  return mod!(a, ideal(Q))
+end
+
+function mod(a::NfRelOrdElem, Q::RelOrdQuoRing)
+  return mod(a, ideal(Q))
 end
 
 ################################################################################

@@ -368,6 +368,24 @@ end
 
 ################################################################################
 #
+#  Unsafe operations
+#
+################################################################################
+
+function add!(c::NfRelOrdElem, a::NfRelOrdElem, b::NfRelOrdElem)
+  c.elem_in_nf = add!(c.elem_in_nf, a.elem_in_nf, b.elem_in_nf)
+  c.has_coord = false
+  return c
+end
+
+function mul!(c::NfRelOrdElem, a::NfRelOrdElem, b::NfRelOrdElem)
+  c.elem_in_nf = mul!(c.elem_in_nf, a.elem_in_nf, b.elem_in_nf)
+  c.has_coord = false
+  return c
+end
+
+################################################################################
+#
 #  Trace
 #
 ################################################################################

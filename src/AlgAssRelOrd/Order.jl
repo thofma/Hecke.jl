@@ -1,6 +1,6 @@
-elem_type(::AlgAssRelOrd{S, T}) where {S, T} = AlgAssRelOrdElem{S}
+elem_type(::AlgAssRelOrd{S, T}) where {S, T} = AlgAssRelOrdElem{S, T}
 
-elem_type(::Type{AlgAssRelOrd{S, T}}) where {S, T} = AlgAssRelOrdElem{S}
+elem_type(::Type{AlgAssRelOrd{S, T}}) where {S, T} = AlgAssRelOrdElem{S, T}
 
 ideal_type(::AlgAssRelOrd{S, T}) where {S, T} = AlgAssRelOrdIdl{S, T}
 
