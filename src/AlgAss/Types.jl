@@ -588,6 +588,9 @@ mutable struct AlgAssRelOrdIdl{S, T}
 
   iszero::Int                      # 0: don't know, 1: known to be zero, 2: known to be not zero
 
+  norm
+  normred
+
   function AlgAssRelOrdIdl{S, T}(O::AlgAssRelOrd{S, T}) where {S, T}
     z = new{S, T}()
     z.order = O

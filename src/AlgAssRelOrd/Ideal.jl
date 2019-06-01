@@ -463,3 +463,70 @@ end
 function mod(a::AlgAssRelOrdElem, Q::RelOrdQuoRing)
   return mod(a, ideal(Q))
 end
+
+################################################################################
+#
+#  Norm
+#
+################################################################################
+
+# Assumes, that det(basis_mat(a)) == 1
+function assure_has_norm(a::AlgAssRelOrdIdl)
+  if isdefined(a, :norm)
+    return nothing
+  end
+  if iszero(a)
+    O = base_ring(order(a))
+    a.norm = O()*O
+    return nothing
+  end
+  c = basis_pmat(a, copy = false).coeffs
+  d = inv_coeff_ideals(order(a), copy = false)
+  n = c[1]*d[1]
+  for i = 2:degree(order(a))
+    n *= c[i]*d[i]
+  end
+  simplify(n)
+  @assert denominator(n) == 1
+  a.norm = numerator(n)
+  return nothing
+end
+
+function norm(a::AlgAssRelOrdIdl; copy::Bool = true)
+  assure_has_norm(a)
+  if copy
+    return deepcopy(a.norm)
+  else
+    return a.norm
+  end
+end
+
+function assure_has_normred(a::AlgAssRelOrdIdl)
+  if isdefined(a, :normred)
+    return nothing
+  end
+  if iszero(a)
+    a.normred = norm(a)
+    return nothing
+  end
+
+  A = algebra(order(a))
+  m = isqrt(dim(A))
+  @assert m^2 == dim(A)
+  N = norm(a, copy = false)
+  b, I = ispower(N, m)
+  @assert b
+  a.normred = I
+  return nothing
+end
+
+function normred(a::AlgAssRelOrdIdl; copy::Bool = true)
+  @assert dimension_of_center(algebra(order(a))) == 1
+  @assert algebra(order(a)).issimple == 1
+  assure_has_normred(a)
+  if copy
+    return deepcopy(a.normred)
+  else
+    return a.normred
+  end
+end
