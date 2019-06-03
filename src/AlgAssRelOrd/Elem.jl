@@ -61,6 +61,8 @@ end
   end
 end
 
+(O::AlgAssRelOrd)(a::T, check::Bool = true) where T = O(algebra(O)(a), check)
+
 ################################################################################
 #
 #  Deepcopy
