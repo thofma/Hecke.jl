@@ -12,8 +12,6 @@ base_ring(O::AlgAssRelOrd) = order(basis_pmat(O, copy = false).coeffs[1])
 
 iscommutative(O::AlgAssRelOrd) = iscommutative(algebra(O))
 
-ismaximal_known(O::AlgAssRelOrd) = O.ismaximal != 0
-
 ################################################################################
 #
 #  Construction
@@ -374,10 +372,10 @@ end
 
 # Requires that O is maximal and A = K^(n\times n) for a number field K.
 # Computes a maximal order of type
-#  (O ... O a^(-1))
-#  (:     :   :   )
-#  (O ... O a^(-1))
-#  (a ... a   O   )
+#  (  O    ...   O    a )
+#  (  :          :    : )
+#  (  O    ...   O    a )
+#  (a^(-1) ... a^(-1) O )
 # for an ideal a of O.
 # See Bley, Johnston "Computing generators of free modules over orders in group
 # algebras", Prop. 5.1.
@@ -402,6 +400,11 @@ function _simple_maximal_order(O::AlgAssRelOrd, with_trafo::Type{Val{T}} = Val{f
   U = similar(PM.matrix, 0, 0)
   steinitz_form!(PM, U, false)
 
+  a = PM.coeffs[end]
+  if !isone(a.den)
+    mul_row!(PM.matrix, nrows(PM.matrix), K(a.den))
+  end
+
   # Compute M^(-1)*O*M
   M = PM.matrix
   iM = inv(M)
@@ -418,4 +421,127 @@ function _simple_maximal_order(O::AlgAssRelOrd, with_trafo::Type{Val{T}} = Val{f
   else
     return Order(A, PN)
   end
+end
+
+function ismaximal(O::AlgAssRelOrd)
+  if O.ismaximal == 1
+    return true
+  end
+  if O.ismaximal == 2
+    return false
+  end
+  OO = maximal_order(algebra(O))
+  if discriminant(O) == discriminant(OO)
+    O.ismaximal = 1
+  else
+    O.ismaximal = 2
+  end
+  return O.ismaximal == 1
+end
+
+ismaximal_known(O::AlgAssRelOrd) = O.ismaximal != 0
+
+################################################################################
+#
+#  Units of quotients
+#
+################################################################################
+
+# Computes a generating system of U in O, where U is a set of representatives of
+# the image of the projection map \pi:O^\times -> (O/g*O)^\times.
+# Assumes that O is a maximal order in Mat_{n\times n}(K).
+# See Bley, Johnson: "Computing generators of free modules over orders in
+# group algebras", section 6.
+function enum_units(O::AlgAssRelOrd, g::NfAbsOrdIdl)
+  A = algebra(O)
+  @assert A isa AlgMat
+  @assert degree(A)^2 == dim(A)
+
+  n = degree(A)
+
+  K = base_ring(A)
+  OK = base_ring(O)
+  L = _simple_maximal_order(O)
+  a = deepcopy(basis_pmat(L, copy = false).coeffs[end - 1])
+  ai = deepcopy(basis_pmat(L, copy = false).coeffs[n])
+
+  gensOKg = Vector{elem_type(K)}()
+  for b in basis(OK)
+    bmod = mod(b, g)
+    if iszero(bmod)
+      continue
+    end
+    push!(gensOKg, elem_in_nf(bmod))
+  end
+
+  if isone(a)
+    gensinvag = gensOKg
+  else
+    gensinvag = Vector{elem_type(K)}()
+    aig = ai*g
+    for b in basis(ai)
+      bmod = mod(b, aig)
+      if iszero(bmod)
+        continue
+      end
+      push!(gensinvag, bmod)
+    end
+  end
+
+  if isone(a)
+    gensag = gensOKg
+  else
+    gensag = Vector{elem_type(K)}()
+    ag = a*g
+    for b in basis(a)
+      bmod = mod(b, ag)
+      if iszero(bmod)
+        continue
+      end
+      push!(gensag, bmod)
+    end
+  end
+
+  result = Vector{elem_type(L)}()
+  n1 = n - 1
+  # n \nmid i, j or n \mid i, j
+  for i = 1:n1
+    for j = 1:n1
+      if j == i
+        continue
+      end
+      for x in gensOKg
+        E = identity_matrix(K, n)
+        E[i, j] = deepcopy(x)
+        push!(result, L(A(E)))
+      end
+    end
+  end
+
+  # n \nmid i and n \mid j
+  for i = 1:n1
+    for x in gensag
+      E = identity_matrix(K, n)
+      E[i, n] = deepcopy(x)
+      push!(result, L(A(E)))
+    end
+  end
+
+  # n \mid i and n \nmid j
+  for j = 1:n1
+    for x in gensinvag
+      E = identity_matrix(K, n)
+      E[n, j] = deepcopy(x)
+      push!(result, L(A(E)))
+    end
+  end
+
+  U, mU = unit_group(OK)
+  for i = 1:ngens(U)
+    x = elem_in_nf(mU(U[i]))
+    E = identity_matrix(K, n)
+    E[1, 1] = x
+    push!(result, L(A(E)))
+  end
+  return result
 end

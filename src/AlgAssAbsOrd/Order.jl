@@ -1326,3 +1326,59 @@ function conductor(R::AlgAssAbsOrd, S::AlgAssAbsOrd, action::Symbol)
     return ideal(R, divexact(Hinv, new_den), :left)
   end
 end
+
+################################################################################
+#
+#  Units of quotients
+#
+################################################################################
+
+# Computes a generating system of U in O, where U is a set of representatives of
+# the image of the projection map \pi:O^\times -> (O/g*O)^\times.
+# Assumes that O is a maximal order in Mat_{n\times n}(QQ).
+# See Bley, Johnson: "Computing generators of free modules over orders in
+# group algebras", section 6.
+function enum_units(O::AlgAssAbsOrd, g::fmpz)
+  A = algebra(O)
+  @assert A isa AlgMat
+  @assert degree(A)^2 == dim(A)
+
+  n = degree(A)
+
+  L = _simple_maximal_order(O)
+  a = basis_mat(L, copy = false)[dim(A) - 1, dim(A) - 1]
+  ai = basis_mat(L, copy = false)[n, n]
+
+  result = Vector{elem_type(L)}()
+  n1 = n - 1
+  # n \nmid i, j or n \mid i, j
+  for i = 1:n1
+    for j = 1:n1
+      if j == i
+        continue
+      end
+      E = identity_matrix(FlintQQ, n)
+      E[i, j] = deepcopy(g)
+      push!(result, L(A(E)))
+    end
+  end
+
+  # n \nmid i and n \mid j
+  for i = 1:n1
+    E = identity_matrix(FlintQQ, n)
+    E[i, n] = deepcopy(a)
+    push!(result, L(A(E)))
+  end
+
+  # n \mid i and n \nmid j
+  for j = 1:n1
+    E = identity_matrix(FlintQQ, n)
+    E[n, j] = deepcopy(ai)
+    push!(result, L(A(E)))
+  end
+
+  E = identity_matrix(FlintQQ, n)
+  E[1, 1] = fmpz(-1)
+  push!(result, L(A(E)))
+  return result
+end
