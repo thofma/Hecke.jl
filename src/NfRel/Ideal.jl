@@ -976,12 +976,12 @@ function prime_dec_index(O::NfRelOrd, p::Union{NfOrdIdl, NfRelOrdIdl})
 end
 
 # Returns all prime ideals in O containing the prime number p
-function primes_ideals_over(O::NfRelOrd, p::Union{ Int, fmpz })
+function prime_ideals_over(O::NfRelOrd, p::Union{ Int, fmpz })
   if base_ring(O) isa NfAbsOrd
     pdec = prime_decomposition(base_ring(O), p)
     pdec = [ pdec[i][1] for i = 1:length(pdec) ]
   else
-    pdec = primes_ideals_over(base_ring(O), p)
+    pdec = prime_ideals_over(base_ring(O), p)
   end
 
   primes = Vector{ideal_type(O)}()
@@ -1470,7 +1470,7 @@ function approximate(v::Vector{Int}, primes::Vector{ <: NfRelOrdIdl })
 
   primes2 = Vector{ideal_type(O)}()
   for p in prime_numbers
-    pdec = primes_ideals_over(O, p)
+    pdec = prime_ideals_over(O, p)
     append!(primes2, pdec)
   end
 

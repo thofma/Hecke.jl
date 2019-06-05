@@ -23,6 +23,12 @@ degree(A::AlgAss) = dim(A)
 
 elem_type(::Type{AlgAss{T}}) where {T} = AlgAssElem{T, AlgAss{T}}
 
+order_type(::AlgAss{fmpq}) = AlgAssAbsOrd{AlgAss{fmpq}, elem_type(AlgAss{fmpq})}
+order_type(::Type{AlgAss{fmpq}}) = AlgAssAbsOrd{AlgAss{fmpq}, elem_type(AlgAss{fmpq})}
+
+order_type(::AlgAss{T}) where { T <: NumFieldElem } = AlgAssRelOrd{T, frac_ideal_type(order_type(parent_type(T)))}
+order_type(::Type{AlgAss{T}}) where { T <: NumFieldElem } = AlgAssRelOrd{T, frac_ideal_type(order_type(parent_type(T)))}
+
 function multiplication_table(A::AlgAss; copy::Bool = true)
   @assert !iszero(A)
   if copy
@@ -379,7 +385,12 @@ function AlgAss(O::Union{ NfRelOrd{T, S}, AlgAssRelOrd{T, S} }, I::Union{ NfRelO
 
   OLL = Order(K, PseudoMatrix(new_basis_mat, new_basis_coeffs))
 
-  newI = ideal(OLL, PseudoMatrix(new_basis_mat_I, new_coeff_I))
+  if isalgass
+    newI = ideal(OLL, PseudoMatrix(new_basis_mat_I, new_coeff_I), :nothing, false, true)
+  else
+    newI = ideal(OLL, PseudoMatrix(new_basis_mat_I, new_coeff_I), false, true)
+  end
+  # basis_pmat of newI is NOT in pseudo HNF!
 
   new_basis = pseudo_basis(OLL)
 
@@ -803,6 +814,18 @@ end
 
 function _radical(A::AlgAss{T}) where { T <: Union{ fq_nmod, fq } }
   F = base_ring(A)
+
+  if degree(F) == 1
+    if T <: fq_nmod
+      Fp = GF(Int(characteristic(F)))
+    else
+      Fp = GF(characteristic(F))
+    end
+    B, AtoB, BtoA = restrict_scalars(A, Fp)
+    J = _radical(B)
+    return map(BtoA, J)
+  end
+
   p = characteristic(F)
   k = flog(fmpz(dim(A)), p)
   Qx, x = PolynomialRing(FlintQQ, "x", cached = false)
