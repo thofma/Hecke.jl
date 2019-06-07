@@ -22,6 +22,12 @@ elem_type(A::AlgMat{T, S}) where { T, S } = AlgMatElem{T, AlgMat{T, S}, S}
 
 elem_type(::Type{AlgMat{T, S}}) where { T, S } = AlgMatElem{T, AlgMat{T, S}, S}
 
+order_type(::AlgMat{fmpq, S}) where { S } = AlgAssAbsOrd{AlgMat{fmpq, S}, elem_type(AlgMat{fmpq, S})}
+order_type(::Type{AlgMat{fmpq, S}}) where { S } = AlgAssAbsOrd{AlgMat{fmpq, S}, elem_type(AlgMat{fmpq, S})}
+
+order_type(::AlgMat{T, S}) where { T <: NumFieldElem, S } = AlgAssRelOrd{T, frac_ideal_type(order_type(parent_type(T)))}
+order_type(::Type{AlgMat{T, S}}) where { T <: NumFieldElem, S } = AlgAssRelOrd{T, frac_ideal_type(order_type(parent_type(T)))}
+
 ################################################################################
 #
 #  Basis matrix

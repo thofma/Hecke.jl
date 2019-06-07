@@ -134,3 +134,27 @@ end
 function RelOrdToAlgAssMor(O::Union{ NfRelOrd, AlgAssRelOrd }, A::AlgAss{T}, _image, _preimage) where {T}
   return RelOrdToAlgAssMor{typeof(O), T}(O, A, _image, _preimage)
 end
+
+mutable struct RelOrdQuoMap{T1, T2, T3, S} <: Map{T1, RelOrdQuoRing{T1, T2, T3}, HeckeMap, RelOrdQuoMap}
+  header::MapHeader{T1, RelOrdQuoRing{T1, T2, T3}}
+
+  function RelOrdQuoMap{T1, T2, T3, S}(O::T1, Q::RelOrdQuoRing{T1, T2, T3}) where { T1, T2, T3, S }
+    z = new{T1, T2, T3, S}()
+
+    _image = function (x::S)
+      return Q(x)
+    end
+
+    _preimage = function (x::RelOrdQuoRingElem{T1, T2, T3, S})
+      return x.elem
+    end
+
+    z.header = MapHeader(O, Q, _image, _preimage)
+    return z
+  end
+end
+
+function RelOrdQuoMap(O::T1, Q::RelOrdQuoRing{T1, T2, T3}) where { T1, T2, T3 }
+  S = elem_type(O)
+  return RelOrdQuoMap{T1, T2, T3, S}(O, Q)
+end

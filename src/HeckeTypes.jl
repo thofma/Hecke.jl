@@ -4,9 +4,9 @@
 #
 ################################################################################
 
-abstract type RelativeExtension{T} <: SimpleNumField{T} end
+abstract type RelativeExtension{T} <: NumField{T} end
 
-abstract type RelativeElement{T} <: SimpleNumFieldElem{T} end
+abstract type RelativeElement{T} <: NumFieldElem{T} end
 
 abstract type NonSimpleNumField{T} <: NumField{T} end
 

@@ -553,7 +553,7 @@ mutable struct AlgAssRelOrdElem{S, T} <: RingElem
     z = new{S, T}()
     z.parent = O
     z.elem_in_algebra = a
-    z.coordinates = Vector{S, T}(undef, degree(O))
+    z.coordinates = Vector{S}(undef, degree(O))
     z.has_coord = false
     return z
   end
@@ -587,6 +587,9 @@ mutable struct AlgAssRelOrdIdl{S, T}
   isright::Int                     # as for isleft
 
   iszero::Int                      # 0: don't know, 1: known to be zero, 2: known to be not zero
+
+  norm
+  normred
 
   function AlgAssRelOrdIdl{S, T}(O::AlgAssRelOrd{S, T}) where {S, T}
     z = new{S, T}()

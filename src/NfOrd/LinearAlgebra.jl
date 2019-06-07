@@ -1740,20 +1740,35 @@ end
 
 function _steinitz_form(P::PMat, trafo::Type{Val{T}} = Val{false}) where T
   if trafo == Val{true}
-    S, U = pseudo_hnf_with_transform(P)
-    steinitz_form!(S, U, true)
+    S, U = pseudo_hnf_with_transform(P, :lowerleft)
+  else
+    S = pseudo_hnf(P, :lowerleft)
+  end
+
+  K = base_ring(S.matrix)
+  oneK = one(K)
+  O = order(S.coeffs[1])
+  start_row = 1
+  for i = 1:nrows(S)
+    if !iszero(S.matrix[i, 1])
+      start_row = i
+      break
+    end
+    S.coeffs[i] = oneK*O
+  end
+  if trafo == Val{true}
+    steinitz_form!(S, U, true, start_row)
     return S, U
   else
-    S = pseudo_hnf(P)
     U = similar(S.matrix, 0, 0)
-    steinitz_form!(S, U, false)
+    steinitz_form!(S, U, false, start_row)
     return S
   end
 end
 
 # Algorithm 4.6.2 in Hoppe: Normal forms over Dedekind domains
-function steinitz_form!(M::PMat{T, S}, U::Generic.Mat{T}, with_transform::Bool = false) where { T <: Union{ nf_elem, RelativeElement }, S }
-  if nrows(M) == 0
+function steinitz_form!(M::PMat{T, S}, U::Generic.Mat{T}, with_transform::Bool = false, start_row::Int = 1) where { T <: Union{ nf_elem, RelativeElement }, S }
+  if nrows(M) < start_row
     return nothing
   end
 
@@ -1763,7 +1778,7 @@ function steinitz_form!(M::PMat{T, S}, U::Generic.Mat{T}, with_transform::Bool =
   t = K()
   t1 = K()
   O = order(M.coeffs[1])
-  for r = 1:nrows(M) - 1
+  for r = start_row:nrows(M) - 1
     a = M.coeffs[r]
     if a isa NfOrdFracIdl && a.num.is_principal == 1
       x = divexact(K(a.num.princ_gen), K(a.den))
@@ -1802,8 +1817,10 @@ function steinitz_form!(M::PMat{T, S}, U::Generic.Mat{T}, with_transform::Bool =
       t1 = mul!(t1, t, n2)
       A[r + 1, c] = mul!(A[r + 1, c], A[r + 1, c], n1)
       A[r + 1, c] = add!(A[r + 1, c], A[r + 1, c], t1)
+    end
 
-      if with_transform
+    if with_transform
+      for c = 1:ncols(U)
         t = deepcopy(U[r, c])
 
         U[r, c] = mul!(U[r, c], U[r, c], m1)

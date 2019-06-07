@@ -47,7 +47,34 @@ function zero!(a::MatElem)
   return a
 end
 
-mul!(c::MatElem, a::MatElem, b::MatElem) = a*b
+function mul!(c::MatElem, a::MatElem, b::MatElem)
+  ncols(a) != nrows(b) && error("Incompatible matrix dimensions")
+  nrows(c) != nrows(a) && error("Incompatible matrix dimensions")
+  ncols(c) != ncols(b) && error("Incompatible matrix dimensions")
+
+  t = base_ring(a)()
+  for i = 1:nrows(a)
+    for j = 1:ncols(b)
+      c[i, j] = zero!(c[i, j])
+      for k = 1:ncols(a)
+        c[i, j] = addmul_delayed_reduction!(c[i, j], a[i, k], b[k, j], t)
+      end
+      c[i, j] = reduce!(c[i, j])
+    end
+  end
+  return c
+end
+
+function add!(c::MatElem, a::MatElem, b::MatElem)
+  parent(a) != parent(b) && error("Parents don't match.")
+  parent(c) != parent(b) && error("Parents don't match.")
+  for i = 1:nrows(c)
+    for j = 1:ncols(c)
+      c[i, j] = add!(c[i, j], a[i, j], b[i, j])
+    end
+  end
+  return c
+end
 
 ################################################################################
 #
