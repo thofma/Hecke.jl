@@ -7,7 +7,8 @@
 export GrpGen, GrpGenElem, GrpGenToGrpGenMor, generic_group, GrpGen, GrpGenElem, isabelian, iscyclic, order, elements,
 getindex, subgroups, subgroup, quotient, inv, kernel, elem_type, parent, *,
 psylow_subgroup, commutator_subgroup, derived_series, order, direct_product,
-conjugancy_classes, ischaracteristic, induces_to_subgroup, induces_to_quotient
+conjugancy_classes, ischaracteristic, induces_to_subgroup, induces_to_quotient,
+max_order, gen_2_ab
 
 ################################################################################
 #
@@ -231,6 +232,25 @@ function *(g::GrpGenElem, h::GrpGenElem)
 end
 
 op(g::GrpGenElem, h::GrpGenElem) = g*h
+
+function ^(g::GrpGenElem, i::Int64)
+  if i == 0
+    return id(parent(g))
+  end
+  if i > 0
+    res = g
+    for j in 2:i
+      res = res * g
+    end
+    return res
+  else
+    res = inv(g)
+    for j in 2:-i
+      res = res * inv(g)
+    end
+    return res
+  end
+end
 
 ################################################################################
 #
@@ -816,4 +836,87 @@ end
 function induces_to_quotient(G::GrpGen, mQ::GrpGenToGrpGenMor, aut::GrpGenToGrpGenMor)
   Q = mQ.domain
   return GrpGenToGrpGenMor(Q, Q, [mQ(aut(preimage(mQ, q))) for q in collect(Q)])
+end
+
+@doc Markdown.doc"""
+     max_order(G::GrpGen) -> (g::GrpGenElem, i::Int64)
+Returns an element of $G$ with maximal order and the corresponding order.
+"""
+function max_order(G::GrpGen)
+  temp = id(G)
+  temp_max = order(temp)
+  for g in G
+    if order(g) > temp_max
+      temp = g
+      temp_max = order(g)
+    end
+  end
+  return(temp, temp_max)
+end
+
+function gen_2_ab(G::GrpGen)
+  if !isabelian(G)
+      error("Given group is not abelian")
+  end
+
+  d = order(G)
+  d_first = max_order(G)[2]
+  pos = Array{Array{Int64,1},1}()
+
+  _d_find_rek!([[d_first]], d, pos)
+
+  for pos_elem in pos
+    Cycl_group, TupleToGroup, GroupToTuple = cycl_prod(pos_elem)
+    Gens = Array{GrpGenElem,1}(undef,length(pos_elem))
+    Rels = [[j for i in 1:pos_elem[j]] for j in 1:length(pos_elem)]
+    A = [0 for j in 1:length(pos_elem)]
+    for i in 1:length(pos_elem)
+      A[i] = 1
+      Gens[i] = TupleToGroup[Tuple(A)]
+      A[i] = 0
+    end
+    #improve to auts directly
+    for mor in Hecke._morphisms_with_gens(Cycl_group, G, Gens, Rels)
+      if isbijective(mor)
+        #due to construction alrdy in snf
+        # GrpAbFinGen([4], true) -> GrpAb[2]why not?
+        GrpAb = GrpAbFinGen(pos_elem, true)
+        GrpAbtoG = Dict{GrpAbFinGenElem, GrpGenElem}(x => mor(TupleToGroup[Tuple(Int64.(x.coeff))]) for x in collect(GrpAb))
+        GtoGrpAb = Dict{GrpGenElem, GrpAbFinGenElem}(G[i] => GrpAb([GroupToTuple[inv(mor)(G[i])]...]) for i in 1:length(G))
+        return (GrpAb, GtoGrpAb, GrpAbtoG)
+      end
+    end
+  end
+end
+
+function _d_find_rek!(candidates::Array{Array{Int64,1},1}, bound::Int64, Res::Array{Array{Int64,1},1})
+  new_candidates = Array{Array{Int64,1},1}()
+  for can in candidates
+    produ = prod(can)
+    for div in divisors(can[1])
+      if produ * div < bound && div != 1
+        new_can = vcat(div, can)
+        push!(new_candidates, new_can)
+      elseif produ * div == bound
+        if div != 1
+          new_res = vcat(div, can)
+          push!(Res, new_res)
+        else
+        push!(Res, can)
+      end
+      end
+    end
+  end
+  if length(new_candidates) == 0
+    return
+  else
+    _d_find_rek!(new_candidates, bound, Res)
+  end
+end
+
+function cycl_prod(A::Array{Int64,1})
+  Ar_elems = [[k for k in 0:A[i]-1] for i in 1:length(A)]
+  it = Iterators.product(Ar_elems...)
+  cycl_prod_op(A1,A2) = Tuple([mod(A1[i] + A2[i], A[i]) for i in 1:length(A)])
+  return generic_group(vec([i for i in it]), cycl_prod_op)
 end
