@@ -112,7 +112,10 @@ end
 Nemo.zero(K::NfRel_ns) = K(Nemo.zero(parent(K.pol[1])))
 
 Nemo.one(K::NfRel_ns) = K(Nemo.one(parent(K.pol[1])))
+
 Nemo.one(a::NfRel_nsElem) = one(a.parent)
+
+(K::NfRel_ns{T})(a::NfRel_nsElem) where {T} = a
 
 ################################################################################
 #
