@@ -381,6 +381,15 @@ function basis(K::NfRel_ns)
   return b
 end
 
+function basis_mat(a::Vector{NfRel_nsElem{T}}) where {T <: NumFieldElem}
+  K = parent(a[1])
+  M = zero_matrix(base_ring(K), length(a), degree(K))
+  for i in 1:length(a)
+    elem_to_mat_row!(M, i, a[i])
+  end
+  return M
+end
+
 function elem_to_mat_row!(M::Generic.Mat{T}, i::Int, a::NfRel_nsElem{T}) where T
   a.parent
   K = parent(a)

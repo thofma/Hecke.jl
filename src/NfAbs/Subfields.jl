@@ -182,9 +182,9 @@ function fixed_field(K::S, A::Array{T, 1}; simplify::Bool = true) where {S <: Un
       v[j] = o
     end
 
-    bm = basis_mat(v)
     
     if S === AnticNumberField
+      bm = basis_mat(v, FakeFmpqMat)
       # We have to be a bit careful (clever) since in the absolute case the
       # basis matrix is a FakeFmpqMat
 
@@ -193,6 +193,7 @@ function fixed_field(K::S, A::Array{T, 1}; simplify::Bool = true) where {S <: Un
         m[j, j] = m[j, j] - bm.den # This is autos[i] - identity
       end
     else
+      bm = basis_mat(v)
       # In the generic case just subtract the identity
       m = bm - identity_matrix(F, degree(K))
     end
@@ -271,7 +272,7 @@ function _principal_subfields_basis(K::AnticNumberField)
       for l in 0:degree(fi)-1
         t = basis_mat([coeff(im_ar[j], l)])
         for m in 1:n
-          M[j, l * n + m] = (t.num[1, m])//t.den
+          M[j, l * n + m] = t[1, m]
         end
       end
     end

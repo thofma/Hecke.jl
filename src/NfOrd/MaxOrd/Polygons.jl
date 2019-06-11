@@ -335,7 +335,7 @@ function gens_overorder_polygons(O::NfOrd, p::fmpz)
       end
     end
   end
-  B = basis_mat(l)
+  B = basis_mat(l, FakeFmpqMat)
   hnf_modular_eldiv!(B.num, B.den, :lowerleft)
   B = FakeFmpqMat(view(B.num, nrows(B)-degree(K)+1:nrows(B), 1:degree(K)), B.den)
   if !regular
@@ -437,7 +437,7 @@ function _order_for_polygon_overorder(K::S, elt::Array{T, 1}) where {S, T}
       end
     end
     
-    B = basis_mat(prods) 
+    B = basis_mat(prods, FakeFmpqMat) 
     hnf_modular_eldiv!(B.num, B.den, :lowerleft)
     
     dd = B.num[nrows(B) - degree(K) + 1, 1]
