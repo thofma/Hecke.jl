@@ -216,6 +216,11 @@ function (K::NfRel_ns{T})(a::T) where T
   return z
 end
 
+function (K::NfRel_ns{T})(a::NfRel_nsElem{T}) where T
+  parent(a) != K == error("Cannot coerce")
+  return a
+end
+
 (K::NfRel_ns)(a::Integer) = K(parent(K.pol[1])(a))
 
 (K::NfRel_ns)(a::Rational{T}) where {T <: Integer} = K(parent(K.pol[1])(a))
