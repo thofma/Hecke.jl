@@ -30,6 +30,60 @@ function multiplicative_group_mod_units_fac_elem(A::Array{nf_elem, 1}; use_max_o
   return h, t, cp
 end
 
+function units(h::SMat, t, b::Array{nf_elem, 1})
+  u = FacElem{nf_elem, AnticNumberField}[]
+  for i=nrows(h)+1:length(b)
+    k = [fmpz(0) for i=b]
+    k[i] = 1
+    for i in length(t):-1:1
+      Hecke.apply_right!(k, t[i])
+    end
+    push!(u, FacElem(b, k))
+  end
+  return u
+end
+
+function unit_group_mod_torsion_fac_elem(O::NfAbsOrd, u::Array{FacElem{nf_elem, AnticNumberField}, 1})
+  U = Hecke._unit_group_init(O)
+  s = signature(O)
+  r = s[1] + s[2] - 1
+  for y = u
+    is_tors, p = istorsion_unit(y, false, U.tors_prec)
+    U.tors_prec = max(p, U.tors_prec)
+    if is_tors
+      continue
+    end
+    Hecke._add_unit(U, y)
+    if length(U.units) >= r
+      break
+    end
+  end
+  if length(U.units) < r
+    # maybe use pAdic stuff here...
+    error("not complete yet")
+  end
+
+  U.full_rank = true
+
+  U.units = Hecke.reduce(U.units, U.tors_prec)
+
+  for y = u
+    is_tors, p = istorsion_unit(y, false, U.tors_prec)
+    U.tors_prec = max(p, U.tors_prec)
+    if is_tors
+      continue
+    end
+    x = Hecke.reduce_mod_units([y], U)[1]
+    is_tors, p = istorsion_unit(x, false, U.tors_prec)
+    U.tors_prec = max(p, U.tors_prec)
+    if is_tors
+      continue
+    end
+    Hecke._add_dependent_unit(U, x)
+  end
+  return U
+end
+
 function *(O1::NfAbsOrd, O2::NfAbsOrd)
   k = nf(O1)
   @assert k === nf(O2)
@@ -127,7 +181,7 @@ function coprime_base(A::Array{nf_elem, 1})
 end
 
 function coprime_base(A::Array{nf_elem, 1}, O::NfAbsOrd)
-  c = Array{NfAbsOrdIdl, 1}()
+  c = Array{NfAbsOrdIdl{AnticNumberField, nf_elem}, 1}()
   for a = A
     n,d = integral_split(a*O)
     isone(n) || push!(c, n)
