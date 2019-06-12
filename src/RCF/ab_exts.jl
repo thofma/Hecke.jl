@@ -1,6 +1,8 @@
 add_verbose_scope(:AbExt)
 add_assert_scope(:AbExt)
 
+add_verbose_scope(:MaxAbExt)
+
 ##############################################################################
 #
 #  Sieves for primes and squarefree numbers
@@ -9,25 +11,25 @@ add_assert_scope(:AbExt)
 
 function squarefree_up_to(n::Int; coprime_to::Array{fmpz,1}=fmpz[])
 
-  list= trues(n)
+  list = trues(n)
   for x in coprime_to
-    t=x
-    while t<= n
-      @inbounds list[Int(t)]=false
-      t+=x
+    t = Int(x)
+    while t <= n
+      @inbounds list[t]=false
+      t += Int(x)
     end
   end
-  i=2
-  b=Base.sqrt(n)
-  while i<=b
+  i = 2
+  b = root(n, 2)
+  while i <= b
     @inbounds if list[i]
-      j=i^2
+      j = i^2
       @inbounds if !list[j]
-        i+=1
+        i += 1
         continue
       else 
         @inbounds list[j]=false
-        t=2*j
+        t = 2*j
         while t<= n
           @inbounds list[t]=false
           t+=j
@@ -194,26 +196,26 @@ end
 
 function tame_conductors_degree_2(O::NfOrd, bound::fmpz)
  
-  K=nf(O)
-  d=degree(O)
-  b1=Int(root(bound,d))
-  ram_primes=collect(keys(factor(O.disc).fac))
+  K = nf(O)
+  d = degree(O)
+  b1 = Int(root(bound,d))
+  ram_primes = ramified_primes(O)
   sort!(ram_primes)
-  filter!(x -> x!=2 ,ram_primes)
-  list=squarefree_up_to(b1, coprime_to=vcat(ram_primes,2))
+  filter!(x -> x!=2, ram_primes)
+  list = squarefree_up_to(b1, coprime_to = vcat(ram_primes,2))
 
-  extra_list=Tuple{Int, fmpz}[(1,fmpz(1))]
+  extra_list = Tuple{Int, fmpz}[(1,fmpz(1))]
   for q in ram_primes
-    tr=prime_decomposition_type(O,Int(q))
-    e=tr[1][2]
-    nq=fmpz(q)^(divexact(d,e))
-    if nq> bound
+    tr = prime_decomposition_type(O, Int(q))
+    e = tr[1][2]
+    nq = fmpz(q)^(divexact(d,e))
+    if nq > bound
       break
     end
     l=length(extra_list)
-    for i=1:l
-      n=extra_list[i][2]*nq
-      if n> bound
+    for i = 1:l
+      n = extra_list[i][2]*nq
+      if n > bound
         continue
       end
       push!(extra_list, (extra_list[i][1]*q, n))
@@ -221,7 +223,7 @@ function tame_conductors_degree_2(O::NfOrd, bound::fmpz)
   end
   
   final_list=Tuple{Int,fmpz}[]
-  l=length(list)
+  l = length(list)
   for (el,norm) in extra_list
     for i=1:l
       if fmpz(list[i])^d*norm>bound
@@ -236,36 +238,36 @@ end
 
 function squarefree_for_conductors(O::NfOrd, n::Int, deg::Int; coprime_to::Array{fmpz,1}=fmpz[])
   
-  sqf= trues(n)
-  primes= trues(n)
+  sqf = trues(n)
+  primes = trues(n)
   
   #remove primes that can be wildly ramified or
   #that are ramified in the base field
   for x in coprime_to
-    el=Int(x)
-    t=el
-    while t<= n
+    el = Int(x)
+    t = el
+    while t <= n
       @inbounds sqf[t]=false
       @inbounds primes[t]=false
-      t+=el
+      t += el
     end
   end
   
   #sieving procedure
   
   if !(2 in coprime_to)
-    dt=prime_decomposition_type(O,2)
-    if gcd(2^dt[1][1]-1, deg)==1
+    dt = prime_decomposition_type(O,2)
+    if isone(gcd(2^dt[1][1]-1, deg))
       j=2
       while j<=n
         @inbounds sqf[j]=false
         @inbounds primes[j]=false
-        j+=2
+        j += 2
       end
     else 
       i=2
       s=4
-      while s<=n
+      while s <= n
         @inbounds primes[s]=false
         s+=2
       end
@@ -276,9 +278,9 @@ function squarefree_for_conductors(O::NfOrd, n::Int, deg::Int; coprime_to::Array
       end
     end
   end
-  i=3
-  b=Base.sqrt(n)
-  while i<=b
+  i = 3
+  b = root(n, 2)
+  while i <= b
     if primes[i]
       if gcd(i-1, deg) != 1
         j = i
@@ -348,25 +350,26 @@ end
 
 function conductors_tame(O::NfOrd, n::Int, bound::fmpz)
 
-  if n==2
+  if n == 2
     return tame_conductors_degree_2(O,bound)
   end
   #
   #  First, conductors coprime to the ramified primes and to the 
   #  degree of the extension we are searching for.
   # 
-  d=degree(O)
-  K=nf(O)
-  wild_ram=collect(keys(factor(fmpz(n)).fac))
-  ram_primes=collect(keys(factor(O.disc).fac))
+  d = degree(O)
+  K = nf(O)
+  wild_ram = collect(keys(factor(fmpz(n)).fac))
+  ram_primes = ramified_primes(O)
   filter!(x -> !divisible(fmpz(n),x), ram_primes)
-  coprime_to=cat(ram_primes, wild_ram, dims = 1)
+  coprime_to = vcat(ram_primes, wild_ram)
   sort!(ram_primes)
-  m=minimum(wild_ram)
-  k=divexact(n,m)
-  b1=Int(root(fmpz(bound), Int(degree(O)*(m-1)*k)))
-  list = squarefree_for_conductors(O, b1, n, coprime_to=coprime_to)
+  m = minimum(wild_ram)
+  k = divexact(n, m)
   e = Int((m-1)*k)
+  b1 = Int(root(bound, degree(O)*e))
+  list = squarefree_for_conductors(O, b1, n, coprime_to = coprime_to)
+  
   extra_list = Tuple{Int, fmpz}[(1, fmpz(1))]
   for q in ram_primes
     tr = prime_decomposition_type(O, Int(q))
@@ -418,9 +421,9 @@ function conductors(O::NfOrd, a::Array{Int, 1}, bound::fmpz, tame::Bool=false)
   #
   # First, conductors for tamely ramified extensions
   #
+  bound_tame = root(bound, divexact(n, expo))
+  list = conductors_tame(O, expo, bound_tame)
 
-  list = conductors_tame(O, n, bound)
-  
   if tame
     return Tuple{Int, Dict{NfOrdIdl, Int}}[(x[1], Dict{NfOrdIdl, Int}()) for x in list]  
   end
@@ -429,8 +432,8 @@ function conductors(O::NfOrd, a::Array{Int, 1}, bound::fmpz, tame::Bool=false)
   #
   wild_list=Tuple{Int, Dict{NfOrdIdl, Int}, fmpz}[(1, Dict{NfOrdIdl, Int}(), fmpz(1))]
   for q in wild_ram
-    lp = prime_decomposition(O,Int(q))
-    fq = divexact(d,lp[1][2]*length(lp))
+    lp = prime_decomposition(O, Int(q))
+    fq = divexact(d, lp[1][2]*length(lp))
     l = length(wild_list)
     sq = fmpz(q)^(divexact(d,lp[1][2])) #norm of the squarefree part of the integer q
     #=
@@ -444,32 +447,21 @@ function conductors(O::NfOrd, a::Array{Int, 1}, bound::fmpz, tame::Bool=false)
         v_p(m)<= (q*ap)/(h_(m,C)*(q-1))
       To find ap, it is enough to compute a logarithm.
     =#
-    nisc = gcd(q^(fq)-1, expo)
     v = valuation(expo, q)
+    # First, we compute the bound coming from the bound on the discriminant
+    boundsubext = root(bound, Int(divexact(n, q^v))) #The bound on the norm of the discriminant on the subextension 
+                                                     # of order q^v
+    #Bound coming from the bound on the discriminant
+    obound = flog(boundsubext, sq)                                                
+    
     #Bound coming from the analysis on the different in a local extension
     nbound = q^v + lp[1][2] * v * q^v - 1
-    boundsubext = root(bound, Int(divexact(n, q^v)))
-    #Bound coming from the bound on the discriminant
-    obound = flog(boundsubext, sq)
-    #Bound coming from ramification groups
-    tbound = obound
-    #=
-    if v == 1
-      k = div(lp[1][2]*q, q-1)
-      tbound = (k+1)*(q-1)
-    end
-    if v == 2
-      k = div(lp[1][2]*q^v, q-1)
-      tbound = q*(q-1) + (k-q+1)*(q^2-1)
-    end
-    if v == 3
-      k = div(lp[1][2]*q^v, q-1)
-      tbound = q*(q-1) + q*(q^2-1) + (k-q^2+1)*(q^3-1)
-    end
-    =#
-    #@show (nbound, obound, tbound) 
-    bound_max_ap = min(nbound, obound, tbound)  #bound on ap
+
+    bound_max_ap = min(nbound, obound)  #bound on ap
     bound_max_exp = div(q*bound_max_ap, q^v*(q-1)) #bound on the exponent in the conductor
+    #@show div(nbound, (q^(v-1))*(q-1)), div(q^v*lp[1][2], q-1)+1
+    #The prime may be also tamely ramified!
+    nisc = gcd(q^(fq)-1, expo)
     if nisc != 1
       fnisc=minimum(keys(factor(nisc).fac))
       nq=sq^((fnisc-1)*(divexact(n, fnisc)))
@@ -486,7 +478,8 @@ function conductors(O::NfOrd, a::Array{Int, 1}, bound::fmpz, tame::Bool=false)
       for j=1:length(lp)
         d1[lp[j][1]]=i
       end
-      nq= sq^(i*(q-1)*divexact(n,q))
+      exp1 = i*(q-1)*divexact(n,q)
+      nq= sq^(exp1)
       for s=1:l
         nn=nq*wild_list[s][3]
         if nn>bound
@@ -692,14 +685,7 @@ function conductorsQQ(O::NfOrd, a::Array{Int, 1}, bound::fmpz, tame::Bool=false)
     obound = flog(boundsubext, q)
     nnbound = valuation_bound_discriminant(n, q)
     k = div(expo, Int(q)-1)
-    tbound = nbound
-    if v == 1
-      tbound = (k+1)*(q-1)
-    end
-    if v == 2
-      tbound = q*(q-1)+(k - q + 1)*(q^2-1)
-    end
-    bound_max_ap = min(nbound, obound, nnbound, tbound)  #bound on ap
+    bound_max_ap = min(nbound, obound, nnbound)  #bound on ap
     bound_max_exp = div(q*bound_max_ap, q^v*(q-1)) #bound on the exponent in the conductor
     if nisc != 1
       fnisc=minimum(keys(factor(nisc).fac))
@@ -1678,4 +1664,367 @@ function _from_relative_to_abs(L::NfRel_ns{T}, auts::Array{NfRel_nsToNfRel_nsMor
   return Ks, autos
 
 end 
+
+
+###############################################################################
+#
+#  Maximal abelian subfield for fields function
+#
+###############################################################################
+
+
+function check_abelian_extensions(class_fields::Vector{Tuple{Hecke.ClassField{Hecke.MapRayClassGrp,GrpAbFinGenMap}, Vector{GrpAbFinGenMap}}}, autos::Array{NfToNfMor, 1}, emb_sub::NfToNfMor)
+
+  @vprint :MaxAbExt 3 "Starting checking abelian extension\n"
+  K = base_field(class_fields[1][1])
+  d = degree(K)
+  G = domain(class_fields[1][2][1])
+  expo = G.snf[end]
+  com, uncom = ppio(Int(expo), d)
+  if com == 1
+    return Hecke.ClassField{Hecke.MapRayClassGrp,GrpAbFinGenMap}[x[1] for x in class_fields]
+  end 
+  #I extract the generators that restricted to the domain of emb_sub are the identity.
+  #Notice that I can do this only because I know the way I am constructing the generators of the group.
+  expG_arr = Int[]
+  act_indices = Int[]
+  p = 11
+  d1 = discriminant(domain(emb_sub))
+  d2 = discriminant(K)
+  while iszero(mod(d1, p)) || iszero(mod(d2, p))
+    p = next_prime(p)
+  end
+  R = GF(p, cached = false)
+  Rx, x = PolynomialRing(R, "x", cached = false)
+  fmod = Rx(K.pol)
+  mp_pol = Rx(emb_sub.prim_img)
+  for i = 1:length(autos)
+    pol = Rx(autos[i].prim_img)
+    if mp_pol ==  Hecke.compose_mod(mp_pol, pol, fmod)
+      push!(act_indices, i)
+      #I compute the order of the automorphisms. I need the exponent of the relative extension!
+      j = 2
+      att = Hecke.compose_mod(pol, pol, fmod)
+      while att != x
+        att = Hecke.compose_mod(pol, att, fmod)
+        j += 1
+      end
+      push!(expG_arr, j)
+    end
+  end
+  expG = lcm(expG_arr)
+  expG1 = ppio(expG, com)[1]
+  com1 = ppio(com, expG1)[1]
+  @vprint :MaxAbExt 3 "Context for ray class groups\n"
+  
+  OK = maximal_order(K)
+  rcg_ctx = Hecke.rayclassgrp_ctx(OK, com1*expG1)
+  
+  @vprint :MaxAbExt 3 "Ordering the class fields\n"
+  
+  mins = Vector{fmpz}(undef, length(class_fields))
+  for i = 1:length(mins)
+    mins[i] = minimum(defining_modulus(class_fields[i][1])[1])
+  end
+  ismax = trues(length(mins))
+  for i = 1:length(ismax)
+    for j = i+1:length(ismax)
+      if ismax[j] 
+        i2 = ppio(mins[i], mins[j])[2]
+        if isone(i2)
+          ismax[i] = false
+          break
+        end 
+        i3 = ppio(mins[j], mins[i])[2]
+        if isone(i3)
+          ismax[j] = false
+        end
+      end
+    end
+  end
+  ord_class_fields = Vector{Int}(undef, length(ismax))
+  j1 = 1
+  j2 = length(ismax)
+  for i = 1:length(ismax)
+    if ismax[i]
+      ord_class_fields[j1] = i
+      j1 += 1
+    else
+      ord_class_fields[j2] = i
+      j2 -= 1
+    end
+  end
+  
+  cfields = Hecke.ClassField{Hecke.MapRayClassGrp, GrpAbFinGenMap}[]
+  for i = 1:length(class_fields)
+    @vprint :MaxAbExt 3 "Class Field $i\n"
+    C, res_act = class_fields[ord_class_fields[i]]
+    res_act_new = Vector{GrpAbFinGenMap}(undef, length(act_indices))
+    for i = 1:length(act_indices)
+      res_act_new[i] = res_act[act_indices[i]]
+    end
+    fl = check_abelian_extension(C, res_act_new, emb_sub, rcg_ctx)
+    if fl
+      push!(cfields, C)
+    end
+  end
+  return cfields
+  
+end
+
+function check_abelian_extension(C::Hecke.ClassField, res_act::Vector{GrpAbFinGenMap}, emb_sub::NfToNfMor, rcg_ctx::Hecke.ctx_rayclassgrp)
+
+  #I consider the action on every P-sylow and see if it is trivial
+  G = codomain(C.quotientmap)
+  expG = Int(exponent(G))
+  fac = factor(rcg_ctx.n)
+  prime_to_test = Int[]
+  new_prime = false
+  for (P, v) in fac
+    # I check that the action on the P-sylow is the identity.
+    for i = 1:ngens(G)
+      if !divisible(G.snf[i], P)
+        continue
+      end
+      pp, q = ppio(G.snf[i], P)
+      new_prime = false
+      for j = 1:length(res_act)
+        if res_act[j](q*G[i]) != q*G[i]
+          new_prime = true
+          break
+        end
+      end
+      if new_prime
+        break
+      end
+    end
+    if !new_prime
+      push!(prime_to_test, P)
+    end
+  end 
+  if isempty(prime_to_test)
+    return true
+  end
+
+  n = prod(prime_to_test)
+  n1, m = ppio(Int(G.snf[end]), n)
+  if m != 1
+    # Now, I compute the maximal abelian subextension of the n-part of C
+    Q, mQ = quo(G, n1, false)
+    C1 = ray_class_field(C.rayclassgroupmap, Hecke.GrpAbFinGenMap(Hecke.compose(C.quotientmap, mQ)))
+    #@vtime :MaxAbExt 1 
+    fl = _maximal_abelian_subfield(C1, emb_sub, rcg_ctx, expG)
+  else
+    #@vtime :MaxAbExt 1 
+    fl = _maximal_abelian_subfield(C, emb_sub, rcg_ctx, expG)
+  end
+  return fl
+
+end
+
+function _bound_exp_conductor_wild(O::NfOrd, n::Int, q::Int, bound::fmpz)
+  d = degree(O)
+  lp = prime_decomposition_type(O, q)
+  f_times_r = divexact(d, lp[1][2]) 
+  sq = fmpz(q)^f_times_r
+  nbound = n+n*lp[1][2]*valuation(n,q)-div(fmpz(n), q^(valuation(n,q)))
+  obound = flog(bound, sq)
+  bound_max_ap = min(nbound, obound)  #bound on ap
+  return div(q*bound_max_ap, n*(q-1)) #bound on the exponent in the conductor
+end
+
+function minimumd(D::Dict{NfOrdIdl, Int}, deg_ext::Int)
+  primes_done = Int[]
+  res = 1
+  for (P, e) in D
+    p = Int(minimum(P))
+    if p in primes_done
+      continue
+    else
+      push!(primes_done, p)
+    end
+    ram_index = P.splitting_type[1]
+    s, t = divrem(e, ram_index)
+    if iszero(t)
+      d = min(s, valuation(deg_ext, p)+2)
+      res *= p^d
+    else
+      d = min(s+1, valuation(deg_ext, p)+2)
+      res *= p^d
+    end
+  end
+  return res
+end
+
+function _maximal_abelian_subfield(A::Hecke.ClassField, mp::Hecke.NfToNfMor, ctx::Hecke.ctx_rayclassgrp, expG::Int)
+
+  K = base_field(A)
+  k = domain(mp)
+  ZK = maximal_order(K)
+  zk = maximal_order(k)
+  expected_order = div(degree(K), degree(k))
+  if gcd(expected_order, degree(A)) == 1
+    return false
+  end
+  # disc(ZK/Q) = N(disc(ZK/zk)) * disc(zk)^deg
+  # we need the disc ZK/k, well a conductor.
+  d = abs(div(discriminant(ZK), discriminant(zk)^expected_order))
+  mR1 = A.rayclassgroupmap
+  expo = Int(exponent(codomain(A.quotientmap)))
+
+  #First, a suitable modulus for A over k
+  #I take the discriminant K/k times the norm of the conductor A/K
+  
+  fac1 = factor(d)
+  fm0 = Dict{NfOrdIdl, Int}()
+  for (p, v) in fac1
+    lPp = prime_decomposition(zk, p)
+    if divisible(fmpz(expected_order), p)
+      theoretical_bound = _bound_exp_conductor_wild(zk, expG, Int(p), d)
+      for i = 1:length(lPp)
+        fm0[lPp[i][1]] = min(theoretical_bound, Int(v))
+      end
+    else
+      for i = 1:length(lPp)
+        fm0[lPp[i][1]] = 1
+      end
+    end
+  end
+  #Now, I want to compute f_m0 = merge(max, norm(mR1.fact_mod), fac2)
+  primes_done = fmpz[]
+  for (P, e) in mR1.fact_mod
+    p = minimum(P)
+    if p in primes_done
+      continue
+    else
+      push!(primes_done, p)
+    end
+    lp = prime_decomposition(zk, p)
+    if !divisible(fmpz(expected_order * expo), p)
+      for i = 1:length(lp)
+        fm0[lp[i][1]] = 1
+      end
+    else
+      #I need the relative norm of P expressed as a prime power.
+      pm = Hecke.intersect_prime(mp, P)
+      fpm = divexact(P.splitting_type[2], pm.splitting_type[2])
+      theoretical_bound1 = _bound_exp_conductor_wild(zk, lcm(expo, expG), Int(p), d*norm(defining_modulus(A)[1]))
+      for i = 1:length(lp)
+        if haskey(fm0, lp[i][1])
+          fm0[lp[i][1]] =  min(fm0[lp[i][1]] * fpm * e, theoretical_bound1)
+        else
+          fm0[lp[i][1]] = min(fpm * e, theoretical_bound1)
+        end
+      end
+    end
+  end
+  # Now, I extend the modulus to K
+  fM0 = Dict{NfOrdIdl, Int}()
+  primes_done = fmpz[]
+  for (P, e) in fm0
+    p = Hecke.minimum(P)
+    if p in primes_done
+      continue
+    else
+      push!(primes_done, p)
+    end
+    
+    lp = prime_decomposition(ZK, p)
+    multip = divexact(lp[1][2], P.splitting_type[1])
+    if !divisible(fmpz(expected_order * expo), p)
+      for i = 1:length(lp)
+        fM0[lp[i][1]] = 1
+      end
+    else
+      if isdefined(A, :abs_disc) 
+        d = A.abs_disc
+        ev = prod(w^z for (w,z) in d)
+        ev = divexact(ev, discriminant(ZK))
+        theoretical_bound2 = _bound_exp_conductor_wild(ZK, expo, Int(p), ppio(ev, p)[1])
+        for i = 1:length(lp)
+          fM0[lp[i][1]] = min(multip * e, theoretical_bound2)
+        end
+      else
+        for i = 1:length(lp)
+          fM0[lp[i][1]] = multip * e
+        end
+      end
+    end 
+  end
+  ind = 0
+  #@vtime :MaxAbExt 1 
+  if isdefined(ctx, :computed)
+    flinf = isempty(mR1.modulus_inf)
+    for i = 1:length(ctx.computed)
+      idmr, ifmr, mRRR = ctx.computed[i]
+      if flinf != ifmr
+        continue
+      end
+      contained = true
+      for (P, v) in fM0
+        if !haskey(idmr, P) || idmr[P] < v
+          contained = false
+        end
+      end
+      if contained
+        ind = i
+        break
+      end
+    end
+  end
+  if iszero(ind)
+    R, mR = Hecke.ray_class_group_quo(ZK, fM0, mR1.modulus_inf, ctx, check = false)
+    if isdefined(ctx, :computed)
+      push!(ctx.computed, (fM0, isempty(mR1.modulus_inf), mR))
+    else
+      ctx.computed = [(fM0, isempty(mR1.modulus_inf), mR)]
+    end
+  else
+    mR = ctx.computed[ind][3]
+    R = domain(mR)
+  end
+  if degree(zk) != 1
+    if istotally_real(K) && isempty(mR1.modulus_inf)
+      inf_plc = InfPlc[]
+    else
+      inf_plc = real_places(k)
+    end
+    #@vtime :MaxAbExt 1 
+    r, mr = Hecke.ray_class_group_quo(zk, ctx.n, fm0, inf_plc)
+  else
+    rel_plc = true
+    if istotally_real(K) && isempty(mR1.modulus_inf)
+      rel_plc = false
+    end
+    modulo = minimumd(fm0, expo * expected_order)
+    #@vtime :MaxAbExt 1 
+    r, mr = Hecke.ray_class_groupQQ(zk, modulo, rel_plc, ctx.n)
+  end
+  #@vtime :MaxAbExt 1 
+  lP, gS = Hecke.find_gens(mR, coprime_to = minimum(mR1.modulus_fin))
+  listn = NfOrdIdl[norm(mp, x) for x in lP]
+  # Create the map between R and r by taking norms
+  preimgs = Vector{GrpAbFinGenElem}(undef, length(listn))
+  for i = 1:length(preimgs)
+    preimgs[i] = mr\listn[i]
+  end
+  proj = hom(gS, preimgs)
+  #compute the norm group of A in R
+  prms = Vector{GrpAbFinGenElem}(undef, length(lP))
+  for i = 1:length(lP)
+    if haskey(mR1.prime_ideal_preimage_cache, lP[i])
+      f = mR1.prime_ideal_preimage_cache[lP[i]]
+    else
+      f = mR1\lP[i]
+      mR1.prime_ideal_preimage_cache[lP[i]] = f
+    end
+    prms[i] = A.quotientmap(f)
+  end
+  proj1 = hom(gS, prms)
+  S, mS = kernel(proj1, false)
+  mS1 = mS*proj
+  G, mG = Hecke.cokernel(mS1, false)
+  return (order(G) == expected_order)::Bool
+
+end
 

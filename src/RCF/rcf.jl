@@ -109,8 +109,10 @@ function ray_class_field_cyclic_pp(CF::ClassField{S, T}, mQ::GrpAbFinGenMap) whe
   CFpp.quotientmap = compose(CF.quotientmap, mQ)
   CFpp.rayclassgroupmap = CF.rayclassgroupmap
   @assert domain(CFpp.rayclassgroupmap) == domain(CFpp.quotientmap)
-  @vprint :ClassField 1 "finding the Kummer extension...\n"
   
+  @vprint :ClassField 1 "computing the S-units...\n"
+  @vtime :ClassField 1 _rcf_S_units(CFpp)
+  @vprint :ClassField 1 "finding the Kummer extension...\n"
   @vtime :ClassField 1 _rcf_find_kummer(CFpp)
   @vprint :ClassField 1 "reducing the generator...\n"
   @vtime :ClassField 1 _rcf_reduce(CFpp)
@@ -352,7 +354,7 @@ function find_gens(K::KummerExt, S::PrimesSet, cp::fmpz=fmpz(1))
   s, ms = snf(q)
   ind = 1
   
-
+  #=
   ctx = _get_ClassGrpCtx_of_order(ZK)
   fb = ctx.FB.ideals
   
@@ -399,6 +401,7 @@ function find_gens(K::KummerExt, S::PrimesSet, cp::fmpz=fmpz(1))
     K.frob_gens = (lp, sR)
     return lp, sR
   end
+  =#
 
   for p in S
     if cp % p == 0 || index(ZK) % p == 0
@@ -447,87 +450,27 @@ function find_gens(K::KummerExt, S::PrimesSet, cp::fmpz=fmpz(1))
   return lp, sR
 end
 
-
-###############################################################################
+################################################################################
 #
-#  First step: Find the Kummer extension over the cyclotomic field
+#  S-units computation
 #
-###############################################################################
-#=
-  next, to piece things together:
-    have a quo of some ray class group in k,
-    taking primes in k over primes in Z that are 1 mod n
-    then the prime is totally split in Kr, hence I do not need to
-      do relative splitting and relative ideal norms. I am lazy
-        darn: I still need to match the ideals
-    find enough such primes to generate the rcg quotient (via norm)
-                       and the full automorphism group of the big Kummer
+################################################################################
 
-          Kr(U^(1/n))  the "big" Kummer ext
-         /
-        X(z) = Kr(x^(1/n)) the "target"
-      / /
-    X  Kr = k(z)  = Ka
-    | /             |
-    k               |
-    |               |
-    Q               Q
+function _rcf_S_units(CF::ClassField_pp)
 
-    this way we have the map (projection) from "big Kummer" to 
-    Aut(X/k) = quo(rcg)
-    The generator "x" is fixed by the kernel of this map
-
-    Alternatively, "x" could be obtained via Hecke's theorem, ala Cohen
-
-    Finally, X is derived via descent
-=#
-
-
-
-# mR: GrpAb A -> Ideal in k, only preimage used
-# cf: Ideal in K -> GrpAb B, only image
-# mp:: k -> K inclusion
-# builds a (projection) from B -> A identifying (pre)images of
-# prime ideals, the ideals are coprime to cp and ==1 mod n
-
-#function build_map(mR::Map, K::KummerExt, c::CyclotomicExt)
-function build_map(CF::ClassField_pp, K::KummerExt, c::CyclotomicExt)
-  #mR should be GrpAbFinGen -> IdlSet
-  #          probably be either "the rcg"
-  #          or a compositum, where the last component is "the rcg"
-  # we need this to get the defining modulus - for coprime testing
-  m = defining_modulus(CF)[1]
-  ZK = maximal_order(base_ring(K.gen[1]))
-  cp = lcm(minimum(m), discriminant(ZK))
+  f = defining_modulus(CF)[1]
+  @vprint :ClassField 2 "Kummer extension with modulus $f\n"
+  k1 = base_field(CF)
   
-  #cf = Hecke.MapFromFunc(x->can_frobenius1(x, K), IdealSet(ZK), K.AutG)
-
-  mp = c.mp[2]
-  cp = lcm(cp, index(maximal_order(domain(mp))))
-  ZK = maximal_order(c.Ka)
-  #@hassert :ClassField 1 order(domain(cf)) == ZK
-  Zk = order(m)
-  Sp = Hecke.PrimesSet(100, -1, c.n, 1) #primes = 1 mod n, so totally split in cyclo
-
-  #@vtime :ClassField 3 
-  lp, sG = find_gens(K, Sp, cp)
-  G = K.AutG
-  sR = Array{GrpAbFinGenElem, 1}(undef, length(lp))
-  #@vtime :ClassField 3 
-  for i = 1:length(lp)
-    p = intersect_nonindex(mp, lp[i])
-    #Since the prime are totally split in the cyclotomic extension by our choice, we can ignore the valuation of the norm
-    #sR[i] = valuation(norm(lp[i]), norm(p))*CF.quotientmap(preimage(CF.rayclassgroupmap, p))
-    sR[i] = CF.quotientmap(preimage(CF.rayclassgroupmap, p))
-  end
-  @hassert :ClassField 1 order(quo(G, sG, false)[1]) == 1
-       # if think if the quo(G, ..) == 1, then the other is automatic
-       # it is not, in general it will never be.
-       #example: Q[sqrt(10)], rcf of 16*Zk
-  # now the map G -> R sG[i] -> sR[i] 
-  h = hom(sG, sR)
-  @hassert :ClassField 1 !isone(gcd(fmpz(degree(CF)), minimum(m))) || issurjective(h)
-  return h
+  #@assert Hecke.isprime_power(e)
+  @vprint :ClassField 2 "Adjoining the root of unity\n"
+  C = cyclotomic_extension(k1, degree(CF))
+  
+  #We could use f, but we would have to factor it.
+  @vtime :ClassField 3 lP, KK = _s_unit_for_kummer(C, minimum(f))
+  CF.bigK = KK
+  CF.sup = lP
+  return nothing
 end
 
 #This function finds a set S of primes such that we can find a Kummer generator in it.
@@ -604,6 +547,86 @@ function _s_unit_for_kummer(C::CyclotomicExt, f::fmpz)
   return lP, KK
 end
 
+###############################################################################
+#
+#  First step: Find the Kummer extension over the cyclotomic field
+#
+###############################################################################
+#=
+  next, to piece things together:
+    have a quo of some ray class group in k,
+    taking primes in k over primes in Z that are 1 mod n
+    then the prime is totally split in Kr, hence I do not need to
+      do relative splitting and relative ideal norms. I am lazy
+        darn: I still need to match the ideals
+    find enough such primes to generate the rcg quotient (via norm)
+                       and the full automorphism group of the big Kummer
+
+          Kr(U^(1/n))  the "big" Kummer ext
+         /
+        X(z) = Kr(x^(1/n)) the "target"
+      / /
+    X  Kr = k(z)  = Ka
+    | /             |
+    k               |
+    |               |
+    Q               Q
+
+    this way we have the map (projection) from "big Kummer" to 
+    Aut(X/k) = quo(rcg)
+    The generator "x" is fixed by the kernel of this map
+
+    Alternatively, "x" could be obtained via Hecke's theorem, ala Cohen
+
+    Finally, X is derived via descent
+=#
+
+# mR: GrpAb A -> Ideal in k, only preimage used
+# cf: Ideal in K -> GrpAb B, only image
+# mp:: k -> K inclusion
+# builds a (projection) from B -> A identifying (pre)images of
+# prime ideals, the ideals are coprime to cp and ==1 mod n
+
+#function build_map(mR::Map, K::KummerExt, c::CyclotomicExt)
+function build_map(CF::ClassField_pp, K::KummerExt, c::CyclotomicExt)
+  #mR should be GrpAbFinGen -> IdlSet
+  #          probably be either "the rcg"
+  #          or a compositum, where the last component is "the rcg"
+  # we need this to get the defining modulus - for coprime testing
+  m = defining_modulus(CF)[1]
+  ZK = maximal_order(base_ring(K.gen[1]))
+  cp = lcm(minimum(m), discriminant(ZK))
+  
+  #cf = Hecke.MapFromFunc(x->can_frobenius1(x, K), IdealSet(ZK), K.AutG)
+
+  mp = c.mp[2]
+  cp = lcm(cp, index(maximal_order(domain(mp))))
+  ZK = maximal_order(c.Ka)
+  #@hassert :ClassField 1 order(domain(cf)) == ZK
+  Zk = order(m)
+  Sp = Hecke.PrimesSet(100, -1, c.n, 1) #primes = 1 mod n, so totally split in cyclo
+
+  #@vtime :ClassField 3 
+  lp, sG = find_gens(K, Sp, cp)
+  G = K.AutG
+  sR = Array{GrpAbFinGenElem, 1}(undef, length(lp))
+  #@vtime :ClassField 3 
+  for i = 1:length(lp)
+    p = intersect_nonindex(mp, lp[i])
+    #Since the prime are totally split in the cyclotomic extension by our choice, we can ignore the valuation of the norm
+    #sR[i] = valuation(norm(lp[i]), norm(p))*CF.quotientmap(preimage(CF.rayclassgroupmap, p))
+    sR[i] = CF.quotientmap(preimage(CF.rayclassgroupmap, p))
+  end
+  @hassert :ClassField 1 order(quo(G, sG, false)[1]) == 1
+       # if think if the quo(G, ..) == 1, then the other is automatic
+       # it is not, in general it will never be.
+       #example: Q[sqrt(10)], rcf of 16*Zk
+  # now the map G -> R sG[i] -> sR[i] 
+  h = hom(sG, sR)
+  @hassert :ClassField 1 !isone(gcd(fmpz(degree(CF)), minimum(m))) || issurjective(h)
+  return h
+end
+
 function _rcf_find_kummer(CF::ClassField_pp{S, T}) where {S, T}
 
   if isdefined(CF, :K)
@@ -618,9 +641,10 @@ function _rcf_find_kummer(CF::ClassField_pp{S, T}) where {S, T}
   C = cyclotomic_extension(k1, degree(CF))
   
   #We could use f, but we would have to factor it.
-  @vtime :ClassField 3 lP, KK = _s_unit_for_kummer(C, minimum(f))
-  CF.bigK = KK
-  CF.sup = lP
+  #As we only need the support, we save the computation of
+  #the valuations of the ideal
+  KK = CF.bigK  
+  lP = CF.sup
   @vprint :ClassField 2 "building Artin map for the large Kummer extension\n"
   @vtime :ClassField 2 h = build_map(CF, KK, C)
   @vprint :ClassField 2 "... done\n"

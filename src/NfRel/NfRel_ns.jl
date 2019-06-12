@@ -668,11 +668,16 @@ mutable struct NfRel_nsToNfRel_nsMor{T} <: Map{NfRel_ns{T}, NfRel_ns{T}, HeckeMa
       # x is an element of K
       # First evaluate the coefficients of f at a to get a polynomial over L
       # Then evaluate at b
-      y = deepcopy(x)
-      for i=1:length(y.data)
-        y.data.coeffs[i] = aut(y.data.coeffs[i])
+      f = x.data
+      Kbxyz = parent(f)
+      k = nvars(Kbxyz)
+      Lbxyz = PolynomialRing(base_ring(L), k)[1]
+      coeffs = Vector{T}(undef, length(f.coeffs))
+      for i = 1:length(coeffs)
+        coeffs[i] = aut(f.coeffs[i])
       end
-      return msubst(y.data, emb)
+      g = Lbxyz(coeffs, f.exps)
+      return msubst(g, emb)
     end
 
     z = new{T}()
