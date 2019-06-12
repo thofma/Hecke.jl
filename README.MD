@@ -71,16 +71,3 @@ with basis [1,a,a^2]
 ## Documentation
 
 The online documentation can be found here: [http://thofma.github.io/Hecke.jl/latest/](http://thofma.github.io/Hecke.jl/latest/)
-
-The documentation of the single functions can also be accessed at the julia prompt. Here is an example:
-
-```
-help?> signature
-search: signature
-
-  ----------------------------------------------------------------------------
-
-  signature(O::NfMaximalOrder) -> Tuple{Int, Int}
-
-  |  Returns the signature of the ambient number field of \mathcal O.
-```
