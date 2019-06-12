@@ -1636,7 +1636,7 @@ function _from_relative_to_abs(L::NfRel_ns{T}, auts::Array{NfRel_nsToNfRel_nsMor
   for i = 2:degree(Ks)
     arr_prim_img[i] = arr_prim_img[i-1]*mKs.prim_img
   end
-  M1 = inv(basis_mat(arr_prim_img))
+  M1 = inv(basis_mat(arr_prim_img, FakeFmpqMat))
   basisO2 = Array{nf_elem, 1}(undef, degree(Ks))
   M = zero_matrix(FlintZZ, 1, degree(Ks))
   for i=1:length(basisO2)

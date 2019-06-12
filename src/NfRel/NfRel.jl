@@ -506,6 +506,13 @@ Nemo.canonical_unit(a::NfRelElem) = a
 
 @inline degree(L::Hecke.NfRel) = degree(L.pol)
 
+@doc Markdown.doc"""
+    degree(K::NumField) -> Int
+
+> Return the degree of the number field over its base field.
+"""
+degree(::NumField)
+
 #######################################################################
 # convenience constructions
 #######################################################################
@@ -779,9 +786,10 @@ function (R::Generic.PolyRing{NfRelElem{T}})(a::NfRelElem{NfRelElem{T}}) where T
   error("wrong ring")
 end
 
-function factor(f::Generic.Poly{NfRelElem{T}}) where T
+function factor(f::PolyElem{<: NumFieldElem})
   K = base_ring(f)
   Ka, rel_abs, _ = absolute_field(K)
+
   function map_poly(P::Ring, mp::Map, f::Generic.Poly)
     return P([mp(coeff(f, i)) for i=0:degree(f)])
   end

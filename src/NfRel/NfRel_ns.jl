@@ -112,7 +112,10 @@ end
 Nemo.zero(K::NfRel_ns) = K(Nemo.zero(parent(K.pol[1])))
 
 Nemo.one(K::NfRel_ns) = K(Nemo.one(parent(K.pol[1])))
+
 Nemo.one(a::NfRel_nsElem) = one(a.parent)
+
+(K::NfRel_ns{T})(a::NfRel_nsElem) where {T} = a
 
 ################################################################################
 #
@@ -376,6 +379,15 @@ function basis(K::NfRel_ns)
     push!(b, prod(g[j]^(i[j]-1) for j=1:length(i)))
   end
   return b
+end
+
+function basis_mat(a::Vector{NfRel_nsElem{T}}) where {T <: NumFieldElem}
+  K = parent(a[1])
+  M = zero_matrix(base_ring(K), length(a), degree(K))
+  for i in 1:length(a)
+    elem_to_mat_row!(M, i, a[i])
+  end
+  return M
 end
 
 function elem_to_mat_row!(M::Generic.Mat{T}, i::Int, a::NfRel_nsElem{T}) where T

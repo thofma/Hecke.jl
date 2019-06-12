@@ -23,6 +23,12 @@ degree(A::AlgAss) = dim(A)
 
 elem_type(::Type{AlgAss{T}}) where {T} = AlgAssElem{T, AlgAss{T}}
 
+order_type(::AlgAss{fmpq}) = AlgAssAbsOrd{AlgAss{fmpq}, elem_type(AlgAss{fmpq})}
+order_type(::Type{AlgAss{fmpq}}) = AlgAssAbsOrd{AlgAss{fmpq}, elem_type(AlgAss{fmpq})}
+
+order_type(::AlgAss{T}) where { T <: NumFieldElem } = AlgAssRelOrd{T, frac_ideal_type(order_type(parent_type(T)))}
+order_type(::Type{AlgAss{T}}) where { T <: NumFieldElem } = AlgAssRelOrd{T, frac_ideal_type(order_type(parent_type(T)))}
+
 function multiplication_table(A::AlgAss; copy::Bool = true)
   @assert !iszero(A)
   if copy
@@ -322,7 +328,12 @@ p = prime_decomposition(OK, 2)[1][1]
 # The idea is to compute pseudo-basis of O and I respectively, for which the
 # coefficient ideals have zero p-adic valuation. Then we can think in the
 # localization at p and do as in the case of principal ideal domains.
-function AlgAss(O::NfRelOrd{T, S}, I::NfRelOrdIdl{T, S}, p::Union{NfOrdIdl, NfRelOrdIdl}) where {T, S}
+function AlgAss(O::Union{ NfRelOrd{T, S}, AlgAssRelOrd{T, S} }, I::Union{ NfRelOrdIdl{T, S}, AlgAssRelOrdIdl{T, S} }, p::Union{NfOrdIdl, NfRelOrdIdl}) where {T, S}
+
+  isalgass = ( O isa AlgAssRelOrd )
+
+  K = isalgass ? algebra(O) : nf(O)
+
   basis_pmatI = basis_pmat(I, copy = false)
   basis_pmatO = basis_pmat(O, copy = false)
 
@@ -334,7 +345,7 @@ function AlgAss(O::NfRelOrd{T, S}, I::NfRelOrdIdl{T, S}, p::Union{NfOrdIdl, NfRe
   new_basis_coeffs = S[]
 
   for i in 1:degree(O)
-    a = pi^valuation(basis_pmat(O).coeffs[i], p)
+    a = pi^valuation(basis_pmatO.coeffs[i], p)
     push!(new_basis_coeffs, a * basis_pmatO.coeffs[i])
     mul_row!(new_basis_mat, i, inv(a))
     for j in 1:degree(O)
@@ -351,7 +362,7 @@ function AlgAss(O::NfRelOrd{T, S}, I::NfRelOrdIdl{T, S}, p::Union{NfOrdIdl, NfRe
   end
 
   Fp, mF = ResidueField(order(p), p)
-  mmF = extend(mF, base_ring(nf(O)))
+  mmF = extend(mF, base_ring(K))
   invmmF = pseudo_inv(mmF)
 
   basis_elts = Int[]
@@ -372,21 +383,32 @@ function AlgAss(O::NfRelOrd{T, S}, I::NfRelOrdIdl{T, S}, p::Union{NfOrdIdl, NfRe
 
   reverse!(reducers)
 
-  OLL = Order(nf(O), PseudoMatrix(new_basis_mat, new_basis_coeffs))
+  OLL = Order(K, PseudoMatrix(new_basis_mat, new_basis_coeffs))
 
-  newI = ideal(OLL, PseudoMatrix(new_basis_mat_I, new_coeff_I))
+  if isalgass
+    newI = ideal(OLL, PseudoMatrix(new_basis_mat_I, new_coeff_I), :nothing, false, true)
+  else
+    newI = ideal(OLL, PseudoMatrix(new_basis_mat_I, new_coeff_I), false, true)
+  end
+  # basis_pmat of newI is NOT in pseudo HNF!
 
   new_basis = pseudo_basis(OLL)
 
   pseudo_basis_newI = pseudo_basis(newI)
 
-  tmp_matrix = zero_matrix(base_ring(nf(O)), 1, degree(O))
+  tmp_matrix = zero_matrix(base_ring(K), 1, degree(O))
 
   basis_mat_inv_OLL = basis_mat_inv(OLL)
 
-  function _coeff(c) 
-    for i in 0:degree(O) - 1
-      tmp_matrix[1, i + 1] = coeff(c, i)
+  function _coeff(c)
+    if isalgass
+      for i = 1:degree(O)
+        tmp_matrix[1, i] = coeffs(c, copy = false)[i]
+      end
+    else
+      for i in 0:degree(O) - 1
+        tmp_matrix[1, i + 1] = coeff(c, i)
+      end
     end
     return tmp_matrix * basis_mat_inv_OLL
   end
@@ -423,10 +445,16 @@ function AlgAss(O::NfRelOrd{T, S}, I::NfRelOrdIdl{T, S}, p::Union{NfOrdIdl, NfRe
   else
     A = AlgAss(Fp, mult_table)
   end
-  A.iscommutative = 1
+  if !isalgass || iscommutative(O)
+    A.iscommutative = 1
+  end
 
-  function _image(a::NfRelOrdElem)
-    c = a.elem_in_nf
+  function _image(a::Union{ NfRelOrdElem, AlgAssRelOrdElem })
+    if isalgass
+      c = elem_in_algebra(a, copy = false)
+    else
+      c = a.elem_in_nf
+    end
     coeffs = _coeff(c)
     for k in reducers
       d = -coeffs[k]//new_basis_mat_I[k, k]
@@ -458,7 +486,7 @@ function AlgAss(O::NfRelOrd{T, S}, I::NfRelOrdIdl{T, S}, p::Union{NfOrdIdl, NfRe
     return O(sum((invmmF(v.coeffs[i])) * lifted_basis_of_A[i] for i in 1:r))
   end
 
-  OtoA = NfRelOrdToAlgAssMor{T, S, elem_type(Fp)}(O, A, _image, _preimage)
+  OtoA = RelOrdToAlgAssMor(O, A, _image, _preimage)
 
   return A, OtoA
 end
@@ -728,12 +756,12 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-     radical(A::AlgAss{T}) where { T <: Union{ gfp_elem, Generic.ResF{fmpz}, fmpq, nf_elem } }
+     radical(A::AlgAss{T}) where { T <: Union{ gfp_elem, Generic.ResF{fmpz}, fq_nmod, fq, fmpq, nf_elem } }
 
 Given an algebra over a finite field of prime order, this function
 returns the radical of A.
 """
-function radical(A::AlgAss{T}) where { T <: Union{ gfp_elem, Generic.ResF{fmpz}, fmpq, nf_elem } }
+function radical(A::AlgAss{T}) where { T <: Union{ gfp_elem, Generic.ResF{fmpz}, fq_nmod, fq, fmpq, nf_elem } }
   return ideal_from_gens(A, _radical(A), :twosided)
 end
 
@@ -741,49 +769,127 @@ end
 function _radical(A::AlgAss{T}) where { T <: Union{ gfp_elem, Generic.ResF{fmpz} } }
   F = base_ring(A)
   p = characteristic(F)
-  l = clog(fmpz(dim(A)), p)
-  # First step: kernel of the trace matrix
-  I = trace_matrix(A)
-  k, B = nullspace(I)
-  # The columns of B give the coordinates of the elements in the order.
-  if k == 0
+  k = flog(fmpz(dim(A)), p)
+
+  MF = trace_matrix(A)
+  d, B = nullspace(MF)
+  if d == 0
     return elem_type(A)[]
   end
+
   C = transpose(B)
-  if l == 1 && dim(A) != p
-    # In this case, we can output I: it is the standard p-trace method.
-    return elem_type(A)[ elem_from_mat_row(A, C, i) for i = 1:nrows(C) ]
-  end
   # Now, iterate: we need to find the kernel of tr((xy)^(p^i))/p^i mod p
   # on the subspace generated by C
   # Hard to believe, but this is linear!!!!
-  pi = fmpz(1)
-  for i = 1:l
-    pi = p*pi
+  MZ = zero_matrix(FlintZZ, degree(A), degree(A))
+  pl = fmpz(1)
+  a = A()
+  for l = 1:k
+    pl = p*pl
     M = zero_matrix(F, dim(A), nrows(C))
-    for t = 1:nrows(C)
-      elm = elem_from_mat_row(A, C, t)
-      for s = 1:dim(A)
-        a = elm*A[s]
-        M1 = representation_matrix(a)
-        M2 = zero_matrix(FlintZZ, nrows(M1), ncols(M1))
-        for j = 1:nrows(M1)
-          for k = 1:ncols(M1)
-            M2[j, k] = lift(M1[j, k])
+    for i = 1:nrows(C)
+      c = elem_from_mat_row(A, C, i)
+      for j = 1:dim(A)
+        a = mul!(a, c, A[j])
+        MF = representation_matrix(a)
+        for m = 1:nrows(MF)
+          for n = 1:ncols(MF)
+            MZ[m, n] = lift(MF[m, n])
           end
         end
-        el = tr(M2^Int(pi))
-        @assert iszero(mod(el, pi))
-        M[s, t] = F(divexact(el, pi))
+        t = tr(MZ^Int(pl))
+        @assert iszero(mod(t, pl))
+        M[j, i] = F(divexact(t, pl))
       end
     end
-    k, B = nullspace(M)
-    if k == 0
+    d, B = nullspace(M)
+    if d == 0
       return elem_type(A)[]
     end
     C = transpose(B)*C
   end
+
   return elem_type(A)[ elem_from_mat_row(A, C, i) for i = 1:nrows(C) ]
+end
+
+function _radical(A::AlgAss{T}) where { T <: Union{ fq_nmod, fq } }
+  F = base_ring(A)
+
+  if degree(F) == 1
+    if T <: fq_nmod
+      Fp = GF(Int(characteristic(F)))
+    else
+      Fp = GF(characteristic(F))
+    end
+    B, AtoB, BtoA = restrict_scalars(A, Fp)
+    J = _radical(B)
+    return map(BtoA, J)
+  end
+
+  p = characteristic(F)
+  k = flog(fmpz(dim(A)), p)
+  Qx, x = PolynomialRing(FlintQQ, "x", cached = false)
+  n = degree(F)
+  powers_of_gen = Vector{elem_type(F)}(undef, n)
+  powers_of_gen[1] = one(F)
+  for i = 2:n
+    powers_of_gen[i] = powers_of_gen[i - 1]*gen(F)
+  end
+  an = powers_of_gen[n]*gen(F)
+  f = Qx(push!([ -fmpq(coeff(an, i)) for i = 0:(n - 1) ], fmpq(1)))
+  K, a = number_field(f, "a")
+
+  MF = trace_matrix(A)
+  d, B = nullspace(MF)
+  if d == 0
+    return elem_type(A)[]
+  end
+
+  C = transpose(B)
+  pl = fmpz(1)
+  MK = zero_matrix(K, degree(A), degree(A))
+  MQx = zero_matrix(Qx, degree(A), degree(A))
+  a = A()
+  for l = 1:k
+    pl = p*pl
+    M = zero_matrix(F, dim(A), nrows(C))
+    for i = 1:nrows(C)
+      c = elem_from_mat_row(A, C, i)
+      for j = 1:dim(A)
+        a = mul!(a, c, A[j])
+        MF = representation_matrix(a)
+        MK = _lift_fq_mat!(MF, MK, MQx)
+        t = tr(MK^Int(pl))
+        @assert all([ iszero(mod(coeff(t, s), pl)) for s = 0:(n - 1) ])
+        M[j, i] = sum([ powers_of_gen[s + 1]*divexact(numerator(coeff(t, s)), pl) for s = 0:(n - 1) ])
+      end
+    end
+    d, B = nullspace(M)
+    if d == 0
+      return elem_type(A)[]
+    end
+    C = transpose(B)*C
+  end
+
+  return elem_type(A)[ elem_from_mat_row(A, C, i) for i = 1:nrows(C) ]
+end
+
+function _lift_fq_mat!(M1::MatElem{T}, M2::MatElem{nf_elem}, M3::MatElem{fmpq_poly}) where { T <: Union{ fq_nmod, fq } }
+  @assert ncols(M1) == ncols(M2) && ncols(M1) == ncols(M3)
+  @assert nrows(M1) == nrows(M2) && nrows(M1) == nrows(M3)
+  n = degree(base_ring(M1))
+  K = base_ring(M2)
+  R = base_ring(M3)
+  for i = 1:nrows(M1)
+    for j = 1:ncols(M1)
+      # Sadly, there is no setcoeff! for nf_elem...
+      for k = 0:(n - 1)
+        M3[i, j] = setcoeff!(M3[i, j], k, fmpq(coeff(M1[i, j], k)))
+      end
+      ccall((:nf_elem_set_fmpq_poly, :libantic), Nothing, (Ref{nf_elem}, Ref{fmpq_poly}, Ref{AnticNumberField}), M2[i, j], M3[i, j], K)
+    end
+  end
+  return M2
 end
 
 function _radical(A::AlgAss{T}) where { T <: Union{ fmpq, nf_elem } }

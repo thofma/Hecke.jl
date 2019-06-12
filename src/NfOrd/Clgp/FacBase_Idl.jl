@@ -41,10 +41,10 @@ function NfFactorBase(O::NfOrd, lp::Array{NfOrdIdl, 1})
   fb = Dict{fmpz, Array{Tuple{Int, NfOrdIdl}, 1}}()
 
   for i = 1:length(lp)
-    if !haskey(fb, lp[i].gen_one)
-      fb[lp[i].gen_one] = [(i, lp[i])]
+    if !haskey(fb, minimum(lp[i]))
+      fb[minimum(lp[i])] = [(i, lp[i])]
     else
-      push!(fb[lp[i].gen_one], (i, lp[i]))
+      push!(fb[minimum(lp[i])], (i, lp[i]))
     end
   end
 
@@ -126,9 +126,7 @@ function _factor!(FB::NfFactorBase, a::nf_elem,
 end
 
 function factor(FB::NfFactorBase, a::nf_elem)
-  M = SMat{Int}()
-  _factor!(M, 1, FB, a)
-  return M
+  return _factor!(FB, a, true, abs(norm(a)), false)[2]
 end
 
 function _factor!(FB::Hecke.NfFactorBase, A::Hecke.NfOrdIdl,

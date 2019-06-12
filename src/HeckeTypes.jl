@@ -1,5 +1,19 @@
 ################################################################################
 #
+#  Abstract types for number fields
+#
+################################################################################
+
+abstract type RelativeExtension{T} <: NumField{T} end
+
+abstract type RelativeElement{T} <: NumFieldElem{T} end
+
+abstract type NonSimpleNumField{T} <: NumField{T} end
+
+abstract type NonSimpleNumFieldElem{T} <: NumFieldElem{T} end
+
+################################################################################
+#
 #  Z/nZ modelled with UInt's
 #
 ################################################################################
@@ -704,7 +718,7 @@ mutable struct NfAbsOrd{S, T} <: Ring
 
   function NfAbsOrd{S, T}(b::Array{T, 1}, cached::Bool = false) where {S, T}
     K = parent(b[1])
-    A = basis_mat(b)
+    A = basis_mat(b, FakeFmpqMat)
     if cached && haskey(NfAbsOrdID, (K,A))
       return NfAbsOrdID[(K,A)]::NfAbsOrd{S, T}
     else
@@ -1779,7 +1793,6 @@ end
 #
 ################################################################################
 
-abstract type RelativeExtension{T} <: Nemo.Field end
 
 mutable struct NfRel{T} <: RelativeExtension{T}
   base_ring::Nemo.Field
@@ -1808,7 +1821,6 @@ end
 const NfRelID = Dict{Tuple{Generic.PolyRing, Generic.Poly, Symbol},
                      NfRel}()
 
-abstract type RelativeElement{T} <: Nemo.FieldElem end
 
 mutable struct NfRelElem{T} <: RelativeElement{T}
   data::Generic.Poly{T}
@@ -1908,10 +1920,10 @@ const GroupLattice = GrpAbLatticeCreate()
 
 mutable struct PMat{T, S}
   parent
-  matrix::Generic.Mat{T}
+  matrix::Generic.MatSpaceElem{T}
   coeffs::Array{S, 1}
 
-  function PMat{T, S}(m::Generic.Mat{T}, c::Array{S, 1}) where {T, S}
+  function PMat{T, S}(m::Generic.MatSpaceElem{T}, c::Array{S, 1}) where {T, S}
     z = new{T, S}()
     z.matrix = m
     z.coeffs = c
@@ -1930,7 +1942,7 @@ end
 #
 ################################################################################
 
-mutable struct NfAbsNS <: Field
+mutable struct NfAbsNS <: NonSimpleNumField{fmpq}
   pol::Array{fmpq_mpoly, 1}
   S::Array{Symbol, 1}
   basis#::Vector{NfAbsNSElem}
@@ -1949,7 +1961,7 @@ mutable struct NfAbsNS <: Field
   end
 end
 
-mutable struct NfAbsNSElem <: FieldElem
+mutable struct NfAbsNSElem <: NonSimpleNumFieldElem{fmpq}
   data::fmpq_mpoly
   parent::NfAbsNS
 

@@ -296,6 +296,38 @@ end
 *(O::AlgAssRelOrd{S, T}, x::AlgAssRelOrdElem{S, T}) where {S, T} = ideal(O, x, :right)
 *(x::AlgAssRelOrdElem{S, T}, O::AlgAssRelOrd{S, T}) where {S, T} = ideal(O, x, :left)
 
+function ideal(O::AlgAssRelOrd{S, T}, a::T, check::Bool = true) where {S, T}
+  d = degree(O)
+  pb = pseudo_basis(O, copy = false)
+  M = identity_matrix(base_ring(algebra(O)), d)
+  PM = PseudoMatrix(M, [ a*pb[i][2] for i = 1:d ])
+  if check
+    !defines_ideal(O, PM) && error("The coefficient ideal does not define an ideal.")
+  end
+  PM = pseudo_hnf(PM, :lowerleft)
+  return ideal(O, PM, :twosided, false, true)
+end
+
+function ideal(O::AlgAssRelOrd{nf_elem, NfOrdFracIdl}, a::NfOrdIdl, check::Bool = true)
+  aa = frac_ideal(order(a), a, fmpz(1))
+  return ideal(O, aa, check)
+end
+
+function ideal(O::AlgAssRelOrd, a::NfRelOrdIdl, check::Bool = true)
+  @assert order(a) == order(pseudo_basis(O, copy = false)[1][2])
+
+  aa = frac_ideal(order(a), basis_pmat(a), true)
+  return ideal(O, aa, check)
+end
+
+*(O::AlgAssRelOrd{S, T}, a::T) where {S, T} = ideal(O, a)
+
+*(a::T, O::AlgAssRelOrd{S, T}) where {S, T} = ideal(O, a)
+
+*(O::AlgAssRelOrd, a::Union{NfOrdIdl, NfRelOrdIdl}) = ideal(O, a)
+
+*(a::Union{NfOrdIdl, NfRelOrdIdl}, O::AlgAssRelOrd) = ideal(O, a)
+
 ################################################################################
 #
 #  Inclusion of elements in ideals
@@ -348,4 +380,153 @@ function _test_ideal_sidedness(a::AlgAssRelOrdIdl, side::Symbol)
   end
 
   return _spans_subset_of_pseudohnf(basis_pmat(c, copy = false), basis_pmat(a, copy = false), :lowerleft)
+end
+
+################################################################################
+#
+#  Ring of multipliers, left and right order
+#
+################################################################################
+
+function ring_of_multipliers(a::AlgAssRelOrdIdl{T1, T2}, action::Symbol = :left) where {T1, T2}
+  O = order(a)
+  K = base_ring(algebra(O))
+  d = degree(O)
+  pb = pseudo_basis(a, copy = false)
+  S = basis_mat_inv(O, copy = false)*basis_mat_inv(a, copy = false)
+  M = basis_mat(O, copy = false)*representation_matrix(pb[1][1], action)*S
+  for i = 2:d
+    M = hcat(M, basis_mat(O, copy = false)*representation_matrix(pb[i][1], action)*S)
+  end
+  invcoeffs = [ simplify(inv(pb[i][2])) for i = 1:d ]
+  C = Array{T2}(undef, d^2)
+  for i = 1:d
+    for j = 1:d
+      if i == j
+        C[(i - 1)*d + j] = K(1)*order(pb[i][2])
+      else
+        C[(i - 1)*d + j] = simplify(pb[i][2]*invcoeffs[j])
+      end
+    end
+  end
+  PM = PseudoMatrix(transpose(M), C)
+  PM = sub(pseudo_hnf(PM, :upperright, true), 1:d, 1:d)
+  N = inv(transpose(PM.matrix))*basis_mat(O, copy = false)
+  PN = PseudoMatrix(N, [ simplify(inv(I)) for I in PM.coeffs ])
+  PN = pseudo_hnf(PN, :lowerleft, true)
+  return typeof(O)(algebra(O), PN)
+end
+
+left_order(a::AlgAssRelOrdIdl) = ring_of_multipliers(a, :right)
+
+right_order(a::AlgAssRelOrdIdl) = ring_of_multipliers(a, :left)
+
+################################################################################
+#
+#  Reduction of element modulo ideal
+#
+################################################################################
+
+function mod!(a::AlgAssRelOrdElem, I::AlgAssRelOrdIdl)
+  O = order(I)
+  b = coordinates(a, copy = false)
+  PM = basis_pmat(I, copy = false) # PM is assumed to be in lower left pseudo hnf
+  t = parent(b[1])()
+  t1 = parent(b[1])()
+  for i = degree(O):-1:1
+    t = add!(t, mod(b[i], PM.coeffs[i]), -b[i])
+    for j = 1:i
+      t1 = mul!(t1, t, PM.matrix[i, j])
+      b[j] = add!(b[j], b[j], t1)
+    end
+  end
+
+  t = algebra(O)()
+  B = basis_alg(O, copy = false)
+  zero!(a.elem_in_algebra)
+  for i = 1:degree(O)
+    t = mul!(t, B[i], algebra(O)(b[i]))
+    a.elem_in_algebra = add!(a.elem_in_algebra, a.elem_in_algebra, t)
+  end
+
+  return a
+end
+
+function mod(a::AlgAssRelOrdElem, I::AlgAssRelOrdIdl)
+  return mod!(deepcopy(a), I)
+end
+
+function mod!(a::AlgAssRelOrdElem, Q::RelOrdQuoRing)
+  return mod!(a, ideal(Q))
+end
+
+function mod(a::AlgAssRelOrdElem, Q::RelOrdQuoRing)
+  return mod(a, ideal(Q))
+end
+
+################################################################################
+#
+#  Norm
+#
+################################################################################
+
+# Assumes, that det(basis_mat(a)) == 1
+function assure_has_norm(a::AlgAssRelOrdIdl)
+  if isdefined(a, :norm)
+    return nothing
+  end
+  if iszero(a)
+    O = base_ring(order(a))
+    a.norm = O()*O
+    return nothing
+  end
+  c = basis_pmat(a, copy = false).coeffs
+  d = inv_coeff_ideals(order(a), copy = false)
+  n = c[1]*d[1]
+  for i = 2:degree(order(a))
+    n *= c[i]*d[i]
+  end
+  simplify(n)
+  @assert denominator(n) == 1
+  a.norm = numerator(n)
+  return nothing
+end
+
+function norm(a::AlgAssRelOrdIdl; copy::Bool = true)
+  assure_has_norm(a)
+  if copy
+    return deepcopy(a.norm)
+  else
+    return a.norm
+  end
+end
+
+function assure_has_normred(a::AlgAssRelOrdIdl)
+  if isdefined(a, :normred)
+    return nothing
+  end
+  if iszero(a)
+    a.normred = norm(a)
+    return nothing
+  end
+
+  A = algebra(order(a))
+  m = isqrt(dim(A))
+  @assert m^2 == dim(A)
+  N = norm(a, copy = false)
+  b, I = ispower(N, m)
+  @assert b
+  a.normred = I
+  return nothing
+end
+
+function normred(a::AlgAssRelOrdIdl; copy::Bool = true)
+  @assert dimension_of_center(algebra(order(a))) == 1
+  @assert algebra(order(a)).issimple == 1
+  assure_has_normred(a)
+  if copy
+    return deepcopy(a.normred)
+  else
+    return a.normred
+  end
 end

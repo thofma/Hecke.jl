@@ -730,9 +730,9 @@ end
 #
 ################################################################################
 
-left_order(a::AlgAssAbsOrdIdl) = ring_of_multipliers(a, fmpz(1), :left)
+left_order(a::AlgAssAbsOrdIdl) = ring_of_multipliers(a, fmpz(1), :right)
 
-right_order(a::AlgAssAbsOrdIdl) = ring_of_multipliers(a, fmpz(1), :right)
+right_order(a::AlgAssAbsOrdIdl) = ring_of_multipliers(a, fmpz(1), :left)
 
 ################################################################################
 #

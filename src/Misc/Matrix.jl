@@ -10,24 +10,10 @@ import Base.vcat
 #
 ################################################################################
 
-dense_matrix_type(::Type{fmpz}) = fmpz_mat
+dense_matrix_type(::Type{T}) where {T} = Generic.MatSpaceElem{T}
 
-dense_matrix_type(::Type{fmpq}) = fmpq_mat
-
-dense_matrix_type(::Type{nmod}) = nmod_mat
-
-dense_matrix_type(::Type{fq_nmod}) = fq_nmod_mat
-
-dense_matrix_type(::Type{fq}) = fq_mat
-
-dense_matrix_type(::Type{arb}) = arb_mat
-
-dense_matrix_type(::Type{acb}) = acb_mat
-
-dense_matrix_type(::Type{gfp_elem}) = gfp_mat
-
-dense_matrix_type(::Type{T}) where {T} = Generic.Mat{T}
-
+# TODO (easy): Check if the following can be simplified to
+# coefficient_type(::Type{<:Mat{T}}} where {T} = T
 coefficient_type(::Type{fmpz_mat}) = fmpz
 
 coefficient_type(::Type{fmpq_mat}) = fmpq
@@ -61,7 +47,34 @@ function zero!(a::MatElem)
   return a
 end
 
-mul!(c::MatElem, a::MatElem, b::MatElem) = a*b
+function mul!(c::MatElem, a::MatElem, b::MatElem)
+  ncols(a) != nrows(b) && error("Incompatible matrix dimensions")
+  nrows(c) != nrows(a) && error("Incompatible matrix dimensions")
+  ncols(c) != ncols(b) && error("Incompatible matrix dimensions")
+
+  t = base_ring(a)()
+  for i = 1:nrows(a)
+    for j = 1:ncols(b)
+      c[i, j] = zero!(c[i, j])
+      for k = 1:ncols(a)
+        c[i, j] = addmul_delayed_reduction!(c[i, j], a[i, k], b[k, j], t)
+      end
+      c[i, j] = reduce!(c[i, j])
+    end
+  end
+  return c
+end
+
+function add!(c::MatElem, a::MatElem, b::MatElem)
+  parent(a) != parent(b) && error("Parents don't match.")
+  parent(c) != parent(b) && error("Parents don't match.")
+  for i = 1:nrows(c)
+    for j = 1:ncols(c)
+      c[i, j] = add!(c[i, j], a[i, j], b[i, j])
+    end
+  end
+  return c
+end
 
 ################################################################################
 #
@@ -1456,11 +1469,6 @@ function _can_solve_with_kernel(A::MatElem{T}, B::MatElem{T}) where T <: FieldEl
   return true, sol, n
 end
 
-# TODO (easy): Remove this once the name is changed in AbstractAlgebra
-hnf_with_trafo(x::fmpz_mat) = hnf_with_transform(x)
-
-hnf_with_transform(x) = hnf_with_trafo(x)
-
 @doc Markdown.doc"""
     can_solve(A::MatElem{T}, B::MatElem{T}, side = :right) where T <: RingElem -> Bool, MatElem
     
@@ -1488,7 +1496,7 @@ function can_solve(A::MatElem{T}, B::MatElem{T};
 end
 
 function _can_solve(a::MatElem{S}, b::MatElem{S}, side = :left) where S <: RingElem
-  H, T = hnf_with_trafo(transpose(a))
+  H, T = hnf_with_transform(transpose(a))
   b = deepcopy(b)
   z = similar(a, ncols(b), ncols(a))
   l = min(nrows(a), ncols(a))

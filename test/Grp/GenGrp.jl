@@ -1,6 +1,5 @@
-using Test
 
-@testset "quotients" begin
+@testset "Generic Group" begin
     @testset "QuotientGroup" begin
         @test Hecke.quotient_indx(1,1) == [(1,1)]
         @test Hecke.quotient_indx(2,1) == [(1,1), (2,1)]
@@ -56,23 +55,21 @@ using Test
         @test_throws ErrorException psylow_subgroup(G,10)
     end
 
-    @testset "morphisms" begin
-        G,AtoG,GtoA = generic_group([1, -1, im, -im], *)
-        Hom = GrpGenToGrpGenMor(G,G,[G[1],G[1],G[1],G[1]])
-        @test order(image(Hom)[1]) == 1
-        @test order(kernel(Hom)[1]) == 4
-        @test issurjective(Hom) == false
-        @test isinjective(Hom) == false
-        @test isbijective(Hom) == false
+    @testset "GrpGenToGrpAb" begin
+        G,AtoG,GtoA = Hecke.generic_group([1, -1, im, -im], *)
+        GrpAb, GtoGrpAb, GrpAbtoG = gen_2_ab(G)
+        @test GrpAb.snf == ZZ.([4])
+        @test order(GtoGrpAb[G[1]]) == 1
+        @test order(GtoGrpAb[G[2]]) == 2
+        @test order(GtoGrpAb[G[3]]) == 4
+        @test order(GtoGrpAb[G[4]]) == 4
 
-        Hom = GrpGenToGrpGenMor(G,G,[G[1],G[2],G[3],G[4]])
-        @test order(image(Hom)[1]) == 4
-        @test order(kernel(Hom)[1]) == 1
-        @test issurjective(Hom) == true
-        @test isinjective(Hom) == true
-        @test isbijective(Hom) == true
+        @test gen_2_ab(small_group(4,2))[1].snf == ZZ.([2, 2])
+        @test gen_2_ab(small_group(8,2))[1].snf == ZZ.([2, 4])
+        @test gen_2_ab(small_group(58,2))[1].snf == ZZ.([58])
+        @test gen_2_ab(small_group(56,13))[1].snf == ZZ.([2, 2, 14])
+        @test gen_2_ab(small_group(60,13))[1].snf == ZZ.([2, 30])
+        @test gen_2_ab(small_group(54,15))[1].snf == ZZ.([3, 3, 6])
+
     end
-
-
-
 end

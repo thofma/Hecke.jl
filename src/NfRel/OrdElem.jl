@@ -368,6 +368,24 @@ end
 
 ################################################################################
 #
+#  Unsafe operations
+#
+################################################################################
+
+function add!(c::NfRelOrdElem, a::NfRelOrdElem, b::NfRelOrdElem)
+  c.elem_in_nf = add!(c.elem_in_nf, a.elem_in_nf, b.elem_in_nf)
+  c.has_coord = false
+  return c
+end
+
+function mul!(c::NfRelOrdElem, a::NfRelOrdElem, b::NfRelOrdElem)
+  c.elem_in_nf = mul!(c.elem_in_nf, a.elem_in_nf, b.elem_in_nf)
+  c.has_coord = false
+  return c
+end
+
+################################################################################
+#
 #  Trace
 #
 ################################################################################
@@ -391,6 +409,10 @@ tr(a::NfRelOrdElem) = tr(a.elem_in_nf)
 Returns the norm of $a$.
 """
 norm(a::NfRelOrdElem) = norm(a.elem_in_nf)
+
+norm(a::NfRelOrdElem, k::Union{ NfRel, AnticNumberField, NfRel_ns, FlintRationalField }) = norm(a.elem_in_nf, k)
+
+absolute_norm(a::NfRelOrdElem) = absolute_norm(a.elem_in_nf)
 
 ################################################################################
 #

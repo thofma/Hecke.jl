@@ -491,8 +491,8 @@ mutable struct AlgAssRelOrd{S, T} <: Ring
   dim::Int
   pseudo_basis::Vector{Tuple{AbsAlgAssElem{S}, T}}
   basis_alg::Vector{AbsAlgAssElem{S}}
-  basis_mat::Generic.Mat{S}
-  basis_mat_inv::Generic.Mat{S}
+  basis_mat::Generic.MatSpaceElem{S}
+  basis_mat_inv::Generic.MatSpaceElem{S}
   basis_pmat::PMat{S, T}
 
   disc # an integral ideal in the base field
@@ -501,7 +501,7 @@ mutable struct AlgAssRelOrd{S, T} <: Ring
                                    # 1 Known to be maximal
                                    # 2 Known to not be maximal
 
-  trred_matrix::Generic.Mat{S}
+  trred_matrix::Generic.MatSpaceElem{S}
 
   inv_coeff_ideals::Vector{T}
 
@@ -520,7 +520,7 @@ mutable struct AlgAssRelOrd{S, T} <: Ring
     return z
   end
 
-  function AlgAssRelOrd{S, T}(A::AbsAlgAss{S}, M::Generic.Mat{S}) where {S, T}
+  function AlgAssRelOrd{S, T}(A::AbsAlgAss{S}, M::Generic.MatSpaceElem{S}) where {S, T}
     z = AlgAssRelOrd{S, T}(A)
     z.basis_mat = M
     z.basis_pmat = pseudo_matrix(M)
@@ -553,7 +553,7 @@ mutable struct AlgAssRelOrdElem{S, T} <: RingElem
     z = new{S, T}()
     z.parent = O
     z.elem_in_algebra = a
-    z.coordinates = Vector{S, T}(undef, degree(O))
+    z.coordinates = Vector{S}(undef, degree(O))
     z.has_coord = false
     return z
   end
@@ -578,8 +578,8 @@ mutable struct AlgAssRelOrdIdl{S, T}
   order::AlgAssRelOrd{S, T}
   pseudo_basis::Vector{Tuple{AbsAlgAssElem{S}, T}}
   basis_pmat::PMat{S, T}
-  basis_mat::Generic.Mat{S}
-  basis_mat_inv::Generic.Mat{S}
+  basis_mat::Generic.MatSpaceElem{S}
+  basis_mat_inv::Generic.MatSpaceElem{S}
 
   isleft::Int                      # 0 Not known
                                    # 1 Known to be a left ideal
@@ -587,6 +587,9 @@ mutable struct AlgAssRelOrdIdl{S, T}
   isright::Int                     # as for isleft
 
   iszero::Int                      # 0: don't know, 1: known to be zero, 2: known to be not zero
+
+  norm
+  normred
 
   function AlgAssRelOrdIdl{S, T}(O::AlgAssRelOrd{S, T}) where {S, T}
     z = new{S, T}()

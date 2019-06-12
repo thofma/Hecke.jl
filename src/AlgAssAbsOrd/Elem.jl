@@ -59,6 +59,8 @@ end
   end
 end
 
+(O::AlgAssAbsOrd)(a::T, check::Bool = true) where T = O(algebra(O)(a), check)
+
 ################################################################################
 #
 #  Deepcopy
@@ -249,6 +251,12 @@ end
 #  Unsafe operations
 #
 ################################################################################
+
+function add!(z::T, x::T, y::T) where { T <: Union{ AlgAssAbsOrdElem, AlgAssRelOrdElem } }
+  z.elem_in_algebra = add!(elem_in_algebra(z, copy = false), elem_in_algebra(x, copy = false), elem_in_algebra(y, copy = false))
+  z.has_coord = false
+  return z
+end
 
 function mul!(z::T, x::T, y::T) where { T <: Union{ AlgAssAbsOrdElem, AlgAssRelOrdElem } }
   z.elem_in_algebra = mul!(elem_in_algebra(z, copy = false), elem_in_algebra(x, copy = false), elem_in_algebra(y, copy = false))
