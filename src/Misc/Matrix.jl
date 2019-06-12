@@ -845,7 +845,7 @@ function vcat(A::Array{T, 1})  where {S <: RingElem, T <: MatElem{S}}
   if any(x->ncols(x) != ncols(A[1]), A)
     error("Matrices must have same number of columns")
   end
-  M = zero_matrix(base_ring(A[1]), sum(rows, A), ncols(A[1]))
+  M = zero_matrix(base_ring(A[1]), sum(nrows, A), ncols(A[1]))
   s = 0
   for i=A
     for j=1:nrows(i)
