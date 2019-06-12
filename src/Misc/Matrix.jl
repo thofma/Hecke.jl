@@ -4,6 +4,9 @@ import Nemo.matrix
 
 import Base.vcat
 
+import LinearAlgebra
+LinearAlgebra.dot(a::RingElem, b::RingElem) = a*b
+
 ################################################################################
 #
 #  Dense matrix types
