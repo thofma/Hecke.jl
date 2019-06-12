@@ -1595,12 +1595,12 @@ function _from_relative_to_abs(L::NfRel_ns{T}, auts::Array{NfRel_nsToNfRel_nsMor
   B = Array{nf_elem, 1}(undef, degree(K))
   B[1] = K(1)
   ind = total_degree(pols[1])
-  genjj = mK(mS\gL[1])
+  genjj = mK\(mS\gL[1])
   for i = 2:ind
     B[i] = genjj*B[i-1]
   end
   for jj = 2:length(pols)
-    genjj = mK(mS\gL[jj])
+    genjj = mK\(mS\gL[jj])
     el = genjj
     new_deg = total_degree(pols[jj])
     for i = 2:new_deg
@@ -1616,7 +1616,7 @@ function _from_relative_to_abs(L::NfRel_ns{T}, auts::Array{NfRel_nsToNfRel_nsMor
   if degree(base_ring(L)) > 1
     O = maximal_order(S.base_ring)
     for i = 1:degree(O)
-      el = mK(S(O.basis_nf[i]))
+      el = mK\(S(O.basis_nf[i]))
       for j = 1:ind
         B[(i-1)* ind + j] = B[j] * el 
       end
@@ -1650,9 +1650,9 @@ function _from_relative_to_abs(L::NfRel_ns{T}, auts::Array{NfRel_nsToNfRel_nsMor
 
   #Now, the automorphisms.
   autos=Array{NfToNfMor, 1}(undef, length(auts))
-  el=mS(mK\(mKs(gen(Ks))))
+  el=mS(mK((mKs(gen(Ks)))))
   for i=1:length(auts)
-    x = mK(mS\(auts[i](el)))
+    x = mK\(mS\(auts[i](el)))
     elem_to_mat_row!(M, 1, denominator(x), x)
     mul!(M, M, M1.num)
     y=Hecke.elem_from_mat_row(Ks, M, 1, M1.den*denominator(x))

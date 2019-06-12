@@ -135,3 +135,17 @@ end
 > canonical basis of `K`.
 """
 basis_mat(v::Vector{<: NumFieldElem})
+
+################################################################################
+#
+#  Characteristic polynomial
+#
+################################################################################
+
+@doc Markdown.doc"""
+    characteristic_polynomial(a::NumFieldElem) -> Poly
+
+> Given a number field element `a` of a number field `K`, this function returns
+> the characteristic polynomial of `a` over the base field of `K`.
+"""
+characteristic_polynomial(::NumFieldElem)
