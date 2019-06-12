@@ -47,11 +47,35 @@ function setprecision!(q::qadic, N::Int)
   return q
 end
 
+function setprecision!(Q::FlintQadicField, n::Int)
+  Q.prec_max = n
+end
+
 function setprecision!(f::Generic.Poly{qadic}, N::Int)
   for i=1:length(f)
     f.coeffs[i].N = N
   end
   return f
+end
+
+function setprecision!(a::AbstractArray{qadic}, N::Int)
+  for x = a
+    setprecision!(x, N)
+  end
+end
+
+function Base.setprecision(a::AbstractArray{qadic}, N::Int)
+  return map(x->setprecision(x, N), a)
+end
+
+function setprecision!(a::Generic.MatSpaceElem{qadic}, N::Int)
+  setprecision!(a.entries, N)
+end
+
+function Base.setprecision(a::Generic.MatSpaceElem{qadic}, N::Int)
+  b = deepcopy(a)
+  setprecision!(b, N)
+  return B
 end
 
 #XXX: valuation(Q(0)) == 0 !!!!!
@@ -465,7 +489,7 @@ function *(A::fmpz_mat, B::MatElem{padic})
   return matrix(base_ring(B), A) * B
 end
 
-uniformizer(Q::FlintQadicField) = Q(prime(Q))
+Hecke.uniformizer(Q::FlintQadicField) = Q(prime(Q))
 Base.precision(Q::FlintQadicField) = Q.prec_max
 
 function expand(a::qadic)
@@ -478,8 +502,8 @@ function expand(a::qadic)
     b = divexact((a-1), pi)
     b = setprecision(b, i)
     push!(x, b)
-    b = setprecision(b, precision(Q)-i)
-    @show a = a*inv(1+pi*b)
+    b = setprecision(b, precision(Q))
+    a = a*inv(1+pi*b)
     pi = pi^2
     i = 2*i
     if i > precision(Q)
@@ -488,12 +512,83 @@ function expand(a::qadic)
   end
 end
 
+Hecke.nrows(A::Array{T, 2}) where {T} = size(A)[1]
+Hecke.ncols(A::Array{T, 2}) where {T} = size(A)[2]
+
+
+struct LogData
+  rels::Array{qadic, 2}
+  gens::Array{qadic, 1}
+  lg::Array{qadic, 2}
+  V::Array{qadic, 1}
+end
+
+function prepro(Q::FlintQadicField)
+  n = precision(Q)
+  rels = Array{qadic, 2}(undef, 1, 1)
+  p = 2^nbits(n) + 1
+  setprecision!(Q, p)
+  pi = uniformizer(Q)
+  rels[1,1] = pi
+  gens = qadic[1+pi]
+  i = 2
+  while i <= n
+    @show ng = 1+pi^i
+    nm = Array{qadic, 2}(undef, nrows(rels), 1)
+    for j=1:nrows(rels)
+      @show mu = sum(rels[j, k]*log(gens[k]) for k=1:length(gens))//pi^i
+      nm[j,1] = setprecision(-mu, n)
+    end
+    rels = hcat(rels, nm)
+    nm = zeros(Q, 1, ncols(rels))
+    nm[end] = pi^i
+    @show size(rels), size(nm)
+    rels = vcat(rels, nm)
+    push!(gens, ng)
+    i *= 2
+  end
+  p = i
+  setprecision!(Q, p)
+  rels = setprecision(rels, p)
+  R = ring_of_integers(Q)
+  u = matrix(map(R, rels))
+  S, U, V = snf_with_transform(u)
+  n = length(gens)
+  @assert !iszero(S[n,n])
+  lp = qadic[gen(Q)]
+  for i=2:degree(Q)-1
+    push!(lp, lp[1]*lp[end])
+  end
+
+  lg = map(ij -> ij[1]^ij[2], Base.Iterators.ProductIterator((gens, lp)))
+  return LogData(rels, gens, lg, qadic[V[i, n].x for i=1:n])
+end
+
+function Base.log(a::qadic, L::LogData)
+  i = 1
+  pi = uniformizer(parent(a))
+  l = qadic[]
+  n = length(L.gens)
+  prec = precision(a)
+  while n > 0
+    z = setprecision(divexact(setprecision((a-1), 2*i), pi), prec)
+    #a*inv(1+pi^i)^z
+    #we have (1+pi^i)^gen
+  end
+
+
+end
+
+import Base.^
+^(a::qadic, b::qadic) = exp(b*log(a))
+
 ################################################################################
 #
 # (q/p)adic integers
 # 
 # complete enough to support hnf
 ################################################################################
+# CHECK precision!!!
 
 struct QadicRing{T} <: Generic.Ring
   Q::T
@@ -543,12 +638,14 @@ end
 
 function divexact(a::QadicRingElem, b::QadicRingElem)
   @assert !iszero(b.x)
-  valuation(a.x) >= valuation(b.x) && return QadicRingElem(a.x//b.x, a.P)
+  iszero(a) && return a
+  valuation(a.x) >= valuation(b.x) || error("division not exact")
+  return QadicRingElem(a.x//b.x, a.P)
 end
 
 function divrem(a::QadicRingElem, b::QadicRingElem)
   if valuation(a.x) < valuation(b.x)
-    return a.P(0), a 
+    return setprecision(a.P(0), precision(a)), a 
   end
   q = divexact(a, b)
   return q, a-q*b
@@ -556,7 +653,7 @@ end
 
 function Base.div(a::QadicRingElem, b::QadicRingElem)
   if valuation(a.x) < valuation(b.x)
-    return a.P(0)
+    return setprecision(a.P(0), precision(a))
   end
   q = divexact(a, b)
   return q
@@ -570,6 +667,7 @@ Hecke.parent_type(::Type{QadicRingElem{padic}}) = QadicRing{FlintPadicField}
 Hecke.parent_type(::Type{QadicRingElem{qadic}}) = QadicRing{FlintQadicField}
 Hecke.zero(Q::QadicRing) = QadicRingElem(Q.Q(0), Q)
 Hecke.one(Q::QadicRing) = QadicRingElem(Q.Q(1), Q)
+(Q::QadicRing)(a::qadic) = QadicRingElem(a, Q)
 (Q::QadicRing)(a::QadicRingElem) = QadicRingElem(a.x, a.P)
 (Q::QadicRing)(a::Int) = QadicRingElem(Q.Q(a), Q)
 (Q::QadicRing)() = QadicRingElem(Q.Q(), Q)
@@ -579,18 +677,26 @@ function Base.deepcopy_internal(a::QadicRingElem, dict::IdDict)
   return QadicRingElem(a.x, a.P)
 end
 function Hecke.canonical_unit(a::QadicRingElem)
-  iszero(a.x) && return a.P(1)
+  iszero(a.x) && return setprecision(a.P(1), precision(a))
   v = valuation(a.x)
   return QadicRingElem(inv(a.x//prime(a.P.Q)^v), a.P)
 end
 
 function Hecke.gcdx(a::QadicRingElem, b::QadicRingElem)
+  if iszero(a)
+    c = canonical_unit(b)
+    return b*c, a, c
+  end
+  if iszero(b)
+    c = canonical_unit(a)
+    return a*c, c, b
+  end
   if valuation(a.x) < valuation(b.x)
     c = canonical_unit(a)
-    return a*c, c, a.P(0)
+    return a*c, c, setprecision(a.P(0), precision(a))
   else
     c = canonical_unit(b)
-    return b*c, b.P(0), c
+    return b*c, setprecision(b.P(0), precision(b)), c
   end
 end
 
@@ -612,5 +718,23 @@ end
 
 Base.iszero(a::QadicRingElem) = iszero(a.x)
 Base.isone(a::QadicRingElem) = isone(a.x)
- 
+
+Base.precision(Q::QadicRing) = precision(Q.Q)
+Base.precision(a::QadicRingElem) = precision(a.x)
+function setprecision!(Q::QadicRing, n::Int) 
+  setprecision!(Q.Q, n)
+end
+
+function Base.setprecision(a::QadicRingElem, n::Int)
+  return a.P(setprecision(a.x, n))
+end
+
+function setprecision!(a::QadicRingElem, n::Int)
+  setprecision!(a.x, n)
+end
+
+function Base.setprecision(a::Generic.MatSpaceElem{QadicRingElem{qadic}}, n::Int)
+  return matrix(map(x -> setprecision(x, n), a.entries))
+end
+
 end
