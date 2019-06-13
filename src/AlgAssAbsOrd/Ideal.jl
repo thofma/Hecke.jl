@@ -205,8 +205,8 @@ end
 #
 ################################################################################
 
-*(x::fmpz, a::AlgAssAbsOrdIdl) = ideal(order(a), x*basis_mat(a, copy = false), :nothing, true)
-*(a::AlgAssAbsOrdIdl, x::fmpz) = ideal(order(a), basis_mat(a, copy = false)*x, :nothing, true)
+*(x::Union{ Int, fmpz }, a::AlgAssAbsOrdIdl) = ideal(order(a), x*basis_mat(a, copy = false), :nothing, true)
+*(a::AlgAssAbsOrdIdl, x::Union{ Int, fmpz }) = ideal(order(a), basis_mat(a, copy = false)*x, :nothing, true)
 
 function *(x::AlgAssAbsOrdElem, a::AlgAssAbsOrdIdl)
   @assert parent(x) === order(a)
@@ -295,6 +295,9 @@ end
 
 *(O::AlgAssAbsOrd{S, T}, x::AlgAssAbsOrdElem{S, T}) where {S, T} = ideal(O, x, :right)
 *(x::AlgAssAbsOrdElem{S, T}, O::AlgAssAbsOrd{S, T}) where {S, T} = ideal(O, x, :left)
+
+*(O::AlgAssAbsOrd, x::Union{ Int, fmpz }) = O*O(x)
+*(x::Union{ Int, fmpz }, O::AlgAssAbsOrd) = O(x)*O
 
 function ideal_from_z_gens(O::AlgAssAbsOrd, b::Vector{T}, side::Symbol = :nothing) where { T <: AlgAssAbsOrdElem }
   d = degree(O)

@@ -50,7 +50,7 @@ function assure_has_basis_pmat(a::AlgAssRelOrdIdl)
   A = algebra(order(a))
   M = zero_matrix(base_ring(A), dim(A), dim(A))
   C = Vector{frac_ideal_type(order_type(base_ring(A)))}()
-  for i = 1:degree(L)
+  for i = 1:dim(A)
     elem_to_mat_row!(M, i, pb[i][1])
     push!(C, deepcopy(pb[i][2]))
   end

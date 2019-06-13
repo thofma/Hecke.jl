@@ -264,6 +264,21 @@ function mul!(z::T, x::T, y::T) where { T <: Union{ AlgAssAbsOrdElem, AlgAssRelO
   return z
 end
 
+function mul!(z::AlgAssAbsOrdElem, x::Union{ Int, fmpz }, y::AlgAssAbsOrdElem)
+  z.elem_in_algebra = mul!(elem_in_algebra(z, copy = false), x, elem_in_algebra(y, copy = false))
+  if z.has_coord && y.has_coord
+    if x isa Int
+      x = fmpz(x)
+    end
+    for i = 1:degree(parent(y))
+      z.coordinates[i] = mul!(z.coordinates[i], x, coordinates(y, copy = false)[i])
+    end
+  end
+  return z
+end
+
+mul!(z::AlgAssAbsOrdElem, y::AlgAssAbsOrdElem, x::Union{ Int, fmpz }) = mul!(z, x, y)
+
 ################################################################################
 #
 #  String I/O

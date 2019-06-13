@@ -183,7 +183,7 @@ end
 
 mul!(c::AbsAlgAssElem{T}, a::T, b::AbsAlgAssElem{T}) where {T} = mul!(c, b, a)
 
-function mul!(c::AbsAlgAssElem{T}, a::AbsAlgAssElem{T}, b::fmpz) where {T}
+function mul!(c::AbsAlgAssElem{T}, a::AbsAlgAssElem{T}, b::Union{ Int, fmpz }) where {T}
   parent(a) != parent(c) && error("Parents don't match.")
 
   if c === a
@@ -199,7 +199,7 @@ function mul!(c::AbsAlgAssElem{T}, a::AbsAlgAssElem{T}, b::fmpz) where {T}
   return c
 end
 
-mul!(c::AbsAlgAssElem{T}, a::fmpz, b::AbsAlgAssElem{T}) where {T} = mul!(c, b, a)
+mul!(c::AbsAlgAssElem{T}, a::Union{ Int, fmpz }, b::AbsAlgAssElem{T}) where {T} = mul!(c, b, a)
 
 function mul!(c::AlgGrpElem{T, S}, a::AlgGrpElem{T, S}, b::AlgGrpElem{T, S}) where {T, S}
   parent(a) != parent(b) && error("Parents don't match.")
@@ -286,7 +286,6 @@ function isdivisible(a::AbsAlgAssElem, b::AbsAlgAssElem, action::Symbol)
   end
 
   vc = solve_ut(sub(Ma, 1:r, 1:dim(A)), sub(Ma, 1:r, (dim(A) + 1):(dim(A) + 1)))
-
   return true, A([ vc[i, 1] for i = 1:dim(A) ])
 end
 
@@ -469,11 +468,11 @@ function (A::AlgGrp)(a::AlgGrpElem)
 end
 
 # For polynomial substitution
-function (A::AlgAss)(a::Int)
+function (A::AlgAss)(a::Union{ Int, fmpz })
   return a*one(A)
 end
 
-function (A::AlgGrp)(a::Int)
+function (A::AlgGrp)(a::Union{ Int, fmpz })
   return a*one(A)
 end
 
@@ -631,13 +630,13 @@ function representation_matrix(a::AlgGrpElem, action::Symbol=:left)
   if action==:left
     for i = 1:dim(A)
       for j = 1:dim(A)
-        M[i, multiplication_table(A, copy = false)[j, i]] = coeffs(a, copy = false)[j]
+        M[i, multiplication_table(A, copy = false)[j, i]] = deepcopy(coeffs(a, copy = false)[j])
       end
     end
   elseif action==:right
     for i = 1:dim(A)
       for j = 1:dim(A)
-        M[i, multiplication_table(A, copy = false)[i, j]] = coeffs(a, copy = false)[j]
+        M[i, multiplication_table(A, copy = false)[i, j]] = deepcopy(coeffs(a, copy = false)[j])
       end
     end
   else

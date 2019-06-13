@@ -69,12 +69,12 @@ end
 ################################################################################
 
 # TODO: Make sure this always returns 1 or 2. So far we only have _radical for
-# algebras over Fp, QQ, and number fields
+# algebras over Fp, Fq, QQ, and number fields
 function _issemisimple(A::AlgAss)
   return A.issemisimple
 end
 
-function _issemisimple(A::AlgAss{T}) where { T <: Union{ gfp_elem, Generic.ResF{fmpz}, fmpq, nf_elem } }
+function _issemisimple(A::AlgAss{T}) where { T <: Union{ gfp_elem, Generic.ResF{fmpz}, fq, fq_nmod, fmpq, nf_elem } }
   if A.issemisimple == 0
     if isempty(_radical(A))
       A.issemisimple = 1
