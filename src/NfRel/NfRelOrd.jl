@@ -726,19 +726,18 @@ end
 #
 ################################################################################
 
-function relative_order(O::NfOrd, m::NfRelToNf)
-  L = domain(m)
-  Labs = codomain(m)
+function relative_order(O::NfOrd, m::NfToNfRel)
+  L = codomain(m)
+  Labs = domain(m)
   @assert nf(O) == Labs
   K = base_ring(L)
   OK = maximal_order(K)
-  mm = pseudo_inv(m)
   B = basis(O, copy = false)
   d = degree(L)
   dabs = degree(Labs)
   M = zero_matrix(K, dabs, d)
   for i = 1:dabs
-    elem_to_mat_row!(M, i, mm(Labs(B[i])))
+    elem_to_mat_row!(M, i, m(Labs(B[i])))
   end
   PM = sub(pseudo_hnf(PseudoMatrix(M), :lowerleft, true), (dabs - d + 1):dabs, 1:d)
   return NfRelOrd{elem_type(K), frac_ideal_type(OK)}(L, PM)

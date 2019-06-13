@@ -10,7 +10,7 @@ mutable struct CyclotomicExt
   n::Int
   Kr::Hecke.NfRel{nf_elem}
   Ka::AnticNumberField
-  mp::Tuple{NfRelToNf, NfToNfMor}
+  mp::Tuple{NfToNfRel, NfToNfMor}
   
   kummer_exts::Dict{Set{fmpz}, Tuple{Vector{NfOrdIdl}, KummerExt}}
                       #I save the kummer extensions used in the class field construction
@@ -60,11 +60,11 @@ function cyclotomic_extension(k::AnticNumberField, n::Int)
   if n == 2
     #Easy, just return the field
     Kr = number_field(t+1, cached = false, check = false)[1]
-    rel2abs = NfRelToNf(Kr, k, gen(k), k(-1), Kr(gen(k)))
+    abs2rel = NfToNfRel(k, Kr, gen(k), k(-1), Kr(gen(k)))
     small2abs = id_hom(k)
     c.Kr = Kr
     c.Ka = k
-    c.mp = (rel2abs, small2abs)
+    c.mp = (abs2rel, small2abs)
 
     push!(Ac, c)
     Hecke._set_cyclotomic_ext_nf(k, Ac)
@@ -85,14 +85,14 @@ function cyclotomic_extension(k::AnticNumberField, n::Int)
     if length(rt) == 1
       #The polynomial splits completely!
       Kr, gKr = number_field(t - rt[1], cached = false, check = false)
-      rel2abs = NfRelToNf(Kr, k, gen(k), rt[1], Kr(gen(k)))
+      abs2rel = NfToNfRel(k, Kr, gen(k), rt[1], Kr(gen(k)))
       small2abs = id_hom(k)
       c.Kr = Kr
       c.Ka = k
-      c.mp = (rel2abs, small2abs)
+      c.mp = (abs2rel, small2abs)
     else
       Kr, Kr_gen = number_field(fk, "z_$n", cached = false, check = false)
-      Ka, rel2abs, small2abs = Hecke.absolute_field(Kr, false)
+      Ka, abs2rel, small2abs = Hecke.absolute_field(Kr, false)
 
       Zk = maximal_order(k)
       b_k = basis(Zk, k)
@@ -100,7 +100,7 @@ function cyclotomic_extension(k::AnticNumberField, n::Int)
       for i = 1:length(b_k)
         B_k[i] = small2abs(b_k[i])
       end
-      g = rel2abs(Kr_gen)
+      g = abs2rel\(Kr_gen)
       for j = 1:length(b_k)
         B_k[j+length(b_k)] = B_k[j]*g
       end
@@ -116,7 +116,7 @@ function cyclotomic_extension(k::AnticNumberField, n::Int)
       Hecke._set_maximal_order_of_nf(Ka, ZKa)
       c.Kr = Kr
       c.Ka = Ka
-      c.mp = (rel2abs, small2abs)
+      c.mp = (abs2rel, small2abs)
     end
     push!(Ac, c)
     Hecke._set_cyclotomic_ext_nf(k, Ac)
@@ -129,7 +129,7 @@ function cyclotomic_extension(k::AnticNumberField, n::Int)
 
   Kr, Kr_gen = number_field(fk, "z_$n", cached = false, check = false)
   if degree(fk) != 1
-    Ka, rel2abs, small2abs = Hecke.absolute_field(Kr, false)
+    Ka, abs2rel, small2abs = Hecke.absolute_field(Kr, false)
     
     # An equation order defined from a factor of a 
     # cyclotomic polynomial is always maximal by Dedekind
@@ -138,7 +138,7 @@ function cyclotomic_extension(k::AnticNumberField, n::Int)
     Zk = maximal_order(k)
     b_k = basis(Zk, k)
     B_k = nf_elem[small2abs(x) for x = b_k]
-    g = rel2abs(Kr_gen)
+    g = abs2rel\(Kr_gen)
     g1 = one(Ka)
     for i = 1:degree(fk)-1
       mul!(g1, g1, g)
@@ -155,14 +155,14 @@ function cyclotomic_extension(k::AnticNumberField, n::Int)
     Hecke._set_maximal_order_of_nf(Ka, ZKa)
   else
     Ka = k
-    rel2abs = NfRelToNf(Kr, Ka, gen(Ka), -coeff(fk, 0), Kr(gen(Ka)))
+    abs2rel = NfToNfRel(Ka, Kr, gen(Ka), -coeff(fk, 0), Kr(gen(Ka)))
     small2abs = id_hom(k)
     ZKa = maximal_order(k)
   end
 
   c.Kr = Kr
   c.Ka = Ka
-  c.mp = (rel2abs, small2abs)
+  c.mp = (abs2rel, small2abs)
 
   push!(Ac, c)
   Hecke._set_cyclotomic_ext_nf(k, Ac)
