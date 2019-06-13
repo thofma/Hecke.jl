@@ -1598,7 +1598,9 @@ function find_isomorphism_with_abelian_group(G, op)
     elem_to_index[G[i]] = i
   end
 
-  while length(list) != n
+  first_round = true # One has to do this once even if length(list) == n
+  while first_round || length(list) != n
+    first_round = false
     for g in list
       for i in 1:length(S)
         s = S[i]

@@ -43,6 +43,8 @@ end
 
 group_algebra(K::Ring, G; op = *) = AlgGrp(K, G, op = op)
 
+group_algebra(K::Ring, G::GrpAbFinGen) = AlgGrp(K, G)
+
 ################################################################################
 #
 #  Commutativity
@@ -303,4 +305,86 @@ function gens(A::AlgGrp, return_full_basis::Type{Val{T}} = Val{false}) where T
   end
 
   return map(A, group_gens), map(A, full_group), elts_in_gens
+end
+
+################################################################################
+#
+#  Isomorphisms to number fields
+#
+################################################################################
+
+# Assumes that Gal(K/k) == group(A), where k = base_field(K) and that group(A) is
+# abelian.
+# Returns a k-linear map from K to A and one from A to K
+function _find_isomorphism(K::Union{ AnticNumberField, NfRel{nf_elem} }, A::AlgGrp)
+  G = group(A)
+  aut = automorphisms(K)
+
+  aut_dict = Dict{elem_type(K), Int}()
+  n = length(aut)
+  identity = 0
+  for i = 1:n
+    b = aut[i].prim_img
+    aut_dict[b] = i
+    if b == gen(K)
+      identity = i
+    end
+  end
+
+  op_array = zeros(Int, n, n)
+  for i = 1:n
+    for j = i:n
+      if i == identity
+        k = j
+      elseif j == identity
+        k = i
+      else
+        b = aut[i](aut[j].prim_img)
+        k = aut_dict[b]
+      end
+      op_array[i, j] = k
+      # It is assumed, that the group is abelian
+      op_array[j, i] = k
+    end
+  end
+
+  function op(i::Int, j::Int)
+    return op_array[i, j]
+  end
+
+  auttoG, Gtoaut = find_isomorphism([ i for i in 1:n ], op, G)
+
+  alpha = normal_basis(K)
+  basis_alpha = Vector{elem_type(K)}(undef, dim(A))
+  for (i, g) in enumerate(G)
+    f = aut[Gtoaut[g]]
+    basis_alpha[A.group_to_base[g]] = f(alpha)
+  end
+
+  M = zero_matrix(base_field(K), degree(K), degree(K))
+  for i = 1:degree(K)
+    a = basis_alpha[i]
+    for j = 1:degree(K)
+      M[i, j] = coeff(a, j - 1)
+    end
+  end
+
+  invM = inv(M)
+
+  function KtoA(x::Union{ nf_elem, NfRelElem })
+    t = zero_matrix(base_field(K), 1, degree(K))
+    for i = 1:degree(K)
+      t[1, i] = coeff(x, i - 1)
+    end
+    y = t*invM
+    return A([ y[1, i] for i = 1:degree(K) ])
+  end
+
+  function AtoK(x::AlgGrpElem)
+    t = matrix(base_field(K), 1, degree(K), coeffs(x))
+    y = t*M
+    return K(parent(K.pol)([ y[1, i] for i = 1:degree(K) ]))
+  end
+
+  return KtoA, AtoK
 end

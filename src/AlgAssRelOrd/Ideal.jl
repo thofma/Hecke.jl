@@ -328,6 +328,20 @@ end
 
 *(a::Union{NfOrdIdl, NfRelOrdIdl}, O::AlgAssRelOrd) = ideal(O, a)
 
+function ideal_from_lattice_gens(O::AlgAssRelOrd, gens::Vector{ <: AbsAlgAssElem }, check::Bool = true)
+
+  M = zero_matrix(base_ring(algebra(O)), length(gens), degree(O))
+  for i = 1:length(gens)
+    elem_to_mat_row!(M, i, gens[i])
+  end
+  PM = pseudo_hnf(PseudoMatrix(M), :lowerleft)
+  if length(gens) != degree(O)
+    PM = sub(PM, (length(gens) - degree(O) + 1):length(gens), 1:degree(O))
+  end
+
+  return ideal(O, PM, :nothing, check, true)
+end
+
 ################################################################################
 #
 #  Inclusion of elements in ideals
