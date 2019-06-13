@@ -212,7 +212,30 @@ function AlgAss(O::Union{NfAbsOrd, AlgAssAbsOrd}, I::Union{NfAbsOrdIdl, AlgAssAb
     end
   end
   r = rref!(B)
-  r == 0 && error("Cannot construct zero dimensional algebra.")
+
+  if r == 0
+    A = _zero_algebra(Fp)
+
+    local _image_zero
+
+    let A = A
+      function _image_zero(a::Union{ NfAbsOrdElem, AlgAssAbsOrdElem })
+        return A()
+      end
+    end
+
+    local _preimage_zero
+
+    let O = O
+      function _preimage_zero(a::AlgAssElem)
+        return O()
+      end
+    end
+
+    OtoA = AbsOrdToAlgAssMor{typeof(O), elem_type(Fp)}(O, A, _image_zero, _preimage_zero)
+    return A, OtoA
+  end
+
   b = Vector{fmpz}(undef, n)
   bbasis = Vector{elem_type(O)}(undef, r)
   for i = 1:r
@@ -298,6 +321,165 @@ function AlgAss(O::Union{NfAbsOrd, AlgAssAbsOrd}, I::Union{NfAbsOrdIdl, AlgAssAb
   return A, OtoA
 end
 
+# Requires M to be in lower left HNF
+function reduce_vector_mod_hnf(v::fmpz_mat, M::fmpz_mat)
+  @assert ncols(v) == nrows(M) && nrows(M) == ncols(M)
+
+  w = Vector{fmpz}(undef, length(v))
+  t = fmpz()
+  for i in length(v):-1:1
+    t = fdiv(v[1, i], M[i, i])
+    for j in 1:i
+      w[j] = v[1, j] - t*M[i, j]
+    end
+  end
+  return w
+end
+
+# Assumes pI \subseteq J \subseteq I
+# Returns I/J as O_K/p-algebra where O_K = base_ring(order(I))
+function AlgAss(I::Union{ NfAbsOrdIdl, AlgAssAbsOrdIdl }, J::Union{NfAbsOrdIdl, AlgAssAbsOrdIdl}, p::Union{Integer, fmpz})
+  @assert order(I) === order(J)
+
+  O = order(I)
+
+  n = degree(O)
+  BI = basis(I, copy = false)
+  BmatJinI = hnf(basis_mat(J, copy = false)*basis_mat_inv(I, copy = false), :lowerleft)
+  @assert isone(BmatJinI.den) "J is not a subset of I"
+  BmatJinI = BmatJinI.num
+  BImod = Vector{Vector{fmpz}}(undef, n)
+  t = zero_matrix(FlintZZ, 1, n)
+  for i = 1:n
+    t[1, i] = fmpz(1)
+    BImod[i] = reduce_vector_mod_hnf(t, BmatJinI)
+    t[1, i] = fmpz(0)
+  end
+  Fp = GF(p, cached=false)
+  B = zero_matrix(Fp, n, n)
+  for i = 1:n
+    _b = BImod[i]
+    for j = 1:n
+      B[i, j] = Fp(_b[j])
+    end
+  end
+  r = rref!(B)
+
+  if r == 0
+    A = _zero_algebra(Fp)
+
+    local _image_zero
+
+    let A = A
+      function _image_zero(a::Union{ NfAbsOrdElem, AlgAssAbsOrdElem })
+        return A()
+      end
+    end
+
+    local _preimage_zero
+
+    let O = O
+      function _preimage_zero(a::AlgAssElem)
+        return O()
+      end
+    end
+
+    OtoA = AbsOrdToAlgAssMor{typeof(O), elem_type(Fp)}(O, A, _image_zero, _preimage_zero)
+    return A, OtoA
+  end
+
+  bbasis = Vector{elem_type(O)}(undef, r)
+  aux = O()
+  for i = 1:r
+    bbasis[i] = O()
+    for j = 1:n
+      aux = mul!(aux, lift(B[i, j]), BI[j])
+      bbasis[i] = add!(bbasis[i], bbasis[i], aux)
+    end
+  end
+
+  _, perm, L, U = lu(transpose(B))
+
+  mult_table = Array{elem_type(Fp), 3}(undef, r, r, r)
+
+  d = zero_matrix(Fp, n, 1)
+
+  iscom = true
+  if O isa AlgAssAbsOrd
+    iscom = iscommutative(O)
+  end
+
+  t = FakeFmpqMat(zero_matrix(FlintZZ, 1, n))
+  for i = 1:r
+    for j = 1:r
+      if iscom && j < i
+        continue
+      end
+      aux = mul!(aux, bbasis[i], bbasis[j])
+      elem_to_mat_row!(t.num, 1, aux)
+      t = mul!(t, t, basis_mat_inv(I, copy = false))
+      @assert isone(t.den)
+      c = reduce_vector_mod_hnf(t.num, BmatJinI)
+      for k = 1:n
+        d[perm[k], 1] = c[k]
+      end
+      d = solve_lt(L, d)
+      d = solve_ut(U, d)
+      for k = 1:r
+        mult_table[i, j, k] = deepcopy(d[k, 1])
+        if iscom && i != j
+          mult_table[j, i, k] = deepcopy(d[k, 1])
+        end
+      end
+    end
+  end
+
+  if isone(bbasis[1])
+    one = zeros(Fp, r)
+    one[1] = Fp(1)
+    A = AlgAss(Fp, mult_table, one)
+  else
+    A = AlgAss(Fp, mult_table)
+  end
+  if iscom
+    A.iscommutative = 1
+  end
+
+  local _image
+
+  let n = n, r = r, d = d, I = I, J = J, A = A, L = L, U = U, perm = perm, t = t
+    function _image(a::Union{NfAbsOrdElem, AlgAssAbsOrdElem})
+      elem_to_mat_row!(t.num, 1, a)
+      t = mul!(t, t, basis_mat_inv(I, copy = false))
+      @assert isone(t.den) "Not an element of the domain"
+      c = reduce_vector_mod_hnf(t.num, BmatJinI)
+      for k = 1:n
+        d[perm[k], 1] = c[k]
+      end
+      d = solve_lt(L, d)
+      d = solve_ut(U, d)
+      e = A()
+      for k = 1:r
+        e.coeffs[k] = deepcopy(d[k, 1])
+      end
+      return e
+    end
+  end
+
+  local _preimage
+
+  let bbasis = bbasis, r = r
+    function _preimage(a::AlgAssElem)
+      return sum(lift(a.coeffs[i])*bbasis[i] for i = 1:r)
+    end
+  end
+
+  OtoA = AbsOrdToAlgAssMor{typeof(O), elem_type(Fp)}(O, A, _image, _preimage)
+
+  return A, OtoA
+end
+
+
 function _modular_basis(pb::Vector{Tuple{T, NfOrdFracIdl}}, p::NfOrdIdl) where T <: RelativeElement{nf_elem}
   L = parent(pb[1][1])
   K = base_ring(L)
@@ -334,31 +516,39 @@ function AlgAss(O::Union{ NfRelOrd{T, S}, AlgAssRelOrd{T, S} }, I::Union{ NfRelO
 
   K = isalgass ? algebra(O) : nf(O)
 
-  basis_pmatI = basis_pmat(I, copy = false)
-  basis_pmatO = basis_pmat(O, copy = false)
+  basisO = pseudo_basis(O, copy = false)
+  new_basisO = Vector{Tuple{elem_type(K), S}}()
+  new_bmatO = basis_mat(O)
 
-  new_basis_mat = deepcopy(O.basis_mat)
-  new_basis_mat_I = deepcopy(I.basis_mat)
+  bpmatI = basis_pmat(I, copy = false)
+  new_bpmatI = deepcopy(bpmatI)
 
   pi = anti_uniformizer(p)
 
-  new_basis_coeffs = S[]
-
   for i in 1:degree(O)
-    a = pi^valuation(basis_pmatO.coeffs[i], p)
-    push!(new_basis_coeffs, a * basis_pmatO.coeffs[i])
-    mul_row!(new_basis_mat, i, inv(a))
+    a = pi^valuation(basisO[i][2], p)
+    ia = inv(a)
+    push!(new_basisO, (ia*basisO[i][1], a*basisO[i][2]))
+    mul_row!(new_bmatO, i, ia)
     for j in 1:degree(O)
-      new_basis_mat_I[j, i] = new_basis_mat_I[j, i] * a
+      new_bpmatI.matrix[j, i] = new_bpmatI.matrix[j, i]*a
     end
   end
-
-  new_coeff_I = S[]
+  new_bmatinvO = inv(new_bmatO)
 
   for i in 1:degree(O)
-    a = pi^valuation(basis_pmatI.coeffs[i], p)
-    push!(new_coeff_I, a * basis_pmatI.coeffs[i])
-    mul_row!(new_basis_mat_I, i, inv(a))
+    a = pi^valuation(bpmatI.coeffs[i], p)
+    new_bpmatI.coeffs[i] = a*new_bpmatI.coeffs[i]
+    mul_row!(new_bpmatI.matrix, i, inv(a))
+  end
+
+  new_basisI = Vector{Tuple{elem_type(K), S}}()
+  for i = 1:degree(O)
+    t = K()
+    for j = 1:degree(O)
+      t += new_bpmatI.matrix[i, j]*new_basisO[j][1]
+    end
+    push!(new_basisI, (t, deepcopy(new_bpmatI.coeffs[i])))
   end
 
   Fp, mF = ResidueField(order(p), p)
@@ -369,36 +559,43 @@ function AlgAss(O::Union{ NfRelOrd{T, S}, AlgAssRelOrd{T, S} }, I::Union{ NfRelO
   reducers = Int[]
 
   for i in 1:degree(O)
-    v = valuation(new_basis_mat_I[i, i], p)
-    v2 = valuation(new_coeff_I[i], p)
-    #@show (v2, v)
+    v = valuation(new_bpmatI.matrix[i, i], p)
     @assert v >= 0
     if v == 0
-    #if valuation(basis_pmatI.coeffs[i], p) + valuation(new_basis_mat_I[i, i], p) == 0
       push!(reducers, i)
     else
       push!(basis_elts, i)
     end
   end
 
+  r = length(basis_elts)
+
+  if r == 0
+    A = _zero_algebra(Fp)
+
+    local _image_zero
+
+    let A = A
+      function _image_zero(a::Union{ NfRelOrdElem, AlgAssRelOrdElem })
+        return A()
+      end
+    end
+
+    local _preimage_zero
+
+    let O = O
+      function _preimage_zero(a::AlgAssElem)
+        return O()
+      end
+    end
+
+    OtoA = RelOrdToAlgAssMor(O, A, _image_zero, _preimage_zero)
+    return A, OtoA
+  end
+
   reverse!(reducers)
 
-  OLL = Order(K, PseudoMatrix(new_basis_mat, new_basis_coeffs))
-
-  if isalgass
-    newI = ideal(OLL, PseudoMatrix(new_basis_mat_I, new_coeff_I), :nothing, false, true)
-  else
-    newI = ideal(OLL, PseudoMatrix(new_basis_mat_I, new_coeff_I), false, true)
-  end
-  # basis_pmat of newI is NOT in pseudo HNF!
-
-  new_basis = pseudo_basis(OLL)
-
-  pseudo_basis_newI = pseudo_basis(newI)
-
   tmp_matrix = zero_matrix(base_ring(K), 1, degree(O))
-
-  basis_mat_inv_OLL = basis_mat_inv(OLL)
 
   function _coeff(c)
     if isalgass
@@ -410,21 +607,201 @@ function AlgAss(O::Union{ NfRelOrd{T, S}, AlgAssRelOrd{T, S} }, I::Union{ NfRelO
         tmp_matrix[1, i + 1] = coeff(c, i)
       end
     end
-    return tmp_matrix * basis_mat_inv_OLL
+    return tmp_matrix*new_bmatinvO
+  end
+
+  mult_table = Array{elem_type(Fp), 3}(undef, r, r, r)
+  for i in 1:r
+    for j in 1:r
+      c = new_basisO[basis_elts[i]][1]*new_basisO[basis_elts[j]][1]
+      coeffs_c = _coeff(c)
+
+      for k in reducers
+        d = -coeffs_c[k]//new_bpmatI.matrix[k, k]
+        c = c + d*new_basisI[k][1]
+      end
+      coeffs_c = _coeff(c)
+      for k in 1:degree(O)
+        if !(k in basis_elts)
+          @assert iszero(coeffs_c[k])
+        end
+      end
+      for k in 1:r
+        mult_table[i, j, k] = mmF(coeffs_c[basis_elts[k]])
+      end
+    end
+  end
+
+  if isone(new_basisO[basis_elts[1]][1])
+    one = zeros(Fp, length(basis_elts))
+    one[1] = Fp(1)
+    A = AlgAss(Fp, mult_table, one)
+  else
+    A = AlgAss(Fp, mult_table)
+  end
+  if !isalgass || iscommutative(O)
+    A.iscommutative = 1
+  end
+
+  function _image(a::Union{ NfRelOrdElem, AlgAssRelOrdElem })
+    if isalgass
+      c = elem_in_algebra(a, copy = false)
+    else
+      c = a.elem_in_nf
+    end
+    coeffs_c = _coeff(c)
+    for k in reducers
+      d = -coeffs_c[k]//new_bpmatI.matrix[k, k]
+      c = c + d*new_basisI[k][1]
+    end
+    coeffs_c = _coeff(c)
+    for k in 1:degree(O)
+      if !(k in basis_elts)
+        @assert iszero(coeffs_c[k])
+      end
+    end
+    b = A()
+    for k in 1:r
+      b.coeffs[k] = mmF(coeffs_c[basis_elts[k]])
+    end
+    return b
+  end
+
+  lifted_basis_of_A = []
+
+  for i in basis_elts
+    c = coprime_to(new_basisO[i][2], p)
+    b = invmmF(inv(mmF(c)))*c*new_basisO[i][1]
+    @assert b in O
+    push!(lifted_basis_of_A, b)
+  end
+
+  function _preimage(v::AlgAssElem)
+    return O(sum((invmmF(v.coeffs[i]))*lifted_basis_of_A[i] for i in 1:r))
+  end
+
+  OtoA = RelOrdToAlgAssMor(O, A, _image, _preimage)
+
+  return A, OtoA
+end
+
+# Assumes pI \subseteq J \subseteq I
+# Returns I/J as O_K/p-algebra where O_K = base_ring(order(I))
+function AlgAss(I::Union{ NfRelOrdIdl{T, S}, AlgAssRelOrdIdl{T, S} }, J::Union{ NfRelOrdIdl{T, S}, AlgAssRelOrdIdl{T, S} }, p::Union{NfOrdIdl, NfRelOrdIdl}) where {T, S}
+  @assert order(I) === order(J)
+
+  O = order(I)
+  isalgass = ( O isa AlgAssRelOrd )
+
+  K = isalgass ? algebra(O) : nf(O)
+
+  basisI = pseudo_basis(I, copy = false)
+  new_basisI = Vector{Tuple{elem_type(K), S}}()
+
+  pi = anti_uniformizer(p)
+
+  for i in 1:degree(O)
+    a = pi^valuation(basisI[i][2], p)
+    push!(new_basisI, (inv(a)*basisI[i][1], a*basisI[i][2]))
+  end
+
+  # This matrix is NOT in the basis of the order!
+  new_bmatI = zero_matrix(base_ring(K), degree(O), degree(O))
+  for i = 1:degree(O)
+    elem_to_mat_row!(new_bmatI, i, new_basisI[i][1])
+  end
+  bmatinvI = inv(new_bmatI)
+
+  bpmatJinI = basis_pmat(J)
+  bpmatJinI.matrix = bpmatJinI.matrix*basis_mat(O, copy = false)*bmatinvI
+  bpmatJinI = pseudo_hnf(bpmatJinI, :lowerleft)
+  bmatJinI = bpmatJinI.matrix
+  basisJinI = Vector{Tuple{elem_type(K), S}}()
+  for i = 1:degree(O)
+    t = K()
+    for j = 1:degree(O)
+      t += bmatJinI[i, j]*new_basisI[j][1]
+    end
+    push!(basisJinI, (t, deepcopy(bpmatJinI.coeffs[i])))
+  end
+
+  new_bmatJinI = deepcopy(bmatJinI)
+  new_basisJinI = Vector{Tuple{elem_type(K), S}}()
+  for i in 1:degree(O)
+    a = pi^valuation(basisJinI[i][2], p)
+    push!(new_basisJinI, (inv(a)*basisJinI[i][1], a*basisJinI[i][2]))
+    mul_row!(new_bmatJinI, i, inv(a))
+  end
+
+  Fp, mF = ResidueField(order(p), p)
+  mmF = extend(mF, base_ring(K))
+  invmmF = pseudo_inv(mmF)
+
+  basis_elts = Int[]
+  reducers = Int[]
+
+  for i in 1:degree(O)
+    v = valuation(new_bmatJinI[i, i], p)
+    @assert v >= 0
+    if v == 0
+      push!(reducers, i)
+    else
+      push!(basis_elts, i)
+    end
   end
 
   r = length(basis_elts)
+
+  if r == 0
+    A = _zero_algebra(Fp)
+
+    local _image_zero
+
+    let A = A
+      function _image_zero(a::Union{ NfRelOrdElem, AlgAssRelOrdElem })
+        return A()
+      end
+    end
+
+    local _preimage_zero
+
+    let O = O
+      function _preimage_zero(a::AlgAssElem)
+        return O()
+      end
+    end
+
+    OtoA = RelOrdToAlgAssMor(O, A, _image_zero, _preimage_zero)
+    return A, OtoA
+  end
+
+  reverse!(reducers)
+
+  tmp_matrix = zero_matrix(base_ring(K), 1, degree(O))
+
+  function _coeff(c)
+    if isalgass
+      for i = 1:degree(O)
+        tmp_matrix[1, i] = coeffs(c, copy = false)[i]
+      end
+    else
+      for i in 0:degree(O) - 1
+        tmp_matrix[1, i + 1] = coeff(c, i)
+      end
+    end
+    return tmp_matrix*bmatinvI
+  end
 
   mult_table = Array{elem_type(Fp), 3}(undef, r, r, r)
 
   for i in 1:r
     for j in 1:r
-      c = new_basis[basis_elts[i]][1] * new_basis[basis_elts[j]][1]
+      c = new_basisI[basis_elts[i]][1]*new_basisI[basis_elts[j]][1]
       coeffs = _coeff(c)
 
       for k in reducers
-        d = -coeffs[k]//new_basis_mat_I[k, k]
-        c = c + d * pseudo_basis_newI[k][1]
+        d = -coeffs[k]//new_bmatJinI[k, k]
+        c = c + d * new_basisJinI[k][1]
       end
       coeffs = _coeff(c)
       for k in 1:degree(O)
@@ -438,7 +815,7 @@ function AlgAss(O::Union{ NfRelOrd{T, S}, AlgAssRelOrd{T, S} }, I::Union{ NfRelO
     end
   end
 
-  if isone(new_basis[basis_elts[1]][1])
+  if isone(new_basisI[basis_elts[1]][1])
     one = zeros(Fp, length(basis_elts))
     one[1] = Fp(1)
     A = AlgAss(Fp, mult_table, one)
@@ -457,8 +834,8 @@ function AlgAss(O::Union{ NfRelOrd{T, S}, AlgAssRelOrd{T, S} }, I::Union{ NfRelO
     end
     coeffs = _coeff(c)
     for k in reducers
-      d = -coeffs[k]//new_basis_mat_I[k, k]
-      c = c + d*pseudo_basis_newI[k][1]
+      d = -coeffs[k]//new_bmatJinI[k, k]
+      c = c + d*new_basisJinI[k][1]
     end
     coeffs = _coeff(c)
     for k in 1:degree(O)
@@ -476,9 +853,9 @@ function AlgAss(O::Union{ NfRelOrd{T, S}, AlgAssRelOrd{T, S} }, I::Union{ NfRelO
   lifted_basis_of_A = []
 
   for i in basis_elts
-    c = coprime_to(new_basis[i][2], p)
-    b = invmmF(inv(mmF(c)))*c*new_basis[i][1]
-    @assert b in O
+    c = coprime_to(new_basisI[i][2], p)
+    b = invmmF(inv(mmF(c)))*c*new_basisI[i][1]
+    @assert O(b) in I
     push!(lifted_basis_of_A, b)
   end
 
