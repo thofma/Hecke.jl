@@ -896,4 +896,37 @@ function Nemo.discriminant(K::NfRel, ::FlintRationalField)
   return d
 end
 
+################################################################################
+#
+#  Normal basis
+#
+################################################################################
 
+# Mostly the same as in the absolute case
+function normal_basis(L::NfRel{nf_elem})
+  O = EquationOrder(L)
+  K = base_ring(L)
+  OK = base_ring(O)
+  d = discriminant(O)
+  for p in PrimeIdealsSet(OK, degree(L), -1, indexdivisors = false, ramified = false)
+    if valuation(d, p) != 0
+      continue
+    end
+
+    # Check if p is totally split
+    F, mF = ResidueField(OK, p)
+    mmF = extend(mF, K)
+    Ft, t = PolynomialRing(F, "t", cached = false)
+    ft = nf_elem_poly_to_fq_poly(Ft, mmF, L.pol)
+    pt = powmod(t, order(F), ft)
+
+    if degree(gcd(ft, pt - t)) == degree(ft)
+      # Lift an idempotent of O/pO
+      immF = pseudo_inv(mmF)
+      fac = factor(ft)
+      gt = divexact(ft, first(keys(fac.fac)))
+      g = fq_poly_to_nf_elem_poly(parent(L.pol), immF, gt)
+      return L(g)
+    end
+  end
+end

@@ -265,6 +265,7 @@ function _automorphisms(K::AnticNumberField)
     Aut1[end] = id_hom(K)
     auts = closure(Aut1, degree(K))
   end
+  return auts
 end
 
 function automorphisms(K::AnticNumberField; copy::Bool = true)

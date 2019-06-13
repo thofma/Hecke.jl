@@ -225,6 +225,9 @@ id_hom(K::NfRel) = NfRelToNfRelMor(K, K, gen(K))
 morphism_type(::Type{NfRel{T}}) where {T} = NfRelToNfRel{T}
 
 function ==(x::NfRelToNfRelMor{T}, y::NfRelToNfRelMor{T}) where T
+  if base_ring(domain(x)) == base_ring(domain(y))
+    return x.prim_img == y.prim_img
+  end
   return (x.coeff_aut == y.coeff_aut) && (x.prim_img == y.prim_img) 
 end
 
@@ -276,5 +279,47 @@ mutable struct NfRelToFqMor{T} <: Map{NfRel{T}, FqFiniteField, HeckeMap, NfRelTo
     z = new{T}()
     z.header = MapHeader{NfRel{T}, FqFiniteField}()
     return z
+  end
+end
+
+function _automorphisms(L::NfRel)
+  if degree(L) == 1
+    auts = NfRelToNfRelMor[hom(K, K, one(K))]
+  else
+    f = L.pol
+    Lt, t = PolynomialRing(L, "t", cached = false)
+    f1 = change_ring(f, Lt)
+    divpol = Lt([ -gen(L), L(1) ])
+    f1 = divexact(f1, divpol)
+    lr = roots(f1)
+    Aut1 = Vector{NfRelToNfRelMor}(undef, length(lr) + 1)
+    for i = 1:length(lr)
+      Aut1[i] = hom(L, L, lr[i], check = false)
+    end
+    Aut1[end] = id_hom(L)
+    auts = closure(Aut1, *, id_hom(L)) # One could probably do this modular as in the absolute case
+  end
+  return auts
+end
+
+function automorphisms(L::NfRel; copy::Bool = true)
+  try
+    Aut = _get_automorphisms_nf_rel(L)::Vector{ <: NfRelToNfRelMor}
+    if copy
+      return deepcopy(Aut)
+    else
+      return Aut
+    end
+  catch e
+    if !isa(e, AccessorNotSetError)
+      rethrow(e)
+    end
+  end
+  auts = _automorphisms(L)
+  _set_automorphisms_nf_rel(L, auts)
+  if copy
+    return deepcopy(auts)
+  else
+    return auts
   end
 end

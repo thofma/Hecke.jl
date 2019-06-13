@@ -212,6 +212,12 @@ function __init__()
   global _get_fac_elem_mon_of_nf = t[1]
   global _set_fac_elem_mon_of_nf = t[2]
 
+  t = create_accessors(NfRel, Array, get_handle())
+
+  global _get_automorphisms_nf_rel = t[1]
+  global _set_automorphisms_nf_rel = t[2]
+
+
   global R = _RealRing()
 
   # Stuff for elliptic curves
