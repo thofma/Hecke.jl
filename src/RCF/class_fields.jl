@@ -113,7 +113,7 @@ end
 ###############################################################################
 
 @doc Markdown.doc"""
-  base_ring(A::ClassField)
+    base_ring(A::ClassField)
 The maximal order of the field that $A$ is defined over.
 """
 function base_ring(A::ClassField)
@@ -121,7 +121,7 @@ function base_ring(A::ClassField)
 end
 
 @doc Markdown.doc"""
-  base_field(A::ClassField)
+    base_field(A::ClassField)
 The number field that $A$ is defined over.
 """
 function base_field(A::ClassField)
@@ -144,8 +144,7 @@ end
 
 @doc Markdown.doc"""
     degree(A::ClassField)
-
-> The degree of $A$ over its base field, ie. the size of the defining ideal group.
+The degree of $A$ over its base field, ie. the size of the defining ideal group.
 """
 function degree(A::ClassField)
   if A.degree == -1
@@ -161,6 +160,20 @@ function degree(A::ClassField_pp{S, T}) where {S, T}
   return A.degree
 end
 
+###############################################################################
+#
+#  Exponent
+#
+###############################################################################
+
+@doc Markdown.doc"""
+    exponent(A::ClassField)
+The exponent of $A$ over its base field, i.e. the exponent of the Galois
+group of the extension.
+"""
+function exponent(A::ClassField{S, T}) where {S, T}
+  return Int(exponent(codomain(A.quotientmap)))
+end
 ###############################################################################
 #
 #  Compositum

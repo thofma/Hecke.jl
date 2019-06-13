@@ -12,6 +12,7 @@ end
 #  set_verbose_level(scope, 3)
 #end
 
+@time include("NumField.jl")
 @time include("AlgAss.jl")
 @time include("AlgAssAbsOrd.jl")
 @time include("AlgAssRelOrd.jl")
@@ -27,5 +28,3 @@ end
 @time include("RCF.jl")
 @time include("Examples.jl")
 @time include("Sparse.jl")
-
-# x^5 + 514944*x^2 + 123904 test prime decomposition with this (2 is index divisor and only one prime ideal over 2)

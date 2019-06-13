@@ -954,7 +954,7 @@ function _order(K::S, elt::Array{T, 1}; cached::Bool = true, check::Bool = true)
   for e = elt
     if phase == 2
       if denominator(B) % denominator(e) == 0
-        C = basis_mat([e])
+        C = basis_mat([e], FakeFmpqMat)
         fl, _ = can_solve(B.num, div(B.den, denominator(e))*C.num, side = :left)
 #        fl && println("elt known:", e)
         fl && continue
@@ -972,7 +972,7 @@ function _order(K::S, elt::Array{T, 1}; cached::Bool = true, check::Bool = true)
       mul!(f, f, e)
       if phase == 2
         if denominator(B) % denominator(f) == 0
-          C = basis_mat(elem_type(K)[f])
+          C = basis_mat(elem_type(K)[f], FakeFmpqMat)
           fl = iszero_mod_hnf!(div(B.den, denominator(f))*C.num, B.num)
 #          fl && println("inner abort: ", e, " ^ ", i)
           fl && break
@@ -981,7 +981,7 @@ function _order(K::S, elt::Array{T, 1}; cached::Bool = true, check::Bool = true)
       b = elem_type(K)[e*x for x in bas]
       append!(bas, b)
       if length(bas) >= n
-        B = basis_mat(bas)
+        B = basis_mat(bas, FakeFmpqMat)
         hnf!(B)
         rk = nrows(B) - n + 1
         while iszero_row(B, rk)
@@ -996,7 +996,7 @@ function _order(K::S, elt::Array{T, 1}; cached::Bool = true, check::Bool = true)
   end
 
   if length(bas) >= n
-    B = basis_mat(bas)
+    B = basis_mat(bas, FakeFmpqMat)
     hnf!(B)
     rk = nrows(B) - n + 1
     if iszero_row(B.num, rk)
@@ -1258,13 +1258,13 @@ function defines_order(K::S, x::FakeFmpqMat) where {S}
     for j in i:n
       l[j] = d[i]*d[j]
     end
-    Ml = basis_mat(l)
+    Ml = basis_mat(l, FakeFmpqMat)
     if !isone((Ml * xinv).den)
       return false, x, Vector{elem_type(K)}()
     end
   end
   # Check if 1 is contained in the Z-module
-  Ml = basis_mat([one(K)])
+  Ml = basis_mat([one(K)], FakeFmpqMat)
   if !isone((Ml * xinv).den)
     return false, x, Vector{elem_type(K)}()
   end
@@ -1275,7 +1275,7 @@ function defines_order(K::S, A::Vector{T}) where {S, T}
   if length(A) != degree(K)
     return false, FakeFmpqMat(), FakeFmpqMat(), A
   else
-    B = basis_mat(A)
+    B = basis_mat(A, FakeFmpqMat)
     b, Binv, _ = defines_order(K, B)
     return b, B, Binv, A
   end

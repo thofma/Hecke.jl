@@ -65,8 +65,8 @@ function rel_auto_easy(A::ClassField_pp)
   tau = hom(A.K, A.K, A.bigK.zeta*gen(A.K), check = false)
   N = SRow(tau(A.pe))
   C = cyclotomic_extension(base_field(A), degree(A))
-  Mk = _expand(M, C.mp[1])
-  Nk = _expand(N, C.mp[1])
+  Mk = _expand(M, pseudo_inv(C.mp[1]))
+  Nk = _expand(N, pseudo_inv(C.mp[1]))
   s = solve(Mk, Nk) # will not work, matrix non-square...
   im = A.A()
   r = degree(C.Kr)
@@ -96,7 +96,7 @@ function rel_auto_intersect(A::ClassField_pp)
     b *= A.pe
     push!(M, SRow(b))
   end
-  Mk = _expand(M, C.mp[1])
+  Mk = _expand(M, pseudo_inv(C.mp[1]))
   # One of the automorphisms must generate the group, so I check the order.
   for j = 1:ngens(G)
     if !divisible(G.snf[j], fmpz(degree(A)))
@@ -113,7 +113,7 @@ function rel_auto_intersect(A::ClassField_pp)
       end
     end
     N = SRow(elem)
-    Nk = _expand(N, C.mp[1])
+    Nk = _expand(N, pseudo_inv(C.mp[1]))
     s = solve(Mk, Nk) # will not work, matrix non-square...
     im = A.A()
     for (i, c) = s
@@ -408,7 +408,7 @@ function extend_aut_pp(A::ClassField, autos::Array{NfToNfMor, 1}, p::fmpz)
   Autos_abs = Array{NfToNfMor, 1}(undef, length(autos))
   for i = 1:length(autos)
     aut = extend_to_cyclotomic(C, autos[i])
-    Autos_abs[i] = hom(KC, KC, C.mp[1](aut(C.mp[1]\gen(KC))), check = false)
+    Autos_abs[i] = hom(KC, KC, C.mp[1]\(aut(C.mp[1](gen(KC)))), check = false)
   end
   #I compute the embeddings of the small cyclotomic extensions into the others
   abs_emb = Array{NfToNfMor, 1}(undef, length(Cp))
@@ -419,7 +419,7 @@ function extend_aut_pp(A::ClassField, autos::Array{NfToNfMor, 1}, p::fmpz)
     else
       Cs = cyclotomic_extension(k, dCp)
       emb = hom(Cs.Kr, C.Kr, gen(C.Kr)^div(d, dCp), check = false)
-      img = C.mp[1](emb(Cs.mp[1]\(gen(Cs.Ka))))
+      img = C.mp[1]\(emb(Cs.mp[1](gen(Cs.Ka))))
       abs_emb[i] = hom(Cs.Ka, KC, img, check = false)
     end
   end
@@ -547,14 +547,14 @@ function restriction(K::NfRel_ns{nf_elem}, Cp::Vector{ClassField_pp{S, T}}, auto
   end
 
   b_AA = basis(AA)
-  Mk = _expand(M, C.mp[1])
+  Mk = _expand(M, pseudo_inv(C.mp[1]))
   #@hassert :ClassField 2 nullspace(Mk')[1] == 0
   all_im = Array{Array{NfRel_nsElem{nf_elem}, 1}, 1}(undef, length(autos))
   for i = 1:length(autos)
     all_imCp = Array{NfRel_nsElem{nf_elem}, 1}(undef, length(Cp))
     for jj=1:length(Cp)
       N = SRow(all_pe[jj][2][i])
-      Nk = _expand(N, C.mp[1])
+      Nk = _expand(N, pseudo_inv(C.mp[1]))
       n = solve(Mk, Nk)
       im = sum(v*b_AA[l] for (l, v) = n)
       all_imCp[jj] = im
@@ -665,7 +665,7 @@ function extend_aut(A::ClassField, tau::T) where T <: Map
     
     C = cyclotomic_extension(k, Int(om))
     Tau = extend_to_cyclotomic(C, tau)
-    tau_Ka = hom(C.Ka, C.Ka, C.mp[1](Tau(C.mp[1]\gen(C.Ka))), check = false)
+    tau_Ka = hom(C.Ka, C.Ka, C.mp[1]\(Tau(C.mp[1](gen(C.Ka)))), check = false)
     
     #TODO: need the inverse of this or similar...
     # currently, this is not used as it did not work.
@@ -683,7 +683,7 @@ function extend_aut(A::ClassField, tau::T) where T <: Map
 #      println("om: $om -> ", degree(c), " vs ", c.o)
       Cs = cyclotomic_extension(k, Int(degree(c)))
       Emb = hom(Cs.Kr, C.Kr, gen(C.Kr)^div(om, degree(c)), check = false)
-      emb = pseudo_inv(Cs.mp[1]) * Emb * C.mp[1]
+      emb = Cs.mp[1] * Emb * pseudo_inv(C.mp[1])
       a = FacElem(Dict(emb(k) => v for (k,v) = c.a.fac))
       tau_a = FacElem(Dict(tau_Ka(k) => v for (k,v) = a.fac))
       push!(all_emb, (a, tau_a, emb, divexact(om, c.o)))
@@ -802,12 +802,12 @@ function extend_aut(A::ClassField, tau::T) where T <: Map
     @assert d == degree(AA)
     @assert d == length(B)
     b_AA = basis(AA)
-    Mk = _expand(M, C.mp[1])
+    Mk = _expand(M, pseudo_inv(C.mp[1]))
     #@hassert :ClassField 2 nullspace(Mk')[1] == 0
     all_im = NfRel_nsElem{nf_elem}[]
     for jj=1:length(Cp)
       N = SRow(all_pe[jj][2])
-      Nk = _expand(N, C.mp[1])
+      Nk = _expand(N, pseudo_inv(C.mp[1]))
       global last_solve = (Mk, Nk, M, N)
       n = solve(Mk, Nk)
       im = sum(v*b_AA[l] for (l, v) = n)
@@ -902,7 +902,7 @@ function extend_hom(C::ClassField_pp, D::Array{ClassField_pp, 1}, tau)
     z_i_inv = invmod(z_i, om)
 
     Tau = NfRelToNfRelMor(Cy.Kr, Dy.Kr, tau, z)
-    @show tau_Ka = hom(Cy.Ka, Dy.Ka, Dy.mp[1](Tau(Cy.mp[1]\gen(Cy.Ka))), check = false)
+    @show tau_Ka = hom(Cy.Ka, Dy.Ka, Dy.mp[1]\(Tau(Cy.mp[1](gen(Cy.Ka)))), check = false)
 
     lp = collect(keys(D[im].bigK.frob_cache))
     pp = maximum(minimum(x) for x = lp)
@@ -917,7 +917,7 @@ function extend_hom(C::ClassField_pp, D::Array{ClassField_pp, 1}, tau)
 #      println("om: $om -> ", degree(c), " vs ", c.o)
       Cs = cyclotomic_extension(k2, Int(degree(c)))
       Emb = hom(Cs.Kr, Dy.Kr, gen(Dy.Kr)^div(om, degree(c)), check = false)
-      emb = pseudo_inv(Cs.mp[1]) * Emb * Dy.mp[1]
+      emb = Cs.mp[1] * Emb * pseudo_inv(Dy.mp[1])
       a = FacElem(Dict(emb(k) => v for (k,v) = c.a.fac))
       push!(all_emb, (a, emb, divexact(om, c.o)))
     end
@@ -1019,10 +1019,10 @@ function extend_hom(C::ClassField_pp, D::Array{ClassField_pp, 1}, tau)
     @assert d == degree(AA)
     @assert d == length(B)
     b_AA = basis(AA)
-    Mk = _expand(M, Dy.mp[1])
+    Mk = _expand(M, pseudo_inv(Dy.mp[1]))
     #@hassert :ClassField 2 nullspace(Mk')[1] == 0
     N = SRow(h(C.pe))
-    Nk = _expand(N, Dy.mp[1])
+    Nk = _expand(N, pseudo_inv(Dy.mp[1]))
     n = solve(Mk, Nk)
     all_im = sum(v*b_AA[l] for (l, v) = n)
 

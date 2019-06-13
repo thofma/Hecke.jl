@@ -1,6 +1,6 @@
 export image, preimage, has_preimage, isinjective,
 issurjective, isbijective, automorphisms, morphisms, find_small_group,
-inv, *, id_hom, domain, codomain
+inv, *, id_hom, domain, codomain, divisors, multiples
 
 ################################################################################
 #
@@ -272,6 +272,40 @@ end
   return auts
 end
 
+function _morphisms_with_gens(G::GrpGen, H::GrpGen, Gens::Array{GrpGenElem,1}, Rels::Array{Array{Int64,1},1})
+
+  l = order(H)
+
+  elements_by_orders = Dict{Int, Array{GrpGenElem, 1}}()
+
+  for i in 1:l
+    h = H[i]
+    o = order(h)
+    for k in multiples(o, order(G))
+      if haskey(elements_by_orders, k)
+        push!(elements_by_orders[k], h)
+      else
+        elements_by_orders[k] = [h]
+      end
+    end
+  end
+
+
+  elbyord = [elements_by_orders[order(o)] for o in Gens]
+
+  it = Iterators.product(elbyord...)
+
+  words::Vector{Vector{Int}} = Rels
+
+  idH = id(H)
+
+  homs = _hom_group(it, words, idH)::Vector{Vector{GrpGenElem}}
+
+  Ggens = Gens
+
+  return [_spin_up_morphism(Ggens, a) for a in homs]
+end
+
 @doc Markdown.doc"""
     morphisms(G::GrpGen, H::GrpGen) -> A::Array{GrpGenToGrpGenMor,1}
 Returns all group homomorphisms from $G$ to $H$.
@@ -340,6 +374,6 @@ end
   return homs
 end
 
-_divisors(n) =  findall(x -> mod(n,x) == 0, 1:n)
+divisors(n::Int64) =  findall(x -> mod(n,x) == 0, 1:n)
 
-multiples(n, b) =  [i * n for i in 1:Int64(floor(b/n))]
+multiples(n::Int64, b::Int64) =  [i * n for i in 1:Int64(floor(b/n))]

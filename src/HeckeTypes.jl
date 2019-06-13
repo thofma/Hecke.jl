@@ -718,7 +718,7 @@ mutable struct NfAbsOrd{S, T} <: Ring
 
   function NfAbsOrd{S, T}(b::Array{T, 1}, cached::Bool = false) where {S, T}
     K = parent(b[1])
-    A = basis_mat(b)
+    A = basis_mat(b, FakeFmpqMat)
     if cached && haskey(NfAbsOrdID, (K,A))
       return NfAbsOrdID[(K,A)]::NfAbsOrd{S, T}
     else
