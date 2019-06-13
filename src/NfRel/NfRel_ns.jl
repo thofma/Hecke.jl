@@ -382,6 +382,7 @@ function basis(K::NfRel_ns)
 end
 
 function basis_mat(a::Vector{NfRel_nsElem{T}}) where {T <: NumFieldElem}
+  @assert length(a) > 0
   K = parent(a[1])
   M = zero_matrix(base_ring(K), length(a), degree(K))
   for i in 1:length(a)
@@ -847,7 +848,7 @@ Compute an isomorphic field as an extension of $Q$ together with the isomorphism
 function simple_extension(K::NfRel_ns{nf_elem}, ::FlintRationalField)
   Ks, mp = simple_extension(K)
   Ka, m1, m2 = absolute_field(Ks)
-  return Ka, pseudo_inv(m1)*mp, m2
+  return Ka, m1*mp, m2
 end
 
 absolute_field(K::NfRel_ns{nf_elem}) = simple_extension(K, FlintQQ)

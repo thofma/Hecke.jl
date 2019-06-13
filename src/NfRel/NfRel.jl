@@ -410,7 +410,8 @@ Given an extension $K/k/Q$, find an isomorphic extension of $Q$.
 """
 function absolute_field(K::NfRel{nf_elem}, cached::Bool = false)
   Ka, a, b, c = _absolute_field(K, cached)
-  return Ka, NfRelToNf(K, Ka, a, b, c), hom(base_ring(K), Ka, a, check = false)
+  #return Ka, NfRelToNf(K, Ka, a, b, c), hom(base_ring(K), Ka, a, check = false)
+  return Ka, NfToNfRel(Ka, K, a, b, c), hom(base_ring(K), Ka, a, check = false)
 end
 
 @doc Markdown.doc"""
@@ -794,9 +795,9 @@ function factor(f::PolyElem{<: NumFieldElem})
     return P([mp(coeff(f, i)) for i=0:degree(f)])
   end
 
-  fa = map_poly(PolynomialRing(Ka, "T", cached=false)[1], rel_abs, f)
+  fa = map_poly(PolynomialRing(Ka, "T", cached=false)[1], pseudo_inv(rel_abs), f)
   lf = factor(fa)
-  res = Fac(map_poly(parent(f), pseudo_inv(rel_abs), lf.unit), Dict(map_poly(parent(f), pseudo_inv(rel_abs), k)=>v for (k,v) = lf.fac))
+  res = Fac(map_poly(parent(f), rel_abs, lf.unit), Dict(map_poly(parent(f), rel_abs, k)=>v for (k,v) = lf.fac))
 
   return res
 end

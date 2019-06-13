@@ -770,7 +770,7 @@ function _aut_A_over_k(C::CyclotomicExt, CF::ClassField_pp)
   ng = ngens(g)+1
   AutA_gen = Array{Hecke.NfRelToNfRelMor{nf_elem,  nf_elem}, 1}(undef, ng)
   AutA_rel = zero_matrix(FlintZZ, ng, ng)
-  zeta = C.mp[1](gen(Kr))
+  zeta = C.mp[1]\(gen(Kr))
   n = degree(A)
   @assert e % n == 0
 
@@ -785,7 +785,7 @@ function _aut_A_over_k(C::CyclotomicExt, CF::ClassField_pp)
   for i = 1:ngens(g)
     si = hom(Kr, Kr, gen(Kr)^Int(lift(mg(g[i]))), check = false)
     @vprint :ClassField 2 "... extending zeta -> zeta^$(mg(g[i]))\n"
-    to_be_ext = hom(K, K, C.mp[1](si(preimage(C.mp[1], gen(K)))), check = false)
+    to_be_ext = hom(K, K, C.mp[1]\(si(image(C.mp[1], gen(K)))), check = false)
     sigma = _extend_auto(A, to_be_ext)
     AutA_gen[i+1] = sigma
 
@@ -969,7 +969,7 @@ function _rcf_descent(CF::ClassField_pp)
     function coerce_down(a::NfRelElem{nf_elem})
       @assert a.data.length <= 1
       b = coeff(a, 0)
-      c = preimage(inc_map, b)
+      c = image(inc_map, b)
       @assert c.data.length <= 1
       return coeff(c, 0)
     end

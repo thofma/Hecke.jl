@@ -1,1 +1,3 @@
-include("NumField/Elem.jl")
+@testset "Number fields" begin
+  include("NumField/Elem.jl")
+end
