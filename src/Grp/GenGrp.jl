@@ -8,7 +8,7 @@ export GrpGen, GrpGenElem, GrpGenToGrpGenMor, generic_group, GrpGen, GrpGenElem,
 getindex, subgroups, subgroup, quotient, inv, kernel, elem_type, parent, *,
 psylow_subgroup, commutator_subgroup, derived_series, order, direct_product,
 conjugancy_classes, ischaracteristic, induces_to_subgroup, induces_to_quotient,
-max_order, gen_2_ab
+max_order, gen_2_ab, orbit, stabilizer
 
 ################################################################################
 #
@@ -821,4 +821,43 @@ function cycl_prod(A::Array{Int64,1})
   it = Iterators.product(Ar_elems...)
   cycl_prod_op(A1,A2) = Tuple([mod(A1[i] + A2[i], A[i]) for i in 1:length(A)])
   return generic_group(vec([i for i in it]), cycl_prod_op)
+end
+
+function orbit(G::GrpGen, action, x)
+  Gens = gens(G)
+  L = [x]
+  i = 1
+  while i <= length(L)
+    temp = L[i]
+    for g in Gens
+      y = action(g, temp)
+      if !in(y, L)
+        push!(L, y)
+      end
+      i += 1
+    end
+  end
+  return L
+end
+
+function stabilizer(G::GrpGen, action, x::T) where T
+  Gens = gens(G)
+  S = Array{GrpGenElem, 1}()
+  D = Dict{T, GrpGenElem}()
+  D[x] = id(G)
+  L = [x]
+  i = 1
+  while i <= length(L)
+    temp = L[i]
+    for g in Gens
+      y = action(g, temp)
+      if !haskey(D,y)
+        D[y] = D[temp] * g
+        push!(L, y)
+      else push!(S, D[temp] * g * inv(D[y]))
+      end
+      i += 1
+    end
+  end
+  return S
 end
