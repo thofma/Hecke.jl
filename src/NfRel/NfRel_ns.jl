@@ -112,7 +112,10 @@ end
 Nemo.zero(K::NfRel_ns) = K(Nemo.zero(parent(K.pol[1])))
 
 Nemo.one(K::NfRel_ns) = K(Nemo.one(parent(K.pol[1])))
+
 Nemo.one(a::NfRel_nsElem) = one(a.parent)
+
+(K::NfRel_ns{T})(a::NfRel_nsElem) where {T} = a
 
 ################################################################################
 #
@@ -381,6 +384,16 @@ function basis(K::NfRel_ns)
     push!(b, prod(g[j]^(i[j]-1) for j=1:length(i)))
   end
   return b
+end
+
+function basis_mat(a::Vector{NfRel_nsElem{T}}) where {T <: NumFieldElem}
+  @assert length(a) > 0
+  K = parent(a[1])
+  M = zero_matrix(base_ring(K), length(a), degree(K))
+  for i in 1:length(a)
+    elem_to_mat_row!(M, i, a[i])
+  end
+  return M
 end
 
 function elem_to_mat_row!(M::Generic.Mat{T}, i::Int, a::NfRel_nsElem{T}) where T
@@ -673,11 +686,16 @@ mutable struct NfRel_nsToNfRel_nsMor{T} <: Map{NfRel_ns{T}, NfRel_ns{T}, HeckeMa
       # x is an element of K
       # First evaluate the coefficients of f at a to get a polynomial over L
       # Then evaluate at b
-      y = deepcopy(x)
-      for i=1:length(y.data)
-        y.data.coeffs[i] = aut(y.data.coeffs[i])
+      f = x.data
+      Kbxyz = parent(f)
+      k = nvars(Kbxyz)
+      Lbxyz = PolynomialRing(base_ring(L), k)[1]
+      coeffs = Vector{T}(undef, length(f.coeffs))
+      for i = 1:length(coeffs)
+        coeffs[i] = aut(f.coeffs[i])
       end
-      return msubst(y.data, emb)
+      g = Lbxyz(coeffs, f.exps)
+      return msubst(g, emb)
     end
 
     z = new{T}()
@@ -835,7 +853,7 @@ Compute an isomorphic field as an extension of $Q$ together with the isomorphism
 function simple_extension(K::NfRel_ns{nf_elem}, ::FlintRationalField)
   Ks, mp = simple_extension(K)
   Ka, m1, m2 = absolute_field(Ks)
-  return Ka, pseudo_inv(m1)*mp, m2
+  return Ka, m1*mp, m2
 end
 
 absolute_field(K::NfRel_ns{nf_elem}) = simple_extension(K, FlintQQ)

@@ -152,46 +152,21 @@ mutable struct NfRelToNfRelMor{T, S} <: Map{NfRel{T}, NfRel{S}, HeckeMap, NfRelT
   end  
 end
 
-function ^(f::NfRelToNfRelMor, b::Int)
-  K = domain(f)
-  @assert K == codomain(f)
-  d = absolute_degree(K)
-  b = mod(b, d)
-  if b == 0
-    return id_hom(K)
-  elseif b == 1
-    return f
-  else
-    bit = ~((~UInt(0)) >> 1)
-    while (UInt(bit) & b) == 0
-      bit >>= 1
-    end
-    z = f
-    bit >>= 1
-    while bit != 0
-      z = z * z
-      if (UInt(bit) & b) != 0
-        z = z * f
-      end
-      bit >>= 1
-    end
-    return z
-  end
-end
-
 
   #so far, only for single relative.
 function NfRelToNfRelMor(K::NfRel{nf_elem}, L::NfRel{nf_elem}, A::NfToNfMor, a::NfRelElem{nf_elem})
   function image(x::NfRelElem{nf_elem})
     # x is an element of K
-    f = data(x)
-    g = zero(f)
-    for i=0:degree(f)
-      setcoeff!(g, i, A(coeff(f, i)))
-    end
     # First evaluate the coefficients of f at a to get a polynomial over L
+    f = data(x)
+    g = Vector{nf_elem}(undef, degree(f)+1)
+    for i=0:degree(f)
+      g[i+1] = A(coeff(f, i))
+    end
+    Sx = PolynomialRing(base_field(L), "x")[1]
+    g1 = Sx(g)
     # Then evaluate at b
-    return g(a)
+    return g1(a)
   end
 
   z = NfRelToNfRelMor{nf_elem, nf_elem}()
@@ -224,7 +199,37 @@ id_hom(K::NfRel) = NfRelToNfRelMor(K, K, gen(K))
 
 morphism_type(::Type{NfRel{T}}) where {T} = NfRelToNfRel{T}
 
+function ^(f::NfRelToNfRelMor, b::Int)
+  K = domain(f)
+  @assert K == codomain(f)
+  d = absolute_degree(K)
+  b = mod(b, d)
+  if b == 0
+    return id_hom(K)
+  elseif b == 1
+    return f
+  else
+    bit = ~((~UInt(0)) >> 1)
+    while (UInt(bit) & b) == 0
+      bit >>= 1
+    end
+    z = f
+    bit >>= 1
+    while bit != 0
+      z = z * z
+      if (UInt(bit) & b) != 0
+        z = z * f
+      end
+      bit >>= 1
+    end
+    return z
+  end
+end
+
 function ==(x::NfRelToNfRelMor{T}, y::NfRelToNfRelMor{T}) where T
+  if base_ring(domain(x)) == base_ring(domain(y))
+    return x.prim_img == y.prim_img
+  end
   return (x.coeff_aut == y.coeff_aut) && (x.prim_img == y.prim_img) 
 end
 
@@ -276,5 +281,47 @@ mutable struct NfRelToFqMor{T} <: Map{NfRel{T}, FqFiniteField, HeckeMap, NfRelTo
     z = new{T}()
     z.header = MapHeader{NfRel{T}, FqFiniteField}()
     return z
+  end
+end
+
+function _automorphisms(L::NfRel)
+  if degree(L) == 1
+    auts = NfRelToNfRelMor[hom(K, K, one(K))]
+  else
+    f = L.pol
+    Lt, t = PolynomialRing(L, "t", cached = false)
+    f1 = change_ring(f, Lt)
+    divpol = Lt([ -gen(L), L(1) ])
+    f1 = divexact(f1, divpol)
+    lr = roots(f1)
+    Aut1 = Vector{NfRelToNfRelMor}(undef, length(lr) + 1)
+    for i = 1:length(lr)
+      Aut1[i] = hom(L, L, lr[i], check = false)
+    end
+    Aut1[end] = id_hom(L)
+    auts = closure(Aut1, *, id_hom(L)) # One could probably do this modular as in the absolute case
+  end
+  return auts
+end
+
+function automorphisms(L::NfRel; copy::Bool = true)
+  try
+    Aut = _get_automorphisms_nf_rel(L)::Vector{ <: NfRelToNfRelMor}
+    if copy
+      return deepcopy(Aut)
+    else
+      return Aut
+    end
+  catch e
+    if !isa(e, AccessorNotSetError)
+      rethrow(e)
+    end
+  end
+  auts = _automorphisms(L)
+  _set_automorphisms_nf_rel(L, auts)
+  if copy
+    return deepcopy(auts)
+  else
+    return auts
   end
 end

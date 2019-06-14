@@ -12,8 +12,6 @@ base_ring(O::AlgAssRelOrd) = order(basis_pmat(O, copy = false).coeffs[1])
 
 iscommutative(O::AlgAssRelOrd) = iscommutative(algebra(O))
 
-ismaximal_known(O::AlgAssRelOrd) = O.ismaximal != 0
-
 ################################################################################
 #
 #  Construction
@@ -358,6 +356,19 @@ function maximal_order(A::AbsAlgAss{T}) where { T <: NumFieldElem }
     return A.maximal_order
   end
 
+  # So far ..._absolute is usually faster for linear, quadratic and cubic base fields,
+  # but of course there are exceptions.
+  # Feel free to adjust this if-condition.
+  if base_field(A) == FlintQQ && degree(base_ring(A)) <= 3
+    O = maximal_order_via_absolute(A)
+  else
+    O = maximal_order_via_relative(A)
+  end
+  A.maximal_order = O
+  return O
+end
+
+function maximal_order_via_absolute(A::AbsAlgAss{T}) where { T <: NumFieldElem }
   B, BtoA = AlgAss(A)
   C, BtoC, CtoB = restrict_scalars(B, FlintQQ)
   OC = maximal_order(C)
@@ -368,16 +379,71 @@ function maximal_order(A::AbsAlgAss{T}) where { T <: NumFieldElem }
   PM = sub(pseudo_hnf(PseudoMatrix(M), :lowerleft, true), (degree(OC) - dim(A) + 1):degree(OC), 1:dim(A))
   O = Order(A, PM)
   O.ismaximal = 1
-  A.maximal_order = O
   return O
 end
 
+function maximal_order_via_relative(A::AbsAlgAss{T}) where { T <: NumFieldElem }
+  O = any_order(A)
+  return maximal_order(O)
+end
+
+function maximal_order(O::AlgAssRelOrd)
+  A = algebra(O)
+
+  d = discriminant(O)
+  fac = factor(d)
+
+  OO = O
+  for (p, e) in fac
+    if e == 1
+      continue
+    end
+    OO += pmaximal_overorder(O, p)
+  end
+  OO.ismaximal = 1
+  return OO
+end
+
+function any_order(A::AbsAlgAss{T}) where { T <: NumFieldElem }
+  K = base_ring(A)
+  return any_order(A, maximal_order(K))
+end
+
+function any_order(A::AbsAlgAss{T}, OK::Union{ NfAbsOrd, NfRelOrd }) where { T <: NumFieldElem }
+  K = base_ring(A)
+  d = _denominator_of_mult_table(A, OK)
+
+  M = vcat(zero_matrix(K, 1, dim(A)), d*identity_matrix(K, dim(A)))
+  oneA = one(A)
+  for i = 1:dim(A)
+    M[1, i] = deepcopy(coeffs(oneA, copy = false)[i])
+  end
+  PM = PseudoMatrix(M)
+  PM = pseudo_hnf(PM, :lowerleft, true)
+  O = Order(A, sub(PM, 2:dim(A) + 1, 1:dim(A)))
+  return O
+end
+
+function _denominator_of_mult_table(A::AbsAlgAss{T}, OK::Union{ NfAbsOrd, NfRelOrd }) where { T <: NumFieldElem }
+  l = denominator(multiplication_table(A, copy = false)[1, 1, 1], OK)
+  for i = 1:dim(A)
+    for j = 1:dim(A)
+      for k = 1:dim(A)
+        l = lcm(l, denominator(multiplication_table(A, copy = false)[i, j, k], OK))
+      end
+    end
+  end
+  return l
+end
+
+_denominator_of_mult_table(A::AlgGrp{T}, OK::Union{ NfAbsOrd, NfRelOrd }) where { T <: NumFieldElem } = fmpz(1)
+
 # Requires that O is maximal and A = K^(n\times n) for a number field K.
 # Computes a maximal order of type
-#  (O ... O a^(-1))
-#  (:     :   :   )
-#  (O ... O a^(-1))
-#  (a ... a   O   )
+#  (  O    ...   O    a )
+#  (  :          :    : )
+#  (  O    ...   O    a )
+#  (a^(-1) ... a^(-1) O )
 # for an ideal a of O.
 # See Bley, Johnston "Computing generators of free modules over orders in group
 # algebras", Prop. 5.1.
@@ -402,6 +468,11 @@ function _simple_maximal_order(O::AlgAssRelOrd, with_trafo::Type{Val{T}} = Val{f
   U = similar(PM.matrix, 0, 0)
   steinitz_form!(PM, U, false)
 
+  a = PM.coeffs[end]
+  if !isone(a.den)
+    mul_row!(PM.matrix, nrows(PM.matrix), K(a.den))
+  end
+
   # Compute M^(-1)*O*M
   M = PM.matrix
   iM = inv(M)
@@ -418,4 +489,182 @@ function _simple_maximal_order(O::AlgAssRelOrd, with_trafo::Type{Val{T}} = Val{f
   else
     return Order(A, PN)
   end
+end
+
+function ismaximal(O::AlgAssRelOrd)
+  if O.ismaximal == 1
+    return true
+  end
+  if O.ismaximal == 2
+    return false
+  end
+  OO = maximal_order(algebra(O))
+  if discriminant(O) == discriminant(OO)
+    O.ismaximal = 1
+  else
+    O.ismaximal = 2
+  end
+  return O.ismaximal == 1
+end
+
+ismaximal_known(O::AlgAssRelOrd) = O.ismaximal != 0
+
+################################################################################
+#
+#  p-hereditary / p-maximal overorders
+#
+################################################################################
+
+# See Friedrichs: "Berechnung von Maximalordnungen über Dedekindringen", Algorithmus 4.12
+function phereditary_overorder(O::AlgAssRelOrd, p::Union{ NfAbsOrdIdl, NfRelOrdIdl })
+  d = discriminant(O)
+  prad = pradical(O, p)
+  OO = left_order(prad)
+  dd = discriminant(OO)
+  while d != dd
+    d = dd
+    prad = pradical(OO, p)
+    OO = left_order(prad)
+    dd = discriminant(OO)
+  end
+  return OO
+end
+
+# See Friedrichs: "Berechnung von Maximalordnungen über Dedekindringen", Algorithmus 3.16
+function _pmaximal_overorder(O::AlgAssRelOrd, p::Union{ NfAbsOrdIdl, NfRelOrdIdl })
+  d = discriminant(O)
+  primes = prime_ideals_over(O, p)
+  for P in primes
+    OO = left_order(P)
+    dd = discriminant(OO)
+    if d != dd
+      return _pmaximal_overorder(OO, p)
+    end
+  end
+  return O
+end
+
+function pmaximal_overorder(O::AlgAssRelOrd, p::Union{ NfAbsOrdIdl, NfRelOrdIdl })
+  O = phereditary_overorder(O, p)
+  return _pmaximal_overorder(O, p)
+end
+
+################################################################################
+#
+#  Addition
+#
+################################################################################
+
+function +(a::AlgAssRelOrd{S, T}, b::AlgAssRelOrd{S, T}) where { S, T }
+  @assert algebra(a) === algebra(b)
+  aB = basis_pmat(a, copy = false)
+  bB = basis_pmat(b, copy = false)
+  d = degree(a)
+  PM = sub(pseudo_hnf(vcat(aB, bB), :lowerleft, true), d + 1:2*d, 1:d)
+  return Order(algebra(a), PM)
+end
+
+################################################################################
+#
+#  Units of quotients
+#
+################################################################################
+
+# Computes a generating system of U in O, where U is a set of representatives of
+# the image of the projection map \pi:O^\times -> (O/g*O)^\times.
+# Assumes that O is a maximal order in Mat_{n\times n}(K).
+# See Bley, Johnson: "Computing generators of free modules over orders in
+# group algebras", section 6.
+function enum_units(O::AlgAssRelOrd, g::NfAbsOrdIdl)
+  A = algebra(O)
+  @assert A isa AlgMat
+  @assert degree(A)^2 == dim(A)
+
+  n = degree(A)
+
+  K = base_ring(A)
+  OK = base_ring(O)
+  L = _simple_maximal_order(O)
+  a = deepcopy(basis_pmat(L, copy = false).coeffs[end - 1])
+  ai = deepcopy(basis_pmat(L, copy = false).coeffs[n])
+
+  gensOKg = Vector{elem_type(K)}()
+  for b in basis(OK)
+    bmod = mod(b, g)
+    if iszero(bmod)
+      continue
+    end
+    push!(gensOKg, elem_in_nf(bmod))
+  end
+
+  if isone(a)
+    gensinvag = gensOKg
+  else
+    gensinvag = Vector{elem_type(K)}()
+    aig = ai*g
+    for b in basis(ai)
+      bmod = mod(b, aig)
+      if iszero(bmod)
+        continue
+      end
+      push!(gensinvag, bmod)
+    end
+  end
+
+  if isone(a)
+    gensag = gensOKg
+  else
+    gensag = Vector{elem_type(K)}()
+    ag = a*g
+    for b in basis(a)
+      bmod = mod(b, ag)
+      if iszero(bmod)
+        continue
+      end
+      push!(gensag, bmod)
+    end
+  end
+
+  result = Vector{elem_type(L)}()
+  n1 = n - 1
+  # n \nmid i, j or n \mid i, j
+  for i = 1:n1
+    for j = 1:n1
+      if j == i
+        continue
+      end
+      for x in gensOKg
+        E = identity_matrix(K, n)
+        E[i, j] = deepcopy(x)
+        push!(result, L(A(E)))
+      end
+    end
+  end
+
+  # n \nmid i and n \mid j
+  for i = 1:n1
+    for x in gensag
+      E = identity_matrix(K, n)
+      E[i, n] = deepcopy(x)
+      push!(result, L(A(E)))
+    end
+  end
+
+  # n \mid i and n \nmid j
+  for j = 1:n1
+    for x in gensinvag
+      E = identity_matrix(K, n)
+      E[n, j] = deepcopy(x)
+      push!(result, L(A(E)))
+    end
+  end
+
+  U, mU = unit_group(OK)
+  for i = 1:ngens(U)
+    x = elem_in_nf(mU(U[i]))
+    E = identity_matrix(K, n)
+    E[1, 1] = x
+    push!(result, L(A(E)))
+  end
+  return result
 end

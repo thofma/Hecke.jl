@@ -82,6 +82,61 @@ end
 
 parent(f::NfToNfMor) = NfMorSet(domain(f))
 
+################################################################################
+#
+#  NfToNfRelMor
+#
+################################################################################
+
+mutable struct NfToNfRel <: Map{AnticNumberField, NfRel{nf_elem}, HeckeMap, NfToNfRel}
+  header::MapHeader{AnticNumberField, NfRel{nf_elem}}
+
+  function NfToNfRel(L::AnticNumberField, K::NfRel{nf_elem}, a::nf_elem, b::nf_elem, c::NfRelElem{nf_elem})
+    # let K/k, k absolute number field
+    # k -> L, gen(k) -> a
+    # K -> L, gen(K) -> b
+    # L -> K, gen(L) -> c
+
+    k = K.base_ring
+    Ly, y = PolynomialRing(L, cached = false)
+    R = parent(k.pol)
+    S = parent(L.pol)
+
+    function image(x::nf_elem)
+      # x is an element of L
+      f = S(x)
+      res = evaluate(f, c)
+      return res
+    end
+
+    function preimage(x::NfRelElem{nf_elem})
+      # x is an element of K
+      f = data(x)
+      # First evaluate the coefficients of f at a to get a polynomial over L
+      # Then evaluate at b
+      r = Vector{nf_elem}(undef, degree(f) + 1)
+      for  i = 0:degree(f)
+        r[i+1] = evaluate(R(coeff(f, i)), a)
+      end
+      return evaluate(Ly(r), b)
+    end
+
+    z = new()
+    z.header = MapHeader(L, K, image, preimage)
+    return z
+  end
+end
+
+function show(io::IO, h::NfToNfRel)
+  println(io, "Morphism between ", domain(h), "\nand ", codomain(h))
+end
+
+################################################################################
+#
+#  Generic groups to set of homomorphisms
+#
+################################################################################
+
 mutable struct GrpGenToNfMorSet{T} <: Map{GrpGen, NfMorSet{T}, HeckeMap, GrpGenToNfMorSet{T}}
   header::MapHeader{GrpGen, NfMorSet{T}}
 
@@ -265,6 +320,7 @@ function _automorphisms(K::AnticNumberField)
     Aut1[end] = id_hom(K)
     auts = closure(Aut1, degree(K))
   end
+  return auts
 end
 
 function automorphisms(K::AnticNumberField; copy::Bool = true)

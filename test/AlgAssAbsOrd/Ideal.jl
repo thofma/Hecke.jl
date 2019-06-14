@@ -1,0 +1,24 @@
+@testset "AlgAssAbsOrdIdl" begin
+
+  @testset "Locally free basis" begin
+    Qx, x = FlintQQ["x"]
+    f = x^4 - 5x^2 + 5
+    K, a = number_field(f, "a") # Gal(K/Q) == C_4
+    OK = maximal_order(K)
+
+    QG = group_algebra(FlintQQ, GrpAbFinGen([ 4 ]))
+    KtoQG, QGtoK = Hecke._find_isomorphism(K, QG)
+    basisOK = [ KtoQG(b.elem_in_nf) for b in basis(OK) ]
+    d = lcm([ denominator(b) for b in basisOK ])
+    ZG = Order(QG, basis(QG))
+    I = Hecke.ideal_from_z_gens(ZG, [ ZG(d*b) for b in basisOK ])
+
+    g = Hecke.locally_free_basis(I, 3)
+    ZGg = ZG*g
+    t = det(basis_mat(I, copy = false)*basis_mat_inv(ZGg, copy = false))
+    @test valuation(t, 3) == 0
+
+    @test_throws ErrorException  Hecke.locally_free_basis(I, 2)
+  end
+
+end

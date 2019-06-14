@@ -205,8 +205,8 @@ end
 #
 ################################################################################
 
-*(x::fmpz, a::AlgAssAbsOrdIdl) = ideal(order(a), x*basis_mat(a, copy = false), :nothing, true)
-*(a::AlgAssAbsOrdIdl, x::fmpz) = ideal(order(a), basis_mat(a, copy = false)*x, :nothing, true)
+*(x::Union{ Int, fmpz }, a::AlgAssAbsOrdIdl) = ideal(order(a), x*basis_mat(a, copy = false), :nothing, true)
+*(a::AlgAssAbsOrdIdl, x::Union{ Int, fmpz }) = ideal(order(a), basis_mat(a, copy = false)*x, :nothing, true)
 
 function *(x::AlgAssAbsOrdElem, a::AlgAssAbsOrdIdl)
   @assert parent(x) === order(a)
@@ -295,6 +295,9 @@ end
 
 *(O::AlgAssAbsOrd{S, T}, x::AlgAssAbsOrdElem{S, T}) where {S, T} = ideal(O, x, :right)
 *(x::AlgAssAbsOrdElem{S, T}, O::AlgAssAbsOrd{S, T}) where {S, T} = ideal(O, x, :left)
+
+*(O::AlgAssAbsOrd, x::Union{ Int, fmpz }) = O*O(x)
+*(x::Union{ Int, fmpz }, O::AlgAssAbsOrd) = O(x)*O
 
 function ideal_from_z_gens(O::AlgAssAbsOrd, b::Vector{T}, side::Symbol = :nothing) where { T <: AlgAssAbsOrdElem }
   d = degree(O)
@@ -741,3 +744,94 @@ right_order(a::AlgAssAbsOrdIdl) = ring_of_multipliers(a, fmpz(1), :left)
 ################################################################################
 
 isnormal(a::AlgAssAbsOrdIdl) = ismaximal(left_order(a))
+
+################################################################################
+#
+#  Locally free basis
+#
+################################################################################
+
+function locally_free_basis(I::AlgAssAbsOrdIdl, p::Union{ Int, fmpz })
+  b, x = islocally_free(I, p)
+  if !b
+    error("The ideal is not locally free at the prime")
+  end
+  return x
+end
+
+# See Bley, Wilson "Computations in relative algebraic K-groups", section 4.2
+# Returns (true, x) with x in I such that I_p = O_px if I is locally free at p
+# and (false, 0) otherwise.
+function islocally_free(I::AlgAssAbsOrdIdl, p::Union{ Int, fmpz })
+  O = order(I)
+  OpO, toOpO = AlgAss(O, p*O, p)
+  J = radical(OpO)
+  OJ, toOJ = quo(OpO, J)
+  decOJ = decompose(OJ)
+
+  pI = p*I
+  IpI, toIpI = AlgAss(I, p*I, p)
+  gensJ = Vector{elem_type(IpI)}()
+  for b in basis(J, copy = false)
+    bb = toOpO\b
+    for c in basis(I, copy = false)
+      push!(gensJ, toIpI(bb*c))
+    end
+  end
+  JinIpI = ideal_from_gens(IpI, gensJ)
+  IJ, toIJ = quo(IpI, JinIpI)
+
+  a = O()
+  for i = 1:length(decOJ)
+    A, AtoOJ = decOJ[i]
+    B, AtoB, BtoA = _as_algebra_over_center(A)
+    C, BtoC = _as_matrix_algebra(B)
+    e = toOpO\(toOJ\(AtoOJ(BtoA(BtoC\C[1]))))
+    basiseIJ = Vector{elem_type(IJ)}()
+    for b in basis(I, copy = false)
+      bb = toIJ(toIpI(e*b))
+      if !iszero(bb)
+        push!(basiseIJ, bb)
+      end
+    end
+
+    # Construct an Fq-basis for e*IJ where Fq \cong centre(A)
+    Z, ZtoA = center(A)
+    basisZ = [ toOpO\(toOJ\(AtoOJ(ZtoA(Z[i])))) for i = 1:dim(Z) ]
+
+    basiseIJoverZ = Vector{elem_type(O)}()
+    M = zero_matrix(base_ring(IJ), dim(Z), dim(IJ))
+    MM = zero_matrix(base_ring(IJ), 0, dim(IJ))
+    r = 0
+    for i = 1:length(basiseIJ)
+      b = toIpI\(toIJ\basiseIJ[i])
+
+      for j = 1:dim(Z)
+        bb = toIJ(toIpI(basisZ[j]*b))
+        elem_to_mat_row!(M, j, bb)
+      end
+
+      N = vcat(MM, M)
+      s = rank(N)
+      if s > r
+        push!(basiseIJoverZ, b)
+        MM = N
+        r = s
+      end
+      if r == length(basiseIJ)
+        break
+      end
+    end
+
+    if length(basiseIJoverZ) != degree(C)
+      # I is not locally free
+      return false, O()
+    end
+
+    for i = 1:length(basiseIJoverZ)
+      a += mod(toOpO\(toOJ\(AtoOJ(BtoA(BtoC\C[i]))))*basiseIJoverZ[i], pI)
+    end
+  end
+
+  return true, mod(a, pI)
+end

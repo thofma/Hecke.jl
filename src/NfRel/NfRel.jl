@@ -410,7 +410,8 @@ Given an extension $K/k/Q$, find an isomorphic extension of $Q$.
 """
 function absolute_field(K::NfRel{nf_elem}, cached::Bool = false)
   Ka, a, b, c = _absolute_field(K, cached)
-  return Ka, NfRelToNf(K, Ka, a, b, c), hom(base_ring(K), Ka, a, check = false)
+  #return Ka, NfRelToNf(K, Ka, a, b, c), hom(base_ring(K), Ka, a, check = false)
+  return Ka, NfToNfRel(Ka, K, a, b, c), hom(base_ring(K), Ka, a, check = false)
 end
 
 @doc Markdown.doc"""
@@ -658,6 +659,16 @@ function rand!(c::NfRelElem, b::Vector{<: NfRelElem}, r::UnitRange)
   return c
 end
 
+function rand(L::NfRel, r::UnitRange)
+  K = base_field(L)
+  c = L()
+  b = basis(L)
+  for i = 1:degree(L)
+    c = add!(c, c, b[i]*rand(K, r))
+  end
+  return c
+end
+
 ######################################################################
 # fun in towers..
 ######################################################################
@@ -786,16 +797,17 @@ function (R::Generic.PolyRing{NfRelElem{T}})(a::NfRelElem{NfRelElem{T}}) where T
   error("wrong ring")
 end
 
-function factor(f::Generic.Poly{NfRelElem{T}}) where T
+function factor(f::PolyElem{<: NumFieldElem})
   K = base_ring(f)
   Ka, rel_abs, _ = absolute_field(K)
+
   function map_poly(P::Ring, mp::Map, f::Generic.Poly)
     return P([mp(coeff(f, i)) for i=0:degree(f)])
   end
 
-  fa = map_poly(PolynomialRing(Ka, "T", cached=false)[1], rel_abs, f)
+  fa = map_poly(PolynomialRing(Ka, "T", cached=false)[1], pseudo_inv(rel_abs), f)
   lf = factor(fa)
-  res = Fac(map_poly(parent(f), pseudo_inv(rel_abs), lf.unit), Dict(map_poly(parent(f), pseudo_inv(rel_abs), k)=>v for (k,v) = lf.fac))
+  res = Fac(map_poly(parent(f), rel_abs, lf.unit), Dict(map_poly(parent(f), rel_abs, k)=>v for (k,v) = lf.fac))
 
   return res
 end
@@ -896,4 +908,37 @@ function Nemo.discriminant(K::NfRel, ::FlintRationalField)
   return d
 end
 
+################################################################################
+#
+#  Normal basis
+#
+################################################################################
 
+# Mostly the same as in the absolute case
+function normal_basis(L::NfRel{nf_elem})
+  O = EquationOrder(L)
+  K = base_ring(L)
+  OK = base_ring(O)
+  d = discriminant(O)
+  for p in PrimeIdealsSet(OK, degree(L), -1, indexdivisors = false, ramified = false)
+    if valuation(d, p) != 0
+      continue
+    end
+
+    # Check if p is totally split
+    F, mF = ResidueField(OK, p)
+    mmF = extend(mF, K)
+    Ft, t = PolynomialRing(F, "t", cached = false)
+    ft = nf_elem_poly_to_fq_poly(Ft, mmF, L.pol)
+    pt = powmod(t, order(F), ft)
+
+    if degree(gcd(ft, pt - t)) == degree(ft)
+      # Lift an idempotent of O/pO
+      immF = pseudo_inv(mmF)
+      fac = factor(ft)
+      gt = divexact(ft, first(keys(fac.fac)))
+      g = fq_poly_to_nf_elem_poly(parent(L.pol), immF, gt)
+      return L(g)
+    end
+  end
+end

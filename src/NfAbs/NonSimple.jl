@@ -147,10 +147,6 @@ function Nemo.one!(a::fmpq_mpoly)
   return a
 end
 
-dot(a::NfAbsNSElem, b::Union{Integer, fmpz}) = a * b
-
-dot(a::Union{Integer, fmpz}, b::NfAbsNSElem) = b * a
-
 ################################################################################
 #
 #  Random
@@ -165,6 +161,28 @@ function rand(K::NfAbsNS, r::UnitRange)
     z += rand(r) * b[i]
   end
   return z
+end
+
+################################################################################
+#
+#  Basis matrix
+#
+################################################################################
+
+function basis_mat(A::Array{NfAbsNSElem})
+  @assert length(A) > 0
+  n = length(A)
+  d = degree(parent(A[1]))
+
+  MM = zero_matrix(FlintQQ, n, d)
+  for i in 1:n
+    elem_to_mat_row!(MM, i, A[i])
+  end
+  return MM
+end
+
+function basis_mat(A::Vector{NfAbsNSElem}, ::Type{FakeFmpqMat})
+  return FakeFmpqMat(basis_mat(A))
 end
 
 ################################################################################

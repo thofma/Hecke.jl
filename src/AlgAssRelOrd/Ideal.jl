@@ -50,7 +50,7 @@ function assure_has_basis_pmat(a::AlgAssRelOrdIdl)
   A = algebra(order(a))
   M = zero_matrix(base_ring(A), dim(A), dim(A))
   C = Vector{frac_ideal_type(order_type(base_ring(A)))}()
-  for i = 1:degree(L)
+  for i = 1:dim(A)
     elem_to_mat_row!(M, i, pb[i][1])
     push!(C, deepcopy(pb[i][2]))
   end
@@ -328,6 +328,20 @@ end
 
 *(a::Union{NfOrdIdl, NfRelOrdIdl}, O::AlgAssRelOrd) = ideal(O, a)
 
+function ideal_from_lattice_gens(O::AlgAssRelOrd, gens::Vector{ <: AbsAlgAssElem }, check::Bool = true)
+
+  M = zero_matrix(base_ring(algebra(O)), length(gens), degree(O))
+  for i = 1:length(gens)
+    elem_to_mat_row!(M, i, gens[i])
+  end
+  PM = pseudo_hnf(PseudoMatrix(M), :lowerleft)
+  if length(gens) != degree(O)
+    PM = sub(PM, (length(gens) - degree(O) + 1):length(gens), 1:degree(O))
+  end
+
+  return ideal(O, PM, :nothing, check, true)
+end
+
 ################################################################################
 #
 #  Inclusion of elements in ideals
@@ -413,7 +427,6 @@ function ring_of_multipliers(a::AlgAssRelOrdIdl{T1, T2}, action::Symbol = :left)
   PM = sub(pseudo_hnf(PM, :upperright, true), 1:d, 1:d)
   N = inv(transpose(PM.matrix))*basis_mat(O, copy = false)
   PN = PseudoMatrix(N, [ simplify(inv(I)) for I in PM.coeffs ])
-  PN = pseudo_hnf(PN, :lowerleft, true)
   return typeof(O)(algebra(O), PN)
 end
 
@@ -529,4 +542,180 @@ function normred(a::AlgAssRelOrdIdl; copy::Bool = true)
   else
     return a.normred
   end
+end
+
+################################################################################
+#
+#  Locally free basis
+#
+################################################################################
+
+function locally_free_basis(I::AlgAssRelOrdIdl, p::Union{ NfAbsOrdIdl, NfRelOrdIdl })
+  b, x = islocally_free(I, p)
+  if !b
+    error("The ideal is not locally free at the prime")
+  end
+  return x
+end
+
+# See Bley, Wilson "Computations in relative algebraic K-groups", section 4.2
+# Returns (true, x) with x in I such that I_p = O_px if I is locally free at p
+# and (false, 0) otherwise.
+function islocally_free(I::AlgAssRelOrdIdl, p::Union{ NfAbsOrdIdl, NfRelOrdIdl })
+  O = order(I)
+  pO = p*O
+  OpO, toOpO = AlgAss(O, p*O, p)
+  J = radical(OpO)
+  OJ, toOJ = quo(OpO, J)
+  decOJ = decompose(OJ)
+
+  pI = pO*I
+  IpI, toIpI = AlgAss(I, pI, p)
+  basisIpI = [ toIpI\IpI[i] for i = 1:dim(IpI) ]
+  gensJ = Vector{elem_type(IpI)}()
+  for b in basis(J, copy = false)
+    bb = toOpO\b
+    for c in basisIpI
+      push!(gensJ, toIpI(bb*c))
+    end
+  end
+  JinIpI = ideal_from_gens(IpI, gensJ)
+  IJ, toIJ = quo(IpI, JinIpI)
+
+  a = O()
+  for i = 1:length(decOJ)
+    A, AtoOJ = decOJ[i]
+    B, AtoB, BtoA = _as_algebra_over_center(A)
+    C, BtoC = _as_matrix_algebra(B)
+    e = toOpO\(toOJ\(AtoOJ(BtoA(BtoC\C[1]))))
+    basiseIJ = Vector{elem_type(IJ)}()
+    for b in basisIpI
+      bb = toIJ(toIpI(e*b))
+      if !iszero(bb)
+        push!(basiseIJ, bb)
+      end
+    end
+
+    # Construct an Fq-basis for e*IJ where Fq \cong centre(A)
+    Z, ZtoA = center(A)
+    basisZ = [ toOpO\(toOJ\(AtoOJ(ZtoA(Z[i])))) for i = 1:dim(Z) ]
+
+    basiseIJoverZ = Vector{elem_type(O)}()
+    M = zero_matrix(base_ring(IJ), dim(Z), dim(IJ))
+    MM = zero_matrix(base_ring(IJ), 0, dim(IJ))
+    r = 0
+    for i = 1:length(basiseIJ)
+      b = toIpI\(toIJ\basiseIJ[i])
+
+      for j = 1:dim(Z)
+        bb = toIJ(toIpI(basisZ[j]*b))
+        elem_to_mat_row!(M, j, bb)
+      end
+
+      N = vcat(MM, M)
+      s = rank(N)
+      if s > r
+        push!(basiseIJoverZ, b)
+        MM = N
+        r = s
+      end
+      if r == length(basiseIJ)
+        break
+      end
+    end
+
+    if length(basiseIJoverZ) != degree(C)
+      # I is not locally free
+      return false, O()
+    end
+
+    for i = 1:length(basiseIJoverZ)
+      a += mod(toOpO\(toOJ\(AtoOJ(BtoA(BtoC\C[i]))))*basiseIJoverZ[i], pI)
+    end
+  end
+
+  return true, mod(a, pI)
+end
+
+################################################################################
+#
+#  p-Radical
+#
+################################################################################
+
+# See Friedrichs: "Berechnung von Maximalordnungen über Dedekindringen", Algorithmus 5.1
+function pradical(O::AlgAssRelOrd, p::Union{ NfAbsOrdIdl, NfRelOrdIdl })
+  K = base_ring(algebra(O))
+  OK = maximal_order(K)
+  pO = p*O
+  OpO, OtoOpO = AlgAss(O, pO, p)
+  J = radical(OpO)
+
+  N = basis_pmat(pO, copy = false)
+  t = PseudoMatrix(zero_matrix(K, 1, degree(O)))
+  for b in basis(J)
+    bb = OtoOpO\b
+    for i = 1:degree(O)
+      t.matrix[1, i] = coordinates(bb, copy = false)[i]
+    end
+    N = vcat(N, deepcopy(t))
+  end
+  if p isa NfAbsOrdIdl
+    N = sub(pseudo_hnf_full_rank_with_modulus(N, p, :lowerleft), nrows(N) - degree(O) + 1:nrows(N), 1:degree(O))
+  else
+    N = sub(pseudo_hnf(N, :lowerleft, true), nrows(N) - degree(O) + 1:nrows(N), 1:degree(O))
+  end
+  return ideal(O, N, :twosided, false, true)
+end
+
+################################################################################
+#
+#  Primes lying over a prime
+#
+################################################################################
+
+# See Friedrichs: "Berechnung von Maximalordnungen über Dedekindringen", Algorithmus 5.23
+function prime_ideals_over(O::AlgAssRelOrd, p::Union{ NfAbsOrdIdl, NfRelOrdIdl })
+  K = base_ring(algebra(O))
+  OK = order(p)
+
+  prad = pradical(O, p)
+  A, OtoA = AlgAss(O, prad, p)
+  decA = decompose(A)
+
+  if length(decA) == 1
+    return [ prad ]
+  end
+
+  lifted_components = Vector{typeof(basis_pmat(prad, copy = false))}()
+  for k = 1:length(decA)
+    N = zero_matrix(K, dim(decA[k][1]), degree(O))
+    for i = 1:dim(decA[k][1])
+      b = OtoA\(decA[k][2](decA[k][1][i]))
+      for j = 1:degree(O)
+        N[i, j] = coordinates(b, copy = false)[j]
+      end
+    end
+    push!(lifted_components, PseudoMatrix(N))
+  end
+
+  primes = Vector{ideal_type(O)}()
+  for i = 1:length(decA)
+    N = basis_pmat(prad, copy = false)
+    for j = 1:length(decA)
+      if i == j
+        continue
+      end
+
+      N = vcat(N, lifted_components[j])
+    end
+    if p isa NfAbsOrdIdl
+      N = sub(pseudo_hnf_full_rank_with_modulus(N, p, :lowerleft), nrows(N) - degree(O) + 1:nrows(N), 1:degree(O))
+    else
+      N = sub(pseudo_hnf(N, :lowerleft, true), nrows(N) - degree(O) + 1:nrows(N), 1:degree(O))
+    end
+    push!(primes, ideal(O, N, :twosided, false, true))
+  end
+
+  return primes
 end

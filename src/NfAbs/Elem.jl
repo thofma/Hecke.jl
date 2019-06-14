@@ -2,26 +2,6 @@ export isintegral
 
 ################################################################################
 #
-#  Base case for dot products
-#
-################################################################################
-
-dot(x::fmpz, y::nf_elem) = x*y
-
-dot(x::nf_elem, y::fmpz) = x*y
-
-function dot(a::Array{nf_elem, 1}, b::Array{fmpz, 1})
-  d = zero(parent(a[1]))
-  t = zero(d)
-  for i=1:length(a)
-    mul!(t, a[i], b[i])
-    add!(d, d, t)
-  end
-  return d
-end
-
-################################################################################
-#
 #  Copy
 #
 ################################################################################
@@ -30,121 +10,14 @@ Base.copy(d::nf_elem) = deepcopy(d)
 
 ################################################################################
 #
-#  Is rational?
-#
-################################################################################
-
-function israt(a::nf_elem)
-  if degree(parent(a))==1
-    return true
-  end
-  @assert degree(parent(a))>2 ## fails for 2 due to efficiency
-  return a.elem_length<2
-end
-
-################################################################################
-#
-#  Is integral
-#
-################################################################################
-
-isintegral(a::fmpq) = isone(denominator(a))
-
-@doc Markdown.doc"""
-    isintegral(a::NumFieldElem) -> Bool
-> Returns whether $a$ is integral, that is, whether the minimal polynomial
-> of $a$ has integral coefficients.
-"""
-function isintegral(a::NumFieldElem)
-  f = minpoly(a)
-  for i = 0:(degree(f) - 1)
-    if !isintegral(coeff(f, i))
-      return false
-    end
-  end
-  return true
-end
-
-################################################################################
-#
-#  Random elements from arrays of nf_elem
-#
-################################################################################
-
-@doc Markdown.doc"""
-    rand(b::Vector{NumFieldElem}, r::UnitRange) -> NumFieldElem
-
-> A random linear combination of elements in `b` with coefficients in `r`.
-"""
-function rand(b::Vector{<: NumFieldElem}, r::UnitRange)
-  length(b) == 0 && error("Array must not be empty")
-  s = zero(parent(b[1]))
-  rand!(s, b, r)
-  return s
-end
-
-@doc Markdown.doc"""
-    rand(b::Vector{NumFieldElem}, r::UnitRange, terms::Int) -> NumFieldElem
-
-> A random linear combination (with repetitions) of \code{terms} elements of `b`
-> with coefficients in `r`.
-"""
-function rand(b::Vector{<: NumFieldElem}, r::UnitRange, terms::Int)
-  length(b) == 0 && error("Array must not be empty")
-  s = zero(parent(b[1]))
-  rand!(s, b, r, terms)
-  return s
-end
-
-function rand!(c::T, b::Vector{T}, r::UnitRange,
-               terms::Int) where {T <: NumFieldElem}
-  length(b) == 0 && error("Array must not be empty")
-  (terms<=0 || terms > length(b)) && error("Number of terms should be at least 1 and cannot exceed the length of the array")
-
-  t = zero(parent(c))
-
-  terms = min(terms, length(b))
-  mul!(c, rand(b), rand(r))
-  for i = 2:terms
-    mul!(t, rand(b), rand(r))
-    add!(c, t, c)
-  end
-
-  return c
-end
-
-function rand!(c::T, b::Vector{T}, r::UnitRange) where {T <: NumFieldElem}
-  length(b) == 0 && error("Array must not be empty")
-
-  mul!(c, b[1], rand(r))
-  t = zero(parent(c))
-
-  for i = 2:length(b)
-    mul!(t, b[i], rand(r))
-    add!(c, t, c)
-  end
-
-  return c
-end
-
-################################################################################
-#
 #  Basis matrix
 #
 ################################################################################
 
-function basis_mat(A::Array{T, 1}) where {T <: Union{nf_elem, NfAbsNSElem}}
+function basis_mat(A::Array{nf_elem, 1}, ::Type{FakeFmpqMat})
   @assert length(A) > 0
   n = length(A)
   d = degree(parent(A[1]))
-
-  if T === NfAbsNSElem
-    MM = zero_matrix(FlintQQ, n, d)
-    for i in 1:n
-      elem_to_mat_row!(MM, i, A[i])
-    end
-    return FakeFmpqMat(MM)
-  end
 
   M = zero_matrix(FlintZZ, n, d)
 
@@ -163,6 +36,21 @@ function basis_mat(A::Array{T, 1}) where {T <: Union{nf_elem, NfAbsNSElem}}
     end
   end
   return FakeFmpqMat(M, deno)
+end
+
+function basis_mat(A::Array{nf_elem, 1})
+  @assert length(A) > 0
+  n = length(A)
+  d = degree(parent(A[1]))
+
+  M = zero_matrix(FlintQQ, n, d)
+
+  for i in 1:n
+    for j in 1:d
+      M[i, j] = coeff(A[i], j - 1)
+    end
+  end
+  return M
 end
 
 ################################################################################
@@ -195,7 +83,7 @@ function charpoly(Zx::FmpzPolyRing, a::nf_elem)
   if !isone(denominator(f))
     error("element is not integral")
   end
-  return Zx(denocharator(f)*f)
+  return Zx(f)
 end
 
 function charpoly(a::nf_elem, Z::FlintIntegerRing)
@@ -236,7 +124,7 @@ function minpoly(Zx::FmpzPolyRing, a::nf_elem)
   if !isone(denominator(f))
     error("element is not integral")
   end
-  return Zx(denominator(f)*f)
+  return Zx(f)
 end
 
 ################################################################################
@@ -262,8 +150,6 @@ function ^(x::nf_elem, y::fmpz)
   end
   return res
 end
-
-
 
 ################################################################################
 #
