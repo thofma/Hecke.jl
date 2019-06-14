@@ -15,37 +15,94 @@ import AbstractAlgebra: base_ring, parent, check_parent, isunit, inv, +, -, *, d
 import Nemo.prime
 
 #prime might be product of several primes if localized at several primes, those primes are in array primes
-mutable struct Loc{T<: RingElem} <: AbstractAlgebra.Ring
+mutable struct Loc{T} <: AbstractAlgebra.Ring
    base_ring::AbstractAlgebra.Ring
    prime::T
-   primes::Array{T,1}
+   primes::Array{T,1}  # in general, not set.
+   comp::Bool  # false: den has to be coprime to prime
+               # true:  den can ONLY use prime (and powers)
 
-   function Loc{T}(prime::T, primes::Array{T,1}, cached::Bool = true) where {T <: RingElem}
+   function Loc{T}(prime::T, primes::Array{T,1}, cached::Bool = true, comp::Bool = false) where {T <: RingElem}
       length(primes) == 0 && error("No element to localize at since array of primes is empty")
-      if cached && haskey(LocDict, (parent(prime), prime))
-         return LocDict[parent(prime), prime]::Loc{T}
+      if cached && haskey(LocDict, (parent(prime), prime, comp))
+         return LocDict[parent(prime), prime, comp]::Loc{T}
       else
-         z = new(parent(prime), prime, primes)
+         z = new(parent(prime), prime, primes, comp)
          if cached
-            LocDict[parent(prime), prime] = z
+            LocDict[parent(prime), prime, comp] = z
          end
          return z
       end
    end
-end
-
-
-const LocDict = Dict{Tuple{AbstractAlgebra.Ring, RingElement}, AbstractAlgebra.Ring}()
-
-mutable struct LocElem{T<: RingElem} <: AbstractAlgebra.RingElem
-   data::FracElem{T}
-   parent::Loc{T}
-   function LocElem{T}(data::FracElem{T}, par::Loc, checked::Bool = true) where {T <: RingElem}
-      checked && !isone(gcd(denominator(data), prime(par))) && error("No valid element of localization since its denominator and the primes localized at are not coprime")
-      return new{T}(data,par)
+   function Loc{T}(prime::T, cached::Bool = true, comp::Bool = false) where {T <: RingElem}
+     isunit(prime) && error("no-point")
+     if cached && haskey(LocDict, (parent(prime), prime, comp))
+       return LocDict[parent(prime), prime, comp]::Loc{T}
+     else
+       r = new()
+       r.base_ring = parent(prime)
+       r.prime = prime
+       if cached
+          LocDict[parent(prime), prime, comp] = r
+       end
+       return r
+     end
    end
 end
 
+
+const LocDict = Dict{Tuple{AbstractAlgebra.Ring, RingElement, Bool}, AbstractAlgebra.Ring}()
+
+function isin(a, L::Loc{T}) where {T <: RingElem}
+  iszero(a) && return true
+  L.comp || (!isone(gcd(denominator(a), prime(L))) && return false)
+  L.comp && ppio(denominator(a), prime(L))[1] != denominator(data) && return false
+  return true
+end
+
+mutable struct LocElem{T} <: AbstractAlgebra.RingElem
+   data::FieldElem
+   parent::Loc{T}
+   function LocElem{T}(data::FracElem{T}, par::Loc, checked::Bool = true) where {T <: RingElem}
+     checked && (isin(data, par) || error("illegal elt"))
+     return new{T}(data,par)
+   end
+end
+
+#=
+
+Let s be an integer (start with localisations in PIDs = Z)
+and S = {x | gcd(x, s) = 1} (for s = p, S = Z \setminus p)
+
+  the localsation L = S^-1 R = {a/b | gcd(b, s) = 1}
+
+This is euclidean under N(a/b) = gcd(a, s^infty)
+
+a_1*s_1/b_1 : a_2*s_2/b_2
+  
+  divrem(a_1 * s_1 * b_2, s_2) = q, r  => r < s_2
+  a_1 s_1 b_2 = q s_2 + r
+
+a_1*s_1/b_1 =   q/(a_2 b_1) *  a_2 s_2/b_2 + r/(b_1 b_2)
+
+
+This works....
+
+
+Now the other one:
+  S = { s^i : i}
+  L = S^-1 R  = { a/b | gcd(b, s^infty) = b}
+
+a_1/s_1 : a_2/s_2   N(a/s) = |a/gcd(a, s^infty)|
+
+a_1s_2 = q a_2 + r
+a_1/s_1 = q/s_1 a_2/s_2 + r/(s1 s2)
+
+===========================================
+Poly: deg(N(a/b)), rest the same
+
+===========================================
+=#
 ###############################################################################
 #
 #   Unsafe operators and functions
@@ -65,15 +122,15 @@ AbstractAlgebra.addeq!(a::LocElem, b::LocElem) = a + b
 #
 ###############################################################################
 
-elem_type(::Type{Loc{T}}) where {T <: RingElem} = LocElem{T}
+elem_type(::Type{Loc{T}}) where {T} = LocElem{T}
 
-parent_type(::Type{LocElem{T}}) where {T <: RingElem} = Loc{T}
+parent_type(::Type{LocElem{T}}) where {T} = Loc{T}
 
-base_ring(L::Loc{T})  where {T <: RingElem}  = L.base_ring::parent_type(T)
+base_ring(L::Loc) = L.base_ring
 
-base_ring(a::LocElem{T}) where {T <: RingElem} = base_ring(parent(a))
+base_ring(a::LocElem) = base_ring(parent(a))
 
-parent(a::LocElem{T})  where {T <: RingElem} = a.parent
+parent(a::LocElem) = a.parent
 
 function check_parent(a::LocElem{T}, b::LocElem{T})  where {T <: RingElem}
     parent(a) !== parent(b) && error("Parent objects do not match")
@@ -86,29 +143,29 @@ end
 #
 ###############################################################################
 
-data(a::LocElem{T}) where {T <: RingElement} = a.data
+data(a::LocElem) = a.data
 
 numerator(a::LocElem{T}) where {T <: RingElement} = numerator(data(a))
 
 denominator(a::LocElem{T}) where {T <: RingElement} = denominator(data(a))
 
-prime(L::Loc{T}) where {T <: RingElement} = L.prime
+prime(L::Loc) = L.prime
 
-primes(L::Loc{T}) where {T <: RingElement} = L.primes
+primes(L::Loc) = L.primes
 
-zero(L::Loc{T}) where {T <: RingElement} = L(0)
+zero(L::Loc) = L(0)
 
-one(L::Loc{T}) where {T <: RingElement} = L(1)
+one(L::Loc) = L(1)
 
-iszero(a::LocElem{T}) where {T <: RingElement} = iszero(data(a))
+iszero(a::LocElem) = iszero(data(a))
 
-isone(a::LocElem{T}) where {T <: RingElement} = isone(data(a))
+isone(a::LocElem) = isone(data(a))
 
 function isunit(a::LocElem{T})  where {T <: RingElem}
-    return isone(gcd(numerator(data(a)),prime(parent(a))))
+  return isin(inv(a.data), parent(a))
 end
 
-deepcopy_internal(a::LocElem{T}, dict::IdDict) where {T <: RingElem} = parent(a)(deepcopy(data(a)))
+deepcopy_internal(a::LocElem, dict::IdDict) = parent(a)(deepcopy(data(a)))
 
 ###############################################################################
 #
@@ -116,19 +173,24 @@ deepcopy_internal(a::LocElem{T}, dict::IdDict) where {T <: RingElem} = parent(a)
 #
 ###############################################################################
 
-function show(io::IO, a::LocElem{T}) where {T <: RingElem}
+function show(io::IO, a::LocElem)
    print(io, data(a))
 end
 
-function show(io::IO, L::Loc{T}) where {T <: RingElem}
-   print(io, "Localization of ", base_ring(L), " at ", primes(L))
+function show(io::IO, L::Loc)
+   if L.comp
+     print(io, "Localization of ", base_ring(L), " at complement of ", prime(L))
+   else
+     print(io, "Localization of ", base_ring(L), " at ", prime(L))
+   end
 end
 
-needs_parentheses(x::LocElem{T})  where {T <: RingElem} = needs_parentheses(data(x))
+needs_parentheses(x::LocElem) = needs_parentheses(data(x))
 
-displayed_with_minus_in_front(x::LocElem{T})  where {T <: RingElem} = displayed_with_minus_in_front(data(x))
+displayed_with_minus_in_front(x::LocElem) = displayed_with_minus_in_front(data(x))
 
 show_minus_one(::Type{LocElem{T}}) where {T <: RingElement} = true
+show_minus_one(::Type{LocElem{NfOrdIdl}}) = true
 
 ###############################################################################
 #
@@ -136,7 +198,7 @@ show_minus_one(::Type{LocElem{T}}) where {T <: RingElement} = true
 #
 ###############################################################################
 
-function -(a::LocElem{T})  where {T <: RingElem}
+function -(a::LocElem)
    parent(a)(-data(a))
 end
 
@@ -146,17 +208,17 @@ end
 #
 ###############################################################################
 
-function +(a::LocElem{T}, b::LocElem{T})  where {T <: RingElem}
+function +(a::LocElem{T}, b::LocElem) where {T}
    check_parent(a,b)
    return LocElem{T}(data(a) + data(b), parent(a), false)
 end
 
-function -(a::LocElem{T}, b::LocElem{T})  where {T <: RingElem}
+function -(a::LocElem{T}, b::LocElem{T})  where {T}
    check_parent(a,b)
    return LocElem{T}(data(a) - data(b), parent(a), false)
 end
 
-function *(a::LocElem{T}, b::LocElem{T})  where {T <: RingElem}
+function *(a::LocElem{T}, b::LocElem{T})  where {T}
    check_parent(a,b)
    return LocElem{T}(data(a) * data(b), parent(a), false)
 end
@@ -184,9 +246,10 @@ Returns the inverse element of $a$ if $a$ is a unit.
 If 'checked = false' the invertibility of $a$ is not checked and the corresponding inverse element
 of the Fraction Field is returned.
 """
-function inv(a::LocElem{T}, checked::Bool = true)  where {T <: RingElem}
-   checked && !isunit(a) && error("$a not invertible in given localization")
-   return LocElem{T}(inv(data(a)), parent(a), false)
+function inv(a::LocElem{T}, checked::Bool = true)  where {T}
+   b = inv(a.data)
+   checked && (isin(b, parent(a)) || error("no unit"))
+   return LocElem{T}(b, parent(a), false)
 end
 
 ###############################################################################
@@ -201,13 +264,11 @@ Returns tuple (`true`,`c`) if $b$ divides $a$ where `c`*$b$ = $a$.
 If 'checked = false' the corresponding element of the Fraction Field is returned and it is not
 checked whether it is an element of the given localization.
 """
-function divides(a::LocElem{T}, b::LocElem{T}, checked::Bool = true) where {T <: RingElem}
+function divides(a::LocElem, b::LocElem, checked::Bool = true)
    check_parent(a,b)
-   try
-      true, parent(a)(divexact(data(a), data(b)), checked)
-   catch
-      false, parent(a)()
-   end
+   c = divexact(data(a), data(b))
+   isin(c, parent(a)) && return true, parent(a)(c, checked)
+   return false, a
 end
 
 @doc Markdown.doc"""
@@ -216,21 +277,39 @@ Returns element 'c' of given localization s.th. `c`*$b$ = $a$ if such element ex
 If 'checked = false' the corresponding element of the Fraction Field is returned and it is not
 checked whether it is an element of the given localization.
 """
-function divexact(a::LocElem{T}, b::LocElem{T}, checked::Bool = true)  where {T <: RingElem}
+function divexact(a::LocElem, b::LocElem, checked::Bool = true)
    d = divides(a, b, checked)
    d[1] ? d[2] : error("$a not divisible by $b in the given Localization")
 end
 
 @doc Markdown.doc"""
      div(a::LocElem{T}, b::LocElem{T}, checked::Bool = true)  where {T <: RingElem}
-Returns element `c` if $b$ divides $a$ where `c`* $b$ = $a$.
-If $b$ does not divide $a$, `0`is returned.
-If 'checked = false' the corresponding element of the Fraction Field is returned and it is not
-checked whether it is an element of the given localization.
+In case the ring is euclidean, return a euclidean division.     
 """
-function div(a::LocElem{T}, b::LocElem{T}, checked::Bool = true)  where {T <: RingElem}
-   d = divides(a, b, checked)
-   return d[2]
+function divrem(a::LocElem{T}, b::LocElem{T}, checked::Bool = true)  where {T <: RingElem}
+  check_parent(a, b)
+  L = parent(a)
+  if L.comp
+    a1, s1 = ppio(numerator(a.data), L.prime)
+    a2, s2 = ppio(numerator(b.data), L.prime)
+    b1 = denominator(a)
+    b2 = denominator(b)
+    q, r = divrem(a1 * s1 * b2, s2)
+    return L(q//(a2*b1), checked), L(r//(b1*b2), checked)
+  else
+    q, r = divrem(numerator(a)*denominator(b), numerator(b))
+    return L(q//denominator(a), checked), L(r//(denominator(a)*denominator(b)), checked)
+  end
+end
+
+function div(a::Loc{T}, b::Loc{T}) where {T}
+  return divrem(a, b)[1]
+end
+function rem(a::Loc{T}, b::Loc{T}) where {T}
+  return divrem(a, b)[2]
+end
+
+function euclid(a::LocElem{T}) where {T <: RingElem}
 end
 
 ###############################################################################
@@ -308,8 +387,8 @@ end
 #
 ###############################################################################
 
-function ^(a::LocElem{T}, b::Int) where {T <: RingElem}
-   return LocElem{T}(data(a)^b, parent(a), false)
+function ^(a::LocElem, b::Int)
+   return parent(a)(data(a)^b, parent(a), false)
 end
 
 ###############################################################################
@@ -327,15 +406,15 @@ promote_rule(::Type{LocElem{T}}, ::Type{LocElem{T}}) where {T <: RingElement} = 
 #
 ###############################################################################
 
-(L::Loc{T})() where {T <: RingElement} = L(zero(base_ring(L)))
+(L::Loc{T})() where {T} = L(zero(base_ring(L)))
 
-(L::Loc{T})(a::Integer)  where {T <: RingElem} = L(base_ring(L)(a))
+(L::Loc{T})(a::Integer)  where {T} = L(base_ring(L)(a))
 
 function (L::Loc{T})(data::FracElem{T}, checked::Bool = true) where {T <: RingElem}
    return LocElem{T}(data,L,checked)
 end
 
-function (L::Loc{T})(data::Rational{<: Integer}, checked::Bool = true) where {T <: RingElem}
+function (L::Loc{T})(data::Rational{<: Integer}, checked::Bool = true) where {T}
    return LocElem{T}(base_ring(L)(numerator(data)) // base_ring(L)(denominator(data)),L,checked)
 end
 
@@ -394,16 +473,15 @@ end
 ###############################################################################
 
 @doc Markdown.doc"""
-    Localization(R::AbstractAlgebra.Ring, prime::T; cached=true) where {T <: RingElement}
+    Localization(R::AbstractAlgebra.Ring, prime::T; cached=true, comp=false) where {T <: RingElement}
 Returns the localization of the ring $R$ at the ideal generated by the ring element $prime$. Requires $R$ to
 be an euclidean domain and $prime$ to be a prime element, both not checked.
 If `cached == true` (the default) then the resulting
 localization parent object is cached and returned for any subsequent calls
 to the constructor with the same base ring $R$ and element $prime$.
 """
-function Localization(R::AbstractAlgebra.Ring, prime::T; cached=true) where {T <: RingElement}
-   primes = [R(prime)]
-   return Loc{elem_type(R)}(R(prime), primes, cached)
+function Localization(R::AbstractAlgebra.Ring, prime::T; cached::Bool=true, comp::Bool = false) where {T <: RingElement}
+   return Loc{elem_type(R)}(R(prime), cached, comp)
 end
 
 @doc Markdown.doc"""

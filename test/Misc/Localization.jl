@@ -196,7 +196,7 @@
       L = Localization(R,R(19))
       @test divides(L(15),L(3)) == (true, L(5))
       @test divides(L(15),L(30)) == (true, L(1//2))
-      @test divides(L(15),L(19)) == (false, L(0))
+      @test divides(L(15),L(19))[1] == false
       @test_throws ErrorException divexact(L(8),L(38))
       for i in 1:300
         a = rand(L)
@@ -204,8 +204,6 @@
         d = divides(a,b)
         if d[1]
           @test a == d[2] * b
-        else
-          @test d[2] == L()
         end
       end
 
@@ -220,8 +218,6 @@
         d = divides(a,b)
         if d[1]
           @test a == d[2] * b
-        else
-          @test d[2] == L()
         end
       end
 

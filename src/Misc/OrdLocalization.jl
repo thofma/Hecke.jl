@@ -10,23 +10,70 @@ export OrdLoc, OrdLocElem
 mutable struct OrdLoc{T<:nf_elem} <: Hecke.Ring
    OK::NfAbsOrd{AnticNumberField,T}
    prime::NfAbsOrdIdl{AnticNumberField,T}
+   comp::Bool
 
-   function OrdLoc{T}(OK::NfAbsOrd{AnticNumberField,T}, prime::NfAbsOrdIdl{AnticNumberField,T}, checked::Bool = true, cached::Bool = true) where {T <: nf_elem}
-      checked && !isprime(prime) && error("Ideal is not prime")
-      if cached && haskey(OrdLocDict, (OK, prime))
-         return OrdLocDict[OK, prime]::OrdLoc{T}
+   function OrdLoc{T}(OK::NfAbsOrd{AnticNumberField,T}, prime::NfAbsOrdIdl{AnticNumberField,T}, cached::Bool = true, comp::Bool = false) where {T <: nf_elem}
+      if cached && haskey(OrdLocDict, (OK, prime, comp))
+         return OrdLocDict[OK, prime, comp]::OrdLoc{T}
       else
-         z = new(OK, prime)
+         z = new(OK, prime, comp)
          if cached
-            OrdLocDict[OK, prime] = z
+            OrdLocDict[OK, prime, comp] = z
          end
          return z
       end
    end
 end
 
+function ppio(a::NfOrdIdl, b::NfOrdIdl)
+   c = gcd(a, b)
+   n = divexact(a, c)
+   g = gcd(c, n)
+   while !isone(g)
+      c *= g
+      n = divexact(n, g)
+      g = gcd(c, n)
+   end
+   return c, n
+end
 
-OrdLocDict = Dict{Tuple{NfAbsOrd{AnticNumberField,nf_elem}, NfAbsOrdIdl{AnticNumberField,nf_elem}}, Hecke.Ring}()
+function isin(a::nf_elem, L::OrdLoc{<:nf_elem})
+  iszero(a) && return true
+  n, d = integral_split(a*L.OK)
+  L.comp || (!isone(gcd(d, L.prime)) && return false)
+  L.comp && ppio(d, L.prime)[1] != d && return false
+  return true
+end
+
+#=
+s an ideal (or element = principal ideal)
+  S = { x in R | v_p(x) = 0 for all p | s}
+  L = { x in K | gcd(den(<x>), s) = 1} = {a/b | v_p(a) - v_p(b) >= 0 for all p|s}
+    N(x) = norm(num(<x>) + s^infty)
+         = prod N(p)^v_p(x)    p|s
+    K -> prod R_(p)  for p | s where R_(p) = {x | v_p(x) >=0 } subset R_p = completion at p
+      find q_p, r_p s.th.
+      a = q_p b + r_p and v_p(r_p) < v_p(b) (either a or 0)
+      any r in K s.th. v_p(r) = v_p(r_p) should be a valid remainder, q = (a-r)/b is the quotient
+        c = num(<a>) + s^infty
+        d = num(<b>) + s^infty
+        den(c/d) has support all p where v_p(c) < v_p(d)
+        r = a mod (den(c/d)^2)
+          = 0 mod s/gcd(s, den(c,d))
+        should work...
+
+some more detail in divrem
+
+  S = { x in R | v_p(x) = 0 for all p not | s}
+  L = { x in K | gcd(den(<x>), s^infty) = den(<x>) } = {a/b | v_p(a) - v_p(b) >= 0 for all p not | s}
+    N(x) = norm(num(<x>):s^infty)
+         = prod N(p)^v_p(x)    p not | s
+    in general not euclidean since not PID (S = 1 => R = R).
+    if S large enough (gen class group), then PID
+
+=#
+
+OrdLocDict = Dict{Tuple{NfAbsOrd{AnticNumberField,nf_elem}, NfAbsOrdIdl{AnticNumberField,nf_elem}, Bool}, Hecke.Ring}()
 
 mutable struct OrdLocElem{T<:nf_elem} <: RingElem
    data::T
@@ -34,7 +81,7 @@ mutable struct OrdLocElem{T<:nf_elem} <: RingElem
 
    function OrdLocElem{T}(data::T, par::OrdLoc, checked::Bool = true) where {T <:nf_elem}
       data == zero(parent(data)) && return new{T}(data,par)
-      checked && valuation(data, prime(par))<0 && error("No valid element of localization")
+      checked && (!isin(data, par)) && error("No valid element of localization")
       return new{T}(data,par)
    end
 end
@@ -102,12 +149,12 @@ isone(a::OrdLocElem{T}) where {T <: nf_elem} = isone(data(a))
 
 function in(x::nf_elem, L::OrdLoc)
    iszero(x) ? true :
-   return valuation(x,prime(L)) >= 0
+   return isin(x, L)
 end
 
 function isunit(a::OrdLocElem{T})  where {T <: nf_elem}
    iszero(a) ? false :
-    return valuation(data(a),prime(a))==0
+    return isin(inv(a.data), parent(a))
 end
 
 deepcopy_internal(a::OrdLocElem{T}, dict::IdDict) where {T <: nf_elem} = parent(a)(deepcopy(data(a)))
@@ -123,7 +170,11 @@ function show(io::IO, a::OrdLocElem{T}) where {T <: nf_elem}
 end
 
 function show(io::IO, L::OrdLoc{T}) where {T <: nf_elem}
-   print(io, "Localization of ", order(L), " at ", prime(L))
+  if L.comp
+    print(io, "Localization of ", order(L), " at complement of ", prime(L))
+  else
+    print(io, "Localization of ", order(L), " at ", prime(L))
+  end
 end
 
 needs_parentheses(x::OrdLocElem{T})  where {T <: nf_elem} = needs_parentheses(data(x))
@@ -187,8 +238,9 @@ end
 > of the numberfield is returned.
 """
 function inv(a::OrdLocElem{T}, checked::Bool = true)  where {T <: nf_elem}
-   checked && !isunit(a) && error("$a not invertible in given localization")
-   return parent(a)(inv(data(a)), false)
+   b = inv(data(a))
+   checked && (!isin(b, parent(a))) && error("$a not invertible in given localization")
+   return parent(a)(b, false)
 end
 
 ##############################################################################
@@ -237,14 +289,58 @@ end
 
 @doc Markdown.doc"""
      div(a::OrdLocElem{T}, b::OrdLocElem{T}, checked::Bool = true)  where {T <: nf_elem}
-> Returns element `c` if $b$ divides $a$ where `c`* $b$ = $a$.
-> If $b$ does not divide $a$, `0`is returned.
-> If 'checked = false' the corresponding element of the numberfield is returned and it is not
-> checked whether it is an element of the given localization.
 """
+function _make_legal(a::nf_elem, S::NfOrdIdl)
+  d = denominator(a, order(S))
+  n = order(S)(d*a)
+  b, _ = ppio(d*order(S), S)
+  bi = inv(b)
+  x = bi.num.gen_two.elem_in_nf//bi.den
+  # a in OrdLoc(S) implies the true den of a is coprime to S
+  # return a = n/d with n, d in the order and d coprime to S
+  R = order(S)
+  @assert (n*x) in R
+  @assert (d*x) in R
+  @assert isone(R(d*x)*R + S)
+  return n*x, d*x
+end
+
+function divrem(a::OrdLocElem, b::OrdLocElem, checked::Bool = true)
+  L = parent(a)
+  L.comp && error("ring not known to be useful euclidean")
+
+  na, da = _make_legal(a.data, L.prime)
+  nb, db = _make_legal(b.data, L.prime)
+
+  A = na*db
+  B = nb*da
+  #Plan: A = qB + R
+  #then a = q/da b + R/db/da
+
+  N, D = integral_split(B//A*L.OK)
+  N = ppio(N, L.prime)[1] # those primes where v_p(A) < v_p(B)
+  N = N^2
+  D = divexact(L.prime^2, L.prime^2 + N)
+  R = L(crt(L.OK(A), N, L.OK(0), D))
+  r = divexact(R, L(da*db))
+  q = divexact(a-r, b)
+  return q, r
+end
+
 function div(a::OrdLocElem{T}, b::OrdLocElem{T}, checked::Bool = true)  where {T <: nf_elem}
-   d = divides(a, b, checked)
-   return d[2]
+   return divrem(a, b)[1]
+end
+
+function rem(a::OrdLocElem{T}, b::OrdLocElem{T}, checked::Bool = true)  where {T <: nf_elem}
+   return divrem(a, b)[2]
+end
+
+function euclid(a::OrdLocElem)
+  L = parent(a)
+  L.comp && error("ring not known to be useful euclidean")
+  N, _ = integral_split(a.data * L.OK)
+  N, _ = ppio(N, L.prime)
+  return norm(N)
 end
 
 ###############################################################################
@@ -258,6 +354,8 @@ end
 > Returns gcd of $a$ and $b$ in canonical representation.
 """
 function gcd(a::OrdLocElem{T}, b::OrdLocElem{T}) where {T <: nf_elem}
+  L = parent(a)
+  L.comp && error("ring not known to be useful euclidean")
    check_parent(a,b)
    iszero(a) && return canonical_unit(b) * b
    iszero(b) && return canonical_unit(a) * a
@@ -279,6 +377,8 @@ end
 > Returns tuple `(g,u,v)` s.th. `g` = gcd($a$,$b$) and `g` = `u` * $a$ + `v` * $b$.
 """
 function gcdx(a::OrdLocElem{T}, b::OrdLocElem{T}) where {T <: nf_elem}
+  L = parent(a)
+  L.comp && error("ring not known to be useful euclidean")
    check_parent(a,b)
    par = parent(a)
    g = gcd(a,b)
@@ -421,6 +521,6 @@ end
 > localization parent object is cached and returned for any subsequent calls
 > to the constructor with the same order $OK$ and ideal $prime$.
 """
-function OrdLoc(OK::NfAbsOrd{AnticNumberField,T}, prime::NfAbsOrdIdl{AnticNumberField,T}, checked= true, cached=true) where {T <: nf_elem}
-   return OrdLoc{T}(OK, prime, checked, cached)
+function Localization(OK::NfAbsOrd{AnticNumberField,T}, prime::NfAbsOrdIdl{AnticNumberField,T}; cached=true, comp::Bool = false) where {T <: nf_elem}
+   return OrdLoc{T}(OK, prime, cached, comp)
 end
