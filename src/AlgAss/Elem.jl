@@ -318,9 +318,9 @@ end
 
 *(b::Integer, a::AbsAlgAssElem{T}) where {T} = a*b
 
-dot(a::AbsAlgAssElem{T}, b::T) where {T} = a*b
+dot(a::AbsAlgAssElem{T}, b::T) where {T <: RingElem} = a*b
 
-dot(b::T, a::AbsAlgAssElem{T}) where {T} = b*a
+dot(b::T, a::AbsAlgAssElem{T}) where {T <: RingElem} = b*a
 
 dot(a::AbsAlgAssElem{T}, b::Integer) where {T} = a*b
 
