@@ -1192,31 +1192,26 @@ end
 function _radical(A::AlgAss{T}) where { T <: Union{ fq_nmod, fq } }
   F = base_ring(A)
 
-  if degree(F) == 1
-    if T <: fq_nmod
-      Fp = GF(Int(characteristic(F)))
-    else
-      Fp = GF(characteristic(F))
-    end
-    B, AtoB, BtoA = restrict_scalars(A, Fp)
-    J = _radical(B)
-    return map(BtoA, J)
+  p = characteristic(F)
+  if T <: fq_nmod
+    Fp = GF(Int(p))
+  else
+    Fp = GF(p)
+  end
+  A2, AtoA2, A2toA = restrict_scalars(A, Fp)
+  n = degree(F)
+
+  if n == 1
+    J = _radical(A2)
+    return [ A2toA(b) for b in J ]
   end
 
-  p = characteristic(F)
   k = flog(fmpz(dim(A)), p)
   Qx, x = PolynomialRing(FlintQQ, "x", cached = false)
-  n = degree(F)
-  powers_of_gen = Vector{elem_type(F)}(undef, n)
-  powers_of_gen[1] = one(F)
-  for i = 2:n
-    powers_of_gen[i] = powers_of_gen[i - 1]*gen(F)
-  end
-  an = powers_of_gen[n]*gen(F)
-  f = Qx(push!([ -fmpq(coeff(an, i)) for i = 0:(n - 1) ], fmpq(1)))
+  f = Qx(push!([ -fmpq(coeff(gen(F)^n, i)) for i = 0:(n - 1) ], fmpq(1)))
   K, a = number_field(f, "a")
 
-  MF = trace_matrix(A)
+  MF = trace_matrix(A2)
   d, B = nullspace(MF)
   if d == 0
     return elem_type(A)[]
@@ -1229,16 +1224,19 @@ function _radical(A::AlgAss{T}) where { T <: Union{ fq_nmod, fq } }
   a = A()
   for l = 1:k
     pl = p*pl
-    M = zero_matrix(F, dim(A), nrows(C))
+    M = zero_matrix(Fp, dim(A2), nrows(C))
     for i = 1:nrows(C)
-      c = elem_from_mat_row(A, C, i)
+      c = A2toA(elem_from_mat_row(A2, C, i))
       for j = 1:dim(A)
         a = mul!(a, c, A[j])
         MF = representation_matrix(a)
         MK = _lift_fq_mat!(MF, MK, MQx)
         t = tr(MK^Int(pl))
         @assert all([ iszero(mod(coeff(t, s), pl)) for s = 0:(n - 1) ])
-        M[j, i] = sum([ powers_of_gen[s + 1]*divexact(numerator(coeff(t, s)), pl) for s = 0:(n - 1) ])
+        jn = (j - 1)*n
+        for s = 1:n
+          M[jn + s, i] = Fp(divexact(numerator(coeff(t, s - 1)), pl))
+        end
       end
     end
     d, B = nullspace(M)
@@ -1248,7 +1246,7 @@ function _radical(A::AlgAss{T}) where { T <: Union{ fq_nmod, fq } }
     C = transpose(B)*C
   end
 
-  return elem_type(A)[ elem_from_mat_row(A, C, i) for i = 1:nrows(C) ]
+  return elem_type(A)[ A2toA(elem_from_mat_row(A2, C, i)) for i = 1:nrows(C) ]
 end
 
 function _lift_fq_mat!(M1::MatElem{T}, M2::MatElem{nf_elem}, M3::MatElem{fmpq_poly}) where { T <: Union{ fq_nmod, fq } }

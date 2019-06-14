@@ -356,6 +356,19 @@ function maximal_order(A::AbsAlgAss{T}) where { T <: NumFieldElem }
     return A.maximal_order
   end
 
+  # So far ..._absolute is usually faster for linear, quadratic and cubic base fields,
+  # but of course there are exceptions.
+  # Feel free to adjust this if-condition.
+  if base_field(A) == FlintQQ && degree(base_ring(A)) <= 3
+    O = maximal_order_via_absolute(A)
+  else
+    O = maximal_order_via_relative(A)
+  end
+  A.maximal_order = O
+  return O
+end
+
+function maximal_order_via_absolute(A::AbsAlgAss{T}) where { T <: NumFieldElem }
   B, BtoA = AlgAss(A)
   C, BtoC, CtoB = restrict_scalars(B, FlintQQ)
   OC = maximal_order(C)
@@ -366,9 +379,64 @@ function maximal_order(A::AbsAlgAss{T}) where { T <: NumFieldElem }
   PM = sub(pseudo_hnf(PseudoMatrix(M), :lowerleft, true), (degree(OC) - dim(A) + 1):degree(OC), 1:dim(A))
   O = Order(A, PM)
   O.ismaximal = 1
-  A.maximal_order = O
   return O
 end
+
+function maximal_order_via_relative(A::AbsAlgAss{T}) where { T <: NumFieldElem }
+  O = any_order(A)
+  return maximal_order(O)
+end
+
+function maximal_order(O::AlgAssRelOrd)
+  A = algebra(O)
+
+  d = discriminant(O)
+  fac = factor(d)
+
+  OO = O
+  for (p, e) in fac
+    if e == 1
+      continue
+    end
+    OO += pmaximal_overorder(O, p)
+  end
+  OO.ismaximal = 1
+  return OO
+end
+
+function any_order(A::AbsAlgAss{T}) where { T <: NumFieldElem }
+  K = base_ring(A)
+  return any_order(A, maximal_order(K))
+end
+
+function any_order(A::AbsAlgAss{T}, OK::Union{ NfAbsOrd, NfRelOrd }) where { T <: NumFieldElem }
+  K = base_ring(A)
+  d = _denominator_of_mult_table(A, OK)
+
+  M = vcat(zero_matrix(K, 1, dim(A)), d*identity_matrix(K, dim(A)))
+  oneA = one(A)
+  for i = 1:dim(A)
+    M[1, i] = deepcopy(coeffs(oneA, copy = false)[i])
+  end
+  PM = PseudoMatrix(M)
+  PM = pseudo_hnf(PM, :lowerleft, true)
+  O = Order(A, sub(PM, 2:dim(A) + 1, 1:dim(A)))
+  return O
+end
+
+function _denominator_of_mult_table(A::AbsAlgAss{T}, OK::Union{ NfAbsOrd, NfRelOrd }) where { T <: NumFieldElem }
+  l = denominator(multiplication_table(A, copy = false)[1, 1, 1], OK)
+  for i = 1:dim(A)
+    for j = 1:dim(A)
+      for k = 1:dim(A)
+        l = lcm(l, denominator(multiplication_table(A, copy = false)[i, j, k], OK))
+      end
+    end
+  end
+  return l
+end
+
+_denominator_of_mult_table(A::AlgGrp{T}, OK::Union{ NfAbsOrd, NfRelOrd }) where { T <: NumFieldElem } = fmpz(1)
 
 # Requires that O is maximal and A = K^(n\times n) for a number field K.
 # Computes a maximal order of type
@@ -440,6 +508,61 @@ function ismaximal(O::AlgAssRelOrd)
 end
 
 ismaximal_known(O::AlgAssRelOrd) = O.ismaximal != 0
+
+################################################################################
+#
+#  p-hereditary / p-maximal overorders
+#
+################################################################################
+
+# See Friedrichs: "Berechnung von Maximalordnungen über Dedekindringen", Algorithmus 4.12
+function phereditary_overorder(O::AlgAssRelOrd, p::Union{ NfAbsOrdIdl, NfRelOrdIdl })
+  d = discriminant(O)
+  prad = pradical(O, p)
+  OO = left_order(prad)
+  dd = discriminant(OO)
+  while d != dd
+    d = dd
+    prad = pradical(OO, p)
+    OO = left_order(prad)
+    dd = discriminant(OO)
+  end
+  return OO
+end
+
+# See Friedrichs: "Berechnung von Maximalordnungen über Dedekindringen", Algorithmus 3.16
+function _pmaximal_overorder(O::AlgAssRelOrd, p::Union{ NfAbsOrdIdl, NfRelOrdIdl })
+  d = discriminant(O)
+  primes = prime_ideals_over(O, p)
+  for P in primes
+    OO = left_order(P)
+    dd = discriminant(OO)
+    if d != dd
+      return _pmaximal_overorder(OO, p)
+    end
+  end
+  return O
+end
+
+function pmaximal_overorder(O::AlgAssRelOrd, p::Union{ NfAbsOrdIdl, NfRelOrdIdl })
+  O = phereditary_overorder(O, p)
+  return _pmaximal_overorder(O, p)
+end
+
+################################################################################
+#
+#  Addition
+#
+################################################################################
+
+function +(a::AlgAssRelOrd{S, T}, b::AlgAssRelOrd{S, T}) where { S, T }
+  @assert algebra(a) === algebra(b)
+  aB = basis_pmat(a, copy = false)
+  bB = basis_pmat(b, copy = false)
+  d = degree(a)
+  PM = sub(pseudo_hnf(vcat(aB, bB), :lowerleft, true), d + 1:2*d, 1:d)
+  return Order(algebra(a), PM)
+end
 
 ################################################################################
 #

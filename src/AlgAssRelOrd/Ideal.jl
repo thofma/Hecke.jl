@@ -427,7 +427,6 @@ function ring_of_multipliers(a::AlgAssRelOrdIdl{T1, T2}, action::Symbol = :left)
   PM = sub(pseudo_hnf(PM, :upperright, true), 1:d, 1:d)
   N = inv(transpose(PM.matrix))*basis_mat(O, copy = false)
   PN = PseudoMatrix(N, [ simplify(inv(I)) for I in PM.coeffs ])
-  PN = pseudo_hnf(PN, :lowerleft, true)
   return typeof(O)(algebra(O), PN)
 end
 
@@ -636,4 +635,87 @@ function islocally_free(I::AlgAssRelOrdIdl, p::Union{ NfAbsOrdIdl, NfRelOrdIdl }
   end
 
   return true, mod(a, pI)
+end
+
+################################################################################
+#
+#  p-Radical
+#
+################################################################################
+
+# See Friedrichs: "Berechnung von Maximalordnungen über Dedekindringen", Algorithmus 5.1
+function pradical(O::AlgAssRelOrd, p::Union{ NfAbsOrdIdl, NfRelOrdIdl })
+  K = base_ring(algebra(O))
+  OK = maximal_order(K)
+  pO = p*O
+  OpO, OtoOpO = AlgAss(O, pO, p)
+  J = radical(OpO)
+
+  N = basis_pmat(pO, copy = false)
+  t = PseudoMatrix(zero_matrix(K, 1, degree(O)))
+  for b in basis(J)
+    bb = OtoOpO\b
+    for i = 1:degree(O)
+      t.matrix[1, i] = coordinates(bb, copy = false)[i]
+    end
+    N = vcat(N, deepcopy(t))
+  end
+  if p isa NfAbsOrdIdl
+    N = sub(pseudo_hnf_full_rank_with_modulus(N, p, :lowerleft), nrows(N) - degree(O) + 1:nrows(N), 1:degree(O))
+  else
+    N = sub(pseudo_hnf(N, :lowerleft, true), nrows(N) - degree(O) + 1:nrows(N), 1:degree(O))
+  end
+  return ideal(O, N, :twosided, false, true)
+end
+
+################################################################################
+#
+#  Primes lying over a prime
+#
+################################################################################
+
+# See Friedrichs: "Berechnung von Maximalordnungen über Dedekindringen", Algorithmus 5.23
+function prime_ideals_over(O::AlgAssRelOrd, p::Union{ NfAbsOrdIdl, NfRelOrdIdl })
+  K = base_ring(algebra(O))
+  OK = order(p)
+
+  prad = pradical(O, p)
+  A, OtoA = AlgAss(O, prad, p)
+  decA = decompose(A)
+
+  if length(decA) == 1
+    return [ prad ]
+  end
+
+  lifted_components = Vector{typeof(basis_pmat(prad, copy = false))}()
+  for k = 1:length(decA)
+    N = zero_matrix(K, dim(decA[k][1]), degree(O))
+    for i = 1:dim(decA[k][1])
+      b = OtoA\(decA[k][2](decA[k][1][i]))
+      for j = 1:degree(O)
+        N[i, j] = coordinates(b, copy = false)[j]
+      end
+    end
+    push!(lifted_components, PseudoMatrix(N))
+  end
+
+  primes = Vector{ideal_type(O)}()
+  for i = 1:length(decA)
+    N = basis_pmat(prad, copy = false)
+    for j = 1:length(decA)
+      if i == j
+        continue
+      end
+
+      N = vcat(N, lifted_components[j])
+    end
+    if p isa NfAbsOrdIdl
+      N = sub(pseudo_hnf_full_rank_with_modulus(N, p, :lowerleft), nrows(N) - degree(O) + 1:nrows(N), 1:degree(O))
+    else
+      N = sub(pseudo_hnf(N, :lowerleft, true), nrows(N) - degree(O) + 1:nrows(N), 1:degree(O))
+    end
+    push!(primes, ideal(O, N, :twosided, false, true))
+  end
+
+  return primes
 end

@@ -381,8 +381,9 @@ end
 function _coprime_norm_integral_ideal_class(x::NfOrdFracIdl, y::NfOrdIdl)
   # x must be nonzero
   O = order(y)
-  c = conjugates_init(nf(O).pol)
-  #num_x_inv = inv(numerator(x))
+  if isone(x.den) && gcd(norm(numerator(x)), norm(y)) == 1
+    return deepcopy(numerator(x)), nf(O)(1)
+  end
   x_inv = inv(x)
   check = true
   z = ideal(O, O(1))
@@ -398,8 +399,7 @@ function _coprime_norm_integral_ideal_class(x::NfOrdFracIdl, y::NfOrdIdl)
     z = divexact(numerator(b), denominator(b))
     gcd(norm(z), norm(y)) == 1 ? (check = false) : (check = true)
   end
-  @assert gcd(norm(z), norm(y)) == 1
-  return z, a 
+  return z, a
 end
 
 function rand(I::Union{NfOrdIdl, AlgAssAbsOrdIdl}, B::Int)
@@ -579,12 +579,17 @@ function pseudo_hnf_mod(P::PMat, m::NfOrdIdl, shape::Symbol = :upperright, strat
     else
       o = ideal(O, zz[i + shift, i].elem)
       t_sum += @elapsed g = o + m
-      t_div += @elapsed oo = divexact(o, g)
-      t_div += @elapsed mm = divexact(m, g)
+      if isone(norm(g))
+        oo = o
+        mm = m
+      else
+        t_div += @elapsed oo = divexact(o, g)
+        t_div += @elapsed mm = divexact(m, g)
+      end
       t_idem += @elapsed e, f = idempotents(oo, mm)
-      res.coeffs[i + shift] = NfOrdFracIdl(deepcopy(g), fmpz(1))
-      mul_row!(res.matrix, i + shift, elem_in_nf(e))
-      divide_row!(res.matrix, i + shift, elem_in_nf(zz[i + shift, i].elem))
+      res.coeffs[i + shift] = NfOrdFracIdl(g, fmpz(1))
+      t = divexact(elem_in_nf(e), elem_in_nf(zz[i + shift, i].elem))
+      mul_row!(res.matrix, i + shift, t)
       res.matrix[i + shift, i] = one(nf(O))
     end
   end
@@ -636,31 +641,21 @@ end
 # we assume that span(P) \subseteq O^r
 function _matrix_for_reduced_span(P::PMat, m::NfOrdIdl)
   O = order(m)
-  c = Array{NfOrdIdl}(undef, nrows(P))
-  mat = deepcopy(P.matrix)
-  for i in 1:nrows(P)
-    I, a = _coprime_norm_integral_ideal_class(P.coeffs[i], m)
-    divide_row!(mat, i, a)
-    c[i] = I
-  end
   Om, OtoOm = quo(O, m)
   z = zero_matrix(Om, nrows(P), ncols(P))
+  if isone(norm(m))
+    return z
+  end
+
   for i in 1:nrows(z)
+    I, a = _coprime_norm_integral_ideal_class(P.coeffs[i], m)
+    n = norm(I, copy = false)
+    Omn = OtoOm(O(n))
+    qq = inv(Omn)
     for j in 1:ncols(z)
-      @assert norm(c[i])*mat[i, j] in O
-      # TH TODO:
-      # The following assertion will fail in case Om is the zero ring.
-      # (This happens if m is the whole ring).
-      # But if m is the whole ring, we actually don't have to do
-      # anything.
-      if isone(norm(m))
-        z[i, j] = zero(Om)
-      else
-        @assert euclid(OtoOm(O(norm(c[i])))) == 1
-        q = OtoOm(O(norm(c[i])*mat[i,j]))
-        qq = inv(OtoOm(O(norm(c[i]))))
-        z[i, j] = q*qq
-      end
+      @assert euclid(Omn) == 1
+      q = OtoOm(O(n*divexact(P.matrix[i, j], a)))
+      z[i, j] = mul!(z[i, j], q, qq)
     end
   end
   return z
@@ -701,14 +696,14 @@ end
 
 function mul_row!(M::Generic.Mat{T}, i::Int, r::T) where T
   for j in 1:ncols(M)
-    M[i, j] = M[i, j] * r
+    M[i, j] = mul!(M[i, j], M[i, j], r)
   end
   return nothing
 end
 
 function mul_col!(M::Generic.Mat{T}, i::Int, r::T) where T
   for j in 1:nrows(M)
-    M[j, i] = M[j, i]*r
+    M[j, i] = mul!(M[j, i], M[j, i], r)
   end
   return nothing
 end

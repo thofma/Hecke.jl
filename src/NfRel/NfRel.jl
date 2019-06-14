@@ -659,6 +659,16 @@ function rand!(c::NfRelElem, b::Vector{<: NfRelElem}, r::UnitRange)
   return c
 end
 
+function rand(L::NfRel, r::UnitRange)
+  K = base_field(L)
+  c = L()
+  b = basis(L)
+  for i = 1:degree(L)
+    c = add!(c, c, b[i]*rand(K, r))
+  end
+  return c
+end
+
 ######################################################################
 # fun in towers..
 ######################################################################

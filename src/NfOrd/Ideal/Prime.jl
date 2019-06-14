@@ -1059,6 +1059,9 @@ function valuation(A::NfOrdIdl, p::NfOrdIdl)
   if !isdefined(p, :splitting_type) || p.splitting_type[1] == 0 #ie. if p is non-prime...
     return valuation_naive(A, p)
   end
+  if iszero(A.gen_two)
+    return valuation(A.gen_one, p)
+  end
   return min(valuation(A.gen_one, p), valuation(elem_in_nf(A.gen_two), p))
 end
 
