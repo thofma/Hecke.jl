@@ -7,12 +7,12 @@ export Localization, LocElem, Loc
 #
 ###############################################################################
 
-import AbstractAlgebra: base_ring, parent, check_parent, isunit, inv, +, -, *, divexact, zero, Base.promote_rule,
-       elem_type, parent_type, Base.one, Base.iszero, Base.isone, Base.==, Base.gcd, Base.deepcopy_internal, needs_parentheses, valuation, Base.show,
-       displayed_with_minus_in_front, show_minus_one, Base.^, data, Base.numerator, Base.denominator, canonical_unit, Base.gcdx, Base.div, divides,
-       Base.lcm, Base.rand
-
-import Nemo.prime
+import AbstractAlgebra: base_ring, parent, check_parent, isunit, inv, +, -, *,
+      divexact, zero, Base.promote_rule, elem_type, parent_type, Base.one,
+      Base.iszero, Base.isone, Base.==, Base.gcd, Base.deepcopy_internal,
+      needs_parentheses, Base.show, displayed_with_minus_in_front, show_minus_one,
+      Base.^, data, Base.numerator, Base.denominator, canonical_unit, Base.gcdx,
+      Base.div, divides, Base.lcm, Base.rand, Nemo.prime
 
 #prime might be product of several primes if localized at several primes, those primes are in array primes
 mutable struct Loc{T} <: AbstractAlgebra.Ring
@@ -150,8 +150,6 @@ numerator(a::LocElem{T}) where {T <: RingElement} = numerator(data(a))
 denominator(a::LocElem{T}) where {T <: RingElement} = denominator(data(a))
 
 prime(L::Loc) = L.prime
-
-primes(L::Loc) = L.primes
 
 zero(L::Loc) = L(0)
 
@@ -310,6 +308,12 @@ function rem(a::Loc{T}, b::Loc{T}) where {T}
 end
 
 function euclid(a::LocElem{T}) where {T <: RingElem}
+  L = parent(a)
+  if L.comp
+    return ppio(numerator(a.data), L.prime)[1]
+  else
+    return ppio(numerator(a.data), L.prime)[2]
+  end
 end
 
 ###############################################################################
@@ -324,10 +328,14 @@ Returns gcd of $a$ and $b$ in canonical representation.
 """
 function gcd(a::LocElem{T}, b::LocElem{T}) where {T <: RingElement}
    check_parent(a,b)
-   iszero(a) && return canonical_unit(b) * b
-   iszero(b) && return canonical_unit(a) * a
+   iszero(a) && return inv(canonical_unit(b)) * b
+   iszero(b) && return inv(canonical_unit(a)) * a
    par = parent(a)
-   elem = prod([pi^min(valuation(a,pi), valuation(b,pi)) for pi in primes(par)])
+   if par.comp
+     elem = ppio(gcd(numerator(a.data), numerator(b.data)), parent(a).prime)[2]
+   else
+     elem = ppio(gcd(numerator(a.data), numerator(b.data)), parent(a).prime)[1]
+   end
    return par(elem)
 end
 
@@ -339,7 +347,11 @@ function lcm(a::LocElem{T}, b::LocElem{T}) where {T <: RingElement}
    check_parent(a,b)
    par = parent(a)
    (iszero(a) || iszero(b)) && return par()
-   elem = prod([pi^max(valuation(a,pi), valuation(b,pi)) for pi in primes(par)])
+   if par.comp
+     elem = ppio(lcm(numerator(a.data), numerator(b.data)), parent(a).prime)[2]
+   else
+     elem = ppio(lcm(numerator(a.data), numerator(b.data)), parent(a).prime)[1]
+   end
    return par(elem)
 end
 
@@ -356,14 +368,10 @@ Requires method gcdx for ring that is localized.
 """
 function gcdx(a::LocElem{T}, b::LocElem{T}) where {T <: RingElement}
    check_parent(a,b)
-   par = parent(a)
-   g = gcd(a,b)
-   can_a = canonical_unit(a)
-   can_b = canonical_unit(b)
-   a_temp = numerator(divexact(can_a * a, g, false))
-   b_temp = numerator(divexact(can_b * b, g, false))
-   (_,u,v) = gcdx(a_temp, b_temp)
-   return (g, par(u)*can_a, par(v)*can_b)
+   L = parent(a)
+   g, u, v = gcdx(numerator(a.data), numerator(b.data))
+   c = inv(canonical_unit(L(g)))
+   return c*L(g), c*L(u*denominator(a.data)), c*L(v*denominator(b.data))
 end
 
 ###############################################################################
@@ -434,15 +442,6 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    valuation(a::LocElem{T}) where {T <: RingElement}
-Returns the valuation of $a$ at the prime localized at. Only implemented for localizations at one prime ideal.
-"""
-function valuation(a::LocElem{T}) where {T <: RingElement}
-   length(primes(parent(a))) != 1 && error("Only implemented for localizations at one prime ideal")
-   return valuation(data(a), prime(parent(a)))
-end
-
-@doc Markdown.doc"""
     valuation(a::LocElem{T}, p::T) where {T <: RingElement}
 Returns the valuation `n` of $a$ at $p$, i.e. the integer `n` s.th $a$ = $p$^`n` * x, where x has valuation 0 at $p$
 """
@@ -459,11 +458,12 @@ valuation(a::LocElem{T}, p::T) where {T <: RingElement} = valuation(data(a), p)
 Returns unit `b`::LocElem{T} s.th. $a$ * `b` only consists of powers of primes localized at.
 """
 function canonical_unit(a::LocElem{T}) where {T <: RingElem}
-   temp = data(a)
-   for pi in primes(parent(a))
-      _,temp = remove(temp, pi)
+   if parent(a).comp
+     b = ppio(numerator(a.data), parent(a).prime)[1]
+   else
+     b = ppio(numerator(a.data), parent(a).prime)[2]
    end
-   return parent(a)(inv(temp))
+   return parent(a)(b//denominator(a.data))
 end
 
 ###############################################################################

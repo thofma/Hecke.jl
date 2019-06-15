@@ -316,17 +316,21 @@ function divrem(a::OrdLocElem, b::OrdLocElem, checked::Bool = true)
   B = nb*da
   #Plan: A = qB + R
   #then a = q/da b + R/db/da
+  #moving to the residue ring (B+S^infty)*S helps
+  # the euclidean function is the same, and division works in there
+  # Plan: get the reminder from there, then lift and compute the quotient
 
-  N, D = integral_split(B//A*L.OK)
-  N = ppio(N, L.prime)[1] # those primes where v_p(A) < v_p(B)
-  N = N^2
-  D = divexact(L.prime^2, L.prime^2 + N)
-  R = L(crt(L.OK(A), N, L.OK(0), D))
+  C = ppio(L.OK(B)*L.OK, L.prime)[1]*L.prime
+  Q, mQ = quo(L.OK, C)
+  R = L(preimage(mQ, divrem(mQ(L.OK(A)), mQ(L.OK(B)))[2]))  
+
   r = divexact(R, L(da*db))
   q = divexact(a-r, b)
+  @assert iszero(r) || euclid(r) < euclid(b)
   return q, r
 end
-
+#=
+#XXX: those do not seem to be there for AbsOrdQuoRingElems
 function div(a::OrdLocElem{T}, b::OrdLocElem{T}, checked::Bool = true)  where {T <: nf_elem}
    return divrem(a, b)[1]
 end
@@ -334,8 +338,10 @@ end
 function rem(a::OrdLocElem{T}, b::OrdLocElem{T}, checked::Bool = true)  where {T <: nf_elem}
    return divrem(a, b)[2]
 end
+=#
 
 function euclid(a::OrdLocElem)
+  iszero(a) && return fmpz(0)
   L = parent(a)
   L.comp && error("ring not known to be useful euclidean")
   N, _ = integral_split(a.data * L.OK)
@@ -357,12 +363,14 @@ function gcd(a::OrdLocElem{T}, b::OrdLocElem{T}) where {T <: nf_elem}
   L = parent(a)
   L.comp && error("ring not known to be useful euclidean")
    check_parent(a,b)
-   iszero(a) && return canonical_unit(b) * b
-   iszero(b) && return canonical_unit(a) * a
-   u = parent(a)(uniformizer(prime(a)))
-   n = min(valuation(a), valuation(b))
-   elem = u^n
-   return canonical_unit(elem) * (elem)
+   iszero(a) && return inv(canonical_unit(b)) * b
+   iszero(b) && return inv(canonical_unit(a)) * a
+   na, _ = _make_legal(a.data, L.prime)
+   nb, _ = _make_legal(b.data, L.prime)
+   g = L.OK(na) * L.OK + L.OK(nb) * L.OK + L.prime
+   assure_2_normal(g)
+   elem = L(g.gen_two)
+   return inv(canonical_unit(elem)) * (elem)
 end
 
 
@@ -380,11 +388,15 @@ function gcdx(a::OrdLocElem{T}, b::OrdLocElem{T}) where {T <: nf_elem}
   L = parent(a)
   L.comp && error("ring not known to be useful euclidean")
    check_parent(a,b)
-   par = parent(a)
-   g = gcd(a,b)
-   a == par() ? (g, par(), canonical_unit(b)) :
-   b == par() ? (g, canonical_unit(a), par()) :
-   valuation(a) > valuation(b) ? (g, par(), canonical_unit(b)) : (g, canonical_unit(a), par())
+   L = parent(a)
+   M = [L(1) L(0); L(0) L(1)]
+   while !iszero(b)
+     q,r = divrem(a, b)
+     M = [L(0) L(1); L(1) L(-q)] * M
+     a, b = b, r
+   end
+   c = inv(canonical_unit(a))
+   return a*c, M[1,1]*c, M[1,2]*c
 end
 
 ###############################################################################
@@ -394,6 +406,8 @@ end
 ###############################################################################
 
 function principal_gen(L::OrdLoc{T}, I::NfAbsOrdIdl{AnticNumberField,T}) where {T <: nf_elem}
+  #possible for !L.comp due to semi local
+  #theoretical for L.comp if L.prime large enough...
    valuation(L(I.gen_one)) >= valuation(L(I.gen_two)) ? L(I.gen_two) : L(I.gen_one)
 end
 
@@ -476,14 +490,6 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    valuation(a::OrdLocElem{T}) where {T <: nf_elem}
-> Returns the valuation of $a$ at the prime localized at.
-"""
-function valuation(a::OrdLocElem{T}) where {T <: nf_elem}
-   return valuation(data(a), prime(parent(a)))
-end
-
-@doc Markdown.doc"""
     valuation(a::OrdLocElem{T}, prime::NfAbsOrdIdl{AnticNumberField,T}) where {T <: nf_elem}
 > Returns the valuation `n` of $a$ at $P$.
 """
@@ -497,15 +503,25 @@ valuation(a::OrdLocElem{T}, prime::NfAbsOrdIdl{AnticNumberField,T}) where {T <: 
 
 @doc Markdown.doc"""
     canonical_unit(a::OrdLocElem{T}) where {T <: nf_elem}
-> Returns unit `b`::OrdLocElem{T} s.th. ($a$ * `b`) only consists of powers of the prime localized at.
+> Returns unit `b`::OrdLocElem{T} s.th. ($a$ * inv(`b`)) is hopefully nicer.
 """
 function canonical_unit(a::OrdLocElem{T}) where {T <: nf_elem}
-   if a == parent(a)()
-      return parent(a)(1)
+   iszero(a) && return parent(a)(1)
+   isunit(a) && return a
+   L = parent(a)
+   if L.comp
+     return L(1)
+   else
+     na, _ = _make_legal(a.data, L.prime)
+     A = ppio(L.OK(na)*L.OK, L.prime)[1] * L.prime
+     z = mod(L.OK(na), A)
+     #L(z) should be equivalent to a, since v_p(A) = v_p(a) + 1`for all p | prime
+     # u = a//z
+     u = divexact(a, L(z))
+     @assert isunit(u)
+     return divexact(a, L(z))
    end
-   u = parent(a)(uniformizer(prime(a)))
-   n = valuation(a)
-   return divexact(u^n,a)
+
 end
 
 ###############################################################################
@@ -515,12 +531,14 @@ end
 ###############################################################################
 
 @doc Markdown.doc"""
-    OrdLoc(OK::NfAbsOrd{AnticNumberField,T}, prime::NfAbsOrdIdl{AnticNumberField,T}; cached=true) where {T <: nf_elem}
-> Returns the localization of the order $OK$ at the ideal $prime$. Not checked that ideal $prime$ is prime.
+    Localization(OK::NfAbsOrd{AnticNumberField,T}, S::NfAbsOrdIdl{AnticNumberField,T}; cached=true, comp = false) where {T <: nf_elem}
+> Returns the localization of the order $OK$ at the ideal $S$. 
 > If `cached == true` (the default) then the resulting
 > localization parent object is cached and returned for any subsequent calls
-> to the constructor with the same order $OK$ and ideal $prime$.
+> to the constructor with the same order $OK$ and ideal $S$.
+> `comp == false` means primes dividing $S$ are invertable,
+> `comp == true` means all primes not dividing $S$ become units. 
 """
-function Localization(OK::NfAbsOrd{AnticNumberField,T}, prime::NfAbsOrdIdl{AnticNumberField,T}; cached=true, comp::Bool = false) where {T <: nf_elem}
-   return OrdLoc{T}(OK, prime, cached, comp)
+function Localization(OK::NfAbsOrd{AnticNumberField,T}, S::NfAbsOrdIdl{AnticNumberField,T}; cached=true, comp::Bool = false) where {T <: nf_elem}
+   return OrdLoc{T}(OK, S, cached, comp)
 end

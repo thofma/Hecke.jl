@@ -41,51 +41,26 @@
 
     L = Localization(R, 23)
     @test canonical_unit(L(23)) == one(L)
-    @test canonical_unit(L(230)) == L(1//10)
-    @test canonical_unit(L(230//45)) == L(45//10)
+    @test canonical_unit(L(230)) == L(10)
+    @test canonical_unit(L(230//45)) == L(10//45)
 
     L = Localization(R, [2,7])
     @test canonical_unit(L(2)) == one(L)
     @test canonical_unit(L(28)) == one(L)
-    @test canonical_unit(L(49//55)) == L(55)
-    @test canonical_unit(L(18//11)) == L(11//9)
-    @test canonical_unit(L(49//55)) == L(55)
+    @test canonical_unit(L(49//55)) == L(1//55)
+    @test canonical_unit(L(18//11)) == L(9//11)
+    @test canonical_unit(L(49//55)) == L(1//55)
 
     L = Localization(Qx, 5x^2+3x+2)
-    @test canonical_unit(L(5x^2+3x+2)) == one(L)
-    @test canonical_unit(L(28)) == L(1//28)
-    @test canonical_unit(L(5*x^4+3*x^3+12*x^2+6*x+4)) == L(1//(x^2+2))
+    @test canonical_unit(L(5x^2+3x+2)) == L(5)
+    @test canonical_unit(L(28)) == L(28)
+    @test canonical_unit(L(5*x^4+3*x^3+12*x^2+6*x+4)) == L(5*(x^2+2))
 
     L = Localization(Qx,[5x^2+3x+2, x^16+x+3])
     @test canonical_unit(L(x^16+x+3)) == one(L)
-    @test canonical_unit(L(89)) == L(1//89)
-    @test canonical_unit(L((5*x^4+3*x^3+12*x^2+6*x+4)//(x^3+9))) == L((x^3+9)//(x^2+2))
+    @test canonical_unit(L(89)) == L(89)
+    @test canonical_unit(L((5*x^4+3*x^3+12*x^2+6*x+4)//(x^3+9))) == inv(L((1//5*x^3+9//5)//(x^2+2)))
   end
-
-    @testset "Valuation" begin
-
-      L = Localization(R, 71)
-      @test valuation(L(71)) == 1
-      @test valuation(L(71//40)) == 1
-      @test valuation(L(5//12)) == 0
-      @test valuation(L(15123)) == 2
-      @test valuation(L(24),R(3)) == 1
-
-      L = Localization(R, [2,7])
-      @test valuation(L(7),R(2)) == 0
-      @test valuation(L(14//3),R(7)) == 1
-      @test valuation(L(56),R(2)) == 3
-
-      L = Localization(Qx, 5x^2+3x+2)
-      @test valuation(L(4)) == 0
-      @test valuation(L(5x^2+3x+2)) == 1
-      @test valuation(L(25*x^4+30*x^3+29*x^2+12*x+4)) == 2
-      @test valuation(L(x^8+2*x^6+18*x^5+36*x^3+81*x^2+162), x^3+9) == 2
-
-      L = Localization(Qx,[5x^2+3x+2, x^16+x+3])
-      @test_throws ErrorException valuation(L(5x^2+3x+2))
-      @test valuation(L(x^8+2*x^6+18*x^5+36*x^3+81*x^2+162), x^3+9) == 2
-    end
 
     @testset "Parent object call overloading" begin
 
@@ -211,7 +186,7 @@
       @test_throws ErrorException divexact(L(9),L(22))
       @test divides(L(15),L(3)) == (true, L(5))
       @test divides(L(15),L(30)) == (true, L(1//2))
-      @test divides(L(15),L(22)) == (false, L(0))
+      @test divides(L(15),L(22))[1] == false
       for i in 1:300
         a = rand(L)
         b = rand(L)
