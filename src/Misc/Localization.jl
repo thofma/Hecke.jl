@@ -43,6 +43,7 @@ mutable struct Loc{T} <: AbstractAlgebra.Ring
        r = new()
        r.base_ring = parent(prime)
        r.prime = prime
+       r.comp = comp
        if cached
           LocDict[parent(prime), prime, comp] = r
        end
@@ -57,7 +58,7 @@ const LocDict = Dict{Tuple{AbstractAlgebra.Ring, RingElement, Bool}, AbstractAlg
 function isin(a, L::Loc{T}) where {T <: RingElem}
   iszero(a) && return true
   L.comp || (!isone(gcd(denominator(a), prime(L))) && return false)
-  L.comp && ppio(denominator(a), prime(L))[1] != denominator(data) && return false
+  L.comp && ppio(denominator(a), prime(L))[1] != denominator(a.data) && return false
   return true
 end
 
