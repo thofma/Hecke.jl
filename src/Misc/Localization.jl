@@ -12,7 +12,8 @@ import AbstractAlgebra: base_ring, parent, check_parent, isunit, inv, +, -, *,
       Base.iszero, Base.isone, Base.==, Base.gcd, Base.deepcopy_internal,
       needs_parentheses, Base.show, displayed_with_minus_in_front, show_minus_one,
       Base.^, data, Base.numerator, Base.denominator, canonical_unit, Base.gcdx,
-      Base.div, divides, Base.lcm, Base.rand, Nemo.prime
+      Base.div, divides, Base.lcm, Base.rand, 
+import Nemo: prime
 
 #prime might be product of several primes if localized at several primes, those primes are in array primes
 mutable struct Loc{T} <: AbstractAlgebra.Ring
