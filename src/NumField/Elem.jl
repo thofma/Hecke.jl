@@ -23,6 +23,19 @@ end
 
 ################################################################################
 #
+#  Parent
+#
+################################################################################
+
+@doc Markdown.doc"""
+    parent(a::NumFieldElem) -> NumField
+
+> Given an element `a` of a number field $K$, this function returns $K$.
+"""
+parent(a::NumFieldElem)
+
+################################################################################
+#
 #  Integrality
 #
 ################################################################################
@@ -143,9 +156,65 @@ basis_mat(v::Vector{<: NumFieldElem})
 ################################################################################
 
 @doc Markdown.doc"""
-    characteristic_polynomial(a::NumFieldElem) -> Poly
+    charpoly(a::NumFieldElem) -> Poly
 
 > Given a number field element `a` of a number field `K`, this function returns
 > the characteristic polynomial of `a` over the base field of `K`.
 """
-characteristic_polynomial(::NumFieldElem)
+charpoly(::NumFieldElem)
+
+@doc Markdown.doc"""
+    minpoly(a::NumFieldElem) -> Poly
+
+> Given a number field element `a` of a number field `K`, this function returns
+> the minimal polynomial of `a` over the base field of `K`.
+"""
+minpoly(::NumFieldElem)
+
+################################################################################
+#
+#  Powering with fmpz
+#
+################################################################################
+
+function ^(x::NumFieldElem, y::fmpz)
+  if fits(Int, y)
+    return x^Int(y)
+  end
+
+  return _power(x, y)
+end
+
+# We test once if it fits, otherwise we would have to check for every ^
+# instance.
+function _power(x::NumFieldElem, y::fmpz)
+  res = parent(x)()
+  if y < 0
+    res = _power(inv(x), -y)
+  elseif y == 0
+    res = parent(x)(1)
+  elseif y == 1
+    res = deepcopy(x)
+  elseif mod(y, 2) == 0
+    z = _power(x, div(y, 2))
+    res = z*z
+  else
+    res = _power(x, y - 1) * x
+  end
+  return res
+end
+
+################################################################################
+#
+#  SimpleNumFieldElem
+#
+################################################################################
+
+@doc Markdown.doc"""
+    coeff(a::SimpleNumFieldelem, i::Int) -> Poly
+
+> Given a number field element `a` of a simple number field `K` of degree `d`,
+> this function returns the `i`-th coefficient of `a`, when expanded in the
+> canonical power basis of `K`.
+"""
+coeff(::SimpleNumFieldElem, ::Int)

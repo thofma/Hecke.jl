@@ -15,7 +15,7 @@ function _max_max(M::Generic.Mat{NfOrdElem})
     for j in 1:ncols(M)
       if !iszero(M[i, j])
         v = coordinates(M[i, j])
-        for k in degree(base_ring(M))
+        for k in degree(base_field(M))
           d = max(d, abs(v[k]))
         end
       end
@@ -287,7 +287,7 @@ end
 function PseudoMatrix(m::Generic.Mat{S}) where S <: RelativeElement
   L = base_ring(m)
   OL = maximal_order(L)
-  K = base_ring(L)
+  K = base_field(L)
   OK = maximal_order(K)
   return PseudoMatrix(m, [ frac_ideal(OL, identity_matrix(K, degree(L))) for i = 1:nrows(m) ])
 end

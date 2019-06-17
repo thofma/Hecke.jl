@@ -55,7 +55,7 @@ function rel_auto_easy(A::ClassField_pp)
   # sqrt[n](a) -> zeta sqrt[n](a) on A.A
   #on A.K, the Kummer: sqrt[n](a) = gen(A.K) -> zeta gen(A.K)
   #we have the embedding A.A -> A.K : gen(A.A) -> A.pe
-  M = sparse_matrix(base_ring(A.K))
+  M = sparse_matrix(base_field(A.K))
   b = A.K(1)
   push!(M, SRow(b))
   for i=2:degree(A)
@@ -89,7 +89,7 @@ function rel_auto_intersect(A::ClassField_pp)
   end
   G, mG = snf(AbelianGroup(A.AutR))
   #Now, I restrict them to A.A
-  M = sparse_matrix(base_ring(A.K))
+  M = sparse_matrix(base_field(A.K))
   b = A.K(1)
   push!(M, SRow(b))
   for i = 2:degree(A)
@@ -166,7 +166,7 @@ Given a cyclotomic extension $C$ of a number field $K$ and an automorphism $\tau
 function extend_to_cyclotomic(C::CyclotomicExt, tau::NfToNfMor)		
    		
   K = domain(tau)		
-  @assert K == base_ring(C.Kr)
+  @assert K == base_field(C.Kr)
   gKr = gen(C.Kr)
   if euler_phi(C.n) == degree(C.Kr)
     #The extension with the roots of unity is disjoint from K
@@ -674,7 +674,7 @@ function extend_aut(A::ClassField, tau::T) where T <: Map
     pp = maximum(minimum(x) for x = lp)
     S = Base.Iterators.flatten((lp, PrimeIdealsSet(order(lp[1]), pp, fmpz(-1), indexdivisors=false, ramified=false, degreebound = 1)))
 
-    @assert C.Ka == base_ring(Cp[im].K)
+    @assert C.Ka == base_field(Cp[im].K)
 
     all_s = []
     all_tau_s = []
@@ -908,7 +908,7 @@ function extend_hom(C::ClassField_pp, D::Array{ClassField_pp, 1}, tau)
     pp = maximum(minimum(x) for x = lp)
     S = Base.Iterators.flatten((lp, PrimeIdealsSet(order(lp[1]), pp, fmpz(-1), indexdivisors=false, ramified=false, degreebound = 1)))
 
-    @assert Dy.Ka == base_ring(D[im].K)
+    @assert Dy.Ka == base_field(D[im].K)
 
     all_s = []
     all_tau_s = []
@@ -1063,7 +1063,7 @@ end
 function _expand(M::Generic.Mat{nf_elem}, mp::Map)
   Kr = domain(mp)
   Ka = codomain(mp)
-  k = base_ring(Kr)
+  k = base_field(Kr)
   d = degree(Kr)
   N = zero_matrix(k, nrows(M), ncols(M) * d)
   for i=1:nrows(M)
@@ -1079,7 +1079,7 @@ end
 
 function _expand(M::SRow{nf_elem}, mp::Map)
   Kr = domain(mp)
-  k = base_ring(Kr)
+  k = base_field(Kr)
   d = degree(Kr)
   sr = SRow(k)
   for (j, v) = M
@@ -1097,7 +1097,7 @@ end
 
 function _expand(M::SMat{nf_elem}, mp::Map)
   Kr = domain(mp)
-  k = base_ring(Kr)
+  k = base_field(Kr)
   N = sparse_matrix(k)
   for i=1:nrows(M)
     sr = _expand(M[i], mp)

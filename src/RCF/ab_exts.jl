@@ -1613,7 +1613,7 @@ function _from_relative_to_abs(L::NfRel_ns{T}, auts::Array{NfRel_nsToNfRel_nsMor
   end
 
   #Now, I add the elements of the maximal order
-  if degree(base_ring(L)) > 1
+  if degree(base_field(L)) > 1
     O = maximal_order(S.base_ring)
     for i = 1:degree(O)
       el = mK\(S(O.basis_nf[i]))

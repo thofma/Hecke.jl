@@ -143,8 +143,6 @@ end
 #
 ################################################################################
 
-@inline Nemo.base_ring(a::NfRel_ns{T}) where {T} = a.base_ring::parent_type(T)
-
 @inline base_field(a::NfRel_ns{T}) where {T} = a.base_ring::parent_type(T)
 
 @inline Nemo.data(a::NfRel_nsElem) = a.data
@@ -172,7 +170,7 @@ end
 
 function Base.show(io::IO, a::NfRel_ns)
   print(io, "non-simple Relative number field over\n")
-  print(io, a.base_ring, "\n")
+  print(io, base_field(a), "\n")
   print(io, " with defining polynomials ", a.pol)
 end
 
@@ -389,7 +387,7 @@ end
 function basis_mat(a::Vector{NfRel_nsElem{T}}) where {T <: NumFieldElem}
   @assert length(a) > 0
   K = parent(a[1])
-  M = zero_matrix(base_ring(K), length(a), degree(K))
+  M = zero_matrix(base_field(K), length(a), degree(K))
   for i in 1:length(a)
     elem_to_mat_row!(M, i, a[i])
   end
@@ -403,7 +401,7 @@ function elem_to_mat_row!(M::Generic.Mat{T}, i::Int, a::NfRel_nsElem{T}) where T
   #L = LinearIndices(C)
   #CC = [UInt[c[i] for i=length(K.pol):-1:1] for c = C]
   for j=1:ncols(M)
-    M[i, j] = zero(base_ring(K))
+    M[i, j] = zero(base_field(K))
   end
   for j=1:length(a.data)
     #p = findfirst(isequal(a.data.exps[:, j]), CC)
@@ -438,7 +436,7 @@ function monomial_to_index(i::Int, a::NfRel_nsElem)
 end
 
 function SRow(a::NfRel_nsElem)
-  sr = SRow(base_ring(parent(a)))
+  sr = SRow(base_field(parent(a)))
   for i=1:length(a.data)
     push!(sr.pos, monomial_to_index(i, a))
     push!(sr.values, a.data.coeffs[i])
@@ -450,7 +448,7 @@ function SRow(a::NfRel_nsElem)
 end
 
 function SRow(a::NfRelElem)
-  sr = SRow(base_ring(parent(a)))
+  sr = SRow(base_field(parent(a)))
   for i=0:length(a.data)
     c = coeff(a.data, i)
     if !iszero(c)
@@ -464,7 +462,7 @@ end
 function minpoly_dense(a::NfRel_nsElem)
   K = parent(a)
   n = degree(K)
-  k = base_ring(K)
+  k = base_field(K)
   M = zero_matrix(k, degree(K)+1, degree(K))
   z = one(K)
   elem_to_mat_row!(M, 1, z)
@@ -497,7 +495,7 @@ end
 function minpoly_sparse(a::NfRel_nsElem)
   K = parent(a)
   n = degree(K)
-  k = base_ring(K)
+  k = base_field(K)
   M = sparse_matrix(k)
   z = one(K)
   sz = SRow(z)
@@ -587,7 +585,7 @@ end
 function representation_matrix(a::NfRel_nsElem)
   K = parent(a)
   b = basis(K)
-  k = base_ring(K)
+  k = base_field(K)
   M = zero_matrix(k, degree(K), degree(K))
   for i=1:degree(K)
     elem_to_mat_row!(M, i, a*b[i])
@@ -675,7 +673,7 @@ mutable struct NfRel_nsToNfRel_nsMor{T} <: Map{NfRel_ns{T}, NfRel_ns{T}, HeckeMa
     end
 
     z = new{T}()
-    z.coeff_aut = id_hom(K.base_ring)
+    z.coeff_aut = id_hom(base_field(K))
     z.emb = emb
     z.header = MapHeader(K, L, image)
     return z
@@ -689,7 +687,7 @@ mutable struct NfRel_nsToNfRel_nsMor{T} <: Map{NfRel_ns{T}, NfRel_ns{T}, HeckeMa
       f = x.data
       Kbxyz = parent(f)
       k = nvars(Kbxyz)
-      Lbxyz = PolynomialRing(base_ring(L), k)[1]
+      Lbxyz = PolynomialRing(base_field(L), k)[1]
       coeffs = Vector{T}(undef, length(f.coeffs))
       for i = 1:length(coeffs)
         coeffs[i] = aut(f.coeffs[i])
@@ -730,7 +728,7 @@ function Base.:(==)(f::NfRel_nsToNfRel_nsMor{T}, g::NfRel_nsToNfRel_nsMor{T}) wh
   end
 
   L = domain(f)
-  K = base_ring(L)
+  K = base_field(L)
 
   if f.coeff_aut.prim_img != g.coeff_aut.prim_img
     return false
@@ -817,7 +815,7 @@ function simple_extension(K::NfRel_ns{T}) where {T}
     end
   end
   Ka, a = number_field(f, check = false)
-  k = base_ring(K)
+  k = base_field(K)
   M = zero_matrix(k, degree(K), degree(K))
   z = one(K)
   elem_to_mat_row!(M, 1, z)

@@ -819,7 +819,7 @@ end
 function _extend_auto(K::Hecke.NfRel{nf_elem}, h::Hecke.NfToNfMor)
   @hassert :ClassField 1 iskummer_extension(K)
   #@assert iskummer_extension(K)
-  k = base_ring(K)
+  k = base_field(K)
   Zk = maximal_order(k)
 
   if degree(K) == 2

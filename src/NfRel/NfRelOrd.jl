@@ -78,7 +78,7 @@ function assure_has_basis_pmat(O::NfRelOrd{T, S}) where {T, S}
   end
   pb = pseudo_basis(O, copy = false)
   L = nf(O)
-  M = zero_matrix(base_ring(L), degree(O), degree(O))
+  M = zero_matrix(base_field(L), degree(O), degree(O))
   C = Vector{S}()
   for i = 1:degree(O)
     elem_to_mat_row!(M, i, pb[i][1])
@@ -370,7 +370,7 @@ end
 
 function _check_elem_in_order(a::RelativeElement{T}, O::NfRelOrd{T, S}, short::Type{Val{V}} = Val{false}) where {T, S, V}
   b_pmat = basis_pmat(O, copy = false)
-  t = zero_matrix(base_ring(nf(O)), 1, degree(O))
+  t = zero_matrix(base_field(nf(O)), 1, degree(O))
   elem_to_mat_row!(t, 1, a)
   t = t*basis_mat_inv(O, copy = false)
   if short == Val{true}
@@ -422,7 +422,7 @@ end
 
 function Order(L::RelativeExtension{S}, M::Generic.Mat{S}) where S <: RelativeElement{T} where T
   # checks
-  return NfRelOrd{elem_type(base_ring(L)), NfRelOrdFracIdl{T}}(L, deepcopy(M))
+  return NfRelOrd{elem_type(base_field(L)), NfRelOrdFracIdl{T}}(L, deepcopy(M))
 end
 
 @doc Markdown.doc"""
@@ -443,7 +443,7 @@ end
 Returns the equation order of the number field $L$.
 """
 function EquationOrder(L::RelativeExtension)
-  M = identity_matrix(base_ring(L), degree(L))
+  M = identity_matrix(base_field(L), degree(L))
   PM = PseudoMatrix(M)
   O = Order(L, PM)
   O.basis_mat_inv = M
@@ -521,7 +521,7 @@ function trace_matrix(O::NfRelOrd)
     return deepcopy(O.trace_mat)
   end
   L = nf(O)
-  K = base_ring(L)
+  K = base_field(L)
   b = basis_nf(O, copy = false)
   d = degree(L)
   g = zero_matrix(K, d, d)
@@ -595,7 +595,7 @@ function dedekind_test(O::NfRelOrd, p::Union{NfOrdIdl, NfRelOrdIdl}, compute_ord
   !issimple(O) && error("Not implemented for non-simple extensions")
 
   L = nf(O)
-  K = base_ring(L)
+  K = base_field(L)
   T = L.pol
   Kx = parent(T)
   OK = maximal_order(K)
@@ -730,7 +730,7 @@ function relative_order(O::NfOrd, m::NfToNfRel)
   L = codomain(m)
   Labs = domain(m)
   @assert nf(O) == Labs
-  K = base_ring(L)
+  K = base_field(L)
   OK = maximal_order(K)
   B = basis(O, copy = false)
   d = degree(L)
@@ -753,7 +753,7 @@ function non_simple_order(O::NfRelOrd, m::NfRelToNfRel_nsMor)
   L = domain(m)
   L_ns = codomain(m)
   @assert nf(O) == L
-  K = base_ring(L)
+  K = base_field(L)
   B = basis_nf(O, copy = false)
   d = degree(L)
   M = zero_matrix(K, d, d)
@@ -777,7 +777,7 @@ Returns the smallest positive integer $k$ such that $k \cdot a$ is contained in
 $\mathcal O$.
 """
 function denominator(a::RelativeElement, O::NfRelOrd)
-  t = zero_matrix(base_ring(nf(O)), 1, degree(O))
+  t = zero_matrix(base_field(nf(O)), 1, degree(O))
   elem_to_mat_row!(t, 1, a)
   t = t*basis_mat_inv(O, copy = false)
   d = fmpz(1)
@@ -820,8 +820,8 @@ function _maximal_absolute_order_from_relative(L::NfRel_ns)
   K,mK=absolute_field(S, false)
 
   #we compute the relative maximal order of L and of the base field
-  OL=maximal_order(L)  
-  O=maximal_order(L.base_ring)
+  OL = maximal_order(L)  
+  O = maximal_order(base_field(L))
   
   #take the basis
   basisL=[OL.pseudo_basis[i][1]*denominator(OL.pseudo_basis[i][2]) for i=1:degree(L.pol)]#basis(S)
