@@ -552,7 +552,8 @@ function AlgAss(O::Union{ NfRelOrd{T, S}, AlgAssRelOrd{T, S} }, I::Union{ NfRelO
   end
 
   Fp, mF = ResidueField(order(p), p)
-  mmF = extend(mF, base_ring(K))
+  KKK = isalgass ? base_ring(K) : base_field(K)
+  mmF = extend(mF, KKK)
   invmmF = pseudo_inv(mmF)
 
   basis_elts = Int[]
@@ -595,7 +596,7 @@ function AlgAss(O::Union{ NfRelOrd{T, S}, AlgAssRelOrd{T, S} }, I::Union{ NfRelO
 
   reverse!(reducers)
 
-  tmp_matrix = zero_matrix(base_ring(K), 1, degree(O))
+  tmp_matrix = zero_matrix(KKK, 1, degree(O))
 
   function _coeff(c)
     if isalgass
@@ -694,6 +695,7 @@ function AlgAss(I::Union{ NfRelOrdIdl{T, S}, AlgAssRelOrdIdl{T, S} }, J::Union{ 
   isalgass = ( O isa AlgAssRelOrd )
 
   K = isalgass ? algebra(O) : nf(O)
+  KKK = isalgass ? base_ring(K) : base_field(K)
 
   basisI = pseudo_basis(I, copy = false)
   new_basisI = Vector{Tuple{elem_type(K), S}}()
@@ -706,7 +708,7 @@ function AlgAss(I::Union{ NfRelOrdIdl{T, S}, AlgAssRelOrdIdl{T, S} }, J::Union{ 
   end
 
   # This matrix is NOT in the basis of the order!
-  new_bmatI = zero_matrix(base_ring(K), degree(O), degree(O))
+  new_bmatI = zero_matrix(KKK, degree(O), degree(O))
   for i = 1:degree(O)
     elem_to_mat_row!(new_bmatI, i, new_basisI[i][1])
   end
@@ -734,7 +736,7 @@ function AlgAss(I::Union{ NfRelOrdIdl{T, S}, AlgAssRelOrdIdl{T, S} }, J::Union{ 
   end
 
   Fp, mF = ResidueField(order(p), p)
-  mmF = extend(mF, base_ring(K))
+  mmF = extend(mF, KKK)
   invmmF = pseudo_inv(mmF)
 
   basis_elts = Int[]
@@ -777,7 +779,7 @@ function AlgAss(I::Union{ NfRelOrdIdl{T, S}, AlgAssRelOrdIdl{T, S} }, J::Union{ 
 
   reverse!(reducers)
 
-  tmp_matrix = zero_matrix(base_ring(K), 1, degree(O))
+  tmp_matrix = zero_matrix(KKK, 1, degree(O))
 
   function _coeff(c)
     if isalgass
