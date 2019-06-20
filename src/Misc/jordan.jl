@@ -1,4 +1,9 @@
+export spectrum, eigenspace, jordan_normal_form, rational_canonical_form, companion_matrix
 
+@doc Markdown.doc"""
+    spectrum(M::MatElem{T}) where T <: FieldElem -> Dict{T, Int}
+Returns the spectrum of a matrix, i.e. the set of eigenvalues of M with multiplicities.
+"""
 function spectrum(M::MatElem{T}) where T <: FieldElem
   @assert issquare_matrix(M)
   K = base_ring(M)
@@ -16,26 +21,37 @@ function spectrum(M::MatElem{T}) where T <: FieldElem
   return D
 end
 
+@doc Markdown.doc"""
+    spectrum(M::MatElem{T}) where T <: FieldElem -> Dict{T, Int}
+Returns the spectrum of a matrix over the field L, i.e. the set of eigenvalues of M with multiplicities.
+"""
 function spectrum(M::MatElem{T}, L) where T <: FieldElem
   @assert issquare_matrix(M)
   M1 = change_base_ring(M, L)
   return spectrum(M1)
 end
 
+
 function issquare_matrix(M::MatElem)
   return ncols(M) == nrows(M)
 end
 
-eigenvalues(M::MatElem{T}) where T <: FieldElem = spectrum(M)
-eigenvalues(M::MatElem{T}, L) where T <: FieldElem = spectrum(M, L)
+eigvals(M::MatElem{T}) where T <: FieldElem = spectrum(M)
+eigvals(M::MatElem{T}, L) where T <: FieldElem = spectrum(M, L)
 
+@doc Markdown.doc"""
+    eigenspace(M::MatElem{T}, lambda::T) where T <: FieldElem -> Vector{MatElem{T}}
+Returns a basis of the eigenspace of $M$ with respect to the eigenvalues $lambda$
+"""
 function eigenspace(M::MatElem{T}, lambda::T) where T <: FieldElem
   @assert issquare_matrix(M)
   N = deepcopy(M)
   for i = 1:ncols(N)
     N[i, i] -= lambda
   end
-  return Hecke.left_kernel_basis(N)
+  res = Hecke.left_kernel_basis(N)
+  resvect = [matrix(base_ring(M), 1, ncols(M), x) for x in res]
+  return resvect
 end
 
 function closure_with_pol(v::MatElem{T}, M::MatElem{T}) where T <: FieldElem
@@ -174,14 +190,28 @@ function _copy_matrix_into_matrix(A::MatElem, i::Int, j::Int, B::MatElem)
   return nothing
 end
 
+
+@doc Markdown.doc"""
+    companion_matrix(p::PolyElem) -> MatElem
+Returns the companion matrix of $p = \sum_{i=0}^n a_ix^i$, i.e. the matrix
+
+
+    0 1  0  $\dots$  0 
+    0  0  1  $\dots$  0
+    $\vdots$  $\vdots$  $\ddots$  $\vdots$  $\vdots$
+    0  0  $\vdots$  0  1 
+    $-a_0$  $-a_1$  $-a_2$  $\dots$  $a_{n-1}$ 
+  
+"""
 function companion_matrix(p::PolyElem)
   K = base_ring(p)
+  p1 = divexact(p, lead(p))
   M = zero_matrix(K, degree(p), degree(p))
   for i = 1:degree(p)-1
     setindex!(M, one(K), i, i+1)
   end
   for i = 1:degree(p)
-    setindex!(M, -coeff(p, i-1), degree(p), i) 
+    setindex!(M, -coeff(p1, i-1), degree(p), i) 
   end
   return M
 end
@@ -209,54 +239,69 @@ function split_primary(L::Dict, M::MatElem{T}) where T <: FieldElem
       end
       #I need the sequence of the kernels of g^i(M) \cap W
       #So I restrict to W the endomorphism
-      @show "here"
       WM1 = W*M
       fl, MW = Hecke.can_solve(W, WM1, side = :right)
       @assert fl
+      #Now, MW is the restriction of M to W.
+      #I compute g(MW) and then the kernels of the powers
       gMW = Hecke._subst(g, MW)
       kernels = Vector{typeof(M)}()
+      push!(kernels, zero_matrix(base_ring(MW), 0, ncols(gMW)))
       d, K = kernel(gMW, side = :left)
+      rref!(K)
       push!(kernels, K)
       M1 = gMW
       while true
         M1 *= gMW
         if iszero(M1)
+          push!(kernels, identity_matrix(base_ring(MW), ncols(M1)))
           break
         end
         d1, K = kernel(M1, side = :left)
+        rref!(K)
         push!(kernels, K)
       end 
       #Now, I start taking vectors from the kernels till I generate the entire space
       subgen = zero_matrix(base_ring(M), 0, ncols(K))
-      for i = length(kernels):-1:1
+      for i = length(kernels)-1:-1:1
         j = 1
-        while true
-          ej = zero_matrix(base_ring(M), 1, ncols(K))
-          ej[1, j] = 1
-          res = Hecke.cleanvect(kernels[i], ej)
-          res = Hecke.cleanvect(subgen, ej)
-          while iszero(res) && j < ncols(K)
-            ej[1, j] = 0
+        to_reduce = vcat(kernels[i], subgen)
+        rref!(to_reduce)
+        while j <= nrows(kernels[i+1])
+          ej = sub(kernels[i+1], j:j, 1:ncols(K))
+          res = Hecke.cleanvect(to_reduce, ej)
+          while iszero(res) && j < nrows(kernels[i+1])
             j += 1
-            ej[1, j] = 1
-            res = Hecke.cleanvect(kernels[i], ej)
-            res = Hecke.cleanvect(subgen, ej)
+            ej = sub(kernels[i+1], j:j, 1:ncols(K))
+            res = Hecke.cleanvect(to_reduce, ej)
           end 
           if iszero(res)
             break
           end
-          C = closure_with_pol(res, MW)[1]
-          push!(newl, (C, res))
+          C = closure_with_pol(ej, MW)[1]
+          push!(newl, (C*W, ej*W))
           subgen = vcat(subgen, C)
           rref!(subgen)
+          if nrows(subgen) == nrows(W)
+            i = 1
+            break
+          end
+          to_reduce = vcat(kernels[i], subgen)
+          rref!(to_reduce)
+          j += 1
         end
       end
     end
-    L[g] = newl
+   L[g] = newl
   end
   return L
 end
 
+
+@doc Markdown.doc"""
+    jordan_normal_form(M::MatElem{T}) where T <: FieldElem -> MatElem{T}, MatElem{T}
+Returns matrices $J$ and $S$ such that $J = SMS^{-1}$ and $J$ is in Jordan normal form.
+"""
 function jordan_normal_form(M::MatElem{T}) where T <: FieldElem
   K = base_ring(M)
   L = decompose_primary(M)
@@ -266,7 +311,6 @@ function jordan_normal_form(M::MatElem{T}) where T <: FieldElem
   ind = 1
   for (g, v) in L
     d = degree(g)
-    @show v
     for i = 1:length(v)
       e = divexact(nrows(v[i][1]), d)
       J1 = jordan_block(g, e)
@@ -288,6 +332,10 @@ function jordan_normal_form(M::MatElem{T}) where T <: FieldElem
   return J, B
 end
 
+@doc Markdown.doc"""
+    jordan_decomposition(M::MatElem{T}) where T <:FieldElem -> MatElem{T}, MatElem{T}
+Returns matrices $S$ and $N$ such that $N$ is nilpotent, $S$ is semisimple and $M = S+N$.
+"""
 function jordan_decomposition(M::MatElem{T}) where T <: FieldElem
   K = base_ring(M)
   L = decompose_primary(M)
@@ -322,39 +370,133 @@ function jordan_decomposition(M::MatElem{T}) where T <: FieldElem
     end
   end
   Binv = inv(B)
-  return Binv*N*B, Binv*S*B
+  return Binv*S*B, Binv*N*B
 end
 
+@doc Markdown.doc"""
+    multiplicative_jordan_decomposition(M::MatElem{T}) where T <:FieldElem -> MatElem{T}, MatElem{T}
+Returns matrices $S$ and $U$ such that $U$ is unipotent, $S$ is semisimple and $M = SU$.
+"""
 function multiplicative_jordan_decomposition(M::MatElem{T}) where T <:FieldElem
+  S, N = jordan_decomposition(M)
+  U = inv(S)*N + identity_matrix(base_ring(M), ncols(M))
+  return S, U
+end
+
+@doc Markdown.doc"""
+    rational_canonical_form(M::MatElem{T}) where T <: FieldElem -> MatElem{T}, MatElem{T}
+Returns matrices $C$ and $S$ such that $C = SMS^{-1}$ and $C$ is in rational canonical form.
+"""
+function rational_canonical_form(M::MatElem{T}) where T <: FieldElem
   K = base_ring(M)
   L = decompose_primary(M)
   L = split_primary(L, M)
-  U = similar(M)
-  S = similar(M)
-  B = similar(M)
-  ind = 1
-  for (g, v) in L
-    d = degree(g)
-    if iszero(coeff(g, 0))
-      error("The matrix is not invertible")
+  #order the subspace by dimension
+  max_length = 0
+  for (q, v) in L
+    v1 = sort(v, by = x -> nrows(x[1]))
+    if length(v1) > max_length
+      max_length = length(v1)
     end
-    for i = 1:length(v)
-      e = divexact(nrows(v[i][1]), d)
-      J1 = jordan_block(g, e)
-      w = v[i][2]
-      for k = 1:e
-        aux = w
-        for j = 1:degree(g)
-          aux = aux*M
-          for s = 1:ncols(M)
-            B[ind+(k-1)*d+j-1, s] = aux[1, s]
-          end
-        end
-        w = w*Hecke._subst(g, M)
-      end
-      _copy_matrix_into_matrix(J, ind, ind, J1)
-      ind += d*e
-    end
+    L[q] = v1
   end
-  return J, B
+  vectors_and_minpolys = Vector{Tuple{typeof(M), typeof(first(keys(L)))}}(undef, max_length)
+  Kt = parent(first(keys(L)))
+  for i = 1:max_length
+    mp = one(Kt)
+    w = zero_matrix(K, 1, ncols(M))
+    for (q, v) in L 
+      if length(v) < i
+        continue
+      end
+      W = v[length(v)-i+1][1]
+      gw = v[length(v)-i+1][2]
+      mult = divexact(nrows(W), degree(q))
+      w += gw
+      mp *= q^mult
+    end
+    vectors_and_minpolys[i] = (w, mp)
+  end
+  #Now, the matrix and the transformation matrix
+  CF = similar(M)
+  TM = similar(M)
+  ind = 1
+  for i = max_length:-1:1
+    w, mp = vectors_and_minpolys[i]
+    C = companion_matrix(mp)
+    _copy_matrix_into_matrix(CF, ind, ind, C)
+    S = closure_with_pol(w, M)[1]
+    _copy_matrix_into_matrix(TM, ind, 1, S)
+    ind += nrows(S)
+  end
+  return CF, TM
 end
+
+@doc Markdown.doc"""
+    issimilar(M::MatElem{T}, N::MatElem{T}) where T <: FieldElem -> Bool
+Returns true if the matrices are similar (conjugated) and false otherwise.
+"""
+function issimilar(M::MatElem{T}, N::MatElem{T}) where T <: FieldElem
+  CM = rational_canonical_form(M)[1]
+  CN = rational_canonical_form(N)[1]
+  return CM == CN
+end
+
+@doc Markdown.doc"""
+    conjugating_matrix(M::MatElem{T}, N::MatElem{T}) where T <: FieldElem -> MatElem{T}
+Returns a matrix $S$ such that $S\times N \times S^{-1} = M$.
+"""
+function conjugating_matrix(M::MatElem{T}, N::MatElem{T}) where T <: FieldElem
+  CM, SM = rational_canonical_form(M)
+  CN, SN = rational_canonical_form(N)
+  if CM != CN
+    error("Matrices are not similar!")
+  end
+  return inv(SM)*SN
+end
+
+
+#=
+function maximal_vector(M::MatElem{T}) where T <: FieldElem
+  
+  K = base_ring(M)
+  Kt, t = PolynomialRing(K, "t", cached = false)
+  v = zero_matrix(K, 1, ncols(M))
+  v[1, 1] = 1
+  C, coeffs_vect = closure_with_pol(v, M)
+  if nrows(C) == nrows(M)
+    return v
+  end
+  coeffs = T[coeffs_vect[1, i] for i = 1:length(coeffs_vect)]
+  push!(coeffs, K(1))
+  mp = Kt(coeffs)
+  rref!(C)
+  for i = 2:nrows(M)
+    v1 = zero_matrix(K, 1, ncols(M))
+    v1[1, i] = 1
+    res = Hecke.cleanvect(C, v1)
+    if iszero(res)
+      continue
+    end
+    C1, coeffs_vect2 = closure_with_pol(v1, M)
+    if nrows(C1) == nrows(M)
+      return true
+    end
+    coeffs2 = T[coeffs_vect2[1, i] for i = 1:length(coeffs_vect)]
+    push!(coeffs2, K(1))
+    mp2 = Kt(coeffs2)
+    if isone(gcd(mp1, mp2))
+      v = v + v1
+      C, coeffs_vect = closure_with_pol(v, M)
+      if nrows(C) == nrows(M)
+        return v
+      end
+      coeffs = T[coeffs_vect[1, i] for i = 1:length(coeffs_vect)]
+      push!(coeffs, K(1))
+      mp = Kt(coeffs)
+      rref!(C)
+    end 
+  end
+
+end
+=#
