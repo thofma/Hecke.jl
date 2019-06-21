@@ -172,12 +172,6 @@ end
 
 ################################################################################
 #
-#  Ad hoc operations
-#
-################################################################################
-
-################################################################################
-#
 #  Norm div
 #
 ################################################################################
@@ -185,8 +179,9 @@ end
 @doc Markdown.doc"""
     norm_div(a::nf_elem, d::fmpz, nb::Int) -> fmpq
 
-Computes divexact(norm(a), d) provided the result has at most `nb` bits.
-Typically, $a$ is in some ideal and $d$ is the norm of the ideal.
+> Computes `divexact(norm(a), d)` provided the result has at most `nb` bits.
+>
+> Typically, `a` is an element of somee ideal with norm `d`.
 """
 function norm_div(a::nf_elem, d::fmpz, nb::Int)
    z = fmpq()

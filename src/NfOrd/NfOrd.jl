@@ -649,7 +649,7 @@ function norm_change_const(O::NfOrd)
 
     N = Symmetric([ Float64(M[i, j]) for i in 1:nrows(M), j in 1:ncols(M) ])
     #forcing N to really be Symmetric helps julia - aparently
-    r = sort(eigvals(N))
+    r = sort(LinearAlgebra.eigvals(N))
     if !(r[1] > 0)
       # more complicated methods are called for...
       m = ceil(Int, log(d)/log(2))

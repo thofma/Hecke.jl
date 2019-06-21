@@ -60,7 +60,7 @@ end
 
 ################################################################################
 #
-#  Random elements from arrays of nf_elem
+#  Random elements from arrays of number field elements
 #
 ################################################################################
 
@@ -185,8 +185,7 @@ function ^(x::NumFieldElem, y::fmpz)
   return _power(x, y)
 end
 
-# We test once if it fits, otherwise we would have to check for every ^
-# instance.
+# We test once if it fits, otherwise we would have to check for every ^-call
 function _power(x::NumFieldElem, y::fmpz)
   res = parent(x)()
   if y < 0
@@ -211,10 +210,11 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    coeff(a::SimpleNumFieldelem, i::Int) -> Poly
+    coeff(a::SimpleNumFieldElem, i::Int) -> FieldElem
 
-> Given a number field element `a` of a simple number field `K` of degree `d`,
-> this function returns the `i`-th coefficient of `a`, when expanded in the
-> canonical power basis of `K`.
+> Given a number field element `a` of a simple number field extension `L/K` of
+> degree `d`, this function returns the `i`-th coefficient of `a`, when
+> expanded in the canonical power basis of `L`. The result is an element of
+> `L`.
 """
 coeff(::SimpleNumFieldElem, ::Int)
