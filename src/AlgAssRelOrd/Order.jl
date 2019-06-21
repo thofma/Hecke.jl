@@ -359,7 +359,7 @@ function maximal_order(A::AbsAlgAss{T}) where { T <: NumFieldElem }
   # So far ..._absolute is usually faster for linear, quadratic and cubic base fields,
   # but of course there are exceptions.
   # Feel free to adjust this if-condition.
-  if base_field(A) == FlintQQ && degree(base_ring(A)) <= 3
+  if base_field(base_ring(A)) == FlintQQ && degree(base_ring(A)) <= 3
     O = maximal_order_via_absolute(A)
   else
     O = maximal_order_via_relative(A)
