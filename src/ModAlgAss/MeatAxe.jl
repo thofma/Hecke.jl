@@ -629,6 +629,7 @@ function _irrsubs(M::ModAlgAss{S, T}, N::ModAlgAss{S, T}) where {S, T}
   #  Try all the possibilities. (A recursive approach? I don't know if it is a smart idea...)
   #  Notice that we eliminate lots of candidates considering the action of the group on the homomorphisms space
   #
+
   candidate_comb=append!(_enum_el(K,[K(0)], length(vects)-1),_enum_el(K,[K(1)],length(vects)-1))
   deleteat!(candidate_comb,1)
   list=Array{T,1}(undef, length(candidate_comb))
@@ -915,6 +916,12 @@ function powmod(f::Zmodn_poly, e::fmpz, g::Zmodn_poly)
   if nbits(e) <= 63
     return powmod(f, Int(e), g)
   else
-    error("Not implemented yet")
+    _e = BigInt()
+    z = parent(f)()
+    ccall((:fmpz_get_mpz, :libflint), Nothing, (Ref{BigInt}, Ref{fmpz}), _e, e)
+    ccall((:nmod_poly_powmod_mpz_binexp, :libflint), Nothing,
+          (Ref{Zmodn_poly}, Ref{Zmodn_poly}, Ref{BigInt}, Ref{Zmodn_poly}),
+           z, f, e, g)
+    return z
   end
 end
