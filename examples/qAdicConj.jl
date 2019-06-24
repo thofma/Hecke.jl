@@ -734,4 +734,38 @@ end
 
 Hecke.base_ring(Q::QadicRing) = integers(base_ring(Q.Q))
 
+#########################
+#
+#########################
+
+mutable type HenselCtxQadic
+  f::PolyElem{qadic}
+  lf::Array{PolyElem{qadic}, 1}
+  la::Array{PolyElem{qadic}, 1}
+  #TODO: lift over subfields first
+  function HenselCtxQadic(f::PolyElem{qadic})
+    Q = base_ring(f)
+    K, mK = ResidueField(Q)
+    fp = change_base_ring(f, mK)
+    lfp = collect(keys(factor(fp).fac))
+    i = 1
+    la = Array{PolyElem{qadic}, 1}()
+    while i < length(lfp)
+      if i = length(flp)
+        push!(la, one(parent(f)))
+        push!(lfp, 1)
+      else
+        f1 = lfp[i]
+        f2 = lfp[i+1]
+        g, a, b = gcdx(f1, f2)
+        @assert isone(g)
+        push!(la, change_base_ring(a, x->preimage(mK, x)))
+        push!(la, change_base_ring(b, x->preimage(mK, x)))
+        push!(lfp, f1*f2)
+        i += 2
+      end
+    end
+  end
+end
+
 end
