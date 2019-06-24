@@ -53,15 +53,11 @@ end
 #
 ################################################################################
 
-Nemo.elem_type(::Type{NfRel{T}}) where {T} = NfRelElem{T}
+elem_type(::Type{NfRel{T}}) where {T} = NfRelElem{T}
 
-Nemo.elem_type(::NfRel{T}) where {T} = NfRelElem{T}
+elem_type(::NfRel{T}) where {T} = NfRelElem{T}
 
-Nemo.parent_type(::Type{NfRelElem{T}}) where {T} = NfRel{T}
-
-order_type(K::NfRel{T}) where {T} = NfRelOrd{T, frac_ideal_type(order_type(base_field(K)))}
-
-order_type(::Type{NfRel{T}}) where {T} = NfRelOrd{T, frac_ideal_type(order_type(parent_type(T)))}
+parent_type(::Type{NfRelElem{T}}) where {T} = NfRel{T}
 
 Nemo.needs_parentheses(::NfRelElem) = true
 
@@ -88,6 +84,8 @@ function Nemo.zero!(a::NfRelElem)
   return a
 end
 
+isunit(a::NfRelElem) = !iszero(a)
+
 ################################################################################
 #
 #  Promotion
@@ -110,19 +108,45 @@ end
 
 ################################################################################
 #
+#  Order types
+#
+################################################################################
+
+order_type(K::NfRel{T}) where {T} = NfRelOrd{T, frac_ideal_type(order_type(base_field(K)))}
+
+order_type(::Type{NfRel{T}}) where {T} = NfRelOrd{T, frac_ideal_type(order_type(parent_type(T)))}
+
+################################################################################
+#
 #  Field access
 #
 ################################################################################
 
-@inline Nemo.base_ring(a::NfRel{T}) where {T} = a.base_ring::parent_type(T)
-
 @inline base_field(a::NfRel{T}) where {T} = a.base_ring::parent_type(T)
 
-@inline Nemo.data(a::NfRelElem) = a.data
+@inline data(a::NfRelElem) = a.data
 
-@inline Nemo.parent(a::NfRelElem{T}) where {T} = a.parent::NfRel{T}
+@inline parent(a::NfRelElem{T}) where {T} = a.parent::NfRel{T}
 
-issimple(a::NfRel) = true
+@inline issimple(a::NfRel) = true
+
+################################################################################
+#
+#  Coefficient setting and getting
+#
+################################################################################
+
+@inline coeff(a::NfRelElem{T}, i::Int) where {T} = coeff(a.data, i)
+
+@inline setcoeff!(a::NfRelElem{T}, i::Int, c::T) where {T} = setcoeff!(a.data, i, c)
+
+################################################################################
+#
+#  Degree
+#
+################################################################################
+
+@inline degree(L::Hecke.NfRel) = degree(L.pol)
 
 ################################################################################
 #
@@ -208,10 +232,16 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    NumberField(f::Generic.Poly{T}, s::String; cached::Bool = false, check::Bool = false) where T
-Given an irreducible polynomial $f$ over some number field $K$,
-create the field $K[t]/f$.
-$f$ must be irreducible - although this is not tested.
+    NumberField(f::Poly{NumFieldElem}, s::String;
+                cached::Bool = false, check::Bool = false) -> NumField, NumFieldElem
+
+> Given an irreducible polynomial $f \in K[t]$ over some number field $K$, this
+> function creates the simple number field $L = K[t]/(f)$ and returns $(L, b)$,
+> where $b$ is the class of $t$ in $L$. The string `s` is used only for
+> printing the primitive element $b$.
+>
+> Testing that $f$ is irreducible can be disabled by setting the ketword
+> argument to `false`.
 """
 function NumberField(f::Generic.Poly{T}, s::String; cached::Bool = false, check::Bool = false) where T
   S = Symbol(s)
@@ -222,9 +252,6 @@ end
 
 @doc Markdown.doc"""
     NumberField(f::Generic.Poly{T}; cached::Bool = false, check::Bool = false) where T
-Given an irreducible polynomial $f$ over some number field $K$,
-create the field $K[t]/f$.
-$f$ must be irreducible - although this is not tested.
 """
 function NumberField(f::Generic.Poly{T}; cached::Bool = false, check::Bool = false) where T
   return NumberField(f, "_\$", cached = cached, check = check)
@@ -411,7 +438,7 @@ Given an extension $K/k/Q$, find an isomorphic extension of $Q$.
 function absolute_field(K::NfRel{nf_elem}, cached::Bool = false)
   Ka, a, b, c = _absolute_field(K, cached)
   #return Ka, NfRelToNf(K, Ka, a, b, c), hom(base_ring(K), Ka, a, check = false)
-  return Ka, NfToNfRel(Ka, K, a, b, c), hom(base_ring(K), Ka, a, check = false)
+  return Ka, NfToNfRel(Ka, K, a, b, c), hom(base_field(K), Ka, a, check = false)
 end
 
 @doc Markdown.doc"""
@@ -421,7 +448,7 @@ In a tower, only the top-most steps are collapsed.
 """
 function absolute_field(K::NfRel{NfRelElem{T}}, cached::Bool = false) where T
   Ka, a, b, c = _absolute_field(K)
-  return Ka, NfRelRelToNfRel(K, Ka, a, b, c), hom(base_ring(K), Ka, a, check = false)
+  return Ka, NfRelRelToNfRel(K, Ka, a, b, c), hom(base_field(K), Ka, a, check = false)
 end
 
 
@@ -485,27 +512,6 @@ end
 
 Nemo.canonical_unit(a::NfRelElem) = a
 
-#function +(a::NfRelElem{NfRelElem{T}}, b::NfRelElem{T}) where T
-#  c = deepcopy(a)
-#  setcoeff!(c.data, 0, coeff(c.data, 0)+b)
-#  return c
-#end
-#
-#+(a::NfRelElem{T}, b::NfRelElem{NfRelElem{T}}) where T = b+a
-#
-#function *(a::NfRelElem{NfRelElem{T}}, b::NfRelElem{T}) where T
-#  c = deepcopy(a)
-#  setcoeff!(c.data, 0, coeff(c.data, 0)*b)
-#  return c
-#end
-#
-#*(a::NfRelElem{T}, b::NfRelElem{NfRelElem{T}}) where T = b*a
-
-@inline coeff(a::NfRelElem{T}, i::Int) where {T} = coeff(a.data, i)
-
-@inline setcoeff!(a::NfRelElem{T}, i::Int, c::T) where {T} = setcoeff!(a.data, i, c)
-
-@inline degree(L::Hecke.NfRel) = degree(L.pol)
 
 @doc Markdown.doc"""
     degree(K::NumField) -> Int
@@ -538,7 +544,7 @@ function iskummer_extension(K::Hecke.NfRel{nf_elem})
     return false
   end
 
-  k = base_ring(K)
+  k = base_field(K)
   Zk = maximal_order(k)
   _, o = Hecke.torsion_units_gen_order(Zk)
   if o % degree(K) != 0
@@ -604,7 +610,7 @@ end
 function representation_matrix(a::NfRelElem)
   L = a.parent
   n = degree(L)
-  M = zero_matrix(base_ring(L), n, n)
+  M = zero_matrix(base_field(L), n, n)
   t = gen(L)
   b = deepcopy(a)
   for i = 1:n-1
@@ -673,13 +679,13 @@ end
 # fun in towers..
 ######################################################################
 
-isunit(a::NfRelElem) = !iszero(a)
+################################################################################
+#
+#  Minimal and characteristic polynomial
+#
+################################################################################
 
 absolute_degree(A::AnticNumberField) = degree(A)
-
-function absolute_degree(A::NfRel)
-  return absolute_degree(base_ring(A))*degree(A)
-end
 
 function tr(a::NfRelElem, k::Union{NfRel, AnticNumberField, FlintRationalField})
   b = tr(a)
@@ -718,8 +724,8 @@ characteristic polynomial of $a$ over $K$.
 """
 function charpoly(a::NfRelElem)
   M = representation_matrix(a)
-  R = PolynomialRing(base_ring(parent(a)), cached = false)[1]
-  return minpoly(R, M, true)
+  R = PolynomialRing(base_field(parent(a)), cached = false)[1]
+  return charpoly(R, M)
 end
 
 @doc Markdown.doc"""
@@ -730,7 +736,7 @@ polynomial of $a$ of $K$.
 """
 function minpoly(a::NfRelElem)
   M = representation_matrix(a)
-  R = PolynomialRing(base_ring(parent(a)), cached = false)[1]
+  R = PolynomialRing(base_field(parent(a)), cached = false)[1]
   return minpoly(R, M, false)
 end
 
@@ -771,9 +777,9 @@ end
 
 #
 
-(K::NfRel)(x::NfRelElem) = K(base_ring(K)(x))
+(K::NfRel)(x::NfRelElem) = K(base_field(K)(x))
 
-(K::NfRel)(x::nf_elem) = K(base_ring(K)(x))
+(K::NfRel)(x::nf_elem) = K(base_field(K)(x))
 
 (K::NfRel{T})(x::NfRelElem{T}) where {T} = K(x.data)
 
@@ -784,14 +790,14 @@ end
 #
 
 function (R::Generic.PolyRing{nf_elem})(a::NfRelElem{nf_elem})
-  if base_ring(R)==base_ring(parent(a))
+  if base_ring(R)==base_field(parent(a))
     return a.data
   end
   error("wrong ring")
 end
 
 function (R::Generic.PolyRing{NfRelElem{T}})(a::NfRelElem{NfRelElem{T}}) where T
-  if base_ring(R)==base_ring(parent(a))
+  if base_ring(R)==base_field(parent(a))
     return a.data
   end
   error("wrong ring")
@@ -838,7 +844,7 @@ Otherwise the function returns "false" and a morphism mapping everything to
 $0$.
 """
 function issubfield(K::NfRel, L::NfRel)
-  @assert base_ring(K) == base_ring(L)
+  @assert base_field(K) == base_field(L)
   f = K.pol
   g = L.pol
   if mod(degree(g), degree(f)) != 0
@@ -868,7 +874,7 @@ Returns "true" and an isomorphism from $K$ to $L$ if $K$ and $L$ are isomorphic.
 Otherwise the function returns "false" and a morphism mapping everything to $0$.
 """
 function isisomorphic(K::NfRel, L::NfRel)
-  @assert base_ring(K) == base_ring(L)
+  @assert base_field(K) == base_field(L)
   f = K.pol
   g = L.pol
   if degree(f) != degree(g)
@@ -917,7 +923,7 @@ end
 # Mostly the same as in the absolute case
 function normal_basis(L::NfRel{nf_elem})
   O = EquationOrder(L)
-  K = base_ring(L)
+  K = base_field(L)
   OK = base_ring(O)
   d = discriminant(O)
   for p in PrimeIdealsSet(OK, degree(L), -1, indexdivisors = false, ramified = false)

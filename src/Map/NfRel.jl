@@ -227,7 +227,7 @@ function ^(f::NfRelToNfRelMor, b::Int)
 end
 
 function ==(x::NfRelToNfRelMor{T}, y::NfRelToNfRelMor{T}) where T
-  if base_ring(domain(x)) == base_ring(domain(y))
+  if base_field(domain(x)) == base_field(domain(y))
     return x.prim_img == y.prim_img
   end
   return (x.coeff_aut == y.coeff_aut) && (x.prim_img == y.prim_img) 

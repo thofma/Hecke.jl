@@ -159,7 +159,7 @@ end
 function frac_ideal(O::NfRelOrd{T, S}, x::RelativeElement{T}) where {T, S}
   d = degree(O)
   pb = pseudo_basis(O, copy = false)
-  M = zero_matrix(base_ring(nf(O)), d, d)
+  M = zero_matrix(base_field(nf(O)), d, d)
   if iszero(x)
     return NfRelOrdFracIdl{T, S}(O, PseudoMatrix(M, [ deepcopy(pb[i][2]) for i = 1:d ]))
   end
@@ -181,7 +181,7 @@ function frac_ideal(O::NfRelOrd{T, S}, a::NfRelOrdIdl{T, S}) where {T, S}
 end
 
 function frac_ideal(O::NfRelOrd{T, S}, a::NfRelOrdIdl{T, S}, d::U) where { T, S, U <: Union{ fmpz, NfAbsOrdElem, NfRelOrdElem } }
-  K = base_ring(nf(O))
+  K = base_field(nf(O))
   dd = inv(K(d))
   return frac_ideal(O, dd*basis_pmat(a), true)
 end
@@ -344,7 +344,7 @@ function *(a::NfRelOrdFracIdl{T, S}, b::NfRelOrdFracIdl{T, S}) where {T, S}
   mb = basis_mat(b, copy = false)
   den = denominator(a)*denominator(b)
   L = nf(order(a))
-  K = base_ring(L)
+  K = base_field(L)
   d = degree(order(a))
   M = zero_matrix(K, d^2, d)
   C = Array{frac_ideal_type(order_type(K)), 1}(undef, d^2)
@@ -481,7 +481,7 @@ function in(x::RelativeElement, y::NfRelOrdFracIdl)
   parent(x) != nf(order(y)) && error("Number field of element and ideal must be equal")
   O = order(y)
   b_pmat = basis_pmat(y, copy = false)
-  t = zero_matrix(base_ring(nf(O)), 1, degree(O))
+  t = zero_matrix(base_field(nf(O)), 1, degree(O))
   elem_to_mat_row!(t, 1, x)
   t = t*basis_mat_inv(O, copy = false)
   t = t*basis_mat_inv(y, copy = false)
