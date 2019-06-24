@@ -39,6 +39,13 @@ function Base.setprecision(q::qadic, N::Int)
   return r
 end
 
+function Base.setprecision(q::padic, N::Int)
+  r = parent(q)()
+  r.N = N
+  ccall((:padic_set, :libflint), Nothing, (Ref{padic}, Ref{padic}, Ref{FlintPadicField}), r, q, parent(q))
+  return r
+end
+
 export setprecision!
 
 function setprecision!(q::qadic, N::Int)
@@ -48,6 +55,10 @@ function setprecision!(q::qadic, N::Int)
 end
 
 function setprecision!(Q::FlintQadicField, n::Int)
+  Q.prec_max = n
+end
+
+function setprecision!(Q::FlintPadicField, n::Int)
   Q.prec_max = n
 end
 
@@ -76,6 +87,19 @@ function Base.setprecision(a::Generic.MatSpaceElem{qadic}, N::Int)
   b = deepcopy(a)
   setprecision!(b, N)
   return B
+end
+
+function Hecke.trace(r::qadic)
+  t = base_ring(parent(r))()
+  @show t.N
+  ccall((:qadic_trace, :libflint), Nothing, (Ref{padic}, Ref{qadic}, Ref{FlintQadicField}), t, r, parent(r))
+  return t
+end
+
+function Hecke.norm(r::qadic)
+  t = base_ring(parent(r))()
+  ccall((:qadic_norm, :libflint), Nothing, (Ref{padic}, Ref{qadic}, Ref{FlintQadicField}), t, r, parent(r))
+  return t
 end
 
 #XXX: valuation(Q(0)) == 0 !!!!!
@@ -156,6 +180,27 @@ function Hecke.ResidueField(Q::FlintQadicField)
   end
   return k, MapFromFunc(pro, lif, Q, k)
 end
+
+function Hecke.ResidueField(Q::FlintPadicField)
+  k = GF(Int(prime(Q)))
+  pro = function(x::padic)
+    v = valuation(x)
+    v < 0 && error("elt non integral")
+    v > 0 && return k(0)
+    z = k(lift(x))
+    return z
+  end
+  lif = function(x::Hecke.gfp_elem)
+    z = Q(lift(x))
+    return z
+  end
+  return k, MapFromFunc(pro, lif, Q, k)
+end
+
+function Hecke.base_ring(Q::FlintQadicField)
+  return FlintPadicField(prime(Q), precision(Q))
+end
+base_field(Q::FlintQadicField) = base_ring(Q)
 
 function Hecke.roots(f::fmpz_poly, Q::FlintQadicField; max_roots::Int = degree(f))
   k, mk = ResidueField(Q)
@@ -492,6 +537,9 @@ end
 Hecke.uniformizer(Q::FlintQadicField) = Q(prime(Q))
 Base.precision(Q::FlintQadicField) = Q.prec_max
 
+Hecke.uniformizer(Q::FlintPadicField) = Q(prime(Q))
+Base.precision(Q::FlintPadicField) = Q.prec_max
+
 function expand(a::qadic)
   @assert valuation(a-1)>0
   i = 1
@@ -516,71 +564,9 @@ Hecke.nrows(A::Array{T, 2}) where {T} = size(A)[1]
 Hecke.ncols(A::Array{T, 2}) where {T} = size(A)[2]
 
 
-struct LogData
-  rels::Array{qadic, 2}
-  gens::Array{qadic, 1}
-  lg::Array{qadic, 2}
-  V::Array{qadic, 1}
-end
-
-function prepro(Q::FlintQadicField)
-  n = precision(Q)
-  rels = Array{qadic, 2}(undef, 1, 1)
-  p = 2^nbits(n) + 1
-  setprecision!(Q, p)
-  pi = uniformizer(Q)
-  rels[1,1] = pi
-  gens = qadic[1+pi]
-  i = 2
-  while i <= n
-    @show ng = 1+pi^i
-    nm = Array{qadic, 2}(undef, nrows(rels), 1)
-    for j=1:nrows(rels)
-      @show mu = sum(rels[j, k]*log(gens[k]) for k=1:length(gens))//pi^i
-      nm[j,1] = setprecision(-mu, n)
-    end
-    rels = hcat(rels, nm)
-    nm = zeros(Q, 1, ncols(rels))
-    nm[end] = pi^i
-    @show size(rels), size(nm)
-    rels = vcat(rels, nm)
-    push!(gens, ng)
-    i *= 2
-  end
-  p = i
-  setprecision!(Q, p)
-  rels = setprecision(rels, p)
-  R = ring_of_integers(Q)
-  u = matrix(map(R, rels))
-  S, U, V = snf_with_transform(u)
-  n = length(gens)
-  @assert !iszero(S[n,n])
-  lp = qadic[gen(Q)]
-  for i=2:degree(Q)-1
-    push!(lp, lp[1]*lp[end])
-  end
-
-  lg = map(ij -> ij[1]^ij[2], Base.Iterators.ProductIterator((gens, lp)))
-  return LogData(rels, gens, lg, qadic[V[i, n].x for i=1:n])
-end
-
-function Base.log(a::qadic, L::LogData)
-  i = 1
-  pi = uniformizer(parent(a))
-  l = qadic[]
-  n = length(L.gens)
-  prec = precision(a)
-  while n > 0
-    z = setprecision(divexact(setprecision((a-1), 2*i), pi), prec)
-    #a*inv(1+pi^i)^z
-    #we have (1+pi^i)^gen
-  end
-
-
-end
-
 import Base.^
 ^(a::qadic, b::qadic) = exp(b*log(a))
+^(a::padic, b::padic) = exp(b*log(a))
 
 ################################################################################
 #
@@ -601,10 +587,12 @@ end
 function Hecke.ring_of_integers(Q::FlintQadicField)
   return QadicRing{FlintQadicField}(Q)
 end
+#Hecke.integers(Q::FlintQadicField) = ring_of_integers(Q)
 
 function Hecke.ring_of_integers(Q::FlintPadicField)
   return QadicRing{FlintPadicField}(Q)
 end
+#Hecke.integers(Q::FlintPadicField) = ring_of_integers(Q)
 
 struct QadicRingElem{S} <: RingElem
   x::S
@@ -628,6 +616,8 @@ import Base.*, Base.==, Base.+, Base.inv, Hecke.divexact, Hecke.canonical_unit,
 +(a::QadicRingElem, b::QadicRingElem) = QadicRingElem(a.x+b.x, a.P)
 -(a::QadicRingElem, b::QadicRingElem) = QadicRingElem(a.x-b.x, a.P)
 -(a::QadicRingElem) = QadicRingElem(-a.x, a.P)
+^(a::QadicRingElem, b::QadicRingElem) = QadicRingElem(a.x^b.x, a.P)
+^(a::T, b::QadicRingElem{T}) where {T} = a^b.x
 
 function inv(a::QadicRingElem) 
   valuation(a.x) == 0 || error("non unit")
@@ -659,18 +649,22 @@ function Base.div(a::QadicRingElem, b::QadicRingElem)
   return q
 end
 
-
 Hecke.parent(a::QadicRingElem) = a.P
 Hecke.elem_type(::Type{QadicRing{FlintPadicField}}) = QadicRingElem{padic}
 Hecke.elem_type(::Type{QadicRing{FlintQadicField}}) = QadicRingElem{qadic}
 Hecke.parent_type(::Type{QadicRingElem{padic}}) = QadicRing{FlintPadicField}
 Hecke.parent_type(::Type{QadicRingElem{qadic}}) = QadicRing{FlintQadicField}
+
 Hecke.zero(Q::QadicRing) = QadicRingElem(Q.Q(0), Q)
 Hecke.one(Q::QadicRing) = QadicRingElem(Q.Q(1), Q)
+
 (Q::QadicRing)(a::qadic) = QadicRingElem(a, Q)
+(Q::QadicRing)(a::padic) = QadicRingElem(a, Q)
 (Q::QadicRing)(a::QadicRingElem) = QadicRingElem(a.x, a.P)
 (Q::QadicRing)(a::Int) = QadicRingElem(Q.Q(a), Q)
 (Q::QadicRing)() = QadicRingElem(Q.Q(), Q)
+(Q::FlintQadicField)(a::QadicRingElem{qadic}) = a.x
+(Q::FlintPadicField)(a::QadicRingElem{padic}) = a.x
 Hecke.valuation(a::QadicRingElem) = valuation(a.x)
 Hecke.isunit(a::QadicRingElem) = valuation(a) == 0
 function Base.deepcopy_internal(a::QadicRingElem, dict::IdDict)
@@ -736,5 +730,7 @@ end
 function Base.setprecision(a::Generic.MatSpaceElem{QadicRingElem{qadic}}, n::Int)
   return matrix(map(x -> setprecision(x, n), a.entries))
 end
+
+Hecke.base_ring(Q::QadicRing) = integers(base_ring(Q.Q))
 
 end
