@@ -31,4 +31,5 @@ include("Misc/Screen.jl")
 include("Misc/IJulia.jl")
 include("Misc/Localization.jl")
 include("Misc/OrdLocalization.jl")
-#include("Misc/cohomology.jl")
+include("Misc/jordan.jl")
+

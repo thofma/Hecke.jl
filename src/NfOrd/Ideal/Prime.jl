@@ -341,13 +341,13 @@ function prime_dec_nonindex(O::NfOrd, p::Union{Integer, fmpz}, degree_limit::Int
     #ideal = ideal_from_poly(O, p, fi, ei)
     t = parent(f)(fi)
     b = K(t)
-    ideal = NfAbsOrdIdl(O)
-    ideal.gen_one = p
-    ideal.gen_two = O(b, false)
-    ideal.is_prime = 1
-    ideal.splitting_type = ei, degree(fi)
-    ideal.norm = FlintZZ(p)^degree(fi)
-    ideal.minimum = FlintZZ(p)
+    I = NfAbsOrdIdl(O)
+    I.gen_one = p
+    I.gen_two = O(b, false)
+    I.is_prime = 1
+    I.splitting_type = ei, degree(fi)
+    I.norm = FlintZZ(p)^degree(fi)
+    I.minimum = FlintZZ(p)
 
     # We have to do something to get 2-normal presentation:
     # if ramified or valuation val(b,P) == 1, (p,b)
@@ -355,20 +355,19 @@ function prime_dec_nonindex(O::NfOrd, p::Union{Integer, fmpz}, degree_limit::Int
     # otherwise we need to take p+b
     # I SHOULD CHECK THAT THIS WORKS
 
-    if ei == 1 && isnorm_divisible(b,(ideal.norm)^2) 
-      ideal.gen_two = ideal.gen_two + O(p)
+    if ei == 1 && isnorm_divisible(b, (I.norm)^2) 
+      I.gen_two = I.gen_two + O(p)
     end
 
-    ideal.gens_normal = fmpz(p)
-    ideal.gens_weakly_normal = true
+    I.gens_normal = fmpz(p)
+    I.gens_weakly_normal = true
 
-    if length(fac) == 1 && ideal.splitting_type[2] == degree(f)
+    if length(fac) == 1 && I.splitting_type[2] == degree(f)
       # Prime number is inert, in particular principal
-      ideal.is_principal = 1
-      ideal.princ_gen = O(p)
+      I.is_principal = 1
+      I.princ_gen = O(p)
     end
-    result[k] =  (ideal, ei)
-    k += 1
+    result[k] = (I, ei)
   end
   return result
 end

@@ -289,7 +289,7 @@ function find_gens_descent(mR::Map, A::ClassField_pp, cp::fmpz)
     return lp, sR
   end
   
-  @show "Bad Case in Descent"
+  @vprint :ClassField 3 "Bad Case in Descent\n"
   S = PrimesSet(300, -1)
   for p in S
     if cp % p == 0 || index(ZK) % p == 0
@@ -354,7 +354,6 @@ function find_gens(K::KummerExt, S::PrimesSet, cp::fmpz=fmpz(1))
   s, ms = snf(q)
   ind = 1
   
-  #=
   ctx = _get_ClassGrpCtx_of_order(ZK)
   fb = ctx.FB.ideals
   
@@ -401,7 +400,6 @@ function find_gens(K::KummerExt, S::PrimesSet, cp::fmpz=fmpz(1))
     K.frob_gens = (lp, sR)
     return lp, sR
   end
-  =#
 
   for p in S
     if cp % p == 0 || index(ZK) % p == 0
