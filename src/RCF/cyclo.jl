@@ -188,12 +188,12 @@ function automorphisms(C::CyclotomicExt; gens::Vector{NfToNfMor} = small_generat
   if degree(absolute_field(C)) == degree(base_field(C))
     return automorphisms(C.Ka, copy = copy)
   end
-  genK = C.mp[1]\gen(C.Ka)
+  genK = C.mp[1](gen(C.Ka))
   gnew = Hecke.NfToNfMor[]
   #First extend the old generators
   for g in gens
     ng = Hecke.extend_to_cyclotomic(C, g)
-    na = hom(C.Ka, C.Ka, C.mp[1](ng(genK)), check = false)
+    na = hom(C.Ka, C.Ka, C.mp[1]\(ng(genK)), check = false)
     push!(gnew, na)
   end 
   #Now add the automorphisms of the relative extension
@@ -203,7 +203,7 @@ function automorphisms(C::CyclotomicExt; gens::Vector{NfToNfMor} = small_generat
     k = degree(C.Kr)
     expo = divexact(eulerphi(fmpz(C.n)), k)
     l = hom(C.Kr, C.Kr, gen(C.Kr)^Int(lift(mU(U[1])^expo)), check = false)
-    l1 = hom(C.Ka, C.Ka, C.mp[1](l(C.mp[1]\gen(C.Ka))), check = false)
+    l1 = hom(C.Ka, C.Ka, C.mp[1]\(l(C.mp[1](gen(C.Ka)))), check = false)
     push!(gnew, l1)
   else
     f = C.Kr.pol
@@ -211,7 +211,7 @@ function automorphisms(C::CyclotomicExt; gens::Vector{NfToNfMor} = small_generat
     S, mS = snf(s)
     for t = 1:ngens(S)
       l = hom(C.Kr, C.Kr, gen(C.Kr)^Int(lift(mU(ms(mS(S[t]))))), check = false)
-      push!(gnew, hom(C.Ka, C.Ka, C.mp[1](l(genK)), check = false))
+      push!(gnew, hom(C.Ka, C.Ka, C.mp[1]\(l(genK)), check = false))
     end
   end
   auts = closure(gnew, degree(C.Ka))

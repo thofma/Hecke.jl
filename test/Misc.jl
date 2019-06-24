@@ -8,4 +8,5 @@
   include("Misc/Poly.jl")
   include("Misc/Localization.jl")
   include("Misc/OrdLocalization.jl")
+  include("Misc/jordan_test.jl")
 end

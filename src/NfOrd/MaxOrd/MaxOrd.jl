@@ -24,6 +24,7 @@ function MaximalOrder(O::NfAbsOrd{S, T}; index_divisors::Vector{fmpz} = fmpz[], 
       rethrow(e)
     end
     M = new_maximal_order(O, index_divisors = index_divisors, disc = discriminant, ramified_primes = ramified_primes)
+    @assert isdefined(M, :disc)
     M.ismaximal = 1
     _set_maximal_order(K, M)
     return M
@@ -131,6 +132,7 @@ function pmaximal_overorder_at(O::NfOrd, primes::Array{fmpz, 1})
     end
     @vprint :NfOrd 1 "done\n"
   end
+  @assert isdefined(OO, :disc)
   return OO
 end
 ################################################################################
@@ -255,12 +257,12 @@ function _TameOverorderBL(O::NfOrd, lp::Array{fmpz,1})
   M = coprime_base(lp)
   Q = fmpz[]
   while !isempty(M)
-    @vprint :NfOrd 1 M
+    @vprint :NfOrd 1 "List of factors: $M\n"
     q = pop!(M)
     if isprime(q)
       OO1 = pmaximal_overorder(O, q)
       if valuation(discriminant(OO1), q) < valuation(discriminant(OO), q)
-        OO += OO1
+        OO = sum_as_Z_modules(OO, OO1)
       end
     else
       OO, q1 = _cycleBL(OO, q)

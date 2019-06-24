@@ -608,7 +608,6 @@ end
 function _irrsubs(M::ModAlgAss{S, T}, N::ModAlgAss{S, T}) where {S, T}
 
   @assert M.isirreducible == 1
-  
   K=M.base_ring
   rel=_relations(M,N)
   if rel[N.dimension, N.dimension]!=0
@@ -623,24 +622,44 @@ function _irrsubs(M::ModAlgAss{S, T}, N::ModAlgAss{S, T}) where {S, T}
   if a == 1
     return T[closure(kern, N.action)]
   end  
-  vects=T[sub(kern, i:i, 1:N.dimension) for i=1:a]
-
-  #
+  vects = T[sub(kern, i:i, 1:N.dimension) for i=1:a]
+  #First sieve: The vectors may be dependent when considering the structure of G-module.
+  #So I reduce the number of vectors by looking at the subspace they generate.
+  #If there is an inclusion, then I can remove them.  
+  closure_list = [closure(vects[1], N.action)]
+  final_vect_list = [vects[1]]
+  for i = 2:length(vects)
+    reduce=true
+    for j = 1:length(closure_list)      
+      w = cleanvect(closure_list[j], vects[i])
+      if iszero(w)
+        reduce = false
+        break
+      end
+    end  
+    if reduce
+      push!(final_vect_list, vects[i])
+      push!(closure_list, closure(vects[i], N.action))
+    end
+  end
+  if isone(length(final_vect_list))
+    return closure_list
+  end 
   #  Try all the possibilities. (A recursive approach? I don't know if it is a smart idea...)
   #  Notice that we eliminate lots of candidates considering the action of the group on the homomorphisms space
-  #
-  candidate_comb=append!(_enum_el(K,[K(0)], length(vects)-1),_enum_el(K,[K(1)],length(vects)-1))
-  deleteat!(candidate_comb,1)
-  list=Array{T,1}(undef, length(candidate_comb))
-  for j=1:length(candidate_comb)
-    list[j] = sum([candidate_comb[j][i]*vects[i] for i=1:length(vects)])
+
+  candidate_comb = append!(_enum_el(K,[K(0)], length(final_vect_list)-1),_enum_el(K,[K(1)],length(final_vect_list)-1))
+  deleteat!(candidate_comb, 1)
+  list = Array{T,1}(undef, length(candidate_comb))
+  for j = 1:length(candidate_comb)
+    list[j] = sum([candidate_comb[j][i]*final_vect_list[i] for i=1:length(final_vect_list)])
   end
   final_list=T[]
   push!(final_list, closure(list[1], N.action))
   for i = 2:length(list)
     reduce=true
     for j=1:length(final_list)      
-      w=cleanvect(final_list[j],list[i])
+      w = cleanvect(final_list[j],list[i])
       if iszero(w)
         reduce=false
         break
@@ -915,6 +934,12 @@ function powmod(f::Zmodn_poly, e::fmpz, g::Zmodn_poly)
   if nbits(e) <= 63
     return powmod(f, Int(e), g)
   else
-    error("Not implemented yet")
+    _e = BigInt()
+    z = parent(f)()
+    ccall((:fmpz_get_mpz, :libflint), Nothing, (Ref{BigInt}, Ref{fmpz}), _e, e)
+    ccall((:nmod_poly_powmod_mpz_binexp, :libflint), Nothing,
+          (Ref{Zmodn_poly}, Ref{Zmodn_poly}, Ref{BigInt}, Ref{Zmodn_poly}),
+           z, f, e, g)
+    return z
   end
 end
