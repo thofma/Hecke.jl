@@ -665,6 +665,7 @@ Hecke.one(Q::QadicRing) = QadicRingElem(Q.Q(1), Q)
 (Q::QadicRing)() = QadicRingElem(Q.Q(), Q)
 (Q::FlintQadicField)(a::QadicRingElem{qadic}) = a.x
 (Q::FlintPadicField)(a::QadicRingElem{padic}) = a.x
+(Q::FlintQadicField)(a::padic) = Q(lift(a)) #TODO: do properly
 Hecke.valuation(a::QadicRingElem) = valuation(a.x)
 Hecke.isunit(a::QadicRingElem) = valuation(a) == 0
 function Base.deepcopy_internal(a::QadicRingElem, dict::IdDict)
