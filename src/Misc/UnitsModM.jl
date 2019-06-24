@@ -356,7 +356,7 @@ end
 Tries to find g s.th. a^g == b under the assumption that g <= o.
 Uses Baby-Step-Giant-Step
 """
-function disc_log_bs_gs(a::Generic.Res{T}, b::Generic.Res{T}, o::fmpz) where {T <: Union{PolyElem, fmpz, fq_nmod_poly, fq_poly, nmod_poly}}
+function disc_log_bs_gs(a::Generic.ResF{T}, b::Generic.ResF{T}, o::fmpz) where {T <: Union{PolyElem, fmpz, fq_nmod_poly, fq_poly, nmod_poly}}
   b==1 && return fmpz(0)  
   b==a && return fmpz(1)
   if o < 100 
@@ -384,8 +384,8 @@ function disc_log_bs_gs(a::Generic.Res{T}, b::Generic.Res{T}, o::fmpz) where {T 
     for i=1:r
       b *= giant
       g += r
-      f = findfirst(baby, b)
-      f >0 && return fmpz(g+f-1)
+      f = findfirst(x -> x == b, baby)
+      f !== nothing && return fmpz(g+f-1)
     end
     throw("disc_log failed")
   end
