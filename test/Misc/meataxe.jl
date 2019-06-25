@@ -15,15 +15,11 @@
      M=Hecke.ModAlgAss(G)
      v=MatrixSpace(F,1,4)([1,0,0,0])
      X=Hecke.closure(v,M.action)
-     Y=Hecke.spinning(v,M.action)
      @test nrows(X)==2
-     @test nrows(Y)==2
-     rref!(Y)
-     @test X==Y
      w=MatrixSpace(F,1,4)([0,0,0,1])
      v=vcat(v,w)
      @test nrows(Hecke.closure(v,M.action))==4
- 
+
     end
     
     @testset "meataxe" begin

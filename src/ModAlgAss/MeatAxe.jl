@@ -38,18 +38,20 @@ function cleanvect(M::T, v::T) where {T}
 
 end
 
-#
-#  Given a matrix C containing the coordinates of vectors v_1,dots, v_k 
-#  in echelon form, the function computes a basis for the submodule they generate
-# 
+@doc Markdown.doc"""
+    closure(C::T, G::Array{T,1}) where T <: MatElem
 
+Given a matrix C representing a subspace of K^n and a list of matrices G representing endomorphisms of K^n,
+the function returns a matrix representing the closure of the subspace under the action, i.e. the smallest
+subspace of K^n invariant under the endomorphisms. 
+"""
 function closure(C::T, G::Array{T,1}) where {T}
   rref!(C)
   i=1
   while i <= nrows(C)
     w=view(C, i:i, 1:ncols(C))
     for j=1:length(G)
-      res=cleanvect(C,w*G[j])
+      res = cleanvect(C, w*G[j])
       if !iszero(res)
         C = vcat(C,res)  
         if nrows(C)==ncols(C)
@@ -68,39 +70,10 @@ function closure(C::T, G::Array{T,1}) where {T}
 end
 
 #
-#  Given a matrix C containing the coordinates of vectors v_1,dots, v_k,
-#  the function computes a basis for the submodule they generate
-# 
-
-function spinning(C::T,G::Array{T,1}) where {T}
-
-  B=deepcopy(C)
-  X=rref(C)[2]
-  i=1
-  while i != nrows(B)+1
-    for j=1:length(G)
-      el= view(B, i:i, 1:ncols(B)) * G[j]
-      res= cleanvect(X,el)
-      if !iszero(res)
-        X=vcat(X,res)
-        rref!(X)
-        B=vcat(B,el)
-        if nrows(B)==ncols(B)
-          return B
-        end
-      end
-    end  
-    i+=1
-  end
-  return B
-  
-end
-
-#
 #  Function to obtain the action of G on the quotient and on the submodule
 #
 
-function clean_and_quotient(M::T,N::T, pivotindex::Set{Int}) where {T}
+function clean_and_quotient(M::T, N::T, pivotindex::Set{Int}) where {T}
 
   coeff=zero_matrix(parent(M[1,1]),nrows(N),nrows(M))
   for i=1:nrows(N)
@@ -272,11 +245,10 @@ function dual_space(M::ModAlgAss{S, T, V}) where {S, T, V}
   return ModAlgAss(G)
 end
 
-function _subst(f::Nemo.PolyElem{T}, a::S) where {T <: Nemo.RingElement, S}
-   #S = parent(a)
+function _subst(f::Nemo.PolyElem{T}, a::MatElem{T}) where {T <: Nemo.RingElement}
    n = degree(f)
    if n < 0
-      return similar(a)#S()
+      return similar(a)
    elseif n == 0
       return coeff(f, 0) * identity_matrix(base_ring(a), nrows(a))
    elseif n == 1
@@ -325,7 +297,7 @@ function meataxe(M::ModAlgAss{S, T, V}) where {S, T, V}
   H = M.action
   if n == 1
     M.isirreducible = 1
-    return true, identity_matrix(base_ring(H[1]), n)
+    return true, identity_matrix(K, n)
   end
   
   
@@ -333,22 +305,22 @@ function meataxe(M::ModAlgAss{S, T, V}) where {S, T, V}
   filter!(x -> !iszero(x), G)
 
   if length(G) == 0
-    return false, matrix(base_ring(H[1]), 1, n, [one(base_ring(H[1])) for i = 1:n])
+    return false, matrix(K, 1, n, [one(K) for i = 1:n])
   end
-
-  if length(G)==1
+  
+  if isone(length(G))
     A = G[1]
-    poly=charpoly(Kx,A)
+    poly = minpoly(Kx, A)
     sq = factor_squarefree(poly)
     lf = factor(first(keys(sq.fac)))
     t = first(keys(lf.fac))
     if degree(t)==n
-      M.isirreducible= 1
-      return true, identity_matrix(base_ring(G[1]), n)
+      M.isirreducible = 1
+      return true, identity_matrix(K, n)
     else 
       N = _subst(t, A)
       null, kern = kernel(N, side = :left)
-      B = closure(sub(kern,1:1, 1:n), G)
+      B = closure(sub(kern, 1:1, 1:n), G)
       return false, B
     end
   end
@@ -359,16 +331,6 @@ function meataxe(M::ModAlgAss{S, T, V}) where {S, T, V}
 
 
   Gt = T[transpose(x) for x in M.action]
-  
-  #for i=1:max(length(M.action),9)
-  #  l1=rand(1:length(G))
-  #  l2=rand(1:length(G))
-  #  while l1 !=l2
-  #    l2=rand(1:length(G))
-  #  end
-  #  push!(G, G[l1]*G[l2])
-  #end
-  
   cnt = 0
   while true
     cnt += 1
@@ -387,13 +349,13 @@ function meataxe(M::ModAlgAss{S, T, V}) where {S, T, V}
     #
     A = zero_matrix(K, n, n)
     for i=1:length(G)
-      A += rand(K)*G[i]
+      add!(A, A, rand(K)*G[i])
     end
  
     #
     # Compute the characteristic polynomial and, for irreducible factor f, try the Norton test
     # 
-    poly=charpoly(Kx,A)
+    poly = minpoly(Kx, A)
     sqfpart = keys(factor_squarefree(poly).fac)
     for el in sqfpart
       sq = el
@@ -425,7 +387,7 @@ function meataxe(M::ModAlgAss{S, T, V}) where {S, T, V}
           if degree(t) == a
             # f is a good factor, irreducibility!
             M.isirreducible = 1
-            return true, identity_matrix(base_ring(G[1]), n)
+            return true, identity_matrix(K, n)
           end
         end
         i+=1
@@ -441,23 +403,23 @@ Given a Fq[G]-module M, it returns a composition series for M, i.e. a sequence o
 
 """
 function composition_series(M::ModAlgAss{S, T, V}) where {S, T, V}
-
+  
   if M.isirreducible == 1 || M.dimension == 1
-    return [identity_matrix(base_ring(M.action[1]), M.dimension)]
+    return [identity_matrix(base_ring(M.action[1]), dimension(M))]
   end
-
+  
   bool, C = meataxe(M)
   #
   #  If the module is irreducible, we return a basis of the space
   #
-  if bool == true
-    return [identity_matrix(base_ring(M.action[1]), M.dimension)]
+  if bool
+    return [identity_matrix(base_ring(M.action[1]), dimension(M))]
   end
   #
   #  The module is reducible, so we call the algorithm on the quotient and on the subgroup
   #
-  G=M.action
-  K=M.base_ring
+  G = M.action
+  K = M.base_ring
   
   rref!(C)
   
@@ -511,9 +473,7 @@ function composition_factors(M::ModAlgAss{S, T, V}; dimension::Int=-1) where {S,
  
   K=M.base_ring
   bool, C = meataxe(M)
-  #
   #  If the module is irreducible, we just return a basis of the space
-  #
   if bool
     if dimension!= -1 
       if M.dimension==dimension
@@ -526,18 +486,13 @@ function composition_factors(M::ModAlgAss{S, T, V}; dimension::Int=-1) where {S,
     end
   end
   G=M.action
-  #
+
   #  The module is reducible, so we call the algorithm on the quotient and on the subgroup
-  #
-  
   rref!(C)
-  
-  sub,quot,pivotindex=__split(C,G)
+  sub, quot, pivotindex = __split(C, G)
   sub_list = composition_factors(sub)
   quot_list = composition_factors(quot)
-  #
   #  Now, we check if the factors are isomorphic
-  #
   for i=1:length(sub_list)
     for j=1:length(quot_list)
       if isisomorphic(sub_list[i][1], quot_list[j][1])
@@ -553,7 +508,7 @@ end
 
 function _relations(M::ModAlgAss{S, T, V}, N::ModAlgAss{S, T, V}) where {S, T, V}
   @assert M.isirreducible == 1
-  G=M.action
+  G =M.action
   H=N.action
   K=base_ring(M)
   n=dimension(M)
@@ -626,64 +581,83 @@ function _irrsubs(M::ModAlgAss{S, T}, N::ModAlgAss{S, T}) where {S, T}
   #First sieve: The vectors may be dependent when considering the structure of G-module.
   #So I reduce the number of vectors by looking at the subspace they generate.
   #If there is an inclusion, then I can remove them.  
-  closure_list = [closure(vects[1], N.action)]
+  to_reduce = closure(vects[1], N.action)
   final_vect_list = [vects[1]]
   for i = 2:length(vects)
-    reduce=true
-    for j = 1:length(closure_list)      
-      w = cleanvect(closure_list[j], vects[i])
-      if iszero(w)
-        reduce = false
-        break
-      end
-    end  
-    if reduce
+    w = cleanvect(to_reduce, vects[i])
+    if !iszero(w)
       push!(final_vect_list, vects[i])
-      push!(closure_list, closure(vects[i], N.action))
-    end
+      to_reduce = vcat(vects[i], to_reduce)
+      to_reduce = closure(to_reduce, N.action)
+    end  
   end
   if isone(length(final_vect_list))
-    return closure_list
+    return [closure(final_vect_list[1], N.action)]
   end 
-  #  Try all the possibilities. (A recursive approach? I don't know if it is a smart idea...)
-  #  Notice that we eliminate lots of candidates considering the action of the group on the homomorphisms space
+  # Now, I have a list of generators as G-modules.
+  # Therefore I need to consider combinations as G-modules
+  return _submodules_direct_sum(final_vect_list, N)
 
-  candidate_comb = append!(_enum_el(K,[K(0)], length(final_vect_list)-1),_enum_el(K,[K(1)],length(final_vect_list)-1))
-  deleteat!(candidate_comb, 1)
-  list = Array{T,1}(undef, length(candidate_comb))
-  for j = 1:length(candidate_comb)
-    list[j] = sum([candidate_comb[j][i]*final_vect_list[i] for i=1:length(final_vect_list)])
-  end
-  final_list=T[]
-  push!(final_list, closure(list[1], N.action))
-  for i = 2:length(list)
-    reduce=true
-    for j=1:length(final_list)      
-      w = cleanvect(final_list[j],list[i])
-      if iszero(w)
-        reduce=false
-        break
+end
+
+function _all_combinations(M::MatElem{T}) where T
+  K = base_ring(M)
+  els = collect(x for x in K)
+  res = Vector{typeof(M)}(undef, length(els)*nrows(M))
+  ind = 1
+  m = zero_matrix(K, 1, nrows(M))
+  for i in CartesianIndices(Tuple(1:length(els) for i in 1:nrows(M)))
+    for j = 1:nrows(M)
+      m[1, j] = els[i[j]]
+    end
+    res[ind] = m * M
+    ind += 1
+  end  
+  return res
+end
+
+function _submodules_direct_sum(gens::Vector{T}, N::ModAlgAss{S, T, V}) where {S, T, V}
+  K = base_ring(N)
+  closures = [closure(x, N.action) for x in gens]
+  all_combinations = [_all_combinations(x) for x in closures]
+  res = Vector{T}()
+  for i = 1:length(gens)-1
+    #I have to list all the elements that have 1 in the first component and all the possible elements in the other.
+    it = CartesianIndices(Tuple(1:length(all_combinations[j]) for j = i+1:length(gens)))
+    m = zero_matrix(K, 0, dimension(N))
+    non_zero_el = all_combinations[i][1]
+    ind = 2
+    while iszero(non_zero_el)
+      non_zero_el = all_combinations[i][ind]
+      ind += 1
+    end
+    for I in it
+      m = non_zero_el
+      for s = 1:length(I)
+        m += all_combinations[i+s][I[s]]
       end
-    end  
-    if reduce
-      push!(final_list, closure(list[i],N.action))
+      push!(res, closure(m, N.action))
     end
   end
-  return final_list
-
+  non_zero_el = all_combinations[length(gens)][1]
+  ind = 2
+  while iszero(non_zero_el)
+    non_zero_el = all_combinations[length(gens)][ind]
+    ind += 1
+  end
+  push!(res, closure(non_zero_el, N.action))
+  return res
 end
 
 @doc Markdown.doc"""
     minimal_submodules(M::ModAlgAss)
 
 Given a Fq[G]-module M, it returns all the minimal submodules of M
-
 """
 function minimal_submodules(M::ModAlgAss{S, T, V}, dim::Int=M.dimension+1, lf = Tuple{ModAlgAss{S, T, V}, Int}[]) where {S, T, V}
   
   K = M.base_ring
   n = M.dimension
-  
   if isone(M.isirreducible)
     if dim >= n
       return T[identity_matrix(K, n)]
@@ -718,7 +692,6 @@ end
 Given a $G$-module $M$, it returns all the maximal submodules of M
 
 """
-
 function maximal_submodules(M::ModAlgAss{S, T, V}, index::Int=M.dimension, lf = Tuple{ModAlgAss{S, T, V}, Int}[]) where {S, T, V}
 
   M_dual = dual_space(M)
@@ -737,7 +710,6 @@ end
 Given a $G$-module $M$, it returns all the submodules of M
 
 """
-
 function submodules(M::ModAlgAss{S, T, V}) where {S, T, V}
 
   K=M.base_ring
@@ -766,27 +738,32 @@ function submodules(M::ModAlgAss{S, T, V}) where {S, T, V}
       push!(list,vcat(x,s))
     end
   end
-  for x in list
-    rref!(x)
-  end
-  i=2
-  while i<length(list)
-    j=i+1
-    while j<=length(list)
-      if nrows(list[j])!=nrows(list[i])
-        j+=1
-      elseif list[j]==list[i]
-        deleteat!(list, j)
-      else 
-        j+=1
-      end
+  for i = 1:length(list)
+    x = list[i]
+    rk = rref!(x)
+    if rk < nrows(x)
+      nx = sub(x, 1:rk, 1:ncols(x))
+      list[i] = nx
     end
-    i+=1
   end
-  append!(list,minlist)
   push!(list, zero_matrix(K, 0, M.dimension))
   push!(list, identity_matrix(K, M.dimension))
-  return list
+  append!(list, minlist)
+  res = T[list[1]]
+  for i = 2:length(list)
+    x = list[i]
+    found = false
+    for j = 1:length(res)
+      if x == res[j]
+        found = true
+        break
+      end
+    end
+    if !found
+      push!(res, x)
+    end
+  end
+  return res
   
 end
 
@@ -796,7 +773,6 @@ end
 Given a $G$-module $M$, it returns all the submodules of M of index q^index, where q is the order of the field
 
 """
-
 function submodules(M::ModAlgAss{S, T}, index::Int; comp_factors=Tuple{ModAlgAss{S, T}, Int}[]) where {S, T}
   
   K=M.base_ring
