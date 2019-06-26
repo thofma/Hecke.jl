@@ -133,7 +133,7 @@ function newton_lift(f::fmpz_poly, r::qadic)
   for p = reverse(chain)
     r.N = p
     o.N = p
-    Base.Q.prec_max = r.N
+    Q.prec_max = r.N
     setprecision!(qf, r.N)
     setprecision!(qfs, r.N)
     r = r - qf(r)*o
@@ -246,21 +246,24 @@ end
 
 #TODO: refine roots....
 
-t = Hecke.create_accessors(AnticNumberField, Dict{Int, qAdicRootCtx}, get_handle())
+t = Hecke.create_accessors(AnticNumberField, Dict{Int, Tuple{qAdicRootCtx, Dict{nf_elem, Any}}}, get_handle())
 global _get_nf_conjugate_data_qAdic = t[1]
 global _set_nf_conjugate_data_qAdic = t[2]
 
 mutable struct qAdicConj
   K::AnticNumberField
   C::qAdicRootCtx
+  cache::Dict{nf_elem, Any}
+
   function qAdicConj(K::AnticNumberField, p::Int)
     D = _get_nf_conjugate_data_qAdic(K, false)
     if D !== nothing
       if haskey(D, p)
-        return new(K, D[p])
+        Dp = D[p]
+        return new(K, Dp[1], Dp[2])
       end
     else
-      D = Dict{Int, qAdicRootCtx}()
+      D = Dict{Int, Tuple{qAdicRootCtx, Dict{nf_elem, Any}}}()
       _set_nf_conjugate_data_qAdic(K, D)
     end
     Zx = PolynomialRing(FlintZZ, cached = false)[1]
@@ -268,7 +271,8 @@ mutable struct qAdicConj
     r = new()
     r.C = C
     r.K = K
-    D[p] = C
+    r.cache = Dict{nf_elem, Any}()
+    D[p] = (C, r.cache)
     return r
   end
 end
@@ -276,7 +280,7 @@ end
 function Hecke.conjugates(a::nf_elem, C::qAdicConj, n::Int = 10)
   return _conjugates(a, C, n, x -> x, flat = false, all = true)
 end
-#TODO: implement a proper Frobneius - with caching of the frobenius_a element
+#TODO: implement a proper Frobenius - with caching of the frobenius_a element
 function _conjugates(a::nf_elem, C::qAdicConj, n::Int, op::Function; flat::Bool = true, all::Bool = false)
   R = roots(C.C, n)
   @assert parent(a) == C.K
@@ -314,16 +318,14 @@ function _log(a::qadic)
   return log(a*inv(teichmuller(a)))
 end
 
-log_cache = Dict{nf_elem, Any}()
 function Hecke.conjugates_log(a::nf_elem, C::qAdicConj, n::Int = 10)
-  global log_cache
-  if haskey(log_cache, a)
-    b = log_cache[a]
+  if haskey(C.cache, a)
+    b = C.cache[a]
     if b[1,1].N == n
       return b
     end
   end
-  return log_cache[a] = _conjugates(a, C, n, _log)
+  return C.cache[a] = _conjugates(a, C, n, _log)
 end
 
 function Hecke.conjugates_log(a::FacElem{nf_elem, AnticNumberField}, C::qAdicConj, n::Int = 10)
@@ -360,7 +362,6 @@ function Hecke.conjugates_log(a::FacElem{nf_elem, AnticNumberField}, C::qAdicCon
   return res
 end
 
-
 function mult_syzygies_units(A::Array{FacElem{nf_elem, AnticNumberField}, 1})
   p = next_prime(100)
   K = base_ring(parent(A[1]))
@@ -371,7 +372,7 @@ function mult_syzygies_units(A::Array{FacElem{nf_elem, AnticNumberField}, 1})
   end
          #experimentally, the runtime is dominated by log
   u = FacElem{nf_elem, AnticNumberField}[]
-  prec = 640
+  prec = 10
 
   r1, r2 = signature(K)
   r = r1+r2 -1
@@ -844,33 +845,93 @@ function Hecke.lift(C::HenselCtxQadic)
   C.p *= p
 end
 
-function factor(C::HenselCtxQadic)
+function Hecke.factor(C::HenselCtxQadic)
   return C.lf[1:C.n]
 end
 
 function Hecke.precision(C::HenselCtxQadic)
-  return C.N
+  return valuation(C.p)
 end
 
 function Hecke.prime(C::HenselCtxQadic)
   return C.p
 end
 
+function lift_root(f::fmpz_poly, a::nf_elem, o::nf_elem, p::fmpz, n::Int)
+  #f(a) = 0 mod p, o*f'(a) = 1 mod p, want f(a) = 0 mod p^n
+  k = 1
+  while k < n
+    p *= p
+    k *= 2
+
+    pa = [one(a)]
+    while length(pa) <= degree(f)
+      push!(pa, pa[end]*a)
+      mod_sym!(pa[end], p)
+    end
+    fa  = sum(coeff(f, i-1) * pa[i] for i=1:length(pa))
+    fsa = sum(coeff(f, i) * i * pa[i] for i=1:length(pa)-1)  
+    o = o*(2-fsa*o)
+    a = a - fa*o
+    mod_sym!(o, p)
+    mod_sym!(a, p)
+  end
+  return a
+end
+
 function completion(K::AnticNumberField, P::NfOrdIdl)
   p = minimum(P)
-  C = qAdicConj(K, p)
+  C = qAdicConj(K, Int(p))
   g = conjugates(P.gen_two.elem_in_nf, C)
-  @show map(valuation, g)
-  i = findfirst(x->valuation(x) > 0)
+  i = findfirst(x->valuation(x) > 0, g)
+  return completion(K, p, i)
+end
 
-  function inj(a::nf_elem, p::Int = 10)
-    return conjugates(a, p)[i]
+completion(K::AnticNumberField, p::Integer, i::Int) = completion(K, fmpz(p), i)
+
+function completion(K::AnticNumberField, p::fmpz, i::Int)
+  C = qAdicConj(K, Int(p))
+  @assert 0<i<= length(C.C.Q)
+
+  ca = conjugates(gen(K), C)[i]
+  function inj(a::nf_elem)
+    return conjugates(a, C, precision(parent(ca)))[i]
+  end
+  # gen(K) -> conj(a, p)[i] -> a = sum a_i o^i
+  # need o = sum o_i a^i
+  R, mR = ResidueField(parent(ca))
+  pa = [one(R), mR(ca)]
+  d = degree(R)
+  while length(pa) < d
+    push!(pa, pa[end]*pa[2])
+  end
+  m = matrix(GF(p), d, d, [coeff(pa[i], j-1) for j=1:d for i=1:d])
+  o = matrix(GF(p), d, 1, [coeff(gen(R), j-1) for j=1:d])
+  s = solve(m, o)
+  a = K()
+  for i=1:d
+    Hecke._num_setcoeff!(a, i-1, lift(s[i,1]))
+  end
+  f = defining_polynomial(parent(ca), FlintZZ)
+  fso = inv(derivative(f)(gen(R)))
+  o = matrix(GF(p), d, 1, [coeff(fso, j-1) for j=1:d])
+  s = solve(m, o)
+  b = K()
+  for i=1:d
+    Hecke._num_setcoeff!(b, i-1, lift(s[i,1]))
   end
 
-  function lift(a::qadic)
-
+  function lif(x::qadic)
+    c = lift_root(f, a, b, p, precision(x))
+    n = x.length
+    r = K(lift(coeff(x, n-1)))
+    while n > 1
+      n -= 1
+      r = r*c + lift(coeff(x, n-1))
+    end
+    return r*K(p)^valuation(x)
   end
-  return MapFromFunc(inj, lift, K, parent(g[i]))
+  return MapFromFunc(inj, lif, K, parent(ca))
 end
 
 function defining_polynomial(Q::FlintQadicField, P::Hecke.Ring = base_ring(Q))
@@ -884,6 +945,97 @@ function defining_polynomial(Q::FlintQadicField, P::Hecke.Ring = base_ring(Q))
   end
   return f
 end
+
+function defining_polynomial(Q::FqNmodFiniteField, P::Hecke.Ring = GF(characteristic(Q)))
+  Pt, t = PolynomialRing(P, cached = false)
+  f = Pt()
+  for i=0:Q.len-1
+    j = unsafe_load(reinterpret(Ptr{Int}, Q.j), i+1)
+    a = fmpz()
+    ccall((:fmpz_set, :libflint), Nothing, (Ref{fmpz}, Int64), a, Q.a+i*sizeof(Ptr))
+    setcoeff!(f, j, P(a))
+  end
+  return f
+end
+
+
+function reco(a::NfAbsOrdElem, M, pM)
+  m = matrix(FlintZZ, 1, degree(parent(a)), coordinates(a))
+  m = m - matrix(FlintZZ, 1, degree(parent(a)), map(x -> round(fmpz, x//pM[2]), m*pM[1]))*M
+  return parent(a)(collect(m))
+end
+
+function zassenhaus(f::fmpz_poly, P::NfOrdIdl, N::Int)
+  return zassenhaus(change_base_ring(f, nf(order(P))), P, N)
+end
+
+function zassenhaus(f::fmpq_poly, P::NfOrdIdl, N::Int)
+  return zassenhaus(change_base_ring(f, nf(order(P))), P, N)
+end
+
+function zassenhaus(f::PolyElem{nf_elem}, P::NfOrdIdl, N::Int)
+  K = base_ring(parent(f))
+  mC = completion(K, P)
+  C = codomain(mC)
+  setprecision!(C, N)
+  H = HenselCtxQadic(change_base_ring(f, mC))
+  while precision(H) < N
+    lift(H)
+  end
+
+  M = lll(basis_mat(P^N))
+  pM = pseudo_inv(M)
+
+  lf = factor(H)
+  zk = order(P)
+
+  S = MSet(map(x -> change_base_ring(x, y -> preimage(mC, y), parent(f)), lf))
+  #TODO: make subsets for Set
+  #TODO: test reco result for being small, do early abort
+  #TODO: test selected coefficients first without computing the product
+  #TODO: once a factor is found (need to enumerate by size!!!), remove stuff...
+  for s = Hecke.subsets(S)
+    if length(s) == 0
+      continue
+    end
+    g = prod(s)
+    println(g, " -> ", change_base_ring(g, x->reco(zk(x), M, pM)))
+  end
+
+
+end
+
+function van_hoeij(f::fmpz_poly, P::NfOrdIdl, N::Int)
+  return van_hoeij(change_base_ring(f, nf(order(P))), P, N)
+end
+
+function van_hoeij(f::fmpq_poly, P::NfOrdIdl, N::Int)
+  return van_hoeij(change_base_ring(f, nf(order(P))), P, N)
+end
+
+function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl, N::Int)
+  K = base_ring(parent(f))
+  mC = completion(K, P)
+  C = codomain(mC)
+  setprecision!(C, N)
+  H = HenselCtxQadic(change_base_ring(f, mC))
+  while precision(H) < N
+    lift(H)
+  end
+
+  M = lll(basis_mat(P^N))
+  pM = pseudo_inv(M)
+
+  lf = factor(H)
+  lf = [divexact(derivative(x)*H.f, x) for x = lf]
+  zk = order(P)
+
+
+  S = map(x -> change_base_ring(x, y -> preimage(mC, y), parent(f)), lf)
+  zkx = zk["x"][1]
+  return [change_base_ring(g, x->reco(zk(x), M, pM), zkx) for g = S]
+end
+
 
 
 end
