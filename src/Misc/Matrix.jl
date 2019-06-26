@@ -148,6 +148,7 @@ function scalar_matrix(R::Ring, n::Int, a::RingElement)
   for i in 1:n
     z[i, i] = b
   end
+  return z
 end
 
 function Array(a::fmpz_mat; S::Type{T} = fmpz) where T
