@@ -218,3 +218,8 @@ end
 > `L`.
 """
 coeff(::SimpleNumFieldElem, ::Int)
+
+# copy does not do anything (so far), this is only for compatibility with coeffs(::AbsAlgAssElem)
+function coeffs(a::SimpleNumFieldElem; copy::Bool = false)
+  return [ coeff(a, i) for i = 0:degree(parent(a)) - 1 ]
+end

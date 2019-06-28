@@ -1,4 +1,3 @@
-# include("AlgAss/AlgAssTypes.jl")
 include("AlgAss/AbsAlgAss.jl")
 include("AlgAss/AlgAss.jl")
 include("AlgAss/AlgGrp.jl")

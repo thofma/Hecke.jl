@@ -140,6 +140,11 @@ order_type(::Type{NfRel{T}}) where {T} = NfRelOrd{T, frac_ideal_type(order_type(
 
 @inline setcoeff!(a::NfRelElem{T}, i::Int, c::T) where {T} = setcoeff!(a.data, i, c)
 
+# copy does not do anything (so far), this is only for compatibility with coeffs(::AbsAlgAssElem)
+function coeffs(a::NfRelElem; copy::Bool = false)
+  return [ coeff(a, i) for i = 0:degree(parent(a)) - 1 ]
+end
+
 ################################################################################
 #
 #  Degree

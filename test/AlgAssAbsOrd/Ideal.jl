@@ -1,4 +1,30 @@
 @testset "AlgAssAbsOrdIdl" begin
+  QG = group_algebra(FlintQQ, GrpAbFinGen([ 4 ]))
+
+  @testset "Arithmetic" begin
+    O = any_order(QG)
+    I = 2*O
+    J = 4*O
+
+    @test I + J == I
+    @test I*J == 8*O
+    @test intersect(I, J) == J
+    @test I^2 == J
+    @test I^fmpz(2) == J
+  end
+
+  @testset "Prime ideals" begin
+    A = Hecke.quaternion_algebra(-1, -1)
+    OA = maximal_order(A)
+
+    p = prime_ideals_over(OA, 2)
+    @test length(p) == 1
+    @test p[1] == pradical(OA, 2)
+
+    p = prime_ideals_over(OA, 3)
+    @test length(p) == 1
+    @test p[1] == 3*OA
+  end
 
   @testset "Locally free basis" begin
     Qx, x = FlintQQ["x"]
@@ -6,7 +32,6 @@
     K, a = number_field(f, "a") # Gal(K/Q) == C_4
     OK = maximal_order(K)
 
-    QG = group_algebra(FlintQQ, GrpAbFinGen([ 4 ]))
     KtoQG, QGtoK = Hecke._find_isomorphism(K, QG)
     basisOK = [ KtoQG(b.elem_in_nf) for b in basis(OK) ]
     d = lcm([ denominator(b) for b in basisOK ])

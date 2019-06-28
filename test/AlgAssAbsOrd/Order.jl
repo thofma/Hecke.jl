@@ -1,5 +1,6 @@
-@testset "CSAMaxOrd" begin
-  
+@testset "AlgAssAbsOrd" begin
+  Qx, x = FlintQQ["x"]
+
   @testset "Quaternion Algebras" begin
     function sum_of_two_squares(a::fmpz)
       for i=1:Int(root(a,2))
@@ -8,11 +9,10 @@
             return true
           end
         end
-      end 
+      end
       return false
-    end 
-  
-    Qx,x = PolynomialRing(FlintQQ, "x")
+    end
+
     for b in Hecke.squarefree_up_to(100)[2:end]
       K,a=NumberField(x^2-b)
       O=maximal_order(K);
@@ -37,19 +37,17 @@
         @test !sum_of_two_squares(fmpz(b))
       end
     end
- 
+
     A=Hecke.quaternion_algebra(4,36)
     @test Hecke.issplit(A)
     A=Hecke.quaternion_algebra(-1,-1)
     O= Order(A, [A[i] for i=1:4])
     @test Hecke.schur_index_at_real_plc(O)==2
-    
+
   end
-  
-  
+
   @testset "Crossed Product Order" begin
-    
-    Qx,x = PolynomialRing(FlintQQ, "x")
+
     K, a = NumberField(x^4-4*x^2+1)
     O = maximal_order(K)
     Autos = Array{NfToNfMor, 1}(undef, 4)
@@ -77,4 +75,42 @@
     end
   end
 
+  @testset "Any order" begin
+    A = AlgAss(x^2 - fmpq(1, 5))
+
+    O = any_order(A)
+
+    # Test whether O is indeed an order
+    @test one(A) in O
+
+    for b in basis(O, copy = false)
+      @test isintegral(elem_in_algebra(b, copy = false))
+      for c in basis(O, copy = false)
+        @test elem_in_algebra(b*c, copy = false) in O
+      end
+    end
+
+    # Some more miscellaneous tests
+    b = rand(O, 10)
+    @test elem_in_algebra(b) in O
+
+    b = A([ fmpq(1), fmpq(1, 3) ])
+    @test denominator(b, O)*b in O
+  end
+
+  @testset "Maximal Order" begin
+    A = AlgAss(x^2 + 10x + 7)
+    AA = deepcopy(A) # avoid caching
+    O1 = maximal_order(A)
+    O2 = Hecke.maximal_order_via_decomposition(AA)
+    @test discriminant(O1) == discriminant(O2)
+
+    QG = group_algebra(FlintQQ, small_group(2, 1))
+    O = maximal_order(QG)
+    @test isone(abs(discriminant(O)))
+
+    M = matrix_algebra(FlintQQ, 3)
+    O = maximal_order(M)
+    @test isone(abs(discriminant(O)))
+  end
 end

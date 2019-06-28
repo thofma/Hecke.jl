@@ -4,6 +4,13 @@
 #
 ################################################################################
 
+@doc Markdown.doc"""
+    multiplicative_group(Q::AlgAssAbsOrdQuoRing)
+      -> GrpAbFinGen, GrpAbFinGenToAbsOrdMap
+    unit_group(Q::AlgAssAbsOrdQuoRing) -> GrpAbFinGen, GrpAbFinGenToAbsOrdMap
+
+> Returns the group $Q^\times$ and the injection $Q^\times -> Q$.
+"""
 function multiplicative_group(Q::AlgAssAbsOrdQuoRing)
   if !isdefined(Q, :multiplicative_group)
     O = base_ring(Q)

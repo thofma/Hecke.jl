@@ -1,3 +1,4 @@
+export issplit, multiplication_table, restrict_scalars, radical, center
 
 ################################################################################
 #
@@ -28,6 +29,13 @@ order_type(::Type{AlgAss{fmpq}}) = AlgAssAbsOrd{AlgAss{fmpq}, elem_type(AlgAss{f
 order_type(::AlgAss{T}) where { T <: NumFieldElem } = AlgAssRelOrd{T, frac_ideal_type(order_type(parent_type(T)))}
 order_type(::Type{AlgAss{T}}) where { T <: NumFieldElem } = AlgAssRelOrd{T, frac_ideal_type(order_type(parent_type(T)))}
 
+@doc Markdown.doc"""
+    multiplication_table(A::AlgAss; copy::Bool = true) -> Array{RingElem, 3}
+
+> Given an algebra $A$ this function returns the multiplication table of $A$:
+> If the function returns $M$ and the basis of $A$ is $e_1,\dots, e_n$ then
+> it holds $e_i \cdot e_j = \sum_k M[i, j, k] \cdot e_k$.
+"""
 function multiplication_table(A::AlgAss; copy::Bool = true)
   @assert !iszero(A)
   if copy
@@ -45,6 +53,11 @@ end
 
 iscommutative_known(A::AlgAss) = (A.iscommutative != 0)
 
+@doc Markdown.doc"""
+    iscommutative(A::AlgAss) -> Bool
+
+> Returns `true` if $A$ is a commutative ring and `false` otherwise.
+"""
 function iscommutative(A::AlgAss)
   if iscommutative_known(A)
     return A.iscommutative == 1
@@ -196,21 +209,52 @@ function AlgAss(f::PolyElem)
   return A
 end
 
+# Reduces the rows of M in `rows` modulo N in place.
+# Assumes that N is in lowerleft HNF.
+function reduce_rows_mod_hnf!(M::fmpz_mat, N::fmpz_mat, rows::Vector{Int})
+  for i in rows
+    for j = ncols(M):-1:1
+      if iszero(M[i, j])
+        continue
+      end
+
+      t = fdiv(M[i, j], N[j, j])
+      for k = 1:j
+        M[i, k] = M[i, k] - t*N[j, k]
+      end
+    end
+  end
+  return M
+end
+
+@doc Markdown.doc"""
+    quo(O::NfAbsOrd, I::NfAbsOrdIdl, p::Union{ Int, fmpz })
+    quo(O::AlgAssAbsOrd, I::AlgAssAbsOrdIdl, p::Union{ Int, fmpz })
+      -> AlgAss, AbsOrdToAlgAssMor
+
+> Given an ideal $I$ such that $p \cdot O \subseteq I \subseteq O$ this function
+> constructs $O/I$ as an algebra over $\mathbb F_p$ together with the projection
+> map $O \to O/I$.
+> It is assumed that $p$ is prime.
+"""
+quo(O::Union{NfAbsOrd, AlgAssAbsOrd}, I::Union{NfAbsOrdIdl, AlgAssAbsOrdIdl}, p::Union{Integer, fmpz}) = AlgAss(O, I, p)
+
 function AlgAss(O::Union{NfAbsOrd, AlgAssAbsOrd}, I::Union{NfAbsOrdIdl, AlgAssAbsOrdIdl}, p::Union{Integer, fmpz})
   @assert order(I) === O
 
   n = degree(O)
-  BO = basis(O, copy = false)
-  BOmod = elem_type(O)[ mod(v, I) for v in BO ]
-  Fp = GF(p, cached=false)
-  B = zero_matrix(Fp, n, n)
+
+  basis_elts = Vector{Int}()
   for i = 1:n
-    _b = coordinates(BOmod[i], copy = false)
-    for j = 1:n
-      B[i, j] = Fp(_b[j])
+    if valuation(basis_mat(I, copy = false)[i, i], p) == 0
+      continue
     end
+
+    push!(basis_elts, i)
   end
-  r = rref!(B)
+
+  r = length(basis_elts)
+  Fp = GF(p, cached = false)
 
   if r == 0
     A = _zero_algebra(Fp)
@@ -235,83 +279,45 @@ function AlgAss(O::Union{NfAbsOrd, AlgAssAbsOrd}, I::Union{NfAbsOrdIdl, AlgAssAb
     return A, OtoA
   end
 
-  b = Vector{fmpz}(undef, n)
-  bbasis = Vector{elem_type(O)}(undef, r)
-  for i = 1:r
-    for j = 1:n
-      b[j] = lift(B[i, j])
-    end
-    bbasis[i] = O(b)
-  end
-
-  _, perm, L, U = lu(transpose(B))
-
+  BO = basis(O, copy = false)
   mult_table = Array{elem_type(Fp), 3}(undef, r, r, r)
-
-  d = zero_matrix(Fp, n, 1)
-
-  iscom = true
-  if O isa AlgAssAbsOrd
-    iscom = iscommutative(O)
-  end
-
-  aux = O()
-
   for i = 1:r
+    M = representation_matrix(BO[basis_elts[i]])
+    if r != degree(O)
+      M = reduce_rows_mod_hnf!(M, basis_mat(I, copy = false), basis_elts)
+    end
     for j = 1:r
-      if iscom && j < i
-        continue
-      end
-      mul!(aux, bbasis[i], bbasis[j])
-      c = coordinates(mod(aux, I))
-      for k = 1:n
-        d[perm[k], 1] = c[k]
-      end
-      d = solve_lt(L, d)
-      d = solve_ut(U, d)
       for k = 1:r
-        mult_table[i, j, k] = deepcopy(d[k, 1])
-        if iscom && i != j
-          mult_table[j, i, k] = deepcopy(d[k, 1])
-        end
+        mult_table[i, j, k] = Fp(M[basis_elts[j], basis_elts[k]])
       end
     end
   end
 
-  if isone(bbasis[1])
+  if isone(BO[1])
     one = zeros(Fp, r)
     one[1] = Fp(1)
     A = AlgAss(Fp, mult_table, one)
   else
     A = AlgAss(Fp, mult_table)
   end
-  if iscom
+  if iscommutative(O)
     A.iscommutative = 1
   end
 
   local _image
 
-  let n = n, r = r, d = d, I = I, A = A, L = L, U = U, perm = perm
+  let I = I, A = A, basis_elts = basis_elts, Fp = Fp
     function _image(a::Union{NfAbsOrdElem, AlgAssAbsOrdElem})
-      c = coordinates(mod(a, I))
-      for k = 1:n
-        d[perm[k], 1] = c[k]
-      end
-      d = solve_lt(L, d)
-      d = solve_ut(U, d)
-      e = A()
-      for k = 1:r
-        e.coeffs[k] = deepcopy(d[k, 1])
-      end
-      return e
+      c = coordinates(mod(a, I), copy = false)
+      return A([ Fp(c[i]) for i in basis_elts ])
     end
   end
 
   local _preimage
 
-  let bbasis = bbasis, r = r
+  let BO = BO, basis_elts = basis_elts, r = r
     function _preimage(a::AlgAssElem)
-      return sum(lift(a.coeffs[i])*bbasis[i] for i = 1:r)
+      return sum(lift(coeffs(a, copy = false)[i])*BO[basis_elts[i]] for i = 1:r)
     end
   end
 
@@ -335,8 +341,18 @@ function reduce_vector_mod_hnf(v::fmpz_mat, M::fmpz_mat)
   return w
 end
 
-# Assumes pI \subseteq J \subseteq I
-# Returns I/J as O_K/p-algebra where O_K = base_ring(order(I))
+@doc Markdown.doc"""
+    quo(I::NfAbsOrdIdl, J::NfAbsOrdIdl, p::Union{ Int, fmpz })
+    quo(I::AlgAssAbsOrdIdl, J::AlgAssAbsOrdIdl, p::Union{ Int, fmpz })
+      -> AlgAss, AbsOrdToAlgAssMor
+
+> Given an ideal $J$ such that $p \cdot I \subseteq J \subseteq I$ this function
+> constructs $I/J$ as an algebra over $\mathbb F_p$ together with the projection
+> map $I \to I/J$.
+> It is assumed that $p$ is prime.
+"""
+quo(I::Union{ NfAbsOrdIdl, AlgAssAbsOrdIdl }, J::Union{ NfAbsOrdIdl, AlgAssAbsOrdIdl }, p::Union{ Integer, fmpz }) = AlgAss(I, J, p)
+
 function AlgAss(I::Union{ NfAbsOrdIdl, AlgAssAbsOrdIdl }, J::Union{NfAbsOrdIdl, AlgAssAbsOrdIdl}, p::Union{Integer, fmpz})
   @assert order(I) === order(J)
 
@@ -347,22 +363,17 @@ function AlgAss(I::Union{ NfAbsOrdIdl, AlgAssAbsOrdIdl }, J::Union{NfAbsOrdIdl, 
   BmatJinI = hnf(basis_mat(J, copy = false)*basis_mat_inv(I, copy = false), :lowerleft)
   @assert isone(BmatJinI.den) "J is not a subset of I"
   BmatJinI = BmatJinI.num
-  BImod = Vector{Vector{fmpz}}(undef, n)
-  t = zero_matrix(FlintZZ, 1, n)
+  basis_elts = Vector{Int}()
   for i = 1:n
-    t[1, i] = fmpz(1)
-    BImod[i] = reduce_vector_mod_hnf(t, BmatJinI)
-    t[1, i] = fmpz(0)
-  end
-  Fp = GF(p, cached=false)
-  B = zero_matrix(Fp, n, n)
-  for i = 1:n
-    _b = BImod[i]
-    for j = 1:n
-      B[i, j] = Fp(_b[j])
+    if valuation(BmatJinI[i, i], p) == 0
+      continue
     end
+
+    push!(basis_elts, i)
   end
-  r = rref!(B)
+
+  r = length(basis_elts)
+  Fp = GF(p, cached = false)
 
   if r == 0
     A = _zero_algebra(Fp)
@@ -387,108 +398,57 @@ function AlgAss(I::Union{ NfAbsOrdIdl, AlgAssAbsOrdIdl }, J::Union{NfAbsOrdIdl, 
     return A, OtoA
   end
 
-  bbasis = Vector{elem_type(O)}(undef, r)
-  aux = O()
-  for i = 1:r
-    bbasis[i] = O()
-    for j = 1:n
-      aux = mul!(aux, lift(B[i, j]), BI[j])
-      bbasis[i] = add!(bbasis[i], bbasis[i], aux)
-    end
-  end
-
-  _, perm, L, U = lu(transpose(B))
+  BI = basis(I, copy = false)
+  BmatI = basis_mat(I, copy = false)*basis_mat(O, copy = false)
+  BmatIinv = inv(BmatI)
 
   mult_table = Array{elem_type(Fp), 3}(undef, r, r, r)
-
-  d = zero_matrix(Fp, n, 1)
-
-  iscom = true
-  if O isa AlgAssAbsOrd
-    iscom = iscommutative(O)
-  end
-
-  t = FakeFmpqMat(zero_matrix(FlintZZ, 1, n))
   for i = 1:r
+    M = FakeFmpqMat(representation_matrix(elem_in_algebra(BI[basis_elts[i]])))
+    M = mul!(M, BmatI, M)
+    M = mul!(M, M, BmatIinv)
+    @assert M.den == 1
+    M = M.num # M is now the representation matrix in the basis of I
+    if r != degree(O)
+      M = reduce_rows_mod_hnf!(M, BmatJinI, basis_elts)
+    end
     for j = 1:r
-      if iscom && j < i
-        continue
-      end
-      aux = mul!(aux, bbasis[i], bbasis[j])
-      elem_to_mat_row!(t.num, 1, aux)
-      t = mul!(t, t, basis_mat_inv(I, copy = false))
-      @assert isone(t.den)
-      c = reduce_vector_mod_hnf(t.num, BmatJinI)
-      for k = 1:n
-        d[perm[k], 1] = c[k]
-      end
-      d = solve_lt(L, d)
-      d = solve_ut(U, d)
       for k = 1:r
-        mult_table[i, j, k] = deepcopy(d[k, 1])
-        if iscom && i != j
-          mult_table[j, i, k] = deepcopy(d[k, 1])
-        end
+        mult_table[i, j, k] = Fp(M[basis_elts[j], basis_elts[k]])
       end
     end
   end
 
-  if isone(bbasis[1])
-    one = zeros(Fp, r)
-    one[1] = Fp(1)
-    A = AlgAss(Fp, mult_table, one)
-  else
-    A = AlgAss(Fp, mult_table)
-  end
-  if iscom
+  A = AlgAss(Fp, mult_table)
+  if iscommutative(O)
     A.iscommutative = 1
   end
 
+  t = FakeFmpqMat(zero_matrix(FlintZZ, 1, n))
+
   local _image
 
-  let n = n, r = r, d = d, I = I, J = J, A = A, L = L, U = U, perm = perm, t = t
+  let BmatJinI = BmatJinI, I = I, r = r, A = A, t = t, Fp = Fp
     function _image(a::Union{NfAbsOrdElem, AlgAssAbsOrdElem})
       elem_to_mat_row!(t.num, 1, a)
       t = mul!(t, t, basis_mat_inv(I, copy = false))
       @assert isone(t.den) "Not an element of the domain"
       c = reduce_vector_mod_hnf(t.num, BmatJinI)
-      for k = 1:n
-        d[perm[k], 1] = c[k]
-      end
-      d = solve_lt(L, d)
-      d = solve_ut(U, d)
-      e = A()
-      for k = 1:r
-        e.coeffs[k] = deepcopy(d[k, 1])
-      end
-      return e
+      return A([ Fp(c[i]) for i in basis_elts ])
     end
   end
 
   local _preimage
 
-  let bbasis = bbasis, r = r
+  let BI = BI, basis_elts = basis_elts, r = r
     function _preimage(a::AlgAssElem)
-      return sum(lift(a.coeffs[i])*bbasis[i] for i = 1:r)
+      return sum(lift(coeffs(a, copy = false)[i])*BI[basis_elts[i]] for i = 1:r)
     end
   end
 
   OtoA = AbsOrdToAlgAssMor{typeof(O), elem_type(Fp)}(O, A, _image, _preimage)
 
   return A, OtoA
-end
-
-
-function _modular_basis(pb::Vector{Tuple{T, NfOrdFracIdl}}, p::NfOrdIdl) where T <: RelativeElement{nf_elem}
-  L = parent(pb[1][1])
-  K = base_ring(L)
-  basis = Array{elem_type(L), 1}()
-  u = L(K(uniformizer(p)))
-  for i = 1:degree(L)
-    v = valuation(pb[i][2], p)
-    push!(basis, (u^v)*pb[i][1])
-  end
-  return basis
 end
 
 #=
@@ -509,11 +469,21 @@ p = prime_decomposition(OK, 2)[1][1]
 # The idea is to compute pseudo-basis of O and I respectively, for which the
 # coefficient ideals have zero p-adic valuation. Then we can think in the
 # localization at p and do as in the case of principal ideal domains.
+@doc Markdown.doc"""
+    quo(O::NfRelOrd, I::NfRelOrdIdl, p::Union{ NfAbsOrdIdl, NfRelOrdIdl })
+    quo(O::AlgAssRelOrd, I::AlgAssRelOrdIdl, p::Union{ NfAbsOrdIdl, NfRelOrdIdl })
+      -> AlgAss, RelOrdToAlgAssMor
+
+> Given an ideal $I$ such that $p \cdot O \subseteq I \subseteq O$ this function
+> constructs $O/I$ as an algebra over the finite field $R/p$, where $R$ is the
+> order of $p$, together with the projection map $O \to O/I$.
+> It is assumed that `R == base_ring(O)` and that $p$ is prime.
+"""
+quo(O::Union{ NfRelOrd{T, S}, AlgAssRelOrd{T, S} }, I::Union{ NfRelOrdIdl{T, S}, AlgAssRelOrdIdl{T, S} }, p::Union{NfOrdIdl, NfRelOrdIdl}) where {T, S} = AlgAss(O, I, p)
+
 function AlgAss(O::Union{ NfRelOrd{T, S}, AlgAssRelOrd{T, S} }, I::Union{ NfRelOrdIdl{T, S}, AlgAssRelOrdIdl{T, S} }, p::Union{NfOrdIdl, NfRelOrdIdl}) where {T, S}
 
-  isalgass = ( O isa AlgAssRelOrd )
-
-  K = isalgass ? algebra(O) : nf(O)
+  K = _algebra(O)
 
   basisO = pseudo_basis(O, copy = false)
   new_basisO = Vector{Tuple{elem_type(K), S}}()
@@ -551,8 +521,7 @@ function AlgAss(O::Union{ NfRelOrd{T, S}, AlgAssRelOrd{T, S} }, I::Union{ NfRelO
   end
 
   Fp, mF = ResidueField(order(p), p)
-  KKK = isalgass ? base_ring(K) : base_field(K)
-  mmF = extend(mF, KKK)
+  mmF = extend(mF, _base_ring(K))
   invmmF = pseudo_inv(mmF)
 
   basis_elts = Int[]
@@ -595,17 +564,11 @@ function AlgAss(O::Union{ NfRelOrd{T, S}, AlgAssRelOrd{T, S} }, I::Union{ NfRelO
 
   reverse!(reducers)
 
-  tmp_matrix = zero_matrix(KKK, 1, degree(O))
+  tmp_matrix = zero_matrix(_base_ring(K), 1, degree(O))
 
   function _coeff(c)
-    if isalgass
-      for i = 1:degree(O)
-        tmp_matrix[1, i] = coeffs(c, copy = false)[i]
-      end
-    else
-      for i in 0:degree(O) - 1
-        tmp_matrix[1, i + 1] = coeff(c, i)
-      end
+    for i = 1:degree(O)
+      tmp_matrix[1, i] = coeffs(c, copy = false)[i]
     end
     return tmp_matrix*new_bmatinvO
   end
@@ -639,16 +602,12 @@ function AlgAss(O::Union{ NfRelOrd{T, S}, AlgAssRelOrd{T, S} }, I::Union{ NfRelO
   else
     A = AlgAss(Fp, mult_table)
   end
-  if !isalgass || iscommutative(O)
+  if iscommutative(O)
     A.iscommutative = 1
   end
 
   function _image(a::Union{ NfRelOrdElem, AlgAssRelOrdElem })
-    if isalgass
-      c = elem_in_algebra(a, copy = false)
-    else
-      c = a.elem_in_nf
-    end
+    c = _elem_in_algebra(a, copy = false)
     coeffs_c = _coeff(c)
     for k in reducers
       d = -coeffs_c[k]//new_bpmatI.matrix[k, k]
@@ -685,16 +644,24 @@ function AlgAss(O::Union{ NfRelOrd{T, S}, AlgAssRelOrd{T, S} }, I::Union{ NfRelO
   return A, OtoA
 end
 
-# Assumes pI \subseteq J \subseteq I
-# Returns I/J as O_K/p-algebra where O_K = base_ring(order(I))
+@doc Markdown.doc"""
+    quo(I::NfRelOrdIdl, J::NfRelOrdIdl, p::Union{ NfAbsOrdIdl, NfRelOrdIdl })
+    quo(I::AlgAssRelOrdIdl, J::AlgAssRelOrdIdl, p::Union{ NfAbsOrdIdl, NfRelOrdIdl })
+      -> AlgAss, RelOrdToAlgAssMor
+
+> Given an ideal $J$ such that $p \cdot I \subseteq J \subseteq I$ this function
+> constructs $I/J$ as an algebra over the finite field $R/p$, where $R$ is the
+> order of $p$, together with the projection map $I \to I/J$.
+> It is assumed that `R == base_ring(order(I))` and that $p$ is prime.
+"""
+quo(I::Union{ NfRelOrdIdl{T, S}, AlgAssRelOrdIdl{T, S} }, J::Union{ NfRelOrdIdl{T, S}, AlgAssRelOrdIdl{T, S} }, p::Union{NfOrdIdl, NfRelOrdIdl}) where {T, S} = AlgAss(I, J, p)
+
 function AlgAss(I::Union{ NfRelOrdIdl{T, S}, AlgAssRelOrdIdl{T, S} }, J::Union{ NfRelOrdIdl{T, S}, AlgAssRelOrdIdl{T, S} }, p::Union{NfOrdIdl, NfRelOrdIdl}) where {T, S}
   @assert order(I) === order(J)
 
   O = order(I)
-  isalgass = ( O isa AlgAssRelOrd )
 
-  K = isalgass ? algebra(O) : nf(O)
-  KKK = isalgass ? base_ring(K) : base_field(K)
+  K = _algebra(O)
 
   basisI = pseudo_basis(I, copy = false)
   new_basisI = Vector{Tuple{elem_type(K), S}}()
@@ -707,7 +674,7 @@ function AlgAss(I::Union{ NfRelOrdIdl{T, S}, AlgAssRelOrdIdl{T, S} }, J::Union{ 
   end
 
   # This matrix is NOT in the basis of the order!
-  new_bmatI = zero_matrix(KKK, degree(O), degree(O))
+  new_bmatI = zero_matrix(_base_ring(K), degree(O), degree(O))
   for i = 1:degree(O)
     elem_to_mat_row!(new_bmatI, i, new_basisI[i][1])
   end
@@ -735,7 +702,7 @@ function AlgAss(I::Union{ NfRelOrdIdl{T, S}, AlgAssRelOrdIdl{T, S} }, J::Union{ 
   end
 
   Fp, mF = ResidueField(order(p), p)
-  mmF = extend(mF, KKK)
+  mmF = extend(mF, _base_ring(K))
   invmmF = pseudo_inv(mmF)
 
   basis_elts = Int[]
@@ -778,17 +745,11 @@ function AlgAss(I::Union{ NfRelOrdIdl{T, S}, AlgAssRelOrdIdl{T, S} }, J::Union{ 
 
   reverse!(reducers)
 
-  tmp_matrix = zero_matrix(KKK, 1, degree(O))
+  tmp_matrix = zero_matrix(_base_ring(K), 1, degree(O))
 
   function _coeff(c)
-    if isalgass
-      for i = 1:degree(O)
-        tmp_matrix[1, i] = coeffs(c, copy = false)[i]
-      end
-    else
-      for i in 0:degree(O) - 1
-        tmp_matrix[1, i + 1] = coeff(c, i)
-      end
+    for i = 1:degree(O)
+      tmp_matrix[1, i] = coeffs(c, copy = false)[i]
     end
     return tmp_matrix*bmatinvI
   end
@@ -823,16 +784,12 @@ function AlgAss(I::Union{ NfRelOrdIdl{T, S}, AlgAssRelOrdIdl{T, S} }, J::Union{ 
   else
     A = AlgAss(Fp, mult_table)
   end
-  if !isalgass || iscommutative(O)
+  if iscommutative(O)
     A.iscommutative = 1
   end
 
   function _image(a::Union{ NfRelOrdElem, AlgAssRelOrdElem })
-    if isalgass
-      c = elem_in_algebra(a, copy = false)
-    else
-      c = a.elem_in_nf
-    end
+    c = _elem_in_algebra(a, copy = false)
     coeffs = _coeff(c)
     for k in reducers
       d = -coeffs[k]//new_bmatJinI[k, k]
@@ -1011,10 +968,14 @@ function _build_subalgebra_mult_table!(A::AlgAss{T}, B::MatElem{T}, return_LU::T
 end
 
 @doc Markdown.doc"""
-     subalgebra(A::AlgAss{T}, e::AlgAssElem{T, AlgAss{T}}, idempotent::Bool = false, action::Symbol = :left) where {T}
+     subalgebra(A::AlgAss, e::AlgAssElem, idempotent::Bool = false,
+                action::Symbol = :left)
+       -> AlgAss, AbsAlgAssMor
 
-Returns the algebra e*A (if action == :left) or A*e (if action == :right) and
-a map from this algebra to A.
+> Given an algebra $A$ and an element $e$, this function constructs the algebra
+> $e \cdot A$ (if `action == :left`) respectively $A \cdot e$ (if `action == :right`)
+> and a map from this algebra to $A$.
+> If `idempotent` is `true`, it is assumed that $e$ is idempotent in $A$.
 """
 function subalgebra(A::AlgAss{T}, e::AlgAssElem{T, AlgAss{T}}, idempotent::Bool = false, action::Symbol = :left) where {T}
   @assert parent(e) == A
@@ -1078,10 +1039,10 @@ function subalgebra(A::AlgAss{T}, e::AlgAssElem{T, AlgAss{T}}, idempotent::Bool 
 end
 
 @doc Markdown.doc"""
-    subalgebra(A::AlgAss{T}, basis::Vector{AlgAssElem{T, AlgAss{T}}}) where T
+    subalgebra(A::AlgAss, basis::Vector{AlgAssElem}) -> AlgAss, AbsAlgAssMor
 
-Returns the subalgebra of A generated by the elements in basis and a map
-from this algebra to A.
+> Returns the subalgebra of $A$ generated by the elements in `basis` and a map
+> from this algebra to $A$.
 """
 function subalgebra(A::AlgAss{T}, basis::Vector{AlgAssElem{T, AlgAss{T}}}) where T
   M = zero_matrix(base_ring(A), dim(A), dim(A))
@@ -1109,6 +1070,13 @@ function _assure_trace_basis(A::AlgAss{T}) where T
   return nothing
 end
 
+@doc Markdown.doc"""
+    trace_matrix(A::AlgAss) -> MatElem
+
+> Returns a matrix $M$ over the base ring of $A$ such that
+> $M_{i, j} = \mathrm{tr}(b_i \cdot b_j)$, where $b_1, \dots, b_n$ is the
+> basis of $A$.
+"""
 function trace_matrix(A::AlgAss)
   _assure_trace_basis(A)
   F = base_ring(A)
@@ -1134,10 +1102,9 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-     radical(A::AlgAss{T}) where { T <: Union{ gfp_elem, Generic.ResF{fmpz}, fq_nmod, fq, fmpq, nf_elem } }
+     radical(A::AlgAss) -> AbsAlgAssIdl
 
-Given an algebra over a finite field of prime order, this function
-returns the radical of A.
+> Returns the Jacobson-Radical of $A$.
 """
 function radical(A::AlgAss{T}) where { T <: Union{ gfp_elem, Generic.ResF{fmpz}, fq_nmod, fq, fmpq, nf_elem } }
   return ideal_from_gens(A, _radical(A), :twosided)
@@ -1301,9 +1268,9 @@ function _rep_for_center(M::T, A::AlgAss) where T<: MatElem
 end
 
 @doc Markdown.doc"""
-    center(A::AlgAss{T}) where T
+    center(A::AlgAss) -> AlgAss, AbsAlgAssMor
 
-Returns the center C of A and the inclusion C \to A.
+> Returns the center $C$ of $A$ and the inclusion $C \to A$.
 """
 function center(A::AlgAss{T}) where {T}
   if iscommutative(A)
@@ -1337,9 +1304,11 @@ end
     restrict_scalars(A::AlgAss{nf_elem}, Q::FlintRationalField)
     restrict_scalars(A::AlgAss{fq_nmod}, Fp::GaloisField)
     restrict_scalars(A::AlgAss{fq}, Fp::Generic.ResField{fmpz})
+      -> AlgAss, Function, Function
 
-Given an algebra over a field L and the prime field K of L, this function
-returns the the restriction B of A to K and maps from A to B and from B to A.
+> Given an algebra $A$ over a field $L$ and the prime field $K$ of $L$, this
+> function returns the restriction $B$ of $A$ to $K$ and maps from $A$ to $B$
+> and from $B$ to $A$.
 """
 # Top level functions to avoid "type mix-ups" (like AlgAss{fq_nmod} with FlintQQ)
 function restrict_scalars(A::AlgAss{nf_elem}, Q::FlintRationalField)
@@ -1446,6 +1415,14 @@ function _restrict_scalars_to_prime_field(A::AlgAss{T}, prime_field::Union{Flint
   return B, AtoB, BtoA
 end
 
+@doc Markdown.doc"""
+    restrict_scalars(A::AlgAss{nf_elem}, KtoL::NfToNfMor)
+      -> AlgAss, Function, Function
+
+> Given an algebra $A$ over a number field $L$ and an inclusion map `KtoL` from
+> a number field $K$ to $L$, this function returns the restriction $B$ of $A$
+> to $K$ and maps from $A$ to $B$ and from $B$ to $A$.
+"""
 function restrict_scalars(A::AlgAss{nf_elem}, KtoL::NfToNfMor)
   K = domain(KtoL)
   L = codomain(KtoL)
@@ -1917,4 +1894,68 @@ function _as_matrix_algebra(A::AlgAss{T}) where { T <: Union{gfp_elem, Generic.R
     elem_to_mat_row!(M, i, matrix_basis[i])
   end
   return B, hom(A, B, inv(M), M)
+end
+
+################################################################################
+#
+#  Schur Index at real place
+#
+################################################################################
+
+function trace_signature(A::AlgAss, P::InfPlc)
+  M = trred_matrix(basis(A))
+  Ky, y = PolynomialRing(base_ring(A), "y", cached = false)
+  f = charpoly(Ky, M)
+  npos = number_positive_roots(f, P)
+  return (npos, degree(f) - npos)
+end
+
+function schur_index_at_real_plc(A::AlgAss, P::InfPlc)
+  if dim(A) % 4 != 0
+    return 1
+  end
+  x = trace_signature(A, P)
+  n = root(dim(A),2)
+  if x[1] == divexact(n*(n+1),2)
+    return 1
+  else
+    return 2
+  end
+end
+
+################################################################################
+#
+#  Is split
+#
+################################################################################
+
+@doc Markdown.doc"""
+    issplit(A::AlgAss{fmpq}) -> Bool
+
+> Given a $\mathbb Q$-algebra $A$, this function returns `true` if $A$ splits
+> over $\mathbb Q$ and `false` otherwise.
+"""
+function issplit(A::AlgAss{fmpq})
+  O = Order(A, basis(A))
+  i = schur_index_at_real_plc(O)
+  if i==2
+    @vprint :AlgAssOrd 1 "Not split at the infinite prime\n"
+    return false
+  end
+  fac = factor(root(abs(discriminant(O)),2))
+  for (p,j) in fac
+    O1 = pmaximal_overorder(O, Int(p))
+    if valuation(discriminant(O1), Int(p)) != 0
+      @vprint :AlgAssOrd 1 "Not split at $p\n"
+      return false
+    end
+  end
+  return true
+end
+
+function issplit(A::AlgAss, P::InfPlc)
+  if iscomplex(P)
+    return true
+  end
+  return schur_index_at_real_plc(A, P) == 1
 end

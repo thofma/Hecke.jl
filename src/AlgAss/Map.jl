@@ -254,11 +254,12 @@ mutable struct AbsAlgAssToFqMor{S, T, MatType, PolyRingType} <: Map{S, T, HeckeM
   R::PolyRingType
   RtoFq::FqPolyRingToFqMor # only used if S == AbsAlgAss{fq} or S == AbsAlgAss{fq_nmod}
 
-  function AbsAlgAssToFqMor{S, T, MatType, PolyRingType}(A::S, Fq::T, M::MatType, N::MatType, R::PolyRingType, RtoFq::FqPolyRingToFqMor...) where {
-           S <: AbsAlgAss{S1} where { S1 <: Union{ gfp_elem, Generic.ResF{fmpz}, fq, fq_nmod} },
+  # First case: base_ring(A) == F_p
+  function AbsAlgAssToFqMor{S, T, MatType, PolyRingType}(A::S, Fq::T, M::MatType, N::MatType, R::PolyRingType) where {
+           S <: AbsAlgAss{S1} where { S1 <: Union{ gfp_elem, Generic.ResF{fmpz} } },
            T <: Union{ FqNmodFiniteField, FqFiniteField },
-           MatType <: Union{ gfp_mat, Generic.MatSpaceElem{Generic.ResF{fmpz}}, fq_nmod_mat, fq_mat },
-           PolyRingType <: Union{ GFPPolyRing, GFPFmpzPolyRing, FqNmodPolyRing, FqPolyRing }
+           MatType <: Union{ gfp_mat, Generic.MatSpaceElem{Generic.ResF{fmpz}} },
+           PolyRingType <: Union{ GFPPolyRing, GFPFmpzPolyRing }
     }
 
     z = new{S, T, MatType, PolyRingType}()
@@ -268,30 +269,18 @@ mutable struct AbsAlgAssToFqMor{S, T, MatType, PolyRingType} <: Map{S, T, HeckeM
     z.tt = zero_matrix(base_ring(A), 1, dim(A))
     z.R = R
 
-    isfq = ( base_ring(A) isa FqNmodFiniteField || base_ring(A) isa FqFiniteField )
-    if isfq
-      z.RtoFq = RtoFq[1]
-    end
-
-    function _image(x::AlgAssElem)
+    function _image(x::AbsAlgAssElem)
       @assert typeof(x) == elem_type(A)
       for i = 1:dim(A)
         z.t[1, i] = coeffs(x, copy = false)[i]
       end
       s = z.t*M
       sR = z.R([ s[1, i] for i = 1:dim(A) ])
-      if isfq
-        return Fq(z.RtoFq(sR))
-      else
-        return Fq(sR)
-      end
+      return Fq(sR)
     end
 
     function _preimage(x::Union{ fq_nmod, fq })
       @assert typeof(x) == elem_type(T)
-      if isfq
-        x = z.RtoFq\x
-      end
       for i = 1:dim(A)
         z.tt[1, i] = base_ring(A)(coeff(x, i - 1))
       end
@@ -302,6 +291,47 @@ mutable struct AbsAlgAssToFqMor{S, T, MatType, PolyRingType} <: Map{S, T, HeckeM
     z.header = MapHeader{S, T}(A, Fq, _image, _preimage)
     return z
   end
+
+  # Second case: base_ring(A) == F_p^n
+  function AbsAlgAssToFqMor{S, T, MatType, PolyRingType}(A::S, Fq::T, M::MatType, N::MatType, R::PolyRingType, RtoFq::FqPolyRingToFqMor) where {
+           S <: AbsAlgAss{S1} where { S1 <: Union{ fq, fq_nmod } },
+           T <: Union{ FqNmodFiniteField, FqFiniteField },
+           MatType <: Union{ fq_nmod_mat, fq_mat },
+           PolyRingType <: Union{ FqNmodPolyRing, FqPolyRing }
+    }
+
+    z = new{S, T, MatType, PolyRingType}()
+    z.mat = M
+    z.imat = N
+    z.t = zero_matrix(base_ring(A), 1, dim(A))
+    z.tt = zero_matrix(base_ring(A), 1, dim(A))
+    z.R = R
+    z.RtoFq = RtoFq
+
+    function _image(x::AbsAlgAssElem)
+      @assert typeof(x) == elem_type(A)
+      for i = 1:dim(A)
+        z.t[1, i] = coeffs(x, copy = false)[i]
+      end
+      s = z.t*M
+      sR = z.R([ s[1, i] for i = 1:dim(A) ])
+      return Fq(z.RtoFq(sR))
+    end
+
+    function _preimage(x::Union{ fq_nmod, fq })
+      @assert typeof(x) == elem_type(T)
+      x = z.RtoFq\x
+      for i = 1:dim(A)
+        z.tt[1, i] = base_ring(A)(coeff(x, i - 1))
+      end
+      s = z.tt*N
+      return A([ s[1, i] for i = 1:dim(A) ])
+    end
+
+    z.header = MapHeader{S, T}(A, Fq, _image, _preimage)
+    return z
+  end
+
 end
 
 function AbsAlgAssToFqMor(A::AbsAlgAss{gfp_elem}, Fq::FqNmodFiniteField, M::gfp_mat, N::gfp_mat, R::GFPPolyRing)
