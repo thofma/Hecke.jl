@@ -3,6 +3,7 @@ module QAdic
 
 using Hecke
 
+
 mutable struct qAdicRootCtx
   f::fmpz_poly
   p::Int
@@ -39,6 +40,13 @@ function Base.setprecision(q::qadic, N::Int)
   return r
 end
 
+function Base.setprecision(q::padic, N::Int)
+  r = parent(q)()
+  r.N = N
+  ccall((:padic_set, :libflint), Nothing, (Ref{padic}, Ref{padic}, Ref{FlintPadicField}), r, q, parent(q))
+  return r
+end
+
 export setprecision!
 
 function setprecision!(q::qadic, N::Int)
@@ -51,12 +59,25 @@ function setprecision!(Q::FlintQadicField, n::Int)
   Q.prec_max = n
 end
 
+function setprecision!(Q::FlintPadicField, n::Int)
+  Q.prec_max = n
+end
+
 function setprecision!(f::Generic.Poly{qadic}, N::Int)
   for i=1:length(f)
     f.coeffs[i].N = N
   end
   return f
 end
+
+function Base.setprecision(f::Generic.Poly{qadic}, N::Int)
+  f = deepcopy(f)
+  for i=1:length(f)
+    f.coeffs[i].N = N
+  end
+  return f
+end
+
 
 function setprecision!(a::AbstractArray{qadic}, N::Int)
   for x = a
@@ -76,6 +97,19 @@ function Base.setprecision(a::Generic.MatSpaceElem{qadic}, N::Int)
   b = deepcopy(a)
   setprecision!(b, N)
   return B
+end
+
+function Hecke.trace(r::qadic)
+  t = base_ring(parent(r))()
+  @show t.N
+  ccall((:qadic_trace, :libflint), Nothing, (Ref{padic}, Ref{qadic}, Ref{FlintQadicField}), t, r, parent(r))
+  return t
+end
+
+function Hecke.norm(r::qadic)
+  t = base_ring(parent(r))()
+  ccall((:qadic_norm, :libflint), Nothing, (Ref{padic}, Ref{qadic}, Ref{FlintQadicField}), t, r, parent(r))
+  return t
 end
 
 #XXX: valuation(Q(0)) == 0 !!!!!
@@ -128,6 +162,7 @@ function Hecke.setcoeff!(x::qadic, i::Int, y::padic)
   ccall((:padic_poly_set_coeff_padic, :libflint), Nothing, 
            (Ref{qadic}, Int, Ref{padic}, Ref{FlintQadicField}), x, i, y, parent(x))
 end
+
 function Hecke.setcoeff!(x::qadic, i::Int, y::UInt)
   R = FlintPadicField(prime(parent(x)), parent(x).prec_max)
   Y = R(fmpz(y))
@@ -156,6 +191,27 @@ function Hecke.ResidueField(Q::FlintQadicField)
   end
   return k, MapFromFunc(pro, lif, Q, k)
 end
+
+function Hecke.ResidueField(Q::FlintPadicField)
+  k = GF(Int(prime(Q)))
+  pro = function(x::padic)
+    v = valuation(x)
+    v < 0 && error("elt non integral")
+    v > 0 && return k(0)
+    z = k(lift(x))
+    return z
+  end
+  lif = function(x::Hecke.gfp_elem)
+    z = Q(lift(x))
+    return z
+  end
+  return k, MapFromFunc(pro, lif, Q, k)
+end
+
+function Hecke.base_ring(Q::FlintQadicField)
+  return FlintPadicField(prime(Q), precision(Q))
+end
+base_field(Q::FlintQadicField) = base_ring(Q)
 
 function Hecke.roots(f::fmpz_poly, Q::FlintQadicField; max_roots::Int = degree(f))
   k, mk = ResidueField(Q)
@@ -190,23 +246,41 @@ end
 
 #TODO: refine roots....
 
+t = Hecke.create_accessors(AnticNumberField, Dict{Int, Tuple{qAdicRootCtx, Dict{nf_elem, Any}}}, get_handle())
+global _get_nf_conjugate_data_qAdic = t[1]
+global _set_nf_conjugate_data_qAdic = t[2]
+
 mutable struct qAdicConj
   K::AnticNumberField
   C::qAdicRootCtx
+  cache::Dict{nf_elem, Any}
+
   function qAdicConj(K::AnticNumberField, p::Int)
+    D = _get_nf_conjugate_data_qAdic(K, false)
+    if D !== nothing
+      if haskey(D, p)
+        Dp = D[p]
+        return new(K, Dp[1], Dp[2])
+      end
+    else
+      D = Dict{Int, Tuple{qAdicRootCtx, Dict{nf_elem, Any}}}()
+      _set_nf_conjugate_data_qAdic(K, D)
+    end
     Zx = PolynomialRing(FlintZZ, cached = false)[1]
     C = qAdicRootCtx(Zx(K.pol), p)
     r = new()
     r.C = C
     r.K = K
+    r.cache = Dict{nf_elem, Any}()
+    D[p] = (C, r.cache)
     return r
   end
 end
 
 function Hecke.conjugates(a::nf_elem, C::qAdicConj, n::Int = 10)
-  return _conjugates(a, C, n, x -> x)
+  return _conjugates(a, C, n, x -> x, flat = false, all = true)
 end
-#TODO: implement a proper Frobneius - with caching of the frobenius_a element
+#TODO: implement a proper Frobenius - with caching of the frobenius_a element
 function _conjugates(a::nf_elem, C::qAdicConj, n::Int, op::Function; flat::Bool = true, all::Bool = false)
   R = roots(C.C, n)
   @assert parent(a) == C.K
@@ -244,16 +318,14 @@ function _log(a::qadic)
   return log(a*inv(teichmuller(a)))
 end
 
-log_cache = Dict{nf_elem, Any}()
 function Hecke.conjugates_log(a::nf_elem, C::qAdicConj, n::Int = 10)
-  global log_cache
-  if haskey(log_cache, a)
-    b = log_cache[a]
+  if haskey(C.cache, a)
+    b = C.cache[a]
     if b[1,1].N == n
       return b
     end
   end
-  return log_cache[a] = _conjugates(a, C, n, _log)
+  return C.cache[a] = _conjugates(a, C, n, _log)
 end
 
 function Hecke.conjugates_log(a::FacElem{nf_elem, AnticNumberField}, C::qAdicConj, n::Int = 10)
@@ -290,7 +362,6 @@ function Hecke.conjugates_log(a::FacElem{nf_elem, AnticNumberField}, C::qAdicCon
   return res
 end
 
-
 function mult_syzygies_units(A::Array{FacElem{nf_elem, AnticNumberField}, 1})
   p = next_prime(100)
   K = base_ring(parent(A[1]))
@@ -301,7 +372,7 @@ function mult_syzygies_units(A::Array{FacElem{nf_elem, AnticNumberField}, 1})
   end
          #experimentally, the runtime is dominated by log
   u = FacElem{nf_elem, AnticNumberField}[]
-  prec = 640
+  prec = 10
 
   r1, r2 = signature(K)
   r = r1+r2 -1
@@ -492,6 +563,9 @@ end
 Hecke.uniformizer(Q::FlintQadicField) = Q(prime(Q))
 Base.precision(Q::FlintQadicField) = Q.prec_max
 
+Hecke.uniformizer(Q::FlintPadicField) = Q(prime(Q))
+Base.precision(Q::FlintPadicField) = Q.prec_max
+
 function expand(a::qadic)
   @assert valuation(a-1)>0
   i = 1
@@ -516,71 +590,9 @@ Hecke.nrows(A::Array{T, 2}) where {T} = size(A)[1]
 Hecke.ncols(A::Array{T, 2}) where {T} = size(A)[2]
 
 
-struct LogData
-  rels::Array{qadic, 2}
-  gens::Array{qadic, 1}
-  lg::Array{qadic, 2}
-  V::Array{qadic, 1}
-end
-
-function prepro(Q::FlintQadicField)
-  n = precision(Q)
-  rels = Array{qadic, 2}(undef, 1, 1)
-  p = 2^nbits(n) + 1
-  setprecision!(Q, p)
-  pi = uniformizer(Q)
-  rels[1,1] = pi
-  gens = qadic[1+pi]
-  i = 2
-  while i <= n
-    @show ng = 1+pi^i
-    nm = Array{qadic, 2}(undef, nrows(rels), 1)
-    for j=1:nrows(rels)
-      @show mu = sum(rels[j, k]*log(gens[k]) for k=1:length(gens))//pi^i
-      nm[j,1] = setprecision(-mu, n)
-    end
-    rels = hcat(rels, nm)
-    nm = zeros(Q, 1, ncols(rels))
-    nm[end] = pi^i
-    @show size(rels), size(nm)
-    rels = vcat(rels, nm)
-    push!(gens, ng)
-    i *= 2
-  end
-  p = i
-  setprecision!(Q, p)
-  rels = setprecision(rels, p)
-  R = ring_of_integers(Q)
-  u = matrix(map(R, rels))
-  S, U, V = snf_with_transform(u)
-  n = length(gens)
-  @assert !iszero(S[n,n])
-  lp = qadic[gen(Q)]
-  for i=2:degree(Q)-1
-    push!(lp, lp[1]*lp[end])
-  end
-
-  lg = map(ij -> ij[1]^ij[2], Base.Iterators.ProductIterator((gens, lp)))
-  return LogData(rels, gens, lg, qadic[V[i, n].x for i=1:n])
-end
-
-function Base.log(a::qadic, L::LogData)
-  i = 1
-  pi = uniformizer(parent(a))
-  l = qadic[]
-  n = length(L.gens)
-  prec = precision(a)
-  while n > 0
-    z = setprecision(divexact(setprecision((a-1), 2*i), pi), prec)
-    #a*inv(1+pi^i)^z
-    #we have (1+pi^i)^gen
-  end
-
-
-end
-
 import Base.^
 ^(a::qadic, b::qadic) = exp(b*log(a))
+^(a::padic, b::padic) = exp(b*log(a))
 
 ################################################################################
 #
@@ -601,10 +613,12 @@ end
 function Hecke.ring_of_integers(Q::FlintQadicField)
   return QadicRing{FlintQadicField}(Q)
 end
+#Hecke.integers(Q::FlintQadicField) = ring_of_integers(Q)
 
 function Hecke.ring_of_integers(Q::FlintPadicField)
   return QadicRing{FlintPadicField}(Q)
 end
+#Hecke.integers(Q::FlintPadicField) = ring_of_integers(Q)
 
 struct QadicRingElem{S} <: RingElem
   x::S
@@ -628,6 +642,8 @@ import Base.*, Base.==, Base.+, Base.inv, Hecke.divexact, Hecke.canonical_unit,
 +(a::QadicRingElem, b::QadicRingElem) = QadicRingElem(a.x+b.x, a.P)
 -(a::QadicRingElem, b::QadicRingElem) = QadicRingElem(a.x-b.x, a.P)
 -(a::QadicRingElem) = QadicRingElem(-a.x, a.P)
+^(a::QadicRingElem, b::QadicRingElem) = QadicRingElem(a.x^b.x, a.P)
+^(a::T, b::QadicRingElem{T}) where {T} = a^b.x
 
 function inv(a::QadicRingElem) 
   valuation(a.x) == 0 || error("non unit")
@@ -659,18 +675,23 @@ function Base.div(a::QadicRingElem, b::QadicRingElem)
   return q
 end
 
-
 Hecke.parent(a::QadicRingElem) = a.P
 Hecke.elem_type(::Type{QadicRing{FlintPadicField}}) = QadicRingElem{padic}
 Hecke.elem_type(::Type{QadicRing{FlintQadicField}}) = QadicRingElem{qadic}
 Hecke.parent_type(::Type{QadicRingElem{padic}}) = QadicRing{FlintPadicField}
 Hecke.parent_type(::Type{QadicRingElem{qadic}}) = QadicRing{FlintQadicField}
+
 Hecke.zero(Q::QadicRing) = QadicRingElem(Q.Q(0), Q)
 Hecke.one(Q::QadicRing) = QadicRingElem(Q.Q(1), Q)
+
 (Q::QadicRing)(a::qadic) = QadicRingElem(a, Q)
+(Q::QadicRing)(a::padic) = QadicRingElem(a, Q)
 (Q::QadicRing)(a::QadicRingElem) = QadicRingElem(a.x, a.P)
 (Q::QadicRing)(a::Int) = QadicRingElem(Q.Q(a), Q)
 (Q::QadicRing)() = QadicRingElem(Q.Q(), Q)
+(Q::FlintQadicField)(a::QadicRingElem{qadic}) = a.x
+(Q::FlintPadicField)(a::QadicRingElem{padic}) = a.x
+(Q::FlintQadicField)(a::padic) = Q(lift(a)) #TODO: do properly
 Hecke.valuation(a::QadicRingElem) = valuation(a.x)
 Hecke.isunit(a::QadicRingElem) = valuation(a) == 0
 function Base.deepcopy_internal(a::QadicRingElem, dict::IdDict)
@@ -736,5 +757,285 @@ end
 function Base.setprecision(a::Generic.MatSpaceElem{QadicRingElem{qadic}}, n::Int)
   return matrix(map(x -> setprecision(x, n), a.entries))
 end
+
+Hecke.base_ring(Q::QadicRing) = integers(base_ring(Q.Q))
+
+#########################
+#
+#########################
+
+mutable struct HenselCtxQadic
+  f::PolyElem{qadic}
+  lf::Array{PolyElem{qadic}, 1}
+  la::Array{PolyElem{qadic}, 1}
+  p::qadic
+  n::Int
+  #TODO: lift over subfields first iff poly is defined over subfield
+  function HenselCtxQadic(f::PolyElem{qadic}, lfp::Array{fq_nmod_poly, 1})
+    @assert sum(map(degree, lfp)) == degree(f)
+    Q = base_ring(f)
+    Qx = parent(f)
+    K, mK = ResidueField(Q)
+    i = 1
+    la = Array{PolyElem{qadic}, 1}()
+    n = length(lfp)
+    while i < length(lfp)
+      f1 = lfp[i]
+      f2 = lfp[i+1]
+      g, a, b = gcdx(f1, f2)
+      @assert isone(g)
+      push!(la, setprecision(change_base_ring(a, x->preimage(mK, x), Qx), 1))
+      push!(la, setprecision(change_base_ring(b, x->preimage(mK, x), Qx), 1))
+      push!(lfp, f1*f2)
+      i += 2
+    end
+    return new(f, map(x->setprecision(change_base_ring(x, y->preimage(mK, y), Qx), 1), lfp), la, uniformizer(Q), n)
+  end
+
+  function HenselCtxQadic(f::PolyElem{qadic})
+    Q = base_ring(f)
+    K, mK = ResidueField(Q)
+    fp = change_base_ring(f, mK)
+    lfp = collect(keys(factor(fp).fac))
+    return HenselCtxQadic(f, lfp)
+  end
+end
+
+function Base.show(io::IO, C::HenselCtxQadic)
+  println(io, "Lifting tree for $(C.f), with $(C.n) factors, currently up precision $(valuation(C.p))")
+end
+
+function Hecke.lift(C::HenselCtxQadic)
+  i = length(C.lf)
+  j = i-1
+  p = C.p
+  N = valuation(p)
+  while j > 0
+    if i==length(C.lf)
+      f = C.f
+    else
+      f = C.lf[i]
+    end
+    #formulae and names from the Flint doc
+    h = C.lf[j]
+    g = C.lf[j-1]
+    b = C.la[j]
+    a = C.la[j-1]
+    setprecision!(h, 2*N)
+    setprecision!(g, 2*N)
+    setprecision!(a, 2*N)
+    setprecision!(b, 2*N)
+
+    fgh = (f-g*h)*inv(p)
+    G = rem(fgh*b, g)*p+g
+    H = rem(fgh*a, h)*p+h
+    t = (1-a*G-b*H)*inv(p)
+    B = rem(t*b, g)*p+b
+    A = rem(t*a, h)*p+a
+    if i < length(C.lf)
+      C.lf[i] = G*H
+    end
+    C.lf[j-1] = G
+    C.lf[j] = H
+    C.la[j-1] = A
+    C.la[j] = B
+    i -= 1
+    j -= 2
+  end
+  C.p *= p
+end
+
+function Hecke.factor(C::HenselCtxQadic)
+  return C.lf[1:C.n]
+end
+
+function Hecke.precision(C::HenselCtxQadic)
+  return valuation(C.p)
+end
+
+function Hecke.prime(C::HenselCtxQadic)
+  return C.p
+end
+
+function lift_root(f::fmpz_poly, a::nf_elem, o::nf_elem, p::fmpz, n::Int)
+  #f(a) = 0 mod p, o*f'(a) = 1 mod p, want f(a) = 0 mod p^n
+  k = 1
+  while k < n
+    p *= p
+    k *= 2
+
+    pa = [one(a)]
+    while length(pa) <= degree(f)
+      push!(pa, pa[end]*a)
+      mod_sym!(pa[end], p)
+    end
+    fa  = sum(coeff(f, i-1) * pa[i] for i=1:length(pa))
+    fsa = sum(coeff(f, i) * i * pa[i] for i=1:length(pa)-1)  
+    o = o*(2-fsa*o)
+    a = a - fa*o
+    mod_sym!(o, p)
+    mod_sym!(a, p)
+  end
+  return a
+end
+
+function completion(K::AnticNumberField, P::NfOrdIdl)
+  p = minimum(P)
+  C = qAdicConj(K, Int(p))
+  g = conjugates(P.gen_two.elem_in_nf, C)
+  i = findfirst(x->valuation(x) > 0, g)
+  return completion(K, p, i)
+end
+
+completion(K::AnticNumberField, p::Integer, i::Int) = completion(K, fmpz(p), i)
+
+function completion(K::AnticNumberField, p::fmpz, i::Int)
+  C = qAdicConj(K, Int(p))
+  @assert 0<i<= length(C.C.Q)
+
+  ca = conjugates(gen(K), C)[i]
+  function inj(a::nf_elem)
+    return conjugates(a, C, precision(parent(ca)))[i]
+  end
+  # gen(K) -> conj(a, p)[i] -> a = sum a_i o^i
+  # need o = sum o_i a^i
+  R, mR = ResidueField(parent(ca))
+  pa = [one(R), mR(ca)]
+  d = degree(R)
+  while length(pa) < d
+    push!(pa, pa[end]*pa[2])
+  end
+  m = matrix(GF(p), d, d, [coeff(pa[i], j-1) for j=1:d for i=1:d])
+  o = matrix(GF(p), d, 1, [coeff(gen(R), j-1) for j=1:d])
+  s = solve(m, o)
+  a = K()
+  for i=1:d
+    Hecke._num_setcoeff!(a, i-1, lift(s[i,1]))
+  end
+  f = defining_polynomial(parent(ca), FlintZZ)
+  fso = inv(derivative(f)(gen(R)))
+  o = matrix(GF(p), d, 1, [coeff(fso, j-1) for j=1:d])
+  s = solve(m, o)
+  b = K()
+  for i=1:d
+    Hecke._num_setcoeff!(b, i-1, lift(s[i,1]))
+  end
+
+  function lif(x::qadic)
+    c = lift_root(f, a, b, p, precision(x))
+    n = x.length
+    r = K(lift(coeff(x, n-1)))
+    while n > 1
+      n -= 1
+      r = r*c + lift(coeff(x, n-1))
+    end
+    return r*K(p)^valuation(x)
+  end
+  return MapFromFunc(inj, lif, K, parent(ca))
+end
+
+function defining_polynomial(Q::FlintQadicField, P::Hecke.Ring = base_ring(Q))
+  Pt, t = PolynomialRing(P, cached = false)
+  f = Pt()
+  for i=0:Q.len-1
+    j = unsafe_load(reinterpret(Ptr{Int}, Q.j), i+1)
+    a = fmpz()
+    ccall((:fmpz_set, :libflint), Nothing, (Ref{fmpz}, Int64), a, Q.a+i*sizeof(Ptr))
+    setcoeff!(f, j, P(a))
+  end
+  return f
+end
+
+function defining_polynomial(Q::FqNmodFiniteField, P::Hecke.Ring = GF(characteristic(Q)))
+  Pt, t = PolynomialRing(P, cached = false)
+  f = Pt()
+  for i=0:Q.len-1
+    j = unsafe_load(reinterpret(Ptr{Int}, Q.j), i+1)
+    a = fmpz()
+    ccall((:fmpz_set, :libflint), Nothing, (Ref{fmpz}, Int64), a, Q.a+i*sizeof(Ptr))
+    setcoeff!(f, j, P(a))
+  end
+  return f
+end
+
+
+function reco(a::NfAbsOrdElem, M, pM)
+  m = matrix(FlintZZ, 1, degree(parent(a)), coordinates(a))
+  m = m - matrix(FlintZZ, 1, degree(parent(a)), map(x -> round(fmpz, x//pM[2]), m*pM[1]))*M
+  return parent(a)(collect(m))
+end
+
+function zassenhaus(f::fmpz_poly, P::NfOrdIdl, N::Int)
+  return zassenhaus(change_base_ring(f, nf(order(P))), P, N)
+end
+
+function zassenhaus(f::fmpq_poly, P::NfOrdIdl, N::Int)
+  return zassenhaus(change_base_ring(f, nf(order(P))), P, N)
+end
+
+function zassenhaus(f::PolyElem{nf_elem}, P::NfOrdIdl, N::Int)
+  K = base_ring(parent(f))
+  mC = completion(K, P)
+  C = codomain(mC)
+  setprecision!(C, N)
+  H = HenselCtxQadic(change_base_ring(f, mC))
+  while precision(H) < N
+    lift(H)
+  end
+
+  M = lll(basis_mat(P^N))
+  pM = pseudo_inv(M)
+
+  lf = factor(H)
+  zk = order(P)
+
+  S = MSet(map(x -> change_base_ring(x, y -> preimage(mC, y), parent(f)), lf))
+  #TODO: make subsets for Set
+  #TODO: test reco result for being small, do early abort
+  #TODO: test selected coefficients first without computing the product
+  #TODO: once a factor is found (need to enumerate by size!!!), remove stuff...
+  for s = Hecke.subsets(S)
+    if length(s) == 0
+      continue
+    end
+    g = prod(s)
+    println(g, " -> ", change_base_ring(g, x->reco(zk(x), M, pM)))
+  end
+
+
+end
+
+function van_hoeij(f::fmpz_poly, P::NfOrdIdl, N::Int)
+  return van_hoeij(change_base_ring(f, nf(order(P))), P, N)
+end
+
+function van_hoeij(f::fmpq_poly, P::NfOrdIdl, N::Int)
+  return van_hoeij(change_base_ring(f, nf(order(P))), P, N)
+end
+
+function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl, N::Int)
+  K = base_ring(parent(f))
+  mC = completion(K, P)
+  C = codomain(mC)
+  setprecision!(C, N)
+  H = HenselCtxQadic(change_base_ring(f, mC))
+  while precision(H) < N
+    lift(H)
+  end
+
+  M = lll(basis_mat(P^N))
+  pM = pseudo_inv(M)
+
+  lf = factor(H)
+  lf = [divexact(derivative(x)*H.f, x) for x = lf]
+  zk = order(P)
+
+
+  S = map(x -> change_base_ring(x, y -> preimage(mC, y), parent(f)), lf)
+  zkx = zk["x"][1]
+  return [change_base_ring(g, x->reco(zk(x), M, pM), zkx) for g = S]
+end
+
+
 
 end

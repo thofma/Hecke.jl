@@ -258,15 +258,19 @@ end
 #
 ################################################################################
 
-function maximal_vector(M::MatElem{T}, Kt) where T <: FieldElem
+function maximal_vector(M::MatElem{T}, Kt, max_deg::Int = -1) where T <: FieldElem
   K = base_ring(M)
   v = zero_matrix(K, 1, ncols(M))
+  bound = ncols(M)
+  if max_deg != -1
+    bound = min(max_deg, bound)
+  end
   v[1, 1] = 1
   to_reduce, coeffs_vect = closure_with_pol(v, M)
   coeffs = T[-coeffs_vect[1, i] for i = 1:length(coeffs_vect)]
   push!(coeffs, K(1))
   mp = Kt(coeffs)
-  if nrows(to_reduce) == nrows(M)
+  if nrows(to_reduce) == bound
     return v, mp
   end
   rref!(to_reduce)
@@ -286,7 +290,7 @@ function maximal_vector(M::MatElem{T}, Kt) where T <: FieldElem
     if divides(mp, mp2)[1]
       continue
     end
-    if nrows(C1) == nrows(M)
+    if nrows(C1) == bound
       return v1, mp2
     end
     f1, f2 = coprime_fact(mp, mp2)
@@ -299,7 +303,7 @@ function maximal_vector(M::MatElem{T}, Kt) where T <: FieldElem
     coeffs = T[-coeffs_vect[1, i] for i = 1:length(coeffs_vect)]
     push!(coeffs, K(1))
     mp = Kt(coeffs)
-    if nrows(C) == nrows(M)
+    if nrows(C) == bound
       return v, mp
     end
   end
@@ -320,20 +324,57 @@ function coprime_fact(a::PolyElem{T}, b::PolyElem{T}) where T <: FieldElem
   return a1, b1
 end
 
-function find_invariant_complement(M::MatElem{T}, v::MatElem{T}, d::Int) where T <: FieldElem
-  N = zero_matrix(base_ring(M), nrows(M), d)
+function find_pivots(M::MatElem{T}) where T <: FieldElem
+  pivots = Vector{Int}(undef, nrows(M))
+  j = 1
   for i = 1:nrows(M)
-    N[i, 1] = v[1, i]
+    while iszero(M[i, j])
+      j += 1
+    end
+    pivots[i] = j
   end
-  w = transpose(v)
-  for i = 2:d
-    w = M*w
-    for j = 1:nrows(M)
-    	N[j, i] = w[j, 1]
+  return pivots
+end
+
+@doc Markdown.doc"""
+    complete_to_basis(C::MatElem{T}) where T <: FieldElem -> MatElem{T}
+Returns a matrix representing a basis of K^n whose first elements are given by the column of C
+"""
+function complete_to_basis(C::MatElem{T}) where T <: FieldElem
+  CEF = rref(C)[2]
+  pivots = find_pivots(CEF)
+  S = zero_matrix(base_ring(C), ncols(C), ncols(C))
+  _copy_matrix_into_matrix(S, 1, 1, C)
+  j = nrows(C)+1
+  for i = 1:ncols(C)
+    if i in pivots
+      continue
+    end
+    S[j, i] = 1
+    j += 1
+  end
+  return S
+end
+
+function find_invariant_complement(M::MatElem{T}, C::MatElem{T}) where T <: FieldElem
+  #I follow Geck's approach. It would be nice if we were able to do the computation without
+  # a base change
+  #First, I have to complete to a basis C
+  S = complete_to_basis(C)
+  Sinv = inv(S)
+  TB = S*M*Sinv
+  ed = zero_matrix(base_ring(M), ncols(C), 1)
+  ed[nrows(C), 1] = 1
+  N = zero_matrix(base_ring(M), ncols(C), ncols(C))
+  N[nrows(C), 1] = 1
+  for i = 2:nrows(C)
+    ed = TB*ed
+    for j = 1:ncols(C)
+      N[j, i] = ed[j, 1]
     end
   end
-  n, K = kernel(N, side = :left)
-  return K
+  k, K = kernel(N, side = :left)
+  return K*S
 end
 
 function _closure(M::MatElem{T}, v::MatElem{T}, d::Int) where T <: FieldElem
@@ -371,10 +412,11 @@ function _rational_canonical_form_setup(M::MatElem{T}) where T <: FieldElem
   gens = typeof(v)[v]
   C = _closure(M, v, degree(mp))
   push!(basis_transf, C)
-  K = find_invariant_complement(M, sub(C, nrows(C):nrows(C), 1:ncols(M)), degree(mp))
+  K = find_invariant_complement(M, C)
   N = restriction(M, K)
+  bound = degree(mp)
   while sum(nrows(x) for x in basis_transf) < nrows(M)
-    w, mp1 = maximal_vector(N, Kt)
+    w, mp1 = maximal_vector(N, Kt, bound)
     push!(pols, mp1)
     push!(gens, w*K)
     subclos = _closure(N, w, degree(mp1))
@@ -382,9 +424,10 @@ function _rational_canonical_form_setup(M::MatElem{T}) where T <: FieldElem
     if nrows(subclos) == nrows(N)
       break
     end
-    K1 = find_invariant_complement(N, sub(subclos, nrows(subclos):nrows(subclos), 1:ncols(N)), degree(mp1))
+    K1 = find_invariant_complement(N, subclos)
     K = K1*K
     N = restriction(M, K)
+    bound = degree(mp1)
   end
   return pols, basis_transf, gens
 end

@@ -411,7 +411,6 @@ end
 function conductors(O::NfOrd, a::Array{Int, 1}, bound::fmpz, tame::Bool=false)
   
   #Careful: I am assuming that a is in snf!
-  
   K=nf(O)
   d=degree(O)
   n = prod(a)
@@ -458,8 +457,17 @@ function conductors(O::NfOrd, a::Array{Int, 1}, bound::fmpz, tame::Bool=false)
     nbound = q^v + lp[1][2] * v * q^v - 1
 
     bound_max_ap = min(nbound, obound)  #bound on ap
-    bound_max_exp = div(q*bound_max_ap, q^v*(q-1)) #bound on the exponent in the conductor
-    #@show div(nbound, (q^(v-1))*(q-1)), div(q^v*lp[1][2], q-1)+1
+    bound_max_exp = div(bound_max_ap, (q-1)*q^(v-1)) #bound on the exponent in the conductor
+    
+    #Ramification groups bound
+    max_nontrivial_ramification_group = div(lp[1][2]*(q^v), q-1)
+    if v > 1
+      ram_groups_bound = max_nontrivial_ramification_group - sum(q^i for i = 1:v-1) + v 
+    else
+      ram_groups_bound = max_nontrivial_ramification_group + 1 
+    end
+    bound_max_exp = min(ram_groups_bound, bound_max_exp)
+    
     #The prime may be also tamely ramified!
     nisc = gcd(q^(fq)-1, expo)
     if nisc != 1
@@ -686,7 +694,7 @@ function conductorsQQ(O::NfOrd, a::Array{Int, 1}, bound::fmpz, tame::Bool=false)
     nnbound = valuation_bound_discriminant(n, q)
     k = div(expo, Int(q)-1)
     bound_max_ap = min(nbound, obound, nnbound)  #bound on ap
-    bound_max_exp = div(q*bound_max_ap, q^v*(q-1)) #bound on the exponent in the conductor
+    bound_max_exp = div(bound_max_ap, (q^(v-1))*(q-1)) #bound on the exponent in the conductor
     if nisc != 1
       fnisc=minimum(keys(factor(nisc).fac))
       nq=fmpz(q)^((fnisc-1)*(divexact(n, fnisc)))
@@ -1091,7 +1099,7 @@ function _C22_with_max_ord(l)
     B[2] = mS\(g[1])
     B[3] = mS\(g[2])
     B[4] = B[2] * B[3]
-    M = basis_mat(B)
+    M = basis_mat(B, FakeFmpqMat)
     hnf_modular_eldiv!(M.num, M.den, :lowerleft)
     O = NfAbsOrd(S, FakeFmpqMat(M.num, M.den))
     O.disc = d1^2*d2^2
@@ -1548,7 +1556,7 @@ function _from_relative_to_absQQ(L::NfRel_ns{T}, auts::Array{NfRel_nsToNfRel_nsM
   for i = 2:degree(Ks)
     arr_prim_img[i] = arr_prim_img[i-1]*mKs.prim_img
   end
-  M1 = inv(basis_mat(arr_prim_img))
+  M1 = inv(basis_mat(arr_prim_img, FakeFmpqMat))
   
   basisO2 = Array{nf_elem, 1}(undef, degree(Ks))
   M = zero_matrix(FlintZZ, 1, degree(Ks))
