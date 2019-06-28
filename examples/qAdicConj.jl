@@ -965,6 +965,13 @@ function reco(a::NfAbsOrdElem, M, pM)
   return parent(a)(collect(m))
 end
 
+function reco_inv(a::NfAbsOrdElem, M, pM)
+  m = matrix(FlintZZ, 1, degree(parent(a)), coordinates(a))
+  m = m - matrix(FlintZZ, 1, degree(parent(a)), map(x -> round(fmpz, x//pM[2]), m*pM[1]))*M
+  return parent(a)(collect(m*pM[1]))
+end
+
+
 function zassenhaus(f::fmpz_poly, P::NfOrdIdl, N::Int)
   return zassenhaus(change_base_ring(f, nf(order(P))), P, N)
 end
@@ -1001,8 +1008,6 @@ function zassenhaus(f::PolyElem{nf_elem}, P::NfOrdIdl, N::Int)
     g = prod(s)
     println(g, " -> ", change_base_ring(g, x->reco(zk(x), M, pM)))
   end
-
-
 end
 
 function van_hoeij(f::fmpz_poly, P::NfOrdIdl, N::Int)
@@ -1025,6 +1030,8 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl, N::Int)
 
   M = lll(basis_mat(P^N))
   pM = pseudo_inv(M)
+  F = FakeFmpqMat(pM)
+  pM = (F.num, F.den)
 
   lf = factor(H)
   lf = [divexact(derivative(x)*H.f, x) for x = lf]
@@ -1032,6 +1039,7 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl, N::Int)
 
 
   S = map(x -> change_base_ring(x, y -> preimage(mC, y), parent(f)), lf)
+  return hcat([vcat([coordinates(reco_inv(zk(coeff(S[i], j)), M, pM)) for j=0:degree(f)-1]...) for i=1:length(S)]...)
   zkx = zk["x"][1]
   return [change_base_ring(g, x->reco(zk(x), M, pM), zkx) for g = S]
 end
