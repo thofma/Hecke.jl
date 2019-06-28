@@ -1378,3 +1378,72 @@ function enum_units(O::AlgAssAbsOrd, g::fmpz)
   push!(result, L(A(E)))
   return result
 end
+
+#
+
+function random_units(M, B = 10)
+  b = rand(M, B)
+  f = minpoly(elem_in_algebra(b))
+  d = degree(f)
+  if d == 1
+    return random_units(M, B)
+  end
+  K,  = number_field(f)
+  OK = maximal_order(K)
+  if unit_rank(OK) == 0
+    return random_units(M, B)
+  end
+  @show K
+  U, mU = unit_group(OK)
+  res = elem_type(M)[]
+  for i in 1:ngens(U)
+    c = (elem_in_nf(mU(U[i])))
+    if !isone(denominator(c))
+      continue
+    end
+    uu = sum(coeff(c, i) * b^i for i in 0:(d-1))
+    push!(res, uu)
+  end
+  return res 
+end
+
+function _random_gl(M, m, k = 50)
+  u = elem_type(M)[]
+  while length(u) < k 
+    append!(u, random_units(M, 10))
+  end
+
+  s = ""
+  for i in 1:length(u) - 1
+    s = s * _to_magma("F", m(u[i]).matrix) * ", "
+  end
+  s = s * _to_magma("F", m(u[length(u)]).matrix) 
+  return s
+end
+
+function _to_magma(F, M)
+  v = [M[i, j] for i in 1:nrows(M) for j in 1:ncols(M)] 
+  s = "Matrix($F, $(nrows(M)), $(ncols(M)), ["
+  k = 0
+  for i in 1:nrows(M)
+    for j in 1:nrows(M)
+      k = k + 1
+      s = s * "$(M[i, j])"
+      if k < nrows(M) * ncols(M)
+        s = s * ", "
+      end
+    end
+  end
+  s = s * "])"
+  return s
+end
+
+function rand(M1, M2, k = rand(1:1000))
+  A = M1^0
+  for i in 1:k
+    rand() < 0.5 ? A = A * M1 : A = A * M2
+  end
+  return A
+end
+
+
