@@ -13,6 +13,8 @@ Returns the ambient number field of $\mathcal O$.
 """
 nf(O::NfRelOrd) = O.nf
 
+_algebra(O::NfRelOrd) = nf(O)
+
 @doc Markdown.doc"""
     parent(O::NfRelOrd) -> NfRelOrdSet
 
@@ -50,6 +52,8 @@ function ismaximal(O::NfRelOrd)
 end
 
 issimple(O::NfRelOrd) = issimple(nf(O))
+
+iscommutative(O::NfRelOrd) = true
 
 elem_type(::NfRelOrd{T, S}) where {T, S} = NfRelOrdElem{T}
 

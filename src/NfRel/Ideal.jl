@@ -977,12 +977,7 @@ end
 
 # Returns all prime ideals in O containing the prime number p
 function prime_ideals_over(O::NfRelOrd, p::Union{ Int, fmpz })
-  if base_ring(O) isa NfAbsOrd
-    pdec = prime_decomposition(base_ring(O), p)
-    pdec = [ pdec[i][1] for i = 1:length(pdec) ]
-  else
-    pdec = prime_ideals_over(base_ring(O), p)
-  end
+  pdec = prime_ideals_over(base_ring(O), p)
 
   primes = Vector{ideal_type(O)}()
   for q in pdec

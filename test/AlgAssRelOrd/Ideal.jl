@@ -1,16 +1,30 @@
 @testset "AlgAssRelOrdIdl" begin
+  Qx, x = FlintQQ["x"]
+  f = x^2 - 10x - 8
+  K, a = number_field(f, "a")
+  KG = group_algebra(K, GrpAbFinGen([ 2 ]))
+
+  @testset "Arithmetic" begin
+    O = any_order(KG)
+    I = 2*O
+    J = 4*O
+
+    @test I + J == I
+    @test I*J == 8*O
+    @test intersect(I, J) == J
+    @test I^2 == J
+    @test I^fmpz(2) == J
+
+    @test norm(I) == 4*base_ring(O)
+  end
 
   @testset "Locally free basis" begin
-    Qx, x = FlintQQ["x"]
-    f = x^2 - 10x - 8
-    K, a = number_field(f, "a")
     Ky, y = K["y"]
     OK = maximal_order(K)
     g = y^2 + 1
     L, b = number_field(g, "b") # Gal(L/K) == C_2
     OL = maximal_order(L)
 
-    KG = group_algebra(K, GrpAbFinGen([ 2 ]))
     LtoKG, KGtoL = Hecke._find_isomorphism(L, KG)
     basisOL = Vector{elem_type(KG)}()
     for i = 1:degree(L)

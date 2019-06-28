@@ -1,3 +1,10 @@
+export left_order, right_order, normred, locally_free_basis, islocally_free
+
+@doc Markdown.doc"""
+    order(I::AlgAssRelOrdIdl) -> AlgAssRelOrd
+
+> Returns the order containing $I$.
+"""
 @inline order(I::AlgAssRelOrdIdl) = I.order
 
 iszero(I::AlgAssRelOrdIdl) = (I.iszero == 1)
@@ -67,18 +74,18 @@ function assure_has_pseudo_basis(a::AlgAssRelOrdIdl)
     error("No pseudo_basis and no basis_pmat defined.")
   end
   P = basis_pmat(a, copy = false)
-  B = basis_alg(order(a), copy = false)
+  B = pseudo_basis(order(a), copy = false)
   A = algebra(order(a))
   K = base_ring(A)
-  pseudo_basis = Vector{Tuple{elem_type(A), frac_ideal_type(order_type(K))}}()
+  pb = Vector{Tuple{elem_type(A), frac_ideal_type(order_type(K))}}()
   for i = 1:dim(A)
     t = A()
     for j = 1:dim(A)
-      t += P.matrix[i, j]*B[j]
+      t += P.matrix[i, j]*B[j][1]
     end
-    push!(pseudo_basis, (t, deepcopy(P.coeffs[i])))
+    push!(pb, (t, deepcopy(P.coeffs[i])))
   end
-  a.pseudo_basis = pseudo_basis
+  a.pseudo_basis = pb
   return nothing
 end
 
@@ -104,6 +111,13 @@ end
 #
 ################################################################################
 
+@doc Markdown.doc"""
+    pseudo_basis(a::AlgAssRelOrdIdl; copy::Bool = true)
+
+> Returns the pseudo basis of $a$, i. e. a vector $v$ of pairs $(e_i, a_i)$ such
+> that $a = \bigoplus_i a_i e_i$, where $e_i$ is an element of the algebra
+> containing $a$ and $a_i$ is a fractional ideal of `base_ring(order(a))`.
+"""
 function pseudo_basis(a::AlgAssRelOrdIdl; copy::Bool = true)
   assure_has_pseudo_basis(a)
   if copy
@@ -113,6 +127,11 @@ function pseudo_basis(a::AlgAssRelOrdIdl; copy::Bool = true)
   end
 end
 
+@doc Markdown.doc"""
+    basis_pmat(a::AlgAssRelOrdIdl; copy::Bool = true) -> PMat
+
+> Returns the basis pseudo-matrix of $a$ with respect to the basis of the order.
+"""
 function basis_pmat(a::AlgAssRelOrdIdl; copy::Bool = true)
   assure_has_basis_pmat(a)
   if copy
@@ -128,6 +147,12 @@ end
 #
 ################################################################################
 
+@doc Markdown.doc"""
+    basis_mat(a::AlgAssRelOrdIdl; copy::Bool = true) -> MatElem
+
+> Returns the basis matrix of $a$, that is the basis pseudo-matrix of $a$ without
+> the coefficient ideals.
+"""
 function basis_mat(a::AlgAssRelOrdIdl; copy::Bool = true)
   assure_has_basis_mat(a)
   if copy
@@ -137,6 +162,11 @@ function basis_mat(a::AlgAssRelOrdIdl; copy::Bool = true)
   end
 end
 
+@doc Markdown.doc"""
+    basis_mat_inv(a::AlgAssRelOrdIdl; copy::Bool = true) -> MatElem
+
+> Returns the inverse of the basis matrix of $a$.
+"""
 function basis_mat_inv(a::AlgAssRelOrdIdl; copy::Bool = true)
   assure_has_basis_mat_inv(a)
   if copy
@@ -152,6 +182,11 @@ end
 #
 ################################################################################
 
+@doc Markdown.doc"""
+    +(a::AlgAssRelOrdIdl, b::AlgAssRelOrdIdl) -> AlgAssRelOrdIdl
+
+> Returns $a + b$.
+"""
 function +(a::AlgAssRelOrdIdl{S, T}, b::AlgAssRelOrdIdl{S, T}) where {S, T}
   if iszero(a)
     return deepcopy(b)
@@ -165,6 +200,11 @@ function +(a::AlgAssRelOrdIdl{S, T}, b::AlgAssRelOrdIdl{S, T}) where {S, T}
   return ideal(order(a), M, :nothing, false, true)
 end
 
+@doc Markdown.doc"""
+    *(a::AlgAssRelOrdIdl, b::AlgAssRelOrdIdl) -> AlgAssRelOrdIdl
+
+> Returns $a \cdot b$.
+"""
 function *(a::AlgAssRelOrdIdl{S, T}, b::AlgAssRelOrdIdl{S, T}) where {S, T}
   if iszero(a)
     return deepcopy(a)
@@ -197,9 +237,20 @@ function *(a::AlgAssRelOrdIdl{S, T}, b::AlgAssRelOrdIdl{S, T}) where {S, T}
   return ideal(order(a), H, :nothing, false, true)
 end
 
+@doc Markdown.doc"""
+    ^(a::AlgAssRelOrdIdl, e::Int) -> AlgAssRelOrdIdl
+    ^(a::AlgAssRelOrdIdl, e::fmpz) -> AlgAssRelOrdIdl
+
+> Returns $a^e$.
+"""
 ^(A::AlgAssRelOrdIdl, e::Int) = Base.power_by_squaring(A, e)
 ^(A::AlgAssRelOrdIdl, e::fmpz) = Base.power_by_squaring(A, BigInt(e))
 
+@doc Markdown.doc"""
+    intersect(a::AlgAssRelOrdIdl, b::AlgAssRelOrdIdl) -> AlgAssRelOrdIdl
+
+> Returns $a \cap b$.
+"""
 function intersect(a::AlgAssRelOrdIdl{S, T}, b::AlgAssRelOrdIdl{S, T}) where {S, T}
   d = degree(order(a))
   Ma = basis_pmat(a)
@@ -225,6 +276,17 @@ function defines_ideal(O::AlgAssRelOrd{S, T}, M::PMat{S, T}) where {S, T}
   return _spans_subset_of_pseudohnf(M, I, :lowerleft)
 end
 
+@doc Markdown.doc"""
+    ideal(O::AlgAssRelOrd, M::PMat, side::Symbol = :nothing, check::Bool = true,
+          M_in_hnf::Bool = false)
+      -> AlgAssRelOrdIdl
+
+> Returns the ideal of $O$ with basis pseudo-matrix $M$.
+> If the ideal is known to be a right/left/twosided ideal of $O$, `side` may be
+> set to `:right`/`:left`/`:twosided` respectively.
+> If `check == false` it is not checked whether $M$ defines an ideal of $O$.
+> If `M_in_hnf == true` it is assumed that $M$ is already in lower left pseudo HNF.
+"""
 function ideal(O::AlgAssRelOrd{S, T}, M::PMat{S, T}, side::Symbol = :nothing, check::Bool = true, M_in_hnf::Bool = false) where {S, T}
   if check
     !defines_ideal(O, M) && error("The pseudo-matrix does not define an ideal.")
@@ -235,11 +297,26 @@ function ideal(O::AlgAssRelOrd{S, T}, M::PMat{S, T}, side::Symbol = :nothing, ch
   return a
 end
 
+@doc Markdown.doc"""
+    ideal(O::AlgAssRelOrd, M::Generic.Mat, side::Symbol = :nothing,
+          check::Bool = true)
+      -> AlgAssRelOrdIdl
+
+> Returns the ideal of $O$ with basis matrix $M$.
+> If the ideal is known to be a right/left/twosided ideal of $O$, `side` may be
+> set to `:right`/`:left`/`:twosided` respectively.
+> If `check == false` it is not checked whether $M$ defines an ideal of $O$.
+"""
 function ideal(O::AlgAssRelOrd{S, T}, M::Generic.Mat{S}, side::Symbol = :nothing, check::Bool = true) where {S, T}
   coeffs = deepcopy(basis_pmat(O, copy = false).coeffs)
   return ideal(O, PseudoMatrix(M, coeffs), side, check)
 end
 
+@doc Markdown.doc"""
+    ideal(O::AlgAssRelOrd, x::AlgAssRelOrdElem) -> AlgAssRelOrdIdl
+
+> Returns the twosided principal ideal of $O$ generated by $x$.
+"""
 function ideal(O::AlgAssRelOrd{S, T}, x::AlgAssRelOrdElem{S, T}) where {S, T}
   @assert parent(x) == O
 
@@ -279,6 +356,12 @@ function ideal(O::AlgAssRelOrd{S, T}, x::AlgAssRelOrdElem{S, T}) where {S, T}
   return ideal(O, M, :twosided, false, true)
 end
 
+@doc Markdown.doc"""
+    ideal(O::AlgAssRelOrd, x::AlgAssRelOrdElem, action::Symbol) -> AlgAssRelOrdIdl
+
+> Returns the ideal $x \cdot O$, if `action == :left`, and $O \cdot x$, if
+> `action == :right`.
+"""
 function ideal(O::AlgAssRelOrd{S, T}, x::AlgAssRelOrdElem{S, T}, action::Symbol) where {S, T}
   @assert parent(x) == O
   M = representation_matrix(x, action)
@@ -293,9 +376,28 @@ function ideal(O::AlgAssRelOrd{S, T}, x::AlgAssRelOrdElem{S, T}, action::Symbol)
   return a
 end
 
+@doc Markdown.doc"""
+    *(O::AlgAssRelOrd, x::AlgAssRelOrdElem) -> AlgAssRelOrdIdl
+    *(O::AlgAssRelOrd, x::Int) -> AlgAssRelOrdIdl
+    *(O::AlgAssRelOrd, x::fmpz) -> AlgAssRelOrdIdl
+    *(x::AlgAssRelOrdElem, O::AlgAssRelOrd) -> AlgAssRelOrdIdl
+    *(x::Int, O::AlgAssRelOrd) -> AlgAssRelOrdIdl
+    *(x::fmpz, O::AlgAssRelOrd) -> AlgAssRelOrdIdl
+
+> Returns the ideal $O \cdot x$ or $x \cdot O$ respectively.
+"""
 *(O::AlgAssRelOrd{S, T}, x::AlgAssRelOrdElem{S, T}) where {S, T} = ideal(O, x, :right)
 *(x::AlgAssRelOrdElem{S, T}, O::AlgAssRelOrd{S, T}) where {S, T} = ideal(O, x, :left)
+*(O::AlgAssRelOrd{S, T}, x::Union{ Int, fmpz }) where {S, T} = ideal(O, O(x), :right)
+*(x::Union{ Int, fmpz }, O::AlgAssRelOrd{S, T}) where {S, T} = ideal(O, O(x), :left)
 
+@doc Markdown.doc"""
+    ideal(O::AlgAssRelOrd, a::NfOrdFracIdl, check::Bool = true) -> AlgAssRelOrdIdl
+    ideal(O::AlgAssRelOrd, a::NfRelOrdFracIdl, check::Bool = true) -> AlgAssRelOrdIdl
+
+> Returns the ideal $a \cdot O$ where $a$ is a fractional ideal of `base_ring(O)`.
+> If `check == false` it is not checked whether this defines an ideal of $O$.
+"""
 function ideal(O::AlgAssRelOrd{S, T}, a::T, check::Bool = true) where {S, T}
   d = degree(O)
   pb = pseudo_basis(O, copy = false)
@@ -308,26 +410,52 @@ function ideal(O::AlgAssRelOrd{S, T}, a::T, check::Bool = true) where {S, T}
   return ideal(O, PM, :twosided, false, true)
 end
 
-function ideal(O::AlgAssRelOrd{nf_elem, NfOrdFracIdl}, a::NfOrdIdl, check::Bool = true)
+@doc Markdown.doc"""
+    ideal(O::AlgAssRelOrd, a::NfAbsOrdIdl) -> AlgAssRelOrdIdl
+    ideal(O::AlgAssRelOrd, a::NfRelOrdIdl) -> AlgAssRelOrdIdl
+
+> Returns the ideal $a \cdot O$ where $a$ is an ideal of `base_ring(O)`.
+"""
+function ideal(O::AlgAssRelOrd{nf_elem, NfOrdFracIdl}, a::NfAbsOrdIdl)
   aa = frac_ideal(order(a), a, fmpz(1))
-  return ideal(O, aa, check)
+  return ideal(O, aa, false)
 end
 
-function ideal(O::AlgAssRelOrd, a::NfRelOrdIdl, check::Bool = true)
+function ideal(O::AlgAssRelOrd, a::NfRelOrdIdl)
   @assert order(a) == order(pseudo_basis(O, copy = false)[1][2])
 
   aa = frac_ideal(order(a), basis_pmat(a), true)
-  return ideal(O, aa, check)
+  return ideal(O, aa, false)
 end
 
+@doc Markdown.doc"""
+    *(O::AlgAssRelOrd, a::NfAbsOrdIdl) -> AlgAssRelOrdIdl
+    *(O::AlgAssRelOrd, a::NfRelOrdIdl) -> AlgAssRelOrdIdl
+    *(O::AlgAssRelOrd, a::NfOrdFracIdl) -> AlgAssRelOrdIdl
+    *(O::AlgAssRelOrd, a::NfRelOrdFracIdl) -> AlgAssRelOrdIdl
+    *(a::NfAbsOrdIdl, O::AlgAssRelOrd) -> AlgAssRelOrdIdl
+    *(a::NfRelOrdIdl, O::AlgAssRelOrd) -> AlgAssRelOrdIdl
+    *(a::NfOrdFracIdl, O::AlgAssRelOrd) -> AlgAssRelOrdIdl
+    *(a::NfRelOrdFracIdl, O::AlgAssRelOrd) -> AlgAssRelOrdIdl
+
+> Returns the ideal $a \cdot O$ where $a$ is a (fractional) ideal of `base_ring(O)`.
+"""
 *(O::AlgAssRelOrd{S, T}, a::T) where {S, T} = ideal(O, a)
 
 *(a::T, O::AlgAssRelOrd{S, T}) where {S, T} = ideal(O, a)
 
-*(O::AlgAssRelOrd, a::Union{NfOrdIdl, NfRelOrdIdl}) = ideal(O, a)
+*(O::AlgAssRelOrd, a::Union{NfAbsOrdIdl, NfRelOrdIdl}) = ideal(O, a)
 
-*(a::Union{NfOrdIdl, NfRelOrdIdl}, O::AlgAssRelOrd) = ideal(O, a)
+*(a::Union{NfAbsOrdIdl, NfRelOrdIdl}, O::AlgAssRelOrd) = ideal(O, a)
 
+@doc Markdown.doc"""
+    ideal_from_lattice_gens(O::AlgAssRelOrd, gens::Vector{ <: AbsAlgAssElem },
+                            check::Bool = true)
+      -> AlgAssRelOrd
+
+> Returns the ideal of $O$ generated by the elements of `gens` as a lattice over
+> `base_ring(O)`.
+"""
 function ideal_from_lattice_gens(O::AlgAssRelOrd, gens::Vector{ <: AbsAlgAssElem }, check::Bool = true)
 
   M = zero_matrix(base_ring(algebra(O)), length(gens), degree(O))
@@ -348,12 +476,17 @@ end
 #
 ################################################################################
 
-function in(x::AlgAssRelOrdElem, y::AlgAssRelOrdIdl)
-  parent(x) !== order(y) && error("Order of element and ideal must be equal")
-  O = order(y)
-  b_pmat = basis_pmat(y, copy = false)
+@doc Markdown.doc"""
+    in(x::AlgAssRelOrdElem, a::AlgAssRelOrdIdl) -> Bool
+
+> Returns `true` if the order element $x$ is in $a$ and `false` otherwise.
+"""
+function in(x::AlgAssRelOrdElem, a::AlgAssRelOrdIdl)
+  parent(x) !== order(a) && error("Order of element and ideal must be equal")
+  O = order(a)
+  b_pmat = basis_pmat(a, copy = false)
   t = matrix(base_ring(algebra(O)), 1, degree(O), coordinates(x))
-  t = t*basis_mat_inv(y, copy = false)
+  t = t*basis_mat_inv(a, copy = false)
   for i = 1:degree(O)
     if !(t[1, i] in b_pmat.coeffs[i])
       return false
@@ -368,6 +501,11 @@ end
 #
 ################################################################################
 
+@doc Markdown.doc"""
+    ==(a::AlgAssRelOrdIdl, b::AlgAssRelOrdIdl) -> Bool
+
+> Returns `true` if $a$ and $b$ are equal and `false` otherwise.
+"""
 function ==(A::AlgAssRelOrdIdl, B::AlgAssRelOrdIdl)
   order(A) !== order(B) && return false
   return basis_pmat(A, copy = false) == basis_pmat(B, copy = false)
@@ -430,8 +568,20 @@ function ring_of_multipliers(a::AlgAssRelOrdIdl{T1, T2}, action::Symbol = :left)
   return typeof(O)(algebra(O), PN)
 end
 
+@doc Markdown.doc"""
+    left_order(a::AlgAssRelOrdIdl) -> AlgAssRelOrd
+
+> Returns the order $\{ x \in A \mid xa \subseteq a\}$, where $A$ is the algebra
+> containing $a$.
+"""
 left_order(a::AlgAssRelOrdIdl) = ring_of_multipliers(a, :right)
 
+@doc Markdown.doc"""
+    right_order(a::AlgAssRelOrdIdl) -> AlgAssRelOrd
+
+> Returns the order $\{ x \in A \mid ax \subseteq a\}$, where $A$ is the algebra
+> containing $a$.
+"""
 right_order(a::AlgAssRelOrdIdl) = ring_of_multipliers(a, :left)
 
 ################################################################################
@@ -455,16 +605,22 @@ function mod!(a::AlgAssRelOrdElem, I::AlgAssRelOrdIdl)
   end
 
   t = algebra(O)()
-  B = basis_alg(O, copy = false)
+  B = pseudo_basis(O, copy = false)
   zero!(a.elem_in_algebra)
   for i = 1:degree(O)
-    t = mul!(t, B[i], algebra(O)(b[i]))
+    t = mul!(t, B[i][1], algebra(O)(b[i]))
     a.elem_in_algebra = add!(a.elem_in_algebra, a.elem_in_algebra, t)
   end
 
   return a
 end
 
+@doc Markdown.doc"""
+    mod(a::AlgAssRelOrdElem, I::AlgAssRelOrdIdl) -> AlgAssRelOrdElem
+
+> Returns $b$ in `order(I)` such that $a \equiv b \mod I$ and the coefficients
+> of $b$ are reduced modulo $I$.
+"""
 function mod(a::AlgAssRelOrdElem, I::AlgAssRelOrdIdl)
   return mod!(deepcopy(a), I)
 end
@@ -505,6 +661,11 @@ function assure_has_norm(a::AlgAssRelOrdIdl)
   return nothing
 end
 
+@doc Markdown.doc"""
+    norm(a::AlgAssRelOrdIdl; copy::Bool = true)
+
+> Returns the norm of $a$ as an ideal of `base_ring(order(a))`.
+"""
 function norm(a::AlgAssRelOrdIdl; copy::Bool = true)
   assure_has_norm(a)
   if copy
@@ -533,6 +694,12 @@ function assure_has_normred(a::AlgAssRelOrdIdl)
   return nothing
 end
 
+@doc Markdown.doc"""
+    normred(a::AlgAssRelOrdIdl; copy::Bool = true)
+
+> Returns the reduced norm of $a$ as an ideal of `base_ring(order(a))`.
+> It is assumed that the algebra containing $a$ is simple and central.
+"""
 function normred(a::AlgAssRelOrdIdl; copy::Bool = true)
   @assert dimension_of_center(algebra(order(a))) == 1
   @assert algebra(order(a)).issimple == 1
@@ -550,6 +717,14 @@ end
 #
 ################################################################################
 
+@doc Markdown.doc"""
+    locally_free_basis(a::AlgAssRelOrdIdl, p::Union{ NfAbsOrdIdl, NfRelOrdIdl })
+      -> AlgAssRelOrdElem
+
+> Returns an element $x$ of the order $O$ of $a$ such that $a_p = O_p \cdot b$
+> where $p$ is a prime ideal of `base_ring(O)`.
+> See also `islocally_free`.
+"""
 function locally_free_basis(I::AlgAssRelOrdIdl, p::Union{ NfAbsOrdIdl, NfRelOrdIdl })
   b, x = islocally_free(I, p)
   if !b
@@ -559,8 +734,15 @@ function locally_free_basis(I::AlgAssRelOrdIdl, p::Union{ NfAbsOrdIdl, NfRelOrdI
 end
 
 # See Bley, Wilson "Computations in relative algebraic K-groups", section 4.2
-# Returns (true, x) with x in I such that I_p = O_px if I is locally free at p
-# and (false, 0) otherwise.
+@doc Markdown.doc"""
+    islocally_free(a::AlgAssRelOrdIdl, p::Union{ NfAbsOrdIdl, NfRelOrdIdl })
+      -> Bool, AlgAssRelOrdElem
+
+> Returns a tuple `(true, x)` with an element $x$ of the order $O$ of $a$ such
+> that $a_p = O_p x$ if $a$ is locally free at $p$, and `(false, 0)` otherwise.
+> $p$ is a prime ideal of `base_ring(O)`.
+> See also `locally_free_basis`.
+"""
 function islocally_free(I::AlgAssRelOrdIdl, p::Union{ NfAbsOrdIdl, NfRelOrdIdl })
   O = order(I)
   pO = p*O
@@ -644,6 +826,11 @@ end
 ################################################################################
 
 # See Friedrichs: "Berechnung von Maximalordnungen über Dedekindringen", Algorithmus 5.1
+@doc Markdown.doc"""
+    pradical(O::AlgAssRelOrd, p::Union{ NfAbsOrdIdl, NfRelOrdIdl }) -> AlgAssRelOrdIdl
+
+> Returns the ideal $\sqrt{p \cdot O}$ where $p$ is a prime ideal of `base_ring(O)`.
+"""
 function pradical(O::AlgAssRelOrd, p::Union{ NfAbsOrdIdl, NfRelOrdIdl })
   K = base_ring(algebra(O))
   OK = maximal_order(K)
@@ -660,11 +847,7 @@ function pradical(O::AlgAssRelOrd, p::Union{ NfAbsOrdIdl, NfRelOrdIdl })
     end
     N = vcat(N, deepcopy(t))
   end
-  if p isa NfAbsOrdIdl
-    N = sub(pseudo_hnf_full_rank_with_modulus(N, p, :lowerleft), nrows(N) - degree(O) + 1:nrows(N), 1:degree(O))
-  else
-    N = sub(pseudo_hnf(N, :lowerleft, true), nrows(N) - degree(O) + 1:nrows(N), 1:degree(O))
-  end
+  N = sub(pseudo_hnf_full_rank_with_modulus(N, p, :lowerleft), nrows(N) - degree(O) + 1:nrows(N), 1:degree(O))
   return ideal(O, N, :twosided, false, true)
 end
 
@@ -675,16 +858,32 @@ end
 ################################################################################
 
 # See Friedrichs: "Berechnung von Maximalordnungen über Dedekindringen", Algorithmus 5.23
+@doc Markdown.doc"""
+    prime_ideals_over(O::AlgAssRelOrd, p::Union{ NfAbsOrdIdl, NfRelOrdIdl })
+      -> Vector{AlgAssRelOrdIdl}
+
+> Returns all prime ideal of $O$ lying over $p$ where $p$ is a prime ideal
+> of `base_ring(O)`.
+"""
 function prime_ideals_over(O::AlgAssRelOrd, p::Union{ NfAbsOrdIdl, NfRelOrdIdl })
+  return _prime_ideals_over(O, pradical(O, p), p)
+end
+
+# prad is expected to be pradical(O, p). If strict_containment == true and prad
+# is already prime, we return an empty array.
+function _prime_ideals_over(O::AlgAssRelOrd, prad::AlgAssRelOrdIdl, p::Union{ NfAbsOrdIdl, NfRelOrdIdl }; strict_containment::Bool = false)
   K = base_ring(algebra(O))
   OK = order(p)
 
-  prad = pradical(O, p)
   A, OtoA = AlgAss(O, prad, p)
   decA = decompose(A)
 
   if length(decA) == 1
-    return [ prad ]
+    if strict_containment
+      return ideal_type(O)[]
+    else
+      return [ prad ]
+    end
   end
 
   lifted_components = Vector{typeof(basis_pmat(prad, copy = false))}()
@@ -709,13 +908,30 @@ function prime_ideals_over(O::AlgAssRelOrd, p::Union{ NfAbsOrdIdl, NfRelOrdIdl }
 
       N = vcat(N, lifted_components[j])
     end
-    if p isa NfAbsOrdIdl
-      N = sub(pseudo_hnf_full_rank_with_modulus(N, p, :lowerleft), nrows(N) - degree(O) + 1:nrows(N), 1:degree(O))
-    else
-      N = sub(pseudo_hnf(N, :lowerleft, true), nrows(N) - degree(O) + 1:nrows(N), 1:degree(O))
-    end
+    N = sub(pseudo_hnf_full_rank_with_modulus(N, p, :lowerleft), nrows(N) - degree(O) + 1:nrows(N), 1:degree(O))
     push!(primes, ideal(O, N, :twosided, false, true))
   end
 
   return primes
+end
+
+################################################################################
+#
+#  Random elements
+#
+################################################################################
+
+@doc Markdown.doc"""
+    rand(a::AlgAssRelOrdIdl, B::Int) -> AlgAssRelOrdElem
+
+> Returns a random element of $a$ whose coefficient size is controlled by $B$.
+"""
+function rand(a::AlgAssRelOrdIdl, B::Int)
+  pb = pseudo_basis(a, copy = false)
+  z = algebra(order(a))()
+  for i = 1:degree(order(a))
+    t = rand(pb[i][2], B)
+    z += t*pb[i][1]
+  end
+  return order(a)(z)
 end

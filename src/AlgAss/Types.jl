@@ -127,13 +127,6 @@ mutable struct AlgGrp{T, S, R} <: AbsAlgAss{T}
     A.iscommutative = 0
     A.issimple = 0
     A.issemisimple = 0
-    if K isa Field
-      if iszero(characteristic(K))
-        A.issemisimple = 1
-      else
-        A.issemisimple = isone(gcd(characteristic(K), order(G))) ? 1 : 2
-      end
-    end
     A.base_ring = K
     A.group = G
     d = Int(order(G))
@@ -490,7 +483,6 @@ mutable struct AlgAssRelOrd{S, T} <: Ring
   algebra::AbsAlgAss{S}
   dim::Int
   pseudo_basis::Vector{Tuple{AbsAlgAssElem{S}, T}}
-  basis_alg::Vector{AbsAlgAssElem{S}}
   basis_mat::Generic.MatSpaceElem{S}
   basis_mat_inv::Generic.MatSpaceElem{S}
   basis_pmat::PMat{S, T}

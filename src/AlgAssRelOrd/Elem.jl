@@ -1,9 +1,16 @@
 # for arithmetic etc. see AlgAssAbsOrd/Elem.jl
 
+export trred
+
 parent_type(::Type{AlgAssRelOrdElem{S, T}}) where {S, T} = AlgAssRelOrd{S, T}
 
 parent_type(::AlgAssRelOrdElem{S, T}) where {S, T} = AlgAssRelOrd{S, T}
 
+@doc Markdown.doc"""
+    parent(x::AlgAssRelOrdElem) -> AlgAssRelOrd
+
+> Returns the order containing $x$.
+"""
 @inline parent(x::AlgAssRelOrdElem) = x.parent
 
 ################################################################################
@@ -107,6 +114,14 @@ end
 #
 ################################################################################
 
+@doc Markdown.doc"""
+    representation_matrix(x::AlgAssRelOrdElem, action::Symbol = :left) -> MatElem
+
+> Returns a matrix representing multiplication with $x$ with respect to the basis
+> of `order(x)`.
+> The multiplication is from the left if `action == :left` and from the right if
+> `action == :right`.
+"""
 function representation_matrix(x::AlgAssRelOrdElem, action::Symbol = :left)
 
   O = parent(x)
@@ -126,10 +141,20 @@ end
 #
 ################################################################################
 
+@doc Markdown.doc"""
+    tr(x::AlgAssRelOrdElem{S, T}) where { S, T } -> S
+
+> Returns the trace of $x$.
+"""
 function tr(x::AlgAssRelOrdElem)
   return tr(elem_in_algebra(x, copy = false))
 end
 
+@doc Markdown.doc"""
+    trred(x::AlgAssRelOrdElem{S, T}) where { S, T } -> S
+
+> Returns the reduced trace of $x$.
+"""
 function trred(x::AlgAssRelOrdElem)
   return trred(elem_in_algebra(x, copy = false))
 end

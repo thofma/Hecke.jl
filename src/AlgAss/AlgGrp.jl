@@ -18,6 +18,11 @@ order_type(::Type{AlgGrp{fmpq, S, R}}) where { S, R } = AlgAssAbsOrd{AlgGrp{fmpq
 order_type(::AlgGrp{T, S, R}) where { T <: NumFieldElem, S, R } = AlgAssRelOrd{T, frac_ideal_type(order_type(parent_type(T)))}
 order_type(::Type{AlgGrp{T, S, R}}) where { T <: NumFieldElem, S, R } = AlgAssRelOrd{T, frac_ideal_type(order_type(parent_type(T)))}
 
+@doc Markdown.doc"""
+    group(A::AlgGrp) -> Group
+
+> Returns the group defining $A$.
+"""
 group(A::AlgGrp) = A.group
 
 has_one(A::AlgGrp) = true
@@ -27,6 +32,13 @@ function (A::AlgGrp{T, S, R})(c::Array{T, 1}) where {T, S, R}
   return AlgGrpElem{T, typeof(A)}(A, c)
 end
 
+@doc Markdown.doc"""
+    multiplication_table(A::AlgGrp; copy::Bool = true) -> Array{RingElem, 2}
+
+> Given an group algebra $A$ this function returns the multiplication table of
+> $A$: If the function returns $M$ and the basis of $A$ is $g_1,\dots, g_n$ then
+> it holds $g_i \cdot g_j = g_{M[i, j]}$.
+"""
 function multiplication_table(A::AlgGrp; copy::Bool = true)
   if copy
     return deepcopy(A.mult_table)
@@ -41,9 +53,31 @@ end
 #
 ################################################################################
 
+@doc Markdown.doc"""
+    group_algebra(K::Ring, G; op = *) -> AlgGrp
+
+> Returns the group ring $K[G]$.
+> $G$ may be any set and `op` a group operation on $G$.
+"""
 group_algebra(K::Ring, G; op = *) = AlgGrp(K, G, op = op)
 
 group_algebra(K::Ring, G::GrpAbFinGen) = AlgGrp(K, G)
+
+function group_algebra(K::Field, G; op = *)
+  A = AlgGrp(K, G, op = op)
+  if iszero(characteristic(K))
+    A.issemisimple = 1
+  else
+    A.issemisimple = isone(gcd(characteristic(K), order(G))) ? 1 : 2
+  end
+  return A
+end
+
+function group_algebra(K::Field, G::GrpAbFinGen)
+  A = group_algebra(K, G, op = +)
+  A.iscommutative = true
+  return A
+end
 
 ################################################################################
 #
@@ -53,6 +87,11 @@ group_algebra(K::Ring, G::GrpAbFinGen) = AlgGrp(K, G)
 
 iscommutative_known(A::AlgGrp) = (A.iscommutative != 0)
 
+@doc Markdown.doc"""
+    iscommutative(A::AlgGrp) -> Bool
+
+> Returns `true` if $A$ is a commutative ring and `false` otherwise.
+"""
 function iscommutative(A::AlgGrp)
   if iscommutative_known(A)
     return A.iscommutative == 1
@@ -109,6 +148,11 @@ end
 #
 ################################################################################
 
+@doc Markdown.doc"""
+    ==(A::AlgGrp, B::AlgGrp) -> Bool
+
+> Returns `true` if $A$ and $B$ are equal and `false` otherwise.
+"""
 function ==(A::AlgGrp{T}, B::AlgGrp{T}) where {T}
   return base_ring(A) == base_ring(B) && group(A) == group(B)
 end
@@ -130,13 +174,20 @@ function _assure_trace_basis(A::AlgGrp{T}) where {T}
   return nothing
 end
 
+@doc Markdown.doc"""
+    trace_matrix(A::AlgGrp) -> MatElem
+
+> Returns a matrix $M$ over the base ring of $A$ such that
+> $M_{i, j} = \mathrm{tr}(b_i \cdot b_j)$, where $b_1, \dots, b_n$ is the
+> basis of $A$.
+"""
 function trace_matrix(A::AlgGrp)
   _assure_trace_basis(A)
   F = base_ring(A)
   n = dim(A)
   M = zero_matrix(F, n, n)
   for i = 1:n
-    M[i,i] = tr(A[i]^2)  
+    M[i,i] = tr(A[i]^2)
   end
   for i = 1:n
     for j = i+1:n
@@ -155,9 +206,9 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    center(A::AlgGrp{T}) where T
+    center(A::AlgGrp) -> AlgAss, AbsAlgAssMor
 
-Returns the center C of A and the inclusion C \to A.
+> Returns the center $C$ of $A$ and the inclusion $C \to A$.
 """
 function center(A::AlgGrp{T}) where {T}
   if iscommutative(A)
@@ -253,6 +304,19 @@ function _merge_elts_in_gens!(left::Vector{Tuple{Int, Int}}, mid::Vector{Tuple{I
   return mid
 end
 
+@doc Markdown.doc"""
+    gens(A::AlgGrp, return_full_basis::Typel{Val{T}} = Val{false})
+      -> Vector{AlgGrpElem}
+
+> Returns a subset of `basis(A)`, which generates $A$ as an algebra over
+> `base_ring(A)`.
+> If `return_full_basis` is set to `Val{true}`, the function also returns a
+> `Vector{AbsAlgAssElem}` containing a full basis consisting of monomials in
+> the generators and a `Vector{Vector{Tuple{Int, Int}}}` containing the
+> information on how these monomials are built. E. g.: If the function returns
+> `g`, `full_basis` and `v`, then we have
+> `full_basis[i] = prod( g[j]^k for (j, k) in v[i] )`.
+"""
 function gens(A::AlgGrp, return_full_basis::Type{Val{T}} = Val{false}) where T
   G = group(A)
   group_gens = gens(G)
