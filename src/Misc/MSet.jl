@@ -156,3 +156,124 @@ function Base.show(io::IO, M::MSubSetItr)
 end
 
 #... to be completed from base/Set.jl ...
+
+#subsets for Set
+struct SubSetItr{T}
+  b::Array{T, 1}
+  length::Int
+end
+
+function subsets(s::Set{T}) where T
+  # subsets are represented by integers in base 2
+  b = collect(unique(s))
+  return SubSetItr{T}(b, 2^length(b))
+end
+
+function int_to_elt(M::SubSetItr{T}, i::Int) where T
+  s = Set{T}()
+  j = 1
+  while i > 0
+    if isodd(i)
+      push!(s, M.b[j])
+    end
+    j += 1
+    i = div(i, 2)
+  end
+  return s
+end
+
+function Base.iterate(M::SubSetItr)
+  return int_to_elt(M, 0), 0
+end
+
+function Base.iterate(M::SubSetItr, st::Int)
+  st += 1
+  st >= M.length && return nothing
+  return int_to_elt(M, st), st
+end
+
+function Base.length(M::SubSetItr)
+  return M.length
+end
+
+Base.IteratorSize(M::SubSetItr) = Base.HasLength()
+Base.IteratorEltype(M::SubSetItr) = Base.HasEltype()
+Base.eltype(M::SubSetItr{T}) where {T} = Set{T}
+
+function Base.show(io::IO, M::SubSetItr)
+  println(io, "subset iterator of length $(M.length) for $(M.b)")
+end
+
+
+struct SubSetSizeItr{T}
+  b::Array{T, 1}
+  k::Int #subsets of size k only
+  B::Array{Array{Int, 1}, 1}
+  length::Int
+end
+
+function subsets(s::Set{T}, k::Int) where T
+  # subsets are represented by integers in the Combinatorial_number_system
+  # https://en.wikipedia.org/wiki/Combinatorial_number_system
+  b = collect(unique(s))
+  m = Int(binom(length(b), k))
+  C = Array{Array{Int, 1}, 1}()
+  while k > 1
+    B = zeros(Int, k-1)
+    i = k
+    while true
+      c = Int(binom(i, k))
+      if c <= m && length(B) < length(b)
+        push!(B, c)
+        i += 1
+      else
+        break
+      end
+    end
+    push!(C, B)
+    k -=1 
+  end
+
+  return SubSetSizeItr{T}(b, length(C)+1, C, m)
+end
+
+
+function int_to_elt(M::SubSetSizeItr{T}, i::Int) where T
+  s = Set{T}()
+  j = 1
+  while j <= length(M.B)
+    @show z = findlast(x -> x <= i, M.B[j])
+    push!(s, M.b[z])
+    i -= M.B[j][z]
+    j += 1
+  end
+  while length(s) < M.k
+    push!(s, M.b[length(s)])
+  end
+
+  return s
+end
+
+function Base.iterate(M::SubSetSizeItr)
+  return int_to_elt(M, 0), 0
+end
+
+function Base.iterate(M::SubSetSizeItr, st::Int)
+  st += 1
+  st >= M.length && return nothing
+  return int_to_elt(M, st), st
+end
+
+function Base.length(M::SubSetSizeItr)
+  return M.length
+end
+
+Base.IteratorSize(M::SubSetItr) = Base.HasLength()
+Base.IteratorEltype(M::SubSetItr) = Base.HasEltype()
+Base.eltype(M::SubSetItr{T}) where {T} = Set{T}
+
+function Base.show(io::IO, M::SubSetItr)
+  println(io, "subset iterator of length $(M.length) for $(M.b) and subsets of size $(M.k)")
+end
+
+
