@@ -110,8 +110,53 @@ mutable struct NfRelRelToNfRel{T} <: Map{NfRel{NfRelElem{T}}, NfRel{T}, HeckeMap
 end
 
 function show(io::IO, h::NfRelRelToNfRel)
-  println(io, "Isomorphism between ", domain(h), "\nand ", codomain(h))
+  println(io, "Morphism between ", domain(h), "\nand ", codomain(h))
 end
+
+mutable struct NfRelToNfRelRel{T} <: Map{NfRel{T}, NfRel{NfRelElem{T}}, HeckeMap, NfRelToNfRelRel} 
+  header::MapHeader{NfRel{T}, NfRel{NfRelElem{T}}}
+
+  function NfRelToNfRelRel(L::NfRel{T}, K::NfRel{NfRelElem{T}}, a::NfRelElem{T}, b::NfRelElem{T}, c::NfRelElem{NfRelElem{T}}) where T
+    # let K/k, k absolute number field
+    # k -> L, gen(k) -> a
+    # K -> L, gen(K) -> b
+    # L -> K, gen(L) -> c
+
+    k = K.base_ring
+    Ly, y = PolynomialRing(L, cached = false)
+    R = parent(k.pol)
+    S = parent(L.pol)
+
+    function image(x::NfRelElem{T}) where T
+      # x is an element of L
+      f = S(x)
+      return f(c)
+    end
+
+    function preimage(x::NfRelElem{NfRelElem{T}}) where T
+      # x is an element of K
+      f = data(x)
+      # First evaluate the coefficients of f at a to get a polynomial over L
+      # Then evaluate at b
+      r = [ R(coeff(f, i))( a) for i in 0:degree(f)]
+      return Ly(r)(b)
+    end
+
+    z = new{T}()
+    z.header = MapHeader(L, K, image, preimage)
+    return z
+  end
+end
+
+function show(io::IO, h::NfRelRelToNfRel)
+  println(io, "Morphism between ", domain(h), "\nand ", codomain(h))
+end
+
+################################################################################
+#
+#  NfRelToNfRel
+#
+################################################################################
 
 function hom(K::NfRel, L::NfRel, a::NfRelElem; check::Bool = false)
    if base_field(K) != base_field(L)
