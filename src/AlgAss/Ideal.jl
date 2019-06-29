@@ -586,3 +586,33 @@ function rand(a::AbsAlgAssIdl, rng::UnitRange{Int})
   end
   return x
 end
+
+################################################################################
+#
+#  Reduction of element modulo ideal
+#
+################################################################################
+
+function mod(x::AbsAlgAssElem, a::AbsAlgAssIdl)
+  if iszero(a)
+    return deepcopy(x)
+  end
+
+  c = coeffs(x)
+  M = basis_mat(a, copy = false) # Assumed to be in upper right rref
+  k = 1
+  for i = 1:nrows(M)
+    while iszero(M[i, k])
+      k += 1
+    end
+    if iszero(c[k])
+      continue
+    end
+
+    t = divexact(c[k], M[i, k])
+    for j = k:dim(algebra(a))
+      c[j] = c[j] - t*M[i, j]
+    end
+  end
+  return algebra(a)(c)
+end

@@ -23,13 +23,13 @@
     @test iszero(AtoQ(zero(A)))
     @test AtoQ\zero(Q) in J
     @test isone(AtoQ(one(A)))
-    @test one(A) - AtoQ\one(Q) in J
+    @test mod(one(A), J) == mod(AtoQ\one(Q), J)
 
     for i = 1:5
       c = rand(A, -10:10)
       d = rand(A, -10:10)
-      @test AtoQ\(AtoQ(c)) - c in J
-      @test AtoQ\(AtoQ(d)) - d in J
+      @test mod(AtoQ\(AtoQ(c)), J) == mod(c, J)
+      @test mod(AtoQ\(AtoQ(d)), J) == mod(d, J)
       @test AtoQ(c + d) == AtoQ(c) + AtoQ(d)
       @test AtoQ(c*d) == AtoQ(c)*AtoQ(d)
 
@@ -37,8 +37,8 @@
       f = rand(Q, -10:10)
       @test AtoQ(AtoQ\e) == e
       @test AtoQ(AtoQ\f) == f
-      @test AtoQ\(e + f) - (AtoQ\e + AtoQ\f) in J
-      @test AtoQ\(e*f) - ((AtoQ\e)*(AtoQ\f)) in J
+      @test mod(AtoQ\(e + f), J) == mod((AtoQ\e + AtoQ\f), J)
+      @test mod(AtoQ\(e*f), J) == mod(((AtoQ\e)*(AtoQ\f)), J)
     end
 
     J2 = J^2
@@ -53,15 +53,15 @@
     for i = 1:5
       c = rand(J, -10:10)
       d = rand(J, -10:10)
-      @test AtoQ\(AtoQ(c)) - c in J2
-      @test AtoQ\(AtoQ(d)) - d in J2
+      @test mod(AtoQ\(AtoQ(c)), J2) == mod(c, J2)
+      @test mod(AtoQ\(AtoQ(d)), J2) == mod(d, J2)
       @test AtoQ(c + d) == AtoQ(c) + AtoQ(d)
 
       e = rand(Q, -10:10)
       f = rand(Q, -10:10)
       @test AtoQ(AtoQ\e) == e
       @test AtoQ(AtoQ\f) == f
-      @test AtoQ\(e + f) - (AtoQ\e + AtoQ\f) in J2
+      @test mod(AtoQ\(e + f), J2) == mod((AtoQ\e + AtoQ\f), J2)
     end
   end
 

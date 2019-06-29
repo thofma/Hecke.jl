@@ -38,6 +38,9 @@ function unit_group_non_maximal(O::NfOrd)
     if !isa(e, AccessorNotSetError)
       rethrow(e)
     end
+    if ismaximal(O)
+      return unit_group(O)
+    end
     U, mU = _unit_group_non_maximal(O)
     _set_unit_group_non_maximal(O, mU)
     return U, mU
