@@ -146,7 +146,7 @@ function _unit_group_non_maximal(O::NfOrd)
       M[i, j] = h.coeff[1, j]
     end
   end
-  GtoH = hom(G, H, M, false)
+  GtoH = hom(G, H, M, check = false)
 
   K, KtoG = kernel(GtoH)
   S, StoK = snf(K)
@@ -222,7 +222,7 @@ function _picard_group(O::NfOrd)
     end
   end
 
-  UtoG = compose(UtoOK, compose(OKtoQ, inv(GtoQ)))
+  UtoG = compose(UtoOK, compose(OKtoQ, pseudo_inv(GtoQ)))
   Q = zero_matrix(FlintZZ, ngens(U), ngens(G))
   for i = 1:ngens(U)
     t = UtoG(U[i]).coeff
