@@ -149,8 +149,13 @@ function new_maximal_order(O::NfOrd; index_divisors::Vector{fmpz} = fmpz[], disc
     O.ismaximal = 1
     return O  
   end
+
+  if isdefining_polynomial_nice(K) && !isone(denominator(basis_mat_inv(O)))
+    #The order does not contain the equation order. We add them
+    O = O + EquationOrder(K)
+  end
   
-  if isdefining_polynomial_nice(K) && (isequation_order(O) || isinteger(gen_index(O)))
+  if isdefining_polynomial_nice(K) && (isequation_order(O) || isone(denominator(basis_mat_inv(O))))
     Zx, x = PolynomialRing(FlintZZ, "x", cached = false)
     f1 = Zx(K.pol)
     ds = gcd(rres(f1, derivative(f1)), discriminant(O))
