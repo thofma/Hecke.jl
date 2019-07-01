@@ -204,6 +204,7 @@ function Base.show(io::IO, M::SubSetItr)
   println(io, "subset iterator of length $(M.length) for $(M.b)")
 end
 
+#only subsets of a given size
 
 struct SubSetSizeItr{T}
   b::Array{T, 1}
@@ -215,15 +216,17 @@ end
 function subsets(s::Set{T}, k::Int) where T
   # subsets are represented by integers in the Combinatorial_number_system
   # https://en.wikipedia.org/wiki/Combinatorial_number_system
+  # this iterator could indexed, the other one below not
+  # maybe use "The coolest way to generate combinations" instead
   b = collect(unique(s))
   m = Int(binom(length(b), k))
   C = Array{Array{Int, 1}, 1}()
-  while k > 1
-    B = zeros(Int, k-1)
-    i = k
+  while k >= 1
+    B = Int[]
+    i = k-1
     while true
       c = Int(binom(i, k))
-      if c <= m && length(B) < length(b)
+      if c < m && length(B) < length(b)
         push!(B, c)
         i += 1
       else
@@ -234,7 +237,7 @@ function subsets(s::Set{T}, k::Int) where T
     k -=1 
   end
 
-  return SubSetSizeItr{T}(b, length(C)+1, C, m)
+  return SubSetSizeItr{T}(b, length(C), C, m)
 end
 
 
@@ -242,8 +245,8 @@ function int_to_elt(M::SubSetSizeItr{T}, i::Int) where T
   s = Set{T}()
   j = 1
   while j <= length(M.B)
-    @show z = findlast(x -> x <= i, M.B[j])
-    push!(s, M.b[z])
+    z = findlast(x -> x <= i, M.B[j])
+    push!(s, M.b[z + M.k - j])
     i -= M.B[j][z]
     j += 1
   end
@@ -268,11 +271,11 @@ function Base.length(M::SubSetSizeItr)
   return M.length
 end
 
-Base.IteratorSize(M::SubSetItr) = Base.HasLength()
-Base.IteratorEltype(M::SubSetItr) = Base.HasEltype()
-Base.eltype(M::SubSetItr{T}) where {T} = Set{T}
+Base.IteratorSize(M::SubSetSizeItr) = Base.HasLength()
+Base.IteratorEltype(M::SubSetSizeItr) = Base.HasEltype()
+Base.eltype(M::SubSetSizeItr{T}) where {T} = Set{T}
 
-function Base.show(io::IO, M::SubSetItr)
+function Base.show(io::IO, M::SubSetSizeItr)
   println(io, "subset iterator of length $(M.length) for $(M.b) and subsets of size $(M.k)")
 end
 
