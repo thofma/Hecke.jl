@@ -453,7 +453,7 @@ In a tower, only the top-most steps are collapsed.
 """
 function absolute_field(K::NfRel{NfRelElem{T}}, cached::Bool = false) where T
   Ka, a, b, c = _absolute_field(K)
-  return Ka, NfRelRelToNfRel(K, Ka, a, b, c), hom(base_field(K), Ka, a, check = false)
+  return Ka, NfRelToNfRelRel(Ka, K, a, b, c), hom(base_field(K), Ka, a, check = false)
 end
 
 
@@ -766,7 +766,6 @@ function minpoly(a::NfRelElem, k::Union{NfRel, AnticNumberField, FlintRationalFi
 
   f = minpoly(a)
     while base_ring(f) != k
-    @show typeof(f)
     f = norm(f)
     g = gcd(f, derivative(f))
     if !isone(g)

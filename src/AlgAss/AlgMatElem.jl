@@ -309,3 +309,13 @@ function elem_from_mat_row(A::AlgMat, M::fmpz_mat, i::Int, d::fmpz = fmpz(1))
   end
   return A(v)
 end
+
+################################################################################
+#
+#  Hashing
+#
+################################################################################
+
+function Base.hash(a::AlgMatElem, h::UInt)
+  return Base.hash(matrix(a, copy = false), h)
+end

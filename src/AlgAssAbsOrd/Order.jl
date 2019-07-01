@@ -1,3 +1,5 @@
+export algebra
+
 add_assert_scope(:AlgAssOrd)
 add_verbose_scope(:AlgAssOrd)
 
