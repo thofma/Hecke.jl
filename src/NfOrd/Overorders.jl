@@ -31,7 +31,7 @@ function iszero_mod_hnf!(a::fmpz_mat, H::fmpz_mat)
 end
 
 function defines_minimal_overorder(B::Vector{nf_elem}, l::Vector{nf_elem})
-  M = basis_mat(B)
+  M = basis_mat(B, FakeFmpqMat)
   hnf!(M)
   x = M.den * l[1]^2
   if denominator(x) != 1
@@ -105,7 +105,7 @@ mutable struct GrpAbFinGenToNfOrdQuoNfOrd <: Map{GrpAbFinGen, NfOrd, HeckeMap, G
     z.bottom = O
     z.top_snf_basis = new_basis_M
     z.bottom_snf_basis = new_basis_O
-    z.top_basis_mat_inv = inv(basis_mat(new_basis_M))
+    z.top_basis_mat_inv = inv(basis_mat(new_basis_M, FakeFmpqMat))
     z.top_snf_basis_in_order = map(M, z.top_snf_basis)
 
     return z
@@ -439,15 +439,15 @@ function new_poverorders(O::NfOrd, p::fmpz)
     nres = typeof(O)[]
     tP = @elapsed Pprim = pprimary_overorders(O, P)
     @show length(Pprim), length(res)
-    trec = @elapsed for R in Pprim
+    trec = for R in Pprim
       #@show R
       for S in res
         #@show S
         #@show sum_as_Z_modules(R, S)
-        push!(nres, sum_as_Z_modules(R, S, tz), triangular = true)
+        push!(nres, sum_as_Z_modules(R, S, tz))
       end
     end
-    println("time for recombination: $trec")
+#    println("time for recombination: $trec")
     res = nres
   end
   return res
@@ -560,7 +560,7 @@ function new_overorders(O::NfOrd)
       kk = 1
       for O1 in orders
         @time for O2 in new_p
-          orders1[kk] = sum_as_Z_modules(O1, O2, z, triangular = true)
+          orders1[kk] = sum_as_Z_modules(O1, O2, z)
           kk += 1
         end
       end
