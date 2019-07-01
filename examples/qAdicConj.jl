@@ -101,7 +101,6 @@ end
 
 function Hecke.trace(r::qadic)
   t = base_ring(parent(r))()
-  @show t.N
   ccall((:qadic_trace, :libflint), Nothing, (Ref{padic}, Ref{qadic}, Ref{FlintQadicField}), t, r, parent(r))
   return t
 end
@@ -184,7 +183,7 @@ function Hecke.ResidueField(Q::FlintQadicField)
   end
   lif = function(x::fq_nmod)
     z = Q()
-    for i=0:degree(Q)
+    for i=0:degree(Q)-1
       setcoeff!(z, i, coeff(x, i))
     end
     return z
@@ -921,17 +920,33 @@ function completion(K::AnticNumberField, p::fmpz, i::Int)
     Hecke._num_setcoeff!(b, i-1, lift(s[i,1]))
   end
 
+  c = lift_root(f, a, b, p, 10)
+  pc = fmpz(10)
   function lif(x::qadic)
-    c = lift_root(f, a, b, p, precision(x))
+    if iszero(x)
+      return K(0)
+    end
+    if precision(x) > pc
+      #XXX this changes (c, pc) inplace as a cache
+      #probably should be done with a new map type that can
+      #store c, pc on the map.
+      d = lift_root(f, a, b, p, precision(x))
+      ccall((:nf_elem_set, :libantic), Nothing, (Ref{nf_elem}, Ref{nf_elem}, Ref{AnticNumberField}), c, d, K)
+      ccall((:fmpz_set_si, :libflint), Nothing, (Ref{fmpz}, Cint), pc, precision(x))
+    elseif precision(x) < pc
+      d = Hecke.mod_sym(c, p^precision(x))
+    else
+      d = c
+    end
     n = x.length
     r = K(lift(coeff(x, n-1)))
     while n > 1
       n -= 1
-      r = r*c + lift(coeff(x, n-1))
+      r = r*d + lift(coeff(x, n-1))
     end
     return r*K(p)^valuation(x)
   end
-  return MapFromFunc(inj, lif, K, parent(ca))
+  return parent(ca), MapFromFunc(inj, lif, K, parent(ca))
 end
 
 function defining_polynomial(Q::FlintQadicField, P::Hecke.Ring = base_ring(Q))
@@ -982,8 +997,7 @@ end
 
 function zassenhaus(f::PolyElem{nf_elem}, P::NfOrdIdl, N::Int)
   K = base_ring(parent(f))
-  mC = completion(K, P)
-  C = codomain(mC)
+  C, mC = completion(K, P)
   setprecision!(C, N)
   H = HenselCtxQadic(change_base_ring(f, mC))
   while precision(H) < N
@@ -996,11 +1010,13 @@ function zassenhaus(f::PolyElem{nf_elem}, P::NfOrdIdl, N::Int)
   lf = factor(H)
   zk = order(P)
 
-  S = MSet(map(x -> change_base_ring(x, y -> preimage(mC, y), parent(f)), lf))
-  #TODO: make subsets for Set
+  S = Set(map(x -> change_base_ring(x, y -> preimage(mC, y), parent(f)), lf))
   #TODO: test reco result for being small, do early abort
   #TODO: test selected coefficients first without computing the product
   #TODO: once a factor is found (need to enumerate by size!!!), remove stuff...
+  #    : if f is the norm of a poly over a larger field, then every
+  #      combination has to respect he prime splitting in the extension
+  #      the norm(poly) is the prod of the local norm(poly)s
   for s = Hecke.subsets(S)
     if length(s) == 0
       continue
@@ -1008,6 +1024,139 @@ function zassenhaus(f::PolyElem{nf_elem}, P::NfOrdIdl, N::Int)
     g = prod(s)
     println(g, " -> ", change_base_ring(g, x->reco(zk(x), M, pM)))
   end
+end
+
+###############################################
+# generic for testing, used for qadics (and maybe padics
+# if one chooses a deg 1 prime in the factoring)
+
+#computes the top n coeffs of the product only
+function mulhigh_n(a::PolyElem{T}, b::PolyElem{T}, n::Int) where {T}
+  #sum a_i t^i and sum b_j t^j
+  #want (i,j) s.th. i+j >= deg a + deg b - n
+  r = parent(a)()
+  for i=max(degree(a)-n, 0):degree(a)
+    for j = max(degree(a) + degree(b) - n - i, 0):degree(b)
+      setcoeff!(r, i+j, coeff(r, i+j) + coeff(a, i)*coeff(b, j))
+    end
+  end
+  return r
+end
+
+function mulhigh_n(a::fmpz_poly, b::fmpz_poly, n::Int)
+  c = parent(a)()
+  #careful: as part of the interface, the coeffs 0 - (n-1) are random garbage
+  ccall((:fmpz_poly_mulhigh_n, :libflint), Nothing, (Ref{fmpz_poly}, Ref{fmpz_poly}, Ref{fmpz_poly}, Cint), c, a, b, n)
+  return c
+end
+function mulhigh(a::PolyElem{T}, b::PolyElem{T}, n::Int) where {T} 
+  return mulhigh_n(a, b, degree(a) + degree(b) - n)
+end
+
+#assuming b divides a, compute the last n coeffs of the quotient
+#will produce garbage otherwise
+#div(a, b) mod x^n
+function divexact_low(a::PolyElem{T}, b::PolyElem{T}, n::Int) where {T}
+  r = parent(a)()
+  a = truncate(a, n)
+  b = truncate(b, n)
+  for i=0:n-1
+    q = divexact(constant_coefficient(a), constant_coefficient(b))
+    setcoeff!(r, i, q)
+    a = shift_right(a-q*b, 1)
+    #truncate both a and b to n-i-1 (for generic polys one could just change the length)
+  end
+  return r
+end
+
+#computes the top coeffs starting with x^n
+function divhigh(a::PolyElem{T}, b::PolyElem{T}, n::Int) where {T}
+  r = parent(a)()
+  n = degree(a) - degree(b) - n
+  for i=0:n
+    if degree(a) < degree(b)
+      break
+    end
+    q = divexact(lead(a), lead(b))
+    setcoeff!(r, degree(a) - degree(b), q)
+    a = a-q*shift_left(b, degree(a) - degree(b)) # inplace, one operation would be cool
+  end
+  return r
+end
+###############################################
+function cld_bound(f::PolyElem{nf_elem}, k::Array{Int, 1})
+  @assert all(kk -> 0 <= kk < degree(f), k)
+  Zx, x = PolynomialRing(FlintZZ, cached = false)
+  g = Zx()
+  for i=0:degree(f)
+    setcoeff!(g, i, Hecke.upper_bound(sqrt(t2(coeff(f, i))), fmpz))
+  end
+  bb = fmpz[]
+  for kk = k
+    b = FlintZZ()
+    ccall((:fmpz_poly_CLD_bound, :libflint), Nothing, (Ref{fmpz}, Ref{fmpz_poly}, Int64), b, g, kk)
+    push!(bb, b)
+  end
+  return bb
+end
+cld_bound(f::PolyElem{nf_elem}, k::Int) = cld_bound(f, [k])[1]
+
+function cld_bound(f::fmpz_poly, k::Int)
+  @assert 0 <= k < degree(f)
+  b = FlintZZ()
+  ccall((:fmpz_poly_CLD_bound, :libflint), Nothing, (Ref{fmpz}, Ref{fmpz_poly}, Int64), b, f, k)
+  return b
+end
+cld_bound(f::fmpz_poly, k::Array{Int, 1}) = map(x->cld_bound(f, x), k)
+
+Base.log2(a::fmpz) = log2(BigInt(a))
+
+function initial_prec(f::PolyElem{nf_elem}, p::Int, r::Int = degree(f))
+  b = minimum(cld_bound(f, [0,1]))
+  a = ceil(Int, (2.5*r*degree(base_ring(f))+log2(b) + log2(degree(f))/2)/log2(p))
+  return a
+end
+
+function cld_data(H::HenselCtxQadic, up_to::Int, from::Int, mC, Mi)
+  lf = factor(H)
+  a = preimage(mC, zero(codomain(mC)))
+  k = parent(a)
+  N = degree(H.f)
+  @assert 0<= up_to <= N  #up_tp: modulo x^up_tp
+  @assert 0<= from <= N   #from : div by x^from
+#  @assert up_to <= from
+
+  M = zero_matrix(FlintZZ, length(lf), (1+up_to + N - from) * degree(k))
+
+  lf = [divexact_low(mullow(derivative(x), H.f, up_to), x, up_to) for x = lf]
+
+  NN = zero_matrix(FlintZZ, 1, degree(k))
+  d = FlintZZ()
+  for i=0:up_to
+    for j=1:length(lf)
+      c = preimage(mC, coeff(lf[j], i)) # should be an nf_elem
+      elem_to_mat_row!(NN, 1, d, c)
+      mul!(NN, NN, Mi) #base_change, Mi should be the inv-lll-basis-mat wrt field
+      @assert isone(d)
+      for h=1:degree(k)
+        M[j, i*degree(k) + h] = NN[1, h]
+      end
+    end
+  end
+  lf = factor(H)
+  lf = [divhigh(mulhigh(derivative(x), H.f, from), x, from) for x = lf]
+  for i=from:N-1
+    for j=1:length(lf)
+      c = preimage(mC, coeff(lf[j], i)) # should be an nf_elem
+      elem_to_mat_row!(NN, 1, d, c)
+      mul!(NN, NN, Mi) #base_change, Mi should be the inv-lll-basis-mat wrt field
+      @assert isone(d)
+      for h=1:degree(k)
+        M[j, (i-from+up_to)*degree(k) + h] = NN[1, h]
+      end
+    end
+  end
+  return M
 end
 
 function van_hoeij(f::fmpz_poly, P::NfOrdIdl, N::Int)
@@ -1018,32 +1167,133 @@ function van_hoeij(f::fmpq_poly, P::NfOrdIdl, N::Int)
   return van_hoeij(change_base_ring(f, nf(order(P))), P, N)
 end
 
-function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl, N::Int)
+
+function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl, pr::Int; magic = 20)
   K = base_ring(parent(f))
-  mC = completion(K, P)
-  C = codomain(mC)
-  setprecision!(C, N)
+  C, mC = completion(K, P)
+  setprecision!(C, pr)
   H = HenselCtxQadic(change_base_ring(f, mC))
-  while precision(H) < N
+  while precision(H) < pr
     lift(H)
   end
+  N = degree(f)
+  r = length(factor(H))
 
-  M = lll(basis_mat(P^N))
-  pM = pseudo_inv(M)
+  Ml = lll(basis_mat(P^pr))
+  pM = pseudo_inv(Ml)
+  av_bits = sum(nbits, Ml)/nrows(Ml)^2
   F = FakeFmpqMat(pM)
+  #M * basis_mat(zk) is the basis wrt to the field
+  #(M*B)^-1 = B^-1 * M^-1, so I need basis_mat_inv(zk) * pM
+  F = basis_mat_inv(order(P)) * F
   pM = (F.num, F.den)
+#  return H, mC, pM
+  up_to = 7
+  from = N-7  #use 5 coeffs on either end
+  up_to = min(up_to, N)
+  from = min(from, N)
+  from = max(up_to, from)
+  C = cld_data(H, up_to, from, mC, pM[1]) # currently all information, needs to be gradually done
+  b = cld_bound(f, vcat(0:up_to-1, from:N-1))
+  # we want
+  # I |  C/p^n
+  # 0 |   I
+  # true factors, in this lattice, are small (the lower I is the rounding)
+  # the left part is to keep track of operations
+  # by cld_bound, we know the expected upper size of the rounded legal entries
+  # so we scale it by the bound. If all would be exact, the true factors would be zero...
+  # 1st make integral:
+  # I | C
+  # 0 | p^n
+  # scale:
+  # I | C/lambda
+  # 0 | p^n/lambda  lambda depends on the column
+  # now, to limit damages re-write the rationals with den | 2^k (rounding)
+  # I | D/2^k
+  #   | X/2^k
+  #make integral
+  # 2^k | D
+  #  0  | X   where X is still diagonal
+  # is all goes like planned: lll with reduction will magically work...
+  # needs (I think): fix a in Z_k, P and ideal. Then write a wrt. a LLL basis of P^k
+  #  a = sum a^k_i alpha^k_i, a^k_i in Q, then for k -> infty, a^k_i -> 0
+  #  (ineffective: write coeffs with Cramer's rule via determinants. The
+  #  numerator has n-1 LLL-basis vectors and one small vector (a), thus the
+  #  determinant is s.th. ^(n-1) and the coeff then ()^(n-1)/()^n should go to zero
+  # lambda should be chosen, so that the true factors become < 1 by it
+  # for the gradual feeding, we can also add the individual coefficients (of the nf_elems) individually
 
-  lf = factor(H)
-  lf = [divexact(derivative(x)*H.f, x) for x = lf]
-  zk = order(P)
 
-
-  S = map(x -> change_base_ring(x, y -> preimage(mC, y), parent(f)), lf)
-  return hcat([vcat([coordinates(reco_inv(zk(coeff(S[i], j)), M, pM)) for j=0:degree(f)-1]...) for i=1:length(S)]...)
-  zkx = zk["x"][1]
-  return [change_base_ring(g, x->reco(zk(x), M, pM), zkx) for g = S]
+  # - apply transformations already done (by checking the left part of the matrix)
+  # - scale, round
+  # - call lll_with_removel
+  # until done (whatever that means)
+  # if unlucky: re-do Hensel and start over again, hopefull retaining some info
+  # can happen if the CLD coeffs are too large for the current Hensel level
+  r = length(factor(H))
+  prec_scale = 20 #Bill's article
+  M = identity_matrix(FlintZZ, r)*2^prec_scale
+  used = []
+  have = vcat(0:up_to-1, from:N-1)
+  st = 1
+  while length(have) > 0
+    if isodd(st)
+      n = minimum(setdiff(have, used))
+      push!(used, n)
+    else
+      n = maximum(setdiff(have, used))
+      push!(used, n)
+    end
+    st += 1
+    i = findfirst(x->x == n, have) #new data will be in block i of C
+    B = sub(C, 1:r, (i-1)*degree(K)+1:i*degree(K))
+    T = sub(M, 1:nrows(M), 1:r)
+    B = T*B   # T contains the prec_scale 
+    mod_sym!(B, pM[2]*2^prec_scale)
+    sz = floor(Int, degree(K)*av_bits/degree(P) - nbits(b[i])) + magic
+    ccall((:fmpz_mat_scalar_tdiv_q_2exp, :libflint), Nothing, (Ref{fmpz_mat}, Ref{fmpz_mat}, Cint), B, B, sz)
+    s = max(0, sz - prec_scale)
+    d = tdivpow2(pM[2], s)
+    M = [M B; zero_matrix(FlintZZ, ncols(B), ncols(M)) d*identity_matrix(FlintZZ, ncols(B))]
+    l, M = lll_with_removal(M, r*fmpz(2)^(2*prec_scale) + div(r+1, 2)*N*degree(K))
+    @show hnf(sub(M, 1:l, 1:r))
+    M = sub(M, 1:l, 1:ncols(M))
+    d = Dict{fmpz_mat, Array{Int, 1}}()
+    for l=1:r
+      k = M[:, l]
+      if haskey(d, k)
+        push!(d[k], l)
+      else
+        d[k] = [l]
+      end
+    end
+    if length(keys(d)) <= nrows(M)
+      @show "BINGO"
+      display(d)
+    end
+  end
 end
 
+function Hecke.mod_sym!(M::fmpz_mat, B::fmpz)
+  ccall((:fmpz_mat_scalar_smod, :libflint), Nothing, (Ref{fmpz_mat}, Ref{fmpz_mat}, Ref{fmpz}), M, M, B)
+end
+Hecke.mod_sym!(M::fmpz_mat, B::Integer) = mod_sym!(M, fmpz(B))
 
+function Hecke.mod_sym(M::fmpz_mat, B::fmpz)
+  N = zero_matrix(FlintZZ, nrows(M), ncols(M))
+  ccall((:fmpz_mat_scalar_smod, :libflint), Nothing, (Ref{fmpz_mat}, Ref{fmpz_mat}, Ref{fmpz}), N, M, B)
+  return N
+end
+Hecke.mod_sym(M::fmpz_mat, B::Integer) = mod_sym(M, fmpz(B))
+
+function map!(f, M::fmpz_mat)
+  for i=1:nrows(M)
+    for j=1:ncols(M)
+      M[i,j] = f(M[i,j])
+    end
+  end
+end
 
 end
+
+set_printing_mode(FlintPadicField, :terse)
