@@ -242,7 +242,6 @@ function new_maximal_order(O::NfOrd; index_divisors::Vector{fmpz} = fmpz[], disc
     OO.ismaximal = 1
     return OO
   end
-  @show OO
   O1, Q = _TameOverorderBL(OO, ll1)
   if !isempty(Q) && discriminant(O1) != disc
     @vprint :NfOrd 1 "I have to factor $Q\n "
