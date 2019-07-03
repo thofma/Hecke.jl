@@ -91,7 +91,8 @@ end
 
 > Returns the order of $A$ with basis $B$.
 """
-function Order(A::S, B::Vector{T}) where {S <: AbsAlgAss{fmpq}, T <: AbsAlgAssElem{fmpq}}
+function Order(A::S, B::Vector{T}; check::Bool = false, isbasis = true) where {S <: AbsAlgAss{fmpq}, T <: AbsAlgAssElem{fmpq}}
+  check == true || isbasis == false && error("Not implemented yet")
   return AlgAssAbsOrd{S, T}(A, B)
 end
 
@@ -100,7 +101,8 @@ end
 
 > Returns the order of $A$ with basis matrix $M$.
 """
-function Order(A::S, M::FakeFmpqMat) where {S <: AbsAlgAss{fmpq}}
+function Order(A::S, M::FakeFmpqMat; check::Bool = false, cached::Bool = false) where {S <: AbsAlgAss{fmpq}}
+  check || cached && error("Not implemented yet")
   return AlgAssAbsOrd{S}(A, deepcopy(M))
 end
 
@@ -472,12 +474,15 @@ end
 
 function _check_order(O::AlgAssAbsOrd)
   for x in O.basis_alg
-    @assert denominator(minpoly(x))==1
+    #@assert denominator(minpoly(x))==1
     for y in O.basis_alg
       if !(x*y in O)
         return false
       end
     end
+  end
+  if !(one(algebra(O)) in O) return
+    false
   end
   return true
 end
@@ -635,9 +640,8 @@ end
 #
 ################################################################################
 
-function pmaximal_overorder(O::AlgAssAbsOrd, p::Int)
-
-  d=discriminant(O)
+function pmaximal_overorder(O::AlgAssAbsOrd, p::Union{fmpz, Int})
+  d = discriminant(O)
   if rem(d, p^2) != 0
     return O
   end
@@ -651,7 +655,7 @@ function pmaximal_overorder(O::AlgAssAbsOrd, p::Int)
   end
 end
 
-function pmaximal_overorder_meataxe(O::AlgAssAbsOrd, p::Int)
+function pmaximal_overorder_meataxe(O::AlgAssAbsOrd, p::Union{fmpz, Int})
 
   extend = false
   d = discriminant(O)

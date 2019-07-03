@@ -1199,7 +1199,7 @@ end
 
 # Returns the twosided maximal ideals of O containing I, where p*O \subseteq I.
 # If strict_containment == true and I is already prime, we return an empty array.
-function _maximal_ideals(O::AlgAssAbsOrd, I::AlgAssAbsOrdIdl, p::Int; strict_containment::Bool = false)
+function _maximal_ideals(O::AlgAssAbsOrd, I::AlgAssAbsOrdIdl, p::Union{Int, fmpz}; strict_containment::Bool = false)
 
   A1, OtoA1 = quo(O, I, p)
   @vtime :AlgAssOrd 1 lg = gens(A1)
@@ -1215,7 +1215,7 @@ function _maximal_ideals(O::AlgAssAbsOrd, I::AlgAssAbsOrdIdl, p::Int; strict_con
 
 end
 
-function _from_submodules_to_ideals(M::ModAlgAss, O::AlgAssAbsOrd, I::AlgAssAbsOrdIdl, x::Zmodn_mat, p::fmpz, poneO::AlgAssAbsOrdElem, A1::AlgAss, OtoA1::AbsOrdToAlgAssMor)
+function _from_submodules_to_ideals(M::ModAlgAss, O::AlgAssAbsOrd, I::AlgAssAbsOrdIdl, x::Union{Zmodn_mat, Generic.Mat{Generic.ResF{fmpz}}}, p::fmpz, poneO::AlgAssAbsOrdElem, A1::AlgAss, OtoA1::AbsOrdToAlgAssMor)
   @hassert :AlgAssOrd 1 begin r = rref(x)[1]; closure(x, M.action) == sub(rref(x)[2], 1:r, 1:ncols(x)) end
   m = zero_matrix(FlintZZ, nrows(x)+degree(O) , degree(O))
   gens = Vector{AlgAssAbsOrdElem}(undef, nrows(x))

@@ -669,21 +669,21 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
-    change_base_ring(M::MatElem, R::Ring) -> MatElem{elem_type(R)} 
-
-Given a $m\times n$ matrix M over a ring S and another ring R, return the $m \times n$
-matrix over R obtained by coercing the entries of M from S into R. 
-"""
-function change_base_ring(M::MatElem, R::Ring)
-  MP = zero_matrix(R, nrows(M), ncols(M))
-  for i = 1:nrows(M)
-    for j = 1:ncols(M)
-      MP[i, j] = R(M[i, j])
-    end
-  end
-  return MP
-end
+#@doc Markdown.doc"""
+#    change_base_ring(M::MatElem, R::Ring) -> MatElem{elem_type(R)} 
+#
+#Given a $m\times n$ matrix M over a ring S and another ring R, return the $m \times n$
+#matrix over R obtained by coercing the entries of M from S into R. 
+#"""
+#function change_base_ring(M::MatElem, R::Ring)
+#  MP = zero_matrix(R, nrows(M), ncols(M))
+#  for i = 1:nrows(M)
+#    for j = 1:ncols(M)
+#      MP[i, j] = R(M[i, j])
+#    end
+#  end
+#  return MP
+#end
 
 ################################################################################
 #

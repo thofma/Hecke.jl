@@ -22,12 +22,12 @@ _base_ring(::FlintRationalField) = FlintQQ
 #
 ################################################################################
 
-@doc Markdown.doc"""
-    degree(L::NumField) -> Int 
-
-> Given a number field $L/K$, this function returns the degree of $L$ over $K$.
-"""
-degree(A::NumField)
+#@doc Markdown.doc"""
+#    degree(L::NumField) -> Int 
+#
+#> Given a number field $L/K$, this function returns the degree of $L$ over $K$.
+#"""
+#degree(A::NumField)
 
 ################################################################################
 #

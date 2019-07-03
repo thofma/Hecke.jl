@@ -148,9 +148,9 @@ mutable struct NfRelToNfRelRel{T} <: Map{NfRel{T}, NfRel{NfRelElem{T}}, HeckeMap
   end
 end
 
-function show(io::IO, h::NfRelRelToNfRel)
-  println(io, "Morphism between ", domain(h), "\nand ", codomain(h))
-end
+#function show(io::IO, h::NfRelRelToNfRel)
+#  println(io, "Morphism between ", domain(h), "\nand ", codomain(h))
+#end
 
 ################################################################################
 #

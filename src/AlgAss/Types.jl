@@ -254,11 +254,14 @@ mutable struct AlgAssAbsOrd{S, T} <: Ring
 
   picard_group#::MapPicardGrp
 
+  tcontain::FakeFmpqMat
+
   function AlgAssAbsOrd{S}(A::S) where {S}
     O = new{S, elem_type(S)}()
     O.algebra = A
     O.dim = dim(A)
     O.ismaximal = 0
+    O.tcontain = FakeFmpqMat(zero_matrix(FlintZZ, 1, dim(A)))
     return O
   end
 
@@ -266,8 +269,14 @@ mutable struct AlgAssAbsOrd{S, T} <: Ring
     # "Default" constructor with default values.
     r = AlgAssAbsOrd{S}(A)
     @assert length(basis) == r.dim
-    r.basis_alg = basis
     r.basis_mat = basis_mat(basis)
+    #r.basis_mat = hnf!(basis_mat(basis), :lowerleft)
+    r.basis_alg = basis
+    #r.basis_alg = Vector{elem_type(A)}(undef, length(basis))
+    #for i in 1:length(basis)
+    #  r.basis_alg[i] = sum(r.basis_mat[i, j] * A.basis[j] for j in 1:length(basis))
+    #end
+    r.tcontain = FakeFmpqMat(zero_matrix(FlintZZ, 1, dim(A)))
     return r
   end
 
@@ -276,6 +285,7 @@ mutable struct AlgAssAbsOrd{S, T} <: Ring
     d = dim(A)
     r.basis_mat = basis_mat
     r.basis_alg = Vector{elem_type(S)}(undef, nrows(basis_mat))
+    r.tcontain = FakeFmpqMat(zero_matrix(FlintZZ, 1, dim(A)))
     for i in 1:d
       r.basis_alg[i] = elem_from_mat_row(A, basis_mat.num, i, basis_mat.den)
     end

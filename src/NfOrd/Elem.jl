@@ -701,13 +701,7 @@ function powermod(a::NfOrdElem, i::fmpz, I::NfOrdIdl)
 end
 
 denominator(a::NfAbsNSElem) = denominator(a.data)
-#TODO: replace by Daniel's official version
-function content(a::fmpq_mpoly)
-  c = fmpq()
-  ccall((:fmpq_set, :libflint), Nothing, (Ref{fmpq}, Ref{fmpq_mpoly}), c, a)
-  return c
-end
-denominator(a::fmpq_mpoly) = denominator(content(a))
+
 function mod(a::NfAbsNSElem, p::fmpz)
   b = copy(a)
   @assert denominator(b) == 1

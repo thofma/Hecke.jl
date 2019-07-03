@@ -603,7 +603,8 @@ end
 function _all_combinations(M::MatElem{T}) where T
   K = base_ring(M)
   els = collect(x for x in K)
-  res = Vector{typeof(M)}(undef, length(els)*nrows(M))
+  @assert fits(Int, fmpz(length(els))^nrows(M))
+  res = Vector{typeof(M)}(undef, length(els)^nrows(M))
   ind = 1
   m = zero_matrix(K, 1, nrows(M))
   for i in CartesianIndices(Tuple(1:length(els) for i in 1:nrows(M)))
