@@ -1249,8 +1249,9 @@ end
 # This is not optimizied for performance.
 # If false, then this returns (false, garbage, garbage).
 # If true, then this return (true, basis_mat, basis_mat_inv).
+# This should also work if K is an algebra over QQ.
 function defines_order(K::S, x::FakeFmpqMat) where {S}
-  if nrows(x) != degree(K) || ncols(x) != degree(K)
+  if nrows(x) != dim(K) || ncols(x) != dim(K)
     return false, x, Vector{elem_type(K)}()
   end
   local xinv
@@ -1259,7 +1260,7 @@ function defines_order(K::S, x::FakeFmpqMat) where {S}
   catch
     return false, x, Vector{elem_type(K)}()
   end
-  n = degree(K)
+  n = dim(K)
   B_K = basis(K)
   d = Vector{elem_type(K)}(undef, n)
   # Construct the basis elements from the basis matrix
@@ -1270,7 +1271,10 @@ function defines_order(K::S, x::FakeFmpqMat) where {S}
   # Check if Z-module spanned by x is closed under multiplcation
   l = Vector{elem_type(K)}(undef, n)
   for i in 1:n
-    for j in i:n
+    for j in 1:n
+      if j < i && iscommutative(K)
+        continue
+      end
       l[j] = d[i]*d[j]
     end
     Ml = basis_mat(l, FakeFmpqMat)
@@ -1287,7 +1291,7 @@ function defines_order(K::S, x::FakeFmpqMat) where {S}
 end
 
 function defines_order(K::S, A::Vector{T}) where {S, T}
-  if length(A) != degree(K)
+  if length(A) != dim(K)
     return false, FakeFmpqMat(), FakeFmpqMat(), A
   else
     B = basis_mat(A, FakeFmpqMat)

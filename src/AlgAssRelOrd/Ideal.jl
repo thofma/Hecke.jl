@@ -689,7 +689,7 @@ function assure_has_normred(a::AlgAssRelOrdIdl)
   @assert m^2 == dim(A)
   N = norm(a, copy = false)
   b, I = ispower(N, m)
-  @assert b
+  @assert b "Cannot compute reduced norm. Maybe the algebra is not simple and central?"
   a.normred = I
   return nothing
 end
@@ -838,16 +838,20 @@ function pradical(O::AlgAssRelOrd, p::Union{ NfAbsOrdIdl, NfRelOrdIdl })
   OpO, OtoOpO = AlgAss(O, pO, p)
   J = radical(OpO)
 
+  if isempty(basis(J, copy = false))
+    return pO
+  end
+
   N = basis_pmat(pO, copy = false)
   t = PseudoMatrix(zero_matrix(K, 1, degree(O)))
-  for b in basis(J)
+  for b in basis(J, copy = false)
     bb = OtoOpO\b
     for i = 1:degree(O)
       t.matrix[1, i] = coordinates(bb, copy = false)[i]
     end
     N = vcat(N, deepcopy(t))
   end
-  N = sub(pseudo_hnf_full_rank_with_modulus(N, p, :lowerleft), nrows(N) - degree(O) + 1:nrows(N), 1:degree(O))
+  N = sub(pseudo_hnf(N, :lowerleft, true), nrows(N) - degree(O) + 1:nrows(N), 1:degree(O))
   return ideal(O, N, :twosided, false, true)
 end
 
@@ -908,7 +912,7 @@ function _prime_ideals_over(O::AlgAssRelOrd, prad::AlgAssRelOrdIdl, p::Union{ Nf
 
       N = vcat(N, lifted_components[j])
     end
-    N = sub(pseudo_hnf_full_rank_with_modulus(N, p, :lowerleft), nrows(N) - degree(O) + 1:nrows(N), 1:degree(O))
+    N = sub(pseudo_hnf(N, :lowerleft, true), nrows(N) - degree(O) + 1:nrows(N), 1:degree(O))
     push!(primes, ideal(O, N, :twosided, false, true))
   end
 

@@ -11,6 +11,7 @@
     @test intersect(I, J) == J
     @test I^2 == J
     @test I^fmpz(2) == J
+    @test norm(I) == 16
   end
 
   @testset "Prime ideals" begin

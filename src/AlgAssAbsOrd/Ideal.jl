@@ -1029,9 +1029,9 @@ function ring_of_multipliers(I::AlgAssAbsOrdIdl, p::fmpz=fmpz(1), action::Symbol
   n = transpose(view(m, 1:degree(O), 1:degree(O)))
   b = FakeFmpqMat(pseudo_inv(n))
   mul!(b, b, basis_mat(O, copy = false))
+  @hassert :AlgAssOrd 1 defines_order(algebra(O), b)[1]
   O1 = Order(algebra(O), b)
   O1.disc = divexact(discriminant(O), s^2)
-  @hassert :AlgAssOrd 1 check_order(O1)
   return O1
 end
 
@@ -1193,6 +1193,56 @@ end
 
 ################################################################################
 #
+#  Some tests
+#
+################################################################################
+
+function check_ideal(I::AlgAssAbsOrdIdl)
+  
+  O = order(I)
+  B = basis(O)
+  B1 = basis(I)
+  for i = 1:length(B)
+    for j = 1:length(B1)
+      if !(B[i]*B1[j] in I)
+        @show coordinates(B[i]*B1[j])
+        error("Ideal not closed under multiplication")
+      end 
+      if !(B1[j]*B[i] in I)
+        @show coordinates(B1[j]*B[i])
+        error("Ideal not closed under multiplication")
+      end 
+    end 
+  end
+  return true
+end
+
+function check_pradical(I::AlgAssAbsOrdIdl, p::Int)
+  
+  O= order(I)
+  for i=1:degree(O)
+    x=elem_from_mat_row(O,basis_mat(I, copy = false), i)
+    for j=1:degree(O)
+      @assert divisible(numerator(tr(elem_in_algebra(x; copy = false)*O.basis_alg[j])), p)
+    end
+  end
+  #=
+  if p==2
+    for i=1:O.dim
+      x=elem_from_mat_row(O,I.basis_mat, i)
+      for j=1:O.dim
+        for k=1:clog(fmpz(O.dim), p)
+          @assert divisible(numerator(tr((x.elem_in_algebra*O.basis_alg[j])^(p^k))), p^(k+1))
+        end
+      end
+    end
+  end
+  =#
+  return true
+end
+
+################################################################################
+#
 #  Primes lying over a prime
 #
 ################################################################################
@@ -1252,4 +1302,104 @@ end
 function prime_ideals_over(O::AlgAssAbsOrd, p::Union{ Int, fmpz })
   @vtime :AlgAssOrd 1 max_id = collect(_maximal_ideals(O, p*O, Int(p)))
   return max_id
+end
+
+@doc Markdown.doc"""
+    prime_ideals_over(O::AlgAssAbsOrd, P::AlgAssAbsOrdIdl) -> Vector{AlgAssAbsOrdIdl}
+
+> Given a prime ideal $P$ in an order contained in $O$, this function returns
+> the prime ideals of $O$ lying over $P$.
+"""
+function prime_ideals_over(O::AlgAssAbsOrd, P::AlgAssAbsOrdIdl)
+  O1 = order(P)
+  if O1 == O
+    return ideal_type(O)[P]
+  end
+  M = maximal_order(O)
+  lp = prime_ideals_over(M, minimum(P))
+  p_critical_primes = Vector{ideal_type(O)}()
+  for Q in lp
+    c = contract(Q, O1)
+    if c == P
+      c1 = contract(Q, O)
+      if !(c1 in p_critical_primes)
+        push!(p_critical_primes, c1)
+      end
+    end
+  end
+  return p_critical_primes
+end
+
+################################################################################
+#
+#  Minimum
+#
+################################################################################
+
+function minimum(P::AlgAssAbsOrdIdl)
+  N = norm(P, copy = false)
+  f, p = ispower(N)
+  @assert isprime(p)
+  return p
+end
+
+################################################################################
+#
+#  Norm
+#
+################################################################################
+
+function assure_has_norm(a::AlgAssAbsOrdIdl)
+  if isdefined(a, :norm)
+    return nothing
+  end
+
+  a.norm = abs(det(basis_mat(a, copy = false)))
+  return nothing
+end
+
+@doc Markdown.doc"""
+    norm(a::AlgAssAbsordIdl; copy::Bool = true) -> fmpz
+
+> Returns the norm of $a$.
+"""
+function norm(a::AlgAssAbsOrdIdl; copy::Bool = true)
+  assure_has_norm(a)
+  if copy
+    return deepcopy(a.norm)
+  else
+    return a.norm
+  end
+end
+
+function assure_has_normred(a::AlgAssAbsOrdIdl)
+  if isdefined(a, :normred)
+    return nothing
+  end
+
+  A = algebra(order(a))
+  m = isqrt(dim(A))
+  @assert m^2 == dim(A)
+  N = norm(a, copy = false)
+  b, n = ispower(N, m)
+  @assert b "Cannot compute reduced norm. Maybe the algebra is not simple and central?"
+  a.normred = n
+  return nothing
+end
+
+@doc Markdown.doc"""
+    normred(a::AlgAssAbsOrdIdl; copy::Bool = true) -> fmpz
+
+> Returns the reduced norm of $a$.
+> It is assumed that the algebra containing $a$ is simple and central.
+"""
+function normred(a::AlgAssAbsOrdIdl; copy::Bool = true)
+  @assert dimension_of_center(algebra(order(a))) == 1
+  @assert algebra(order(a)).issimple == 1
+  assure_has_normred(a)
+  if copy
+    return deepcopy(a.normred)
+  else
+    return a.normred
+  end
 end

@@ -472,6 +472,14 @@ end
 function maximal_order(O::AlgAssRelOrd)
   A = algebra(O)
 
+  if isdefined(A, :maximal_order)
+    # Check whether O \subseteq OO
+    OO = A.maximal_order
+    if _spans_subset_of_pseudohnf(basis_pmat(O, copy = false), basis_pmat(OO, copy = false), :lowerleft)
+      return OO
+    end
+  end
+
   d = discriminant(O)
   fac = factor(d)
 
@@ -483,6 +491,10 @@ function maximal_order(O::AlgAssRelOrd)
     OO += pmaximal_overorder(O, p)
   end
   OO.ismaximal = 1
+
+  if !isdefined(A, :maximal_order)
+    A.maximal_order = OO
+  end
   return OO
 end
 

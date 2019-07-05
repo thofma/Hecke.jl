@@ -30,6 +30,45 @@ order_type(::Type{AlgMat{T, S}}) where { T <: NumFieldElem, S } = AlgAssRelOrd{T
 
 ################################################################################
 #
+#  Commutativity
+#
+################################################################################
+
+iscommutative_known(A::AlgMat) = (A.iscommutative != 0)
+
+@doc Markdown.doc"""
+    iscommutative(A::AlgMat) -> Bool
+
+> Returns `true` if $A$ is a commutative ring and `false` otherwise.
+"""
+function iscommutative(A::AlgMat)
+  if iscommutative_known(A)
+    return A.iscommutative == 1
+  end
+  dcr = 1
+  if coefficient_ring(A) != base_ring(A)
+    dcr = dim(coefficient_ring(A))
+  end
+  if dim(A) == degree(A)^2*dcr
+    A.iscommutative = 2
+    return false
+  end
+
+  mt = multiplication_table(A, copy = false)
+  for i = 1:dim(A)
+    for j = i + 1:dim(A)
+      if mt[i, j, :] != mt[j, i, :]
+        A.iscommutative = 2
+        return false
+      end
+    end
+  end
+  A.iscommutative = 1
+  return true
+end
+
+################################################################################
+#
 #  Basis matrix
 #
 ################################################################################

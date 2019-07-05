@@ -29,6 +29,8 @@ _base_ring(::FlintRationalField) = FlintQQ
 #"""
 #degree(A::NumField)
 
+dim(K::NumField) = degree(K)
+
 ################################################################################
 #
 #  Absolute degree
@@ -78,3 +80,11 @@ issimple(a::NumField)
 > argument to `false`.
 """
 NumberField(f::PolyElem{<:NumFieldElem}, s::String; cached::Bool = false, check::Bool = false) 
+
+################################################################################
+#
+#  Is commutative
+#
+################################################################################
+
+iscommutative(K::NumField) = true

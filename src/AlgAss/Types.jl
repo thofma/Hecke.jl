@@ -256,8 +256,9 @@ mutable struct AlgAssAbsOrd{S, T} <: Ring
 
   tcontain::FakeFmpqMat
 
-  function AlgAssAbsOrd{S}(A::S) where {S}
-    O = new{S, elem_type(S)}()
+  function AlgAssAbsOrd{S, T}(A::S) where {S, T}
+    # "Default" constructor with default values.
+    O = new{S, T}()
     O.algebra = A
     O.dim = dim(A)
     O.ismaximal = 0
@@ -265,33 +266,53 @@ mutable struct AlgAssAbsOrd{S, T} <: Ring
     return O
   end
 
-  function AlgAssAbsOrd{S, T}(A::S, basis::Vector{T}) where {S, T}
-    # "Default" constructor with default values.
-    r = AlgAssAbsOrd{S}(A)
-    @assert length(basis) == r.dim
-    r.basis_mat = basis_mat(basis)
-    #r.basis_mat = hnf!(basis_mat(basis), :lowerleft)
-    r.basis_alg = basis
-    #r.basis_alg = Vector{elem_type(A)}(undef, length(basis))
-    #for i in 1:length(basis)
-    #  r.basis_alg[i] = sum(r.basis_mat[i, j] * A.basis[j] for j in 1:length(basis))
-    #end
-    r.tcontain = FakeFmpqMat(zero_matrix(FlintZZ, 1, dim(A)))
-    return r
+  function AlgAssAbsOrd{S, T}(A::S, M::FakeFmpqMat, Minv::FakeFmpqMat, B::Vector{T}, cached::Bool = false) where {S, T}
+    if cached && haskey(AlgAssAbsOrdID, (A, M))
+      return AlgAssAbsOrdID[(A, M)]
+    end
+    O = AlgAssAbsOrd{S, T}(A)
+    O.basis_alg = B
+    O.basis_mat = M
+    O.basis_mat_inv = Minv
+    if cached
+      AlgAssAbsOrdID[(A, M)] = O
+    end
+    return O
   end
 
-  function AlgAssAbsOrd{S}(A::S, basis_mat::FakeFmpqMat) where {S}
-    r = AlgAssAbsOrd{S}(A)
-    d = dim(A)
-    r.basis_mat = basis_mat
-    r.basis_alg = Vector{elem_type(S)}(undef, nrows(basis_mat))
-    r.tcontain = FakeFmpqMat(zero_matrix(FlintZZ, 1, dim(A)))
-    for i in 1:d
-      r.basis_alg[i] = elem_from_mat_row(A, basis_mat.num, i, basis_mat.den)
+  function AlgAssAbsOrd{S, T}(A::S, M::FakeFmpqMat, cached::Bool = false) where {S, T}
+    if cached && haskey(AlgAssAbsOrdID, (A, M))
+      return AlgAssAbsOrdID[(A, M)]
     end
-    return r
+    O = AlgAssAbsOrd{S, T}(A)
+    d = dim(A)
+    O.basis_mat = M
+    O.basis_alg = Vector{T}(undef, d)
+    for i in 1:d
+      O.basis_alg[i] = elem_from_mat_row(A, M.num, i, M.den)
+    end
+    if cached
+      AlgAssAbsOrdID[(A, M)] = O
+    end
+    return O
+  end
+
+  function AlgAssAbsOrd{S, T}(A::S, B::Vector{T}, cached::Bool = false) where {S, T}
+    O = AlgAssAbsOrd{S, T}(A)
+    M = basis_mat(B, FakeFmpqMat)
+    if cached && haskey(AlgAssAbsOrdID, (A, M))
+      return AlgAssAbsOrdID[(A, M)]
+    end
+    O.basis_alg = B
+    O.basis_mat = M
+    if cached
+      AlgAssAbsOrdID[(A, M)] = O
+    end
+    return O
   end
 end
+
+const AlgAssAbsOrdID = Dict{Tuple{AbsAlgAss, FakeFmpqMat}, AlgAssAbsOrd}()
 
 mutable struct AlgAssAbsOrdElem{S, T} <: RingElem
   elem_in_algebra::T
@@ -349,6 +370,9 @@ mutable struct AlgAssAbsOrdIdl{S, T}
   isright::Int                     # as for isleft
 
   iszero::Int                             # 0: don't know, 1: known to be zero, 2: known to be not zero
+
+  norm::fmpz
+  normred::fmpz
 
   function AlgAssAbsOrdIdl{S, T}(O::AlgAssAbsOrd{S, T}) where {S, T}
     r = new{S, T}()
@@ -435,6 +459,7 @@ mutable struct AlgMat{T, S} <: AbsAlgAss{T}
   degree::Int
   issimple::Int
   issemisimple::Int
+  iscommutative::Int
   decomposition
   maximal_order
   mult_table::Array{T, 3} # e_i*e_j = sum_k mult_table[i, j, k]*e_k
@@ -445,6 +470,7 @@ mutable struct AlgMat{T, S} <: AbsAlgAss{T}
     A.coefficient_ring = R
     A.issimple = 0
     A.issemisimple = 0
+    A.iscommutative = 0
     return A
   end
 
@@ -454,6 +480,7 @@ mutable struct AlgMat{T, S} <: AbsAlgAss{T}
     A.coefficient_ring = R2
     A.issimple = 0
     A.issemisimple = 0
+    A.iscommutative = 0
     return A
   end
 end

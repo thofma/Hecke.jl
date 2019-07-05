@@ -132,21 +132,6 @@ domain(f::GrpAbFinGenToNfOrdQuoNfOrd) = f.domain
 
 codomain(f::GrpAbFinGenToNfOrdQuoNfOrd) = f.codomain
 
-basis_mat(a::Vector{<:AbsAlgAssElem}, ::Type{FakeFmpqMat}) = basis_mat(a)
-
-function elem_to_mat_row!(x::fmpz_mat, i::Int, d::fmpz, a::AbsAlgAssElem)
-  z = zero_matrix(FlintQQ, 1, ncols(x))
-  elem_to_mat_row!(z, 1, a)
-  z_q = FakeFmpqMat(z)
-
-  for j in 1:ncols(x)
-    x[i, j] = z_q.num[1, j]
-  end
-
-  ccall((:fmpz_set, :libflint), Nothing, (Ref{fmpz}, Ref{fmpz}), d, z_q.den)
-  return nothing
-end
-
 function image(f::GrpAbFinGenToNfOrdQuoNfOrd{S, T, U}, x::GrpAbFinGenElem) where {S, T, U}
   t = zero(codomain(f))
   z = deepcopy(f.top_snf_basis_in_order[1 + f.offset])
@@ -1542,43 +1527,6 @@ end
 #  Clean up
 #
 ################################################################################
-
-#P is a prime ideal in a order contained in O
-#Computes the set of prime ideals lying over P
-
-function prime_ideals_over(O, P)
-  #@assert isprime(P)
-  O1 = order(P)
-  if O1 == O
-    return ideal_type(O)[P]
-  end
-  M = maximal_order(O)
-  lp = prime_ideals_over(M, minimum(P))
-  p_critical_primes = Vector{ideal_type(O)}()
-  for Q in lp
-    c = contract(Q, O1)
-    if c == P
-      c1 = contract(Q, O)
-      #c1.is_prime = 1
-      if !(c1 in p_critical_primes)
-        push!(p_critical_primes, c1)
-      end 
-    end
-  end
-  return p_critical_primes
-end
-
-function minimum(P::AlgAssAbsOrdIdl)
-  #@show FakeFmpqMat(matrix(ZZ, 1, nrows(B), coordinates(one(order(P))))) * basis_mat_inv(P)
-  N = norm(P)
-  f, p = ispower(N)
-  @assert isprime(p)
-  return p
-end
-
-function norm(P::AlgAssAbsOrdIdl)
-  return det(basis_mat(P))
-end
 
 contains_equation_order(O) = false
 

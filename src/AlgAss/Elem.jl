@@ -704,7 +704,20 @@ function elem_from_mat_row(A::AbsAlgAss{T}, M::MatElem{T}, i::Int) where T
   return a
 end
 
-function elem_from_mat_row(A::AbsAlgAss, M::fmpz_mat, i::Int, d::fmpz=fmpz(1))
+function elem_to_mat_row!(x::fmpz_mat, i::Int, d::fmpz, a::AbsAlgAssElem{fmpq})
+  z = zero_matrix(FlintQQ, 1, ncols(x))
+  elem_to_mat_row!(z, 1, a)
+  z_q = FakeFmpqMat(z)
+
+  for j in 1:ncols(x)
+    x[i, j] = z_q.num[1, j]
+  end
+
+  ccall((:fmpz_set, :libflint), Nothing, (Ref{fmpz}, Ref{fmpz}), d, z_q.den)
+  return nothing
+end
+
+function elem_from_mat_row(A::AbsAlgAss{fmpq}, M::fmpz_mat, i::Int, d::fmpz = fmpz(1))
   a = A()
   for j in 1:ncols(M)
     a.coeffs[j] = fmpq(M[i, j], d)
