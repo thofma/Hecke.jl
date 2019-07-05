@@ -897,14 +897,5 @@ end
 
 @inline __get_rounding_mode() = Base.MPFR.rounding_raw(BigFloat)
 
-# TODO: Remove the following once Nemo 0.14.1 is tagged and used
-function content(a::fmpq_mpoly)
-  c = fmpq()
-  ccall((:fmpq_set, :libflint), Nothing, (Ref{fmpq}, Ref{fmpq_mpoly}), c, a)
-  return c
-end
-
-denominator(a::fmpq_mpoly) = denominator(content(a))
-
 end # module
 
