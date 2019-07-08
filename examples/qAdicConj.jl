@@ -890,7 +890,7 @@ completion(K::AnticNumberField, p::Integer, i::Int) = completion(K, fmpz(p), i)
 
 function completion(K::AnticNumberField, p::fmpz, i::Int)
   C = qAdicConj(K, Int(p))
-  @assert 0<i<= length(C.C.Q)
+  @assert 0<i<= length(C.C.R)
 
   ca = conjugates(gen(K), C)[i]
   function inj(a::nf_elem)
@@ -944,7 +944,7 @@ function completion(K::AnticNumberField, p::fmpz, i::Int)
       n -= 1
       r = r*d + lift(coeff(x, n-1))
     end
-    return r*K(p)^valuation(x)
+    return r#*K(p)^valuation(x)
   end
   return parent(ca), MapFromFunc(inj, lif, K, parent(ca))
 end
@@ -986,6 +986,12 @@ function reco_inv(a::NfAbsOrdElem, M, pM)
   return parent(a)(collect(m*pM[1]))
 end
 
+function reco(a::nf_elem, M, pM)
+  m = matrix(FlintZZ, 1, degree(parent(a)), [FlintZZ(coeff(a, i)) for i=0:degree(parent(a))-1])
+  m = m - matrix(FlintZZ, 1, degree(parent(a)), map(x -> round(fmpz, x//pM[2]), m*pM[1]))*M
+  return parent(a)(parent(parent(a).pol)(collect(m)))
+end
+
 
 function zassenhaus(f::fmpz_poly, P::NfOrdIdl, N::Int)
   return zassenhaus(change_base_ring(f, nf(order(P))), P, N)
@@ -1017,6 +1023,11 @@ function zassenhaus(f::PolyElem{nf_elem}, P::NfOrdIdl, N::Int)
   #    : if f is the norm of a poly over a larger field, then every
   #      combination has to respect he prime splitting in the extension
   #      the norm(poly) is the prod of the local norm(poly)s
+  #TODO: make subsets for Set
+  #TODO: test reco result for being small, do early abort
+  #TODO: test selected coefficients first without computing the product
+  #TODO: once a factor is found (need to enumerate by size!!!), remove stuff...
+  #add/use degree sets and search restrictions. Users might want restricted degrees
   for s = Hecke.subsets(S)
     if length(s) == 0
       continue
@@ -1112,7 +1123,7 @@ cld_bound(f::fmpz_poly, k::Array{Int, 1}) = map(x->cld_bound(f, x), k)
 Base.log2(a::fmpz) = log2(BigInt(a))
 
 function initial_prec(f::PolyElem{nf_elem}, p::Int, r::Int = degree(f))
-  b = minimum(cld_bound(f, [0,1]))
+  b = minimum(cld_bound(f, [0,degree(f)-2])) #deg(f)-1 will always be deg factor
   a = ceil(Int, (2.5*r*degree(base_ring(f))+log2(b) + log2(degree(f))/2)/log2(p))
   return a
 end
@@ -1168,7 +1179,7 @@ function van_hoeij(f::fmpq_poly, P::NfOrdIdl, N::Int)
 end
 
 
-function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl, pr::Int; magic = 20)
+function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl, pr::Int; prec_scale = 20)
   K = base_ring(parent(f))
   C, mC = completion(K, P)
   setprecision!(C, pr)
@@ -1176,25 +1187,43 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl, pr::Int; magic = 20)
   while precision(H) < pr
     lift(H)
   end
-  N = degree(f)
-  r = length(factor(H))
+  @show N = degree(f)
+  @show r = length(factor(H))
 
-  Ml = lll(basis_mat(P^pr))
-  pM = pseudo_inv(Ml)
+  @time Ml = lll(basis_mat(P^pr))
+  pMr = pseudo_inv(Ml)
   av_bits = sum(nbits, Ml)/nrows(Ml)^2
-  F = FakeFmpqMat(pM)
+  F = FakeFmpqMat(pMr)
   #M * basis_mat(zk) is the basis wrt to the field
   #(M*B)^-1 = B^-1 * M^-1, so I need basis_mat_inv(zk) * pM
+  pMr = (F.num, F.den)
   F = basis_mat_inv(order(P)) * F
   pM = (F.num, F.den)
 #  return H, mC, pM
-  up_to = 7
-  from = N-7  #use 5 coeffs on either end
+  up_to = max(5, ceil(Int, N/10))
+  from = N-up_to  #use 5 coeffs on either end
   up_to = min(up_to, N)
   from = min(from, N)
   from = max(up_to, from)
-  C = cld_data(H, up_to, from, mC, pM[1]) # currently all information, needs to be gradually done
+  C = cld_data(H, up_to, from, mC, pM[1]) 
   b = cld_bound(f, vcat(0:up_to-1, from:N-1))
+
+  # from Fieker/Friedrichs, still wrong here
+  # needs to be larger than anticipated...
+  c1, c2 = Hecke.norm_change_const(order(P))
+  @show b = [ceil(Int, degree(K)/2/degree(P)*(log2(c1*c2) + 2*nbits(x))) for x = b]
+  # In the end, p-adic precision needs to be large enough to
+  # cover some CLDs. If you want the factors, it also has to 
+  # cover those. The norm change constants also come in ...
+  # and the degree of P...
+
+  # starting precision:
+  # - large enough to recover factors (maybe)
+  # - large enough to recover some CLD (definitely)
+  # - + eps to give algo a chance.
+  # Then take 10% of the CLD, small enough for the current precision
+  # possibly figure out which CLD's are available at all
+
   # we want
   # I |  C/p^n
   # 0 |   I
@@ -1231,10 +1260,9 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl, pr::Int; magic = 20)
   # if unlucky: re-do Hensel and start over again, hopefull retaining some info
   # can happen if the CLD coeffs are too large for the current Hensel level
   r = length(factor(H))
-  prec_scale = 20 #Bill's article
   M = identity_matrix(FlintZZ, r)*2^prec_scale
   used = []
-  have = vcat(0:up_to-1, from:N-1)
+  have = vcat(0:up_to-1, from:N-2)  #N-1 is always 1
   st = 1
   while length(have) > 0
     if isodd(st)
@@ -1247,16 +1275,29 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl, pr::Int; magic = 20)
     st += 1
     i = findfirst(x->x == n, have) #new data will be in block i of C
     B = sub(C, 1:r, (i-1)*degree(K)+1:i*degree(K))
+    @show i, maximum(nbits, B)
+    
     T = sub(M, 1:nrows(M), 1:r)
     B = T*B   # T contains the prec_scale 
     mod_sym!(B, pM[2]*2^prec_scale)
-    sz = floor(Int, degree(K)*av_bits/degree(P) - nbits(b[i])) + magic
+    @show maximum(nbits, B), nbits(pM[2]), b[i]
+    @show sz = floor(Int, degree(K)*av_bits/degree(P) - b[i])
+    if sz + prec_scale >= nbits(pM[2]) || sz < 0
+      println("loss of precision for this col: ", sz, " ", nbits(pM[2]))
+      continue
+    else
+      sz = nbits(pM[2]) - 2 * prec_scale
+    end
+    @show sz, nbits(pM[2])
     ccall((:fmpz_mat_scalar_tdiv_q_2exp, :libflint), Nothing, (Ref{fmpz_mat}, Ref{fmpz_mat}, Cint), B, B, sz)
     s = max(0, sz - prec_scale)
     d = tdivpow2(pM[2], s)
     M = [M B; zero_matrix(FlintZZ, ncols(B), ncols(M)) d*identity_matrix(FlintZZ, ncols(B))]
-    l, M = lll_with_removal(M, r*fmpz(2)^(2*prec_scale) + div(r+1, 2)*N*degree(K))
-    @show hnf(sub(M, 1:l, 1:r))
+#    @show map(nbits, Array(M))
+    @time l, M = lll_with_removal(M, r*fmpz(2)^(2*prec_scale) + div(r+1, 2)*N*degree(K))
+#    @show l, i# , map(nbits, Array(M))
+#    @show hnf(sub(M, 1:l, 1:r))
+    @assert !iszero(sub(M, 1:l, 1:r))
     M = sub(M, 1:l, 1:ncols(M))
     d = Dict{fmpz_mat, Array{Int, 1}}()
     for l=1:r
@@ -1268,8 +1309,35 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl, pr::Int; magic = 20)
       end
     end
     if length(keys(d)) <= nrows(M)
-      @show "BINGO"
-      display(d)
+      @show "BINGO", length(keys(d)), "factors"
+      if length(keys(d)) == 2
+        return H, mC, pM, d
+      end
+      res = typeof(f)[]
+      for v = values(d)
+        #trivial test:
+        a = prod(map(constant_coefficient, factor(H)[v]))
+        A = K(reco(order(P)(preimage(mC, a)), Ml, pMr))
+        if denominator(divexact(constant_coefficient(f), A), order(P)) != 1
+          @show "fast damm"
+          break
+        end
+        g = prod(factor(H)[v])
+        G = parent(f)([K(reco(order(P)(preimage(mC, coeff(g, l))), Ml, pMr)) for l=0:degree(g)])
+
+        if !iszero(rem(f, G))
+          @show "damm"
+          return g, mC, Ml, pMr
+          break
+        end
+        push!(res, G)
+      end
+      if length(res) < length(d)
+        @show "... here we go again ..."
+#        return H, mC, pM
+      else
+        return res
+      end
     end
   end
 end
@@ -1294,6 +1362,40 @@ function map!(f, M::fmpz_mat)
   end
 end
 
+#does not seem to be faster than the direct approach. (not modular)
+#Magma is faster, which seems to suggest the direct resultant is
+#even better (modular resultant)
+# power series over finite fields are sub-par...or at least this usage
+# fixed "most" of it...
+function norm_mod(f::PolyElem{nf_elem}, Zx)
+  p = Hecke.p_start
+  K = base_ring(f)
+
+  g = Zx(0)
+  d = fmpz(1)
+
+  while true
+    p = next_prime(p)
+    k = GF(p)
+    me = modular_init(K, p)
+    t = Hecke.modular_proj(f, me)
+    tt = lift(Zx, Hecke.power_sums_to_polynomial(sum(map(x -> map(y -> k(coeff(trace(y), 0)), Hecke.polynomial_to_power_sums(x, degree(f)*degree(K))), t))))
+    prev = g
+    if isone(d)
+      g = tt
+      d = fmpz(p)
+    else
+      g, d = induce_crt(g, d, tt, fmpz(p), true)
+    end
+    if prev == g
+      return g
+    end
+    if nbits(d) > 2000
+      error("too bad")
+    end
+  end
 end
 
-set_printing_mode(FlintPadicField, :terse)
+end
+
+#set_printing_mode(FlintPadicField, :terse)
