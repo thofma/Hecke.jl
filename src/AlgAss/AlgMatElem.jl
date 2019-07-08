@@ -241,6 +241,7 @@ function (A::AlgMat)()
 end
 
 function (A::AlgMat{T, S})(M::S) where { T, S }
+  @assert base_ring(M) === coefficient_ring(A)
   return AlgMatElem{T, typeof(A), S}(A, M)
 end
 

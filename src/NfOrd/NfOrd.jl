@@ -994,7 +994,9 @@ function _order(K::S, elt::Array{T, 1}; cached::Bool = true, check::Bool = true)
         B = sub(B, rk:nrows(B), 1:n)
         phase = 2
         bas = elem_type(K)[ elem_from_mat_row(K, B.num, i, B.den) for i = 1:nrows(B) ]
-        @assert isone(bas[1])
+        if check
+          @assert isone(bas[1])
+        end
       end
     end
   end
@@ -1096,7 +1098,7 @@ function +(a::NfAbsOrd, b::NfAbsOrd; cached::Bool = false)
   nf(a) != nf(b) && error("Orders must have same ambient number field")
   if contains_equation_order(a) && contains_equation_order(b) &&
           isone(gcd(index(a), index(b)))
-    return sum_as_Z_modules(a, b)
+    return sum_as_Z_modules_fast(a, b)
   else
     return _order(nf(a), vcat(a.basis_nf, b.basis_nf), cached = cached, check = false)
   end
@@ -1108,8 +1110,16 @@ end
 #
 ################################################################################
 
-function sum_as_Z_modules(O1::NfAbsOrd, O2::NfAbsOrd, z::fmpz_mat = zero_matrix(FlintZZ, 2 * degree(O1), degree(O1)))
-  K = nf(O1)
+function sum_as_Z_modules(O1, O2, z::fmpz_mat = zero_matrix(FlintZZ, 2 * degree(O1), degree(O1)))
+  if contains_equation_order(O1) && contains_equation_order(O2)
+    return sum_as_Z_modules_fast(O1, O2, z)
+  else
+    return O1 + O2
+  end
+end
+
+function sum_as_Z_modules_fast(O1, O2, z::fmpz_mat = zero_matrix(FlintZZ, 2 * degree(O1), degree(O1)))
+  K = _algebra(O1)
   R1 = basis_mat(O1, copy = false)
   S1 = basis_mat(O2, copy = false)
   d = degree(K)
@@ -1121,11 +1131,13 @@ function sum_as_Z_modules(O1::NfAbsOrd, O2::NfAbsOrd, z::fmpz_mat = zero_matrix(
   mul!(z1, R1.num, s1)
   z2 = view(z, (d + 1):2*d, 1:d)
   mul!(z2, S1.num, r1)
-  hnf_modular_eldiv!(z, lcm(R1.den,S1.den), :lowerleft)
+  hnf_modular_eldiv!(z, lcm(R1.den, S1.den), :lowerleft)
   M = FakeFmpqMat(view(z, (nrows(z)-ncols(z)+1):nrows(z), 1:ncols(z)), lcm(R1.den, S1.den))
   @hassert :NfOrd 1 defines_order(K, M)[1]
-  O = NfAbsOrd(K, M, false)
-  O.primesofmaximality = union(O1.primesofmaximality, O2.primesofmaximality)
+  O = Order(K, M, check = false)
+  if O isa NfOrd
+    O.primesofmaximality = union(O1.primesofmaximality, O2.primesofmaximality)
+  end
   O.disc = gcd(discriminant(O1), discriminant(O2))
   if O1.disc<0 || O2.disc<0
     O.disc = -O.disc
@@ -1237,8 +1249,9 @@ end
 # This is not optimizied for performance.
 # If false, then this returns (false, garbage, garbage).
 # If true, then this return (true, basis_mat, basis_mat_inv).
+# This should also work if K is an algebra over QQ.
 function defines_order(K::S, x::FakeFmpqMat) where {S}
-  if nrows(x) != degree(K) || ncols(x) != degree(K)
+  if nrows(x) != dim(K) || ncols(x) != dim(K)
     return false, x, Vector{elem_type(K)}()
   end
   local xinv
@@ -1247,7 +1260,7 @@ function defines_order(K::S, x::FakeFmpqMat) where {S}
   catch
     return false, x, Vector{elem_type(K)}()
   end
-  n = degree(K)
+  n = dim(K)
   B_K = basis(K)
   d = Vector{elem_type(K)}(undef, n)
   # Construct the basis elements from the basis matrix
@@ -1258,7 +1271,10 @@ function defines_order(K::S, x::FakeFmpqMat) where {S}
   # Check if Z-module spanned by x is closed under multiplcation
   l = Vector{elem_type(K)}(undef, n)
   for i in 1:n
-    for j in i:n
+    for j in 1:n
+      if j < i && iscommutative(K)
+        continue
+      end
       l[j] = d[i]*d[j]
     end
     Ml = basis_mat(l, FakeFmpqMat)
@@ -1275,7 +1291,7 @@ function defines_order(K::S, x::FakeFmpqMat) where {S}
 end
 
 function defines_order(K::S, A::Vector{T}) where {S, T}
-  if length(A) != degree(K)
+  if length(A) != dim(K)
     return false, FakeFmpqMat(), FakeFmpqMat(), A
   else
     B = basis_mat(A, FakeFmpqMat)

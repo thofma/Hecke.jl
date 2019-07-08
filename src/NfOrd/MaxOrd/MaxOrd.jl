@@ -149,8 +149,13 @@ function new_maximal_order(O::NfOrd; index_divisors::Vector{fmpz} = fmpz[], disc
     O.ismaximal = 1
     return O  
   end
+
+  if isdefining_polynomial_nice(K) && !isone(denominator(basis_mat_inv(O)))
+    #The order does not contain the equation order. We add them
+    O = O + EquationOrder(K)
+  end
   
-  if isdefining_polynomial_nice(K) && (isequation_order(O) || isinteger(gen_index(O)))
+  if isdefining_polynomial_nice(K) && (isequation_order(O) || isone(denominator(basis_mat_inv(O))))
     Zx, x = PolynomialRing(FlintZZ, "x", cached = false)
     f1 = Zx(K.pol)
     ds = gcd(rres(f1, derivative(f1)), discriminant(O))
@@ -242,8 +247,8 @@ function new_maximal_order(O::NfOrd; index_divisors::Vector{fmpz} = fmpz[], disc
     @vprint :NfOrd 1 "I have to factor $Q\n "
     for el in Q
       d = factor(el).fac
-      O1 = pmaximal_overorder_at(O, collect(keys(d)))
-      OO = sum_as_Z_modules(OO, O1, auxmat)
+      O2 = pmaximal_overorder_at(O, collect(keys(d)))
+      O1 = sum_as_Z_modules(O1, O2, auxmat)
     end
   end
   O1.ismaximal = 1

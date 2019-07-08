@@ -22,12 +22,14 @@ _base_ring(::FlintRationalField) = FlintQQ
 #
 ################################################################################
 
-@doc Markdown.doc"""
-    degree(L::NumField) -> Int 
+#@doc Markdown.doc"""
+#    degree(L::NumField) -> Int 
+#
+#> Given a number field $L/K$, this function returns the degree of $L$ over $K$.
+#"""
+#degree(A::NumField)
 
-> Given a number field $L/K$, this function returns the degree of $L$ over $K$.
-"""
-degree(A::NumField)
+dim(K::NumField) = degree(K)
 
 ################################################################################
 #
@@ -78,3 +80,11 @@ issimple(a::NumField)
 > argument to `false`.
 """
 NumberField(f::PolyElem{<:NumFieldElem}, s::String; cached::Bool = false, check::Bool = false) 
+
+################################################################################
+#
+#  Is commutative
+#
+################################################################################
+
+iscommutative(K::NumField) = true
