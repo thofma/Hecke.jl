@@ -239,6 +239,14 @@ function Hecke.roots(C::qAdicRootCtx, n::Int = 10)
       end
     end
   end
+  if isdefined(C, :R)
+    st = qadic[]
+    for r = C.R
+      p = findfirst(x -> degree(parent(r)) == degree(parent(x)) && iszero(x-r), rt)
+      push!(st, rt[p])
+    end
+    rt = st
+  end
   C.R = rt
   return rt
 end
@@ -256,6 +264,12 @@ mutable struct qAdicConj
 
   function qAdicConj(K::AnticNumberField, p::Int)
     D = _get_nf_conjugate_data_qAdic(K, false)
+    global new_load
+    if new_load 
+      D = Dict{Int, Tuple{qAdicRootCtx, Dict{nf_elem, Any}}}()
+      _set_nf_conjugate_data_qAdic(K, D)
+      new_load = false
+    end
     if D !== nothing
       if haskey(D, p)
         Dp = D[p]
@@ -292,7 +306,7 @@ function _conjugates(a::nf_elem, C::qAdicConj, n::Int, op::Function; flat::Bool 
     push!(res, a)
     if all
       i = 2
-      while i < degree(parent(a))
+      while i <= degree(parent(a))
         a = frobenius(a)
         push!(res, a)
         i += 1
@@ -809,6 +823,10 @@ function Hecke.lift(C::HenselCtxQadic)
   j = i-1
   p = C.p
   N = valuation(p)
+  @show map(precision, coefficients(C.f)), N, precision(parent(p))
+  @show mx = minimum(precision, coefficients(C.f))
+  N2 = min(mx, 2*N)
+  @show p = setprecision(p, N2)
   while j > 0
     if i==length(C.lf)
       f = C.f
@@ -820,10 +838,10 @@ function Hecke.lift(C::HenselCtxQadic)
     g = C.lf[j-1]
     b = C.la[j]
     a = C.la[j-1]
-    setprecision!(h, 2*N)
-    setprecision!(g, 2*N)
-    setprecision!(a, 2*N)
-    setprecision!(b, 2*N)
+    setprecision!(h, N2)
+    setprecision!(g, N2)
+    setprecision!(a, N2)
+    setprecision!(b, N2)
 
     fgh = (f-g*h)*inv(p)
     G = rem(fgh*b, g)*p+g
@@ -841,7 +859,7 @@ function Hecke.lift(C::HenselCtxQadic)
     i -= 1
     j -= 2
   end
-  C.p *= p
+  @show C.p.val = N2
 end
 
 function Hecke.factor(C::HenselCtxQadic)
@@ -879,9 +897,11 @@ function lift_root(f::fmpz_poly, a::nf_elem, o::nf_elem, p::fmpz, n::Int)
 end
 
 function completion(K::AnticNumberField, P::NfOrdIdl)
+  #non-unique!! will have deg(P) many
   p = minimum(P)
   C = qAdicConj(K, Int(p))
   g = conjugates(P.gen_two.elem_in_nf, C)
+  @show map(x->valuation(x), g)
   i = findfirst(x->valuation(x) > 0, g)
   return completion(K, p, i)
 end
@@ -890,7 +910,7 @@ completion(K::AnticNumberField, p::Integer, i::Int) = completion(K, fmpz(p), i)
 
 function completion(K::AnticNumberField, p::fmpz, i::Int)
   C = qAdicConj(K, Int(p))
-  @assert 0<i<= length(C.C.R)
+  @assert 0<i<= degree(K)
 
   ca = conjugates(gen(K), C)[i]
   function inj(a::nf_elem)
@@ -907,6 +927,7 @@ function completion(K::AnticNumberField, p::fmpz, i::Int)
   m = matrix(GF(p), d, d, [coeff(pa[i], j-1) for j=1:d for i=1:d])
   o = matrix(GF(p), d, 1, [coeff(gen(R), j-1) for j=1:d])
   s = solve(m, o)
+  @assert m*s == o
   a = K()
   for i=1:d
     Hecke._num_setcoeff!(a, i-1, lift(s[i,1]))
@@ -1178,171 +1199,254 @@ function van_hoeij(f::fmpq_poly, P::NfOrdIdl, N::Int)
   return van_hoeij(change_base_ring(f, nf(order(P))), P, N)
 end
 
-
-function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl, pr::Int; prec_scale = 20)
-  K = base_ring(parent(f))
-  C, mC = completion(K, P)
-  setprecision!(C, pr)
-  H = HenselCtxQadic(change_base_ring(f, mC))
-  while precision(H) < pr
-    lift(H)
+mutable struct vanHoeijCtx
+  H::HenselCtxQadic
+  pr::Int
+  Ml::fmpz_mat
+  pMr::Tuple{fmpz_mat, fmpz}
+  pM::Tuple{fmpz_mat, fmpz}
+  C::FlintQadicField
+  P::NfOrdIdl
+  function vanHoeijCtx()
+    return new()
   end
-  @show N = degree(f)
-  @show r = length(factor(H))
+end
 
-  @time Ml = lll(basis_mat(P^pr))
-  pMr = pseudo_inv(Ml)
-  av_bits = sum(nbits, Ml)/nrows(Ml)^2
-  F = FakeFmpqMat(pMr)
+function grow_prec!(vH::vanHoeijCtx, pr::Int)
+  while precision(vH.H) < pr
+    lift(vH.H)
+  end
+  @show precision(vH.H.p), valuation(vH.H.p)
+  @show vH.H.lf[1]
+
+  vH.Ml = lll(basis_mat(vH.P^pr))
+  vH.pMr = pseudo_inv(vH.Ml)
+  F = FakeFmpqMat(vH.pMr)
   #M * basis_mat(zk) is the basis wrt to the field
   #(M*B)^-1 = B^-1 * M^-1, so I need basis_mat_inv(zk) * pM
-  pMr = (F.num, F.den)
-  F = basis_mat_inv(order(P)) * F
-  pM = (F.num, F.den)
-#  return H, mC, pM
+  vH.pMr = (F.num, F.den)
+  F = basis_mat_inv(order(vH.P)) * F
+  vH.pM = (F.num, F.den)
+end
+
+
+function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 20)
+  K = base_ring(parent(f))
+  C, mC = completion(K, P)
+
+  _, mK = ResidueField(order(P), P)
+  mK = extend(mK, K)
+  @show r = length(factor(change_base_ring(f, mK)))
+  @show N = degree(f)
+
+  setprecision!(C, 5)
+
+  vH = vanHoeijCtx()
+  vH.H = HenselCtxQadic(change_base_ring(f, mC))
+  @show vH.H.lf[1], vH.H.p
+  vH.C = C
+  vH.P = P
+
   up_to = max(5, ceil(Int, N/10))
   from = N-up_to  #use 5 coeffs on either end
   up_to = min(up_to, N)
   from = min(from, N)
   from = max(up_to, from)
-  C = cld_data(H, up_to, from, mC, pM[1]) 
   b = cld_bound(f, vcat(0:up_to-1, from:N-1))
 
   # from Fieker/Friedrichs, still wrong here
   # needs to be larger than anticipated...
   c1, c2 = Hecke.norm_change_const(order(P))
-  @show b = [ceil(Int, degree(K)/2/degree(P)*(log2(c1*c2) + 2*nbits(x))) for x = b]
-  # In the end, p-adic precision needs to be large enough to
-  # cover some CLDs. If you want the factors, it also has to 
-  # cover those. The norm change constants also come in ...
-  # and the degree of P...
+  @show b = [ceil(Int, degree(K)/2/degree(P)*(log2(c1*c2) + 2*nbits(x)+ prec_scale)) for x = b]
 
-  # starting precision:
-  # - large enough to recover factors (maybe)
-  # - large enough to recover some CLD (definitely)
-  # - + eps to give algo a chance.
-  # Then take 10% of the CLD, small enough for the current precision
-  # possibly figure out which CLD's are available at all
-
-  # we want
-  # I |  C/p^n
-  # 0 |   I
-  # true factors, in this lattice, are small (the lower I is the rounding)
-  # the left part is to keep track of operations
-  # by cld_bound, we know the expected upper size of the rounded legal entries
-  # so we scale it by the bound. If all would be exact, the true factors would be zero...
-  # 1st make integral:
-  # I | C
-  # 0 | p^n
-  # scale:
-  # I | C/lambda
-  # 0 | p^n/lambda  lambda depends on the column
-  # now, to limit damages re-write the rationals with den | 2^k (rounding)
-  # I | D/2^k
-  #   | X/2^k
-  #make integral
-  # 2^k | D
-  #  0  | X   where X is still diagonal
-  # is all goes like planned: lll with reduction will magically work...
-  # needs (I think): fix a in Z_k, P and ideal. Then write a wrt. a LLL basis of P^k
-  #  a = sum a^k_i alpha^k_i, a^k_i in Q, then for k -> infty, a^k_i -> 0
-  #  (ineffective: write coeffs with Cramer's rule via determinants. The
-  #  numerator has n-1 LLL-basis vectors and one small vector (a), thus the
-  #  determinant is s.th. ^(n-1) and the coeff then ()^(n-1)/()^n should go to zero
-  # lambda should be chosen, so that the true factors become < 1 by it
-  # for the gradual feeding, we can also add the individual coefficients (of the nf_elems) individually
-
-
-  # - apply transformations already done (by checking the left part of the matrix)
-  # - scale, round
-  # - call lll_with_removel
-  # until done (whatever that means)
-  # if unlucky: re-do Hensel and start over again, hopefull retaining some info
-  # can happen if the CLD coeffs are too large for the current Hensel level
-  r = length(factor(H))
-  M = identity_matrix(FlintZZ, r)*2^prec_scale
   used = []
+  really_used = []
   have = vcat(0:up_to-1, from:N-2)  #N-1 is always 1
-  st = 1
-  while length(have) > 0
-    if isodd(st)
-      n = minimum(setdiff(have, used))
-      push!(used, n)
-    else
-      n = maximum(setdiff(have, used))
-      push!(used, n)
-    end
-    st += 1
-    i = findfirst(x->x == n, have) #new data will be in block i of C
-    B = sub(C, 1:r, (i-1)*degree(K)+1:i*degree(K))
-    @show i, maximum(nbits, B)
-    
-    T = sub(M, 1:nrows(M), 1:r)
-    B = T*B   # T contains the prec_scale 
-    mod_sym!(B, pM[2]*2^prec_scale)
-    @show maximum(nbits, B), nbits(pM[2]), b[i]
-    @show sz = floor(Int, degree(K)*av_bits/degree(P) - b[i])
-    if sz + prec_scale >= nbits(pM[2]) || sz < 0
-      println("loss of precision for this col: ", sz, " ", nbits(pM[2]))
-      continue
-    else
-      sz = nbits(pM[2]) - 2 * prec_scale
-    end
-    @show sz, nbits(pM[2])
-    ccall((:fmpz_mat_scalar_tdiv_q_2exp, :libflint), Nothing, (Ref{fmpz_mat}, Ref{fmpz_mat}, Cint), B, B, sz)
-    s = max(0, sz - prec_scale)
-    d = tdivpow2(pM[2], s)
-    M = [M B; zero_matrix(FlintZZ, ncols(B), ncols(M)) d*identity_matrix(FlintZZ, ncols(B))]
-#    @show map(nbits, Array(M))
-    @time l, M = lll_with_removal(M, r*fmpz(2)^(2*prec_scale) + div(r+1, 2)*N*degree(K))
-#    @show l, i# , map(nbits, Array(M))
-#    @show hnf(sub(M, 1:l, 1:r))
-    @assert !iszero(sub(M, 1:l, 1:r))
-    M = sub(M, 1:l, 1:ncols(M))
-    d = Dict{fmpz_mat, Array{Int, 1}}()
-    for l=1:r
-      k = M[:, l]
-      if haskey(d, k)
-        push!(d[k], l)
-      else
-        d[k] = [l]
-      end
-    end
-    if length(keys(d)) <= nrows(M)
-      @show "BINGO", length(keys(d)), "factors"
-      if length(keys(d)) == 2
-        return H, mC, pM, d
-      end
-      res = typeof(f)[]
-      for v = values(d)
-        #trivial test:
-        a = prod(map(constant_coefficient, factor(H)[v]))
-        A = K(reco(order(P)(preimage(mC, a)), Ml, pMr))
-        if denominator(divexact(constant_coefficient(f), A), order(P)) != 1
-          @show "fast damm"
-          break
-        end
-        g = prod(factor(H)[v])
-        G = parent(f)([K(reco(order(P)(preimage(mC, coeff(g, l))), Ml, pMr)) for l=0:degree(g)])
+  M = identity_matrix(FlintZZ, r)*2^prec_scale
 
-        if !iszero(rem(f, G))
-          @show "damm"
-          return g, mC, Ml, pMr
-          break
-        end
-        push!(res, G)
-      end
-      if length(res) < length(d)
-        @show "... here we go again ..."
-#        return H, mC, pM
+  while true #the main loop
+    #find some prec
+    #to start with, I want at least half of the CLDs to be useful
+    i= sort(b)[up_to] # minimal expo to recover CLD
+    println("setting prec to $i, and lifting the info ...")
+    setprecision!(codomain(mC), i)
+    vH.H.f = change_base_ring(f, mC)
+    @time grow_prec!(vH, i)
+
+   
+    av_bits = sum(nbits, vH.Ml)/degree(K)^2
+    println("obtaining CLDs...")
+    @time C = cld_data(vH.H, up_to, from, mC, vH.pM[1]) 
+
+    # In the end, p-adic precision needs to be large enough to
+    # cover some CLDs. If you want the factors, it also has to 
+    # cover those. The norm change constants also come in ...
+    # and the degree of P...
+
+    # starting precision:
+    # - large enough to recover factors (maybe)
+    # - large enough to recover some CLD (definitely)
+    # - + eps to give algo a chance.
+    # Then take 10% of the CLD, small enough for the current precision
+    # possibly figure out which CLD's are available at all
+
+    # we want
+    # I |  C/p^n
+    # 0 |   I
+    # true factors, in this lattice, are small (the lower I is the rounding)
+    # the left part is to keep track of operations
+    # by cld_bound, we know the expected upper size of the rounded legal entries
+    # so we scale it by the bound. If all would be exact, the true factors would be zero...
+    # 1st make integral:
+    # I | C
+    # 0 | p^n
+    # scale:
+    # I | C/lambda
+    # 0 | p^n/lambda  lambda depends on the column
+    # now, to limit damages re-write the rationals with den | 2^k (rounding)
+    # I | D/2^k
+    #   | X/2^k
+    #make integral
+    # 2^k | D
+    #  0  | X   where X is still diagonal
+    # is all goes like planned: lll with reduction will magically work...
+    # needs (I think): fix a in Z_k, P and ideal. Then write a wrt. a LLL basis of P^k
+    #  a = sum a^k_i alpha^k_i, a^k_i in Q, then for k -> infty, a^k_i -> 0
+    #  (ineffective: write coeffs with Cramer's rule via determinants. The
+    #  numerator has n-1 LLL-basis vectors and one small vector (a), thus the
+    #  determinant is s.th. ^(n-1) and the coeff then ()^(n-1)/()^n should go to zero
+    # lambda should be chosen, so that the true factors become < 1 by it
+    # for the gradual feeding, we can also add the individual coefficients (of the nf_elems) individually
+
+
+    # - apply transformations already done (by checking the left part of the matrix)
+    # - scale, round
+    # - call lll_with_removel
+    # until done (whatever that means)
+    # if unlucky: re-do Hensel and start over again, hopefull retaining some info
+    # can happen if the CLD coeffs are too large for the current Hensel level
+    st = 1
+    while length(have) > length(used)
+      if isodd(st)
+        n = minimum(setdiff(have, used))
+        push!(used, n)
       else
-        return res
+        n = maximum(setdiff(have, used))
+        push!(used, n)
+      end
+      st += 1
+      i = findfirst(x->x == n, have) #new data will be in block i of C
+      println("trying to use coeff $n which is $i")
+      if b[i] > precision(codomain(mC))
+        @show "not enough precisino for CLD ", i
+        continue
+      end
+      sz = floor(Int, degree(K)*av_bits/degree(P) - b[i])
+
+      B = sub(C, 1:r, (i-1)*degree(K)+1:i*degree(K))
+      @show i, maximum(nbits, B)
+      
+      T = sub(M, 1:nrows(M), 1:r)
+      B = T*B   # T contains the prec_scale 
+      mod_sym!(B, vH.pM[2]*fmpz(2)^prec_scale)
+      @show maximum(nbits, B), nbits(vH.pM[2]), b[i]
+      if sz + prec_scale >= nbits(vH.pM[2]) || sz < 0
+        println("loss of precision for this col: ", sz, " ", nbits(pM[2]))
+        continue
+      else
+        sz = nbits(vH.pM[2]) - 2 * prec_scale
+      end
+      push!(really_used, n)
+      @show sz, nbits(vH.pM[2])
+      ccall((:fmpz_mat_scalar_tdiv_q_2exp, :libflint), Nothing, (Ref{fmpz_mat}, Ref{fmpz_mat}, Cint), B, B, sz)
+      s = max(0, sz - prec_scale)
+      d = tdivpow2(vH.pM[2], s)
+      M = [M B; zero_matrix(FlintZZ, ncols(B), ncols(M)) d*identity_matrix(FlintZZ, ncols(B))]
+  #    @show map(nbits, Array(M))
+      @time l, M = lll_with_removal(M, r*fmpz(2)^(2*prec_scale) + div(r+1, 2)*N*degree(K))
+      @show l, i# , map(nbits, Array(M))
+  #    @show hnf(sub(M, 1:l, 1:r))
+      @assert !iszero(sub(M, 1:l, 1:r))
+      M = sub(M, 1:l, 1:ncols(M))
+      d = Dict{fmpz_mat, Array{Int, 1}}()
+      for l=1:r
+        k = M[:, l]
+        if haskey(d, k)
+          push!(d[k], l)
+        else
+          d[k] = [l]
+        end
+      end
+      @show values(d)
+      if length(keys(d)) <= nrows(M)
+        @show "BINGO", length(keys(d)), "factors"
+        res = typeof(f)[]
+        fail = []
+        if length(keys(d)) == 1
+          @show "irreducible!!!"
+          return [f]
+        end
+        display(d)
+        for v = values(d)
+          #trivial test:
+          a = prod(map(constant_coefficient, factor(vH.H)[v]))
+          A = K(reco(order(P)(preimage(mC, a)), vH.Ml, vH.pMr))
+          if denominator(divexact(constant_coefficient(f), A), order(P)) != 1
+            push!(fail, v)
+            @show "fail", v
+            if length(fail) > 1
+              break
+            end
+            continue
+          end
+          g = prod(factor(vH.H)[v])
+          G = parent(f)([K(reco(order(P)(preimage(mC, coeff(g, l))), vH.Ml, vH.pMr)) for l=0:degree(g)])
+
+          if !iszero(rem(f, G))
+            push!(fail, v)
+            @show "fail2", v
+            if length(fail) > 1
+              break
+            end
+            continue
+          end
+          @show "success", G
+          push!(res, G)
+        end
+        if length(fail) == 1
+          @show "only one reco failed, total success"
+          return res
+        end
+        if length(res) < length(d)
+          @show "... here we go again ..."
+        else
+          return res
+        end
       end
     end
-  end
+    @show used, have, really_used
+
+    up_to = min(2*up_to, N)
+    from = N-up_to 
+    from = min(from, N)
+    from = max(up_to, from)
+
+    have = vcat(0:up_to-1, from:N-2)  #N-1 is always 1
+    if length(have) <= length(really_used)
+      error("too bad")
+    end
+    used = deepcopy(really_used)
+
+    b = cld_bound(f, vcat(0:up_to-1, from:N-1))
+
+    # from Fieker/Friedrichs, still wrong here
+    # needs to be larger than anticipated...
+    @show b = [ceil(Int, degree(K)/2/degree(P)*(log2(c1*c2) + 2*nbits(x)+ prec_scale)) for x = b]
+  end #the big while
 end
 
 function Hecke.mod_sym!(M::fmpz_mat, B::fmpz)
+  @assert !iszero(B)
   ccall((:fmpz_mat_scalar_smod, :libflint), Nothing, (Ref{fmpz_mat}, Ref{fmpz_mat}, Ref{fmpz}), M, M, B)
 end
 Hecke.mod_sym!(M::fmpz_mat, B::Integer) = mod_sym!(M, fmpz(B))
@@ -1396,6 +1500,21 @@ function norm_mod(f::PolyElem{nf_elem}, Zx)
   end
 end
 
+new_load = true
+function cc()
+  global new_load = true
 end
 
-#set_printing_mode(FlintPadicField, :terse)
+end
+
+set_printing_mode(FlintPadicField, :terse)
+#=
+  Daniel:
+  let a_i be a linear recurrence sequence or better
+    sum_1^infty a_i x^-i = -f/g is rational, deg f<deg g < n/2
+    run rational reconstruction on h := sum_0^n a_i x^(n-i) and x^n
+    finding bh = a mod x^n (h = a/b mod x^n)
+    then b = g and f = div(a-bh, x^n)
+    establishing the link between rat-recon and Berlekamp Massey
+
+=#    
