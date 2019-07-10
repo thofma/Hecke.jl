@@ -272,7 +272,11 @@ function ^(f::NfRelToNfRelMor, b::Int)
 end
 
 function ==(x::NfRelToNfRelMor{T}, y::NfRelToNfRelMor{T}) where T
-  return (x.coeff_aut == y.coeff_aut) && (x.prim_img == y.prim_img)
+  if isdefined(x, :coeff_auto) && isdefined(y, :coeff_auto)
+    return (x.coeff_aut == y.coeff_aut) && (x.prim_img == y.prim_img)
+  else
+    return x.prim_img == y.prim_img
+  end
 end
 
 function *(x::NfRelToNfRelMor{T}, y::NfRelToNfRelMor{T}) where T
