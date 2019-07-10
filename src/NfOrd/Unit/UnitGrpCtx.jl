@@ -302,7 +302,9 @@ function _add_unit(u::UnitGrpCtx, x::FacElem{nf_elem, AnticNumberField})
   u.indep_prec = max(p, u.indep_prec)
   if isindep
     push!(u.units, x)
+    return true
   end
+  return false
 end
 
 

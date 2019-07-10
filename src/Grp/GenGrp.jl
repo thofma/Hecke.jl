@@ -579,7 +579,7 @@ end
 Returns whether $G$ is cyclic.
 """
 function iscyclic(G::GrpGen)
-  return G.isscyclic
+  return G.iscyclic
 end
 
 ################################################################################

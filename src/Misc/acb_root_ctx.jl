@@ -257,6 +257,7 @@ function radiuslttwopower(x::acb, e::Int)
   u = ccall((:arb_rad_ptr, :libarb), Ptr{Nemo.mag_struct}, (Ptr{arb}, ), im)
   ok = (ccall((:mag_cmp_2exp_si, :libarb), Cint,
               (Ptr{Nemo.mag_struct}, Int), t, e) <= 0)
+
   ok = ok && (ccall((:mag_cmp_2exp_si, :libarb), Cint,
               (Ptr{Nemo.mag_struct}, Int), u, e) <= 0)
   return ok
