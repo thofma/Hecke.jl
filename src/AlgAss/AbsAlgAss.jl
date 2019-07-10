@@ -1,3 +1,7 @@
+export subalgebra, decompose
+
+_base_ring(A::AbsAlgAss) = base_ring(A)
+
 ################################################################################
 #
 #  Morphism types
@@ -24,6 +28,11 @@ morphism_type(A::Type{T}) where {T <: AbsAlgAss} = morphism_type(A, A)
 #
 ################################################################################
 
+@doc Markdown.doc"""
+    basis(A::AbsAlgAss) -> Vector{AbsAlgAssElem}
+
+> Returns the basis of $A$.
+"""
 function basis(A::AbsAlgAss)
   if isdefined(A, :basis)
     return A.basis::Vector{elem_type(A)}
@@ -78,7 +87,7 @@ function check_distributivity(A::AbsAlgAss)
           return false
         end
       end
-    end 
+    end
   end
   return true
 end
@@ -94,25 +103,40 @@ function dimension_of_center(A::AbsAlgAss)
   return dim(C)
 end
 
-
 ################################################################################
 #
 #  Subalgebras
 #
 ################################################################################
 
-# Constructs the algebra e*A
 # This is the generic fallback which constructs an associative algebra
-function subalgebra(A::AbsAlgAss{T}, e::AbsAlgAssElem{T}, idempotent::Bool = false) where {T}
+@doc Markdown.doc"""
+    subalgebra(A::AbsAlgAss, e::AbsAlgAssElem, idempotent::Bool = false,
+               action::Symbol = :left)
+      -> AlgAss, AbsAlgAssMor
+
+> Given an algebra $A$ and an element $e$, this function constructs the algebra
+> $e \cdot A$ (if `action == :left`) respectively $A \cdot e$ (if `action == :right`)
+> and a map from this algebra to $A$.
+> If `idempotent` is `true`, it is assumed that $e$ is idempotent in $A$.
+"""
+function subalgebra(A::AbsAlgAss{T}, e::AbsAlgAssElem{T}, idempotent::Bool = false, action::Symbol = :left) where {T}
   @assert parent(e) == A
   B, mB = AlgAss(A)
-  C, mC = subalgebra(B, mB\e, idempotent)
+  C, mC = subalgebra(B, mB\e, idempotent, action)
   mD = compose_and_squash(mB, mC)
   @assert domain(mD) == C
   return C, mD
 end
 
-function subalgebra(A::AbsAlgAss{T}, basis::Array{S}) where {T, S}
+@doc Markdown.doc"""
+    subalgebra(A::AbsAlgAss, basis::Vector{AbsAlgAssElem})
+      -> AlgAss, AbsAlgAssMor
+
+> Returns the subalgebra $A$ generated be the elements in `basis` and a map
+> from this algebra to $A$.
+"""
+function subalgebra(A::AbsAlgAss{T}, basis::Vector{ <: AbsAlgAssElem{T} }) where T
   B, mB = AlgAss(A)
   basis_pre = elem_type(B)[mB\(basis[i]) for i in 1:length(basis)]
   C, mC = subalgebra(B, basis_pre)
@@ -151,49 +175,56 @@ function kernel_of_frobenius(A::AbsAlgAss)
 end
 
 @doc Markdown.doc"""
-    decompose(A::AbsAlgAss{T}) -> AlgAss{T}
+    decompose(A::AbsAlgAss) -> Array{Tuple{AlgAss, AbsAlgAssMor}}
 
-Given a semisimple algebra over a field, this function 
-returns a decomposition of A as a direct sum of simple algebras.
+> Given a semisimple algebra $A$ over a field, this function returns a
+> decomposition of $A$ as a direct sum of simple algebras and maps from these
+> components to $A$.
 """
-function decompose(A::AbsAlgAss{T}) where {T}
+function decompose(A::AlgAss{T}) where {T}
   if isdefined(A, :decomposition)
     return A.decomposition::Vector{Tuple{AlgAss{T}, morphism_type(AlgAss{T}, typeof(A))}}
   end
 
   if issimple_known(A) && A.issimple == 1
     B, mB = AlgAss(A)
-    res = Tuple{AlgAss{T}, morphism_type(AlgAss{T}, typeof(A))}[(B, mB)]
+    return Tuple{AlgAss{T}, morphism_type(AlgAss{T}, typeof(A))}[(B, mB)]
   end
 
-  if A isa AlgAss
-    D = _decompose(A)
-    return D
+  res = _decompose(A)
+  A.decomposition = res
+  return res
+end
+
+# Generic function for everything besides AlgAss
+function decompose(A::AbsAlgAss{T}) where T
+  if isdefined(A, :decomposition)
+    return A.decomposition::Vector{Tuple{AlgAss{T}, morphism_type(AlgAss{T}, typeof(A))}}
   end
 
-  if A isa AlgGrp || A isa AlgMat
-    B, mB = AlgAss(A)
-    D = _decompose(B)
-    res = Tuple{AlgAss{T}, morphism_type(AlgAss{T}, typeof(A))}[]
-    for (S, mS) in D
-      mD = compose_and_squash(mB, mS)
-      push!(res, (S, mD))
-    end
-    A.decomposition = res
-    return res
+  B, mB = AlgAss(A)
+
+  if issimple_known(A) && A.issimple == 1
+    return Tuple{AlgAss{T}, morphism_type(AlgAss{T}, typeof(A))}[ (B, mB) ]
   end
+
+  D = _decompose(B)
+  res = Tuple{AlgAss{T}, morphism_type(AlgAss{T}, typeof(A))}[]
+  for (S, mS) in D
+    mD = compose_and_squash(mB, mS)
+    push!(res, (S, mD))
+  end
+  A.decomposition = res
+  return res
 end
 
 function _decompose(A::AbsAlgAss{T}) where {T}
   @assert _issemisimple(A) != 2 "Algebra is not semisimple"
   if iscommutative(A)
-    res = _dec_com(A)
+    return _dec_com(A)
   else
-    res = _dec_via_center(A)
+    return _dec_via_center(A)
   end
-
-  A.decomposition = res
-  return res
 end
 
 function _dec_via_center(A::S) where {T, S <: AbsAlgAss{T}}
@@ -389,7 +420,7 @@ function _dec_com_finite(A::AbsAlgAss{T}) where T
     end
   end
   return res
-  
+
 end
 
 ################################################################################
@@ -400,9 +431,11 @@ end
 
 @doc Markdown.doc"""
     as_number_fields(A::AbsAlgAss{fmpq})
+      -> Vector{Tuple{AnticNumberField, AbsAlgAssToNfAbsMor}}
 
-Given a commutative algebra over QQ, this function returns a decomposition
-of A as direct sum of number fields.
+> Given a commutative algebra $A$ over $\mathbb Q$, this function returns a
+> decomposition of $A$ as direct sum of number fields and maps from $A$ to
+> these fields.
 """
 function as_number_fields(A::AbsAlgAss{fmpq})
   if isdefined(A, :maps_to_numberfields)
@@ -526,7 +559,7 @@ end
 #     (0 0 0 0 0),
 # i. e. "almost" in rref, but the rows do not have to be sorted.
 # For a column c of M pivot_rows[c] should be the row with the pivot or 0.
-# The function changes M, and pivot_rows in place!
+# The function changes M and pivot_rows in place!
 function _add_row_to_rref!(M::MatElem{T}, v::Vector{T}, pivot_rows::Vector{Int}, i::Int) where { T <: FieldElem }
   @assert ncols(M) == length(v)
   @assert ncols(M) == length(pivot_rows)
@@ -588,10 +621,24 @@ function _add_row_to_rref!(M::MatElem{T}, v::Vector{T}, pivot_rows::Vector{Int},
   return rank_increases
 end
 
-# Returns a subset of the basis, which generates A as an algebra over the base ring.
-# If torough_search is true, the number of returned generators is possibly smaller.
-# This will in general increase the runtime.
-function gens(A::AbsAlgAss, return_full_basis::Type{Val{T}} = Val{false}, thorough_search::Bool = false) where T
+@doc Markdown.doc"""
+    gens(A::AbsAlgAss, return_full_basis::Typel{Val{T}} = Val{false};
+         thorough_search::Bool = false) where T
+      -> Vector{AbsAlgAssElem}
+
+> Returns a subset of `basis(A)`, which generates $A$ as an algebra over
+> `base_ring(A)`.
+> If `return_full_basis` is set to `Val{true}`, the function also returns a
+> `Vector{AbsAlgAssElem}` containing a full basis consisting of monomials in
+> the generators and a `Vector{Vector{Tuple{Int, Int}}}` containing the
+> information on how these monomials are built. E. g.: If the function returns
+> `g`, `full_basis` and `v`, then we have
+> `full_basis[i] = prod( g[j]^k for (j, k) in v[i] )`.
+> If `thorough_search` is `true`, the number of returned generators is possibly
+> smaller. This will in general increase the runtime. It is not guaranteed that
+> the number of generators is minimal in any case.
+"""
+function gens(A::AbsAlgAss, return_full_basis::Type{Val{T}} = Val{false}; thorough_search::Bool = false) where T
   d = dim(A)
 
   if thorough_search
@@ -768,21 +815,27 @@ function _as_field_with_isomorphism(A::AbsAlgAss{S}, a::AbsAlgAssElem{S}, mina::
     elem_to_mat_row!(M, i, s)
   end
 
-  if base_ring(A) == FlintQQ
-    K = number_field(mina, cached = false)[1]
-    return K, AbsAlgAssToNfAbsMor(A, K, inv(M), M)
-  elseif base_ring(A) isa GaloisField
-    Fq = FqNmodFiniteField(mina, Symbol("a"), false)
-    return Fq, AbsAlgAssToFqMor(A, Fq, inv(M), M, parent(mina))
-  elseif base_ring(A) isa Generic.ResField{fmpz}
-    Fq = FqFiniteField(mina, Symbol("a"), false)
-    return Fq, AbsAlgAssToFqMor(A, Fq, inv(M), M, parent(mina))
-  elseif base_ring(A) isa FqNmodFiniteField || base_ring(A) isa FqFiniteField
-    Fr, RtoFr = field_extension(mina)
-    return Fr, AbsAlgAssToFqMor(A, Fr, inv(M), M, parent(mina), RtoFr)
-  else
-    error("Not implemented")
-  end
+  return __as_field_with_isomorphism(A, mina, M)
+end
+
+function __as_field_with_isomorphism(A::AbsAlgAss{fmpq}, f::fmpq_poly, M::fmpq_mat)
+  K = number_field(f, cached = false)[1]
+  return K, AbsAlgAssToNfAbsMor(A, K, inv(M), M)
+end
+
+function __as_field_with_isomorphism(A::AbsAlgAss{gfp_elem}, f::gfp_poly, M::gfp_mat)
+  Fq = FqNmodFiniteField(f, Symbol("a"), false)
+  return Fq, AbsAlgAssToFqMor(A, Fq, inv(M), M, parent(f))
+end
+
+function __as_field_with_isomorphism(A::AbsAlgAss{Generic.ResF{fmpz}}, f::gfp_fmpz_poly, M::Generic.MatSpaceElem{Generic.ResF{fmpz}})
+  Fq = FqFiniteField(f, Symbol("a"), false)
+  return Fq, AbsAlgAssToFqMor(A, Fq, inv(M), M, parent(f))
+end
+
+function __as_field_with_isomorphism(A::AbsAlgAss{S}, f::T, M::U) where { S <: Union{ fq_nmod, fq }, T <: Union{ fq_nmod_poly, fq_poly }, U <: Union{ fq_nmod_mat, fq_mat } }
+  Fr, RtoFr = field_extension(f)
+  return Fr, AbsAlgAssToFqMor(A, Fr, inv(M), M, parent(f), RtoFr)
 end
 
 ################################################################################
@@ -792,14 +845,14 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    regular_matrix_algebra(A::Union{ AlgAss, AlgGrp })
+    regular_matrix_algebra(A::Union{ AlgAss, AlgGrp }) -> AlgMat, AbsAlgAssMor
 
-Returns the matrix algebra B generated by the right representation matrices of
-the basis elements of A and a map from B to A.
+> Returns the matrix algebra $B$ generated by the right representation matrices
+> of the basis elements of $A$ and a map from $B$ to $A$.
 """
 function regular_matrix_algebra(A::Union{ AlgAss, AlgGrp })
   K = base_ring(A)
-  B = matrix_algebra(K, [ representation_matrix(A[i], :right) for i = 1:dim(A) ], isbasis = true, check = false)
+  B = matrix_algebra(K, [ representation_matrix(A[i], :right) for i = 1:dim(A) ], isbasis = true)
   return B, hom(B, A, identity_matrix(K, dim(A)), identity_matrix(K, dim(A)))
 end
 

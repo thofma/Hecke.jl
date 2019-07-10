@@ -185,12 +185,18 @@ end
 
 Returns the element $a$ considered as an element of the ambient number field.
 """
-function elem_in_nf(a::NfAbsOrdElem)
+function elem_in_nf(a::NfAbsOrdElem; copy::Bool = true)
   if isdefined(a, :elem_in_nf)
-    return deepcopy(a.elem_in_nf)
+    if copy
+      return deepcopy(a.elem_in_nf)
+    else
+      return a.elem_in_nf
+    end
   end
   error("Not a valid order element")
 end
+
+_elem_in_algebra(a::NfAbsOrdElem; copy::Bool = true) = elem_in_nf(a, copy = copy)
 
 ################################################################################
 #
@@ -695,13 +701,7 @@ function powermod(a::NfOrdElem, i::fmpz, I::NfOrdIdl)
 end
 
 denominator(a::NfAbsNSElem) = denominator(a.data)
-#TODO: replace by Daniel's official version
-function content(a::fmpq_mpoly)
-  c = fmpq()
-  ccall((:fmpq_set, :libflint), Nothing, (Ref{fmpq}, Ref{fmpq_mpoly}), c, a)
-  return c
-end
-denominator(a::fmpq_mpoly) = denominator(content(a))
+
 function mod(a::NfAbsNSElem, p::fmpz)
   b = copy(a)
   @assert denominator(b) == 1

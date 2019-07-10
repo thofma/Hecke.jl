@@ -59,11 +59,6 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
-    charpoly(a::nf_elem) -> fmpq_poly
-
-The characteristic polynomial of a.
-"""
 function charpoly(Qx::FmpqPolyRing, a::nf_elem)
   f = charpoly(Qx, representation_matrix(a))
   return f
@@ -129,30 +124,6 @@ end
 
 ################################################################################
 #
-#  Powering with fmpz
-#
-################################################################################
-
-function ^(x::nf_elem, y::fmpz)
-  # TODO: try to coerce y to UInt
-  res = parent(x)()
-  if y < 0
-    res = inv(x)^(-y)
-  elseif y == 0
-    res = parent(x)(1)
-  elseif y == 1
-    res = deepcopy(x)
-  elseif mod(y, 2) == 0
-    z = x^(div(y, 2))
-    res = z*z
-  else
-    res = x^(y-1) * x
-  end
-  return res
-end
-
-################################################################################
-#
 #  Unsafe operations
 #
 ################################################################################
@@ -201,12 +172,6 @@ end
 
 ################################################################################
 #
-#  Ad hoc operations
-#
-################################################################################
-
-################################################################################
-#
 #  Norm div
 #
 ################################################################################
@@ -214,8 +179,9 @@ end
 @doc Markdown.doc"""
     norm_div(a::nf_elem, d::fmpz, nb::Int) -> fmpq
 
-Computes divexact(norm(a), d) provided the result has at most `nb` bits.
-Typically, $a$ is in some ideal and $d$ is the norm of the ideal.
+> Computes `divexact(norm(a), d)` provided the result has at most `nb` bits.
+>
+> Typically, `a` is an element of somee ideal with norm `d`.
 """
 function norm_div(a::nf_elem, d::fmpz, nb::Int)
    z = fmpq()
@@ -287,6 +253,7 @@ end
 #  Numerator
 #
 ################################################################################
+
 @doc Markdown.doc"""
     numerator(a::nf_elem) -> nf_elem
 For an element $a\in K = Q[t]/f$ write $a$ as $b/d$ with

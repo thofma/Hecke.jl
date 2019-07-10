@@ -4,6 +4,9 @@ import Nemo.matrix
 
 import Base.vcat
 
+import LinearAlgebra
+LinearAlgebra.dot(a::RingElem, b::RingElem) = a*b
+
 ################################################################################
 #
 #  Dense matrix types
@@ -145,6 +148,7 @@ function scalar_matrix(R::Ring, n::Int, a::RingElement)
   for i in 1:n
     z[i, i] = b
   end
+  return z
 end
 
 function Array(a::fmpz_mat; S::Type{T} = fmpz) where T
@@ -665,21 +669,21 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
-    change_base_ring(M::MatElem, R::Ring) -> MatElem{elem_type(R)} 
-
-Given a $m\times n$ matrix M over a ring S and another ring R, return the $m \times n$
-matrix over R obtained by coercing the entries of M from S into R. 
-"""
-function change_base_ring(M::MatElem, R::Ring)
-  MP = zero_matrix(R, nrows(M), ncols(M))
-  for i = 1:nrows(M)
-    for j = 1:ncols(M)
-      MP[i, j] = R(M[i, j])
-    end
-  end
-  return MP
-end
+#@doc Markdown.doc"""
+#    change_base_ring(M::MatElem, R::Ring) -> MatElem{elem_type(R)} 
+#
+#Given a $m\times n$ matrix M over a ring S and another ring R, return the $m \times n$
+#matrix over R obtained by coercing the entries of M from S into R. 
+#"""
+#function change_base_ring(M::MatElem, R::Ring)
+#  MP = zero_matrix(R, nrows(M), ncols(M))
+#  for i = 1:nrows(M)
+#    for j = 1:ncols(M)
+#      MP[i, j] = R(M[i, j])
+#    end
+#  end
+#  return MP
+#end
 
 ################################################################################
 #
@@ -842,7 +846,7 @@ function vcat(A::Array{T, 1})  where {S <: RingElem, T <: MatElem{S}}
   if any(x->ncols(x) != ncols(A[1]), A)
     error("Matrices must have same number of columns")
   end
-  M = zero_matrix(base_ring(A[1]), sum(rows, A), ncols(A[1]))
+  M = zero_matrix(base_ring(A[1]), sum(nrows, A), ncols(A[1]))
   s = 0
   for i=A
     for j=1:nrows(i)

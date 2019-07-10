@@ -47,8 +47,8 @@ function assure_has_basis_pmat(a::Union{NfRelOrdIdl, NfRelOrdFracIdl})
   end
   pb = pseudo_basis(a, copy = false)
   L = nf(order(a))
-  M = zero_matrix(base_ring(L), degree(L), degree(L))
-  C = Vector{frac_ideal_type(order_type(base_ring(L)))}()
+  M = zero_matrix(base_field(L), degree(L), degree(L))
+  C = Vector{frac_ideal_type(order_type(base_field(L)))}()
   for i = 1:degree(L)
     elem_to_mat_row!(M, i, pb[i][1])
     push!(C, deepcopy(pb[i][2]))
@@ -68,7 +68,7 @@ function assure_has_pseudo_basis(a::Union{NfRelOrdIdl, NfRelOrdFracIdl})
   P = basis_pmat(a, copy = false)
   B = basis_nf(order(a), copy = false)
   L = nf(order(a))
-  K = base_ring(L)
+  K = base_field(L)
   pseudo_basis = Vector{Tuple{elem_type(L), frac_ideal_type(order_type(K))}}()
   for i = 1:degree(L)
     t = L()
@@ -200,7 +200,7 @@ end
 ################################################################################
 
 function defines_ideal(O::NfRelOrd{T, S}, M::PMat{T, S}) where {T, S}
-  K = base_ring(nf(O))
+  K = base_field(nf(O))
   coeffs = basis_pmat(O, copy = false).coeffs
   I = PseudoMatrix(identity_matrix(K, degree(O)), deepcopy(coeffs))
   return _spans_subset_of_pseudohnf(M, I, :lowerleft)
@@ -241,7 +241,7 @@ then it is checked whether these elements define an ideal.
 function ideal(O::NfRelOrd{T, S}, x::RelativeElement{T}, y::RelativeElement{T}, a::S, b::S, check::Bool = true) where {T, S}
   d = degree(O)
   pb = pseudo_basis(O, copy = false)
-  M = zero_matrix(base_ring(nf(O)), 2*d, d)
+  M = zero_matrix(base_field(nf(O)), 2*d, d)
   C = Array{S}(undef, 2*d)
   for i = 1:d
     elem_to_mat_row!(M, i, pb[i][1]*x)
@@ -283,7 +283,7 @@ function ideal(O::NfRelOrd{T, S}, x::NfRelOrdElem) where {T, S}
   x = O(x)
   d = degree(O)
   pb = pseudo_basis(O, copy = false)
-  M = zero_matrix(base_ring(nf(O)), d, d)
+  M = zero_matrix(base_field(nf(O)), d, d)
   if iszero(x)
     return NfRelOrdIdl{T, S}(O, PseudoMatrix(M, [ deepcopy(pb[i][2]) for i = 1:d ]))
   end
@@ -313,7 +313,7 @@ then it is checked whether $a$ defines an (integral) ideal.
 function ideal(O::NfRelOrd{T, S}, a::S, check::Bool = true) where {T, S}
   d = degree(O)
   pb = pseudo_basis(O, copy = false)
-  M = identity_matrix(base_ring(nf(O)), d)
+  M = identity_matrix(base_field(nf(O)), d)
   PM = PseudoMatrix(M, [ a*pb[i][2] for i = 1:d ])
   if check
     !defines_ideal(O, PM) && error("The coefficient ideal does not define an ideal.")
@@ -516,7 +516,7 @@ function *(a::NfRelOrdIdl{T, S}, b::NfRelOrdIdl{T, S}) where {T, S}
   ma = basis_mat(a, copy = false)
   mb = basis_mat(b, copy = false)
   L = nf(order(a))
-  K = base_ring(L)
+  K = base_field(L)
   d = degree(order(a))
   M = zero_matrix(K, d^2, d)
   C = Array{frac_ideal_type(order_type(K)), 1}(undef, d^2)
@@ -705,7 +705,7 @@ just $\{ x \in \mathcal O \mid \exists k \in \mathbf Z_{\geq 0} \colon x^k
 function pradical(O::NfRelOrd, P::Union{NfOrdIdl, NfRelOrdIdl})
   d = degree(O)
   L = nf(O)
-  K = base_ring(L)
+  K = base_field(L)
   OK = maximal_order(K)
   pb = pseudo_basis(O, copy = false)
 
@@ -814,7 +814,7 @@ of $a$.
 """
 function ring_of_multipliers(a::NfRelOrdIdl{T1, T2}) where {T1, T2}
   O = order(a)
-  K = base_ring(nf(O))
+  K = base_field(nf(O))
   d = degree(O)
   pb = pseudo_basis(a, copy = false)
   S = basis_mat_inv(O, copy = false)*basis_mat_inv(a, copy = false)
@@ -851,7 +851,7 @@ function relative_ideal(a::NfOrdIdl, m::NfRelToNf)
   L = domain(m)
   Labs = codomain(m)
   @assert nf(order(a)) == Labs
-  K = base_ring(L)
+  K = base_field(L)
   O = relative_order(order(a), m)
   mm = pseudo_inv(m)
   B = basis(a, copy = false)
@@ -897,7 +897,7 @@ function prime_dec_nonindex(O::NfRelOrd, p::Union{NfOrdIdl, NfRelOrdIdl})
   @assert OK == O.basis_pmat.coeffs[1].order
   @assert OK.ismaximal == 1
   a = gen(L)
-  K = base_ring(L)
+  K = base_field(L)
   f = L.pol
 
   Kx = parent(f)
@@ -939,7 +939,7 @@ end
 
 function prime_dec_index(O::NfRelOrd, p::Union{NfOrdIdl, NfRelOrdIdl})
   L = nf(O)
-  K = base_ring(L)
+  K = base_field(L)
   pbasisO = pseudo_basis(O, copy = false)
   pO = p*O
 
@@ -977,12 +977,7 @@ end
 
 # Returns all prime ideals in O containing the prime number p
 function prime_ideals_over(O::NfRelOrd, p::Union{ Int, fmpz })
-  if base_ring(O) isa NfAbsOrd
-    pdec = prime_decomposition(base_ring(O), p)
-    pdec = [ pdec[i][1] for i = 1:length(pdec) ]
-  else
-    pdec = prime_ideals_over(base_ring(O), p)
-  end
+  pdec = prime_ideals_over(base_ring(O), p)
 
   primes = Vector{ideal_type(O)}()
   for q in pdec
@@ -1175,7 +1170,7 @@ function idempotents(x::NfRelOrdIdl{T, S}, y::NfRelOrdIdl{T, S}) where {T, S}
 
   d = degree(O)
   L = nf(O)
-  K = base_ring(L)
+  K = base_field(L)
   OK = maximal_order(K)
   M = zero_matrix(K, 2*d + 1, 2*d + 1)
 
@@ -1240,7 +1235,7 @@ function in(x::NfRelOrdElem, y::NfRelOrdIdl)
   parent(x) !== order(y) && error("Order of element and ideal must be equal")
   O = order(y)
   b_pmat = basis_pmat(y, copy = false)
-  t = matrix(base_ring(nf(O)), 1, degree(O), coordinates(x))
+  t = matrix(base_field(nf(O)), 1, degree(O), coordinates(x))
   t = t*basis_mat_inv(y, copy = false)
   for i = 1:degree(O)
     if !(t[1, i] in b_pmat.coeffs[i])
@@ -1359,7 +1354,7 @@ function anti_uniformizer(P::NfRelOrdIdl{T, S}) where {T, S}
       mul_row!(N, i, d[i])
       mul_col!(NN, i, inv(d[i]))
     else
-      d[i] = base_ring(nf(O))(1)
+      d[i] = one(base_field(nf(O)))
     end
   end
 

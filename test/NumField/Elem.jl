@@ -12,10 +12,22 @@ K4, (a4, ) = NumberField([t^3 - 2])
   @test fl
   fl = @inferred isintegral(a)
 
+
   B = @inferred basis(K)
   c = @inferred basis_mat([one(K), a^4])
   @assert nrows(c) == 2
   @assert ncols(c) == 3
   @assert sum(B[i] * c[1, i] for i in 1:3) == one(K)
   @assert sum(B[i] * c[2, i] for i in 1:3) == a^4
+
+  f = @inferred charpoly(one(K()))
+  @test f == (gen(parent(f)) - 1)^3
+  f = @inferred minpoly(one(K))
+  @test f == (gen(parent(f)) - 1)
+
+  f = @inferred charpoly(a)
+  @test f == gen(parent(f))^3 - 2
+  f = @inferred minpoly(a)
+  @test f == gen(parent(f))^3 - 2
+
 end

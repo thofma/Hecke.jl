@@ -1,3 +1,5 @@
+export principal_gen, kernel_group
+
 ################################################################################
 #
 #  Map Types
@@ -36,13 +38,14 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    picard_group(O::AlgAssAbsOrd)
+    picard_group(O::AlgAssAbsOrd, prepare_ref_disc_log::Bool = false)
+      -> GrpAbFinGen, MapPicardGroup
 
-Given an order O in a commutative algebra over QQ, this function returns the
-picard group of O.
+> Given an order $O$ in a commutative algebra over $\mathbb Q$, this function
+> returns the picard group of $O$.
+> If `prepare_ref_disc_log` is `true`, then (possibly expensive) preparations
+> for the computation of refined discrete logarithms in non maximal orders are done.
 """
-# If prepare_ref_disc_log is true, then (possibly expensive) preparations for
-# the computation of refined discrete logarithms in non maximal orders are done.
 function picard_group(O::AlgAssAbsOrd, prepare_ref_disc_log::Bool = false)
   if !prepare_ref_disc_log && isdefined(O, :picard_group)
     return domain(O.picard_group), O.picard_group
@@ -407,6 +410,12 @@ function refined_disc_log_picard_group(a::AlgAssAbsOrdIdl, mP::MapPicardGrp)
   return k*beta*inv(t*gamma), P(p)
 end
 
+@doc Markdown.doc"""
+    principal_gen(a::AlgAssAbsOrdIdl) -> AlgAssAbsOrdElem
+
+> Given an principal ideal $a$ in an order $O$ in a commutative algebra over
+> $\mathbb Q$, this function returns a principal generator of $a$.
+"""
 function principal_gen(a::AlgAssAbsOrdIdl)
   g = principal_gen_fac_elem(a)
   return order(a)(evaluate(g))
@@ -685,6 +694,13 @@ end
 #
 ################################################################################
 
+@doc Markdown.doc"""
+    kernel_group(O::AlgAssAbsOrd) -> GrpAbFinGen, MapPicardGroup
+
+> Given an order $O$ in a commutative algebra over $\mathbb Q$, this function
+> returns the group $D$ in the exact sequence $0 \to D \to Pic(O) \to Pic(O')$
+> where $O'$ is a maximal order containing $O$.
+"""
 function kernel_group(O::AlgAssAbsOrd)
   A = algebra(O)
   OO = maximal_order(A)

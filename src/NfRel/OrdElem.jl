@@ -97,12 +97,18 @@ parent(x::NfRelOrdElem{nf_elem}) = x.parent
 Returns the element $a$ considered as an element of the ambient number field.
 """
 
-function elem_in_nf(a::NfRelOrdElem)
+function elem_in_nf(a::NfRelOrdElem; copy::Bool = true)
   if isdefined(a, :elem_in_nf)
-    return deepcopy(a.elem_in_nf)
+    if copy
+      return deepcopy(a.elem_in_nf)
+    else
+      return a.elem_in_nf
+    end
   end
   error("Not a valid order element.")
 end
+
+_elem_in_algebra(a; copy::Bool = true) = elem_in_nf(a, copy = copy)
 
 ################################################################################
 #

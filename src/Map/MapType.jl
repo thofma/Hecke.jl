@@ -30,7 +30,7 @@ function preimage_function(f::Map(HeckeMap))
   end
 end
 
-export Map, CoerceMap, ResidueRingPolyMap
+export Map
 
 mutable struct MapCache{D, C, De, Ce}
   lim::Int

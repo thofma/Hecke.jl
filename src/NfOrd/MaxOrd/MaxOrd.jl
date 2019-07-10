@@ -24,6 +24,7 @@ function MaximalOrder(O::NfAbsOrd{S, T}; index_divisors::Vector{fmpz} = fmpz[], 
       rethrow(e)
     end
     M = new_maximal_order(O, index_divisors = index_divisors, disc = discriminant, ramified_primes = ramified_primes)
+    @assert isdefined(M, :disc)
     M.ismaximal = 1
     _set_maximal_order(K, M)
     return M
@@ -131,6 +132,7 @@ function pmaximal_overorder_at(O::NfOrd, primes::Array{fmpz, 1})
     end
     @vprint :NfOrd 1 "done\n"
   end
+  @assert isdefined(OO, :disc)
   return OO
 end
 ################################################################################
@@ -147,8 +149,13 @@ function new_maximal_order(O::NfOrd; index_divisors::Vector{fmpz} = fmpz[], disc
     O.ismaximal = 1
     return O  
   end
+
+  if isdefining_polynomial_nice(K) && !isone(denominator(basis_mat_inv(O)))
+    #The order does not contain the equation order. We add them
+    O = O + EquationOrder(K)
+  end
   
-  if isdefining_polynomial_nice(K) && (isequation_order(O) || isinteger(gen_index(O)))
+  if isdefining_polynomial_nice(K) && (isequation_order(O) || isone(denominator(basis_mat_inv(O))))
     Zx, x = PolynomialRing(FlintZZ, "x", cached = false)
     f1 = Zx(K.pol)
     ds = gcd(rres(f1, derivative(f1)), discriminant(O))
@@ -240,8 +247,8 @@ function new_maximal_order(O::NfOrd; index_divisors::Vector{fmpz} = fmpz[], disc
     @vprint :NfOrd 1 "I have to factor $Q\n "
     for el in Q
       d = factor(el).fac
-      O1 = pmaximal_overorder_at(O, collect(keys(d)))
-      OO = sum_as_Z_modules(OO, O1, auxmat)
+      O2 = pmaximal_overorder_at(O, collect(keys(d)))
+      O1 = sum_as_Z_modules(O1, O2, auxmat)
     end
   end
   O1.ismaximal = 1
@@ -255,12 +262,12 @@ function _TameOverorderBL(O::NfOrd, lp::Array{fmpz,1})
   M = coprime_base(lp)
   Q = fmpz[]
   while !isempty(M)
-    @vprint :NfOrd 1 M
+    @vprint :NfOrd 1 "List of factors: $M\n"
     q = pop!(M)
     if isprime(q)
       OO1 = pmaximal_overorder(O, q)
       if valuation(discriminant(OO1), q) < valuation(discriminant(OO), q)
-        OO += OO1
+        OO = sum_as_Z_modules(OO, OO1)
       end
     else
       OO, q1 = _cycleBL(OO, q)

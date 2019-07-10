@@ -263,7 +263,7 @@ function math_html(io::IO, M::Map)
   else
     print(io, string(n))
   end
-  print(io, "\\to")
+  print(io, "\\to ")
   n = find_name(codomain(M))
   if n === nothing
     math_html(cio, codomain(M))

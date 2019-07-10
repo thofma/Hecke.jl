@@ -59,12 +59,12 @@ mutable struct NfToNfMor <: Map{AnticNumberField, AnticNumberField, HeckeMap, Nf
     z.header = MapHeader(K, L, _image, _preimage)
     return z
   end
-  
+
   function NfToNfMor(K::AnticNumberField, L::AnticNumberField, y::nf_elem, y_inv::nf_elem)
     z = new()
     z.prim_img = y
     z.prim_preimg = y_inv
-    
+
     function _image(x::nf_elem)
       g = parent(K.pol)(x)
       return evaluate(g, y)
@@ -320,14 +320,15 @@ function _automorphisms(K::AnticNumberField)
     Aut1[end] = id_hom(K)
     auts = closure(Aut1, degree(K))
   end
+  return auts
 end
 
 function automorphisms(K::AnticNumberField; copy::Bool = true)
   try
     Aut = _get_automorphisms_nf(K)::Vector{NfToNfMor}
-    if copy 
+    if copy
       return Base.copy(Aut)
-    else 
+    else
       return Aut
     end
   catch e
@@ -339,7 +340,7 @@ function automorphisms(K::AnticNumberField; copy::Bool = true)
   _set_automorphisms_nf(K, auts)
   if copy
     return Base.copy(auts)
-  else 
+  else
     return auts
   end
 end
@@ -507,4 +508,39 @@ function small_generating_set(Aut::Array{NfToNfMor, 1})
     end
   end
   return small_generating_set(Aut, *, Identity)
+end
+
+function generic_group(G::Vector{NfToNfMor}, ::typeof(*))
+  K = domain(G[1])
+  n = length(G)
+  #First, find a good prime
+  p = 11
+  d = numerator(discriminant(K.pol))
+  while mod(d, p) == 0
+    p = next_prime(p)
+  end
+  R = GF(p, cached = false)
+  Rx, x = PolynomialRing(R, "x", cached = false)
+  fmod = Rx(K.pol)
+  pols = gfp_poly[Rx(g.prim_img) for g in G]
+  Dcreation = Vector{Tuple{gfp_poly, Int}}(undef, length(pols))
+  for i = 1:length(pols)
+    Dcreation[i] = (pols[i], i)
+  end
+  D = Dict{gfp_poly, Int}(Dcreation)
+  @assert length(D) == degree(K)
+  permutations = Array{Array{Int, 1},1}(undef, n)
+
+  m_table = Array{Int, 2}(undef, n, n)
+
+  for s = 1:n
+    for i = 1:n
+      m_table[s, i] =  D[Hecke.compose_mod(pols[s], pols[i], fmod)]
+    end
+  end
+
+  Gen = GrpGen(m_table)
+  GentoG = Dict{GrpGenElem, eltype(G)}(Gen[i] => G[i] for i in 1:length(G))
+  GtoGen = Dict{eltype(G), GrpGenElem}(G[i] => Gen[i] for i in 1:length(G))
+  return Gen, GtoGen, GentoG
 end

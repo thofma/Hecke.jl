@@ -1,5 +1,10 @@
 parent_type(::Type{AlgMatElem{T, S, Mat}}) where {T, S, Mat} = S
 
+@doc Markdown.doc"""
+    matrix(a::AlgMatElem; copy::Bool = true) -> MatElem
+
+> Returns the matrix which defines $a$.
+"""
 function matrix(a::AlgMatElem; copy::Bool = true)
   if copy
     return deepcopy(a.matrix)
@@ -28,6 +33,11 @@ function assure_has_coeffs(a::AlgMatElem)
   return nothing
 end
 
+@doc Markdown.doc"""
+    coeffs(a::AlgMatElem; copy::Bool = true) -> Vector{RingElem}
+
+> Returns the coefficients of $a$ in the basis of `algebra(a)`.
+"""
 function coeffs(a::AlgMatElem; copy::Bool = true)
   assure_has_coeffs(a)
   if copy
@@ -36,6 +46,12 @@ function coeffs(a::AlgMatElem; copy::Bool = true)
     return a.coeffs
   end
 end
+
+################################################################################
+#
+#  String I/O
+#
+################################################################################
 
 function show(io::IO, a::AlgMatElem)
   show(IOContext(io, :compact => true), matrix(a, copy = false))
@@ -47,6 +63,11 @@ end
 #
 ################################################################################
 
+@doc Markdown.doc"""
+    -(a::AlgMatElem) -> AlgMatElem
+
+> Returns $-a$.
+"""
 function -(a::AlgMatElem)
   b = parent(a)(-matrix(a, copy = false))
   if a.has_coeffs
@@ -62,6 +83,11 @@ end
 #
 ################################################################################
 
+@doc Markdown.doc"""
+    +(a::AlgMatElem, b::AlgMatElem) -> AlgMatElem
+
+> Return $a + b$.
+"""
 function +(a::AlgMatElem{T, S, V}, b::AlgMatElem{T, S, V}) where {T, S, V}
   parent(a) != parent(b) && error("Parents don't match.")
   c = parent(a)(matrix(a, copy = false) + matrix(b, copy = false))
@@ -72,6 +98,11 @@ function +(a::AlgMatElem{T, S, V}, b::AlgMatElem{T, S, V}) where {T, S, V}
   return c
 end
 
+@doc Markdown.doc"""
+    -(a::AlgMatElem, b::AlgMatElem) -> AlgMatElem
+
+> Return $a - b$.
+"""
 function -(a::AlgMatElem{T, S, V}, b::AlgMatElem{T, S, V}) where {T, S, V}
   parent(a) != parent(b) && error("Parents don't match.")
   c = parent(a)(matrix(a, copy = false) - matrix(b, copy = false))
@@ -82,6 +113,11 @@ function -(a::AlgMatElem{T, S, V}, b::AlgMatElem{T, S, V}) where {T, S, V}
   return c
 end
 
+@doc Markdown.doc"""
+    *(a::AlgMatElem, b::AlgMatElem) -> AlgMatElem
+
+> Return $a \cdot b$.
+"""
 function *(a::AlgMatElem{T, S, V}, b::AlgMatElem{T, S, V}) where {T, S, V}
   parent(a) != parent(b) && error("Parents don't match.")
   return parent(a)(matrix(a, copy = false)*matrix(b, copy = false))
@@ -169,6 +205,11 @@ end
 #
 ################################################################################
 
+@doc Markdown.doc"""
+    inv(a::AlgMatElem) -> AlgMatElem
+
+> Returns $a^{-1}$.
+"""
 function inv(a::AlgMatElem)
   return parent(a)(inv(matrix(a, copy = false)))
 end
@@ -179,6 +220,11 @@ end
 #
 ################################################################################
 
+@doc Markdown.doc"""
+    ^(a::AlgMatElem, b::Int) -> AlgMatElem
+
+> Returns $a^b$.
+"""
 function ^(a::AlgMatElem, b::Int)
   return parent(a)(matrix(a, copy = false)^b)
 end
@@ -195,6 +241,7 @@ function (A::AlgMat)()
 end
 
 function (A::AlgMat{T, S})(M::S) where { T, S }
+  @assert base_ring(M) === coefficient_ring(A)
   return AlgMatElem{T, typeof(A), S}(A, M)
 end
 
@@ -222,6 +269,11 @@ end
 #
 ################################################################################
 
+@doc Markdown.doc"""
+    ==(a::AlgMatElem, b::AlgMatElem) -> Bool
+
+> Returns `true` if $a$ and $b$ are equal and `false` otherwise.
+"""
 function ==(a::AlgMatElem{T, S, V}, b::AlgMatElem{T, S, V}) where {T, S, V}
   parent(a) != parent(b) && return false
   return matrix(a, copy = false) == matrix(b, copy = false)
@@ -257,4 +309,14 @@ function elem_from_mat_row(A::AlgMat, M::fmpz_mat, i::Int, d::fmpz = fmpz(1))
     v[j] = fmpq(M[i, j], d)
   end
   return A(v)
+end
+
+################################################################################
+#
+#  Hashing
+#
+################################################################################
+
+function Base.hash(a::AlgMatElem, h::UInt)
+  return Base.hash(matrix(a, copy = false), h)
 end

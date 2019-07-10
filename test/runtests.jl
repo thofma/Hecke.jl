@@ -15,6 +15,7 @@ end
 @time include("NumField.jl")
 @time include("AlgAss.jl")
 @time include("AlgAssAbsOrd.jl")
+@time include("AlgAssRelOrd.jl")
 @time include("EllCrv.jl")
 @time include("GrpAb.jl")
 @time include("Grp.jl")

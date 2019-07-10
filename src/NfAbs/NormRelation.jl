@@ -204,6 +204,7 @@ function check_relation(N::NormRelation, a::nf_elem)
 end
 
 function (N::NormRelation)(x::Union{nf_elem, FacElem{nf_elem, AnticNumberField}}, i::Int)
+  @show 4
   z = one(N.K)
   _, mk = subfield(N, i)
   y = mk(x)
@@ -318,7 +319,7 @@ function induce_action(N::NormRelation, i, j, s, FB, cache)
     end
 
     # We still need to sort the positions of the non-zero entries
-    #@show l, v
+    @show l, v
     sort!(v, by = x -> x[1])
     #@show l, v
     # Now apply the automorphism
@@ -375,7 +376,7 @@ function _setup_for_norm_relation_fun(K, S = prime_ideals_up_to(maximal_order(K)
   return c, UZK
 end
 
-function _add_sunits_from_norm_relation!(c, N)
+function _add_sunits_from_norm_relation!(c, UZK, N)
   cp = sort!(collect(Set(minimum(x) for x = c.FB.ideals)))
   K = N.K
   for i = 1:length(N)
@@ -386,29 +387,30 @@ function _add_sunits_from_norm_relation!(c, N)
     @show k
     @time zk = lll(zk)
     print("Computing class group of $k... ")
-    @time class_group(zk, redo = true, use_aut = true)
+    @time class_group(zk, redo = !true, use_aut = true)
     println("done")
     lpk = NfOrdIdl[ P[1] for p in cp for P = prime_decomposition(zk, p)]
     println("Now computing the S-unit group for lp of length $(length(lpk))")
     @assert length(lpk) > 0
     @time Szk, mS = Hecke.sunit_mod_units_group_fac_elem(lpk)
-    @show length(N.coefficients_gen[i])
+#    @show length(N.coefficients_gen[i])
+
+    D = Dict{nf_elem, nf_elem}()
+    function N_mk(x, D, i)
+      if haskey(D, x)
+        return D[x]
+      else
+        y = N(x, i)
+        D[x] = y
+        return y
+      end
+    end
+
 
     if ispure(N)
       @time z = induce_action(N, i, lpk, c.FB.ideals) # Careful, don't use S instead of FB.ideals
 
       # Embedding is expensive, so let us build a cache
-      D = Dict{nf_elem, nf_elem}()
-      function N_mk(x, D, i)
-        if haskey(D, x)
-          return D[x]
-        else
-          y = N(x, i)
-          D[x] = y
-          return y
-        end
-      end
-
       print("Feeding in the S-units of the small field ... ")
 
       for j=1:ngens(Szk)
@@ -450,12 +452,12 @@ function _add_sunits_from_norm_relation!(c, N)
     println("done")
 
     # Skipping the units
-    #U, mU = unit_group_fac_elem(zk)
-    #for j=2:ngens(U) # I cannot add a torsion unit. He will hang forever.
-    #  u = mU(U[j])
-    #  Hecke._add_unit(UZK, FacElem(Dict((N_mk(x, D, i), v) for (x,v) = u.fac)))
-    #end
-    #UZK.units = Hecke.reduce(UZK.units, UZK.tors_prec)
+    U, mU = unit_group_fac_elem(zk)
+    for j=2:ngens(U) # I cannot add a torsion unit. He will hang forever.
+      u = mU(U[j])
+      Hecke._add_unit(UZK, FacElem(Dict((N_mk(x, D, i), v) for (x,v) = u.fac)))
+    end
+    UZK.units = Hecke.reduce(UZK.units, UZK.tors_prec)
   end
 
   #UZK.tentative_regulator = Hecke.regulator(UZK.units, 64)
@@ -471,7 +473,7 @@ function _compute_sunit_group_mod(K::AnticNumberField, N::NormRelation, S)
 
   for i = 1:length(N)
     k, mk = subfield(N, i)
-    zk = maximal_order(k)
+    zk = lll(maximal_order(k))
     print("Computing class group of $k... ")
     class_group(zk, use_aut = true)
     println("done")
@@ -517,6 +519,7 @@ function _compute_sunit_group_mod(K::AnticNumberField, N::NormRelation, S)
   end
 
   UZK.tentative_regulator = Hecke.regulator(UZK.units, 64)
+  return c, UZK
 
   println("Now saturating ... ")
 
