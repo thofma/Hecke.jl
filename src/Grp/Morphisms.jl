@@ -81,6 +81,16 @@ isinjective(GtoH::GrpGenToGrpGenMor) = issurjective(GtoH)
 
 isbijective(GtoH::GrpGenToGrpGenMor) = issurjective(GtoH)
 
+(M::GrpGenToGrpAbMor)(g::GrpGenElem) = M.dict[g]
+
+function (M::GrpAbToGrpGenMor)(g::GrpAbElem)
+  elem = id(M.codomain)
+  for i in 1:length(g.coeff)
+    elem = elem * M.I[i]^g.coeff[i]
+  end
+  return elem
+end
+
 ################################################################################
 #
 #  Find Morphisms
