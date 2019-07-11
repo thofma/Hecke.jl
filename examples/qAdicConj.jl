@@ -829,7 +829,7 @@ function Hecke.lift(C::HenselCtxQadic)
   @show p = setprecision(p, N2)
   while j > 0
     if i==length(C.lf)
-      f = C.f
+      f = setprecision(C.f, N2)
     else
       f = C.lf[i]
     end
@@ -1363,6 +1363,7 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 20)
       d = tdivpow2(vH.pM[2], s)
       M = [M B; zero_matrix(FlintZZ, ncols(B), ncols(M)) d*identity_matrix(FlintZZ, ncols(B))]
   #    @show map(nbits, Array(M))
+      @show maximum(nbits, Array(M))
       @time l, M = lll_with_removal(M, r*fmpz(2)^(2*prec_scale) + div(r+1, 2)*N*degree(K))
       @show l, i# , map(nbits, Array(M))
   #    @show hnf(sub(M, 1:l, 1:r))
