@@ -380,6 +380,7 @@ function t2(x::nf_elem, abs_tol::Int = 32, T = arb)
     z = mapreduce(y -> y^2, +, minkowski_map(x, p))
     while !radiuslttwopower(z, -abs_tol)
       p = 2 * p
+      @assert p > 0
       z = mapreduce(y -> y^2, +, minkowski_map(x, p))
     end
     return z
