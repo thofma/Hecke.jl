@@ -59,10 +59,10 @@
         G,AtoG,GtoA = Hecke.generic_group([1, -1, im, -im], *)
         GrpAb, GtoGrpAb, GrpAbtoG = gen_2_ab(G)
         @test GrpAb.snf == ZZ.([4])
-        @test order(GtoGrpAb[G[1]]) == 1
-        @test order(GtoGrpAb[G[2]]) == 2
-        @test order(GtoGrpAb[G[3]]) == 4
-        @test order(GtoGrpAb[G[4]]) == 4
+        @test order(GtoGrpAb(G[1])) == 1
+        @test order(GtoGrpAb(G[2])) == 2
+        @test order(GtoGrpAb(G[3])) == 4
+        @test order(GtoGrpAb(G[4])) == 4
 
         @test gen_2_ab(small_group(4,2))[1].snf == ZZ.([2, 2])
         @test gen_2_ab(small_group(8,2))[1].snf == ZZ.([2, 4])

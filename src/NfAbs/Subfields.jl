@@ -20,7 +20,7 @@ function _subfield_basis(K, elt)
       if phase == 2
         C = matrix(FlintQQ, basis_mat(elem_type(K)[f]).num)
         reduce_mod!(C, matrix(FlintQQ, B.num))
-        fl = iszero(C) 
+        fl = iszero(C)
         fl && break
       end
       b = elem_type(K)[e*x for x in bas]
@@ -182,7 +182,7 @@ function fixed_field(K::S, A::Array{T, 1}; simplify::Bool = true) where {S <: Un
       v[j] = o
     end
 
-    
+
     if S === AnticNumberField
       bm = basis_mat(v, FakeFmpqMat)
       # We have to be a bit careful (clever) since in the absolute case the
@@ -239,7 +239,7 @@ end
 #
 ################################################################################
 
-function _principal_subfields_basis(K::AnticNumberField)
+function _principal_subfields_basis(K::T) where {T <: Union{AnticNumberField, Hecke.NfRel}}
   f = K.pol
   Kx, x = PolynomialRing(K, "x", cached = false)
   n = degree(K)
@@ -264,7 +264,7 @@ function _principal_subfields_basis(K::AnticNumberField)
   k = base_field(K)
   principal_subfields_ar = dense_matrix_type(elem_type(k))[]
 
-  # #compute kernel of (phi - id)
+  #compute kernel of (phi - id)
   for fi in factor_ar
     M = zero_matrix(k, n, n * degree(fi))
     im_ar = elem_type(Kx)[(mod(x^l,fi)-gen(K)^l) for l in 0:n-1]
@@ -279,9 +279,12 @@ function _principal_subfields_basis(K::AnticNumberField)
     nu, ker = kernel(M, side = :left)
 
     # This might be expensive for bigger fields?
-    ker_rref = matrix(FlintQQ, lll(saturate(FakeFmpqMat(rref(ker)[2]).num)))
+    if K isa AnticNumberField
+      ker_rref = matrix(FlintQQ, lll(saturate(FakeFmpqMat(rref(ker)[2]).num)))
+    else
+      ker_rref = rref(ker)[2]
+    end
 
-    # TODO: Remove this madness once we switched to Nemo >=0.13.2
     if ker_rref in [ b for b in principal_subfields_ar if nrows(b) == nrows(ker_rref)]
       continue
     else
@@ -494,7 +497,7 @@ function nextSubfields(ListSubfields, Kx, S::Vector{T}, L::T, e::Array{Int64,1},
   end
 end
 
-function subfields(K::T; degree::Int64 = -1) where {T <: Union{AnticNumberField, Hecke.NfRel}}
+function subfields(K::NumField; degree::Int64 = -1)
   n = Hecke.degree(K) # I want to keep the degree keyword
   k = base_field(K)
   #K = k[x]/f
@@ -503,6 +506,7 @@ function subfields(K::T; degree::Int64 = -1) where {T <: Union{AnticNumberField,
   # TODO (medium)
   # I don't know why we have to do this.
   # This needs to be fixed properly
+  T = typeof(K)
   if n == 1
     return Tuple{T, morphism_type(T)}[(K, id_hom(K))]
   end
@@ -519,10 +523,17 @@ function subfields(K::T; degree::Int64 = -1) where {T <: Union{AnticNumberField,
   for sf_mat in sf_asmat_ar
     #interpret column vectors as field elems
     #sf_mat = transpose(sf_mat)
-    sf_mat_f = FakeFmpqMat(sf_mat)
+    #sf_mat_f = FakeFmpqMat(sf_mat)#
+    sf_mat_f = sf_mat
     basis_ar = Array{elem_type(K),1}(undef, nrows(sf_mat_f))
     for i in 1:nrows(sf_mat_f)
-      basis_ar[i] = elem_from_mat_row(K, sf_mat_f.num, i, sf_mat_f.den)
+      if K isa AnticNumberField
+        _t = FakeFmpqMat(sf_mat_f)
+        basis_ar[i] = elem_from_mat_row(K, _t.num, i, _t.den)
+      else
+        basis_ar[i] = elem_from_mat_row(K, sf_mat_f, i)
+      end
+
       #field_elem = K(0)
       #for j in 1:n
       #  field_elem += sf_mat[j,i] * gen(K)^(j-1)

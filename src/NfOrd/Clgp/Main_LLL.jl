@@ -184,7 +184,7 @@ function class_group_new_relations_via_lll(c::ClassGrpCtx{T}, rat::Float64 = 0.2
       if h > 0
         extra = 2
 #        J = [rand(c.FB.ideals) for x=1:10]
-        println("extending rand")
+        #println("extending rand")
 #        random_extend(rand_env, J)
         random_extend(rand_env, root(abs(discriminant(O)), 2))
       end

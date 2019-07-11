@@ -74,7 +74,7 @@ function show(io::IO, h::NfRelToNf)
   println(io, "Isomorphism between ", domain(h), "\nand ", codomain(h))
 end
 
-mutable struct NfRelRelToNfRel{T} <: Map{NfRel{NfRelElem{T}}, NfRel{T}, HeckeMap, NfRelRelToNfRel} 
+mutable struct NfRelRelToNfRel{T} <: Map{NfRel{NfRelElem{T}}, NfRel{T}, HeckeMap, NfRelRelToNfRel}
   header::MapHeader{NfRel{NfRelElem{T}}, NfRel{T}}
 
   function NfRelRelToNfRel(K::NfRel{NfRelElem{T}}, L::NfRel{T}, a::NfRelElem{T}, b::NfRelElem{T}, c::NfRelElem{NfRelElem{T}}) where T
@@ -162,7 +162,7 @@ function hom(K::NfRel, L::NfRel, a::NfRelElem; check::Bool = false)
    if base_field(K) != base_field(L)
      error("The base fields do not coincide!")
    end
-   if check 
+   if check
      if !iszero(evaluate(K.pol, a))
        error("Data does not define a homomorphism")
      end
@@ -194,7 +194,7 @@ mutable struct NfRelToNfRelMor{T, S} <: Map{NfRel{T}, NfRel{S}, HeckeMap, NfRelT
     z.prim_img = a
     z.header = MapHeader(K, L, image)
     return z
-  end  
+  end
 end
 
 
@@ -242,7 +242,7 @@ end
 
 id_hom(K::NfRel) = NfRelToNfRelMor(K, K, gen(K))
 
-morphism_type(::Type{NfRel{T}}) where {T} = NfRelToNfRel{T}
+morphism_type(::Type{NfRel{T}}) where {T} = NfRelToNfRelMor{T}
 
 function ^(f::NfRelToNfRelMor, b::Int)
   K = domain(f)
@@ -272,10 +272,11 @@ function ^(f::NfRelToNfRelMor, b::Int)
 end
 
 function ==(x::NfRelToNfRelMor{T}, y::NfRelToNfRelMor{T}) where T
-  if base_field(domain(x)) == base_field(domain(y))
+  if isdefined(x, :coeff_auto) && isdefined(y, :coeff_auto)
+    return (x.coeff_aut == y.coeff_aut) && (x.prim_img == y.prim_img)
+  else
     return x.prim_img == y.prim_img
   end
-  return (x.coeff_aut == y.coeff_aut) && (x.prim_img == y.prim_img) 
 end
 
 function *(x::NfRelToNfRelMor{T}, y::NfRelToNfRelMor{T}) where T
@@ -289,7 +290,7 @@ function *(x::NfRelToNfRelMor{T}, y::NfRelToNfRelMor{T}) where T
   #end
 
   new_prim_img = y(x.prim_img)
-  
+
   if isdefined(y, :coeff_aut)
     if !isdefined(x, :coeff_aut)
       new_coeff_aut = y.coeff_aut
