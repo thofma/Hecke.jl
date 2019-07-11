@@ -106,4 +106,14 @@ end
   @test aut(a) == a^-1
 end
 
+@testset "Bad example" begin
+  Zx, x = PolynomialRing(FlintZZ)
+  f = swinnerton_dyer(3, x)
+  g = swinnerton_dyer(8, x)
+  k, a = number_field(f, cached = false)
+  s = @inferred t2(k(coeff(g, 0)), 512)
+  @test contains(s, degree(k) * coeff(g, 0)^2)
+  @test Hecke.radiuslttwopower(s, -512)
+end
+
 end

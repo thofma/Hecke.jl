@@ -331,6 +331,13 @@ Every entry of the array returned is of type `arb` with radius less then
 `2^(-abs_tol)`.
 """
 function minkowski_map(a::nf_elem, abs_tol::Int = 32)
+  _minkowski_map_and_apply(a, abs_tol, identity)
+end
+
+# The following function computes the minkowski_map, applies G to the output.
+# G mus be a function (::Vector{arb}, abs_tol::Int) -> Bool, *
+# where the first return value indicates if the result is good enough
+function _minkowski_map_and_apply(a, abs_tol, G)
   # TODO: Rewrite this using conjugates_arb
   K = parent(a)
   A = Array{arb}(undef, degree(K))
@@ -338,9 +345,8 @@ function minkowski_map(a::nf_elem, abs_tol::Int = 32)
   c = conjugate_data_arb(K)
   R = PolynomialRing(AcbField(c.prec, false), "x", cached=false)[1]
   f = R(parent(K.pol)(a))
-  CC = AcbField(c.prec, false)
-  T = PolynomialRing(CC, "x", cached=false)[1]
-  g = T(f)
+  CC = base_ring(R)
+  g = R(f)
 
   for i in 1:r
     t = evaluate(g, c.real_roots[i])
@@ -348,24 +354,32 @@ function minkowski_map(a::nf_elem, abs_tol::Int = 32)
     A[i] = real(t)
     if !radiuslttwopower(A[i], -abs_tol)
       refine(c)
-      return minkowski_map(a, abs_tol)
+      return _minkowski_map_and_apply(a, abs_tol, G)
     end
   end
-
-  t = base_ring(g)()
 
   for i in 1:s
-    t = evaluate(g, c.complex_roots[i])
-    t = sqrt(CC(2))*t
-    if !radiuslttwopower(t, -abs_tol)
+    tt = evaluate(g, c.complex_roots[i])
+    tt = sqrt(CC(2))*tt
+    if !radiuslttwopower(tt, -abs_tol)
       refine(c)
-      return minkowski_map(a, abs_tol)
+      return _minkowski_map_and_apply(a, abs_tol, G)
     end
-    A[r + 2*i - 1] = real(t)
-    A[r + 2*i] = imag(t)
+    A[r + 2*i - 1] = real(tt)
+    A[r + 2*i] = imag(tt)
   end
 
-  return A
+  if typeof(G) === typeof(identity)
+    return A
+  else
+    b, B = G(A, abs_tol)
+    if b
+      return B
+    else
+      refine(c)
+      return _minkowski_map_and_apply(a, abs_tol, G)
+    end
+  end
 end
 
 ################################################################################
@@ -376,14 +390,11 @@ end
 
 function t2(x::nf_elem, abs_tol::Int = 32, T = arb)
   if T === arb
-    p = 2*abs_tol
-    z = mapreduce(y -> y^2, +, minkowski_map(x, p))
-    while !radiuslttwopower(z, -abs_tol)
-      p = 2 * p
-      @assert p > 0
-      z = mapreduce(y -> y^2, +, minkowski_map(x, p))
+    g = function(w, abs_tol)
+      z = mapreduce(y -> y^2, +, w)
+      return radiuslttwopower(z, -abs_tol), z
     end
-    return z
+    return _minkowski_map_and_apply(x, abs_tol, g)
   else
     error("Not yet implemented")
   end
