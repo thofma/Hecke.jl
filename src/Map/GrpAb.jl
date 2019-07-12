@@ -100,7 +100,9 @@ end
 
 function preimage(f::Map(GrpAbFinGenMap), a::GrpAbFinGenElem)
   if !isdefined(f, :imap)
-    return haspreimage(f, a)[2]
+    fl, r = haspreimage(f, a)
+    fl || error("element is not in the image")
+    return r
   end
   return GrpAbFinGenElem(domain(f), a.coeff * f.imap)
 end
