@@ -784,6 +784,7 @@ mutable struct HenselCtxQadic
   p::qadic
   n::Int
   #TODO: lift over subfields first iff poly is defined over subfield
+  #TODO: use flint if qadic = padic!!
   function HenselCtxQadic(f::PolyElem{qadic}, lfp::Array{fq_nmod_poly, 1})
     @assert sum(map(degree, lfp)) == degree(f)
     Q = base_ring(f)
@@ -823,7 +824,7 @@ function Hecke.lift(C::HenselCtxQadic)
   j = i-1
   p = C.p
   N = valuation(p)
-  @show map(precision, coefficients(C.f)), N, precision(parent(p))
+#  @show map(precision, coefficients(C.f)), N, precision(parent(p))
   @show mx = minimum(precision, coefficients(C.f))
   N2 = min(mx, 2*N)
   @show p = setprecision(p, N2)
@@ -1344,6 +1345,7 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 20)
       sz = floor(Int, degree(K)*av_bits/degree(P) - b[i])
 
       B = sub(C, 1:r, (i-1)*degree(K)+1:i*degree(K))
+#      B = sub(C, 1:r, (i-1)*degree(K)+5:(i-1)*degree(K)+7)
       @show i, maximum(nbits, B)
       
       T = sub(M, 1:nrows(M), 1:r)
@@ -1363,7 +1365,7 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 20)
       d = tdivpow2(vH.pM[2], s)
       M = [M B; zero_matrix(FlintZZ, ncols(B), ncols(M)) d*identity_matrix(FlintZZ, ncols(B))]
   #    @show map(nbits, Array(M))
-      @show maximum(nbits, Array(M))
+      @show maximum(nbits, Array(M)), size(M)
       @time l, M = lll_with_removal(M, r*fmpz(2)^(2*prec_scale) + div(r+1, 2)*N*degree(K))
       @show l, i# , map(nbits, Array(M))
   #    @show hnf(sub(M, 1:l, 1:r))
@@ -1380,14 +1382,14 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 20)
       end
       @show values(d)
       if length(keys(d)) <= nrows(M)
-        @show "BINGO", length(keys(d)), "factors"
+#        @show "BINGO", length(keys(d)), "factors"
         res = typeof(f)[]
         fail = []
         if length(keys(d)) == 1
           @show "irreducible!!!"
           return [f]
         end
-        display(d)
+#        display(d)
         for v = values(d)
           #trivial test:
           a = prod(map(constant_coefficient, factor(vH.H)[v]))
@@ -1411,7 +1413,7 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 20)
             end
             continue
           end
-          @show "success", G
+ #         @show "success", G
           push!(res, G)
         end
         if length(fail) == 1
