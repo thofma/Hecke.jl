@@ -347,14 +347,14 @@ function induce_action(N::NormRelation, i, j, s, FB, cache)
   z = zero_matrix(SMat, FlintZZ, 0, length(S))
   mk = embedding(N, i)
   zk = order(s[1])
-  
+
   _ , _, auto = N.coefficients_gen[i][j]
   #@show auto
   println("Call to induce(FB, auto)...")
   if haskey(N.induced, auto)
     p = N.induced[auto]
   else
-    p = induce(FB, auto) 
+    p = induce(FB, auto)
     N.induced[auto] = p
   end
   #@show p
@@ -852,7 +852,7 @@ function _has_norm_relation_abstract(G::GrpGen, H::Vector{Tuple{GrpGen, GrpGenTo
   # We use the following trick to reduce the number of equations
   # Instead of working with the Q-basis (g N_H h)_(H, g in G, h in H), we take
   # (g N_H h)_(H, g in G/H, h in G\N_G(H))
-  
+
   left_cosets_for_sub = Vector{GrpGenElem}[]
   right_cosets_for_normalizer = Vector{GrpGenElem}[]
 
@@ -962,3 +962,71 @@ function _has_norm_relation_abstract(G::GrpGen, H::Vector{Tuple{GrpGen, GrpGenTo
   return true, den, solutions
 end
 
+################################################################################
+#
+#  Existence of norm relations
+#
+################################################################################
+
+function has_useful_brauer_relation(G)
+  subs = subgroups(G, conjugacy_classes = true)
+  for (H,_) in subs
+    if iscyclic(H)
+      continue
+    end
+    fac = factor(order(H))
+    if length(fac) > 2
+      continue
+    end
+    if length(fac) == 2
+      e = prod(e for (p, e) in fac)
+      if e == 1
+        return true
+      end
+    end
+    if length(fac) == 1
+      for (p, e) in fac
+        if e == 2
+          return true
+        end
+      end
+    end
+  end
+  return false
+end
+
+const _fermat_primes = Int[3, 5, 17, 257, 65537]
+
+function has_useful_generalized_norm_relation(G)
+  subs = subgroups(G, conjugacy_classes = true)
+  for (H,_) in subs
+    if iscyclic(H)
+      continue
+    end
+
+    # This is the check for SL(2, 3)
+    # SL(2, 5) has order 120
+    if order(H) == 24 && find_small_group(H)[1] == (24, 3)
+      return true
+    end
+
+    fac = factor(order(H))
+    if length(fac) > 2
+      continue
+    end
+    if length(fac) == 2
+      e = prod(e for (p, e) in fac)
+      if e == 1
+        return true
+      end
+    end
+    if length(fac) == 1
+      for (p, e) in fac
+        if e == 2
+          return true
+        end
+      end
+    end
+  end
+  return false
+end
