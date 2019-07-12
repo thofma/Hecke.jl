@@ -705,11 +705,17 @@ end
 Computes the splitting field of $f$ as an absolute field.
 """
 function splitting_field(f::fmpz_poly; do_roots::Bool = false)
-  return splitting_field(fmpq_poly(f), do_roots = roots)
+  Qx = PolynomialRing(FlintQQ, parent(f).S, cached = false)[1]
+  return splitting_field(Qx(f), do_roots = do_roots)
 end
 
 function splitting_field(f::fmpq_poly; do_roots::Bool = false)
   return splitting_field([f], do_roots = do_roots)
+end
+
+function splitting_field(fl::Array{fmpz_poly, 1}; coprime::Bool = false, do_roots::Bool = false)
+  Qx = PolynomialRing(FlintQQ, parent(fl[1]).S, cached = false)[1]
+  return splitting_field([Qx(x) for x = fl], coprime = coprime, do_roots = do_roots)
 end
 
 function splitting_field(fl::Array{fmpq_poly, 1}; coprime::Bool = false, do_roots::Bool = false)
@@ -788,14 +794,14 @@ function splitting_field(fl::Array{<:PolyElem{nf_elem}, 1}; do_roots::Bool = fal
   Ks, nk, mk = absolute_field(K)
   
   ggl = [change_base_ring(lg[1], mk)]
-  ggl[1] = divexact(ggl[1], gen(parent(ggl[1])) - nk(a))
+  ggl[1] = divexact(ggl[1], gen(parent(ggl[1])) - preimage(nk, a))
 
   for i = 2:length(lg)
     push!(ggl, change_base_ring(lg[i], mk))
   end
   if do_roots
     R = [mk(x) for x = r] 
-    push!(R, nk(a))
+    push!(R, preimage(nk, a))
     Kst, t = PolynomialRing(Ks, cached = false)
     return splitting_field(vcat(ggl, [t-y for y in R]), coprime = true, do_roots = true)
   else
