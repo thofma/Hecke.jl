@@ -1532,7 +1532,7 @@ end
 @doc Markdown.doc"""
     can_solve_with_kernel(A::MatElem{T}, B::MatElem{T}) where T <: RingElem -> Bool, MatElem, MatElem
 
-Tries to solve $Ax = B$ for $x$ if `side = :right` or $Ax = B$ if `side = :left`.
+Tries to solve $Ax = B$ for $x$ if `side = :right` or $xA = B$ if `side = :left`.
 It returns the solution and the right respectively left kernel of $A$.
 """
 function can_solve_with_kernel(A::MatElem{T}, B::MatElem{T}; side = :right) where T <: RingElem
@@ -1557,6 +1557,7 @@ function _can_solve_with_kernel(a::MatElem{S}, b::MatElem{S}) where S <: RingEle
   H, T = hnf_with_transform(transpose(a))
   z = similar(a, ncols(b), ncols(a))
   l = min(nrows(a), ncols(a))
+  b = deepcopy(b)
   for i=1:ncols(b)
     for j=1:l
       k = 1
@@ -1573,7 +1574,7 @@ function _can_solve_with_kernel(a::MatElem{S}, b::MatElem{S}) where S <: RingEle
       for h=k:ncols(H)
         b[h, i] -= q*H[j, h]
       end
-      z[i, k] = q
+      z[i, j] = q
     end
   end
   if !iszero(b)
@@ -1595,7 +1596,7 @@ function _can_solve_with_kernel(a::MatElem{S}, b::MatElem{S}) where S <: RingEle
   end
   N =  similar(a, ncols(a), 0)
 
-  return true, (z*T), N
+  return true, transpose(z*T), N
 end
 
 ################################################################################
