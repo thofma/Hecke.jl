@@ -53,4 +53,9 @@
 
   @test length(overorders(O, type = :gorenstein)) == 657
   @test length(overorders(O, type = :bass)) == 5
+
+  f = x^4-1680*x^3-25920*x^2-1175040*x+25214976
+  A = AlgAss(f)
+  O = Order(A, basis(A))
+  @test length(overorders(O)) == 2535
 end
