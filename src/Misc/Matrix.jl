@@ -1000,7 +1000,7 @@ V = [e -divexact(b, g) ; f divexact(a, g)];
 then U*[ a 0; 0 b] * V = [g 0 ; 0 l]
 =#
 @doc Markdown.doc"""
-  snf_with_transform(A::fmpz_mat, l::Bool = true, r::Bool = true) -> fmpz_mat, fmpz_mat, fmpz_mat
+    snf_with_transform(A::fmpz_mat, l::Bool = true, r::Bool = true) -> fmpz_mat, fmpz_mat, fmpz_mat
 
 Given some integer matrix A, compute the Smith normal form (elementary
 divisor normal form) of A. If l and/ or r are true, then the corresponding

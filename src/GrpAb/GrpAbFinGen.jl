@@ -368,7 +368,7 @@ function snf(G::GrpAbFinGen)
 end
 
 # For S in SNF with G.rels = U*S*T and Ti = inv(T) this removes
-# the ones at the diagonal of S and contructs the homomorphism.
+# the ones at the diagonal of S and constructs the homomorphism.
 function _reduce_snf(G::GrpAbFinGen, S::fmpz_mat, T::fmpz_mat, Ti::fmpz_mat)
 
   d = fmpz[S[i,i] for i = 1:min(nrows(S), ncols(S))]

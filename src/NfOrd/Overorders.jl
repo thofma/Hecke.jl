@@ -249,7 +249,7 @@ function overorders(O; type = :all)
       throw(error("Type :gorenstein not supported for non-commutative orders"))
     end
   else
-    throw(error("Type $(type) not supported"))
+    throw(error("Type $type not supported"))
   end
 end
 
