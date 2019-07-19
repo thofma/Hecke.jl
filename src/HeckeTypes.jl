@@ -1067,7 +1067,7 @@ mutable struct NfOrdFracIdl
     z = new()
     z.order = O
     b = abs(b)
-    z.basis_mat = FakeFmpqMat(basis_mat(a), b)
+    z.basis_mat = FakeFmpqMat(basis_mat(a), deepcopy(b))
     z.num = a
     z.den = b
     return z

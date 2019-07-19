@@ -275,7 +275,7 @@ function assure_has_numerator_and_denominator(a::NfOrdFracIdl)
   return nothing
 end
 
-function numerator(x::NfOrdFracIdl; copy::Bool = false)
+function numerator(x::NfOrdFracIdl; copy::Bool = true)
   assure_has_numerator_and_denominator(x)
   if copy
     return deepcopy(x.num)
@@ -284,7 +284,7 @@ function numerator(x::NfOrdFracIdl; copy::Bool = false)
   end
 end
 
-function denominator(x::NfOrdFracIdl; copy::Bool = false)
+function denominator(x::NfOrdFracIdl; copy::Bool = true)
   assure_has_numerator_and_denominator(x)
   if copy
     return deepcopy(x.den)
