@@ -463,6 +463,7 @@ mutable struct AlgMat{T, S} <: AbsAlgAss{T}
   decomposition
   maximal_order
   mult_table::Array{T, 3} # e_i*e_j = sum_k mult_table[i, j, k]*e_k
+  canonical_basis::Int # whether A[(j - 1)*n + i] == E_ij, where E_ij = (e_kl)_kl with e_kl = 1 if i =k and j = l and e_kl = 0 otherwise.
 
   function AlgMat{T, S}(R::Ring) where {T, S}
     A = new{T, S}()
@@ -471,6 +472,7 @@ mutable struct AlgMat{T, S} <: AbsAlgAss{T}
     A.issimple = 0
     A.issemisimple = 0
     A.iscommutative = 0
+    A.canonical_basis = 0
     return A
   end
 
@@ -481,6 +483,7 @@ mutable struct AlgMat{T, S} <: AbsAlgAss{T}
     A.issimple = 0
     A.issemisimple = 0
     A.iscommutative = 0
+    A.canonical_basis = 0
     return A
   end
 end

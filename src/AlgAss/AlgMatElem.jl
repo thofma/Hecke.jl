@@ -242,7 +242,7 @@ end
 
 function (A::AlgMat{T, S})(M::S) where { T, S }
   @assert base_ring(M) === coefficient_ring(A)
-  return AlgMatElem{T, typeof(A), S}(A, M)
+  return AlgMatElem{T, typeof(A), S}(A, deepcopy(M))
 end
 
 function (A::AlgMat{T, S})(a::T) where { T, S }
@@ -319,4 +319,20 @@ end
 
 function Base.hash(a::AlgMatElem, h::UInt)
   return Base.hash(matrix(a, copy = false), h)
+end
+
+################################################################################
+#
+#  getindex / setindex
+#
+################################################################################
+
+function getindex(a::AlgMatElem, r::Int, c::Int)
+  return matrix(a, copy = false)[r, c]
+end
+
+function setindex!(a::AlgMatElem, d::T, r::Int, c::Int) where T <: Union{ RingElem, Int }
+  a.matrix[r, c] = coefficient_ring(parent(a))(d)
+  a.has_coeffs = false
+  return nothing
 end
