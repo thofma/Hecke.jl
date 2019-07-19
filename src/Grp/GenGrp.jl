@@ -4,7 +4,8 @@
 #
 ################################################################################
 
-export GrpGen, GrpGenElem, GrpGenToGrpGenMor, generic_group, GrpGen, GrpGenElem, isabelian, iscyclic, order, elements,
+export GrpGen, GrpGenElem, GrpGenToGrpGenMor, GrpGenToGrpAbMor, GrpAbToGrpGenMor,
+generic_group, isabelian, iscyclic, order, elements,
 getindex, subgroups, subgroup, quotient, inv, kernel, elem_type, parent, *,
 psylow_subgroup, commutator_subgroup, derived_series, order, direct_product,
 conjugancy_classes, ischaracteristic, induces_to_subgroup, induces_to_quotient,
@@ -95,6 +96,51 @@ mutable struct GrpGenToGrpGenMor <: Map{GrpGen, GrpGen, HeckeMap, GrpGen}
 end
 
 
+mutable struct GrpGenToGrpAbMor #<: Map
+
+  domain::GrpGen
+  codomain::GrpAbFinGen
+  dict::Dict{GrpGenElem, GrpAbFinGenElem}
+
+  function GrpGenToGrpAbMor(S::Vector{GrpGenElem}, I::Vector{GrpAbFinGenElem})
+    z = new()
+    z.domain = parent(S[1])
+    z.codomain = parent(I[1])
+    dict = Dict{GrpGenElem, GrpAbFinGenElem}()
+    op(t1::Tuple{GrpGenElem, GrpAbFinGenElem}, t2::Tuple{GrpGenElem, GrpAbFinGenElem}) = (t1[1] * t2[1], t1[2] + t2[2])
+    close = closure([(S[i],I[i]) for i in 1:length(S)], op)
+    for c in close
+      dict[c[1]] = c[2]
+    end
+    z.dict = dict
+    return z
+  end
+
+  function GrpGenToGrpAbMor(dict::Dict{GrpGenElem, GrpAbFinGenElem})
+    z = new()
+    z.domain = parent(first(dict)[1])
+    z.codomain = parent(first(dict)[2])
+    z.dict = dict
+    return z
+  end
+end
+
+mutable struct GrpAbToGrpGenMor#<: Map
+
+  domain::GrpAbFinGen
+  codomain::GrpGen
+  I::Vector{GrpGenElem}
+
+  function GrpAbToGrpGenMor(G::GrpAbFinGen, I::Vector{GrpGenElem})
+    z = new()
+    z.domain = G
+    z.codomain = parent(I[1])
+    z.I = I
+    return z
+  end
+end
+
+
 ################################################################################
 #
 #  Compute generic group from anything
@@ -111,6 +157,20 @@ function generic_group(G, op)
   GentoG = Dict{GrpGenElem, eltype(G)}(Gen[i] => G[i] for i in 1:length(G))
   GtoGen = Dict{eltype(G), GrpGenElem}(G[i] => Gen[i] for i in 1:length(G))
   return Gen, GtoGen, GentoG
+end
+
+###############################################################################
+#
+#   AbstractString I/O
+#
+###############################################################################
+
+function show(io::IO, m::GrpAbToGrpGenMor)
+   print(io, "Group Morphism from\n", m.domain, "\nto ", m.codomain)
+end
+
+function show(io::IO, m::GrpGenToGrpAbMor)
+   print(io, "Group Morphism from\n", m.domain, "\nto ", m.codomain)
 end
 
 ################################################################################
@@ -233,7 +293,7 @@ end
 
 op(g::GrpGenElem, h::GrpGenElem) = g*h
 
-function ^(g::GrpGenElem, i::Int64)
+function ^(g::GrpGenElem, i::T) where T <: Union{Int64, fmpz}
   if i == 0
     return id(parent(g))
   end
@@ -519,7 +579,7 @@ end
 Returns whether $G$ is cyclic.
 """
 function iscyclic(G::GrpGen)
-  return G.isscyclic
+  return G.iscyclic
 end
 
 ################################################################################
@@ -781,11 +841,11 @@ function gen_2_ab(G::GrpGen)
     for mor in Hecke._morphisms_with_gens(Cycl_group, G, Gens, Rels)
       if isbijective(mor)
         #due to construction alrdy in snf
-        # GrpAbFinGen([4], true) -> GrpAb[2]why not?
         GrpAb = GrpAbFinGen(pos_elem, true)
-        GrpAbtoG = Dict{GrpAbFinGenElem, GrpGenElem}(x => mor(TupleToGroup[Tuple(Int64.(x.coeff))]) for x in collect(GrpAb))
+        #GrpAbtoG = Dict{GrpAbFinGenElem, GrpGenElem}(x => mor(TupleToGroup[Tuple(Int64.(x.coeff))]) for x in collect(GrpAb))
+        GrpAbtoG = [mor(TupleToGroup[Tuple(Int64.(x.coeff))]) for x in gens(GrpAb)]
         GtoGrpAb = Dict{GrpGenElem, GrpAbFinGenElem}(G[i] => GrpAb([GroupToTuple[inv(mor)(G[i])]...]) for i in 1:length(G))
-        return (GrpAb, GtoGrpAb, GrpAbtoG)
+        return (GrpAb, GrpGenToGrpAbMor(GtoGrpAb), GrpAbToGrpGenMor(GrpAb, GrpAbtoG))
       end
     end
   end

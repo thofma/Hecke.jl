@@ -439,7 +439,7 @@ function resultant_mod(f::Generic.Poly{nf_elem}, g::Generic.Poly{nf_elem})
     me = modular_init(K, p)
     fp = deepcopy(Hecke.modular_proj(f, me))  # bad!!!
     gp = Hecke.modular_proj(g, me)
-    rp = Array{fq_nmod}(length(gp))
+    rp = Array{fq_nmod}(undef, length(gp))
     for i=1:length(gp)
       rp[i] = resultant(fp[i], gp[i])
     end

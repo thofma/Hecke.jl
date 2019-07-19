@@ -457,16 +457,16 @@ function _minimal_poverorders_in_ring_of_multipliers(O, P, excess = Int[0], use_
 end
 
 # Compute minimal 2 overorders of O in (P : P) where 2 = min(P)
-function _minimal_poverorders_at_2(O::NfOrd, P::NfOrdIdl, excess = Int[])
+function _minimal_poverorders_at_2(O, P, excess = Int[])
   M = ring_of_multipliers(P)
   A, mA = quo(M, O)
-  orders = NfOrd[]
+  orders = typeof(O)[]
   if order(A) == 1
     return orders
   end
   B = mA.bottom_snf_basis
   d = degree(O)
-  K = nf(O)
+  K = _algebra(O)
   if norm(P) == order(A)
     O1 = Order(K, hnf(basis_mat(M, copy = false)), check = false, cached = false)
     push!(orders, O1)
@@ -501,7 +501,7 @@ function _minimal_poverorders_at_2(O::NfOrd, P::NfOrdIdl, excess = Int[])
     subs = (sub(A, lift(x), false) for x in subm)
   end
   
-  potential_basis = Vector{nf_elem}(undef, d)
+  potential_basis = Vector{elem_type(K)}(undef, d)
 
   offset = mA.offset
   for i in 1:offset

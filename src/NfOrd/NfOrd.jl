@@ -920,6 +920,7 @@ end
 
 @doc Markdown.doc"""
     EquationOrder(f::fmpz_poly; cached::Bool = true, check::Bool = true) -> NfOrd
+    equation_order(f::fmpz_poly; cached::Bool = true, check::Bool = true) -> NfOrd
 
 Returns the equation order defined by the monic polynomial $f$.
 """
@@ -928,9 +929,11 @@ function EquationOrder(f::fmpz_poly; cached::Bool = true, check::Bool = true)
   K = number_field(f, cached = cached, check = check)[1]
   return EquationOrder(K)
 end
+equation_order(f::fmpz_poly; cached::Bool = true, check::Bool = true) = EquationOrder(f, cached = cached, check = check)
 
 @doc Markdown.doc"""
     EquationOrder(f::fmpq_poly; cached::Bool = true, check::Bool = true) -> NfOrd
+    equation_order(f::fmpq_poly; cached::Bool = true, check::Bool = true) -> NfOrd
 
 Returns the equation order defined by the monic integral polynomial $f$.
 """
@@ -941,12 +944,14 @@ function EquationOrder(f::fmpq_poly; cached::Bool = true, check::Bool = true)
   K = number_field(f, cached = cached, check = check)[1]
   return EquationOrder(K)
 end
+equation_order(f::fmpq_poly; cached::Bool = true, check::Bool = true) = EquationOrder(f, cached = cached, check = check)
 
 @doc Markdown.doc"""
     equation_order(M::NfOrd) -> NfOrd
 The equation order of then number field.
 """
 equation_order(M::NfAbsOrd) = equation_order(nf(M))
+
 
 function _order(K::S, elt::Array{T, 1}; cached::Bool = true, check::Bool = true) where {S, T}
   n = degree(K)

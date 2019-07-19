@@ -165,6 +165,9 @@ function _unit_group_find_units_with_transform(u::UnitGrpCtx, x::ClassGrpCtx)
   return 1
 end
 
+
+all_units = []
+
 function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx)
   @vprint :UnitGroup 1 "Processing ClassGrpCtx to find units ... \n"
 
@@ -237,6 +240,10 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx)
 
       @vprint :UnitGroup 1 "Test if kernel element yields torsion unit ... \n"
       @v_do :UnitGroup 2 pushindent()
+
+      global all_units
+      push!(all_units, y)
+
       time_torsion += @elapsed is_tors, p = istorsion_unit(y, false, u.tors_prec)
 
       u.tors_prec = max(p, u.tors_prec)

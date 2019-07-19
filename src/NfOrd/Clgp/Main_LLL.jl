@@ -23,7 +23,7 @@ function single_env(c::ClassGrpCtx{T}, I::Hecke.SmallLLLRelationsCtx, rat::Float
       end
       continue
     end
-    bef = length(c.M.bas_gens) + length(c.M.rel_gens)
+    bef = length(c.M.bas_gens) #+ length(c.M.rel_gens)
     fl, r = issmooth!(c.FB.fb_int, n)
     fl || (c.bad_rel += 1)
     fl = fl || (r < c.B2 && isprime(r))
@@ -36,7 +36,7 @@ function single_env(c::ClassGrpCtx{T}, I::Hecke.SmallLLLRelationsCtx, rat::Float
       break
     end
     if fl 
-      good += length(c.M.bas_gens) + length(c.M.rel_gens) - bef
+      good += length(c.M.bas_gens) #= + length(c.M.rel_gens) =# - bef
     end
     if fl && max_good > -1
       if max_good < good
@@ -157,7 +157,7 @@ function class_group_new_relations_via_lll(c::ClassGrpCtx{T}, rat::Float64 = 0.2
         @vtime :ClassGroup 3 J *= c.FB.ideals[p]^rand_exp
         @vtime :ClassGroup 3 I = class_group_small_lll_elements_relation_start(c, J)
         n_idl += 1
-        @vtime :ClassGroup 3 single_env(c, I, 0.8, -1)
+        @vtime :ClassGroup 3 single_env(c, I, 0.8, length(c.FB.ideals)/rank(c.M) < 2 ? 1 : -1)
         if h == 0 && rank(c.M) == length(c.FB.ideals)
           #reached full rank for the 1st time!!
           h, p = class_group_get_pivot_info(c)
@@ -182,9 +182,9 @@ function class_group_new_relations_via_lll(c::ClassGrpCtx{T}, rat::Float64 = 0.2
     
     if piv_new == piv
       if h > 0
-        extra = 5
+        extra = 2
 #        J = [rand(c.FB.ideals) for x=1:10]
-#        println("extending rand")
+        #println("extending rand")
 #        random_extend(rand_env, J)
         random_extend(rand_env, root(abs(discriminant(O)), 2))
       end

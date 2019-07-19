@@ -516,10 +516,10 @@ function jordan_normal_form(M::MatElem{T}) where T <: FieldElem
       for k = 1:el[3]
         aux = w
         for t = 1:degree(el[2])
-          aux = aux*M
           for s = 1:ncols(M)
             S[ind+(k-1)*degree(el[2])+t-1, s] = aux[1, s]
           end
+          aux = aux*M
         end
         w = w*N
       end
@@ -555,10 +555,10 @@ function jordan_decomposition(M::MatElem{T}) where T <: FieldElem
       for k = 1:el[3]
         aux = w
         for t = 1:degree(el[2])
-          aux = aux*M
           for s = 1:ncols(M)
             B[ind+(k-1)*degree(el[2])+t-1, s] = aux[1, s]
           end
+          aux = aux*M
         end
         w = w*N1
       end
@@ -570,7 +570,6 @@ function jordan_decomposition(M::MatElem{T}) where T <: FieldElem
         _copy_matrix_into_matrix(J, ind, ind, JB)
         ind += degree(el[2])
       end
-
     end
   end
   Binv = inv(B)
@@ -734,3 +733,42 @@ function rational_canonical_form1(M::MatElem{T}) where T <: FieldElem
   end
   return CF, TM
 end
+
+################################################################################
+#
+#  Interface for modules and homomorphisms
+#
+################################################################################
+#=
+function isendomorphism(f::ModuleHomomorphism{T}) where T
+  return domain(f) == codomain(f)
+end
+
+function issimilar(f::ModuleHomomorphism{T}, g::ModuleHomomorphism{T}) where T <: FieldElem
+  @assert isendomorphism(f) && isendomorphism(g)
+  return issimilar(f.matrix, g.matrix)
+end
+
+function minpoly(f::ModuleHomomorphism{T}) where T <: FieldElem
+  @assert isendomorphism(f)
+  return minpoly(f.matrix)
+end
+
+function issemisimple(f::ModuleHomomorphism{T}) where T <: FieldElem
+  @assert isendomorphism(f)
+  return issquarefree(minpoly(f))
+end
+
+function isnilpotent(f::ModuleHomomorphism{T}) where T <: FieldElem
+  @assert isendomorphism(f)
+  mp = minpoly(f)
+  isnil = true
+  for i = 0:degree(mp)-1
+    if !iszero(coeff(mp, i))
+      isnil = false
+      break
+    end
+  end
+  return isnil
+end
+=#
