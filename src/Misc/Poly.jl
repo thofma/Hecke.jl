@@ -835,7 +835,7 @@ function roots(f::gfp_poly, K::FqNmodFiniteField)
   return roots(ff)
 end
 
-function ispower(a::Nemo.fq_nmod, m::Int)
+function ispower(a::fq_nmod, m::Int)
   s = size(parent(a))
   if gcd(s-1, m) == 1
     return true, a^invmod(m, s-1)
@@ -861,14 +861,20 @@ function roots(f::T) where T <: Union{fq_nmod_poly, fq_poly} # should be in Nemo
   end
   f = gcd(f, x)
   l = factor(f).fac
-  return elem_type(base_ring(f))[-trailing_coefficient(x) for x = keys(l) if degree(x)==1]
+  return elem_type(base_ring(f))[-divexact(trailing_coefficient(x), leading_coefficient(x)) for x = keys(l) if degree(x)==1]
 end
 
 # generic fall back
 # ...
 function roots(f::PolyElem)
   lf = factor(f)
-  return elem_type(base_ring(f))[-trailing_coefficient(x) for x= keys(lf.fac) if degree(x)==1]
+  rts = Vector{elem_type(base_ring(f))}()
+  for (p, e) in lf
+    if degree(p) == 1
+      push!(rts, -divexact(trailing_coefficient(p), leading_coefficient(p)))
+    end
+  end
+  return rts
 end    
 
 function ispower(a::RingElem, n::Int)
@@ -1201,4 +1207,3 @@ function roots(f::fmpz_poly)
 end
 
 =#
-
