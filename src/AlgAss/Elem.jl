@@ -880,24 +880,9 @@ end
 > Returns the reduced norm of $a$.
 """
 function normred(a::AbsAlgAssElem)
-  A = parent(a)
-  if issimple_known(A) && A.issimple == 1
-    d = dimension_of_center(A)
-    n = divexact(dim(A), d)
-    m = isqrt(n)
-    @assert m^2 == n
-    N = norm(a)
-    Nred = root(N, m)
-    @assert Nred^m == N
-    return Nred
-  else
-    Adec = decompose(A)
-    t = one(base_ring(A))
-    for (B, BtoA) in Adec
-      t = t*normred(BtoA\a)
-    end
-    return t
-  end
+  f = reduced_charpoly(a)
+  n = degree(f)
+  return (-one(base_ring(parent(a))))^n*coeff(f, 0)
 end
 
 ################################################################################
