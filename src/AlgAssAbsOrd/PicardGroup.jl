@@ -788,8 +788,8 @@ function _coprime_integral_ideal_class(a::AlgAssAbsOrdIdl, b::AlgAssAbsOrdIdl)
     x = rand(a_inv, 100)
     c = x*a
     c = simplify!(c)
-    @assert denominator(c, false) == 1
-    isone(numerator(c, false) + b) ? (check = false) : (check = true)
+    @assert denominator(c, copy = false) == 1
+    isone(numerator(c, copy = false) + b) ? (check = false) : (check = true)
   end
-  return numerator(c, false), x
+  return numerator(c, copy = false), x
 end

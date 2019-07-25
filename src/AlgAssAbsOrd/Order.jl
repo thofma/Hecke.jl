@@ -892,7 +892,7 @@ end
 > $\{ x \in R \mid Sx \subseteq R \}$ if `action == :left`.
 > It is assumed that $R \subseteq S$.
 """
-function conductor(R::AlgAssAbsOrd, S::AlgAssAbsOrd, action::Symbol)
+function conductor(R::AlgAssAbsOrd, S::AlgAssAbsOrd, action::Symbol = :left)
   n = degree(R)
   t = basis_mat(R, copy = false)*basis_mat_inv(S, copy = false)
   @assert isone(t.den)

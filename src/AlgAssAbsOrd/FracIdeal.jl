@@ -1,6 +1,6 @@
 function isone(a::AlgAssAbsOrdFracIdl)
   a = simplify!(a)
-  return isone(denominator(a, false)) && isone(numerator(a, false))
+  return isone(denominator(a, copy = false)) && isone(numerator(a, copy = false))
 end
 
 ###############################################################################
@@ -13,7 +13,7 @@ function show(io::IO, a::AlgAssAbsOrdFracIdl)
   print(io, "Fractional Ideal of ")
   show(IOContext(io, :compact => true), order(a))
   println(io, " with basis matrix ")
-  print(io, basis_mat(a, false))
+  print(io, basis_mat(a, copy = false))
 end
 
 ###############################################################################
@@ -23,7 +23,7 @@ end
 ###############################################################################
 
 function Base.deepcopy_internal(a::AlgAssAbsOrdFracIdl, dict::IdDict)
-  b = typeof(a)(order(a), deepcopy(a.num), deepcopy(a.den))
+  b = typeof(a)(order(a), numerator(a), denominator(a))
   for i in fieldnames(typeof(a))
     if isdefined(a, i)
       if i != :order && i != :num && i != :den
@@ -42,7 +42,7 @@ end
 
 order(a::AlgAssAbsOrdFracIdl) = a.order
 
-function numerator(a::AlgAssAbsOrdFracIdl, copy::Bool = true)
+function numerator(a::AlgAssAbsOrdFracIdl; copy::Bool = true)
   if !isdefined(a, :num)
     if !isdefined(a, :basis_mat)
       error("No basis matrix defined")
@@ -56,7 +56,7 @@ function numerator(a::AlgAssAbsOrdFracIdl, copy::Bool = true)
   end
 end
 
-function denominator(a::AlgAssAbsOrdFracIdl, copy::Bool = true)
+function denominator(a::AlgAssAbsOrdFracIdl; copy::Bool = true)
   if !isdefined(a, :den)
     if !isdefined(a, :basis_mat)
       error("No basis matrix defined")
@@ -70,7 +70,7 @@ function denominator(a::AlgAssAbsOrdFracIdl, copy::Bool = true)
   end
 end
 
-function basis_mat(a::AlgAssAbsOrdFracIdl, copy::Bool = true)
+function basis_mat(a::AlgAssAbsOrdFracIdl; copy::Bool = true)
   if !isdefined(a, :basis_mat)
     if !isdefined(a, :num) || !isdefined(a, :den)
       error("Numerator and/or denominator not defined")
@@ -84,9 +84,9 @@ function basis_mat(a::AlgAssAbsOrdFracIdl, copy::Bool = true)
   end
 end
 
-function basis_mat_inv(a::AlgAssAbsOrdFracIdl, copy::Bool = true)
+function basis_mat_inv(a::AlgAssAbsOrdFracIdl; copy::Bool = true)
   if !isdefined(a, :basis_mat_inv)
-    a.basis_mat_inv = inv(basis_mat(a, false))
+    a.basis_mat_inv = inv(basis_mat(a, copy = false))
   end
   if copy
     return deepcopy(a.basis_mat_inv)
@@ -116,6 +116,9 @@ function frac_ideal(O::AlgAssAbsOrd{S, T}, a::T) where {S, T}
   return frac_ideal(O, ideal(O, O(d*a)), d)
 end
 
+*(O::AlgAssAbsOrd{S, T}, a::T) where {S, T} = frac_ideal(O, a)
+*(a::T, O::AlgAssAbsOrd{S, T}) where {S, T} = frac_ideal(O, a)
+
 function frac_ideal_from_z_gens(O::AlgAssAbsOrd{S, T}, b::Vector{T}) where {S, T}
   d = degree(O)
   den = lcm([ denominator(bb) for bb in b ])
@@ -130,15 +133,15 @@ end
 ################################################################################
 
 function +(a::AlgAssAbsOrdFracIdl{S, T}, b::AlgAssAbsOrdFracIdl{S, T}) where {S, T}
-  d = lcm(denominator(a, false), denominator(b, false))
-  ma = div(d, denominator(a, false))
-  mb = div(d, denominator(b, false))
-  return frac_ideal(order(a), numerator(a, false)*ma + numerator(b, false)*mb, d)
+  d = lcm(denominator(a, copy = false), denominator(b, copy = false))
+  ma = div(d, denominator(a, copy = false))
+  mb = div(d, denominator(b, copy = false))
+  return frac_ideal(order(a), numerator(a, copy = false)*ma + numerator(b, copy = false)*mb, d)
 end
 
 function *(a::AlgAssAbsOrdFracIdl{S, T}, b::AlgAssAbsOrdFracIdl{S, T}) where {S, T}
-  d = denominator(a, false)*denominator(b, false)
-  return frac_ideal(order(a), numerator(a, false)*numerator(b, false), d)
+  d = denominator(a, copy = false)*denominator(b, copy = false)
+  return frac_ideal(order(a), numerator(a, copy = false)*numerator(b, copy = false), d)
 end
 
 ^(A::AlgAssAbsOrdFracIdl, e::Int) = Base.power_by_squaring(A, e)
@@ -151,18 +154,18 @@ end
 ################################################################################
 
 function +(a::AlgAssAbsOrdIdl{S, T}, b::AlgAssAbsOrdFracIdl{S, T}) where {S, T}
-  c = a*denominator(b, false) + numerator(b, false)
+  c = a*denominator(b, copy = false) + numerator(b, copy = false)
   return frac_ideal(order(a), c, denominator(b))
 end
 
 +(a::AlgAssAbsOrdFracIdl{S, T}, b::AlgAssAbsOrdIdl{S, T}) where {S, T} = b + a
 
 function *(a::AlgAssAbsOrdIdl{S, T}, b::AlgAssAbsOrdFracIdl{S, T}) where {S, T}
-  return typeof(b)(order(a), a*numerator(b, false), denominator(b))
+  return typeof(b)(order(a), a*numerator(b, copy = false), denominator(b))
 end
 
 function *(a::AlgAssAbsOrdFracIdl{S, T}, b::AlgAssAbsOrdIdl{S, T}) where {S, T}
-  return typeof(a)(order(a), numerator(a, false)*b, denominator(a))
+  return typeof(a)(order(a), numerator(a, copy = false)*b, denominator(a))
 end
 
 function *(x::T, a::AlgAssAbsOrdFracIdl{S, T}) where {S, T}
@@ -193,7 +196,7 @@ end
 
 function ==(A::AlgAssAbsOrdFracIdl, B::AlgAssAbsOrdFracIdl)
   order(A) !== order(B) && return false
-  return basis_mat(A, false) == basis_mat(B, false)
+  return basis_mat(A, copy = false) == basis_mat(B, copy = false)
 end
 
 ################################################################################
@@ -203,8 +206,8 @@ end
 ################################################################################
 
 function simplify!(a::AlgAssAbsOrdFracIdl)
-  b = basis_mat(numerator(a, false), copy = false)
-  g = gcd(denominator(a, false), content(b))
+  b = basis_mat(numerator(a, copy = false), copy = false)
+  g = gcd(denominator(a, copy = false), content(b))
 
   if g != 1
     a.num = divexact(a.num, g)
@@ -221,6 +224,23 @@ end
 ################################################################################
 
 function rand(a::AlgAssAbsOrdFracIdl, B::Int)
-  z = rand(numerator(a, false), B)
-  return fmpq(1, denominator(a, false))*elem_in_algebra(z, copy = false)
+  z = rand(numerator(a, copy = false), B)
+  return fmpq(1, denominator(a, copy = false))*elem_in_algebra(z, copy = false)
+end
+
+################################################################################
+#
+#  Inclusion of elements
+#
+################################################################################
+
+function in(x::AbsAlgAssElem, a::AlgAssAbsOrdFracIdl)
+  O = order(a)
+  M = zero_matrix(FlintZZ, 1, degree(O))
+  t = FakeFmpqMat(M)
+  elem_to_mat_row!(t.num, 1, t.den, x)
+  v = t*basis_mat_inv(O, copy = false)
+  v = v*basis_mat_inv(a, copy = false)
+
+  return v.den == 1
 end
