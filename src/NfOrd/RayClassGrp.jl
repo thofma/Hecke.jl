@@ -1116,11 +1116,17 @@ function ray_class_group_fac_elem(m::NfOrdIdl, inf_plc::Array{InfPlc, 1} = Array
 # We compute the group using the sequence U -> (O/m)^* _> Cl^m -> Cl -> 1
 # First of all, we compute all these groups with their own maps
 #  
-
+  
   O = parent(m).order
   K = nf(O)
   
   C, mC = class_group(O, GRH = GRH)
+  if isone(m) && isempty(inf_plc)
+    function exp_c(a::GrpAbFinGenElem)
+      return FacElem(Dict(mC(a) => 1))
+    end
+    return class_as_ray_class(C, mC, exp_c, m, Int(exponent(C)))
+  end
   _assure_princ_gen(mC)
     U, mU = unit_group_fac_elem(O, GRH = GRH)
   Q, pi = quo(O, m)
