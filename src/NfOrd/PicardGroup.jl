@@ -302,3 +302,49 @@ function _picard_group(O::NfOrd)
 
   return S, StoIdl
 end
+
+################################################################################
+#
+#  Principal ideals
+#
+################################################################################
+
+function isprincipal_non_maximal(I::NfAbsOrdIdl)
+  O = order(I)
+  K = nf(O)
+  OK = maximal_order(O)
+  IOK = I*OK
+  b, x = isprincipal_fac_elem(IOK)
+  if !b
+    return false, O()
+  end
+
+  x = evaluate(x)
+  if x in O
+    y = O(x)
+    if y*O == I
+      return true, y
+    end
+  end
+
+  # We have IOK = x*OK and want to find y in O with I = y*O.
+  # Then y = x*u for a u in OK^\times/O^\times.
+
+  U1, mU1 = unit_group(OK)
+  U2, mU2 = unit_group(O)
+  Q, QtoU1 = quo(U1, [ mU1\(OK(elem_in_nf(mU2(U2[i]), copy = false))) for i = 1:ngens(U2) ])
+  for (i, q) in enumerate(Q)
+    u = mU1(QtoU1(q))
+    ux = u*x
+    if !(ux in O)
+      continue
+    end
+
+    y = O(ux)
+    if y*O == I
+      return true, y
+    end
+  end
+
+  return false, O()
+end
