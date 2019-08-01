@@ -310,7 +310,7 @@ function issurjective(A::GrpAbFinGenMap)
     H, mH = image(A)
     return (order(codomain(A)) == order(H))::Bool
   else
-    return (order(cokernel(A)) == 1)::Bool
+    return (order(cokernel(A)[1]) == 1)::Bool
   end
 end
 

@@ -1374,6 +1374,8 @@ function codifferent(R::NfOrd)
   return ideal(R, ti, true)//d
 end
 
+trace_dual(R::NfAbsOrd) = codifferent(R)
+
 ################################################################################
 #
 #  Conductor

@@ -972,3 +972,15 @@ function enum_units(O::AlgAssAbsOrd{S, T}, g::fmpz) where { S <: AlgMat, T }
   push!(result, L(A(E)))
   return result
 end
+
+################################################################################
+#
+#  Trace dual ideal
+#
+################################################################################
+
+function trace_dual(R::AlgAssAbsOrd)
+  t = trred_matrix(R)
+  ti, d = pseudo_inv(t)
+  return frac_ideal(R, ideal(R, ti), d)
+end
