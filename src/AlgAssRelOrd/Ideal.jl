@@ -230,10 +230,9 @@ function *(a::AlgAssRelOrdIdl{S, T}, b::AlgAssRelOrdIdl{S, T}) where {S, T}
     end
   end
 
-  H = pseudo_hnf(PseudoMatrix(M, C), :lowerleft)
-  H = sub(H, (d2 - d + 1):d2, 1:d)
-  H.matrix = H.matrix*basis_mat_inv(order(a), copy = false)
-  H = pseudo_hnf(H, :lowerleft)
+  PM = PseudoMatrix(M, C)
+  PM.matrix = PM.matrix*basis_mat_inv(order(a), copy = false)
+  H = sub(pseudo_hnf(PM, :lowerleft), (d2 - d + 1):d2, 1:d)
   return ideal(order(a), H, :nothing, false, true)
 end
 
