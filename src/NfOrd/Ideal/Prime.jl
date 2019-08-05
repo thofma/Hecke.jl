@@ -200,6 +200,19 @@ function lift(K::AnticNumberField, f::T) where {T <: Zmodn_poly}
   return r
 end
 
+function lift(K::AnticNumberField, f::gfp_fmpz_poly)
+  if degree(f)>=degree(K)
+    f = mod(f, parent(f)(K.pol))
+  end
+  r = K()
+  for i=0:f.length-1
+    u = fmpz()
+    ccall((:fmpz_mod_poly_get_coeff_fmpz, :libflint), Nothing, (Ref{fmpz}, Ref{gfp_fmpz_poly}, Int), u, f, i)
+    _num_setcoeff!(r, i, u)
+  end
+  return r
+end
+
 ##TODO: make fmpz-safe!!!!
 #return <p, lift(O, fi> in 2-element normal presentation given the data
 function ideal_from_poly(O::NfOrd, p::Int, fi::Zmodn_poly, ei::Int)

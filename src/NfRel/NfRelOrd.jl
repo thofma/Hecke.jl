@@ -482,8 +482,8 @@ function maximal_order_via_absolute(L::NfRel)
   return relative_order(Oabs, lToLabs)
 end
 
-function maximal_order_via_absolute(m::NfRelToNf)
-  Oabs = maximal_order(codomain(m))
+function maximal_order_via_absolute(m::NfToNfRel)
+  Oabs = maximal_order(domain(m))
   return relative_order(Oabs, m)
 end
 
@@ -684,6 +684,9 @@ function pmaximal_overorder(O::NfRelOrd, p::Union{NfOrdIdl, NfRelOrdIdl})
     d = dd
     OO = poverorder(OO, p)
     dd = discriminant(OO)
+    if valuation(dd, p) < 2
+      break
+    end
   end
   return OO
 end

@@ -842,6 +842,7 @@ function pradical(O::AlgAssRelOrd, p::Union{ NfAbsOrdIdl, NfRelOrdIdl })
   end
 
   N = basis_pmat(pO, copy = false)
+  m = numerator(det(N), copy = false)
   t = PseudoMatrix(zero_matrix(K, 1, degree(O)))
   for b in basis(J, copy = false)
     bb = OtoOpO\b
@@ -850,7 +851,7 @@ function pradical(O::AlgAssRelOrd, p::Union{ NfAbsOrdIdl, NfRelOrdIdl })
     end
     N = vcat(N, deepcopy(t))
   end
-  N = sub(pseudo_hnf(N, :lowerleft, true), nrows(N) - degree(O) + 1:nrows(N), 1:degree(O))
+  N = sub(pseudo_hnf_full_rank_with_modulus(N, m, :lowerleft), nrows(N) - degree(O) + 1:nrows(N), 1:degree(O))
   return ideal(O, N, :twosided, false, true)
 end
 
@@ -904,6 +905,7 @@ function _prime_ideals_over(O::AlgAssRelOrd, prad::AlgAssRelOrdIdl, p::Union{ Nf
   primes = Vector{ideal_type(O)}()
   for i = 1:length(decA)
     N = basis_pmat(prad, copy = false)
+    m = numerator(det(N), copy = false)
     for j = 1:length(decA)
       if i == j
         continue
@@ -911,7 +913,7 @@ function _prime_ideals_over(O::AlgAssRelOrd, prad::AlgAssRelOrdIdl, p::Union{ Nf
 
       N = vcat(N, lifted_components[j])
     end
-    N = sub(pseudo_hnf(N, :lowerleft, true), nrows(N) - degree(O) + 1:nrows(N), 1:degree(O))
+    N = sub(pseudo_hnf_full_rank_with_modulus(N, m, :lowerleft), nrows(N) - degree(O) + 1:nrows(N), 1:degree(O))
     push!(primes, ideal(O, N, :twosided, false, true))
   end
 
