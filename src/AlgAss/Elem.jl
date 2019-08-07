@@ -330,7 +330,7 @@ function isdivisible(a::AbsAlgAssElem, b::AbsAlgAssElem, action::Symbol)
 end
 
 # Computes a/b if action is :right and b\a if action is :left (and if this is possible)
-function divexact(a::AbsAlgAssElem, b::AbsAlgAssElem, action::Symbol)
+function divexact(a::AbsAlgAssElem, b::AbsAlgAssElem, action::Symbol = :left)
   t, c = isdivisible(a, b, action)
   if !t
     error("Divison not possible")

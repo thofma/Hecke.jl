@@ -431,7 +431,10 @@ end
 
 function isprincipal(a::AlgAssAbsOrdIdl)
   b, x = isprincipal_fac_elem(a)
-  return b, evaluate(x)
+  if !b
+    return b, order(a)()
+  end
+  return b, order(a)(evaluate(x))
 end
 
 function isprincipal_fac_elem(a::AlgAssAbsOrdIdl)
