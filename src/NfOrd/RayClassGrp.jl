@@ -2564,7 +2564,7 @@ function ray_class_group_quo(I::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Dict{NfOrd
   end
   
   X = AbelianGroup(R)
-  
+
   disc_log_inf = Dict{InfPlc, GrpAbFinGenElem}()
   for i = 1:length(inf_plc)
     eldi = zeros(FlintZZ, ngens(X))

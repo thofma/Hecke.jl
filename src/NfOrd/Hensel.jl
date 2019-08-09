@@ -381,17 +381,15 @@ function _hensel(f::Generic.Poly{nf_elem},
     f_coeff_ZX[j + 1] = ZX(coeff(f, j))
   end
 
-  t_lll = 0.0
-  t_inv = 0.0
-
+  n = degree(K)
+  M = zero_matrix(FlintZZ, n, n)
   for i=2:length(pr)
     pp = fmpz(p)^pr[i]
     Q = ResidueRing(FlintZZ, pp, cached=false)
-    Qt, t = PolynomialRing(Q,"t", cached=false)
+    Qt, t = PolynomialRing(Q, "t", cached=false)
 
     #possibly this should be done with max precision and then adjusted down
     #the poly mod P^??
-
     if !ispure
       fpp = fmpz_mod_poly[Qt(f_coeff_ZX[k + 1]) for k=0:degree(f)]
     end
@@ -402,14 +400,19 @@ function _hensel(f::Generic.Poly{nf_elem},
     pgg = Qt(gg) #we'll do the reductions by hand - possibly not optimal
 
     #the lattice for reco:
-    n = degree(K)
-    M = zero_matrix(FlintZZ, n, n)
+    zero!(M)
     for j=1:degree(pgg)
       M[j,j] = pp
     end
-    pt = t^(degree(pgg)-1)
+    coeffarr = Vector{elem_type(Q)}(undef, degree(pgg))
+    for j = 1:degree(pgg)-1
+      coeffarr[j] = zero(Q)
+    end
+    coeffarr[degree(pgg)] = one(Q)
+    pt = Qt(coeffarr)
     for j=degree(pgg)+1:n
-      pt = (pt*t) % pgg
+      pt = shift_left(pt, 1)
+      rem!(pt, pt, pgg)
       M[j,j] = 1
       for k=0:degree(pt)
         M[j, k+1] = -lift(coeff(pt, k))
@@ -426,7 +429,7 @@ function _hensel(f::Generic.Poly{nf_elem},
     end
 
     for j=1:length(RT)
-      if RT[j] == 0
+      if iszero(RT[j])
         continue
       end
       #to eval fp and the derivative, we pre-compute the powers of the
