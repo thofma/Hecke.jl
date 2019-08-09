@@ -208,7 +208,7 @@ function NfRelToNfRelMor(K::NfRel{nf_elem}, L::NfRel{nf_elem}, A::NfToNfMor, a::
     for i=0:degree(f)
       g[i+1] = A(coeff(f, i))
     end
-    Sx = PolynomialRing(base_field(L), "x")[1]
+    Sx = PolynomialRing(base_field(L), "x", cached = false)[1]
     g1 = Sx(g)
     # Then evaluate at b
     return g1(a)
