@@ -55,6 +55,11 @@ function mul!(c::MatElem, a::MatElem, b::MatElem)
   nrows(c) != nrows(a) && error("Incompatible matrix dimensions")
   ncols(c) != ncols(b) && error("Incompatible matrix dimensions")
 
+  if c === a || c === b
+    d = parent(a)()
+    return mul!(d, a, b)
+  end
+
   t = base_ring(a)()
   for i = 1:nrows(a)
     for j = 1:ncols(b)

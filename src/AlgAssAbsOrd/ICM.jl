@@ -8,8 +8,8 @@ export ideal_class_monoid, islocally_isomorphic
 
 # Stefano Marseglia "Computing the ideal class monoid of an order"
 @doc Markdown.doc"""
-    ideal_class_monoid(R::NfAbsOrd) -> Vector{NfOrdFracIdl}
-    ideal_class_monoid(R::AlgAssAbsOrd) -> Vector{AlgAssAbsOrdFracIdl}
+    ideal_class_monoid(R::NfAbsOrd) -> Vector{FacElem{NfOrdFracIdl, NfOrdFracIdlSet}}
+    ideal_class_monoid(R::AlgAssAbsOrd) -> Vector{FacElem{AlgAssAbsOrdFracIdl, AlgAssAbsOrdFracIdlSet}}
 
 > Given an order $R$ in a number field or a finite product of number fields this
 > function returns representatives of the isomorphism classes of fractional
