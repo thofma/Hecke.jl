@@ -1003,7 +1003,7 @@ end
 function C22_extensions(bound::Int)
   
   
-  Qx,x=PolynomialRing(FlintZZ, "x")
+  Qx, x=PolynomialRing(FlintZZ, "x")
   K, _=NumberField(x-1, cached = false)
   Kx,x=PolynomialRing(K,"x", cached=false)
   b1=ceil(Int,Base.sqrt(bound))
@@ -1142,51 +1142,42 @@ end
 function _disc(a::Int, b::Int, c::Int, bound::Int)
   a1 = mod(a, 4)
   b1 = mod(b, 4)
-  c1 = mod(c, 4)
   if a1 == 1 && b1 == 1
-    return abs(a*b*c) <= bound
-  elseif a1 == 1 || b1 == 1 || c1 == 1
-    return abs(16*a*b*c) <= bound
+    return a*b*c <= bound
+  end
+  c1 = mod(c, 4)
+  if a1 == 1 || b1 == 1 || c1 == 1
+    return 16*a*b*c <= bound
   else
-    return abs(64*a*b*c) <= bound
+    return 64*a*b*c <= bound
   end
 end
 
-function _find_pairs(bound::Int, only_real::Bool = false)
-  b1=ceil(Int, Base.sqrt(bound))
-  ls = squarefree_up_to(b1)
-  if !only_real
-    sqfs = Vector{Tuple{Int, Int}}(undef, 2*length(ls) -1)
-    for i = 1:length(ls)
-      sqfs[i] = (-ls[i], i)
-    end
-    for i = 2:length(ls)
-      sqfs[i+length(ls)-1] = (ls[i], i+length(ls)-1)
-    end
-  else
-    sqfs = Vector{Tuple{Int, Int}}(undef, length(ls) -1)
-    for i = 2:length(ls)
-      sqfs[i-1] = (ls[i], i-1) 
-    end
-  end
-  d = Dict(sqfs)
-  pairs = trues(length(sqfs), length(sqfs))
-  for j = 1:length(sqfs)
-    for i = j:length(sqfs)
+function _pairs_totally_real(pairs, ls, bound)
+  b1=floor(Int, Base.sqrt(bound))
+  pairs[1, 1:length(ls)] .= false
+  pairs[1:length(ls), 1] .= false
+  for j = 2:length(ls)
+    for i = j:length(ls)
       pairs[i, j] = false
     end
   end
-  for j = 1:length(sqfs)
-    second = sqfs[j][1]
-    for i = 1:j-1
+  for j = 2:length(ls)
+    second = ls[j]
+    for i = 2:j-1
       if pairs[i, j]
-        first = sqfs[i][1]
-        third = divexact(first*second, gcd(first, second)^2)
+        first = ls[i]
+        g = gcd(first, second)
+        if isone(g)
+          third = first*second
+        else
+          third = divexact(first*second, g^2)
+        end
         if abs(third) > b1
           pairs[i, j] = false
           continue
         end
-        k = d[third]
+        k = searchsortedfirst(ls, third)
         if i < k
           pairs[i, k] = false
         else
@@ -1204,13 +1195,63 @@ function _find_pairs(bound::Int, only_real::Bool = false)
     end
   end
   it = findall(pairs)
-  res = Vector{Tuple{Int, Int}}(undef, length(it))
+  totally_real_exts = Vector{Tuple{Int, Int}}(undef, length(it))
   ind = 1
   for I in it
-    res[ind] = (sqfs[I[1]][1], sqfs[I[2]][1])
+    totally_real_exts[ind] = (ls[I[1]], ls[I[2]])
     ind += 1
   end
-  return res
+  return totally_real_exts
+
+end
+
+
+function _find_pairs(bound::Int, only_real::Bool = false)
+
+  #first, we need the squarefree numbers
+  b1=ceil(Int, Base.sqrt(bound))
+  ls = squarefree_up_to(b1)
+  #The first step is to enumerate all the totally real extensions.
+  pairs = trues(length(ls), length(ls))
+  real_exts = _pairs_totally_real(pairs, ls, bound)
+  if only_real
+    return real_exts
+  end
+  ls1 = -ls
+  #Now, all the others.
+  pairs[1:length(ls), 2:length(ls)] .= true
+  for j = 2:length(ls)
+    second = ls[j]
+    for i = 1:length(ls)
+      if pairs[i, j]
+        first = ls1[i]
+        g = gcd(first, second)
+        if isone(g)
+          third = first*second
+        else
+          third = divexact(first*second, g^2)
+        end
+        abt = -third
+        if abt > b1
+          pairs[i, j] = false
+          continue
+        end
+        k = searchsortedfirst(ls, abt)
+        pairs[k, j] = false
+        if !_disc(first, second, third, bound)
+          pairs[i, j] = false
+        end
+      end
+    end
+  end
+  it = findall(pairs)
+  ind = 1
+  res = Vector{Tuple{Int, Int}}(undef, length(it))
+  for I in it
+    res[ind] = (ls1[I[1]], ls[I[2]])
+    ind += 1
+  end 
+  return vcat(res, real_exts)
 end
 
 ################################################################################
