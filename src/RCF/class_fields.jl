@@ -1,3 +1,5 @@
+export ClassField
+
 #TODO: create an interface using characters
 
 mutable struct BadPrime <: Exception
@@ -117,7 +119,7 @@ end
 The maximal order of the field that $A$ is defined over.
 """
 function base_ring(A::ClassField)
-  return order(defining_modulus(A)[1])
+  return order(codomain(A.rayclassgroupmap))
 end
 
 @doc Markdown.doc"""
@@ -129,7 +131,7 @@ function base_field(A::ClassField)
 end
 
 function base_ring(A::ClassField_pp)
-  return order(defining_modulus(A)[1])
+  return order(codomain(A.rayclassgroupmap))
 end
 
 function base_field(A::ClassField_pp)
