@@ -163,7 +163,8 @@ function _find_prime(f::fmpz_poly)
   while true
     p = next_prime(p)
     R = GF(p, cached=false)
-    fR = change_base_ring(f, R)
+    Rt = PolynomialRing(R, "t", cached = false)[1]
+    fR = change_base_ring(f, R, Rt)
     if !issquarefree(fR)
       continue
     end

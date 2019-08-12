@@ -804,7 +804,8 @@ end
 #
 
 function factor(f::PolyElem, R::Field)
-  f1 = change_base_ring(f, R)
+  Rt = PolynomialRing(R, "t", cached = false)[1]
+  f1 = change_base_ring(f, R, Rt)
   return factor(f1)
 end
 
@@ -814,7 +815,8 @@ function factor(f::fmpq_poly, R::T) where T <: Union{Nemo.FqNmodFiniteField, Nem
 end
 
 function roots(f::PolyElem, R::Field)
-  f1 = change_base_ring(f, R)
+  Rt = PolynomialRing(R, "t", cached = false)[1]
+  f1 = change_base_ring(f, R, Rt)
   return roots(f1)
 end
 
@@ -828,10 +830,11 @@ end
 function roots(f::gfp_poly, K::FqNmodFiniteField)
   @assert characteristic(K) == characteristic(base_ring(f))
   Kx = PolynomialRing(K, cached = false)[1]
-  ff = Kx()
+  coeffsff = Vector{elem_type(K)}(undef, degree(f)+1)
   for i=0:degree(f)
-    setcoeff!(ff, i, lift(coeff(f, i)))
+    coeffsff[i] = K(lift(coeff(f, i)))
   end
+  ff = Kx(coeffsff)
   return roots(ff)
 end
 
