@@ -140,10 +140,20 @@ export parent, order, basis_mat, basis_mat_inv, basis, norm,
 
 parent(a::NfOrdFracIdl) = NfOrdFracIdlSet(order(a), false)
 
+function FracIdealSet(O::NfAbsOrd)
+   return NfOrdFracIdlSet(O, false)
+end
+
 function Base.hash(a::NfOrdFracIdl, h::UInt)
   b = simplify(a)
   return hash(numerator(b, copy = false), hash(denominator(b, copy = false), h))
 end
+
+elem_type(::Type{NfOrdFracIdlSet}) = NfOrdFracIdl
+
+elem_type(::NfOrdFracIdlSet) = NfOrdFracIdl
+
+parent_type(::Type{NfOrdFracIdl}) = NfOrdFracIdlSet
 
 ################################################################################
 #
@@ -666,4 +676,44 @@ function coprime_to(I::NfOrdFracIdl, p::NfOrdIdl)
   @assert valuation(a, p) == 0
   @assert denominator(I)*a in numerator(I)
   return a
+end
+
+################################################################################
+#
+#  Colon
+#
+################################################################################
+
+function colon(I::NfOrdFracIdl, J::NfOrdFracIdl)
+  # Let I = a/c and J = b/d, a and b integral ideals, c, d \in Z, then
+  # \{ x \in K | xJ \subseteq I \} = \{ x \in K | xcb \subseteq da \}
+
+  II = numerator(I, copy = false)*denominator(J, copy = false)
+  JJ = numerator(J, copy = false)*denominator(I, copy = false)
+  return colon(II, JJ)
+end
+
+################################################################################
+#
+#  Move ideals to another order
+#
+################################################################################
+
+function extend(I::NfOrdFracIdl, O::NfAbsOrd)
+  J = extend(numerator(I, copy = false), O)
+  return frac_ideal(O, J, denominator(I, copy = false))
+end
+
+*(I::NfOrdFracIdl, O::NfAbsOrd) = extend(I, O)
+*(O::NfAbsOrd, I::NfOrdFracIdl) = extend(I, O)
+
+function _as_frac_ideal_of_smaller_order(O::NfAbsOrd, I::NfAbsOrdIdl)
+  M = basis_mat(I, copy = false)
+  M = M*basis_mat(order(I), copy = false)*basis_mat_inv(O, copy = false)
+  return frac_ideal(O, M)
+end
+
+function _as_frac_ideal_of_smaller_order(O::NfAbsOrd, I::NfOrdFracIdl)
+  J = _as_frac_ideal_of_smaller_order(O, numerator(I, copy = false))
+  return nf(O)(fmpq(1, denominator(I, copy = false)))*J
 end

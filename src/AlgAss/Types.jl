@@ -432,6 +432,19 @@ mutable struct AlgAssAbsOrdFracIdl{S, T}
   end
 end
 
+mutable struct AlgAssAbsOrdFracIdlSet{S, T}
+  order::AlgAssAbsOrd{S, T}
+
+  function AlgAssAbsOrdFracIdlSet{S, T}(O::AlgAssAbsOrd{S, T}) where {S, T}
+    z = new{S, T}(O)
+    return z
+  end
+end
+
+function AlgAssAbsOrdFracIdlSet(O::AlgAssAbsOrd{S, T}) where {S, T}
+  return AlgAssAbsOrdFracIdlSet{S, T}(O)
+end
+
 ################################################################################
 #
 #  AlgAssAbsOrdQuoRing / AlgAssAbsOrdQuoRingElem

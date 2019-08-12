@@ -154,12 +154,19 @@ The quotient ring $O/I$ as a ring together with the section $M: O/I \to O$.
 The pointwise inverse of $M$ is the canonical projection $O\to O/I$.
 """
 
-function quo(O::Union{NfAbsOrd, AlgAssAbsOrd}, I::Union{NfAbsOrdIdl, AlgAssAbsOrdIdl})
+function quo(O::Union{NfAbsOrd, AlgAssAbsOrd}, I::Union{NfAbsOrdIdl, AlgAssAbsOrdIdl}; type::Symbol = :ring)
   @assert order(I) === O
   # We should check that I is not zero
-  Q = AbsOrdQuoRing(O, I)
-  f = AbsOrdQuoMap(O, Q)
-  return Q, f
+  if type == :ring
+    Q = AbsOrdQuoRing(O, I)
+    f = AbsOrdQuoMap(O, Q)
+    return Q, f
+  elseif type == :group
+    f = GrpAbFinGenToNfOrdQuoNfOrd(O, I)
+    return domain(f), f
+  else
+    error("Type $type not supported")
+  end
 end
 
 @doc Markdown.doc"""

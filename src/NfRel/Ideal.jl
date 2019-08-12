@@ -528,17 +528,13 @@ function *(a::NfRelOrdIdl{T, S}, b::NfRelOrdIdl{T, S}) where {T, S}
       C[(i - 1)*d + j] = simplify(pba[i][2]*pbb[j][2])
     end
   end
+  PM = PseudoMatrix(M, C)
+  PM.matrix = PM.matrix*basis_mat_inv(order(a), copy = false)
   if T == nf_elem
     m = norm(a)*norm(b)
-    H = sub(pseudo_hnf_full_rank_with_modulus(PseudoMatrix(M, C), m, :lowerleft), (d*(d - 1) + 1):d^2, 1:d)
+    H = sub(pseudo_hnf_full_rank_with_modulus(PM, m, :lowerleft), (d*(d - 1) + 1):d^2, 1:d)
   else
-    H = sub(pseudo_hnf(PseudoMatrix(M, C), :lowerleft), (d*(d - 1) + 1):d^2, 1:d)
-  end
-  H.matrix = H.matrix*basis_mat_inv(order(a), copy = false)
-  if T == nf_elem
-    H = pseudo_hnf_full_rank_with_modulus(H, m, :lowerleft)
-  else
-    H = pseudo_hnf(H, :lowerleft)
+    H = sub(pseudo_hnf(PM, :lowerleft), (d*(d - 1) + 1):d^2, 1:d)
   end
   return ideal(order(a), H, false, true)
 end
@@ -779,21 +775,21 @@ function pradical(O::NfRelOrd, P::Union{NfOrdIdl, NfRelOrdIdl})
       M1[i, j] = K(imF(B[j, i])*elts_with_val[j])
     end
   end
-  M2 = identity_matrix(K, d)
-  PM1 = PseudoMatrix(M1)
-  # PM2 is the basis pseudo matrix of P*Oint
-  PM2 = PseudoMatrix(M2, [ pbint[i][2]*deepcopy(P) for i = 1:d ])
-  PM = sub(pseudo_hnf(vcat(PM1, PM2), :lowerleft, true), (d + 1):2*d, 1:d)
 
-  # Write PM in the basis of O (and not Oint)
-  for j = 1:d
-    t = K(denominator(pb[j][2]))
-    for i = j:d
-      PM.matrix[i, j] = divexact(PM.matrix[i, j], t)
+  M1 = zero_matrix(K, d, d)
+  imF = pseudo_inv(mF)
+  # Write a basis of the kernel of A in the rows of M1.
+  for j = 1:nrows(B)
+    t = K(denominator(pb[j][2], copy = false))
+    for i = 1:ncols(B)
+      M1[i, j] = divexact(K(imF(B[j, i])*elts_with_val[j]), t)
     end
   end
-  # TODO: Use that the matrix is already triangular
-  PM = pseudo_hnf(PM, :lowerleft, true)
+  PM1 = PseudoMatrix(M1)
+  PM2 = PseudoMatrix(identity_matrix(K, d), [ pb[i][2]*deepcopy(P) for i = 1:d ])
+  m = det(PM2)
+  PM = sub(pseudo_hnf_full_rank_with_modulus(vcat(PM1, PM2), numerator(m, copy = false), :lowerleft), (d + 1):2*d, 1:d)
+
   return ideal(O, PM, false, true)
 end
 
@@ -837,7 +833,6 @@ function ring_of_multipliers(a::NfRelOrdIdl{T1, T2}) where {T1, T2}
   PM = sub(pseudo_hnf(PM, :upperright, true), 1:d, 1:d)
   N = inv(transpose(PM.matrix))*basis_mat(O, copy = false)
   PN = PseudoMatrix(N, [ simplify(inv(I)) for I in PM.coeffs ])
-  PN = pseudo_hnf(PN, :lowerleft, true)
   return NfRelOrd{T1, T2}(nf(O), PN)
 end
 
@@ -847,19 +842,18 @@ end
 #
 ################################################################################
 
-function relative_ideal(a::NfOrdIdl, m::NfRelToNf)
-  L = domain(m)
-  Labs = codomain(m)
+function relative_ideal(a::NfOrdIdl, m::NfToNfRel)
+  L = codomain(m)
+  Labs = domain(m)
   @assert nf(order(a)) == Labs
   K = base_field(L)
   O = relative_order(order(a), m)
-  mm = pseudo_inv(m)
   B = basis(a, copy = false)
   d = degree(L)
   dabs = degree(Labs)
   M = zero_matrix(K, dabs, d)
   for i = 1:dabs
-    elem_to_mat_row!(M, i, mm(Labs(B[i])))
+    elem_to_mat_row!(M, i, m(Labs(B[i])))
   end
   M = M*basis_mat_inv(O, copy = false)
   PM = sub(pseudo_hnf(PseudoMatrix(M), :lowerleft, true), (dabs - d + 1):dabs, 1:d)

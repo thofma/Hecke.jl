@@ -3,6 +3,18 @@ function isone(a::AlgAssAbsOrdFracIdl)
   return isone(denominator(a, copy = false)) && isone(numerator(a, copy = false))
 end
 
+function one(S::AlgAssAbsOrdFracIdlSet)
+  return frac_ideal(order(S), ideal(order(S), one(order(S))), fmpz(1))
+end
+
+function one(I::AlgAssAbsOrdFracIdl)
+  return frac_ideal(order(I), ideal(order(I), one(order(I))), fmpz(1))
+end
+
+function Base.copy(I::AlgAssAbsOrdFracIdl)
+  return I
+end
+
 ###############################################################################
 #
 #  String I/O
@@ -244,3 +256,67 @@ function in(x::AbsAlgAssElem, a::AlgAssAbsOrdFracIdl)
 
   return v.den == 1
 end
+
+################################################################################
+#
+#  Colon
+#
+################################################################################
+
+function colon(I::AlgAssAbsOrdFracIdl, J::AlgAssAbsOrdFracIdl)
+  # Let I = a/c and J = b/d, a and b integral ideals, c, d \in Z, then
+  # \{ x \in K | xJ \subseteq I \} = \{ x \in K | xcb \subseteq da \}
+
+  II = numerator(I, copy = false)*denominator(J, copy = false)
+  JJ = numerator(J, copy = false)*denominator(I, copy = false)
+  return colon(II, JJ)
+end
+
+################################################################################
+#
+#  Move ideals to another order
+#
+################################################################################
+
+function extend(I::AlgAssAbsOrdFracIdl, O::AlgAssAbsOrd)
+  J = extend(numerator(I, copy = false), O)
+  return frac_ideal(O, J, denominator(I, copy = false))
+end
+
+*(I::AlgAssAbsOrdFracIdl, O::AlgAssAbsOrd) = extend(I, O)
+*(O::AlgAssAbsOrd, I::AlgAssAbsOrdFracIdl) = extend(I, O)
+
+function _as_frac_ideal_of_smaller_order(O::AlgAssAbsOrd, I::AlgAssAbsOrdIdl)
+  M = basis_mat(I, copy = false)
+  M = M*basis_mat(order(I), copy = false)*basis_mat_inv(O, copy = false)
+  return frac_ideal(O, M)
+end
+
+function _as_frac_ideal_of_smaller_order(O::AlgAssAbsOrd, I::AlgAssAbsOrdFracIdl)
+  J = _as_frac_ideal_of_smaller_order(O, numerator(I, copy = false))
+  return algebra(O)(fmpq(1, denominator(I, copy = false)))*J
+end
+
+################################################################################
+#
+#  Ideal Set
+#
+################################################################################
+
+function show(io::IO, a::AlgAssAbsOrdFracIdlSet)
+  print(io, "Set of fractional ideals of $(order(a))")
+end
+
+order(a::AlgAssAbsOrdFracIdlSet) = a.order
+
+parent(I::AlgAssAbsOrdFracIdl) = AlgAssAbsOrdFracIdlSet(order(I))
+
+function FracIdealSet(O::AlgAssAbsOrd)
+   return AlgAssAbsOrdFracIdlSet(O)
+end
+
+elem_type(::Type{AlgAssAbsOrdFracIdlSet{S, T}}) where {S, T} = AlgAssAbsOrdFracIdl{S, T}
+
+elem_type(::AlgAssAbsOrdFracIdlSet{S, T}) where {S, T} = AlgAssAbsOrdFracIdl{S, T}
+
+parent_type(::Type{AlgAssAbsOrdFracIdl{S, T}}) where {S, T} = AlgAssAbsOrdFracIdlSet{S, T}

@@ -429,6 +429,14 @@ function principal_gen_fac_elem(a::AlgAssAbsOrdIdl)
   return g
 end
 
+function isprincipal(a::AlgAssAbsOrdIdl)
+  b, x = isprincipal_fac_elem(a)
+  if !b
+    return b, order(a)()
+  end
+  return b, order(a)(evaluate(x))
+end
+
 function isprincipal_fac_elem(a::AlgAssAbsOrdIdl)
   O = order(a)
   if O.ismaximal == 1
