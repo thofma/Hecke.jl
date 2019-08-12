@@ -94,20 +94,20 @@ function _wicm_bar(R::T, S::T) where { T <: Union{ NfAbsOrd, AlgAssAbsOrd } }
   end
 
   orders = overorders(S)
-  for T in orders
-    if T == S
+  for O in orders
+    if O == S
       continue
     end
 
-    StT = St*T
-    if !(one(K) in StT*colon(frac_ideal(T, one(K)), StT))
+    StO = St*O
+    if !(one(K) in StO*colon(frac_ideal(O, one(K)), StO))
       continue
     end
-    f = conductor(S, T)
-    fT = f*T
-    @assert isone(colon(fT, fT))
+    f = conductor(S, O)
+    fO = f*O
+    @assert isone(colon(fO, fO))
 
-    ideals = ideals_containing(T, fT, S)
+    ideals = ideals_containing(O, fO, S)
     for I in ideals
       if colon(I, I) != oneS
         continue
