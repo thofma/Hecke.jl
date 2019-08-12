@@ -481,7 +481,7 @@ function _absolute_field(K::NfRel, cached::Bool = false)
     N = norm(g)
   end
 
-  Ka = NumberField(N, "x", cached = cached, check = false)[1]
+  Ka, gKa = NumberField(N, "x", cached = cached, check = false)
 
   KaT, T = PolynomialRing(Ka, "T", cached = false)
 
@@ -492,13 +492,16 @@ function _absolute_field(K::NfRel, cached::Bool = false)
 
   gg = zero(KaT)
   for i=degree(g):-1:0
-    gg = gg*gen(Ka) + Qx(coeff(g, i))(gen(KaT))
+    auxp = change_ring(Qx(coeff(g, i)), KaT)
+    gg = gg*gKa
+    add!(gg, gg,auxp)
+    #gg = gg*gKa + auxp
   end
-
-  q = gcd(gg, k.pol(gen(KaT)))
+  
+  q = gcd(gg, change_ring(k.pol, KaT))
   @assert degree(q) == 1
   al = -trailing_coefficient(q)//lead(q)
-  be = gen(Ka) - l*al
+  be = gKa - l*al
   ga = gen(K) + l*gen(k)
 
   #al -> gen(k) in Ka

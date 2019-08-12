@@ -24,7 +24,7 @@ function simplify(K::AnticNumberField; canonical::Bool = false, cached = false)
       ZK = OK.lllO
     else
       prec = 100 + 25*div(degree(K), 3) + Int(round(log(abs(discriminant(K)))))
-      ZK = _lll(OK, prec = prec)[2]
+      ZK = _lll_for_simplify(OK, prec = prec)[2]
     end
     a = gen(K)
 
@@ -354,7 +354,7 @@ end
 #
 ################################################################################
 
-function _lll(M::NfOrd; prec = 100)
+function _lll_for_simplify(M::NfOrd; prec = 100)
 
   K = nf(M)
 

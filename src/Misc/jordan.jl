@@ -405,7 +405,7 @@ end
 
 function _rational_canonical_form_setup(M::MatElem{T}) where T <: FieldElem
   K = base_ring(M)
-  Kt, t = PolynomialRing(K, "t")
+  Kt, t = PolynomialRing(K, "t", cached = false)
   v, mp = maximal_vector(M, Kt)
   pols = typeof(mp)[mp]
   basis_transf = typeof(M)[]
