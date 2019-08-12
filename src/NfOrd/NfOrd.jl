@@ -325,7 +325,7 @@ function assure_has_discriminant(O::NfAbsOrd)
     if isequation_order(O) && issimple(nf(O))
       O.disc = numerator(discriminant(nf(O).pol))
     else
-      O.disc = det(trace_matrix(O))
+      O.disc = det(trace_matrix(O, copy = false))
     end
   end
   return nothing
@@ -353,7 +353,7 @@ function reduced_discriminant(O::NfOrd)
     f = Zx(nf(O).pol)
     return rres(f, derivative(f))
   end
-  return maximal_elementary_divisor(trace_matrix(O))
+  return maximal_elementary_divisor(trace_matrix(O, copy = false))
 end
 
 ################################################################################
@@ -1060,9 +1060,13 @@ end
 Returns the trace matrix of `\mathcal O`, that is, the matrix
 $(\operatorname{tr}_{K/\mathbf Q}(b_i \cdot b_j))_{1 \leq i, j \leq d}$.
 """
-function trace_matrix(O::NfAbsOrd)
+function trace_matrix(O::NfAbsOrd; copy::Bool = true)
   if isdefined(O, :trace_mat)
-    return deepcopy(O.trace_mat)
+    if copy
+      return deepcopy(O.trace_mat)
+    else
+      return O.trace_mat
+    end
   end
   K = nf(O)
   b = O.basis_nf
@@ -1083,7 +1087,11 @@ function trace_matrix(O::NfAbsOrd)
     end
   end
   O.trace_mat = g
-  return deepcopy(g)
+  if copy 
+    return deepcopy(g)
+  else
+    return g
+  end
 end
 
 ################################################################################
@@ -1167,7 +1175,7 @@ function _lll_gram(M::NfOrd)
   @assert istotally_real(K)
   g = trace_matrix(M)
 
-  q,w = lll_gram_with_transform(g)
+  q, w = lll_gram_with_transform(g)
   On = NfOrd(K, w*basis_mat(M, copy = false))
   On.ismaximal = M.ismaximal
   if isdefined(M, :index)
@@ -1187,7 +1195,7 @@ end
 A basis for $m$ that is reduced using the LLL algorithm for the Minkowski metric.    
 """
 function lll_basis(M::NfOrd)
-  I = ideal(M, parent(basis_mat(M, copy = false).num)(1))
+  I = ideal(M, identity_matrix(FlintZZ, degree(M)))
   return lll_basis(I)
 end
 
@@ -1208,14 +1216,14 @@ function lll(M::NfOrd)
     return On::NfOrd
   end
 
-  I = ideal(M, 1)
+
   #TODO HARD: find proper parameters
   prec = 100 + 25*div(degree(M), 3) + Int(round(log(abs(discriminant(K)))))
   #prec = 100
   i = 0
   while true
     try
-      q, w = lll(I, zero_matrix(FlintZZ, degree(K), degree(K)), prec = prec)
+      q, w = _lll(M, prec = prec)
       On = NfOrd(K, w*basis_mat(M, copy = false))
       On.ismaximal = M.ismaximal
       if isdefined(M, :index)
@@ -1417,3 +1425,68 @@ end
 The conductor of $R$ in the maximal order.
 """
 conductor(R::NfOrd) = conductor(R, maximal_order(R))
+
+################################################################################
+#
+#  lll for an order
+#
+################################################################################
+
+function _lll(O::NfOrd; prec::Int = 100)
+
+  K = nf(O)
+
+  if istotally_real(K)
+    #in this case the gram-matrix of the minkowski lattice is the trace-matrix
+    #which is exact.
+    return _lll_gram(ideal(O, 1))
+  end
+
+  if degree(K) == 2 && discriminant(O) < 0
+    #in this case the gram-matrix of the minkowski lattice is related to the
+    #trace-matrix which is exact.
+    #could be extended to CM-fields
+    return _lll_quad(ideal(O, 1))
+  end
+
+  n = degree(O)
+  prec = max(prec, 4*n)
+
+  d = minkowski_gram_mat_scaled(O, prec)
+  g = identity_matrix(FlintZZ, n)
+ 
+
+  prec = div(prec, 2)
+  shift!(d, -prec)  #TODO: remove?
+
+  for i=1:n
+    fmpz_mat_entry_add_ui!(d, i, i, UInt(nrows(d)))
+  end
+
+  ctx = Nemo.lll_ctx(0.99, 0.51, :gram)
+  ccall((:fmpz_lll, :libflint), Nothing, (Ref{fmpz_mat}, Ref{fmpz_mat}, Ref{Nemo.lll_ctx}), d, g, ctx)
+
+  ## test if entries in l are small enough, if not: increase precision
+  ## or signal that prec was too low
+  if nbits(maximum(abs, g)) >  div(prec, 2)
+    throw(LowPrecisionLLL())
+  end
+  ## lattice has lattice disc = order_disc * norm^2
+  ## lll needs to yield a basis sth
+  ## l[1,1] = |b_i|^2 <= 2^((n-1)/2) disc^(1/n)  
+  ## and prod(l[i,i]) <= 2^(n(n-1)/2) disc
+  
+  disc = abs(discriminant(O))
+  di = root(disc, n)+1
+  di *= fmpz(2)^(div(n+1,2)) * fmpz(2)^prec
+
+  if cmpindex(d, 1, 1, di) > 0 
+    throw(LowPrecisionLLL())
+  end
+  pr = prod_diag(d)
+  if pr > fmpz(2)^(div(n*(n-1), 2)) * disc * fmpz(2)^(n*prec)
+    throw(LowPrecisionLLL())
+  end
+
+  return FakeFmpqMat(d, fmpz(2)^prec), g
+end
