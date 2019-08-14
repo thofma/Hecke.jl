@@ -109,6 +109,32 @@ end
 
 ################################################################################
 #
+#  Basis
+#
+################################################################################
+
+function basis(a::AlgAssAbsOrdFracIdl)
+  B = basis_mat(a, copy = false)
+  O = order(a)
+  A = algebra(O)
+  d = dim(A)
+  Oba = basis(O, copy = false)
+  res = Array{elem_type(A)}(undef, d)
+
+  for i in 1:d
+    z = A()
+    for j in 1:d
+      z = z + B.num[i, j]*elem_in_algebra(Oba[j], copy = false)
+    end
+    z = divexact(z, A(B.den))
+    res[i] = z
+  end
+
+  return res
+end
+
+################################################################################
+#
 #  Construction
 #
 ################################################################################
@@ -133,7 +159,7 @@ end
 
 function frac_ideal_from_z_gens(O::AlgAssAbsOrd{S, T}, b::Vector{T}) where {S, T}
   d = degree(O)
-  den = lcm([ denominator(bb) for bb in b ])
+  den = lcm([ denominator(bb, O) for bb in b ])
   num = ideal_from_z_gens(O, [ O(den*bb) for bb in b ])
   return frac_ideal(O, num, den)
 end

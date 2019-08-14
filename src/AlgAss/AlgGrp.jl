@@ -305,7 +305,7 @@ function _merge_elts_in_gens!(left::Vector{Tuple{Int, Int}}, mid::Vector{Tuple{I
 end
 
 @doc Markdown.doc"""
-    gens(A::AlgGrp, return_full_basis::Typel{Val{T}} = Val{false})
+    gens(A::AlgGrp, return_full_basis::Type{Val{T}} = Val{false})
       -> Vector{AlgGrpElem}
 
 > Returns a subset of `basis(A)`, which generates $A$ as an algebra over

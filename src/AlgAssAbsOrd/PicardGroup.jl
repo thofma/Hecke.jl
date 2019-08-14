@@ -51,9 +51,8 @@ function picard_group(O::AlgAssAbsOrd, prepare_ref_disc_log::Bool = false)
     return domain(O.picard_group), O.picard_group
   end
 
-  OO = maximal_order(algebra(O)) # We need it later anyway
-  if O == OO
-    return _picard_group_maximal(OO)
+  if ismaximal(O)
+    return _picard_group_maximal(O)
   end
 
   if prepare_ref_disc_log && isdefined(O, :picard_group)
@@ -439,12 +438,8 @@ end
 
 function isprincipal_fac_elem(a::AlgAssAbsOrdIdl)
   O = order(a)
-  if O.ismaximal == 1
-    return isprincipal_maximal_fac_elem(a)
-  end
 
-  OO = maximal_order(algebra(O))
-  if O == OO
+  if ismaximal(O)
     return isprincipal_maximal_fac_elem(a)
   end
 
