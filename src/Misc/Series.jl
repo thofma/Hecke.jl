@@ -80,6 +80,7 @@ function derivative(f::RelSeriesElem{T}) where T
 end
 
 Nemo.fit!(::fmpq_rel_series, Int) = nothing
+Nemo.fit!(::fmpq_abs_series, Int) = nothing
 
 @doc Markdown.doc"""
     integral(f::RelSeriesElem{T}) -> RelSeriesElem
