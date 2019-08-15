@@ -209,6 +209,13 @@ function AlgAss(f::PolyElem)
   return A
 end
 
+function AlgAss(K::AnticNumberField)
+  A = AlgAss(K.pol)
+  m = AbsAlgAssToNfAbsMor(A, K, identity_matrix(FlintQQ, dim(A)), identity_matrix(FlintQQ, dim(A)))
+  A.maps_to_numberfields = [ (K, m) ]
+  return A, m
+end
+
 # Reduces the rows of M in `rows` modulo N in place.
 # Assumes that N is in lowerleft HNF.
 function reduce_rows_mod_hnf!(M::fmpz_mat, N::fmpz_mat, rows::Vector{Int})
@@ -1958,4 +1965,106 @@ function issplit(A::AlgAss, P::InfPlc)
     return true
   end
   return schur_index_at_real_plc(A, P) == 1
+end
+
+################################################################################
+#
+#  Direct product
+#
+################################################################################
+
+@doc Markdown.doc"""
+    direct_product(algebras::AlgAss...; task::Symbol = :sum)
+      -> AlgAss, Vector{AbsAlgAssMor}, Vector{AbsAlgAssMor}
+    direct_product(algebras::Vector{AlgAss}; task::Symbol = :sum)
+      -> AlgAss, Vector{AbsAlgAssMor}, Vector{AbsAlgAssMor}
+
+> Returns the algebra $A = A_1 \times \cdots \times A_k$. {{{task}}} can be
+> ":sum", ":prod", ":both" or ":none" and determines which canonical maps
+> are computed as well: ":sum" for the injections, ":prod" for the projections.
+"""
+function direct_product(algebras::Vector{ <: AlgAss{T} }; task::Symbol = :sum) where T
+  return direct_product(algebras..., task = task)
+end
+
+function direct_product(algebras::AlgAss{T}...; task::Symbol = :sum) where T
+  @assert !isempty(algebras)
+  @assert all( A -> base_ring(A) == base_ring(algebras[1]), algebras)
+  @assert task in [ :prod, :sum, :both, :none ]
+
+  d = sum( dim(A) for A in algebras )
+  mt = zeros(base_ring(algebras[1]), d, d, d)
+  offset = 0
+  for B in algebras
+    dd = dim(B)
+    mtB = multiplication_table(B)
+    for i = 1:dd
+      for j = 1:dd
+        for k = 1:dd
+          mt[i + offset, j + offset, k + offset] = multiplication_table(B)[i, j, k]
+        end
+      end
+    end
+    offset += dd
+  end
+  A = AlgAss(base_ring(algebras[1]), mt)
+  if task == :none
+    return A
+  end
+
+  if task == :sum || task == :both
+    inj = Vector{morphism_type(typeof(A), typeof(algebras[1]))}(undef, length(algebras))
+  end
+  if task == :prod || task == :both
+    proj = Vector{morphism_type(typeof(A), typeof(algebras[1]))}(undef, length(algebras))
+  end
+  offset = 0
+  for i = 1:length(algebras)
+    B = algebras[i]
+    M = zero_matrix(base_ring(A), dim(A), dim(B))
+    for i = 1:dim(B)
+      M[i + offset, i] = one(base_ring(A))
+    end
+    Mt = transpose(M)
+    if task == :sum || task == :both
+      inj[i] = hom(B, A, Mt, M)
+    end
+    if task == :prod || task == :both
+      proj[i] = hom(A, B, M, Mt)
+    end
+    offset += dim(B)
+  end
+  if task == :prod
+    return A, proj
+  elseif task == :sum
+    return A, inj
+  else
+    return A, proj, inj
+  end
+end
+
+@doc Markdown.doc"""
+    direct_product(fields::AnticNumberFields...)
+      -> AlgAss{fmpq}, Vector{AbsAlgAssToNfAbsMor}
+    direct_product(fields::Vector{AnticNumberFields})
+      -> AlgAss{fmpq}, Vector{AbsAlgAssToNfAbsMor}
+
+> Returns the algebra $A = K_1 \times \cdots \times K_k$ and the projection
+> maps $A ->> K_i$.
+"""
+function direct_product(fields::Vector{AnticNumberField})
+  return direct_product(fields...)
+end
+
+function direct_product(fields::AnticNumberField...)
+  algebras = [ AlgAss(K) for K in fields ]
+  A, proj, inj = direct_product([ B for (B, m) in algebras ], task = :both)
+  A.decomposition = [ (algebras[i][1], inj[i]) for i = 1:length(algebras) ]
+  maps_to_fields = Vector{AbsAlgAssToNfAbsMor}(undef, length(fields))
+  for i = 1:length(fields)
+    # Assumes, that the map algebras[i] -> K is given by the identity matrix
+    maps_to_fields[i] = AbsAlgAssToNfAbsMor(A, fields[i], proj[i].mat, proj[i].imat)
+  end
+  A.maps_to_numberfields = [ (fields[i], maps_to_fields[i]) for i = 1:length(fields) ]
+  return A, maps_to_fields
 end

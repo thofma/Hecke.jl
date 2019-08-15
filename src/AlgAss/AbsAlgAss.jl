@@ -759,6 +759,14 @@ function primitive_element(A::AbsAlgAss)
   return a
 end
 
+function primitive_element(A::AbsAlgAss{fmpq})
+  if isdefined(A, :maps_to_numberfields)
+    return primitive_element_via_number_fields(A)
+  end
+  a, _ = _primitive_element(A)
+  return a
+end
+
 function _primitive_element(A::AbsAlgAss)
   error("Not implemented yet")
   return nothing
@@ -773,6 +781,15 @@ function _primitive_element(A::AbsAlgAss{T}) where T <: Union{nmod, fq, fq_nmod,
     f = minpoly(a)
   end
   return a, f
+end
+
+function primitive_element_via_number_fields(A::AbsAlgAss{fmpq})
+  fields_and_maps = as_number_fields(A)
+  a = A()
+  for (K, AtoK) in fields_and_maps
+    a += AtoK\gen(K)
+  end
+  return a
 end
 
 function _as_field(A::AbsAlgAss{T}) where T
