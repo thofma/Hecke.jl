@@ -713,7 +713,6 @@ end
 #
 ################################################################################
 
-# Algorithm 1.3.2 in Cohen "Advanced Topics in Computational Number Theory"
 @doc Markdown.doc"""
     idempotents(a::AlgAssAbsOrdIdl, b::AlgAssAbsOrdIdl)
       -> AlgAssAbsOrdElem, AlgAssAbsOrdElem
@@ -722,26 +721,41 @@ end
 > and $y \in b$ such that $x + y = 1$.
 """
 function idempotents(a::AlgAssAbsOrdIdl, b::AlgAssAbsOrdIdl)
+
   !(order(a) === order(b)) && error("Parent mismatch")
   O = order(a)
   d = degree(O)
-  A = basis_mat(a, copy = false)
-  B = basis_mat(b, copy = false)
 
-  C = vcat(A, B)
-  H, U = hnf_with_transform(C)
-
-  if H != vcat(identity_matrix(FlintZZ, d), zero_matrix(FlintZZ, d, d))
-    error("Ideals are not coprime")
+  V = zero_matrix(FlintZZ, 1 + 2*degree(O), 1 + 2*degree(O))
+  V[1, 1] = 1
+  u = coordinates(one(O))
+  for i = 1:d
+    V[1, i + 1] = u[i]
   end
 
-  X = sub(U, 1:1, 1:d)
-  XA = X*A
-  x = O([ XA[1, i] for i = 1:d ])
-  @assert x in a
-  y = one(O) - x
-  @assert y in b
-  return x, y
+  _copy_matrix_into_matrix(V, 2, 2, basis_mat(a, copy = false))
+  _copy_matrix_into_matrix(V, 2 + d, 2, basis_mat(b, copy = false))
+  for i = 2:d + 1
+    V[i, d + i] = 1
+  end
+
+  H = hnf!(V)
+  for i = 2:d + 1
+    if H[1, i] != 0
+      error("Ideals are not coprime")
+    end
+  end
+
+  t = O()
+  z = basis(a, copy = false)[1]*H[1, d + 2]
+  for i = 2:d
+    t = mul!(t, basis(a, copy = false)[i], H[1, d + 1 + i])
+    z = add!(z, z, t)
+  end
+
+  @assert -z in a
+  @assert one(O) + z in b
+  return -z, one(O) + z
 end
 
 ################################################################################

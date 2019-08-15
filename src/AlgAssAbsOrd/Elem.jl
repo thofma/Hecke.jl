@@ -232,6 +232,8 @@ function *(n::Union{Integer, fmpz}, x::AlgAssAbsOrdElem)
   return O(y)
 end
 
+*(x::AlgAssAbsOrdElem, n::Union{Integer, fmpz}) = n*x
+
 # Computes a/b if action is :right and b\a if action is :left (and if this is possible)
 function divexact(a::T, b::T, action::Symbol, check::Bool = true) where { T <: Union{ AlgAssAbsOrdElem, AlgAssRelOrdElem } }
   !check_parent(a, b) && error("Wrong parents")

@@ -9,4 +9,6 @@
   @time include("NfRel/NfRel.jl")
   println("NfRel/Elem.jl")
   @time include("NfRel/Elem.jl")
+  println("NfRel/NEQ_Kirschmer.jl")
+  @time include("NfRel/NEQ_Kirschmer.jl")
 end

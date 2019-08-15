@@ -44,7 +44,7 @@ import Base: show, minimum, rand, prod, copy, rand, ceil, round, size, in,
              setindex!, transpose, getindex, //, div, floor, max, BigFloat,
              precision, first, StepRange, show, one, zero, inv, iseven, isodd,
              convert, angle, abs2, isless, exponent, isfinite, zeros, rem, min,
-             numerator, denominator, exp, maximum, intersect
+             numerator, denominator, exp, maximum, intersect, reduce
 
 # To make all exported Nemo functions visible to someone using "using Hecke"
 # we have to export everything again
@@ -90,7 +90,7 @@ export @vprint, @hassert, @vtime, add_verbose_scope, get_verbose_level,
 ###############################################################################
 
 const pkgdir = joinpath(dirname(pathof(Hecke)), "..")
-#
+
 #const libhecke = joinpath(pkgdir, "local", "lib", "libhecke")
 #
 #const libdir = joinpath(pkgdir, "local", "lib")
@@ -817,6 +817,11 @@ export example
 
 function example(s::String)
   Base.include(Main, joinpath(dirname(pathof(Hecke)), "..", "examples", s))
+end
+
+function revise(s::String)
+  s = joinpath(dirname(pathof(Hecke)), "..", "examples", s)
+  Main.Revise.track(Main, s)
 end
 
 #same (copyed) as in stdlib/v1.0/InteractiveUtils/src/InteractiveUtils.jl

@@ -166,6 +166,17 @@ function _order(A::S, gens::Vector{T}; cached::Bool = true, check::Bool = true) 
   return Order(A, Bmat, cached = cached, check = check)
 end
 
+function _equation_order(A::AbsAlgAss{fmpq})
+  @assert iscommutative(A)
+  a = primitive_element_via_number_fields(A)
+  b = Vector{elem_type(A)}(undef, dim(A))
+  b[1] = one(A)
+  for i = 2:dim(A)
+    b[i] = b[i - 1]*a
+  end
+  return Order(A, b)
+end
+
 ################################################################################
 #
 #  Index

@@ -131,7 +131,7 @@ function _multgrp(Q::AlgAssAbsOrdQuoRing)
     return [ s.coeff[1, i] for i = 1:ngens(S) ]
   end
 
-  return S, GrpAbFinGenToAbsOrdMap(S, Q, generators, disc_log)
+  return S, GrpAbFinGenToAbsOrdQuoRingMultMap(S, Q, generators, disc_log)
 end
 
 ################################################################################

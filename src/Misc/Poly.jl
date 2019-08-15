@@ -708,13 +708,29 @@ power sums from the coefficients of $f$.
 function polynomial_to_power_sums(f::PolyElem{T}, n::Int=degree(f)) where T <: FieldElem
   d = degree(f)
   R = base_ring(f)
-  S = PowerSeriesRing(R, n+1, "gen(S)")[1]
+  S = PowerSeriesRing(R, n+1, "gen(S)", cached = false, model =:capped_absolute)[1]
   #careful: converting to power series and derivative do not commute
   #I also don't quite get this: I thought this was just the log,
   #but it isn't
-  A = S([coeff(reverse(derivative(f)), i) for i=0:d-1], d, n+1, 0)
-  B = S([coeff(reverse(f), i) for i=0:d], d+1, n+1, 0)
+  A = S()
+  B = S()
+  fit!(A, d)
+  fit!(B, d+1)
+#  A.val = B.val = 0
+  for i=1:d
+    c = coeff(f, i)
+    setcoeff!(A, d-i, i*c)
+    setcoeff!(B, d-i, c)
+  end
+  setcoeff!(B, d, coeff(f, 0))
+  A.prec = n+1
+  B.prec = n+1
+
+#  @show A, B
+#  A = S([coeff(reverse(derivative(f)), i) for i=0:d-1], d, n+1, 0)
+#  B = S([coeff(reverse(f), i) for i=0:d], d+1, n+1, 0)
   L = A*inv(B)
+#  s = T()
   s = T[coeff(L, i) for i=1:n]
   return s
 end
@@ -747,7 +763,7 @@ coefficients (the elementary symmetric functions) from the power sums.
 function power_sums_to_polynomial(P::Array{T, 1}) where T <: FieldElem
   d = length(P)
   R = parent(P[1])
-  S = PowerSeriesRing(R, d, "gen(S)")[1]
+  S = PowerSeriesRing(R, d, "gen(S)")[1] #, model = :capped_absolute)[1]
   s = S(P, length(P), d, 0)
   
   r = -integral(s)

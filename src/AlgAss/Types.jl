@@ -253,6 +253,7 @@ mutable struct AlgAssAbsOrd{S, T} <: Ring
   trred_matrix::fmpz_mat
 
   picard_group#::MapPicardGrp
+  unit_group#::MapUnitGrp
 
   tcontain::FakeFmpqMat
 

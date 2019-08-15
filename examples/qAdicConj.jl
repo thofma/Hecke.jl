@@ -1,7 +1,13 @@
 
 module QAdic
 
-using Hecke
+using Hecke, Profile
+
+Hecke.add_assert_scope(:PolyFactor)
+Hecke.add_verbose_scope(:PolyFactor)
+
+Hecke.add_verbose_scope(:qAdic)
+Hecke.add_assert_scope(:qAdic)
 
 
 mutable struct qAdicRootCtx
@@ -396,10 +402,10 @@ function mult_syzygies_units(A::Array{FacElem{nf_elem, AnticNumberField}, 1})
   uu = []
   for a = A
     while true
-      @time la = conjugates_log(a, C, prec)
+      @vtime :qAdic 1 la = conjugates_log(a, C, prec)
       if iszero(la)
-        @time @assert verify_gamma([a], [fmpz(1)], fmpz(p)^prec)
-        println("torsion found")
+        @vtime :qAdic 1 @hassert :qAdic 1 verify_gamma([a], [fmpz(1)], fmpz(p)^prec)
+        @vprint :qAdic 1 println("torsion found")
         break
       end
       lv = vcat(lu, la)
@@ -413,7 +419,7 @@ function mult_syzygies_units(A::Array{FacElem{nf_elem, AnticNumberField}, 1})
           end
         end
       end
-      @time k = Hecke.left_kernel_basis(lv)
+      @vtime :qAdic 1 k = Hecke.left_kernel_basis(lv)
       @assert length(k) < 2
       if length(k) == 0
         println("new ")
@@ -423,10 +429,10 @@ function mult_syzygies_units(A::Array{FacElem{nf_elem, AnticNumberField}, 1})
       else # length == 1 extend the module
         s = fmpq[]
         for x = k[1]
-          @time y = lift_reco(FlintQQ, x, reco = true)
+          @vtime :qAdic 1 y = lift_reco(FlintQQ, x, reco = true)
           if y == nothing
             prec *= 2
-            @show "increase prec to ", prec
+            @vprint :qAdic 1  "increase prec to ", prec
             lu = vcat([conjugates_log(x, C, prec) for x = u])
             break
           end
@@ -440,7 +446,7 @@ function mult_syzygies_units(A::Array{FacElem{nf_elem, AnticNumberField}, 1})
         @assert reduce(gcd, gamma) == 1 # should be a primitive relation
         @time if !verify_gamma(push!(copy(u), a), gamma, fmpz(p)^prec)
           prec *= 2
-          @show "increase prec to ", prec
+          @vprint :qAdic 1 "increase prec to ", prec
           lu = vcat([conjugates_log(x, C, prec) for x = u])
           continue
         end
@@ -477,7 +483,6 @@ function mult_syzygies_units(A::Array{FacElem{nf_elem, AnticNumberField}, 1})
     append!(uu[i][2], zeros(FlintZZ, length(uu[end][2])-length(uu[i][2])))
   end
   if length(uu) == 0
-    @show uu
     U = matrix(FlintZZ, length(uu), length(uu[end][2]), reduce(vcat, [x[2] for x = uu]))
   else
     U = matrix(FlintZZ, length(uu), length(uu[end][2]), reduce(vcat, [x[2] for x = uu]))
@@ -519,11 +524,10 @@ function verify_gamma(a::Array{FacElem{nf_elem, AnticNumberField}, 1}, g::Array{
   B = ArbField(nbits(v)*2)(v)^2
   B = 1/2 *acosh((B-2)/2)^2
   p = Hecke.upper_bound(log(B)/log(parent(B)(2)), fmpz)
-  @show "using", p, nbits(v)*2
+  @vprint :qAdic 1  "using", p, nbits(v)*2
   b = conjugates_arb_log(t, max(-Int(div(p, 2)), 2))
-  global res = (B, b, t)
 #  @show B , sum(x*x for x = b), istorsion_unit(t)[1]
-  @assert (B > sum(x*x for x = b)) == istorsion_unit(t)[1]
+  @hassert :qAdic 1 (B > sum(x*x for x = b)) == istorsion_unit(t)[1]
   return B > sum(x*x for x = b)
 end
 
@@ -546,11 +550,7 @@ function lift_reco(::FlintRationalField, a::padic; reco::Bool = false)
     R = parent(a)
     fl, c, d = rational_reconstruction(u, prime(R, N-v))
     !fl && return nothing
-    if false && 2*max(nbits(c), nbits(d)) > nbits(prime(R, N-v)) -20 #arbitrary 
-      @show "bad"
-      return nothing
-    end
-    @assert fl
+    
     x = FlintQQ(c, d)
     if v < 0
       return x//prime(R, -v)
@@ -580,7 +580,7 @@ Hecke.uniformizer(Q::FlintPadicField) = Q(prime(Q))
 Base.precision(Q::FlintPadicField) = Q.prec_max
 
 function expand(a::qadic)
-  @assert valuation(a-1)>0
+  @hassert :qAdic 1 valuation(a-1)>0
   i = 1
   Q = parent(a)
   pi = uniformizer(Q)
@@ -777,7 +777,8 @@ Hecke.base_ring(Q::QadicRing) = integers(base_ring(Q.Q))
 #
 #########################
 
-mutable struct HenselCtxQadic
+abstract type Hensel end
+mutable struct HenselCtxQadic <: Hensel
   f::PolyElem{qadic}
   lf::Array{PolyElem{qadic}, 1}
   la::Array{PolyElem{qadic}, 1}
@@ -819,48 +820,54 @@ function Base.show(io::IO, C::HenselCtxQadic)
   println(io, "Lifting tree for $(C.f), with $(C.n) factors, currently up precision $(valuation(C.p))")
 end
 
-function Hecke.lift(C::HenselCtxQadic)
-  i = length(C.lf)
-  j = i-1
+function Hecke.lift(C::HenselCtxQadic, mx::Int = minimum(precision, coefficients(C.f)))
   p = C.p
   N = valuation(p)
 #  @show map(precision, coefficients(C.f)), N, precision(parent(p))
-  @show mx = minimum(precision, coefficients(C.f))
-  N2 = min(mx, 2*N)
-  @show p = setprecision(p, N2)
-  while j > 0
-    if i==length(C.lf)
-      f = setprecision(C.f, N2)
-    else
-      f = C.lf[i]
-    end
-    #formulae and names from the Flint doc
-    h = C.lf[j]
-    g = C.lf[j-1]
-    b = C.la[j]
-    a = C.la[j-1]
-    setprecision!(h, N2)
-    setprecision!(g, N2)
-    setprecision!(a, N2)
-    setprecision!(b, N2)
-
-    fgh = (f-g*h)*inv(p)
-    G = rem(fgh*b, g)*p+g
-    H = rem(fgh*a, h)*p+h
-    t = (1-a*G-b*H)*inv(p)
-    B = rem(t*b, g)*p+b
-    A = rem(t*a, h)*p+a
-    if i < length(C.lf)
-      C.lf[i] = G*H
-    end
-    C.lf[j-1] = G
-    C.lf[j] = H
-    C.la[j-1] = A
-    C.la[j] = B
-    i -= 1
-    j -= 2
+  #have: N need mx
+  ch = [mx] 
+  while ch[end] > N
+    push!(ch, div(ch[end]+1, 2))
   end
-  @show C.p.val = N2
+  @vprint :PolyFactor 1 "using lifting chain ", ch
+  for k=length(ch)-1:-1:1
+    N2 = ch[k]
+    i = length(C.lf)
+    j = i-1
+    p = setprecision(p, N2)
+    while j > 0
+      if i==length(C.lf)
+        f = setprecision(C.f, N2)
+      else
+        f = setprecision(C.lf[i], N2)
+      end
+      #formulae and names from the Flint doc
+      h = C.lf[j]
+      g = C.lf[j-1]
+      b = C.la[j]
+      a = C.la[j-1]
+      setprecision!(h, N2)
+      setprecision!(g, N2)
+      setprecision!(a, N2)
+      setprecision!(b, N2)
+
+      fgh = (f-g*h)*inv(p)
+      G = rem(fgh*b, g)*p+g
+      H = rem(fgh*a, h)*p+h
+      t = (1-a*G-b*H)*inv(p)
+      B = rem(t*b, g)*p+b
+      A = rem(t*a, h)*p+a
+      if i < length(C.lf)
+        C.lf[i] = G*H
+      end
+      C.lf[j-1] = G
+      C.lf[j] = H
+      C.la[j-1] = A
+      C.la[j] = B
+      i -= 1
+      j -= 2
+    end
+  end
 end
 
 function Hecke.factor(C::HenselCtxQadic)
@@ -871,8 +878,51 @@ function Hecke.precision(C::HenselCtxQadic)
   return valuation(C.p)
 end
 
-function Hecke.prime(C::HenselCtxQadic)
-  return C.p
+# interface to use Bill's Z/p^k lifting code. same algo as above, but 
+# tighter implementation
+mutable struct HenselCtxPadic <: Hensel
+  X::Hecke.HenselCtx
+  f::PolyElem{padic}
+  function HenselCtxPadic(f::PolyElem{padic})
+    r = new()
+    r.f = f
+    Zx = PolynomialRing(FlintZZ, cached = false)[1]
+    ff = Zx()
+    for i=0:degree(f)
+      setcoeff!(ff, i, lift(coeff(f, i)))
+    end
+    r.X = Hecke.HenselCtx(ff, prime(base_ring(f)))
+    Hecke.start_lift(r.X, 1)
+    return r
+  end
+end
+
+function Hecke.lift(C::HenselCtxPadic, mx::Int) 
+  for i=0:degree(C.f)
+    setcoeff!(C.X.f, i, lift(coeff(C.f, i)))
+  end
+  Hecke.continue_lift(C.X, mx)
+end
+
+function Hecke.factor(C::HenselCtxPadic)
+  res =  typeof(C.f)[]
+  Zx = PolynomialRing(FlintZZ, cached = false)[1]
+  h = Zx()
+  Qp = base_ring(C.f)
+  for i = 1:C.X.LF._num #from factor_to_dict
+    #cannot use factor_to_dict as the order will be random (hashing!)
+    g = parent(C.f)()
+    ccall((:fmpz_poly_set, :libflint), Nothing, (Ref{fmpz_poly}, Ref{Hecke.fmpz_poly_raw}), h, C.X.LF.poly+(i-1)*sizeof(Hecke.fmpz_poly_raw))
+    for j=0:degree(h)
+      setcoeff!(g, j, Qp(coeff(h, j)))
+    end
+    push!(res, g)
+  end
+  return res
+end
+
+function Hecke.precision(C::HenselCtxPadic)
+  return Int(C.X.N)
 end
 
 function lift_root(f::fmpz_poly, a::nf_elem, o::nf_elem, p::fmpz, n::Int)
@@ -902,7 +952,7 @@ function completion(K::AnticNumberField, P::NfOrdIdl)
   p = minimum(P)
   C = qAdicConj(K, Int(p))
   g = conjugates(P.gen_two.elem_in_nf, C)
-  @show map(x->valuation(x), g)
+#  @show map(x->valuation(x), g)
   i = findfirst(x->valuation(x) > 0, g)
   return completion(K, p, i)
 end
@@ -928,7 +978,7 @@ function completion(K::AnticNumberField, p::fmpz, i::Int)
   m = matrix(GF(p), d, d, [coeff(pa[i], j-1) for j=1:d for i=1:d])
   o = matrix(GF(p), d, 1, [coeff(gen(R), j-1) for j=1:d])
   s = solve(m, o)
-  @assert m*s == o
+  @hassert :qAdic 1 m*s == o
   a = K()
   for i=1:d
     Hecke._num_setcoeff!(a, i-1, lift(s[i,1]))
@@ -995,10 +1045,19 @@ function defining_polynomial(Q::FqNmodFiniteField, P::Hecke.Ring = GF(characteri
   return f
 end
 
+function Base.round(::Type{fmpz}, a::fmpz, b::fmpz) 
+  s = sign(a)
+  as = abs(a)
+  r = s*div(2*as+b, 2*b)
+#  global rnd = (a, b)
+#  @assert r == round(fmpz, a//b)
+  return r
+end
+  
 
 function reco(a::NfAbsOrdElem, M, pM)
   m = matrix(FlintZZ, 1, degree(parent(a)), coordinates(a))
-  m = m - matrix(FlintZZ, 1, degree(parent(a)), map(x -> round(fmpz, x//pM[2]), m*pM[1]))*M
+  m = m - matrix(FlintZZ, 1, degree(parent(a)), map(x -> round(fmpz, x, pM[2]), m*pM[1]))*M
   return parent(a)(collect(m))
 end
 
@@ -1014,49 +1073,148 @@ function reco(a::nf_elem, M, pM)
   return parent(a)(parent(parent(a).pol)(collect(m)))
 end
 
+function myfactor(f::PolyElem{nf_elem})
+  k = base_ring(f)
+  zk = maximal_order(k)
+  p = degree(f)
+  np = 0
+  bp = 1*zk
+  br = 0
+  s = Set{Int}()
+  while true
+    p = next_prime(p)
+    if isindex_divisor(zk, p)
+      continue
+    end
+    P = prime_decomposition(zk, p, 1)
+    if length(P) == 0
+      continue
+    end
+    F, mF = ResidueField(zk, P[1][1])
+    mF = Hecke.extend(mF, k)
+    lf = factor(change_base_ring(f, mF))
+    if any(i -> i>1, values(lf.fac))
+      continue
+    end
+    ns = Hecke._ds(lf)
+    if length(s) == 0
+      s = ns
+    else
+      s = Base.intersect(s, ns)
+    end
 
-function zassenhaus(f::fmpz_poly, P::NfOrdIdl, N::Int)
+    if length(s) == 1
+      println("irreducible by degset")
+      return [f]
+    end
+
+    if br == 0 || br > length(lf.fac)
+      br = length(lf.fac)
+      bp = P[1][1]
+    end
+    np += 1
+    if np > 2 && br > 10
+      break
+    end
+    if np > 2*degree(f)
+      break
+    end
+  end
+  println("possible degrees: ", s)
+  if br < 5
+    return zassenhaus(f, bp, degset = s)
+  else
+    return van_hoeij(f, bp)
+  end
+end
+
+function landau_mignotte_bound(f::PolyElem{nf_elem})
+  Zx, x = PolynomialRing(FlintZZ, cached = false)
+  g = Zx()
+  for i=0:degree(f)
+    setcoeff!(g, i, Hecke.upper_bound(sqrt(t2(coeff(f, i))), fmpz))
+  end
+  b = fmpz()
+  ccall((:fmpz_poly_factor_mignotte, :libflint), Nothing, (Ref{fmpz}, Ref{fmpz_poly}), b, g)
+  return b
+end
+
+
+function zassenhaus(f::fmpz_poly, P::NfOrdIdl)
   return zassenhaus(change_base_ring(f, nf(order(P))), P, N)
 end
 
-function zassenhaus(f::fmpq_poly, P::NfOrdIdl, N::Int)
+function zassenhaus(f::fmpq_poly, P::NfOrdIdl)
   return zassenhaus(change_base_ring(f, nf(order(P))), P, N)
 end
 
-function zassenhaus(f::PolyElem{nf_elem}, P::NfOrdIdl, N::Int)
+function zassenhaus(f::PolyElem{nf_elem}, P::NfOrdIdl; degset::Set{Int} = Set{Int}(collect(1:degree(f))))
   K = base_ring(parent(f))
   C, mC = completion(K, P)
-  setprecision!(C, N)
-  H = HenselCtxQadic(change_base_ring(f, mC))
-  while precision(H) < N
-    lift(H)
-  end
 
-  M = lll(basis_mat(P^N))
-  pM = pseudo_inv(M)
+  b = landau_mignotte_bound(f)
+  c1, c2 = Hecke.norm_change_const(order(P))
+  N = ceil(Int, degree(K)/2/degree(P)*(log2(c1*c2) + 2*nbits(b)))
+  @vprint :PolyFactor 1 "using a precision of $N\n"
+
+  setprecision!(C, N)
+
+  vH = vanHoeijCtx()
+  if degree(P) == 1
+    vH.H = HenselCtxPadic(change_base_ring(f, x->coeff(mC(x), 0)))
+  else
+    vH.H = HenselCtxQadic(change_base_ring(f, mC))
+  end
+  vH.C = C
+  vH.P = P
+
+  @vtime :PolyFactor 1 grow_prec!(vH, N)
+
+  H = vH.H
+
+  M = vH.Ml
+  pM = vH.pMr
 
   lf = factor(H)
   zk = order(P)
 
-  S = Set(map(x -> change_base_ring(x, y -> preimage(mC, y), parent(f)), lf))
+  if degree(P) == 1
+    S = Set(map(x -> change_base_ring(x, y -> lift(y), parent(f)), lf))
+  else
+    S = Set(map(x -> change_base_ring(x, y -> preimage(mC, y), parent(f)), lf))
+  end
   #TODO: test reco result for being small, do early abort
   #TODO: test selected coefficients first without computing the product
   #TODO: once a factor is found (need to enumerate by size!!!), remove stuff...
   #    : if f is the norm of a poly over a larger field, then every
   #      combination has to respect he prime splitting in the extension
   #      the norm(poly) is the prod of the local norm(poly)s
-  #TODO: make subsets for Set
-  #TODO: test reco result for being small, do early abort
-  #TODO: test selected coefficients first without computing the product
-  #TODO: once a factor is found (need to enumerate by size!!!), remove stuff...
-  #add/use degree sets and search restrictions. Users might want restricted degrees
-  for s = Hecke.subsets(S)
-    if length(s) == 0
-      continue
+  #TODO: add/use degree sets and search restrictions. Users might want restricted degrees
+  #TODO: add a call to jump from van Hoeij to Zassenhaus once a partitioning 
+  #      is there.
+  used = empty(S)
+  res = typeof(f)[]
+  for d = 1:length(S)
+    for s = Hecke.subsets(S, d)
+      if length(Base.intersect(used, s)) > 0 
+        println("re-using data")
+        continue
+      end
+      #TODO: test constant term first, possibly also trace + size
+      g = prod(s)
+      g = change_base_ring(g, x->K(reco(zk(x), M, pM)))
+      if iszero(rem(f, g))
+        push!(res, g)
+        used = union(used, s)
+        if length(used) == length(S)
+          return res
+        end
+      else
+        println("reco failed")
+      end
     end
-    g = prod(s)
-    println(g, " -> ", change_base_ring(g, x->reco(zk(x), M, pM)))
   end
+  return res
 end
 
 ###############################################
@@ -1097,25 +1255,36 @@ function divexact_low(a::PolyElem{T}, b::PolyElem{T}, n::Int) where {T}
     q = divexact(constant_coefficient(a), constant_coefficient(b))
     setcoeff!(r, i, q)
     a = shift_right(a-q*b, 1)
+    b = truncate(b, n-i-1)
     #truncate both a and b to n-i-1 (for generic polys one could just change the length)
   end
   return r
 end
 
 #computes the top coeffs starting with x^n
-function divhigh(a::PolyElem{T}, b::PolyElem{T}, n::Int) where {T}
+function divhigh(a::PolyElem{T}, b::PolyElem{T}, n0::Int) where {T}
   r = parent(a)()
-  n = degree(a) - degree(b) - n
+  n = degree(a) - degree(b) - n0
+  Hecke.fit!(r, degree(a) - degree(b))
+  a = deepcopy(a)
+  k = degree(a) - n0
+  da = degree(a)
   for i=0:n
     if degree(a) < degree(b)
       break
     end
-    q = divexact(lead(a), lead(b))
-    setcoeff!(r, degree(a) - degree(b), q)
-    a = a-q*shift_left(b, degree(a) - degree(b)) # inplace, one operation would be cool
+    q = divexact(coeff(a, da), lead(b))
+    setcoeff!(r, da - degree(b), q)
+    for j=da:-1:max(k, da - degree(b))
+      setcoeff!(a, j, coeff(a, j)-q*coeff(b, j-da+degree(b)))
+    end
+    da -= 1
+#    a = a-q*shift_left(b, degree(a) - degree(b)) # inplace, one operation would be cool
   end
+  Hecke.set_length!(r, Hecke.normalise(r, length(r) - 1))
   return r
 end
+
 ###############################################
 function cld_bound(f::PolyElem{nf_elem}, k::Array{Int, 1})
   @assert all(kk -> 0 <= kk < degree(f), k)
@@ -1150,7 +1319,7 @@ function initial_prec(f::PolyElem{nf_elem}, p::Int, r::Int = degree(f))
   return a
 end
 
-function cld_data(H::HenselCtxQadic, up_to::Int, from::Int, mC, Mi)
+function cld_data(H::Hensel, up_to::Int, from::Int, mC, Mi)
   lf = factor(H)
   a = preimage(mC, zero(codomain(mC)))
   k = parent(a)
@@ -1192,21 +1361,21 @@ function cld_data(H::HenselCtxQadic, up_to::Int, from::Int, mC, Mi)
   return M
 end
 
-function van_hoeij(f::fmpz_poly, P::NfOrdIdl, N::Int)
-  return van_hoeij(change_base_ring(f, nf(order(P))), P, N)
+function van_hoeij(f::fmpz_poly, P::NfOrdIdl)
+  return van_hoeij(change_base_ring(f, nf(order(P))), P)
 end
 
-function van_hoeij(f::fmpq_poly, P::NfOrdIdl, N::Int)
-  return van_hoeij(change_base_ring(f, nf(order(P))), P, N)
+function van_hoeij(f::fmpq_poly, P::NfOrdIdl)
+  return van_hoeij(change_base_ring(f, nf(order(P))), P)
 end
 
 mutable struct vanHoeijCtx
-  H::HenselCtxQadic
+  H::Hensel
   pr::Int
   Ml::fmpz_mat
   pMr::Tuple{fmpz_mat, fmpz}
   pM::Tuple{fmpz_mat, fmpz}
-  C::FlintQadicField
+  C::Union{FlintQadicField, FlintPadicField}
   P::NfOrdIdl
   function vanHoeijCtx()
     return new()
@@ -1214,11 +1383,7 @@ mutable struct vanHoeijCtx
 end
 
 function grow_prec!(vH::vanHoeijCtx, pr::Int)
-  while precision(vH.H) < pr
-    lift(vH.H)
-  end
-  @show precision(vH.H.p), valuation(vH.H.p)
-  @show vH.H.lf[1]
+  lift(vH.H, pr)
 
   vH.Ml = lll(basis_mat(vH.P^pr))
   vH.pMr = pseudo_inv(vH.Ml)
@@ -1237,18 +1402,23 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 20)
 
   _, mK = ResidueField(order(P), P)
   mK = extend(mK, K)
-  @show r = length(factor(change_base_ring(f, mK)))
-  @show N = degree(f)
+  r = length(factor(change_base_ring(f, mK)))
+  N = degree(f)
+  @vprint :PolyFactor 1  "Having $r local factors for degree ", N
 
   setprecision!(C, 5)
 
   vH = vanHoeijCtx()
-  vH.H = HenselCtxQadic(change_base_ring(f, mC))
-  @show vH.H.lf[1], vH.H.p
+  if degree(P) == 1
+    vH.H = HenselCtxPadic(change_base_ring(f, x->coeff(mC(x), 0)))
+  else
+    vH.H = HenselCtxQadic(change_base_ring(f, mC))
+  end
   vH.C = C
   vH.P = P
 
-  up_to = max(5, ceil(Int, N/10))
+  up_to = min(5, ceil(Int, N/20))
+  up_to_start = up_to
   from = N-up_to  #use 5 coeffs on either end
   up_to = min(up_to, N)
   from = min(from, N)
@@ -1258,26 +1428,46 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 20)
   # from Fieker/Friedrichs, still wrong here
   # needs to be larger than anticipated...
   c1, c2 = Hecke.norm_change_const(order(P))
-  @show b = [ceil(Int, degree(K)/2/degree(P)*(log2(c1*c2) + 2*nbits(x)+ prec_scale)) for x = b]
+  b = [ceil(Int, degree(K)/2/degree(P)*(log2(c1*c2) + 2*nbits(x)+ prec_scale)) for x = b]
+  @vprint :PolyFactor 2 "using CLD precsion bounds ", b
 
   used = []
   really_used = []
-  have = vcat(0:up_to-1, from:N-2)  #N-1 is always 1
   M = identity_matrix(FlintZZ, r)*2^prec_scale
 
   while true #the main loop
     #find some prec
     #to start with, I want at least half of the CLDs to be useful
-    i= sort(b)[up_to] # minimal expo to recover CLD
-    println("setting prec to $i, and lifting the info ...")
+    i= sort(b)[div(length(b)+1, 2)]
+    @vprint :PolyFactor 1 "setting prec to $i, and lifting the info ...\n"
     setprecision!(codomain(mC), i)
-    vH.H.f = change_base_ring(f, mC)
-    @time grow_prec!(vH, i)
+    if degree(P) == 1
+      vH.H.f = change_base_ring(f, x->coeff(mC(x), 0))
+    else
+      vH.H.f = change_base_ring(f, mC)
+    end
+    @vtime :PolyFactor 1 grow_prec!(vH, i)
 
    
     av_bits = sum(nbits, vH.Ml)/degree(K)^2
-    println("obtaining CLDs...")
-    @time C = cld_data(vH.H, up_to, from, mC, vH.pM[1]) 
+    @vprint :PolyFactor 1 "obtaining CLDs...\n"
+
+    #prune: in Swinnerton-Dyer: either top or bottom are too large.
+    while from < N && b[N - from + up_to] > i
+      from += 1
+    end
+    while up_to > 0 && b[up_to] > i
+      up_to -= 1
+    end
+    b = b[vcat(1:up_to, length(b)-(N-from-1):length(b))]
+    have = vcat(0:up_to-1, from:N-2)  #N-1 is always 1
+
+    if degree(P) == 1
+      mD = MapFromFunc(x->coeff(mC(x),0), y->K(lift(y)), K, base_ring(vH.H.f))
+      @vtime :PolyFactor 1 C = cld_data(vH.H, up_to, from, mD, vH.pM[1]) 
+    else
+      @vtime :PolyFactor 1 C = cld_data(vH.H, up_to, from, mC, vH.pM[1]) 
+    end
 
     # In the end, p-adic precision needs to be large enough to
     # cover some CLDs. If you want the factors, it also has to 
@@ -1326,50 +1516,56 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 20)
     # until done (whatever that means)
     # if unlucky: re-do Hensel and start over again, hopefull retaining some info
     # can happen if the CLD coeffs are too large for the current Hensel level
-    st = 1
+    
     while length(have) > length(used)
-      if isodd(st)
-        n = minimum(setdiff(have, used))
-        push!(used, n)
-      else
-        n = maximum(setdiff(have, used))
-        push!(used, n)
+      m = (b[1], 1)
+      for i=1:length(have)
+        if have[i] in used
+          continue
+        end
+        if b[i] < m[1]
+          m = (b[i], i)
+        end
       end
-      st += 1
+      n = have[m[2]]
+      push!(used, n)
+      
       i = findfirst(x->x == n, have) #new data will be in block i of C
-      println("trying to use coeff $n which is $i")
+      @vprint :PolyFactor 2 "trying to use coeff $n which is $i\n"
       if b[i] > precision(codomain(mC))
         @show "not enough precisino for CLD ", i
+        error()
         continue
       end
       sz = floor(Int, degree(K)*av_bits/degree(P) - b[i])
 
       B = sub(C, 1:r, (i-1)*degree(K)+1:i*degree(K))
-#      B = sub(C, 1:r, (i-1)*degree(K)+5:(i-1)*degree(K)+7)
-      @show i, maximum(nbits, B)
+#      B = sub(C, 1:r, (i-1)*degree(K)+5:(i-1)*degree(K)+7) #attempt to use parts of a coeff
+#      @show i, maximum(nbits, B)
       
       T = sub(M, 1:nrows(M), 1:r)
       B = T*B   # T contains the prec_scale 
       mod_sym!(B, vH.pM[2]*fmpz(2)^prec_scale)
-      @show maximum(nbits, B), nbits(vH.pM[2]), b[i]
+#      @show maximum(nbits, B), nbits(vH.pM[2]), b[i]
       if sz + prec_scale >= nbits(vH.pM[2]) || sz < 0
         println("loss of precision for this col: ", sz, " ", nbits(pM[2]))
+        error()
         continue
       else
         sz = nbits(vH.pM[2]) - 2 * prec_scale
       end
       push!(really_used, n)
-      @show sz, nbits(vH.pM[2])
+#      @show sz, nbits(vH.pM[2])
       ccall((:fmpz_mat_scalar_tdiv_q_2exp, :libflint), Nothing, (Ref{fmpz_mat}, Ref{fmpz_mat}, Cint), B, B, sz)
       s = max(0, sz - prec_scale)
       d = tdivpow2(vH.pM[2], s)
       M = [M B; zero_matrix(FlintZZ, ncols(B), ncols(M)) d*identity_matrix(FlintZZ, ncols(B))]
   #    @show map(nbits, Array(M))
-      @show maximum(nbits, Array(M)), size(M)
-      @time l, M = lll_with_removal(M, r*fmpz(2)^(2*prec_scale) + div(r+1, 2)*N*degree(K))
-      @show l, i# , map(nbits, Array(M))
+#      @show maximum(nbits, Array(M)), size(M)
+      @vtime :PolyFactor 1 l, M = lll_with_removal(M, r*fmpz(2)^(2*prec_scale) + div(r+1, 2)*N*degree(K))
+#      @show l, i# , map(nbits, Array(M))
   #    @show hnf(sub(M, 1:l, 1:r))
-      @assert !iszero(sub(M, 1:l, 1:r))
+      @hassert :PolyFactor 1 !iszero(sub(M, 1:l, 1:r))
       M = sub(M, 1:l, 1:ncols(M))
       d = Dict{fmpz_mat, Array{Int, 1}}()
       for l=1:r
@@ -1380,62 +1576,67 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 20)
           d[k] = [l]
         end
       end
-      @show values(d)
+      @vprint :PolyFactor 1 "partitioning  of local factors: $(values(d))\n"
       if length(keys(d)) <= nrows(M)
 #        @show "BINGO", length(keys(d)), "factors"
         res = typeof(f)[]
         fail = []
         if length(keys(d)) == 1
-          @show "irreducible!!!"
           return [f]
         end
 #        display(d)
         for v = values(d)
           #trivial test:
           a = prod(map(constant_coefficient, factor(vH.H)[v]))
-          A = K(reco(order(P)(preimage(mC, a)), vH.Ml, vH.pMr))
+          if degree(P) == 1
+            A = K(reco(order(P)(lift(a)), vH.Ml, vH.pMr))
+          else
+            A = K(reco(order(P)(preimage(mC, a)), vH.Ml, vH.pMr))
+          end
           if denominator(divexact(constant_coefficient(f), A), order(P)) != 1
             push!(fail, v)
-            @show "fail", v
             if length(fail) > 1
               break
             end
             continue
           end
-          g = prod(factor(vH.H)[v])
-          G = parent(f)([K(reco(order(P)(preimage(mC, coeff(g, l))), vH.Ml, vH.pMr)) for l=0:degree(g)])
+          @time g = prod(factor(vH.H)[v])
+          if degree(P) == 1
+            @profile G = parent(f)([K(reco(order(P)(lift(coeff(g, l))), vH.Ml, vH.pMr)) for l=0:degree(g)])
+          else
+            @time G = parent(f)([K(reco(order(P)(preimage(mC, coeff(g, l))), vH.Ml, vH.pMr)) for l=0:degree(g)])
+          end
 
           if !iszero(rem(f, G))
             push!(fail, v)
-            @show "fail2", v
             if length(fail) > 1
               break
             end
             continue
           end
- #         @show "success", G
           push!(res, G)
         end
         if length(fail) == 1
-          @show "only one reco failed, total success"
+          @vprint :PolyFactor 1 "only one reco failed, total success\n"
           return res
         end
         if length(res) < length(d)
-          @show "... here we go again ..."
+          @vprint :PolyFactor 1 "reco failed\n... here we go again ...\n"
         else
           return res
         end
       end
     end
-    @show used, have, really_used
 
-    up_to = min(2*up_to, N)
+    up_to = up_to_start = min(2*up_to_start, N)
+    up_to = min(N, up_to)
     from = N-up_to 
     from = min(from, N)
     from = max(up_to, from)
 
     have = vcat(0:up_to-1, from:N-2)  #N-1 is always 1
     if length(have) <= length(really_used)
+      @show have, really_used, used
       error("too bad")
     end
     used = deepcopy(really_used)
@@ -1444,7 +1645,7 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 20)
 
     # from Fieker/Friedrichs, still wrong here
     # needs to be larger than anticipated...
-    @show b = [ceil(Int, degree(K)/2/degree(P)*(log2(c1*c2) + 2*nbits(x)+ prec_scale)) for x = b]
+    b = [ceil(Int, degree(K)/2/degree(P)*(log2(c1*c2) + 2*nbits(x)+ prec_scale)) for x = b]
   end #the big while
 end
 

@@ -33,7 +33,7 @@ function dim_of_coefficient_ring(A::AlgMat)
   if base_ring(A) == coefficient_ring(A)
     return 1
   end
-  @assert base_ring(coefficient_ring(A)) == base_ring(A)
+  @assert _base_ring(coefficient_ring(A)) == base_ring(A)
   return dim(coefficient_ring(A))
 end
 
@@ -192,12 +192,12 @@ end
 
 # Constructs Mat_n(S) as an R-algebra
 @doc Markdown.doc"""
-    matrix_algebra(R::Ring, S::AbsAlgAss, n::Int) -> AlgMat
+    matrix_algebra(R::Ring, S::Ring, n::Int) -> AlgMat
 
 > Returns $\mathrm{Mat}_n(S)$ as an $R$-algebra.
 > It is assumed that $S$ is an $R$-algebra.
 """
-function matrix_algebra(R::Ring, S::AbsAlgAss, n::Int)
+function matrix_algebra(R::Ring, S::Ring, n::Int)
   A = AlgMat{elem_type(R), dense_matrix_type(elem_type(S))}(R, S)
   n2 = n^2
   A.dim = n2*dim(S)
@@ -305,7 +305,7 @@ function matrix_algebra(R::Ring, gens::Vector{<:MatElem}; isbasis::Bool = false)
 end
 
 @doc Markdown.doc"""
-    matrix_algebra(R::Ring, S::AbsAlgAss, gens::Vector{<: MatElem};
+    matrix_algebra(R::Ring, S::Ring, gens::Vector{<: MatElem};
                    isbasis::Bool = false)
       -> AlgMat
 
@@ -316,7 +316,7 @@ end
 > of this algebra, i. e. that the spanned $R$-module is closed under
 > multiplication.
 """
-function matrix_algebra(R::Ring, S::AbsAlgAss, gens::Vector{<:MatElem}; isbasis::Bool = false)
+function matrix_algebra(R::Ring, S::Ring, gens::Vector{<:MatElem}; isbasis::Bool = false)
   @assert length(gens) > 0
   A = AlgMat{elem_type(R), dense_matrix_type(elem_type(S))}(R, S)
   A.degree = nrows(gens[1])
@@ -397,7 +397,7 @@ function matrix_algebra(R::Ring, S::AbsAlgAss, gens::Vector{<:MatElem}; isbasis:
       jd = (j - 1)*d
       for k = 1:d
         jkd = (jd + k - 1)*dcr
-        t = Vector{elem_type(base_ring(S))}(undef, dcr)
+        t = Vector{elem_type(_base_ring(S))}(undef, dcr)
         for l = 1:dcr
           t[l] = basis_mat(A, copy = false)[i, jkd + l]
         end

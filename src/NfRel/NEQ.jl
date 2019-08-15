@@ -19,8 +19,12 @@ function isnorm_fac_elem(K::NfRel{nf_elem}, a::nf_elem)
     q, mmq = quo(q, [mq(preimage(mC, FB[i]))])
     mq = mq*mmq
   end
-
+  
   s = Set([minimum(mkK, I) for I = S])
+  #make S relative Galois closed:
+  PS = parent(S[1])
+  S = vcat([collect(keys(factor(PS(mkK, p)))) for p = s]...)
+
   U, mU = sunit_group_fac_elem(collect(S))
   class_group(parent(a))
   u, mu = sunit_group_fac_elem(collect(s))

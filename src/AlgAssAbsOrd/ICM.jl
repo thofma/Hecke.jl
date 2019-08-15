@@ -1,4 +1,4 @@
-export ideal_class_monoid, islocally_isomorphic
+export ideal_class_monoid, islocally_isomorphic, isconjugate
 
 ###############################################################################
 #
@@ -201,4 +201,82 @@ function ideals_containing(S::T, a::T2, R::T) where { T <: Union{ NfAbsOrd, AlgA
   end
 
   return ( group_to_ideal(s) for s in subs )
+end
+
+###############################################################################
+#
+#  Conjugacy classes of integral matrices
+#
+###############################################################################
+
+function ideal_to_matrix(I::Union{AlgAssAbsOrdIdl, AlgAssAbsOrdFracIdl})
+  O = order(I)
+  A = algebra(O)
+  a = primitive_element_via_number_fields(A)
+  M = FakeFmpqMat(representation_matrix(a, :left))
+  B = basis_mat(I, copy = false)*basis_mat(O, copy = false)
+  C = inv(B)
+  M = mul!(M, B, M)
+  M = mul!(M, M, C)
+  @assert isone(M.den)
+  return M.num
+end
+
+function matrix_to_ideal(O::AlgAssAbsOrd, M::fmpz_mat)
+  f = charpoly(M)
+  A = algebra(O)
+  @assert dim(A) == degree(f) # Actually A == Q[x]/f
+  fields_and_maps = as_number_fields(A)
+  result = zeros(A, dim(A))
+  Mt = transpose(M)
+  for (K, AtoK) in fields_and_maps
+    MK = matrix(K, Mt) - gen(K)*identity_matrix(K, dim(A))
+    _, B = nullspace(MK)
+    d = lcm([ denominator(B[i, 1]) for i = 1:nrows(B) ]) # Reduce the size of the entries
+    B = d*B
+    for j = 1:ncols(B)
+      for i = 1:dim(A)
+        result[i] += AtoK\B[i, j]
+      end
+    end
+  end
+  return frac_ideal_from_z_gens(O, result), result
+end
+
+# Stefano Marseglia "Computing the ideal class monoid of an order"
+@doc Markdown.doc"""
+    isconjugate(M::fmpz_mat, N::fmpz_mat) -> Bool, fmpz_mat
+
+> Returns `true` and a matrix $U$ with $M = U\cdot N\cdot U^{-1}$ if such a
+> matrix exists and `false` and $0$ otherwise.
+> The characteristic polynomial of $M$ is required to be square-free.
+"""
+function isconjugate(M::fmpz_mat, N::fmpz_mat)
+  Zx, x = FlintZZ["x"]
+  f = charpoly(Zx, M)
+  if f != charpoly(Zx, N)
+    return false, zero_matrix(FlintZZ, nrows(M), ncols(M))
+  end
+
+  fac = factor(f)
+  fields = Vector{AnticNumberField}()
+  for (g, e) in fac
+    e != 1 ? error("The characteristic polynomial must be square-free") : nothing
+    push!(fields, number_field(g)[1])
+  end
+  A, AtoK = direct_product(fields)
+  O = _equation_order(A)
+  I, basisI = matrix_to_ideal(O, M)
+  J, basisJ = matrix_to_ideal(O, N)
+  t, a = isisomorphic(I, J)
+  if !t
+    return false, zero_matrix(FlintZZ, nrows(M), ncols(M))
+  end
+
+  aBJ = basis_mat([ a*b for b in basisJ ], FakeFmpqMat)
+  BI = basis_mat(basisI, FakeFmpqMat)
+  UU = aBJ*inv(BI)
+  @assert isone(UU.den)
+  U = transpose(UU.num)
+  return true, U
 end
