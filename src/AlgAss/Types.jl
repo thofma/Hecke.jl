@@ -432,6 +432,19 @@ mutable struct AlgAssAbsOrdFracIdl{S, T}
   end
 end
 
+mutable struct AlgAssAbsOrdFracIdlSet{S, T}
+  order::AlgAssAbsOrd{S, T}
+
+  function AlgAssAbsOrdFracIdlSet{S, T}(O::AlgAssAbsOrd{S, T}) where {S, T}
+    z = new{S, T}(O)
+    return z
+  end
+end
+
+function AlgAssAbsOrdFracIdlSet(O::AlgAssAbsOrd{S, T}) where {S, T}
+  return AlgAssAbsOrdFracIdlSet{S, T}(O)
+end
+
 ################################################################################
 #
 #  AlgAssAbsOrdQuoRing / AlgAssAbsOrdQuoRingElem
@@ -463,6 +476,7 @@ mutable struct AlgMat{T, S} <: AbsAlgAss{T}
   decomposition
   maximal_order
   mult_table::Array{T, 3} # e_i*e_j = sum_k mult_table[i, j, k]*e_k
+  canonical_basis::Int # whether A[(j - 1)*n + i] == E_ij, where E_ij = (e_kl)_kl with e_kl = 1 if i =k and j = l and e_kl = 0 otherwise.
 
   function AlgMat{T, S}(R::Ring) where {T, S}
     A = new{T, S}()
@@ -471,6 +485,7 @@ mutable struct AlgMat{T, S} <: AbsAlgAss{T}
     A.issimple = 0
     A.issemisimple = 0
     A.iscommutative = 0
+    A.canonical_basis = 0
     return A
   end
 
@@ -481,6 +496,7 @@ mutable struct AlgMat{T, S} <: AbsAlgAss{T}
     A.issimple = 0
     A.issemisimple = 0
     A.iscommutative = 0
+    A.canonical_basis = 0
     return A
   end
 end

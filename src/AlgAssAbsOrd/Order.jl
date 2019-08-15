@@ -892,7 +892,7 @@ end
 > $\{ x \in R \mid Sx \subseteq R \}$ if `action == :left`.
 > It is assumed that $R \subseteq S$.
 """
-function conductor(R::AlgAssAbsOrd, S::AlgAssAbsOrd, action::Symbol)
+function conductor(R::AlgAssAbsOrd, S::AlgAssAbsOrd, action::Symbol = :left)
   n = degree(R)
   t = basis_mat(R, copy = false)*basis_mat_inv(S, copy = false)
   @assert isone(t.den)
@@ -971,4 +971,16 @@ function enum_units(O::AlgAssAbsOrd{S, T}, g::fmpz) where { S <: AlgMat, T }
   E[1, 1] = fmpz(-1)
   push!(result, L(A(E)))
   return result
+end
+
+################################################################################
+#
+#  Trace dual ideal
+#
+################################################################################
+
+function trace_dual(R::AlgAssAbsOrd)
+  t = trred_matrix(R)
+  ti, d = pseudo_inv(t)
+  return frac_ideal(R, ideal(R, ti), d)
 end

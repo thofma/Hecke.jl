@@ -55,6 +55,11 @@ function mul!(c::MatElem, a::MatElem, b::MatElem)
   nrows(c) != nrows(a) && error("Incompatible matrix dimensions")
   ncols(c) != ncols(b) && error("Incompatible matrix dimensions")
 
+  if c === a || c === b
+    d = parent(a)()
+    return mul!(d, a, b)
+  end
+
   t = base_ring(a)()
   for i = 1:nrows(a)
     for j = 1:ncols(b)
@@ -1000,7 +1005,7 @@ V = [e -divexact(b, g) ; f divexact(a, g)];
 then U*[ a 0; 0 b] * V = [g 0 ; 0 l]
 =#
 @doc Markdown.doc"""
-  snf_with_transform(A::fmpz_mat, l::Bool = true, r::Bool = true) -> fmpz_mat, fmpz_mat, fmpz_mat
+    snf_with_transform(A::fmpz_mat, l::Bool = true, r::Bool = true) -> fmpz_mat, fmpz_mat, fmpz_mat
 
 Given some integer matrix A, compute the Smith normal form (elementary
 divisor normal form) of A. If l and/ or r are true, then the corresponding
@@ -1532,7 +1537,7 @@ end
 @doc Markdown.doc"""
     can_solve_with_kernel(A::MatElem{T}, B::MatElem{T}) where T <: RingElem -> Bool, MatElem, MatElem
 
-Tries to solve $Ax = B$ for $x$ if `side = :right` or $Ax = B$ if `side = :left`.
+Tries to solve $Ax = B$ for $x$ if `side = :right` or $xA = B$ if `side = :left`.
 It returns the solution and the right respectively left kernel of $A$.
 """
 function can_solve_with_kernel(A::MatElem{T}, B::MatElem{T}; side = :right) where T <: RingElem
@@ -1557,6 +1562,7 @@ function _can_solve_with_kernel(a::MatElem{S}, b::MatElem{S}) where S <: RingEle
   H, T = hnf_with_transform(transpose(a))
   z = similar(a, ncols(b), ncols(a))
   l = min(nrows(a), ncols(a))
+  b = deepcopy(b)
   for i=1:ncols(b)
     for j=1:l
       k = 1
@@ -1573,7 +1579,7 @@ function _can_solve_with_kernel(a::MatElem{S}, b::MatElem{S}) where S <: RingEle
       for h=k:ncols(H)
         b[h, i] -= q*H[j, h]
       end
-      z[i, k] = q
+      z[i, j] = q
     end
   end
   if !iszero(b)
@@ -1595,7 +1601,7 @@ function _can_solve_with_kernel(a::MatElem{S}, b::MatElem{S}) where S <: RingEle
   end
   N =  similar(a, ncols(a), 0)
 
-  return true, (z*T), N
+  return true, transpose(z*T), N
 end
 
 ################################################################################

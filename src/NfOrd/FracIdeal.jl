@@ -140,10 +140,20 @@ export parent, order, basis_mat, basis_mat_inv, basis, norm,
 
 parent(a::NfOrdFracIdl) = NfOrdFracIdlSet(order(a), false)
 
+function FracIdealSet(O::NfAbsOrd)
+   return NfOrdFracIdlSet(O, false)
+end
+
 function Base.hash(a::NfOrdFracIdl, h::UInt)
   b = simplify(a)
-  return hash(b.num, hash(b.den, h))
+  return hash(numerator(b, copy = false), hash(denominator(b, copy = false), h))
 end
+
+elem_type(::Type{NfOrdFracIdlSet}) = NfOrdFracIdl
+
+elem_type(::NfOrdFracIdlSet) = NfOrdFracIdl
+
+parent_type(::Type{NfOrdFracIdl}) = NfOrdFracIdlSet
 
 ################################################################################
 #
@@ -217,7 +227,7 @@ end
 ################################################################################
 
 function Base.deepcopy_internal(x::NfOrdFracIdl, dict::IdDict)
-  z = NfOrdFracIdl(deepcopy(x.num), deepcopy(x.den))
+  z = NfOrdFracIdl(numerator(x), denominator(x))
   if isdefined(x, :basis_mat)
     z.basis_mat = deepcopy(x.basis_mat)
   end
@@ -230,17 +240,29 @@ end
 #
 ################################################################################
 
+function assure_has_basis_mat(a::NfOrdFracIdl)
+  if isdefined(a, :basis_mat)
+    return nothing
+  end
+  if !isdefined(a, :num)
+    error("Not a valid fractional ideal")
+  end
+
+  a.basis_mat = FakeFmpqMat(basis_mat(numerator(a, copy = false)), denominator(a))
+  return nothing
+end
+
 @doc Markdown.doc"""
     basis_mat(I::NfOrdFracIdl) -> FakeFmpqMat
 
 Returns the basis matrix of $I$ with respect to the basis of the order.
 """
-function basis_mat(x::NfOrdFracIdl)
-  if isdefined(x, :basis_mat)
+function basis_mat(x::NfOrdFracIdl; copy::Bool = true)
+  assure_has_basis_mat(x)
+  if copy
     return deepcopy(x.basis_mat)
   else
-    x.basis_mat = FakeFmpqMat(basis_mat(numerator(x)), denominator(x))
-    return deepcopy(x.basis_mat)
+    return x.basis_mat
   end
 end
 
@@ -250,9 +272,36 @@ end
 #
 ################################################################################
 
-numerator(x::NfOrdFracIdl) = x.num
+function assure_has_numerator_and_denominator(a::NfOrdFracIdl)
+  if isdefined(a, :num) && isdefined(a, :den)
+    return nothing
+  end
+  if !isdefined(a, :basis_mat)
+    error("Not a valid fractional ideal")
+  end
 
-denominator(x::NfOrdFracIdl) = deepcopy(x.den)
+  a.num = ideal(order(a), numerator(basis_mat(a, copy = false)))
+  a.den = denominator(basis_mat(a, copy = false))
+  return nothing
+end
+
+function numerator(x::NfOrdFracIdl; copy::Bool = true)
+  assure_has_numerator_and_denominator(x)
+  if copy
+    return deepcopy(x.num)
+  else
+    return x.num
+  end
+end
+
+function denominator(x::NfOrdFracIdl; copy::Bool = true)
+  assure_has_numerator_and_denominator(x)
+  if copy
+    return deepcopy(x.den)
+  else
+    return x.den
+  end
+end
 
 ################################################################################
 #
@@ -267,11 +316,11 @@ end
 
 function show(io::IO, id::NfOrdFracIdl)
   if isdefined(id, :num) && isdefined(id, :den)
-    print(io, "1//", id.den, " * ")
-    print(io, id.num)
+    print(io, "1//", denominator(id, copy = false), " * ")
+    print(io, numerator(id, copy = false))
   else
     print(io, "Fractional ideal with basis matrix\n")
-    print(io, id.basis_mat)
+    print(io, basis_mat(id, copy = false))
   end
 end
 
@@ -290,7 +339,7 @@ function norm(A::NfOrdFracIdl)
   if isdefined(A, :norm)
     return deepcopy(A.norm)
   else
-    A.norm = norm(A.num)//A.den^degree(order(A))
+    A.norm = norm(numerator(A, copy = false))//denominator(A, copy = false)^degree(order(A))
     return deepcopy(A.norm)
   end
 end
@@ -302,7 +351,7 @@ end
 ################################################################################
 
 function minimum(A::NfOrdFracIdl)
-  return minimum(A.num)//A.den
+  return minimum(numerator(A, copy = false))//denominator(A, copy = false)
 end
 
 ################################################################################
@@ -317,10 +366,10 @@ end
 Returns the fractional ideal $B$ such that $AB = \mathcal O$.
 """
 function inv(A::NfOrdFracIdl)
-  B = inv(A.num)
-  g = gcd(B.den, A.den)
-  B.den = divexact(B.den, g)
-  a = divexact(A.den, g)
+  B = inv(numerator(A, copy = false))
+  g = gcd(denominator(B, copy = false), denominator(A, copy = false))
+  B.den = divexact(denominator(B, copy = false), g)
+  a = divexact(denominator(A, copy = false), g)
   return prod_by_int(B, a)
 end
 
@@ -331,6 +380,7 @@ end
 ################################################################################
 
 function simplify_exact!(A::NfOrdFracIdl)
+  assure_has_numerator_and_denominator(A)
   g = A.den
 
   A.den = fmpz(1)
@@ -339,6 +389,7 @@ end
 
 
 function simplify(A::NfOrdFracIdl)
+  assure_has_numerator_and_denominator(A)
   simplify(A.num)
 
   if has_2_elem(A.num)
@@ -365,7 +416,7 @@ end
 #
 ################################################################################
 
-isprime_known(A::NfOrdFracIdl) = isprime_known(A.num)
+isprime_known(A::NfOrdFracIdl) = isprime_known(numerator(A, copy = false))
 
 ################################################################################
 #
@@ -381,16 +432,16 @@ Returns whether $x$ and $y$ are equal.
 function ==(A::NfOrdFracIdl, B::NfOrdFracIdl)
   #return B.den * basis_mat(A.num) == A.den * basis_mat(B.num)
   if !ismaximal_known(order(A)) || !ismaximal(order(A))
-    return basis_mat(A) == basis_mat(B)
+    return basis_mat(A, copy = false) == basis_mat(B, copy = false)
   end
 
   if !isdefined(A, :num) || !isdefined(B, :num)
-    return basis_mat(A) == basis_mat(B)
+    return basis_mat(A, copy = false) == basis_mat(B, copy = false)
   end
   D = inv(B)
   E = prod(A, D)
   C = simplify(E)
-  return isone(C.den) && isone(norm(C))
+  return isone(denominator(C, copy = false)) && isone(norm(C))
 end
 
 ################################################################################
@@ -400,8 +451,8 @@ end
 ################################################################################
 
 function prod(a::NfOrdFracIdl, b::NfOrdFracIdl)
-  A = a.num* b.num
-  return NfOrdFracIdl(A, a.den*b.den)
+  A = numerator(a, copy = false)*numerator(b, copy = false)
+  return NfOrdFracIdl(A, denominator(a, copy = false)*denominator(b, copy = false))
 end
 
 @doc Markdown.doc"""
@@ -454,18 +505,18 @@ end
 ################################################################################
 
 function prod_by_int(A::NfOrdFracIdl, a::fmpz)
-  return NfOrdFracIdl(A.num * a, A.den)
+  return NfOrdFracIdl(numerator(A, copy = false) * a, denominator(A))
 end
 
 *(A::NfOrdFracIdl, a::fmpz) = prod_by_int(A, a)
 *(a::fmpz, A::NfOrdFracIdl) = prod_by_int(A, a)
 
 function *(A::NfOrdIdl, B::NfOrdFracIdl)
-  z = NfOrdFracIdl(A*B.num, B.den)
+  z = NfOrdFracIdl(A*numerator(B, copy = false), denominator(B))
   return z
 end
 
-*(A::NfOrdFracIdl, B::NfOrdIdl) = NfOrdFracIdl(A.num*B, A.den)
+*(A::NfOrdFracIdl, B::NfOrdIdl) = NfOrdFracIdl(numerator(A, copy = false)*B, denominator(A))
 
 function *(A::NfOrdFracIdl, a::nf_elem)
   C = *(A, a*order(A))
@@ -538,7 +589,7 @@ function ==(A::NfOrdIdl, B::NfOrdFracIdl)
 
   C = simplify(B)
 
-  if C.den != 1 || C.num != A
+  if denominator(C, copy = false) != 1 || numerator(C, copy = false) != A
     return false
   else
     return true
@@ -554,8 +605,8 @@ end
 ################################################################################
  
 function (ord::NfOrdIdlSet)(b::NfOrdFracIdl)
-   b.den > 1 && error("not integral")
-   return b.num
+  denominator(b, copy = false) > 1 && error("not integral")
+  return numerator(b, copy = false)
 end
 
 function ideal(O::NfOrd, a::nf_elem)
@@ -604,7 +655,7 @@ end
 The valuation of $A$ at $p$.
 """
 function valuation(A::NfOrdFracIdl, p::NfOrdIdl)
-  return valuation(A.num, p) - valuation(A.den, p)
+  return valuation(numerator(A, copy = false), p) - valuation(denominator(A, copy = false), p)
 end
 
 ################################################################################
@@ -625,4 +676,44 @@ function coprime_to(I::NfOrdFracIdl, p::NfOrdIdl)
   @assert valuation(a, p) == 0
   @assert denominator(I)*a in numerator(I)
   return a
+end
+
+################################################################################
+#
+#  Colon
+#
+################################################################################
+
+function colon(I::NfOrdFracIdl, J::NfOrdFracIdl)
+  # Let I = a/c and J = b/d, a and b integral ideals, c, d \in Z, then
+  # \{ x \in K | xJ \subseteq I \} = \{ x \in K | xcb \subseteq da \}
+
+  II = numerator(I, copy = false)*denominator(J, copy = false)
+  JJ = numerator(J, copy = false)*denominator(I, copy = false)
+  return colon(II, JJ)
+end
+
+################################################################################
+#
+#  Move ideals to another order
+#
+################################################################################
+
+function extend(I::NfOrdFracIdl, O::NfAbsOrd)
+  J = extend(numerator(I, copy = false), O)
+  return frac_ideal(O, J, denominator(I, copy = false))
+end
+
+*(I::NfOrdFracIdl, O::NfAbsOrd) = extend(I, O)
+*(O::NfAbsOrd, I::NfOrdFracIdl) = extend(I, O)
+
+function _as_frac_ideal_of_smaller_order(O::NfAbsOrd, I::NfAbsOrdIdl)
+  M = basis_mat(I, copy = false)
+  M = M*basis_mat(order(I), copy = false)*basis_mat_inv(O, copy = false)
+  return frac_ideal(O, M)
+end
+
+function _as_frac_ideal_of_smaller_order(O::NfAbsOrd, I::NfOrdFracIdl)
+  J = _as_frac_ideal_of_smaller_order(O, numerator(I, copy = false))
+  return nf(O)(fmpq(1, denominator(I, copy = false)))*J
 end

@@ -116,7 +116,7 @@ end
 
 function _subfield_from_primitive_element(K, s)
   f = minpoly(s)
-  L,_ = NumberField(f)
+  L,_ = NumberField(f, cached = false)
   return L, hom(L, K, s)
 end
 

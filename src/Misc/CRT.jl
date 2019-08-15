@@ -540,7 +540,6 @@ Returns data that can be used by \code{modular_proj} and \code{modular_lift}.
 """
 function modular_init(K::AnticNumberField, p::fmpz; deg_limit::Int=0, max_split::Int = 0)
   @assert isprime(p)
-  UInt(p) # to enforce p being small
 
   me = modular_env()
   me.Fpx = PolynomialRing(ResidueRing(FlintZZ, Int(p), cached = false), "_x", cached=false)[1]
@@ -563,8 +562,8 @@ function modular_init(K::AnticNumberField, p::fmpz; deg_limit::Int=0, max_split:
   me.ce = crt_env(pols)
   me.fld = [FqNmodFiniteField(x, :$, false) for x = pols]  #think about F_p!!!
                                    # and chacheing
-  me.rp = Array{nmod_poly}(undef, length(pols))
-  me.res = Array{fq_nmod}(undef, me.ce.n)
+  me.rp = Vector{nmod_poly}(undef, length(pols))
+  me.res = Vector{fq_nmod}(undef, me.ce.n)
 
   me.p = p
   me.K = K

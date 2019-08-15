@@ -1729,11 +1729,18 @@ function colon(a::NfAbsOrdIdl, b::NfAbsOrdIdl, contains::Bool = false)
     d = denominator(n)
     for i in 2:length(B)
       n = representation_matrix(B[i])*bmatinv
-      l = lcm(denominator(n), d)
-      if l==d
-        m = hcat(m, n.num)
+      mm = n.num
+      dd = n.den
+      l = lcm(dd, d)
+      if l == d && l == dd
+        m = hcat(m, mm)
+      elseif l == d
+        m = hcat(m, div(d, dd)*mm)
+      elseif l == dd
+        m = hcat(div(dd, d)*m, mm)
+        d = dd
       else
-        m = hcat(m*div(l, d), n.num*div(l, denominator(n)))
+        m = hcat(m*div(l, d), mm*div(l, dd))
         d = l
       end
     end
@@ -1741,8 +1748,8 @@ function colon(a::NfAbsOrdIdl, b::NfAbsOrdIdl, contains::Bool = false)
     hnf!(m)
     # m is upper right HNF
     m = transpose(sub(m, 1:degree(O), 1:degree(O)))
-    b, l = pseudo_inv(m)
-    return ideal(O, b)//l
+    b = inv(FakeFmpqMat(m, d))
+    return frac_ideal(O, b)
   end
 end
 

@@ -267,6 +267,25 @@ function Base.copy(a::AbsAlgAssIdl)
   return a
 end
 
+function *(x::AbsAlgAssElem, a::AbsAlgAssIdl)
+  @assert isleft_ideal(a) "Not a left ideal"
+  if iszero(a)
+    return deepcopy(a)
+  end
+
+  basis_a = basis(a, copy = false)
+  return ideal_from_gens(algebra(a), [ x*basis_a[i] for i = 1:length(basis_a) ])
+end
+
+function *(a::AbsAlgAssIdl, x::AbsAlgAssElem)
+  @assert isright_ideal(a) "Not a right ideal"
+  if iszero(a)
+    return deepcopy(a)
+  end
+
+  basis_a = basis(a, copy = false)
+  return ideal_from_gens(algebra(a), [ basis_a[i]*x for i = 1:length(basis_a) ])
+end
 ################################################################################
 #
 #  Equality
@@ -615,4 +634,72 @@ function mod(x::AbsAlgAssElem, a::AbsAlgAssIdl)
     end
   end
   return algebra(a)(c)
+end
+
+################################################################################
+#
+#  Principal generators (in full matrix algebras)
+#
+################################################################################
+
+function left_principal_gen(a::AbsAlgAssIdl{S, T, U}) where { S <: AlgMat, T, U }
+  @assert isleft_ideal(a) "Not a left ideal"
+  A = algebra(a)
+  if dim(A) != degree(A)^2*dim_of_coefficient_ring(A)
+    error("Only implemented for full matrix algebras")
+  end
+
+  if iscanonical(A)
+    e11 = A[1]
+  else
+    t = zero_matrix(coefficient_ring(A), degree(A), degree(A))
+    t[1, 1] = one(coefficient_ring(A))
+    e11 = A(t)
+    t[1, 1] = zero(coefficient_ring(A))
+  end
+  ea = e11*a
+
+  x = A()
+  for i = 1:length(basis(ea, copy = false))
+    if iscanonical(A)
+      ei1 = A[i]
+    else
+      t[i, 1] = one(coefficient_ring(A))
+      ei1 = A(t)
+      t[i, 1] = zero(coefficient_ring(A))
+    end
+    x += ei1*basis(ea, copy = false)[i]
+  end
+  return x
+end
+
+function right_principal_gen(a::AbsAlgAssIdl{S, T, U}) where { S <: AlgMat, T, U }
+  @assert isright_ideal(a) "Not a right ideal"
+  A = algebra(a)
+  if dim(A) != degree(A)^2*dim_of_coefficient_ring(A)
+    error("Only implemented for full matrix algebras")
+  end
+
+  if iscanonical(A)
+    e11 = A[1]
+  else
+    t = zero_matrix(coefficient_ring(A), degree(A), degree(A))
+    t[1, 1] = one(coefficient_ring(A))
+    e11 = A(t)
+    t[1, 1] = zero(coefficient_ring(A))
+  end
+  ae = a*e11
+
+  x = A()
+  for i = 1:length(basis(ae, copy = false))
+    if iscanonical(A)
+      e1i = A[(i - 1)*degree(A) + 1]
+    else
+      t[1, i] = one(coefficient_ring(A))
+      e1i = A(t)
+      t[1, i] = zero(coefficient_ring(A))
+    end
+    x += basis(ae, copy = false)[i]*e1i
+  end
+  return x
 end

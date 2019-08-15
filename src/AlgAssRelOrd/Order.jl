@@ -664,6 +664,9 @@ function phereditary_overorder(O::AlgAssRelOrd, p::Union{ NfAbsOrdIdl, NfRelOrdI
     prad = pradical(OO, p)
     OO = left_order(prad)
     dd = discriminant(OO)
+    if valuation(dd, p) < 2
+      break
+    end
   end
   if return_pradical == Val{true}
     return order(prad), prad
@@ -683,6 +686,9 @@ function _pmaximal_overorder(O::AlgAssRelOrd, prad::AlgAssRelOrdIdl, p::Union{ N
   for P in primes
     OO = left_order(P)
     dd = discriminant(OO)
+    if valuation(dd, p) < 2
+      return OO
+    end
     if d != dd
       return _pmaximal_overorder(OO, p)
     end

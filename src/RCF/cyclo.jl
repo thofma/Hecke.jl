@@ -77,7 +77,7 @@ function cyclotomic_extension(k::AnticNumberField, n::Int)
   if n < 5
     #For n = 3, 4 the cyclotomic polynomial has degree 2,
     #so we can just ask for the roots.
-    if !isone(gcd(discriminant(maximal_order(k)), n))
+    if !isone(gcd(discriminant(maximal_order(k)), n)) && !istotally_real(k)
       rt = _roots_hensel(fk, max_roots = 1, isnormal = true)
     else
       rt = nf_elem[]
@@ -122,6 +122,47 @@ function cyclotomic_extension(k::AnticNumberField, n::Int)
     Hecke._set_cyclotomic_ext_nf(k, Ac)
     return c
   end
+  if n == 8 
+    if !isone(gcd(discriminant(maximal_order(k)), n)) 
+      if istotally_real(k)
+        f1k = kt(nf_elem[k(-2), zero(k), one(k)])
+        rt = _roots_hensel(f1k, max_roots = 1, isnormal = true)
+        if length(rt) == 1
+          fk = kt(nf_elem[one(k), zero(k), one(k)])
+        end
+      else
+        lf = factor(fk)
+        fk = first(keys(lf.fac))
+      end
+    end
+    
+    Kr, Kr_gen = number_field(fk, "z_$n", cached = false, check = false)
+    Ka, abs2rel, small2abs = Hecke.absolute_field(Kr, false)
+    Zk = maximal_order(k)
+    b_k = basis(Zk, k)
+    B_k = Vector{nf_elem}(undef, degree(Ka))
+    for i = 1:length(b_k)
+      B_k[i] = small2abs(b_k[i])
+    end
+    g = abs2rel\(Kr_gen)
+    for j = 1:length(B_k)-length(b_k)
+      B_k[j+length(b_k)] = B_k[j]*g
+    end
+    ZKa = Hecke.NfOrd(B_k)
+    for (p,v) = factor(gcd(discriminant(Zk), fmpz(n))).fac
+      ZKa = pmaximal_overorder(ZKa, p)
+    end
+    ZKa.ismaximal = 1
+    ZKa = lll(ZKa)
+    Hecke._set_maximal_order_of_nf(Ka, ZKa)
+    c.Kr = Kr
+    c.Ka = Ka
+    c.mp = (abs2rel, small2abs)
+    push!(Ac, c)
+    Hecke._set_cyclotomic_ext_nf(k, Ac)
+    return c
+  end
+  
   if !isone(gcd(discriminant(maximal_order(k)), n))
     lf = factor(fk)
     fk = first(keys(lf.fac))
@@ -137,18 +178,21 @@ function cyclotomic_extension(k::AnticNumberField, n::Int)
     # for all p dividing the gcd()
     Zk = maximal_order(k)
     b_k = basis(Zk, k)
-    B_k = nf_elem[small2abs(x) for x = b_k]
+    B_k = Vector{nf_elem}(undef, degree(Ka))
+    for i = 1:length(b_k)
+      B_k[i] = small2abs(b_k[i])
+    end
     g = abs2rel\(Kr_gen)
-    g1 = one(Ka)
+    s = length(b_k)+1
     for i = 1:degree(fk)-1
-      mul!(g1, g1, g)
       for j = 1:degree(k)
-        push!(B_k, B_k[j]*g1)
+        B_k[s] = B_k[s-degree(k)]*g
+        s += 1
       end
     end
     ZKa = Hecke.NfOrd(B_k)
-    for (p,v) = factor(gcd(discriminant(Zk), fmpz(n))).fac
-      ZKa = pmaximal_overorder(ZKa, p)
+    for (p, v) in factor(gcd(discriminant(Zk), fmpz(n)))
+      ZKa = pmaximal_overorder_at(ZKa, [p])
     end
     ZKa = lll(ZKa)
     ZKa.ismaximal = 1

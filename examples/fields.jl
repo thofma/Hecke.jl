@@ -237,7 +237,7 @@ function single_D5_extensions(absolute_bound::fmpz, K::AnticNumberField)
       if Hecke._is_conductor_min_normal(C)
         @vprint :AbExt 1 "New Field\n"
         L=number_field(C)
-        auto=Hecke.extend_aut(C, gens[1])
+        auto=Hecke.new_extend_aut(C, gens[1])
         pol=_quintic_ext(auto)
         push!(z, (pol,D^2*minimum(mr.modulus_fin)^4))
       end
@@ -544,7 +544,7 @@ function C3xD5_extensions(non_normal_bound::fmpz)
           for p in keys(factor(O.disc).fac)
             push!(ram_primes, p)
           end
-          auto=Hecke.extend_aut(C,gens[1])
+          auto=Hecke.new_extend_aut(C,gens[1])
           T,mT=simple_extension(L)
           x=mT(gen(T))
           if (auto*auto)(x)!=x
@@ -664,7 +664,7 @@ function S3xC5_extensions(non_normal_bound::fmpz, list_quad)
           for p in keys(factor(O.disc).fac)
             push!(ram_primes, p)
           end
-          auto=extend_aut(C,gens[1])
+          auto=new_extend_aut(C,gens[1])
           T,mT=simple_extension(L)
           x=mT(gen(T))
           if (auto*auto)(x)!=x

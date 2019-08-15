@@ -69,42 +69,40 @@ end
 
 # For convenience, there is a quotient constructor for an extension of orders.
 # The quotient will be represented as an abelian group.
-mutable struct GrpAbFinGenToNfOrdQuoNfOrd{T, S, U} <:
-              Map{GrpAbFinGen, T, HeckeMap, GrpAbFinGenToNfOrdQuoNfOrd{T, S, U}}
+mutable struct GrpAbFinGenToNfOrdQuoNfOrd{T1, T2, S, U} <:
+              Map{GrpAbFinGen, T1, HeckeMap, GrpAbFinGenToNfOrdQuoNfOrd{T1, T2, S, U}}
   domain::GrpAbFinGen
-  codomain::T
-  bottom::T
+  codomain::T1
+  bottom::T2
   offset::Int
   top_snf_basis::Vector{S}
   top_snf_basis_in_order::Vector{U}
   bottom_snf_basis::Vector{S}
   top_basis_mat_inv::FakeFmpqMat
 
-  function GrpAbFinGenToNfOrdQuoNfOrd(M::T, O::T) where {T}
+  function GrpAbFinGenToNfOrdQuoNfOrd(M::T1, N::T2) where { T1 <: Union{ NfAbsOrd, AlgAssAbsOrd }, T2 <: Union{ NfAbsOrd, AlgAssAbsOrd, NfAbsOrdIdl, AlgAssAbsOrdIdl } }
     TT = elem_type(_algebra(M))
-    z = new{T, TT, elem_type(T)}()
-    d = degree(O)
-    K = _algebra(O)
+    z = new{T1, T2, TT, elem_type(T1)}()
+    d = degree(M)
+    K = _algebra(M)
     B = zero_matrix(FlintZZ, d, d)
     for i in 1:d
-      v = coordinates(M(_elem_in_algebra(basis(O)[i])), copy = false)
+      v = coordinates(M(_elem_in_algebra(basis(N)[i])), copy = false)
       for j in 1:d
         B[i, j] = v[j]
       end
     end
     S, U, V = snf_with_transform(B, true, true)
     Vinv = inv(V)
-    basis_O = basis(O)
-    basis_M = basis(M)
-    new_basis_O = Vector{TT}(undef, d)
+    new_basis_N = Vector{TT}(undef, d)
     new_basis_M = Vector{TT}(undef, d)
 
     for i in 1:d
-      new_basis_O[i] = _elem_in_algebra(sum(U[i, j] * basis_O[j] for j in 1:d))
+      new_basis_N[i] = _elem_in_algebra(sum(U[i, j] * basis(N, copy = false)[j] for j in 1:d))
     end
 
     for i in 1:d
-      new_basis_M[i] = _elem_in_algebra(sum(Vinv[i, j] * basis_M[j] for j in 1:d))
+      new_basis_M[i] = _elem_in_algebra(sum(Vinv[i, j] * basis(M, copy = false)[j] for j in 1:d))
     end
 
     offset = 1
@@ -121,9 +119,9 @@ mutable struct GrpAbFinGenToNfOrdQuoNfOrd{T, S, U} <:
     z.offset = offset
     z.domain = A
     z.codomain = M
-    z.bottom = O
+    z.bottom = N
     z.top_snf_basis = new_basis_M
-    z.bottom_snf_basis = new_basis_O
+    z.bottom_snf_basis = new_basis_N
     z.top_basis_mat_inv = inv(basis_mat(new_basis_M, FakeFmpqMat))
     z.top_snf_basis_in_order = map(M, z.top_snf_basis)
 
@@ -144,7 +142,7 @@ function show(io::IO, f::GrpAbFinGenToNfOrdQuoNfOrd)
   print(io, "\n(kernel with basis: ", basis(f.bottom), ")")
 end
 
-function image(f::GrpAbFinGenToNfOrdQuoNfOrd{S, T, U}, x::GrpAbFinGenElem) where {S, T, U}
+function image(f::GrpAbFinGenToNfOrdQuoNfOrd{S1, S2, T, U}, x::GrpAbFinGenElem) where {S1, S2, T, U}
   t = zero(codomain(f))
   z = deepcopy(f.top_snf_basis_in_order[1 + f.offset])
   mul!(z, x.coeff[1], z)
@@ -155,7 +153,7 @@ function image(f::GrpAbFinGenToNfOrdQuoNfOrd{S, T, U}, x::GrpAbFinGenElem) where
   return z
 end
 
-function preimage(f::GrpAbFinGenToNfOrdQuoNfOrd{S, T, U}, x) where {S, T, U}
+function preimage(f::GrpAbFinGenToNfOrdQuoNfOrd{S1, S2, T, U}, x) where {S1, S2, T, U}
   v = _elem_in_algebra(x)
   t = f.codomain.tcontain
   elem_to_mat_row!(t.num, 1, t.den, v)
@@ -249,7 +247,7 @@ function overorders(O; type = :all)
       throw(error("Type :gorenstein not supported for non-commutative orders"))
     end
   else
-    throw(error("Type $(type) not supported"))
+    throw(error("Type $type not supported"))
   end
 end
 
@@ -457,16 +455,16 @@ function _minimal_poverorders_in_ring_of_multipliers(O, P, excess = Int[0], use_
 end
 
 # Compute minimal 2 overorders of O in (P : P) where 2 = min(P)
-function _minimal_poverorders_at_2(O::NfOrd, P::NfOrdIdl, excess = Int[])
+function _minimal_poverorders_at_2(O, P, excess = Int[])
   M = ring_of_multipliers(P)
   A, mA = quo(M, O)
-  orders = NfOrd[]
+  orders = typeof(O)[]
   if order(A) == 1
     return orders
   end
   B = mA.bottom_snf_basis
   d = degree(O)
-  K = nf(O)
+  K = _algebra(O)
   if norm(P) == order(A)
     O1 = Order(K, hnf(basis_mat(M, copy = false)), check = false, cached = false)
     push!(orders, O1)
@@ -501,7 +499,7 @@ function _minimal_poverorders_at_2(O::NfOrd, P::NfOrdIdl, excess = Int[])
     subs = (sub(A, lift(x), false) for x in subm)
   end
   
-  potential_basis = Vector{nf_elem}(undef, d)
+  potential_basis = Vector{elem_type(K)}(undef, d)
 
   offset = mA.offset
   for i in 1:offset

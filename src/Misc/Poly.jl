@@ -820,7 +820,8 @@ end
 #
 
 function factor(f::PolyElem, R::Field)
-  f1 = change_base_ring(f, R)
+  Rt = PolynomialRing(R, "t", cached = false)[1]
+  f1 = change_base_ring(f, R, Rt)
   return factor(f1)
 end
 
@@ -830,7 +831,8 @@ function factor(f::fmpq_poly, R::T) where T <: Union{Nemo.FqNmodFiniteField, Nem
 end
 
 function roots(f::PolyElem, R::Field)
-  f1 = change_base_ring(f, R)
+  Rt = PolynomialRing(R, "t", cached = false)[1]
+  f1 = change_base_ring(f, R, Rt)
   return roots(f1)
 end
 
@@ -844,14 +846,15 @@ end
 function roots(f::gfp_poly, K::FqNmodFiniteField)
   @assert characteristic(K) == characteristic(base_ring(f))
   Kx = PolynomialRing(K, cached = false)[1]
-  ff = Kx()
+  coeffsff = Vector{elem_type(K)}(undef, degree(f)+1)
   for i=0:degree(f)
-    setcoeff!(ff, i, lift(coeff(f, i)))
+    coeffsff[i] = K(lift(coeff(f, i)))
   end
+  ff = Kx(coeffsff)
   return roots(ff)
 end
 
-function ispower(a::Nemo.fq_nmod, m::Int)
+function ispower(a::fq_nmod, m::Int)
   s = size(parent(a))
   if gcd(s-1, m) == 1
     return true, a^invmod(m, s-1)
@@ -877,14 +880,20 @@ function roots(f::T) where T <: Union{fq_nmod_poly, fq_poly} # should be in Nemo
   end
   f = gcd(f, x)
   l = factor(f).fac
-  return elem_type(base_ring(f))[-trailing_coefficient(x) for x = keys(l) if degree(x)==1]
+  return elem_type(base_ring(f))[-divexact(trailing_coefficient(x), leading_coefficient(x)) for x = keys(l) if degree(x)==1]
 end
 
 # generic fall back
 # ...
 function roots(f::PolyElem)
   lf = factor(f)
-  return elem_type(base_ring(f))[-trailing_coefficient(x) for x= keys(lf.fac) if degree(x)==1]
+  rts = Vector{elem_type(base_ring(f))}()
+  for (p, e) in lf
+    if degree(p) == 1
+      push!(rts, -divexact(trailing_coefficient(p), leading_coefficient(p)))
+    end
+  end
+  return rts
 end    
 
 function ispower(a::RingElem, n::Int)
@@ -1217,4 +1226,3 @@ function roots(f::fmpz_poly)
 end
 
 =#
-

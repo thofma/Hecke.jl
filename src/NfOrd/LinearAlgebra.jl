@@ -1,4 +1,5 @@
 export pseudo_matrix, pseudo_hnf, PseudoMatrix, pseudo_hnf_with_transform
+import Base.vcat, Base.hcat
 
 function _det_bound(M::Generic.Mat{NfOrdElem})
   n = nrows(M)
@@ -320,8 +321,6 @@ end
 function det(m::PMat)
   z = m.coeffs[1]
   for i in 2:nrows(m)
-    if isdefined(z.num, :gen_two) && isdefined(m.coeffs[i].num, :gen_two)
-    end
     z = z*m.coeffs[i]
   end
   return det(m.matrix)*z
@@ -1499,18 +1498,42 @@ function simplify_basis(M::ModDed)
    return N
 end
 
-function Base.vcat(P::PMat, Q::PMat)
+function vcat(P::PMat, Q::PMat)
    @assert base_ring(P.matrix) == base_ring(Q.matrix)
    m = vcat(P.matrix, Q.matrix)
    c = vcat(P.coeffs, Q.coeffs)
    return PseudoMatrix(m, c)
 end
 
-function Base.hcat(P::PMat, Q::PMat)
+function vcat(A::Vector{ <: PMat })
+  m = vcat([ P.matrix for P in A ])
+  c = vcat([ P.coeffs for P in A ]...)
+  return PseudoMatrix(m, c)
+end
+
+function vcat(A::PMat...)
+  m = vcat([ P.matrix for P in A ])
+  c = vcat([ P.coeffs for P in A ]...)
+  return PseudoMatrix(m, c)
+end
+
+function hcat(P::PMat, Q::PMat)
    @assert base_ring(P.matrix) == base_ring(Q.matrix)
    @assert P.coeffs == Q.coeffs
    m = hcat(P.matrix, Q.matrix)
-   return PseudoMatrix(m, P.coeffs)
+   return PseudoMatrix(m, deepcopy(P.coeffs))
+end
+
+function hcat(A::Vector{ <: PMat })
+  @assert all( P -> P.coeffs == A[1].coeffs, A)
+  m = hcat([ P.matrix for P in A ])
+  return PseudoMatrix(m, deepcopy(A[1].coeffs))
+end
+
+function hcat(A::PMat...)
+  @assert all( P -> P.coeffs == A[1].coeffs, A)
+  m = hcat([ P.matrix for P in A ])
+  return PseudoMatrix(m, deepcopy(A[1].coeffs))
 end
 
 function +(M::ModDed, N::ModDed)

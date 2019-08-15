@@ -28,6 +28,15 @@ order_type(::Type{AlgMat{fmpq, S}}) where { S } = AlgAssAbsOrd{AlgMat{fmpq, S}, 
 order_type(::AlgMat{T, S}) where { T <: NumFieldElem, S } = AlgAssRelOrd{T, frac_ideal_type(order_type(parent_type(T)))}
 order_type(::Type{AlgMat{T, S}}) where { T <: NumFieldElem, S } = AlgAssRelOrd{T, frac_ideal_type(order_type(parent_type(T)))}
 
+# Returns the dimension d of the coefficient_ring of A, so that dim(A) = degree(A)^2 + d.
+function dim_of_coefficient_ring(A::AlgMat)
+  if base_ring(A) == coefficient_ring(A)
+    return 1
+  end
+  @assert base_ring(coefficient_ring(A)) == base_ring(A)
+  return dim(coefficient_ring(A))
+end
+
 ################################################################################
 #
 #  Commutativity
@@ -45,10 +54,7 @@ function iscommutative(A::AlgMat)
   if iscommutative_known(A)
     return A.iscommutative == 1
   end
-  dcr = 1
-  if coefficient_ring(A) != base_ring(A)
-    dcr = dim(coefficient_ring(A))
-  end
+  dcr = dim_of_coefficient_ring(A)
   if dim(A) == degree(A)^2*dcr
     A.iscommutative = 2
     return false
@@ -89,7 +95,7 @@ function assure_has_basis_mat(A::AlgMat)
     end
     A.basis_mat = M
   else
-    dcr = dim(coefficient_ring(A))
+    dcr = dim_of_coefficient_ring(A)
     M = zero_matrix(base_ring(A), dim(A), d2*dcr)
     for i = 1:dim(A)
       N = matrix(A[i])
@@ -180,6 +186,7 @@ function matrix_algebra(R::Ring, n::Int)
   end
   A.basis = B
   A.one = identity_matrix(R, n)
+  A.canonical_basis = 1
   return A
 end
 
@@ -209,6 +216,7 @@ function matrix_algebra(R::Ring, S::AbsAlgAss, n::Int)
   end
   A.basis = B
   A.one = identity_matrix(S, n)
+  A.canonical_basis = 2
   return A
 end
 
@@ -462,7 +470,7 @@ function _check_matrix_in_algebra(M::S, A::AlgMat{T, S}, short::Type{Val{U}} = V
       t[1, i] = M[i]
     end
   else
-    dcr = dim(coefficient_ring(A))
+    dcr = dim_of_coefficient_ring(A)
     t = zero_matrix(base_ring(A), 1, d2*dcr)
     for i = 1:d2
       ii = (i - 1)*dcr
@@ -491,4 +499,53 @@ function AlgAss(A::AlgMat{T, S}) where {T, S}
   B.issimple = A.issimple
   B.issemisimple = A.issemisimple
   return B, hom(B, A, identity_matrix(K, dim(A)), identity_matrix(K, dim(A)))
+end
+
+################################################################################
+#
+#  Canonical basis
+#
+################################################################################
+
+# Checks whether A[(j - 1)*n + i] == E_ij, where E_ij = (e_kl)_kl with e_kl = 1 if i =k and j = l and e_kl = 0 otherwise.
+function iscanonical(A::AlgMat)
+  if A.canonical_basis != 0
+    return A.canonical_basis == 1
+  end
+
+  if coefficient_ring(A) != base_ring(A)
+    A.canonical_basis = 2
+    return false
+  end
+
+  n = degree(A)
+  if dim(A) != n^2
+    A.canonical_basis = 2
+    return false
+  end
+
+  for j = 1:n
+    nj = (j - 1)*n
+    for i = 1:n
+      m = matrix(A[nj + i], copy = false)
+      for k = 1:n
+        for l = 1:n
+          if k == i && l == j
+            if !isone(m[k, l])
+              A.canonical_basis = 2
+              return false
+            end
+          else
+            if !iszero(m[k, l])
+              A.canonical_basis = 2
+              return false
+            end
+          end
+        end
+      end
+    end
+  end
+
+  A.canonical_basis = 1
+  return true
 end

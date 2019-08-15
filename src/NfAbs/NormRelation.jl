@@ -741,16 +741,36 @@ function _has_norm_relation_abstract(G::GrpGen, H::Vector{Tuple{GrpGen, GrpGenTo
   n = Int(order(G))
 
   if pure
-    m = zero_matrix(FlintQQ, length(H), n)
-    for i in 1:length(H)
-      for j in 1:n
-        m[i, j] = norms[i].coeffs[j]
+
+    if iszero(target_den)
+      m = zero_matrix(FlintQQ, length(H), n)
+      for i in 1:length(H)
+        for j in 1:n
+          m[i, j] = norms[i].coeffs[j]
+        end
       end
+
+      onee = matrix(FlintQQ, 1, n, coeffs(one(QG)))
+
+      b, v, K = can_solve_with_kernel(m, onee, side = :left)
+    else
+      @show "here"
+      m = zero_matrix(FlintZZ, length(H), n)
+      for i in 1:length(H)
+        for j in 1:n
+          m[i, j] = FlintZZ(norms[i].coeffs[j])
+        end
+      end
+
+      onee = matrix(FlintZZ, 1, n, coeffs(one(QG)))
+
+      b, w, K = can_solve_with_kernel(m, target_den * onee, side = :left)
+      v = 1//target_den * change_base_ring(w, FlintQQ)
     end
 
-    onee = matrix(FlintQQ, 1, n, coeffs(one(QG)))
-
-    b, v, K = can_solve_with_kernel(m, onee, side = :left)
+    if !b
+      return false, zero(FlintZZ), Vector{Tuple{Vector{Tuple{fmpz, GrpAbFinGenElem}}, Vector{GrpAbFinGenElem}}}()
+    end
 
     @assert b
 

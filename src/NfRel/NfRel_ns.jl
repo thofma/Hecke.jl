@@ -687,7 +687,7 @@ mutable struct NfRel_nsToNfRel_nsMor{T} <: Map{NfRel_ns{T}, NfRel_ns{T}, HeckeMa
       f = x.data
       Kbxyz = parent(f)
       k = nvars(Kbxyz)
-      Lbxyz = PolynomialRing(base_field(L), k)[1]
+      Lbxyz = PolynomialRing(base_field(L), k, cached = false)[1]
       coeffs = Vector{T}(undef, length(f.coeffs))
       for i = 1:length(coeffs)
         coeffs[i] = aut(f.coeffs[i])

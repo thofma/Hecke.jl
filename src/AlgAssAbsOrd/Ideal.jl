@@ -290,6 +290,74 @@ end
 #
 ################################################################################
 
+# Assumes that B_I[i] == elem_from_mat_row(O, M, i)
+function defines_ideal(O::Union{ NfAbsOrd, AlgAssAbsOrd }, M::fmpz_mat, B_I::Vector{ <: Union{ NfAbsOrdElem, AlgAssAbsOrdElem } })
+  if nrows(M) != degree(O) || ncols(M) != degree(O)
+    return false, FakeFmpqMat()
+  end
+  local Minv
+  try
+    Minv = FakeFmpqMat(pseudo_inv(M))
+  catch
+    return false, FakeFmpqMat()
+  end
+  n = degree(O)
+  B_O = basis(O, copy = false)
+
+  N = zero_matrix(FlintZZ, n, n)
+  t = O()
+  for i = 1:n
+    for j = 1:n
+      t = mul!(t, B_O[i], B_I[j])
+      for k = 1:n
+        N[j, k] = deepcopy(coordinates(t, copy = false)[k])
+      end
+    end
+    if !isone((N*Minv).den)
+      return false, Minv
+    end
+    if iscommutative(O)
+      continue
+    end
+    for j = 1:n
+      t = mul!(t, B_I[i], B_O[j])
+      for k = 1:n
+        N[j, k] = deepcopy(coordinates(t, copy = false)[k])
+      end
+    end
+    if !isone((N*Minv).den)
+      return false, Minv
+    end
+  end
+  return true, Minv
+end
+
+function defines_ideal(O::Union{ NfAbsOrd, AlgAssAbsOrd }, M::fmpz_mat)
+  if nrows(M) != degree(O) || ncols(M) != degree(O)
+    return false, FakeFmpqMat(M), elem_type(O)[]
+  end
+  B_I = Vector{elem_type(O)}(undef, degree(O))
+  for i = 1:degree(O)
+    B_I[i] = elem_from_mat_row(O, M, i)
+  end
+  b, Minv = defines_ideal(O, M, B_I)
+  return b, Minv, B_I
+end
+
+function defines_ideal(O::Union{ NfAbsOrd, AlgAssAbsOrd }, B_I::Vector{ <: Union{ NfAbsOrdElem, AlgAssAbsOrdElem } })
+  if length(B_I) != degree(O)
+    return false, zero_matrix(O, degree(O), degree(O)), FakeFmpqMat()
+  end
+  M = zero_matrix(FlintZZ, degree(O), degree(O))
+  for i = 1:degree(O)
+    for j = 1:degree(O)
+      M[i, j] = deepcopy(coordinates(B_I[i], copy = false)[j])
+    end
+  end
+  b, Minv = defines_ideal(O, M, B_I)
+  return b, M, Minv
+end
+
 @doc Markdown.doc"""
     ideal(O::AlgAssAbsOrd, M::fmpz_mat, side::Symbol = :nothing,
           M_in_hnf::Bool = false)
@@ -645,7 +713,6 @@ end
 #
 ################################################################################
 
-# Algorithm 1.3.2 in Cohen "Advanced Topics in Computational Number Theory"
 @doc Markdown.doc"""
     idempotents(a::AlgAssAbsOrdIdl, b::AlgAssAbsOrdIdl)
       -> AlgAssAbsOrdElem, AlgAssAbsOrdElem
@@ -654,26 +721,41 @@ end
 > and $y \in b$ such that $x + y = 1$.
 """
 function idempotents(a::AlgAssAbsOrdIdl, b::AlgAssAbsOrdIdl)
+
   !(order(a) === order(b)) && error("Parent mismatch")
   O = order(a)
   d = degree(O)
-  A = basis_mat(a, copy = false)
-  B = basis_mat(b, copy = false)
 
-  C = vcat(A, B)
-  H, U = hnf_with_transform(C)
-
-  if H != vcat(identity_matrix(FlintZZ, d), zero_matrix(FlintZZ, d, d))
-    error("Ideals are not coprime")
+  V = zero_matrix(FlintZZ, 1 + 2*degree(O), 1 + 2*degree(O))
+  V[1, 1] = 1
+  u = coordinates(one(O))
+  for i = 1:d
+    V[1, i + 1] = u[i]
   end
 
-  X = sub(U, 1:1, 1:d)
-  XA = X*A
-  x = O([ XA[1, i] for i = 1:d ])
-  @assert x in a
-  y = one(O) - x
-  @assert y in b
-  return x, y
+  _copy_matrix_into_matrix(V, 2, 2, basis_mat(a, copy = false))
+  _copy_matrix_into_matrix(V, 2 + d, 2, basis_mat(b, copy = false))
+  for i = 2:d + 1
+    V[i, d + i] = 1
+  end
+
+  H = hnf!(V)
+  for i = 2:d + 1
+    if H[1, i] != 0
+      error("Ideals are not coprime")
+    end
+  end
+
+  t = O()
+  z = basis(a, copy = false)[1]*H[1, d + 2]
+  for i = 2:d
+    t = mul!(t, basis(a, copy = false)[i], H[1, d + 1 + i])
+    z = add!(z, z, t)
+  end
+
+  @assert -z in a
+  @assert one(O) + z in b
+  return -z, one(O) + z
 end
 
 ################################################################################
@@ -816,24 +898,31 @@ function colon(a::AlgAssAbsOrdIdl{S, T}, b::AlgAssAbsOrdIdl{S, T}) where {S, T}
 
   bmatinv = basis_mat_inv(a, copy = false)
 
-  n = FakeFmpqMat(representation_matrix(B[1]), FlintZZ(1))*bmatinv
+  n = representation_matrix(B[1])*bmatinv
   m = numerator(n)
   d = denominator(n)
   for i in 2:length(B)
-    n = FakeFmpqMat(representation_matrix(B[i]), FlintZZ(1))*bmatinv
-    l = lcm(denominator(n), d)
-    if l == d
-      m = hcat(m, n.num)
+    n = representation_matrix(B[i])*bmatinv
+    mm = n.num
+    dd = n.den
+    l = lcm(dd, d)
+    if l == d && l == dd
+      m = hcat(m, mm)
+    elseif l == d
+      m = hcat(m, div(d, dd)*mm)
+    elseif l == dd
+      m = hcat(div(dd, d)*m, mm)
+      d = dd
     else
-      m = hcat(m*div(l, d), n.num*div(l, denominator(n)))
+      m = hcat(m*div(l, d), mm*div(l, dd))
       d = l
     end
   end
   m = hnf(transpose(m))
   # n is upper right HNF
   m = transpose(sub(m, 1:degree(O), 1:degree(O)))
-  b, l = pseudo_inv(m)
-  return frac_ideal_type(O)(O, ideal(O, b), l)
+  b = inv(FakeFmpqMat(m, d))
+  return frac_ideal_type(O)(O, ideal(O, b.num), b.den)
 end
 
 function isinvertible(a::AlgAssAbsOrdIdl)
@@ -989,7 +1078,7 @@ function ring_of_multipliers(I::AlgAssAbsOrdIdl, p::fmpz=fmpz(1), action::Symbol
   O = order(I)
   @hassert :AlgAssOrd 1 Hecke.check_associativity(algebra(O))
   @hassert :AlgAssOrd 1 Hecke.check_distributivity(algebra(O))
-  @hassert :AlgAssOrd 1 check_ideal(I)
+  @hassert :AlgAssOrd 1 defines_ideal(O, basis_mat(I, copy = false))[1]
   bmatinv = basis_mat_inv(I, copy = false)
   if isdefined(I, :gens) && length(I.gens) < degree(O)
     B = I.gens
@@ -1196,26 +1285,6 @@ end
 #  Some tests
 #
 ################################################################################
-
-function check_ideal(I::AlgAssAbsOrdIdl)
-  
-  O = order(I)
-  B = basis(O)
-  B1 = basis(I)
-  for i = 1:length(B)
-    for j = 1:length(B1)
-      if !(B[i]*B1[j] in I)
-        @show coordinates(B[i]*B1[j])
-        error("Ideal not closed under multiplication")
-      end 
-      if !(B1[j]*B[i] in I)
-        @show coordinates(B1[j]*B[i])
-        error("Ideal not closed under multiplication")
-      end 
-    end 
-  end
-  return true
-end
 
 function check_pradical(I::AlgAssAbsOrdIdl, p::Int)
   

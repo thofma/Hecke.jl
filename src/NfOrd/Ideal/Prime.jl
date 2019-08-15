@@ -123,9 +123,9 @@ function intersect_nonindex(f::Map, P::NfOrdIdl, Zk = maximal_order(domain(f)))
   gp = factor(Fp(g))
   hp = Fp(h)
   Gp = gcd(Fp(K(P.gen_two)), Fp(G))
-  for (f, e) = gp.fac
-    if iszero(f(hp) % Gp)
-      p = ideal_from_poly(Zk, Int(minimum(P)), f, 1)
+  for (s, e) in gp
+    if iszero(s(hp) % Gp)
+      p = ideal_from_poly(Zk, Int(minimum(P)), s, e)
       return p
     end
   end
@@ -171,16 +171,49 @@ function prime_decomposition_nonindex(f::Map, p::NfOrdIdl, ZK = maximal_order(co
   G = K.pol
   Qx = parent(G)
 
-  Fp, xp = PolynomialRing(GF(Int(minimum(p)), cached = false), cached = false)
-  Gp = factor(gcd(Fp(f(K(p.gen_two))), Fp(G)))
+  Fp = PolynomialRing(GF(Int(minimum(p)), cached = false), cached = false)[1]
+  Gp = factor(ppio(Fp(G), Fp(f(K(p.gen_two))))[1])
   res = Tuple{NfOrdIdl, Int}[]
-  Zk = maximal_order(k)
-  for (ke, e) = Gp.fac
-    P = ideal_from_poly(ZK, Int(minimum(p)), ke, 1)
-    push!(res, (P, e))
+  for (ke, e) in Gp
+    P = ideal_from_poly(ZK, Int(minimum(p)), ke, e)
+    push!(res, (P, divexact(e, ramification_index(p))))
   end
   return res
 end
+
+function prime_decomposition_type(f::Map, p::NfOrdIdl, ZK = maximal_order(codomain(f)))
+  
+  if !isindex_divisor(ZK, minimum(p)) && !isramified(ZK, minimum(p))
+    return prime_decomposition_type_nonindex(f, p, ZK)
+  end
+  lp = prime_decomposition(f, p, ZK)
+  res = Vector{Tuple{Int, Int}}(undef, length(lp))
+  for i = 1:length(lp)
+    res[i] = (divexact(degree(lp[i][1]), degree(p)), lp[i][2])
+  end
+  return res
+
+end
+
+function prime_decomposition_type_nonindex(f::Map, p::NfOrdIdl, ZK = maximal_order(codomain(f)))
+  k = domain(f)
+  K = codomain(f)
+  G = K.pol
+  Qx = parent(G)
+
+  Fp = PolynomialRing(GF(Int(minimum(p)), cached = false), cached = false)[1]
+  Gp = factor_shape(gcd(Fp(f(K(p.gen_two))), Fp(G)))
+  res = Vector{Tuple{Int, Int}}(undef, sum(values(Gp)))
+  ind = 1
+  for (d, e) in Gp
+    for i = 1:e
+      res[ind] = (d, 1)
+      ind += 1 
+    end
+  end
+  return res
+end
+
 
 @doc Markdown.doc"""
     lift(K::AnticNumberField, f::nmod_poly) -> nf_elem
@@ -195,6 +228,19 @@ function lift(K::AnticNumberField, f::T) where {T <: Zmodn_poly}
   r = K()
   for i=0:f.length-1
     u = ccall((:nmod_poly_get_coeff_ui, :libflint), UInt, (Ref{T}, Int), f, i)
+    _num_setcoeff!(r, i, u)
+  end
+  return r
+end
+
+function lift(K::AnticNumberField, f::gfp_fmpz_poly)
+  if degree(f)>=degree(K)
+    f = mod(f, parent(f)(K.pol))
+  end
+  r = K()
+  for i=0:f.length-1
+    u = fmpz()
+    ccall((:fmpz_mod_poly_get_coeff_fmpz, :libflint), Nothing, (Ref{fmpz}, Ref{gfp_fmpz_poly}, Int), u, f, i)
     _num_setcoeff!(r, i, u)
   end
   return r
@@ -445,6 +491,12 @@ function _prime_decomposition_type(fmodp)
   return res
 end
 
+@doc Markdown.doc"""
+    prime_decomposition_type(O::NfOrd, p::Integer) -> Vector{Tuple{Int, Int}}
+
+Returns an array of tuples whose length is the number of primes lying over $p$ and the $i$-th tuples
+gives the splitting type of the corresponding prime, ordered as inertia degree and ramification index.
+"""
 function prime_decomposition_type(O::NfOrd, p::Integer)
   if !isdefining_polynomial_nice(nf(O))
     return Tuple{Int, Int}[(degree(x[1]), x[2]) for x = prime_decomposition(O, p)]

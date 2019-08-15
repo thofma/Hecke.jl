@@ -81,9 +81,13 @@ end
 Returns the smallest positive integer $d$ such that $da$ is contained in
 the order of $a$.
 """
-function denominator(a::NfRelOrdFracIdl)
+function denominator(a::NfRelOrdFracIdl; copy::Bool = true)
   assure_has_denominator(a)
-  return a.den
+  if copy
+    return deepcopy(a.den)
+  else
+    return a.den
+  end
 end
 
 @doc Markdown.doc"""
@@ -91,7 +95,7 @@ end
 
 Returns the ideal $d*a$ where $d$ is the denominator of $a$.
 """
-function numerator(a::NfRelOrdFracIdl)
+function numerator(a::NfRelOrdFracIdl; copy::Bool = true) # copy for compatibility with NfOrdFracIdl (it doesn't do anything here)
   d = denominator(a)
   PM = basis_pmat(a)
   if isone(d)
@@ -357,17 +361,15 @@ function *(a::NfRelOrdFracIdl{T, S}, b::NfRelOrdFracIdl{T, S}) where {T, S}
       C[(i - 1)*d + j] = pba[i][2]*pbb[j][2]
     end
   end
+  PM = PseudoMatrix(M, C)
+  PM.matrix = PM.matrix*basis_mat_inv(order(a), copy = false)
   if T != nf_elem
-    H = sub(pseudo_hnf(PseudoMatrix(M, C), :lowerleft), (d*(d - 1) + 1):d^2, 1:d)
-    H.matrix = H.matrix*basis_mat_inv(order(a), copy = false)
-    H = pseudo_hnf(H, :lowerleft)
+    H = sub(pseudo_hnf(PM, :lowerleft), (d*(d - 1) + 1):d^2, 1:d)
     return frac_ideal(order(a), H, true)
   end
   m = simplify(den^(2*d)*norm(a)*norm(b))
   @assert isone(denominator(m))
-  H = sub(pseudo_hnf_full_rank_with_modulus(PseudoMatrix(M, C), numerator(m), :lowerleft), (d*(d - 1) + 1):d^2, 1:d)
-  H.matrix = H.matrix*basis_mat_inv(order(a), copy = false)
-  H = pseudo_hnf_full_rank_with_modulus(H, numerator(m), :lowerleft)
+  H = sub(pseudo_hnf_full_rank_with_modulus(PM, numerator(m), :lowerleft), (d*(d - 1) + 1):d^2, 1:d)
   for i = 1:d
     H.coeffs[i].den = H.coeffs[i].den*den
     H.coeffs[i] = simplify(H.coeffs[i])

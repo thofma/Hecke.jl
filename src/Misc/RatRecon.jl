@@ -349,16 +349,16 @@ end
 ################################################################################
 
 function _modpResults(f, p::fmpz, M::Int)
+
    Rc = f.parent
-   l1 = nmod_poly[]; l3 = fmpz[]
+   l1 = fmpz_mod_poly[]; l3 = fmpz[]
    Np = listprimes([f], p, M)
    Zx, Y = PolynomialRing(FlintZZ, "Y", cached=false)
-   L2 = []
    for j in 1:length(Np)
      RNp = ResidueRing(FlintZZ, Np[j], cached=false)
      Rp, t = PolynomialRing(RNp, "t", cached=false)
      fp = Rp(f)
-     L1 = []
+     L1 = Generic.Res{fmpz}[]
      for i in 0:degree(fp)
         push!(L1, coeff(fp, i))
      end

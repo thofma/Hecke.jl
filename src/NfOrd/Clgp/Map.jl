@@ -442,11 +442,19 @@ For a principal ideal $A$, find a generator.
 """
 function principal_gen(A::NfOrdIdl)
   O = order(A)
-  fl, e = isprincipal_fac_elem(A)
+  if ismaximal(O)
+    fl, e = isprincipal_fac_elem(A)
+  else
+    fl, e = isprincipal_non_maximal(A)
+  end
   if !fl
     error("Ideal is not principal")
   end
-  return O(evaluate(e))
+  if ismaximal(O)
+    return O(evaluate(e))
+  else
+    return e
+  end
 end
 
 @doc Markdown.doc"""
@@ -500,14 +508,23 @@ Tests if $A$ is principal and returns $(\mathtt{true}, \alpha)$ if $A =
 """
 function isprincipal(A::NfOrdIdl)
   O = order(A)
+  if !ismaximal(O)
+    return isprincipal_non_maximal(A)
+  end
   fl, a = isprincipal_fac_elem(A)
   return fl, O(evaluate(a))
 end
 
 function isprincipal(A::NfOrdFracIdl)
   O = order(A)
-  fl, a = isprincipal_fac_elem(numerator(A))
-  return fl, evaluate(a)//denominator(A)
+  if !ismaximal(O)
+    fl, a = isprincipal_non_maximal(numerator(A, copy = false))
+    b = elem_in_nf(a, copy = false)
+  else
+    fl, a = isprincipal_fac_elem(numerator(A, copy = false))
+    b = evaluate(a)
+  end
+  return fl, b//denominator(A, copy = false)
 end
  
 # does not work, cannot work. Problem

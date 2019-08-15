@@ -381,9 +381,13 @@ obtained via `[ f(U[1+i]) for i in 1:unit_rank(O) ]`.
 `f(U[1])` will give a generator for the torsion subgroup.
 """
 function unit_group(O::NfOrd; method::Int = 3, unit_method::Int = 1, use_aut::Bool = false, GRH::Bool = true)
-  c, U, b = _class_unit_group(O, method = method, unit_method = unit_method, use_aut = use_aut, GRH = GRH)
-  @assert b==1
-  return unit_group(c, U)
+  if ismaximal(O)
+    c, U, b = _class_unit_group(O, method = method, unit_method = unit_method, use_aut = use_aut, GRH = GRH)
+    @assert b==1
+    return unit_group(c, U)
+  else
+    return unit_group_non_maximal(O)
+  end
 end
 
 @doc Markdown.doc"""

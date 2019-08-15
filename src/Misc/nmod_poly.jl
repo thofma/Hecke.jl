@@ -385,7 +385,7 @@ function Nemo.invmod(f::fmpz_mod_poly, M::fmpz_mod_poly)
   c = f*g
   rem!(c, c, M)
   while !isone(c)
-    g = g*(2-c)
+    mul!(g, g, 2-c)
     rem!(g, g, M)
     mul!(c, f, g)
     rem!(c, c, M)

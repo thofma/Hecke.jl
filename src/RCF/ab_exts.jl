@@ -15,30 +15,22 @@ function squarefree_up_to(n::Int; coprime_to::Array{fmpz,1}=fmpz[])
   for x in coprime_to
     t = Int(x)
     while t <= n
-      @inbounds list[t]=false
+      list[t]=false
       t += Int(x)
     end
   end
   i = 2
   b = root(n, 2)
-  while i <= b
-    @inbounds if list[i]
-      j = i^2
-      @inbounds if !list[j]
-        i += 1
-        continue
-      else 
-        @inbounds list[j]=false
-        t = 2*j
-        while t<= n
-          @inbounds list[t]=false
-          t+=j
-        end
-      end
+  lp = primes_up_to(b)
+  for i = 1:length(lp)
+    p2 = lp[i]*lp[i]
+    ind = p2
+    while ind <= n
+      list[ind] = false
+      ind += p2
     end
-    i+=1
   end
-  @inbounds return Int[i for i=1:n if list[i]]
+  return findall(list)
 
 end
 
@@ -69,7 +61,7 @@ function primes_up_to(n::Int)
     end
     i+=1
   end
-  return Int[i for i=1:n if list[i]]
+  return findall(list)
   
 end
 
@@ -1011,34 +1003,41 @@ end
 function C22_extensions(bound::Int)
   
   
-  Qx,x=PolynomialRing(FlintZZ, "x")
+  Qx, x=PolynomialRing(FlintZZ, "x")
   K, _=NumberField(x-1, cached = false)
   Kx,x=PolynomialRing(K,"x", cached=false)
   b1=ceil(Int,Base.sqrt(bound))
   n=2*b1+1
-  pairs, sqf = _find_pairs(bound)
-  poszero=b1+1
-  return (_ext(Kx,x,i-poszero,j-poszero) for i=1:n for j=i+1:n if i != poszero && j != poszero && sqf[abs(i-poszero)] && sqf[abs(j-poszero)] && pairs[i,j])
+  pairs = _find_pairs(bound)
+  return (_ext(Kx,x,i,j) for (i, j) in pairs)
   
 end
 
+function _ext(Ox,x,i,j)
+ 
+  y=mod(i,4)
+  pol1 = x^2
+  if y != 1
+    pol1 = x^2-i
+  else
+    pol1 = x^2-x+divexact(1-i,4)
+  end
+  y=mod(j,4)
+  pol2=Ox(1)
+  if y!=1
+    pol2=x^2-j
+  else
+    pol2=x^2-x+divexact(1-j,4)
+  end
+  return number_field([pol1,pol2], cached = false)
+
+end
+
+
 function _C22_exts_abexts(bound::Int, only_real::Bool = false)
   Qx, x = PolynomialRing(FlintZZ, "x")
-  if !only_real
-    pairs, sqf = _find_pairs(bound)
-    b1 = ceil(Int, Base.sqrt(bound))
-    n = size(pairs, 1)
-    poszero = b1+1
-    return (_ext_with_autos(Qx, x, i-poszero, j-poszero) for i = 1:n for j = i+1:n if i != poszero && j != poszero && sqf[abs(i-poszero)] && sqf[abs(j-poszero)] && pairs[i,j])
-  else
-    pairs, sqf = _find_pairs_real(bound)
-    b = length(sqf)
-    sqfs = Int[i for i = 2:b if sqf[i]]
-    res = Tuple{Int, Int}[(i, j) for i = 1:length(sqfs) for j = i+1:length(sqfs) if pairs[sqfs[i], sqfs[j]]]
-    return (_ext_with_autos(Qx, x, sqfs[i], sqfs[j]) for (i, j) in res)
-    #return (_ext_with_autos(Qx, x, sqfs[i], sqfs[j]) for i = 1:length(sqfs) for j = i+1:length(sqfs) if pairs[sqfs[i], sqfs[j]])
-    #return (_ext_with_autos(Qx, x, i, j) for i = 2:b for j = i+1:b if sqf[i] && sqf[j] && pairs[i,j])
-  end
+  pairs = _find_pairs(bound, only_real)
+  return (_ext_with_autos(Qx, x, i, j) for (i, j) in pairs)
 end
 
 function _ext_with_autos(Qx, x, i::Int, j::Int)
@@ -1140,303 +1139,120 @@ function _C22_with_max_ord(l)
   return list
 end
 
-function _find_pairs_real(bound::Int)
-  b1 = ceil(Int,Base.sqrt(bound))
-  pairs = trues(b1, b1)
-  
-  #sieve for squarefree  
-  list = trues(b1)
-  i=2
-  b=Base.sqrt(b1)
-  while i<=b
-    if list[i]
-      j=i^2
-      if !list[j]
-        i+=1
-        continue
-      else 
-        list[j]=false
-        t = j + j
-        while t <= b1
-          list[t]=false
-          t += j
-        end
-      end
-    end
-    i+=1
+function _disc(a::Int, b::Int, c::Int, bound::Int)
+  a1 = mod(a, 4)
+  b1 = mod(b, 4)
+  if a1 == 1 && b1 == 1
+    return a*b*c <= bound
   end
-  
-  #counting extensions  
-  for i = 2:b1
-    if !list[i]
-      continue
+  c1 = mod(c, 4)
+  if a1 == 1 || b1 == 1 || c1 == 1
+    return 16*a*b*c <= bound
+  else
+    return 64*a*b*c <= bound
+  end
+end
+
+function _pairs_totally_real(pairs, ls, bound)
+  b1=floor(Int, Base.sqrt(bound))
+  pairs[1, 1:length(ls)] .= false
+  pairs[1:length(ls), 1] .= false
+  for j = 2:length(ls)
+    for i = j:length(ls)
+      pairs[i, j] = false
     end
-    for j = i+1:b1
-      if !list[j]
-        continue
-      end
+  end
+  for j = 2:length(ls)
+    second = ls[j]
+    for i = 2:j-1
       if pairs[i, j]
-        third = divexact(i*j, gcd(i, j)^2)
+        first = ls[i]
+        g = gcd(first, second)
+        if isone(g)
+          third = first*second
+        else
+          third = divexact(first*second, g^2)
+        end
         if abs(third) > b1
-          pairs[i,j] = false
-        else
-          pairs[third, i] = false
-          pairs[third, j] = false
-          pairs[i, third] = false
-          pairs[j, third] = false
-          d1 = _discn(i)
-          d2 = _discn(j)
-          g1 = d1*d2
-          if abs(g1) < b1
-            continue
-          end
-          d3 = _discn(third)
-          g2 = d1*d3
-          if abs(g2)<b1
-            continue
-          end
-          g3 = d2*d3
-          if abs(g3)<b1
-            continue
-          end
-          g = gcd(g1,g2,g3)
-          if abs(g)<b1
-            continue
-          elseif check_disc(i, j, third, bound)
-            pairs[i,j] = false
-          end
-        end
-      end
-    end
-  end
-  return pairs, list
-  
-end
-
-
-
-
-function _find_pairs(bound::Int)
-  
-  b1=ceil(Int, Base.sqrt(bound))
-  n=2*b1+1
-  pairs = trues(n,n)
-  poszero = b1+1
-  
-  pairs[1:poszero, poszero] .= false
-  pairs[1:(b1+2), b1+2] .= false
-  pairs[poszero, (poszero+1):n] .= false
-  pairs[b1+2, (b1+3):n] .= false
-  
-  #sieve for squarefree  
-  list = trues(b1)
-  i = 2
-  b = Base.sqrt(b1)
-  while i <= b
-    if list[i]
-      j = i^2
-      if !list[j]
-        i += 1
-        continue
-      else 
-        list[j] = false
-        t = 2*j
-        while t <= b1
-          list[t] = false
-          t +=j
-        end
-      end
-    end
-    i+=1
-  end
-  
-  #counting extensions  
-  for i = 1:n
-    if i == poszero || !list[abs(i-poszero)] || i == b1+2
-      continue
-    end
-    for j = i+1:n
-      if j == poszero || !list[abs(j-poszero)] || j == b1+2
-        continue
-      end
-      if pairs[i, j]
-        first = i-poszero
-        second = j-poszero
-        third = divexact(first*second, gcd(first, second)^2)
-        if abs(third)>b1
           pairs[i, j] = false
+          continue
+        end
+        k = searchsortedfirst(ls, third)
+        if i < k
+          pairs[i, k] = false
         else
-          y=third+poszero
-          pairs[y,i] = false
-          pairs[y,j] = false
-          pairs[i,y] = false
-          pairs[j,y] = false
-          d1=_discn(first)
-          d2=_discn(second)
-          g1=d1*d2
-          if abs(g1) < b1
-            continue
-          else 
-            d3=_discn(third)
-            g2=d1*d3
-            if abs(g2)<b1
-              continue
-            else
-              g3=d2*d3
-              if abs(g3)<b1
-                continue
-              else
-                g = gcd(g1,g2,g3)
-                if abs(g)<b1
-                  continue
-                elseif check_disc(first, second, third, bound)
-                  pairs[i, j] = false
-                end
-              end
-            end
-          end
+          pairs[k, i] = false
+        end
+        if j < k
+          pairs[j, k] = false
+        else
+          pairs[k, j] = false
+        end
+        if !_disc(first, second, third, bound)
+          pairs[i, j] = false
         end
       end
     end
   end
-  return pairs, list
-  
+  it = findall(pairs)
+  totally_real_exts = Vector{Tuple{Int, Int}}(undef, length(it))
+  ind = 1
+  for I in it
+    totally_real_exts[ind] = (ls[I[1]], ls[I[2]])
+    ind += 1
+  end
+  return totally_real_exts
+
 end
 
-function check_disc(a::Int, b::Int, c::Int, bound::Int)
-  
-  if mod(a,4)!=2 && mod(b,4)!=2
-    return true
+
+function _find_pairs(bound::Int, only_real::Bool = false)
+
+  #first, we need the squarefree numbers
+  b1=ceil(Int, Base.sqrt(bound))
+  ls = squarefree_up_to(b1)
+  #The first step is to enumerate all the totally real extensions.
+  pairs = trues(length(ls), length(ls))
+  real_exts = _pairs_totally_real(pairs, ls, bound)
+  if only_real
+    return real_exts
+  end
+  ls1 = -ls
+  #Now, all the others.
+  pairs[1:length(ls), 2:length(ls)] .= true
+  for j = 2:length(ls)
+    second = ls[j]
+    for i = 1:length(ls)
+      if pairs[i, j]
+        first = ls1[i]
+        g = gcd(first, second)
+        if isone(g)
+          third = first*second
+        else
+          third = divexact(first*second, g^2)
+        end
+        abt = -third
+        if abt > b1
+          pairs[i, j] = false
+          continue
+        end
+        k = searchsortedfirst(ls, abt)
+        pairs[k, j] = false
+        if !_disc(first, second, third, bound)
+          pairs[i, j] = false
+        end
+      end
+    end
+  end
+  it = findall(pairs)
+  ind = 1
+  res = Vector{Tuple{Int, Int}}(undef, length(it))
+  for I in it
+    res[ind] = (ls1[I[1]], ls[I[2]])
+    ind += 1
   end 
-  if mod(a,4)==1 || mod(b,4)==1 || mod(c,4)==1
-    return true
-  end
-  if 64*a*b*c>=bound
-    return true
-  else
-    return false
-  end
-  
+  return vcat(res, real_exts)
 end
-
-#given integers i,j, this function returns the extension Q(sqrt(i))Q(sqrt(j))
-function _ext(Ox,x,i,j)
- 
-  y=mod(i,4)
-  pol1 = x^2
-  if y != 1
-    pol1 = x^2-i
-  else
-    pol1 = x^2-x+divexact(1-i,4)
-  end
-  y=mod(j,4)
-  pol2=Ox(1)
-  if y!=1
-    pol2=x^2-j
-  else
-    pol2=x^2-x+divexact(1-j,4)
-  end
-  return number_field([pol1,pol2], cached = false)
-
-end
-
-# Given a squarefree integer n, this function computes the absolute value
-# of the discriminant of the extension Q(sqrt(n))
-function _discn(n::Int)
-  
-  x = mod(n,4)
-  if x != 1
-    return 4*n
-  else
-    return n
-  end
-  
-end
-
-function C22_extensions_tame_real(bound::Int)
-  
-  
-  Qx,x=PolynomialRing(FlintZZ, "x")
-  K,_=NumberField(x-1)
-  Kx,x=PolynomialRing(K,"x", cached=false)
-
-  b1=floor(Int,Base.sqrt(bound))
-  n=b1
-  pairs=trues(b1,b1)
-  
-  #sieve for squarefree number congruent to 1 mod 4
-  i=2
-  k=4
-  while k<=b1
-    pairs[1:i,i]=false
-    pairs[1:k,k]=false
-    pairs[i,i+1:n]=false
-    pairs[k,k+1:n]=false
-    i+=4
-    k+=4
-  end
-  i=3
-  b=Base.sqrt(b1)
-  while i<=b
-    if pairs[1,i]
-      j=i^2
-      if !pairs[1,j]
-        i+=2
-        continue
-      else 
-        pairs[1:j,j]=false
-        pairs[j,1:j]=false
-        t=2*j
-        while t <= b1
-          pairs[t,t:n]=false
-          pairs[1:t,t]=false
-          t+=j
-        end
-      end
-    end
-    i+=2
-  end
-  k=3
-  while k<=b1
-    pairs[1:k,k]=false
-    pairs[k,k:n]=false
-    k+=4
-  end
-  pairs[1,1:n]=false
-  
-  #counting extensions  
-  for i=5:b1
-    for j=i+1:b1
-      if pairs[i,j]
-        k=divexact(i*j, gcd(i, j)^2)
-        if k>b1
-          pairs[i,j]=false
-        else
-          if k>i
-            pairs[i,k]=false
-          else
-            pairs[k,i]=false
-          end
-          if k>j
-            pairs[j,k]=false
-          else
-            pairs[k,j]=false
-          end
-          if i*j*k<bound
-            continue
-          else 
-            pairs[i,j]=false
-          end
-        end
-      end
-    end
-  end
-  
-  return (_ext(Kx,x,i,j) for i=5:b1 for j=i+1:b1 if pairs[i,j])
-  
-end
-
-
 
 ################################################################################
 #

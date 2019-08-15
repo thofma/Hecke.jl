@@ -57,7 +57,7 @@ end
 @doc Markdown.doc"""
   gcd(a::Generic.Poly{nf_elem}, b::Generic.Poly{nf_elem}) -> Generic.Poly{nf_elem}
 
-A modular $\gcd$
+Computes the greatest common divisor of $f$ and $g$ using a modular algorithm.
 """
 function gcd(a::Generic.Poly{nf_elem}, b::Generic.Poly{nf_elem}, test_sqfr::Bool = false)
   # modular kronnecker assumes a, b !=n 0
@@ -70,10 +70,13 @@ function gcd(a::Generic.Poly{nf_elem}, b::Generic.Poly{nf_elem}, test_sqfr::Bool
   elseif iszero(b)
     return inv(lead(a))*a
   end
-
-  g = gcd_modular_kronnecker(a, b, test_sqfr)
-  test_sqfr && return g
-  return inv(lead(g))*g  # we want it monic...
+  if min(degree(a), degree(b)) >= 6 || test_sqfr
+    g = gcd_modular_kronnecker(a, b, test_sqfr)
+    test_sqfr && return g
+    return inv(lead(g))*g  # we want it monic...
+  else
+    return gcd_euclid(a, b)
+  end
 end
 
 ################################################################################
@@ -134,6 +137,34 @@ function gcd_modular(a::Generic.Poly{nf_elem}, b::Generic.Poly{nf_elem})
   end
 end
 
+
+function _preproc_pol(a::Generic.Poly{nf_elem}, b::Generic.Poly{nf_elem})
+  a1 = a*(1//leading_coefficient(a))
+  da = Base.reduce(lcm, [denominator(coeff(a1, i)) for i=0:degree(a)])
+  b1 = b*(1//leading_coefficient(b))
+  db = Base.reduce(lcm, [denominator(coeff(b1, i)) for i=0:degree(b)])
+  d = gcd(da, db)
+  a2 = a1*da
+  b2 = b1*db
+  Kt = parent(a)
+  K = base_ring(Kt)
+  fsa = evaluate(derivative(K.pol), gen(K))*d
+  return a2, b2, fsa
+end
+
+function gcd_euclid(a::AbstractAlgebra.PolyElem{nf_elem}, b::AbstractAlgebra.PolyElem{nf_elem}) 
+   check_parent(a, b)
+   if length(a) > length(b)
+      (a, b) = (b, a)
+   end
+   while !iszero(a)
+      (a, b) = (mod(b, a), a)
+   end
+   d = lead(b)
+   return divexact(b, d)
+end
+
+
 #similar to gcd_modular, but avoids rational reconstruction by controlling
 #a/the denominator
 function gcd_modular_kronnecker(a::Generic.Poly{nf_elem}, b::Generic.Poly{nf_elem}, test_sqfr::Bool = false)
@@ -141,23 +172,16 @@ function gcd_modular_kronnecker(a::Generic.Poly{nf_elem}, b::Generic.Poly{nf_ele
   # if not monic, scale by gcd
   # remove content?
   @assert parent(a) == parent(b)
-  a = a*(1//leading_coefficient(a))
-  da = Base.reduce(lcm, [denominator(coeff(a, i)) for i=0:degree(a)])
-  b = b*(1//leading_coefficient(b))
-  db = Base.reduce(lcm, [denominator(coeff(b, i)) for i=0:degree(b)])
-  d = gcd(da, db)
-  a = a*da
-  b = b*db
+  a, b, fsa = _preproc_pol(a, b)
   Kt = parent(a)
   K = base_ring(Kt)
-  fsa = evaluate(derivative(K.pol), gen(K))*d
   #now gcd(a, b)*fsa should be in the equation order...
   global p_start
   p = p_start
   
-  g = zero(a)
+  g = zero(Kt)
   d = fmpz(1)
-  last_g = parent(a)(0)
+  last_g = zero(Kt)
   while true
     p = next_prime(p)
     local me, fp, gp, fsap
@@ -172,15 +196,15 @@ function gcd_modular_kronnecker(a::Generic.Poly{nf_elem}, b::Generic.Poly{nf_ele
       end
       continue
     end
-    gp = [fsap[i] * gcd(fp[i], gp[i]) for i=1:length(gp)]
+    gp = fq_nmod_poly[fsap[i] * gcd(fp[i], gp[i]) for i=1:length(gp)]
     gc = Hecke.modular_lift(gp, me)
     if isconstant(gc)
-      return parent(a)(1)::Generic.Poly{nf_elem}
+      return one(Kt)
     end
     if test_sqfr
-      return parent(a)(0)::Generic.Poly{nf_elem}
+      return zero(Kt)
     end
-    if d == 1
+    if isone(d)
       g = gc
       d = fmpz(p)
     else
@@ -193,14 +217,8 @@ function gcd_modular_kronnecker(a::Generic.Poly{nf_elem}, b::Generic.Poly{nf_ele
         g, d = induce_crt(g, d, gc, fmpz(p), true)
       end
     end
-    if g == last_g
-      r = mod(a, g)
-      if iszero(r)
-        r = mod(b, g)
-        if iszero(r)
-          return g::Generic.Poly{nf_elem}
-        end
-      end
+    if g == last_g && iszero(mod(a, g)) && iszero(mod(b, g))
+      return g
     else
       last_g = g
     end

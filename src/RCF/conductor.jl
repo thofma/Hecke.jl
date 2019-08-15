@@ -1144,6 +1144,51 @@ function norm_group(f::Array{T, 1}, mR::Hecke.MapRayClassGrp, isabelian::Bool = 
   return sub(R, subgrp, true)
 end
 
+
+
+function norm_group(mL::NfToNfMor, mR::Hecke.MapRayClassGrp, expected_degree::Int = 1)
+  
+  K = domain(mL)
+  L = codomain(mL)
+  R = domain(mR)
+  O = maximal_order(K)
+  N = minimum(mR.modulus_fin)
+
+  els = GrpAbFinGenElem[]  
+
+  #
+  #  Adding small primes until it stabilizes
+  #
+  n = divexact(degree(L), degree(K))
+  max_stable = 2*n
+  stable = max_stable
+  p = N
+  Q, mQ = quo(R, els, false)
+  while true
+    if order(Q) == expected_degree
+      break
+    end
+    if order(Q) <= n && stable <= 0
+      break
+    end
+    p = next_prime(p)
+    lP = prime_decomposition(O, p)
+    for (P, e) in lP
+      lQ = prime_decomposition_type(mL, P)
+      s = gcd([x[1] for x in lQ])
+      candidate = s*(mR\P) 
+      if !iszero(mQ(candidate))
+        push!(els, candidate)
+        Q, mQ = quo(R, els, false)
+        stable = max_stable
+      else
+        stable -= 1
+      end
+    end
+  end
+  return sub(R, els, false)
+end
+
 function norm_group_map(R::ClassField{S, T}, r::Vector{<:ClassField}, map = false) where {S, T}
   @assert map != false || all(x -> base_ring(R) == base_ring(x), r)
 #  @assert map == false && all(x -> base_ring(R) == base_ring(x), r)

@@ -24,7 +24,7 @@ function simplify(K::AnticNumberField; canonical::Bool = false, cached = false)
       ZK = OK.lllO
     else
       prec = 100 + 25*div(degree(K), 3) + Int(round(log(abs(discriminant(K)))))
-      ZK = _lll(OK, prec = prec)[2]
+      ZK = _lll_for_simplify(OK, prec = prec)[2]
     end
     a = gen(K)
 
@@ -163,7 +163,8 @@ function _find_prime(f::fmpz_poly)
   while true
     p = next_prime(p)
     R = GF(p, cached=false)
-    fR = change_base_ring(f, R)
+    Rt = PolynomialRing(R, "t", cached = false)[1]
+    fR = change_base_ring(f, R, Rt)
     if !issquarefree(fR)
       continue
     end
@@ -354,7 +355,7 @@ end
 #
 ################################################################################
 
-function _lll(M::NfOrd; prec = 100)
+function _lll_for_simplify(M::NfOrd; prec = 100)
 
   K = nf(M)
 
