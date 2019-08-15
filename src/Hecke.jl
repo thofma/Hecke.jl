@@ -90,7 +90,7 @@ export @vprint, @hassert, @vtime, add_verbose_scope, get_verbose_level,
 ###############################################################################
 
 const pkgdir = joinpath(dirname(pathof(Hecke)), "..")
-#
+
 #const libhecke = joinpath(pkgdir, "local", "lib", "libhecke")
 #
 #const libdir = joinpath(pkgdir, "local", "lib")
