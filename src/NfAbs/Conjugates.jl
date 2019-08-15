@@ -101,6 +101,7 @@ function conjugates_arb(x::nf_elem, abs_tol::Int = 32)
   r1, r2 = signature(K)
   conjugates = Array{acb}(undef, r1 + 2*r2)
   target_tol = abs_tol
+  abs_tol = Int(floor(abs_tol * 1.1))
 
   while true
     prec_too_low = false
@@ -337,36 +338,29 @@ end
 # The following function computes the minkowski_map, applies G to the output.
 # G mus be a function (::Vector{arb}, abs_tol::Int) -> Bool, *
 # where the first return value indicates if the result is good enough
-function _minkowski_map_and_apply(a, abs_tol, G)
-  # TODO: Rewrite this using conjugates_arb
+function _minkowski_map_and_apply(a, abs_tol, G, work_tol = abs_tol)
   K = parent(a)
-  A = Array{arb}(undef, degree(K))
   r, s = signature(K)
-  c = conjugate_data_arb(K)
-  R = PolynomialRing(AcbField(c.prec, false), "x", cached=false)[1]
-  f = R(parent(K.pol)(a))
-  CC = base_ring(R)
-  g = R(f)
+  A = Array{arb}(undef, degree(K))
+  c = conjugates_arb(a, work_tol)
 
   for i in 1:r
-    t = evaluate(g, c.real_roots[i])
-    @assert isreal(t)
-    A[i] = real(t)
+    @assert isreal(c[i])
+    A[i] = real(c[i])
     if !radiuslttwopower(A[i], -abs_tol)
-      refine(c)
-      return _minkowski_map_and_apply(a, abs_tol, G)
+      error("this should not happen")
     end
   end
 
+  sqrt2 = sqrt(ArbField(prec(parent(c[1])), false)(2))
+
   for i in 1:s
-    tt = evaluate(g, c.complex_roots[i])
-    tt = sqrt(CC(2))*tt
-    if !radiuslttwopower(tt, -abs_tol)
-      refine(c)
-      return _minkowski_map_and_apply(a, abs_tol, G)
+    t = c[r + i]
+    A[r + 2*i - 1] = sqrt2 * real(c[r + i])
+    A[r + 2*i] = sqrt2 * imag(c[r + i])
+    if !radiuslttwopower(A[r + 2*i], -abs_tol)
+      return _minkowski_map_and_apply(a, abs_tol, G, Int(floor(work_tol * 1.1)))
     end
-    A[r + 2*i - 1] = real(tt)
-    A[r + 2*i] = imag(tt)
   end
 
   if typeof(G) === typeof(identity)
@@ -376,8 +370,7 @@ function _minkowski_map_and_apply(a, abs_tol, G)
     if b
       return B
     else
-      refine(c)
-      return _minkowski_map_and_apply(a, abs_tol, G)
+      return _minkowski_map_and_apply(a, abs_tol, G, 2*work_tol)
     end
   end
 end
