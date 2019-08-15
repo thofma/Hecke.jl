@@ -1045,10 +1045,19 @@ function defining_polynomial(Q::FqNmodFiniteField, P::Hecke.Ring = GF(characteri
   return f
 end
 
+function Base.round(::Type{fmpz}, a::fmpz, b::fmpz) 
+  s = sign(a)
+  as = abs(a)
+  r = s*div(2*as+b, 2*b)
+#  global rnd = (a, b)
+#  @assert r == round(fmpz, a//b)
+  return r
+end
+  
 
 function reco(a::NfAbsOrdElem, M, pM)
   m = matrix(FlintZZ, 1, degree(parent(a)), coordinates(a))
-  m = m - matrix(FlintZZ, 1, degree(parent(a)), map(x -> round(fmpz, x//pM[2]), m*pM[1]))*M
+  m = m - matrix(FlintZZ, 1, degree(parent(a)), map(x -> round(fmpz, x, pM[2]), m*pM[1]))*M
   return parent(a)(collect(m))
 end
 
@@ -1073,7 +1082,7 @@ function myfactor(f::PolyElem{nf_elem})
   br = 0
   s = Set{Int}()
   while true
-    @show p = next_prime(p)
+    p = next_prime(p)
     if isindex_divisor(zk, p)
       continue
     end
@@ -1591,11 +1600,11 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 20)
             end
             continue
           end
-          g = prod(factor(vH.H)[v])
+          @time g = prod(factor(vH.H)[v])
           if degree(P) == 1
-            G = parent(f)([K(reco(order(P)(lift(coeff(g, l))), vH.Ml, vH.pMr)) for l=0:degree(g)])
+            @profile G = parent(f)([K(reco(order(P)(lift(coeff(g, l))), vH.Ml, vH.pMr)) for l=0:degree(g)])
           else
-            G = parent(f)([K(reco(order(P)(preimage(mC, coeff(g, l))), vH.Ml, vH.pMr)) for l=0:degree(g)])
+            @time G = parent(f)([K(reco(order(P)(preimage(mC, coeff(g, l))), vH.Ml, vH.pMr)) for l=0:degree(g)])
           end
 
           if !iszero(rem(f, G))
