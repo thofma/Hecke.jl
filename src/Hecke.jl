@@ -819,6 +819,11 @@ function example(s::String)
   Base.include(Main, joinpath(dirname(pathof(Hecke)), "..", "examples", s))
 end
 
+function revise(s::String)
+  s = joinpath(dirname(pathof(Hecke)), "..", "examples", s)
+  Main.Revise.track(Main, s)
+end
+
 #same (copyed) as in stdlib/v1.0/InteractiveUtils/src/InteractiveUtils.jl
 #difference: names(m, all = true) to also see non-exported variables, aka
 # caches...
