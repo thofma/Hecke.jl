@@ -223,3 +223,7 @@ coeff(::SimpleNumFieldElem, ::Int)
 function coeffs(a::SimpleNumFieldElem; copy::Bool = false)
   return [ coeff(a, i) for i = 0:degree(parent(a)) - 1 ]
 end
+
+function (K::AnticNumberField)(c::Vector{fmpq})
+  return K(parent(K.pol)(c))
+end
