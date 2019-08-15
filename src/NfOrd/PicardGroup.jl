@@ -55,9 +55,10 @@ end
 
 # Computes \bigoplus_p OK_p^\times/O_p^\times where the sum runs over all prime
 # ideals p containing the conductor of O and OK is the maximal order.
+# This group is isomorphic to (OK/F)^\times/(O/F)^\times.
 # Algorithm 8.1 in Klueners, Pauli: Computing residue class rings and Picard
 # groups of orders
-function _direct_sum_of_localizations(O::NfOrd)
+function OO_mod_F_mod_O_mod_F(O::NfAbsOrd)
   OK = maximal_order(nf(O))
   F = conductor(O, OK)
   FOK = extend(F, OK)
@@ -134,12 +135,21 @@ function _direct_sum_of_localizations(O::NfOrd)
   return S, StoQ, OKtoQF
 end
 
-function _unit_group_non_maximal(O::NfOrd)
-  OK = maximal_order(nf(O))
+function _unit_group_non_maximal(O::Union{ NfAbsOrd, AlgAssAbsOrd })
+  OK = maximal_order(_algebra(O))
   G, GtoOK = unit_group(OK)
-  H, HtoQ, OKtoQ = _direct_sum_of_localizations(O)
+  if isdefined(O, :picard_group) && isdefined(O.picard_group, :OO_mod_F_mod_O_mod_F) # only for NfAbsOrd
+    HtoQ = O.picard_group.OO_mod_F_mod_O_mod_F
+    H = domain(HtoQ)
+    OKtoQ = AbsOrdQuoMap(codomain(HtoQ))
+  else
+    H, HtoQ, OKtoQ = OO_mod_F_mod_O_mod_F(O)
+  end
 
-  # The unit group of O is the kernel of a map from G to H
+  # We use the exact sequence
+  # 0 --> O^\times --> O_K^\times --> (O_K/F)^\times)/(O/F)^\times
+  # that is 0 --> O^\times --> G --> H.
+  # So, O^\times is the kernel of a map from G to H
   # (we really want a GrpAbFinGenMap, so we can't use compose to build this map)
   M = zero_matrix(FlintZZ, ngens(G), ngens(H))
   for i = 1:ngens(G)
@@ -158,11 +168,12 @@ function _unit_group_non_maximal(O::NfOrd)
   # Build the map from S to O
   function _image(x::GrpAbFinGenElem)
     y = GtoOK(StoG(x))
-    return O(elem_in_nf(y))
+    return O(_elem_in_algebra(y))
   end
 
-  function _preimage(x::NfOrdElem)
-    y = OK(elem_in_nf(x))
+  function _preimage(x::Union{ NfAbsOrdElem, AlgAssAbsOrdElem })
+    @assert parent(x) === O
+    y = OK(_elem_in_algebra(x))
     g = GtoOK\y
     b, k = haspreimage(KtoG, g)
     @assert b
@@ -173,6 +184,7 @@ function _unit_group_non_maximal(O::NfOrd)
 
   StoO = MapUnitGrp{typeof(O)}()
   StoO.header = MapHeader(S, O, _image, _preimage)
+  StoO.OO_mod_F_mod_O_mod_F = HtoQ
 
   return S, StoO
 end
@@ -186,7 +198,7 @@ function _picard_group(O::NfOrd)
   OK = maximal_order(nf(O))
   U, UtoOK = unit_group(OK)
   Cl, CltoOK = class_group(OK)
-  G, GtoQ, OKtoQ = _direct_sum_of_localizations(O)
+  G, GtoQ, OKtoQ = OO_mod_F_mod_O_mod_F(O)
   @assert issnf(U) && issnf(Cl) && issnf(G)
 
   _assure_princ_gen(CltoOK)
@@ -297,8 +309,10 @@ function _picard_group(O::NfOrd)
     return s
   end
 
-  StoIdl = MapClassGrp() # Technically, it is a MapPicardGrp...
-  StoIdl.header = MapHeader(S, IdealSet(O), disc_exp_picard_group, disc_log_picard_group)
+  Idl = IdealSet(O)
+  StoIdl = MapPicardGrp{typeof(S), typeof(Idl)}()
+  StoIdl.header = MapHeader(S, Idl, disc_exp_picard_group, disc_log_picard_group)
+  StoIdl.OO_mod_F_mod_O_mod_F = GtoQ
 
   return S, StoIdl
 end
@@ -309,42 +323,56 @@ end
 #
 ################################################################################
 
-function isprincipal_non_maximal(I::NfAbsOrdIdl)
+function isprincipal_non_maximal(I::Union{ NfAbsOrdIdl, AlgAssAbsOrdIdl })
+  # Main idea stolen from a Magma implementation by Stefano Marseglia.
+  # We use the exact sequence
+  # 0 --> O^\times --> O_K^\times --> (O_K/F)^\times/(O/F)^\times --> Pic(O) --> Pic(O_K) --> 0
+  # where F is the conductor of O in O_K.
+  # See W. Bley, M. Endres "Picard groups and refined discrete logarithm", p. 4.
   O = order(I)
-  K = nf(O)
+  if !isinvertible(I)[1]
+    return false, O()
+  end
+  K = _algebra(O)
   OK = maximal_order(O)
-  IOK = I*OK
-  b, x = isprincipal_fac_elem(IOK)
+  F = conductor(O, OK)
+  if !isone(I + F)
+    J, z = _coprime_integral_ideal_class(I, F)
+  else
+    J = I
+    z = one(K)
+  end
+  JOK = J*OK
+  b, x = isprincipal_fac_elem(JOK)
   if !b
     return false, O()
   end
 
   x = evaluate(x)
-  if x in O
-    y = O(x)
-    if y*O == I
-      return true, y
-    end
+  if x in O && ideal(O, O(x)) == J
+    y = O(x*inv(z))
+    return true, y
   end
 
-  # We have IOK = x*OK and want to find y in O with I = y*O.
-  # Then y = x*u for a u in OK^\times/O^\times.
-
-  U1, mU1 = unit_group(OK)
-  U2, mU2 = unit_group(O)
-  Q, QtoU1 = quo(U1, [ mU1\(OK(elem_in_nf(mU2(U2[i]), copy = false))) for i = 1:ngens(U2) ])
-  for (i, q) in enumerate(Q)
-    u = mU1(QtoU1(q))
-    ux = u*x
-    if !(ux in O)
-      continue
-    end
-
-    y = O(ux)
-    if y*O == I
-      return true, y
-    end
+  _, m = unit_group(O)
+  # We do not really need the unit group, but only:
+  GtoQ = m.OO_mod_F_mod_O_mod_F
+  G = domain(GtoQ)
+  if order(G) == 1
+    y = O(x*inv(z))
+    return true, y
   end
 
-  return false, O()
+  Q = codomain(GtoQ)
+  OKtoQ = AbsOrdQuoMap(OK, Q)
+  U, mU = unit_group(OK)
+  h = hom(U, G, [ GtoQ\(OKtoQ(mU(U[i]))) for i = 1:ngens(U) ])
+  b, u = haspreimage(h, GtoQ\(OKtoQ(OK(x))))
+  if !b
+    return false, O()
+  end
+  Q, toQ = quo(U, kernel(h)[1])
+  u = toQ\(toQ(u)) # Reduce the coefficient size (hopefully)
+  y = O(x*inv(_elem_in_algebra(mU(u), copy = false))*inv(z))
+  return true, y
 end
