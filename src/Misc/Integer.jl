@@ -1209,7 +1209,7 @@ function quo(::FlintIntegerRing, a::Integer)
   return R, f
 end
 
-function FlintZZ(x::Rational{Int})
+function (::FlintIntegerRing)(x::Rational{Int})
   @assert denominator(x) == 1
   return fmpz(numerator(x))
 end

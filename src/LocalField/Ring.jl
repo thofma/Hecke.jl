@@ -14,12 +14,12 @@ function Base.show(io::IO, Q::QadicRing)
   println("Integers of ", Q.Q)
 end
 
-function ring_of_integers(Q::FlintQadicField)
+function MaximalOrder(Q::FlintQadicField)
   return QadicRing{FlintQadicField}(Q)
 end
 #integers(Q::FlintQadicField) = ring_of_integers(Q)
 
-function ring_of_integers(Q::FlintPadicField)
+function MaximalOrder(Q::FlintPadicField)
   return QadicRing{FlintPadicField}(Q)
 end
 #integers(Q::FlintPadicField) = ring_of_integers(Q)
@@ -39,9 +39,6 @@ function Base.show(io::IO, a::QadicRingElem)
   print(io, a.x)
 end
   
-import Base.*, Base.==, Base.+, Base.inv, divexact, canonical_unit,
-       Base.-
-
 *(a::QadicRingElem, b::QadicRingElem) = QadicRingElem(a.x*b.x, a.P)
 +(a::QadicRingElem, b::QadicRingElem) = QadicRingElem(a.x+b.x, a.P)
 -(a::QadicRingElem, b::QadicRingElem) = QadicRingElem(a.x-b.x, a.P)
@@ -162,5 +159,6 @@ function Base.setprecision(a::Generic.MatSpaceElem{QadicRingElem{qadic}}, n::Int
   return matrix(map(x -> setprecision(x, n), a.entries))
 end
 
-base_ring(Q::QadicRing) = integers(base_ring(Q.Q))
+coefficient_ring(Q::QadicRing) = integers(coefficient_ring(Q.Q))
+
 

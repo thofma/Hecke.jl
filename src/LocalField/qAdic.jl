@@ -1,6 +1,7 @@
 add_verbose_scope(:qAdic)
 add_assert_scope(:qAdic)
 
+export setprecision!, defining_polynomial
 
 function Base.setprecision(q::qadic, N::Int)
   r = parent(q)()
@@ -16,7 +17,6 @@ function Base.setprecision(q::padic, N::Int)
   return r
 end
 
-export setprecision!
 
 function setprecision!(q::qadic, N::Int)
   @assert N >= q.N
@@ -142,10 +142,10 @@ function ResidueField(Q::FlintPadicField)
   return k, MapFromFunc(pro, lif, Q, k)
 end
 
-function base_ring(Q::FlintQadicField)
+function coefficient_ring(Q::FlintQadicField)
   return FlintPadicField(prime(Q), precision(Q))
 end
-base_field(Q::FlintQadicField) = base_ring(Q)
+coefficient_field(Q::FlintQadicField) = coefficient_ring(Q)
 
 function prime(R::PadicField, i::Int)
   p = fmpz()
