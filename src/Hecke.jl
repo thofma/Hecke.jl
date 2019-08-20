@@ -730,6 +730,7 @@ include("ModAlgAss.jl")
 include("AlgAss.jl")
 include("AlgAssAbsOrd.jl")
 include("AlgAssRelOrd.jl")
+include("LocalField.jl")
 
 ################################################################################
 #
