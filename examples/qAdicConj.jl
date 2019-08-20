@@ -39,84 +39,6 @@ function Hecke.prime(H::Hecke.HenselCtx)
   return Int(H.p)
 end
 
-function Base.setprecision(q::qadic, N::Int)
-  r = parent(q)()
-  r.N = N
-  ccall((:padic_poly_set, :libflint), Nothing, (Ref{qadic}, Ref{qadic}, Ref{FlintQadicField}), r, q, parent(q))
-  return r
-end
-
-function Base.setprecision(q::padic, N::Int)
-  r = parent(q)()
-  r.N = N
-  ccall((:padic_set, :libflint), Nothing, (Ref{padic}, Ref{padic}, Ref{FlintPadicField}), r, q, parent(q))
-  return r
-end
-
-export setprecision!
-
-function setprecision!(q::qadic, N::Int)
-  @assert N >= q.N
-  q.N = N
-  return q
-end
-
-function setprecision!(Q::FlintQadicField, n::Int)
-  Q.prec_max = n
-end
-
-function setprecision!(Q::FlintPadicField, n::Int)
-  Q.prec_max = n
-end
-
-function setprecision!(f::Generic.Poly{qadic}, N::Int)
-  for i=1:length(f)
-    f.coeffs[i].N = N
-  end
-  return f
-end
-
-function Base.setprecision(f::Generic.Poly{qadic}, N::Int)
-  f = deepcopy(f)
-  for i=1:length(f)
-    f.coeffs[i].N = N
-  end
-  return f
-end
-
-
-function setprecision!(a::AbstractArray{qadic}, N::Int)
-  for x = a
-    setprecision!(x, N)
-  end
-end
-
-function Base.setprecision(a::AbstractArray{qadic}, N::Int)
-  return map(x->setprecision(x, N), a)
-end
-
-function setprecision!(a::Generic.MatSpaceElem{qadic}, N::Int)
-  setprecision!(a.entries, N)
-end
-
-function Base.setprecision(a::Generic.MatSpaceElem{qadic}, N::Int)
-  b = deepcopy(a)
-  setprecision!(b, N)
-  return B
-end
-
-function Hecke.trace(r::qadic)
-  t = base_ring(parent(r))()
-  ccall((:qadic_trace, :libflint), Nothing, (Ref{padic}, Ref{qadic}, Ref{FlintQadicField}), t, r, parent(r))
-  return t
-end
-
-function Hecke.norm(r::qadic)
-  t = base_ring(parent(r))()
-  ccall((:qadic_norm, :libflint), Nothing, (Ref{padic}, Ref{qadic}, Ref{FlintQadicField}), t, r, parent(r))
-  return t
-end
-
 #XXX: valuation(Q(0)) == 0 !!!!!
 function newton_lift(f::fmpz_poly, r::qadic)
   Q = parent(r)
@@ -149,74 +71,6 @@ function newton_lift(f::fmpz_poly, r::qadic)
     o = o*(2-qfs(r)*o)
   end
 end
-
-function Hecke.setcoeff!(x::fq_nmod, n::Int, u::UInt)
-  ccall((:nmod_poly_set_coeff_ui, :libflint), Nothing, 
-                (Ref{fq_nmod}, Int, UInt), x, n, u)
-end
-
-function Hecke.coeff(x::qadic, i::Int)
-  R = FlintPadicField(prime(parent(x)), parent(x).prec_max)
-  c = R()
-  ccall((:padic_poly_get_coeff_padic, :libflint), Nothing, 
-           (Ref{padic}, Ref{qadic}, Int, Ref{FlintQadicField}), c, x, i, parent(x))
-  return c         
-end
-
-function Hecke.setcoeff!(x::qadic, i::Int, y::padic)
-  ccall((:padic_poly_set_coeff_padic, :libflint), Nothing, 
-           (Ref{qadic}, Int, Ref{padic}, Ref{FlintQadicField}), x, i, y, parent(x))
-end
-
-function Hecke.setcoeff!(x::qadic, i::Int, y::UInt)
-  R = FlintPadicField(prime(parent(x)), parent(x).prec_max)
-  Y = R(fmpz(y))
-  ccall((:padic_poly_set_coeff_padic, :libflint), Nothing, 
-           (Ref{qadic}, Int, Ref{padic}, Ref{FlintQadicField}), x, i, Y, parent(x))
-end
-
-function Hecke.ResidueField(Q::FlintQadicField)
-  k = GF(Int(prime(Q)), degree(Q))[1]
-  pro = function(x::qadic)
-    v = valuation(x)
-    v < 0 && error("elt non integral")
-    v > 0 && return k(0)
-    z = k()
-    for i=0:degree(Q)
-      setcoeff!(z, i, UInt(lift(coeff(x, i))%prime(Q)))
-    end
-    return z
-  end
-  lif = function(x::fq_nmod)
-    z = Q()
-    for i=0:degree(Q)-1
-      setcoeff!(z, i, coeff(x, i))
-    end
-    return z
-  end
-  return k, MapFromFunc(pro, lif, Q, k)
-end
-
-function Hecke.ResidueField(Q::FlintPadicField)
-  k = GF(Int(prime(Q)))
-  pro = function(x::padic)
-    v = valuation(x)
-    v < 0 && error("elt non integral")
-    v > 0 && return k(0)
-    z = k(lift(x))
-    return z
-  end
-  lif = function(x::Hecke.gfp_elem)
-    z = Q(lift(x))
-    return z
-  end
-  return k, MapFromFunc(pro, lif, Q, k)
-end
-
-function Hecke.base_ring(Q::FlintQadicField)
-  return FlintPadicField(prime(Q), precision(Q))
-end
-base_field(Q::FlintQadicField) = base_ring(Q)
 
 function Hecke.roots(f::fmpz_poly, Q::FlintQadicField; max_roots::Int = degree(f))
   k, mk = ResidueField(Q)
@@ -531,19 +385,6 @@ function verify_gamma(a::Array{FacElem{nf_elem, AnticNumberField}, 1}, g::Array{
   return B > sum(x*x for x = b)
 end
 
-
-function Hecke.prime(R::PadicField, i::Int)
-  p = fmpz()
-  ccall((:padic_ctx_pow_ui, :libflint), Cvoid, (Ref{fmpz}, Int, Ref{PadicField}), p, i, R)
-  return p
-end
-
-function getUnit(a::padic)
-  u = fmpz()
-  ccall((:fmpz_set, :libflint), Cvoid, (Ref{fmpz}, Ref{Int}), u, a.u)
-  return u, a.v, a.N
-end
-
 function lift_reco(::FlintRationalField, a::padic; reco::Bool = false)
   if reco
     u, v, N = getUnit(a)
@@ -562,216 +403,8 @@ function lift_reco(::FlintRationalField, a::padic; reco::Bool = false)
   end
 end
 
-function Hecke.FlintZZ(x::Rational{Int})
-  @assert denominator(x) == 1
-  return fmpz(numerator(x))
-end
-
-import Base.*
-
-function *(A::fmpz_mat, B::MatElem{padic})
-  return matrix(base_ring(B), A) * B
-end
-
-Hecke.uniformizer(Q::FlintQadicField) = Q(prime(Q))
-Base.precision(Q::FlintQadicField) = Q.prec_max
-
-Hecke.uniformizer(Q::FlintPadicField) = Q(prime(Q))
-Base.precision(Q::FlintPadicField) = Q.prec_max
-
-function expand(a::qadic)
-  @hassert :qAdic 1 valuation(a-1)>0
-  i = 1
-  Q = parent(a)
-  pi = uniformizer(Q)
-  x = qadic[]
-  while true
-    b = divexact((a-1), pi)
-    b = setprecision(b, i)
-    push!(x, b)
-    b = setprecision(b, precision(Q))
-    a = a*inv(1+pi*b)
-    pi = pi^2
-    i = 2*i
-    if i > precision(Q)
-      return x
-    end
-  end
-end
-
 Hecke.nrows(A::Array{T, 2}) where {T} = size(A)[1]
 Hecke.ncols(A::Array{T, 2}) where {T} = size(A)[2]
-
-
-import Base.^
-^(a::qadic, b::qadic) = exp(b*log(a))
-^(a::padic, b::padic) = exp(b*log(a))
-
-################################################################################
-#
-# (q/p)adic integers
-# 
-# complete enough to support hnf
-################################################################################
-# CHECK precision!!!
-
-struct QadicRing{T} <: Generic.Ring
-  Q::T
-end
-
-function Base.show(io::IO, Q::QadicRing)
-  println("Integers of ", Q.Q)
-end
-
-function Hecke.ring_of_integers(Q::FlintQadicField)
-  return QadicRing{FlintQadicField}(Q)
-end
-#Hecke.integers(Q::FlintQadicField) = ring_of_integers(Q)
-
-function Hecke.ring_of_integers(Q::FlintPadicField)
-  return QadicRing{FlintPadicField}(Q)
-end
-#Hecke.integers(Q::FlintPadicField) = ring_of_integers(Q)
-
-struct QadicRingElem{S} <: RingElem
-  x::S
-  P::QadicRing
-  function QadicRingElem(a::qadic, P::QadicRing)
-    r = new{qadic}(a, P)
-  end
-  function QadicRingElem(a::padic, P::QadicRing)
-    r = new{padic}(a, P)
-  end
-end
-
-function Base.show(io::IO, a::QadicRingElem)
-  print(io, a.x)
-end
-  
-import Base.*, Base.==, Base.+, Base.inv, Hecke.divexact, Hecke.canonical_unit,
-       Base.-
-
-*(a::QadicRingElem, b::QadicRingElem) = QadicRingElem(a.x*b.x, a.P)
-+(a::QadicRingElem, b::QadicRingElem) = QadicRingElem(a.x+b.x, a.P)
--(a::QadicRingElem, b::QadicRingElem) = QadicRingElem(a.x-b.x, a.P)
--(a::QadicRingElem) = QadicRingElem(-a.x, a.P)
-^(a::QadicRingElem, b::QadicRingElem) = QadicRingElem(a.x^b.x, a.P)
-^(a::T, b::QadicRingElem{T}) where {T} = a^b.x
-
-function inv(a::QadicRingElem) 
-  valuation(a.x) == 0 || error("non unit")
-  return QadicRingElem(inv(a.x), a.P)
-end
-
-==(a::QadicRingElem, b::QadicRingElem) = a.x == b.x 
-
-function divexact(a::QadicRingElem, b::QadicRingElem)
-  @assert !iszero(b.x)
-  iszero(a) && return a
-  valuation(a.x) >= valuation(b.x) || error("division not exact")
-  return QadicRingElem(a.x//b.x, a.P)
-end
-
-function divrem(a::QadicRingElem, b::QadicRingElem)
-  if valuation(a.x) < valuation(b.x)
-    return setprecision(a.P(0), precision(a)), a 
-  end
-  q = divexact(a, b)
-  return q, a-q*b
-end
-
-function Base.div(a::QadicRingElem, b::QadicRingElem)
-  if valuation(a.x) < valuation(b.x)
-    return setprecision(a.P(0), precision(a))
-  end
-  q = divexact(a, b)
-  return q
-end
-
-Hecke.parent(a::QadicRingElem) = a.P
-Hecke.elem_type(::Type{QadicRing{FlintPadicField}}) = QadicRingElem{padic}
-Hecke.elem_type(::Type{QadicRing{FlintQadicField}}) = QadicRingElem{qadic}
-Hecke.parent_type(::Type{QadicRingElem{padic}}) = QadicRing{FlintPadicField}
-Hecke.parent_type(::Type{QadicRingElem{qadic}}) = QadicRing{FlintQadicField}
-
-Hecke.zero(Q::QadicRing) = QadicRingElem(Q.Q(0), Q)
-Hecke.one(Q::QadicRing) = QadicRingElem(Q.Q(1), Q)
-
-(Q::QadicRing)(a::qadic) = QadicRingElem(a, Q)
-(Q::QadicRing)(a::padic) = QadicRingElem(a, Q)
-(Q::QadicRing)(a::QadicRingElem) = QadicRingElem(a.x, a.P)
-(Q::QadicRing)(a::Int) = QadicRingElem(Q.Q(a), Q)
-(Q::QadicRing)() = QadicRingElem(Q.Q(), Q)
-(Q::FlintQadicField)(a::QadicRingElem{qadic}) = a.x
-(Q::FlintPadicField)(a::QadicRingElem{padic}) = a.x
-(Q::FlintQadicField)(a::padic) = Q(lift(a)) #TODO: do properly
-Hecke.valuation(a::QadicRingElem) = valuation(a.x)
-Hecke.isunit(a::QadicRingElem) = valuation(a) == 0
-function Base.deepcopy_internal(a::QadicRingElem, dict::IdDict)
-  return QadicRingElem(a.x, a.P)
-end
-function Hecke.canonical_unit(a::QadicRingElem)
-  iszero(a.x) && return setprecision(a.P(1), precision(a))
-  v = valuation(a.x)
-  return QadicRingElem(inv(a.x//prime(a.P.Q)^v), a.P)
-end
-
-function Hecke.gcdx(a::QadicRingElem, b::QadicRingElem)
-  if iszero(a)
-    c = canonical_unit(b)
-    return b*c, a, c
-  end
-  if iszero(b)
-    c = canonical_unit(a)
-    return a*c, c, b
-  end
-  if valuation(a.x) < valuation(b.x)
-    c = canonical_unit(a)
-    return a*c, c, setprecision(a.P(0), precision(a))
-  else
-    c = canonical_unit(b)
-    return b*c, setprecision(b.P(0), precision(b)), c
-  end
-end
-
-function Hecke.mul_red!(a::QadicRingElem, b::QadicRingElem, c::QadicRingElem, f::Bool = false)
-  return b*c
-end
-
-function Hecke.mul!(a::QadicRingElem, b::QadicRingElem, c::QadicRingElem)
-  return b*c
-end
-
-function Hecke.add!(a::QadicRingElem, b::QadicRingElem, c::QadicRingElem)
-  return b+c
-end
-
-function Hecke.addeq!(a::QadicRingElem, b::QadicRingElem)
-  return a+b
-end
-
-Base.iszero(a::QadicRingElem) = iszero(a.x)
-Base.isone(a::QadicRingElem) = isone(a.x)
-
-Base.precision(Q::QadicRing) = precision(Q.Q)
-Base.precision(a::QadicRingElem) = precision(a.x)
-function setprecision!(Q::QadicRing, n::Int) 
-  setprecision!(Q.Q, n)
-end
-
-function Base.setprecision(a::QadicRingElem, n::Int)
-  return a.P(setprecision(a.x, n))
-end
-
-function setprecision!(a::QadicRingElem, n::Int)
-  setprecision!(a.x, n)
-end
-
-function Base.setprecision(a::Generic.MatSpaceElem{QadicRingElem{qadic}}, n::Int)
-  return matrix(map(x -> setprecision(x, n), a.entries))
-end
-
-Hecke.base_ring(Q::QadicRing) = integers(base_ring(Q.Q))
 
 #########################
 #
@@ -1021,30 +654,6 @@ function completion(K::AnticNumberField, p::fmpz, i::Int)
   return parent(ca), MapFromFunc(inj, lif, K, parent(ca))
 end
 
-function defining_polynomial(Q::FlintQadicField, P::Hecke.Ring = base_ring(Q))
-  Pt, t = PolynomialRing(P, cached = false)
-  f = Pt()
-  for i=0:Q.len-1
-    j = unsafe_load(reinterpret(Ptr{Int}, Q.j), i+1)
-    a = fmpz()
-    ccall((:fmpz_set, :libflint), Nothing, (Ref{fmpz}, Int64), a, Q.a+i*sizeof(Ptr))
-    setcoeff!(f, j, P(a))
-  end
-  return f
-end
-
-function defining_polynomial(Q::FqNmodFiniteField, P::Hecke.Ring = GF(characteristic(Q)))
-  Pt, t = PolynomialRing(P, cached = false)
-  f = Pt()
-  for i=0:Q.len-1
-    j = unsafe_load(reinterpret(Ptr{Int}, Q.j), i+1)
-    a = fmpz()
-    ccall((:fmpz_set, :libflint), Nothing, (Ref{fmpz}, Int64), a, Q.a+i*sizeof(Ptr))
-    setcoeff!(f, j, P(a))
-  end
-  return f
-end
-
 function Base.round(::Type{fmpz}, a::fmpz, b::fmpz) 
   s = sign(a)
   as = abs(a)
@@ -1053,7 +662,42 @@ function Base.round(::Type{fmpz}, a::fmpz, b::fmpz)
 #  @assert r == round(fmpz, a//b)
   return r
 end
+
+function div_preinv(a::fmpz, b::fmpz, bi::Hecke.fmpz_preinvn_struct)
+  q = fmpz()
+  r = fmpz()
+  Hecke.fdiv_qr_with_preinvn!(q, r, a, b, bi)
+  return q
+end
+
+function Base.round(::Type{fmpz}, a::fmpz, b::fmpz, bi::Hecke.fmpz_preinvn_struct) 
+  s = sign(a)
+  as = abs(a)
+  r = s*div_preinv(2*as+b, 2*b, bi)
+#  global rnd = (a, b)
+#  @assert r == round(fmpz, a//b)
+  return r
+end
+
+function Base.round(::Type{fmpz}, a::fmpz, b::fmpz)
+  s = sign(a)
+  as = abs(a)
+  r = s*div(2*as+b, 2*b)
+#  global rnd = (a, b)
+#  @assert r == round(fmpz, a//b)
+  return r
+end
   
+
+function reco(a::fmpz, M, pM::Tuple{fmpz_mat, fmpz, Hecke.fmpz_preinvn_struct}, O)
+  m = matrix(FlintZZ, 1, degree(O), map(x -> round(fmpz, a*x, pM[2], pM[3]), pM[1][1, :]))*M
+  return a - O(collect(m))
+end
+
+function reco(a::fmpz, M, pM::Tuple{fmpz_mat, fmpz}, O)
+  m = matrix(FlintZZ, 1, degree(O), map(x -> round(fmpz, a*x, pM[2]), pM[1][1, :]))*M
+  return a - O(collect(m))
+end
 
 function reco(a::NfAbsOrdElem, M, pM)
   m = matrix(FlintZZ, 1, degree(parent(a)), coordinates(a))
@@ -1071,6 +715,14 @@ function reco(a::nf_elem, M, pM)
   m = matrix(FlintZZ, 1, degree(parent(a)), [FlintZZ(coeff(a, i)) for i=0:degree(parent(a))-1])
   m = m - matrix(FlintZZ, 1, degree(parent(a)), map(x -> round(fmpz, x//pM[2]), m*pM[1]))*M
   return parent(a)(parent(parent(a).pol)(collect(m)))
+end
+
+function myfactor(f::fmpz_poly, k::AnticNumberField)
+  return myfactor(change_base_ring(f, k))
+end
+
+function myfactor(f::fmpq_poly, k::AnticNumberField)
+  return myfactor(change_base_ring(f, k))
 end
 
 function myfactor(f::PolyElem{nf_elem})
@@ -1218,74 +870,7 @@ function zassenhaus(f::PolyElem{nf_elem}, P::NfOrdIdl; degset::Set{Int} = Set{In
 end
 
 ###############################################
-# generic for testing, used for qadics (and maybe padics
-# if one chooses a deg 1 prime in the factoring)
 
-#computes the top n coeffs of the product only
-function mulhigh_n(a::PolyElem{T}, b::PolyElem{T}, n::Int) where {T}
-  #sum a_i t^i and sum b_j t^j
-  #want (i,j) s.th. i+j >= deg a + deg b - n
-  r = parent(a)()
-  for i=max(degree(a)-n, 0):degree(a)
-    for j = max(degree(a) + degree(b) - n - i, 0):degree(b)
-      setcoeff!(r, i+j, coeff(r, i+j) + coeff(a, i)*coeff(b, j))
-    end
-  end
-  return r
-end
-
-function mulhigh_n(a::fmpz_poly, b::fmpz_poly, n::Int)
-  c = parent(a)()
-  #careful: as part of the interface, the coeffs 0 - (n-1) are random garbage
-  ccall((:fmpz_poly_mulhigh_n, :libflint), Nothing, (Ref{fmpz_poly}, Ref{fmpz_poly}, Ref{fmpz_poly}, Cint), c, a, b, n)
-  return c
-end
-function mulhigh(a::PolyElem{T}, b::PolyElem{T}, n::Int) where {T} 
-  return mulhigh_n(a, b, degree(a) + degree(b) - n)
-end
-
-#assuming b divides a, compute the last n coeffs of the quotient
-#will produce garbage otherwise
-#div(a, b) mod x^n
-function divexact_low(a::PolyElem{T}, b::PolyElem{T}, n::Int) where {T}
-  r = parent(a)()
-  a = truncate(a, n)
-  b = truncate(b, n)
-  for i=0:n-1
-    q = divexact(constant_coefficient(a), constant_coefficient(b))
-    setcoeff!(r, i, q)
-    a = shift_right(a-q*b, 1)
-    b = truncate(b, n-i-1)
-    #truncate both a and b to n-i-1 (for generic polys one could just change the length)
-  end
-  return r
-end
-
-#computes the top coeffs starting with x^n
-function divhigh(a::PolyElem{T}, b::PolyElem{T}, n0::Int) where {T}
-  r = parent(a)()
-  n = degree(a) - degree(b) - n0
-  Hecke.fit!(r, degree(a) - degree(b))
-  a = deepcopy(a)
-  k = degree(a) - n0
-  da = degree(a)
-  for i=0:n
-    if degree(a) < degree(b)
-      break
-    end
-    q = divexact(coeff(a, da), lead(b))
-    setcoeff!(r, da - degree(b), q)
-    for j=da:-1:max(k, da - degree(b))
-      setcoeff!(a, j, coeff(a, j)-q*coeff(b, j-da+degree(b)))
-    end
-    da -= 1
-#    a = a-q*shift_left(b, degree(a) - degree(b)) # inplace, one operation would be cool
-  end
-  Hecke.set_length!(r, Hecke.normalise(r, length(r) - 1))
-  return r
-end
-
-###############################################
 function cld_bound(f::PolyElem{nf_elem}, k::Array{Int, 1})
   @assert all(kk -> 0 <= kk < degree(f), k)
   Zx, x = PolynomialRing(FlintZZ, cached = false)
@@ -1330,7 +915,7 @@ function cld_data(H::Hensel, up_to::Int, from::Int, mC, Mi)
 
   M = zero_matrix(FlintZZ, length(lf), (1+up_to + N - from) * degree(k))
 
-  lf = [divexact_low(mullow(derivative(x), H.f, up_to), x, up_to) for x = lf]
+  lf = [Hecke.divexact_low(Hecke.mullow(derivative(x), H.f, up_to), x, up_to) for x = lf]
 
   NN = zero_matrix(FlintZZ, 1, degree(k))
   d = FlintZZ()
@@ -1346,7 +931,7 @@ function cld_data(H::Hensel, up_to::Int, from::Int, mC, Mi)
     end
   end
   lf = factor(H)
-  lf = [divhigh(mulhigh(derivative(x), H.f, from), x, from) for x = lf]
+  lf = [Hecke.divhigh(Hecke.mulhigh(derivative(x), H.f, from), x, from) for x = lf]
   for i=from:N-1
     for j=1:length(lf)
       c = preimage(mC, coeff(lf[j], i)) # should be an nf_elem
@@ -1373,7 +958,7 @@ mutable struct vanHoeijCtx
   H::Hensel
   pr::Int
   Ml::fmpz_mat
-  pMr::Tuple{fmpz_mat, fmpz}
+  pMr::Tuple{fmpz_mat, fmpz, Hecke.fmpz_preinvn_struct}
   pM::Tuple{fmpz_mat, fmpz}
   C::Union{FlintQadicField, FlintPadicField}
   P::NfOrdIdl
@@ -1386,11 +971,11 @@ function grow_prec!(vH::vanHoeijCtx, pr::Int)
   lift(vH.H, pr)
 
   vH.Ml = lll(basis_mat(vH.P^pr))
-  vH.pMr = pseudo_inv(vH.Ml)
-  F = FakeFmpqMat(vH.pMr)
+  pMr = pseudo_inv(vH.Ml)
+  F = FakeFmpqMat(pMr)
   #M * basis_mat(zk) is the basis wrt to the field
   #(M*B)^-1 = B^-1 * M^-1, so I need basis_mat_inv(zk) * pM
-  vH.pMr = (F.num, F.den)
+  vH.pMr = (F.num, F.den, Hecke.fmpz_preinvn_struct(2*F.den))
   F = basis_mat_inv(order(vH.P)) * F
   vH.pM = (F.num, F.den)
 end
@@ -1602,7 +1187,7 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 20)
           end
           @time g = prod(factor(vH.H)[v])
           if degree(P) == 1
-            @profile G = parent(f)([K(reco(order(P)(lift(coeff(g, l))), vH.Ml, vH.pMr)) for l=0:degree(g)])
+            @profile G = parent(f)([K(reco(lift(coeff(g, l)), vH.Ml, vH.pMr, order(P))) for l=0:degree(g)])
           else
             @time G = parent(f)([K(reco(order(P)(preimage(mC, coeff(g, l))), vH.Ml, vH.pMr)) for l=0:degree(g)])
           end
@@ -1648,19 +1233,6 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 20)
     b = [ceil(Int, degree(K)/2/degree(P)*(log2(c1*c2) + 2*nbits(x)+ prec_scale)) for x = b]
   end #the big while
 end
-
-function Hecke.mod_sym!(M::fmpz_mat, B::fmpz)
-  @assert !iszero(B)
-  ccall((:fmpz_mat_scalar_smod, :libflint), Nothing, (Ref{fmpz_mat}, Ref{fmpz_mat}, Ref{fmpz}), M, M, B)
-end
-Hecke.mod_sym!(M::fmpz_mat, B::Integer) = mod_sym!(M, fmpz(B))
-
-function Hecke.mod_sym(M::fmpz_mat, B::fmpz)
-  N = zero_matrix(FlintZZ, nrows(M), ncols(M))
-  ccall((:fmpz_mat_scalar_smod, :libflint), Nothing, (Ref{fmpz_mat}, Ref{fmpz_mat}, Ref{fmpz}), N, M, B)
-  return N
-end
-Hecke.mod_sym(M::fmpz_mat, B::Integer) = mod_sym(M, fmpz(B))
 
 function map!(f, M::fmpz_mat)
   for i=1:nrows(M)
