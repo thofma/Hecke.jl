@@ -82,14 +82,38 @@ end
   @test issnf(P)
   @test P.snf == fmpz[ 2 ]
   @test test_disc_log_picard(P, mP, O)
-  # Test the refined discrete logarithm
-  @test isdefined(mP, :betas)
   I = mP(P[1])
-  @test_throws ErrorException Hecke.principal_gen(I)
+  @test_throws ErrorException principal_gen(I)
   I2 = I^2
-  a = Hecke.principal_gen(I2)
+  a = principal_gen(I2)
   @test I2 == ideal(O, a)
   I = ideal(O, 7*one(O)) # not coprime to the conductor of O in the maximal order
-  a = Hecke.principal_gen(I)
+  a = principal_gen(I)
   @test I == ideal(O, a)
+  # Test the refined discrete logarithm
+  @test isdefined(mP, :betas)
+  I = rand(O, -5:5)*mP(P[1])
+  r, p = Hecke.refined_disc_log_picard_group(I, mP)
+  @test numerator(evaluate(r)*mP(P[1])) == I
+  @test p == P[1]
+end
+
+@testset "Unit groups of orders of algebras" begin
+
+  Qx, x = FlintQQ["x"]
+  f = x^3 - 12*x^2 - 6324*x + 459510
+  K, a = number_field(f, "a", cached = false)
+  OK = equation_order(K)
+  UK, mUK = unit_group(OK)
+
+  A = AlgAss(f)
+  OA = Order(A, basis(A))
+  UA, mUA = unit_group(OA)
+  @test issnf(UA)
+  @test UA.snf == fmpz[ 2, 0 ]
+  G, GtoUK = sub(UK, [ mUK\OK(K(coeffs(elem_in_algebra(mUA(UA[i]), copy = false), copy = false))) for i = 1:ngens(UA) ])
+  for i = 1:ngens(UK)
+    @test haspreimage(GtoUK, UK[i])[1]
+  end
+
 end

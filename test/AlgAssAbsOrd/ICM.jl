@@ -46,3 +46,47 @@ end
   @test length(icm) == 852
 
 end
+
+@testset "Conjugacy of integral matrices" begin
+
+  Zx, x = FlintZZ["x"]
+  f = x^3 - 4x^2 + 8x + 5
+
+  M = companion_matrix(f)
+  U = identity_matrix(FlintZZ, nrows(M))
+  for i = 1:nrows(M)
+    for j = i + 1:ncols(M)
+      U[i, j] = rand(-10:10)
+    end
+  end
+  N = U*M*inv(U)
+
+  b, V = isconjugate(M, N)
+  @test b == true
+  @test M == V*N*inv(V)
+
+  N = identity_matrix(FlintZZ, nrows(M))
+  b, V = isconjugate(M, N)
+  @test b == false
+
+  g = x^2 + 10x - 1
+  h = x^2 - x + 5
+
+  M = companion_matrix(f*g*h)
+  U = identity_matrix(FlintZZ, nrows(M))
+  for i = 1:nrows(M)
+    for j = i + 1:ncols(M)
+      U[i, j] = rand(-10:10)
+    end
+  end
+  N = U*M*inv(U)
+
+  b, V = isconjugate(M, N)
+  @test b == true
+  @test M == V*N*inv(V)
+
+  N = identity_matrix(FlintZZ, nrows(M))
+  b, V = isconjugate(M, N)
+  @test b == false
+
+end
