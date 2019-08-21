@@ -56,7 +56,7 @@ function ismonic(a::PolyElem)
 end
 
 @doc Markdown.doc"""
-  valence(f::PolyElem) -> RingElem
+    valence(f::PolyElem) -> RingElem
 
  The last non-zero coefficient of f
 """
@@ -71,15 +71,15 @@ function valence(f::PolyElem)
 end
 
 @doc Markdown.doc"""
-  leading_coefficient(f::PolyElem) -> RingElem
+    leading_coefficient(f::PolyElem) -> RingElem
 
  The last leading coefficient of f.
 """
 leading_coefficient(f::PolyElem) = lead(f)
 
 @doc Markdown.doc"""
-  trailing_coefficient(f::PolyElem) -> RingElem
-  constant_coefficient(f::PolyElem) -> RingElem
+    trailing_coefficient(f::PolyElem) -> RingElem
+    constant_coefficient(f::PolyElem) -> RingElem
 
  The constant coefficient of f.
 """
