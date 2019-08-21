@@ -222,22 +222,47 @@ function ideal_to_matrix(I::Union{AlgAssAbsOrdIdl, AlgAssAbsOrdFracIdl})
   return M.num
 end
 
+function ideal_to_matrix(I::Union{ NfAbsOrdIdl, NfOrdFracIdl })
+  O = order(I)
+  K = nf(O)
+  a = gen(K)
+  M = FakeFmpqMat(representation_matrix(a))
+  B = basis_mat(I, copy = false)*basis_mat(O, copy = false)
+  C = inv(B)
+  M = mul!(M, B, M)
+  M = mul!(M, M, C)
+  @assert isone(M.den)
+  return M.num
+end
+
 function matrix_to_ideal(O::AlgAssAbsOrd, M::fmpz_mat)
   f = charpoly(M)
   A = algebra(O)
   @assert dim(A) == degree(f) # Actually A == Q[x]/f
   fields_and_maps = as_number_fields(A)
   result = zeros(A, dim(A))
-  Mt = transpose(M)
   for (K, AtoK) in fields_and_maps
-    MK = matrix(K, Mt) - gen(K)*identity_matrix(K, dim(A))
+    MK = change_base_ring(M, K) - gen(K)*identity_matrix(K, dim(A))
     _, B = nullspace(MK)
-    d = lcm([ denominator(B[i, 1]) for i = 1:nrows(B) ]) # Reduce the size of the entries
-    B = d*B
     for j = 1:ncols(B)
       for i = 1:dim(A)
         result[i] += AtoK\B[i, j]
       end
+    end
+  end
+  return frac_ideal_from_z_gens(O, result), result
+end
+
+function matrix_to_ideal(O::NfAbsOrd, M::fmpz_mat)
+  f = charpoly(M)
+  K = nf(O)
+  @assert K.pol == change_base_ring(f, base_ring(K.pol))
+  result = zeros(K, degree(K))
+  MK = change_base_ring(M, K) - gen(K)*identity_matrix(K, degree(K))
+  _, B = nullspace(MK)
+  for j = 1:ncols(B)
+    for i = 1:degree(K)
+      result[i] += B[i, j]
     end
   end
   return frac_ideal_from_z_gens(O, result), result
@@ -264,19 +289,28 @@ function isconjugate(M::fmpz_mat, N::fmpz_mat)
     e != 1 ? error("The characteristic polynomial must be square-free") : nothing
     push!(fields, number_field(g)[1])
   end
+
+  if length(fields) == 1
+    return _isconjugate(equation_order(fields[1]), M, N)
+  end
+
   A, AtoK = direct_product(fields)
   O = _equation_order(A)
+  return _isconjugate(O, M, N)
+end
+
+function _isconjugate(O::Union{ NfAbsOrd, AlgAssAbsOrd }, M::fmpz_mat, N::fmpz_mat)
   I, basisI = matrix_to_ideal(O, M)
   J, basisJ = matrix_to_ideal(O, N)
-  t, a = isisomorphic(I, J)
+  t, a = isisomorphic(J, I)
+  @assert J == a*I
   if !t
     return false, zero_matrix(FlintZZ, nrows(M), ncols(M))
   end
 
-  aBJ = basis_mat([ a*b for b in basisJ ], FakeFmpqMat)
-  BI = basis_mat(basisI, FakeFmpqMat)
-  UU = aBJ*inv(BI)
+  aBI = basis_mat([ a*b for b in basisI ], FakeFmpqMat)
+  BJ = basis_mat(basisJ, FakeFmpqMat)
+  UU = aBI*inv(BJ)
   @assert isone(UU.den)
-  U = transpose(UU.num)
-  return true, U
+  return true, UU.num
 end
