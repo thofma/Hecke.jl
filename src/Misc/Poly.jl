@@ -1187,10 +1187,11 @@ function roots(f::fmpz_poly, ::FlintRationalField; max_roots::Int = degree(f))
   if degree(h) == 1
     return fmpq[-trailing_coefficient(h)//lead(h)]
   end
+  h = primpart(h)
 
   global p_start
   p = p_start
-  bd = 1+maximum(abs, coefficients(h)) # // lead(h)
+  bd = lead(h)+maximum(abs, coefficients(h))
   while true
     p = next_prime(p)
     k = GF(p)
@@ -1198,8 +1199,10 @@ function roots(f::fmpz_poly, ::FlintRationalField; max_roots::Int = degree(f))
     if !issquarefree(hp)
       continue
     end
-    Hp = factor_mod_pk(h, p, ceil(Int, log(bd)/log(p)))
-    r = fmpq[-trailing_coefficient(x) for x = keys(Hp) if degree(x) == 1]
+    k = ceil(Int, log(bd)/log(p))
+    Hp = factor_mod_pk(h, p, k)
+    pk = fmpz(p)^k
+    r = fmpq[mod_sym(-trailing_coefficient(x)*lead(h), pk)//lead(h) for x = keys(Hp) if degree(x) == 1]
     return [x for x = r if iszero(f(x)) ]  
   end
 end
@@ -1214,7 +1217,4 @@ function roots(f::fmpq_poly; max_roots::Int = degree(f))
   g = Zx(denominator(f)*f)
   return roots(g, FlintQQ)
 end
-
-
-
 
