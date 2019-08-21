@@ -814,6 +814,7 @@ end
 @doc Markdown.doc"""
     mod!(M::fmpz_mat, p::fmpz) 
 Reduces every entry modulo $p$ in-place, ie. applies the mod function to every entry.
+Positive residue system.
 """
 function mod!(M::fmpz_mat, p::fmpz)
   for i=1:nrows(M)
@@ -835,6 +836,26 @@ function mod(M::fmpz_mat, p::fmpz)
   return N
 end
 
+@doc Markdown.doc"""
+    mod!(M::fmpz_mat, p::fmpz) 
+Reduces every entry modulo $p$ in-place, into the symmetric residue system.
+"""
+function mod_sym!(M::fmpz_mat, B::fmpz)
+  @assert !iszero(B)
+  ccall((:fmpz_mat_scalar_smod, :libflint), Nothing, (Ref{fmpz_mat}, Ref{fmpz_mat}, Ref{fmpz}), M, M, B)
+end
+mod_sym!(M::fmpz_mat, B::Integer) = mod_sym!(M, fmpz(B))
+
+@doc Markdown.doc"""
+    mod(M::fmpz_mat, p::fmpz) -> fmpz_mat
+Reduces every entry modulo $p$ into the symmetric residue system.
+"""
+function mod_sym(M::fmpz_mat, B::fmpz)
+  N = zero_matrix(FlintZZ, nrows(M), ncols(M))
+  ccall((:fmpz_mat_scalar_smod, :libflint), Nothing, (Ref{fmpz_mat}, Ref{fmpz_mat}, Ref{fmpz}), N, M, B)
+  return N
+end
+mod_sym(M::fmpz_mat, B::Integer) = mod_sym(M, fmpz(B))
 ################################################################################
 #
 #  Concatenation of matrices
@@ -1702,3 +1723,5 @@ function charpoly(M::MatElem)
   kx, x = PolynomialRing(k, cached = false)
   return charpoly(kx, M)
 end
+
+

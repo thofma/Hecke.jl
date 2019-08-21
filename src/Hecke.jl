@@ -217,6 +217,10 @@ function __init__()
   global _get_automorphisms_nf_rel = t[1]
   global _set_automorphisms_nf_rel = t[2]
 
+  t = Hecke.create_accessors(AnticNumberField, Dict{Int, Tuple{qAdicRootCtx, Dict{nf_elem, Any}}}, get_handle())
+  global _get_nf_conjugate_data_qAdic = t[1]
+  global _set_nf_conjugate_data_qAdic = t[2]
+
 
   global R = _RealRing()
 
@@ -343,7 +347,7 @@ Base.adjoint(x) = transpose(x)
 #
 ################################################################################
 
-global VERSION_NUMBER = v"0.6.4"
+global VERSION_NUMBER = v"0.6.5"
 
 ################################################################################
 #
@@ -730,6 +734,7 @@ include("ModAlgAss.jl")
 include("AlgAss.jl")
 include("AlgAssAbsOrd.jl")
 include("AlgAssRelOrd.jl")
+include("LocalField.jl")
 
 ################################################################################
 #
