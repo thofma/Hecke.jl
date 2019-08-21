@@ -5,6 +5,7 @@ export induce_rational_reconstruction, induce_crt, root, roots,
        compositum
 
 add_verbose_scope(:PolyFactor)       
+add_assert_scope(:PolyFactor)       
 add_verbose_scope(:CompactPresentation)       
 add_assert_scope(:CompactPresentation)       
 
@@ -50,3 +51,4 @@ include("NfAbs/DiscriminantBounds.jl")
 include("NfAbs/Hilbert.jl")
 include("NfAbs/NormRelation.jl")
 include("NfAbs/Subfields.jl")
+include("NfAbs/PolyFact.jl")

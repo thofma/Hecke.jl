@@ -160,14 +160,21 @@ function show(io::IO, a::fmpz_poly_factor)
 end
 
 function show(io::IO, a::HenselCtx)
-  println("factorisation of $(a.f) modulo $(a.p)^$(a.N)")
+  println(io, "factorisation of $(a.f) modulo $(a.p)^$(a.N)")
+  if a.r == 1
+    println(io, "irreducible, $(a.f)")
+    return
+  end
   if a.N > 0
     d = factor_to_dict(a.LF)
-    println("currently: $d")
+    println(io, "currently: $d")
   end
 end
 
 function start_lift(a::HenselCtx, N::Int)
+  if a.r == 1
+    return
+  end
   a.prev = ccall((:_fmpz_poly_hensel_start_lift, :libflint), UInt, 
        (Ref{fmpz_poly_factor}, Ref{Int}, Ref{fmpz_poly_raw}, Ref{fmpz_poly_raw}, Ref{fmpz_poly}, Ref{Nemo.nmod_poly_factor}, Int),
        a.LF, a.link, a.v, a.w, a.f, a.lf, N)
@@ -175,6 +182,9 @@ function start_lift(a::HenselCtx, N::Int)
 end
 
 function continue_lift(a::HenselCtx, N::Int)
+  if a.r == 1
+    return
+  end
   a.prev = ccall((:_fmpz_poly_hensel_continue_lift, :libflint), Int, 
        (Ref{fmpz_poly_factor}, Ref{Int}, Ref{fmpz_poly_raw}, Ref{fmpz_poly_raw}, Ref{fmpz_poly}, UInt, UInt, Int, Ref{fmpz}),
        a.LF, a.link, a.v, a.w, a.f, a.prev, a.N, N, fmpz(a.p))
@@ -188,6 +198,9 @@ end
 """
 function factor_mod_pk(f::fmpz_poly, p::Int, k::Int)
   H = HenselCtx(f, fmpz(p))
+  if H.r == 1
+    return Dict(a.f => 1)
+  end
   start_lift(H, k)
   return factor_to_dict(H.LF)
 end
@@ -209,6 +222,9 @@ end
  Using the result of factor_mod_pk_init, return a factorisation modulo p^k
 """
 function factor_mod_pk(H::HenselCtx, k::Int)
+  if H.r == 1
+    return Dict(H.f => 1)
+  end
   @assert k>= H.N
   if H.N == 0
     start_lift(H, k)

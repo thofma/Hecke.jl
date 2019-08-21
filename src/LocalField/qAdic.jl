@@ -17,7 +17,6 @@ function Base.setprecision(q::padic, N::Int)
   return r
 end
 
-
 function setprecision!(q::qadic, N::Int)
   @assert N >= q.N
   q.N = N

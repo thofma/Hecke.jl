@@ -95,9 +95,11 @@ one(Q::QadicRing) = QadicRingElem(Q.Q(1), Q)
 (Q::FlintQadicField)(a::padic) = Q(lift(a)) #TODO: do properly
 valuation(a::QadicRingElem) = valuation(a.x)
 isunit(a::QadicRingElem) = valuation(a) == 0
+
 function Base.deepcopy_internal(a::QadicRingElem, dict::IdDict)
   return QadicRingElem(a.x, a.P)
 end
+
 function canonical_unit(a::QadicRingElem)
   iszero(a.x) && return setprecision(a.P(1), precision(a))
   v = valuation(a.x)
@@ -143,6 +145,7 @@ Base.isone(a::QadicRingElem) = isone(a.x)
 
 Base.precision(Q::QadicRing) = precision(Q.Q)
 Base.precision(a::QadicRingElem) = precision(a.x)
+
 function setprecision!(Q::QadicRing, n::Int) 
   setprecision!(Q.Q, n)
 end
