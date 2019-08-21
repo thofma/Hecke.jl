@@ -489,3 +489,42 @@ function resultant_mod(f::Generic.Poly{nf_elem}, g::Generic.Poly{nf_elem})
 end
 
 
+
+function landau_mignotte_bound(f::PolyElem{nf_elem})
+  Zx, x = PolynomialRing(FlintZZ, cached = false)
+  g = Zx()
+  for i=0:degree(f)
+    setcoeff!(g, i, Hecke.upper_bound(sqrt(t2(coeff(f, i))), fmpz))
+  end
+  b = fmpz()
+  ccall((:fmpz_poly_factor_mignotte, :libflint), Nothing, (Ref{fmpz}, Ref{fmpz_poly}), b, g)
+  return b
+end
+
+
+
+function cld_bound(f::PolyElem{nf_elem}, k::Array{Int, 1})
+  @assert all(kk -> 0 <= kk < degree(f), k)
+  Zx, x = PolynomialRing(FlintZZ, cached = false)
+  g = Zx()
+  for i=0:degree(f)
+    setcoeff!(g, i, Hecke.upper_bound(sqrt(t2(coeff(f, i))), fmpz))
+  end
+  bb = fmpz[]
+  for kk = k
+    b = FlintZZ()
+    ccall((:fmpz_poly_CLD_bound, :libflint), Nothing, (Ref{fmpz}, Ref{fmpz_poly}, Int64), b, g, kk)
+    push!(bb, b)
+  end
+  return bb
+end
+cld_bound(f::PolyElem{nf_elem}, k::Int) = cld_bound(f, [k])[1]
+
+function cld_bound(f::fmpz_poly, k::Int)
+  @assert 0 <= k < degree(f)
+  b = FlintZZ()
+  ccall((:fmpz_poly_CLD_bound, :libflint), Nothing, (Ref{fmpz}, Ref{fmpz_poly}, Int64), b, f, k)
+  return b
+end
+cld_bound(f::fmpz_poly, k::Array{Int, 1}) = map(x->cld_bound(f, x), k)
+
