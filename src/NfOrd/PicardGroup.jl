@@ -326,9 +326,17 @@ end
 function isprincipal_non_maximal(I::Union{ NfAbsOrdIdl, AlgAssAbsOrdIdl })
   # Main idea stolen from a Magma implementation by Stefano Marseglia.
   # We use the exact sequence
-  # 0 --> O^\times --> O_K^\times --> (O_K/F)^\times/(O/F)^\times --> Pic(O) --> Pic(O_K) --> 0
+  # 1 --> O^\times -(1)-> O_K^\times -(2)-> (O_K/F)^\times/(O/F)^\times
+  #      -(3)-> Pic(O) -(4)-> Pic(O_K) --> 1
   # where F is the conductor of O in O_K.
   # See W. Bley, M. Endres "Picard groups and refined discrete logarithm", p. 4.
+  # The idea is the following: Assume I + F = O and I*O_K = a*O_K for some a in O_K.
+  # Then a is in (O_K/F)^\times and we can look for a preimage under the map (2).
+  # If this does not exists, then the ideal is not in the kernel of map (3), so
+  # not trivial in Pic(O), so not a principal ideal.
+  # Otherwise let b in O_K^\times be such an preimage. Then c := a*b^{-1} is 1 in
+  # (O_K/F)^\times/(O/F)^\times and hence an element of (O/F)^\times, so of O.
+  # But I*O_K = c*O_K, as b is a unit of O_K, so I = c*O.
   O = order(I)
   if !isinvertible(I)[1]
     return false, O()
