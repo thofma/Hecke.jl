@@ -1105,31 +1105,6 @@ end
     There are also bounds on the coefficients which are sometimes tight  
 =#
 
-
-#=
-function roots(f::fmpz_poly)
-  g = gcd(f, derivative(f))
-  p = p_start
-  while true
-    p = next_prime(p)
-    R = GF(p)
-    Rx,x = PolynomialRing(R, cached = false)
-    gp = Rx(g)
-    if !issquarefree(gp)
-      continue
-    end
-    #TODO: try a few primes to find best (with fewest roots)
-    rp = roots(gp)
-    if length(rp) == 0
-      return []
-    end
-    
-  end
-  
-end
-
-=#
-
 #computes the top n coeffs of the product only
 function mulhigh_n(a::PolyElem{T}, b::PolyElem{T}, n::Int) where {T}
   #sum a_i t^i and sum b_j t^j
@@ -1193,4 +1168,53 @@ function divhigh(a::PolyElem{T}, b::PolyElem{T}, n0::Int) where {T}
   Hecke.set_length!(r, Hecke.normalise(r, length(r) - 1))
   return r
 end
+
+
+function roots(f::fmpz_poly, ::FlintRationalField; max_roots::Int = degree(f))
+  if degree(f) < 1
+    return fmpq[]
+  end
+  if degree(f) == 1
+    return fmpq[-trailing_coefficient(f)//lead(f)]
+  end
+
+  g = gcd(f, derivative(f))
+  if isone(g)
+    h = f
+  else
+    h = divexact(f, g)
+  end
+  if degree(h) == 1
+    return fmpq[-trailing_coefficient(h)//lead(h)]
+  end
+
+  global p_start
+  p = p_start
+  bd = 1+maximum(abs, coefficients(h)) # // lead(h)
+  while true
+    p = next_prime(p)
+    k = GF(p)
+    hp = change_base_ring(h, k)
+    if !issquarefree(hp)
+      continue
+    end
+    Hp = factor_mod_pk(h, p, ceil(Int, log(bd)/log(p)))
+    r = fmpq[-trailing_coefficient(x) for x = keys(Hp) if degree(x) == 1]
+    return [x for x = r if iszero(f(x)) ]  
+  end
+end
+
+function roots(f::fmpz_poly; max_roots::Int = degree(f))
+  r = roots(f, FlintQQ, max_roots = max_roots)
+  return fmpz[FlintZZ(x) for x = r if denominator(x) == 1]
+end
+
+function roots(f::fmpq_poly; max_roots::Int = degree(f))
+  Zx, x = PolynomialRing(FlintZZ, cached = false)
+  g = Zx(denominator(f)*f)
+  return roots(g, FlintQQ)
+end
+
+
+
 
