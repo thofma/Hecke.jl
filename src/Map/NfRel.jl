@@ -221,7 +221,6 @@ function NfRelToNfRelMor(K::NfRel{nf_elem}, L::NfRel{nf_elem}, A::NfToNfMor, a::
   return z
 end
 
-
 function NfRelToNfRelMor(K::NfRel{nf_elem}, L::NfRel{nf_elem}, a::NfRelElem{nf_elem})
   function image(x::NfRelElem{nf_elem})
     # x is an element of K
@@ -242,7 +241,7 @@ end
 
 id_hom(K::NfRel) = NfRelToNfRelMor(K, K, gen(K))
 
-morphism_type(::Type{NfRel{T}}) where {T} = NfRelToNfRelMor{T}
+morphism_type(::Type{NfRel{T}}) where {T} = NfRelToNfRelMor{T, T}
 
 function ^(f::NfRelToNfRelMor, b::Int)
   K = domain(f)
