@@ -43,7 +43,7 @@ function Base.show(io::IO, C::HenselCtxQadic)
   println(io, "Lifting tree for $(C.f), with $(C.n) factors, currently up precision $(valuation(C.p))")
 end
 
-function Hecke.lift(C::HenselCtxQadic, mx::Int = minimum(precision, coefficients(C.f)))
+function lift(C::HenselCtxQadic, mx::Int = minimum(precision, coefficients(C.f)))
   p = C.p
   N = valuation(p)
 #  @show map(precision, coefficients(C.f)), N, precision(parent(p))
@@ -93,18 +93,18 @@ function Hecke.lift(C::HenselCtxQadic, mx::Int = minimum(precision, coefficients
   end
 end
 
-function Hecke.factor(C::HenselCtxQadic)
+function factor(C::HenselCtxQadic)
   return C.lf[1:C.n]
 end
 
-function Hecke.precision(C::HenselCtxQadic)
+function precision(C::HenselCtxQadic)
   return valuation(C.p)
 end
 
 # interface to use Bill's Z/p^k lifting code. same algo as above, but 
 # tighter implementation
 mutable struct HenselCtxPadic <: Hensel
-  X::Hecke.HenselCtx
+  X::HenselCtx
   f::PolyElem{padic}
   function HenselCtxPadic(f::PolyElem{padic})
     r = new()
@@ -114,20 +114,20 @@ mutable struct HenselCtxPadic <: Hensel
     for i=0:degree(f)
       setcoeff!(ff, i, lift(coeff(f, i)))
     end
-    r.X = Hecke.HenselCtx(ff, prime(base_ring(f)))
-    Hecke.start_lift(r.X, 1)
+    r.X = HenselCtx(ff, prime(base_ring(f)))
+    start_lift(r.X, 1)
     return r
   end
 end
 
-function Hecke.lift(C::HenselCtxPadic, mx::Int) 
+function lift(C::HenselCtxPadic, mx::Int) 
   for i=0:degree(C.f)
     setcoeff!(C.X.f, i, lift(coeff(C.f, i)))
   end
-  Hecke.continue_lift(C.X, mx)
+  continue_lift(C.X, mx)
 end
 
-function Hecke.factor(C::HenselCtxPadic)
+function factor(C::HenselCtxPadic)
   res =  typeof(C.f)[]
   Zx = PolynomialRing(FlintZZ, cached = false)[1]
   h = Zx()
@@ -135,7 +135,7 @@ function Hecke.factor(C::HenselCtxPadic)
   for i = 1:C.X.LF._num #from factor_to_dict
     #cannot use factor_to_dict as the order will be random (hashing!)
     g = parent(C.f)()
-    ccall((:fmpz_poly_set, :libflint), Nothing, (Ref{fmpz_poly}, Ref{Hecke.fmpz_poly_raw}), h, C.X.LF.poly+(i-1)*sizeof(Hecke.fmpz_poly_raw))
+    ccall((:fmpz_poly_set, :libflint), Nothing, (Ref{fmpz_poly}, Ref{fmpz_poly_raw}), h, C.X.LF.poly+(i-1)*sizeof(fmpz_poly_raw))
     for j=0:degree(h)
       setcoeff!(g, j, Qp(coeff(h, j)))
     end
@@ -144,45 +144,55 @@ function Hecke.factor(C::HenselCtxPadic)
   return res
 end
 
-function Hecke.precision(C::HenselCtxPadic)
+function precision(C::HenselCtxPadic)
   return Int(C.X.N)
 end
 
-function Hecke.precision(H::Hecke.HenselCtx)
+function precision(H::HenselCtx)
   return Int(H.N)
 end
 
-function Hecke.prime(H::Hecke.HenselCtx)
+function prime(H::HenselCtx)
   return Int(H.p)
 end
 
-function div_preinv(a::fmpz, b::fmpz, bi::Hecke.fmpz_preinvn_struct)
+function div_preinv(a::fmpz, b::fmpz, bi::fmpz_preinvn_struct)
   q = fmpz()
   r = fmpz()
-  Hecke.fdiv_qr_with_preinvn!(q, r, a, b, bi)
+  fdiv_qr_with_preinvn!(q, r, a, b, bi)
   return q
 end
 
-function Base.round(::Type{fmpz}, a::fmpz, b::fmpz, bi::Hecke.fmpz_preinvn_struct) 
+@doc Markdown.doc"""
+    round(::fmpz, a::fmpz, b::fmpz, bi::fmpz) -> fmpz
+
+Computes {{{round(a//b)}}} using the pre-inverse of {{{2b}}}    
+"""
+function Base.round(::Type{fmpz}, a::fmpz, b::fmpz, bi::fmpz_preinvn_struct)
   s = sign(a)
   as = abs(a)
   r = s*div_preinv(2*as+b, 2*b, bi)
-#  global rnd = (a, b)
+  @hassert :PolyFactor 1 abs(r - a//b) <= 1//2
 #  @assert r == round(fmpz, a//b)
   return r
 end
 
+@doc Markdown.doc"""
+    round(::fmpz, a::fmpz, b::fmpz) -> fmpz
+
+Computes {{{round(a//b)}}}.
+"""
 function Base.round(::Type{fmpz}, a::fmpz, b::fmpz)
   s = sign(a)
   as = abs(a)
   r = s*div(2*as+b, 2*b)
-#  global rnd = (a, b)
 #  @assert r == round(fmpz, a//b)
   return r
 end
   
-
-function reco(a::fmpz, M, pM::Tuple{fmpz_mat, fmpz, Hecke.fmpz_preinvn_struct}, O)
+#TODO: think about computing pM[1][1,:]//pM[2] as a "float" approximation
+#      to save on multiplications
+function reco(a::fmpz, M, pM::Tuple{fmpz_mat, fmpz, fmpz_preinvn_struct}, O)
   m = matrix(FlintZZ, 1, degree(O), map(x -> round(fmpz, a*x, pM[2], pM[3]), pM[1][1, :]))*M
   return a - O(collect(m))
 end
@@ -198,18 +208,14 @@ function reco(a::NfAbsOrdElem, M, pM)
   return parent(a)(collect(m))
 end
 
-function reco_inv(a::NfAbsOrdElem, M, pM)
-  m = matrix(FlintZZ, 1, degree(parent(a)), coordinates(a))
-  m = m - matrix(FlintZZ, 1, degree(parent(a)), map(x -> round(fmpz, x//pM[2]), m*pM[1]))*M
-  return parent(a)(collect(m*pM[1]))
-end
 
-function reco(a::nf_elem, M, pM)
-  m = matrix(FlintZZ, 1, degree(parent(a)), [FlintZZ(coeff(a, i)) for i=0:degree(parent(a))-1])
-  m = m - matrix(FlintZZ, 1, degree(parent(a)), map(x -> round(fmpz, x//pM[2]), m*pM[1]))*M
-  return parent(a)(parent(parent(a).pol)(collect(m)))
-end
+@doc Markdown.doc"""
+    factor_new(f::PolyElem{nf_elem}) -> Array{PolyElem{nf_elem}, 1}
 
+Direct factorisation over a number field, using either Zassenhaus' approach
+with the potentially exponential recombination or a van Hoeij like approach using LLL.
+The decision is based on the number of local factors.
+"""
 function factor_new(f::PolyElem{nf_elem})
   k = base_ring(f)
   zk = maximal_order(k)
@@ -221,7 +227,7 @@ function factor_new(f::PolyElem{nf_elem})
   s = Set{Int}()
   while true
     p = next_prime(p)
-    if isindex_divisor(zk, p)
+    if isindex_divisor(zk, p) || iszero(discriminant(zk) % p) 
       continue
     end
     P = prime_decomposition(zk, p, 1)
@@ -229,7 +235,7 @@ function factor_new(f::PolyElem{nf_elem})
       continue
     end
     F, mF = ResidueField(zk, P[1][1])
-    mF = Hecke.extend(mF, k)
+    mF = extend(mF, k)
     fp = change_base_ring(f, mF)
     if degree(fp) < degree(f)
       continue
@@ -270,14 +276,23 @@ function factor_new(f::PolyElem{nf_elem})
   end
 end
 
+@doc Markdown.doc"""
+    zassenhaus(f::PolyElem{nf_elem}, P::NfOrdIdl; degset::Set{Int} = Set{Int}(collect(1:degree(f)))) -> Array{PolyElem{nf_elem}, 1}
+
+Zassenhaus' factoring algorithm over an absolute simple field. Given a prime ideal $P$ which
+has to be an unramified non-index divisor, a factorisation of $f$ in the $P$-adic completion
+is computed. In the last step, all combinations of the local factors are tried to find the 
+correct factorisation.
+$f$ needs to be square-free and square-free modulo $P$ as well.
+"""
 function zassenhaus(f::PolyElem{nf_elem}, P::NfOrdIdl; degset::Set{Int} = Set{Int}(collect(1:degree(f))))
   @vprint :PolyFactor 1 "Using (relative) Zassenhaus\n"
 
   K = base_ring(parent(f))
   C, mC = completion(K, P)
 
-  b = Hecke.landau_mignotte_bound(f)*upper_bound(sqrt(t2(lead(f))), fmpz)
-  c1, c2 = Hecke.norm_change_const(order(P))
+  b = landau_mignotte_bound(f)*upper_bound(sqrt(t2(lead(f))), fmpz)
+  c1, c2 = norm_change_const(order(P))
   N = ceil(Int, degree(K)/2/degree(P)*(log2(c1*c2) + 2*nbits(b)))
   @vprint :PolyFactor 1 "using a precision of $N\n"
 
@@ -319,14 +334,14 @@ function zassenhaus(f::PolyElem{nf_elem}, P::NfOrdIdl; degset::Set{Int} = Set{In
   used = empty(S)
   res = typeof(f)[]
   for d = 1:length(S)
-    for s = Hecke.subsets(S, d)
+    for s = subsets(S, d)
       if length(Base.intersect(used, s)) > 0 
-        println("re-using data")
+#        println("re-using data")
         continue
       end
       #TODO: test constant term first, possibly also trace + size
       g = prod(s)
-      g = change_base_ring(g, x->K(reco(zk(lead(f)*x), M, pM)))*(1//lead(f))
+      g = change_base_ring(g, x->K(reco(zk(lead(f)*x), M, pM)), parent(f))*(1//lead(f))
       if iszero(rem(f, g))
         push!(res, g)
         used = union(used, s)
@@ -334,7 +349,7 @@ function zassenhaus(f::PolyElem{nf_elem}, P::NfOrdIdl; degset::Set{Int} = Set{In
           return res
         end
       else
-        println("reco failed")
+  #      println("reco failed")
       end
     end
   end
@@ -342,8 +357,11 @@ function zassenhaus(f::PolyElem{nf_elem}, P::NfOrdIdl; degset::Set{Int} = Set{In
 end
 
 ###############################################
-Base.log2(a::fmpz) = log2(BigInt(a))
+Base.log2(a::fmpz) = log2(BigInt(a)) # stupid: there has to be faster way
 
+#given the local factorisation in H, find the cld, the Coefficients of the Logarithmic
+#Derivative: a factor g of f is mapped to g'*f/g
+#Only the coefficients 0:up_to and from:degree(f)-1 are computed
 function cld_data(H::Hensel, up_to::Int, from::Int, mC, Mi, sc::nf_elem)
   lf = factor(H)
   a = preimage(mC, zero(codomain(mC)))
@@ -355,7 +373,7 @@ function cld_data(H::Hensel, up_to::Int, from::Int, mC, Mi, sc::nf_elem)
 
   M = zero_matrix(FlintZZ, length(lf), (1+up_to + N - from) * degree(k))
 
-  lf = [Hecke.divexact_low(Hecke.mullow(derivative(x), H.f, up_to), x, up_to) for x = lf]
+  lf = [divexact_low(mullow(derivative(x), H.f, up_to), x, up_to) for x = lf]
 
   NN = zero_matrix(FlintZZ, 1, degree(k))
   d = FlintZZ()
@@ -372,7 +390,7 @@ function cld_data(H::Hensel, up_to::Int, from::Int, mC, Mi, sc::nf_elem)
     end
   end
   lf = factor(H)
-  lf = [Hecke.divhigh(Hecke.mulhigh(derivative(x), H.f, from), x, from) for x = lf]
+  lf = [divhigh(mulhigh(derivative(x), H.f, from), x, from) for x = lf]
   for i=from:N-1
     for j=1:length(lf)
       c = sc * preimage(mC, coeff(lf[j], i)) # should be an nf_elem
@@ -391,7 +409,7 @@ mutable struct vanHoeijCtx
   H::Hensel
   pr::Int
   Ml::fmpz_mat
-  pMr::Tuple{fmpz_mat, fmpz, Hecke.fmpz_preinvn_struct}
+  pMr::Tuple{fmpz_mat, fmpz, fmpz_preinvn_struct}
   pM::Tuple{fmpz_mat, fmpz}
   C::Union{FlintQadicField, FlintPadicField}
   P::NfOrdIdl
@@ -400,6 +418,8 @@ mutable struct vanHoeijCtx
   end
 end
 
+#increase the precision of the local data, i.e lift the factorisation and
+#the LLL_basis of the ideal
 function grow_prec!(vH::vanHoeijCtx, pr::Int)
   lift(vH.H, pr)
 
@@ -408,14 +428,24 @@ function grow_prec!(vH::vanHoeijCtx, pr::Int)
   F = FakeFmpqMat(pMr)
   #M * basis_mat(zk) is the basis wrt to the field
   #(M*B)^-1 = B^-1 * M^-1, so I need basis_mat_inv(zk) * pM
-  vH.pMr = (F.num, F.den, Hecke.fmpz_preinvn_struct(2*F.den))
+  vH.pMr = (F.num, F.den, fmpz_preinvn_struct(2*F.den))
   F = basis_mat_inv(order(vH.P)) * F
   vH.pM = (F.num, F.den)
 end
 
 
+@doc Markdown.doc"""
+    van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 20) -> Array{PolyElem{nf_elem}, 1}
+
+A van Hoeij-like factorisation over an absolute simple number field, using the factorisation in the
+$P$-adic completion where $P$ has to be an unramified non-index divisor and the square-free $f$ has 
+to be square-free mod $P$ as well.
+
+Approach is taken from Hart, Novacin, van Hoeij in ISSAC.
+"""
 function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 20)
   @vprint :PolyFactor 1 "Using (relative) van Hoeij\n"
+
   K = base_ring(parent(f))
   C, mC = completion(K, P)
 
@@ -442,11 +472,11 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 20)
   up_to = min(up_to, N)
   from = min(from, N)
   from = max(up_to, from)
-  b = Hecke.cld_bound(f, vcat(0:up_to-1, from:N-1)) .* upper_bound(sqrt(t2(lead(f))), fmpz)
+  b = cld_bound(f, vcat(0:up_to-1, from:N-1)) .* upper_bound(sqrt(t2(lead(f))), fmpz)
 
   # from Fieker/Friedrichs, still wrong here
   # needs to be larger than anticipated...
-  c1, c2 = Hecke.norm_change_const(order(P))
+  c1, c2 = norm_change_const(order(P))
   b = [ceil(Int, degree(K)/2/degree(P)*(log2(c1*c2) + 2*nbits(x)+ prec_scale)) for x = b]
   @vprint :PolyFactor 2 "using CLD precsion bounds ", b
 
@@ -457,7 +487,11 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 20)
   while true #the main loop
     #find some prec
     #to start with, I want at least half of the CLDs to be useful
-    i= sort(b)[div(length(b)+1, 2)]
+    if length(b) == degree(f)
+      i = maximum(b) + 100
+    else
+      i= sort(b)[div(length(b)+1, 2)]
+    end
     @vprint :PolyFactor 1 "setting prec to $i, and lifting the info ...\n"
     setprecision!(codomain(mC), i)
     if degree(P) == 1
@@ -552,8 +586,8 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 20)
       i = findfirst(x->x == n, have) #new data will be in block i of C
       @vprint :PolyFactor 2 "trying to use coeff $n which is $i\n"
       if b[i] > precision(codomain(mC))
-        @show "not enough precisino for CLD ", i
-        error()
+        @show "not enough precision for CLD ", i,b, precision(codomain(mC))
+#        error()
         continue
       end
       sz = floor(Int, degree(K)*av_bits/degree(P) - b[i])
@@ -606,16 +640,14 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 20)
 #        display(d)
         for v = values(d)
           #trivial test:
-          if false # does not work with non-monics....
+          if ismonic(f) #don't know what to do for non-monics
             a = prod(map(constant_coefficient, factor(vH.H)[v])) 
             if degree(P) == 1
-              A = K(reco(lead(f)*order(P)(lift(a)), vH.Ml, vH.pMr))
+              A = K(reco(order(P)(lift(a)), vH.Ml, vH.pMr))
             else
-              A = K(reco(lead(f)*order(P)(preimage(mC, a)), vH.Ml, vH.pMr))
+              A = K(reco(order(P)(preimage(mC, a)), vH.Ml, vH.pMr))
             end
-            A = A//lead(f)
             if denominator(divexact(constant_coefficient(f), A), order(P)) != 1
-              @show :damn
               push!(fail, v)
               if length(fail) > 1
                 break
@@ -632,7 +664,6 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 20)
           G *= 1//lead(f)
 
           if !iszero(rem(f, G))
-            @show :damn2
             push!(fail, v)
             if length(fail) > 1
               break
@@ -666,7 +697,7 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 20)
     end
     used = deepcopy(really_used)
 
-    b = Hecke.cld_bound(f, vcat(0:up_to-1, from:N-1)) .* upper_bound(sqrt(t2(lead(f))), fmpz)
+    b = cld_bound(f, vcat(0:up_to-1, from:N-1)) .* upper_bound(sqrt(t2(lead(f))), fmpz)
 
     # from Fieker/Friedrichs, still wrong here
     # needs to be larger than anticipated...
@@ -688,7 +719,7 @@ end
 # power series over finite fields are sub-par...or at least this usage
 # fixed "most" of it...
 function norm_mod(f::PolyElem{nf_elem}, Zx)
-  p = Hecke.p_start
+  p = p_start
   K = base_ring(f)
 
   g = Zx(0)
@@ -698,8 +729,8 @@ function norm_mod(f::PolyElem{nf_elem}, Zx)
     p = next_prime(p)
     k = GF(p)
     me = modular_init(K, p)
-    t = Hecke.modular_proj(f, me)
-    tt = lift(Zx, Hecke.power_sums_to_polynomial(sum(map(x -> map(y -> k(coeff(trace(y), 0)), Hecke.polynomial_to_power_sums(x, degree(f)*degree(K))), t))))
+    t = modular_proj(f, me)
+    tt = lift(Zx, power_sums_to_polynomial(sum(map(x -> map(y -> k(coeff(trace(y), 0)), polynomial_to_power_sums(x, degree(f)*degree(K))), t))))
     prev = g
     if isone(d)
       g = tt
