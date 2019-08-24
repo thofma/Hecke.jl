@@ -212,12 +212,12 @@ function mult_syzygies_units(A::Array{FacElem{nf_elem, AnticNumberField}, 1})
   r = r1+r2 -1
   n = degree(K)
   C = qAdicConj(K, p)
-  la = conjugates_log(A[1], C, prec)
+  la = matrix(conjugates_log(A[1], C, prec, all = false, flat = true))'
   lu = zero_matrix(base_ring(la), 0, n)
   uu = []
   for a = A
     while true
-      @vtime :qAdic 1 la = conjugates_log(a, C, prec)
+      @vtime :qAdic 1 la = matrix(conjugates_log(a, C, prec, all = false, flat = true))'
       if iszero(la)
         @vtime :qAdic 1 @hassert :qAdic 1 verify_gamma([a], [fmpz(1)], fmpz(p)^prec)
         @vprint :qAdic 1 println("torsion found")
@@ -248,7 +248,7 @@ function mult_syzygies_units(A::Array{FacElem{nf_elem, AnticNumberField}, 1})
           if y == nothing
             prec *= 2
             @vprint :qAdic 1  "increase prec to ", prec
-            lu = vcat([conjugates_log(x, C, prec) for x = u])
+            lu = matrix([conjugates_log(x, C, prec, all = false, flat = true) for x = u])'
             break
           end
           push!(s, y)
@@ -262,7 +262,7 @@ function mult_syzygies_units(A::Array{FacElem{nf_elem, AnticNumberField}, 1})
         @time if !verify_gamma(push!(copy(u), a), gamma, fmpz(p)^prec)
           prec *= 2
           @vprint :qAdic 1 "increase prec to ", prec
-          lu = vcat([conjugates_log(x, C, prec) for x = u])
+          lu = matrix([conjugates_log(x, C, prec, all = false, flat = true) for x = u])'
           continue
         end
         @assert length(gamma) == length(u)+1
