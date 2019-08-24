@@ -185,6 +185,9 @@ function continue_lift(a::HenselCtx, N::Int)
   if a.r == 1
     return
   end
+  if a.N >= N 
+    return
+  end
   a.prev = ccall((:_fmpz_poly_hensel_continue_lift, :libflint), Int, 
        (Ref{fmpz_poly_factor}, Ref{Int}, Ref{fmpz_poly_raw}, Ref{fmpz_poly_raw}, Ref{fmpz_poly}, UInt, UInt, Int, Ref{fmpz}),
        a.LF, a.link, a.v, a.w, a.f, a.prev, a.N, N, fmpz(a.p))
@@ -1180,6 +1183,10 @@ function divhigh(a::PolyElem{T}, b::PolyElem{T}, n0::Int) where {T}
     end
     da -= 1
 #    a = a-q*shift_left(b, degree(a) - degree(b)) # inplace, one operation would be cool
+  end
+  if iszero(r)
+    #set_length(, -1) fails
+    return r
   end
   Hecke.set_length!(r, Hecke.normalise(r, length(r) - 1))
   return r
