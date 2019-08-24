@@ -240,6 +240,35 @@ function conjugates_log(a::FacElem{nf_elem, AnticNumberField}, C::qAdicConj, n::
 end
 
 
+function special_gram(m::Array{Array{qadic, 1}, 1})
+  g = Array{padic, 1}[]
+  for i = m
+    r = padic[]
+    for j = m
+      k = 1
+      S = 0
+      while k <= length(i)
+        s = i[k] * j[k]
+        for l = 1:degree(parent(s))-1
+          s += i[k+l] * j[k+l]
+        end
+        S += coeff(s, 0)
+        @assert s == coeff(s, 0)
+        k += degree(parent(s))
+      end
+      push!(r, S)
+    end
+    push!(g, r)
+  end
+  return g
+end
+
+function special_gram(m::Array{Array{padic, 1}, 1})
+  n = matrix(m)
+  n = n'*n
+  return [[n[i,j] for j=1:ncols(n)] for i = 1:nrows(n)]
+end
+
 @doc Markdown.doc"""
     regulator(u::Array{T, 1}, C::qAdicConj, n::Int = 10; flat::Bool = true) where {T<: Union{nf_elem, FacElem{nf_elem, AnticNumberField}}}
     regulator(K::AnticNumberField, C::qAdicConj, n::Int = 10; flat::Bool = true)
@@ -252,8 +281,7 @@ In either case, Leopold's conjectue states that the regulator is zero iff the un
 """
 function regulator(u::Array{T, 1}, C::qAdicConj, n::Int = 10; flat::Bool = true) where {T<: Union{nf_elem, FacElem{nf_elem, AnticNumberField}}}
   c = map(x -> conjugates_log(x, C, n, all = !flat, flat = flat), u)
-  m = matrix(c)
-  return det(m'*m)
+  return det(matrix(special_gram(c)))
 end
 
 function regulator(K::AnticNumberField, C::qAdicConj, n::Int = 10; flat::Bool = false)
