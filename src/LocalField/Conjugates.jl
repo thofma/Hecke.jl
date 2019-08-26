@@ -315,7 +315,7 @@ function regulator_iwasawa(K::AnticNumberField, C::qAdicConj, n::Int = 10)
   return regulator_iwasawa(maximal_order(K), C, n)
 end
 
-function regulator_iwasawa(R::NfAbsOrd, C:qAdicConj, n::Int = 10)
+function regulator_iwasawa(R::NfAbsOrd, C::qAdicConj, n::Int = 10)
   @assert istotally_real(nf(R))
   u, mu = unit_group_fac_elem(R)
   return regulator_iwasawa([mu(u[i]) for i=2:ngens(u)], C, n)
