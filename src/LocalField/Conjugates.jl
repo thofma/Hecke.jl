@@ -1,4 +1,4 @@
-export completion
+export completion, qAdicConj
 
 #XXX: valuation(Q(0)) == 0 !!!!!
 function newton_lift(f::fmpz_poly, r::qadic)
