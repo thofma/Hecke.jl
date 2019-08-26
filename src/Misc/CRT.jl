@@ -97,17 +97,17 @@ function crt!(res::T, b::Array{T, 1}, a::crt_env{T}) where T
   bn = div(a.n, 2)
   if isodd(a.n)
     @inbounds zero!(a.tmp[1])
-    @inbounds add!(a.tmp[1], a.tmp[1], b[end])
+    @inbounds a.tmp[1] = add!(a.tmp[1], a.tmp[1], b[end])
     off = 1
   else
     off = 0
   end
 
   for i=1:bn
-    @inbounds mul!(a.t1, b[2*i-1], a.id[2*i-1])
-    @inbounds mul!(a.t2, b[2*i], a.id[2*i])
-    @inbounds add!(a.tmp[i+off], a.t1, a.t2)
-    @inbounds rem!(a.tmp[i+off], a.tmp[i+off], a.pr[a.n+i])
+    @inbounds a.t1 = mul!(a.t1, b[2*i-1], a.id[2*i-1])
+    @inbounds a.t2 = mul!(a.t2, b[2*i], a.id[2*i])
+    @inbounds a.tmp[i+off] = add!(a.tmp[i+off], a.t1, a.t2)
+    @inbounds a.tmp[i+off] = rem!(a.tmp[i+off], a.tmp[i+off], a.pr[a.n+i])
   end
 
   if isodd(a.n)
@@ -126,15 +126,15 @@ function crt!(res::T, b::Array{T, 1}, a::crt_env{T}) where T
     bn = div(bn, 2)
     for i=1:bn
       if true  # that means we need only one co-factor!!!
-        @inbounds sub!(a.t1, a.tmp[2*i-1], a.tmp[2*i])
-        @inbounds mul!(a.t1, a.t1, a.id[id_off + 2*i-1])
-        @inbounds add!(a.tmp[i+off], a.t1, a.tmp[2*i])
+        @inbounds a.t1 = sub!(a.t1, a.tmp[2*i-1], a.tmp[2*i])
+        @inbounds a.t1 = mul!(a.t1, a.t1, a.id[id_off + 2*i-1])
+        @inbounds a.tmp[i+off] = add!(a.tmp[i+off], a.t1, a.tmp[2*i])
       else
         @inbounds mul!(a.t1, a.tmp[2*i-1], a.id[id_off + 2*i-1])
         @inbounds mul!(a.t2, a.tmp[2*i], a.id[id_off + 2*i])
         @inbounds add!(a.tmp[i + off], a.t1, a.t2)
       end  
-      @inbounds rem!(a.tmp[i + off], a.tmp[i + off], a.pr[pr_off+i])
+      @inbounds a.tmp[i + off] = rem!(a.tmp[i + off], a.tmp[i + off], a.pr[pr_off+i])
     end
     if off == 1
       @inbounds a.tmp[1], a.tmp[2*bn+1] = a.tmp[2*bn+1], a.tmp[1] 
@@ -145,7 +145,7 @@ function crt!(res::T, b::Array{T, 1}, a::crt_env{T}) where T
 #    println(a.tmp, " id_off=$id_off, pr_off=$pr_off, off=$off, bn=$bn")
   end
   zero!(res)
-  @inbounds add!(res, res, a.tmp[1])
+  @inbounds res = add!(res, res, a.tmp[1])
   return res
 end
 
