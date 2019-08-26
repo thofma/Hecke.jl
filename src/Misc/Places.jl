@@ -205,6 +205,18 @@ function ispositive(a::Union{nf_elem, FacElem{nf_elem, AnticNumberField}}, P::In
 end
 
 @doc Markdown.doc"""
+    isnegative(a::nf_elem, P::InfPlc)          -> Bool
+    isnegative(a::FacElem{nf_elem}, P::InfPlc) -> Bool
+
+Returns whether the element $a$ is negative at the embedding corresponding to
+$P$. The place $P$ must be real.
+"""
+function isnegative(a::Union{nf_elem, FacElem{nf_elem, AnticNumberField}}, P::InfPlc)
+  !isreal(P) && error("Place must be real")
+  return sign(a, P) < 0
+end
+
+@doc Markdown.doc"""
     ispositive(a::nf_elem, l::Vector{InfPlc})          -> Bool
     ispositive(a::FacElem{nf_elem}, l::Vector{InfPlc}) -> Bool
 

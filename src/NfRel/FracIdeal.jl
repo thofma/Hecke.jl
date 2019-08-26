@@ -122,8 +122,8 @@ end
 function show(io::IO, a::NfRelOrdFracIdl)
   compact = get(io, :compact, false)
   if compact
-    print(io, "Fractional ideal with basis pseudo-matrix\n")
-    show(IOContext(io, :compact => true), basis_pmat(a, copy = false))
+    print(io, "Fractional ideal")
+    #show(IOContext(io, :compact => true), basis_pmat(a, copy = false))
   else
     print(io, "Fractional ideal of\n")
     show(IOContext(io, :compact => true), order(a))

@@ -50,6 +50,8 @@ import Base: show, minimum, rand, prod, copy, rand, ceil, round, size, in,
 # we have to export everything again
 # dong it the "import" route, we can pick & choose...
 
+using Requires
+
 using LinearAlgebra, Markdown, InteractiveUtils, Libdl, Distributed, Printf, SparseArrays, Serialization, Random, Pkg, Test
 
 import AbstractAlgebra
@@ -96,8 +98,10 @@ const pkgdir = joinpath(dirname(pathof(Hecke)), "..")
 #const libdir = joinpath(pkgdir, "local", "lib")
 
 global const number_field = NumberField
+
 function MaximalOrder
 end
+
 global const maximal_order = MaximalOrder
 
 function __init__()
@@ -233,6 +237,8 @@ function __init__()
   #global _y = gen(_Zxy)
 
   global flint_rand_ctx = flint_rand_state()
+
+  @require GAP="c863536a-3901-11e9-33e7-d5cd0df7b904" include("FieldFactory/fields.jl")
 end
 
 function _get_maximal_order(K::AnticNumberField)
@@ -735,6 +741,7 @@ include("AlgAss.jl")
 include("AlgAssAbsOrd.jl")
 include("AlgAssRelOrd.jl")
 include("LocalField.jl")
+include("QuadForm.jl")
 
 ################################################################################
 #

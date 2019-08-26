@@ -150,8 +150,8 @@ end
 function toNemo(f::IOStream, clg::ClassGrpCtx; field_name = "K")
   O = order(clg.FB.ideals[1])
   L = nf(O)
-  var = string(L.S)
-  print(f, "$field_name, $var = number_field(", nf(order(clg.FB.ideals[1])).pol, ", \"$var\");\n");
+  varr = string(L.S)
+  print(f, "$field_name, $vvar = number_field(", nf(order(clg.FB.ideals[1])).pol, ", \"$varr\");\n");
   O = order(clg.FB.ideals[1])
   toNemo(f, basis(O))
   print(f, "O = Order($field_name, map($field_name, R))\n")
