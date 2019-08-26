@@ -18,6 +18,34 @@ function PolynomialRing(R::FlintIntegerRing, a::Symbol; cached::Bool = true)
   return Zx, gen(Zx)
 end
 
+################################################################################
+#
+#  Dense polynomial types
+#
+################################################################################
+
+dense_poly_type(::Type{arb}) = arb_poly
+
+dense_poly_type(::Type{acb}) = acb_poly
+
+dense_poly_type(::Type{fq}) = fq_poly
+
+dense_poly_type(::Type{fq_nmod}) = fq_nmod_poly
+
+dense_poly_type(::Type{gfp_elem}) = gfp_poly
+
+dense_poly_type(::Type{Generic.ResF{fmpz}}) = gfp_fmpz_poly
+
+dense_poly_type(::Type{fmpz}) = fmpz_poly
+
+dense_poly_type(::Type{fmpq}) = fmpq_poly
+
+dense_poly_type(::Type{nmod}) = nmod_poly
+
+dense_poly_type(::Type{Generic.Res{fmpz}}) = fmpz_mod_poly
+
+dense_poly_type(::Type{T}) where {T} = Generic.Poly{T}
+
 function fmpz(a::Generic.Res{Nemo.fmpz})
   return a.data
 end
