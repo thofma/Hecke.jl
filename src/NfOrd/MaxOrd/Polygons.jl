@@ -803,10 +803,6 @@ function find_elem_of_valuation_1(P::NfAbsOrdIdl{S, T}, P2::NfAbsOrdIdl{S, T}) w
   return el
 end
 
-dense_poly_type(::Type{fq}) = fq_poly
-
-dense_poly_type(::Type{fq_nmod}) = fq_nmod_poly
-
 function decomposition_type_polygon(O::NfOrd, p::Union{fmpz, Int})
   K = nf(O)
   Zx, x = PolynomialRing(FlintZZ, "x", cached = false)

@@ -2,8 +2,8 @@
    k, a = wildanger_field(3, 13)
 
    @testset "Regulator" begin
-     C_29 = qAdicConj(k, 29)
-     C_31 = qAdicConj(k, 31)
+     C_29 = Hecke.qAdicConj(k, 29)
+     C_31 = Hecke.qAdicConj(k, 31)
 
      @test valuation(regulator(k, C_29)) == 2
      @test valuation(regulator(k, C_31)) == 2
