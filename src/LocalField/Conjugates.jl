@@ -306,8 +306,8 @@ function regulator_iwasawa(u::Array{T, 1}, C::qAdicConj, n::Int = 10) where {T<:
   @assert istotally_real(k)
   c = map(x -> conjugates_log(x, C, n, all = true, flat = false), u)
   m = matrix(c)
-  m = hcat(m, matrix(base_ring(m), rows(m), 1, [one(base_ring(m)) for i=1:rows(m)]))
-  return det(m)
+  m = hcat(m, matrix(base_ring(m), nrows(m), 1, [one(base_ring(m)) for i=1:nrows(m)]))
+  return det(m)//degree(k)
 end
 
 function regulator_iwasawa(K::AnticNumberField, C::qAdicConj, n::Int = 10)
