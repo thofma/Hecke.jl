@@ -66,6 +66,9 @@ nav:
       - Elements:         orders/elements.md
       - Ideals:           orders/ideals.md
       - Fractional Ideals: orders/frac_ideals.md
+    - Quadratic and Hermitian forms:
+      - Introduction: 'quad_forms/introduction.md'
+      - Basics: 'quad_forms/basics.md'
     - Abelian groups:
       - Introduction:     abelian/introduction.md
     - Class fields:

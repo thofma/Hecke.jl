@@ -366,7 +366,7 @@ end
   factor(f::fmpz_poly, K::NumberField) -> Fac{Generic.Poly{nf_elem}}
   factor(f::fmpq_poly, K::NumberField) -> Fac{Generic.Poly{nf_elem}}
 
-The factorisation of f over K (using Trager's method).
+The factorisation of f over K.
 """
 function factor(f::fmpq_poly, K::AnticNumberField)
   f1 = change_base_ring(f, K)
@@ -381,7 +381,7 @@ end
 @doc Markdown.doc"""
   factor(f::PolyElem{nf_elem}) -> Fac{Generic.Poly{nf_elem}}
 
-The factorisation of f (using Trager's method).
+The factorisation of f.
 """
 function factor(f::PolyElem{nf_elem})
   Kx = parent(f)
@@ -414,28 +414,14 @@ function factor(f::PolyElem{nf_elem})
 
   f = f*(1//lead(f))
 
-  k = 0
-  g = f
-  @vtime :PolyFactor 2 N = norm(g)
-
-  while isconstant(N) || !issquarefree(N)
-    k = k + 1
-    g = compose(f, gen(Kx) - k*gen(K))
-    @vtime :PolyFactor 2 N = norm(g)
-  end
-  @vtime :PolyFactor 2 fac = factor(N)
-  
-  res = Dict{PolyElem{nf_elem}, Int64}()
-
-  for i in keys(fac.fac)
-    t = change_ring(i, Kx)
-    t = compose(t, gen(Kx) + k*gen(K))
-    @vtime :PolyFactor 2 t = gcd(f, t)
-    res[t] = 1
+  if true#degree(f) < degree(K)
+    lf = factor_trager(f)
+  else
+    lf = factor_new(f)
   end
 
   r = Fac{typeof(f)}()
-  r.fac = res
+  r.fac = res = Dict( x=> 1 for x = lf)
   r.unit = Kx(1)
 
   if f != f_orig
@@ -451,7 +437,6 @@ function factor(f::PolyElem{nf_elem})
           gp = modular_proj(k, me)[1]
           res[k] = valuation(fp, gp)
         end
-        r.fac = res
         # adjust the unit of the factorization
         r.unit = one(Kx) * lead(f_orig)//prod((lead(p) for (p, e) in r))
         return r
@@ -460,6 +445,34 @@ function factor(f::PolyElem{nf_elem})
   end
   r.unit = one(Kx)* lead(f_orig)//prod((lead(p) for (p, e) in r))
   return r
+end
+
+function factor_trager(f::PolyElem{nf_elem})
+  k = 0
+  g = f
+  @vprint :PolyFactor 1 "Using Trager's method\n"
+  @vtime :PolyFactor 2 N = norm(g)
+
+  Kx = parent(f)
+  K = base_ring(Kx)
+
+  while isconstant(N) || !issquarefree(N)
+    k = k + 1
+    g = compose(f, gen(Kx) - k*gen(K))
+    @vtime :PolyFactor 2 N = norm(g)
+  end
+  @vtime :PolyFactor 2 fac = factor(N)
+  
+  res = PolyElem{nf_elem}[]
+
+  for i in keys(fac.fac)
+    t = change_ring(i, Kx)
+    t = compose(t, gen(Kx) + k*gen(K))
+    @vtime :PolyFactor 2 t = gcd(f, t)
+    push!(res, t)
+  end
+
+  return res
 end
 
 function isirreducible(f::PolyElem{nf_elem})
@@ -815,7 +828,7 @@ end
 #
 ################################################################################
 
-function __mod(a::nf_elem, b::fmpz, fl::Bool = true)
+function __mod(a::nf_elem, b::fmpz, fl::Bool = true)#, sym::Bool = false) # Not yet
   z = parent(a)()
   ccall((:nf_elem_mod_fmpz_den, :libantic), Nothing, (Ref{nf_elem}, Ref{nf_elem}, Ref{fmpz}, Ref{AnticNumberField}, Cint), z, a, b, parent(a), Cint(fl))
   return z
@@ -829,6 +842,11 @@ end
 
 function mod_sym!(a::nf_elem, b::fmpz, b2::fmpz)
   z = fmpz()
+  if degree(parent(a)) == 1
+    Nemo.num_coeff!(z, a, 0)
+    _num_setcoeff!(a, 0, mod_sym(z, b))
+    return
+  end
   for i=0:a.elem_length-1
     Nemo.num_coeff!(z, a, i)
     rem!(z, z, b)

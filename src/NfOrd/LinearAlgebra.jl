@@ -1,4 +1,4 @@
-export pseudo_matrix, pseudo_hnf, PseudoMatrix, pseudo_hnf_with_transform
+export pseudo_matrix, pseudo_hnf, PseudoMatrix, pseudo_hnf_with_transform, coefficient_ideals, matrix
 import Base.vcat, Base.hcat
 
 function _det_bound(M::Generic.Mat{NfOrdElem})
@@ -227,7 +227,7 @@ function show(io::IO, P::PMat)
     for i in 1:nrows(P.matrix)
       i == 1 || print(io, "\n")
       print(io, "(")
-      show(IOContext(io, :compact => true), P.coeffs[i])
+      print(IOContext(io, :compact => true), P.coeffs[i])
       print(io, ") * ")
       print(io, sub(P.matrix, i:i, 1:ncols(P.matrix)))
     end
@@ -240,6 +240,10 @@ function show(io::IO, P::PMat)
     end
   end
 end
+
+coefficient_ideals(M::PMat) = M.coeffs
+
+matrix(M::PMat) = M.matrix
 
 function PseudoMatrix(m::Generic.Mat{T}, c::Array{S, 1}) where {T, S}
   # sanity checks

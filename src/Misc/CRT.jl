@@ -440,14 +440,16 @@ only if you know what you're doing.
 """
 function _num_setcoeff!(a::nf_elem, n::Int, c::fmpz)
   K = parent(a)
-  @assert n < degree(K) && n >=0
   ra = pointer_from_objref(a)
   if degree(K) == 1
+    @assert n == 0
     ccall((:fmpz_set, :libflint), Nothing, (Ref{Nothing}, Ref{fmpz}), ra, c)
     ccall((:fmpq_canonicalise, :libflint), Nothing, (Ref{nf_elem}, ), a)
   elseif degree(K) == 2
+     @assert n >= 0  && n <= 3
      ccall((:fmpz_set, :libflint), Nothing, (Ref{Nothing}, Ref{fmpz}), ra+n*sizeof(Int), c)
   else
+    @assert n < degree(K) && n >=0
     ccall((:fmpq_poly_set_coeff_fmpz, :libflint), Nothing, (Ref{nf_elem}, Int, Ref{fmpz}), a, n, c)
    # includes canonicalisation and treatment of den.
   end

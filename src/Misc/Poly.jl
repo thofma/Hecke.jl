@@ -160,14 +160,21 @@ function show(io::IO, a::fmpz_poly_factor)
 end
 
 function show(io::IO, a::HenselCtx)
-  println("factorisation of $(a.f) modulo $(a.p)^$(a.N)")
+  println(io, "factorisation of $(a.f) modulo $(a.p)^$(a.N)")
+  if a.r == 1
+    println(io, "irreducible, $(a.f)")
+    return
+  end
   if a.N > 0
     d = factor_to_dict(a.LF)
-    println("currently: $d")
+    println(io, "currently: $d")
   end
 end
 
 function start_lift(a::HenselCtx, N::Int)
+  if a.r == 1
+    return
+  end
   a.prev = ccall((:_fmpz_poly_hensel_start_lift, :libflint), UInt, 
        (Ref{fmpz_poly_factor}, Ref{Int}, Ref{fmpz_poly_raw}, Ref{fmpz_poly_raw}, Ref{fmpz_poly}, Ref{Nemo.nmod_poly_factor}, Int),
        a.LF, a.link, a.v, a.w, a.f, a.lf, N)
@@ -175,6 +182,12 @@ function start_lift(a::HenselCtx, N::Int)
 end
 
 function continue_lift(a::HenselCtx, N::Int)
+  if a.r == 1
+    return
+  end
+  if a.N >= N 
+    return
+  end
   a.prev = ccall((:_fmpz_poly_hensel_continue_lift, :libflint), Int, 
        (Ref{fmpz_poly_factor}, Ref{Int}, Ref{fmpz_poly_raw}, Ref{fmpz_poly_raw}, Ref{fmpz_poly}, UInt, UInt, Int, Ref{fmpz}),
        a.LF, a.link, a.v, a.w, a.f, a.prev, a.N, N, fmpz(a.p))
@@ -188,6 +201,9 @@ end
 """
 function factor_mod_pk(f::fmpz_poly, p::Int, k::Int)
   H = HenselCtx(f, fmpz(p))
+  if H.r == 1
+    return Dict(a.f => 1)
+  end
   start_lift(H, k)
   return factor_to_dict(H.LF)
 end
@@ -209,6 +225,9 @@ end
  Using the result of factor_mod_pk_init, return a factorisation modulo p^k
 """
 function factor_mod_pk(H::HenselCtx, k::Int)
+  if H.r == 1
+    return Dict(H.f => 1)
+  end
   @assert k>= H.N
   if H.N == 0
     start_lift(H, k)
@@ -1105,31 +1124,6 @@ end
     There are also bounds on the coefficients which are sometimes tight  
 =#
 
-
-#=
-function roots(f::fmpz_poly)
-  g = gcd(f, derivative(f))
-  p = p_start
-  while true
-    p = next_prime(p)
-    R = GF(p)
-    Rx,x = PolynomialRing(R, cached = false)
-    gp = Rx(g)
-    if !issquarefree(gp)
-      continue
-    end
-    #TODO: try a few primes to find best (with fewest roots)
-    rp = roots(gp)
-    if length(rp) == 0
-      return []
-    end
-    
-  end
-  
-end
-
-=#
-
 #computes the top n coeffs of the product only
 function mulhigh_n(a::PolyElem{T}, b::PolyElem{T}, n::Int) where {T}
   #sum a_i t^i and sum b_j t^j
@@ -1190,7 +1184,60 @@ function divhigh(a::PolyElem{T}, b::PolyElem{T}, n0::Int) where {T}
     da -= 1
 #    a = a-q*shift_left(b, degree(a) - degree(b)) # inplace, one operation would be cool
   end
+  if iszero(r)
+    #set_length(, -1) fails
+    return r
+  end
   Hecke.set_length!(r, Hecke.normalise(r, length(r) - 1))
   return r
+end
+
+
+function roots(f::fmpz_poly, ::FlintRationalField; max_roots::Int = degree(f))
+  if degree(f) < 1
+    return fmpq[]
+  end
+  if degree(f) == 1
+    return fmpq[-trailing_coefficient(f)//lead(f)]
+  end
+
+  g = gcd(f, derivative(f))
+  if isone(g)
+    h = f
+  else
+    h = divexact(f, g)
+  end
+  if degree(h) == 1
+    return fmpq[-trailing_coefficient(h)//lead(h)]
+  end
+  h = primpart(h)
+
+  global p_start
+  p = p_start
+  bd = lead(h)+maximum(abs, coefficients(h))
+  while true
+    p = next_prime(p)
+    k = GF(p)
+    hp = change_base_ring(h, k)
+    if !issquarefree(hp)
+      continue
+    end
+    k = ceil(Int, log(bd)/log(p))
+    Hp = factor_mod_pk(h, p, k)
+    pk = fmpz(p)^k
+    r = fmpq[mod_sym(-trailing_coefficient(x)*lead(h), pk)//lead(h) for x = keys(Hp) if degree(x) == 1]
+    return [x for x = r if iszero(f(x)) ]  
+  end
+end
+
+function roots(f::fmpz_poly; max_roots::Int = degree(f))
+  r = roots(f, FlintQQ, max_roots = max_roots)
+  return fmpz[FlintZZ(x) for x = r if denominator(x) == 1]
+end
+
+function roots(f::fmpq_poly; max_roots::Int = degree(f))
+  Zx, x = PolynomialRing(FlintZZ, cached = false)
+  g = Zx(denominator(f)*f)
+  return roots(g, FlintQQ)
 end
 

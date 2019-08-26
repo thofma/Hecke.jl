@@ -121,6 +121,13 @@ function frac_ideal(O::NfOrd, x::NfOrdElem)
   return z
 end
 
+function frac_ideal_from_z_gens(O::NfAbsOrd{S, T}, b::Vector{T}) where {S, T}
+  d = degree(O)
+  den = lcm([ denominator(bb, O) for bb in b ])
+  num = ideal_from_z_gens(O, [ O(den*bb) for bb in b ])
+  return frac_ideal(O, num, den)
+end
+
 ################################################################################
 #
 #  String I/O

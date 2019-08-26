@@ -185,7 +185,18 @@ function math_html(io::IO, a::fmpq)
   end
 end
 
+function Base.show(io::IO, ::MIME"text/html", a::fmpq)
+  print(io, "\$")
+  math_html(io, a)
+  print(io, "\$")
+end
+
 math_html(io::IO, a::Rational) = math_html(io, fmpq(a))
+function Base.show(io::IO, ::MIME"text/html", a::Rational) 
+  print(io, "\$")
+  math_html(io, a)
+  print(io, "\$")
+end
 
 #= infinite recursion through generic math_html, so don't
 function Base.show(io::IO, ::MIME"text/html", a) 

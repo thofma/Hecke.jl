@@ -17,7 +17,6 @@ function Base.setprecision(q::padic, N::Int)
   return r
 end
 
-
 function setprecision!(q::qadic, N::Int)
   @assert N >= q.N
   q.N = N
@@ -194,7 +193,12 @@ import Base.^
 ^(a::qadic, b::qadic) = exp(b*log(a))
 ^(a::padic, b::padic) = exp(b*log(a))
 
-function defining_polynomial(Q::FlintQadicField, P::Ring = base_ring(Q))
+import Base.//
+//(a::qadic, b::qadic) = divexact(a, b)
+//(a::padic, b::qadic) = divexact(a, b)
+//(a::qadic, b::padic) = divexact(a, b)
+
+function defining_polynomial(Q::FlintQadicField, P::Ring = coefficient_ring(Q))
   Pt, t = PolynomialRing(P, cached = false)
   f = Pt()
   for i=0:Q.len-1

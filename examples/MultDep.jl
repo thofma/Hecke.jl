@@ -195,4 +195,175 @@ function valuation(a::nf_elem, p::GeIdeal)
   return valuation(a, p.a)
 end
 
+
+function mult_syzygies_units(A::Array{FacElem{nf_elem, AnticNumberField}, 1})
+  p = next_prime(100)
+  K = base_ring(parent(A[1]))
+  m = maximum(degree, keys(factor(K.pol, GF(p)).fac))
+  while m > 4
+    p = next_prime(p)
+    m = maximum(degree, keys(factor(K.pol, GF(p)).fac))
+  end
+         #experimentally, the runtime is dominated by log
+  u = FacElem{nf_elem, AnticNumberField}[]
+  prec = 10
+
+  r1, r2 = signature(K)
+  r = r1+r2 -1
+  n = degree(K)
+  C = qAdicConj(K, p)
+  la = matrix(conjugates_log(A[1], C, prec, all = false, flat = true))'
+  lu = zero_matrix(base_ring(la), 0, n)
+  uu = []
+  for a = A
+    while true
+      @vtime :qAdic 1 la = matrix(conjugates_log(a, C, prec, all = false, flat = true))'
+      if iszero(la)
+        @vtime :qAdic 1 @hassert :qAdic 1 verify_gamma([a], [fmpz(1)], fmpz(p)^prec)
+        @vprint :qAdic 1 println("torsion found")
+        break
+      end
+      lv = vcat(lu, la)
+      #check_precision and change
+      if false && any(x->precision(x) < prec, lv)
+        println("loss of precision - not sure what to do")
+        for i=1:rows(lv)
+          for j = cols(lv) #seems to not do anything
+            lv[i, j] = setprecision(lv[i, j], min_p)
+            @assert precision(lv[i,j]) == min_p
+          end
+        end
+      end
+      @vtime :qAdic 1 k = Hecke.left_kernel_basis(lv)
+      @assert length(k) < 2
+      if length(k) == 0
+        println("new ")
+        push!(u, a)
+        lu = vcat(lu, la)
+        @assert length(u) <= r
+      else # length == 1 extend the module
+        s = fmpq[]
+        for x = k[1]
+          @vtime :qAdic 1 y = lift_reco(FlintQQ, x, reco = true)
+          if y == nothing
+            prec *= 2
+            @vprint :qAdic 1  "increase prec to ", prec
+            lu = matrix([conjugates_log(x, C, prec, all = false, flat = true) for x = u])'
+            break
+          end
+          push!(s, y)
+        end
+        if length(s) < length(k[1])
+          continue
+        end
+        d = reduce(lcm, map(denominator, s))
+        gamma = fmpz[FlintZZ(x*d)::fmpz for x = s] 
+        @assert reduce(gcd, gamma) == 1 # should be a primitive relation
+        @time if !verify_gamma(push!(copy(u), a), gamma, fmpz(p)^prec)
+          prec *= 2
+          @vprint :qAdic 1 "increase prec to ", prec
+          lu = matrix([conjugates_log(x, C, prec, all = false, flat = true) for x = u])'
+          continue
+        end
+        @assert length(gamma) == length(u)+1
+        gamma = vcat(gamma[1:length(u)], [0 for i=length(u)+1:r+length(uu)], [gamma[end]])
+        push!(uu, (a, gamma))
+      end
+      break
+    end
+  end
+  #=
+    let u_1, .., u_n be units and
+       <u_i | i> has rank s and 
+        r_i in Z^n be such that
+          prod u_i^r_i = 1  (OK, sum of the logs is zero)
+          rank <r_i | i> = s as well
+    so the r_i form a Q-basis for the relations.
+    Essentially, the gamma of above are the r_i
+    Let [H|0] = [r_i|i]*T be the hnf with trafo, so T in Gl(n, Z)
+    Then
+      <u_i|i> = <[u_i|i] T>
+      [r_i|i] * [u_i|i]^t = 0 (by construction)
+      [r_i|i] T inv(T) [u[i] | i] = 0
+      [H | 0]   [v_i | i] = 0
+      so, since H is triangular(!!) v_1, ... v_n-s = 0
+      and <u_i |i> = <v_n-s+1, ..., v_n>
+    
+    for the case of n=s+1 this is mostly the "normal" construction.
+    Note: as a side, the relations do not have to be primitive.
+      If they are, (and n=s+1), then H = 1
+  =#
+
+  for i=1:length(uu)-1
+    append!(uu[i][2], zeros(FlintZZ, length(uu[end][2])-length(uu[i][2])))
+  end
+  if length(uu) == 0
+    U = matrix(FlintZZ, length(uu), length(uu[end][2]), reduce(vcat, [x[2] for x = uu]))
+  else
+    U = matrix(FlintZZ, length(uu), length(uu[end][2]), reduce(vcat, [x[2] for x = uu]))
+  end
+  _, U = hnf_with_transform(U')
+  if false
+    U = inv(U)
+    V = sub(U, 1:rows(U), 1:cols(U)-length(u))
+    U = sub(U, 1:rows(U), cols(U)-length(u)+1:cols(U))
+    #U can be reduced modulo V...
+    Z = zero_matrix(FlintZZ, cols(V), cols(U))
+    I = identity_matrix(FlintZZ, cols(U)) * p^(2*prec)
+    k = base_ring(A[1])
+    A = [ Z V'; I U']
+    l = lll(A)
+    U = sub(l, cols(V)+1:rows(l), cols(U)+1:cols(l))
+    U = lll(U)
+  else
+    U = lll(U')
+  end
+  return Hecke._transform(vcat(u, FacElem{nf_elem,AnticNumberField}[FacElem(k(1)) for i=length(u)+1:r], [x[1] for x = uu]), U')
 end
+
+function verify_gamma(a::Array{FacElem{nf_elem, AnticNumberField}, 1}, g::Array{fmpz, 1}, v::fmpz)
+  #knowing that sum g[i] log(a[i]) == 0 mod v, prove that prod a[i]^g[i] is
+  #torsion
+  #= I claim N(1-a) > v^n for n the field degree:
+   Let K be one of the p-adic fields involved, set b = a^g
+   then log(K(b)) = 0 (v = p^l) by assumption
+   so val(log(K(b))) >= l, but
+   val(X) = 1/deg(K) val(norm(X)) for p-adics
+   This is true for all completions involved, and sum degrees is n
+ =#
+
+  t = prod([a[i]^g[i] for i=1:length(a)])
+  # t is either 1 or 1-t is large, norm(1-t) is div. by p^ln
+  #in this case T2(1-t) is large, by the arguments above: T2>= (np^l)^2=:B
+  # and, see the bottom, \|Log()\|_2^2 >= 1/4 arcosh((B-2)/2)^2
+  B = ArbField(nbits(v)*2)(v)^2
+  B = 1/2 *acosh((B-2)/2)^2
+  p = Hecke.upper_bound(log(B)/log(parent(B)(2)), fmpz)
+  @vprint :qAdic 1  "using", p, nbits(v)*2
+  b = conjugates_arb_log(t, max(-Int(div(p, 2)), 2))
+#  @show B , sum(x*x for x = b), istorsion_unit(t)[1]
+  @hassert :qAdic 1 (B > sum(x*x for x = b)) == istorsion_unit(t)[1]
+  return B > sum(x*x for x = b)
+end
+
+function lift_reco(::FlintRationalField, a::padic; reco::Bool = false)
+  if reco
+    u, v, N = getUnit(a)
+    R = parent(a)
+    fl, c, d = rational_reconstruction(u, prime(R, N-v))
+    !fl && return nothing
+    
+    x = FlintQQ(c, d)
+    if v < 0
+      return x//prime(R, -v)
+    else
+      return x*prime(R, v)
+    end
+  else
+    return lift(FlintQQ, a)
+  end
+end
+
+Hecke.nrows(A::Array{T, 2}) where {T} = size(A)[1]
+Hecke.ncols(A::Array{T, 2}) where {T} = size(A)[2]
+

@@ -1,4 +1,4 @@
-export iszero_row, howell_form, kernel_basis
+export iszero_row, howell_form, kernel_basis, isdiagonal, diagonal
 
 import Nemo.matrix
 
@@ -1045,7 +1045,7 @@ function snf_with_transform(A::fmpz_mat, l::Bool = true, r::Bool = true)
   #       Rationale: most of the work is on the 1st HNF..
   #
   S = deepcopy(A)
-  while !isdiag(S)
+  while !isdiagonal(S)
     if l
       S, T = hnf_with_transform(S)
       L = T*L
@@ -1053,7 +1053,7 @@ function snf_with_transform(A::fmpz_mat, l::Bool = true, r::Bool = true)
       S = hnf(S)
     end
 
-    if isdiag(S)
+    if isdiagonal(S)
       break
     end
     if r
@@ -1126,11 +1126,11 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-  isdiag(A::fmpz_mat)
+    isdiagonal(A::Mat)
 
 Tests if A is diagonal.
 """
-function isdiag(A::fmpz_mat)
+function isdiagonal(A::MatElem)
   for i = 1:ncols(A)
     for j = 1:nrows(A)
       if i != j && !iszero(A[j, i])
@@ -1140,6 +1140,19 @@ function isdiag(A::fmpz_mat)
   end
   return true
 end
+
+################################################################################
+#
+#  Diagonal
+#
+################################################################################
+
+@doc Markdown.doc"""
+    diagonal(A::Mat{T}) -> Vector{T}
+
+Returns the diagonal of `A` is an array.
+"""
+diagonal(A::Generic.Mat{T}) where {T} = T[A[i, i] for i in 1:nrows(A)]
 
 ################################################################################
 #
@@ -1669,7 +1682,7 @@ function divisors(M::fmpz_mat, d::fmpz)
   end
   d = ispower(d)[2]
   M1 = _hnf_modular_eldiv(M, d)
-  while !isdiag(M1)
+  while !isdiagonal(M1)
     M1 = M1'
     hnf_modular_eldiv!(M1, d)
   end
