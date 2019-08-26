@@ -5,8 +5,6 @@ add_assert_scope(:Fields)
 
 add_verbose_scope(:FieldsNonFancy)
 
-
-
 mutable struct FieldsTower
   field::AnticNumberField
   generators_of_automorphisms::Vector{NfToNfMor}
