@@ -239,6 +239,14 @@ function __init__()
   global flint_rand_ctx = flint_rand_state()
 
   @require GAP="c863536a-3901-11e9-33e7-d5cd0df7b904" include("FieldFactory/fields.jl")
+  @require Revise="295af30f-e4ad-537b-8983-00126c2a3abe" begin
+    import .Revise
+    Revise.track(Hecke, "FieldFactory/fields.jl")
+    Revise.track(Hecke, "FieldFactory/abelian_layer.jl")
+    Revise.track(Hecke, "FieldFactory/brauer.jl")
+    Revise.track(Hecke, "FieldFactory/merge.jl")
+    Revise.track(Hecke, "FieldFactory/read_write.jl")
+  end
 end
 
 function _get_maximal_order(K::AnticNumberField)
