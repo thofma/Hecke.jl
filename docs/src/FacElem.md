@@ -104,7 +104,7 @@ istotally_positive(::Union{FacElem{nf_elem,AnticNumberField}, nf_elem})
 valuation(::FacElem{nf_elem,AnticNumberField}, ::NfAbsOrdIdl{AnticNumberField,nf_elem})
 valuation(::FacElem{NfAbsOrdIdl{AnticNumberField,nf_elem},Hecke.NfAbsOrdIdlSet{AnticNumberField,nf_elem}}, ::NfAbsOrdIdl{AnticNumberField,nf_elem})
 evaluate_mod(::FacElem{nf_elem,AnticNumberField}, ::NfOrdFracIdl)
-pure_extension(::Int64, ::FacElem{nf_elem,AnticNumberField})
+radical_extension(::Int64, ::FacElem{nf_elem,AnticNumberField})
 reduce_ideal2(::FacElem{NfAbsOrdIdl{AnticNumberField,nf_elem},Hecke.NfAbsOrdIdlSet{AnticNumberField,nf_elem}})
 modular_proj(::FacElem{nf_elem,AnticNumberField}, ::Hecke.modular_env)
 ```

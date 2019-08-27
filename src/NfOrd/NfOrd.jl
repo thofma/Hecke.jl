@@ -868,7 +868,7 @@ equation_order(K, cached::Bool = false) = EquationOrder(K, cached)
 
 Returns the equation order of the absolute number field $K$.
 """
-function EquationOrder(K::T, cached::Bool = true) where {T}
+function EquationOrder(K::NumField{fmpq}, cached::Bool = true)
   if cached
     try
       M = _get_nf_equation_order(K)

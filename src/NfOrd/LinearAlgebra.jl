@@ -289,7 +289,7 @@ function PseudoMatrix(m::Generic.Mat{nf_elem})
    return PseudoMatrix(m, [ideal(O, K(1)) for i = 1:nrows(m)])
 end
 
-function PseudoMatrix(m::Generic.Mat{S}) where S <: RelativeElement
+function PseudoMatrix(m::MatElem{S}) where S <: NumFieldElem
   L = base_ring(m)
   OL = maximal_order(L)
   K = base_field(L)
@@ -297,13 +297,13 @@ function PseudoMatrix(m::Generic.Mat{S}) where S <: RelativeElement
   return PseudoMatrix(m, [ frac_ideal(OL, identity_matrix(K, degree(L))) for i = 1:nrows(m) ])
 end
 
-function PseudoMatrix(m::Generic.Mat{S}, c::Array{T, 1}) where {S <: RelativeElement, T <: NfRelOrdIdl}
+function PseudoMatrix(m::MatElem{S}, c::Array{T, 1}) where {S <: NumFieldElem, T <: NfRelOrdIdl}
   @assert nrows(m) == length(c)
   cc = [ frac_ideal(order(c[i]), basis_pmat(c[i]), true) for i = 1:length(c) ]
   return PMat{S, typeof(cc[1])}(m, cc)
 end
 
-PseudoMatrix(m::Generic.Mat{NfOrdElem}) = PseudoMatrix(change_base_ring(m, nf(base_ring(m))))
+PseudoMatrix(m::MatElem{NfOrdElem}) = PseudoMatrix(change_base_ring(m, nf(base_ring(m))))
 
 function PseudoMatrix(c::Array{S, 1}) where S
    K = nf(order(c[1]))
@@ -438,9 +438,9 @@ end
 
 pseudo_hnf_with_transform(P::PMat{nf_elem, NfOrdFracIdl}, shape::Symbol = :upperright, full_rank::Bool = false) = pseudo_hnf_kb_with_transform(P, shape)
 
-pseudo_hnf(P::PMat{T, S}, shape::Symbol = :upperright, full_rank::Bool = false) where {T <: RelativeElement, S} = pseudo_hnf_kb(P, shape)
+pseudo_hnf(P::PMat{T, S}, shape::Symbol = :upperright, full_rank::Bool = false) where {T <: NumFieldElem, S} = pseudo_hnf_kb(P, shape)
 
-pseudo_hnf_with_transform(P::PMat{T, S}, shape::Symbol = :upperright, full_rank::Bool = false) where {T <: RelativeElement, S} = pseudo_hnf_kb_with_transform(P, shape)
+pseudo_hnf_with_transform(P::PMat{T, S}, shape::Symbol = :upperright, full_rank::Bool = false) where {T <: NumFieldElem, S} = pseudo_hnf_kb_with_transform(P, shape)
 
 function pseudo_hnf_full_rank(P::PMat, shape::Symbol = :upperright)
   PP = deepcopy(P)
@@ -1046,7 +1046,7 @@ function kb_search_first_pivot(H::PMat, start_element::Int = 1)
    return 0, 0
 end
 
-function kb_reduce_row!(H::PMat{T, S}, U::Generic.Mat{T}, pivot::Array{Int, 1}, c::Int, with_transform::Bool) where {T <: Union{nf_elem, RelativeElement}, S}
+function kb_reduce_row!(H::PMat{T, S}, U::Generic.Mat{T}, pivot::Array{Int, 1}, c::Int, with_transform::Bool) where {T <: NumFieldElem, S}
    r = pivot[c]
    A = H.matrix
    t = base_ring(A)()
@@ -1072,7 +1072,7 @@ function kb_reduce_row!(H::PMat{T, S}, U::Generic.Mat{T}, pivot::Array{Int, 1}, 
    return nothing
 end
 
-function kb_reduce_column!(H::PMat{T, S}, U::Generic.Mat{T}, pivot::Array{Int, 1}, c::Int, with_transform::Bool, start_element::Int = 1) where {T <: Union{nf_elem, RelativeElement}, S}
+function kb_reduce_column!(H::PMat{T, S}, U::Generic.Mat{T}, pivot::Array{Int, 1}, c::Int, with_transform::Bool, start_element::Int = 1) where {T <: NumFieldElem, S}
    r = pivot[c]
    A = H.matrix
    t = base_ring(A)()
@@ -1098,7 +1098,7 @@ function kb_reduce_column!(H::PMat{T, S}, U::Generic.Mat{T}, pivot::Array{Int, 1
    return nothing
 end
 
-function kb_sort_rows!(H::PMat{T, S}, U::Generic.Mat{T}, pivot::Array{Int, 1}, with_transform::Bool, start_element::Int = 1) where {T <: Union{nf_elem, RelativeElement}, S}
+function kb_sort_rows!(H::PMat{T, S}, U::Generic.Mat{T}, pivot::Array{Int, 1}, with_transform::Bool, start_element::Int = 1) where {T <: NumFieldElem, S}
    m = nrows(H)
    n = ncols(H)
    pivot2 = zeros(Int, m)
@@ -1134,7 +1134,7 @@ function kb_sort_rows!(H::PMat{T, S}, U::Generic.Mat{T}, pivot::Array{Int, 1}, w
    return nothing
 end
 
-function pseudo_hnf_kb!(H::PMat{T, S}, U::Generic.Mat{T}, with_transform::Bool = false, start_element::Int = 1) where {T <: Union{nf_elem, RelativeElement}, S}
+function pseudo_hnf_kb!(H::PMat{T, S}, U::Generic.Mat{T}, with_transform::Bool = false, start_element::Int = 1) where {T <: NumFieldElem, S}
    m = nrows(H)
    n = ncols(H)
    A = H.matrix
@@ -1791,7 +1791,7 @@ function _steinitz_form(P::PMat, trafo::Type{Val{T}} = Val{false}) where T
 end
 
 # Algorithm 4.6.2 in Hoppe: Normal forms over Dedekind domains
-function steinitz_form!(M::PMat{T, S}, U::Generic.Mat{T}, with_transform::Bool = false, start_row::Int = 1) where { T <: Union{ nf_elem, RelativeElement }, S }
+function steinitz_form!(M::PMat{T, S}, U::Generic.Mat{T}, with_transform::Bool = false, start_row::Int = 1) where { T <: NumFieldElem, S }
   if nrows(M) < start_row
     return nothing
   end

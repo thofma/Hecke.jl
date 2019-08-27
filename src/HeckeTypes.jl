@@ -4,9 +4,9 @@
 #
 ################################################################################
 
-abstract type RelativeExtension{T} <: NumField{T} end
+export NonSimpleNumField
 
-abstract type RelativeElement{T} <: NumFieldElem{T} end
+export NonSimpleNumFieldElem
 
 abstract type NonSimpleNumField{T} <: NumField{T} end
 
@@ -1805,8 +1805,7 @@ end
 #
 ################################################################################
 
-
-mutable struct NfRel{T} <: RelativeExtension{T}
+mutable struct NfRel{T} <: SimpleNumField{T}
   base_ring::Nemo.Field
   pol::Generic.Poly{T}
   S::Symbol
@@ -1834,7 +1833,7 @@ const NfRelID = Dict{Tuple{Generic.PolyRing, Generic.Poly, Symbol},
                      NfRel}()
 
 
-mutable struct NfRelElem{T} <: RelativeElement{T}
+mutable struct NfRelElem{T} <: NumFieldElem{T}
   data::Generic.Poly{T}
   parent::NfRel{T}
 

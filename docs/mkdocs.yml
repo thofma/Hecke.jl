@@ -59,7 +59,11 @@ docs_dir: 'build'
 nav:
   - About: 'index.md'
   - Documentation:
-    - Number fields: 'number_fields/intro.md'
+    - Number fields:
+      - Introduction: 'number_fields/intro.md'
+      - Creation and basics: 'number_fields/basics.md'
+      - Elements: 'number_fields/elements.md'
+      - Internals:    'number_fields/internal.md'
     - Orders:
       - Introduction: 'orders/introduction.md'
       - Basics:           orders/orders.md
