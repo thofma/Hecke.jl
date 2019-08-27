@@ -7,6 +7,14 @@ blockquote {
   quotes: "\201C""\201D""\2018""\2019";
 }
 
+.md-typeset code {
+font-size: 0.8em;
+}
+
+.md-typeset pre {
+font-size: 0.8em;
+}
+
 .md-typeset h1 {
 font-size: 1.7em;
 font-weight: 400;
@@ -32,13 +40,13 @@ color: rgba(0,0,0,.87);
 }
 
 .md-typeset p {
-  font-size: 0.9em;
+  font-size: 0.8em;
   line-height: 1.4;
   text-align: justify;
 }
 
 .md-typeset li {
-  font-size: 0.9em;
+  font-size: 0.8em;
   line-height: 1.4;
 }
 
