@@ -974,10 +974,14 @@ function squarefree_factorization(f::PolyElem)
   @assert iszero(characteristic(base_ring(f)))
   c = lead(f)
   f = divexact(f, c)
+  res = Dict{typeof(f), Int}()
   di = gcd(f, derivative(f))
+  if isone(di)
+    res[f] = 1
+    return res
+  end
   ei = divexact(f, di)
   i = 1
-  res = Dict{typeof(f), Int}()
   while !isconstant(ei)
     eii = gcd(di, ei)
     dii = divexact(di, eii)

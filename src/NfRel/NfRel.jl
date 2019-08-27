@@ -494,7 +494,7 @@ function _absolute_field(K::NfRel, cached::Bool = false)
   for i=degree(g):-1:0
     auxp = change_ring(Qx(coeff(g, i)), KaT)
     gg = gg*gKa
-    add!(gg, gg,auxp)
+    add!(gg, gg, auxp)
     #gg = gg*gKa + auxp
   end
   

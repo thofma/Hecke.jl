@@ -1033,7 +1033,6 @@ end
 # requires some coefficient of f to be a unit
 
 function fun_factor(f::T) where T <: Union{fmpz_mod_poly, nmod_poly}
-
   Rx = parent(f)
   if isunit(lead(f))
     l = lead(f)
