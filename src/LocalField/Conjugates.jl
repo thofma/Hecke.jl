@@ -88,6 +88,8 @@ mutable struct qAdicConj
   cache::Dict{nf_elem, Any}
 
   function qAdicConj(K::AnticNumberField, p::Int)
+    isindex_divisor(maximal_order(K), p) && error("cannot deal with index divisors yet")
+    isramified(maximal_order(K), p) && error("cannot deal with ramification yet")
     D = _get_nf_conjugate_data_qAdic(K, false)
     if D !== nothing
       if haskey(D, p)
@@ -177,6 +179,9 @@ end
 
 function _log(a::qadic)
   q = prime(parent(a))^degree(parent(a))
+  if iseven(q) # an error in flint
+    return log((a^(q-1))^2)//2//(q-1)
+  end
   return log(a^(q-1))//(q-1) # faster than the teichmuller stuff
   return log(a*inv(teichmuller(a)))
 end
