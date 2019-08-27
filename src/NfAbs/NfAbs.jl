@@ -94,17 +94,15 @@ function cyclotomic_field(n::Int; cached::Bool = true)
   return CyclotomicField(n, "z_$n", cached = cached)
 end
 
-#fields with usually large class groups...
 # TODO: Some sort of reference?
 @doc Markdown.doc"""
     wildanger_field(n::Int, B::fmpz) -> AnticNumberField, nf_elem
-    wildanger_field(n::Int, B::Integer) -> AnticNumberField, nf_elem
 
 Returns the field with defining polynomial $x^n + \sum_{i=0}^{n-1} (-1)^{n-i}Bx^i$.
 These fields tend to have non-trivial class groups.
 """
 function wildanger_field(n::Int, B::fmpz; cached::Bool = true)
-  Qx, x = PolynomialRing(FlintQQ)
+  Qx, x = PolynomialRing(FlintQQ, "x", cached = false)
   f = x^n
   for i=0:n-1
     f += (-1)^(n-i)*B*x^i
@@ -162,32 +160,6 @@ characteristic(::AnticNumberField) = 0
 #  Predicates
 #
 ################################################################################
-
-@doc Markdown.doc"""
-    ispure_extension(K::AnticNumberField) -> Bool
-    
-Tests if $K$ is pure, that is, if the defining polynomial is $x^n - g$ for some
-rational number $g$.
-"""
-function ispure_extension(K::AnticNumberField)
-  if !ismonic(K.pol)
-    return false
-  end
-  return all(i->iszero(coeff(K.pol, i)), 1:degree(K)-1)
-end
-
-@doc Markdown.doc"""
-    iskummer_extension(K::AnticNumberField) -> Bool
-
-Tests if $K$ is a Kummer extension of $\mathbb Q$, that is, if the defining
-polynomial is of the form $x^2 - g$.
-"""
-function iskummer_extension(K::AnticNumberField)
-  if degree(K) != 2
-    return false
-  end
-  return ispure_extension(K)
-end
 
 @doc Markdown.doc"""
     isdefining_polynomial_nice(K::AnticNumberField)

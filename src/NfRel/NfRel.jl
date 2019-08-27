@@ -49,7 +49,7 @@ end
 
 ################################################################################
 #
-#  Comply with Nemo ring interface
+#  Comply with ring interface
 #
 ################################################################################
 
@@ -59,32 +59,30 @@ elem_type(::NfRel{T}) where {T} = NfRelElem{T}
 
 parent_type(::Type{NfRelElem{T}}) where {T} = NfRel{T}
 
-Nemo.needs_parentheses(::NfRelElem) = true
+needs_parentheses(::NfRelElem) = true
 
-Nemo.isnegative(x::NfRelElem) = Nemo.isnegative(data(x))
+isnegative(x::NfRelElem) = isnegative(data(x))
 
-Nemo.show_minus_one(::Type{NfRelElem{T}}) where {T} = true
+show_minus_one(::Type{NfRelElem{T}}) where {T} = true
 
-function Nemo.iszero(a::NfRelElem)
+function iszero(a::NfRelElem)
   reduce!(a)
   return iszero(data(a))
 end
 
-function Nemo.isone(a::NfRelElem)
+function isone(a::NfRelElem)
   reduce!(a)
   return isone(data(a))
 end
 
-Nemo.zero(K::NfRel) = K(Nemo.zero(parent(K.pol)))
+zero(K::NfRel) = K(zero(parent(K.pol)))
 
-Nemo.one(K::NfRel) = K(Nemo.one(parent(K.pol)))
+one(K::NfRel) = K(one(parent(K.pol)))
 
-function Nemo.zero!(a::NfRelElem)
-  Nemo.zero!(a.data)
+function zero!(a::NfRelElem)
+  zero!(a.data)
   return a
 end
-
-isunit(a::NfRelElem) = !iszero(a)
 
 ################################################################################
 #
@@ -92,18 +90,18 @@ isunit(a::NfRelElem) = !iszero(a)
 #
 ################################################################################
 
-Nemo.promote_rule(::Type{NfRelElem{S}}, ::Type{T}) where {T <: Integer, S} = NfRelElem{S}
+promote_rule(::Type{NfRelElem{S}}, ::Type{T}) where {T <: Integer, S} = NfRelElem{S}
 
-Nemo.promote_rule(::Type{NfRelElem{T}}, ::Type{fmpz}) where {T <: Nemo.RingElement} = NfRelElem{T}
+promote_rule(::Type{NfRelElem{T}}, ::Type{fmpz}) where {T <: RingElement} = NfRelElem{T}
 
-Nemo.promote_rule(::Type{NfRelElem{T}}, ::Type{fmpq}) where {T <: Nemo.RingElement} = NfRelElem{T}
+promote_rule(::Type{NfRelElem{T}}, ::Type{fmpq}) where {T <: RingElement} = NfRelElem{T}
 
-Nemo.promote_rule(::Type{NfRelElem{T}}, ::Type{T}) where {T} = NfRelElem{T}
+promote_rule(::Type{NfRelElem{T}}, ::Type{T}) where {T} = NfRelElem{T}
 
-Nemo.promote_rule(::Type{NfRelElem{T}}, ::Type{NfRelElem{T}}) where T <: Nemo.RingElement = NfRelElem{T}
+promote_rule(::Type{NfRelElem{T}}, ::Type{NfRelElem{T}}) where T <: RingElement = NfRelElem{T}
 
-function Nemo.promote_rule(::Type{NfRelElem{T}}, ::Type{U}) where {T <: Nemo.RingElement, U <: Nemo.RingElement}
-  Nemo.promote_rule(T, U) == T ? NfRelElem{T} : Union{}
+function promote_rule(::Type{NfRelElem{T}}, ::Type{U}) where {T <: RingElement, U <: RingElement}
+  promote_rule(T, U) == T ? NfRelElem{T} : Union{}
 end
 
 ################################################################################
@@ -237,20 +235,21 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    NumberField(f::Poly{NumFieldElem}, s::String;
+    NumberField(f::PolyElem{NumFieldElem}, s::String;
                 cached::Bool = false, check::Bool = false) -> NumField, NumFieldElem
 
-> Given an irreducible polynomial $f \in K[t]$ over some number field $K$, this
-> function creates the simple number field $L = K[t]/(f)$ and returns $(L, b)$,
-> where $b$ is the class of $t$ in $L$. The string `s` is used only for
-> printing the primitive element $b$.
->
-> Testing that $f$ is irreducible can be disabled by setting the ketword
-> argument to `false`.
+Given an irreducible polynomial $f \in K[t]$ over some number field $K$, this
+function creates the simple number field $L = K[t]/(f)$ and returns $(L, b)$,
+where $b$ is the class of $t$ in $L$. The string `s` is used only for printing
+the primitive element $b$.
+
+Testing that $f$ is irreducible can be disabled by setting the keyword
+argument to `false`.
 """
-function NumberField(f::Generic.Poly{T}, s::String; cached::Bool = false, check::Bool = false) where T
+function NumberField(f::PolyElem{T}, s::String;
+                     cached::Bool = false, check::Bool = false)  where {T <: NumFieldElem}
   S = Symbol(s)
-  check && !isirreducible(f) && error("Polynomial must be irreducible")
+  check && !isirreducible(f) && throw(error("Polynomial must be irreducible"))
   K = NfRel{T}(f, S, cached)
   return K, K(gen(parent(f)))
 end
@@ -275,13 +274,6 @@ function (K::NfRel{T})(a::T) where T
   return z
 end
 
-function (K::NfRel{T})(a::Vector{T}) where T
-  @assert length(a) <= degree(K)
-  z = NfRelElem{T}(parent(K.pol)(a))
-  z.parent = K
-  return z
-end
-
 (K::NfRel)(a::Integer) = K(parent(K.pol)(a))
 
 (K::NfRel)(a::Rational{T}) where {T <: Integer} = K(parent(K.pol)(a))
@@ -292,7 +284,7 @@ end
 
 (K::NfRel)() = zero(K)
 
-Nemo.gen(K::NfRel) = K(Nemo.gen(parent(K.pol)))
+gen(K::NfRel) = K(gen(parent(K.pol)))
 
 ################################################################################
 #
@@ -322,7 +314,7 @@ function Base.:(*)(a::NfRelElem{T}, b::NfRelElem{T}) where {T}
   return parent(a)(data(a) * data(b))
 end
 
-function Nemo.divexact(a::NfRelElem{T}, b::NfRelElem{T}) where {T}
+function divexact(a::NfRelElem{T}, b::NfRelElem{T}) where {T}
   b == 0 && error("Element not invertible")
   return a*inv(b)
 end
@@ -336,7 +328,7 @@ Base.:(//)(a::NfRelElem{T}, b::NfRelElem{T}) where {T} = divexact(a, b)
 ################################################################################
 
 function Base.inv(a::NfRelElem)
-  a == 0 && error("Element not invertible")
+  a == 0 && throw(error("Element not invertible"))
   g, s, _ = gcdx(data(a), parent(a).pol)
   @assert g == 1
   return parent(a)(s)
@@ -402,11 +394,74 @@ end
 
 ################################################################################
 #
+#  Ad hoc operators
+#
+################################################################################
+
+function Base.:(*)(a::NfRelElem{T}, b::T) where {T <: NumFieldElem}
+  return parent(a)(data(a) * b)
+end
+
+Base.:(*)(a::T, b::NfRelElem{T}) where {T <: NumFieldElem} = b * a
+
+function Base.:(+)(a::NfRelElem{T}, b::T) where {T <: NumFieldElem}
+  return parent(a)(data(a) + b)
+end
+
+Base.:(+)(a::T, b::NfRelElem{T}) where {T <: NumFieldElem} = b + a
+
+function Base.:(-)(a::NfRelElem{T}, b::T) where {T <: NumFieldElem}
+  return parent(a)(data(a) - b)
+end
+
+function Base.:(-)(a::T, b::NfRelElem{T}) where {T <: NumFieldElem}
+  return parent(b)(a - data(b))
+end
+
+function divexact(a::NfRelElem{T}, b::T) where {T <: NumFieldElem}
+  return parent(a)(divexact(data(a), b))
+end
+
+Base.:(//)(a::NfRelElem{T}, b::T) where {T <: NumFieldElem} = divexact(a, b)
+
+for F in [fmpz, fmpq, Int]
+  @eval begin
+    function Base.:(*)(a::NfRelElem{T}, b::$F) where {T <: NumFieldElem}
+      return parent(a)(data(a) * b)
+    end
+
+    Base.:(*)(a::$F, b::NfRelElem{T}) where {T <: NumFieldElem} = b * a
+
+    function Base.:(+)(a::NfRelElem{T}, b::$F) where {T <: NumFieldElem}
+      return parent(a)(data(a) + b)
+    end
+
+    Base.:(+)(a::$F, b::NfRelElem{T}) where {T <: NumFieldElem} = b + a
+
+    function Base.:(-)(a::NfRelElem{T}, b::$F) where {T <: NumFieldElem}
+      return parent(a)(data(a) - b)
+    end
+
+    function Base.:(-)(a::$F, b::NfRelElem{T}) where {T <: NumFieldElem}
+      return parent(b)(a - data(b))
+    end
+    
+    function divexact(a::NfRelElem{T}, b::$F) where {T <: NumFieldElem}
+      return parent(a)(divexact(data(a), b))
+    end
+
+    Base.:(//)(a::NfRelElem{T}, b::$F) where {T <: NumFieldElem} = divexact(a, b)
+  end
+end
+
+
+################################################################################
+#
 #  Unsafe operations
 #
 ################################################################################
 
-function Nemo.mul!(c::NfRelElem{T}, a::NfRelElem{T}, b::NfRelElem{T}) where {T}
+function mul!(c::NfRelElem{T}, a::NfRelElem{T}, b::NfRelElem{T}) where {T}
   mul!(c.data, a.data, b.data)
   c = reduce!(c)
   return c
@@ -418,13 +473,13 @@ function mul!(c::NfRelElem{T}, a::NfRelElem{T}, b::T) where {T}
   return c
 end
 
-function Nemo.addeq!(b::NfRelElem{T}, a::NfRelElem{T}) where {T}
+function addeq!(b::NfRelElem{T}, a::NfRelElem{T}) where {T}
   addeq!(b.data, a.data)
   b = reduce!(b)
   return b
 end
 
-function Nemo.add!(c::NfRelElem{T}, a::NfRelElem{T}, b::NfRelElem{T}) where {T}
+function add!(c::NfRelElem{T}, a::NfRelElem{T}, b::NfRelElem{T}) where {T}
   add!(c.data, a.data, b.data)
   c = reduce!(c)
   return c
@@ -510,76 +565,23 @@ function _absolute_field(K::NfRel, cached::Bool = false)
   return Ka, al, be, ga
 end 
 
-function Nemo.check_parent(a, b)
+function check_parent(a, b)
   return a==b
 end
 
-function Nemo.content(a::Generic.Poly{T}) where T <: Nemo.Field
+function content(a::Generic.Poly{T}) where T <: Field
   return base_ring(a)(1)
 end
 
-Nemo.canonical_unit(a::NfRelElem) = a
-
-
-@doc Markdown.doc"""
-    degree(K::NumField) -> Int
-
-> Return the degree of the number field over its base field.
-"""
-degree(::NumField)
+canonical_unit(a::NfRelElem) = a
 
 #######################################################################
 # convenience constructions
 #######################################################################
-@doc Markdown.doc"""
-    ispure_extension(K::NfRel) -> Bool
-Tests if $K$ is pure, ie. if the defining polynomial is $x^n-g$.
-"""
-function ispure_extension(K::NfRel)
-  if !ismonic(K.pol)
-    return false
-  end
-  return all(i->iszero(coeff(K.pol, i)), 1:degree(K)-1)
-end
-
-@doc Markdown.doc"""
-    iskummer_extension(K::Hecke.NfRel{nf_elem}) -> Bool
-Tests if $K$ is Kummer, ie. if the defining polynomial is $x^n-g$ and
-if the coefficient field contains the $n$-th roots of unity.
-"""
-function iskummer_extension(K::Hecke.NfRel{nf_elem})
-  if !ispure_extension(K)
-    return false
-  end
-
-  k = base_field(K)
-  Zk = maximal_order(k)
-  _, o = Hecke.torsion_units_gen_order(Zk)
-  if o % degree(K) != 0
-    return false
-  end
-  return true
-end
-
-@doc Markdown.doc"""
-    pure_extension(n::Int, gen::FacElem{nf_elem, AnticNumberField}) -> NfRel{nf_elem}, NfRelElem
-    pure_extension(n::Int, gen::nf_elem) -> NfRel{nf_elem}, NfRelElem
-Create the field extension with the defining polynomial $x^n-gen$.
-"""
-function pure_extension(n::Int, gen::FacElem{nf_elem, AnticNumberField})
-  return pure_extension(n, evaluate(gen))
-end
-
-function pure_extension(n::Int, gen::nf_elem)
-  k = parent(gen)
-  kx, x = PolynomialRing(k, cached = false)
-  return number_field(x^n-gen)
-end
 
 function hash(a::Hecke.NfRelElem{nf_elem}, b::UInt)
   return hash(a.data, b)
 end
-
 ################################################################################
 #
 #  Representation Matrix
@@ -637,7 +639,6 @@ function norm(a::NfRelElem{nf_elem}, new::Bool = !true)
   return det(M)
 end
 
-
 function norm(a::NfRelElem, new::Bool = true)
   if new && ismonic(parent(a).pol)
     return resultant(a.data, parent(a).pol)
@@ -657,35 +658,32 @@ end
 #
 ################################################################################
 
-function rand!(c::NfRelElem, b::Vector{<: NfRelElem}, r::UnitRange)
-  K = parent(b[1])
-  length(b) == 0 && error("Array must not be empty")
+#function rand!(c::NfRelElem, b::Vector{<: NfRelElem}, r::UnitRange)
+#  K = parent(b[1])
+#  length(b) == 0 && error("Array must not be empty")
+#
+#  # TODO: Avoid promotion to K
+#  mul!(c, b[1], K(rand(r)))
+#  t = zero(K)
+#
+#  for i = 2:length(b)
+#    mul!(t, b[i], K(rand(r)))
+#    add!(c, t, c)
+#  end
+#
+#  return c
+#end
+#
+#function rand(L::NfRel, r::UnitRange)
+#  K = base_field(L)
+#  c = L()
+#  b = basis(L)
+#  for i = 1:degree(L)
+#    c = add!(c, c, b[i]*rand(K, r))
+#  end
+#  return c
+#end
 
-  # TODO: Avoid promotion to K
-  mul!(c, b[1], K(rand(r)))
-  t = zero(K)
-
-  for i = 2:length(b)
-    mul!(t, b[i], K(rand(r)))
-    add!(c, t, c)
-  end
-
-  return c
-end
-
-function rand(L::NfRel, r::UnitRange)
-  K = base_field(L)
-  c = L()
-  b = basis(L)
-  for i = 1:degree(L)
-    c = add!(c, c, b[i]*rand(K, r))
-  end
-  return c
-end
-
-######################################################################
-# fun in towers..
-######################################################################
 
 ################################################################################
 #
@@ -693,31 +691,15 @@ end
 #
 ################################################################################
 
-absolute_degree(A::AnticNumberField) = degree(A)
-
-function tr(a::NfRelElem, k::Union{NfRel, AnticNumberField, FlintRationalField})
-  b = tr(a)
-  while parent(b) != k
-    b = tr(b)
+function _poly_norm_to(f, k::T) where {T}
+  if base_ring(f) isa T
+    @assert base_ring(f) == k
+    return f
+  else
+    return _poly_norm_to(norm(f), k)
   end
-  return b
 end
 
-function norm(a::NfRelElem, k::Union{NfRel, AnticNumberField, FlintRationalField})
-  b = norm(a)
-  while parent(b) != k
-    b = norm(b)
-  end
-  return b
-end
-
-function absolute_tr(a::NfRelElem)
-  return tr(a, FlintQQ)
-end
-
-function absolute_norm(a::NfRelElem)
-  return norm(a, FlintQQ)
-end
 
 #TODO: investigate charpoly/ minpoly from power_sums, aka tr(a^i) and
 #      Newton identities
@@ -748,12 +730,10 @@ function minpoly(a::NfRelElem)
   return minpoly(R, M, false)
 end
 
+
 function charpoly(a::NfRelElem, k::Union{NfRel, AnticNumberField, FlintRationalField})
   f = charpoly(a)
-  while base_ring(f) != k
-    f = norm(f)
-  end
-  return f
+  return _poly_norm_to(f, k)
 end
 
 function absolute_charpoly(a::NfRelElem)
@@ -768,7 +748,7 @@ function minpoly(a::NfRelElem, k::Union{NfRel, AnticNumberField, FlintRationalFi
   end
 
   f = minpoly(a)
-    while base_ring(f) != k
+  while base_ring(f) != k
     f = norm(f)
     g = gcd(f, derivative(f))
     if !isone(g)
@@ -808,33 +788,6 @@ function (R::Generic.PolyRing{NfRelElem{T}})(a::NfRelElem{NfRelElem{T}}) where T
     return a.data
   end
   error("wrong ring")
-end
-
-function factor(f::PolyElem{<: NumFieldElem})
-  K = base_ring(f)
-  Ka, rel_abs, _ = absolute_field(K)
-
-  function map_poly(P::Ring, mp::Map, f::Generic.Poly)
-    return P([mp(coeff(f, i)) for i=0:degree(f)])
-  end
-
-  fa = map_poly(PolynomialRing(Ka, "T", cached=false)[1], pseudo_inv(rel_abs), f)
-  lf = factor(fa)
-  res = Fac(map_poly(parent(f), rel_abs, lf.unit), Dict(map_poly(parent(f), rel_abs, k)=>v for (k,v) = lf.fac))
-
-  return res
-end
-
-function isirreducible(f::Generic.Poly{NfRelElem{T}}) where T
-  lf = factor(f)
-  return sum(values(lf.fac)) == 1
-end
-
-function roots(f::Generic.Poly{NfRelElem{T}}) where T
-  lf = factor(f)
-  @assert degree(lf.unit) == 0
-  scale = inv(coeff(lf.unit, 0))
-  return [-constant_coefficient(x)*scale for x = keys(lf.fac) if degree(x)==1]
 end
 
 ################################################################################
@@ -896,11 +849,11 @@ end
 The discriminant of the defining polynomial of $K$ {\bf not} the discriminant 
 of the maximal order.
 """
-function Nemo.discriminant(K::AnticNumberField)
+function discriminant(K::AnticNumberField)
   return discriminant(K.pol)
 end
 
-function Nemo.discriminant(K::NfRel)
+function discriminant(K::NfRel)
   d = discriminant(K.pol)
   return d
 end
@@ -908,15 +861,16 @@ end
 @doc Markdown.doc"""
     discriminant(K::AnticNumberField, FlintQQ) -> fmpq
     discriminant(K::NfRel, FlintQQ) -> 
+
 The absolute discriminant of the defining polynomial of $K$ {\bf not} the discriminant 
 of the maximal order. Ie the norm of the discriminant time the power of the discriminant
 of the base field.
 """
-function Nemo.discriminant(K::AnticNumberField, ::FlintRationalField)
+function discriminant(K::AnticNumberField, ::FlintRationalField)
   return discriminant(K)
 end
 
-function Nemo.discriminant(K::NfRel, ::FlintRationalField)
+function discriminant(K::NfRel, ::FlintRationalField)
   d = norm(discriminant(K)) * discriminant(base_field(K))^degree(K)
   return d
 end
@@ -933,6 +887,7 @@ function normal_basis(L::NfRel{nf_elem})
   K = base_field(L)
   OK = base_ring(O)
   d = discriminant(O)
+
   for p in PrimeIdealsSet(OK, degree(L), -1, indexdivisors = false, ramified = false)
     if valuation(d, p) != 0
       continue

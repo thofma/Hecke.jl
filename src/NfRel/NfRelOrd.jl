@@ -7,7 +7,7 @@ export pseudo_basis, basis_pmat
 ################################################################################
 
 @doc Markdown.doc"""
-      nf(O::NfRelOrd) -> RelativeExtension
+      nf(O::NfRelOrd) -> NumField
 
 Returns the ambient number field of $\mathcal O$.
 """
@@ -156,7 +156,7 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-      pseudo_basis(O::NfRelOrd{T, S}) -> Vector{Tuple{RelativeElement{T}{T}, S}}
+      pseudo_basis(O::NfRelOrd{T, S}) -> Vector{Tuple{NumFieldElem{T}{T}, S}}
 
 Returns the pseudo-basis of $\mathcal O$.
 """
@@ -205,7 +205,7 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-      basis_nf(O::NfRelOrd) -> Array{RelativeElement, 1}
+      basis_nf(O::NfRelOrd) -> Array{NumFieldElem, 1}
 
 Returns the elements of the pseudo-basis of $\mathcal O$ as elements of the
 ambient number field.
@@ -325,7 +325,7 @@ function discriminant(O::NfRelOrd{nf_elem, S}) where S
   return deepcopy(O.disc_abs)
 end
 
-function discriminant(O::NfRelOrd{T, S}) where {T <: RelativeElement{U} where U, S}
+function discriminant(O::NfRelOrd{T, S}) where {T <: NumFieldElem{U} where U, S}
   assure_has_discriminant(O)
   return deepcopy(O.disc_rel)
 end
@@ -372,7 +372,7 @@ end
 #
 ################################################################################
 
-function _check_elem_in_order(a::RelativeElement{T}, O::NfRelOrd{T, S}, short::Type{Val{V}} = Val{false}) where {T, S, V}
+function _check_elem_in_order(a::NumFieldElem{T}, O::NfRelOrd{T, S}, short::Type{Val{V}} = Val{false}) where {T, S, V}
   b_pmat = basis_pmat(O, copy = false)
   t = zero_matrix(base_field(nf(O)), 1, degree(O))
   elem_to_mat_row!(t, 1, a)
@@ -399,11 +399,11 @@ function _check_elem_in_order(a::RelativeElement{T}, O::NfRelOrd{T, S}, short::T
 end
 
 @doc Markdown.doc"""
-      in(a::RelativeElement, O::NfRelOrd) -> Bool
+      in(a::NumFieldElem, O::NfRelOrd) -> Bool
 
 Checks whether $a$ lies in $\mathcal O$.
 """
-function in(a::RelativeElement{T}, O::NfRelOrd{T, S}) where {T, S}
+function in(a::NumFieldElem{T}, O::NfRelOrd{T, S}) where {T, S}
   return _check_elem_in_order(a, O, Val{true})
 end
 
@@ -414,39 +414,39 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-      Order(K::RelativeExtension{T}, M::Generic.Mat{T}) -> NfRelOrd
+      Order(K::NumField{T}, M::Generic.Mat{T}) -> NfRelOrd
 
 Returns the order which has basis matrix $M$ with respect to the power basis
 of $K$.
 """
-function Order(L::RelativeExtension{nf_elem}, M::Generic.Mat{nf_elem})
+function Order(L::NumField{nf_elem}, M::Generic.Mat{nf_elem})
   # checks
   return NfRelOrd{nf_elem, NfOrdFracIdl}(L, deepcopy(M))
 end
 
-function Order(L::RelativeExtension{S}, M::Generic.Mat{S}) where S <: RelativeElement{T} where T
+function Order(L::NumField{S}, M::Generic.Mat{S}) where S <: NumFieldElem{T} where T
   # checks
   return NfRelOrd{elem_type(base_field(L)), NfRelOrdFracIdl{T}}(L, deepcopy(M))
 end
 
 @doc Markdown.doc"""
-      Order(K::RelativeExtension, M::PMat) -> NfRelOrd
+      Order(K::NumField, M::PMat) -> NfRelOrd
 
 Returns the order which has basis pseudo-matrix $M$ with respect to the power basis
 of $K$.
 """
-function Order(L::RelativeExtension{T}, M::PMat{T, S}) where {T, S}
+function Order(L::NumField{T}, M::PMat{T, S}) where {T, S}
   # checks
   return NfRelOrd{T, S}(L, deepcopy(M))
 end
 
 @doc Markdown.doc"""
-      EquationOrder(L::RelativeExtension) -> NfRelOrd
-      equation_order(L::RelativeExtension) -> NfRelOrd
+      EquationOrder(L::NumField) -> NfRelOrd
+      equation_order(L::NumField) -> NfRelOrd
 
 Returns the equation order of the number field $L$.
 """
-function EquationOrder(L::RelativeExtension)
+function EquationOrder(L::NumField)
   M = identity_matrix(base_field(L), degree(L))
   PM = PseudoMatrix(M)
   O = Order(L, PM)
@@ -455,14 +455,14 @@ function EquationOrder(L::RelativeExtension)
   return O
 end
 
-equation_order(L::RelativeExtension) = EquationOrder(L)
+equation_order(L::NumField) = EquationOrder(L)
 
 @doc Markdown.doc"""
-      maximal_order(L::RelativeExtension) -> NfRelOrd
+      maximal_order(L::NumField) -> NfRelOrd
 
 Returns the maximal order of $L$.
 """
-function MaximalOrder(L::RelativeExtension)
+function MaximalOrder(L::NumField)
   try
     O = _get_maximal_order_of_nf_rel(L)
     return O
@@ -778,12 +778,12 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    denominator(a::RelativeElement, O::NfRelOrd) -> fmpz
+    denominator(a::NumFieldElem, O::NfRelOrd) -> fmpz
 
 Returns the smallest positive integer $k$ such that $k \cdot a$ is contained in
 $\mathcal O$.
 """
-function denominator(a::RelativeElement, O::NfRelOrd)
+function denominator(a::NumFieldElem, O::NfRelOrd)
   t = zero_matrix(base_field(nf(O)), 1, degree(O))
   elem_to_mat_row!(t, 1, a)
   t = t*basis_mat_inv(O, copy = false)

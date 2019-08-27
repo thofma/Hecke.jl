@@ -930,20 +930,6 @@ function (K::NfAbsNS)(a::NfAbsNSElem)
   error("not compatible")
 end
 
-@doc Markdown.doc"""
-    norm(f::PolyElem{NfAbsNSElem}) -> fmpq_poly
-
->The norm of $f$, that is, the product of all conjugates of $f$ taken
->coefficientwise.
-"""
-function norm(f::PolyElem{NfAbsNSElem})
-  Kx = parent(f)
-  K = base_ring(f)
-  P = polynomial_to_power_sums(f, degree(f)*degree(K))
-  PQ = fmpq[tr(x) for x in P]
-  return power_sums_to_polynomial(PQ)
-end
-
 function trace_assure(K::NfAbsNS)
   if isdefined(K, :traces)
     return
@@ -1107,14 +1093,11 @@ function factor(f::PolyElem{NfAbsNSElem})
     g = compose(f, gen(Kx) - k*pe)
     @vtime :PolyFactor 2 N = norm(g)
   end
-  @show "factor"
   @vtime :PolyFactor 2 fac = factor(N)
-  @show "done"
   
   res = Dict{PolyElem{NfAbsNSElem}, Int64}()
 
   for i in keys(fac.fac)
-    @show i
     t = change_ring(i, Kx)
     t = compose(t, gen(Kx) + k*pe)
     @vtime :PolyFactor 2 t = gcd(f, t)

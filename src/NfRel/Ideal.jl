@@ -12,7 +12,7 @@ Returns the order of $a$.
 order(a::NfRelOrdIdl) = a.order
 
 @doc Markdown.doc"""
-    nf(a::NfRelOrdIdl) -> RelativeExtension
+    nf(a::NfRelOrdIdl) -> NumField
 
 Returns the number field, of which $a$ is an integral ideal.
 """
@@ -104,8 +104,8 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-      pseudo_basis(a::NfRelOrdIdl{T, S}) -> Vector{Tuple{RelativeElement{T}, S}}
-      pseudo_basis(a::NfRelOrdFracIdl{T, S}) -> Vector{Tuple{RelativeElement{T}, S}}
+      pseudo_basis(a::NfRelOrdIdl{T, S}) -> Vector{Tuple{NumFieldElem{T}, S}}
+      pseudo_basis(a::NfRelOrdFracIdl{T, S}) -> Vector{Tuple{NumFieldElem{T}, S}}
 
 Returns the pseudo-basis of $a$.
 """
@@ -238,7 +238,7 @@ end
 Creates the ideal $x\cdot a + y\cdot b$ of $\mathcal O$. If check is set,
 then it is checked whether these elements define an ideal.
 """
-function ideal(O::NfRelOrd{T, S}, x::RelativeElement{T}, y::RelativeElement{T}, a::S, b::S, check::Bool = true) where {T, S}
+function ideal(O::NfRelOrd{T, S}, x::NumFieldElem{T}, y::NumFieldElem{T}, a::S, b::S, check::Bool = true) where {T, S}
   d = degree(O)
   pb = pseudo_basis(O, copy = false)
   M = zero_matrix(base_field(nf(O)), 2*d, d)
@@ -260,13 +260,13 @@ function ideal(O::NfRelOrd{T, S}, x::RelativeElement{T}, y::RelativeElement{T}, 
   return NfRelOrdIdl{T, S}(O, PM)
 end
 
-function ideal(O::NfRelOrd{T, S}, x::RelativeElement{T}, y::RelativeElement{T}, a::NfOrdIdl, b::NfOrdIdl, check::Bool = true) where {T, S}
+function ideal(O::NfRelOrd{T, S}, x::NumFieldElem{T}, y::NumFieldElem{T}, a::NfOrdIdl, b::NfOrdIdl, check::Bool = true) where {T, S}
   aa = frac_ideal(order(a), a, fmpz(1))
   bb = frac_ideal(order(b), b, fmpz(1))
   return ideal(O, x, y, aa, bb, check)
 end
 
-function ideal(O::NfRelOrd{T, S}, x::RelativeElement{T}, y::RelativeElement{T}, a::NfRelOrdIdl, b::NfRelOrdIdl, check::Bool = true) where {T, S}
+function ideal(O::NfRelOrd{T, S}, x::NumFieldElem{T}, y::NumFieldElem{T}, a::NfRelOrdIdl, b::NfRelOrdIdl, check::Bool = true) where {T, S}
   aa = frac_ideal(order(a), basis_pmat(a), true)
   bb = frac_ideal(order(b), basis_pmat(b), true)
   return ideal(O, x, y, aa, bb, check)
@@ -1220,7 +1220,7 @@ end
 
 @doc Markdown.doc"""
     in(x::NfRelOrdElem, y::NfRelOrdIdl)
-    in(x::RelativeElement, y::NfRelOrdIdl)
+    in(x::NumFieldElem, y::NfRelOrdIdl)
     in(x::fmpz, y::NfRelOrdIdl)
 
 Returns whether $x$ is contained in $y$.
@@ -1239,7 +1239,7 @@ function in(x::NfRelOrdElem, y::NfRelOrdIdl)
   return true
 end
 
-function in(x::RelativeElement, y::NfRelOrdIdl)
+function in(x::NumFieldElem, y::NfRelOrdIdl)
   parent(x) !== nf(order(y)) && error("Number field of element and ideal must be equal")
   return in(order(y)(x),y)
 end
@@ -1321,7 +1321,7 @@ function p_uniformizer(P::NfRelOrdIdl)
 end
 
 @doc Markdown.doc"""
-    anti_uniformizer(P::NfRelOrdIdl) -> RelativeElement
+    anti_uniformizer(P::NfRelOrdIdl) -> NumFieldElem
 
 Returns an element $a$ in the number field containing $P$ with valuation(a, P) == -1
 and non-negative valuation at all other prime ideals.
