@@ -9,14 +9,17 @@ end
 
 @inline function rem!(a::fmpz, b::fmpz, c::fmpz)
   ccall((:fmpz_mod, :libflint), Nothing, (Ref{fmpz}, Ref{fmpz}, Ref{fmpz}), a, b, c)
+  return a
 end
 
 @inline function sub!(a::fmpz, b::fmpz, c::fmpz)
   ccall((:fmpz_sub, :libflint), Nothing, (Ref{fmpz}, Ref{fmpz}, Ref{fmpz}), a, b, c)
+  return a
 end
 
 function rem!(a::fmpz_mod_poly, b::fmpz_mod_poly, c::fmpz_mod_poly)
   ccall((:fmpz_mod_poly_rem, :libflint), Nothing, (Ref{fmpz_mod_poly}, Ref{fmpz_mod_poly}, Ref{fmpz_mod_poly}), a, b, c)
+  return a
 end
 
 mutable struct crt_env{T}

@@ -624,7 +624,6 @@ function slope_factorization(f::Generic.Poly{T}) where T <: Union{padic, qadic}
         fact[fphi] = v
         continue
       end
-      @show phi
       NP = NewtonPolygon(fphi, phi)
       L = lines(NP)
       L1 = sort(L, rev = true, by = x -> slope(x))
@@ -639,9 +638,9 @@ function slope_factorization(f::Generic.Poly{T}) where T <: Union{padic, qadic}
         hchi = Hensel_factorization(chi)
         fchi = hchi[phi]
         com = fchi(mu)
-        @show gc = gcd(com, fphi)
+        gc = gcd(com, fphi)
         fact[gc] = v
-        @show fphi = divexact(fphi, gc)
+        fphi = divexact(fphi, gc)
       end
     end
   end
