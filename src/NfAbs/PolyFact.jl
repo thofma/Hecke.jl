@@ -252,7 +252,6 @@ function factor_new(f::PolyElem{nf_elem})
     end
 
     if length(s) == 1
-      println("irreducible by degset")
       return [f]
     end
 
@@ -601,7 +600,7 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 20)
       mod_sym!(B, vH.pM[2]*fmpz(2)^prec_scale)
 #      @show maximum(nbits, B), nbits(vH.pM[2]), b[i]
       if sz + prec_scale >= nbits(vH.pM[2]) || sz < 0
-        println("loss of precision for this col: ", sz, " ", nbits(pM[2]))
+        println("Loss of precision for this col: ", sz, " ", nbits(pM[2]))
         error()
         continue
       else

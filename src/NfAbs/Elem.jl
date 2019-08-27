@@ -403,7 +403,7 @@ function factor(f::PolyElem{nf_elem})
 
   f = f*(1//lead(f))
 
-  if true#degree(f) < degree(K)
+  if degree(f) < degree(K)
     lf = factor_trager(f)
   else
     lf = factor_new(f)
