@@ -71,16 +71,16 @@ function NumberField(f::fmpz_poly; cached::Bool = true, check::Bool = true)
 end
 
 @doc Markdown.doc"""
-    pure_extension(n::Int, gen::Integer; cached::Bool = true, check::Bool = true) -> AnticNumberField, nf_elem
-    pure_extension(n::Int, gen::fmpz; cached::Bool = true, check::Bool = true) -> AnticNumberField, nf_elem
+    radical_extension(n::Int, gen::Integer; cached::Bool = true, check::Bool = true) -> AnticNumberField, nf_elem
+    radical_extension(n::Int, gen::fmpz; cached::Bool = true, check::Bool = true) -> AnticNumberField, nf_elem
 
 The number field with defining polynomial $x^n-gen$.
 """
-function pure_extension(n::Int, gen::Integer; cached::Bool = true, check::Bool = true)
-  return pure_extension(n, fmpz(gen), cached = cached, check = check)
+function radical_extension(n::Int, gen::Integer; cached::Bool = true, check::Bool = true)
+  return radical_extension(n, fmpz(gen), cached = cached, check = check)
 end
 
-function pure_extension(n::Int, gen::fmpz; cached::Bool = true, check::Bool = true)
+function radical_extension(n::Int, gen::fmpz; cached::Bool = true, check::Bool = true)
   kx, x = FlintQQ["x"]
   return number_field(x^n - gen, cached = cached, check = check)
 end
@@ -193,12 +193,6 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
-    basis(K::AnticNumberField) -> Vector{nf_elem}
-
-Returns the power basis of $K$, that is, the elements $1,a,\dotsc,a^{d - 1}$,
-where $d$ is the degree of $K$.
-"""
 function basis(K::AnticNumberField)
   n = degree(K)
   g = gen(K);

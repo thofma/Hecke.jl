@@ -14,16 +14,23 @@ color: rgba(0,0,0,.87);
 }
 
 .md-typeset h2 {
-font-size: 1.3em;
-font-weight: 400;
-color: rgba(0,0,0,.87);
+  font-size: 1.4em;
+  font-weight: 400;
+  color: rgba(0,0,0,.87);
 }
 
 .md-typeset h3 {
-font-size: 1.1em;
-font-weight: 400;
-color: rgba(0,0,0,.87);
+  font-size: 1.2em;
+  font-weight: 400;
+  color: rgba(0,0,0,.87);
 }
+
+.md-typeset h4 {
+  font-size: 1.0em;
+  font-weight: 400;
+  color: rgba(0,0,0,.87);
+}
+
 .md-typeset p {
   font-size: 0.9em;
   line-height: 1.4;

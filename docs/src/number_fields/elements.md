@@ -7,8 +7,10 @@ CurrentModule = Hecke
 ### Creation
 
 ```@docs
-AnticNumberField
+gen(::SimpleNumField)
+gens(::NonSimpleNumField)
 ```
+
 ### Predicates
 
 ```@docs
@@ -18,12 +20,11 @@ isintegral(::NumFieldElem)
 ### Invariants
 
 ```@docs
-norm(::nf_elem)
-minpoly(::nf_elem)
-charpoly(::nf_elem)
-denominator(::nf_elem)
-numerator(::nf_elem)
-isunit(::nf_elem)
+norm(::NumFieldElem)
+minpoly(::NumFieldElem)
+absolute_minpoly(::NumFieldElem)
+charpoly(::NumFieldElem)
+absolute_charpoly(::NumFieldElem)
 ```
 
 ## Implicit Relative Extensions

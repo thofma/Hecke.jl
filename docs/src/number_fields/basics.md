@@ -13,13 +13,13 @@ functions can be used.
 NumberField(f::PolyElem{<:NumFieldElem}, s::String)
 cyclotomic_field(n::Int)
 wildanger_field(n::Int, B::fmpz)
-pure_extension(n::Int, a::NumFieldElem)
+radical_extension(n::Int, a::NumFieldElem)
 ```
 ---
 
 Many of the constructors have arguments of type `Symbol` or `AbstractString`,
 if used, they define the appearance in printing, and printing only.
-The named parameter `check` can be `true` or `false, the default being `true`.
+The named parameter `check` can be `true` or `false`, the default being `true`.
 This parameter controlls is the polynomial defining the number field is
 tested for irreducibility or not. Given that this can be potentially 
 very time consuming if the degree if large, one can disable this test. Note
@@ -42,11 +42,11 @@ K, a = NumberField(x^2 - 10, "a")
 ### Creation of non-simple number fields
 
 ```@docs
-NumberField(f::Vector{<:Generic.Poly{T}}) where {T}
+NumberField(::Vector{PolyElem{<:Union{NumFieldElem, fmpq}}}, ::String)
 ```
 ---
 
-### Example
+#### Example
 
 ```@repl
 using Hecke # hide
@@ -57,24 +57,33 @@ minpoly(g[1] + g[2])
 ```
 
 ### Conversion
+
 ```@docs
-simple_extension(K::NfAbsNS)
+absolute_field(K::NumField)
 ```
 
 ```@docs
-absolute_field(K::NfRel{nf_elem})
-absolute_field(K::NfRel{NfRelElem})
+simple_extension(::NonSimpleNumField)
 ```
+
+### Invariants
 
 ```@docs
-simple_extension(K::NfRel_ns)
-simple_extension(K::NfRel_ns{nf_elem}, ::FlintRationalField)
+basis(::SimpleNumField)
+basis(::NonSimpleNumField)
+issimple(::NumField)
+isabsolute(::NumField)
+degree(::NumField)
+discriminant(::SimpleNumField)
+absolute_discriminant(::SimpleNumField)
+defining_polynomial(::SimpleNumField)
 ```
+---
 
-## Invariants
+### Subfields
 
 ```@docs
-degree(::AnticNumberField)
-basis(::AnticNumberField)
-discriminant(::AnticNumberField)
+issubfield(::SimpleNumField, ::SimpleNumField)
+isisomorphic(::SimpleNumField, ::SimpleNumField)
 ```
+---

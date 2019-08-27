@@ -6,6 +6,8 @@
 
 isunit(a::NumFieldElem) = !iszero(a)
 
+canonical_unit(a::NumFieldElem) = a
+
 absolute_degree(A::AnticNumberField) = degree(A)
 
 ################################################################################
@@ -165,7 +167,7 @@ basis_mat(v::Vector{<: NumFieldElem})
 ################################################################################
 
 @doc Markdown.doc"""
-    charpoly(a::NumFieldElem) -> Poly
+    charpoly(a::NumFieldElem) -> PolyElem
 
 Given a number field element `a` of a number field `K`, this function returns
 the characteristic polynomial of `a` over the base field of `K`.
@@ -173,12 +175,28 @@ the characteristic polynomial of `a` over the base field of `K`.
 charpoly(::NumFieldElem)
 
 @doc Markdown.doc"""
-    minpoly(a::NumFieldElem) -> Poly
+    absolute_charpoly(a::NumFieldElem) -> PolyElem
+
+Given a number field element `a` of a number field `K`, this function returns
+the characteristic polynomial of `a` over the rationals $\mathbf{Q}$.
+"""
+absolute_charpoly(::NumFieldElem)
+
+@doc Markdown.doc"""
+    minpoly(a::NumFieldElem) -> PolyElem
 
 Given a number field element `a` of a number field `K`, this function returns
 the minimal polynomial of `a` over the base field of `K`.
 """
 minpoly(::NumFieldElem)
+
+@doc Markdown.doc"""
+    absolute_minpoly(a::NumFieldElem) -> PolyElem
+
+Given a number field element `a` of a number field `K`, this function returns
+the minimal polynomial of `a` over the rationals $\mathbf{Q}$.
+"""
+absolute_minpoly(::NumFieldElem)
 
 ################################################################################
 #
@@ -403,3 +421,38 @@ function roots(f::PolyElem{<: NumFieldElem})
   return elem_type(base_ring(f))[-constant_coefficient(x)*scale for x = keys(lf.fac) if degree(x) == 1]
 end
 
+################################################################################
+#
+#
+#
+################################################################################
+
+@doc Markdown.doc"""
+    representation_matrix(a::NumFieldElem) -> MatElem
+ 
+Returns the representation matrix of $a$, that is, the matrix representing
+multiplication with $a$ with respect to the canonical basis of the parent of $a$.
+"""
+representation_matrix(a::NumFieldElem)
+
+################################################################################
+#
+#
+#
+################################################################################
+
+@doc Markdown.doc"""
+    gen(L::SimpleNumField) -> NumFieldElem
+
+Given a simple number field $L = K[x]/(x)$ over $K$, this functions returns the
+class of $x$, which is the canonical primitive element of $L$ over $K$.
+"""
+gen(::SimpleNumField)
+
+@doc Markdown.doc"""
+    gens(L::NonSimpleNumField) -> Vector{NumFieldElem}
+
+Given a non-simple number field $L = K[x_1,\dotsc,x_n]/(f_1,\dotsc,f_n)$ over
+$K$, this functions returns the list $\bar x_1,\dotsc,\bar x_n$.
+"""
+gens(::NonSimpleNumField)

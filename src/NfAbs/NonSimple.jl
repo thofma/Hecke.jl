@@ -773,11 +773,7 @@ end
 #  Simple extensions
 #
 ################################################################################
-@doc Markdown.doc"""
-    simple_extension(K::NfAbsNS) -> AnticNumberField, Map
-For a non-simple extension $K$ of $Q$, find a primitive element and thus
-an isomorphic simple extension of $Q$. The map realises this isomorphism.
-"""
+
 function simple_extension(K::NfAbsNS; check = true)
   n = ngens(K)
   g = gens(K)

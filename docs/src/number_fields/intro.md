@@ -17,4 +17,7 @@ In both cases we refer to $K$ as the *base field* of the number field $L$.
 Another useful dichotomy comes from the type of the base field.
 We call $L$ an *absolute* number field, if the base field is equal to the rational numbers $\mathbf{Q}$.
 
+### Types
 
+The abstract type for number fields is `NumField`. For simple number fields the type is
+`SimpleNumField`, where as for non-simple number fields the type is `NonSimpleNumField`.

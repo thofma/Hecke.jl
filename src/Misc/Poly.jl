@@ -46,6 +46,17 @@ dense_poly_type(::Type{Generic.Res{fmpz}}) = fmpz_mod_poly
 
 dense_poly_type(::Type{T}) where {T} = Generic.Poly{T}
 
+################################################################################
+#
+#  Content
+#
+################################################################################
+
+function content(a::PolyElem{<: FieldElem})
+  return one(base_ring(a))
+end
+
+
 function fmpz(a::Generic.Res{Nemo.fmpz})
   return a.data
 end

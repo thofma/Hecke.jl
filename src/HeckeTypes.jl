@@ -4,6 +4,10 @@
 #
 ################################################################################
 
+export NonSimpleNumField
+
+export NonSimpleNumFieldElem
+
 abstract type NonSimpleNumField{T} <: NumField{T} end
 
 abstract type NonSimpleNumFieldElem{T} <: NumFieldElem{T} end

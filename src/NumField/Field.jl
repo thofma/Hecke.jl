@@ -8,13 +8,40 @@
     base_field(L::NumField) -> NumField
 
 Given a number field $L/K$ this function returns the base field $K$.
-For absolute extensions this returns `QQ`.
+For absolute extensions this returns $\mathbf{Q}$.
 """
 base_field(::NumField)
 
 _base_ring(K::NumField) = base_field(K)
 
 _base_ring(::FlintRationalField) = FlintQQ
+
+################################################################################
+#
+#  Predicates
+#
+################################################################################
+
+export isabsolute
+
+@doc Markdown.doc"""
+    isabsolute(L::NumField) -> Bool
+
+Returns whether $L$ is an absolute extension, that is, whether the base field
+of $L$ is $\mathbf{Q}$.
+"""
+isabsolute(::NumField)
+
+isabsolute(::NumField) = false
+
+isabsolute(::NumField{fmpq}) = true
+
+@doc Markdown.doc"""
+    elem_type(L::NumField) -> Type
+
+Returns the type of the elements of $L$.
+"""
+elem_type(::NumField)
 
 ################################################################################
 #
@@ -97,12 +124,12 @@ iscommutative(K::NumField) = true
 ################################################################################
 
 @doc Markdown.doc"""
-    ispure_extension(L::SimpleNumField) -> Bool
+    isradical_extension(L::SimpleNumField) -> Bool
 
 Tests if $L/K$ is pure, that is, if the defining polynomial is of the form
 $x^n - b$ for some $b \in K$.
 """
-function ispure_extension(K::SimpleNumField)
+function isradical_extension(K::SimpleNumField)
   if !ismonic(K.pol)
     return false
   end
@@ -117,7 +144,7 @@ of the form $x^n - b$ for some $b \in K$ and if $K$ contains the $n$-th roots
 of unity.
 """
 function iskummer_extension(K::SimpleNumField)
-  if !ispure_extension(K)
+  if !isradical_extension(K)
     return false
   end
 
@@ -134,31 +161,154 @@ function iskummer_extension(K::AnticNumberField)
   if degree(K) != 2
     return false
   end
-  return ispure_extension(K)
+  return isradical_extension(K)
 end
 
-function pure_extension(n::Int, a::FacElem;
+function radical_extension(n::Int, a::FacElem;
                         cached::Bool = true, check::Bool = true)
-  return pure_extension(n, evaluate(a), cached = cached, check = check)
+  return radical_extension(n, evaluate(a), cached = cached, check = check)
 end
 
 @doc Markdown.doc"""
-    pure_extension(n::Int, a::NumFieldElem; s = "_$",
+    radical_extension(n::Int, a::NumFieldElem; s = "_$",
                    check = true, cached = true) -> NumField, NumFieldElem
 
 Given an element $a$ of a number field $K$ and an integer $n$, create the simple
 extension of $K$ with the defining polynomial $x^n - a$.
 """
-function pure_extension(n::Int, a::NumFieldElem; s::String = "_\$",
+function radical_extension(n::Int, a::NumFieldElem; s::String = "_\$",
                         cached::Bool = true, check::Bool = true)
   k = parent(a)
   kx, x = PolynomialRing(k, cached = false)
   return number_field(x^n - a, s, check = check, cached = cached)
 end
 
-function pure_extension(n::Int, a::fmpq; s::String = "_\$",
+function radical_extension(n::Int, a::fmpq; s::String = "_\$",
                         cached::Bool = true, check::Bool = true)
   k = parent(a)
   kx, x = PolynomialRing(k, cached = false)
   return number_field(x^n - a, s, check = check, cached = cached)
 end
+
+## Non-simple
+
+@doc Markdown.doc"""
+    NumberField(f::Vector{PolyElem{<:NumFieldElem}}, s::String="_\$")
+                                              -> NumField, Vector{NumFieldElem}
+
+Given a list $f$ of univariate polynomials $f_1, \ldots, f_n \in K[x]$ over
+some number field $K$, constructs the extension $K[x_1, \ldots, x_n]/(f_1(x_1),
+\ldots, f_n(x_n))$.
+
+The extensions $K[x]/(f_i)$ must be linearly disjoint or equivalently the ideal
+$(f_1(x_1),\dotsc,f_n(x_n))$ must be maximal (although this is not tested).
+"""
+NumberField(::Vector{PolyElem{<:Union{NumFieldElem, fmpq}}}, ::String)
+
+## Missing
+
+@doc Markdown.doc"""
+    basis(L::SimpleNumField) -> Vector{NumFieldElem}
+
+Returns the canonical basis of a simple extension $L/K$, that is, the elements
+$1,a,\dotsc,a^{d - 1}$, where $d$ is the degree of $K$ and $a$ the primitive
+element.
+"""
+basis(::SimpleNumField)
+
+@doc Markdown.doc"""
+    basis(L::NonSimpleNumField) -> Vector{NumFieldElem}
+
+Returns the canonical basis of a non-simple extension $L/K$. If $L = K(a_1,\dotsc,a_n)$
+where each $a_i$ has degree $d_i$, then the basis will be $a_1^{i_1}\dotsm a_d^{i_d}$
+with $0 \leq i_j d_j - 1$ for $1 \leq j \leq n$.
+"""
+basis(::NonSimpleNumField)
+
+@doc Markdown.doc"""
+    simple_extension(L::NonSimpleNumField) -> SimpleNumField, Map
+
+Given a non-simple extension $L/K$, this function computes a simple extension $M/K$
+and an $K$-linear isomorphism $M \to L$.
+"""
+simple_extension(::NonSimpleNumField)
+
+@doc Markdown.doc"""
+    absolute_field(L::NumField) -> NumField, Map
+
+Given a number field $L$, this function returns an absolute simple number field $M/\mathbf{Q}$
+together with a $\mathbf{Q}$-linear isomorphism $M \to K$.
+"""
+absolute_field(::NumField)
+
+################################################################################
+#
+#  Defining polynomial
+#
+################################################################################
+
+export defining_polynomial
+
+@doc Markdown.doc"""
+    defining_polynomial(L::SimpleNumField) -> PolyElem
+
+Given a simple number field $L/K$, constructed as $L = K[x]/(f)$, this function
+returns $f$.
+"""
+defining_polynomial(::SimpleNumField)
+
+defining_polynomial(K::NfRel) = K.pol
+
+defining_polynomial(K::AnticNumberField) = K.pol
+
+@doc Markdown.doc"""
+    discriminant(L::SimpleNumField) -> NumFieldElem
+
+The discriminant of the defining polynomial of $L$, *not* the discriminant of
+the maximal order of $L$.
+"""
+function discriminant(K::SimpleNumField)
+  return discriminant(defining_polynomial(K))
+end
+
+@doc Markdown.doc"""
+    absolute_discriminant(L::SimpleNumField, QQ) -> fmpq
+
+The absolute discriminant of the defining polynomial of $L$, *not* the
+discriminant of the maximal order of $L$. This is the norm of the discriminant
+times the $d$-th power of the discriminant of the base field, where $d$ is the
+degree of $L$.
+"""
+absolute_discriminant(::SimpleNumField)
+
+function absolute_discriminant(K::AnticNumberField)
+  return discriminant(K)
+end
+
+function absolute_discriminant(K::NfRel)
+  d = norm(discriminant(K)) * absolute_discriminant(base_field(K))^degree(K)
+  return d
+end
+
+function discriminant(K::FlintRationalField)
+  return one(K)
+end
+
+##
+
+@doc Markdown.doc"""
+    issubfield(K::SimpleNumField, L::SimpleNumField) -> Bool, Map
+
+Returns `true` and an injection from $K$ to $L$ if $K$ is a subfield of $L$.
+Otherwise the function returns `false` and a morphism mapping everything to
+$0$.
+"""
+issubfield(::SimpleNumField, ::SimpleNumField)
+
+@doc Markdown.doc"""
+    isisomorphic(K::SimpleNumField, L::SimpleNumField) -> Bool, Map
+
+Returns `true` and an isomorphism from $K$ to $L$ if $K$ and $L$ are isomorphic.
+Otherwise the function returns `false` and a morphism mapping everything to $0$.
+"""
+isisomorphic(::SimpleNumField, ::SimpleNumField)

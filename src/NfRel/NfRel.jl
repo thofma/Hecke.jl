@@ -139,9 +139,26 @@ order_type(::Type{NfRel{T}}) where {T} = NfRelOrd{T, frac_ideal_type(order_type(
 @inline setcoeff!(a::NfRelElem{T}, i::Int, c::T) where {T} = setcoeff!(a.data, i, c)
 
 # copy does not do anything (so far), this is only for compatibility with coeffs(::AbsAlgAssElem)
-function coeffs(a::NfRelElem; copy::Bool = false)
-  return [ coeff(a, i) for i = 0:degree(parent(a)) - 1 ]
+function coeffs(a::NfRelElem{T}; copy::Bool = false) where {T}
+  return T[coeff(a, i) for i = 0:degree(parent(a)) - 1 ]
 end
+
+################################################################################
+#
+#  Constructors
+#
+################################################################################
+
+(K::NfRel)(x::NfRelElem) = K(base_field(K)(x))
+
+(K::NfRel)(x::nf_elem) = K(base_field(K)(x))
+
+(K::NfRel{T})(x::NfRelElem{T}) where {T} = K(x.data)
+
+(K::NfRel{NfRelElem{T}})(x::NfRelElem{T}) where {T} = K(parent(K.pol)(x))
+
+(K::NfRel{nf_elem})(x::nf_elem) = K(parent(K.pol)(x))
+
 
 ################################################################################
 #
@@ -234,18 +251,6 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
-    NumberField(f::PolyElem{NumFieldElem}, s::String;
-                cached::Bool = false, check::Bool = false) -> NumField, NumFieldElem
-
-Given an irreducible polynomial $f \in K[t]$ over some number field $K$, this
-function creates the simple number field $L = K[t]/(f)$ and returns $(L, b)$,
-where $b$ is the class of $t$ in $L$. The string `s` is used only for printing
-the primitive element $b$.
-
-Testing that $f$ is irreducible can be disabled by setting the keyword
-argument to `false`.
-"""
 function NumberField(f::PolyElem{T}, s::String;
                      cached::Bool = false, check::Bool = false)  where {T <: NumFieldElem}
   S = Symbol(s)
@@ -254,10 +259,7 @@ function NumberField(f::PolyElem{T}, s::String;
   return K, K(gen(parent(f)))
 end
 
-@doc Markdown.doc"""
-    NumberField(f::Generic.Poly{T}; cached::Bool = false, check::Bool = false) where T
-"""
-function NumberField(f::Generic.Poly{T}; cached::Bool = false, check::Bool = false) where T
+function NumberField(f::PolyElem{<: NumFieldElem}; cached::Bool = false, check::Bool = false)
   return NumberField(f, "_\$", cached = cached, check = check)
 end
  
@@ -491,22 +493,23 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
-    absolute_field(K::NfRel{nf_elem}, cached::Bool = false) -> AnticNumberField, Map, Map
-Given an extension $K/k/Q$, find an isomorphic extension of $Q$.
-"""
+#@doc Markdown.doc"""
+#    absolute_field(K::NfRel{nf_elem}, cached::Bool = false) -> AnticNumberField, Map, Map
+#Given an extension $K/k/Q$, find an isomorphic extension of $Q$.
+#"""
 function absolute_field(K::NfRel{nf_elem}, cached::Bool = false)
   Ka, a, b, c = _absolute_field(K, cached)
   #return Ka, NfRelToNf(K, Ka, a, b, c), hom(base_ring(K), Ka, a, check = false)
   return Ka, NfToNfRel(Ka, K, a, b, c), hom(base_field(K), Ka, a, check = false)
 end
 
-@doc Markdown.doc"""
-    absolute_field(K::NfRel{NfRelElem}, cached::Bool = false) -> NfRel, Map, Map
-Given an extension $E/K/k$, find an isomorphic extension of $k$.
-In a tower, only the top-most steps are collapsed.
-"""
+#@doc Markdown.doc"""
+#    absolute_field(K::NfRel{NfRelElem}, cached::Bool = false) -> NfRel, Map, Map
+#Given an extension $E/K/k$, find an isomorphic extension of $k$.
+#In a tower, only the top-most steps are collapsed.
+#"""
 function absolute_field(K::NfRel{NfRelElem{T}}, cached::Bool = false) where T
+  @show "here"
   Ka, a, b, c = _absolute_field(K)
   return Ka, NfRelToNfRelRel(Ka, K, a, b, c), hom(base_field(K), Ka, a, check = false)
 end
@@ -569,22 +572,13 @@ function check_parent(a, b)
   return a==b
 end
 
-function content(a::Generic.Poly{T}) where T <: Field
-  return base_ring(a)(1)
-end
-
-canonical_unit(a::NfRelElem) = a
-
-#######################################################################
-# convenience constructions
-#######################################################################
-
 function hash(a::Hecke.NfRelElem{nf_elem}, b::UInt)
   return hash(a.data, b)
 end
+
 ################################################################################
 #
-#  Representation Matrix
+#  Basis & representation matrix
 #
 ################################################################################
 
@@ -654,39 +648,6 @@ end
 
 ################################################################################
 #
-#  Random elements from arrays
-#
-################################################################################
-
-#function rand!(c::NfRelElem, b::Vector{<: NfRelElem}, r::UnitRange)
-#  K = parent(b[1])
-#  length(b) == 0 && error("Array must not be empty")
-#
-#  # TODO: Avoid promotion to K
-#  mul!(c, b[1], K(rand(r)))
-#  t = zero(K)
-#
-#  for i = 2:length(b)
-#    mul!(t, b[i], K(rand(r)))
-#    add!(c, t, c)
-#  end
-#
-#  return c
-#end
-#
-#function rand(L::NfRel, r::UnitRange)
-#  K = base_field(L)
-#  c = L()
-#  b = basis(L)
-#  for i = 1:degree(L)
-#    c = add!(c, c, b[i]*rand(K, r))
-#  end
-#  return c
-#end
-
-
-################################################################################
-#
 #  Minimal and characteristic polynomial
 #
 ################################################################################
@@ -699,7 +660,6 @@ function _poly_norm_to(f, k::T) where {T}
     return _poly_norm_to(norm(f), k)
   end
 end
-
 
 #TODO: investigate charpoly/ minpoly from power_sums, aka tr(a^i) and
 #      Newton identities
@@ -729,7 +689,6 @@ function minpoly(a::NfRelElem)
   R = PolynomialRing(base_field(parent(a)), cached = false)[1]
   return minpoly(R, M, false)
 end
-
 
 function charpoly(a::NfRelElem, k::Union{NfRel, AnticNumberField, FlintRationalField})
   f = charpoly(a)
@@ -764,16 +723,6 @@ end
 
 #
 
-(K::NfRel)(x::NfRelElem) = K(base_field(K)(x))
-
-(K::NfRel)(x::nf_elem) = K(base_field(K)(x))
-
-(K::NfRel{T})(x::NfRelElem{T}) where {T} = K(x.data)
-
-(K::NfRel{NfRelElem{T}})(x::NfRelElem{T}) where {T} = K(parent(K.pol)(x))
-
-(K::NfRel{nf_elem})(x::nf_elem) = K(parent(K.pol)(x))
-
 #
 
 function (R::Generic.PolyRing{nf_elem})(a::NfRelElem{nf_elem})
@@ -796,13 +745,6 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
-    issubfield(K::NfRel, L::NfRel) -> Bool, NfRelToNfRelMor
-
-Returns "true" and an injection from $K$ to $L$ if $K$ is a subfield of $L$.
-Otherwise the function returns "false" and a morphism mapping everything to
-$0$.
-"""
 function issubfield(K::NfRel, L::NfRel)
   @assert base_field(K) == base_field(L)
   f = K.pol
@@ -827,12 +769,6 @@ function issubfield(K::NfRel, L::NfRel)
   return false, hom(K, L, zero(L), check = false)
 end
 
-@doc Markdown.doc"""
-    isisomorphic(K::NfRel, L::NfRel) -> Bool, NfRelToNfRelMor
-
-Returns "true" and an isomorphism from $K$ to $L$ if $K$ and $L$ are isomorphic.
-Otherwise the function returns "false" and a morphism mapping everything to $0$.
-"""
 function isisomorphic(K::NfRel, L::NfRel)
   @assert base_field(K) == base_field(L)
   f = K.pol
@@ -841,38 +777,6 @@ function isisomorphic(K::NfRel, L::NfRel)
     return false, hom(K, L, zero(L), check = false)
   end
   return issubfield(K, L)
-end
-
-@doc Markdown.doc"""
-    discriminant(K::AnticNumberField) -> fmpq
-    discriminant(K::NfRel) -> 
-The discriminant of the defining polynomial of $K$ {\bf not} the discriminant 
-of the maximal order.
-"""
-function discriminant(K::AnticNumberField)
-  return discriminant(K.pol)
-end
-
-function discriminant(K::NfRel)
-  d = discriminant(K.pol)
-  return d
-end
-
-@doc Markdown.doc"""
-    discriminant(K::AnticNumberField, FlintQQ) -> fmpq
-    discriminant(K::NfRel, FlintQQ) -> 
-
-The absolute discriminant of the defining polynomial of $K$ {\bf not} the discriminant 
-of the maximal order. Ie the norm of the discriminant time the power of the discriminant
-of the base field.
-"""
-function discriminant(K::AnticNumberField, ::FlintRationalField)
-  return discriminant(K)
-end
-
-function discriminant(K::NfRel, ::FlintRationalField)
-  d = norm(discriminant(K)) * discriminant(base_field(K))^degree(K)
-  return d
 end
 
 ################################################################################
