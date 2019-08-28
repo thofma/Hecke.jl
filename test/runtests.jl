@@ -12,6 +12,10 @@ end
 #  set_verbose_level(scope, 3)
 #end
 
+k, a = quadratic_field(5)
+@assert fmpz(1) - a == -(a - 1)
+@assert 1 - a == -(a - 1)
+
 @time include("NumField.jl")
 @time include("AlgAss.jl")
 @time include("AlgAssAbsOrd.jl")
