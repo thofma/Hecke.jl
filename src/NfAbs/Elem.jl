@@ -76,7 +76,7 @@ end
 function charpoly(Zx::FmpzPolyRing, a::nf_elem)
   f = charpoly(a)
   if !isone(denominator(f))
-    error("element is not integral")
+    throw(error("Element is not integral"))
   end
   return Zx(f)
 end
@@ -117,7 +117,7 @@ end
 function minpoly(Zx::FmpzPolyRing, a::nf_elem)
   f = minpoly(a)
   if !isone(denominator(f))
-    error("element is not integral")
+    throw(error("Element is not integral"))
   end
   return Zx(f)
 end
@@ -224,7 +224,6 @@ end
 #
 ################################################################################
 
-
 @doc Markdown.doc"""
     isnorm_divisible(a::nf_elem, n::fmpz) -> Bool
 Checks if the norm of $a$ is divisible by $n$, assuming that the norm of $a$ is
@@ -246,7 +245,6 @@ function isnorm_divisible(a::nf_elem, n::fmpz)
   end 
   return iszero(el) 
 end
-
 
 ################################################################################
 #
@@ -345,15 +343,6 @@ function norm(f::PolyElem{nf_elem})
   T = change_ring(K.pol, Qxy)
   h = nf_poly_to_xy(f, Qxy, Qx)
   return resultant(T, h)
-end
-
-function norm(f::PolyElem{T}) where T <: NfRelElem
-  Kx = parent(f)
-  K = base_ring(f)
-
-  P = polynomial_to_power_sums(f, degree(f)*degree(K))
-  PQ = [tr(x) for x = P]
-  return power_sums_to_polynomial(PQ)
 end
 
 ################################################################################
@@ -709,13 +698,13 @@ end
     issquare(a::nf_elem) -> Bool, nf_elem
 Tests if $a$ is a square and return the root if possible.
 """
-Nemo.issquare(a::nf_elem) = ispower(a, 2)
+issquare(a::nf_elem) = ispower(a, 2)
 
 @doc Markdown.doc"""
     sqrt(a::nf_elem) -> nf_elem
 The square-root of $a$ or an error if this is not possible.
  """
-Nemo.sqrt(a::nf_elem) = root(a, 2)
+sqrt(a::nf_elem) = root(a, 2)
 
 @doc Markdown.doc"""
     root(a::nf_elem, n::Int) -> nf_elem

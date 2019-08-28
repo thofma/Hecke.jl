@@ -54,6 +54,16 @@ function eigenspace(M::MatElem{T}, lambda::T) where T <: FieldElem
   return resvect
 end
 
+function eigenspaces(M::MatElem{T}) where T<:Hecke.FieldElem
+
+  S = spectrum(M)
+  L = Dict{elem_type(base_ring(M)), typeof(M)}()
+  for k in keys(S)
+    push!(L, k => Hecke.vcat(Hecke.eigenspace(M, k)))
+  end
+  return L
+end
+
 function closure_with_pol(v::MatElem{T}, M::MatElem{T}) where T <: FieldElem
   i = 1
   E = rref(v)[2]
@@ -733,6 +743,112 @@ function rational_canonical_form1(M::MatElem{T}) where T <: FieldElem
   end
   return CF, TM
 end
+
+################################################################################
+#
+#  Simultaneous diagonalization
+#
+################################################################################
+
+function commute_pairwise(L::Array{S, 1}) where S <: Hecke.MatElem{T} where T <:Hecke.FieldElem
+
+  n = length(L)
+
+  # Check pairwise commutativity
+  for i in 1:n
+    for j in i+1:n
+      if L[i]*L[j] != L[j]*L[i]
+        return false
+      end
+    end
+  end
+  return true
+end
+
+function issimultaneous_diagonalizable(L::Vector{S}) where S <: Hecke.MatElem{T} where T <:Hecke.FieldElem
+  
+  if !commute_pairwise(L)
+    return false
+  end
+  
+  for i = 1:length(L)
+    f = minpoly(L[i])
+    if !issquarefree(f)
+      return false
+    end
+    lr = roots(f)
+    if length(lr) != degree(f)
+      return false
+    end
+  end
+  return true
+end
+
+
+function _intersect(A::Hecke.MatElem{T}, B::Hecke.MatElem{T}) where T <:
+Hecke.FieldElem
+
+  n = Hecke.nrows(A)
+  M = Hecke.vcat(A, B)
+  N = Hecke.kernel(M, side=:left)[2]
+  return N[:, 1:n]*A
+end
+
+
+@doc Markdown.doc"""
+    simuldiag(L::Array{S, 1}; splitting_field::Bool=false)
+> Returns a tuple whose first entry is the transformation matrix and whose
+> second entry is an array of matrices containing the diagonal forms of
+> the elements of $L$. 
+> If "check" is set to true, the algorithm checks whether
+> the matrices in $L$ are simultaneous diagonalizable before computing the transformation matrix. Default value is "true".
+"""
+function simuldiag(L::Vector{S}, check::Bool = true) where S <: MatElem{T} where T <: FieldElem
+
+  if check
+    if !issimultaneous_diagonalizable(L)
+      error("Only one matrix as input!")
+    end
+  end
+
+  n = length(L)
+  if n == 1
+    error("Only one matrix as input!")
+  end
+  s = Hecke.nrows(L[1])
+
+  # Compute transformation marix
+  egs = [eigenspaces(L[i]) for i = 1:length(L)]
+  _egs = [Dict([x] => v for (x, v) in y) for y in egs]
+  CE = common_eigenspaces(_egs)
+  A =  Hecke.vcat(collect(values(CE)))
+
+  # Compute diagonal forms
+  D = [similar(L[1]) for i in 1:length(L)]
+  m = 0
+  for (v, k) in CE
+    nr = Hecke.nrows(k)
+    for j in 1:nr
+      for i in 1:n
+        D[i][m + j, m + j] = v[i]
+      end
+    end
+    m = m + nr
+  end
+  return A, D
+end
+
+
+function common_eigenspaces(L::Array{Dict{Vector{T}, S}, 1}) where S<:Hecke.MatElem{T} where T<:Hecke.FieldElem
+
+  n = length(L)
+  if n==1
+    return L[1]
+  end
+  k = BigInt(floor(n/2))
+  return intersect_eigenspaces(common_eigenspaces(L[1:k]), common_eigenspaces(L[k+1:n]))
+end
+
 
 ################################################################################
 #

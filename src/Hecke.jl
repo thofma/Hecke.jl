@@ -44,7 +44,7 @@ import Base: show, minimum, rand, prod, copy, rand, ceil, round, size, in,
              setindex!, transpose, getindex, //, div, floor, max, BigFloat,
              precision, first, StepRange, show, one, zero, inv, iseven, isodd,
              convert, angle, abs2, isless, exponent, isfinite, zeros, rem, min,
-             numerator, denominator, exp, maximum, intersect, reduce
+             numerator, denominator, exp, maximum, intersect, reduce, sqrt
 
 # To make all exported Nemo functions visible to someone using "using Hecke"
 # we have to export everything again
@@ -196,7 +196,7 @@ function __init__()
   global _get_equation_order_of_nf = t[1]
   global _set_equation_order_of_nf = t[2]
 
-  t = create_accessors(RelativeExtension, NfRelOrd, get_handle())
+  t = create_accessors(SimpleNumField, NfRelOrd, get_handle())
 
   global _get_maximal_order_of_nf_rel = t[1]
   global _set_maximal_order_of_nf_rel = t[2]

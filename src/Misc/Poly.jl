@@ -46,6 +46,17 @@ dense_poly_type(::Type{Generic.Res{fmpz}}) = fmpz_mod_poly
 
 dense_poly_type(::Type{T}) where {T} = Generic.Poly{T}
 
+################################################################################
+#
+#  Content
+#
+################################################################################
+
+function content(a::PolyElem{<: FieldElem})
+  return one(base_ring(a))
+end
+
+
 function fmpz(a::Generic.Res{Nemo.fmpz})
   return a.data
 end
@@ -84,7 +95,7 @@ function ismonic(a::PolyElem)
 end
 
 @doc Markdown.doc"""
-  valence(f::PolyElem) -> RingElem
+    valence(f::PolyElem) -> RingElem
 
  The last non-zero coefficient of f
 """
@@ -99,15 +110,15 @@ function valence(f::PolyElem)
 end
 
 @doc Markdown.doc"""
-  leading_coefficient(f::PolyElem) -> RingElem
+    leading_coefficient(f::PolyElem) -> RingElem
 
  The last leading coefficient of f.
 """
 leading_coefficient(f::PolyElem) = lead(f)
 
 @doc Markdown.doc"""
-  trailing_coefficient(f::PolyElem) -> RingElem
-  constant_coefficient(f::PolyElem) -> RingElem
+    trailing_coefficient(f::PolyElem) -> RingElem
+    constant_coefficient(f::PolyElem) -> RingElem
 
  The constant coefficient of f.
 """
@@ -974,10 +985,14 @@ function squarefree_factorization(f::PolyElem)
   @assert iszero(characteristic(base_ring(f)))
   c = lead(f)
   f = divexact(f, c)
+  res = Dict{typeof(f), Int}()
   di = gcd(f, derivative(f))
+  if isone(di)
+    res[f] = 1
+    return res
+  end
   ei = divexact(f, di)
   i = 1
-  res = Dict{typeof(f), Int}()
   while !isconstant(ei)
     eii = gcd(di, ei)
     dii = divexact(di, eii)

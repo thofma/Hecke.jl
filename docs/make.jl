@@ -8,6 +8,40 @@ makedocs(
 
 docsdir = joinpath(@__DIR__, "build/")
 
+function _super_cool_example(f, overwrite = true)
+  inside = false
+  new_file = ""
+  open(f) do file
+    for ln in eachline(file);
+      if startswith(ln, "<a id='Example")
+        continue
+      end
+      if startswith(ln, "#### Example")
+        ln = ""
+        inside = true
+      end
+      if inside
+        if startswith(ln, "```julia-repl")
+          line = "!!! note \"Example\"\n    ```julia"
+        else
+          line = "    " * ln
+        end
+      else
+        line = ln;
+      end
+
+      if startswith(ln, "```") && !occursin("julia-repl", ln)
+        inside = false
+      end
+      new_file = new_file * "\n" * line
+    end
+  end
+  rm(f)
+  open(f, "w") do file
+    write(file, new_file)
+  end
+end
+
 for (root, dirs, files) in walkdir(docsdir)
   for file in files
     filename = joinpath(root, file) # path to files
@@ -16,6 +50,7 @@ for (root, dirs, files) in walkdir(docsdir)
     run(`sed -i 's/.*dash; \*Function.*/---/g' $filename`)
     run(`sed -i '/>source<\/a>/d' $filename`)
     run(`sed -i '/>\#<\/a>/d' $filename`)
+    _super_cool_example(filename)
   end
 end
 

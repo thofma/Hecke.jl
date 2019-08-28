@@ -1161,7 +1161,7 @@ function _rcf_reduce(CF::ClassField_pp)
   else
     CF.a = reduce_mod_powers(CF.a, e)
   end
-  CF.K = pure_extension(CF.o, CF.a)[1]
+  CF.K = radical_extension(CF.o, CF.a)[1]
   return nothing
 end
 

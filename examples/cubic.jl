@@ -128,7 +128,7 @@ function s3_with_discriminant(I::NfOrdIdl)
       @assert length(gens(K)) == 1
       Kr = K
       @assert degree(Kr) == 2
-#      @assert Hecke.ispure_extension(Kr)
+#      @assert Hecke.isradical_extension(Kr)
       conj = Hecke.rel_auto(a.cyc[1])
       Kr = a.cyc[1].A
       k = base_ring(Kr)

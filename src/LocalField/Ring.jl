@@ -92,9 +92,23 @@ one(Q::QadicRing) = QadicRingElem(Q.Q(1), Q)
 (Q::QadicRing)() = QadicRingElem(Q.Q(), Q)
 (Q::FlintQadicField)(a::QadicRingElem{qadic}) = a.x
 (Q::FlintPadicField)(a::QadicRingElem{padic}) = a.x
-(Q::FlintQadicField)(a::padic) = Q(lift(a)) #TODO: do properly
 valuation(a::QadicRingElem) = valuation(a.x)
 isunit(a::QadicRingElem) = valuation(a) == 0
+(Q::FlintQadicField)(a::padic) =  _map(Q, a) #TODO: do properly
+
+function _map(Q::FlintQadicField, a::padic)
+  K = parent(a)
+  v = valuation(a)
+  if v >= 0
+    q = Q(lift(a))
+    return setprecision(q, a.N)
+  else
+    d = uniformizer(K)^-v
+    n = a*d
+    n1 = divexact(Q(lift(n)), Q(lift(d)))
+    return n1
+  end
+end
 
 function Base.deepcopy_internal(a::QadicRingElem, dict::IdDict)
   return QadicRingElem(a.x, a.P)

@@ -14,7 +14,7 @@ Returns the order of $a$.
 order(a::NfRelOrdFracIdl) = a.order
 
 @doc Markdown.doc"""
-    nf(a::NfRelOrdFracIdl) -> RelativeExtension
+    nf(a::NfRelOrdFracIdl) -> NumField
 
 Returns the number field, of which $a$ is an fractional ideal.
 """
@@ -160,7 +160,7 @@ function frac_ideal(O::NfRelOrd{T, S}, M::Generic.Mat{T}) where {T, S}
   return frac_ideal(O, PseudoMatrix(M, coeffs))
 end
 
-function frac_ideal(O::NfRelOrd{T, S}, x::RelativeElement{T}) where {T, S}
+function frac_ideal(O::NfRelOrd{T, S}, x::NumFieldElem{T}) where {T, S}
   d = degree(O)
   pb = pseudo_basis(O, copy = false)
   M = zero_matrix(base_field(nf(O)), d, d)
@@ -176,9 +176,9 @@ function frac_ideal(O::NfRelOrd{T, S}, x::RelativeElement{T}) where {T, S}
   return NfRelOrdFracIdl{T, S}(O, PM)
 end
 
-*(O::NfRelOrd{T, S}, x::RelativeElement{T}) where {T, S} = frac_ideal(O, x)
+*(O::NfRelOrd{T, S}, x::NumFieldElem{T}) where {T, S} = frac_ideal(O, x)
 
-*(x::RelativeElement{T}, O::NfRelOrd{T, S}) where {T, S} = frac_ideal(O, x)
+*(x::NumFieldElem{T}, O::NfRelOrd{T, S}) where {T, S} = frac_ideal(O, x)
 
 function frac_ideal(O::NfRelOrd{T, S}, a::NfRelOrdIdl{T, S}) where {T, S}
   return frac_ideal(O, basis_pmat(a), true)
@@ -417,7 +417,7 @@ end
 #
 ################################################################################
 
-function *(a::NfRelOrdFracIdl{T, S}, b::RelativeElement{T}) where {T, S}
+function *(a::NfRelOrdFracIdl{T, S}, b::NumFieldElem{T}) where {T, S}
   if iszero(b)
     return b*order(a)
   end
@@ -425,7 +425,7 @@ function *(a::NfRelOrdFracIdl{T, S}, b::RelativeElement{T}) where {T, S}
   return c*a
 end
 
-*(b::RelativeElement{T}, a::NfRelOrdFracIdl{T, S}) where {T, S} = a*b
+*(b::NumFieldElem{T}, a::NfRelOrdFracIdl{T, S}) where {T, S} = a*b
 
 ################################################################################
 #
@@ -451,7 +451,7 @@ simplify(a::NfRelOrdFracIdl) = a
 #
 ################################################################################
 
-function mod(x::S, y::T) where {S <: Union{nf_elem, RelativeElement}, T <: Union{NfOrdFracIdl, NfRelOrdFracIdl}}
+function mod(x::S, y::T) where {S <: Union{nf_elem, NumFieldElem}, T <: Union{NfOrdFracIdl, NfRelOrdFracIdl}}
   K = parent(x)
   O = order(y)
   d = K(lcm(denominator(x, O), denominator(y)))
@@ -475,11 +475,11 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    in(x::RelativeElement, y::NfRelOrdFracIdl)
+    in(x::NumFieldElem, y::NfRelOrdFracIdl)
 
 Returns whether $x$ is contained in $y$.
 """
-function in(x::RelativeElement, y::NfRelOrdFracIdl)
+function in(x::NumFieldElem, y::NfRelOrdFracIdl)
   parent(x) != nf(order(y)) && error("Number field of element and ideal must be equal")
   O = order(y)
   b_pmat = basis_pmat(y, copy = false)
@@ -505,12 +505,12 @@ function valuation(A::NfRelOrdFracIdl, P::NfRelOrdIdl)
   return valuation(numerator(A), P) - valuation(denominator(A), P)
 end
 
-function valuation_naive(a::RelativeElement, P::NfRelOrdIdl)
+function valuation_naive(a::NumFieldElem, P::NfRelOrdIdl)
   @assert !iszero(a)
   return valuation(a*order(P), P)
 end
 
-valuation(a::RelativeElement, P::NfRelOrdIdl) = valuation_naive(a, P)
+valuation(a::NumFieldElem, P::NfRelOrdIdl) = valuation_naive(a, P)
 
 ################################################################################
 #

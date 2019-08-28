@@ -8,21 +8,21 @@
 # Still hoping for julia/#18466
 
 mutable struct NfRelOrdSet{T}
-  nf::RelativeExtension{T}
+  nf::NumField{T}
 
-  function NfRelOrdSet{T}(K::RelativeExtension{T}) where {T}
+  function NfRelOrdSet{T}(K::NumField{T}) where {T}
     a = new(K)
     return a
   end
 end
 
 mutable struct NfRelOrd{T, S} <: Ring
-  nf::RelativeExtension{T}
-  basis_nf::Vector{RelativeElement{T}}
+  nf::NumField{T}
+  basis_nf::Vector{NumFieldElem{T}}
   basis_mat::Generic.MatSpaceElem{T}
   basis_mat_inv::Generic.MatSpaceElem{T}
   basis_pmat::PMat{T, S}
-  pseudo_basis::Vector{Tuple{RelativeElement{T}, S}}
+  pseudo_basis::Vector{Tuple{NumFieldElem{T}, S}}
 
   disc_abs::NfOrdIdl # used if T == nf_elem
   disc_rel#::NfRelOrdIdl{T} # used otherwise; is a forward declaration
@@ -38,7 +38,7 @@ mutable struct NfRelOrd{T, S} <: Ring
 
   inv_coeff_ideals::Vector{S}
 
-  function NfRelOrd{T, S}(K::RelativeExtension{T}) where {T, S}
+  function NfRelOrd{T, S}(K::NumField{T}) where {T, S}
     z = new{T, S}()
     z.nf = K
     z.parent = NfRelOrdSet{T}(K)
@@ -47,7 +47,7 @@ mutable struct NfRelOrd{T, S} <: Ring
     return z
   end
 
-  function NfRelOrd{T, S}(K::RelativeExtension{T}, M::PMat{T, S}) where {T, S}
+  function NfRelOrd{T, S}(K::NumField{T}, M::PMat{T, S}) where {T, S}
     z = NfRelOrd{T, S}(K)
     z.nf = K
     z.parent = NfRelOrdSet{T}(K)
@@ -56,7 +56,7 @@ mutable struct NfRelOrd{T, S} <: Ring
     return z
   end
 
-  function NfRelOrd{T, S}(K::RelativeExtension{T}, M::Generic.MatSpaceElem{T}) where {T, S}
+  function NfRelOrd{T, S}(K::NumField{T}, M::Generic.MatSpaceElem{T}) where {T, S}
     z = NfRelOrd{T, S}(K)
     z.nf = K
     z.parent = NfRelOrdSet{T}(K)
@@ -74,7 +74,7 @@ end
 
 mutable struct NfRelOrdElem{T} <: RingElem
   parent#::NfRelOrd{T, S} # I don't want to drag the S around
-  elem_in_nf::RelativeElement{T}
+  elem_in_nf::NumFieldElem{T}
   coordinates::Vector{T}
   has_coord::Bool
 
@@ -87,7 +87,7 @@ mutable struct NfRelOrdElem{T} <: RingElem
     return z
   end
 
-  function NfRelOrdElem{T}(O::NfRelOrd{T}, a::RelativeElement{T}) where {T}
+  function NfRelOrdElem{T}(O::NfRelOrd{T}, a::NumFieldElem{T}) where {T}
     z = new{T}()
     z.parent = O
     z.elem_in_nf = a
@@ -96,7 +96,7 @@ mutable struct NfRelOrdElem{T} <: RingElem
     return z
   end
 
-  function NfRelOrdElem{T}(O::NfRelOrd{T}, a::RelativeElement{T}, arr::Vector{T}) where {T}
+  function NfRelOrdElem{T}(O::NfRelOrd{T}, a::NumFieldElem{T}, arr::Vector{T}) where {T}
     z = new{T}()
     z.parent = O
     z.elem_in_nf = a
@@ -125,7 +125,7 @@ mutable struct NfRelOrdFracIdl{T, S}
   order::NfRelOrd{T, S}
   parent::NfRelOrdFracIdlSet{T, S}
   basis_pmat::PMat{T, S}
-  pseudo_basis::Vector{Tuple{RelativeElement{T}, S}}
+  pseudo_basis::Vector{Tuple{NumFieldElem{T}, S}}
   basis_mat::Generic.MatSpaceElem{T}
   basis_mat_inv::Generic.MatSpaceElem{T}
   den::fmpz
@@ -148,7 +148,7 @@ mutable struct NfRelOrdFracIdl{T, S}
     return z
   end
 
-  function NfRelOrdFracIdl{T, S}(O::NfRelOrd{T, S}, a::Array{Tuple{T1, S}}) where {T1 <: RelativeElement{T}, S} where T
+  function NfRelOrdFracIdl{T, S}(O::NfRelOrd{T, S}, a::Array{Tuple{T1, S}}) where {T1 <: NumFieldElem{T}, S} where T
     z = NfRelOrdFracIdl{T, S}(O)
     z.pseudo_basis = a
     return z
@@ -174,7 +174,7 @@ mutable struct NfRelOrdIdl{T, S}
   order::NfRelOrd{T, S}
   parent::NfRelOrdIdlSet{T, S}
   basis_pmat::PMat{T, S}
-  pseudo_basis::Vector{Tuple{RelativeElement{T}, S}}
+  pseudo_basis::Vector{Tuple{NumFieldElem{T}, S}}
   basis_mat::Generic.MatSpaceElem{T}
   basis_mat_inv::Generic.MatSpaceElem{T}
 
@@ -188,7 +188,7 @@ mutable struct NfRelOrdIdl{T, S}
   minimum
   non_index_div_poly::fq_poly # only used if the ideal is a prime ideal not dividing the index
   p_uniformizer::NfRelOrdElem{T}
-  anti_uniformizer::RelativeElement{T}
+  anti_uniformizer::NumFieldElem{T}
 
   function NfRelOrdIdl{T, S}(O::NfRelOrd{T, S}) where {T, S}
     z = new{T, S}()
@@ -207,7 +207,7 @@ mutable struct NfRelOrdIdl{T, S}
     return z
   end
 
-  function NfRelOrdIdl{T, S}(O::NfRelOrd{T, S}, a::Array{Tuple{T1, S}}) where {T1 <: RelativeElement{T}, S} where T
+  function NfRelOrdIdl{T, S}(O::NfRelOrd{T, S}, a::Array{Tuple{T1, S}}) where {T1 <: NumFieldElem{T}, S} where T
     z = NfRelOrdIdl{T, S}(O)
     z.pseudo_basis = a
     return z
@@ -220,7 +220,7 @@ end
 #
 ################################################################################
 
-mutable struct NfRel_ns{T} <: RelativeExtension{T}
+mutable struct NfRel_ns{T} <: NumField{T}
   base_ring::Nemo.Field
   pol::Array{Nemo.Generic.MPoly{T}, 1}
   abs_pol::Array{Generic.Poly{T}, 1}
@@ -238,7 +238,7 @@ mutable struct NfRel_ns{T} <: RelativeExtension{T}
   end
 end
 
-mutable struct NfRel_nsElem{T} <: RelativeElement{T}
+mutable struct NfRel_nsElem{T} <: NonSimpleNumFieldElem{T}
   data::Nemo.Generic.MPoly{T}
   parent::NfRel_ns{T}
 
