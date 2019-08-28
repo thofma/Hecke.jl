@@ -414,7 +414,7 @@ function factor(f::PolyElem{nf_elem})
 
   f = f*(1//lead(f))
 
-  if true#degree(f) < degree(K)
+  if degree(f) < degree(K)
     lf = factor_trager(f)
   else
     lf = factor_new(f)
@@ -845,6 +845,14 @@ function mod_sym!(a::nf_elem, b::fmpz, b2::fmpz)
   if degree(parent(a)) == 1
     Nemo.num_coeff!(z, a, 0)
     _num_setcoeff!(a, 0, mod_sym(z, b))
+    return
+  end
+  if degree(parent(a)) == 2
+    #TODO: call Tommy's new c-function (when available)
+    Nemo.num_coeff!(z, a, 0)
+    iszero(z) || _num_setcoeff!(a, 0, mod_sym(z, b))
+    Nemo.num_coeff!(z, a, 1)
+    iszero(z) || _num_setcoeff!(a, 1, mod_sym(z, b))
     return
   end
   for i=0:a.elem_length-1
