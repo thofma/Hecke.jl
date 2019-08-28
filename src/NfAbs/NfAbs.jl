@@ -336,32 +336,6 @@ function normal_basis(K::Nemo.AnticNumberField)
   
 end
 
-
-function normal_basis2(K::Nemo.AnticNumberField)
-  n = degree(K)
-  Aut = automorphisms(K)
-
-  length(Aut) != degree(K) && error("The field is not normal over the rationals!")
-
-  A = zero_matrix(FlintQQ, n, n)
-  r = one(K)
-  while true
-    r = rand(basis(K), -n:n)
-    for i = 1:n
-      y = Aut[i](r)
-      for j = 1:n
-        A[i,j] = coeff(y, j - 1)
-      end
-    end
-    if !iszero(det(A))
-      break
-    end
-  end
-  return r
-end
-
-
-
 ################################################################################
 #
 #  Subfield check
@@ -813,3 +787,21 @@ function set_name!(K::AnticNumberField)
   s === nothing || set_name!(K, string(s))
 end
 
+################################################################################
+#
+#  Is linearly disjoint
+#
+################################################################################
+
+function islinearly_disjoint(K1::AnticNumberField, K2::AnticNumberField)
+  if gcd(degree(K1), degree(K2)) == 1
+    return true
+  end
+  d1 = numerator(discriminant(K1.pol))
+  d2 = numerator(discriminant(K2.pol))
+  if gcd(d1, d2) == 1
+    return true
+  end
+  f = change_base_ring(K1.pol, K2)
+  return isirreducible(f)
+end

@@ -48,7 +48,7 @@ end
 end
 
 (O::AlgAssAbsOrd{S, T})(arr::Vector{fmpz}) where {S, T} = begin
-  M = basis_mat(O, copy = false)
+  M = basis_matrix(O, copy = false)
   N = matrix(FlintZZ, 1, degree(O), arr)
   NM = N*M
   x = elem_from_mat_row(algebra(O), NM.num, 1, NM.den)
@@ -381,7 +381,7 @@ end
 function representation_matrix(x::AlgAssAbsOrdElem, action::Symbol = :left)
 
   O = parent(x)
-  M = basis_mat(O, copy = false)
+  M = basis_matrix(O, copy = false)
   M1 = basis_mat_inv(O, copy = false)
 
   B = FakeFmpqMat(representation_matrix(elem_in_algebra(x, copy = false), action))
@@ -474,7 +474,7 @@ function isdivisible_mod_ideal(x::AlgAssAbsOrdElem, y::AlgAssAbsOrdElem, a::AlgA
   end
 
   A = representation_matrix(y)
-  B = basis_mat(a, copy = false)
+  B = basis_matrix(a, copy = false)
 
   _copy_matrix_into_matrix(V, 2, 2, A)
   _copy_matrix_into_matrix(V, 2 + d, 2, B)

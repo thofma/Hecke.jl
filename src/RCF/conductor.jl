@@ -99,7 +99,7 @@ function _1pluspk_1pluspk1(K::AnticNumberField, p::NfOrdIdl, pk::NfOrdIdl, pv::N
   
   O = maximal_order(K)
   b = basis(pk, copy = false)
-  N = basis_mat(pv, copy = false)*basis_mat_inv(pk, copy = false)
+  N = basis_matrix(pv, copy = false)*basis_mat_inv(pk, copy = false)
   G = AbelianGroup(N.num)
   S, mS = snf(G)
   #Generators

@@ -23,7 +23,7 @@ end
 
 function lll_basis(A::NfOrdIdl, v::fmpz_mat = zero_matrix(FlintZZ, 1, 1); prec::Int = 100)
   L, T = lll(A, v, prec=prec)
-  S = FakeFmpqMat(T)*basis_mat(A)*basis_mat(order(A))
+  S = FakeFmpqMat(T)*basis_matrix(A)*basis_matrix(order(A))
   K = nf(order(A))
   q = nf_elem[elem_from_mat_row(K, numerator(S), i, denominator(S)) for i=1:degree(K)]
   return q
@@ -63,7 +63,7 @@ function lll(A::NfOrdIdl, v::fmpz_mat = zero_matrix(FlintZZ, 1, 1); prec::Int = 
   n = degree(order(A))
   prec = max(prec, 4*n)
 
-  l, t1 = lll_with_transform(basis_mat(A, copy = false))
+  l, t1 = lll_with_transform(basis_matrix(A, copy = false))
 
   if iszero(v)
     d = minkowski_gram_mat_scaled(order(A), prec)
@@ -73,9 +73,9 @@ function lll(A::NfOrdIdl, v::fmpz_mat = zero_matrix(FlintZZ, 1, 1); prec::Int = 
     den = fmpz(1)
     sv = fmpz(0)
   else
-    c = minkowski_mat(nf(order(A)), prec) ## careful: current iteration
+    c = minkowski_matrix(nf(order(A)), prec) ## careful: current iteration
                                           ## c is NOT a copy, so don't change.
-    b = FakeFmpqMat(l)*basis_mat(order(A), copy = false)
+    b = FakeFmpqMat(l)*basis_matrix(order(A), copy = false)
 
 
     rt_c = roots_ctx(K)
@@ -166,7 +166,7 @@ end
 function short_elem(A::NfOrdIdl,
                 v::fmpz_mat = zero_matrix(FlintZZ, 1,1); prec::Int = 100)
   K = nf(order(A))
-  temp = basis_mat(A, copy = false)*basis_mat(order(A), copy = false)
+  temp = basis_matrix(A, copy = false)*basis_matrix(order(A), copy = false)
   b = temp.num
   b_den = temp.den
   local t

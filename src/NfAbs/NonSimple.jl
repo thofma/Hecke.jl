@@ -171,7 +171,7 @@ end
 #
 ################################################################################
 
-function basis_mat(A::Array{NfAbsNSElem})
+function basis_matrix(A::Array{NfAbsNSElem})
   @assert length(A) > 0
   n = length(A)
   d = degree(parent(A[1]))
@@ -183,8 +183,8 @@ function basis_mat(A::Array{NfAbsNSElem})
   return MM
 end
 
-function basis_mat(A::Vector{NfAbsNSElem}, ::Type{FakeFmpqMat})
-  return FakeFmpqMat(basis_mat(A))
+function basis_matrix(A::Vector{NfAbsNSElem}, ::Type{FakeFmpqMat})
+  return FakeFmpqMat(basis_matrix(A))
 end
 
 ################################################################################
@@ -830,26 +830,6 @@ function simple_extension(K::NfAbsNS; check = true)
 
   return Ka, NfAbsToNfAbsNS(Ka, K, pe, emb)
 end
-
-################################################################################
-#
-#  Composite of linearly disjoint fields
-#
-################################################################################
-
-function islinearly_disjoint(K1::AnticNumberField, K2::AnticNumberField)
-  if gcd(degree(K1), degree(K2)) == 1
-    return true
-  end
-  d1 = numerator(discriminant(K1.pol))
-  d2 = numerator(discriminant(K2.pol))
-  if gcd(d1, d2) == 1
-    return true
-  end
-  f = change_base_ring(K1.pol, K2)
-  return isirreducible(f)
-end
-
 
 function NumberField(K1::AnticNumberField, K2::AnticNumberField; cached::Bool = false, check::Bool = false)
 

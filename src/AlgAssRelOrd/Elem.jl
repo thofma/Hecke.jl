@@ -50,7 +50,7 @@ end
 end
 
 (O::AlgAssRelOrd{S, T})(arr::Vector{S}, check::Bool = true) where {S, T} = begin
-  M = basis_mat(O, copy = false)
+  M = basis_matrix(O, copy = false)
   N = matrix(base_ring(algebra(O)), 1, degree(O), arr)
   NM = N*M
   x = elem_from_mat_row(algebra(O), NM, 1)
@@ -125,7 +125,7 @@ end
 function representation_matrix(x::AlgAssRelOrdElem, action::Symbol = :left)
 
   O = parent(x)
-  M = basis_mat(O, copy = false)
+  M = basis_matrix(O, copy = false)
   M1 = basis_mat_inv(O, copy = false)
 
   B = representation_matrix(elem_in_algebra(x, copy = false), action)

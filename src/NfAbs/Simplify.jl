@@ -101,7 +101,7 @@ function _index(a::NfOrdElem)
   for i = 3:d
     pows[i] = pows[i-1]*a.elem_in_nf
   end
-  M = basis_mat(pows)
+  M = basis_matrix(pows)
   hnf!(M)
   res = prod(M[i, i] for i = 1:degree(K)) 
   return numerator(res*index(O))
@@ -371,7 +371,7 @@ function _lll_for_simplify(M::NfOrd; prec = 100)
     #in this case the gram-matrix of the minkowski lattice is the trace-matrix
     #which is exact. 
     BM = _lll_gram(ideal(M, 1))[2]
-    O1 = NfOrd(K, BM*basis_mat(M, copy = false))
+    O1 = NfOrd(K, BM*basis_matrix(M, copy = false))
     O1.ismaximal = M.ismaximal
     if isdefined(M, :index)
       O1.index = M.index
@@ -391,7 +391,7 @@ function _lll_for_simplify(M::NfOrd; prec = 100)
     #trace-matrix which is exact.
     #could be extended to CM-fields
     BM = _lll_quad(ideal(M, 1))[2]
-    O1 = NfOrd(K, BM*basis_mat(M, copy = false))
+    O1 = NfOrd(K, BM*basis_matrix(M, copy = false))
     O1.ismaximal = M.ismaximal
     if isdefined(M, :index)
       O1.index = M.index
@@ -456,7 +456,7 @@ function _lll_for_simplify(M::NfOrd; prec = 100)
       end
     end
   end
-  On = NfOrd(K, g*basis_mat(M, copy = false))
+  On = NfOrd(K, g*basis_matrix(M, copy = false))
   On.ismaximal = M.ismaximal
   if isdefined(M, :index)
     On.index = M.index

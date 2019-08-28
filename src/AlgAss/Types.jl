@@ -196,7 +196,7 @@ end
 mutable struct AbsAlgAssIdl{S, T, U}
   algebra::S
   basis::Vector{T}
-  basis_mat::U
+  basis_matrix::U
 
   isleft::Int                      # 0 Not known
                                    # 1 Known to be a left ideal
@@ -217,7 +217,7 @@ mutable struct AbsAlgAssIdl{S, T, U}
   function AbsAlgAssIdl{S, U}(A::S, M::U) where {S, U}
     I = new{S, elem_type(S), U}()
     I.algebra = A
-    I.basis_mat = M
+    I.basis_matrix = M
     I.isleft = 0
     I.isright = 0
     I.iszero = 0
@@ -237,7 +237,7 @@ mutable struct AlgAssAbsOrd{S, T} <: Ring
   dim::Int
   basis#::Vector{AlgAssAbsOrdElem{S, T}}
   basis_alg::Vector{T}             # Basis as array of elements of the algebra
-  basis_mat::FakeFmpqMat           # Basis matrix of order wrt basis of the algebra
+  basis_matrix::FakeFmpqMat           # Basis matrix of order wrt basis of the algebra
   basis_mat_inv::FakeFmpqMat       # Inverse of basis matrix
   gen_index::fmpq                  # The det of basis_mat_inv as fmpq
   index::fmpz                      # The det of basis_mat_inv
@@ -273,7 +273,7 @@ mutable struct AlgAssAbsOrd{S, T} <: Ring
     end
     O = AlgAssAbsOrd{S, T}(A)
     O.basis_alg = B
-    O.basis_mat = M
+    O.basis_matrix = M
     O.basis_mat_inv = Minv
     if cached
       AlgAssAbsOrdID[(A, M)] = O
@@ -287,7 +287,7 @@ mutable struct AlgAssAbsOrd{S, T} <: Ring
     end
     O = AlgAssAbsOrd{S, T}(A)
     d = dim(A)
-    O.basis_mat = M
+    O.basis_matrix = M
     O.basis_alg = Vector{T}(undef, d)
     for i in 1:d
       O.basis_alg[i] = elem_from_mat_row(A, M.num, i, M.den)
@@ -300,12 +300,12 @@ mutable struct AlgAssAbsOrd{S, T} <: Ring
 
   function AlgAssAbsOrd{S, T}(A::S, B::Vector{T}, cached::Bool = false) where {S, T}
     O = AlgAssAbsOrd{S, T}(A)
-    M = basis_mat(B, FakeFmpqMat)
+    M = basis_matrix(B, FakeFmpqMat)
     if cached && haskey(AlgAssAbsOrdID, (A, M))
       return AlgAssAbsOrdID[(A, M)]
     end
     O.basis_alg = B
-    O.basis_mat = M
+    O.basis_matrix = M
     if cached
       AlgAssAbsOrdID[(A, M)] = O
     end
@@ -361,7 +361,7 @@ end
 mutable struct AlgAssAbsOrdIdl{S, T}
   order::AlgAssAbsOrd                     # Order containing it
   basis::Vector{AlgAssAbsOrdElem{S, T}}   # Basis of the ideal as array of elements of the order
-  basis_mat::fmpz_mat                     # Basis matrix of ideal wrt basis of the order
+  basis_matrix::fmpz_mat                     # Basis matrix of ideal wrt basis of the order
   basis_mat_inv::FakeFmpqMat
   gens::Vector{AlgAssAbsOrdElem{S, T}}    # Generators of the ideal
 
@@ -388,7 +388,7 @@ mutable struct AlgAssAbsOrdIdl{S, T}
     r = new{S, T}()
     r.order = O
     d = O.dim
-    r.basis_mat = M
+    r.basis_matrix = M
     r.isleft = 0
     r.isright = 0
     r.iszero = 0
@@ -413,13 +413,13 @@ mutable struct AlgAssAbsOrdFracIdl{S, T}
   order::AlgAssAbsOrd{S, T}
   num::AlgAssAbsOrdIdl{S, T}
   den::fmpz
-  basis_mat::FakeFmpqMat
+  basis_matrix::FakeFmpqMat
   basis_mat_inv::FakeFmpqMat
 
   function AlgAssAbsOrdFracIdl{S, T}(O::AlgAssAbsOrd{S, T}, a::AlgAssAbsOrdIdl{S, T}, b::fmpz) where {S, T}
     z = new{S, T}()
     z.order = O
-    z.basis_mat = FakeFmpqMat(basis_mat(a), deepcopy(b))
+    z.basis_matrix = FakeFmpqMat(basis_matrix(a), deepcopy(b))
     z.num = a
     z.den = b
     return z
@@ -428,7 +428,7 @@ mutable struct AlgAssAbsOrdFracIdl{S, T}
   function AlgAssAbsOrdFracIdl{S, T}(O::AlgAssAbsOrd{S, T}, M::FakeFmpqMat) where {S, T}
     z = new{S, T}()
     z.order = O
-    z.basis_mat = M
+    z.basis_matrix = M
     return z
   end
 end
@@ -468,7 +468,7 @@ mutable struct AlgMat{T, S} <: AbsAlgAss{T}
   coefficient_ring::Ring
   one::S
   basis
-  basis_mat # matrix over the base_ring
+  basis_matrix # matrix over the base_ring
   dim::Int
   degree::Int
   issimple::Int
@@ -537,9 +537,9 @@ mutable struct AlgAssRelOrd{S, T} <: Ring
   algebra::AbsAlgAss{S}
   dim::Int
   pseudo_basis::Vector{Tuple{AbsAlgAssElem{S}, T}}
-  basis_mat::Generic.MatSpaceElem{S}
+  basis_matrix::Generic.MatSpaceElem{S}
   basis_mat_inv::Generic.MatSpaceElem{S}
-  basis_pmat::PMat{S, T}
+  basis_pmatrix::PMat{S, T}
 
   disc # an integral ideal in the base field
 
@@ -561,15 +561,15 @@ mutable struct AlgAssRelOrd{S, T} <: Ring
 
   function AlgAssRelOrd{S, T}(A::AbsAlgAss{S}, M::PMat{S, T}) where {S, T}
     z = AlgAssRelOrd{S, T}(A)
-    z.basis_pmat = M
-    z.basis_mat = M.matrix
+    z.basis_pmatrix = M
+    z.basis_matrix = M.matrix
     return z
   end
 
   function AlgAssRelOrd{S, T}(A::AbsAlgAss{S}, M::Generic.MatSpaceElem{S}) where {S, T}
     z = AlgAssRelOrd{S, T}(A)
-    z.basis_mat = M
-    z.basis_pmat = pseudo_matrix(M)
+    z.basis_matrix = M
+    z.basis_pmatrix = pseudo_matrix(M)
     return z
   end
 end
@@ -623,8 +623,8 @@ end
 mutable struct AlgAssRelOrdIdl{S, T}
   order::AlgAssRelOrd{S, T}
   pseudo_basis::Vector{Tuple{AbsAlgAssElem{S}, T}}
-  basis_pmat::PMat{S, T}
-  basis_mat::Generic.MatSpaceElem{S}
+  basis_pmatrix::PMat{S, T}
+  basis_matrix::Generic.MatSpaceElem{S}
   basis_mat_inv::Generic.MatSpaceElem{S}
 
   isleft::Int                      # 0 Not known
@@ -648,8 +648,8 @@ mutable struct AlgAssRelOrdIdl{S, T}
 
   function AlgAssRelOrdIdl{S, T}(O::AlgAssRelOrd{S, T}, M::PMat{S, T}) where {S, T}
     z = AlgAssRelOrdIdl{S, T}(O)
-    z.basis_pmat = M
-    z.basis_mat = M.matrix
+    z.basis_pmatrix = M
+    z.basis_matrix = M.matrix
     return z
   end
 end

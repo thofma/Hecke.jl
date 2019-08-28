@@ -63,7 +63,7 @@ function +(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
     return ideal(order(x), g)
   end
   d = degree(order(x))
-  H = vcat(basis_mat(x, copy = false), basis_mat(y, copy = false))
+  H = vcat(basis_matrix(x, copy = false), basis_matrix(y, copy = false))
   hnf_modular_eldiv!(H, g, :lowerleft)
   H = view(H, (d + 1):2*d, 1:d)
   res = ideal(order(x), H, false, true)
@@ -92,10 +92,10 @@ function intersect(x::NfOrdIdl, y::NfOrdIdl)
     return x*y
   end
   d = degree(order(x))
-  H = vcat(basis_mat(x, copy = false), basis_mat(y, copy = false))
+  H = vcat(basis_matrix(x, copy = false), basis_matrix(y, copy = false))
   K = left_kernel(H)[2]
   g = lcm(minimum(x),minimum(y))
-  return ideal(order(x), _hnf_modular_eldiv(view(K, 1:d, 1:d)*basis_mat(x, copy = false), g, :lowerleft), false, true)
+  return ideal(order(x), _hnf_modular_eldiv(view(K, 1:d, 1:d)*basis_matrix(x, copy = false), g, :lowerleft), false, true)
 end
 
 @doc Markdown.doc"""
@@ -385,7 +385,7 @@ function gcd(A::NfOrdIdl, p::fmpz)
     g = gcd(A.gen_one, p)
     return ideal(order(A), g, A.gen_two)
   else
-    @assert isdefined(A, :basis_mat)
+    @assert isdefined(A, :basis_matrix)
     return A + ideal(order(A), p)
   end
 end
@@ -583,7 +583,7 @@ function mul_gen(x::NfOrdIdl, y::fmpz)
     return z
   end
 
-  z = ideal(order(x), basis_mat(x, copy = false)*y)
+  z = ideal(order(x), basis_matrix(x, copy = false)*y)
   if isdefined(x, :princ_gen)
     z.princ_gen = x.princ_gen * y
   end
@@ -646,8 +646,8 @@ function idempotents(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
     V[1, i + 1] = u[i]
   end
 
-  _copy_matrix_into_matrix(V, 2, 2, basis_mat(x, copy = false))
-  _copy_matrix_into_matrix(V, 2 + d, 2, basis_mat(y, copy = false))
+  _copy_matrix_into_matrix(V, 2, 2, basis_matrix(x, copy = false))
+  _copy_matrix_into_matrix(V, 2 + d, 2, basis_matrix(y, copy = false))
 
   for i in 1:d
     V[1 + i, d + 1 + i] = 1
@@ -736,15 +736,15 @@ function divexact(A::NfOrdIdl, b::fmpz)
       B.gens_normal = A.gens_normal
     end
     B.gens_weakly_normal = A.gens_weakly_normal
-    if has_basis_mat(A)
-      B.basis_mat = divexact(A.basis_mat, b)
+    if has_basis_matrix(A)
+      B.basis_matrix = divexact(A.basis_matrix, b)
     end
     if false && has_basis_mat_inv(A)
       error("not defined at all")
       B.basis_mat_inv = b*A.basis_mat_inv
     end
   else
-    B = ideal(zk, divexact(A.basis_mat, b))
+    B = ideal(zk, divexact(A.basis_matrix, b))
     if false && has_basis_mat_inv(A)
       error("not defined at all")
       B.basis_mat_inv = b*A.basis_mat_inv
@@ -782,7 +782,7 @@ function divexact(A::NfOrdIdl, B::NfOrdIdl)
   else
     t_prod += @elapsed I = A*inv(B)
     t_simpl += @elapsed simplify_exact!(I)
-    #t_b_mat += @elapsed B = basis_mat(I)
+    #t_b_mat += @elapsed B = basis_matrix(I)
     I.den != 1 && error("Division not exact")
     #I = ideal(order(A), B.num)
     #t_2_elem_weak += @elapsed _assure_weakly_normal_presentation(I)
@@ -850,12 +850,12 @@ function contract(A::NfOrdIdl, O::NfOrd)
   end
 
   d = degree(O)
-  M = basis_mat(O, copy = false)*basis_mat_inv(order(A), copy = false)
+  M = basis_matrix(O, copy = false)*basis_mat_inv(order(A), copy = false)
   @assert M.den == 1
-  H = vcat(basis_mat(A, copy = false), M.num)
+  H = vcat(basis_matrix(A, copy = false), M.num)
   K = left_kernel(H)[2]
-  M = view(K, 1:d, 1:d)*basis_mat(A, copy = false)
-  M = M*basis_mat(order(A), copy = false)*basis_mat_inv(O, copy = false)
+  M = view(K, 1:d, 1:d)*basis_matrix(A, copy = false)
+  M = M*basis_matrix(order(A), copy = false)*basis_mat_inv(O, copy = false)
   @assert M.den == 1
   M = _hnf_modular_eldiv(M.num, minimum(A), :lowerleft)
   res = ideal(O, M, false, true)

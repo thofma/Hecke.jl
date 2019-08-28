@@ -14,7 +14,7 @@ Base.copy(d::nf_elem) = deepcopy(d)
 #
 ################################################################################
 
-function basis_mat(A::Array{nf_elem, 1}, ::Type{FakeFmpqMat})
+function basis_matrix(A::Array{nf_elem, 1}, ::Type{FakeFmpqMat})
   @assert length(A) > 0
   n = length(A)
   d = degree(parent(A[1]))
@@ -38,7 +38,7 @@ function basis_mat(A::Array{nf_elem, 1}, ::Type{FakeFmpqMat})
   return FakeFmpqMat(M, deno)
 end
 
-function basis_mat(A::Array{nf_elem, 1})
+function basis_matrix(A::Array{nf_elem, 1})
   @assert length(A) > 0
   n = length(A)
   d = degree(parent(A[1]))
@@ -817,16 +817,53 @@ end
 #
 ################################################################################
 
+function _mod_sym!_antic(a::nf_elem, b::fmpz)
+  ccall((:nf_elem_smod_fmpz, :libantic), Nothing, (Ref{nf_elem}, Ref{nf_elem}, Ref{fmpz}, Ref{AnticNumberField}), a, a, b, parent(a))
+  return a
+end
+
+function _mod_sym_antic(a::nf_elem, b::fmpz)
+  z = deepcopy(a)
+  _mod_sym!_antic(z, b)
+end
+
+function _mod!_antic(a::nf_elem, b::fmpz)
+  ccall((:nf_elem_mod_fmpz, :libantic), Nothing, (Ref{nf_elem}, Ref{nf_elem}, Ref{fmpz}, Ref{AnticNumberField}), a, a, b, parent(a))
+  return a
+end
+
+function _mod_antic(a::nf_elem, b::fmpz)
+  z = deepcopy(a)
+  _mod!_antic(z, b)
+end
+
 function __mod(a::nf_elem, b::fmpz, fl::Bool = true)#, sym::Bool = false) # Not yet
   z = parent(a)()
   ccall((:nf_elem_mod_fmpz_den, :libantic), Nothing, (Ref{nf_elem}, Ref{nf_elem}, Ref{fmpz}, Ref{AnticNumberField}, Cint), z, a, b, parent(a), Cint(fl))
   return z
 end
 
+function coprime_denominator(a::nf_elem, b::fmpz)
+  z = parent(a)()
+  ccall((:nf_elem_coprime_den, :libantic), Nothing, (Ref{nf_elem}, Ref{nf_elem}, Ref{fmpz}, Ref{AnticNumberField}), z, a, b, parent(a))
+  return z
+end
+
 import Hecke.mod_sym!, Hecke.rem!, Hecke.mod!, Hecke.mod, Hecke.rem
 
 function mod_sym!(a::nf_elem, b::fmpz)
-  mod_sym!(a, b, div(b, 2))
+  #ww = deepcopy(a)
+  #w = deepcopy(a)
+  #_mod_sym!_antic(w, b)
+  z = mod_sym!(a, b, div(b, 2))
+  #if z != w
+  #  @show w
+  #  @show b
+  #  @show a
+  #  @show w
+  #  error("Adsd")
+  #end
+  return z
 end
 
 function mod_sym!(a::nf_elem, b::fmpz, b2::fmpz)
@@ -834,7 +871,7 @@ function mod_sym!(a::nf_elem, b::fmpz, b2::fmpz)
   if degree(parent(a)) == 1
     Nemo.num_coeff!(z, a, 0)
     _num_setcoeff!(a, 0, mod_sym(z, b))
-    return
+    return a
   end
   if degree(parent(a)) == 2
     #TODO: call Tommy's new c-function (when available)
@@ -852,6 +889,7 @@ function mod_sym!(a::nf_elem, b::fmpz, b2::fmpz)
     end
     _num_setcoeff!(a, i, z)
   end
+  return a
 end
 
 function mod(b::nf_elem, p::fmpz)
@@ -869,7 +907,9 @@ mod(x::nf_elem, y::Integer) = mod(x, fmpz(y))
 
 #Assuming that the denominator of a is one, reduces all the coefficients modulo p
 function _mod!(a::nf_elem, b::fmpz)
-  @hassert :NfOrd 1 isone(denominator(a))
+  #w = deepcopy(a)
+  #_mod!_antic(w, b)
+  #@hassert :NfOrd 1 isone(denominator(a))
   z = fmpz()
   d = degree(parent(a))
   if d == 1
@@ -890,6 +930,7 @@ function _mod!(a::nf_elem, b::fmpz)
       _num_setcoeff!(a, i, z)
     end
   end
+  #@assert a == w
   return nothing
 end
 
@@ -909,7 +950,9 @@ function rem(a::nf_elem, b::fmpz)
 end
 
 function mod_sym(a::nf_elem, b::fmpz)
-  return mod_sym(a, b, div(b, 2))
+  z = mod_sym(a, b, div(b, 2))
+  #@assert z == _mod_sym_antic(a, b)
+  return z
 end
 
 function mod_sym(a::nf_elem, b::fmpz, b2::fmpz)

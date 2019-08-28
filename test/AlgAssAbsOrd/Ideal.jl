@@ -41,7 +41,7 @@
 
     g = Hecke.locally_free_basis(I, 3)
     ZGg = ZG*g
-    t = det(basis_mat(I, copy = false)*basis_mat_inv(ZGg, copy = false))
+    t = det(basis_matrix(I, copy = false)*basis_mat_inv(ZGg, copy = false))
     @test valuation(t, 3) == 0
 
     @test_throws ErrorException  Hecke.locally_free_basis(I, 2)

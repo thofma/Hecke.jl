@@ -150,7 +150,7 @@ function iskummer_extension(K::SimpleNumField)
 
   k = base_field(K)
   Zk = maximal_order(k)
-  _, o = Hecke.torsion_units_gen_order(Zk)
+  _, o = torsion_units_gen_order(Zk)
   if o % degree(K) != 0
     return false
   end
@@ -312,3 +312,55 @@ Returns `true` and an isomorphism from $K$ to $L$ if $K$ and $L$ are isomorphic.
 Otherwise the function returns `false` and a morphism mapping everything to $0$.
 """
 isisomorphic(::SimpleNumField, ::SimpleNumField)
+
+################################################################################
+#
+#  Linear disjointness
+#
+################################################################################
+
+# TODO (easy): Do this for Non-Simple number fields
+@doc Markdown.doc"""
+    islinear_disjoint(K::SimpleNumField, L::SimpleNumField) -> Bool
+
+Given two number fields $K$ and $L$ with the same base field $k$, this function
+returns whether $K$ and $L$ are linear disjoint over $k$.
+"""
+islinear_disjoint(K::SimpleNumField, L::SimpleNumField)
+
+################################################################################
+# 
+#  Normal basis
+#
+################################################################################
+
+@doc Markdown.doc"""
+    normal_basis(L::NumField) -> NumFieldElem
+
+Given a normal number field $L/K$, this function returns an element $a$ of $L$,
+such that the orbit of $a$ under the Galois group of $L/K$ is an $K$-basis
+of $L$.
+"""
+function normal_basis(L::NumField)
+  n = degree(L)
+  K = base_field(L)
+  Aut = automorphisms(L)
+
+  length(Aut) != degree(L) && error("The field is not normal over the rationals!")
+
+  A = zero_matrix(K, n, n)
+  r = one(L)
+  while true
+    r = rand(basis(L), -n:n)
+    for i = 1:n
+      y = Aut[i](r)
+      for j = 1:n
+        A[i,j] = coeff(y, j - 1)
+      end
+    end
+    if !iszero(det(A))
+      break
+    end
+  end
+  return r
+end

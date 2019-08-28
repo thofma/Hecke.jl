@@ -8,7 +8,7 @@ export isinvertible, contract
 @inline order(I::AlgAssAbsOrdIdl) = I.order
 
 iszero(I::AlgAssAbsOrdIdl) = (I.iszero == 1)
-isone(I::AlgAssAbsOrdIdl) = isone(abs(det(basis_mat(I, copy = false))))
+isone(I::AlgAssAbsOrdIdl) = isone(abs(det(basis_matrix(I, copy = false))))
 
 function Base.one(S::AlgAssAbsOrdIdlSet)
   O = order(S)
@@ -34,7 +34,7 @@ function show(io::IO, a::AlgAssAbsOrdIdl)
   print(io, "Ideal of ")
   show(IOContext(io, :compact => true), order(a))
   println(io, " with basis matrix")
-  print(io, a.basis_mat)
+  print(io, a.basis_matrix)
 end
 
 ################################################################################
@@ -93,7 +93,7 @@ function assure_has_basis(a::AlgAssAbsOrdIdl{S, T}) where {S, T}
   O = order(a)
   a.basis = Vector{AlgAssAbsOrdElem{S, T}}(undef, degree(O))
   for i = 1:degree(O)
-    a.basis[i] = elem_from_mat_row(O, basis_mat(a, copy = false), i)
+    a.basis[i] = elem_from_mat_row(O, basis_matrix(a, copy = false), i)
   end
   return nothing
 end
@@ -102,7 +102,7 @@ function assure_has_basis_mat_inv(a::AlgAssAbsOrdIdl)
   if isdefined(a, :basis_mat_inv)
     return nothing
   else
-    a.basis_mat_inv = FakeFmpqMat(pseudo_inv(basis_mat(a, copy = false)))
+    a.basis_mat_inv = FakeFmpqMat(pseudo_inv(basis_matrix(a, copy = false)))
     return nothing
   end
 end
@@ -128,15 +128,15 @@ function basis(a::AlgAssAbsOrdIdl; copy::Bool = true)
 end
 
 @doc Markdown.doc"""
-    basis_mat(a::AlgAssAbsOrdIdl; copy::Bool = true) -> fmpz_mat
+    basis_matrix(a::AlgAssAbsOrdIdl; copy::Bool = true) -> fmpz_mat
 
 > Returns the basis matrix of $a$ with respect to the basis of the order.
 """
-function basis_mat(a::AlgAssAbsOrdIdl; copy::Bool = true)
+function basis_matrix(a::AlgAssAbsOrdIdl; copy::Bool = true)
   if copy
-    return deepcopy(a.basis_mat)
+    return deepcopy(a.basis_matrix)
   else
-    return a.basis_mat
+    return a.basis_matrix
   end
 end
 
@@ -154,9 +154,9 @@ function basis_mat_inv(a::AlgAssAbsOrdIdl; copy::Bool = true)
   end
 end
 
-function det_of_basis_mat(a::AlgAssAbsOrdIdl)
+function det_of_basis_matrix(a::AlgAssAbsOrdIdl)
   d = fmpz(1)
-  M = basis_mat(a, copy = false)
+  M = basis_matrix(a, copy = false)
   for i = 1:nrows(M)
     d = mul!(d, d, M[i, i])
   end
@@ -182,9 +182,9 @@ function +(a::AlgAssAbsOrdIdl{S, T}, b::AlgAssAbsOrdIdl{S, T}) where {S, T}
   end
 
   d = degree(order(a))
-  M = vcat(basis_mat(a), basis_mat(b))
-  deta = det_of_basis_mat(a)
-  detb = det_of_basis_mat(b)
+  M = vcat(basis_matrix(a), basis_matrix(b))
+  deta = det_of_basis_matrix(a)
+  detb = det_of_basis_matrix(b)
   M = hnf_modular_eldiv!(M, gcd(deta, detb), :lowerleft)
   M = sub(M, (d + 1):2*d, 1:d)
   return ideal(order(a), M, :nothing, true)
@@ -218,8 +218,8 @@ function *(a::AlgAssAbsOrdIdl{S, T}, b::AlgAssAbsOrdIdl{S, T}) where {S, T}
     end
   end
 
-  deta = det_of_basis_mat(a)
-  detb = det_of_basis_mat(b)
+  deta = det_of_basis_matrix(a)
+  detb = det_of_basis_matrix(b)
   M = hnf_modular_eldiv!(M, deta*detb, :lowerleft)
   M = sub(M, (d2 - d + 1):d2, 1:d)
   return ideal(order(a), M, :nothing, true)
@@ -241,9 +241,9 @@ end
 """
 function intersect(a::AlgAssAbsOrdIdl{S, T}, b::AlgAssAbsOrdIdl{S, T}) where {S, T}
   d = degree(order(a))
-  H = vcat(basis_mat(a), basis_mat(b))
+  H = vcat(basis_matrix(a), basis_matrix(b))
   K = left_kernel(H)[2]
-  return ideal(order(a), _hnf(view(K, 1:d, 1:d)*basis_mat(a, copy = false), :lowerleft), :nothing, true)
+  return ideal(order(a), _hnf(view(K, 1:d, 1:d)*basis_matrix(a, copy = false), :lowerleft), :nothing, true)
 end
 
 ################################################################################
@@ -252,8 +252,8 @@ end
 #
 ################################################################################
 
-*(x::Union{ Int, fmpz }, a::AlgAssAbsOrdIdl) = ideal(order(a), x*basis_mat(a, copy = false), :nothing, true)
-*(a::AlgAssAbsOrdIdl, x::Union{ Int, fmpz }) = ideal(order(a), basis_mat(a, copy = false)*x, :nothing, true)
+*(x::Union{ Int, fmpz }, a::AlgAssAbsOrdIdl) = ideal(order(a), x*basis_matrix(a, copy = false), :nothing, true)
+*(a::AlgAssAbsOrdIdl, x::Union{ Int, fmpz }) = ideal(order(a), basis_matrix(a, copy = false)*x, :nothing, true)
 
 function *(x::AlgAssAbsOrdElem, a::AlgAssAbsOrdIdl)
   @assert parent(x) === order(a)
@@ -277,7 +277,7 @@ end
 
 function divexact(a::AlgAssAbsOrdIdl, x::fmpz)
   O = order(a)
-  M = FakeFmpqMat(basis_mat(a, copy = false), deepcopy(x))
+  M = FakeFmpqMat(basis_matrix(a, copy = false), deepcopy(x))
   if M.den != 1
     error("Ideal not divisible by x")
   end
@@ -542,12 +542,12 @@ function contract(A::AlgAssAbsOrdIdl, O::AlgAssAbsOrd)
   # Assumes O \subseteq order(A)
 
   d = degree(O)
-  M = basis_mat(O, copy = false)*basis_mat_inv(order(A), copy = false)
+  M = basis_matrix(O, copy = false)*basis_mat_inv(order(A), copy = false)
   @assert M.den == 1
-  H = vcat(basis_mat(A), M.num)
+  H = vcat(basis_matrix(A), M.num)
   K = left_kernel(H)[2]
-  M = sub(K, 1:d, 1:d)*basis_mat(A, copy = false)
-  M = M*basis_mat(order(A), copy = false)*basis_mat_inv(O, copy = false)
+  M = sub(K, 1:d, 1:d)*basis_matrix(A, copy = false)
+  M = M*basis_matrix(order(A), copy = false)*basis_mat_inv(O, copy = false)
   @assert M.den == 1
   M = _hnf(M.num, :lowerleft)
   return ideal(O, M, :nothing, true)
@@ -579,7 +579,7 @@ function _as_ideal_of_smaller_algebra(m::AbsAlgAssMor, I::AlgAssAbsOrdIdl, OB::A
     elem_to_mat_row!(M, i, t)
   end
   # Compute the intersection of M and IB
-  H = vcat(M, basis_mat(IB))
+  H = vcat(M, basis_matrix(IB))
   K = left_kernel(H)[2]
   N = view(K, 1:dim(B), 1:dim(B))*M
   # Map the basis to A
@@ -610,7 +610,7 @@ function _as_order_of_smaller_algebra(m::AbsAlgAssMor, O::AlgAssAbsOrd, OB::AlgA
     elem_to_mat_row!(M, i, t)
   end
   # Compute the intersection of M and O (in OB)
-  N = basis_mat(O, copy = false)*basis_mat_inv(OB, copy = false)
+  N = basis_matrix(O, copy = false)*basis_mat_inv(OB, copy = false)
   @assert N.den == 1
   H = vcat(M, N.num)
   K = left_kernel(H)[2]
@@ -673,7 +673,7 @@ end
 function in(x::AlgAssAbsOrdElem, I::AlgAssAbsOrdIdl)
   el = coordinates(x)
   y = matrix(FlintZZ, 1, length(el), el)
-  M1, d = pseudo_inv(basis_mat(I, copy = false))
+  M1, d = pseudo_inv(basis_matrix(I, copy = false))
   if FakeFmpqMat(y*M1, d).den == 1
     return true
   else
@@ -694,7 +694,7 @@ end
 """
 function ==(A::AlgAssAbsOrdIdl, B::AlgAssAbsOrdIdl)
   order(A) !== order(B) && return false
-  return basis_mat(A, copy = false) == basis_mat(B, copy = false)
+  return basis_matrix(A, copy = false) == basis_matrix(B, copy = false)
 end
 
 ################################################################################
@@ -704,7 +704,7 @@ end
 ################################################################################
 
 function Base.hash(A::AlgAssAbsOrdIdl, h::UInt)
-  return Base.hash(basis_mat(A, copy = false), h)
+  return Base.hash(basis_matrix(A, copy = false), h)
 end
 
 ################################################################################
@@ -733,8 +733,8 @@ function idempotents(a::AlgAssAbsOrdIdl, b::AlgAssAbsOrdIdl)
     V[1, i + 1] = u[i]
   end
 
-  _copy_matrix_into_matrix(V, 2, 2, basis_mat(a, copy = false))
-  _copy_matrix_into_matrix(V, 2 + d, 2, basis_mat(b, copy = false))
+  _copy_matrix_into_matrix(V, 2, 2, basis_matrix(a, copy = false))
+  _copy_matrix_into_matrix(V, 2 + d, 2, basis_matrix(b, copy = false))
   for i = 2:d + 1
     V[i, d + i] = 1
   end
@@ -930,7 +930,7 @@ function isinvertible(a::AlgAssAbsOrdIdl)
     return false, a
   end
 
-  bmata = basis_mat(a, copy = false)
+  bmata = basis_matrix(a, copy = false)
 
   if any(iszero(bmata[i, i]) for i in 1:degree(order(a)))
     return false, a
@@ -1078,7 +1078,7 @@ function ring_of_multipliers(I::AlgAssAbsOrdIdl, p::fmpz=fmpz(1), action::Symbol
   O = order(I)
   @hassert :AlgAssOrd 1 Hecke.check_associativity(algebra(O))
   @hassert :AlgAssOrd 1 Hecke.check_distributivity(algebra(O))
-  @hassert :AlgAssOrd 1 defines_ideal(O, basis_mat(I, copy = false))[1]
+  @hassert :AlgAssOrd 1 defines_ideal(O, basis_matrix(I, copy = false))[1]
   bmatinv = basis_mat_inv(I, copy = false)
   if isdefined(I, :gens) && length(I.gens) < degree(O)
     B = I.gens
@@ -1117,7 +1117,7 @@ function ring_of_multipliers(I::AlgAssAbsOrdIdl, p::fmpz=fmpz(1), action::Symbol
   # n is upper right HNF
   n = transpose(view(m, 1:degree(O), 1:degree(O)))
   b = FakeFmpqMat(pseudo_inv(n))
-  mul!(b, b, basis_mat(O, copy = false))
+  mul!(b, b, basis_matrix(O, copy = false))
   @hassert :AlgAssOrd 1 defines_order(algebra(O), b)[1]
   O1 = Order(algebra(O), b)
   O1.disc = divexact(discriminant(O), s^2)
@@ -1290,7 +1290,7 @@ function check_pradical(I::AlgAssAbsOrdIdl, p::Int)
   
   O= order(I)
   for i=1:degree(O)
-    x=elem_from_mat_row(O,basis_mat(I, copy = false), i)
+    x=elem_from_mat_row(O,basis_matrix(I, copy = false), i)
     for j=1:degree(O)
       @assert divisible(numerator(tr(elem_in_algebra(x; copy = false)*O.basis_alg[j])), p)
     end
@@ -1298,7 +1298,7 @@ function check_pradical(I::AlgAssAbsOrdIdl, p::Int)
   #=
   if p==2
     for i=1:O.dim
-      x=elem_from_mat_row(O,I.basis_mat, i)
+      x=elem_from_mat_row(O,I.basis_matrix, i)
       for j=1:O.dim
         for k=1:clog(fmpz(O.dim), p)
           @assert divisible(numerator(tr((x.elem_in_algebra*O.basis_alg[j])^(p^k))), p^(k+1))
@@ -1347,7 +1347,7 @@ function _from_submodules_to_ideals(M::ModAlgAss, O::AlgAssAbsOrd, I::AlgAssAbsO
   end
   for i=nrows(x)+1:nrows(m)
     for j=1:degree(O)
-      m[i,j] = basis_mat(I, copy = false)[i-nrows(x), j]
+      m[i,j] = basis_matrix(I, copy = false)[i-nrows(x), j]
     end
   end
   hnf_modular_eldiv!(m, fmpz(p))
@@ -1423,7 +1423,7 @@ function assure_has_norm(a::AlgAssAbsOrdIdl)
     return nothing
   end
 
-  a.norm = abs(det(basis_mat(a, copy = false)))
+  a.norm = abs(det(basis_matrix(a, copy = false)))
   return nothing
 end
 

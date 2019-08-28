@@ -18,7 +18,7 @@ base_ring(Q::RelOrdQuoRing) = Q.base_ring
 
 ideal(Q::RelOrdQuoRing) = Q.ideal
 
-basis_pmat(Q::RelOrdQuoRing) = Q.basis_pmat
+basis_pmatrix(Q::RelOrdQuoRing) = Q.basis_pmatrix
 
 parent(x::RelOrdQuoRingElem) = x.parent
 

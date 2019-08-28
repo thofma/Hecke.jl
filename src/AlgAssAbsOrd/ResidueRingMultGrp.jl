@@ -199,7 +199,7 @@ function _multgrp_mod_p(p::AlgAssAbsOrdIdl, P::AlgAssAbsOrdIdl)
   O = order(p)
   OA = order(P) # the maximal order
 
-  q = det(basis_mat(p, copy = false))
+  q = det(basis_matrix(p, copy = false))
   q = q - 1 # the cardinality of (O/p)^\times
   if isone(q)
     G = GrpAbFinGen(fmpz[])
@@ -390,7 +390,7 @@ function _1_plus_pu_plus_q_mod_1_plus_pv_plus_q(puq::AlgAssAbsOrdIdl, pvq::AlgAs
   b = basis(puq, copy = false)
 
   # Compute (p^u + q)/(p^v + q)
-  N = basis_mat(pvq, copy = false)*basis_mat_inv(puq, copy = false)
+  N = basis_matrix(pvq, copy = false)*basis_mat_inv(puq, copy = false)
   @assert denominator(N) == 1
   G = AbelianGroup(numerator(N))
   S, StoG = snf(G)
