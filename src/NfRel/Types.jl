@@ -19,7 +19,7 @@ end
 mutable struct NfRelOrd{T, S} <: Ring
   nf::NumField{T}
   basis_nf::Vector{NumFieldElem{T}}
-  basis_mat::Generic.MatSpaceElem{T}
+  basis_matrix::Generic.MatSpaceElem{T}
   basis_mat_inv::Generic.MatSpaceElem{T}
   basis_pmat::PMat{T, S}
   pseudo_basis::Vector{Tuple{NumFieldElem{T}, S}}
@@ -52,7 +52,7 @@ mutable struct NfRelOrd{T, S} <: Ring
     z.nf = K
     z.parent = NfRelOrdSet{T}(K)
     z.basis_pmat = M
-    z.basis_mat = M.matrix
+    z.basis_matrix = M.matrix
     return z
   end
 
@@ -60,7 +60,7 @@ mutable struct NfRelOrd{T, S} <: Ring
     z = NfRelOrd{T, S}(K)
     z.nf = K
     z.parent = NfRelOrdSet{T}(K)
-    z.basis_mat = M
+    z.basis_matrix = M
     z.basis_pmat = pseudo_matrix(M)
     return z
   end
@@ -126,7 +126,7 @@ mutable struct NfRelOrdFracIdl{T, S}
   parent::NfRelOrdFracIdlSet{T, S}
   basis_pmat::PMat{T, S}
   pseudo_basis::Vector{Tuple{NumFieldElem{T}, S}}
-  basis_mat::Generic.MatSpaceElem{T}
+  basis_matrix::Generic.MatSpaceElem{T}
   basis_mat_inv::Generic.MatSpaceElem{T}
   den::fmpz
 
@@ -144,7 +144,7 @@ mutable struct NfRelOrdFracIdl{T, S}
   function NfRelOrdFracIdl{T, S}(O::NfRelOrd{T, S}, M::PMat{T, S}) where {T, S}
     z = NfRelOrdFracIdl{T, S}(O)
     z.basis_pmat = M
-    z.basis_mat = M.matrix
+    z.basis_matrix = M.matrix
     return z
   end
 
@@ -175,7 +175,7 @@ mutable struct NfRelOrdIdl{T, S}
   parent::NfRelOrdIdlSet{T, S}
   basis_pmat::PMat{T, S}
   pseudo_basis::Vector{Tuple{NumFieldElem{T}, S}}
-  basis_mat::Generic.MatSpaceElem{T}
+  basis_matrix::Generic.MatSpaceElem{T}
   basis_mat_inv::Generic.MatSpaceElem{T}
 
   norm
@@ -203,7 +203,7 @@ mutable struct NfRelOrdIdl{T, S}
   function NfRelOrdIdl{T, S}(O::NfRelOrd{T, S}, M::PMat{T, S}) where {T, S}
     z = NfRelOrdIdl{T, S}(O)
     z.basis_pmat = M
-    z.basis_mat = M.matrix
+    z.basis_matrix = M.matrix
     return z
   end
 

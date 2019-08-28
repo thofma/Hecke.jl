@@ -79,8 +79,8 @@ end
 #
 ################################################################################
 
-function assure_has_basis_mat(A::AlgMat)
-  if isdefined(A, :basis_mat)
+function assure_has_basis_matrix(A::AlgMat)
+  if isdefined(A, :basis_matrix)
     return nothing
   end
 
@@ -93,7 +93,7 @@ function assure_has_basis_mat(A::AlgMat)
         M[i, j] = N[j]
       end
     end
-    A.basis_mat = M
+    A.basis_matrix = M
   else
     dcr = dim_of_coefficient_ring(A)
     M = zero_matrix(base_ring(A), dim(A), d2*dcr)
@@ -106,17 +106,17 @@ function assure_has_basis_mat(A::AlgMat)
         end
       end
     end
-    A.basis_mat = M
+    A.basis_matrix = M
   end
   return nothing
 end
 
-function basis_mat(A::AlgMat; copy::Bool = true)
-  assure_has_basis_mat(A)
+function basis_matrix(A::AlgMat; copy::Bool = true)
+  assure_has_basis_matrix(A)
   if copy
-    return deepcopy(A.basis_mat)
+    return deepcopy(A.basis_matrix)
   else
-    return A.basis_mat
+    return A.basis_matrix
   end
 end
 
@@ -287,14 +287,14 @@ function matrix_algebra(R::Ring, gens::Vector{<:MatElem}; isbasis::Bool = false)
   end
 
   A.dim = cur_rank
-  A.basis_mat = sub(M, 1:cur_rank, 1:d2)
+  A.basis_matrix = sub(M, 1:cur_rank, 1:d2)
   bas = Vector{elem_type(A)}(undef, dim(A))
   for i = 1:dim(A)
     N = zero_matrix(R, degree(A), degree(A))
     for j = 1:d
       jd = (j - 1)*d
       for k = 1:d
-        N[k, j] = basis_mat(A, copy = false)[i, jd + k]
+        N[k, j] = basis_matrix(A, copy = false)[i, jd + k]
       end
     end
     bas[i] = A(N)
@@ -389,7 +389,7 @@ function matrix_algebra(R::Ring, S::Ring, gens::Vector{<:MatElem}; isbasis::Bool
   end
 
   A.dim = cur_rank
-  A.basis_mat = sub(M, 1:cur_rank, 1:max_dim)
+  A.basis_matrix = sub(M, 1:cur_rank, 1:max_dim)
   bas = Vector{elem_type(A)}(undef, dim(A))
   for i = 1:dim(A)
     N = zero_matrix(S, degree(A), degree(A))
@@ -399,7 +399,7 @@ function matrix_algebra(R::Ring, S::Ring, gens::Vector{<:MatElem}; isbasis::Bool
         jkd = (jd + k - 1)*dcr
         t = Vector{elem_type(_base_ring(S))}(undef, dcr)
         for l = 1:dcr
-          t[l] = basis_mat(A, copy = false)[i, jkd + l]
+          t[l] = basis_matrix(A, copy = false)[i, jkd + l]
         end
         N[k, j] = S(t)
       end
@@ -463,7 +463,7 @@ function _check_matrix_in_algebra(M::S, A::AlgMat{T, S}, short::Type{Val{U}} = V
   end
 
   d2 = degree(A)^2
-  B = basis_mat(A, copy = false)
+  B = basis_matrix(A, copy = false)
   if coefficient_ring(A) == base_ring(A)
     t = zero_matrix(base_ring(A), 1, d2)
     for i = 1:d2

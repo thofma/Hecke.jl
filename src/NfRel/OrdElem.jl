@@ -439,6 +439,6 @@ absolute_norm(a::NfRelOrdElem) = absolute_norm(a.elem_in_nf)
 function representation_matrix(a::NfRelOrdElem)
   O = parent(a)
   A = representation_matrix(elem_in_nf(a))
-  A = basis_mat(O, copy = false)*A*basis_mat_inv(O, copy = false)
+  A = basis_matrix(O, copy = false)*A*basis_mat_inv(O, copy = false)
   return A
 end

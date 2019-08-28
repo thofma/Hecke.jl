@@ -40,7 +40,7 @@ export IdealSet, valuation,prime_decomposition_type, prime_decomposition,
 
 export NfOrdIdl
 
-export deepcopy, parent, order, basis, basis_mat, basis_mat_inv, minimum, norm,
+export deepcopy, parent, order, basis, basis_matrix, basis_mat_inv, minimum, norm,
        ==, in, +, *, intersect, lcm, idempotents, mod, pradical
 
 add_assert_scope(:Rres)
@@ -124,7 +124,7 @@ parent_type(::Type{NfOrdIdl}) = NfOrdIdlSet
 # - slow (due to basis)
 # - unless basis is in HNF it is also non-unique
 function Base.hash(A::NfAbsOrdIdl, h::UInt)
-  return Base.hash(basis_mat(A, copy = false), h)
+  return Base.hash(basis_matrix(A, copy = false), h)
 end
 
 ################################################################################
@@ -152,7 +152,7 @@ function show_gen(io::IO, a::NfAbsOrdIdl)
   show(IOContext(io, :compact => true), order(a))
   print(io, ")\n")
   print(io, "with basis matrix\n")
-  print(io, basis_mat(a, copy = false))
+  print(io, basis_matrix(a, copy = false))
 end
 
 function show_maximal(io::IO, id::NfAbsOrdIdl)
@@ -164,8 +164,8 @@ function show_maximal(io::IO, id::NfAbsOrdIdl)
     elseif isdefined(id, :princ_gen)
         print(io, "\nprincipal generator ", id.princ_gen)
         return
-    elseif isdefined(id, :basis_mat)
-        print(io, "\nbasis_mat \n", id.basis_mat)
+    elseif isdefined(id, :basis_matrix)
+        print(io, "\nbasis_matrix \n", id.basis_matrix)
         return
     else    
       error("ideal without data")
@@ -186,8 +186,8 @@ function show_maximal(io::IO, id::NfAbsOrdIdl)
     if isdefined(id, :princ_gen)
       print(io, "\nprincipal generator ", id.princ_gen)
     end
-     if isdefined(id, :basis_mat)
-       print(io, "\nbasis_mat \n", id.basis_mat)
+     if isdefined(id, :basis_matrix)
+       print(io, "\nbasis_matrix \n", id.basis_matrix)
      end
     if isdefined(id, :gens_normal)
       print(io, "\ntwo normal wrt: ", id.gens_normal)
@@ -361,9 +361,9 @@ function assure_has_basis(A::NfAbsOrdIdl)
   if isdefined(A, :basis)
     return nothing
   else
-    assure_has_basis_mat(A)
+    assure_has_basis_matrix(A)
     O = order(A)
-    M = A.basis_mat
+    M = A.basis_matrix
     Ob = basis(O, copy = false)
     B = Vector{elem_type(O)}(undef, degree(O))
     y = O()
@@ -401,51 +401,51 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    has_basis_mat(A::NfAbsOrdIdl) -> Bool
+    has_basis_matrix(A::NfAbsOrdIdl) -> Bool
 
 Returns whether $A$ knows its basis matrix.
 """
-@inline has_basis_mat(A::NfAbsOrdIdl) = isdefined(A, :basis_mat)
+@inline has_basis_matrix(A::NfAbsOrdIdl) = isdefined(A, :basis_matrix)
 
 @doc Markdown.doc"""
-    basis_mat(A::NfAbsOrdIdl) -> fmpz_mat
+    basis_matrix(A::NfAbsOrdIdl) -> fmpz_mat
 
 Returns the basis matrix of $A$.
 """
-function basis_mat(A::NfAbsOrdIdl; copy::Bool = true)
-  assure_has_basis_mat(A)
+function basis_matrix(A::NfAbsOrdIdl; copy::Bool = true)
+  assure_has_basis_matrix(A)
   if copy
-    return deepcopy(A.basis_mat)
+    return deepcopy(A.basis_matrix)
   else
-    return A.basis_mat
+    return A.basis_matrix
   end
 end
 
-function assure_has_basis_mat(A::NfAbsOrdIdl)
-  if isdefined(A, :basis_mat)
+function assure_has_basis_matrix(A::NfAbsOrdIdl)
+  if isdefined(A, :basis_matrix)
     return nothing
   end
 
   if iszero(A)
-    A.basis_mat = zero_matrix(FlintZZ, degree(order(A)), degree(order(A)))
+    A.basis_matrix = zero_matrix(FlintZZ, degree(order(A)), degree(order(A)))
     return nothing
   end
 
   if !isdefining_polynomial_nice(nf(order(A)))
     c = hnf_modular_eldiv!(representation_matrix(A.gen_two), A.gen_one, :lowerleft)
-    A.basis_mat = c
+    A.basis_matrix = c
     return nothing
   end
 
   if !issimple(nf(order(A))) && isdefined(A, :is_prime) && A.is_prime == 1 &&
          A.norm == A.minimum && !isindex_divisor(order(A), A.minimum)
     # A is a prime ideal of degree 1
-    A.basis_mat = basis_mat_prime_deg_1(A)
+    A.basis_matrix = basis_mat_prime_deg_1(A)
     return nothing
   end
 
   if has_princ_gen(A)
-    A.basis_mat = hnf_modular_eldiv!(representation_matrix_mod(A.princ_gen, minimum(A)), minimum(A), :lowerleft)
+    A.basis_matrix = hnf_modular_eldiv!(representation_matrix_mod(A.princ_gen, minimum(A)), minimum(A), :lowerleft)
     return nothing
   end
 
@@ -458,7 +458,7 @@ function assure_has_basis_mat(A::NfAbsOrdIdl)
   be = mod(be, m)
 
   c = hnf_modular_eldiv!(representation_matrix_mod(order(A)(be), m), m, :lowerleft)
-  A.basis_mat = c
+  A.basis_matrix = c
   return nothing
 end
 
@@ -520,7 +520,7 @@ function assure_has_basis_mat_inv(A::NfAbsOrdIdl)
   if isdefined(A, :basis_mat_inv)
     return nothing
   else
-    A.basis_mat_inv = FakeFmpqMat(pseudo_inv(basis_mat(A, copy = false)))
+    A.basis_mat_inv = FakeFmpqMat(pseudo_inv(basis_matrix(A, copy = false)))
     return nothing
   end
 end
@@ -595,7 +595,7 @@ function assure_has_minimum(A::NfAbsOrdIdl)
   end
 
   @hassert :NfOrd 2 isone(basis(order(A), copy = false)[1])
-  A.minimum = basis_mat(A, copy = false)[1, 1]
+  A.minimum = basis_matrix(A, copy = false)[1, 1]
   return nothing
 end
 
@@ -639,8 +639,8 @@ function assure_has_norm(A::NfAbsOrdIdl)
     return nothing
   end
 
-  assure_has_basis_mat(A)
-  A.norm = abs(det(basis_mat(A, copy = false)))
+  assure_has_basis_matrix(A)
+  A.norm = abs(det(basis_matrix(A, copy = false)))
   return nothing
 end
 
@@ -720,12 +720,12 @@ function ==(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
       return false
     end
   end
-  if isdefined(x, :basis_mat) && isdefined(y, :basis_mat)
-    if ishnf(basis_mat(x, copy = false), :lowerleft) && ishnf(basis_mat(y, copy = false), :lowerleft)
-      return basis_mat(x, copy = false) == basis_mat(y, copy = false)
+  if isdefined(x, :basis_matrix) && isdefined(y, :basis_matrix)
+    if ishnf(basis_matrix(x, copy = false), :lowerleft) && ishnf(basis_matrix(y, copy = false), :lowerleft)
+      return basis_matrix(x, copy = false) == basis_matrix(y, copy = false)
     end
   end
-  if isdefined(x, :basis_mat) && has_2_elem(y)
+  if isdefined(x, :basis_matrix) && has_2_elem(y)
     if !divisible(y.gen_one, minimum(x, copy = false))
       return false
     end
@@ -734,7 +734,7 @@ function ==(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
     end 
     return norm(x) == norm(y)
   end
-  if isdefined(y, :basis_mat) && has_2_elem(y)
+  if isdefined(y, :basis_matrix) && has_2_elem(y)
     if !divisible(x.gen_one, minimum(y, copy = false))
       return false
     end
@@ -745,7 +745,7 @@ function ==(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
   end
   
   
-  return _hnf(basis_mat(x, copy = false), :lowerleft) == _hnf(basis_mat(y, copy = false), :lowerleft)
+  return _hnf(basis_matrix(x, copy = false), :lowerleft) == _hnf(basis_matrix(y, copy = false), :lowerleft)
 end
 
 ################################################################################
@@ -966,7 +966,7 @@ function _minmod_comp(a::fmpz, b::NfOrdElem)
   if isone(acom)
     return min_uncom
   end
-  e, _ = ppio(denominator(basis_mat(Zk, copy = false)), acom)
+  e, _ = ppio(denominator(basis_matrix(Zk, copy = false)), acom)
   d = denominator(b.elem_in_nf)
   d, _ = ppio(d, acom)  
   mod = acom*d*e
@@ -1021,7 +1021,7 @@ function _invmod(a::fmpz, b::NfOrdElem)
   end
   d = denominator(b.elem_in_nf)
   d, _ = ppio(d, a)
-  e, _ = ppio(basis_mat(Zk, copy = false).den, a) 
+  e, _ = ppio(basis_matrix(Zk, copy = false).den, a) 
   S = ResidueRing(FlintZZ, a^2*d*e, cached=false)
   St = PolynomialRing(S, cached=false)[1]
   B = St(d*b.elem_in_nf)
@@ -1178,7 +1178,7 @@ end
 
 function trace_matrix(A::NfAbsOrdIdl)
   g = trace_matrix(order(A))
-  b = basis_mat(A, copy = false)
+  b = basis_matrix(A, copy = false)
 #  mul!(b, b, g)   #b*g*b' is what we want.
 #                  #g should not be changed? b is a copy.
 #  mul!(b, b, b')  #TODO: find a spare tmp-mat and use transpose
@@ -1409,7 +1409,7 @@ function mod(x::S, y::T) where { S <: Union{NfAbsOrdElem, AlgAssAbsOrdElem}, T <
     return O(a)
   end
 
-  c = basis_mat(y, copy = false)
+  c = basis_matrix(y, copy = false)
   t = fmpz(0)
   for i in degree(O):-1:1
     t = fdiv(a[i], c[i,i])
@@ -1435,7 +1435,7 @@ function mod(x::NfOrdElem, y::NfAbsOrdIdl, preinv::Array{fmpz_preinvn_struct, 1}
     end
     return O(a)
   else
-    return mod(x, basis_mat(y, copy = false), preinv)
+    return mod(x, basis_matrix(y, copy = false), preinv)
   end
 end
 
@@ -1710,7 +1710,7 @@ function colon(a::NfAbsOrdIdl, b::NfAbsOrdIdl, contains::Bool = false)
       mul!(M, M, bmatinv.num)
       M = transpose(M)
       _copy_matrix_into_matrix(m, n*(ind-1)+1, 1, M)
-      if view(id_gen, n+1:2*n, 1:n) == basis_mat(a, copy = false)
+      if view(id_gen, n+1:2*n, 1:n) == basis_matrix(a, copy = false)
         m = view(m, 1:n*ind, 1:n)
         break
       end

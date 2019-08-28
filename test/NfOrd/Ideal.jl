@@ -13,18 +13,18 @@
     @test I.princ_gen_special[1] == 1
     @test I.princ_gen_special[2] == 17
     @test I.princ_gen == O1(-17)
-    @test basis_mat(I) == MatrixSpace(FlintZZ, 3, 3)(17)
+    @test basis_matrix(I) == MatrixSpace(FlintZZ, 3, 3)(17)
 
     J = @inferred ideal(O1, FlintZZ(-17))
     @test order(J) == O1
     @test J.princ_gen_special[1] == 2
     @test J.princ_gen_special[3] == FlintZZ(17)
     @test J.princ_gen == O1(-17)
-    @test basis_mat(J) == MatrixSpace(FlintZZ, 3, 3)(17)
+    @test basis_matrix(J) == MatrixSpace(FlintZZ, 3, 3)(17)
 
     K = @inferred ideal(O1, O1(-17))
     @test K.princ_gen == O1(-17)
-    @test basis_mat(K) == MatrixSpace(FlintZZ, 3, 3)(17)
+    @test basis_matrix(K) == MatrixSpace(FlintZZ, 3, 3)(17)
 
     M = @inferred O1(-17)*O1
     L = @inferred O1*O1(-17)
@@ -82,13 +82,13 @@
   @testset "Basismatrix" begin
     M = @inferred ideal(O1, O1(4*a1^2))
 
-    b = @inferred basis_mat(M)
+    b = @inferred basis_matrix(M)
     @test b == FlintZZ[16 0 0; 0 16 0; 0 0 1]
 
     b = @inferred basis_mat_inv(M)
     @test b == Hecke.FakeFmpqMat(FlintZZ[1 0 0; 0 1 0; 0 0 16], FlintZZ(16))
 
-    b = @inferred basis_mat(M)
+    b = @inferred basis_matrix(M)
     @test b == FlintZZ[16 0 0; 0 16 0; 0 0 1]
 
     b = @inferred basis_mat_inv(M)

@@ -619,7 +619,7 @@ mutable struct NfAbsOrd{S, T} <: Ring
   nf::S
   basis_nf::Vector{T}        # Basis as array of number field elements
   basis_ord#::Vector{NfAbsOrdElem}    # Basis as array of order elements
-  basis_mat::FakeFmpqMat           # Basis matrix of order wrt basis of K
+  basis_matrix::FakeFmpqMat           # Basis matrix of order wrt basis of K
   basis_mat_inv::FakeFmpqMat       # Inverse of basis matrix
   gen_index::fmpq                  # The det of basis_mat_inv as fmpq
   index::fmpz                      # The det of basis_mat_inv
@@ -687,7 +687,7 @@ mutable struct NfAbsOrd{S, T} <: Ring
       z = NfAbsOrd{S, T}(K)
       n = degree(K)
       z.basis_nf = B
-      z.basis_mat = x
+      z.basis_matrix = x
       z.basis_mat_inv = xinv
       if cached
         NfAbsOrdID[(K, x)] = z
@@ -708,7 +708,7 @@ mutable struct NfAbsOrd{S, T} <: Ring
         d[i] = elem_from_mat_row(K, x.num, i, x.den)
       end
       z.basis_nf = d
-      z.basis_mat = x
+      z.basis_matrix = x
       if cached
         NfAbsOrdID[(K, x)] = z
       end
@@ -718,13 +718,13 @@ mutable struct NfAbsOrd{S, T} <: Ring
 
   function NfAbsOrd{S, T}(b::Array{T, 1}, cached::Bool = false) where {S, T}
     K = parent(b[1])
-    A = basis_mat(b, FakeFmpqMat)
+    A = basis_matrix(b, FakeFmpqMat)
     if cached && haskey(NfAbsOrdID, (K,A))
       return NfAbsOrdID[(K,A)]::NfAbsOrd{S, T}
     else
       z = NfAbsOrd{parent_type(T), T}(K)
       z.basis_nf = b
-      z.basis_mat = A
+      z.basis_matrix = A
       if cached
         NfAbsOrdID[(K, A)] = z
       end
@@ -879,7 +879,7 @@ const NfAbsOrdIdlSetID = Dict{NfAbsOrd, NfAbsOrdIdlSet}()
 mutable struct NfAbsOrdIdl{S, T}
   order::NfAbsOrd{S, T}
   basis::Array{NfAbsOrdElem{S, T}, 1}
-  basis_mat::fmpz_mat
+  basis_matrix::fmpz_mat
   basis_mat_inv::FakeFmpqMat
   gen_one::fmpz
   gen_two::NfAbsOrdElem{S, T}
@@ -932,7 +932,7 @@ mutable struct NfAbsOrdIdl{S, T}
     # create ideal of O with basis_matrix a
     # Note that the constructor 'destroys' a, a should not be used anymore
     r = NfAbsOrdIdl(O)
-    r.basis_mat = a
+    r.basis_matrix = a
     return r
   end
 
@@ -981,7 +981,7 @@ mutable struct NfAbsOrdIdl{S, T}
     C = NfAbsOrdIdl(O)
     C.princ_gen = O(x)
     C.is_principal = 1
-    C.basis_mat = abs(x)*identity_matrix(FlintZZ, degree(O))
+    C.basis_matrix = abs(x)*identity_matrix(FlintZZ, degree(O))
     C.princ_gen_special = (1, abs(x), fmpz(0))
     C.gen_one = fmpz(x)
     C.gen_two = O(x)
@@ -998,7 +998,7 @@ mutable struct NfAbsOrdIdl{S, T}
     C = NfAbsOrdIdl(O)
     C.princ_gen = O(x)
     C.is_principal = 1
-    C.basis_mat = abs(x)*identity_matrix(FlintZZ, degree(O))
+    C.basis_matrix = abs(x)*identity_matrix(FlintZZ, degree(O))
     C.princ_gen_special = (2, Int(0), abs(x))
     C.gen_one = x
     C.gen_two = O(x)
@@ -1054,7 +1054,7 @@ mutable struct NfOrdFracIdl
   num::NfOrdIdl
   den::fmpz
   norm::fmpq
-  basis_mat::FakeFmpqMat
+  basis_matrix::FakeFmpqMat
   basis_mat_inv::FakeFmpqMat
 
   function NfOrdFracIdl(O::NfOrd)
@@ -1067,7 +1067,7 @@ mutable struct NfOrdFracIdl
     z = new()
     z.order = O
     b = abs(b)
-    z.basis_mat = FakeFmpqMat(basis_mat(a), deepcopy(b))
+    z.basis_matrix = FakeFmpqMat(basis_matrix(a), deepcopy(b))
     z.num = a
     z.den = b
     return z
@@ -1076,7 +1076,7 @@ mutable struct NfOrdFracIdl
   function NfOrdFracIdl(O::NfOrd, a::FakeFmpqMat)
     z = new()
     z.order = O
-    z.basis_mat = a
+    z.basis_matrix = a
     return z
   end
 
@@ -1093,7 +1093,7 @@ mutable struct NfOrdFracIdl
     z.order = O
     z.num = ideal(O, O(denominator(a, O)*a))
     z.den = denominator(a, O)
-    z.basis_mat = hnf(FakeFmpqMat(representation_matrix(O(denominator(a, O)*a)), denominator(a, O)))
+    z.basis_matrix = hnf(FakeFmpqMat(representation_matrix(O(denominator(a, O)*a)), denominator(a, O)))
     return z
   end
 end
@@ -1621,7 +1621,7 @@ end
 mutable struct AbsOrdQuoRing{S, T} <: Ring
   base_ring::S
   ideal::T
-  basis_mat::fmpz_mat
+  basis_matrix::fmpz_mat
   basis_mat_array::Array{fmpz, 2}
   preinvn::Array{fmpz_preinvn_struct, 1}
   factor::Dict{T, Int}
@@ -1639,9 +1639,9 @@ mutable struct AbsOrdQuoRing{S, T} <: Ring
     z = new{S, T}()
     z.base_ring = O
     z.ideal = I
-    z.basis_mat = basis_mat(I)
-    z.basis_mat_array = Array(z.basis_mat)
-    z.preinvn = [ fmpz_preinvn_struct(z.basis_mat[i, i]) for i in 1:degree(O)]
+    z.basis_matrix = basis_matrix(I)
+    z.basis_mat_array = Array(z.basis_matrix)
+    z.preinvn = [ fmpz_preinvn_struct(z.basis_matrix[i, i]) for i in 1:degree(O)]
     d = degree(O)
     z.tmp_div = zero_matrix(FlintZZ, 2*d + 1, 2*d + 1)
     z.tmp_xxgcd = zero_matrix(FlintZZ, 3*d + 1, 3*d + 1)

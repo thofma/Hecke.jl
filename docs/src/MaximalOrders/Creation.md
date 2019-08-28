@@ -12,7 +12,7 @@
 @{degree(::NfMaximalOrder)}
 @{basis(::NfMaximalOrder)}
 @{basis(::NfMaximalOrder, ::AnticNumberField)}
-@{basis_mat(::NfMaximalOrder)}
+@{basis_matrix(::NfMaximalOrder)}
 @{basis_mat_inv(::NfMaximalOrder)}
 @{index(::NfMaximalOrder)}
 @{signature(::NfMaximalOrder)}

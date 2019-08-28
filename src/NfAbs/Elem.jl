@@ -14,7 +14,7 @@ Base.copy(d::nf_elem) = deepcopy(d)
 #
 ################################################################################
 
-function basis_mat(A::Array{nf_elem, 1}, ::Type{FakeFmpqMat})
+function basis_matrix(A::Array{nf_elem, 1}, ::Type{FakeFmpqMat})
   @assert length(A) > 0
   n = length(A)
   d = degree(parent(A[1]))
@@ -38,7 +38,7 @@ function basis_mat(A::Array{nf_elem, 1}, ::Type{FakeFmpqMat})
   return FakeFmpqMat(M, deno)
 end
 
-function basis_mat(A::Array{nf_elem, 1})
+function basis_matrix(A::Array{nf_elem, 1})
   @assert length(A) > 0
   n = length(A)
   d = degree(parent(A[1]))

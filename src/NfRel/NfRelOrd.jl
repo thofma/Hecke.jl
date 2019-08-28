@@ -124,11 +124,11 @@ function assure_has_basis_nf(O::NfRelOrd{T, S}) where {T, S}
   return nothing
 end
 
-function assure_has_basis_mat(O::NfRelOrd)
-  if isdefined(O, :basis_mat)
+function assure_has_basis_matrix(O::NfRelOrd)
+  if isdefined(O, :basis_matrix)
     return nothing
   end
-  O.basis_mat = basis_pmat(O).matrix
+  O.basis_matrix = basis_pmat(O).matrix
   return nothing
 end
 
@@ -136,7 +136,7 @@ function assure_has_basis_mat_inv(O::NfRelOrd)
   if isdefined(O, :basis_mat_inv)
     return nothing
   end
-  O.basis_mat_inv = inv(basis_mat(O, copy = false))
+  O.basis_mat_inv = inv(basis_matrix(O, copy = false))
   return nothing
 end
 
@@ -220,17 +220,17 @@ function basis_nf(O::NfRelOrd; copy::Bool = true)
 end
 
 @doc Markdown.doc"""
-      basis_mat(O::NfRelOrd{T, S}) -> Generic.Mat{T}
+      basis_matrix(O::NfRelOrd{T, S}) -> Generic.Mat{T}
 
 Returns the basis matrix of $\mathcal O$ with respect to the power basis
 of the ambient number field.
 """
-function basis_mat(O::NfRelOrd; copy::Bool = true)
-  assure_has_basis_mat(O)
+function basis_matrix(O::NfRelOrd; copy::Bool = true)
+  assure_has_basis_matrix(O)
   if copy
-    return deepcopy(O.basis_mat)
+    return deepcopy(O.basis_matrix)
   else
-    return O.basis_mat
+    return O.basis_matrix
   end
 end
 

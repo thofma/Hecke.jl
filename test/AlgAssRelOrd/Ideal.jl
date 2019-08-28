@@ -39,7 +39,7 @@
     p = prime_decomposition(OK, 3)[1][1]
     g = Hecke.locally_free_basis(I, p)
     OKGg = OKG*g
-    t = det(basis_mat(I, copy = false)*basis_mat_inv(OKGg, copy = false))
+    t = det(basis_matrix(I, copy = false)*basis_mat_inv(OKGg, copy = false))
     @test valuation(t, p) == 0
 
     p = prime_decomposition(OK, 2)[1][1]

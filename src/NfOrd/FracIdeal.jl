@@ -134,9 +134,9 @@ end
 #
 ################################################################################
 
-export basis_mat, norm, inv, ==, *, integral_split
+export basis_matrix, norm, inv, ==, *, integral_split
 
-export parent, order, basis_mat, basis_mat_inv, basis, norm,
+export parent, order, basis_matrix, basis_mat_inv, basis, norm,
        ring_of_multipliers, ==
 
 ################################################################################
@@ -191,7 +191,7 @@ function basis_mat_inv(a::NfOrdFracIdl)
   if isdefined(a, :basis_mat_inv)
     return deepcopy(a.basis_mat_inv)
   else
-    a.basis_mat_inv = inv(basis_mat(a))
+    a.basis_mat_inv = inv(basis_matrix(a))
     return deepcopy(a.basis_mat_inv)
   end
 end
@@ -208,7 +208,7 @@ end
 Returns the $\mathbf Z$-basis of $I$.
 """
 function basis(a::NfOrdFracIdl)
-  B = basis_mat(a)
+  B = basis_matrix(a)
   d = degree(order(a))
   O = order(a)
   K = nf(O)
@@ -235,8 +235,8 @@ end
 
 function Base.deepcopy_internal(x::NfOrdFracIdl, dict::IdDict)
   z = NfOrdFracIdl(numerator(x), denominator(x))
-  if isdefined(x, :basis_mat)
-    z.basis_mat = deepcopy(x.basis_mat)
+  if isdefined(x, :basis_matrix)
+    z.basis_matrix = deepcopy(x.basis_matrix)
   end
   return z
 end
@@ -247,29 +247,29 @@ end
 #
 ################################################################################
 
-function assure_has_basis_mat(a::NfOrdFracIdl)
-  if isdefined(a, :basis_mat)
+function assure_has_basis_matrix(a::NfOrdFracIdl)
+  if isdefined(a, :basis_matrix)
     return nothing
   end
   if !isdefined(a, :num)
     error("Not a valid fractional ideal")
   end
 
-  a.basis_mat = FakeFmpqMat(basis_mat(numerator(a, copy = false)), denominator(a))
+  a.basis_matrix = FakeFmpqMat(basis_matrix(numerator(a, copy = false)), denominator(a))
   return nothing
 end
 
 @doc Markdown.doc"""
-    basis_mat(I::NfOrdFracIdl) -> FakeFmpqMat
+    basis_matrix(I::NfOrdFracIdl) -> FakeFmpqMat
 
 Returns the basis matrix of $I$ with respect to the basis of the order.
 """
-function basis_mat(x::NfOrdFracIdl; copy::Bool = true)
-  assure_has_basis_mat(x)
+function basis_matrix(x::NfOrdFracIdl; copy::Bool = true)
+  assure_has_basis_matrix(x)
   if copy
-    return deepcopy(x.basis_mat)
+    return deepcopy(x.basis_matrix)
   else
-    return x.basis_mat
+    return x.basis_matrix
   end
 end
 
@@ -283,12 +283,12 @@ function assure_has_numerator_and_denominator(a::NfOrdFracIdl)
   if isdefined(a, :num) && isdefined(a, :den)
     return nothing
   end
-  if !isdefined(a, :basis_mat)
+  if !isdefined(a, :basis_matrix)
     error("Not a valid fractional ideal")
   end
 
-  a.num = ideal(order(a), numerator(basis_mat(a, copy = false)))
-  a.den = denominator(basis_mat(a, copy = false))
+  a.num = ideal(order(a), numerator(basis_matrix(a, copy = false)))
+  a.den = denominator(basis_matrix(a, copy = false))
   return nothing
 end
 
@@ -327,7 +327,7 @@ function show(io::IO, id::NfOrdFracIdl)
     print(io, numerator(id, copy = false))
   else
     print(io, "Fractional ideal with basis matrix\n")
-    print(io, basis_mat(id, copy = false))
+    print(io, basis_matrix(id, copy = false))
   end
 end
 
@@ -405,7 +405,7 @@ function simplify(A::NfOrdFracIdl)
     g = gcd(g, A.den)
     g = gcd(g, A.num.gen_one)
   else  
-    b = basis_mat(A.num, copy = false)
+    b = basis_matrix(A.num, copy = false)
     g = gcd(denominator(A), content(b))
   end  
 
@@ -437,13 +437,13 @@ isprime_known(A::NfOrdFracIdl) = isprime_known(numerator(A, copy = false))
 Returns whether $x$ and $y$ are equal.
 """
 function ==(A::NfOrdFracIdl, B::NfOrdFracIdl)
-  #return B.den * basis_mat(A.num) == A.den * basis_mat(B.num)
+  #return B.den * basis_matrix(A.num) == A.den * basis_matrix(B.num)
   if !ismaximal_known(order(A)) || !ismaximal(order(A))
-    return basis_mat(A, copy = false) == basis_mat(B, copy = false)
+    return basis_matrix(A, copy = false) == basis_matrix(B, copy = false)
   end
 
   if !isdefined(A, :num) || !isdefined(B, :num)
-    return basis_mat(A, copy = false) == basis_mat(B, copy = false)
+    return basis_matrix(A, copy = false) == basis_matrix(B, copy = false)
   end
   D = inv(B)
   E = prod(A, D)
@@ -715,8 +715,8 @@ end
 *(O::NfAbsOrd, I::NfOrdFracIdl) = extend(I, O)
 
 function _as_frac_ideal_of_smaller_order(O::NfAbsOrd, I::NfAbsOrdIdl)
-  M = basis_mat(I, copy = false)
-  M = M*basis_mat(order(I), copy = false)*basis_mat_inv(O, copy = false)
+  M = basis_matrix(I, copy = false)
+  M = M*basis_matrix(order(I), copy = false)*basis_mat_inv(O, copy = false)
   return frac_ideal(O, M)
 end
 

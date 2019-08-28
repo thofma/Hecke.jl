@@ -196,7 +196,7 @@ function ideals_containing(S::T, a::T2, R::T) where { T <: Union{ NfAbsOrd, AlgA
         potential_basis[i + offset] = sum( v[1, j]*mQ.top_snf_basis[j + offset] for j = 1:(d - offset) )
       end
     end
-    M = basis_mat(potential_basis, FakeFmpqMat)*basis_mat_inv(R, copy = false)
+    M = basis_matrix(potential_basis, FakeFmpqMat)*basis_mat_inv(R, copy = false)
     return frac_ideal(R, M)
   end
 
@@ -214,7 +214,7 @@ function ideal_to_matrix(I::Union{AlgAssAbsOrdIdl, AlgAssAbsOrdFracIdl})
   A = algebra(O)
   a = primitive_element_via_number_fields(A)
   M = FakeFmpqMat(representation_matrix(a, :left))
-  B = basis_mat(I, copy = false)*basis_mat(O, copy = false)
+  B = basis_matrix(I, copy = false)*basis_matrix(O, copy = false)
   C = inv(B)
   M = mul!(M, B, M)
   M = mul!(M, M, C)
@@ -227,7 +227,7 @@ function ideal_to_matrix(I::Union{ NfAbsOrdIdl, NfOrdFracIdl })
   K = nf(O)
   a = gen(K)
   M = FakeFmpqMat(representation_matrix(a))
-  B = basis_mat(I, copy = false)*basis_mat(O, copy = false)
+  B = basis_matrix(I, copy = false)*basis_matrix(O, copy = false)
   C = inv(B)
   M = mul!(M, B, M)
   M = mul!(M, M, C)
@@ -308,8 +308,8 @@ function _isconjugate(O::Union{ NfAbsOrd, AlgAssAbsOrd }, M::fmpz_mat, N::fmpz_m
     return false, zero_matrix(FlintZZ, nrows(M), ncols(M))
   end
 
-  aBI = basis_mat([ a*b for b in basisI ], FakeFmpqMat)
-  BJ = basis_mat(basisJ, FakeFmpqMat)
+  aBI = basis_matrix([ a*b for b in basisI ], FakeFmpqMat)
+  BJ = basis_matrix(basisJ, FakeFmpqMat)
   UU = aBI*inv(BJ)
   @assert isone(UU.den)
   return true, UU.num

@@ -253,7 +253,7 @@ function AlgAss(O::Union{NfAbsOrd, AlgAssAbsOrd}, I::Union{NfAbsOrdIdl, AlgAssAb
 
   basis_elts = Vector{Int}()
   for i = 1:n
-    if valuation(basis_mat(I, copy = false)[i, i], p) == 0
+    if valuation(basis_matrix(I, copy = false)[i, i], p) == 0
       continue
     end
 
@@ -291,7 +291,7 @@ function AlgAss(O::Union{NfAbsOrd, AlgAssAbsOrd}, I::Union{NfAbsOrdIdl, AlgAssAb
   for i = 1:r
     M = representation_matrix(BO[basis_elts[i]])
     if r != degree(O)
-      M = reduce_rows_mod_hnf!(M, basis_mat(I, copy = false), basis_elts)
+      M = reduce_rows_mod_hnf!(M, basis_matrix(I, copy = false), basis_elts)
     end
     for j = 1:r
       for k = 1:r
@@ -367,7 +367,7 @@ function AlgAss(I::Union{ NfAbsOrdIdl, AlgAssAbsOrdIdl }, J::Union{NfAbsOrdIdl, 
 
   n = degree(O)
   BI = basis(I, copy = false)
-  BmatJinI = hnf(basis_mat(J, copy = false)*basis_mat_inv(I, copy = false), :lowerleft)
+  BmatJinI = hnf(basis_matrix(J, copy = false)*basis_mat_inv(I, copy = false), :lowerleft)
   @assert isone(BmatJinI.den) "J is not a subset of I"
   BmatJinI = BmatJinI.num
   basis_elts = Vector{Int}()
@@ -406,7 +406,7 @@ function AlgAss(I::Union{ NfAbsOrdIdl, AlgAssAbsOrdIdl }, J::Union{NfAbsOrdIdl, 
   end
 
   BI = basis(I, copy = false)
-  BmatI = basis_mat(I, copy = false)*basis_mat(O, copy = false)
+  BmatI = basis_matrix(I, copy = false)*basis_matrix(O, copy = false)
   BmatIinv = inv(BmatI)
 
   mult_table = Array{elem_type(Fp), 3}(undef, r, r, r)
@@ -494,7 +494,7 @@ function AlgAss(O::Union{ NfRelOrd{T, S}, AlgAssRelOrd{T, S} }, I::Union{ NfRelO
 
   basisO = pseudo_basis(O, copy = false)
   new_basisO = Vector{Tuple{elem_type(K), S}}()
-  new_bmatO = basis_mat(O)
+  new_bmatO = basis_matrix(O)
 
   bpmatI = basis_pmat(I, copy = false)
   new_bpmatI = deepcopy(bpmatI)
@@ -688,7 +688,7 @@ function AlgAss(I::Union{ NfRelOrdIdl{T, S}, AlgAssRelOrdIdl{T, S} }, J::Union{ 
   bmatinvI = inv(new_bmatI)
 
   bpmatJinI = basis_pmat(J)
-  bpmatJinI.matrix = bpmatJinI.matrix*basis_mat(O, copy = false)*bmatinvI
+  bpmatJinI.matrix = bpmatJinI.matrix*basis_matrix(O, copy = false)*bmatinvI
   bpmatJinI = pseudo_hnf(bpmatJinI, :lowerleft)
   bmatJinI = bpmatJinI.matrix
   basisJinI = Vector{Tuple{elem_type(K), S}}()

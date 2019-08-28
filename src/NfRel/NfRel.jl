@@ -582,7 +582,7 @@ end
 #
 ################################################################################
 
-function basis_mat(v::Vector{<: NfRelElem})
+function basis_matrix(v::Vector{<: NfRelElem})
   K = parent(v[1])
   k = base_field(K)
   z = zero_matrix(k, length(v), degree(K))

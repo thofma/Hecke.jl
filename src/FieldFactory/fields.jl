@@ -211,7 +211,7 @@ function _from_relative_to_abs_with_embedding(L::Hecke.NfRel_ns{T}, autL::Array{
   #Now, we compute the maximal order. Then we simplify.
   #We simplify only if the degree of the field is lower than 30
   
-  BasisMat = basis_mat(B, FakeFmpqMat)
+  BasisMat = basis_matrix(B, FakeFmpqMat)
   @vtime :Fields 3 Hecke.hnf_modular_eldiv!(BasisMat.num, BasisMat.den, :lowerleft)
   NewBMat = FakeFmpqMat(BasisMat.num, BasisMat.den)
   @vtime :Fields 3 Ostart = NfAbsOrd(K, NewBMat)
@@ -239,13 +239,13 @@ function _from_relative_to_abs_with_embedding(L::Hecke.NfRel_ns{T}, autL::Array{
   for i = 3:degree(Ks)
     arr_prim_img[i] = arr_prim_img[i-1]*mKs.prim_img
   end
-  M1 = inv(basis_mat(arr_prim_img, FakeFmpqMat))
+  M1 = inv(basis_matrix(arr_prim_img, FakeFmpqMat))
   end
   if isdefined(O1, :lllO)
-    O2 = NfAbsOrd(Ks, basis_mat(O1.lllO, copy = false)*M1)
+    O2 = NfAbsOrd(Ks, basis_matrix(O1.lllO, copy = false)*M1)
     O2.lllO = O2
   else
-    O2 = NfAbsOrd(Ks, basis_mat(O1, copy = false)*M1)
+    O2 = NfAbsOrd(Ks, basis_matrix(O1, copy = false)*M1)
   end
   O2.ismaximal = 1
   @assert isdefined(O1, :disc)

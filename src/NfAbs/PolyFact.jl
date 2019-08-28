@@ -422,10 +422,10 @@ end
 function grow_prec!(vH::vanHoeijCtx, pr::Int)
   lift(vH.H, pr)
 
-  vH.Ml = lll(basis_mat(vH.P^pr))
+  vH.Ml = lll(basis_matrix(vH.P^pr))
   pMr = pseudo_inv(vH.Ml)
   F = FakeFmpqMat(pMr)
-  #M * basis_mat(zk) is the basis wrt to the field
+  #M * basis_matrix(zk) is the basis wrt to the field
   #(M*B)^-1 = B^-1 * M^-1, so I need basis_mat_inv(zk) * pM
   vH.pMr = (F.num, F.den, fmpz_preinvn_struct(2*F.den))
   F = basis_mat_inv(order(vH.P)) * F

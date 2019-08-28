@@ -378,7 +378,7 @@ function basis(K::NfRel_ns)
   return b
 end
 
-function basis_mat(a::Vector{NfRel_nsElem{T}}) where {T <: NumFieldElem}
+function basis_matrix(a::Vector{NfRel_nsElem{T}}) where {T <: NumFieldElem}
   @assert length(a) > 0
   K = parent(a[1])
   M = zero_matrix(base_field(K), length(a), degree(K))

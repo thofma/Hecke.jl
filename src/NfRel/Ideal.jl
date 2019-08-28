@@ -81,11 +81,11 @@ function assure_has_pseudo_basis(a::Union{NfRelOrdIdl, NfRelOrdFracIdl})
   return nothing
 end
 
-function assure_has_basis_mat(a::Union{NfRelOrdIdl, NfRelOrdFracIdl})
-  if isdefined(a, :basis_mat)
+function assure_has_basis_matrix(a::Union{NfRelOrdIdl, NfRelOrdFracIdl})
+  if isdefined(a, :basis_matrix)
     return nothing
   end
-  a.basis_mat = basis_pmat(a).matrix
+  a.basis_matrix = basis_pmat(a).matrix
   return nothing
 end
 
@@ -93,7 +93,7 @@ function assure_has_basis_mat_inv(a::Union{NfRelOrdIdl, NfRelOrdFracIdl})
   if isdefined(a, :basis_mat_inv)
     return nothing
   end
-  a.basis_mat_inv = inv(basis_mat(a, copy = false))
+  a.basis_mat_inv = inv(basis_matrix(a, copy = false))
   return nothing
 end
 
@@ -140,17 +140,17 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-      basis_mat(a::NfRelOrdIdl{T, S}) -> Generic.Mat{T}
-      basis_mat(a::NfRelOrdFracIdl{T, S}) -> Generic.Mat{T}
+      basis_matrix(a::NfRelOrdIdl{T, S}) -> Generic.Mat{T}
+      basis_matrix(a::NfRelOrdFracIdl{T, S}) -> Generic.Mat{T}
 
 Returns the basis matrix of $a$.
 """
-function basis_mat(a::Union{NfRelOrdIdl, NfRelOrdFracIdl}; copy::Bool = true)
-  assure_has_basis_mat(a)
+function basis_matrix(a::Union{NfRelOrdIdl, NfRelOrdFracIdl}; copy::Bool = true)
+  assure_has_basis_matrix(a)
   if copy
-    return deepcopy(a.basis_mat)
+    return deepcopy(a.basis_matrix)
   else
-    return a.basis_mat
+    return a.basis_matrix
   end
 end
 
@@ -398,7 +398,7 @@ end
 #
 ################################################################################
 
-iszero(a::NfRelOrdIdl) = iszero(basis_mat(a, copy = false)[1, 1])
+iszero(a::NfRelOrdIdl) = iszero(basis_matrix(a, copy = false)[1, 1])
 
 isone(a::NfRelOrdIdl) = isone(minimum(a))
 
@@ -408,7 +408,7 @@ isone(a::NfRelOrdIdl) = isone(minimum(a))
 #
 ################################################################################
 
-# Assumes, that det(basis_mat(a)) == 1
+# Assumes, that det(basis_matrix(a)) == 1
 function assure_has_norm(a::NfRelOrdIdl{T, S}) where {T, S}
   if a.has_norm
     return nothing
@@ -513,8 +513,8 @@ function *(a::NfRelOrdIdl{T, S}, b::NfRelOrdIdl{T, S}) where {T, S}
   end
   pba = pseudo_basis(a, copy = false)
   pbb = pseudo_basis(b, copy = false)
-  ma = basis_mat(a, copy = false)
-  mb = basis_mat(b, copy = false)
+  ma = basis_matrix(a, copy = false)
+  mb = basis_matrix(b, copy = false)
   L = nf(order(a))
   K = base_field(L)
   d = degree(order(a))
@@ -622,7 +622,7 @@ function inv(a::Union{NfRelOrdIdl{T, S}, NfRelOrdFracIdl{T, S}}) where {T, S}
   O = order(a)
   d = degree(O)
   pb = pseudo_basis(a, copy = false)
-  bmO = basis_mat(O, copy = false)
+  bmO = basis_matrix(O, copy = false)
   bmOinv = basis_mat_inv(O, copy = false)
   M = bmO*representation_matrix(pb[1][1])*bmOinv
   for i = 2:d
@@ -814,9 +814,9 @@ function ring_of_multipliers(a::NfRelOrdIdl{T1, T2}) where {T1, T2}
   d = degree(O)
   pb = pseudo_basis(a, copy = false)
   S = basis_mat_inv(O, copy = false)*basis_mat_inv(a, copy = false)
-  M = basis_mat(O, copy = false)*representation_matrix(pb[1][1])*S
+  M = basis_matrix(O, copy = false)*representation_matrix(pb[1][1])*S
   for i = 2:d
-    M = hcat(M, basis_mat(O, copy = false)*representation_matrix(pb[i][1])*S)
+    M = hcat(M, basis_matrix(O, copy = false)*representation_matrix(pb[i][1])*S)
   end
   invcoeffs = [ simplify(inv(pb[i][2])) for i = 1:d ]
   C = Array{T2}(undef, d^2)
@@ -831,7 +831,7 @@ function ring_of_multipliers(a::NfRelOrdIdl{T1, T2}) where {T1, T2}
   end
   PM = PseudoMatrix(transpose(M), C)
   PM = sub(pseudo_hnf(PM, :upperright, true), 1:d, 1:d)
-  N = inv(transpose(PM.matrix))*basis_mat(O, copy = false)
+  N = inv(transpose(PM.matrix))*basis_matrix(O, copy = false)
   PN = PseudoMatrix(N, [ simplify(inv(I)) for I in PM.coeffs ])
   return NfRelOrd{T1, T2}(nf(O), PN)
 end
@@ -1175,8 +1175,8 @@ function idempotents(x::NfRelOrdIdl{T, S}, y::NfRelOrdIdl{T, S}) where {T, S}
   end
   for i = 1:d
     for j = 1:d
-      M[i + 1, j + 1] = deepcopy(basis_mat(x, copy = false)[i, j])
-      M[i + 1 + d, j + 1] = deepcopy(basis_mat(y, copy = false)[i, j])
+      M[i + 1, j + 1] = deepcopy(basis_matrix(x, copy = false)[i, j])
+      M[i + 1 + d, j + 1] = deepcopy(basis_matrix(y, copy = false)[i, j])
     end
     M[i + 1, i + d + 1] = K(1)
   end
@@ -1337,7 +1337,7 @@ function anti_uniformizer(P::NfRelOrdIdl{T, S}) where {T, S}
   # We need a pseudo basis of O, where the coefficient ideals have valuation
   # 0 at p.
   O = order(P)
-  N = basis_mat(O)
+  N = basis_matrix(O)
   NN = basis_mat_inv(O)
   d = Vector{T}(undef, degree(O))
   a = elem_in_nf(uniformizer(p))

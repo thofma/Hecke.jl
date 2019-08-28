@@ -359,7 +359,7 @@ function gens_overorder_polygons(O::NfOrd, p::fmpz)
       end
     end
   end
-  B = basis_mat(l, FakeFmpqMat)
+  B = basis_matrix(l, FakeFmpqMat)
   hnf_modular_eldiv!(B.num, B.den, :lowerleft)
   B = FakeFmpqMat(view(B.num, nrows(B)-degree(K)+1:nrows(B), 1:degree(K)), B.den)
   if !regular
@@ -461,7 +461,7 @@ function _order_for_polygon_overorder(K::S, elt::Array{T, 1}) where {S, T}
       end
     end
     
-    B = basis_mat(prods, FakeFmpqMat) 
+    B = basis_matrix(prods, FakeFmpqMat) 
     hnf_modular_eldiv!(B.num, B.den, :lowerleft)
     
     dd = B.num[nrows(B) - degree(K) + 1, 1]
@@ -507,7 +507,7 @@ function _from_algs_to_ideals(A::AlgAss{T}, OtoA::Map, AtoO::Map, Ip1, p::Union{
   AA = _dec_com_finite(A)
   @vprint :NfOrd 1 "Done \n"
   ideals = Array{Tuple{typeof(Ip1), Int}, 1}(undef, length(AA))
-  N = basis_mat(Ip1, copy = false)
+  N = basis_matrix(Ip1, copy = false)
   list_bases = Vector{Vector{Vector{fmpz}}}(undef, length(AA))
   for i = 1:length(AA)
     l = Vector{Vector{fmpz}}(undef, dim(AA[i][1]))
@@ -770,9 +770,9 @@ function find_random_second_gen(A::NfAbsOrdIdl{S, T}) where {S, T}
       continue
     end
 
-    mul!(m, m, basis_mat(A, copy = false))
-    d = denominator(basis_mat(O, copy = false))
-    mul!(m, m, basis_mat(O, copy = false).num)
+    mul!(m, m, basis_matrix(A, copy = false))
+    d = denominator(basis_matrix(O, copy = false))
+    mul!(m, m, basis_matrix(O, copy = false).num)
     gen = elem_from_mat_row(nf(O), m, 1, d)
     d = denominator(gen)
     f, e = ppio(d, minimum(A, copy = false))

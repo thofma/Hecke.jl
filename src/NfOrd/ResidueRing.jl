@@ -66,7 +66,7 @@ base_ring(Q::AbsOrdQuoRing) = Q.base_ring
 
 ideal(Q::AbsOrdQuoRing) = Q.ideal
 
-basis_mat(Q::AbsOrdQuoRing) = Q.basis_mat
+basis_matrix(Q::AbsOrdQuoRing) = Q.basis_matrix
 
 parent(x::AbsOrdQuoRingElem) = x.parent
 
@@ -357,7 +357,7 @@ function isdivisible2(x::AbsOrdQuoRingElem, y::AbsOrdQuoRingElem)
 
   
   A = representation_matrix_mod(y.elem, minimum(R.ideal))
-  B = parent(x).basis_mat
+  B = parent(x).basis_matrix
   V = hcat(A', B')
 
   a = coordinates(x.elem, copy = false)
@@ -395,7 +395,7 @@ function isdivisible(x::AbsOrdQuoRingElem, y::AbsOrdQuoRingElem)
 
   V = R.tmp_div
   A = representation_matrix_mod(y.elem, minimum(R.ideal))
-  B = parent(x).basis_mat
+  B = parent(x).basis_matrix
 
   V[1, 1] = 1
 
@@ -502,7 +502,7 @@ function euclid(x::NfOrdQuoRingElem)
   d = degree(base_ring(parent(x)))
 
   _copy_matrix_into_matrix(U, 1, 1, representation_matrix(x.elem))
-  _copy_matrix_into_matrix(U, d + 1, 1, parent(x).basis_mat)
+  _copy_matrix_into_matrix(U, d + 1, 1, parent(x).basis_matrix)
 
   hnf_modular_eldiv!(U, minimum(parent(x).ideal, copy = false))
 
@@ -554,7 +554,7 @@ end
 ################################################################################
 
 function rand(Q::NfOrdQuoRing)
-  A = basis_mat(Q)
+  A = basis_matrix(Q)
   B = basis(base_ring(Q))
   z = rand(fmpz(1):A[1,1]) * B[1]
 
@@ -582,7 +582,7 @@ function annihilator(x::NfOrdQuoRingElem)
   # ( M_I )
   # ( M_x )
    _copy_matrix_into_matrix(U, 1, 1, representation_matrix(x.elem))
-   _copy_matrix_into_matrix(U, d + 1, 1, I.basis_mat)
+   _copy_matrix_into_matrix(U, d + 1, 1, I.basis_matrix)
 
   m = left_kernel(U)[2]
   I = ideal(O, _hnf_modular_eldiv(sub(m, 1:degree(O), 1:degree(O)),
@@ -647,7 +647,7 @@ function xxgcd(x::NfOrdQuoRingElem, y::NfOrdQuoRingElem)
   M_e = representation_matrix(e.elem)
   M_f = representation_matrix(f.elem)
 
-  M_I = Q.basis_mat
+  M_I = Q.basis_matrix
 
   # let us build
   # ( 1  Q(1) 0  0 )

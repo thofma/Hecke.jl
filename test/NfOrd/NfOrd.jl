@@ -129,16 +129,16 @@
 
     @test O4.basis_nf == [ a4^0, 2*a4 ]
 
-    b = @inferred basis_mat(O1)
+    b = @inferred basis_matrix(O1)
     @test b == Hecke.FakeFmpqMat(one(MatrixSpace(FlintZZ, 3, 3)), one(FlintZZ))
 
-    b = @inferred basis_mat(O2)
+    b = @inferred basis_matrix(O2)
     @test b == Hecke.FakeFmpqMat(one(MatrixSpace(FlintZZ, 1, 1)), one(FlintZZ))
 
-    b = @inferred basis_mat(O3)
+    b = @inferred basis_matrix(O3)
     @test b == Hecke.FakeFmpqMat(one(MatrixSpace(FlintZZ, 64, 64)), one(FlintZZ))
 
-    b = @inferred basis_mat(O4)
+    b = @inferred basis_matrix(O4)
     @test b == Hecke.FakeFmpqMat(FlintZZ[1 0; 0 2], one(FlintZZ))
 
     b = @inferred basis_mat_inv(O1)
@@ -313,7 +313,7 @@
     O6_3 = Order(K6, Hecke.FakeFmpqMat(FlintZZ[3 0; 0 1], FlintZZ(3)))
 
     b = @inferred O6_2 + O6_3
-    @test basis_mat(b) == Hecke.FakeFmpqMat(FlintZZ[6 0; 0 1], FlintZZ(6))
+    @test basis_matrix(b) == Hecke.FakeFmpqMat(FlintZZ[6 0; 0 1], FlintZZ(6))
 
     @test discriminant(b) == 20
 

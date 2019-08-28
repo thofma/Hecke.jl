@@ -822,7 +822,7 @@ function sub(P::PMat, rows::UnitRange{Int}, cols::UnitRange{Int})
 end
 
 function in(x::nf_elem, y::NfOrdFracIdl)
-  B = inv(basis_mat(y))
+  B = inv(basis_matrix(y))
   O = order(y)
   M = zero_matrix(FlintZZ, 1, degree(O))
   t = FakeFmpqMat(M)

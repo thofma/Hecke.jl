@@ -34,7 +34,7 @@ parent(a::NfRelOrdFracIdl) = a.parent
 #
 ################################################################################
 
-iszero(a::NfRelOrdFracIdl) = iszero(basis_mat(a, copy = false)[1, 1])
+iszero(a::NfRelOrdFracIdl) = iszero(basis_matrix(a, copy = false)[1, 1])
 
 function isone(a::NfRelOrdFracIdl)
   if denominator(a) != 1
@@ -230,7 +230,7 @@ end
 #
 ################################################################################
 
-# Assumes, that det(basis_mat(a)) == 1
+# Assumes, that det(basis_matrix(a)) == 1
 function assure_has_norm(a::NfRelOrdFracIdl)
   if a.has_norm
     return nothing
@@ -344,8 +344,8 @@ function *(a::NfRelOrdFracIdl{T, S}, b::NfRelOrdFracIdl{T, S}) where {T, S}
   end
   pba = pseudo_basis(a, copy = false)
   pbb = pseudo_basis(b, copy = false)
-  ma = basis_mat(a, copy = false)
-  mb = basis_mat(b, copy = false)
+  ma = basis_matrix(a, copy = false)
+  mb = basis_matrix(b, copy = false)
   den = denominator(a)*denominator(b)
   L = nf(order(a))
   K = base_field(L)

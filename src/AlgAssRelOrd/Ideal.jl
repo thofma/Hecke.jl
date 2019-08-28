@@ -89,11 +89,11 @@ function assure_has_pseudo_basis(a::AlgAssRelOrdIdl)
   return nothing
 end
 
-function assure_has_basis_mat(a::AlgAssRelOrdIdl)
-  if isdefined(a, :basis_mat)
+function assure_has_basis_matrix(a::AlgAssRelOrdIdl)
+  if isdefined(a, :basis_matrix)
     return nothing
   end
-  a.basis_mat = basis_pmat(a).matrix
+  a.basis_matrix = basis_pmat(a).matrix
   return nothing
 end
 
@@ -101,7 +101,7 @@ function assure_has_basis_mat_inv(a::AlgAssRelOrdIdl)
   if isdefined(a, :basis_mat_inv)
     return nothing
   end
-  a.basis_mat_inv = inv(basis_mat(a, copy = false))
+  a.basis_mat_inv = inv(basis_matrix(a, copy = false))
   return nothing
 end
 
@@ -148,17 +148,17 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    basis_mat(a::AlgAssRelOrdIdl; copy::Bool = true) -> MatElem
+    basis_matrix(a::AlgAssRelOrdIdl; copy::Bool = true) -> MatElem
 
 > Returns the basis matrix of $a$, that is the basis pseudo-matrix of $a$ without
 > the coefficient ideals.
 """
-function basis_mat(a::AlgAssRelOrdIdl; copy::Bool = true)
-  assure_has_basis_mat(a)
+function basis_matrix(a::AlgAssRelOrdIdl; copy::Bool = true)
+  assure_has_basis_matrix(a)
   if copy
-    return deepcopy(a.basis_mat)
+    return deepcopy(a.basis_matrix)
   else
-    return a.basis_mat
+    return a.basis_matrix
   end
 end
 
@@ -545,9 +545,9 @@ function ring_of_multipliers(a::AlgAssRelOrdIdl{T1, T2}, action::Symbol = :left)
   d = degree(O)
   pb = pseudo_basis(a, copy = false)
   S = basis_mat_inv(O, copy = false)*basis_mat_inv(a, copy = false)
-  M = basis_mat(O, copy = false)*representation_matrix(pb[1][1], action)*S
+  M = basis_matrix(O, copy = false)*representation_matrix(pb[1][1], action)*S
   for i = 2:d
-    M = hcat(M, basis_mat(O, copy = false)*representation_matrix(pb[i][1], action)*S)
+    M = hcat(M, basis_matrix(O, copy = false)*representation_matrix(pb[i][1], action)*S)
   end
   invcoeffs = [ simplify(inv(pb[i][2])) for i = 1:d ]
   C = Array{T2}(undef, d^2)
@@ -562,7 +562,7 @@ function ring_of_multipliers(a::AlgAssRelOrdIdl{T1, T2}, action::Symbol = :left)
   end
   PM = PseudoMatrix(transpose(M), C)
   PM = sub(pseudo_hnf(PM, :upperright, true), 1:d, 1:d)
-  N = inv(transpose(PM.matrix))*basis_mat(O, copy = false)
+  N = inv(transpose(PM.matrix))*basis_matrix(O, copy = false)
   PN = PseudoMatrix(N, [ simplify(inv(I)) for I in PM.coeffs ])
   return typeof(O)(algebra(O), PN)
 end
@@ -638,7 +638,7 @@ end
 #
 ################################################################################
 
-# Assumes, that det(basis_mat(a)) == 1
+# Assumes, that det(basis_matrix(a)) == 1
 function assure_has_norm(a::AlgAssRelOrdIdl)
   if isdefined(a, :norm)
     return nothing
