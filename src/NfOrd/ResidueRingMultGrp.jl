@@ -212,7 +212,7 @@ function _multgrp_mod_pv(p::NfOrdIdl, v::Int, pv::NfOrdIdl; method=nothing)
     function disc_log2(x::NfOrdQuoRingElem)
       y = OtoQ\x
       r = mod((G1toO.discrete_logarithm(y))[1]*obcs_inv, rel1)
-      y *= gen1_obcs^mod(-r, rel1)
+      y *= powermod(gen1_obcs, mod(-r, rel1), pnumv)
       return append!([r], G2toO.discrete_logarithm(y))
     end
 
