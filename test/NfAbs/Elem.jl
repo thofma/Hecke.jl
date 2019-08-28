@@ -49,3 +49,25 @@ end
   @test Hecke.isintegral(b[1]) == true
   @test Hecke.isintegral(fmpq(1, 2)*b[1]) == false
 end
+
+@testset "Compositum" begin
+  Qx, x = FlintQQ["x"]
+  f = x^2 + 1
+  K, a = number_field(f, "a")
+  L, b = number_field(x^2-3, "b")
+  C, mK, mL = compositum(K, L)
+
+  @test iszero(K.pol(mK(gen(K))))
+  @test iszero(L.pol(mL(gen(L))))
+end
+
+@testset "PolyFactor" begin
+  Zx, x = FlintZZ["x"]
+  k, a = number_field(swinnerton_dyer(3, x))
+  kt, t = k["t"]
+
+  g = swinnerton_dyer(8, x)
+  @test length(factor((t^2-a)*(t^3-a-1))) == 2 #Trager
+  @test length(factor((t^2-a)*(t^3-a-1)*(t+a^2+1)*(t^5+t+a))) == 4 #Zassenhaus
+  @test length(factor(change_base_ring(g, k))) == 8 # van Hoeij
+end

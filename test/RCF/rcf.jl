@@ -65,5 +65,10 @@
   B = Hecke.maximal_abelian_subfield(A, k)
   @test A == B
   @test conductor(A) == conductor(B)
+
+  K, _ = compositum(k, wildanger_field(3, 13)[1])
+  A = maximal_abelian_subfield(ClassField, K)
+  @test degree(A) == 2
+  @test degree(intersect(A, cyclotomic_field(ClassField, 10))) == 1 
 end
 
