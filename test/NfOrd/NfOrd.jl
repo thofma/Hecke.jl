@@ -218,7 +218,7 @@
     RR = ArbField(64)
 
     b = RR[ RR(1) Base.sqrt(RR(2)) RR(0); (exp(1//RR(3) * log(RR(2)))) (-exp(-1//RR(6) * log(RR(2)))) (Base.sqrt(RR(3)) * exp(-1//RR(6) * log(RR(2)))); (exp(1//RR(3) * log(RR(4)))) (-exp(1//RR(6) * log(RR(2)))) (-exp(1//RR(6) * log(RR(54)))) ]
-    bb = @inferred minkowski_mat(O1, 256)
+    bb = @inferred minkowski_matrix(O1, 256)
 
     @test overlaps(b, bb)
     for i in 1:3
@@ -229,7 +229,7 @@
 
     b = one(MatrixSpace(RR, 1, 1))
 
-    bb = @inferred minkowski_mat(O2, 1024)
+    bb = @inferred minkowski_matrix(O2, 1024)
 
     @test overlaps(b, bb)
     for i in 1:1
@@ -238,7 +238,7 @@
       end
     end
 
-    bb = @inferred minkowski_mat(O3, 1024)
+    bb = @inferred minkowski_matrix(O3, 1024)
 
     for i in 1:64
       for j in 1:64
@@ -250,7 +250,7 @@
 
     b = RR[ RR(1) RR(1); -2*Base.sqrt(RR(5)) 2*Base.sqrt(RR(5))]
 
-    bb = @inferred minkowski_mat(O4, 1024)
+    bb = @inferred minkowski_matrix(O4, 1024)
 
     @test overlaps(b, bb) ||
     for i in 1:2

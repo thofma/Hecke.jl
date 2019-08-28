@@ -1,5 +1,5 @@
 function lll_basis_profile(A::NfOrdIdl; prec::Int = 100)
-  c = Hecke.minkowski_mat(Hecke.nf(order(A)), prec)
+  c = Hecke.minkowski_matrix(Hecke.nf(order(A)), prec)
   l = lll(basis_matrix(A))
   b = FakeFmpqMat(l)*basis_matrix(order(A))
   if !isdefined(rt_c, :cache)
@@ -39,7 +39,7 @@ function bkz_basis(A::NfOrdIdl, bs::Int;
                       
   K = nf(order(A))
 
-  c = minkowski_mat(K, prec)
+  c = minkowski_matrix(K, prec)
 
   l, t1 = lll_with_transform(basis_matrix(A))
   temp = FakeFmpqMat(l)*basis_matrix(order(A))
@@ -71,7 +71,7 @@ function fplll_basis(rt_c::Hecke.roots_ctx, A::NfOrdIdl, bs::Int;
                       
   K = nf(order(A))
 
-  c = minkowski_mat(rt_c, K, prec)
+  c = minkowski_matrix(rt_c, K, prec)
 
   @time l, t1 = lll_with_transform(basis_matrix(A))
   @time temp = FakeFmpqMat(l)*basis_matrix(order(A))

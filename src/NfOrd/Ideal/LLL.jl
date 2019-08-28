@@ -73,7 +73,7 @@ function lll(A::NfOrdIdl, v::fmpz_mat = zero_matrix(FlintZZ, 1, 1); prec::Int = 
     den = fmpz(1)
     sv = fmpz(0)
   else
-    c = minkowski_mat(nf(order(A)), prec) ## careful: current iteration
+    c = minkowski_matrix(nf(order(A)), prec) ## careful: current iteration
                                           ## c is NOT a copy, so don't change.
     b = FakeFmpqMat(l)*basis_matrix(order(A), copy = false)
 

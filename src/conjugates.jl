@@ -161,14 +161,14 @@ function Base.setprecision(x::BigFloat, p::Int)
   end
 end
 
-function minkowski_mat(K::AnticNumberField, p::Int = 50)
+function minkowski_matrix(K::AnticNumberField, p::Int = 50)
   c = roots_ctx(K)
 
-  if isdefined(c, :minkowski_mat) 
+  if isdefined(c, :minkowski_matrix) 
     if c.minkowski_mat_p == p
-      return c.minkowski_mat
+      return c.minkowski_matrix
     elseif c.minkowski_mat_p >= p
-      return map(x->setprecision(x, p), c.minkowski_mat)
+      return map(x->setprecision(x, p), c.minkowski_matrix)
     end
   end
 
@@ -184,7 +184,7 @@ function minkowski_mat(K::AnticNumberField, p::Int = 50)
       m[i,j] = mm[i][j]
     end
   end
-  c.minkowski_mat = m
+  c.minkowski_matrix = m
   c.minkowski_mat_p = p
   setprecision(old)
   return m

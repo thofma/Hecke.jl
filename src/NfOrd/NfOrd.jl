@@ -35,7 +35,7 @@
 export ==, +, basis, basis_matrix, basis_mat_inv, contains_equation_order,
        discriminant, degree, den, gen_index, EquationOrder, index,
        isequation_order, isindex_divisor, lll, lll_basis, nf,
-       minkowski_mat, norm_change_const, Order, parent, different,
+       minkowski_matrix, norm_change_const, Order, parent, different,
        signature, trace_matrix, codifferent, reduced_discriminant
 
 ################################################################################
@@ -482,16 +482,16 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    minkowski_mat(O::NfOrd, abs_tol::Int = 64) -> arb_mat
+    minkowski_matrix(O::NfOrd, abs_tol::Int = 64) -> arb_mat
 
 Returns the Minkowski matrix of $\mathcal O$.  Thus if $\mathcal O$ has degree
 $d$, then the result is a matrix in $\operatorname{Mat}_{d\times d}(\mathbf
 R)$. The entries of the matrix are real balls of type `arb` with radius less
 then `2^-abs_tol`.
 """
-function minkowski_mat(O::NfOrd, abs_tol::Int = 64)
-  if isdefined(O, :minkowski_mat) && O.minkowski_mat[2] > abs_tol
-    A = deepcopy(O.minkowski_mat[1])
+function minkowski_matrix(O::NfOrd, abs_tol::Int = 64)
+  if isdefined(O, :minkowski_matrix) && O.minkowski_matrix[2] > abs_tol
+    A = deepcopy(O.minkowski_matrix[1])
   else
     T = Vector{Vector{arb}}(undef, degree(O))
     B = O.basis_nf
@@ -505,7 +505,7 @@ function minkowski_mat(O::NfOrd, abs_tol::Int = 64)
         M[i, j] = T[i][j]
       end
     end
-    O.minkowski_mat = (M, abs_tol)
+    O.minkowski_matrix = (M, abs_tol)
     A = deepcopy(M)
   end
   return A
@@ -514,7 +514,7 @@ end
 @doc Markdown.doc"""
     minkowski_gram_mat_scaled(O::NfOrd, prec::Int = 64) -> fmpz_mat
 
-Let $c$ be the Minkowski matrix as computed by {{{minkowski_mat}}} with precision $p$.
+Let $c$ be the Minkowski matrix as computed by {{{minkowski_matrix}}} with precision $p$.
 This function computes $d = round(c 2^p)$ and returns $round(d d^t/2^p)$.
 """
 function minkowski_gram_mat_scaled(O::NfOrd, prec::Int = 64)
@@ -522,7 +522,7 @@ function minkowski_gram_mat_scaled(O::NfOrd, prec::Int = 64)
     A = deepcopy(O.minkowski_gram_mat_scaled[1])
     shift!(A, prec - O.minkowski_gram_mat_scaled[2])
   else
-    c = minkowski_mat(O, prec)
+    c = minkowski_matrix(O, prec)
     d = zero_matrix(FlintZZ, degree(O), degree(O))
     A = zero_matrix(FlintZZ, degree(O), degree(O))
     round_scale!(d, c, prec)
@@ -641,7 +641,7 @@ function norm_change_const(O::NfOrd)
     return O.norm_change_const::Tuple{Float64, Float64}
   else
     d = degree(O)
-    M = minkowski_mat(O, 64)
+    M = minkowski_matrix(O, 64)
     # I don't think we have to swap rows,
     # since permutation matrices are orthogonal
     #r1, r2 = signature(O)
@@ -675,11 +675,11 @@ function norm_change_const(O::NfOrd)
             O.norm_change_const = z
             return z::Tuple{Float64, Float64}
           end
-          M = minkowski_mat(O, pr)
+          M = minkowski_matrix(O, pr)
           M = M*M'
           pr *= 2
         catch e  # should verify the correct error
-          M = minkowski_mat(O, pr)
+          M = minkowski_matrix(O, pr)
           M = M*M'
           pr *= 2
         end

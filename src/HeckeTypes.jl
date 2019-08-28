@@ -630,7 +630,7 @@ mutable struct NfAbsOrd{S, T} <: Ring
   signature::Tuple{Int, Int}       # Signature of the ambient number field
                                    # (-1, 0) means "not set"
   #conjugate_data::acb_root_ctx
-  minkowski_mat::Tuple{arb_mat, Int}        # Minkowski matrix
+  minkowski_matrix::Tuple{arb_mat, Int}        # Minkowski matrix
   minkowski_gram_mat_scaled::Tuple{fmpz_mat, Int} # Minkowski matrix - gram * 2^prec and rounded
   torsion_units#::Tuple{Int, NfAbsOrdElem}
   unit_group::Map                  # Abstract types in the field is usually bad,
@@ -1215,7 +1215,7 @@ mutable struct roots_ctx
   r::Array{BigComplex, 1}    # the complexes and at the end, the conjugated
   r1::Int
   r2::Int
-  minkowski_mat::Array{BigFloat, 2} # caching: I currently
+  minkowski_matrix::Array{BigFloat, 2} # caching: I currently
                                     # cannot extend number fields, so I cache it
                                     # here...
   minkowski_mat_p::Int
