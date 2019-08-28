@@ -31,6 +31,7 @@ quotient of the domain of $m$ and a subgroup of $m$, create the
 is canonically isomorphic to the codomain of $q$.
 """
 function ray_class_field(m::S, quomap::T) where {S <: Union{MapClassGrp, MapRayClassGrp}, T}
+  domain(quomap) == domain(m) || error("1st map must be a (ray)class group map, and the 2nd must be a projection of the domain of the 1st")
   CF = ClassField{S, T}()
   CF.rayclassgroupmap = m
   D = codomain(quomap)
