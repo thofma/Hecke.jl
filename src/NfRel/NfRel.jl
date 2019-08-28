@@ -786,7 +786,7 @@ end
 ################################################################################
 
 # Mostly the same as in the absolute case
-function normal_basis(L::NfRel{nf_elem})
+function normal_basis(L::NfRel{nf_elem}, check::Bool = false)
   O = EquationOrder(L)
   K = base_field(L)
   OK = base_ring(O)
@@ -813,4 +813,23 @@ function normal_basis(L::NfRel{nf_elem})
       return L(g)
     end
   end
+end
+
+################################################################################
+#
+#  Linear disjointness
+#
+################################################################################
+
+function islinearly_disjoint(K1::NfRel, K2::NfRel)
+  if base_field(K1) != base_field(K2)
+    throw(error("Number fields must have the same base field"))
+  end
+
+  if gcd(degree(K1), degree(K2)) == 1
+    return true
+  end
+
+  f = change_base_ring(defining_polynomial(K1), K2)
+  return isirreducible(f)
 end
