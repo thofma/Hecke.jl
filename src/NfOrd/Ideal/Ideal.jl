@@ -1934,7 +1934,9 @@ function (I_Zk::NfOrdIdlSet)(a::NfOrdIdl)
   end
   Zk = order(I_Zk)
   Zl = order(a)
-  @assert has_2_elem(a)
+  @assert ismaximal_known_and_maximal(Zk)
+
+  has_2_elem(a) || _assure_weakly_normal_presentation(a)
   b = ideal(Zk, a.gen_one, Zk(Zk.nf(Zl.nf(a.gen_two))))
   for i in [:gens_normal, :gens_weakly_normal, :iszero, :minimum]
     if isdefined(a, i)
