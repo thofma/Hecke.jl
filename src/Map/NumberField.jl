@@ -544,3 +544,43 @@ function generic_group(G::Vector{NfToNfMor}, ::typeof(*))
   GtoGen = Dict{eltype(G), GrpGenElem}(G[i] => Gen[i] for i in 1:length(G))
   return Gen, GtoGen, GentoG
 end
+
+################################################################################
+#
+#  Induced image
+#
+################################################################################
+
+# For Carlo:
+(f::NfToNfMor)(x...) = induce_image(f, x...)
+
+function induce_image(f::NfToNfMor, x::NfOrdIdl)
+  domain(f) !== codmain(f) && throw(error("Map must be an automorphism"))
+  OK = order(x)
+  if ismaximal_known_and_maximal(order(x))
+    # Do
+  else
+    # Check if the elements are in the order
+  end
+end
+
+# This is the function at the moment:
+function induce_image(A::NfOrdIdl, S::Map)
+  #S has to be an automorphism!!!!
+  O = order(A)
+  K = O.nf
+  B = ideal(order(A), A.gen_one, O(S(K(A.gen_two)))) # set is prime, norm, ...
+  for i in [:is_prime, :gens_normal, :gens_weakly_normal, :is_principal, 
+            :iszero, :minimum, :norm, :splitting_type]
+    if isdefined(A, i)
+      setfield!(B, i, getfield(A, i))
+    end
+  end
+  if isdefined(A, :princ_gen)
+    B.princ_gen = O(S(K(A.princ_gen)))
+  end
+  # whatever is known, transfer it...possibly using S as well...
+  return B
+end
+
+
