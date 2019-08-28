@@ -692,6 +692,8 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 20)
     have = vcat(0:up_to-1, from:N-2)  #N-1 is always 1
     if length(have) <= length(really_used)
       @show have, really_used, used
+      @show f
+      @show base_ring(f)
       error("too bad")
     end
     used = deepcopy(really_used)
