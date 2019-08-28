@@ -259,11 +259,11 @@ end
 #In this way, (f\circ g)(P)= f(g(P)), otherwise it would fail.
 
 @doc Markdown.doc"""
-    induce_image(P::InfPlc, m::NfToNfMor) -> InfPlc
+    induce_image(m::NfToNfMor, P::InfPlc) -> InfPlc
 Find a place in the image of $P$ under $m$. If $m$ is an automorphism,
 this is unique.
 """
-function induce_image(P::InfPlc, m::NfToNfMor)
+function induce_image(m::NfToNfMor, P::InfPlc)
   k = number_field(P)
   @assert k == domain(m)
   Qx = parent(k.pol)
