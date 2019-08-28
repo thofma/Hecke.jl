@@ -9,7 +9,7 @@ function _subfield_basis(K, elt)
 
   for e = elt
     if phase == 2
-      C = basis_mat([e])
+      C = basis_matrix([e])
       fl, _ = can_solve(matrix(FlintQQ, B.num), matrix(FlintQQ, C.num), side = :left)
       fl && continue
     end
@@ -18,7 +18,7 @@ function _subfield_basis(K, elt)
     for i=1:df
       mul!(f, f, e)
       if phase == 2
-        C = matrix(FlintQQ, basis_mat(elem_type(K)[f]).num)
+        C = matrix(FlintQQ, basis_matrix(elem_type(K)[f]).num)
         reduce_mod!(C, matrix(FlintQQ, B.num))
         fl = iszero(C)
         fl && break
@@ -26,7 +26,7 @@ function _subfield_basis(K, elt)
       b = elem_type(K)[e*x for x in bas]
       append!(bas, b)
       if length(bas) >= n
-        B = basis_mat(bas)
+        B = basis_matrix(bas)
         hnf!(B)
         rk = nrows(B) - n + 1
         while iszero_row(B, rk)
@@ -40,7 +40,7 @@ function _subfield_basis(K, elt)
   end
 
   if length(bas) >= n
-    B = basis_mat(bas)
+    B = basis_matrix(bas)
     hnf!(B)
     rk = nrows(B) - n + 1
     # This is wrong. But I need to see an actual error
@@ -68,11 +68,11 @@ function _improve_subfield_basis(K, bas)
     end
   end
   S = saturate(matrix(FlintZZ, basinOK * deno))
-  SS = S * basis_mat(OK, copy = false)
+  SS = S * basis_matrix(OK, copy = false)
   lllOK = lll(OK)
   N = (SS * basis_mat_inv(lllOK)).num
   lllN = lll(N)
-  maybesmaller = lllN * basis_mat(lllOK)
+  maybesmaller = lllN * basis_matrix(lllOK)
   return maybesmaller
 end
 
@@ -184,7 +184,7 @@ function fixed_field(K::S, A::Array{T, 1}; simplify::Bool = true) where {S <: Un
 
 
     if S === AnticNumberField
-      bm = basis_mat(v, FakeFmpqMat)
+      bm = basis_matrix(v, FakeFmpqMat)
       # We have to be a bit careful (clever) since in the absolute case the
       # basis matrix is a FakeFmpqMat
 
@@ -193,7 +193,7 @@ function fixed_field(K::S, A::Array{T, 1}; simplify::Bool = true) where {S <: Un
         m[j, j] = m[j, j] - bm.den # This is autos[i] - identity
       end
     else
-      bm = basis_mat(v)
+      bm = basis_matrix(v)
       # In the generic case just subtract the identity
       m = bm - identity_matrix(F, degree(K))
     end
@@ -270,7 +270,7 @@ function _principal_subfields_basis(K::T) where {T <: Union{AnticNumberField, He
     im_ar = elem_type(Kx)[(mod(x^l,fi)-gen(K)^l) for l in 0:n-1]
     for j in 1:n
       for l in 0:degree(fi)-1
-        t = basis_mat([coeff(im_ar[j], l)])
+        t = basis_matrix([coeff(im_ar[j], l)])
         for m in 1:n
           M[j, l * n + m] = t[1, m]
         end

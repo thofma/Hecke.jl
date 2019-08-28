@@ -46,7 +46,7 @@ function isconsistent(A::NfAbsOrdIdl)
     end
   end
   if has_norm(A)
-    b = basis_mat(A, copy = false)
+    b = basis_matrix(A, copy = false)
     if det(b) != A.norm
       return false
     end
@@ -180,9 +180,9 @@ function _assure_weakly_normal_presentation(A::NfAbsOrdIdl)
       continue
     end
 
-    mul!(m, m, basis_mat(A, copy = false))
-    d = denominator(basis_mat(O, copy = false))
-    mul!(m, m, basis_mat(O, copy = false).num)
+    mul!(m, m, basis_matrix(A, copy = false))
+    d = denominator(basis_matrix(O, copy = false))
+    mul!(m, m, basis_matrix(O, copy = false).num)
     gen = elem_from_mat_row(nf(O), m, 1, d)
     d = denominator(gen)
     f, e = ppio(d, minimum(A, copy = false))

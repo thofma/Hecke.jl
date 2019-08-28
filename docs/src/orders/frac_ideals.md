@@ -36,7 +36,7 @@ integral_split(::NfOrdFracIdl)
 
 ```@docs
 order(::NfOrdFracIdl)
-basis_mat(::NfOrdFracIdl)
+basis_matrix(::NfOrdFracIdl)
 basis_mat_inv(::NfOrdFracIdl)
 basis(::NfOrdFracIdl)
 norm(::NfOrdFracIdl)

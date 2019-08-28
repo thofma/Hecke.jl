@@ -176,7 +176,7 @@ function K1_order_mod_conductor(O::AlgAssAbsOrd, OA::AlgAssAbsOrd, F::AlgAssAbsO
     (p, q) = primary_ideals[i]
     pF = p + F
     qF = moduli[i]
-    char = basis_mat(p, copy = false)[1, 1]
+    char = basis_matrix(p, copy = false)[1, 1]
     B, OtoB = AlgAss(O, pF, char)
     k1_B = K1(B)
     k1_O = [ OtoB\x for x in k1_B ]

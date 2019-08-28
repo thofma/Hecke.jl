@@ -321,7 +321,7 @@ function _qradical(O::NfOrd, q::fmpz)
       end
     end
     I1 = ideal(O, q, gen2)
-    I1.basis_mat = M1
+    I1.basis_matrix = M1
     I1.gens = NfOrdElem[O(q), gen2]
     return fmpz(1), I1
   end
@@ -411,7 +411,7 @@ function _cycleBL2(O::NfOrd, q::fmpz, I::NfOrdIdl)
     end
     I1 = (ideals[1] + ideal(O, q))*(ideals[3] + ideal(O, q))
     I2 = (ideals[2] + ideal(O, q))^2
-    M2 = basis_mat(I2, copy = false)*basis_mat_inv(I1, copy = false)
+    M2 = basis_matrix(I2, copy = false)*basis_mat_inv(I1, copy = false)
     @assert isone(M2.den)
     G2 = divisors(M2.num, q)
     if isempty(G2)
@@ -634,7 +634,7 @@ function ring_of_multipliers(a::NfAbsOrdIdl)
     mul!(M, M, bmatinv.num)
     M = transpose(M)
     _copy_matrix_into_matrix(m, n*(ind-1)+1, 1, M)
-    if view(id_gen, n+1:2*n, 1:n) == basis_mat(a, copy = false)
+    if view(id_gen, n+1:2*n, 1:n) == basis_matrix(a, copy = false)
       m = view(m, 1:n*ind, 1:n)
       break
     end
@@ -652,7 +652,7 @@ function ring_of_multipliers(a::NfAbsOrdIdl)
   # mhnf is upper right HNF
   mhnf = transpose(mhnf)
   b = FakeFmpqMat(pseudo_inv(mhnf))
-  mul!(b, b, basis_mat(O, copy = false))
+  mul!(b, b, basis_matrix(O, copy = false))
   @hassert :NfOrd 1 defines_order(nf(O), b)[1]
   O1 = NfAbsOrd(nf(O), b)
   if isdefined(O, :disc)
@@ -806,7 +806,7 @@ function pradical_trace1(O::NfOrd, p::Union{Integer, fmpz})
   M1 = representation_matrix_mod(gen2, fmpz(p))
   hnf_modular_eldiv!(M1, fmpz(p), :lowerleft)
   I1 = ideal(O, p, gen2)
-  I1.basis_mat = M1
+  I1.basis_matrix = M1
   k, B = kernel(M, F)
   if iszero(k)
     return ideal(O, p)

@@ -104,8 +104,8 @@ function generators(L::AbsLat; minimal::Bool = true)
   end
 
   _assure_weakly_normal_presentation(I)
-  push!(v, T[base_algebra(L)(I.gen_one)//den * basis_mat(L)[n, j] for j in 1:d])
-  push!(v, T[base_algebra(L)(I.gen_two)//den * basis_mat(L)[n, j] for j in 1:d])
+  push!(v, T[base_algebra(L)(I.gen_one)//den * basis_matrix(L)[n, j] for j in 1:d])
+  push!(v, T[base_algebra(L)(I.gen_two)//den * basis_matrix(L)[n, j] for j in 1:d])
 
   return v
 end

@@ -8,31 +8,31 @@
 
   @testset "Construction" begin
     I = @inferred frac_ideal(O1, i)
-    @test I.basis_mat == Hecke.FakeFmpqMat(FlintZZ[16 0 0; 0 1 0; 0 0 1], fmpz(1))
+    @test I.basis_matrix == Hecke.FakeFmpqMat(FlintZZ[16 0 0; 0 1 0; 0 0 1], fmpz(1))
     @test basis_mat_inv(I) == Hecke.FakeFmpqMat(FlintZZ[1 0 0; 0 16 0; 0 0 16], fmpz(16))
 
     J = @inferred frac_ideal(O1, i, 2)
-    @test J.basis_mat == Hecke.FakeFmpqMat(FlintZZ[16 0 0; 0 1 0; 0 0 1], fmpz(2))
-    @test basis_mat(J) == Hecke.FakeFmpqMat(FlintZZ[16 0 0; 0 1 0; 0 0 1], fmpz(2))
-    @test basis_mat(J) == Hecke.FakeFmpqMat(FlintZZ[16 0 0; 0 1 0; 0 0 1], fmpz(2))
+    @test J.basis_matrix == Hecke.FakeFmpqMat(FlintZZ[16 0 0; 0 1 0; 0 0 1], fmpz(2))
+    @test basis_matrix(J) == Hecke.FakeFmpqMat(FlintZZ[16 0 0; 0 1 0; 0 0 1], fmpz(2))
+    @test basis_matrix(J) == Hecke.FakeFmpqMat(FlintZZ[16 0 0; 0 1 0; 0 0 1], fmpz(2))
     @test basis_mat_inv(J) == Hecke.FakeFmpqMat(FlintZZ[1 0 0; 0 16 0; 0 0 16], fmpz(8))
     @test basis_mat_inv(J) == Hecke.FakeFmpqMat(FlintZZ[1 0 0; 0 16 0; 0 0 16], fmpz(8))
 
     K = @inferred frac_ideal(O1, FlintZZ[16 0 0; 0 1 0; 0 0 1], fmpz(2))
-    @test K.basis_mat == Hecke.FakeFmpqMat(FlintZZ[16 0 0; 0 1 0; 0 0 1], fmpz(2))
-    @test basis_mat(K) == Hecke.FakeFmpqMat(FlintZZ[16 0 0; 0 1 0; 0 0 1], fmpz(2))
+    @test K.basis_matrix == Hecke.FakeFmpqMat(FlintZZ[16 0 0; 0 1 0; 0 0 1], fmpz(2))
+    @test basis_matrix(K) == Hecke.FakeFmpqMat(FlintZZ[16 0 0; 0 1 0; 0 0 1], fmpz(2))
     @test basis_mat_inv(K) == Hecke.FakeFmpqMat(FlintZZ[1 0 0; 0 16 0; 0 0 16], fmpz(8))
     @test basis_mat_inv(K) == Hecke.FakeFmpqMat(FlintZZ[1 0 0; 0 16 0; 0 0 16], fmpz(8))
 
     L = @inferred frac_ideal(O1, Hecke.FakeFmpqMat(FlintZZ[16 0 0; 0 1 0; 0 0 1], fmpz(2)))
-    @test L.basis_mat == Hecke.FakeFmpqMat(FlintZZ[16 0 0; 0 1 0; 0 0 1], fmpz(2))
-    @test basis_mat(L) == Hecke.FakeFmpqMat(FlintZZ[16 0 0; 0 1 0; 0 0 1], fmpz(2))
+    @test L.basis_matrix == Hecke.FakeFmpqMat(FlintZZ[16 0 0; 0 1 0; 0 0 1], fmpz(2))
+    @test basis_matrix(L) == Hecke.FakeFmpqMat(FlintZZ[16 0 0; 0 1 0; 0 0 1], fmpz(2))
     @test basis_mat_inv(L) == Hecke.FakeFmpqMat(FlintZZ[1 0 0; 0 16 0; 0 0 16], fmpz(8))
     @test basis_mat_inv(L) == Hecke.FakeFmpqMat(FlintZZ[1 0 0; 0 16 0; 0 0 16], fmpz(8))
 
     M = @inferred frac_ideal(O1, 2*a1//2)
-    @test M.basis_mat == Hecke.FakeFmpqMat(FlintZZ[16 0 0; 0 1 0; 0 0 1], fmpz(2))
-    @test basis_mat(M) == Hecke.FakeFmpqMat(FlintZZ[16 0 0; 0 1 0; 0 0 1], fmpz(2))
+    @test M.basis_matrix == Hecke.FakeFmpqMat(FlintZZ[16 0 0; 0 1 0; 0 0 1], fmpz(2))
+    @test basis_matrix(M) == Hecke.FakeFmpqMat(FlintZZ[16 0 0; 0 1 0; 0 0 1], fmpz(2))
     @test basis_mat_inv(M) == Hecke.FakeFmpqMat(FlintZZ[1 0 0; 0 16 0; 0 0 16], fmpz(8))
     @test basis_mat_inv(M) == Hecke.FakeFmpqMat(FlintZZ[1 0 0; 0 16 0; 0 0 16], fmpz(8))
 
@@ -67,7 +67,7 @@
     i = ideal(O1, FlintZZ[2 0 0; 0 1 0; 0 0 1])
     N = @inferred ring_of_multipliers(i)
 
-    @test basis_mat(N) == Hecke.FakeFmpqMat(FlintZZ[1 0 0; 0 2 0; 0 0 2], fmpz(1))
+    @test basis_matrix(N) == Hecke.FakeFmpqMat(FlintZZ[1 0 0; 0 2 0; 0 0 2], fmpz(1))
   end
 
   @testset "Denominator" begin
@@ -78,7 +78,7 @@
       O = maximal_order(K)
       I = Hecke.NfOrdFracIdl(ideal(O, O(2)), fmpz(2))
       @test denominator(I) == fmpz(2)
-      basis_mat(I)
+      basis_matrix(I)
       @test denominator(I) == fmpz(2)
     end
   end

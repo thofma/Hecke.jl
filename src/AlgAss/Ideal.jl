@@ -19,7 +19,7 @@ function show(io::IO, a::AbsAlgAssIdl)
   print(io, "Ideal of ")
   print(io, algebra(a))
   println(io, " with basis matrix")
-  print(io, basis_mat(a, copy = false))
+  print(io, basis_matrix(a, copy = false))
 end
 
 ################################################################################
@@ -52,7 +52,7 @@ function assure_has_basis(a::AbsAlgAssIdl)
   end
 
   A = algebra(a)
-  M = basis_mat(a, copy = false)
+  M = basis_matrix(a, copy = false)
   a.basis = Vector{elem_type(A)}(undef, nrows(M))
   for i = 1:nrows(M)
     a.basis[i] = elem_from_mat_row(A, M, i)
@@ -75,15 +75,15 @@ function basis(a::AbsAlgAssIdl; copy::Bool = true)
 end
 
 @doc Markdown.doc"""
-    basis_mat(a::AbsAlgAssIdl; copy::Bool = true) -> MatElem
+    basis_matrix(a::AbsAlgAssIdl; copy::Bool = true) -> MatElem
 
 > Returns the basis matrix of $a$ with respect to the basis of the algebra.
 """
-function basis_mat(a::AbsAlgAssIdl; copy::Bool = true)
+function basis_matrix(a::AbsAlgAssIdl; copy::Bool = true)
   if copy
-    return deepcopy(a.basis_mat)
+    return deepcopy(a.basis_matrix)
   else
-    return a.basis_mat
+    return a.basis_matrix
   end
 end
 
@@ -101,7 +101,7 @@ end
 function in(x::T, a::AbsAlgAssIdl{S, T, U}) where {S, T, U}
   A = algebra(a)
   M = matrix(base_ring(A), 1, dim(A), coeffs(x, copy = false))
-  return rank(vcat(basis_mat(a, copy = false), M)) == nrows(basis_mat(a, copy = false)) # so far we assume nrows(basis_mat) == rank(basis_mat)
+  return rank(vcat(basis_matrix(a, copy = false), M)) == nrows(basis_matrix(a, copy = false)) # so far we assume nrows(basis_matrix) == rank(basis_matrix)
 end
 
 ################################################################################
@@ -217,7 +217,7 @@ function +(a::AbsAlgAssIdl{S, T, U}, b::AbsAlgAssIdl{S, T, U}) where {S, T, U}
     return deepcopy(a)
   end
 
-  M = vcat(basis_mat(a), basis_mat(b))
+  M = vcat(basis_matrix(a), basis_matrix(b))
   r = rref!(M)
   if r != nrows(M)
     M = sub(M, 1:r, 1:ncols(M))
@@ -299,7 +299,7 @@ end
 """
 function ==(a::AbsAlgAssIdl, b::AbsAlgAssIdl)
   algebra(a) != algebra(b) && return false
-  return basis_mat(a, copy = false) == basis_mat(b, copy = false)
+  return basis_matrix(a, copy = false) == basis_matrix(b, copy = false)
 end
 
 ################################################################################
@@ -452,7 +452,7 @@ function quo(A::S, a::AbsAlgAssIdl{S, T, U}) where { S, T, U }
   K = base_ring(A)
 
   # First compute the vector space quotient
-  Ma = basis_mat(a, copy = false)
+  Ma = basis_matrix(a, copy = false)
   M = hcat(deepcopy(transpose(Ma)), identity_matrix(K, dim(A)))
   r = rref!(M)
   pivot_cols = Vector{Int}()
@@ -523,8 +523,8 @@ function quo(a::AbsAlgAssIdl{S, T, U}, b::AbsAlgAssIdl{S, T, U}) where { S, T, U
   K = base_ring(A)
 
   # First compute the vector space quotient
-  Ma = basis_mat(a, copy = false)
-  Mb = basis_mat(b, copy = false)
+  Ma = basis_matrix(a, copy = false)
+  Mb = basis_matrix(b, copy = false)
   M = hcat(deepcopy(transpose(Mb)), deepcopy(transpose(Ma)))
   r = rref!(M)
   pivot_cols = Vector{Int}()
@@ -618,7 +618,7 @@ function mod(x::AbsAlgAssElem, a::AbsAlgAssIdl)
   end
 
   c = coeffs(x)
-  M = basis_mat(a, copy = false) # Assumed to be in upper right rref
+  M = basis_matrix(a, copy = false) # Assumed to be in upper right rref
   k = 1
   for i = 1:nrows(M)
     while iszero(M[i, k])

@@ -745,10 +745,10 @@ Returns the representation matrix of the element $a$.
 """
 function representation_matrix(a::NfAbsOrdElem)
   O = parent(a)
-  assure_has_basis_mat(O)
+  assure_has_basis_matrix(O)
   assure_has_basis_mat_inv(O)
   A = representation_matrix(a, nf(O))
-  mul!(A, O.basis_mat, A)
+  mul!(A, O.basis_matrix, A)
   mul!(A, A, O.basis_mat_inv)
   !(A.den == 1) && error("Element not in order")
   return A.num
@@ -777,15 +777,15 @@ Returns the representation matrix of the element $a$ with entries reduced mod d.
 """
 function representation_matrix_mod(a::NfAbsOrdElem, d::fmpz)
   O = parent(a)
-  assure_has_basis_mat(O)
+  assure_has_basis_matrix(O)
   assure_has_basis_mat_inv(O)
   A = representation_matrix(a, nf(O))
-  d2 = O.basis_mat.den * O.basis_mat_inv.den*A.den
+  d2 = O.basis_matrix.den * O.basis_mat_inv.den*A.den
   d2c, d2nc = ppio(d2, d)
   d1 = d * d2c
   A1 = A.num 
   mod!(A.num, d1)
-  M1 = mod(O.basis_mat.num, d1)
+  M1 = mod(O.basis_matrix.num, d1)
   mul!(A1, M1, A1)
   M2 = mod(O.basis_mat_inv.num, d1)
   mul!(A1, A1, M2)

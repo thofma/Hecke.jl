@@ -25,7 +25,7 @@ function show(io::IO, a::AlgAssAbsOrdFracIdl)
   print(io, "Fractional Ideal of ")
   show(IOContext(io, :compact => true), order(a))
   println(io, " with basis matrix ")
-  print(io, basis_mat(a, copy = false))
+  print(io, basis_matrix(a, copy = false))
 end
 
 ###############################################################################
@@ -56,10 +56,10 @@ order(a::AlgAssAbsOrdFracIdl) = a.order
 
 function numerator(a::AlgAssAbsOrdFracIdl; copy::Bool = true)
   if !isdefined(a, :num)
-    if !isdefined(a, :basis_mat)
+    if !isdefined(a, :basis_matrix)
       error("No basis matrix defined")
     end
-    a.num = ideal(order(a), numerator(basis_mat(a)))
+    a.num = ideal(order(a), numerator(basis_matrix(a)))
   end
   if copy
     return deepcopy(a.num)
@@ -70,10 +70,10 @@ end
 
 function denominator(a::AlgAssAbsOrdFracIdl; copy::Bool = true)
   if !isdefined(a, :den)
-    if !isdefined(a, :basis_mat)
+    if !isdefined(a, :basis_matrix)
       error("No basis matrix defined")
     end
-    a.den = denominator(basis_mat(a))
+    a.den = denominator(basis_matrix(a))
   end
   if copy
     return deepcopy(a.den)
@@ -82,23 +82,23 @@ function denominator(a::AlgAssAbsOrdFracIdl; copy::Bool = true)
   end
 end
 
-function basis_mat(a::AlgAssAbsOrdFracIdl; copy::Bool = true)
-  if !isdefined(a, :basis_mat)
+function basis_matrix(a::AlgAssAbsOrdFracIdl; copy::Bool = true)
+  if !isdefined(a, :basis_matrix)
     if !isdefined(a, :num) || !isdefined(a, :den)
       error("Numerator and/or denominator not defined")
     end
-    a.basis_mat = FakeFmpqMat(basis_mat(a.num, copy = false), a.den)
+    a.basis_matrix = FakeFmpqMat(basis_matrix(a.num, copy = false), a.den)
   end
   if copy
-    return deepcopy(a.basis_mat)
+    return deepcopy(a.basis_matrix)
   else
-    return a.basis_mat
+    return a.basis_matrix
   end
 end
 
 function basis_mat_inv(a::AlgAssAbsOrdFracIdl; copy::Bool = true)
   if !isdefined(a, :basis_mat_inv)
-    a.basis_mat_inv = inv(basis_mat(a, copy = false))
+    a.basis_mat_inv = inv(basis_matrix(a, copy = false))
   end
   if copy
     return deepcopy(a.basis_mat_inv)
@@ -114,7 +114,7 @@ end
 ################################################################################
 
 function basis(a::AlgAssAbsOrdFracIdl)
-  B = basis_mat(a, copy = false)
+  B = basis_matrix(a, copy = false)
   O = order(a)
   A = algebra(O)
   d = dim(A)
@@ -234,7 +234,7 @@ end
 
 function ==(A::AlgAssAbsOrdFracIdl, B::AlgAssAbsOrdFracIdl)
   order(A) !== order(B) && return false
-  return basis_mat(A, copy = false) == basis_mat(B, copy = false)
+  return basis_matrix(A, copy = false) == basis_matrix(B, copy = false)
 end
 
 ################################################################################
@@ -244,7 +244,7 @@ end
 ################################################################################
 
 function simplify!(a::AlgAssAbsOrdFracIdl)
-  b = basis_mat(numerator(a, copy = false), copy = false)
+  b = basis_matrix(numerator(a, copy = false), copy = false)
   g = gcd(denominator(a, copy = false), content(b))
 
   if g != 1
@@ -313,8 +313,8 @@ end
 *(O::AlgAssAbsOrd, I::AlgAssAbsOrdFracIdl) = extend(I, O)
 
 function _as_frac_ideal_of_smaller_order(O::AlgAssAbsOrd, I::AlgAssAbsOrdIdl)
-  M = basis_mat(I, copy = false)
-  M = M*basis_mat(order(I), copy = false)*basis_mat_inv(O, copy = false)
+  M = basis_matrix(I, copy = false)
+  M = M*basis_matrix(order(I), copy = false)*basis_mat_inv(O, copy = false)
   return frac_ideal(O, M)
 end
 

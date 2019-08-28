@@ -32,10 +32,10 @@
 #
 ################################################################################
 
-export ==, +, basis, basis_mat, basis_mat_inv, contains_equation_order,
+export ==, +, basis, basis_matrix, basis_mat_inv, contains_equation_order,
        discriminant, degree, den, gen_index, EquationOrder, index,
        isequation_order, isindex_divisor, lll, lll_basis, nf,
-       minkowski_mat, norm_change_const, Order, parent, different,
+       minkowski_matrix, norm_change_const, Order, parent, different,
        signature, trace_matrix, codifferent, reduced_discriminant
 
 ################################################################################
@@ -178,12 +178,12 @@ function assure_has_basis(O::NfAbsOrd)
   return nothing
 end
 
-function assure_has_basis_mat(O::NfAbsOrd)
-  if isdefined(O, :basis_mat)
+function assure_has_basis_matrix(O::NfAbsOrd)
+  if isdefined(O, :basis_matrix)
     return nothing
   end
   A = O.basis_nf#::Vector{elem_type(nf(O))}
-  O.basis_mat = FakeFmpqMat(basis_mat(A))
+  O.basis_matrix = FakeFmpqMat(basis_matrix(A))
   return nothing
 end
 
@@ -191,7 +191,7 @@ function assure_has_basis_mat_inv(O::NfAbsOrd)
   if isdefined(O, :basis_mat_inv)
     return nothing
   end
-  O.basis_mat_inv = inv(basis_mat(O, copy = false))
+  O.basis_mat_inv = inv(basis_matrix(O, copy = false))
   return nothing
 end
 
@@ -240,17 +240,17 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    basis_mat(O::NfOrd) -> FakeFmpqMat
+    basis_matrix(O::NfOrd) -> FakeFmpqMat
 
 Returns the basis matrix of $\mathcal O$ with respect to the power basis
 of the ambient number field.
 """
-function basis_mat(O::NfAbsOrd; copy::Bool = true)
-  assure_has_basis_mat(O)
+function basis_matrix(O::NfAbsOrd; copy::Bool = true)
+  assure_has_basis_matrix(O)
   if copy
-    return deepcopy(O.basis_mat)
+    return deepcopy(O.basis_matrix)
   else
-    return O.basis_mat
+    return O.basis_matrix
   end
 end
 
@@ -372,7 +372,7 @@ function gen_index(O::NfAbsOrd)
   if isdefined(O, :gen_index)
     return deepcopy(O.gen_index)
   else
-    O.gen_index = inv(det(basis_mat(O, copy = false)))#FlintQQ(O.basis_mat.den^degree(O), det(O.basis_mat.num))
+    O.gen_index = inv(det(basis_matrix(O, copy = false)))#FlintQQ(O.basis_matrix.den^degree(O), det(O.basis_matrix.num))
     return deepcopy(O.gen_index)
   end
 end
@@ -482,16 +482,16 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    minkowski_mat(O::NfOrd, abs_tol::Int = 64) -> arb_mat
+    minkowski_matrix(O::NfOrd, abs_tol::Int = 64) -> arb_mat
 
 Returns the Minkowski matrix of $\mathcal O$.  Thus if $\mathcal O$ has degree
 $d$, then the result is a matrix in $\operatorname{Mat}_{d\times d}(\mathbf
 R)$. The entries of the matrix are real balls of type `arb` with radius less
 then `2^-abs_tol`.
 """
-function minkowski_mat(O::NfOrd, abs_tol::Int = 64)
-  if isdefined(O, :minkowski_mat) && O.minkowski_mat[2] > abs_tol
-    A = deepcopy(O.minkowski_mat[1])
+function minkowski_matrix(O::NfOrd, abs_tol::Int = 64)
+  if isdefined(O, :minkowski_matrix) && O.minkowski_matrix[2] > abs_tol
+    A = deepcopy(O.minkowski_matrix[1])
   else
     T = Vector{Vector{arb}}(undef, degree(O))
     B = O.basis_nf
@@ -505,7 +505,7 @@ function minkowski_mat(O::NfOrd, abs_tol::Int = 64)
         M[i, j] = T[i][j]
       end
     end
-    O.minkowski_mat = (M, abs_tol)
+    O.minkowski_matrix = (M, abs_tol)
     A = deepcopy(M)
   end
   return A
@@ -514,7 +514,7 @@ end
 @doc Markdown.doc"""
     minkowski_gram_mat_scaled(O::NfOrd, prec::Int = 64) -> fmpz_mat
 
-Let $c$ be the Minkowski matrix as computed by {{{minkowski_mat}}} with precision $p$.
+Let $c$ be the Minkowski matrix as computed by {{{minkowski_matrix}}} with precision $p$.
 This function computes $d = round(c 2^p)$ and returns $round(d d^t/2^p)$.
 """
 function minkowski_gram_mat_scaled(O::NfOrd, prec::Int = 64)
@@ -522,7 +522,7 @@ function minkowski_gram_mat_scaled(O::NfOrd, prec::Int = 64)
     A = deepcopy(O.minkowski_gram_mat_scaled[1])
     shift!(A, prec - O.minkowski_gram_mat_scaled[2])
   else
-    c = minkowski_mat(O, prec)
+    c = minkowski_matrix(O, prec)
     d = zero_matrix(FlintZZ, degree(O), degree(O))
     A = zero_matrix(FlintZZ, degree(O), degree(O))
     round_scale!(d, c, prec)
@@ -641,7 +641,7 @@ function norm_change_const(O::NfOrd)
     return O.norm_change_const::Tuple{Float64, Float64}
   else
     d = degree(O)
-    M = minkowski_mat(O, 64)
+    M = minkowski_matrix(O, 64)
     # I don't think we have to swap rows,
     # since permutation matrices are orthogonal
     #r1, r2 = signature(O)
@@ -675,11 +675,11 @@ function norm_change_const(O::NfOrd)
             O.norm_change_const = z
             return z::Tuple{Float64, Float64}
           end
-          M = minkowski_mat(O, pr)
+          M = minkowski_matrix(O, pr)
           M = M*M'
           pr *= 2
         catch e  # should verify the correct error
-          M = minkowski_mat(O, pr)
+          M = minkowski_matrix(O, pr)
           M = M*M'
           pr *= 2
         end
@@ -963,7 +963,7 @@ function _order(K::S, elt::Array{T, 1}; cached::Bool = true, check::Bool = true)
   for e = elt
     if phase == 2
       if denominator(B) % denominator(e) == 0
-        C = basis_mat([e], FakeFmpqMat)
+        C = basis_matrix([e], FakeFmpqMat)
         fl, _ = can_solve(B.num, div(B.den, denominator(e))*C.num, side = :left)
 #        fl && println("elt known:", e)
         fl && continue
@@ -981,7 +981,7 @@ function _order(K::S, elt::Array{T, 1}; cached::Bool = true, check::Bool = true)
       mul!(f, f, e)
       if phase == 2
         if denominator(B) % denominator(f) == 0
-          C = basis_mat(elem_type(K)[f], FakeFmpqMat)
+          C = basis_matrix(elem_type(K)[f], FakeFmpqMat)
           fl = iszero_mod_hnf!(div(B.den, denominator(f))*C.num, B.num)
 #          fl && println("inner abort: ", e, " ^ ", i)
           fl && break
@@ -990,7 +990,7 @@ function _order(K::S, elt::Array{T, 1}; cached::Bool = true, check::Bool = true)
       b = elem_type(K)[e*x for x in bas]
       append!(bas, b)
       if length(bas) >= n
-        B = basis_mat(bas, FakeFmpqMat)
+        B = basis_matrix(bas, FakeFmpqMat)
         hnf!(B)
         rk = nrows(B) - n + 1
         while iszero_row(B, rk)
@@ -1007,7 +1007,7 @@ function _order(K::S, elt::Array{T, 1}; cached::Bool = true, check::Bool = true)
   end
 
   if length(bas) >= n
-    B = basis_mat(bas, FakeFmpqMat)
+    B = basis_matrix(bas, FakeFmpqMat)
     hnf!(B)
     rk = nrows(B) - n + 1
     if iszero_row(B.num, rk)
@@ -1039,9 +1039,9 @@ function ==(R::NfAbsOrd, S::NfAbsOrd)
   if discriminant(R) != discriminant(S)
     return false
   end
-  assure_has_basis_mat(R)
-  assure_has_basis_mat(S)
-  return hnf(R.basis_mat) == hnf(S.basis_mat)
+  assure_has_basis_matrix(R)
+  assure_has_basis_matrix(S)
+  return hnf(R.basis_matrix) == hnf(S.basis_matrix)
 end
 
 function ==(R::NfAbsOrdSet, S::NfAbsOrdSet)
@@ -1133,8 +1133,8 @@ end
 
 function sum_as_Z_modules_fast(O1, O2, z::fmpz_mat = zero_matrix(FlintZZ, 2 * degree(O1), degree(O1)))
   K = _algebra(O1)
-  R1 = basis_mat(O1, copy = false)
-  S1 = basis_mat(O2, copy = false)
+  R1 = basis_matrix(O1, copy = false)
+  S1 = basis_matrix(O2, copy = false)
   d = degree(K)
   g = gcd(R1.den, S1.den)
   r1 = divexact(R1.den, g)
@@ -1176,7 +1176,7 @@ function _lll_gram(M::NfOrd)
   g = trace_matrix(M)
 
   q, w = lll_gram_with_transform(g)
-  On = NfOrd(K, w*basis_mat(M, copy = false))
+  On = NfOrd(K, w*basis_matrix(M, copy = false))
   On.ismaximal = M.ismaximal
   if isdefined(M, :index)
     On.index = M.index
@@ -1224,7 +1224,7 @@ function lll(M::NfOrd)
   while true
     try
       q, w = _lll(M, prec = prec)
-      On = NfOrd(K, w*basis_mat(M, copy = false))
+      On = NfOrd(K, w*basis_matrix(M, copy = false))
       On.ismaximal = M.ismaximal
       if isdefined(M, :index)
         On.index = M.index
@@ -1261,7 +1261,7 @@ end
 
 # This is not optimizied for performance.
 # If false, then this returns (false, garbage, garbage).
-# If true, then this return (true, basis_mat, basis_mat_inv).
+# If true, then this return (true, basis_matrix, basis_mat_inv).
 # This should also work if K is an algebra over QQ.
 function defines_order(K::S, x::FakeFmpqMat) where {S}
   if nrows(x) != dim(K) || ncols(x) != dim(K)
@@ -1290,13 +1290,13 @@ function defines_order(K::S, x::FakeFmpqMat) where {S}
       end
       l[j] = d[i]*d[j]
     end
-    Ml = basis_mat(l, FakeFmpqMat)
+    Ml = basis_matrix(l, FakeFmpqMat)
     if !isone((Ml * xinv).den)
       return false, x, Vector{elem_type(K)}()
     end
   end
   # Check if 1 is contained in the Z-module
-  Ml = basis_mat([one(K)], FakeFmpqMat)
+  Ml = basis_matrix([one(K)], FakeFmpqMat)
   if !isone((Ml * xinv).den)
     return false, x, Vector{elem_type(K)}()
   end
@@ -1307,7 +1307,7 @@ function defines_order(K::S, A::Vector{T}) where {S, T}
   if length(A) != dim(K)
     return false, FakeFmpqMat(), FakeFmpqMat(), A
   else
-    B = basis_mat(A, FakeFmpqMat)
+    B = basis_matrix(A, FakeFmpqMat)
     b, Binv, _ = defines_order(K, B)
     return b, B, Binv, A
   end
@@ -1399,7 +1399,7 @@ for orders $R\subseteq S$.
 """
 function conductor(R::NfOrd, S::NfOrd)
   n = degree(R)
-  t = basis_mat(R, copy = false) * basis_mat_inv(S, copy = false)
+  t = basis_matrix(R, copy = false) * basis_mat_inv(S, copy = false)
   if !isone(t.den)
     error("The first order is not contained in the second!")
   end

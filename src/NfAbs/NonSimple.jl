@@ -171,7 +171,7 @@ end
 #
 ################################################################################
 
-function basis_mat(A::Array{NfAbsNSElem})
+function basis_matrix(A::Array{NfAbsNSElem})
   @assert length(A) > 0
   n = length(A)
   d = degree(parent(A[1]))
@@ -183,8 +183,8 @@ function basis_mat(A::Array{NfAbsNSElem})
   return MM
 end
 
-function basis_mat(A::Vector{NfAbsNSElem}, ::Type{FakeFmpqMat})
-  return FakeFmpqMat(basis_mat(A))
+function basis_matrix(A::Vector{NfAbsNSElem}, ::Type{FakeFmpqMat})
+  return FakeFmpqMat(basis_matrix(A))
 end
 
 ################################################################################

@@ -14,7 +14,7 @@ K4, (a4, ) = NumberField([t^3 - 2])
 
 
   B = @inferred basis(K)
-  c = @inferred basis_mat([one(K), a^4])
+  c = @inferred basis_matrix([one(K), a^4])
   @assert nrows(c) == 2
   @assert ncols(c) == 3
   @assert sum(B[i] * c[1, i] for i in 1:3) == one(K)

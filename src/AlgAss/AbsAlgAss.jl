@@ -457,8 +457,8 @@ function as_number_fields(A::AbsAlgAss{fmpq})
     # Compute a LLL reduced basis of the maximal order of A to find "small"
     # polynomials for the number fields.
     OA = maximal_order(A)
-    L = lll(basis_mat(OA, copy = false).num)
-    n = basis_mat(OA, copy = false).den
+    L = lll(basis_matrix(OA, copy = false).num)
+    n = basis_matrix(OA, copy = false).den
     basis_lll = [ elem_from_mat_row(A, L, i, n) for i = 1:d ]
   end
 

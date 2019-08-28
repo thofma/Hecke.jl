@@ -973,7 +973,7 @@ function probabilistic_coprime(a::NfOrdIdl, m::NfOrdIdl)
   O = order(a)
   K = nf(O)
   J = inv(a)
-  temp = basis_mat(J.num, copy = false)*basis_mat(O, copy = false)
+  temp = basis_matrix(J.num, copy = false)*basis_matrix(O, copy = false)
   b = temp.num
   b_den = temp.den
   prec = 100

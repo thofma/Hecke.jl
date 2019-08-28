@@ -1098,7 +1098,7 @@ function _C22_with_max_ord(l)
     B[2] = mS\(g[1])
     B[3] = mS\(g[2])
     B[4] = B[2] * B[3]
-    M = basis_mat(B, FakeFmpqMat)
+    M = basis_matrix(B, FakeFmpqMat)
     hnf_modular_eldiv!(M.num, M.den, :lowerleft)
     O = NfAbsOrd(S, FakeFmpqMat(M.num, M.den))
     O.disc = d1^2*d2^2
@@ -1372,7 +1372,7 @@ function _from_relative_to_absQQ(L::NfRel_ns{T}, auts::Array{NfRel_nsToNfRel_nsM
   for i = 2:degree(Ks)
     arr_prim_img[i] = arr_prim_img[i-1]*mKs.prim_img
   end
-  M1 = inv(basis_mat(arr_prim_img, FakeFmpqMat))
+  M1 = inv(basis_matrix(arr_prim_img, FakeFmpqMat))
   
   basisO2 = Array{nf_elem, 1}(undef, degree(Ks))
   M = zero_matrix(FlintZZ, 1, degree(Ks))
@@ -1381,7 +1381,7 @@ function _from_relative_to_absQQ(L::NfRel_ns{T}, auts::Array{NfRel_nsToNfRel_nsM
     mul!(M, M, M1.num)
     basisO2[i] = elem_from_mat_row(Ks, M, 1, M1.den*denominator(O1.basis_nf[i]))
   end
-  O2 = NfAbsOrd(Ks, basis_mat(O1, copy = false)*M1)
+  O2 = NfAbsOrd(Ks, basis_matrix(O1, copy = false)*M1)
   O2.ismaximal = 1
   _set_maximal_order_of_nf(Ks, O2)
 
@@ -1460,7 +1460,7 @@ function _from_relative_to_abs(L::NfRel_ns{T}, auts::Array{NfRel_nsToNfRel_nsMor
   for i = 2:degree(Ks)
     arr_prim_img[i] = arr_prim_img[i-1]*mKs.prim_img
   end
-  M1 = inv(basis_mat(arr_prim_img, FakeFmpqMat))
+  M1 = inv(basis_matrix(arr_prim_img, FakeFmpqMat))
   basisO2 = Array{nf_elem, 1}(undef, degree(Ks))
   M = zero_matrix(FlintZZ, 1, degree(Ks))
   for i=1:length(basisO2)

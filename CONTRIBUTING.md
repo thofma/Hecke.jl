@@ -11,7 +11,7 @@
 
  - Use lower case with underscores for method names, for example,
    `prime_decomposition` instead of `primedecomposition` and
-   `basis_mat` instead of `basismat`. The only exception are method
+   `basis_matrix` instead of `basismat`. The only exception are method
    names that start with an `is` (predicates). In this case there is
    no underscore between `is` and the word that follows. For example,
    it is `issubgroup` instead of `is_subgroup` and `istorsion_point`

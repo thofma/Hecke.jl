@@ -151,14 +151,14 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    basis_mat(v::Vector{NumFieldElem}) -> Mat
+    basis_matrix(v::Vector{NumFieldElem}) -> Mat
 
 Given a vector `v` of `n` elements of a number field `K` of degree `d`, this
 function returns an `n x d` matrix with entries in the base field of $K$,
  where row `i` contains the > coefficients of `v[i]` with respect of the
 canonical basis of `K`.
 """
-basis_mat(v::Vector{<: NumFieldElem})
+basis_matrix(v::Vector{<: NumFieldElem})
 
 ################################################################################
 #

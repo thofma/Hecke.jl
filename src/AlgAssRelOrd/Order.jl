@@ -22,7 +22,7 @@ _algebra(O::AlgAssRelOrd) = algebra(O)
 
 > Returns an order $R$ in the base ring of `algebra(O)`, such that $O$ is an $R$-order.
 """
-base_ring(O::AlgAssRelOrd) = order(basis_pmat(O, copy = false).coeffs[1])
+base_ring(O::AlgAssRelOrd) = order(basis_pmatrix(O, copy = false).coeffs[1])
 
 @doc Markdown.doc"""
     iscommutative(O::AlgAssRelOrd) -> Bool
@@ -77,12 +77,12 @@ end
 #
 ################################################################################
 
-function assure_has_basis_pmat(O::AlgAssRelOrd{S, T}) where {S, T}
-  if isdefined(O, :basis_pmat)
+function assure_has_basis_pmatrix(O::AlgAssRelOrd{S, T}) where {S, T}
+  if isdefined(O, :basis_pmatrix)
     return nothing
   end
   if !isdefined(O, :pseudo_basis)
-    error("No pseudo_basis and no basis_pmat defined.")
+    error("No pseudo_basis and no basis_pmatrix defined.")
   end
   pb = pseudo_basis(O, copy = false)
   A = algebra(O)
@@ -92,7 +92,7 @@ function assure_has_basis_pmat(O::AlgAssRelOrd{S, T}) where {S, T}
     elem_to_mat_row!(M, i, pb[i][1])
     push!(C, deepcopy(pb[i][2]))
   end
-  O.basis_pmat = PseudoMatrix(M, C)
+  O.basis_pmatrix = PseudoMatrix(M, C)
   return nothing
 end
 
@@ -100,10 +100,10 @@ function assure_has_pseudo_basis(O::AlgAssRelOrd{S, T}) where {S, T}
   if isdefined(O, :pseudo_basis)
     return nothing
   end
-  if !isdefined(O, :basis_pmat)
-    error("No pseudo_basis and no basis_pmat defined.")
+  if !isdefined(O, :basis_pmatrix)
+    error("No pseudo_basis and no basis_pmatrix defined.")
   end
-  P = basis_pmat(O, copy = false)
+  P = basis_pmatrix(O, copy = false)
   A = algebra(O)
   pseudo_basis = Vector{Tuple{elem_type(A), T}}()
   for i = 1:degree(O)
@@ -114,11 +114,11 @@ function assure_has_pseudo_basis(O::AlgAssRelOrd{S, T}) where {S, T}
   return nothing
 end
 
-function assure_has_basis_mat(O::AlgAssRelOrd)
-  if isdefined(O, :basis_mat)
+function assure_has_basis_matrix(O::AlgAssRelOrd)
+  if isdefined(O, :basis_matrix)
     return nothing
   end
-  O.basis_mat = basis_pmat(O).matrix
+  O.basis_matrix = basis_pmatrix(O).matrix
   return nothing
 end
 
@@ -126,7 +126,7 @@ function assure_has_basis_mat_inv(O::AlgAssRelOrd)
   if isdefined(O, :basis_mat_inv)
     return nothing
   end
-  O.basis_mat_inv = inv(basis_mat(O, copy = false))
+  O.basis_mat_inv = inv(basis_matrix(O, copy = false))
   return nothing
 end
 
@@ -162,16 +162,16 @@ function pseudo_basis(O::AlgAssRelOrd; copy::Bool = true)
 end
 
 @doc Markdown.doc"""
-    basis_pmat(O::AlgAssRelOrd; copy::Bool = true) -> PMat
+    basis_pmatrix(O::AlgAssRelOrd; copy::Bool = true) -> PMat
 
 > Returns the basis pseudo-matrix of $O$.
 """
-function basis_pmat(O::AlgAssRelOrd; copy::Bool = true)
-  assure_has_basis_pmat(O)
+function basis_pmatrix(O::AlgAssRelOrd; copy::Bool = true)
+  assure_has_basis_pmatrix(O)
   if copy
-    return deepcopy(O.basis_pmat)
+    return deepcopy(O.basis_pmatrix)
   else
-    return O.basis_pmat
+    return O.basis_pmatrix
   end
 end
 
@@ -191,17 +191,17 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    basis_mat(O::AlgAssRelOrd; copy::Bool = true) -> MatElem
+    basis_matrix(O::AlgAssRelOrd; copy::Bool = true) -> MatElem
 
 > Returns the basis matrix of $O$, that is the basis pseudo-matrix of $O$ without
 > the coefficient ideals.
 """
-function basis_mat(O::AlgAssRelOrd; copy::Bool = true)
-  assure_has_basis_mat(O)
+function basis_matrix(O::AlgAssRelOrd; copy::Bool = true)
+  assure_has_basis_matrix(O)
   if copy
-    return deepcopy(O.basis_mat)
+    return deepcopy(O.basis_matrix)
   else
-    return O.basis_mat
+    return O.basis_matrix
   end
 end
 
@@ -244,7 +244,7 @@ function _check_elem_in_order(a::AbsAlgAssElem{S}, O::AlgAssRelOrd{S, T}, short:
   t = zero_matrix(base_ring(algebra(O)), 1, degree(O))
   elem_to_mat_row!(t, 1, a)
   t = t*basis_mat_inv(O, copy = false)
-  b_pmat = basis_pmat(O, copy = false)
+  b_pmat = basis_pmatrix(O, copy = false)
   if short == Val{true}
     for i = 1:degree(O)
       if !(t[1, i] in b_pmat.coeffs[i])
@@ -360,7 +360,7 @@ end
 """
 function ==(R::AlgAssRelOrd, S::AlgAssRelOrd)
   algebra(R) != algebra(S) && return false
-  return basis_pmat(R, copy = false) == basis_pmat(S, copy = false)
+  return basis_pmatrix(R, copy = false) == basis_pmatrix(S, copy = false)
 end
 
 ################################################################################
@@ -475,7 +475,7 @@ function maximal_order(O::AlgAssRelOrd)
   if isdefined(A, :maximal_order)
     # Check whether O \subseteq OO
     OO = A.maximal_order
-    if _spans_subset_of_pseudohnf(basis_pmat(O, copy = false), basis_pmat(OO, copy = false), :lowerleft)
+    if _spans_subset_of_pseudohnf(basis_pmatrix(O, copy = false), basis_pmatrix(OO, copy = false), :lowerleft)
       return OO
     end
   end
@@ -565,7 +565,7 @@ function _simple_maximal_order(O::AlgAssRelOrd, with_trafo::Type{Val{T}} = Val{f
       M[i, j] = deepcopy(matrix(pseudo_basis(O, copy = false)[i][1], copy = false)[1, j])
     end
   end
-  PM = PseudoMatrix(M, deepcopy(basis_pmat(O, copy = false).coeffs))
+  PM = PseudoMatrix(M, deepcopy(basis_pmatrix(O, copy = false).coeffs))
   PM = pseudo_hnf(PM, :upperright)
 
   M = sub(PM.matrix, 1:n, 1:n)
@@ -586,7 +586,7 @@ function _simple_maximal_order(O::AlgAssRelOrd, with_trafo::Type{Val{T}} = Val{f
     elem_to_mat_row!(N, i, iM*pseudo_basis(O, copy = false)[i][1]*M)
   end
 
-  PN = PseudoMatrix(N, deepcopy(basis_pmat(O, copy = false).coeffs))
+  PN = PseudoMatrix(N, deepcopy(basis_pmatrix(O, copy = false).coeffs))
   PN = pseudo_hnf(PN, :lowerleft)
 
   if with_trafo == Val{true}
@@ -717,8 +717,8 @@ end
 
 function +(a::AlgAssRelOrd{S, T}, b::AlgAssRelOrd{S, T}) where { S, T }
   @assert algebra(a) === algebra(b)
-  aB = basis_pmat(a, copy = false)
-  bB = basis_pmat(b, copy = false)
+  aB = basis_pmatrix(a, copy = false)
+  bB = basis_pmatrix(b, copy = false)
   d = degree(a)
   PM = sub(pseudo_hnf(vcat(aB, bB), :lowerleft, true), d + 1:2*d, 1:d)
   return Order(algebra(a), PM)
@@ -745,8 +745,8 @@ function enum_units(O::AlgAssRelOrd, g::NfAbsOrdIdl)
   K = base_ring(A)
   OK = base_ring(O)
   L = _simple_maximal_order(O)
-  a = deepcopy(basis_pmat(L, copy = false).coeffs[end - 1])
-  ai = deepcopy(basis_pmat(L, copy = false).coeffs[n])
+  a = deepcopy(basis_pmatrix(L, copy = false).coeffs[end - 1])
+  ai = deepcopy(basis_pmatrix(L, copy = false).coeffs[n])
 
   gensOKg = Vector{elem_type(K)}()
   for b in basis(OK)
