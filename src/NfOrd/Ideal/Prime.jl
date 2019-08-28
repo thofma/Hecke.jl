@@ -32,7 +32,7 @@
 #
 ################################################################################
 
-export PrimeIdealsSet, prime_ideals_over
+export PrimeIdealsSet, prime_ideals_over, ramification_index
 
 @doc Markdown.doc"""
     isramified(O::NfOrd, p::Int) -> Bool
@@ -54,6 +54,8 @@ function degree(A::NfAbsOrdIdl)
   return A.splitting_type[2]
 end
 
+inertia_degree(A::NfAbsOrdIdl) = degree(A)
+
 @doc Markdown.doc"""
     ramification_index(P::NfOrdIdl) -> Int
 The ramification index of the prime-ideal $P$.
@@ -63,21 +65,12 @@ function ramification_index(A::NfAbsOrdIdl)
   return A.splitting_type[1]
 end
 
-@doc Markdown.doc"""
-    splitting_type(P::NfOrdIdl) -> Int, Int
-The ramification index and inertia degree of the prime ideal $P$.
-First value is the ramificatio index, the second the degree of $P$.
-"""
-function splitting_type(A::NfAbsOrdIdl)
-  @assert isprime(A)
-  return A.splitting_type
-end
-
 ################################################################################
 #
 #  Prime decomposition
 #
 ################################################################################
+
 @doc Markdown.doc"""
     intersect_prime(f::Map, P::NfOrdIdl, O_k::NfOrd) -> NfOrdIdl
 Given a prime ideal $P$ in $K$ and the inclusion map $f:k \to K$ 

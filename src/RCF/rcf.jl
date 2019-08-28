@@ -261,7 +261,7 @@ function find_gens_descent(mR::Map, A::ClassField_pp, cp::fmpz)
         f = R[1]
         for (P, e) = lP
           lpp = prime_decomposition(C.mp[2], P)
-          if divexact(splitting_type(lpp[1][1])[2], splitting_type(P)[2]) != U.snf[i]
+          if divexact(degree(lpp[1][1]), degree(P)) != U.snf[i]
             continue
           end
           try

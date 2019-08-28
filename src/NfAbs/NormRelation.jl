@@ -293,8 +293,8 @@ function induce_action_from_subfield(N::NormRelation, i, s, FB, cache)
       pmin = minimum(P, copy = false)
       # Compute the number of ideals
       # Assume that L/K and L/Q are normal
-      rele = divexact(splitting_type((FB.fb[pmin].lp)[1][2])[1], splitting_type(P)[1])
-      relf = divexact(splitting_type((FB.fb[pmin].lp)[1][2])[2], splitting_type(P)[2])
+      rele = divexact(ramification_index((FB.fb[pmin].lp)[1][2]), ramification_index(P))
+      relf = divexact(degree((FB.fb[pmin].lp)[1][2]), degree(P))
       @assert mod(reldeg, rele * relf) == 0
       numb_ideal = divexact(reldeg, rele * relf)
       found = 0
@@ -304,8 +304,8 @@ function induce_action_from_subfield(N::NormRelation, i, s, FB, cache)
           ant = anti_uniformizer(Q)
           if (genofsl * ant) in ZK
             found += 1
-            @assert mod(splitting_type(Q)[1], splitting_type(s[l])[1]) == 0
-            push!(v, (k, divexact(splitting_type(Q)[1], splitting_type(s[l])[1])))
+            @assert mod(ramification_index(Q), ramification_index(s[l])) == 0
+            push!(v, (k, divexact(ramification_index(Q), ramification_index(s[l]))))
           end
         end
         if found == numb_ideal
@@ -381,8 +381,8 @@ function induce_action(N::NormRelation, i, j, s, FB, cache)
       pmin = minimum(P, copy = false)
       # Compute the number of ideals
       # Assume that L/K and L/Q are normal
-      rele = divexact(splitting_type((FB.fb[pmin].lp)[1][2])[1], splitting_type(P)[1])
-      relf = divexact(splitting_type((FB.fb[pmin].lp)[1][2])[2], splitting_type(P)[2])
+      rele = divexact(ramification_index((FB.fb[pmin].lp)[1][2]), ramification_index(P))
+      relf = divexact(degree((FB.fb[pmin].lp)[1][2]), degree(P))
       @assert mod(reldeg, rele * relf) == 0
       numb_ideal = divexact(reldeg, rele * relf)
       found = 0
@@ -392,8 +392,8 @@ function induce_action(N::NormRelation, i, j, s, FB, cache)
           ant = anti_uniformizer(Q)
           if (genofsl * ant) in ZK
             found += 1
-            @assert mod(splitting_type(Q)[1], splitting_type(s[l])[1]) == 0
-            push!(v, (k, divexact(splitting_type(Q)[1], splitting_type(s[l])[1])))
+            @assert mod(ramification_index(Q), ramification_index(s[l])) == 0
+            push!(v, (k, divexact(ramification_index(Q), ramification_index(s[l]))))
           end
         end
         if found == numb_ideal
@@ -439,7 +439,7 @@ function induce_action(N::NormRelation, i, s::Vector, S::Vector)
       if minimum(Q, copy = false) == minimum(s[j], copy = false)
         ant = anti_uniformizer(Q)
         if (elem_in_nf(mk(s[j].gen_two.elem_in_nf)) * ant) in ZK
-          push!(v, (k, divexact(splitting_type(Q)[1], splitting_type(s[j])[1])))
+          push!(v, (k, divexact(ramification_index(Q), ramification_index(s[j]))))
         end
       end
     end
