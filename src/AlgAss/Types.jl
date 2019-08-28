@@ -539,7 +539,7 @@ mutable struct AlgAssRelOrd{S, T} <: Ring
   pseudo_basis::Vector{Tuple{AbsAlgAssElem{S}, T}}
   basis_matrix::Generic.MatSpaceElem{S}
   basis_mat_inv::Generic.MatSpaceElem{S}
-  basis_pmat::PMat{S, T}
+  basis_pmatrix::PMat{S, T}
 
   disc # an integral ideal in the base field
 
@@ -561,7 +561,7 @@ mutable struct AlgAssRelOrd{S, T} <: Ring
 
   function AlgAssRelOrd{S, T}(A::AbsAlgAss{S}, M::PMat{S, T}) where {S, T}
     z = AlgAssRelOrd{S, T}(A)
-    z.basis_pmat = M
+    z.basis_pmatrix = M
     z.basis_matrix = M.matrix
     return z
   end
@@ -569,7 +569,7 @@ mutable struct AlgAssRelOrd{S, T} <: Ring
   function AlgAssRelOrd{S, T}(A::AbsAlgAss{S}, M::Generic.MatSpaceElem{S}) where {S, T}
     z = AlgAssRelOrd{S, T}(A)
     z.basis_matrix = M
-    z.basis_pmat = pseudo_matrix(M)
+    z.basis_pmatrix = pseudo_matrix(M)
     return z
   end
 end
@@ -623,7 +623,7 @@ end
 mutable struct AlgAssRelOrdIdl{S, T}
   order::AlgAssRelOrd{S, T}
   pseudo_basis::Vector{Tuple{AbsAlgAssElem{S}, T}}
-  basis_pmat::PMat{S, T}
+  basis_pmatrix::PMat{S, T}
   basis_matrix::Generic.MatSpaceElem{S}
   basis_mat_inv::Generic.MatSpaceElem{S}
 
@@ -648,7 +648,7 @@ mutable struct AlgAssRelOrdIdl{S, T}
 
   function AlgAssRelOrdIdl{S, T}(O::AlgAssRelOrd{S, T}, M::PMat{S, T}) where {S, T}
     z = AlgAssRelOrdIdl{S, T}(O)
-    z.basis_pmat = M
+    z.basis_pmatrix = M
     z.basis_matrix = M.matrix
     return z
   end

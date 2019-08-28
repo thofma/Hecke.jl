@@ -21,7 +21,7 @@ mutable struct NfRelOrd{T, S} <: Ring
   basis_nf::Vector{NumFieldElem{T}}
   basis_matrix::Generic.MatSpaceElem{T}
   basis_mat_inv::Generic.MatSpaceElem{T}
-  basis_pmat::PMat{T, S}
+  basis_pmatrix::PMat{T, S}
   pseudo_basis::Vector{Tuple{NumFieldElem{T}, S}}
 
   disc_abs::NfOrdIdl # used if T == nf_elem
@@ -51,7 +51,7 @@ mutable struct NfRelOrd{T, S} <: Ring
     z = NfRelOrd{T, S}(K)
     z.nf = K
     z.parent = NfRelOrdSet{T}(K)
-    z.basis_pmat = M
+    z.basis_pmatrix = M
     z.basis_matrix = M.matrix
     return z
   end
@@ -61,7 +61,7 @@ mutable struct NfRelOrd{T, S} <: Ring
     z.nf = K
     z.parent = NfRelOrdSet{T}(K)
     z.basis_matrix = M
-    z.basis_pmat = pseudo_matrix(M)
+    z.basis_pmatrix = pseudo_matrix(M)
     return z
   end
 end
@@ -124,7 +124,7 @@ end
 mutable struct NfRelOrdFracIdl{T, S}
   order::NfRelOrd{T, S}
   parent::NfRelOrdFracIdlSet{T, S}
-  basis_pmat::PMat{T, S}
+  basis_pmatrix::PMat{T, S}
   pseudo_basis::Vector{Tuple{NumFieldElem{T}, S}}
   basis_matrix::Generic.MatSpaceElem{T}
   basis_mat_inv::Generic.MatSpaceElem{T}
@@ -143,7 +143,7 @@ mutable struct NfRelOrdFracIdl{T, S}
 
   function NfRelOrdFracIdl{T, S}(O::NfRelOrd{T, S}, M::PMat{T, S}) where {T, S}
     z = NfRelOrdFracIdl{T, S}(O)
-    z.basis_pmat = M
+    z.basis_pmatrix = M
     z.basis_matrix = M.matrix
     return z
   end
@@ -173,7 +173,7 @@ end
 mutable struct NfRelOrdIdl{T, S}
   order::NfRelOrd{T, S}
   parent::NfRelOrdIdlSet{T, S}
-  basis_pmat::PMat{T, S}
+  basis_pmatrix::PMat{T, S}
   pseudo_basis::Vector{Tuple{NumFieldElem{T}, S}}
   basis_matrix::Generic.MatSpaceElem{T}
   basis_mat_inv::Generic.MatSpaceElem{T}
@@ -202,7 +202,7 @@ mutable struct NfRelOrdIdl{T, S}
 
   function NfRelOrdIdl{T, S}(O::NfRelOrd{T, S}, M::PMat{T, S}) where {T, S}
     z = NfRelOrdIdl{T, S}(O)
-    z.basis_pmat = M
+    z.basis_pmatrix = M
     z.basis_matrix = M.matrix
     return z
   end
@@ -256,20 +256,20 @@ end
 mutable struct RelOrdQuoRing{T1, T2, T3} <: Ring
   base_ring::T1
   ideal::T2
-  basis_pmat::T3
+  basis_pmatrix::T3
 
   function RelOrdQuoRing{T1, T2, T3}(O::T1, I::T2) where { T1, T2, T3 }
     z = new{T1, T2, T3}()
     z.base_ring = O
     z.ideal = I
-    z.basis_pmat = basis_pmat(I)
+    z.basis_pmatrix = basis_pmatrix(I)
     return z
   end
 end
 
 function RelOrdQuoRing(O::T1, I::T2) where { T1, T2 }
   @assert T2 == ideal_type(O)
-  return RelOrdQuoRing{T1, T2, typeof(basis_pmat(I, copy = false))}(O, I)
+  return RelOrdQuoRing{T1, T2, typeof(basis_pmatrix(I, copy = false))}(O, I)
 end
 
 # T1, T2 and T3 as for RelOrdQuoRing, S is the elem_type of the order

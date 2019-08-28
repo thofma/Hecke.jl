@@ -496,7 +496,7 @@ function AlgAss(O::Union{ NfRelOrd{T, S}, AlgAssRelOrd{T, S} }, I::Union{ NfRelO
   new_basisO = Vector{Tuple{elem_type(K), S}}()
   new_bmatO = basis_matrix(O)
 
-  bpmatI = basis_pmat(I, copy = false)
+  bpmatI = basis_pmatrix(I, copy = false)
   new_bpmatI = deepcopy(bpmatI)
 
   pi = anti_uniformizer(p)
@@ -687,7 +687,7 @@ function AlgAss(I::Union{ NfRelOrdIdl{T, S}, AlgAssRelOrdIdl{T, S} }, J::Union{ 
   end
   bmatinvI = inv(new_bmatI)
 
-  bpmatJinI = basis_pmat(J)
+  bpmatJinI = basis_pmatrix(J)
   bpmatJinI.matrix = bpmatJinI.matrix*basis_matrix(O, copy = false)*bmatinvI
   bpmatJinI = pseudo_hnf(bpmatJinI, :lowerleft)
   bmatJinI = bpmatJinI.matrix

@@ -12,7 +12,7 @@
   @test denominator(I) == fmpz(2)
   @test Hecke.isintegral(I.den*I)
 
-  PM = basis_pmat(OL)
+  PM = basis_pmatrix(OL)
   PM.matrix[1, 1] = K(fmpq(1, 2))
   PM.matrix[2, 1] = K()
   PM.matrix[2, 2] = K(fmpq(1, 3))

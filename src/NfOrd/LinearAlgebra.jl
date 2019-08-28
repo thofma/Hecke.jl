@@ -299,7 +299,7 @@ end
 
 function PseudoMatrix(m::MatElem{S}, c::Array{T, 1}) where {S <: NumFieldElem, T <: NfRelOrdIdl}
   @assert nrows(m) == length(c)
-  cc = [ frac_ideal(order(c[i]), basis_pmat(c[i]), true) for i = 1:length(c) ]
+  cc = [ frac_ideal(order(c[i]), basis_pmatrix(c[i]), true) for i = 1:length(c) ]
   return PMat{S, typeof(cc[1])}(m, cc)
 end
 
@@ -1189,8 +1189,8 @@ function pseudo_hnf_kb!(H::PMat{T, S}, U::Generic.Mat{T}, with_transform::Bool =
                 error("Ideals are not integral.")
               end
               # numerator(ad) would make a deepcopy...
-              adint = ideal_type(order(ad))(order(ad), basis_pmat(ad, copy = false))
-              bdint = ideal_type(order(bd))(order(bd), basis_pmat(bd, copy = false))
+              adint = ideal_type(order(ad))(order(ad), basis_pmatrix(ad, copy = false))
+              bdint = ideal_type(order(bd))(order(bd), basis_pmatrix(bd, copy = false))
               u, v = map(K, idempotents(adint, bdint))
             end
             u = divexact(u, Aij)

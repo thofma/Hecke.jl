@@ -19,7 +19,7 @@ function show(io::IO, a::AlgAssRelOrdIdl)
   print(io, "Ideal of ")
   show(IOContext(io, :compact => true), order(a))
   print(io, " with basis pseudo-matrix\n")
-  show(IOContext(io, :compact => true), basis_pmat(a, copy = false))
+  show(IOContext(io, :compact => true), basis_pmatrix(a, copy = false))
 end
 
 ################################################################################
@@ -46,12 +46,12 @@ end
 #
 ################################################################################
 
-function assure_has_basis_pmat(a::AlgAssRelOrdIdl)
-  if isdefined(a, :basis_pmat)
+function assure_has_basis_pmatrix(a::AlgAssRelOrdIdl)
+  if isdefined(a, :basis_pmatrix)
     return nothing
   end
   if !isdefined(a, :pseudo_basis)
-    error("No pseudo_basis and no basis_pmat defined.")
+    error("No pseudo_basis and no basis_pmatrix defined.")
   end
   pb = pseudo_basis(a, copy = false)
   A = algebra(order(a))
@@ -62,7 +62,7 @@ function assure_has_basis_pmat(a::AlgAssRelOrdIdl)
     push!(C, deepcopy(pb[i][2]))
   end
   M = M*basis_mat_inv(order(a), copy = false)
-  a.basis_pmat = pseudo_hnf(PseudoMatrix(M, C), :lowerleft, true)
+  a.basis_pmatrix = pseudo_hnf(PseudoMatrix(M, C), :lowerleft, true)
   return nothing
 end
 
@@ -70,10 +70,10 @@ function assure_has_pseudo_basis(a::AlgAssRelOrdIdl)
   if isdefined(a, :pseudo_basis)
     return nothing
   end
-  if !isdefined(a, :basis_pmat)
-    error("No pseudo_basis and no basis_pmat defined.")
+  if !isdefined(a, :basis_pmatrix)
+    error("No pseudo_basis and no basis_pmatrix defined.")
   end
-  P = basis_pmat(a, copy = false)
+  P = basis_pmatrix(a, copy = false)
   B = pseudo_basis(order(a), copy = false)
   A = algebra(order(a))
   K = base_ring(A)
@@ -93,7 +93,7 @@ function assure_has_basis_matrix(a::AlgAssRelOrdIdl)
   if isdefined(a, :basis_matrix)
     return nothing
   end
-  a.basis_matrix = basis_pmat(a).matrix
+  a.basis_matrix = basis_pmatrix(a).matrix
   return nothing
 end
 
@@ -128,16 +128,16 @@ function pseudo_basis(a::AlgAssRelOrdIdl; copy::Bool = true)
 end
 
 @doc Markdown.doc"""
-    basis_pmat(a::AlgAssRelOrdIdl; copy::Bool = true) -> PMat
+    basis_pmatrix(a::AlgAssRelOrdIdl; copy::Bool = true) -> PMat
 
 > Returns the basis pseudo-matrix of $a$ with respect to the basis of the order.
 """
-function basis_pmat(a::AlgAssRelOrdIdl; copy::Bool = true)
-  assure_has_basis_pmat(a)
+function basis_pmatrix(a::AlgAssRelOrdIdl; copy::Bool = true)
+  assure_has_basis_pmatrix(a)
   if copy
-    return deepcopy(a.basis_pmat)
+    return deepcopy(a.basis_pmatrix)
   else
-    return a.basis_pmat
+    return a.basis_pmatrix
   end
 end
 
@@ -195,7 +195,7 @@ function +(a::AlgAssRelOrdIdl{S, T}, b::AlgAssRelOrdIdl{S, T}) where {S, T}
   end
 
   d = degree(order(a))
-  M = vcat(basis_pmat(a), basis_pmat(b))
+  M = vcat(basis_pmatrix(a), basis_pmatrix(b))
   M = sub(pseudo_hnf(M, :lowerleft), (d + 1):2*d, 1:d)
   return ideal(order(a), M, :nothing, false, true)
 end
@@ -252,8 +252,8 @@ end
 """
 function intersect(a::AlgAssRelOrdIdl{S, T}, b::AlgAssRelOrdIdl{S, T}) where {S, T}
   d = degree(order(a))
-  Ma = basis_pmat(a)
-  Mb = basis_pmat(b)
+  Ma = basis_pmatrix(a)
+  Mb = basis_pmatrix(b)
   M1 = hcat(Ma, deepcopy(Ma))
   z = zero_matrix(base_ring(Ma.matrix), d, d)
   M2 = hcat(PseudoMatrix(z, Mb.coeffs), Mb)
@@ -270,7 +270,7 @@ end
 
 function defines_ideal(O::AlgAssRelOrd{S, T}, M::PMat{S, T}) where {S, T}
   K = base_ring(algebra(O))
-  coeffs = basis_pmat(O, copy = false).coeffs
+  coeffs = basis_pmatrix(O, copy = false).coeffs
   I = PseudoMatrix(identity_matrix(K, degree(O)), deepcopy(coeffs))
   return _spans_subset_of_pseudohnf(M, I, :lowerleft)
 end
@@ -307,7 +307,7 @@ end
 > If `check == false` it is not checked whether $M$ defines an ideal of $O$.
 """
 function ideal(O::AlgAssRelOrd{S, T}, M::Generic.Mat{S}, side::Symbol = :nothing, check::Bool = true) where {S, T}
-  coeffs = deepcopy(basis_pmat(O, copy = false).coeffs)
+  coeffs = deepcopy(basis_pmatrix(O, copy = false).coeffs)
   return ideal(O, PseudoMatrix(M, coeffs), side, check)
 end
 
@@ -423,7 +423,7 @@ end
 function ideal(O::AlgAssRelOrd, a::NfRelOrdIdl)
   @assert order(a) == order(pseudo_basis(O, copy = false)[1][2])
 
-  aa = frac_ideal(order(a), basis_pmat(a), true)
+  aa = frac_ideal(order(a), basis_pmatrix(a), true)
   return ideal(O, aa, false)
 end
 
@@ -483,7 +483,7 @@ end
 function in(x::AlgAssRelOrdElem, a::AlgAssRelOrdIdl)
   parent(x) !== order(a) && error("Order of element and ideal must be equal")
   O = order(a)
-  b_pmat = basis_pmat(a, copy = false)
+  b_pmat = basis_pmatrix(a, copy = false)
   t = matrix(base_ring(algebra(O)), 1, degree(O), coordinates(x))
   t = t*basis_mat_inv(a, copy = false)
   for i = 1:degree(O)
@@ -507,7 +507,7 @@ end
 """
 function ==(A::AlgAssRelOrdIdl, B::AlgAssRelOrdIdl)
   order(A) !== order(B) && return false
-  return basis_pmat(A, copy = false) == basis_pmat(B, copy = false)
+  return basis_pmatrix(A, copy = false) == basis_pmatrix(B, copy = false)
 end
 
 ################################################################################
@@ -530,7 +530,7 @@ function _test_ideal_sidedness(a::AlgAssRelOrdIdl, side::Symbol)
     error("side must be either :left or :right")
   end
 
-  return _spans_subset_of_pseudohnf(basis_pmat(c, copy = false), basis_pmat(a, copy = false), :lowerleft)
+  return _spans_subset_of_pseudohnf(basis_pmatrix(c, copy = false), basis_pmatrix(a, copy = false), :lowerleft)
 end
 
 ################################################################################
@@ -592,7 +592,7 @@ right_order(a::AlgAssRelOrdIdl) = ring_of_multipliers(a, :left)
 function mod!(a::AlgAssRelOrdElem, I::AlgAssRelOrdIdl)
   O = order(I)
   b = coordinates(a, copy = false)
-  PM = basis_pmat(I, copy = false) # PM is assumed to be in lower left pseudo hnf
+  PM = basis_pmatrix(I, copy = false) # PM is assumed to be in lower left pseudo hnf
   t = parent(b[1])()
   t1 = parent(b[1])()
   for i = degree(O):-1:1
@@ -648,7 +648,7 @@ function assure_has_norm(a::AlgAssRelOrdIdl)
     a.norm = O()*O
     return nothing
   end
-  c = basis_pmat(a, copy = false).coeffs
+  c = basis_pmatrix(a, copy = false).coeffs
   d = inv_coeff_ideals(order(a), copy = false)
   n = c[1]*d[1]
   for i = 2:degree(order(a))
@@ -841,7 +841,7 @@ function pradical(O::AlgAssRelOrd, p::Union{ NfAbsOrdIdl, NfRelOrdIdl })
     return pO
   end
 
-  N = basis_pmat(pO, copy = false)
+  N = basis_pmatrix(pO, copy = false)
   m = numerator(det(N), copy = false)
   t = PseudoMatrix(zero_matrix(K, 1, degree(O)))
   for b in basis(J, copy = false)
@@ -890,7 +890,7 @@ function _prime_ideals_over(O::AlgAssRelOrd, prad::AlgAssRelOrdIdl, p::Union{ Nf
     end
   end
 
-  lifted_components = Vector{typeof(basis_pmat(prad, copy = false))}()
+  lifted_components = Vector{typeof(basis_pmatrix(prad, copy = false))}()
   for k = 1:length(decA)
     N = zero_matrix(K, dim(decA[k][1]), degree(O))
     for i = 1:dim(decA[k][1])
@@ -904,7 +904,7 @@ function _prime_ideals_over(O::AlgAssRelOrd, prad::AlgAssRelOrdIdl, p::Union{ Nf
 
   primes = Vector{ideal_type(O)}()
   for i = 1:length(decA)
-    N = basis_pmat(prad, copy = false)
+    N = basis_pmatrix(prad, copy = false)
     m = numerator(det(N), copy = false)
     for j = 1:length(decA)
       if i == j

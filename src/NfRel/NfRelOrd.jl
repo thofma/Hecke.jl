@@ -1,4 +1,4 @@
-export pseudo_basis, basis_pmat
+export pseudo_basis, basis_pmatrix
 
 ################################################################################
 #
@@ -73,12 +73,12 @@ frac_ideal_type(::Type{NfRelOrd{T, S}}) where {T, S} = NfRelOrdFracIdl{T, S}
 #
 ################################################################################
 
-function assure_has_basis_pmat(O::NfRelOrd{T, S}) where {T, S}
-  if isdefined(O, :basis_pmat)
+function assure_has_basis_pmatrix(O::NfRelOrd{T, S}) where {T, S}
+  if isdefined(O, :basis_pmatrix)
     return nothing
   end
   if !isdefined(O, :pseudo_basis)
-    error("No pseudo_basis and no basis_pmat defined.")
+    error("No pseudo_basis and no basis_pmatrix defined.")
   end
   pb = pseudo_basis(O, copy = false)
   L = nf(O)
@@ -88,7 +88,7 @@ function assure_has_basis_pmat(O::NfRelOrd{T, S}) where {T, S}
     elem_to_mat_row!(M, i, pb[i][1])
     push!(C, deepcopy(pb[i][2]))
   end
-  O.basis_pmat = PseudoMatrix(M, C)
+  O.basis_pmatrix = PseudoMatrix(M, C)
   return nothing
 end
 
@@ -96,10 +96,10 @@ function assure_has_pseudo_basis(O::NfRelOrd{T, S}) where {T, S}
   if isdefined(O, :pseudo_basis)
     return nothing
   end
-  if !isdefined(O, :basis_pmat)
-    error("No pseudo_basis and no basis_pmat defined.")
+  if !isdefined(O, :basis_pmatrix)
+    error("No pseudo_basis and no basis_pmatrix defined.")
   end
-  P = basis_pmat(O, copy = false)
+  P = basis_pmatrix(O, copy = false)
   L = nf(O)
   pseudo_basis = Vector{Tuple{elem_type(L), S}}()
   for i = 1:degree(O)
@@ -128,7 +128,7 @@ function assure_has_basis_matrix(O::NfRelOrd)
   if isdefined(O, :basis_matrix)
     return nothing
   end
-  O.basis_matrix = basis_pmat(O).matrix
+  O.basis_matrix = basis_pmatrix(O).matrix
   return nothing
 end
 
@@ -170,17 +170,17 @@ function pseudo_basis(O::NfRelOrd; copy::Bool = true)
 end
 
 @doc Markdown.doc"""
-      basis_pmat(O::NfRelOrd) -> PMat
+      basis_pmatrix(O::NfRelOrd) -> PMat
 
 Returns the basis pseudo-matrix of $\mathcal O$ with respect to the power basis
 of the ambient number field.
 """
-function basis_pmat(O::NfRelOrd; copy::Bool = true)
-  assure_has_basis_pmat(O)
+function basis_pmatrix(O::NfRelOrd; copy::Bool = true)
+  assure_has_basis_pmatrix(O)
   if copy
-    return deepcopy(O.basis_pmat)
+    return deepcopy(O.basis_pmatrix)
   else
-    return O.basis_pmat
+    return O.basis_pmatrix
   end
 end
 
@@ -373,7 +373,7 @@ end
 ################################################################################
 
 function _check_elem_in_order(a::NumFieldElem{T}, O::NfRelOrd{T, S}, short::Type{Val{V}} = Val{false}) where {T, S, V}
-  b_pmat = basis_pmat(O, copy = false)
+  b_pmat = basis_pmatrix(O, copy = false)
   t = zero_matrix(base_field(nf(O)), 1, degree(O))
   elem_to_mat_row!(t, 1, a)
   t = t*basis_mat_inv(O, copy = false)
@@ -506,7 +506,7 @@ end
 
 function ==(R::NfRelOrd, S::NfRelOrd)
   nf(R) != nf(S) && return false
-  return basis_pmat(R, copy = false) == basis_pmat(S, copy = false)
+  return basis_pmatrix(R, copy = false) == basis_pmatrix(S, copy = false)
 end
 
 ################################################################################
@@ -633,7 +633,7 @@ function dedekind_test(O::NfRelOrd, p::Union{NfOrdIdl, NfRelOrdIdl}, compute_ord
     Umodp = divexact(Tmodp, d)
     U = fq_poly_to_nf_elem_poly(Kx, immF, Umodp)
     PM = PseudoMatrix(representation_matrix(a*U(gen(L))), [ K(1)*OK for i = 1:degree(O) ])
-    PN = vcat(basis_pmat(O), PM)
+    PN = vcat(basis_pmatrix(O), PM)
     PN = sub(pseudo_hnf(PN, :lowerleft, true), degree(O) + 1:2*degree(O), 1:degree(O))
     OO = Order(L, PN)
     OO.isequation_order = false
@@ -720,8 +720,8 @@ containing both $R$ and $S$.
 function +(a::NfRelOrd{T, S}, b::NfRelOrd{T, S}) where {T, S}
   # checks
   @assert nf(a) == nf(b)
-  aB = basis_pmat(a, copy = false)
-  bB = basis_pmat(b, copy = false)
+  aB = basis_pmatrix(a, copy = false)
+  bB = basis_pmatrix(b, copy = false)
   d = degree(a)
   PM = sub(pseudo_hnf(vcat(aB, bB), :lowerleft, true), d + 1:2*d, 1:d)
   return NfRelOrd{T, S}(nf(a), PM)
@@ -767,7 +767,7 @@ function non_simple_order(O::NfRelOrd, m::NfRelToNfRel_nsMor)
   for i = 1:d
     elem_to_mat_row!(M, i, m(L(B[i])))
   end
-  PM = pseudo_hnf(PseudoMatrix(M, Hecke.basis_pmat(O).coeffs), :lowerleft, true)
+  PM = pseudo_hnf(PseudoMatrix(M, Hecke.basis_pmatrix(O).coeffs), :lowerleft, true)
   return NfRelOrd{typeof(PM.matrix[1, 1]), typeof(PM.coeffs[1])}(L_ns, PM)
 end
 
