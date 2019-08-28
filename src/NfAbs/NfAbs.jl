@@ -561,7 +561,7 @@ function compositum(K::AnticNumberField, L::AnticNumberField)
   end
   KK = NumberField(first(lf.fac)[1])[1]
   Ka, m1, m2 = absolute_field(KK)
-  return Ka, hom(K, Ka, m1(gen(KK))), m2
+  return Ka, hom(K, Ka, preimage(m1, gen(KK))), m2
 end
 
 ################################################################################
