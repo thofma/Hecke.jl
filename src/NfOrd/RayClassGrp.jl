@@ -1974,8 +1974,12 @@ function find_gens(mR::MapRayClassGrp; coprime_to::fmpz = fmpz(-1))
   end
   
   
-  ctx = _get_ClassGrpCtx_of_order(O)
-  fb = ctx.FB.ideals
+  ctx = _get_ClassGrpCtx_of_order(O, false)
+  if ctx == nothing
+    fb = elem_type(IdealSet(O))[]
+  else
+    fb = ctx.FB.ideals
+  end
   l = length(fb)
   
   q, mq = quo(R, sR, false)
@@ -2005,7 +2009,11 @@ function find_gens(mR::MapRayClassGrp; coprime_to::fmpz = fmpz(-1))
   end
   
   if order(q) != 1
-    p1 = minimum(fb[1])
+    if length(fb) > 0
+      p1 = minimum(fb[1])
+    else
+      p1 = fmpz(2)
+    end
     while order(q) != 1
       p1 = next_prime(p1)
       if gcd(p1, mm) != 1

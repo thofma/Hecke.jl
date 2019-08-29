@@ -355,8 +355,12 @@ function find_gens(K::KummerExt, S::PrimesSet, cp::fmpz=fmpz(1))
   s, ms = snf(q)
   ind = 1
   
-  ctx = _get_ClassGrpCtx_of_order(ZK)
-  fb = ctx.FB.ideals
+  ctx = _get_ClassGrpCtx_of_order(ZK, false)
+  if ctx == nothing
+    fb = elem_type(IdealSet(ZK))[]
+  else
+    fb = ctx.FB.ideals
+  end
   
   for P in fb
     p = minimum(P)

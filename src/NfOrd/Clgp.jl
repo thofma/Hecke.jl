@@ -364,11 +364,16 @@ group of principal ideals.
 """
 function class_group(O::NfOrd; bound::Int = -1, method::Int = 3,
                      redo::Bool = false, unit_method::Int = 1,
-                     large::Int = 1000, use_aut::Bool = false, GRH::Bool = true)
-  c, U, b = _class_unit_group(O, bound = bound, method = method, redo = redo, unit_method = unit_method, large = large, use_aut = use_aut, GRH = GRH)
+                     large::Int = 1000, use_aut::Bool = false, GRH::Bool = true, do_lll::Bool = true)
+  if do_lll
+    L = lll(maximal_order(nf(O)))                   
+  else
+    L = O
+  end
+  c, U, b = _class_unit_group(L, bound = bound, method = method, redo = redo, unit_method = unit_method, large = large, use_aut = use_aut, GRH = GRH)
 
   @assert b == 1
-  return class_group(c)
+  return class_group(c, O)
 end
 
 
@@ -400,6 +405,10 @@ obtained via `[ f(U[1+i]) for i in 1:unit_rank(O) ]`.
 All elements will be returned in factored form.
 """
 function unit_group_fac_elem(O::NfOrd; method::Int = 3, unit_method::Int = 1, use_aut::Bool = false, GRH::Bool = true)
+  c = _get_ClassGrpCtx_of_order(O, false)
+  if c == nothing
+    O = lll(maximal_order(nf(O)))
+  end
   c, U, b = _class_unit_group(O, method = method, unit_method = unit_method, use_aut = use_aut, GRH = GRH)
   @assert b==1
   return unit_group_fac_elem(c, U)
@@ -410,6 +419,10 @@ end
 Computes the regulator of $O$, ie. the discriminant of the unit lattice.    
 """
 function regulator(O::NfOrd; method::Int = 3, unit_method::Int = 1, use_aut::Bool = false, GRH::Bool = true)
+  c = _get_ClassGrpCtx_of_order(O, false)
+  if c == nothing
+    O = lll(maximal_order(nf(O)))
+  end
   c, U, b = _class_unit_group(O, method = method, unit_method = unit_method, use_aut = use_aut, GRH = GRH)
   @assert b==1
   unit_group_fac_elem(c, U)

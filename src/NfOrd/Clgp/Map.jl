@@ -325,17 +325,27 @@ mutable struct MapClassGrp <: Map{GrpAbFinGen, NfOrdIdlSet, HeckeMap, MapClassGr
   end
 end
 
+function change_base_ring(mC::MapClassGrp, O::NfOrd)
+  L = order(codomain(mC))
+  mD = MapClassGrp()
+  mD.header = MapHeader(mC.header.domain, IdealSet(O), x -> IdealSet(O)(mC.header.image(x)), y -> mC.header.preimage(codomain(mC)(y)))
+  return mD
+end
+
 function show(io::IO, mC::MapClassGrp)
   @show_name(io, mC)
   println(io, "ClassGroup map of ")
   show(IOContext(io, :compact => true), codomain(mC))
 end
 
-function class_group(c::ClassGrpCtx; redo::Bool = false)
+function class_group(c::ClassGrpCtx, O::NfOrd = order(c); redo::Bool = false)
   if !redo
     if isdefined(c, :cl_map)
       mC = c.cl_map::MapClassGrp
       C = domain(mC)
+      if O !== order(c)
+        return C, change_base_ring(mC, O)
+      end
       return C, mC
     end
   end  
@@ -359,6 +369,9 @@ function class_group(c::ClassGrpCtx; redo::Bool = false)
   r.header = MapHeader(C, parent(c.FB.ideals[1]), expo, disclog)
 
   c.cl_map = r
+  if O !== order(c)
+    return C, change_base_ring(r, O)
+  end
   return C, r
 end
 
@@ -465,8 +478,15 @@ The generator will be in factored form.
 """
 function isprincipal_fac_elem(A::NfOrdIdl)
   O = order(A)
-  class_group(O)
-  c = _get_ClassGrpCtx_of_order(O)
+  c = _get_ClassGrpCtx_of_order(O, false)
+  if c == nothing
+    L = lll(maximal_order(nf(O)))
+    class_group(L)
+    c = _get_ClassGrpCtx_of_order(L)
+    A = IdealSet(L)(A)
+  else 
+    L = O
+  end
 
   module_trafo_assure(c.M)
 
@@ -495,7 +515,7 @@ function isprincipal_fac_elem(A::NfOrdIdl)
   e = FacElem(vcat(c.R_gen, c.R_rel), rs)*inv(x)  
 
   #reduce e modulo units.
-  e = reduce_mod_units([e], _get_UnitGrpCtx_of_order(O))[1]
+  e = reduce_mod_units([e], _get_UnitGrpCtx_of_order(L))[1]
 
   return true, e
 end
@@ -690,10 +710,17 @@ function sunit_mod_units_group_fac_elem(I::Array{NfOrdIdl, 1})
   #deal with trivial case somehow!!!
   @assert length(I) > 0
   O = order(I[1])
+  I_in = I
 
   @vprint :ClassGroup 1 "calling sunit_mod_units_group_fac_elem with $(length(I)) ideals\n"
 
-  c = _get_ClassGrpCtx_of_order(O)
+  c = _get_ClassGrpCtx_of_order(O, false)
+  if c == nothing
+    L = lll(maximal_order(nf(O)))
+    class_group(L)
+    c = _get_ClassGrpCtx_of_order(L)
+    I = map(IdealSet(L), I)
+  end
   module_trafo_assure(c.M)
   H = c.M.basis
   T = c.M.trafo
@@ -767,7 +794,7 @@ function sunit_mod_units_group_fac_elem(I::Array{NfOrdIdl, 1})
     push!(U, e)  # I don't understand the inv
   end
   @vprint :ClassGroup 1 "reducing mod units\n"
-  @vtime :ClassGroup 1 U = reduce_mod_units(U, _get_UnitGrpCtx_of_order(O))
+  @vtime :ClassGroup 1 U = reduce_mod_units(U, _get_UnitGrpCtx_of_order(order(c)))
   @vprint :ClassGroup 1 "Done!\n"
 
   #for j in 1:length(I)
@@ -776,7 +803,7 @@ function sunit_mod_units_group_fac_elem(I::Array{NfOrdIdl, 1})
 
   C = DiagonalGroup(fmpz[0 for i=U])
   r = MapSUnitModUnitGrpFacElem{typeof(C)}()
-  r.idl = I
+  r.idl = I_in
  
   function exp(a::GrpAbFinGenElem)
     b = U[1]^a.coeff[1, 1]
