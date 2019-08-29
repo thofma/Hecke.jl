@@ -486,7 +486,7 @@ function +(a::NfRelOrdIdl{T, S}, b::NfRelOrdIdl{T, S}) where {T, S}
   check_parent(a, b)
   d = degree(order(a))
   H = vcat(basis_pmatrix(a), basis_pmatrix(b))
-  if T == nf_elem
+  if T === nf_elem
     m = norm(a) + norm(b)
     H = sub(pseudo_hnf_full_rank_with_modulus(H, m, :lowerleft), (d + 1):2*d, 1:d)
   else
@@ -592,7 +592,7 @@ function intersect(a::NfRelOrdIdl{T, S}, b::NfRelOrdIdl{T, S}) where {T, S}
   z = zero_matrix(base_ring(Ma.matrix), d, d)
   M2 = hcat(PseudoMatrix(z, Mb.coeffs), Mb)
   M = vcat(M1, M2)
-  if T == nf_elem
+  if T === nf_elem
     m = intersect(norm(a), norm(b))
     H = sub(pseudo_hnf_full_rank_with_modulus(M, m, :lowerleft), 1:d, 1:d)
   else
