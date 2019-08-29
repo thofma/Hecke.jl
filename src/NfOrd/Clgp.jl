@@ -408,7 +408,6 @@ function unit_group_fac_elem(O::NfOrd; method::Int = 3, unit_method::Int = 1, us
   c = _get_ClassGrpCtx_of_order(O, false)
   if c == nothing
     O = lll(maximal_order(nf(O)))
-    c = _get_ClassGrpCtx_of_order(O)
   end
   c, U, b = _class_unit_group(O, method = method, unit_method = unit_method, use_aut = use_aut, GRH = GRH)
   @assert b==1
