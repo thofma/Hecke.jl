@@ -1379,7 +1379,7 @@ function normal_closure(C::ClassField)
   end
   aut = automorphisms(k)
   @assert length(aut) == degree(k)
-  fin = lcm([induce_image(c[1], x) for x = aut])
+  fin = lcm([induce_image(x, c[1]) for x = aut])
 
   D = ray_class_field(fin, inf, n_quo = Int(exponent(codomain(C.quotientmap))))
   h = norm_group_map(D, C)
@@ -1430,11 +1430,11 @@ end
 function isnormal_easy(C::ClassField)
   aut = automorphisms(base_field(C))
   c, inf = conductor(C)
-  if any(x-> c != induce_image(c, x), aut)
+  if any(x-> c != induce_image(x, c), aut)
     return false
   end
   s1 = Set(inf)
-  if any(x -> s1 != Set(induce_image(y, x) for y = s1), aut)
+  if any(x -> s1 != Set(induce_image(x, y) for y = s1), aut)
     return false
   end
   C = rewrite_with_conductor(C)
@@ -1510,11 +1510,11 @@ function iscentral(C::ClassField)
   aut = automorphisms(base_field(C))
   c, inf = conductor(C)
 
-  if any(x-> c != induce_image(c, x), aut)
+  if any(x-> c != induce_image(x, c), aut)
     return false
   end
   s1 = Set(inf)
-  if any(x -> s1 != Set(induce_image(y, x) for y = s1), aut)
+  if any(x -> s1 != Set(induce_image(x, y) for y = s1), aut)
     return false
   end
   C = rewrite_with_conductor(C)

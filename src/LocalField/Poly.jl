@@ -142,6 +142,8 @@ function Base.gcd(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{padic
   if degree(f) < degree(g)
     f, g = g, f
   end
+  @show f
+  @show g
   while true
     cf = _content(f)
     if !isone(cf)
@@ -203,6 +205,7 @@ function invmod(f::Generic.Poly{qadic}, M::Generic.Poly{qadic})
   if !iszero(valuation(lead(M)))
     error("Not yet implemented")
   end
+  f = rem(f, M)
   if !iszero(valuation(coeff(f, 0))) || !all(x -> x > 0, [valuation(coeff(f, i)) for i = 1:degree(f)])
     g, s, t = gcdx(f, M)
     return s
@@ -220,6 +223,11 @@ function invmod(f::Generic.Poly{qadic}, M::Generic.Poly{qadic})
     c = rem!(c, c, M)
   end
   return g
+end
+
+function _divexact(f::Generic.Poly{padic}, g::Generic.Poly{padic})
+  q = div(f, g)
+  
 end
 
 ################################################################################
@@ -240,6 +248,7 @@ function gcdx(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{padic, qa
       return f, one(Kx), zero(Kx) 
     else
       s = Kx(inv(coeff(g, 0)))
+      @assert one(Kx) == s*g
       return one(Kx), zero(Kx), s
     end
   end
@@ -247,48 +256,58 @@ function gcdx(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{padic, qa
   if !isone(cf)
     f1 = divexact(f, cf)
     d, u, v = gcdx(f1, g)
+    @assert f*divexact(u, cf) + v*g == d
     return d, divexact(u, cf), v
   end
   cg = _content(g)
   if !isone(cg)
     g1 = divexact(g, cg)
     d, u, v = gcdx(f, g1)
+    @assert f*u+divexact(v, cg)*g == d
     return d, u, divexact(v, cg)
   end
   if iszero(valuation(lead(g)))
     q, f1 = divrem(f, g)
     d, u, v = gcdx(g, f1)
+    @assert d == f*v+(u-v*q)*g
     return d, v, u-v*q
   end
   ug, gg = fun_factor(g)
   if iszero(valuation(lead(f)))
     s = invmod(ug, f)
-    t = div(1-s*ug, f)
+    t = divexact(1-s*ug, f)
+    @assert t*f == 1-s*ug
     d, u, v = gcdx(f, gg)
+    @assert d == u*f + v*gg
+    @assert d == (u+v*t*gg)*f + v*s*g
     return d, u+v*t*gg, v*s
   end
   uf, ff = fun_factor(f)
   d, u, v = gcdx(ff, gg)
-  if degree(gg) > 1
+  if degree(gg) >= 1
     s = invmod(uf, gg)
-    t = div(1-s*uf, gg)
+    t = divexact(1-s*uf, gg)
+    @assert t*gg == 1-s*uf
   else
     #gg = 1. Easy to compute Bezout coefficients...
     s = zero(Kx)
     t = one(Kx)
   end
   U = u*s
-  V = u*ff + v*t*gg+s*uf*v
+  V = u*ff*t + v*t*gg+s*uf*v
   d1, u1, v1 = gcdx(reverse(uf), reverse(ug))
   d1 = reverse(d1)
   u1 = reverse(u1)
   v1 = reverse(v1)
-  if degree(ff) > 1
+  @assert d1 == u1*uf+v1*ug
+  if degree(ff) >= 1
     t1 = invmod(ug, ff)
-    s1 = div(1-t1*ug, ff)
+    s1 = divexact(1-t1*ug, ff)
+    @assert t1*ug + s1*ff == one(Kx)
   else
     t1 = zero(Kx)
     s1 = one(Kx)
+    @assert s1*ff + t1*ug == one(Kx)
   end
   U1 = u1*s1
   V1 = s1*ff*v1+t1*u1*uf+t1*v1*ug
@@ -296,7 +315,42 @@ function gcdx(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{padic, qa
   DD = d*d1
   UU = U*U1*f + U1*V*gg+U*V1*ug
   VV = V*V1 
+  @assert DD == UU*f + VV*g
   return DD, UU, VV
+end
+
+function divexact(f::AbstractAlgebra.PolyElem{T}, g::AbstractAlgebra.PolyElem{T}) where T<: Union{padic, qadic}
+   check_parent(f, g)
+   f1 = deepcopy(f)
+   g1 = deepcopy(g)
+   iszero(g) && throw(DivideError())
+   if iszero(f)
+      return zero(parent(f))
+   end
+   lenq = length(f) - length(g) + 1
+   d = Array{T}(undef, lenq)
+   for i = 1:lenq
+      d[i] = zero(base_ring(f))
+   end
+   x = gen(parent(f))
+   leng = length(g)
+   while length(f) >= leng
+      lenf = length(f)
+      q1 = d[lenf - leng + 1] = divexact(coeff(f, lenf - 1), coeff(g, leng - 1))
+      f = f - shift_left(q1*g, lenf - leng)
+      if length(f) == lenf # inexact case
+         set_length!(f, normalise(f, lenf - 1))
+      end
+   end
+   q = parent(f)(d)
+   set_length!(q, lenq)
+   K = base_ring(f)
+   Kt = parent(f)
+   p = prime(K)
+   while !iszero(q*g1 - f1)
+     q = Kt([coeff(q, i) + O(K, p^(prec(q)-1)) for i = 0:degree(q)])
+   end
+   return q
 end
 
 
@@ -413,7 +467,7 @@ function characteristic_polynomial(f::Generic.Poly{T}, g::Generic.Poly{T}) where
     cp = characteristic_polynomial(fL, gL)
     #cp will have coefficients over K, so I need to change the base ring.
     cf = [coeff(coeff(cp, i), 0) for i = 0:degree(cp)]
-    return Kt([K(lift(cf[i])) for i = 1:length(cf)])
+    return Kt([setprecision(K(lift(cf[i])), precision(cf[i])) for i = 1:length(cf)])
   end
   #The resultant will be a polynomial of degree degree(f1). So I need degree(f1)+1 interpolation points.
   ev_points = interpolation_points(K, degree(f)+1)
@@ -636,11 +690,19 @@ function slope_factorization(f::Generic.Poly{T}) where T <: Union{padic, qadic}
         mu = divexact(phi^Int(denominator(s)), uniformizer(K)^(-(Int(numerator(s)))))
         chi = characteristic_polynomial(fphi, mu)
         hchi = Hensel_factorization(chi)
-        fchi = hchi[phi]
-        com = fchi(mu)
-        gc = gcd(com, fphi)
-        fact[gc] = v
-        fphi = divexact(fphi, gc)
+        for (ppp, fff) in hchi
+          if ppp == gen(Kt)
+            continue
+          end
+          com = fff(mu)
+          gc = gcd(com, fphi)
+          fact[gc] = v
+          fphi1 = divexact(fphi, gc)
+          if gc*fphi1 != fphi
+            error("problem!")
+          end
+          fphi = fphi1
+        end
       end
     end
   end

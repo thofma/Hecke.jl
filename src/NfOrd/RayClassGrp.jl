@@ -2076,7 +2076,7 @@ function induce_action(mR::MapRayClassGrp, Aut::Array{Hecke.NfToNfMor, 1} = Heck
     images = Array{GrpAbFinGenElem,1}(undef, length(lgens))
     for i=1:length(lgens) 
       #println("Elem: $(subs[i].coeff)")
-      @vtime :RayFacElem 3 J = induce_image(lgens[i], Aut[k])
+      @vtime :RayFacElem 3 J = induce_image(Aut[k], lgens[i])
       @vtime :RayFacElem 3 images[i] = mR\J
       #println("Image: $(images[i].coeff)")
     end
@@ -2792,13 +2792,13 @@ function induce_action_new(mR::MapRayClassGrp, Aut::Array{Hecke.NfToNfMor, 1})
     images = Array{GrpAbFinGenElem,1}(undef, length(Igens)+length(IPgens))
     for i=1:length(Igens) 
       #println("Elem: $(subs[i].coeff)")
-      @vtime :RayFacElem 3 J = induce_image(Igens[i], Aut[k])
+      @vtime :RayFacElem 3 J = induce_image(Aut[k], Igens[i])
       @vtime :RayFacElem 3 images[i] = mR\J
       #println("Image: $(images[i].coeff)")
     end
     for i = 1:length(IPgens)
       #println("Elem: $(IPsubs[i].coeff)")
-      Pn = induce_image(IPgens[i], Aut[k])
+      Pn = induce_image(Aut[k],IPgens[i])
       images[i+length(Igens)] = mR.disc_log_inf_plc[Pn]
       #println("Image: $(images[i+length(Igens)].coeff)")
     end

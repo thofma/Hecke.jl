@@ -363,7 +363,7 @@ end
 function extend_aut2(A::ClassField, autos::Array{NfToNfMor, 1})
   
   Cp = [x for x in A.cyc if degree(x) % 2 == 0]
-  AA, gAA = number_field([c.A.pol for c in Cp])
+  AA, gAA = number_field([c.A.pol for c in Cp], check = false)
   KK = kummer_extension([2 for i = 1:length(Cp)], [x.a for x in Cp])
   act_on_gens = Array{Array{FacElem{nf_elem, AnticNumberField}, 1}, 1}(undef, length(KK.gen))
   for i = 1:length(KK.gen)
@@ -404,7 +404,7 @@ function extend_aut_pp(A::ClassField, autos::Array{NfToNfMor, 1}, p::fmpz)
   if d == 2
     return extend_aut2(A, autos)
   end
-  AA, gAA = number_field([c.A.pol for c in Cp])
+  AA, gAA = number_field([c.A.pol for c in Cp], check = false)
   #Main Idea: I extend tau to the big kummer extension KK and then I restrict it to AA.
   k = base_field(A)
   C = cyclotomic_extension(k, d)
@@ -528,7 +528,7 @@ function restriction(K::NfRel_ns{nf_elem}, Cp::Vector{ClassField_pp{S, T}}, auto
     all_pe[j] = (pe, tau_pe)
   end
   #AA is the target field 
-  AA, gAA = number_field([c.A.pol for c = Cp], cached = false)
+  AA, gAA = number_field([c.A.pol for c = Cp], cached = false, check = false)
   #And now, linear algebra to compute the restriction
   #I need the product basis fo all the primitive elements of Cp
   B = Array{NfRel_nsElem, 1}(undef, degree(AA))
@@ -754,7 +754,7 @@ function extend_hom(C::ClassField_pp, D::Array{ClassField_pp, 1}, tau)
     
     Ka = Dy.Ka
     KaT, X = PolynomialRing(Ka, "T", cached = false)
-    KK, gKK = number_field([X^Int(divexact(D[j].o, t_corr[j])) - root(evaluate(all_emb[j][1]), Int(t_corr[j])) for j=1:length(D)])
+    KK, gKK = number_field([X^Int(divexact(D[j].o, t_corr[j])) - root(evaluate(all_emb[j][1]), Int(t_corr[j])) for j=1:length(D)], check = false)
     s = gKK[1]
     s = s^Int(divexact(D[1].o, C.o)*all_b[2][1])
     for j in 2:length(D)
@@ -790,7 +790,7 @@ function extend_hom(C::ClassField_pp, D::Array{ClassField_pp, 1}, tau)
     for i=1:d
       push!(M, SRow(B[i]))
     end
-    AA, gAA = number_field([c.A.pol for c = D])
+    AA, gAA = number_field([c.A.pol for c = D], check = false)
     @assert d == degree(AA)
     @assert d == length(B)
     b_AA = basis(AA)

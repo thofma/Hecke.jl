@@ -552,35 +552,36 @@ end
 ################################################################################
 
 # For Carlo:
-(f::NfToNfMor)(x...) = induce_image(f, x...)
+(f::NfToNfMor)(x::NfOrdIdl) = induce_image(f, x)
 
 function induce_image(f::NfToNfMor, x::NfOrdIdl)
-  domain(f) !== codmain(f) && throw(error("Map must be an automorphism"))
+  domain(f) !== codomain(f) && throw(error("Map must be an automorphism"))
   OK = order(x)
-  if ismaximal_known_and_maximal(order(x))
-    # Do
-  else
-    # Check if the elements are in the order
+  K = nf(OK)
+  I = ideal(OK)
+  if isdefined(x, :gen_two)
+    I.gen_two = OK(f(K(x.gen_two)))
   end
-end
-
-# This is the function at the moment:
-function induce_image(A::NfOrdIdl, S::Map)
-  #S has to be an automorphism!!!!
-  O = order(A)
-  K = O.nf
-  B = ideal(order(A), A.gen_one, O(S(K(A.gen_two)))) # set is prime, norm, ...
-  for i in [:is_prime, :gens_normal, :gens_weakly_normal, :is_principal, 
-            :iszero, :minimum, :norm, :splitting_type]
-    if isdefined(A, i)
-      setfield!(B, i, getfield(A, i))
+  if isdefined(x, :princ_gen)
+    I.princ_gen = OK(f(K(x.princ_gen)))
+  end
+  for i in [:gen_one, :is_prime, :gens_normal, :gens_weakly_normal, :is_principal, 
+          :iszero, :minimum, :norm, :splitting_type]
+    if isdefined(x, i)
+      setfield!(I, i, getfield(x, i))
     end
   end
-  if isdefined(A, :princ_gen)
-    B.princ_gen = O(S(K(A.princ_gen)))
+  if !has_2_elem(I)
+    #I need to translate the basis matrix
+    I.basis = map(x -> OK(f(K(x))), basis(x, copy = false))
+    M = zero_matrix(FlintZZ, degree(K), degree(K))
+    for i = 1:degree(K)
+      el = coordinates(I.basis[i])
+      for j = 1:degree(K)
+        M[i, j] = el[j]
+      end
+    end
+    I.basis_matrix = M
   end
-  # whatever is known, transfer it...possibly using S as well...
-  return B
+  return I
 end
-
-

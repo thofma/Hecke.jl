@@ -183,9 +183,9 @@ end
 ###############################################################################
 
 function _Brauer_at_two(list::Vector{FieldsTower}, L::Main.ForeignGAP.MPtr, i::Int)
-  list1 = Vector{FieldsTower}()
   mH, autos, _cocycle_values = cocycle_computation(L, i)
   domcoc = GAP.Globals.ImagesSource(mH)
+  admit_ext = falses(length(list))
   for t = 1:length(list)
     @vprint :Fields 1 "$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())Fields to test: $(length(list)-t+1)"
     K = list[t].field
@@ -232,15 +232,14 @@ function _Brauer_at_two(list::Vector{FieldsTower}, L::Main.ForeignGAP.MPtr, i::I
       end
       
     end
-    #If I am here, all the algebras don't split. I return false
     if obstruction
       list[t].proj_ext = mH
       list[t].auts_for_conductors = auts_for_conductors
-      push!(list1, list[t])
+      admit_ext[t] = true
     end
   end
   @vprint :Fields 1 "$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())"
-  return list1 
+  return list[findall(admit_ext)]
 
 end
 
@@ -307,14 +306,7 @@ function _Brauer_prime_case(list::Vector{FieldsTower}, L::Main.ForeignGAP.MPtr, 
     end
   end
   @vprint :Fields 1 "$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())"
-  it = findall(list1)
-  lfields = Vector{FieldsTower}(undef, length(it))
-  ind = 1
-  for i in it
-    lfields[ind] = list[i]
-    ind += 1
-  end
-  return lfields
+  return list[findall(list1)]
 
 end
 

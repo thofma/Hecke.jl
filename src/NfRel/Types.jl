@@ -220,7 +220,7 @@ end
 #
 ################################################################################
 
-mutable struct NfRel_ns{T} <: NumField{T}
+mutable struct NfRel_ns{T} <: NonSimpleNumField{T}
   base_ring::Nemo.Field
   pol::Array{Nemo.Generic.MPoly{T}, 1}
   abs_pol::Array{Generic.Poly{T}, 1}
