@@ -747,7 +747,7 @@ function _ext_and_autos(resul::Vector{Hecke.ClassField{S, T}}, autos::Vector{NfT
   for i = 1:length(resul)
     append!(pols, [Hecke.isunivariate(resul[i].A.pol[w])[2] for w = 1:length(resul[i].A.pol)])
   end
-  L, gL = number_field(pols, cached = false)
+  L, gL = number_field(pols, cached = false, check = false)
   autL = Vector{Hecke.NfRel_nsToNfRel_nsMor{nf_elem}}()
   imgs_auts_base_field = Vector{Vector{Hecke.NfRel_nsElem{nf_elem}}}(undef, length(autos))
   for i = 1:length(autos)
@@ -1144,14 +1144,14 @@ function translate_fields_up(class_fields, new_class_fields, subfields, it)
         coeffs[s] = zero(Lzeta)
       end
       coeffs[end] = one(Lzeta)
-      Cpp.K = number_field(Lt(coeffs), cached = false)[1]
+      Cpp.K = number_field(Lt(coeffs), cached = false, check = false)[1]
       #The target extension
       fdef = Ccyc.A.pol
       coeffs1 = Vector{nf_elem}(undef, degree(fdef)+1)
       for s = 1:length(coeffs1)
         coeffs1[s] = mL(coeff(fdef, s-1))
       end
-      Cpp.A = number_field(Ky(coeffs1), cached = false)[1]
+      Cpp.A = number_field(Ky(coeffs1), cached = false, check = false)[1]
       #Now, the primitive element of the target extension seen in Cpp.K
       mrel2 = Hecke.NfRelToNfRelMor(Ccyc.K, Cpp.K, D[d], gen(Cpp.K))
       Cpp.pe = mrel2(Ccyc.pe) 
@@ -1159,7 +1159,7 @@ function translate_fields_up(class_fields, new_class_fields, subfields, it)
       cyc[j] = Cpp
     end
     C.cyc = cyc
-    C.A = number_field([cyc[j].A.pol for j = 1:length(cyc)], cached = false)[1]
+    C.A = number_field([cyc[j].A.pol for j = 1:length(cyc)], cached = false, check = false)[1]
   end
   return nothing
 

@@ -758,7 +758,7 @@ function abelian_extensions(O::Union{FlintIntegerRing, FlintRationalField},
 
   newlist = Vector{NfAbsNS}(undef, length(l))
   for j in 1:length(l)
-    newlist[j], _ = number_field([Qx([coeff(coeff(f, i), 0) for i in 0:length(f)]) for f in l[j].abs_pol])
+    newlist[j], _ = number_field([Qx([coeff(coeff(f, i), 0) for i in 0:length(f)]) for f in l[j].abs_pol], check = false)
   end
   return newlist
 end
@@ -931,7 +931,7 @@ function quadratic_extensions(bound::Int; tame::Bool=false, real::Bool=false, co
   end
   if tame
     filter!( x -> mod(x,4)==1, sqf)
-    return ( number_field(x^2-x+divexact(1-i,4), cached=false)[1] for i in sqf)
+    return ( number_field(x^2-x+divexact(1-i,4), cached=false, check = false)[1] for i in sqf)
   end
   final_list=Int[]
   for i=1:length(sqf)
@@ -943,7 +943,7 @@ function quadratic_extensions(bound::Int; tame::Bool=false, real::Bool=false, co
       @views push!(final_list,sqf[i])
     end
   end
-  return ( mod(i,4)!=1 ? number_field(x^2-i, cached=false)[1] : number_field(x^2-x+divexact(1-i,4), cached = false)[1] for i in final_list)
+  return ( mod(i,4)!=1 ? number_field(x^2-i, cached=false, check = false)[1] : number_field(x^2-x+divexact(1-i,4), cached = false, check = false)[1] for i in final_list)
 
 end
 
@@ -1029,7 +1029,7 @@ function _ext(Ox,x,i,j)
   else
     pol2=x^2-x+divexact(1-j,4)
   end
-  return number_field([pol1,pol2], cached = false)
+  return number_field([pol1,pol2], cached = false, check = false)
 
 end
 
@@ -1088,7 +1088,7 @@ function _C22_with_max_ord(l)
   Qx, x = PolynomialRing(FlintQQ, "x", cached = false)
   K = NumberField(x-1, cached = false)[1]
   for (p1, p2) in l
-    Kns, g = number_field(fmpz_poly[p1, p2])
+    Kns, g = number_field(fmpz_poly[p1, p2], check = false)
     S, mS = simple_extension(Kns, check = false)
     d1 = discriminant(p1)
     d2 = discriminant(p2)
@@ -1305,7 +1305,7 @@ function _from_relative_to_absQQ(L::NfRel_ns{T}, auts::Array{NfRel_nsToNfRel_nsM
     f = Qx([coeff(coeff(fK, j), 0) for j = 0:degree(fK)])
     polys[i] = f
   end
-  NS, gNS = number_field(polys)
+  NS, gNS = number_field(polys, check = false)
   gpols = gens(parent(gNS[1]))
   B, lp = maximal_order_of_components(NS)
   K, mK = simple_extension(NS, check = false)

@@ -795,15 +795,18 @@ Hecke.FieldElem
 end
 
 
+function simultaneous_diagonalization(L...; check::Bool = true)
+  return simultaneous_diagonalization(collect(L), check = check)
+end 
+
 @doc Markdown.doc"""
-    simuldiag(L::Array{S, 1}; splitting_field::Bool=false)
-> Returns a tuple whose first entry is the transformation matrix and whose
-> second entry is an array of matrices containing the diagonal forms of
-> the elements of $L$. 
-> If "check" is set to true, the algorithm checks whether
-> the matrices in $L$ are simultaneous diagonalizable before computing the transformation matrix. Default value is "true".
+    simultaneous_diagonalization(L::Array{S, 1}; check::Bool=false)
+Returns a tuple whose first entry is the transformation matrix and whose
+second entry is an array of matrices containing the diagonal forms of
+the elements of $L$. If "check" is set to true, the algorithm checks whether
+the matrices in $L$ are simultaneous diagonalizable before computing the transformation matrix. Default value is "true".
 """
-function simuldiag(L::Vector{S}, check::Bool = true) where S <: MatElem{T} where T <: FieldElem
+function simultaneous_diagonalization(L::Vector{S}; check::Bool = true) where S <: MatElem{T} where T <: FieldElem
 
   if check
     if !issimultaneous_diagonalizable(L)
@@ -838,6 +841,18 @@ function simuldiag(L::Vector{S}, check::Bool = true) where S <: MatElem{T} where
   return A, D
 end
 
+@doc Markdown.doc"""
+    simultaneous_diagonalization(L::Array{MatElem, 1}, K::Field; check::Bool=false)
+Returns a tuple whose first entry is the transformation matrix and whose
+second entry is an array of matrices containing the diagonal forms of
+the elements of $L$ computed over the field $K$. If "check" is set to true, the algorithm checks whether
+the matrices in $L$ are simultaneous diagonalizable before computing the transformation matrix. Default value is "true".
+"""
+function simultaneous_diagonalization(L::Vector{S}, K::W; check::Bool = true) where S <: MatElem{T} where T <: FieldElem where W<:Field
+  L1 = [change_base_ring(x, K) for x in L]
+  return simultaneous_diagonalization(L1, check = check)
+end
+
 
 function common_eigenspaces(L::Array{Dict{Vector{T}, S}, 1}) where S<:Hecke.MatElem{T} where T<:Hecke.FieldElem
 
@@ -849,42 +864,16 @@ function common_eigenspaces(L::Array{Dict{Vector{T}, S}, 1}) where S<:Hecke.MatE
   return intersect_eigenspaces(common_eigenspaces(L[1:k]), common_eigenspaces(L[k+1:n]))
 end
 
+function intersect_eigenspaces(L1::Dict{Array{T, 1}, S}, L2::Dict{Array{T, 1}, S}) where S<:Hecke.MatElem{T} where T <: Hecke.FieldElem
 
-################################################################################
-#
-#  Interface for modules and homomorphisms
-#
-################################################################################
-#=
-function isendomorphism(f::ModuleHomomorphism{T}) where T
-  return domain(f) == codomain(f)
-end
-
-function issimilar(f::ModuleHomomorphism{T}, g::ModuleHomomorphism{T}) where T <: FieldElem
-  @assert isendomorphism(f) && isendomorphism(g)
-  return issimilar(f.matrix, g.matrix)
-end
-
-function minpoly(f::ModuleHomomorphism{T}) where T <: FieldElem
-  @assert isendomorphism(f)
-  return minpoly(f.matrix)
-end
-
-function issemisimple(f::ModuleHomomorphism{T}) where T <: FieldElem
-  @assert isendomorphism(f)
-  return issquarefree(minpoly(f))
-end
-
-function isnilpotent(f::ModuleHomomorphism{T}) where T <: FieldElem
-  @assert isendomorphism(f)
-  mp = minpoly(f)
-  isnil = true
-  for i = 0:degree(mp)-1
-    if !iszero(coeff(mp, i))
-      isnil = false
-      break
+  L = Dict{keytype(L1), valtype(L1)}()
+  for (k1, v1) in L1
+    for (k2, v2) in L2
+      I = intersect_spaces(v1, v2)
+      if !iszero(I)
+        push!(L, vcat(k1, k2)  => I)
+      end
     end
   end
-  return isnil
+  return L
 end
-=#

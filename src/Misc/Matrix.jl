@@ -692,6 +692,40 @@ end
 
 ################################################################################
 #
+#  Diagonal (block) matrix creation
+#
+################################################################################
+@doc Markdown.doc"""
+    diagonal_matrix(x::Vector{T}) where T <: RingElem -> MatElem{T}
+
+Returns a diagonal matrix whose diagonal entries are the element of $x$.
+"""
+function diagonal_matrix(x::Vector{T}) where T <: RingElem
+  M = zero_matrix(T, length(x), length(x))
+  for i = 1:length(x)
+    M[i, i] = x[i]
+  end
+  return M
+end
+
+function diagonal_matrix(x::T...) where T <: RingElem
+  return diagonal_matrix(collect(x))
+end
+
+@doc Markdown.doc"""
+    diagonal_matrix(x::Vector{T}) where T <: MatElem -> MatElem
+
+Returns a block diagonal matrix whose diagonal blocks are the matrices in $x$.
+"""
+function diagonal_matrix(x::Vector{T}) where T <: MatElem
+  return cat(x, dims = (1, 2))
+end
+
+function diagonal_matrix(x::T...) where T <: MatElem
+  return cat(collect(x), dims = (1, 2))
+end
+################################################################################
+#
 #  Copy matrix into another matrix
 #
 ################################################################################

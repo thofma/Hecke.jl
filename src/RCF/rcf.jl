@@ -100,7 +100,7 @@ function NumberField(CF::ClassField{S, T}; redo::Bool = false) where {S, T}
     q[i] = G[i]
   end
   CF.cyc = res
-  CF.A = number_field([x.A.pol for x = CF.cyc])[1]
+  CF.A = number_field([x.A.pol for x = CF.cyc], check = false)[1]
   return CF.A
 end
 

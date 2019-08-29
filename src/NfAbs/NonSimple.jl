@@ -832,13 +832,8 @@ function simple_extension(K::NfAbsNS; check = true)
 end
 
 function NumberField(K1::AnticNumberField, K2::AnticNumberField; cached::Bool = false, check::Bool = false)
-
-  if check
-    #I have to check that the fields are linearly disjoint
-    @assert islinearly_disjoint(K1, K2)
-  end
   
-  K , l= number_field([K1.pol, K2.pol], "_\$")
+  K , l = number_field([K1.pol, K2.pol], "_\$", check = check, cached = cached)
   mp1 = NfAbsToNfAbsNS(K1, K, l[1])
   mp2 = NfAbsToNfAbsNS(K2, K, l[2])
   return K, mp1, mp2
@@ -858,7 +853,7 @@ we construct
  $$K = Q[t_1, \ldots, t_n]/\langle f_1(t_1), \ldots, f_n(t_n)\rangle$$
 The ideal bust be maximal, however, this is not tested.
 """
-function NumberField(f::Array{fmpq_poly, 1}, s::String="_\$"; cached::Bool = false, check::Bool = false)
+function NumberField(f::Array{fmpq_poly, 1}, s::String="_\$"; cached::Bool = false, check::Bool = true)
   S = Symbol(s)
   n = length(f)
   Qx, x = PolynomialRing(FlintQQ, n, s)
@@ -866,10 +861,15 @@ function NumberField(f::Array{fmpq_poly, 1}, s::String="_\$"; cached::Bool = fal
               Symbol[Symbol("$s$i") for i=1:n], cached)
   K.degrees = [degree(f[i]) for i in 1:n]
   K.degree = prod(K.degrees)
+  if check
+    if !check_consistency(K)
+      error("The fields are not linearly disjoint!")
+    end
+  end
   return K, gens(K)
 end
 
-function NumberField(f::Array{fmpz_poly, 1}, s::String="_\$"; cached::Bool = false, check::Bool = false)
+function NumberField(f::Array{fmpz_poly, 1}, s::String="_\$"; cached::Bool = false, check::Bool = true)
   S = Symbol(s)
   n = length(f)
   Qx, x = PolynomialRing(FlintQQ, n, s)
@@ -877,6 +877,11 @@ function NumberField(f::Array{fmpz_poly, 1}, s::String="_\$"; cached::Bool = fal
               Symbol[Symbol("$s$i") for i=1:n], cached)
   K.degrees = [degree(f[i]) for i in 1:n]
   K.degree = prod(K.degrees)
+  if check
+    if !check_consistency(K)
+      error("The fields are not linearly disjoint!")
+    end
+  end
   return K, gens(K)
 end
 

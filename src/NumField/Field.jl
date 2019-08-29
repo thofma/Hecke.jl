@@ -364,3 +364,40 @@ function normal_basis(L::NumField)
   end
   return r
 end
+
+################################################################################
+#
+#  Check linearly disjointness
+#
+################################################################################
+
+function check_consistency(K::NonSimpleNumField)
+  QQz, z = PolynomialRing(base_field(K), "z")
+  for i = 1:length(K.pol)
+    v = [zero(QQz) for i in 1:length(K.pol)]
+    v[i] = z
+    p = evaluate(K.pol[i], v)
+    if !isirreducible(p)
+      return false
+    end
+  end
+  lg = gens(K)
+  el = lg[1]
+  f = minpoly(el)
+  d = degree(f)
+  for i = 2:length(lg)
+    el += lg[i]
+    f = minpoly(el)
+    while !issquarefree(f)
+      el += lg[i]
+      f = minpoly(el)
+    end
+    if degree(f) != prod(degree(K.pol[j], j) for j = 1:i)
+      return false
+    end
+    if !isirreducible(f)
+      return false
+    end 
+  end
+  return true
+end

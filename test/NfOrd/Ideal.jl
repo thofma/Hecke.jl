@@ -32,6 +32,10 @@
     @test I == J && J == K && K == M && M == L && L == I
 
     I2 = @inferred ideal(O2, O2(1 + a2))
+    
+    Ib = basis(I2)
+    II = ideal(O2, Ib)
+    @test I2 == II
   end
 
   I = ideal(O1, -17)
