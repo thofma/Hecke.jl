@@ -1,5 +1,3 @@
-
-
 add_verbose_scope(:Fields)
 add_assert_scope(:Fields)
 
