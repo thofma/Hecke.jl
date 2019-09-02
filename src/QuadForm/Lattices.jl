@@ -139,7 +139,6 @@ function hermitian_lattice(K::NumField, B::MatElem; gram_ambient_space = nothing
 
     P = pseudo_matrix(B)
     z = HermLat{typeof(K), typeof(base_field(K)), typeof(B), typeof(P), morphism_type(typeof(K))}()
-    @show z
     z.pmat = P
     z.gram = gram
     z.involution = involution
@@ -166,7 +165,6 @@ function hermitian_lattice(K::NumField, B::PMat; gram_ambient_space = nothing, g
     end
 
     z = HermLat{typeof(K), typeof(base_field(K)), typeof(gram), typeof(B), morphism_type(typeof(K))}()
-    @show z
     z.pmat = P
     z.gram = gram
     z.involution = involution
@@ -265,7 +263,7 @@ function discriminant(L::AbsLat)
   v = involution(L)
   C = coefficient_ideals(L)
   I = prod(J for J in C)
-  return d * I * induce_image(I, v)
+  return d * I * v(I)
 end
 
 ################################################################################
@@ -462,10 +460,10 @@ end
 function scale(L::HermLat)
   G = gram_matrix_of_basis(L)
   C = coefficient_ideals(L)
-  to_sum = [ G[i, j] * C[i] * induce_image(C[j], involution(L)) for j in 1:length(C) for i in 1:j ]
+  to_sum = [ G[i, j] * C[i] * involution(L)(C[j]) for j in 1:length(C) for i in 1:j ]
   d = length(to_sum)
   for i in 1:d
-    push!(to_sum, induce_image(to_sum[i], involution(L)))
+    push!(to_sum, involution(L)(to_sum[i]))
   end
   return sum(to_sum)
 end
@@ -575,6 +573,115 @@ end
 #
 ################################################################################
 
+function bad_primes(L::AbsLat; even::Bool = false)
+  s = scale(L)
+  f = factor(scale(L))
+  ff = factor(volume(L))
+  for (p, e) in ff
+    f[p] = 0
+  end
+  if even
+    for p in prime_decomposition(s, 2)
+      f[p] = 0
+    end
+  end
+  return collect(keys(f))
+end
+
+################################################################################
+#
+#  Jordan decomposition
+#
+################################################################################
+
+function jordan_decomposition(L::AbsLat, p)
+  F = gram_matrix(ambient_space(L))
+  even = 2 in p
+  if even
+    pi = elem_in_nf(uniformizer(p))
+  else
+    pi = zero(nf(order(p)))
+  end
+
+  oldval = PosInf()
+  blocks = Int[]
+  exponents = Int[]
+  S = local_basis_matrix(L,p)
+  @show S
+  @show F
+  n = ncols(S)
+  k = 1
+  while k <= n
+    G = S * F * transpose(S)
+    @show k
+    @show G
+    X = Union{Int, PosInf}[ valuation(G[i, i], p) for i in k:n]
+    m, ii = findmin(X)
+    ii = ii + (k - 1)
+    pair = (ii, ii)
+
+    for i in k:n
+      for j in (i + 1):n
+        tmp = iszero(G[i, j]) ? inf : valuation(G[i, j], p)
+        if tmp < m
+          m = temp
+          pair = (i, j)
+        end
+      end
+    end
+
+    if m != oldval
+      push!(blocks, k)
+      oldval = m
+      push!(exponents, m)
+    end
+
+    if even && pair[1] != pair[2]
+      swap_rows!(S, pair[1], k)
+      swap_rows!(S, pair[2], k +1)
+
+      T12 = (sub(S, k:k, 1:ncols(S)) * F * transpose(sub(S, k+1:k+1, 1:ncols(S))))[1, 1]
+      for l in 1:ncols(S)
+        S[k, l] = S[k, l] * pi^valuation(T12, p)//T12
+      end
+
+      T = (i, j) -> (sub(S, i:i, 1:ncols(S)) * F * transpose(sub(S, j:j, 1:ncols(S))))[1, 1]
+      T11 = T(k, k)
+      T22 = T(k + 1, k + 1)
+      T12 = T(k, k + 1)
+      d = T11*T22 - T12^2
+      for l in (k + 2):n
+        tl = T12 * T(k + 1, l) - T22 * T(k, l)
+        ul = T12 * T(k, l) - T11 * T(k + 1, l)
+        for u in 1:ncols(S)
+          S[l, u] = (tl//d) * S[k, l] + (ul//d) * S[k + 1, u]
+        end
+      end
+      k = k + 2
+    else
+      if pair[1] == pair[2]
+        swap_rows!(S, pair[1], k)
+      else
+        for u in 1:ncols(S)
+          S[pair[1], u] = S[pair[1], u] + S[pair[2], u]
+          swap_rows!(S, pair[1], k)
+        end
+      end
+      nrm = (sub(S, k:k, 1:ncols(S)) * F * transpose(sub(S, k:k, 1:ncols(S))))[1, 1]
+      XX = sub(S, k:k, 1:ncols(S)) * F * transpose(S)
+      for l in k+1:n
+        for u in 1:ncols(S)
+          S[l, u] = S[l, u] - XX[1,l]//nrm * S[k, u]
+        end
+      end
+      k = k + 1
+    end
+  end
+
+  push!(blocks, n+1)
+  matrices = [ sub(S, blocks[i]:(blocks[i+1] - 1), 1:ncols(S)) for i in 1:(length(blocks) - 1)]
+  return matrices, [ m * F * transpose(m) for m in matrices], exponents
+end
 
 ################################################################################
 #
@@ -677,8 +784,8 @@ function _local_basis_supermodule_matrix(a::PMat, p::NfOrdIdl)
   return z
 end
 
-function induce_image(A::NfOrdFracIdl, S::Map)
-  return induce_image(numerator(A), S)//denominator(A)
+function image(S::T, A::NfOrdFracIdl) where {T <: Map}
+  return S(numerator(A))//denominator(A)
 end
 
 function ideal_trace(I)
