@@ -568,8 +568,10 @@ end
 
 Returns a triple `(d, H, I)` of invariants of `M`, which determine the
 equivalence class completely. The element `d` is the determinant of a Gram
-matrix, `H` contains the non-trivial Hasse invariants and `I` containes for
+matrix, `H` contains the non-trivial Hasse invariants and `I` contains for
 each real place the negative index of inertia.
+
+Note that `d` is determined only modulo squares.
 """
 invariants(V::QuadSpace) = _quadratic_form_invariants(gram_matrix(V))
 
