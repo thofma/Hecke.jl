@@ -241,7 +241,7 @@ end
 function factor_mod_pk(f::fmpz_poly, p::Int, k::Int)
   H = HenselCtx(f, fmpz(p))
   if H.r == 1
-    return Dict(a.f => 1)
+    return Dict(H.f => 1)
   end
   start_lift(H, k)
   return factor_to_dict(H.LF)
