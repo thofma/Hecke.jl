@@ -886,6 +886,7 @@ function sunit_group_fac_elem(I::Array{NfOrdIdl, 1})
   function log(a::FacElem{nf_elem, AnticNumberField})
     a1 = preimage(mS, a)
     a2 = a*inv(image(mS, a1))
+#    @assert isunit(O(evaluate(a2)))
     a3 = preimage(mU, a2)
     return G(vcat([a3.coeff[1,i] for i=1:ncols(a3.coeff)], [a1.coeff[1,i] for i=1:ncols(a1.coeff)]))
   end
