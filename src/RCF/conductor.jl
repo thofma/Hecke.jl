@@ -1683,15 +1683,25 @@ function minimum(m::T, I::NfOrdIdl) where T <: Map{AnticNumberField, AnticNumber
   K = codomain(m)
   @assert K == nf(order(I))
   k = domain(m)
-  assure_2_normal(I)
   zk = maximal_order(k)
+  assure_2_normal(I) # basically implies order(I) is maximal
+  if !isone(gcd(minimum(I), index(order(I))))
+    bk = map(m, basis(maximal_order(k), k))
+    bK = map(K, basis(I))
+    d = lcm(lcm(map(denominator, bk)), lcm(map(denominator, bK)))
+    F = FreeModule(FlintZZ, degree(K))
+    sk = sub(F, [F(matrix(FlintZZ, 1, degree(K), coeffs(d*x))) for x = bk])
+    sK = sub(F, [F(matrix(FlintZZ, 1, degree(K), coeffs(d*x))) for x = bK])
+    m = intersect(sk[1], sK[1])
+    return ideal(zk, [zk(collect(x.v)) for x = map(m[2], gens(m[1]))])
+  end
 
   @assert K == nf(order(I))
   k = domain(m)
   kt, t = PolynomialRing(k, cached = false)
   Qt = parent(K.pol)
   h = gcd(gen(k) - evaluate(Qt(m(gen(k))), t), evaluate(K.pol, t))
-  g, ai, _ = gcdx(evaluate(Qt(I.gen_two.elem_in_nf), t), h)
+  g, ai, _ = gcdx(evaluate(Qt(I.gen_two.elem_in_nf), t) % h, h)
   @assert g == 1
   #so ai * a = 1 in K/k
   c = content_ideal(ai, zk)
