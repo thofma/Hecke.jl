@@ -371,7 +371,7 @@ end
 #
 ################################################################################
 
-function check_consistency(K::NonSimpleNumField)
+function _check_consistency(K::NonSimpleNumField)
   QQz, z = PolynomialRing(base_field(K), "z")
   for i = 1:length(K.pol)
     v = [zero(QQz) for i in 1:length(K.pol)]

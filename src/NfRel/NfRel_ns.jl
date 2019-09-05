@@ -187,13 +187,13 @@ end
 #
 ################################################################################
 
-function Nemo.NumberField(f::Array{Generic.Poly{T}, 1}, s::String="_\$"; cached::Bool = false, check::Bool = true) where T
+function NumberField(f::Array{Generic.Poly{T}, 1}, s::String="_\$"; cached::Bool = false, check::Bool = true) where T
   S = Symbol(s)
   R = base_ring(f[1])
   Rx, x = PolynomialRing(R, length(f), s)
   K = NfRel_ns(f, [f[i](x[i]) for i=1:length(f)], [Symbol("$s$i") for i=1:length(f)])
   if check
-    if !check_consistency(K)
+    if !_check_consistency(K)
       error("The fields are not linearly disjoint!")
     end
   end

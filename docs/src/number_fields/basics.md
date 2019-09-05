@@ -31,7 +31,7 @@ system. Two number fields defined using the same polynomial from the
 identical polynomial ring and the same (identical) symbol/ string
 will be identical if `cached == true` and different if `cached == false`.
 
-#### Example
+#### Example +
 
 ```@repl
 using Hecke # hide
@@ -46,7 +46,7 @@ NumberField(::Vector{PolyElem{<:Union{NumFieldElem, fmpq}}}, ::String)
 ```
 ---
 
-#### Example
+#### Example +
 
 ```@repl
 using Hecke # hide
@@ -60,9 +60,6 @@ minpoly(g[1] + g[2])
 
 ```@docs
 absolute_field(K::NumField)
-```
-
-```@docs
 simple_extension(::NonSimpleNumField)
 ```
 
