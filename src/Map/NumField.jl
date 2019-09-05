@@ -190,3 +190,11 @@ end
 function (f::NumFieldMor)(x)
   return image(f, x)
 end
+
+function image_primitive_element(f::NumFieldMor{AnticNumberField})
+  return f.image_data.prim_img
+end
+
+function image_primitive_element(f::NumFieldMor{<:NfRel})
+  return f.image_data.prim_img
+end
