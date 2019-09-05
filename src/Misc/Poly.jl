@@ -2,7 +2,7 @@
 export rational_reconstruction, farey_lift, div, valence, leading_coefficient,
        trailing_coefficient, constant_coefficient, factor_mod_pk,
        factor_mod_pk_init, hensel_lift, rres, rresx,
-       coefficients
+       coefficients, polynomial
 
 function PolynomialRing(R::Ring; cached::Bool = false)
   return PolynomialRing(R, "x", cached = cached)
@@ -1290,5 +1290,24 @@ end
 
 function (f::acb_poly)(x::acb)
   return evaluate(f, x)
+end
+
+function polynomial(A::Array{T, 1}) where {T <: RingElem}
+  P = parent(A[1])
+  @assert all(x->parent(x) == P, A)
+  Pt, t = PolynomialRing(P, cached = false)
+  return Pt(A)
+end
+
+function polynomial(R::Ring, A::Array{T, 1}) where {T <: RingElem}
+  return polynomial(map(R, A))
+end
+
+function polynomial(R::Ring, A::Array{T, 1}) where {T <: Integer}
+  return polynomial(map(R, A))
+end
+
+function polynomial(R::Ring, A::Array{T, 1}) where {T <: Rational}
+  return polynomial(map(R, A))
 end
 
