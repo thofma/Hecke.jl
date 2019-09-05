@@ -1284,3 +1284,11 @@ function roots(f::fmpq_poly; max_roots::Int = degree(f))
   return roots(g, FlintQQ)
 end
 
+function roots(f::Union{fmpz_poly, fmpq_poly}, R::AcbField, abs_tol::Int=R.prec, initial_prec::Int...)
+  return _roots(f, abs_tol, initial_prec...)
+end
+
+function (f::acb_poly)(x::acb)
+  return evaluate(f, x)
+end
+
