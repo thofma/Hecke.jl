@@ -713,6 +713,11 @@ Base.showerror(io::IO, e::LowPrecisionLLL) =
     print(io, """
     Transformation matrix has too large entries relative to precision in LLL""")
 
+mutable struct NotImplemented <: Exception end
+
+Base.showerror(io::IO, ::NotImplemented) =
+    print(io, """Not implemented (yet).""")
+
 # what is this function doing here?
 function checkbounds(a::Int, b::Int) nothing; end;
 
