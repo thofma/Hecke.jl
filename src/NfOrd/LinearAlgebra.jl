@@ -245,6 +245,8 @@ coefficient_ideals(M::PMat) = M.coeffs
 
 matrix(M::PMat) = M.matrix
 
+base_ring(M::PMat) = order(M.coeffs[1])
+
 function PseudoMatrix(m::Generic.Mat{T}, c::Array{S, 1}) where {T, S}
   # sanity checks
   @assert nrows(m) == length(c)

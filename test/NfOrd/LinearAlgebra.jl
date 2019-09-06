@@ -1,5 +1,16 @@
 @testset "Linear algebra" begin
 
+  @testset "Dixon solve" begin
+    Qx, x = FlintQQ["x"]
+    K, a = number_field(x^3 + 3)
+    A = rand(MatrixSpace(K, 4, 4), 10:100)
+    while det(A) == 0
+      A = rand(MatrixSpace(K, 4, 4), 10:100)
+    end
+    b = rand(MatrixSpace(K, 4 ,1), 10:100)
+    @test A * Hecke.solve_dixon(A, b) == b
+  end
+
   @testset "Pseudo matrices" begin
 
     Qx, x = PolynomialRing(FlintQQ, "x")
