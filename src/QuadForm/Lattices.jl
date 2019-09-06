@@ -50,9 +50,9 @@ spanned by the pseudo-matrix $B$ inside the quadratic space over $K$ with gram
 matrix $F$.
 
 If $F$ is not supplied, the gram matrix of the ambient space will be the
-identity matrix
+identity matrix.
 """
-quadratic_lattice(::NumField, B::PMat; gram_ambient_space = nothing)
+quadratic_lattice(::NumField, ::PMat; gram_ambient_space = nothing)
 
 # TODO: At the moment I assume that B is a pseudo-hnf (probably)
 function quadratic_lattice(K::NumField, B::PMat; gram_ambient_space = nothing, gram = nothing)
@@ -79,9 +79,9 @@ spanned by the rows $B$ inside the quadratic space over $K$ with gram matrix
 $F$.
 
 If $F$ is not supplied, the gram matrix of the ambient space will be the
-identity matrix
+identity matrix.
 """
-quadratic_lattice(::NumField, B::MatElem; gram_ambient_space = nothing)
+quadratic_lattice(::NumField, ::MatElem; gram_ambient_space = nothing)
 
 function quadratic_lattice(K::NumField, B::MatElem; gram_ambient_space = nothing, gram = nothing)
   if gram_ambient_space === nothing && gram === nothing
@@ -149,9 +149,9 @@ spanned by the pseudo-matrix $B$ inside the hermitian space over $K$ with gram
 matrix $F$.
 
 If $F$ is not supplied, the gram matrix of the ambient space will be the
-identity matrix
+identity matrix.
 """
-hermitian_lattice(::NumField, B::PMat; gram_ambient_space = nothing)
+hermitian_lattice(::NumField, ::PMat; gram_ambient_space = nothing)
 
 function hermitian_lattice(K::NumField, B::PMat; gram_ambient_space = nothing, gram = nothing)
   if gram_ambient_space === nothing && gram === nothing
@@ -187,9 +187,9 @@ spanned by the rows $B$ inside the hermitian space over $K$ with gram matrix
 $F$.
 
 If $F$ is not supplied, the gram matrix of the ambient space will be the
-identity matrix
+identity matrix.
 """
-hermitian_lattice(::NumField, B::MatElem; gram_ambient_space = nothing)
+hermitian_lattice(::NumField, ::MatElem; gram_ambient_space = nothing)
 
 function hermitian_lattice(K::NumField, B::MatElem; gram_ambient_space = nothing, gram = nothing)
   if gram_ambient_space === nothing && gram === nothing
@@ -318,7 +318,7 @@ end
 
 ################################################################################
 #
-#  Module invariants
+#  Module properties
 #
 ################################################################################
 
@@ -684,36 +684,6 @@ end
 
 ################################################################################
 #
-#  Local basis matrix
-#
-################################################################################
-
-@doc Markdown.doc"""
-    local_basis_matrix(L::AbsLat, p::NfOrdIdl; type = :any) -> MatElem
-
-Given a prime ideal $\mathfrak p$ and a lattice $L$, this functions returns
-a basis matrix of lattice $M$ such that $M_{\mathfrak{p}} = L_{\mathfrak{p}}$.
-
-- If `type == :submodule`, the lattice $L$ will be a sublattice of $M$.
-- If `type == :supermodule`, the lattice $L$ will be a superlattice of $M$.
-- If `type == :any`, there may not be any containment relation between $M$ and
-  $L$.
-"""
-function local_basis_matrix(L::AbsLat, p; type::Symbol = :any)
-  if type == :any
-    return _local_basis_matrix(pseudo_matrix(L), p)
-  elseif type == :submodule
-    return _local_basis_submodule_matrix(pseudo_matrix(L), p)
-  elseif type == :supermodule
-    return _local_basis_supermodule_matrix(pseudo_matrix(L), p)
-  else
-    throw(error("""Invalid :type keyword :$(type).
-                   Must be either :any, :submodule, or :supermodule"""))
-  end
-end
-
-################################################################################
-#
 #  Norm
 #
 ################################################################################
@@ -936,6 +906,37 @@ end
 
 ################################################################################
 #
+#  Local basis matrix
+#
+################################################################################
+
+@doc Markdown.doc"""
+    local_basis_matrix(L::AbsLat, p::NfOrdIdl; type = :any) -> MatElem
+
+Given a prime ideal $\mathfrak p$ and a lattice $L$, this functions returns
+a basis matrix of lattice $M$ such that $M_{\mathfrak{p}} = L_{\mathfrak{p}}$.
+
+- If `type == :submodule`, the lattice $L$ will be a sublattice of $M$.
+- If `type == :supermodule`, the lattice $L$ will be a superlattice of $M$.
+- If `type == :any`, there may not be any containment relation between $M$ and
+  $L$.
+"""
+function local_basis_matrix(L::AbsLat, p; type::Symbol = :any)
+  if type == :any
+    return _local_basis_matrix(pseudo_matrix(L), p)
+  elseif type == :submodule
+    return _local_basis_submodule_matrix(pseudo_matrix(L), p)
+  elseif type == :supermodule
+    return _local_basis_supermodule_matrix(pseudo_matrix(L), p)
+  else
+    throw(error("""Invalid :type keyword :$(type).
+                   Must be either :any, :submodule, or :supermodule"""))
+  end
+end
+
+
+################################################################################
+#
 #  Jordan decomposition
 #
 ################################################################################
@@ -1074,7 +1075,7 @@ end
     genus_symbol(L::AbsLat, p::NfOrdIdl; uniformizer = uniformizer(p))
                                                                   -> GenusSymbol
 
-Returns the genus symbol of $L$ at the prime ideal $\mathfrak{p}}$. One can
+Returns the genus symbol of $L$ at the prime ideal $\mathfrak{p}$. One can
 specify which uniformizer to choose using the `uniformizer` keyword.
 """
 genus_symbol(::AbsLat, ::NfOrdIdl; uniformizer::Any = 0)
@@ -1151,7 +1152,7 @@ end
 @doc Markdown.doc"""
     change_uniformizer(G::GenusSymbol, a::NfOrdElem) -> GenusSymbol
 
-Returns an equivalent? genus symbol with uniformizer `a`.
+Returns an equivalent? genus symbol with uniformizer $a$.
 """
 function change_uniformizer(G::GenusSymbol, unif::NfOrdElem)
   if unif == uniformizer(G)

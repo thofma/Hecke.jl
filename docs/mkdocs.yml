@@ -74,6 +74,7 @@ nav:
     - Quadratic and Hermitian forms:
       - Introduction: 'quad_forms/introduction.md'
       - Basics: 'quad_forms/basics.md'
+      - Lattices: 'quad_forms/lattices.md'
     - Abelian groups:
       - Introduction:     abelian/introduction.md
     - Class fields:
