@@ -64,7 +64,7 @@ mutable struct HermSpace{S, T, U, W} <: AbsSpace{S}
   gram::U
   involution::W
   @declare_other
-  
+
   function HermSpace(E::S, gram::U) where {S, U}
     # I also need to check if the gram matrix is Hermitian
     if dense_matrix_type(elem_type(S)) === U
@@ -158,7 +158,7 @@ rank(L::AbsSpace) = nrows(L.gram)
 
 Return the dimension of the space `V`.
 """
-dim(V::AbsSpace) = rank(L)
+dim(V::AbsSpace) = rank(V)
 
 @doc Markdown.doc"""
     gram_matrix(V::AbsSpace) -> MatElem
@@ -365,7 +365,7 @@ function _gram_schmidt(M::MatElem, a)
   S = identity_matrix(K, n)
   ok = isdiagonal(F)
   if !ok
-    for i in 1:n 
+    for i in 1:n
       if iszero(F[i,i])
         T = identity_matrix(K, n)
         let F = F, i = i
@@ -383,8 +383,8 @@ function _gram_schmidt(M::MatElem, a)
           if ok === nothing
             error("Matrix is not of full rank")
           end
-          T[i, j] = 1 
-        end 
+          T[i, j] = 1
+        end
         S = T * S
         F = T * F * transpose(_map(T, a))
       end
@@ -517,8 +517,45 @@ function isequivalent(L::QuadSpace, M::QuadSpace, p::InfPlc)
   return count(x -> isnegative(x, p), DL) == count(x -> isnegative(x, p), DM)
 end
 
-function isequivalent(L::HermSpace, M::HermSpace, p)
-  throw(error("Not implemented yet"))
+# hermitian case
+
+function isequivalent(L::HermSpace{AnticNumberField}, M::HermSpace{AnticNumberField}, p::fmpz)
+  return _isequivalent(L, M, p)
+end
+
+function isequivalent(L::HermSpace, M::HermSpace, p::NfOrdIdl)
+  return _isequivalent(L, M, p)
+end
+
+function _isequivalent(L::HermSpace, M::HermSpace, p)
+  base_field(L) != base_field(M) && error("Both spaces must have the same base field")
+  A = gram_matrix(L)
+  B = gram_matrix(M)
+  if A == B
+    return true
+  end
+
+  if rank(L) != rank(M)
+    return false
+  end
+
+  return islocal_norm(base_field(L), det(L) * det(M), p)
+end
+
+function isequivalent(L::HermSpace, M::HermSpace, P::InfPlc)
+  if L == M
+    return true
+  end
+
+  if iscomplex(P)
+    return true
+  end
+
+  DL = diagonal(L)
+  DM = diagonal(M)
+  iL = count(d -> isnegative(d, P), DL)
+  iM = count(d -> isnegative(d, P), DM)
+  return iL == iM
 end
 
 @doc Markdown.doc"""
@@ -577,7 +614,7 @@ invariants(V::QuadSpace) = _quadratic_form_invariants(gram_matrix(V))
 
 @doc Markdown.doc"""
     isequivalent(M::QuadSpace, L::QuadSpace) -> Bool
- 
+
 Tests if `M` and `L` are equivalent.
 """
 function isequivalent(M::QuadSpace, L::QuadSpace)
@@ -587,6 +624,21 @@ function isequivalent(M::QuadSpace, L::QuadSpace)
   d1, H1, I1 = invariants(M)
   d2, H2, I2 = invariants(L)
   return I1 == I2 && H1 == H2 && issquare(d1 * d2)[1]
+end
+
+function isequivalent(M::HermSpace, L::HermSpace)
+  if gram_matrix(M) == gram_matrix(L)
+    return true
+  end
+
+  if rank(M) != rank(L)
+    return false
+  end
+
+  E = base_field(M)
+  # I could replace this with a islocal_norm at the ramified primes + primes
+  # dividing right hand side
+  return isnorm(E, det(M) * det(L))
 end
 
 ################################################################################
