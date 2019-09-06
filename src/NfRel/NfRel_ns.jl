@@ -287,7 +287,7 @@ function Base.:(^)(a::NfRel_nsElem{T}, b::Integer) where T
   elseif mod(b, 2) == 0
     c = a^(div(b, 2))
     return c*c
-  else mod(b, 2) == 1
+  else 
     return a^(b - 1)*a
   end
 end
@@ -302,7 +302,7 @@ function Base.:(^)(a::NfRel_nsElem{T}, b::fmpz) where T
   elseif mod(b, 2) == 0
     c = a^(div(b, 2))
     return c*c
-  else mod(b, 2) == 1
+  else 
     return a^(b - 1)*a
   end
 end
@@ -879,4 +879,205 @@ end
 function Nemo.discriminant(K::NfRel_ns, ::FlintRationalField)
   d = norm(discriminant(K)) * discriminant(base_field(K))^degree(K)
   return d
+end
+
+
+################################################################################
+#
+#  Permutation group from NfRel_nsToNfRel_nsMor
+#
+################################################################################
+
+function _get_poly_from_elem(a::NfRel_nsElem{nf_elem}, Qxy)
+  K = base_field(parent(a))
+  Qx = parent(K.pol)
+  p = change_base_ring(a.data, x -> evaluate(Qx(x), gen(Qxy, 1)))
+  p1 = evaluate(p, [i for i in 1:ngens(parent(a))], gens(Qxy)[2:end])
+  return coeff(p1, [0 for i = 1:nvars(parent(p1))])
+end
+
+function (Rxy::Generic.MPolyRing{gfp_elem})(f::fmpq_mpoly)
+  R = base_ring(Rxy)
+  return change_base_ring(f, x -> divexact(R(numerator(x)), R(denominator(x))), Rxy)
+end
+
+function _get_polys_from_auto(f::NfRel_nsToNfRel_nsMor{nf_elem}, Qxy)
+  res = Vector{elem_type(Qxy)}(undef, nvars(Qxy))
+  fK = f.coeff_aut
+  ap = fK.prim_img
+  K = parent(ap)
+  res[1] = evaluate(parent(K.pol)(ap), gen(Qxy, 1))
+  for i = 2:nvars(Qxy)
+    res[i] = _get_poly_from_elem(f.emb[i-1], Qxy)
+  end
+  return res
+end
+
+function permutation_group(G::Vector{NfRel_nsToNfRel_nsMor{nf_elem}})
+  
+  L = domain(G[1])
+  K = base_field(L)
+  dK = absolute_degree(L)
+  d1 = numerator(discriminant(L, FlintQQ))
+  p = 2
+  while divisible(d1, p)
+    p = next_prime(p)
+  end
+  R = GF(p, cached = false)
+  Rm, gRm = PolynomialRing(R, ngens(L)+1, cached = false)
+  fmod = Vector{elem_type(Rm)}(undef, ngens(L)+1)
+  RQm, gRQm = PolynomialRing(FlintQQ, ngens(L)+1, cached = false)
+  p1 = K.pol
+  p1Q = evaluate(p1, gRQm[1])
+  fmod[1] = Rm(p1Q)
+  for i = 1:ngens(L)
+    pp = L.pol[i]
+    pp1 = change_base_ring(pp, x -> evaluate(parent(p1)(x), gRQm[1]))
+    pp2 = evaluate(pp1, [i for i = 1:ngens(L)], [gRQm[i+1] for i= 1:ngens(L)])
+    pp3 = coeff(pp2, [0 for s=1:nvars(parent(pp2))])
+    fmod[i+1] = Rm(pp3)
+  end
+  pols = typeof(gRm)[gRm]
+  gpols = map(Rm, _get_polys_from_auto(G[1], RQm))
+  if gpols != gRm
+    push!(pols, gpols)
+    gpol = [compose_mod(gpols[i], [j for j =1:nvars(Rm)], pols[2], fmod) for i = 1:length(gpols)]
+    while gRm != gpol
+      push!(pols, gpol)
+      gpol = [compose_mod(gpol[i], [j for j in 1:nvars(Rm)], pols[2], fmod) for i = 1:length(gpols)]
+    end
+  end
+  order = length(pols)
+
+  for i in 2:length(G)
+    pi = map(Rm, _get_polys_from_auto(G[i], RQm))
+    if !(pi in pols)
+      previous_order = order
+      order = order + 1
+      push!(pols, pi)
+      for j in 2:previous_order
+        order = order + 1
+        push!(pols, [compose_mod(pols[j][s], [z for z in 1:nvars(Rm)],  pi, fmod) for s = 1:length(pi)])
+      end
+      if order == dK
+        break
+      end
+      rep_pos = previous_order + 1
+      while rep_pos <= order
+        for k in 1:i
+          po = map(Rm, _get_polys_from_auto(G[k], RQm))
+          att = [compose_mod(pols[rep_pos][s], [i for i in 1:nvars(Rm)], po, fmod) for s = 1:length(pols[rep_pos])]
+          if !(att in pols)
+            order = order + 1
+            push!(pols, att)
+            for j in 2:previous_order
+              order = order + 1
+              push!(pols, [compose_mod(pols[j][s], [z for z in 1:nvars(Rm)], att, fmod) for s = 1:length(pols[j])])
+            end
+            if order == dK
+              break
+            end
+          end
+        end
+        rep_pos = rep_pos + previous_order
+      end
+    end
+  end
+  #Now, I have the images mod p
+  Dcreation = Vector{Tuple{typeof(pols[1]), Int}}(undef, length(pols))
+  for i = 1:length(pols)
+    Dcreation[i] = (pols[i], i)
+  end
+  permutations = Array{Array{Int, 1},1}(undef, length(G))
+  for i = 1:length(G)
+    permutations[i] = Vector{Int}(undef, dK)
+  end
+  gen_pols = [[Rm(y) for y in _get_polys_from_auto(x, RQm)] for x in G]
+  D = Dict(Dcreation)
+  for s = 1:length(G)
+    for i = 1:length(pols)
+      permutations[s][i] = D[[compose_mod(gen_pols[s][t], [i for i in 1:nvars(Rm)], pols[i], fmod) for t =1:length(gen_pols[s])]]
+    end
+  end
+  return permutations
+end
+
+
+@doc Markdown.doc"""
+    compose_mod(a::AbstractAlgebra.MPolyElem{T}, vars::Vector{Int}, vals::Vector{MPolyElem{T}}, mod::Vector{MPolyElem{T}}) where T <: FieldElement
+Evaluate the polynomial by substituting in the supplied values in the array `vals` for
+the corresponding variables with indices given by the array `vars`. The evaluation will
+succeed if multiplication is defined between elements of the coefficient ring of $a$ and
+elements of `vals`. The result will be reduced modulo "mod". If "mod" is a Groebner basis for the ideal 
+the elements generate. 
+"""
+function compose_mod(a::S, vars::Vector{Int}, vals::Vector{S}, mod::Vector{S}) where S <:MPolyElem{T} where T <: RingElem
+  unique(vars) != vars && error("Variables not unique")
+  length(vars) != length(vals) && error("Number of variables does not match number of values")
+  for i = 1:length(vars)
+    if vars[i] < 1 || vars[i] > nvars(parent(a))
+      error("Variable index not in range")
+    end
+  end
+  if length(vars) == 0
+    return a
+  end
+  powers = Dict{Int, S}[Dict{Int, S}() for i in 1:length(vals)]
+  return _compose_mod(a, vars, vals, powers, mod)
+end
+
+function powmod(a::S, i::Union{Int, fmpz}, modu::Vector{S}) where S <:MPolyElem{T} where T <: RingElem
+  if i == 0
+    return one(parent(a))
+  end
+  if i == 1
+    b = divrem(a, modu)[2]
+    return b
+  end
+  if mod(i, 2) == 0
+    j = div(i, 2)
+    b = powmod(a, j, modu)
+    b = b*b
+    b = divrem(b, modu)[2]
+    return b
+  end
+  b = divrem(a * powmod(a, i - 1, modu), modu)[2]
+  return b
+end
+
+function mulmod(a::S, b::S, mod::Vector{S}) where S <:MPolyElem{T} where T <: RingElem
+  return divrem(a*b, mod)[2]
+end
+
+
+function _compose_mod(a, vars, vals, powers, modu)
+  S = parent(a)
+  r = AbstractAlgebra.Generic.geobucket(S)
+  cvzip = zip(coeffs(a), exponent_vectors(a))
+  for (c, v) in cvzip
+    t = one(S)
+    for j = 1:length(vars)
+      varnum = vars[j]
+      exp = v[varnum]
+      if !haskey(powers[j], exp)
+        powers[j][exp] = powmod(vals[j], exp, modu)
+      end
+      t = mulmod(t, powers[j][exp], modu)
+      v[varnum] = 0
+    end
+    M = MPolyBuildCtx(S)
+    push_term!(M, c, v)
+    push!(r, mulmod(t, finish(M), modu))
+  end
+  return finish(r)
+end
+
+
+function change_base_ring(p::MPolyElem{T}, g, new_polynomial_ring) where {T <: RingElement}
+  cvzip = zip(coeffs(p), exponent_vectors(p))
+  M = MPolyBuildCtx(new_polynomial_ring)
+  for (c, v) in cvzip
+     push_term!(M, g(c), v)
+  end
+  return finish(M)
 end

@@ -730,7 +730,7 @@ function compute_fields(class_fields::Vector{Hecke.ClassField{Hecke.MapRayClassG
     C = class_fields[ord_class_fields[i]]
     L = number_field(C)
     autL = Hecke.absolute_automorphism_group(C, autos)
-    Cpperm = perm_grp(autL)
+    Cpperm = permutation_group(autL)
     if !isone(gcd(degree(K), expo)) && GAP.Globals.IdGroup(Cpperm) != grp_to_be_checked
       right_grp[ord_class_fields[i]] = false
     end
@@ -892,7 +892,7 @@ function computing_over_subfields(class_fields, subfields, idE, autos, right_grp
     rel_extend = Hecke.new_extend_aut(C, autos)
     autsA = vcat(rel_extend, autsrelC)
     C.AbsAutGrpA = autsA
-    Cpperm = perm_grp(autsA)
+    Cpperm = permutation_group(autsA)
     if GAP.Globals.IdGroup(Cpperm) != idE
       right_grp[i] = false
     end

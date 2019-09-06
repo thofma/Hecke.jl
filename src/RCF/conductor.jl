@@ -243,7 +243,7 @@ function conductor(C::Hecke.ClassField)
   #Infinite part of the modulus
   cond_inf=InfPlc[]
   if !isempty(inf_plc)
-    S, ex, lo = carlos_units(O)
+    S, ex, lo = infinite_primes_map(O, inf_plc, mR.modulus_fin)
     for i=1:length(inf_plc)
       pl=inf_plc[i]
       j=1
@@ -384,7 +384,7 @@ function isconductor(C::Hecke.ClassField, m::NfOrdIdl, inf_plc::Array{InfPlc,1}=
 
   #Infinite part of the modulus
   if !isempty(inf_plc2)
-    S, ex, lo=carlos_units(O)
+    S, ex, lo = infinite_primes_map(O, inf_plc, mR.modulus_fin)
     for i=1:length(inf_plc)
       i=1
       while true

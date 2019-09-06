@@ -172,10 +172,10 @@ function __init__()
   global _get_UnitGrpCtx_of_order = t[1]
   global _set_UnitGrpCtx_of_order = t[2]
   
-  t = create_accessors(NfOrd, Array, get_handle())
+  t = create_accessors(AnticNumberField, Dict, get_handle())
   
-  global _get_carlos_units_of_order = t[1]
-  global _set_carlos_units_of_order = t[2]
+  global _get_places_uniformizers = t[1]
+  global _set_places_uniformizers = t[2]
 
   t = create_accessors(AnticNumberField, roots_ctx, get_handle())
 

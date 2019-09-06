@@ -283,4 +283,18 @@ function number_field(P::InfPlc)
   return P.K
 end
 
+################################################################################
+#
+#  Uniformizers
+#
+################################################################################
+
+function uniformizer(P::InfPlc)
+  if iscomplex(P)
+    error("The place is complex")
+  end
+  D = infinite_places_uniformizers(number_field(P))
+  return deepcopy(D[P])
+end
+
 
