@@ -254,7 +254,7 @@ end
 @doc Markdown.doc"""
     ambient_space(L::AbsLat) -> AbsSpace
 
-Returns the ambient space of $L$. If the ambient space is not know, an
+Returns the ambient space of $L$. If the ambient space is not known, an
 error is raised.
 """
 function ambient_space(L::AbsLat)
