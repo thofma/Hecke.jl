@@ -482,7 +482,7 @@ end
 @doc Markdown.doc"""
     witt_invariant(L::AbsLat, p::Union{InfPlc, NfOrdIdl}) -> Int
 
-Returns the witt invariant of the rational span of $L$ at $p$.
+Returns the Witt invariant of the rational span of $L$ at $p$.
 """
 function witt_invariant(L::QuadLat, p::NfAbsOrdIdl)
   return hasse_invariant(rational_span(L), p)
