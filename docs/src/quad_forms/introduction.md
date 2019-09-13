@@ -35,3 +35,9 @@ of $V$). In this chapter we will refer to quadratic and Hermitian spaces also ju
 Let $V$ be a space (either quadratic or Hermitian) with base field $E$.
 A finitely generated $\mathcal O_E$-submodule $L$ of $V$ is called a *quadratic lattice* or *Hermitian lattice* respectively.
 We call $V$ the *ambient space* of $L$ and $L\otimes_{\mathcal O_E} E$ the *rational span* of $L$.
+
+## References
+
+Many of the implemented algorithms for computing with quadratic and hermitian lattices
+over number fields are based on the Magma implementation of Markus Kirschmer, which can
+be found [here](http://www.math.rwth-aachen.de/~Markus.Kirschmer/magma/lat.html).
