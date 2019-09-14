@@ -273,3 +273,24 @@ function charpoly(Rx::GFPPolyRing, a::fq_nmod)
 end
 
 
+function minpoly(a::fq)
+  return minpoly(PolynomialRing(GF(characteristic(parent(a)), cached = false), cached = false)[1], a)
+end
+
+function minpoly(Rx::GFPFmpzPolyRing, a::fq)
+  c = [a]
+  fa = frobenius(a)
+  while !(fa in c)
+    push!(c, fa)
+    fa = frobenius(fa)
+  end
+  St = PolynomialRing(parent(a), cached = false)[1]
+  f = prod([gen(St) - x for x = c])
+  g = Rx()
+  for i = 0:degree(f)
+    setcoeff!(g, i, coeff(coeff(f, i), 0))
+  end
+  return g
+end
+
+
