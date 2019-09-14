@@ -172,10 +172,10 @@ function __init__()
   global _get_UnitGrpCtx_of_order = t[1]
   global _set_UnitGrpCtx_of_order = t[2]
   
-  t = create_accessors(NfOrd, Array, get_handle())
+  t = create_accessors(AnticNumberField, Dict, get_handle())
   
-  global _get_carlos_units_of_order = t[1]
-  global _set_carlos_units_of_order = t[2]
+  global _get_places_uniformizers = t[1]
+  global _set_places_uniformizers = t[2]
 
   t = create_accessors(AnticNumberField, roots_ctx, get_handle())
 
@@ -712,6 +712,11 @@ mutable struct LowPrecisionLLL <: Exception end
 Base.showerror(io::IO, e::LowPrecisionLLL) =
     print(io, """
     Transformation matrix has too large entries relative to precision in LLL""")
+
+mutable struct NotImplemented <: Exception end
+
+Base.showerror(io::IO, ::NotImplemented) =
+    print(io, """Not implemented (yet).""")
 
 # what is this function doing here?
 function checkbounds(a::Int, b::Int) nothing; end;

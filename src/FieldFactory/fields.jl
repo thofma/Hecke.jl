@@ -1,3 +1,5 @@
+export fields
+
 add_verbose_scope(:Fields)
 add_assert_scope(:Fields)
 
@@ -47,7 +49,7 @@ end
 #
 ###############################################################################
 
-function perm_grp(G::Vector{Hecke.NfRel_nsToNfRel_nsMor{nf_elem}})
+function permutation_group(G::Vector{Hecke.NfRel_nsToNfRel_nsMor{nf_elem}})
   
   n = length(G)
   G1 = closure(G, *)
@@ -69,43 +71,83 @@ function perm_grp(G::Vector{Hecke.NfRel_nsToNfRel_nsMor{nf_elem}})
 end
 
 
-function perm_grp(G::Array{Hecke.NfToNfMor, 1})
-  #TODO: I don't need the closure. I only need the images in the residue ring.
+function permutation_group(G::Array{Hecke.NfToNfMor, 1})
   K = domain(G[1])
   n = length(G)
-  G1 = closure(G, degree(K))
-  #First, find a good prime
-  p = 11
+  dK = degree(K)
   d = numerator(discriminant(K.pol))
+  p = 11
   while mod(d, p) == 0
     p = next_prime(p)
   end
   R = GF(p, cached = false)
   Rx, x = PolynomialRing(R, "x", cached = false)
   fmod = Rx(K.pol)
-  pols = gfp_poly[Rx(g.prim_img) for g in G]
-  for g in G1
-    if g in G
-      continue
+
+
+  pols = gfp_poly[x]
+  gpol = Rx(S[1].prim_img)
+  if gpol != x
+    push!(pols, gpol)
+    gpol = compose_mod(gpol, pols[2], fmod)
+    while gpol != x
+      push!(pols, gpol)
+      gpol = compose_mod(gpol, pols[2], fmod)
     end
-    push!(pols, Rx(g.prim_img))
   end
+  order = length(pols)
+
+  for i in 2:n
+    pi = Rx(G[i].prim_img)
+    if !(pi in pols)
+      previous_order = order
+      order = order + 1
+      push!(pols, pi)
+      for j in 2:previous_order
+        order = order + 1
+        push!(pols, compose_mod(pols[j], pi, fmod))
+      end
+      if order == n
+        break
+      end
+      rep_pos = previous_order + 1
+      while rep_pos <= order
+        for k in 1:i
+          po = Rx(G[k].prim_img)
+          att = compose_mod(pols[rep_pos], po, fmod)
+          if !(att in pols)
+            order = order + 1
+            push!(pols, att)
+            for j in 2:previous_order
+              order = order + 1
+              push!(pols, compose_mod(pols[j], att, fmod))
+            end
+            if order == dK
+              return elements
+            end
+          end
+        end
+        rep_pos = rep_pos + previous_order
+      end
+    end
+  end
+  #Now, I have the images mod p
   Dcreation = Vector{Tuple{gfp_poly, Int}}(undef, length(pols))
   for i = 1:length(pols)
     Dcreation[i] = (pols[i], i)
   end
-  D = Dict{gfp_poly, Int}(Dcreation)
-  @assert length(D) == degree(K)
   permutations = Array{Array{Int, 1},1}(undef, n)
+  for i = 1:n
+    permutations[i] = Vector{Int}(undef, dK)
+  end
+  gen_pols = [Rx(x.prim_img) for x in G]
+  D = Dict{gfp_poly, Int}(Dcreation)
   for s = 1:n
-    perm = Array{Int, 1}(undef, length(G1))
-    for i = 1:length(G1)
-      perm[i] = D[Hecke.compose_mod(pols[s], pols[i], fmod)]
+    for i = 1:length(pols)
+      permutations[s][i] = D[Hecke.compose_mod(gen_pols[s], pols[i], fmod)]
     end
-    permutations[s] = perm
   end
   return _perm_to_gap_grp(permutations)
-
 end
 
 function _from_autos_to_perm(G::Array{Hecke.NfToNfMor,1})
@@ -295,7 +337,7 @@ end
 function _split_extension(G::Array{Hecke.NfToNfMor, 1}, mats::Array{Hecke.GrpAbFinGenMap, 1})
   
   gtype = map(Int, domain(mats[1]).snf)
-  G1 = perm_grp(G)
+  G1 = permutation_group(G)
   gensG1 = GAP.Globals.GeneratorsOfGroup(G1)
   A = GAP.Globals.AbelianGroup(GAP.julia_to_gap(gtype))
   gens = GAP.Globals.GeneratorsOfGroup(A)

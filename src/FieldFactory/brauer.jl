@@ -19,7 +19,7 @@ function check_cocycle(G::Array{NfToNfMor, 1}, Coc::Function, d::Int)
     zeta1 = O(g1(K(zeta)))
     # I need the discrete logarithm with respect to zeta
     i = 1
-    a = deepcopy(zeta)
+    a = zeta
     while a != zeta1
       a *= zeta
       i += 1
@@ -182,6 +182,29 @@ end
 #
 ###############################################################################
 
+function primes_to_check2(OK::NfOrd)
+  lp = Hecke.ramified_primes(OK)
+  lp_to_check = Vector{Int}()
+  for p in lp
+    if p == 2
+      continue
+    end
+    lP = prime_decomposition(OK, p, cached = true)
+    P = lP[1][1]
+    e = ppio(lP[1][2], 2)
+    if e == 1
+      continue
+    end
+    f = ppio(degree(P), 2)
+    if f == 1 && divisible(norm(P)-1, 2*e)
+      continue
+    end
+    push!(lp_to_check, p)
+  end
+  return lp_to_check
+end
+
+
 function _Brauer_at_two(list::Vector{FieldsTower}, L::Main.ForeignGAP.MPtr, i::Int)
   mH, autos, _cocycle_values = cocycle_computation(L, i)
   domcoc = GAP.Globals.ImagesSource(mH)
@@ -189,6 +212,17 @@ function _Brauer_at_two(list::Vector{FieldsTower}, L::Main.ForeignGAP.MPtr, i::I
   for t = 1:length(list)
     @vprint :Fields 1 "$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())Fields to test: $(length(list)-t+1)"
     K = list[t].field
+    OK = maximal_order(K)
+    lp = primes_to_check2(OK)
+    #Some easy cases
+    if isempty(lp) && (!divisible(discriminant(OK), 2) || istotally_real(K))
+      admit_ext[t] = true
+      continue
+    end
+    if isone(length(lp)) && !divisible(discriminant(OK), 2) && istotally_real(K)
+      admit_ext[t] = true
+      continue
+    end
     GC = automorphisms(K, copy = false)
     DGCvect = Vector{Tuple{NfToNfMor, Int}}(undef, length(GC))
     for i = 1:length(GC)
@@ -225,7 +259,7 @@ function _Brauer_at_two(list::Vector{FieldsTower}, L::Main.ForeignGAP.MPtr, i::I
       end
   
       #Now, we have to see if it splits
-      fl = cpa_issplit(K, Gp, cocycle, 2)
+      fl = cpa_issplit(K, Gp, cocycle, 2, lp)
       if fl
         obstruction = true
         push!(auts_for_conductors, g)
@@ -249,6 +283,8 @@ end
 #
 ###############################################################################
 
+
+
 function _Brauer_prime_case(list::Vector{FieldsTower}, L::Main.ForeignGAP.MPtr, i::Int, p::Int)
   
   list1 = falses(length(list))  
@@ -256,8 +292,8 @@ function _Brauer_prime_case(list::Vector{FieldsTower}, L::Main.ForeignGAP.MPtr, 
   H = GAP.Globals.ImagesSource(mH)
   for t = 1:length(list)
     @vprint :Fields 1 "$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())Fields to test: $(length(list)-t+1)"
-    Kc = _ext_cycl(list[t].generators_of_automorphisms, p)
     K = list[t].field
+    Kc = _ext_cycl(list[t].generators_of_automorphisms, p)
     K1 = Kc.Ka
     autsK = automorphisms(K, copy = false)
     autsK1 = automorphisms(K1, copy = false)
@@ -282,16 +318,18 @@ function _Brauer_prime_case(list::Vector{FieldsTower}, L::Main.ForeignGAP.MPtr, 
     auts_for_conductor = Vector{Main.ForeignGAP.MPtr}()
     for g in autos
       #I create the cocycle
-
-      function cocycle(aut1::NfToNfMor, aut2::NfToNfMor)
-        s1 = restr[dautsK1[aut1]]
-        a1 = GAP.Globals.Image(g, ElemGAP[s1])
-        s2 = restr[dautsK1[aut2]]
-        b1 = GAP.Globals.Image(g, ElemGAP[s2])
-        rescoc = coc(a1, b1)
-        return mod(rescoc, p)::Int
+      local cocycle
+      let restr = restr, dautsK1 = dautsK1, g = g, ElemGAP = ElemGAP, coc = coc, p = p
+        function cocycle(aut1::NfToNfMor, aut2::NfToNfMor)
+          s1 = restr[dautsK1[aut1]]
+          a1 = GAP.Globals.Image(g, ElemGAP[s1])
+          s2 = restr[dautsK1[aut2]]
+          b1 = GAP.Globals.Image(g, ElemGAP[s2])
+          rescoc = coc(a1, b1)
+          return mod(rescoc, p)::Int
+        end
       end
-
+      
       if cpa_issplit(K1, Gp, cocycle, p)
         obstruction = true
         push!(auts_for_conductor, g)
@@ -651,7 +689,7 @@ end
 
 
 #p must be a prime power 
-function cpa_issplit(K::AnticNumberField, G::Vector{NfToNfMor}, Coc::Function, pv::Int)
+function cpa_issplit(K::AnticNumberField, G::Vector{NfToNfMor}, Coc::Function, pv::Int, lp::Vector{Int} = Hecke.ramified_primes(maximal_order(K)))
   
   p = ispower(pv)[2]
   @vtime :BrauerObst 1 if p == 2 && !istotally_real(K) && !is_split_at_infinity(K, Coc)
@@ -663,7 +701,9 @@ function cpa_issplit(K::AnticNumberField, G::Vector{NfToNfMor}, Coc::Function, p
   # I only need to check the tame ramification.
   # The exact sequence on Brauer groups and completion tells me that I have one degree of freedom! :)
   O = maximal_order(K)
-  lp = Hecke.ramified_primes(O)
+  if !(p in lp) && divisible(discriminant(O), p)
+    push!(lp, p)
+  end 
   if p in lp
     for q in lp
       if q != p 

@@ -496,6 +496,7 @@ function closure(S::Vector{NfToNfMor}, final_order::Int = -1)
   return elements
 end
 
+
 function small_generating_set(Aut::Array{NfToNfMor, 1})
   K = domain(Aut[1])
   a = gen(K)
