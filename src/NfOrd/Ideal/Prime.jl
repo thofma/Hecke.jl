@@ -1664,3 +1664,45 @@ function approximate(v::Vector{Int}, primes::Vector{ <: NfAbsOrdIdl })
 
   return divexact(c*elem_in_nf(a_pos), elem_in_nf(a_neg))
 end
+
+# Return b in K with a \equiv b mod I and b_v >= 0 for v in pos_places
+# Cohen, Advanced Topics in Computational Number Theory, Algorithm 4.2.20
+function approximate(a::nf_elem, I::NfAbsOrdIdl, pos_places::Vector{InfPlc})
+  F2 = GF(2)
+  v = matrix(F2, length(pos_places), 1, [ ispositive(a, p) ? F2(0) : F2(1) for p in pos_places ])
+  if all(iszero, v[:, 1])
+    return a
+  end
+  bound = 5
+  count = 1
+  F2 = GF(2)
+  M = zero_matrix(F2, length(pos_places), length(pos_places))
+  betas = Vector{elem_type(order(I))}()
+  r = 0
+  while r != length(pos_places)
+    count += 1
+    b = 1 + rand(I, bound)
+    N = deepcopy(M)
+    for i = 1:length(pos_places)
+      N[i, r + 1] = ispositive(b, pos_places[i]) ? F2(0) : F2(1)
+    end
+    rr = rank(N)
+    if rr > r
+      M = N
+      r = rr
+      push!(betas, b)
+    end
+    if count > 2^length(pos_places)*bound
+      bound += 5
+    end
+  end
+
+  w = inv(M)*v
+  b = a
+  for i = 1:nrows(w)
+    if !iszero(w[i, 1])
+      b *= betas[i]
+    end
+  end
+  return b
+end

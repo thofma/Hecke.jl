@@ -476,13 +476,13 @@ end
 
 # Returns the group algebra Q[G] where G = Gal(K/Q) and a Q-linear map from K
 # to Q[G] and one from Q[G] to K
-function _as_group_algebra(K::AnticNumberField)
+_as_group_algebra(K::AnticNumberField) = _as_group_algebra(K, normal_basis(K))
+
+# alpha should be a "generator" for a normal basis of K
+function _as_group_algebra(K::AnticNumberField, alpha::nf_elem)
   G, Gtoaut = automorphism_group(K)
   A = group_algebra(FlintQQ, G)
 
-  #alpha = normal_basis(K)
-  alpha = gen(K)
-  @show alpha
   basis_alpha = Vector{elem_type(K)}(undef, dim(A))
   for (i, g) in enumerate(G)
     f = Gtoaut(g)
