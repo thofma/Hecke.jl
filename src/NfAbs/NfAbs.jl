@@ -136,7 +136,7 @@ end
 
 function show_quad(io::IO, q::AnticNumberField)
   d = trail(q.pol)
-  if d > 0
+  if d < 0
     print(io, "Real quadratic field by ", q.pol)
   else
     print(io, "Imaginary quadratic field by ", q.pol)

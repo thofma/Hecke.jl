@@ -254,7 +254,7 @@ end
 @doc Markdown.doc"""
     ambient_space(L::AbsLat) -> AbsSpace
 
-Returns the ambient space of $L$. If the ambient space is not know, an
+Returns the ambient space of $L$. If the ambient space is not known, an
 error is raised.
 """
 function ambient_space(L::AbsLat)
@@ -482,7 +482,7 @@ end
 @doc Markdown.doc"""
     witt_invariant(L::AbsLat, p::Union{InfPlc, NfOrdIdl}) -> Int
 
-Returns the witt invariant of the rational span of $L$ at $p$.
+Returns the Witt invariant of the rational span of $L$ at $p$.
 """
 function witt_invariant(L::QuadLat, p::NfAbsOrdIdl)
   return hasse_invariant(rational_span(L), p)
