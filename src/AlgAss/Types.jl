@@ -478,6 +478,7 @@ mutable struct AlgMat{T, S} <: AbsAlgAss{T}
   maximal_order
   mult_table::Array{T, 3} # e_i*e_j = sum_k mult_table[i, j, k]*e_k
   canonical_basis::Int # whether A[(j - 1)*n + i] == E_ij, where E_ij = (e_kl)_kl with e_kl = 1 if i =k and j = l and e_kl = 0 otherwise.
+  center#Tuple{AlgAss{T}, mor(AlgAss{T}, AlgAss{T})
 
   function AlgMat{T, S}(R::Ring) where {T, S}
     A = new{T, S}()

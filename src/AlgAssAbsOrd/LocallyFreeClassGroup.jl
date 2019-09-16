@@ -9,14 +9,14 @@ export locally_free_class_group
 # Bley, Boltje "Computation of Locally Free Class Groups"
 # If the left and right conductor of O in a maximal order coincide (which is the
 # case if O is the integral group ring of a group algebra), the computation can
-# be speeded up be setting cond = :left.
+# be speeded up by setting cond = :left.
 @doc Markdown.doc"""
     locally_free_class_group(O::AlgAssAbsOrd) -> GrpAbFinGen
 
 > Given an order $O$ in a semisimple algebra over $\mathbb Q$, this function
 > returns the locally free class group of $O$.
 """
-function locally_free_class_group(O::AlgAssAbsOrd, cond::Symbol = :center)
+function locally_free_class_group(O::AlgAssAbsOrd, cond::Symbol = :center, return_disc_log_data::Type{Val{T}} = Val{false}) where T
   A = algebra(O)
   OA = maximal_order(O)
   Z, ZtoA = center(A)
@@ -88,16 +88,22 @@ function locally_free_class_group(O::AlgAssAbsOrd, cond::Symbol = :center)
     push!(k1_as_subgroup, s)
   end
 
-  Cl, CltoR = quo(R, k1_as_subgroup)
+  Cl, RtoCl = quo(R, k1_as_subgroup)
 
-  return snf(Cl)[1]
+  S, StoCl = snf(Cl)
+
+  if return_disc_log_data == Val{true}
+    return S, compose(RtoCl, inv(StoCl)), mR, FinZ
+  else
+    return S
+  end
 end
 
 # Helper function for locally_free_class_group
 # Computes the representative in the ray class group (domain(mR)) for the ideal
 # nr(a)*O_Z, where nr is the reduced norm and O_Z the maximal order of the centre
 # of A.
-function _reduced_norms(a::AlgAssElem, mR::MapRayClassGroupAlg)
+function _reduced_norms(a::AbsAlgAssElem, mR::MapRayClassGroupAlg)
   A = parent(a)
   Adec = decompose(A)
   r = zero_matrix(FlintZZ, 1, 0)
