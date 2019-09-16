@@ -507,7 +507,7 @@ function ray_class_group(m::AlgAssAbsOrdIdl, inf_plc::Vector{Vector{InfPlc}} = V
   groups = Vector{Tuple{GrpAbFinGen, MapRayClassGrp}}()
   for i = 1:length(fields_and_maps)
     mi = _as_ideal_of_number_field(m, fields_and_maps[i][2])
-    if length(inf_plc[i]) != 0
+    if length(inf_plc) != 0
       r, mr = ray_class_group(mi, inf_plc[i])
     else
       r, mr = ray_class_group(mi)
