@@ -489,6 +489,34 @@ end
 
 ################################################################################
 #
+#  Center
+#
+################################################################################
+
+@doc Markdown.doc"""
+    center(A::AlgMat) -> AlgAss, AbsAlgAssMor
+
+> Returns the center $C$ of $A$ and the inclusion $C \to A$.
+"""
+function center(A::AlgMat{T, S}) where {T, S}
+  if iscommutative(A)
+    B, mB = AlgAss(A)
+    return B, mB
+  end
+
+  if isdefined(A, :center)
+    return A.center::Tuple{AlgAss{T}, morphism_type(AlgAss{T}, typeof(A))}
+  end
+
+  B, mB = AlgAss(A)
+  C, mC = center(B)
+  mD = compose_and_squash(mB, mC)
+  A.center = C, mD
+  return C, mD
+end
+
+################################################################################
+#
 #  Conversion to AlgAss
 #
 ################################################################################
@@ -498,6 +526,27 @@ function AlgAss(A::AlgMat{T, S}) where {T, S}
   B = AlgAss(K, multiplication_table(A))
   B.issimple = A.issimple
   B.issemisimple = A.issemisimple
+  AtoB = hom(A, B, identity_matrix(K, dim(A)), identity_matrix(K, dim(A)))
+  if isdefined(A, :center)
+    Z, ZtoA = center(A)
+    B.center = (Z, compose_and_squash(AtoB, ZtoA))
+  end
+  if isdefined(A, :decomposition)
+    dec = Tuple{AlgAss{T}, morphism_type(AlgAss{T}, typeof(B))}[]
+    for (C, CtoA) in A.decomposition
+      CtoB = compose_and_squash(AtoB, CtoA)
+      push!(dec, (C, CtoB))
+    end
+    B.decomposition = dec
+  end
+  if isdefined(A, :maps_to_numberfields)
+    fields_and_maps = Tuple{AnticNumberField, AbsAlgAssToNfAbsMor{typeof(B), elem_type(B)}}[]
+    for (K, AtoK) in A.maps_to_numberfields
+      BtoK = AbsAlgAssToNfAbsMor(B, K, AtoK.mat, AtoK.imat)
+      push!(fields_and_maps, (K, BtoK))
+    end
+    B.maps_to_numberfields = fields_and_maps
+  end
   return B, hom(B, A, identity_matrix(K, dim(A)), identity_matrix(K, dim(A)))
 end
 

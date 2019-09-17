@@ -569,7 +569,7 @@ function _as_ideal_of_smaller_algebra(m::AbsAlgAssMor, I::AlgAssAbsOrdIdl, OB::A
   A = domain(m)
   B = codomain(m)
   @assert dim(A) <= dim(B)
-  @assert algebra(order(I)) == B
+  @assert algebra(order(I)) === B
   OA = maximal_order(A)
   IB = extend(I, OB)
   # Transport OA to B

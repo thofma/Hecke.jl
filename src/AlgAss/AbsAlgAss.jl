@@ -215,6 +215,13 @@ function decompose(A::AbsAlgAss{T}) where T
     push!(res, (S, mD))
   end
   A.decomposition = res
+  Z, ZtoB = center(B)
+  if dim(Z) != dim(B)
+    if isdefined(A, :center)
+      @assert A.center[1] === Z
+    end
+    A.center = (Z, compose_and_squash(mB, ZtoB))
+  end
   return res
 end
 
