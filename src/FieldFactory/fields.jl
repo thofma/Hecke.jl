@@ -31,9 +31,12 @@ include("./brauer.jl")
 include("./merge.jl")
 include("./abelian_layer.jl")
 include("./read_write.jl")
+include("./rayclassgrp.jl")
+include("./conductors.jl")
 
 Generic.degree(F::FieldsTower) = degree(F.field)
 Hecke.maximal_order(F::FieldsTower) = maximal_order(F.field)
+
 
 function ramified_primes(F::FieldsTower)
   if !isdefined(F, :ramified_primes)
@@ -49,24 +52,33 @@ end
 #
 ###############################################################################
 
+function Base.push!(G::AbstractAlgebra.Generic.geobucket{T}, p::T) where {T <: AbstractAlgebra.MPolyElem}
+   R = parent(p)
+   i = max(1, ndigits(length(p), base=4))
+   l = length(G.buckets)
+   if length(G.buckets) < i
+     resize!(G.buckets, i)
+     for j in (l + 1):i
+       G.buckets[j] = zero(R)
+     end
+   end
+   G.buckets[i] = addeq!(G.buckets[i], p)
+   while i <= G.len
+      if length(G.buckets[i]) >= 4^i
+         G.buckets[i + 1] = addeq!(G.buckets[i + 1], G.buckets[i])
+         G.buckets[i] = R()
+         i += 1
+      end
+      break
+   end
+   if i == G.len + 1
+      Base.push!(G.buckets, R())
+      G.len += 1
+   end
+end
+
 function permutation_group(G::Vector{Hecke.NfRel_nsToNfRel_nsMor{nf_elem}})
-  
-  n = length(G)
-  G1 = closure(G, *)
-  Dc = Vector{Tuple{Hecke.NfRel_nsToNfRel_nsMor, Int}}(undef, length(G1))
-  for i = 1:length(G1)
-    Dc[i] = (G1[i], i)
-  end
-  D = Dict{Hecke.NfRel_nsToNfRel_nsMor, Int}(Dc)
-  permutations = Array{Array{Int, 1},1}(undef, n)
-  for s = 1:n
-    perm = Array{Int, 1}(undef, length(G1))
-    for i = 1:length(G1)
-      a = G[s]*G1[i]
-      perm[i] = D[a]
-    end
-    permutations[s] = perm
-  end
+  permutations = permutation_group1(G)
   return _perm_to_gap_grp(permutations)
 end
 
@@ -465,14 +477,12 @@ function field_extensions(x::FieldsTower, bound::fmpz, IsoE1::Main.ForeignGAP.MP
   
 end
 
-
-
-
 ###############################################################################
 #
 #  Interface
 #
 ###############################################################################
+
 function fields_direct_product(g1, g2, red, redfirst, absolute_bound; only_real = false)
   b1 = root(absolute_bound, g2[1])
   b2 = root(absolute_bound, g1[1])
@@ -492,7 +502,6 @@ end
 
 
 function fields(a::Int, b::Int, absolute_bound::fmpz; using_direct_product::Bool = true, only_real::Bool = false)
-  
   @assert absolute_bound > 0
   if a == 1
     @assert b == 1
@@ -525,9 +534,8 @@ function fields(a::Int, b::Int, absolute_bound::fmpz; using_direct_product::Bool
   @vprint :Fields 1 "First step completed\n \n"
   @vprint :FieldsNonFancy 1 "First step completed\n \n"
   for i = 2:length(L)-1
-    H1 = GAP.Globals.FactorGroup(L[i], L[i+1])
     E1 = GAP.Globals.FactorGroup(L[1], L[i+1])
-    l = GAP.gap_to_julia(Vector{Int64}, GAP.Globals.AbelianInvariants(H1))
+    l = GAP.gap_to_julia(Vector{Int64}, GAP.Globals.AbelianInvariants(L[i]))
     @vprint :Fields 1 "contructing abelian extensions with invariants $l \n" 
     @vprint :FieldsNonFancy 1 "contructing abelian extensions with invariants $l \n" 
     o = divexact(a, GAP.Globals.Size(E1))
@@ -538,12 +546,16 @@ function fields(a::Int, b::Int, absolute_bound::fmpz; using_direct_product::Bool
     lG = snf(DiagonalGroup(l))[1]
     invariants = map(Int, lG.snf) 
     onlyreal = (lvl > i || only_real)
+    ext_to_check = invariants[end]
+    if length(invariants) > 1
+      ext_to_check = ppio(invariants[end], invariants[end-1])[2]
+    end
     #First, I search for obstruction.
-    if iscyclic(lG) 
+    if !isone(ext_to_check)
       @vprint :Fields 1 "Computing obstructions\n"
       @vprint :FieldsNonFancy 1 "Computing obstructions\n"
       #@vtime :Fields 1 
-      list = check_Brauer_obstruction(list, L, i, invariants[1])
+      list = check_Brauer_obstruction(list, L, i, ext_to_check)
       @vprint :Fields 1 "Fields to check: $(length(list))\n\n"
       @vprint :FieldsNonFancy 1 "Fields to check: $(length(list))\n\n"
     end

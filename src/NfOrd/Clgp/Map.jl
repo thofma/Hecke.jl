@@ -942,3 +942,157 @@ function sunit_group(I::Array{NfOrdIdl, 1})
   return G, r
 end
 
+################################################################################
+#
+#  Representative of ideal classes coprime to the modulus
+#
+################################################################################
+
+@doc Markdown.doc"""
+    find_coprime_representatives(mC::MapClassGrp, m::NfOrdIdl, lp::Dict{NfOrdIdl, Int} = factor(m)) -> MapClassGrp
+
+Returns a class group map such that the representatives for every classes are coprime to $m$.
+$lp$ is the factorization of $m$. 
+"""
+function find_coprime_representatives(mC::MapClassGrp, m::NfOrdIdl, lp::Dict{NfOrdIdl, Int} = factor(m))
+ 
+  O = order(m)
+  K = nf(O)
+  C = domain(mC)
+  L = Array{NfOrdIdl,1}(undef, ngens(C))
+  el = Array{nf_elem,1}(undef, ngens(C))
+  ppp = 1.0
+  for (p, v) in lp
+    ppp *= (1 - 1/Float64(norm(p)))
+  end
+  
+  prob = ppp > 0.1
+  
+  for i = 1:ngens(C)
+    a = first(keys(mC.princ_gens[i][1].fac))
+    if iscoprime(a, m)
+      L[i] = a
+      el[i] = K(1)
+    elseif prob
+      L[i], el[i] = probabilistic_coprime(a, m)
+    else
+      L[i], el[i] = coprime_deterministic(a, m, lp)
+    end
+    @hassert :RayFacElem 1 iscoprime(L[i], m)
+    @hassert :RayFacElem 1 a*el[i] == L[i]
+  end
+  
+  local exp
+  let L = L, C = C
+    function exp(a::GrpAbFinGenElem)  
+      e = Dict{NfOrdIdl,fmpz}()
+      for i = 1:ngens(C)
+        if !iszero(a[i])
+          e[L[i]]= a[i]
+        end
+      end
+      if isempty(e)
+        e[ideal(O,1)]=1
+      end
+      return FacElem(e)
+    end
+  end
+  
+  return exp, el
+
+end 
+
+function coprime_deterministic(a::NfOrdIdl, m::NfOrdIdl, lp::Dict{NfOrdIdl, Int})
+  g, ng = ppio(a.gen_one, m.gen_one)
+  @assert !isone(g)
+  primes = Tuple{fmpz, nf_elem}[]
+  for (p, v) in lp
+    if !divisible(g, minimum(p))
+      continue
+    end
+    vp = valuation(a, p)
+    if iszero(vp)
+      continue
+    end
+    ant_val = anti_uniformizer(p)
+    found = false
+    ind = 1
+    for i = 1:length(primes)
+      if primes[i][1] == minimum(p)
+        found = true
+        ind = i
+        break
+      end
+    end
+    if found
+      primes[ind] = (minimum(p), primes[ind][2]*ant_val^vp)
+    else
+      push!(primes, (minimum(p), ant_val^vp))
+    end
+  end
+  
+  OK = order(a)
+  r = m.gen_one
+  moduli = Vector{fmpz}(undef, length(primes)+1)
+  for i = 1:length(primes)
+    moduli[i] = ppio(a.gen_one, primes[i][1])[1]
+    r = ppio(r, moduli[i])[2]
+  end
+  mo = moduli[1]
+  res = primes[1][2]
+  moduli[length(primes)+1] = r
+  for i = 2:length(moduli)
+    d, u, v = gcdx(mo, moduli[i])
+    if i == length(moduli)
+      res = u*mo + v*moduli[i]*res
+    else
+      res = primes[i][2]*u*mo + v*moduli[i]*res
+    end
+    mo = mo*moduli[i]
+  end
+  res = mod(res, minimum(m))
+  I = res*a
+  I = simplify(I)
+  return I.num, res*I.den
+end
+
+function probabilistic_coprime(a::NfOrdIdl, m::NfOrdIdl)
+  O = order(a)
+  K = nf(O)
+  J = inv(a)
+  temp = basis_matrix(J.num, copy = false)*basis_matrix(O, copy = false)
+  b = temp.num
+  b_den = temp.den
+  prec = 100
+  local t
+  while true
+    if prec > 2^18
+      error("Something wrong in short_elem")
+    end
+    try
+      l, t = lll(J.num, zero_matrix(FlintZZ, 1,1), prec = prec)
+      break
+    catch e
+      if !(e isa LowPrecisionLLL || e isa InexactError)
+        rethrow(e)
+      end
+    end
+    prec = 2 * prec
+  end
+  rr = matrix(FlintZZ, 1, nrows(t), fmpz[rand(1:minimum(a)^2) for i = 1:nrows(t)])
+  b1 = t*b
+  c = rr*b1
+  s = divexact(elem_from_mat_row(K, c, 1, b_den), J.den)
+  I = s*a
+  I = simplify(I)
+  I1 = I.num
+  while !iscoprime(I1, m)
+    rr = matrix(FlintZZ, 1, nrows(t), fmpz[rand(1:minimum(a)^2) for i = 1:nrows(t)])
+    c = rr*b1
+    s = divexact(elem_from_mat_row(K, c, 1, b_den), J.den)
+    I = s*a
+    I = simplify(I)
+    I1 = I.num
+  end
+  return I1, s*I.den
+end

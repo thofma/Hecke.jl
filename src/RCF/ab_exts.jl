@@ -65,121 +65,7 @@ function primes_up_to(n::Int)
   
 end
 
-                                                                
-                                                                               
-###########################################################################
-#
-#  Some useful functions
-#
-###########################################################################
-
-#This function gets a quotient of the ray class group and the action on
-# the ray class group
-# In output, we get the quotient group as a ZpnGModule
-
-function _action_on_quo(mq::GrpAbFinGenMap, act::Array{GrpAbFinGenMap,1})
-  
-  q=mq.header.codomain
-  S,mS=snf(q)
-  n=Int(S.snf[end])
-  R=ResidueField(FlintZZ, n, cached=false)
-  quo_action=Array{nmod_mat,1}(undef, length(act))
-  for s=1:length(act)
-    quo_action[s]= change_base_ring(mS.map*act[i].map*mS.imap, R)
-  end
-  return ZpnGModule(S, quo_action)
-
-end
-
-
-# Function that finds an integer in the ideal 
-function _min_wild(D::Dict{NfOrdIdl, Int})
-
-  res = fmpz(1)
-  primes_done=fmpz[]
-  for (p,v) in D
-    s=minimum(p)
-    if s in primes_done
-      continue
-    end
-    push!(primes_done, s)
-    res*=s^v
-  end  
-  return res  
-
-end
-
-function totally_positive_generators(mr::MapRayClassGrp, wild::Bool=false)
-  
-  a = minimum(mr.modulus_fin)
-  if isdefined(mr, :tame_mult_grp)
-    tmg=mr.tame_mult_grp
-    for (p, v) in tmg
-      new_p = GrpAbFinGenToNfAbsOrdMap(domain(v), codomain(v), [ make_positive(v.generators[1], a) ], v.discrete_logarithm)
-      if isdefined(v, :disc_log)
-        new_p.disc_log = v.disc_log
-      end
-      tmg[p] = new_p
-      @hassert :RayFacElem 1 istotally_positive(mr.tame_mult_grp[p].generators[1])
-    end
-  end
-  if wild && isdefined(mr, :wild_mult_grp)
-    wld=mr.wild_mult_grp
-    for (p,v) in wld
-      x=v.generators
-      for i=1:length(x)
-        x[i]=make_positive(x[i],a)
-        @hassert :RayFacElem 1 iscoprime(ideal(parent(x[i]), x[i]), ideal(parent(x[i]), a))
-      end
-      mr.wild_mult_grp[p] = GrpAbFinGenToNfAbsOrdMap(domain(v), codomain(v), x, v.discrete_logarithm)
-    end 
-  end
-
-end
-
-function make_positive(x::NfOrdElem, a::fmpz)
- 
-  els=conjugates_real(elem_in_nf(x))
-  m=fmpz(0)
-  for i=1:length(els)
-    y = BigFloat(midpoint(els[i]/a))
-    if y > 0
-      continue
-    else
-      m = max(m,1-ceil(fmpz,y))
-    end
-  end
-  @hassert :RayFacElem 1 iscoprime(ideal(parent(x),x), ideal(parent(x), a))
-  @hassert :RayFacElem 1 iscoprime(ideal(parent(x),x+fmpz(m)*a), ideal(parent(x), a))
-  @hassert :RayFacElem 1 istotally_positive(x+m*a)
-  return x+fmpz(m)*a
-    
-end
-
-function _are_there_subs(G::GrpAbFinGen,gtype::Array{Int,1})
-
-  H=DiagonalGroup(gtype)
-  H, _=snf(H)
-  G1, _=snf(G)
-  if length(G1.snf)<length(H.snf)
-    return false
-  end
-  for i=0:length(H.snf)-1
-    if !divisible(G1.snf[end-i],H.snf[end-i])
-      return false
-    end
-  end
-  return true
-end
-
-function issquarefree(n::Union{Int,fmpz})
-  if iszero(n)
-    throw(error("Argument must be non-zero"))
-  end
-  return isone(abs(n)) || maximum(values(factor(n).fac)) == 1
-end
-
-
+       
 ##########################################################################################################
 #
 #  Functions for conductors
@@ -515,7 +401,6 @@ end
 #
 ###############################################################################
 
-
 function squarefree_for_conductorsQQ(O::NfOrd, n::Int, a::Array{Int, 1}; coprime_to::Array{fmpz,1}=fmpz[])
   
   G = map(Int, snf(DiagonalGroup(a))[1].snf)
@@ -736,7 +621,6 @@ function conductorsQQ(O::NfOrd, a::Array{Int, 1}, bound::fmpz, tame::Bool=false)
   
 end
 
-
 ###############################################################################
 #
 #  Abelian extensions
@@ -909,6 +793,154 @@ function abelian_normal_extensions(O::NfOrd, gtype::Array{Int,1}, absolute_discr
 
   return fields
 
+end
+
+
+################################################################################
+#
+#  Valuation bounds for discriminants
+#
+################################################################################
+
+function valuation_bound_discriminant(n::Int, p::Union{Integer, fmpz})
+  # First compute the p-adic expansion of n
+  S = Vector{typeof(p)}()
+	q = typeof(p)(n)
+  q, r = divrem(q, p)
+  push!(S, r)
+  while q >= p
+    q, r = divrem(q, p)
+    push!(S, r)
+  end
+
+	if !iszero(q)
+		push!(S, q)
+	end
+
+	@assert sum(S[i + 1] * p^i for i in 0:length(S)-1) == n
+
+	b = zero(typeof(p))
+
+	for i in 0:length(S) - 1
+		b = b + S[i + 1] * (i + 1) * p^i
+		if !iszero(S[i + 1])
+			b = b - 1
+		end
+	end
+
+  return b
+end                                                         
+                                                                               
+###########################################################################
+#
+#  Some useful functions
+#
+###########################################################################
+
+#This function gets a quotient of the ray class group and the action on
+# the ray class group
+# In output, we get the quotient group as a ZpnGModule
+
+function _action_on_quo(mq::GrpAbFinGenMap, act::Array{GrpAbFinGenMap,1})
+  
+  q=mq.header.codomain
+  S,mS=snf(q)
+  n=Int(S.snf[end])
+  R=ResidueField(FlintZZ, n, cached=false)
+  quo_action=Array{nmod_mat,1}(undef, length(act))
+  for s=1:length(act)
+    quo_action[s]= change_base_ring(mS.map*act[i].map*mS.imap, R)
+  end
+  return ZpnGModule(S, quo_action)
+
+end
+
+
+# Function that finds an integer in the ideal 
+function _min_wild(D::Dict{NfOrdIdl, Int})
+
+  res = fmpz(1)
+  primes_done=fmpz[]
+  for (p,v) in D
+    s=minimum(p)
+    if s in primes_done
+      continue
+    end
+    push!(primes_done, s)
+    res*=s^v
+  end  
+  return res  
+
+end
+
+function totally_positive_generators(mr::MapRayClassGrp, wild::Bool=false)
+  
+  a = minimum(mr.modulus_fin)
+  if isdefined(mr, :tame_mult_grp)
+    tmg=mr.tame_mult_grp
+    for (p, v) in tmg
+      new_p = GrpAbFinGenToNfAbsOrdMap(domain(v), codomain(v), [ make_positive(v.generators[1], a) ], v.discrete_logarithm)
+      if isdefined(v, :disc_log)
+        new_p.disc_log = v.disc_log
+      end
+      tmg[p] = new_p
+      @hassert :RayFacElem 1 istotally_positive(mr.tame_mult_grp[p].generators[1])
+    end
+  end
+  if wild && isdefined(mr, :wild_mult_grp)
+    wld=mr.wild_mult_grp
+    for (p,v) in wld
+      x=v.generators
+      for i=1:length(x)
+        x[i]=make_positive(x[i],a)
+        @hassert :RayFacElem 1 iscoprime(ideal(parent(x[i]), x[i]), ideal(parent(x[i]), a))
+      end
+      mr.wild_mult_grp[p] = GrpAbFinGenToNfAbsOrdMap(domain(v), codomain(v), x, v.discrete_logarithm)
+    end 
+  end
+
+end
+
+function make_positive(x::NfOrdElem, a::fmpz)
+ 
+  els=conjugates_real(elem_in_nf(x))
+  m=fmpz(0)
+  for i=1:length(els)
+    y = BigFloat(midpoint(els[i]/a))
+    if y > 0
+      continue
+    else
+      m = max(m,1-ceil(fmpz,y))
+    end
+  end
+  @hassert :RayFacElem 1 iscoprime(ideal(parent(x),x), ideal(parent(x), a))
+  @hassert :RayFacElem 1 iscoprime(ideal(parent(x),x+fmpz(m)*a), ideal(parent(x), a))
+  @hassert :RayFacElem 1 istotally_positive(x+m*a)
+  return x+fmpz(m)*a
+    
+end
+
+function _are_there_subs(G::GrpAbFinGen,gtype::Array{Int,1})
+
+  H=DiagonalGroup(gtype)
+  H, _=snf(H)
+  G1, _=snf(G)
+  if length(G1.snf)<length(H.snf)
+    return false
+  end
+  for i=0:length(H.snf)-1
+    if !divisible(G1.snf[end-i],H.snf[end-i])
+      return false
+    end
+  end
+  return true
+end
+
+function issquarefree(n::Union{Int,fmpz})
+  if iszero(n)
+    throw(error("Argument must be non-zero"))
+  end
+  return isone(abs(n)) || maximum(values(factor(n).fac)) == 1
 end
 
 ###############################################################################
@@ -1254,41 +1286,6 @@ function _find_pairs(bound::Int, only_real::Bool = false)
   return vcat(res, real_exts)
 end
 
-################################################################################
-#
-#  Valuation bounds for discriminants
-#
-################################################################################
-
-function valuation_bound_discriminant(n::Int, p::Union{Integer, fmpz})
-  # First compute the p-adic expansion of n
-  S = Vector{typeof(p)}()
-	q = typeof(p)(n)
-  q, r = divrem(q, p)
-  push!(S, r)
-  while q >= p
-    q, r = divrem(q, p)
-    push!(S, r)
-  end
-
-	if !iszero(q)
-		push!(S, q)
-	end
-
-	@assert sum(S[i + 1] * p^i for i in 0:length(S)-1) == n
-
-	b = zero(typeof(p))
-
-	for i in 0:length(S) - 1
-		b = b + S[i + 1] * (i + 1) * p^i
-		if !iszero(S[i + 1])
-			b = b - 1
-		end
-	end
-
-  return b
-end
-
 ###############################################################################
 #
 #  From relative to absolute
@@ -1486,369 +1483,385 @@ function _from_relative_to_abs(L::NfRel_ns{T}, auts::Array{NfRel_nsToNfRel_nsMor
   
   @vprint :AbExt 2 "Finished\n"
   return Ks, autos
+end 
+
+#######################################################################################
+#
+#  relative discriminant for abelian extension function
+#
+#######################################################################################
+
+function discriminant_conductor(C::ClassField, bound::fmpz; lwp::Dict{Tuple{Int, Int}, Array{GrpAbFinGenElem, 1}} = Dict{Tuple{Int, Int}, Array{GrpAbFinGenElem, 1}}())
+  
+  mr = C.rayclassgroupmap 
+  O = base_ring(C)
+  n = degree(C)
+  lp = mr.fact_mod
+  abs_disc = factor(discriminant(O)^n).fac
+  if isempty(lp)
+    C.absolute_discriminant=abs_disc
+    return true
+  end
+  K = nf(O)
+  d = degree(K)
+  discr = fmpz(1)
+  mp = pseudo_inv(C.quotientmap) * mr
+  R = domain(mp)
+  a = minimum(mr.modulus_fin)
+  cyc_prime = isprime(n)
+  
+  #first, tamely ramified part
+  tmg=mr.tame_mult_grp
+  primes_done = fmpz[]
+  for (p, mapp) in tmg 
+    if p.minimum in primes_done || haskey(mr.wild_mult_grp, p)
+      continue
+    end
+    ap=n
+    push!(primes_done, p.minimum)
+    if cyc_prime
+      ap-=1
+    else
+      if isdefined(mapp, :disc_log)
+        el = C.quotientmap(mapp.disc_log)
+      else
+        el=mp\ideal(O,tmg[p].generators[1]) #The generator is totally positive, we modified it before
+      end
+      q,mq=quo(R,GrpAbFinGenElem[el], false)
+      ap-= order(q)
+    end
+    qw = divexact(d, p.splitting_type[1])*ap
+    mul!(discr, discr, fmpz(p.minimum)^qw)
+    if discr > bound
+      @vprint :AbExt 2 "too large\n"
+      return false
+    else
+      if haskey(abs_disc, p.minimum)
+        abs_disc[p.minimum] += qw
+      else 
+        abs_disc[p.minimum] = qw
+      end
+      #for q in keys(tmg)
+      #  if minimum(q)==minimum(p) 
+      #    relative_disc[q]=ap
+      #  end
+      #end
+    end
+  end
+  
+  #now, wild ramification
+  if !isempty(mr.wild_mult_grp)
+    prime_power=Dict{NfOrdIdl, NfOrdIdl}()
+    for (p,v) in lp
+      prime_power[p]=p^v
+    end
+    wldg = mr.wild_mult_grp
+    primes_done = fmpz[]
+    for p in keys(wldg)
+      if p.minimum in primes_done
+        continue
+      end 
+      np = p.minimum^divexact(d, p.splitting_type[1])
+      push!(primes_done, p.minimum) 
+      ap = n*lp[p]
+      if cyc_prime
+        ap -= lp[p]
+      else
+        s = lp[p]
+        @hassert :AbExt 1 s>=2
+        els=GrpAbFinGenElem[]
+        for k=2:lp[p]      
+          s = s-1
+          pk = p^s
+          pv = pk*p
+          if haskey(lwp, (Int(p.minimum), s+1))
+            gens = lwp[(Int(p.minimum), s+1)]
+          else
+            gens_els = _1pluspk_1pluspk1(K, p, pk, pv, lp, prime_power, a, n)
+            gens = Vector{GrpAbFinGenElem}(undef, length(gens_els))
+            for i = 1:length(gens)
+              gens[i] = mr\(ideal(O, gens_els[i]))
+            end
+            lwp[(Int(p.minimum), s+1)] = gens
+          end
+          for i = 1:length(gens)
+            push!(els, C.quotientmap(gens[i]))
+          end
+          o = order(quo(R,els, false)[1])
+          ap -= o
+          tentative_ap = ap - (lp[p] - k + 1)*o
+          tentative_discr = discr * (np^tentative_ap)
+          if tentative_discr > bound
+            return false
+          end
+          @hassert :AbExt 1 ap>0
+        end
+        if haskey(tmg, p)
+          if isdefined(tmg[p], :disc_log)
+            push!(els, C.quotientmap(tmg[p].disc_log))
+          else
+            push!(els, mp\ideal(O, tmg[p].generators[1]))
+          end
+        end
+        ap -= order(quo(R, els, false)[1])
+        @hassert :AbExt 1 ap>0
+      end
+      np1 = np^ap
+      mul!(discr, discr, np1)
+      if discr > bound
+        @vprint :AbExt 2 "too large\n"
+        return false
+      else
+        if haskey(abs_disc, p.minimum)
+          abs_disc[p.minimum] += ap*divexact(d, p.splitting_type[1])
+        else 
+          abs_disc[p.minimum] = ap*divexact(d, p.splitting_type[1])
+        end
+      #  for q in keys(tmg)
+      #    if minimum(q)==minimum(p) 
+      #      relative_disc[q]=ap
+      #    end
+      #  end
+      end
+    end
+  end
+  #C.relative_discriminant=relative_disc
+  C.absolute_discriminant = abs_disc
+  return true
+
+end
+
+#same function but for ray class groups over QQ
+
+function discriminant_conductorQQ(O::NfOrd, C::ClassField, m::Int, bound::fmpz, n::Int)
+  
+  discr=fmpz(1)
+  mp = pseudo_inv(C.quotientmap) * C.rayclassgroupmap
+  G=domain(mp)
+  
+  cyc_prime= isprime(n)==true
+  
+  lp=factor(m).fac
+  abs_disc=Dict{fmpz,Int}()
+
+  R=ResidueRing(FlintZZ, m, cached=false)
+
+  for (p,v) in lp 
+    if v==1
+      ap=n
+      if cyc_prime
+        ap-=1
+      else
+        x=_unit_grp_residue_field_mod_n(Int(p),n)[1]
+        s=divexact(m,Int(p))
+        d,a,b=gcdx(s, Int(p))
+        l=Int((R(x)*a*s+b*Int(p)).data)
+        el=mp\ideal(O,l)
+        q,mq=quo(G, GrpAbFinGenElem[el], false)
+        ap-= order(q)
+      end
+      discr*=p^ap
+      if discr>bound
+        @vprint :AbExt 2 "too large\n"
+        return false
+      else
+        abs_disc[p]=ap
+      end
+    else
+      ap=n*v
+      pow=Int(p)^Int(v)
+      el = R(1)
+      if cyc_prime
+        ap-=v
+      else
+        if isodd(p)
+          s=divexact(m,pow)
+          d,a,b=gcdx(pow,s)  
+          s1=R(1+p)^(p-1)
+          el=G[1]
+          if v==2
+            el=mp\ideal(O,Int((b*s*R(s1)+a*pow).data))
+            ap-=order(quo(G,GrpAbFinGenElem[el], false)[1])
+          else
+            for k=0:v-2      
+              el=mp\ideal(O,Int((b*s*R(s1)^(p^k)+a*pow).data))
+              ap-=order(quo(G, GrpAbFinGenElem[el], false)[1])
+              @hassert :AbExt 1 ap>0
+            end
+          end
+          if gcd(n,p-1)==1
+            ap-=order(quo(G, GrpAbFinGenElem[mp\(ideal(O,fmpz((b*s*R(s1)+a*pow).data)))], false)[1])
+          else
+            x=_unit_grp_residue_field_mod_n(Int(p),n)[1]
+            el1=mp\ideal(O,Int((R(x)*b*s+a*pow).data))
+            ap-=order(quo(G, GrpAbFinGenElem[mp\(ideal(O,Int((b*s*R(s1)+a*pow).data))), el1], false)[1])
+          end
+        else
+          s=divexact(m,2^v)
+          d,a,b=gcdx(2^v,s)  
+          el=0*G[1]
+          for k=v-3:-1:0
+            el=mp\ideal(O,Int((R(5)^(2^k)*b*s+a*2^v).data))
+            ap-=order(quo(G, GrpAbFinGenElem[el], false)[1])
+          end
+          el1=mp\ideal(O,Int((R(-1)*b*s+a*p^v).data))
+          ap-=2*order(quo(G, GrpAbFinGenElem[el, el1], false)[1])
+        end
+      end
+      discr*=p^ap
+      if discr>bound
+        @vprint :AbExt 2 "too large\n"
+        return false
+      else
+        abs_disc[p]=ap
+      end
+    end
+  end
+  C.absolute_discriminant=abs_disc
+  return true
+end
+
+###############################################################################
+#
+#  conductor function for abelian extension function
+#
+###############################################################################
+#
+#  For this function, we assume the base field to be normal over Q and the conductor of the extension we are considering to be invariant
+#  The input must be a multiple of the minimum of the conductor, we don't check for consistency. 
+#
+
+function _is_conductor_min_normal(C::Hecke.ClassField; lwp::Dict{Int, Array{GrpAbFinGenElem, 1}} = Dict{Int, Array{GrpAbFinGenElem, 1}}())
+
+  mr = C.rayclassgroupmap
+  lp = mr.fact_mod
+  if isempty(lp)
+    return true
+  end
+  
+  a = minimum(mr.modulus_fin)
+  mp = pseudo_inv(C.quotientmap) * mr 
+  R = domain(mp)
+  
+  O = base_ring(C)
+  tmg = mr.tame_mult_grp
+  #first, tame part
+  primes_done = fmpz[]
+  for (p, v) in tmg
+    if p.minimum in primes_done 
+      continue
+    end
+    push!(primes_done, p.minimum)
+    if isdefined(v, :disc_log)
+      el = C.quotientmap(v.disc_log)
+    else
+      I = ideal(O, v.generators[1])
+      el = mp\I
+    end
+    if iszero(el)
+      return false
+    end
+  end
+  K = nf(O)
+  #wild part
+  if !isempty(mr.wild_mult_grp)
+    o = Int(order(R))
+    prime_power = Dict{NfOrdIdl, NfOrdIdl}()
+    for (p,v) in lp
+      prime_power[p] = p^v
+    end
+    wldg = mr.wild_mult_grp
+    primes_done = fmpz[]
+    for p in keys(wldg)
+      if p.minimum in primes_done
+        continue
+      end
+      push!(primes_done, p.minimum)
+      @assert lp[p]>=2
+      k = lp[p]-1
+      pk = p^k
+      pv = prime_power[p]
+      if haskey(lwp, Int(p.minimum))
+        gens = lwp[Int(p.minimum)]
+      else
+        gens_els = _1pluspk_1pluspk1(K, p, pk, pv, lp, prime_power, a, o)
+        gens = Vector{GrpAbFinGenElem}(undef, length(gens_els))
+        for i = 1:length(gens)
+          gens[i] = mr\(ideal(O, gens_els[i]))
+        end
+        lwp[Int(p.minimum)] = gens
+      end
+      iscond = false
+      for i in 1:length(gens)
+        if !iszero(C.quotientmap(gens[i]))
+          iscond=true
+          break
+        end
+      end
+      if !iscond
+        return false
+      end
+    end
+  end
+  return true
 
 end 
 
-
-###############################################################################
 #
-#  Maximal abelian subfield for fields function
+#  Same function as above, but in the assumption that the map comes from a ray class group over QQ
 #
-###############################################################################
 
+function _is_conductor_minQQ(C::Hecke.ClassField, n::Int)
 
-function check_abelian_extensions(class_fields::Vector{Tuple{Hecke.ClassField{Hecke.MapRayClassGrp,GrpAbFinGenMap}, Vector{GrpAbFinGenMap}}}, autos::Array{NfToNfMor, 1}, emb_sub::NfToNfMor)
-
-  @vprint :MaxAbExt 3 "Starting checking abelian extension\n"
-  K = base_field(class_fields[1][1])
-  d = degree(K)
-  G = domain(class_fields[1][2][1])
-  expo = G.snf[end]
-  com, uncom = ppio(Int(expo), d)
-  if com == 1
-    return Hecke.ClassField{Hecke.MapRayClassGrp,GrpAbFinGenMap}[x[1] for x in class_fields]
-  end 
-  #I extract the generators that restricted to the domain of emb_sub are the identity.
-  #Notice that I can do this only because I know the way I am constructing the generators of the group.
-  expG_arr = Int[]
-  act_indices = Int[]
-  p = 11
-  d1 = discriminant(domain(emb_sub))
-  d2 = discriminant(K)
-  while iszero(mod(d1, p)) || iszero(mod(d2, p))
-    p = next_prime(p)
-  end
-  R = GF(p, cached = false)
-  Rx, x = PolynomialRing(R, "x", cached = false)
-  fmod = Rx(K.pol)
-  mp_pol = Rx(emb_sub.prim_img)
-  for i = 1:length(autos)
-    pol = Rx(autos[i].prim_img)
-    if mp_pol ==  Hecke.compose_mod(mp_pol, pol, fmod)
-      push!(act_indices, i)
-      #I compute the order of the automorphisms. I need the exponent of the relative extension!
-      j = 2
-      att = Hecke.compose_mod(pol, pol, fmod)
-      while att != x
-        att = Hecke.compose_mod(pol, att, fmod)
-        j += 1
-      end
-      push!(expG_arr, j)
-    end
-  end
-  expG = lcm(expG_arr)
-  expG1 = ppio(expG, com)[1]
-  com1 = ppio(com, expG1)[1]
-  @vprint :MaxAbExt 3 "Context for ray class groups\n"
+  mr = C.rayclassgroupmap
+  mp = pseudo_inv(C.quotientmap) * mr
+  m = mr.modulus_fin
+  mm = Int(minimum(m))
+  lp = factor(m.minimum)
   
-  OK = maximal_order(K)
-  rcg_ctx = Hecke.rayclassgrp_ctx(OK, com1*expG1)
+  O=order(m)
+  K=nf(O)
   
-  @vprint :MaxAbExt 3 "Ordering the class fields\n"
-  
-  mins = Vector{fmpz}(undef, length(class_fields))
-  for i = 1:length(mins)
-    mins[i] = minimum(defining_modulus(class_fields[i][1])[1])
-  end
-  ismax = trues(length(mins))
-  for i = 1:length(ismax)
-    for j = i+1:length(ismax)
-      if ismax[j] 
-        i2 = ppio(mins[i], mins[j])[2]
-        if isone(i2)
-          ismax[i] = false
-          break
-        end 
-        i3 = ppio(mins[j], mins[i])[2]
-        if isone(i3)
-          ismax[j] = false
+  R=ResidueRing(FlintZZ, mm, cached=false)
+  for (p,v) in lp.fac
+    if isodd(p)
+      if v==1
+        x=_unit_grp_residue_field_mod_n(Int(p), n)[1]
+        s=divexact(mm,Int(p))
+        d,a,b=gcdx(s,Int(p))
+        l=a*s*R(x)+p*b  
+        if iszero(mp\(ideal(O,Int(l.data))))
+          return false
+        end
+      else      
+        s=divexact(mm,p^v)
+        d,a,b=gcdx(s,p^v)
+        x=a*s*R(1+p)^((p-1)*p^(v-2))+p^v*b
+        if iszero(mp\(ideal(O,Int(x.data))))
+          return false
         end
       end
-    end
-  end
-  ord_class_fields = Vector{Int}(undef, length(ismax))
-  j1 = 1
-  j2 = length(ismax)
-  for i = 1:length(ismax)
-    if ismax[i]
-      ord_class_fields[j1] = i
-      j1 += 1
     else
-      ord_class_fields[j2] = i
-      j2 -= 1
-    end
-  end
-  
-  cfields = Hecke.ClassField{Hecke.MapRayClassGrp, GrpAbFinGenMap}[]
-  for i = 1:length(class_fields)
-    @vprint :MaxAbExt 3 "Class Field $i\n"
-    C, res_act = class_fields[ord_class_fields[i]]
-    res_act_new = Vector{GrpAbFinGenMap}(undef, length(act_indices))
-    for i = 1:length(act_indices)
-      res_act_new[i] = res_act[act_indices[i]]
-    end
-    fl = check_abelian_extension(C, res_act_new, emb_sub, rcg_ctx)
-    if fl
-      push!(cfields, C)
-    end
-  end
-  return cfields
-  
-end
-
-function check_abelian_extension(C::Hecke.ClassField, res_act::Vector{GrpAbFinGenMap}, emb_sub::NfToNfMor, rcg_ctx::Hecke.ctx_rayclassgrp)
-
-  #I consider the action on every P-sylow and see if it is trivial
-  G = codomain(C.quotientmap)
-  expG = Int(exponent(G))
-  fac = factor(rcg_ctx.n)
-  prime_to_test = Int[]
-  new_prime = false
-  for (P, v) in fac
-    # I check that the action on the P-sylow is the identity.
-    for i = 1:ngens(G)
-      if !divisible(G.snf[i], P)
-        continue
+      if v==1
+        return false
       end
-      pp, q = ppio(G.snf[i], P)
-      new_prime = false
-      for j = 1:length(res_act)
-        if res_act[j](q*G[i]) != q*G[i]
-          new_prime = true
-          break
-        end
-      end
-      if new_prime
-        break
-      end
-    end
-    if !new_prime
-      push!(prime_to_test, P)
-    end
-  end 
-  if isempty(prime_to_test)
-    return true
-  end
-
-  n = prod(prime_to_test)
-  n1, m = ppio(Int(G.snf[end]), n)
-  if m != 1
-    # Now, I compute the maximal abelian subextension of the n-part of C
-    Q, mQ = quo(G, n1, false)
-    C1 = ray_class_field(C.rayclassgroupmap, Hecke.GrpAbFinGenMap(Hecke.compose(C.quotientmap, mQ)))
-    #@vtime :MaxAbExt 1 
-    fl = _maximal_abelian_subfield(C1, emb_sub, rcg_ctx, expG)
-  else
-    #@vtime :MaxAbExt 1 
-    fl = _maximal_abelian_subfield(C, emb_sub, rcg_ctx, expG)
-  end
-  return fl
-
-end
-
-function _bound_exp_conductor_wild(O::NfOrd, n::Int, q::Int, bound::fmpz)
-  d = degree(O)
-  lp = prime_decomposition_type(O, q)
-  f_times_r = divexact(d, lp[1][2]) 
-  sq = fmpz(q)^f_times_r
-  nbound = n+n*lp[1][2]*valuation(n,q)-div(fmpz(n), q^(valuation(n,q)))
-  obound = flog(bound, sq)
-  bound_max_ap = min(nbound, obound)  #bound on ap
-  return div(q*bound_max_ap, n*(q-1)) #bound on the exponent in the conductor
-end
-
-function minimumd(D::Dict{NfOrdIdl, Int}, deg_ext::Int)
-  primes_done = Int[]
-  res = 1
-  for (P, e) in D
-    p = Int(minimum(P))
-    if p in primes_done
-      continue
-    else
-      push!(primes_done, p)
-    end
-    ram_index = P.splitting_type[1]
-    s, t = divrem(e, ram_index)
-    if iszero(t)
-      d = min(s, valuation(deg_ext, p)+2)
-      res *= p^d
-    else
-      d = min(s+1, valuation(deg_ext, p)+2)
-      res *= p^d
-    end
-  end
-  return res
-end
-
-function _maximal_abelian_subfield(A::Hecke.ClassField, mp::Hecke.NfToNfMor, ctx::Hecke.ctx_rayclassgrp, expG::Int)
-
-  K = base_field(A)
-  k = domain(mp)
-  ZK = maximal_order(K)
-  zk = maximal_order(k)
-  expected_order = div(degree(K), degree(k))
-  if gcd(expected_order, degree(A)) == 1
-    return false
-  end
-  # disc(ZK/Q) = N(disc(ZK/zk)) * disc(zk)^deg
-  # we need the disc ZK/k, well a conductor.
-  d = abs(div(discriminant(ZK), discriminant(zk)^expected_order))
-  mR1 = A.rayclassgroupmap
-  expo = Int(exponent(codomain(A.quotientmap)))
-
-  #First, a suitable modulus for A over k
-  #I take the discriminant K/k times the norm of the conductor A/K
-  
-  fac1 = factor(d)
-  fm0 = Dict{NfOrdIdl, Int}()
-  for (p, v) in fac1
-    lPp = prime_decomposition(zk, p)
-    if divisible(fmpz(expected_order), p)
-      theoretical_bound = _bound_exp_conductor_wild(zk, expG, Int(p), d)
-      for i = 1:length(lPp)
-        fm0[lPp[i][1]] = min(theoretical_bound, Int(v))
-      end
-    else
-      for i = 1:length(lPp)
-        fm0[lPp[i][1]] = 1
-      end
-    end
-  end
-  #Now, I want to compute f_m0 = merge(max, norm(mR1.fact_mod), fac2)
-  primes_done = fmpz[]
-  for (P, e) in mR1.fact_mod
-    p = minimum(P)
-    if p in primes_done
-      continue
-    else
-      push!(primes_done, p)
-    end
-    lp = prime_decomposition(zk, p)
-    if !divisible(fmpz(expected_order * expo), p)
-      for i = 1:length(lp)
-        fm0[lp[i][1]] = 1
-      end
-    else
-      #I need the relative norm of P expressed as a prime power.
-      pm = Hecke.intersect_prime(mp, P)
-      fpm = divexact(P.splitting_type[2], pm.splitting_type[2])
-      theoretical_bound1 = _bound_exp_conductor_wild(zk, lcm(expo, expG), Int(p), d*norm(defining_modulus(A)[1]))
-      for i = 1:length(lp)
-        if haskey(fm0, lp[i][1])
-          fm0[lp[i][1]] =  min(fm0[lp[i][1]] * fpm * e, theoretical_bound1)
-        else
-          fm0[lp[i][1]] = min(fpm * e, theoretical_bound1)
-        end
-      end
-    end
-  end
-  # Now, I extend the modulus to K
-  fM0 = Dict{NfOrdIdl, Int}()
-  primes_done = fmpz[]
-  for (P, e) in fm0
-    p = Hecke.minimum(P)
-    if p in primes_done
-      continue
-    else
-      push!(primes_done, p)
-    end
-    
-    lp = prime_decomposition(ZK, p)
-    multip = divexact(lp[1][2], P.splitting_type[1])
-    if !divisible(fmpz(expected_order * expo), p)
-      for i = 1:length(lp)
-        fM0[lp[i][1]] = 1
-      end
-    else
-      if isdefined(A, :abs_disc) 
-        d = A.abs_disc
-        ev = prod(w^z for (w,z) in d)
-        ev = divexact(ev, discriminant(ZK))
-        theoretical_bound2 = _bound_exp_conductor_wild(ZK, expo, Int(p), ppio(ev, p)[1])
-        for i = 1:length(lp)
-          fM0[lp[i][1]] = min(multip * e, theoretical_bound2)
+      if v==2
+        s=divexact(mm,4)
+        d,a,b=gcdx(s,4)
+        l=a*s*R(-1)+4*b
+        if iszero(mp\(ideal(O,Int(l.data))))
+          return false
         end
       else
-        for i = 1:length(lp)
-          fM0[lp[i][1]] = multip * e
+        s=divexact(mm,2^v)
+        d,a,b=gcdx(s, 2^v)
+        l=a*s*R(5)^(2^(v-3))+2^v*b
+        if iszero(mp\(ideal(O,Int(l.data))))
+          return false
         end
       end
-    end 
-  end
-  ind = 0
-  #@vtime :MaxAbExt 1 
-  if isdefined(ctx, :computed)
-    flinf = isempty(mR1.modulus_inf)
-    for i = 1:length(ctx.computed)
-      idmr, ifmr, mRRR = ctx.computed[i]
-      if flinf != ifmr
-        continue
-      end
-      contained = true
-      for (P, v) in fM0
-        if !haskey(idmr, P) || idmr[P] < v
-          contained = false
-        end
-      end
-      if contained
-        ind = i
-        break
-      end
     end
   end
-  if iszero(ind)
-    R, mR = Hecke.ray_class_group_quo(ZK, fM0, mR1.modulus_inf, ctx, check = false)
-    if isdefined(ctx, :computed)
-      push!(ctx.computed, (fM0, isempty(mR1.modulus_inf), mR))
-    else
-      ctx.computed = [(fM0, isempty(mR1.modulus_inf), mR)]
-    end
-  else
-    mR = ctx.computed[ind][3]
-    R = domain(mR)
-  end
-  if degree(zk) != 1
-    if istotally_real(K) && isempty(mR1.modulus_inf)
-      inf_plc = InfPlc[]
-    else
-      inf_plc = real_places(k)
-    end
-    #@vtime :MaxAbExt 1 
-    r, mr = Hecke.ray_class_group_quo(zk, ctx.n, fm0, inf_plc)
-  else
-    rel_plc = true
-    if istotally_real(K) && isempty(mR1.modulus_inf)
-      rel_plc = false
-    end
-    modulo = minimumd(fm0, expo * expected_order)
-    #@vtime :MaxAbExt 1 
-    r, mr = Hecke.ray_class_groupQQ(zk, modulo, rel_plc, ctx.n)
-  end
-  #@vtime :MaxAbExt 1 
-  lP, gS = Hecke.find_gens(mR, coprime_to = minimum(mR1.modulus_fin))
-  listn = NfOrdIdl[norm(mp, x) for x in lP]
-  # Create the map between R and r by taking norms
-  preimgs = Vector{GrpAbFinGenElem}(undef, length(listn))
-  for i = 1:length(preimgs)
-    preimgs[i] = mr\listn[i]
-  end
-  proj = hom(gS, preimgs)
-  #compute the norm group of A in R
-  prms = Vector{GrpAbFinGenElem}(undef, length(lP))
-  for i = 1:length(lP)
-    if haskey(mR1.prime_ideal_preimage_cache, lP[i])
-      f = mR1.prime_ideal_preimage_cache[lP[i]]
-    else
-      f = mR1\lP[i]
-      mR1.prime_ideal_preimage_cache[lP[i]] = f
-    end
-    prms[i] = A.quotientmap(f)
-  end
-  proj1 = hom(gS, prms)
-  S, mS = kernel(proj1, false)
-  mS1 = mS*proj
-  G, mG = Hecke.cokernel(mS1, false)
-  return (order(G) == expected_order)::Bool
+  return true
 
-end
-
+end 

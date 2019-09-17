@@ -182,95 +182,13 @@ end
 #
 ###############################################################################
 
-function primes_to_check2(OK::NfOrd)
-  lp = Hecke.ramified_primes(OK)
-  lp_to_check = Vector{Int}()
-  for p in lp
-    if p == 2
-      continue
-    end
-    lP = prime_decomposition(OK, p, cached = true)
-    P = lP[1][1]
-    e = ppio(lP[1][2], 2)
-    if e == 1
-      continue
-    end
-    f = ppio(degree(P), 2)
-    if f == 1 && divisible(norm(P)-1, 2*e)
-      continue
-    end
-    push!(lp_to_check, p)
-  end
-  return lp_to_check
-end
-
-
 function _Brauer_at_two(list::Vector{FieldsTower}, L::Main.ForeignGAP.MPtr, i::Int)
   mH, autos, _cocycle_values = cocycle_computation(L, i)
   domcoc = GAP.Globals.ImagesSource(mH)
   admit_ext = falses(length(list))
   for t = 1:length(list)
     @vprint :Fields 1 "$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())Fields to test: $(length(list)-t+1)"
-    K = list[t].field
-    OK = maximal_order(K)
-    lp = primes_to_check2(OK)
-    #Some easy cases
-    if isempty(lp) && (!divisible(discriminant(OK), 2) || istotally_real(K))
-      admit_ext[t] = true
-      continue
-    end
-    if isone(length(lp)) && !divisible(discriminant(OK), 2) && istotally_real(K)
-      admit_ext[t] = true
-      continue
-    end
-    GC = automorphisms(K, copy = false)
-    DGCvect = Vector{Tuple{NfToNfMor, Int}}(undef, length(GC))
-    for i = 1:length(GC)
-      DGCvect[i] = (GC[i], i)
-    end
-    DGC = Dict{NfToNfMor, Int}(DGCvect)
-    permGC = _from_autos_to_perm(GC) #TODO: Improve a little.
-    Gperm = _perm_to_gap_grp(permGC)
-    PermGAP = Vector{Main.ForeignGAP.MPtr}(undef, length(permGC))
-    for w = 1:length(permGC)
-      PermGAP[w] = _perm_to_gap_perm(permGC[w])
-    end
-    #Restrict to the p-Sylow
-    Gp = pSylow(Gperm, PermGAP, GC, 2)
-    iso = GAP.Globals.IsomorphismGroups(Gperm, domcoc)
-    ElemGAP = Vector{Main.ForeignGAP.MPtr}(undef, length(permGC))
-    for w = 1:length(permGC)
-      ElemGAP[w] = GAP.Globals.Image(iso, PermGAP[w])
-    end
-    list[t].imgs_autos = ElemGAP
-    obstruction = false
-    auts_for_conductors = Vector{Main.ForeignGAP.MPtr}()
-    for g in autos
-      #I create the cocycle
-      local cocycle
-      let DGC = DGC, g = g, ElemGAP = ElemGAP
-        function cocycle(aut1::NfToNfMor, aut2::NfToNfMor)
-          s1 = DGC[aut1]
-          a1 = GAP.Globals.Image(g, ElemGAP[s1])
-          s2 = DGC[aut2]
-          b1 = GAP.Globals.Image(g, ElemGAP[s2])
-          return mod(_cocycle_values(a1, b1), 2)
-        end
-      end
-  
-      #Now, we have to see if it splits
-      fl = cpa_issplit(K, Gp, cocycle, 2, lp)
-      if fl
-        obstruction = true
-        push!(auts_for_conductors, g)
-      end
-      
-    end
-    if obstruction
-      list[t].proj_ext = mH
-      list[t].auts_for_conductors = auts_for_conductors
-      admit_ext[t] = true
-    end
+    admit_ext[t] = _Brauer_no_extend(list[t], mH, autos, _cocycle_values, domcoc, 2)
   end
   @vprint :Fields 1 "$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())"
   return list[findall(admit_ext)]
@@ -283,8 +201,6 @@ end
 #
 ###############################################################################
 
-
-
 function _Brauer_prime_case(list::Vector{FieldsTower}, L::Main.ForeignGAP.MPtr, i::Int, p::Int)
   
   list1 = falses(length(list))  
@@ -293,6 +209,12 @@ function _Brauer_prime_case(list::Vector{FieldsTower}, L::Main.ForeignGAP.MPtr, 
   for t = 1:length(list)
     @vprint :Fields 1 "$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())Fields to test: $(length(list)-t+1)"
     K = list[t].field
+    lp = ramified_primes(list[t])
+    if all(x -> (isone(mod(x, p)) || x == p), lp)
+      #no need to extend the field with the roots of unity!
+      list1[t] = _Brauer_no_extend(list[t], mH, autos, coc, H, p)
+      continue
+    end 
     Kc = _ext_cycl(list[t].generators_of_automorphisms, p)
     K1 = Kc.Ka
     autsK = automorphisms(K, copy = false)
@@ -346,6 +268,61 @@ function _Brauer_prime_case(list::Vector{FieldsTower}, L::Main.ForeignGAP.MPtr, 
   @vprint :Fields 1 "$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())"
   return list[findall(list1)]
 
+end
+
+function _Brauer_no_extend(x::FieldsTower, mH, autos, _cocycle_values, domcoc, p)
+  K = x.field
+  OK = maximal_order(K)
+  GC = automorphisms(K, copy = false)
+  DGCvect = Vector{Tuple{NfToNfMor, Int}}(undef, length(GC))
+  for i = 1:length(GC)
+    DGCvect[i] = (GC[i], i)
+  end
+  DGC = Dict{NfToNfMor, Int}(DGCvect)
+  permGC = _from_autos_to_perm(GC) #TODO: Improve a little.
+  Gperm = _perm_to_gap_grp(permGC)
+  PermGAP = Vector{Main.ForeignGAP.MPtr}(undef, length(permGC))
+  for w = 1:length(permGC)
+    PermGAP[w] = _perm_to_gap_perm(permGC[w])
+  end
+  #Restrict to the p-Sylow
+  Gp = pSylow(Gperm, PermGAP, GC, p)
+  iso = GAP.Globals.IsomorphismGroups(Gperm, domcoc)
+  ElemGAP = Vector{Main.ForeignGAP.MPtr}(undef, length(permGC))
+  for w = 1:length(permGC)
+    ElemGAP[w] = GAP.Globals.Image(iso, PermGAP[w])
+  end
+  x.imgs_autos = ElemGAP
+  obstruction = false
+  auts_for_conductors = Vector{Main.ForeignGAP.MPtr}()
+  for g in autos
+    #I create the cocycle
+    local cocycle
+    let DGC = DGC, g = g, ElemGAP = ElemGAP
+      function cocycle(aut1::NfToNfMor, aut2::NfToNfMor)
+        s1 = DGC[aut1]
+        a1 = GAP.Globals.Image(g, ElemGAP[s1])
+        s2 = DGC[aut2]
+        b1 = GAP.Globals.Image(g, ElemGAP[s2])
+        return mod(_cocycle_values(a1, b1), p)
+      end
+    end
+  
+    #Now, we have to see if it splits
+    fl = cpa_issplit(K, Gp, cocycle, p)
+    if fl
+      obstruction = true
+      push!(auts_for_conductors, g)
+    end
+     
+  end
+  if obstruction
+    x.proj_ext = mH
+    x.auts_for_conductors = auts_for_conductors
+    return true
+  else
+    return false
+  end
 end
 
 ###############################################################################
@@ -547,8 +524,14 @@ function check_Brauer_obstruction_pp(list::Vector{FieldsTower}, L::Main.ForeignG
   list1 = falses(length(list))
   pv = p^v
   mH, autos, coc, action_grp, Elems = cocycle_computation_pp(L, i)
+  H = GAP.Globals.ImagesSource(mH)
   for t = 1:length(list)
     @vprint :Fields 1 "$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())Fields to test: $(length(list)-t+1)"
+    lp = ramified_primes(list[t])
+    if all(x -> (isone(mod(x, pv)) || x == p), lp)
+      list1[t] = _Brauer_no_extend_pp(list[t], mH, autos, coc, p, v, Elems, pv, action_grp)
+      continue
+    end
     Kc = _ext_cycl(list[t].generators_of_automorphisms, pv)
     K = list[t].field
     K1 = Kc.Ka
@@ -562,7 +545,6 @@ function check_Brauer_obstruction_pp(list::Vector{FieldsTower}, L::Main.ForeignG
     for w = 1:length(autsK1)
       dautsK1[autsK1[w]] = w
     end 
-    H = GAP.Globals.ImagesSource(mH)
     iso = GAP.Globals.IsomorphismGroups(Gperm, H)
     ElemGAP = Vector{Main.ForeignGAP.MPtr}(undef, length(permGC))
     for w = 1:length(permGC)
@@ -644,9 +626,98 @@ function check_Brauer_obstruction_pp(list::Vector{FieldsTower}, L::Main.ForeignG
   @vprint :Fields 1 "$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())"
   it = findall(list1)
   return FieldsTower[list[t] for t in it]
-
 end
 
+
+function _Brauer_no_extend_pp(F, mH, autos, coc, p, v, Elems, pv, action_grp)
+  K = F.field
+  autsK = automorphisms(K, copy = false)
+  #I construct the group and the isomorphisms between the automorphisms and the gap group.
+  permGC = _from_autos_to_perm(autsK) 
+  Gperm = _perm_to_gap_grp(permGC)
+  dautsK = Dict{NfToNfMor, Int}()
+  for w = 1:length(autsK)
+    dautsK[autsK[w]] = w
+  end 
+  H = GAP.Globals.ImagesSource(mH)
+  iso = GAP.Globals.IsomorphismGroups(Gperm, H)
+  ElemGAP = Vector{Main.ForeignGAP.MPtr}(undef, length(permGC))
+  for w = 1:length(permGC)
+    ElemGAP[w] = GAP.Globals.Image(iso, _perm_to_gap_perm(permGC[w]))
+  end
+  F.imgs_autos = ElemGAP
+  #Restrict to the p-Sylow
+  #Unfortunately, I need to compute the group structure.
+  Gp = pSylow(autsK, p)
+  obstruction = false
+  auts_for_conductors = Vector{Main.ForeignGAP.MPtr}()
+  for (g1, g2) in autos
+    #I create the cocycle
+    local cocycle
+    let  ElemGAP = ElemGAP, dautsK = dautsK, coc = coc, pv = pv
+      function cocycle(aut1::NfToNfMor, aut2::NfToNfMor)
+        s1 = dautsK[aut1]
+        a1 = GAP.Globals.PreImagesRepresentative(g1, ElemGAP[s1])
+        s2 = dautsK[aut2]
+        b1 = GAP.Globals.PreImagesRepresentative(g1, ElemGAP[s2])
+        rescoc = coc(a1, b1)*g2
+        return mod(rescoc, pv)::Int
+      end
+    end
+    #I have to find the subgroup of Gp such that the action of Gp on the roots of unity 
+    #coincides with the action
+    Stab = NfToNfMor[]
+    for w = 1:length(Gp)
+      if Gp[w].prim_img == gen(K)
+        push!(Stab, Gp[w])
+        continue
+      end
+      s1 = dautsK[Gp[w]]
+      img_el = GAP.Globals.PreImagesRepresentative(g1, ElemGAP[s1])
+      ind = 1
+      for s = 1:length(Elems)
+        if img_el == Elems[s]
+          ind = s
+          break
+        end
+      end
+      if action_grp[ind] == 1
+        push!(Stab, Gp[w])
+      end
+    end
+    #@assert check_cocycle(Stab, cocycle, pv)
+
+    #If the group acts as the roots of unity, we have a Brauer embedding problem, so
+    # we only have to check one algebra.
+    if length(Stab) == length(Gp)
+      fl = cpa_issplit(K, Gp, cocycle, pv)
+      if fl
+        obstruction = true
+        push!(auts_for_conductors, g1)
+        continue
+      end
+    end
+    #Otherwise, I reduce the embedding problem to 2 different Brauer embedding problems.
+    #One corresponds to the subextension of prime degree, the other one corresponds
+    # the the embedding problem given by the subgroup of G having the same action on G and
+    # on the roots of unity.
+    fl = cpa_issplit(K, Gp, cocycle, p) && cpa_issplit(K, Gp, Stab, cocycle, p, v)
+    if fl
+      obstruction = true
+      push!(auts_for_conductors, g1)
+      continue
+    end
+  end
+  #If I am here, all the algebras don't split. I return false
+  if obstruction
+    F.auts_for_conductors = auts_for_conductors
+    F.proj_ext = mH
+    return true
+  else
+    return false
+  end
+  
+end
 ###############################################################################
 #
 #  Brauer obstruction: interface
@@ -687,10 +758,8 @@ end
 #
 ###############################################################################
 
-
 #p must be a prime power 
-function cpa_issplit(K::AnticNumberField, G::Vector{NfToNfMor}, Coc::Function, pv::Int, lp::Vector{Int} = Hecke.ramified_primes(maximal_order(K)))
-  
+function cpa_issplit(K::AnticNumberField, G::Vector{NfToNfMor}, Coc::Function, pv::Int, lp::Vector{fmpz} = Hecke.ramified_primes(maximal_order(K)))
   p = ispower(pv)[2]
   @vtime :BrauerObst 1 if p == 2 && !istotally_real(K) && !is_split_at_infinity(K, Coc)
     return false    
@@ -722,12 +791,10 @@ function cpa_issplit(K::AnticNumberField, G::Vector{NfToNfMor}, Coc::Function, p
     end
   end
   return true
-  
 end
 
 
 function is_split_at_infinity(K::AnticNumberField, Coc::Function)
-  
   aut = complex_conjugation(K)
   if Coc(aut, aut) == 1
     @vprint :Fields 3 "Real places!\n"
@@ -735,11 +802,9 @@ function is_split_at_infinity(K::AnticNumberField, Coc::Function)
   else
     return true
   end
-
 end
 
 function inertia_subgroup(F, mF, G::Array{NfToNfMor, 1})
-  
   @assert !isempty(G)
   K = domain(G[1])
   O = maximal_order(K)
@@ -756,14 +821,12 @@ function inertia_subgroup(F, mF, G::Array{NfToNfMor, 1})
       push!(inertia_grp, g)
     end
   end
-  return inertia_grp
-  
+  return inertia_grp 
 end
 
 
 
 function decomposition_group(G::Array{NfToNfMor, 1}, P::NfOrdIdl, orderG::Int = length(G))
-  
   @assert !isempty(G)
   O = order(P)
   K = nf(O)
@@ -782,8 +845,7 @@ function decomposition_group(G::Array{NfToNfMor, 1}, P::NfOrdIdl, orderG::Int = 
       break
     end
   end
-  return dec_group
-  
+  return dec_group 
 end
 
 function _find_theta(G::Vector{NfToNfMor}, F::FqNmodFiniteField, mF::Hecke.NfOrdToFqNmodMor, e::Int)
@@ -915,7 +977,6 @@ function is_split_at_p(O::NfOrd, GC::Array{NfToNfMor, 1}, Coc::Function, p::Int,
   powtheta = theta^mod(q, e)
   lambda = mod(lambda - Coc(powtheta, frob), n)
   return iszero(lambda)
-
 end
 
 ################################################################################

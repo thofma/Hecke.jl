@@ -891,14 +891,16 @@ end
 function _get_poly_from_elem(a::NfRel_nsElem{nf_elem}, Qxy)
   K = base_field(parent(a))
   Qx = parent(K.pol)
-  p = change_base_ring(a.data, x -> evaluate(Qx(x), gen(Qxy, 1)))
-  p1 = evaluate(p, [i for i in 1:ngens(parent(a))], gens(Qxy)[2:end])
-  return coeff(p1, [0 for i = 1:nvars(parent(p1))])
+  p = change_base_ring(a.data, x -> evaluate(Qx(x), gen(Qxy, nvars(Qxy))))
+  p1 = evaluate(p, [i for i in 1:ngens(parent(a))], gens(Qxy)[1:end-1])
+  res = coeff(p1, [0 for i = 1:nvars(parent(p1))])
+  return res
 end
 
-function (Rxy::Generic.MPolyRing{gfp_elem})(f::fmpq_mpoly)
+function (Rxy::NmodMPolyRing)(f::fmpq_mpoly)
   R = base_ring(Rxy)
-  return change_base_ring(f, x -> divexact(R(numerator(x)), R(denominator(x))), Rxy)
+  res = change_base_ring(f, x -> divexact(R(numerator(x)), R(denominator(x))), Rxy)
+  return res
 end
 
 function _get_polys_from_auto(f::NfRel_nsToNfRel_nsMor{nf_elem}, Qxy)
@@ -906,15 +908,18 @@ function _get_polys_from_auto(f::NfRel_nsToNfRel_nsMor{nf_elem}, Qxy)
   fK = f.coeff_aut
   ap = fK.prim_img
   K = parent(ap)
-  res[1] = evaluate(parent(K.pol)(ap), gen(Qxy, 1))
-  for i = 2:nvars(Qxy)
-    res[i] = _get_poly_from_elem(f.emb[i-1], Qxy)
+  res[nvars(Qxy)] = evaluate(parent(K.pol)(ap), gen(Qxy, nvars(Qxy)))
+  for i = 1:nvars(Qxy)-1
+    res[i] = _get_poly_from_elem(f.emb[i], Qxy)
   end
   return res
 end
 
-function permutation_group(G::Vector{NfRel_nsToNfRel_nsMor{nf_elem}})
-  
+function Base.hash(f::nmod_mpoly, h::UInt)
+  return UInt(1)
+end
+
+function permutation_group1(G::Vector{NfRel_nsToNfRel_nsMor{nf_elem}})
   L = domain(G[1])
   K = base_field(L)
   dK = absolute_degree(L)
@@ -923,58 +928,64 @@ function permutation_group(G::Vector{NfRel_nsToNfRel_nsMor{nf_elem}})
   while divisible(d1, p)
     p = next_prime(p)
   end
-  R = GF(p, cached = false)
+  R = ResidueRing(FlintZZ, p, cached = false)
   Rm, gRm = PolynomialRing(R, ngens(L)+1, cached = false)
   fmod = Vector{elem_type(Rm)}(undef, ngens(L)+1)
   RQm, gRQm = PolynomialRing(FlintQQ, ngens(L)+1, cached = false)
   p1 = K.pol
-  p1Q = evaluate(p1, gRQm[1])
+  p1Q = evaluate(p1, gRQm[end])
   fmod[1] = Rm(p1Q)
   for i = 1:ngens(L)
     pp = L.pol[i]
-    pp1 = change_base_ring(pp, x -> evaluate(parent(p1)(x), gRQm[1]))
-    pp2 = evaluate(pp1, [i for i = 1:ngens(L)], [gRQm[i+1] for i= 1:ngens(L)])
+    pp1 = change_base_ring(pp, x -> evaluate(parent(p1)(x), gRQm[end]))
+    pp2 = evaluate(pp1, [i for i = 1:ngens(L)], [gRQm[i] for i= 1:ngens(L)])
     pp3 = coeff(pp2, [0 for s=1:nvars(parent(pp2))])
     fmod[i+1] = Rm(pp3)
   end
-  pols = typeof(gRm)[gRm]
+  permutations = Array{Array{Int, 1},1}(undef, length(G))
+  for i = 1:length(G)
+    permutations[i] = Vector{Int}(undef, dK)
+  end
+  pols = Vector{typeof(gRm)}(undef, dK)
+  pols[1] = gRm
+  ind = 2
   gpols = map(Rm, _get_polys_from_auto(G[1], RQm))
   if gpols != gRm
-    push!(pols, gpols)
-    gpol = [compose_mod(gpols[i], [j for j =1:nvars(Rm)], pols[2], fmod) for i = 1:length(gpols)]
+    pols[ind] = gpols
+    ind += 1
+    gpol = [compose_mod(gpols[i], [j for j = 1:nvars(Rm)], pols[2], fmod) for i = 1:length(gpols)]
     while gRm != gpol
-      push!(pols, gpol)
+      pols[ind] = gpol
+      ind += 1
       gpol = [compose_mod(gpol[i], [j for j in 1:nvars(Rm)], pols[2], fmod) for i = 1:length(gpols)]
     end
   end
-  order = length(pols)
-
   for i in 2:length(G)
-    pi = map(Rm, _get_polys_from_auto(G[i], RQm))
-    if !(pi in pols)
-      previous_order = order
-      order = order + 1
-      push!(pols, pi)
+    pi = typeof(gRm[1])[Rm(x) for x in _get_polys_from_auto(G[i], RQm)]
+    if !(pi in pols[1:ind-1])
+      previous_order = ind - 1
+      pols[ind] = pi
+      ind += 1
       for j in 2:previous_order
-        order = order + 1
-        push!(pols, [compose_mod(pols[j][s], [z for z in 1:nvars(Rm)],  pi, fmod) for s = 1:length(pi)])
+        pols[ind] = [compose_mod(pols[j][s], [z for z in 1:nvars(Rm)], pi, fmod) for s = 1:length(pi)]
+        ind += 1
       end
-      if order == dK
+      if ind - 1 == dK
         break
       end
       rep_pos = previous_order + 1
-      while rep_pos <= order
+      while rep_pos <= ind - 1
         for k in 1:i
           po = map(Rm, _get_polys_from_auto(G[k], RQm))
           att = [compose_mod(pols[rep_pos][s], [i for i in 1:nvars(Rm)], po, fmod) for s = 1:length(pols[rep_pos])]
-          if !(att in pols)
-            order = order + 1
-            push!(pols, att)
+          if !(att in pols[1:ind-1])
+            pols[ind] = att
+            ind += 1
             for j in 2:previous_order
-              order = order + 1
-              push!(pols, [compose_mod(pols[j][s], [z for z in 1:nvars(Rm)], att, fmod) for s = 1:length(pols[j])])
+              pols[ind] = [compose_mod(pols[j][s], [z for z in 1:nvars(Rm)], att, fmod) for s = 1:length(pols[j])]
+              ind += 1
             end
-            if order == dK
+            if ind - 1 == dK
               break
             end
           end
@@ -988,15 +999,13 @@ function permutation_group(G::Vector{NfRel_nsToNfRel_nsMor{nf_elem}})
   for i = 1:length(pols)
     Dcreation[i] = (pols[i], i)
   end
-  permutations = Array{Array{Int, 1},1}(undef, length(G))
-  for i = 1:length(G)
-    permutations[i] = Vector{Int}(undef, dK)
-  end
+
   gen_pols = [[Rm(y) for y in _get_polys_from_auto(x, RQm)] for x in G]
   D = Dict(Dcreation)
   for s = 1:length(G)
-    for i = 1:length(pols)
-      permutations[s][i] = D[[compose_mod(gen_pols[s][t], [i for i in 1:nvars(Rm)], pols[i], fmod) for t =1:length(gen_pols[s])]]
+    permutations[s][1] = D[gen_pols[s]]
+    for i = 2:length(pols)
+      permutations[s][i] = D[[compose_mod(gen_pols[s][t], [i for i in 1:nvars(Rm)], pols[i], fmod) for t = 1:length(gen_pols[s])]]
     end
   end
   return permutations
@@ -1077,7 +1086,10 @@ function change_base_ring(p::MPolyElem{T}, g, new_polynomial_ring) where {T <: R
   cvzip = zip(coeffs(p), exponent_vectors(p))
   M = MPolyBuildCtx(new_polynomial_ring)
   for (c, v) in cvzip
-     push_term!(M, g(c), v)
+    res = g(c)
+    if !iszero(res)
+      push_term!(M, g(c), v)
+    end
   end
-  return finish(M)
+  return finish(M)::elem_type(new_polynomial_ring)
 end
