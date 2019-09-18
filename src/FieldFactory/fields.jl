@@ -98,7 +98,7 @@ function permutation_group(G::Array{Hecke.NfToNfMor, 1})
 
 
   pols = gfp_poly[x]
-  gpol = Rx(S[1].prim_img)
+  gpol = Rx(G[1].prim_img)
   if gpol != x
     push!(pols, gpol)
     gpol = compose_mod(gpol, pols[2], fmod)
