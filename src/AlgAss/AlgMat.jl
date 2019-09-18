@@ -441,15 +441,6 @@ end
 
 ################################################################################
 #
-#  Equality
-#
-################################################################################
-
-# So far we don't have a canonical basis
-==(A::AlgMat, B::AlgMat) = A === B
-
-################################################################################
-#
 #  Inclusion of matrices
 #
 ################################################################################
@@ -499,15 +490,13 @@ end
 > Returns the center $C$ of $A$ and the inclusion $C \to A$.
 """
 function center(A::AlgMat{T, S}) where {T, S}
-  if iscommutative(A)
-    B, mB = AlgAss(A)
-    return B, mB
-  end
-
   if isdefined(A, :center)
     return A.center::Tuple{AlgAss{T}, morphism_type(AlgAss{T}, typeof(A))}
   end
 
+  # Unlike for AlgAss, we should cache the centre even if A is commutative
+  # since it is of a different type, so A !== center(A)[1].
+  # Otherwise center(A)[1] !== center(A)[1] which is really annoying.
   B, mB = AlgAss(A)
   C, mC = center(B)
   mD = compose_and_squash(mB, mC)
