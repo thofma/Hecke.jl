@@ -160,6 +160,16 @@ function fractional_ideal(O::NfRelOrd{T, S}, M::Generic.Mat{T}) where {T, S}
   return fractional_ideal(O, PseudoMatrix(M, coeffs))
 end
 
+function fractional_ideal(O::NfRelOrd{T, S}, A::Vector{<:NumFieldElem}) where {T, S}
+  if all(iszero, A)
+    M = zero_matrix(base_field(nf(O)), degree(O), degree(O))
+    pb = pseudo_basis(O)
+    return NfRelOrdFracIdl{T, S}(O, PseudoMatrix(M, [ deepcopy(pb[i][2]) for i = 1:degree(O)]))
+  end
+
+  return sum(fractional_ideal(O, a) for a in A if !iszero(a))
+end
+
 function fractional_ideal(O::NfRelOrd{T, S}, x::NumFieldElem{T}) where {T, S}
   d = degree(O)
   pb = pseudo_basis(O, copy = false)
@@ -299,6 +309,12 @@ end
 Returns $a + b$.
 """
 function +(a::NfRelOrdFracIdl{T, S}, b::NfRelOrdFracIdl{T, S}) where {T, S}
+  if iszero(a)
+    return b
+  end
+  if iszero(b)
+    return a
+  end
   d = degree(order(a))
   H = vcat(basis_pmatrix(a), basis_pmatrix(b))
   if T != nf_elem

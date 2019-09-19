@@ -128,14 +128,14 @@ end
 
 function Base.show(io::IO, V::QuadSpace)
   print(io, "Quadratic space over\n")
-  println(io, base_algebra(V))
+  println(io, base_ring(V))
   println(io, "with Gram matrix")
   print(io, gram_matrix(V))
 end
 
 function Base.show(io::IO, V::HermSpace)
   print(io, "Hermitian space over\n")
-  println(io, base_algebra(V))
+  println(io, base_ring(V))
   println(io, "with Gram matrix")
   print(io, gram_matrix(V))
 end
@@ -168,16 +168,16 @@ Return the Gram matrix of `V`.
 gram_matrix(V::AbsSpace) = V.gram
 
 # Once we have quaternion spaces the following makes more sense
-base_algebra(V::QuadSpace) = V.K
+_base_algebra(V::QuadSpace) = V.K
 
-base_algebra(V::HermSpace) = V.E
+_base_algebra(V::HermSpace) = V.E
 
 @doc Markdown.doc"""
-    base_field(V::AbsSpace) -> NumField
+    base_ring(V::AbsSpace) -> NumField
 
 Return the base field of `V`.
 """
-base_field(V::AbsSpace) = base_algebra(V)
+base_ring(V::AbsSpace) = _base_algebra(V)
 
 involution(V::QuadSpace) = identity
 
@@ -190,7 +190,7 @@ Return the fixed field of `V`.
 """
 fixed_field(::AbsSpace)
 
-fixed_field(V::QuadSpace) = base_algebra(V)
+fixed_field(V::QuadSpace) = base_ring(V)
 
 fixed_field(V::HermSpace) = V.K
 
@@ -226,7 +226,7 @@ end
 
 function det(V::HermSpace)
   d = det(gram_matrix(V))
-  @assert all(iszero(coeff(d, i)) for i in 1:degree(base_algebra(V)) - 1)
+  @assert all(iszero(coeff(d, i)) for i in 1:degree(base_ring(V)) - 1)
   return coeff(d, 0)
 end
 
@@ -271,7 +271,7 @@ function gram_matrix(V::AbsSpace{T}, M::MatElem{S}) where {S, T}
   if S === elem_type(T)
     return M * gram_matrix(V) * transpose(_map(M, involution(V)))
   else
-    Mc = change_base_ring(M, base_algebra(V))
+    Mc = change_base_ring(M, base_ring(V))
     return Mc * gram_matrix(V) * transpose(_map(Mc, involution(V)))
   end
 end
@@ -282,7 +282,7 @@ end
 Returns the gram matrix of the sequence `S`.
 """
 function gram_matrix(V::AbsSpace{T}, S::Vector{Vector{U}}) where {T, U}
-  m = zero_matrix(base_algebra(V), length(S), rank(V))
+  m = zero_matrix(base_ring(V), length(S), rank(V))
   for i in 1:length(S)
     if length(S[i]) != rank(V)
       throw(error("Vectors must be of length $(rank(V))"))
@@ -421,7 +421,9 @@ end
 @doc Markdown.doc"""
     hasse_invariant(V::QuadSpace, p::Union{InfPlc, NfOrdIdl}) -> Int
 
-Returns the Hasse invariant of the quadratic space `V` at `p`.
+Returns the Hasse invariant of the quadratic space `V` at `p`. This is equal
+to the product of local Hilbert symbols $(a_i, a_j)_p$, $i < j$, where $V$ is
+isometric to $\langle a_1,\dotsc,a_n\rangle$.
 """
 function hasse_invariant(V::QuadSpace, p)
   return _hasse_invariant(diagonal(V), p)
@@ -438,7 +440,7 @@ function witt_invariant(L::QuadSpace, p::NfOrdIdl)
   h = hasse_invariant(L, p)
   F = gram_matrix(L)
   dett = det(F)
-  K = base_algebra(L)
+  K = base_ring(L)
   ncolsFmod8 = mod(ncols(F), 8)
   if ncolsFmod8 == 3 || ncolsFmod8 == 4
     c = -dett
@@ -454,13 +456,13 @@ end
 
 function witt_invariant(L::QuadSpace, p::InfPlc)
   if iscomplex(p)
-    error("Dont' know what to do. Markus returns false")
+    return 1
   end
 
   h = hasse_invariant(L, p)
   F = gram_matrix(L)
   dett = det(F)
-  K = base_algebra(L)
+  K = base_ring(L)
   ncolsFmod8 = mod(ncols(F), 8)
   if ncolsFmod8 == 3 || ncolsFmod8 == 4
     c = -dett
@@ -483,15 +485,20 @@ end
     witt_invariant(V::QuadSpace, p::Union{InfPlc, NfOrdIdl}) -> Int
 
 Returns the Witt invariant of the quadratic space `V` at `p`.
+
+See [Definition 3.2.1, Kir16].
 """
 witt_invariant(V::QuadSpace, p)
+
+function witt_invariant(L::HermSpace, p)
+  throw(error("The space must be quadratic"))
+end
 
 ################################################################################
 #
 #  Local equivalence
 #
 ################################################################################
-
 
 function isequivalent(L::QuadSpace, M::QuadSpace, p::NfOrdIdl)
   GL = gram_matrix(L)
@@ -528,7 +535,7 @@ function isequivalent(L::HermSpace, M::HermSpace, p::NfOrdIdl)
 end
 
 function _isequivalent(L::HermSpace, M::HermSpace, p)
-  base_field(L) != base_field(M) && error("Both spaces must have the same base field")
+  base_ring(L) != base_ring(M) && error("Both spaces must have the same base field")
   A = gram_matrix(L)
   B = gram_matrix(M)
   if A == B
@@ -539,7 +546,7 @@ function _isequivalent(L::HermSpace, M::HermSpace, p)
     return false
   end
 
-  return islocal_norm(base_field(L), det(L) * det(M), p)
+  return islocal_norm(base_ring(L), det(L) * det(M), p)
 end
 
 function isequivalent(L::HermSpace, M::HermSpace, P::InfPlc)
@@ -635,7 +642,7 @@ function isequivalent(M::HermSpace, L::HermSpace)
     return false
   end
 
-  E = base_field(M)
+  E = base_ring(M)
   # I could replace this with a islocal_norm at the ramified primes + primes
   # dividing right hand side
   return isnorm(E, det(M) * det(L))
@@ -653,7 +660,7 @@ end
 # Returns an element a != 0 such that a * canonical_basis of V has
 # positive Gram matrix
 function _isdefinite(V::QuadSpace)
-  K = base_field(V)
+  K = base_ring(V)
   R = maximal_order(K)
   if !istotally_real(K)
     return zero(R)
@@ -676,7 +683,7 @@ function _isdefinite(V::QuadSpace)
 end
 
 function ispositive_definite(V::QuadSpace)
-  K = base_field(V)
+  K = base_ring(V)
   R = maximal_order(K)
   if !istotally_real(K)
     return false
@@ -691,7 +698,7 @@ function ispositive_definite(V::QuadSpace)
 end
 
 function isnegative_definite(V::QuadSpace)
-  K = base_field(V)
+  K = base_ring(V)
   R = maximal_order(K)
   if !istotally_real(K)
     return false
@@ -734,7 +741,7 @@ function islocal_square(a, p)
   return quadratic_defect(a, p) isa PosInf
 end
 
-function _map(a::MatElem, f)
+function _map(a::AbstractAlgebra.Generic.MatrixElem, f)
   z = similar(a)
   for i in 1:nrows(a)
     for j in 1:ncols(a)

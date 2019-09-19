@@ -313,6 +313,12 @@ then it is checked whether $a$ defines an (integral) ideal.
 function ideal(O::NfRelOrd{T, S}, a::S, check::Bool = true) where {T, S}
   d = degree(O)
   pb = pseudo_basis(O, copy = false)
+  if iszero(a)
+    M = zero_matrix(base_field(nf(O)), d, d)
+    PM = PseudoMatrix(M, [ a*pb[i][2] for i = 1:d ])
+    return NfRelOrdIdl{T, S}(O, PM)
+  end
+
   M = identity_matrix(base_field(nf(O)), d)
   PM = PseudoMatrix(M, [ a*pb[i][2] for i = 1:d ])
   if check

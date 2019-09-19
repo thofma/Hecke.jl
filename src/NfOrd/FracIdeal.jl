@@ -47,6 +47,16 @@ end
 
 ################################################################################
 #
+#  Predicates
+#
+################################################################################
+
+function iszero(x::NfOrdFracIdl)
+  return iszero(numerator(x))
+end
+
+################################################################################
+#
 #  Construction
 #
 ################################################################################
@@ -134,10 +144,15 @@ function fractional_ideal(O::NfOrd, v::Vector{nf_elem})
   end
   I = ideal(O, v[1])
   for i = 2:length(v)
+    if iszero(v[i])
+      continue
+    end
     I += ideal(O, v[i])
   end
   return I
 end
+
+*(R::NfOrd, x::fmpq) = fractional_ideal(R, nf(R)(x))
 
 ################################################################################
 #
@@ -415,10 +430,10 @@ function simplify(A::NfOrdFracIdl)
     g = Base.reduce(gcd, coordinates(ZK(A.num.gen_two)))
     g = gcd(g, A.den)
     g = gcd(g, A.num.gen_one)
-  else  
+  else
     b = basis_matrix(A.num, copy = false)
     g = gcd(denominator(A), content(b))
-  end  
+  end
 
   if g != 1
     A.num = divexact(A.num, g)
@@ -583,6 +598,14 @@ end
 +(A::NfOrdFracIdl, B::NfOrdIdl) = B+A
 
 function +(A::NfOrdFracIdl, B::Hecke.NfOrdFracIdl)
+  if iszero(A)
+    return B
+  end
+
+  if iszero(B)
+    return A
+  end
+
   d = lcm(denominator(A), denominator(B))
   ma = div(d, denominator(A))
   mb = div(d, denominator(B))
@@ -621,7 +644,7 @@ end
 #  Conversion
 #
 ################################################################################
- 
+
 function (ord::NfOrdIdlSet)(b::NfOrdFracIdl)
   denominator(b, copy = false) > 1 && error("not integral")
   return numerator(b, copy = false)
@@ -660,8 +683,8 @@ function factor(I::NfOrdFracIdl)
     else
       fn[k] = -v
     end
-  end  
-  return fn  
+  end
+  return fn
 end
 
 function one(A::NfOrdFracIdl)

@@ -247,7 +247,7 @@ matrix(M::PMat) = M.matrix
 
 base_ring(M::PMat) = order(M.coeffs[1])
 
-function PseudoMatrix(m::Generic.Mat{T}, c::Array{S, 1}) where {T, S}
+function PseudoMatrix(m::AbstractAlgebra.MatElem{T}, c::Array{S, 1}) where {T, S}
   # sanity checks
   @assert nrows(m) == length(c)
   return PMat{T, S}(m ,c)
@@ -260,7 +260,7 @@ Returns the (row) pseudo matrix representing the Z\_k-module
  $$\sum c_i m_i$$
  where $c_i$ are the ideals in $c$ and $m_i$ the rows of $M$. 
 """
-function PseudoMatrix(m::Generic.Mat{nf_elem}, c::Array{NfOrdIdl, 1})
+function PseudoMatrix(m::AbstractAlgebra.MatElem{nf_elem}, c::Array{NfOrdIdl, 1})
   @assert nrows(m) == length(c)
   cc = map(z -> NfOrdFracIdl(z, fmpz(1)), c)
   return PMat{nf_elem, NfOrdFracIdl}(m, cc)
