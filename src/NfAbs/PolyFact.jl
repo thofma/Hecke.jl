@@ -603,7 +603,8 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 20)
       mod_sym!(B, vH.pM[2]*fmpz(2)^prec_scale)
 #      @show maximum(nbits, B), nbits(vH.pM[2]), b[i]
       if sz + prec_scale >= nbits(vH.pM[2]) || sz < 0
-        println("Loss of precision for this col: ", sz, " ", nbits(pM[2]))
+        println("Loss of precision for this col: ", sz, " ", nbits(vH.pM[2]))
+        @show f, base_ring(f), P
         error()
         continue
       else
