@@ -70,4 +70,10 @@ end
   @test length(factor((t^2-a)*(t^3-a-1))) == 2 #Trager
   @test length(factor((t^2-a)*(t^3-a-1)*(t+a^2+1)*(t^5+t+a))) == 4 #Zassenhaus
   @test length(factor(change_base_ring(g, k))) == 8 # van Hoeij
+
+  K, a = NumberField(x - 1, "a") 
+  Kt, t = K["t"]
+  f = t^5 -3 * t^4 - 104 * t^3 + 312 * t^2 + 400t -1200
+  @test length(factor(f)) == 5
+  @test length(factor(f*t)) == 6
 end
