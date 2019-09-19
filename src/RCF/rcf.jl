@@ -1317,7 +1317,7 @@ function factor_coprime(a::FacElem{nf_elem, AnticNumberField}, I::NfOrdIdlSet)
   if length(A) == 0
     A[ideal(Zk, 1)] = 1
   end
-  return factor_coprime(FacElem(A))
+  return factor_coprime!(FacElem(A))
 end
 
 @doc Markdown.doc"""

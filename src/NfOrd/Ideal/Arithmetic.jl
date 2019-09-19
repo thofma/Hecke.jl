@@ -62,12 +62,15 @@ function +(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
   if isone(g)
     return ideal(order(x), g)
   end
-  d = degree(order(x))
+  OK = order(x)
+  d = degree(OK)
   H = vcat(basis_matrix(x, copy = false), basis_matrix(y, copy = false))
   hnf_modular_eldiv!(H, g, :lowerleft)
   H = view(H, (d + 1):2*d, 1:d)
   res = ideal(order(x), H, false, true)
-  res.minimum = H[1, 1]
+  if isone(basis(OK, copy = false)[1])
+    res.minimum = H[1, 1]
+  end
   res.norm = prod(H[i, i] for i = 1:d)
   return res
 end

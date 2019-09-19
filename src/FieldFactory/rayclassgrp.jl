@@ -640,6 +640,7 @@ function minimumd(D::Dict{NfOrdIdl, Int}, deg_ext::Int)
   return res
 end
 
+
 function _maximal_abelian_subfield(A::Hecke.ClassField, mp::Hecke.NfToNfMor, ctx::Hecke.ctx_rayclassgrp, expG::Int)
 
   K = base_field(A)
@@ -757,7 +758,7 @@ function _maximal_abelian_subfield(A::Hecke.ClassField, mp::Hecke.NfToNfMor, ctx
     end
   end
   if iszero(ind)
-    R, mR = Hecke.ray_class_group_quo(ZK, fM0, mR1.modulus_inf, ctx, check = false)
+    @vtime :MaxAbExt 3 R, mR = Hecke.ray_class_group_quo(ZK, fM0, mR1.modulus_inf, ctx, check = false)
     if isdefined(ctx, :computed)
       push!(ctx.computed, (fM0, isempty(mR1.modulus_inf), mR))
     else

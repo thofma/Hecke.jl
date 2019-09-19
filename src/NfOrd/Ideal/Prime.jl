@@ -643,8 +643,29 @@ end
 Checks if B divides A
 """
 function divides(A::NfOrdIdl, B::NfOrdIdl)
-  minimum(A) % minimum(B) == 0 || return false
-  return valuation(A, B) > 0
+  @assert order(A) == order(B)
+  minimum(A, copy = false) % minimum(B, copy = false) == 0 || return false
+  if B.is_prime == 1 && has_2_elem(A) && !isindex_divisor(order(A), minimum(B, copy = false))
+    #I can just test the polynomials!
+    K = nf(order(A))
+    Qx = parent(K.pol)
+    if nbits(minimum(B)) > 60
+      R = ResidueRing(FlintZZ, minimum(B), cached = false)
+      Rx = PolynomialRing(R, "t", cached = false)[1]
+      f1 = Rx(Qx(A.gen_two.elem_in_nf))
+      f2 = Rx(Qx(B.gen_two.elem_in_nf))
+      res = iszero(mod(f1, f2))
+    else  
+      R1 = ResidueRing(FlintZZ, Int(minimum(B)), cached = false)
+      R1x = PolynomialRing(R1, "t", cached = false)[1]
+      f11 = R1x(Qx(A.gen_two.elem_in_nf))
+      f21 = R1x(Qx(B.gen_two.elem_in_nf))
+      res = iszero(mod(f11, f21))
+    end
+    #@assert res == (valuation(A, B) > 0)
+    return res
+  end
+  return (valuation(A, B) > 0) ::Bool
 end
 
 function coprime_base(A::Array{NfOrdIdl, 1}, p::fmpz)
@@ -653,7 +674,7 @@ function coprime_base(A::Array{NfOrdIdl, 1}, p::fmpz)
   #however using the p-part of the norm, the coprime basis becomes A, B...
   if iseven(p)
     lp = prime_decomposition(order(A[1]), 2)
-    Ap = NfOrdIdl[x[1] for x = lp if any(y->divides(y, x[1]) > 0, A)]
+    Ap = NfOrdIdl[x[1] for x = lp if any(y-> divides(y, x[1]), A)]
     a = remove(p, 2)[2]
     if !isone(a)
       Bp = coprime_base(A, a)
@@ -662,7 +683,12 @@ function coprime_base(A::Array{NfOrdIdl, 1}, p::fmpz)
       return Ap
     end
   else
-    Ap = [gcd(x, p^valuation(norm(x), p)) for x = A if minimum(x) % p == 0]
+    Ap = NfOrdIdl[]
+    for x in A
+      if minimum(x) % p == 0
+        push!(Ap, gcd(x, p^valuation(norm(x), p)))
+      end
+    end
   end
   return coprime_base_steel(Ap)
 end
@@ -675,16 +701,32 @@ generated multiplicatively the same ideals as the input and are pairwise
 coprime.
 """
 function coprime_base(A::Array{NfOrdIdl, 1})
-  a = collect(Set(map(minimum, A)))
+  a = collect(Set(map(x -> minimum(x, copy = false), A)))
   a = coprime_base(a)
   C = Array{NfOrdIdl, 1}()
-
   for p = a
     if p == 1
       continue
     end
-    cp = coprime_base(A, p)
-    append!(C, cp)
+    if isprime(p)
+      lp = prime_decomposition(order(A[1]), p)
+      for (P, v) in lp
+        found = false
+        for i = 1:length(A)
+          if divisible(minimum(A[i], copy = false), p) && valuation(A[i], P) > 0
+          #if divides(A[i], P)
+            found = true
+            break
+          end
+        end
+        if found
+          push!(C, P)
+        end
+      end
+    else
+      cp = coprime_base(A, p)
+      append!(C, cp)
+    end
   end
   return C
 end
@@ -939,6 +981,21 @@ function val_func_index(p::NfOrdIdl)
   return val
 end
 
+function valuation_with_anti_uni(a::nf_elem, anti_uni::nf_elem, I::NfOrdIdl)
+  O = order(I)
+  b = a*anti_uni
+  if !(b in O)
+    return 0
+  end
+  v = 1
+  mul!(b, b, anti_uni)
+  while b in O
+    v += 1
+    mul!(b, b, anti_uni)
+  end
+  return v
+end
+
 @doc Markdown.doc"""
     valuation(a::nf_elem, p::NfOrdIdl) -> fmpz
     valuation(a::NfOrdElem, p::NfOrdIdl) -> fmpz
@@ -962,19 +1019,30 @@ function valuation(a::nf_elem, p::NfOrdIdl, no::fmpq = fmpq(0))
   b = divexact(a, c)
   
   if isdefined(p, :valuation)
-    return valnumden + p.valuation(b, divexact(no, c^degree(K)))::Int
+    nno = no
+    if !iszero(nno)
+      nno = divexact(no, c^degree(K))
+    end
+    return valnumden + p.valuation(b, nno)::Int
   end
   O = order(p)
 
   # for generic ideals
   if p.splitting_type[2] == 0
     #global bad_ideal = p
+    assure_2_normal(p)
+    pinv = inv(p)
+    anti_uni = pinv.num.gen_two.elem_in_nf//pinv.den
     local val2
-    let O = O, p = p
+    let O = O, p = p, anti_uni = anti_uni
       function val2(s::nf_elem, no::fmpq = fmpq(0))
         d = denominator(s, O)
-        x = O(d*s)
-        return valuation_naive(x, p)::Int - valuation_naive(O(d), p)::Int
+        x = d*s
+        if gcd(d, minimum(p)) == 1
+          return valuation_with_anti_uni(x, anti_uni, p)::Int
+        else
+          return valuation_with_anti_uni(x, anti_uni, p)::Int - valuation_with_anti_uni(K(d), anti_uni, p)::Int
+        end
       end
     end
     p.valuation = val2
@@ -1099,6 +1167,9 @@ Computes the $\mathfrak p$-adic valuation of $A$, that is, the largest $i$
 such that $A$ is contained in $\mathfrak p^i$.
 """
 function valuation(A::NfOrdIdl, p::NfOrdIdl)
+  if A.is_principal == 1 && isdefined(A, :princ_gen)
+    return valuation(A.princ_gen, p)
+  end
   _assure_weakly_normal_presentation(A)
   if !isdefined(p, :splitting_type) || p.splitting_type[1] == 0 #ie. if p is non-prime...
     return valuation_naive(A, p)

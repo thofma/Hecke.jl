@@ -627,7 +627,7 @@ function simplify!(x::FacElem{NfOrdIdl, NfOrdIdlSet})
   if length(x.fac) <= 1
     p = first(keys(x.fac))
     x.fac =  Dict(p => x.fac[p])
-    return 
+    return nothing
   end
   cp = coprime_base(collect(base(x)))
   ev = Dict{NfOrdIdl, fmpz}()
@@ -640,11 +640,12 @@ function simplify!(x::FacElem{NfOrdIdl, NfOrdIdlSet})
     for b = base(x)
       v += valuation(b, p)*x.fac[b]
     end
-    if v != 0
+    if !iszero(v)
       ev[p] = v
     end
   end
   x.fac = ev
+  return nothing
 end  
 
 function simplify(x::FacElem{NfOrdFracIdl, NfOrdFracIdlSet})
@@ -668,6 +669,11 @@ of pariwise coprime integral ideals.
 """
 function factor_coprime(x::FacElem{NfOrdIdl, NfOrdIdlSet})
   x = deepcopy(x)
+  simplify!(x)
+  return Dict(p=>Int(v) for (p,v) = x.fac)
+end
+
+function factor_coprime!(x::FacElem{NfOrdIdl, NfOrdIdlSet})
   simplify!(x)
   return Dict(p=>Int(v) for (p,v) = x.fac)
 end

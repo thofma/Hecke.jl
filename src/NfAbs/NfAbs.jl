@@ -147,6 +147,11 @@ function quadratic_field(d::Integer; cached::Bool = true, check::Bool = true)
   return quadratic_field(fmpz(d), cached = cached, check = check)
 end
 
+function rationals_as_number_field()
+  Qx, x = FlintQQ["x"]
+  return number_field(x-1)
+end
+
 ################################################################################
 #
 #  Characteristic

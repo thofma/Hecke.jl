@@ -63,7 +63,6 @@ function compact_presentation(a::FacElem{nf_elem, AnticNumberField}, nn::Int = 2
 
   de = Dict(A => fmpz(1))
   delete!(de, ideal(ZK, 1))
-  B=0
   
   @hassert :CompactPresentation 1 length(de) == 0 && isone(abs(factored_norm(a*be))) == 1 ||
                                   abs(factored_norm(a*be)) == factored_norm(FacElem(de))
@@ -107,7 +106,6 @@ function compact_presentation(a::FacElem{nf_elem, AnticNumberField}, nn::Int = 2
    
     @assert abs(norm(b)//norm(id)) <= abs(discriminant(ZK)) # the trivial case
 
-  if true
     for p = keys(A.fac)
       isone(p) || (de[p] -= n^k*A.fac[p])
     end
@@ -115,8 +113,8 @@ function compact_presentation(a::FacElem{nf_elem, AnticNumberField}, nn::Int = 2
     B = simplify(ideal(ZK, b)*eA)
     @assert isone(B.den)
     B = B.num
-  else
-    
+
+    #=
     B = simplify(ideal(ZK, b))
     @assert B.num.is_principal == 1  
     @assert isone(B.num) || B.num.gens_normal > 1
@@ -144,7 +142,7 @@ function compact_presentation(a::FacElem{nf_elem, AnticNumberField}, nn::Int = 2
       #@hassert :CompactPresentation 1 valuation(B, p) == 0
     end
     @assert !haskey(de, ideal(ZK, 1))
-  end  
+    =#
    
     @assert norm(B) <= abs(discriminant(ZK))
 

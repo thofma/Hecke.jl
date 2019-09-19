@@ -653,7 +653,6 @@ end
 #
 ################################################################################
 
-global deb = []
 @doc Markdown.doc"""
     slope_factorization(f::Generic.Poly{T}) where T <: Union{padic, qadic} -> Dict{Generic.Poly{T}, Int}
 
@@ -679,7 +678,6 @@ function slope_factorization(f::Generic.Poly{T}) where T <: Union{padic, qadic}
   for (g, v) in sqf
     hg = Hensel_factorization(g)
     for (phi, fphi) in hg
-      push!(deb, (phi, fphi))
       if degree(phi) == degree(fphi)
         fact[fphi] = v
         continue

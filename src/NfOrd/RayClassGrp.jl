@@ -433,7 +433,6 @@ function coprime_base(l::Dict{fmpz, Int}, exponent::fmpz = fmpz(-1))
 end
 
 
-
 function _new_eval_quo(O::NfOrd, elems::Array{NfOrdElem, 1}, elems_int::Vector{Dict{fmpz, Int}}, p::NfOrdIdl, q::NfOrdIdl)
   anti_uni = anti_uniformizer(p)
   el = Vector{NfOrdElem}(undef, length(elems))

@@ -744,10 +744,7 @@ function compute_subfields(K::AnticNumberField, E, H, S)
 
 end
 
-global deb = []
-
 function translate_class_field_down(subfields, class_fields, it)
-
   new_class_fields = similar(class_fields)
   #Now, I translate the fields over the subfields.
   to_be_done = Int[i for i in it]
@@ -763,7 +760,6 @@ function translate_class_field_down(subfields, class_fields, it)
     end
     to_be_done = to_be_done_new
   end
-  push!(deb, (subfields, class_fields, it))
   error("Something went wrong!")
 end
 

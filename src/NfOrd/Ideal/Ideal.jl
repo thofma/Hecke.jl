@@ -626,8 +626,20 @@ function assure_has_minimum(A::NfAbsOrdIdl)
     return nothing
   end
 
-  @hassert :NfOrd 2 isone(basis(order(A), copy = false)[1])
-  A.minimum = basis_matrix(A, copy = false)[1, 1]
+  if isone(basis(order(A), copy = false)[1])
+    A.minimum = basis_matrix(A, copy = false)[1, 1]
+  else
+    M = basis_matrix(A, copy = false)
+    d = prod(M[i, i] for i = 1:nrows(M))
+    v = matrix(FlintZZ, 1, nrows(M), coordinates(order(A)(d)))
+    fl, s = can_solve(M, v, side = :left)
+    @assert fl
+    den = denominator(s[1]//d)
+    for i = 2:ncols(s)
+      den = lcm(den, denominator(s[i]//d))
+    end
+    A.minimum = den
+  end
   return nothing
 end
 
@@ -1157,16 +1169,17 @@ function simplify(A::NfAbsOrdIdl)
     #if maximum(element_to_sequence(A.gen_two)) > A.gen_one^2
     #  A.gen_two = element_reduce_mod(A.gen_two, A.parent.order, A.gen_one^2)
     #end
-    if A.gen_one == 1 # || test other things to avoid the 1 ideal
+    if isone(A)
       A.gen_two = order(A)(1)
       A.minimum = fmpz(1)
       A.norm = fmpz(1)
       @hassert :NfOrd 1 isconsistent(A)
       return A
     end
-    A.minimum = _minmod(A.gen_one, A.gen_two)
-    @hassert :Rres 1 A.minimum == gcd(A.gen_one, denominator(inv(A.gen_two.elem_in_nf), order(A)))
-
+    if !has_minimum(A)
+      A.minimum = _minmod(A.gen_one, A.gen_two)
+      @hassert :Rres 1 A.minimum == gcd(A.gen_one, denominator(inv(A.gen_two.elem_in_nf), order(A)))
+    end
     A.gen_one = A.minimum
     if !isdefined(A, :norm)
       if false 

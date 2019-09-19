@@ -192,7 +192,6 @@ function _Brauer_at_two(list::Vector{FieldsTower}, L::Main.ForeignGAP.MPtr, i::I
   end
   @vprint :Fields 1 "$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())"
   return list[findall(admit_ext)]
-
 end
 
 ###############################################################################
