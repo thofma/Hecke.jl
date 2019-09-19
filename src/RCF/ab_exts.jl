@@ -660,9 +660,9 @@ function abelian_extensions(O::NfOrd, gtype::Array{Int,1}, absolute_discriminant
   l_conductors=conductorsQQ(O, gtype, absolute_discriminant_bound, tame)
   @vprint :AbExt 1 "Number of conductors: $(length(l_conductors)) \n"
   if with_autos==Val{true}
-    fields = Tuple{NfRel_ns, Array{NfRel_nsToNfRel_nsMor,1}}[]
+    fields = Tuple{NfRelNS, Array{NfRelNSToNfRelNSMor,1}}[]
   else
-    fields = NfRel_ns[]
+    fields = NfRelNS[]
   end
 
   #Now, the big loop
@@ -705,9 +705,9 @@ function abelian_normal_extensions(O::NfOrd, gtype::Array{Int,1}, absolute_discr
   inf_plc=InfPlc[]
   
   if with_autos==Val{true}
-    fields=Tuple{NfRel_ns,Vector{NfRel_nsToNfRel_nsMor{nf_elem}}}[]
+    fields=Tuple{NfRelNS,Vector{NfRelNSToNfRelNSMor{nf_elem}}}[]
   else
-    fields=NfRel_ns[]
+    fields=NfRelNS[]
   end
   
   bound = div(absolute_discriminant_bound, abs(discriminant(O))^n)
@@ -1292,7 +1292,7 @@ end
 #
 ###############################################################################
 
-function _from_relative_to_absQQ(L::NfRel_ns{T}, auts::Array{NfRel_nsToNfRel_nsMor{T}, 1}) where T
+function _from_relative_to_absQQ(L::NfRelNS{T}, auts::Array{NfRelNSToNfRelNSMor{T}, 1}) where T
 
   @vprint :AbExt 2 "Computing maximal orders of subfields\n"
   Qx, x = PolynomialRing(FlintQQ, "x")
@@ -1400,7 +1400,7 @@ function _from_relative_to_absQQ(L::NfRel_ns{T}, auts::Array{NfRel_nsToNfRel_nsM
 
 end 
 
-function _from_relative_to_abs(L::NfRel_ns{T}, auts::Array{NfRel_nsToNfRel_nsMor{T}, 1}) where T
+function _from_relative_to_abs(L::NfRelNS{T}, auts::Array{NfRelNSToNfRelNSMor{T}, 1}) where T
 
   S, mS = simple_extension(L)
   K, mK, mK2 = absolute_field(S, false)

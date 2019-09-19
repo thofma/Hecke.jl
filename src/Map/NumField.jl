@@ -112,18 +112,18 @@ map_data(K::NfAbsNS, L, y) = MapDataFromNfAbsNS{typeof(y)}(y)
 
 map_data(K::NfAbsNS, L, ::Bool) = MapDataFromNfAbsNS{Vector{elem_type(L)}}(true)
 
-# From NfRel_ns into something
-mutable struct MapDataFromNfRel_ns{T, S}
+# From NfRelNS into something
+mutable struct MapDataFromNfRelNS{T, S}
   images::T
   base_field_map_data::S
   isid::Bool
 
-  function MapDataFromNfRel_ns{T, S}(x::T, y::S) where {T, S}
+  function MapDataFromNfRelNS{T, S}(x::T, y::S) where {T, S}
     z = new{T, S}(x, y, false)
     return z
   end
   
-  function MapDataFromNfRel_ns{T, S}(x::Bool) where {T, S}
+  function MapDataFromNfRelNS{T, S}(x::Bool) where {T, S}
     @assert x
     z = new{T, S}()
     z.isid = true
@@ -131,27 +131,27 @@ mutable struct MapDataFromNfRel_ns{T, S}
   end
 end
 
-function image(f::MapDataFromNfRel_ns, y)
+function image(f::MapDataFromNfRelNS, y)
   z = change_base_ring(y.data, f.base_field_map_data)
   return evaluate(z, f.images)
 end
 
-function (f::MapDataFromNfRel_ns)(y)
+function (f::MapDataFromNfRelNS)(y)
   return image(f, y)
 end
 
-map_data_type(K::NfRel_ns, L) = MapDataFromNfRel_ns{Vector{elem_type(L)}, map_data_type(base_field(K), L)}
+map_data_type(K::NfRelNS, L) = MapDataFromNfRelNS{Vector{elem_type(L)}, map_data_type(base_field(K), L)}
 
-map_data_type(K::NfRel_ns, L, base_field_map_data::S) where {S} = MapDataFromNfRel_ns{Vector{elem_type(L)}, S}
+map_data_type(K::NfRelNS, L, base_field_map_data::S) where {S} = MapDataFromNfRelNS{Vector{elem_type(L)}, S}
 
 # Here g is a NumFieldMor
-map_data(K::NfRel_ns, L, y, g) = MapDataFromNfRel_ns{typeof(y), typeof(g.image_data)}(y, g.image_data)
+map_data(K::NfRelNS, L, y, g) = MapDataFromNfRelNS{typeof(y), typeof(g.image_data)}(y, g.image_data)
 
-map_data(K::NfRel_ns, L, y) = MapDataFromNfRel_ns{typeof(y), map_data_type(base_field(K), L)}(y, map_data_type(base_field(K), L)(true))
+map_data(K::NfRelNS, L, y) = MapDataFromNfRelNS{typeof(y), map_data_type(base_field(K), L)}(y, map_data_type(base_field(K), L)(true))
 
-#map_data(K::NfRel_ns, ::Bool) = MapDataFromNfRel_ns{Vector{elem_type(K)}, map_data_type(base_ring(K), K)}(true)
+#map_data(K::NfRelNS, ::Bool) = MapDataFromNfRelNS{Vector{elem_type(K)}, map_data_type(base_ring(K), K)}(true)
 
-map_data(K::NfRel_ns, L, ::Bool) = MapDataFromNfRel_ns{Vector{elem_type(L)}, map_data_type(base_ring(K), L)}(true)
+map_data(K::NfRelNS, L, ::Bool) = MapDataFromNfRelNS{Vector{elem_type(L)}, map_data_type(base_ring(K), L)}(true)
 
 mutable struct NumFieldMor{S, T, U, V}
   header::MapHeader{S, T}

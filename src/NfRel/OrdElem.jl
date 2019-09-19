@@ -416,7 +416,7 @@ Returns the norm of $a$.
 """
 norm(a::NfRelOrdElem) = norm(a.elem_in_nf)
 
-norm(a::NfRelOrdElem, k::Union{ NfRel, AnticNumberField, NfRel_ns, FlintRationalField }) = norm(a.elem_in_nf, k)
+norm(a::NfRelOrdElem, k::Union{ NfRel, AnticNumberField, NfRelNS, FlintRationalField }) = norm(a.elem_in_nf, k)
 
 absolute_norm(a::NfRelOrdElem) = absolute_norm(a.elem_in_nf)
 
@@ -428,7 +428,7 @@ absolute_norm(a::NfRelOrdElem) = absolute_norm(a.elem_in_nf)
 
 (K::NfRel)(a::NfRelOrdElem) = elem_in_nf(a)
 
-(K::NfRel_ns)(a::NfRelOrdElem) = elem_in_nf(a)
+(K::NfRelNS)(a::NfRelOrdElem) = elem_in_nf(a)
 
 ################################################################################
 #

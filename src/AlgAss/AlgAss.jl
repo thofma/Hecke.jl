@@ -894,29 +894,6 @@ end
 
 ################################################################################
 #
-#  Equality
-#
-################################################################################
-
-function ==(A::AlgAss, B::AlgAss)
-  base_ring(A) != base_ring(B) && return false
-  if iszero(A) != iszero(B)
-    return false
-  end
-  if iszero(A) && iszero(B)
-    return true
-  end
-  if has_one(A) != has_one(B)
-    return false
-  end
-  if has_one(A) && has_one(B) && A.one != B.one
-    return false
-  end
-  return multiplication_table(A, copy = false) == multiplication_table(B, copy = false)
-end
-
-################################################################################
-#
 #  Subalgebra
 #
 ################################################################################
