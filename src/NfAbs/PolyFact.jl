@@ -307,6 +307,7 @@ function zassenhaus(f::PolyElem{nf_elem}, P::NfOrdIdl; degset::Set{Int} = Set{In
   vH.P = P
 
   @vtime :PolyFactor 1 grow_prec!(vH, N)
+  av_bits = sum(nbits, vH.Ml)/degree(K)^2
 
   H = vH.H
 
@@ -479,7 +480,7 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 20)
   # from Fieker/Friedrichs, still wrong here
   # needs to be larger than anticipated...
   c1, c2 = norm_change_const(order(P))
-  b = [ceil(Int, degree(K)/2/degree(P)*(log2(c1*c2) + 2*nbits(x)+ prec_scale)) for x = b]
+  b = [ceil(Int, degree(K)/2/degree(P)*(log2(c1*c2) + 2*nbits(x)+ 2*prec_scale)) for x = b]
   @vprint :PolyFactor 2 "using CLD precsion bounds ", b
 
   used = []
@@ -706,7 +707,7 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 20)
 
     # from Fieker/Friedrichs, still wrong here
     # needs to be larger than anticipated...
-    b = [ceil(Int, degree(K)/2/degree(P)*(log2(c1*c2) + 2*nbits(x)+ prec_scale)) for x = b]
+    b = [ceil(Int, degree(K)/2/degree(P)*(log2(c1*c2) + 2*nbits(x)+ 2*prec_scale)) for x = b]
   end #the big while
 end
 
