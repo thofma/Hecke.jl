@@ -12,11 +12,11 @@ different types:
     The complete type of an extension of an absolute field (`AnticNumberField`)
     is `NfRel{nf_elem}`. The next extension thus will be
     `NfRel{NfRelElem{nf_elem}}`.
- - `NfRel_ns`: extensions of number fields given by several polynomials.
+ - `NfRelNS`: extensions of number fields given by several polynomials.
     This too will be refered to as a non-simple field.
 
 The simple types `AnticNumberField` and `NfRel` are also calle simple
-fields in the rest of this document, `NfRel` and `NfRel_ns` are referred
+fields in the rest of this document, `NfRel` and `NfRelNS` are referred
 to as relative extensions while `AnticNumberField` and `NfAbsNS` are
 called absolute.
 

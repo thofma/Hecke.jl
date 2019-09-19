@@ -267,7 +267,7 @@ function norm(a::NfRelOrdFracIdl, copy::Type{Val{T}} = Val{true}) where T
   end
 end
 
-function norm(a::NfRelOrdFracIdl, k::Union{ NfRel, AnticNumberField, NfRel_ns })
+function norm(a::NfRelOrdFracIdl, k::Union{ NfRel, AnticNumberField, NfRelNS })
   n = norm(a)
   while nf(order(n)) != k
     n = norm(n)

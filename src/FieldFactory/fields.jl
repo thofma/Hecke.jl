@@ -77,7 +77,7 @@ function Base.push!(G::AbstractAlgebra.Generic.geobucket{T}, p::T) where {T <: A
    end
 end
 
-function permutation_group(G::Vector{Hecke.NfRel_nsToNfRel_nsMor{nf_elem}})
+function permutation_group(G::Vector{Hecke.NfRelNSToNfRelNSMor{nf_elem}})
   permutations = permutation_group1(G)
   return _perm_to_gap_grp(permutations)
 end
@@ -220,7 +220,7 @@ end
 #
 ################################################################################
 
-function _from_relative_to_abs_with_embedding(L::Hecke.NfRel_ns{T}, autL::Array{Hecke.NfRel_nsToNfRel_nsMor{T}, 1}) where T
+function _from_relative_to_abs_with_embedding(L::Hecke.NfRelNS{T}, autL::Array{Hecke.NfRelNSToNfRelNSMor{T}, 1}) where T
   
   S, mS = simple_extension(L)
   K, mK, MK = absolute_field(S, false)

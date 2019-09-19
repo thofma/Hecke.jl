@@ -487,13 +487,13 @@ function maximal_order_via_absolute(m::NfToNfRel)
   return relative_order(Oabs, m)
 end
 
-function maximal_order_via_simple(L::NfRel_ns)
+function maximal_order_via_simple(L::NfRelNS)
   Ls, m = simple_extension(L)
   Os = maximal_order(Ls)
   return non_simple_order(Os, m)
 end
 
-function maximal_order_via_simple(m::NfRelToNfRel_nsMor)
+function maximal_order_via_simple(m::NfRelToNfRelNSMor)
   Os = maximal_order(domain(m))
   return non_simple_order(Os, m)
 end
@@ -756,7 +756,7 @@ end
 #
 ################################################################################
 
-function non_simple_order(O::NfRelOrd, m::NfRelToNfRel_nsMor)
+function non_simple_order(O::NfRelOrd, m::NfRelToNfRelNSMor)
   L = domain(m)
   L_ns = codomain(m)
   @assert nf(O) == L
@@ -820,7 +820,7 @@ end
 #
 ###############################################################################
 
-function _maximal_absolute_order_from_relative(L::NfRel_ns)
+function _maximal_absolute_order_from_relative(L::NfRelNS)
 
   #We compute the absolute extension and the maps
   S,mS=simple_extension(L)

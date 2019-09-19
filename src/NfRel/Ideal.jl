@@ -451,7 +451,7 @@ function norm(a::NfRelOrdIdl; copy::Bool = true)
   end
 end
 
-function norm(a::NfRelOrdIdl, k::Union{ NfRel, AnticNumberField, NfRel_ns })
+function norm(a::NfRelOrdIdl, k::Union{ NfRel, AnticNumberField, NfRelNS })
   n = norm(a)
   while nf(order(n)) != k
     n = norm(n)

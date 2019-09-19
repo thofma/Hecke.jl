@@ -216,18 +216,18 @@ end
 
 ################################################################################
 #
-#  NfRel_ns / NfRel_nsElem
+#  NfRelNS / NfRelNSElem
 #
 ################################################################################
 
-mutable struct NfRel_ns{T} <: NonSimpleNumField{T}
+mutable struct NfRelNS{T} <: NonSimpleNumField{T}
   base_ring::Nemo.Field
   pol::Array{Nemo.Generic.MPoly{T}, 1}
   abs_pol::Array{Generic.Poly{T}, 1}
   S::Array{Symbol, 1}
   auxilliary_data::Array{Any, 1}
 
-  function NfRel_ns(abs_pol::Array{Generic.Poly{T}}, f::Array{Nemo.Generic.MPoly{T}, 1}, S::Array{Symbol, 1}; cached::Bool = false) where T
+  function NfRelNS(abs_pol::Array{Generic.Poly{T}}, f::Array{Nemo.Generic.MPoly{T}, 1}, S::Array{Symbol, 1}; cached::Bool = false) where T
     r = new{T}()
     r.pol = f
     r.abs_pol = abs_pol
@@ -238,11 +238,11 @@ mutable struct NfRel_ns{T} <: NonSimpleNumField{T}
   end
 end
 
-mutable struct NfRel_nsElem{T} <: NonSimpleNumFieldElem{T}
+mutable struct NfRelNSElem{T} <: NonSimpleNumFieldElem{T}
   data::Nemo.Generic.MPoly{T}
-  parent::NfRel_ns{T}
+  parent::NfRelNS{T}
 
-  NfRel_nsElem{T}(g::Generic.MPoly{T}) where {T} = new{T}(g)
+  NfRelNSElem{T}(g::Generic.MPoly{T}) where {T} = new{T}(g)
 end
 
 ################################################################################

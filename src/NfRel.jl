@@ -1,5 +1,5 @@
 include("NfRel/NfRel.jl")
-include("NfRel/NfRel_ns.jl")
+include("NfRel/NfRelNS.jl")
 # include("NfRel/NfRelTypes.jl")
 include("NfRel/NfRelOrd.jl")
 include("NfRel/OrdElem.jl")

@@ -74,7 +74,7 @@ end
 ###############################################################################
 
 @doc Markdown.doc"""
-    NumberField(CF::ClassField) -> Hecke.NfRel_ns{Nemo.nf_elem}
+    NumberField(CF::ClassField) -> Hecke.NfRelNS{Nemo.nf_elem}
 Given a (formal) abelian extension, compute the class field by
 finding defining polynomials
 for all prime power cyclic subfields.
