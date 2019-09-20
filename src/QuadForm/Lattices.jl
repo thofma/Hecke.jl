@@ -1363,7 +1363,7 @@ end
 function ideal_trace(I)
   E = nf(order(I))
   K = base_field(E)
-  return frac_ideal(maximal_order(K), [trace(b) for b in Basis(I)])
+  return fractional_ideal(maximal_order(K), [trace(b) for b in Basis(I)])
 end
 
 function ideal_trace(I::NfOrdFracIdl)

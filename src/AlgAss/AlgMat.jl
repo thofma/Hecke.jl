@@ -25,8 +25,8 @@ elem_type(::Type{AlgMat{T, S}}) where { T, S } = AlgMatElem{T, AlgMat{T, S}, S}
 order_type(::AlgMat{fmpq, S}) where { S } = AlgAssAbsOrd{AlgMat{fmpq, S}, elem_type(AlgMat{fmpq, S})}
 order_type(::Type{AlgMat{fmpq, S}}) where { S } = AlgAssAbsOrd{AlgMat{fmpq, S}, elem_type(AlgMat{fmpq, S})}
 
-order_type(::AlgMat{T, S}) where { T <: NumFieldElem, S } = AlgAssRelOrd{T, frac_ideal_type(order_type(parent_type(T)))}
-order_type(::Type{AlgMat{T, S}}) where { T <: NumFieldElem, S } = AlgAssRelOrd{T, frac_ideal_type(order_type(parent_type(T)))}
+order_type(::AlgMat{T, S}) where { T <: NumFieldElem, S } = AlgAssRelOrd{T, fractional_ideal_type(order_type(parent_type(T)))}
+order_type(::Type{AlgMat{T, S}}) where { T <: NumFieldElem, S } = AlgAssRelOrd{T, fractional_ideal_type(order_type(parent_type(T)))}
 
 # Returns the dimension d of the coefficient_ring of A, so that dim(A) = degree(A)^2 + d.
 function dim_of_coefficient_ring(A::AlgMat)

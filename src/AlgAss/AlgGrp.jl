@@ -15,8 +15,8 @@ elem_type(::Type{AlgGrp{T, S, R}}) where {T, S, R} = AlgGrpElem{T, AlgGrp{T, S, 
 order_type(::AlgGrp{fmpq, S, R}) where { S, R } = AlgAssAbsOrd{AlgGrp{fmpq, S, R}, elem_type(AlgGrp{fmpq, S, R})}
 order_type(::Type{AlgGrp{fmpq, S, R}}) where { S, R } = AlgAssAbsOrd{AlgGrp{fmpq, S, R}, elem_type(AlgGrp{fmpq, S, R})}
 
-order_type(::AlgGrp{T, S, R}) where { T <: NumFieldElem, S, R } = AlgAssRelOrd{T, frac_ideal_type(order_type(parent_type(T)))}
-order_type(::Type{AlgGrp{T, S, R}}) where { T <: NumFieldElem, S, R } = AlgAssRelOrd{T, frac_ideal_type(order_type(parent_type(T)))}
+order_type(::AlgGrp{T, S, R}) where { T <: NumFieldElem, S, R } = AlgAssRelOrd{T, fractional_ideal_type(order_type(parent_type(T)))}
+order_type(::Type{AlgGrp{T, S, R}}) where { T <: NumFieldElem, S, R } = AlgAssRelOrd{T, fractional_ideal_type(order_type(parent_type(T)))}
 
 @doc Markdown.doc"""
     group(A::AlgGrp) -> Group

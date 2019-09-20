@@ -89,9 +89,9 @@ Nemo.elem_type(::NfRelNS{T}) where {T} = NfRelNSElem{T}
 
 Nemo.parent_type(::Type{NfRelNSElem{T}}) where {T} = NfRelNS{T}
 
-order_type(K::NfRelNS{T}) where {T} = NfRelOrd{T, frac_ideal_type(order_type(base_field(K)))}
+order_type(K::NfRelNS{T}) where {T} = NfRelOrd{T, fractional_ideal_type(order_type(base_field(K)))}
 
-order_type(::Type{NfRelNS{T}}) where {T} = NfRelOrd{T, frac_ideal_type(order_type(parent_type(T)))}
+order_type(::Type{NfRelNS{T}}) where {T} = NfRelOrd{T, fractional_ideal_type(order_type(parent_type(T)))}
 
 Nemo.needs_parentheses(::NfRelNSElem) = true
 

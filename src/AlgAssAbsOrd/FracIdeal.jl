@@ -4,11 +4,11 @@ function isone(a::AlgAssAbsOrdFracIdl)
 end
 
 function one(S::AlgAssAbsOrdFracIdlSet)
-  return frac_ideal(order(S), ideal(order(S), one(order(S))), fmpz(1))
+  return fractional_ideal(order(S), ideal(order(S), one(order(S))), fmpz(1))
 end
 
 function one(I::AlgAssAbsOrdFracIdl)
-  return frac_ideal(order(I), ideal(order(I), one(order(I))), fmpz(1))
+  return fractional_ideal(order(I), ideal(order(I), one(order(I))), fmpz(1))
 end
 
 function Base.copy(I::AlgAssAbsOrdFracIdl)
@@ -139,29 +139,29 @@ end
 #
 ################################################################################
 
-function frac_ideal(O::AlgAssAbsOrd{S, T}, M::FakeFmpqMat, M_in_hnf::Bool = false) where {S, T}
+function fractional_ideal(O::AlgAssAbsOrd{S, T}, M::FakeFmpqMat, M_in_hnf::Bool = false) where {S, T}
   !M_in_hnf ? M = hnf(M, :lowerleft) : nothing
 
   return AlgAssAbsOrdFracIdl{S, T}(O, M)
 end
 
-function frac_ideal(O::AlgAssAbsOrd{S, T}, a::AlgAssAbsOrdIdl{S, T}, d::fmpz) where {S, T}
+function fractional_ideal(O::AlgAssAbsOrd{S, T}, a::AlgAssAbsOrdIdl{S, T}, d::fmpz) where {S, T}
   return AlgAssAbsOrdFracIdl{S, T}(O, a, d)
 end
 
-function frac_ideal(O::AlgAssAbsOrd{S, T}, a::T) where {S, T}
+function fractional_ideal(O::AlgAssAbsOrd{S, T}, a::T) where {S, T}
   d = denominator(a, O)
-  return frac_ideal(O, ideal(O, O(d*a)), d)
+  return fractional_ideal(O, ideal(O, O(d*a)), d)
 end
 
-*(O::AlgAssAbsOrd{S, T}, a::T) where {S, T} = frac_ideal(O, a)
-*(a::T, O::AlgAssAbsOrd{S, T}) where {S, T} = frac_ideal(O, a)
+*(O::AlgAssAbsOrd{S, T}, a::T) where {S, T} = fractional_ideal(O, a)
+*(a::T, O::AlgAssAbsOrd{S, T}) where {S, T} = fractional_ideal(O, a)
 
-function frac_ideal_from_z_gens(O::AlgAssAbsOrd{S, T}, b::Vector{T}) where {S, T}
+function fractional_ideal_from_z_gens(O::AlgAssAbsOrd{S, T}, b::Vector{T}) where {S, T}
   d = degree(O)
   den = lcm([ denominator(bb, O) for bb in b ])
   num = ideal_from_z_gens(O, [ O(den*bb) for bb in b ])
-  return frac_ideal(O, num, den)
+  return fractional_ideal(O, num, den)
 end
 
 ################################################################################
@@ -174,12 +174,12 @@ function +(a::AlgAssAbsOrdFracIdl{S, T}, b::AlgAssAbsOrdFracIdl{S, T}) where {S,
   d = lcm(denominator(a, copy = false), denominator(b, copy = false))
   ma = div(d, denominator(a, copy = false))
   mb = div(d, denominator(b, copy = false))
-  return frac_ideal(order(a), numerator(a, copy = false)*ma + numerator(b, copy = false)*mb, d)
+  return fractional_ideal(order(a), numerator(a, copy = false)*ma + numerator(b, copy = false)*mb, d)
 end
 
 function *(a::AlgAssAbsOrdFracIdl{S, T}, b::AlgAssAbsOrdFracIdl{S, T}) where {S, T}
   d = denominator(a, copy = false)*denominator(b, copy = false)
-  return frac_ideal(order(a), numerator(a, copy = false)*numerator(b, copy = false), d)
+  return fractional_ideal(order(a), numerator(a, copy = false)*numerator(b, copy = false), d)
 end
 
 ^(A::AlgAssAbsOrdFracIdl, e::Int) = Base.power_by_squaring(A, e)
@@ -193,7 +193,7 @@ end
 
 function +(a::AlgAssAbsOrdIdl{S, T}, b::AlgAssAbsOrdFracIdl{S, T}) where {S, T}
   c = a*denominator(b, copy = false) + numerator(b, copy = false)
-  return frac_ideal(order(a), c, denominator(b))
+  return fractional_ideal(order(a), c, denominator(b))
 end
 
 +(a::AlgAssAbsOrdFracIdl{S, T}, b::AlgAssAbsOrdIdl{S, T}) where {S, T} = b + a
@@ -208,22 +208,22 @@ end
 
 function *(x::T, a::AlgAssAbsOrdFracIdl{S, T}) where {S, T}
   O = order(a)
-  return frac_ideal(O, x)*a
+  return fractional_ideal(O, x)*a
 end
 
 function *(a::AlgAssAbsOrdFracIdl{S, T}, x::T) where {S, T}
   O = order(a)
-  return a*frac_ideal(O, x)
+  return a*fractional_ideal(O, x)
 end
 
 function *(x::T, a::AlgAssAbsOrdIdl{S, T}) where {S, T}
   O = order(a)
-  return frac_ideal(O, x)*a
+  return fractional_ideal(O, x)*a
 end
 
 function *(a::AlgAssAbsOrdIdl{S, T}, x::T) where {S, T}
   O = order(a)
-  return a*frac_ideal(O, x)
+  return a*fractional_ideal(O, x)
 end
 
 ################################################################################
@@ -306,20 +306,20 @@ end
 
 function extend(I::AlgAssAbsOrdFracIdl, O::AlgAssAbsOrd)
   J = extend(numerator(I, copy = false), O)
-  return frac_ideal(O, J, denominator(I, copy = false))
+  return fractional_ideal(O, J, denominator(I, copy = false))
 end
 
 *(I::AlgAssAbsOrdFracIdl, O::AlgAssAbsOrd) = extend(I, O)
 *(O::AlgAssAbsOrd, I::AlgAssAbsOrdFracIdl) = extend(I, O)
 
-function _as_frac_ideal_of_smaller_order(O::AlgAssAbsOrd, I::AlgAssAbsOrdIdl)
+function _as_fractional_ideal_of_smaller_order(O::AlgAssAbsOrd, I::AlgAssAbsOrdIdl)
   M = basis_matrix(I, copy = false)
   M = M*basis_matrix(order(I), copy = false)*basis_mat_inv(O, copy = false)
-  return frac_ideal(O, M)
+  return fractional_ideal(O, M)
 end
 
-function _as_frac_ideal_of_smaller_order(O::AlgAssAbsOrd, I::AlgAssAbsOrdFracIdl)
-  J = _as_frac_ideal_of_smaller_order(O, numerator(I, copy = false))
+function _as_fractional_ideal_of_smaller_order(O::AlgAssAbsOrd, I::AlgAssAbsOrdFracIdl)
+  J = _as_fractional_ideal_of_smaller_order(O, numerator(I, copy = false))
   return algebra(O)(fmpq(1, denominator(I, copy = false)))*J
 end
 

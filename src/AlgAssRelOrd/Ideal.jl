@@ -56,7 +56,7 @@ function assure_has_basis_pmatrix(a::AlgAssRelOrdIdl)
   pb = pseudo_basis(a, copy = false)
   A = algebra(order(a))
   M = zero_matrix(base_ring(A), dim(A), dim(A))
-  C = Vector{frac_ideal_type(order_type(base_ring(A)))}()
+  C = Vector{fractional_ideal_type(order_type(base_ring(A)))}()
   for i = 1:dim(A)
     elem_to_mat_row!(M, i, pb[i][1])
     push!(C, deepcopy(pb[i][2]))
@@ -77,7 +77,7 @@ function assure_has_pseudo_basis(a::AlgAssRelOrdIdl)
   B = pseudo_basis(order(a), copy = false)
   A = algebra(order(a))
   K = base_ring(A)
-  pb = Vector{Tuple{elem_type(A), frac_ideal_type(order_type(K))}}()
+  pb = Vector{Tuple{elem_type(A), fractional_ideal_type(order_type(K))}}()
   for i = 1:dim(A)
     t = A()
     for j = 1:dim(A)
@@ -219,7 +219,7 @@ function *(a::AlgAssRelOrdIdl{S, T}, b::AlgAssRelOrdIdl{S, T}) where {S, T}
   A = algebra(order(a))
 
   M = zero_matrix(base_ring(A), d2, d)
-  C = Array{frac_ideal_type(order_type(base_ring(A))), 1}(undef, d2)
+  C = Array{fractional_ideal_type(order_type(base_ring(A))), 1}(undef, d2)
   t = one(A)
   for i = 1:d
     i1d = (i - 1)*d
@@ -416,14 +416,14 @@ end
 > Returns the ideal $a \cdot O$ where $a$ is an ideal of `base_ring(O)`.
 """
 function ideal(O::AlgAssRelOrd{nf_elem, NfOrdFracIdl}, a::NfAbsOrdIdl)
-  aa = frac_ideal(order(a), a, fmpz(1))
+  aa = fractional_ideal(order(a), a, fmpz(1))
   return ideal(O, aa, false)
 end
 
 function ideal(O::AlgAssRelOrd, a::NfRelOrdIdl)
   @assert order(a) == order(pseudo_basis(O, copy = false)[1][2])
 
-  aa = frac_ideal(order(a), basis_pmatrix(a), true)
+  aa = fractional_ideal(order(a), basis_pmatrix(a), true)
   return ideal(O, aa, false)
 end
 

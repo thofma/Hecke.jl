@@ -48,7 +48,7 @@ function assure_has_basis_pmatrix(a::Union{NfRelOrdIdl, NfRelOrdFracIdl})
   pb = pseudo_basis(a, copy = false)
   L = nf(order(a))
   M = zero_matrix(base_field(L), degree(L), degree(L))
-  C = Vector{frac_ideal_type(order_type(base_field(L)))}()
+  C = Vector{fractional_ideal_type(order_type(base_field(L)))}()
   for i = 1:degree(L)
     elem_to_mat_row!(M, i, pb[i][1])
     push!(C, deepcopy(pb[i][2]))
@@ -69,7 +69,7 @@ function assure_has_pseudo_basis(a::Union{NfRelOrdIdl, NfRelOrdFracIdl})
   B = basis_nf(order(a), copy = false)
   L = nf(order(a))
   K = base_field(L)
-  pseudo_basis = Vector{Tuple{elem_type(L), frac_ideal_type(order_type(K))}}()
+  pseudo_basis = Vector{Tuple{elem_type(L), fractional_ideal_type(order_type(K))}}()
   for i = 1:degree(L)
     t = L()
     for j = 1:degree(L)
@@ -261,14 +261,14 @@ function ideal(O::NfRelOrd{T, S}, x::NumFieldElem{T}, y::NumFieldElem{T}, a::S, 
 end
 
 function ideal(O::NfRelOrd{T, S}, x::NumFieldElem{T}, y::NumFieldElem{T}, a::NfOrdIdl, b::NfOrdIdl, check::Bool = true) where {T, S}
-  aa = frac_ideal(order(a), a, fmpz(1))
-  bb = frac_ideal(order(b), b, fmpz(1))
+  aa = fractional_ideal(order(a), a, fmpz(1))
+  bb = fractional_ideal(order(b), b, fmpz(1))
   return ideal(O, x, y, aa, bb, check)
 end
 
 function ideal(O::NfRelOrd{T, S}, x::NumFieldElem{T}, y::NumFieldElem{T}, a::NfRelOrdIdl, b::NfRelOrdIdl, check::Bool = true) where {T, S}
-  aa = frac_ideal(order(a), basis_pmatrix(a), true)
-  bb = frac_ideal(order(b), basis_pmatrix(b), true)
+  aa = fractional_ideal(order(a), basis_pmatrix(a), true)
+  bb = fractional_ideal(order(b), basis_pmatrix(b), true)
   return ideal(O, x, y, aa, bb, check)
 end
 
@@ -323,14 +323,14 @@ function ideal(O::NfRelOrd{T, S}, a::S, check::Bool = true) where {T, S}
 end
 
 function ideal(O::NfRelOrd{nf_elem, NfOrdFracIdl}, a::NfOrdIdl, check::Bool = true)
-  aa = frac_ideal(order(a), a, fmpz(1))
+  aa = fractional_ideal(order(a), a, fmpz(1))
   return ideal(O, aa, check)
 end
 
 function ideal(O::NfRelOrd, a::NfRelOrdIdl, check::Bool = true)
   @assert order(a) == order(pseudo_basis(O, copy = false)[1][2])
 
-  aa = frac_ideal(order(a), basis_pmatrix(a), true)
+  aa = fractional_ideal(order(a), basis_pmatrix(a), true)
   return ideal(O, aa, check)
 end
 
@@ -519,7 +519,7 @@ function *(a::NfRelOrdIdl{T, S}, b::NfRelOrdIdl{T, S}) where {T, S}
   K = base_field(L)
   d = degree(order(a))
   M = zero_matrix(K, d^2, d)
-  C = Array{frac_ideal_type(order_type(K)), 1}(undef, d^2)
+  C = Array{fractional_ideal_type(order_type(K)), 1}(undef, d^2)
   t = L()
   for i = 1:d
     for j = 1:d
@@ -640,7 +640,7 @@ function inv(a::Union{NfRelOrdIdl{T, S}, NfRelOrdFracIdl{T, S}}) where {T, S}
   N = inv(transpose(PM.matrix))
   PN = PseudoMatrix(N, [ simplify(inv(I)) for I in PM.coeffs ])
   PN = pseudo_hnf(PN, :lowerleft, true)
-  return frac_ideal(O, PN, true)
+  return fractional_ideal(O, PN, true)
 end
 
 ################################################################################
@@ -656,7 +656,7 @@ Returns $ab^{-1}$.
 """
 function divexact(a::NfRelOrdIdl{T, S}, b::NfRelOrdIdl{T, S}) where {T, S}
   O = order(a)
-  return frac_ideal(O, basis_pmatrix(a, copy = false), true)*inv(b)
+  return fractional_ideal(O, basis_pmatrix(a, copy = false), true)*inv(b)
 end
 
 //(a::NfRelOrdIdl{T, S}, b::NfRelOrdIdl{T, S}) where {T, S} = divexact(a, b)
@@ -720,9 +720,9 @@ function pradical(O::NfRelOrd, P::Union{NfOrdIdl, NfRelOrdIdl})
     elem_to_mat_row!(basis_mat_int, i, t)
   end
   if is_absolute
-    Oint = typeof(O)(L, PseudoMatrix(basis_mat_int, [ frac_ideal(OK, pbint[i][2], fmpz(1)) for i = 1:d ]))
+    Oint = typeof(O)(L, PseudoMatrix(basis_mat_int, [ fractional_ideal(OK, pbint[i][2], fmpz(1)) for i = 1:d ]))
   else
-    Oint = typeof(O)(L, PseudoMatrix(basis_mat_int, [ frac_ideal(OK, basis_pmatrix(pbint[i][2], copy = false)) for i = 1:d ]))
+    Oint = typeof(O)(L, PseudoMatrix(basis_mat_int, [ fractional_ideal(OK, basis_pmatrix(pbint[i][2], copy = false)) for i = 1:d ]))
   end
 
   if is_absolute
@@ -1035,7 +1035,7 @@ function valuation_naive(A::NfRelOrdIdl{T, S}, B::NfRelOrdIdl{T, S}) where {T, S
   @assert order(A.basis_pmatrix.coeffs[1]) == order(B.basis_pmatrix.coeffs[1])
   @assert !iszero(A) && !iszero(B)
   O = order(A)
-  Afrac = frac_ideal(O, basis_pmatrix(A), true)
+  Afrac = fractional_ideal(O, basis_pmatrix(A), true)
   Bi = inv(B)
   i = 0
   C = Afrac*Bi

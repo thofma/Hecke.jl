@@ -922,7 +922,7 @@ function colon(a::AlgAssAbsOrdIdl{S, T}, b::AlgAssAbsOrdIdl{S, T}) where {S, T}
   # n is upper right HNF
   m = transpose(sub(m, 1:degree(O), 1:degree(O)))
   b = inv(FakeFmpqMat(m, d))
-  return frac_ideal_type(O)(O, ideal(O, b.num), b.den)
+  return fractional_ideal_type(O)(O, ideal(O, b.num), b.den)
 end
 
 function isinvertible(a::AlgAssAbsOrdIdl)

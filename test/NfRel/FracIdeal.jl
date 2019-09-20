@@ -17,7 +17,7 @@
   PM.matrix[2, 1] = K()
   PM.matrix[2, 2] = K(fmpq(1, 3))
   PM = pseudo_hnf(PM, :lowerleft)
-  J = frac_ideal(OL, PM)
+  J = fractional_ideal(OL, PM)
   @test denominator(J) == fmpz(6)
   @test Hecke.isintegral(J.den*J)
 end

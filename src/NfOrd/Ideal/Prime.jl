@@ -640,7 +640,7 @@ end
 @doc Markdown.doc"""
     divides(A::NfOrdIdl, B::NfOrdIdl)
     
-Checks if B divides A
+Checks if B divides A.
 """
 function divides(A::NfOrdIdl, B::NfOrdIdl)
   @assert order(A) == order(B)
@@ -654,18 +654,26 @@ function divides(A::NfOrdIdl, B::NfOrdIdl)
       Rx = PolynomialRing(R, "t", cached = false)[1]
       f1 = Rx(Qx(A.gen_two.elem_in_nf))
       f2 = Rx(Qx(B.gen_two.elem_in_nf))
-      res = iszero(mod(f1, f2))
+      if iszero(f2)
+        res = iszero(f1)
+      else
+        res = iszero(mod(f1, f2))
+      end
     else  
       R1 = ResidueRing(FlintZZ, Int(minimum(B)), cached = false)
       R1x = PolynomialRing(R1, "t", cached = false)[1]
       f11 = R1x(Qx(A.gen_two.elem_in_nf))
       f21 = R1x(Qx(B.gen_two.elem_in_nf))
-      res = iszero(mod(f11, f21))
+      if iszero(f21)
+        res = iszero(f11)
+      else
+        res = iszero(mod(f11, f21))
+      end
     end
     #@assert res == (valuation(A, B) > 0)
     return res
   end
-  return (valuation(A, B) > 0) ::Bool
+  return (valuation(A, B) > 0)::Bool
 end
 
 function coprime_base(A::Array{NfOrdIdl, 1}, p::fmpz)
@@ -1011,22 +1019,12 @@ function valuation(a::nf_elem, p::NfOrdIdl, no::fmpq = fmpq(0))
   @hassert :NfOrd 0 !iszero(a)
   #assert(a !=0) # can't handle infinity yet
   #First, check the content of a as a polynomial.
-  K = parent(a)
-  Qx = parent(K.pol)
-  pol_a = Qx(a)
-  c = content(pol_a)
-  valnumden = valuation(numerator(c), p) - valuation(denominator(c), p)
-  b = divexact(a, c)
   
-  if isdefined(p, :valuation)
-    nno = no
-    if !iszero(nno)
-      nno = divexact(no, c^degree(K))
-    end
-    return valnumden + p.valuation(b, nno)::Int
+  if p.is_prime != 1 && isdefined(p, :valuation)
+    return p.valuation(a, no)
   end
   O = order(p)
-
+  K = nf(O)
   # for generic ideals
   if p.splitting_type[2] == 0
     #global bad_ideal = p
@@ -1046,8 +1044,24 @@ function valuation(a::nf_elem, p::NfOrdIdl, no::fmpq = fmpq(0))
       end
     end
     p.valuation = val2
-    return valnumden + p.valuation(b)::Int
+    return p.valuation(a, no)::Int
   end
+  Qx = parent(K.pol)
+  pol_a = Qx(a)
+  c = content(pol_a)
+  valnumden = valuation(numerator(c), p) - valuation(denominator(c), p)
+  b = divexact(a, c)
+  
+  if isdefined(p, :valuation)
+    nno = no
+    if !iszero(nno)
+      nno = divexact(no, c^degree(K))
+    end
+    return valnumden + p.valuation(b, nno)::Int
+  end
+  
+
+  
 
   P = p.gen_one
 

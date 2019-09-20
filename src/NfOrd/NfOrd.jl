@@ -54,9 +54,9 @@ ideal_type(::NfAbsOrd{S, T}) where {S, T} = NfAbsOrdIdl{S, T}
 
 ideal_type(::Type{NfAbsOrd{S, T}}) where {S, T} = NfAbsOrdIdl{S, T}
 
-frac_ideal_type(::NfAbsOrd{S, T}) where {S, T} = NfOrdFracIdl
+fractional_ideal_type(::NfAbsOrd{S, T}) where {S, T} = NfOrdFracIdl
 
-frac_ideal_type(::Type{NfAbsOrd{S, T}}) where {S, T} = NfOrdFracIdl
+fractional_ideal_type(::Type{NfAbsOrd{S, T}}) where {S, T} = NfOrdFracIdl
 
 Nemo.show_minus_one(::Type{NfAbsOrdElem{S, T}}) where {S, T} = true
 

@@ -63,9 +63,9 @@ ideal_type(::NfRelOrd{T, S}) where {T, S} = NfRelOrdIdl{T, S}
 
 ideal_type(::Type{NfRelOrd{T, S}}) where {T, S} = NfRelOrdIdl{T, S}
 
-frac_ideal_type(::NfRelOrd{T, S}) where {T, S} = NfRelOrdFracIdl{T, S}
+fractional_ideal_type(::NfRelOrd{T, S}) where {T, S} = NfRelOrdFracIdl{T, S}
 
-frac_ideal_type(::Type{NfRelOrd{T, S}}) where {T, S} = NfRelOrdFracIdl{T, S}
+fractional_ideal_type(::Type{NfRelOrd{T, S}}) where {T, S} = NfRelOrdFracIdl{T, S}
 
 ################################################################################
 #
@@ -747,7 +747,7 @@ function relative_order(O::NfOrd, m::NfToNfRel)
     elem_to_mat_row!(M, i, m(Labs(B[i])))
   end
   PM = sub(pseudo_hnf(PseudoMatrix(M), :lowerleft, true), (dabs - d + 1):dabs, 1:d)
-  return NfRelOrd{elem_type(K), frac_ideal_type(OK)}(L, PM)
+  return NfRelOrd{elem_type(K), fractional_ideal_type(OK)}(L, PM)
 end
 
 ################################################################################

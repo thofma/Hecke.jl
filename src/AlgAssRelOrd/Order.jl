@@ -44,7 +44,7 @@ iscommutative(O::AlgAssRelOrd) = iscommutative(algebra(O))
 > Returns the order of $A$ with basis matrix $M$.
 """
 function Order(A::AbsAlgAss{S}, M::Generic.Mat{S}) where S <: NumFieldElem
-  return AlgAssRelOrd{S, frac_ideal_type(order_type(base_ring(A)))}(A, deepcopy(M))
+  return AlgAssRelOrd{S, fractional_ideal_type(order_type(base_ring(A)))}(A, deepcopy(M))
 end
 
 @doc Markdown.doc"""

@@ -20,7 +20,6 @@ function reduce_ideal2(I::FacElem{NfOrdIdl, NfOrdIdlSet})
   fst = true
   a = FacElem(Dict(K(1) => fmpz(1)))
   A = ideal(O, 1)
-
   for (k,v) = I.fac
     @assert order(k) === O
     if iszero(v)

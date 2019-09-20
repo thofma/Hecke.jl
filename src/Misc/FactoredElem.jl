@@ -4,6 +4,31 @@ export transform
 
 ################################################################################
 #
+#  Insert in a dictionary
+#
+################################################################################
+
+function add_to_key!(D::Dict{S, T}, k::S, v::T) where S where T <: Union{fmpz, Integer}
+  hash_k = Base.ht_keyindex2!(D, k)
+  if hash_k > 0
+    #The key is in the dictionary, we only need to add
+    @inbounds D.vals[hash_k] += v
+  else
+    pos = -hash_k
+    @inbounds D.slots[pos] = 0x1
+    @inbounds D.keys[pos] = k
+    @inbounds D.vals[pos] = v
+    D.count += 1
+    if hash_k < D.idxfloor
+      D.idxfloor = hash_k
+    end
+  end
+  D.age += 1
+  return nothing
+end
+
+################################################################################
+#
 #  Multiplicative representation
 #
 ################################################################################
@@ -339,7 +364,7 @@ function evaluate(x::FacElem{NfOrdIdl, NfOrdIdlSet}; coprime::Bool = false)
     x = simplify(x) # the other method won't work due to one()
   end
   if length(x.fac)==0
-    return frac_ideal(O, O(1))
+    return fractional_ideal(O, O(1))
   end
   # still doesn't work
   D = collect(x.fac)
@@ -668,9 +693,9 @@ Computed a partial factorisation of $x$, ie. writes $x$ as a product
 of pariwise coprime integral ideals.
 """
 function factor_coprime(x::FacElem{NfOrdIdl, NfOrdIdlSet})
-  x = deepcopy(x)
-  simplify!(x)
-  return Dict(p=>Int(v) for (p,v) = x.fac)
+  z = deepcopy(x)
+  simplify!(z)
+  return Dict(p=>Int(v) for (p,v) = z.fac)
 end
 
 function factor_coprime!(x::FacElem{NfOrdIdl, NfOrdIdlSet})
