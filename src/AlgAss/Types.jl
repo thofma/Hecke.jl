@@ -479,6 +479,7 @@ mutable struct AlgMat{T, S} <: AbsAlgAss{T}
   mult_table::Array{T, 3} # e_i*e_j = sum_k mult_table[i, j, k]*e_k
   canonical_basis::Int # whether A[(j - 1)*n + i] == E_ij, where E_ij = (e_kl)_kl with e_kl = 1 if i =k and j = l and e_kl = 0 otherwise.
   center#Tuple{AlgAss{T}, mor(AlgAss{T}, AlgAss{T})
+  trace_basis_elem::Vector{T}
 
   function AlgMat{T, S}(R::Ring) where {T, S}
     A = new{T, S}()
@@ -526,11 +527,11 @@ mutable struct AlgMatElem{T, S, Mat} <: AbsAlgAssElem{T}
   end
 end
 
-###############################################################################
+################################################################################
 #
 #  AlgAssRelOrd
 #
-###############################################################################
+################################################################################
 
 # S is the element type of the base field of the algebra, T the fractional ideal
 # type of this field
@@ -575,11 +576,11 @@ mutable struct AlgAssRelOrd{S, T} <: Ring
   end
 end
 
-###############################################################################
+################################################################################
 #
 #  AlgAssRelOrdElem
 #
-###############################################################################
+################################################################################
 
 mutable struct AlgAssRelOrdElem{S, T} <: RingElem
   parent::AlgAssRelOrd{S, T}
@@ -615,11 +616,11 @@ mutable struct AlgAssRelOrdElem{S, T} <: RingElem
   end
 end
 
-###############################################################################
+################################################################################
 #
 #  AlgAssRelOrdIdl
 #
-###############################################################################
+################################################################################
 
 mutable struct AlgAssRelOrdIdl{S, T}
   order::AlgAssRelOrd{S, T}

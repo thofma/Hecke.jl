@@ -1464,7 +1464,7 @@ end
 """
 function normred(a::AlgAssAbsOrdIdl; copy::Bool = true)
   @assert dimension_of_center(algebra(order(a))) == 1
-  @assert algebra(order(a)).issimple == 1
+  @assert issimple(algebra(order(a)))
   assure_has_normred(a)
   if copy
     return deepcopy(a.normred)
