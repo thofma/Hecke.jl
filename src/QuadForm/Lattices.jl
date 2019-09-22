@@ -1287,7 +1287,7 @@ genus_symbol(::AbsLat, ::NfOrdIdl; uniformizer::Any = 0)
 function genus_symbol(L::QuadLat, p::NfOrdIdl; uniformizer = zero(order(p)))
   O = order(p)
   nf(O) != base_field(L) && throw(error("Prime ideal must be an ideal of the base field of the lattice"))
-  # If you pull from cache, you might have to adjust the symbol accoring
+  # If you pull from cache, you might have to adjust the symbol according
   # to the uniformizer flag
 
   J, G, E = jordan_decomposition(L, p)
