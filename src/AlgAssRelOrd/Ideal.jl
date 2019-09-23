@@ -1022,6 +1022,61 @@ end
 
 ################################################################################
 #
+#  Maximal integral ideals
+#
+################################################################################
+
+# Computes any maximal integral ideal with left order O (if side = :left) or
+# right order O (if side = :right) which contains p.
+# Assumes (so far?) that the algebra is simple and O is maximal.
+function maximal_integral_ideal(O::AlgAssRelOrd, p::Union{ NfAbsOrdIdl, NfRelOrdIdl }, side::Symbol)
+  A = algebra(O)
+  @assert issimple(A)
+  @assert ismaximal(O)
+
+  K = base_ring(algebra(O))
+  OK = base_ring(O)
+
+  P = pradical(O, p) # if the algebra is simple, then the pradical is the unique prime lying over p
+
+  # P is the Jacobson radical of O/pO, so O/P is a simple algebra
+  B, OtoB = quo(O, P, p)
+  C, BtoC, CtoB = _as_algebra_over_center(B)
+  D, CtoD = _as_matrix_algebra(C)
+
+  n = degree(D)
+  N = basis_pmatrix(P)
+  m = numerator(det(N), copy = false)
+  t = zero_matrix(K, 1, degree(O))
+  # Now we only need to lift a basis for diag(1, ..., 1, 0)*D (side = :left) or
+  # D*diag(1, ..., 1, 0) (side = :right) since these are maximal ideals of D.
+  if side == :left
+    jMax = n - 1
+    iMax = n
+  elseif side == :right
+    jMax = n
+    iMax = n - 1
+  else
+    error("Option :$(side) for side not implemented")
+  end
+  for j = 1:jMax
+    jn = (j - 1)*n
+    for i = 1:iMax
+      b = (OtoB\(CtoB(CtoD\D[jn + i])))
+      for k = 1:degree(O)
+        t[1, k] = coordinates(b, copy = false)[k]
+      end
+      N = vcat(N, PseudoMatrix(deepcopy(t), [ K(1)*OK ]))
+    end
+  end
+  N = sub(pseudo_hnf_full_rank_with_modulus(N, m, :lowerleft), nrows(N) - degree(O) + 1:nrows(N), 1:degree(O))
+
+  M = ideal(O, N, side, false, true)
+  return M
+end
+
+################################################################################
+#
 #  Random elements
 #
 ################################################################################

@@ -1768,6 +1768,43 @@ end
 
 ################################################################################
 #
+#  Eichler condition
+#
+################################################################################
+
+function ramified_infinite_places(A::AlgAss{nf_elem})
+  K = base_ring(A)
+  inf_plc = Vector{InfPlc}()
+  places = real_places(K)
+  for p in places
+    if !issplit(A, p)
+      push!(inf_plc, p)
+    end
+  end
+
+  return inf_plc
+end
+
+# Tests whether A fulfils the Eichler condition relative to the maximal Z-order
+# of base_ring(A)
+function iseichler(A::AlgAss{nf_elem})
+  @assert issimple(A)
+  @assert iscentral(A)
+  if dim(A) != 4
+    return true
+  end
+  K = base_ring(A)
+  places = real_places(K)
+  for p in places
+    if issplit(A, p)
+      return true
+    end
+  end
+  return false
+end
+
+################################################################################
+#
 #  Direct product
 #
 ################################################################################
