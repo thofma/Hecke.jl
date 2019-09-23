@@ -100,7 +100,7 @@ function NumberField(CF::ClassField{S, T}; redo::Bool = false) where {S, T}
     q[i] = G[i]
   end
   CF.cyc = res
-  CF.A = number_field([x.A.pol for x = CF.cyc], check = false)[1]
+  CF.A = number_field([x.A.pol for x = CF.cyc], check = false, cached = false)[1]
   return CF.A
 end
 
@@ -1017,7 +1017,7 @@ function _rcf_descent(CF::ClassField_pp)
       @vprint :ClassField 2 "... done\n"
     end  
   end
-  CF.A = number_field(f2, check = false)[1]
+  CF.A = number_field(f2, check = false, cached = false)[1]
   return nothing
 end
 
@@ -1161,7 +1161,7 @@ function _rcf_reduce(CF::ClassField_pp)
   else
     CF.a = reduce_mod_powers(CF.a, e)
   end
-  CF.K = radical_extension(CF.o, CF.a)[1]
+  CF.K = radical_extension(CF.o, CF.a, check = false, cached = false)[1]
   return nothing
 end
 
@@ -1269,7 +1269,7 @@ function reduce_mod_powers(a::FacElem{nf_elem, AnticNumberField}, n::Int, decom:
 end
 
 function reduce_mod_powers(a::FacElem{nf_elem, AnticNumberField}, n::Int, primes::Array{NfOrdIdl, 1})
-  lp = Dict((p, Int(valuation(a, p))) for p = primes)
+  lp = Dict{NfOrdIdl, Int}((p, Int(valuation(a, p))) for p = primes)
   return reduce_mod_powers(a, n, lp)  
 end
 

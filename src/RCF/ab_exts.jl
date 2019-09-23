@@ -642,7 +642,7 @@ function abelian_extensions(O::Union{FlintIntegerRing, FlintRationalField},
 
   newlist = Vector{NfAbsNS}(undef, length(l))
   for j in 1:length(l)
-    newlist[j], _ = number_field([Qx([coeff(coeff(f, i), 0) for i in 0:length(f)]) for f in l[j].abs_pol], check = false)
+    newlist[j], _ = number_field([Qx([coeff(coeff(f, i), 0) for i in 0:length(f)]) for f in l[j].abs_pol], cached = false, check = false)
   end
   return newlist
 end
@@ -1120,7 +1120,7 @@ function _C22_with_max_ord(l)
   Qx, x = PolynomialRing(FlintQQ, "x", cached = false)
   K = NumberField(x-1, cached = false)[1]
   for (p1, p2) in l
-    Kns, g = number_field(fmpz_poly[p1, p2], check = false)
+    Kns, g = number_field(fmpz_poly[p1, p2], check = false, cached = false)
     S, mS = simple_extension(Kns, check = false)
     d1 = discriminant(p1)
     d2 = discriminant(p2)
@@ -1302,7 +1302,7 @@ function _from_relative_to_absQQ(L::NfRelNS{T}, auts::Array{NfRelNSToNfRelNSMor{
     f = Qx([coeff(coeff(fK, j), 0) for j = 0:degree(fK)])
     polys[i] = f
   end
-  NS, gNS = number_field(polys, check = false)
+  NS, gNS = number_field(polys, check = false, cached = false)
   gpols = gens(parent(gNS[1]))
   B, lp = maximal_order_of_components(NS)
   K, mK = simple_extension(NS, check = false)
