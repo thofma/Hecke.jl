@@ -8,6 +8,10 @@ ideal_type(::AlgAssRelOrd{S, T}) where {S, T} = AlgAssRelOrdIdl{S, T}
 
 ideal_type(::Type{AlgAssRelOrd{S, T}}) where {S, T} = AlgAssRelOrdIdl{S, T}
 
+fractional_ideal_type(::AlgAssRelOrd{S, T}) where {S, T} = AlgAssRelOrdFracIdl{S, T}
+
+fractional_ideal_type(::Type{AlgAssRelOrd{S, T}}) where {S, T} = AlgAssRelOrdFracIdl{S, T}
+
 @doc Markdown.doc"""
     algebra(O::AlgAssRelOrd) -> AbsAlgAss
 

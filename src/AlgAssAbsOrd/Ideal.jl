@@ -1463,8 +1463,7 @@ end
 > It is assumed that the algebra containing $a$ is simple and central.
 """
 function normred(a::AlgAssAbsOrdIdl; copy::Bool = true)
-  @assert dimension_of_center(algebra(order(a))) == 1
-  @assert issimple(algebra(order(a)))
+  @assert issimple(algebra(order(a))) && iscentral(algebra(order(a))) "Only implemented for simple and central algebras"
   assure_has_normred(a)
   if copy
     return deepcopy(a.normred)

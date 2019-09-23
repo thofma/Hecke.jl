@@ -157,10 +157,11 @@ end
     isright_ideal(a::AbsAlgAssIdl) -> Bool
     isright_ideal(a::AlgAssAbsOrdIdl) -> Bool
     isright_ideal(a::AlgAssRelOrdIdl) -> Bool
+    isright_ideal(a::AlgAssRelOrdFracIdl) -> Bool
 
 > Returns `true` if $a$ is an right ideal and `false` otherwise.
 """
-function isright_ideal(a::Union{ AbsAlgAssIdl, AlgAssAbsOrdIdl, AlgAssRelOrdIdl })
+function isright_ideal(a::Union{ AbsAlgAssIdl, AlgAssAbsOrdIdl, AlgAssRelOrdIdl, AlgAssRelOrdFracIdl })
   if a.isright == 1
     return true
   elseif a.isright == 2
@@ -180,10 +181,11 @@ end
     isleft_ideal(a::AbsAlgAssIdl) -> Bool
     isleft_ideal(a::AlgAssAbsOrdIdl) -> Bool
     isleft_ideal(a::AlgAssRelOrdIdl) -> Bool
+    isleft_ideal(a::AlgAssRelOrdFracIdl) -> Bool
 
 > Returns `true` if $a$ is an left ideal and `false` otherwise.
 """
-function isleft_ideal(a::Union{ AbsAlgAssIdl, AlgAssAbsOrdIdl, AlgAssRelOrdIdl })
+function isleft_ideal(a::Union{ AbsAlgAssIdl, AlgAssAbsOrdIdl, AlgAssRelOrdIdl, AlgAssRelOrdFracIdl })
   if a.isleft == 1
     return true
   elseif a.isleft == 2
