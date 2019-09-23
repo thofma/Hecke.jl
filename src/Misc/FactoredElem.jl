@@ -8,6 +8,11 @@ export transform
 #
 ################################################################################
 
+function add_to_key!(D::Dict{S, T}, k::S, v) where S where T <: Union{fmpz, Integer}
+  add_to_key!(D, k, T(v))
+  return nothing
+end
+
 function add_to_key!(D::Dict{S, T}, k::S, v::T) where S where T <: Union{fmpz, Integer}
   hash_k = Base.ht_keyindex2!(D, k)
   if hash_k > 0
@@ -19,8 +24,8 @@ function add_to_key!(D::Dict{S, T}, k::S, v::T) where S where T <: Union{fmpz, I
     @inbounds D.keys[pos] = k
     @inbounds D.vals[pos] = v
     D.count += 1
-    if hash_k < D.idxfloor
-      D.idxfloor = hash_k
+    if pos < D.idxfloor
+      D.idxfloor = pos
     end
   end
   D.age += 1
@@ -56,14 +61,15 @@ function FacElem(base::Array{B, 1}, exp::Array{fmpz, 1}) where B
   z = FacElem{B, typeof(parent(base[1]))}()
 
   for i in 1:length(base)
-    if exp[i] == 0
+    if iszero(exp[i])
       continue
     end
-    if haskey(z.fac, base[i])
-      z.fac[base[i]] += exp[i]
-    else
-      z.fac[base[i]] = exp[i]
-    end
+    add_to_key!(z.fac, base[i], exp[i])
+    #if haskey(z.fac, base[i])
+    #  z.fac[base[i]] += exp[i]
+    #else
+    #  z.fac[base[i]] = exp[i]
+    #end
   end
 
   z.parent = FacElemMon(parent(base[1]))
@@ -159,8 +165,8 @@ end
 #
 ################################################################################
 function inv!(x::FacElem)
-  for a in base(x)
-    x.fac[a] = -x.fac[a]
+  for (a, v) in x
+    x.fac[a] = -v
   end
 end
 
@@ -178,16 +184,16 @@ end
 
 function pow!(z::FacElem, x::FacElem, y::T) where T <: Union{fmpz, Integer}
   z.fac = copy(x.fac)
-  for a in base(x)
+  for (a, v) in x
     # this should be inplace ... not sure anymore: using copy, inplace is bad
-    z.fac[a] = y*x.fac[a]
+    z.fac[a] = y*v
   end
 end
 
 function pow!(x::FacElem, y::T) where T <: Union{fmpz, Integer}
-  for a in base(x)
+  for (a, v) in x
     # this should be inplace ... not sure anymore: using copy, inplace is bad
-    x.fac[a] = y*x.fac[a]
+    x.fac[a] = y*v
   end
 end
 
@@ -203,9 +209,9 @@ for T in [:Integer, fmpz]
         return copy(x)
       else
         z.fac = copy(x.fac)
-        for a in base(x)
+        for (a, v) in x
           # this should be inplac
-          z.fac[a] = y*x.fac[a]
+          z.fac[a] = y*v
         end
         return z
       end
@@ -221,13 +227,15 @@ end
 
 function mul!(z::FacElem{B, S}, x::FacElem{B, S}, y::FacElem{B, S}) where {B, S}
   z.fac = copy(x.fac)
-  for a in base(y)
-    if haskey(x.fac, a)
-      z.fac[a] = z.fac[a] + y.fac[a]
-    else
-      z.fac[a] = y.fac[a]
-    end
+  for (a, v) in y
+    add_to_key!(z.fac, a, v)
+    #if haskey(x.fac, a)
+    #  z.fac[a] = z.fac[a] + y.fac[a]
+    #else
+    #  z.fac[a] = y.fac[a]
+    #end
   end
+  return z
 end
 
 function *(x::FacElem{B, S}, y::FacElem{B, S}) where {B, S}
@@ -240,44 +248,48 @@ function *(x::FacElem{B, S}, y::FacElem{B, S}) where {B, S}
   end
 
   z = copy(x)
-  for a in base(y)
-    if haskey(x.fac, a)
-      z.fac[a] = z.fac[a] + y.fac[a]
-    else
-      z.fac[a] = y.fac[a]
-    end
+  for (a, v) in y
+    add_to_key!(z.fac, a, v)
+    #if haskey(x.fac, a)
+    #  z.fac[a] = z.fac[a] + y.fac[a]
+    #else
+    #  z.fac[a] = y.fac[a]
+    #end
   end
   return z
 end
 
 function *(x::FacElem{B}, y::B) where B
   z = copy(x)
-  if haskey(x.fac, y)
-    z.fac[y] = z.fac[y] + 1
-  else
-    z.fac[y] = 1
-  end
+  add_to_key!(z.fac, y, 1)
+  #if haskey(x.fac, y)
+  #  z.fac[y] = z.fac[y] + 1
+  #else
+  #  z.fac[y] = 1
+  #end
   return z
 end
 
 function *(y::B, x::FacElem{B}) where B
   z = copy(x)
-  if haskey(x.fac, y)
-    z.fac[y] = z.fac[y] + 1
-  else
-    z.fac[y] = 1
-  end
+  add_to_key!(z.fac, y, 1)
+  #if haskey(x.fac, y)
+  #  z.fac[y] = z.fac[y] + 1
+  #else
+  #  z.fac[y] = 1
+  #end
   return z
 end
 
 function div(x::FacElem{B}, y::FacElem{B}) where B
   z = copy(x)
-  for a in base(y)
-    if haskey(x.fac, a)
-      z.fac[a] = z.fac[a] - y.fac[a]
-    else
-      z.fac[a] = -y.fac[a]
-    end
+  for (a, v) in y
+    add_to_key!(z.fac, a, -v)
+    #if haskey(x.fac, a)
+    #  z.fac[a] = z.fac[a] - y.fac[a]
+    #else
+    #  z.fac[a] = -y.fac[a]
+    #end
   end
   return z
 end
@@ -548,8 +560,8 @@ function simplify!(x::FacElem{fmpq})
       continue
     end
     v = fmpz(0)
-    for b = base(x)
-      v += valuation(b, abs(p))*x.fac[b]
+    for (b, vb) in x
+      v += valuation(b, abs(p))*vb
     end
     if v != 0
       ev[fmpq(abs(p))] = v
@@ -594,8 +606,8 @@ function simplify!(x::FacElem{fmpz})
       continue
     end
     v = fmpz(0)
-    for b = base(x)
-      v += valuation(b, abs(p))*x.fac[b]
+    for (b, vb) in x
+      v += valuation(b, abs(p))*vb
     end
     if v < 0 
       throw(DomainError(v, "Negative valuation in simplify!"))
@@ -660,10 +672,13 @@ function simplify!(x::FacElem{NfOrdIdl, NfOrdIdlSet})
     if isone(p)
       continue
     end
+    P = minimum(p)
     assure_2_normal(p)
     v = fmpz(0)
-    for b = base(x)
-      v += valuation(b, p)*x.fac[b]
+    for (b, e) in x
+      if divisible(minimum(b, copy = false), P) 
+        v += valuation(b, p)*e
+      end
     end
     if !iszero(v)
       ev[p] = v

@@ -897,6 +897,25 @@ function _get_poly_from_elem(a::NfRelNSElem{nf_elem}, Qxy)
   return res
 end
 
+function multivariate_from_tower(f::Generic.MPoly{nf_elem}, Qxy)
+  M = MPolyBuildCtx(Qxy)
+  K = base_ring(f)
+  Qx = parent(K.pol)
+  cvzip = zip(coeffs(f), exponent_vectors(f))
+  for (c, v) in cvzip
+    pc = Qx(c)
+    for i = degree(pc):-1:0
+      cpc = coeff(pc, i)
+      if iszero(cpc)
+        continue
+      end
+      vn = vcat(v, i)
+      push_term!(M, cpc, vn)
+    end
+  end
+  return finish(M)
+end
+
 function (Rxy::NmodMPolyRing)(f::fmpq_mpoly)
   R = base_ring(Rxy)
   res = change_base_ring(f, x -> divexact(R(numerator(x)), R(denominator(x))), Rxy)
@@ -910,7 +929,7 @@ function _get_polys_from_auto(f::NfRelNSToNfRelNSMor{nf_elem}, Qxy)
   K = parent(ap)
   res[nvars(Qxy)] = evaluate(parent(K.pol)(ap), gen(Qxy, nvars(Qxy)))
   for i = 1:nvars(Qxy)-1
-    res[i] = _get_poly_from_elem(f.emb[i], Qxy)
+    res[i] = multivariate_from_tower(f.emb[i].data, Qxy)
   end
   return res
 end
@@ -937,10 +956,8 @@ function permutation_group1(G::Vector{NfRelNSToNfRelNSMor{nf_elem}})
   fmod[1] = Rm(p1Q)
   for i = 1:ngens(L)
     pp = L.pol[i]
-    pp1 = change_base_ring(pp, x -> evaluate(parent(p1)(x), gRQm[end]))
-    pp2 = evaluate(pp1, [i for i = 1:ngens(L)], [gRQm[i] for i= 1:ngens(L)])
-    pp3 = coeff(pp2, [0 for s=1:nvars(parent(pp2))])
-    fmod[i+1] = Rm(pp3)
+    pp1 = multivariate_from_tower(pp, RQm)
+    fmod[i+1] = Rm(pp1)
   end
   permutations = Array{Array{Int, 1},1}(undef, length(G))
   for i = 1:length(G)

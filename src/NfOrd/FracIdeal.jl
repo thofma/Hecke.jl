@@ -592,7 +592,8 @@ function //(A::NfOrdIdl, d::Integer)
 end
 
 function +(A::NfOrdIdl, B::NfOrdFracIdl)
-  return (A*denominator(B)+numerator(B))//denominator(B)
+  n = A*denominator(B)+numerator(B)
+  return n//denominator(B)
 end
 
 +(A::NfOrdFracIdl, B::NfOrdIdl) = B+A
@@ -659,10 +660,14 @@ end
 Computes the unique coprime integral ideals $N$ and $D$ s.th. $A = ND^{-1}$
 """
 function integral_split(A::NfOrdFracIdl)
-  d = simplify(inv(A + ideal(order(A), fmpz(1))))
-  @assert denominator(d) == 1
+  if isone(A.den)
+    return A.num, ideal(order(A), 1)
+  end
+  I1 = A + ideal(order(A), fmpz(1))
+  d = simplify(inv(I1))
+  @assert isone(d.den)
   n = simplify(A*d)
-  @assert denominator(n) == 1
+  @assert isone(n.den)
   return numerator(n), numerator(d)
 end
 

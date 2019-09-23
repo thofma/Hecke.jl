@@ -15,6 +15,7 @@ export isprincipal
 Computes $B$ and $\alpha$ in factored form, such that $\alpha B = A$.
 """
 function reduce_ideal2(I::FacElem{NfOrdIdl, NfOrdIdlSet})
+  @assert !isempty(I.fac)
   O = order(first(keys(I.fac)))
   K = nf(O)
   fst = true
@@ -33,10 +34,12 @@ function reduce_ideal2(I::FacElem{NfOrdIdl, NfOrdIdlSet})
       B, b = power_reduce2(k, v)
       @hassert :PID_Test (v>0 ? k^Int(v) : inv(k)^Int(-v)) == B*evaluate(b)
       A = A*B
-      a = a*b
+      mul!(a, a, b)
+      #a = a*b
       if norm(A) > abs(discriminant(O))
         A, c = reduce_ideal2(A)
-        a = a*FacElem(Dict(K(c) => fmpz(-1)))
+        add_to_key!(a.fac, K(c), fmpz(-1))
+        #a = a*FacElem(Dict(K(c) => fmpz(-1)))
       end
     end
   end
@@ -77,7 +80,8 @@ function power_reduce2(A::NfOrdIdl, e::fmpz)
   if e < 0
     B = inv(A)
     A = numerator(B)
-    al *= FacElem(Dict(K(denominator(B)) => fmpz(e)))
+    #al *= FacElem(Dict(K(denominator(B)) => fmpz(e)))
+    add_to_key!(al.fac, K(denominator(B)), fmpz(e))
     e = -e
   end
   # A^e = A^(e/2)^2 A or A^(e/2)^2
@@ -87,17 +91,20 @@ function power_reduce2(A::NfOrdIdl, e::fmpz)
     @hassert :PID_Test 1 C*evaluate(cl) == A^Int(div(e, 2))
 
     C2 = C^2
-    al = al*cl^2
+    mul!(al, al, cl^2)
+    #al = al*cl^2
     if norm(C2) > abs(discriminant(O))
       C2, a = reduce_ideal2(C2)
-      al *= inv(a)
+      add_to_key!(al.fac, inv(a), 1)
+      #mul!(al, al, inv(a))# al *= inv(a)
     end
 
     if isodd(e)
       A = C2*A
       if norm(A) > abs(discriminant(O))
         A, a = reduce_ideal2(A)
-        al *= inv(a)
+        add_to_key!(al.fac, inv(a), 1)
+        #mul!(al, al, inv(a)) #al *= inv(a)
       end
     else
       A = C2
@@ -355,6 +362,9 @@ function class_group(c::ClassGrpCtx, O::NfOrd = order(c); redo::Bool = false)
   local disclog 
   let c = c
     function disclog(x::NfOrdIdl)
+      if x.is_principal == 1
+        return id(C)
+      end
       return class_group_disc_log(x, c)
     end
   end
@@ -476,7 +486,13 @@ Tests if $A$ is principal and returns $(\mathtt{true}, \alpha)$ if $A =
 The generator will be in factored form.
 """
 function isprincipal_fac_elem(A::NfOrdIdl)
+  if A.is_principal == 1 && isdefined(A, :princ_gen)
+    return true, FacElem(A.princ_gen.elem_in_nf)
+  end
   O = order(A)
+  if A.is_principal == 2
+    return false, FacElem(one(nf(O)))
+  end
   c = _get_ClassGrpCtx_of_order(O, false)
   if c == nothing
     L = lll(maximal_order(nf(O)))
@@ -515,7 +531,6 @@ function isprincipal_fac_elem(A::NfOrdIdl)
 
   #reduce e modulo units.
   e = reduce_mod_units([e], _get_UnitGrpCtx_of_order(L))[1]
-
   return true, e
 end
 
@@ -526,7 +541,13 @@ Tests if $A$ is principal and returns $(\mathtt{true}, \alpha)$ if $A =
 \langle \alpha\rangle$ of $(\mathtt{false}, 1)$ otherwise.  
 """
 function isprincipal(A::NfOrdIdl)
+  if A.is_principal == 1 && isdefined(A, :princ_gen)
+    return true, A.princ_gen
+  end
   O = order(A)
+  if A.is_principal == 2
+    return false, one(O)
+  end
   if !ismaximal(O)
     return isprincipal_non_maximal(A)
   end

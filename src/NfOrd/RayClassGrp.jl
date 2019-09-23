@@ -130,18 +130,10 @@ function _preproc(O::NfOrd, elems::Array{FacElem{nf_elem, AnticNumberField},1}, 
       d = denominator(f)
       if !isone(denominator(f))
         el = O(d)
-        if haskey(x,el)
-          x[el] = mod(x[el]-l, exponent)
-        else
-          x[el]= mod(-l, exponent)
-        end
+        add_to_key!(x, el, -l)
       end
       el1 = O(n)
-      if haskey(x,el1)
-        x[el1] = mod(x[el1]+l, exponent)
-      else
-        x[el1] = l
-      end
+      add_to_key!(x, el1, l)
     end
     if !isempty(x)
       push!(newelems, FacElem(x))
@@ -236,20 +228,12 @@ function _fac_elem_evaluation(O::NfOrd, Q::NfOrdQuoRing, quots::Array, idemps::A
     end
     n = numerator(f)
     d = denominator(f)
-    if !isone(denominator(f))
+    if !isone(d)
       el = O(d)
-      if haskey(x,el)
-        x[el] = mod(x[el]-l, exponent)
-      else
-        x[el]=mod(-l, exponent)
-      end
+      add_to_key!(x, el, exponent-l)
     end
     el1 = O(n)
-    if haskey(x,el1)
-      x[el1] = mod(x[el1]+l, exponent)
-    else
-      x[el1] = l
-    end
+    add_to_key!(x, el1, l)
   end
   if isempty(x)
     return element.elem
@@ -816,17 +800,19 @@ function ray_class_group_fac_elem(m::NfOrdIdl, inf_plc::Array{InfPlc, 1} = Array
  
  
   function disclog(J::NfOrdIdl)
-
+    
     if isone(J)
     @vprint :RayFacElem 1 "J is one \n"
       return X([0 for i=1:ngens(X)])
     else
       L=mC\J
       @vprint :RayFacElem 1 "Disc log of element J in the Class Group: $(L.coeff) \n"
-      s=exp_class(L)
-      I=J* inv(s)
+      s = exp_class(L)
+      inv!(s)
+      add_to_key!(s.fac, J, 1) 
+      #I = J*s
       @vprint :RayFacElem 1 "This ideal is principal: $I \n"
-      z=principal_gen_fac_elem(I)
+      z = principal_gen_fac_elem(s)
       el=_fac_elem_evaluation(O,Q,quots,idemps,z,lp,expon)
       @vprint :RayFacElem 1 "and 'generated' by $el \n"
       y=(mG\Q(el)).coeff
@@ -1205,7 +1191,6 @@ function ray_class_group_quo(n::Integer, m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2
   end
   
   function disclog(J::NfOrdIdl)
-    
     @hassert :RayFacElem 1 iscoprime(J, I)
     res = zero_matrix(FlintZZ, 1, ngens(X))
     if J.is_principal==1
@@ -1259,11 +1244,12 @@ function ray_class_group_quo(n::Integer, m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2
       for (el,v) in s.fac
         s.fac[el] = -nonnclass*v
       end
-      if haskey(s.fac, J)
-        s.fac[J] += nonnclass
-      else
-        s.fac[J] = nonnclass
-      end
+      add_to_key!(s.fac, J, nonnclass)
+      #if haskey(s.fac, J)
+      #  s.fac[J] += nonnclass
+      #else
+      #  s.fac[J] = nonnclass
+      #end
       z = principal_gen_fac_elem(s)
       el = _fac_elem_evaluation(O, Q, quots, idemps, z, gcd(expo,n))
       y=(mG\(pi(el))).coeff
