@@ -527,6 +527,22 @@ function ideal_from_lattice_gens(O::AlgAssRelOrd, gens::Vector{ <: AbsAlgAssElem
   return ideal(O, PM, :nothing, check, true)
 end
 
+function ideal(O::AlgAssRelOrd{S, T}, I::AlgAssRelOrdIdl{S, T}, check::Bool = true) where { S, T }
+  if O === order(I)
+    return deepcopy(I)
+  end
+  PM = basis_pmatrix(I)
+  PM.matrix = PM.matrix*basis_matrix(order(I), copy = false)*basis_mat_inv(O, copy = false)
+  J = ideal(O, PM, :nothing, check)
+  if isdefined(I, :left_order)
+    J.left_order = left_order(I)
+  end
+  if isdefined(I, :right_order)
+    J.right_order = right_order(I)
+  end
+  return J
+end
+
 ################################################################################
 #
 #  Inclusion of elements in ideals
@@ -651,7 +667,7 @@ function left_order(a::Union{ AlgAssRelOrdIdl, AlgAssRelOrdFracIdl })
   end
 
   if ismaximal_known(order(a)) && ismaximal(order(a))
-    if isleft_known(a) && isleft_ideal(a)
+    if isleft_ideal(a)
       a.left_order = order(a)
       return order(a)
     end
@@ -674,7 +690,7 @@ function right_order(a::Union{ AlgAssRelOrdIdl, AlgAssRelOrdFracIdl })
   end
 
   if ismaximal_known(order(a)) && ismaximal(order(a))
-    if isright_known(a) && isright_ideal(a)
+    if isright_ideal(a)
       a.right_order = order(a)
       return order(a)
     end
@@ -1072,7 +1088,131 @@ function maximal_integral_ideal(O::AlgAssRelOrd, p::Union{ NfAbsOrdIdl, NfRelOrd
   N = sub(pseudo_hnf_full_rank_with_modulus(N, m, :lowerleft), nrows(N) - degree(O) + 1:nrows(N), 1:degree(O))
 
   M = ideal(O, N, side, false, true)
+  if side == :left
+    M.left_order = O # O is maximal
+  else
+    M.right_order = O
+  end
   return M
+end
+
+# Constructs a maximal integral ideal M of O := order(I) such that M\cap R = p
+# and I\subseteq M.
+# M is a left ideal of O if side = :left and a right ideal if side = :right.
+# Assumes (so far?) that the algebra is simple and O is maximal.
+function maximal_integral_ideal_containing(I::AlgAssRelOrdIdl, p::Union{ NfAbsOrdIdl, NfRelOrdIdl }, side::Symbol)
+  O = order(I)
+  if side == :left
+    @assert isleft_ideal(I)
+  elseif side == :right
+    @assert isright_ideal(I)
+  else
+    error("Option :$(side) for side not implemented")
+  end
+
+  @assert issimple(algebra(O))
+  @assert ismaximal(O)
+
+  n = normred(I)
+  if valuation(n, p) == 0
+    error("Cannot find a maximal ideal for the given prime")
+  end
+  if n == p
+    return I
+  end
+
+  P = prime_ideals_over(O, p)[1]
+  J = I + P
+  if normred(J) == p
+    return J
+  end
+
+  OP, toOP = quo(O, P, p)
+  B, OPtoB, BtoOP = _as_algebra_over_center(OP)
+  C, toC = _as_matrix_algebra(B)
+
+  JinC = ideal_from_gens(C, [ toC(BtoOP(toOP(b))) for b in z_basis(J) ])
+  y = left_principal_gen(JinC)
+  m = matrix(y)
+  r = rref!(m)
+  k = degree(C)
+  @assert r < k - 1 # Otherwise J would be maximal, which we have checked...
+
+  # We need to "add" pivots to m to get rank k - 1
+  row = 1
+  col = 1
+  while r < k - 1
+    if !iszero(m[row, col])
+      row += 1
+      continue
+    end
+
+    r += 1
+    m[r, col] = 1
+    col += 1
+  end
+  @assert rank(m) == k - 1
+  if side == :left
+    c = C*C(m)
+  else
+    c = C(m)*C
+  end
+  basis_c = basis(c, copy = false)
+
+  t = zero_matrix(base_ring(algebra(O)), length(basis_c), degree(O))
+  for i = 1:length(basis_c)
+    b = toOP\(BtoOP(toC\(basis_c[i])))
+    for j = 1:degree(O)
+      t[i, j] = coordinates(b, copy = false)[j]
+    end
+  end
+  PM = vcat(basis_pmat(P), PseudoMatrix(t))
+  n = numerator(det(basis_pmat(P, copy = false)), copy = false)
+  PM = sub(pseudo_hnf_full_rank_with_modulus(PM, n, :lowerleft), length(basis_c) + 1:nrows(PM), 1:ncols(PM))
+
+  M = ideal(O, PM, side, false, true)
+  @assert normred(M) == p
+  if side == :left
+    M.left_order = O # O is maximal
+  else
+    M.right_order = O
+  end
+
+  return M
+end
+
+################################################################################
+#
+#  Factorization into maximal ideals
+#
+################################################################################
+
+# Computes maximal integral ideals M_1, ..., M_k such that I = M_1\cdots M_k,
+# and such that the right order of any factor is the left order of the next
+# factor.
+# Always considers I as an ideal of its left order.
+function factor(I::AlgAssRelOrdIdl)
+  O = left_order(I)
+  @assert ismaximal(O)
+  J = ideal(O, I)
+  J.isleft = true
+
+  factors = Vector{ideal_type(O)}()
+  n = normred(J)
+  fac_n = factor(n)
+  primes = collect(keys(fac_n))
+  sort!(primes, lt = (p, q) -> minimum(p, copy = false) < minimum(q, copy = false))
+  fac_n[primes[end]] -= 1 # We don't need to find the "last" maximal ideal
+  for p in primes
+    for i = 1:fac_n[p]
+      M = maximal_integral_ideal_containing(J, p, :left)
+      push!(factors, M)
+      J = divexact_left(J, M, set_order = :right_b)
+    end
+  end
+  push!(factors, J)
+
+  return factors
 end
 
 ################################################################################
