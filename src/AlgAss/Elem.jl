@@ -913,6 +913,16 @@ function normred_over_center(a::AbsAlgAssElem, ZtoA::AbsAlgAssMor)
   return n
 end
 
+function normred(x::FacElem{S, T}) where { S <: AbsAlgAssElem, T <: AbsAlgAss }
+  K = base_ring(base_ring(parent(x)))
+  @assert iscommutative(K) # so, it doesn't matter in which order we compute the norms
+  n = one(K)
+  for (b, e) in x.fac
+    n *= normred(b)^e
+  end
+  return n
+end
+
 ################################################################################
 #
 #  Gram matrix of reduced trace

@@ -498,6 +498,24 @@ function maximal_order_via_simple(m::NfRelToNfRelNSMor)
   return non_simple_order(Os, m)
 end
 
+function maximal_order_via_relative(K::AnticNumberField, m::NfToNfRel)
+  try
+    O = _get_maximal_order(K)
+    return O
+  catch e
+    if !isa(e, AccessorNotSetError)
+      rethrow(e)
+    end
+    L = codomain(m)
+    OL = maximal_order(L)
+    B = z_basis(OL)
+    OK = Order(K, [ m\b for b in B ], check = false, isbasis = true)
+    OK.ismaximal = 1
+    _set_maximal_order(K, OK)
+    return OK
+  end
+end
+
 ################################################################################
 #
 #  Equality

@@ -574,6 +574,21 @@ function hash(a::Hecke.NfRelElem{nf_elem}, b::UInt)
   return hash(a.data, b)
 end
 
+# Calls simplify on the output of absolute_field
+function simplified_absolute_field(L::NfRel{nf_elem}, cached::Bool = false)
+  Ka, a, b, c = _absolute_field(L, cached)
+  KatoL = NfToNfRel(Ka, L, a, b, c)
+  OKa = maximal_order_via_relative(Ka, KatoL)
+  K, KtoKa = simplify(Ka)
+  KatoK = inv(KtoKa)
+  aa = KatoK(a)
+  bb = KatoK(b)
+  cc = KatoL(KtoKa(gen(K)))
+  ktoK = hom(base_field(L), K, aa, check = false)
+  KtoL = NfToNfRel(K, L, aa, bb, cc)
+  return K, KtoL, ktoK
+end
+
 ################################################################################
 #
 #  Basis & representation matrix
