@@ -1059,9 +1059,6 @@ function valuation(a::nf_elem, p::NfOrdIdl, no::fmpq = fmpq(0))
     end
     return valnumden + p.valuation(b, nno)::Int
   end
-  
-
-  
 
   P = p.gen_one
 
@@ -1181,6 +1178,9 @@ Computes the $\mathfrak p$-adic valuation of $A$, that is, the largest $i$
 such that $A$ is contained in $\mathfrak p^i$.
 """
 function valuation(A::NfOrdIdl, p::NfOrdIdl)
+  if has_minimum(A) && has_minimum(p) && !divisible(minimum(A, copy = false), minimum(p, copy = false))
+    return 0
+  end
   if A.is_principal == 1 && isdefined(A, :princ_gen)
     return valuation(A.princ_gen, p)
   end

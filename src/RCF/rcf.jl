@@ -1097,11 +1097,7 @@ function extend_easy(f::Hecke.NfOrdToFqNmodMor, K::AnticNumberField)
       if iszero(s)
         throw(BadPrime(p))
       end
-      if haskey(D, s)
-        D[s] += v
-      else
-        D[s] = v
-      end
+      add_to_key!(D, s, v)
     end
     return _ev(D, one(Fq))
   end
@@ -1300,22 +1296,15 @@ function factor_coprime(a::FacElem{nf_elem, AnticNumberField}, I::NfOrdIdlSet)
   for (e,v) = a.fac
     N, D = integral_split(ideal(Zk, e))
     if !isone(N)
-      if haskey(A, N)
-        A[N] += v
-      else
-        A[N] = v
-      end
+      add_to_key!(A, N, v)
     end
     if !isone(D)
-      if haskey(A, D)
-        A[D] -= v
-      else
-        A[D] = -v
-      end
+      add_to_key!(A, D, -v)
     end
   end
   if length(A) == 0
     A[ideal(Zk, 1)] = 1
+    return A
   end
   return factor_coprime!(FacElem(A))
 end

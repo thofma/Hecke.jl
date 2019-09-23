@@ -186,7 +186,6 @@ function conjugates_arb_log(x::FacElem{nf_elem, AnticNumberField}, abs_tol::Int)
 
 
   target_tol = abs_tol
-
   pr = abs_tol + nbits(maximum(abs, values(x.fac))) + nbits(length(x.fac))
 
   while true
@@ -269,11 +268,12 @@ function ideal(O::NfOrd, a::FacElem{nf_elem, AnticNumberField})
   de = Dict{NfOrdFracIdl, fmpz}()
   for (e, k) = a.fac
     I = ideal(O, e)
-    if haskey(de, I)
-      de[I] += k
-    else
-      de[I] = k
-    end
+    add_to_key!(de, I, k)
+    #if haskey(de, I)
+    #  de[I] += k
+    #else
+    #  de[I] = k
+    #end
   end
   return FacElem(de)
 end

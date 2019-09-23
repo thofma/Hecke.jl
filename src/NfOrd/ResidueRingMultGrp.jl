@@ -63,23 +63,11 @@ function FacElem(Q::FacElem{NfOrdFracIdl, NfOrdFracIdlSet}, O::NfOrdIdlSet)
   D = Dict{NfOrdIdl, fmpz}()
   for (I, v) = Q.fac
     if isone(I.den)
-      if haskey(D, I.num)
-        D[I.num] += v
-      else
-        D[I.num] = v
-      end
+      add_to_key!(D, I.num, v)
     else
       n,d = integral_split(I)
-      if haskey(D, n)
-        D[n] += v
-      else
-        D[n] = v
-      end
-      if haskey(D, d)
-        D[d] -= v
-      else
-        D[d] = -v
-      end
+      add_to_key!(D, n, v)
+      add_to_key!(D, d, -v)
     end
   end
   return FacElem(D)

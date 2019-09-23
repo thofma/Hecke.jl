@@ -838,19 +838,21 @@ function factor(N::fmpz)
       ee, f = ispower(f)
       ee = valuation(N, f) #careful, f does not need to be prime, so N/f^ee is not coprime to f
       if isprime(f)
-        if haskey(r, f)
-          r[f] += fac*ee
-        else
-          r[f] = fac*ee
-        end
+        add_to_key!(r, f, fac*ee)
+        #if haskey(r, f)
+        #  r[f] += fac*ee
+        #else
+        #  r[f] = fac*ee
+        #end
       else
         s = factor(f)
         for (p, ex) = s.fac
-          if haskey(r, p)
-            r[p] += fac*ex*ee
-          else
-            r[p] = fac*ex*ee
-          end
+          add_to_key!(r, p, fac*ex*ee)
+          #if haskey(r, p)
+          #  r[p] += fac*ex*ee
+          #else
+          #  r[p] = fac*ex*ee
+          #end
         end
       end
   #    @assert N % f^ee == 0
@@ -865,11 +867,12 @@ function factor(N::fmpz)
   end
   s = Nemo.factor(N)
   for (p, ex) = s.fac
-    if haskey(r, p)
-      r[p] += fac*ex
-    else
-      r[p] = fac*ex
-    end
+    add_to_key!(r, p, fac*ex)
+    #if haskey(r, p)
+    #  r[p] += fac*ex
+    #else
+    #  r[p] = fac*ex
+    #end
   end
   for p = keys(r)
     if nbits(p) > 60 && !(p in big_primes)
