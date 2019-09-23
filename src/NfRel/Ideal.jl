@@ -38,26 +38,6 @@ end
 #
 ################################################################################
 
-function assure_has_basis_pmatrix(a::Union{NfRelOrdIdl, NfRelOrdFracIdl})
-  if isdefined(a, :basis_pmatrix)
-    return nothing
-  end
-  if !isdefined(a, :pseudo_basis)
-    error("No pseudo_basis and no basis_pmatrix defined.")
-  end
-  pb = pseudo_basis(a, copy = false)
-  L = nf(order(a))
-  M = zero_matrix(base_field(L), degree(L), degree(L))
-  C = Vector{fractional_ideal_type(order_type(base_field(L)))}()
-  for i = 1:degree(L)
-    elem_to_mat_row!(M, i, pb[i][1])
-    push!(C, deepcopy(pb[i][2]))
-  end
-  M = M*basis_mat_inv(order(a), copy = false)
-  a.basis_pmatrix = pseudo_hnf(PseudoMatrix(M, C), :lowerleft, true)
-  return nothing
-end
-
 function assure_has_pseudo_basis(a::Union{NfRelOrdIdl, NfRelOrdFracIdl})
   if isdefined(a, :pseudo_basis)
     return nothing
@@ -125,7 +105,6 @@ end
 Returns the basis pseudo-matrix of $a$.
 """
 function basis_pmatrix(a::Union{NfRelOrdIdl, NfRelOrdFracIdl}; copy::Bool = true)
-  assure_has_basis_pmatrix(a)
   if copy
     return deepcopy(a.basis_pmatrix)
   else
@@ -313,6 +292,12 @@ then it is checked whether $a$ defines an (integral) ideal.
 function ideal(O::NfRelOrd{T, S}, a::S, check::Bool = true) where {T, S}
   d = degree(O)
   pb = pseudo_basis(O, copy = false)
+  if iszero(a)
+    M = zero_matrix(base_field(nf(O)), d, d)
+    PM = PseudoMatrix(M, [ a*pb[i][2] for i = 1:d ])
+    return NfRelOrdIdl{T, S}(O, PM)
+  end
+
   M = identity_matrix(base_field(nf(O)), d)
   PM = PseudoMatrix(M, [ a*pb[i][2] for i = 1:d ])
   if check
@@ -814,9 +799,9 @@ function ring_of_multipliers(a::NfRelOrdIdl{T1, T2}) where {T1, T2}
   d = degree(O)
   pb = pseudo_basis(a, copy = false)
   S = basis_mat_inv(O, copy = false)*basis_mat_inv(a, copy = false)
-  M = basis_matrix(O, copy = false)*representation_matrix(pb[1][1])*S
+  M = representation_matrix(pb[1][1])*S
   for i = 2:d
-    M = hcat(M, basis_matrix(O, copy = false)*representation_matrix(pb[i][1])*S)
+    M = hcat(M, representation_matrix(pb[i][1])*S)
   end
   invcoeffs = [ simplify(inv(pb[i][2])) for i = 1:d ]
   C = Array{T2}(undef, d^2)
@@ -831,7 +816,7 @@ function ring_of_multipliers(a::NfRelOrdIdl{T1, T2}) where {T1, T2}
   end
   PM = PseudoMatrix(transpose(M), C)
   PM = sub(pseudo_hnf(PM, :upperright, true), 1:d, 1:d)
-  N = inv(transpose(PM.matrix))*basis_matrix(O, copy = false)
+  N = inv(transpose(PM.matrix))
   PN = PseudoMatrix(N, [ simplify(inv(I)) for I in PM.coeffs ])
   return NfRelOrd{T1, T2}(nf(O), PN)
 end
@@ -877,15 +862,15 @@ end
 #
 ################################################################################
 
-function prime_decomposition(O::NfRelOrd, p::Union{NfOrdIdl, NfRelOrdIdl})
+function prime_decomposition(O::NfRelOrd, p::Union{NfOrdIdl, NfRelOrdIdl}; compute_uniformizer::Bool = true)
   if isindex_divisor(O, p)
     return prime_dec_index(O, p)
   end
 
-  return prime_dec_nonindex(O, p)
+  return prime_dec_nonindex(O, p, compute_uniformizer = compute_uniformizer)
 end
 
-function prime_dec_nonindex(O::NfRelOrd, p::Union{NfOrdIdl, NfRelOrdIdl})
+function prime_dec_nonindex(O::NfRelOrd, p::Union{NfOrdIdl, NfRelOrdIdl}; compute_uniformizer::Bool = true)
   L = nf(O)
   OK = order(p)
   @assert OK == O.basis_pmatrix.coeffs[1].order
@@ -911,18 +896,20 @@ function prime_dec_nonindex(O::NfRelOrd, p::Union{NfOrdIdl, NfRelOrdIdl})
     P.minimum = deepcopy(p)
     P.non_index_div_poly = q
     Oga = O(ga)
-    # TODO: Warum funktioniert das? Muss uniformizer(p) ein p-uniformizer sein?
-    if iszero(Oga)
-      @assert e == 1
-      P.p_uniformizer = O(uniformizer(p))
-    else
-      if e != 1
-        P.p_uniformizer = Oga
+    if compute_uniformizer
+      # TODO: Warum funktioniert das? Muss uniformizer(p) ein p-uniformizer sein?
+      if iszero(Oga)
+        @assert e == 1
+        P.p_uniformizer = O(uniformizer(p))
       else
-        if valuation(Oga, P) == 1
+        if e != 1
           P.p_uniformizer = Oga
         else
-          P.p_uniformizer = Oga + O(uniformizer(p))
+          if valuation(Oga, P) == 1
+            P.p_uniformizer = Oga
+          else
+            P.p_uniformizer = Oga + O(uniformizer(p))
+          end
         end
       end
     end

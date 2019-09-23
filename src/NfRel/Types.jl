@@ -147,12 +147,6 @@ mutable struct NfRelOrdFracIdl{T, S}
     z.basis_matrix = M.matrix
     return z
   end
-
-  function NfRelOrdFracIdl{T, S}(O::NfRelOrd{T, S}, a::Array{Tuple{T1, S}}) where {T1 <: NumFieldElem{T}, S} where T
-    z = NfRelOrdFracIdl{T, S}(O)
-    z.pseudo_basis = a
-    return z
-  end
 end
 
 ###############################################################################
@@ -204,12 +198,6 @@ mutable struct NfRelOrdIdl{T, S}
     z = NfRelOrdIdl{T, S}(O)
     z.basis_pmatrix = M
     z.basis_matrix = M.matrix
-    return z
-  end
-
-  function NfRelOrdIdl{T, S}(O::NfRelOrd{T, S}, a::Array{Tuple{T1, S}}) where {T1 <: NumFieldElem{T}, S} where T
-    z = NfRelOrdIdl{T, S}(O)
-    z.pseudo_basis = a
     return z
   end
 end

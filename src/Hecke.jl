@@ -82,7 +82,7 @@ import Nemo: acb_struct, Ring, Group, Field, NmodRing, nmod, arf_struct,
 
 export @vprint, @hassert, @vtime, add_verbose_scope, get_verbose_level,
        set_verbose_level, add_assert_scope, get_assert_level, set_assert_level,
-       update, show, StepRange, domain, codomain, image, preimage,
+       show, StepRange, domain, codomain, image, preimage,
        modord, resultant, next_prime, ispower, number_field, factor
 
 ###############################################################################
@@ -110,9 +110,9 @@ function __init__()
     println("")
     print("Welcome to \n")
     printstyled("
-    _    _           _        
-   | |  | |         | |       
-   | |__| | ___  ___| | _____ 
+    _    _           _
+   | |  | |         | |
+   | |__| | ___  ___| | _____
    |  __  |/ _ \\/ __| |/ / _ \\
    | |  | |  __/ (__|   <  __/
    |_|  |_|\\___|\\___|_|\\_\\___|
@@ -132,7 +132,7 @@ function __init__()
   if inNotebook()  # to make toggle work in IJulia
     display("text/html", "\$\\require{action}\$")
   end
-  
+
   #if "HOSTNAME" in keys(ENV) && ENV["HOSTNAME"] == "juliabox"
   #  push!(Libdl.DL_LOAD_PATH, "/usr/local/lib")
   #elseif Sys.islinux()
@@ -141,7 +141,7 @@ function __init__()
   #else
   #  push!(Libdl.DL_LOAD_PATH, libdir)
   #end
-  
+
   t = create_accessors(AnticNumberField, acb_root_ctx, get_handle())
   global _get_nf_conjugate_data_arb = t[1]
   global _set_nf_conjugate_data_arb = t[2]
@@ -171,9 +171,9 @@ function __init__()
 
   global _get_UnitGrpCtx_of_order = t[1]
   global _set_UnitGrpCtx_of_order = t[2]
-  
+
   t = create_accessors(AnticNumberField, Dict, get_handle())
-  
+
   global _get_places_uniformizers = t[1]
   global _set_places_uniformizers = t[2]
 
@@ -238,7 +238,7 @@ function __init__()
 
   global flint_rand_ctx = flint_rand_state()
 
-  @require GAP="c863536a-3901-11e9-33e7-d5cd0df7b904" begin 
+  @require GAP="c863536a-3901-11e9-33e7-d5cd0df7b904" begin
     include("FieldFactory/fields.jl")
     #@require Revise="295af30f-e4ad-537b-8983-00126c2a3abe" begin
     #  import .Revise
@@ -570,7 +570,7 @@ macro show_name(io, O)
     s = get_special(o, :name)
     if s === nothing
       sy = find_name(o)
-      if sy === nothing 
+      if sy === nothing
         sy = extra_name(o)
       end
       if sy !== nothing
@@ -669,7 +669,7 @@ end
 #usage
 # @vtime_add_ellapsed :ClassGroup 2 clg :saturate  s= hnf(a)
 # @vtime_add :ClassGroup 2 clg :saturate  0.5
-# -> clg.time[:saturate] += 
+# -> clg.time[:saturate] +=
 function _vtime_add(D::Dict, k::Any, v::Any)
   if haskey(D, k)
     D[k] += v
@@ -692,7 +692,7 @@ macro vtime_add_elapsed(flag, level, var, key, stmt)
     if get_verbose_level($flag) >= $level
       _vtime_add($(esc(var)).time, $key, tm)
     end
-  end  
+  end
 end
 
 ################################################################################
@@ -891,8 +891,8 @@ function find_cache(M::Module)
   sym = []
   for a in collect(names(M, all = true))
     d = Meta.parse("$M.$a")
-      try 
-        z = eval(d); 
+      try
+        z = eval(d);
         if isa(z, AbstractArray) || isa(z, AbstractDict)
           push!(sym, (d, z))
         end
@@ -902,9 +902,9 @@ function find_cache(M::Module)
   return sym
 end
 
-protect = [:(Hecke.ASSERT_LOOKUP), :(Hecke.VERBOSE_LOOKUP), 
+protect = [:(Hecke.ASSERT_LOOKUP), :(Hecke.VERBOSE_LOOKUP),
            :(Hecke.ASSERT_SCOPE), :(Hecke.VERBOSE_SCOPE),
-           :(Hecke._euler_phi_inverse_maximum), 
+           :(Hecke._euler_phi_inverse_maximum),
            :(Hecke.odlyzko_bound_grh),
            :(Hecke.nC), :(Hecke.B1), #part of ECM
            :(Hecke.VERBOSE_PRINT_INDENT)]
@@ -930,4 +930,3 @@ end
 @inline __get_rounding_mode() = Base.MPFR.rounding_raw(BigFloat)
 
 end # module
-

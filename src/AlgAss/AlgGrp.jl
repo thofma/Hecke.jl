@@ -144,44 +144,21 @@ end
 
 ###############################################################################
 #
-#  Trace Matrix
+#  Trace basis
 #
 ###############################################################################
 
 function _assure_trace_basis(A::AlgGrp{T}) where {T}
-  if !isdefined(A, :trace_basis_elem)
-    A.trace_basis_elem = Vector{T}(undef, dim(A))
-    A.trace_basis_elem[1] = base_ring(A)(dim(A))
-    for i=2:length(A.trace_basis_elem)
-      A.trace_basis_elem[i] = zero(base_ring(A))
-    end
+  if isdefined(A, :trace_basis_elem)
+    return nothing
+  end
+
+  A.trace_basis_elem = Vector{T}(undef, dim(A))
+  A.trace_basis_elem[1] = base_ring(A)(dim(A))
+  for i = 2:dim(A)
+    A.trace_basis_elem[i] = zero(base_ring(A))
   end
   return nothing
-end
-
-@doc Markdown.doc"""
-    trace_matrix(A::AlgGrp) -> MatElem
-
-> Returns a matrix $M$ over the base ring of $A$ such that
-> $M_{i, j} = \mathrm{tr}(b_i \cdot b_j)$, where $b_1, \dots, b_n$ is the
-> basis of $A$.
-"""
-function trace_matrix(A::AlgGrp)
-  _assure_trace_basis(A)
-  F = base_ring(A)
-  n = dim(A)
-  M = zero_matrix(F, n, n)
-  for i = 1:n
-    M[i,i] = tr(A[i]^2)
-  end
-  for i = 1:n
-    for j = i+1:n
-      x = tr(A[i]*A[j])
-      M[i,j] = x
-      M[j,i] = x
-    end
-  end
-  return M
 end
 
 ################################################################################

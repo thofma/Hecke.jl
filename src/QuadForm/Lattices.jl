@@ -64,7 +64,7 @@ function quadratic_lattice(K::NumField, B::PMat; gram_ambient_space = nothing, g
   end
   if gram_ambient_space === nothing && gram !== nothing
     z = QuadLat{typeof(K), typeof(gram), typeof(B)}()
-    z.pmat = P
+    z.pmat = B
     z.gram = gram
     z.base_algebra = K
     return z
@@ -100,6 +100,40 @@ function quadratic_lattice(K::NumField, B::MatElem; gram_ambient_space = nothing
   end
 end
 
+@doc Markdown.doc"""
+    quadratic_lattice(V::QuadSpace, B::PMat) -> QuadLat
+
+Given a quadratic space $V$ and a pseudo-matrix $B$, returns the quadratic lattice
+spanned by the pseudo-matrix $B$ inside $V$.
+"""
+function lattice(V::QuadSpace, B::PMat)
+  K = base_ring(V)
+  z = QuadLat{typeof(K), typeof(gram_matrix(V)), typeof(B)}()
+  z.pmat = B
+  z.gram = gram_matrix(V, matrix(B))
+  z.base_algebra = K
+  z.space = V
+  return z
+end
+
+@doc Markdown.doc"""
+    quadratic_lattice(V::QuadSpace, B::MatElem) -> QuadLat
+
+Given a quadratic space $V$ and a matrix $B$, returns the quadratic lattice
+spanned by the rows of $B$ inside $V$.
+"""
+function lattice(V::QuadSpace, B::MatElem)
+  K = base_ring(V)
+  pmat = pseudo_matrix(B)
+  z = QuadLat{typeof(K), typeof(gram_matrix(V)), typeof(pmat)}()
+  z.pmat = pmat
+  z.gram = gram_matrix(V, B)
+  z.base_algebra = K
+  z.space = V
+  return z
+end
+
+# Hermitian lattices
 mutable struct HermLat{S, T, U, V, W} <: AbsLat{S}
   space::HermSpace{S, T, U, W}
   pmat::V
@@ -218,6 +252,59 @@ function hermitian_lattice(K::NumField, B::MatElem; gram_ambient_space = nothing
   end
 end
 
+@doc Markdown.doc"""
+    hermitian_lattice(V::HermSpace, B::PMat) -> HermLat
+
+Given a hermitian space $V$ and a pseudo-matrix $B$, returns the hermitian lattice
+spanned by the pseudo-matrix $B$ inside $V$.
+"""
+function lattice(V::HermSpace, B::PMat)
+  K = base_ring(V)
+  gram = gram_matrix(V, matrix(B))
+  z = HermLat{typeof(K), typeof(base_field(K)), typeof(gram), typeof(B), morphism_type(typeof(K))}()
+  z.pmat = B
+  z.gram = gram
+  z.base_algebra = base_ring(V)
+  z.involution = involution(V)
+  z.space = V
+  return z
+end
+
+@doc Markdown.doc"""
+    hermitian_lattice(V::QuadSpace, B::MatElem) -> HermLat
+
+Given a Hermitian space $V$ and a matrix $B$, returns the Hermitian lattice
+spanned by the rows of $B$ inside $V$.
+"""
+function lattice(V::HermSpace, B::MatElem)
+  K = base_ring(V)
+  gram = gram_matrix(V, B)
+  pmat = pseudo_matrix(B)
+  z = HermLat{typeof(K), typeof(base_field(K)), typeof(gram), typeof(pmat), morphism_type(typeof(K))}()
+  z.pmat = pmat
+  z.gram = gram
+  z.base_algebra = base_ring(V)
+  z.involution = involution(V)
+  z.space = V
+  return z
+end
+
+@doc Markdown.doc"""
+    lattice(V::HermSpace) -> HermLat
+
+Given a Hermitian space $V$, returns the Hermitian lattice with trivial basis
+matrix.
+"""
+lattice(V::HermSpace) = lattice(V, identity_matrix(base_ring(V), rank(V)))
+
+@doc Markdown.doc"""
+    lattice(V::QuadSpace) -> QuadLat
+
+Given a quadratic space $V$, returns the quadratic lattice with trivial basis
+matrix.
+"""
+lattice(V::QuadSpace) = lattice(V, identity_matrix(base_ring(V), rank(V)))
+
 ################################################################################
 #
 #  String I/O
@@ -227,13 +314,13 @@ end
 function Base.show(io::IO, L::QuadLat)
   println(io, "Quadratic lattice of rank $(rank(L)) and degree $(degree(L))")
   println(io, "over")
-  print(io, base_algebra(L))
+  print(IOContext(io, :compact => true), base_ring(L))
 end
 
 function Base.show(io::IO, L::HermLat)
   println(io, "Hermitian lattice of rank $(rank(L)) and degree $(degree(L))")
   println(io, "over")
-  print(io, base_algebra(L))
+  print(IOContext(io, :compact => true), base_ring(L))
 end
 
 ################################################################################
@@ -345,8 +432,6 @@ basis_matrix(L::AbsLat) = matrix(pseudo_matrix(L))
 
 # I don't know if I like those names.
 base_field(L::AbsLat) = L.base_algebra
-
-base_algebra(L::AbsLat) = L.base_algebra
 
 base_ring(L::AbsLat) = base_ring(L.pmat)
 
@@ -708,10 +793,11 @@ function norm(L::HermLat)
   G = gram_matrix_of_basis(L)
   v = involution(L)
   K = base_ring(G)
+  R = base_ring(L)
   C = coefficient_ideals(L)
   to_sum = sum(G[i, i] * C[i] * v(C[i]) for i in 1:length(C))
-  to_sum = to_sum + K(reduce(gcd, [ideal_trace(C[i] * G[i, j] * v(C[j])) for j in 1:length(C) for i in 1:(j-1)]; init = fmpq(0)) ) * order(to_sum)
-  return minimum(to_sum)
+  to_sum = to_sum + R * reduce(+, [ideal_trace(C[i] * G[i, j] * v(C[j])) for j in 1:length(C) for i in 1:(j-1)])
+  return minimum(numerator(to_sum))//denominator(to_sum)
 end
 
 ################################################################################
@@ -891,8 +977,8 @@ also the prime ideals dividing $2$ are included.
 """
 function bad_primes(L::AbsLat; even::Bool = false)
   s = scale(L)
-  f = factor(scale(L))
-  ff = factor(volume(L))
+  f = factor(norm(scale(L)))
+  ff = factor(norm(volume(L)))
   for (p, e) in ff
     f[p] = 0
   end
@@ -922,18 +1008,28 @@ a basis matrix of lattice $M$ such that $M_{\mathfrak{p}} = L_{\mathfrak{p}}$.
   $L$.
 """
 function local_basis_matrix(L::AbsLat, p; type::Symbol = :any)
-  if type == :any
-    return _local_basis_matrix(pseudo_matrix(L), p)
-  elseif type == :submodule
-    return _local_basis_submodule_matrix(pseudo_matrix(L), p)
-  elseif type == :supermodule
-    return _local_basis_supermodule_matrix(pseudo_matrix(L), p)
-  else
-    throw(error("""Invalid :type keyword :$(type).
-                   Must be either :any, :submodule, or :supermodule"""))
+  R = base_ring(L)
+  S = order(p)
+  if R === S
+    if type == :any
+      return _local_basis_matrix(pseudo_matrix(L), p)
+    elseif type == :submodule
+      return _local_basis_submodule_matrix(pseudo_matrix(L), p)
+    elseif type == :supermodule
+      return _local_basis_supermodule_matrix(pseudo_matrix(L), p)
+    else
+      throw(error("""Invalid :type keyword :$(type).
+                     Must be either :any, :submodule, or :supermodule"""))
+    end
+  elseif S === base_ring(R)
+    if type == :any
+      return _local_basis_matrix_prime_below(pseudo_matrix(L), p)
+    else
+      throw(error("""Invalid :type keyword :$(type).
+                     Must be either :any, :submodule, or :supermodule"""))
+    end
   end
 end
-
 
 ################################################################################
 #
@@ -1039,8 +1135,116 @@ function jordan_decomposition(L::QuadLat, p)
   return matrices, typeof(F)[ m * F * transpose(m) for m in matrices], exponents
 end
 
+_contains_2(p) = 2 in p
+
+_contains_2(p::fmpz) = p == 2
+
 function jordan_decomposition(L::HermLat, p)
-  throw(NotImplemented())
+  R = base_ring(L)
+  aut = involution(L)
+  even = _contains_2(p)
+
+  S = local_basis_matrix(L, p)
+
+  D = prime_decomposition(R, p)
+  split = length(D) == 2
+  ram = D[1][2] == 2
+  n = rank(L)
+
+  P = D[1][1]
+
+  if split
+    # I need a p-uniformizer
+    pi = elem_in_nf(uniformizer(P))
+    @assert valuation(pi, D[2]) == 0
+  elseif ram
+    pi = elem_in_nf(uniformizer(P))
+  else
+    pi = base_field(L)(elem_in_nf(uniformizer(p)))
+    su = even ? _special_unit(P, p) : one(nf(order(P)))
+  end
+
+  oldval = inf
+  blocks = []
+  exponents = []
+
+  F = gram_matrix(ambient_space(L))
+
+  k = 1
+  while k <= n
+    G = S * F * transpose(_map(S, aut))
+    X = Union{Int, PosInf}[ valuation(G[i, i], P) for i in k:n]
+    m, ii = findmin(X)
+    ii = ii + (k - 1)
+    pair = (ii, ii)
+    for i in k:n
+      for j in k:n
+        tmp = iszero(G[i, j]) ? inf : valuation(G[i, j], P)
+        if tmp < m
+          m = tmp
+          pair = (i, j)
+        end
+      end
+    end
+    if m != oldval
+      push!(blocks, k)
+      oldval = m
+      push!(exponents, m)
+    end
+    i, j = pair[1], pair[2]
+    if (i != j) && !(ram && (even || isodd(m)))
+      a = G[i, j]
+      if split
+        lambda = valuation(pi * a, P) == m ? pi : aut(pi)
+      elseif ram
+        @assert iseven(m)
+        lambda = norm(pi)^(div(m ,2))//a
+      else
+        lambda = pi^m//a * su
+      end
+      for l in 1:ncols(S)
+        S[i, l] = S[i, l] + aut(lambda) * S[j, l]
+      end
+      G = S * F * transpose(_map(S, aut))
+      @assert valuation(G[i, i], P) == m
+      j = i
+    end
+
+    if i != j
+      swap_rows!(S, i, k)
+      swap_rows!(S, j, k + 1)
+      SF = S * F
+      X1 = SF * transpose(_map(view(S, k:k, 1:ncols(S))), aut)
+      X2 = SF * transpose(_map(view(S, (k + 1):(k + 1), 1:ncols(S))), aut)
+      for l in k+2:n
+        den = norm(X2[k, 1]) - X1[k, 1] * X2[k + 1, 1]
+        for o in 1:ncols(S)
+          S[l, o] = S[l, o] - (X2[l, 1] * X1[k + 1, 1] - X1[l, 1] * X2[k + 1, 1])//den * S[k, o] +
+                    (X1[l, 1] * X2[k, 1] - X2[l, 1] * X1[k, 1])//den * S[k + 1, o]
+        end
+      end
+      k = k + 2
+    else
+      swap_rows!(S, i, k)
+      X1 = S * F * transpose(_map(view(S, k:k, 1:ncols(S)), aut))
+      for l in (k + 1):n
+        for o in 1:ncols(S)
+          S[l, o] = S[l, o] - X1[l, 1]//X1[k, 1] * S[k, o]
+        end
+      end
+      k = k + 1
+    end
+  end
+
+  if !ram
+    G = S * F * transpose(_map(S, aut))
+    @assert isdiagonal(G)
+  end
+
+  push!(blocks, n + 1)
+
+  matrices = typeof(F)[ sub(S, blocks[i]:(blocks[i+1] - 1), 1:ncols(S)) for i in 1:(length(blocks) - 1)]
+  return matrices, typeof(F)[ m * F * transpose(_map(m, aut)) for m in matrices], exponents
 end
 
 ################################################################################
@@ -1083,7 +1287,7 @@ genus_symbol(::AbsLat, ::NfOrdIdl; uniformizer::Any = 0)
 function genus_symbol(L::QuadLat, p::NfOrdIdl; uniformizer = zero(order(p)))
   O = order(p)
   nf(O) != base_field(L) && throw(error("Prime ideal must be an ideal of the base field of the lattice"))
-  # If you pull from cache, you might have to adjust the symbol accoring
+  # If you pull from cache, you might have to adjust the symbol according
   # to the uniformizer flag
 
   J, G, E = jordan_decomposition(L, p)
@@ -1093,7 +1297,7 @@ function genus_symbol(L::QuadLat, p::NfOrdIdl; uniformizer = zero(order(p)))
       throw(error("Wrong uniformizer"))
     end
   else
-    unif = Hecke.uniformizer(p)
+    unif = elem_in_nf(Hecke.uniformizer(p))
   end
 
   if minimum(p) != 2
@@ -1132,8 +1336,66 @@ function genus_symbol(L::QuadLat, p::NfOrdIdl; uniformizer = zero(order(p)))
   end
 end
 
-function genus_symbol(L::HermLat, p::NfOrdIdl; uniformizer = zero(order(p)))
-  throw(NotImplemented())
+function _genus_symbol(L::HermLat, p; uniformizer = zero(order(p)))
+  @assert order(p) == base_ring(base_ring(L))
+
+  B, G, S = jordan_decomposition(L, p)
+  R = base_ring(L)
+  E = nf(R)
+  K = base_field(E)
+  if !_contains_2(p) || !isramified(R, p)
+    sym = [ (nrows(B[i]), S[i], islocal_norm(E, coeff(det(G[i]), 0), p)) for i in 1:length(B)]
+  else
+    P = prime_decomposition(R, p)[1][1]
+    pi = E(K(Hecke.uniformizer(p)))
+    sym = []
+    for i in 1:length(B)
+      normal = _get_norm_valuation_from_gram_matrix(G[i], P) == S[i]
+      GG = diagonal_matrix([pi^(max(0, S[i] - S[j])) * G[j] for j in 1:length(B)])
+      v = _get_norm_valuation_from_gram_matrix(GG, P)
+      @assert v == valuation(R * norm(lattice(hermitian_space(E, GG), identity_matrix(E, nrows(GG)))), P)
+      s = (nrows(B[i]), S[i], normal, v, coeff(det(diagonal_matrix([G[j] for j in 1:i])), 0))
+      push!(sym, s)
+    end
+  end
+  return sym
+end
+
+# base case for order(p) == base_ring(base_ring(L1))
+function islocally_isometric(L1, L2, p)
+  R = base_ring(L1)
+  E = nf(R)
+  S1 = _genus_symbol(L1, p)
+  S2 = _genus_symbol(L2, p)
+  if !_contains_2(p) || !isramified(R, p)
+    return S1 == S2
+  end
+
+  t = length(S1)
+  if t != length(S2)
+    return false
+  end
+  for i in 1:t
+    for k in 1:4
+      if S1[i][k] != S2[i][k]
+        return false
+      end
+    end
+  end
+
+  if !islocal_norm(E, S1[t][5]//S2[t][5], p)
+    return false
+  end
+
+  for i in 1:(t-1)
+    @assert valuation(S1[i][5], p) == valuation(S2[i][5], p)
+    x = S1[i][5]//S2[i][5]
+    n = 2 * normic_defect(E, x, p)
+    if n < (S1[i][4] + S1[i + 1][4]) - 2 * S1[i][2]
+      return false
+    end
+  end
+  return true
 end
 
 function Base.:(==)(G1::GenusSymbol, G2::GenusSymbol)
@@ -1251,9 +1513,9 @@ function islocally_isometric(L::QuadLat, M::QuadLat, p::NfOrdIdl)
   return true
 end
 
-function islocally_isometric(L::HermLat, M::HermLat, p::NfOrdIdl)
-  throw(NotImplemented())
-end
+#function islocally_isometric(L::HermLat, M::HermLat, p::NfOrdIdl)
+#  throw(NotImplemented())
+#end
 
 ################################################################################
 #
@@ -1311,11 +1573,33 @@ end
 _module_scale_ideal(a::PMat, b::NfRelOrdFracIdl) = _module_scale_ideal(b, a)
 
 function _local_basis_matrix(a::PMat, p::NfOrdIdl)
+  @assert base_ring(a) == order(p)
   uni = uniformizer(p)
   z = zero_matrix(base_ring(matrix(a)), nrows(a), ncols(a))
   for i in 1:nrows(a)
     c = coefficient_ideals(a)[i]
     x = uni^valuation(c, p)
+    for j in 1:ncols(a)
+      z[i, j] = x * matrix(a)[i, j]
+    end
+  end
+  return z
+end
+
+function _local_basis_matrix_prime_below(a::PMat, p)
+  @assert base_ring(base_ring(a)) == order(p)
+  R = base_ring(a)
+  D = prime_decomposition(R, p)
+  unis = [uniformizer(q[1]) for q in D]
+  @assert all(valuation(unis[i], D[i][1]) == 1 for i in 1:length(D))
+  @assert all(sum(valuation(unis[i], D[j][1]) for j in 1:length(D)) == 1 for i in 1:length(D))
+  z = zero_matrix(base_ring(matrix(a)), nrows(a), ncols(a))
+  for i in 1:nrows(a)
+    c = coefficient_ideals(a)[i]
+    x = unis[1]^valuation(c, D[1][1])
+    for k in 2:length(D)
+      x = x * unis[k]^valuation(c, D[k][1])
+    end
     for j in 1:ncols(a)
       z[i, j] = x * matrix(a)[i, j]
     end
@@ -1363,7 +1647,7 @@ end
 function ideal_trace(I)
   E = nf(order(I))
   K = base_field(E)
-  return fractional_ideal(maximal_order(K), [trace(b) for b in Basis(I)])
+  return fractional_ideal(maximal_order(K), [trace(b) for b in absolute_basis(I)])
 end
 
 function ideal_trace(I::NfOrdFracIdl)
@@ -1426,3 +1710,135 @@ function islocal_norm(K::NfRel{T}, a::T, P) where {T} # ideal of parent(a)
   return hilbert_symbol(a, bQ, P) == 1
 end
 
+# Return a local unit u (that is, valuation(u, P) = 0) with trace zero.
+# P must be even and inert (P is lying over p)
+function _special_unit(P, p)
+  @assert ramification_index(P) == 1
+  @assert 2 in p
+  R = order(P)
+  E = nf(R)
+  @assert degree(E) == 2
+  x = gen(E)
+  x = x - trace(x)//2
+  a = coeff(x^2, 0)
+  K = base_field(E)
+  pi = E(elem_in_nf(uniformizer(p)))
+  v = valuation(a, p)
+  if v != 0
+    @assert iseven(v)
+    a = a//pi^v
+    x = x//pi^(div(v, 2))
+  end
+  k, h = ResidueField(order(p), p)
+  hex = extend(h, K)
+  t = hex \ sqrt(hex(a))
+  a = a//t^2
+  x = x//t
+  w = valuation(a - 1, p)
+  e = valuation(order(p)(2), p)
+  while w < 2*e
+    @assert iseven(w)
+    s = sqrt(h((a - 1)//pi^w))
+    t = 1 + (hex \ s) * pi^(div(w, 2))
+    a = a//t^2
+    x = x//t
+    w = valuation(a - 1, p)
+  end
+  @assert w == 2 * e
+  u = (1 + x)//2
+  @assert trace(u) == 1
+  @assert valuation(u, P) == 0
+  return u
+end
+
+function sqrt(a::fq)
+  Rt, t = PolynomialRing(parent(a), "t", cached = false)
+  r = roots(t^2 - a)
+  if length(r) > 0
+    return r[1]
+  else
+    error("not root")
+  end
+end
+
+ramification_index(P) = P.splitting_type[1]
+
+# L is a list of (integral) number field elements
+# and p a prime ideal of the maximal.
+# Return v(tr(<L>), P).
+function trace_ideal_valuation(L, p)
+  R = order(p)
+  v = valuation(different(R), p)
+  V = unique!(valuation(l, p) for l in L if !iszero(l))
+  X = Int[ 2 *div(l + v, 2) for l in V]
+  if length(X) == 0
+    return inf
+  else
+    minimum(X)
+  end
+end
+
+function _get_norm_valuation_from_gram_matrix(G, P)
+  n = ncols(G)
+  R = order(P)
+  L = nf(R)
+  K = base_field(L)
+  trrr = R * (ideal_trace(fractional_ideal(order(P), [G[i, j] for i in 1:n for j in i+1:n])))
+  if iszero(trrr)
+    T = inf
+  else
+    T = valuation(trrr, P)
+  end
+  #T = trace_ideal_valuation((G[i, j] for i in 1:n for j in i+1:n), P)
+  diag = minimum(valuation(G[i, i], P) for i in 1:n)
+  if T isa PosInf
+    return diag
+  else
+    return min(T, diag)
+  end
+end
+
+#
+#function GetNorm(G, P)
+#  n:= Ncols(G);
+#  T:= TraceIdeal([ G[i,j]: j in [i+1..n], i in [1..n] ], P);
+#  Diag:= Min([ Valuation(G[i,i], P) : i in [1..n] ]);
+#  return Type(T) eq Infty select Diag else Min( Diag, T );
+#end function;
+
+function absolute_basis(I::NfOrdFracIdl)
+  return basis(I)
+end
+
+function absolute_basis(I::NfRelOrdFracIdl)
+  res = elem_type(nf(order(I)))[]
+  pb = pseudo_basis(I)
+  for (e, I) in pb
+    for b in absolute_basis(I)
+      push!(res, e * b)
+    end
+  end
+  return res
+end
+
+order(::fmpz) = FlintZZ
+
+uniformizer(p::fmpz) = p
+
+function isramified(R, p)
+  D = prime_decomposition(R, p)
+  for (_, e) in D
+    if e > 1
+      return true
+    end
+  end
+  return false
+end
+
+function normic_defect(E, a, p)
+  R = maximal_order(E)
+  if iszero(a) || islocal_norm(E, a, p)
+    inf
+  end
+  return valuation(a, p) + valuation(discriminant(R), p) - 1
+end

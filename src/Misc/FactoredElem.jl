@@ -872,7 +872,7 @@ end
 #
 ################################################################################
 
-function (F::FacElemMon{T})(a::T) where T
+function (F::FacElemMon)(a::T) where T
   z = F()
   z.fac[a] = fmpz(1)
   return z

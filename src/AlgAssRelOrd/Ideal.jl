@@ -46,26 +46,6 @@ end
 #
 ################################################################################
 
-function assure_has_basis_pmatrix(a::AlgAssRelOrdIdl)
-  if isdefined(a, :basis_pmatrix)
-    return nothing
-  end
-  if !isdefined(a, :pseudo_basis)
-    error("No pseudo_basis and no basis_pmatrix defined.")
-  end
-  pb = pseudo_basis(a, copy = false)
-  A = algebra(order(a))
-  M = zero_matrix(base_ring(A), dim(A), dim(A))
-  C = Vector{fractional_ideal_type(order_type(base_ring(A)))}()
-  for i = 1:dim(A)
-    elem_to_mat_row!(M, i, pb[i][1])
-    push!(C, deepcopy(pb[i][2]))
-  end
-  M = M*basis_mat_inv(order(a), copy = false)
-  a.basis_pmatrix = pseudo_hnf(PseudoMatrix(M, C), :lowerleft, true)
-  return nothing
-end
-
 function assure_has_pseudo_basis(a::AlgAssRelOrdIdl)
   if isdefined(a, :pseudo_basis)
     return nothing
@@ -133,7 +113,6 @@ end
 > Returns the basis pseudo-matrix of $a$ with respect to the basis of the order.
 """
 function basis_pmatrix(a::AlgAssRelOrdIdl; copy::Bool = true)
-  assure_has_basis_pmatrix(a)
   if copy
     return deepcopy(a.basis_pmatrix)
   else
@@ -701,7 +680,7 @@ end
 """
 function normred(a::AlgAssRelOrdIdl; copy::Bool = true)
   @assert dimension_of_center(algebra(order(a))) == 1
-  @assert algebra(order(a)).issimple == 1
+  @assert issimple(algebra(order(a)))
   assure_has_normred(a)
   if copy
     return deepcopy(a.normred)

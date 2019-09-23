@@ -646,7 +646,7 @@ end
 
 function _reduced_charpoly_simple(a::AbsAlgAssElem, R::PolyRing)
   A = parent(a)
-  @assert issimple_known(A) && A.issimple == 1
+  @assert issimple(A)
 
   M = representation_matrix(a)
   f = charpoly(R, M)

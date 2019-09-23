@@ -187,6 +187,8 @@ function matrix_algebra(R::Ring, n::Int)
   A.basis = B
   A.one = identity_matrix(R, n)
   A.canonical_basis = 1
+  A.issimple = 1
+  A.issemisimple = 1
   return A
 end
 
