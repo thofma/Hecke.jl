@@ -421,7 +421,7 @@ end
 
 # Helper function to set the side-flags
 # side can be :right, :left or :twosided
-function _set_sidedness(a::Union{ AbsAlgAssIdl, AlgAssAbsOrdIdl, AlgAssRelOrdIdl }, side::Symbol)
+function _set_sidedness(a::Union{ AbsAlgAssIdl, AlgAssAbsOrdIdl, AlgAssRelOrdIdl, AlgAssRelOrdFracIdl }, side::Symbol)
   if side == :right
     a.isleft = 0
     a.isright = 1

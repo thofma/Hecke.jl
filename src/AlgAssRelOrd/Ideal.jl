@@ -134,6 +134,18 @@ function basis_pmatrix(a::Union{ AlgAssRelOrdIdl, AlgAssRelOrdFracIdl }; copy::B
   end
 end
 
+function z_basis(a::AlgAssRelOrdIdl)
+  O = order(a)
+  pb = pseudo_basis(a, copy = false)
+  res = Vector{elem_type(O)}()
+  for i = 1:degree(O)
+    for b in basis(pb[i][2])
+      push!(res, O(b*pb[i][1]))
+    end
+  end
+  return res
+end
+
 ################################################################################
 #
 #  (Inverse) basis matrix
@@ -1207,7 +1219,9 @@ function factor(I::AlgAssRelOrdIdl)
     for i = 1:fac_n[p]
       M = maximal_integral_ideal_containing(J, p, :left)
       push!(factors, M)
-      J = divexact_left(J, M, set_order = :right_b)
+      JJ = divexact_left(J, M, set_order = :right_b)
+      # This MUST be integral
+      J = ideal(order(JJ), basis_pmatrix(JJ, copy = false), :left, false, true)
     end
   end
   push!(factors, J)

@@ -168,3 +168,21 @@ end
 iszero(a::AlgAssRelOrdElem) = iszero(elem_in_algebra(a, copy = false))
 
 isone(a::AlgAssRelOrdElem) = isone(elem_in_algebra(a, copy = false))
+
+isunit(a::AlgAssRelOrdElem) = isunit(norm(a))
+
+################################################################################
+#
+#  Norm
+#
+################################################################################
+
+function norm(a::AlgAssRelOrdElem)
+  OK = base_ring(parent(a))
+  return OK(norm(elem_in_algebra(a, copy = false)))
+end
+
+function normred(a::AlgAssRelOrdElem)
+  OK = base_ring(parent(a))
+  return OK(normred(elem_in_algebra(a, copy = false)))
+end

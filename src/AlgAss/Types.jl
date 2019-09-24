@@ -702,7 +702,7 @@ mutable struct AlgAssRelOrdFracIdl{S, T}
   end
 
   function AlgAssRelOrdFracIdl{S, T}(O::AlgAssRelOrd{S, T}, M::PMat{S, T}) where {S, T}
-    z = AlgAssRelOrdIdl{S, T}(O)
+    z = AlgAssRelOrdFracIdl{S, T}(O)
     z.basis_pmatrix = M
     z.basis_matrix = M.matrix
     return z

@@ -208,13 +208,14 @@ function *(a::Union{ AlgAssRelOrdIdl, AlgAssRelOrdFracIdl }, x::AbsAlgAssElem)
   if iszero(x)
     return _zero_fractional_ideal(order(a))
   end
-  A = algebra(a)
+  A = algebra(order(a))
   M = zero_matrix(base_ring(A), dim(A), dim(A))
   for i = 1:dim(A)
     t = pseudo_basis(a, copy = false)[i][1]*x
     elem_to_mat_row!(M, i, t)
   end
   PM = PseudoMatrix(M, [ deepcopy(pseudo_basis(a, copy = false)[i][2]) for i = 1:dim(A) ])
+  PM.matrix = PM.matrix*basis_mat_inv(order(a), copy = false)
   return fractional_ideal(order(a), PM)
 end
 
@@ -222,13 +223,14 @@ function *(x::AbsAlgAssElem, a::Union{ AlgAssRelOrdIdl, AlgAssRelOrdFracIdl })
   if iszero(x)
     return _zero_fractional_ideal(order(a))
   end
-  A = algebra(a)
+  A = algebra(order(a))
   M = zero_matrix(base_ring(A), dim(A), dim(A))
   for i = 1:dim(A)
     t = x*pseudo_basis(a, copy = false)[i][1]
     elem_to_mat_row!(M, i, t)
   end
   PM = PseudoMatrix(M, [ deepcopy(pseudo_basis(a, copy = false)[i][2]) for i = 1:dim(A) ])
+  PM.matrix = PM.matrix*basis_mat_inv(order(a), copy = false)
   return fractional_ideal(order(a), PM)
 end
 
@@ -473,7 +475,7 @@ end
 """
 function in(x::AbsAlgAssElem, a::AlgAssRelOrdFracIdl)
   parent(x) !== algebra(a) && error("Algebra of element and full lattice must be equal")
-  A = algebra(a)
+  A = algebra(order(a))
   b_pmat = basis_pmatrix(a, copy = false)
   t = matrix(base_ring(A), 1, dim(A), coeffs(x, copy = false))
   t = t*basis_mat_inv(O, copy = false)*basis_mat_inv(a, copy = false)
