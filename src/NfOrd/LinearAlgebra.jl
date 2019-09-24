@@ -332,7 +332,7 @@ function det(m::PMat)
   return det(m.matrix)*z
 end
 
-function *(P::PMat{T, S}, x::U) where { T, S, U <: Union{Int, fmpz, FieldElem } }
+function *(P::PMat{T, S}, x::U) where { T, S, U <: Union{ Int, RingElem } }
   if nrows(P) == 0 || ncols(P) == 0
     return P
   end
@@ -348,7 +348,7 @@ function *(P::PMat{T, S}, x::U) where { T, S, U <: Union{Int, fmpz, FieldElem } 
   return PP
 end
 
-*(x::U, P::PMat{T, S}) where { T, S, U <: Union{Int, fmpz, FieldElem } } = P*x
+*(x::U, P::PMat{T, S}) where { T, S, U <: Union{ Int, RingElem } } = P*x
 
 # this is slow
 function _coprime_integral_ideal_class(x::Union{NfOrdFracIdl, NfOrdIdl}, y::NfOrdIdl)

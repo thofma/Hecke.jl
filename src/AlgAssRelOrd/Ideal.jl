@@ -268,15 +268,24 @@ function _mul_same_order(a::AlgAssRelOrdIdl{S, T}, b::AlgAssRelOrdIdl{S, T}) whe
 end
 
 # The multiplication of full lattices, the result may be an integral or fractional
-# ideal of left_order(a).
+# ideal either of left_order(a) or of right_order(b) (depending on set_order).
 # If return_type == :nothing, it is tested whether the product is integral and
 # the returned type is chosen accordingly.
 # If return_type == :integral or return_type == :fractional, then the result
 # is returned as integral resp. fractional ideal WITHOUT CHECKS!
-function _mul_full_lattice(a::AlgAssRelOrdIdl{S, T}, b::AlgAssRelOrdIdl{S, T}; return_type::Symbol = :nothing) where { S, T }
+function _mul_full_lattice(a::AlgAssRelOrdIdl{S, T}, b::AlgAssRelOrdIdl{S, T}; set_order::Symbol = :left_a, return_type::Symbol = :nothing) where { S, T }
   A = algebra(order(a))
   PM = __mul_pseudo_bases(A, pseudo_basis(a, copy = false), pseudo_basis(b, copy = false))
-  O = left_order(a)
+
+  if set_order == :left_a
+    O = left_order(a)
+    side = :left
+  elseif set_order == :right_b
+    O = right_order(b)
+    side = :right
+  else
+    error("Option :$(set_order) for set_order not implemented")
+  end
   PM.matrix = PM.matrix*basis_mat_inv(O, copy = false)
   H = sub(pseudo_hnf(PM, :lowerleft), (nrows(PM) - dim(A) + 1):nrows(PM), 1:dim(A))
 
@@ -293,12 +302,14 @@ function _mul_full_lattice(a::AlgAssRelOrdIdl{S, T}, b::AlgAssRelOrdIdl{S, T}; r
     error("Option :$(return_type) for return_type not implemented")
   end
   if isint
-    c = ideal(O, H, :left, false, true)
+    c = ideal(O, H, side, false, true)
   else
-    c = fractional_ideal(O, H, :left, true)
+    c = fractional_ideal(O, H, side, true)
   end
 
-  c.left_order = O
+  if isdefined(a, :left_order)
+    c.left_order = left_order(a)
+  end
   if isdefined(b, :right_order)
     c.right_order = right_order(b)
   end
@@ -331,6 +342,37 @@ function intersect(a::AlgAssRelOrdIdl{S, T}, b::AlgAssRelOrdIdl{S, T}) where {S,
   H = sub(pseudo_hnf(M, :lowerleft), 1:d, 1:d)
   return ideal(order(a), H, :nothing, false, true)
 end
+
+################################################################################
+#
+#  Ad hoc multiplication
+#
+################################################################################
+
+@doc Markdown.doc"""
+    *(a::AlgAssRelOrdIdl, x::NfAbsOrdElem) -> AlgAssRelOrdIdl
+    *(x::NfAbsOrdElem, a::AlgAssRelOrdIdl) -> AlgAssRelOrdIdl
+    *(a::AlgAssRelOrdIdl, x::NfRelOrdElem) -> AlgAssRelOrdIdl
+    *(x::NfRelOrdElem, a::AlgAssRelOrdIdl) -> AlgAssRelOrdIdl
+    *(a::AlgAssRelOrdIdl, x::Int) -> AlgAssRelOrdIdl
+    *(x::Int, a::AlgAssRelOrdIdl) -> AlgAssRelOrdIdl
+    *(a::AlgAssRelOrdIdl, x::fmpz) -> AlgAssRelOrdIdl
+    *(x::fmpz, a::AlgAssRelOrdIdl) -> AlgAssRelOrdIdl
+
+> Returns the ideal $a*x$ respectively $x*a$.
+"""
+function *(a::AlgAssRelOrdIdl, x::Union{ Int, fmpz, NfAbsOrdElem, NfRelOrdElem })
+  if iszero(x)
+    return _zero_ideal(order(a))
+  end
+  x = base_ring(order(a))(x)
+  b = ideal(order(a), x*basis_pmatrix(a, copy = false), :nothing, true)
+  b.isleft = a.isleft
+  b.isright = a.isright
+  return b
+end
+
+*(x::Union{ Int, fmpz, NfAbsOrdElem, NfRelOrdElem }, a::AlgAssRelOrdIdl) = a*x
 
 ################################################################################
 #
@@ -553,6 +595,12 @@ function ideal(O::AlgAssRelOrd{S, T}, I::AlgAssRelOrdIdl{S, T}, check::Bool = tr
     J.right_order = right_order(I)
   end
   return J
+end
+
+function _zero_ideal(O::AlgAssRelOrd{S, T}) where { S, T }
+  a = AlgAssRelOrdIdl{S, T}(O)
+  a.iszero = 1
+  return a
 end
 
 ################################################################################
@@ -1283,7 +1331,7 @@ function integral_coprime_representative(O::AlgAssRelOrd, I::AlgAssRelOrdIdl, a:
     @assert b "No local generator found for $p"
     ig = inv(elem_in_algebra(g, copy = false))
     Ig = I*ig
-    y = coprime_denominator(O, Ig, p)
+    y = coprime_denominator(Ig, p)
     x += ig*elem_in_nf(y, copy = false)*elem_in_nf(z, copy = false)
   end
   return x
