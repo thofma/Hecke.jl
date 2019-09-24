@@ -12,19 +12,19 @@ parent_type(::Type{eisf_elem}) = EisensteinField
 """
 parent(a::eisf_elem) = a.parent
 
-elem_type(::Type{EisensteinField}) = eisf_elem
+elem_type(::Type{EisensteinField{padic}}) = eisf_elem
 
 @doc Markdown.doc"""
     base_ring(a::EisensteinField)
 > Not implemented.
 """
-base_ring(a::EisensteinField) = error("Not implemented.")
+base_ring(a::EisensteinField) = a.base_ring
 
 @doc Markdown.doc"""
     base_ring(a::eisf_elem)
 > Not implemented.
 """
-base_ring(a::eisf_elem) = error("Not implemented")
+base_ring(a::eisf_elem) = a.base_ring
 
 # What is this?
 # isdomain_type(::Type{eisf_elem}) = true
@@ -55,6 +55,77 @@ function hash(a::eisf_elem, h::UInt)
     return
 end
 
+function deepcopy(a::eisf_elem)
+    r = parent(a)()
+    r.res_ring_elt = deepcopy(a.res_ring_elt)
+    return r
+end
+
+@doc Markdown.doc"""
+    gen(a::EisensteinField)
+> Return the generator of the given EisensteinField.
+"""
+function gen(a::EisensteinField)
+    r = eisf_elem(a)
+    r.res_ring_elt = gen(a.res_ring)
+   return r
+end
+
+
+
+@doc Markdown.doc"""
+    one(a::EisensteinField)
+> Return the multiplicative identity, i.e. one, in the given number field.
+"""
+function one(a::EisensteinField)
+    return a(1)
+end
+
+@doc Markdown.doc"""
+    zero(a::EisensteinField)
+> Return the multiplicative identity, i.e. one, in the given number field.
+"""
+function zero(a::EisensteinField)
+    return a(0)
+end
+
+# @doc Markdown.doc"""
+#     isgen(a::eisf_elem)
+# > Return `true` if the given number field element is the generator of the
+# > number field, otherwise return `false`.
+# """
+# function isgen(a::eisf_elem)
+#    return ccall((:eisf_elem_is_gen, :libantic), Bool,
+#                 (Ref{eisf_elem}, Ref{EisensteinField}), a, a.parent)
+# end
+
+@doc Markdown.doc"""
+    isone(a::eisf_elem)
+> Return `true` if the given number field element is the multiplicative
+> identity of the number field, i.e. one, otherwise return `false`.
+"""
+function isone(a::eisf_elem)
+   return a == parent(a)(1)
+end
+
+@doc Markdown.doc"""
+    iszero(a::eisf_elem)
+> Return `true` if the given number field element is the additive
+> identity of the number field, i.e. zero, otherwise return `false`.
+"""
+function iszero(a::eisf_elem)
+   return a == parent(a)(0)
+end
+
+@doc Markdown.doc"""
+    isunit(a::eisf_elem)
+> Return `true` if the given number field element is invertible, i.e. nonzero,
+> otherwise return `false`.
+"""
+isunit(a::eisf_elem) = !iszero(a)
+
+
+#######################################################
 if false
 
 @doc Markdown.doc"""
@@ -76,98 +147,6 @@ function num_coeff!(z::fmpz, x::eisf_elem, n::Int)
    ccall((:eisf_elem_get_coeff_fmpz, :libantic), Nothing,
      (Ref{fmpz}, Ref{eisf_elem}, Int, Ref{EisensteinField}), z, x, n, parent(x))
    return z
-end
-
-@doc Markdown.doc"""
-    gen(a::EisensteinField)
-> Return the generator of the given number field.
-"""
-function gen(a::EisensteinField)
-   r = eisf_elem(a)
-   ccall((:eisf_elem_gen, :libantic), Nothing,
-         (Ref{eisf_elem}, Ref{EisensteinField}), r, a)
-   return r
-end
-
-@doc Markdown.doc"""
-    one(a::EisensteinField)
-> Return the multiplicative identity, i.e. one, in the given number field.
-"""
-function one(a::EisensteinField)
-   r = eisf_elem(a)
-   ccall((:eisf_elem_one, :libantic), Nothing,
-         (Ref{eisf_elem}, Ref{EisensteinField}), r, a)
-   return r
-end
-
-@doc Markdown.doc"""
-    zero(a::EisensteinField)
-> Return the multiplicative identity, i.e. one, in the given number field.
-"""
-function zero(a::EisensteinField)
-   r = eisf_elem(a)
-   ccall((:eisf_elem_zero, :libantic), Nothing,
-         (Ref{eisf_elem}, Ref{EisensteinField}), r, a)
-   return r
-end
-
-@doc Markdown.doc"""
-    isgen(a::eisf_elem)
-> Return `true` if the given number field element is the generator of the
-> number field, otherwise return `false`.
-"""
-function isgen(a::eisf_elem)
-   return ccall((:eisf_elem_is_gen, :libantic), Bool,
-                (Ref{eisf_elem}, Ref{EisensteinField}), a, a.parent)
-end
-
-@doc Markdown.doc"""
-    isone(a::eisf_elem)
-> Return `true` if the given number field element is the multiplicative
-> identity of the number field, i.e. one, otherwise return `false`.
-"""
-function isone(a::eisf_elem)
-   return ccall((:eisf_elem_is_one, :libantic), Bool,
-                (Ref{eisf_elem}, Ref{EisensteinField}), a, a.parent)
-end
-
-@doc Markdown.doc"""
-    iszero(a::eisf_elem)
-> Return `true` if the given number field element is the additive
-> identity of the number field, i.e. zero, otherwise return `false`.
-"""
-function iszero(a::eisf_elem)
-   return ccall((:eisf_elem_is_zero, :libantic), Bool,
-                (Ref{eisf_elem}, Ref{EisensteinField}), a, a.parent)
-end
-
-@doc Markdown.doc"""
-    isunit(a::eisf_elem)
-> Return `true` if the given number field element is invertible, i.e. nonzero,
-> otherwise return `false`.
-"""
-isunit(a::eisf_elem) = !iszero(a)
-
-@doc Markdown.doc"""
-    isinteger(a::eisf_elem)
-> Return `true` if the given number field element is an integer, otherwise
-> return `false`.
-"""
-function isinteger(a::eisf_elem)
-   b = ccall((:eisf_elem_is_integer, :libantic), Cint,
-             (Ref{eisf_elem}, Ref{EisensteinField}), a, a.parent)
-   return Bool(b)
-end
-
-@doc Markdown.doc"""
-    isrational(a::eisf_elem)
-> Return `true` if the given number field element is a rational number,
-> otherwise `false`.
-"""
-function isrational(a::eisf_elem)
-   b = ccall((:eisf_elem_is_rational, :libantic), Cint,
-             (Ref{eisf_elem}, Ref{EisensteinField}), a, a.parent)
-   return Bool(b)
 end
 
 @doc Markdown.doc"""
@@ -200,20 +179,6 @@ function elem_to_mat_row!(a::fmpz_mat, i::Int, d::fmpz, b::eisf_elem)
    nothing
  end
 
-@doc Markdown.doc"""
-    degree(a::EisensteinField)
-> Return the degree of the given number field, i.e. the degree of its
-> defining polynomial.
-"""
-degree(a::EisensteinField) = a.pol_length-1
-
-@doc Markdown.doc"""
-    signature(a::EisensteinField)
-> Return the signature of the given number field, i.e. a tuple $r, s$
-> consisting of $r$, the number of real embeddings and $s$, half the number of
-> complex embeddings.
-"""
-signature(a::EisensteinField) = signature(a.pol)
 
 function deepcopy_internal(d::eisf_elem, dict::IdDict)
    z = eisf_elem(parent(d), d)
@@ -221,6 +186,263 @@ function deepcopy_internal(d::eisf_elem, dict::IdDict)
 end
 
 end #if
+
+@doc Markdown.doc"""
+    degree(a::EisensteinField)
+> Return the degree of the given number field, i.e. the degree of its
+> defining polynomial.
+"""
+degree(a::EisensteinField) = degree(a.pol)
+
+# By our definition, the generator of a field of eisenstein type is the uniformizer.
+uniformizer(a::EisensteinField) = gen(a)
+
+
+###############################################################################
+#
+#   AbstractString I/O
+#
+###############################################################################
+
+function show(io::IO, a::EisensteinField)
+   print(io, "Eisenstein extension over padic field")
+   print(io, " with defining polynomial ", a.pol)
+end
+
+function show(io::IO, x::eisf_elem)
+   print(io, x.res_ring_elt)
+end
+
+# What is this?
+needs_parentheses(::eisf_elem) = true
+
+displayed_with_minus_in_front(::eisf_elem) = false
+
+show_minus_one(::Type{eisf_elem}) = false
+
+#canonical_unit(x::nf_elem) = x
+
+###############################################################################
+#
+#   Unary operators
+#
+###############################################################################
+
+function -(a::eisf_elem)
+    b = a.parent(a)
+    b.res_ring_elt = -a.res_ring_elt
+    return b
+end
+
+function valuation(a::eisf_elem)
+    coeffs = coefficients(a.res_ring_elt.data)
+
+    min = valuation(coeffs[0])
+    for i = 1:length(coeffs)-1
+        newv = valuation(coeffs[i]) + (i)//degree(a.parent.pol)
+        if newv < min
+            min = newv
+        end
+    end
+    return min
+end
+
+function residue_image(a::padic)
+    Fp = ResidueRing(FlintZZ,parent(a).p)
+    return Fp(lift(a))
+end
+
+
+function residue_image(a::eisf_elem)
+    coeffs = coefficients(a.res_ring_elt.data)
+    
+    for i = 0:length(coeffs)-1
+        newv = valuation(coeffs[i]) + (i)//degree(a.parent.pol)
+        if newv < 0
+            error("Valuation of input is negative.")
+        end
+    end
+    return residue_image(coeffs[0])
+end
+
+inv(a::eisf_elem) = one(parent(a))//a
+
+###############################################################################
+#
+#   Binary operators
+#
+###############################################################################
+
+function +(a::eisf_elem, b::eisf_elem)
+    check_parent(a, b)
+    r = a.parent()
+    r.res_ring_elt = a.res_ring_elt + b.res_ring_elt
+    return r
+end
+
+function -(a::eisf_elem, b::eisf_elem)
+    check_parent(a, b)
+    r = a.parent()
+    r.res_ring_elt = a.res_ring_elt - b.res_ring_elt
+    return r
+end
+
+function *(a::eisf_elem, b::eisf_elem)
+    check_parent(a, b)
+    r = a.parent()
+    r.res_ring_elt = a.res_ring_elt * b.res_ring_elt
+    return r
+end
+
+function divexact(a::eisf_elem, b::eisf_elem)
+    check_parent(a, b)
+    r = a.parent()
+    r.res_ring_elt = a.res_ring_elt // b.res_ring_elt
+    return r
+end
+
+/(a::eisf_elem, b::eisf_elem) = divexact(a,b)
+
+###############################################################################
+#
+#   Ad hoc binary operators
+#
+###############################################################################
+
+function +(a::eisf_elem, b::Union{Int,fmpz,fmpq,padic})
+   r = a.parent()
+   r.res_ring_elt = a.res_ring_elt + b
+   return r
+end
+
+function -(a::eisf_elem, b::Union{Int,fmpz,fmpq,padic})
+   r = a.parent()
+   r.res_ring_elt = a.res_ring_elt - b
+   return r
+end
+
+function -(a::Union{Int,fmpz,fmpq,padic}, b::eisf_elem)
+   r = b.parent()
+   r.res_ring_elt = a - b.res_ring_elt
+   return r
+end
+
++(a::eisf_elem, b::Integer) = a + fmpz(b)
+
+-(a::eisf_elem, b::Integer) = a - fmpz(b)
+
+-(a::Integer, b::eisf_elem) = fmpz(a) - b
+
++(a::Integer, b::eisf_elem) = b + a
+
++(a::fmpq, b::eisf_elem) = b + a
+
++(a::Rational, b::eisf_elem) = fmpq(a) + b
+
++(a::eisf_elem, b::Rational) = b + a
+
+-(a::Rational, b::eisf_elem) = fmpq(a) - b
+
+-(a::eisf_elem, b::Rational) = a - fmpq(b)
+
+function *(a::eisf_elem, b::Union{Int,fmpz,fmpq,padic})
+    r = a.parent()
+    r.res_ring_elt = a.res_ring_elt*b
+    return r
+end
+
+function *(a::Rational, b::eisf_elem)
+  return fmpq(a) * b
+end
+
+*(a::eisf_elem, b::Rational) = b * a
+
+*(a::eisf_elem, b::Integer) = a * fmpz(b)
+
+*(a::Integer, b::eisf_elem) = b * a
+
+*(a::fmpz, b::eisf_elem) = b * a
+
+*(a::fmpq, b::eisf_elem) = b * a
+
+
+function /(a::eisf_elem, b::Union{Int,fmpz,fmpq,padic})
+    r = a.parent()
+    r.res_ring_elt = a.res_ring_elt*b
+    return r
+end
+
+###
+if false
+//(a::eisf_elem, b::Int) = divexact(a, b)
+
+//(a::eisf_elem, b::fmpz) = divexact(a, b)
+
+//(a::eisf_elem, b::Integer) = a//fmpz(b)
+
+//(a::eisf_elem, b::fmpq) = divexact(a, b)
+
+//(a::Integer, b::eisf_elem) = divexact(a, b)
+
+//(a::fmpz, b::eisf_elem) = divexact(a, b)
+
+//(a::fmpq, b::eisf_elem) = divexact(a, b)
+
+//(a::Rational, b::eisf_elem) = divexact(fmpq(a), b)
+
+//(a::eisf_elem, b::Rational) = divexact(a, fmpq(b))
+
+end # if
+
+###############################################################################
+#
+#   Powering
+#
+###############################################################################
+
+function ^(a::eisf_elem, n::Int)
+    r = a.parent()
+    r.res_ring_elt = a.res_ring_elt^n
+   return r
+end
+
+###############################################################################
+#
+#   Comparison
+#
+###############################################################################
+
+function ==(a::eisf_elem, b::eisf_elem)
+    check_parent(a, b)
+    return a.res_ring_elt == b.res_ring_elt
+end
+
+################################################################################
+#
+#  Unsafe operations
+#
+################################################################################
+
+@inline function add!(z::eisf_elem, x::eisf_elem, y::eisf_elem)
+  add!(z.res_ring_elt, x.res_ring_elt, y.res_ring_elt)
+  return z
+end
+
+@inline function sub!(z::eisf_elem, x::eisf_elem, y::eisf_elem)
+  sub!(z.res_ring_elt, x.res_ring_elt, y.res_ring_elt)
+  return z
+end
+
+@inline function mul!(z::eisf_elem, x::eisf_elem, y::eisf_elem)
+  mul!(z.res_ring_elt, x.res_ring_elt, y.res_ring_elt)
+  return z
+end
+
+function addeq!(z::eisf_elem, x::eisf_elem)
+  addeq!(z.res_ring_elt, x.res_ring_elt)
+  return z
+end
+
 
 ###############################################################################
 #
@@ -235,34 +457,47 @@ end #if
 """
 function (a::EisensteinField)()
     z = eisf_elem(a)
-    u = z.u
-    return z.res_ring_elt = a.res_ring
+    #u = z.u
+    z.res_ring_elt = a.res_ring()
     return z
 end
 
-### Comment block.
-if false
+function (a::EisensteinField)(b::eisf_elem)
+   parent(b) != a && error("Cannot coerce element")
+   return b
+end
+
+function (a::EisensteinField)(b::padic)
+    parent(b) != base_ring(a) && error("Cannot coerce element")
+    r = eisf_elem(a)
+    r.res_ring_elt = a.res_ring(b)
+   return r
+end
+
 
 @doc Markdown.doc"""
     (a::EisensteinField)(c::Int)
 
 > Return $c$ as an element in $a$.
 """
-function (a::EisensteinField)(c::Int)
-   z = eisf_elem(a)
-   ccall((:eisf_elem_set_si, :libantic), Nothing,
-         (Ref{eisf_elem}, Int, Ref{EisensteinField}), z, c, a)
-   return z
+# function (a::EisensteinField)(c::Int)
+#     z = eisf_elem(a)
+#     z.res_ring_elt = a.res_ring(c)
+#     return z
+# end
+
+function (a::EisensteinField)(c::fmpz)
+    z = eisf_elem(a)
+    z.res_ring_elt = a.res_ring(c)
+    return z
 end
 
 (a::EisensteinField)(c::Integer) = a(fmpz(c))
 
-function (a::EisensteinField)(c::fmpz)
-   z = eisf_elem(a)
-   ccall((:eisf_elem_set_fmpz, :libantic), Nothing,
-         (Ref{eisf_elem}, Ref{fmpz}, Ref{EisensteinField}), z, c, a)
-   return z
-end
+### Comment block.
+if false
+
+
 
 function (a::EisensteinField)(c::fmpq)
    z = eisf_elem(a)
@@ -273,10 +508,6 @@ end
 
 (a::EisensteinField)(c::Rational) = a(fmpq(c))
 
-function (a::EisensteinField)(b::eisf_elem)
-   parent(b) != a && error("Cannot coerce element")
-   return b
-end
 
 
 # Debatable if we actually want this functionality...
@@ -299,12 +530,16 @@ function (a::FmpqPolyRing)(b::eisf_elem)
    return r
 end
 
+end #if
+    
 ###############################################################################
 #
 #   Random generation
 #
 ###############################################################################
 
+if false
+    
 function rand(K::EisensteinField, r::UnitRange{Int64})
    R = parent(K.pol)
    n = degree(K.pol)
@@ -325,9 +560,11 @@ end #if
 > of the local field $\mathbb{Q}_p/(f)$ where $f$ is the supplied polynomial.
 > The supplied string `s` specifies how the generator of the field extension
 > should be printed.
+
+> WARNING: Defaults are actually cached::Bool = false, check::Bool = false
 """
-function EisensteinField(f::fmpq_poly, s::AbstractString;
-                         cached::Bool = true, check::Bool = true)
+function EisensteinField(f::AbstractAlgebra.Generic.Poly{padic}, s::AbstractString;
+                         cached::Bool = false, check::Bool = true)
    S = Symbol(s)
    parent_obj = EisensteinField(f, S, cached, check)
    return parent_obj, gen(parent_obj)

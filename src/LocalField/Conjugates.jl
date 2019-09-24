@@ -164,7 +164,7 @@ end
 
 #TODO: implement a proper Frobenius - with caching of the frobenius_a element
 function _conjugates(a::nf_elem, C::qAdicConj, n::Int, op::Function)
-  R = roots(C.C, n)
+  R = roots(C.C, n)   # This seems to be the line where the roots are actually computed.
   @assert parent(a) == C.K
   Zx = PolynomialRing(FlintZZ, cached = false)[1]
   d = denominator(a)

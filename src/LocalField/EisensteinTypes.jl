@@ -2,6 +2,11 @@
 
 ## Doing things with Eisenstein extensions.
 
+## TODO: Move this to AbstractAlgebra?? 
+function gen(a::AbstractAlgebra.Generic.ResField{AbstractAlgebra.Generic.Poly{padic}})
+    return a(gen(parent(a.modulus)))
+end
+
 const EisensteinFieldID = Dict{Tuple{FmpqPolyRing, fmpq_poly, Symbol}, Field}()
 
 # TODO: Investigate the type of coefficient field element (whether padic/qadic should be allowed).
@@ -24,6 +29,7 @@ mutable struct EisensteinField{padic} <: AbstractAlgebra.Field
     #traces_alloc::Int
     #traces_length::Int
 
+    base_ring
     pol
     S::Symbol
     auxilliary_data::Array{Any, 1} # Storage for extensible data.
@@ -31,20 +37,21 @@ mutable struct EisensteinField{padic} <: AbstractAlgebra.Field
     res_ring ## Temporary to get things off the ground. This may well be a poor choice.
     
     function EisensteinField(pol::AbstractAlgebra.Generic.Poly{padic}, s::Symbol,
-                                  cached::Bool = false, check::Bool = false)
-        check && error("Irreducibility check not implemented") &&
-            !isirreducible(pol) && error("Polynomial must be irreducible")
+                                  cached::Bool = false, check::Bool = true)
+        check && !is_eisenstein(pol) && error("Polynomial must be eisenstein over base ring.")
 
         if cached && haskey(EisensteinFieldID, (parent(pol), pol, s))
             return EisensteinFieldID[parent(pol), pol, s]::EisensteinField
         end
                      
         eisf = new{padic}()
-        eisf.pol = pol        
+        eisf.pol = pol
+        eisf.base_ring = base_ring(pol)
         eisf.S = s
-        eisf.res_ring = ResidueRing(parent(pol), pol)
+        eisf.res_ring = ResidueField(parent(pol), pol)
         
-        #nf.auxilliary_data = Array{Any}(undef, 5)
+        eisf.auxilliary_data = Array{Any}(undef, 5)
+
         if cached
             EisensteinFieldID[parent(pol), pol, s] = eisf
         end
@@ -67,6 +74,7 @@ mutable struct eisf_elem <: FieldElem
     u::eisf_unit_internal
     v::Integer
     N::Integer
+    
     res_ring_elt
     parent::EisensteinField
 
@@ -82,7 +90,6 @@ mutable struct eisf_elem <: FieldElem
         r.res_ring_elt = deepcopy(a.res_ring_elt)
         return r
     end
-    
 end
 
 
