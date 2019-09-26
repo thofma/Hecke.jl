@@ -464,7 +464,7 @@ function assure_has_basis_matrix(A::NfAbsOrdIdl)
     return nothing
   end
 
-  if !isdefining_polynomial_nice(nf(order(A)))
+  if !issimple(nf(order(A))) || !isdefining_polynomial_nice(nf(order(A)))
     c = hnf_modular_eldiv!(representation_matrix(A.gen_two), A.gen_one, :lowerleft)
     A.basis_matrix = c
     return nothing
