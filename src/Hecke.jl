@@ -249,6 +249,10 @@ function __init__()
     #  #Revise.track(Hecke, "FieldFactory/read_write.jl")
     #end
   end
+
+  @require Polymake="d720cf60-89b5-51f5-aff5-213f193123e7" begin
+    include("AlgAssRelOrd/NEQ_polymake.jl")
+  end
 end
 
 function _get_maximal_order(K::AnticNumberField)
