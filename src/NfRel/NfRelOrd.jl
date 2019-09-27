@@ -508,7 +508,7 @@ function maximal_order_via_relative(K::AnticNumberField, m::NfToNfRel)
     end
     L = codomain(m)
     OL = maximal_order(L)
-    B = z_basis(OL)
+    B = absolute_basis(OL)
     OK = Order(K, [ m\b for b in B ], check = false, isbasis = true)
     OK.ismaximal = 1
     _set_maximal_order(K, OK)

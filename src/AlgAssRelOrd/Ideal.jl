@@ -134,7 +134,7 @@ function basis_pmatrix(a::Union{ AlgAssRelOrdIdl, AlgAssRelOrdFracIdl }; copy::B
   end
 end
 
-function z_basis(a::AlgAssRelOrdIdl)
+function absolute_basis(a::AlgAssRelOrdIdl)
   O = order(a)
   pb = pseudo_basis(a, copy = false)
   res = Vector{elem_type(O)}()
@@ -1191,7 +1191,7 @@ function maximal_integral_ideal_containing(I::AlgAssRelOrdIdl, p::Union{ NfAbsOr
   B, OPtoB, BtoOP = _as_algebra_over_center(OP)
   C, toC = _as_matrix_algebra(B)
 
-  JinC = ideal_from_gens(C, [ toC(BtoOP(toOP(b))) for b in z_basis(J) ])
+  JinC = ideal_from_gens(C, [ toC(BtoOP(toOP(b))) for b in absolute_basis(J) ])
   y = left_principal_gen(JinC)
   m = matrix(y)
   r = rref!(m)
