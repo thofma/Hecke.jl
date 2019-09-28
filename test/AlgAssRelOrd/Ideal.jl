@@ -39,8 +39,8 @@
     p = prime_decomposition(OK, 3)[1][1]
     g = Hecke.locally_free_basis(I, p)
     OKGg = OKG*g
-    mat_I = coprime_bases(OKG, I, p)[4]
-    mat_OKGg = coprime_bases(OKG, OKGg, p)[4]
+    mat_I = Hecke.coprime_bases(OKG, I, p)[4]
+    mat_OKGg = Hecke.coprime_bases(OKG, OKGg, p)[4]
     t = det(mat_I*inv(mat_OKGg))
     @test valuation(t, p) == 0
 
