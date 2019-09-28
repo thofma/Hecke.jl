@@ -468,40 +468,8 @@ function AlgAss(O::Union{ NfRelOrd{T, S}, AlgAssRelOrd{T, S} }, I::Union{ NfRelO
 
   K = _algebra(O)
 
-  basisO = pseudo_basis(O, copy = false)
-  new_basisO = Vector{Tuple{elem_type(K), S}}()
-  new_bmatO = basis_matrix(O)
-
-  bpmatI = basis_pmatrix(I, copy = false)
-  new_bpmatI = deepcopy(bpmatI)
-
-  pi = anti_uniformizer(p)
-
-  for i in 1:degree(O)
-    a = pi^valuation(basisO[i][2], p)
-    ia = inv(a)
-    push!(new_basisO, (ia*basisO[i][1], a*basisO[i][2]))
-    mul_row!(new_bmatO, i, ia)
-    for j in 1:degree(O)
-      new_bpmatI.matrix[j, i] = new_bpmatI.matrix[j, i]*a
-    end
-  end
+  new_basisO, new_basisI, new_bmatO, new_bmatI = coprime_bases(O, I, p)
   new_bmatinvO = inv(new_bmatO)
-
-  for i in 1:degree(O)
-    a = pi^valuation(bpmatI.coeffs[i], p)
-    new_bpmatI.coeffs[i] = a*new_bpmatI.coeffs[i]
-    mul_row!(new_bpmatI.matrix, i, inv(a))
-  end
-
-  new_basisI = Vector{Tuple{elem_type(K), S}}()
-  for i = 1:degree(O)
-    t = K()
-    for j = 1:degree(O)
-      t += new_bpmatI.matrix[i, j]*new_basisO[j][1]
-    end
-    push!(new_basisI, (t, deepcopy(new_bpmatI.coeffs[i])))
-  end
 
   Fp, mF = ResidueField(order(p), p)
   mmF = extend(mF, _base_ring(K))
@@ -511,7 +479,7 @@ function AlgAss(O::Union{ NfRelOrd{T, S}, AlgAssRelOrd{T, S} }, I::Union{ NfRelO
   reducers = Int[]
 
   for i in 1:degree(O)
-    v = valuation(new_bpmatI.matrix[i, i], p)
+    v = valuation(new_bmatI[i, i], p)
     @assert v >= 0
     if v == 0
       push!(reducers, i)
@@ -563,7 +531,7 @@ function AlgAss(O::Union{ NfRelOrd{T, S}, AlgAssRelOrd{T, S} }, I::Union{ NfRelO
       coeffs_c = _coeff(c)
 
       for k in reducers
-        d = -coeffs_c[k]//new_bpmatI.matrix[k, k]
+        d = -coeffs_c[k]//new_bmatI[k, k]
         c = c + d*new_basisI[k][1]
       end
       coeffs_c = _coeff(c)
@@ -593,7 +561,7 @@ function AlgAss(O::Union{ NfRelOrd{T, S}, AlgAssRelOrd{T, S} }, I::Union{ NfRelO
     c = _elem_in_algebra(a, copy = false)
     coeffs_c = _coeff(c)
     for k in reducers
-      d = -coeffs_c[k]//new_bpmatI.matrix[k, k]
+      d = -coeffs_c[k]//new_bmatI[k, k]
       c = c + d*new_basisI[k][1]
     end
     coeffs_c = _coeff(c)
@@ -635,54 +603,20 @@ end
 > Given an ideal $J$ such that $p \cdot I \subseteq J \subseteq I$ this function
 > constructs $I/J$ as an algebra over the finite field $R/p$, where $R$ is the
 > order of $p$, together with the projection map $I \to I/J$.
-> It is assumed that `R == base_ring(order(I))` and that $p$ is prime.
+> It is assumed that `order(I) === order(J)` and in particular both should be
+> defined. Further, it should hold `R == base_ring(order(I))` and $p$ should be
+> prime.
 """
 quo(I::Union{ NfRelOrdIdl{T, S}, AlgAssRelOrdIdl{T, S} }, J::Union{ NfRelOrdIdl{T, S}, AlgAssRelOrdIdl{T, S} }, p::Union{NfOrdIdl, NfRelOrdIdl}) where {T, S} = AlgAss(I, J, p)
 
 function AlgAss(I::Union{ NfRelOrdIdl{T, S}, AlgAssRelOrdIdl{T, S} }, J::Union{ NfRelOrdIdl{T, S}, AlgAssRelOrdIdl{T, S} }, p::Union{NfOrdIdl, NfRelOrdIdl}) where {T, S}
+  @assert _algebra(I) === _algebra(J)
   @assert order(I) === order(J)
 
   O = order(I)
-
-  K = _algebra(O)
-
-  basisI = pseudo_basis(I, copy = false)
-  new_basisI = Vector{Tuple{elem_type(K), S}}()
-
-  pi = anti_uniformizer(p)
-
-  for i in 1:degree(O)
-    a = pi^valuation(basisI[i][2], p)
-    push!(new_basisI, (inv(a)*basisI[i][1], a*basisI[i][2]))
-  end
-
-  # This matrix is NOT in the basis of the order!
-  new_bmatI = zero_matrix(_base_ring(K), degree(O), degree(O))
-  for i = 1:degree(O)
-    elem_to_mat_row!(new_bmatI, i, new_basisI[i][1])
-  end
+  K = _algebra(I)
+  new_basisI, new_basisJ, new_bmatI, new_bmatJinI = coprime_bases(I, J, p)
   bmatinvI = inv(new_bmatI)
-
-  bpmatJinI = basis_pmatrix(J)
-  bpmatJinI.matrix = bpmatJinI.matrix*basis_matrix(O, copy = false)*bmatinvI
-  bpmatJinI = pseudo_hnf(bpmatJinI, :lowerleft)
-  bmatJinI = bpmatJinI.matrix
-  basisJinI = Vector{Tuple{elem_type(K), S}}()
-  for i = 1:degree(O)
-    t = K()
-    for j = 1:degree(O)
-      t += bmatJinI[i, j]*new_basisI[j][1]
-    end
-    push!(basisJinI, (t, deepcopy(bpmatJinI.coeffs[i])))
-  end
-
-  new_bmatJinI = deepcopy(bmatJinI)
-  new_basisJinI = Vector{Tuple{elem_type(K), S}}()
-  for i in 1:degree(O)
-    a = pi^valuation(basisJinI[i][2], p)
-    push!(new_basisJinI, (inv(a)*basisJinI[i][1], a*basisJinI[i][2]))
-    mul_row!(new_bmatJinI, i, inv(a))
-  end
 
   Fp, mF = ResidueField(order(p), p)
   mmF = extend(mF, _base_ring(K))
@@ -746,7 +680,7 @@ function AlgAss(I::Union{ NfRelOrdIdl{T, S}, AlgAssRelOrdIdl{T, S} }, J::Union{ 
 
       for k in reducers
         d = -coeffs[k]//new_bmatJinI[k, k]
-        c = c + d * new_basisJinI[k][1]
+        c = c + d * new_basisJ[k][1]
       end
       coeffs = _coeff(c)
       for k in 1:degree(O)
@@ -776,7 +710,7 @@ function AlgAss(I::Union{ NfRelOrdIdl{T, S}, AlgAssRelOrdIdl{T, S} }, J::Union{ 
     coeffs = _coeff(c)
     for k in reducers
       d = -coeffs[k]//new_bmatJinI[k, k]
-      c = c + d*new_basisJinI[k][1]
+      c = c + d*new_basisJ[k][1]
     end
     coeffs = _coeff(c)
     for k in 1:degree(O)

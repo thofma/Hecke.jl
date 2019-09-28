@@ -157,11 +157,10 @@ end
     isright_ideal(a::AbsAlgAssIdl) -> Bool
     isright_ideal(a::AlgAssAbsOrdIdl) -> Bool
     isright_ideal(a::AlgAssRelOrdIdl) -> Bool
-    isright_ideal(a::AlgAssRelOrdFracIdl) -> Bool
 
 > Returns `true` if $a$ is an right ideal and `false` otherwise.
 """
-function isright_ideal(a::Union{ AbsAlgAssIdl, AlgAssAbsOrdIdl, AlgAssRelOrdIdl, AlgAssRelOrdFracIdl })
+function isright_ideal(a::Union{ AbsAlgAssIdl, AlgAssAbsOrdIdl, AlgAssRelOrdIdl })
   if a.isright == 1
     return true
   elseif a.isright == 2
@@ -181,11 +180,10 @@ end
     isleft_ideal(a::AbsAlgAssIdl) -> Bool
     isleft_ideal(a::AlgAssAbsOrdIdl) -> Bool
     isleft_ideal(a::AlgAssRelOrdIdl) -> Bool
-    isleft_ideal(a::AlgAssRelOrdFracIdl) -> Bool
 
 > Returns `true` if $a$ is an left ideal and `false` otherwise.
 """
-function isleft_ideal(a::Union{ AbsAlgAssIdl, AlgAssAbsOrdIdl, AlgAssRelOrdIdl, AlgAssRelOrdFracIdl })
+function isleft_ideal(a::Union{ AbsAlgAssIdl, AlgAssAbsOrdIdl, AlgAssRelOrdIdl })
   if a.isleft == 1
     return true
   elseif a.isleft == 2
@@ -421,7 +419,7 @@ end
 
 # Helper function to set the side-flags
 # side can be :right, :left or :twosided
-function _set_sidedness(a::Union{ AbsAlgAssIdl, AlgAssAbsOrdIdl, AlgAssRelOrdIdl, AlgAssRelOrdFracIdl }, side::Symbol)
+function _set_sidedness(a::Union{ AbsAlgAssIdl, AlgAssAbsOrdIdl, AlgAssRelOrdIdl }, side::Symbol)
   if side == :right
     a.isleft = 0
     a.isright = 1

@@ -18,6 +18,8 @@ Returns the number field, of which $a$ is an integral ideal.
 """
 nf(a::NfRelOrdIdl) = nf(order(a))
 
+_algebra(a::NfRelOrdIdl) = nf(a)
+
 ################################################################################
 #
 #  Parent
@@ -110,6 +112,12 @@ function basis_pmatrix(a::Union{NfRelOrdIdl, NfRelOrdFracIdl}; copy::Bool = true
   else
     return a.basis_pmatrix
   end
+end
+
+# For compatibility with AlgAssRelOrdIdl
+function basis_pmatrix_wrt(a::Union{ NfRelOrdIdl, NfRelOrdFracIdl }, O::NfRelOrd)
+  @assert O === order(a)
+  return basis_pmatrix(a)
 end
 
 ################################################################################

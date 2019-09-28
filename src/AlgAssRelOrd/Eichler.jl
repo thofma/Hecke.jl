@@ -1,7 +1,6 @@
 function principal_gen_eichler(I::AlgAssRelOrdIdl)
-  O = order(I)
+  O = left_order(I)
   @assert ismaximal(O)
-  @assert isleft_ideal(I)
   A = algebra(O)
   @assert iseichler(A)
 
@@ -16,22 +15,20 @@ function principal_gen_eichler(I::AlgAssRelOrdIdl)
         continue
       end
 
-      # Pretend orders[i] is a fractional ideal of orders[j]
-      PM = basis_pmatrix(orders[i])
-      PM.matrix = PM.matrix*basis_mat_inv(orders[j], copy = false)
-      # PM is not in HNF, but we don't need this
-      OO = fractional_ideal(orders[j], PM, :nothing, false)
-      r = lcm(r, denominator(OO, copy = false))
+      # Consider orders[i] is an ideal.
+      # The basis pseudo-matrix is probably not in HNF, but we don't need this.
+      OO = ideal(A, basis_pmatrix(orders[i], copy = false), true)
+      r = lcm(r, denominator(OO, orders[j]))
     end
   end
   rd = r*d
 
   y = integral_coprime_representative(O, I, rd)
-  Iy = I*y
-  # Make an integral ideal out of this
-  J = ideal(O, basis_pmatrix(Iy, copy = false), :left, false, true)
+  J = I*y
 
   N = normred(J)
+  @assert denominator(N, copy = false) == 1 # J should be integral
+  N = numerator(N, copy = false)
   OK = order(N)
   t, a = has_principal_gen_1_mod_m(N, OK(1)*OK, ramified_infinite_places(A))
   @assert t "Ideal is not principal"
@@ -47,14 +44,11 @@ function principal_gen_eichler(I::AlgAssRelOrdIdl)
   end
 
   O2 = orders[order_num]
-  OO = O*one(A)
-  OO2 = O2*one(A)
-  OO.right_order = O
-  L = _mul_full_lattice_frac(OO2, OO, set_order = :right_b)
+  L = ideal(O, one(A))*ideal(O2, one(A))
   L = inv(L)
 
   z = integral_coprime_representative(O, L, rd)
-  Lz = ideal(O, basis_pmatrix(L*z, copy = false), :left, false, true)
+  Lz = L*z
   u, v = idempotents(norm(Lz), rd)
   @assert u*base_ring(O) + rd == base_ring(O)(1)*base_ring(O)
   t = O(elem_in_nf(u, copy = false)*inv(z)*w*z)
@@ -68,12 +62,10 @@ end
 # system of representatives of the maximal orders.
 # Returns t in O^\times such that M = Nt
 function _eichler_find_transforming_unit_maximal(M::T, N::T) where { T <: AlgAssRelOrdIdl }
-  O = order(M)
-  A = algebra(O)
+  A = algebra(M)
+  O = left_order(M)
   @assert ismaximal(O)
-  @assert O === order(N)
-  @assert isleft_ideal(M)
-  @assert isleft_ideal(N)
+  # We assume that left_order(N) == O, but testing this would be really expensive
 
   if M == N
     return one(O)
@@ -82,11 +74,13 @@ function _eichler_find_transforming_unit_maximal(M::T, N::T) where { T <: AlgAss
   F = FieldOracle(A, [ O ])
   p = normred(M)
   @assert p == normred(N)
+  @assert denominator(p, copy = false) == 1
+  p = numerator(p, copy = false)
   OpO, toOpO = quo(O, p*O, p)
   B, toB = _as_matrix_algebra(OpO)
 
-  I = ideal_from_gens(B, [ toB(toOpO(b)) for b in absolute_basis(M) ])
-  J = ideal_from_gens(B, [ toB(toOpO(b)) for b in absolute_basis(N) ])
+  I = ideal_from_gens(B, [ toB(toOpO(O(b))) for b in absolute_basis(M) ])
+  J = ideal_from_gens(B, [ toB(toOpO(O(b))) for b in absolute_basis(N) ])
 
   # Compute the image of 1 under the canonical projections O -> O/M respectively O -> O/N
   Fq = base_ring(B)
@@ -172,18 +166,13 @@ function _eichler_find_transforming_unit_recurse(I::AlgAssRelOrdIdl, J::AlgAssRe
   N = maximal_integral_ideal_containing(J, p, :left)
   u = elem_in_algebra(_eichler_find_transforming_unit_maximal(M, N), copy = false)
   v = inv(u)
-  II = divexact_left(I, M, set_order = :right_b)
-  I = ideal(order(II), basis_pmatrix(II, copy = false), :left, false, true)
+  I = divexact_left(I, M)
+  OI = left_order(I) # We need it later anyway and it should be the same (as in ===) as the one of J
 
-  JJ = divexact_left(J, N, set_order = :right_b)
-  JJ = v*JJ # now its probably not an ideal of order(JJ) anymore
-  JJ = JJ*u
-  # In theory, JJ is an integral ideal of order(I)
-  PM = basis_pmatrix(JJ, copy = false)
-  PM.matrix = PM.matrix*basis_matrix(order(JJ), copy = false)*basis_mat_inv(order(I), copy = false)
-  #J = ideal(order(I), PM, :left, false, false)
-  J = ideal(order(I), PM, :left, true, false) # Remove the check sooner or later
-  J.left_order = order(J)
+  J = divexact_left(J, N)
+  J = v*J
+  J = J*u
+  J.left_order = OI
 
   t = _eichler_find_transforming_unit_recurse(I, J, primes)
   return u*t
@@ -194,21 +183,21 @@ end
 # discriminant of O and r in base_ring(O) such that r O_i \subseteq O_j for a
 # system of representatives of the maximal orders.
 function _eichler_find_transforming_unit(I::AlgAssRelOrdIdl, J::AlgAssRelOrdIdl)
-  O = order(I)
+  O = left_order(I)
   @assert ismaximal(O)
-  @assert O === order(J)
-  @assert isleft_ideal(I)
-  @assert isleft_ideal(J)
+  # We assume that left_order(J) == O, but testing this would be really expensive
 
   n = normred(I)
   @assert n == normred(J)
+  @assert denominator(n, copy = false) == 1
+  n = numerator(n, copy = false)
 
   fac_n = factor(n)
   if isempty(fac_n)
     return one(algebra(order(O)))
   end
 
-  primes = Vector{ideal_type(base_ring(order(I)))}()
+  primes = Vector{ideal_type(base_ring(O))}()
   for (p, e) in fac_n
     for i = 1:e
       push!(primes, p)

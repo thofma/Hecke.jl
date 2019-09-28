@@ -250,7 +250,7 @@ mutable struct RelOrdQuoRing{T1, T2, T3} <: Ring
     z = new{T1, T2, T3}()
     z.base_ring = O
     z.ideal = I
-    z.basis_pmatrix = basis_pmatrix(I)
+    z.basis_pmatrix = basis_pmatrix_wrt(I, O)
     return z
   end
 end

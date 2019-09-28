@@ -623,63 +623,22 @@ end
 ################################################################################
 
 mutable struct AlgAssRelOrdIdl{S, T}
-  order::AlgAssRelOrd{S, T}
-
-  left_order::AlgAssRelOrd{S, T} # the largest order of which the ideal is a left ideal
-  right_order::AlgAssRelOrd{S, T} # as above
+  algebra::AbsAlgAss{S}
 
   pseudo_basis::Vector{Tuple{AbsAlgAssElem{S}, T}}
-  # The basis matrices are in the basis of `order`
+  # The basis matrices are in the BASIS of the ALGEBRA!
   basis_pmatrix::PMat{S, T}
   basis_matrix::Generic.MatSpaceElem{S}
   basis_mat_inv::Generic.MatSpaceElem{S}
 
-  # isleft and isright with respect to `order`
-  isleft::Int                      # 0 Not known
-                                   # 1 Known to be a left ideal
-                                   # 2 Known not to be a left ideal
-  isright::Int                     # as for isleft
+  # Left and right order:
+  # The largest orders of which the ideal is a left resp. right ideal.
+  left_order::AlgAssRelOrd{S, T}
+  right_order::AlgAssRelOrd{S, T}
 
-  iszero::Int                      # 0: don't know, 1: known to be zero, 2: known to be not zero
-
-  norm
-  normred
-
-  function AlgAssRelOrdIdl{S, T}(O::AlgAssRelOrd{S, T}) where {S, T}
-    z = new{S, T}()
-    z.order = O
-    z.isleft = 0
-    z.isright = 0
-    z.iszero = 0
-    return z
-  end
-
-  function AlgAssRelOrdIdl{S, T}(O::AlgAssRelOrd{S, T}, M::PMat{S, T}) where {S, T}
-    z = AlgAssRelOrdIdl{S, T}(O)
-    z.basis_pmatrix = M
-    z.basis_matrix = M.matrix
-    return z
-  end
-end
-
-################################################################################
-#
-#  AlgAssRelOrdFracIdl
-#
-################################################################################
-
-mutable struct AlgAssRelOrdFracIdl{S, T}
+  # Any order contained in the left or right order, that is, an order of which
+  # the ideal is a (possibly fractional) ideal.
   order::AlgAssRelOrd{S, T}
-
-  left_order::AlgAssRelOrd{S, T} # the largest order of which the ideal is a left ideal
-  right_order::AlgAssRelOrd{S, T} # as above
-
-  pseudo_basis::Vector{Tuple{AbsAlgAssElem{S}, T}}
-  # The basis matrices are in the basis of `order`
-  basis_pmatrix::PMat{S, T}
-  basis_matrix::Generic.MatSpaceElem{S}
-  basis_mat_inv::Generic.MatSpaceElem{S}
-  den::fmpz
 
   # isleft and isright with respect to `order`
   isleft::Int                      # 0 Not known
@@ -692,17 +651,17 @@ mutable struct AlgAssRelOrdFracIdl{S, T}
   norm::T
   normred::T
 
-  function AlgAssRelOrdFracIdl{S, T}(O::AlgAssRelOrd{S, T}) where {S, T}
+  function AlgAssRelOrdIdl{S, T}(A::AbsAlgAss{S}) where {S, T}
     z = new{S, T}()
-    z.order = O
+    z.algebra = A
     z.isleft = 0
     z.isright = 0
     z.iszero = 0
     return z
   end
 
-  function AlgAssRelOrdFracIdl{S, T}(O::AlgAssRelOrd{S, T}, M::PMat{S, T}) where {S, T}
-    z = AlgAssRelOrdFracIdl{S, T}(O)
+  function AlgAssRelOrdIdl{S, T}(A::AbsAlgAss{S}, M::PMat{S, T}) where {S, T}
+    z = AlgAssRelOrdIdl{S, T}(A)
     z.basis_pmatrix = M
     z.basis_matrix = M.matrix
     return z
