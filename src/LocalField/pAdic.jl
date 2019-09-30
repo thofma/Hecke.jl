@@ -27,12 +27,16 @@ function setprecision!(f::Generic.Poly{padic}, N::Int)
   return f
 end
 
-function is_eisenstein(f::Generic.Poly{padic})
-    if valuation(f.coeffs[1]) != 1
+function is_eisenstein(f::Generic.Poly{<:NALocalFieldElem})
+
+    pi = uniformizer(base_ring(f))
+    g  = valuation(pi)
+    
+    if valuation(f.coeffs[1]) != g
         return false
     end
     for i=2:length(f)-1
-        if valuation(f.coeffs[i]) < 1
+        if valuation(f.coeffs[i]) < g
             return false
         end
     end

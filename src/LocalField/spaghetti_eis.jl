@@ -11,7 +11,7 @@ residue_image = Hecke.residue_image
 
 # Citation "krasner.pdf"
 import Base.//
-function //(f::Hecke.Generic.Poly{T}, b::T) where T <: Union{padic,eisf_elem}
+function //(f::Hecke.Generic.Poly{T}, b::T) where T <: NALocalFieldElem
     g = deepcopy(f)
     for i=1:degree(f)+1
         g.coeffs[i] = g.coeffs[i]//b
@@ -31,9 +31,9 @@ import Markdown
     number_of_roots(K, f)
 Given an eisenstein extension `K` and a polynomial $f \in K[x]$, return the number of roots of `f` defined over `K`.
 """
-function number_of_roots(K, f)
+function number_of_roots(f::Hecke.Generic.Poly{<:NALocalFieldElem})
 
-    base_ring(f) != K && error("The polynomial should be over the base ring $K.")
+    K = base_ring(f)
 
     x = gen(parent(f))
     pi = uniformizer(K)
@@ -65,6 +65,10 @@ function number_of_roots(K, f)
     return m
 end
 
+function number_of_roots(f::Hecke.Generic.Poly{<:NALocalFieldElem}, K::NALocalField)
+    return number_of_roots(change_base_ring(f, K))
+end
+
 ############################################################
 
 # Lifting the roots looks like the next step...
@@ -74,7 +78,7 @@ my_setprecision!(f,N) = f
 # Should use a precision access function rather than a "__.N".
 
 #XXX: valuation(Q(0)) == 0 !!!!!
-function newton_lift(f::Hecke.Generic.Poly{eisf_elem}, r::eisf_elem)
+function newton_lift(f::Hecke.Generic.Poly{T}, r::T) where T<:NALocalFieldElem
 
     # The many setprecision! calls are likely not valid for an approximately defined
     # polynomial.
@@ -124,56 +128,10 @@ end
 
 import Hecke.roots
 
-if false
-function roots(K::Hecke.EisensteinField{padic}, f)
-
-    base_ring(f) != K && error("The polynomial should be over the base ring $K.")
-
-    x = gen(parent(f))
-    pi = uniformizer(K)
-    C = [primitive_part(f)]
-
-    roots_out = []
-
-    while !isempty(C)
-        c = pop!(C)        
-        cp = change_base_ring(c, residue_image)
-        Rfp = parent(cp)
-        rts = roots(cp)
-        
-        for rt in rts
-
-            beta = K(lift(rt))
-            
-            h = primitive_part( c(pi*x + beta ) )
-            hp = change_base_ring(h, residue_image)
-            
-            if degree( hp ) == 1
-                rr = K(lift(roots(hp)[1]))
-                rr.N = 1
-                h_root = newton_lift(h,rr)
-                push!(roots_out, h_root*pi)
-            elseif degree(hp) > 1
-                push!(C, h)        
-            end
-        end
-
-        if length(C) >= degree(f)
-            error("Code has clearly gone wrong")
-        end
-    end
-    return roots_out
-end
-end # if false block
-
-# The recursive version that actually makes sense.
-#
 # TODO: XXX: f is assumed to be "square-free".
-#            
-function integral_roots(K::Hecke.EisensteinField{padic},f)
+function integral_roots(f::Hecke.Generic.Poly{<:Hecke.NALocalFieldElem})
 
-    base_ring(f) != K && error("The polynomial should be over the base ring $K.")
-
+    K = base_ring(parent(f))
     x = gen(parent(f))
     pi = uniformizer(K)
     roots_type = typeof(zero(K))
@@ -197,20 +155,36 @@ function integral_roots(K::Hecke.EisensteinField{padic},f)
         roots_out = roots_type[]
         for beta in rts
             beta_lift = K(lift(beta))
-            roots_near_beta = roots_recursive( K, fprim(pi*x + beta_lift) )
+            roots_near_beta = integral_roots( fprim(pi*x + beta_lift) )
             roots_out = vcat(roots_out, [pi*r + beta_lift for r in roots_near_beta] )
         end
         
         return roots_out
     end
-    error("Something has gone quite wrong.")
+    error("Etwas hat scheif gelaufen.")
 end
 
-function roots(K::Hecke.EisensteinField{padic},f)
-    Ov_roots   = integral_roots(K,f)
-    outside_Ov_roots = integral_roots(K,reverse(f))
+function roots(f::Hecke.Generic.Poly{<:Hecke.NALocalFieldElem})
+
+    K = base_ring(parent(f))
+    pi = uniformizer(K)
+    x = gen(parent(f))
+    
+    Ov_roots   = integral_roots(f,K)
+    outside_Ov_roots = integral_roots(reverse(f)(pi*x), K)
     filter!(r->r!=K(0), outside_Ov_roots)
     return vcat(Ov_roots, [inv(rt) for rt in outside_Ov_roots])
 end
+
+function roots(f, K::Hecke.Field)
+    #base_ring(f) != K && error("Not implemented unless the polynomial has base ring $K.")
+    return roots(change_base_ring(f,K))
+end
+
+function integral_roots(f, K::Hecke.Field)
+    #base_ring(f) != K && error("Not implemented unless the polynomial has base ring $K.")
+    return integral_roots(change_base_ring(f,K))
+end
+
 
 nothing

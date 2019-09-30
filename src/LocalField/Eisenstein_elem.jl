@@ -12,7 +12,7 @@ parent_type(::Type{eisf_elem}) = EisensteinField
 """
 parent(a::eisf_elem) = a.parent
 
-elem_type(::Type{EisensteinField{padic}}) = eisf_elem
+elem_type(::Type{EisensteinField{T}}) where T = eisf_elem
 
 @doc Markdown.doc"""
     base_ring(a::EisensteinField)
@@ -26,8 +26,9 @@ base_ring(a::EisensteinField) = a.base_ring
 """
 base_ring(a::eisf_elem) = a.base_ring
 
-# What is this?
-# isdomain_type(::Type{eisf_elem}) = true
+isdomain_type(::Type{eisf_elem}) = true
+
+isexact_type(::Type{eisf_elem}) = false
 
 @doc Markdown.doc"""
     var(a::EisensteinField)
@@ -40,8 +41,6 @@ function check_parent(a::eisf_elem, b::eisf_elem)
    a.parent != b.parent && error("Incompatible EisensteinField elements")
 end
 
-# What is this?
-# show_minus_one(::Type{eisf_elem}) = false
 
 ###############################################################################
 #
@@ -204,8 +203,8 @@ uniformizer(a::EisensteinField) = gen(a)
 #
 ###############################################################################
 
-function show(io::IO, a::EisensteinField)
-   print(io, "Eisenstein extension over padic field")
+function show(io::IO, a::EisensteinField{T}) where T
+   print(io, "Eisenstein extension over local field of type $T")
    print(io, " with defining polynomial ", a.pol)
 end
 
@@ -213,14 +212,13 @@ function show(io::IO, x::eisf_elem)
    print(io, x.res_ring_elt)
 end
 
-# What is this?
 needs_parentheses(::eisf_elem) = true
 
 displayed_with_minus_in_front(::eisf_elem) = false
 
-show_minus_one(::Type{eisf_elem}) = false
+show_minus_one(::Type{eisf_elem}) = true
 
-#canonical_unit(x::nf_elem) = x
+canonical_unit(x::eisf_elem) = x
 
 ###############################################################################
 #
@@ -563,7 +561,7 @@ end #if
 
 > WARNING: Defaults are actually cached::Bool = false, check::Bool = false
 """
-function EisensteinField(f::AbstractAlgebra.Generic.Poly{padic}, s::AbstractString;
+function EisensteinField(f::AbstractAlgebra.Generic.Poly{<:NALocalFieldElem}, s::AbstractString;
                          cached::Bool = false, check::Bool = true)
    S = Symbol(s)
    parent_obj = EisensteinField(f, S, cached, check)

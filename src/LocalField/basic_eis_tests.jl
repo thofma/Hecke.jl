@@ -11,6 +11,3 @@ f = x^5 - 7*x + 4
 fK = change_base_ring(f,K)
 
 X = gen(parent(fK))
-
-## This fails for some reason.
-#display(fK + X)

@@ -1,4 +1,24 @@
 
+############################################################################################
+#
+#   Abstract Types
+#
+############################################################################################
+
+#abstract type NonArchimedeanLocalField     <: AbstractAlgebra.Field end
+#abstract type NonArchimedeanLocalFieldElem <: AbstractAlgebra.FieldElem end
+
+# Alias
+#NALocalField     = NonArchimedeanLocalField
+#NALocalFieldElem = NonArchimedeanLocalFieldElem
+
+
+############################################################################################
+#
+#   EisensteinField
+#
+############################################################################################
+
 
 ## Doing things with Eisenstein extensions.
 
@@ -14,7 +34,7 @@ const EisensteinFieldID = Dict{Tuple{FmpqPolyRing, fmpq_poly, Symbol}, Field}()
 # Coefficients of the defining polynomial are approximate.
 # Defining polynomial *can* change precision.
 
-mutable struct EisensteinField{padic} <: AbstractAlgebra.Field
+mutable struct EisensteinField{NonArchimedeanLocalFieldElem} <: NonArchimedeanLocalField
     
     # Cache inverse of the polynomial.
     #
@@ -36,19 +56,24 @@ mutable struct EisensteinField{padic} <: AbstractAlgebra.Field
 
     res_ring ## Temporary to get things off the ground. This may well be a poor choice.
     
-    function EisensteinField(pol::AbstractAlgebra.Generic.Poly{padic}, s::Symbol,
-                                  cached::Bool = false, check::Bool = true)
+    function EisensteinField(pol::AbstractAlgebra.Generic.Poly{T}, s::Symbol,
+                             cached::Bool = false, check::Bool = true) where T<:NALocalFieldElem
+
         check && !is_eisenstein(pol) && error("Polynomial must be eisenstein over base ring.")
 
         if cached && haskey(EisensteinFieldID, (parent(pol), pol, s))
             return EisensteinFieldID[parent(pol), pol, s]::EisensteinField
         end
                      
-        eisf = new{padic}()
+        eisf = new{T}()
         eisf.pol = pol
         eisf.base_ring = base_ring(pol)
         eisf.S = s
-        eisf.res_ring = ResidueField(parent(pol), pol)
+
+        # Construct a new parent for printing reasons.
+        P = PolynomialRing(base_ring(pol), s)
+
+        eisf.res_ring = ResidueField(P, P(pol))
         
         eisf.auxilliary_data = Array{Any}(undef, 5)
 
@@ -63,14 +88,14 @@ end
 # Internal structure of elements could be a residue ring class.
 # (Perhaps better is to have an internal polynomial representation, and do the reductions myself.)
 
-mutable struct eisf_unit_internal <: FieldElem
+mutable struct eisf_unit_internal <: NALocalFieldElem
     
     elem_coeffs
     res_ring_elt     # Very likely we will need to implement operations from scratch.
     debug_parent::EisensteinField # This should be removed eventually.
 end
 
-mutable struct eisf_elem <: FieldElem
+mutable struct eisf_elem <: NALocalFieldElem
     u::eisf_unit_internal
     v::Integer
     N::Integer
