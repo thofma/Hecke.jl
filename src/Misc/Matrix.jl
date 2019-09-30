@@ -1378,9 +1378,9 @@ function setindex!(A::MatElem, b, i::Int, ::Colon)
   b
 end
 
-
-getindex(A::MatElem, i::Int, ::Colon) = A[i:i, 1:ncols(A)]
-getindex(A::MatElem, ::Colon, i::Int) = A[1:nrows(A), i:i]
+# These overwrite AbstractAlgebra.
+#getindex(A::MatElem, i::Int, ::Colon) = A[i:i, 1:ncols(A)]
+#getindex(A::MatElem, ::Colon, i::Int) = A[1:nrows(A), i:i]
 
 
 @doc Markdown.doc"""
