@@ -114,31 +114,35 @@ end
 ideal(O::AlgAssRelOrd{S, T}, x::AlgAssRelOrdElem{S, T}) where { S, T } = ideal(O, elem_in_algebra(x, copy = false))
 
 @doc Markdown.doc"""
-    ideal(O::AlgAssRelOrd, x::AbsAlgAssElem, action::Symbol) -> AlgAssRelOrdIdl
-    ideal(O::AlgAssRelOrd, x::AlgAssRelOrdElem, action::Symbol) -> AlgAssRelOrdIdl
+    ideal(O::AlgAssRelOrd, x::AbsAlgAssElem, side::Symbol) -> AlgAssRelOrdIdl
+    ideal(O::AlgAssRelOrd, x::AlgAssRelOrdElem, side::Symbol) -> AlgAssRelOrdIdl
 
-> Returns the ideal $x \cdot O$, if `action == :left`, and $O \cdot x$, if
-> `action == :right`.
+> Returns the ideal $O \cdot x$, if `side == :left`, and $x \cdot O$, if
+> `side == :right`.
 """
-function ideal(O::AlgAssRelOrd{S, T}, x::AbsAlgAssElem{S}, action::Symbol) where {S, T}
+function ideal(O::AlgAssRelOrd{S, T}, x::AbsAlgAssElem{S}, side::Symbol) where {S, T}
   A = algebra(O)
   @assert parent(x) === A
   if iszero(x)
     return _zero_ideal(A, O)
   end
+  if side == :twosided
+    return ideal(O, x)
+  end
+  @assert side == :left || side == :right "Option :$(side) for side not implemented"
 
-  M = representation_matrix(x, action)
-  coeffs = deepcopy(basis_pmatrix(O, copy = false).coeffs)
-  PM = PseudoMatrix(M, coeffs)
-  if action == :left
-    a = ideal(A, O, PM, :right)
-  elseif action == :right
-    a = ideal(A, O, PM, :left)
+  M = zero_matrix(base_ring(A), degree(O), degree(O))
+  pb = pseudo_basis(O, copy = false)
+  for i = 1:degree(O)
+    if side == :left
+      elem_to_mat_row!(M, i, pb[i][1]*x)
+    elseif side == :right
+      elem_to_mat_row!(M, i, x*pb[i][1])
+    end
   end
-  if iszero(x)
-    a.iszero = 1
-  end
-  return a
+  M = PseudoMatrix(M, deepcopy(basis_pmatrix(O, copy = false).coeffs))
+
+  return ideal(A, O, M, side)
 end
 
 ideal(O::AlgAssRelOrd{S, T}, x::AlgAssRelOrdElem{S, T}, action::Symbol) where { S, T } = ideal(O, elem_in_algebra(x, copy = false), action)
@@ -155,12 +159,12 @@ ideal(O::AlgAssRelOrd{S, T}, x::AlgAssRelOrdElem{S, T}, action::Symbol) where { 
 
 > Returns the ideal $O \cdot x$ or $x \cdot O$ respectively.
 """
-*(O::AlgAssRelOrd{S, T}, x::AbsAlgAssElem{S}) where {S, T} = ideal(O, x, :right)
-*(x::AbsAlgAssElem{S}, O::AlgAssRelOrd{S, T}) where {S, T} = ideal(O, x, :left)
-*(O::AlgAssRelOrd{S, T}, x::AlgAssRelOrdElem{S, T}) where {S, T} = ideal(O, x, :right)
-*(x::AlgAssRelOrdElem{S, T}, O::AlgAssRelOrd{S, T}) where {S, T} = ideal(O, x, :left)
-*(O::AlgAssRelOrd{S, T}, x::Union{ Int, fmpz }) where {S, T} = ideal(O, O(x), :right)
-*(x::Union{ Int, fmpz }, O::AlgAssRelOrd{S, T}) where {S, T} = ideal(O, O(x), :left)
+*(O::AlgAssRelOrd{S, T}, x::AbsAlgAssElem{S}) where {S, T} = ideal(O, x, :left)
+*(x::AbsAlgAssElem{S}, O::AlgAssRelOrd{S, T}) where {S, T} = ideal(O, x, :right)
+*(O::AlgAssRelOrd{S, T}, x::AlgAssRelOrdElem{S, T}) where {S, T} = ideal(O, x, :left)
+*(x::AlgAssRelOrdElem{S, T}, O::AlgAssRelOrd{S, T}) where {S, T} = ideal(O, x, :right)
+*(O::AlgAssRelOrd{S, T}, x::Union{ Int, fmpz }) where {S, T} = ideal(O, O(x), :left)
+*(x::Union{ Int, fmpz }, O::AlgAssRelOrd{S, T}) where {S, T} = ideal(O, O(x), :right)
 
 @doc Markdown.doc"""
     ideal(O::AlgAssRelOrd, a::NfOrdFracIdl) -> AlgAssRelOrdIdl
