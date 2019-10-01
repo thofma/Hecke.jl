@@ -220,10 +220,19 @@ function Base.show(io::IO, M::MapFromFunc)
   end
 end
 
+@doc Markdown.doc"""
+    MapFromFunc(f::Function, D, C)
+> Creates a map structure from the domain `D` to the codomain `C`.
+"""
 function MapFromFunc(f::Function, D, C)
   return MapFromFunc{typeof(D), typeof(C)}(f, D, C)
 end
 
+@doc Markdown.doc"""
+    MapFromFunc(f::Function, g::Function, D, C)
+> Creates a map structure from the domain `D` to the codomain `C`.
+> Also creates the inverse.
+"""
 function MapFromFunc(f::Function, g::Function, D, C)
   return MapFromFunc{typeof(D), typeof(C)}(f, g, D, C)
 end
