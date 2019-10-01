@@ -245,11 +245,38 @@ function valuation(a::eisf_elem)
     return min
 end
 
+
+################################################################################
+#
+#  Lifting and residue fields
+#
+################################################################################
+
+
+function lift(x::FinFieldElem, K::EisensteinField)
+    return K(lift(x, base_ring(K)))
+end
+
+
 function residue_image(a::padic)
     Fp = ResidueRing(FlintZZ,parent(a).p)
     return Fp(lift(a))
 end
 
+function residue_image(a::qadic)
+    display("WARNING!!!! Lazy testing code, assumes that the residue field is given "*
+            "by a Conway polynomial.")
+
+    Qq = parent(a)
+    R,x = PolynomialRing(FlintZZ,"x")
+
+    Fp = FlintFiniteField(prime(Qq))
+    Fq = FlintFiniteField(prime(Qq), degree(Qq), "b")[1]
+    return Fq(change_base_ring(lift(R,a),Fp))
+end
+
+
+## Need to implement "lift" for type Qq.
 
 function residue_image(a::eisf_elem)
     coeffs = coefficients(a.res_ring_elt.data)

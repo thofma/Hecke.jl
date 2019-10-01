@@ -1,16 +1,10 @@
 
-@doc Markdown.doc"""
-    lift(a::T, K::PadicField) where T <: Union{Nemo.nmod, Generic.Res{fmpz}, gfp_elem} -> padic
+################################################################################
+#
+#  Lifting
+#
+################################################################################
 
-Computes a lift of the element from the residue ring.
-"""
-function lift(a::T, K::PadicField) where T <: Union{Nemo.nmod, Generic.Res{fmpz}, gfp_elem} 
-  n = modulus(parent(a))
-  p = prime(K)
-  v, fl = remove(n, p)
-  @assert isone(fl)
-  return Hecke.lift(a) + O(K, p^v)
-end
 
 @doc Markdown.doc"""
     lift(f::T, Kt) where T <: Union{nmod_poly, fmpz_mod_poly, gfp_poly} -> Generic.Poly{padic}
@@ -26,32 +20,37 @@ function lift(f::T, Kt) where T <: Union{nmod_poly, fmpz_mod_poly, gfp_poly}
   return Kt(coeffs)
 end
 
-@doc Markdown.doc"""
-    lift(x::fq_nmod, Q::QadicField) -> qadic
 
-Computes a lift of the element from the residue ring.
-"""
-function lift(x::fq_nmod, Q::QadicField)
-  z = Q()
-  for i=0:degree(Q)-1
-    setcoeff!(z, i, coeff(x, i))
-  end
-  return setprecision(z, 1)
+################################################################################
+#
+#  Eisenstein check
+#
+################################################################################
+
+function is_eisenstein(f::Generic.Poly{<:NALocalFieldElem})
+
+    pi = uniformizer(base_ring(f))
+    g  = valuation(pi)
+    
+    if valuation(f.coeffs[1]) != g
+        return false
+    end
+    for i=2:length(f)-1
+        if valuation(f.coeffs[i]) < g
+            return false
+        end
+    end
+    if valuation(f.coeffs[length(f)]) != 0
+        return false
+    end
+    return true
 end
 
-@doc Markdown.doc"""
-    lift(x::fq_nmod_poly, Kt) -> Generic.Poly{qadic}
-
-Computes a lift of the polynomial lifting every coefficient of the residue ring.
-"""
-function lift(x::fq_nmod_poly, Kt)
-  K = base_ring(Kt)
-  coeffs = Vector{qadic}(undef, degree(x)+1)
-  for i = 1:degree(x)+1
-    coeffs[i] = lift(coeff(x, i-1), K)
-  end
-  return Kt(coeffs)
-end
+################################################################################
+#
+#  Primitive/content
+#
+################################################################################
 
 function _content(f::Generic.Poly{T}) where T <: Union{padic, qadic}
   K = base_ring(f)
@@ -443,7 +442,6 @@ function resultant(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{padi
   return res*res1*res2
 end
 
-degree(::FlintPadicField) = 1
 
 @doc Markdown.doc"""
     characteristic_polynomial(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{padic, qadic} -> Generic.Poly{T}

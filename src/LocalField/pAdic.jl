@@ -1,3 +1,9 @@
+################################################################################
+#
+#  Lifting methods
+#
+################################################################################
+
 @doc Markdown.doc"""
   lift(a::padic) -> fmpz
 
@@ -11,6 +17,35 @@ function lift(a::padic)
   return b
 end
 
+@doc Markdown.doc"""
+    lift(a::T, K::PadicField) where T <: Union{Nemo.nmod, Generic.Res{fmpz}, gfp_elem} -> padic
+
+Computes a lift of the element from the residue ring.
+"""
+function lift(a::T, K::PadicField) where T <: Union{Nemo.nmod, Generic.Res{fmpz}, gfp_elem} 
+  n = modulus(parent(a))
+  p = prime(K)
+  v, fl = remove(n, p)
+  @assert isone(fl)
+  return Hecke.lift(a) + O(K, p^v)
+end
+
+@doc Markdown.doc"""
+    lift(x::nmod, Q::PadicField) -> padic
+
+Computes a lift of the element from the residue ring.
+"""
+function lift(x::nmod, Q::PadicField)
+    z = Q()
+    z.u = lift(x)
+  return setprecision(z, 1)
+end
+
+################################################################################
+#
+#  Precision
+#
+################################################################################
 
 function Base.setprecision(f::Generic.Poly{padic}, N::Int)
   f = deepcopy(f)
@@ -27,21 +62,10 @@ function setprecision!(f::Generic.Poly{padic}, N::Int)
   return f
 end
 
-function is_eisenstein(f::Generic.Poly{<:NALocalFieldElem})
+################################################################################
+#
+#  Field invariants
+#
+################################################################################
 
-    pi = uniformizer(base_ring(f))
-    g  = valuation(pi)
-    
-    if valuation(f.coeffs[1]) != g
-        return false
-    end
-    for i=2:length(f)-1
-        if valuation(f.coeffs[i]) < g
-            return false
-        end
-    end
-    if valuation(f.coeffs[length(f)]) != 0
-        return false
-    end
-    return true
-end
+degree(::FlintPadicField) = 1

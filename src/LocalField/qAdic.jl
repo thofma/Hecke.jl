@@ -3,6 +3,16 @@ add_assert_scope(:qAdic)
 
 export setprecision!, defining_polynomial
 
+################################################################################
+#
+#  Precision
+#
+################################################################################
+
+#TODO: Looks like most of this file belongs in Nemo.
+
+Base.precision(Q::FlintQadicField) = Q.prec_max
+
 function Base.setprecision(q::qadic, N::Int)
   r = parent(q)()
   r.N = N
@@ -66,6 +76,13 @@ function Base.setprecision(a::Generic.MatSpaceElem{qadic}, N::Int)
   return B
 end
 
+################################################################################
+#
+#  Unary operations
+#
+################################################################################
+
+
 function trace(r::qadic)
   t = base_ring(parent(r))()
   ccall((:qadic_trace, :libflint), Nothing, (Ref{padic}, Ref{qadic}, Ref{FlintQadicField}), t, r, parent(r))
@@ -77,6 +94,12 @@ function norm(r::qadic)
   ccall((:qadic_norm, :libflint), Nothing, (Ref{padic}, Ref{qadic}, Ref{FlintQadicField}), t, r, parent(r))
   return t
 end
+
+################################################################################
+#
+#  Coefficients
+#
+################################################################################
 
 function setcoeff!(x::fq_nmod, n::Int, u::UInt)
   ccall((:nmod_poly_set_coeff_ui, :libflint), Nothing, 
@@ -102,6 +125,13 @@ function setcoeff!(x::qadic, i::Int, y::UInt)
   ccall((:padic_poly_set_coeff_padic, :libflint), Nothing, 
            (Ref{qadic}, Int, Ref{padic}, Ref{FlintQadicField}), x, i, Y, parent(x))
 end
+
+################################################################################
+#
+#  Lifting and residue fields
+#
+################################################################################
+
 
 function ResidueField(Q::FlintQadicField)
   k = GF(Int(prime(Q)), degree(Q))[1]
@@ -146,6 +176,7 @@ function coefficient_ring(Q::FlintQadicField)
 end
 coefficient_field(Q::FlintQadicField) = coefficient_ring(Q)
 
+# This is a pretty terrible name. Should be prime_power or something.
 function prime(R::PadicField, i::Int)
   p = fmpz()
   ccall((:padic_ctx_pow_ui, :libflint), Cvoid, (Ref{fmpz}, Int, Ref{PadicField}), p, i, R)
@@ -157,6 +188,40 @@ function getUnit(a::padic)
   ccall((:fmpz_set, :libflint), Cvoid, (Ref{fmpz}, Ref{Int}), u, a.u)
   return u, a.v, a.N
 end
+
+################################################################################
+#
+#  lifting methods.
+#
+################################################################################
+
+@doc Markdown.doc"""
+    lift(x::fq_nmod, Q::QadicField) -> qadic
+
+Computes a lift of the element from the residue ring.
+"""
+function lift(x::Union{fq,fq_nmod}, Q::QadicField)
+  z = Q()
+  for i=0:degree(Q)-1
+    setcoeff!(z, i, coeff(x, i))
+  end
+  return setprecision(z, 1)
+end
+
+@doc Markdown.doc"""
+    lift(x::fq_nmod_poly, Kt) -> Generic.Poly{qadic}
+
+Computes a lift of the polynomial lifting every coefficient of the residue ring.
+"""
+function lift(x::fq_nmod_poly, Kt)
+  K = base_ring(Kt)
+  coeffs = Vector{qadic}(undef, degree(x)+1)
+  for i = 1:degree(x)+1
+    coeffs[i] = lift(coeff(x, i-1), K)
+  end
+  return Kt(coeffs)
+end
+
 
 function lift_reco(::FlintRationalField, a::padic; reco::Bool = false)
   if reco
@@ -176,12 +241,18 @@ function lift_reco(::FlintRationalField, a::padic; reco::Bool = false)
   end
 end
 
+################################################################################
+#
+#  Misc
+#
+################################################################################
+
+
 function *(A::fmpz_mat, B::MatElem{padic})
   return matrix(base_ring(B), A) * B
 end
 
 uniformizer(Q::FlintQadicField) = Q(prime(Q))
-Base.precision(Q::FlintQadicField) = Q.prec_max
 
 uniformizer(Q::FlintPadicField) = Q(prime(Q))
 Base.precision(Q::FlintPadicField) = Q.prec_max
