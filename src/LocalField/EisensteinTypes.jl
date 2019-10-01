@@ -23,7 +23,7 @@
 ## Doing things with Eisenstein extensions.
 
 ## TODO: Move this to AbstractAlgebra?? 
-function gen(a::AbstractAlgebra.Generic.ResField{AbstractAlgebra.Generic.Poly{padic}})
+function gen(a::AbstractAlgebra.Generic.ResField{<:AbstractAlgebra.Generic.Poly{<:RingElem}})
     return a(gen(parent(a.modulus)))
 end
 
@@ -34,7 +34,7 @@ const EisensteinFieldID = Dict{Tuple{FmpqPolyRing, fmpq_poly, Symbol}, Field}()
 # Coefficients of the defining polynomial are approximate.
 # Defining polynomial *can* change precision.
 
-mutable struct EisensteinField{NonArchimedeanLocalFieldElem} <: NonArchimedeanLocalField
+mutable struct EisensteinField{NonArchLocalFieldElem} <: NonArchLocalField
     
     # Cache inverse of the polynomial.
     #
@@ -70,17 +70,19 @@ mutable struct EisensteinField{NonArchimedeanLocalFieldElem} <: NonArchimedeanLo
         eisf.base_ring = base_ring(pol)
         eisf.S = s
 
-        # Construct a new parent for printing reasons.
-        P = PolynomialRing(base_ring(pol), s)
+        # Construct a new parent to actually print a generator nicely.
+        P,Pvar = PolynomialRing(base_ring(pol), string(s))
+        eisf.res_ring = ResidueField(P, pol(Pvar))
 
-        eisf.res_ring = ResidueField(P, P(pol))
-        
+        # Construct the generator
+        g = eisf_elem(eisf)
+        g.res_ring_elt = gen(eisf.res_ring)
+
         eisf.auxilliary_data = Array{Any}(undef, 5)
-
         if cached
             EisensteinFieldID[parent(pol), pol, s] = eisf
         end
-        return eisf
+        return eisf, g
    end
 end
 

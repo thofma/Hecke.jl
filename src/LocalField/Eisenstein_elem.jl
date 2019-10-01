@@ -334,19 +334,19 @@ end
 #
 ###############################################################################
 
-function +(a::eisf_elem, b::Union{Int,fmpz,fmpq,padic})
+function +(a::eisf_elem, b::Union{Int,fmpz,fmpq,FlintLocalFieldElem})
    r = a.parent()
    r.res_ring_elt = a.res_ring_elt + b
    return r
 end
 
-function -(a::eisf_elem, b::Union{Int,fmpz,fmpq,padic})
+function -(a::eisf_elem, b::Union{Int,fmpz,fmpq,FlintLocalFieldElem})
    r = a.parent()
    r.res_ring_elt = a.res_ring_elt - b
    return r
 end
 
-function -(a::Union{Int,fmpz,fmpq,padic}, b::eisf_elem)
+function -(a::Union{Int,fmpz,fmpq,FlintLocalFieldElem}, b::eisf_elem)
    r = b.parent()
    r.res_ring_elt = a - b.res_ring_elt
    return r
@@ -370,7 +370,7 @@ end
 
 -(a::eisf_elem, b::Rational) = a - fmpq(b)
 
-function *(a::eisf_elem, b::Union{Int,fmpz,fmpq,padic})
+function *(a::eisf_elem, b::Union{Int,fmpz,fmpq,FlintLocalFieldElem})
     r = a.parent()
     r.res_ring_elt = a.res_ring_elt*b
     return r
@@ -391,7 +391,7 @@ end
 *(a::fmpq, b::eisf_elem) = b * a
 
 
-function /(a::eisf_elem, b::Union{Int,fmpz,fmpq,padic})
+function /(a::eisf_elem, b::Union{Int,fmpz,fmpq,FlintLocalFieldElem})
     r = a.parent()
     r.res_ring_elt = a.res_ring_elt*b
     return r
@@ -492,7 +492,7 @@ function (a::EisensteinField)(b::eisf_elem)
    return b
 end
 
-function (a::EisensteinField)(b::padic)
+function (a::EisensteinField)(b::FlintLocalFieldElem)
     parent(b) != base_ring(a) && error("Cannot coerce element")
     r = eisf_elem(a)
     r.res_ring_elt = a.res_ring(b)
@@ -590,8 +590,9 @@ end #if
 """
 function EisensteinField(f::AbstractAlgebra.Generic.Poly{<:NALocalFieldElem}, s::AbstractString;
                          cached::Bool = false, check::Bool = true)
-   S = Symbol(s)
-   parent_obj = EisensteinField(f, S, cached, check)
-   return parent_obj, gen(parent_obj)
+    S = Symbol(s)
+    return EisensteinField(f, S, cached, check)
+    #parent_obj = EisensteinField(f, S, cached, check)
+   #return parent_obj, gen(parent_obj)
 end
 
