@@ -126,6 +126,14 @@ function setcoeff!(x::qadic, i::Int, y::UInt)
            (Ref{qadic}, Int, Ref{padic}, Ref{FlintQadicField}), x, i, Y, parent(x))
 end
 
+
+function coefficient_ring(Q::FlintQadicField)
+  return FlintPadicField(prime(Q), precision(Q))
+end
+coefficient_field(Q::FlintQadicField) = coefficient_ring(Q)
+
+
+
 ################################################################################
 #
 #  Lifting and residue fields
@@ -155,46 +163,6 @@ function ResidueField(Q::FlintQadicField)
   return k, MapFromFunc(pro, lif, Q, k)
 end
 
-function ResidueField(Q::FlintPadicField)
-  k = GF(Int(prime(Q)))
-  pro = function(x::padic)
-    v = valuation(x)
-    v < 0 && error("elt non integral")
-    v > 0 && return k(0)
-    z = k(lift(x))
-    return z
-  end
-  lif = function(x::gfp_elem)
-    z = Q(lift(x))
-    return z
-  end
-  return k, MapFromFunc(pro, lif, Q, k)
-end
-
-function coefficient_ring(Q::FlintQadicField)
-  return FlintPadicField(prime(Q), precision(Q))
-end
-coefficient_field(Q::FlintQadicField) = coefficient_ring(Q)
-
-# This is a pretty terrible name. Should be prime_power or something.
-function prime(R::PadicField, i::Int)
-  p = fmpz()
-  ccall((:padic_ctx_pow_ui, :libflint), Cvoid, (Ref{fmpz}, Int, Ref{PadicField}), p, i, R)
-  return p
-end
-
-function getUnit(a::padic)
-  u = fmpz()
-  ccall((:fmpz_set, :libflint), Cvoid, (Ref{fmpz}, Ref{Int}), u, a.u)
-  return u, a.v, a.N
-end
-
-################################################################################
-#
-#  lifting methods.
-#
-################################################################################
-
 @doc Markdown.doc"""
     lift(x::fq_nmod, Q::QadicField) -> qadic
 
@@ -223,24 +191,6 @@ function lift(x::fq_nmod_poly, Kt)
 end
 
 
-function lift_reco(::FlintRationalField, a::padic; reco::Bool = false)
-  if reco
-    u, v, N = getUnit(a)
-    R = parent(a)
-    fl, c, d = rational_reconstruction(u, prime(R, N-v))
-    !fl && return nothing
-    
-    x = FlintQQ(c, d)
-    if v < 0
-      return x//prime(R, -v)
-    else
-      return x*prime(R, v)
-    end
-  else
-    return lift(FlintQQ, a)
-  end
-end
-
 ################################################################################
 #
 #  Misc
@@ -254,15 +204,11 @@ end
 
 uniformizer(Q::FlintQadicField) = Q(prime(Q))
 
-uniformizer(Q::FlintPadicField) = Q(prime(Q))
-Base.precision(Q::FlintPadicField) = Q.prec_max
-
 nrows(A::Array{T, 2}) where {T} = size(A)[1]
 ncols(A::Array{T, 2}) where {T} = size(A)[2]
 
 import Base.^
 ^(a::qadic, b::qadic) = exp(b*log(a))
-^(a::padic, b::padic) = exp(b*log(a))
 
 import Base.//
 //(a::qadic, b::qadic) = divexact(a, b)

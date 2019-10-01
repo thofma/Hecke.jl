@@ -1,6 +1,4 @@
 
-
-
 ## Payani's algorithm.
 
 eisf_elem = Hecke.eisf_elem
