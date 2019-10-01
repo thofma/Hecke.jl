@@ -16,15 +16,27 @@ elem_type(::Type{EisensteinField{T}}) where T = eisf_elem
 
 @doc Markdown.doc"""
     base_ring(a::EisensteinField)
-> Not implemented.
+> Returns the base ring of `a`.
 """
 base_ring(a::EisensteinField) = a.base_ring
 
 @doc Markdown.doc"""
+    base_field(a::EisensteinField)
+> Returns the base ring of `a`.
+"""
+base_field(a::EisensteinField) = base_ring(a)
+
+@doc Markdown.doc"""
     base_ring(a::eisf_elem)
-> Not implemented.
+> Returns the base ring of the parent of `a`.
 """
 base_ring(a::eisf_elem) = a.base_ring
+
+@doc Markdown.doc"""
+    base_field(a::eisf_elem)
+> Returns the base ring of the parent of `a`.
+"""
+base_field(a::eisf_elem) = base_ring(a)
 
 isdomain_type(::Type{eisf_elem}) = true
 
@@ -87,6 +99,14 @@ end
 function zero(a::EisensteinField)
     return a(0)
 end
+
+#TODO: THIS IS VERY WRONG. The fix should occur in AbstractAlgebra.
+#TODO: Make this more efficient.
+function zero!(a::eisf_elem)
+    a.res_ring_elt = zero(parent(a)).res_ring_elt
+    a
+end
+
 
 # @doc Markdown.doc"""
 #     isgen(a::eisf_elem)
@@ -186,13 +206,26 @@ end
 
 end #if
 
+# TODO: Decide whether this is a "relative" or absolute.
 @doc Markdown.doc"""
     degree(a::EisensteinField)
-> Return the degree of the given number field, i.e. the degree of its
+> Return the degree of the given Eisenstein field over it's base. i.e. the degree of its
 > defining polynomial.
 """
 degree(a::EisensteinField) = degree(a.pol)
 
+
+@doc Markdown.doc"""
+    absolute_degree(a::NALocalField)
+> Return the absolute degree of the given Eisenstein field over the ground padic field.
+"""
+absolute_degree(a::PadicField) = 1
+absolute_degree(a::QadicField) = degree(a)
+
+function absolute_degree(a::NALocalField)
+    return degree(a)*absolute_degree(base_ring(a))
+end
+    
 # By our definition, the generator of a field of eisenstein type is the uniformizer.
 uniformizer(a::EisensteinField) = gen(a)
 
@@ -233,11 +266,11 @@ function -(a::eisf_elem)
 end
 
 function valuation(a::eisf_elem)
-    coeffs = coefficients(a.res_ring_elt.data)
+    coeffs = coefficients(a)
 
     min = valuation(coeffs[0])
     for i = 1:length(coeffs)-1
-        newv = valuation(coeffs[i]) + (i)//degree(a.parent.pol)
+        newv = valuation(coeffs[i]) + (i)//absolute_degree(parent(a))
         if newv < min
             min = newv
         end
@@ -245,6 +278,8 @@ function valuation(a::eisf_elem)
     return min
 end
 
+#TODO: Replace `inv` with a Hensel lifting version.
+inv(a::eisf_elem) = one(parent(a))//a
 
 ################################################################################
 #
@@ -258,39 +293,67 @@ function lift(x::FinFieldElem, K::EisensteinField)
 end
 
 
-function residue_image(a::padic)
-    Fp = ResidueRing(FlintZZ,parent(a).p)
-    return Fp(lift(a))
+# function residue_image(a::padic)
+#     Fp = ResidueRing(FlintZZ,parent(a).p)
+#     return Fp(lift(a))
+# end
+
+# function residue_image(a::qadic)
+#     display("WARNING!!!! Lazy testing code, assumes that the residue field is given "*
+#             "by a Conway polynomial.")
+
+#     Qq = parent(a)
+#     R,x = PolynomialRing(FlintZZ,"x")
+
+#     Fp = FlintFiniteField(prime(Qq))
+#     Fq = FlintFiniteField(prime(Qq), degree(Qq), "b")[1]
+#     return Fq(change_base_ring(lift(R,a),Fp))
+# end
+
+coefficients(a::eisf_elem) = coefficients(a.res_ring_elt.data)
+
+coeff(a::eisf_elem,i::Int) = coeff(a.res_ring_elt.data, i)
+
+function setcoeff!(a::eisf_elem, i::Int64, c::NALocalFieldElem)
+    setcoeff!(a.res_ring_elt.data, i, c)
 end
 
-function residue_image(a::qadic)
-    display("WARNING!!!! Lazy testing code, assumes that the residue field is given "*
-            "by a Conway polynomial.")
+function ResidueField(K::EisensteinField)
+    k, mp_struct = ResidueField(base_ring(K))
 
-    Qq = parent(a)
-    R,x = PolynomialRing(FlintZZ,"x")
+    # Unpack the map structure to get the maps to/from the residue field.
+    base_res  = mp_struct.f
+    base_lift = mp_struct.g
 
-    Fp = FlintFiniteField(prime(Qq))
-    Fq = FlintFiniteField(prime(Qq), degree(Qq), "b")[1]
-    return Fq(change_base_ring(lift(R,a),Fp))
-end
-
-
-## Need to implement "lift" for type Qq.
-
-function residue_image(a::eisf_elem)
-    coeffs = coefficients(a.res_ring_elt.data)
+    T = elem_type(k)
     
-    for i = 0:length(coeffs)-1
-        newv = valuation(coeffs[i]) + (i)//degree(a.parent.pol)
-        if newv < 0
-            error("Valuation of input is negative.")
-        end
+    _residue = function(x::eisf_elem)
+        v = valuation(x)
+        v < 0 && error("element $x is not integral.")
+        return base_res(coeff(x,0))
     end
-    return residue_image(coeffs[0])
+
+    #TODO: See if the residue field elem type can be declared dynamically.
+    function _lift(x)
+        return K(base_lift(x))
+    end
+    
+    return k, MapFromFunc(_residue, _lift, K, k)
 end
 
-inv(a::eisf_elem) = one(parent(a))//a
+
+# function residue_image(a::eisf_elem)
+#     coeffs = coefficients(a.res_ring_elt.data)
+    
+#     for i = 0:length(coeffs)-1
+#         newv = valuation(coeffs[i]) + (i)//degree(a.parent.pol)
+#         if newv < 0
+#             error("Valuation of input is negative.")
+#         end
+#     end
+#     return residue_image(coeffs[0])
+# end
+
 
 ###############################################################################
 #
@@ -487,11 +550,21 @@ function (a::EisensteinField)()
     return z
 end
 
+#TODO: Perhaps do some santiy checks as to not to drive the user insane.
+#TODO: The number field case likely has a useful pattern here.
 function (a::EisensteinField)(b::eisf_elem)
-   parent(b) != a && error("Cannot coerce element")
-   return b
+    parent(b) == a && return b
+
+    if parent(b) == base_ring(a)
+        r = eisf_elem(a)
+        r.res_ring_elt = a.res_ring(b)
+        return r
+    end
+    
+    return a(base_ring(a)(b))
 end
 
+# Base case dispatch.
 function (a::EisensteinField)(b::FlintLocalFieldElem)
     parent(b) != base_ring(a) && error("Cannot coerce element")
     r = eisf_elem(a)

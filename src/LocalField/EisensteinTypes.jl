@@ -72,7 +72,7 @@ mutable struct EisensteinField{NonArchLocalFieldElem} <: NonArchLocalField
 
         # Construct a new parent to actually print a generator nicely.
         P,Pvar = PolynomialRing(base_ring(pol), string(s))
-        eisf.res_ring = ResidueField(P, pol(Pvar))
+        eisf.res_ring = ResidueField(P, pol(Pvar), cached=cached)
 
         # Construct the generator
         g = eisf_elem(eisf)
