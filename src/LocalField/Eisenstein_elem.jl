@@ -68,7 +68,7 @@ end
 
 function deepcopy(a::eisf_elem)
     r = parent(a)()
-    r.res_ring_elt = deepcopy(a.res_ring_elt)
+    r.data_ring_elt = deepcopy(a.data_ring_elt)
     return r
 end
 
@@ -78,7 +78,7 @@ end
 """
 function gen(a::EisensteinField)
     r = eisf_elem(a)
-    r.res_ring_elt = gen(a.res_ring)
+    r.data_ring_elt = gen(a.data_ring)
    return r
 end
 
@@ -103,7 +103,7 @@ end
 #TODO: THIS IS VERY WRONG. The fix should occur in AbstractAlgebra.
 #TODO: Make this more efficient.
 function zero!(a::eisf_elem)
-    a.res_ring_elt = zero(parent(a)).res_ring_elt
+    a.data_ring_elt = zero(parent(a)).data_ring_elt
     a
 end
 
@@ -206,7 +206,7 @@ end
 
 end #if
 
-# TODO: Decide whether this is a "relative" or absolute.
+# TODO: Decide whether this is a "relative" or absolute method.
 @doc Markdown.doc"""
     degree(a::EisensteinField)
 > Return the degree of the given Eisenstein field over it's base. i.e. the degree of its
@@ -242,7 +242,7 @@ function show(io::IO, a::EisensteinField{T}) where T
 end
 
 function show(io::IO, x::eisf_elem)
-   print(io, x.res_ring_elt)
+   print(io, x.data_ring_elt)
 end
 
 needs_parentheses(::eisf_elem) = true
@@ -261,7 +261,7 @@ canonical_unit(x::eisf_elem) = x
 
 function -(a::eisf_elem)
     b = a.parent(a)
-    b.res_ring_elt = -a.res_ring_elt
+    b.data_ring_elt = -a.data_ring_elt
     return b
 end
 
@@ -310,12 +310,12 @@ end
 #     return Fq(change_base_ring(lift(R,a),Fp))
 # end
 
-coefficients(a::eisf_elem) = coefficients(a.res_ring_elt.data)
+coefficients(a::eisf_elem) = coefficients(a.data_ring_elt.data)
 
-coeff(a::eisf_elem,i::Int) = coeff(a.res_ring_elt.data, i)
+coeff(a::eisf_elem,i::Int) = coeff(a.data_ring_elt.data, i)
 
 function setcoeff!(a::eisf_elem, i::Int64, c::NALocalFieldElem)
-    setcoeff!(a.res_ring_elt.data, i, c)
+    setcoeff!(a.data_ring_elt.data, i, c)
 end
 
 function ResidueField(K::EisensteinField)
@@ -343,7 +343,7 @@ end
 
 
 # function residue_image(a::eisf_elem)
-#     coeffs = coefficients(a.res_ring_elt.data)
+#     coeffs = coefficients(a.data_ring_elt.data)
     
 #     for i = 0:length(coeffs)-1
 #         newv = valuation(coeffs[i]) + (i)//degree(a.parent.pol)
@@ -364,32 +364,32 @@ end
 function +(a::eisf_elem, b::eisf_elem)
     check_parent(a, b)
     r = a.parent()
-    r.res_ring_elt = a.res_ring_elt + b.res_ring_elt
+    r.data_ring_elt = a.data_ring_elt + b.data_ring_elt
     return r
 end
 
 function -(a::eisf_elem, b::eisf_elem)
     check_parent(a, b)
     r = a.parent()
-    r.res_ring_elt = a.res_ring_elt - b.res_ring_elt
+    r.data_ring_elt = a.data_ring_elt - b.data_ring_elt
     return r
 end
 
 function *(a::eisf_elem, b::eisf_elem)
     check_parent(a, b)
     r = a.parent()
-    r.res_ring_elt = a.res_ring_elt * b.res_ring_elt
+    r.data_ring_elt = a.data_ring_elt * b.data_ring_elt
     return r
 end
 
-function divexact(a::eisf_elem, b::eisf_elem)
+function /(a::eisf_elem, b::eisf_elem)
     check_parent(a, b)
     r = a.parent()
-    r.res_ring_elt = a.res_ring_elt // b.res_ring_elt
+    r.data_ring_elt = a.data_ring_elt // b.data_ring_elt
     return r
 end
 
-/(a::eisf_elem, b::eisf_elem) = divexact(a,b)
+divexact(a::eisf_elem, b::eisf_elem) = a/b
 
 ###############################################################################
 #
@@ -399,19 +399,19 @@ end
 
 function +(a::eisf_elem, b::Union{Int,fmpz,fmpq,FlintLocalFieldElem})
    r = a.parent()
-   r.res_ring_elt = a.res_ring_elt + b
+   r.data_ring_elt = a.data_ring_elt + b
    return r
 end
 
 function -(a::eisf_elem, b::Union{Int,fmpz,fmpq,FlintLocalFieldElem})
    r = a.parent()
-   r.res_ring_elt = a.res_ring_elt - b
+   r.data_ring_elt = a.data_ring_elt - b
    return r
 end
 
 function -(a::Union{Int,fmpz,fmpq,FlintLocalFieldElem}, b::eisf_elem)
    r = b.parent()
-   r.res_ring_elt = a - b.res_ring_elt
+   r.data_ring_elt = a - b.data_ring_elt
    return r
 end
 
@@ -435,7 +435,7 @@ end
 
 function *(a::eisf_elem, b::Union{Int,fmpz,fmpq,FlintLocalFieldElem})
     r = a.parent()
-    r.res_ring_elt = a.res_ring_elt*b
+    r.data_ring_elt = a.data_ring_elt*b
     return r
 end
 
@@ -456,31 +456,27 @@ end
 
 function /(a::eisf_elem, b::Union{Int,fmpz,fmpq,FlintLocalFieldElem})
     r = a.parent()
-    r.res_ring_elt = a.res_ring_elt*b
+    r.data_ring_elt = a.data_ring_elt/b
     return r
 end
 
-###
-if false
-//(a::eisf_elem, b::Int) = divexact(a, b)
+//(a::eisf_elem, b::Int) = a / parent(a)(b)
 
-//(a::eisf_elem, b::fmpz) = divexact(a, b)
+//(a::eisf_elem, b::fmpz) = a / parent(a)(b)
 
-//(a::eisf_elem, b::Integer) = a//fmpz(b)
+//(a::eisf_elem, b::Integer) = a // parent(a)(fmpz(b))
 
-//(a::eisf_elem, b::fmpq) = divexact(a, b)
+//(a::eisf_elem, b::fmpq) = a / parent(a)(b)
 
-//(a::Integer, b::eisf_elem) = divexact(a, b)
+//(a::Integer, b::eisf_elem) = parent(b)(a) / b
 
-//(a::fmpz, b::eisf_elem) = divexact(a, b)
+//(a::fmpz, b::eisf_elem) = parent(b)(a) / b
 
-//(a::fmpq, b::eisf_elem) = divexact(a, b)
+//(a::fmpq, b::eisf_elem) = parent(b)(a) / b
 
-//(a::Rational, b::eisf_elem) = divexact(fmpq(a), b)
+//(a::Rational, b::eisf_elem) = parent(b)(fmpq(a)) / b
 
-//(a::eisf_elem, b::Rational) = divexact(a, fmpq(b))
-
-end # if
+//(a::eisf_elem, b::Rational) = a / parent(a)(fmpq(b))
 
 ###############################################################################
 #
@@ -490,7 +486,7 @@ end # if
 
 function ^(a::eisf_elem, n::Int)
     r = a.parent()
-    r.res_ring_elt = a.res_ring_elt^n
+    r.data_ring_elt = a.data_ring_elt^n
    return r
 end
 
@@ -502,7 +498,7 @@ end
 
 function ==(a::eisf_elem, b::eisf_elem)
     check_parent(a, b)
-    return a.res_ring_elt == b.res_ring_elt
+    return a.data_ring_elt == b.data_ring_elt
 end
 
 ################################################################################
@@ -512,22 +508,22 @@ end
 ################################################################################
 
 @inline function add!(z::eisf_elem, x::eisf_elem, y::eisf_elem)
-  add!(z.res_ring_elt, x.res_ring_elt, y.res_ring_elt)
+  add!(z.data_ring_elt, x.data_ring_elt, y.data_ring_elt)
   return z
 end
 
 @inline function sub!(z::eisf_elem, x::eisf_elem, y::eisf_elem)
-  sub!(z.res_ring_elt, x.res_ring_elt, y.res_ring_elt)
+  sub!(z.data_ring_elt, x.data_ring_elt, y.data_ring_elt)
   return z
 end
 
 @inline function mul!(z::eisf_elem, x::eisf_elem, y::eisf_elem)
-  mul!(z.res_ring_elt, x.res_ring_elt, y.res_ring_elt)
+  mul!(z.data_ring_elt, x.data_ring_elt, y.data_ring_elt)
   return z
 end
 
 function addeq!(z::eisf_elem, x::eisf_elem)
-  addeq!(z.res_ring_elt, x.res_ring_elt)
+  addeq!(z.data_ring_elt, x.data_ring_elt)
   return z
 end
 
@@ -546,7 +542,7 @@ end
 function (a::EisensteinField)()
     z = eisf_elem(a)
     #u = z.u
-    z.res_ring_elt = a.res_ring()
+    z.data_ring_elt = a.data_ring()
     return z
 end
 
@@ -557,45 +553,38 @@ function (a::EisensteinField)(b::eisf_elem)
 
     if parent(b) == base_ring(a)
         r = eisf_elem(a)
-        r.res_ring_elt = a.res_ring(b)
+        r.data_ring_elt = a.data_ring(b)
         return r
     end
     
     return a(base_ring(a)(b))
 end
 
-# Base case dispatch.
 function (a::EisensteinField)(b::FlintLocalFieldElem)
     parent(b) != base_ring(a) && error("Cannot coerce element")
     r = eisf_elem(a)
-    r.res_ring_elt = a.res_ring(b)
+    r.data_ring_elt = a.data_ring(b)
    return r
 end
 
-
-@doc Markdown.doc"""
-    (a::EisensteinField)(c::Int)
-
-> Return $c$ as an element in $a$.
-"""
-# function (a::EisensteinField)(c::Int)
-#     z = eisf_elem(a)
-#     z.res_ring_elt = a.res_ring(c)
-#     return z
-# end
-
 function (a::EisensteinField)(c::fmpz)
     z = eisf_elem(a)
-    z.res_ring_elt = a.res_ring(c)
+    z.data_ring_elt = a.data_ring(c)
+    return z
+end
+
+function (a::EisensteinField)(c::fmpq)
+    z = eisf_elem(a)
+    z.data_ring_elt = a.data_ring(c)
     return z
 end
 
 (a::EisensteinField)(c::Integer) = a(fmpz(c))
 
+(a::EisensteinField)(c::Rational) = a(fmpq(c))
+
 ### Comment block.
 if false
-
-
 
 function (a::EisensteinField)(c::fmpq)
    z = eisf_elem(a)
@@ -603,10 +592,6 @@ function (a::EisensteinField)(c::fmpq)
          (Ref{eisf_elem}, Ref{fmpq}, Ref{EisensteinField}), z, c, a)
    return z
 end
-
-(a::EisensteinField)(c::Rational) = a(fmpq(c))
-
-
 
 # Debatable if we actually want this functionality...
 function (a::EisensteinField)(pol::fmpq_poly)

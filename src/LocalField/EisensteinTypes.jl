@@ -33,7 +33,16 @@ const EisensteinFieldID = Dict{Tuple{FmpqPolyRing, fmpq_poly, Symbol}, Field}()
 
 # Coefficients of the defining polynomial are approximate.
 # Defining polynomial *can* change precision.
+@doc Markdown.doc"""
+    EisensteinField{NonArchLocalFieldElem} <: NonArchLocalField
 
+> Type for Eisenstein extensions of local fields. Data fields are
+> - base_ring -- The ring of coefficients of the primitive element, which is also a uniformizer.
+> - pol       -- Defining polynomial.
+> - S         -- Symbol representing the primitive element.
+> - data_ring -- Ring storing representatives of the elements. The ring is the ResidueField defined by pol.
+> - auxilliary_data -- for that sweet, sweet, Hecke magic.
+"""
 mutable struct EisensteinField{NonArchLocalFieldElem} <: NonArchLocalField
     
     # Cache inverse of the polynomial.
@@ -54,7 +63,8 @@ mutable struct EisensteinField{NonArchLocalFieldElem} <: NonArchLocalField
     S::Symbol
     auxilliary_data::Array{Any, 1} # Storage for extensible data.
 
-    res_ring ## Temporary to get things off the ground. This may well be a poor choice.
+    ## Temporary to get things off the ground. This may well be a poor choice.
+    data_ring::AbstractAlgebra.Generic.ResField{<:AbstractAlgebra.Generic.Poly}
     
     function EisensteinField(pol::AbstractAlgebra.Generic.Poly{T}, s::Symbol,
                              cached::Bool = false, check::Bool = true) where T<:NALocalFieldElem
@@ -72,11 +82,11 @@ mutable struct EisensteinField{NonArchLocalFieldElem} <: NonArchLocalField
 
         # Construct a new parent to actually print a generator nicely.
         P,Pvar = PolynomialRing(base_ring(pol), string(s))
-        eisf.res_ring = ResidueField(P, pol(Pvar), cached=cached)
+        eisf.data_ring = ResidueField(P, pol(Pvar), cached=cached)
 
         # Construct the generator
         g = eisf_elem(eisf)
-        g.res_ring_elt = gen(eisf.res_ring)
+        g.data_ring_elt = gen(eisf.data_ring)
 
         eisf.auxilliary_data = Array{Any}(undef, 5)
         if cached
@@ -93,16 +103,23 @@ end
 mutable struct eisf_unit_internal <: NALocalFieldElem
     
     elem_coeffs
-    res_ring_elt     # Very likely we will need to implement operations from scratch.
+    data_ring_elt     # Very likely we will need to implement operations from scratch.
     debug_parent::EisensteinField # This should be removed eventually.
 end
 
+@doc Markdown.doc"""
+    eisf_elem <: NALocalFieldElem
+
+> Element type for an EisensteinField. Data fields are:
+> - parent        -- The EisensteinField to which the element belongs.
+> - data_ring_elt -- The representative in the data ring.
+"""
 mutable struct eisf_elem <: NALocalFieldElem
     u::eisf_unit_internal
     v::Integer
     N::Integer
     
-    res_ring_elt
+    data_ring_elt
     parent::EisensteinField
 
     function eisf_elem(p::EisensteinField)
@@ -114,7 +131,7 @@ mutable struct eisf_elem <: NALocalFieldElem
     function eisf_elem(p::EisensteinField, a::eisf_elem)
         r = new()
         r.parent = p
-        r.res_ring_elt = deepcopy(a.res_ring_elt)
+        r.data_ring_elt = deepcopy(a.data_ring_elt)
         return r
     end
 end

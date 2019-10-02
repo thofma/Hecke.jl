@@ -6,21 +6,15 @@ eisf_elem = Hecke.eisf_elem
 # TODO: Various division operators and coefficient manipulations need to be implemented.
 
 # Citation "krasner.pdf"
-import Base.//
-function //(f::Hecke.Generic.Poly{T}, b::T) where T <: NALocalFieldElem
-    g = deepcopy(f)
-    for i=1:degree(f)+1
-        g.coeffs[i] = g.coeffs[i]//b
-    end
-    return g
-end
+# import Base.//
+# function //(f::Hecke.Generic.Poly{T}, b::T) where T <: NALocalFieldElem
+#     g = deepcopy(f)
+#     for i=1:degree(f)+1
+#         g.coeffs[i] = g.coeffs[i]//b
+#     end
+#     return g
+# end
 
-
-function primitive_part(f)
-    K = base_ring(f)
-    val,i = findmin( valuation.(coefficients(f)) )
-    return f//coefficients(f)[i-1]
-end
 
 import Markdown
 @doc Markdown.doc"""
@@ -192,6 +186,33 @@ function integral_roots(f, K::Hecke.Field)
     #base_ring(f) != K && error("Not implemented unless the polynomial has base ring $K.")
     return integral_roots(change_base_ring(f,K))
 end
+
+
+######################################################################
+#
+# Tests!
+#
+######################################################################
+
+rts1 = roots(fK)
+correct = fmpz(5) + 138118274 + O(Qp,7^10)
+# + O(7^10)
+
+@assert length(rts1) == 1 && K(correct) == rts1[1]
+
+rts2 = roots(x^6 - 7, K)
+
+correct = [
+(2 + 4*7^1 + 6*7^2 + 3*7^3 + 2*7^5 + 6*7^6 + 2*7^7 + 4*7^8 + O(Qp,7^9))*θ
+(3 + 4*7^1 + 6*7^2 + 3*7^3 + 2*7^5 + 6*7^6 + 2*7^7 + 4*7^8 + O(Qp,7^9))*θ        
+(5 + 2*7^1 + 3*7^3 + 6*7^4 + 4*7^5 + 4*7^7 + 2*7^8 + O(Qp,7^9))*θ                
+θ                                                                             
+(4 + 2*7^1 + 3*7^3 + 6*7^4 + 4*7^5 + 4*7^7 + 2*7^8 + O(Qp,7^9))*θ                
+(6 + 6*7^1 + 6*7^2 + 6*7^3 + 6*7^4 + 6*7^5 + 6*7^6 + 6*7^7 + 6*7^8 + O(Qp,7^9))*θ
+]
+
+@assert rts2 == correct
+
 
 
 nothing
