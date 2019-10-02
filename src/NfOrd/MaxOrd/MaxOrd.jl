@@ -1,5 +1,5 @@
 
-export maximal_order, pmaximal_order, poverorder, MaximalOrder, ring_of_integers
+export maximal_order, poverorder, MaximalOrder, ring_of_integers
 
 
 ###############################################################################
@@ -20,7 +20,7 @@ function MaximalOrder(O::NfAbsOrd{S, T}; index_divisors::Vector{fmpz} = fmpz[], 
     M = _get_maximal_order(K)::typeof(O)
     return M
   catch e
-    if !isa(e, AccessorNotSetError) 
+    if !isa(e, AccessorNotSetError)
       rethrow(e)
     end
     M = new_maximal_order(O, index_divisors = index_divisors, disc = discriminant, ramified_primes = ramified_primes)
@@ -35,7 +35,7 @@ end
     maximal_order(K::Union{AnticNumberField, NfAbsNS}; discriminant::fmpz, ramified_primes::Vector{fmpz}) -> NfAbsOrd
 
 Returns the maximal order of $K$. Additional information can be supplied if they are already known, as the ramified primes
-or the discriminant of the maximal order.  
+or the discriminant of the maximal order.
 
 # Example
 
@@ -114,7 +114,7 @@ function pmaximal_overorder_at(O::NfOrd, primes::Array{fmpz, 1})
   Zx = PolynomialRing(FlintZZ, "x", cached = false)[1]
   f = Zx(K.pol)
   for i in 1:length(primes1)
-    p = primes[i]
+    p = primes1[i]
     @vprint :NfOrd 1 "Computing p-maximal overorder for $p ..."
     if !divisible(ind, p) || isregular_at(f, p)
       O1 = pmaximal_overorder(EO, p)
@@ -147,14 +147,14 @@ function new_maximal_order(O::NfOrd; index_divisors::Vector{fmpz} = fmpz[], disc
   K = nf(O)
   if degree(K) == 1
     O.ismaximal = 1
-    return O  
+    return O
   end
 
   if isdefining_polynomial_nice(K) && !isone(denominator(basis_mat_inv(O)))
     #The order does not contain the equation order. We add them
     O = O + EquationOrder(K)
   end
-  
+
   if isdefining_polynomial_nice(K) && (isequation_order(O) || isone(denominator(basis_mat_inv(O))))
     Zx, x = PolynomialRing(FlintZZ, "x", cached = false)
     f1 = Zx(K.pol)
@@ -166,11 +166,11 @@ function new_maximal_order(O::NfOrd; index_divisors::Vector{fmpz} = fmpz[], disc
     M = trace_matrix(O)
     @vtime :NfOrd 1 l = divisors(M, ds)
   end
-  
+
   @vprint :NfOrd 1 "Computing some factors of the discriminant\n"
 
 
-  #No, factors of the discriminant appearing in the 
+  #No, factors of the discriminant appearing in the
   if !isempty(index_divisors)
     append!(l, index_divisors)
   end
@@ -253,11 +253,11 @@ function new_maximal_order(O::NfOrd; index_divisors::Vector{fmpz} = fmpz[], disc
   end
   O1.ismaximal = 1
   return O1
-  
+
 end
 
 function _TameOverorderBL(O::NfOrd, lp::Array{fmpz,1})
-  
+
   OO = O
   M = coprime_base(lp)
   Q = fmpz[]
@@ -287,11 +287,8 @@ function _TameOverorderBL(O::NfOrd, lp::Array{fmpz,1})
 
 end
 
-
-
-
 function _qradical(O::NfOrd, q::fmpz)
-  
+
   d = degree(O)
   K = nf(O)
   R = ResidueRing(FlintZZ, q, cached=false)
@@ -317,7 +314,7 @@ function _qradical(O::NfOrd, q::fmpz)
       if !isone(M1[i, i])
         if M1[i, i] != q && !isone(gcd(M1[i, i], q))
           return M1[i, i], ideal(O, q)
-        end 
+        end
       end
     end
     I1 = ideal(O, q, gen2)
@@ -330,8 +327,8 @@ function _qradical(O::NfOrd, q::fmpz)
   for i = 1:k
     for j = 1:d
       na = lift(B[j, i])
-      if q != na && !isone(gcd(na, q))
-        return n1, ideal(O, q)
+      if q != na && !iszero(na) && !isone(gcd(na, q))
+        return na, ideal(O, q)
       end
       M2[i, j] = na
     end
@@ -344,7 +341,7 @@ function _qradical(O::NfOrd, q::fmpz)
   for i = 1:d
     if M2[i, i] != q && !isone(gcd(M2[i, i], q))
       return M2[i, i], ideal(O, q)
-    end 
+    end
   end
   I = ideal(O, M2)
   I.minimum = q
@@ -354,7 +351,7 @@ function _qradical(O::NfOrd, q::fmpz)
 end
 
 function _cycleBL(O::NfOrd, q::fmpz)
-  
+
   q1, I = _qradical(O, q)
   if !isone(q1)
     return O, q1
@@ -440,8 +437,8 @@ end
 
 
 function TameOverorderBL(O::NfOrd, lp::Array{fmpz,1}=fmpz[])
-    
-  # First, we hope that we can get a factorization of the discriminant by computing 
+
+  # First, we hope that we can get a factorization of the discriminant by computing
   # the structure of the group OO^*/OO
   OO=O
   list = append!(elementary_divisors(trace_matrix(OO)), primes_up_to(degree(O)))
@@ -568,7 +565,7 @@ function pmaximal_overorder(O::NfAbsOrd, p::fmpz)
     return O
   end
   d = discriminant(O)
-  if !iszero(rem(d, p^2)) 
+  if !iszero(rem(d, p^2))
     push!(O.primesofmaximality, p)
     return O
   end
@@ -606,7 +603,7 @@ Computes the order $(I : I)$, which is the set of all $x \in K$
 with $xI \subseteq I$.
 """
 function ring_of_multipliers(a::NfAbsOrdIdl)
-  O = order(a) 
+  O = order(a)
   n = degree(O)
   bmatinv = basis_mat_inv(a, copy = false)
   if isdefined(a, :gens) && length(a.gens) < n
@@ -615,7 +612,7 @@ function ring_of_multipliers(a::NfAbsOrdIdl)
     B = basis(a, copy = false)
   end
   @assert length(B) > 0
-  id_gen = zero_matrix(FlintZZ, 2*n, n) 
+  id_gen = zero_matrix(FlintZZ, 2*n, n)
   m = zero_matrix(FlintZZ, n*length(B), n)
   ind = 1
   modu = minimum(a)*bmatinv.den
@@ -627,7 +624,7 @@ function ring_of_multipliers(a::NfAbsOrdIdl)
         continue
       end
     end
-    M = representation_matrix_mod(B[i], modu) 
+    M = representation_matrix_mod(B[i], modu)
     _copy_matrix_into_matrix(id_gen, 1, 1, M)
     hnf_modular_eldiv!(id_gen, minimum(a), :lowerleft)
     mod!(M, minimum(a)*bmatinv.den)
@@ -642,7 +639,7 @@ function ring_of_multipliers(a::NfAbsOrdIdl)
   end
   if !isone(bmatinv.den)
     divexact!(m, m, bmatinv.den)
-  end 
+  end
   hnf_modular_eldiv!(m, minimum(a))
   mhnf = view(m, 1:n, 1:n)
   s = prod(mhnf[i,i] for i = 1:n)
@@ -678,7 +675,7 @@ end
 @doc Markdown.doc"""
     factor_shape_refined(f::gfp_poly)
 
-Given a polynomial f over a finite field, it returns an array having one 
+Given a polynomial f over a finite field, it returns an array having one
 entry for every irreducible factor giving its degree and its multiplicity.
 """
 function factor_shape_refined(x::gfp_poly) where {T <: RingElem}
@@ -789,7 +786,7 @@ end
 function pradical_trace1(O::NfOrd, p::Union{Integer, fmpz})
   if isone(gcd(discriminant(O), p))
     return ideal(O, p)
-  end 
+  end
   d = degree(O)
   M = trace_matrix(O)
   K = nf(O)
@@ -811,7 +808,7 @@ function pradical_trace1(O::NfOrd, p::Union{Integer, fmpz})
   if iszero(k)
     return ideal(O, p)
   end
-  
+
   gens = NfOrdElem[O(p), gen2]
   for i = 1:k
     coords = Vector{fmpz}(undef, d)
@@ -833,7 +830,7 @@ function pradical_trace1(O::NfOrd, p::Union{Integer, fmpz})
   end
   for i = 1:d
     for j = 1:i
-      M2[i+length(gens)-2, j] = M1[i, j] 
+      M2[i+length(gens)-2, j] = M1[i, j]
     end
   end
   hnf_modular_eldiv!(M2, fmpz(p), :lowerleft)
@@ -851,11 +848,11 @@ function pradical1(O::NfOrd, p::Union{Integer, fmpz})
     end
   end
   d = degree(O)
-  
+
   if !isdefining_polynomial_nice(nf(O))
     return pradical(O, p)
   end
-  
+
   #Trace method if the prime is large enough
   if p > d
     return pradical_trace1(O, p)
@@ -880,7 +877,7 @@ function prefactorization(f::fmpz_poly, d::fmpz)
     if isone(d1) || iszero(d1)
       continue
     end
-    
+
     R = ResidueRing(FlintZZ, d1, cached = false)
     Rx = PolynomialRing(R, "x", cached = false)[1]
     ff = Rx(f)
@@ -907,7 +904,7 @@ function prefactorization(f::fmpz_poly, d::fmpz)
 end
 
 
- 
+
 function _gcd_with_failure(a::fmpz_mod_poly, b::fmpz_mod_poly)
   f = fmpz()
   G = parent(a)()
@@ -915,4 +912,3 @@ function _gcd_with_failure(a::fmpz_mod_poly, b::fmpz_mod_poly)
               (Ref{fmpz}, Ref{fmpz_mod_poly}, Ref{fmpz_mod_poly}, Ref{fmpz_mod_poly}), f, G, a, b)
   return f, G
 end
-

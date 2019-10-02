@@ -136,7 +136,7 @@ end
 
 function show_quad(io::IO, q::AnticNumberField)
   d = trail(q.pol)
-  if d > 0
+  if d < 0
     print(io, "Real quadratic field by ", q.pol)
   else
     print(io, "Imaginary quadratic field by ", q.pol)
@@ -145,6 +145,11 @@ end
 
 function quadratic_field(d::Integer; cached::Bool = true, check::Bool = true)
   return quadratic_field(fmpz(d), cached = cached, check = check)
+end
+
+function rationals_as_number_field()
+  Qx, x = FlintQQ["x"]
+  return number_field(x-1)
 end
 
 ################################################################################

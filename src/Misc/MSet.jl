@@ -39,11 +39,12 @@ Base.IteratorEltype(s::MSet) = Base.HasEltype()
 Base.eltype(s::MSet{T}) where {T} = T
 Base.in(x, s::MSet) = haskey(s.dict, x)
 function Base.push!(s::MSet, x, mult::Int = 1)
-  if haskey(s.dict, x)
-    s.dict[x] += mult
-  else
-    s.dict[x] = mult
-  end
+  add_to_key!(s.dict, x, mult)
+  #if haskey(s.dict, x)
+  #  s.dict[x] += mult
+  #else
+  #  s.dict[x] = mult
+  #end
 end
 
 function Base.pop!(s::MSet, x) 

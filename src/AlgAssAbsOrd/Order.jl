@@ -11,9 +11,9 @@ ideal_type(::AlgAssAbsOrd{S, T}) where {S, T} = AlgAssAbsOrdIdl{S, T}
 
 ideal_type(::Type{AlgAssAbsOrd{S, T}}) where {S, T} = AlgAssAbsOrdIdl{S, T}
 
-frac_ideal_type(::AlgAssAbsOrd{S, T}) where {S, T} = AlgAssAbsOrdFracIdl{S, T}
+fractional_ideal_type(::AlgAssAbsOrd{S, T}) where {S, T} = AlgAssAbsOrdFracIdl{S, T}
 
-frac_ideal_type(::Type{AlgAssAbsOrd{S, T}}) where {S, T} = AlgAssAbsOrdFracIdl{S, T}
+fractional_ideal_type(::Type{AlgAssAbsOrd{S, T}}) where {S, T} = AlgAssAbsOrdFracIdl{S, T}
 
 @doc Markdown.doc"""
     algebra(O::AlgAssAbsOrd) -> AbsAlgAss
@@ -993,5 +993,5 @@ end
 function trace_dual(R::AlgAssAbsOrd)
   t = trred_matrix(R)
   ti, d = pseudo_inv(t)
-  return frac_ideal(R, ideal(R, ti), d)
+  return fractional_ideal(R, ideal(R, ti), d)
 end

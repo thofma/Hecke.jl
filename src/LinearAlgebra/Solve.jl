@@ -64,7 +64,7 @@ Inplace: reduce all entries of $A$ modulo $m$, into the positive residue system.
 function mod!(A::Generic.Mat{nf_elem}, m::fmpz)
   for i=1:nrows(A)
     for j=1:ncols(A)
-      mod!(A[i,j], m)
+      _mod!(A[i,j], m)
     end
   end
 end
@@ -177,7 +177,7 @@ end
 # - extend to non-unique solutions
 # - make Aip*D mult faster, A*y as well?
 #
-function Nemo.solve_dixon(A::Generic.Mat{nf_elem}, B::Generic.Mat{nf_elem})
+function solve_dixon(A::Generic.Mat{nf_elem}, B::Generic.Mat{nf_elem})
   p = next_prime(p_start)
   K = base_ring(A)
   

@@ -18,6 +18,8 @@ Returns the number field, of which $a$ is an integral ideal.
 """
 nf(a::NfRelOrdIdl) = nf(order(a))
 
+_algebra(a::NfRelOrdIdl) = nf(a)
+
 ################################################################################
 #
 #  Parent
@@ -38,26 +40,6 @@ end
 #
 ################################################################################
 
-function assure_has_basis_pmatrix(a::Union{NfRelOrdIdl, NfRelOrdFracIdl})
-  if isdefined(a, :basis_pmatrix)
-    return nothing
-  end
-  if !isdefined(a, :pseudo_basis)
-    error("No pseudo_basis and no basis_pmatrix defined.")
-  end
-  pb = pseudo_basis(a, copy = false)
-  L = nf(order(a))
-  M = zero_matrix(base_field(L), degree(L), degree(L))
-  C = Vector{frac_ideal_type(order_type(base_field(L)))}()
-  for i = 1:degree(L)
-    elem_to_mat_row!(M, i, pb[i][1])
-    push!(C, deepcopy(pb[i][2]))
-  end
-  M = M*basis_mat_inv(order(a), copy = false)
-  a.basis_pmatrix = pseudo_hnf(PseudoMatrix(M, C), :lowerleft, true)
-  return nothing
-end
-
 function assure_has_pseudo_basis(a::Union{NfRelOrdIdl, NfRelOrdFracIdl})
   if isdefined(a, :pseudo_basis)
     return nothing
@@ -69,7 +51,7 @@ function assure_has_pseudo_basis(a::Union{NfRelOrdIdl, NfRelOrdFracIdl})
   B = basis_nf(order(a), copy = false)
   L = nf(order(a))
   K = base_field(L)
-  pseudo_basis = Vector{Tuple{elem_type(L), frac_ideal_type(order_type(K))}}()
+  pseudo_basis = Vector{Tuple{elem_type(L), fractional_ideal_type(order_type(K))}}()
   for i = 1:degree(L)
     t = L()
     for j = 1:degree(L)
@@ -125,12 +107,17 @@ end
 Returns the basis pseudo-matrix of $a$.
 """
 function basis_pmatrix(a::Union{NfRelOrdIdl, NfRelOrdFracIdl}; copy::Bool = true)
-  assure_has_basis_pmatrix(a)
   if copy
     return deepcopy(a.basis_pmatrix)
   else
     return a.basis_pmatrix
   end
+end
+
+# For compatibility with AlgAssRelOrdIdl
+function basis_pmatrix_wrt(a::Union{ NfRelOrdIdl, NfRelOrdFracIdl }, O::NfRelOrd)
+  @assert O === order(a)
+  return basis_pmatrix(a)
 end
 
 ################################################################################
@@ -261,14 +248,14 @@ function ideal(O::NfRelOrd{T, S}, x::NumFieldElem{T}, y::NumFieldElem{T}, a::S, 
 end
 
 function ideal(O::NfRelOrd{T, S}, x::NumFieldElem{T}, y::NumFieldElem{T}, a::NfOrdIdl, b::NfOrdIdl, check::Bool = true) where {T, S}
-  aa = frac_ideal(order(a), a, fmpz(1))
-  bb = frac_ideal(order(b), b, fmpz(1))
+  aa = fractional_ideal(order(a), a, fmpz(1))
+  bb = fractional_ideal(order(b), b, fmpz(1))
   return ideal(O, x, y, aa, bb, check)
 end
 
 function ideal(O::NfRelOrd{T, S}, x::NumFieldElem{T}, y::NumFieldElem{T}, a::NfRelOrdIdl, b::NfRelOrdIdl, check::Bool = true) where {T, S}
-  aa = frac_ideal(order(a), basis_pmatrix(a), true)
-  bb = frac_ideal(order(b), basis_pmatrix(b), true)
+  aa = fractional_ideal(order(a), basis_pmatrix(a), true)
+  bb = fractional_ideal(order(b), basis_pmatrix(b), true)
   return ideal(O, x, y, aa, bb, check)
 end
 
@@ -313,6 +300,12 @@ then it is checked whether $a$ defines an (integral) ideal.
 function ideal(O::NfRelOrd{T, S}, a::S, check::Bool = true) where {T, S}
   d = degree(O)
   pb = pseudo_basis(O, copy = false)
+  if iszero(a)
+    M = zero_matrix(base_field(nf(O)), d, d)
+    PM = PseudoMatrix(M, [ a*pb[i][2] for i = 1:d ])
+    return NfRelOrdIdl{T, S}(O, PM)
+  end
+
   M = identity_matrix(base_field(nf(O)), d)
   PM = PseudoMatrix(M, [ a*pb[i][2] for i = 1:d ])
   if check
@@ -323,14 +316,14 @@ function ideal(O::NfRelOrd{T, S}, a::S, check::Bool = true) where {T, S}
 end
 
 function ideal(O::NfRelOrd{nf_elem, NfOrdFracIdl}, a::NfOrdIdl, check::Bool = true)
-  aa = frac_ideal(order(a), a, fmpz(1))
+  aa = fractional_ideal(order(a), a, fmpz(1))
   return ideal(O, aa, check)
 end
 
 function ideal(O::NfRelOrd, a::NfRelOrdIdl, check::Bool = true)
   @assert order(a) == order(pseudo_basis(O, copy = false)[1][2])
 
-  aa = frac_ideal(order(a), basis_pmatrix(a), true)
+  aa = fractional_ideal(order(a), basis_pmatrix(a), true)
   return ideal(O, aa, check)
 end
 
@@ -451,7 +444,7 @@ function norm(a::NfRelOrdIdl; copy::Bool = true)
   end
 end
 
-function norm(a::NfRelOrdIdl, k::Union{ NfRel, AnticNumberField, NfRel_ns })
+function norm(a::NfRelOrdIdl, k::Union{ NfRel, AnticNumberField, NfRelNS })
   n = norm(a)
   while nf(order(n)) != k
     n = norm(n)
@@ -486,7 +479,7 @@ function +(a::NfRelOrdIdl{T, S}, b::NfRelOrdIdl{T, S}) where {T, S}
   check_parent(a, b)
   d = degree(order(a))
   H = vcat(basis_pmatrix(a), basis_pmatrix(b))
-  if T == nf_elem
+  if T === nf_elem
     m = norm(a) + norm(b)
     H = sub(pseudo_hnf_full_rank_with_modulus(H, m, :lowerleft), (d + 1):2*d, 1:d)
   else
@@ -519,7 +512,7 @@ function *(a::NfRelOrdIdl{T, S}, b::NfRelOrdIdl{T, S}) where {T, S}
   K = base_field(L)
   d = degree(order(a))
   M = zero_matrix(K, d^2, d)
-  C = Array{frac_ideal_type(order_type(K)), 1}(undef, d^2)
+  C = Array{fractional_ideal_type(order_type(K)), 1}(undef, d^2)
   t = L()
   for i = 1:d
     for j = 1:d
@@ -592,7 +585,7 @@ function intersect(a::NfRelOrdIdl{T, S}, b::NfRelOrdIdl{T, S}) where {T, S}
   z = zero_matrix(base_ring(Ma.matrix), d, d)
   M2 = hcat(PseudoMatrix(z, Mb.coeffs), Mb)
   M = vcat(M1, M2)
-  if T == nf_elem
+  if T === nf_elem
     m = intersect(norm(a), norm(b))
     H = sub(pseudo_hnf_full_rank_with_modulus(M, m, :lowerleft), 1:d, 1:d)
   else
@@ -640,7 +633,7 @@ function inv(a::Union{NfRelOrdIdl{T, S}, NfRelOrdFracIdl{T, S}}) where {T, S}
   N = inv(transpose(PM.matrix))
   PN = PseudoMatrix(N, [ simplify(inv(I)) for I in PM.coeffs ])
   PN = pseudo_hnf(PN, :lowerleft, true)
-  return frac_ideal(O, PN, true)
+  return fractional_ideal(O, PN, true)
 end
 
 ################################################################################
@@ -656,7 +649,7 @@ Returns $ab^{-1}$.
 """
 function divexact(a::NfRelOrdIdl{T, S}, b::NfRelOrdIdl{T, S}) where {T, S}
   O = order(a)
-  return frac_ideal(O, basis_pmatrix(a, copy = false), true)*inv(b)
+  return fractional_ideal(O, basis_pmatrix(a, copy = false), true)*inv(b)
 end
 
 //(a::NfRelOrdIdl{T, S}, b::NfRelOrdIdl{T, S}) where {T, S} = divexact(a, b)
@@ -720,9 +713,9 @@ function pradical(O::NfRelOrd, P::Union{NfOrdIdl, NfRelOrdIdl})
     elem_to_mat_row!(basis_mat_int, i, t)
   end
   if is_absolute
-    Oint = typeof(O)(L, PseudoMatrix(basis_mat_int, [ frac_ideal(OK, pbint[i][2], fmpz(1)) for i = 1:d ]))
+    Oint = typeof(O)(L, PseudoMatrix(basis_mat_int, [ fractional_ideal(OK, pbint[i][2], fmpz(1)) for i = 1:d ]))
   else
-    Oint = typeof(O)(L, PseudoMatrix(basis_mat_int, [ frac_ideal(OK, basis_pmatrix(pbint[i][2], copy = false)) for i = 1:d ]))
+    Oint = typeof(O)(L, PseudoMatrix(basis_mat_int, [ fractional_ideal(OK, basis_pmatrix(pbint[i][2], copy = false)) for i = 1:d ]))
   end
 
   if is_absolute
@@ -814,9 +807,9 @@ function ring_of_multipliers(a::NfRelOrdIdl{T1, T2}) where {T1, T2}
   d = degree(O)
   pb = pseudo_basis(a, copy = false)
   S = basis_mat_inv(O, copy = false)*basis_mat_inv(a, copy = false)
-  M = basis_matrix(O, copy = false)*representation_matrix(pb[1][1])*S
+  M = representation_matrix(pb[1][1])*S
   for i = 2:d
-    M = hcat(M, basis_matrix(O, copy = false)*representation_matrix(pb[i][1])*S)
+    M = hcat(M, representation_matrix(pb[i][1])*S)
   end
   invcoeffs = [ simplify(inv(pb[i][2])) for i = 1:d ]
   C = Array{T2}(undef, d^2)
@@ -831,7 +824,7 @@ function ring_of_multipliers(a::NfRelOrdIdl{T1, T2}) where {T1, T2}
   end
   PM = PseudoMatrix(transpose(M), C)
   PM = sub(pseudo_hnf(PM, :upperright, true), 1:d, 1:d)
-  N = inv(transpose(PM.matrix))*basis_matrix(O, copy = false)
+  N = inv(transpose(PM.matrix))
   PN = PseudoMatrix(N, [ simplify(inv(I)) for I in PM.coeffs ])
   return NfRelOrd{T1, T2}(nf(O), PN)
 end
@@ -877,15 +870,15 @@ end
 #
 ################################################################################
 
-function prime_decomposition(O::NfRelOrd, p::Union{NfOrdIdl, NfRelOrdIdl})
+function prime_decomposition(O::NfRelOrd, p::Union{NfOrdIdl, NfRelOrdIdl}; compute_uniformizer::Bool = true)
   if isindex_divisor(O, p)
     return prime_dec_index(O, p)
   end
 
-  return prime_dec_nonindex(O, p)
+  return prime_dec_nonindex(O, p, compute_uniformizer = compute_uniformizer)
 end
 
-function prime_dec_nonindex(O::NfRelOrd, p::Union{NfOrdIdl, NfRelOrdIdl})
+function prime_dec_nonindex(O::NfRelOrd, p::Union{NfOrdIdl, NfRelOrdIdl}; compute_uniformizer::Bool = true)
   L = nf(O)
   OK = order(p)
   @assert OK == O.basis_pmatrix.coeffs[1].order
@@ -911,18 +904,20 @@ function prime_dec_nonindex(O::NfRelOrd, p::Union{NfOrdIdl, NfRelOrdIdl})
     P.minimum = deepcopy(p)
     P.non_index_div_poly = q
     Oga = O(ga)
-    # TODO: Warum funktioniert das? Muss uniformizer(p) ein p-uniformizer sein?
-    if iszero(Oga)
-      @assert e == 1
-      P.p_uniformizer = O(uniformizer(p))
-    else
-      if e != 1
-        P.p_uniformizer = Oga
+    if compute_uniformizer
+      # TODO: Warum funktioniert das? Muss uniformizer(p) ein p-uniformizer sein?
+      if iszero(Oga)
+        @assert e == 1
+        P.p_uniformizer = O(uniformizer(p))
       else
-        if valuation(Oga, P) == 1
+        if e != 1
           P.p_uniformizer = Oga
         else
-          P.p_uniformizer = Oga + O(uniformizer(p))
+          if valuation(Oga, P) == 1
+            P.p_uniformizer = Oga
+          else
+            P.p_uniformizer = Oga + O(uniformizer(p))
+          end
         end
       end
     end
@@ -1035,7 +1030,7 @@ function valuation_naive(A::NfRelOrdIdl{T, S}, B::NfRelOrdIdl{T, S}) where {T, S
   @assert order(A.basis_pmatrix.coeffs[1]) == order(B.basis_pmatrix.coeffs[1])
   @assert !iszero(A) && !iszero(B)
   O = order(A)
-  Afrac = frac_ideal(O, basis_pmatrix(A), true)
+  Afrac = fractional_ideal(O, basis_pmatrix(A), true)
   Bi = inv(B)
   i = 0
   C = Afrac*Bi

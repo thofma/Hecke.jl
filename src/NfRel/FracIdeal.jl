@@ -139,28 +139,38 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    frac_ideal(O::NfRelOrd, M::PMat, M_in_hnf::Bool = false) -> NfRelOrdFracIdl
+    fractional_ideal(O::NfRelOrd, M::PMat, M_in_hnf::Bool = false) -> NfRelOrdFracIdl
 
 Creates the fractional ideal of $\mathcal O$ with basis pseudo-matrix $M$. If
 M_in_hnf is set, then it is assumed that $M$ is already in lower left pseudo
 HNF.
 """
-function frac_ideal(O::NfRelOrd{T, S}, M::PMat{T, S}, M_in_hnf::Bool = false) where {T, S}
+function fractional_ideal(O::NfRelOrd{T, S}, M::PMat{T, S}, M_in_hnf::Bool = false) where {T, S}
   !M_in_hnf ? M = pseudo_hnf(M, :lowerleft, true) : nothing
   return NfRelOrdFracIdl{T, S}(O, M)
 end
 
 @doc Markdown.doc"""
-    frac_ideal(O::NfRelOrd, M::Generic.Mat) -> NfRelOrdFracIdl
+    fractional_ideal(O::NfRelOrd, M::Generic.Mat) -> NfRelOrdFracIdl
 
 Creates the fractional ideal of $\mathcal O$ with basis matrix $M$.
 """
-function frac_ideal(O::NfRelOrd{T, S}, M::Generic.Mat{T}) where {T, S}
+function fractional_ideal(O::NfRelOrd{T, S}, M::Generic.Mat{T}) where {T, S}
   coeffs = deepcopy(basis_pmatrix(O, copy = false)).coeffs
-  return frac_ideal(O, PseudoMatrix(M, coeffs))
+  return fractional_ideal(O, PseudoMatrix(M, coeffs))
 end
 
-function frac_ideal(O::NfRelOrd{T, S}, x::NumFieldElem{T}) where {T, S}
+function fractional_ideal(O::NfRelOrd{T, S}, A::Vector{<:NumFieldElem}) where {T, S}
+  if all(iszero, A)
+    M = zero_matrix(base_field(nf(O)), degree(O), degree(O))
+    pb = pseudo_basis(O)
+    return NfRelOrdFracIdl{T, S}(O, PseudoMatrix(M, [ deepcopy(pb[i][2]) for i = 1:degree(O)]))
+  end
+
+  return sum(fractional_ideal(O, a) for a in A if !iszero(a))
+end
+
+function fractional_ideal(O::NfRelOrd{T, S}, x::NumFieldElem{T}) where {T, S}
   d = degree(O)
   pb = pseudo_basis(O, copy = false)
   M = zero_matrix(base_field(nf(O)), d, d)
@@ -176,18 +186,18 @@ function frac_ideal(O::NfRelOrd{T, S}, x::NumFieldElem{T}) where {T, S}
   return NfRelOrdFracIdl{T, S}(O, PM)
 end
 
-*(O::NfRelOrd{T, S}, x::NumFieldElem{T}) where {T, S} = frac_ideal(O, x)
+*(O::NfRelOrd{T, S}, x::NumFieldElem{T}) where {T, S} = fractional_ideal(O, x)
 
-*(x::NumFieldElem{T}, O::NfRelOrd{T, S}) where {T, S} = frac_ideal(O, x)
+*(x::NumFieldElem{T}, O::NfRelOrd{T, S}) where {T, S} = fractional_ideal(O, x)
 
-function frac_ideal(O::NfRelOrd{T, S}, a::NfRelOrdIdl{T, S}) where {T, S}
-  return frac_ideal(O, basis_pmatrix(a), true)
+function fractional_ideal(O::NfRelOrd{T, S}, a::NfRelOrdIdl{T, S}) where {T, S}
+  return fractional_ideal(O, basis_pmatrix(a), true)
 end
 
-function frac_ideal(O::NfRelOrd{T, S}, a::NfRelOrdIdl{T, S}, d::U) where { T, S, U <: Union{ fmpz, NfAbsOrdElem, NfRelOrdElem } }
+function fractional_ideal(O::NfRelOrd{T, S}, a::NfRelOrdIdl{T, S}, d::U) where { T, S, U <: Union{ fmpz, NfAbsOrdElem, NfRelOrdElem } }
   K = base_field(nf(O))
   dd = inv(K(d))
-  return frac_ideal(O, dd*basis_pmatrix(a), true)
+  return fractional_ideal(O, dd*basis_pmatrix(a), true)
 end
 
 ################################################################################
@@ -267,7 +277,7 @@ function norm(a::NfRelOrdFracIdl, copy::Type{Val{T}} = Val{true}) where T
   end
 end
 
-function norm(a::NfRelOrdFracIdl, k::Union{ NfRel, AnticNumberField, NfRel_ns })
+function norm(a::NfRelOrdFracIdl, k::Union{ NfRel, AnticNumberField, NfRelNS })
   n = norm(a)
   while nf(order(n)) != k
     n = norm(n)
@@ -299,11 +309,17 @@ end
 Returns $a + b$.
 """
 function +(a::NfRelOrdFracIdl{T, S}, b::NfRelOrdFracIdl{T, S}) where {T, S}
+  if iszero(a)
+    return b
+  end
+  if iszero(b)
+    return a
+  end
   d = degree(order(a))
   H = vcat(basis_pmatrix(a), basis_pmatrix(b))
   if T != nf_elem
     H = sub(pseudo_hnf(H, :lowerleft), (d + 1):2*d, 1:d)
-    return frac_ideal(order(a), H, true)
+    return fractional_ideal(order(a), H, true)
   end
   den = lcm(denominator(a), denominator(b))
   for i = 1:d
@@ -320,12 +336,12 @@ function +(a::NfRelOrdFracIdl{T, S}, b::NfRelOrdFracIdl{T, S}) where {T, S}
     H.coeffs[i].den = H.coeffs[i].den*den
     H.coeffs[i] = simplify(H.coeffs[i])
   end
-  return frac_ideal(order(a), H, true)
+  return fractional_ideal(order(a), H, true)
 end
 
-+(a::NfRelOrdIdl{T, S}, b::NfRelOrdFracIdl{T, S}) where {T, S} = frac_ideal(order(a), a) + b
++(a::NfRelOrdIdl{T, S}, b::NfRelOrdFracIdl{T, S}) where {T, S} = fractional_ideal(order(a), a) + b
 
-+(a::NfRelOrdFracIdl{T, S}, b::NfRelOrdIdl{T, S}) where {T, S} = a + frac_ideal(order(b), b)
++(a::NfRelOrdFracIdl{T, S}, b::NfRelOrdIdl{T, S}) where {T, S} = a + fractional_ideal(order(b), b)
 
 ################################################################################
 #
@@ -351,7 +367,7 @@ function *(a::NfRelOrdFracIdl{T, S}, b::NfRelOrdFracIdl{T, S}) where {T, S}
   K = base_field(L)
   d = degree(order(a))
   M = zero_matrix(K, d^2, d)
-  C = Array{frac_ideal_type(order_type(K)), 1}(undef, d^2)
+  C = Array{fractional_ideal_type(order_type(K)), 1}(undef, d^2)
   t = L()
   for i = 1:d
     for j = 1:d
@@ -365,7 +381,7 @@ function *(a::NfRelOrdFracIdl{T, S}, b::NfRelOrdFracIdl{T, S}) where {T, S}
   PM.matrix = PM.matrix*basis_mat_inv(order(a), copy = false)
   if T != nf_elem
     H = sub(pseudo_hnf(PM, :lowerleft), (d*(d - 1) + 1):d^2, 1:d)
-    return frac_ideal(order(a), H, true)
+    return fractional_ideal(order(a), H, true)
   end
   m = simplify(den^(2*d)*norm(a)*norm(b))
   @assert isone(denominator(m))
@@ -374,12 +390,12 @@ function *(a::NfRelOrdFracIdl{T, S}, b::NfRelOrdFracIdl{T, S}) where {T, S}
     H.coeffs[i].den = H.coeffs[i].den*den
     H.coeffs[i] = simplify(H.coeffs[i])
   end
-  return frac_ideal(order(a), H, true)
+  return fractional_ideal(order(a), H, true)
 end
 
-*(a::NfRelOrdIdl{T, S}, b::NfRelOrdFracIdl{T, S}) where {T, S} = frac_ideal(order(a), a)*b
+*(a::NfRelOrdIdl{T, S}, b::NfRelOrdFracIdl{T, S}) where {T, S} = fractional_ideal(order(a), a)*b
 
-*(a::NfRelOrdFracIdl{T, S}, b::NfRelOrdIdl{T, S}) where {T, S} = a*frac_ideal(order(b), b)
+*(a::NfRelOrdFracIdl{T, S}, b::NfRelOrdIdl{T, S}) where {T, S} = a*fractional_ideal(order(b), b)
 
 Base.:(^)(A::NfRelOrdFracIdl, b::Int) = Base.power_by_squaring(A, b)
 
@@ -402,7 +418,7 @@ divexact(a::NfRelOrdFracIdl{T, S}, b::NfRelOrdIdl{T, S}) where {T, S} = a*inv(b)
 
 function divexact(a::NfRelOrdIdl{T, S}, b::NfRelOrdFracIdl{T, S}) where {T, S}
   O = order(a)
-  return frac_ideal(O, basis_pmatrix(a, copy = false), true)*inv(b)
+  return fractional_ideal(O, basis_pmatrix(a, copy = false), true)*inv(b)
 end
 
 //(a::NfRelOrdFracIdl{T, S}, b::NfRelOrdFracIdl{T, S}) where {T, S} = divexact(a, b)

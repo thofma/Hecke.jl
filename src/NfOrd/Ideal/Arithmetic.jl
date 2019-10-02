@@ -58,16 +58,29 @@ function +(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
   if isdefined(x, :norm) && isdefined(y, :norm) && isone(gcd(x.norm, y.norm))
     return ideal(order(x), 1)
   end
-  g = gcd(minimum(x), minimum(y))
+  if has_princ_gen_special(x) && has_2_elem(y)
+    genx = x.princ_gen_special[2]+x.princ_gen_special[3]
+    gen1 = gcd(genx, y.gen_one)
+    return ideal(order(x), gen1, y.gen_two)    
+  end
+  if has_princ_gen_special(y) && has_2_elem(x)
+    geny = y.princ_gen_special[2]+y.princ_gen_special[3]
+    gen2 = gcd(geny, x.gen_one)
+    return ideal(order(x), gen2, x.gen_two)    
+  end
+  g = gcd(minimum(x, copy = false), minimum(y, copy = false))
   if isone(g)
     return ideal(order(x), g)
   end
-  d = degree(order(x))
+  OK = order(x)
+  d = degree(OK)
   H = vcat(basis_matrix(x, copy = false), basis_matrix(y, copy = false))
   hnf_modular_eldiv!(H, g, :lowerleft)
   H = view(H, (d + 1):2*d, 1:d)
   res = ideal(order(x), H, false, true)
-  res.minimum = H[1, 1]
+  if isone(basis(OK, copy = false)[1])
+    res.minimum = H[1, 1]
+  end
   res.norm = prod(H[i, i] for i = 1:d)
   return res
 end
@@ -316,7 +329,7 @@ end
 
 # dispatching
 @doc Markdown.doc"""
-  *(x::NfMaxIdl, y::NfOrdIdl)
+    *(x::NfOrdIdl, y::NfOrdIdl)
 
 Returns the ideal x*y.
 """
@@ -490,6 +503,14 @@ function prod_by_int_2_elem_normal(A::NfOrdIdl, a::fmpz)
   end
 
   B = NfOrdIdl(A.gen_one*a, a2*a)
+  if has_princ_gen_special(A)
+    B.princ_gen_special = (2, 0, (A.princ_gen_special[2] + A.princ_gen_special[3])*a)
+  end
+  
+  if has_princ_gen(A)
+    B.is_principal = 1
+    B.princ_gen = a*A.princ_gen
+  end
   B.gens_normal = m
 
   if has_minimum(A)
@@ -508,7 +529,14 @@ function prod_by_int_2_elem(A::NfOrdIdl, a::fmpz)
   @assert has_2_elem(A)
 
   B = NfOrdIdl(A.gen_one*a, A.gen_two*a)
-  B.gens_normal = A.gens_normal
+  if has_princ_gen(A)
+    B.is_principal = 1
+    B.princ_gen = A.princ_gen*a
+  end
+  
+  if has_princ_gen_special(A)
+    B.princ_gen_special = (2, 0, (A.princ_gen_special[2]+A.princ_gen_special[3])*a)
+  end
 
   if has_minimum(A)
     B.minimum = A.minimum * a
@@ -536,22 +564,21 @@ function *(x::NfOrdIdl, y::fmpz)
 end
 
 function mul_maximal(x::NfOrdIdl, y::fmpz)
-  if y == 0
+  if iszero(y)
     z = ideal(order(x), 0)
     z.iszero = 1
     return z
   end
 
-  if y == 1 || y == -1
+  if isone(y) || y == -1
     return x
   end
 
   if has_2_elem(x)
     if has_2_elem_normal(x)
       return prod_by_int_2_elem_normal(x,y)
-# this does not make any sense since prod_by_int_2_elem(x, y) works only if has_2_elem_norm(x) == true
-#    else
-#      return prod_by_int_2_elem(x,y)
+    else
+      return prod_by_int_2_elem(x,y)
     end
   end
 

@@ -34,12 +34,14 @@
     end
     d = lcm([ denominator(b) for b in basisOL ])
     OKG = Order(KG, basis(KG))
-    I = Hecke.ideal_from_lattice_gens(OKG, [ d*b for b in basisOL ])
+    I = Hecke.ideal_from_lattice_gens(KG, OKG, [ d*b for b in basisOL ])
 
     p = prime_decomposition(OK, 3)[1][1]
     g = Hecke.locally_free_basis(I, p)
     OKGg = OKG*g
-    t = det(basis_matrix(I, copy = false)*basis_mat_inv(OKGg, copy = false))
+    mat_I = Hecke.coprime_bases(OKG, I, p)[4]
+    mat_OKGg = Hecke.coprime_bases(OKG, OKGg, p)[4]
+    t = det(mat_I*inv(mat_OKGg))
     @test valuation(t, p) == 0
 
     p = prime_decomposition(OK, 2)[1][1]

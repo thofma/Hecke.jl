@@ -15,8 +15,8 @@ elem_type(::Type{AlgGrp{T, S, R}}) where {T, S, R} = AlgGrpElem{T, AlgGrp{T, S, 
 order_type(::AlgGrp{fmpq, S, R}) where { S, R } = AlgAssAbsOrd{AlgGrp{fmpq, S, R}, elem_type(AlgGrp{fmpq, S, R})}
 order_type(::Type{AlgGrp{fmpq, S, R}}) where { S, R } = AlgAssAbsOrd{AlgGrp{fmpq, S, R}, elem_type(AlgGrp{fmpq, S, R})}
 
-order_type(::AlgGrp{T, S, R}) where { T <: NumFieldElem, S, R } = AlgAssRelOrd{T, frac_ideal_type(order_type(parent_type(T)))}
-order_type(::Type{AlgGrp{T, S, R}}) where { T <: NumFieldElem, S, R } = AlgAssRelOrd{T, frac_ideal_type(order_type(parent_type(T)))}
+order_type(::AlgGrp{T, S, R}) where { T <: NumFieldElem, S, R } = AlgAssRelOrd{T, fractional_ideal_type(order_type(parent_type(T)))}
+order_type(::Type{AlgGrp{T, S, R}}) where { T <: NumFieldElem, S, R } = AlgAssRelOrd{T, fractional_ideal_type(order_type(parent_type(T)))}
 
 @doc Markdown.doc"""
     group(A::AlgGrp) -> Group
@@ -142,61 +142,23 @@ end
 #  return B
 #end
 
-################################################################################
-#
-#  Equality
-#
-################################################################################
-
-@doc Markdown.doc"""
-    ==(A::AlgGrp, B::AlgGrp) -> Bool
-
-> Returns `true` if $A$ and $B$ are equal and `false` otherwise.
-"""
-function ==(A::AlgGrp{T}, B::AlgGrp{T}) where {T}
-  return base_ring(A) == base_ring(B) && group(A) == group(B)
-end
-
 ###############################################################################
 #
-#  Trace Matrix
+#  Trace basis
 #
 ###############################################################################
 
 function _assure_trace_basis(A::AlgGrp{T}) where {T}
-  if !isdefined(A, :trace_basis_elem)
-    A.trace_basis_elem = Vector{T}(undef, dim(A))
-    A.trace_basis_elem[1] = base_ring(A)(dim(A))
-    for i=2:length(A.trace_basis_elem)
-      A.trace_basis_elem[i] = zero(base_ring(A))
-    end
+  if isdefined(A, :trace_basis_elem)
+    return nothing
+  end
+
+  A.trace_basis_elem = Vector{T}(undef, dim(A))
+  A.trace_basis_elem[1] = base_ring(A)(dim(A))
+  for i = 2:dim(A)
+    A.trace_basis_elem[i] = zero(base_ring(A))
   end
   return nothing
-end
-
-@doc Markdown.doc"""
-    trace_matrix(A::AlgGrp) -> MatElem
-
-> Returns a matrix $M$ over the base ring of $A$ such that
-> $M_{i, j} = \mathrm{tr}(b_i \cdot b_j)$, where $b_1, \dots, b_n$ is the
-> basis of $A$.
-"""
-function trace_matrix(A::AlgGrp)
-  _assure_trace_basis(A)
-  F = base_ring(A)
-  n = dim(A)
-  M = zero_matrix(F, n, n)
-  for i = 1:n
-    M[i,i] = tr(A[i]^2)
-  end
-  for i = 1:n
-    for j = i+1:n
-      x = tr(A[i]*A[j])
-      M[i,j] = x
-      M[j,i] = x
-    end
-  end
-  return M
 end
 
 ################################################################################
@@ -211,15 +173,13 @@ end
 > Returns the center $C$ of $A$ and the inclusion $C \to A$.
 """
 function center(A::AlgGrp{T}) where {T}
-  if iscommutative(A)
-    B, mB = AlgAss(A)
-    return B, mB
-  end
-
   if isdefined(A, :center)
     return A.center::Tuple{AlgAss{T}, morphism_type(AlgAss{T}, typeof(A))}
   end
 
+  # Unlike for AlgAss, we should cache the centre even if A is commutative
+  # since it is of a different type, so A !== center(A)[1].
+  # Otherwise center(A)[1] !== center(A)[1] which is really annoying.
   B, mB = AlgAss(A)
   C, mC = center(B)
   mD = compose_and_squash(mB, mC)
@@ -254,6 +214,27 @@ function AlgAss(A::AlgGrp{T, S, R}) where {T, S, R}
   B.iscommutative = A.iscommutative
   B.issimple = A.issimple
   B.issemisimple = A.issemisimple
+  AtoB = hom(A, B, identity_matrix(K, dim(A)), identity_matrix(K, dim(A)))
+  if isdefined(A, :center)
+    Z, ZtoA = center(A)
+    B.center = (Z, compose_and_squash(AtoB, ZtoA))
+  end
+  if isdefined(A, :decomposition)
+    dec = Tuple{AlgAss{T}, morphism_type(AlgAss{T}, typeof(B))}[]
+    for (C, CtoA) in A.decomposition
+      CtoB = compose_and_squash(AtoB, CtoA)
+      push!(dec, (C, CtoB))
+    end
+    B.decomposition = dec
+  end
+  if isdefined(A, :maps_to_numberfields)
+    fields_and_maps = Tuple{AnticNumberField, AbsAlgAssToNfAbsMor{typeof(B), elem_type(B)}}[]
+    for (K, AtoK) in A.maps_to_numberfields
+      BtoK = AbsAlgAssToNfAbsMor(B, K, AtoK.mat, AtoK.imat)
+      push!(fields_and_maps, (K, BtoK))
+    end
+    B.maps_to_numberfields = fields_and_maps
+  end
   return B, hom(B, A, identity_matrix(K, dim(A)), identity_matrix(K, dim(A)))
 end
 
@@ -451,4 +432,47 @@ function _find_isomorphism(K::Union{ AnticNumberField, NfRel{nf_elem} }, A::AlgG
   end
 
   return KtoA, AtoK
+end
+
+# Returns the group algebra Q[G] where G = Gal(K/Q) and a Q-linear map from K
+# to Q[G] and one from Q[G] to K
+_as_group_algebra(K::AnticNumberField) = _as_group_algebra(K, normal_basis(K))
+
+# alpha should be a "generator" for a normal basis of K
+function _as_group_algebra(K::AnticNumberField, alpha::nf_elem)
+  G, Gtoaut = automorphism_group(K)
+  A = group_algebra(FlintQQ, G)
+
+  basis_alpha = Vector{elem_type(K)}(undef, dim(A))
+  for (i, g) in enumerate(G)
+    f = Gtoaut(g)
+    basis_alpha[A.group_to_base[g]] = f(alpha)
+  end
+
+  M = zero_matrix(base_field(K), degree(K), degree(K))
+  for i = 1:degree(K)
+    a = basis_alpha[i]
+    for j = 1:degree(K)
+      M[i, j] = coeff(a, j - 1)
+    end
+  end
+
+  invM = inv(M)
+
+  function KtoA(x::Union{ nf_elem, NfRelElem })
+    t = zero_matrix(base_field(K), 1, degree(K))
+    for i = 1:degree(K)
+      t[1, i] = coeff(x, i - 1)
+    end
+    y = t*invM
+    return A([ y[1, i] for i = 1:degree(K) ])
+  end
+
+  function AtoK(x::AlgGrpElem)
+    t = matrix(base_field(K), 1, degree(K), coeffs(x))
+    y = t*M
+    return K(parent(K.pol)([ y[1, i] for i = 1:degree(K) ]))
+  end
+
+  return A, KtoA, AtoK
 end

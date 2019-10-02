@@ -44,7 +44,7 @@ iscommutative(O::AlgAssRelOrd) = iscommutative(algebra(O))
 > Returns the order of $A$ with basis matrix $M$.
 """
 function Order(A::AbsAlgAss{S}, M::Generic.Mat{S}) where S <: NumFieldElem
-  return AlgAssRelOrd{S, frac_ideal_type(order_type(base_ring(A)))}(A, deepcopy(M))
+  return AlgAssRelOrd{S, fractional_ideal_type(order_type(base_ring(A)))}(A, deepcopy(M))
 end
 
 @doc Markdown.doc"""
@@ -182,6 +182,18 @@ function inv_coeff_ideals(O::AlgAssRelOrd; copy::Bool = true)
   else
     return O.inv_coeff_ideals
   end
+end
+
+# Returns a basis of O as Z-module
+function absolute_basis(O::Union{ NfRelOrd, AlgAssRelOrd })
+  pb = pseudo_basis(O, copy = false)
+  res = Vector{elem_type(_algebra(O))}()
+  for i = 1:degree(O)
+    for b in basis(pb[i][2])
+      push!(res, b*pb[i][1])
+    end
+  end
+  return res
 end
 
 ################################################################################
@@ -826,5 +838,116 @@ function enum_units(O::AlgAssRelOrd, g::NfAbsOrdIdl)
     E[1, 1] = x
     push!(result, L(A(E)))
   end
+  return result
+end
+
+################################################################################
+#
+#  Ramifying primes
+#
+################################################################################
+
+# Returns a vector of tuples (p, m, k) where p is prime ideal at which the
+# algebra ramifies, m its local index (Schur index) and k its local capacity.
+# See Reiner: "Maximal order" Theorem 32.1
+function ramified_prime_ideals(O::AlgAssRelOrd)
+  A = algebra(O)
+  @assert issimple(A)
+  n2 = dim(A)
+  n = isqrt(n2)
+  @assert n^2 == n2
+
+  d = discriminant(O)
+  facd = factor(d)
+  result = Vector{Tuple{ideal_type(base_ring(O)), Int, Int}}()
+  for (p, e) in facd
+    k = divexact(n2 - e, n)
+    m = divexact(n, k)
+    push!(result, (p, m, k))
+    @assert m*k == n
+  end
+
+  return result
+end
+
+################################################################################
+#
+#  "All" maximal orders
+#
+################################################################################
+
+# Returns a vector containing a system of representatives of the maximal orders
+# of A with respect to conjugation, that is, any maximal order of A is conjugated
+# to one of them and no two returned orders are conjugated.
+# Only works for algebras fulfilling the Eichler condition.
+representatives_of_maximal_orders(A::AlgAss{nf_elem}) = representatives_of_maximal_orders(maximal_order(A))
+
+function representatives_of_maximal_orders(O::AlgAssRelOrd)
+  A = algebra(O)
+  @assert issimple(A)
+  @assert iseichler(A)
+  @assert ismaximal(O)
+  K = base_ring(A)
+  OK = base_ring(O)
+  n2 = dim(A)
+  n = isqrt(n2)
+  @assert n^2 == n2
+
+  inf_plc = ramified_infinite_places(A)
+
+  R, mR = ray_class_group(OK(1)*OK, inf_plc)
+  S, mS = snf(R)
+  if order(S) == 1
+    return [ O ]
+  end
+
+  ram_primes = ramified_prime_ideals(O)
+
+  U = Vector{elem_type(S)}()
+  for i = 1:ngens(S)
+    push!(U, n*S[i])
+  end
+  for (p, m, k) in ram_primes
+    push!(U, k*(mS\(mR\p)))
+  end
+
+  SU, mSU = quo(S, U)
+  if order(SU) == 1
+    return [ O ]
+  end
+
+  # Each element of SU corresponds now to a maximal order.
+  # We have to find a prime ideal in each of these classes.
+  reps_found = Set{elem_type(SU)}()
+  primes = Vector{ideal_type(OK)}()
+  push!(reps_found, id(SU))
+  P = PrimeIdealsSet(OK, 1, -1, indexdivisors = false, ramified = false)
+  for p in P
+    g = mSU(mS\(mR\p))
+    if g in reps_found
+      continue
+    end
+
+    push!(reps_found, g)
+    push!(primes, p)
+
+    if length(reps_found) == order(SU)
+      break
+    end
+  end
+
+  # For each of the prime ideals compute a maximal ideal with left order O.
+  # Then the right orders of these form a system of representatives.
+  max_ideals = Vector{ideal_type(O)}()
+  for i = 1:length(primes)
+    push!(max_ideals, maximal_integral_ideal(O, primes[i], :left))
+  end
+
+  result = Vector{typeof(O)}()
+  push!(result, O)
+  for i = 1:length(max_ideals)
+    push!(result, right_order(max_ideals[i]))
+  end
+
   return result
 end

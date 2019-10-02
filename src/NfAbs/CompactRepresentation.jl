@@ -39,13 +39,10 @@ function compact_presentation(a::FacElem{nf_elem, AnticNumberField}, nn::Int = 2
   A = ideal(ZK, 1)
   for _k = floor(Int, log(Int(n), Int(_v))):-1:0
     B = Dict((p, div(v, Int(n^_k)) % Int(n)) for (p, v) = de)
-    if haskey(B, A)
-      B[A] = B[A] + n
-    else
-      B[A] = n
-    end
+    add_to_key!(B, A, n)
     A, alpha = reduce_ideal2(FacElem(B))
-    be *= alpha^(-(n^_k))
+    mul!(be, be, alpha^(-n^_k))
+    #be *= alpha^(-(n^_k))
     v -= Ref(n^_k) .* conjugates_arb_log_normalise(alpha, arb_prec)
   end
   if length(be.fac) > 1
@@ -63,7 +60,6 @@ function compact_presentation(a::FacElem{nf_elem, AnticNumberField}, nn::Int = 2
 
   de = Dict(A => fmpz(1))
   delete!(de, ideal(ZK, 1))
-  B=0
   
   @hassert :CompactPresentation 1 length(de) == 0 && isone(abs(factored_norm(a*be))) == 1 ||
                                   abs(factored_norm(a*be)) == factored_norm(FacElem(de))
@@ -81,10 +77,11 @@ function compact_presentation(a::FacElem{nf_elem, AnticNumberField}, nn::Int = 2
     end
     vv = [x//n^k for x = v]
     vvv = fmpz[]
+    el_embs = a*be
     for i=1:r1
       while !radiuslttwopower(vv[i], -5)
         arb_prec *= 2
-        v = conjugates_arb_log_normalise(a*be, arb_prec)
+        v = conjugates_arb_log_normalise(el_embs, arb_prec)
         vv = [x//n^k for x = v]
       end
       push!(vvv, round(fmpz, vv[i]//log(2)))
@@ -92,7 +89,7 @@ function compact_presentation(a::FacElem{nf_elem, AnticNumberField}, nn::Int = 2
     for i=r1+1:r1+r2
       while !radiuslttwopower(vv[i], -5)
         arb_prec *= 2
-        v = conjugates_arb_log_normalise(a*be, arb_prec)
+        v = conjugates_arb_log_normalise(el_embs, arb_prec)
         vv = [x//n^k for x = v]
       end
       local r = round(fmpz, vv[i]//log(2)//2)
@@ -107,48 +104,19 @@ function compact_presentation(a::FacElem{nf_elem, AnticNumberField}, nn::Int = 2
    
     @assert abs(norm(b)//norm(id)) <= abs(discriminant(ZK)) # the trivial case
 
-  if true
-    for p = keys(A.fac)
-      isone(p) || (de[p] -= n^k*A.fac[p])
+    for (p, v) in A
+      if isone(p)
+        continue
+      end
+      de[p] -= n^k*v
     end
 
     B = simplify(ideal(ZK, b)*eA)
     @assert isone(B.den)
-    B = B.num
-  else
-    
-    B = simplify(ideal(ZK, b))
-    @assert B.num.is_principal == 1  
-    @assert isone(B.num) || B.num.gens_normal > 1
-    assure_2_normal(B.num)
-    @hassert :NfOrd 1 isconsistent(B.num)
-    @hassert :NfOrd 1 norm(B) == abs(norm(b))
+    B1 = B.num   
+    @assert norm(B1) <= abs(discriminant(ZK))
 
-    for p = keys(de)
-      assure_2_normal(p)
-      @vtime :CompactPresentation 1 local _v = valuation(b, p)
-      # @hassert :CompactPresentation 1 valuation(B, p) == _v
-      # unfortunately, wrong: valuation(p^2 = p^9 / p^7, p^3) = 0 or 1 depending...
-      @hassert :NfOrd 1 isconsistent(p)
-      de[p] += n^k*_v
-      if haskey(de_inv, p)
-        pi = de_inv[p]
-      else
-        @vtime :CompactPresentation 1 pi = inv(p)
-        de_inv[p] = pi
-      end
-      B *= pi^_v
-      @hassert :NfOrd 1 isconsistent(B.num)
-      @vtime :CompactPresentation 1 B = simplify(B)
-      @hassert :NfOrd 1 isconsistent(B.num)
-      #@hassert :CompactPresentation 1 valuation(B, p) == 0
-    end
-    @assert !haskey(de, ideal(ZK, 1))
-  end  
-   
-    @assert norm(B) <= abs(discriminant(ZK))
-
-    @vtime :CompactPresentation 1 for (p, _v) = factor(B)
+    @vtime :CompactPresentation 1 for (p, _v) = factor(B1)
       if haskey(de, p)
         de[p] += _v*n^k
         continue
@@ -161,8 +129,9 @@ function compact_presentation(a::FacElem{nf_elem, AnticNumberField}, nn::Int = 2
     v += Ref(n^k) .* v_b
     @v_do :CompactPresentation 2 @show new_n = sum(x^2 for x = v)
     @v_do :CompactPresentation 2 @show old_n / new_n 
-
-    be  *= FacElem(b)^(n^k)
+    
+    add_to_key!(be.fac, b, n^k)
+    #be *= FacElem(b)^(n^k)
     @hassert :CompactPresentation 1 length(de) == 0 && isone(abs(factored_norm(a*be))) == 1 ||
                                     abs(factored_norm(a*be)) == factored_norm(FacElem(de))
     @hassert :CompactPresentation 2 length(de) != 0 || isone(ideal(ZK, a*be)) 
@@ -179,13 +148,15 @@ function compact_presentation(a::FacElem{nf_elem, AnticNumberField}, nn::Int = 2
   @vprint :CompactPresentation 1 "Final eval...\n"
   @vtime :CompactPresentation 1 A = evaluate(FacElem(de), coprime = true)
   @vtime :CompactPresentation 1 b = evaluate_mod(a*be, A)
-  return inv(be)*b
+  inv!(be)
+  add_to_key!(be.fac, b, fmpz(1))
+  return be
 end
 
 function insert_prime_into_coprime(de::Dict{NfOrdIdl, fmpz}, p::NfOrdIdl, e::fmpz)
   @assert !isone(p)
   P = p.gen_one
-  for k=keys(de)
+  for (k, v) in de
     if k.gen_one % P == 0
       if k.splitting_type[2] == 0
         #k is not known to be prime, so p could divide...
@@ -196,11 +167,11 @@ function insert_prime_into_coprime(de::Dict{NfOrdIdl, fmpz}, p::NfOrdIdl, e::fmp
         #since it divides k it cannot divide any other (coprime!)
         p2 = simplify(k*inv(p)^v1).num
         if !isone(p2)
-          de[p2] = de[k]
+          de[p2] = v
         end
-        de[p] = de[k]*v1+e
+        de[p] = v*v1+e
         delete!(de, k)
-        return
+        return nothing
       else
         #both are know to be prime, and p is new to the dict.
         @assert p != k
@@ -208,6 +179,7 @@ function insert_prime_into_coprime(de::Dict{NfOrdIdl, fmpz}, p::NfOrdIdl, e::fmp
     end
   end
   de[p] = e
+  return nothing
 end
 
 #TODO: use the log as a stopping condition as well

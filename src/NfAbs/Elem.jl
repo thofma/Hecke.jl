@@ -385,7 +385,14 @@ function factor(f::PolyElem{nf_elem})
     return r
   end
 
+  v = 0
+  while v < degree(f) && iszero(coeff(f, v))
+    v += 1
+  end
+  f = shift_right(f, v)
+
   f_orig = deepcopy(f)
+
   @vprint :PolyFactor 1 "Factoring $f\n"
   @vtime :PolyFactor 2 g = gcd(f, derivative(f))  
   if degree(g) > 0
@@ -397,6 +404,9 @@ function factor(f::PolyElem{nf_elem})
     multip = div(degree(f_orig), degree(f))
     r = Fac{typeof(f)}()
     r.fac = Dict{typeof(f), Int}(f*(1//lead(f)) => multip)
+    if v > 0
+      r.fac[gen(parent(f))] = v
+    end
     r.unit = one(Kx) * lead(f_orig)
     return r
   end
@@ -431,6 +441,9 @@ function factor(f::PolyElem{nf_elem})
         return r
       end
     end
+  end
+  if v > 0
+    r.fac[gen(parent(f))] = v
   end
   r.unit = one(Kx)* lead(f_orig)//prod((lead(p) for (p, e) in r))
   return r

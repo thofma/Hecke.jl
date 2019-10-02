@@ -1,6 +1,6 @@
 ################################################################################
 #
-#  NfRel/NfRel_ns.jl : non-simple relative fields
+#  NfRel/NfRelNS.jl : non-simple relative fields
 #
 # This file is part of Hecke.
 #
@@ -32,7 +32,7 @@
 #
 ################################################################################
 
-export NfRel_ns, simple_extension
+export NfRelNS, simple_extension
 
 #= trivial example
 Qx, x = PolynomialRing(FlintQQ)
@@ -66,14 +66,14 @@ end
 #
 ################################################################################
 
-function Base.deepcopy_internal(a::NfRel_nsElem{T}, dict::IdDict) where T
-  z = NfRel_nsElem{T}(Base.deepcopy_internal(data(a), dict))
+function Base.deepcopy_internal(a::NfRelNSElem{T}, dict::IdDict) where T
+  z = NfRelNSElem{T}(Base.deepcopy_internal(data(a), dict))
   z.parent = parent(a)
   return z
 end
 
 #julia's a^i needs copy
-function Base.copy(a::NfRel_nsElem)
+function Base.copy(a::NfRelNSElem)
   return parent(a)(a.data)
 end
 
@@ -83,39 +83,39 @@ end
 #
 ################################################################################
 
-Nemo.elem_type(::Type{NfRel_ns{T}}) where {T} = NfRel_nsElem{T}
+Nemo.elem_type(::Type{NfRelNS{T}}) where {T} = NfRelNSElem{T}
 
-Nemo.elem_type(::NfRel_ns{T}) where {T} = NfRel_nsElem{T}
+Nemo.elem_type(::NfRelNS{T}) where {T} = NfRelNSElem{T}
 
-Nemo.parent_type(::Type{NfRel_nsElem{T}}) where {T} = NfRel_ns{T}
+Nemo.parent_type(::Type{NfRelNSElem{T}}) where {T} = NfRelNS{T}
 
-order_type(K::NfRel_ns{T}) where {T} = NfRelOrd{T, frac_ideal_type(order_type(base_field(K)))}
+order_type(K::NfRelNS{T}) where {T} = NfRelOrd{T, fractional_ideal_type(order_type(base_field(K)))}
 
-order_type(::Type{NfRel_ns{T}}) where {T} = NfRelOrd{T, frac_ideal_type(order_type(parent_type(T)))}
+order_type(::Type{NfRelNS{T}}) where {T} = NfRelOrd{T, fractional_ideal_type(order_type(parent_type(T)))}
 
-Nemo.needs_parentheses(::NfRel_nsElem) = true
+Nemo.needs_parentheses(::NfRelNSElem) = true
 
-Nemo.isnegative(x::NfRel_nsElem) = Nemo.isnegative(data(x))
+Nemo.isnegative(x::NfRelNSElem) = Nemo.isnegative(data(x))
 
-Nemo.show_minus_one(::Type{NfRel_nsElem{T}}) where {T} = true
+Nemo.show_minus_one(::Type{NfRelNSElem{T}}) where {T} = true
 
-function Nemo.iszero(a::NfRel_nsElem)
+function Nemo.iszero(a::NfRelNSElem)
   reduce!(a)
   return iszero(data(a))
 end
 
-function Nemo.isone(a::NfRel_nsElem)
+function Nemo.isone(a::NfRelNSElem)
   reduce!(a)
   return isone(data(a))
 end
 
-Nemo.zero(K::NfRel_ns) = K(Nemo.zero(parent(K.pol[1])))
+Nemo.zero(K::NfRelNS) = K(Nemo.zero(parent(K.pol[1])))
 
-Nemo.one(K::NfRel_ns) = K(Nemo.one(parent(K.pol[1])))
+Nemo.one(K::NfRelNS) = K(Nemo.one(parent(K.pol[1])))
 
-Nemo.one(a::NfRel_nsElem) = one(a.parent)
+Nemo.one(a::NfRelNSElem) = one(a.parent)
 
-(K::NfRel_ns{T})(a::NfRel_nsElem) where {T} = a
+(K::NfRelNS{T})(a::NfRelNSElem) where {T} = a
 
 ################################################################################
 #
@@ -123,18 +123,18 @@ Nemo.one(a::NfRel_nsElem) = one(a.parent)
 #
 ################################################################################
 
-Nemo.promote_rule(::Type{NfRel_nsElem{S}}, ::Type{T}) where {T <: Integer, S} = NfRel_nsElem{S}
+Nemo.promote_rule(::Type{NfRelNSElem{S}}, ::Type{T}) where {T <: Integer, S} = NfRelNSElem{S}
 
-Nemo.promote_rule(::Type{NfRel_nsElem{T}}, ::Type{fmpz}) where {T <: Nemo.RingElement} = NfRel_nsElem{T}
+Nemo.promote_rule(::Type{NfRelNSElem{T}}, ::Type{fmpz}) where {T <: Nemo.RingElement} = NfRelNSElem{T}
 
-Nemo.promote_rule(::Type{NfRel_nsElem{T}}, ::Type{fmpq}) where {T <: Nemo.RingElement} = NfRel_nsElem{T}
+Nemo.promote_rule(::Type{NfRelNSElem{T}}, ::Type{fmpq}) where {T <: Nemo.RingElement} = NfRelNSElem{T}
 
-Nemo.promote_rule(::Type{NfRel_nsElem{T}}, ::Type{T}) where {T} = NfRel_nsElem{T}
+Nemo.promote_rule(::Type{NfRelNSElem{T}}, ::Type{T}) where {T} = NfRelNSElem{T}
 
-Nemo.promote_rule(::Type{NfRel_nsElem{T}}, ::Type{NfRel_nsElem{T}}) where T <: Nemo.RingElement = NfRel_nsElem{T}
+Nemo.promote_rule(::Type{NfRelNSElem{T}}, ::Type{NfRelNSElem{T}}) where T <: Nemo.RingElement = NfRelNSElem{T}
 
-function Nemo.promote_rule(::Type{NfRel_nsElem{T}}, ::Type{U}) where {T <: Nemo.RingElement, U <: Nemo.RingElement}
-  Nemo.promote_rule(T, U) == T ? NfRel_nsElem{T} : Union{}
+function Nemo.promote_rule(::Type{NfRelNSElem{T}}, ::Type{U}) where {T <: Nemo.RingElement, U <: Nemo.RingElement}
+  Nemo.promote_rule(T, U) == T ? NfRelNSElem{T} : Union{}
 end
 
 ################################################################################
@@ -143,13 +143,13 @@ end
 #
 ################################################################################
 
-@inline base_field(a::NfRel_ns{T}) where {T} = a.base_ring::parent_type(T)
+@inline base_field(a::NfRelNS{T}) where {T} = a.base_ring::parent_type(T)
 
-@inline Nemo.data(a::NfRel_nsElem) = a.data
+@inline Nemo.data(a::NfRelNSElem) = a.data
 
-@inline Nemo.parent(a::NfRel_nsElem{T}) where {T} = a.parent::NfRel_ns{T}
+@inline Nemo.parent(a::NfRelNSElem{T}) where {T} = a.parent::NfRelNS{T}
 
-issimple(a::NfRel_ns) = false
+issimple(a::NfRelNS) = false
 
 ################################################################################
 #
@@ -157,7 +157,7 @@ issimple(a::NfRel_ns) = false
 #
 ################################################################################
 
-function reduce!(a::NfRel_nsElem)
+function reduce!(a::NfRelNSElem)
   q, a.data = divrem(a.data, parent(a).pol)
   return a
 end
@@ -168,14 +168,14 @@ end
 #
 ################################################################################
 
-function Base.show(io::IO, a::NfRel_ns)
+function Base.show(io::IO, a::NfRelNS)
   print(io, "non-simple Relative number field over\n")
   print(io, base_field(a), "\n")
   print(io, " with defining polynomials ", a.pol)
 end
 
 #TODO: this is a terrible show func.
-function Base.show(io::IO, a::NfRel_nsElem)
+function Base.show(io::IO, a::NfRelNSElem)
   f = data(a)
   AbstractAlgebra.Generic._show(io, f, [string(s) for s = a.parent.S])
   return nothing
@@ -187,51 +187,51 @@ end
 #
 ################################################################################
 
-function Nemo.NumberField(f::Array{Generic.Poly{T}, 1}, s::String="_\$"; cached::Bool = false, check::Bool = true) where T
+function NumberField(f::Array{Generic.Poly{T}, 1}, s::String="_\$"; cached::Bool = false, check::Bool = true) where T
   S = Symbol(s)
   R = base_ring(f[1])
   Rx, x = PolynomialRing(R, length(f), s)
-  K = NfRel_ns(f, [f[i](x[i]) for i=1:length(f)], [Symbol("$s$i") for i=1:length(f)])
+  K = NfRelNS(f, [f[i](x[i]) for i=1:length(f)], [Symbol("$s$i") for i=1:length(f)])
   if check
-    if !check_consistency(K)
+    if !_check_consistency(K)
       error("The fields are not linearly disjoint!")
     end
   end
   return K, gens(K)
 end
 
-Nemo.gens(K::NfRel_ns) = [K(x) for x = gens(parent(K.pol[1]))]
+Nemo.gens(K::NfRelNS) = [K(x) for x = gens(parent(K.pol[1]))]
 
-function (K::NfRel_ns{T})(a::Generic.MPoly{T}) where T
+function (K::NfRelNS{T})(a::Generic.MPoly{T}) where T
   q, w = divrem(a, K.pol)
-  z = NfRel_nsElem{T}(w)
+  z = NfRelNSElem{T}(w)
   z.parent = K
   return z
 end
 
-function (K::NfRel_ns{T})(a::T) where T
+function (K::NfRelNS{T})(a::T) where T
   parent(a) != base_ring(parent(K.pol[1])) == error("Cannot coerce")
-  z = NfRel_nsElem{T}(parent(K.pol[1])(a))
+  z = NfRelNSElem{T}(parent(K.pol[1])(a))
   z.parent = K
   return z
 end
 
-function (K::NfRel_ns{T})(a::NfRel_nsElem{T}) where T
+function (K::NfRelNS{T})(a::NfRelNSElem{T}) where T
   parent(a) != K == error("Cannot coerce")
   return a
 end
 
-(K::NfRel_ns)(a::Integer) = K(parent(K.pol[1])(a))
+(K::NfRelNS)(a::Integer) = K(parent(K.pol[1])(a))
 
-(K::NfRel_ns)(a::Rational{T}) where {T <: Integer} = K(parent(K.pol[1])(a))
+(K::NfRelNS)(a::Rational{T}) where {T <: Integer} = K(parent(K.pol[1])(a))
 
-(K::NfRel_ns)(a::fmpz) = K(parent(K.pol[1])(a))
+(K::NfRelNS)(a::fmpz) = K(parent(K.pol[1])(a))
 
-(K::NfRel_ns)(a::fmpq) = K(parent(K.pol[1])(a))
+(K::NfRelNS)(a::fmpq) = K(parent(K.pol[1])(a))
 
-(K::NfRel_ns)() = zero(K)
+(K::NfRelNS)() = zero(K)
 
-Nemo.gen(K::NfRel_ns) = K(Nemo.gen(parent(K.pol[1])))
+Nemo.gen(K::NfRelNS) = K(Nemo.gen(parent(K.pol[1])))
 
 ################################################################################
 #
@@ -239,7 +239,7 @@ Nemo.gen(K::NfRel_ns) = K(Nemo.gen(parent(K.pol[1])))
 #
 ################################################################################
 
-function Base.:(-)(a::NfRel_nsElem)
+function Base.:(-)(a::NfRelNSElem)
   return parent(a)(-data(a))
 end
 
@@ -249,27 +249,27 @@ end
 #
 ################################################################################
 
-function Base.:(+)(a::NfRel_nsElem{T}, b::NfRel_nsElem{T}) where {T}
+function Base.:(+)(a::NfRelNSElem{T}, b::NfRelNSElem{T}) where {T}
   return parent(a)(data(a) + data(b))
 end
 
-function Base.:(-)(a::NfRel_nsElem{T}, b::NfRel_nsElem{T}) where {T}
+function Base.:(-)(a::NfRelNSElem{T}, b::NfRelNSElem{T}) where {T}
   return parent(a)(data(a) - data(b))
 end
 
-function Base.:(*)(a::NfRel_nsElem{T}, b::NfRel_nsElem{T}) where {T}
+function Base.:(*)(a::NfRelNSElem{T}, b::NfRelNSElem{T}) where {T}
   return parent(a)(data(a) * data(b))
 end
 
-function Base.:(//)(a::NfRel_nsElem{T}, b::NfRel_nsElem{T}) where {T}
+function Base.:(//)(a::NfRelNSElem{T}, b::NfRelNSElem{T}) where {T}
   return div(a, b)
 end
 
-function Nemo.div(a::NfRel_nsElem{T}, b::NfRel_nsElem{T}) where {T}
+function Nemo.div(a::NfRelNSElem{T}, b::NfRelNSElem{T}) where {T}
   return a*inv(b)
 end
 
-Nemo.divexact(a::NfRel_nsElem, b::NfRel_nsElem) = div(a, b)
+Nemo.divexact(a::NfRelNSElem, b::NfRelNSElem) = div(a, b)
 ################################################################################
 #
 #  Powering
@@ -277,7 +277,7 @@ Nemo.divexact(a::NfRel_nsElem, b::NfRel_nsElem) = div(a, b)
 ################################################################################
 #via julia
 
-function Base.:(^)(a::NfRel_nsElem{T}, b::Integer) where T 
+function Base.:(^)(a::NfRelNSElem{T}, b::Integer) where T 
   if b < 0
     return inv(a)^(-b)
   elseif b == 0
@@ -287,12 +287,12 @@ function Base.:(^)(a::NfRel_nsElem{T}, b::Integer) where T
   elseif mod(b, 2) == 0
     c = a^(div(b, 2))
     return c*c
-  else mod(b, 2) == 1
+  else 
     return a^(b - 1)*a
   end
 end
 
-function Base.:(^)(a::NfRel_nsElem{T}, b::fmpz) where T
+function Base.:(^)(a::NfRelNSElem{T}, b::fmpz) where T
   if b < 0
     return inv(a)^(-b)
   elseif b == 0
@@ -302,7 +302,7 @@ function Base.:(^)(a::NfRel_nsElem{T}, b::fmpz) where T
   elseif mod(b, 2) == 0
     c = a^(div(b, 2))
     return c*c
-  else mod(b, 2) == 1
+  else 
     return a^(b - 1)*a
   end
 end
@@ -313,7 +313,7 @@ end
 #
 ################################################################################
 
-function Base.:(==)(a::NfRel_nsElem{T}, b::NfRel_nsElem{T}) where T
+function Base.:(==)(a::NfRelNSElem{T}, b::NfRelNSElem{T}) where T
   reduce!(a)
   reduce!(b)
   return data(a) == data(b)
@@ -325,19 +325,19 @@ end
 #
 ################################################################################
 
-function Nemo.mul!(c::NfRel_nsElem{T}, a::NfRel_nsElem{T}, b::NfRel_nsElem{T}) where {T}
+function Nemo.mul!(c::NfRelNSElem{T}, a::NfRelNSElem{T}, b::NfRelNSElem{T}) where {T}
   mul!(c.data, a.data, b.data)
   c = reduce!(c)
   return c
 end
 
-function Nemo.addeq!(b::NfRel_nsElem{T}, a::NfRel_nsElem{T}) where {T}
+function Nemo.addeq!(b::NfRelNSElem{T}, a::NfRelNSElem{T}) where {T}
   addeq!(b.data, a.data)
   b = reduce!(b)
   return b
 end
 
-function Base.hash(a::NfRel_nsElem{nf_elem}, b::UInt)
+function Base.hash(a::NfRelNSElem{nf_elem}, b::UInt)
   reduce!(a)
   return hash(a.data, b)
 end
@@ -346,7 +346,7 @@ end
 # other stuff, trivia and non-trivia
 ###############################################################################
 
-function Nemo.degree(K::NfRel_ns)
+function Nemo.degree(K::NfRelNS)
   return prod([total_degree(x) for x=K.pol])
 end
 
@@ -374,8 +374,8 @@ function (R::Generic.PolyRing{nf_elem})(f::Generic.MPoly)
 end
 
 #non-optimal...
-function basis(K::NfRel_ns)
-  b = NfRel_nsElem[]
+function basis(K::NfRelNS)
+  b = NfRelNSElem[]
   g = gens(K)
   for i=CartesianIndices(Tuple(1:total_degree(f) for f = K.pol))
     push!(b, prod(g[j]^(i[j]-1) for j=1:length(i)))
@@ -383,7 +383,7 @@ function basis(K::NfRel_ns)
   return b
 end
 
-function basis_matrix(a::Vector{NfRel_nsElem{T}}) where {T <: NumFieldElem}
+function basis_matrix(a::Vector{NfRelNSElem{T}}) where {T <: NumFieldElem}
   @assert length(a) > 0
   K = parent(a[1])
   M = zero_matrix(base_field(K), length(a), degree(K))
@@ -393,7 +393,7 @@ function basis_matrix(a::Vector{NfRel_nsElem{T}}) where {T <: NumFieldElem}
   return M
 end
 
-function elem_to_mat_row!(M::Generic.Mat{T}, i::Int, a::NfRel_nsElem{T}) where T
+function elem_to_mat_row!(M::Generic.Mat{T}, i::Int, a::NfRelNSElem{T}) where T
   a.parent
   K = parent(a)
   #C = CartesianIndices(Tuple(0:total_degree(f)-1 for f = K.pol))
@@ -409,7 +409,7 @@ function elem_to_mat_row!(M::Generic.Mat{T}, i::Int, a::NfRel_nsElem{T}) where T
   end
 end
 
-function elem_from_mat_row(K::NfRel_ns{T}, M::Generic.Mat{T}, i::Int) where T
+function elem_from_mat_row(K::NfRelNS{T}, M::Generic.Mat{T}, i::Int) where T
   a = K()
   t = K()
   b = basis(K)
@@ -423,7 +423,7 @@ function elem_from_mat_row(K::NfRel_ns{T}, M::Generic.Mat{T}, i::Int) where T
   return a
 end
 
-function monomial_to_index(i::Int, a::NfRel_nsElem)
+function monomial_to_index(i::Int, a::NfRelNSElem)
   K = parent(a)
   n = ngens(K)
   idx = a.data.exps[1, i]
@@ -434,7 +434,7 @@ function monomial_to_index(i::Int, a::NfRel_nsElem)
   return Int(idx+1)
 end
 
-function SRow(a::NfRel_nsElem)
+function SRow(a::NfRelNSElem)
   sr = SRow(base_field(parent(a)))
   for i=1:length(a.data)
     push!(sr.pos, monomial_to_index(i, a))
@@ -458,7 +458,7 @@ function SRow(a::NfRelElem)
   return sr
 end
   
-function minpoly_dense(a::NfRel_nsElem)
+function minpoly_dense(a::NfRelNSElem)
   K = parent(a)
   n = degree(K)
   k = base_field(K)
@@ -491,7 +491,7 @@ function Base.Matrix(a::SMat)
   return A
 end  
 
-function minpoly_sparse(a::NfRel_nsElem)
+function minpoly_sparse(a::NfRelNSElem)
   K = parent(a)
   n = degree(K)
   k = base_field(K)
@@ -535,11 +535,11 @@ function minpoly_sparse(a::NfRel_nsElem)
   end
 end
 
-function minpoly(a::NfRel_nsElem)
+function minpoly(a::NfRelNSElem)
   return minpoly_sparse(a)
 end
 
-function minpoly(a::NfRel_nsElem{nf_elem}, ::FlintRationalField)
+function minpoly(a::NfRelNSElem{nf_elem}, ::FlintRationalField)
   f = minpoly(a)
   n = norm(f)
   g = gcd(n, derivative(n))
@@ -550,9 +550,9 @@ function minpoly(a::NfRel_nsElem{nf_elem}, ::FlintRationalField)
   return n
 end
 
-absolute_minpoly(a::NfRel_nsElem{nf_elem}) = minpoly(a, FlintQQ)
+absolute_minpoly(a::NfRelNSElem{nf_elem}) = minpoly(a, FlintQQ)
 
-function inv(a::NfRel_nsElem)
+function inv(a::NfRelNSElem)
   if iszero(a)
     error("division by zero")
   end
@@ -565,23 +565,23 @@ function inv(a::NfRel_nsElem)
   return -z*inv(coeff(f, 0))
 end
 
-function charpoly(a::NfRel_nsElem)
+function charpoly(a::NfRelNSElem)
   f = minpoly(a)
   return f^div(degree(parent(a)), degree(f))
 end
 
-function norm(a::NfRel_nsElem)
+function norm(a::NfRelNSElem)
   f = minpoly(a)
   return (-1)^degree(parent(a)) * coeff(f, 0)^div(degree(parent(a)), degree(f))
 end
 
-function tr(a::NfRel_nsElem)
+function tr(a::NfRelNSElem)
   f = minpoly(a)
   return -coeff(f, degree(f)-1)*div(degree(parent(a)), degree(f))
 end
 
 #TODO: also provide a sparse version
-function representation_matrix(a::NfRel_nsElem)
+function representation_matrix(a::NfRelNSElem)
   K = parent(a)
   b = basis(K)
   k = base_field(K)
@@ -592,15 +592,15 @@ function representation_matrix(a::NfRel_nsElem)
   return M
 end
 
-@inline ngens(K::NfRel_ns) = length(K.pol)
+@inline ngens(K::NfRelNS) = length(K.pol)
 
-mutable struct NfRelToNfRel_nsMor{T} <: Map{NfRel{T}, NfRel_ns{T}, HeckeMap, NfRelToNfRel_nsMor}
-  header::MapHeader{NfRel{T}, NfRel_ns{T}}
-  prim_img::NfRel_nsElem{T}
+mutable struct NfRelToNfRelNSMor{T} <: Map{NfRel{T}, NfRelNS{T}, HeckeMap, NfRelToNfRelNSMor}
+  header::MapHeader{NfRel{T}, NfRelNS{T}}
+  prim_img::NfRelNSElem{T}
   emb::Array{NfRelElem{T}, 1}
   coeff_aut::NfToNfMor
 
-  function NfRelToNfRel_nsMor(K::NfRel{T}, L::NfRel_ns{T}, a::NfRel_nsElem{T}, emb::Array{NfRelElem{T}, 1}) where {T}
+  function NfRelToNfRelNSMor(K::NfRel{T}, L::NfRelNS{T}, a::NfRelNSElem{T}, emb::Array{NfRelElem{T}, 1}) where {T}
     function image(x::NfRelElem{T})
       # x is an element of K
       f = data(x)
@@ -609,7 +609,7 @@ mutable struct NfRelToNfRel_nsMor{T} <: Map{NfRel{T}, NfRel_ns{T}, HeckeMap, NfR
       return f(a)
     end
 
-    function preimage(x::NfRel_nsElem{T})
+    function preimage(x::NfRelNSElem{T})
       return msubst(x.data, emb)
     end
 
@@ -620,7 +620,7 @@ mutable struct NfRelToNfRel_nsMor{T} <: Map{NfRel{T}, NfRel_ns{T}, HeckeMap, NfR
     return z
   end  
 
-  function NfRelToNfRel_nsMor(K::NfRel{T}, L::NfRel_ns{T}, a::NfRel_nsElem{T}) where {T}
+  function NfRelToNfRelNSMor(K::NfRel{T}, L::NfRelNS{T}, a::NfRelNSElem{T}) where {T}
     function image(x::NfRelElem{T})
       # x is an element of K
       f = data(x)
@@ -635,7 +635,7 @@ mutable struct NfRelToNfRel_nsMor{T} <: Map{NfRel{T}, NfRel_ns{T}, HeckeMap, NfR
     return z
   end  
 
-  function NfRelToNfRel_nsMor(K::NfRel{T}, L::NfRel_ns{T}, aut::Map, a::NfRel_nsElem{T}) where {T}
+  function NfRelToNfRelNSMor(K::NfRel{T}, L::NfRelNS{T}, aut::Map, a::NfRelNSElem{T}) where {T}
     aut = NfToNfMor(domain(aut), codomain(aut), aut(gen(domain(aut))))
     function image(x::NfRelElem{T})
       # x is an element of K
@@ -658,13 +658,13 @@ mutable struct NfRelToNfRel_nsMor{T} <: Map{NfRel{T}, NfRel_ns{T}, HeckeMap, NfR
 
 end
 
-mutable struct NfRel_nsToNfRel_nsMor{T} <: Map{NfRel_ns{T}, NfRel_ns{T}, HeckeMap, NfRel_nsToNfRel_nsMor}
-  header::MapHeader{NfRel_ns{T}, NfRel_ns{T}}
-  emb::Array{NfRel_nsElem{T}, 1}
+mutable struct NfRelNSToNfRelNSMor{T} <: Map{NfRelNS{T}, NfRelNS{T}, HeckeMap, NfRelNSToNfRelNSMor}
+  header::MapHeader{NfRelNS{T}, NfRelNS{T}}
+  emb::Array{NfRelNSElem{T}, 1}
   coeff_aut::NfToNfMor
 
-  function NfRel_nsToNfRel_nsMor(K::NfRel_ns{T}, L::NfRel_ns{T}, emb::Array{NfRel_nsElem{T}, 1}) where {T}
-    function image(x::NfRel_nsElem{T})
+  function NfRelNSToNfRelNSMor(K::NfRelNS{T}, L::NfRelNS{T}, emb::Array{NfRelNSElem{T}, 1}) where {T}
+    function image(x::NfRelNSElem{T})
       # x is an element of K
       # First evaluate the coefficients of f at a to get a polynomial over L
       # Then evaluate at b
@@ -678,8 +678,8 @@ mutable struct NfRel_nsToNfRel_nsMor{T} <: Map{NfRel_ns{T}, NfRel_ns{T}, HeckeMa
     return z
   end  
 
-  function NfRel_nsToNfRel_nsMor(K::NfRel_ns{T}, L::NfRel_ns{T}, aut::Map, emb::Array{NfRel_nsElem{T}, 1}) where {T}
-    function image(x::NfRel_nsElem{T})
+  function NfRelNSToNfRelNSMor(K::NfRelNS{T}, L::NfRelNS{T}, aut::Map, emb::Array{NfRelNSElem{T}, 1}) where {T}
+    function image(x::NfRelNSElem{T})
       # x is an element of K
       # First evaluate the coefficients of f at a to get a polynomial over L
       # Then evaluate at b
@@ -703,9 +703,9 @@ mutable struct NfRel_nsToNfRel_nsMor{T} <: Map{NfRel_ns{T}, NfRel_ns{T}, HeckeMa
   end  
 end
 
-id_hom(K::NfRel_ns) = NfRel_nsToNfRel_nsMor(K, K, gens(K))
+id_hom(K::NfRelNS) = NfRelNSToNfRelNSMor(K, K, gens(K))
 
-function Base.hash(f::NfRel_nsToNfRel_nsMor{T}, u::UInt64) where T
+function Base.hash(f::NfRelNSToNfRelNSMor{T}, u::UInt64) where T
   #I combine the hash functions for the automorphism of the base field and the hash function for the images of the generators.
   a = hash(f.coeff_aut, u)
   for i = 1:length(f.emb)
@@ -714,14 +714,14 @@ function Base.hash(f::NfRel_nsToNfRel_nsMor{T}, u::UInt64) where T
   return a
 end
 
-function Base.:(*)(f::NfRel_nsToNfRel_nsMor{T}, g::NfRel_nsToNfRel_nsMor{T}) where {T}
+function Base.:(*)(f::NfRelNSToNfRelNSMor{T}, g::NfRelNSToNfRelNSMor{T}) where {T}
   codomain(f) == domain(g) || throw("Maps not compatible")
 
   a = gens(domain(g))
-  return NfRel_nsToNfRel_nsMor(domain(g), codomain(f), f.coeff_aut * g.coeff_aut, [ g(f(x)) for x in a])
+  return NfRelNSToNfRelNSMor(domain(g), codomain(f), f.coeff_aut * g.coeff_aut, [ g(f(x)) for x in a])
 end
 
-function Base.:(==)(f::NfRel_nsToNfRel_nsMor{T}, g::NfRel_nsToNfRel_nsMor{T}) where {T}
+function Base.:(==)(f::NfRelNSToNfRelNSMor{T}, g::NfRelNSToNfRelNSMor{T}) where {T}
   if domain(f) != domain(g) || codomain(f) != codomain(g)
     return false
   end
@@ -766,7 +766,7 @@ function msubst(f::Generic.MPoly{T}, v::Array{NfRelElem{T}, 1}) where T
   end
   return r
 end
-function msubst(f::Generic.MPoly{T}, v::Array{NfRel_nsElem{T}, 1}) where T
+function msubst(f::Generic.MPoly{T}, v::Array{NfRelNSElem{T}, 1}) where T
   k = base_ring(parent(f))
   n = length(v)
   @assert n == ngens(parent(f))
@@ -777,13 +777,13 @@ function msubst(f::Generic.MPoly{T}, v::Array{NfRel_nsElem{T}, 1}) where T
   return r
 end
 
-function simple_extension(K::NfRel_ns{T}) where {T}
+function simple_extension(K::NfRelNS{T}) where {T}
   n = ngens(K)
   g = gens(K)
   if n == 1
     fl, p = isunivariate(K.pol[1])
     Ks, gKs = number_field(p, cached = false, check = false)
-    return Ks, NfRelToNfRel_nsMor(Ks, K, g[1], [gKs])
+    return Ks, NfRelToNfRelNSMor(Ks, K, g[1], [gKs])
   end
   if lcm([total_degree(K.pol[i]) for i = 1:length(K.pol)]) == degree(K)
     #The sum of the primitive elements is the right element
@@ -827,24 +827,24 @@ function simple_extension(K::NfRel_ns{T}) where {T}
     end
   end
 
-  return Ka, NfRelToNfRel_nsMor(Ka, K, pe, emb)
+  return Ka, NfRelToNfRelNSMor(Ka, K, pe, emb)
 end
 
 @doc Markdown.doc"""
-    simple_extension(K::NfRel_ns{nf_elem}, FlintQQ) -> AnticNumberField, Map, Map
+    simple_extension(K::NfRelNS{nf_elem}, FlintQQ) -> AnticNumberField, Map, Map
 
-    absolute_field(K::NfRel_ns{nf_elem}) -> AnticNumberField, Map, Map
+    absolute_field(K::NfRelNS{nf_elem}) -> AnticNumberField, Map, Map
 
 Compute an isomorphic field as an extension of $Q$ together with the isomorphism 
 (1st map) and the embedding of the base field (2nd map).
 """
-function simple_extension(K::NfRel_ns{nf_elem}, ::FlintRationalField)
+function simple_extension(K::NfRelNS{nf_elem}, ::FlintRationalField)
   Ks, mp = simple_extension(K)
   Ka, m1, m2 = absolute_field(Ks)
   return Ka, m1*mp, m2
 end
 
-absolute_field(K::NfRel_ns{nf_elem}) = simple_extension(K, FlintQQ)
+absolute_field(K::NfRelNS{nf_elem}) = simple_extension(K, FlintQQ)
 
 #trivia, missing in NfRel
 function basis(K::NfRel)
@@ -865,7 +865,7 @@ function Base.copy(a::NfRelElem)
   return parent(a)(a.data)
 end
 
-function Nemo.discriminant(K::NfRel_ns)
+function Nemo.discriminant(K::NfRelNS)
   p = [isunivariate(x)[2] for x = K.pol]
   d = discriminant(p[1])
   n = degree(p[1])
@@ -876,7 +876,237 @@ function Nemo.discriminant(K::NfRel_ns)
   return d
 end
 
-function Nemo.discriminant(K::NfRel_ns, ::FlintRationalField)
+function Nemo.discriminant(K::NfRelNS, ::FlintRationalField)
   d = norm(discriminant(K)) * discriminant(base_field(K))^degree(K)
   return d
+end
+
+
+################################################################################
+#
+#  Permutation group from NfRelNSToNfRelNSMor
+#
+################################################################################
+
+function _get_poly_from_elem(a::NfRelNSElem{nf_elem}, Qxy)
+  K = base_field(parent(a))
+  Qx = parent(K.pol)
+  p = change_base_ring(a.data, x -> evaluate(Qx(x), gen(Qxy, nvars(Qxy))))
+  p1 = evaluate(p, [i for i in 1:ngens(parent(a))], gens(Qxy)[1:end-1])
+  res = coeff(p1, [0 for i = 1:nvars(parent(p1))])
+  return res
+end
+
+function multivariate_from_tower(f::Generic.MPoly{nf_elem}, Qxy)
+  M = MPolyBuildCtx(Qxy)
+  K = base_ring(f)
+  Qx = parent(K.pol)
+  cvzip = zip(coeffs(f), exponent_vectors(f))
+  for (c, v) in cvzip
+    pc = Qx(c)
+    for i = degree(pc):-1:0
+      cpc = coeff(pc, i)
+      if iszero(cpc)
+        continue
+      end
+      vn = vcat(v, i)
+      push_term!(M, cpc, vn)
+    end
+  end
+  return finish(M)
+end
+
+function (Rxy::NmodMPolyRing)(f::fmpq_mpoly)
+  R = base_ring(Rxy)
+  res = change_base_ring(f, x -> divexact(R(numerator(x)), R(denominator(x))), Rxy)
+  return res
+end
+
+function _get_polys_from_auto(f::NfRelNSToNfRelNSMor{nf_elem}, Qxy)
+  res = Vector{elem_type(Qxy)}(undef, nvars(Qxy))
+  fK = f.coeff_aut
+  ap = fK.prim_img
+  K = parent(ap)
+  res[nvars(Qxy)] = evaluate(parent(K.pol)(ap), gen(Qxy, nvars(Qxy)))
+  for i = 1:nvars(Qxy)-1
+    res[i] = multivariate_from_tower(f.emb[i].data, Qxy)
+  end
+  return res
+end
+
+function Base.hash(f::nmod_mpoly, h::UInt)
+  return UInt(1)
+end
+
+function permutation_group1(G::Vector{NfRelNSToNfRelNSMor{nf_elem}})
+  L = domain(G[1])
+  K = base_field(L)
+  dK = absolute_degree(L)
+  d1 = numerator(discriminant(L, FlintQQ))
+  p = 2
+  while divisible(d1, p)
+    p = next_prime(p)
+  end
+  R = ResidueRing(FlintZZ, p, cached = false)
+  Rm, gRm = PolynomialRing(R, ngens(L)+1, cached = false)
+  fmod = Vector{elem_type(Rm)}(undef, ngens(L)+1)
+  RQm, gRQm = PolynomialRing(FlintQQ, ngens(L)+1, cached = false)
+  p1 = K.pol
+  p1Q = evaluate(p1, gRQm[end])
+  fmod[1] = Rm(p1Q)
+  for i = 1:ngens(L)
+    pp = L.pol[i]
+    pp1 = multivariate_from_tower(pp, RQm)
+    fmod[i+1] = Rm(pp1)
+  end
+  permutations = Array{Array{Int, 1},1}(undef, length(G))
+  for i = 1:length(G)
+    permutations[i] = Vector{Int}(undef, dK)
+  end
+  pols = Vector{typeof(gRm)}(undef, dK)
+  pols[1] = gRm
+  ind = 2
+  gpols = map(Rm, _get_polys_from_auto(G[1], RQm))
+  if gpols != gRm
+    pols[ind] = gpols
+    ind += 1
+    gpol = [compose_mod(gpols[i], [j for j = 1:nvars(Rm)], pols[2], fmod) for i = 1:length(gpols)]
+    while gRm != gpol
+      pols[ind] = gpol
+      ind += 1
+      gpol = [compose_mod(gpol[i], [j for j in 1:nvars(Rm)], pols[2], fmod) for i = 1:length(gpols)]
+    end
+  end
+  for i in 2:length(G)
+    pi = typeof(gRm[1])[Rm(x) for x in _get_polys_from_auto(G[i], RQm)]
+    if !(pi in pols[1:ind-1])
+      previous_order = ind - 1
+      pols[ind] = pi
+      ind += 1
+      for j in 2:previous_order
+        pols[ind] = [compose_mod(pols[j][s], [z for z in 1:nvars(Rm)], pi, fmod) for s = 1:length(pi)]
+        ind += 1
+      end
+      if ind - 1 == dK
+        break
+      end
+      rep_pos = previous_order + 1
+      while rep_pos <= ind - 1
+        for k in 1:i
+          po = map(Rm, _get_polys_from_auto(G[k], RQm))
+          att = [compose_mod(pols[rep_pos][s], [i for i in 1:nvars(Rm)], po, fmod) for s = 1:length(pols[rep_pos])]
+          if !(att in pols[1:ind-1])
+            pols[ind] = att
+            ind += 1
+            for j in 2:previous_order
+              pols[ind] = [compose_mod(pols[j][s], [z for z in 1:nvars(Rm)], att, fmod) for s = 1:length(pols[j])]
+              ind += 1
+            end
+            if ind - 1 == dK
+              break
+            end
+          end
+        end
+        rep_pos = rep_pos + previous_order
+      end
+    end
+  end
+  #Now, I have the images mod p
+  Dcreation = Vector{Tuple{typeof(pols[1]), Int}}(undef, length(pols))
+  for i = 1:length(pols)
+    Dcreation[i] = (pols[i], i)
+  end
+
+  gen_pols = [[Rm(y) for y in _get_polys_from_auto(x, RQm)] for x in G]
+  D = Dict(Dcreation)
+  for s = 1:length(G)
+    permutations[s][1] = D[gen_pols[s]]
+    for i = 2:length(pols)
+      permutations[s][i] = D[[compose_mod(gen_pols[s][t], [i for i in 1:nvars(Rm)], pols[i], fmod) for t = 1:length(gen_pols[s])]]
+    end
+  end
+  return permutations
+end
+
+
+@doc Markdown.doc"""
+    compose_mod(a::AbstractAlgebra.MPolyElem{T}, vars::Vector{Int}, vals::Vector{MPolyElem{T}}, mod::Vector{MPolyElem{T}}) where T <: FieldElement
+Evaluate the polynomial by substituting in the supplied values in the array `vals` for
+the corresponding variables with indices given by the array `vars`. The evaluation will
+succeed if multiplication is defined between elements of the coefficient ring of $a$ and
+elements of `vals`. The result will be reduced modulo "mod". If "mod" is a Groebner basis for the ideal 
+the elements generate. 
+"""
+function compose_mod(a::S, vars::Vector{Int}, vals::Vector{S}, mod::Vector{S}) where S <:MPolyElem{T} where T <: RingElem
+  unique(vars) != vars && error("Variables not unique")
+  length(vars) != length(vals) && error("Number of variables does not match number of values")
+  for i = 1:length(vars)
+    if vars[i] < 1 || vars[i] > nvars(parent(a))
+      error("Variable index not in range")
+    end
+  end
+  if length(vars) == 0
+    return a
+  end
+  powers = Dict{Int, S}[Dict{Int, S}() for i in 1:length(vals)]
+  return _compose_mod(a, vars, vals, powers, mod)
+end
+
+function powmod(a::S, i::Union{Int, fmpz}, modu::Vector{S}) where S <:MPolyElem{T} where T <: RingElem
+  if i == 0
+    return one(parent(a))
+  end
+  if i == 1
+    b = divrem(a, modu)[2]
+    return b
+  end
+  if mod(i, 2) == 0
+    j = div(i, 2)
+    b = powmod(a, j, modu)
+    b = b*b
+    b = divrem(b, modu)[2]
+    return b
+  end
+  b = divrem(a * powmod(a, i - 1, modu), modu)[2]
+  return b
+end
+
+function mulmod(a::S, b::S, mod::Vector{S}) where S <:MPolyElem{T} where T <: RingElem
+  return divrem(a*b, mod)[2]
+end
+
+
+function _compose_mod(a, vars, vals, powers, modu)
+  S = parent(a)
+  r = AbstractAlgebra.Generic.geobucket(S)
+  cvzip = zip(coeffs(a), exponent_vectors(a))
+  for (c, v) in cvzip
+    t = one(S)
+    for j = 1:length(vars)
+      varnum = vars[j]
+      exp = v[varnum]
+      if !haskey(powers[j], exp)
+        powers[j][exp] = powmod(vals[j], exp, modu)
+      end
+      t = mulmod(t, powers[j][exp], modu)
+      v[varnum] = 0
+    end
+    M = MPolyBuildCtx(S)
+    push_term!(M, c, v)
+    push!(r, mulmod(t, finish(M), modu))
+  end
+  return finish(r)
+end
+
+
+function change_base_ring(p::MPolyElem{T}, g, new_polynomial_ring) where {T <: RingElement}
+  cvzip = zip(coeffs(p), exponent_vectors(p))
+  M = MPolyBuildCtx(new_polynomial_ring)
+  for (c, v) in cvzip
+    res = g(c)
+    if !iszero(res)
+      push_term!(M, g(c), v)
+    end
+  end
+  return finish(M)::elem_type(new_polynomial_ring)
 end

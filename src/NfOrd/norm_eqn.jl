@@ -49,9 +49,9 @@ end
 
 For a fmpz $a$, try to find $T \in K$ s.th. $N(T) = a$
 holds. If successful, return true and $T$, otherwise false and some element.
-In \testtt{extra} one gave pass in additional prime numbers that
+In \testtt{extra} one can pass in additional prime numbers that
 are allowed to occur in the solution. This will then be supplemented.
-The element will be returned in factored form.
+The element will be returned in factored form. 
 """
 function isnorm(K::AnticNumberField, a::fmpz; extra::Array{fmpz, 1}=fmpz[])
   L = lll(maximal_order(K))

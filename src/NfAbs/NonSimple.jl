@@ -862,7 +862,7 @@ function NumberField(f::Array{fmpq_poly, 1}, s::String="_\$"; cached::Bool = fal
   K.degrees = [degree(f[i]) for i in 1:n]
   K.degree = prod(K.degrees)
   if check
-    if !check_consistency(K)
+    if !_check_consistency(K)
       error("The fields are not linearly disjoint!")
     end
   end
@@ -878,7 +878,7 @@ function NumberField(f::Array{fmpz_poly, 1}, s::String="_\$"; cached::Bool = fal
   K.degrees = [degree(f[i]) for i in 1:n]
   K.degree = prod(K.degrees)
   if check
-    if !check_consistency(K)
+    if !_check_consistency(K)
       error("The fields are not linearly disjoint!")
     end
   end

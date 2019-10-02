@@ -718,11 +718,11 @@ end
 Returns a block diagonal matrix whose diagonal blocks are the matrices in $x$.
 """
 function diagonal_matrix(x::Vector{T}) where T <: MatElem
-  return cat(x, dims = (1, 2))
+  return cat(x..., dims = (1, 2))
 end
 
 function diagonal_matrix(x::T...) where T <: MatElem
-  return cat(collect(x), dims = (1, 2))
+  return cat(x..., dims = (1, 2))
 end
 ################################################################################
 #

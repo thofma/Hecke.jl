@@ -15,12 +15,12 @@
     PM2 = pseudo_hnf(Hecke.PseudoMatrix(matrix(K, [6 0; 0 6]), coeff_ideals), :lowerleft, true)
     PM3 = pseudo_hnf(Hecke.PseudoMatrix(matrix(K, [9 0; 0 9]), coeff_ideals), :lowerleft, true)
     I = ideal(OL, PM)
-    I1 = frac_ideal(OL, PM)
+    I1 = fractional_ideal(OL, PM)
     A = ideal(OL, PM1)
-    A1 = frac_ideal(OL, PM1)
+    A1 = fractional_ideal(OL, PM1)
     B = ideal(OL, PM2)
     C = ideal(OL, PM3)
-    C1 = frac_ideal(OL, PM3)
+    C1 = fractional_ideal(OL, PM3)
 
     @test A == B + C
     @test B == intersect(A, B)

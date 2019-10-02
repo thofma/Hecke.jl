@@ -1,4 +1,6 @@
 
+add_assert_scope(:padic_poly)
+
 ###################################################################################
 #
 #  TODO: XXX: Should be moved to AbstractAlgebra.Generic once 0.6.0 is compatible.
@@ -12,7 +14,6 @@ function //(f::Generic.Poly{T}, a::T) where T<:RingElem
     end
     return g
 end
-
 
 ################################################################################
 #
@@ -200,8 +201,6 @@ function Base.gcd(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: FlintLocalF
   if degree(f) < degree(g)
     f, g = g, f
   end
-  @show f
-  @show g
   while true
     cf = fcontent(f)
     if !isone(cf)
@@ -283,10 +282,6 @@ function invmod(f::Generic.Poly{qadic}, M::Generic.Poly{qadic})
   return g
 end
 
-function _divexact(f::Generic.Poly{padic}, g::Generic.Poly{padic})
-  q = div(f, g)
-  
-end
 
 ################################################################################
 #
@@ -306,7 +301,7 @@ function gcdx(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: FlintLocalField
       return f, one(Kx), zero(Kx) 
     else
       s = Kx(inv(coeff(g, 0)))
-      @assert one(Kx) == s*g
+      @hassert one(Kx) == s*g
       return one(Kx), zero(Kx), s
     end
   end
@@ -314,30 +309,30 @@ function gcdx(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: FlintLocalField
   if !isone(cf)
     f1 = divexact(f, cf)
     d, u, v = gcdx(f1, g)
-    @assert f*divexact(u, cf) + v*g == d
+    @hassert :padic_poly 1 f*divexact(u, cf) + v*g == d
     return d, divexact(u, cf), v
   end
   cg = fcontent(g)
   if !isone(cg)
     g1 = divexact(g, cg)
     d, u, v = gcdx(f, g1)
-    @assert f*u+divexact(v, cg)*g == d
+    @hassert :padic_poly 1  f*u+divexact(v, cg)*g == d
     return d, u, divexact(v, cg)
   end
   if iszero(valuation(lead(g)))
     q, f1 = divrem(f, g)
     d, u, v = gcdx(g, f1)
-    @assert d == f*v+(u-v*q)*g
+    @hassert :padic_poly 1  d == f*v+(u-v*q)*g
     return d, v, u-v*q
   end
   ug, gg = fun_factor(g)
   if iszero(valuation(lead(f)))
     s = invmod(ug, f)
     t = divexact(1-s*ug, f)
-    @assert t*f == 1-s*ug
+    @hassert :padic_poly 1  t*f == 1-s*ug
     d, u, v = gcdx(f, gg)
-    @assert d == u*f + v*gg
-    @assert d == (u+v*t*gg)*f + v*s*g
+    @hassert :padic_poly 1  d == u*f + v*gg
+    @hassert :padic_poly 1  d == (u+v*t*gg)*f + v*s*g
     return d, u+v*t*gg, v*s
   end
   uf, ff = fun_factor(f)
@@ -345,7 +340,7 @@ function gcdx(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: FlintLocalField
   if degree(gg) >= 1
     s = invmod(uf, gg)
     t = divexact(1-s*uf, gg)
-    @assert t*gg == 1-s*uf
+    @hassert :padic_poly 1  t*gg == 1-s*uf
   else
     #gg = 1. Easy to compute Bezout coefficients...
     s = zero(Kx)
@@ -357,15 +352,15 @@ function gcdx(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: FlintLocalField
   d1 = reverse(d1)
   u1 = reverse(u1)
   v1 = reverse(v1)
-  @assert d1 == u1*uf+v1*ug
+  @hassert :padic_poly 1  d1 == u1*uf+v1*ug
   if degree(ff) >= 1
     t1 = invmod(ug, ff)
     s1 = divexact(1-t1*ug, ff)
-    @assert t1*ug + s1*ff == one(Kx)
+    @hassert :padic_poly 1  t1*ug + s1*ff == one(Kx)
   else
     t1 = zero(Kx)
     s1 = one(Kx)
-    @assert s1*ff + t1*ug == one(Kx)
+    @hassert :padic_poly 1  s1*ff + t1*ug == one(Kx)
   end
   U1 = u1*s1
   V1 = s1*ff*v1+t1*u1*uf+t1*v1*ug
@@ -373,7 +368,7 @@ function gcdx(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: FlintLocalField
   DD = d*d1
   UU = U*U1*f + U1*V*gg+U*V1*ug
   VV = V*V1 
-  @assert DD == UU*f + VV*g
+  @hassert :padic_poly 1  DD == UU*f + VV*g
   return DD, UU, VV
 end
 
@@ -406,7 +401,7 @@ function divexact(f::AbstractAlgebra.PolyElem{T}, g::AbstractAlgebra.PolyElem{T}
    Kt = parent(f)
    p = prime(K)
    while !iszero(q*g1 - f1)
-     q = Kt([coeff(q, i) + O(K, p^(prec(q)-1)) for i = 0:degree(q)])
+     q = Kt(T[coeff(q, i) + O(K, p^(prec(q)-1)) for i = 0:degree(q)])
    end
    return q
 end
@@ -507,7 +502,18 @@ end
 
 Computes Res_x(f(x), t- g(x)).
 """
-function characteristic_polynomial(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: FlintLocalFieldElem
+function characteristic_polynomial(f::Generic.Poly{padic}, g::Generic.Poly{padic})
+  Kt = parent(f)
+  Ktx, x = PolynomialRing(Kt, "x")
+  fcoeffs = Generic.Poly{padic}[Kt(coeff(f, i)) for i = 0:degree(f)]
+  gcoeffs = Generic.Poly{padic}[Kt(-coeff(g, i)) for i = 0:degree(g)]
+  f1 = Ktx(fcoeffs)
+  g1 = Ktx(gcoeffs) + gen(Kt)
+  return resultant(f1, g1)
+end
+
+#=
+function characteristic_polynomial(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: FlintLocalField
   K = base_ring(f)
   Kt = parent(f)
   p = prime(K)
@@ -540,7 +546,7 @@ function characteristic_polynomial(f::Generic.Poly{T}, g::Generic.Poly{T}) where
   resu = crt(res, crtctx)
   return resu
 end
-
+=#
 
 function interpolation_points(K, n::Int)
   p = prime(K)

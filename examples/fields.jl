@@ -246,7 +246,7 @@ function single_D5_extensions(absolute_bound::fmpz, K::AnticNumberField)
   return z
 end
 
-function _quintic_ext(auto)#::NfRel_nsToNfRel_nsMor)
+function _quintic_ext(auto)#::NfRelNSToNfRelNSMor)
 
   #first, find a generator of the simple extension
   L=domain(auto)
@@ -383,7 +383,7 @@ end
 function Dn_extensions(n::Int, absolute_bound::fmpz, list_quad ; tame::Bool=false)
   @assert absolute_bound>0
   len=length(list_quad)
-  fieldslist=Tuple{NfRel_ns,  Array{Hecke.NfRel_nsToNfRel_nsMor{nf_elem},1},fmpz, Array{fmpz,1}}[]
+  fieldslist=Tuple{NfRelNS,  Array{Hecke.NfRelNSToNfRelNSMor{nf_elem},1},fmpz, Array{fmpz,1}}[]
   
   for K in list_quad
     len-=1
@@ -825,7 +825,7 @@ end
 #
 ###############################################################################
 
-function _to_non_normal(autos)#::Vector{NfRel_nsToNfRel_nsMor})
+function _to_non_normal(autos)#::Vector{NfRelNSToNfRelNSMor})
 
   #first, find a generator of the simple extension
   L=domain(autos[1])

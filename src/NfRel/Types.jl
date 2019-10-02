@@ -147,12 +147,6 @@ mutable struct NfRelOrdFracIdl{T, S}
     z.basis_matrix = M.matrix
     return z
   end
-
-  function NfRelOrdFracIdl{T, S}(O::NfRelOrd{T, S}, a::Array{Tuple{T1, S}}) where {T1 <: NumFieldElem{T}, S} where T
-    z = NfRelOrdFracIdl{T, S}(O)
-    z.pseudo_basis = a
-    return z
-  end
 end
 
 ###############################################################################
@@ -206,28 +200,22 @@ mutable struct NfRelOrdIdl{T, S}
     z.basis_matrix = M.matrix
     return z
   end
-
-  function NfRelOrdIdl{T, S}(O::NfRelOrd{T, S}, a::Array{Tuple{T1, S}}) where {T1 <: NumFieldElem{T}, S} where T
-    z = NfRelOrdIdl{T, S}(O)
-    z.pseudo_basis = a
-    return z
-  end
 end
 
 ################################################################################
 #
-#  NfRel_ns / NfRel_nsElem
+#  NfRelNS / NfRelNSElem
 #
 ################################################################################
 
-mutable struct NfRel_ns{T} <: NonSimpleNumField{T}
+mutable struct NfRelNS{T} <: NonSimpleNumField{T}
   base_ring::Nemo.Field
   pol::Array{Nemo.Generic.MPoly{T}, 1}
   abs_pol::Array{Generic.Poly{T}, 1}
   S::Array{Symbol, 1}
   auxilliary_data::Array{Any, 1}
 
-  function NfRel_ns(abs_pol::Array{Generic.Poly{T}}, f::Array{Nemo.Generic.MPoly{T}, 1}, S::Array{Symbol, 1}; cached::Bool = false) where T
+  function NfRelNS(abs_pol::Array{Generic.Poly{T}}, f::Array{Nemo.Generic.MPoly{T}, 1}, S::Array{Symbol, 1}; cached::Bool = false) where T
     r = new{T}()
     r.pol = f
     r.abs_pol = abs_pol
@@ -238,11 +226,11 @@ mutable struct NfRel_ns{T} <: NonSimpleNumField{T}
   end
 end
 
-mutable struct NfRel_nsElem{T} <: NonSimpleNumFieldElem{T}
+mutable struct NfRelNSElem{T} <: NonSimpleNumFieldElem{T}
   data::Nemo.Generic.MPoly{T}
-  parent::NfRel_ns{T}
+  parent::NfRelNS{T}
 
-  NfRel_nsElem{T}(g::Generic.MPoly{T}) where {T} = new{T}(g)
+  NfRelNSElem{T}(g::Generic.MPoly{T}) where {T} = new{T}(g)
 end
 
 ################################################################################
@@ -262,7 +250,7 @@ mutable struct RelOrdQuoRing{T1, T2, T3} <: Ring
     z = new{T1, T2, T3}()
     z.base_ring = O
     z.ideal = I
-    z.basis_pmatrix = basis_pmatrix(I)
+    z.basis_pmatrix = basis_pmatrix_wrt(I, O)
     return z
   end
 end

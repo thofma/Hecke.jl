@@ -22,12 +22,20 @@ function isnorm_fac_elem(K::NfRel{nf_elem}, a::nf_elem)
   
   s = Set([minimum(mkK, I) for I = S])
   #make S relative Galois closed:
-  PS = parent(S[1])
+  PS = IdealSet(ZKa)
   S = vcat([collect(keys(factor(PS(mkK, p)))) for p = s]...)
 
-  U, mU = sunit_group_fac_elem(collect(S))
+  if length(S) == 0
+    U, mU = unit_group_fac_elem(ZKa)
+  else
+    U, mU = sunit_group_fac_elem(collect(S))
+  end
   class_group(parent(a))
-  u, mu = sunit_group_fac_elem(collect(s))
+  if length(s) == 0
+    u, mu = unit_group_fac_elem(maximal_order(parent(a)))
+  else
+    u, mu = sunit_group_fac_elem(collect(s))
+  end
   No = hom(U, u, elem_type(u)[preimage(mu, norm(mkK, mU(g))) for g = gens(U)])
   aa = preimage(mu, FacElem(a))
   fl, so = haspreimage(No, aa)

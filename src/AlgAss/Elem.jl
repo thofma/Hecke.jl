@@ -646,7 +646,7 @@ end
 
 function _reduced_charpoly_simple(a::AbsAlgAssElem, R::PolyRing)
   A = parent(a)
-  @assert issimple_known(A) && A.issimple == 1
+  @assert issimple(A)
 
   M = representation_matrix(a)
   f = charpoly(R, M)
@@ -883,6 +883,44 @@ function normred(a::AbsAlgAssElem)
   f = reduced_charpoly(a)
   n = degree(f)
   return (-one(base_ring(parent(a))))^n*coeff(f, 0)
+end
+
+function _normred_over_center_simple(a::AbsAlgAssElem{fmpq}, ZtoA::AbsAlgAssMor)
+  A = parent(a)
+  Z = domain(ZtoA)
+  fields = as_number_fields(Z)
+  @assert length(fields) == 1
+  K, ZtoK = fields[1]
+  B, AtoB, BtoA = _as_algebra_over_center(A)
+  @assert base_ring(B) === K
+  n = normred(AtoB(a))
+  return ZtoK\(n)
+end
+
+# Computes the norm of algebra(a) considered as an algebra over its centre.
+# ZtoA should be center(algebra(a))[2]
+function normred_over_center(a::AbsAlgAssElem, ZtoA::AbsAlgAssMor)
+  A = parent(a)
+  Adec = decompose(A)
+  n = zero(domain(ZtoA))
+  for (B, BtoA) in Adec
+    _, ZtoB = center(B)
+    n1 = _normred_over_center_simple(BtoA\a, ZtoB)
+    t, n2 = haspreimage(ZtoA, BtoA(ZtoB(n1)))
+    @assert t
+    n += n2
+  end
+  return n
+end
+
+function normred(x::FacElem{S, T}) where { S <: AbsAlgAssElem, T <: AbsAlgAss }
+  K = base_ring(base_ring(parent(x)))
+  @assert iscommutative(K) # so, it doesn't matter in which order we compute the norms
+  n = one(K)
+  for (b, e) in x.fac
+    n *= normred(b)^e
+  end
+  return n
 end
 
 ################################################################################

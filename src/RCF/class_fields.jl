@@ -62,8 +62,8 @@ mutable struct ClassField{S, T}
   relative_discriminant::Dict{NfOrdIdl, Int}
   absolute_discriminant::Dict{fmpz,Int}
   cyc::Array{ClassField_pp{S, T}, 1}
-  A::NfRel_ns{nf_elem}
-  AbsAutGrpA::Vector{NfRel_nsToNfRel_nsMor{nf_elem}} #The generators for the absolute automorphism
+  A::NfRelNS{nf_elem}
+  AbsAutGrpA::Vector{NfRelNSToNfRelNSMor{nf_elem}} #The generators for the absolute automorphism
                                                      #group of A
   degree::Int # The degree of the relative extension we are searching for.
               # In other words, the order of the codomain of quotientmap

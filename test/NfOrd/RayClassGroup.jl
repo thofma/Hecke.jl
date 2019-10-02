@@ -12,8 +12,8 @@
 
   @testset "quadratic fields" begin
     
-     Qx,x=PolynomialRing(FlintQQ,"x")
-     K,a=NumberField(x^2+199,"a")
+    Qx,x=PolynomialRing(FlintQQ,"x")
+    K,a=NumberField(x^2+199,"a")
     O=maximal_order(K)
     C,mC=class_group(O)
   
@@ -27,8 +27,7 @@
       @test Hecke.isisomorphic(R1,q)
     end
     
-     Qx,x=PolynomialRing(FlintQQ,"x")
-     K,a=NumberField(x^2-5,"a")
+    K,a=NumberField(x^2-5,"a")
     O=maximal_order(K)
     C,mC=class_group(O, redo = true)
     inf_plc=real_places(K)

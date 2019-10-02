@@ -90,8 +90,6 @@ end
 #
 ################################################################################
 
-promote_rule(::Type{NfRelElem{S}}, ::Type{T}) where {T <: Integer, S} = NfRelElem{S}
-
 promote_rule(::Type{NfRelElem{T}}, ::Type{fmpz}) where {T <: RingElement} = NfRelElem{T}
 
 promote_rule(::Type{NfRelElem{T}}, ::Type{fmpq}) where {T <: RingElement} = NfRelElem{T}
@@ -110,9 +108,9 @@ end
 #
 ################################################################################
 
-order_type(K::NfRel{T}) where {T} = NfRelOrd{T, frac_ideal_type(order_type(base_field(K)))}
+order_type(K::NfRel{T}) where {T} = NfRelOrd{T, fractional_ideal_type(order_type(base_field(K)))}
 
-order_type(::Type{NfRel{T}}) where {T} = NfRelOrd{T, frac_ideal_type(order_type(parent_type(T)))}
+order_type(::Type{NfRel{T}}) where {T} = NfRelOrd{T, fractional_ideal_type(order_type(parent_type(T)))}
 
 ################################################################################
 #
@@ -252,14 +250,14 @@ end
 ################################################################################
 
 function NumberField(f::PolyElem{T}, s::String;
-                     cached::Bool = false, check::Bool = false)  where {T <: NumFieldElem}
+                     cached::Bool = false, check::Bool = true)  where {T <: NumFieldElem}
   S = Symbol(s)
   check && !isirreducible(f) && throw(error("Polynomial must be irreducible"))
   K = NfRel{T}(f, S, cached)
   return K, K(gen(parent(f)))
 end
 
-function NumberField(f::PolyElem{<: NumFieldElem}; cached::Bool = false, check::Bool = false)
+function NumberField(f::PolyElem{<: NumFieldElem}; cached::Bool = false, check::Bool = true)
   return NumberField(f, "_\$", cached = cached, check = check)
 end
  
@@ -574,6 +572,21 @@ end
 
 function hash(a::Hecke.NfRelElem{nf_elem}, b::UInt)
   return hash(a.data, b)
+end
+
+# Calls simplify on the output of absolute_field
+function simplified_absolute_field(L::NfRel{nf_elem}, cached::Bool = false)
+  Ka, a, b, c = _absolute_field(L, cached)
+  KatoL = NfToNfRel(Ka, L, a, b, c)
+  OKa = maximal_order_via_relative(Ka, KatoL)
+  K, KtoKa = simplify(Ka)
+  KatoK = inv(KtoKa)
+  aa = KatoK(a)
+  bb = KatoK(b)
+  cc = KatoL(KtoKa(gen(K)))
+  ktoK = hom(base_field(L), K, aa, check = false)
+  KtoL = NfToNfRel(K, L, aa, bb, cc)
+  return K, KtoL, ktoK
 end
 
 ################################################################################

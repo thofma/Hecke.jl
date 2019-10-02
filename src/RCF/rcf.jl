@@ -74,7 +74,7 @@ end
 ###############################################################################
 
 @doc Markdown.doc"""
-    NumberField(CF::ClassField) -> Hecke.NfRel_ns{Nemo.nf_elem}
+    NumberField(CF::ClassField) -> Hecke.NfRelNS{Nemo.nf_elem}
 Given a (formal) abelian extension, compute the class field by
 finding defining polynomials
 for all prime power cyclic subfields.
@@ -100,7 +100,7 @@ function NumberField(CF::ClassField{S, T}; redo::Bool = false) where {S, T}
     q[i] = G[i]
   end
   CF.cyc = res
-  CF.A = number_field([x.A.pol for x = CF.cyc], check = false)[1]
+  CF.A = number_field([x.A.pol for x = CF.cyc], check = false, cached = false)[1]
   return CF.A
 end
 
@@ -1017,7 +1017,7 @@ function _rcf_descent(CF::ClassField_pp)
       @vprint :ClassField 2 "... done\n"
     end  
   end
-  CF.A = number_field(f2, check = false)[1]
+  CF.A = number_field(f2, check = false, cached = false)[1]
   return nothing
 end
 
@@ -1097,11 +1097,7 @@ function extend_easy(f::Hecke.NfOrdToFqNmodMor, K::AnticNumberField)
       if iszero(s)
         throw(BadPrime(p))
       end
-      if haskey(D, s)
-        D[s] += v
-      else
-        D[s] = v
-      end
+      add_to_key!(D, s, v)
     end
     return _ev(D, one(Fq))
   end
@@ -1165,7 +1161,7 @@ function _rcf_reduce(CF::ClassField_pp)
   else
     CF.a = reduce_mod_powers(CF.a, e)
   end
-  CF.K = radical_extension(CF.o, CF.a)[1]
+  CF.K = radical_extension(CF.o, CF.a, check = false, cached = false)[1]
   return nothing
 end
 
@@ -1273,7 +1269,7 @@ function reduce_mod_powers(a::FacElem{nf_elem, AnticNumberField}, n::Int, decom:
 end
 
 function reduce_mod_powers(a::FacElem{nf_elem, AnticNumberField}, n::Int, primes::Array{NfOrdIdl, 1})
-  lp = Dict((p, Int(valuation(a, p))) for p = primes)
+  lp = Dict{NfOrdIdl, Int}((p, Int(valuation(a, p))) for p = primes)
   return reduce_mod_powers(a, n, lp)  
 end
 
@@ -1300,24 +1296,17 @@ function factor_coprime(a::FacElem{nf_elem, AnticNumberField}, I::NfOrdIdlSet)
   for (e,v) = a.fac
     N, D = integral_split(ideal(Zk, e))
     if !isone(N)
-      if haskey(A, N)
-        A[N] += v
-      else
-        A[N] = v
-      end
+      add_to_key!(A, N, v)
     end
     if !isone(D)
-      if haskey(A, D)
-        A[D] -= v
-      else
-        A[D] = -v
-      end
+      add_to_key!(A, D, -v)
     end
   end
   if length(A) == 0
     A[ideal(Zk, 1)] = 1
+    return A
   end
-  return factor_coprime(FacElem(A))
+  return factor_coprime!(FacElem(A))
 end
 
 @doc Markdown.doc"""

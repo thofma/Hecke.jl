@@ -98,10 +98,9 @@ using .RelSaturate
 function class_group_ctx(O::NfOrd; bound::Int = -1, method::Int = 3, large::Int = 1000, redo::Bool = false, use_aut::Bool = false)
 
   if !redo
-    try
-      c = _get_ClassGrpCtx_of_order(O)::ClassGrpCtx{SMat{fmpz}}
-      return c
-    catch e
+    c = _get_ClassGrpCtx_of_order(O, false)
+    if c !== nothing
+      return c::ClassGrpCtx{SMat{fmpz}}
     end
   end
 
@@ -111,6 +110,7 @@ function class_group_ctx(O::NfOrd; bound::Int = -1, method::Int = 3, large::Int 
   end
 
   c = class_group_init(O, bound, complete = false, use_aut = use_aut)::ClassGrpCtx{SMat{fmpz}}
+  @assert order(c) === O
 
   _set_ClassGrpCtx_of_order(O, c)
 

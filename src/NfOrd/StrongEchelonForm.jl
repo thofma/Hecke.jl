@@ -500,7 +500,7 @@ function test_pseudohnf()
     for p in [2, 3, 5, 7, 11, 13]
       pp = prime_decomposition(O, p)
       for P in pp
-        push!(lp, frac_ideal(O, P[1]))
+        push!(lp, fractional_ideal(O, P[1]))
       end
     end
 

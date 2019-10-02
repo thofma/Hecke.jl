@@ -569,7 +569,7 @@ function _as_ideal_of_smaller_algebra(m::AbsAlgAssMor, I::AlgAssAbsOrdIdl, OB::A
   A = domain(m)
   B = codomain(m)
   @assert dim(A) <= dim(B)
-  @assert algebra(order(I)) == B
+  @assert algebra(order(I)) === B
   OA = maximal_order(A)
   IB = extend(I, OB)
   # Transport OA to B
@@ -922,7 +922,7 @@ function colon(a::AlgAssAbsOrdIdl{S, T}, b::AlgAssAbsOrdIdl{S, T}) where {S, T}
   # n is upper right HNF
   m = transpose(sub(m, 1:degree(O), 1:degree(O)))
   b = inv(FakeFmpqMat(m, d))
-  return frac_ideal_type(O)(O, ideal(O, b.num), b.den)
+  return fractional_ideal_type(O)(O, ideal(O, b.num), b.den)
 end
 
 function isinvertible(a::AlgAssAbsOrdIdl)
@@ -1463,8 +1463,7 @@ end
 > It is assumed that the algebra containing $a$ is simple and central.
 """
 function normred(a::AlgAssAbsOrdIdl; copy::Bool = true)
-  @assert dimension_of_center(algebra(order(a))) == 1
-  @assert algebra(order(a)).issimple == 1
+  @assert issimple(algebra(order(a))) && iscentral(algebra(order(a))) "Only implemented for simple and central algebras"
   assure_has_normred(a)
   if copy
     return deepcopy(a.normred)

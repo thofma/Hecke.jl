@@ -63,9 +63,9 @@ ideal_type(::NfRelOrd{T, S}) where {T, S} = NfRelOrdIdl{T, S}
 
 ideal_type(::Type{NfRelOrd{T, S}}) where {T, S} = NfRelOrdIdl{T, S}
 
-frac_ideal_type(::NfRelOrd{T, S}) where {T, S} = NfRelOrdFracIdl{T, S}
+fractional_ideal_type(::NfRelOrd{T, S}) where {T, S} = NfRelOrdFracIdl{T, S}
 
-frac_ideal_type(::Type{NfRelOrd{T, S}}) where {T, S} = NfRelOrdFracIdl{T, S}
+fractional_ideal_type(::Type{NfRelOrd{T, S}}) where {T, S} = NfRelOrdFracIdl{T, S}
 
 ################################################################################
 #
@@ -487,15 +487,33 @@ function maximal_order_via_absolute(m::NfToNfRel)
   return relative_order(Oabs, m)
 end
 
-function maximal_order_via_simple(L::NfRel_ns)
+function maximal_order_via_simple(L::NfRelNS)
   Ls, m = simple_extension(L)
   Os = maximal_order(Ls)
   return non_simple_order(Os, m)
 end
 
-function maximal_order_via_simple(m::NfRelToNfRel_nsMor)
+function maximal_order_via_simple(m::NfRelToNfRelNSMor)
   Os = maximal_order(domain(m))
   return non_simple_order(Os, m)
+end
+
+function maximal_order_via_relative(K::AnticNumberField, m::NfToNfRel)
+  try
+    O = _get_maximal_order(K)
+    return O
+  catch e
+    if !isa(e, AccessorNotSetError)
+      rethrow(e)
+    end
+    L = codomain(m)
+    OL = maximal_order(L)
+    B = absolute_basis(OL)
+    OK = Order(K, [ m\b for b in B ], check = false, isbasis = true)
+    OK.ismaximal = 1
+    _set_maximal_order(K, OK)
+    return OK
+  end
 end
 
 ################################################################################
@@ -747,7 +765,7 @@ function relative_order(O::NfOrd, m::NfToNfRel)
     elem_to_mat_row!(M, i, m(Labs(B[i])))
   end
   PM = sub(pseudo_hnf(PseudoMatrix(M), :lowerleft, true), (dabs - d + 1):dabs, 1:d)
-  return NfRelOrd{elem_type(K), frac_ideal_type(OK)}(L, PM)
+  return NfRelOrd{elem_type(K), fractional_ideal_type(OK)}(L, PM)
 end
 
 ################################################################################
@@ -756,7 +774,7 @@ end
 #
 ################################################################################
 
-function non_simple_order(O::NfRelOrd, m::NfRelToNfRel_nsMor)
+function non_simple_order(O::NfRelOrd, m::NfRelToNfRelNSMor)
   L = domain(m)
   L_ns = codomain(m)
   @assert nf(O) == L
@@ -820,7 +838,7 @@ end
 #
 ###############################################################################
 
-function _maximal_absolute_order_from_relative(L::NfRel_ns)
+function _maximal_absolute_order_from_relative(L::NfRelNS)
 
   #We compute the absolute extension and the maps
   S,mS=simple_extension(L)

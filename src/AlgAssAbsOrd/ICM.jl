@@ -17,7 +17,7 @@ export ideal_class_monoid, islocally_isomorphic, isconjugate
 """
 function ideal_class_monoid(R::T) where { T <: Union{ NfAbsOrd, AlgAssAbsOrd } }
   orders = overorders(R)
-  result = Vector{FacElem{frac_ideal_type(R)}}()
+  result = Vector{FacElem{fractional_ideal_type(R)}}()
   for S in orders
     append!(result, _icm_bar(R, S))
   end
@@ -86,10 +86,10 @@ function _wicm_bar(R::T, S::T) where { T <: Union{ NfAbsOrd, AlgAssAbsOrd } }
   K = _algebra(S)
   oneS = one(K)*S
   St = trace_dual(S)
-  reps = Vector{frac_ideal_type(R)}()
+  reps = Vector{fractional_ideal_type(R)}()
   I = St*colon(oneS, St)
   if one(K) in I
-    push!(reps, _as_frac_ideal_of_smaller_order(R, oneS))
+    push!(reps, _as_fractional_ideal_of_smaller_order(R, oneS))
     return reps
   end
 
@@ -100,7 +100,7 @@ function _wicm_bar(R::T, S::T) where { T <: Union{ NfAbsOrd, AlgAssAbsOrd } }
     end
 
     StO = St*O
-    if !(one(K) in StO*colon(frac_ideal(O, one(K)), StO))
+    if !(one(K) in StO*colon(fractional_ideal(O, one(K)), StO))
       continue
     end
     f = conductor(S, O)
@@ -112,7 +112,7 @@ function _wicm_bar(R::T, S::T) where { T <: Union{ NfAbsOrd, AlgAssAbsOrd } }
       if colon(I, I) != oneS
         continue
       end
-      I = _as_frac_ideal_of_smaller_order(R, I)
+      I = _as_fractional_ideal_of_smaller_order(R, I)
       new_class = true
       for J in reps
         if islocally_isomorphic(I, J)
@@ -136,7 +136,7 @@ function _icm_bar(R::T, S::T) where { T <: Union{ NfAbsOrd, AlgAssAbsOrd } }
   P, mP = picard_group(S)
   fac_elem_mon = FacElemMon(FracIdealSet(R))
   result = Vector{elem_type(fac_elem_mon)}()
-  gens_of_P = [ _as_frac_ideal_of_smaller_order(R, mP(P[i])) for i = 1:ngens(P) ]
+  gens_of_P = [ _as_fractional_ideal_of_smaller_order(R, mP(P[i])) for i = 1:ngens(P) ]
   last_p = P()
   for (i, p) in enumerate(P)
     fac_elem = fac_elem_mon()
@@ -176,7 +176,7 @@ function ideals_containing(S::T, a::T2, R::T) where { T <: Union{ NfAbsOrd, AlgA
   d = degree(S)
 
   potential_basis = Vector{elem_type(_algebra(S))}(undef, d)
-  ideals = frac_ideal_type(R)[]
+  ideals = fractional_ideal_type(R)[]
 
   for i = 1:mQ.offset
     potential_basis[i] = mQ.bottom_snf_basis[i]
@@ -197,7 +197,7 @@ function ideals_containing(S::T, a::T2, R::T) where { T <: Union{ NfAbsOrd, AlgA
       end
     end
     M = basis_matrix(potential_basis, FakeFmpqMat)*basis_mat_inv(R, copy = false)
-    return frac_ideal(R, M)
+    return fractional_ideal(R, M)
   end
 
   return ( group_to_ideal(s) for s in subs )
@@ -250,7 +250,7 @@ function matrix_to_ideal(O::AlgAssAbsOrd, M::fmpz_mat)
       end
     end
   end
-  return frac_ideal_from_z_gens(O, result), result
+  return fractional_ideal_from_z_gens(O, result), result
 end
 
 function matrix_to_ideal(O::NfAbsOrd, M::fmpz_mat)
@@ -265,7 +265,7 @@ function matrix_to_ideal(O::NfAbsOrd, M::fmpz_mat)
       result[i] += B[i, j]
     end
   end
-  return frac_ideal_from_z_gens(O, result), result
+  return fractional_ideal_from_z_gens(O, result), result
 end
 
 # Stefano Marseglia "Computing the ideal class monoid of an order"

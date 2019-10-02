@@ -11,18 +11,27 @@ docsdir = joinpath(@__DIR__, "build/")
 function _super_cool_example(f, overwrite = true)
   inside = false
   new_file = ""
+  collapsing = false
   open(f) do file
     for ln in eachline(file);
       if startswith(ln, "<a id='Example")
         continue
       end
       if startswith(ln, "#### Example")
+        if startswith(ln, "#### Example +")
+          collapsing = true
+        end
         ln = ""
         inside = true
       end
       if inside
         if startswith(ln, "```julia-repl")
-          line = "!!! note \"Example\"\n    ```julia"
+          if collapsing
+            line = "??? note \"Example\"\n    ```julia"
+            collapsing = false
+          else
+            line = "!!! note \"Example\"\n    ```julia"
+          end
         else
           line = "    " * ln
         end

@@ -19,7 +19,7 @@ function unit_group_disc_exp(x::GrpAbFinGenElem, U::UnitGrpCtx)
   K = nf(order(U))
   y = FacElem([K(U.torsion_units_gen)], [x.coeff[1,1]])
   for i=1:length(U.units)
-    y *= U.units[i]^x.coeff[1,i+1]
+    mul!(y, y, U.units[i]^x.coeff[1,i+1])
   end
   return y
 end

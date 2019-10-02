@@ -1776,7 +1776,10 @@ mutable struct InfPlc <: Plc
                       # where a is the primitive element of K
   r::acb              # Approximation of the root
   isreal::Bool        # True if and only if r is real
-
+  uniformizer::nf_elem# An element which is positive at the place 
+                      # and negative at all the other real places
+                      # Makes sense only if the place is real
+ 
   function InfPlc(K::AnticNumberField, i::Int)
     z = new()
     z.K = K

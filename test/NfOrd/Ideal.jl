@@ -57,7 +57,7 @@
       R, x = PolynomialRing(FlintQQ, "x")
       _K, _a = NumberField(x, "a")
       _O = maximal_order(_K)
-      _I = frac_ideal(_O, _K(1))
+      _I = fractional_ideal(_O, _K(1))
       _J = _I*_K(fmpq(-1, 5))
       @test minimum(numerator(_J)) == 1
     end
