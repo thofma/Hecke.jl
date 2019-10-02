@@ -52,20 +52,59 @@ end
 #
 ################################################################################
 
-function _content(f::Generic.Poly{T}) where T <: Union{padic, qadic}
-  K = base_ring(f)
-  p = uniformizer(K)
-  v = valuation(coeff(f, 0))
-  for i = 1:degree(f)
-    v = min(v, valuation(coeff(f, i)))
-    if iszero(v)
-      break
-    end
-  end
-  return p^v
+# NOTE: These methods are underscored because, technically, the content/primitive
+#       parts of a polynomial `f` over a field is 1 (resp. f). 
+
+"""
+    fcontent(f::Generic.Poly{T}) where T <: FlintLocalFieldElem
+
+> The content of a polynomial over the fraction field $Q$ of a Euclidian domain $R$
+> is defined as follows:
+> Let $f = d^{-1} g$, such that $g \in R[x]$. Then $c(f) := d^{-1}c(g)$. Note that $c(f)$
+> is independent of the choice of denominator $d$. (See [Wikipedia]("https://en.wikipedia.org/wiki/Primitive_part_and_content#Over_the_rationals") for more details.)
+
+> In order to maintain code consistency, as not all termology sources agree, we designate
+> a special name for this circumstance.
+"""
+function fcontent(f::Generic.Poly{T}) where T <: FlintLocalFieldElem
+    K  = base_ring(f)
+    pi = uniformizer(K)
+    val,i = findmin(valuation.(coefficients(f)))
+    return pi^val
 end
 
-function rem!(x::AbstractAlgebra.Generic.Poly{T}, y::AbstractAlgebra.Generic.Poly{T}, z::AbstractAlgebra.Generic.Poly{T}) where T <:Union{padic, qadic}
+function fprimitive_part(f::Hecke.Generic.Poly{<:NALocalFieldElem})
+  K = base_ring(f)
+  val,i = findmin( valuation.(coefficients(f)) )
+  return f//coefficients(f)[i-1]
+end
+
+
+# Below is the original code. I believe it has a bug.
+#
+# function fcontent(f::Generic.Poly{T}) where T <: FlintLocalFieldElem
+#   K = base_ring(f)
+#   p = uniformizer(K)
+#   v = valuation(coeff(f, 0))
+#   for i = 1:degree(f)
+#     v = min(v, valuation(coeff(f, i)))
+#     if iszero(v)
+#       break        ## The early exit here means if there is a coefficient
+#     end            ## of a higher degree term with negative valuation, the
+#   end              ## result is incorrect.
+#   return p^v
+# end
+
+@docs Markdown.doc"""
+    fprimpar(f::Hecke.Generic.Poly{<:NALocalFieldElem})
+    fprimitive_part(f::Hecke.Generic.Poly{<:NALocalFieldElem})
+Returns f//fcontent(f). See documentation for `fcontent` for more details. 
+"""
+fprimpart(f::Hecke.Generic.Poly{<:NALocalFieldElem}) = f//fcontent(f)
+
+fprimitive_part(f::Hecke.Generic.Poly{<:NALocalFieldElem}) = fprimpart(f)
+
+function rem!(x::AbstractAlgebra.Generic.Poly{T}, y::AbstractAlgebra.Generic.Poly{T}, z::AbstractAlgebra.Generic.Poly{T}) where T <:FlintLocalFieldElem
   x = rem(y, z)
   return x
 end
@@ -92,7 +131,7 @@ function fun_factor(f::Generic.Poly{qadic})
   K = base_ring(f)
   Kt = parent(f)
   v = prec(f)
-  @assert isone(_content(f))
+  @assert isone(fcontent(f))
   if iszero(valuation(lead(f)))
     return one(Kt), g
   end
@@ -128,7 +167,7 @@ end
 #
 ################################################################################
 
-function Nemo.prec(g::Generic.Poly{T}) where T <: Union{padic, qadic}
+function Nemo.prec(g::Generic.Poly{T}) where T <: FlintLocalFieldElem
   N = coeff(g, 0).N
   for i = 1:degree(g)
     N = min(N, coeff(g, i).N)
@@ -137,18 +176,18 @@ function Nemo.prec(g::Generic.Poly{T}) where T <: Union{padic, qadic}
 end
 
 
-function Base.gcd(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{padic, qadic}
+function Base.gcd(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: FlintLocalFieldElem
   if degree(f) < degree(g)
     f, g = g, f
   end
   @show f
   @show g
   while true
-    cf = _content(f)
+    cf = fcontent(f)
     if !isone(cf)
       f = divexact(f, cf)
     end
-    cg = _content(g)
+    cg = fcontent(g)
     if !isone(cg)
       g = divexact(g, cg)
     end
@@ -236,7 +275,7 @@ end
 ################################################################################
 
 #TODO: The implementation is recursive. Change it to an iterative implementation.
-function gcdx(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{padic, qadic}
+function gcdx(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: FlintLocalFieldElem
   if degree(f) < degree(g)
     r1, r2, r3 = gcdx(g, f)
     return r1, r3, r2
@@ -251,14 +290,14 @@ function gcdx(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{padic, qa
       return one(Kx), zero(Kx), s
     end
   end
-  cf = _content(f)
+  cf = fcontent(f)
   if !isone(cf)
     f1 = divexact(f, cf)
     d, u, v = gcdx(f1, g)
     @assert f*divexact(u, cf) + v*g == d
     return d, divexact(u, cf), v
   end
-  cg = _content(g)
+  cg = fcontent(g)
   if !isone(cg)
     g1 = divexact(g, cg)
     d, u, v = gcdx(f, g1)
@@ -318,7 +357,7 @@ function gcdx(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{padic, qa
   return DD, UU, VV
 end
 
-function divexact(f::AbstractAlgebra.PolyElem{T}, g::AbstractAlgebra.PolyElem{T}) where T<: Union{padic, qadic}
+function divexact(f::AbstractAlgebra.PolyElem{T}, g::AbstractAlgebra.PolyElem{T}) where T<: FlintLocalFieldElem
    check_parent(f, g)
    f1 = deepcopy(f)
    g1 = deepcopy(g)
@@ -379,7 +418,7 @@ function rres(f::Generic.Poly{padic}, g::Generic.Poly{padic})
   return lift(r, K)
 end
 
-function resultant(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{padic, qadic}
+function resultant(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: FlintLocalFieldElem
   Nemo.check_parent(f, g)
   Rt = parent(f)
   R = base_ring(Rt)
@@ -403,13 +442,13 @@ function resultant(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{padi
       return res
     end
 
-    cf = _content(f)
+    cf = fcontent(f)
     if !isone(cf)
       f = divexact(f, cf)
       res *= cf^degree(g)
     end
 
-    cg = _content(g)
+    cg = fcontent(g)
     if !isone(cg)
       g = divexact(g, cg)
       res *= cg^degree(f)
@@ -444,11 +483,11 @@ end
 
 
 @doc Markdown.doc"""
-    characteristic_polynomial(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{padic, qadic} -> Generic.Poly{T}
+    characteristic_polynomial(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: FlintLocalFieldElem -> Generic.Poly{T}
 
 Computes Res_x(f(x), t- g(x)).
 """
-function characteristic_polynomial(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{padic, qadic}
+function characteristic_polynomial(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: FlintLocalFieldElem
   K = base_ring(f)
   Kt = parent(f)
   p = prime(K)
@@ -509,12 +548,12 @@ end
 #
 ################################################################################
 @doc Markdown.doc"""
-    Hensel_factorization(f::Generic.Poly{T}) where T <: Union{padic, qadic} -> Dict{Generic.Poly{T}, Generic.Poly{T}}
+    Hensel_factorization(f::Generic.Poly{T}) where T <: FlintLocalFieldElem -> Dict{Generic.Poly{T}, Generic.Poly{T}}
 
 Computes a factorization of $f$ such that every factor has a unique irreducible factor over the residue field.
 The output is a dictionary whose keys are lifts of the irreducible factors over the residue field and values the corresponding factors of $f$.
 """
-function Hensel_factorization(f::Generic.Poly{T}) where T <: Union{padic, qadic}
+function Hensel_factorization(f::Generic.Poly{T}) where T <: FlintLocalFieldElem
   D = Dict{Generic.Poly{T}, Generic.Poly{T}}()
   Kt = parent(f)
   K = base_ring(Kt)
@@ -648,17 +687,17 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    slope_factorization(f::Generic.Poly{T}) where T <: Union{padic, qadic} -> Dict{Generic.Poly{T}, Int}
+    slope_factorization(f::Generic.Poly{T}) where T <: FlintLocalFieldElem -> Dict{Generic.Poly{T}, Int}
 
 Computes a factorization of $f$ such that every factor has a one-sided generalized Newton polygon.
 The output is a dictionary whose keys are the factors of $f$ and the corresponding value is the multiplicity. 
 """
-function slope_factorization(f::Generic.Poly{T}) where T <: Union{padic, qadic}
+function slope_factorization(f::Generic.Poly{T}) where T <: FlintLocalFieldElem
 
   K = base_ring(f)
   Kt = parent(f)
   fact = Dict{Generic.Poly{T}, Int}()
-  cf = _content(f)
+  cf = fcontent(f)
   f = divexact(f, cf)
   if !iszero(valuation(lead(f)))
     u, f = fun_factor(f)
