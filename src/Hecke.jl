@@ -80,10 +80,8 @@ import Nemo: acb_struct, Ring, Group, Field, NmodRing, nmod, arf_struct,
              elem_to_mat_row!, elem_from_mat_row, gfp_elem, gfp_mat,
              Zmodn_poly, Zmodn_mat, GaloisField, acb_vec, array, acb_vec_clear
 
-export @vprint, @hassert, @vtime, add_verbose_scope, get_verbose_level,
-       set_verbose_level, add_assert_scope, get_assert_level, set_assert_level,
-       show, StepRange, domain, codomain, image, preimage,
-       modord, resultant, next_prime, ispower, number_field, factor
+export show, StepRange, domain, codomain, image, preimage, modord, resultant,
+       next_prime, ispower, number_field, factor
 
 ###############################################################################
 #
@@ -92,10 +90,6 @@ export @vprint, @hassert, @vtime, add_verbose_scope, get_verbose_level,
 ###############################################################################
 
 const pkgdir = joinpath(dirname(pathof(Hecke)), "..")
-
-#const libhecke = joinpath(pkgdir, "local", "lib", "libhecke")
-#
-#const libdir = joinpath(pkgdir, "local", "lib")
 
 global const number_field = NumberField
 
@@ -132,15 +126,6 @@ function __init__()
   if inNotebook()  # to make toggle work in IJulia
     display("text/html", "\$\\require{action}\$")
   end
-
-  #if "HOSTNAME" in keys(ENV) && ENV["HOSTNAME"] == "juliabox"
-  #  push!(Libdl.DL_LOAD_PATH, "/usr/local/lib")
-  #elseif Sys.islinux()
-  #  push!(Libdl.DL_LOAD_PATH, libdir)
-  #  Libdl.dlopen(libhecke)
-  #else
-  #  push!(Libdl.DL_LOAD_PATH, libdir)
-  #end
 
   t = create_accessors(AnticNumberField, acb_root_ctx, get_handle())
   global _get_nf_conjugate_data_arb = t[1]
@@ -228,14 +213,6 @@ function __init__()
 
   global R = _RealRing()
 
-  # Stuff for elliptic curves
-  # polynomial rings Zx = ZZ[x] and _Zxy = ZZ[x,y]
-  # will be removed eventually
-  #global _Zx = PolynomialRing(FlintZZ, "_x")[1]
-  #global _Zxy = PolynomialRing(_Zx, "_y")[1]
-  #global _x = gen(_Zx)
-  #global _y = gen(_Zxy)
-
   global flint_rand_ctx = flint_rand_state()
 
   @require GAP="c863536a-3901-11e9-33e7-d5cd0df7b904" begin
@@ -254,6 +231,20 @@ function __init__()
     include("AlgAssRelOrd/NEQ_polymake.jl")
   end
 end
+
+################################################################################
+#
+#  Verbose printing and custom assertions
+#
+################################################################################
+
+include("Assertions.jl")
+
+################################################################################
+#
+#  Setter and getter for objects
+#
+################################################################################
 
 function _get_maximal_order(K::AnticNumberField)
   return _get_maximal_order_of_nf(K)
@@ -355,10 +346,6 @@ end
 
 trace(x...) = tr(x...)
 
-#lufact(x...) = lu(x...)
-#
-#lufact!(x...) = lu!(x...)
-
 Base.adjoint(x) = transpose(x)
 
 ################################################################################
@@ -368,132 +355,6 @@ Base.adjoint(x) = transpose(x)
 ################################################################################
 
 global VERSION_NUMBER = v"0.6.5"
-
-################################################################################
-#
-#  Verbose printing
-#
-################################################################################
-
-global hecke = Hecke
-
-global VERBOSE_SCOPE = Symbol[]
-
-global VERBOSE_LOOKUP = Dict{Symbol, Int}()
-
-global VERBOSE_PRINT_INDENT = [ 0 ]
-
-function add_verbose_scope(s::Symbol)
-  !(s in VERBOSE_SCOPE) && push!(VERBOSE_SCOPE, s)
-  nothing
-end
-
-function pushindent()
-  a = VERBOSE_PRINT_INDENT[1]
-  VERBOSE_PRINT_INDENT[1] = a + 1
-  nothing
-end
-
-function clearindent()
-  VERBOSE_PRINT_INDENT[1] = 0
-  nothing
-end
-
-function popindent()
-  a = VERBOSE_PRINT_INDENT[1]
-  VERBOSE_PRINT_INDENT[1] = a - 1
-  nothing
-end
-
-function _global_indent()
-  s = "  "^VERBOSE_PRINT_INDENT[1]
-  return s
-end
-
-macro vprint(args...)
-  if length(args) == 2
-    quote
-      if get_verbose_level($(args[1])) >= 1
-        print(_global_indent())
-        print($(esc((args[2]))))
-      end
-    end
-  elseif length(args) == 3
-    quote
-      if get_verbose_level($(args[1])) >= $(args[2])
-        print(_global_indent())
-        print($(esc((args[3]))))
-      end
-    end
-  end
-end
-
-macro v_do(args...)
-  if length(args) == 2
-    quote
-      if get_verbose_level($(esc(args[1]))) >= 1
-       $(esc(args[2]))
-      end
-    end
-  elseif length(args) == 3
-    quote
-      if get_verbose_level($(esc(args[1]))) >= $(esc(args[2]))
-        $(esc(args[3]))
-      end
-    end
-  end
-end
-
-function set_verbose_level(s::Symbol, l::Int)
-  !(s in VERBOSE_SCOPE) && error("Not a valid symbol")
-  VERBOSE_LOOKUP[s] = l
-end
-
-function get_verbose_level(s::Symbol)
-  !(s in VERBOSE_SCOPE) && error("Not a valid symbol")
-  return get(VERBOSE_LOOKUP, s, 0)::Int
-end
-
-################################################################################
-#
-#  Assertions
-#
-################################################################################
-
-global ASSERT_SCOPE = Symbol[]
-
-global ASSERT_LOOKUP = Dict{Symbol, Int}()
-
-function add_assert_scope(s::Symbol)
-  !(s in ASSERT_SCOPE) && push!(ASSERT_SCOPE, s)
-  nothing
-end
-
-function set_assert_level(s::Symbol, l::Int)
-  !(s in ASSERT_SCOPE) && error("Not a valid symbol")
-  ASSERT_LOOKUP[s] = l
-end
-
-function get_assert_level(s::Symbol)
-  !(s in ASSERT_SCOPE) && error("Not a valid symbol")
-  return get(ASSERT_LOOKUP, s, 0)::Int
-end
-
-macro hassert(args...)
-  if length(args) == 2
-    quote
-      if get_assert_level($(args[1])) >= 1
-        @assert $(esc(args[2]))
-      end
-    end
-  elseif length(args) == 3
-    quote
-      if get_assert_level($(args[1])) >= $(args[2])
-        @assert $(esc(args[3]))
-      end
-    end
-  end
-end
 
 ######################################################################
 # named printing support
