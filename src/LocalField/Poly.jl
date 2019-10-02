@@ -1,4 +1,19 @@
 
+###################################################################################
+#
+#  TODO: XXX: Should be moved to AbstractAlgebra.Generic once 0.6.0 is compatible.
+#
+###################################################################################
+
+function //(f::Generic.Poly{T}, a::T) where T<:RingElem
+    g = deepcopy(f)
+    for i in 1:length(g.coeffs)
+        g.coeffs[i] = g.coeffs[i]//base_ring(g)(a)
+    end
+    return g
+end
+
+
 ################################################################################
 #
 #  Lifting
@@ -55,28 +70,33 @@ end
 # NOTE: These methods are underscored because, technically, the content/primitive
 #       parts of a polynomial `f` over a field is 1 (resp. f). 
 
-"""
+@doc Markdown.doc"""
+    fcontent(f::Generic.Poly{T}) where T <: NALocalFieldElem
     fcontent(f::Generic.Poly{T}) where T <: FlintLocalFieldElem
 
-> The content of a polynomial over the fraction field $Q$ of a Euclidian domain $R$
-> is defined as follows:
-> Let $f = d^{-1} g$, such that $g \in R[x]$. Then $c(f) := d^{-1}c(g)$. Note that $c(f)$
-> is independent of the choice of denominator $d$. (See [Wikipedia]("https://en.wikipedia.org/wiki/Primitive_part_and_content#Over_the_rationals") for more details.)
+The content of a polynomial over the fraction field $Q$ of a Euclidian domain $R$ 
+is defined as follows:
+Let $f = d^{-1} g$, such that $g \in R[x]$. Then $c(f) := d^{-1}c(g)$. Note that $c(f)$
+is independent of the choice of denominator $d$. 
+(See [Wikipedia](https://en.wikipedia.org/wiki/Primitive_part_and_content#Over_the_rationals) 
+for more details.)
 
-> In order to maintain code consistency, as not all termology sources agree, we designate
-> a special name for this circumstance.
+In order to maintain code consistency, as not all termology sources agree, we designate
+a special name for this circumstance.
 """
+function fcontent(f::Generic.Poly{T}) where T <: NALocalFieldElem
+    K  = base_ring(f)
+    pi = uniformizer(K)
+    v  = valuation(pi)
+    val,i = findmin(valuation.(coefficients(f)))
+    return pi^(Integer(val//v))
+end
+
 function fcontent(f::Generic.Poly{T}) where T <: FlintLocalFieldElem
     K  = base_ring(f)
     pi = uniformizer(K)
     val,i = findmin(valuation.(coefficients(f)))
     return pi^val
-end
-
-function fprimitive_part(f::Hecke.Generic.Poly{<:NALocalFieldElem})
-  K = base_ring(f)
-  val,i = findmin( valuation.(coefficients(f)) )
-  return f//coefficients(f)[i-1]
 end
 
 
@@ -95,10 +115,10 @@ end
 #   return p^v
 # end
 
-@docs Markdown.doc"""
+@doc Markdown.doc"""
     fprimpar(f::Hecke.Generic.Poly{<:NALocalFieldElem})
     fprimitive_part(f::Hecke.Generic.Poly{<:NALocalFieldElem})
-Returns f//fcontent(f). See documentation for `fcontent` for more details. 
+Returns `f//fcontent(f)`. See documentation for `fcontent` for more details. 
 """
 fprimpart(f::Hecke.Generic.Poly{<:NALocalFieldElem}) = f//fcontent(f)
 

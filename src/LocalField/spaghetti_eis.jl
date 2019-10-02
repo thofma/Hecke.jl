@@ -3,6 +3,8 @@
 
 eisf_elem = Hecke.eisf_elem
 
+fprimitive_part = Hecke.fprimitive_part
+
 # TODO: Various division operators and coefficient manipulations need to be implemented.
 
 # Citation "krasner.pdf"
@@ -32,7 +34,7 @@ function number_of_roots(f::Hecke.Generic.Poly{<:NALocalFieldElem})
     
     x = gen(parent(f))
     pi = uniformizer(K)
-    C = [primitive_part(f)]
+    C = [fprimitive_part(f)]
     m = 0
 
     while !isempty(C)
@@ -43,7 +45,7 @@ function number_of_roots(f::Hecke.Generic.Poly{<:NALocalFieldElem})
         
         for rt in rts
             
-            h = primitive_part( c(pi*x + lift(rt)) )
+            h = fprimitive_part( c(pi*x + lift(rt)) )
             hp = change_base_ring(h, res)
             
             if degree(hp) == 1
@@ -137,7 +139,7 @@ function integral_roots(f::Hecke.Generic.Poly{<:Hecke.NALocalFieldElem})
     pi = uniformizer(K)
     roots_type = elem_type(K)
     
-    fprim = primitive_part(f)
+    fprim = fprimitive_part(f)
     fp = change_base_ring(fprim, res)
 
     rts = roots(fp)
