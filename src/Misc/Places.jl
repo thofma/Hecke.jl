@@ -387,9 +387,9 @@ function infinite_places_uniformizers(K::AnticNumberField; redo::Bool = false)
       good = true
       rep = reim(lc[i])[1]
       if ispositive(rep)
-        y = -ceil(Int, BigFloat(rep))
+        y = -ceil(fmpz, BigFloat(rep))
       else
-        y = -floor(Int, BigFloat(rep))
+        y = -floor(fmpz, BigFloat(rep))
       end
       ar = zeros(Int, length(p))
       for j = 1:length(p)

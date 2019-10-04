@@ -65,11 +65,6 @@ function FacElem(base::Array{B, 1}, exp::Array{fmpz, 1}) where B
       continue
     end
     add_to_key!(z.fac, base[i], exp[i])
-    #if haskey(z.fac, base[i])
-    #  z.fac[base[i]] += exp[i]
-    #else
-    #  z.fac[base[i]] = exp[i]
-    #end
   end
 
   z.parent = FacElemMon(parent(base[1]))
@@ -165,9 +160,12 @@ end
 #
 ################################################################################
 function inv!(x::FacElem)
-  for (a, v) in x
-    x.fac[a] = -v
+  for i = x.fac.idxfloor:length(x.fac.vals)
+    if isassigned(x.fac.vals, i)
+      x.fac.vals[i] = -x.fac.vals[i]
+    end
   end
+  return x
 end
 
 function inv(x::FacElem)
@@ -229,11 +227,6 @@ function mul!(z::FacElem{B, S}, x::FacElem{B, S}, y::FacElem{B, S}) where {B, S}
   z.fac = copy(x.fac)
   for (a, v) in y
     add_to_key!(z.fac, a, v)
-    #if haskey(x.fac, a)
-    #  z.fac[a] = z.fac[a] + y.fac[a]
-    #else
-    #  z.fac[a] = y.fac[a]
-    #end
   end
   return z
 end
@@ -250,11 +243,6 @@ function *(x::FacElem{B, S}, y::FacElem{B, S}) where {B, S}
   z = copy(x)
   for (a, v) in y
     add_to_key!(z.fac, a, v)
-    #if haskey(x.fac, a)
-    #  z.fac[a] = z.fac[a] + y.fac[a]
-    #else
-    #  z.fac[a] = y.fac[a]
-    #end
   end
   return z
 end
@@ -262,22 +250,12 @@ end
 function *(x::FacElem{B}, y::B) where B
   z = copy(x)
   add_to_key!(z.fac, y, 1)
-  #if haskey(x.fac, y)
-  #  z.fac[y] = z.fac[y] + 1
-  #else
-  #  z.fac[y] = 1
-  #end
   return z
 end
 
 function *(y::B, x::FacElem{B}) where B
   z = copy(x)
   add_to_key!(z.fac, y, 1)
-  #if haskey(x.fac, y)
-  #  z.fac[y] = z.fac[y] + 1
-  #else
-  #  z.fac[y] = 1
-  #end
   return z
 end
 
@@ -285,11 +263,6 @@ function div(x::FacElem{B}, y::FacElem{B}) where B
   z = copy(x)
   for (a, v) in y
     add_to_key!(z.fac, a, -v)
-    #if haskey(x.fac, a)
-    #  z.fac[a] = z.fac[a] - y.fac[a]
-    #else
-    #  z.fac[a] = -y.fac[a]
-    #end
   end
   return z
 end
@@ -843,11 +816,12 @@ function FacElem(A::Array{nf_elem_or_fac_elem, 1}, v::Array{fmpz, 1})
   B = B^v[1]
   for i=2:length(A)
     if typeof(A[i]) == nf_elem
-      C = FacElem(A[i])^v[i]
+      add_to_key!(B.fac, A[i], v[i])
     else
-      C = A[i]^v[i]
+      for (k, v1) in A[i]
+        add_to_key!(B.fac, k, v1*v[i])
+      end
     end
-    B *= C
   end
   return B
 end

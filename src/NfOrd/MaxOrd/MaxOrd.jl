@@ -114,7 +114,7 @@ function pmaximal_overorder_at(O::NfOrd, primes::Array{fmpz, 1})
   Zx = PolynomialRing(FlintZZ, "x", cached = false)[1]
   f = Zx(K.pol)
   for i in 1:length(primes1)
-    p = primes[i]
+    p = primes1[i]
     @vprint :NfOrd 1 "Computing p-maximal overorder for $p ..."
     if !divisible(ind, p) || isregular_at(f, p)
       O1 = pmaximal_overorder(EO, p)
@@ -287,9 +287,6 @@ function _TameOverorderBL(O::NfOrd, lp::Array{fmpz,1})
 
 end
 
-
-
-
 function _qradical(O::NfOrd, q::fmpz)
 
   d = degree(O)
@@ -330,8 +327,8 @@ function _qradical(O::NfOrd, q::fmpz)
   for i = 1:k
     for j = 1:d
       na = lift(B[j, i])
-      if q != na && !isone(gcd(na, q))
-        return n1, ideal(O, q)
+      if q != na && !iszero(na) && !isone(gcd(na, q))
+        return na, ideal(O, q)
       end
       M2[i, j] = na
     end

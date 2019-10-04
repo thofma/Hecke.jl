@@ -768,8 +768,20 @@ factor(A::NfOrdIdl) = factor_dict(A)
 
 function factor_dict(A::NfOrdIdl)
   ## this should be fixed
-  lf = factor(minimum(A))
   lF = Dict{NfOrdIdl, Int}()
+  O = order(A)
+  if has_princ_gen_special(A)
+    g = A.princ_gen_special[2] + A.princ_gen_special[3]
+    fg = factor(g)
+    for (p, v) in fg
+      lP = prime_decomposition(O, p)
+      for (P, vv) in lP
+        lF[P] = vv*v
+      end
+    end
+    return lF
+  end
+  lf = factor(minimum(A))
   n = norm(A)
   O = order(A)
   for (i, (p, v)) in enumerate(lf)
@@ -977,9 +989,11 @@ function val_func_index(p::NfOrdIdl)
       v = 0
       d, x_mat = integral_split(x, O)
       Nemo.mul!(x_mat, x_mat, M)
-      while gcd(content(x_mat), P) == P  # should divide and test in place
+      c = content(x_mat)
+      while divisible(c, P)  # should divide and test in place
         divexact!(x_mat, x_mat, P)
         Nemo.mul!(x_mat, x_mat, M)
+        c = content(x_mat)
         v += 1
       end
       return v-valuation(d, P)*p.splitting_type[1] ::Int

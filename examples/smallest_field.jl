@@ -1,132 +1,189 @@
-using Libdl, Printf
+using GAP, Hecke, Printf, ArgParse
 
-push!(Libdl.DL_LOAD_PATH, "/tmpbig/thofmann/juliagap/libgap/.libs/")
-include("/tmpbig/thofmann/juliagap/LibGAP.jl/src/initialization.jl")
-libgap.initialize( [ ""
-                   , "-l", "/tmpbig/thofmann/juliagap/libgap/"
-                   , "-T", "-r", "-A", "-q"
-                   , "-m", "512m" ], ["\0"])
+include(joinpath(Hecke.pkgdir,"examples/FieldEnumeration.jl"))
+include(joinpath(Hecke.pkgdir,"examples/fields.jl"))
 
-using Hecke
+function parse_commandline()
+  s = ArgParseSettings()
 
-include("/users/cip/users/thofmann/CarloLibGAPTest/towards_cohomology.jl")
-include("/tmpbig/thofmann/v0.6/Hecke/examples/FieldEnumeration.jl")
-include("/tmpbig/thofmann/v0.6/Hecke/examples/fields.jl")
+  @add_arg_table s begin
+    "--order", "-o"
+      help = "Order of the group"
+      arg_type = Int
+      default = -1
+    "--id", "-i"
+      help = "Id of the group"
+      arg_type = Int
+      default = -1
+    "--number", "-n"
+      help = "Number of the group"
+      arg_type = Int
+      default = -1
+    "--tamely-ramified"
+      help = "Only tamely ramified fields"
+      action = :store_true
+    "--only-real"
+      help = "Only totally real fields"
+      action = :store_true
+    "--disc-bound"
+      help = "Discriminant bound"
+      arg_type = fmpz
+      default = fmpz(-1)
+  end
 
-sprint_formatted(fmt, args...) = @eval @sprintf($fmt, $(args...))
+  return parse_args(s)
+end
 
-grp_no = Int(eval(Meta.parse(ARGS[1])))
+function main()
+  parsed_args = parse_commandline()
 
-n, i = small_solvable_groups[grp_no]
+  local grp_order::Int
+  local grp_id::Int
+  local dbound::fmpz
+  local only_real::Bool
+  local only_tame::Bool
+  local grp_no::Int
 
-file = sprint_formatted("%0$(length(string(length(small_solvable_groups))))d", grp_no) * "-$n-$i."* "log"
+  for (arg, val) in parsed_args
+    println("$arg => $val")
+    if arg == "order"
+      grp_order = val
+    elseif arg == "id"
+      grp_id = val
+    elseif arg == "disc-bound"
+      dbound = val
+    elseif arg == "only-real"
+      only_real = val
+    elseif arg == "tamely-ramified"
+      only_tame = val
+    elseif arg == "number"
+      grp_no = val
+    end
+  end
 
-println("========================================")
-println("Group: $n $i")
-println("========================================")
+  sprint_formatted(fmt, args...) = @eval @sprintf($fmt, $(args...))
 
-global dbound = 0
-
-if length(ARGS) == 2
-  dbound = fmpz(eval(Meta.parse(ARGS[2])))
-else
-  if mod(n, 2) == 0
-    dbound = Hecke.lower_discriminant_bound(n, div(n, 2))
+  if grp_id != -1
+    @assert grp_order != -1
+    n = grp_order
+    i = grp_id
+    grp_no = findfirst(isequal((n, i)), small_solvable_groups)
   else
-    dbound = Hecke.lower_discriminant_bound(n, 0)
+    @assert grp_no != -1
+    n, i = small_solvable_groups[grp_no]
   end
-end
 
-dbound = 10 * dbound
+  file = sprint_formatted("%0$(length(string(length(small_solvable_groups))))d", grp_no) * "-$n-$i."* "log"
 
-println("========================================")
-println("Discriminant bound: $dbound")
-println("========================================")
-
-set_verbose_level(:FieldsNonFancy, 1)
-
-l = []
-
-global complex_fields = []
-global real_fields = []
-global all = []
-
-global found_complex = false
-global found_real = false
-
-if mod(n, 2) != 0
-  found_complex = true
-end
-
-global only_real = false
-
-while true
-  global complex_fields
-  global real_fields
-  global found_complex
-  global found_real
-  global only_real
-  global dbound
-
+  @show grp_order
+  @show grp_id
+  @show grp_no
+  @show dbound
   @show only_real
+  @show only_tame
+  @show file
 
-  global l = fields(n, i, dbound, only_real = only_real)
-
-  for v in l
-    x = v[1]
-    if !found_complex
-      if signature(x)[2] != 0
-        push!(complex_fields, v)
-      end
-    end
-
-    if !found_real
-      if signature(x)[2] == 0
-        push!(real_fields, v)
-      end
-    end
+  if isfile(file)
+    throw(error("File $file does already exist"))
   end
 
-  if !found_complex && length(complex_fields) > 0
-    append!(all, complex_fields)
-    found_complex = true
-    println("== FOUND SOMETHING COMPLEX ==")
-    empty!(complex_fields)
-  end
+  println("========================================")
+  println("Group: $grp_no: $n $i")
+  println("========================================")
 
-  if !found_real && length(real_fields) > 0
-    append!(all, real_fields)
-    found_real = true
-    println("== FOUND SOMETHING REAL ==")
-    empty!(real_fields)
-  end
-
-  if found_complex
-    if !found_real
-      only_real = true
-      println("== I AM IN ONLY_REAL = TRUE MODE ==")
+  if dbound == -1
+    if mod(n, 2) == 0
+      dbound = Hecke.lower_discriminant_bound(n, div(n, 2))
     else
-      println("== EXITING ==")
-      break
+      dbound = Hecke.lower_discriminant_bound(n, 0)
     end
   end
 
-  dbound = 100 * dbound
+  dbound = 10 * dbound
+
   println("========================================")
-  println("Increasing discriminant bound: $dbound")
+  println("Discriminant bound: $dbound")
   println("========================================")
-  println("only_real = $only_real")
-  println("found_complex = $found_complex")
-  println("found_real = $found_real")
+
+  set_verbose_level(:FieldsNonFancy, 1)
+
+  l = []
+
+  complex_fields = []
+  real_fields = []
+  all = []
+
+  found_complex = false
+  found_real = false
+
+  if mod(n, 2) != 0
+    found_complex = true
+  end
+
+  while true
+
+    @show only_real
+
+    l = fields(n, i, dbound, only_real = only_real)
+
+    for v in l
+      x = v.field
+      if !found_complex
+        if signature(x)[2] != 0
+          push!(complex_fields, v)
+        end
+      end
+
+      if !found_real
+        if signature(x)[2] == 0
+          push!(real_fields, v)
+        end
+      end
+    end
+
+    if !found_complex && length(complex_fields) > 0
+      append!(all, complex_fields)
+      found_complex = true
+      println("== FOUND SOMETHING COMPLEX ==")
+      empty!(complex_fields)
+    end
+
+    if !found_real && length(real_fields) > 0
+      append!(all, real_fields)
+      found_real = true
+      println("== FOUND SOMETHING REAL ==")
+      empty!(real_fields)
+    end
+
+    if found_complex
+      if !found_real
+        only_real = true
+        println("== I AM IN ONLY_REAL = TRUE MODE ==")
+      else
+        println("== EXITING ==")
+        break
+      end
+    end
+
+    dbound = 100 * dbound
+    println("========================================")
+    println("Increasing discriminant bound: $dbound")
+    println("========================================")
+    println("only_real = $only_real")
+    println("found_complex = $found_complex")
+    println("found_real = $found_real")
+  end
+
+  l = all
+
+  ll = map(v -> v.field, l)
+  ffields = [ (x, discriminant(maximal_order(x))) for x in ll ]
+  sort!(ffields, lt = (x, y) -> abs(x[2]) <= abs(y[2]))
+
+
+  @show length(ffields)
+
+  _write_fields(ffields, file)
 end
 
-l = all
-
-ll = map(v -> v[1], l)
-ffields = [ (x, discriminant(maximal_order(x))) for x in ll ]
-sort!(ffields, lt = (x, y) -> abs(x[2]) <= abs(y[2]))
-
-
-@show length(ffields)
-
-_write_fields(ffields, file)
+main()

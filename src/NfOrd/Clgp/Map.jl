@@ -234,6 +234,7 @@ function class_group_ideal_relation(I::NfOrdIdl, c::ClassGrpCtx)
     end
   end
   # ok, we have to work
+  
   _I, b = reduce_ideal2(I) # do the obvious reduction to an ideal of bounded norm
   @hassert :PID_Test 1 b*I == _I
   I = _I
@@ -245,7 +246,6 @@ function class_group_ideal_relation(I::NfOrdIdl, c::ClassGrpCtx)
     end
   end
   #really annoying, but at least we have a small(ish) ideal now
-
   #println("have to work")
   E = class_group_small_lll_elements_relation_start(c, I)
   iI = inv(I)
@@ -444,6 +444,7 @@ function principal_gen_fac_elem(A::NfOrdIdl)
   return e
 end
 
+
 @doc Markdown.doc"""
     principal_gen_fac_elem(I::FacElem) -> FacElem{nf_elem, NumberField}
 For a principal ideal $A$ in factored form, find a generator in factored form.
@@ -453,7 +454,7 @@ function principal_gen_fac_elem(I::FacElem{NfOrdIdl, NfOrdIdlSet})
   #@hassert :PID_Test 1 evaluate(a)*J == evaluate(I)
   x = Hecke.principal_gen_fac_elem(J)
   #@hassert :PID_Test 1 ideal(order(J), evaluate(x)) == J
-  x=x*a
+  mul!(x, x, a) #x=x*a
   return x
   
 end
@@ -514,6 +515,7 @@ function isprincipal_fac_elem(A::NfOrdIdl)
   R, d = solve_ut(H, r)
 
   if d != 1
+    A.is_principal = 2
     return false, FacElem([nf(O)(1)], fmpz[1])
   end
 
@@ -526,11 +528,14 @@ function isprincipal_fac_elem(A::NfOrdIdl)
   for i in length(T):-1:1
     apply_right!(rs, T[i])
   end
-
-  e = FacElem(vcat(c.R_gen, c.R_rel), rs)*inv(x)  
+  
+  e = FacElem(vcat(c.R_gen, c.R_rel), rs)
+  add_to_key!(e.fac, x, -1)  
 
   #reduce e modulo units.
   e = reduce_mod_units([e], _get_UnitGrpCtx_of_order(L))[1]
+  #A.is_principal = 1
+  # TODO: if we set it to be principal, we need to set the generator. Otherwise the ^ function is broken
   return true, e
 end
 
@@ -552,7 +557,10 @@ function isprincipal(A::NfOrdIdl)
     return isprincipal_non_maximal(A)
   end
   fl, a = isprincipal_fac_elem(A)
-  return fl, O(evaluate(a))
+  ev = O(evaluate(a))
+  A.is_principal = 1
+  A.princ_gen = ev
+  return fl, ev
 end
 
 function isprincipal(A::NfOrdFracIdl)
