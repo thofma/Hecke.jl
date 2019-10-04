@@ -528,10 +528,10 @@ function *(a::AlgAssRelOrdIdl{S, T}, b::AlgAssRelOrdIdl{S, T}) where {S, T}
   H = sub(pseudo_hnf(PseudoMatrix(M, C), :lowerleft), (d2 - d + 1):d2, 1:d)
   c = ideal(A, H, true)
 
-  if isdefined(a, :left_order)
+  if _left_order_known_and_maximal(a)
     c.left_order = left_order(a)
   end
-  if isdefined(b, :right_order)
+  if _right_order_known_and_maximal(b)
     c.right_order = right_order(b)
   end
   if isdefined(a, :order) && isdefined(b, :order) && order(a) === order(b)
@@ -801,18 +801,42 @@ function right_order(a::AlgAssRelOrdIdl)
   return a.right_order
 end
 
+# Checks whether the left order is known and if it is known to be maximal
+function _left_order_known_and_maximal(a::AlgAssRelOrdIdl)
+  if !isdefined(a, :left_order)
+    return false
+  end
+  O = left_order(a)
+  if ismaximal_known(O) && ismaximal(O)
+    return true
+  end
+  return false
+end
+
+# Checks whether the right order is known and if it is known to be maximal
+function _right_order_known_and_maximal(a::AlgAssRelOrdIdl)
+  if !isdefined(a, :right_order)
+    return false
+  end
+  O = right_order(a)
+  if ismaximal_known(O) && ismaximal(O)
+    return true
+  end
+  return false
+end
+
 ################################################################################
 #
 #  Reduction of element modulo ideal
 #
 ################################################################################
 
-function mod!(x::AlgAssRelOrdElem, a::AlgAssRelOrdIdl)
+# Assumes PM == basis_pmatrix_wrt(a, order(a))
+function mod!(x::AlgAssRelOrdElem, a::AlgAssRelOrdIdl, PM::PMat)
   A = algebra(a)
   O = parent(x)
   @assert order(a) === O
   b = coordinates(x, copy = false)
-  PM = basis_pmatrix_wrt(a, O)
   t = parent(b[1])()
   t1 = parent(b[1])()
   for i = degree(O):-1:1
@@ -834,6 +858,8 @@ function mod!(x::AlgAssRelOrdElem, a::AlgAssRelOrdIdl)
   return x
 end
 
+mod!(x::AlgAssRelOrdElem, a::AlgAssRelOrdIdl) = mod!(x, a, basis_pmatrix_wrt(a, order(a)))
+
 @doc Markdown.doc"""
     mod(x::AlgAssRelOrdElem, a::AlgAssRelOrdIdl) -> AlgAssRelOrdElem
 
@@ -841,16 +867,18 @@ end
 > of $y$ are reduced modulo $a$.
 > Assumes `parent(x) == order(a)` and that $a$ is an integral ideal of `order(a)`.
 """
-function mod(x::AlgAssRelOrdElem, a::AlgAssRelOrdIdl)
-  return mod!(deepcopy(x), a)
+mod(x::AlgAssRelOrdElem, a::AlgAssRelOrdIdl) = mod(x, a, basis_pmatrix_wrt(a, order(a)))
+
+function mod(x::AlgAssRelOrdElem, a::AlgAssRelOrdIdl, PM::PMat)
+  return mod!(deepcopy(x), a, PM)
 end
 
 function mod!(x::AlgAssRelOrdElem, Q::RelOrdQuoRing)
-  return mod!(x, ideal(Q))
+  return mod!(x, ideal(Q), basis_pmatrix(Q))
 end
 
 function mod(x::AlgAssRelOrdElem, Q::RelOrdQuoRing)
-  return mod(x, ideal(Q))
+  return mod(x, ideal(Q), basis_pmatrix(Q))
 end
 
 ################################################################################
@@ -860,23 +888,13 @@ end
 ################################################################################
 
 # Assumes, that det(basis_matrix(a)) == 1
-function assure_has_norm(a::AlgAssRelOrdIdl)
-  if isdefined(a, :norm)
+function assure_has_norm(a::AlgAssRelOrdIdl{S, T}, O::AlgAssRelOrd{S, T}) where { S, T }
+  if haskey(a.norm, O)
     return nothing
   end
   if iszero(a)
-    O = order(basis_pmatrix(a, copy = false).coeffs[1])
-    a.norm = _algebra(O)()*O
+    a.norm[O] = _algebra(O)()*O
     return nothing
-  end
-
-  # Find any order, of which a is an ideal
-  if isdefined(a, :order)
-    O = order(a)
-  elseif isdefined(a, :right_order)
-    O = right_order(a)
-  else
-    O = left_order(a)
   end
 
   # Now consider a as an ideal of O (but without computing a basis pseudo matrix
@@ -892,58 +910,77 @@ function assure_has_norm(a::AlgAssRelOrdIdl)
   # inv(det(basis_matrix(O))), since det(basis_matrix(a)) == 1.
   n *= inv(det(basis_matrix(O, copy = false)))
   simplify(n)
-  a.norm = n
+  a.norm[O] = n
   return nothing
+end
+
+@doc Markdown.doc"""
+    norm(a::AlgAssRelOrdIdl{S, T}, O::AlgAssRelOrd{S, T}; copy::Bool = true)
+      where { S, T } -> T
+
+> Returns the norm of $a$ considered as an (possibly fractional) ideal of $O$.
+"""
+function norm(a::AlgAssRelOrdIdl{S, T}, O::AlgAssRelOrd{S, T}; copy::Bool = true) where { S, T }
+  assure_has_norm(a, O)
+  if copy
+    return deepcopy(a.norm[O])
+  else
+    return a.norm[O]
+  end
 end
 
 @doc Markdown.doc"""
     norm(a::AlgAssRelOrdIdl{S, T}; copy::Bool = true) where { S, T } -> T
 
-> Returns the norm of $a$.
+> Returns the norm of $a$ considered as an (possibly fractional) ideal of
+> `order(a)`.
 """
-function norm(a::AlgAssRelOrdIdl; copy::Bool = true)
-  assure_has_norm(a)
-  if copy
-    return deepcopy(a.norm)
-  else
-    return a.norm
-  end
-end
+norm(a::AlgAssRelOrdIdl; copy::Bool = true) = norm(a, order(a), copy = copy)
 
-function assure_has_normred(a::AlgAssRelOrdIdl)
-  if isdefined(a, :normred)
+function assure_has_normred(a::AlgAssRelOrdIdl{S, T}, O::AlgAssRelOrd{S, T}) where { S, T }
+  if haskey(a.normred, O)
     return nothing
   end
   if iszero(a)
-    a.normred = norm(a)
+    a.normred[O] = norm(a, O)
     return nothing
   end
 
   A = algebra(a)
   m = isqrt(dim(A))
   @assert m^2 == dim(A)
-  N = norm(a, copy = false)
+  N = norm(a, O, copy = false)
   b, I = ispower(N, m)
   @assert b "Cannot compute reduced norm. Maybe the algebra is not simple and central?"
-  a.normred = I
+  a.normred[O] = I
   return nothing
+end
+
+@doc Markdown.doc"""
+    normred(a::AlgAssRelOrdIdl{S, T}, O::AlgAssRelOrd{S, T}; copy::Bool = true)
+      where { S, T } -> T
+
+> Returns the reduced norm of $a$ considered as an (possibly fractional) ideal
+> of $O$.
+> It is assumed that the algebra containing $a$ is simple and central.
+"""
+function normred(a::AlgAssRelOrdIdl{S, T}, O::AlgAssRelOrd{S, T}; copy::Bool = true) where { S, T }
+  @assert issimple(algebra(a)) && iscentral(algebra(a)) "Only implemented for simple and central algebras"
+  assure_has_normred(a, O)
+  if copy
+    return deepcopy(a.normred[O])
+  else
+    return a.normred[O]
+  end
 end
 
 @doc Markdown.doc"""
     normred(a::AlgAssRelOrdIdl{S, T}; copy::Bool = true) where { S, T } -> T
 
-> Returns the reduced norm of $a$.
-> It is assumed that the algebra containing $a$ is simple and central.
+> Returns the reduced norm of $a$ considered as an (possibly fractional) ideal
+> of `order(a)`.
 """
-function normred(a::AlgAssRelOrdIdl; copy::Bool = true)
-  @assert issimple(algebra(a)) && iscentral(algebra(a)) "Only implemented for simple and central algebras"
-  assure_has_normred(a)
-  if copy
-    return deepcopy(a.normred)
-  else
-    return a.normred
-  end
-end
+normred(a::AlgAssRelOrdIdl; copy::Bool = true) = normred(a, order(a), copy = copy)
 
 ################################################################################
 #
@@ -1249,7 +1286,7 @@ function maximal_integral_ideal_containing(I::AlgAssRelOrdIdl, p::Union{ NfAbsOr
   @assert issimple(algebra(O))
   @assert ismaximal(O)
 
-  n = normred(I)
+  n = normred(I, O)
   if valuation(n, p) == 0
     error("Cannot find a maximal ideal for the given prime")
   end
@@ -1260,7 +1297,7 @@ function maximal_integral_ideal_containing(I::AlgAssRelOrdIdl, p::Union{ NfAbsOr
 
   P = pradical(O, p) # if the algebra is simple, then the pradical is the unique prime lying over p
   J = I + P
-  if normred(J) == p
+  if normred(J, O) == p
     return J
   end
 
@@ -1306,7 +1343,7 @@ function maximal_integral_ideal_containing(I::AlgAssRelOrdIdl, p::Union{ NfAbsOr
   PM = sub(pseudo_hnf_full_rank_with_modulus(PM, n, :lowerleft), length(basis_c) + 1:nrows(PM), 1:ncols(PM))
 
   M = ideal(algebra(O), O, PM, side, true)
-  @assert normred(M) == p
+  @assert normred(M, O) == p
   if side == :left
     M.left_order = O # O is maximal
   else
@@ -1331,7 +1368,7 @@ function factor(I::AlgAssRelOrdIdl)
   @assert ismaximal(O)
 
   factors = Vector{ideal_type(O)}()
-  n = normred(J)
+  n = normred(J, O)
   fac_n = factor(n)
   primes = collect(keys(fac_n))
   sort!(primes, lt = (p, q) -> minimum(p, copy = false) < minimum(q, copy = false))
@@ -1457,10 +1494,10 @@ function divexact_left(a::AlgAssRelOrdIdl{S, T}, b::AlgAssRelOrdIdl{S, T}) where
   PM = _colon_raw(a, b, :left)
   c = ideal(algebra(a), PM)
 
-  if isdefined(a, :right_order)
+  if _right_order_known_and_maximal(a)
     c.right_order = right_order(a)
   end
-  if isdefined(b, :right_order)
+  if _right_order_known_and_maximal(b)
     c.left_order = right_order(b)
   end
 
@@ -1477,10 +1514,10 @@ function divexact_right(a::AlgAssRelOrdIdl{S, T}, b::AlgAssRelOrdIdl{S, T}) wher
   PM = _colon_raw(a, b, :right)
   c = ideal(algebra(a), PM)
 
-  if isdefined(a, :left_order)
+  if _left_order_known_and_maximal(a)
     c.left_order = left_order(a)
   end
-  if isdefined(b, :left_order)
+  if _left_order_known_and_maximal(b)
     c.right_order = left_order(b)
   end
 
@@ -1517,6 +1554,14 @@ function denominator(a::AlgAssRelOrdIdl{S, T}, O::AlgAssRelOrd{S, T}) where { S,
   end
   return d
 end
+
+@doc Markdown.doc"""
+    denominator(a::AlgAssRelOrdIdl) -> fmpz
+
+> Returns the smallest positive integer $d$ such that $da$ is contained in
+> `order(a)`.
+"""
+denominator(a::AlgAssRelOrdIdl) = denominator(a, order(a))
 
 # Assumes that I is "locally integral at p", i. e. I_p \subseteq O_p.
 # Returns x in R\setminus p such that Ix \subseteq O, where R = order(p)

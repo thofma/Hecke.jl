@@ -648,8 +648,9 @@ mutable struct AlgAssRelOrdIdl{S, T}
 
   iszero::Int                      # 0: don't know, 1: known to be zero, 2: known to be not zero
 
-  norm::T
-  normred::T
+  norm::Dict{AlgAssRelOrd{S, T}, T} # The ideal has different norms with respect
+                                    # to different orders
+  normred::Dict{AlgAssRelOrd{S, T}, T}
 
   function AlgAssRelOrdIdl{S, T}(A::AbsAlgAss{S}) where {S, T}
     z = new{S, T}()
@@ -657,6 +658,8 @@ mutable struct AlgAssRelOrdIdl{S, T}
     z.isleft = 0
     z.isright = 0
     z.iszero = 0
+    z.norm = Dict{AlgAssRelOrd{S, T}, T}()
+    z.normred = Dict{AlgAssRelOrd{S, T}, T}()
     return z
   end
 
