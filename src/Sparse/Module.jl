@@ -7,8 +7,6 @@
 export det_mc, id, isupper_triangular, norm2, hadamard_bound2, 
        hnf, hnf!, echelon_with_transform
 
-const p = nothing#next_prime(2^20)
-
 add_verbose_scope(:HNF)
 
 add_assert_scope(:HNF)

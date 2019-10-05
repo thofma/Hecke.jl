@@ -23,7 +23,7 @@ mutable struct QuadSpace{S, T} <: AbsSpace{S}
       z = new{S, T}(K, G)
     else
       try
-        Gc = change_base_ring(G, K)
+        Gc = change_base_ring(K, G)
         if typeof(Gc) !== dense_matrix_type(elem_type(S))
           throw(error("Cannot convert entries of the matrix to the number field"))
         end
@@ -71,7 +71,7 @@ mutable struct HermSpace{S, T, U, W} <: AbsSpace{S}
       gramc = gram
     else
       try
-        gramc = change_base_ring(gram, E)
+        gramc = change_base_ring(E, gram)
         if typeof(gramc) !== dense_matrix_type(elem_type(S))
           throw(error("Cannot convert entries of the matrix to the number field"))
         end
@@ -271,7 +271,7 @@ function gram_matrix(V::AbsSpace{T}, M::MatElem{S}) where {S, T}
   if S === elem_type(T)
     return M * gram_matrix(V) * transpose(_map(M, involution(V)))
   else
-    Mc = change_base_ring(M, base_ring(V))
+    Mc = change_base_ring(base_ring(V), M)
     return Mc * gram_matrix(V) * transpose(_map(Mc, involution(V)))
   end
 end
@@ -718,6 +718,39 @@ end
 
 ################################################################################
 #
+#  Isotropic
+#
+################################################################################
+
+function _islocally_hyperbolic_hermitian_detclass(rk, d, E, K, p)
+  if isodd(rk)
+    return false
+  end
+  if d == 1
+    if iseven(div(rk, 2))
+      return true
+    else
+      return islocal_norm(E, K(-1), p)
+    end
+  else
+    if iseven(div(rk, 2))
+      return false
+    else
+      return !islocal_norm(E, K(-1), p)
+    end
+  end
+end
+
+function islocally_hyperbolic(V::HermSpace, p)
+  rk = rank(V)
+  if isodd(rk)
+    return false
+  end
+  return islocal_norm(base_ring(V), det(V) * (-1)^(div(rk, 2)), p)
+end
+
+################################################################################
+#
 #  Helper functions (sort them later)
 #
 ################################################################################
@@ -728,9 +761,9 @@ function image(f::NfRelToNfRelMor{T, T}, I::NfRelOrdFracIdl{T, S}) where {T, S}
   @assert ismaximal(O) # Otherwise the order might change
   K = nf(O)
 
-  b = pseudo_basis(I)
+  pb = pseudo_basis(I)
 
-  z = NfRelOrdFracIdl{T, S}(O, [(f(a), b) for (a, b) in b])
+  z = sum(b * (f(a) * O) for (a, b) in pb)
   return z
 end
 
@@ -741,7 +774,7 @@ function islocal_square(a, p)
   return quadratic_defect(a, p) isa PosInf
 end
 
-function _map(a::AbstractAlgebra.Generic.MatrixElem, f)
+function _map(a::AbstractAlgebra.MatrixElem, f)
   z = similar(a)
   for i in 1:nrows(a)
     for j in 1:ncols(a)
@@ -785,4 +818,3 @@ end
 function element_with_signs(K, A::Vector{Tuple{InfPlc, Int}})
   return _element_with_signs(K, A)
 end
-

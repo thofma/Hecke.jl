@@ -680,7 +680,7 @@ end
 Returns a diagonal matrix whose diagonal entries are the element of $x$.
 """
 function diagonal_matrix(x::Vector{T}) where T <: RingElem
-  M = zero_matrix(T, length(x), length(x))
+  M = zero_matrix(parent(x[1]), length(x), length(x))
   for i = 1:length(x)
     M[i, i] = x[i]
   end

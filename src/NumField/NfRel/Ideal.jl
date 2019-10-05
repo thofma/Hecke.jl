@@ -333,13 +333,28 @@ end
 
 Creates the ideal $a \cdot \mathcal O$ of $\mathcal O$.
 """
-*(O::NfRelOrd{T, S}, a::S) where {T, S} = ideal(O, a)
+*(O::NfRelOrd{T, S}, a::S) where {T, S} = fractional_ideal(O, a)
 
-*(a::S, O::NfRelOrd{T, S}) where {T, S} = ideal(O, a)
+*(a::S, O::NfRelOrd{T, S}) where {T, S} = fractional_ideal(O, a)
 
 *(O::NfRelOrd, a::Union{NfOrdIdl, NfRelOrdIdl}) = ideal(O, a)
 
 *(a::Union{NfOrdIdl, NfRelOrdIdl}, O::NfRelOrd) = ideal(O, a)
+
+function fractional_ideal(O::NfRelOrd{T, S}, a::S) where {T, S}
+  d = degree(O)
+  pb = pseudo_basis(O, copy = false)
+  if iszero(a)
+    M = zero_matrix(base_field(nf(O)), d, d)
+    PM = PseudoMatrix(M, [ a*pb[i][2] for i = 1:d ])
+    return NfRelOrdFracIdl{T, S}(O, PM)
+  end
+
+  M = identity_matrix(base_field(nf(O)), d)
+  PM = PseudoMatrix(M, [ a*pb[i][2] for i = 1:d ])
+  PM = pseudo_hnf(PM, :lowerleft)
+  return NfRelOrdFracIdl{T, S}(O, PM)
+end
 
 ################################################################################
 #

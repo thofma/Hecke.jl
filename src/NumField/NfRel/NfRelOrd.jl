@@ -332,12 +332,43 @@ end
 
 ################################################################################
 #
+#  Codifferent
+#
+################################################################################
+
+@doc Markdown.doc"""
+    codifferent(O::NfRelOrd) -> NfRelOrdFracIdl
+
+Returns the codifferent of $\mathcal O$.
+"""
+function codifferent(O::NfRelOrd)
+  T = trace_matrix(O)
+  R = base_ring(O)
+  K = nf(R)
+  pm = pseudo_matrix(inv(change_base_ring(K, T)))
+  return fractional_ideal(O, pm)
+end
+
+@doc Markdown.doc"""
+    different(O::NfRelOrd) -> NfRelOrdIdl
+
+Returns the different of $\mathcal O$.
+"""
+function different(O::NfRelOrd)
+  if !ismaximal_known_and_maximal(O)
+    throw(error("Order not known to be maximal"))
+  end
+  return ideal(O, basis_pmatrix(inv(codifferent(O))))
+end
+
+################################################################################
+#
 #  Degree
 #
 ################################################################################
 
 @doc Markdown.doc"""
-      degree(O::NfRelOrd) -> Int
+    degree(O::NfRelOrd) -> Int
 
 Returns the degree of $\mathcal O$.
 """
@@ -534,9 +565,10 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-      trace_matrix(O::NfRelOrd{T, S}) -> Generic.Mat{T}
+    trace_matrix(O::NfRelOrd{T, S}) -> Generic.Mat{T}
 
-Returns the trace matrix of $\mathcal O$.
+Returns the trace matrix of $\mathcal O$ with respect to $(\omega_1,\dotsc,\omega_d)$
+where $(\mathfrak c_i, \omega_i)$ is the pseudo-basis of $\mathcal O$.
 """
 function trace_matrix(O::NfRelOrd)
   if isdefined(O, :trace_mat)
