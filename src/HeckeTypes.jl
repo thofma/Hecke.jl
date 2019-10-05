@@ -1639,7 +1639,7 @@ mutable struct AbsOrdQuoRing{S, T} <: Ring
     z = new{S, T}()
     z.base_ring = O
     z.ideal = I
-    z.basis_matrix = basis_matrix(I)
+    z.basis_matrix = integral_basis_matrix_wrt(I, O)
     z.basis_mat_array = Array(z.basis_matrix)
     z.preinvn = [ fmpz_preinvn_struct(z.basis_matrix[i, i]) for i in 1:degree(O)]
     d = degree(O)

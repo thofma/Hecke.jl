@@ -299,6 +299,12 @@ function basis_matrix(x::NfOrdFracIdl; copy::Bool = true)
   end
 end
 
+# For compatibility with AlgAssAbsOrdIdl
+function basis_matrix_wrt(A::NfOrdFracIdl, O::NfAbsOrd; copy::Bool = true)
+  @assert O === order(A)
+  return basis_matrix(A, copy = copy)
+end
+
 ################################################################################
 #
 #  Numerator and denominator

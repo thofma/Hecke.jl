@@ -407,7 +407,7 @@ function _coprime_norm_integral_ideal_class(x::NfOrdFracIdl, y::NfOrdIdl)
   return z, a
 end
 
-function rand(I::Union{NfOrdIdl, AlgAssAbsOrdIdl}, B::Int)
+function rand(I::NfOrdIdl, B::Int)
   r = rand(-B:B, degree(order(I)))
   b = basis(I)
   z = r[1]*b[1]

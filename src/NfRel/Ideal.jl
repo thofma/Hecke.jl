@@ -115,9 +115,9 @@ function basis_pmatrix(a::Union{NfRelOrdIdl, NfRelOrdFracIdl}; copy::Bool = true
 end
 
 # For compatibility with AlgAssRelOrdIdl
-function basis_pmatrix_wrt(a::Union{ NfRelOrdIdl, NfRelOrdFracIdl }, O::NfRelOrd)
+function basis_pmatrix_wrt(a::Union{ NfRelOrdIdl, NfRelOrdFracIdl }, O::NfRelOrd; copy::Bool = true)
   @assert O === order(a)
-  return basis_pmatrix(a)
+  return basis_pmatrix(a, copy = copy)
 end
 
 ################################################################################

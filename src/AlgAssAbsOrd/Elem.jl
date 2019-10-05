@@ -423,7 +423,8 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    powermod(a::AlgAssAbsOrdElem, i::Union{ fmpz, Int }, m::AlgAssAbsOrdIdl) -> AlgAssAbsOrdElem
+    powermod(a::AlgAssAbsOrdElem, i::Union{ fmpz, Int }, m::AlgAssAbsOrdIdl)
+      -> AlgAssAbsOrdElem
 
 > Returns an element $b$ of `order(a)` such that $a^i \equiv b \mod m$.
 """
@@ -474,7 +475,7 @@ function isdivisible_mod_ideal(x::AlgAssAbsOrdElem, y::AlgAssAbsOrdElem, a::AlgA
   end
 
   A = representation_matrix(y)
-  B = basis_matrix(a, copy = false)
+  B = integral_basis_matrix_wrt(a, O, copy = false)
 
   _copy_matrix_into_matrix(V, 2, 2, A)
   _copy_matrix_into_matrix(V, 2 + d, 2, B)

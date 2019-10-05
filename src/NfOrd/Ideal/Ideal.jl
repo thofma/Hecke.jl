@@ -517,6 +517,12 @@ function basis_mat_prime_deg_1(A::NfAbsOrdIdl)
   return b
 end
 
+# For compatibility with AlgAssAbsOrdIdl
+function integral_basis_matrix_wrt(A::NfAbsOrdIdl, O::NfAbsOrd; copy::Bool = true)
+  @assert O === order(A)
+  return basis_matrix(A, copy = copy)
+end
+
 ################################################################################
 #
 #  Basis matrix inverse
@@ -1455,7 +1461,7 @@ function mod(x::S, y::T) where { S <: Union{NfAbsOrdElem, AlgAssAbsOrdElem}, T <
     return O(a)
   end
 
-  c = basis_matrix(y, copy = false)
+  c = integral_basis_matrix_wrt(y, O, copy = false)
   t = fmpz(0)
   for i in degree(O):-1:1
     t = fdiv(a[i], c[i,i])
