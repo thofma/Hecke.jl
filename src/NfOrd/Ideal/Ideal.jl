@@ -1610,12 +1610,102 @@ function mod!(x::Union{NfOrdElem, AlgAssAbsOrdElem}, Q::AbsOrdQuoRing)
   return mod!(x, Q.basis_mat_array, Q.preinvn)
 end
 
+function mod(x::FacElem{S, T}, Q::AbsOrdQuoRing{NfAbsOrd{T, S}, NfAbsOrdIdl{T, S}}) where { S, T }
+  O = base_ring(Q)
+  K = nf(O)
+  D = Dict{elem_type(O), fmpz}()
+  # First step: Make all factors integral
+  for (b, e) in x.fac
+    d = denominator(b, O)
+    b = O(d*b)
+    if haskey(D, b)
+      D[b] += e
+    else
+      D[b] = e
+    end
+    if isone(d)
+      continue
+    end
+    Od = O(d)
+    if haskey(D, Od)
+      D[Od] -= e
+    else
+      D[Od] = -e
+    end
+  end
+  bases = Vector{elem_type(O)}()
+  exps = Vector{fmpz}()
+  for (b, e) in D
+    push!(bases, b)
+    push!(exps, e)
+  end
+
+  # Second step: Make sure everything has non-negative valuation at primes
+  # dividing ideal(Q)
+  primes = collect(keys(factor(Q)))
+  vals = zeros(Int, length(primes))
+  for i = 1:length(primes)
+    p = primes[i]
+    val_elt = one(K) # Going to be an element with valuation -1 at p and valuation
+                     # 0 at all other elements of primes. I only want to compute
+                     # it, if it is needed.
+    val_elt_computed = false
+    # Find the factors with non-zero valuation at p and negative exponent
+    n = fmpz(0) # Counts how often we multiplied by val_elt
+    for j = 1:length(bases)
+      if exps[j] >= 0
+        continue
+      end
+      v = valuation(bases[j], p)
+      if iszero(v)
+        continue
+      end
+      if !val_elt_computed
+        vals[i] = -1
+        val_elt = approximate(vals, primes)
+        vals[i] = 0
+        val_elt_computed = true
+      end
+      b = bases[j]*val_elt^v
+      bases[j] = O(b)
+      n += v*exps[j]
+    end
+    if iszero(n)
+      continue
+    end
+    # Multiply the factors with non-zero valuation at p and positive exponent
+    # by val_elt to compensate for the ones we multiplied above.
+    for j = 1:length(bases)
+      if exps[j] <= 0
+        continue
+      end
+      v = valuation(bases[j], p)
+      if iszero(v)
+        continue
+      end
+      b = bases[j]*val_elt^v
+      bases[j] = O(b)
+      n += v*exps[j]
+      if n >= 0
+        break
+      end
+    end
+    @assert n >= 0 "Element not integral"
+  end
+
+  # Now we can evaluate (modulo ideal(Q) of course)
+  z = one(Q)
+  for i = 1:length(bases)
+    z *= Q(bases[i])^exps[i]
+  end
+  return z
+end
+
 ################################################################################
 #
 #  p-radical
 #
 ################################################################################
-
 
 function pradical_trace(O::NfAbsOrd, p::Union{Integer, fmpz})
   d = degree(O)
