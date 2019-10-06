@@ -36,7 +36,7 @@ function taylor_shift(x::nmod_poly, c::UInt)
   return r
 end
 
-function induce(FB::Hecke.NfFactorBase, A::Map) 
+function induce(FB::Hecke.NfFactorBase, A::Map)
   K = domain(A)
   f = A(gen(K)) # essentially a polynomial in the primitive element
 
@@ -54,11 +54,11 @@ function induce(FB::Hecke.NfFactorBase, A::Map)
       for (i, P) in FP.lp
         Q = induce_image(A, P)
         id = findfirst(isequal(Q), lp)
-        @assert id !== nothing        
+        @assert id !== nothing
         push!(prm, (i, FP.lp[id][1]))
       end
       #anti_ = [anti_uniformizer(x[2]) for x in FP.lp]
-      #for (i, P) in FP.lp 
+      #for (i, P) in FP.lp
       #  b = A(P.gen_two.elem_in_nf)
       #  id = -1
       #  for j in 1:length(FP.lp)
@@ -80,7 +80,7 @@ function induce(FB::Hecke.NfFactorBase, A::Map)
       #   an irreducible factor of gpx (Kummer/ Dedekind)
       # an ideal is divisible by P iff the canonical 2nd generator of the prime ideal
       # divides the 2nd generator of the target (CRT)
-      # so 
+      # so
       lp = [gcd(px(K(P[2].gen_two)), gpx) for P = FP.lp]
       # this makes lp canonical (should be doing nothing actually)
 
@@ -91,7 +91,7 @@ function induce(FB::Hecke.NfFactorBase, A::Map)
         else
           im = compose_mod(hp, fpx, gpx)
           # the image, directly mod p...
-        end  
+        end
         im = Hecke.gcd!(im, gpx, im)
         # canonical
         push!(prm, (i, FP.lp[findfirst(isequal(im), lp)][1]))
@@ -108,10 +108,10 @@ end
   Algo 4: Dimino
   Tested for cyclic groups - unfortunately only.
   I still need to generate other input
-=#  
-#function orbit_in_FB(op::Array{Tuple{Map, Generic.perm}, 1}, a::nf_elem, s::SRow)
+=#
+#function orbit_in_FB(op::Array{Tuple{Map, Generic.Perm}, 1}, a::nf_elem, s::SRow)
 function orbit_in_FB(op::Array, a::nf_elem, s::SRow)
-  function op_smat(n::SRow, p::Generic.perm)
+  function op_smat(n::SRow, p::Generic.Perm)
     r = [(p[i], v) for (i,v) = n]
     sort!(r, lt = (a,b)->a[1]<b[1])
     return typeof(n)(r)
@@ -129,7 +129,7 @@ function orbit_in_FB(op::Array, a::nf_elem, s::SRow)
     b = op[1][1](b)
   end
 
-  for i=2:length(op) 
+  for i=2:length(op)
     bb = op[i][1](a)
     if haskey(Ss, bb)
       continue
@@ -170,7 +170,7 @@ function generated_subgroup(op::Array) #pairs: permutations and Map
       push!(elt, c_g)
 #      g = (x->op[1][1](c_g[1](x)), op[1][2]*c_g[2])
       g = (x->op[1][1](c_g[1](x)), c_g[2]*op[1][2])
-    end  
+    end
   end
   ord = length(elt)
 
@@ -196,7 +196,7 @@ function generated_subgroup(op::Array) #pairs: permutations and Map
           if g[2] in [x[2] for x=elt]
             continue
           end
-        end  
+        end
         let c_g = g
           push!(elt, c_g)
           for j = 2:pord
@@ -204,15 +204,14 @@ function generated_subgroup(op::Array) #pairs: permutations and Map
 #            push!(elt, (x->elt[c_j][1](c_g[1](x)), elt[c_j][2]*c_g[2]))
             push!(elt, (x->elt[c_j][1](c_g[1](x)), c_g[2]*elt[c_j][2]))
           end
-        end  
+        end
         ord = length(elt)
       end
       rpos += pord
-      if rpos > length(elt) 
+      if rpos > length(elt)
         break
       end
     end
   end
   return elt
 end
-

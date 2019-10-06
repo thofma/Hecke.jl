@@ -5,12 +5,12 @@
 ################################################################################
 
 # Example
-# 
+#
 # julia> f = x^8+8*x^6+64*x^4-192*x^2+576
 # x^8+8*x^6+64*x^4-192*x^2+576
-# 
+#
 # julia> K, a = number_field(f);
-# 
+#
 # julia> N  = Hecke._norm_relation_setup(K)
 # Norm relation of
 #   Number field over Rational Field with defining polynomial x^8+8*x^6+64*x^4-192*x^2+576
@@ -22,7 +22,7 @@
 #   Number field over Rational Field with defining polynomial x^2+6
 #   Number field over Rational Field with defining polynomial x^2-3
 #   Number field over Rational Field with defining polynomial x^2-x+1
- 
+
 mutable struct NormRelation{T}
   K::AnticNumberField
   subfields::Vector{Tuple{AnticNumberField, NfToNfMor}}
@@ -35,7 +35,7 @@ mutable struct NormRelation{T}
   coefficients_gen::Vector{Vector{Tuple{Int, NfToNfMor, NfToNfMor}}}
   embed_cache::Dict{Tuple{Int, Int}, Dict{nf_elem, nf_elem}}
   mor_cache::Dict{NfToNfMor, Dict{nf_elem, nf_elem}}
-  induced::Dict{NfToNfMor, perm{Int}}
+  induced::Dict{NfToNfMor, Perm{Int}}
 
   function NormRelation{T}() where {T}
     z = new{T}()
@@ -45,7 +45,7 @@ mutable struct NormRelation{T}
     z.denominator = 0
     z.embed_cache = Dict{Tuple{Int, Int}, Dict{nf_elem, nf_elem}}()
     z.mor_cache = Dict{NfToNfMor, Dict{nf_elem, nf_elem}}()
-    z.induced = Dict{NfToNfMor, perm{Int}}()
+    z.induced = Dict{NfToNfMor, Perm{Int}}()
     return z
   end
 end
@@ -81,7 +81,7 @@ function _norm_relation_setup_abelian(K::AnticNumberField; small_degree::Bool = 
   z.ispure = false
 
   println("Computing the subfields ... ")
- 
+
   for i in 1:n
     println("$i/$n")
     @time F, mF = fixed_field(K, NfToNfMor[AtoG[f] for f in ls[i][2]])
@@ -138,7 +138,7 @@ function _norm_relation_setup_generic(K::AnticNumberField; small_degree::Bool = 
   z.subfields = Vector{Tuple{AnticNumberField, NfToNfMor}}(undef, n)
   z.denominator = den
   z.ispure = pure
- 
+
   for i in 1:n
     println("Computing fixed fields ...")
     F, mF = fixed_field(K, NfToNfMor[GtoA[f] for f in ls[i][1]])
@@ -261,7 +261,7 @@ function induce_action_from_subfield(N::NormRelation, i, s, FB, cache)
 
   mk = embedding(N, i)
   zk = order(s[1])
-  
+
   if length(cache) == 0
     cache = resize!(cache, length(s))
     cached = false
@@ -275,7 +275,7 @@ function induce_action_from_subfield(N::NormRelation, i, s, FB, cache)
     if haskey(N.induced, auto)
       p = N.induced[auto]
     else
-      p = induce(FB, auto) 
+      p = induce(FB, auto)
       N.induced[auto] = p
     end
   end
@@ -645,7 +645,7 @@ function simplify(c::Hecke.ClassGrpCtx)
       Hecke._add_unit(U, c.R_rel[i])
     end
   end
-  for i=1:length(U.units)  
+  for i=1:length(U.units)
     Hecke.class_group_add_relation(d, U.units[i], SRow(FlintZZ))
   end
   return d, U

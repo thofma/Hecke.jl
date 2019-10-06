@@ -16,7 +16,7 @@ function special_prime_ideal(p::fmpz, a::nf_elem)
   R = parent(f)
   Zx = PolynomialRing(FlintZZ)[1]
   Zpx = PolynomialRing(GF(UInt(p), cached=false), "\$x_p", cached=false)[1]
-  g = Zpx(a)  
+  g = Zpx(a)
   ff = Zpx(f)
   gcd!(g, g, ff)
   return lift(Zx, g)
@@ -32,7 +32,7 @@ function class_group_add_relation(clg::ClassGrpCtx{T}, a::nf_elem, n::fmpq, nI::
   if iszero(a)
     return false
   end
-  if hash(a) in clg.RS 
+  if hash(a) in clg.RS
     return false
   end
 
@@ -42,20 +42,20 @@ function class_group_add_relation(clg::ClassGrpCtx{T}, a::nf_elem, n::fmpq, nI::
   else
     clg.normStat[nb] = 1
   end
-  
-  O = order(clg.FB.ideals[1]) 
+
+  O = order(clg.FB.ideals[1])
   easy = isdefining_polynomial_nice(parent(a))
   @vprint :ClassGroup 3 "trying relation of length $(Float64(length(a))) and norm $(Float64(n*nI)), effective $(Float64(n))\n"
   if integral #element is known to be integral
     fl, r = issmooth!(clg.FB.fb_int, numerator(n*nI))
-  else  
+  else
     fl, r = issmooth!(clg.FB.fb_int, numerator(n*nI)*denominator(a, O))
-  end  
+  end
   if !fl
     @vprint :ClassGroup 3 "not int-smooth\n"
 #    println("not int-smooth");
     # try for large prime?
-    if easy && abs(r) < clg.B2 && isprime(r) && !isindex_divisor(O, r) 
+    if easy && abs(r) < clg.B2 && isprime(r) && !isindex_divisor(O, r)
       @vprint :ClassGroup 3 "gives potential large prime\n"
       i = special_prime_ideal(r, a)
       #TODO: check Galois orbit of special ideal
@@ -65,7 +65,7 @@ function class_group_add_relation(clg::ClassGrpCtx{T}, a::nf_elem, n::fmpq, nI::
         fl, r2 = _factor!(clg.FB, lp[1], false, norm(lp[1]))
         b = FacElem(Dict([(a,1), (lp[1],-1)]))
         fl = class_group_add_relation(clg, b, r1 - r2)
-        if fl 
+        if fl
           clg.largePrime_success += 1
         else
           clg.largePrime_no_success += 1
@@ -95,7 +95,7 @@ function class_group_add_relation(clg::ClassGrpCtx{T}, a::nf_elem, n::fmpq, nI::
     if orbit && isdefined(clg, :aut_grp)
       n = res
       o = clg.aut_grp
-      function op_smat(n::SRow, p::Nemo.Generic.perm)
+      function op_smat(n::SRow, p::Nemo.Generic.Perm)
         r = [(p[i], v) for (i,v) = n]
         sort!(r, lt = (a,b)->a[1]<b[1])
         return typeof(n)(r)
@@ -118,7 +118,7 @@ function class_group_add_relation(clg::ClassGrpCtx{T}, a::nf_elem, n::fmpq, nI::
           end
         end
       end
-    end  
+    end
 
     clg.rel_cnt += 1
 #    @assert clg.rel_cnt < 2*ncols(clg.M)
@@ -147,13 +147,13 @@ function class_group_add_relation(clg::ClassGrpCtx{SMat{fmpz}}, a::FacElem{nf_el
   return class_group_add_relation(clg, a, R)
 end
 
-function class_group_add_relation(clg::ClassGrpCtx{SMat{fmpz}}, a::FacElem{nf_elem, AnticNumberField}, R::SRow{fmpz}) 
-  
-  if hash(a) in clg.RS 
+function class_group_add_relation(clg::ClassGrpCtx{SMat{fmpz}}, a::FacElem{nf_elem, AnticNumberField}, R::SRow{fmpz})
+
+  if hash(a) in clg.RS
     return false
   end
 
-  O = order(clg.FB.ideals[1]) 
+  O = order(clg.FB.ideals[1])
 
   @vprint :ClassGroup 3 "adding $R\n"
 
@@ -171,4 +171,3 @@ function class_group_add_relation(clg::ClassGrpCtx{SMat{fmpz}}, a::FacElem{nf_el
   clg.last = clg.bad_rel
   return true
 end
-
