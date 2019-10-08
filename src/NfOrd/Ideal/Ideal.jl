@@ -1668,7 +1668,7 @@ function mod(x::FacElem{S, T}, Q::AbsOrdQuoRing{NfAbsOrd{T, S}, NfAbsOrdIdl{T, S
       end
       b = bases[j]*val_elt^v
       bases[j] = O(b)
-      n += v*exps[j]
+      n -= v*exps[j]
     end
     if iszero(n)
       continue
@@ -1683,14 +1683,27 @@ function mod(x::FacElem{S, T}, Q::AbsOrdQuoRing{NfAbsOrd{T, S}, NfAbsOrdIdl{T, S
       if iszero(v)
         continue
       end
-      b = bases[j]*val_elt^v
-      bases[j] = O(b)
-      n += v*exps[j]
-      if n >= 0
+      n2 = n - v*exps[j]
+      if n2 >= 0
+        b = bases[j]*val_elt^v
+        bases[j] = O(b)
+        n = n2
+        if n == 0
+          break
+        end
+      else
+        q, r = divrem(n, exps[j])
+        @assert q < v
+        b = bases[j]
+        push!(bases, O(b*val_elt^q))
+        push!(exps, exps[j] - r)
+        bases[j] = O(b*val_elt^(q + 1))
+        exps[j] = r
+        n = 0
         break
       end
     end
-    @assert n >= 0 "Element not integral"
+    @assert n == 0 "Element not integral"
   end
 
   # Now we can evaluate (modulo ideal(Q) of course)
