@@ -23,26 +23,26 @@ function locally_free_class_group(O::AlgAssAbsOrd, cond::Symbol = :center, retur
   Fl = conductor(O, OA, :left)
   if cond == :left
     F = Fl
-    FinZ = _as_ideal_of_smaller_algebra(ZtoA, F, OA)
+    FinZ = _as_ideal_of_smaller_algebra(ZtoA, F)
   elseif cond == :center
-    FinZ = _as_ideal_of_smaller_algebra(ZtoA, Fl, OA)
+    FinZ = _as_ideal_of_smaller_algebra(ZtoA, Fl)
     # Compute FinZ*OA but as an ideal of O
     bOA = basis(OA, copy = false)
     bFinZ = basis(FinZ, copy = false)
-    basis_F = Vector{elem_type(O)}()
+    basis_F = Vector{elem_type(A)}()
     t = one(A)
     for x in bOA
       for y in bFinZ
-        yy = ZtoA(elem_in_algebra(y, copy = false))
+        yy = ZtoA(y)
         t = mul!(t, yy, elem_in_algebra(x, copy = false))
-        push!(basis_F, O(t))
+        push!(basis_F, t)
       end
     end
-    F = ideal_from_z_gens(O, basis_F)
+    F = ideal_from_lattice_gens(A, O, basis_F, :twosided)
   elseif cond == :product
     Fr = conductor(O, OA, :right)
     F = Fr*Fl
-    FinZ = _as_ideal_of_smaller_algebra(ZtoA, F, OA)
+    FinZ = _as_ideal_of_smaller_algebra(ZtoA, F)
   else
     error("Option :$(cond) for cond not implemented")
   end
@@ -210,7 +210,7 @@ function K1_order_mod_conductor(O::AlgAssAbsOrd, OA::AlgAssAbsOrd, F::AlgAssAbsO
     (p, q) = primary_ideals[i]
     pF = p + F
     qF = moduli[i]
-    char = basis_matrix(p, copy = false)[1, 1]
+    char = minimum(p)
     B, OtoB = AlgAss(O, pF, char)
     k1_B = K1(B)
     k1_O = [ OtoB\x for x in k1_B ]
@@ -377,7 +377,9 @@ mutable struct DiscLogLocallyFreeClassGroup{S, T} <: Map{S, T, HeckeMap, DiscLog
     function _image(I::AlgAssAbsOrdIdl)
       @assert order(I) === O
       # Bley, Wilson: "Computations in relative algebraic K-groups"
-      primes = collect(keys(factor(norm(I)).fac))
+      n = norm(I)
+      @assert isone(denominator(n)) "Ideal is not integral"
+      primes = collect(keys(factor(numerator(n)).fac))
       c = id(C)
       for p in primes
         x = locally_free_basis(I, p)

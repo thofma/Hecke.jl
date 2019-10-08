@@ -534,7 +534,8 @@ function isprincipal_fac_elem(A::NfOrdIdl)
 
   #reduce e modulo units.
   e = reduce_mod_units([e], _get_UnitGrpCtx_of_order(L))[1]
-  A.is_principal = 1
+  #A.is_principal = 1
+  # TODO: if we set it to be principal, we need to set the generator. Otherwise the ^ function is broken
   return true, e
 end
 

@@ -400,3 +400,14 @@ end
 function NfRelToAbsAlgAssMor(K::S, A::T, M::Mat) where { S <: NfRel, T <: AbsAlgAss, Mat <: MatElem }
   return NfRelToAbsAlgAssMor{S, T, Mat}(K, A, M)
 end
+
+function haspreimage(m::NfRelToAbsAlgAssMor, a::AbsAlgAssElem)
+  A = parent(a)
+  t = matrix(base_ring(A), 1, dim(A), coeffs(a))
+  b, p = can_solve(m.mat, t, side = :left)
+  if b
+    return true, domain(m)([ p[1, i] for i = 1:nrows(m.mat) ])
+  else
+    return false, zero(domain(m))
+  end
+end

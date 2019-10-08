@@ -1075,7 +1075,7 @@ end
 
 function isgorenstein(O, P)
   J = colon(1 * O, P)
-  return isone(norm(P)*det(basis_matrix(J)))
+  return isone(norm(P)*det(basis_matrix_wrt(J, O, copy = false)))
 end
 
 # This is very slow!

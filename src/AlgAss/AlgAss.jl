@@ -226,10 +226,11 @@ function AlgAss(O::Union{NfAbsOrd, AlgAssAbsOrd}, I::Union{NfAbsOrdIdl, AlgAssAb
   @assert order(I) === O
 
   n = degree(O)
+  bmatI = integral_basis_matrix_wrt(I, O, copy = false)
 
   basis_elts = Vector{Int}()
   for i = 1:n
-    if valuation(basis_matrix(I, copy = false)[i, i], p) == 0
+    if valuation(bmatI[i, i], p) == 0
       continue
     end
 
@@ -267,7 +268,7 @@ function AlgAss(O::Union{NfAbsOrd, AlgAssAbsOrd}, I::Union{NfAbsOrdIdl, AlgAssAb
   for i = 1:r
     M = representation_matrix(BO[basis_elts[i]])
     if r != degree(O)
-      M = reduce_rows_mod_hnf!(M, basis_matrix(I, copy = false), basis_elts)
+      M = reduce_rows_mod_hnf!(M, bmatI, basis_elts)
     end
     for j = 1:r
       for k = 1:r
@@ -342,7 +343,6 @@ function AlgAss(I::Union{ NfAbsOrdIdl, AlgAssAbsOrdIdl }, J::Union{NfAbsOrdIdl, 
   O = order(I)
 
   n = degree(O)
-  BI = basis(I, copy = false)
   BmatJinI = hnf(basis_matrix(J, copy = false)*basis_mat_inv(I, copy = false), :lowerleft)
   @assert isone(BmatJinI.den) "J is not a subset of I"
   BmatJinI = BmatJinI.num
@@ -382,12 +382,12 @@ function AlgAss(I::Union{ NfAbsOrdIdl, AlgAssAbsOrdIdl }, J::Union{NfAbsOrdIdl, 
   end
 
   BI = basis(I, copy = false)
-  BmatI = basis_matrix(I, copy = false)*basis_matrix(O, copy = false)
+  BmatI = basis_matrix(I, copy = false)
   BmatIinv = inv(BmatI)
 
   mult_table = Array{elem_type(Fp), 3}(undef, r, r, r)
   for i = 1:r
-    M = FakeFmpqMat(representation_matrix(elem_in_algebra(BI[basis_elts[i]])))
+    M = FakeFmpqMat(representation_matrix(_elem_in_algebra(BI[basis_elts[i]], copy = false)))
     M = mul!(M, BmatI, M)
     M = mul!(M, M, BmatIinv)
     @assert M.den == 1
@@ -413,7 +413,7 @@ function AlgAss(I::Union{ NfAbsOrdIdl, AlgAssAbsOrdIdl }, J::Union{NfAbsOrdIdl, 
 
   let BmatJinI = BmatJinI, I = I, r = r, A = A, t = t, Fp = Fp
     function _image(a::Union{NfAbsOrdElem, AlgAssAbsOrdElem})
-      elem_to_mat_row!(t.num, 1, a)
+      elem_to_mat_row!(t.num, 1, t.den, _elem_in_algebra(a, copy = false))
       t = mul!(t, t, basis_mat_inv(I, copy = false))
       @assert isone(t.den) "Not an element of the domain"
       c = reduce_vector_mod_hnf(t.num, BmatJinI)
@@ -425,7 +425,7 @@ function AlgAss(I::Union{ NfAbsOrdIdl, AlgAssAbsOrdIdl }, J::Union{NfAbsOrdIdl, 
 
   let BI = BI, basis_elts = basis_elts, r = r
     function _preimage(a::AlgAssElem)
-      return sum(lift(coeffs(a, copy = false)[i])*BI[basis_elts[i]] for i = 1:r)
+      return O(sum(lift(coeffs(a, copy = false)[i])*BI[basis_elts[i]] for i = 1:r))
     end
   end
 

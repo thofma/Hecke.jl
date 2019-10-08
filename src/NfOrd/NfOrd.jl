@@ -1132,6 +1132,8 @@ function sum_as_Z_modules(O1, O2, z::fmpz_mat = zero_matrix(FlintZZ, 2 * degree(
 end
 
 function sum_as_Z_modules_fast(O1, O2, z::fmpz_mat = zero_matrix(FlintZZ, 2 * degree(O1), degree(O1)))
+  @hassert :NfOrd 1 contains_equation_order(O1)
+  @hassert :NfOrd 1 contains_equation_order(O2)
   K = _algebra(O1)
   R1 = basis_matrix(O1, copy = false)
   S1 = basis_matrix(O2, copy = false)
@@ -1139,7 +1141,6 @@ function sum_as_Z_modules_fast(O1, O2, z::fmpz_mat = zero_matrix(FlintZZ, 2 * de
   g = gcd(R1.den, S1.den)
   r1 = divexact(R1.den, g)
   s1 = divexact(S1.den, g)
-
   z1 = view(z, 1:d, 1:d)
   mul!(z1, R1.num, s1)
   z2 = view(z, (d + 1):2*d, 1:d)
@@ -1151,13 +1152,10 @@ function sum_as_Z_modules_fast(O1, O2, z::fmpz_mat = zero_matrix(FlintZZ, 2 * de
   if O isa NfOrd
     O.primesofmaximality = union(O1.primesofmaximality, O2.primesofmaximality)
   end
-  O.disc = gcd(discriminant(O1), discriminant(O2))
-  if O1.disc<0 || O2.disc<0
-    O.disc = -O.disc
-  end
-  if isdefined(O1, :index) && isdefined(O2, :index)
-    O.index = lcm(index(O1), index(O2))
-  end
+  O.index = divexact(denominator(M)^d, prod(M.num[i, i] for i in 1:d))
+  @hassert :NfOrd 1 numerator(gen_index(O)) == O.index
+  O.disc = divexact(discriminant(O1) * index(O1)^2, O.index^2)
+  @hassert :NfOrd 1 det(trace_matrix(O)) == O.disc
   return O
 end
 
