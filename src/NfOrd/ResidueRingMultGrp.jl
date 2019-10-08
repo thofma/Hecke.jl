@@ -784,7 +784,7 @@ function pohlig_hellman(g, n, h; factor_n=factor(n), big_step_cache = Dict())
     pv = p^v
     r = div(n,pv)
     if !haskey(big_step_cache, p)
-      big_step_cache[p] = Dict{fmpz, typeof(g)}()
+      big_step_cache[p] = Dict{typeof(g), fmpz}()
     end
     c = _pohlig_hellman_prime_power(g^r,p,v,h^r, big_step_cache = big_step_cache[p])
     push!(results, fmpz(c))
@@ -1051,7 +1051,7 @@ function _mult_grp_mod_n(Q::NfOrdQuoRing, y1::Dict{NfOrdIdl, Int}, y2::Dict{NfOr
         while !isone(mod(e, uncom))
           e *= e
         end
-        tame_part[q].generators[1] = tame_part[q].generators[1]^e
+        tame_part[q].generators[1] = powermod(tame_part[q].generators[1], e, minimum(idQ))
       end
       
       i += ngens(G2)
