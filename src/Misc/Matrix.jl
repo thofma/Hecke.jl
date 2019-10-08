@@ -41,15 +41,6 @@ coefficient_type(::Type{Generic.Mat{T}}) where {T} = T
 #
 ################################################################################
 
-function zero!(a::MatElem)
-  for i in 1:nrows(a)
-    for j in 1:ncols(a)
-      a[i, j] = zero!(a[i, j])
-    end
-  end
-  return a
-end
-
 function mul!(c::MatElem, a::MatElem, b::MatElem)
   ncols(a) != nrows(b) && error("Incompatible matrix dimensions")
   nrows(c) != nrows(a) && error("Incompatible matrix dimensions")
@@ -161,14 +152,14 @@ function Array(a::fmpz_mat; S::Type{T} = fmpz) where T
   for i = 1:nrows(a)
     for j = 1:ncols(a)
       A[i,j] = T(a[i,j])
-    end 
+    end
   end
   return A
 end
 
 function iszero_row(M::fmpz_mat, i::Int)
   for j = 1:ncols(M)
-    if M[i,j] != 0 
+    if M[i,j] != 0
       return false
     end
   end
@@ -197,7 +188,7 @@ end
 
 function iszero_row(M::Array{T, 2}, i::Int) where T <: Integer
   for j = 1:Base.size(M, 2)
-    if M[i,j] != 0 
+    if M[i,j] != 0
       return false
     end
   end
@@ -206,7 +197,7 @@ end
 
 function iszero_row(M::Array{fmpz, 2}, i::Int)
   for j = 1:Base.size(M, 2)
-    if M[i,j] != 0 
+    if M[i,j] != 0
       return false
     end
   end
@@ -228,9 +219,9 @@ function divexact!(a::fmpz_mat, b::fmpz_mat, d::fmpz)
 end
 
 function mul!(a::fmpz_mat, b::fmpz_mat, c::fmpz)
-  ccall((:fmpz_mat_scalar_mul_fmpz, :libflint), Nothing, 
+  ccall((:fmpz_mat_scalar_mul_fmpz, :libflint), Nothing,
                   (Ref{fmpz_mat}, Ref{fmpz_mat}, Ref{fmpz}), a, b, c)
-end                  
+end
 
 function _hnf(x::fmpz_mat, shape::Symbol = :upperright)
   if shape == :lowerleft
@@ -333,13 +324,13 @@ end
 ################################################################################
 
 function islll_reduced(x::fmpz_mat, ctx::lll_ctx = lll_ctx(0.99, 0.51))
-  b = ccall((:fmpz_lll_is_reduced_d, :libflint), Cint, 
+  b = ccall((:fmpz_lll_is_reduced_d, :libflint), Cint,
             (Ref{fmpz_mat}, Ref{lll_ctx}), x, ctx)
   return Bool(b)
 end
 
 ################################################################################
-# 
+#
 ################################################################################
 
 function maximum(f::typeof(abs), a::fmpz_mat)
@@ -357,7 +348,7 @@ function maximum(f::typeof(abs), a::fmpz_mat)
   return r
 end
 
-function maximum(a::fmpz_mat)  
+function maximum(a::fmpz_mat)
   m = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ref{fmpz_mat}, Int, Int), a, 0,0)
   for i=1:nrows(a)
     for j=1:ncols(a)
@@ -372,7 +363,7 @@ function maximum(a::fmpz_mat)
   return r
 end
 
-function minimum(a::fmpz_mat) 
+function minimum(a::fmpz_mat)
   m = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ref{fmpz_mat}, Int, Int), a, 0,0)
   for i=1:nrows(a)
     for j=1:ncols(a)
@@ -533,10 +524,10 @@ end
 @doc Markdown.doc"""
     right_kernel(a::gfp_mat) ->  Int, gfp_mat
 
-It returns a tuple (n, M) where M is a matrix whose columns generate 
+It returns a tuple (n, M) where M is a matrix whose columns generate
 the kernel and n is the dimension of the kernel.
 """
-function right_kernel(x::gfp_mat) 
+function right_kernel(x::gfp_mat)
   z = zero_matrix(base_ring(x), ncols(x), max(nrows(x),ncols(x)))
   n = ccall((:nmod_mat_nullspace, :libflint), Int, (Ref{gfp_mat}, Ref{gfp_mat}), z, x)
   return n, z
@@ -550,7 +541,7 @@ end
 @doc Markdown.doc"""
     left_kernel(a::fmpz_mat) -> Int, fmpz_mat
 
-It returns a tuple (n, M) where M is a matrix whose rows generate 
+It returns a tuple (n, M) where M is a matrix whose rows generate
 the kernel of M and n is the rank of the kernel.
 """
 function left_kernel(x::fmpz_mat)
@@ -570,7 +561,7 @@ end
 
 right_kernel(M::MatElem) = nullspace(M)
 
-function left_kernel(M::MatElem) 
+function left_kernel(M::MatElem)
   rk, M1 = nullspace(transpose(M))
   return rk, transpose(M1)
 end
@@ -578,7 +569,7 @@ end
 @doc Markdown.doc"""
     right_kernel(a::fmpz_mat) -> Int, fmpz_mat
 
-It returns a tuple (n, M) where M is a matrix whose rows generate 
+It returns a tuple (n, M) where M is a matrix whose rows generate
 the kernel of M and n is the rank of the kernel.
 """
 function right_kernel(x::fmpz_mat)
@@ -589,7 +580,7 @@ end
 @doc Markdown.doc"""
     right_kernel(a::nmod_mat) -> Int, nmod_mat
 
-It returns a tuple (n, M) where M is a matrix whose rows generate 
+It returns a tuple (n, M) where M is a matrix whose rows generate
 the kernel of M and n is the rank of the kernel.
 """
 function right_kernel(M::nmod_mat)
@@ -675,10 +666,10 @@ end
 ################################################################################
 
 #@doc Markdown.doc"""
-#    change_base_ring(M::MatElem, R::Ring) -> MatElem{elem_type(R)} 
+#    change_base_ring(M::MatElem, R::Ring) -> MatElem{elem_type(R)}
 #
 #Given a $m\times n$ matrix M over a ring S and another ring R, return the $m \times n$
-#matrix over R obtained by coercing the entries of M from S into R. 
+#matrix over R obtained by coercing the entries of M from S into R.
 #"""
 #function change_base_ring(M::MatElem, R::Ring)
 #  MP = zero_matrix(R, nrows(M), ncols(M))
@@ -777,7 +768,7 @@ function round_scale(a::Array{BigFloat, 2}, l::Int)
   b = zero_matrix(FlintZZ, s[1], s[2])
   return round_scale!(b, a, l)
 end
- 
+
 function round_scale!(b::fmpz_mat, a::Array{BigFloat, 2}, l::Int)
   s = size(a)
   R = RealRing()::_RealRing
@@ -788,7 +779,7 @@ function round_scale!(b::fmpz_mat, a::Array{BigFloat, 2}, l::Int)
   tmp_mpfr = deepcopy(a[1,1])  #cannot use the R.?? tmp variable as it may/will
                                #have the wrong precision
 
-  rd = __get_rounding_mode()                             
+  rd = __get_rounding_mode()
   for i = 1:s[1]
     for j = 1:s[2]
       e = a[i,j].exp
@@ -798,7 +789,7 @@ function round_scale!(b::fmpz_mat, a::Array{BigFloat, 2}, l::Int)
       f = ccall((:mpfr_get_z_2exp, :libmpfr), Clong, (Ref{BigInt}, Ref{BigFloat}),
         tmp_mpz, tmp_mpfr)
       ccall((:fmpz_set_mpz, :libflint), Nothing, (Ref{fmpz}, Ref{BigInt}), tmp_fmpz, tmp_mpz)
-      if f > 0  
+      if f > 0
         ccall((:fmpz_mul_2exp, :libflint), Nothing, (Ref{fmpz}, Ref{fmpz}, UInt), tmp_fmpz, tmp_fmpz, f)
       else
         ccall((:fmpz_tdiv_q_2exp, :libflint), Nothing, (Ref{fmpz}, Ref{fmpz}, UInt), tmp_fmpz, tmp_fmpz, -f);
@@ -846,7 +837,7 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    mod!(M::fmpz_mat, p::fmpz) 
+    mod!(M::fmpz_mat, p::fmpz)
 Reduces every entry modulo $p$ in-place, ie. applies the mod function to every entry.
 Positive residue system.
 """
@@ -871,7 +862,7 @@ function mod(M::fmpz_mat, p::fmpz)
 end
 
 @doc Markdown.doc"""
-    mod!(M::fmpz_mat, p::fmpz) 
+    mod!(M::fmpz_mat, p::fmpz)
 Reduces every entry modulo $p$ in-place, into the symmetric residue system.
 """
 function mod_sym!(M::fmpz_mat, B::fmpz)
@@ -1011,10 +1002,10 @@ function Base.hcat(A::MatElem...)
 end
 
 
-function Base.cat(A::MatElem...;dims) 
+function Base.cat(A::MatElem...;dims)
   @assert dims == (1,2) || isa(dims, Int)
 
-  if isa(dims, Int) 
+  if isa(dims, Int)
     if dims == 1
       return hcat(A...)
     elseif dims == 2
@@ -1319,7 +1310,7 @@ function setindex!(A::MatElem{T}, n::Int, s::T) where T <: RingElem
   A[1 + ((n-1) % nrows(A)), 1 + div((n-1), nrows(A))] = s
 end
 
-function Base.iterate(A::MatElem, state::Int = 0) 
+function Base.iterate(A::MatElem, state::Int = 0)
   s = size(A)
   if state < s[1]*s[2]
     state += 1
@@ -1333,7 +1324,7 @@ Base.IteratorEltype(M::MatElem) = Base.HasEltype()
 Base.eltype(M::MatElem) = elem_type(base_ring(M))
 
 function setindex!(A::MatElem{T}, b::MatElem{T}, ::Colon, i::Int) where T
-  @assert ncols(b) == 1 && nrows(b) == nrows(A) 
+  @assert ncols(b) == 1 && nrows(b) == nrows(A)
   for j=1:nrows(A)
     A[j,i] = b[j]
   end
@@ -1348,7 +1339,7 @@ function setindex!(A::MatElem{T}, b::MatElem{T}, i::Int, ::Colon) where T
   b
 end
 
-function setindex!(A::MatElem, b::Array{<: Any, 1}, ::Colon, i::Int) 
+function setindex!(A::MatElem, b::Array{<: Any, 1}, ::Colon, i::Int)
   @assert length(b) == nrows(A)
   for j=1:nrows(A)
     A[j,i] = b[j]
@@ -1364,7 +1355,7 @@ function setindex!(A::MatElem, b::Array{ <: Any, 1}, i::Int, ::Colon)
   b
 end
 
-function setindex!(A::MatElem, b, ::Colon, i::Int) 
+function setindex!(A::MatElem, b, ::Colon, i::Int)
   for j=1:nrows(A)
     A[j,i] = b
   end
@@ -1548,7 +1539,7 @@ end
 
 @doc Markdown.doc"""
     can_solve(A::MatElem{T}, B::MatElem{T}, side = :right) where T <: RingElem -> Bool, MatElem
-    
+
 Tries to solve $Ax = B$ for $x$ if `side = :right` or $Ax = B$ if `side = :left`
 over a euclidean ring.
 """
@@ -1720,7 +1711,7 @@ function divisors(M::fmpz_mat, d::fmpz)
     M1 = M1'
     hnf_modular_eldiv!(M1, d)
   end
-  
+
   for j = 1:nrows(M1)
     if !isone(M1[j,j])
       push!(l, M1[j, j])
@@ -1770,5 +1761,3 @@ function charpoly(M::MatElem)
   kx, x = PolynomialRing(k, cached = false)
   return charpoly(kx, M)
 end
-
-
