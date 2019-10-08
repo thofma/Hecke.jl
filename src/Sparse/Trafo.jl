@@ -145,11 +145,11 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    invert_rows!(A::SMat)
+    reverse_rows!(A::SMat)
 
 Inplace inversion of the rows of $A$.
 """
-function invert_rows!(A::SMat{T}) where T
+function reverse_rows!(A::SMat{T}) where T
   for i = 1:div(A.r, 2)
     A[i], A[A.r+1-i] = A[A.r+1-i], A[i]
   end

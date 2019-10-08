@@ -494,7 +494,7 @@ function _minimal_poverorders_at_2(O, P, excess = Int[])
     subs = subgroups(A, subtype = [2], fun = (G, z) -> sub(G, z, false))
   else
     R = GF(2)
-    V = ModAlgAss([change_base_ring(l.map, R) for l in autos])
+    V = ModAlgAss([change_base_ring(R, l.map) for l in autos])
     subm = minimal_submodules(V, f)
     subs = (sub(A, lift(x), false) for x in subm)
   end

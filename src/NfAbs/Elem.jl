@@ -358,12 +358,12 @@ end
 The factorisation of f over K.
 """
 function factor(f::fmpq_poly, K::AnticNumberField)
-  f1 = change_base_ring(f, K)
+  f1 = change_base_ring(K, f)
   return factor(f1)
 end
 
 function factor(f::fmpz_poly, K::AnticNumberField)
-  f1 = change_base_ring(f, K)
+  f1 = change_base_ring(K, f)
   return factor(f1)
 end
 
@@ -580,7 +580,7 @@ Computes all roots in $K$ of a polynomial $f$. It is assumed that $f$ is is non-
 squarefree and monic.
 """
 function roots(f::fmpz_poly, K::AnticNumberField; kw...)
-  f1 = change_base_ring(f, K)
+  f1 = change_base_ring(K, f)
   return roots(f1; kw...)
 end
 
@@ -591,7 +591,7 @@ Computes all roots in $K$ of a polynomial $f$. It is assumed that $f$ is is non-
 squarefree and monic.
 """
 function roots(f::fmpq_poly, K::AnticNumberField; kw...)
-  f1 = change_base_ring(f, K)
+  f1 = change_base_ring(K, f)
   return roots(f1; kw...)
 end
 
@@ -657,12 +657,12 @@ end
 Tests if $f$ has a root in $K$, and return it.
 """
 function hasroot(f::fmpz_poly, K::AnticNumberField)
-  f1 = change_base_ring(f, K)
+  f1 = change_base_ring(K, f)
   return hasroot(f1)
 end
 
 function hasroot(f::fmpq_poly, K::AnticNumberField)
-  f1 = change_base_ring(f, K)
+  f1 = change_base_ring(K, f)
   return hasroot(f1)
 end
 
