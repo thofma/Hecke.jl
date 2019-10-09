@@ -310,8 +310,8 @@ are uniformizers for the corresponding real place.
 A uniformizer of a real place P is an element of the field which is negative
 at $P$ and positive at all the other real places. 
 """
-function infinite_places_uniformizers(K::AnticNumberField; redo::Bool = false)
-  if !redo
+function infinite_places_uniformizers(K::AnticNumberField)
+  #if !redo
     try 
       c = _get_places_uniformizers(K)::Dict{InfPlc, nf_elem}
       return c
@@ -320,20 +320,14 @@ function infinite_places_uniformizers(K::AnticNumberField; redo::Bool = false)
         rethrow(e)
       end
     end
-  end
+  #end
   r, s = signature(K)
   if iszero(r)
     return Dict{InfPlc, nf_elem}()
   end
   
   p = real_places(K) #Important: I assume these are ordered as the roots of the defining polynomial!
-  S = DiagonalGroup([2 for i = 1:length(p)])
-  
-  let S = S
-    function logS(x::Array{Int, 1})
-      return S([x[i] > 0 ? 0 : 1 for i=1:length(x)])
-    end
-  end
+  S = DiagonalGroup(Int[2 for i = 1:length(p)])
 
   s = Vector{GrpAbFinGenElem}(undef, length(p))
   g = Vector{nf_elem}(undef, length(p))
@@ -430,9 +424,8 @@ function infinite_places_uniformizers(K::AnticNumberField; redo::Bool = false)
   if b <= 0
     b = 10
     cnt = 0
-    E = EquationOrder(K)
-    lllE = lll(E)
-    bas = basis(E, K)
+    lllE = lll(EquationOrder(K))
+    bas = basis(lllE, K, copy = false)
     while true
       @assert b>0
       a = rand(bas, 1:b)
@@ -440,7 +433,7 @@ function infinite_places_uniformizers(K::AnticNumberField; redo::Bool = false)
         continue
       end
       emb = signs(a, p)
-      ar = [0 for i = 1:length(p)]
+      ar = Int[0 for i = 1:length(p)]
       for i=1:length(p)
         if emb[p[i]] == -1
           ar[i] = 1
@@ -469,13 +462,19 @@ function infinite_places_uniformizers(K::AnticNumberField; redo::Bool = false)
   hS1 = inv(hS)
   for i = 1:length(p)
     y = hS1(S[i])
-    r[i] = prod(g[w]^Int(y[w]) for w = 1:length(p) if !iszero(y[w]))
+    auxr = one(K)
+    for w = 1:length(p)
+      if !iszero(y[w])
+        mul!(auxr, auxr, g[w]^Int(y[w]))
+      end
+    end
+    r[i] = auxr
   end
   D = Dict{InfPlc, nf_elem}()
   for i = 1:length(p)
     D[p[i]] = r[i]
     @hassert :NfOrd 1 sign(r[i], p[i]) == -1
-    @hassert :NfOrd 1 all(x -> isone(x), values(signs(r[i], [P for P in p if P != p[i]])))
+    #@hassert :NfOrd 1 all(x -> isone(x), values(signs(r[i], [P for P in p if P != p[i]])))
   end
   _set_places_uniformizers(K, D)
   return D

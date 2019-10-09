@@ -401,22 +401,20 @@ function factor(f::PolyElem{nf_elem})
 
   
   if degree(f) == 1
-    multip = div(degree(f_orig), degree(f))
     r = Fac{typeof(f)}()
-    r.fac = Dict{typeof(f), Int}(f*(1//lead(f)) => multip)
+    r.fac = Dict{typeof(f), Int}(f*(1//lead(f)) => degree(f_orig))
     if v > 0
       r.fac[gen(parent(f))] = v
     end
     r.unit = one(Kx) * lead(f_orig)
     return r
   end
-
   f = f*(1//lead(f))
-
+  
   if degree(f) < degree(K)
-    lf = factor_trager(f)
+    lf = factor_trager(f)::Vector{typeof(f)}
   else
-    lf = factor_new(f)
+    lf = factor_new(f)::Vector{typeof(f)}
   end
 
   r = Fac{typeof(f)}()
@@ -465,7 +463,7 @@ function factor_trager(f::PolyElem{nf_elem})
   end
   @vtime :PolyFactor 2 fac = factor(N)
   
-  res = PolyElem{nf_elem}[]
+  res = typeof(f)[]
 
   for i in keys(fac.fac)
     t = change_ring(i, Kx)

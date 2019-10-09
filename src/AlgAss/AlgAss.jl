@@ -1445,7 +1445,10 @@ function _find_idempotent_via_non_squarefree_poly(A::AlgAss{T}, a::AlgAssElem{T}
   if length(fac) == 1
     return zero(A)
   end
-  sf_part = prod(keys(fac.fac))
+  sf_part = one(parent(mina))
+  for (k, v) in fac
+    mul!(sf_part, sf_part, k)
+  end
   b = sf_part(a)
   # This is not really an algebra, only a right sided ideal
   bA, bAtoA = subalgebra(A, b, false, :left)

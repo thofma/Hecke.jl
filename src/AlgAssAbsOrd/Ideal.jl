@@ -704,7 +704,7 @@ function _ring_of_multipliers_integral_ideal(I::AlgAssAbsOrdIdl, p::fmpz = fmpz(
   else
     hnf_modular_eldiv!(m, p)
   end
-  s = prod(m[i, i] for i = 1:ncols(m))
+  s = prod(fmpz[m[i, i] for i = 1:ncols(m)])
   if s == 1
     return O
   end
