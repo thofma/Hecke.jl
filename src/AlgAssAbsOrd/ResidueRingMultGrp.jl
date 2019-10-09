@@ -199,7 +199,9 @@ function _multgrp_mod_p(p::AlgAssAbsOrdIdl, P::AlgAssAbsOrdIdl)
   O = order(p)
   OA = order(P) # the maximal order
 
-  q = det(basis_matrix(p, copy = false))
+  q = norm(p, O)
+  @assert isone(denominator(q))
+  q = numerator(q)
   q = q - 1 # the cardinality of (O/p)^\times
   if isone(q)
     G = GrpAbFinGen(fmpz[])
@@ -387,12 +389,12 @@ end
 # Cohen "Advanced Topics in Computational Number Theory" Algorithm 4.2.15.
 function _1_plus_pu_plus_q_mod_1_plus_pv_plus_q(puq::AlgAssAbsOrdIdl, pvq::AlgAssAbsOrdIdl, only_generators::Type{Val{T}} = Val{false}) where T
   O = order(puq)
-  b = basis(puq, copy = false)
+  b = [ O(x) for x in basis(puq, copy = false) ]
 
   # Compute (p^u + q)/(p^v + q)
   N = basis_matrix(pvq, copy = false)*basis_mat_inv(puq, copy = false)
-  @assert denominator(N) == 1
-  G = AbelianGroup(numerator(N))
+  @assert denominator(N, copy = false) == 1
+  G = AbelianGroup(numerator(N, copy = false))
   S, StoG = snf(G)
 
   gens = Vector{elem_type(O)}(undef, ngens(S))
@@ -412,7 +414,7 @@ function _1_plus_pu_plus_q_mod_1_plus_pv_plus_q(puq::AlgAssAbsOrdIdl, pvq::AlgAs
   end
 
   # The first part of Algorithm 4.2.16 in Cohen "Advanced Topics..."
-  M = basis_mat_inv(puq, copy = false)*StoG.imap
+  M = basis_matrix(O, copy = false)*basis_mat_inv(puq, copy = false)*StoG.imap
   function disc_log(x::AlgAssAbsOrdElem)
     y = mod(x - one(O), pvq)
     y_fakemat = FakeFmpqMat(matrix(FlintZZ, 1, degree(O), coordinates(y)), fmpz(1))

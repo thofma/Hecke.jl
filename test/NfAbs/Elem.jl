@@ -69,7 +69,7 @@ end
   g = swinnerton_dyer(8, x)
   @test length(factor((t^2-a)*(t^3-a-1))) == 2 #Trager
   @test length(factor((t^2-a)*(t^3-a-1)*(t+a^2+1)*(t^5+t+a))) == 4 #Zassenhaus
-  @test length(factor(change_base_ring(g, k))) == 8 # van Hoeij
+  @test length(factor(change_base_ring(k, g))) == 8 # van Hoeij
 
   K, a = NumberField(x - 1, "a") 
   Kt, t = K["t"]

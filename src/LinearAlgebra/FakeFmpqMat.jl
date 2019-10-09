@@ -6,9 +6,21 @@
 
 iszero(x::FakeFmpqMat) = iszero(x.num)
 
-numerator(x::FakeFmpqMat) = deepcopy(x.num)
+function numerator(x::FakeFmpqMat; copy::Bool = true)
+  if copy
+    return deepcopy(x.num)
+  else
+    return x.num
+  end
+end
 
-denominator(x::FakeFmpqMat) = deepcopy(x.den)
+function denominator(x::FakeFmpqMat; copy::Bool = true)
+  if copy
+    return deepcopy(x.den)
+  else
+    return x.den
+  end
+end
 
 nrows(x::FakeFmpqMat) = nrows(x.num)
 
@@ -133,7 +145,7 @@ end
 function *(x::Integer, y::FakeFmpqMat)
   g = gcd(x, y.den)
   if isone(g)
-    return FakeFmpqMat(y.num * x, y, true)
+    return FakeFmpqMat(y.num * x, y.den, true)
   else
     return FakeFmpqMat(y.num * divexact(x, g), divexact(y.den, g), true)
   end
@@ -142,7 +154,7 @@ end
 function *(x::fmpz, y::FakeFmpqMat)
   g = gcd(x, y.den)
   if isone(g)
-    return FakeFmpqMat(y.num * x, y, true)
+    return FakeFmpqMat(y.num * x, y.den, true)
   else
     return FakeFmpqMat(y.num * divexact(x, g), divexact(y.den, g), true)
   end
@@ -159,7 +171,7 @@ function *(x::fmpq, y::FakeFmpqMat)
   if isone(g)
     return FakeFmpqMat(y.num * n, y.den * d, true)
   else
-    return FakeFmpqMat(y.num * divexact(n, g), d * divexact(y.den, d), true)
+    return FakeFmpqMat(y.num * divexact(n, g), d * divexact(y.den, g), true)
   end
 end
 
@@ -280,4 +292,38 @@ function det(x::FakeFmpqMat)
   nrows(x) != ncols(x) && error("Matrix must be square")
   
   return det(x.num)//(x.den)^nrows(x)
+end
+
+################################################################################
+#
+#  vcat / hcat
+#
+################################################################################
+
+function vcat(M::FakeFmpqMat, N::FakeFmpqMat)
+  g = gcd(denominator(M, copy = false), denominator(N, copy = false))
+  d1 = divexact(denominator(M, copy = false), g)
+  d2 = divexact(denominator(N, copy = false), g)
+  M1 = numerator(M, copy = false)*d2
+  N1 = numerator(N, copy = false)*d1
+  return FakeFmpqMat(vcat(M1, N1), g*d1*d2)
+end
+
+function hcat(M::FakeFmpqMat, N::FakeFmpqMat)
+  g = gcd(denominator(M, copy = false), denominator(N, copy = false))
+  d1 = divexact(denominator(M, copy = false), g)
+  d2 = divexact(denominator(N, copy = false), g)
+  M1 = numerator(M, copy = false)*d2
+  N1 = numerator(N, copy = false)*d1
+  return FakeFmpqMat(hcat(M1, N1), g*d1*d2)
+end
+
+################################################################################
+#
+#  Transpose
+#
+################################################################################
+
+function transpose(M::FakeFmpqMat)
+  return FakeFmpqMat(transpose(numerator(M, copy = false)), denominator(M))
 end

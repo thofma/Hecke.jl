@@ -414,7 +414,7 @@ end
 
 function _issubfield_normal(K::AnticNumberField, L::AnticNumberField)
   f = K.pol
-  f1 = change_base_ring(f, L)
+  f1 = change_base_ring(L, f)
   r = roots(f1, max_roots = 1, isnormal = true)
   if length(r) > 0
     h = parent(L.pol)(r[1])

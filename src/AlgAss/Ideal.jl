@@ -131,28 +131,6 @@ function _test_ideal_sidedness(a::AbsAlgAssIdl, side::Symbol)
   return true
 end
 
-function _test_ideal_sidedness(a::AlgAssAbsOrdIdl, side::Symbol)
-  O = order(a)
-  ba = basis(a, copy = false)
-  bO = basis(O, copy = false)
-  t = O()
-  for i = 1:degree(O)
-    for j = 1:length(ba)
-      if side == :left
-        t = mul!(t, bO[i], ba[j])
-      elseif side == :right
-        t = mul!(t, ba[j], bO[i])
-      else
-        error("side must be either :left or :right")
-      end
-      if !(t in a)
-        return false
-      end
-    end
-  end
-  return true
-end
-
 @doc Markdown.doc"""
     isright_ideal(a::AbsAlgAssIdl) -> Bool
     isright_ideal(a::AlgAssAbsOrdIdl) -> Bool

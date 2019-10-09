@@ -482,8 +482,17 @@ end
 #
 ################################################################################
 
+function isinvertible(x::AbsOrdQuoRingElem)
+  if iszero(x)
+    return false, x
+  end
+  return isdivisible(one(parent(x)), x)
+end
+
 function inv(x::AbsOrdQuoRingElem)
-  return divexact(one(parent(x)), x)
+  t, y = isinvertible(x)
+  @assert t "Element is not invertible"
+  return y
 end
 
 ################################################################################

@@ -384,8 +384,46 @@ end
 
     @test length(subfields(L)) == 10
     @test length(subfields(L, degree = 6)) == 3
-
-
   end
 
+  @testset "Subfields" begin
+    Qx,x = PolynomialRing(QQ,"x")
+    K,a = NumberField(x^3 + x + 1)
+
+    F,phi = Hecke.subfield(K,[one(K)])
+    @test degree(F) == 1
+    @test parent(phi(one(F))) === K
+
+    F,_ = Hecke.subfield(K,[K(1),K(2),K(3)])
+    @test degree(F) == 1
+
+    F,_ = Hecke.subfield(K,[gen(K)])
+    @test degree(F) == 3
+
+    F,_ = Hecke.subfield(K,[gen(K), gen(K)+1])
+    @test degree(F) == 3
+
+    Qx,x = PolynomialRing(QQ,"x")
+    K,a3 = NumberField(x^2 - 3)
+    Ky,y = PolynomialRing(K,"y")
+    L,a5 = NumberField(y^2 - 5)
+
+    F,phi = Hecke.subfield(K,[one(K)])
+    @test degree(F) == 1
+    @test parent(phi(one(F))) === K
+
+    F,_ = Hecke.subfield(K,[gen(K)])
+    @test degree(F) == 2
+
+    Labs,psi,phi = absolute_field(L)
+
+    F,_ = Hecke.subfield(Labs,[phi(a3)])
+    @test degree(F) == 2
+
+    F,_ = Hecke.subfield(Labs,[preimage(psi,a5)])
+    @test degree(F) == 2
+
+    F,_ = Hecke.subfield(Labs,[phi(a3), preimage(psi,a5)])
+    @test degree(F) == 4
+  end
 end

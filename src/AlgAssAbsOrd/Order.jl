@@ -11,9 +11,10 @@ ideal_type(::AlgAssAbsOrd{S, T}) where {S, T} = AlgAssAbsOrdIdl{S, T}
 
 ideal_type(::Type{AlgAssAbsOrd{S, T}}) where {S, T} = AlgAssAbsOrdIdl{S, T}
 
-fractional_ideal_type(::AlgAssAbsOrd{S, T}) where {S, T} = AlgAssAbsOrdFracIdl{S, T}
+# There is no dedicated type for fractional ideals
+fractional_ideal_type(::AlgAssAbsOrd{S, T}) where {S, T} = AlgAssAbsOrdIdl{S, T}
 
-fractional_ideal_type(::Type{AlgAssAbsOrd{S, T}}) where {S, T} = AlgAssAbsOrdFracIdl{S, T}
+fractional_ideal_type(::Type{AlgAssAbsOrd{S, T}}) where {S, T} = AlgAssAbsOrdIdl{S, T}
 
 @doc Markdown.doc"""
     algebra(O::AlgAssAbsOrd) -> AbsAlgAss
@@ -217,6 +218,20 @@ function assure_basis_mat_inv(O::AlgAssAbsOrd)
   return nothing
 end
 
+function assure_basis_alg(O::AlgAssAbsOrd)
+  if isdefined(O, :basis_alg)
+    return nothing
+  end
+
+  M = basis_matrix(O, copy = false)
+  A = algebra(O)
+  O.basis_alg = Vector{elem_type(A)}(undef, dim(A))
+  for i = 1:dim(A)
+    O.basis_alg[i] = elem_from_mat_row(A, M.num, i, M.den)
+  end
+  return nothing
+end
+
 ################################################################################
 #
 #  Basis
@@ -234,6 +249,15 @@ function basis(O::AlgAssAbsOrd; copy::Bool = true)
     return deepcopy(O.basis)
   else
     return O.basis
+  end
+end
+
+function basis_alg(O::AlgAssAbsOrd; copy::Bool = true)
+  assure_basis_alg(O)
+  if copy
+    return deepcopy(O.basis_alg)
+  else
+    return O.basis_alg
   end
 end
 
@@ -615,7 +639,7 @@ function pmaximal_overorder_meataxe(O::AlgAssAbsOrd, p::Union{fmpz, Int})
     dd = fmpz(1)
     @vtime :AlgAssOrd 1 max_id =_maximal_ideals(O, p*O, p, strict_containment = true)
     for m in max_id
-      @vtime :AlgAssOrd 1 OO = ring_of_multipliers(m, fmpz(p))
+      @vtime :AlgAssOrd 1 OO = _ring_of_multipliers_integral_ideal(m, fmpz(p))
       dd = discriminant(OO)
       if d != dd
         extend = true
@@ -643,7 +667,7 @@ function pmaximal_overorder_tr(O::AlgAssAbsOrd, p::Int)
   #First, the head order by computing the pradical and its ring of multipliers
   d = discriminant(O)
   @vtime :AlgAssOrd 1 I = pradical(O, p)
-  @vtime :AlgAssOrd 1 OO = ring_of_multipliers(I, fmpz(p))
+  @vtime :AlgAssOrd 1 OO = _ring_of_multipliers_integral_ideal(I, fmpz(p))
   dd = discriminant(OO)
   if rem(dd, p^2) != 0
     return OO
@@ -652,7 +676,7 @@ function pmaximal_overorder_tr(O::AlgAssAbsOrd, p::Int)
     d = dd
     O = OO
     @vtime :AlgAssOrd 1 I = pradical(O,p)
-    @vtime :AlgAssOrd 1 OO = ring_of_multipliers(I, fmpz(p))
+    @vtime :AlgAssOrd 1 OO = _ring_of_multipliers_integral_ideal(I, fmpz(p))
     dd = discriminant(OO)
     if rem(dd, p^2) != 0
       return OO
@@ -663,7 +687,7 @@ function pmaximal_overorder_tr(O::AlgAssAbsOrd, p::Int)
   extend = false
   @vtime :AlgAssOrd 1 max_id = _maximal_ideals(O, I, p, strict_containment = true)
   for m in max_id
-    @vtime :AlgAssOrd 1 OO = ring_of_multipliers(m, fmpz(p))
+    @vtime :AlgAssOrd 1 OO = _ring_of_multipliers_integral_ideal(m, fmpz(p))
     dd = discriminant(OO)
     if d != dd
       extend = true
@@ -684,7 +708,7 @@ function pmaximal_overorder_tr(O::AlgAssAbsOrd, p::Int)
     dd = fmpz(1)
     @vtime :AlgAssOrd 1 max_id = _maximal_ideals(O, p*O, p, strict_containment = true)
     for m in max_id
-      OO = ring_of_multipliers(m, fmpz(p))
+      OO = _ring_of_multipliers_integral_ideal(m, fmpz(p))
       dd = discriminant(OO)
       if d != dd
         extend = true
@@ -920,12 +944,12 @@ function conductor(R::AlgAssAbsOrd, S::AlgAssAbsOrd, action::Symbol = :left)
     end
   end
   H = sub(hnf(M), 1:n, 1:n)
-  Hinv, new_den = pseudo_inv(transpose(H))
-  Hinv = Hinv*basis_mat_R_in_S_inv_num
+  Hinv = inv(FakeFmpqMat(transpose(H)))
+  Hinv = Hinv*basis_mat_R_in_S_inv_num*basis_matrix(R, copy = false)
   if action == :left
-    return ideal(R, divexact(Hinv, new_den), :right)
+    return ideal(algebra(R), R, Hinv, :right)
   else
-    return ideal(R, divexact(Hinv, new_den), :left)
+    return ideal(algebra(R), R, Hinv, :left)
   end
 end
 
@@ -991,7 +1015,6 @@ end
 ################################################################################
 
 function trace_dual(R::AlgAssAbsOrd)
-  t = trred_matrix(R)
-  ti, d = pseudo_inv(t)
-  return fractional_ideal(R, ideal(R, ti), d)
+  t = inv(FakeFmpqMat(trred_matrix(R)))*basis_matrix(R, copy = false)
+  return ideal(algebra(R), R, t)
 end

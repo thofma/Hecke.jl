@@ -37,7 +37,7 @@
     basisOK = [ KtoQG(b.elem_in_nf) for b in basis(OK) ]
     d = lcm([ denominator(b) for b in basisOK ])
     ZG = Order(QG, basis(QG))
-    I = Hecke.ideal_from_z_gens(ZG, [ ZG(d*b) for b in basisOK ])
+    I = Hecke.ideal_from_lattice_gens(QG, ZG, [ d*b for b in basisOK ])
 
     g = Hecke.locally_free_basis(I, 3)
     ZGg = ZG*g

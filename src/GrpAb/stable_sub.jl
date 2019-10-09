@@ -204,7 +204,7 @@ function _dualize(M::nmod_mat, V::GrpAbFinGen, v::Array{fmpz,1})
   end 
   mH=Hecke.GrpAbFinGenMap(V,K,A)
   newel=kernel_as_submodule(mH)
-  return change_base_ring(newel, base_ring(M))
+  return change_base_ring(base_ring(M), newel)
 
 end
 
@@ -519,7 +519,7 @@ function submodules_all(M::ZpnGModule)
   #
   #  Writing the submodules in terms of the given generators and returning an iterator
   #
-  MatSnf=change_base_ring(mS.map, R)
+  MatSnf=change_base_ring(R, mS.map)
   return (x*MatSnf for x in list)
   
 end
@@ -575,7 +575,7 @@ function _submodules_with_struct_cyclic(M::ZpnGModule, ord::Int)
       list1[i][1, k] *= v[k]
     end
   end  
-  MatSnf=change_base_ring(mS.map*ms.map, R)
+  MatSnf=change_base_ring(R, mS.map*ms.map)
   for j=1:length(list1)
     list1[j] = list1[j]*MatSnf
   end
@@ -672,7 +672,7 @@ function _submodules_with_struct(M::ZpnGModule, typesub::Array{Int, 1})
   end 
   #and now as elements of M
   auxmat = mS.map*ms.map
-  auxmat2 = change_base_ring(auxmat, R)
+  auxmat2 = change_base_ring(R, auxmat)
   for j = 1:length(list1)
     @inbounds list1[j] = list1[j]*auxmat2
   end
@@ -783,7 +783,7 @@ function submodules_order(M::ZpnGModule, ord::Int)
   #  Write the submodules in terms of the set of given generators
   #
   
-  MatSnf=change_base_ring(mS.map, R)
+  MatSnf=map(mS.map, R)
   for j=1:length(list)
     list[j]=list[j]*MatSnf #vcat([W(( mS( S.V([list[j][k,i].data for i=1:ngens(S.V)]))).coeff)  for k=1:nrows(list[j])])
   end
@@ -840,7 +840,7 @@ function submodules_with_quo_struct(M::ZpnGModule, typequo::Array{Int,1})
   #
   #  Write the submodules in terms of the given generators
   #
-  MatSnf = change_base_ring(mS.map, R)
+  MatSnf = change_base_ring(R, mS.map)
   return (final_check_and_ans(x, MatSnf, M) for x in list)
   
 end
@@ -946,7 +946,7 @@ function stable_subgroups(R::GrpAbFinGen, act::Array{T, 1}; op = sub, quotype::A
       for z=1:length(act)
         y = transpose(solve(auxmat1, (auxmat2*act[z].map)'))
         y = sub(y, 1:ngens(S), 1:ngens(G))*mS.imap
-        act_mat1[z] = change_base_ring(y, RR)
+        act_mat1[z] = change_base_ring(RR, y)
       end
       
       #

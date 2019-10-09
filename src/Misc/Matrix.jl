@@ -41,14 +41,14 @@ coefficient_type(::Type{Generic.Mat{T}}) where {T} = T
 #
 ################################################################################
 
-function zero!(a::MatElem)
-  for i in 1:nrows(a)
-    for j in 1:ncols(a)
-      a[i, j] = zero!(a[i, j])
-    end
-  end
-  return a
-end
+#function zero!(a::MatElem)
+#  for i in 1:nrows(a)
+#    for j in 1:ncols(a)
+#      a[i, j] = zero!(a[i, j])
+#    end
+#  end
+#  return a
+#end
 
 function mul!(c::MatElem, a::MatElem, b::MatElem)
   ncols(a) != nrows(b) && error("Incompatible matrix dimensions")
@@ -234,9 +234,9 @@ end
 
 function _hnf(x::fmpz_mat, shape::Symbol = :upperright)
   if shape == :lowerleft
-    h = hnf(invert_cols(x))
-    invert_cols!(h)
-    invert_rows!(h)
+    h = hnf(reverse_cols(x))
+    reverse_cols!(h)
+    reverse_rows!(h)
     return h::fmpz_mat
   end
   return hnf(x)::fmpz_mat
@@ -244,10 +244,10 @@ end
 
 function _hnf!(x::fmpz_mat, shape::Symbol = :upperright)
   if shape == :lowerleft
-    invert_cols!(x)
+    reverse_cols!(x)
     hnf!(x)
-    invert_cols!(x)
-    invert_rows!(x)
+    reverse_cols!(x)
+    reverse_rows!(x)
     return x::fmpz_mat
   end
   hnf!(x)
@@ -261,9 +261,9 @@ end
 
 function _hnf_modular_eldiv(x::fmpz_mat, m::fmpz, shape::Symbol = :upperright)
   if shape == :lowerleft
-    h = hnf_modular_eldiv!(invert_cols(x), m)
-    invert_cols!(h)
-    invert_rows!(h)
+    h = hnf_modular_eldiv!(reverse_cols(x), m)
+    reverse_cols!(h)
+    reverse_rows!(h)
     return h
   elseif shape == :upperright
     return hnf_modular_eldiv(x, m)
@@ -280,11 +280,11 @@ function hnf_modular_eldiv!(x::fmpz_mat, d::fmpz, shape::Symbol = :upperright)
                   (Ref{fmpz_mat}, Ref{fmpz}), x, d)
      return x
    elseif shape == :lowerleft
-     invert_cols!(x)
+     reverse_cols!(x)
      ccall((:fmpz_mat_hnf_modular_eldiv, :libflint), Nothing,
                  (Ref{fmpz_mat}, Ref{fmpz}), x, d)
-     invert_cols!(x)
-     invert_rows!(x)
+     reverse_cols!(x)
+     reverse_rows!(x)
      return x
    else
      error("shape $shape is not supported")
@@ -658,43 +658,22 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    kernel(a::MatElem{T}, R::Ring; side::Symbol = :right) -> n, MatElem{elem_type(R)}
+    kernel(a::MatrixElem{T}, R::Ring; side::Symbol = :right) -> n, MatElem{elem_type(R)}
 
 It returns a tuple $(n, M)$, where n is the rank of the kernel over $R$ and $M$ is a basis for it. If side is $:right$ or not
 specified, the right kernel is computed. If side is $:left$, the left kernel is computed.
 """
-function kernel(M::MatElem, R::Ring; side::Symbol = :right)
-  MP = change_base_ring(M, R)
+function kernel(M::MatrixElem, R::Ring; side::Symbol = :right)
+  MP = change_base_ring(R, M)
   return kernel(MP, side = side)
 end
-
-################################################################################
-#
-#  Change base ring
-#
-################################################################################
-
-#@doc Markdown.doc"""
-#    change_base_ring(M::MatElem, R::Ring) -> MatElem{elem_type(R)} 
-#
-#Given a $m\times n$ matrix M over a ring S and another ring R, return the $m \times n$
-#matrix over R obtained by coercing the entries of M from S into R. 
-#"""
-#function change_base_ring(M::MatElem, R::Ring)
-#  MP = zero_matrix(R, nrows(M), ncols(M))
-#  for i = 1:nrows(M)
-#    for j = 1:ncols(M)
-#      MP[i, j] = R(M[i, j])
-#    end
-#  end
-#  return MP
-#end
 
 ################################################################################
 #
 #  Diagonal (block) matrix creation
 #
 ################################################################################
+
 @doc Markdown.doc"""
     diagonal_matrix(x::Vector{T}) where T <: RingElem -> MatElem{T}
 
@@ -1377,11 +1356,6 @@ function setindex!(A::MatElem, b, i::Int, ::Colon)
   end
   b
 end
-
-
-getindex(A::MatElem, i::Int, ::Colon) = A[i:i, 1:ncols(A)]
-getindex(A::MatElem, ::Colon, i::Int) = A[1:nrows(A), i:i]
-
 
 @doc Markdown.doc"""
     reduce_mod!(A::MatElem{T}, B::MatElem{T}) where T <: FieldElem

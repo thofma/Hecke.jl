@@ -1,4 +1,4 @@
-const small_groups_1_63 = Vector{Tuple{Vector{perm{Int64}}, Vector{Vector{Int}}, Vector{Vector{Int}}, Vector{Tuple{Int, Int}}, Vector{Tuple{Int, Int}}, Bool, Bool, Bool, Bool, BigInt}}[[ ([ perm"()" ], [
+const small_groups_1_63 = Vector{Tuple{Vector{Perm{Int64}}, Vector{Vector{Int}}, Vector{Vector{Int}}, Vector{Tuple{Int, Int}}, Vector{Tuple{Int, Int}}, Bool, Bool, Bool, Bool, BigInt}}[[ ([ perm"()" ], [
 [ 1 ]
 ], [], [ (1, 1) ], [ (1, 1) ], true, true, true, true, 1) ], [ ([ perm"(1, 2)" ], [
 [ 1, 1 ]

@@ -172,7 +172,7 @@ function _find_prime(f::fmpz_poly)
     p = next_prime(p)
     R = GF(p, cached=false)
     Rt = PolynomialRing(R, "t", cached = false)[1]
-    fR = change_base_ring(f, R, Rt)
+    fR = change_base_ring(R, f, parent = Rt)
     if !issquarefree(fR)
       continue
     end
@@ -184,7 +184,6 @@ function _find_prime(f::fmpz_poly)
   end
   return p, d
 end
-
 
 function polredabs(K::AnticNumberField)
   #intended to implement 
