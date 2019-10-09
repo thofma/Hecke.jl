@@ -274,7 +274,7 @@ Returns the (row) pseudo matrix representing the $Z_k$-module
 """
 function PseudoMatrix(m::Generic.Mat{NfOrdElem}, c::Array{NfOrdIdl, 1})
   @assert nrows(m) == length(c)
-  mm = change_base_ring(m, nf(base_ring(m)))
+  mm = change_base_ring(nf(base_ring(m)), m)
   cc = map(z -> NfOrdFracIdl(z, fmpz(1)), c)
   return PMat{nf_elem, NfOrdFracIdl}(mm, cc)
 end
@@ -305,7 +305,7 @@ function PseudoMatrix(m::MatElem{S}, c::Array{T, 1}) where {S <: NumFieldElem, T
   return PMat{S, typeof(cc[1])}(m, cc)
 end
 
-PseudoMatrix(m::MatElem{NfOrdElem}) = PseudoMatrix(change_base_ring(m, nf(base_ring(m))))
+PseudoMatrix(m::MatElem{NfOrdElem}) = PseudoMatrix(change_base_ring(nf(base_ring(m)), m))
 
 function PseudoMatrix(c::Array{S, 1}) where S
    K = nf(order(c[1]))
@@ -996,9 +996,9 @@ end
 
 function pseudo_hnf_kb(P::PMat, shape::Symbol = :upperright)
   if shape == :lowerleft
-    H = _pseudo_hnf_kb(PseudoMatrix(invert_cols(P.matrix), P.coeffs), Val{false})
-    invert_cols!(H.matrix)
-    invert_rows!(H.matrix)
+    H = _pseudo_hnf_kb(PseudoMatrix(reverse_cols(P.matrix), P.coeffs), Val{false})
+    reverse_cols!(H.matrix)
+    reverse_rows!(H.matrix)
     reverse!(H.coeffs)
     return H
   elseif shape == :upperright
@@ -1010,11 +1010,11 @@ end
 
 function pseudo_hnf_kb_with_transform(P::PMat, shape::Symbol = :upperright)
   if shape == :lowerleft
-    H, U = _pseudo_hnf_kb(PseudoMatrix(invert_cols(P.matrix), P.coeffs), Val{true})
-    invert_cols!(H.matrix)
-    invert_rows!(H.matrix)
+    H, U = _pseudo_hnf_kb(PseudoMatrix(reverse_cols(P.matrix), P.coeffs), Val{true})
+    reverse_cols!(H.matrix)
+    reverse_rows!(H.matrix)
     reverse!(H.coeffs)
-    invert_rows!(U)
+    reverse_rows!(U)
     return H, U
   elseif shape == :upperright
     return _pseudo_hnf_kb(P, Val{true})
@@ -1290,7 +1290,7 @@ end
 
 
 function PseudoMatrix2(m::Generic.Mat{NfOrdElem}, r::Array{NfOrdFracIdl, 1}, c::Array{NfOrdIdl, 1})
-   mm = change_base_ring(m, nf(base_ring(m)))
+   mm = change_base_ring(nf(base_ring(m)), m)
    rr = map(z -> NfOrdFracIdl(z, fmpz(1)), r)
    cc = map(z -> NfOrdFracIdl(z, fmpz(1)), c)
    return PMat(mm, rr, cc)

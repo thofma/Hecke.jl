@@ -978,28 +978,27 @@ function val_func_index(p::NfOrdIdl)
   # time is spent computing denominators of order elements.
   # By using the representation matrix to multiply, we can stay in the order
   # and still be fast (faster even than in field).
-
   pi = inv(p)
   M = representation_matrix(pi.num.gen_two)
   O = order(p)
   P = p.gen_one
   local val
   let P = P, O = O, M = M, p = p
-    function val(x::nf_elem, no::fmpq = fmpq(0))
+    function val(x::nf_elem, no::fmpq)
       v = 0
       d, x_mat = integral_split(x, O)
       Nemo.mul!(x_mat, x_mat, M)
       c = content(x_mat)
       while divisible(c, P)  # should divide and test in place
-        divexact!(x_mat, x_mat, P)
+        vc, a = remove(c, P)
+	      divexact!(x_mat, x_mat, c)
         Nemo.mul!(x_mat, x_mat, M)
         c = content(x_mat)
-        v += 1
+        v += 1 + (vc-1)*p.splitting_type[1]
       end
-      return v-valuation(d, P)*p.splitting_type[1] ::Int
+      return v-Int(valuation(d, P))*p.splitting_type[1]
     end
   end
-  
   return val
 end
 
@@ -1028,29 +1027,28 @@ such that $a$ is contained in $\mathfrak p^i$.
 """
 function valuation(a::nf_elem, p::NfOrdIdl, no::fmpq = fmpq(0))
   if !isdefining_polynomial_nice(parent(a)) || order(p).ismaximal != 1
-    return valuation_naive(a, p)
+    return valuation_naive(a, p)::Int
   end
   @hassert :NfOrd 0 !iszero(a)
   #assert(a !=0) # can't handle infinity yet
   #First, check the content of a as a polynomial.
   
   if p.is_prime != 1 && isdefined(p, :valuation)
-    return p.valuation(a, no)
+    return Int(p.valuation(a, no))::Int
   end
   O = order(p)
   K = nf(O)
   # for generic ideals
   if p.splitting_type[2] == 0
-    #global bad_ideal = p
     assure_2_normal(p)
     pinv = inv(p)
     anti_uni = pinv.num.gen_two.elem_in_nf//pinv.den
     local val2
-    let O = O, p = p, anti_uni = anti_uni
+    let O = O, p = p, anti_uni = anti_uni, K = K
       function val2(s::nf_elem, no::fmpq = fmpq(0))
         d = denominator(s, O)
         x = d*s
-        if gcd(d, minimum(p)) == 1
+        if gcd(d, minimum(p, copy = false)) == 1
           return valuation_with_anti_uni(x, anti_uni, p)::Int
         else
           return valuation_with_anti_uni(x, anti_uni, p)::Int - valuation_with_anti_uni(K(d), anti_uni, p)::Int
@@ -1058,7 +1056,8 @@ function valuation(a::nf_elem, p::NfOrdIdl, no::fmpq = fmpq(0))
       end
     end
     p.valuation = val2
-    return p.valuation(a, no)::Int
+    res = Int(p.valuation(a, no)) ::Int
+    return res
   end
   Qx = parent(K.pol)
   pol_a = Qx(a)
@@ -1068,10 +1067,12 @@ function valuation(a::nf_elem, p::NfOrdIdl, no::fmpq = fmpq(0))
   
   if isdefined(p, :valuation)
     nno = no
+#    Main.Infiltrator.@infiltrate
     if !iszero(nno)
-      nno = divexact(no, c^degree(K))
+      nno = divexact(nno, c^degree(K))
     end
-    return valnumden + p.valuation(b, nno)::Int
+    res = Int(p.valuation(b, nno))::Int
+    return valnumden + res
   end
 
   P = p.gen_one
@@ -1107,8 +1108,8 @@ function valuation(a::nf_elem, p::NfOrdIdl, no::fmpq = fmpq(0))
   else
     p.valuation = val_func_index(p)
   end
-
-  return valnumden + p.valuation(b, divexact(no, c^degree(K)))::Int
+  res = Int(p.valuation(b, divexact(no, c^degree(K))))::Int
+  return valnumden + res
 
 end
 

@@ -35,7 +35,7 @@ mutable struct NormRelation{T}
   coefficients_gen::Vector{Vector{Tuple{Int, NfToNfMor, NfToNfMor}}}
   embed_cache::Dict{Tuple{Int, Int}, Dict{nf_elem, nf_elem}}
   mor_cache::Dict{NfToNfMor, Dict{nf_elem, nf_elem}}
-  induced::Dict{NfToNfMor, perm{Int}}
+  induced::Dict{NfToNfMor, Perm{Int}}
 
   function NormRelation{T}() where {T}
     z = new{T}()
@@ -45,7 +45,7 @@ mutable struct NormRelation{T}
     z.denominator = 0
     z.embed_cache = Dict{Tuple{Int, Int}, Dict{nf_elem, nf_elem}}()
     z.mor_cache = Dict{NfToNfMor, Dict{nf_elem, nf_elem}}()
-    z.induced = Dict{NfToNfMor, perm{Int}}()
+    z.induced = Dict{NfToNfMor, Perm{Int}}()
     return z
   end
 end

@@ -793,7 +793,7 @@ end
 
 function roots(f::PolyElem, R::Field)
   Rt = PolynomialRing(R, "t", cached = false)[1]
-  f1 = change_base_ring(f, R, Rt)
+  f1 = change_base_ring(R, f, parent = Rt)
   return roots(f1)
 end
 

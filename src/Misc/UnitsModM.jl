@@ -158,10 +158,10 @@ function UnitGroup(R::Generic.ResRing{fmpz}, mod::fmpz=fmpz(0))
 
   G = DiagonalGroup(r)
   function dexp(x::GrpAbFinGenElem)
-    return prod([R(g[i])^x[i] for i=1:ngens(G)])
+    return prod(Res{fmpz}[R(g[i])^x[i] for i=1:ngens(G)])
   end
   function dlog(x::Generic.Res{fmpz})
-    return G([disc_log_mod(g[i], lift(x), mi[i]) for i=1:ngens(G)])
+    return G(fmpz[disc_log_mod(g[i], lift(x), mi[i]) for i=1:ngens(G)])
   end
   return G, MapUnitGroupModM{typeof(R)}(G, R, dexp, dlog)
 end

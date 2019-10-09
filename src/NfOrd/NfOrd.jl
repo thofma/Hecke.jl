@@ -1148,15 +1148,15 @@ function sum_as_Z_modules_fast(O1, O2, z::fmpz_mat = zero_matrix(FlintZZ, 2 * de
   hnf_modular_eldiv!(z, lcm(R1.den, S1.den), :lowerleft)
   M = FakeFmpqMat(view(z, (nrows(z)-ncols(z)+1):nrows(z), 1:ncols(z)), lcm(R1.den, S1.den))
   @hassert :NfOrd 1 defines_order(K, M)[1]
-  O = Order(K, M, check = false)
-  if O isa NfOrd
-    O.primesofmaximality = union(O1.primesofmaximality, O2.primesofmaximality)
+  OK = Order(K, M, check = false)::typeof(O1)
+  if OK isa NfOrd
+    OK.primesofmaximality = union(O1.primesofmaximality, O2.primesofmaximality)
   end
-  O.index = divexact(denominator(M)^d, prod(M.num[i, i] for i in 1:d))
-  @hassert :NfOrd 1 numerator(gen_index(O)) == O.index
-  O.disc = divexact(discriminant(O1) * index(O1)^2, O.index^2)
-  @hassert :NfOrd 1 det(trace_matrix(O)) == O.disc
-  return O
+  OK.index = divexact(denominator(M)^d, prod(fmpz[M.num[i, i] for i in 1:d]))
+  @hassert :NfOrd 1 numerator(gen_index(OK)) == OK.index
+  OK.disc = divexact(discriminant(O1) * index(O1)^2, OK.index^2)
+  @hassert :NfOrd 1 det(trace_matrix(OK)) == OK.disc
+  return OK
 end
 
 ###############################################################################

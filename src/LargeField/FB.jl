@@ -109,9 +109,9 @@ end
   Tested for cyclic groups - unfortunately only.
   I still need to generate other input
 =#  
-#function orbit_in_FB(op::Array{Tuple{Map, Generic.perm}, 1}, a::nf_elem, s::SRow)
+#function orbit_in_FB(op::Array{Tuple{Map, Generic.Perm}, 1}, a::nf_elem, s::SRow)
 function orbit_in_FB(op::Array, a::nf_elem, s::SRow)
-  function op_smat(n::SRow, p::Generic.perm)
+  function op_smat(n::SRow, p::Generic.Perm)
     r = [(p[i], v) for (i,v) = n]
     sort!(r, lt = (a,b)->a[1]<b[1])
     return typeof(n)(r)

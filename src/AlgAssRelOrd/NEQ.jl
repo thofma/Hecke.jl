@@ -4,9 +4,9 @@
 #
 ################################################################################
 
-# Given maximal order O_1, ..., O_k in the algebra A over a field K, this
-# helps to construct field extensions of K of degree sqrt(dim(A)), whose
-# maximal order is a submodule of one of the O_i.
+# Given maximal orders O_1, ..., O_k in the algebra A over a field K, this
+# helps to construct field extensions of K, whose maximal order is a submodule
+# of one of the O_i.
 mutable struct FieldOracle{S, T, U}
   algebra::S
   maximal_orders::Vector{T}
@@ -62,6 +62,7 @@ end
 mutable struct NormCache{S, T, U}
   algebra::S
   maximal_orders::Vector{T}
+  n::Int # n^2 == dim(algebra)
 
   field_oracle::FieldOracle{S, T, U}
 
@@ -76,18 +77,27 @@ mutable struct NormCache{S, T, U}
   GtoUk_surjective::BitVector
   fields_in_product::Vector{Vector{Tuple{NfRelToAbsAlgAssMor, NfToNfRel}}}
 
-  function NormCache{S, T, U}(A::S, orders::Vector{T}, a::NfAbsOrdElem) where { S, T, U}
+  function NormCache{S, T, U}(A::S, orders::Vector{T}, a::NfAbsOrdElem) where { S, T, U }
+    primes = collect(keys(factor(a*parent(a))))
+    vals = [ valuation(a, p) for p in primes ]
+    z = NormCache{S, T, U}(A, orders, parent(a), primes, vals)
+    z.a = a
+    return z
+  end
+
+  function NormCache{S, T, U}(A::S, orders::Vector{T}, Ok::NfAbsOrd, primes::Vector{<: NfAbsOrdIdl}, valuations::Vector{Int}) where { S, T, U }
     z = new{S, T, U}()
     z.algebra = A
     z.maximal_orders = orders
+    z.n = isqrt(dim(A))
+    @assert z.n^2 == dim(A)
+
     z.field_oracle = FieldOracle(A, orders)
 
-    Ok = parent(a)
     Uk, UktoOk = unit_group(Ok)
     z.UktoOk = UktoOk
-    z.a = a
-    z.primes = collect(keys(factor(a*Ok)))
-    z.valuations = [ valuation(a, p) for p in z.primes ]
+    z.primes = primes
+    z.valuations = valuations
     z.fac_elem_mon = FacElemMon(A)
     z.partial_solutions = Vector{Dict{Set{Int}, Vector{FacElem{U, S}}}}(undef, length(orders))
     z.solutions_mod_units = Vector{Dict{FacElem{U, S}, GrpAbFinGenElem}}(undef, length(orders))
@@ -110,6 +120,10 @@ function NormCache(A::AbsAlgAss, orders::Vector{<: AlgAssRelOrd}, a::NfAbsOrdEle
   return NormCache{typeof(A), typeof(orders[1]), elem_type(A)}(A, orders, a)
 end
 
+function NormCache(A::AbsAlgAss, orders::Vector{<: AlgAssRelOrd}, Ok::NfAbsOrd, primes::Vector{<: NfAbsOrdIdl}, valuations::Vector{Int})
+  return NormCache{typeof(A), typeof(orders[1]), elem_type(A)}(A, orders, Ok, primes, valuations)
+end
+
 ################################################################################
 #
 #  Integral norm equations
@@ -118,7 +132,7 @@ end
 
 # Returns the solution of the norm equation and the number of the order, in which
 # the solution was found.
-function norm_equation(orders::Vector{ <: AlgAssRelOrd }, a::NfAbsOrdElem)
+function norm_equation(orders::Vector{<: AlgAssRelOrd}, a::NfAbsOrdElem)
   A = algebra(orders[1])
   if iszero(a)
     return A(), 1
@@ -127,7 +141,7 @@ function norm_equation(orders::Vector{ <: AlgAssRelOrd }, a::NfAbsOrdElem)
   return evaluate(d), i
 end
 
-function norm_equation_fac_elem(orders::Vector{ <: AlgAssRelOrd }, a::NfAbsOrdElem)
+function norm_equation_fac_elem(orders::Vector{<: AlgAssRelOrd}, a::NfAbsOrdElem)
   A = algebra(orders[1])
   @assert !iszero(a) # We cannot represent 0 as a FacElem
   NC = NormCache(A, orders, a)
@@ -147,6 +161,7 @@ end
 # new fields).
 function _norm_equation(NC::NormCache, order_num::Int; max_num_fields::Int = 10)
   A = NC.algebra
+  n = NC.n
   primes = NC.primes
   vals = NC.valuations
   full_set = Set(1:length(primes))
@@ -172,16 +187,43 @@ function _norm_equation(NC::NormCache, order_num::Int; max_num_fields::Int = 10)
     good_primes = __neq_find_good_primes(NC, OL)
 
     if !isempty(good_primes)
-      sols = __neq_sunit(ktoK, [ primes[i] for i in good_primes ], [ vals[i] for i in good_primes ])
-      if !isempty(sols)
-        # We better evaluate s here: Some factors may not be integral which can
-        # become a problem since the multiplication in A is non-commutative.
-        # Also, multiplications and computing inverses in K are cheap.
-        add_partial_solutions!(NC, order_num, good_primes, [ NC.fac_elem_mon(LtoA(KtoL(evaluate(s)))) for s in sols ])
+      if degree(L) != n
+        n2 = degree(L)//n
+        vals2 = [ Int(n2*vals[i]) for i = 1:length(vals) ]
+      else
+        vals2 = vals
+      end
+
+      remaining_primes = Set{Int}()
+      # First search for solutions for single primes
+      for p in good_primes
+        sols = __neq_sunit(ktoK, [ primes[p] ], [ vals2[p] ])
+        if !isempty(sols)
+          # We better evaluate s here: Some factors may not be integral which can
+          # become a problem since the multiplication in A is non-commutative.
+          # Also, multiplications and computing inverses in K are cheap.
+          add_partial_solutions!(NC, order_num, Set(p), [ NC.fac_elem_mon(LtoA(KtoL(evaluate(s)))) for s in sols ])
+        else
+          push!(remaining_primes, p)
+        end
+      end
+
+      if !isempty(remaining_primes)
+        # Now the primes together, for which have not found a solution yet
+        sols = __neq_sunit(ktoK, [ primes[i] for i in remaining_primes ], [ vals2[i] for i in remaining_primes ])
+        if !isempty(sols)
+          add_partial_solutions!(NC, order_num, remaining_primes, [ NC.fac_elem_mon(LtoA(KtoL(evaluate(s)))) for s in sols ])
+        elseif length(remaining_primes) < length(good_primes)
+          # If this also failed, we test all primes together
+          sols = __neq_sunit(ktoK, [ primes[i] for i in good_primes ], [ vals2[i] for i in good_primes ])
+          if !isempty(sols)
+            add_partial_solutions!(NC, order_num, good_primes, [ NC.fac_elem_mon(LtoA(KtoL(evaluate(s)))) for s in sols ])
+          end
+        end
       end
     end
 
-    if !NC.GtoUk_surjective[order_num]
+    if !NC.GtoUk_surjective[order_num] && degree(L) == n
       UK, mUK = unit_group(OK)
       N = hom(UK, Uk, [ mUk\(norm(ktoK, K(mUK(g)))) for g in gens(UK) ])
       if ngens(G) == 0
@@ -237,6 +279,151 @@ end
 
 ################################################################################
 #
+#  Integral norm equations - valuations only
+#
+################################################################################
+
+# A special case needed for principal_gen_eichler.
+# Finds a in O such that v_{p_i}(normred(a)) == v_i where p_i = primes[i] and
+# v_i = valuations[i] and such that v_q(normred(a)) == 0 for all other primes q,
+# assuming that such an element exists.
+function _norm_equation_valuations_only(O::AlgAssRelOrd, primes::Vector{<: NfAbsOrdIdl}, valuations::Vector{Int})
+  @assert !isempty(primes)
+  @assert length(primes) == length(valuations)
+  A = algebra(O)
+  Ok = order(primes[1])
+  NC = NormCache(A, [ O ], Ok, primes, valuations)
+  n = NC.n
+  full_set = Set(1:length(primes))
+  partial_solutions = NC.partial_solutions[1]
+
+  while true
+    LtoA = get_new_field(NC.field_oracle, 1, no_restriction = true)
+    L = domain(LtoA)
+    OL = maximal_order(L)
+
+    K, KtoL, ktoK = simplified_absolute_field(L)
+    OK = maximal_order_via_relative(K, KtoL)
+
+    good_primes = __neq_find_good_primes(NC, OL)
+
+    if !isempty(good_primes)
+      cache = Vector{Any}(undef, 3) # Used in __neq_find_sol_in_order
+      if degree(L) != n
+        n2 = degree(L)//n
+        vals2 = [ Int(n2*valuations[i]) for i = 1:length(valuations) ]
+      else
+        vals2 = valuations
+      end
+
+      remaining_primes = Set{Int}()
+      # First search for solutions for single primes
+      for p in good_primes
+        if haskey(partial_solutions, Set(p))
+          continue
+        end
+        b, s = __neq_find_sol_in_order(O, LtoA, KtoL, ktoK, [ primes[p] ], [ vals2[p] ], cache)
+        if b
+          add_partial_solutions!(NC, 1, Set(p), [ NC.fac_elem_mon(s) ])
+        else
+          push!(remaining_primes, p)
+        end
+      end
+
+      if !isempty(remaining_primes) && !haskey(partial_solutions, remaining_primes)
+        # Now the primes together, for which have not found a solution yet
+        b, s = __neq_find_sol_in_order(O, LtoA, KtoL, ktoK, [ primes[i] for i in remaining_primes ], [ vals2[i] for i in remaining_primes ], cache)
+        if b
+          add_partial_solutions!(NC, 1, remaining_primes, [ NC.fac_elem_mon(s) ])
+        elseif length(remaining_primes) < length(good_primes)
+          # If this also failed, we test all primes together
+          b, s = __neq_find_sol_in_order(O, LtoA, KtoL, ktoK, [ primes[i] for i in good_primes ], [ vals2[i] for i in good_primes ], cache)
+          if b
+            add_partial_solutions!(NC, 1, good_primes, [ NC.fac_elem_mon(s) ])
+          end
+        end
+      end
+    end
+
+    if haskey(partial_solutions, full_set)
+      s = first(partial_solutions[full_set])
+      return s
+    end
+  end
+end
+
+# Finds any a \in O \cap L such that v_p(nr(a)) = vals[i] for p = primes[i].
+function __neq_find_sol_in_order(O::AlgAssRelOrd, LtoA::NfRelToAbsAlgAssMor, KtoL::NfToNfRel, ktoK::NfToNfMor, primes_in_k::Vector{<: NfAbsOrdIdl}, vals::Vector{Int}, cache::Vector{Any})
+  A = algebra(O)
+  sols = __neq_sunit(ktoK, primes_in_k, vals)
+  if isempty(sols)
+    return false, A()
+  end
+
+  K = codomain(ktoK)
+  L = domain(LtoA)
+  sols_eval = Vector{elem_type(K)}()
+  for s in sols
+    s_eval = evaluate(s)
+    t = LtoA(KtoL(s_eval))
+    if t in O
+      return true, t
+    end
+    push!(sols_eval, s_eval)
+  end
+
+  # None of the found solutions lies in O.
+  # We assume that equation_order(L) \subseteq O and try to adjust one of the
+  # elements of sols by a unit.
+  OK = maximal_order(K)
+  UK, mUK = unit_group(OK)
+  if !isassigned(cache, 1)
+    cache[1] = Order(K, [ KtoL\b for b in absolute_basis(equation_order(L)) ], check = false, isbasis = true)
+  end
+  OE = cache[1]
+  if !isassigned(cache, 2)
+    cache[2] = OO_mod_F_mod_O_mod_F(OE)
+  end
+  G, GtoQ, OKtoQ = cache[2]
+  sols2 = Vector{elem_type(K)}()
+  for s in s_eval
+    sinQ = OKtoQ(OK(s))
+    if !isinvertible(sinQ)[1]
+      push!(s, sols2)
+    end
+    # s is coprime to the conductor
+
+    g = GtoQ\sinQ
+    h = hom(UK, G, [ GtoQ\(OKtoQ(mUK(UK[i]))) for i = 1:ngens(UK) ])
+    b, u = haspreimage(h, g)
+    if b
+      Q, toQ = quo(UK, kernel(h)[1])
+      u = toQ\(toQ(u)) # Reduce the coefficient size (hopefully)
+      s = s*inv(elem_in_nf(mUK(u), copy = false))
+      return true, LtoA(KtoL(s))
+    end
+  end
+
+  if !isassigned(cache, 3)
+    UE, mUE = unit_group(OE)
+    UEinUK = [ mUK\(OK(elem_in_nf(mUE(UE[i]), copy = false))) for i = 1:ngens(UE) ]
+    cache[3] = quo(UK, UEinUK)
+  end
+  Q, toQ = cache[3]
+  for (i, g) in enumerate(Q)
+    u = mUK(toQ\g)
+    for s in sols2
+      su = LtoA(KtoL(s*u))
+      if su in O
+        return true, su
+      end
+    end
+  end
+  return false, A()
+end
+
+################################################################################
+#
 #  Some helpers
 #
 ################################################################################
@@ -244,7 +431,7 @@ end
 # Let S be the set of primes lying over primes_in_k.
 # This finds a set of representatives of the S-units of K modulo units of O_K,
 # whose norm has the valuations vals at the primes primes_in_k.
-function __neq_sunit(ktoK::NfToNfMor, primes_in_k::Vector{ <: NfAbsOrdIdl}, vals::Vector{Int})
+function __neq_sunit(ktoK::NfToNfMor, primes_in_k::Vector{<: NfAbsOrdIdl}, vals::Vector{Int})
   K = codomain(ktoK)
   OK = maximal_order(K)
   primes_in_K = Vector{ideal_type(OK)}()
@@ -305,21 +492,28 @@ function __neq_lift_unit(NC::NormCache, order_num::Int, g::GrpAbFinGenElem)
   for j = 1:length(fields_in_product)
     LtoA, KtoL = fields_in_product[j]
     pi = canonical_projection(H, j)
-    h = pi(h)
+    h2 = pi(h)
     K = domain(KtoL)
     mUK = unit_group(maximal_order(K))[2]
-    x *= LtoA(KtoL(elem_in_nf(mUK(h), copy = false)))
+    x *= LtoA(KtoL(elem_in_nf(mUK(h2), copy = false)))
   end
   return x
 end
 
 function __neq_find_good_primes(NC::NormCache, OL::NfRelOrd, verbose::Bool = false)
+  n = NC.n
+  m = degree(nf(OL))
+  mn = m//n
   good_primes = Set{Int}()
   for j = 1:length(NC.primes)
+    v = NC.valuations[j]*mn
+    if !isone(denominator(v))
+      continue
+    end
     p = NC.primes[j]
     pdec = prime_decomposition(OL, p, compute_uniformizer = false)
     for (q, e) in pdec
-      if q.splitting_type[2] <= NC.valuations[j]
+      if q.splitting_type[2] <= v
         push!(good_primes, j)
         break
       end
@@ -353,7 +547,7 @@ end
 
 # The matrices in modules should generate full lattices in A.
 # This returns the numbers of the modules of which LtoA(O) is a submodule.
-function _issubmodule(modules::Vector{ <: PMat}, O::NfRelOrd, LtoA::NfRelToAbsAlgAssMor)
+function _issubmodule(modules::Vector{<: PMat}, O::NfRelOrd, LtoA::NfRelToAbsAlgAssMor)
   L = domain(LtoA)
   A = codomain(LtoA)
   B = absolute_basis(O)
@@ -401,15 +595,21 @@ function small_elements(O::AlgAssRelOrd)
 end
 
 # Adds a field for order number i (and possibly for other orders too)
-function add_field(FO::FieldOracle, i::Int)
+function add_field(FO::FieldOracle, i::Int; no_restriction::Bool = false)
   A = FO.algebra
   function _add_field(x::AbsAlgAssElem)
     f = minpoly(x)
-    if degree(f)^2 != dim(A)
-      return false
+    L, LtoA = _as_subfield(A, x, f)
+
+    if no_restriction
+      # The users wants no restriction on the fields. Let's hope he/she knows
+      # what he/she is doing.
+      for j = 1:length(FO.fields)
+        push!(FO.fields[j], LtoA)
+      end
+      return true
     end
 
-    L, LtoA = _as_subfield(A, x, f)
     # Find the orders in which maximal_order(L) lies
     good_orders = _issubmodule(FO.hnf_basis_pmats, maximal_order(L), LtoA)
     for o in good_orders
@@ -462,9 +662,9 @@ function add_field(FO::FieldOracle, i::Int)
 end
 
 # Returns a "new" field for order i
-function get_new_field(FO::FieldOracle, i::Int)
+function get_new_field(FO::FieldOracle, i::Int; no_restriction::Bool = false)
   if isempty(FO.fields[i])
-    add_field(FO, i)
+    add_field(FO, i, no_restriction = no_restriction)
   end
 
   return pop!(FO.fields[i])

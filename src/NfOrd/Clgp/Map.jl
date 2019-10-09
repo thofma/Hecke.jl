@@ -694,7 +694,12 @@ function reduce_mod_units(a::Array{T, 1}, U) where T
     end
     @vprint :UnitGroup 2 "exactly? ($exact) reducing by $V\n"
     for i=1:length(b)
-      b[i] = b[i]*prod([U.units[j]^-V[i,j] for j = 1:ncols(V)])
+      for j = 1:ncols(V)
+        if !iszero(V[i, j])
+          mul!(b[i], b[i], U.units[j]^(-V[i,j]))
+        end
+      end
+      #b[i] = b[i]*prod([U.units[j]^-V[i,j] for j = 1:ncols(V)])
     end
 
     if exact
@@ -995,7 +1000,6 @@ function find_coprime_representatives(mC::MapClassGrp, m::NfOrdIdl, lp::Dict{NfO
   end
   
   prob = ppp > 0.1
-  
   for i = 1:ngens(C)
     a = first(keys(mC.princ_gens[i][1].fac))
     if iscoprime(a, m)

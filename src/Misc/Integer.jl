@@ -309,6 +309,10 @@ function Base.getindex(a::StepRange{fmpz,fmpz}, i::fmpz)
   a.start+(i-1)*Base.step(a)
 end
 
+function Base.divrem(a::fmpz, b::Int)
+  return (div(a, b), rem(a, b))
+end
+
 ################################################################################
 #
 #  Should go to Nemo?
@@ -375,7 +379,7 @@ end
 @doc Markdown.doc"""
     ispower(a::fmpz) -> Int, fmpz
     ispower(a::Integer) -> Int, Integer
-Writes $a = r^e$ with $e$ maximal. Note: $1 = 1^0$.
+Returns $e$, $r$ such that $a = r^e$ with $e$ maximal. Note: $1 = 1^0$.
 """
 function ispower(a::fmpz)
   if iszero(a)

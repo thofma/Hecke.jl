@@ -704,7 +704,7 @@ function _ring_of_multipliers_integral_ideal(I::AlgAssAbsOrdIdl, p::fmpz = fmpz(
   else
     hnf_modular_eldiv!(m, p)
   end
-  s = prod(m[i, i] for i = 1:ncols(m))
+  s = prod(fmpz[m[i, i] for i = 1:ncols(m)])
   if s == 1
     return O
   end
@@ -1074,7 +1074,7 @@ function pradical(O::AlgAssAbsOrd, p::Int)
   n = root(degree(O), 2)
   F = GF(p, cached = false)
 
-  I = change_base_ring(n*trred_matrix(O), F)
+  I = change_base_ring(F, n*trred_matrix(O))
   k, B = nullspace(I)
   # The columns of B give the coordinates of the elements in the order.
   if k == 0

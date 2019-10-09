@@ -181,7 +181,7 @@ end
 
 > Computes `divexact(norm(a), d)` provided the result has at most `nb` bits.
 >
-> Typically, `a` is an element of somee ideal with norm `d`.
+> Typically, `a` is an element of some ideal with norm `d`.
 """
 function norm_div(a::nf_elem, d::fmpz, nb::Int)
    z = fmpq()
@@ -224,13 +224,13 @@ end
 #
 ################################################################################
 
+# TODO: Use fits(Int, n) and then split into fmpz_mod/nmod case
 @doc Markdown.doc"""
     isnorm_divisible(a::nf_elem, n::fmpz) -> Bool
 Checks if the norm of $a$ is divisible by $n$, assuming that the norm of $a$ is
 an integer.
 """
 function isnorm_divisible(a::nf_elem, n::fmpz)
-  
   K = parent(a)
   s, t = ppio(denominator(a), n)
   if s == 1
@@ -358,12 +358,12 @@ end
 The factorisation of f over K.
 """
 function factor(f::fmpq_poly, K::AnticNumberField)
-  f1 = change_base_ring(f, K)
+  f1 = change_base_ring(K, f)
   return factor(f1)
 end
 
 function factor(f::fmpz_poly, K::AnticNumberField)
-  f1 = change_base_ring(f, K)
+  f1 = change_base_ring(K, f)
   return factor(f1)
 end
 
@@ -401,22 +401,20 @@ function factor(f::PolyElem{nf_elem})
 
   
   if degree(f) == 1
-    multip = div(degree(f_orig), degree(f))
     r = Fac{typeof(f)}()
-    r.fac = Dict{typeof(f), Int}(f*(1//lead(f)) => multip)
+    r.fac = Dict{typeof(f), Int}(f*(1//lead(f)) => degree(f_orig))
     if v > 0
       r.fac[gen(parent(f))] = v
     end
     r.unit = one(Kx) * lead(f_orig)
     return r
   end
-
   f = f*(1//lead(f))
-
+  
   if degree(f) < degree(K)
-    lf = factor_trager(f)
+    lf = factor_trager(f)::Vector{typeof(f)}
   else
-    lf = factor_new(f)
+    lf = factor_new(f)::Vector{typeof(f)}
   end
 
   r = Fac{typeof(f)}()
@@ -465,7 +463,7 @@ function factor_trager(f::PolyElem{nf_elem})
   end
   @vtime :PolyFactor 2 fac = factor(N)
   
-  res = PolyElem{nf_elem}[]
+  res = typeof(f)[]
 
   for i in keys(fac.fac)
     t = change_ring(i, Kx)
@@ -580,7 +578,7 @@ Computes all roots in $K$ of a polynomial $f$. It is assumed that $f$ is is non-
 squarefree and monic.
 """
 function roots(f::fmpz_poly, K::AnticNumberField; kw...)
-  f1 = change_base_ring(f, K)
+  f1 = change_base_ring(K, f)
   return roots(f1; kw...)
 end
 
@@ -591,7 +589,7 @@ Computes all roots in $K$ of a polynomial $f$. It is assumed that $f$ is is non-
 squarefree and monic.
 """
 function roots(f::fmpq_poly, K::AnticNumberField; kw...)
-  f1 = change_base_ring(f, K)
+  f1 = change_base_ring(K, f)
   return roots(f1; kw...)
 end
 
@@ -657,12 +655,12 @@ end
 Tests if $f$ has a root in $K$, and return it.
 """
 function hasroot(f::fmpz_poly, K::AnticNumberField)
-  f1 = change_base_ring(f, K)
+  f1 = change_base_ring(K, f)
   return hasroot(f1)
 end
 
 function hasroot(f::fmpq_poly, K::AnticNumberField)
-  f1 = change_base_ring(f, K)
+  f1 = change_base_ring(K, f)
   return hasroot(f1)
 end
 
@@ -830,26 +828,6 @@ end
 #
 ################################################################################
 
-function _mod_sym!_antic(a::nf_elem, b::fmpz)
-  ccall((:nf_elem_smod_fmpz, :libantic), Nothing, (Ref{nf_elem}, Ref{nf_elem}, Ref{fmpz}, Ref{AnticNumberField}), a, a, b, parent(a))
-  return a
-end
-
-function _mod_sym_antic(a::nf_elem, b::fmpz)
-  z = deepcopy(a)
-  _mod_sym!_antic(z, b)
-end
-
-function _mod!_antic(a::nf_elem, b::fmpz)
-  ccall((:nf_elem_mod_fmpz, :libantic), Nothing, (Ref{nf_elem}, Ref{nf_elem}, Ref{fmpz}, Ref{AnticNumberField}), a, a, b, parent(a))
-  return a
-end
-
-function _mod_antic(a::nf_elem, b::fmpz)
-  z = deepcopy(a)
-  _mod!_antic(z, b)
-end
-
 function __mod(a::nf_elem, b::fmpz, fl::Bool = true)#, sym::Bool = false) # Not yet
   z = parent(a)()
   ccall((:nf_elem_mod_fmpz_den, :libantic), Nothing, (Ref{nf_elem}, Ref{nf_elem}, Ref{fmpz}, Ref{AnticNumberField}, Cint), z, a, b, parent(a), Cint(fl))
@@ -862,98 +840,26 @@ function coprime_denominator(a::nf_elem, b::fmpz)
   return z
 end
 
-import Hecke.mod_sym!, Hecke.rem!, Hecke.mod!, Hecke.mod, Hecke.rem
-
 function mod_sym!(a::nf_elem, b::fmpz)
-  #ww = deepcopy(a)
-  #w = deepcopy(a)
-  #_mod_sym!_antic(w, b)
-  z = mod_sym!(a, b, div(b, 2))
-  #if z != w
-  #  @show w
-  #  @show b
-  #  @show a
-  #  @show w
-  #  error("Adsd")
-  #end
-  return z
-end
-
-function mod_sym!(a::nf_elem, b::fmpz, b2::fmpz)
-  z = fmpz()
-  if degree(parent(a)) == 1
-    Nemo.num_coeff!(z, a, 0)
-    _num_setcoeff!(a, 0, mod_sym(z, b))
-    return a
-  end
-  if degree(parent(a)) == 2
-    #TODO: call Tommy's new c-function (when available)
-    Nemo.num_coeff!(z, a, 0)
-    iszero(z) || _num_setcoeff!(a, 0, mod_sym(z, b))
-    Nemo.num_coeff!(z, a, 1)
-    iszero(z) || _num_setcoeff!(a, 1, mod_sym(z, b))
-    return
-  end
-  for i=0:a.elem_length-1
-    Nemo.num_coeff!(z, a, i)
-    rem!(z, z, b)
-    if z >= b2
-      sub!(z, z, b)
-    end
-    _num_setcoeff!(a, i, z)
-  end
+  ccall((:nf_elem_smod_fmpz, :libantic), Nothing,
+        (Ref{nf_elem}, Ref{nf_elem}, Ref{fmpz}, Ref{AnticNumberField}),
+        a, a, b, parent(a))
   return a
 end
 
 function mod(b::nf_elem, p::fmpz)
-  db = denominator(b)
-  nb = numerator(b)
-  f, e = ppio(db, p)
-  e1 = invmod(e, p*f)
-  mul!(nb, nb, e1)
-  _mod!(nb, p*f)
-  divexact!(nb, nb, f)
-  return nb
+  return coprime_denominator(b, p)
 end
 
 mod(x::nf_elem, y::Integer) = mod(x, fmpz(y))
 
 #Assuming that the denominator of a is one, reduces all the coefficients modulo p
-function _mod!(a::nf_elem, b::fmpz)
-  #w = deepcopy(a)
-  #_mod!_antic(w, b)
-  #@hassert :NfOrd 1 isone(denominator(a))
-  z = fmpz()
-  d = degree(parent(a))
-  if d == 1
-    Nemo.num_coeff!(z, a, 0)
-    mod!(z, z, b)
-    _num_setcoeff!(a, 0, z)
-  elseif d == 2
-    Nemo.num_coeff!(z, a, 0)
-    mod!(z, z, b)
-    _num_setcoeff!(a, 0, z)
-    Nemo.num_coeff!(z, a, 1)
-    mod!(z, z, b)
-    _num_setcoeff!(a, 1, z)
-  else
-    for i=0:a.elem_length-1
-      Nemo.num_coeff!(z, a, i)
-      mod!(z, z, b)
-      _num_setcoeff!(a, i, z)
-    end
-  end
-  #@assert a == w
-  return nothing
-end
-
-function rem!(a::nf_elem, b::fmpz)
-  z = fmpz()
-  for i=0:a.elem_length-1
-    Nemo.num_coeff!(z, a, i)
-    rem!(z, z, b)
-    _num_setcoeff!(a, i, z)
-  end
+# non-symmetric (positive) residue system
+function mod!(a::nf_elem, b::fmpz)
+  ccall((:nf_elem_mod_fmpz, :libantic), Nothing,
+        (Ref{nf_elem}, Ref{nf_elem}, Ref{fmpz}, Ref{AnticNumberField}),
+        a, a, b, parent(a))
+  return a
 end
 
 function rem(a::nf_elem, b::fmpz)
@@ -1018,6 +924,12 @@ function (R::Nemo.FmpzModPolyRing)(a::nf_elem)
   nf_elem_to_fmpz_mod_poly!(r, a)
   return r
 end
+
+################################################################################
+#
+#  Complex conjugate
+#
+################################################################################
 
 function conjugate_quad(a::nf_elem)
   k = parent(a)

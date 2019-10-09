@@ -37,7 +37,7 @@
       for r in R1
         @test r== mR1\(mR1(r))
       end
-      R2,mR2=ray_class_group(ideal(O,i), inf_plc, n_quo=2)
+      R2, mR2=ray_class_group(ideal(O,i), inf_plc, n_quo=2)
       for r in R2
         @test r== mR2\(mR2(r))
       end
@@ -62,11 +62,13 @@
   
      Qx,x=PolynomialRing(FlintQQ,"x");
     f=x^2+1;
-     K,a=NumberField(f,"a");
-    O=maximal_order(K);
-    C,mC=class_group(O);
-    r,mr=ray_class_group(ideal(O,3*5*7), n_quo=8);
-    act=Hecke.induce_action(mr);
+    K,a=NumberField(f,"a");
+    auts = automorphisms(K)
+    auts = small_generating_set(auts, *)
+    O = maximal_order(K);
+    C, mC = class_group(O);
+    r, mr = ray_class_group(ideal(O,3*5*7), n_quo=8);
+    act = Hecke.induce_action(mr, auts);
     x=Hecke.stable_subgroups(r,act,op = quo, quotype = [8]);
     y=subgroups(r, quotype=[8])
     i=0
@@ -88,7 +90,7 @@
     @test length(x)==i
     
     r,mr=ray_class_group(ideal(O,9*19*29), n_quo=9);
-    act=Hecke.induce_action(mr);
+    act=Hecke.induce_action(mr, auts);
     x=Hecke.stable_subgroups(r, act, op = quo, quotype = [9]);
     y=subgroups(r, quotype=[9])
     i=0

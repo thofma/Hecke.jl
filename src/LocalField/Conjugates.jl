@@ -11,8 +11,8 @@ function newton_lift(f::fmpz_poly, r::qadic)
     push!(chain, i)
   end
   fs = derivative(f)
-  qf = change_base_ring(f, Q)
-  qfs = change_base_ring(fs, Q)
+  qf = change_base_ring(Q, f, cached = false)
+  qfs = change_base_ring(Q, fs, cached = false)
   o = Q(r)
   o.N = 1
   s = qf(r)
