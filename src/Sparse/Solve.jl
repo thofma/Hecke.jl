@@ -155,7 +155,7 @@ function det_mc(A::SMat{fmpz})
   b = sparse_matrix(matrix(FlintZZ, 1, A.c, rand(1:10, A.c)))
   _, qq = solve_dixon_sf(A, b)
   
-  q = p
+  q = p_start # global prime
   first = true
   dd = fmpz(1)
   mm = fmpz(1)

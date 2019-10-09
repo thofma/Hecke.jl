@@ -10,35 +10,10 @@ add_verbose_scope(:CompactPresentation)
 add_assert_scope(:CompactPresentation)       
 
 if Int==Int32
-  global const p_start = 2^30
+  global const p_start = next_prime(2^30)
 else
-  global const p_start = 2^60
+  global const p_start = next_prime(2^60)
 end
-
-#mutable struct nf_elem_deg_1_raw
-#  num::Int  ## fmpz!
-#  den::Int
-#end
-#
-#mutable struct nf_elem_deg_2_raw
-#  nu0::Int  ## fmpz - actually an fmpz[3]
-#  nu1::Int
-#  nu2::Int
-#  den::Int
-#end
-#
-#mutable struct nf_elem_deg_n_raw  #actually an fmpq_poly_raw
-#  A::Ptr{Int} # fmpz
-#  den::Int # fmpz
-#  alloc::Int
-#  len::Int
-#end
-#
-#mutable struct nmod_t
-#  n::Int
-#  ni::Int
-#  norm::Int
-#end
 
 include("NfAbs/NfAbs.jl")
 include("NfAbs/Conjugates.jl")
@@ -50,5 +25,4 @@ include("NfAbs/Simplify.jl")
 include("NfAbs/DiscriminantBounds.jl")
 include("NfAbs/Hilbert.jl")
 include("NfAbs/NormRelation.jl")
-include("NfAbs/Subfields.jl")
 include("NfAbs/PolyFact.jl")

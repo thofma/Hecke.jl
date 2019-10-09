@@ -64,7 +64,7 @@ Inplace: reduce all entries of $A$ modulo $m$, into the positive residue system.
 function mod!(A::Generic.Mat{nf_elem}, m::fmpz)
   for i=1:nrows(A)
     for j=1:ncols(A)
-      _mod!(A[i,j], m)
+      mod!(A[i, j], m)
     end
   end
 end
@@ -74,9 +74,9 @@ end
 Inplace: reduce all entries of $A$ modulo $m$, into the symmetric residue system.
 """
 function mod_sym!(A::Generic.Mat{nf_elem}, m::fmpz)
-  for i=1:nrows(A)
-    for j=1:ncols(A)
-      mod_sym!(A[i,j], m)
+  for i = 1:nrows(A)
+    for j = 1:ncols(A)
+      mod_sym!(A[i, j], m)
     end
   end
 end

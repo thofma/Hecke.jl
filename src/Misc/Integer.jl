@@ -309,6 +309,10 @@ function Base.getindex(a::StepRange{fmpz,fmpz}, i::fmpz)
   a.start+(i-1)*Base.step(a)
 end
 
+function Base.divrem(a::fmpz, b::Int)
+  return (div(a, b), rem(a, b))
+end
+
 ################################################################################
 #
 #  Should go to Nemo?
