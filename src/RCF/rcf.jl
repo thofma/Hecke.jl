@@ -54,7 +54,7 @@ end
 The ray class field modulo $I$. If {{{n_quo}}} is given, then the largest
 subfield of exponent $n$ is computed.
 """
-function ray_class_field(I::NfAbsOrdIdl; n_quo = 0)
+function ray_class_field(I::NfAbsOrdIdl; n_quo = -1)
   return ray_class_field(ray_class_group(I, n_quo = n_quo)[2])
 end
 
@@ -63,7 +63,7 @@ end
 The ray class field modulo $I$ and the infinite places given. If {{{n_quo}}} is given, then the largest
 subfield of exponent $n$ is computed.
 """
-function ray_class_field(I::NfAbsOrdIdl, inf::Array{InfPlc, 1}; n_quo = 0)
+function ray_class_field(I::NfAbsOrdIdl, inf::Array{InfPlc, 1}; n_quo = -1)
   return ray_class_field(ray_class_group(I, inf, n_quo = n_quo)[2])
 end
 
@@ -1392,7 +1392,7 @@ and the number of primes above $p$.
 function prime_decomposition_type(C::ClassField, p::NfAbsOrdIdl)
   @hassert :ClassField 1 isprime(p)
   mR = C.rayclassgroupmap
-  m0 = mR.modulus_fin
+  m0 = defining_modulus(C)[1]
   R = domain(mR)
 
   v = valuation(m0, p)

@@ -321,6 +321,11 @@ function infinite_places_uniformizers(K::AnticNumberField; redo::Bool = false)
       end
     end
   end
+  r, s = signature(K)
+  if iszero(r)
+    return Dict{InfPlc, nf_elem}()
+  end
+  
   p = real_places(K) #Important: I assume these are ordered as the roots of the defining polynomial!
   S = DiagonalGroup([2 for i = 1:length(p)])
   
@@ -387,9 +392,9 @@ function infinite_places_uniformizers(K::AnticNumberField; redo::Bool = false)
       good = true
       rep = reim(lc[i])[1]
       if ispositive(rep)
-        y = -ceil(fmpz, BigFloat(rep))
+        y = -ceil(fmpz, BigFloat(rep))-1
       else
-        y = -floor(fmpz, BigFloat(rep))
+        y = -floor(fmpz, BigFloat(rep))+1
       end
       ar = zeros(Int, length(p))
       for j = 1:length(p)
@@ -478,6 +483,26 @@ end
 
 function infinite_primes_map(O::NfOrd, p::Vector{InfPlc}, lying_in::NfOrdIdl)
   K = nf(O)
+  
+  if isempty(p)
+    S = DiagonalGroup(Int[])
+    local exp1
+    let S = S, lying_in = lying_in, O = O
+      function exp1(A::GrpAbFinGenElem)
+        return O(minimum(lying_in))
+      end 
+    end
+
+    local log1
+    let S = S
+      function log1(B::T) where T <: Union{nf_elem, FacElem{nf_elem, AnticNumberField}}
+        return id(S)
+      end 
+    end
+    return S, exp1, log1
+  end
+  
+  
   D = infinite_places_uniformizers(K)
   
   S = DiagonalGroup([2 for i = 1:length(p)])

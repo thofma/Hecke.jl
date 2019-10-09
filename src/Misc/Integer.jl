@@ -375,7 +375,7 @@ end
 @doc Markdown.doc"""
     ispower(a::fmpz) -> Int, fmpz
     ispower(a::Integer) -> Int, Integer
-Writes $a = r^e$ with $e$ maximal. Note: $1 = 1^0$.
+Returns $e$, $r$ such that $a = r^e$ with $e$ maximal. Note: $1 = 1^0$.
 """
 function ispower(a::fmpz)
   if iszero(a)

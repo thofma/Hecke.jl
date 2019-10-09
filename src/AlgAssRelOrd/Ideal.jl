@@ -1486,11 +1486,11 @@ function integral_coprime_representative(O::AlgAssRelOrd, I::AlgAssRelOrdIdl, a:
       x += A(elem_in_nf(z, copy = false))
       continue
     end
-    b, g = islocally_free(I, p)
+    b, g = islocally_free(O, I, p)
     @assert b "No local generator found for $p"
     ig = inv(elem_in_algebra(g, copy = false))
     Ig = I*ig
-    y = coprime_denominator(Ig, p)
+    y = coprime_denominator(Ig, O, p)
     x += ig*elem_in_nf(y, copy = false)*elem_in_nf(z, copy = false)
   end
   return x*d

@@ -363,7 +363,9 @@ function isprincipal_non_maximal(I::Union{ NfAbsOrdIdl, AlgAssAbsOrdIdl })
   end
 
   _, m = unit_group(O)
-  # We do not really need the unit group, but only:
+  # We do not really need the unit group, but only m.OO_mod_F_mod_O_mod_F.
+  # If we compute the unit group then this map is cached for the next time.
+  # (And computing the unit group is only little more work).
   GtoQ = m.OO_mod_F_mod_O_mod_F
   G = domain(GtoQ)
   if order(G) == 1
