@@ -1152,9 +1152,9 @@ function sum_as_Z_modules_fast(O1, O2, z::fmpz_mat = zero_matrix(FlintZZ, 2 * de
   if O isa NfOrd
     O.primesofmaximality = union(O1.primesofmaximality, O2.primesofmaximality)
   end
-  O.index = divexact(denominator(M)^d, prod(M.num[i, i] for i in 1:d))
+  O.index = divexact(denominator(M)^d, prod(M.num[i, i]::fmpz for i in 1:d))::fmpz
   @hassert :NfOrd 1 numerator(gen_index(O)) == O.index
-  O.disc = divexact(discriminant(O1) * index(O1)^2, O.index^2)
+  O.disc = divexact(discriminant(O1) * index(O1)^2, O.index^2)::fmpz
   @hassert :NfOrd 1 det(trace_matrix(O)) == O.disc
   return O
 end
