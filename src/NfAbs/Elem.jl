@@ -224,13 +224,13 @@ end
 #
 ################################################################################
 
+# TODO: Use fits(Int, n) and then split into fmpz_mod/nmod case
 @doc Markdown.doc"""
     isnorm_divisible(a::nf_elem, n::fmpz) -> Bool
 Checks if the norm of $a$ is divisible by $n$, assuming that the norm of $a$ is
 an integer.
 """
 function isnorm_divisible(a::nf_elem, n::fmpz)
-  
   K = parent(a)
   s, t = ppio(denominator(a), n)
   if s == 1
