@@ -683,7 +683,7 @@ function disc_log_generalized_ray_class_grp(I::Union{ S, FacElem{S, T} }, mR::Ma
   for i = 1:length(ideals)
     K, AtoK = fields_and_maps[i]
     d, lI = disc_log_generalized_ray_class_grp(ideals[i], groups[i][2])
-    p = hcat(p, matrix(FlintZZ, 1, length(lI), [ lI[i][2] for i = 1:length(lI) ]))
+    p = hcat(p, lI.coeff)
     for (b, e) in d
       t = AtoK\b
       t = add!(t, t, sum_idems)

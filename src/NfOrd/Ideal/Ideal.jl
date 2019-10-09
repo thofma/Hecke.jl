@@ -1959,7 +1959,7 @@ function iscoprime(I::NfAbsOrdIdl, J::NfAbsOrdIdl)
       return true
     end
   end
-  if gcd(minimum(I), minimum(J)) == 1
+  if gcd(minimum(I, copy = false), minimum(J, copy = false)) == 1
     return true
   else 
     return isone(I+J)

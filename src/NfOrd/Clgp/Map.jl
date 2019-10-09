@@ -994,7 +994,6 @@ function find_coprime_representatives(mC::MapClassGrp, m::NfOrdIdl, lp::Dict{NfO
   end
   
   prob = ppp > 0.1
-  
   for i = 1:ngens(C)
     a = first(keys(mC.princ_gens[i][1].fac))
     if iscoprime(a, m)

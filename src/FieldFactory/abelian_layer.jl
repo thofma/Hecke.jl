@@ -252,14 +252,13 @@ function _abelian_normal_extensions(F::FieldsTower, gtype::Array{Int, 1}, absbou
     end
     if first_group
       B1 = maximum([next_prime(max_ramified_prime(O, gtype, bound)), 211])
-      lP = Hecke.find_gens(pseudo_inv(rcg_ctx.mC), PrimesSet(B1, -1))[1]
-      rcg_ctx.mC.small_gens = lP
+      lP = Hecke.find_gens(pseudo_inv(rcg_ctx.class_group_map), PrimesSet(B1, -1))[1]
+      rcg_ctx.class_group_map.small_gens = lP
       first_group = false
     end
-    mr.clgrpmap.small_gens = rcg_ctx.mC.small_gens
-    @vtime :Fields 3 act = Hecke.induce_action_new(mr, autos)
+    mr.clgrpmap.small_gens = rcg_ctx.class_group_map.small_gens
+    @vtime :Fields 3 act = Hecke.induce_action(mr, autos)
     @vtime :Fields 3 ls = stable_subgroups(r, act, op = (x, y) -> quo(x, y, false)[2], quotype = gtype)
-    Hecke.totally_positive_generators(mr)
     Dcond = Dict{Int, Array{GrpAbFinGenElem, 1}}()
     Ddisc = Dict{Tuple{Int, Int}, Array{GrpAbFinGenElem, 1}}()
     for s in ls

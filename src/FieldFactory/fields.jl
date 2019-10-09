@@ -31,7 +31,6 @@ include("./brauer.jl")
 include("./merge.jl")
 include("./abelian_layer.jl")
 include("./read_write.jl")
-include("./rayclassgrp.jl")
 include("./conductors.jl")
 
 Generic.degree(F::FieldsTower) = degree(F.field)

@@ -507,7 +507,7 @@ exponent_gen(A::GrpAbFinGen) = exponent(snf(A)[1])
 
 Checks if $A$ is the trivial group.
 """
-istrivial(A::GrpAbFinGen) = isfinite(A) && order(A) == 1
+istrivial(A::GrpAbFinGen) = isfinite(A) && isone(order(A))
 
 ################################################################################
 #
