@@ -779,7 +779,7 @@ function _maximal_abelian_subfield(A::Hecke.ClassField, mp::Hecke.NfToNfMor, ctx
       inf_plc = real_places(k)
     end
     #@vtime :MaxAbExt 1 
-    r, mr = Hecke.ray_class_group_quo(zk, ctx.n, fm0, inf_plc)
+    r, mr = Hecke.ray_class_group(zk, fm0, inf_plc, n_quo = ctx.n)
   else
     rel_plc = true
     if istotally_real(K) && isempty(defining_modulus(mR1)[2])

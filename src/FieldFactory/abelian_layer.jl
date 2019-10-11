@@ -782,7 +782,7 @@ function translate_fields_up(class_fields, new_class_fields, subfields, it)
         CEL = cyclotomic_extension(L, d)
         img = gen(CEK.Kr)
         if degree(CEK.Kr) != euler_phi(d)
-          pp = map_coeffs(mL, CEL.Kr.pol)
+          pp = map_coeffs(mL, CEL.Kr.pol, cached = false)
           while !iszero(pp(img))
             mul!(img, img, gen(CEK.Kr))
           end
@@ -790,7 +790,7 @@ function translate_fields_up(class_fields, new_class_fields, subfields, it)
         mrel = Hecke.NfRelToNfRelMor(CEL.Kr, CEK.Kr, mL, img) 
         @hassert :Fields 1 isconsistent(mrel)
         g = mrel(CEL.mp[1](gen(CEL.Ka)))
-        mp = hom(CEL.Ka, CEK.Ka, CEK.mp[1]\(g), check = true)
+        mp = hom(CEL.Ka, CEK.Ka, CEK.mp[1]\(g), check = false)
         D[d] = mp
       end
     end
@@ -816,7 +816,7 @@ function translate_fields_up(class_fields, new_class_fields, subfields, it)
       coeffs[end] = one(Lzeta)
       Cpp.K = number_field(Lt(coeffs), cached = false, check = false)[1]
       #The target extension
-      fdef = map_coeffs(mL, Ccyc.A.pol, parent = Ky)
+      fdef = map_coeffs(mL, Ccyc.A.pol, parent = Ky, cached = false)
       Cpp.A = number_field(fdef, cached = false, check = false)[1]
       #Now, the primitive element of the target extension seen in Cpp.K
       mrel2 = Hecke.NfRelToNfRelMor(Ccyc.K, Cpp.K, D[d], gen(Cpp.K))
@@ -824,7 +824,7 @@ function translate_fields_up(class_fields, new_class_fields, subfields, it)
       @hassert :Fields 1 parent(Ccyc.pe) == domain(mrel2)
       Cpp.pe = mrel2(Ccyc.pe) 
       CEKK = cyclotomic_extension(K, d)
-      @hassert :Fields 1 iszero(map_coeffs(CEKK.mp[2], fdef)(Cpp.pe))
+      @hassert :Fields 1 iszero(map_coeffs(CEKK.mp[2], fdef, cached = false)(Cpp.pe))
       Cpp.o = d1
       cyc[j] = Cpp
     end
@@ -840,7 +840,7 @@ function isconsistent(f::NfRelToNfRelMor)
   
   K = domain(f)
   p = K.pol
-  p1 = map_coeffs(f.coeff_aut, p)
+  p1 = map_coeffs(f.coeff_aut, p, cached = false)
   if !iszero(p1(f.prim_img))
     error("Wrong")
   end

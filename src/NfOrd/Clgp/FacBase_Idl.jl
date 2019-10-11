@@ -49,8 +49,8 @@ function NfFactorBase(O::NfOrd, lp::Array{NfOrdIdl, 1})
   end
 
   FB.fb = Dict{fmpz, FactorBaseSingleP}()
-  for p in keys(fb)
-    FB.fb[p] = FactorBaseSingleP(p, fb[p])
+  for (p, v) in fb
+    FB.fb[p] = FactorBaseSingleP(p, v)
   end
 
   FB.fb_int = FactorBase(Set(keys(FB.fb)); check = false)
