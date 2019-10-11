@@ -989,12 +989,13 @@ function val_func_index(p::NfOrdIdl)
       d, x_mat = integral_split(x, O)
       Nemo.mul!(x_mat, x_mat, M)
       c = content(x_mat)
-      while divisible(c, P)  # should divide and test in place
-        vc, a = remove(c, P)
+      vc = valuation(c, P)
+      while vc > 0  # should divide and test in place
 	      divexact!(x_mat, x_mat, c)
-        Nemo.mul!(x_mat, x_mat, M)
-        c = content(x_mat)
+        mul!(x_mat, x_mat, M)
         v += 1 + (vc-1)*p.splitting_type[1]
+        c = content(x_mat)
+        vc = valuation(c, P)
       end
       return v-Int(valuation(d, P))*p.splitting_type[1]
     end

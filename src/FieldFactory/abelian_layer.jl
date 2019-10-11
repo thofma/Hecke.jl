@@ -292,7 +292,6 @@ end
 
 function from_class_fields_to_fields(class_fields::Vector{Hecke.ClassField{Hecke.MapRayClassGrp, GrpAbFinGenMap}}, autos::Vector{NfToNfMor}, grp_to_be_checked::Dict{Int, Main.ForeignGAP.MPtr})
   
-   
   if isempty(class_fields)
     @vprint :Fields 1 "\e[1F$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())"
     return Tuple{Hecke.NfRelNS{nf_elem}, Vector{Hecke.NfRelNSToNfRelNSMor{nf_elem}}}[] 
@@ -555,6 +554,7 @@ function computing_over_subfields(class_fields, subfields, idE, autos, right_grp
     for s = 1:length(autsrelC1)
       el = autsrelC1[s]
       autsrelC[s] = Hecke.NfRelNSToNfRelNSMor(C.A, C.A, [maprel(x) for x in el.emb])
+      @hassert :Fields 1 isconsistent(autsrelC[s])
     end
     rel_extend = Hecke.new_extend_aut(C, autos)
     autsA = vcat(rel_extend, autsrelC)
@@ -603,6 +603,8 @@ function translate_extensions(mL::NfToNfMor, class_fields, new_class_fields, ctx
       if !haskey(fm0, p1)
         fm0[p1] = v
       end
+      ep = divexact(ramification_index(p), ramification_index(p1))
+      fM0[p] = ep*v
     end
     #Now, I have problems, so I need to add the ramification of the other extension.
     for (p, v) in f
@@ -663,10 +665,10 @@ function translate_extensions(mL::NfToNfMor, class_fields, new_class_fields, ctx
     s, ms = sub(ck, GrpAbFinGenElem[mck(mngL(x)) for x in gens(ngL)])
     mq1 = find_complement(ms)
     mqq = mck * mq1 
-    @assert domain(mqq) == r
+    @hassert :Fields 1 domain(mqq) == r
     C1 = ray_class_field(mr, mqq)
     number_field(C1)
-    @assert degree(C1) == degree(C)
+    @hassert :Fields 1 degree(C1) == degree(C)
     new_class_fields[indclf] = C1
   end
   @vprint :Fields 1 "$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())"
@@ -706,13 +708,9 @@ function create_sub(ss, iso, PermGAP, auts, K)
   inds = Vector{Int}(undef, length(lS1))
   for j = 1:length(inds)
     el = lS1[j]
-    i = 1
-    while el != PermGAP[i]
-      i += 1
-    end
-    inds[j] = i
+    inds[j] = findfirst(x -> x == el, PermGAP)
   end
-  mL = Hecke.fixed_field(K, [auts[i] for i in inds])[2]
+  mL = Hecke.fixed_field(K, NfToNfMor[auts[i] for i in inds])[2]
   return mL
 end
 
@@ -762,6 +760,7 @@ function translate_class_field_down(subfields, class_fields, it)
   error("Something went wrong!")
 end
 
+
 function translate_fields_up(class_fields, new_class_fields, subfields, it)
   K = base_field(class_fields[1])
   Ky = PolynomialRing(K, "y", cached = false)[1]
@@ -781,9 +780,17 @@ function translate_fields_up(class_fields, new_class_fields, subfields, it)
       if !haskey(D, d)
         CEK = cyclotomic_extension(K, d)
         CEL = cyclotomic_extension(L, d)
-        mrel = Hecke.NfRelToNfRelMor(CEL.Kr, CEK.Kr, mL, gen(CEK.Kr)) 
+        img = gen(CEK.Kr)
+        if degree(CEK.Kr) != euler_phi(d)
+          pp = map_coeffs(mL, CEL.Kr.pol)
+          while !iszero(pp(img))
+            mul!(img, img, gen(CEK.Kr))
+          end
+        end
+        mrel = Hecke.NfRelToNfRelMor(CEL.Kr, CEK.Kr, mL, img) 
+        @hassert :Fields 1 isconsistent(mrel)
         g = mrel(CEL.mp[1](gen(CEL.Ka)))
-        mp = hom(CEL.Ka, CEK.Ka, CEK.mp[1]\(g))
+        mp = hom(CEL.Ka, CEK.Ka, CEK.mp[1]\(g), check = true)
         D[d] = mp
       end
     end
@@ -809,15 +816,15 @@ function translate_fields_up(class_fields, new_class_fields, subfields, it)
       coeffs[end] = one(Lzeta)
       Cpp.K = number_field(Lt(coeffs), cached = false, check = false)[1]
       #The target extension
-      fdef = Ccyc.A.pol
-      coeffs1 = Vector{nf_elem}(undef, degree(fdef)+1)
-      for s = 1:length(coeffs1)
-        coeffs1[s] = mL(coeff(fdef, s-1))
-      end
-      Cpp.A = number_field(Ky(coeffs1), cached = false, check = false)[1]
+      fdef = map_coeffs(mL, Ccyc.A.pol, parent = Ky)
+      Cpp.A = number_field(fdef, cached = false, check = false)[1]
       #Now, the primitive element of the target extension seen in Cpp.K
       mrel2 = Hecke.NfRelToNfRelMor(Ccyc.K, Cpp.K, D[d], gen(Cpp.K))
+      @hassert :Fields 1 isconsistent(mrel2)
+      @hassert :Fields 1 parent(Ccyc.pe) == domain(mrel2)
       Cpp.pe = mrel2(Ccyc.pe) 
+      CEKK = cyclotomic_extension(K, d)
+      @hassert :Fields 1 iszero(map_coeffs(CEKK.mp[2], fdef)(Cpp.pe))
       Cpp.o = d1
       cyc[j] = Cpp
     end
@@ -827,3 +834,17 @@ function translate_fields_up(class_fields, new_class_fields, subfields, it)
   return nothing
 
 end
+
+
+function isconsistent(f::NfRelToNfRelMor)
+  
+  K = domain(f)
+  p = K.pol
+  p1 = map_coeffs(f.coeff_aut, p)
+  if !iszero(p1(f.prim_img))
+    error("Wrong")
+  end
+  return true
+  
+end
+

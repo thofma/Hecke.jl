@@ -970,21 +970,21 @@ function permutation_group1(G::Vector{NfRelNSToNfRelNSMor{nf_elem}})
   if gpols != gRm
     pols[ind] = gpols
     ind += 1
-    gpol = [compose_mod(gpols[i], [j for j = 1:nvars(Rm)], pols[2], fmod) for i = 1:length(gpols)]
+    gpol = elem_type(Rm)[compose_mod(gpols[i], [j for j = 1:nvars(Rm)], pols[2], fmod) for i = 1:length(gpols)]
     while gRm != gpol
       pols[ind] = gpol
       ind += 1
-      gpol = [compose_mod(gpol[i], [j for j in 1:nvars(Rm)], pols[2], fmod) for i = 1:length(gpols)]
+      gpol = elem_type(Rm)[compose_mod(gpol[i], [j for j in 1:nvars(Rm)], pols[2], fmod) for i = 1:length(gpols)]
     end
   end
   for i in 2:length(G)
-    pi = typeof(gRm[1])[Rm(x) for x in _get_polys_from_auto(G[i], RQm)]
+    pi = elem_type(Rm)[Rm(x) for x in _get_polys_from_auto(G[i], RQm)]
     if !(pi in pols[1:ind-1])
       previous_order = ind - 1
       pols[ind] = pi
       ind += 1
       for j in 2:previous_order
-        pols[ind] = [compose_mod(pols[j][s], [z for z in 1:nvars(Rm)], pi, fmod) for s = 1:length(pi)]
+        pols[ind] = elem_type(Rm)[compose_mod(pols[j][s], [z for z in 1:nvars(Rm)], pi, fmod) for s = 1:length(pi)]
         ind += 1
       end
       if ind - 1 == dK
@@ -994,12 +994,12 @@ function permutation_group1(G::Vector{NfRelNSToNfRelNSMor{nf_elem}})
       while rep_pos <= ind - 1
         for k in 1:i
           po = map(Rm, _get_polys_from_auto(G[k], RQm))
-          att = [compose_mod(pols[rep_pos][s], [i for i in 1:nvars(Rm)], po, fmod) for s = 1:length(pols[rep_pos])]
+          att = elem_type(Rm)[compose_mod(pols[rep_pos][s], [i for i in 1:nvars(Rm)], po, fmod) for s = 1:length(pols[rep_pos])]
           if !(att in pols[1:ind-1])
             pols[ind] = att
             ind += 1
             for j in 2:previous_order
-              pols[ind] = [compose_mod(pols[j][s], [z for z in 1:nvars(Rm)], att, fmod) for s = 1:length(pols[j])]
+              pols[ind] = elem_type(Rm)[compose_mod(pols[j][s], [z for z in 1:nvars(Rm)], att, fmod) for s = 1:length(pols[j])]
               ind += 1
             end
             if ind - 1 == dK

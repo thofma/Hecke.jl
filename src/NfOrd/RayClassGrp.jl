@@ -90,7 +90,7 @@ function class_as_ray_class(C::GrpAbFinGen, mC::MapClassGrp, exp_class::Function
   return X, mp
 end
 
-###############################################################################
+##############################################################################
 #
 #  Functions for the evaluation of factored elements
 #
@@ -100,7 +100,7 @@ end
 #  Multiple elements evaluation
 #
 function fac_elems_eval(p::NfOrdIdl, q::NfOrdIdl, elems::Array{FacElem{nf_elem, AnticNumberField},1}, exponent::fmpz)
-  return _eval_quo(elems, p, q, anti_uniformizer(p), exponent)
+  return _eval_quo(elems, p, q, exponent)
 end
 
 function _preproc(el::FacElem{nf_elem, AnticNumberField}, exponent::fmpz)
@@ -201,93 +201,91 @@ function _preproc(p::NfOrdIdl, elems::Array{FacElem{nf_elem, AnticNumberField},1
   return newelems
 end
 
+function _powmod(a::nf_elem, i::Int, p::fmpz)
+  if iszero(i)
+    return one(parent(a))
+  end
+  if isone(i)
+    b = mod(a, p)
+    return b
+  end
+  if iseven(i)
+    j = div(i, 2)
+    b = _powmod(a, j, p)
+    mul!(b, b, b)
+    b = mod(b, p)
+    return b
+  end
+  b1 = _powmod(a, i - 1, p)
+  mul!(b1, b1, a)
+  b = mod(b1, p)
+  return b
+end
 
-function _eval_quo(elems::Array{FacElem{nf_elem, AnticNumberField},1}, p::NfOrdIdl, q::NfOrdIdl, anti_uni::nf_elem, exponent::fmpz)
+function _ev_quo(Q, mQ, elems, p, exponent)
+  el = elem_type(Q)[one(Q) for i = 1:length(elems)]
+  anti_uni = anti_uniformizer(p)
   powers = Dict{Int, nf_elem}()
   powers[1] = anti_uni
   O = order(p)
+  F, mF = ResidueField(O, p)
+  for i=1:length(elems)
+    J = elems[i]
+    vp = fmpz(0)
+    for (f, k1) in J
+      k = mod(k1, exponent)
+      if iszero(k)
+        continue
+      end
+      if isinteger(f)
+        inte = numerator(coeff(f, 0))
+        vpp, np = remove(inte, minimum(p, copy = false))
+        mul!(el[i], el[i], Q(np)^k)
+        vp += vpp*k
+        continue
+      end
+      el1 = O(f, false)
+      if !iszero(mF(el1))
+        mul!(el[i], el[i], mQ(el1)^k)
+        continue
+      end
+      val = valuation(f, p)
+      if haskey(powers, val)
+        act_el = O(powers[val]*f, false)
+      else
+        anti_val = _powmod(anti_uni, val, minimum(p)^(val+1))
+        powers[val] = anti_val
+        act_el = O(anti_val*f, false)
+      end
+      mul!(el[i], el[i], mQ(act_el)^k)
+    end
+    vp = mod(vp, exponent)
+    if !iszero(vp)
+      if haskey(powers, p.splitting_type[1])
+        eli = minimum(p, copy = false)*powers[p.splitting_type[1]]
+      else
+        powers[p.splitting_type[1]] = anti_uni^p.splitting_type[1]
+        eli = minimum(p, copy = false)*powers[p.splitting_type[1]]
+      end
+      mul!(el[i], el[i], mQ(O(eli, false))^vp)
+    end
+  end
+  return NfOrdElem[mQ\el[i] for i=1:length(el)]
+end
+
+function _eval_quo(elems::Array{FacElem{nf_elem, AnticNumberField},1}, p::NfOrdIdl, q::NfOrdIdl, exponent::fmpz)
+  O = order(p) 
   if p == q
     if nbits(p.minimum) < 64
       Q, mQ = ResidueFieldSmall(O, p)
-      el = [one(Q) for i = 1:length(elems)]
-      for i=1:length(elems)
-        J = elems[i]
-        for (f, k1) in J.fac
-          k = mod(k1, exponent)
-          if iszero(k)
-            continue
-          end
-          el1 = mQ(O(f, false))
-          if !iszero(el1)
-            mul!(el[i], el[i], el1^k)
-            continue
-          end
-          val = valuation(f, p)
-          if haskey(powers, val)
-            act_el = O(powers[val]*f, false)
-          else
-            anti_val = anti_uni^val
-            powers[val] = anti_val
-            act_el = O(anti_val*f, false)
-          end
-          mul!(el[i], el[i], mQ(act_el)^k)
-        end
-      end
+      return _ev_quo(Q, mQ, elems, p, exponent)
     else
       Q, mQ = ResidueField(O, p)
-      el = [one(Q) for i=1:length(elems)]
-      for i=1:length(elems)
-        J = elems[i]
-        for (f, k1) in J.fac
-          k = mod(k1, exponent)
-          if iszero(k)
-            continue
-          end
-          el1 = mQ(O(f, false))
-          if !iszero(el1)
-            mul!(el[i], el[i], el1^k)
-            continue
-          end
-          val = valuation(f, p)
-          if haskey(powers, val)
-            act_el = O(powers[val]*f, false)
-          else
-            anti_val = anti_uni^val
-            powers[val] = anti_val
-            act_el = O(anti_val*f, false)
-          end
-          mul!(el[i], el[i], mQ(act_el)^k)
-        end
-      end
+      return _ev_quo(Q, mQ, elems, p, exponent)
     end
-    return elem_type(O)[mQ\el[i] for i=1:length(el)]
   else
     Q, mQ = quo(O, q)
-    el = [one(Q) for i=1:length(elems)]
-    for i=1:length(elems)
-      J = elems[i]
-      for (f, k1) in J.fac
-        k = mod(k1, exponent)
-        if iszero(k)
-          continue
-        end
-        el1 = O(f)
-        if !iszero(mod(el1, p))
-          mul!(el[i], el[i], Q(el1)^k)
-          continue
-        end
-        val = valuation(f, p)
-        if haskey(powers, val)
-          act_el = O(powers[val]*f, false)
-        else
-          anti_val = anti_uni^val
-          powers[val] = anti_val
-          act_el = O(anti_val*f, false)
-        end
-        mul!(el[i], el[i], mQ(act_el)^k)
-      end
-    end
-    return elem_type(O)[el[i].elem for i=1:length(el)]
+    return _ev_quo(Q, mQ, elems, p, exponent)
   end
 end
 
@@ -331,7 +329,7 @@ function n_part_class_group(mC::Hecke.MapClassGrp, n::Integer)
   ind = findfirst(x -> !iscoprime(x, n), C.snf)
   diff = ppio(C.snf[end], fmpz(n))[2]
 
-  G = DiagonalGroup([ppio(x, fmpz(n))[1] for x in C.snf[ind:end]])
+  G = DiagonalGroup(fmpz[ppio(x, fmpz(n))[1] for x in C.snf[ind:end]])
   local exp2
   let O = O, G = G
     function exp2(a::GrpAbFinGenElem)
@@ -343,18 +341,20 @@ function n_part_class_group(mC::Hecke.MapClassGrp, n::Integer)
     end
   end 
   
+  
   local disclog2
   let G = G, mC = mC, C = C, diff = diff
+    idiff = invmod(diff, exponent(G))
     function disclog2(I::NfOrdIdl)
-      y = G[0]
       if I.is_principal == 1
-        return y
+        return id(G)
       end
-      x=diff*(mC\I)
+      x=idiff*(mC\I)
+      y = zero_matrix(FlintZZ, 1, ngens(G))
       for i=ind:ngens(C)
-        y.coeff[1,i-ind+1]=x.coeff[1,i]
+        y[1,i-ind+1]=x.coeff[1,i]
       end 
-      return y
+      return G(y)
     end
   end
   
@@ -526,11 +526,11 @@ function ray_class_group(m::NfOrdIdl, inf_plc::Vector{InfPlc} = Vector{InfPlc}()
     tobeeval1[i+ngens(U)] = mC.princ_gens[i][2]*(Kel[i]^C.snf[i])
   end
   tobeeval = _preproc(m, tobeeval1, expon)
-  #evals = [O(evaluate(x)) for x in tobeeval1]
+
   ind = 1
   for i = 1:length(groups_and_maps)
     exp_q = gcd(expon, norm(powers[i][2])- divexact(norm(powers[i][2]), norm(powers[i][1])))
-    evals = fac_elems_eval(powers[i][1], powers[i][2], tobeeval, expon)
+    @vtime :RayFacElem 3 evals = fac_elems_eval(powers[i][1], powers[i][2], tobeeval, exp_q)
     Q = quo_rings[i][1]
     mG = groups_and_maps[i][2]
     for j = 1:ngens(U)
@@ -567,7 +567,7 @@ function ray_class_group(m::NfOrdIdl, inf_plc::Vector{InfPlc} = Vector{InfPlc}()
   X = AbelianGroup(R)
   
   local disclog
-  let X = X, mC = mC, C = C, exp_class = exp_class, powers = powers, groups_and_maps = groups_and_maps, quo_rings = quo_rings, lH = lH, diffC = diffC, n_quo = n_quo, m = m
+  let X = X, mC = mC, C = C, exp_class = exp_class, powers = powers, groups_and_maps = groups_and_maps, quo_rings = quo_rings, lH = lH, diffC = diffC, n_quo = n_quo, m = m, expon = expon
     invd = invmod(fmpz(diffC), expon)
     # Discrete logarithm
     function disclog(J::FacElem{NfOrdIdl, NfOrdIdlSet})
