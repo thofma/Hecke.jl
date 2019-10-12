@@ -1,3 +1,14 @@
+@testset "Linear disjoint" begin
+  Qx, x = PolynomialRing(FlintQQ, "x")
+  _K, _ = NumberField([x^2 - 2, x^2 - 3], "a", cached = false)
+  K, _ = simple_extension(_K)
+  L, b = NumberField(x^2 - 2, "b", cached = false)
+  @test !islinearly_disjoint(K, L)
+
+  M, c = NumberField(x^2 - 3, "c", cached = false)
+  @test islinearly_disjoint(L, M)
+end
+
 @testset "Random" begin
   Qx, x = PolynomialRing(FlintQQ, "x")
   K, a = NumberField(x^32 + 2, "a")

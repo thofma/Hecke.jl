@@ -1,4 +1,4 @@
-export splitting_field, issubfield, isdefining_polynomial_nice, quadratic_field
+export splitting_field, issubfield, isdefining_polynomial_nice, quadratic_field, islinearly_disjoint
 
 ################################################################################
 #
@@ -807,6 +807,6 @@ function islinearly_disjoint(K1::AnticNumberField, K2::AnticNumberField)
   if gcd(d1, d2) == 1
     return true
   end
-  f = change_base_ring(K1.pol, K2)
+  f = change_base_ring(K2, K1.pol)
   return isirreducible(f)
 end
