@@ -31,7 +31,6 @@ include("./brauer.jl")
 include("./merge.jl")
 include("./abelian_layer.jl")
 include("./read_write.jl")
-include("./rayclassgrp.jl")
 include("./conductors.jl")
 
 Generic.degree(F::FieldsTower) = degree(F.field)
@@ -135,9 +134,15 @@ function permutation_group(G::Array{Hecke.NfToNfMor, 1})
               push!(pols, compose_mod(pols[j], att, fmod))
             end
             if order == dK
-              return elements
+              break
             end
           end
+          if order == dK
+            break
+          end
+        end
+        if order == dK
+          break
         end
         rep_pos = rep_pos + previous_order
       end
@@ -199,8 +204,7 @@ function _perm_to_gap_grp(perm::Array{Array{Int, 1},1})
     z = _perm_to_gap_perm(x)
     push!(g, z)
   end
-  A = GAP.Globals.Group(GAP.julia_to_gap(g))
-  return A  
+  return GAP.Globals.Group(GAP.julia_to_gap(g))  
 end
 
 function _perm_to_gap_perm(x::Array{Int, 1})
@@ -209,7 +213,7 @@ function _perm_to_gap_perm(x::Array{Int, 1})
 end
 
 function IdGroup(autos::Array{NfToNfMor, 1})
-  G = _from_autos_to_perm_grp(autos)
+  G = permutation_group(autos)
   return GAP.Globals.IdGroup(G)
 end
 
@@ -446,8 +450,6 @@ function field_extensions(list::Vector{FieldsTower}, bound::fmpz, IsoE1::Main.Fo
 
 end
 
-debf = []
-
 function field_extensions(x::FieldsTower, bound::fmpz, IsoE1::Main.ForeignGAP.MPtr, l::Array{Int, 1}, only_real::Bool, grp_to_be_checked::Dict{Int, Main.ForeignGAP.MPtr}, IsoG::Main.ForeignGAP.MPtr)
   
   list_cfields = _abelian_normal_extensions(x, l, bound, IsoE1, only_real, IsoG)
@@ -456,7 +458,6 @@ function field_extensions(x::FieldsTower, bound::fmpz, IsoE1::Main.ForeignGAP.MP
     @vprint :FieldsNonFancy 1 "Number of new fields found: 0\n"
     return Vector{FieldsTower}()
   end
-  push!(debf, (list_cfields, x.generators_of_automorphisms, grp_to_be_checked))
   list = from_class_fields_to_fields(list_cfields, x.generators_of_automorphisms, grp_to_be_checked)
   @vprint :Fields 1 "Computing maximal orders"
   @vprint :FieldsNonFancy 1 "Computing maximal orders\n"

@@ -155,7 +155,7 @@ function det_mc(A::SMat{fmpz})
   b = sparse_matrix(matrix(FlintZZ, 1, A.c, rand(1:10, A.c)))
   _, qq = solve_dixon_sf(A, b)
   
-  q = p
+  q = p_start # global prime
   first = true
   dd = fmpz(1)
   mm = fmpz(1)
@@ -257,18 +257,18 @@ function solve_dixon_sf(A::SMat{fmpz}, B::SMat{fmpz}, is_int::Bool = false)
   # J (TB)' J = J B' T' J = J (JA) T' J = A (JT)' = JE'J still upp-triag
 
   Bp = copy(Ap)
-  invert_rows!(Bp)
+  reverse_rows!(Bp)
   Bp = Bp'
   Ep, Tp = echelon_with_transform(Bp)
   @hassert :HNF 1  Ep.c == Ep.r
 #  @hassert :HNF 1  nmod_mat(Tp) * nmod_mat(Bp) == nmod_mat(Ep)
 
-  invert_rows!(Ep)
+  reverse_rows!(Ep)
   Ep = Ep'
-  invert_rows!(Ep)
+  reverse_rows!(Ep)
 #  @hassert :HNF 1  Hecke.isupper_triangular(Ep)
 
-  invert_rows!(Tp)
+  reverse_rows!(Tp)
   Tp = Tp'
 #  @hassert :HNF 1  nmod_mat(Ap)*nmod_mat(Tp) == nmod_mat(Ep)
 

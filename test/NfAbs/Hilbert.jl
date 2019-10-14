@@ -31,4 +31,11 @@
   for P in prime_ideals_up_to(OK, 200)
     @test hilbert_symbol(b, -3, P) == 1
   end
+  
+  # Test where Magma div(x, y) differs from julia div(x, y) (internally)
+  K, a = MaximalRealSubfield(8, "a") # x^2 - 2
+  z = 9278908160780559301//4*a+6561375391013480455//2
+  w = K(-2)
+  p = prime_decomposition(maximal_order(K), 2)[1][1]
+  @test hilbert_symbol(z, w, p) == 1
 end

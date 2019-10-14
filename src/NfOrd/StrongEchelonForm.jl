@@ -45,9 +45,9 @@ end
 
 function strong_echelon_form(A::Generic.Mat{NfOrdQuoRingElem}, shape::Symbol = :upperright, strategy::Symbol = :split)
   if shape == :lowerleft
-    h = _strong_echelon_form(invert_cols(A), strategy)
-    invert_cols!(h)
-    invert_rows!(h)
+    h = _strong_echelon_form(reverse_cols(A), strategy)
+    reverse_cols!(h)
+    reverse_rows!(h)
     return h
   elseif shape == :upperright
     h = _strong_echelon_form(A, strategy)

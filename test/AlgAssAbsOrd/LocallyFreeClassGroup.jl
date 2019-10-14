@@ -56,7 +56,7 @@ end
   basisOK = [ KtoA(b.elem_in_nf) for b in basis(OK) ]
   d = lcm([ denominator(b) for b in basisOK ])
   ZG = Order(A, basis(A))
-  I = Hecke.ideal_from_z_gens(ZG, [ ZG(d*b) for b in basisOK ])
+  I = Hecke.ideal_from_lattice_gens(A, ZG, [ d*b for b in basisOK ])
   S, mS = locally_free_class_group_with_disc_log(ZG)
   @test S.snf == fmpz[ 2, 2 ]
   @test iszero(mS(I))
@@ -66,7 +66,7 @@ end
   basisOK2 = [ BtoA\b for b in basisOK ]
   d2 = lcm([ denominator(b) for b in basisOK2 ])
   ZG = Order(B, basis(B))
-  I = Hecke.ideal_from_z_gens(ZG, [ ZG(d*b) for b in basisOK2 ])
+  I = Hecke.ideal_from_lattice_gens(B, ZG, [ d*b for b in basisOK2 ])
   S, mS = locally_free_class_group_with_disc_log(ZG, check = false)
   @test S.snf == fmpz[ 2, 2 ]
   @test iszero(mS(I))
@@ -78,7 +78,7 @@ end
   basisOK = [ KtoA(b.elem_in_nf) for b in basis(OK) ]
   d = lcm([ denominator(b) for b in basisOK ])
   ZG = Order(A, basis(A))
-  I = Hecke.ideal_from_z_gens(ZG, [ ZG(d*b) for b in basisOK ])
+  I = Hecke.ideal_from_lattice_gens(A, ZG, [ d*b for b in basisOK ])
   S, mS = locally_free_class_group_with_disc_log(ZG)
   @test S.snf == fmpz[ 2 ]
   @test mS(I) == S[1]

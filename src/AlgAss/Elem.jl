@@ -14,6 +14,21 @@ parent(a::AbsAlgAssElem) = a.parent
 
 ################################################################################
 #
+#  elem_in_algebra
+#
+################################################################################
+
+# This is may look weird but is really useful.
+function _elem_in_algebra(a::AbsAlgAssElem; copy::Bool = true)
+  if copy
+    return deepcopy(a)
+  else
+    return a
+  end
+end
+
+################################################################################
+#
 #  Special elements
 #
 ################################################################################

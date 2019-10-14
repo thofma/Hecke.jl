@@ -56,7 +56,7 @@ using LinearAlgebra, Markdown, InteractiveUtils, Libdl, Distributed, Printf, Spa
 
 import AbstractAlgebra
 
-import LinearAlgebra: dot, istriu, nullspace
+import LinearAlgebra: dot, istriu, nullspace, rank
 
 import SparseArrays: nnz
 
@@ -597,20 +597,20 @@ set_assert_level(:PID_Test, 0)
 ################################################################################
 
 include("HeckeTypes.jl")
-include("NfRel/Types.jl")
+include("NumField/NfRel/Types.jl")
 include("AlgAss/Types.jl")
+include("AlgAssAbsOrd/Types.jl")
+include("AlgAssRelOrd/Types.jl")
 include("Grp.jl")
 include("Map.jl")
 include("Misc.jl")
 include("GrpAb.jl")
 include("LinearAlgebra.jl")
-include("NfAbs.jl")
 include("NumField.jl")
 include("NfOrd.jl")
 include("Sparse.jl")
 include("BigComplex.jl")
 include("conjugates.jl")
-include("NfRel.jl")
 include("analytic.jl")
 include("helper.jl")
 include("EllCrv.jl")
@@ -622,6 +622,7 @@ include("AlgAssAbsOrd.jl")
 include("AlgAssRelOrd.jl")
 include("LocalField.jl")
 include("QuadForm.jl")
+include("FieldFactory.jl")
 
 ################################################################################
 #

@@ -22,18 +22,18 @@ mutable struct HenselCtxQadic <: Hensel
       f2 = lfp[i+1]
       g, a, b = gcdx(f1, f2)
       @assert isone(g)
-      push!(la, setprecision(change_base_ring(a, x->preimage(mK, x), Qx), 1))
-      push!(la, setprecision(change_base_ring(b, x->preimage(mK, x), Qx), 1))
+      push!(la, setprecision(map_coeffs(x->preimage(mK, x), a, parent = Qx), 1))
+      push!(la, setprecision(map_coeffs(x->preimage(mK, x), b, parent = Qx), 1))
       push!(lfp, f1*f2)
       i += 2
     end
-    return new(f, map(x->setprecision(change_base_ring(x, y->preimage(mK, y), Qx), 1), lfp), la, uniformizer(Q), n)
+    return new(f, map(x->setprecision(map_coeffs(y->preimage(mK, y), x, parent = Qx), 1), lfp), la, uniformizer(Q), n)
   end
 
   function HenselCtxQadic(f::PolyElem{qadic})
     Q = base_ring(f)
     K, mK = ResidueField(Q)
-    fp = change_base_ring(f, mK)
+    fp = map_coeffs(mK, f)
     lfp = collect(keys(factor(fp).fac))
     return HenselCtxQadic(f, lfp)
   end
@@ -193,18 +193,18 @@ end
 #TODO: think about computing pM[1][1,:]//pM[2] as a "float" approximation
 #      to save on multiplications
 function reco(a::fmpz, M, pM::Tuple{fmpz_mat, fmpz, fmpz_preinvn_struct}, O)
-  m = matrix(FlintZZ, 1, degree(O), map(x -> round(fmpz, a*x, pM[2], pM[3]), pM[1][1, :]))*M
+  m = map(x -> round(fmpz, a*x, pM[2], pM[3]), pM[1][1, :])*M
   return a - O(collect(m))
 end
 
 function reco(a::fmpz, M, pM::Tuple{fmpz_mat, fmpz}, O)
-  m = matrix(FlintZZ, 1, degree(O), map(x -> round(fmpz, a*x, pM[2]), pM[1][1, :]))*M
+  m = map(x -> round(fmpz, a*x, pM[2]), pM[1][1, :])*M
   return a - O(collect(m))
 end
 
 function reco(a::NfAbsOrdElem, M, pM)
   m = matrix(FlintZZ, 1, degree(parent(a)), coordinates(a))
-  m = m - matrix(FlintZZ, 1, degree(parent(a)), map(x -> round(fmpz, x, pM[2]), m*pM[1]))*M
+  m = m - map(x -> round(fmpz, x, pM[2]), m*pM[1])*M
   return parent(a)(collect(m))
 end
 
@@ -236,7 +236,7 @@ function factor_new(f::PolyElem{nf_elem})
     end
     F, mF = ResidueField(zk, P[1][1])
     mF = extend(mF, k)
-    fp = change_base_ring(f, mF)
+    fp = map_coeffs(mF, f, cached = false)
     if degree(fp) < degree(f) || iszero(trailing_coefficient(fp)) || iszero(trailing_coefficient(fp))
       continue
     end
@@ -299,9 +299,9 @@ function zassenhaus(f::PolyElem{nf_elem}, P::NfOrdIdl; degset::Set{Int} = Set{In
 
   vH = vanHoeijCtx()
   if degree(P) == 1
-    vH.H = HenselCtxPadic(change_base_ring(f, x->coeff(mC(x), 0)))
+    vH.H = HenselCtxPadic(map_coeffs(x->coeff(mC(x), 0), f))
   else
-    vH.H = HenselCtxQadic(change_base_ring(f, mC))
+    vH.H = HenselCtxQadic(map_coeffs(mC, f))
   end
   vH.C = C
   vH.P = P
@@ -318,9 +318,9 @@ function zassenhaus(f::PolyElem{nf_elem}, P::NfOrdIdl; degset::Set{Int} = Set{In
   zk = order(P)
 
   if degree(P) == 1
-    S = Set(map(x -> change_base_ring(x, y -> lift(y), parent(f)), lf))
+    S = Set(map(x -> map_coeffs(y -> lift(y), x, parent = parent(f)), lf))
   else
-    S = Set(map(x -> change_base_ring(x, y -> preimage(mC, y), parent(f)), lf))
+    S = Set(map(x -> map_coeffs(y -> preimage(mC, y), x, parent = parent(f)), lf))
   end
   #TODO: test reco result for being small, do early abort
   #TODO: test selected coefficients first without computing the product
@@ -341,7 +341,7 @@ function zassenhaus(f::PolyElem{nf_elem}, P::NfOrdIdl; degset::Set{Int} = Set{In
       end
       #TODO: test constant term first, possibly also trace + size
       g = prod(s)
-      g = change_base_ring(g, x->K(reco(zk(lead(f)*x), M, pM)), parent(f))*(1//lead(f))
+      g = map_coeffs(x -> K(reco(zk(lead(f)*x), M, pM)), g, parent = parent(f))*(1//lead(f))
       if iszero(rem(f, g))
         push!(res, g)
         used = union(used, s)
@@ -454,7 +454,7 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 20)
 
   _, mK = ResidueField(order(P), P)
   mK = extend(mK, K)
-  r = length(factor(change_base_ring(f, mK)))
+  r = length(factor(map_coeffs(mK, f)))
   N = degree(f)
   @vprint :PolyFactor 1  "Having $r local factors for degree ", N
 
@@ -462,9 +462,9 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 20)
 
   vH = vanHoeijCtx()
   if degree(P) == 1
-    vH.H = HenselCtxPadic(change_base_ring(f, x->coeff(mC(x), 0)))
+    vH.H = HenselCtxPadic(map_coeffs(x->coeff(mC(x), 0), f))
   else
-    vH.H = HenselCtxQadic(change_base_ring(f, mC))
+    vH.H = HenselCtxQadic(map_coeffs(mC, f))
   end
   vH.C = C
   vH.P = P
@@ -498,9 +498,9 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 20)
     @vprint :PolyFactor 1 "setting prec to $i, and lifting the info ...\n"
     setprecision!(codomain(mC), i)
     if degree(P) == 1
-      vH.H.f = change_base_ring(f, x->coeff(mC(x), 0))
+      vH.H.f = map_coeffs(x->coeff(mC(x), 0), f)
     else
-      vH.H.f = change_base_ring(f, mC)
+      vH.H.f = map_coeffs(mC, f)
     end
     @vtime :PolyFactor 1 grow_prec!(vH, i)
 

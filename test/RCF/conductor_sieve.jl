@@ -1,31 +1,5 @@
 @testset "RCF" begin
 
-  include(joinpath(Hecke.pkgdir, "examples", "fields.jl"))
-
-  @testset "Various examples" begin
-  
-    l=collect(Hecke.quadratic_extensions(50))
-    @test length(l)==30
-    
-    fields=D5_extensions(3*fmpz(10)^3, l)
-    @test length(fields)==1
-    
-    fields=Dn_extensions(3, 2*fmpz(10)^4, l)
-    @test length(fields)==1
-    
-    fields=C3xD5_extensions(fmpz(2000000))
-    @test length(fields)==0
-    
-    fields=S3xC5_extensions(fmpz(353517))
-    @test length(fields)==0
-    
-    fields1=C9semiC4(fmpz(10)^30)
-    @test fields1==1
-    
-    
-  
-  end
-  
   @testset "abelian extensions && related examples" begin
     
     Qx,x=PolynomialRing(FlintQQ, "x")
@@ -54,7 +28,5 @@
       end
     end
   end
-  
-  
 
 end

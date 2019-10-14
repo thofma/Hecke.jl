@@ -5,11 +5,12 @@
 ###############################################################################
 
 mutable struct ctx_rayclassgrp
-  mC::MapClassGrp
-  n::Int
-  vect::Vector{fmpz}
-  units::Vector{Tuple{NfOrdElem, Dict{fmpz, Int}}}
-  princ_gens::Vector{Tuple{NfOrdElem, Dict{fmpz, Int}}}
+  order::NfOrd
+  class_group_map::MapClassGrp #The class group mod n map 
+  n::Int #the n for n_quo
+  diffC::fmpz #exponent of the full class group, divided by n
+  units::Vector{FacElem{nf_elem, AnticNumberField}}
+  princ_gens::Vector{FacElem{nf_elem, AnticNumberField}}
   
   computed::Vector{Tuple{Dict{NfOrdIdl, Int}, Bool, MapRayClassGrp}}
   
@@ -19,108 +20,34 @@ mutable struct ctx_rayclassgrp
   end
 end
 
-function elems_to_be_eval(ctx::ctx_rayclassgrp, Kel::Vector{nf_elem})
-  units = ctx.units
-  O = parent(units[1][1])
-  princ_gens = ctx.princ_gens
-  mC = ctx.mC
-  C = domain(ctx.mC)
-  vect = ctx.vect
-  n = fmpz(ctx.n)
-  @vprint :RayFacElem 1 "Collecting elements to be evaluated; first, units \n"
-  to_be_eval = Vector{NfOrdElem}(undef, length(units) + length(princ_gens))
-  to_be_eval_int = Vector{Dict{fmpz, Int}}(undef, length(units) + length(princ_gens))
-  for i = 1:length(units)
-    to_be_eval[i] = units[i][1]
-    to_be_eval_int[i] = units[i][2]
-  end
-  C = domain(ctx.mC)
-  vect = ctx.vect
-  n = fmpz(ctx.n)
-  for i = 1:length(princ_gens)
-    expokel = mod(C.snf[i]*vect[i], n)
-    if iszero(expokel) || isone(Kel[i])
-      to_be_eval[i+length(units)] = princ_gens[i][1]
-      to_be_eval_int[i+length(units)] = princ_gens[i][2]
-      continue
-    end
-    numkel = numerator(Kel[i])
-    denkel = denominator(Kel[i])
-    mul!(numkel, princ_gens[i][1].elem_in_nf, numkel^expokel)
-    to_be_eval[i+length(units)] = O(numkel, false)
-    to_be_eval_int[i+length(units)] = copy(princ_gens[i][2])
-    if !isone(denkel)
-      if haskey(to_be_eval_int[i+length(units)], denkel)
-        to_be_eval_int[i+length(units)][denkel] = Int(mod(to_be_eval_int[i+length(units)][denkel]-expokel, n))
-      else
-        to_be_eval_int[i+length(units)][denkel] = Int(mod(-expokel, n))
-        to_be_eval_int[i+length(units)] = coprime_base(to_be_eval_int[i+length(units)], n)
-      end
-    end
-  end
-  return to_be_eval, to_be_eval_int
-
-end
-
 function rayclassgrp_ctx(O::NfOrd, expo::Int)
 
   C1, mC1 = class_group(O)
   valclass = ppio(exponent(C1), fmpz(expo))[1]
-  C, mC, vect = Hecke._class_group_mod_n(C1, mC1, Int(valclass))
-  U, mU = unit_group_fac_elem(O)
-  units_to_be_eval = FacElem{nf_elem, AnticNumberField}[mU(U[i]) for i = 1:ngens(U)]
-  Hecke._assure_princ_gen(mC)
-  princgens_to_be_eval = FacElem{nf_elem, AnticNumberField}[mC.princ_gens[i][2] for i = 1:length(mC.princ_gens)]
-  preproc, ints1 = Hecke._new_preproc(units_to_be_eval, fmpz(expo))
-  units = Vector{Tuple{NfOrdElem, Dict{fmpz, Int}}}(undef, length(preproc))
-  for i = 1:length(units)
-    el = evaluate(preproc[i])
-    Qx = parent(parent(el).pol)
-    elpol = Qx(el)
-    c = content(elpol)
-    el1 = el//c
-    if haskey(ints1[i], numerator(c))
-      ints1[i][numerator(c)] += 1
-    else
-      ints1[i][numerator(c)] = 1
-    end
-    if haskey(ints1[i], denominator(c))
-      ints1[i][denominator(c)] -= 1
-    else
-      ints1[i][denominator(c)] = 1
-    end
-    units[i] = (O(el1), coprime_base(ints1[i], fmpz(expo)))
-  end
-  princ_gens = Vector{Tuple{NfOrdElem, Dict{fmpz, Int}}}(undef, ngens(C))
-  if !iszero(ngens(C))
-    preproc1, ints2 = Hecke._new_preproc(princgens_to_be_eval, fmpz(expo))
-    for i = 1:length(princ_gens)
-      el = evaluate(preproc1[i])
-      Qx = parent(parent(el).pol)
-      elpol = Qx(el)
-      c = content(elpol)
-      el1 = el//c
-      if haskey(ints2[i], numerator(c))
-        ints2[i][numerator(c)] += 1
-      else
-        ints2[i][numerator(c)] = 1
-      end
-      if haskey(ints2[i], denominator(c))
-        ints2[i][denominator(c)] -= 1
-      else
-        ints2[i][denominator(c)] = -1
-      end
-      princ_gens[i] = (O(el1), coprime_base(ints2[i], fmpz(expo)))
-    end
-  end
+  C, mC = Hecke.n_part_class_group(mC1, expo)
   ctx = ctx_rayclassgrp()
-  ctx.mC = mC
+  ctx.order = O
+  ctx.class_group_map = mC
   ctx.n = expo
-  ctx.vect = vect
-  ctx.units = units
-  ctx.princ_gens = princ_gens
+  ctx.diffC = Int(divexact(exponent(C1), exponent(C)))
   return ctx
 
+end
+
+function assure_elements_to_be_eval(ctx::ctx_rayclassgrp)
+  if isdefined(ctx, :units)
+    return nothing
+  end
+  OK = ctx.order
+  U, mU = unit_group_fac_elem(OK)
+  mC = ctx.class_group_map
+  _assure_princ_gen(mC)
+  n = ctx.n
+  units = FacElem{nf_elem, AnticNumberField}[_preproc(mU(U[i]), fmpz(n)) for i = 1:ngens(U)]
+  princ_gens = FacElem{nf_elem, AnticNumberField}[_preproc(mC.princ_gens[i][2], fmpz(n)) for i = 1:length(mC.princ_gens)]
+  ctx.units = units
+  ctx.princ_gens = princ_gens
+  return nothing
 end
 
 ###############################################################################
@@ -129,50 +56,334 @@ end
 #
 ###############################################################################
 
-function _minimum(wprimes::Dict{NfOrdIdl, Int})
-  mins = Dict{fmpz, Int}()
-  for (P, v) in wprimes
-    e = P.splitting_type[1]
-    p = minimum(P)
-    k, r = divrem(v, e)
-    if !iszero(r)
-      k += 1
-    end
-    if haskey(mins, p)
-      mins[p] = max(mins[p], k)
-    else
-      mins[p] = k
+function empty_ray_class(m::NfOrdIdl)
+  O = order(parent(m))
+  X = DiagonalGroup(Int[])
+  
+  local exp
+  let O = O
+    function exp(a::GrpAbFinGenElem)
+      return FacElem(Dict(ideal(O,1) => fmpz(1)))
     end
   end
-  return prod(x^v for (x, v) in mins)
+  
+  local disclog
+  let X = X
+    function disclog(J::Union{NfOrdIdl, FacElem{NfOrdIdl}})
+      return X(Int[])
+    end
+  end
+  
+  mp = Hecke.MapRayClassGrp()
+  mp.header = Hecke.MapHeader(X, FacElemMon(parent(m)) , exp, disclog)
+  mp.defining_modulus = (m, InfPlc[])
+  return X,mp
+
 end
 
-function ray_class_group_quo(O::NfOrd, m::Int, wprimes::Dict{NfOrdIdl,Int}, inf_plc::Array{InfPlc,1}, ctx::ctx_rayclassgrp; GRH::Bool = true)
-  
-  d1 = Dict{NfOrdIdl, Int}()
-  lp = factor(m)
-  I = ideal(O, 1)
-  for q in keys(lp.fac)
-    lq = prime_decomposition(O, q) 
-    for (P, e) in lq
-      I *= P
-      d1[P] = 1
-    end   
-  end
-  I.minimum = m
-  if !isempty(wprimes)
-    for (p, v) in wprimes
-      I *= p^v
+function ray_class_group_quo(m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Dict{NfOrdIdl,Int}, inf_plc::Vector{InfPlc}, ctx::ctx_rayclassgrp; check::Bool = true, GRH::Bool = true)
+
+  mC = ctx.class_group_map
+  C = domain(mC)
+  diffC = ctx.diffC
+
+  if isempty(y1) && isempty(y2) && isempty(inf_plc)
+    local exp_c
+    let mC = mC
+      function exp_c(a::GrpAbFinGenElem)
+        return FacElem(Dict(mC(a) => 1))
+      end
     end
-    I.minimum = m*_minimum(wprimes)
+    return class_as_ray_class(C, mC, exp_c, m)
   end
   
-  return ray_class_group_quo(I, d1, wprimes, inf_plc, ctx, GRH = GRH)
+  O = ctx.order
+  K = nf(O)
+  n_quo = ctx.n
+
+  lp = merge(max, y1, y2)
+  
+  powers = Vector{Tuple{NfOrdIdl, NfOrdIdl}}()
+  quo_rings = Tuple{NfOrdQuoRing, Hecke.AbsOrdQuoMap{NfAbsOrd{AnticNumberField,nf_elem},NfAbsOrdIdl{AnticNumberField,nf_elem},NfAbsOrdElem{AnticNumberField,nf_elem}}}[]
+  groups_and_maps = Tuple{GrpAbFinGen, Hecke.GrpAbFinGenToAbsOrdQuoRingMultMap{NfAbsOrd{AnticNumberField,nf_elem},NfAbsOrdIdl{AnticNumberField,nf_elem},NfAbsOrdElem{AnticNumberField,nf_elem}}}[]
+  for (PP, ee) in lp
+    if isone(ee)
+      dtame = Dict{NfOrdIdl, Int}(PP => 1)
+      dwild = Dict{NfOrdIdl, Int}()
+    else
+      dwild = Dict{NfOrdIdl, Int}(PP => ee)
+      if haskey(y1, PP)
+        dtame = Dict{NfOrdIdl, Int}(PP => 1)
+      else
+        dtame = Dict{NfOrdIdl, Int}()
+      end
+    end
+    QQ = PP^ee
+    push!(powers, (PP, QQ))
+    push!(quo_rings, quo(O, QQ))
+    push!(groups_and_maps, _mult_grp_mod_n(quo_rings[end][1], dtame, dwild, n_quo))
+  end
+  
+  if isempty(groups_and_maps)
+    nG = 0
+    expon = fmpz(1)
+  else  
+    nG = sum(ngens(x[1]) for x in groups_and_maps)
+    expon = lcm([exponent(x[1]) for x in groups_and_maps])
+  end
+  
+  
+  if iseven(n_quo)
+    p = InfPlc[ x for x in inf_plc if isreal(x) ]
+  else
+    p = InfPlc[]
+  end
+  H, lH = log_infinite_primes(O, p)
+  expon = lcm(expon, exponent(H))
+  
+  if exponent(C)*expon < n_quo && check
+    return empty_ray_class(m)
+  end
+  
+  assure_elements_to_be_eval(ctx)
+  exp_class, Kel = find_coprime_representatives(mC, m, lp)
+  nU = length(ctx.units) 
+  # We construct the relation matrix and evaluate units and relations with the class group in the quotient by m
+  # Then we compute the discrete logarithms  
+  
+  R = zero_matrix(FlintZZ, 2*(ngens(C)+nG+ngens(H))+nU, ngens(C)+ngens(H)+nG)
+  for i = 1:ncols(R)
+    R[i+ngens(C)+nG+ngens(H)+nU, i] = n_quo
+  end
+  for i=1:ngens(C)
+    R[i,i] = C.snf[i]
+  end
+  ind = 1
+  for s = 1:length(quo_rings) 
+    G = groups_and_maps[s][1]
+    @assert issnf(G)
+    for i = 1:ngens(G)
+      R[i+ngens(C)+ind-1, i+ngens(C)+ind-1] = G.snf[i]
+    end
+    ind += ngens(G)
+  end
+  for i = 1:ngens(H)
+    R[ngens(C)+nG+i, ngens(C)+nG+i] = 2
+  end
+
+
+  @vprint :RayFacElem 1 "Collecting elements to be evaluated; first, units \n"
+  tobeeval = Vector{FacElem{nf_elem, AnticNumberField}}(undef, nU+ngens(C))
+  for i = 1:nU
+    tobeeval[i] = ctx.units[i]
+  end
+  for i = 1:ngens(C)
+    tobeeval[i+nU] = _preproc(ctx.princ_gens[i]*FacElem(Dict(Kel[i] => C.snf[i])), expon)
+  end
+
+  ind = 1
+  for i = 1:length(groups_and_maps)
+    exp_q = gcd(expon, norm(powers[i][2])- divexact(norm(powers[i][2]), norm(powers[i][1])))
+    evals = fac_elems_eval(powers[i][1], powers[i][2], tobeeval, expon)
+    Q = quo_rings[i][1]
+    mG = groups_and_maps[i][2]
+    for j = 1:nU
+      a = (mG\Q(evals[j])).coeff
+      for s = 1:ncols(a)
+        R[j+nG+ngens(H)+ngens(C), ngens(C)+s+ind-1] = a[1, s]
+      end
+    end
+    
+    for j = 1:ngens(C)
+      a = (mG\Q(evals[j+nU])).coeff
+      for s = 1:ncols(a)
+        R[j, ngens(C)+ind+s-1] = -a[1, s]
+      end
+    end
+    ind += ngens(groups_and_maps[i][1])
+  end 
+  
+  if !isempty(p)
+    for j = 1:nU
+      a = lH(tobeeval[j]).coeff
+      for s = 1:ncols(a)
+        R[j+nG+ngens(C)+ngens(H), ngens(C)+ind-1+s] = a[1, s] 
+      end
+    end
+    for j = 1:ngens(C)
+      a = lH(tobeeval[j+nU]).coeff
+      for s = 1:ncols(a)
+        R[j, ngens(C)+ind-1+s] = -a[1, s] 
+      end
+    end
+  end  
+  
+  X = AbelianGroup(R)
+  
+  local disclog
+  let X = X, mC = mC, C = C, exp_class = exp_class, powers = powers, groups_and_maps = groups_and_maps, quo_rings = quo_rings, lH = lH, diffC = diffC, n_quo = n_quo, m = m
+    invd = invmod(fmpz(diffC), expon)
+    # Discrete logarithm
+    function disclog(J::FacElem{NfOrdIdl, NfOrdIdlSet})
+      @vprint :RayFacElem 1 "Disc log of element $J \n"
+      a = id(X)
+      for (f, k) in J
+        a += k*disclog(f)
+      end
+      return a
+    end
+  
+    function disclog(J::NfOrdIdl)
+      if isone(J)
+        @vprint :RayFacElem 1 "J is one \n"
+        return id(X)
+      end
+      coeffs = zero_matrix(FlintZZ, 1, ngens(X))
+      if J.is_principal == 1 && isdefined(J, :princ_gen)
+        z = FacElem(Dict(J.princ_gen.elem_in_nf => diffC))
+      else
+        L = mC\J
+        for i = 1:ngens(C)
+          coeffs[1, i] = L[i]
+        end
+        @vprint :RayFacElem 1 "Disc log of element J in the Class Group: $(L.coeff) \n"
+        s = exp_class(L)
+        inv!(s)
+        add_to_key!(s.fac, J, 1) 
+        pow!(s, diffC)
+        @vprint :RayFacElem 1 "This ideal is principal: $I \n"
+        z = principal_gen_fac_elem(s)
+      end
+      ii = 1
+      z1 = _preproc(z, expon)
+      for i = 1:length(powers)
+        P, Q = powers[i]
+        exponq = gcd(expon, norm(Q)-divexact(norm(Q), norm(P)))
+        el = fac_elems_eval(P, Q, [z1], exponq)
+        y = (invd*(groups_and_maps[i][2]\quo_rings[i][1](el[1]))).coeff
+        for s = 1:ncols(y)
+          coeffs[1, ii-1+ngens(C)+s] = y[1, s]
+        end
+        ii += ngens(groups_and_maps[i][1])
+      end
+      if !isempty(p)
+        b = lH(z).coeff
+        for s = 1:ncols(b)
+          coeffs[1, ii-1+s+ngens(C)] = b[1, s]
+        end
+      end 
+      return X(coeffs)
+    end 
+  end
+  
+  Dgens = Tuple{NfOrdElem, GrpAbFinGenElem}[]
+  ind = 1
+  #We need generators of the full multiplicative group
+  #In particular, we need the idempotents...
+  for i = 1:length(powers)
+    P, Q = powers[i]
+    mG = groups_and_maps[i][2]
+    J = ideal(O, 1)
+    minJ = fmpz(1)
+    for j = 1:length(powers)
+      if j != i
+        J *= powers[j][2]
+        minJ = lcm(minJ, minimum(powers[j][2], copy = false))
+      end
+    end
+    J.minimum = minJ
+    i1, i2 = idempotents(Q, J)
+    gens = mG.generators
+    if isempty(p)
+      if haskey(mG.tame, P)
+        gens_tame = mG.tame[P].generators
+        for s = 1:length(gens_tame)
+          gens_tame[s] = gens_tame[s]*i2 + i1
+        end
+        mG.tame[P].generators = gens_tame
+      end
+      if haskey(mG.wild, P)
+        gens_wild = mG.wild[P].generators
+        for s = 1:length(gens_wild)
+          gens_wild[s] = gens_wild[s]*i2 + i1
+        end
+        mG.wild[P].generators = gens_wild
+      end
+      for s = 1:length(gens)
+        push!(Dgens, (gens[s].elem*i2+i1, X[ngens(C)+ind-1+s]))
+      end
+    else
+      if haskey(mG.tame, P)
+        gens_tame = mG.tame[P].generators
+        for s = 1:length(gens_tame)
+          gens_tame[s] = make_positive(gens_tame[s]*i2 + i1, minimum(m, copy = false))
+        end
+        mG.tame[P].generators = gens_tame
+      end
+      if haskey(mG.wild, P)
+        gens_wild = mG.wild[P].generators
+        for s = 1:length(gens_wild)
+          gens_wild[s] = make_positive(gens_wild[s]*i2 + i1, minimum(m, copy = false))
+        end
+        mG.wild[P].generators = gens_wild
+      end
+      for s = 1:length(gens)
+        elgen = make_positive(gens[s].elem*i2 + i1, minimum(m, copy = false))
+        push!(Dgens, (elgen, X[ngens(C)+ind-1+s]))
+      end
+    end
+    ind += length(gens)
+  end
+    
+  ind = 1
+  for i = 1:length(powers)
+    mG = groups_and_maps[i][2]
+    for (prim, mprim) in mG.tame
+      dis = zero_matrix(FlintZZ, 1, ngens(X))
+      to_be_c = mprim.disc_log.coeff
+      for i = 1:length(to_be_c)
+        dis[1, ind-1+i+ngens(C)] = to_be_c[1, i]
+      end
+      mprim.disc_log = X(dis)
+    end
+    ind += ngens(domain(mG))
+  end
+  
+  disc_log_inf = Dict{InfPlc, GrpAbFinGenElem}()
+  for i = 1:length(p)
+    eldi = zeros(FlintZZ, ngens(X))
+    eldi[ngens(X) - length(inf_plc) + i] = 1
+    disc_log_inf[p[i]] = X(eldi)
+  end
+  
+  mp = MapRayClassGrp()
+  mp.header = Hecke.MapHeader(X, FacElemMon(parent(m)))
+  mp.header.preimage = disclog
+  mp.fact_mod = lp
+  mp.defining_modulus = (m, inf_plc)
+  mp.powers = powers
+  mp.groups_and_maps = groups_and_maps
+  mp.disc_log_inf_plc = disc_log_inf
+  mp.gens_mult_grp_disc_log = Dgens
+  mp.clgrpmap = mC
+  return X, mp
   
 end
+
 
 function log_infinite_primes(O::NfOrd, p::Array{InfPlc,1})
+  if isempty(p)
+    S = DiagonalGroup(Int[])
     
+    local log1
+    let S = S
+      function log1(B::T) where T <: Union{nf_elem ,FacElem{nf_elem, AnticNumberField}}
+        return id(S)
+      end
+    end 
+    return S, log1
+  end
+  
   S = DiagonalGroup(Int[2 for i=1:length(p)])
   local log
   let S = S, p = p
@@ -190,6 +401,32 @@ function log_infinite_primes(O::NfOrd, p::Array{InfPlc,1})
   return S, log
 end
 
+
+function ray_class_group_quo(O::NfOrd, m::Int, wprimes::Dict{NfOrdIdl,Int}, inf_plc::Array{InfPlc,1}, ctx::ctx_rayclassgrp; GRH::Bool = true)
+  
+  d1 = Dict{NfOrdIdl, Int}()
+  lp = factor(m)
+  I = ideal(O, 1)
+  minI = fmpz(1)
+  for q in keys(lp.fac)
+    lq = prime_decomposition(O, q) 
+    for (P, e) in lq
+      I *= P
+      d1[P] = 1
+    end   
+    minI = q*minI
+  end
+  if !isempty(wprimes)
+    for (p, v) in wprimes
+      qq = p^v
+      I *= qq
+      minI = lcm(minI, minimum(qq, copy = false))
+    end
+  end
+  I.minimum = minI
+  return ray_class_group_quo(I, d1, wprimes, inf_plc, ctx, GRH = GRH)
+  
+end
 
 
 
@@ -217,238 +454,6 @@ function ray_class_group_quo(O::NfOrd, y::Dict{NfOrdIdl, Int}, inf_plc::Array{In
   end
   return ray_class_group_quo(I, y1, y2, inf_plc, ctx, GRH = GRH, check = check)
 
-end
-
-
-
-function ray_class_group_quo(I::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Dict{NfOrdIdl,Int}, inf_plc::Vector{InfPlc}, ctx::ctx_rayclassgrp; check::Bool = true, GRH::Bool = true)
-
-  O = order(I)
-  K = nf(O)
-  #@assert (!(isempty(y1) && isempty(y2))) || isone(I)
-  vect = ctx.vect
-  n = ctx.n
-  mC = ctx.mC
-  lp = Dict{NfOrdIdl, Int}()
-  for (p, v) in y1
-    lp[p] = 1
-  end
-  for (p, v) in y2
-    lp[p] = v
-  end
-  
-  Q, pi = quo(O, I)
-  Q.factor = lp
-  C = domain(mC)
-  @vtime :RayFacElem 1 G, mG, tame, wild = _mult_grp_mod_n(Q, y1, y2, n)
-  if iszero(mod(n,2)) && !isempty(inf_plc)
-    H, lH = Hecke.log_infinite_primes(O, inf_plc)
-    T = G
-    G = Hecke.direct_product(G, H, task = :none)
-  end
-  expo = exponent(G)
-  
-  if exponent(C)*expo < n && check
-    return empty_ray_class(I)::Tuple{GrpAbFinGen, MapRayClassGrp}
-  end
-  
-  C1, mC1 = class_group(O, GRH = GRH)::Tuple{GrpAbFinGen, MapClassGrp}
-  valclass, nonnclass = ppio(exponent(C1), fmpz(n))
-  U, mU = unit_group_fac_elem(O, GRH = GRH)
-
-  exp_class, Kel = find_coprime_representatives(mC, I, lp)
-  
-  if order(G) == 1
-    RR, mRR = class_as_ray_class(C, mC, exp_class, I, n) 
-    mRR.clgrpmap = mC
-    return RR, mRR 
-  end
-  
-#
-# We start to construct the relation matrix
-#
-
-  
-  R = zero_matrix(FlintZZ, 2*ngens(C)+ngens(U)+2*ngens(G), ngens(C)+ngens(G))
-  for i=1:ncols(R)
-    R[ngens(C)+ngens(U)+ngens(G)+i, i] = n
-  end
-  for i = 1:ngens(C)
-    R[i, i] = C.snf[i]
-  end
-  if issnf(G)
-    for i=1:ngens(G)
-      R[i+ngens(C), i+ngens(C)] = G.snf[i]
-    end
-  else
-    for i=1:ngens(G)
-      R[i+ngens(C), i+ngens(C)] = G.rels[i,i]
-    end
-  end
-  
-  #
-  # We compute the relation matrix given by the image of the map U -> (O/m)^*
-  #
-
-  @hassert :RayFacElem 1 issnf(U)
-  to_be_eval, to_be_eval_int = elems_to_be_eval(ctx, Kel)
-  @vprint :RayFacElem 1 "Time for elements evaluation: "
-  @vtime :RayFacElem 1 evals, quots, idemps = _crt_normalization(O, Q, to_be_eval, to_be_eval_int, lp)
-  @vprint :RayFacElem 1 "\n"
-  
-  for i = 1:ngens(U)
-    @vprint :RayFacElem 1 "Disclog of unit $i \n"
-    a = preimage(mG, evals[i])::GrpAbFinGenElem
-    for j = 1:ncols(a.coeff)
-      R[i+ngens(G)+ngens(C), ngens(C)+j] = a[j]
-    end
-    if iszero(mod(n, 2)) && !isempty(inf_plc)
-      if i==1
-        for j = 1:length(inf_plc)
-          R[i+ngens(G)+ngens(C), ngens(C)+ncols(a.coeff)+j] = 1
-        end
-      else
-        b = lH(mU(U[i]))
-        for j = 1:length(inf_plc)
-          R[i+ngens(G)+ngens(C), ngens(C)+ncols(a.coeff)+j] = b[j]
-        end
-      end
-    end
-  end 
-
-  # 
-  # We compute the relation between generators of Cl and (O/m)^* in Cl^m
-  #
-  
-
-  for i=1:ngens(C)
-    @vprint :RayFacElem 1 "Disclog of class group element $i \n"
-    invn = invmod(vect[i], expo)
-    a = preimage(mG, evals[i+ngens(U)])::GrpAbFinGenElem
-    for j = 1:ncols(a.coeff)
-      R[i,ngens(C)+j] = -a[j]*invn
-    end
-    if mod(n, 2)==0 && !isempty(inf_plc)
-      b = lH(mC.princ_gens[i][2]*(Kel[i]^(C.snf[i]*vect[i])))::GrpAbFinGenElem
-      for j = 1:ncols(b.coeff)
-        R[i, ngens(C)+ncols(a.coeff)+j] = -b[j]
-      end
-    end
-  end
-  
-  X = AbelianGroup(R)
-
-  disc_log_inf = Dict{InfPlc, GrpAbFinGenElem}()
-  for i = 1:length(inf_plc)
-    eldi = zeros(FlintZZ, ngens(X))
-    eldi[ngens(X) - length(inf_plc) + i] = 1
-    disc_log_inf[inf_plc[i]] = X(eldi)
-  end
-   
-  #
-  # Discrete logarithm
-  #
-  inverse_d = invmod(nonnclass, expo)
-  
-  local disclog
-  let X = X, I = I, mG = mG, O = O, pi = pi, exp_class = exp_class, mC = mC, Q = Q, nonnclass = nonnclass, inverse_d = inverse_d, n = n, quots = quots, idemps = idemps, C = C, expo = expo
-  function disclog(J::NfOrdIdl)
-    
-    res = zero_matrix(FlintZZ, 1, ngens(X))
-    @hassert :RayFacElem 1 iscoprime(J, I)
-    if J.is_principal==1
-      if isdefined(J,:princ_gen)
-        el = J.princ_gen
-        y = preimage(mG, pi(el)).coeff
-        for i = 1:ncols(y)
-          res[1, ngens(C) + i] = y[1, i]
-        end
-        if iszero(mod(n, 2)) && !isempty(inf_plc)
-          b = lH(K(el))
-          for i = 1:length(inf_plc)
-            res[1, ngens(C)+ncols(y)+i] = b[i]
-          end
-        end
-      elseif isdefined(J,:princ_gen_special)
-        el1 = O(J.princ_gen_special[2])+O(J.princ_gen_special[3])
-        YY = preimage(mG, pi(el1)).coeff
-        for i = 1:ncols(YY)
-          res[1, i+ngens(C)] = YY[1, i]
-        end
-        if iszero(mod(n,2)) && !isempty(pr)
-          b = lH(K(el)).coeff
-          for i = 1:ncols(b)
-            res[1, i+ngens(C)+ncols(YY)] = b[1, i]
-          end
-        end
-      else
-        z = principal_gen_fac_elem(J)
-        el = _fac_elem_evaluation(O, Q, quots, idemps, z, gcd(expo,n))
-        y = (mG\(pi(el))).coeff
-        for i = 1:ncols(y)
-          res[1, i+ngens(C)] = y[1, i]
-        end
-        if mod(n,2)==0 && !isempty(inf_plc)
-          b=lH(z).coeff
-          for i = 1:ncols(b)
-            res[1, i+ngens(C)+ncols(y)] = b[1, i]
-          end
-        end
-      end 
-    else      
-      W = mC\J
-      for i = 1:ngens(C)
-        res[1, i] = W[i]
-      end
-      s = exp_class(W)
-      pow!(s, -nonnclass)
-      if haskey(s.fac, J)
-        s.fac[J] += nonnclass
-      else
-        s.fac[J] = nonnclass
-      end
-      z = principal_gen_fac_elem(s)
-      el = _fac_elem_evaluation(O, Q, quots, idemps, z, gcd(expo,n))
-      y=(mG\(pi(el))).coeff
-      for i = 1:ncols(y)
-        res[1, i+ngens(C)] = y[1, i]*inverse_d
-      end
-      if mod(n,2)==0 && !isempty(inf_plc)
-        b = lH(z).coeff
-        for i = 1:ncols(b)
-          res[1, i+ngens(C)+ncols(y)] = b[1, i]
-        end
-      end
-    end    
-    return GrpAbFinGenElem(X, res)
-  end 
-  end
-  
-  for (prim, mprim) in tame
-    dis = zero_matrix(FlintZZ, 1, ngens(X))
-    to_be_c = mprim.disc_log.coeff
-    for i = 1:length(to_be_c)
-      dis[1, i+ngens(C)] = to_be_c[1, i]
-    end
-    mprim.disc_log = X(dis)
-  end
-
-  mp = Hecke.MapRayClassGrp()
-  mp.header = Hecke.MapHeader(X, FacElemMon(parent(I)))
-  mp.header.preimage = disclog
-  mp.modulus_fin = I
-  mp.modulus_inf = inf_plc
-  mp.quots_nquo = quots
-  mp.idemps = idemps
-  mp.coprime_elems = Kel
-  mp.fact_mod = lp
-  mp.tame_mult_grp = tame
-  mp.wild_mult_grp = wild
-  mp.defining_modulus = (I, inf_plc)
-  mp.disc_log_inf_plc = disc_log_inf
-  mp.clgrpmap = mC
-  return X::GrpAbFinGen, mp
-  
 end
 
 ###############################################################################
@@ -737,9 +742,8 @@ function _maximal_abelian_subfield(A::Hecke.ClassField, mp::Hecke.NfToNfMor, ctx
     end 
   end
   ind = 0
-  #@vtime :MaxAbExt 1 
   if isdefined(ctx, :computed)
-    flinf = isempty(mR1.modulus_inf)
+    flinf = isempty(defining_modulus(mR1)[2])
     for i = 1:length(ctx.computed)
       idmr, ifmr, mRRR = ctx.computed[i]
       if flinf != ifmr
@@ -758,27 +762,27 @@ function _maximal_abelian_subfield(A::Hecke.ClassField, mp::Hecke.NfToNfMor, ctx
     end
   end
   if iszero(ind)
-    @vtime :MaxAbExt 3 R, mR = Hecke.ray_class_group_quo(ZK, fM0, mR1.modulus_inf, ctx, check = false)
+    @vtime :MaxAbExt 3 R, mR = Hecke.ray_class_group_quo(ZK, fM0, defining_modulus(mR1)[2], ctx, check = false)
     if isdefined(ctx, :computed)
-      push!(ctx.computed, (fM0, isempty(mR1.modulus_inf), mR))
+      push!(ctx.computed, (fM0, isempty(defining_modulus(mR1)[2]), mR))
     else
-      ctx.computed = [(fM0, isempty(mR1.modulus_inf), mR)]
+      ctx.computed = [(fM0, isempty(defining_modulus(mR1)[2]), mR)]
     end
   else
     mR = ctx.computed[ind][3]
     R = domain(mR)
   end
   if degree(zk) != 1
-    if istotally_real(K) && isempty(mR1.modulus_inf)
+    if istotally_real(K) && isempty(defining_modulus(mR1)[2])
       inf_plc = InfPlc[]
     else
       inf_plc = real_places(k)
     end
     #@vtime :MaxAbExt 1 
-    r, mr = Hecke.ray_class_group_quo(zk, ctx.n, fm0, inf_plc)
+    r, mr = Hecke.ray_class_group(zk, fm0, inf_plc, n_quo = ctx.n)
   else
     rel_plc = true
-    if istotally_real(K) && isempty(mR1.modulus_inf)
+    if istotally_real(K) && isempty(defining_modulus(mR1)[2])
       rel_plc = false
     end
     modulo = minimumd(fm0, expo * expected_order)
@@ -786,7 +790,7 @@ function _maximal_abelian_subfield(A::Hecke.ClassField, mp::Hecke.NfToNfMor, ctx
     r, mr = Hecke.ray_class_groupQQ(zk, modulo, rel_plc, ctx.n)
   end
   #@vtime :MaxAbExt 1 
-  lP, gS = Hecke.find_gens(mR, coprime_to = minimum(mR1.modulus_fin))
+  lP, gS = Hecke.find_gens(mR, coprime_to = minimum(defining_modulus(mR1)[1]))
   listn = NfOrdIdl[norm(mp, x) for x in lP]
   # Create the map between R and r by taking norms
   preimgs = Vector{GrpAbFinGenElem}(undef, length(listn))

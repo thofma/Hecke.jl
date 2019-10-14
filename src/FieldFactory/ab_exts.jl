@@ -669,7 +669,7 @@ function abelian_extensions(O::NfOrd, gtype::Array{Int,1}, absolute_discriminant
   for (i, k) in enumerate(l_conductors)
     @vprint :AbExt 1 "Conductor: $k \n"
     @vprint :AbExt 1 "Left: $(length(l_conductors) - i)\n"
-    r,mr=Hecke.ray_class_groupQQ(O,k,!real,expo)
+    r,mr=Hecke.ray_class_groupQQ(O, k, !real, expo)
     if !Hecke._are_there_subs(r,gtype)
       continue
     end
@@ -692,11 +692,11 @@ function abelian_extensions(O::NfOrd, gtype::Array{Int,1}, absolute_discriminant
 
 end
 
-
+#TODO: Allow more groups
 function abelian_normal_extensions(O::NfOrd, gtype::Array{Int,1}, absolute_discriminant_bound::fmpz; ramified_at_infplc::Bool=true, tame::Bool=false, absolute_galois_group::Symbol = :all,  with_autos::Type{Val{T}} = Val{false}, autos::Array{NfToNfMor,1}=NfToNfMor[]) where T 
 
   d=degree(O)
-  if d==1
+  if d == 1
     return abelian_extensions(O, gtype, absolute_discriminant_bound, real=!ramified_at_infplc, tame=tame, with_autos=with_autos) 
   end
 
@@ -704,7 +704,7 @@ function abelian_normal_extensions(O::NfOrd, gtype::Array{Int,1}, absolute_discr
   n=prod(gtype)
   inf_plc=InfPlc[]
   
-  if with_autos==Val{true}
+  if with_autos == Val{true}
     fields=Tuple{NfRelNS,Vector{NfRelNSToNfRelNSMor{nf_elem}}}[]
   else
     fields=NfRelNS[]
@@ -719,12 +719,9 @@ function abelian_normal_extensions(O::NfOrd, gtype::Array{Int,1}, absolute_discr
     inf_plc=real_places(K)
   end
 
-  expo=lcm(gtype)
-  C,mC=class_group(O)
-  cgrp= gcd(n,order(C))!=1
-  if cgrp
-    S = prime_ideals_up_to(O, max(100,12*clog(abs(discriminant(O)),10)^2))
-  end
+  expo = lcm(gtype)
+  C, mC = class_group(O)
+  cgrp = !iscoprime(n, order(C))
   allow_cache!(mC)
   
   #
@@ -743,21 +740,17 @@ function abelian_normal_extensions(O::NfOrd, gtype::Array{Int,1}, absolute_discr
   l_conductors=conductors(O, gtype, bound, tame)
   @vprint :AbExt 1 "Number of conductors: $(length(l_conductors)) \n"
   
-
+  ctx = rayclassgrp_ctx(O, expo)
   #Now, the big loop
   for (i, k) in enumerate(l_conductors)
     @vprint :AbExt 1 "Conductor: $k \n"
     @vprint :AbExt 1 "Left: $(length(l_conductors) - i)\n"
-    r,mr=ray_class_group_quo(O,expo,k[1], k[2],inf_plc)
+    r,mr = ray_class_group_quo(O, k[1], k[2], inf_plc, ctx)
     if !_are_there_subs(r,gtype)
       continue
     end
-    if cgrp
-        mr.prime_ideal_cache = S
-    end
     act = induce_action(mr,gens)
     ls = stable_subgroups(r, act, op=(x, y) -> quo(x, y, false)[2], quotype = gtype)
-    totally_positive_generators(mr)
     for s in ls
       @hassert :AbExt 1 order(codomain(s))==n
       C = ray_class_field(mr, s)
@@ -853,71 +846,6 @@ function _action_on_quo(mq::GrpAbFinGenMap, act::Array{GrpAbFinGenMap,1})
   end
   return ZpnGModule(S, quo_action)
 
-end
-
-
-# Function that finds an integer in the ideal 
-function _min_wild(D::Dict{NfOrdIdl, Int})
-
-  res = fmpz(1)
-  primes_done=fmpz[]
-  for (p,v) in D
-    s=minimum(p)
-    if s in primes_done
-      continue
-    end
-    push!(primes_done, s)
-    res*=s^v
-  end  
-  return res  
-
-end
-
-function totally_positive_generators(mr::MapRayClassGrp, wild::Bool=false)
-  
-  a = minimum(mr.modulus_fin)
-  if isdefined(mr, :tame_mult_grp)
-    tmg=mr.tame_mult_grp
-    for (p, v) in tmg
-      new_p = GrpAbFinGenToNfAbsOrdMap(domain(v), codomain(v), [ make_positive(v.generators[1], a) ], v.discrete_logarithm)
-      if isdefined(v, :disc_log)
-        new_p.disc_log = v.disc_log
-      end
-      tmg[p] = new_p
-      @hassert :RayFacElem 1 istotally_positive(mr.tame_mult_grp[p].generators[1])
-    end
-  end
-  if wild && isdefined(mr, :wild_mult_grp)
-    wld=mr.wild_mult_grp
-    for (p,v) in wld
-      x=v.generators
-      for i=1:length(x)
-        x[i]=make_positive(x[i],a)
-        @hassert :RayFacElem 1 iscoprime(ideal(parent(x[i]), x[i]), ideal(parent(x[i]), a))
-      end
-      mr.wild_mult_grp[p] = GrpAbFinGenToNfAbsOrdMap(domain(v), codomain(v), x, v.discrete_logarithm)
-    end 
-  end
-
-end
-
-function make_positive(x::NfOrdElem, a::fmpz)
- 
-  els=conjugates_real(elem_in_nf(x))
-  m=fmpz(0)
-  for i=1:length(els)
-    y = BigFloat(midpoint(els[i]/a))
-    if y > 0
-      continue
-    else
-      m = max(m,1-ceil(fmpz,y))
-    end
-  end
-  @hassert :RayFacElem 1 iscoprime(ideal(parent(x),x), ideal(parent(x), a))
-  @hassert :RayFacElem 1 iscoprime(ideal(parent(x),x+fmpz(m)*a), ideal(parent(x), a))
-  @hassert :RayFacElem 1 istotally_positive(x+m*a)
-  return x+fmpz(m)*a
-    
 end
 
 function _are_there_subs(G::GrpAbFinGen,gtype::Array{Int,1})
@@ -1496,6 +1424,7 @@ function discriminant_conductor(C::ClassField, bound::fmpz; lwp::Dict{Tuple{Int,
   mr = C.rayclassgroupmap 
   O = base_ring(C)
   n = degree(C)
+  e = Int(exponent(C))
   lp = mr.fact_mod
   abs_disc = factor(discriminant(O)^n).fac
   if isempty(lp)
@@ -1507,125 +1436,110 @@ function discriminant_conductor(C::ClassField, bound::fmpz; lwp::Dict{Tuple{Int,
   discr = fmpz(1)
   mp = pseudo_inv(C.quotientmap) * mr
   R = domain(mp)
-  a = minimum(mr.modulus_fin)
-  cyc_prime = isprime(n)
-  
-  #first, tamely ramified part
-  tmg=mr.tame_mult_grp
+  a = minimum(defining_modulus(mr)[1])
   primes_done = fmpz[]
-  for (p, mapp) in tmg 
-    if p.minimum in primes_done || haskey(mr.wild_mult_grp, p)
-      continue
-    end
-    ap=n
-    push!(primes_done, p.minimum)
-    if cyc_prime
-      ap-=1
-    else
-      if isdefined(mapp, :disc_log)
-        el = C.quotientmap(mapp.disc_log)
-      else
-        el=mp\ideal(O,tmg[p].generators[1]) #The generator is totally positive, we modified it before
-      end
-      q,mq=quo(R,GrpAbFinGenElem[el], false)
-      ap-= order(q)
-    end
-    qw = divexact(d, p.splitting_type[1])*ap
-    mul!(discr, discr, fmpz(p.minimum)^qw)
-    if discr > bound
-      @vprint :AbExt 2 "too large\n"
-      return false
-    else
-      if haskey(abs_disc, p.minimum)
-        abs_disc[p.minimum] += qw
-      else 
-        abs_disc[p.minimum] = qw
-      end
-      #for q in keys(tmg)
-      #  if minimum(q)==minimum(p) 
-      #    relative_disc[q]=ap
-      #  end
-      #end
-    end
-  end
-  
-  #now, wild ramification
-  if !isempty(mr.wild_mult_grp)
-    prime_power=Dict{NfOrdIdl, NfOrdIdl}()
-    for (p,v) in lp
-      prime_power[p]=p^v
-    end
-    wldg = mr.wild_mult_grp
-    primes_done = fmpz[]
-    for p in keys(wldg)
-      if p.minimum in primes_done
+  if isprime(n)
+    for (p, v) in lp
+      if minimum(p, copy = false) in primes_done
         continue
-      end 
-      np = p.minimum^divexact(d, p.splitting_type[1])
-      push!(primes_done, p.minimum) 
-      ap = n*lp[p]
-      if cyc_prime
-        ap -= lp[p]
-      else
-        s = lp[p]
-        @hassert :AbExt 1 s>=2
-        els=GrpAbFinGenElem[]
-        for k=2:lp[p]      
-          s = s-1
-          pk = p^s
-          pv = pk*p
-          if haskey(lwp, (Int(p.minimum), s+1))
-            gens = lwp[(Int(p.minimum), s+1)]
-          else
-            gens_els = _1pluspk_1pluspk1(K, p, pk, pv, lp, prime_power, a, n)
-            gens = Vector{GrpAbFinGenElem}(undef, length(gens_els))
-            for i = 1:length(gens)
-              gens[i] = mr\(ideal(O, gens_els[i]))
-            end
-            lwp[(Int(p.minimum), s+1)] = gens
-          end
-          for i = 1:length(gens)
-            push!(els, C.quotientmap(gens[i]))
-          end
-          o = order(quo(R,els, false)[1])
-          ap -= o
-          tentative_ap = ap - (lp[p] - k + 1)*o
-          tentative_discr = discr * (np^tentative_ap)
-          if tentative_discr > bound
-            return false
-          end
-          @hassert :AbExt 1 ap>0
-        end
-        if haskey(tmg, p)
-          if isdefined(tmg[p], :disc_log)
-            push!(els, C.quotientmap(tmg[p].disc_log))
-          else
-            push!(els, mp\ideal(O, tmg[p].generators[1]))
-          end
-        end
-        ap -= order(quo(R, els, false)[1])
-        @hassert :AbExt 1 ap>0
       end
-      np1 = np^ap
-      mul!(discr, discr, np1)
+      push!(primes_done, minimum(p, copy = false))
+      ap = n*v-v
+      qw = divexact(d, p.splitting_type[1])*ap
+      mul!(discr, discr, fmpz(p.minimum)^qw)
       if discr > bound
         @vprint :AbExt 2 "too large\n"
         return false
       else
         if haskey(abs_disc, p.minimum)
-          abs_disc[p.minimum] += ap*divexact(d, p.splitting_type[1])
+          abs_disc[p.minimum] += qw
         else 
-          abs_disc[p.minimum] = ap*divexact(d, p.splitting_type[1])
+          abs_disc[p.minimum] = qw
         end
-      #  for q in keys(tmg)
-      #    if minimum(q)==minimum(p) 
-      #      relative_disc[q]=ap
-      #    end
-      #  end
+      end
+    end
+    return true
+  end
+  
+  powers = mr.powers
+  groups_and_maps = mr.groups_and_maps
+  
+  for i = 1:length(powers)
+    p, q = powers[i]
+    if p.minimum in primes_done
+      continue
+    end
+    push!(primes_done, p.minimum)
+    if p == q
+      ap = n
+      tmg = groups_and_maps[i][2].tame[p]
+      el = C.quotientmap(tmg.disc_log)
+      Q, mQ = quo(R, GrpAbFinGenElem[el], false)
+      ap -= order(Q)
+      qw = divexact(d, p.splitting_type[1])*ap
+      mul!(discr, discr, fmpz(p.minimum)^qw)
+      if discr > bound
+        @vprint :AbExt 2 "too large\n"
+        return false
+      else
+        if haskey(abs_disc, p.minimum)
+          abs_disc[p.minimum] += qw
+        else 
+          abs_disc[p.minimum] = qw
+        end
+      end
+      continue
+    end
+    np = p.minimum^divexact(d, p.splitting_type[1])
+    ap = n*lp[p]
+    s = lp[p]
+    @hassert :AbExt 1 s>=2
+    els=GrpAbFinGenElem[]
+    for k=2:lp[p]      
+      s = s-1
+      pk = p^s
+      pv = pk*p
+      if haskey(lwp, (Int(p.minimum), s+1))
+        gens = lwp[(Int(p.minimum), s+1)]
+      else
+        gens_els = _1pluspk_1pluspk1(K, p, pk, pv, powers, a, e)
+        gens = Vector{GrpAbFinGenElem}(undef, length(gens_els))
+        for i = 1:length(gens)
+          gens[i] = mr\(ideal(O, gens_els[i]))
+        end
+        lwp[(Int(p.minimum), s+1)] = gens
+      end
+      for i = 1:length(gens)
+        push!(els, C.quotientmap(gens[i]))
+      end
+      o = order(quo(R, els, false)[1])
+      ap -= o
+      tentative_ap = ap - (lp[p] - k + 1)*o
+      tentative_discr = discr * (np^tentative_ap)
+      if tentative_discr > bound
+        return false
+      end
+      @hassert :AbExt 1 ap>0
+    end
+    if haskey(groups_and_maps[i][2].tame, p)
+      v = groups_and_maps[i][2].tame[p]
+      push!(els, C.quotientmap(v.disc_log))
+    end
+    ap -= order(quo(R, els, false)[1])
+    @hassert :AbExt 1 ap>0
+    np1 = np^ap
+    mul!(discr, discr, np1)
+    if discr > bound
+      @vprint :AbExt 2 "too large\n"
+      return false
+    else
+      if haskey(abs_disc, p.minimum)
+        abs_disc[p.minimum] += ap*divexact(d, p.splitting_type[1])
+      else 
+        abs_disc[p.minimum] = ap*divexact(d, p.splitting_type[1])
       end
     end
   end
-  #C.relative_discriminant=relative_disc
   C.absolute_discriminant = abs_disc
   return true
 
@@ -1726,85 +1640,77 @@ end
 #  conductor function for abelian extension function
 #
 ###############################################################################
-#
+
 #  For this function, we assume the base field to be normal over Q and the conductor of the extension we are considering to be invariant
-#  The input must be a multiple of the minimum of the conductor, we don't check for consistency. 
-#
+#  Checks if the defining modulus is the conductor of C
 
 function _is_conductor_min_normal(C::Hecke.ClassField; lwp::Dict{Int, Array{GrpAbFinGenElem, 1}} = Dict{Int, Array{GrpAbFinGenElem, 1}}())
-
   mr = C.rayclassgroupmap
   lp = mr.fact_mod
   if isempty(lp)
     return true
   end
   
-  a = minimum(mr.modulus_fin)
+  a = minimum(defining_modulus(mr)[1])
   mp = pseudo_inv(C.quotientmap) * mr 
   R = domain(mp)
-  
+  e = Int(exponent(C))
   O = base_ring(C)
-  tmg = mr.tame_mult_grp
+  K = nf(O)
+  lp = mr.fact_mod
+  powers = mr.powers
+  groups_and_maps = mr.groups_and_maps
   #first, tame part
   primes_done = fmpz[]
-  for (p, v) in tmg
+  for i = 1:length(powers)
+    p, q = powers[i]
     if p.minimum in primes_done 
       continue
     end
     push!(primes_done, p.minimum)
-    if isdefined(v, :disc_log)
+    if p == q
+      #The prime is tamely ramified
+      v = groups_and_maps[i][2].tame[p]
       el = C.quotientmap(v.disc_log)
-    else
-      I = ideal(O, v.generators[1])
-      el = mp\I
-    end
-    if iszero(el)
-      return false
-    end
-  end
-  K = nf(O)
-  #wild part
-  if !isempty(mr.wild_mult_grp)
-    o = Int(order(R))
-    prime_power = Dict{NfOrdIdl, NfOrdIdl}()
-    for (p,v) in lp
-      prime_power[p] = p^v
-    end
-    wldg = mr.wild_mult_grp
-    primes_done = fmpz[]
-    for p in keys(wldg)
-      if p.minimum in primes_done
-        continue
+      if iszero(el)
+        return false
       end
-      push!(primes_done, p.minimum)
-      @assert lp[p]>=2
+      continue
+    end
+    if haskey(lwp, Int(p.minimum))
+      gens = lwp[Int(p.minimum)]
+    else
       k = lp[p]-1
-      pk = p^k
-      pv = prime_power[p]
-      if haskey(lwp, Int(p.minimum))
-        gens = lwp[Int(p.minimum)]
+      if isone(k)
+        #In this particular case, the generators that I need are cached in the map
+        v = groups_and_maps[i][2].wild[p]
+        gens = Vector{GrpAbFinGenElem}(undef, length(v.generators))
+        for i = 1:length(gens)
+          gens[i] = mr\(ideal(O, v.generators[i]))
+        end
       else
-        gens_els = _1pluspk_1pluspk1(K, p, pk, pv, lp, prime_power, a, o)
+        pk = p^k
+        pv = q
+        gens_els = _1pluspk_1pluspk1(K, p, pk, pv, powers, a, e)
         gens = Vector{GrpAbFinGenElem}(undef, length(gens_els))
         for i = 1:length(gens)
           gens[i] = mr\(ideal(O, gens_els[i]))
         end
-        lwp[Int(p.minimum)] = gens
       end
-      iscond = false
-      for i in 1:length(gens)
-        if !iszero(C.quotientmap(gens[i]))
-          iscond=true
-          break
-        end
+      lwp[Int(p.minimum)] = gens
+    end
+    iscond = false
+    for i in 1:length(gens)
+      if !iszero(C.quotientmap(gens[i]))
+        iscond=true
+        break
       end
-      if !iscond
-        return false
-      end
+    end
+    if !iscond
+      return false
     end
   end
   return true
-
 end 
 
 #
@@ -1815,9 +1721,9 @@ function _is_conductor_minQQ(C::Hecke.ClassField, n::Int)
 
   mr = C.rayclassgroupmap
   mp = pseudo_inv(C.quotientmap) * mr
-  m = mr.modulus_fin
+  m = defining_modulus(mr)[1]
   mm = Int(minimum(m))
-  lp = factor(m.minimum)
+  lp = factor(mm)
   
   O=order(m)
   K=nf(O)

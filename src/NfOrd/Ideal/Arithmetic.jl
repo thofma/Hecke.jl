@@ -426,7 +426,7 @@ end
 
 function pow_2_elem(A::NfAbsOrdIdl, e::Int)
   OK = order(A)
-  if A.is_principal == 1
+  if A.is_principal == 1 && isdefined(A, :princ_gen)
     gen = (A.princ_gen)^e
     I = ideal(OK, gen)
     if isdefined(A, :norm)

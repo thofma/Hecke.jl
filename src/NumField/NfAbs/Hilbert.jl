@@ -175,7 +175,7 @@ function hilbert_symbol(a::nf_elem, b::nf_elem, p::NfOrdIdl)
 
   v, a = _quadratic_defect_unit(a, p)
 
-  b = b // pi^( 2*div(w, 2) )
+  b = b // pi^(2*fld(w, 2)) # fld(x, y) = div(x, y, RoundDown), i.e., round towards -oo
   w = mod(w, 2)
   # turn b into a uniformizer
   if isfinite(v) && isodd(v)

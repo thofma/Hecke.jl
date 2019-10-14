@@ -49,8 +49,8 @@ function factor(Q::FacElem{NfOrdIdl, NfOrdIdlSet})
     fac = Dict{NfOrdIdl, Int}()
     for (p, e)=S
       lp = factor(p)
-      for q = keys(lp)
-        fac[q] = Int(valuation(p, q)*e)
+      for (q, v) in lp
+        fac[q] = Int(v*e)
       end
     end
   else
@@ -75,7 +75,7 @@ end
 
 
 @doc Markdown.doc"""
-     factor_coprime(Q::FacElem{NfOrdFracIdl, NfOrdFracIdlSet}) -> Dict{NfOrdIdl, Int}
+    factor_coprime(Q::FacElem{NfOrdFracIdl, NfOrdFracIdlSet}) -> Dict{NfOrdIdl, Int}
 A coprime factorisation of $Q$: each ideal in $Q$ is split using \code{integral_split} and then
 a coprime basis is computed.
 This does {\bf not} use any factorisation.
@@ -95,8 +95,8 @@ function factor(Q::FacElem{NfOrdFracIdl, NfOrdFracIdlSet})
   fac = Dict{NfOrdIdl, Int}()
   for (p, e)=S
     lp = factor(p)
-    for q = keys(lp)
-      fac[q] = Int(valuation(p, q)*e)
+    for (q, v) in lp
+      fac[q] = Int(v*e)
     end
   end
   return fac
@@ -137,9 +137,13 @@ function _multgrp(Q::NfOrdQuoRing, save_tame_wild::Bool = false; method = nothin
   prime_powers = Vector{NfOrdIdl}()
   groups = Vector{GrpAbFinGen}()
   maps = Vector{GrpAbFinGenToAbsOrdQuoRingMultMap}()
+  tame_ind = Tuple{NfOrdIdl, Int}[]
+  ind = 1
   for (p, vp) in fac
     pvp = p^vp
     G1, mG1 = _multgrp_mod_pv(p, vp, pvp; method = method)
+    push!(tame_ind, (p, ind))
+    ind += ngens(G1)
     push!(prime_powers, pvp)
     push!(groups, G1)
     push!(maps, mG1)
@@ -147,11 +151,15 @@ function _multgrp(Q::NfOrdQuoRing, save_tame_wild::Bool = false; method = nothin
 
   G, GtoQ = _direct_product(groups, maps, prime_powers, Q, save_tame_wild)
   S, StoG, StoQ = snf(G, GtoQ)
+  
+  if save_tame_wild
+    for s = 1:length(tame_ind)
+      StoQ.tame[tame_ind[s][1]].disc_log = StoG\(G[tame_ind[s][2]]) #Relies on the ordering tame\wild in the construction!
+    end
+  end
 
   return S, StoQ
 end
-
-_multgrp_ray(Q::NfOrdQuoRing; method = nothing) = _multgrp(Q, true; method = method)
 
 ################################################################################
 #
@@ -175,6 +183,7 @@ function _multgrp_mod_pv(p::NfOrdIdl, v::Int, pv::NfOrdIdl; method=nothing)
   tame_part = Dict{NfAbsOrdIdl, GrpAbFinGenToNfAbsOrdMap}()
   wild_part = Dict{NfAbsOrdIdl, GrpAbFinGenToNfAbsOrdMap}()
   if v == 1
+    G1toO.disc_log = G1[1]
     tame_part[p] = G1toO
     function disc_log(x::NfOrdQuoRingElem)
       return G1toO.discrete_logarithm((OtoQ\x))
@@ -192,10 +201,12 @@ function _multgrp_mod_pv(p::NfOrdIdl, v::Int, pv::NfOrdIdl; method=nothing)
     gens = map(OtoQ, append!([gen1_obcs], G2toO.generators))
 
     G1toO.generators[1] = gen1_obcs
-    tame_part[p] = G1toO
 
     G = direct_product(G1, G2, task = :none)
 
+    G1toO.disc_log = G[1]
+    tame_part[p] = G1toO
+    
     obcs_inv = gcdx(G2.snf[end], rel1)[2]
     function disc_log2(x::NfOrdQuoRingElem)
       y = OtoQ\x
@@ -784,7 +795,7 @@ function pohlig_hellman(g, n, h; factor_n=factor(n), big_step_cache = Dict())
     pv = p^v
     r = div(n,pv)
     if !haskey(big_step_cache, p)
-      big_step_cache[p] = Dict{fmpz, typeof(g)}()
+      big_step_cache[p] = Dict{typeof(g), fmpz}()
     end
     c = _pohlig_hellman_prime_power(g^r,p,v,h^r, big_step_cache = big_step_cache[p])
     push!(results, fmpz(c))
@@ -1010,7 +1021,9 @@ function _n_part_multgrp_mod_p(p::NfOrdIdl, n::Int)
   return G, map
 end
 
+
 function _mult_grp_mod_n(Q::NfOrdQuoRing, y1::Dict{NfOrdIdl, Int}, y2::Dict{NfOrdIdl, Int}, n::Integer)
+
   O = Q.base_ring
   idQ = Q.ideal
   OtoQ = NfOrdQuoMap(O, Q)
@@ -1051,7 +1064,7 @@ function _mult_grp_mod_n(Q::NfOrdQuoRing, y1::Dict{NfOrdIdl, Int}, y2::Dict{NfOr
         while !isone(mod(e, uncom))
           e *= e
         end
-        tame_part[q].generators[1] = tame_part[q].generators[1]^e
+        tame_part[q].generators[1] = powermod(tame_part[q].generators[1], e, minimum(idQ))
       end
       
       i += ngens(G2)
@@ -1086,8 +1099,9 @@ function _mult_grp_mod_n(Q::NfOrdQuoRing, y1::Dict{NfOrdIdl, Int}, y2::Dict{NfOr
   for s = 1:length(tame_ind)
     tame_part[tame_ind[s][1]].disc_log = StoG\(G[tame_ind[s][2]])
   end
-  
-  return S, StoQ, tame_part, wild_part
+  StoQ.tame = tame_part
+  StoQ.wild = wild_part
+  return S, StoQ
 end
 
 ################################################################################

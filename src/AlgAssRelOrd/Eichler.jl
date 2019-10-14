@@ -15,7 +15,7 @@ function principal_gen_eichler(I::AlgAssRelOrdIdl)
         continue
       end
 
-      # Consider orders[i] is an ideal.
+      # Consider orders[i] as an ideal.
       # The basis pseudo-matrix is probably not in HNF, but we don't need this.
       OO = ideal(A, basis_pmatrix(orders[i], copy = false), true)
       r = lcm(r, denominator(OO, orders[j]))
@@ -26,35 +26,21 @@ function principal_gen_eichler(I::AlgAssRelOrdIdl)
   y = integral_coprime_representative(O, I, rd)
   J = I*y
 
-  N = normred(J)
+  N = normred(J, O)
   @assert denominator(N, copy = false) == 1 # J should be integral
   N = numerator(N, copy = false)
   OK = order(N)
-  t, a = has_principal_gen_1_mod_m(N, OK(1)*OK, ramified_infinite_places(A))
-  @assert t "Ideal is not principal"
-  a = OK(evaluate(a))
+  R, mR = ray_class_group(OK(1)*OK, ramified_infinite_places(A))
+  @assert iszero(mR\N) "Ideal is not principal"
 
-  w, order_num = norm_equation(orders, a)
-  @assert normred(w) == a
+  primes = collect(keys(factor(N)))
+  valuations = [ valuation(N, p) for p in primes ]
+  w = _norm_equation_valuations_only(O, primes, valuations)
+  w = evaluate(w)
 
-  if orders[order_num] === O
-    Ow = O*O(w)
-    ww = _eichler_find_transforming_unit(J, Ow)
-    return w*ww*inv(y)
-  end
-
-  O2 = orders[order_num]
-  L = ideal(O, one(A))*ideal(O2, one(A))
-  L = inv(L)
-
-  z = integral_coprime_representative(O, L, rd)
-  Lz = L*z
-  u, v = idempotents(norm(Lz), rd)
-  @assert u*base_ring(O) + rd == base_ring(O)(1)*base_ring(O)
-  t = O(elem_in_nf(u, copy = false)*inv(z)*w*z)
-  I2 = O*t
-  x = _eichler_find_transforming_unit(J*u, I2)
-  return inv(z)*w*z*x*inv(y)
+  Ow = O*O(w)
+  ww = _eichler_find_transforming_unit(J, Ow)
+  return w*ww*inv(y)
 end
 
 # Requires nr(M) == nr(N) and that nr(N) is coprime to r*d where d is the
@@ -72,8 +58,8 @@ function _eichler_find_transforming_unit_maximal(M::T, N::T) where { T <: AlgAss
   end
 
   F = FieldOracle(A, [ O ])
-  p = normred(M)
-  @assert p == normred(N)
+  p = normred(M, O)
+  @assert p == normred(N, O)
   @assert denominator(p, copy = false) == 1
   p = numerator(p, copy = false)
   OpO, toOpO = quo(O, p*O, p)
@@ -116,6 +102,7 @@ function _eichler_find_transforming_unit_maximal(M::T, N::T) where { T <: AlgAss
   b = ceil(Int, degree(base_ring(B))*dim(B)*log2(BigInt(characteristic(base_ring(B)))))
   # A minimal set of generators of around b elements should generate B^\times
   units = _find_some_units(F, 1, b)
+  push!(units, -one(O))
   generators = [ matrix(toB(toOpO(u)), copy = false) for u in units ]
   path_exists, path = find_path(generators, v, w)
 
@@ -149,7 +136,11 @@ function _find_some_units(F::FieldOracle, order_num::Int, n::Int)
     OK = maximal_order_via_relative(K, KtoL)
     UK, mUK = unit_group(OK)
     for j = 1:ngens(UK)
-      push!(units, O(LtoA(KtoL(elem_in_nf(mUK(UK[j]), copy = false)))))
+      u = mUK(UK[j])
+      if u == -one(OK)
+        continue
+      end
+      push!(units, O(LtoA(KtoL(elem_in_nf(u, copy = false)))))
     end
   end
   return units
@@ -187,8 +178,8 @@ function _eichler_find_transforming_unit(I::AlgAssRelOrdIdl, J::AlgAssRelOrdIdl)
   @assert ismaximal(O)
   # We assume that left_order(J) == O, but testing this would be really expensive
 
-  n = normred(I)
-  @assert n == normred(J)
+  n = normred(I, O)
+  @assert n == normred(J, O)
   @assert denominator(n, copy = false) == 1
   n = numerator(n, copy = false)
 

@@ -1030,41 +1030,41 @@ const NfOrdIdl = NfAbsOrdIdl{AnticNumberField, nf_elem}
 #
 ################################################################################
 
-mutable struct NfOrdFracIdlSet
-   order::NfOrd
+mutable struct NfAbsOrdFracIdlSet{S, T}
+  order::NfAbsOrd{S, T}
 
-   function NfOrdFracIdlSet(O::NfOrd, cached::Bool=false)
-     try
-       return NfOrdFracIdlSetID[O]::NfOrdFracIdlSet
-     catch
-       r = new()
-       r.order = O
-       if cached
-         NfOrdFracIdlSetID[O] = r
-       end
-       return r::NfOrdFracIdlSet
-     end
-   end
+  function NfAbsOrdFracIdlSet{S, T}(O::NfAbsOrd{S, T}, cached::Bool=false) where {S, T}
+    if haskey(NfAbsOrdFracIdlSetID, O)
+      return NfAbsOrdFracIdlSetID[O]::NfAbsOrdFracIdlSet{S, T}
+    else
+      r = new{S, T}()
+      r.order = O
+      if cached
+        NfAbsOrdFracIdlSetID[O] = r
+      end
+      return r::NfAbsOrdFracIdlSet{S, T}
+    end
+  end
 end
 
-const NfOrdFracIdlSetID = Dict{NfOrd, NfOrdFracIdlSet}()
+const NfAbsOrdFracIdlSetID = Dict{NfAbsOrd, NfAbsOrdFracIdlSet}()
 
-mutable struct NfOrdFracIdl
-  order::NfOrd
-  num::NfOrdIdl
+mutable struct NfAbsOrdFracIdl{S, T}
+  order::NfAbsOrd{S, T}
+  num::NfAbsOrdIdl{S, T}
   den::fmpz
   norm::fmpq
   basis_matrix::FakeFmpqMat
   basis_mat_inv::FakeFmpqMat
 
-  function NfOrdFracIdl(O::NfOrd)
-    z = new()
+  function NfAbsOrdFracIdl{S, T}(O::NfAbsOrd{S, T}) where {S, T}
+    z = new{S, T}()
     z.order = O
     return z
   end
 
-  function NfOrdFracIdl(O::NfOrd, a::NfOrdIdl, b::fmpz)
-    z = new()
+  function NfAbsOrdFracIdl{S, T}(O::NfAbsOrd{S, T}, a::NfAbsOrdIdl{S, T}, b::fmpz) where {S, T}
+    z = new{S, T}()
     z.order = O
     b = abs(b)
     z.basis_matrix = FakeFmpqMat(basis_matrix(a), deepcopy(b))
@@ -1073,23 +1073,23 @@ mutable struct NfOrdFracIdl
     return z
   end
 
-  function NfOrdFracIdl(O::NfOrd, a::FakeFmpqMat)
-    z = new()
+  function NfAbsOrdFracIdl{S, T}(O::NfAbsOrd{S, T}, a::FakeFmpqMat) where {S, T}
+    z = new{S, T}()
     z.order = O
     z.basis_matrix = a
     return z
   end
 
-  function NfOrdFracIdl(x::NfOrdIdl, y::fmpz)
-    z = new()
+  function NfAbsOrdFracIdl{S, T}(x::NfAbsOrdIdl{S, T}, y::fmpz) where {S, T}
+    z = new{S, T}()
     z.order = order(x)
     z.num = x
     z.den = abs(y)
     return z
   end
   
-  function NfOrdFracIdl(O::NfOrd, a::nf_elem)
-    z = new()
+  function NfAbsOrdFracIdl{S, T}(O::NfAbsOrd{S, T}, a::T) where {S, T}
+    z = new{S, T}()
     z.order = O
     z.num = ideal(O, O(denominator(a, O)*a))
     z.den = denominator(a, O)
@@ -1097,6 +1097,31 @@ mutable struct NfOrdFracIdl
     return z
   end
 end
+
+function NfAbsOrdFracIdl(O::NfAbsOrd{S, T}) where {S, T}
+  return NfAbsOrdFracIdl{S, T}(O)
+end
+
+function NfAbsOrdFracIdl(O::NfAbsOrd{S, T},
+                         a::NfAbsOrdIdl{S, T}, b::fmpz) where {S, T}
+  return NfAbsOrdFracIdl{S, T}(O, a, b)
+end
+
+function NfAbsOrdFracIdl(O::NfAbsOrd{S, T}, a::FakeFmpqMat) where {S, T}
+  return NfAbsOrdFracIdl{S, T}(O, a)
+end
+
+function NfAbsOrdFracIdl(x::NfAbsOrdIdl{S, T}, y::fmpz) where {S, T}
+  return NfAbsOrdFracIdl{S, T}(x, y)
+end
+
+function NfAbsOrdFracIdl(O::NfAbsOrd{S, T}, a::T) where {S, T}
+  return NfAbsOrdFracIdl{S, T}(O, a)
+end
+ 
+const NfOrdFracIdlSet = NfAbsOrdFracIdlSet{AnticNumberField, nf_elem}
+
+const NfOrdFracIdl = NfAbsOrdFracIdl{AnticNumberField, nf_elem}
 
 ################################################################################
 #
@@ -1639,7 +1664,7 @@ mutable struct AbsOrdQuoRing{S, T} <: Ring
     z = new{S, T}()
     z.base_ring = O
     z.ideal = I
-    z.basis_matrix = basis_matrix(I)
+    z.basis_matrix = integral_basis_matrix_wrt(I, O)
     z.basis_mat_array = Array(z.basis_matrix)
     z.preinvn = [ fmpz_preinvn_struct(z.basis_matrix[i, i]) for i in 1:degree(O)]
     d = degree(O)

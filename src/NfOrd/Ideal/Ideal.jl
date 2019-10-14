@@ -219,6 +219,9 @@ function ideal(O::NfOrd, v::Vector{NfOrdElem})
   if isempty(v)
     return ideal(O, 0)
   end
+  for i = 1:length(v)
+    @assert O === parent(v[i])
+  end
   M = zero_matrix(FlintZZ, 2*degree(O), degree(O))
   M1 = representation_matrix(v[1])
   _hnf!(M1, :lowerleft)
@@ -284,10 +287,12 @@ end
 Creates the ideal $(x, y)$ of $\mathcal O$.
 """
 function ideal(O::NfAbsOrd, x::fmpz, y::NfOrdElem)
+  @assert parent(y) === O
   return NfAbsOrdIdl(deepcopy(x), deepcopy(y))
 end
 
 function ideal(O::NfAbsOrd, x::Integer, y::NfOrdElem)
+  @assert parent(y) === O
   return NfAbsOrdIdl(fmpz(x), deepcopy(y))
 end
 
@@ -310,6 +315,9 @@ ideal(O::NfAbsOrd, a::Int) = NfAbsOrdIdl(O, a)
 ideal(O::NfAbsOrd, a::Integer) = NfAbsOrdIdl(O, fmpz(a))
 
 function ideal_from_z_gens(O::NfOrd, b::Vector{NfOrdElem}, check::Bool = false)
+  for i = 1:length(b)
+    @assert parent(b[i]) === O
+  end
   d = degree(O)
   @assert length(b) >= d
 
@@ -464,7 +472,7 @@ function assure_has_basis_matrix(A::NfAbsOrdIdl)
     return nothing
   end
 
-  if !isdefining_polynomial_nice(nf(order(A)))
+  if !issimple(nf(order(A))) || !isdefining_polynomial_nice(nf(order(A)))
     c = hnf_modular_eldiv!(representation_matrix(A.gen_two), A.gen_one, :lowerleft)
     A.basis_matrix = c
     return nothing
@@ -515,6 +523,12 @@ function basis_mat_prime_deg_1(A::NfAbsOrdIdl)
   end
   # b is Hermite normal form, but lower left
   return b
+end
+
+# For compatibility with AlgAssAbsOrdIdl
+function integral_basis_matrix_wrt(A::NfAbsOrdIdl, O::NfAbsOrd; copy::Bool = true)
+  @assert O === order(A)
+  return basis_matrix(A, copy = copy)
 end
 
 ################################################################################
@@ -1455,7 +1469,7 @@ function mod(x::S, y::T) where { S <: Union{NfAbsOrdElem, AlgAssAbsOrdElem}, T <
     return O(a)
   end
 
-  c = basis_matrix(y, copy = false)
+  c = integral_basis_matrix_wrt(y, O, copy = false)
   t = fmpz(0)
   for i in degree(O):-1:1
     t = fdiv(a[i], c[i,i])
@@ -1604,12 +1618,115 @@ function mod!(x::Union{NfOrdElem, AlgAssAbsOrdElem}, Q::AbsOrdQuoRing)
   return mod!(x, Q.basis_mat_array, Q.preinvn)
 end
 
+function mod(x::FacElem{S, T}, Q::AbsOrdQuoRing{NfAbsOrd{T, S}, NfAbsOrdIdl{T, S}}) where { S, T }
+  O = base_ring(Q)
+  K = nf(O)
+  D = Dict{elem_type(O), fmpz}()
+  # First step: Make all factors integral
+  for (b, e) in x.fac
+    d = denominator(b, O)
+    b = O(d*b)
+    if haskey(D, b)
+      D[b] += e
+    else
+      D[b] = e
+    end
+    if isone(d)
+      continue
+    end
+    Od = O(d)
+    if haskey(D, Od)
+      D[Od] -= e
+    else
+      D[Od] = -e
+    end
+  end
+  bases = Vector{elem_type(O)}()
+  exps = Vector{fmpz}()
+  for (b, e) in D
+    push!(bases, b)
+    push!(exps, e)
+  end
+
+  # Second step: Make sure everything has non-negative valuation at primes
+  # dividing ideal(Q)
+  primes = collect(keys(factor(Q)))
+  vals = zeros(Int, length(primes))
+  for i = 1:length(primes)
+    p = primes[i]
+    val_elt = one(K) # Going to be an element with valuation -1 at p and valuation
+                     # 0 at all other elements of primes. I only want to compute
+                     # it, if it is needed.
+    val_elt_computed = false
+    # Find the factors with non-zero valuation at p and negative exponent
+    n = fmpz(0) # Counts how often we multiplied by val_elt
+    for j = 1:length(bases)
+      if exps[j] >= 0
+        continue
+      end
+      v = valuation(bases[j], p)
+      if iszero(v)
+        continue
+      end
+      if !val_elt_computed
+        vals[i] = -1
+        val_elt = approximate(vals, primes)
+        vals[i] = 0
+        val_elt_computed = true
+      end
+      b = bases[j]*val_elt^v
+      bases[j] = O(b)
+      n -= v*exps[j]
+    end
+    if iszero(n)
+      continue
+    end
+    # Multiply the factors with non-zero valuation at p and positive exponent
+    # by val_elt to compensate for the ones we multiplied above.
+    for j = 1:length(bases)
+      if exps[j] <= 0
+        continue
+      end
+      v = valuation(bases[j], p)
+      if iszero(v)
+        continue
+      end
+      n2 = n - v*exps[j]
+      if n2 >= 0
+        b = bases[j]*val_elt^v
+        bases[j] = O(b)
+        n = n2
+        if n == 0
+          break
+        end
+      else
+        q, r = divrem(n, exps[j])
+        @assert q < v
+        b = bases[j]
+        push!(bases, O(b*val_elt^q))
+        push!(exps, exps[j] - r)
+        bases[j] = O(b*val_elt^(q + 1))
+        exps[j] = r
+        n = 0
+        break
+      end
+    end
+    @assert n == 0 "Element not integral"
+  end
+
+  # Now we can evaluate (modulo ideal(Q) of course)
+  z = one(Q)
+  for i = 1:length(bases)
+    z *= Q(bases[i])^exps[i]
+  end
+  return z
+end
+
 ################################################################################
 #
 #  p-radical
 #
 ################################################################################
-
 
 function pradical_trace(O::NfAbsOrd, p::Union{Integer, fmpz})
   d = degree(O)
@@ -1959,7 +2076,7 @@ function iscoprime(I::NfAbsOrdIdl, J::NfAbsOrdIdl)
       return true
     end
   end
-  if gcd(minimum(I), minimum(J)) == 1
+  if gcd(minimum(I, copy = false), minimum(J, copy = false)) == 1
     return true
   else 
     return isone(I+J)
