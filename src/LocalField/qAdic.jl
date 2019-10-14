@@ -239,4 +239,16 @@ function defining_polynomial(Q::FqNmodFiniteField, P::Ring = GF(characteristic(Q
   return f
 end
 
+###############################################################################
+#
+#   Random generation
+#
+###############################################################################
 
+function rand(K::FlintQadicField)
+    a = gen(K)
+    p = prime(K)
+    N  = precision(K)
+    n  = degree(K)
+   return sum(K(rand(0:p^N))*a^j for j=0:n-1)
+end

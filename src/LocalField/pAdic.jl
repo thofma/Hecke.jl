@@ -152,7 +152,8 @@ padic Gaussian distribution. If $N$ is the precision of $K$, this is equivalent
 to choosing an element uniformly at random from $[0,..,p^N-1]$.
 """
 function rand(K::PadicField)
-    p = FlintZZ(prime(K))
-   return K(rand(0:p^precision(K)-1))
+    p = prime(K)
+    N = precision(K)
+   return K(rand(0:p^N-1))
 end
 

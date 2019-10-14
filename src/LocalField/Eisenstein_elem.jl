@@ -491,11 +491,12 @@ end
 ###############################################################################
 
 @doc Markdown.doc"""
-    rand(K::EisensteinField, r::UnitRange{Int64})
-Return a random element of the Eisenstein Field $K$, according to the distribution:
-> $a_{n-1} \pi^{n-1} + \ldots + a_0$, with each $a_i$ i.i.d standard p-adic Gaussians. 
+    rand(K::NALocalField)
+Return a random element of the non-archimedean Local Field ``K``, according to the distribution:
+``a_{n-1} \pi^{n-1} + \ldots + a_0``, 
+with each ``a_i`` the i.i.d standard distributions on the base field. 
 """
-function rand(K::EisensteinField, r::UnitRange{Int64})
+function rand(K::NALocalField)
     pi = gen(K)
     B  = base_ring(K)
     n  = degree(K)

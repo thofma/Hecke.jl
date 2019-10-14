@@ -388,20 +388,30 @@ function completion(K::AnticNumberField, p::fmpz, i::Int)
   end
   # gen(K) -> conj(a, p)[i] -> a = sum a_i o^i
   # need o = sum o_i a^i
-  R, mR = ResidueField(parent(ca))
+    R, mR = ResidueField(parent(ca))
+
+    # Construct the array of powers of the primitive element.
   pa = [one(R), mR(ca)]
   d = degree(R)
   while length(pa) < d
     push!(pa, pa[end]*pa[2])
   end
+
+    # Solve a linear system to figure out how to express the root of the
+    # Conway Polynomial defining the completion in terms of the image of the
+    # primitive element of the number field $K$.
   m = matrix(GF(p), d, d, [coeff(pa[i], j-1) for j=1:d for i=1:d])
   o = matrix(GF(p), d, 1, [coeff(gen(R), j-1) for j=1:d])
   s = solve(m, o)
   @hassert :qAdic 1 m*s == o
-  a = K()
+
+    # Construct the Conway root in the residue field.
+    a = K()
   for i=1:d
     _num_setcoeff!(a, i-1, lift(s[i,1]))
   end
+
+    # Construct the derivative of the Conway root in the residue field.
   f = defining_polynomial(parent(ca), FlintZZ)
   fso = inv(derivative(f)(gen(R)))
   o = matrix(GF(p), d, 1, [coeff(fso, j-1) for j=1:d])
@@ -411,6 +421,7 @@ function completion(K::AnticNumberField, p::fmpz, i::Int)
     _num_setcoeff!(b, i-1, lift(s[i,1]))
   end
 
+    # Lift the data from the residue field back to Qp.
   c = lift_root(f, a, b, p, 10)
   pc = fmpz(10)
   function lif(x::qadic)
@@ -421,9 +432,14 @@ function completion(K::AnticNumberField, p::fmpz, i::Int)
       #XXX this changes (c, pc) inplace as a cache
       #probably should be done with a new map type that can
       #store c, pc on the map.
-      d = lift_root(f, a, b, p, precision(x))
-      ccall((:nf_elem_set, :libantic), Nothing, (Ref{nf_elem}, Ref{nf_elem}, Ref{AnticNumberField}), c, d, K)
-      ccall((:fmpz_set_si, :libflint), Nothing, (Ref{fmpz}, Cint), pc, precision(x))
+        d = lift_root(f, a, b, p, precision(x))
+
+        # Manipulate the values c, pc by the implicit pointers stored inside this function.
+        # Unfortunately this cannot be done at the julia level...
+        ccall((:nf_elem_set, :libantic), Nothing,
+              (Ref{nf_elem}, Ref{nf_elem}, Ref{AnticNumberField}), c, d, K)
+        ccall((:fmpz_set_si, :libflint), Nothing, (Ref{fmpz}, Cint), pc, precision(x))
+
     elseif precision(x) < pc
       d = mod_sym(c, p^precision(x))
     else
