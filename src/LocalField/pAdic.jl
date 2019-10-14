@@ -137,3 +137,22 @@ Base.precision(Q::FlintPadicField) = Q.prec_max
 ################################################################################
 
 degree(::FlintPadicField) = 1
+
+    
+###############################################################################
+#
+#   Random generation
+#
+###############################################################################
+
+@doc Markdown.doc"""
+    rand(K::PadicField, r::UnitRange{Int64})
+Return a random element of the PadicField $K$. The distribution is the standard
+padic Gaussian distribution. If $N$ is the precision of $K$, this is equivalent
+to choosing an element uniformly at random from $[0,..,p^N-1]$.
+"""
+function rand(K::PadicField)
+    p = FlintZZ(prime(K))
+   return K(rand(0:p^precision(K)-1))
+end
+

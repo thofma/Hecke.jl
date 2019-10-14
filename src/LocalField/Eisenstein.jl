@@ -4,21 +4,102 @@
 
 ################################################################################
 #
-#  Base field
+#  Basic interface
 #
 ################################################################################
 
-base_field(K::EisensteinField) = FlintQQ
+@doc Markdown.doc"""
+    var(a::EisensteinField)
+> Returns the identifier (as a symbol, not a string), that is used for printing
+> the generator of the given Eisenstein field.
+"""
+var(a::EisensteinField) = a.S
+
+@doc Markdown.doc"""
+    gen(a::EisensteinField)
+> Return the generator of the given EisensteinField.
+"""
+function gen(a::EisensteinField)
+    r = eisf_elem(a)
+    r.data_ring_elt = gen(a.data_ring)
+   return r
+end
+
+@doc Markdown.doc"""
+    one(a::EisensteinField)
+> Return the multiplicative identity, i.e. one, in the given Eisenstein field.
+"""
+function one(a::EisensteinField)
+    return a(1)
+end
+
+@doc Markdown.doc"""
+    zero(a::EisensteinField)
+> Return the multiplicative identity, i.e. one, in the given Eisenstein field.
+"""
+function zero(a::EisensteinField)
+    return a(0)
+end
 
 ################################################################################
 #
-#  Order type
+#  Base field, basic base field functions, and uniformizer
 #
 ################################################################################
 
-order_type(::EisensteinField) = NfAbsOrd{EisensteinField, nf_elem}
+@doc Markdown.doc"""
+    base_ring(a::EisensteinField)
+> Returns the base ring of `a`.
+"""
+base_ring(a::EisensteinField) = a.base_ring
 
-order_type(::Type{EisensteinField}) = NfAbsOrd{EisensteinField, nf_elem}
+@doc Markdown.doc"""
+    base_field(a::EisensteinField)
+> Returns the base ring of `a`.
+"""
+base_field(a::EisensteinField) = base_ring(a)
+
+
+# TODO: Decide whether this is a "relative" or absolute method.
+@doc Markdown.doc"""
+    degree(a::EisensteinField)
+> Return the degree of the given Eisenstein field over it's base. i.e. the degree of its
+> defining polynomial.
+"""
+degree(a::EisensteinField) = degree(a.pol)
+
+@doc Markdown.doc"""
+    absolute_degree(a::NALocalField)
+> Return the absolute degree of the given Eisenstein field over the ground padic field.
+"""
+absolute_degree(a::PadicField) = 1
+absolute_degree(a::QadicField) = degree(a)
+
+function absolute_degree(a::NALocalField)
+    return degree(a)*absolute_degree(base_ring(a))
+end
+    
+# By our definition, the generator of a field of eisenstein type is the uniformizer.
+uniformizer(a::EisensteinField) = gen(a)
+
+@doc Markdown.doc"""
+    basis(K::EisensteinField) -> Array{eisf_elem,1}
+
+Returns a basis for $K$ over its base ring.
+"""
+function basis(K::EisensteinField)
+    n = degree(K)
+    g = gen(K);
+    d = Array{typeof(g)}(undef, n)
+    b = K(1)
+    for i = 1:n-1
+        d[i] = b
+        b *= g
+    end
+    d[n] = b
+    return d
+end
+
 
 ################################################################################
 #
@@ -30,6 +111,18 @@ issimple(::Type{EisensteinField}) = true
 
 issimple(::EisensteinField) = true
 
+
+###############################################################################
+#
+#   AbstractString I/O
+#
+###############################################################################
+
+function show(io::IO, a::EisensteinField{T}) where T
+   print(io, "Eisenstein extension over local field of type $T")
+   print(io, " with defining polynomial ", a.pol)
+end
+
 ################################################################################
 #
 #  Field constructions
@@ -37,117 +130,21 @@ issimple(::EisensteinField) = true
 ################################################################################
 
 @doc Markdown.doc"""
-    NumberField(S::Generic.ResRing{fmpq_poly}; cached::Bool = true, check::Bool = true) -> EisensteinField, Map
+    EisenteinField(f::AbstractAlgebra.Generic.Poly{<:NALocalFieldElem}, 
+                   s::AbstractString; cached::Bool = true, check::Bool = true)
+> Return a tuple $R, x$ consisting of the parent object $R$ and generator $x$
+> of the local field $\mathbb{Q}_p/(f)$ where $f$ is the supplied polynomial.
+> The supplied string `s` specifies how the generator of the field extension
+> should be printed.
 
- The number field $K$ isomorphic to the ring $S$ and the map from $K\to S$.
+> WARNING: Defaults are actually cached::Bool = false, check::Bool = true
 """
-function NumberField(S::Generic.ResRing{fmpq_poly}; cached::Bool = true, check::Bool = true)
-  Qx = parent(modulus(S))
-  K, a = NumberField(modulus(S), "_a", cached = cached, check = check)
-  mp = MapFromFunc(y -> S(Qx(y)), x -> K(lift(x)), K, S)
-  return K, mp
+function EisensteinField(f::AbstractAlgebra.Generic.Poly{<:NALocalFieldElem},
+                         s::AbstractString;
+                         cached::Bool = false, check::Bool = true)
+    return EisensteinField(f, Symbol(s), cached, check)
 end
 
-@doc Markdown.doc"""
-    NumberField(f::fmpq_poly; cached::Bool = true, check::Bool = true)
-
- The number field Q[x]/f generated by f.
-"""
-function NumberField(f::fmpq_poly; cached::Bool = true, check::Bool = true)
-  return NumberField(f, "_a", cached = cached, check = check)
-end
-
-function NumberField(f::fmpz_poly, s::Symbol; cached::Bool = true, check::Bool = true)
-  Qx, x = PolynomialRing(FlintQQ, string(parent(f).S))
-  return NumberField(Qx(f), String(s), cached = cached, check = check)
-end
-
-function NumberField(f::fmpz_poly, s::AbstractString; cached::Bool = true, check::Bool = true)
-  Qx, x = PolynomialRing(FlintQQ, string(parent(f).S))
-  return NumberField(Qx(f), s, cached = cached, check = check)
-end
-
-function NumberField(f::fmpz_poly; cached::Bool = true, check::Bool = true)
-  Qx, x = PolynomialRing(FlintQQ, string(parent(f).S))
-  return NumberField(Qx(f), cached = cached, check = check)
-end
-
-@doc Markdown.doc"""
-    radical_extension(n::Int, gen::Integer; cached::Bool = true, check::Bool = true) -> EisensteinField, nf_elem
-    radical_extension(n::Int, gen::fmpz; cached::Bool = true, check::Bool = true) -> EisensteinField, nf_elem
-
-The number field with defining polynomial $x^n-gen$.
-"""
-function radical_extension(n::Int, gen::Integer; cached::Bool = true, check::Bool = true)
-  return radical_extension(n, fmpz(gen), cached = cached, check = check)
-end
-
-function radical_extension(n::Int, gen::fmpz; cached::Bool = true, check::Bool = true)
-  kx, x = FlintQQ["x"]
-  return number_field(x^n - gen, cached = cached, check = check)
-end
-
-@doc Markdown.doc"""
-    cyclotomic_field(n::Int) -> EisensteinField, nf_elem
-
-The $n$-th cyclotomic field defined by the $n$-the cyclotomic polynomial.
-"""
-function cyclotomic_field(n::Int; cached::Bool = true)
-  return CyclotomicField(n, "z_$n", cached = cached)
-end
-
-# TODO: Some sort of reference?
-@doc Markdown.doc"""
-    wildanger_field(n::Int, B::fmpz) -> EisensteinField, nf_elem
-
-Returns the field with defining polynomial $x^n + \sum_{i=0}^{n-1} (-1)^{n-i}Bx^i$.
-These fields tend to have non-trivial class groups.
-"""
-function wildanger_field(n::Int, B::fmpz; cached::Bool = true)
-  Qx, x = PolynomialRing(FlintQQ, "x", cached = false)
-  f = x^n
-  for i=0:n-1
-    f += (-1)^(n-i)*B*x^i
-  end
-  return NumberField(f, "_\$", cached = cached)
-end
-
-function wildanger_field(n::Int, B::Integer; cached::Bool = true)
-  return wildanger_field(n, fmpz(B), cached = cached)
-end
-
-@doc Markdown.doc"""
-    quadratic_field(d::Integer) -> EisensteinField, nf_elem
-    quadratic_field(d::fmpz) -> EisensteinField, nf_elem
-
-Returns the field with defining polynomial $x^n -d$.
-"""
-function quadratic_field(d::fmpz; cached::Bool = true, check::Bool = true)
-  Qx, x = PolynomialRing(FlintQQ)
-  if nbits(d) > 100
-    a = div(d, fmpz(10)^(ndigits(d, 10) - 4))
-    b = mod(abs(d), 10^4)
-    s = "sqrt($a..($(nbits(d)) bits)..$b)"
-  else
-    s = "sqrt($d)"
-  end
-  q, a = number_field(x^2-d, s, cached = cached, check = check)
-  set_special(q, :show => show_quad)
-  return q, a
-end
-
-function show_quad(io::IO, q::EisensteinField)
-  d = trail(q.pol)
-  if d > 0
-    print(io, "Real quadratic field by ", q.pol)
-  else
-    print(io, "Imaginary quadratic field by ", q.pol)
-  end
-end
-
-function quadratic_field(d::Integer; cached::Bool = true, check::Bool = true)
-  return quadratic_field(fmpz(d), cached = cached, check = check)
-end
 
 ################################################################################
 #
@@ -159,21 +156,6 @@ characteristic(::EisensteinField) = 0
 
 ################################################################################
 #
-#  Predicates
-#
-################################################################################
-
-@doc Markdown.doc"""
-    isdefining_polynomial_nice(K::EisensteinField)
-
-Tests if the defining polynomial of $K$ is integral and monic.
-"""
-function isdefining_polynomial_nice(K::EisensteinField)
-  return Bool(K.flag & UInt(1))
-end
-
-################################################################################
-#
 #  Class group
 #
 ################################################################################
@@ -181,29 +163,41 @@ end
 @doc Markdown.doc"""
     class_group(K::EisensteinField) -> GrpAbFinGen, Map
 
-Shortcut for {{{class_group(maximal_order(K))}}}: returns the class
-group as an abelian group and a map from this group to the set
-of ideals of the maximal order.
+Returns the class group as an abelian group and a map from this group to the set
+of ideals of the maximal order. 
+
+NOTE: This function is not implemented.
 """
 function class_group(K::EisensteinField)
-  return class_group(maximal_order(K))
+  error("Not implemented.")
 end
 
 ################################################################################
 #
-#  Basis
+#  Residue Field
 #
 ################################################################################
 
-function basis(K::EisensteinField)
-  n = degree(K)
-  g = gen(K);
-  d = Array{typeof(g)}(undef, n)
-  b = K(1)
-  for i = 1:n-1
-    d[i] = b
-    b *= g
-  end
-  d[n] = b
-  return d
+function ResidueField(K::EisensteinField)
+    k, mp_struct = ResidueField(base_ring(K))
+
+    # Unpack the map structure to get the maps to/from the residue field.
+    base_res  = mp_struct.f
+    base_lift = mp_struct.g
+
+    T = elem_type(k)
+    
+    _residue = function(x::eisf_elem)
+        v = valuation(x)
+        v < 0 && error("element $x is not integral.")
+        return base_res(coeff(x,0))
+    end
+
+    #TODO: See if the residue field elem type can be declared dynamically.
+    function _lift(x)
+        return K(base_lift(x))
+    end
+    
+    return k, MapFromFunc(_residue, _lift, K, k)
 end
+

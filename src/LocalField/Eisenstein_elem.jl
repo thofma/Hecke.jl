@@ -15,18 +15,6 @@ parent(a::eisf_elem) = a.parent
 elem_type(::Type{EisensteinField{T}}) where T = eisf_elem
 
 @doc Markdown.doc"""
-    base_ring(a::EisensteinField)
-> Returns the base ring of `a`.
-"""
-base_ring(a::EisensteinField) = a.base_ring
-
-@doc Markdown.doc"""
-    base_field(a::EisensteinField)
-> Returns the base ring of `a`.
-"""
-base_field(a::EisensteinField) = base_ring(a)
-
-@doc Markdown.doc"""
     base_ring(a::eisf_elem)
 > Returns the base ring of the parent of `a`.
 """
@@ -42,17 +30,9 @@ isdomain_type(::Type{eisf_elem}) = true
 
 isexact_type(::Type{eisf_elem}) = false
 
-@doc Markdown.doc"""
-    var(a::EisensteinField)
-> Returns the identifier (as a symbol, not a string), that is used for printing
-> the generator of the given number field.
-"""
-var(a::EisensteinField) = a.S
-
 function check_parent(a::eisf_elem, b::eisf_elem)
    a.parent != b.parent && error("Incompatible EisensteinField elements")
 end
-
 
 ###############################################################################
 #
@@ -72,35 +52,7 @@ function deepcopy(a::eisf_elem)
     return r
 end
 
-@doc Markdown.doc"""
-    gen(a::EisensteinField)
-> Return the generator of the given EisensteinField.
-"""
-function gen(a::EisensteinField)
-    r = eisf_elem(a)
-    r.data_ring_elt = gen(a.data_ring)
-   return r
-end
-
-
-
-@doc Markdown.doc"""
-    one(a::EisensteinField)
-> Return the multiplicative identity, i.e. one, in the given number field.
-"""
-function one(a::EisensteinField)
-    return a(1)
-end
-
-@doc Markdown.doc"""
-    zero(a::EisensteinField)
-> Return the multiplicative identity, i.e. one, in the given number field.
-"""
-function zero(a::EisensteinField)
-    return a(0)
-end
-
-#TODO: THIS IS VERY WRONG. The fix should occur in AbstractAlgebra.
+#TODO: UNSAFE ZERO SHOULD NOT RETURN AN ELEMENT. The fix should occur in AbstractAlgebra.
 #TODO: Make this more efficient.
 function zero!(a::eisf_elem)
     a.data_ring_elt = zero(parent(a)).data_ring_elt
@@ -199,35 +151,7 @@ function elem_to_mat_row!(a::fmpz_mat, i::Int, d::fmpz, b::eisf_elem)
  end
 
 
-function deepcopy_internal(d::eisf_elem, dict::IdDict)
-   z = eisf_elem(parent(d), d)
-   return z
-end
-
 end #if
-
-# TODO: Decide whether this is a "relative" or absolute method.
-@doc Markdown.doc"""
-    degree(a::EisensteinField)
-> Return the degree of the given Eisenstein field over it's base. i.e. the degree of its
-> defining polynomial.
-"""
-degree(a::EisensteinField) = degree(a.pol)
-
-
-@doc Markdown.doc"""
-    absolute_degree(a::NALocalField)
-> Return the absolute degree of the given Eisenstein field over the ground padic field.
-"""
-absolute_degree(a::PadicField) = 1
-absolute_degree(a::QadicField) = degree(a)
-
-function absolute_degree(a::NALocalField)
-    return degree(a)*absolute_degree(base_ring(a))
-end
-    
-# By our definition, the generator of a field of eisenstein type is the uniformizer.
-uniformizer(a::EisensteinField) = gen(a)
 
 
 ###############################################################################
@@ -235,11 +159,6 @@ uniformizer(a::EisensteinField) = gen(a)
 #   AbstractString I/O
 #
 ###############################################################################
-
-function show(io::IO, a::EisensteinField{T}) where T
-   print(io, "Eisenstein extension over local field of type $T")
-   print(io, " with defining polynomial ", a.pol)
-end
 
 function show(io::IO, x::eisf_elem)
    print(io, x.data_ring_elt)
@@ -310,38 +229,6 @@ end
 #     return Fq(change_base_ring(lift(R,a),Fp))
 # end
 
-coefficients(a::eisf_elem) = coefficients(a.data_ring_elt.data)
-
-coeff(a::eisf_elem,i::Int) = coeff(a.data_ring_elt.data, i)
-
-function setcoeff!(a::eisf_elem, i::Int64, c::NALocalFieldElem)
-    setcoeff!(a.data_ring_elt.data, i, c)
-end
-
-function ResidueField(K::EisensteinField)
-    k, mp_struct = ResidueField(base_ring(K))
-
-    # Unpack the map structure to get the maps to/from the residue field.
-    base_res  = mp_struct.f
-    base_lift = mp_struct.g
-
-    T = elem_type(k)
-    
-    _residue = function(x::eisf_elem)
-        v = valuation(x)
-        v < 0 && error("element $x is not integral.")
-        return base_res(coeff(x,0))
-    end
-
-    #TODO: See if the residue field elem type can be declared dynamically.
-    function _lift(x)
-        return K(base_lift(x))
-    end
-    
-    return k, MapFromFunc(_residue, _lift, K, k)
-end
-
-
 # function residue_image(a::eisf_elem)
 #     coeffs = coefficients(a.data_ring_elt.data)
     
@@ -354,6 +241,19 @@ end
 #     return residue_image(coeffs[0])
 # end
 
+###############################################################################
+#
+#   Coefficients
+#
+###############################################################################
+
+coefficients(a::eisf_elem) = coefficients(a.data_ring_elt.data)
+
+coeff(a::eisf_elem,i::Int) = coeff(a.data_ring_elt.data, i)
+
+function setcoeff!(a::eisf_elem, i::Int64, c::NALocalFieldElem)
+    setcoeff!(a.data_ring_elt.data, i, c)
+end
 
 ###############################################################################
 #
@@ -583,37 +483,6 @@ end
 
 (a::EisensteinField)(c::Rational) = a(fmpq(c))
 
-### Comment block.
-if false
-
-function (a::EisensteinField)(c::fmpq)
-   z = eisf_elem(a)
-   ccall((:eisf_elem_set_fmpq, :libantic), Nothing,
-         (Ref{eisf_elem}, Ref{fmpq}, Ref{EisensteinField}), z, c, a)
-   return z
-end
-
-# Debatable if we actually want this functionality...
-function (a::EisensteinField)(pol::fmpq_poly)
-   pol = parent(a.pol)(pol) # check pol has correct parent
-   z = eisf_elem(a)
-   if length(pol) >= length(a.pol)
-      pol = mod(pol, a.pol)
-   end
-   ccall((:eisf_elem_set_fmpq_poly, :libantic), Nothing,
-         (Ref{eisf_elem}, Ref{fmpq_poly}, Ref{EisensteinField}), z, pol, a)
-   return z
-end
-
-function (a::FmpqPolyRing)(b::eisf_elem)
-   parent(parent(b).pol) != a && error("Cannot coerce from field to polynomial ring")
-   r = a()
-   ccall((:eisf_elem_get_fmpq_poly, :libantic), Nothing,
-         (Ref{fmpq_poly}, Ref{eisf_elem}, Ref{EisensteinField}), r, b, parent(b))
-   return r
-end
-
-end #if
     
 ###############################################################################
 #
@@ -621,36 +490,14 @@ end #if
 #
 ###############################################################################
 
-if false
-    
-function rand(K::EisensteinField, r::UnitRange{Int64})
-   R = parent(K.pol)
-   n = degree(K.pol)
-   return K(rand(R, (n-1):(n-1), r)) 
-end
-
-end #if
-    
-###############################################################################
-#
-#   EisensteinField constructor
-#
-###############################################################################
-
 @doc Markdown.doc"""
-    EisenteinField(f::fmpq_poly, s::AbstractString; cached::Bool = true, check::Bool = true)
-> Return a tuple $R, x$ consisting of the parent object $R$ and generator $x$
-> of the local field $\mathbb{Q}_p/(f)$ where $f$ is the supplied polynomial.
-> The supplied string `s` specifies how the generator of the field extension
-> should be printed.
-
-> WARNING: Defaults are actually cached::Bool = false, check::Bool = false
+    rand(K::EisensteinField, r::UnitRange{Int64})
+Return a random element of the Eisenstein Field $K$, according to the distribution:
+> $a_{n-1} \pi^{n-1} + \ldots + a_0$, with each $a_i$ i.i.d standard p-adic Gaussians. 
 """
-function EisensteinField(f::AbstractAlgebra.Generic.Poly{<:NALocalFieldElem}, s::AbstractString;
-                         cached::Bool = false, check::Bool = true)
-    S = Symbol(s)
-    return EisensteinField(f, S, cached, check)
-    #parent_obj = EisensteinField(f, S, cached, check)
-   #return parent_obj, gen(parent_obj)
+function rand(K::EisensteinField, r::UnitRange{Int64})
+    pi = gen(K)
+    B  = base_ring(K)
+    n  = degree(K)
+   return sum(K(rand(B))*pi^j for j=0:n-1)
 end
-
