@@ -65,20 +65,20 @@ K,θ = Hecke.EisensteinField(x^6-7, "θ")
 
 
 f = x^5 - 7*x + 4
-fK = change_base_ring(f,K)
+fK = change_base_ring(K,f)
 
 
 Ql = QadicField(17,3,10)
 S, y = PolynomialRing(Ql, "y")
 L,a = Hecke.EisensteinField(y^3-17*y^2+17*y-17, "a")
 
-g = change_base_ring(L.pol, L)
-Y = change_base_ring(y,L)
+g = change_base_ring(L, L.pol)
+Y = change_base_ring(L, y)
 
 
 # Some tests
 
-@assert fK - 4 == change_base_ring(x^5 - 7*x,K)
+@assert fK - 4 == change_base_ring(K, x^5 - 7*x)
 
 @assert 2*θ == θ + θ
 

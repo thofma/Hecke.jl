@@ -39,14 +39,14 @@ function number_of_roots(f::Hecke.Generic.Poly{<:NALocalFieldElem})
 
     while !isempty(C)
         c = pop!(C)        
-        cp = change_base_ring(c, res)
+        cp = map_coeffs(res, c)
         Rfp = parent(cp)
         rts = roots(cp)
         
         for rt in rts
             
             h = fprimitive_part( c(pi*x + lift(rt)) )
-            hp = change_base_ring(h, res)
+            hp = map_coeffs(res, h)
             
             if degree(hp) == 1
                 m += 1
@@ -63,7 +63,7 @@ function number_of_roots(f::Hecke.Generic.Poly{<:NALocalFieldElem})
 end
 
 function number_of_roots(f::Hecke.Generic.Poly{<:NALocalFieldElem}, K::NALocalField)
-    return number_of_roots(change_base_ring(f, K))
+    return number_of_roots(change_base_ring(K,f))
 end
 
 ############################################################
@@ -93,8 +93,8 @@ function newton_lift(f::Hecke.Generic.Poly{T}, r::T) where T<:NALocalFieldElem
         push!(chain, i)
     end
     df  = derivative(f)
-    fK  = change_base_ring(f, K)
-    dfK = change_base_ring(df, K)
+    fK  = change_base_ring(K,f)
+    dfK = change_base_ring(K,df)
 
     @assert r.N == 1          # Ensure the residue is well-defined.
     df_at_r_inverse = K(r)    # Cache and update the values of 1/dfK(r)
@@ -140,7 +140,7 @@ function integral_roots(f::Hecke.Generic.Poly{<:Hecke.NALocalFieldElem})
     roots_type = elem_type(K)
     
     fprim = fprimitive_part(f)
-    fp = change_base_ring(fprim, res)
+    fp = map_coeffs(res, fprim)
 
     rts = roots(fp)
     
@@ -181,12 +181,12 @@ end
 
 function roots(f, K::Hecke.Field)
     #base_ring(f) != K && error("Not implemented unless the polynomial has base ring $K.")
-    return roots(change_base_ring(f,K))
+    return roots(change_base_ring(K,f))
 end
 
 function integral_roots(f, K::Hecke.Field)
     #base_ring(f) != K && error("Not implemented unless the polynomial has base ring $K.")
-    return integral_roots(change_base_ring(f,K))
+    return integral_roots(change_base_ring(K,f))
 end
 
 
