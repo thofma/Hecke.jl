@@ -171,6 +171,11 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx)
 
   @vprint :UnitGroup 1 "Relation module $(x.M)\n"
 
+  if nrows(x.M.rel_gens) == 0
+    @vprint :UnitGroup 1 "No additional relations. Going back ...\n"
+    return 0
+  end
+
   O = order(u)
 
   K = nf(order(x.FB.ideals[1]))
@@ -204,6 +209,7 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx)
   not_larger = 0
 
   @vprint :UnitGroup 1 "Enlarging unit group by adding kernel elements ...\n"
+
   while not_larger < 5 
 
     add_units = []
