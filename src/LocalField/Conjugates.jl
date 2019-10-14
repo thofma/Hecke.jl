@@ -355,7 +355,7 @@ end
 
 @doc Markdown.doc"""
     completion(K::AnticNumberField, P::NfOrdIdl) -> FlintQadicField, Map{AnticNumberField -> FlintQadicField}
-The completino of $K$ wrt to the topology induced by the valuation at $P$. $P$ needs
+The completion of $K$ wrt to the topology induced by the valuation at $P$. $P$ needs
 to be unramifed.
 The map giving the embedding of $K$ into the completion, admits a pointwise pre-image to obtain a lift.
 Note, that the map is not well defined by this data: $K$ will have $\deg P$ many embeddings.
