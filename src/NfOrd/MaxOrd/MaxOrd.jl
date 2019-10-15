@@ -842,10 +842,8 @@ function pradical_trace1(O::NfOrd, p::Union{Integer, fmpz})
 end
 
 function pradical1(O::NfOrd, p::Union{Integer, fmpz})
-  if p isa fmpz
-    if nbits(p) < 64
-      return pradical1(O, Int(p))
-    end
+  if p isa fmpz && fits(Int, p)
+    return pradical1(O, Int(p))
   end
   d = degree(O)
 

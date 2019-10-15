@@ -879,7 +879,7 @@ function factor(N::fmpz)
     #end
   end
   for p = keys(r)
-    if nbits(p) > 60 && !(p in big_primes)
+    if !fits(Int, p) && !(p in big_primes)
       push!(big_primes, p)
     end
   end

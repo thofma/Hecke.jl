@@ -287,14 +287,14 @@ Note that in this case it may happen that $p\mathcal O$ is not the product of th
 $\mathfrak p_i^{e_i}$.
 """
 function prime_decomposition(O::NfAbsOrd{S, T}, p::Union{Integer, fmpz}, degree_limit::Int = 0, lower_limit::Int = 0; cached::Bool = true) where {S, T}
-  if typeof(p) == fmpz && nbits(p) < 64
+  if typeof(p) == fmpz && fits(Int, p)
     return prime_decomposition(O, Int(p), degree_limit, lower_limit)
   end
   return prime_dec_nonindex(O, p, degree_limit, lower_limit)
 end
 
 function prime_decomposition(O::NfOrd, p::Union{Integer, fmpz}, degree_limit::Int = degree(O), lower_limit::Int = 0; cached::Bool = false)
-  if typeof(p) == fmpz && nbits(p) < 64
+  if typeof(p) == fmpz && fits(Int, p)
     return prime_decomposition(O, Int(p), degree_limit, lower_limit)
   end
   if isdefining_polynomial_nice(nf(O))
@@ -649,7 +649,7 @@ function divides(A::NfOrdIdl, B::NfOrdIdl)
     #I can just test the polynomials!
     K = nf(order(A))
     Qx = parent(K.pol)
-    if nbits(minimum(B)) > 60
+    if fits(Int, minimum(B))
       R = ResidueRing(FlintZZ, minimum(B), cached = false)
       Rx = PolynomialRing(R, "t", cached = false)[1]
       f1 = Rx(Qx(A.gen_two.elem_in_nf))

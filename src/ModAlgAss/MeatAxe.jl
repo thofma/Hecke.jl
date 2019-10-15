@@ -919,7 +919,7 @@ Base.IteratorSize(::Type{GaloisField}) = Base.HasLength()
 Base.length(R::GaloisField) = R.n
 
 function powmod(f::Zmodn_poly, e::fmpz, g::Zmodn_poly)
-  if nbits(e) <= 63
+  if fits(Int, e)
     return powmod(f, Int(e), g)
   else
     _e = BigInt()

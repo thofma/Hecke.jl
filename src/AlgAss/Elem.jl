@@ -484,7 +484,7 @@ function ^(a::AbsAlgAssElem, b::Int)
 end
 
 function ^(a::AbsAlgAssElem, b::fmpz)
-  if nbits(b) < 64
+  if fits(Int, b)
     return a^Int(b)
   end
   if b < 0

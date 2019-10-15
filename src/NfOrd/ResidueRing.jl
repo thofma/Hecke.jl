@@ -254,7 +254,7 @@ end
 *(x::AbsOrdQuoRingElem, y::fmpz) = y*x
 
 function ^(a::AbsOrdQuoRingElem, f::fmpz)
-  if nbits(f) < 64
+  if fits(Int, f)
     return a^Int(f)
   end
   f == 0 && return one(parent(a))

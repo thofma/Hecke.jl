@@ -966,7 +966,7 @@ end
 function _minmod_easy(a::fmpz, b::NfOrdElem)
   Zk = parent(b)
   k = number_field(Zk)
-  if nbits(a) < 64
+  if fits(Int, a)
     S = ResidueRing(FlintZZ, Int(a), cached = false)
     St = PolynomialRing(S, cached=false)[1]
     B = St(b.elem_in_nf)
@@ -1029,7 +1029,7 @@ function _minmod_comp(a::fmpz, b::NfOrdElem)
   d = denominator(b.elem_in_nf)
   d, _ = ppio(d, acom)  
   mod = acom*d*e
-  if nbits(mod) < 64
+  if fits(Int, mod)
     S1 = ResidueRing(FlintZZ, Int(mod), cached = false)
     St1 = PolynomialRing(S1, cached=false)[1]
     B1 = St1(d*b.elem_in_nf)
@@ -1155,7 +1155,7 @@ function _normmod_comp(a::fmpz, b::NfOrdElem)
   d = denominator(b.elem_in_nf)
   com, uncom = ppio(d, a)
   mod = a*com^degree(k)
-  if nbits(mod) < 64
+  if fits(Int, mod)
     R = ResidueRing(FlintZZ, Int(mod), cached=false)
     Rt = PolynomialRing(R, cached=false)[1]
     B1 = Rt(d*b.elem_in_nf)
@@ -1818,7 +1818,7 @@ just $\{ x \in \mathcal O \mid \exists k \in \mathbf Z_{\geq 0} \colon x^k
 """
 function pradical(O::NfAbsOrd, p::Union{Integer, fmpz})
   if p isa fmpz
-    if nbits(p) < 64
+    if fits(Int, p)
       return pradical(O, Int(p))
     end
   end

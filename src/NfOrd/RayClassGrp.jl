@@ -276,7 +276,7 @@ end
 function _eval_quo(elems::Array{FacElem{nf_elem, AnticNumberField},1}, p::NfOrdIdl, q::NfOrdIdl, exponent::fmpz)
   O = order(p) 
   if p == q
-    if nbits(p.minimum) < 64
+    if fits(Int, p.minimum)
       Q, mQ = ResidueFieldSmall(O, p)
       return _ev_quo(Q, mQ, elems, p, exponent)
     else
