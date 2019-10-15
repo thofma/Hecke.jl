@@ -1090,7 +1090,7 @@ The inverse of the Euler totient functions: find all $x$ s.th. $phi(x) = n$
 holde. The elements are returned in factored form.
 """
 function eulerphi_inv_fac_elem(n::fmpz)
-  lp = []
+  lp = fmpz[]
   for d = Divisors(n)
     if isprime(d+1)
       push!(lp, d+1)
@@ -1098,8 +1098,8 @@ function eulerphi_inv_fac_elem(n::fmpz)
   end
 #  println("possible primes: ", lp)
 
-  E = []
-  res = []
+  E = Tuple{fmpz, Vector{Tuple{fmpz, Int}}}[]
+  res = FacElem{fmpz, FlintQQ}[]
   for p = lp
     v = valuation(n, p)
     for i=0:v

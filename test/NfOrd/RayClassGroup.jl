@@ -49,7 +49,7 @@
   @testset "infinite places" begin
   
      Qx, x = PolynomialRing(FlintQQ, "x");
-     K, a = NumberField(x^4-4*x^3-11*x^2+30*x+20)
+     K, a = NumberField(x^4-4*x^3-11*x^2+30*x+20, cached = false)
     O = maximal_order(K)
     r, mr = ray_class_group(ideal(O,4), real_places(K), n_quo=2)
     @test order(r) == 2^5

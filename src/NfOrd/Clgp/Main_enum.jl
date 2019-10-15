@@ -70,7 +70,6 @@ function class_group_find_relations(clg::ClassGrpCtx; val = 0, prec::Int = 100,
   for i in clg.FB.ideals
     f = class_group_small_real_elements_relation_start(clg, i, limit = limit,
                         prec = prec, val = val)
-
     push!(I, f)
     f.vl = val
     while true

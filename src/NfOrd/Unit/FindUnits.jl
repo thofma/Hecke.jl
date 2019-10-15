@@ -212,7 +212,7 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx)
 
   while not_larger < 5 
 
-    add_units = []
+    add_units = Int[]
     rel = SMat{fmpz}()
     for jj in 1:min(div(nrows(x.M.rel_gens), 10)+1, 20)
       xj = rand(1:nrows(x.M.rel_gens))

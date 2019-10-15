@@ -312,7 +312,7 @@ function from_class_fields_to_fields(class_fields::Vector{Hecke.ClassField{Hecke
       cfieldsp[i] = Hecke.maximal_p_subfield(class_fields[i], Int(p))
     end
     idE = grp_to_be_checked[p]
-    if mod(order(torsion_unit_group(maximal_order(K))[1]), exponent(cfieldsp[1])) == 0 
+    if iszero(mod(order(torsion_unit_group(maximal_order(K))[1]), p^(valuation(exponent(class_fields[1]), p))))
       compute_fields(cfieldsp, autos, idE, right_grp)
       pclassfields[ind] = cfieldsp
       ind += 1
@@ -358,47 +358,15 @@ function compute_fields(class_fields::Vector{Hecke.ClassField{Hecke.MapRayClassG
   #Since I want to compute as few Frobenius as possible, I want to first compute the extensions
   #whose set of divisors is maximal
   it = findall(right_grp)
-  mins = Vector{fmpz}(undef, length(it))
-  for i = 1:length(mins)
-    mins[i] = minimum(defining_modulus(class_fields[it[i]])[1])
-  end
-  ismax = trues(length(mins))
-  for i = 1:length(ismax)
-    for j = i+1:length(ismax)
-      if ismax[j] 
-        i2 = ppio(mins[i], mins[j])[2]
-        if isone(i2)
-          ismax[i] = false
-          break
-        end 
-        i3 = ppio(mins[j], mins[i])[2]
-        if isone(i3)
-          ismax[j] = false
-        end
-      end
-    end
-  end
-  ord_class_fields = Vector{Int}(undef, length(ismax))
-  j1 = 1
-  j2 = length(ismax)
-  for i = 1:length(ismax)
-    if ismax[i]
-      ord_class_fields[j1] = it[i]
-      j1 += 1
-    else
-      ord_class_fields[j2] = it[i]
-      j2 -= 1
-    end
-  end
   set_up_cycl_ext(K, expo, autos)
   
   for i in it
-    C = class_fields[ord_class_fields[i]]
+    C = class_fields[i]
     L = number_field(C)
     autL = Hecke.absolute_automorphism_group(C, autos)
     Cpperm = permutation_group(autL)
     if !isone(gcd(degree(K), expo)) && GAP.Globals.IdGroup(Cpperm) != grp_to_be_checked
-      right_grp[ord_class_fields[i]] = false
+      right_grp[i] = false
     end
   end
   return right_grp
@@ -576,14 +544,13 @@ function computing_over_subfields(class_fields, subfields, idE, autos, right_grp
 end
 
 function translate_extensions(mL::NfToNfMor, class_fields, new_class_fields, ctxK, it)
-  
   to_be_done = Int[]
   L = domain(mL)
   OL = maximal_order(L)
   K = codomain(mL)
   OK = maximal_order(K)
-  n = Int(exponent(codomain(class_fields[1].quotientmap)))
-  ordext = Int(order(codomain(class_fields[1].quotientmap)))
+  n = Int(exponent(codomain(class_fields[it[1]].quotientmap)))
+  ordext = Int(order(codomain(class_fields[it[1]].quotientmap)))
   ctx = Hecke.rayclassgrp_ctx(OL, n)
   d = divexact(discriminant(maximal_order(K)), discriminant(OL)^(divexact(degree(K), degree(L))))
   f = factor(ideal(OL, d))
@@ -637,8 +604,12 @@ function translate_extensions(mL::NfToNfMor, class_fields, new_class_fields, ctx
     end
     #Finally, the norm group of C over L
     #I use the usual strategy, as in check_abelian_extension
-    fM0 = merge(F, fM0)
-    RM, mRM = Hecke.ray_class_group_quo(OK, fM0, InfPlc[], ctxK, check = false)
+    fM0 = merge(max, F, fM0)
+    inf_plc2 = InfPlc[]
+    if !isempty(infplc)
+      inf_plc2 = real_places(K)
+    end
+    RM, mRM = Hecke.ray_class_group_quo(OK, fM0, inf_plc2, ctxK, check = false)
     lP, gS = Hecke.find_gens(mRM)
     listn = NfOrdIdl[norm(mL, x) for x in lP]
     # Create the map between R and r by taking norms
@@ -656,8 +627,11 @@ function translate_extensions(mL::NfToNfMor, class_fields, new_class_fields, ctx
     k, mk = kernel(RMtoR)
     mp = mk*proj
     ck, mck = cokernel(mp)
-    expected_order = divexact(order(r), order(ngL)) * degree(C)
-    if order(ck) != expected_order
+    #If everything could work, then ck should be the direct product of the abelian extension I am searching for and 
+    #the maximal abelian subextension of K/L
+    G1 = snf(cokernel(mngL)[1])[1]
+    G2 = snf(codomain(C.quotientmap))[1]
+    if !_are_there_subs(ck, map(Int, vcat(G1.snf, G2.snf)))
       push!(to_be_done, indclf)
       continue
     end
@@ -746,9 +720,9 @@ function translate_class_field_down(subfields, class_fields, it)
   #Now, I translate the fields over the subfields.
   to_be_done = Int[i for i in it]
   created_subfields = NfToNfMor[]
-  K = base_field(class_fields[1])
+  K = base_field(class_fields[to_be_done[1]])
   OK = maximal_order(K)
-  ctxK = Hecke.rayclassgrp_ctx(OK, exponent(class_fields[1]))
+  ctxK = Hecke.rayclassgrp_ctx(OK, exponent(class_fields[to_be_done[1]]))
   for mL in subfields
     push!(created_subfields, mL)
     to_be_done_new = translate_extensions(mL, class_fields, new_class_fields, ctxK, it)
@@ -762,7 +736,7 @@ end
 
 
 function translate_fields_up(class_fields, new_class_fields, subfields, it)
-  K = base_field(class_fields[1])
+  K = base_field(class_fields[it[1]])
   Ky = PolynomialRing(K, "y", cached = false)[1]
   for i in it
     C = class_fields[i]
@@ -775,8 +749,8 @@ function translate_fields_up(class_fields, new_class_fields, subfields, it)
     end
     L = domain(mL)
     D = Dict{Int, NfToNfMor}()
-    for i = 1:length(new_class_fields[i].cyc)
-      d = degree(new_class_fields[1].cyc[i])
+    for j = 1:length(new_class_fields[i].cyc)
+      d = degree(new_class_fields[i].cyc[j])
       if !haskey(D, d)
         CEK = cyclotomic_extension(K, d)
         CEL = cyclotomic_extension(L, d)

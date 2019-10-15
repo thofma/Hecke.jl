@@ -62,7 +62,7 @@ function rel_auto_easy(A::ClassField_pp)
     b *= A.pe
     push!(M, SRow(b))
   end
-  tau = hom(A.K, A.K, A.bigK.zeta*gen(A.K), check = false)
+  tau = hom(A.K, A.K, A.bigK.zeta*gen(A.K), check = true)
   N = SRow(tau(A.pe))
   C = cyclotomic_extension(base_field(A), degree(A))
   Mk = _expand(M, pseudo_inv(C.mp[1]))
@@ -136,7 +136,6 @@ function rel_auto(A::ClassField_pp)
     return rel_auto_intersect(A)
   end
 end
-
 
 function rel_auto(A::ClassField)
   aut = NfRelToNfRelMor{nf_elem}[rel_auto(x) for x = A.cyc]
