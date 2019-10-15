@@ -142,6 +142,7 @@ function contains_equation_order(O::NfAbsOrd)
 end
 
 iscommutative(O::NfAbsOrd) = true
+iscommutative(::FlintIntegerRing) = true
 
 ################################################################################
 #

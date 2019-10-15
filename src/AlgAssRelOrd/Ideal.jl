@@ -1284,6 +1284,10 @@ function maximal_integral_ideal(O::AlgAssRelOrd, p::Union{ NfAbsOrdIdl, NfRelOrd
   D, CtoD = _as_matrix_algebra(C)
 
   n = degree(D)
+  if isone(n)
+    return P
+  end
+
   N = basis_pmatrix(P)
   m = numerator(det(N), copy = false)
   t = zero_matrix(K, 1, degree(O))
@@ -1353,7 +1357,7 @@ function maximal_integral_ideal_containing(I::AlgAssRelOrdIdl, p::Union{ NfAbsOr
   B, OPtoB, BtoOP = _as_algebra_over_center(OP)
   C, toC = _as_matrix_algebra(B)
 
-  JinC = ideal_from_gens(C, [ toC(BtoOP(toOP(O(b)))) for b in absolute_basis(J) ])
+  JinC = ideal_from_gens(C, [ toC(OPtoB(toOP(O(b)))) for b in absolute_basis(J) ])
   y = left_principal_gen(JinC)
   m = matrix(y)
   r = rref!(m)
@@ -1386,8 +1390,8 @@ function maximal_integral_ideal_containing(I::AlgAssRelOrdIdl, p::Union{ NfAbsOr
     b = toOP\(BtoOP(toC\(basis_c[i])))
     elem_to_mat_row!(t, i, elem_in_algebra(b, copy = false))
   end
-  PM = vcat(basis_pmat(P), PseudoMatrix(t))
-  n = numerator(det(basis_pmat(P, copy = false)), copy = false)
+  PM = vcat(basis_pmatrix(P), PseudoMatrix(t))
+  n = numerator(det(basis_pmatrix(P, copy = false)), copy = false)
   PM = sub(pseudo_hnf_full_rank_with_modulus(PM, n, :lowerleft), length(basis_c) + 1:nrows(PM), 1:ncols(PM))
 
   M = ideal(algebra(O), O, PM, side, true)

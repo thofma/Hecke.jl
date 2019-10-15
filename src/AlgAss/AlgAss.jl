@@ -1740,6 +1740,15 @@ function iseichler(A::AlgAss{nf_elem})
   return false
 end
 
+function iseichler(A::AlgAss{fmpq})
+  @assert issimple(A)
+  @assert iscentral(A)
+  if dim(A) != 4
+    return true
+  end
+  return issplit(A)
+end
+
 ################################################################################
 #
 #  Direct product
