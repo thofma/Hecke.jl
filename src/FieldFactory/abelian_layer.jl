@@ -472,7 +472,7 @@ function max_ab_norm_sub_containing(G::Main.ForeignGAP.MPtr)
   #First, I check if the centralizer split directly as a direct product.
   sc = GAP.Globals.ComplementClassesRepresentatives(G1, H)
   if !GAP.Globals.IsEmpty(sc)
-    return sc[1], H
+    return G1, H
   end
   lS = GAP.gap_to_julia(GAP.Globals.ConjugacyClassesSubgroups(G1))
   #TODO: Subgroups in the quotient by H and not in the full group
@@ -503,8 +503,23 @@ end
 ################################################################################
 
 function computing_over_subfields(class_fields, subfields, idE, autos, right_grp)
+
   it = findall(right_grp)
-  new_class_fields, subs = translate_class_field_down(subfields, class_fields, it)
+  new_class_fields, subs, to_be_done = translate_class_field_down(subfields, class_fields, it)
+  for x in to_be_done
+    C = class_fields[x]
+    L = number_field(C)
+    auts = absolute_automorphism_group(C, autos)
+    Cpperm = permutation_group(auts)
+    if GAP.Globals.IdGroup(Cpperm) == idE
+      error("Something went wrong")
+    end
+    right_grp[x] = false
+  end
+  it = findall(right_grp)
+  if isempty(it)
+    return Vector{Tuple{Hecke.NfRelNS{nf_elem}, Vector{Hecke.NfRelNSToNfRelNSMor{nf_elem}}}}()
+  end
   translate_fields_up(class_fields, new_class_fields, subs, it)
   #Now, finally, the automorphisms computation and the isomorphism check
   for i in it
@@ -568,7 +583,11 @@ function translate_extensions(mL::NfToNfMor, class_fields, new_class_fields, ctx
     for (p, v) in fM0
       p1 = Hecke.intersect_prime(mL, p)
       if !haskey(fm0, p1)
-        fm0[p1] = v
+        if iscoprime(minimum(p1, copy = false), n) 
+          fm0[p1] = 1
+        else
+          fm0[p1] = v
+        end
       end
       ep = divexact(ramification_index(p), ramification_index(p1))
       fM0[p] = ep*v
@@ -592,19 +611,29 @@ function translate_extensions(mL::NfToNfMor, class_fields, new_class_fields, ctx
       infplc = real_places(L)
     end
     r, mr = Hecke.ray_class_group_quo(OL, fm0, infplc, ctx, check = false)
-    if order(r) < degree(C)
+    if exponent(r) < n || order(r) < degree(C)
       push!(to_be_done, indclf)
       continue
     end 
     #Now, the norm group of K over L
     ngL, mngL = Hecke.norm_group(mL, mr)
-    if !divisible(order(ngL), degree(C))
+    if !divisible(order(ngL), degree(C)) || !divisible(exponent(C), n)
       push!(to_be_done, indclf)
       continue
     end
     #Finally, the norm group of C over L
-    #I use the usual strategy, as in check_abelian_extension
-    fM0 = merge(max, F, fM0)
+    #I use the usual strategy, as in check_ elian_extension
+    for (p, v) in F
+      if iscoprime(minimum(p, copy = false), degree(C))
+        fM0[p] = 1
+      else
+        if haskey(fM0, p)
+          fM0[p] = max(v, fM0[p])
+        else
+          fM0[p] = v
+        end 
+      end
+    end
     inf_plc2 = InfPlc[]
     if !isempty(infplc)
       inf_plc2 = real_places(K)
@@ -648,6 +677,10 @@ function translate_extensions(mL::NfToNfMor, class_fields, new_class_fields, ctx
   @vprint :Fields 1 "$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())"
   return to_be_done
   
+end
+
+function divisible(x::Integer, y::Integer)
+  return divisible(fmpz(x), fmpz(y))
 end
 
 
@@ -727,11 +760,11 @@ function translate_class_field_down(subfields, class_fields, it)
     push!(created_subfields, mL)
     to_be_done_new = translate_extensions(mL, class_fields, new_class_fields, ctxK, it)
     if length(to_be_done_new) == 0 
-      return new_class_fields, created_subfields
+      return new_class_fields, created_subfields, to_be_done_new
     end
     to_be_done = to_be_done_new
   end
-  error("Something went wrong!")
+  return new_class_fields, created_subfields, to_be_done
 end
 
 

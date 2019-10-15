@@ -272,8 +272,26 @@ function ^(a::AbsOrdQuoRingElem, f::fmpz)
 end
 
 #^(a::NfOrdQuoRingElem, f::Integer) = a^fmpz(f)
+function ^(a::NfOrdQuoRingElem, b::Int)
+  if b < 0
+    a = inv(a)
+    b = -b
+  end
+  Q = parent(a)
+  O = base_ring(Q)
+  if !isdefining_polynomial_nice(nf(O)) || !contains_equation_order(O)
+    return pow1(a, b)
+  end
+  m = minimum(Q.ideal, copy = false)
+  x = _powmod(a.elem.elem_in_nf, b, m)
+  return Q(O(x))
+end
 
 function ^(a::AbsOrdQuoRingElem, b::Int)
+  return pow1(a, b)
+end
+
+function pow1(a::AbsOrdQuoRingElem, b::Int)
   if b == 0
     return one(parent(a))
   elseif b == 1

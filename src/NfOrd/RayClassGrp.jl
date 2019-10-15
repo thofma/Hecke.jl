@@ -246,7 +246,11 @@ function _ev_quo(Q, mQ, elems, p, exponent)
       end
       el1 = O(f, false)
       if !iszero(mF(el1))
-        mul!(el[i], el[i], mQ(el1)^k)
+        if !isone(k)
+          mul!(el[i], el[i], mQ(el1)^k)
+        else
+          mul!(el[i], el[i], mQ(el1))
+        end
         continue
       end
       val = valuation(f, p)
@@ -523,9 +527,9 @@ function ray_class_group(m::NfOrdIdl, inf_plc::Vector{InfPlc} = Vector{InfPlc}()
     tobeeval1[i] = mU(U[i])
   end
   for i = 1:ngens(C)
-    tobeeval1[i+ngens(U)] = mC.princ_gens[i][2]*(Kel[i]^C.snf[i])
+    tobeeval1[i+ngens(U)] = _preproc(mC.princ_gens[i][2]*(FacElem(Dict(Kel[i] => C.snf[i]))), expon)
   end
-  tobeeval = _preproc(m, tobeeval1, expon)
+  tobeeval = tobeeval1#_preproc(m, tobeeval1, expon)
 
   ind = 1
   for i = 1:length(groups_and_maps)
@@ -631,7 +635,12 @@ function ray_class_group(m::NfOrdIdl, inf_plc::Vector{InfPlc} = Vector{InfPlc}()
     mG = groups_and_maps[i][2]
     J = ideal(O, 1)
     minJ = fmpz(1)
+    mins = fmpz(1)
     for (PP, vPP) in lp
+      if minimum(PP, copy = false) != minimum(P, copy = false)
+        mins = lcm(mins, minimum(PP, copy = false)^vPP)
+        continue
+      end
       if PP != P
         Jm = PP^vPP
         J *= Jm
@@ -640,6 +649,11 @@ function ray_class_group(m::NfOrdIdl, inf_plc::Vector{InfPlc} = Vector{InfPlc}()
     end
     J.minimum = minJ
     i1, i2 = idempotents(Q, J)
+    if !isone(mins)
+      d, u1, v1 = gcdx(minimum(Q, copy = false), mins)
+      i1 = i1*(u1*minimum(Q, copy = false) + v1*mins) + u1*minimum(Q, copy = false) *i2
+      i2 = v1*mins*i2
+    end 
     gens = mG.generators
     if isempty(p)
       if haskey(mG.tame, P)

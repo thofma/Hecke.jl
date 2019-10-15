@@ -851,8 +851,8 @@ end
 function _are_there_subs(G::GrpAbFinGen,gtype::Array{Int,1})
 
   H = DiagonalGroup(gtype)
-  H, _ = snf(H)
-  G1, _ = snf(G)
+  H = snf(H)[1]
+  G1 = snf(G)[1]
   if length(G1.snf) < length(H.snf)
     return false
   end

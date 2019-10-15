@@ -89,11 +89,14 @@ end
 function number_field(K::KummerExt)
   k = base_field(K)
   kt = PolynomialRing(k, "t", cached = false)[1]
-  pols = Array{typeof(t), 1}(undef, length(K.gen))
+  pols = Array{elem_type(kt), 1}(undef, length(K.gen))
   for i = 1:length(pols)
     p = Vector{nf_elem}(undef, Int(order(K.AutG[i]))+1)
-    p[0] = -evaluate(K.gen[i])
-    p[end] = k(1)
+    p[1] = -evaluate(K.gen[i])
+    for i = 2:Int(order(K.AutG[i]))
+      p[i] = zero(k)
+    end 
+    p[end] = one(k)
     pols[i] = kt(p)
   end
   return number_field(pols, check = false, cached = false)

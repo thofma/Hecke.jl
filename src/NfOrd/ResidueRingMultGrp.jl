@@ -496,7 +496,11 @@ function _quadratic_method(p::NfOrdIdl, u::Int, v::Int; pu::NfOrdIdl=p^u, pv::Nf
   g, M, dlog = _pu_mod_pv(pu,pv)
   map!(x -> x + 1, g, g)
   function discrete_logarithm(x::NfOrdElem)
-    return dlog(mod(x-1,pv))
+    res = dlog(mod(x-1,pv))
+    for i = 1:length(res)
+      res[i] = mod(res[i], M[end])
+    end
+    return res
   end
   return g, M, discrete_logarithm
 end
@@ -523,7 +527,11 @@ function _artin_hasse_method(p::NfOrdIdl, u::Int, v::Int; pu::NfOrdIdl=p^u, pv::
   local discrete_logarithm
   let Q = Q, pnum = pnum, dlog = dlog
     function discrete_logarithm(x::NfOrdElem)
-      return dlog(artin_hasse_log(Q(x), pnum)) 
+      res = dlog(artin_hasse_log(Q(x), pnum)) 
+      for i = 1:length(res)
+        res[i] = mod(res[i], M[end])
+      end
+      return res
     end
   end
   return g, M, discrete_logarithm
@@ -601,7 +609,11 @@ function _p_adic_method(p::NfOrdIdl, u::Int, v::Int; pu::NfOrdIdl=p^u, pv::NfOrd
   local discrete_logarithm
   let Q = Q, p = p, v = v, dlog = dlog, powers = powers
     function discrete_logarithm(b::NfOrdElem) 
-      return dlog(p_adic_log(Q, p, v, b, powers))
+      res = dlog(p_adic_log(Q, p, v, b, powers))
+      for i = 1:length(res)
+        res[i] = mod(res[i], M[end])
+      end
+      return res
     end
   end
   return g, M, discrete_logarithm
