@@ -85,8 +85,6 @@ local_basis_matrix(L::AbsLat, p; type::Symbol = :any)
 ismodular(L::AbsLat, p)
 bad_primes(L::AbsLat; even::Bool = false)
 jordan_decomposition(L::AbsLat, p::NfOrdIdl)
-genus_symbol(::AbsLat, ::NfOrdIdl; uniformizer::Any = 0)
-change_uniformizer(G::GenusSymbol, unif::NfOrdElem)
 islocally_isometric(::AbsLat, ::AbsLat, ::NfOrdIdl)
 ```
 ---
