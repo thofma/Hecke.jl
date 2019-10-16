@@ -1134,6 +1134,38 @@ end
 
 ################################################################################
 #
+#  IsUpper\Lower triangular 
+#
+################################################################################
+
+function isupper_triangular(M::MatElem)
+  n = nrows(M)
+  @assert n == ncols(M)
+  for i = 2:n
+    for j = 1:i-1
+      if !iszero(M[i, j])
+        return false
+      end
+    end
+  end
+  return true
+end
+
+function islower_triangular(M::MatElem)
+  n = nrows(M)
+  @assert n == ncols(M)
+  for i = 1:n
+    for j = i+1:n
+      if !iszero(M[i, j])
+        return false
+      end
+    end
+  end
+  return true
+end
+
+################################################################################
+#
 #  Is diagonal
 #
 ################################################################################
