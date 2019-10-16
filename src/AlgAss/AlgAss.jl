@@ -1746,7 +1746,8 @@ function iseichler(A::AlgAss{fmpq})
   if dim(A) != 4
     return true
   end
-  return issplit(A)
+  O = Order(A, basis(A))
+  return schur_index_at_real_plc(O) == 1
 end
 
 ################################################################################
