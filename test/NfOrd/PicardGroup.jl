@@ -62,7 +62,7 @@ end
   Qx, x = FlintQQ["x"]
   AF = ArbField(20)
 
-  f = x^3 - 2
+  @show f = x^3 - 2
   K, a = number_field(f, "a", cached = false)
   O = Order(K, [ K(1), 10*a, 100*a^2 ])
   P, mP = picard_group(O)
@@ -76,7 +76,7 @@ end
   @test contains(AF(53.89509393317), Hecke.regulator([ K(mU(U[2])) ], 1))
   @test test_disc_log_units(U, mU, O)
 
-  f = x^3 - 12*x^2 - 6324*x + 459510
+  @show f = x^3 - 12*x^2 - 6324*x + 459510
   K, a = number_field(f, "a", cached = false)
   O = equation_order(K)
   P, mP = picard_group(O)
@@ -90,7 +90,7 @@ end
   @test contains(AF(169.7695458895), Hecke.regulator([ K(mU(U[2])) ], 1))
   @test test_disc_log_units(U, mU, O)
 
-  f = x^3-9270*x^2-6226*x-2617
+  @show f = x^3-9270*x^2-6226*x-2617
   K, a = number_field(f, "a", cached = false)
   O = equation_order(K)
   P, mP = picard_group(O)
