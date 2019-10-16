@@ -372,7 +372,8 @@ function automorphisms(L::NfRel; copy::Bool = true)
 end
 
 # Embedding of a relative number field into an algebra over the base field.
-# S is the type of the field, T the type of the algebra and the dense matrix type of the base ring of either
+# S is the type of the field, T the type of the algebra and Mat the dense matrix
+# type of the base ring of either
 mutable struct NfRelToAbsAlgAssMor{S, T, Mat} <: Map{S, T, HeckeMap, NfRelToAbsAlgAssMor}
   header::MapHeader{S, T}
   mat::Mat

@@ -936,8 +936,8 @@ end
     ismodular(L::AbsLat) -> Bool, NfOrdFracIdl
 
 Returns whether $L$ is modular. In this case, the second return value is a
-fractional ideal $\mathfrak a$ such that $\mathfrak a L^\perp = L$, where
-$L^\perp$ is the dual of $L$.
+fractional ideal $\mathfrak a$ such that $\mathfrak a L^\# = L$, where
+$L^\#$ is the dual of $L$.
 """
 function ismodular(L::AbsLat)
   a = scale(L)
@@ -2574,7 +2574,7 @@ end
 #// Given an element b in a number field K and sets of finite and infinite 
 #// places P and I of K, return an element a in K such that 
 #// { v: (a,b)_v = -1 } = P \cup I
-#// Note that the function coputes the unit and class groups of K!
+#// Note that the function computes the unit and class groups of K!
 
 function _find_quaternion_algebra(b, P, I)
   @assert iseven(length(I) + length(P))

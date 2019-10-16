@@ -116,6 +116,7 @@ NumberField(f::PolyElem{<:NumFieldElem}, s::String;
 ################################################################################
 
 iscommutative(K::NumField) = true
+iscommutative(::FlintRationalField) = true
 
 ################################################################################
 #

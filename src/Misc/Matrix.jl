@@ -1219,7 +1219,7 @@ function solve_ut(A::MatElem{T}, b::MatElem{T}) where T
   n = ncols(A)
   @assert m == nrows(b)
   @assert m <= n
-  x = similar(A, n, 1)
+  x = zero_matrix(base_ring(A), n, 1)
   pivot_cols = Vector{Int}()
   r = 0
   last_pivot = n + 1
@@ -1254,7 +1254,7 @@ function solve_lt(A::MatElem{T}, b::MatElem{T}) where T
   n = ncols(A)
   @assert m == nrows(b)
   @assert m <= n
-  x = similar(A, n, 1)
+  x = zero_matrix(base_ring(A), n, 1)
   pivot_cols = Vector{Int}()
   r = 0
   last_pivot = 0

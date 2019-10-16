@@ -353,6 +353,8 @@ function basis(a::AlgAssAbsOrdIdl; copy::Bool = true)
   end
 end
 
+absolute_basis(a::AlgAssAbsOrdIdl) = basis(a)
+
 @doc Markdown.doc"""
     basis_matrix(a::AlgAssAbsOrdIdl; copy::Bool = true) -> FakeFmpqMat
 
@@ -843,7 +845,7 @@ end
 """
 norm(a::AlgAssAbsOrdIdl; copy::Bool = true) = norm(a, order(a), copy = copy)
 
-function assure_has_normred(a::AlgAssAbsOrdIdl)
+function assure_has_normred(a::AlgAssAbsOrdIdl{S, T}, O::AlgAssAbsOrd{S, T}) where { S, T }
   if haskey(a.normred, O)
     return nothing
   end
@@ -1729,4 +1731,186 @@ function rand(a::AlgAssAbsOrdIdl, B::Int)
     z = add!(z, z, t)
   end
   return z
+end
+
+################################################################################
+#
+#  Coprime representative
+#
+################################################################################
+
+# Returns x \in A with Ix + a*O == O and Ix \subseteq O.
+function integral_coprime_representative(O::AlgAssAbsOrd, I::AlgAssAbsOrdIdl, a::fmpz)
+  A = algebra(O)
+  d = denominator(I, O)
+  I = d*I
+
+  if one(O) in I + a*O
+    return one(A)*d
+  end
+
+  fac_a = factor(a)
+  primes = collect(keys(fac_a.fac))
+  q = prod(primes)
+
+  x = A()
+  for i = 1:length(primes)
+    p = primes[i]
+    z = divexact(q, p)
+    if one(O) in I + p*O
+      # I is already coprime to this prime
+      x += A(z)
+      continue
+    end
+    b, g = islocally_free(O, I, p)
+    @assert b "No local generator found for $p"
+    ig = inv(elem_in_algebra(g, copy = false))
+    Ig = I*ig
+    y = denominator(Ig, O)
+    @assert valuation(y, p) == 0
+    x += ig*y*z
+  end
+  return x*d
+end
+
+################################################################################
+#
+#  Maximal integral ideals
+#
+################################################################################
+
+# Computes any maximal integral ideal with left order O (if side = :left) or
+# right order O (if side = :right) which contains p.
+# Assumes (so far?) that the algebra is simple and O is maximal.
+function maximal_integral_ideal(O::AlgAssAbsOrd, p::Union{ fmpz, Int }, side::Symbol)
+  A = algebra(O)
+  @assert issimple(A)
+  @assert ismaximal(O)
+
+  P = prime_ideals_over(O, p)[1] # if the algebra is simple, then there is exactly one prime lying over p
+
+  # P is the Jacobson radical of O/pO, so O/P is a simple algebra
+  B, OtoB = quo(O, P, p)
+  C, BtoC, CtoB = _as_algebra_over_center(B)
+  D, CtoD = _as_matrix_algebra(C)
+
+  n = degree(D)
+  if isone(n)
+    return P
+  end
+
+  N = fmpq_mat(basis_matrix(P))
+  t = zero_matrix(FlintQQ, 1, degree(O))
+  # Now we only need to lift a basis for diag(1, ..., 1, 0)*D (side = :left) or
+  # D*diag(1, ..., 1, 0) (side = :right) since these are maximal ideals of D.
+  if side == :left
+    jMax = n - 1
+    iMax = n
+  elseif side == :right
+    jMax = n
+    iMax = n - 1
+  else
+    error("Option :$(side) for side not implemented")
+  end
+  for j = 1:jMax
+    jn = (j - 1)*n
+    for i = 1:iMax
+      b = (OtoB\(CtoB(CtoD\D[jn + i])))
+      elem_to_mat_row!(t, 1, elem_in_algebra(b, copy = false))
+      N = vcat(N, deepcopy(t))
+    end
+  end
+  N = FakeFmpqMat(N)
+  N = sub(hnf(N, :lowerleft), nrows(N) - degree(O) + 1:nrows(N), 1:degree(O))
+
+  M = ideal(algebra(O), O, N, side, true)
+  if side == :left
+    M.left_order = O # O is maximal
+  else
+    M.right_order = O
+  end
+  return M
+end
+
+# Constructs a maximal integral ideal M of O such that M\cap R = p and I\subseteq M,
+# where O is the left order (if side = :left) or right order (if side = :right)
+# of I. It is assumed that I \subseteq O.
+# M is a left ideal of O if side = :left and a right ideal if side = :right.
+# Assumes (so far?) that the algebra is simple and O is maximal.
+function maximal_integral_ideal_containing(I::AlgAssAbsOrdIdl, p::Union{ fmpz, Int }, side::Symbol)
+  if side == :left
+    O = left_order(I)
+  elseif side == :right
+    O = right_order(I)
+  else
+    error("Option :$(side) for side not implemented")
+  end
+
+  @assert issimple(algebra(O))
+  @assert ismaximal(O)
+
+  n = normred(I, O)
+  if valuation(n, p) == 0
+    error("Cannot find a maximal ideal for the given prime")
+  end
+  if n == p
+    # The ideal is maximal iff its reduced norm is prime
+    return I
+  end
+
+  P = prime_ideals_over(O, p)[1] # if the algebra is simple, then there is exactly one prime lying over p
+  J = I + P
+  if normred(J, O) == p
+    return J
+  end
+
+  OP, toOP = quo(O, P, p)
+  B, OPtoB, BtoOP = _as_algebra_over_center(OP)
+  C, toC = _as_matrix_algebra(B)
+
+  JinC = ideal_from_gens(C, [ toC(OPtoB(toOP(O(b)))) for b in absolute_basis(J) ])
+  y = left_principal_gen(JinC)
+  m = matrix(y)
+  r = rref!(m)
+  k = degree(C)
+  @assert r < k - 1 # Otherwise J would be maximal, which we have checked...
+
+  # We need to "add" pivots to m to get rank k - 1
+  row = 1
+  col = 1
+  while r < k - 1
+    if !iszero(m[row, col])
+      row += 1
+      continue
+    end
+
+    r += 1
+    m[r, col] = 1
+    col += 1
+  end
+  @assert rank(m) == k - 1
+  if side == :left
+    c = C*C(m)
+  else
+    c = C(m)*C
+  end
+  basis_c = basis(c, copy = false)
+
+  t = zero_matrix(FlintQQ, length(basis_c), degree(O))
+  for i = 1:length(basis_c)
+    b = toOP\(BtoOP(toC\(basis_c[i])))
+    elem_to_mat_row!(t, i, elem_in_algebra(b, copy = false))
+  end
+  m = hnf(vcat(basis_matrix(P), FakeFmpqMat(t)), :lowerleft)
+  m = sub(m, length(basis_c) + 1:nrows(m), 1:ncols(m))
+
+  M = ideal(algebra(O), O, m, side, true)
+  @assert normred(M, O) == p
+  if side == :left
+    M.left_order = O # O is maximal
+  else
+    M.right_order = O
+  end
+
+  return M
 end

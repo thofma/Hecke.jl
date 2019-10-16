@@ -47,7 +47,7 @@ end
 # discriminant of O and r in base_ring(O) such that r O_i \subseteq O_j for a
 # system of representatives of the maximal orders.
 # Returns t in O^\times such that M = Nt
-function _eichler_find_transforming_unit_maximal(M::T, N::T) where { T <: AlgAssRelOrdIdl }
+function _eichler_find_transforming_unit_maximal(M::T, N::T) where { T <: Union{ AlgAssAbsOrdIdl, AlgAssRelOrdIdl } }
   A = algebra(M)
   O = left_order(M)
   @assert ismaximal(O)
@@ -60,8 +60,8 @@ function _eichler_find_transforming_unit_maximal(M::T, N::T) where { T <: AlgAss
   F = FieldOracle(A, [ O ])
   p = normred(M, O)
   @assert p == normred(N, O)
-  @assert denominator(p, copy = false) == 1
-  p = numerator(p, copy = false)
+  @assert denominator(p) == 1
+  p = numerator(p)
   OpO, toOpO = quo(O, p*O, p)
   B, toB = _as_matrix_algebra(OpO)
 
@@ -125,7 +125,7 @@ function _eichler_find_transforming_unit_maximal(M::T, N::T) where { T <: AlgAss
 end
 
 # Finds at least n units in the order F.maximal_orders[order_num]
-function _find_some_units(F::FieldOracle, order_num::Int, n::Int)
+function _find_some_units(F::FieldOracle{S, T, U, M}, order_num::Int, n::Int) where { S <: AbsAlgAss{nf_elem}, T, U, M }
   O = F.maximal_orders[order_num]
   units = Vector{elem_type(O)}()
   while length(units) < n
@@ -146,13 +146,21 @@ function _find_some_units(F::FieldOracle, order_num::Int, n::Int)
   return units
 end
 
-function _eichler_find_transforming_unit_recurse(I::AlgAssRelOrdIdl, J::AlgAssRelOrdIdl, primes::Vector{T}) where { T <: Union{ NfAbsOrdIdl, NfRelOrdIdl } }
+function _eichler_find_transforming_unit_recurse(I::S, J::S, primes::Vector{T}) where { S <: Union{ AlgAssAbsOrdIdl, AlgAssRelOrdIdl }, T <: Union{ Int, fmpz, NfAbsOrdIdl, NfRelOrdIdl } }
   if length(primes) == 1
     u = _eichler_find_transforming_unit_maximal(I, J)
     return elem_in_algebra(u, copy = false)
   end
 
   p = pop!(primes)
+  IJ = I + J
+  if valuation(normred(IJ, left_order(I)), p) != 0
+    M = maximal_integral_ideal_containing(IJ, p, :left)
+    I = divexact_left(I, M)
+    J = divexact_left(J, M)
+    return _eichler_find_transforming_unit_recurse(I, J, primes)
+  end
+
   M = maximal_integral_ideal_containing(I, p, :left)
   N = maximal_integral_ideal_containing(J, p, :left)
   u = elem_in_algebra(_eichler_find_transforming_unit_maximal(M, N), copy = false)
@@ -194,7 +202,6 @@ function _eichler_find_transforming_unit(I::AlgAssRelOrdIdl, J::AlgAssRelOrdIdl)
       push!(primes, p)
     end
   end
-  sort!(primes, lt = (p, q) -> minimum(p, copy = false) < minimum(q, copy = false))
   t = _eichler_find_transforming_unit_recurse(I, J, primes)
   return t
 end

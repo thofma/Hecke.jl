@@ -586,3 +586,48 @@ function induce_image(f::NfToNfMor, x::NfOrdIdl)
   end
   return I
 end
+
+################################################################################
+#
+#  Maps to algebras
+#
+################################################################################
+
+# Embedding of a number field into an algebra over Q.
+mutable struct NfAbsToAbsAlgAssMor{S} <: Map{AnticNumberField, S, HeckeMap, NfAbsToAbsAlgAssMor}
+  header::MapHeader{AnticNumberField, S}
+  mat::fmpq_mat
+  t::fmpq_mat
+
+  function NfAbsToAbsAlgAssMor{S}(K::AnticNumberField, A::S, M::fmpq_mat) where { S <: AbsAlgAss{fmpq} }
+    z = new{S}()
+    z.mat = M
+    z.t = zero_matrix(FlintQQ, 1, degree(K))
+
+    function _image(x::nf_elem)
+      for i = 1:degree(K)
+        z.t[1, i] = coeff(x, i - 1)
+      end
+      s = z.t*z.mat
+      return A([ s[1, i] for i = 1:dim(A) ])
+    end
+
+    z.header = MapHeader{AnticNumberField, S}(K, A, _image)
+    return z
+  end
+end
+
+function NfAbsToAbsAlgAssMor(K::AnticNumberField, A::S, M::fmpq_mat) where { S <: AbsAlgAss{fmpq} }
+  return NfAbsToAbsAlgAssMor{S}(K, A, M)
+end
+
+function haspreimage(m::NfAbsToAbsAlgAssMor, a::AbsAlgAssElem)
+  A = parent(a)
+  t = matrix(FlintQQ, 1, dim(A), coeffs(a))
+  b, p = can_solve(m.mat, t, side = :left)
+  if b
+    return true, domain(m)([ p[1, i] for i = 1:nrows(m.mat) ])
+  else
+    return false, zero(domain(m))
+  end
+end
