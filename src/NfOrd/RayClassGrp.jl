@@ -698,7 +698,6 @@ function ray_class_group(m::NfOrdIdl, inf_plc::Vector{InfPlc} = Vector{InfPlc}()
   end
   
   local expo
-  #TODO: This may be wrong. Think about it.
   let C = C, O = O, groups_and_maps = groups_and_maps, exp_class = exp_class, eH = eH, H = H, K = K, Dgens = Dgens, X = X
     function expo(a::GrpAbFinGenElem)
       b = C(sub(a.coeff, 1:1, 1:ngens(C)))

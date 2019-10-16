@@ -225,7 +225,6 @@ end
 ################################################################################
 
 function _from_relative_to_abs_with_embedding(L::Hecke.NfRelNS{T}, autL::Array{Hecke.NfRelNSToNfRelNSMor{T}, 1}) where T
-  
   S, mS = simple_extension(L)
   K, mK, MK = absolute_field(S, false)
   
@@ -284,7 +283,7 @@ function _from_relative_to_abs_with_embedding(L::Hecke.NfRelNS{T}, autL::Array{H
   @vtime :Fields 3 O1 = MaximalOrder(Ostart)
   O1.ismaximal = 1
   Hecke._set_maximal_order_of_nf(K, O1)
-  
+
   @vtime :Fields 3 Ks, mKs = Hecke.simplify(K)
   #Now, we have to construct the maximal order of this field.
   #I am computing the preimages of mKs by hand, by inverting the matrix.
@@ -577,12 +576,13 @@ end
 function fields(list::Vector{FieldsTower}, G, absolute_bound::fmpz; only_real::Bool = false)
   L = GAP.Globals.DerivedSeries(G)
   lvl = _real_level(L)
-  #First step by hand
+  @show length(L)-1
   for i = 2:length(L)-1
-    E1 = GAP.Globals.FactorGroup(L[1], L[i+1])
-    if GAP.Globals.Size(E1) != degree(list[1].field)
+    G1 = GAP.Globals.FactorGroup(L[1], L[i])
+    if GAP.Globals.Size(G1) != degree(list[1].field)
       continue
     end
+    E1 = GAP.Globals.FactorGroup(L[1], L[i+1])
     H1 = GAP.Globals.FactorGroup(L[i], L[i+1])
     l = GAP.gap_to_julia(Vector{Int64}, GAP.Globals.AbelianInvariants(H1))
     @vprint :Fields 1 "contructing abelian extensions with invariants $l \n" 

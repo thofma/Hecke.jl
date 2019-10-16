@@ -352,12 +352,13 @@ end
 
 
 function compute_fields(class_fields::Vector{Hecke.ClassField{Hecke.MapRayClassGrp, GrpAbFinGenMap}}, autos::Vector{NfToNfMor}, grp_to_be_checked::Main.ForeignGAP.MPtr, right_grp)
-  K = base_field(class_fields[1])
+  it = findall(right_grp)
+  K = base_field(class_fields[it[1]])
   fields = Tuple{Hecke.NfRelNS{nf_elem}, Vector{Hecke.NfRelNSToNfRelNSMor{nf_elem}}}[]
-  expo = Int(exponent(codomain(class_fields[1].quotientmap)))
+  expo = Int(exponent(codomain(class_fields[it[1]].quotientmap)))
   #Since I want to compute as few Frobenius as possible, I want to first compute the extensions
   #whose set of divisors is maximal
-  it = findall(right_grp)
+  
   set_up_cycl_ext(K, expo, autos)
   
   for i in it
@@ -365,8 +366,11 @@ function compute_fields(class_fields::Vector{Hecke.ClassField{Hecke.MapRayClassG
     L = number_field(C)
     autL = Hecke.absolute_automorphism_group(C, autos)
     Cpperm = permutation_group(autL)
-    if !isone(gcd(degree(K), expo)) && GAP.Globals.IdGroup(Cpperm) != grp_to_be_checked
-      right_grp[i] = false
+    if !isone(gcd(degree(K), expo)) 
+      Cpperm = permutation_group(autL)
+      if GAP.Globals.IdGroup(Cpperm) != grp_to_be_checked
+        right_grp[i] = false
+      end
     end
   end
   return right_grp
@@ -542,9 +546,11 @@ function computing_over_subfields(class_fields, subfields, idE, autos, right_grp
     rel_extend = Hecke.new_extend_aut(C, autos)
     autsA = vcat(rel_extend, autsrelC)
     C.AbsAutGrpA = autsA
-    Cpperm = permutation_group(autsA)
-    if GAP.Globals.IdGroup(Cpperm) != idE
-      right_grp[i] = false
+    if !iscoprime(degree(C), degree(base_field(C)))
+      Cpperm = permutation_group(autsA)
+      if GAP.Globals.IdGroup(Cpperm) != idE
+        right_grp[i] = false
+      end
     end
   end
   it = findall(right_grp)

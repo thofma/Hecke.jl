@@ -192,6 +192,16 @@ function assure_has_basis_mat_inv(O::NfAbsOrd)
   if isdefined(O, :basis_mat_inv)
     return nothing
   end
+  M = basis_matrix(O, copy = false)
+  if isdefined(O, :index) && islower_triangular(M.num)
+    #The order contains the equation order and the matrix is lower triangular
+    #The inverse is lower triangular and it has denominator 1
+    #to exploit this, I call can_solve
+    fl, I = can_solve(M.num, scalar_matrix(FlintZZ, nrows(M), M.den), side = :left)
+    @assert fl
+    O.basis_mat_inv = FakeFmpqMat(I)
+    return nothing
+  end
   O.basis_mat_inv = inv(basis_matrix(O, copy = false))
   return nothing
 end

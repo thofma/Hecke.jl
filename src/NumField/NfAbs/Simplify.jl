@@ -70,43 +70,6 @@ function _simplify(O::NfOrd)
   return a, minpoly(Qx, a)
 end
 
-
-function _index_via_discriminant(a::NfOrdElem)
-  O = parent(a)
-  d = degree(O)
-  el = one(O)
-  traces = Vector{fmpz}(undef, 2*d-1)
-  traces[1] = d
-  for i = 2:(2*d-1)
-    el *= a
-    traces[i] = tr(el)
-  end
-  M = zero_matrix(FlintZZ, d, d)
-  for i = 1:d
-    for j = 1:d
-      M[i, j] = traces[i+j-1]
-    end
-  end
-  res = det_given_divisor(M, discriminant(O))
-  return root(divexact(res, discriminant(O)), 2)
-end
-
-function _index(a::NfOrdElem)
-  O = parent(a)
-  K = nf(O)
-  d = degree(O)
-  pows = Vector{nf_elem}(undef, d)
-  pows[1] = one(K)
-  pows[2] = a.elem_in_nf
-  for i = 3:d
-    pows[i] = pows[i-1]*a.elem_in_nf
-  end
-  M = basis_matrix(pows)
-  hnf!(M)
-  res = prod(M[i, i] for i = 1:degree(K)) 
-  return numerator(res*index(O))
-end
-
  #a block is a partition of 1:n
  #given by the subfield of parent(a) defined by a
  #the embeddings used are in R
