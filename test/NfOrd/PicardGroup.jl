@@ -104,6 +104,8 @@ end
   @test contains(AF(31293.8558289993733), Hecke.regulator([ K(mU(U[2])) ], 1))
   @test test_disc_log_units(U, mU, O)
 
+  @show "done"
+
   #f = x^4-3072*x^3+7926*x^2-3920*x-9063
   #K, a = number_field(f, "a", cached = false)
   #O = equation_order(K)
