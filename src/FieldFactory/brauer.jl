@@ -760,7 +760,9 @@ end
 #p must be a prime power 
 function cpa_issplit(K::AnticNumberField, G::Vector{NfToNfMor}, Coc::Function, pv::Int, lp::Vector{fmpz} = Hecke.ramified_primes(maximal_order(K)))
   p = ispower(pv)[2]
-  @vtime :BrauerObst 1 if p == 2 && !istotally_real(K) && !is_split_at_infinity(K, Coc)
+  O = maximal_order(K)
+  r, s = signature(O)
+  @vtime :BrauerObst 1 if p == 2 && r!= degree(O) && !is_split_at_infinity(K, Coc)
     return false    
   end
   # Now, the finite primes.
@@ -768,7 +770,7 @@ function cpa_issplit(K::AnticNumberField, G::Vector{NfToNfMor}, Coc::Function, p
   # of the cocycle, but our cocycle has values in the roots of unity...
   # I only need to check the tame ramification.
   # The exact sequence on Brauer groups and completion tells me that I have one degree of freedom! :)
-  O = maximal_order(K)
+  
   if !(p in lp) && divisible(discriminant(O), p)
     push!(lp, p)
   end 
@@ -987,7 +989,9 @@ end
 
 function cpa_issplit(K::AnticNumberField, G::Vector{NfToNfMor}, Stab::Vector{NfToNfMor}, Coc::Function, p::Int, v::Int)
 
-  @vtime :BrauerObst 1 if p == 2 && !istotally_real(K) && !is_split_at_infinity(K, Coc)
+  O = maximal_order(K)
+  r, s = signature(O)
+  @vtime :BrauerObst 1 if p == 2 && r != degree(K) && !is_split_at_infinity(K, Coc)
     return false    
   end
   # Now, the finite primes.
@@ -995,7 +999,7 @@ function cpa_issplit(K::AnticNumberField, G::Vector{NfToNfMor}, Stab::Vector{NfT
   # of the cocycle, but our cocycle has values in the roots of unity...
   # I only need to check the tame ramification.
   # The exact sequence on Brauer groups and completion tells me that I have one degree of freedom! :)
-  O = maximal_order(K)
+  
   lp = Hecke.ramified_primes(O)
   if p in lp
     for q in lp

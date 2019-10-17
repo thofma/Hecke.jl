@@ -280,6 +280,7 @@ function _from_relative_to_abs_with_embedding(L::Hecke.NfRelNS{T}, autL::Array{H
       push!(Ostart.primesofmaximality, p) 
     end
   end
+
   @vtime :Fields 3 O1 = MaximalOrder(Ostart)
   O1.ismaximal = 1
   Hecke._set_maximal_order_of_nf(K, O1)

@@ -360,7 +360,7 @@ function compute_fields(class_fields::Vector{Hecke.ClassField{Hecke.MapRayClassG
   #whose set of divisors is maximal
   
   set_up_cycl_ext(K, expo, autos)
-  
+  @vprint :Fields 3 "Computing the fields directly\n"
   for i in it
     C = class_fields[i]
     L = number_field(C)
@@ -564,6 +564,7 @@ function computing_over_subfields(class_fields, subfields, idE, autos, right_grp
   return fields 
 end
 
+
 function translate_extensions(mL::NfToNfMor, class_fields, new_class_fields, ctxK, it)
   to_be_done = Int[]
   L = domain(mL)
@@ -584,7 +585,7 @@ function translate_extensions(mL::NfToNfMor, class_fields, new_class_fields, ctx
     #First, I need a modulus.
     #I take the intersection of the modulus of C with L
     mR = C.rayclassgroupmap
-    fM0 = mR.fact_mod
+    fM0 = copy(mR.fact_mod)
     fm0 = Dict{NfOrdIdl, Int}()
     for (p, v) in fM0
       p1 = Hecke.intersect_prime(mL, p)
@@ -616,13 +617,14 @@ function translate_extensions(mL::NfToNfMor, class_fields, new_class_fields, ctx
     if iszero(mod(n, 2)) 
       infplc = real_places(L)
     end
-    r, mr = Hecke.ray_class_group_quo(OL, fm0, infplc, ctx, check = false)
+    @vprint :Fields 3 "Checking if I can compute $(indclf) over a subfield\n\n "
+    @vtime :Fields 3 r, mr = Hecke.ray_class_group_quo(OL, fm0, infplc, ctx, check = false)
     if exponent(r) < n || order(r) < degree(C)
       push!(to_be_done, indclf)
       continue
     end 
     #Now, the norm group of K over L
-    ngL, mngL = Hecke.norm_group(mL, mr)
+    @vtime :Fields 3 ngL, mngL = Hecke.norm_group(mL, mr)
     if !divisible(order(ngL), degree(C)) || !divisible(exponent(C), n)
       push!(to_be_done, indclf)
       continue
@@ -644,8 +646,11 @@ function translate_extensions(mL::NfToNfMor, class_fields, new_class_fields, ctx
     if !isempty(infplc)
       inf_plc2 = real_places(K)
     end
-    RM, mRM = Hecke.ray_class_group_quo(OK, fM0, inf_plc2, ctxK, check = false)
-    lP, gS = Hecke.find_gens(mRM)
+    @vtime :Fields 3 RM, mRM = Hecke.ray_class_group_quo(OK, fM0, inf_plc2, ctxK, check = false)
+    if !isdefined(ctxK.class_group_map, :small_gens)
+      ctxK.class_group_map.small_gens = find_gens(pseudo_inv(ctxK.class_group_map), PrimesSet(101, -1))[1]
+    end
+    @vtime :Fields 3 lP, gS = Hecke.find_gens(mRM)
     listn = NfOrdIdl[norm(mL, x) for x in lP]
     # Create the map between R and r by taking norms
     preimgs = Vector{GrpAbFinGenElem}(undef, length(listn))

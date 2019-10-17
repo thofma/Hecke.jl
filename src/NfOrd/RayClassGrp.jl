@@ -905,6 +905,21 @@ function find_gens(mR::MapRayClassGrp; coprime_to::fmpz = fmpz(-1))
   
   end
   
+  mC = mR.clgrpmap
+  if isdefined(mC, :small_gens)
+    for x in mC.small_gens
+      if !iscoprime(coprime_to, minimum(x, copy = false))
+        continue
+      end
+      push!(lp, x)
+      push!(sR, mR\x)
+      q, mq = quo(R, sR, false)
+      if order(q)==1
+        return lp, sR
+      end
+    end
+  end
+  
   
   ctx = _get_ClassGrpCtx_of_order(O, false)
   if ctx == nothing
