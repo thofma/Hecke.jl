@@ -529,7 +529,7 @@ function ray_class_group(m::NfOrdIdl, inf_plc::Vector{InfPlc} = Vector{InfPlc}()
   for i = 1:ngens(C)
     tobeeval1[i+ngens(U)] = _preproc(mC.princ_gens[i][2]*(FacElem(Dict(Kel[i] => C.snf[i]))), expon)
   end
-  tobeeval = tobeeval1#_preproc(m, tobeeval1, expon)
+  tobeeval = _preproc(m, tobeeval1, expon)
 
   ind = 1
   for i = 1:length(groups_and_maps)

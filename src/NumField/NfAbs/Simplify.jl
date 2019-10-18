@@ -1,5 +1,7 @@
 export simplify
 
+add_verbose_scope(:Simplify)
+
 @doc Markdown.doc"""
     simplify(K::AnticNumberField; canonical::Bool = false) -> AnticNumberField, NfToNfMor
  > Tries to find an isomorphic field $L$ given by a "nicer" defining polynomial.
@@ -17,13 +19,13 @@ function simplify(K::AnticNumberField; canonical::Bool = false, cached = false)
     f = Qx(f1)
   else
     OK = maximal_order(K)
-    if isdefined(OK, :lllO)
+    @vtime :Simplify 3 if isdefined(OK, :lllO)
       ZK = OK.lllO
     else
-      prec = 100 + 25*div(degree(K), 3) + Int(round(log(abs(discriminant(K)))))
+      prec = 100 + 25*div(degree(K), 3) + Int(round(log(abs(discriminant(OK)))))
       ZK = _lll_for_simplify(OK, prec = prec)[2]
     end
-    a, f = _simplify(ZK)
+    @vtime :Simplify 3 a, f = _simplify(ZK)
   end
   L = NumberField(f, cached = cached, check = false)[1]
   m = hom(L, K, a, check = false)
@@ -392,7 +394,7 @@ function _lll_for_simplify(M::NfOrd; prec = 100)
 
   ccall((:fmpz_mat_one, :libflint), Nothing, (Ref{fmpz_mat}, ), g)
   ccall((:fmpz_lll, :libflint), Nothing, (Ref{fmpz_mat}, Ref{fmpz_mat}, Ref{Nemo.lll_ctx}), d, g, ctx)
-
+ 
   fl = true
   ## test if entries in l are small enough, if not: increase precision
   ## or signal that prec was too low
