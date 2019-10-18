@@ -922,7 +922,7 @@ function (::Type{Base.Rational{BigInt}})(x::fmpq)
   return Rational{BigInt}(BigInt(numerator(x)), BigInt(denominator(x)))
 end
 
-export eulerphi_inv
+export eulerphi_inv, Divisors, carmichael_lambda
 
 @doc Markdown.doc"""
     Divisors{T}
@@ -1150,6 +1150,35 @@ end
 function eulerphi(n::T) where {T <: Integer}
   return T(eulerphi(fmpz(n)))
 end
+
+#function carmichael_lambda(x::Fac{fmpz})
+#  return reduce(lcm, p^(v-1) : (p-1)*p^(v-1) for (p,v) = x.fac)
+#end
+
+function carmichael_lambda(x::fmpz)
+  v, x = remove(x, fmpz(2))
+  if isone(x)
+    c = x
+  else
+    x = factor(x)
+    c = reduce(lcm, (p-1)*p^(v-1) for (p,v) = x.fac)
+  end
+  if v < 2
+    return c
+  else 
+    return fmpz(2)^(v-2)*c
+  end
+end
+
+#function carmichael_lambda(x::FacElem{fmpz, FlintIntegerRing})
+#  x = factor(x)
+#  return reduce(lcm, (p-1)*p^(v-1) for (p,v) = x.fac)
+#end
+
+function carmichael_lambda(n::T) where {T <: Integer}
+  return T(carmichael_lambda(fmpz(n)))
+end
+
 
 @doc Markdown.doc"""
     eulerphi_inv(n::Integer) -> Array{fmpz, 1}
