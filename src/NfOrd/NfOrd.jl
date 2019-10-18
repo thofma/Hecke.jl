@@ -1227,7 +1227,7 @@ function lll(M::NfOrd)
 
 
   #TODO HARD: find proper parameters
-  prec = 100 + 25*div(degree(M), 3) + Int(round(log(abs(discriminant(K)))))
+  prec = 100 + 25*div(degree(M), 3) + Int(round(log(abs(discriminant(M)))))
   #prec = 100
   i = 0
   while true

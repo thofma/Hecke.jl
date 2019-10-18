@@ -983,6 +983,26 @@ function _minmod_easy(a::fmpz, b::NfOrdElem)
   end
 end
 
+function _minmod_easy_pp(a::fmpz, b::NfOrdElem)
+  Zk = parent(b)
+  k = number_field(Zk)
+  if fits(Int, a)
+    S = ResidueRing(FlintZZ, Int(a), cached = false)
+    St = PolynomialRing(S, cached=false)[1]
+    B = St(b.elem_in_nf)
+    F = St(k.pol)
+    m = lift(rres_sircana_pp(B, F))
+    return gcd(a, m)
+  else
+    S1 = ResidueRing(FlintZZ, a, cached = false)
+    St1 = PolynomialRing(S1, cached=false)[1]
+    B1 = St1(b.elem_in_nf)
+    F1 = St1(k.pol)
+    m1 = lift(rres_sircana_pp(B1, F1))
+    return gcd(a, m1)
+  end
+end
+
 function _minmod(a::fmpz, b::NfOrdElem)
   if isone(a) 
     return a
@@ -997,24 +1017,76 @@ function _minmod(a::fmpz, b::NfOrdElem)
   a2, ar = ppio(a, fmpz(2))
   min = fmpz(1)
   if !isone(a2)
-    min *= _minmod_comp(a2, b)
+    min *= _minmod_comp_pp(a2, b)
   end
   a3, ar = ppio(ar, fmpz(3))
   if !isone(a3)
-    min *= _minmod_comp(a3, b)
+    min *= _minmod_comp_pp(a3, b)
   end
   a5, ar = ppio(ar, fmpz(5))
   if !isone(a5)
-    min *= _minmod_comp(a5, b)
+    min *= _minmod_comp_pp(a5, b)
   end
   a7, ar = ppio(ar, fmpz(7))
   if !isone(a7)
-    min *= _minmod_comp(a7, b)
+    min *= _minmod_comp_pp(a7, b)
+  end
+  if isone(ar)
+    return min
   end
   res = min*_minmod_comp(ar, b)
   @hassert :NfOrd 1 res == gcd(denominator(inv(b.elem_in_nf), parent(b)), a)
   return res
 end
+
+function _minmod_comp_pp(a::fmpz, b::NfOrdElem)
+  #a is a prime power
+  Zk = parent(b)
+  k = number_field(Zk)
+  acom, auncom = ppio(a, index(Zk))
+  @assert acom == a || auncom == a
+  min_uncom = _minmod_easy_pp(auncom, b)
+  if isone(acom)
+    return min_uncom
+  end
+  e, _ = ppio(denominator(basis_matrix(Zk, copy = false)), acom)
+  d = denominator(b.elem_in_nf)
+  d, _ = ppio(d, acom)  
+  mod = acom*d*e
+  if fits(Int, mod)
+    S1 = ResidueRing(FlintZZ, Int(mod), cached = false)
+    St1 = PolynomialRing(S1, cached=false)[1]
+    B1 = St1(d*b.elem_in_nf)
+    F1 = St1(k.pol)
+    m1, u1, v1 = rresx_sircana_pp(B1, F1)  # u*B + v*F = m mod modulus(S)
+    U1 = lift(FlintZZ["x"][1], u1)
+    # m can be zero...
+    m2 = lift(m1)
+    if iszero(m2)
+      m2 = mod
+    end
+    bi = k(U1)//m2*d # at this point, bi*d*b = m mod a*d*idx
+    d = denominator(bi, Zk)
+    return min_uncom*gcd(d, acom)
+  else
+    S = ResidueRing(FlintZZ, mod, cached = false)
+    St = PolynomialRing(S, cached=false)[1]
+    B = St(d*b.elem_in_nf)
+    F = St(k.pol)
+    m, u, v = rresx_sircana_pp(B, F)  # u*B + v*F = m mod modulus(S)
+    U = lift(FlintZZ["x"][1], u)
+    # m can be zero...
+    m3 = lift(m)
+    if iszero(m3)
+      m3 = mod
+    end
+    bi = k(U)//m3*d # at this point, bi*d*b = m mod a*d*idx
+    d = denominator(bi, Zk)
+    return min_uncom*gcd(d, acom)
+  end
+
+end
+
 
 function _minmod_comp(a::fmpz, b::NfOrdElem)
 

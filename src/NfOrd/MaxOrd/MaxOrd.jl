@@ -640,7 +640,7 @@ function ring_of_multipliers(a::NfAbsOrdIdl)
   if !isone(bmatinv.den)
     divexact!(m, m, bmatinv.den)
   end
-  hnf_modular_eldiv!(m, minimum(a))
+  hnf_modular_eldiv!(m, minimum(a, copy = false))
   mhnf = view(m, 1:n, 1:n)
   s = prod(mhnf[i,i] for i = 1:n)
   if isone(s)

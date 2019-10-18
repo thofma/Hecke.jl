@@ -529,7 +529,7 @@ function ray_class_group(m::NfOrdIdl, inf_plc::Vector{InfPlc} = Vector{InfPlc}()
   for i = 1:ngens(C)
     tobeeval1[i+ngens(U)] = _preproc(mC.princ_gens[i][2]*(FacElem(Dict(Kel[i] => C.snf[i]))), expon)
   end
-  tobeeval = tobeeval1#_preproc(m, tobeeval1, expon)
+  tobeeval = _preproc(m, tobeeval1, expon)
 
   ind = 1
   for i = 1:length(groups_and_maps)
@@ -903,6 +903,21 @@ function find_gens(mR::MapRayClassGrp; coprime_to::fmpz = fmpz(-1))
       end
     end
   
+  end
+  
+  mC = mR.clgrpmap
+  if isdefined(mC, :small_gens)
+    for x in mC.small_gens
+      if !iscoprime(coprime_to, minimum(x, copy = false))
+        continue
+      end
+      push!(lp, x)
+      push!(sR, mR\x)
+      q, mq = quo(R, sR, false)
+      if order(q)==1
+        return lp, sR
+      end
+    end
   end
   
   

@@ -34,8 +34,8 @@ function factored_norm(A::FacElem{NfOrdFracIdl, NfOrdFracIdlSet})
     #else
     #  b[v] = k
     #end
-    v = denominator(n)
-    add_to_key!(b, v, -k)
+    v1 = denominator(n)
+    add_to_key!(b, v1, -k)
     #if haskey(b, v)
     #  b[v] -= k
     #else
