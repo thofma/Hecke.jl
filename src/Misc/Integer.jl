@@ -765,8 +765,9 @@ function ecm(a::fmpz, max_digits::Int = div(ndigits(a), 2)+1, rnd = flint_rand_c
 
   i = 1
   s = div(max_digits-15, 5)+2
-  s = max(i, s)
+  i = s = max(i, s)
   while i <= s
+    @show i, B1[i], nC[i]
     e,f = ecm(a, B1[i]*1000, B1[i]*1000*100, nC[i], rnd)
     if e != 0
       return (e,f)
@@ -1099,7 +1100,7 @@ function eulerphi_inv_fac_elem(n::fmpz)
 #  println("possible primes: ", lp)
 
   E = Tuple{fmpz, Vector{Tuple{fmpz, Int}}}[]
-  res = FacElem{fmpz, FlintQQ}[]
+  res = FacElem{fmpz, FlintIntegerRing}[]
   for p = lp
     v = valuation(n, p)
     for i=0:v
