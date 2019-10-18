@@ -2,101 +2,6 @@ export completion, qAdicConj
 
 #########################################################################################
 #
-#   qAdic Conj structure
-#
-#########################################################################################
-
-# Honestly the thing that is needed here is a pure Julia implementation of the HenselCtx.
-# Field definitions should use a "Krasner criteria" to detect if the extensions are distinct.
-
-################################################################################
-# Root contexts for lifting algorithms
-################################################################################
-
-mutable struct qAdicRootCtx
-  f::fmpz_poly
-  p::Int
-  n::Int
-  Q::Array{FlintQadicField, 1}
-  H::Hecke.HenselCtx
-  R::Array{qadic, 1} # These are the cached roots.
-  function qAdicRootCtx(f::fmpz_poly, p::Int)
-    r = new()
-    r.f = f
-    r.p = p
-    r.H = H = Hecke.factor_mod_pk_init(f, p)
-    lf = Hecke.factor_mod_pk(H, 1)
-    #TODO:XXX: Careful: QadicField ONLY works, currently, in Conway range
-    Q = [QadicField(p, x, 1) for x = Set(degree(y) for y = keys(lf))]
-    @assert all(isone, values(lf))
-    r.Q = Q
-
-    #NOTE: Roots are not computed when initialized, as no precision has been determined.
-    return r
-  end
-end
-
-
-
-@doc Markdown.doc"""
-    qAdicConj(K::AnticNumberField, p::Int)
-
-Creates a data structure to compute the conjugates in a unramified splitting field
-over $Q_p$.
-"""
-# This structure doesn't compute anything really.
-
-# It mostly just explicitly associates a number field to a Qadic field.
-
-# The work in the initialization is hidden in the HenselCtx step.
-# It would make more sense to have some computation precomputed.
-
-# This object doesn't know very much right now.
-mutable struct qAdicConj
-  K::AnticNumberField
-  C::qAdicRootCtx
-  cache::Dict{nf_elem, Any}
-
-  function qAdicConj(K::AnticNumberField, p::Int)
-    isindex_divisor(maximal_order(K), p) && error("cannot deal with index divisors yet")
-    isramified(maximal_order(K), p) && error("cannot deal with ramification yet")
-
-    # Check for cached data. If none, update the reference in K to set
-    # `D` as the local conjugate data.
-    D = _get_nf_conjugate_data_qAdic(K, false)
-    if D !== nothing
-      if haskey(D, p)
-        Dp = D[p]
-        return new(K, Dp[1], Dp[2])
-      end
-    else
-      D = Dict{Int, Tuple{qAdicRootCtx, Dict{nf_elem, Any}}}()
-      _set_nf_conjugate_data_qAdic(K, D)
-    end
-
-    # Initialize the new structure.  
-    Zx = PolynomialRing(FlintZZ, cached = false)[1]
-    C = qAdicRootCtx(Zx(K.pol), p)
-    r = new()
-    r.C = C
-    r.K = K
-
-    # cache for conjugates of a given number field element??
-    r.cache = Dict{nf_elem, Any}()
-    D[p] = (C, r.cache)
-    return r
-  end
-end
-
-# Display for conjugates data.
-function Base.show(io::IO, C::qAdicConj)
-  println(io, "data for the $(C.C.p)-adic completions of $(C.K)")
-end
-
-
-
-#########################################################################################
-#
 #   Newton lifting and root finding
 #
 #########################################################################################
@@ -138,9 +43,6 @@ end
     roots(f::fmpz_poly, Q::FlintQadicField; max_roots::Int = degree(f)) -> Array{qadic, 1}
 The roots of $f$ in $Q$, $f$ has to be square-free (at least the roots have to be simple roots).    
 """
-
-# NOTE: Both a Hensel factorization and a newton iteration are required to refine the roots,
-#       since the Hensel context only works for polynomials over ZZ.
 function roots(f::fmpz_poly, Q::FlintQadicField; max_roots::Int = degree(f))
   k, mk = ResidueField(Q)
   rt = roots(f, k)
@@ -182,104 +84,60 @@ end
 
 #########################################################################################
 #
-#   Completion from prime ideal
+#   qAdic Conj structure
 #
 #########################################################################################
 
-function gens(P::NfOrdIdl)
-    @assert has_2_elem(P)
-    (P.gen_one, P.gen_two)
-end
-
-function coeffs(a::FinFieldElem)
-    k = parent(a)
-    coeff_field = GF(k.p)
-    if degree(k) == 1
-        return [one(coeff_field)]
-    else
-        return [coeff_field(coeff(a,j)) for j=0:degree(k)-1]
-    end
-end
 
 @doc Markdown.doc"""
-    underdetermined_solve(A,b)
-Solves the equation `Ax=b`.
+    qAdicConj(K::AnticNumberField, p::Int)
+
+Creates a data structure to compute the conjugates in a unramified splitting field
+over $Q_p$.
 """
-function underdetermined_solve(A,b)
-    # Do something.
-    @assert false
-    return
+# This structure doesn't compute anything really.
+# It mostly just explicitly associates a number field to a Qadic field.
+
+# The work in the initialization is hidden in the HenselCtx step.
+# It would make more sense to have some computation precomputed.
+mutable struct qAdicConj
+  K::AnticNumberField
+  C::qAdicRootCtx
+  cache::Dict{nf_elem, Any}
+
+  function qAdicConj(K::AnticNumberField, p::Int)
+    isindex_divisor(maximal_order(K), p) && error("cannot deal with index divisors yet")
+    isramified(maximal_order(K), p) && error("cannot deal with ramification yet")
+
+    # Check for cached data. If none, update the reference in K to set
+    # `D` as the local conjugate data.
+    D = _get_nf_conjugate_data_qAdic(K, false)
+    if D !== nothing
+      if haskey(D, p)
+        Dp = D[p]
+        return new(K, Dp[1], Dp[2])
+      end
+    else
+      D = Dict{Int, Tuple{qAdicRootCtx, Dict{nf_elem, Any}}}()
+      _set_nf_conjugate_data_qAdic(K, D)
+    end
+
+    # Initialize the new structure.  
+    Zx = PolynomialRing(FlintZZ, cached = false)[1]
+    C = qAdicRootCtx(Zx(K.pol), p)
+    r = new()
+    r.C = C
+    r.K = K
+    r.cache = Dict{nf_elem, Any}()
+    D[p] = (C, r.cache)
+    return r
+  end
 end
 
-function new_completion(K::NumField{T} where T, P::NfOrdIdl; prec=10)
-
-    @assert has_2_elem(P)
-    p  = gens(P)[1]
-    pi = gens(P)[2]
-    max_order = maximal_order(K)
-
-    
-    # Determine ramification index.
-    e = ramification_index(P)
-    d = degree(K)
-
-    # Figure out the unramified part.
-    k,res = ResidueField(max_order,P)
-    f = degree(k)
-    Kp_unram = QadicField(p, f, prec)
-
-    # Determine a polynomial over Kp_unram which annihilates pi.
-
-    # The method used here is to find a solution to `g(b) mod P^prec`, where
-    # the residue image of `b` is a (Conway) generator for the residue field.
-
-    # This is definitely not the best algorithm. In the unramified, non-index-divisor
-    # case, computing powers of `P` is trivial. However, in the other (likely important)
-    # cases, it is likely worthwhile to see if computing powers is also easy.
-
-    # To find the Conway generator
-    BO = basis(max_order)
-
-    A = matrix(coeffs.(res.(BO)))
-    b = matrix(coeffs(gen(k)))
-    nu,N = nullspace(hcat(A,-b))
-    y = N[:,size(N,2)]  #TODO: This is really dodgy...
-
-    # This is the lift of the generator of the Qadic subfield of the completion.
-    delta = sum([a*b for (a,b) in zip(BO,lift(y))])
-
-    
-    BPn = basis(P^prec)
-    M = hcat(matrix([coordinates(pi^i*delta^j) for j=0:f-1 for i=0:e]), matrix(coordinates.(BPn)))
-    nu, N = nullspace(M)
-
-    RX,X = PolynomialRing(Kp_unram,"X")
-    
-    # TODO: Also very dodgy...
-    delta_p = f==1 ? 1 : gen(Kp_unram)
-    g =  sum(X^i*delta_p^j * Kp_unram(N[i*f + j + 1, size(N,2)]) for j=0:f-1 for i=0:e )
-    
-    
-    return EisensteinField(g,"_\$")
-    
-    # Constructing the lifting map
-    # -- preimages of delta, pi needed
-    # -- mostly just a coefficient change/evaluation map
-    # -- AFTER sharpening, the result of a lift can be wildly different if the polynomial is
-    #    held constant.
-
-    # Constructing the embedding map
-    # -- mostly just sending the generator to the generator of the Eisenstein extension.
-    
-    # Using the nullspace, we now need to construct the map to Kp_unram
-    
+# Display for conjugates data.
+function Base.show(io::IO, C::qAdicConj)
+  println(io, "data for the $(C.C.p)-adic completions of $(C.K)")
 end
-
-#########################################################################################
-#
-#   Conjugates interface
-#
-#########################################################################################
 
 
 #to compare to the classical conjugates
