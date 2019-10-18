@@ -359,6 +359,7 @@ global VERSION_NUMBER = v"0.6.5"
 ######################################################################
 # named printing support
 ######################################################################
+
 # to use:
 # in HeckeMap
 #   in the show function, start with @show_name(io, map)
