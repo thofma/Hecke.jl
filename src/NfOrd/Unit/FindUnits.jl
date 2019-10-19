@@ -185,11 +185,11 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx)
     return 1
   end
 
-  ## I am not allowed to do this before the other block
-  #if nrows(x.M.rel_gens) == 0
-  #  @vprint :UnitGroup 1 "No additional relations. Going back ...\n"
-  #  return 0
-  #end
+  # I am not allowed to do this before the other block
+  if nrows(x.M.rel_gens) == 0
+    @vprint :UnitGroup 1 "No additional relations. Going back ...\n"
+    return 0
+  end
 
   r1, r2 = signature(O)
 
