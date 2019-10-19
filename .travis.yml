@@ -23,6 +23,11 @@ script:
 env:
    global:
       - DOCUMENTER_DEBUG=true
+
+stages:
+  - Documentation
+  - Test
+
 jobs:
    include:
      - stage: "Documentation"
