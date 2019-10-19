@@ -307,6 +307,12 @@ end
 #
 ################################################################################
 
+@doc Markdown.doc"""
+    gram_matrix(G::LocalGenusHerm)
+
+Return a matrix $M$, such that a lattice with Gram matrix $M$ is an element of
+the given genus.
+"""
 function gram_matrix(G::LocalGenusHerm)
   return diagonal_matrix(dense_matrix_type(base_field(G))[gram_matrix(G, i) for i in 1:length(G)])
 end

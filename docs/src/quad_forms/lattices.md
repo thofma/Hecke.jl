@@ -91,7 +91,7 @@ islocally_isometric(::AbsLat, ::AbsLat, ::NfOrdIdl)
 
 ## Genera
 
-# Creation of genera from lattices
+### Creation of genera from lattices
 
 ```@docs
 genus(L::HermLat, p)
@@ -99,7 +99,7 @@ genus(L::HermLat)
 ```
 ---
 
-# Properties of genera
+### Properties of genera
 
 ```@docs
 rank(G::LocalGenusHerm)
@@ -108,12 +108,11 @@ ranks(G::LocalGenusHerm)
 det(G::LocalGenusHerm)
 det_representative(G::LocalGenusHerm)
 gram_matrix(G::LocalGenusHerm)
-gram_matrix(G::LocalGenusHerm, i::Int)
 primes(G::GenusHerm)
 ```
 ---
 
-# Check if lattice is contained in genus
+### Check if lattice is contained in genus
 
 ```@docs
 Base.in(L::HermLat, G::LocalGenusHerm)
@@ -121,7 +120,7 @@ Base.in(L::HermLat, G::GenusHerm)
 ```
 ---
 
-# Creating representatives
+### Creating representatives
 
 ```@docs
 representative(G::LocalGenusHerm)
