@@ -30,7 +30,7 @@ stages:
 
 jobs:
    include:
-     - stage: "Documentation"
+     - stage: "Test"
        julia: 1.0
        os: linux
        install:
