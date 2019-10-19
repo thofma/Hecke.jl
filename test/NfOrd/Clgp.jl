@@ -180,7 +180,7 @@ using Random
     end
     
     @testset "Cyclotomic Field 13" begin
-      @show K, a = cyclotomic_field(13)
+      @show K, a = cyclotomic_field(13, cached = false)
       O = maximal_order(K)
       Cl, mCl = Hecke.class_group(O, redo = true)
       UU, mU = Hecke.unit_group(O)
@@ -193,7 +193,7 @@ using Random
       @test U.torsion_units_order == 26
       @test order(Cl) == 1
       
-      O = Order(K, shuffle(basis(O)), isbasis = true)
+      O = Order(K, shuffle(basis(O)), isbasis = true, cached = false)
       O.ismaximal = 1
       Cl, mCl = Hecke.class_group(O, redo = true, do_lll = false)
       UU, mU = Hecke.unit_group(O)

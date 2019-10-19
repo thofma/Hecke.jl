@@ -146,7 +146,7 @@ M_in_hnf is set, then it is assumed that $M$ is already in lower left pseudo
 HNF.
 """
 function fractional_ideal(O::NfRelOrd{T, S}, M::PMat{T, S}, M_in_hnf::Bool = false) where {T, S}
-  !M_in_hnf ? M = pseudo_hnf(M, :lowerleft, true) : nothing
+  !M_in_hnf && !iszero(matrix(M)) ? M = pseudo_hnf(M, :lowerleft, true) : nothing
   return NfRelOrdFracIdl{T, S}(O, M)
 end
 

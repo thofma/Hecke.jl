@@ -168,7 +168,6 @@ end
 
 function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx)
   @vprint :UnitGroup 1 "Processing ClassGrpCtx to find units ... \n"
-
   @vprint :UnitGroup 1 "Relation module $(x.M)\n"
 
   O = order(u)
