@@ -88,3 +88,41 @@ jordan_decomposition(L::AbsLat, p::NfOrdIdl)
 islocally_isometric(::AbsLat, ::AbsLat, ::NfOrdIdl)
 ```
 ---
+
+## Genera
+
+# Creation of genera from lattices
+
+```@docs
+genus(L::HermLat, p)
+genus(L::HermLat)
+```
+---
+
+# Properties of genera
+
+```@docs
+rank(G::LocalGenusHerm)
+rank(G::LocalGenusHerm, i::Int)
+ranks(G::LocalGenusHerm)
+det(G::LocalGenusHerm)
+det_representative(G::LocalGenusHerm)
+gram_matrix(G::LocalGenusHerm)
+gram_matrix(G::LocalGenusHerm, i::Int)
+primes(G::GenusHerm)
+```
+---
+
+# Check if lattice is contained in genus
+
+```@docs
+Base.in(L::HermLat, G::LocalGenusHerm)
+Base.in(L::HermLat, G::GenusHerm)
+```
+---
+
+# Creating representatives
+
+```@docs
+representative(G::LocalGenusHerm)
+```

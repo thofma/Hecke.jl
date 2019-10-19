@@ -1,4 +1,6 @@
-export genus, representative
+export genus, representative, rank, det, uniformizer, det_representative,
+       gram_matrix, representative, genus, genera_hermitian,
+       local_genera_hermitian, rank
 
 ################################################################################
 #
@@ -7,9 +9,9 @@ export genus, representative
 ################################################################################
 
 # Need to make this type stable once we have settled on a design
-mutable struct LocalGenusHerm
-  E                                   # Field
-  p                                   # prime of base_field(E)
+mutable struct LocalGenusHerm{S, T}
+  E::S                                # Field
+  p::T                                # prime of base_field(E)
   data::Vector{Tuple{Int, Int, Int}}  # data
   norm_val::Vector{Int}               # additional norm valuation
                                       # (for the dyadic case)
@@ -18,8 +20,8 @@ mutable struct LocalGenusHerm
   non_norm_rep                        # u in K*\N(E*)
   ni::Vector{Int}                     # ni for the ramified, dyadic case
 
-  function LocalGenusHerm()
-    z = new()
+  function LocalGenusHerm{S, T}() where {S, T}
+    z = new{S, T}()
     return z
   end
 end
@@ -419,8 +421,19 @@ end
 #
 ################################################################################
 
-function genus(::Type{HermLat}, E, p, data)
-  z = LocalGenusHerm()
+function genus(::Type{HermLat}, E::S, p::T, data::Vector{Tuple{Int, Int, Int}}) where {S <: NumField, T}
+  z = LocalGenusHerm{S, T}()
+  z.E = E
+  z.p = p
+  z.isdyadic = isdyadic(p)
+  z.isramified = isramified(maximal_order(E), p)
+  @assert !(isramified(z) && isdyadic(z))
+  z.data = data
+  return z
+end
+
+function genus(::Type{HermLat}, E::S, p::T, data::Vector{Tuple{Int, Int, Int, Int}}) where {S <: NumField, T}
+  z = LocalGenusHerm{S, T}()
   z.E = E
   z.p = p
   z.isdyadic = isdyadic(p)
@@ -430,7 +443,7 @@ function genus(::Type{HermLat}, E, p, data)
     z.norm_val = Int[v[end] for v in data]
     z.ni = _get_ni_from_genus(z)
   else
-    z.data = data
+    z.data = Tuple{Int, Int, Int}[Base.front(v) for v in data]
   end
   return z
 end
@@ -585,7 +598,8 @@ function _genus_symbol(L::HermLat, p)
   E = nf(R)
   K = base_field(E)
   if !isdyadic(p) || !isramified(R, p)
-    sym = Tuple{Int, Int, Int}[ (S[i], nrows(B[i]), islocal_norm(E, coeff(det(G[i]), 0), p) ? 1 : -1) for i in 1:length(B)]
+    # The last entry is a dummy to make the compiler happier
+    sym = Tuple{Int, Int, Int, Int}[ (S[i], nrows(B[i]), islocal_norm(E, coeff(det(G[i]), 0), p) ? 1 : -1, 0) for i in 1:length(B)]
   else
     P = prime_decomposition(R, p)[1][1]
     pi = E(K(uniformizer(p)))
@@ -884,7 +898,15 @@ end
 #
 ################################################################################
 
-function _local_genera(E, p, rank, det_val, max_scale, is_ramified)
+@doc Markdown.doc"""
+    local_genera_hermitian(E::NumField, p::NfOrdIdl, rank::Int,
+                 det_val::Int, max_scale::Int) -> Vector{LocalGenusHerm}
+
+Return all local genera of Hermitian lattices over $E$ at $\mathfrak p$ with
+rank `rank`, scale valuation bounded by `max_scale` and determinant valuation
+bounded by `det_val`.
+"""
+function local_genera_hermitian(E, p, rank, det_val, max_scale, is_ramified = isramified(maximal_order(E), p))
   if is_ramified
     # the valuation is with respect to p
     # but the scale is with respect to P
@@ -896,11 +918,11 @@ function _local_genera(E, p, rank, det_val, max_scale, is_ramified)
 
   K = number_field(order(p))
 
-  scales_rks = [] # possible scales and ranks
+  scales_rks = Vector{Tuple{Int, Int}}[] # possible scales and ranks
 
   for rkseq in _integer_lists(rank, max_scale + 1)
     d = 0
-    pgensymbol = []
+    pgensymbol = Tuple{Int, Int}[]
     for i in 0:(max_scale + 1) - 1
       d += i * rkseq[i + 1]
       if rkseq[i + 1] != 0
@@ -911,19 +933,20 @@ function _local_genera(E, p, rank, det_val, max_scale, is_ramified)
         push!(scales_rks, pgensymbol)
     end
   end
-
+  
   if !is_ramified
-    return [ genus(HermLat, E,p, [(b..., 1) for b in g]) for g in scales_rks]
+    # I add the 0 to make the compiler happy
+    return [ genus(HermLat, E,p, Tuple{Int, Int, Int, Int}[(b..., 1, 0) for b in g]) for g in scales_rks]
   end
 
-  scales_rks = [g for g in scales_rks if all((mod(b[1]*b[2], 2) == 0) for b in g)]
+  scales_rks = Vector{Tuple{Int, Int}}[g for g in scales_rks if all((mod(b[1]*b[2], 2) == 0) for b in g)]
 
-  symbols = []
+  symbols = LocalGenusHerm{typeof(E), typeof(p)}[]
   hyperbolic_det = hilbert_symbol(K(-1), gen(K)^2//4 - 1, p)
   if !isdyadic(p) # non-dyadic
     for g in scales_rks
       n = length(g)
-      dets = []
+      dets = Vector{Int}[]
       for b in g
         if mod(b[1], 2) == 0
           push!(dets, [1, -1])
@@ -934,12 +957,12 @@ function _local_genera(E, p, rank, det_val, max_scale, is_ramified)
       end
 
       for d in Iterators.product(dets...)
-        g1 = copy(g)
+        g2 = Vector{Tuple{Int, Int, Int, Int}}(undef, length(g))
         for k in 1:n
-          # this is wrong
-          g1[k] = (g1[k]...,d[k])
+          # Again the 0 for dummy purposes
+          g2[k] = (g[k]..., d[k], 0)
         end
-        push!(symbols, genus(HermLat, E, p, g1))
+        push!(symbols, genus(HermLat, E, p, g2))
       end
     end
     return symbols
@@ -956,37 +979,35 @@ function _local_genera(E, p, rank, det_val, max_scale, is_ramified)
 
   for g in scales_rks
     n = length(g)
-    det_norms = []
-    #println(" === g: $g")
+    det_norms = Vector{Vector{Int}}[]
     for b in g
-      #println(" ======== b: $b")
       if mod(b[2], 2) == 1
         @assert iseven(b[1])
         push!(det_norms, [[1, div(b[1], 2)], [-1, div(b[1], 2)]])
       end
       if mod(b[2], 2) == 0
-        dn = []
+        dn = Vector{Int}[]
         i = b[1]
         # (i + e) // 2 => k >= i/2
         for k in (ceil(Int, Int(i)//2)):(div(Int(i + e), 2) - 1)
-          push!(dn, [1, k])
-          push!(dn, [-1, k])
+          push!(dn, Int[1, k])
+          push!(dn, Int[-1, k])
         end
-        push!(dn, [hyperbolic_det^(div(b[2], 2)), div(i + e, 2)])
+        push!(dn, Int[hyperbolic_det^(div(b[2], 2)), div(i + e, 2)])
         if mod(i + e, 2) == 1
-          push!(dn, [-hyperbolic_det^(div(b[2], 2)), div(i + e, 2)])
+          push!(dn, Int[-hyperbolic_det^(div(b[2], 2)), div(i + e, 2)])
         end
         push!(det_norms, dn)
       end
     end
     #println("================ det_norms: $det_norms")
     for dn in Iterators.product(det_norms...)
-      g1 = deepcopy(g)
+      g2 = Vector{Tuple{Int, Int, Int, Int}}(undef, length(g))
       #println("g1 before: $g1")
       for k in 1:n
-        g1[k] = (g1[k]..., dn[k]...)
+        g2[k] = (g[k]..., dn[k]...)
       end
-      h = genus(HermLat, E, p, g1)
+      h = genus(HermLat, E, p, g2)
       if !(h in symbols)
         push!(symbols, h)
       end
@@ -995,7 +1016,7 @@ function _local_genera(E, p, rank, det_val, max_scale, is_ramified)
   return symbols
 end
 
-function hermitian_genera(E, rank, signatures, determinant; max_scale = nothing)
+function genera_hermitian(E, rank, signatures, determinant; max_scale = nothing)
   K = base_field(E)
   OE = maximal_order(E)
   if max_scale === nothing
@@ -1019,11 +1040,10 @@ function hermitian_genera(E, rank, signatures, determinant; max_scale = nothing)
     det_val = valuation(ds, p)
     mscale_val = valuation(ms, p)
     det_val = div(det_val, 2)
-    is_ram = isramified(OE, p)
     if !is_ram
       mscale_val = div(mscale_val, 2)
     end
-    push!(local_symbols, _local_genera_symbols(E, p, rank, det_val, mscale_val, is_ram))
+    push!(local_symbols, local_genera_hermitian(E, p, rank, det_val, mscale_val))
   end
 
   res = []
