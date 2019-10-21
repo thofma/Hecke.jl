@@ -722,7 +722,7 @@ mutable struct flint_rand_ctx_t
 end  
 
 function show(io::IO, A::flint_rand_ctx_t)
-  println(io, "Flint random state\n")
+  println(io, "Flint random state")
 end
 
 function flint_rand_state()
@@ -816,8 +816,63 @@ function factor(N::fmpz)
       r[p] = v
     end
   end
-#  @assert prod(p^v for (p, v) = r)*N == N_in
+  factor_insert!(r, N)
+  for p = keys(r)
+    if nbits(p) > 60 && !(p in big_primes)
+      push!(big_primes, p)
+    end
+  end
+  return Nemo.Fac(c, r)
+end
+
+function factor_insert!(r::Dict{fmpz, Int}, N::fmpz, scale::Int = 1)
+  #assumes N to be positive
+  #        no small divisors 
+  #        no big_primes
+  if isone(N)
+    return r
+  end
   fac, N = ispower(N)
+  if fac > 1
+    return factor_insert!(r, N, fac)
+  end
+  if isprime(N)
+    @assert !haskey(r, N)
+    r[N] = fac
+    return r
+  end
+  if ndigits(N) < 60
+    s = Nemo.factor(N) #MPQS
+    for (p, k) in s
+      if haskey(r, p)
+        r[p] += k*scale
+      else
+        r[p] = k*scale
+      end
+    end
+    return r
+  end
+
+  e, f = ecm(N)
+  if e == 0
+    s = Nemo.factor(N)
+    for (p, k) in s
+      if haskey(r, p)
+        r[p] += k*scale
+      else
+        r[p] = k*scale
+      end
+    end
+    return r
+  end
+  k, N = remove(N, f)
+  @assert k > 0
+  factor_insert!(r, N, scale)
+  factor_insert!(r, f, scale*k)
+  return r
+end
+  
+#=
 
  #TODO: problem(s)
  # Nemo.factor = mpqs is hopeless if > n digits, but asymptotically and practically
@@ -880,7 +935,7 @@ function factor(N::fmpz)
   @assert prod(a^b for (a,b) = r) * c == N_in
   return Nemo.Fac(c, r)
 end
-
+=#
 
 function ceil(::Type{fmpz}, a::BigFloat)
   return fmpz(ceil(BigInt, a))
