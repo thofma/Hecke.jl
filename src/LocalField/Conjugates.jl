@@ -298,16 +298,34 @@ function new_completion(K::NumField{T} where T, P::NfOrdIdl; prec=10)
     delta_p = f==1 ? 1 : gen(Kp_unram)
     g =  sum(X^i*delta_p^j * Kp_unram(N[i*f + j + 1, size(N,2)]) for j=0:f-1 for i=0:e )
 
-    # Construct the forward map.
+    # Build the completion.
+    Kp, y = EisensteinField(g,"_\$")
+
+    
+    # TODO: figure out the description of the generator in terms of pi.
+    
+    # Construct the forward map, embedding $K$ into its completion.
     function inj(a::nf_elem)
-        return conjugates(a, C, precision(parent(ca)))[i]
+        return sum(coeffs(a)[j+1]*y^j for j=0:d-1)
     end
 
     # Construct the lifting map
-    # Lift the data from the residue field back to Qp.
-    c = lift_root(f, a, b, p, 10)
-    pc = fmpz(10)
-    function lif(x::qadic)
+    # Lift the data from the completion back to K.
+    #c = lift_root(f, a, b, p, 10)
+    #pc = fmpz(10)
+    function lif(x::eisf_elem)
+
+        qadic_coeffs = coeffs(x)
+
+        # display(coeffs.(qadic_coeffs))
+
+        # display([ [pi^i * delta^j * lift(coeffs(qadic_coeffs[i])[j+1])
+        #            for j=0:f-1 ] for i=0:length(qadic_coeffs)-1 ] )
+        
+        return sum(pi^i * delta^j * lift(coeffs(qadic_coeffs[i])[j+1])
+                   for j=0:f-1 for i=0:length(qadic_coeffs)-1 )
+        
+        #=
         if iszero(x)
             return K(0)
         end
@@ -319,9 +337,9 @@ function new_completion(K::NumField{T} where T, P::NfOrdIdl; prec=10)
 
             # Manipulate the values c, pc by the implicit pointers stored inside this function.
             # Unfortunately this cannot be done at the julia level...
-            ccall((:nf_elem_set, :libantic), Nothing,
-                  (Ref{nf_elem}, Ref{nf_elem}, Ref{AnticNumberField}), c, d, K)
-            ccall((:fmpz_set_si, :libflint), Nothing, (Ref{fmpz}, Cint), pc, precision(x))
+            #ccall((:nf_elem_set, :libantic), Nothing,
+            #      (Ref{nf_elem}, Ref{nf_elem}, Ref{AnticNumberField}), c, d, K)
+            #ccall((:fmpz_set_si, :libflint), Nothing, (Ref{fmpz}, Cint), pc, precision(x))
 
         elseif precision(x) < pc
             d = mod_sym(c, p^precision(x))
@@ -335,10 +353,11 @@ function new_completion(K::NumField{T} where T, P::NfOrdIdl; prec=10)
             r = r*d + lift(coeff(x, n-1))
         end
         return r#*K(p)^valuation(x)
+        =#
     end
 
     
-    return EisensteinField(g,"_\$")
+    return (Kp,inj,lif)
     
     # Constructing the lifting map
     # -- preimages of delta, pi needed
