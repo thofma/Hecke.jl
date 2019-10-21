@@ -226,7 +226,7 @@ using Random
 
       Cl, mCl = Hecke.class_group(O, redo = true, do_lll = false)
       UU, mU = Hecke.unit_group(O)
-      @show "doneee2"
+      @show "doneeee2"
 
       if haskey(ENV, "CI") && ENV["CI"] == "true"
         set_verbose_level(:ClassGroup, 0)
