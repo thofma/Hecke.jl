@@ -96,18 +96,28 @@ end
     set_verbose_level(:Unitgroup, 1)
   end
   K, a = number_field(f, "a", cached = false)
+  println("1")
   O = equation_order(K)
+  println("2")
   P, mP = picard_group(O)
+  println("3")
   @test issnf(P)
+  println("4")
   @test P.snf == fmpz[ 2, 6, 24 ]
+  println("5")
   @test test_disc_log_picard(P, mP, O)
+  println("6")
 
   U, mU = Hecke.unit_group_non_maximal(O)
+  println("7")
   @test issnf(U)
+  println("8")
   @test U.snf == fmpz[ 2, 0 ]
+  println("9")
   @test contains(AF(31293.8558289993733), Hecke.regulator([ K(mU(U[2])) ], 1))
+  println("10")
   @test test_disc_log_units(U, mU, O)
-
+  println("11")
   @show "done"
   if haskey(ENV, "CI") && ENV["CI"] == true
     set_verbose_level(:ClassGroup, 0)
