@@ -100,6 +100,7 @@ end
   O = equation_order(K)
   println("2")
   P, mP = picard_group(O)
+  @show P
   println("3")
   @test issnf(P)
   println("4")
