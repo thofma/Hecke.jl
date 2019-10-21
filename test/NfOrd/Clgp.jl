@@ -180,7 +180,7 @@ using Random
     end
     
     @testset "Cyclotomic Field 13" begin
-      @show K, a = cyclotomic_field(13)
+      @show K, a = cyclotomic_field(13, cached = false)
       O = maximal_order(K)
       Cl, mCl = Hecke.class_group(O, redo = true)
       UU, mU = Hecke.unit_group(O)
@@ -193,7 +193,7 @@ using Random
       @test U.torsion_units_order == 26
       @test order(Cl) == 1
       
-      O = Order(K, shuffle(basis(O)), isbasis = true)
+      O = Order(K, shuffle(basis(O)), isbasis = true, cached = false)
       O.ismaximal = 1
       Cl, mCl = Hecke.class_group(O, redo = true, do_lll = false)
       UU, mU = Hecke.unit_group(O)
@@ -210,9 +210,14 @@ using Random
     @testset "f = Q[x]/(f), f = x^18 + 18*x^16 + 135*x^14 + 192*x^12 - 2961*x^10 - 17334*x^8+ 20361*x^6 +  315108*x^4 + 514944*x^2 + 123904" begin
       @show K, a = NumberField(x^18 + 18*x^16 + 135*x^14 + 192*x^12 - 2961*x^10 - 17334*x^8+ 20361*x^6 +  315108*x^4 + 514944*x^2 + 123904, "a")
       O = maximal_order(K)
+      if haskey(ENV, "CI") && ENV["CI"] == "true"
+        set_verbose_level(:ClassGroup, 1)
+        set_verbose_level(:UnitGroup, 1)
+      end
 
       Cl, mCl = Hecke.class_group(O, redo = true)
       UU, mU = Hecke.unit_group(O)
+      @show "doneee"
 
       @test order(Cl)== 36
       
@@ -221,7 +226,12 @@ using Random
 
       Cl, mCl = Hecke.class_group(O, redo = true, do_lll = false)
       UU, mU = Hecke.unit_group(O)
+      @show "doneee2"
 
+      if haskey(ENV, "CI") && ENV["CI"] == "true"
+        set_verbose_level(:ClassGroup, 0)
+        set_verbose_level(:UnitGroup, 0)
+      end
       @test order(Cl)== 36
     end
     
