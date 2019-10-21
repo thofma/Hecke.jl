@@ -91,7 +91,7 @@ end
   @test test_disc_log_units(U, mU, O)
 
   @show f = x^3-9270*x^2-6226*x-2617
-  if haskey(ENV, "CI") && ENV["CI"] == true
+  if haskey(ENV, "CI") && ENV["CI"] == "true"
     set_verbose_level(:ClassGroup, 1)
     set_verbose_level(:Unitgroup, 1)
   end
@@ -119,7 +119,7 @@ end
   @test test_disc_log_units(U, mU, O)
   println("11")
   @show "done"
-  if haskey(ENV, "CI") && ENV["CI"] == true
+  if haskey(ENV, "CI") && ENV["CI"] == "true"
     set_verbose_level(:ClassGroup, 0)
     set_verbose_level(:Unitgroup, 0)
   end
