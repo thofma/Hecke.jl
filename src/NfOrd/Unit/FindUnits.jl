@@ -223,13 +223,17 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx)
       push!(rel, x.M.rel_gens[xj])
     end
 
+    @vprint :UnitGroup 1 "Saturating ...\n"
     time_kernel += @elapsed k, d = solve_dixon_sf(x.M.bas_gens, rel)
     @vtime_add_elapsed :UnitGroup 1 x :saturate_time s = saturate(hcat(k, (-d)*identity_matrix(SMat, FlintZZ, k.r)))
+    @vprint :UnitGroup 1 "Done\n"
 
     ge = vcat(x.R_gen[1:k.c], x.R_rel[add_units])
     for i=1:s.r
+      @vprint :UnitGroup 1 "Looking at the $(it)-th element in the saturation ...\n"
       y = FacElem(ge[s[i].pos], s[i].values)
       @hassert :UnitGroup 2 _isunit(y)
+      @vprint :UnitGroup 1 "(It really is a unit.)"
 
       @hassert :UnitGroup 8000 denominator(minpoly(evaluate(y))) == 1
 
