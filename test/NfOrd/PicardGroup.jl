@@ -91,6 +91,10 @@ end
   @test test_disc_log_units(U, mU, O)
 
   @show f = x^3-9270*x^2-6226*x-2617
+  if haskey(ENV, "CI") && ENV["CI"] == true
+    set_verbose_level(:ClassGroup, 1)
+    set_verbose_level(:Unitgroup, 1)
+  end
   K, a = number_field(f, "a", cached = false)
   O = equation_order(K)
   P, mP = picard_group(O)
@@ -105,6 +109,10 @@ end
   @test test_disc_log_units(U, mU, O)
 
   @show "done"
+  if haskey(ENV, "CI") && ENV["CI"] == true
+    set_verbose_level(:ClassGroup, 0)
+    set_verbose_level(:Unitgroup, 0)
+  end
 
   #f = x^4-3072*x^3+7926*x^2-3920*x-9063
   #K, a = number_field(f, "a", cached = false)
