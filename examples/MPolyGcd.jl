@@ -7,6 +7,7 @@ import Base.//, Base.==
 
 export Terms, gcd
 
+#=
 mutable struct MPolyBuildCtx{T}
   f::T
   function MPolyBuildCtx(R::T) where {T <: AbstractAlgebra.MPolyRing}
@@ -38,6 +39,7 @@ function push_term!(M::MPolyBuildCtx{nmod_mpoly}, c::UInt, e::Vector{Int})
                M.f, c, e, M.f.parent)
 end
 
+=#
 function Hecke.lead(f::AbstractAlgebra.MPolyElem)
   iszero(f) && error("zero poly")
   return coeff(f, 1)
@@ -284,8 +286,9 @@ function Hecke.modular_proj(me::Hecke.modular_env, f::Generic.MPoly{nf_elem})
     c = coeff(f, i)
     e = exponent_vector(f, i)
     cp = Hecke.modular_proj(c, me)
+    R = base_ring(me.Fpx)
     for x = 1:s
-      push_term!(fp[x], coeff(cp[x], 0), e)
+      push_term!(fp[x], Hecke.nmod(coeff(cp[x], 0), R), e)
     end
   end
   return map(finish, fp)
@@ -295,7 +298,7 @@ function Hecke.modular_lift(me::Hecke.modular_env, g::Array{nmod_mpoly, 1})
   bt = MPolyBuildCtx(me.Kxy)
   #TODO deal with different vectors properly (check induce_crt)
   gt = [Terms(x) for x = g]
-  @assert all(x->exponent_vectors(g[1]) == exponent_vectors(g[x]), 2:length(g))
+  @assert all(x->collect(exponent_vectors(g[1])) == collect(exponent_vectors(g[x])), 2:length(g))
   for i=1:length(g[1])
     for x=1:length(g)
       me.res[x] = parent(me.res[x])(lift(coeff(g[x], i)))
@@ -556,9 +559,11 @@ function ==(f::Term, g::Term, monomial_only::Bool = false)
   return AbstractAlgebra.Generic.monomial_cmp(f.f.exps, f.i, g.f.exps, g.i, ngens(R), R, UInt(0))==0 && (monomial_only || coeff(f.f, f.i) == coeff(g.f, g.i))
 end
 
+#=
 function push_term!(M::MPolyBuildCtx{<:Generic.MPoly{T}}, t::Term{T}) where {T}
   push_term!(M, coeff(t.f, t.f.i), exponent_vector(t.f, t.f.i))
 end
+=#
 
 function Hecke.coeff(t::Term)
   return coeff(t.f, t.i)

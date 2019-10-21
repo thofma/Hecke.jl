@@ -15,12 +15,12 @@ export isprincipal
 Computes $B$ and $\alpha$ in factored form, such that $\alpha B = A$.
 """
 function reduce_ideal2(I::FacElem{NfOrdIdl, NfOrdIdlSet})
+  @assert !isempty(I.fac)
   O = order(first(keys(I.fac)))
   K = nf(O)
   fst = true
   a = FacElem(Dict(K(1) => fmpz(1)))
   A = ideal(O, 1)
-
   for (k,v) = I.fac
     @assert order(k) === O
     if iszero(v)
@@ -34,10 +34,12 @@ function reduce_ideal2(I::FacElem{NfOrdIdl, NfOrdIdlSet})
       B, b = power_reduce2(k, v)
       @hassert :PID_Test (v>0 ? k^Int(v) : inv(k)^Int(-v)) == B*evaluate(b)
       A = A*B
-      a = a*b
+      mul!(a, a, b)
+      #a = a*b
       if norm(A) > abs(discriminant(O))
         A, c = reduce_ideal2(A)
-        a = a*FacElem(Dict(K(c) => fmpz(-1)))
+        add_to_key!(a.fac, K(c), fmpz(-1))
+        #a = a*FacElem(Dict(K(c) => fmpz(-1)))
       end
     end
   end
@@ -78,7 +80,8 @@ function power_reduce2(A::NfOrdIdl, e::fmpz)
   if e < 0
     B = inv(A)
     A = numerator(B)
-    al *= FacElem(Dict(K(denominator(B)) => fmpz(e)))
+    #al *= FacElem(Dict(K(denominator(B)) => fmpz(e)))
+    add_to_key!(al.fac, K(denominator(B)), fmpz(e))
     e = -e
   end
   # A^e = A^(e/2)^2 A or A^(e/2)^2
@@ -88,17 +91,20 @@ function power_reduce2(A::NfOrdIdl, e::fmpz)
     @hassert :PID_Test 1 C*evaluate(cl) == A^Int(div(e, 2))
 
     C2 = C^2
-    al = al*cl^2
+    mul!(al, al, cl^2)
+    #al = al*cl^2
     if norm(C2) > abs(discriminant(O))
       C2, a = reduce_ideal2(C2)
-      al *= inv(a)
+      add_to_key!(al.fac, inv(a), 1)
+      #mul!(al, al, inv(a))# al *= inv(a)
     end
 
     if isodd(e)
       A = C2*A
       if norm(A) > abs(discriminant(O))
         A, a = reduce_ideal2(A)
-        al *= inv(a)
+        add_to_key!(al.fac, inv(a), 1)
+        #mul!(al, al, inv(a)) #al *= inv(a)
       end
     else
       A = C2
@@ -228,6 +234,7 @@ function class_group_ideal_relation(I::NfOrdIdl, c::ClassGrpCtx)
     end
   end
   # ok, we have to work
+  
   _I, b = reduce_ideal2(I) # do the obvious reduction to an ideal of bounded norm
   @hassert :PID_Test 1 b*I == _I
   I = _I
@@ -239,7 +246,6 @@ function class_group_ideal_relation(I::NfOrdIdl, c::ClassGrpCtx)
     end
   end
   #really annoying, but at least we have a small(ish) ideal now
-
   #println("have to work")
   E = class_group_small_lll_elements_relation_start(c, I)
   iI = inv(I)
@@ -356,6 +362,9 @@ function class_group(c::ClassGrpCtx, O::NfOrd = order(c); redo::Bool = false)
   local disclog 
   let c = c
     function disclog(x::NfOrdIdl)
+      if x.is_principal == 1
+        return id(C)
+      end
       return class_group_disc_log(x, c)
     end
   end
@@ -435,6 +444,7 @@ function principal_gen_fac_elem(A::NfOrdIdl)
   return e
 end
 
+
 @doc Markdown.doc"""
     principal_gen_fac_elem(I::FacElem) -> FacElem{nf_elem, NumberField}
 For a principal ideal $A$ in factored form, find a generator in factored form.
@@ -444,7 +454,7 @@ function principal_gen_fac_elem(I::FacElem{NfOrdIdl, NfOrdIdlSet})
   #@hassert :PID_Test 1 evaluate(a)*J == evaluate(I)
   x = Hecke.principal_gen_fac_elem(J)
   #@hassert :PID_Test 1 ideal(order(J), evaluate(x)) == J
-  x=x*a
+  mul!(x, x, a) #x=x*a
   return x
   
 end
@@ -477,7 +487,13 @@ Tests if $A$ is principal and returns $(\mathtt{true}, \alpha)$ if $A =
 The generator will be in factored form.
 """
 function isprincipal_fac_elem(A::NfOrdIdl)
+  if A.is_principal == 1 && isdefined(A, :princ_gen)
+    return true, FacElem(A.princ_gen.elem_in_nf)
+  end
   O = order(A)
+  if A.is_principal == 2
+    return false, FacElem(one(nf(O)))
+  end
   c = _get_ClassGrpCtx_of_order(O, false)
   if c == nothing
     L = lll(maximal_order(nf(O)))
@@ -499,6 +515,7 @@ function isprincipal_fac_elem(A::NfOrdIdl)
   R, d = solve_ut(H, r)
 
   if d != 1
+    A.is_principal = 2
     return false, FacElem([nf(O)(1)], fmpz[1])
   end
 
@@ -511,12 +528,14 @@ function isprincipal_fac_elem(A::NfOrdIdl)
   for i in length(T):-1:1
     apply_right!(rs, T[i])
   end
-
-  e = FacElem(vcat(c.R_gen, c.R_rel), rs)*inv(x)  
+  
+  e = FacElem(vcat(c.R_gen, c.R_rel), rs)
+  add_to_key!(e.fac, x, -1)  
 
   #reduce e modulo units.
   e = reduce_mod_units([e], _get_UnitGrpCtx_of_order(L))[1]
-
+  #A.is_principal = 1
+  # TODO: if we set it to be principal, we need to set the generator. Otherwise the ^ function is broken
   return true, e
 end
 
@@ -527,12 +546,21 @@ Tests if $A$ is principal and returns $(\mathtt{true}, \alpha)$ if $A =
 \langle \alpha\rangle$ of $(\mathtt{false}, 1)$ otherwise.  
 """
 function isprincipal(A::NfOrdIdl)
+  if A.is_principal == 1 && isdefined(A, :princ_gen)
+    return true, A.princ_gen
+  end
   O = order(A)
+  if A.is_principal == 2
+    return false, one(O)
+  end
   if !ismaximal(O)
     return isprincipal_non_maximal(A)
   end
   fl, a = isprincipal_fac_elem(A)
-  return fl, O(evaluate(a))
+  ev = O(evaluate(a))
+  A.is_principal = 1
+  A.princ_gen = ev
+  return fl, ev
 end
 
 function isprincipal(A::NfOrdFracIdl)
@@ -666,7 +694,12 @@ function reduce_mod_units(a::Array{T, 1}, U) where T
     end
     @vprint :UnitGroup 2 "exactly? ($exact) reducing by $V\n"
     for i=1:length(b)
-      b[i] = b[i]*prod([U.units[j]^-V[i,j] for j = 1:ncols(V)])
+      for j = 1:ncols(V)
+        if !iszero(V[i, j])
+          mul!(b[i], b[i], U.units[j]^(-V[i,j]))
+        end
+      end
+      #b[i] = b[i]*prod([U.units[j]^-V[i,j] for j = 1:ncols(V)])
     end
 
     if exact
@@ -886,6 +919,7 @@ function sunit_group_fac_elem(I::Array{NfOrdIdl, 1})
   function log(a::FacElem{nf_elem, AnticNumberField})
     a1 = preimage(mS, a)
     a2 = a*inv(image(mS, a1))
+#    @assert isunit(O(evaluate(a2)))
     a3 = preimage(mU, a2)
     return G(vcat([a3.coeff[1,i] for i=1:ncols(a3.coeff)], [a1.coeff[1,i] for i=1:ncols(a1.coeff)]))
   end
@@ -941,3 +975,156 @@ function sunit_group(I::Array{NfOrdIdl, 1})
   return G, r
 end
 
+################################################################################
+#
+#  Representative of ideal classes coprime to the modulus
+#
+################################################################################
+
+@doc Markdown.doc"""
+    find_coprime_representatives(mC::MapClassGrp, m::NfOrdIdl, lp::Dict{NfOrdIdl, Int} = factor(m)) -> MapClassGrp
+
+Returns a class group map such that the representatives for every classes are coprime to $m$.
+$lp$ is the factorization of $m$. 
+"""
+function find_coprime_representatives(mC::MapClassGrp, m::NfOrdIdl, lp::Dict{NfOrdIdl, Int} = factor(m))
+ 
+  O = order(m)
+  K = nf(O)
+  C = domain(mC)
+  L = Array{NfOrdIdl,1}(undef, ngens(C))
+  el = Array{nf_elem,1}(undef, ngens(C))
+  ppp = 1.0
+  for (p, v) in lp
+    ppp *= (1 - 1/Float64(norm(p)))
+  end
+  
+  prob = ppp > 0.1
+  for i = 1:ngens(C)
+    a = first(keys(mC.princ_gens[i][1].fac))
+    if iscoprime(a, m)
+      L[i] = a
+      el[i] = K(1)
+    elseif prob
+      L[i], el[i] = probabilistic_coprime(a, m)
+    else
+      L[i], el[i] = coprime_deterministic(a, m, lp)
+    end
+    @hassert :RayFacElem 1 iscoprime(L[i], m)
+    @hassert :RayFacElem 1 a*el[i] == L[i]
+  end
+  
+  local exp
+  let L = L, C = C
+    function exp(a::GrpAbFinGenElem)  
+      e = Dict{NfOrdIdl,fmpz}()
+      for i = 1:ngens(C)
+        if !iszero(a[i])
+          e[L[i]]= a[i]
+        end
+      end
+      if isempty(e)
+        e[ideal(O,1)]=1
+      end
+      return FacElem(e)
+    end
+  end
+  
+  return exp, el
+
+end 
+
+function coprime_deterministic(a::NfOrdIdl, m::NfOrdIdl, lp::Dict{NfOrdIdl, Int})
+  g, ng = ppio(a.gen_one, m.gen_one)
+  @assert !isone(g)
+  primes = Tuple{fmpz, nf_elem}[]
+  for (p, v) in lp
+    if !divisible(g, minimum(p))
+      continue
+    end
+    vp = valuation(a, p)
+    if iszero(vp)
+      continue
+    end
+    ant_val = anti_uniformizer(p)
+    found = false
+    ind = 1
+    for i = 1:length(primes)
+      if primes[i][1] == minimum(p)
+        found = true
+        ind = i
+        break
+      end
+    end
+    if found
+      primes[ind] = (minimum(p), primes[ind][2]*ant_val^vp)
+    else
+      push!(primes, (minimum(p), ant_val^vp))
+    end
+  end
+  
+  OK = order(a)
+  r = m.gen_one
+  moduli = Vector{fmpz}(undef, length(primes)+1)
+  for i = 1:length(primes)
+    moduli[i] = ppio(a.gen_one, primes[i][1])[1]
+    r = ppio(r, moduli[i])[2]
+  end
+  mo = moduli[1]
+  res = primes[1][2]
+  moduli[length(primes)+1] = r
+  for i = 2:length(moduli)
+    d, u, v = gcdx(mo, moduli[i])
+    if i == length(moduli)
+      res = u*mo + v*moduli[i]*res
+    else
+      res = primes[i][2]*u*mo + v*moduli[i]*res
+    end
+    mo = mo*moduli[i]
+  end
+  res = mod(res, minimum(m))
+  I = res*a
+  I = simplify(I)
+  return I.num, res*I.den
+end
+
+function probabilistic_coprime(a::NfOrdIdl, m::NfOrdIdl)
+  O = order(a)
+  K = nf(O)
+  J = inv(a)
+  temp = basis_matrix(J.num, copy = false)*basis_matrix(O, copy = false)
+  b = temp.num
+  b_den = temp.den
+  prec = 100
+  local t
+  while true
+    if prec > 2^18
+      error("Something wrong in short_elem")
+    end
+    try
+      l, t = lll(J.num, zero_matrix(FlintZZ, 1,1), prec = prec)
+      break
+    catch e
+      if !(e isa LowPrecisionLLL || e isa InexactError)
+        rethrow(e)
+      end
+    end
+    prec = 2 * prec
+  end
+  rr = matrix(FlintZZ, 1, nrows(t), fmpz[rand(1:minimum(a)^2) for i = 1:nrows(t)])
+  b1 = t*b
+  c = rr*b1
+  s = divexact(elem_from_mat_row(K, c, 1, b_den), J.den)
+  I = s*a
+  I = simplify(I)
+  I1 = I.num
+  while !iscoprime(I1, m)
+    rr = matrix(FlintZZ, 1, nrows(t), fmpz[rand(1:minimum(a)^2) for i = 1:nrows(t)])
+    c = rr*b1
+    s = divexact(elem_from_mat_row(K, c, 1, b_den), J.den)
+    I = s*a
+    I = simplify(I)
+    I1 = I.num
+  end
+  return I1, s*I.den
+end

@@ -45,9 +45,9 @@ end
 
 function strong_echelon_form(A::Generic.Mat{NfOrdQuoRingElem}, shape::Symbol = :upperright, strategy::Symbol = :split)
   if shape == :lowerleft
-    h = _strong_echelon_form(invert_cols(A), strategy)
-    invert_cols!(h)
-    invert_rows!(h)
+    h = _strong_echelon_form(reverse_cols(A), strategy)
+    reverse_cols!(h)
+    reverse_rows!(h)
     return h
   elseif shape == :upperright
     h = _strong_echelon_form(A, strategy)
@@ -500,7 +500,7 @@ function test_pseudohnf()
     for p in [2, 3, 5, 7, 11, 13]
       pp = prime_decomposition(O, p)
       for P in pp
-        push!(lp, frac_ideal(O, P[1]))
+        push!(lp, fractional_ideal(O, P[1]))
       end
     end
 

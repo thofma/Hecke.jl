@@ -56,7 +56,7 @@ using LinearAlgebra, Markdown, InteractiveUtils, Libdl, Distributed, Printf, Spa
 
 import AbstractAlgebra
 
-import LinearAlgebra: dot, istriu, nullspace
+import LinearAlgebra: dot, istriu, nullspace, rank
 
 import SparseArrays: nnz
 
@@ -80,10 +80,8 @@ import Nemo: acb_struct, Ring, Group, Field, NmodRing, nmod, arf_struct,
              elem_to_mat_row!, elem_from_mat_row, gfp_elem, gfp_mat,
              Zmodn_poly, Zmodn_mat, GaloisField, acb_vec, array, acb_vec_clear
 
-export @vprint, @hassert, @vtime, add_verbose_scope, get_verbose_level,
-       set_verbose_level, add_assert_scope, get_assert_level, set_assert_level,
-       update, show, StepRange, domain, codomain, image, preimage,
-       modord, resultant, next_prime, ispower, number_field, factor
+export show, StepRange, domain, codomain, image, preimage, modord, resultant,
+       next_prime, ispower, number_field, factor
 
 ###############################################################################
 #
@@ -92,10 +90,6 @@ export @vprint, @hassert, @vtime, add_verbose_scope, get_verbose_level,
 ###############################################################################
 
 const pkgdir = joinpath(dirname(pathof(Hecke)), "..")
-
-#const libhecke = joinpath(pkgdir, "local", "lib", "libhecke")
-#
-#const libdir = joinpath(pkgdir, "local", "lib")
 
 global const number_field = NumberField
 
@@ -110,9 +104,9 @@ function __init__()
     println("")
     print("Welcome to \n")
     printstyled("
-    _    _           _        
-   | |  | |         | |       
-   | |__| | ___  ___| | _____ 
+    _    _           _
+   | |  | |         | |
+   | |__| | ___  ___| | _____
    |  __  |/ _ \\/ __| |/ / _ \\
    | |  | |  __/ (__|   <  __/
    |_|  |_|\\___|\\___|_|\\_\\___|
@@ -132,16 +126,7 @@ function __init__()
   if inNotebook()  # to make toggle work in IJulia
     display("text/html", "\$\\require{action}\$")
   end
-  
-  #if "HOSTNAME" in keys(ENV) && ENV["HOSTNAME"] == "juliabox"
-  #  push!(Libdl.DL_LOAD_PATH, "/usr/local/lib")
-  #elseif Sys.islinux()
-  #  push!(Libdl.DL_LOAD_PATH, libdir)
-  #  Libdl.dlopen(libhecke)
-  #else
-  #  push!(Libdl.DL_LOAD_PATH, libdir)
-  #end
-  
+
   t = create_accessors(AnticNumberField, acb_root_ctx, get_handle())
   global _get_nf_conjugate_data_arb = t[1]
   global _set_nf_conjugate_data_arb = t[2]
@@ -171,11 +156,11 @@ function __init__()
 
   global _get_UnitGrpCtx_of_order = t[1]
   global _set_UnitGrpCtx_of_order = t[2]
-  
-  t = create_accessors(NfOrd, Array, get_handle())
-  
-  global _get_carlos_units_of_order = t[1]
-  global _set_carlos_units_of_order = t[2]
+
+  t = create_accessors(AnticNumberField, Dict, get_handle())
+
+  global _get_places_uniformizers = t[1]
+  global _set_places_uniformizers = t[2]
 
   t = create_accessors(AnticNumberField, roots_ctx, get_handle())
 
@@ -228,28 +213,38 @@ function __init__()
 
   global R = _RealRing()
 
-  # Stuff for elliptic curves
-  # polynomial rings Zx = ZZ[x] and _Zxy = ZZ[x,y]
-  # will be removed eventually
-  #global _Zx = PolynomialRing(FlintZZ, "_x")[1]
-  #global _Zxy = PolynomialRing(_Zx, "_y")[1]
-  #global _x = gen(_Zx)
-  #global _y = gen(_Zxy)
-
   global flint_rand_ctx = flint_rand_state()
 
-  @require GAP="c863536a-3901-11e9-33e7-d5cd0df7b904" begin 
+  @require GAP="c863536a-3901-11e9-33e7-d5cd0df7b904" begin
     include("FieldFactory/fields.jl")
-    @require Revise="295af30f-e4ad-537b-8983-00126c2a3abe" begin
-      import .Revise
-      Revise.track(Hecke, "FieldFactory/fields.jl")
-      Revise.track(Hecke, "FieldFactory/abelian_layer.jl")
-      Revise.track(Hecke, "FieldFactory/brauer.jl")
-      Revise.track(Hecke, "FieldFactory/merge.jl")
-      Revise.track(Hecke, "FieldFactory/read_write.jl")
-    end
+    #@require Revise="295af30f-e4ad-537b-8983-00126c2a3abe" begin
+    #  import .Revise
+    #  #Revise.track(Hecke, joinpath(pkgdir, "src/FieldFactory/fields.jl"))
+    #  #Revise.track(Hecke, "FieldFactory/abelian_layer.jl")
+    #  #Revise.track(Hecke, "FieldFactory/brauer.jl")
+    #  #Revise.track(Hecke, "FieldFactory/merge.jl")
+    #  #Revise.track(Hecke, "FieldFactory/read_write.jl")
+    #end
+  end
+
+  @require Polymake="d720cf60-89b5-51f5-aff5-213f193123e7" begin
+    include("AlgAssRelOrd/NEQ_polymake.jl")
   end
 end
+
+################################################################################
+#
+#  Verbose printing and custom assertions
+#
+################################################################################
+
+include("Assertions.jl")
+
+################################################################################
+#
+#  Setter and getter for objects
+#
+################################################################################
 
 function _get_maximal_order(K::AnticNumberField)
   return _get_maximal_order_of_nf(K)
@@ -351,10 +346,6 @@ end
 
 trace(x...) = tr(x...)
 
-#lufact(x...) = lu(x...)
-#
-#lufact!(x...) = lu!(x...)
-
 Base.adjoint(x) = transpose(x)
 
 ################################################################################
@@ -365,135 +356,10 @@ Base.adjoint(x) = transpose(x)
 
 global VERSION_NUMBER = v"0.6.5"
 
-################################################################################
-#
-#  Verbose printing
-#
-################################################################################
-
-global hecke = Hecke
-
-global VERBOSE_SCOPE = Symbol[]
-
-global VERBOSE_LOOKUP = Dict{Symbol, Int}()
-
-global VERBOSE_PRINT_INDENT = [ 0 ]
-
-function add_verbose_scope(s::Symbol)
-  !(s in VERBOSE_SCOPE) && push!(VERBOSE_SCOPE, s)
-  nothing
-end
-
-function pushindent()
-  a = VERBOSE_PRINT_INDENT[1]
-  VERBOSE_PRINT_INDENT[1] = a + 1
-  nothing
-end
-
-function clearindent()
-  VERBOSE_PRINT_INDENT[1] = 0
-  nothing
-end
-
-function popindent()
-  a = VERBOSE_PRINT_INDENT[1]
-  VERBOSE_PRINT_INDENT[1] = a - 1
-  nothing
-end
-
-function _global_indent()
-  s = "  "^VERBOSE_PRINT_INDENT[1]
-  return s
-end
-
-macro vprint(args...)
-  if length(args) == 2
-    quote
-      if get_verbose_level($(args[1])) >= 1
-        print(_global_indent())
-        print($(esc((args[2]))))
-      end
-    end
-  elseif length(args) == 3
-    quote
-      if get_verbose_level($(args[1])) >= $(args[2])
-        print(_global_indent())
-        print($(esc((args[3]))))
-      end
-    end
-  end
-end
-
-macro v_do(args...)
-  if length(args) == 2
-    quote
-      if get_verbose_level($(esc(args[1]))) >= 1
-       $(esc(args[2]))
-      end
-    end
-  elseif length(args) == 3
-    quote
-      if get_verbose_level($(esc(args[1]))) >= $(esc(args[2]))
-        $(esc(args[3]))
-      end
-    end
-  end
-end
-
-function set_verbose_level(s::Symbol, l::Int)
-  !(s in VERBOSE_SCOPE) && error("Not a valid symbol")
-  VERBOSE_LOOKUP[s] = l
-end
-
-function get_verbose_level(s::Symbol)
-  !(s in VERBOSE_SCOPE) && error("Not a valid symbol")
-  return get(VERBOSE_LOOKUP, s, 0)::Int
-end
-
-################################################################################
-#
-#  Assertions
-#
-################################################################################
-
-global ASSERT_SCOPE = Symbol[]
-
-global ASSERT_LOOKUP = Dict{Symbol, Int}()
-
-function add_assert_scope(s::Symbol)
-  !(s in ASSERT_SCOPE) && push!(ASSERT_SCOPE, s)
-  nothing
-end
-
-function set_assert_level(s::Symbol, l::Int)
-  !(s in ASSERT_SCOPE) && error("Not a valid symbol")
-  ASSERT_LOOKUP[s] = l
-end
-
-function get_assert_level(s::Symbol)
-  !(s in ASSERT_SCOPE) && error("Not a valid symbol")
-  return get(ASSERT_LOOKUP, s, 0)::Int
-end
-
-macro hassert(args...)
-  if length(args) == 2
-    quote
-      if get_assert_level($(args[1])) >= 1
-        @assert $(esc(args[2]))
-      end
-    end
-  elseif length(args) == 3
-    quote
-      if get_assert_level($(args[1])) >= $(args[2])
-        @assert $(esc(args[3]))
-      end
-    end
-  end
-end
-
 ######################################################################
 # named printing support
 ######################################################################
+
 # to use:
 # in HeckeMap
 #   in the show function, start with @show_name(io, map)
@@ -570,7 +436,7 @@ macro show_name(io, O)
     s = get_special(o, :name)
     if s === nothing
       sy = find_name(o)
-      if sy === nothing 
+      if sy === nothing
         sy = extra_name(o)
       end
       if sy !== nothing
@@ -669,7 +535,7 @@ end
 #usage
 # @vtime_add_ellapsed :ClassGroup 2 clg :saturate  s= hnf(a)
 # @vtime_add :ClassGroup 2 clg :saturate  0.5
-# -> clg.time[:saturate] += 
+# -> clg.time[:saturate] +=
 function _vtime_add(D::Dict, k::Any, v::Any)
   if haskey(D, k)
     D[k] += v
@@ -692,7 +558,7 @@ macro vtime_add_elapsed(flag, level, var, key, stmt)
     if get_verbose_level($flag) >= $level
       _vtime_add($(esc(var)).time, $key, tm)
     end
-  end  
+  end
 end
 
 ################################################################################
@@ -713,6 +579,11 @@ Base.showerror(io::IO, e::LowPrecisionLLL) =
     print(io, """
     Transformation matrix has too large entries relative to precision in LLL""")
 
+mutable struct NotImplemented <: Exception end
+
+Base.showerror(io::IO, ::NotImplemented) =
+    print(io, """Not implemented (yet).""")
+
 # what is this function doing here?
 function checkbounds(a::Int, b::Int) nothing; end;
 
@@ -727,20 +598,20 @@ set_assert_level(:PID_Test, 0)
 ################################################################################
 
 include("HeckeTypes.jl")
-include("NfRel/Types.jl")
+include("NumField/NfRel/Types.jl")
 include("AlgAss/Types.jl")
+include("AlgAssAbsOrd/Types.jl")
+include("AlgAssRelOrd/Types.jl")
 include("Grp.jl")
 include("Map.jl")
 include("Misc.jl")
 include("GrpAb.jl")
 include("LinearAlgebra.jl")
-include("NfAbs.jl")
 include("NumField.jl")
 include("NfOrd.jl")
 include("Sparse.jl")
 include("BigComplex.jl")
 include("conjugates.jl")
-include("NfRel.jl")
 include("analytic.jl")
 include("helper.jl")
 include("EllCrv.jl")
@@ -752,6 +623,7 @@ include("AlgAssAbsOrd.jl")
 include("AlgAssRelOrd.jl")
 include("LocalField.jl")
 include("QuadForm.jl")
+include("FieldFactory.jl")
 
 ################################################################################
 #
@@ -886,8 +758,8 @@ function find_cache(M::Module)
   sym = []
   for a in collect(names(M, all = true))
     d = Meta.parse("$M.$a")
-      try 
-        z = eval(d); 
+      try
+        z = eval(d);
         if isa(z, AbstractArray) || isa(z, AbstractDict)
           push!(sym, (d, z))
         end
@@ -897,9 +769,9 @@ function find_cache(M::Module)
   return sym
 end
 
-protect = [:(Hecke.ASSERT_LOOKUP), :(Hecke.VERBOSE_LOOKUP), 
+protect = [:(Hecke.ASSERT_LOOKUP), :(Hecke.VERBOSE_LOOKUP),
            :(Hecke.ASSERT_SCOPE), :(Hecke.VERBOSE_SCOPE),
-           :(Hecke._euler_phi_inverse_maximum), 
+           :(Hecke._euler_phi_inverse_maximum),
            :(Hecke.odlyzko_bound_grh),
            :(Hecke.nC), :(Hecke.B1), #part of ECM
            :(Hecke.VERBOSE_PRINT_INDENT)]
@@ -925,4 +797,3 @@ end
 @inline __get_rounding_mode() = Base.MPFR.rounding_raw(BigFloat)
 
 end # module
-

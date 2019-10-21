@@ -94,7 +94,7 @@ end
   @test isdefined(mP, :betas)
   I = rand(O, -5:5)*mP(P[1])
   r, p = Hecke.refined_disc_log_picard_group(I, mP)
-  @test numerator(evaluate(r)*mP(P[1])) == I
+  @test evaluate(r)*mP(P[1]) == I
   @test p == P[1]
 end
 

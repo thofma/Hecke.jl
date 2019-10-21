@@ -245,7 +245,9 @@ coefficient_ideals(M::PMat) = M.coeffs
 
 matrix(M::PMat) = M.matrix
 
-function PseudoMatrix(m::Generic.Mat{T}, c::Array{S, 1}) where {T, S}
+base_ring(M::PMat) = order(M.coeffs[1])
+
+function PseudoMatrix(m::AbstractAlgebra.MatElem{T}, c::Array{S, 1}) where {T, S}
   # sanity checks
   @assert nrows(m) == length(c)
   return PMat{T, S}(m ,c)
@@ -258,7 +260,7 @@ Returns the (row) pseudo matrix representing the Z\_k-module
  $$\sum c_i m_i$$
  where $c_i$ are the ideals in $c$ and $m_i$ the rows of $M$. 
 """
-function PseudoMatrix(m::Generic.Mat{nf_elem}, c::Array{NfOrdIdl, 1})
+function PseudoMatrix(m::AbstractAlgebra.MatElem{nf_elem}, c::Array{NfOrdIdl, 1})
   @assert nrows(m) == length(c)
   cc = map(z -> NfOrdFracIdl(z, fmpz(1)), c)
   return PMat{nf_elem, NfOrdFracIdl}(m, cc)
@@ -272,7 +274,7 @@ Returns the (row) pseudo matrix representing the $Z_k$-module
 """
 function PseudoMatrix(m::Generic.Mat{NfOrdElem}, c::Array{NfOrdIdl, 1})
   @assert nrows(m) == length(c)
-  mm = change_base_ring(m, nf(base_ring(m)))
+  mm = change_base_ring(nf(base_ring(m)), m)
   cc = map(z -> NfOrdFracIdl(z, fmpz(1)), c)
   return PMat{nf_elem, NfOrdFracIdl}(mm, cc)
 end
@@ -294,16 +296,16 @@ function PseudoMatrix(m::MatElem{S}) where S <: NumFieldElem
   OL = maximal_order(L)
   K = base_field(L)
   OK = maximal_order(K)
-  return PseudoMatrix(m, [ frac_ideal(OL, identity_matrix(K, degree(L))) for i = 1:nrows(m) ])
+  return PseudoMatrix(m, [ fractional_ideal(OL, identity_matrix(K, degree(L))) for i = 1:nrows(m) ])
 end
 
 function PseudoMatrix(m::MatElem{S}, c::Array{T, 1}) where {S <: NumFieldElem, T <: NfRelOrdIdl}
   @assert nrows(m) == length(c)
-  cc = [ frac_ideal(order(c[i]), basis_pmatrix(c[i]), true) for i = 1:length(c) ]
+  cc = [ fractional_ideal(order(c[i]), basis_pmatrix(c[i]), true) for i = 1:length(c) ]
   return PMat{S, typeof(cc[1])}(m, cc)
 end
 
-PseudoMatrix(m::MatElem{NfOrdElem}) = PseudoMatrix(change_base_ring(m, nf(base_ring(m))))
+PseudoMatrix(m::MatElem{NfOrdElem}) = PseudoMatrix(change_base_ring(nf(base_ring(m)), m))
 
 function PseudoMatrix(c::Array{S, 1}) where S
    K = nf(order(c[1]))
@@ -330,7 +332,7 @@ function det(m::PMat)
   return det(m.matrix)*z
 end
 
-function *(P::PMat{T, S}, x::U) where { T, S, U <: Union{Int, fmpz, FieldElem } }
+function *(P::PMat{T, S}, x::U) where { T, S, U <: Union{ Int, RingElem } }
   if nrows(P) == 0 || ncols(P) == 0
     return P
   end
@@ -346,7 +348,7 @@ function *(P::PMat{T, S}, x::U) where { T, S, U <: Union{Int, fmpz, FieldElem } 
   return PP
 end
 
-*(x::U, P::PMat{T, S}) where { T, S, U <: Union{Int, fmpz, FieldElem } } = P*x
+*(x::U, P::PMat{T, S}) where { T, S, U <: Union{ Int, RingElem } } = P*x
 
 # this is slow
 function _coprime_integral_ideal_class(x::Union{NfOrdFracIdl, NfOrdIdl}, y::NfOrdIdl)
@@ -405,7 +407,7 @@ function _coprime_norm_integral_ideal_class(x::NfOrdFracIdl, y::NfOrdIdl)
   return z, a
 end
 
-function rand(I::Union{NfOrdIdl, AlgAssAbsOrdIdl}, B::Int)
+function rand(I::NfOrdIdl, B::Int)
   r = rand(-B:B, degree(order(I)))
   b = basis(I)
   z = r[1]*b[1]
@@ -994,9 +996,9 @@ end
 
 function pseudo_hnf_kb(P::PMat, shape::Symbol = :upperright)
   if shape == :lowerleft
-    H = _pseudo_hnf_kb(PseudoMatrix(invert_cols(P.matrix), P.coeffs), Val{false})
-    invert_cols!(H.matrix)
-    invert_rows!(H.matrix)
+    H = _pseudo_hnf_kb(PseudoMatrix(reverse_cols(P.matrix), P.coeffs), Val{false})
+    reverse_cols!(H.matrix)
+    reverse_rows!(H.matrix)
     reverse!(H.coeffs)
     return H
   elseif shape == :upperright
@@ -1008,11 +1010,11 @@ end
 
 function pseudo_hnf_kb_with_transform(P::PMat, shape::Symbol = :upperright)
   if shape == :lowerleft
-    H, U = _pseudo_hnf_kb(PseudoMatrix(invert_cols(P.matrix), P.coeffs), Val{true})
-    invert_cols!(H.matrix)
-    invert_rows!(H.matrix)
+    H, U = _pseudo_hnf_kb(PseudoMatrix(reverse_cols(P.matrix), P.coeffs), Val{true})
+    reverse_cols!(H.matrix)
+    reverse_rows!(H.matrix)
     reverse!(H.coeffs)
-    invert_rows!(U)
+    reverse_rows!(U)
     return H, U
   elseif shape == :upperright
     return _pseudo_hnf_kb(P, Val{true})
@@ -1288,7 +1290,7 @@ end
 
 
 function PseudoMatrix2(m::Generic.Mat{NfOrdElem}, r::Array{NfOrdFracIdl, 1}, c::Array{NfOrdIdl, 1})
-   mm = change_base_ring(m, nf(base_ring(m)))
+   mm = change_base_ring(nf(base_ring(m)), m)
    rr = map(z -> NfOrdFracIdl(z, fmpz(1)), r)
    cc = map(z -> NfOrdFracIdl(z, fmpz(1)), c)
    return PMat(mm, rr, cc)

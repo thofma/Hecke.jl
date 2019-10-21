@@ -133,7 +133,7 @@ end
 function class_group_small_lll_elements_relation_start(clg::ClassGrpCtx{T},
                 O::NfOrd; prec::Int = 200, val::Int = 0,
                 limit::Int = 0) where {T}
-  return class_group_small_lll_elements_relation_start(clg, hecke.ideal(O, parent(basis_matrix(O).num)(1)), prec = prec)
+  return class_group_small_lll_elements_relation_start(clg, ideal(O, parent(basis_matrix(O).num)(1)), prec = prec)
 end
 
 function class_group_small_lll_elements_relation_start(clg::ClassGrpCtx{T},

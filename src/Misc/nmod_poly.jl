@@ -19,8 +19,7 @@ function resultant_ideal(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} w
   Rt = parent(f)
   R = base_ring(Rt)
   m = fmpz(modulus(R))
-  e, p = ispower(m)
-  easy = isprime(p)
+  easy = isprime_power(m)
   
   if easy
     return resultant_ideal_pp(f,g)
@@ -402,7 +401,6 @@ function rres_sircana_pp(f1::PolyElem{T}, g1::PolyElem{T}) where T <: ResElem{S}
   R = base_ring(Rt)
   m = fmpz(modulus(R))
   e, p = ispower(m)
-  @assert isprime(p)
   f = deepcopy(f1)
   g = deepcopy(g1)
   
@@ -470,8 +468,7 @@ function rres_sircana(f1::PolyElem{T}, g1::PolyElem{T}) where T <: ResElem{S} wh
   Rt = parent(f1)
   R = base_ring(Rt)
   m = fmpz(modulus(R))
-  e, p = ispower(m)
-  easy = isprime(p)
+  easy = isprime_power(m)
   if easy
     return rres_sircana_pp(f1, g1)
   end
@@ -609,6 +606,29 @@ function rresx_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} whe
   end
 end
 
+function rresx_sircana_pp(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where S <: Union{fmpz, Integer}
+  Nemo.check_parent(f, g)
+  @assert typeof(f) == typeof(g)
+  @assert isunit(lead(f)) || isunit(lead(g)) #can be weakened to invertable lead
+  res, u, v = _rresx_sircana_pp(f, g)
+  if !iszero(res)
+    cu = canonical_unit(res)
+    cu = inv(cu)
+    res = mul!(res, res, cu)
+    u *= cu
+    v *= cu
+  end
+  if isunit(lead(g))
+    q, r = divrem(u, g)
+    @hassert :NfOrd 1 res == r*f + (v+q*f)*g
+    return res, r, v+q*f
+  else
+    q, r = divrem(v, f)
+    @hassert :NfOrd 1 res == (u+q*g)*f + r*g
+    return res, u+q*g, r
+  end
+end
+
 
 function _rresx_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where S <: Union{fmpz, Integer}
   Nemo.check_parent(f, g)
@@ -617,8 +637,7 @@ function _rresx_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} wh
   R = base_ring(Rt)
   Zx = PolynomialRing(FlintZZ, "x", cached = false)[1]
   m = fmpz(modulus(R))
-  e, p = ispower(m)
-  easy = isprime(p)
+  easy = isprime_power(m)
   if easy
     return _rresx_sircana_pp(f, g)
   end

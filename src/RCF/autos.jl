@@ -26,18 +26,18 @@ end
 
 function absolute_automorphism_group(C::ClassField, aut_gen_of_base_field::Array{NfToNfMor, 1})
   L = number_field(C)
-  aut_L_rel = rel_auto(C)::Vector{NfRel_nsToNfRel_nsMor{nf_elem}}
+  aut_L_rel = rel_auto(C)::Vector{NfRelNSToNfRelNSMor{nf_elem}}
   if iscyclic(C) && length(aut_L_rel) > 1
     aut = aut_L_rel[1]
     for i = 2:length(aut_L_rel)
       aut *= aut_L_rel[i]
     end
-    aut_L_rel = NfRel_nsToNfRel_nsMor{nf_elem}[aut]
+    aut_L_rel = NfRelNSToNfRelNSMor{nf_elem}[aut]
   end
   rel_extend = Hecke.new_extend_aut(C, aut_gen_of_base_field)
-  rel_gens = vcat(aut_L_rel, rel_extend)::Vector{NfRel_nsToNfRel_nsMor{nf_elem}}
+  rel_gens = vcat(aut_L_rel, rel_extend)::Vector{NfRelNSToNfRelNSMor{nf_elem}}
   C.AbsAutGrpA = rel_gens
-  return rel_gens::Vector{NfRel_nsToNfRel_nsMor{nf_elem}}
+  return rel_gens::Vector{NfRelNSToNfRelNSMor{nf_elem}}
 end
 
 function automorphism_groupQQ(C::ClassField)
@@ -62,7 +62,7 @@ function rel_auto_easy(A::ClassField_pp)
     b *= A.pe
     push!(M, SRow(b))
   end
-  tau = hom(A.K, A.K, A.bigK.zeta*gen(A.K), check = false)
+  tau = hom(A.K, A.K, A.bigK.zeta*gen(A.K), check = true)
   N = SRow(tau(A.pe))
   C = cyclotomic_extension(base_field(A), degree(A))
   Mk = _expand(M, pseudo_inv(C.mp[1]))
@@ -137,14 +137,13 @@ function rel_auto(A::ClassField_pp)
   end
 end
 
-
 function rel_auto(A::ClassField)
   aut = NfRelToNfRelMor{nf_elem}[rel_auto(x) for x = A.cyc]
   K = number_field(A)
   g = gens(K)
-  Aut = Vector{NfRel_nsToNfRel_nsMor{nf_elem}}(undef, length(aut))
+  Aut = Vector{NfRelNSToNfRelNSMor{nf_elem}}(undef, length(aut))
   for i = 1:length(aut)
-    Aut[i] = NfRel_nsToNfRel_nsMor(K, K, NfRel_nsElem{nf_elem}[j==i ? aut[i].prim_img.data(g[j]) : g[j] for j=1:length(aut)])
+    Aut[i] = NfRelNSToNfRelNSMor(K, K, NfRelNSElem{nf_elem}[j==i ? aut[i].prim_img.data(g[j]) : g[j] for j=1:length(aut)])
   end
   return Aut
 end
@@ -199,14 +198,14 @@ function new_extend_aut(A::ClassField, autos::Array{T, 1}) where T <: Map
   lp = factor(fmpz(degree(A)))
   L = number_field(A)
   # I call number field because to extend the automorphism I need the defining polynomials
-  all_imgs = Array{Array{NfRel_nsElem{nf_elem}, 1}, 1}(undef, length(autos))
+  all_imgs = Array{Array{NfRelNSElem{nf_elem}, 1}, 1}(undef, length(autos))
   #Initialize the array
   for i=1:length(autos)
-    all_imgs[i] = Vector{NfRel_nsElem{nf_elem}}(undef, length(A.cyc))#[L() for i=1:length(A.cyc)]
+    all_imgs[i] = Vector{NfRelNSElem{nf_elem}}(undef, length(A.cyc))#[L() for i=1:length(A.cyc)]
   end
   lG = gens(L)
   #P-Sylow subgroups are invariant, I can reduce to the prime power case.
-  res = Array{NfRel_nsToNfRel_nsMor{nf_elem}, 1}(undef, length(autos))
+  res = Array{NfRelNSToNfRelNSMor{nf_elem}, 1}(undef, length(autos))
   for (p, v) = lp.fac
     imgs = extend_aut_pp(A, autos, p)
     # The output are the images of the cyclic components in A.A
@@ -221,7 +220,7 @@ function new_extend_aut(A::ClassField, autos::Array{T, 1}) where T <: Map
     end
     #I need to embed Ap in L
     Ap = parent(imgs[1][1])
-    emb = NfRel_nsToNfRel_nsMor(Ap, L, NfRel_nsElem{nf_elem}[lG[indices[i]] for i = 1:length(indices)])
+    emb = NfRelNSToNfRelNSMor(Ap, L, NfRelNSElem{nf_elem}[lG[indices[i]] for i = 1:length(indices)])
     for j = 1:length(autos)
       for i = 1:length(imgs[j])
         all_imgs[j][indices[i]] = emb(imgs[j][i])
@@ -229,7 +228,8 @@ function new_extend_aut(A::ClassField, autos::Array{T, 1}) where T <: Map
     end
   end
   for i = 1:length(res)
-    res[i] = NfRel_nsToNfRel_nsMor(L, L, autos[i], all_imgs[i])
+    res[i] = NfRelNSToNfRelNSMor(L, L, autos[i], all_imgs[i])
+    @hassert :NfOrd 1 isconsistent(res[i])
   end
   return res
   
@@ -374,7 +374,7 @@ function extend_aut2(A::ClassField, autos::Array{NfToNfMor, 1})
     act_on_gens[i] = act_on_gen_i
   end
   frob_gens = find_gens(KK, act_on_gens, A)
-  autos_extended = Vector{Vector{NfRel_nsElem{nf_elem}}}(undef, length(autos))
+  autos_extended = Vector{Vector{NfRelNSElem{nf_elem}}}(undef, length(autos))
   #I will compute a possible image cyclic component by cyclic component
   for w = 1:length(autos)
     images_KK = Array{Tuple{GrpAbFinGenElem, FacElem{nf_elem, AnticNumberField}}, 1}(undef, length(Cp))
@@ -383,7 +383,7 @@ function extend_aut2(A::ClassField, autos::Array{NfToNfMor, 1})
     end
   
     #Now, I can define the automorphism on AA
-    images_K = Array{NfRel_nsElem{nf_elem}, 1}(undef, length(images_KK))
+    images_K = Array{NfRelNSElem{nf_elem}, 1}(undef, length(images_KK))
     for i = 1:length(images_K)
       s = AA(evaluate(images_KK[i][2]))
       for j = 1:length(Cp)
@@ -433,7 +433,7 @@ function extend_aut_pp(A::ClassField, autos::Array{NfToNfMor, 1}, p::fmpz)
 
   #Now, I can compute the corresponding Kummer extension over the big cyclotomic field.
   m = minimum(defining_modulus(A)[1])
-  incs = Array{NfRelToNfRel_nsMor, 1}(undef, length(Cp))
+
   
   if !isone(gcd(d, m)) && d != minimum(degree(x) for x in Cp)
   #Difficult case. Think about it...
@@ -449,7 +449,7 @@ function extend_aut_pp(A::ClassField, autos::Array{NfToNfMor, 1}, p::fmpz)
       exps[i] = Cp[i].o
     else
       D = Dict{nf_elem, fmpz}()
-      for (ke,v) in Cp[i].a.fac
+      for (ke,v) in Cp[i].a
         D[abs_emb[i](ke)] = v
       end
       a = FacElem(D)
@@ -460,8 +460,9 @@ function extend_aut_pp(A::ClassField, autos::Array{NfToNfMor, 1}, p::fmpz)
   KK = kummer_extension(exps, gens)
   K, gK = number_field(KK)
   #I need the inclusions of the single extensions Cp[i].K in K
+  incs = Array{NfRelToNfRelNSMor, 1}(undef, length(Cp))
   for i = 1:length(Cp)
-    incs[i] = NfRelToNfRel_nsMor(Cp[i].K, K, abs_emb[i], gK[i])
+    incs[i] = NfRelToNfRelNSMor(Cp[i].K, K, abs_emb[i], gK[i])
   end
   
   # I want extend the automorphisms to KK
@@ -480,7 +481,7 @@ function extend_aut_pp(A::ClassField, autos::Array{NfToNfMor, 1}, p::fmpz)
   end
   frob_gens = find_gens(KK, act_on_gens, A)
   
-  autos_extended = Array{NfRel_nsToNfRel_nsMor, 1}(undef, length(autos))
+  autos_extended = Array{NfRelNSToNfRelNSMor, 1}(undef, length(autos))
   #I will compute a possible image cyclic component by cyclic component
   for w = 1:length(autos)
     images_KK = Array{Tuple{GrpAbFinGenElem, FacElem{nf_elem, AnticNumberField}}, 1}(undef, length(Cp))
@@ -489,7 +490,7 @@ function extend_aut_pp(A::ClassField, autos::Array{NfToNfMor, 1}, p::fmpz)
     end
   
     #Now, I can define the automorphism on K
-    images_K = Array{NfRel_nsElem{nf_elem}, 1}(undef, length(images_KK))
+    images_K = Array{NfRelNSElem{nf_elem}, 1}(undef, length(images_KK))
     for i = 1:length(images_K)
       s = K(evaluate(images_KK[i][2]))
       for j = 1:length(Cp)
@@ -497,7 +498,8 @@ function extend_aut_pp(A::ClassField, autos::Array{NfToNfMor, 1}, p::fmpz)
       end
       images_K[i] = s
     end
-    autos_extended[w] = NfRel_nsToNfRel_nsMor(K, K, Autos_abs[w], images_K)
+    autos_extended[w] = NfRelNSToNfRelNSMor(K, K, Autos_abs[w], images_K)
+    @hassert :NfOrd 1 isconsistent(autos_extended[w])
   end
   res = restriction(K, Cp, autos_extended, incs)
   return res
@@ -510,28 +512,40 @@ end
 #
 ###############################################################################
 
+function isconsistent(f::NfRelNSToNfRelNSMor)  
+  K = domain(f)
+  for i = 1:length(K.pol)
+    p = map_coeffs(f.coeff_aut, K.pol[i])
+    if !iszero(msubst(p, f.emb))
+      error("wrong!")
+    end
+  end
+  return true
+end
+
+
 #This function restricts the automorphisms in autos to the number field generated by the class fields in Cp
 # incs are the inclusions of the class fields in K
-function restriction(K::NfRel_ns{nf_elem}, Cp::Vector{ClassField_pp{S, T}}, autos::Vector{NfRel_nsToNfRel_nsMor}, incs::Vector{NfRelToNfRel_nsMor}) where {S, T}
+function restriction(K::NfRelNS{nf_elem}, Cp::Vector{ClassField_pp{S, T}}, autos::Vector{NfRelNSToNfRelNSMor}, incs::Vector{NfRelToNfRelNSMor}) where {S, T}
   
   C = cyclotomic_extension(base_field(Cp[1]), maximum(degree(x) for x in Cp))
   #First, I compute the images in K of the generators of the class fields
   # and their images under the automorphisms
   gK = gens(K)
-  all_pe = Array{Tuple{NfRel_nsElem, Array{NfRel_nsElem, 1}}, 1}(undef, length(Cp))
+  all_pe = Array{Tuple{NfRelNSElem{nf_elem}, Array{NfRelNSElem{nf_elem}, 1}}, 1}(undef, length(Cp))
   for j = 1:length(Cp)
     pe = incs[j](Cp[j].pe)
-    tau_pe = Array{NfRel_nsElem, 1}(undef, length(autos))
+    tau_pe = Array{typeof(pe), 1}(undef, length(autos))
     for i = 1:length(tau_pe)
       tau_pe[i] = autos[i](pe)
     end
     all_pe[j] = (pe, tau_pe)
   end
   #AA is the target field 
-  AA, gAA = number_field([c.A.pol for c = Cp], cached = false, check = false)
+  AA, gAA = number_field([c.A.pol for c = Cp], cached = false, check = true)
   #And now, linear algebra to compute the restriction
   #I need the product basis fo all the primitive elements of Cp
-  B = Array{NfRel_nsElem, 1}(undef, degree(AA))
+  B = Array{NfRelNSElem, 1}(undef, degree(AA))
   B[1] = K(1)
   for i = 2:degree(Cp[1])
     B[i] = all_pe[1][1]*B[i-1]
@@ -547,18 +561,18 @@ function restriction(K::NfRel_ns{nf_elem}, Cp::Vector{ClassField_pp{S, T}}, auto
     end
     ind *= degree(Cp[jj])
   end
+  
   #Now, I construct the corresponding sparse matrix
   M = sparse_matrix(base_field(K))
-  for i = 1:degree(AA)
+  for i = 1:length(B)
     push!(M, SRow(B[i]))
   end
 
   b_AA = basis(AA)
   Mk = _expand(M, pseudo_inv(C.mp[1]))
-  #@hassert :ClassField 2 nullspace(Mk')[1] == 0
-  all_im = Array{Array{NfRel_nsElem{nf_elem}, 1}, 1}(undef, length(autos))
+  all_im = Array{Array{NfRelNSElem{nf_elem}, 1}, 1}(undef, length(autos))
   for i = 1:length(autos)
-    all_imCp = Array{NfRel_nsElem{nf_elem}, 1}(undef, length(Cp))
+    all_imCp = Array{NfRelNSElem{nf_elem}, 1}(undef, length(Cp))
     for jj=1:length(Cp)
       N = SRow(all_pe[jj][2][i])
       Nk = _expand(N, pseudo_inv(C.mp[1]))
@@ -760,13 +774,13 @@ function extend_hom(C::ClassField_pp, D::Array{ClassField_pp, 1}, tau)
     for j in 2:length(D)
       s = s * gKK[j]^Int(divexact(D[j].o, C.o)*all_b[2][j])
     end
-    h = NfRelToNfRel_nsMor(C.K, KK, tau_Ka, inv(all_b[1]) * s)
+    h = NfRelToNfRelNSMor(C.K, KK, tau_Ka, inv(all_b[1]) * s)
 
     # now "all" that remains is to restrict h to the subfield, using lin. alg..
 
     all_pe = []
     for jj=1:length(D)
-      emb = NfRelToNfRel_nsMor(D[jj].K, KK, tau_Ka, gens(KK)[jj])
+      emb = NfRelToNfRelNSMor(D[jj].K, KK, tau_Ka, gens(KK)[jj])
       pe = emb(D[jj].pe)
       push!(all_pe, pe)
     end
@@ -805,7 +819,7 @@ function extend_hom(C::ClassField_pp, D::Array{ClassField_pp, 1}, tau)
 
       #=
 
-    im = NfRel_nsElem{nf_elem}[]
+    im = NfRelNSElem{nf_elem}[]
     i = 1
     j = 1
     while j<=length(A.cyc)
@@ -817,7 +831,7 @@ function extend_hom(C::ClassField_pp, D::Array{ClassField_pp, 1}, tau)
         j += 1
       end
     end
-    emb = NfRel_nsToNfRel_nsMor(KK, A.A, im)
+    emb = NfRelNSToNfRelNSMor(KK, A.A, im)
     i = 1
     j = 1
     while j<=length(A.cyc)
@@ -830,7 +844,7 @@ function extend_hom(C::ClassField_pp, D::Array{ClassField_pp, 1}, tau)
       end
     end
   end
-  return NfRel_nsToNfRel_nsMor(A.A, A.A, tau, all_h)
+  return NfRelNSToNfRelNSMor(A.A, A.A, tau, all_h)
   =#
 end
 

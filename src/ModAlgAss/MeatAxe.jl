@@ -7,6 +7,17 @@ export submodules, minimal_submodules, maximal_submodules, composition_series,
 #
 ################################################################################
 
+
+function pivot(M::MatElem, i::Int)
+  ind = 1
+  while ind <= ncols(M) && iszero(M[i, ind])
+    ind += 1
+  end
+  if ind > ncols(M)
+    error("Zero row! Can't find a pivot")
+  end
+  return ind
+end
 #
 # Given a matrix $M$ in echelon form and a vector, it returns
 # the vector reduced with respect to $M$
@@ -908,7 +919,7 @@ Base.IteratorSize(::Type{GaloisField}) = Base.HasLength()
 Base.length(R::GaloisField) = R.n
 
 function powmod(f::Zmodn_poly, e::fmpz, g::Zmodn_poly)
-  if nbits(e) <= 63
+  if fits(Int, e)
     return powmod(f, Int(e), g)
   else
     _e = BigInt()

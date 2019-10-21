@@ -2,7 +2,7 @@
 export rational_reconstruction, farey_lift, div, valence, leading_coefficient,
        trailing_coefficient, constant_coefficient, factor_mod_pk,
        factor_mod_pk_init, hensel_lift, rres, rresx,
-       coefficients
+       coefficients, polynomial
 
 function PolynomialRing(R::Ring; cached::Bool = false)
   return PolynomialRing(R, "x", cached = cached)
@@ -241,7 +241,7 @@ end
 function factor_mod_pk(f::fmpz_poly, p::Int, k::Int)
   H = HenselCtx(f, fmpz(p))
   if H.r == 1
-    return Dict(a.f => 1)
+    return Dict(H.f => 1)
   end
   start_lift(H, k)
   return factor_to_dict(H.LF)
@@ -793,7 +793,7 @@ end
 
 function roots(f::PolyElem, R::Field)
   Rt = PolynomialRing(R, "t", cached = false)[1]
-  f1 = change_base_ring(f, R, Rt)
+  f1 = change_base_ring(R, f, parent = Rt)
   return roots(f1)
 end
 
@@ -1282,5 +1282,32 @@ function roots(f::fmpq_poly; max_roots::Int = degree(f))
   Zx, x = PolynomialRing(FlintZZ, cached = false)
   g = Zx(denominator(f)*f)
   return roots(g, FlintQQ)
+end
+
+function roots(f::Union{fmpz_poly, fmpq_poly}, R::AcbField, abs_tol::Int=R.prec, initial_prec::Int...)
+  return _roots(f, abs_tol, initial_prec...)
+end
+
+function (f::acb_poly)(x::acb)
+  return evaluate(f, x)
+end
+
+function polynomial(A::Array{T, 1}) where {T <: RingElem}
+  P = parent(A[1])
+  @assert all(x->parent(x) == P, A)
+  Pt, t = PolynomialRing(P, cached = false)
+  return Pt(A)
+end
+
+function polynomial(R::Ring, A::Array{T, 1}) where {T <: RingElem}
+  return polynomial(map(R, A))
+end
+
+function polynomial(R::Ring, A::Array{T, 1}) where {T <: Integer}
+  return polynomial(map(R, A))
+end
+
+function polynomial(R::Ring, A::Array{T, 1}) where {T <: Rational}
+  return polynomial(map(R, A))
 end
 

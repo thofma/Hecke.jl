@@ -1,14 +1,9 @@
+using Random
+
 @testset "Clgp" begin
 
   @testset "class_group" begin
-     Qx, x = PolynomialRing(FlintQQ, "x");
-
-    @testset "K = Q" begin # TODO Fix class_group for K = Q
-      #= K, a = NumberField(x, "a"); =#
-      #= O = maximal_order(K) =#
-      #= Cl = Hecke.class_group(O); =#
-      #= @test Cl.h == 1 =#
-    end
+     Qx, x = PolynomialRing(FlintQQ, "x")
 
     @testset "class numbers" begin
 
@@ -26,45 +21,70 @@
           ,(43,1),(44,1),(45,1),(46,1),(47,1),(48,1),(50,1)]
 
         @testset "K = Q[√$d]" for (d,h) in classnumbersofquadraticfields
-           K, a = NumberField(x^2-d, "a")
+          @show K, a = NumberField(x^2-d, "a")
           O = maximal_order(K)
           Cl, mCl = Hecke.class_group(O, redo = true)
+          U, mU = Hecke.unit_group(O)
+          @test order(Cl) == h
+          
+          Cl, mCl = Hecke.class_group(O, redo = true, do_lll = false)
+          U, mU = Hecke.unit_group(O)
+          @test order(Cl) == h
+
+          O = Order(K, shuffle(basis(O)), isbasis = true)
+          O.ismaximal = 1
+          Cl, mCl = Hecke.class_group(O, redo = true, do_lll = false)
           U, mU = Hecke.unit_group(O)
           @test order(Cl) == h
         end
       end
 
       @testset "x^3-3*x-1" begin
-        f = x^3 - 3*x - 1
-         K, a = NumberField(f, "a");
+        @show f = x^3 - 3*x - 1
+        K, a = NumberField(f, "a")
         O = maximal_order(K)
-        Cl, mCl = Hecke.class_group(O, redo = true);
+        Cl, mCl = Hecke.class_group(O, redo = true)
+        U, mU = Hecke.unit_group(O)
+        @test order(Cl) == 1
+
+        Cl, mCl = Hecke.class_group(O, redo = true, do_lll = true)
+        U, mU = Hecke.unit_group(O)
+        @test order(Cl) == 1
+       
+        O = Order(K, shuffle(basis(O)), isbasis = true)
+        O.ismaximal = 1
+        Cl, mCl = Hecke.class_group(O, redo = true, do_lll = false)
         U, mU = Hecke.unit_group(O)
         @test order(Cl) == 1
       end
 
       @testset "29th cyclotomic polynomial" begin
-        #= phi29 = x^28+x^27+x^26+x^25+x^24+x^23+x^22+x^21+x^20+x^19+x^18+x^17+x^16+x^15+x^14+x^13+x^12+x^11+x^10+x^9+x^8+x^7+x^6+x^5+x^4+x^3+x^2+x+1 =#
-        #= K, a = NumberField(phi29, "a"); =#
-        #= O = maximal_order(K) =#
-        #= Cl = Hecke.class_group(O); =#
-        #= @test Cl.h == 8 =#
+        @show phi29 = x^28+x^27+x^26+x^25+x^24+x^23+x^22+x^21+x^20+x^19+x^18+x^17+x^16+x^15+x^14+x^13+x^12+x^11+x^10+x^9+x^8+x^7+x^6+x^5+x^4+x^3+x^2+x+1
+        K, a = NumberField(phi29, "a")
+        O = maximal_order(K)
+        Cl, mCl = Hecke.class_group(O)
+        @test order(Cl) == 8
+        
+        O = Order(K, shuffle(basis(O)), isbasis = true)
+        O.ismaximal = 1
+        Cl, mCl = Hecke.class_group(O, redo = true, do_lll = false)
+        U, mU = Hecke.unit_group(O)
+        @test order(Cl) == 8
       end
-
 
       @testset "53th cyclotomic polynomial" begin
         #= phi53 = x^52+x^51+x^50+x^49+x^48+x^47+x^46+x^45+x^44+x^43+x^42+x^41+x^40+x^39+x^38+x^37+x^36+x^35+x^34+x^33+x^32+x^31+x^30+x^29+x^28+x^27+x^26+x^25+x^24+x^23+x^22+x^21+x^20+x^19+x^18+x^17+x^16+x^15+x^14+x^13+x^12+x^11+x^10+x^9+x^8+x^7+x^6+x^5+x^4+x^3+x^2+x+1 =#
-        #= K, a = NumberField(phi53, "a"); =#
+        #= K, a = NumberField(phi53, "a") =#
         #= O = maximal_order(K) =#
-        #= Cl = Hecke.class_group(O); =#
+        #= Cl = Hecke.class_group(O) =#
         #= @test Cl.h == 4889 =#
       end
 
       @testset "121th cyclotomic polynomial" begin
         #= phi121 = x^110+x^99+x^88+x^77+x^66+x^55+x^44+x^33+x^22+x^11+1 =#
-        #= K, a = NumberField(phi121, "a"); =#
+        #= K, a = NumberField(phi121, "a") =#
         #= O = maximal_order(K) =#
-        #= Cl = Hecke.class_group(O); =#
+        #= Cl = Hecke.class_group(O) =#
         #= @test Cl.h == 12188792628211 =#
       end
 
@@ -73,26 +93,23 @@
   end
 
   @testset "_class_unit_group" begin
-     Qx, x = PolynomialRing(FlintQQ, "x");
+    Qx, x = PolynomialRing(FlintQQ, "x")
     AF = ArbField(20)
 
-    @testset "K = Q" begin # TODO Fix _class_unit_group for K = Q
-      #= K, a = NumberField(x, "a"); =#
-      #= O = maximal_order(K) =#
-      #= Cl, U, b = Hecke._class_unit_group(O); =#
-      #= @test b == 1 =#
-      #= @test U.order == O =#
-      #= @test U.torsion_units_order == 2 =#
-      #= @test 1 in U.torsion_units =#
-      #= @test -1 in U.torsion_units =#
-      #= @test contains(AF(1),U.tentative_regulator) =#
+    @testset "K = Q" begin
+      @show K, a = NumberField(x, "a")
+      O = maximal_order(K)
+      
+      Cl, mCl = Hecke.class_group(O, redo = true)
+      U, mU = Hecke.unit_group(O)
+      @test order(Cl) == 1
     end
 
     @testset "K = Q[√2]" begin
-       K, a = NumberField(x^2-2, "a");
+      @show K, a = NumberField(x^2-2, "a")
       O = maximal_order(K)
 
-      Cl, mCl = Hecke.class_group(O, redo = true);
+      Cl, mCl = Hecke.class_group(O, redo = true)
       UU, mU = Hecke.unit_group(O)
 
       U = Hecke._get_UnitGrpCtx_of_order(O)
@@ -102,25 +119,53 @@
       @test mG(G[1]) == O(-1)
       @test order(U) == O
       @test U.torsion_units_order == 2
-      #@test 1 in U.torsion_units
-      #@test -1 in U.torsion_units
+      @test contains(AF(0.88137358701),U.tentative_regulator)
+      @test order(Cl) == 1
+      
+      O = Order(K, shuffle(basis(O)), isbasis = true)
+      O.ismaximal = 1
+      Cl, mCl = Hecke.class_group(O, redo = true, do_lll = false)
+      UU, mU = Hecke.unit_group(O)
+
+      U = Hecke._get_UnitGrpCtx_of_order(O)
+
+      G, mG = torsion_unit_group(O)
+      @test order(G) == 2
+      @test mG(G[1]) == O(-1)
+      @test order(U) == O
+      @test U.torsion_units_order == 2
       @test contains(AF(0.88137358701),U.tentative_regulator)
       @test order(Cl) == 1
     end
 
     @testset "K = Q[x]/(f), f = x^3 - 2" begin
-       K, a = NumberField(x^2 - 3, "a");
-      O = maximal_order(K);
-      Cl, mCl = Hecke.class_group(O, redo = true);
+      @show K, a = NumberField(x^2 - 3, "a")
+      O = maximal_order(K)
+      Cl, mCl = Hecke.class_group(O, redo = true)
       UU, mU = Hecke.unit_group(O)
 
       @test order(Cl) == 1
     end
 
     @testset "f = Q[x]/(f), f = x^5 - 11^2 * 7" begin
-       K, a = NumberField(x^5 - 11^2 * 7, "a");
+      @show K, a = NumberField(x^5 - 11^2 * 7, "a")
       O = maximal_order(K)
-      Cl, mCl = Hecke.class_group(O, redo = true);
+      Cl, mCl = Hecke.class_group(O, redo = true)
+      UU, mU = Hecke.unit_group(O)
+
+      U = Hecke._get_UnitGrpCtx_of_order(O)
+
+      G, mG = torsion_unit_group(O)
+      @test order(G) == 2
+      @test mG(G[1]) == O(-1)
+      @test order(U) == O
+      @test U.torsion_units_order == 2
+      @test contains(AF(2027.9289425180057),U.tentative_regulator)
+      @test order(Cl) == 5
+      
+      O = Order(K, shuffle(basis(O)), isbasis = true)
+      O.ismaximal = 1
+      Cl, mCl = Hecke.class_group(O, redo = true, do_lll = false)
       UU, mU = Hecke.unit_group(O)
 
       U = Hecke._get_UnitGrpCtx_of_order(O)
@@ -135,9 +180,22 @@
     end
     
     @testset "Cyclotomic Field 13" begin
-      K, a = cyclotomic_field(13);
+      @show K, a = cyclotomic_field(13, cached = false)
       O = maximal_order(K)
-      Cl, mCl = Hecke.class_group(O, redo = true);
+      Cl, mCl = Hecke.class_group(O, redo = true)
+      UU, mU = Hecke.unit_group(O)
+
+      U = Hecke._get_UnitGrpCtx_of_order(O)
+
+      G, mG = torsion_unit_group(O)
+      @test order(G) == 26
+      @test order(U) == O
+      @test U.torsion_units_order == 26
+      @test order(Cl) == 1
+      
+      O = Order(K, shuffle(basis(O)), isbasis = true, cached = false)
+      O.ismaximal = 1
+      Cl, mCl = Hecke.class_group(O, redo = true, do_lll = false)
       UU, mU = Hecke.unit_group(O)
 
       U = Hecke._get_UnitGrpCtx_of_order(O)
@@ -150,26 +208,41 @@
     end
     
     @testset "f = Q[x]/(f), f = x^18 + 18*x^16 + 135*x^14 + 192*x^12 - 2961*x^10 - 17334*x^8+ 20361*x^6 +  315108*x^4 + 514944*x^2 + 123904" begin
-      K, a = NumberField(x^18 + 18*x^16 + 135*x^14 + 192*x^12 - 2961*x^10 - 17334*x^8+ 20361*x^6 +  315108*x^4 + 514944*x^2 + 123904, "a")
+      @show K, a = NumberField(x^18 + 18*x^16 + 135*x^14 + 192*x^12 - 2961*x^10 - 17334*x^8+ 20361*x^6 +  315108*x^4 + 514944*x^2 + 123904, "a")
       O = maximal_order(K)
+      if haskey(ENV, "CI") && ENV["CI"] == "true"
+        set_verbose_level(:ClassGroup, 1)
+        set_verbose_level(:UnitGroup, 1)
+      end
 
-      Cl, mCl = Hecke.class_group(O, redo = true);
+      Cl, mCl = Hecke.class_group(O, redo = true)
       UU, mU = Hecke.unit_group(O)
+      @show "doneee"
 
+      @test order(Cl)== 36
+      
+      O = Order(K, shuffle(basis(O)), isbasis = true)
+      O.ismaximal = 1
+
+      Cl, mCl = Hecke.class_group(O, redo = true, do_lll = false)
+      UU, mU = Hecke.unit_group(O)
+      @show "doneeee2"
+
+      if haskey(ENV, "CI") && ENV["CI"] == "true"
+        set_verbose_level(:ClassGroup, 0)
+        set_verbose_level(:UnitGroup, 0)
+      end
       @test order(Cl)== 36
     end
     
     @testset "S3 field" begin
-      Qx, x = PolynomialRing(FlintQQ, "x");
-      f = x^6-24*x^4+157*x^2-162;
-      K, a = NumberField(f);
-      OK = maximal_order(K);
-      OK = lll(OK);
-      C, mC = class_group(OK, redo = true, use_aut = true);
+      Qx, x = PolynomialRing(FlintQQ, "x")
+      @show f = x^6-24*x^4+157*x^2-162
+      K, a = NumberField(f)
+      OK = maximal_order(K)
+      OK = lll(OK)
+      C, mC = class_group(OK, redo = true, use_aut = true)
       @test order(C) == 3
     end
-
   end
-
 end
-

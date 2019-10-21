@@ -4,13 +4,7 @@ using Test
 
 using LinearAlgebra
 
-for scope in Hecke.ASSERT_SCOPE
-  set_assert_level(scope, 3)
-end
-
-#for scope in Hecke.VERBOSE_SCOPE
-#  set_verbose_level(scope, 3)
-#end
+Hecke.assertions(true)
 
 k, a = quadratic_field(5)
 @assert fmpz(1) - a == -(a - 1)

@@ -15,7 +15,7 @@ function spectrum(M::MatElem{T}) where T <: FieldElem
     if degree(g) > 1
       continue
     end
-    lambda = -coeff(g, 0)
+    lambda = -divexact(coeff(g, 0), lead(g))
     D[lambda] = v
   end
   return D

@@ -51,338 +51,6 @@ end
 
 ###############################################################################
 #
-#  Conductors
-#
-###############################################################################
-
-function conductors_after_Brauer(F::FieldsTower, st::Vector{Int}, l_cond::Vector)
-  lp = ramified_primes(F)
-  autsH = F.auts_for_conductors
-  auts = automorphisms(F.field, copy = false)
-  imgH = F.imgs_autos
-  proj = F.proj_ext
-  n = prod(st)
-  Hn = GAP.Globals.ImagesSource(proj)
-  G = GAP.Globals.Source(proj)
-  O = maximal_order(F)
-  for p in lp
-    lP = prime_decomposition(O, p)
-    F, mF = Hecke.ResidueFieldSmall(O, lP[1][1])
-    Gp = decomposition_group(auts, lP[1][1])
-    Hp = inertia_subgroup(F, mF, Gp)
-    gHp = small_generating_set(Hp)
-    gensind = Int[]
-    for x in gHp
-      i = 1
-      while x != auts[i]
-        i += 1
-      end
-      push!(gensind, i)
-    end
-    els = Main.ForeignGAP.MPtr[imgH[i] for i in gensind]
-    sub = GAP.Globals.Subgroup(Hn, GAP.julia_to_gap(els))
-    ord = GAP.Globals.Size(sub)
-    sizes_preimages = Int[]
-    for aut in autsH
-      subgs = Vector{Vector{Main.ForeignGAP.MPtr}}(undef, n)
-      for i = 1:n
-        subgs[i] = Vector{Main.ForeignGAP.MPtr}(undef, length(els))
-      end
-      for j = 1:length(els)
-        el2 = GAP.GAP.Globals.Images(aut, els[j])
-        pels = GAP.GAP.Globals.List(GAP.GAP.Globals.PreImages(proj, el2))
-        for i = 1:length(pels)
-          subgs[i][j] = pels[i]
-        end
-      end
-      for lelem in subgs
-        sub = GAP.Globals.Subgroup(G, GAP.julia_to_gap(lelem))
-        onew = GAP.Globals.Size(sub)
-        push!(sizes_preimages, onew)
-      end
-    end
-    if minimum(sizes_preimages) != ord
-      #The prime must ramify!
-      l1 = Vector{Tuple{Int, Dict{NfOrdIdl, Int}}}()
-      if !divisible(fmpz(n), p)
-        for x in l_cond
-          if divisible(fmpz(x[1]), p) 
-            push!(l1, x)
-          end
-        end
-      else
-        for x in l_cond
-          if !isempty(x[2])
-            lI = keys(x[2])
-            found = false
-            for k in lI
-              if minimum(k) == p
-                found = true
-                break
-              end
-            end
-            if found
-              push!(l1, x)
-            end
-          end
-        end
-      end
-      l_cond = l1
-    elseif maximum(sizes_preimages) == ord && !divisible(fmpz(n), p)
-      #The prime must be unramified!
-      l1 = Vector{Tuple{Int, Dict{NfOrdIdl, Int}}}()
-      if !divisible(fmpz(n), p)
-        for x in l_cond
-          if !divisible(fmpz(x[1]), p) 
-            push!(l1, x)
-          end
-        end
-      else
-        for x in l_cond
-          if !isempty(x[2])
-            lI = keys(x[2])
-            found = false
-            for k in lI
-              if minimum(k) == p
-                found = true
-                break
-              end
-            end
-            if !found
-              push!(l1, x)
-            end
-          end
-        end
-      end
-      l_cond = l1
-    end
-  end
-  return l_cond
-
-end
-
-function conductor_general_case(F::FieldsTower, st::Vector{Int}, IdG::Main.ForeignGAP.MPtr, bound::fmpz, l_cond::Vector)
-  n = prod(st)
-  O = maximal_order(F)
-  auts = automorphisms(nf(O), copy = false)
-  Hperm = _from_autos_to_perm(auts)
-  H = _perm_to_gap_grp(Hperm)
-  G = GAP.Globals.SmallGroup(IdG)
-  D = GAP.Globals.DerivedSeries(G)
-  proj = GAP.Globals.NaturalHomomorphismByNormalSubgroup(G, D[end-1])
-  Hn = GAP.Globals.ImagesSource(proj)
-  iso = GAP.Globals.IsomorphismGroups(Hn, H)
-  AutHn = GAP.Globals.AutomorphismGroup(Hn)
-  autH = GAP.Globals.Elements(AutHn)
-  
-  lp = Hecke.ramified_primes(O)
-  for p in lp
-    lP = prime_decomposition(O, p)
-    F, mF = Hecke.ResidueFieldSmall(O, lP[1][1])
-    Gp = decomposition_group(auts, lP[1][1])
-    Hp = inertia_subgroup(F, mF, Gp)
-    gHp = small_generating_set(Hp)
-    gensind = Int[]
-    for x in gHp
-      i = 1
-      while x != auts[i]
-        i += 1
-      end
-      push!(gensind, i)
-    end
-    els = Main.ForeignGAP.MPtr[GAP.Globals.PreImagesRepresentative(iso, _perm_to_gap_perm(Hperm[i])) for i in gensind]
-    sub = GAP.Globals.Subgroup(Hn, GAP.julia_to_gap(els))
-    ord = GAP.Globals.Size(sub)
-    sizes_preimages = Int[]
-    for s = 1:length(autH)
-      aut = autH[s]
-      subgs = Vector{Vector{Main.ForeignGAP.MPtr}}(undef, n)
-      for i = 1:n
-        subgs[i] = Vector{Main.ForeignGAP.MPtr}(undef, length(els))
-      end
-      for j = 1:length(els)
-        el2 = GAP.Globals.Images(aut, els[j])
-        pels = GAP.Globals.List(GAP.Globals.PreImages(proj, el2))
-        for i = 1:length(pels)
-          subgs[i][j] = pels[i]
-        end
-      end
-      for lelem in subgs
-        sub = GAP.Globals.Subgroup(G, GAP.julia_to_gap(lelem))
-        onew = GAP.Globals.Size(sub)
-        push!(sizes_preimages, onew)
-      end
-    end
-    if minimum(sizes_preimages) != ord
-      #The prime must ramify!
-      l1 = Vector{Tuple{Int, Dict{NfOrdIdl, Int}}}()
-      if !divisible(fmpz(n), p)
-        for x in l_cond
-          if divisible(fmpz(x[1]), p) 
-            push!(l1, x)
-          end
-        end
-      else
-        for x in l_cond
-          if !isempty(x[2])
-            lI = keys(x[2])
-            found = false
-            for k in lI
-              if minimum(k) == p
-                found = true
-                break
-              end
-            end
-            if found
-              push!(l1, x)
-            end
-          end
-        end
-      end
-      l_cond = l1
-    elseif maximum(sizes_preimages) == ord && !divisible(fmpz(n), p)
-      #The prime must be unramified!
-      l1 = Vector{Tuple{Int, Dict{NfOrdIdl, Int}}}()
-      if !divisible(fmpz(n), p)
-        for x in l_cond
-          if !divisible(fmpz(x[1]), p) 
-            push!(l1, x)
-          end
-        end
-      else
-        for x in l_cond
-          if !isempty(x[2])
-            lI = keys(x[2])
-            found = false
-            for k in lI
-              if minimum(k) == p
-                found = true
-                break
-              end
-            end
-            if !found
-              push!(l1, x)
-            end
-          end
-        end
-      end
-      l_cond = l1
-    end
-  end
-  return l_cond
-
-end
-
-function conductors_with_restrictions(F::FieldsTower, st::Vector{Int}, IdG::Main.ForeignGAP.MPtr, bound::fmpz)
-
-  O = maximal_order(F)
-  l_cond = Hecke.conductors(O, st, bound)
-  if isdefined(F, :auts_for_conductors)
-    new_conds = conductors_after_Brauer(F, st, l_cond)
-  else
-    new_conds = conductor_general_case(F, st, IdG, bound, l_cond)
-  end
-  if length(st) != 1 || !isprime(st[1]) || isempty(new_conds)
-    return new_conds
-  end
-  #If the extension is cyclic, I take care of the discriminant being a square or not for the wild ramification
-  issquare = is_discriminant_square(IdG)
-  p = st[1]
-  v = valuation(discriminant(O), p)
-  is_square_disc_base_field = iszero(mod(v*p, 2))
-  td = prime_decomposition_type(O, p)
-  if iszero(mod(length(td) * td[1][1]*(p-1), 2))
-    #Regardless of the exponents, the norm of the discriminant will be a square
-    if issquare && is_square_disc_base_field
-      return new_conds
-    elseif issquare 
-      return typeof(new_conds)()
-    else
-      return new_conds
-    end
-  end 
-  #Now, p must be 2.
-  if issquare && is_square_disc_base_field
-    #Only the even exponents are allowed!
-    newer_conds = typeof(new_conds)()
-    for i = 1:length(new_conds)
-      if isempty(new_conds[i][2])
-        push!(newer_conds, new_conds[i])
-        continue
-      end 
-      if iszero(mod(first(values(new_conds[i][2])), 2))
-        push!(newer_conds, new_conds[i])
-      end
-    end
-  elseif issquare
-    #Only the odd exponents are allowed!
-    newer_conds = typeof(new_conds)()
-    for i = 1:length(new_conds)
-      if !isempty(new_conds[i][2]) && !iszero(mod(first(values(new_conds[i][2])), 2))
-        push!(newer_conds, new_conds[i])
-      end
-    end
-  else
-    newer_conds = new_conds
-  end
-
-  #Now, tame ramification.
-  list_tame = Int[x[1] for x in newer_conds]
-  list_tame = coprime_base(list_tame)
-  l = length(list_tame)
-  for i = 1:length(list_tame)
-    x = list_tame[i]
-    if !isone(x) && !isprime(x)
-      append!(list_tame, Hecke.divisors(x))
-    end
-  end
-  list_tame = coprime_base(list_tame)
-  for q in list_tame
-    q == 1 && continue
-    @assert isprime(q)
-    v = valuation(discriminant(O), q)
-    is_square_disc_base_field = iszero(mod(v*p, 2))
-    td = prime_decomposition_type(O, q)
-    if iszero(mod(length(td) * td[1][1] * (p-1), 2))
-      #Regardless of the exponents, the norm of the discriminant will be a square
-      if issquare && is_square_disc_base_field
-        continue
-      elseif issquare || is_square_disc_base_field
-        return typeof(new_conds)()
-      else
-        continue
-      end
-    end 
-    #Now, p must be 2.
-    if issquare && is_square_disc_base_field
-      #Only the even exponents are allowed!
-      #Therefore the prime can't ramify
-      newest_conds = typeof(new_conds)()
-      for i = 1:length(newer_conds)
-        if !iszero(mod(newer_conds[i][1], q))
-          push!(newer_conds, newer_conds[i])
-        end
-      end
-    elseif issquare
-      #Only the odd exponents are allowed!
-      #Therefore the prime must ramify
-      newest_conds = typeof(new_conds)()
-      for i = 1:length(newer_conds)
-        if iszero(mod(newer_conds[i][1], q))
-          push!(newest_conds, newer_conds[i])
-        end
-      end
-    else
-      newest_conds = newer_conds
-    end
-    newer_conds = newest_conds
-  end
-  return newer_conds
-end
-
-
-###############################################################################
-#
 #  Abelian extensions of QQ
 #
 ###############################################################################
@@ -483,7 +151,7 @@ function _abelian_extensionsQQ(gtype::Array{Int,1}, absolute_discriminant_bound:
       end
     end
   end
-  fields = Vector{Tuple{Hecke.NfRel_ns{nf_elem}, Array{Hecke.NfRel_nsToNfRel_nsMor{nf_elem},1}}}(undef, length(class_fields))
+  fields = Vector{Tuple{Hecke.NfRelNS{nf_elem}, Array{Hecke.NfRelNSToNfRelNSMor{nf_elem},1}}}(undef, length(class_fields))
   for i = 1:length(class_fields)
     @vprint :Fields 1 "\e[1FComputing class field $(i) /$(length(class_fields)) \n"
     C = class_fields[i]
@@ -584,14 +252,13 @@ function _abelian_normal_extensions(F::FieldsTower, gtype::Array{Int, 1}, absbou
     end
     if first_group
       B1 = maximum([next_prime(max_ramified_prime(O, gtype, bound)), 211])
-      lP = Hecke.find_gens(pseudo_inv(rcg_ctx.mC), PrimesSet(B1, -1))[1]
-      rcg_ctx.mC.small_gens = lP
+      lP = Hecke.find_gens(pseudo_inv(rcg_ctx.class_group_map), PrimesSet(B1, -1))[1]
+      rcg_ctx.class_group_map.small_gens = lP
       first_group = false
     end
-    mr.clgrpmap.small_gens = rcg_ctx.mC.small_gens
-    @vtime :Fields 3 act = Hecke.induce_action_new(mr, autos)
+    mr.clgrpmap.small_gens = rcg_ctx.class_group_map.small_gens
+    @vtime :Fields 3 act = Hecke.induce_action(mr, autos)
     @vtime :Fields 3 ls = stable_subgroups(r, act, op = (x, y) -> quo(x, y, false)[2], quotype = gtype)
-    Hecke.totally_positive_generators(mr)
     Dcond = Dict{Int, Array{GrpAbFinGenElem, 1}}()
     Ddisc = Dict{Tuple{Int, Int}, Array{GrpAbFinGenElem, 1}}()
     for s in ls
@@ -625,10 +292,9 @@ end
 
 function from_class_fields_to_fields(class_fields::Vector{Hecke.ClassField{Hecke.MapRayClassGrp, GrpAbFinGenMap}}, autos::Vector{NfToNfMor}, grp_to_be_checked::Dict{Int, Main.ForeignGAP.MPtr})
   
-   
   if isempty(class_fields)
     @vprint :Fields 1 "\e[1F$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())"
-    return Tuple{Hecke.NfRel_ns{nf_elem}, Vector{Hecke.NfRel_nsToNfRel_nsMor{nf_elem}}}[] 
+    return Tuple{Hecke.NfRelNS{nf_elem}, Vector{Hecke.NfRelNSToNfRelNSMor{nf_elem}}}[] 
   end
   K = base_ring(class_fields[1])
   divisors_of_n = collect(keys(grp_to_be_checked))
@@ -646,7 +312,7 @@ function from_class_fields_to_fields(class_fields::Vector{Hecke.ClassField{Hecke
       cfieldsp[i] = Hecke.maximal_p_subfield(class_fields[i], Int(p))
     end
     idE = grp_to_be_checked[p]
-    if mod(order(torsion_unit_group(maximal_order(K))[1]), exponent(cfieldsp[1])) == 0 
+    if iszero(mod(order(torsion_unit_group(maximal_order(K))[1]), p^(valuation(exponent(class_fields[1]), p))))
       compute_fields(cfieldsp, autos, idE, right_grp)
       pclassfields[ind] = cfieldsp
       ind += 1
@@ -670,7 +336,7 @@ function from_class_fields_to_fields(class_fields::Vector{Hecke.ClassField{Hecke
     ind += 1
   end
   it = findall(right_grp)
-  fields = Vector{Tuple{NfRel_ns{nf_elem}, Vector{Hecke.NfRel_nsToNfRel_nsMor{nf_elem}}}}(undef, length(it))
+  fields = Vector{Tuple{NfRelNS{nf_elem}, Vector{Hecke.NfRelNSToNfRelNSMor{nf_elem}}}}(undef, length(it))
   ind = 1
   for i in it
     res = Vector{typeof(class_fields[1])}(undef, length(divisors_of_n))
@@ -686,53 +352,25 @@ end
 
 
 function compute_fields(class_fields::Vector{Hecke.ClassField{Hecke.MapRayClassGrp, GrpAbFinGenMap}}, autos::Vector{NfToNfMor}, grp_to_be_checked::Main.ForeignGAP.MPtr, right_grp)
-  K = base_field(class_fields[1])
-  fields = Tuple{Hecke.NfRel_ns{nf_elem}, Vector{Hecke.NfRel_nsToNfRel_nsMor{nf_elem}}}[]
-  expo = Int(exponent(codomain(class_fields[1].quotientmap)))
+  it = findall(right_grp)
+  K = base_field(class_fields[it[1]])
+  fields = Tuple{Hecke.NfRelNS{nf_elem}, Vector{Hecke.NfRelNSToNfRelNSMor{nf_elem}}}[]
+  expo = Int(exponent(codomain(class_fields[it[1]].quotientmap)))
   #Since I want to compute as few Frobenius as possible, I want to first compute the extensions
   #whose set of divisors is maximal
-  it = findall(right_grp)
-  mins = Vector{fmpz}(undef, length(it))
-  for i = 1:length(mins)
-    mins[i] = minimum(defining_modulus(class_fields[it[i]])[1])
-  end
-  ismax = trues(length(mins))
-  for i = 1:length(ismax)
-    for j = i+1:length(ismax)
-      if ismax[j] 
-        i2 = ppio(mins[i], mins[j])[2]
-        if isone(i2)
-          ismax[i] = false
-          break
-        end 
-        i3 = ppio(mins[j], mins[i])[2]
-        if isone(i3)
-          ismax[j] = false
-        end
-      end
-    end
-  end
-  ord_class_fields = Vector{Int}(undef, length(ismax))
-  j1 = 1
-  j2 = length(ismax)
-  for i = 1:length(ismax)
-    if ismax[i]
-      ord_class_fields[j1] = it[i]
-      j1 += 1
-    else
-      ord_class_fields[j2] = it[i]
-      j2 -= 1
-    end
-  end
-  set_up_cycl_ext(K, expo, autos)
   
+  set_up_cycl_ext(K, expo, autos)
+  @vprint :Fields 3 "Computing the fields directly\n"
   for i in it
-    C = class_fields[ord_class_fields[i]]
+    C = class_fields[i]
     L = number_field(C)
     autL = Hecke.absolute_automorphism_group(C, autos)
-    Cpperm = perm_grp(autL)
-    if !isone(gcd(degree(K), expo)) && GAP.Globals.IdGroup(Cpperm) != grp_to_be_checked
-      right_grp[ord_class_fields[i]] = false
+    Cpperm = permutation_group(autL)
+    if !isone(gcd(degree(K), expo)) 
+      Cpperm = permutation_group(autL)
+      if GAP.Globals.IdGroup(Cpperm) != grp_to_be_checked
+        right_grp[i] = false
+      end
     end
   end
   return right_grp
@@ -748,8 +386,8 @@ function _ext_and_autos(resul::Vector{Hecke.ClassField{S, T}}, autos::Vector{NfT
     append!(pols, [Hecke.isunivariate(resul[i].A.pol[w])[2] for w = 1:length(resul[i].A.pol)])
   end
   L, gL = number_field(pols, cached = false, check = false)
-  autL = Vector{Hecke.NfRel_nsToNfRel_nsMor{nf_elem}}()
-  imgs_auts_base_field = Vector{Vector{Hecke.NfRel_nsElem{nf_elem}}}(undef, length(autos))
+  autL = Vector{Hecke.NfRelNSToNfRelNSMor{nf_elem}}()
+  imgs_auts_base_field = Vector{Vector{Hecke.NfRelNSElem{nf_elem}}}(undef, length(autos))
   for i = 1:length(autos)
     imgs_auts_base_field[i] = gens(L)
   end
@@ -768,7 +406,7 @@ function _ext_and_autos(resul::Vector{Hecke.ClassField{S, T}}, autos::Vector{NfT
         for ind = w:(w+length(Cp.A.pol)-1)
           imgsphi[ind] = evaluate(Hecke.isunivariate(phi.emb[ind-w+1].data)[2], imgsphi[ind])
         end
-        push!(autL, Hecke.NfRel_nsToNfRel_nsMor(L, L, imgsphi))
+        push!(autL, Hecke.NfRelNSToNfRelNSMor(L, L, imgsphi))
       else
         ind_aut = 1
         while autos[ind_aut] != phi.coeff_aut
@@ -781,7 +419,7 @@ function _ext_and_autos(resul::Vector{Hecke.ClassField{S, T}}, autos::Vector{NfT
     end
   end
   for i = 1:length(imgs_auts_base_field)
-    push!(autL, Hecke.NfRel_nsToNfRel_nsMor(L, L, autos[i], imgs_auts_base_field[i]))
+    push!(autL, Hecke.NfRelNSToNfRelNSMor(L, L, autos[i], imgs_auts_base_field[i]))
   end
   return L, autL
 
@@ -838,7 +476,7 @@ function max_ab_norm_sub_containing(G::Main.ForeignGAP.MPtr)
   #First, I check if the centralizer split directly as a direct product.
   sc = GAP.Globals.ComplementClassesRepresentatives(G1, H)
   if !GAP.Globals.IsEmpty(sc)
-    return sc[1], H
+    return G1, H
   end
   lS = GAP.gap_to_julia(GAP.Globals.ConjugacyClassesSubgroups(G1))
   #TODO: Subgroups in the quotient by H and not in the full group
@@ -869,8 +507,23 @@ end
 ################################################################################
 
 function computing_over_subfields(class_fields, subfields, idE, autos, right_grp)
+
   it = findall(right_grp)
-  new_class_fields, subs = translate_class_field_down(subfields, class_fields, it)
+  new_class_fields, subs, to_be_done = translate_class_field_down(subfields, class_fields, it)
+  for x in to_be_done
+    C = class_fields[x]
+    L = number_field(C)
+    auts = absolute_automorphism_group(C, autos)
+    Cpperm = permutation_group(auts)
+    if GAP.Globals.IdGroup(Cpperm) == idE
+      error("Something went wrong")
+    end
+    right_grp[x] = false
+  end
+  it = findall(right_grp)
+  if isempty(it)
+    return Vector{Tuple{Hecke.NfRelNS{nf_elem}, Vector{Hecke.NfRelNSToNfRelNSMor{nf_elem}}}}()
+  end
   translate_fields_up(class_fields, new_class_fields, subs, it)
   #Now, finally, the automorphisms computation and the isomorphism check
   for i in it
@@ -882,23 +535,26 @@ function computing_over_subfields(class_fields, subfields, idE, autos, right_grp
       indsubf += 1
       mL = subs[indsubf]
     end
-    maprel = Hecke.NfRel_nsToNfRel_nsMor(C1.A, C.A, mL, gens(C.A))
+    maprel = Hecke.NfRelNSToNfRelNSMor(C1.A, C.A, mL, gens(C.A))
     autsrelC1 = Hecke.rel_auto(C1)
-    autsrelC = Vector{Hecke.NfRel_nsToNfRel_nsMor{nf_elem}}(undef, length(autsrelC1))
+    autsrelC = Vector{Hecke.NfRelNSToNfRelNSMor{nf_elem}}(undef, length(autsrelC1))
     for s = 1:length(autsrelC1)
       el = autsrelC1[s]
-      autsrelC[s] = Hecke.NfRel_nsToNfRel_nsMor(C.A, C.A, [maprel(x) for x in el.emb])
+      autsrelC[s] = Hecke.NfRelNSToNfRelNSMor(C.A, C.A, [maprel(x) for x in el.emb])
+      @hassert :Fields 1 isconsistent(autsrelC[s])
     end
     rel_extend = Hecke.new_extend_aut(C, autos)
     autsA = vcat(rel_extend, autsrelC)
     C.AbsAutGrpA = autsA
-    Cpperm = perm_grp(autsA)
-    if GAP.Globals.IdGroup(Cpperm) != idE
-      right_grp[i] = false
+    if !iscoprime(degree(C), degree(base_field(C)))
+      Cpperm = permutation_group(autsA)
+      if GAP.Globals.IdGroup(Cpperm) != idE
+        right_grp[i] = false
+      end
     end
   end
   it = findall(right_grp)
-  fields = Vector{Tuple{Hecke.NfRel_ns{nf_elem}, Vector{Hecke.NfRel_nsToNfRel_nsMor{nf_elem}}}}(undef, length(it))
+  fields = Vector{Tuple{Hecke.NfRelNS{nf_elem}, Vector{Hecke.NfRelNSToNfRelNSMor{nf_elem}}}}(undef, length(it))
   ind = 1
   for i in it
     C = class_fields[i]
@@ -908,15 +564,15 @@ function computing_over_subfields(class_fields, subfields, idE, autos, right_grp
   return fields 
 end
 
+
 function translate_extensions(mL::NfToNfMor, class_fields, new_class_fields, ctxK, it)
-  
   to_be_done = Int[]
   L = domain(mL)
   OL = maximal_order(L)
   K = codomain(mL)
   OK = maximal_order(K)
-  n = Int(exponent(codomain(class_fields[1].quotientmap)))
-  ordext = Int(order(codomain(class_fields[1].quotientmap)))
+  n = Int(exponent(codomain(class_fields[it[1]].quotientmap)))
+  ordext = Int(order(codomain(class_fields[it[1]].quotientmap)))
   ctx = Hecke.rayclassgrp_ctx(OL, n)
   d = divexact(discriminant(maximal_order(K)), discriminant(OL)^(divexact(degree(K), degree(L))))
   f = factor(ideal(OL, d))
@@ -929,13 +585,19 @@ function translate_extensions(mL::NfToNfMor, class_fields, new_class_fields, ctx
     #First, I need a modulus.
     #I take the intersection of the modulus of C with L
     mR = C.rayclassgroupmap
-    fM0 = mR.fact_mod
+    fM0 = copy(mR.fact_mod)
     fm0 = Dict{NfOrdIdl, Int}()
     for (p, v) in fM0
       p1 = Hecke.intersect_prime(mL, p)
       if !haskey(fm0, p1)
-        fm0[p1] = v
+        if iscoprime(minimum(p1, copy = false), n) 
+          fm0[p1] = 1
+        else
+          fm0[p1] = v
+        end
       end
+      ep = divexact(ramification_index(p), ramification_index(p1))
+      fM0[p] = ep*v
     end
     #Now, I have problems, so I need to add the ramification of the other extension.
     for (p, v) in f
@@ -955,22 +617,40 @@ function translate_extensions(mL::NfToNfMor, class_fields, new_class_fields, ctx
     if iszero(mod(n, 2)) 
       infplc = real_places(L)
     end
-    r, mr = Hecke.ray_class_group_quo(OL, fm0, infplc, ctx, check = false)
-    if order(r) < degree(C)
+    @vprint :Fields 3 "Checking if I can compute $(indclf) over a subfield\n\n "
+    @vtime :Fields 3 r, mr = Hecke.ray_class_group_quo(OL, fm0, infplc, ctx, check = false)
+    if exponent(r) < n || order(r) < degree(C)
       push!(to_be_done, indclf)
       continue
     end 
     #Now, the norm group of K over L
-    ngL, mngL = Hecke.norm_group(mL, mr)
-    if !divisible(order(ngL), degree(C))
+    @vtime :Fields 3 ngL, mngL = Hecke.norm_group(mL, mr)
+    if !divisible(order(ngL), degree(C)) || !divisible(exponent(C), n)
       push!(to_be_done, indclf)
       continue
     end
     #Finally, the norm group of C over L
-    #I use the usual strategy, as in check_abelian_extension
-    fM0 = merge(F, fM0)
-    RM, mRM = Hecke.ray_class_group_quo(OK, fM0, InfPlc[], ctxK, check = false)
-    lP, gS = Hecke.find_gens(mRM)
+    #I use the usual strategy, as in check_ elian_extension
+    for (p, v) in F
+      if iscoprime(minimum(p, copy = false), degree(C))
+        fM0[p] = 1
+      else
+        if haskey(fM0, p)
+          fM0[p] = max(v, fM0[p])
+        else
+          fM0[p] = v
+        end 
+      end
+    end
+    inf_plc2 = InfPlc[]
+    if !isempty(infplc)
+      inf_plc2 = real_places(K)
+    end
+    @vtime :Fields 3 RM, mRM = Hecke.ray_class_group_quo(OK, fM0, inf_plc2, ctxK, check = false)
+    if !isdefined(ctxK.class_group_map, :small_gens)
+      ctxK.class_group_map.small_gens = find_gens(pseudo_inv(ctxK.class_group_map), PrimesSet(101, -1))[1]
+    end
+    @vtime :Fields 3 lP, gS = Hecke.find_gens(mRM)
     listn = NfOrdIdl[norm(mL, x) for x in lP]
     # Create the map between R and r by taking norms
     preimgs = Vector{GrpAbFinGenElem}(undef, length(listn))
@@ -987,8 +667,11 @@ function translate_extensions(mL::NfToNfMor, class_fields, new_class_fields, ctx
     k, mk = kernel(RMtoR)
     mp = mk*proj
     ck, mck = cokernel(mp)
-    expected_order = divexact(order(r), order(ngL)) * degree(C)
-    if order(ck) != expected_order
+    #If everything could work, then ck should be the direct product of the abelian extension I am searching for and 
+    #the maximal abelian subextension of K/L
+    G1 = snf(cokernel(mngL)[1])[1]
+    G2 = snf(codomain(C.quotientmap))[1]
+    if !_are_there_subs(ck, map(Int, vcat(G1.snf, G2.snf)))
       push!(to_be_done, indclf)
       continue
     end
@@ -996,15 +679,19 @@ function translate_extensions(mL::NfToNfMor, class_fields, new_class_fields, ctx
     s, ms = sub(ck, GrpAbFinGenElem[mck(mngL(x)) for x in gens(ngL)])
     mq1 = find_complement(ms)
     mqq = mck * mq1 
-    @assert domain(mqq) == r
+    @hassert :Fields 1 domain(mqq) == r
     C1 = ray_class_field(mr, mqq)
     number_field(C1)
-    @assert degree(C1) == degree(C)
+    @hassert :Fields 1 degree(C1) == degree(C)
     new_class_fields[indclf] = C1
   end
   @vprint :Fields 1 "$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())"
   return to_be_done
   
+end
+
+function divisible(x::Integer, y::Integer)
+  return divisible(fmpz(x), fmpz(y))
 end
 
 
@@ -1039,13 +726,9 @@ function create_sub(ss, iso, PermGAP, auts, K)
   inds = Vector{Int}(undef, length(lS1))
   for j = 1:length(inds)
     el = lS1[j]
-    i = 1
-    while el != PermGAP[i]
-      i += 1
-    end
-    inds[j] = i
+    inds[j] = findfirst(x -> x == el, PermGAP)
   end
-  mL = Hecke.fixed_field(K, [auts[i] for i in inds])[2]
+  mL = Hecke.fixed_field(K, NfToNfMor[auts[i] for i in inds])[2]
   return mL
 end
 
@@ -1076,31 +759,28 @@ function compute_subfields(K::AnticNumberField, E, H, S)
 
 end
 
-global deb = []
-
 function translate_class_field_down(subfields, class_fields, it)
-
   new_class_fields = similar(class_fields)
   #Now, I translate the fields over the subfields.
   to_be_done = Int[i for i in it]
   created_subfields = NfToNfMor[]
-  K = base_field(class_fields[1])
+  K = base_field(class_fields[to_be_done[1]])
   OK = maximal_order(K)
-  ctxK = Hecke.rayclassgrp_ctx(OK, exponent(class_fields[1]))
+  ctxK = Hecke.rayclassgrp_ctx(OK, exponent(class_fields[to_be_done[1]]))
   for mL in subfields
     push!(created_subfields, mL)
     to_be_done_new = translate_extensions(mL, class_fields, new_class_fields, ctxK, it)
     if length(to_be_done_new) == 0 
-      return new_class_fields, created_subfields
+      return new_class_fields, created_subfields, to_be_done_new
     end
     to_be_done = to_be_done_new
   end
-  push!(deb, (subfields, class_fields, it))
-  error("Something went wrong!")
+  return new_class_fields, created_subfields, to_be_done
 end
 
+
 function translate_fields_up(class_fields, new_class_fields, subfields, it)
-  K = base_field(class_fields[1])
+  K = base_field(class_fields[it[1]])
   Ky = PolynomialRing(K, "y", cached = false)[1]
   for i in it
     C = class_fields[i]
@@ -1113,14 +793,22 @@ function translate_fields_up(class_fields, new_class_fields, subfields, it)
     end
     L = domain(mL)
     D = Dict{Int, NfToNfMor}()
-    for i = 1:length(new_class_fields[i].cyc)
-      d = degree(new_class_fields[1].cyc[i])
+    for j = 1:length(new_class_fields[i].cyc)
+      d = degree(new_class_fields[i].cyc[j])
       if !haskey(D, d)
         CEK = cyclotomic_extension(K, d)
         CEL = cyclotomic_extension(L, d)
-        mrel = Hecke.NfRelToNfRelMor(CEL.Kr, CEK.Kr, mL, gen(CEK.Kr)) 
+        img = gen(CEK.Kr)
+        if degree(CEK.Kr) != euler_phi(d)
+          pp = map_coeffs(mL, CEL.Kr.pol, cached = false)
+          while !iszero(pp(img))
+            mul!(img, img, gen(CEK.Kr))
+          end
+        end
+        mrel = Hecke.NfRelToNfRelMor(CEL.Kr, CEK.Kr, mL, img) 
+        @hassert :Fields 1 isconsistent(mrel)
         g = mrel(CEL.mp[1](gen(CEL.Ka)))
-        mp = hom(CEL.Ka, CEK.Ka, CEK.mp[1]\(g))
+        mp = hom(CEL.Ka, CEK.Ka, CEK.mp[1]\(g), check = false)
         D[d] = mp
       end
     end
@@ -1146,15 +834,15 @@ function translate_fields_up(class_fields, new_class_fields, subfields, it)
       coeffs[end] = one(Lzeta)
       Cpp.K = number_field(Lt(coeffs), cached = false, check = false)[1]
       #The target extension
-      fdef = Ccyc.A.pol
-      coeffs1 = Vector{nf_elem}(undef, degree(fdef)+1)
-      for s = 1:length(coeffs1)
-        coeffs1[s] = mL(coeff(fdef, s-1))
-      end
-      Cpp.A = number_field(Ky(coeffs1), cached = false, check = false)[1]
+      fdef = map_coeffs(mL, Ccyc.A.pol, parent = Ky, cached = false)
+      Cpp.A = number_field(fdef, cached = false, check = false)[1]
       #Now, the primitive element of the target extension seen in Cpp.K
       mrel2 = Hecke.NfRelToNfRelMor(Ccyc.K, Cpp.K, D[d], gen(Cpp.K))
+      @hassert :Fields 1 isconsistent(mrel2)
+      @hassert :Fields 1 parent(Ccyc.pe) == domain(mrel2)
       Cpp.pe = mrel2(Ccyc.pe) 
+      CEKK = cyclotomic_extension(K, d)
+      @hassert :Fields 1 iszero(map_coeffs(CEKK.mp[2], fdef, cached = false)(Cpp.pe))
       Cpp.o = d1
       cyc[j] = Cpp
     end
@@ -1164,3 +852,17 @@ function translate_fields_up(class_fields, new_class_fields, subfields, it)
   return nothing
 
 end
+
+
+function isconsistent(f::NfRelToNfRelMor)
+  
+  K = domain(f)
+  p = K.pol
+  p1 = map_coeffs(f.coeff_aut, p, cached = false)
+  if !iszero(p1(f.prim_img))
+    error("Wrong")
+  end
+  return true
+  
+end
+

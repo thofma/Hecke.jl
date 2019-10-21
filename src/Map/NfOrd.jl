@@ -146,11 +146,15 @@ mutable struct AbsOrdQuoMap{S, T, U} <: Map{S, AbsOrdQuoRing{S, T}, HeckeMap, Ab
   function AbsOrdQuoMap{S, T, U}(O::S, Q::AbsOrdQuoRing{S, T}) where {S, T, U}
     z = new()
 
-    _image = function (x::U)
+    function _image(x::U)
       return Q(x)
     end
 
-    _preimage = function (x::AbsOrdQuoRingElem{S, T, U})
+    function _image(x::FacElem)
+      return mod(x, Q)
+    end
+
+    function _preimage(x::AbsOrdQuoRingElem{S, T, U})
       return x.elem
     end
 

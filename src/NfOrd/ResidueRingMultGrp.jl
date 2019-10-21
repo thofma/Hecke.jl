@@ -49,8 +49,8 @@ function factor(Q::FacElem{NfOrdIdl, NfOrdIdlSet})
     fac = Dict{NfOrdIdl, Int}()
     for (p, e)=S
       lp = factor(p)
-      for q = keys(lp)
-        fac[q] = Int(valuation(p, q)*e)
+      for (q, v) in lp
+        fac[q] = Int(v*e)
       end
     end
   else
@@ -63,23 +63,11 @@ function FacElem(Q::FacElem{NfOrdFracIdl, NfOrdFracIdlSet}, O::NfOrdIdlSet)
   D = Dict{NfOrdIdl, fmpz}()
   for (I, v) = Q.fac
     if isone(I.den)
-      if haskey(D, I.num)
-        D[I.num] += v
-      else
-        D[I.num] = v
-      end
+      add_to_key!(D, I.num, v)
     else
       n,d = integral_split(I)
-      if haskey(D, n)
-        D[n] += v
-      else
-        D[n] = v
-      end
-      if haskey(D, d)
-        D[d] -= v
-      else
-        D[d] = -v
-      end
+      add_to_key!(D, n, v)
+      add_to_key!(D, d, -v)
     end
   end
   return FacElem(D)
@@ -87,7 +75,7 @@ end
 
 
 @doc Markdown.doc"""
-     factor_coprime(Q::FacElem{NfOrdFracIdl, NfOrdFracIdlSet}) -> Dict{NfOrdIdl, Int}
+    factor_coprime(Q::FacElem{NfOrdFracIdl, NfOrdFracIdlSet}) -> Dict{NfOrdIdl, Int}
 A coprime factorisation of $Q$: each ideal in $Q$ is split using \code{integral_split} and then
 a coprime basis is computed.
 This does {\bf not} use any factorisation.
@@ -107,8 +95,8 @@ function factor(Q::FacElem{NfOrdFracIdl, NfOrdFracIdlSet})
   fac = Dict{NfOrdIdl, Int}()
   for (p, e)=S
     lp = factor(p)
-    for q = keys(lp)
-      fac[q] = Int(valuation(p, q)*e)
+    for (q, v) in lp
+      fac[q] = Int(v*e)
     end
   end
   return fac
@@ -149,9 +137,13 @@ function _multgrp(Q::NfOrdQuoRing, save_tame_wild::Bool = false; method = nothin
   prime_powers = Vector{NfOrdIdl}()
   groups = Vector{GrpAbFinGen}()
   maps = Vector{GrpAbFinGenToAbsOrdQuoRingMultMap}()
+  tame_ind = Tuple{NfOrdIdl, Int}[]
+  ind = 1
   for (p, vp) in fac
     pvp = p^vp
     G1, mG1 = _multgrp_mod_pv(p, vp, pvp; method = method)
+    push!(tame_ind, (p, ind))
+    ind += ngens(G1)
     push!(prime_powers, pvp)
     push!(groups, G1)
     push!(maps, mG1)
@@ -159,11 +151,15 @@ function _multgrp(Q::NfOrdQuoRing, save_tame_wild::Bool = false; method = nothin
 
   G, GtoQ = _direct_product(groups, maps, prime_powers, Q, save_tame_wild)
   S, StoG, StoQ = snf(G, GtoQ)
+  
+  if save_tame_wild
+    for s = 1:length(tame_ind)
+      StoQ.tame[tame_ind[s][1]].disc_log = StoG\(G[tame_ind[s][2]]) #Relies on the ordering tame\wild in the construction!
+    end
+  end
 
   return S, StoQ
 end
-
-_multgrp_ray(Q::NfOrdQuoRing; method = nothing) = _multgrp(Q, true; method = method)
 
 ################################################################################
 #
@@ -187,6 +183,7 @@ function _multgrp_mod_pv(p::NfOrdIdl, v::Int, pv::NfOrdIdl; method=nothing)
   tame_part = Dict{NfAbsOrdIdl, GrpAbFinGenToNfAbsOrdMap}()
   wild_part = Dict{NfAbsOrdIdl, GrpAbFinGenToNfAbsOrdMap}()
   if v == 1
+    G1toO.disc_log = G1[1]
     tame_part[p] = G1toO
     function disc_log(x::NfOrdQuoRingElem)
       return G1toO.discrete_logarithm((OtoQ\x))
@@ -204,10 +201,12 @@ function _multgrp_mod_pv(p::NfOrdIdl, v::Int, pv::NfOrdIdl; method=nothing)
     gens = map(OtoQ, append!([gen1_obcs], G2toO.generators))
 
     G1toO.generators[1] = gen1_obcs
-    tame_part[p] = G1toO
 
     G = direct_product(G1, G2, task = :none)
 
+    G1toO.disc_log = G[1]
+    tame_part[p] = G1toO
+    
     obcs_inv = gcdx(G2.snf[end], rel1)[2]
     function disc_log2(x::NfOrdQuoRingElem)
       y = OtoQ\x
@@ -238,29 +237,30 @@ function _multgrp_mod_p(p::NfOrdIdl, pnumv::fmpz = fmpz(0))
   factor_n = factor(n)
   Q, mQ = ResidueField(O, p)
   gen_quo = mQ(gen)
-  discrete_logarithm = function(x::NfOrdElem)
-    y=mQ(x)
-    if isone(y)
-      return 0
-    elseif y==Q(-1) && mod(n, 2)==0
-      return divexact(n, 2)
-    end
-    if n < 11
-      res = 1
-      el = gen_quo
-      while el != y
-        el *= gen_quo
-        res += 1
+  big_step_cache = Dict{fmpz, Dict{typeof(gen_quo), fmpz}}()
+  local discrete_logarithm
+  let mQ = mQ, n = n, Q = Q, gen_quo = gen_quo, factor_n = factor_n, big_step_cache = big_step_cache
+    function discrete_logarithm(x::NfOrdElem)
+      y=mQ(x)
+      if isone(y)
+        return fmpz[0]
+      elseif y==Q(-1) && iszero(mod(n, 2))
+        return fmpz[divexact(n, 2)]
       end
-      return res
-    else 
-      return pohlig_hellman(gen_quo,n,y;factor_n=factor_n)
+      if n < 11
+        res = 1
+        el = gen_quo
+        while el != y
+          el *= gen_quo
+          res += 1
+        end
+        return fmpz[res]
+      else 
+        return fmpz[pohlig_hellman(gen_quo,n,y;factor_n=factor_n, big_step_cache = big_step_cache)]
+      end
     end
   end
-  disc_log = function(x::NfOrdElem)
-    return fmpz[ discrete_logarithm(x) ]
-  end
-  map = GrpAbFinGenToNfAbsOrdMap(O, [ gen ], [ n ], disc_log, pnumv)
+  map = GrpAbFinGenToNfAbsOrdMap(O, [ gen ], [ n ], discrete_logarithm, pnumv)
   return domain(map), map
 end
 
@@ -496,7 +496,11 @@ function _quadratic_method(p::NfOrdIdl, u::Int, v::Int; pu::NfOrdIdl=p^u, pv::Nf
   g, M, dlog = _pu_mod_pv(pu,pv)
   map!(x -> x + 1, g, g)
   function discrete_logarithm(x::NfOrdElem)
-    return dlog(mod(x-1,pv))
+    res = dlog(mod(x-1,pv))
+    for i = 1:length(res)
+      res[i] = mod(res[i], M[end])
+    end
+    return res
   end
   return g, M, discrete_logarithm
 end
@@ -523,7 +527,11 @@ function _artin_hasse_method(p::NfOrdIdl, u::Int, v::Int; pu::NfOrdIdl=p^u, pv::
   local discrete_logarithm
   let Q = Q, pnum = pnum, dlog = dlog
     function discrete_logarithm(x::NfOrdElem)
-      return dlog(artin_hasse_log(Q(x), pnum)) 
+      res = dlog(artin_hasse_log(Q(x), pnum)) 
+      for i = 1:length(res)
+        res[i] = mod(res[i], M[end])
+      end
+      return res
     end
   end
   return g, M, discrete_logarithm
@@ -597,10 +605,15 @@ function _p_adic_method(p::NfOrdIdl, u::Int, v::Int; pu::NfOrdIdl=p^u, pv::NfOrd
   O = order(p)
   Q = NfOrdQuoRing(O, pv)
   map!(x -> p_adic_exp(Q, p, v, x), g, g)
+  powers = Dict{Int, nf_elem}()
   local discrete_logarithm
-  let Q = Q, p = p, v = v, dlog = dlog
+  let Q = Q, p = p, v = v, dlog = dlog, powers = powers
     function discrete_logarithm(b::NfOrdElem) 
-      return dlog(p_adic_log(Q, p, v, b))
+      res = dlog(p_adic_log(Q, p, v, b, powers))
+      for i = 1:length(res)
+        res[i] = mod(res[i], M[end])
+      end
+      return res
     end
   end
   return g, M, discrete_logarithm
@@ -656,7 +669,7 @@ function p_adic_exp(Q::NfOrdQuoRing, p::NfOrdIdl, v::Int, x::NfOrdElem)
   return s.elem
 end
 
-function p_adic_log(Q::NfOrdQuoRing, p::NfOrdIdl, v::Int, y::NfOrdElem)
+function p_adic_log(Q::NfOrdQuoRing, p::NfOrdIdl, v::Int, y::NfOrdElem, powers::Dict{Int, nf_elem} = Dict{Int, nf_elem}())
   O = parent(y)
   isone(y) && return zero(O)
   pnum = minimum(p)
@@ -691,7 +704,12 @@ function p_adic_log(Q::NfOrdQuoRing, p::NfOrdIdl, v::Int, y::NfOrdElem)
     if iszero(val_pnum_i) 
       inc = _divexact(Q(xi), fmpz(i))
     else  
-      el = anti_uni^val_p_i
+      if haskey(powers, val_p_i)
+        el = powers[val_p_i]
+      else
+        el = _powmod(anti_uni, val_p_i, pnum^(val_p_i+1))
+        powers[val_p_i] = el
+      end
       numer = O(xi.elem_in_nf*el, false)
       denom = O(i*el, false)
       inc = divexact(Q(numer),Q(denom))
@@ -712,7 +730,12 @@ function p_adic_log(Q::NfOrdQuoRing, p::NfOrdIdl, v::Int, y::NfOrdElem)
     if iszero(val_pnum_i) 
       inc = _divexact(Q(xi), fmpz(i))
     else  
-      el = anti_uni^val_p_i
+      if haskey(powers, val_p_i)
+        el = powers[val_p_i]
+      else
+        el = _powmod(anti_uni, val_p_i, pnum^(val_p_i+1))
+        powers[val_p_i] = el
+      end
       numer = O(xi.elem_in_nf*el, false)
       denom = O(i*el, false)
       inc = divexact(Q(numer),Q(denom))
@@ -752,8 +775,7 @@ the same $g$ and $n$.
 """
 function baby_step_giant_step(g, n, h, cache::Dict)
   @assert typeof(g) == typeof(h)
-  n = BigInt(n)
-  m = root(n, 2)+1
+  m = fmpz(root(n, 2)+1)
   if isempty(cache)
     it = g^0
     for j in 0:m
@@ -761,11 +783,7 @@ function baby_step_giant_step(g, n, h, cache::Dict)
       it *= g
     end
   end
-  if typeof(g) == fq_nmod || typeof(g) == fq
-    b = g^(-fmpz(m))
-  else
-    b = g^(-m)
-  end
+  b = g^(-m)
   y = h
   for i in 0:m-1
     if haskey(cache, y)
@@ -791,7 +809,7 @@ $g$ is a generator of order $n$ and $h$ has to be generated by $g$.
 The factorisation of $n$ can be supplied via `factor_n` if
 it is already known.
 """
-function pohlig_hellman(g, n, h; factor_n=factor(n))
+function pohlig_hellman(g, n, h; factor_n=factor(n), big_step_cache = Dict())
   @assert typeof(g) == typeof(h)
   n == 1 && return fmpz(0)
   results = Vector{fmpz}()
@@ -799,7 +817,10 @@ function pohlig_hellman(g, n, h; factor_n=factor(n))
   for (p,v) in factor_n
     pv = p^v
     r = div(n,pv)
-    c = _pohlig_hellman_prime_power(g^r,p,v,h^r)
+    if !haskey(big_step_cache, p)
+      big_step_cache[p] = Dict{typeof(g), fmpz}()
+    end
+    c = _pohlig_hellman_prime_power(g^r,p,v,h^r, big_step_cache = big_step_cache[p])
     push!(results, fmpz(c))
     push!(prime_powers, fmpz(pv))
   end
@@ -809,17 +830,16 @@ function pohlig_hellman(g, n, h; factor_n=factor(n))
   return crt(results, prime_powers)
 end
 
-function _pohlig_hellman_prime_power(g,p,v,h)
-  cache = Dict{typeof(g), BigInt}()
+function _pohlig_hellman_prime_power(g, p, v, h; big_step_cache::Dict)
   p_i = 1
   p_v_min_i_min_1 = p^(v-1)
   g_ = g^(p^(v-1))
-  a = baby_step_giant_step(g_,p,h^(p^(v-1)),cache)
+  a = baby_step_giant_step(g_,p,h^(p^(v-1)), big_step_cache)
   h *= g^-a
   for i in 1:v-1
     p_i *= p
     p_v_min_i_min_1 = div(p_v_min_i_min_1,p)
-    ai = baby_step_giant_step(g_,p,h^p_v_min_i_min_1,cache)
+    ai = baby_step_giant_step(g_, p , h^p_v_min_i_min_1, big_step_cache)
     ai_p_i = ai * p_i
     a += ai_p_i
     h *= g^(-ai_p_i)
@@ -1024,7 +1044,9 @@ function _n_part_multgrp_mod_p(p::NfOrdIdl, n::Int)
   return G, map
 end
 
+
 function _mult_grp_mod_n(Q::NfOrdQuoRing, y1::Dict{NfOrdIdl, Int}, y2::Dict{NfOrdIdl, Int}, n::Integer)
+
   O = Q.base_ring
   idQ = Q.ideal
   OtoQ = NfOrdQuoMap(O, Q)
@@ -1065,7 +1087,7 @@ function _mult_grp_mod_n(Q::NfOrdQuoRing, y1::Dict{NfOrdIdl, Int}, y2::Dict{NfOr
         while !isone(mod(e, uncom))
           e *= e
         end
-        tame_part[q].generators[1] = tame_part[q].generators[1]^e
+        tame_part[q].generators[1] = powermod(tame_part[q].generators[1], e, minimum(idQ))
       end
       
       i += ngens(G2)
@@ -1100,8 +1122,9 @@ function _mult_grp_mod_n(Q::NfOrdQuoRing, y1::Dict{NfOrdIdl, Int}, y2::Dict{NfOr
   for s = 1:length(tame_ind)
     tame_part[tame_ind[s][1]].disc_log = StoG\(G[tame_ind[s][2]])
   end
-  
-  return S, StoQ, tame_part, wild_part
+  StoQ.tame = tame_part
+  StoQ.wild = wild_part
+  return S, StoQ
 end
 
 ################################################################################

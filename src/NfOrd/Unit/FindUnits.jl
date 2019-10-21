@@ -168,7 +168,6 @@ end
 
 function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx)
   @vprint :UnitGroup 1 "Processing ClassGrpCtx to find units ... \n"
-
   @vprint :UnitGroup 1 "Relation module $(x.M)\n"
 
   O = order(u)
@@ -183,6 +182,12 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx)
     u.regulator_precision = u.indep_prec
     u.full_rank = true
     return 1
+  end
+
+  # I am not allowed to do this before the other block
+  if nrows(x.M.rel_gens) == 0
+    @vprint :UnitGroup 1 "No additional relations. Going back ...\n"
+    return 0
   end
 
   r1, r2 = signature(O)
@@ -204,9 +209,10 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx)
   not_larger = 0
 
   @vprint :UnitGroup 1 "Enlarging unit group by adding kernel elements ...\n"
+
   while not_larger < 5 
 
-    add_units = []
+    add_units = Int[]
     rel = SMat{fmpz}()
     for jj in 1:min(div(nrows(x.M.rel_gens), 10)+1, 20)
       xj = rand(1:nrows(x.M.rel_gens))
@@ -217,13 +223,17 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx)
       push!(rel, x.M.rel_gens[xj])
     end
 
+    @vprint :UnitGroup 1 "Saturating ...\n"
     time_kernel += @elapsed k, d = solve_dixon_sf(x.M.bas_gens, rel)
     @vtime_add_elapsed :UnitGroup 1 x :saturate_time s = saturate(hcat(k, (-d)*identity_matrix(SMat, FlintZZ, k.r)))
+    @vprint :UnitGroup 1 "Done\n"
 
     ge = vcat(x.R_gen[1:k.c], x.R_rel[add_units])
     for i=1:s.r
+      @vprint :UnitGroup 1 "Looking at the $(i)-th element in the saturation ...\n"
       y = FacElem(ge[s[i].pos], s[i].values)
       @hassert :UnitGroup 2 _isunit(y)
+      @vprint :UnitGroup 1 "(It really is a unit.)"
 
       @hassert :UnitGroup 8000 denominator(minpoly(evaluate(y))) == 1
 

@@ -42,7 +42,7 @@ end
 # Compute the residue field data given the prime P
 function compute_residue_field_data!(P)
   p = minimum(P)
-  if nbits(p) < 64
+  if fits(Int, p)
     smallp = Int(p)
     A, m = AlgAss(order(P), P, smallp)
     compute_residue_field_data!(P, m)
@@ -101,7 +101,7 @@ function _residue_field_nonindex_divisor(O, P, small::Type{Val{T}} = Val{false})
   g = parent(f)(elem_in_nf(gtwo))
 
   if small == Val{true}
-    @assert nbits(minimum(P)) < 64
+    @assert fits(Int, minimum(P, copy = false))
     F, h = _residue_field_nonindex_divisor_helper(f, g, Int(minimum(P)))
 
     #return F, Mor(O, F, gen(F))
@@ -126,7 +126,7 @@ end
 
 function _residue_field_generic(O, P, small::Type{Val{T}} = Val{false}) where {T}
   if small == Val{true}
-    @assert nbits(minimum(P)) < 64
+    @assert fits(Int, minimum(P, copy = false))
     f = NfOrdToFqNmodMor(O, P)
     return codomain(f), f
   elseif small == Val{false}
@@ -162,7 +162,7 @@ end
 
 function ResidueFieldSmall(O::NfOrd, P::NfOrdIdl)
   p = minimum(P)
-  nbits(p) > 64 && error("Minimum of prime ideal must be small (< 64 bits)")
+  !fits(Int, p) && error("Minimum of prime ideal must be small (< 64 bits)")
   if !ismaximal_known(O) || !ismaximal(O) || !isdefining_polynomial_nice(nf(O))
     return _residue_field_generic(O, P, Val{true})
   end

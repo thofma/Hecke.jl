@@ -309,6 +309,10 @@ function Base.getindex(a::StepRange{fmpz,fmpz}, i::fmpz)
   a.start+(i-1)*Base.step(a)
 end
 
+function Base.divrem(a::fmpz, b::Int)
+  return (div(a, b), rem(a, b))
+end
+
 ################################################################################
 #
 #  Should go to Nemo?
@@ -375,7 +379,7 @@ end
 @doc Markdown.doc"""
     ispower(a::fmpz) -> Int, fmpz
     ispower(a::Integer) -> Int, Integer
-Writes $a = r^e$ with $e$ maximal. Note: $1 = 1^0$.
+Returns $e$, $r$ such that $a = r^e$ with $e$ maximal. Note: $1 = 1^0$.
 """
 function ispower(a::fmpz)
   if iszero(a)
@@ -761,8 +765,9 @@ function ecm(a::fmpz, max_digits::Int = div(ndigits(a), 2)+1, rnd = flint_rand_c
 
   i = 1
   s = div(max_digits-15, 5)+2
-  s = max(i, s)
+  i = s = max(i, s)
   while i <= s
+    @show i, B1[i], nC[i]
     e,f = ecm(a, B1[i]*1000, B1[i]*1000*100, nC[i], rnd)
     if e != 0
       return (e,f)
@@ -893,19 +898,21 @@ end
       ee, f = ispower(f)
       ee = valuation(N, f) #careful, f does not need to be prime, so N/f^ee is not coprime to f
       if isprime(f)
-        if haskey(r, f)
-          r[f] += fac*ee
-        else
-          r[f] = fac*ee
-        end
+        add_to_key!(r, f, fac*ee)
+        #if haskey(r, f)
+        #  r[f] += fac*ee
+        #else
+        #  r[f] = fac*ee
+        #end
       else
         s = factor(f)
         for (p, ex) = s.fac
-          if haskey(r, p)
-            r[p] += fac*ex*ee
-          else
-            r[p] = fac*ex*ee
-          end
+          add_to_key!(r, p, fac*ex*ee)
+          #if haskey(r, p)
+          #  r[p] += fac*ex*ee
+          #else
+          #  r[p] = fac*ex*ee
+          #end
         end
       end
   #    @assert N % f^ee == 0
@@ -920,14 +927,15 @@ end
   end
   s = Nemo.factor(N)
   for (p, ex) = s.fac
-    if haskey(r, p)
-      r[p] += fac*ex
-    else
-      r[p] = fac*ex
-    end
+    add_to_key!(r, p, fac*ex)
+    #if haskey(r, p)
+    #  r[p] += fac*ex
+    #else
+    #  r[p] = fac*ex
+    #end
   end
   for p = keys(r)
-    if nbits(p) > 60 && !(p in big_primes)
+    if !fits(Int, p) && !(p in big_primes)
       push!(big_primes, p)
     end
   end
@@ -969,7 +977,7 @@ function (::Type{Base.Rational{BigInt}})(x::fmpq)
   return Rational{BigInt}(BigInt(numerator(x)), BigInt(denominator(x)))
 end
 
-export eulerphi_inv
+export eulerphi_inv, Divisors, carmichael_lambda
 
 @doc Markdown.doc"""
     Divisors{T}
@@ -1138,7 +1146,7 @@ The inverse of the Euler totient functions: find all $x$ s.th. $phi(x) = n$
 holde. The elements are returned in factored form.
 """
 function eulerphi_inv_fac_elem(n::fmpz)
-  lp = []
+  lp = fmpz[]
   for d = Divisors(n)
     if isprime(d+1)
       push!(lp, d+1)
@@ -1146,8 +1154,8 @@ function eulerphi_inv_fac_elem(n::fmpz)
   end
 #  println("possible primes: ", lp)
 
-  E = []
-  res = []
+  E = Tuple{fmpz, Vector{Tuple{fmpz, Int}}}[]
+  res = FacElem{fmpz, FlintIntegerRing}[]
   for p = lp
     v = valuation(n, p)
     for i=0:v
@@ -1197,6 +1205,35 @@ end
 function eulerphi(n::T) where {T <: Integer}
   return T(eulerphi(fmpz(n)))
 end
+
+#function carmichael_lambda(x::Fac{fmpz})
+#  return reduce(lcm, p^(v-1) : (p-1)*p^(v-1) for (p,v) = x.fac)
+#end
+
+function carmichael_lambda(x::fmpz)
+  v, x = remove(x, fmpz(2))
+  if isone(x)
+    c = x
+  else
+    x = factor(x)
+    c = reduce(lcm, (p-1)*p^(v-1) for (p,v) = x.fac)
+  end
+  if v < 2
+    return c
+  else 
+    return fmpz(2)^(v-2)*c
+  end
+end
+
+#function carmichael_lambda(x::FacElem{fmpz, FlintIntegerRing})
+#  x = factor(x)
+#  return reduce(lcm, (p-1)*p^(v-1) for (p,v) = x.fac)
+#end
+
+function carmichael_lambda(n::T) where {T <: Integer}
+  return T(carmichael_lambda(fmpz(n)))
+end
+
 
 @doc Markdown.doc"""
     eulerphi_inv(n::Integer) -> Array{fmpz, 1}

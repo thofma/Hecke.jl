@@ -10,7 +10,7 @@ function monic_randpoly(S::PolyRing, dmin::Int, dmax::Int, n::Int)
 end
 
 @testset "Relative maximal orders of simple extensions" begin
-   Qx, x = FlintQQ["x"]
+  Qx, x = FlintQQ["x"]
   f = x^2 + 36*x + 16
   K, a = NumberField(f, "a")
   Ky, y = K["y"]

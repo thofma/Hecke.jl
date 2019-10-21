@@ -2,11 +2,12 @@ function factored_norm(A::FacElem{NfOrdIdl, NfOrdIdlSet})
   b = Dict{fmpz, fmpz}()
   for (p, k) = A.fac
     n = norm(p)
-    if haskey(b, n)
-      b[n] += k
-    else
-      b[n] = k
-    end
+    add_to_key!(b, n, k)
+    #if haskey(b, n)
+    #  b[n] += k
+    #else
+    #  b[n] = k
+    #end
   end
   bb = FacElem(b)
   simplify!(bb)
@@ -27,17 +28,19 @@ function factored_norm(A::FacElem{NfOrdFracIdl, NfOrdFracIdlSet})
   for (p, k) = A.fac
     n = norm(p)
     v = numerator(n)
-    if haskey(b, v)
-      b[v] += k
-    else
-      b[v] = k
-    end
-    v = denominator(n)
-    if haskey(b, v)
-      b[v] -= k
-    else
-      b[v] = -k
-    end
+    add_to_key!(b, v, k)
+    #if haskey(b, v)
+    #  b[v] += k
+    #else
+    #  b[v] = k
+    #end
+    v1 = denominator(n)
+    add_to_key!(b, v1, -k)
+    #if haskey(b, v)
+    #  b[v] -= k
+    #else
+    #  b[v] = -k
+    #end
   end
   bb = FacElem(b)
   simplify!(bb)
@@ -54,11 +57,12 @@ function abs(A::FacElemQ)
   B = empty(A.fac)
   for (k,v) = A.fac
     ak = abs(k)
-    if haskey(B, ak)
-      B[ak] += v
-    else
-      B[ak] = v
-    end
+    add_to_key!(B, ak, v)
+    #if haskey(B, ak)
+    #  B[ak] += v
+    #else
+    #  B[ak] = v
+    #end
   end
   if length(B) == 0
     return FacElem(FlintZZ)

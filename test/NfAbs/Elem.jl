@@ -1,3 +1,14 @@
+@testset "Linear disjoint" begin
+  Qx, x = PolynomialRing(FlintQQ, "x")
+  _K, _ = NumberField([x^2 - 2, x^2 - 3], "a", cached = false)
+  K, _ = simple_extension(_K)
+  L, b = NumberField(x^2 - 2, "b", cached = false)
+  @test !islinearly_disjoint(K, L)
+
+  M, c = NumberField(x^2 - 3, "c", cached = false)
+  @test islinearly_disjoint(L, M)
+end
+
 @testset "Random" begin
   Qx, x = PolynomialRing(FlintQQ, "x")
   K, a = NumberField(x^32 + 2, "a")
@@ -69,5 +80,11 @@ end
   g = swinnerton_dyer(8, x)
   @test length(factor((t^2-a)*(t^3-a-1))) == 2 #Trager
   @test length(factor((t^2-a)*(t^3-a-1)*(t+a^2+1)*(t^5+t+a))) == 4 #Zassenhaus
-  @test length(factor(change_base_ring(g, k))) == 8 # van Hoeij
+  @test length(factor(change_base_ring(k, g))) == 8 # van Hoeij
+
+  K, a = NumberField(x - 1, "a") 
+  Kt, t = K["t"]
+  f = t^5 -3 * t^4 - 104 * t^3 + 312 * t^2 + 400t -1200
+  @test length(factor(f)) == 5
+  @test length(factor(f*t)) == 6
 end

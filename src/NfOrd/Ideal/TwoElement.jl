@@ -41,13 +41,17 @@ end
 
 function isconsistent(A::NfAbsOrdIdl)
   if has_2_elem_normal(A) && !iszero(A.gen_two)
-    if !defines_2_normal(A) 
+    if !defines_2_normal(A)
+      @show "Not 2 normal"
+      vshow(A) 
       return false
     end
   end
   if has_norm(A)
     b = basis_matrix(A, copy = false)
     if det(b) != A.norm
+      @show "Norm wrong"
+      vshow(A)
       return false
     end
   end

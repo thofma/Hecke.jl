@@ -86,7 +86,7 @@ function _picard_group_maximal(O::AlgAssAbsOrd)
 
   function disc_exp(x::GrpAbFinGenElem)
     p = StoP(x)
-    basis_of_ideal = Vector{elem_type(O)}()
+    basis_of_ideal = Vector{elem_type(A)}()
     offset = 1
     for i = 1:length(fields_and_maps)
       K, AtoK = fields_and_maps[i]
@@ -94,11 +94,11 @@ function _picard_group_maximal(O::AlgAssAbsOrd)
       c = C(sub(p.coeff, 1:1, offset:(offset + ngens(C) - 1)))
       I = CtoIdl(c)
       for b in basis(I)
-        push!(basis_of_ideal, O(AtoK\K(b)))
+        push!(basis_of_ideal, AtoK\K(b))
       end
       offset += ngens(C)
     end
-    I = ideal_from_z_gens(O, basis_of_ideal)
+    I = ideal_from_lattice_gens(A, O, basis_of_ideal)
     return I
   end
 
@@ -683,7 +683,7 @@ function disc_log_generalized_ray_class_grp(I::Union{ S, FacElem{S, T} }, mR::Ma
   for i = 1:length(ideals)
     K, AtoK = fields_and_maps[i]
     d, lI = disc_log_generalized_ray_class_grp(ideals[i], groups[i][2])
-    p = hcat(p, matrix(FlintZZ, 1, length(lI), [ lI[i][2] for i = 1:length(lI) ]))
+    p = hcat(p, lI.coeff)
     for (b, e) in d
       t = AtoK\b
       t = add!(t, t, sum_idems)
@@ -791,6 +791,9 @@ end
 # Mostly taken from NfOrd/LinearAlgebra.jl
 function _coprime_integral_ideal_class(a::AlgAssAbsOrdIdl, b::AlgAssAbsOrdIdl)
   O = order(b)
+  @assert isone(denominator(b, O))
+  d = denominator(a, O)
+  a = d*a
   a_inv = inv(a)
   c = ideal(O, one(O))
   x = algebra(O)()
@@ -798,11 +801,11 @@ function _coprime_integral_ideal_class(a::AlgAssAbsOrdIdl, b::AlgAssAbsOrdIdl)
   while check
     x = rand(a_inv, 100)
     c = x*a
-    c = simplify!(c)
-    @assert denominator(c, copy = false) == 1
-    isone(numerator(c, copy = false) + b) ? (check = false) : (check = true)
+    @assert denominator(c, O) == 1
+    c.order = O
+    isone(c + b) ? (check = false) : (check = true)
   end
-  return numerator(c, copy = false), x
+  return c, x*d
 end
 
 ################################################################################

@@ -581,9 +581,9 @@ function _decomposition(O::NfAbsOrd, I::NfAbsOrdIdl, Ip::NfAbsOrdIdl, T::NfAbsOr
       modulo = norm(P)*p
       x = zero(parent(u))
       
-      if !isnorm_divisible(u.elem_in_nf, modulo)
+      if !isnorm_divisible_pp(u.elem_in_nf, modulo)
         x = u
-      elseif !isnorm_divisible(u.elem_in_nf+p, modulo)
+      elseif !isnorm_divisible_pp(u.elem_in_nf+p, modulo)
         x = u + p
       end
 
@@ -648,7 +648,7 @@ function _decomposition(O::NfAbsOrd, I::NfAbsOrdIdl, Ip::NfAbsOrdIdl, T::NfAbsOr
         else
           Ba = basis(P, copy = false)
           for i in 1:degree(O)
-            if !isnorm_divisible((v*Ba[i] + u).elem_in_nf, modulo)
+            if !isnorm_divisible_pp((v*Ba[i] + u).elem_in_nf, modulo)
               u = v*Ba[i] + u
               break
             end
@@ -684,11 +684,11 @@ function _decomposition(O::NfAbsOrd, I::NfAbsOrdIdl, Ip::NfAbsOrdIdl, T::NfAbsOr
     x = zero(parent(u))
     modulo = norm(P)*p
 
-    if !isnorm_divisible(u.elem_in_nf, modulo)
+    if !isnorm_divisible_pp(u.elem_in_nf, modulo)
       x = u
-    elseif !isnorm_divisible(u.elem_in_nf+p, modulo)
+    elseif !isnorm_divisible_pp(u.elem_in_nf+p, modulo)
       x = u + p
-    elseif !isnorm_divisible(u.elem_in_nf-p, modulo)
+    elseif !isnorm_divisible_pp(u.elem_in_nf-p, modulo)
       x = u - p
     else
       Ba = basis(P, copy = false)
@@ -917,7 +917,7 @@ function prime_decomposition_polygons(O::NfOrd, p::Union{fmpz, Int}, degree_limi
       # otherwise we need to take p+b
       # I SHOULD CHECK THAT THIS WORKS
 
-      if !(!isnorm_divisible(b, (J.norm)^2) || (ei > 1))
+      if !((ei > 1) || !isnorm_divisible_pp(b, (J.norm)*p))
         J.gen_two = J.gen_two + O(p)
       end
 

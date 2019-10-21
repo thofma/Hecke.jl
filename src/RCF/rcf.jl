@@ -54,7 +54,7 @@ end
 The ray class field modulo $I$. If {{{n_quo}}} is given, then the largest
 subfield of exponent $n$ is computed.
 """
-function ray_class_field(I::NfAbsOrdIdl; n_quo = 0)
+function ray_class_field(I::NfAbsOrdIdl; n_quo = -1)
   return ray_class_field(ray_class_group(I, n_quo = n_quo)[2])
 end
 
@@ -63,7 +63,7 @@ end
 The ray class field modulo $I$ and the infinite places given. If {{{n_quo}}} is given, then the largest
 subfield of exponent $n$ is computed.
 """
-function ray_class_field(I::NfAbsOrdIdl, inf::Array{InfPlc, 1}; n_quo = 0)
+function ray_class_field(I::NfAbsOrdIdl, inf::Array{InfPlc, 1}; n_quo = -1)
   return ray_class_field(ray_class_group(I, inf, n_quo = n_quo)[2])
 end
 
@@ -72,9 +72,8 @@ end
 #  Number_field interface and reduction to prime power case
 #
 ###############################################################################
-
 @doc Markdown.doc"""
-    NumberField(CF::ClassField) -> Hecke.NfRel_ns{Nemo.nf_elem}
+    NumberField(CF::ClassField) -> Hecke.NfRelNS{Nemo.nf_elem}
 Given a (formal) abelian extension, compute the class field by
 finding defining polynomials
 for all prime power cyclic subfields.
@@ -100,7 +99,7 @@ function NumberField(CF::ClassField{S, T}; redo::Bool = false) where {S, T}
     q[i] = G[i]
   end
   CF.cyc = res
-  CF.A = number_field([x.A.pol for x = CF.cyc], check = false)[1]
+  CF.A = number_field([x.A.pol for x = CF.cyc], check = false, cached = false)[1]
   return CF.A
 end
 
@@ -664,7 +663,7 @@ function _rcf_find_kummer(CF::ClassField_pp{S, T}) where {S, T}
   # thus it works iff sum a[i] n[i] = 0
   # for all a in the kernel
   R = ResidueRing(FlintZZ, C.n, cached=false)
-  M = change_base_ring(mk.map, R)
+  M = change_base_ring(R, mk.map)
   i, l = right_kernel(M)
   @assert i > 0
   n = lift(l)
@@ -855,7 +854,6 @@ function _extend_auto(K::Hecke.NfRel{nf_elem}, h::Hecke.NfToNfMor)
 end
 
 
-
 function _rcf_descent(CF::ClassField_pp)
   if isdefined(CF, :A)
     return nothing
@@ -868,7 +866,8 @@ function _rcf_descent(CF::ClassField_pp)
   CE = cyclotomic_extension(k, e)
   A = CF.K
   CK = absolute_field(CE)
-  if degree(CK) == degree(k) #Relies on the fact that, if the cyclotomic extension has degree 1, 
+  if degree(CK) == degree(k) 
+    #Relies on the fact that, if the cyclotomic extension has degree 1, 
     #the absolute field is equal to the base field
     #There is nothing to do! The extension is already on the right field
     CF.A = A
@@ -906,27 +905,33 @@ function _rcf_descent(CF::ClassField_pp)
     @assert n == degree(CF.K)
     
     local canFrob
-    let CE = CE, ZK = ZK, n = n, pe = pe
+    let CE = CE, ZK = ZK, n = n, pe = pe, Auto = Auto
       function canFrob(p::NfOrdIdl)
+
         lP = prime_decomposition(CE.mp[2], p)
         P = lP[1][1]
         F, mF = ResidueFieldSmall(ZK, P)
         Ft = PolynomialRing(F, cached=false)[1]
         mFp = extend_easy(mF, CE.Ka)
         ap = image(mFp, CF.a)
-        pol = Ft()
-        setcoeff!(pol, n, one(F))
-        setcoeff!(pol, 0, -ap)
-        Ap = ResidueRing(Ft, pol, cached = false)
-        xpe = zero(Ft)
-        for i = 0:n-1
-          setcoeff!(xpe, i, image(mFp, coeff(pe, i)))
+        polcoeffs = Vector{elem_type(F)}(undef, n+1)
+        polcoeffs[1] = -ap
+        for i = 2:n
+          polcoeffs[i] = zero(F) 
         end
+        polcoeffs[n+1] = one(F)
+        pol = Ft(polcoeffs)
+        Ap = ResidueRing(Ft, pol, cached = false)
+        xpecoeffs = Vector{elem_type(F)}(undef, n)
+        for i = 0:n-1
+          xpecoeffs[i+1] = image(mFp, coeff(pe, i))
+        end
+        xpe = Ft(xpecoeffs)
         imF = Ap(xpe)^norm(p)
+
         res = GrpAbFinGenElem[]
         for (ky, v) in Auto
           cfs = Vector{fq_nmod}(undef, n)
-          @assert iszero(coeff(v, n))
           for i = 0:n-1
             cfs[i+1] = image(mFp, coeff(v, i))
           end
@@ -1017,7 +1022,7 @@ function _rcf_descent(CF::ClassField_pp)
       @vprint :ClassField 2 "... done\n"
     end  
   end
-  CF.A = number_field(f2, check = false)[1]
+  CF.A = number_field(f2, check = false, cached = false)[1]
   return nothing
 end
 
@@ -1053,96 +1058,6 @@ is also mot permitted (and will produce a {{{BadPrime}}} error.
 function extend_easy(f::Hecke.NfOrdToFqNmodMor, K::AnticNumberField)
   nf(domain(f)) != K && error("Number field is not the number field of the order")
   return NfToFqMor_easy(f, K)
-  #=
-  #O = domain(f) #used for the hassert and thus the testing
-  z = Hecke.NfToFqNmodMor()
-  z.header.domain = K
-  z.header.codomain = f.header.codomain
-
-  p = characteristic(z.header.codomain)
-  #y = f(NfOrdElem(domain(f), gen(K)))
-  Ft, t = PolynomialRing(GF(UInt(p), cached=false), cached=false)
-  #K = number_field(domain(f))
-#  g = gcd(Ft(K.pol), Ft(K(f.P.gen_two)))
-#it would be cool to assert that g is the poly defining the codomain
-  #qm1 = size(codomain(f))-1
-
-  function _image(x::NfOrdElem)
-    return f(x)
-  end
-  
-  Fq = codomain(f)
-  
-  function _image(x::nf_elem)
-    m = denominator(x)
-    if m % p == 0
-      throw(BadPrime(p))
-    end
-    return Fq(Ft(x)) 
-  end
-
-  t = Ft()
-
-  function _image(x::FacElem{nf_elem, AnticNumberField})
-    D = Dict{fq_nmod, fmpz}()
-    for (k, v) = x.fac
-      if iszero(v)
-        continue
-      end
-      if denominator(k) % p == 0
-        throw(BadPrime(p))
-      end
-      s = Fq()
-      _nf_to_fq!(s, k, Fq, t)
-      if iszero(s)
-        throw(BadPrime(p))
-      end
-      if haskey(D, s)
-        D[s] += v
-      else
-        D[s] = v
-      end
-    end
-    return _ev(D, one(Fq))
-  end
-
-  s = Fq()
-  function _image(x::FacElem{nf_elem, AnticNumberField})
-    r = one(Fq)
-    for (k, v) = x.fac
-      if v == 0 || v%qm1 == 0
-        continue
-      end
-      if denominator(k) % p == 0
-        throw(BadPrime(p))
-      end
-      _nf_to_fq!(s, k, Fq, t)
-      if iszero(s)
-        throw(BadPrime(p))
-      end
-      vr = v % qm1
-      if vr < 0
-        vr = (-vr) %qm1
-        ccall((:fq_nmod_inv, :libflint), Nothing, (Ref{fq_nmod}, Ref{fq_nmod}, Ref{FqNmodFiniteField}), s, s, Fq)
-      end
-      ccall((:fq_nmod_pow, :libflint), Nothing, (Ref{fq_nmod}, Ref{fq_nmod}, Ref{fmpz}, Ref{FqNmodFiniteField}), s, s, vr, Fq)
-      mul!(r, r, s)
-    end
-#too expensive - and automatically used in test
-#    @hassert :ClassField 3 r == f(O(evaluate(x)))
-    return r
-  end
-
-
-  function _preimage(x::fq_nmod)
-    return elem_in_nf(preimage(f, x))
-  end
-
-  z.header.image = _image
-  z.header.preimage = _preimage
-
-  return z
-  =#
 end
 
 #a stop-gap, mainly for non-monic polynomials
@@ -1165,7 +1080,7 @@ function _rcf_reduce(CF::ClassField_pp)
   else
     CF.a = reduce_mod_powers(CF.a, e)
   end
-  CF.K = radical_extension(CF.o, CF.a)[1]
+  CF.K = radical_extension(CF.o, CF.a, check = false, cached = false)[1]
   return nothing
 end
 
@@ -1273,7 +1188,7 @@ function reduce_mod_powers(a::FacElem{nf_elem, AnticNumberField}, n::Int, decom:
 end
 
 function reduce_mod_powers(a::FacElem{nf_elem, AnticNumberField}, n::Int, primes::Array{NfOrdIdl, 1})
-  lp = Dict((p, Int(valuation(a, p))) for p = primes)
+  lp = Dict{NfOrdIdl, Int}((p, Int(valuation(a, p))) for p = primes)
   return reduce_mod_powers(a, n, lp)  
 end
 
@@ -1300,24 +1215,17 @@ function factor_coprime(a::FacElem{nf_elem, AnticNumberField}, I::NfOrdIdlSet)
   for (e,v) = a.fac
     N, D = integral_split(ideal(Zk, e))
     if !isone(N)
-      if haskey(A, N)
-        A[N] += v
-      else
-        A[N] = v
-      end
+      add_to_key!(A, N, v)
     end
     if !isone(D)
-      if haskey(A, D)
-        A[D] -= v
-      else
-        A[D] = -v
-      end
+      add_to_key!(A, D, -v)
     end
   end
   if length(A) == 0
     A[ideal(Zk, 1)] = 1
+    return A
   end
-  return factor_coprime(FacElem(A))
+  return factor_coprime!(FacElem(A))
 end
 
 @doc Markdown.doc"""
@@ -1403,7 +1311,7 @@ and the number of primes above $p$.
 function prime_decomposition_type(C::ClassField, p::NfAbsOrdIdl)
   @hassert :ClassField 1 isprime(p)
   mR = C.rayclassgroupmap
-  m0 = mR.modulus_fin
+  m0 = defining_modulus(C)[1]
   R = domain(mR)
 
   v = valuation(m0, p)

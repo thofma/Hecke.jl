@@ -49,8 +49,8 @@ function NfFactorBase(O::NfOrd, lp::Array{NfOrdIdl, 1})
   end
 
   FB.fb = Dict{fmpz, FactorBaseSingleP}()
-  for p in keys(fb)
-    FB.fb[p] = FactorBaseSingleP(p, fb[p])
+  for (p, v) in fb
+    FB.fb[p] = FactorBaseSingleP(p, v)
   end
 
   FB.fb_int = FactorBase(Set(keys(FB.fb)); check = false)
@@ -148,6 +148,9 @@ function _factor!(FB::Hecke.NfFactorBase, A::Hecke.NfOrdIdl,
       if v != 0
         push!(s, (P[1], v))
         vp -= v*P[2].splitting_type[2]
+        if iszero(vp)
+          break
+        end
       end
     end
     if vp != 0
