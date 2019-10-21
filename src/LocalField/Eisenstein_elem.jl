@@ -179,7 +179,7 @@ canonical_unit(x::eisf_elem) = x
 ###############################################################################
 
 function -(a::eisf_elem)
-    b = a.parent(a)
+    b = deepcopy(a)
     b.data_ring_elt = -a.data_ring_elt
     return b
 end
