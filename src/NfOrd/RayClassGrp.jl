@@ -468,7 +468,13 @@ function ray_class_group(m::NfOrdIdl, inf_plc::Vector{InfPlc} = Vector{InfPlc}()
         continue
       end
       push!(powers, (pp, qq))
-      push!(quo_rings, quo(O, qq))
+      Q, mQ = quo(O, qq)
+      if pp == qq
+        Q.factor = dtame
+      else
+        Q.factor = dwild
+      end 
+      push!(quo_rings, (Q, mQ))
       push!(groups_and_maps, _mult_grp_mod_n(quo_rings[end][1], dtame, dwild, n_quo))
     end
   else
@@ -707,14 +713,11 @@ function ray_class_group(m::NfOrdIdl, inf_plc::Vector{InfPlc} = Vector{InfPlc}()
           add_to_key!(res.fac, ideal(O, Dgens[i][1]), a.coeff[1, ngens(C)+i])
         end
       end
-      if isempty(p)
-        return res
+      for i = 1:length(p)
+        if !iszero(a.coeff[i+nG+ngens(C)])
+          add_to_key!(res.fac, ideal(O, O(1+eH(H[i]))), 1)
+        end
       end
-      c = H(sub(a.coeff, 1:1, ngens(C)+nG+1:ngens(X)))
-      if iszero(c)
-        return res
-      end 
-      add_to_key!(res.fac, ideal(O, O(1+eH(c))), 1)
       return res
     end 
   end
