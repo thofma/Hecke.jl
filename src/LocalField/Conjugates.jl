@@ -27,6 +27,7 @@ function sharpen!(K::EisensteinField, g, new_prec)
     return
 end
 
+
 #########################################################################################
 #
 #   qAdic Conj structure
