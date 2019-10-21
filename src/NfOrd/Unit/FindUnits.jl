@@ -230,7 +230,7 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx)
 
     ge = vcat(x.R_gen[1:k.c], x.R_rel[add_units])
     for i=1:s.r
-      @vprint :UnitGroup 1 "Looking at the $(it)-th element in the saturation ...\n"
+      @vprint :UnitGroup 1 "Looking at the $(i)-th element in the saturation ...\n"
       y = FacElem(ge[s[i].pos], s[i].values)
       @hassert :UnitGroup 2 _isunit(y)
       @vprint :UnitGroup 1 "(It really is a unit.)"
