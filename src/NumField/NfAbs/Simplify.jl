@@ -14,6 +14,10 @@ add_verbose_scope(:Simplify)
 """
 function simplify(K::AnticNumberField; canonical::Bool = false, cached = false)
   Qx, x = PolynomialRing(FlintQQ)
+  if degree(K) == 1
+    L = number_field(x-1, cached = false)[1]
+    return L, hom(L, K, K(1))
+  end
   if canonical
     a, f1 = polredabs(K)
     f = Qx(f1)
