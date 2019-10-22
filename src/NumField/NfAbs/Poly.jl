@@ -70,7 +70,7 @@ function gcd(a::Generic.Poly{nf_elem}, b::Generic.Poly{nf_elem}, test_sqfr::Bool
   elseif iszero(b)
     return inv(lead(a))*a
   end
-  if min(degree(a), degree(b)) >= 6 || test_sqfr
+  if min(degree(a), degree(b)) >= 6 || degree(base_ring(a)) > 5 || test_sqfr
     g = gcd_modular_kronnecker(a, b, test_sqfr)
     test_sqfr && return g
     return inv(lead(g))*g  # we want it monic...

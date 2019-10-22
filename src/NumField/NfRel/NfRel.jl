@@ -507,7 +507,6 @@ end
 #In a tower, only the top-most steps are collapsed.
 #"""
 function absolute_field(K::NfRel{NfRelElem{T}}, cached::Bool = false) where T
-  @show "here"
   Ka, a, b, c = _absolute_field(K)
   return Ka, NfRelToNfRelRel(Ka, K, a, b, c), hom(base_field(K), Ka, a, check = false)
 end

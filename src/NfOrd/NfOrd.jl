@@ -142,6 +142,7 @@ function contains_equation_order(O::NfAbsOrd)
 end
 
 iscommutative(O::NfAbsOrd) = true
+iscommutative(::FlintIntegerRing) = true
 
 ################################################################################
 #
@@ -189,6 +190,16 @@ end
 
 function assure_has_basis_mat_inv(O::NfAbsOrd)
   if isdefined(O, :basis_mat_inv)
+    return nothing
+  end
+  M = basis_matrix(O, copy = false)
+  if isdefined(O, :index) && islower_triangular(M.num)
+    #The order contains the equation order and the matrix is lower triangular
+    #The inverse is lower triangular and it has denominator 1
+    #to exploit this, I call can_solve
+    fl, I = can_solve(M.num, scalar_matrix(FlintZZ, nrows(M), M.den), side = :left)
+    @assert fl
+    O.basis_mat_inv = FakeFmpqMat(I)
     return nothing
   end
   O.basis_mat_inv = inv(basis_matrix(O, copy = false))
@@ -1216,7 +1227,7 @@ function lll(M::NfOrd)
 
 
   #TODO HARD: find proper parameters
-  prec = 100 + 25*div(degree(M), 3) + Int(round(log(abs(discriminant(K)))))
+  prec = 100 + 25*div(degree(M), 3) + Int(round(log(abs(discriminant(M)))))
   #prec = 100
   i = 0
   while true

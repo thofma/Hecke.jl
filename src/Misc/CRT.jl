@@ -545,7 +545,6 @@ Returns data that can be used by \code{modular_proj} and \code{modular_lift}.
 """
 function modular_init(K::AnticNumberField, p::fmpz; deg_limit::Int=0, max_split::Int = 0)
   @assert isprime(p)
-
   me = modular_env()
   me.Fpx = PolynomialRing(ResidueRing(FlintZZ, Int(p), cached = false), "_x", cached=false)[1]
   fp = me.Fpx(K.pol)

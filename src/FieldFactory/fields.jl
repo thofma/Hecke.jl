@@ -223,7 +223,6 @@ end
 #  final computation of the maximal order and automorphisms
 #
 ################################################################################
-
 function _from_relative_to_abs_with_embedding(L::Hecke.NfRelNS{T}, autL::Array{Hecke.NfRelNSToNfRelNSMor{T}, 1}) where T
   
   S, mS = simple_extension(L)
@@ -284,24 +283,16 @@ function _from_relative_to_abs_with_embedding(L::Hecke.NfRelNS{T}, autL::Array{H
   @vtime :Fields 3 O1 = MaximalOrder(Ostart)
   O1.ismaximal = 1
   Hecke._set_maximal_order_of_nf(K, O1)
-  
+
   @vtime :Fields 3 Ks, mKs = Hecke.simplify(K)
   #Now, we have to construct the maximal order of this field.
-  #I am computing the preimages of mKs by hand, by inverting the matrix.
-  @vtime :Fields 3 begin
-  arr_prim_img = Array{nf_elem, 1}(undef, degree(Ks))
-  arr_prim_img[1] = K(1)
-  arr_prim_img[2] = mKs.prim_img
-  for i = 3:degree(Ks)
-    arr_prim_img[i] = arr_prim_img[i-1]*mKs.prim_img
-  end
-  M1 = inv(basis_matrix(arr_prim_img, FakeFmpqMat))
-  end
+  #I compute the inverse of mKs
+  @vtime :Fields 3 mKsI = find_inverse(mKs)
   if isdefined(O1, :lllO)
-    O2 = NfAbsOrd(Ks, basis_matrix(O1.lllO, copy = false)*M1)
+    O2 = NfOrd(nf_elem[mKsI(x) for x in basis(O1.lllO, K)], false)
     O2.lllO = O2
   else
-    O2 = NfAbsOrd(Ks, basis_matrix(O1, copy = false)*M1)
+    O2 = NfOrd(nf_elem[mKsI(x) for x in basis(O1, K)], false)
   end
   O2.ismaximal = 1
   @assert isdefined(O1, :disc)
@@ -313,11 +304,7 @@ function _from_relative_to_abs_with_embedding(L::Hecke.NfRelNS{T}, autL::Array{H
   #It is enough to find the image of the primitive element.
   k = base_field(S)
   a = MK(gen(k)) 
-  M = zero_matrix(FlintZZ, 1, degree(Ks))
-  Hecke.elem_to_mat_row!(M, 1, denominator(a), a)
-  mul!(M, M, M1.num)
-  img_a = Hecke.elem_from_mat_row(Ks, M, 1, M1.den*denominator(a))
-  embed = NfToNfMor(k, Ks, img_a)
+  embed = NfToNfMor(k, Ks, mKsI(a))
   #@assert iszero(k.pol(img_a)) 
   @vprint :Fields 3 "MaximalOrder Computed. Now Automorphisms\n"
   #Now, the automorphisms.
@@ -327,12 +314,9 @@ function _from_relative_to_abs_with_embedding(L::Hecke.NfRelNS{T}, autL::Array{H
   el1 = mS(mK(gen(K)))
   for i=1:length(autL)
     #@assert iszero(K.pol(mK(mS\(autL[i](el1)))))
-    x = mK\(mS\(autL[i](el)))
-    Hecke.elem_to_mat_row!(M, 1, denominator(x), x)
-    mul!(M, M, M1.num)
-    y = Hecke.elem_from_mat_row(Ks, M, 1, M1.den*denominator(x) )
+    x = mKsI(mK\(mS\(autL[i](el))))
     #@assert Ks.pol(y) == 0
-    autos[i] = Hecke.NfToNfMor(Ks, Ks, y)
+    autos[i] = Hecke.NfToNfMor(Ks, Ks, x)
   end
   #And the generators are done. Now the closure
   @vtime :Fields 3 Hecke._set_automorphisms_nf(Ks, closure(autos, degree(Ks)))
@@ -342,6 +326,35 @@ function _from_relative_to_abs_with_embedding(L::Hecke.NfRelNS{T}, autL::Array{H
   return Ks, autos, embed
  
 end 
+
+function find_inverse(f::NfToNfMor)
+  v = Vector{nf_elem}(undef, degree(domain(f)))
+  v[1] = one(codomain(f))
+  v[2] = f.prim_img
+  for i = 3:degree(domain(f))
+    v[i] = v[2]*v[i-1]
+  end
+  M = basis_matrix(v)
+  w = zero_matrix(FlintQQ, 1, nrows(M))
+  w[1, 2] = 1
+  fl, s = can_solve(M, w, side = :left)
+  @assert fl
+  s1 = FakeFmpqMat(s)
+  pre_img = elem_from_mat_row(domain(f), s1.num, 1, s1.den)
+  return hom(codomain(f), domain(f), pre_img)
+end
+
+function find_inverse2(f::NfToNfMor)
+  K = codomain(f)
+  arr_prim_img = Array{nf_elem, 1}(undef, degree(K))
+  arr_prim_img[1] = K(1)
+  arr_prim_img[2] = f.prim_img
+  for i = 3:degree(K)
+    arr_prim_img[i] = arr_prim_img[i-1]*f.prim_img
+  end
+  M1 = inv(basis_matrix(arr_prim_img, FakeFmpqMat))
+  return M1
+end
 
 
 ###############################################################################
@@ -577,12 +590,13 @@ end
 function fields(list::Vector{FieldsTower}, G, absolute_bound::fmpz; only_real::Bool = false)
   L = GAP.Globals.DerivedSeries(G)
   lvl = _real_level(L)
-  #First step by hand
+  @show length(L)-1
   for i = 2:length(L)-1
-    E1 = GAP.Globals.FactorGroup(L[1], L[i+1])
-    if GAP.Globals.Size(E1) != degree(list[1].field)
+    G1 = GAP.Globals.FactorGroup(L[1], L[i])
+    if GAP.Globals.Size(G1) != degree(list[1].field)
       continue
     end
+    E1 = GAP.Globals.FactorGroup(L[1], L[i+1])
     H1 = GAP.Globals.FactorGroup(L[i], L[i+1])
     l = GAP.gap_to_julia(Vector{Int64}, GAP.Globals.AbelianInvariants(H1))
     @vprint :Fields 1 "contructing abelian extensions with invariants $l \n" 

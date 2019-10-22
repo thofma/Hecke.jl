@@ -56,7 +56,7 @@ end
 function _factorbase_bound_bdf_right_side(O::NfOrd, x0::Float64, D::Dict{Int, Array{Tuple{Int, Int}, 1}})
   K = nf(O) 
   d = degree(K)
-  r, s = signature(K)
+  r, s = signature(O)
 
   curval = Int(ceil(x0))
 
@@ -113,7 +113,7 @@ end
 function _factor_base_bound_bdf(O::NfOrd, x0::Float64 = 50.0, ste::Float64 = 20.0)
   K = nf(O) 
   d = degree(K)
-  r, s = signature(K)
+  r, s = signature(O)
 
   R = ArbField(64, false)
 

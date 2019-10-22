@@ -726,7 +726,7 @@ mutable struct flint_rand_ctx_t
 end  
 
 function show(io::IO, A::flint_rand_ctx_t)
-  println(io, "Flint random state\n")
+  println(io, "Flint random state")
 end
 
 function flint_rand_state()
@@ -765,8 +765,9 @@ function ecm(a::fmpz, max_digits::Int = div(ndigits(a), 2)+1, rnd = flint_rand_c
 
   i = 1
   s = div(max_digits-15, 5)+2
-  s = max(i, s)
+  i = s = max(i, s)
   while i <= s
+    @show i, B1[i], nC[i]
     e,f = ecm(a, B1[i]*1000, B1[i]*1000*100, nC[i], rnd)
     if e != 0
       return (e,f)
@@ -820,8 +821,63 @@ function factor(N::fmpz)
       r[p] = v
     end
   end
-#  @assert prod(p^v for (p, v) = r)*N == N_in
+  factor_insert!(r, N)
+  for p = keys(r)
+    if nbits(p) > 60 && !(p in big_primes)
+      push!(big_primes, p)
+    end
+  end
+  return Nemo.Fac(c, r)
+end
+
+function factor_insert!(r::Dict{fmpz, Int}, N::fmpz, scale::Int = 1)
+  #assumes N to be positive
+  #        no small divisors 
+  #        no big_primes
+  if isone(N)
+    return r
+  end
   fac, N = ispower(N)
+  if fac > 1
+    return factor_insert!(r, N, fac)
+  end
+  if isprime(N)
+    @assert !haskey(r, N)
+    r[N] = fac
+    return r
+  end
+  if ndigits(N) < 60
+    s = Nemo.factor(N) #MPQS
+    for (p, k) in s
+      if haskey(r, p)
+        r[p] += k*scale
+      else
+        r[p] = k*scale
+      end
+    end
+    return r
+  end
+
+  e, f = ecm(N)
+  if e == 0
+    s = Nemo.factor(N)
+    for (p, k) in s
+      if haskey(r, p)
+        r[p] += k*scale
+      else
+        r[p] = k*scale
+      end
+    end
+    return r
+  end
+  k, N = remove(N, f)
+  @assert k > 0
+  factor_insert!(r, N, scale)
+  factor_insert!(r, f, scale*k)
+  return r
+end
+  
+#=
 
  #TODO: problem(s)
  # Nemo.factor = mpqs is hopeless if > n digits, but asymptotically and practically
@@ -879,7 +935,7 @@ function factor(N::fmpz)
     #end
   end
   for p = keys(r)
-    if nbits(p) > 60 && !(p in big_primes)
+    if !fits(Int, p) && !(p in big_primes)
       push!(big_primes, p)
     end
   end
@@ -887,7 +943,7 @@ function factor(N::fmpz)
   @assert prod(a^b for (a,b) = r) * c == N_in
   return Nemo.Fac(c, r)
 end
-
+=#
 
 function ceil(::Type{fmpz}, a::BigFloat)
   return fmpz(ceil(BigInt, a))
@@ -921,7 +977,7 @@ function (::Type{Base.Rational{BigInt}})(x::fmpq)
   return Rational{BigInt}(BigInt(numerator(x)), BigInt(denominator(x)))
 end
 
-export eulerphi_inv
+export eulerphi_inv, Divisors, carmichael_lambda
 
 @doc Markdown.doc"""
     Divisors{T}
@@ -1090,7 +1146,7 @@ The inverse of the Euler totient functions: find all $x$ s.th. $phi(x) = n$
 holde. The elements are returned in factored form.
 """
 function eulerphi_inv_fac_elem(n::fmpz)
-  lp = []
+  lp = fmpz[]
   for d = Divisors(n)
     if isprime(d+1)
       push!(lp, d+1)
@@ -1098,8 +1154,8 @@ function eulerphi_inv_fac_elem(n::fmpz)
   end
 #  println("possible primes: ", lp)
 
-  E = []
-  res = []
+  E = Tuple{fmpz, Vector{Tuple{fmpz, Int}}}[]
+  res = FacElem{fmpz, FlintIntegerRing}[]
   for p = lp
     v = valuation(n, p)
     for i=0:v
@@ -1149,6 +1205,35 @@ end
 function eulerphi(n::T) where {T <: Integer}
   return T(eulerphi(fmpz(n)))
 end
+
+#function carmichael_lambda(x::Fac{fmpz})
+#  return reduce(lcm, p^(v-1) : (p-1)*p^(v-1) for (p,v) = x.fac)
+#end
+
+function carmichael_lambda(x::fmpz)
+  v, x = remove(x, fmpz(2))
+  if isone(x)
+    c = x
+  else
+    x = factor(x)
+    c = reduce(lcm, (p-1)*p^(v-1) for (p,v) = x.fac)
+  end
+  if v < 2
+    return c
+  else 
+    return fmpz(2)^(v-2)*c
+  end
+end
+
+#function carmichael_lambda(x::FacElem{fmpz, FlintIntegerRing})
+#  x = factor(x)
+#  return reduce(lcm, (p-1)*p^(v-1) for (p,v) = x.fac)
+#end
+
+function carmichael_lambda(n::T) where {T <: Integer}
+  return T(carmichael_lambda(fmpz(n)))
+end
+
 
 @doc Markdown.doc"""
     eulerphi_inv(n::Integer) -> Array{fmpz, 1}

@@ -345,7 +345,7 @@ end
     diagonal(V::AbsSpace) -> Vector{FieldElem}
 
 Returns a vector of elements $a_1,\dotsc,a_n$ such that `V` is isometric to
-the diagonal space $\langle a_1,\dotsc,a_n$.
+the diagonal space $\langle a_1,\dotsc,a_n \rangle$.
 
 The elements will be contained in the fixed field of `V`.
 """

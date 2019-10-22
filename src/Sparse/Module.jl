@@ -14,16 +14,16 @@ set_assert_level(:HNF, 0)
 
 
 function show(io::IO, M::ModuleCtxNmod)
-  println("Sparse module over $(M.R) of (current) rank $(nrows(M.basis)) and $(nrows(M.gens))")
+  print(io, "Sparse module over $(M.R) of (current) rank $(nrows(M.basis)) and $(nrows(M.gens))\n")
 end
 
 function show(io::IO, M::ModuleCtx_fmpz)
-  println("Sparse module over FlintZZ of (current) rank $(nrows(M.bas_gens)) and further $(nrows(M.rel_gens))")
+  print(io, "Sparse module over FlintZZ of (current) rank $(nrows(M.bas_gens)) and further $(nrows(M.rel_gens))\n")
   if isdefined(M, :basis_idx)
-    println("current index: $(M.basis_idx)")
+    print(io, "current index: $(M.basis_idx)\n")
   end
   if isdefined(M, :essential_elementary_divisors)
-    println("current structure: $(M.essential_elementary_divisors)")
+    print(io, "current structure: $(M.essential_elementary_divisors)\n")
   end
 end
 

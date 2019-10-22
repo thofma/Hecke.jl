@@ -1134,6 +1134,38 @@ end
 
 ################################################################################
 #
+#  IsUpper\Lower triangular 
+#
+################################################################################
+
+function isupper_triangular(M::MatElem)
+  n = nrows(M)
+  @assert n == ncols(M)
+  for i = 2:n
+    for j = 1:i-1
+      if !iszero(M[i, j])
+        return false
+      end
+    end
+  end
+  return true
+end
+
+function islower_triangular(M::MatElem)
+  n = nrows(M)
+  @assert n == ncols(M)
+  for i = 1:n
+    for j = i+1:n
+      if !iszero(M[i, j])
+        return false
+      end
+    end
+  end
+  return true
+end
+
+################################################################################
+#
 #  Is diagonal
 #
 ################################################################################
@@ -1187,7 +1219,7 @@ function solve_ut(A::MatElem{T}, b::MatElem{T}) where T
   n = ncols(A)
   @assert m == nrows(b)
   @assert m <= n
-  x = similar(A, n, 1)
+  x = zero_matrix(base_ring(A), n, 1)
   pivot_cols = Vector{Int}()
   r = 0
   last_pivot = n + 1
@@ -1222,7 +1254,7 @@ function solve_lt(A::MatElem{T}, b::MatElem{T}) where T
   n = ncols(A)
   @assert m == nrows(b)
   @assert m <= n
-  x = similar(A, n, 1)
+  x = zero_matrix(base_ring(A), n, 1)
   pivot_cols = Vector{Int}()
   r = 0
   last_pivot = 0

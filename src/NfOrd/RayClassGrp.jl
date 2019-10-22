@@ -246,7 +246,11 @@ function _ev_quo(Q, mQ, elems, p, exponent)
       end
       el1 = O(f, false)
       if !iszero(mF(el1))
-        mul!(el[i], el[i], mQ(el1)^k)
+        if !isone(k)
+          mul!(el[i], el[i], mQ(el1)^k)
+        else
+          mul!(el[i], el[i], mQ(el1))
+        end
         continue
       end
       val = valuation(f, p)
@@ -276,7 +280,7 @@ end
 function _eval_quo(elems::Array{FacElem{nf_elem, AnticNumberField},1}, p::NfOrdIdl, q::NfOrdIdl, exponent::fmpz)
   O = order(p) 
   if p == q
-    if nbits(p.minimum) < 64
+    if fits(Int, p.minimum)
       Q, mQ = ResidueFieldSmall(O, p)
       return _ev_quo(Q, mQ, elems, p, exponent)
     else
@@ -464,7 +468,13 @@ function ray_class_group(m::NfOrdIdl, inf_plc::Vector{InfPlc} = Vector{InfPlc}()
         continue
       end
       push!(powers, (pp, qq))
-      push!(quo_rings, quo(O, qq))
+      Q, mQ = quo(O, qq)
+      if pp == qq
+        Q.factor = dtame
+      else
+        Q.factor = dwild
+      end 
+      push!(quo_rings, (Q, mQ))
       push!(groups_and_maps, _mult_grp_mod_n(quo_rings[end][1], dtame, dwild, n_quo))
     end
   else
@@ -523,7 +533,7 @@ function ray_class_group(m::NfOrdIdl, inf_plc::Vector{InfPlc} = Vector{InfPlc}()
     tobeeval1[i] = mU(U[i])
   end
   for i = 1:ngens(C)
-    tobeeval1[i+ngens(U)] = mC.princ_gens[i][2]*(Kel[i]^C.snf[i])
+    tobeeval1[i+ngens(U)] = _preproc(mC.princ_gens[i][2]*(FacElem(Dict(Kel[i] => C.snf[i]))), expon)
   end
   tobeeval = _preproc(m, tobeeval1, expon)
 
@@ -631,7 +641,12 @@ function ray_class_group(m::NfOrdIdl, inf_plc::Vector{InfPlc} = Vector{InfPlc}()
     mG = groups_and_maps[i][2]
     J = ideal(O, 1)
     minJ = fmpz(1)
+    mins = fmpz(1)
     for (PP, vPP) in lp
+      if minimum(PP, copy = false) != minimum(P, copy = false)
+        mins = lcm(mins, minimum(PP, copy = false)^vPP)
+        continue
+      end
       if PP != P
         Jm = PP^vPP
         J *= Jm
@@ -640,6 +655,11 @@ function ray_class_group(m::NfOrdIdl, inf_plc::Vector{InfPlc} = Vector{InfPlc}()
     end
     J.minimum = minJ
     i1, i2 = idempotents(Q, J)
+    if !isone(mins)
+      d, u1, v1 = gcdx(minimum(Q, copy = false), mins)
+      i1 = i1*(u1*minimum(Q, copy = false) + v1*mins) + u1*minimum(Q, copy = false) *i2
+      i2 = v1*mins*i2
+    end 
     gens = mG.generators
     if isempty(p)
       if haskey(mG.tame, P)
@@ -684,7 +704,6 @@ function ray_class_group(m::NfOrdIdl, inf_plc::Vector{InfPlc} = Vector{InfPlc}()
   end
   
   local expo
-  #TODO: This may be wrong. Think about it.
   let C = C, O = O, groups_and_maps = groups_and_maps, exp_class = exp_class, eH = eH, H = H, K = K, Dgens = Dgens, X = X
     function expo(a::GrpAbFinGenElem)
       b = C(sub(a.coeff, 1:1, 1:ngens(C)))
@@ -694,14 +713,11 @@ function ray_class_group(m::NfOrdIdl, inf_plc::Vector{InfPlc} = Vector{InfPlc}()
           add_to_key!(res.fac, ideal(O, Dgens[i][1]), a.coeff[1, ngens(C)+i])
         end
       end
-      if isempty(p)
-        return res
+      for i = 1:length(p)
+        if !iszero(a.coeff[i+nG+ngens(C)])
+          add_to_key!(res.fac, ideal(O, O(1+eH(H[i]))), 1)
+        end
       end
-      c = H(sub(a.coeff, 1:1, ngens(C)+nG+1:ngens(X)))
-      if iszero(c)
-        return res
-      end 
-      add_to_key!(res.fac, ideal(O, O(1+eH(c))), 1)
       return res
     end 
   end
@@ -890,6 +906,21 @@ function find_gens(mR::MapRayClassGrp; coprime_to::fmpz = fmpz(-1))
       end
     end
   
+  end
+  
+  mC = mR.clgrpmap
+  if isdefined(mC, :small_gens)
+    for x in mC.small_gens
+      if !iscoprime(coprime_to, minimum(x, copy = false))
+        continue
+      end
+      push!(lp, x)
+      push!(sR, mR\x)
+      q, mq = quo(R, sR, false)
+      if order(q)==1
+        return lp, sR
+      end
+    end
   end
   
   

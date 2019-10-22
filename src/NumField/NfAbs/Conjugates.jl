@@ -340,11 +340,11 @@ end
 # where the first return value indicates if the result is good enough
 function _minkowski_map_and_apply(a, abs_tol, G, work_tol = abs_tol)
   K = parent(a)
-  r, s = signature(K)
   A = Array{arb}(undef, degree(K))
   c = conjugates_arb(a, work_tol)
-
-  for i in 1:r
+  r, s = signature(K)
+  
+  for i = 1:r
     @assert isreal(c[i])
     A[i] = real(c[i])
     if !radiuslttwopower(A[i], -abs_tol)

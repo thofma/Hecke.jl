@@ -117,6 +117,7 @@ mutable struct AbToNfOrdMultGrp <: Map{GrpAbFinGen, NfOrd, SetMap, AbToNfOrdMult
   domain::GrpAbFinGen
   codomain::NfOrd
   generator::NfOrdElem
+  @declare_other
 
   function AbToNfOrdMultGrp(O::NfOrd, order::Int, generator::NfOrdElem)
     G = DiagonalGroup([order])

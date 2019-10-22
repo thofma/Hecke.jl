@@ -1740,6 +1740,16 @@ function iseichler(A::AlgAss{nf_elem})
   return false
 end
 
+function iseichler(A::AlgAss{fmpq})
+  @assert issimple(A)
+  @assert iscentral(A)
+  if dim(A) != 4
+    return true
+  end
+  O = Order(A, basis(A))
+  return schur_index_at_real_plc(O) == 1
+end
+
 ################################################################################
 #
 #  Direct product

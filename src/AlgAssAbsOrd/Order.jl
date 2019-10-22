@@ -1018,3 +1018,22 @@ function trace_dual(R::AlgAssAbsOrd)
   t = inv(FakeFmpqMat(trred_matrix(R)))*basis_matrix(R, copy = false)
   return ideal(algebra(R), R, t)
 end
+
+################################################################################
+#
+#  "All" maximal orders
+#
+################################################################################
+
+# Only works for algebras fulfilling the Eichler condition.
+# This is trivial for algebras over QQ, as there is always just one equivalence
+# class with respect to conjugation.
+representatives_of_maximal_orders(A::AlgAss{fmpq}) = representatives_of_maximal_orders(maximal_order(A))
+
+function representatives_of_maximal_orders(O::AlgAssAbsOrd)
+  A = algebra(O)
+  @assert issimple(A)
+  @assert iseichler(A)
+  @assert ismaximal(O)
+  return [ O ]
+end

@@ -153,7 +153,7 @@ end
 *(x::RelOrdQuoRingElem, y::fmpz) = y*x
 
 function ^(a::RelOrdQuoRingElem, f::fmpz)
-  if nbits(f) < 64
+  if fits(Int, f)
     return a^Int(f)
   end
   f == 0 && return one(parent(a))

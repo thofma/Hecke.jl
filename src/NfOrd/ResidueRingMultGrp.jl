@@ -496,7 +496,11 @@ function _quadratic_method(p::NfOrdIdl, u::Int, v::Int; pu::NfOrdIdl=p^u, pv::Nf
   g, M, dlog = _pu_mod_pv(pu,pv)
   map!(x -> x + 1, g, g)
   function discrete_logarithm(x::NfOrdElem)
-    return dlog(mod(x-1,pv))
+    res = dlog(mod(x-1,pv))
+    for i = 1:length(res)
+      res[i] = mod(res[i], M[end])
+    end
+    return res
   end
   return g, M, discrete_logarithm
 end
@@ -523,7 +527,11 @@ function _artin_hasse_method(p::NfOrdIdl, u::Int, v::Int; pu::NfOrdIdl=p^u, pv::
   local discrete_logarithm
   let Q = Q, pnum = pnum, dlog = dlog
     function discrete_logarithm(x::NfOrdElem)
-      return dlog(artin_hasse_log(Q(x), pnum)) 
+      res = dlog(artin_hasse_log(Q(x), pnum)) 
+      for i = 1:length(res)
+        res[i] = mod(res[i], M[end])
+      end
+      return res
     end
   end
   return g, M, discrete_logarithm
@@ -597,10 +605,15 @@ function _p_adic_method(p::NfOrdIdl, u::Int, v::Int; pu::NfOrdIdl=p^u, pv::NfOrd
   O = order(p)
   Q = NfOrdQuoRing(O, pv)
   map!(x -> p_adic_exp(Q, p, v, x), g, g)
+  powers = Dict{Int, nf_elem}()
   local discrete_logarithm
-  let Q = Q, p = p, v = v, dlog = dlog
+  let Q = Q, p = p, v = v, dlog = dlog, powers = powers
     function discrete_logarithm(b::NfOrdElem) 
-      return dlog(p_adic_log(Q, p, v, b))
+      res = dlog(p_adic_log(Q, p, v, b, powers))
+      for i = 1:length(res)
+        res[i] = mod(res[i], M[end])
+      end
+      return res
     end
   end
   return g, M, discrete_logarithm
@@ -656,7 +669,7 @@ function p_adic_exp(Q::NfOrdQuoRing, p::NfOrdIdl, v::Int, x::NfOrdElem)
   return s.elem
 end
 
-function p_adic_log(Q::NfOrdQuoRing, p::NfOrdIdl, v::Int, y::NfOrdElem)
+function p_adic_log(Q::NfOrdQuoRing, p::NfOrdIdl, v::Int, y::NfOrdElem, powers::Dict{Int, nf_elem} = Dict{Int, nf_elem}())
   O = parent(y)
   isone(y) && return zero(O)
   pnum = minimum(p)
@@ -691,7 +704,12 @@ function p_adic_log(Q::NfOrdQuoRing, p::NfOrdIdl, v::Int, y::NfOrdElem)
     if iszero(val_pnum_i) 
       inc = _divexact(Q(xi), fmpz(i))
     else  
-      el = anti_uni^val_p_i
+      if haskey(powers, val_p_i)
+        el = powers[val_p_i]
+      else
+        el = _powmod(anti_uni, val_p_i, pnum^(val_p_i+1))
+        powers[val_p_i] = el
+      end
       numer = O(xi.elem_in_nf*el, false)
       denom = O(i*el, false)
       inc = divexact(Q(numer),Q(denom))
@@ -712,7 +730,12 @@ function p_adic_log(Q::NfOrdQuoRing, p::NfOrdIdl, v::Int, y::NfOrdElem)
     if iszero(val_pnum_i) 
       inc = _divexact(Q(xi), fmpz(i))
     else  
-      el = anti_uni^val_p_i
+      if haskey(powers, val_p_i)
+        el = powers[val_p_i]
+      else
+        el = _powmod(anti_uni, val_p_i, pnum^(val_p_i+1))
+        powers[val_p_i] = el
+      end
       numer = O(xi.elem_in_nf*el, false)
       denom = O(i*el, false)
       inc = divexact(Q(numer),Q(denom))

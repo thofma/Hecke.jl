@@ -150,12 +150,12 @@ function new_maximal_order(O::NfOrd; index_divisors::Vector{fmpz} = fmpz[], disc
     return O
   end
 
-  if isdefining_polynomial_nice(K) && !isone(denominator(basis_mat_inv(O)))
+  if isdefining_polynomial_nice(K) && !contains_equation_order(O)
     #The order does not contain the equation order. We add them
     O = O + EquationOrder(K)
   end
 
-  if isdefining_polynomial_nice(K) && (isequation_order(O) || isone(denominator(basis_mat_inv(O))))
+  if isdefining_polynomial_nice(K) && (isequation_order(O) || contains_equation_order(O))
     Zx, x = PolynomialRing(FlintZZ, "x", cached = false)
     f1 = Zx(K.pol)
     ds = gcd(rres(f1, derivative(f1)), discriminant(O))
@@ -640,7 +640,7 @@ function ring_of_multipliers(a::NfAbsOrdIdl)
   if !isone(bmatinv.den)
     divexact!(m, m, bmatinv.den)
   end
-  hnf_modular_eldiv!(m, minimum(a))
+  hnf_modular_eldiv!(m, minimum(a, copy = false))
   mhnf = view(m, 1:n, 1:n)
   s = prod(mhnf[i,i] for i = 1:n)
   if isone(s)
@@ -842,10 +842,8 @@ function pradical_trace1(O::NfOrd, p::Union{Integer, fmpz})
 end
 
 function pradical1(O::NfOrd, p::Union{Integer, fmpz})
-  if p isa fmpz
-    if nbits(p) < 64
-      return pradical1(O, Int(p))
-    end
+  if p isa fmpz && fits(Int, p)
+    return pradical1(O, Int(p))
   end
   d = degree(O)
 

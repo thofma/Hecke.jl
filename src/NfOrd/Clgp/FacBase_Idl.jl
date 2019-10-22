@@ -140,23 +140,22 @@ function _factor!(FB::Hecke.NfFactorBase, A::Hecke.NfOrdIdl,
   
   rw = FB.rw
   r = Array{Tuple{Int, Int}, 1}()
-  for (p, vp) in d
-    #vp = valuation(n, p)
-    vp1 = vp
+  for p in keys(d)
+    vp = valuation(n, p)
     s = Array{Tuple{Int, Int}, 1}()
     for P=FB.fb[p].lp
       v = valuation(A, P[2])
       if v != 0
         push!(s, (P[1], v))
-        vp1 -= v*P[2].splitting_type[2]
+        vp -= v*P[2].splitting_type[2]
         if iszero(vp)
           break
         end
       end
     end
-    if vp1 != 0
+    if vp != 0
       if error
-        @assert vp1 == 0
+        @assert vp == 0
       end
       return false, SRow{T}()
     end

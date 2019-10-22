@@ -285,7 +285,12 @@ function ray_class_group_quo(m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Dict{NfOrd
     mG = groups_and_maps[i][2]
     J = ideal(O, 1)
     minJ = fmpz(1)
+    mins = fmpz(1)
     for j = 1:length(powers)
+      if minimum(powers[j][1], copy = false) != minimum(P, copy = false)
+        mins = lcm(mins, minimum(powers[j][2], copy = false))
+        continue
+      end
       if j != i
         J *= powers[j][2]
         minJ = lcm(minJ, minimum(powers[j][2], copy = false))
@@ -293,6 +298,11 @@ function ray_class_group_quo(m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Dict{NfOrd
     end
     J.minimum = minJ
     i1, i2 = idempotents(Q, J)
+    if !isone(mins)
+      d, u1, v1 = gcdx(minimum(Q, copy = false), mins)
+      i1 = i1*(u1*minimum(Q, copy = false) + v1*mins) + u1*minimum(Q, copy = false) *i2
+      i2 = v1*mins*i2
+    end   
     gens = mG.generators
     if isempty(p)
       if haskey(mG.tame, P)
@@ -360,7 +370,7 @@ function ray_class_group_quo(m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Dict{NfOrd
   mp.header = Hecke.MapHeader(X, FacElemMon(parent(m)))
   mp.header.preimage = disclog
   mp.fact_mod = lp
-  mp.defining_modulus = (m, inf_plc)
+  mp.defining_modulus = (m, p)
   mp.powers = powers
   mp.groups_and_maps = groups_and_maps
   mp.disc_log_inf_plc = disc_log_inf
