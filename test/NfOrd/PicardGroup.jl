@@ -93,7 +93,7 @@ end
   @show f = x^3-9270*x^2-6226*x-2617
   if haskey(ENV, "CI") && ENV["CI"] == "true"
     set_verbose_level(:ClassGroup, 1)
-    set_verbose_level(:UnitGroup, 1)
+    set_verbose_level(:UnitGroup, 2)
   end
   K, a = number_field(f, "a", cached = false)
   println("1")
