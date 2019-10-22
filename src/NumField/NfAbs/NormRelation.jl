@@ -142,7 +142,7 @@ function _norm_relation_setup_generic(K::AnticNumberField; small_degree::Bool = 
   for i in 1:n
     println("Computing fixed fields ...")
     F, mF = fixed_field(K, NfToNfMor[GtoA[f] for f in ls[i][1]])
-    println("Simplifying ...")
+    println("Simplifying ... $F")
     S, mS = simplify(F, cached = true)
     L = S
     println("done")
@@ -765,7 +765,7 @@ function _has_norm_relation_abstract(G::GrpGen, H::Vector{Tuple{GrpGen, GrpGenTo
       onee = matrix(FlintZZ, 1, n, coeffs(one(QG)))
 
       b, w, K = can_solve_with_kernel(m, target_den * onee, side = :left)
-      v = 1//target_den * change_base_ring(w, FlintQQ)
+      v = 1//target_den * change_base_ring(FlintQQ, w)
     end
 
     if !b
@@ -929,7 +929,7 @@ function _has_norm_relation_abstract(G::GrpGen, H::Vector{Tuple{GrpGen, GrpGenTo
 
     b, w, K = can_solve_with_kernel(m, onee, side = :left)
 
-    v = 1//target_den * change_base_ring(w, FlintQQ)
+    v = 1//target_den * change_base_ring(FlintQQ, w)
   end
 
   @assert b

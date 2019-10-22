@@ -4,16 +4,23 @@ add_verbose_scope(:Simplify)
 
 @doc Markdown.doc"""
     simplify(K::AnticNumberField; canonical::Bool = false) -> AnticNumberField, NfToNfMor
- > Tries to find an isomorphic field $L$ given by a "nicer" defining polynomial.
- > By default, "nice" is defined to be of smaller index, testing is done only using
- > a LLL-basis of the maximal order.
- > If \texttt{canonical} is set to {{{true}}}, then a canonical defining
- > polynomial is found, where canonical is using the pari-definition of {{{polredabs}}}
- > in http://beta.lmfdb.org/knowledge/show/nf.polredabs.
- > Both version require a LLL reduced basis for the maximal order.
+
+Tries to find an isomorphic field $L$ given by a "simpler" defining polynomial.
+By default, "simple" is defined to be of smaller index, testing is done only
+using a LLL-basis of the maximal order.
+
+If `canonical` is set to `true`, then a canonical defining polynomial is found,
+where canonical is using the definition of PARI's `polredabs`, which is described in
+http://beta.lmfdb.org/knowledge/show/nf.polredabs.
+
+Both version require a LLL reduced basis for the maximal order.
 """
 function simplify(K::AnticNumberField; canonical::Bool = false, cached = false)
   Qx, x = PolynomialRing(FlintQQ)
+  if degree(K) == 1
+    L = number_field(x - 1, cached = cached, check = false)[1]
+    return L, hom(L, K, gen(K), check = false)
+  end
   if canonical
     a, f1 = polredabs(K)
     f = Qx(f1)
@@ -83,11 +90,13 @@ end
  # of a block is the degree K:Q(a)
  # a is primitive iff the block system has length n
 function _block(a::nf_elem, R::Array{fq_nmod, 1}, ap::fq_nmod_poly)
-  c = FlintZZ()
-  ap.length = a.elem_length
-  for i=0:a.elem_length
-    Nemo.num_coeff!(c, a, i)
-    setcoeff!(ap, i, c)
+  _R = GF(Int(characteristic(base_ring(ap))), cached = false)
+  _Ry, _ = PolynomialRing(_R, "y", cached = false)
+  _tmp = _Ry()
+  nf_elem_to_gfp_poly!(_tmp, a, false) # ignore denominator
+  set_length!(ap, length(_tmp))
+  for i in 0:(length(_tmp) - 1)
+    setcoeff!(ap, i, base_ring(ap)(_get_coeff_raw(_tmp, i)))
   end
 #  ap = Ft(Zx(a*denominator(a)))
   s = fq_nmod[evaluate(ap, x) for x = R]
@@ -108,8 +117,6 @@ function _block(a::nf_elem, R::Array{fq_nmod, 1}, ap::fq_nmod_poly)
   end
   return b
 end
-
-
 
 #given 2 block systems b1, b2 for elements a1, a2, this computes the
 #system for Q(a1, a2), the compositum of Q(a1) and Q(a2) as subfields of K
@@ -270,7 +277,6 @@ function polredabs(K::AnticNumberField)
 
   return L3[1]
 end
-
 
 function Q1Q2(f::PolyElem)
   q1 = parent(f)()
@@ -436,6 +442,3 @@ function _lll_for_simplify(M::NfOrd; prec = 100)
   end
   return fl, On
 end
-
-
-
