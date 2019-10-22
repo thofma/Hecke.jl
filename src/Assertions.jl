@@ -188,6 +188,9 @@ end
 
 function set_assert_level(s::Symbol, l::Int)
   !(s in ASSERT_SCOPE) && error("Not a valid symbol")
+  if l >= 9000
+    @info "Assertion level over 9000! This might be slow"
+  end
   ASSERT_LOOKUP[s] = l
 end
 
@@ -214,6 +217,6 @@ end
 
 function assertions(flag::Bool)
   for s in Hecke.ASSERT_SCOPE
-    flag ? set_assert_level(s, typemax(Int)) : set_assert_level(s, 0)
+    flag ? set_assert_level(s, 8999) : set_assert_level(s, 0)
   end
 end
