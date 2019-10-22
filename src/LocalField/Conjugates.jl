@@ -239,20 +239,62 @@ function coeffs(a::eisf_elem)
     return coefficients(a)
 end
 
+function mod_sym(a,b)
+    c = mod(a,b)
+    return c < b/2 ? c : c-b
+end
+
+function sym_lift(a::padic)
+    u = unit_part(a)
+    p = prime(a.parent)
+    return mod_sym(u, p^precision(a))*FlintQQ(p)^valuation(a)
+end
 
 @doc Markdown.doc"""
     underdetermined_solve(A,b)
-Solves the equation `Ax=b`.
+Solves the equation `Ax=b`. Return the first index of the column where the last entry is non-zero.
 """
 function underdetermined_solve(A,b)
-    # Do something.
-    @assert false
-    return
+
+    M = hcat(A,-b)
+    nu,N = nullspace(M)
+
+    display(N)
+
+    ind = 0
+    for j=1:size(N,2)
+        if isone(N[size(N,1),j])
+            ind=j
+            break
+        end
+    end
+    @assert !iszero(ind)
+
+    return nu,N,ind
+end
+
+@doc Markdown.doc"""
+    underdetermined_solve_first(A,b)
+Return the first basis column of the solutions to Ax=b, if it exists.
+"""
+function underdetermined_solve_first(A,b)
+    nu,N,ind = underdetermined_solve(A,b)
+    return N[1:size(N,1)-1,ind]
 end
 
 function new_completion(K::NumField{T} where T, P::NfOrdIdl; prec=10)
 
+    # Determine a polynomial over Kp_unram which annihilates pi.
+
+    # The method used here is to find a solution to `g(b) mod P^prec`, where
+    # the residue image of `b` is a (Conway) generator for the residue field.
+
+    # This is definitely not the best algorithm. In the unramified, non-index-divisor
+    # case, computing powers of `P` is trivial. However, in the other (likely important)
+    # cases, it is likely worthwhile to see if computing powers is also easy.
+    
     @assert has_2_elem(P)
+    a  = gen(K)
     p  = gens(P)[1]
     pi = gens(P)[2]
     max_order = maximal_order(K)
@@ -267,65 +309,74 @@ function new_completion(K::NumField{T} where T, P::NfOrdIdl; prec=10)
     f = degree(k)
     Kp_unram = QadicField(p, f, prec)
 
-    # Determine a polynomial over Kp_unram which annihilates pi.
+    # Lift the conway generator of the finite field to the number field.
+    function conway_gen_lift()
+        BO = basis(max_order)
 
-    # The method used here is to find a solution to `g(b) mod P^prec`, where
-    # the residue image of `b` is a (Conway) generator for the residue field.
+        A = matrix(coeffs.(res.(BO)))
+        b = matrix(coeffs(gen(k)))
 
-    # This is definitely not the best algorithm. In the unramified, non-index-divisor
-    # case, computing powers of `P` is trivial. However, in the other (likely important)
-    # cases, it is likely worthwhile to see if computing powers is also easy.
+        y = underdetermined_solve_first(A,b)
 
-    # To find the Conway generator
-    BO = basis(max_order)
+        # This is the lift of the generator of the Qadic subfield of the completion.
+        return sum([a*b for (a,b) in zip(BO,lift(y))])
+    end
 
-    A = matrix(coeffs.(res.(BO)))
-    b = matrix(coeffs(gen(k)))
-    nu,N = nullspace(hcat(A,-b))
-    y = N[:,size(N,2)]  #TODO: This is really dodgy...
+    delta = conway_gen_lift()
+    display(delta)    
+    delta_p = f==1 ? Kp_unram(1) : gen(Kp_unram)
 
-    # This is the lift of the generator of the Qadic subfield of the completion.
-    delta = sum([a*b for (a,b) in zip(BO,lift(y))])
-
-    
+    # Construct the integer matrix encoding coordinates with respect to pi, delta modulo P^N.
+    # Basis elements for the local field and the ideal P^prec
+    BKp = [pi^i*delta^j for j=0:f-1 for i=0:e-1]
     BPn = basis(P^prec)
-    M = hcat(matrix([coordinates(pi^i*delta^j) for j=0:f-1 for i=0:e]), matrix(coordinates.(BPn)))
-    nu, N = nullspace(M)
+    local_basis_lift = hcat(matrix(coordinates.(BKp)), matrix(coordinates.(BPn)))
 
-    RX,X = PolynomialRing(Kp_unram,"X")
+    function construct_defining_polynomial()
+        N = underdetermined_solve_first(local_basis_lift, matrix([coordinates(pi^e)]))
+        RX,X = PolynomialRing(Kp_unram,"X")
+        
+        return X^e + sum(X^i*delta_p^j * N[i*f + j + 1] for j=0:f-1 for i=0:e-1 )
+    end
+
+    ##################################################
+    # Build the completion structure.
+    g = construct_defining_polynomial()
+    display(g)
+    Kp, Y = EisensteinField(g,"_\$")
+
+    ##################################################
+    # Compute the maps
     
-    # TODO: Also very dodgy...
-    delta_p = f==1 ? 1 : gen(Kp_unram)
-    g =  sum(X^i*delta_p^j * Kp_unram(N[i*f + j + 1, size(N,2)]) for j=0:f-1 for i=0:e )
+    function image_of_nf_gen(a)
+        avec = matrix(FlintZZ, length(coeffs(a)), 1, coeffs(a))        
+        N = underdetermined_solve_first(local_basis_lift,avec)
 
-    # Build the completion.
-    Kp, y = EisensteinField(g,"_\$")
+        return sum(Y^i*delta_p^j * N[i*f + j + 1] for j=0:f-1 for i=0:e-1)
+    end
 
-    
-    # TODO: figure out the description of the generator in terms of pi.
+    img_nf_gen = image_of_nf_gen(a)
+    display(img_nf_gen)
     
     # Construct the forward map, embedding $K$ into its completion.
     function inj(a::nf_elem)
-        return sum(coeffs(a)[j+1]*y^j for j=0:d-1)
+        return sum(coeffs(a)[j+1] * img_nf_gen^j for j=0:d-1)
     end
 
-    # Construct the lifting map
-    # Lift the data from the completion back to K.
+    # Construct the lifting map, from the completion back to $K$.
+    function lif(x::eisf_elem)
+        qadic_coeffs = coeffs(x)
+        return sum(pi^i * delta^j * sym_lift(coeffs(qadic_coeffs[i])[j+1])
+                   for j=0:f-1 for i=0:length(qadic_coeffs)-1 )        
+    end
+
+    return (Kp,inj,lif)
+
+    #= PRECISION SHARPENING LOGIC.
+
     #c = lift_root(f, a, b, p, 10)
     #pc = fmpz(10)
-    function lif(x::eisf_elem)
 
-        qadic_coeffs = coeffs(x)
-
-        # display(coeffs.(qadic_coeffs))
-
-        # display([ [pi^i * delta^j * lift(coeffs(qadic_coeffs[i])[j+1])
-        #            for j=0:f-1 ] for i=0:length(qadic_coeffs)-1 ] )
-        
-        return sum(pi^i * delta^j * lift(coeffs(qadic_coeffs[i])[j+1])
-                   for j=0:f-1 for i=0:length(qadic_coeffs)-1 )
-        
-        #=
         if iszero(x)
             return K(0)
         end
@@ -354,10 +405,7 @@ function new_completion(K::NumField{T} where T, P::NfOrdIdl; prec=10)
         end
         return r#*K(p)^valuation(x)
         =#
-    end
 
-    
-    return (Kp,inj,lif)
     
     # Constructing the lifting map
     # -- preimages of delta, pi needed
