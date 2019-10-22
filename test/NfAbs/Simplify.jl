@@ -14,5 +14,5 @@
 
   K,a = NumberField(x^4-100020001*x^2+100040006000400010, cached = false)
   L, mL = simplify(K)
-  @tet isisomorphic(K, L)[1]
+  @test isisomorphic(K, L)[1]
 end
