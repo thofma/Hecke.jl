@@ -21,7 +21,7 @@ using Random
           ,(43,1),(44,1),(45,1),(46,1),(47,1),(48,1),(50,1)]
 
         @testset "K = Q[√$d]" for (d,h) in classnumbersofquadraticfields
-          @show K, a = NumberField(x^2-d, "a")
+          K, a = NumberField(x^2-d, "a")
           O = maximal_order(K)
           Cl, mCl = Hecke.class_group(O, redo = true)
           U, mU = Hecke.unit_group(O)
@@ -40,7 +40,7 @@ using Random
       end
 
       @testset "x^3-3*x-1" begin
-        @show f = x^3 - 3*x - 1
+        f = x^3 - 3*x - 1
         K, a = NumberField(f, "a")
         O = maximal_order(K)
         Cl, mCl = Hecke.class_group(O, redo = true)
@@ -59,7 +59,7 @@ using Random
       end
 
       @testset "29th cyclotomic polynomial" begin
-        @show phi29 = x^28+x^27+x^26+x^25+x^24+x^23+x^22+x^21+x^20+x^19+x^18+x^17+x^16+x^15+x^14+x^13+x^12+x^11+x^10+x^9+x^8+x^7+x^6+x^5+x^4+x^3+x^2+x+1
+        phi29 = x^28+x^27+x^26+x^25+x^24+x^23+x^22+x^21+x^20+x^19+x^18+x^17+x^16+x^15+x^14+x^13+x^12+x^11+x^10+x^9+x^8+x^7+x^6+x^5+x^4+x^3+x^2+x+1
         K, a = NumberField(phi29, "a")
         O = maximal_order(K)
         Cl, mCl = Hecke.class_group(O)
@@ -97,7 +97,7 @@ using Random
     AF = ArbField(20)
 
     @testset "K = Q" begin
-      @show K, a = NumberField(x, "a")
+      K, a = NumberField(x, "a")
       O = maximal_order(K)
       
       Cl, mCl = Hecke.class_group(O, redo = true)
@@ -106,7 +106,7 @@ using Random
     end
 
     @testset "K = Q[√2]" begin
-      @show K, a = NumberField(x^2-2, "a")
+      K, a = NumberField(x^2-2, "a")
       O = maximal_order(K)
 
       Cl, mCl = Hecke.class_group(O, redo = true)
@@ -139,7 +139,7 @@ using Random
     end
 
     @testset "K = Q[x]/(f), f = x^3 - 2" begin
-      @show K, a = NumberField(x^2 - 3, "a")
+      K, a = NumberField(x^2 - 3, "a")
       O = maximal_order(K)
       Cl, mCl = Hecke.class_group(O, redo = true)
       UU, mU = Hecke.unit_group(O)
@@ -148,7 +148,7 @@ using Random
     end
 
     @testset "f = Q[x]/(f), f = x^5 - 11^2 * 7" begin
-      @show K, a = NumberField(x^5 - 11^2 * 7, "a")
+      K, a = NumberField(x^5 - 11^2 * 7, "a")
       O = maximal_order(K)
       Cl, mCl = Hecke.class_group(O, redo = true)
       UU, mU = Hecke.unit_group(O)
@@ -180,7 +180,7 @@ using Random
     end
     
     @testset "Cyclotomic Field 13" begin
-      @show K, a = cyclotomic_field(13, cached = false)
+      K, a = cyclotomic_field(13, cached = false)
       O = maximal_order(K)
       Cl, mCl = Hecke.class_group(O, redo = true)
       UU, mU = Hecke.unit_group(O)
@@ -208,16 +208,11 @@ using Random
     end
     
     @testset "f = Q[x]/(f), f = x^18 + 18*x^16 + 135*x^14 + 192*x^12 - 2961*x^10 - 17334*x^8+ 20361*x^6 +  315108*x^4 + 514944*x^2 + 123904" begin
-      @show K, a = NumberField(x^18 + 18*x^16 + 135*x^14 + 192*x^12 - 2961*x^10 - 17334*x^8+ 20361*x^6 +  315108*x^4 + 514944*x^2 + 123904, "a")
+      K, a = NumberField(x^18 + 18*x^16 + 135*x^14 + 192*x^12 - 2961*x^10 - 17334*x^8+ 20361*x^6 +  315108*x^4 + 514944*x^2 + 123904, "a")
       O = maximal_order(K)
-      if haskey(ENV, "CI") && ENV["CI"] == "true"
-        set_verbose_level(:ClassGroup, 1)
-        set_verbose_level(:UnitGroup, 1)
-      end
 
       Cl, mCl = Hecke.class_group(O, redo = true)
       UU, mU = Hecke.unit_group(O)
-      @show "doneee"
 
       @test order(Cl)== 36
       
@@ -226,18 +221,13 @@ using Random
 
       Cl, mCl = Hecke.class_group(O, redo = true, do_lll = false)
       UU, mU = Hecke.unit_group(O)
-      @show "doneeee2"
 
-      if haskey(ENV, "CI") && ENV["CI"] == "true"
-        set_verbose_level(:ClassGroup, 0)
-        set_verbose_level(:UnitGroup, 0)
-      end
       @test order(Cl)== 36
     end
     
     @testset "S3 field" begin
       Qx, x = PolynomialRing(FlintQQ, "x")
-      @show f = x^6-24*x^4+157*x^2-162
+      f = x^6-24*x^4+157*x^2-162
       K, a = NumberField(f)
       OK = maximal_order(K)
       OK = lll(OK)
