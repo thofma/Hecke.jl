@@ -228,6 +228,13 @@ function saturate!(d::Hecke.ClassGrpCtx, U::Hecke.UnitGrpCtx, n::Int, stable = 3
       end
       
       decom = Dict((c.FB.ideals[k], v) for (k,v) = fac_a)
+
+      #for (k, v) in a.fac
+      #  if iszero(v)
+      #    delete!(a.fac, k)
+      #  end
+      #end
+
       fl, x = ispower(a, n, decom = decom)
 
       if fl
