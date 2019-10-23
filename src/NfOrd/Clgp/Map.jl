@@ -324,10 +324,14 @@ end
 
 mutable struct MapClassGrp <: Map{GrpAbFinGen, NfOrdIdlSet, HeckeMap, MapClassGrp}
   header::MapHeader{GrpAbFinGen, NfOrdIdlSet}
+  
+  quo::Int
   princ_gens::Array{Tuple{FacElem{NfOrdIdl,NfOrdIdlSet}, FacElem{nf_elem, AnticNumberField}},1}
   small_gens::Vector{NfOrdIdl}
   function MapClassGrp()
-    return new()
+    mp = new()
+    mp.quo = -1
+    return mp
   end
 end
 
@@ -355,7 +359,6 @@ function class_group(c::ClassGrpCtx, O::NfOrd = order(c); redo::Bool = false)
       return C, mC
     end
   end  
-  
   C = class_group_grp(c, redo = redo)
   r = MapClassGrp()
   
@@ -988,10 +991,22 @@ Returns a class group map such that the representatives for every classes are co
 $lp$ is the factorization of $m$. 
 """
 function find_coprime_representatives(mC::MapClassGrp, m::NfOrdIdl, lp::Dict{NfOrdIdl, Int} = factor(m))
- 
+  C = domain(mC)
   O = order(m)
   K = nf(O)
-  C = domain(mC)
+  if isone(order(C))
+    local exp1
+    let C = C
+      function exp1(a::GrpAbFinGenElem)  
+        e = Dict{NfOrdIdl,fmpz}()
+        e[ideal(O,1)]=1
+        return FacElem(e)
+      end
+    end
+    return exp1, nf_elem[K(1)]
+  end
+
+  
   L = Array{NfOrdIdl,1}(undef, ngens(C))
   el = Array{nf_elem,1}(undef, ngens(C))
   ppp = 1.0

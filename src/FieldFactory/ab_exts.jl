@@ -302,6 +302,7 @@ function conductors(O::NfOrd, a::Array{Int, 1}, bound::fmpz, tame::Bool=false)
   list = conductors_tame(O, expo, bound_tame)
 
   if tame
+    reverse!(list)
     return Tuple{Int, Dict{NfOrdIdl, Int}}[(x[1], Dict{NfOrdIdl, Int}()) for x in list]  
   end
   #
@@ -391,6 +392,7 @@ function conductors(O::NfOrd, a::Array{Int, 1}, bound::fmpz, tame::Bool=false)
       push!(final_list, (el*q,d))
     end
   end
+  reverse!(final_list)
   return final_list
   
 end
@@ -936,12 +938,20 @@ function _quad_ext(bound::Int, only_real::Bool = false)
   fields_list = Array{Tuple{AnticNumberField, Vector{NfToNfMor}, Vector{NfToNfMor}}, 1}(undef, length(final_list))
   for i = 1:length(final_list)
     if mod(final_list[i],4) != 1
-      L, gL = number_field(x^2-final_list[i], cached=false, check = false)
+      cp = Vector{fmpz}(undef, 3)
+      cp[1] = -final_list[i]
+      cp[2] = 0
+      cp[3] = 1
+      L, gL = number_field(Qx(cp), cached=false, check = false)
       auts = NfToNfMor[hom(L, L, -gL, check = false)]
       emb = NfToNfMor[hom(K, L, one(L), check = false)]
       fields_list[i] = (L, auts, emb)
     else
-      L, gL = number_field(x^2-x+divexact(1-final_list[i], 4), cached=false, check = false)
+      cp = Vector{fmpz}(undef, 3)
+      cp[1] = divexact(1-final_list[i], 4)
+      cp[2] = -1
+      cp[3] = 1
+      L, gL = number_field(Qx(cp), cached=false, check = false)
       auts = NfToNfMor[hom(L, L, 1-gL, check = false)]
       emb = NfToNfMor[hom(K, L, one(L), check = false)]
       fields_list[i] = (L, auts, emb)

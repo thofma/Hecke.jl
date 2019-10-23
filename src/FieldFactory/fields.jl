@@ -223,6 +223,7 @@ end
 #  final computation of the maximal order and automorphisms
 #
 ################################################################################
+
 function _from_relative_to_abs_with_embedding(L::Hecke.NfRelNS{T}, autL::Array{Hecke.NfRelNSToNfRelNSMor{T}, 1}) where T
   
   S, mS = simple_extension(L)

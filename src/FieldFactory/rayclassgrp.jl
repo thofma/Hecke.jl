@@ -119,8 +119,15 @@ function ray_class_group_quo(m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Dict{NfOrd
       end
     end
     QQ = PP^ee
+    
     push!(powers, (PP, QQ))
-    push!(quo_rings, quo(O, QQ))
+    QQQ, mQQQ = quo(O, QQ)
+    if ee == 1
+      QQQ.factor = dtame
+    else
+      QQQ.factor = dwild
+    end
+    push!(quo_rings, (QQQ, mQQQ))
     push!(groups_and_maps, _mult_grp_mod_n(quo_rings[end][1], dtame, dwild, n_quo))
   end
   

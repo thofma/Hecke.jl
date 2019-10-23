@@ -81,6 +81,12 @@ function intersect_prime(f::Map, P::NfOrdIdl, Ok::NfOrd = maximal_order(domain(f
   
   @assert isprime(P)
   p = minimum(P)
+  if isone(degree(Ok))
+    res = ideal(Ok, p)
+    res.is_prime = 1
+    res.splitting_type = (1, 1)
+    return res
+  end
   k = domain(f)
   K = codomain(f)
   OK = maximal_order(K)
@@ -133,7 +139,6 @@ the maximal order of $K$ above.
 The ideals will belong to $Z_K$ which defaults to "the" maximal order of $K$.
 """
 function prime_decomposition(f::Map, p::NfOrdIdl, ZK::NfOrd = maximal_order(codomain(f)))
-  
   @assert p.is_prime == 1
   k = domain(f)
   K = codomain(f)
