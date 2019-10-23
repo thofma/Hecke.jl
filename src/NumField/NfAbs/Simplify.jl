@@ -90,11 +90,12 @@ end
  # of a block is the degree K:Q(a)
  # a is primitive iff the block system has length n
 function _block(a::nf_elem, R::Array{fq_nmod, 1}, ap::fq_nmod_poly)
+  # TODO:
+  # Maybe this _tmp business has to be moved out of this function too
   _R = GF(Int(characteristic(base_ring(ap))), cached = false)
   _Ry, _ = PolynomialRing(_R, "y", cached = false)
   _tmp = _Ry()
   nf_elem_to_gfp_poly!(_tmp, a, false) # ignore denominator
-  set_length!(ap, length(_tmp))
   for i in 0:(length(_tmp) - 1)
     setcoeff!(ap, i, base_ring(ap)(_get_coeff_raw(_tmp, i)))
   end

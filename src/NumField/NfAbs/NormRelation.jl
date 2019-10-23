@@ -36,6 +36,7 @@ mutable struct NormRelation{T}
   embed_cache::Dict{Tuple{Int, Int}, Dict{nf_elem, nf_elem}}
   mor_cache::Dict{NfToNfMor, Dict{nf_elem, nf_elem}}
   induced::Dict{NfToNfMor, Perm{Int}}
+  embed_cache_triv::Vector{Dict{nf_elem, nf_elem}}
 
   function NormRelation{T}() where {T}
     z = new{T}()
@@ -80,15 +81,10 @@ function _norm_relation_setup_abelian(K::AnticNumberField; small_degree::Bool = 
   z.denominator = den
   z.ispure = false
 
-  println("Computing the subfields ... ")
- 
   for i in 1:n
-    println("$i/$n")
-    @time F, mF = fixed_field(K, NfToNfMor[AtoG[f] for f in ls[i][2]])
-    println("I start simplifying")
-    @time maximal_order(F)
-    @time S, mS = simplify(F)
-    println("DONE")
+    F, mF = fixed_field(K, NfToNfMor[AtoG[f] for f in ls[i][2]])
+    maximal_order(F)
+    S, mS = simplify(F)
     L = S
     mL = mS * mF
     z.subfields[i] = L, mL
@@ -118,18 +114,14 @@ function _norm_relation_setup_abelian(K::AnticNumberField; small_degree::Bool = 
 end
 
 function _norm_relation_setup_generic(K::AnticNumberField; small_degree::Bool = true, pure::Bool = false, target_den::fmpz = zero(fmpz))
-  println("Compute automorphisms ...")
   A = automorphisms(K)
-  println("Compute group table ...")
   G, AtoG, GtoA = generic_group(A, *)
-  println("Compute the abstract norm relation")
   if iszero(target_den)
     b, den, ls = _has_norm_relation_abstract(G, [f for f in subgroups(G, conjugacy_classes = true) if order(f[1]) > 1], pure = pure)
   else
     b, den, ls = _has_norm_relation_abstract(G, [f for f in subgroups(G, conjugacy_classes = true) if order(f[1]) > 1], target_den = target_den, pure = pure)
   end
 
-  println("done")
   @assert b
   n = length(ls)
 
@@ -138,14 +130,15 @@ function _norm_relation_setup_generic(K::AnticNumberField; small_degree::Bool = 
   z.subfields = Vector{Tuple{AnticNumberField, NfToNfMor}}(undef, n)
   z.denominator = den
   z.ispure = pure
+  z.embed_cache_triv = Vector{Dict{nf_elem, nf_elem}}(undef, n)
+  for i in 1:n
+    z.embed_cache_triv[i] = Dict{nf_elem, nf_elem}()
+  end
  
   for i in 1:n
-    println("Computing fixed fields ...")
     F, mF = fixed_field(K, NfToNfMor[GtoA[f] for f in ls[i][1]])
-    println("Simplifying ... $F")
     S, mS = simplify(F, cached = true)
     L = S
-    println("done")
     mL = mS * mF
     z.subfields[i] = L, mL
   end
@@ -741,7 +734,6 @@ function _has_norm_relation_abstract(G::GrpGen, H::Vector{Tuple{GrpGen, GrpGenTo
   n = Int(order(G))
 
   if pure
-
     if iszero(target_den)
       m = zero_matrix(FlintQQ, length(H), n)
       for i in 1:length(H)
@@ -754,7 +746,6 @@ function _has_norm_relation_abstract(G::GrpGen, H::Vector{Tuple{GrpGen, GrpGenTo
 
       b, v, K = can_solve_with_kernel(m, onee, side = :left)
     else
-      @show "here"
       m = zero_matrix(FlintZZ, length(H), n)
       for i in 1:length(H)
         for j in 1:n
@@ -1049,4 +1040,181 @@ function has_useful_generalized_norm_relation(G)
     end
   end
   return false
+end
+
+################################################################################
+#
+#  Redo the S-unit computation for Brauer norm relation
+#
+################################################################################
+
+function _embed(N::NormRelation, i::Int, a::nf_elem)
+  b = get(N.embed_cache_triv[i], a, nothing)
+  if b === nothing
+    _, mk = subfield(N, i)
+    c = mk(a)
+    N.embed_cache_triv[i][a] = c
+    return c
+  else
+    return b
+  end
+end
+
+# pure
+
+function _add_sunits_from_brauer_relation!(c, UZK, N)
+  cp = sort!(collect(Set(minimum(x) for x = c.FB.ideals)))
+  K = N.K
+  for i = 1:length(N)
+    k, mk = subfield(N, i)
+    zk = maximal_order(k)
+    zk = lll(zk)
+    class_group(zk, redo = false, use_aut = true)
+    lpk = NfOrdIdl[ P[1] for p in cp for P = prime_decomposition(zk, p)]
+    @assert length(lpk) > 0
+    Szk, mS = Hecke.sunit_mod_units_group_fac_elem(lpk)
+
+    for j in 1:length(N.coefficients_gen[i])
+      z = induce_action_just_from_subfield(N, i, lpk, c.FB)
+
+      for l=1:ngens(Szk)
+        u = mS(Szk[l])  #do compact rep here???
+        valofnewelement = mul(mS.valuations[l], z)
+        Hecke.class_group_add_relation(c, FacElem(Dict((_embed(N, i, x), v) for (x,v) = u.fac)), valofnewelement)
+      end
+    end
+
+    U, mU = unit_group_fac_elem(zk)
+    for j=2:ngens(U) # I cannot add a torsion unit. He will hang forever.
+      u = mU(U[j])
+      Hecke._add_unit(UZK, FacElem(Dict((_embed(N, i, x), v) for (x,v) = u.fac)))
+    end
+    UZK.units = Hecke.reduce(UZK.units, UZK.tors_prec)
+  end
+  return nothing
+end
+
+function induce_action_just_from_subfield(N::NormRelation, i, s, FB)
+  S = FB.ideals
+  ZK = order(S[1])
+
+  z = zero_matrix(SMat, FlintZZ, 0, length(S))
+
+  mk = embedding(N, i)
+  zk = order(s[1])
+
+  @assert mod(degree(ZK), degree(zk)) == 0
+  reldeg = divexact(degree(ZK), degree(zk))
+
+  v = Tuple{Int, fmpz}[]
+  for l in 1:length(s)
+    P = s[l]
+    genofsl = elem_in_nf(_embed(N, i, P.gen_two.elem_in_nf))
+    pmin = minimum(P, copy = false)
+    # Compute the number of ideals
+    # Assume that L/K and L/Q are normal
+    rele = divexact(ramification_index((FB.fb[pmin].lp)[1][2]), ramification_index(P))
+    relf = divexact(degree((FB.fb[pmin].lp)[1][2]), degree(P))
+    @assert mod(reldeg, rele * relf) == 0
+    numb_ideal = divexact(reldeg, rele * relf)
+    found = 0
+    for k in 1:length(S)
+      Q = S[k]
+      if minimum(Q, copy = false) == pmin
+        ant = anti_uniformizer(Q)
+        if (genofsl * ant) in ZK
+          found += 1
+          @assert mod(ramification_index(Q), ramification_index(s[l])) == 0
+          push!(v, (k, divexact(ramification_index(Q), ramification_index(s[l]))))
+        end
+      end
+      if found == numb_ideal
+        break
+      end
+    end
+    sort!(v, by = x -> x[1])
+    push!(z, sparse_row(FlintZZ, v))
+  end
+  return z
+end
+
+function sunit_group_fac_elem_quo_via_brauer(K::AnticNumberField, S, n::Int)
+  N = _norm_relation_setup_generic(K, pure = true, small_degree = true); 
+  return _sunit_group_fac_elem_quo_via_brauer(N, S, n)
+end
+
+function _sunit_group_fac_elem_quo_via_brauer(N::NormRelation, S, n::Int)
+  O = order(S[1])
+
+  if gcd(N.denominator, n) != 1
+    throw(NotImplemented())
+  end
+
+  K = N.K
+
+  c, UZK = Hecke._setup_for_norm_relation_fun(K, S)
+  Hecke._add_sunits_from_brauer_relation!(c, UZK, N)
+  sunitsmodunits = c.R_gen # These are generators for the S-units (mod units, mod n)
+  unitsmodtorsion = UZK.units # These are generators for the units (mod n)
+  T, mT = torsion_unit_group(O)
+  Q, mQ = quo(T, n)
+  @assert issnf(Q)
+  @assert ngens(Q) == 1
+  m = order(Q)
+
+  if !isone(m)
+    tomodn = FacElem(elem_in_nf(mT(mQ\Q[1])))
+    res_group = DiagonalGroup(append!(fmpz[m], [fmpz(n) for i in 1:(length(sunitsmodunits) + length(unitsmodtorsion))]))
+
+    exp = function(a::GrpAbFinGenElem)
+      @assert parent(a) == res_group
+      zz = FacElem(convert(Vector{nf_elem_or_fac_elem}, unitsmodtorsion), fmpz[1 + a[i] for i in 1:length(unitsmodtorsion)])
+      z = mul!(zz, zz, tomodn)
+      zzz = FacElem(convert(Vector{nf_elem_or_fac_elem}, sunitsmodunits), fmpz[a[1 + length(unitsmodtorsion) + i] for i in 1:length(sunitsmodunits)])
+      mul!(z, z, zzz)
+      
+      for (k, v) in z.fac
+        if iszero(v)
+          delete!(z.fac, k)
+        end
+      end
+
+      return z
+    end
+
+    disclog = function(a)
+      throw(NotImplemented())
+    end
+  else # torsion part is one
+    res_group = DiagonalGroup([fmpz(n) for i in 1:(length(sunitsmodunits) + length(unitsmodtorsion))])
+
+    exp = function(a::GrpAbFinGenElem)
+      @assert parent(a) == res_group
+      # remove zeros
+      z = FacElem(convert(Vector{nf_elem_or_fac_elem}, unitsmodtorsion), fmpz[a[i] for i in 1:length(unitsmodtorsion)])
+      # This is madness
+      zz = FacElem(convert(Vector{nf_elem_or_fac_elem}, sunitsmodunits), fmpz[a[length(unitsmodtorsion) + i] for i in 1:length(sunitsmodunits)])
+      z = mul!(z, z, zz)
+
+      for (k, v) in z.fac
+        if iszero(v)
+          delete!(z.fac, k)
+        end
+      end
+
+      return z
+
+    end
+
+    disclog = function(a)
+      throw(NotImplemented())
+    end
+  end
+
+  r = MapSUnitGrpFacElem{typeof(res_group)}()
+  r.idl = S
+  r.isquotientmap = n
+
+  r.header = MapHeader(res_group, FacElemMon(nf(O)), exp, disclog)
+  return res_group, r
 end

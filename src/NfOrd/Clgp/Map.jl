@@ -883,9 +883,12 @@ end
 mutable struct MapSUnitGrpFacElem{T} <: Map{T, FacElemMon{AnticNumberField}, HeckeMap, MapSUnitGrpFacElem}
   header::MapHeader
   idl::Array{NfOrdIdl, 1}
+  isquotientmap::Int
 
   function MapSUnitGrpFacElem{T}() where {T}
-    return new{T}()
+    z = new{T}()
+    z.isquotientmap = -1
+    return z
   end
 end
 
@@ -893,7 +896,10 @@ function show(io::IO, mC::MapSUnitGrpFacElem)
   @show_name(io, mC)
   print(io, "SUnits (in factored form) map of ")
   show(IOContext(io, :compact => true), codomain(mC))
-  println(io, " for $(mC.idl)")
+  println(io, " for S of length ", length(mC.idl))
+  if mC.isquotientmap != -1
+    println(io, " This is the quotient modulo $(mC.isquotientmap)")
+  end
 end
 
 @doc Markdown.doc"""
