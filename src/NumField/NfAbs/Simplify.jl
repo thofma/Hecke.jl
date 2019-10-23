@@ -30,7 +30,7 @@ function simplify(K::AnticNumberField; canonical::Bool = false, cached = false)
       ZK = OK.lllO
     else
       prec = 100 + 25*div(degree(K), 3) + Int(round(log(abs(discriminant(OK)))))
-      ZK = _lll_for_simplify(OK, prec = prec)[2]
+      ZK = _lll_for_simplify(OK, prec = prec)
     end
     @vtime :Simplify 3 a, f = _simplify(ZK)
   end
@@ -353,7 +353,7 @@ function _lll_for_simplify(M::NfOrd; prec = 100)
       O1.gen_index = M.gen_index
     end
     M.lllO = O1
-    return true, O1
+    return O1
   end
 
   if degree(K) == 2 && discriminant(M) < 0
@@ -373,57 +373,65 @@ function _lll_for_simplify(M::NfOrd; prec = 100)
       O1.gen_index = M.gen_index
     end
     M.lllO = O1
-    return true, O1
+    return O1
   end
 
   n = degree(M)
   prec = max(prec, 10*n)
-  local d::fmpz_mat
+  local g
   while true
-    try
-      d = minkowski_gram_mat_scaled(M, prec)
-      break
-    catch e
-      prec = prec*2
+    local d::fmpz_mat
+    while true
+      try
+        d = minkowski_gram_mat_scaled(M, prec)
+        break
+      catch e
+        prec = prec*2
+      end
     end
-  end
-  g = zero_matrix(FlintZZ, n, n)
+    g = zero_matrix(FlintZZ, n, n)
+    
+    prec = div(prec, 2)
+    shift!(d, -prec)  #TODO: remove?
+
+    for i=1:n
+      fmpz_mat_entry_add_ui!(d, i, i, UInt(nrows(d)))
+    end
   
-  prec = div(prec, 2)
-  shift!(d, -prec)  #TODO: remove?
+    ctx = Nemo.lll_ctx(0.6, 0.51, :gram)
 
-  for i=1:n
-    fmpz_mat_entry_add_ui!(d, i, i, UInt(nrows(d)))
-  end
-
-  ctx = Nemo.lll_ctx(0.99, 0.51, :gram)
-
-  ccall((:fmpz_mat_one, :libflint), Nothing, (Ref{fmpz_mat}, ), g)
-  ccall((:fmpz_lll, :libflint), Nothing, (Ref{fmpz_mat}, Ref{fmpz_mat}, Ref{Nemo.lll_ctx}), d, g, ctx)
+    ccall((:fmpz_mat_one, :libflint), Nothing, (Ref{fmpz_mat}, ), g)
+    ccall((:fmpz_lll, :libflint), Nothing, (Ref{fmpz_mat}, Ref{fmpz_mat}, Ref{Nemo.lll_ctx}), d, g, ctx)
  
-  fl = true
-  ## test if entries in l are small enough, if not: increase precision
-  ## or signal that prec was too low
+    fl = true
+    ## test if entries in l are small enough, if not: increase precision
+    ## or signal that prec was too low
 
-  if nbits(maximum(abs, g)) >  div(prec, 2)
-    fl = false
-  else
-    ## lattice has lattice disc = order_disc * norm^2
-    ## lll needs to yield a basis sth
-    ## l[1,1] = |b_i|^2 <= 2^((n-1)/2) disc^(1/n)  
-    ## and prod(l[i,i]) <= 2^(n(n-1)/2) disc
-    n = nrows(d)
-    disc = abs(discriminant(M))
-    di = root(disc, n)+1
-    di *= fmpz(2)^(div(n+1,2)) * fmpz(2)^prec
-
-    if cmpindex(d, 1, 1, di) > 0 
+    if nbits(maximum(abs, g)) >  div(prec, 2)
       fl = false
     else
-      pr = prod_diag(d)
-      if pr > fmpz(2)^(div(n*(n-1), 2)) * disc * fmpz(2)^(n*prec)
+      ## lattice has lattice disc = order_disc * norm^2
+      ## lll needs to yield a basis sth
+      ## l[1,1] = |b_i|^2 <= 2^((n-1)/2) disc^(1/n)  
+      ## and prod(l[i,i]) <= 2^(n(n-1)/2) disc
+      n = nrows(d)
+      disc = abs(discriminant(M))
+      di = root(disc, n)+1
+      di *= fmpz(2)^(div(n+1,2)) * fmpz(2)^prec
+  
+      if cmpindex(d, 1, 1, di) > 0 
         fl = false
+      else
+        pr = prod_diag(d)
+        if pr > fmpz(2)^(div(n*(n-1), 2)) * disc * fmpz(2)^(n*prec)
+          fl = false
+        end
       end
+    end
+    if !fl
+      prec = prec*4
+    else
+      break
     end
   end
   On = NfOrd(K, g*basis_matrix(M, copy = false))
@@ -437,8 +445,6 @@ function _lll_for_simplify(M::NfOrd; prec = 100)
   if isdefined(M, :gen_index)
     On.gen_index = M.gen_index
   end
-  if fl
-    M.lllO = On
-  end
-  return fl, On
+  M.lllO = On
+  return On
 end
