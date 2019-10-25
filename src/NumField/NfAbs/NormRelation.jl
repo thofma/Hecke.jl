@@ -4,6 +4,8 @@
 #
 ################################################################################
 
+add_verbose_scope(:NormRelation)
+
 # Example
 # 
 # julia> f = x^8+8*x^6+64*x^4-192*x^2+576
@@ -1067,13 +1069,18 @@ function _add_sunits_from_brauer_relation!(c, UZK, N)
   K = N.K
   for i = 1:length(N)
     k, mk = subfield(N, i)
+    @vprint :NormRelation 1 "Looking at the subfield $k \n"
+    @vprint :NormRelation 1 "Computing lll basis of maximal order ...\n"
     zk = maximal_order(k)
     zk = lll(zk)
+    @vprint :NormRelation 1 "Computing class group ... \n"
     class_group(zk, redo = false, use_aut = true)
     lpk = NfOrdIdl[ P[1] for p in cp for P = prime_decomposition(zk, p)]
     @assert length(lpk) > 0
+    @vprint :NormRelation 1 "Computing sunit group for set of size $(length(lpk)) ... \n"
     Szk, mS = Hecke.sunit_mod_units_group_fac_elem(lpk)
 
+    @vprint :NormRelation 1 "Coercing the sunits into the big field ...\n"
     for j in 1:length(N.coefficients_gen[i])
       z = induce_action_just_from_subfield(N, i, lpk, c.FB)
 
@@ -1084,6 +1091,7 @@ function _add_sunits_from_brauer_relation!(c, UZK, N)
       end
     end
 
+    @vprint :NormRelation 1 "Coercing the units into the big field ... \n"
     U, mU = unit_group_fac_elem(zk)
     for j=2:ngens(U) # I cannot add a torsion unit. He will hang forever.
       u = mU(U[j])
@@ -1139,21 +1147,36 @@ function induce_action_just_from_subfield(N::NormRelation, i, s, FB)
 end
 
 function sunit_group_fac_elem_quo_via_brauer(K::AnticNumberField, S, n::Int)
+  @vprint :NormRelation 1 "Setting up the norm relation context ... \n"
   N = _norm_relation_setup_generic(K, pure = true, small_degree = true); 
   return _sunit_group_fac_elem_quo_via_brauer(N, S, n)
 end
 
-function _sunit_group_fac_elem_quo_via_brauer(N::NormRelation, S, n::Int)
+function _sunit_group_fac_elem_quo_via_brauer(N::NormRelation, S, n::Int, debug = false)
   O = order(S[1])
-
-  if gcd(N.denominator, n) != 1
-    throw(NotImplemented())
-  end
 
   K = N.K
 
   c, UZK = Hecke._setup_for_norm_relation_fun(K, S)
   Hecke._add_sunits_from_brauer_relation!(c, UZK, N)
+
+  if debug
+    return c, UZK
+  end
+
+  if gcd(index(N), n) != 1
+    # I need to saturate
+    @vprint :NormRelation 1 "Saturating at "
+    for (p, e) in factor(index(N))
+      @vprint :NormRelation 1 "$p "
+      b = Hecke.saturate!(c, UZK, Int(p))
+      while b
+        b = Hecke.saturate!(c, UZK, Int(p))
+      end
+    end
+  end
+  @vprint :NormRelation 1 "\n"
+
   sunitsmodunits = c.R_gen # These are generators for the S-units (mod units, mod n)
   unitsmodtorsion = UZK.units # These are generators for the units (mod n)
   T, mT = torsion_unit_group(O)
@@ -1190,7 +1213,6 @@ function _sunit_group_fac_elem_quo_via_brauer(N::NormRelation, S, n::Int)
 
     exp = function(a::GrpAbFinGenElem)
       @assert parent(a) == res_group
-      # remove zeros
       z = FacElem(convert(Vector{nf_elem_or_fac_elem}, unitsmodtorsion), fmpz[a[i] for i in 1:length(unitsmodtorsion)])
       # This is madness
       zz = FacElem(convert(Vector{nf_elem_or_fac_elem}, sunitsmodunits), fmpz[a[length(unitsmodtorsion) + i] for i in 1:length(sunitsmodunits)])
@@ -1203,7 +1225,6 @@ function _sunit_group_fac_elem_quo_via_brauer(N::NormRelation, S, n::Int)
       end
 
       return z
-
     end
 
     disclog = function(a)
