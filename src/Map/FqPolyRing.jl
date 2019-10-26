@@ -12,10 +12,11 @@ mutable struct FqPolyRingToFqMor{S, T, PolyType, MatType} <: Map{S, T, HeckeMap,
   mat_inv::MatType
 
   function FqPolyRingToFqMor{S, T, PolyType, MatType}(h::PolyType) where {
-           S <: Union{ FqNmodPolyRing, FqPolyRing },
-           T <: Union{ FqNmodFiniteField, FqFiniteField },
-           PolyType <: Union{ fq_nmod_poly, fq_poly },
-           MatType <: Union{ gfp_mat, Generic.MatSpaceElem{Generic.ResF{fmpz}} }
+           S, T, PolyType, MatType
+           #S <: Union{ FqNmodPolyRing, FqPolyRing },
+           #T <: Union{ FqNmodFiniteField, FqFiniteField },
+           #PolyType <: Union{ fq_nmod_poly, fq_poly },
+           #MatType <: Union{ gfp_mat, Generic.MatSpaceElem{Generic.ResF{fmpz}} }
     }
 
     z = new{S, T, PolyType, MatType}()
@@ -134,9 +135,14 @@ mutable struct FqPolyRingToFqMor{S, T, PolyType, MatType} <: Map{S, T, HeckeMap,
   end
 end
 
-
-function FqPolyRingToFqMor(h::fq_poly)
-  return FqPolyRingToFqMor{FqPolyRing, FqFiniteField, fq_poly, Generic.MatSpaceElem{Generic.ResF{fmpz}}}(h)
+if Nemo.version() > v"0.15.1"
+  function FqPolyRingToFqMor(h::fq_poly)
+    return FqPolyRingToFqMor{FqPolyRing, FqFiniteField, fq_poly, Generic.MatSpaceElem{Nemo.gfp_fmpz_elem}}(h)
+  end
+else
+  function FqPolyRingToFqMor(h::fq_poly)
+    return FqPolyRingToFqMor{FqPolyRing, FqFiniteField, fq_poly, Generic.MatSpaceElem{Generic.ResF{fmpz}}}(h)
+  end
 end
 
 function FqPolyRingToFqMor(h::fq_nmod_poly)

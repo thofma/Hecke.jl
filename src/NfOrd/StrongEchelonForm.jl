@@ -326,11 +326,30 @@ function can_make_small(Q::Generic.ResRing{fmpz})
   end
 end
 
+if Nemo.version() > v"0.15.1"
+  function can_make_small(Q::Nemo.FmpzModRing)
+    if nbits(modulus(Q)) < Sys.WORD_SIZE - 1
+      return true
+    else
+      return false
+    end
+  end
+end
+
 function make_small(Q::Generic.ResRing{fmpz})
   R = ResidueRing(FlintZZ, Int(modulus(Q)), cached = false)
   f = (x -> R(x.data)::nmod)
   g = (x -> Q(x.data)::Generic.Res{fmpz})
   return R, f, g
+end
+
+if Nemo.version() > v"0.15.1"
+  function make_small(Q::Nemo.FmpzModRing)
+    R = ResidueRing(FlintZZ, Int(modulus(Q)), cached = false)
+    f = (x -> R(lift(x))::nmod)
+    g = (x -> Q(x.data)::Nemo.fmpz_mod)
+    return R, f, g
+  end
 end
 
 
@@ -475,7 +494,7 @@ function _strong_echelon_form_nonsplit(M)
           forflint[i, j] = f(M[i, j]).data
         end
       end
-      ccall((:fmpz_mat_strong_echelon_form_mod, :libflint), Nothing, (Ref{fmpz_mat}, Ref{fmpz}), forflint, RmodIZ.modulus)
+      ccall((:fmpz_mat_strong_echelon_form_mod, :libflint), Nothing, (Ref{fmpz_mat}, Ref{fmpz}), forflint, modulus(RmodIZ))
       for i in 1:n
         for j in 1:m
           M_cur[i, j] = Q(forflint[i, j])
