@@ -41,16 +41,136 @@ defining_modulus(mR) = mR.defining_modulus
 #
 ################################################################################
 
+function __assure_princ_gen(c::Hecke.ClassGrpCtx{SMat{fmpz}}, nquo::Int)
+  module_trafo_assure(c.M)
+  C = c.dl_data[3]
+  OK = order(c)
+  s = c.dl_data[1]
+  if length(c.dl_data) == 4
+    T = c.dl_data[4]
+  else
+    T = inv(c.dl_data[2])
+    c.dl_data = (s, c.dl_data[2], C, T)
+  end
+  RelHnf = c.M.basis
+  gens = c.FB.ideals
+  rels = vcat(c.R_gen, c.R_rel)
+  trafo = c.M.trafo
+  res = Tuple{FacElem{NfOrdIdl, NfOrdIdlSet}, FacElem{nf_elem, AnticNumberField}}[]
+  diff = ppio(Int(C.snf[end]), nquo)[2]
+  diff_gens = ncols(T) - ngens(C)
+  for i = 1:ngens(C)
+    if nquo != -1 
+      if iscoprime(C.snf[i], nquo)
+        continue
+      end
+      el = diff*sub(T, i+diff_gens:i+diff_gens, 1:ncols(T))
+      ex = Int(ppio(Int(C.snf[i]), nquo)[1])
+    else
+      el = sub(T, i+diff_gens:i+diff_gens, 1:ncols(T))
+      ex = Int(C.snf[i])
+    end
+    els_r = Tuple{Int, fmpz}[] 
+    DI = Dict{NfOrdIdl, fmpz}()
+    for j = 1:ncols(el)
+      if !iszero(el[1, j])
+        add_to_key!(DI, gens[j+s-1], el[1, j])
+        push!(els_r, (j+s-1, ex*el[1, j]))
+      end
+    end
+    r = sparse_row(FlintZZ, els_r)
+    sol, d = solve_ut(RelHnf, r)
+    @assert isone(d)
+    rs = zeros(fmpz, c.M.bas_gens.r + c.M.rel_gens.r)
+
+    for (p,v) in sol
+      rs[p] = v
+    end
+
+    for i in length(trafo):-1:1
+      apply_right!(rs, trafo[i])
+    end
+  
+    e = FacElem(rels, rs)
+    e = reduce_mod_units([e], _get_UnitGrpCtx_of_order(OK))[1]
+    dd = e.fac
+    for i = dd.idxfloor:length(dd.vals)
+      if dd.slots[i] == 0x1 && iszero(dd.vals[i])
+        dd.count -= 1
+        dd.slots[i] = 0x0
+      end
+    end
+    I = FacElem(DI)
+    J, a = reduce_ideal2(I)
+    inv!(a)
+    pow!(a, ex)
+    mul!(e, e, a)
+    push!(res, (FacElem(Dict(J => 1)), e))
+  end
+  return res
+end
+
+
 function _assure_princ_gen(mC::MapClassGrp)  
   if isdefined(mC, :princ_gens)
-    return true
+    return nothing
   end
   C = domain(mC)
-  mC.princ_gens=Array{Tuple{FacElem{NfOrdIdl, NfOrdIdlSet}, FacElem{nf_elem, AnticNumberField}},1}(undef, ngens(C))
-  for i = 1:ngens(C)
-    I = FacElem(Dict(mC(C[i])=> fmpz(1)))
-    pr = principal_gen_fac_elem(I^C.snf[i])
-    mC.princ_gens[i] = (I, pr)
+  OK = order(codomain(mC))
+  K = nf(OK)
+  if order(domain(mC)) == 1
+    res1 = Vector{Tuple{FacElem{NfOrdIdl, NfOrdIdlSet}, FacElem{nf_elem, AnticNumberField}}}()
+    if ngens(domain(mC)) == 1
+      push!(res1, (FacElem(Dict(ideal(OK, 1) => 1)), FacElem(Dict(K(1) => 1))))    
+    end
+    mC.princ_gens = res1
+    return nothing
+  end
+  try 
+    c = _get_ClassGrpCtx_of_order(OK)
+    if !isdefined(c, :dl_data)
+      throw(AccessorNotSetError())
+    end
+    res = __assure_princ_gen(c, mC.quo)
+    @hassert :RayFacElem 1 isconsistent(mC, res)
+    mC.princ_gens = res
+    return nothing
+  catch e
+    if !(isa(e, AccessorNotSetError))
+      rethrow(e)
+    end
+    c = _get_ClassGrpCtx_of_order(OK.lllO)
+    reslll = __assure_princ_gen(c, mC.quo)
+    res = Vector{Tuple{FacElem{NfOrdIdl, NfOrdIdlSet}, FacElem{nf_elem, AnticNumberField}}}(undef, length(reslll))
+    for i = 1:length(res)
+      fe = Dict{NfOrdIdl, fmpz}()
+      for (k, v) in reslll[i][1]
+        fe[IdealSet(OK)(k)] = v
+      end
+      res[i] = (FacElem(fe), reslll[i][2])
+    end
+    @hassert :RayFacElem 1 isconsistent(mC, res)
+    mC.princ_gens = res
+    return nothing
+  end
+end
+
+function isconsistent(mC, res)
+  C = domain(mC)
+  OK = order(codomain(mC))
+  for i = 1:length(res)
+    I = evaluate(res[i][1]).num
+    if mC\I != C[i]
+      @show mC\I
+      @show C[i]
+      @show "wrong representative"
+      return false
+    end
+    e = evaluate(res[i][2])
+    J = ideal(OK, OK(e))
+    if I^Int(C.snf[i]) != J
+      return false
+    end
   end
   return true
 end
@@ -325,6 +445,7 @@ function n_part_class_group(mC::Hecke.MapClassGrp, n::Integer)
     end
     
     mp=Hecke.MapClassGrp()
+    mp.quo = n
     mp.header=Hecke.MapHeader(G, mC.header.codomain, exp1, disclog1)
     mp.princ_gens = Tuple{FacElem{NfOrdIdl, NfOrdIdlSet}, FacElem{nf_elem, AnticNumberField}}[]
     return G, mp
@@ -364,10 +485,11 @@ function n_part_class_group(mC::Hecke.MapClassGrp, n::Integer)
   
   mp=Hecke.MapClassGrp()
   mp.header=Hecke.MapHeader(G, mC.header.codomain, exp2, disclog2)
+  mp.quo = Int(G.snf[end])
   if isdefined(mC, :princ_gens)
     princ_gens = Vector{Tuple{FacElem{NfOrdIdl, NfOrdIdlSet}, FacElem{nf_elem, AnticNumberField}}}(undef, length(vect))
     for i = 1:length(princ_gens)
-      princ_gens[i] = (mC.princ_gens[ind+i-1][1]^diff, mC.princ_gens[ind+i-1][2]^diff)
+      princ_gens[i] = (mC.princ_gens[ind+i-1][1]^diff, mC.princ_gens[ind+i-1][2])
     end
     mp.princ_gens = princ_gens
   end
@@ -490,7 +612,6 @@ function ray_class_group(m::NfOrdIdl, inf_plc::Vector{InfPlc} = Vector{InfPlc}()
     expon = lcm([exponent(x[1]) for x in groups_and_maps])
   end
   
-  
   if n_quo == -1 || iseven(n_quo)
     p = InfPlc[ x for x in inf_plc if isreal(x) ]
   else
@@ -533,7 +654,7 @@ function ray_class_group(m::NfOrdIdl, inf_plc::Vector{InfPlc} = Vector{InfPlc}()
     tobeeval1[i] = mU(U[i])
   end
   for i = 1:ngens(C)
-    tobeeval1[i+ngens(U)] = _preproc(mC.princ_gens[i][2]*(FacElem(Dict(Kel[i] => C.snf[i]))), expon)
+    tobeeval1[i+ngens(U)] = mC.princ_gens[i][2]*(FacElem(Dict(Kel[i] => C.snf[i])))
   end
   tobeeval = _preproc(m, tobeeval1, expon)
 
@@ -1024,7 +1145,7 @@ function induce_action(mR::MapRayClassGrp, Aut::Vector{Hecke.NfToNfMor}, mp::Grp
     if mp != id_hom(R)
       G[k] = hom(genstot, images, check = true)
     else
-      G[k] = hom([mp(x) for x = genstot], [mp(x) for x = images], check = true)
+      G[k] = hom(GrpAbFinGenElem[mp(x) for x = genstot], GrpAbFinGenElem[mp(x) for x = images], check = true)
     end
     @hassert :RayFacElem 1 isbijective(G[k])
   end

@@ -233,9 +233,9 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx)
       @vprint :UnitGroup 1 "Looking at the $(i)-th element in the saturation ...\n"
       y = FacElem(ge[s[i].pos], s[i].values)
       @hassert :UnitGroup 2 _isunit(y)
-      @vprint :UnitGroup 1 "(It really is a unit.)"
+      @vprint :UnitGroup 1 "(It really is a unit.)\n"
 
-      @hassert :UnitGroup 8000 denominator(minpoly(evaluate(y))) == 1
+      @hassert :UnitGroup 9000 denominator(minpoly(evaluate(y))) == 1
 
       if u.full_rank
         @vprint :UnitGroup 2 "have full rank, can reduce unit first...\n"

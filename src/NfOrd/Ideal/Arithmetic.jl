@@ -74,6 +74,30 @@ function +(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
   end
   OK = order(x)
   d = degree(OK)
+  if isdefining_polynomial_nice(nf(OK)) && issimple(nf(OK)) && contains_equation_order(OK) && isprime(g) && !isindex_divisor(OK, g) && has_2_elem(x) && has_2_elem(y)
+    #I can use polynomial arithmetic
+    if fits(Int, g)
+      R1 = ResidueRing(FlintZZ, Int(g), cached = false)
+      R1x = PolynomialRing(R1, "x", cached = false)[1]
+      ggp = gcd(R1x(x.gen_two.elem_in_nf), R1x(y.gen_two.elem_in_nf))
+      if isone(ggp)
+        return ideal(OK, 1)
+      end
+      Zx = PolynomialRing(FlintZZ, "x", cached = false)[1]
+      ggZ = lift(Zx, ggp)
+    else
+      R = ResidueRing(FlintZZ, g, cached = false)
+      Rx = PolynomialRing(R, "x", cached = false)[1]
+      ggp = gcd(Rx(x.gen_two.elem_in_nf), Rx(y.gen_two.elem_in_nf))
+      if isone(ggp)
+        return ideal(OK, 1)
+      end
+      Zx = PolynomialRing(FlintZZ, "x", cached = false)[1]
+      ggZ = lift(Zx, ggp)
+    end
+    gen_2 = OK(nf(OK)(ggZ))
+    return ideal(OK, g, gen_2)
+  end
   H = vcat(basis_matrix(x, copy = false), basis_matrix(y, copy = false))
   hnf_modular_eldiv!(H, g, :lowerleft)
   H = view(H, (d + 1):2*d, 1:d)

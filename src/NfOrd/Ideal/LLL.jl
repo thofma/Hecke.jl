@@ -34,11 +34,13 @@ function cmpindex(A::fmpz_mat, i::Int, j::Int, b::fmpz)
   return ccall((:fmpz_cmp, :libflint), Int32, (Ptr{fmpz}, Ref{fmpz}), a, b)
 end
 
-function prod_diag(A::fmpz_mat)
-  a = fmpz()
-  for i=1:nrows(A)
-    b = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ref{fmpz_mat}, Int, Int), A, i-1, i-1)
-    ccall((:fmpz_mul, :libflint), Nothing, (Ref{fmpz}, Ref{fmpz}, Ptr{fmpz}), a, a, b)
+function prod_diagonal(A::fmpz_mat)
+  a = one(fmpz)
+  GC.@preserve a begin
+    for i=1:nrows(A)
+      b = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ref{fmpz_mat}, Int, Int), A, i - 1, i - 1)
+      ccall((:fmpz_mul, :libflint), Nothing, (Ref{fmpz}, Ref{fmpz}, Ptr{fmpz}), a, a, b)
+    end
   end
   return a
 end
@@ -144,7 +146,7 @@ function lll(A::NfOrdIdl, v::fmpz_mat = zero_matrix(FlintZZ, 1, 1); prec::Int = 
     @v_do :ClassGroup 3 println("bound is ", di, " value at ", 1, " is ", l[1,1]); 
     throw(LowPrecisionLLL())
   end
-  pr = prod_diag(l)
+  pr = prod_diagonal(l)
   if pr > fmpz(2)^(div(n*(n-1), 2)) * disc * fmpz(2)^(n*prec)
     @v_do :ClassGroup 2 printstyled("LLL basis too large\n", color = :red);
     @v_do :ClassGroup 2 println("prod too large: ", pr, " > 2^(n(n-1)/2) disc = ", fmpz(2)^(div(n*(n-1), 2)) * disc * fmpz(2)^(n*prec));

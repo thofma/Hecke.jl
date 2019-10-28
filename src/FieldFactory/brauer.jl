@@ -142,17 +142,19 @@ function cocycle_computation(L::Main.ForeignGAP.MPtr, i::Int)
       MatCoc[i,j] = _find_exp(gen, x1*y1*GAP.Globals.Inverse(xy1))
     end
   end
-  
-  function cocycle(x::Main.ForeignGAP.MPtr, y::Main.ForeignGAP.MPtr)  
-    i = 1
-    while Elems[i] != x
-      i += 1
+  local cocycle
+  let Elems = Elems, MatCoc = MatCoc
+    function cocycle(x::Main.ForeignGAP.MPtr, y::Main.ForeignGAP.MPtr)  
+      i = 1
+      while Elems[i] != x
+        i += 1
+      end
+      j = 1
+      while Elems[j] != y
+        j += 1
+      end
+      return MatCoc[i, j]
     end
-    j = 1
-    while Elems[j] != y
-      j += 1
-    end
-    return MatCoc[i, j]
   end
   
   autos = _autos_to_check(H1, target_grp, mH1)
@@ -303,7 +305,7 @@ function _Brauer_no_extend(x::FieldsTower, mH, autos, _cocycle_values, domcoc, p
         a1 = GAP.Globals.Image(g, ElemGAP[s1])
         s2 = DGC[aut2]
         b1 = GAP.Globals.Image(g, ElemGAP[s2])
-        return mod(_cocycle_values(a1, b1), p)
+        return mod(_cocycle_values(a1, b1), p)::Int
       end
     end
   
@@ -939,7 +941,7 @@ function is_split_at_p(O::NfOrd, GC::Array{NfToNfMor, 1}, Coc::Function, p::Int,
     powtheta = theta
     zeta = 0
     for k = 1:e-1
-      zeta += Coc(powtheta, theta)
+      zeta += Coc(powtheta, theta)::Int
       powtheta *= theta
     end
     zeta = mod(zeta * c, n)
@@ -955,15 +957,15 @@ function is_split_at_p(O::NfOrd, GC::Array{NfToNfMor, 1}, Coc::Function, p::Int,
   end
   frob = _find_frob(Gp, F, mF, e, f, q, theta)
   if iszero(mod(q-1, e*n))
-    lambda = mod(Coc(frob, theta)- Coc(theta, frob), n)
+    lambda = mod(Coc(frob, theta)- Coc(theta, frob), n)::Int
     return iszero(lambda)
   end
-  lambda = Coc(frob, theta)
+  lambda = Coc(frob, theta)::Int
   powtheta = theta
   s, t = divrem(q-1, e)
   if !iszero(mod(s+1, n))
     for k = 1:t
-      lambda -= (s+1) * Coc(powtheta, theta)
+      lambda -= (s+1) * Coc(powtheta, theta)::Int
       powtheta *= theta
     end
   else
@@ -971,12 +973,12 @@ function is_split_at_p(O::NfOrd, GC::Array{NfToNfMor, 1}, Coc::Function, p::Int,
   end
   if !iszero(mod(s, n))
     for k = t+1:(e-1)
-      lambda -= s * Coc(powtheta, theta)
+      lambda -= s * Coc(powtheta, theta)::Int
       powtheta *= theta
     end
   end
   powtheta = theta^mod(q, e)
-  lambda = mod(lambda - Coc(powtheta, frob), n)
+  lambda = mod(lambda - Coc(powtheta, frob), n)::Int
   return iszero(lambda)
 end
 

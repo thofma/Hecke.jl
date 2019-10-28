@@ -479,6 +479,12 @@ function ==(A::NfAbsOrdFracIdl, B::NfAbsOrdFracIdl)
   if !isdefined(A, :num) || !isdefined(B, :num)
     return basis_matrix(A, copy = false) == basis_matrix(B, copy = false)
   end
+  
+  if isdefined(A, :num) && isdefined(B, :num)
+    if A.den == B.den && A.num == B.num
+      return true
+    end
+  end
   D = inv(B)
   E = prod(A, D)
   C = simplify(E)
