@@ -12,8 +12,21 @@ export completion, qAdicConj
 # field so that the defining polynomial has coefficients with precision `new_prec`.
 function sharpen!(K::EisensteinField, g, new_prec)
 
+    # Note: The base field must also be sharpened in order for pre-existing elements
+    #       to live in the same field. This means other extensions defined over the
+    #       same base field are affected by the mutated!!!
+    #
+    #       For this reason. The base field has to be explicitly sharpened before
+    #       any sharpening of extensions occurs.
+    
     # Extract the data that needs to be sharpened
-    Qp   = base_ring(K)
+    Qp = base_ring(K)
+
+    if new_prec > Qp.prec_max
+        error("Base field must be explicitly sharpened to the desired precision prior "*
+              "to sharpening the extension. For more information, see the documentation.")
+    end
+
     Rdat = K.data_ring
     Rx   = Rdat.base_ring
 
@@ -21,9 +34,32 @@ function sharpen!(K::EisensteinField, g, new_prec)
     # NOTE: This causes a mutation in any object with a ref to Qp.
     #       Perhaps a copy operation is advised.
     Qp.prec_max = new_prec
-    gp = change_base_ring(Qp,g)
-    Rdat.modulus = gp(gen(Rx))
+    gp = change_base_ring(Qp,g)(gen(Rx))
+
+    # Check depends on `a +O(p^n) == a + O(p^m)`. Satisfied in the present implementation.
+    if gp != K.pol
+        error("New polynomial does not refine coefficients of the existing defining polynomial.")
+    end
     
+    Rdat.modulus = gp
+    K.pol = Rdat.modulus    
+    return
+end
+
+function sharpen!(K::FlintPadicField, new_prec)
+    K.prec_max = new_prec
+    return
+end
+
+function sharpen!(K::FlintQadicField, new_prec)
+    K.prec_max = new_prec
+    return
+end
+
+function sharpen_base!(K::EisensteinField, new_prec)
+    Q = base_ring(K)
+    @assert typeof(Q) <: FlintLocalField
+    sharpen!(Q, new_prec)
     return
 end
 
