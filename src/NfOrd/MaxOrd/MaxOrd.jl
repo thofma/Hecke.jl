@@ -642,7 +642,7 @@ function ring_of_multipliers(a::NfAbsOrdIdl)
   end
   hnf_modular_eldiv!(m, minimum(a, copy = false))
   mhnf = view(m, 1:n, 1:n)
-  s = prod(mhnf[i,i] for i = 1:n)
+  s = prod(fmpz[mhnf[i,i] for i = 1:n])
   if isone(s)
     return O
   end

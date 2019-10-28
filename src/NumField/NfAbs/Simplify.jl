@@ -30,9 +30,10 @@ function simplify(K::AnticNumberField; canonical::Bool = false, cached = false)
       ZK = OK.lllO
     else
       prec = 100 + 25*div(degree(K), 3) + Int(round(log(abs(discriminant(OK)))))
-      ZK = _lll_for_simplify1(OK, prec = prec)
+      ZK = _lll_for_simplify(OK, prec = prec)
     end
-    @vtime :Simplify 3 a, f = _simplify(ZK)
+    @vtime :Simplify 3 a = _simplify(ZK)
+    @vtime :Simplify 3 f = Qx(minpoly(representation_matrix(OK(a))))
   end
   L = NumberField(f, cached = cached, check = false)[1]
   m = hom(L, K, a, check = false)
@@ -45,7 +46,7 @@ function _simplify(O::NfOrd)
   Zx = PolynomialRing(FlintZZ, "x", cached = false)[1]
   f = Zx(K.pol)
   
-  a = gen(K)
+  a = O(gen(K), false)
   p, d = _find_prime(f)
 
   B = basis(O, copy = false)
@@ -70,15 +71,15 @@ function _simplify(O::NfOrd)
     if isone(denominator(B[indices[i]].elem_in_nf))
       continue
     end 
-    t2n = t2(B[indices[i]].elem_in_nf)
+    t2n = t2(B[indices[i]].elem_in_nf, 5)
     if t2n < I
-      a = B[indices[i]].elem_in_nf
+      a = B[indices[i]]
       I = t2n
     end
   end
-  @show mp = minpoly(Qx, a)
-  return a, mp
+  return a.elem_in_nf
 end
+
 
  #a block is a partition of 1:n
  #given by the subfield of parent(a) defined by a
@@ -340,122 +341,6 @@ function _lll_for_simplify(M::NfOrd; prec = 100)
 
   K = nf(M)
 
-  if istotally_real(K)
-    #in this case the gram-matrix of the minkowski lattice is the trace-matrix
-    #which is exact. 
-    BM = _lll_gram(ideal(M, 1))[2]
-    O1 = NfOrd(K, BM*basis_matrix(M, copy = false))
-    O1.ismaximal = M.ismaximal
-    if isdefined(M, :index)
-      O1.index = M.index
-    end
-    if isdefined(M, :disc)
-      O1.disc = M.disc
-    end
-    if isdefined(M, :gen_index)
-      O1.gen_index = M.gen_index
-    end
-    M.lllO = O1
-    return O1
-  end
-
-  if degree(K) == 2 && discriminant(M) < 0
-    #in this case the gram-matrix of the minkowski lattice is related to the
-    #trace-matrix which is exact.
-    #could be extended to CM-fields
-    BM = _lll_quad(ideal(M, 1))[2]
-    O1 = NfOrd(K, BM*basis_matrix(M, copy = false))
-    O1.ismaximal = M.ismaximal
-    if isdefined(M, :index)
-      O1.index = M.index
-    end
-    if isdefined(M, :disc)
-      O1.disc = M.disc
-    end
-    if isdefined(M, :gen_index)
-      O1.gen_index = M.gen_index
-    end
-    M.lllO = O1
-    return O1
-  end
-
-  n = degree(M)
-  prec = max(prec, 10*n)
-  local g
-  while true
-    local d::fmpz_mat
-    while true
-      try
-        d = minkowski_gram_mat_scaled(M, prec)
-        break
-      catch e
-        prec = prec*2
-      end
-    end
-    g = zero_matrix(FlintZZ, n, n)
-    
-    prec = div(prec, 2)
-    shift!(d, -prec)  #TODO: remove?
-
-    for i=1:n
-      fmpz_mat_entry_add_ui!(d, i, i, UInt(nrows(d)))
-    end
-  
-    ctx = Nemo.lll_ctx(0.6, 0.51, :gram)
-
-    ccall((:fmpz_mat_one, :libflint), Nothing, (Ref{fmpz_mat}, ), g)
-    ccall((:fmpz_lll, :libflint), Nothing, (Ref{fmpz_mat}, Ref{fmpz_mat}, Ref{Nemo.lll_ctx}), d, g, ctx)
- 
-    fl = true
-    ## test if entries in l are small enough, if not: increase precision
-    ## or signal that prec was too low
-
-    if nbits(maximum(abs, g)) >  div(prec, 2)
-      fl = false
-    else
-      ## lattice has lattice disc = order_disc * norm^2
-      ## lll needs to yield a basis sth
-      ## l[1,1] = |b_i|^2 <= 2^((n-1)/2) disc^(1/n)  
-      ## and prod(l[i,i]) <= 2^(n(n-1)/2) disc
-      n = nrows(d)
-      disc = abs(discriminant(M))
-      di = root(disc, n)+1
-      di *= fmpz(2)^(div(n+1,2)) * fmpz(2)^prec
-  
-      if cmpindex(d, 1, 1, di) > 0 
-        fl = false
-      else
-        pr = prod_diag(d)
-        if pr > fmpz(2)^(div(n*(n-1), 2)) * disc * fmpz(2)^(n*prec)
-          fl = false
-        end
-      end
-    end
-    if !fl
-      prec = prec*4
-    else
-      break
-    end
-  end
-  On = NfOrd(K, g*basis_matrix(M, copy = false))
-  On.ismaximal = M.ismaximal
-  if isdefined(M, :index)
-    On.index = M.index
-  end
-  if isdefined(M, :disc)
-    On.disc = M.disc
-  end
-  if isdefined(M, :gen_index)
-    On.gen_index = M.gen_index
-  end
-  M.lllO = On
-  return On
-end
-
-function _lll_for_simplify1(M::NfOrd; prec = 100)
-
-  K = nf(M)
-
   if signature(M)[1] == degree(K)
     #in this case the gram-matrix of the minkowski lattice is the trace-matrix
     #which is exact. 
@@ -499,6 +384,8 @@ function _lll_for_simplify1(M::NfOrd; prec = 100)
   prec = max(prec, 10*n)
   local g::fmpz_mat
   local d::fmpz_mat
+  fl = true
+  ctx = Nemo.lll_ctx(0.75, 0.51, :gram)
   while true
     
     while true
@@ -517,28 +404,30 @@ function _lll_for_simplify1(M::NfOrd; prec = 100)
     for i=1:n
       fmpz_mat_entry_add_ui!(d, i, i, UInt(nrows(d)))
     end
-  
-    ctx = Nemo.lll_ctx(0.99, 0.51, :gram)
     @vtime :Simplify 3 ccall((:fmpz_lll, :libflint), Nothing, (Ref{fmpz_mat}, Ref{fmpz_mat}, Ref{Nemo.lll_ctx}), d, g, ctx)
  
-
-    if nbits(maximum(abs, g)) <  div(prec, 2)
+    nb = nbits(maximum(abs, g))
+    if nb <=  prec
+      if nb > div(prec, 2)
+        fl = false
+      end
       break
     end
+    @vprint :Simplify 3 "Still in the loop\n"
     prec *= 4
   end
   ## lattice has lattice disc = order_disc * norm^2
   ## lll needs to yield a basis sth
   ## l[1,1] = |b_i|^2 <= 2^((n-1)/2) disc^(1/n)  
   ## and prod(l[i,i]) <= 2^(n(n-1)/2) disc
-  fl = true
+
   disc = abs(discriminant(M))
   di = root(disc, n)+1
   di *= fmpz(2)^(div(n+1,2)) * fmpz(2)^prec
   if cmpindex(d, 1, 1, di) > 0 
     fl = false
   else
-    pr = prod_diag(d)
+    pr = prod_diagonal(d)
     if pr > fmpz(2)^(div(n*(n-1), 2)) * disc * fmpz(2)^(n*prec)
       fl = false
     end
@@ -559,7 +448,7 @@ function _lll_for_simplify1(M::NfOrd; prec = 100)
     M.lllO = On
     return On
   else
-    On1 = _lll_for_simplify1(On, prec = prec*4)
+    On1 = _lll_for_simplify(On, prec = prec*4)
     M.lllO = On1
     return On1
   end

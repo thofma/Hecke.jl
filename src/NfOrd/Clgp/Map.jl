@@ -501,7 +501,7 @@ function isprincipal_fac_elem(A::NfOrdIdl)
   if c == nothing
     L = lll(maximal_order(nf(O)))
     class_group(L)
-    c = _get_ClassGrpCtx_of_order(L)
+    c = _get_ClassGrpCtx_of_order(L)::Hecke.ClassGrpCtx{SMat{fmpz}}
     A = IdealSet(L)(A)
   else 
     L = O
@@ -509,8 +509,8 @@ function isprincipal_fac_elem(A::NfOrdIdl)
 
   module_trafo_assure(c.M)
 
-  H = c.M.basis
-  T = c.M.trafo
+  H = c.M.basis::SMat{fmpz}
+  T = c.M.trafo::Vector
 
   x, r = class_group_ideal_relation(A, c)
   #so(?) x*A is c-smooth and x*A = evaluate(r)
@@ -521,8 +521,10 @@ function isprincipal_fac_elem(A::NfOrdIdl)
     A.is_principal = 2
     return false, FacElem([nf(O)(1)], fmpz[1])
   end
-
-  rs = zeros(fmpz, c.M.bas_gens.r + c.M.rel_gens.r)
+  
+  
+  rrows = (c.M.bas_gens.r + c.M.rel_gens.r)::Int
+  rs = zeros(fmpz, rrows)
 
   for (p,v) = R
     rs[p] = v
@@ -531,12 +533,12 @@ function isprincipal_fac_elem(A::NfOrdIdl)
   for i in length(T):-1:1
     apply_right!(rs, T[i])
   end
-  
-  e = FacElem(vcat(c.R_gen, c.R_rel), rs)
+  base = vcat(c.R_gen, c.R_rel)::Vector{Union{nf_elem, FacElem{nf_elem, AnticNumberField}}}
+  e = FacElem(base, rs)::FacElem{nf_elem, AnticNumberField}
   add_to_key!(e.fac, x, -1)  
 
   #reduce e modulo units.
-  e = reduce_mod_units([e], _get_UnitGrpCtx_of_order(L))[1]
+  e = reduce_mod_units(FacElem{nf_elem, AnticNumberField}[e], _get_UnitGrpCtx_of_order(L))[1]
   #A.is_principal = 1
   # TODO: if we set it to be principal, we need to set the generator. Otherwise the ^ function is broken
   return true, e
@@ -1000,18 +1002,6 @@ function find_coprime_representatives(mC::MapClassGrp, m::NfOrdIdl, lp::Dict{NfO
   C = domain(mC)
   O = order(m)
   K = nf(O)
-  if isone(order(C))
-    local exp1
-    let C = C
-      function exp1(a::GrpAbFinGenElem)  
-        e = Dict{NfOrdIdl,fmpz}()
-        e[ideal(O,1)]=1
-        return FacElem(e)
-      end
-    end
-    return exp1, nf_elem[K(1)]
-  end
-
   
   L = Array{NfOrdIdl,1}(undef, ngens(C))
   el = Array{nf_elem,1}(undef, ngens(C))

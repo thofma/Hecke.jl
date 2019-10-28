@@ -192,17 +192,17 @@ function ray_class_group_quo(m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Dict{NfOrd
   for i = 1:length(groups_and_maps)
     exp_q = gcd(expon, norm(powers[i][2])- divexact(norm(powers[i][2]), norm(powers[i][1])))
     evals = fac_elems_eval(powers[i][1], powers[i][2], tobeeval, expon)
-    Q = quo_rings[i][1]
+    Qr = quo_rings[i][1]
     mG = groups_and_maps[i][2]
     for j = 1:nU
-      a = (mG\Q(evals[j])).coeff
+      a = (mG\Qr(evals[j])).coeff
       for s = 1:ncols(a)
         R[j+nG+ngens(H)+ngens(C), ngens(C)+s+ind-1] = a[1, s]
       end
     end
     
     for j = 1:ngens(C)
-      a = (mG\Q(evals[j+nU])).coeff
+      a = (mG\Qr(evals[j+nU])).coeff
       for s = 1:ncols(a)
         R[j, ngens(C)+ind+s-1] = -a[1, s]
       end
@@ -212,32 +212,33 @@ function ray_class_group_quo(m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Dict{NfOrd
   
   if !isempty(p)
     for j = 1:nU
-      a = lH(tobeeval[j]).coeff
-      for s = 1:ncols(a)
-        R[j+nG+ngens(C)+ngens(H), ngens(C)+ind-1+s] = a[1, s] 
+      aa = lH(tobeeval[j])::GrpAbFinGenElem
+      for s = 1:ngens(H)
+        R[j+nG+ngens(C)+ngens(H), ngens(C)+ind-1+s] = aa[s] 
       end
     end
     for j = 1:ngens(C)
-      a = lH(tobeeval[j+nU]).coeff
-      for s = 1:ncols(a)
-        R[j, ngens(C)+ind-1+s] = -a[1, s] 
+      aa = lH(tobeeval[j+nU])::GrpAbFinGenElem
+      for s = 1:ngens(H)
+        R[j, ngens(C)+ind-1+s] = -aa[s] 
       end
     end
   end  
   
   X = AbelianGroup(R)
   
+  invd = invmod(fmpz(diffC), expon)
   local disclog
-  let X = X, mC = mC, C = C, exp_class = exp_class, powers = powers, groups_and_maps = groups_and_maps, quo_rings = quo_rings, lH = lH, diffC = diffC, n_quo = n_quo, m = m
-    invd = invmod(fmpz(diffC), expon)
+  let X = X, mC = mC, invd = invd, C = C, exp_class = exp_class, powers = powers, groups_and_maps = groups_and_maps, quo_rings = quo_rings, lH = lH, diffC = diffC, n_quo = n_quo, m = m, p = p, expon = expon
+    
     # Discrete logarithm
     function disclog(J::FacElem{NfOrdIdl, NfOrdIdlSet})
       @vprint :RayFacElem 1 "Disc log of element $J \n"
-      a = id(X)
+      a1 = id(X)
       for (f, k) in J
-        a += k*disclog(f)
+        a1 += k*disclog(f)
       end
-      return a
+      return a1
     end
   
     function disclog(J::NfOrdIdl)
@@ -266,7 +267,7 @@ function ray_class_group_quo(m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Dict{NfOrd
       for i = 1:length(powers)
         P, Q = powers[i]
         exponq = gcd(expon, norm(Q)-divexact(norm(Q), norm(P)))
-        el = fac_elems_eval(P, Q, [z1], exponq)
+        el = fac_elems_eval(P, Q, FacElem{nf_elem, AnticNumberField}[z1], exponq)
         y = (invd*(groups_and_maps[i][2]\quo_rings[i][1](el[1]))).coeff
         for s = 1:ncols(y)
           coeffs[1, ii-1+ngens(C)+s] = y[1, s]
@@ -288,7 +289,7 @@ function ray_class_group_quo(m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Dict{NfOrd
   #We need generators of the full multiplicative group
   #In particular, we need the idempotents...
   for i = 1:length(powers)
-    P, Q = powers[i]
+    P, QQ = powers[i]
     mG = groups_and_maps[i][2]
     J = ideal(O, 1)
     minJ = fmpz(1)
@@ -304,10 +305,10 @@ function ray_class_group_quo(m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Dict{NfOrd
       end
     end
     J.minimum = minJ
-    i1, i2 = idempotents(Q, J)
+    i1, i2 = idempotents(QQ, J)
     if !isone(mins)
-      d, u1, v1 = gcdx(minimum(Q, copy = false), mins)
-      i1 = i1*(u1*minimum(Q, copy = false) + v1*mins) + u1*minimum(Q, copy = false) *i2
+      d, u1, v1 = gcdx(minimum(QQ, copy = false), mins)
+      i1 = i1*(u1*minimum(QQ, copy = false) + v1*mins) + u1*minimum(QQ, copy = false) *i2
       i2 = v1*mins*i2
     end   
     gens = mG.generators
@@ -374,7 +375,7 @@ function ray_class_group_quo(m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Dict{NfOrd
   end
   
   mp = MapRayClassGrp()
-  mp.header = Hecke.MapHeader(X, FacElemMon(parent(m)))
+  mp.header = MapHeader(X, FacElemMon(parent(m)))
   mp.header.preimage = disclog
   mp.fact_mod = lp
   mp.defining_modulus = (m, p)
@@ -405,7 +406,7 @@ function log_infinite_primes(O::NfOrd, p::Array{InfPlc,1})
   local log
   let S = S, p = p
     function log(B::T) where T <: Union{nf_elem ,FacElem{nf_elem, AnticNumberField}}
-      emb = Hecke.signs(B, p)
+      emb = signs(B, p)
       ar = zero_matrix(FlintZZ, 1, length(p))
       for i = 1:length(p)
         if emb[p[i]] == -1

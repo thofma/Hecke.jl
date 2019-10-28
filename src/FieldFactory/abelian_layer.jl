@@ -133,7 +133,7 @@ function _abelian_extensionsQQ(gtype::Array{Int,1}, absolute_discriminant_bound:
   complex = iseven(expo) && !only_real
   
   #Now, the big loop
-  class_fields = Vector{Hecke.ClassField}()
+  class_fields = Vector{Hecke.ClassField{MapRayClassGrp, GrpAbFinGenMap}}()
   for (i, k) in enumerate(l_conductors)
     if iszero(mod(i, 1000)) 
       pt = len - i
@@ -145,7 +145,7 @@ function _abelian_extensionsQQ(gtype::Array{Int,1}, absolute_discriminant_bound:
     end
     ls = subgroups(r, quotype = gtype, fun = (x, y) -> quo(x, y, false)[2])
     for s in ls
-      C = ray_class_field(mr, s)
+      C = ray_class_field(mr, s)::ClassField{MapRayClassGrp, GrpAbFinGenMap}
       if Hecke._is_conductor_minQQ(C, n) && Hecke.discriminant_conductorQQ(O, C, k, absolute_discriminant_bound, n)
         push!(class_fields, C)
       end
@@ -352,22 +352,18 @@ function from_class_fields_to_fields(class_fields::Vector{Hecke.ClassField{Hecke
   
 end
 
-
 function compute_fields(class_fields::Vector{Hecke.ClassField{Hecke.MapRayClassGrp, GrpAbFinGenMap}}, autos::Vector{NfToNfMor}, grp_to_be_checked::Main.ForeignGAP.MPtr, right_grp)
   it = findall(right_grp)
   K = base_field(class_fields[it[1]])
   fields = Tuple{Hecke.NfRelNS{nf_elem}, Vector{Hecke.NfRelNSToNfRelNSMor{nf_elem}}}[]
   expo = Int(exponent(codomain(class_fields[it[1]].quotientmap)))
-  #Since I want to compute as few Frobenius as possible, I want to first compute the extensions
-  #whose set of divisors is maximal
   
   set_up_cycl_ext(K, expo, autos)
   @vprint :Fields 3 "Computing the fields directly\n"
   for i in it
     C = class_fields[i]
-    L = number_field(C)
+    L = NumberField(C)#_using_Brauer(C)
     autL = Hecke.absolute_automorphism_group(C, autos)
-    Cpperm = permutation_group(autL)
     if !isone(gcd(degree(K), expo)) 
       Cpperm = permutation_group(autL)
       if GAP.Globals.IdGroup(Cpperm) != grp_to_be_checked
@@ -854,17 +850,3 @@ function translate_fields_up(class_fields, new_class_fields, subfields, it)
   return nothing
 
 end
-
-
-function isconsistent(f::NfRelToNfRelMor)
-  
-  K = domain(f)
-  p = K.pol
-  p1 = map_coeffs(f.coeff_aut, p, cached = false)
-  if !iszero(p1(f.prim_img))
-    error("Wrong")
-  end
-  return true
-  
-end
-

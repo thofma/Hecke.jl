@@ -1145,7 +1145,7 @@ function induce_action(mR::MapRayClassGrp, Aut::Vector{Hecke.NfToNfMor}, mp::Grp
     if mp != id_hom(R)
       G[k] = hom(genstot, images, check = true)
     else
-      G[k] = hom([mp(x) for x = genstot], [mp(x) for x = images], check = true)
+      G[k] = hom(GrpAbFinGenElem[mp(x) for x = genstot], GrpAbFinGenElem[mp(x) for x = images], check = true)
     end
     @hassert :RayFacElem 1 isbijective(G[k])
   end

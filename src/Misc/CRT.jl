@@ -623,7 +623,9 @@ function modular_proj(A::FacElem{nf_elem, AnticNumberField}, me::modular_env)
       ccall((:fq_nmod_set, :libflint), Nothing,
                   (Ref{fq_nmod}, Ref{nmod_poly}, Ref{FqNmodFiniteField}),
                   u, me.rp[i], F)
-      u = u^(v % (size(F)-1))            
+      eee = mod(v, size(F)-1)
+      #@show v, eee, size(F)-1
+      u = u^eee          
       me.res[i] *= u
     end
   end  

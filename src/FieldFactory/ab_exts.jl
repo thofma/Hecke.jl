@@ -1237,7 +1237,7 @@ function _from_relative_to_absQQ(L::NfRelNS{T}, auts::Array{NfRelNSToNfRelNSMor{
   polys = Vector{fmpq_poly}(undef, length(L.pol))
   for i = 1:length(L.pol)
     fK = isunivariate(L.pol[i])[2]
-    f = Qx([coeff(coeff(fK, j), 0) for j = 0:degree(fK)])
+    f = Qx(fmpq[coeff(coeff(fK, j), 0) for j = 0:degree(fK)])
     polys[i] = f
   end
   NS, gNS = number_field(polys, check = false, cached = false)
@@ -1277,7 +1277,7 @@ function _from_relative_to_absQQ(L::NfRelNS{T}, auts::Array{NfRelNSToNfRelNSMor{
   imgs = Vector{NfAbsNSElem}(undef, length(auts))
   for i = 1:length(auts)
     fK = isunivariate(auts[i].emb[i].data)[2]
-    f = Qx([coeff(coeff(fK, j), 0) for j = 0:degree(fK)])
+    f = Qx(fmpq[coeff(coeff(fK, j), 0) for j = 0:degree(fK)])
     imgs[i] = NS(evaluate(f, gpols[i]))
   end
   autsNS = Vector{NfAbsNSToNfAbsNS}(undef, length(auts))
@@ -1285,7 +1285,7 @@ function _from_relative_to_absQQ(L::NfRelNS{T}, auts::Array{NfRelNSToNfRelNSMor{
     imgs = Vector{NfAbsNSElem}(undef, length(polys))
     for s = 1:length(polys)
       fK = isunivariate(auts[t].emb[s].data)[2]
-      f = Qx([coeff(coeff(fK, j), 0) for j = 0:degree(fK)])
+      f = Qx(fmpq[coeff(coeff(fK, j), 0) for j = 0:degree(fK)])
       imgs[s] = NS(evaluate(f, gpols[s]))
     end
     autsNS[t] = NfAbsNSToNfAbsNS(NS, NS, imgs)
@@ -1328,7 +1328,7 @@ function _from_relative_to_absQQ(L::NfRelNS{T}, auts::Array{NfRelNSToNfRelNSMor{
     elem_to_mat_row!(M, 1, denominator(x), x)
     mul!(M, M, M1.num)
     y=Hecke.elem_from_mat_row(Ks, M, 1, M1.den*denominator(x))
-    @assert iszero(Ks.pol(y))
+    #@assert iszero(Ks.pol(y))
     autos[i] = hom(Ks, Ks, y, check = false)
   end
   _set_automorphisms_nf(Ks, closure(autos, degree(Ks)))
