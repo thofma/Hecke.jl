@@ -282,6 +282,14 @@ function underdetermined_solve_first(A,b)
     return N[1:size(N,1)-1,ind]
 end
 
+#=
+Commentary on precisions:
+
+See the org file.
+
+
+=#
+
 function new_completion(K::NumField{T} where T, P::NfOrdIdl; prec=10)
 
     # Determine a polynomial over Kp_unram which annihilates pi.
@@ -366,7 +374,7 @@ function new_completion(K::NumField{T} where T, P::NfOrdIdl; prec=10)
     # Construct the lifting map, from the completion back to $K$.
     function lif(x::eisf_elem)
         qadic_coeffs = coeffs(x)
-        return sum(pi^i * delta^j * sym_lift(coeffs(qadic_coeffs[i])[j+1])
+        return sum(pi^i * delta^j * K(sym_lift(coeffs(qadic_coeffs[i])[j+1]))
                    for j=0:f-1 for i=0:length(qadic_coeffs)-1 )        
     end
 
