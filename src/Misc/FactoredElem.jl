@@ -815,15 +815,21 @@ function FacElem(A::Array{nf_elem_or_fac_elem, 1}, v::Array{fmpz, 1})
   end
   B = B^v[1]
   for i=2:length(A)
+    if iszero(v[i])
+      continue
+    end
     if typeof(A[i]) == nf_elem
       add_to_key!(B.fac, A[i], v[i])
     else
       for (k, v1) in A[i]
+        if iszero(v1)
+          continue
+        end
         add_to_key!(B.fac, k, v1*v[i])
       end
     end
   end
-  return B
+  return B::FacElem{nf_elem, AnticNumberField}
 end
 
 #################################################################################

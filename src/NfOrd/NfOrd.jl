@@ -1494,7 +1494,7 @@ function _lll(O::NfOrd; prec::Int = 100)
   if cmpindex(d, 1, 1, di) > 0
     throw(LowPrecisionLLL())
   end
-  pr = prod_diag(d)
+  pr = prod_diagonal(d)
   if pr > fmpz(2)^(div(n*(n-1), 2)) * disc * fmpz(2)^(n*prec)
     throw(LowPrecisionLLL())
   end

@@ -235,7 +235,7 @@ end
 
 > Given an algebra over a finite field, this function returns generators for $K_1(A)$.
 """
-function K1(A::AlgAss{T}) where { T <: Union{gfp_elem, Generic.ResF{fmpz}, fq, fq_nmod } }
+function K1(A::AlgAss{T}) where { T } #<: Union{gfp_elem, Generic.ResF{fmpz}, fq, fq_nmod } }
   # We use the exact sequence 1 + J -> K_1(A) -> K_1(B/J) -> 1
   J = radical(A)
   onePlusJ = _1_plus_j(A, J)
@@ -248,7 +248,7 @@ end
 
 # Computes generators for K_1(A) with A semisimple as described in
 # Bley, Boltje "Computation of Locally Free Class Groups", p. 84.
-function K1_semisimple(A::AlgAss{T}) where { T <: Union{ gfp_elem, Generic.ResF{fmpz}, fq, fq_nmod } }
+function K1_semisimple(A::AlgAss{T}) where { T } #<: Union{ gfp_elem, Generic.ResF{fmpz}, fq, fq_nmod } }
 
   Adec = decompose(A)
   k1 = Vector{elem_type(A)}()
@@ -280,7 +280,7 @@ function K1_semisimple(A::AlgAss{T}) where { T <: Union{ gfp_elem, Generic.ResF{
 end
 
 # Computes generators for 1 + J where J is the Jacobson Radical of A
-function _1_plus_j(A::AlgAss{T}, jacobson_radical::AbsAlgAssIdl...) where { T <: Union{ gfp_elem, Generic.ResF{fmpz}, fq_nmod, fq } }
+function _1_plus_j(A::AlgAss{T}, jacobson_radical::AbsAlgAssIdl...) where { T } #<: Union{ gfp_elem, Generic.ResF{fmpz}, fq_nmod, fq } }
   F = base_ring(A)
 
   if length(jacobson_radical) == 1

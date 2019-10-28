@@ -444,7 +444,8 @@ function find_gens(K::KummerExt, S::PrimesSet, cp::fmpz=fmpz(1))
       q, mq = quo(R, sR[1:ind-1], false)
       s, ms = snf(q)
     end
-    if order(q) == 1   
+    @vprint :ClassField 3 order(s)
+    if order(s) == 1   
       break
     end
   end
@@ -626,6 +627,7 @@ function build_map(CF::ClassField_pp, K::KummerExt, c::CyclotomicExt)
   # now the map G -> R sG[i] -> sR[i] 
   h = hom(sG, sR)
   @hassert :ClassField 1 !isone(gcd(fmpz(degree(CF)), minimum(m))) || issurjective(h)
+  CF.h = h
   return h
 end
 
@@ -683,10 +685,11 @@ function _rcf_find_kummer(CF::ClassField_pp{S, T}) where {S, T}
   #@vprint :ClassField 2 "final $n of order $o and e=$e\n"
   a = FacElem(Dict{nf_elem, fmpz}(one(C.Ka) => fmpz(1)))
   for i = 1:ngens(N)
-    if iszero(g[i])
+    eeee = div(mod(g[i], fmpz(e1)), c)
+    if iszero(eeee)
       continue
     end
-    mul!(a, a, KK.gen[i]^div(mod(g[i], fmpz(e1)), c))
+    mul!(a, a, KK.gen[i]^eeee)
   end
   #a = prod(FacElem{nf_elem, AnticNumberField}[KK.gen[i]^div(mod(g[i], fmpz(e1)), c) for i=1:ngens(N) if !iszero(g[i])])
   #@vprint :ClassField 2 "generator $a\n"

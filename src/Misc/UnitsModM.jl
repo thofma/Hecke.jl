@@ -21,6 +21,16 @@ function isprimitive_root(x::Generic.Res{fmpz}, M::fmpz, fM::Fac{fmpz})
   return true
 end
 
+if Nemo.version() > v"0.15.1"
+  function isprimitive_root(x::Nemo.fmpz_mod, M::fmpz, fM::Fac{fmpz})
+    for (p, l) in fM
+      if x^divexact(M, p) == 1
+        return false
+      end
+    end
+    return true
+  end
+end
 
 #=
   for p = 2 this is trivial, as <-1, 5> are generators independently of 

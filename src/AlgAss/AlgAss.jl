@@ -1063,6 +1063,12 @@ function restrict_scalars(A::AlgAss{fq}, Fp::Generic.ResField{fmpz})
   return _restrict_scalars_to_prime_field(A, Fp)
 end
 
+if Nemo.version() > v"0.15.1"
+  function restrict_scalars(A::AlgAss{fq}, Fp::Nemo.GaloisFmpzField)
+    return _restrict_scalars_to_prime_field(A, Fp)
+  end
+end
+
 function restrict_scalars(A::AlgAss{gfp_elem}, Fp::GaloisField)
   function AtoA(x::AlgAssElem)
     return x
@@ -1077,7 +1083,31 @@ function restrict_scalars(A::AlgAss{Generic.ResF{fmpz}}, Fp::Generic.ResField{fm
   return A, AtoA, AtoA
 end
 
-function _restrict_scalars_to_prime_field(A::AlgAss{T}, prime_field::Union{FlintRationalField, GaloisField, Generic.ResField{fmpz}}) where { T <: Union{nf_elem, fq_nmod, fq} }
+if Nemo.version() > v"0.15.1"
+  function restrict_scalars(A::AlgAss{Nemo.gfp_fmpz_elem}, Fp::Nemo.GaloisFmpzField)
+    function AtoA(x::AlgAssElem)
+      return x
+    end
+    return A, AtoA, AtoA
+  end
+
+  function (R::FqFiniteField)(x::Nemo.gfp_fmpz_elem)
+    return R(lift(x))
+  end
+
+  function *(a::Nemo.fq, b::Nemo.gfp_fmpz_elem)
+    return a * parent(a)(b)
+  end
+
+  function *(a::Nemo.gfp_fmpz_elem, b::Nemo.fq)
+    return parent(b)(a) * b
+  end
+end
+
+
+#function _restrict_scalars_to_prime_field(A::AlgAss{T}, prime_field::Union{FlintRationalField, GaloisField, Generic.ResField{fmpz}}) where { T <: Union{nf_elem, fq_nmod, fq} }
+# TODO: fix the type
+function _restrict_scalars_to_prime_field(A::AlgAss{T}, prime_field) where { T }
   K = base_ring(A)
   n = dim(A)
   m = degree(K)
@@ -1252,7 +1282,8 @@ function restrict_scalars(A::AlgAss{nf_elem}, KtoL::NfToNfMor)
   return B, AtoB, BtoA
 end
 
-function _as_algebra_over_center(A::AlgAss{T}) where { T <: Union{fmpq, gfp_elem, Generic.ResF{fmpz}, fq, fq_nmod} }
+# TODO: Fix the types
+function _as_algebra_over_center(A::AlgAss{T}) where { T } #<: Union{fmpq, gfp_elem, Generic.ResF{fmpz}, fq, fq_nmod} }
   @assert !iszero(A)
 
   K = base_ring(A)
@@ -1412,7 +1443,8 @@ end
 ################################################################################
 
 # See W. Eberly "Computations for Algebras and Group Representations" p. 126.
-function _find_non_trivial_idempotent(A::AlgAss{T}) where { T <: Union{gfp_elem, Generic.ResF{fmpz}, fq, fq_nmod} }
+# TODO: fix the type
+function _find_non_trivial_idempotent(A::AlgAss{T}) where { T } #<: Union{gfp_elem, Generic.ResF{fmpz}, fq, fq_nmod} }
   if dim(A) == 1
     error("Dimension of algebra is 1")
   end
@@ -1440,7 +1472,8 @@ function _find_non_trivial_idempotent(A::AlgAss{T}) where { T <: Union{gfp_elem,
   end
 end
 
-function _find_idempotent_via_non_squarefree_poly(A::AlgAss{T}, a::AlgAssElem{T}, mina::Union{gfp_poly, gfp_fmpz_poly, fq_poly, fq_nmod_poly}) where { T <: Union{gfp_elem, Generic.ResF{fmpz}, fq, fq_nmod} }
+#function _find_idempotent_via_non_squarefree_poly(A::AlgAss{T}, a::AlgAssElem{T}, mina::Union{gfp_poly, gfp_fmpz_poly, fq_poly, fq_nmod_poly}) where { T <: Union{gfp_elem, Generic.ResF{fmpz}, fq, fq_nmod} }
+function _find_idempotent_via_non_squarefree_poly(A::AlgAss{T}, a::AlgAssElem{T}, mina) where {T}
   fac = factor(mina)
   if length(fac) == 1
     return zero(A)
@@ -1511,7 +1544,9 @@ function _extraction_of_idempotents(A::AlgAss, only_one::Bool = false)
   end
 end
 
-function _find_idempotent_via_squarefree_poly(A::AlgAss{T}, a::AlgAssElem{T}, mina::Union{gfp_poly, gfp_fmpz_poly, fq_poly, fq_nmod_poly}) where { T <: Union{gfp_elem, Generic.ResF{fmpz}, fq, fq_nmod} }
+#function _find_idempotent_via_squarefree_poly(A::AlgAss{T}, a::AlgAssElem{T}, mina::Union{gfp_poly, gfp_fmpz_poly, fq_poly, fq_nmod_poly}) where { T <: Union{gfp_elem, Generic.ResF{fmpz}, fq, fq_nmod} }
+# TODO: fix the type
+function _find_idempotent_via_squarefree_poly(A::AlgAss{T}, a::AlgAssElem{T}, mina) where {T}
   B = AlgAss(mina)
   idemB = _extraction_of_idempotents(B, true)
 
@@ -1519,7 +1554,8 @@ function _find_idempotent_via_squarefree_poly(A::AlgAss{T}, a::AlgAssElem{T}, mi
   return e
 end
 
-function _primitive_idempotents(A::AlgAss{T}) where { T <: Union{gfp_elem, Generic.ResF{fmpz}, fq, fq_nmod} }
+# TODO: fix the type
+function _primitive_idempotents(A::AlgAss{T}) where { T } #<: Union{gfp_elem, Generic.ResF{fmpz}, fq, fq_nmod} }
   if dim(A) == 1
     return [ one(A) ]
   end
@@ -1559,7 +1595,8 @@ end
 
 # This computes a "matrix type" basis for A.
 # See W. Eberly "Computations for Algebras and Group Representations" p. 121.
-function _matrix_basis(A::AlgAss{T}, idempotents::Vector{S}) where { T <: Union{gfp_elem, Generic.ResF{fmpz}, fq, fq_nmod}, S <: AlgAssElem{T, AlgAss{T}} }
+# TODO: fix the type
+function _matrix_basis(A::AlgAss{T}, idempotents::Vector{S}) where { T, S }#<: Union{gfp_elem, Generic.ResF{fmpz}, fq, fq_nmod}, S <: AlgAssElem{T, AlgAss{T}} }
   k = length(idempotents)
   # Compute a basis e_ij of A (1 <= i, j <= k) with
   # e_11 + e_22 + ... + e_kk = 1 and e_rs*e_tu = \delta_st*e_ru.
@@ -1621,7 +1658,8 @@ function _matrix_basis(A::AlgAss{T}, idempotents::Vector{S}) where { T <: Union{
 end
 
 # Assumes that A is central and isomorphic to a matrix algebra of base_ring(A)
-function _as_matrix_algebra(A::AlgAss{T}) where { T <: Union{gfp_elem, Generic.ResF{fmpz}, fq, fq_nmod}, S <: AlgAssElem{T, AlgAss{T}} }
+# TODO: fix the type
+function _as_matrix_algebra(A::AlgAss{T}) where { T } # <: Union{gfp_elem, Generic.ResF{fmpz}, fq, fq_nmod}, S <: AlgAssElem{T, AlgAss{T}} }
 
   idempotents = _primitive_idempotents(A)
   @assert length(idempotents)^2 == dim(A)

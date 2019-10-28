@@ -464,7 +464,7 @@ function infinite_places_uniformizers(K::AnticNumberField)
     auxr = one(K)
     for w = 1:length(p)
       if !iszero(y[w])
-        mul!(auxr, auxr, g[w]^Int(y[w]))
+        mul!(auxr, auxr, g[w])
       end
     end
     lc = conjugates(auxr, pr)

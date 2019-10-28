@@ -574,7 +574,12 @@ function induce_image(f::NfToNfMor, x::NfOrdIdl)
   end
   if !has_2_elem(I)
     #I need to translate the basis matrix
-    I.basis = map(x -> OK(f(K(x))), basis(x, copy = false))
+    bb = Vector{NfOrdElem}(undef, degree(K))
+    B = basis(x, copy = false)
+    for i = 1:length(bb)
+      bb[i] = OK(f(K(B[i])))
+    end
+    I.basis = bb
     M = zero_matrix(FlintZZ, degree(K), degree(K))
     for i = 1:degree(K)
       el = coordinates(I.basis[i])
