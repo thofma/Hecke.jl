@@ -96,6 +96,15 @@ end
 isunit(a::eisf_elem) = !iszero(a)
 
 
+@doc Markdown.doc"""
+    precision(a::eisf_elem)
+Return the minimum precision of the coefficients of `a`.
+"""
+function precision(a::eisf_elem)
+    return minimum(precision.(coefficients(a)))
+end
+
+
 #######################################################
 if false
 
@@ -199,6 +208,7 @@ end
 
 #TODO: Replace `inv` with a Hensel lifting version.
 inv(a::eisf_elem) = one(parent(a))//a
+
 
 ################################################################################
 #
@@ -447,7 +457,7 @@ function (a::EisensteinField)()
 end
 
 #TODO: Perhaps do some santiy checks as to not to drive the user insane.
-#TODO: The number field case likely has a useful pattern here.
+#TODO: The number field case likely has a useful pattern here. (Nope...)
 function (a::EisensteinField)(b::eisf_elem)
     parent(b) == a && return b
 
