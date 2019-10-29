@@ -676,6 +676,9 @@ function _maximal_abelian_subfield(A::Hecke.ClassField, mp::Hecke.NfToNfMor, ctx
     lPp = prime_decomposition(zk, p)
     if divisible(fmpz(expected_order), p)
       theoretical_bound = _bound_exp_conductor_wild(zk, expG, Int(p), d)
+      if iszero(theoretical_bound)
+        continue
+      end
       for i = 1:length(lPp)
         fm0[lPp[i][1]] = min(theoretical_bound, Int(v))
       end

@@ -1076,7 +1076,8 @@ function _add_sunits_from_brauer_relation!(c, UZK, N)
     zk = lll(zk)
     @vprint :NormRelation 1 "Computing class group ... \n"
     class_group(zk, redo = false, use_aut = true)
-    lpk = NfOrdIdl[ P[1] for p in cp for P = prime_decomposition(zk, p)]
+    #lpk = NfOrdIdl[ P[1] for p in cp for P = prime_decomposition(zk, p)]
+	  lpk = unique!(NfOrdIdl[ intersect_prime(mk, P) for P in c.FB.ideals])
     @assert length(lpk) > 0
     @vprint :NormRelation 1 "Computing sunit group for set of size $(length(lpk)) ... \n"
     Szk, mS = Hecke.sunit_mod_units_group_fac_elem(lpk)
@@ -1105,7 +1106,7 @@ function _add_sunits_from_brauer_relation!(c, UZK, N)
   return nothing
 end
 
-function induce_action_just_from_subfield(N::NormRelation, i, s, FB)
+function induce_action_just_from_subfield(N::NormRelation, i, s, FB, galois_closed::Bool = false)
   S = FB.ideals
   ZK = order(S[1])
 
@@ -1132,16 +1133,17 @@ function induce_action_just_from_subfield(N::NormRelation, i, s, FB)
     for k in 1:length(S)
       Q = S[k]
       if minimum(Q, copy = false) == pmin
-        ant = anti_uniformizer(Q)
-        if (genofsl * ant) in ZK
+        if genofsl in Q
           found += 1
           @assert mod(ramification_index(Q), ramification_index(s[l])) == 0
           push!(v, (k, divexact(ramification_index(Q), ramification_index(s[l]))))
         end
       end
-      if found == numb_ideal
-        break
-      end
+      if galois_closed 
+				if found == numb_ideal
+					break
+				end
+			end
     end
     sort!(v, by = x -> x[1])
     push!(z, sparse_row(FlintZZ, v))
