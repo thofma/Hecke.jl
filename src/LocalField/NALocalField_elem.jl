@@ -9,7 +9,6 @@ function unit_part(a::NALocalFieldElem)
 end
 
 # TODO: Implement a soft square-and-multiply here.
-import Base.^
 function ^(a::padic, n::fmpz)
     return a^Int64(n)
 end
