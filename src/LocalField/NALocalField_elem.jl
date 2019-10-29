@@ -8,9 +8,15 @@ function unit_part(a::NALocalFieldElem)
     return pi^(-m) * a
 end
 
-# TODO: Implement a soft square-and-multiply here.
 function ^(a::padic, n::fmpz)
-    return a^Int64(n)
+    iszero(n) && return one(a)
+    n < 0     && return inv(a)^(-n)
+
+    if !(typemin(Int) <= n <= typemax(Int))
+        error("Exponent too large to perform operation.")
+    end
+    
+    return a^Int(n)
 end
 
 function (Q::FlintPadicField)(a::Rational{Int})

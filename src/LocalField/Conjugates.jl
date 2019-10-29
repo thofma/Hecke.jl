@@ -192,6 +192,7 @@ function gens(P::NfOrdIdl)
     (P.gen_one, P.gen_two)
 end
 
+# TODO: make the coeffs methods more consistent.
 function coeffs(a::FinFieldElem)
     k = parent(a)
     coeff_field = GF(k.p)
@@ -205,11 +206,6 @@ end
 function coeffs(a::qadic)
     k = parent(a)
     return [coeff(a,j) for j=0:degree(k)-1]
-end
-
-# TODO: Make this more consistent.
-function coeffs(a::eisf_elem)
-    return coefficients(a)
 end
 
 function mod_sym(a,b)

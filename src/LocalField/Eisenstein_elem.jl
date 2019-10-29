@@ -259,7 +259,9 @@ end
 
 coefficients(a::eisf_elem) = coefficients(a.data_ring_elt.data)
 
-coeff(a::eisf_elem,i::Int) = coeff(a.data_ring_elt.data, i)
+coeffs(a::eisf_elem) = coefficients(a)
+
+coeff(a::eisf_elem, i::Int) = coeff(a.data_ring_elt.data, i)
 
 function setcoeff!(a::eisf_elem, i::Int64, c::NALocalFieldElem)
     setcoeff!(a.data_ring_elt.data, i, c)
@@ -456,26 +458,117 @@ function (a::EisensteinField)()
     return z
 end
 
-#TODO: Perhaps do some santiy checks as to not to drive the user insane.
-#TODO: The number field case likely has a useful pattern here. (Nope...)
-function (a::EisensteinField)(b::eisf_elem)
+######################################################
+#  Coercion logic
+######################################################
+
+"""
+    The logic here enables coercion to go up/down a tower
+    with no fear of infinite recursion. At the start, 
+    we calculate the absolute degree of the element and the
+    target field. Comparing these, we then know whether we
+    need to pull the element up the tower or move it down
+    the tower of it's parent.
+
+    Since the base of a tower is always a Flint type, one of
+    the specialized methods will catch the recursion call, and
+    succeed or fail accordingly.
+
+    NOTE: NALocalFields must have an `absolute_degree` method.
+"""
+
+function (a::EisensteinField)(b::NALocalFieldElem)
     parent(b) == a && return b
 
+    K  = a
+    L  = parent(b)
+    characteristic(K) != characteristic(L) && error("Cannot coerce element. Characteristics do not agree.")
+    
+    dK = absolute_degree(K)
+    dL = absolute_degree(L)
+
+    if dK < dL
+        return coerce_up(a,b)
+    elseif dK > dL
+        return coerce_down(a,b)
+    end
+    error("Cannot coerce element.")
+        
+end
+
+function coerce_up(a::NALocalField, b::NALocalFieldElem)
     if parent(b) == base_ring(a)
         r = eisf_elem(a)
         r.data_ring_elt = a.data_ring(b)
         return r
     end
-    
-    return a(base_ring(a)(b))
+    return coerce_up(a, coerce_up(base_ring(a),b))
 end
 
-function (a::EisensteinField)(b::FlintLocalFieldElem)
-    parent(b) != base_ring(a) && error("Cannot coerce element")
-    r = eisf_elem(a)
-    r.data_ring_elt = a.data_ring(b)
-   return r
+function coerce_up(a::FlintLocalField, b::eisf_elem)
+    error("Cannot coerce element.")
 end
+
+# We add a redundant characteristic check just to be safe. We anticipate the addition
+# of the FLINT function fields eventually. We advise the user not to call this method directly.
+function coerce_up(a::FlintLocalField, b::FlintLocalFieldElem)
+    characteristic(a) != characteristic(parent(b)) && error("Cannot coerce element. Characteristics do not agree.")
+    
+    if typeof(a) == FlintPadicField && typeof(parent(b)) == FlintQadicField
+        error("Cannot coerce element.")
+    else
+        return a(b)
+    end
+end
+
+function coerce_down(a::NALocalField, b::NALocalFieldElem)
+    K = parent(b)
+    #display(K)
+    
+    for j=1:degree(K)-1
+        !iszero(coeff(b,j)) && error("Cannot coerce element.")
+    end
+            
+
+    L  = base_ring(K)
+    b0 = coeff(b,0)
+    
+    # If the parents agree, return.    
+    if L == a
+        @assert parent(b0) == L
+        return deepcopy(b0)
+    else
+        # TODO: The recursive calls mean many `r` are produced. This is a little suboptimal.
+        return coerce_down(a, b0)
+    end
+end
+
+function coerce_down(a::NALocalField, b::FlintLocalFieldElem)
+    error("Cannot coerce element.")
+end
+
+function coerce_down(a::FlintLocalField, b::FlintLocalFieldElem)
+    return a(b)
+end
+
+function (a::FlintPadicField)(b::qadic)
+    # TODO: add various asserts? Asserts in Qp() might catch errors already.
+    return a(coeff(b,0))
+end
+
+
+# The Union{} type is what base_ring of a FlintLocalField returns.
+function coerce_down(a::Union{}, b)
+    error("Cannot coerce element.")
+end
+
+
+# function (a::EisensteinField)(b::FlintLocalFieldElem)
+#     parent(b) != base_ring(a) && error("Cannot coerce element")
+#     r = eisf_elem(a)
+#     r.data_ring_elt = a.data_ring(b)
+#    return r
+# end
 
 function (a::EisensteinField)(c::fmpz)
     z = eisf_elem(a)
