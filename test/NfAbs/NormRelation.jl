@@ -14,4 +14,8 @@
   end
   V = sub(Q, elts)[1]
   @test order(V) == order(Q)
+  S = prime_ideals_up_to(OK, Hecke.factor_base_bound_grh(OK))
+  c, U = Hecke.sunit_group_fac_elem_quo_via_brauer(K, S, 2)
+  while Hecke.saturate!(c, U, 2)
+  end
 end

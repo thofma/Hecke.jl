@@ -5,6 +5,7 @@
 ################################################################################
 
 add_verbose_scope(:NormRelation)
+add_assert_scope(:NormRelation)
 
 # Example
 # 
@@ -1087,6 +1088,8 @@ function _add_sunits_from_brauer_relation!(c, UZK, N)
       for l=1:ngens(Szk)
         u = mS(Szk[l])  #do compact rep here???
         valofnewelement = mul(mS.valuations[l], z)
+        zz = mk(evaluate(u))
+        @hassert :NormRelation 1 sparse_row(FlintZZ, [ (i, valuation(zz, p)) for (i, p) in enumerate(c.FB.ideals) if valuation(zz, p) != 0]) == valofnewelement
         Hecke.class_group_add_relation(c, FacElem(Dict((_embed(N, i, x), v) for (x,v) = u.fac)), valofnewelement)
       end
     end
@@ -1114,8 +1117,8 @@ function induce_action_just_from_subfield(N::NormRelation, i, s, FB)
   @assert mod(degree(ZK), degree(zk)) == 0
   reldeg = divexact(degree(ZK), degree(zk))
 
-  v = Tuple{Int, fmpz}[]
   for l in 1:length(s)
+    v = Tuple{Int, fmpz}[]
     P = s[l]
     genofsl = elem_in_nf(_embed(N, i, P.gen_two.elem_in_nf))
     pmin = minimum(P, copy = false)
@@ -1152,17 +1155,13 @@ function sunit_group_fac_elem_quo_via_brauer(K::AnticNumberField, S, n::Int)
   return _sunit_group_fac_elem_quo_via_brauer(N, S, n)
 end
 
-function _sunit_group_fac_elem_quo_via_brauer(N::NormRelation, S, n::Int, debug = false)
+function _sunit_group_fac_elem_quo_via_brauer(N::NormRelation, S, n::Int)
   O = order(S[1])
 
   K = N.K
 
   c, UZK = Hecke._setup_for_norm_relation_fun(K, S)
   Hecke._add_sunits_from_brauer_relation!(c, UZK, N)
-
-  if debug
-    return c, UZK
-  end
 
   if gcd(index(N), n) != 1
     # I need to saturate
