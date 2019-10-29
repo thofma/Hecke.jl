@@ -996,7 +996,7 @@ end
 
 function Base.hcat(A::Array{T, 1}) where {S <: RingElem, T <: MatElem{S}}
   if any(x->nrows(x) != nrows(A[1]), A)
-    error("Matrices must have same number of columns")
+    error("Matrices must have same number of rows")
   end
   M = zero_matrix(base_ring(A[1]), nrows(A[1]), sum(ncols, A))
   s = 0

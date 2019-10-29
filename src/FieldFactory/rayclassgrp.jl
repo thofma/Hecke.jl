@@ -579,39 +579,6 @@ function check_abelian_extensions(class_fields::Vector{Tuple{Hecke.ClassField{He
   
 end
 
-function induce_action_on_subgroup(mS::GrpAbFinGenMap, acts::Vector{GrpAbFinGenMap})
-  res = Vector{GrpAbFinGenMap}(undef, length(acts))
-  S = domain(mS)
-  for i = 1:length(acts)
-    imgs = Vector{GrpAbFinGenElem}(undef, ngens(S))
-    for j = 1:length(imgs)
-      imgs[j] = mS\(acts[i](mS(S[j])))
-    end
-    res[i] = hom(S, S, imgs)
-  end
-  return res
-end
-
-function _my_sum(f::GrpAbFinGenMap, g::GrpAbFinGenMap)
-  @assert domain(f) == domain(g)
-  @assert codomain(f) == codomain(g)
-  return hom(domain(f), codomain(g), GrpAbFinGenElem[f(x)+g(x) for x in gens(domain(f))])
-end 
-
-function isfixed_point_free(act::Vector{GrpAbFinGenMap})
-  G = domain(act[1])
-  intersection_of_kernels = G
-  minus_id = hom(G, G, GrpAbFinGenElem[-x for x in gens(G)])
-  for i = 1:length(act)
-    k, mk = kernel(_my_sum(act[i], minus_id))
-    intersection_of_kernels = intersect(intersection_of_kernels, k)
-    if order(intersection_of_kernels) == 1
-      return true
-    end
-  end
-  return false
-end
-
 function check_abelian_extension(C::Hecke.ClassField, res_act::Vector{GrpAbFinGenMap}, emb_sub::NfToNfMor, rcg_ctx::Hecke.ctx_rayclassgrp)
 
   #I consider the action on every P-sylow and see if it is trivial

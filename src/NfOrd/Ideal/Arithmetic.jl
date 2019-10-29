@@ -209,23 +209,24 @@ function mul_gen(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
     end
     return J
   end
-  z = fmpz_mat(degree(O)*degree(O), degree(O))
-  z.base_ring = FlintZZ
+  z = zero_matrix(FlintZZ, 2*degree(O), degree(O))
+  z1 = zero_matrix(FlintZZ, 2*degree(O), degree(O))
   X = basis(x, copy = false)
-  Y = basis(y, copy = false)
-  t = O()
+  Y = basis_matrix(y, copy = false)
   for i in 1:d
-    for j in 1:d
-      mul!(t, X[i], Y[j])
-      assure_has_coord(t)
-      for k in 1:d
-        z[(i - 1)*d + j, k] = t.coordinates[k]
-      end
+    M1 = representation_matrix(X[i])
+    _copy_matrix_into_matrix(z1, 1, 1, M1)
+    hnf_modular_eldiv!(z1, minimum(x, copy = false), :lowerleft)
+    mul!(M1, Y, M1)
+    _copy_matrix_into_matrix(z, 1, 1, M1)
+    hnf_modular_eldiv!(z, l, :lowerleft)
+    if view(z1, d+1:2*d, 1:d) == basis_matrix(x, copy = false)
+      break
     end
   end
   # This is a d^2 x d matrix
   J = ideal(O, view(hnf_modular_eldiv!(z, l, :lowerleft),
-                      (d*(d - 1) + 1):d^2, 1:d), false, true)
+                      (d+1):2*d, 1:d), false, true)
   if iscoprime(minimum(x, copy = false), minimum(y, copy = false))
     J.minimum = minimum(x, copy = false)*minimum(y, copy = false)
   end
