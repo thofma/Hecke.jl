@@ -52,27 +52,38 @@ Returns $x + y$.
 """
 function +(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
   check_parent(x, y)
+  OK = order(x)
   if isdefined(x, :gen_one) && isdefined(y, :gen_one) && isone(gcd(x.gen_one, y.gen_one))
-    return ideal(order(x), 1)
+    return ideal(OK, 1)
   end
   if isdefined(x, :norm) && isdefined(y, :norm) && isone(gcd(x.norm, y.norm))
-    return ideal(order(x), 1)
+    return ideal(OK, 1)
   end
-  if has_princ_gen_special(x) && has_2_elem(y)
-    genx = x.princ_gen_special[2]+x.princ_gen_special[3]
-    gen1 = gcd(genx, y.gen_one)
-    return ideal(order(x), gen1, y.gen_two)    
+  if has_princ_gen_special(x) 
+    if has_2_elem(y)
+      genx = x.princ_gen_special[2]+x.princ_gen_special[3]
+      gen1 = gcd(genx, y.gen_one)
+      return ideal(OK, gen1, y.gen_two)   
+    else
+      M1 = _hnf_modular_eldiv(basis_matrix(y, copy = false), x.princ_gen_special[2]+x.princ_gen_special[3], :lowerleft)
+      return ideal(OK, M1, false, true)
+    end 
   end
-  if has_princ_gen_special(y) && has_2_elem(x)
-    geny = y.princ_gen_special[2]+y.princ_gen_special[3]
-    gen2 = gcd(geny, x.gen_one)
-    return ideal(order(x), gen2, x.gen_two)    
+  if has_princ_gen_special(y) 
+    if has_2_elem(x)
+      geny = y.princ_gen_special[2]+y.princ_gen_special[3]
+      gen2 = gcd(geny, x.gen_one)
+      return ideal(order(x), gen2, x.gen_two)  
+    else
+      M1 = _hnf_modular_eldiv(basis_matrix(x, copy = false), y.princ_gen_special[2]+y.princ_gen_special[3], :lowerleft)
+      return ideal(OK, M1, false, true)
+    end  
   end
   g = gcd(minimum(x, copy = false), minimum(y, copy = false))
   if isone(g)
     return ideal(order(x), g)
   end
-  OK = order(x)
+  
   d = degree(OK)
   if isdefining_polynomial_nice(nf(OK)) && issimple(nf(OK)) && contains_equation_order(OK) && isprime(g) && !isindex_divisor(OK, g) && has_2_elem(x) && has_2_elem(y)
     #I can use polynomial arithmetic
@@ -178,6 +189,26 @@ function mul_gen(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
   O = order(x)
   d = degree(O)
   l = minimum(x, copy = false)*minimum(y, copy = false)
+  if has_2_elem(x) && has_basis_matrix(y)
+    M1 = representation_matrix(x.gen_two)
+    Mf = vcat(minimum(x, copy = false)*basis_matrix(y, copy = false), basis_matrix(y, copy = false)*M1)
+    hnf_modular_eldiv!(Mf, l, :lowerleft)
+    J = ideal(O, view(Mf, (d+1):2*d, 1:d), false, true)
+    if iscoprime(minimum(x, copy = false), minimum(y, copy = false))
+      J.minimum = minimum(x, copy = false)*minimum(y, copy = false)
+    end
+    return J
+  end
+  if has_2_elem(y) && has_basis_matrix(x)
+    M1 = representation_matrix(y.gen_two)
+    Mf = vcat(minimum(y, copy = false)*basis_matrix(x, copy = false), basis_matrix(x, copy = false)*M1)
+    hnf_modular_eldiv!(Mf, l, :lowerleft)
+    J = ideal(O, view(Mf, (d+1):2*d, 1:d), false, true)
+    if iscoprime(minimum(x, copy = false), minimum(y, copy = false))
+      J.minimum = minimum(x, copy = false)*minimum(y, copy = false)
+    end
+    return J
+  end
   z = fmpz_mat(degree(O)*degree(O), degree(O))
   z.base_ring = FlintZZ
   X = basis(x, copy = false)
@@ -193,8 +224,12 @@ function mul_gen(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
     end
   end
   # This is a d^2 x d matrix
-  return ideal(O, view(_hnf_modular_eldiv(z, l, :lowerleft),
+  J = ideal(O, view(hnf_modular_eldiv!(z, l, :lowerleft),
                       (d*(d - 1) + 1):d^2, 1:d), false, true)
+  if iscoprime(minimum(x, copy = false), minimum(y, copy = false))
+    J.minimum = minimum(x, copy = false)*minimum(y, copy = false)
+  end
+  return J
 end
 
 # using the 2-normal representation

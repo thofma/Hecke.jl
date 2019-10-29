@@ -313,8 +313,8 @@ function find_frob(A::ClassField_pp)
 end
 
 #Finds prime such that the Frobenius automorphisms generate the automorphism group of the kummer extension
-function find_gens(KK::KummerExt, gens_imgs::Array{Array{FacElem{nf_elem, AnticNumberField}, 1}, 1}, A::ClassField)
 
+function find_gens(KK::KummerExt, gens_imgs::Array{Array{FacElem{nf_elem, AnticNumberField}, 1}, 1}, A::ClassField)
   K = base_field(KK)
   m = minimum(defining_modulus(A)[1])
   O = maximal_order(K)
@@ -449,8 +449,8 @@ function extend_aut_pp(A::ClassField, autos::Array{NfToNfMor, 1}, p::fmpz)
 
   
   if !isone(gcd(d, m)) && d != minimum(degree(x) for x in Cp)
-  #Difficult case. Think about it...
-    error("Not yet implemented")
+    #Difficult case. Think about it...
+    @warn "May loop forever, careful"
   end
 
   #the extension and the cyclotomic extensions are linearly disjoint!

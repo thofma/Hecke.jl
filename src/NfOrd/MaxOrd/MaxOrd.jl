@@ -391,7 +391,8 @@ function _cycleBL(O::NfOrd, q::fmpz)
     end
   end
   @vprint :NfOrd 1 "(OO:I)/OO is free\n"
-  return _cycleBL2(O, q, I)
+  res = _cycleBL2(O, q, I)
+  return res
 
 end
 

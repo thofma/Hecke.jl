@@ -439,6 +439,7 @@ function set_up_cycl_ext(K::AnticNumberField, n::Int, autK::Array{NfToNfMor, 1})
     @vprint :FieldsNonFancy 1 "computing class group of cyclotomic extension of order $e\n"
     Cl, mCl = class_group(maximal_order(C.Ka), use_aut = true)
     Hecke.allow_cache!(mCl)
+    @vprint :Fields 1 "$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())"
   end
   return nothing
 
