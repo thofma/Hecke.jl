@@ -16,4 +16,26 @@
   @test order(V) == order(Q)
   S = prime_ideals_up_to(maximal_order(K), Hecke.factor_base_bound_grh(maximal_order(K)))
   c, U = Hecke.sunit_group_fac_elem_quo_via_brauer(K, S, 2)
+
+  # Test a non-normal group
+
+  Qx, x = PolynomialRing(FlintQQ, "x");
+  K, a = NumberField(x^4-2*x^2+9);
+  OK = maximal_order(K);
+  lP = NfOrdIdl[]
+  push!(lP, ideal(OK, 43, OK(a^2 - 12)));
+  push!(lP, ideal(OK, 47, OK(a^2 - 14*a + 3)));
+  push!(lP, ideal(OK, 53, OK(a^2 - 7*a - 3)));
+  push!(lP, ideal(OK, 5, OK(a^2 - 1*a + 2)));
+  push!(lP, ideal(OK, 2, OK(1//12*a^3 + 1//4*a^2 + 7//12*a + 7//4)));
+  push!(lP, ideal(OK, 3, OK(a^2 + 1)));
+  push!(lP, ideal(OK, 3, OK(8*a^3 + 4*a^2 + 2*a + 6)));
+  push!(lP, ideal(OK, 37, OK(a^2 + 12*a - 3)));
+  push!(lP, ideal(OK, 41, OK(a-15)));
+  push!(lP, ideal(OK, 5, OK(a^2 + 1*a + 2)))
+  U, mU = Hecke.sunit_group_fac_elem_quo_via_brauer(K, lP, 8)
+  S, mS = Hecke.sunit_group_fac_elem(lP)
+  Q, mQ = quo(S, 8)
+  V = quo(Q, [mQ(mS\(mU(U[i]))) for i in 1:ngens(U)])
+  @test order(V[1]) == 1
 end
