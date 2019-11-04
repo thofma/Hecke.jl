@@ -392,6 +392,17 @@ function factor(f::fmpz_poly, K::AnticNumberField)
   return factor(f1)
 end
 
+function nice(f::PolyElem{nf_elem})
+  if degree(f) < 10
+    return "$f"
+  end
+  if ismonic(f)
+    return "$(gen(parent(f))^degree(f)) + ... "
+  else
+    return "$(lead(f))$(gen(parent(f))^degree(f)) + ... "
+  end
+end
+
 @doc Markdown.doc"""
   factor(f::PolyElem{nf_elem}) -> Fac{Generic.Poly{nf_elem}}
 
@@ -417,8 +428,7 @@ function factor(f::PolyElem{nf_elem})
   f = shift_right(f, v)
 
   f_orig = deepcopy(f)
-
-  @vprint :PolyFactor 1 "Factoring $f\n"
+  @vprint :PolyFactor 1 "Factoring $(nice(f))\n"
   @vtime :PolyFactor 2 g = gcd(f, derivative(f))  
   if degree(g) > 0
     f = div(f, g)
