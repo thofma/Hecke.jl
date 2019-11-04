@@ -612,11 +612,20 @@ function translate_extensions(mL::NfToNfMor, class_fields, new_class_fields, ctx
           fm0[p] = max(v, fm0[p]) 
         end
       end
+      lPP = prime_decomposition(mL, p)
+      for (P, vP) in lPP
+        if haskey(fM0, P)
+          fM0[P] = max(fM0[P], 2*vP*fm0[p])
+        else
+          fM0[P] = vP*fm0[p]*2
+        end
+      end
     end
     infplc = InfPlc[]
     if iszero(mod(n, 2)) 
       infplc = real_places(L)
     end
+    
     @vprint :Fields 3 "Checking if I can compute $(indclf) over a subfield\n\n "
     @vtime :Fields 3 r, mr = Hecke.ray_class_group_quo(OL, fm0, infplc, ctx, check = false)
     if exponent(r) < n || order(r) < degree(C)

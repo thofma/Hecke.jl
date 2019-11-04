@@ -850,16 +850,18 @@ function _action_on_quo(mq::GrpAbFinGenMap, act::Array{GrpAbFinGenMap,1})
 
 end
 
-function _are_there_subs(G::GrpAbFinGen,gtype::Array{Int,1})
-
+function _are_there_subs(G::GrpAbFinGen, gtype::Array{Int,1})
+  
   H = DiagonalGroup(gtype)
   H = snf(H)[1]
   G1 = snf(G)[1]
-  if length(G1.snf) < length(H.snf)
+  arr_snfG1 = filter(x -> x != 1, G1.snf)
+  arr_snfH = filter(x -> x != 1, H.snf)
+  if length(arr_snfG1) < length(arr_snfH)
     return false
   end
-  for i=0:length(H.snf)-1
-    if !divisible(G1.snf[end-i],H.snf[end-i])
+  for i=0:length(arr_snfH)-1
+    if !divisible(arr_snfG1[end-i], arr_snfH[end-i])
       return false
     end
   end

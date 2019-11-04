@@ -1012,6 +1012,7 @@ function find_coprime_representatives(mC::MapClassGrp, m::NfOrdIdl, lp::Dict{NfO
   
   prob = ppp > 0.1
   for i = 1:ngens(C)
+    @assert length(mC.princ_gens[i][1].fac) == 1
     a = first(keys(mC.princ_gens[i][1].fac))
     if iscoprime(a, m)
       L[i] = a
@@ -1031,7 +1032,7 @@ function find_coprime_representatives(mC::MapClassGrp, m::NfOrdIdl, lp::Dict{NfO
       e = Dict{NfOrdIdl,fmpz}()
       for i = 1:ngens(C)
         if !iszero(a[i])
-          e[L[i]]= a[i]
+          e[L[i]] = a[i]
         end
       end
       if isempty(e)

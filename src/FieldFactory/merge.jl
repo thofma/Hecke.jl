@@ -42,48 +42,36 @@ function direct_product_decomposition(G::Main.ForeignGAP.MPtr, ab::Tuple{Int, In
   end
   
   #We pass to the list with the group ID
-  grp_id_list = Array{Tuple{Main.ForeignGAP.MPtr, Main.ForeignGAP.MPtr}, 1}(undef, length(decompositions))
+  grp_id_list = Vector{Tuple{Tuple{Int, Int}, Tuple{Int, Int}}}(undef, length(decompositions))
   for i = 1:length(grp_id_list)
-    grp_id_list[i] = (GAP.Globals.IdGroup(decompositions[i][1]), GAP.Globals.IdGroup(decompositions[i][2]))  
+    grp_id_list[i] = (GAP.gap_to_julia(Tuple{Int, Int}, GAP.Globals.IdGroup(decompositions[i][1])), GAP.gap_to_julia(Tuple{Int, Int}, GAP.Globals.IdGroup(decompositions[i][2])))  
   end
 
-  l1 = grp_id_list[1][1]
-  a1 = l1[1]
-  b1 = l1[2]
-  l2 = grp_id_list[1][2]
-  a2 = l2[1]
-  b2 = l2[2]
+  res1 = grp_id_list[1][1]
+  res2 = grp_id_list[1][2]
   if length(grp_id_list) == 1
-    return (a1, b1), (a2, b2), 1, 1
+    return res1, res2, 1, 1
   end
   #I count the redundancy, i.e. the number of possible decompositions of the same type.
   red = 1
   for i = 2:length(grp_id_list)
     l1 = grp_id_list[i][1]
-    a11 = l1[1]
-    b11 = l1[2]
     l2 = grp_id_list[i][2]
-    a21 = l2[1]
-    b21 = l2[2]
-    if min(a11, a21) > min(a1, a2)
+    if min(l1[1], l2[1]) > min(res1[1], res2[1])
       red = 1
-      a1 = a11
-      b1 = b11
-      a2 = a21
-      b2 = b21
+      res1 = l1
+      res2 = l2
     else
-      if (a11, b11) == (a1, b1) && (a21, b21) == (a2, b2)
+      if l1 == res1 && l2 == res2
         red += 1 
       end
     end
   end
   #Finally, I count the numer of times a single subgroup appears in the lists.
   redfirst = 1
-  GID_first = [a1, b1]
-  GID_second = [a2, b2]
   ind = 1
   for i = 1:length(decompositions)
-    if GAP.Globals.IdGroup(decompositions[i][1]) == GID_first && GAP.Globals.IdGroup(decompositions[i][2]) == GID_second
+    if grp_id_list[i] == (res1, res2)
       ind = i
       break
     end
@@ -93,7 +81,7 @@ function direct_product_decomposition(G::Main.ForeignGAP.MPtr, ab::Tuple{Int, In
       redfirst += 1
     end
   end
-  return (a1, b1), (a2, b2), red, redfirst
+  return res1, res2, red, redfirst
 
 end
 

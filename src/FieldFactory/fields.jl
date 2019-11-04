@@ -588,6 +588,12 @@ function fields(a::Int, b::Int, absolute_bound::fmpz; using_direct_product::Bool
   
 end
 
+function fields(a::Int, b::Int, list::Vector{FieldsTower}, absolute_bound::fmpz; only_real::Bool = false)
+  G = GAP.Globals.SmallGroup(a, b)
+  return fields(list, G, absolute_bound, only_real = only_real)
+end
+
+
 function fields(list::Vector{FieldsTower}, G, absolute_bound::fmpz; only_real::Bool = false)
   L = GAP.Globals.DerivedSeries(G)
   lvl = _real_level(L)

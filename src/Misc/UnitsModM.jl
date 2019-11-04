@@ -603,7 +603,7 @@ function _unit_pk_mod_n(p::Int, v::Int, n::Int)
       ord = gcd(2^(v-2), n)
       gens = Int[-1,5]
       exps = divexact(2^(v-2), ord)
-      z = 5^exps
+      z = R(5)^exps
       local disc_log6
       let R = R, exps = exps, ord = ord, z = z
       function disc_log6(x::Int)
