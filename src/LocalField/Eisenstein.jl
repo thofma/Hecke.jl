@@ -41,6 +41,10 @@ function zero(a::EisensteinField)
     return a(0)
 end
 
+function prime(a::EisensteinField)
+    return prime(base_field(a))
+end
+
 ################################################################################
 #
 #  Base field, basic base field functions, and uniformizer

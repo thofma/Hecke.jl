@@ -458,9 +458,12 @@ function (a::EisensteinField)()
     return z
 end
 
-######################################################
-#  Coercion logic
-######################################################
+
+###############################################################################
+#
+#    Coercion logic
+#
+###############################################################################
 
 """
     The logic here enables coercion to go up/down a tower
@@ -477,23 +480,27 @@ end
     NOTE: NALocalFields must have an `absolute_degree` method.
 """
 
+function check_coercion_compatible(K::NALocalField, L::NALocalField)
+    characteristic(K) != characteristic(L) && error("Cannot coerce element. Characteristics do not agree.")
+    prime(K) != prime(L) && error("Cannot coerce element. Topologies do not agree.")
+    return true
+end
+
 function (a::EisensteinField)(b::NALocalFieldElem)
     parent(b) == a && return b
+    K = a
+    L = parent(b)
+    check_coercion_compatible(K, L)
 
-    K  = a
-    L  = parent(b)
-    characteristic(K) != characteristic(L) && error("Cannot coerce element. Characteristics do not agree.")
-    
     dK = absolute_degree(K)
     dL = absolute_degree(L)
 
-    if dK < dL
+    if dK > dL
         return coerce_up(a,b)
-    elseif dK > dL
+    elseif dK < dL
         return coerce_down(a,b)
     end
-    error("Cannot coerce element.")
-        
+    error("Cannot coerce element.")        
 end
 
 function coerce_up(a::NALocalField, b::NALocalFieldElem)
@@ -523,13 +530,11 @@ end
 
 function coerce_down(a::NALocalField, b::NALocalFieldElem)
     K = parent(b)
-    #display(K)
     
     for j=1:degree(K)-1
         !iszero(coeff(b,j)) && error("Cannot coerce element.")
     end
-            
-
+    
     L  = base_ring(K)
     b0 = coeff(b,0)
     
@@ -538,7 +543,6 @@ function coerce_down(a::NALocalField, b::NALocalFieldElem)
         @assert parent(b0) == L
         return deepcopy(b0)
     else
-        # TODO: The recursive calls mean many `r` are produced. This is a little suboptimal.
         return coerce_down(a, b0)
     end
 end
@@ -551,24 +555,30 @@ function coerce_down(a::FlintLocalField, b::FlintLocalFieldElem)
     return a(b)
 end
 
+######
+# Ad hoc coercions (Needed as methods cannot be added to abstract types.)
+
 function (a::FlintPadicField)(b::qadic)
     # TODO: add various asserts? Asserts in Qp() might catch errors already.
     return a(coeff(b,0))
 end
 
-
-# The Union{} type is what base_ring of a FlintLocalField returns.
-function coerce_down(a::Union{}, b)
-    error("Cannot coerce element.")
+function (a::FlintPadicField)(b::eisf_elem)
+    parent(b) == a && return b
+    K = a
+    L = parent(b)
+    check_coercion_compatible(K, L)
+    return coerce_down(a,b)
 end
 
+function (a::FlintQadicField)(b::eisf_elem)
+    parent(b) == a && return b
+    K = a
+    L = parent(b)
+    check_coercion_compatible(K, L)
+    return coerce_down(a,b)
+end
 
-# function (a::EisensteinField)(b::FlintLocalFieldElem)
-#     parent(b) != base_ring(a) && error("Cannot coerce element")
-#     r = eisf_elem(a)
-#     r.data_ring_elt = a.data_ring(b)
-#    return r
-# end
 
 function (a::EisensteinField)(c::fmpz)
     z = eisf_elem(a)

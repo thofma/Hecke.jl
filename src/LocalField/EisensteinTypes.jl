@@ -31,6 +31,7 @@ const EisensteinFieldID = Dict{Tuple{FmpqPolyRing, fmpq_poly, Symbol}, Field}()
 
 # TODO: Investigate the type of coefficient field element (whether padic/qadic should be allowed).
 
+# TODO: Should cache the prime and absolute degree for an eisenstein field.
 # Coefficients of the defining polynomial are approximate.
 # Defining polynomial *can* change precision.
 @doc Markdown.doc"""
