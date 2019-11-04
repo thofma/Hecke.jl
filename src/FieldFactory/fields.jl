@@ -223,8 +223,9 @@ end
 #  final computation of the maximal order and automorphisms
 #
 ################################################################################
+
 function _from_relative_to_abs_with_embedding(L::Hecke.NfRelNS{T}, autL::Array{Hecke.NfRelNSToNfRelNSMor{T}, 1}) where T
-  
+
   S, mS = simple_extension(L)
   K, mK, MK = absolute_field(S, false)
   
@@ -270,7 +271,7 @@ function _from_relative_to_abs_with_embedding(L::Hecke.NfRelNS{T}, autL::Array{H
   @vtime :Fields 3 Hecke.hnf_modular_eldiv!(BasisMat.num, BasisMat.den, :lowerleft)
   NewBMat = FakeFmpqMat(BasisMat.num, BasisMat.den)
   @vtime :Fields 3 Ostart = NfAbsOrd(K, NewBMat)
-  Ostart.index = divexact(NewBMat.den^degree(K), prod(NewBMat.num[i, i] for i = 1:degree(K)))
+  Ostart.index = divexact(NewBMat.den^degree(K), prod_diagonal(NewBMat.num))
   Ostart.gen_index = fmpq(Ostart.index)
   Ostart.disc = divexact(numerator(discriminant(K)), Ostart.index^2)
   ram_primes_rel = numerator(norm(discriminant(L)))
@@ -283,16 +284,16 @@ function _from_relative_to_abs_with_embedding(L::Hecke.NfRelNS{T}, autL::Array{H
   @vtime :Fields 3 O1 = MaximalOrder(Ostart)
   O1.ismaximal = 1
   Hecke._set_maximal_order_of_nf(K, O1)
-
   @vtime :Fields 3 Ks, mKs = Hecke.simplify(K)
   #Now, we have to construct the maximal order of this field.
   #I compute the inverse of mKs
   @vtime :Fields 3 mKsI = find_inverse(mKs)
   if isdefined(O1, :lllO)
-    O2 = NfOrd(nf_elem[mKsI(x) for x in basis(O1.lllO, K)], false)
-    O2.lllO = O2
+    lO = O1.lllO::NfOrd
+    O2 = NfOrd(nf_elem[mKsI(x) for x in basis(lO, K, copy = false)], false)
+    #O2.lllO = O2
   else
-    O2 = NfOrd(nf_elem[mKsI(x) for x in basis(O1, K)], false)
+    O2 = NfOrd(nf_elem[mKsI(x) for x in basis(O1, K, copy = false)], false)
   end
   O2.ismaximal = 1
   @assert isdefined(O1, :disc)
@@ -586,6 +587,12 @@ function fields(a::Int, b::Int, absolute_bound::fmpz; using_direct_product::Bool
   return list
   
 end
+
+function fields(a::Int, b::Int, list::Vector{FieldsTower}, absolute_bound::fmpz; only_real::Bool = false)
+  G = GAP.Globals.SmallGroup(a, b)
+  return fields(list, G, absolute_bound, only_real = only_real)
+end
+
 
 function fields(list::Vector{FieldsTower}, G, absolute_bound::fmpz; only_real::Bool = false)
   L = GAP.Globals.DerivedSeries(G)

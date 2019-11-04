@@ -186,7 +186,13 @@ function _roots_hensel(f::Generic.Poly{nf_elem};
       ST, T = PolynomialRing(S, "T", cached=false)
 
       if ispure
-        fp = T^degree(f) + S(Rpt(coeff(f, 0)))
+        red_coeff1 = Vector{fq_nmod}(undef, length(f))
+        red_coeff1[length(f)] = S(1)
+        for i = 2:length(f)-1
+          red_coeff1[i] = zero(S) 
+        end
+        red_coeff1[1] = S(Rpt(coeff(f, 0)))
+        fp = ST(red_coeff1)
       else
         red_coeff = Vector{fq_nmod}(undef, length(f))
         for i in 1:length(f)
@@ -227,9 +233,10 @@ function _roots_hensel(f::Generic.Poly{nf_elem};
 
   # compute the lifting exponent a la Friedrich-Fieker
 
+  E = EquationOrder(K)
   R = ArbField(64, false)
 
-  (r1, r2) = signature(K) 
+  (r1, r2) = signature(E) 
 
   gsa = derivative(K.pol)(gen(K))
   gsa_con = conjugates_arb(gsa, 32)
@@ -272,7 +279,7 @@ function _roots_hensel(f::Generic.Poly{nf_elem};
     end
   end
 
-  ss = _lifting_expo(good_p, good_deg_p, EquationOrder(K), bound_root)
+  ss = _lifting_expo(good_p, good_deg_p, E, bound_root)
 
   rts = _hensel(f, factor_of_g, good_fp, Int(ss), max_roots = max_roots - length(rs), ispure = ispure)
   return vcat(rs, rts)

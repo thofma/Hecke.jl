@@ -324,10 +324,14 @@ end
 
 mutable struct MapClassGrp <: Map{GrpAbFinGen, NfOrdIdlSet, HeckeMap, MapClassGrp}
   header::MapHeader{GrpAbFinGen, NfOrdIdlSet}
+  
+  quo::Int
   princ_gens::Array{Tuple{FacElem{NfOrdIdl,NfOrdIdlSet}, FacElem{nf_elem, AnticNumberField}},1}
   small_gens::Vector{NfOrdIdl}
   function MapClassGrp()
-    return new()
+    mp = new()
+    mp.quo = -1
+    return mp
   end
 end
 
@@ -355,7 +359,6 @@ function class_group(c::ClassGrpCtx, O::NfOrd = order(c); redo::Bool = false)
       return C, mC
     end
   end  
-  
   C = class_group_grp(c, redo = redo)
   r = MapClassGrp()
   
@@ -498,7 +501,7 @@ function isprincipal_fac_elem(A::NfOrdIdl)
   if c == nothing
     L = lll(maximal_order(nf(O)))
     class_group(L)
-    c = _get_ClassGrpCtx_of_order(L)
+    c = _get_ClassGrpCtx_of_order(L)::Hecke.ClassGrpCtx{SMat{fmpz}}
     A = IdealSet(L)(A)
   else 
     L = O
@@ -506,8 +509,8 @@ function isprincipal_fac_elem(A::NfOrdIdl)
 
   module_trafo_assure(c.M)
 
-  H = c.M.basis
-  T = c.M.trafo
+  H = c.M.basis::SMat{fmpz}
+  T = c.M.trafo::Vector
 
   x, r = class_group_ideal_relation(A, c)
   #so(?) x*A is c-smooth and x*A = evaluate(r)
@@ -518,8 +521,10 @@ function isprincipal_fac_elem(A::NfOrdIdl)
     A.is_principal = 2
     return false, FacElem([nf(O)(1)], fmpz[1])
   end
-
-  rs = zeros(fmpz, c.M.bas_gens.r + c.M.rel_gens.r)
+  
+  
+  rrows = (c.M.bas_gens.r + c.M.rel_gens.r)::Int
+  rs = zeros(fmpz, rrows)
 
   for (p,v) = R
     rs[p] = v
@@ -528,12 +533,12 @@ function isprincipal_fac_elem(A::NfOrdIdl)
   for i in length(T):-1:1
     apply_right!(rs, T[i])
   end
-  
-  e = FacElem(vcat(c.R_gen, c.R_rel), rs)
+  base = vcat(c.R_gen, c.R_rel)::Vector{Union{nf_elem, FacElem{nf_elem, AnticNumberField}}}
+  e = FacElem(base, rs)::FacElem{nf_elem, AnticNumberField}
   add_to_key!(e.fac, x, -1)  
 
   #reduce e modulo units.
-  e = reduce_mod_units([e], _get_UnitGrpCtx_of_order(L))[1]
+  e = reduce_mod_units(FacElem{nf_elem, AnticNumberField}[e], _get_UnitGrpCtx_of_order(L))[1]
   #A.is_principal = 1
   # TODO: if we set it to be principal, we need to set the generator. Otherwise the ^ function is broken
   return true, e
@@ -880,9 +885,12 @@ end
 mutable struct MapSUnitGrpFacElem{T} <: Map{T, FacElemMon{AnticNumberField}, HeckeMap, MapSUnitGrpFacElem}
   header::MapHeader
   idl::Array{NfOrdIdl, 1}
+  isquotientmap::Int
 
   function MapSUnitGrpFacElem{T}() where {T}
-    return new{T}()
+    z = new{T}()
+    z.isquotientmap = -1
+    return z
   end
 end
 
@@ -890,7 +898,10 @@ function show(io::IO, mC::MapSUnitGrpFacElem)
   @show_name(io, mC)
   print(io, "SUnits (in factored form) map of ")
   show(IOContext(io, :compact => true), codomain(mC))
-  println(io, " for $(mC.idl)")
+  println(io, " for S of length ", length(mC.idl))
+  if mC.isquotientmap != -1
+    println(io, " This is the quotient modulo $(mC.isquotientmap)")
+  end
 end
 
 @doc Markdown.doc"""
@@ -988,10 +999,10 @@ Returns a class group map such that the representatives for every classes are co
 $lp$ is the factorization of $m$. 
 """
 function find_coprime_representatives(mC::MapClassGrp, m::NfOrdIdl, lp::Dict{NfOrdIdl, Int} = factor(m))
- 
+  C = domain(mC)
   O = order(m)
   K = nf(O)
-  C = domain(mC)
+  
   L = Array{NfOrdIdl,1}(undef, ngens(C))
   el = Array{nf_elem,1}(undef, ngens(C))
   ppp = 1.0
@@ -1001,6 +1012,7 @@ function find_coprime_representatives(mC::MapClassGrp, m::NfOrdIdl, lp::Dict{NfO
   
   prob = ppp > 0.1
   for i = 1:ngens(C)
+    @assert length(mC.princ_gens[i][1].fac) == 1
     a = first(keys(mC.princ_gens[i][1].fac))
     if iscoprime(a, m)
       L[i] = a
@@ -1020,7 +1032,7 @@ function find_coprime_representatives(mC::MapClassGrp, m::NfOrdIdl, lp::Dict{NfO
       e = Dict{NfOrdIdl,fmpz}()
       for i = 1:ngens(C)
         if !iszero(a[i])
-          e[L[i]]= a[i]
+          e[L[i]] = a[i]
         end
       end
       if isempty(e)

@@ -359,7 +359,7 @@ function _minkowski_map_and_apply(a, abs_tol, G, work_tol = abs_tol)
     A[r + 2*i - 1] = sqrt2 * real(c[r + i])
     A[r + 2*i] = sqrt2 * imag(c[r + i])
     if !radiuslttwopower(A[r + 2*i], -abs_tol)
-      return _minkowski_map_and_apply(a, abs_tol, G, Int(floor(work_tol * 1.1)))
+      return _minkowski_map_and_apply(a, abs_tol, G, Int(floor(work_tol * 2)))
     end
   end
 

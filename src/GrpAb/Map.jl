@@ -103,12 +103,12 @@ function hom(A::Array{GrpAbFinGenElem, 1}, B::Array{GrpAbFinGenElem, 1}; check::
   @assert length(B) == length(A)
   @assert length(A) > 0
   if (check)
-    m = vcat([x.coeff for x in A])
+    m = vcat(fmpz_mat[x.coeff for x in A])
     m = vcat(m, rels(parent(A[1])))
     i, T = nullspace(m')
     T = T'
     T = sub(T, 1:nrows(T), 1:length(A))
-    n = vcat([x.coeff for x in B])
+    n = vcat(fmpz_mat[x.coeff for x in B])
     n = T*n
     if !can_solve(rels(parent(B[1])), n, side = :left)[1]
       error("Data does not define a homomorphism")

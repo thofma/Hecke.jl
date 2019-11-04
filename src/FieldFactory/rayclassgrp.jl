@@ -119,8 +119,15 @@ function ray_class_group_quo(m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Dict{NfOrd
       end
     end
     QQ = PP^ee
+    
     push!(powers, (PP, QQ))
-    push!(quo_rings, quo(O, QQ))
+    QQQ, mQQQ = quo(O, QQ)
+    if ee == 1
+      QQQ.factor = dtame
+    else
+      QQQ.factor = dwild
+    end
+    push!(quo_rings, (QQQ, mQQQ))
     push!(groups_and_maps, _mult_grp_mod_n(quo_rings[end][1], dtame, dwild, n_quo))
   end
   
@@ -147,6 +154,8 @@ function ray_class_group_quo(m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Dict{NfOrd
   
   assure_elements_to_be_eval(ctx)
   exp_class, Kel = find_coprime_representatives(mC, m, lp)
+  
+  
   nU = length(ctx.units) 
   # We construct the relation matrix and evaluate units and relations with the class group in the quotient by m
   # Then we compute the discrete logarithms  
@@ -156,7 +165,7 @@ function ray_class_group_quo(m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Dict{NfOrd
     R[i+ngens(C)+nG+ngens(H)+nU, i] = n_quo
   end
   for i=1:ngens(C)
-    R[i,i] = C.snf[i]
+    R[i, i] = C.snf[i]
   end
   ind = 1
   for s = 1:length(quo_rings) 
@@ -184,18 +193,18 @@ function ray_class_group_quo(m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Dict{NfOrd
   ind = 1
   for i = 1:length(groups_and_maps)
     exp_q = gcd(expon, norm(powers[i][2])- divexact(norm(powers[i][2]), norm(powers[i][1])))
-    evals = fac_elems_eval(powers[i][1], powers[i][2], tobeeval, expon)
-    Q = quo_rings[i][1]
+    evals = fac_elems_eval(powers[i][1], powers[i][2], tobeeval, exp_q)
+    Qr = quo_rings[i][1]
     mG = groups_and_maps[i][2]
     for j = 1:nU
-      a = (mG\Q(evals[j])).coeff
+      a = (mG\Qr(evals[j])).coeff
       for s = 1:ncols(a)
         R[j+nG+ngens(H)+ngens(C), ngens(C)+s+ind-1] = a[1, s]
       end
     end
     
     for j = 1:ngens(C)
-      a = (mG\Q(evals[j+nU])).coeff
+      a = (mG\Qr(evals[j+nU])).coeff
       for s = 1:ncols(a)
         R[j, ngens(C)+ind+s-1] = -a[1, s]
       end
@@ -205,35 +214,37 @@ function ray_class_group_quo(m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Dict{NfOrd
   
   if !isempty(p)
     for j = 1:nU
-      a = lH(tobeeval[j]).coeff
-      for s = 1:ncols(a)
-        R[j+nG+ngens(C)+ngens(H), ngens(C)+ind-1+s] = a[1, s] 
+      aa = lH(tobeeval[j])::GrpAbFinGenElem
+      for s = 1:ngens(H)
+        R[j+nG+ngens(C)+ngens(H), ngens(C)+ind-1+s] = aa[s] 
       end
     end
     for j = 1:ngens(C)
-      a = lH(tobeeval[j+nU]).coeff
-      for s = 1:ncols(a)
-        R[j, ngens(C)+ind-1+s] = -a[1, s] 
+      aa = lH(tobeeval[j+nU])::GrpAbFinGenElem
+      for s = 1:ngens(H)
+        R[j, ngens(C)+ind-1+s] = -aa[s] 
       end
     end
   end  
   
   X = AbelianGroup(R)
   
+  invd = invmod(fmpz(diffC), expon)
   local disclog
-  let X = X, mC = mC, C = C, exp_class = exp_class, powers = powers, groups_and_maps = groups_and_maps, quo_rings = quo_rings, lH = lH, diffC = diffC, n_quo = n_quo, m = m
-    invd = invmod(fmpz(diffC), expon)
+  let X = X, mC = mC, invd = invd, C = C, exp_class = exp_class, powers = powers, groups_and_maps = groups_and_maps, quo_rings = quo_rings, lH = lH, diffC = diffC, n_quo = n_quo, m = m, p = p, expon = expon
+    
     # Discrete logarithm
     function disclog(J::FacElem{NfOrdIdl, NfOrdIdlSet})
       @vprint :RayFacElem 1 "Disc log of element $J \n"
-      a = id(X)
+      a1 = id(X)
       for (f, k) in J
-        a += k*disclog(f)
+        a1 += k*disclog(f)
       end
-      return a
+      return a1
     end
   
     function disclog(J::NfOrdIdl)
+      @hassert :RayFacElem 1 iscoprime(J, m)
       if isone(J)
         @vprint :RayFacElem 1 "J is one \n"
         return id(X)
@@ -247,19 +258,19 @@ function ray_class_group_quo(m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Dict{NfOrd
           coeffs[1, i] = L[i]
         end
         @vprint :RayFacElem 1 "Disc log of element J in the Class Group: $(L.coeff) \n"
-        s = exp_class(L)
-        inv!(s)
-        add_to_key!(s.fac, J, 1) 
-        pow!(s, diffC)
+        eL = exp_class(L)
+        inv!(eL)
+        add_to_key!(eL.fac, J, 1) 
+        pow!(eL, diffC)
         @vprint :RayFacElem 1 "This ideal is principal: $I \n"
-        z = principal_gen_fac_elem(s)
+        z = principal_gen_fac_elem(eL)
       end
       ii = 1
       z1 = _preproc(z, expon)
       for i = 1:length(powers)
         P, Q = powers[i]
         exponq = gcd(expon, norm(Q)-divexact(norm(Q), norm(P)))
-        el = fac_elems_eval(P, Q, [z1], exponq)
+        el = fac_elems_eval(P, Q, FacElem{nf_elem, AnticNumberField}[z1], exponq)
         y = (invd*(groups_and_maps[i][2]\quo_rings[i][1](el[1]))).coeff
         for s = 1:ncols(y)
           coeffs[1, ii-1+ngens(C)+s] = y[1, s]
@@ -280,69 +291,93 @@ function ray_class_group_quo(m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Dict{NfOrd
   ind = 1
   #We need generators of the full multiplicative group
   #In particular, we need the idempotents...
-  for i = 1:length(powers)
-    P, Q = powers[i]
-    mG = groups_and_maps[i][2]
-    J = ideal(O, 1)
-    minJ = fmpz(1)
-    mins = fmpz(1)
-    for j = 1:length(powers)
-      if minimum(powers[j][1], copy = false) != minimum(P, copy = false)
-        mins = lcm(mins, minimum(powers[j][2], copy = false))
-        continue
+  if !isone(length(powers))
+    for i = 1:length(powers)
+      P, QQ = powers[i]
+      mG = groups_and_maps[i][2]
+      J = ideal(O, 1)
+      minJ = fmpz(1)
+      mins = fmpz(1)
+      for j = 1:length(powers)
+        if minimum(powers[j][1], copy = false) != minimum(P, copy = false)
+          mins = lcm(mins, minimum(powers[j][2], copy = false))
+          continue
+        end
+        if j != i
+          J *= powers[j][2]
+          minJ = lcm(minJ, minimum(powers[j][2], copy = false))
+        end
       end
-      if j != i
-        J *= powers[j][2]
-        minJ = lcm(minJ, minimum(powers[j][2], copy = false))
+      J.minimum = minJ
+      i1, i2 = idempotents(QQ, J)
+      if !isone(mins)
+        d, u1, v1 = gcdx(minimum(QQ, copy = false), mins)
+        i1 = i1*(u1*minimum(QQ, copy = false) + v1*mins) + u1*minimum(QQ, copy = false) *i2
+        i2 = v1*mins*i2
+      end   
+      @hassert :RayFacElem 1 isone(i1+i2)
+      @hassert :RayFacElem 1 i1 in QQ
+      @hassert :RayFacElem 1 i2 in J
+      @hassert :RayFacElem 1 i2 in ideal(O, mins)
+      gens = mG.generators
+      if isempty(p)
+        if haskey(mG.tame, P)
+          gens_tame = mG.tame[P].generators
+          for s = 1:length(gens_tame)
+            gens_tame[s] = gens_tame[s]*i2 + i1
+            @hassert :RayFacElem 1 isone(mod(gens_tame[s], J*ideal(O, mins)))
+          end
+          mG.tame[P].generators = gens_tame
+        end
+        if haskey(mG.wild, P)
+          gens_wild = mG.wild[P].generators
+          for s = 1:length(gens_wild)
+            gens_wild[s] = gens_wild[s]*i2 + i1
+            @hassert :RayFacElem 1 isone(mod(gens_wild[s], J*ideal(O, mins)))
+          end
+          mG.wild[P].generators = gens_wild
+        end
+        for s = 1:length(gens)
+          el_to_push = gens[s].elem*i2+i1
+          @hassert :RayFacElem 1 isone(mod(el_to_push, J*ideal(O, mins)))
+          push!(Dgens, (el_to_push, X[ngens(C)+ind-1+s]))
+        end
+      else
+        if haskey(mG.tame, P)
+          gens_tame = mG.tame[P].generators
+          for s = 1:length(gens_tame)
+            gens_tame[s] = make_positive(gens_tame[s]*i2 + i1, minimum(m, copy = false))
+          end
+          mG.tame[P].generators = gens_tame
+        end
+        if haskey(mG.wild, P)
+          gens_wild = mG.wild[P].generators
+          for s = 1:length(gens_wild)
+            gens_wild[s] = make_positive(gens_wild[s]*i2 + i1, minimum(m, copy = false))
+          end
+          mG.wild[P].generators = gens_wild
+        end
+        for s = 1:length(gens)
+          elgen = make_positive(gens[s].elem*i2 + i1, minimum(m, copy = false))
+          push!(Dgens, (elgen, X[ngens(C)+ind-1+s]))
+        end
       end
+      ind += length(gens)
     end
-    J.minimum = minJ
-    i1, i2 = idempotents(Q, J)
-    if !isone(mins)
-      d, u1, v1 = gcdx(minimum(Q, copy = false), mins)
-      i1 = i1*(u1*minimum(Q, copy = false) + v1*mins) + u1*minimum(Q, copy = false) *i2
-      i2 = v1*mins*i2
-    end   
+  else
+    mG = groups_and_maps[1][2]
     gens = mG.generators
-    if isempty(p)
-      if haskey(mG.tame, P)
-        gens_tame = mG.tame[P].generators
-        for s = 1:length(gens_tame)
-          gens_tame[s] = gens_tame[s]*i2 + i1
-        end
-        mG.tame[P].generators = gens_tame
-      end
-      if haskey(mG.wild, P)
-        gens_wild = mG.wild[P].generators
-        for s = 1:length(gens_wild)
-          gens_wild[s] = gens_wild[s]*i2 + i1
-        end
-        mG.wild[P].generators = gens_wild
-      end
+    if !isempty(p)
       for s = 1:length(gens)
-        push!(Dgens, (gens[s].elem*i2+i1, X[ngens(C)+ind-1+s]))
+        elgen = make_positive(gens[s].elem, minimum(m, copy = false))
+        push!(Dgens, (elgen, X[ngens(C)+s]))
       end
     else
-      if haskey(mG.tame, P)
-        gens_tame = mG.tame[P].generators
-        for s = 1:length(gens_tame)
-          gens_tame[s] = make_positive(gens_tame[s]*i2 + i1, minimum(m, copy = false))
-        end
-        mG.tame[P].generators = gens_tame
-      end
-      if haskey(mG.wild, P)
-        gens_wild = mG.wild[P].generators
-        for s = 1:length(gens_wild)
-          gens_wild[s] = make_positive(gens_wild[s]*i2 + i1, minimum(m, copy = false))
-        end
-        mG.wild[P].generators = gens_wild
-      end
       for s = 1:length(gens)
-        elgen = make_positive(gens[s].elem*i2 + i1, minimum(m, copy = false))
-        push!(Dgens, (elgen, X[ngens(C)+ind-1+s]))
+        elgen = gens[s].elem
+        push!(Dgens, (elgen, X[ngens(C)+s]))
       end
     end
-    ind += length(gens)
   end
     
   ind = 1
@@ -367,7 +402,7 @@ function ray_class_group_quo(m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Dict{NfOrd
   end
   
   mp = MapRayClassGrp()
-  mp.header = Hecke.MapHeader(X, FacElemMon(parent(m)))
+  mp.header = MapHeader(X, FacElemMon(parent(m)))
   mp.header.preimage = disclog
   mp.fact_mod = lp
   mp.defining_modulus = (m, p)
@@ -398,7 +433,7 @@ function log_infinite_primes(O::NfOrd, p::Array{InfPlc,1})
   local log
   let S = S, p = p
     function log(B::T) where T <: Union{nf_elem ,FacElem{nf_elem, AnticNumberField}}
-      emb = Hecke.signs(B, p)
+      emb = signs(B, p)
       ar = zero_matrix(FlintZZ, 1, length(p))
       for i = 1:length(p)
         if emb[p[i]] == -1
@@ -571,6 +606,7 @@ function check_abelian_extensions(class_fields::Vector{Tuple{Hecke.ClassField{He
   
 end
 
+
 function check_abelian_extension(C::Hecke.ClassField, res_act::Vector{GrpAbFinGenMap}, emb_sub::NfToNfMor, rcg_ctx::Hecke.ctx_rayclassgrp)
 
   #I consider the action on every P-sylow and see if it is trivial
@@ -580,24 +616,11 @@ function check_abelian_extension(C::Hecke.ClassField, res_act::Vector{GrpAbFinGe
   prime_to_test = Int[]
   new_prime = false
   for (P, v) in fac
-    # I check that the action on the P-sylow is the identity.
-    for i = 1:ngens(G)
-      if !divisible(G.snf[i], P)
-        continue
-      end
-      pp, q = ppio(G.snf[i], P)
-      new_prime = false
-      for j = 1:length(res_act)
-        if res_act[j](q*G[i]) != q*G[i]
-          new_prime = true
-          break
-        end
-      end
-      if new_prime
-        break
-      end
-    end
-    if !new_prime
+    # I check that the action of the P-Sylow has no fixed points.
+    PS, mPS = psylow_subgroup(G, P)
+    s, ms = snf(PS)
+    act_sub = induce_action_on_subgroup(ms*mPS, res_act)
+    if !isfixed_point_free(act_sub)
       push!(prime_to_test, P)
     end
   end 
@@ -657,7 +680,6 @@ end
 
 
 function _maximal_abelian_subfield(A::Hecke.ClassField, mp::Hecke.NfToNfMor, ctx::Hecke.ctx_rayclassgrp, expG::Int)
-
   K = base_field(A)
   k = domain(mp)
   ZK = maximal_order(K)
@@ -671,85 +693,52 @@ function _maximal_abelian_subfield(A::Hecke.ClassField, mp::Hecke.NfToNfMor, ctx
   d = abs(div(discriminant(ZK), discriminant(zk)^expected_order))
   mR1 = A.rayclassgroupmap
   expo = Int(exponent(codomain(A.quotientmap)))
-
+  deg = expected_order
   #First, a suitable modulus for A over k
   #I take the discriminant K/k times the norm of the conductor A/K
-  
-  fac1 = factor(d)
   fm0 = Dict{NfOrdIdl, Int}()
-  for (p, v) in fac1
-    lPp = prime_decomposition(zk, p)
-    if divisible(fmpz(expected_order), p)
-      theoretical_bound = _bound_exp_conductor_wild(zk, expG, Int(p), d)
-      for i = 1:length(lPp)
-        fm0[lPp[i][1]] = min(theoretical_bound, Int(v))
-      end
-    else
-      for i = 1:length(lPp)
-        fm0[lPp[i][1]] = 1
-      end
-    end
-  end
-  #Now, I want to compute f_m0 = merge(max, norm(mR1.fact_mod), fac2)
-  primes_done = fmpz[]
   for (P, e) in mR1.fact_mod
-    p = minimum(P)
-    if p in primes_done
-      continue
-    else
-      push!(primes_done, p)
-    end
-    lp = prime_decomposition(zk, p)
-    if !divisible(fmpz(expected_order * expo), p)
-      for i = 1:length(lp)
-        fm0[lp[i][1]] = 1
+    p = intersect_prime(mp, P)
+    if haskey(fm0, p)
+      if !iscoprime(minimum(P, copy = false), deg*expo)
+        fm0[p] += e
       end
     else
-      #I need the relative norm of P expressed as a prime power.
-      pm = Hecke.intersect_prime(mp, P)
-      fpm = divexact(P.splitting_type[2], pm.splitting_type[2])
-      theoretical_bound1 = _bound_exp_conductor_wild(zk, lcm(expo, expG), Int(p), d*norm(defining_modulus(A)[1]))
-      for i = 1:length(lp)
-        if haskey(fm0, lp[i][1])
-          fm0[lp[i][1]] =  min(fm0[lp[i][1]] * fpm * e, theoretical_bound1)
-        else
-          fm0[lp[i][1]] = min(fpm * e, theoretical_bound1)
-        end
+      if !iscoprime(minimum(P, copy = false), deg*expo)
+        fm0[p] = e
+      else
+        fm0[p] = 1
       end
     end
   end
-  # Now, I extend the modulus to K
-  fM0 = Dict{NfOrdIdl, Int}()
-  primes_done = fmpz[]
-  for (P, e) in fm0
-    p = Hecke.minimum(P)
-    if p in primes_done
-      continue
-    else
-      push!(primes_done, p)
-    end
-    
-    lp = prime_decomposition(ZK, p)
-    multip = divexact(lp[1][2], P.splitting_type[1])
-    if !divisible(fmpz(expected_order * expo), p)
-      for i = 1:length(lp)
-        fM0[lp[i][1]] = 1
+  lp = factor(ideal(zk, d))
+  for (P, e) in lp
+    if haskey(fm0, P)
+      if !iscoprime(minimum(P, copy = false), deg*expo)
+        fm0[P] += e
       end
     else
-      if isdefined(A, :abs_disc) 
-        d = A.abs_disc
-        ev = prod(w^z for (w,z) in d)
-        ev = divexact(ev, discriminant(ZK))
-        theoretical_bound2 = _bound_exp_conductor_wild(ZK, expo, Int(p), ppio(ev, p)[1])
-        for i = 1:length(lp)
-          fM0[lp[i][1]] = min(multip * e, theoretical_bound2)
-        end
+      if !iscoprime(minimum(P, copy = false), deg*expo)
+        fm0[P] = e
       else
-        for i = 1:length(lp)
-          fM0[lp[i][1]] = multip * e
-        end
+        fm0[P] = 1
       end
-    end 
+    end
+  end
+  
+  #Now, I extend this modulus to K
+  fM0 = Dict{NfOrdIdl, Int}()
+  for (p, v) in fm0
+    lp = prime_decomposition(mp, p)
+    if iscoprime(minimum(p, copy = false), expo*deg)
+      for (P, e) in lp
+        fM0[P] = 1
+      end
+    else
+      for (P, e) in lp
+        fM0[P] = e*v
+      end
+    end
   end
   ind = 0
   if isdefined(ctx, :computed)

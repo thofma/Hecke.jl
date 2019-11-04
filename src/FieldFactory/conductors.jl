@@ -288,7 +288,7 @@ function conductors_with_restrictions(F::FieldsTower, st::Vector{Int}, IdG::Main
   list_tame = coprime_base(list_tame)
   for q in list_tame
     q == 1 && continue
-    @assert isprime(q)
+    #@assert isprime(q)
     v = valuation(discriminant(O), q)
     is_square_disc_base_field = iszero(mod(v*p, 2))
     td = prime_decomposition_type(O, q)

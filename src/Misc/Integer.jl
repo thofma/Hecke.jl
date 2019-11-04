@@ -765,9 +765,8 @@ function ecm(a::fmpz, max_digits::Int = div(ndigits(a), 2)+1, rnd = flint_rand_c
 
   i = 1
   s = div(max_digits-15, 5)+2
-  i = s = max(i, s)
+  #i = s = max(i, s)
   while i <= s
-    @show i, B1[i], nC[i]
     e,f = ecm(a, B1[i]*1000, B1[i]*1000*100, nC[i], rnd)
     if e != 0
       return (e,f)
@@ -802,12 +801,7 @@ function factor(N::fmpz)
   for (p, v) = r
     N = divexact(N, p^v)
   end
-#  if length(r)==0
-#    r[1] = 1
-#  end
-#  @assert prod(p^v for (p, v) = r)*N == N_in
   if isunit(N)
-#    @assert all(isprime, keys(r))
     @assert N == c
     return Nemo.Fac(c, r)
   end
@@ -877,73 +871,17 @@ function factor_insert!(r::Dict{fmpz, Int}, N::fmpz, scale::Int = 1)
   return r
 end
   
-#=
-
- #TODO: problem(s)
- # Nemo.factor = mpqs is hopeless if > n digits, but asymptotically and practically
- # faster than ecm.
- # ecm is much better if there are "small" factors.
- # p-1 and p+1 methods are missing
- # so probably
- # if n is small enough -> Nemo
- # if n is too large: ecm
- # otherwise
- #  need ecm to find small factors
- # then recurse...
-
-  if ndigits(N) > 60  # TODO: needs revision!
-    e, f = ecm(N, div(ndigits(N), 3))
-    #TODO: use coprime basis to refine stuff...
-    while e != 0
-      ee, f = ispower(f)
-      ee = valuation(N, f) #careful, f does not need to be prime, so N/f^ee is not coprime to f
-      if isprime(f)
-        add_to_key!(r, f, fac*ee)
-        #if haskey(r, f)
-        #  r[f] += fac*ee
-        #else
-        #  r[f] = fac*ee
-        #end
-      else
-        s = factor(f)
-        for (p, ex) = s.fac
-          add_to_key!(r, p, fac*ex*ee)
-          #if haskey(r, p)
-          #  r[p] += fac*ex*ee
-          #else
-          #  r[p] = fac*ex*ee
-          #end
-        end
-      end
-  #    @assert N % f^ee == 0
-  #    @assert N % f^(ee+1) != 0
-      N = divexact(N, f^ee)
-  #    @assert prod(p^v for (p, v) = r)*N == N_in
-      if isone(N)
-        break
-      end
-      e, f = ecm(N, div(ndigits(N), 3))
-    end
-  end
-  s = Nemo.factor(N)
-  for (p, ex) = s.fac
-    add_to_key!(r, p, fac*ex)
-    #if haskey(r, p)
-    #  r[p] += fac*ex
-    #else
-    #  r[p] = fac*ex
-    #end
-  end
-  for p = keys(r)
-    if !fits(Int, p) && !(p in big_primes)
-      push!(big_primes, p)
-    end
-  end
-  @assert all(isprime, keys(r))
-  @assert prod(a^b for (a,b) = r) * c == N_in
-  return Nemo.Fac(c, r)
-end
-=#
+#TODO: problem(s)
+# Nemo.factor = mpqs is hopeless if > n digits, but asymptotically and practically
+# faster than ecm.
+# ecm is much better if there are "small" factors.
+# p-1 and p+1 methods are missing
+# so probably
+# if n is small enough -> Nemo
+# if n is too large: ecm
+# otherwise
+#  need ecm to find small factors
+# then recurse...
 
 function ceil(::Type{fmpz}, a::BigFloat)
   return fmpz(ceil(BigInt, a))
@@ -965,9 +903,6 @@ function rand!(A::Vector{fmpz}, v::StepRange{fmpz, fmpz})
   end
   return A
 end
-
-
-#Base.isless(a::fmpz, b::fmpz) = a < b
 
 Base.isless(a::Int, b::fmpz) = a < b
 
@@ -1206,9 +1141,25 @@ function eulerphi(n::T) where {T <: Integer}
   return T(eulerphi(fmpz(n)))
 end
 
-#function carmichael_lambda(x::Fac{fmpz})
-#  return reduce(lcm, p^(v-1) : (p-1)*p^(v-1) for (p,v) = x.fac)
-#end
+function carmichael_lambda(x::Fac{fmpz})
+  if haskey(x.fac, fmpz(2))
+    y = deepcopy(x.fac)
+    v = y[fmpz(2)]
+    delete!(y, fmpz(2))
+    if v > 2
+      c = fmpz(2)^(v-2)
+    else
+      c = fmpz(1)
+    end
+  else
+    c = fmpz(1)
+    y = x.fac
+  end
+  if length(y) == 0
+    return c
+  end
+  return c * reduce(lcm, (p-1)*p^(v-1) for (p,v) = y)
+end
 
 function carmichael_lambda(x::fmpz)
   v, x = remove(x, fmpz(2))
@@ -1225,15 +1176,14 @@ function carmichael_lambda(x::fmpz)
   end
 end
 
-#function carmichael_lambda(x::FacElem{fmpz, FlintIntegerRing})
-#  x = factor(x)
-#  return reduce(lcm, (p-1)*p^(v-1) for (p,v) = x.fac)
-#end
+function carmichael_lambda(x::FacElem{fmpz, FlintIntegerRing})
+  x = factor(x)
+  return carmichael_lambda(x)
+end
 
 function carmichael_lambda(n::T) where {T <: Integer}
   return T(carmichael_lambda(fmpz(n)))
 end
-
 
 @doc Markdown.doc"""
     eulerphi_inv(n::Integer) -> Array{fmpz, 1}

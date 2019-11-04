@@ -133,7 +133,7 @@ function _abelian_extensionsQQ(gtype::Array{Int,1}, absolute_discriminant_bound:
   complex = iseven(expo) && !only_real
   
   #Now, the big loop
-  class_fields = Vector{Hecke.ClassField}()
+  class_fields = Vector{Hecke.ClassField{MapRayClassGrp, GrpAbFinGenMap}}()
   for (i, k) in enumerate(l_conductors)
     if iszero(mod(i, 1000)) 
       pt = len - i
@@ -145,7 +145,7 @@ function _abelian_extensionsQQ(gtype::Array{Int,1}, absolute_discriminant_bound:
     end
     ls = subgroups(r, quotype = gtype, fun = (x, y) -> quo(x, y, false)[2])
     for s in ls
-      C = ray_class_field(mr, s)
+      C = ray_class_field(mr, s)::ClassField{MapRayClassGrp, GrpAbFinGenMap}
       if Hecke._is_conductor_minQQ(C, n) && Hecke.discriminant_conductorQQ(O, C, k, absolute_discriminant_bound, n)
         push!(class_fields, C)
       end
@@ -226,7 +226,9 @@ function _abelian_normal_extensions(F::FieldsTower, gtype::Array{Int, 1}, absbou
     return Vector{Hecke.ClassField{Hecke.MapRayClassGrp, GrpAbFinGenMap}}[]
   end
   @vprint :Fields 2 "\n"
+  @vprint :Fields 1 "Computing class group"
   @vtime :Fields 2 Cl, mCl = class_group(O, use_aut = true)
+  @vprint :Fields 1 "$(Hecke.clear_to_eol())"
   if mod(n, 2) == 0 && !only_real
     inf_plc = real_places(K)
   end
@@ -350,22 +352,19 @@ function from_class_fields_to_fields(class_fields::Vector{Hecke.ClassField{Hecke
   
 end
 
-
 function compute_fields(class_fields::Vector{Hecke.ClassField{Hecke.MapRayClassGrp, GrpAbFinGenMap}}, autos::Vector{NfToNfMor}, grp_to_be_checked::Main.ForeignGAP.MPtr, right_grp)
   it = findall(right_grp)
   K = base_field(class_fields[it[1]])
   fields = Tuple{Hecke.NfRelNS{nf_elem}, Vector{Hecke.NfRelNSToNfRelNSMor{nf_elem}}}[]
   expo = Int(exponent(codomain(class_fields[it[1]].quotientmap)))
-  #Since I want to compute as few Frobenius as possible, I want to first compute the extensions
-  #whose set of divisors is maximal
   
   set_up_cycl_ext(K, expo, autos)
   @vprint :Fields 3 "Computing the fields directly\n"
   for i in it
     C = class_fields[i]
-    L = number_field(C)
+    L = NumberField(C)
+    #L = NumberField_using_Brauer(C)
     autL = Hecke.absolute_automorphism_group(C, autos)
-    Cpperm = permutation_group(autL)
     if !isone(gcd(degree(K), expo)) 
       Cpperm = permutation_group(autL)
       if GAP.Globals.IdGroup(Cpperm) != grp_to_be_checked
@@ -441,6 +440,7 @@ function set_up_cycl_ext(K::AnticNumberField, n::Int, autK::Array{NfToNfMor, 1})
     @vprint :FieldsNonFancy 1 "computing class group of cyclotomic extension of order $e\n"
     Cl, mCl = class_group(maximal_order(C.Ka), use_aut = true)
     Hecke.allow_cache!(mCl)
+    @vprint :Fields 1 "$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())"
   end
   return nothing
 
@@ -612,11 +612,20 @@ function translate_extensions(mL::NfToNfMor, class_fields, new_class_fields, ctx
           fm0[p] = max(v, fm0[p]) 
         end
       end
+      lPP = prime_decomposition(mL, p)
+      for (P, vP) in lPP
+        if haskey(fM0, P)
+          fM0[P] = max(fM0[P], 2*vP*fm0[p])
+        else
+          fM0[P] = vP*fm0[p]*2
+        end
+      end
     end
     infplc = InfPlc[]
     if iszero(mod(n, 2)) 
       infplc = real_places(L)
     end
+    
     @vprint :Fields 3 "Checking if I can compute $(indclf) over a subfield\n\n "
     @vtime :Fields 3 r, mr = Hecke.ray_class_group_quo(OL, fm0, infplc, ctx, check = false)
     if exponent(r) < n || order(r) < degree(C)
@@ -852,17 +861,3 @@ function translate_fields_up(class_fields, new_class_fields, subfields, it)
   return nothing
 
 end
-
-
-function isconsistent(f::NfRelToNfRelMor)
-  
-  K = domain(f)
-  p = K.pol
-  p1 = map_coeffs(f.coeff_aut, p, cached = false)
-  if !iszero(p1(f.prim_img))
-    error("Wrong")
-  end
-  return true
-  
-end
-

@@ -256,6 +256,15 @@ function discriminant(V::AbsSpace)
   end
 end
 
+function _discriminant(G)
+  d = det(G)
+  if n == 0 || n == 1
+    return d
+  else
+    return -d
+  end
+end
+
 ################################################################################
 #
 #  Computing inner products
@@ -295,18 +304,18 @@ function gram_matrix(V::AbsSpace{T}, S::Vector{Vector{U}}) where {T, U}
 end
 
 function _inner_product(V, v, w)
-  mv = matrix(base_ring(G), 1, rank(G), v)
-  mw = matrix(base_ring(G), rank(G), 1, w)
-  return (mv * gram_matrix(G) * mw)[1, 1]
+  mv = matrix(base_ring(V), 1, nrows(V), v)
+  mw = matrix(base_ring(V), ncols(V), 1, w)
+  return (mv * V * mw)[1, 1]
 end
 
 function _inner_product(G, v, w, involution)
-  return inner_product(G, v, [involution(x) for x in w])
+  return _inner_product(G, v, [involution(x) for x in w])
 end
 
-inner_product(V::QuadSpace, v::Vector, w::Vector) = inner_product(gram_matrix(V), v, w)
+inner_product(V::QuadSpace, v::Vector, w::Vector) = _inner_product(gram_matrix(V), v, w)
 
-inner_product(V::HermSpace, v::Vector, w::Vector) = inner_product(gram_matrix(V), v, w, involution(V))
+inner_product(V::HermSpace, v::Vector, w::Vector) = _inner_product(gram_matrix(V), v, w, involution(V))
 
 @doc Markdown.doc"""
     inner_product(V::AbsSpace, v::Vector, w::Vector) -> FieldElem
@@ -383,7 +392,7 @@ function _gram_schmidt(M::MatElem, a)
           if ok === nothing
             error("Matrix is not of full rank")
           end
-          T[i, j] = 1
+          T[i, j] = 1 // (2 * F[j, i])
         end
         S = T * S
         F = T * F * transpose(_map(T, a))
@@ -546,7 +555,7 @@ function _isequivalent(L::HermSpace, M::HermSpace, p)
     return false
   end
 
-  return islocal_norm(base_ring(L), det(L) * det(M), p)
+  return islocal_norm(base_ring(L), det(L) * det(M), p)[1]
 end
 
 function isequivalent(L::HermSpace, M::HermSpace, P::InfPlc)
@@ -645,7 +654,7 @@ function isequivalent(M::HermSpace, L::HermSpace)
   E = base_ring(M)
   # I could replace this with a islocal_norm at the ramified primes + primes
   # dividing right hand side
-  return isnorm(E, det(M) * det(L))
+  return isnorm(E, det(M) * det(L))[1]
 end
 
 ################################################################################

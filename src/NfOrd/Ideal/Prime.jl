@@ -81,6 +81,12 @@ function intersect_prime(f::Map, P::NfOrdIdl, Ok::NfOrd = maximal_order(domain(f
   
   @assert isprime(P)
   p = minimum(P)
+  if isone(degree(Ok))
+    res = ideal(Ok, p)
+    res.is_prime = 1
+    res.splitting_type = (1, 1)
+    return res
+  end
   k = domain(f)
   K = codomain(f)
   OK = maximal_order(K)
@@ -133,7 +139,6 @@ the maximal order of $K$ above.
 The ideals will belong to $Z_K$ which defaults to "the" maximal order of $K$.
 """
 function prime_decomposition(f::Map, p::NfOrdIdl, ZK::NfOrd = maximal_order(codomain(f)))
-  
   @assert p.is_prime == 1
   k = domain(f)
   K = codomain(f)
@@ -1027,6 +1032,9 @@ Computes the $\mathfrak p$-adic valuation of $a$, that is, the largest $i$
 such that $a$ is contained in $\mathfrak p^i$.
 """
 function valuation(a::nf_elem, p::NfOrdIdl, no::fmpq = fmpq(0))
+  if parent(a) !== nf(order(p))
+    throw(error("Incompatible parents"))
+  end
   if !isdefining_polynomial_nice(parent(a)) || order(p).ismaximal != 1
     return valuation_naive(a, p)::Int
   end

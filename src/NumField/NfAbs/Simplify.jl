@@ -4,16 +4,23 @@ add_verbose_scope(:Simplify)
 
 @doc Markdown.doc"""
     simplify(K::AnticNumberField; canonical::Bool = false) -> AnticNumberField, NfToNfMor
- > Tries to find an isomorphic field $L$ given by a "nicer" defining polynomial.
- > By default, "nice" is defined to be of smaller index, testing is done only using
- > a LLL-basis of the maximal order.
- > If \texttt{canonical} is set to {{{true}}}, then a canonical defining
- > polynomial is found, where canonical is using the pari-definition of {{{polredabs}}}
- > in http://beta.lmfdb.org/knowledge/show/nf.polredabs.
- > Both version require a LLL reduced basis for the maximal order.
+
+Tries to find an isomorphic field $L$ given by a "simpler" defining polynomial.
+By default, "simple" is defined to be of smaller index, testing is done only
+using a LLL-basis of the maximal order.
+
+If `canonical` is set to `true`, then a canonical defining polynomial is found,
+where canonical is using the definition of PARI's `polredabs`, which is described in
+http://beta.lmfdb.org/knowledge/show/nf.polredabs.
+
+Both version require a LLL reduced basis for the maximal order.
 """
 function simplify(K::AnticNumberField; canonical::Bool = false, cached = false)
   Qx, x = PolynomialRing(FlintQQ)
+  if degree(K) == 1
+    L = number_field(x - 1, cached = cached, check = false)[1]
+    return L, hom(L, K, gen(K), check = false)
+  end
   if canonical
     a, f1 = polredabs(K)
     f = Qx(f1)
@@ -23,9 +30,10 @@ function simplify(K::AnticNumberField; canonical::Bool = false, cached = false)
       ZK = OK.lllO
     else
       prec = 100 + 25*div(degree(K), 3) + Int(round(log(abs(discriminant(OK)))))
-      ZK = _lll_for_simplify(OK, prec = prec)[2]
+      ZK = _lll_for_simplify(OK, prec = prec)
     end
-    @vtime :Simplify 3 a, f = _simplify(ZK)
+    @vtime :Simplify 3 a = _simplify(ZK)
+    @vtime :Simplify 3 f = Qx(minpoly(representation_matrix(OK(a))))
   end
   L = NumberField(f, cached = cached, check = false)[1]
   m = hom(L, K, a, check = false)
@@ -38,7 +46,7 @@ function _simplify(O::NfOrd)
   Zx = PolynomialRing(FlintZZ, "x", cached = false)[1]
   f = Zx(K.pol)
   
-  a = gen(K)
+  a = O(gen(K), false)
   p, d = _find_prime(f)
 
   B = basis(O, copy = false)
@@ -63,14 +71,15 @@ function _simplify(O::NfOrd)
     if isone(denominator(B[indices[i]].elem_in_nf))
       continue
     end 
-    t2n = t2(B[indices[i]].elem_in_nf)
+    t2n = t2(B[indices[i]].elem_in_nf, 5)
     if t2n < I
-      a = B[indices[i]].elem_in_nf
+      a = B[indices[i]]
       I = t2n
     end
   end
-  return a, minpoly(Qx, a)
+  return a.elem_in_nf
 end
+
 
  #a block is a partition of 1:n
  #given by the subfield of parent(a) defined by a
@@ -83,11 +92,15 @@ end
  # of a block is the degree K:Q(a)
  # a is primitive iff the block system has length n
 function _block(a::nf_elem, R::Array{fq_nmod, 1}, ap::fq_nmod_poly)
-  c = FlintZZ()
-  ap.length = a.elem_length
-  for i=0:a.elem_length
-    Nemo.num_coeff!(c, a, i)
-    setcoeff!(ap, i, c)
+  # TODO:
+  # Maybe this _tmp business has to be moved out of this function too
+  _R = GF(Int(characteristic(base_ring(ap))), cached = false)
+  _Ry, _ = PolynomialRing(_R, "y", cached = false)
+  _tmp = _Ry()
+  nf_elem_to_gfp_poly!(_tmp, a, false) # ignore denominator
+  set_length!(ap, length(_tmp))
+  for i in 0:(length(_tmp) - 1)
+    setcoeff!(ap, i, base_ring(ap)(_get_coeff_raw(_tmp, i)))
   end
 #  ap = Ft(Zx(a*denominator(a)))
   s = fq_nmod[evaluate(ap, x) for x = R]
@@ -108,8 +121,6 @@ function _block(a::nf_elem, R::Array{fq_nmod, 1}, ap::fq_nmod_poly)
   end
   return b
 end
-
-
 
 #given 2 block systems b1, b2 for elements a1, a2, this computes the
 #system for Q(a1, a2), the compositum of Q(a1) and Q(a2) as subfields of K
@@ -271,7 +282,6 @@ function polredabs(K::AnticNumberField)
   return L3[1]
 end
 
-
 function Q1Q2(f::PolyElem)
   q1 = parent(f)()
   q2 = parent(f)()
@@ -331,7 +341,7 @@ function _lll_for_simplify(M::NfOrd; prec = 100)
 
   K = nf(M)
 
-  if istotally_real(K)
+  if signature(M)[1] == degree(K)
     #in this case the gram-matrix of the minkowski lattice is the trace-matrix
     #which is exact. 
     BM = _lll_gram(ideal(M, 1))[2]
@@ -347,7 +357,7 @@ function _lll_for_simplify(M::NfOrd; prec = 100)
       O1.gen_index = M.gen_index
     end
     M.lllO = O1
-    return true, O1
+    return O1
   end
 
   if degree(K) == 2 && discriminant(M) < 0
@@ -367,57 +377,59 @@ function _lll_for_simplify(M::NfOrd; prec = 100)
       O1.gen_index = M.gen_index
     end
     M.lllO = O1
-    return true, O1
+    return O1
   end
 
   n = degree(M)
   prec = max(prec, 10*n)
+  local g::fmpz_mat
   local d::fmpz_mat
-  while true
-    try
-      d = minkowski_gram_mat_scaled(M, prec)
-      break
-    catch e
-      prec = prec*2
-    end
-  end
-  g = zero_matrix(FlintZZ, n, n)
-  
-  prec = div(prec, 2)
-  shift!(d, -prec)  #TODO: remove?
-
-  for i=1:n
-    fmpz_mat_entry_add_ui!(d, i, i, UInt(nrows(d)))
-  end
-
-  ctx = Nemo.lll_ctx(0.99, 0.51, :gram)
-
-  ccall((:fmpz_mat_one, :libflint), Nothing, (Ref{fmpz_mat}, ), g)
-  ccall((:fmpz_lll, :libflint), Nothing, (Ref{fmpz_mat}, Ref{fmpz_mat}, Ref{Nemo.lll_ctx}), d, g, ctx)
- 
   fl = true
-  ## test if entries in l are small enough, if not: increase precision
-  ## or signal that prec was too low
+  ctx = Nemo.lll_ctx(0.75, 0.51, :gram)
+  while true
+    
+    while true
+      try
+        d = minkowski_gram_mat_scaled(M, prec)
+        break
+      catch e
+        prec = prec*2
+      end
+    end
+    g = identity_matrix(FlintZZ, n)
+    
+    prec = div(prec, 2)
+    shift!(d, -prec)  #TODO: remove?
 
-  if nbits(maximum(abs, g)) >  div(prec, 2)
-    fl = false
-  else
-    ## lattice has lattice disc = order_disc * norm^2
-    ## lll needs to yield a basis sth
-    ## l[1,1] = |b_i|^2 <= 2^((n-1)/2) disc^(1/n)  
-    ## and prod(l[i,i]) <= 2^(n(n-1)/2) disc
-    n = nrows(d)
-    disc = abs(discriminant(M))
-    di = root(disc, n)+1
-    di *= fmpz(2)^(div(n+1,2)) * fmpz(2)^prec
-
-    if cmpindex(d, 1, 1, di) > 0 
-      fl = false
-    else
-      pr = prod_diag(d)
-      if pr > fmpz(2)^(div(n*(n-1), 2)) * disc * fmpz(2)^(n*prec)
+    for i=1:n
+      fmpz_mat_entry_add_ui!(d, i, i, UInt(nrows(d)))
+    end
+    @vtime :Simplify 3 ccall((:fmpz_lll, :libflint), Nothing, (Ref{fmpz_mat}, Ref{fmpz_mat}, Ref{Nemo.lll_ctx}), d, g, ctx)
+ 
+    nb = nbits(maximum(abs, g))
+    if nb <=  prec
+      if nb > div(prec, 2)
         fl = false
       end
+      break
+    end
+    @vprint :Simplify 3 "Still in the loop\n"
+    prec *= 4
+  end
+  ## lattice has lattice disc = order_disc * norm^2
+  ## lll needs to yield a basis sth
+  ## l[1,1] = |b_i|^2 <= 2^((n-1)/2) disc^(1/n)  
+  ## and prod(l[i,i]) <= 2^(n(n-1)/2) disc
+
+  disc = abs(discriminant(M))
+  di = root(disc, n)+1
+  di *= fmpz(2)^(div(n+1,2)) * fmpz(2)^prec
+  if cmpindex(d, 1, 1, di) > 0 
+    fl = false
+  else
+    pr = prod_diagonal(d)
+    if pr > fmpz(2)^(div(n*(n-1), 2)) * disc * fmpz(2)^(n*prec)
+      fl = false
     end
   end
   On = NfOrd(K, g*basis_matrix(M, copy = false))
@@ -431,11 +443,13 @@ function _lll_for_simplify(M::NfOrd; prec = 100)
   if isdefined(M, :gen_index)
     On.gen_index = M.gen_index
   end
+  On.signature = M.signature
   if fl
     M.lllO = On
+    return On
+  else
+    On1 = _lll_for_simplify(On, prec = prec*4)
+    M.lllO = On1
+    return On1
   end
-  return fl, On
 end
-
-
-

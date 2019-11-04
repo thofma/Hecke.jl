@@ -21,6 +21,16 @@ function isprimitive_root(x::Generic.Res{fmpz}, M::fmpz, fM::Fac{fmpz})
   return true
 end
 
+if Nemo.version() > v"0.15.1"
+  function isprimitive_root(x::Nemo.fmpz_mod, M::fmpz, fM::Fac{fmpz})
+    for (p, l) in fM
+      if x^divexact(M, p) == 1
+        return false
+      end
+    end
+    return true
+  end
+end
 
 #=
   for p = 2 this is trivial, as <-1, 5> are generators independently of 
@@ -593,7 +603,7 @@ function _unit_pk_mod_n(p::Int, v::Int, n::Int)
       ord = gcd(2^(v-2), n)
       gens = Int[-1,5]
       exps = divexact(2^(v-2), ord)
-      z = 5^exps
+      z = R(5)^exps
       local disc_log6
       let R = R, exps = exps, ord = ord, z = z
       function disc_log6(x::Int)

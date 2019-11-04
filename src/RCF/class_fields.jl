@@ -30,6 +30,7 @@ mutable struct ClassField_pp{S, T}
   AutG::Vector{NfRelToNfRelMor{nf_elem, nf_elem}}
   AutR::fmpz_mat
   bigK::KummerExt
+  h::GrpAbFinGenMap #The Artin Map provided by the function build_map
   degree::Int # The degree of the relative extension we are searching for.
               # In other words, the order of the codomain of quotientmap
 

@@ -848,41 +848,81 @@ function maximal_abelian_subfield(A::ClassField, k::AnticNumberField)
   K = base_field(A)
   fl, mp = issubfield(k, K)
   @assert fl
+  return maximal_abelian_subfield(A, mp)
+end
+  
+function maximal_abelian_subfield(A::ClassField, mp::NfToNfMor)
+  k = domain(mp)
+  K = codomain(mp)
   ZK = maximal_order(K)
   zk = maximal_order(k)
   # disc(ZK/Q) = N(disc(ZK/zk)) * disc(zk)^deg
   # we need the disc ZK/k, well a conductor.
-  # I think for now, I cheat
   d = div(discriminant(ZK), discriminant(zk)^div(degree(K), degree(k)))
+  deg = divexact(degree(K), degree(k))
+  expo = Int(exponent(codomain(A.quotientmap)))
+  
   mR1 = A.rayclassgroupmap
   mC = pseudo_inv(A.quotientmap)*mR1
-  f_M0 = mR1.fact_mod
-  # want m0 meet zk:
-  f_m0 = typeof(f_M0)()
-  for (P,e) = f_M0
-    lp = prime_decomposition(zk, P.gen_one)
-    p = first([x[1] for x = lp if valuation(mp(k(x[1].gen_two)), P) > 0])
+  #First, I construct a suitable modulus for A/k
+  f_m0 = Dict{NfOrdIdl, Int}()
+  for (P, e) in mR1.fact_mod
+    p = intersect_prime(mp, P)
     if haskey(f_m0, p)
-      f_m0[p] += e
+      if !iscoprime(minimum(P, copy = false), deg*expo)
+        f_m0[p] += e
+      end
     else
-      f_m0[p] = e
+      if !iscoprime(minimum(P, copy = false), deg*expo)
+        f_m0[p] = e
+      else
+        f_m0[p] = 1
+      end
+    end
+  end
+  lp = factor(ideal(zk, d))
+  for (P, e) in lp
+    if haskey(f_m0, P)
+      if !iscoprime(minimum(P, copy = false), deg*expo)
+        f_m0[P] += e
+      end
+    else
+      if !iscoprime(minimum(P, copy = false), deg*expo)
+        f_m0[P] = e
+      else
+        f_m0[P] = 1
+      end
     end
   end
   
-  expo = Int(exponent(codomain(A.quotientmap)))
-  R, mR = Hecke.ray_class_group(ZK, f_M0, real_places(K), n_quo = expo)
-  r, mr = Hecke.ray_class_group(zk, f_m0, real_places(k), n_quo = expo * div(degree(K), degree(k)))
+  #Now, I extend this modulus to K
+  f_M0 = Dict{NfOrdIdl, Int}()
+  for (p, v) in f_m0
+    lp = prime_decomposition(mp, p)
+    if iscoprime(minimum(p, copy = false), expo*deg)
+      for (P, e) in lp
+        f_M0[P] = 1
+      end
+    else
+      for (P, e) in lp
+        f_M0[P] = e*v
+      end
+    end
+  end
+
+    
+  R, mR = Hecke.ray_class_group(ZK, f_M0, real_places(K), n_quo = expo * deg)
+  r, mr = Hecke.ray_class_group(zk, f_m0, real_places(k), n_quo = expo * deg)
   lP, gS = Hecke.find_gens(mR, coprime_to = minimum(defining_modulus(mR1)[1]))
-  listn = [norm(mp, x) for x in lP]
+  listn = NfOrdIdl[norm(mp, x) for x in lP]
   # Create the map between R and r by taking norms
-  proj = hom(gS, [mr\x for x in listn])
+  proj = hom(gS, GrpAbFinGenElem[mr\x for x in listn])
   #compute the norm group of A in R
-  proj1 = hom(gS, [mC\x for x in lP])
+  proj1 = hom(gS, GrpAbFinGenElem[mC\x for x in lP])
   S, mS = kernel(proj1)
-  mS1 = Hecke.compose(mS, proj)
+  mS1 = compose(mS, proj)
   G, mG = Hecke.cokernel(mS1)
   return ray_class_field(mr, mG)
-  
 end
 
 @doc Markdown.doc"""
