@@ -205,3 +205,105 @@ function ResidueField(K::EisensteinField)
     return k, MapFromFunc(_residue, _lift, K, k)
 end
 
+################################################################################
+#
+#  Squash extension
+#
+################################################################################
+
+@doc Markdown.doc"""
+    squash(L::NALocalField)
+Given a Non-archimedean local field `L`, which is defined as an extension of the form $L/K/F$,
+construct the new field extension of the form $L/F$.
+"""
+function squash(L::NALocalField)
+
+    if typeof(L) <: FlintLocalField
+        error("Cannot squash Flint Fields")
+    end
+
+    if typeof(base_ring(L)) <: FlintLocalField
+        error("Base field is of type FlintLocalField, which has no base field.")
+    end
+
+    K = base_ring(L)
+    F = base_ring(K)
+
+    # Treat defining polynomials as multivariate polynomials.
+    Ry, y = PolynomialRing(F, "y")
+    Rx, x = PolynomialRing(Ry, "x")    
+    f = K.pol(x)
+    g = sum(polynomial(coeff(L.pol,i))(x)*y^i for i=0:degree(L.pol))
+
+    h = resultant(f,g)
+    
+    return EisensteinField(h, L.S)
+end
+
+@doc Markdown.doc"""
+    polynomial(a::eisf_elem)
+Converts an eisenstein element into a polynomial over the base ring of its parent.
+"""
+function polynomial(a::eisf_elem)
+    return a.data_ring_elt.data
+end
+
+# function resultant(f::AbstractAlgebra.Generic.MPolyElem, g::AbstractAlgebra.Generic.MPolyElem, m)
+
+#     check_parent(f,g)
+    
+#     # Create a new polynomial ring over a polynomial ring with the variable "m" isolated
+#     R = parent(f)
+#     vars = gens(R)
+#     mind = findfirst(x->x==m, vars)
+
+#     A, new_vars = PolynomialRing(base_ring(R), length(vars)-1)
+#     Rnew, M = PolynomialRing(A, "M")
+
+
+#     any_new_vars = convert(Array{Any,1}, new_vars)
+    
+#     splice!(any_new_vars, mind:mind-1, [M])
+#     splice!(vars, mind:mind)
+
+#     display(vars)
+#     display(any_new_vars)
+    
+#     return resultant(f(any_new_vars...), g(any_new_vars...))(vars)
+# end
+
+@doc Markdown.doc"""
+    coeffs(f::AbstractAlgebra.Generic.MPolyElem, i::Integer)
+Return the coefficients of the polynomial with respect to the $i$-th variable.
+"""
+function coeffs(f::AbstractAlgebra.Generic.MPolyElem, i::Integer)
+    e_vecs = collect(exponent_vectors(f))
+    t_list = collect(terms(f))
+
+    m = gens(parent(f))[i]
+    D = Dict(e=>t for (e,t) in zip(e_vecs, t_list))
+    
+    max_j = maximum(e[i] for e in e_vecs)
+
+    output = AbstractAlgebra.Generic.MPolyElem[]
+    for j = 0:max_j
+        j_term_exps = filter(e-> e[i] == j, e_vecs)
+        push!(output, sum(divexact(D[e], m^j)  for e in j_term_exps))
+    end
+    return output
+end
+
+@docs Markdown.doc"""
+    coeffs(f::AbstractAlgebra.Generic.MPolyElem, m::AbstractAlgebra.Generic.MPolyElem)
+Return the coefficients of the polynomial with respect to the variable $m$.
+"""
+function coeffs(f::AbstractAlgebra.Generic.MPolyElem, m::AbstractAlgebra.Generic.MPolyElem)
+    i = findfirst(a->a==m, gens(parent(f)))
+    return coeffs(f, i)
+end
+
+################################################################################
+#
+#  Unramified extension
+#
+################################################################################
