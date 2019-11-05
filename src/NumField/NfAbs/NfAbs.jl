@@ -101,17 +101,17 @@ end
 Returns the field with defining polynomial $x^n + \sum_{i=0}^{n-1} (-1)^{n-i}Bx^i$.
 These fields tend to have non-trivial class groups.
 """
-function wildanger_field(n::Int, B::fmpz; cached::Bool = true)
+function wildanger_field(n::Int, B::fmpz; check::Bool = true, cached::Bool = true)
   Qx, x = PolynomialRing(FlintQQ, "x", cached = false)
   f = x^n
   for i=0:n-1
     f += (-1)^(n-i)*B*x^i
   end
-  return NumberField(f, "_\$", cached = cached)
+  return NumberField(f, "_\$", cached = cached, check = check)
 end
 
-function wildanger_field(n::Int, B::Integer; cached::Bool = true)
-  return wildanger_field(n, fmpz(B), cached = cached)
+function wildanger_field(n::Int, B::Integer; cached::Bool = true, check::Bool = true)
+  return wildanger_field(n, fmpz(B), cached = cached, check = check)
 end
 
 @doc Markdown.doc"""
