@@ -198,7 +198,7 @@ function valuation(a::eisf_elem)
 
     min = valuation(coeffs[0])
     for i = 1:length(coeffs)-1
-        newv = valuation(coeffs[i]) + (i)//absolute_degree(parent(a))
+        newv = valuation(coeffs[i]) + (i)//ramification_degree(parent(a))
         if newv < min
             min = newv
         end

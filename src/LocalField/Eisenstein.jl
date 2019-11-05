@@ -82,7 +82,18 @@ absolute_degree(a::QadicField) = degree(a)
 function absolute_degree(a::NALocalField)
     return degree(a)*absolute_degree(base_ring(a))
 end
-    
+
+@doc Markdown.doc"""
+    absolute_degree(a::NALocalField)
+> Return the degree of `a` over its maximal unramified subextension.
+"""
+ramification_degree(::FlintLocalField) = 1
+
+function ramification_degree(a::EisensteinField)
+    return degree(a)*ramification_degree(base_ring(a))
+end
+
+
 # By our definition, the generator of a field of eisenstein type is the uniformizer.
 uniformizer(a::EisensteinField) = gen(a)
 
@@ -307,3 +318,49 @@ end
 #  Unramified extension
 #
 ################################################################################
+
+@doc Markdown.doc"""
+    unramified_extension(K::EisensteinField, n::Integer)
+Constructs the unique extension of $K$ by a root of unity `a` with $[K(a) : K] = n$. The
+result is an EisensteinField $K'$, the generator of the unramified extension, and
+an embedding map $f: K --> K'$.
+"""
+function unramified_extension(K::EisensteinField, n::Integer)
+    #TODO: Fix the bug in FLINT preventing qadics-to-qadic coercion.
+    if n <= 0
+        error("Extension degree must be a positive integer.")
+    elseif n==1
+        return K, one(K), x->x
+    end
+
+    Q = base_ring(K)
+    
+    if typeof(Q) <: FlintPadicField
+        L = FlintQadicField(prime(Q), n*degree(Q), precision(Q))
+        mp_base = x->L(x)
+        unram_gen = gen(L)
+    elseif typeof(Q) <: FlintQadicField
+        degree(Q) != 1 && error("Coercions between qadic and qadic fields not implemented.")
+
+        L = FlintQadicField(prime(Q), n*degree(Q), precision(Q))
+        mp_base = x->L(coeff(x,0))
+        unram_gen = gen(L)
+    else
+        L, unram_gen, mp_base = unramified_extension(base_ring(K), n)
+    end
+
+    f = K.pol
+    Knew, Z = EisensteinField(map_coeffs(mp_base, f), K.S)
+
+    # Construct the map between fields.
+    mp = function(x)
+        if iszero(x)
+            return zero(Knew)
+        else
+            return map_coeffs(x->Knew(mp_base(x)), polynomial(x))(Z)
+        end
+    end
+    
+    return Knew, Knew(unram_gen), mp
+end
+

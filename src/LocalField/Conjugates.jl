@@ -336,3 +336,36 @@ function _conjugates(a::nf_elem, C::qAdicConj, n::Int, op::Function)
     end
     return res
 end
+
+#########################################################################################
+#
+#   Conjugates in ramified completions.
+#
+#########################################################################################
+
+
+#=
+
+#1. Need to construct the ramified completion.
+
+#2. Need to determine the unramified sub-extension of the splitting field 
+#   (possible in stupid cases, but in general requires factorizations.)
+
+# For now, give up if the splitting field is not just an unramified extension.
+
+#3. Compute the roots in the local splitting field.
+
+Generally, this will work so long as there is no wild ramification. The wild case is easy
+to detect.
+
+=#
+
+function local_galois_closure(K::EisensteinField)
+    !is_tamely_ramified(K) && error("Wild ramification still not possible.")
+
+    error("Not implemented")
+end
+
+function is_tamely_ramified(K::EisensteinField)
+    return gcd(prime(K), ramification_degree(K)) == 1
+end
