@@ -1045,6 +1045,17 @@ function _n_part_multgrp_mod_p(p::NfOrdIdl, n::Int)
 end
 
 
+#Cohen, Advanced topics in computational number theory, 4.5 exercise 20
+function bound_exp_mult_grp(P::NfOrdIdl, n::Int)
+  @assert isprime(P)
+  e = ramification_index(P)
+  f = degree(P)
+  p = minimum(P, copy = false)
+  s = valuation(n, p)
+  return Int((p^s)-1+s*p^s)
+end
+
+
 function _mult_grp_mod_n(Q::NfOrdQuoRing, y1::Dict{NfOrdIdl, Int}, y2::Dict{NfOrdIdl, Int}, n::Integer)
 
   O = Q.base_ring
@@ -1080,6 +1091,7 @@ function _mult_grp_mod_n(Q::NfOrdQuoRing, y1::Dict{NfOrdIdl, Int}, y2::Dict{NfOr
 
     if haskey(y2, q)
       @assert y2[q] >= 2
+      #exp_q = min(y2[q], bound_exp_mult_grp(q, n))
       G2, G2toO = _1_plus_p_mod_1_plus_pv(q, y2[q], qe)
       if haskey(y1, q)
         e = Int(exponent(G2))

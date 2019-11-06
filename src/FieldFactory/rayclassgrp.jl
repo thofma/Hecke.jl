@@ -94,7 +94,7 @@ function ray_class_group_quo(m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Dict{NfOrd
         return FacElem(Dict(mC(a) => 1))
       end
     end
-    return class_as_ray_class(C, mC, exp_c, m)
+    return class_as_ray_class(quo(C, ctx.n)[1], mC, exp_c, m)
   end
   
   O = ctx.order

@@ -571,7 +571,6 @@ function conductorsQQ(O::NfOrd, a::Array{Int, 1}, bound::fmpz, tame::Bool=false)
     boundsubext = root(bound, Int(divexact(n, q^v)))
     obound = flog(boundsubext, q)
     nnbound = valuation_bound_discriminant(n, q)
-    k = div(expo, Int(q)-1)
     bound_max_ap = min(nbound, obound, nnbound)  #bound on ap
     bound_max_exp = div(bound_max_ap, (q^(v-1))*(q-1)) #bound on the exponent in the conductor
     if nisc != 1

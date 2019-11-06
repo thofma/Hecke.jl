@@ -597,12 +597,13 @@ end
 function fields(list::Vector{FieldsTower}, G, absolute_bound::fmpz; only_real::Bool = false)
   L = GAP.Globals.DerivedSeries(G)
   lvl = _real_level(L)
-  @show length(L)-1
+  first = true
   for i = 2:length(L)-1
     G1 = GAP.Globals.FactorGroup(L[1], L[i])
-    if GAP.Globals.Size(G1) != degree(list[1].field)
+    if first && GAP.Globals.Size(G1) != degree(list[1].field)
       continue
     end
+    first = false
     E1 = GAP.Globals.FactorGroup(L[1], L[i+1])
     H1 = GAP.Globals.FactorGroup(L[i], L[i+1])
     l = GAP.gap_to_julia(Vector{Int64}, GAP.Globals.AbelianInvariants(H1))
