@@ -224,11 +224,13 @@ end
 
 @doc Markdown.doc"""
     squash(L::NALocalField)
-Given a Non-archimedean local field `L`, which is defined as an extension of the form $L/K/F$,
-construct the new field extension of the form $L/F$.
+Given a Non-archimedean local field $L$, which is defined as an extension of the form $L/K/F$,
+construct the new field extension of the form $L/F$, as well as a map $mp: L-->L/F$. The 
+generator of the new extension is the generator of $L$.
 """
 function squash(L::NALocalField)
 
+    #TODO: Also return a map to the squashed extension.
     if typeof(L) <: FlintLocalField
         error("Cannot squash Flint Fields")
     end
@@ -247,8 +249,23 @@ function squash(L::NALocalField)
     g = sum(polynomial(coeff(L.pol,i))(x)*y^i for i=0:degree(L.pol))
 
     h = resultant(f,g)
+    Lsquash, y_img = EisensteinField(h, L.S)
+
+    # We now need to find an element `x` in Lsquash such that `K.pol(x) == 0` and
+    # `g(x,y) == 0` (as `g` is the bivariate version of the minimal polynomial of `y`
+    # over `K`.
     
-    return EisensteinField(h, L.S)
+    roots_in_Lsquash = roots(K.pol, Lsquash)
+    g_Ls = map_coeffs(c->c(y_img), g)
+
+    rt_index = findfirst(rt->iszero(g_Ls(rt)), roots_in_Lsquash)
+    x_img = roots_in_Lsquash[rt_index]
+    
+    mp = function(elt)
+        return map_coeffs(c->polynomial(c)(x_img), polynomial(elt))(y_img)
+    end
+    
+    return Lsquash, mp
 end
 
 @doc Markdown.doc"""
