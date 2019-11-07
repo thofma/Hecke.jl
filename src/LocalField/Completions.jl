@@ -166,6 +166,52 @@ function sharpen_base!(K::EisensteinField, new_prec)
 end
 
 
+#####
+# Sharpen via polynomial (SharpenPolyCtx)
+
+#=
+The point of this interface is to allow the sharpening of the completion map to a field 
+by fixing the defining polynomials and sharpening the root. 
+
+Ideally, there should be a "forget inverse" option, since the linear solve part of the
+procedure is the most expensive part, which is not immediately useful for computing
+regulators.
+=#
+
+# Reminicent of the "qAdicConj" context, but more general.
+mutable struct RootSharpenCtx
+    polynomial             # Should be an exact polynomial
+    #derivative_polynomial # cached derivative of polynomial. Not clear if this should be cached.
+    field                  # field of definition of root
+    root                   # the root of a polynomial
+    precision              # current precision of the root
+
+    function RootSharpenCtx(polynomial, root)
+        ctx = new()
+        ctx.polynomial = change_base_ring(FlintZZ, polynomial)
+        ctx.field = parent(root)
+        ctx.root  = root 
+        ctx.precision = precision(root)
+        return ctx
+    end
+end
+
+function sharpen!(C::RootSharpenCtx, n)
+    f  = C.polynomial
+    C.precision > n  && error("Cannot sharpen to lower precision.")
+    C.precision == n && return
+
+    # sharpen field defining polynomials trivially
+    K = C.field
+    sharpen_base!(K,n)
+    setprecision!(K.pol, n)
+    
+    # Then newton lift the roots
+    # Hope it is continuous.
+    newton_lift(f, C.root)
+    return
+end
+
 #########################################################################################
 #
 #   Completions
@@ -178,6 +224,8 @@ Commentary on precisions:
 See the org file.
 =#
 
+# TODO: Add branching based on optimization parameter.
+# TODO: Add various sharpening contexts.
 function completion(K::NumField{T} where T, P::NfOrdIdl; prec=10)
     if ramification_index(P) == 1
         return unramified_completion(K,P)
