@@ -360,12 +360,68 @@ to detect.
 
 =#
 
-function local_galois_closure(K::EisensteinField)
-    !is_tamely_ramified(K) && error("Wild ramification still not possible.")
-
-    error("Not implemented")
+@doc Markdown.doc"""
+    field_of_definition(a::padic)
+    field_of_definition(a::qadic)
+Returns the degree of the extension defining `a`.
+"""
+function degree_of_field_of_definition(a::qadic)
+    for d in filter(x->x>0, divisors(degree(parent(a))))
+        if a == frobenius(a,d)
+            return d
+        end
+    end
+    error("No power of frobenius of $a equals $a.")
 end
 
-function is_tamely_ramified(K::EisensteinField)
+function degree_of_field_of_definition(a::padic)
+    return 1
+end
+
+
+@doc Markdown.doc"""
+    galois_closure(K::EisensteinField)
+Returns an Eisenstein field `L` such that `L/Qp` is Galois. Also return a map.
+Note that the Eisenstein Field will be over a Qadic base, which might be an extension of
+the base field of $K$.
+"""
+function galois_closure(K::EisensteinField)
+    !is_tamely_ramified(K) && error("Wild ramification still not possible.")
+    is_tamely_ramified(K) && return _galois_closure_tamely_ramified(K)
+end
+
+function galois_closure(K::FlintLocalField)
+    return K, x->x
+end
+
+function _galois_closure_tamely_ramified(K::EisensteinField)
+    L, mp_to_squash = simple_extension(K)
+
+    # TODO: Add reference.
+    # The size of the Galois closure of a tamely ramified extension is given by
+    # the classification of tamely ramified extensions. (given by a poly of the form `X^e-u*p`.)
+    # 
+    frob_orbit_size = lcm(map(degree_of_field_of_definition, coeffs(L.pol)))
+
+    g = change_base_ring(L, L.pol)
+    X = gen(parent(g))
+    h = fprimpart(g(uniformizer(L)*X))
+
+    # Note that $h$ is guarenteed to be squarefree over the residue field by the
+    # tameness assumption, since the degree of `h` is coprime to `p`.
+
+    k,res = ResidueField(L)
+    ext_degrees = map(x->degree(x[1]), factor(map_coeffs(res, h)))
+
+    Lgal, _, mp_to_gal = unramified_extension(L, frob_orbit_size*lcm(ext_degrees))
+    
+    return Lgal, x->mp_to_gal(mp_to_squash(x))
+
+end
+
+@doc Markdown.doc"""
+    is_tamely_ramified(K::NALocalField)
+"""
+function is_tamely_ramified(K::NALocalField)
     return gcd(prime(K), ramification_degree(K)) == 1
 end

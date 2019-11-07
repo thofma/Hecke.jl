@@ -268,6 +268,33 @@ function squash(L::NALocalField)
     return Lsquash, mp
 end
 
+"""
+Return a simple presentation of the Eisenstein field. The function applies "squash"
+until there is only one stage of the tower. Also returns a map.
+"""
+function simple_extension(K::EisensteinField)
+
+    L = K
+    map_list = Array{Any,1}()
+
+    while !isa(base_ring(L), FlintLocalField)
+        L, next_mp = squash(L)
+        push!(map_list, next_mp)
+    end
+    push!(map_list, x->K(x))
+
+    # The map from K->L is the composition of the maps in reverse order.
+    mp = function(elt)
+        a = elt
+        for j=length(map_list):-1:1
+            a = map_list[j](a)
+        end
+        return a
+    end
+    
+    return L,mp
+end
+
 @doc Markdown.doc"""
     polynomial(a::eisf_elem)
 Converts an eisenstein element into a polynomial over the base ring of its parent.
@@ -321,7 +348,7 @@ function coeffs(f::AbstractAlgebra.Generic.MPolyElem, i::Integer)
     return output
 end
 
-@docs Markdown.doc"""
+@doc Markdown.doc"""
     coeffs(f::AbstractAlgebra.Generic.MPolyElem, m::AbstractAlgebra.Generic.MPolyElem)
 Return the coefficients of the polynomial with respect to the variable $m$.
 """
