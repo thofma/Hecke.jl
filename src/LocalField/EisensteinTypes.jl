@@ -62,9 +62,13 @@ mutable struct EisensteinField{NonArchLocalFieldElem} <: NonArchLocalField
     base_ring
     pol
     S::Symbol
+    prec_max # Eisenstein fields are defined by an approximate polynomial, so
+             # element precision will not exceed `prec_max` after a division.
+    
     auxilliary_data::Array{Any, 1} # Storage for extensible data.
 
     ## Temporary to get things off the ground. This may well be a poor choice.
+    ## Actually, this has been working fairly well! Just need to be careful with division...
     data_ring::AbstractAlgebra.Generic.ResField{<:AbstractAlgebra.Generic.Poly}
     
     function EisensteinField(pol::AbstractAlgebra.Generic.Poly{T}, s::Symbol,
@@ -80,7 +84,8 @@ mutable struct EisensteinField{NonArchLocalFieldElem} <: NonArchLocalField
         eisf.pol = pol
         eisf.base_ring = base_ring(pol)
         eisf.S = s
-
+        eisf.prec_max = precision(eisf.base_ring)
+        
         # Construct a new parent to actually print a generator nicely.
         P,Pvar = PolynomialRing(base_ring(pol), string(s))
         eisf.data_ring = ResidueField(P, pol(Pvar), cached=cached)

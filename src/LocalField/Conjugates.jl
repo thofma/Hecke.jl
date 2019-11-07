@@ -102,38 +102,6 @@ end
 #
 #########################################################################################
 
-#XXX: valuation(Q(0)) == 0 !!!!!
-function newton_lift(f::fmpz_poly, r::NALocalFieldElem)
-  Q = parent(r)
-  n = Q.prec_max
-  i = n
-  chain = [n]
-  while i>2
-    i = div(i+1, 2)
-    push!(chain, i)
-  end
-  fs = derivative(f)
-  qf = change_base_ring(Q, f, cached = false)
-  qfs = change_base_ring(Q, fs, cached = false)
-  o = Q(r)
-  o.N = 1
-  s = qf(r)
-  o = inv(setprecision!(qfs, 1)(o))
-  @assert r.N == 1
-  for p = reverse(chain)
-    r.N = p
-    o.N = p
-    Q.prec_max = r.N
-    setprecision!(qf, r.N)
-    setprecision!(qfs, r.N)
-    r = r - qf(r)*o
-    if r.N >= n
-      Q.prec_max = n
-      return r
-    end
-    o = o*(2-qfs(r)*o)
-  end
-end
 
 @doc Markdown.doc"""
     roots(f::fmpz_poly, Q::FlintQadicField; max_roots::Int = degree(f)) -> Array{qadic, 1}

@@ -45,6 +45,8 @@ function prime(a::EisensteinField)
     return prime(base_field(a))
 end
 
+precision(a::EisensteinField) = a.prec_max
+
 ################################################################################
 #
 #  Base field, basic base field functions, and uniformizer

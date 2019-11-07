@@ -106,7 +106,43 @@ function newton_lift(f::Hecke.Generic.Poly{T}, r::T) where T<:NALocalFieldElem
     return r
 end
 
-import Hecke.roots
+#XXX: valuation(Q(0)) == 0 !!!!!
+
+# TODO: This function has some mutation issues...
+function newton_lift(f::fmpz_poly, r::NALocalFieldElem)
+  Q = parent(r)
+  n = Q.prec_max
+  i = n
+  chain = [n]
+  while i>2
+    i = div(i+1, 2)
+    push!(chain, i)
+  end
+  fs = derivative(f)
+  qf = change_base_ring(Q, f, cached = false)
+  qfs = change_base_ring(Q, fs, cached = false)
+  o = Q(r)
+  o.N = 1
+  s = qf(r)
+    
+  setprecision!(qfs, 1)
+  o = inv(qfs(o))
+  @assert r.N == 1
+  for p = reverse(chain)
+    r.N = p
+    o.N = p
+    Q.prec_max = r.N
+    setprecision!(qf, r.N)
+    setprecision!(qfs, r.N)
+    r = r - qf(r)*o
+    if precision(r) >= n
+      Q.prec_max = n
+      return r
+    end
+    o = o*(2-qfs(r)*o)
+  end
+end
+
 
 # TODO: XXX: f is assumed to be "square-free".
 function integral_roots(f::Hecke.Generic.Poly{<:Hecke.NALocalFieldElem})
@@ -150,6 +186,7 @@ function integral_roots(f::Hecke.Generic.Poly{<:Hecke.NALocalFieldElem})
     error("Etwas hat scheif gelaufen.")
 end
 
+import Hecke.roots
 function roots(f::Hecke.Generic.Poly{<:Hecke.NALocalFieldElem})
     K = base_ring(parent(f))
     pi = uniformizer(K)

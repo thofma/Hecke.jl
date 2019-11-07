@@ -196,21 +196,60 @@ mutable struct RootSharpenCtx
     end
 end
 
-function sharpen!(C::RootSharpenCtx, n)
-    f  = C.polynomial
-    C.precision > n  && error("Cannot sharpen to lower precision.")
-    C.precision == n && return
+function sharpen!(maps, ctx::RootSharpenCtx, n)
 
+    # TODO: also sharpen lifting map properly.
+
+    inj = maps.f
+    
+    f  = ctx.polynomial
+    ctx.precision > n  && error("Cannot sharpen to lower precision.")
+    ctx.precision == n && return
+    ctx.precision = n
+    
     # sharpen field defining polynomials trivially
-    K = C.field
+    K = ctx.field
     sharpen_base!(K,n)
     setprecision!(K.pol, n)
+    K.prec_max = n
     
     # Then newton lift the roots
     # Hope it is continuous.
-    newton_lift(f, C.root)
+    test = newton_lift(f, ctx.root)
+
+    display(test)
+    
+    # Now we need to sharpen the maps...
+    img_nf_gen = ctx.root
+    display(precision(img_nf_gen))
+    
+    # Construct the forward map, embedding $K$ into its completion.
+    # The map is determined by the image of the number field generators.
+    function inj(a::nf_elem)
+        return sum(coeffs(a)[j+1] * img_nf_gen^j for j=0:degree(parent(a))-1)
+    end
+
+    maps.f = inj
+    
     return
 end
+
+function setprecision!(a::eisf_elem, N)
+    for c in coeffs(a)
+        setprecision!(c, N)
+    end
+    return
+end
+
+                       
+
+function setprecision!(f::AbstractAlgebra.Generic.Poly{<:NALocalFieldElem}, N::Int)
+  for i=1:length(f)
+    setprecision!(f.coeffs[i], N)
+  end
+  return
+end
+
 
 #########################################################################################
 #
