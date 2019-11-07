@@ -1,6 +1,42 @@
 
 add_assert_scope(:padic_poly)
 
+################################################################################
+#
+#  setcoeff!, iszero!
+#
+################################################################################
+
+# Since approximate polynomials need to remember *different* zeroes, we need to adjust
+# the generic behaviour.
+
+# Unfortunately, need to think about
+#=
+-- how the degree of a polynomial works with `leading zeros`
+-- what happens with memory allocations and array sizing.
+=#
+
+function setcoeff!(c::AbstractAlgebra.Generic.Poly{T}, n::Int, a::T) where {T <: NALocalFieldElem}
+   #if !iszero(a) || n + 1 <= length(c)
+      fit!(c, n + 1)
+      c.coeffs[n + 1] = a
+      c.length = max(length(c), n + 1)
+      # don't normalise
+   #end
+   return c
+end
+
+function iszero(a::AbstractAlgebra.Generic.Poly{<:NALocalFieldElem})
+    length(a) == 0 && return true
+    return all(iszero(c) for c in coefficients(a))
+end
+
+function degree(a::AbstractAlgebra.Generic.Poly{<:NALocalFieldElem})
+    i = findlast(!iszero, a.coeffs)
+    isnothing(i) && return -1
+    return i-1
+end
+
 ###################################################################################
 #
 #  TODO: XXX: Should be moved to AbstractAlgebra.Generic once 0.6.0 is compatible.

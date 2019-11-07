@@ -55,60 +55,94 @@ end
 
 my_setprecision!(f,N) = f
 
+
 # Should use a precision access function rather than a "__.N".
 
-#XXX: valuation(Q(0)) == 0 !!!!!
-function newton_lift(f::Hecke.Generic.Poly{T}, r::T) where T<:NALocalFieldElem
-
-    # The many setprecision! calls are likely not valid for an approximately defined
-    # polynomial.
-
-    r.N = 1 # TODO: should be removed.
-    
-    K = parent(r)
-    #n = K.prec_max
-    n = 100
-    
-    i = n
-    chain = [n]
-    while i>2
-        i = div(i+1, 2)
-        push!(chain, i)
-    end
-    df  = derivative(f)
-    fK  = change_base_ring(K,f)
-    dfK = change_base_ring(K,df)
-
-    @assert r.N == 1          # Ensure the residue is well-defined.
-    df_at_r_inverse = K(r)    # Cache and update the values of 1/dfK(r)
-    df_at_r_inverse.N = 1
-    df_at_r_inverse = inv(my_setprecision!(dfK, 1)(df_at_r_inverse))
-    
-    #s = fK(r)
-
-    for current_precision in reverse(chain)
-        
-        r.N               = current_precision
-        df_at_r_inverse.N = current_precision
-        #K.prec_max = r.N
-        my_setprecision!(fK, r.N)
-        my_setprecision!(dfK, r.N)        
-        r = r - fK(r) * df_at_r_inverse
-        #if r.N >= n
-        #    K.prec_max = n
-        #    return r
-        #end
-
-        # Update the value of the derivative.
-        df_at_r_inverse = df_at_r_inverse*(2-dfK(r)*df_at_r_inverse)
-    end
-
-    return r
+#TODO: See if newton lift needs to be modified in characteristic `p`.
+function newton_lift(f::Hecke.Generic.Poly{T}, r::T, num_input_correct_digits=1::Integer) where T<:NALocalFieldElem
+    rt = deepcopy(r)
+    newton_lift!(f, rt, num_input_correct_digits)
+    return rt
 end
 
-#XXX: valuation(Q(0)) == 0 !!!!!
+@doc Markdown.doc"""
+    newton_lift!(f::Hecke.Generic.Poly{T}, r::T, num_input_correct_digits=1) where T<:NALocalFieldElem
+Mutates `r` via newton iteration (Hensel lifting) such that `f(r)==zero(parent(r))`. The root `r` is a *forward solution* to the problem, given at the maximum possible precision. The third argument specifies the number of presently known digits of the root.
 
-# TODO: This function has some mutation issues...
+The output of `newton_lift!` is the condition number of the root, indicating the size of the neighbourhood `U` around `r` such that $f(U) \subseteq zero(parent(r))$.
+"""
+function newton_lift!(f::Hecke.Generic.Poly{T}, r::T, num_input_correct_digits=1::Integer) where T<:NALocalFieldElem
+
+    # The algorithm is a standard double lifting algorithm where the root and
+    # the value of 1/dfK(r) are lifted simultaneously.
+    
+    K = parent(r)
+    base_ring(parent(f)) != K && error("Base fields not compatible for newton_lift.")  
+    N = precision(K)
+
+    @assert num_input_correct_digits > 0
+    @assert precision(r) >= num_input_correct_digits
+
+    # Initialize the derivative of the function at `r`.
+    fK  = deepcopy(f)
+    dfK = derivative(f)
+    df_at_r_inverse = dfK(r)
+    
+    @assert !iszero(df_at_r_inverse)    
+    df_at_r_inverse = inv(df_at_r_inverse)
+    condition_number = abs(df_at_r_inverse)
+
+    if 2*valuation(fK(r)) + valuation(df_at_r_inverse) < 0
+        error("Newton iteration does not converge at $r at given precision.")
+    end
+    
+    # Allocate some memory.
+    two = K(2)
+    expr_container = K()
+    current_precision = num_input_correct_digits
+        
+    while true
+        current_precision =  2*current_precision
+        current_precision <= 0 && error("Integer overflow error in precision quantity.") 
+        
+        setprecision!(r, current_precision)
+        setprecision!(df_at_r_inverse, current_precision)
+
+        # NOTE: The correct functioning of this algorithm depends on setprecision!
+        # not obliterating the extra digits automatically.
+        my_setprecision!(fK, current_precision)
+        my_setprecision!(dfK, current_precision)
+
+        mul!(expr_container, fK(r), df_at_r_inverse)
+        sub!(r, r, expr_container)
+
+        if current_precision > N
+            break
+        end
+        
+        # Update the value of the derivative. Value of df_at_r_inverse equvalent to
+        #     df_at_r_inverse*(2-dfK(r)*df_at_r_inverse)
+        # after exression.
+        mul!(expr_container, dfK(r), df_at_r_inverse)
+        sub!(expr_container, two, expr_container)        
+        mul!(df_at_r_inverse, df_at_r_inverse, expr_container)
+    end
+
+    return condition_number
+end
+
+function newton_lift!(f::fmpz_poly, r::NALocalFieldElem, num_input_correct_digits=1::Integer)
+    K = parent(r)
+    newton_lift!(change_base_ring(K, f), r, num_input_correct_digits)
+end
+
+function newton_lift(f::fmpz_poly, r::NALocalFieldElem, num_input_correct_digits=1::Integer)
+    K = parent(r)
+    return newton_lift(change_base_ring(K, f), r, num_input_correct_digits)
+end
+
+
+#=
 function newton_lift(f::fmpz_poly, r::NALocalFieldElem)
   Q = parent(r)
   n = Q.prec_max
@@ -142,7 +176,7 @@ function newton_lift(f::fmpz_poly, r::NALocalFieldElem)
     o = o*(2-qfs(r)*o)
   end
 end
-
+=#
 
 # TODO: XXX: f is assumed to be "square-free".
 function integral_roots(f::Hecke.Generic.Poly{<:Hecke.NALocalFieldElem})

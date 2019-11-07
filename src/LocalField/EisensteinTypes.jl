@@ -121,9 +121,11 @@ end
 > - data_ring_elt -- The representative in the data ring.
 """
 mutable struct eisf_elem <: NALocalFieldElem
-    u::eisf_unit_internal
-    v::Integer
-    N::Integer
+
+    # Cached data (unclear if these should be updated after every arithmetic operation.)
+    #u::eisf_unit_internal
+    #v::Integer
+    #N::Integer
     
     data_ring_elt
     parent::EisensteinField

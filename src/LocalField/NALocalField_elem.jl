@@ -19,6 +19,11 @@ function ^(a::padic, n::fmpz)
     return a^Int(n)
 end
 
+function abs(a::NALocalFieldElem)
+    return residue_characteristic(parent(a))^(-valuation(a))
+end
+
+
 function (Q::FlintPadicField)(a::Rational{Int})
     return Q(numerator(a))//Q(denominator(a))
 end

@@ -245,7 +245,7 @@ end
 ###############################################################################
 
 function rand(K::FlintQadicField)
-    a = gen(K)
+    a = degree(K)==1 ? one(K) : gen(K)
     p = prime(K)
     N  = precision(K)
     n  = degree(K)

@@ -100,10 +100,18 @@ isunit(a::eisf_elem) = !iszero(a)
     precision(a::eisf_elem)
 Return the minimum precision of the coefficients of `a`.
 """
+# TODO: XXX: Figure out how the precision of the zeros works.
+# Eisenstein elements can store the different zeroes in the polynomial representation.
+# Empty zeros are treated like `zero(K)`.
 function precision(a::eisf_elem)
+    a_coeffs = coefficients(a)
+    isempty(a_coeffs) && return precision(parent(a))
     return minimum(precision.(coefficients(a)))
 end
 
+function relative_precision(a::eisf_elem)
+    return precision(a) - valuation(a)
+end
 
 #######################################################
 if false
@@ -428,6 +436,22 @@ end
   sub!(z.data_ring_elt, x.data_ring_elt, y.data_ring_elt)
   return z
 end
+
+#TODO: Move this to FLINT.
+@inline function sub!(z::qadic, x::qadic, y::qadic)
+    z.N = min(x.N, y.N)
+    ctx = parent(x)
+    ccall((:qadic_sub, :libflint), Nothing,
+          (Ref{qadic}, Ref{qadic}, Ref{qadic}, Ref{FlintQadicField}),
+          z, x, y, ctx)
+    return z
+end
+
+@inline function sub!(c::AbstractAlgebra.ResFieldElem{T}, a::AbstractAlgebra.ResFieldElem{T}, b::AbstractAlgebra.ResFieldElem{T}) where {T <: RingElement}
+   c.data = mod(data(a) - data(b), modulus(a))
+   return c
+end
+####
 
 @inline function mul!(z::eisf_elem, x::eisf_elem, y::eisf_elem)
   mul!(z.data_ring_elt, x.data_ring_elt, y.data_ring_elt)
