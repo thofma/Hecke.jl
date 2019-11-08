@@ -408,7 +408,7 @@ function unramified_completion(K::AnticNumberField, P::NfOrdIdl; skip_map_invers
   #non-unique!! will have deg(P) many
   p = minimum(P)
   C = qAdicConj(K, Int(p))
-  g = conjugates(P.gen_two.elem_in_nf, C)
+  g = embedding_classes_unramified(P.gen_two.elem_in_nf, C)
 #  @show map(x->valuation(x), g)
   i = findfirst(x->valuation(x) > 0, g)
   return completion(K, p, i)
@@ -422,14 +422,39 @@ completion(K::AnticNumberField, p::Integer, i::Int) = completion(K, fmpz(p), i)
 The completion corresponding to the $i$-th conjugate in the non-canonical ordering of
 {{{conjugates}}}.
 """
-function completion(K::AnticNumberField, p::fmpz, i::Int)
+function completion(K::AnticNumberField, p::fmpz, i::Int; prec=10)
   C = qAdicConj(K, Int(p))
   @assert 0<i<= degree(K)
 
-  ca = conjugates(gen(K), C, all = true, flat = false)[i]
-  function inj(a::nf_elem)
-    return conjugates(a, C, precision(parent(ca)))[i]
-  end
+    #### Insertion #####
+    # This seems to be the line where the roots are actually computed.
+    R = roots(C.C, prec)
+
+    display(R)
+    
+    Zx = PolynomialRing(FlintZZ, cached = false)[1]
+
+    # The element `a` is replaced by a polynomial. It is assumed that the variable
+    # in the polynomial is identified with the generator of the number field.    
+    result = qadic[]
+    alpha = R[i] # TODO: Some redesign is needed to deal will all completions vs. one completion.
+
+    function inj(a)
+        @assert parent(a) == C.K
+        d = denominator(a)
+        f = Zx(d*a)
+        return inv(parent(alpha)(d))*f(alpha)
+    end
+    
+
+    ###
+
+    #conjugates(gen(K), C, all = true, flat = false)[i]
+    ca = R[i]
+    
+  # function inj(a::nf_elem)
+  #   return conjugates(a, C, precision(parent(ca)))[i]
+  # end
   # gen(K) -> conj(a, p)[i] -> a = sum a_i o^i
   # need o = sum o_i a^i
   R, mR = ResidueField(parent(ca))

@@ -222,7 +222,7 @@ function integral_roots(f::Hecke.Generic.Poly{<:Hecke.NALocalFieldElem})
         for beta in rts
             beta_lift = lift(beta)
             roots_near_beta = integral_roots( fprim(pi*x + beta_lift) )
-            roots_out = vcat(roots_out, [pi*r + beta_lift for r in roots_near_beta] )
+            roots_out = vcat(roots_out, [(pi*r[1] + beta_lift,r[2]) for r in roots_near_beta] )
         end
         
         return roots_out

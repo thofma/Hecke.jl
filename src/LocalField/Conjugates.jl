@@ -264,24 +264,20 @@ end
 
 # function _conjugates(a::nf_elem, C::qAdicConj, n::Int, op::Function)
 function embedding_classes_unramified(a, C, precision=10)
+
+    # Extract prime from qAdic root context. Eventially this will be replaced in the final version.
+    p = C.C.p 
+    
     K = parent(a)
+
+    #TODO: determine the correct number of completions.
+    completions = [Hecke.completion(K,p,i) for i=1:2]
+    embeddings_up_to_equiv = [mp(a) for (field,mp) in completions]
+    
     #C = qAdicConj(K, Int(p))
     #TODO: implement a proper Frobenius - with caching of the frobenius_a element
 
-    R = roots(C.C, precision)   # This seems to be the line where the roots are actually computed.
-    @assert parent(a) == C.K
-    Zx = PolynomialRing(FlintZZ, cached = false)[1]
-    d = denominator(a)
-
-    # The element `a` is replaced by a polynomial. It is assumed that the variable
-    # in the polynomial is identified with the generator of the number field.
-    f = Zx(d*a)
-    res = qadic[]
-    for alpha in R
-        b = inv(parent(alpha)(d))*f(alpha)
-        push!(res, b)
-    end
-    return res
+    return embeddings_up_to_equiv
 end
 
 #########################################################################################
