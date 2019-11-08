@@ -267,7 +267,6 @@ end
 
 # function _conjugates(a::nf_elem, C::qAdicConj, n::Int, op::Function)
 function embedding_classes_unramified(a, p::fmpz, precision=10)
-
     K = parent(a)
     completions = unramified_completions(K, p, prec=precision)
     embeddings_up_to_equiv = [mp(a) for (field, mp) in completions]
@@ -302,43 +301,44 @@ If {{{all = false}}}, then for each $P_i$ only one conjugate is returned, the ot
 xomputed using automorphisms (the Frobenius).
 If {{{flat = true}}}, then instead of the conjugates, only the $p$-adic coefficients are returned.
 """
-function conjugates(a::nf_elem, p::fmpz, precision=10; flat::Bool = false, all::Bool = true)
-  return expand(embedding_classes_unramified(a, p, precision), flat = flat, all = all)
+function conjugates(a::nf_elem, p::fmpz, precision=10)
+  return frobenius_orbit.(embedding_classes_unramified(a, p, precision))
 end
 
-function conjugates(a::nf_elem, p::Integer, precision=10; flat::Bool = false, all::Bool = true)
-    return conjugates(a, fmpz(p), precision=precision; flat=flat, all=all)
+function conjugates(a::nf_elem, p::Integer, precision=10)
+    return conjugates(a, fmpz(p), precision=precision)
 end
 
 
 # Expansion logic to apply frobenius to the partial result.
 #TODO: implement a proper Frobenius - with caching of the frobenius_a element
-function expand(a::Array{qadic, 1}; all::Bool, flat::Bool)
-  re = qadic[]
-  if all
-    for x = a
-      push!(re, x)
-      y = x
-      for i=2:degree(parent(x))
+
+#function expand(a::Array{qadic, 1}; all::Bool, flat::Bool)
+function frobenius_orbit(a::qadic)
+    result = [a]
+    y = a
+    for i=2:degree(parent(a))
         y = frobenius(y)
-        push!(re, y)
-      end
+        push!(result, y)
     end
-  else
-    re = a
-  end
-  if flat
-    r = padic[]
-    for x = re
-      for i=1:degree(parent(x))
-        push!(r, coeff(x, i-1))
-      end
-    end
-    return r
-  else
-    return re
-  end
+    return result
 end
+
+
+# This interface is now obsolete. Use coeffs.(embedding_classes(a))
+# function flat(a::Array{qadic, 1})
+#   if flat
+#     r = padic[]
+#     for x = re
+#       for i=1:degree(parent(x))
+#         push!(r, coeff(x, i-1))
+#       end
+#     end
+#     return r
+#   else
+#     return re
+#   end
+# end
 
 
 #########################################################################################
