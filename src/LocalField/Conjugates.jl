@@ -194,6 +194,7 @@ end
     underdetermined_solve(A,b)
 Solves the equation `Ax=b`. Return the first index of the column where the last entry is non-zero.
 """
+# TODO: This method needs to be made more reliable. The return structure of `N` is a bit wacky.
 function underdetermined_solve(A,b)
 
     M = hcat(A,-b)

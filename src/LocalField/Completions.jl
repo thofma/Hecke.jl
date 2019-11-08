@@ -133,7 +133,7 @@ function sharpen!(Kp::EisensteinField, P::NfAbsOrdIdl, completion_maps, new_prec
     function inj(a::nf_elem)
         return sum(coeffs(a)[j+1] * img_nf_gen^j for j=0:degree(K)-1)
     end
-
+    
     # Update the completion maps 
     completion_maps.f = inj
     return
@@ -167,15 +167,11 @@ end
 
 
 #####
-# Sharpen via polynomial (SharpenPolyCtx)
+# Sharpen via polynomial (RootSharpenCtx)
 
 #=
 The point of this interface is to allow the sharpening of the completion map to a field 
 by fixing the defining polynomials and sharpening the root. 
-
-Ideally, there should be a "forget inverse" option, since the linear solve part of the
-procedure is the most expensive part, which is not immediately useful for computing
-regulators.
 =#
 
 # Reminicent of the "qAdicConj" context, but more general.
@@ -229,6 +225,8 @@ function sharpen!(maps, ctx::RootSharpenCtx, n)
     function inj(a::nf_elem)
         return sum(coeffs(a)[j+1] * img_nf_gen^j for j=0:degree(parent(a))-1)
     end
+
+    # TODO: Add sharpening of lifting map so that things are compatible.
 
     maps.f = inj
     
@@ -404,15 +402,37 @@ to be unramifed.
 The map giving the embedding of $K$ into the completion, admits a pointwise pre-image to obtain a lift.
 Note, that the map is not well defined by this data: $K$ will have $\deg P$ many embeddings.
 """
-function unramified_completion(K::AnticNumberField, P::NfOrdIdl; skip_map_inverse=false)
-  #non-unique!! will have deg(P) many
-  p = minimum(P)
-  #C = qAdicConj(K, Int(p))
-  g = embedding_classes_unramified(P.gen_two.elem_in_nf, p)
-#  @show map(x->valuation(x), g)
-  i = findfirst(x->valuation(x) > 0, g)
-  return completion(K, p, i)
+function unramified_completion(K::AnticNumberField, P::NfOrdIdl; prec=10, skip_map_inverse=false)
+    #non-unique!! will have deg(P) many
+    p = minimum(P)
+    C = qAdicConj(K, Int(p))
+    R = roots(C.C, prec)
+
+    display(R)
+
+    pi = P.gen_two.elem_in_nf
+    predicate = (Kp,inj) -> valuation(inj(pi)) > 0
+    
+    return unramified_completion(K, p, predicate; prec=prec, skip_map_inverse=skip_map_inverse)
 end
+
+# Find the first unramified completion over `p` such that `predicate(Kp,inj)` is `true`.
+function unramified_completion(K::AnticNumberField, p::fmpz, predicate;
+                               prec=10, skip_map_inverse=false)
+
+    C = qAdicConj(K, Int(p))
+    R = roots(C.C, prec)
+    display(R)
+    
+    for rt in R
+        (Kp, inj) = unramified_completion(K, rt, prec=prec, skip_map_inverse=true)
+        if predicate(Kp,inj)
+            return unramified_completion(K, rt, prec=prec, skip_map_inverse=skip_map_inverse)
+        end
+    end
+    error("Predicate is false for every unramified completion.")
+end
+
 
 @doc Markdown.doc"""
     completion(K::AnticNumberField, p::fmpz, i::Int) -> FlintQadicField, Map
@@ -427,6 +447,8 @@ end
 
 completion(K::AnticNumberField, p::Integer, i::Int) = completion(K, FlintZZ(p), i)
 
+
+# Returns the unramified completions of $K$ over the prime $p$.
 function unramified_completions(K::AnticNumberField, p::fmpz; prec=10)
     # Since in the unramified case we complete via factorizations, we first
     # construct the roots data needed to define/sharpen the extension.
@@ -447,7 +469,7 @@ end
 
 # Give the unramified completion where gen(K) is mapped to `gen_img`. It is assumed that
 # gen_img satisfied `change_base_ring(Kp, K.pol)(gen_img) == 0`.
-function unramified_completion(K::AnticNumberField, gen_img::qadic; prec=10)
+function unramified_completion(K::AnticNumberField, gen_img::qadic; prec=10, skip_map_inverse=false)
 
     p = prime(parent(gen_img))
     
@@ -464,77 +486,83 @@ function unramified_completion(K::AnticNumberField, gen_img::qadic; prec=10)
     end    
     ### End insertion.
 
-    
-  # function inj(a::nf_elem)
-  #   return conjugates(a, C, precision(parent(ca)))[i]
-  # end
-  # gen(K) -> conj(a, p)[i] -> a = sum a_i o^i
-  # need o = sum o_i a^i
-  R, mR = ResidueField(parent(gen_img))
 
-  # Construct the array of powers of the primitive element.
-  pa = [one(R), mR(gen_img)]
-  d = degree(R)
-  while length(pa) < d
-    push!(pa, pa[end]*pa[2])
-  end
+    if !skip_map_inverse
+        
+        # function inj(a::nf_elem)
+        #   return conjugates(a, C, precision(parent(ca)))[i]
+        # end
+        # gen(K) -> conj(a, p)[i] -> a = sum a_i o^i
+        # need o = sum o_i a^i
+        R, mR = ResidueField(parent(gen_img))
 
-  # Solve a linear system to figure out how to express the root of the
-  # Conway Polynomial defining the completion in terms of the image of the
-  # primitive element of the number field $K$.
-  m = matrix(GF(p), d, d, [coeff(pa[i], j-1) for j=1:d for i=1:d])
-  o = matrix(GF(p), d, 1, [coeff(gen(R), j-1) for j=1:d])
-  s = solve(m, o)
-  @hassert :qAdic 1 m*s == o
+        # Construct the array of powers of the primitive element.
+        pa = [one(R), mR(gen_img)]
+        d = degree(R)
+        while length(pa) < d
+            push!(pa, pa[end]*pa[2])
+        end
 
-  # Construct the Conway root in the number field.
-  a = K()
-  for i=1:d
-    _num_setcoeff!(a, i-1, lift(s[i,1]))
-  end
+        # Solve a linear system to figure out how to express the root of the
+        # Conway Polynomial defining the completion in terms of the image of the
+        # primitive element of the number field $K$.
+        m = matrix(GF(p), d, d, [coeff(pa[i], j-1) for j=1:d for i=1:d])
+        o = matrix(GF(p), d, 1, [coeff(gen(R), j-1) for j=1:d])
+        s = solve(m, o)
+        @hassert :qAdic 1 m*s == o
 
-  # Construct the derivative of the Conway root in the number field.
-  f = defining_polynomial(parent(gen_img), FlintZZ)
-  fso = inv(derivative(f)(gen(R)))
-  o = matrix(GF(p), d, 1, [coeff(fso, j-1) for j=1:d])
-  s = solve(m, o)
-  b = K()
-  for i=1:d
-    _num_setcoeff!(b, i-1, lift(s[i,1]))
-  end
+        # Construct the Conway root in the number field.
+        a = K()
+        for i=1:d
+            _num_setcoeff!(a, i-1, lift(s[i,1]))
+        end
 
-  # Lift the data from the residue field back to Qp.
-  c = lift_root(f, a, b, p, 10)
-  pc = fmpz(10)
-  function lif(x::qadic)
-    if iszero(x)
-      return K(0)
-    end
-    if precision(x) > pc
-      #XXX this changes (c, pc) inplace as a cache
-      #probably should be done with a new map type that can
-      #store c, pc on the map.
-        d = lift_root(f, a, b, p, precision(x))
+        # Construct the derivative of the Conway root in the number field.
+        f = defining_polynomial(parent(gen_img), FlintZZ)
+        fso = inv(derivative(f)(gen(R)))
+        o = matrix(GF(p), d, 1, [coeff(fso, j-1) for j=1:d])
+        s = solve(m, o)
+        b = K()
+        for i=1:d
+            _num_setcoeff!(b, i-1, lift(s[i,1]))
+        end
 
-        # Manipulate the values c, pc by the implicit pointers stored inside this function.
-        # Unfortunately this cannot be done at the julia level...
-        ccall((:nf_elem_set, :libantic), Nothing,
-              (Ref{nf_elem}, Ref{nf_elem}, Ref{AnticNumberField}), c, d, K)
-        ccall((:fmpz_set_si, :libflint), Nothing, (Ref{fmpz}, Cint), pc, precision(x))
+        # Lift the data from the residue field back to Qp.
+        c = lift_root(f, a, b, p, 10)
+        pc = fmpz(10)
+        lif = function(x::qadic) 
+            if iszero(x)
+                return K(0)
+            end
+            if precision(x) > pc
+                #XXX this changes (c, pc) inplace as a cache
+                #probably should be done with a new map type that can
+                #store c, pc on the map.
+                d = lift_root(f, a, b, p, precision(x))
 
-    elseif precision(x) < pc
-      d = mod_sym(c, p^precision(x))
+                # Manipulate the values c, pc by the implicit pointers stored inside this function.
+                # Unfortunately this cannot be done at the julia level...
+                ccall((:nf_elem_set, :libantic), Nothing,
+                      (Ref{nf_elem}, Ref{nf_elem}, Ref{AnticNumberField}), c, d, K)
+                ccall((:fmpz_set_si, :libflint), Nothing, (Ref{fmpz}, Cint), pc, precision(x))
+
+            elseif precision(x) < pc
+                d = mod_sym(c, p^precision(x))
+            else
+                d = c
+            end
+            n = x.length
+            r = K(lift(coeff(x, n-1)))
+            while n > 1
+                n -= 1
+                r = r*d + lift(coeff(x, n-1))
+            end
+            return r#*K(p)^valuation(x)
+        end
     else
-      d = c
+        lif(x::qadic) = error("Completion lift map definition was skipped during initialization.")
     end
-    n = x.length
-    r = K(lift(coeff(x, n-1)))
-    while n > 1
-      n -= 1
-      r = r*d + lift(coeff(x, n-1))
-    end
-    return r#*K(p)^valuation(x)
-  end
-  return parent(gen_img), MapFromFunc(inj, lif, K, parent(gen_img))
+    
+    return parent(gen_img), MapFromFunc(inj, lif, K, parent(gen_img))
 end
 
