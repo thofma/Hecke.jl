@@ -234,6 +234,58 @@ end
 
 #########################################################################################
 #
+#   Embedding classes (up to equivalence) interface
+#
+#########################################################################################
+
+# Return the embeddings, up to local Galois automorphisms, of a number field element `a`.
+# Treatment is different in ramified versus unramified cases due to the extra structure.
+# i.e, a factorization method is present in the unramified case.
+
+function embedding_classes(a, p)    
+    K = parent(a)
+
+    if any(isramified(maximal_order(K), p))
+        return embedding_classes_ramified(a,p)
+    else
+        return embedding_classes_unramified(a,p)
+    end
+end
+
+function embedding_classes_ramified(a,p)
+    K = parent(a)
+    lp = prime_decomposition(maximal_order(K), p)
+    prime_ideals = [P[1] for P in lp]
+
+    completions = [Hecke.completion(K,P) for P in prime_ideals]
+    embeddings_up_to_equiv = [mp(a) for (field,mp) in completions]
+    return embeddings_up_to_equiv
+end
+
+# function _conjugates(a::nf_elem, C::qAdicConj, n::Int, op::Function)
+function embedding_classes_unramified(a, C, precision=10)
+    K = parent(a)
+    #C = qAdicConj(K, Int(p))
+    #TODO: implement a proper Frobenius - with caching of the frobenius_a element
+
+    R = roots(C.C, precision)   # This seems to be the line where the roots are actually computed.
+    @assert parent(a) == C.K
+    Zx = PolynomialRing(FlintZZ, cached = false)[1]
+    d = denominator(a)
+
+    # The element `a` is replaced by a polynomial. It is assumed that the variable
+    # in the polynomial is identified with the generator of the number field.
+    f = Zx(d*a)
+    res = qadic[]
+    for alpha in R
+        b = inv(parent(alpha)(d))*f(alpha)
+        push!(res, b)
+    end
+    return res
+end
+
+#########################################################################################
+#
 #   Conjugates interface
 #
 #########################################################################################
@@ -255,9 +307,8 @@ If {{{all = false}}}, then for each $P_i$ only one conjugate is returned, the ot
 xomputed using automorphisms (the Frobenius).
 If {{{flat = true}}}, then instead of the conjugates, only the $p$-adic coefficients are returned.
 """
-function conjugates(a::nf_elem, C::qAdicConj, n::Int = 10;
-                    flat::Bool = false, all::Bool = true)
-  return expand(_conjugates(a, C, n, x -> x), flat = flat, all = all)
+function conjugates(a::nf_elem, C::qAdicConj, precision=10; flat::Bool = false, all::Bool = true)
+  return expand(embedding_classes_unramified(a, C, precision), flat = flat, all = all)
 end
 
 # Expansion logic to apply frobenius to the partial result.
@@ -288,23 +339,6 @@ function expand(a::Array{qadic, 1}; all::Bool, flat::Bool)
   end
 end
 
-#TODO: implement a proper Frobenius - with caching of the frobenius_a element
-function _conjugates(a::nf_elem, C::qAdicConj, n::Int, op::Function)
-    R = roots(C.C, n)   # This seems to be the line where the roots are actually computed.
-    @assert parent(a) == C.K
-    Zx = PolynomialRing(FlintZZ, cached = false)[1]
-    d = denominator(a)
-
-    # The element `a` is replaced by a polynomial. It is assumed that the variable
-    # in the polynomial is identified with the generator of the number field.
-    f = Zx(d*a)
-    res = qadic[]
-    for x = R
-        b = op(inv(parent(x)(d))*f(x))::qadic
-        push!(res, b)
-    end
-    return res
-end
 
 #########################################################################################
 #

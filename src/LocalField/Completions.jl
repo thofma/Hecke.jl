@@ -266,15 +266,15 @@ See the org file.
 
 # TODO: Add branching based on optimization parameter.
 # TODO: Add various sharpening contexts.
-function completion(K::NumField{T} where T, P::NfOrdIdl; prec=10)
+function completion(K::NumField{T} where T, P::NfOrdIdl; prec=10, skip_map_inverse=false)
     if ramification_index(P) == 1
-        return unramified_completion(K,P)
+        return unramified_completion(K, P, skip_map_inverse=skip_map_inverse)
     else
-        return ramified_completion(K,P, prec=prec)
+        return ramified_completion(K, P, prec=prec, skip_map_inverse=skip_map_inverse)
     end
 end
 
-function ramified_completion(K::NumField{T} where T, P::NfOrdIdl; prec=10)
+function ramified_completion(K::NumField{T} where T, P::NfOrdIdl; prec=10, skip_map_inverse=false)
 
     # Determine a polynomial over Kp_unram which annihilates pi.
 
@@ -404,7 +404,7 @@ to be unramifed.
 The map giving the embedding of $K$ into the completion, admits a pointwise pre-image to obtain a lift.
 Note, that the map is not well defined by this data: $K$ will have $\deg P$ many embeddings.
 """
-function unramified_completion(K::AnticNumberField, P::NfOrdIdl)
+function unramified_completion(K::AnticNumberField, P::NfOrdIdl; skip_map_inverse=false)
   #non-unique!! will have deg(P) many
   p = minimum(P)
   C = qAdicConj(K, Int(p))
