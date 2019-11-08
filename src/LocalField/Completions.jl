@@ -445,10 +445,15 @@ completion(K::AnticNumberField, p::Integer, i::Int) = completion(K, FlintZZ(p), 
 
 # Returns the unramified completions of $K$ over the prime $p$.
 function unramified_completions(K::AnticNumberField, p::fmpz; prec=10)
+
+    # TODO: The HenselCtx fails to properly detect the correct unramified completion
+    # if `K.pol mod p` is pathological.
+    
+    # TODO: This is the last bastion of the qAdicConj structure!
     # Since in the unramified case we complete via factorizations, we first
     # construct the roots data needed to define/sharpen the extension.
     C = qAdicConj(K, Int(p))
-
+    
     #### Insertion of old "conjugates(gen(K), C, all = true, flat = false)[i]" logic #####
     # This seems to be the line where the roots are actually computed.
     R = roots(C.C, prec)
