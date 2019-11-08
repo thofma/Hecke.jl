@@ -405,11 +405,6 @@ Note, that the map is not well defined by this data: $K$ will have $\deg P$ many
 function unramified_completion(K::AnticNumberField, P::NfOrdIdl; prec=10, skip_map_inverse=false)
     #non-unique!! will have deg(P) many
     p = minimum(P)
-    C = qAdicConj(K, Int(p))
-    R = roots(C.C, prec)
-
-    display(R)
-
     pi = P.gen_two.elem_in_nf
     predicate = (Kp,inj) -> valuation(inj(pi)) > 0
     
