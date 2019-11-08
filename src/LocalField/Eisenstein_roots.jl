@@ -61,15 +61,15 @@ my_setprecision!(f,N) = f
 #TODO: See if newton lift needs to be modified in characteristic `p`.
 function newton_lift(f::Hecke.Generic.Poly{T}, r::T, num_input_correct_digits=1::Integer) where T<:NALocalFieldElem
     rt = deepcopy(r)
-    newton_lift!(f, rt, num_input_correct_digits)
-    return rt
+    cond = newton_lift!(f, rt, num_input_correct_digits)
+    return rt, cond
 end
 
 @doc Markdown.doc"""
     newton_lift!(f::Hecke.Generic.Poly{T}, r::T, num_input_correct_digits=1) where T<:NALocalFieldElem
 Mutates `r` via newton iteration (Hensel lifting) such that `f(r)==zero(parent(r))`. The root `r` is a *forward solution* to the problem, given at the maximum possible precision. The third argument specifies the number of presently known digits of the root.
 
-The output of `newton_lift!` is the condition number of the root, indicating the size of the neighbourhood `U` around `r` such that $f(U) \subseteq zero(parent(r))$.
+The output of `newton_lift!` is the condition number of the root, indicating the size of the neighbourhood `U` around `r` such that $f(U) \subseteq zero(parent(r))$. It is the valuation of the derivative of `f` at the root.
 """
 function newton_lift!(f::Hecke.Generic.Poly{T}, r::T, num_input_correct_digits=1::Integer) where T<:NALocalFieldElem
 
@@ -90,24 +90,29 @@ function newton_lift!(f::Hecke.Generic.Poly{T}, r::T, num_input_correct_digits=1
     
     @assert !iszero(df_at_r_inverse)    
     df_at_r_inverse = inv(df_at_r_inverse)
-    condition_number = abs(df_at_r_inverse)
+    condition_number = valuation(df_at_r_inverse)
 
-    if 2*valuation(fK(r)) + valuation(df_at_r_inverse) < 0
+    if valuation(fK(r)) + 2*valuation(df_at_r_inverse) < 0
         error("Newton iteration does not converge at $r at given precision.")
     end
-    
+
     # Allocate some memory.
     two = K(2)
     expr_container = K()
     current_precision = num_input_correct_digits
         
     while true
+        display(current_precision)
+        
         current_precision =  2*current_precision
         current_precision <= 0 && error("Integer overflow error in precision quantity.") 
         
         setprecision!(r, current_precision)
         setprecision!(df_at_r_inverse, current_precision)
 
+        test = deepcopy(df_at_r_inverse)
+        display(df_at_r_inverse)
+        
         # NOTE: The correct functioning of this algorithm depends on setprecision!
         # not obliterating the extra digits automatically.
         my_setprecision!(fK, current_precision)
@@ -116,6 +121,8 @@ function newton_lift!(f::Hecke.Generic.Poly{T}, r::T, num_input_correct_digits=1
         mul!(expr_container, fK(r), df_at_r_inverse)
         sub!(r, r, expr_container)
 
+        display(fK(r))
+        
         if current_precision > N
             break
         end
@@ -126,6 +133,9 @@ function newton_lift!(f::Hecke.Generic.Poly{T}, r::T, num_input_correct_digits=1
         mul!(expr_container, dfK(r), df_at_r_inverse)
         sub!(expr_container, two, expr_container)        
         mul!(df_at_r_inverse, df_at_r_inverse, expr_container)
+
+        # Catch FLINT related bugs.
+        @assert test*(2-dfK(r)*test) == df_at_r_inverse
     end
 
     return condition_number

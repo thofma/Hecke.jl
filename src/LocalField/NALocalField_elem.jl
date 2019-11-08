@@ -19,9 +19,10 @@ function ^(a::padic, n::fmpz)
     return a^Int(n)
 end
 
-function abs(a::NALocalFieldElem)
-    return residue_characteristic(parent(a))^(-valuation(a))
-end
+# TODO: Make the output of abs lie in a well-defined real field?
+# function abs(a::NALocalFieldElem)
+#     return residue_characteristic(parent(a))^(-valuation(a))
+# end
 
 
 function (Q::FlintPadicField)(a::Rational{Int})

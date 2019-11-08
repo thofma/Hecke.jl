@@ -215,9 +215,10 @@ function sharpen!(maps, ctx::RootSharpenCtx, n)
     
     # Then newton lift the roots
     # Hope it is continuous.
-    test = newton_lift(f, ctx.root)
+    test = newton_lift!(f, ctx.root)
 
     display(test)
+    display(precision(ctx.root))
     
     # Now we need to sharpen the maps...
     img_nf_gen = ctx.root
@@ -324,7 +325,7 @@ function ramified_completion(K::NumField{T} where T, P::NfOrdIdl; prec=10)
     local_basis_lift = hcat(matrix(coordinates.(BKp)), matrix(coordinates.(BPn)))
 
     function construct_defining_polynomial()
-        N = underdetermined_solve_first(local_basis_lift, matrix([coordinates(pi^e)]))
+        N = underdetermined_solve_first(local_basis_lift, -matrix([coordinates(pi^e)]))
         RX,X = PolynomialRing(Kp_unram,"X")
         
         return X^e + sum(X^i*delta_p^j * N[i*f + j + 1] for j=0:f-1 for i=0:e-1 )
@@ -347,7 +348,7 @@ function ramified_completion(K::NumField{T} where T, P::NfOrdIdl; prec=10)
     end
 
     img_nf_gen = image_of_nf_gen(a)
-    display(img_nf_gen)
+    display("Printing nf gen image: $img_nf_gen")
     
     # Construct the forward map, embedding $K$ into its completion.
     # The map is determined by the image of the number field generators.
@@ -365,6 +366,11 @@ function ramified_completion(K::NumField{T} where T, P::NfOrdIdl; prec=10)
     end
 
     # TODO: Cache the sharpening data in some way.
+
+    #TODO: Move to proper tests
+    # Sanity check the returns
+    @assert iszero(change_base_ring(Kp,K.pol)(inj(gen(K))))
+    @assert lif(inj(gen(K) + 1)) == gen(K) + 1
     return Kp, MapFromFunc(inj, lif, K, Kp)
 end
 

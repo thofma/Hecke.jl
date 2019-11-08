@@ -111,16 +111,17 @@ The roots of $f$ in $Q$, $f$ has to be square-free (at least the roots have to b
 # NOTE: Both a Hensel factorization and a newton iteration are required to refine the roots,
 #       since the Hensel context only works for polynomials over ZZ.
 function roots(f::fmpz_poly, Q::FlintQadicField; max_roots::Int = degree(f))
-  k, mk = ResidueField(Q)
-  rt = roots(f, k)
-  RT = qadic[]
-  for r = rt
-    push!(RT, newton_lift(f, preimage(mk, r)))
-    if length(RT) >= max_roots
-      return RT
+    k, mk = ResidueField(Q)
+    rt = roots(f, k)
+    RT = qadic[]
+    for r = rt
+        new_rt, cond = newton_lift(f, preimage(mk, r))
+        push!(RT, new_rt)
+        if length(RT) >= max_roots
+            return RT
+        end
     end
-  end
-  return RT
+    return RT
 end
 
 function roots(C::qAdicRootCtx, n::Int = 10)
@@ -307,26 +308,9 @@ end
 
 #########################################################################################
 #
-#   Conjugates in ramified completions.
+#   Galois closures
 #
 #########################################################################################
-
-
-#=
-
-#1. Need to construct the ramified completion.
-
-#2. Need to determine the unramified sub-extension of the splitting field 
-#   (possible in stupid cases, but in general requires factorizations.)
-
-# For now, give up if the splitting field is not just an unramified extension.
-
-#3. Compute the roots in the local splitting field.
-
-Generally, this will work so long as there is no wild ramification. The wild case is easy
-to detect.
-
-=#
 
 @doc Markdown.doc"""
     field_of_definition(a::padic)
@@ -393,3 +377,25 @@ end
 function is_tamely_ramified(K::NALocalField)
     return gcd(prime(K), ramification_degree(K)) == 1
 end
+
+#########################################################################################
+#
+#   Conjugates in ramified completions.
+#
+#########################################################################################
+
+
+#=
+#1. Need to construct the ramified completion.
+
+#2. Need to determine the unramified sub-extension of the splitting field 
+#   (possible in stupid cases, but in general requires factorizations.)
+
+# For now, give up if the splitting field is not just an unramified extension.
+
+#3. Compute the roots in the local splitting field.
+
+Generally, this will work so long as there is no wild ramification. The wild case is easy
+to detect.
+=#
+

@@ -110,7 +110,7 @@ function precision(a::eisf_elem)
 end
 
 function relative_precision(a::eisf_elem)
-    return precision(a) - valuation(a)
+    return precision(a) - Integer(valuation(a)//valuation(uniformizer(parent(a))))
 end
 
 #######################################################
