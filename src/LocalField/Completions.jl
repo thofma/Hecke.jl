@@ -407,14 +407,12 @@ Note, that the map is not well defined by this data: $K$ will have $\deg P$ many
 function unramified_completion(K::AnticNumberField, P::NfOrdIdl; skip_map_inverse=false)
   #non-unique!! will have deg(P) many
   p = minimum(P)
-  C = qAdicConj(K, Int(p))
-  g = embedding_classes_unramified(P.gen_two.elem_in_nf, C)
+  #C = qAdicConj(K, Int(p))
+  g = embedding_classes_unramified(P.gen_two.elem_in_nf, p)
 #  @show map(x->valuation(x), g)
   i = findfirst(x->valuation(x) > 0, g)
   return completion(K, p, i)
 end
-
-completion(K::AnticNumberField, p::Integer, i::Int) = completion(K, fmpz(p), i)
 
 @doc Markdown.doc"""
     completion(K::AnticNumberField, p::fmpz, i::Int) -> FlintQadicField, Map
@@ -422,45 +420,60 @@ completion(K::AnticNumberField, p::Integer, i::Int) = completion(K, fmpz(p), i)
 The completion corresponding to the $i$-th conjugate in the non-canonical ordering of
 {{{conjugates}}}.
 """
-function completion(K::AnticNumberField, p::fmpz, i::Int; prec=10)
-  C = qAdicConj(K, Int(p))
-  @assert 0<i<= degree(K)
+function completion(K::AnticNumberField, p::fmpz, i::Int)
+    @assert 0<i<= degree(K)
+    return unramified_completions(K, fmpz(p))[i]
+end
 
-    #### Insertion #####
+completion(K::AnticNumberField, p::Integer, i::Int) = completion(K, FlintZZ(p), i)
+
+function unramified_completions(K::AnticNumberField, p::fmpz; prec=10)
+    # Since in the unramified case we complete via factorizations, we first
+    # construct the roots data needed to define/sharpen the extension.
+    C = qAdicConj(K, Int(p))
+
+    #### Insertion of old "conjugates(gen(K), C, all = true, flat = false)[i]" logic #####
     # This seems to be the line where the roots are actually computed.
     R = roots(C.C, prec)
 
     display(R)
     
+    return [unramified_completion(K, rt, prec=prec) for rt in R]
+end
+
+function unramified_completions(K::AnticNumberField, p::Integer; prec=10)
+    unramified_completions(K::AnticNumberField, FlintZZ(p); prec=10)
+end
+
+# Give the unramified completion where gen(K) is mapped to `gen_img`. It is assumed that
+# gen_img satisfied `change_base_ring(Kp, K.pol)(gen_img) == 0`.
+function unramified_completion(K::AnticNumberField, gen_img::qadic; prec=10)
+
+    p = prime(parent(gen_img))
+    
+    #### Resume insertion of old "conjugates(gen(K), C, all = true, flat = false)[i]" logic #####
     Zx = PolynomialRing(FlintZZ, cached = false)[1]
 
     # The element `a` is replaced by a polynomial. It is assumed that the variable
     # in the polynomial is identified with the generator of the number field.    
-    result = qadic[]
-    alpha = R[i] # TODO: Some redesign is needed to deal will all completions vs. one completion.
-
     function inj(a)
-        @assert parent(a) == C.K
+        @assert parent(a) == K
         d = denominator(a)
         f = Zx(d*a)
-        return inv(parent(alpha)(d))*f(alpha)
-    end
-    
+        return inv(parent(gen_img)(d))*f(gen_img)
+    end    
+    ### End insertion.
 
-    ###
-
-    #conjugates(gen(K), C, all = true, flat = false)[i]
-    ca = R[i]
     
   # function inj(a::nf_elem)
   #   return conjugates(a, C, precision(parent(ca)))[i]
   # end
   # gen(K) -> conj(a, p)[i] -> a = sum a_i o^i
   # need o = sum o_i a^i
-  R, mR = ResidueField(parent(ca))
+  R, mR = ResidueField(parent(gen_img))
 
   # Construct the array of powers of the primitive element.
-  pa = [one(R), mR(ca)]
+  pa = [one(R), mR(gen_img)]
   d = degree(R)
   while length(pa) < d
     push!(pa, pa[end]*pa[2])
@@ -481,7 +494,7 @@ function completion(K::AnticNumberField, p::fmpz, i::Int; prec=10)
   end
 
   # Construct the derivative of the Conway root in the number field.
-  f = defining_polynomial(parent(ca), FlintZZ)
+  f = defining_polynomial(parent(gen_img), FlintZZ)
   fso = inv(derivative(f)(gen(R)))
   o = matrix(GF(p), d, 1, [coeff(fso, j-1) for j=1:d])
   s = solve(m, o)
@@ -522,6 +535,6 @@ function completion(K::AnticNumberField, p::fmpz, i::Int; prec=10)
     end
     return r#*K(p)^valuation(x)
   end
-  return parent(ca), MapFromFunc(inj, lif, K, parent(ca))
+  return parent(gen_img), MapFromFunc(inj, lif, K, parent(gen_img))
 end
 

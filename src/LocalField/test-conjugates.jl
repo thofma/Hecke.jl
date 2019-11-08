@@ -33,7 +33,7 @@ end
 
     conj_test_values = [F(b) for (F,b) in zip(conjugate_fields, raw_values)]
 
-    @test conjugates(a, C) == conj_test_values
+    @test conjugates(a, fmpz(31)) == conj_test_values
 
     lp = prime_decomposition(maximal_order(k), 37)
     # 2-element Array{Tuple{NfAbsOrdIdl{AnticNumberField,nf_elem},Int64},1}:
