@@ -224,7 +224,7 @@ end
 #
 ################################################################################
 
-function _from_relative_to_abs_with_embedding(L::Hecke.NfRelNS{T}, autL::Array{Hecke.NfRelNSToNfRelNSMor{T}, 1}) where T
+function _from_relative_to_abs_with_embedding(L::Hecke.NfRelNS{T}, autL::Array{Hecke.NfRelNSToNfRelNSMor{T}, 1}, use_simplify::Bool = true) where T
 
   S, mS = simple_extension(L)
   K, mK, MK = absolute_field(S, false)
@@ -284,23 +284,29 @@ function _from_relative_to_abs_with_embedding(L::Hecke.NfRelNS{T}, autL::Array{H
   @vtime :Fields 3 O1 = MaximalOrder(Ostart)
   O1.ismaximal = 1
   Hecke._set_maximal_order_of_nf(K, O1)
-  @vtime :Fields 3 Ks, mKs = Hecke.simplify(K)
-  #Now, we have to construct the maximal order of this field.
-  #I compute the inverse of mKs
-  @vtime :Fields 3 mKsI = find_inverse(mKs)
-  if isdefined(O1, :lllO)
-    lO = O1.lllO::NfOrd
-    O2 = NfOrd(nf_elem[mKsI(x) for x in basis(lO, K, copy = false)], false)
-    #O2.lllO = O2
+  if use_simplify
+    @vtime :Fields 3 Ks, mKs = Hecke.simplify(K)
+    #Now, we have to construct the maximal order of this field.
+    #I compute the inverse of mKs
+    @vtime :Fields 3 mKsI = find_inverse(mKs)
+    if isdefined(O1, :lllO)
+      lO = O1.lllO::NfOrd
+      O2 = NfOrd(nf_elem[mKsI(x) for x in basis(lO, K, copy = false)], false)
+      #O2.lllO = O2
+    else
+      O2 = NfOrd(nf_elem[mKsI(x) for x in basis(O1, K, copy = false)], false)
+    end
+    O2.ismaximal = 1
+    @assert isdefined(O1, :disc)
+    O2.disc = O1.disc
+    O2.index = root(divexact(numerator(discriminant(Ks)), O2.disc), 2)
+    @vtime :Fields 3 OLLL = lll(O2)
+    Hecke._set_maximal_order_of_nf(Ks, OLLL)
   else
-    O2 = NfOrd(nf_elem[mKsI(x) for x in basis(O1, K, copy = false)], false)
+    Ks = K
+    mKs = id_hom(K)
+    mKsI = id_hom(K)
   end
-  O2.ismaximal = 1
-  @assert isdefined(O1, :disc)
-  O2.disc = O1.disc
-  O2.index = root(divexact(numerator(discriminant(Ks)), O2.disc), 2)
-  @vtime :Fields 3 OLLL = lll(O2)
-  Hecke._set_maximal_order_of_nf(Ks, OLLL)
   #I want also the embedding of the old field into the new one. 
   #It is enough to find the image of the primitive element.
   k = base_field(S)
@@ -325,8 +331,8 @@ function _from_relative_to_abs_with_embedding(L::Hecke.NfRelNS{T}, autL::Array{H
   @vprint :Fields 2 "Finished\n"
     #@assert codomain(embed) == Ks
   return Ks, autos, embed
- 
 end 
+
 
 function find_inverse(f::NfToNfMor)
   v = Vector{nf_elem}(undef, degree(domain(f)))
@@ -419,7 +425,7 @@ function check_group_extension(TargetGroup::Main.ForeignGAP.MPtr, autos::Array{N
   
   # I check the split extension related to only uncom
   #Now, I have to check if the split extension is isomorphic to IdH
-  Qn, mQn = quo(GS, uncom)
+  Qn, mQn = quo(GS, uncom, false)
   S1, mS1 = snf(Qn)
   new_res_act = Array{GrpAbFinGenMap, 1}(undef, length(res_act))
   for i = 1:length(res_act)
@@ -439,7 +445,7 @@ end
 #
 ###############################################################################
 
-function field_extensions(list::Vector{FieldsTower}, bound::fmpz, IsoE1::Main.ForeignGAP.MPtr, l::Array{Int, 1}, only_real::Bool)
+function field_extensions(list::Vector{FieldsTower}, bound::fmpz, IsoE1::Main.ForeignGAP.MPtr, l::Array{Int, 1}, only_real::Bool, simplify::Bool)
 
   grp_to_be_checked = Dict{Int, Main.ForeignGAP.MPtr}()
   d = degree(list[1])
@@ -458,13 +464,13 @@ function field_extensions(list::Vector{FieldsTower}, bound::fmpz, IsoE1::Main.Fo
   for (j, x) in enumerate(list)   
     @vprint :Fields 1 "Field $(j)/$(length(list)): $(x.field.pol)"
     @vprint :FieldsNonFancy 1 "Field $(j)/$(length(list)): $(x.field.pol)\n"
-    append!(final_list, field_extensions(x, bound, IsoCheck, l, only_real, grp_to_be_checked, IsoE1))
+    append!(final_list, field_extensions(x, bound, IsoCheck, l, only_real, grp_to_be_checked, IsoE1, simplify))
   end 
   return final_list
 
 end
 
-function field_extensions(x::FieldsTower, bound::fmpz, IsoE1::Main.ForeignGAP.MPtr, l::Array{Int, 1}, only_real::Bool, grp_to_be_checked::Dict{Int, Main.ForeignGAP.MPtr}, IsoG::Main.ForeignGAP.MPtr)
+function field_extensions(x::FieldsTower, bound::fmpz, IsoE1::Main.ForeignGAP.MPtr, l::Array{Int, 1}, only_real::Bool, grp_to_be_checked::Dict{Int, Main.ForeignGAP.MPtr}, IsoG::Main.ForeignGAP.MPtr, simplify::Bool)
   
   list_cfields = _abelian_normal_extensions(x, l, bound, IsoE1, only_real, IsoG)
   if isempty(list_cfields)
@@ -477,7 +483,7 @@ function field_extensions(x::FieldsTower, bound::fmpz, IsoE1::Main.ForeignGAP.MP
   @vprint :FieldsNonFancy 1 "Computing maximal orders\n"
   final_list = Vector{FieldsTower}(undef, length(list))
   for j = 1:length(list)
-    fld, autos, embed = _from_relative_to_abs_with_embedding(list[j][1], list[j][2])
+    fld, autos, embed = _from_relative_to_abs_with_embedding(list[j][1], list[j][2], simplify)
     previous_fields = Array{NfToNfMor, 1}(undef, length(x.subfields)+1)
     for s = 1:length(x.subfields)
       previous_fields[s] = x.subfields[s]
@@ -516,7 +522,7 @@ function fields_direct_product(g1, g2, red, redfirst, absolute_bound; only_real 
 end
 
 
-function fields(a::Int, b::Int, absolute_bound::fmpz; using_direct_product::Bool = true, only_real::Bool = false)
+function fields(a::Int, b::Int, absolute_bound::fmpz; using_direct_product::Bool = true, only_real::Bool = false, simplify::Bool = true)
   @assert absolute_bound > 0
   if a == 1
     @assert b == 1
@@ -549,6 +555,7 @@ function fields(a::Int, b::Int, absolute_bound::fmpz; using_direct_product::Bool
   @vprint :Fields 1 "First step completed\n \n"
   @vprint :FieldsNonFancy 1 "First step completed\n \n"
   for i = 2:length(L)-1
+
     E1 = GAP.Globals.FactorGroup(L[1], L[i+1])
     l = GAP.gap_to_julia(Vector{Int64}, GAP.Globals.AbelianInvariants(L[i]))
     @vprint :Fields 1 "contructing abelian extensions with invariants $l \n" 
@@ -577,7 +584,11 @@ function fields(a::Int, b::Int, absolute_bound::fmpz; using_direct_product::Bool
     if isempty(list)
       return FieldsTower[]
     end
-    list = field_extensions(list, bound, IsoE1, invariants, onlyreal)
+    simplify_i_th = true
+    if i == length(L)-1 && simplify == false
+      simplify_i_th = false
+    end
+    list = field_extensions(list, bound, IsoE1, invariants, onlyreal, simplify)
     @vprint :Fields 1 "Step $i completed\n"
     @vprint :FieldsNonFancy 1 "Step $i completed\n"
     if isempty(list)
@@ -588,13 +599,13 @@ function fields(a::Int, b::Int, absolute_bound::fmpz; using_direct_product::Bool
   
 end
 
-function fields(a::Int, b::Int, list::Vector{FieldsTower}, absolute_bound::fmpz; only_real::Bool = false)
+function fields(a::Int, b::Int, list::Vector{FieldsTower}, absolute_bound::fmpz; only_real::Bool = false, simplify::Bool = true)
   G = GAP.Globals.SmallGroup(a, b)
-  return fields(list, G, absolute_bound, only_real = only_real)
+  return fields(list, G, absolute_bound, only_real = only_real, simplify = simplify)
 end
 
 
-function fields(list::Vector{FieldsTower}, G, absolute_bound::fmpz; only_real::Bool = false)
+function fields(list::Vector{FieldsTower}, G, absolute_bound::fmpz; only_real::Bool = false, simplify::Bool = true)
   L = GAP.Globals.DerivedSeries(G)
   lvl = _real_level(L)
   first = true
@@ -629,7 +640,7 @@ function fields(list::Vector{FieldsTower}, G, absolute_bound::fmpz; only_real::B
     if isempty(list)
       return FieldsTower[]
     end
-    list = field_extensions(list, bound, IsoE1, invariants, onlyreal)
+    list = field_extensions(list, bound, IsoE1, invariants, onlyreal, simplify)
     @vprint :Fields 1 "Step $i completed\n"
     @vprint :FieldsNonFancy 1 "Step $i completed\n"
     if isempty(list)

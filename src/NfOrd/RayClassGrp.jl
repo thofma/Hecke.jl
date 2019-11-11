@@ -358,7 +358,8 @@ function _ev_quo(Q, mQ, elems, p, exponent, multiplicity::Int)
       if haskey(powers, val)
         act_el = O(powers[val]*f, false)
       else
-        anti_val = _powmod(anti_uni, val, minimum(p)^(multiplicity*val+1))
+        exp_av = div(multiplicity*val, ramification_index(p))
+        anti_val = _powmod(anti_uni, val, minimum(p)^(exp_av+1))
         powers[val] = anti_val
         act_el = O(anti_val*f, false)
       end
@@ -369,7 +370,7 @@ function _ev_quo(Q, mQ, elems, p, exponent, multiplicity::Int)
       if haskey(powers, ramification_index(p))
         eli = minimum(p, copy = false)*powers[ramification_index(p)]
       else
-        powers[ramification_index(p)] = _powmod(anti_uni, ramification_index(p), minimum(p)^(multiplicity*ramification_index(p)+1))
+        powers[ramification_index(p)] = _powmod(anti_uni, ramification_index(p), minimum(p)^(multiplicity+1))
         eli = minimum(p, copy = false)*powers[ramification_index(p)]
       end
       mul!(el[i], el[i], mQ(O(eli, false))^vp)

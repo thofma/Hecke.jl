@@ -471,7 +471,7 @@ function max_ab_norm_sub_containing(G::Main.ForeignGAP.MPtr)
   H = D[end-1]
   G1 = GAP.Globals.Centralizer(G, H)
   if G1 == H
-    return H, H
+    return H, H, Int[]
   end
   #First, I check if the centralizer split directly as a direct product.
   sc = GAP.Globals.ComplementClassesRepresentatives(G1, H)

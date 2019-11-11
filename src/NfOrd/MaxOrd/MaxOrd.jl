@@ -627,8 +627,8 @@ function ring_of_multipliers(a::NfAbsOrdIdl)
     end
     M = representation_matrix_mod(B[i], modu)
     _copy_matrix_into_matrix(id_gen, 1, 1, M)
-    hnf_modular_eldiv!(id_gen, minimum(a), :lowerleft)
-    mod!(M, minimum(a)*bmatinv.den)
+    hnf_modular_eldiv!(id_gen, minimum(a, copy = false), :lowerleft)
+    mod!(M, minimum(a, copy = false)*bmatinv.den)
     mul!(M, M, bmatinv.num)
     M = transpose(M)
     _copy_matrix_into_matrix(m, n*(ind-1)+1, 1, M)
@@ -695,7 +695,7 @@ function factor_shape_refined(x::gfp_poly) where {T <: RingElem}
 end
 
 
-function pradical_frobenius1(O::NfOrd, p::Union{Integer, fmpz})
+function pradical_frobenius1(O::NfOrd, p::Integer)
   R = GF(p, cached = false)
   d = degree(O)
   K = nf(O)
@@ -899,9 +899,37 @@ function prefactorization(f::fmpz_poly, d::fmpz)
       factors = coprime_base(factors)
     end
   end
-  return coprime_base(final_factors)
+  cb = coprime_base(final_factors)
+  return cb
 end
 
+function _squarefree_decomposition(f::fmpz_mod_poly)
+  D = Dict{Int, fmpz_mod_poly}()
+  fail, d = Hecke._gcd_with_failure(f, derivative(f))
+  if !isone(fail)
+    return fail, D
+  end
+  g = divexact(f, d)
+  f1 = deepcopy(f)
+  j = 1
+  m = modulus(base_ring(f))
+  while !isone(f1)
+    f1 = divexact(f1, g)
+    fail, h = Hecke._gcd_with_failure(f1, g)
+    @show fail
+    @show fail = gcd(fail, m)
+    if !isone(fail)
+      return fail, D
+    end
+    t = divexact(g, h)
+    if !isone(t)
+      D[j] = t
+    end
+    g = h
+    j += 1
+  end
+  return fail, D
+end
 
 
 function _gcd_with_failure(a::fmpz_mod_poly, b::fmpz_mod_poly)

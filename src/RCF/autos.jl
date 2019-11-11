@@ -543,7 +543,7 @@ function restriction(K::NfRelNS{nf_elem}, Cp::Vector{ClassField_pp{S, T}}, autos
     all_pe[j] = (pe, tau_pe)
   end
   #AA is the target field 
-  AA, gAA = number_field([c.A.pol for c = Cp], cached = false, check = true)
+  AA, gAA = number_field([c.A.pol for c = Cp], cached = false, check = false)
   #And now, linear algebra to compute the restriction
   #I need the product basis fo all the primitive elements of Cp
   B = Array{NfRelNSElem, 1}(undef, degree(AA))
