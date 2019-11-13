@@ -71,11 +71,15 @@ reference to it. The precision can only be increased by `sharpen!`.
 function sharpen!(Kp::EisensteinField, P::NfAbsOrdIdl, completion_maps, new_prec)
 
     # TODO: The sharpening methods can be improved a lot with a decent caching strategy.
-    @assert P.norm == prime(base_field(Kp))
+    # TODO: Replace asserts with something compiler-safe
+    P.norm != prime(base_field(Kp)) && error("Prime ideal and characteristic of residue field are different")
 
     inj = completion_maps.f
     lif = completion_maps.g
     K   = domain(completion_maps)
+
+    # Sharpen the base ring.
+    sharpen_base!(Kp, new_prec)
     Kp_unram = base_field(Kp)
     
     max_ord = maximal_order(K)
@@ -100,16 +104,18 @@ function sharpen!(Kp::EisensteinField, P::NfAbsOrdIdl, completion_maps, new_prec
     BPn = basis(P^new_prec)
     local_basis_lift = hcat(matrix(coordinates.(BKp)), matrix(coordinates.(BPn)))
 
-    function construct_defining_polynomial()
-        N = underdetermined_solve_first(local_basis_lift, matrix([coordinates(pi^e)]))
+    # Sharpen the defining polynomial.
+
+    @info "" precision(base_ring(Kp)) new_prec
+
+    gnew = let
+        N = underdetermined_solve_first(local_basis_lift, -matrix([coordinates(pi^e)]))
         RX,X = PolynomialRing(Kp_unram,"X")
-        return X^e + sum(X^i*delta_p^j * N[i*f + j + 1] for j=0:f-1 for i=0:e-1)
+        X^e + sum(X^i*delta_p^j * N[i*f + j + 1] for j=0:f-1 for i=0:e-1)
     end
 
-    gnew = construct_defining_polynomial()
+    @info gnew
 
-    # Sharpen the base field and defining polynomial.
-    sharpen_base!(Kp, new_prec)
     sharpen!(Kp, gnew, new_prec)
 
     ####
@@ -121,13 +127,12 @@ function sharpen!(Kp::EisensteinField, P::NfAbsOrdIdl, completion_maps, new_prec
     # Update delta_p to be the new generator.
     delta_p = unram_gen(Kp_unram)
     
-    function image_of_nf_gen(a)
+    img_nf_gen = let
         avec = matrix(FlintZZ, length(coeffs(a)), 1, coeffs(a))        
         N = underdetermined_solve_first(local_basis_lift, avec)
 
         return sum(gen(Kp)^i*delta_p^j * N[i*f + j + 1] for j=0:f-1 for i=0:e-1)
     end
-    img_nf_gen = image_of_nf_gen(gen(K))
     
     # Reconstruct the forward map, embedding $K$ into its completion.
     function inj(a::nf_elem)
@@ -136,8 +141,11 @@ function sharpen!(Kp::EisensteinField, P::NfAbsOrdIdl, completion_maps, new_prec
     
     # Update the completion maps 
     completion_maps.f = inj
-    return
+    completion_maps.header.image = inj
+    return Kp
 end
+
+# Unsafe methods should actually return, to be able to use them on immutable types..
 
 @doc Markdown.doc"""
     sharpen!(K::FlintLocalField, new_prec)
@@ -322,31 +330,29 @@ function ramified_completion(K::NumField{T} where T, P::NfOrdIdl; prec=10, skip_
     BPn = basis(P^prec)
     local_basis_lift = hcat(matrix(coordinates.(BKp)), matrix(coordinates.(BPn)))
 
-    function construct_defining_polynomial()
+    ##################################################
+    # Build the completion structure.
+    g = let
         N = underdetermined_solve_first(local_basis_lift, -matrix([coordinates(pi^e)]))
         RX,X = PolynomialRing(Kp_unram,"X")
         
-        return X^e + sum(X^i*delta_p^j * N[i*f + j + 1] for j=0:f-1 for i=0:e-1 )
+        X^e + sum(X^i*delta_p^j * N[i*f + j + 1] for j=0:f-1 for i=0:e-1 )
     end
 
-    ##################################################
-    # Build the completion structure.
-    g = construct_defining_polynomial()
-    display(g)
+    @info "" g
     Kp, Y = EisensteinField(g,"_\$")
 
     ##################################################
     # Compute the maps
     
-    function image_of_nf_gen(a)
+    img_nf_gen = let
         avec = matrix(FlintZZ, length(coeffs(a)), 1, coeffs(a))        
         N = underdetermined_solve_first(local_basis_lift, avec)
 
         return sum(Y^i*delta_p^j * N[i*f + j + 1] for j=0:f-1 for i=0:e-1)
     end
 
-    img_nf_gen = image_of_nf_gen(a)
-    display("Printing nf gen image: $img_nf_gen")
+    @info "Printing nf gen image:" img_nf_gen
     
     # Construct the forward map, embedding $K$ into its completion.
     # The map is determined by the image of the number field generators.
