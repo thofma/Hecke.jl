@@ -113,7 +113,6 @@ function rank(G::LocalGenusHerm)
   return sum(rank(G, i) for i in 1:length(G))
 end
 
-
 @doc Markdown.doc"""
     ranks(G::LocalGenusHerm)
 
@@ -813,7 +812,7 @@ function _non_norm_primes(LGS::Vector)
     p = prime(g)
     d = det(g)
     if d != 1
-      push!(z, g)
+      push!(z, p)
     end
   end
   return z
@@ -897,6 +896,41 @@ function _hermitian_form_invariants(M)
   I = Dict([ p=>length([coeff(d, 0) for d in D if isnegative(coeff(d, 0), p)]) for p in real_places(K) if _decomposition_number(E, p) == 1])
   return ncols(M), collect(keys(P)), I
 end
+
+base_field(G::GenusHerm) = G.E
+
+rank(G::GenusHerm) = G.rank
+
+function representative(G::GenusHerm)
+  P = _non_norm_primes(G.LGS)
+  E = base_field(G)
+  V = hermitian_space(E, _hermitian_form_with_invariants(base_field(G), rank(G), P, G.signatures))
+  M = maximal_integral_lattice(V)
+  for g in G.LGS
+    p = prime(g)
+    L = representative(g)
+    M = find_lattice(M, L, p)
+  end
+  return M
+end
+
+#  V = m.HermitianFormWithInvariants(E, self._rank, Pm, self._signatures)
+#  if rational:
+#      return V.ChangeRing(Em).sage()
+#  M = V.MaximalIntegralHermitianLattice()
+#  #M = 27*M
+#  #M = M.MaximalIntegralLattice()
+#  for sym in self._local_symbols:
+#      p = sym._prime
+#      g = sym.gram_matrix()
+#      g = m(g).ChangeRing(E)
+#      L = m.HermitianLattice(g)
+#      pm = self._ideal_to_magma(Km, p)
+#      if Km.sage() == QQ:
+#          pm = gcd([ZZ(a) for a in p.gens()])
+#      M = m.FindLattice(M, L, pm)
+#  return M
+#
 
 ################################################################################
 #
@@ -1046,7 +1080,7 @@ function genera_hermitian(E, rank, signatures, determinant; max_scale = nothing)
     det_val = valuation(ds, p)
     mscale_val = valuation(ms, p)
     det_val = div(det_val, 2)
-    if !is_ram
+    if !isramified(OE, p)
       mscale_val = div(mscale_val, 2)
     end
     push!(local_symbols, local_genera_hermitian(E, p, rank, det_val, mscale_val))
@@ -1058,7 +1092,7 @@ function genera_hermitian(E, rank, signatures, determinant; max_scale = nothing)
     c = collect(gs)
     b = _check_global_genus(c, signatures)
     if b
-      push!(res, primes, GenusHerm(E, rank, c, signatures))
+      push!(res, GenusHerm(E, rank, c, signatures))
     end
   end
 

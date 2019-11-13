@@ -200,7 +200,7 @@ function _newton_polygon(f::fmpz_poly, phi::fmpz_poly, p::Union{fmpz, Int})
   end
   #Compute the development
   dev = phi_development(f, phi)
-  return newton_polygon(dev, p)
+  return _newton_polygon(dev, p)
 end
 
 function _newton_polygon(f::Generic.Poly{T}, phi::Generic.Poly{T}) where T <: Union{padic, qadic}
@@ -315,6 +315,7 @@ function gens_overorder_polygons(O::NfOrd, p::fmpz)
 
   K = nf(O)
   f = K.pol
+  Qx = parent(f)
   Zx, x = PolynomialRing(FlintZZ, "x", cached = false)
   R = GF(p, cached = false)
   Rx, y = PolynomialRing(R, "y", cached = false)
@@ -324,7 +325,7 @@ function gens_overorder_polygons(O::NfOrd, p::fmpz)
   l[1] = one(K)
   l[2] = gen(K)
   for i = 3:length(l)
-    l[i] = l[i-1]* l[2]
+    l[i] = K(gen(Qx)^(i-1))
   end
   regular = true
   vdisc = 0
@@ -367,7 +368,7 @@ function gens_overorder_polygons(O::NfOrd, p::fmpz)
     for i in 1:nrows(B) 
       elt[i] = elem_from_mat_row(K, B.num, i, B.den)
     end
-    O1 = _order_for_polygon_overorder(K, elt)
+    O1 = _order_for_polygon_overorder(K, elt, inv(fmpq(p^vdisc)))
   else
     O1 = NfAbsOrd(K, B)
     O1.disc = divexact(O.disc, p^(2*vdisc))
@@ -438,13 +439,14 @@ function polygons_overorder(O::NfOrd, p::fmpz)
 
 end
 
-function _order_for_polygon_overorder(K::S, elt::Array{T, 1}) where {S, T}
+function _order_for_polygon_overorder(K::S, elt::Array{T, 1}, dold::fmpq = fmpq(0)) where {S, T}
 
   n = degree(K)
   closed = false
-  dold = fmpq(0)
-
+  Oattempt = NfOrd(elt)
+  
   # Since 1 is in elt, prods will contain all elements
+  first = true
   while !closed
     prods = T[elt[i] for i=1:length(elt)]
     for i = 2:length(elt)
@@ -455,11 +457,15 @@ function _order_for_polygon_overorder(K::S, elt::Array{T, 1}) where {S, T}
           continue
         end
         el = elt[i]*elt[j]
-        if denominator(el) != 1
+        if denominator(el) != 1 && !(el in Oattempt) 
           push!(prods, el)
         end
       end
     end
+    if length(prods) == n && first
+      break
+    end
+
     
     B = basis_matrix(prods, FakeFmpqMat) 
     hnf_modular_eldiv!(B.num, B.den, :lowerleft)
@@ -477,9 +483,9 @@ function _order_for_polygon_overorder(K::S, elt::Array{T, 1}) where {S, T}
       closed = true
     else
       dold = d
-      elt = T[]
+      elt = Vector{T}(undef, n)
       for i in 1:n
-        push!(elt, elem_from_mat_row(K, B.num, nrows(B) - n + i, B.den))
+        elt[i] = elem_from_mat_row(K, B.num, nrows(B) - n + i, B.den)
       end
     end
   end

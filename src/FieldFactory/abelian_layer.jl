@@ -321,7 +321,7 @@ function from_class_fields_to_fields(class_fields::Vector{Hecke.ClassField{Hecke
       continue
     end
     E = GAP.Globals.SmallGroup(idE)
-    S, H = max_ab_norm_sub_containing(E)
+    S, H, ab_inv = max_ab_norm_sub_containing(E)
     if S == H 
       compute_fields(cfieldsp, autos, idE, right_grp)
       pclassfields[ind] = cfieldsp
@@ -333,7 +333,7 @@ function from_class_fields_to_fields(class_fields::Vector{Hecke.ClassField{Hecke
     #First, I need the subfields.
     K = base_field(class_fields[1])
     subfields = compute_subfields(K, E, H, S)
-    computing_over_subfields(cfieldsp, subfields, idE, autos, right_grp)
+    computing_over_subfields(cfieldsp, subfields, idE, autos, right_grp, ab_inv)
     pclassfields[ind] = cfieldsp
     ind += 1
   end
@@ -362,7 +362,8 @@ function compute_fields(class_fields::Vector{Hecke.ClassField{Hecke.MapRayClassG
   @vprint :Fields 3 "Computing the fields directly\n"
   for i in it
     C = class_fields[i]
-    L = NumberField(C)#_using_Brauer(C)
+    L = NumberField(C)
+    #L = NumberField_using_Brauer(C)
     autL = Hecke.absolute_automorphism_group(C, autos)
     if !isone(gcd(degree(K), expo)) 
       Cpperm = permutation_group(autL)
@@ -439,6 +440,7 @@ function set_up_cycl_ext(K::AnticNumberField, n::Int, autK::Array{NfToNfMor, 1})
     @vprint :FieldsNonFancy 1 "computing class group of cyclotomic extension of order $e\n"
     Cl, mCl = class_group(maximal_order(C.Ka), use_aut = true)
     Hecke.allow_cache!(mCl)
+    @vprint :Fields 1 "$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())"
   end
   return nothing
 
@@ -469,17 +471,18 @@ function max_ab_norm_sub_containing(G::Main.ForeignGAP.MPtr)
   H = D[end-1]
   G1 = GAP.Globals.Centralizer(G, H)
   if G1 == H
-    return H, H
+    return H, H, Int[]
   end
   #First, I check if the centralizer split directly as a direct product.
   sc = GAP.Globals.ComplementClassesRepresentatives(G1, H)
   if !GAP.Globals.IsEmpty(sc)
-    return G1, H
+    return G1, H, GAP.gap_to_julia(Vector{Int}, GAP.Globals.AbelianInvariants(sc[1]))
   end
   lS = GAP.gap_to_julia(GAP.Globals.ConjugacyClassesSubgroups(G1))
   #TODO: Subgroups in the quotient by H and not in the full group
   candidate = H
   sizecandidate = GAP.Globals.Size(H)
+  ab_invariants = GAP.gap_to_julia(Vector{Int}, GAP.Globals.AbelianInvariants(H))
   for S in lS
     s = GAP.Globals.Representative(S)
     if !GAP.Globals.IsSubset(s, H)
@@ -493,9 +496,10 @@ function max_ab_norm_sub_containing(G::Main.ForeignGAP.MPtr)
     if sncandidate > sizecandidate
       candidate = s
       sizecandidate = sncandidate
+      ab_invariants = GAP.gap_to_julia(Vector{Int}, GAP.Globals.AbelianInvariants(sc[1]))
     end
   end
-  return candidate, H
+  return candidate, H, ab_invariants
 end
 
 ################################################################################
@@ -504,10 +508,10 @@ end
 #
 ################################################################################
 
-function computing_over_subfields(class_fields, subfields, idE, autos, right_grp)
+function computing_over_subfields(class_fields, subfields, idE, autos, right_grp, ab_invariants::Vector{Int})
 
   it = findall(right_grp)
-  new_class_fields, subs, to_be_done = translate_class_field_down(subfields, class_fields, it)
+  new_class_fields, subs, to_be_done = translate_class_field_down(subfields, class_fields, it, ab_invariants)
   for x in to_be_done
     C = class_fields[x]
     L = number_field(C)
@@ -563,7 +567,7 @@ function computing_over_subfields(class_fields, subfields, idE, autos, right_grp
 end
 
 
-function translate_extensions(mL::NfToNfMor, class_fields, new_class_fields, ctxK, it)
+function translate_extensions(mL::NfToNfMor, class_fields, new_class_fields, ctxK, it, ab_invariants::Vector{Int})
   to_be_done = Int[]
   L = domain(mL)
   OL = maximal_order(L)
@@ -575,6 +579,7 @@ function translate_extensions(mL::NfToNfMor, class_fields, new_class_fields, ctx
   d = divexact(discriminant(maximal_order(K)), discriminant(OL)^(divexact(degree(K), degree(L))))
   f = factor(ideal(OL, d))
   F = factor(ideal(OK, d))
+  ab_invariants_mod = map(x -> mod(x, n), ab_invariants)
   for indclf in it
     if isassigned(new_class_fields, indclf)
       continue
@@ -610,6 +615,14 @@ function translate_extensions(mL::NfToNfMor, class_fields, new_class_fields, ctx
           fm0[p] = max(v, fm0[p]) 
         end
       end
+      lPP = prime_decomposition(mL, p)
+      for (P, vP) in lPP
+        if haskey(fM0, P)
+          fM0[P] = max(fM0[P], 2*vP*fm0[p])
+        else
+          fM0[P] = vP*fm0[p]*2
+        end
+      end
     end
     infplc = InfPlc[]
     if iszero(mod(n, 2)) 
@@ -622,13 +635,15 @@ function translate_extensions(mL::NfToNfMor, class_fields, new_class_fields, ctx
       continue
     end 
     #Now, the norm group of K over L
-    @vtime :Fields 3 ngL, mngL = Hecke.norm_group(mL, mr)
+    
+    @vtime :Fields 3 ngL, mngL = Hecke.norm_group(mL, mr, prod(ab_invariants_mod))
+    @hassert :Fields 1 divisible(divexact(fmpz(degree(codomain(mL))), degree(domain(mL))), divexact(order(r), order(ngL))) 
     if !divisible(order(ngL), degree(C)) || !divisible(exponent(C), n)
       push!(to_be_done, indclf)
       continue
     end
     #Finally, the norm group of C over L
-    #I use the usual strategy, as in check_ elian_extension
+    #I use the usual strategy, as in check_abelian_extension
     for (p, v) in F
       if iscoprime(minimum(p, copy = false), degree(C))
         fM0[p] = 1
@@ -663,6 +678,7 @@ function translate_extensions(mL::NfToNfMor, class_fields, new_class_fields, ctx
     end
     RMtoR = hom(gS, prms)
     k, mk = kernel(RMtoR)
+    @hassert :Fields 1 isisomorphic(cokernel(mk)[1], codomain(C.quotientmap))
     mp = mk*proj
     ck, mck = cokernel(mp)
     #If everything could work, then ck should be the direct product of the abelian extension I am searching for and 
@@ -674,7 +690,7 @@ function translate_extensions(mL::NfToNfMor, class_fields, new_class_fields, ctx
       continue
     end
     @vprint :Fields 1 "$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())Doing field $(indclf) / $(length(class_fields))"
-    s, ms = sub(ck, GrpAbFinGenElem[mck(mngL(x)) for x in gens(ngL)])
+    s, ms = image(mngL*mck)#sub(ck, GrpAbFinGenElem[mck(mngL(x)) for x in gens(ngL)])
     mq1 = find_complement(ms)
     mqq = mck * mq1 
     @hassert :Fields 1 domain(mqq) == r
@@ -757,7 +773,7 @@ function compute_subfields(K::AnticNumberField, E, H, S)
 
 end
 
-function translate_class_field_down(subfields, class_fields, it)
+function translate_class_field_down(subfields, class_fields, it, ab_invariants)
   new_class_fields = similar(class_fields)
   #Now, I translate the fields over the subfields.
   to_be_done = Int[i for i in it]
@@ -767,7 +783,7 @@ function translate_class_field_down(subfields, class_fields, it)
   ctxK = Hecke.rayclassgrp_ctx(OK, exponent(class_fields[to_be_done[1]]))
   for mL in subfields
     push!(created_subfields, mL)
-    to_be_done_new = translate_extensions(mL, class_fields, new_class_fields, ctxK, it)
+    to_be_done_new = translate_extensions(mL, class_fields, new_class_fields, ctxK, it, ab_invariants)
     if length(to_be_done_new) == 0 
       return new_class_fields, created_subfields, to_be_done_new
     end

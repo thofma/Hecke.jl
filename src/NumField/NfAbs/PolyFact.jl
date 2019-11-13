@@ -22,18 +22,18 @@ mutable struct HenselCtxQadic <: Hensel
       f2 = lfp[i+1]
       g, a, b = gcdx(f1, f2)
       @assert isone(g)
-      push!(la, setprecision(map_coeffs(x->preimage(mK, x), a, parent = Qx), 1))
-      push!(la, setprecision(map_coeffs(x->preimage(mK, x), b, parent = Qx), 1))
+      push!(la, setprecision(map_coeffs(x->preimage(mK, x), a, cached = false, parent = Qx), 1))
+      push!(la, setprecision(map_coeffs(x->preimage(mK, x), b, cached = false, parent = Qx), 1))
       push!(lfp, f1*f2)
       i += 2
     end
-    return new(f, map(x->setprecision(map_coeffs(y->preimage(mK, y), x, parent = Qx), 1), lfp), la, uniformizer(Q), n)
+    return new(f, map(x->setprecision(map_coeffs(y->preimage(mK, y), x, cached = false, parent = Qx), 1), lfp), la, uniformizer(Q), n)
   end
 
   function HenselCtxQadic(f::PolyElem{qadic})
     Q = base_ring(f)
     K, mK = ResidueField(Q)
-    fp = map_coeffs(mK, f)
+    fp = map_coeffs(mK, f, cached = false)
     lfp = collect(keys(factor(fp).fac))
     return HenselCtxQadic(f, lfp)
   end
@@ -299,9 +299,9 @@ function zassenhaus(f::PolyElem{nf_elem}, P::NfOrdIdl; degset::Set{Int} = Set{In
 
   vH = vanHoeijCtx()
   if degree(P) == 1
-    vH.H = HenselCtxPadic(map_coeffs(x->coeff(mC(x), 0), f))
+    vH.H = HenselCtxPadic(map_coeffs(x->coeff(mC(x), 0), f, cached = false))
   else
-    vH.H = HenselCtxQadic(map_coeffs(mC, f))
+    vH.H = HenselCtxQadic(map_coeffs(mC, f, cached = false))
   end
   vH.C = C
   vH.P = P
@@ -454,7 +454,7 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 20)
 
   _, mK = ResidueField(order(P), P)
   mK = extend(mK, K)
-  r = length(factor(map_coeffs(mK, f)))
+  r = length(factor(map_coeffs(mK, f, cached = false)))
   N = degree(f)
   @vprint :PolyFactor 1  "Having $r local factors for degree ", N
 

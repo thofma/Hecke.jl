@@ -5,6 +5,7 @@
 ################################################################################
 
 add_verbose_scope(:NormRelation)
+add_assert_scope(:NormRelation)
 
 # Example
 # 
@@ -345,7 +346,6 @@ function induce_action(N::NormRelation, i, j, s, FB, cache)
 
   _ , _, auto = N.coefficients_gen[i][j]
   #@show auto
-  println("Call to induce(FB, auto)...")
   if haskey(N.induced, auto)
     p = N.induced[auto]
   else
@@ -1065,6 +1065,7 @@ end
 # pure
 
 function _add_sunits_from_brauer_relation!(c, UZK, N)
+  # I am assuming that c.FB.ideals is invariant under the action of the Galois group
   cp = sort!(collect(Set(minimum(x) for x = c.FB.ideals)))
   K = N.K
   for i = 1:length(N)
@@ -1076,17 +1077,20 @@ function _add_sunits_from_brauer_relation!(c, UZK, N)
     @vprint :NormRelation 1 "Computing class group ... \n"
     class_group(zk, redo = false, use_aut = true)
     lpk = NfOrdIdl[ P[1] for p in cp for P = prime_decomposition(zk, p)]
+	  #lpk = unique!(NfOrdIdl[ intersect_prime(mk, P) for P in c.FB.ideals])
     @assert length(lpk) > 0
     @vprint :NormRelation 1 "Computing sunit group for set of size $(length(lpk)) ... \n"
     Szk, mS = Hecke.sunit_mod_units_group_fac_elem(lpk)
 
     @vprint :NormRelation 1 "Coercing the sunits into the big field ...\n"
-    for j in 1:length(N.coefficients_gen[i])
+    for j in 1:length(N)
       z = induce_action_just_from_subfield(N, i, lpk, c.FB)
 
       for l=1:ngens(Szk)
         u = mS(Szk[l])  #do compact rep here???
         valofnewelement = mul(mS.valuations[l], z)
+        @hassert :NormRelation 1 begin zz = mk(evaluate(u)); true; end
+        @hassert :NormRelation 1 sparse_row(FlintZZ, [ (i, valuation(zz, p)) for (i, p) in enumerate(c.FB.ideals) if valuation(zz, p) != 0]) == valofnewelement
         Hecke.class_group_add_relation(c, FacElem(Dict((_embed(N, i, x), v) for (x,v) = u.fac)), valofnewelement)
       end
     end
@@ -1102,7 +1106,8 @@ function _add_sunits_from_brauer_relation!(c, UZK, N)
   return nothing
 end
 
-function induce_action_just_from_subfield(N::NormRelation, i, s, FB)
+function induce_action_just_from_subfield(N::NormRelation, i, s, FB, invariant::Bool = true)
+  @assert invariant
   S = FB.ideals
   ZK = order(S[1])
 
@@ -1114,8 +1119,8 @@ function induce_action_just_from_subfield(N::NormRelation, i, s, FB)
   @assert mod(degree(ZK), degree(zk)) == 0
   reldeg = divexact(degree(ZK), degree(zk))
 
-  v = Tuple{Int, fmpz}[]
   for l in 1:length(s)
+    v = Tuple{Int, fmpz}[]
     P = s[l]
     genofsl = elem_in_nf(_embed(N, i, P.gen_two.elem_in_nf))
     pmin = minimum(P, copy = false)
@@ -1129,16 +1134,17 @@ function induce_action_just_from_subfield(N::NormRelation, i, s, FB)
     for k in 1:length(S)
       Q = S[k]
       if minimum(Q, copy = false) == pmin
-        ant = anti_uniformizer(Q)
-        if (genofsl * ant) in ZK
+        if genofsl in Q
           found += 1
           @assert mod(ramification_index(Q), ramification_index(s[l])) == 0
           push!(v, (k, divexact(ramification_index(Q), ramification_index(s[l]))))
         end
       end
-      if found == numb_ideal
-        break
-      end
+      if invariant
+				if found == numb_ideal
+					break
+				end
+			end
     end
     sort!(v, by = x -> x[1])
     push!(z, sparse_row(FlintZZ, v))
@@ -1146,22 +1152,33 @@ function induce_action_just_from_subfield(N::NormRelation, i, s, FB)
   return z
 end
 
-function sunit_group_fac_elem_quo_via_brauer(K::AnticNumberField, S, n::Int)
+function sunit_group_fac_elem_quo_via_brauer(K::AnticNumberField, S, n::Int, invariant::Bool = false)
   @vprint :NormRelation 1 "Setting up the norm relation context ... \n"
   N = _norm_relation_setup_generic(K, pure = true, small_degree = true); 
-  return _sunit_group_fac_elem_quo_via_brauer(N, S, n)
+  return _sunit_group_fac_elem_quo_via_brauer(N, S, n, invariant)
 end
 
-function _sunit_group_fac_elem_quo_via_brauer(N::NormRelation, S, n::Int, debug = false)
+function _sunit_group_fac_elem_quo_via_brauer(N::NormRelation, S, n::Int, invariant::Bool = false)
   O = order(S[1])
 
   K = N.K
 
-  c, UZK = Hecke._setup_for_norm_relation_fun(K, S)
-  Hecke._add_sunits_from_brauer_relation!(c, UZK, N)
 
-  if debug
-    return c, UZK
+  if invariant
+    c, UZK = Hecke._setup_for_norm_relation_fun(K, S)
+    Hecke._add_sunits_from_brauer_relation!(c, UZK, N)
+  else
+    cp = sort!(collect(Set(minimum(x) for x = S)))
+    Sclosed = NfOrdIdl[]
+    for p in cp
+      lp = prime_decomposition(O, p)
+      for (P, _) in lp
+        push!(Sclosed, P)
+      end
+    end
+    @vprint :NormRelation 1 "I am not Galois invariant. Working with S of size $(length(Sclosed))\n"
+    c, UZK = Hecke._setup_for_norm_relation_fun(K, Sclosed)
+    Hecke._add_sunits_from_brauer_relation!(c, UZK, N)
   end
 
   if gcd(index(N), n) != 1
@@ -1177,7 +1194,43 @@ function _sunit_group_fac_elem_quo_via_brauer(N::NormRelation, S, n::Int, debug 
   end
   @vprint :NormRelation 1 "\n"
 
-  sunitsmodunits = c.R_gen # These are generators for the S-units (mod units, mod n)
+  c, _ = simplify(c)
+
+  if invariant
+    sunitsmodunits = c.R_gen # These are generators for the S-units (mod units, mod n)
+  else
+    # I need to extract the S-units from the Sclosed-units
+    # Now I need to find the correct indices in the c.FB.ideals
+    sunitsmodunits = typeof(c.R_gen)()
+    ind = Int[]
+    for P in S
+      for i in 1:length(c.FB.ideals)
+        if P == c.FB.ideals[i]
+          push!(ind, i)
+          break
+        end
+      end
+    end
+    @assert length(Sclosed) == length(c.FB.ideals)
+    @assert length(ind) == length(S)
+    z = zero_matrix(FlintZZ, length(c.R_gen), length(Sclosed) - length(S))
+    for i in 1:length(c.R_gen)
+      k = 1
+      for j in 1:length(Sclosed)
+        if !(j in ind)
+          z[i, k] = c.M.bas_gens[i, j]
+          k = k + 1
+        end
+      end
+    end
+    k, K = left_kernel(z)
+    for i in 1:nrows(K)
+      if iszero_row(K, i)
+        continue
+      end
+      push!(sunitsmodunits, FacElem(c.R_gen, fmpz[K[i, j] for j in 1:ncols(K)]))
+    end
+  end
   unitsmodtorsion = UZK.units # These are generators for the units (mod n)
   T, mT = torsion_unit_group(O)
   Q, mQ = quo(T, n)

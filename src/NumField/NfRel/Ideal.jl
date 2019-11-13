@@ -358,6 +358,37 @@ end
 
 ################################################################################
 #
+#  Powering
+#
+################################################################################
+
+function ^(A::NfRelOrdIdl, a::Int)
+  if a == 0
+    B = one(nf(order(A))) * order(A)
+    return B
+  end
+
+  if a == 1
+    return A # copy?
+  end
+
+  if a < 0
+    throw(error("Exponent must be positive"))
+  end
+
+  if a == 2
+    return A*A
+  end
+
+  if mod(a, 2) == 0
+    return (A^div(a, 2))^2
+  else
+    return A * A^(a - 1)
+  end
+end
+
+################################################################################
+#
 #  Deepcopy
 #
 ################################################################################
@@ -546,8 +577,6 @@ function *(a::NfRelOrdIdl{T, S}, b::NfRelOrdIdl{T, S}) where {T, S}
   end
   return ideal(order(a), H, false, true)
 end
-
-Base.:(^)(A::NfRelOrdIdl, e::Int) = Base.power_by_squaring(A, e)
 
 ################################################################################
 #

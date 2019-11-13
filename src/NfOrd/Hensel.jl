@@ -234,16 +234,14 @@ function _roots_hensel(f::Generic.Poly{nf_elem};
   # compute the lifting exponent a la Friedrich-Fieker
 
   E = EquationOrder(K)
-  R = ArbField(64, false)
-
-  (r1, r2) = signature(E) 
+  r1, r2 = signature(E) 
 
   gsa = derivative(K.pol)(gen(K))
   gsa_con = conjugates_arb(gsa, 32)
 
   if length(root_bound) > 0
     @assert length(root_bound) == r1 + r2
-    bound_root = arb[ R(0) for i in 1:(r1 + r2) ]
+    bound_root = Vector{arb}(undef, r1 + r2)
     for i in 1:(r1 + r2)
       bound_root[i] = root_bound[i] * abs(gsa_con[i])
     end
@@ -252,35 +250,24 @@ function _roots_hensel(f::Generic.Poly{nf_elem};
     R = parent(conj[1])
     a_con = [R(abs_upper_bound(abs(e), fmpz)) for e in conj]
 
-    R = ArbField(prec(parent(a_con[1])), false)
-
-    bound_root = arb[ R(0) for i in 1:(r1 + r2) ]
-
-    log_bound_root = arb[ R(0) for i in 1:(r1 + r2) ]
+    bound_root = Vector{arb}(undef, r1 + r2)
 
     for i in 1:r1+r2
       bound_root[i] = root(abs(a_con[i]), degree(f)) * abs(gsa_con[i])
     end
   else
-    bound_root = arb[ R(0) for i in 1:(r1 + r2) ]
+    bound_root = Vector{arb}(undef, r1 + r2)
 
     CC = AcbField(64, false)
     CCt, t = PolynomialRing(CC, "t", cached=false)
     conjugates_of_coeffs = Vector{acb}[ conjugates_arb(c, 32) for c in coeffs_f ]
 
-    for i in 1:r1
+    for i in 1:r1+r2
       g = CCt(acb[ conjugates_of_coeffs[j + 1][i] for j in 0:degree(f) ])
       bound_root[i] = roots_upper_bound(g) * abs(gsa_con[i])
     end
-
-    for i in 1:r2
-      g = CCt(acb[ conjugates_of_coeffs[j + 1][r1 + i] for j in 0:degree(f) ])
-      bound_root[r1 + i] = roots_upper_bound(g) * abs(gsa_con[r1+i])
-    end
   end
-
   ss = _lifting_expo(good_p, good_deg_p, E, bound_root)
-
   rts = _hensel(f, factor_of_g, good_fp, Int(ss), max_roots = max_roots - length(rs), ispure = ispure)
   return vcat(rs, rts)
 end

@@ -224,7 +224,6 @@ function fac_elems_eval(p::NfOrdIdl, q::NfOrdIdl, elems::Array{FacElem{nf_elem, 
 end
 
 function _preproc(el::FacElem{nf_elem, AnticNumberField}, exponent::fmpz)
-
   K = base_ring(el)
   Qx = parent(K.pol)
   x = Dict{nf_elem, fmpz}()
@@ -244,15 +243,6 @@ function _preproc(el::FacElem{nf_elem, AnticNumberField}, exponent::fmpz)
     else
       add_to_key!(x, divexact(n, c), l)
       add_to_key!(x, K(c), l)
-    end
-  end
-  for i = x.idxfloor:length(x.vals)
-    if isassigned(x.vals, i)
-      x.vals[i] = mod(x.vals[i], exponent)
-      if iszero(x.vals[i])
-        x.slots[i] = 0x0
-        x.count -= 1
-      end
     end
   end
   if !isempty(x)
@@ -300,15 +290,6 @@ function _preproc(p::NfOrdIdl, el::FacElem{nf_elem, AnticNumberField}, exponent:
       end
     end
   end
-  for i = x.idxfloor:length(x.vals)
-    if isassigned(x.vals, i)
-      x.vals[i] = mod(x.vals[i], exponent)
-      if iszero(x.vals[i])
-        x.slots[i] = 0x0
-        x.count -= 1
-      end
-    end
-  end
   if !isempty(x)
     return FacElem(x)
   else 
@@ -342,14 +323,14 @@ function _powmod(a::nf_elem, i::Int, p::fmpz)
   return b
 end
 
-function _ev_quo(Q, mQ, elems, p, exponent)
+function _ev_quo(Q, mQ, elems, p, exponent, multiplicity::Int)
   el = elem_type(Q)[one(Q) for i = 1:length(elems)]
   anti_uni = anti_uniformizer(p)
   powers = Dict{Int, nf_elem}()
   powers[1] = anti_uni
   O = order(p)
   F, mF = ResidueField(O, p)
-  for i=1:length(elems)
+  for i = 1:length(elems)
     J = elems[i]
     vp = fmpz(0)
     for (f, k1) in J
@@ -377,7 +358,8 @@ function _ev_quo(Q, mQ, elems, p, exponent)
       if haskey(powers, val)
         act_el = O(powers[val]*f, false)
       else
-        anti_val = _powmod(anti_uni, val, minimum(p)^(val+1))
+        exp_av = div(multiplicity*val, ramification_index(p))
+        anti_val = _powmod(anti_uni, val, minimum(p)^(exp_av+1))
         powers[val] = anti_val
         act_el = O(anti_val*f, false)
       end
@@ -385,11 +367,11 @@ function _ev_quo(Q, mQ, elems, p, exponent)
     end
     vp = mod(vp, exponent)
     if !iszero(vp)
-      if haskey(powers, p.splitting_type[1])
-        eli = minimum(p, copy = false)*powers[p.splitting_type[1]]
+      if haskey(powers, ramification_index(p))
+        eli = minimum(p, copy = false)*powers[ramification_index(p)]
       else
-        powers[p.splitting_type[1]] = anti_uni^p.splitting_type[1]
-        eli = minimum(p, copy = false)*powers[p.splitting_type[1]]
+        powers[ramification_index(p)] = _powmod(anti_uni, ramification_index(p), minimum(p)^(multiplicity+1))
+        eli = minimum(p, copy = false)*powers[ramification_index(p)]
       end
       mul!(el[i], el[i], mQ(O(eli, false))^vp)
     end
@@ -402,14 +384,15 @@ function _eval_quo(elems::Array{FacElem{nf_elem, AnticNumberField},1}, p::NfOrdI
   if p == q
     if fits(Int, p.minimum)
       Q, mQ = ResidueFieldSmall(O, p)
-      return _ev_quo(Q, mQ, elems, p, exponent)
+      return _ev_quo(Q, mQ, elems, p, exponent, 1)
     else
       Q, mQ = ResidueField(O, p)
-      return _ev_quo(Q, mQ, elems, p, exponent)
+      return _ev_quo(Q, mQ, elems, p, exponent, 1)
     end
   else
     Q, mQ = quo(O, q)
-    return _ev_quo(Q, mQ, elems, p, exponent)
+    mult = Int(clog(norm(q), norm(p)))
+    return _ev_quo(Q, mQ, elems, p, exponent, mult)
   end
 end
 
@@ -711,6 +694,7 @@ function ray_class_group(m::NfOrdIdl, inf_plc::Vector{InfPlc} = Vector{InfPlc}()
     end
   
     function disclog(J::NfOrdIdl)
+      @hassert :RayFacElem 1 iscoprime(J, m)
       if isone(J)
         @vprint :RayFacElem 1 "J is one \n"
         return id(X)
@@ -736,7 +720,7 @@ function ray_class_group(m::NfOrdIdl, inf_plc::Vector{InfPlc} = Vector{InfPlc}()
       for i = 1:length(powers)
         P, Q = powers[i]
         exponq = gcd(expon, norm(Q)-divexact(norm(Q), norm(P)))
-        el = fac_elems_eval(P, Q, [z1], exponq)
+        el = fac_elems_eval(P, Q, FacElem{nf_elem, AnticNumberField}[z1], exponq)
         y = (invd*(groups_and_maps[i][2]\quo_rings[i][1](el[1]))).coeff
         for s = 1:ncols(y)
           coeffs[1, ii-1+ngens(C)+s] = y[1, s]
@@ -890,7 +874,7 @@ function ray_class_groupQQ(O::NfOrd, modulus::Int, inf_plc::Bool, n_quo::Int)
   if inf_plc 
     function disc_log1(I::NfOrdIdl)
       @assert gcd(minimum(I),modulus)==1
-      i=Int(mod(I.minimum, modulus))
+      i = Int(mod(I.minimum, modulus))
       return mU\(R(i))
     end
     
@@ -925,7 +909,7 @@ function ray_class_groupQQ(O::NfOrd, modulus::Int, inf_plc::Bool, n_quo::Int)
   
   else
       
-    Q,mQ=quo(U, [mU\(R(-1))])
+    Q,mQ=quo(U, GrpAbFinGenElem[mU\(R(-1))])
     
     function disc_log(I::NfOrdIdl)
       i=Int(mod(minimum(I), modulus))
@@ -983,6 +967,7 @@ function find_gens(mR::MapRayClassGrp; coprime_to::fmpz = fmpz(-1))
   sR = GrpAbFinGenElem[]
   lp = NfOrdIdl[]
   q, mq = quo(R, sR, false)
+  s, ms = snf(q)
   
   #  First, generators of the multiplicative group. 
   #  If the class group is trivial, they are enough 
@@ -993,14 +978,26 @@ function find_gens(mR::MapRayClassGrp; coprime_to::fmpz = fmpz(-1))
     end
     gens_m = mR.gens_mult_grp_disc_log
     for i = 1:length(gens_m)
-      if iszero(mq(gens_m[i][2]))
+      el_q = mq(gens_m[i][2])
+      if iszero(el_q)
         continue
       else
-        push!(sR, gens_m[i][2])
-        push!(lp, ideal(O, gens_m[i][1]))
-        q, mq = quo(R, sR, false)
-        if order(q) == 1 
-          return lp,sR
+        el_in_s = ms\el_q
+        found = false
+        for j = 1:ngens(s)
+          if iscoprime(el_in_s[j], s.snf[j])
+            found = true
+            break
+          end
+        end
+        if found
+          push!(sR, gens_m[i][2])
+          push!(lp, ideal(O, gens_m[i][1]))
+          q, mq = quo(R, sR, false)
+          s, ms = snf(q)
+          if order(s) == 1 
+            return lp,sR
+          end
         end
       end
     end
@@ -1017,12 +1014,23 @@ function find_gens(mR::MapRayClassGrp; coprime_to::fmpz = fmpz(-1))
       if iszero(mq(f))
         continue
       else
-        I = ideal(O, 1+ex(S[i])) # Careful! This way I am assuming an ordering!
-        push!(sR, f)
-        push!(lp, I)
-        q, mq = quo(R, sR, false)
-        if order(q)==1
-          return lp, sR
+        el_in_snf = ms\mq(f)
+        found = false
+        for j = 1:ngens(s)
+          if iscoprime(s.snf[j], el_in_snf[j])
+            found = true
+            break
+          end
+        end
+        if found
+          I = ideal(O, 1+ex(S[i])) # Careful! This way I am assuming an ordering!
+          push!(sR, f)
+          push!(lp, I)
+          q, mq = quo(R, sR, false)
+          s, ms = snf(q)
+          if order(s)==1
+            return lp, sR
+          end
         end
       end
     end
@@ -1035,16 +1043,27 @@ function find_gens(mR::MapRayClassGrp; coprime_to::fmpz = fmpz(-1))
       if !iscoprime(coprime_to, minimum(x, copy = false))
         continue
       end
-      push!(lp, x)
-      push!(sR, mR\x)
-      q, mq = quo(R, sR, false)
-      if order(q)==1
-        return lp, sR
+      f = mR\x
+      el_in_snf = ms\(mq(f))
+      found = false
+      for j = 1:ngens(s)
+        if iscoprime(s.snf[j], el_in_snf[j])
+          found = true
+          break
+        end
+      end
+      if found
+        push!(lp, x)
+        push!(sR, f)
+        q, mq = quo(R, sR, false)
+        s, ms = snf(q)
+        if order(s)==1
+          return lp, sR
+        end
       end
     end
   end
-  
-  
+
   ctx = _get_ClassGrpCtx_of_order(O, false)
   if ctx == nothing
     fb = elem_type(IdealSet(O))[]
@@ -1071,14 +1090,25 @@ function find_gens(mR::MapRayClassGrp; coprime_to::fmpz = fmpz(-1))
     if iszero(mq(f))
       continue
     end
-    push!(sR, f)
-    push!(lp, P)
-    q, mq = quo(R, sR, false)
-    if order(q) == 1 
-      break
+    el_in_snf = ms\(mq(f))
+    found = true
+    for j = 1:ngens(s)
+      if iscoprime(s.snf[j], el_in_snf[j])
+        found = true
+        break
+      end
+    end
+    if found
+      push!(sR, f)
+      push!(lp, P)
+      q, mq = quo(R, sR, false)
+      s, ms = snf(q)
+      if order(s) == 1 
+        return lp, sR
+      end
     end
   end
-  
+
   if order(q) != 1
     if length(fb) > 0
       p1 = minimum(fb[1])
@@ -1087,10 +1117,7 @@ function find_gens(mR::MapRayClassGrp; coprime_to::fmpz = fmpz(-1))
     end
     while order(q) != 1
       p1 = next_prime(p1)
-      if gcd(p1, mm) != 1
-        continue
-      end
-      if coprime_to != -1 &&  gcd(p1, coprime_to) != 1
+      if gcd(p1, mm) != 1 || !iscoprime(p1, coprime_to)
         continue
       end
       lp1 = prime_decomposition(O, p1)
@@ -1104,11 +1131,22 @@ function find_gens(mR::MapRayClassGrp; coprime_to::fmpz = fmpz(-1))
         if iszero(mq(f))
           continue
         end
-        push!(sR, f)
-        push!(lp, P)
-        q, mq = quo(R, sR, false)
-        if order(q) == 1 
-          break
+        el_in_snf = ms\mq(f)
+        found = false
+        for j = 1:ngens(s)
+          if iscoprime(s.snf[j], el_in_snf[j])
+            found = true
+            break
+          end
+        end
+        if found
+          push!(sR, f)
+          push!(lp, P)
+          q, mq = quo(R, sR, false)
+          s, ms = snf(q)
+          if order(s) == 1 
+            break
+          end
         end
       end
     end
