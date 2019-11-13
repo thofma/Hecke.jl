@@ -784,7 +784,7 @@ function sunit_mod_units_group_fac_elem(I::Array{NfOrdIdl, 1})
     # We only track the valuation of the prime ideals in S.
     # Even though S might intersect the class group factor base
     # non-trivially, this should still be correct.
-    push!(vals_of_rels, sparse_row(FlintZZ, [(i, fmpz(-1))]))
+    push!(vals_of_rels, sparse_row(FlintZZ, [(i, fmpz(-1))], sort = false))
   end
 
   @vprint :ClassGroup 1 "... done\n"

@@ -320,7 +320,7 @@ function induce_action_from_subfield(N::NormRelation, i, s, FB, cache)
       r = [(p[i], e) for (i, e) in v]
       sort!(r, lt = (a,b)->a[1]<b[1])
     #@show l, r
-      push!(z[i], sparse_row(FlintZZ, r))
+      push!(z[i], sparse_row(FlintZZ, r, sort = false))
     end
   end
 
@@ -406,7 +406,7 @@ function induce_action(N::NormRelation, i, j, s, FB, cache)
     r = [(p[i], e) for (i, e) in v]
     sort!(r, lt = (a,b)->a[1]<b[1])
     #@show l, r
-    push!(z, sparse_row(FlintZZ, r))
+    push!(z, sparse_row(FlintZZ, r, sort = false))
   end
 
   #for l in 1:length(s)
@@ -442,7 +442,7 @@ function induce_action(N::NormRelation, i, s::Vector, S::Vector)
     # We still need to sort the positions of the non-zero entries
     sort!(v, by = x -> x[1])
 
-    push!(z, N.pure_coefficients[i] * sparse_row(FlintZZ, v))
+    push!(z, N.pure_coefficients[i] * sparse_row(FlintZZ, v, sort = false))
   end
   return z
 end
