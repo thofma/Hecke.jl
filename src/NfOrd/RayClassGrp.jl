@@ -78,7 +78,7 @@ function __assure_princ_gen(c::Hecke.ClassGrpCtx{SMat{fmpz}}, nquo::Int)
         push!(els_r, (j+s-1, ex*el[1, j]))
       end
     end
-    r = sparse_row(FlintZZ, els_r)
+    r = sparse_row(FlintZZ, els_r, sort = false)
     sol, d = solve_ut(RelHnf, r)
     @assert isone(d)
     rs = zeros(fmpz, c.M.bas_gens.r + c.M.rel_gens.r)
