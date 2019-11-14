@@ -117,7 +117,6 @@ function _rcf_S_units_using_Brauer(CF::ClassField_pp)
 end
 
 
-global deb = []
 #This function finds a set S of primes such that we can find a Kummer generator in it.
 function _s_unit_for_kummer_using_Brauer(C::CyclotomicExt, f::fmpz)
   
@@ -155,7 +154,6 @@ function _s_unit_for_kummer_using_Brauer(C::CyclotomicExt, f::fmpz)
   end
   
   @vprint :Fields 3 "Computing S-units with $(length(lP)) primes\n"
-  push!(deb, (C.Ka, lP, e))
   @vtime :Fields 3 S, mS = Hecke.sunit_group_fac_elem_quo_via_brauer(C.Ka, lP, e)
   KK = kummer_extension(e, FacElem{nf_elem, AnticNumberField}[mS(S[i]) for i=1:ngens(S)])
   

@@ -1,7 +1,90 @@
 
 add_verbose_scope(:BrauerObst)
 
+###############################################################################
+#
+#  Brauer obstruction: interface
+#
+###############################################################################
 
+function check_Brauer_obstruction(list::Vector{FieldsTower}, L::Main.ForeignGAP.MPtr, i::Int, invariants::Vector{Int})
+  d = degree(list[1])
+  common_degree = ppio(invariants[end], d)[1]
+  if isone(common_degree)
+    return list
+  end
+  fac = factor(common_degree)
+  for (p, v) in fac
+    if length(invariants) == 1 || iscoprime(invariants[end-1], p)
+      if v > 1
+        list = check_Brauer_obstruction_pp(list, L, i, Int(p), v)
+      else
+        list = _Brauer_prime_case(list, L, i, Int(p))
+      end
+    else
+      #The extension is not cyclic. I need to search for a normal cyclic subextension.
+      #I list the subgroup of the derived subgroup, sieve for the one that are normal in the entire group
+      #and then take the maximal ones. I need to check all of them.
+      @show "here!"
+      subs, target_grp = find_subgroups_cyclic_in_derived(L, i, p)
+      @show subs, target_grp
+      for i = 1:length(subs)
+        new_target = GAP.Globals.FactorGroup(target_grp, subs[i])
+        L1 = GAP.Globals.DerivedSeries(new_target)
+        order = divexact(prod(invariants), GAP.gap_to_julia(Int, GAP.Globals.Size(subs[i])))
+        if order == p
+          list =  _Brauer_prime_case(list, L1, length(L)-1, Int(p))
+        else
+          list = check_Brauer_obstruction_pp(list, L1, length(L)-1, Int(p), Int(valuation(order, p)))
+        end
+      end
+    end
+  end
+  if length(invariants) == 1 && isprime_power(invariants[1])
+    for el in list
+      el.has_info = true
+    end
+  end
+  return list
+end
+
+function find_subgroups_cyclic_in_derived(L::Main.ForeignGAP.MPtr, i::Int, p::fmpz)
+  proj = GAP.Globals.NaturalHomomorphismByNormalSubgroup(L[1], L[i+1])
+  target_grp = GAP.Globals.ImagesSource(proj)
+  normal_subgroups = GAP.Globals.NormalSubgroups(target_grp)
+  mH1 = GAP.Globals.NaturalHomomorphismByNormalSubgroup(target_grp, GAP.Globals.Image(proj, L[i]))
+  G = GAP.Globals.ImagesSource(mH1)
+  K = GAP.Globals.Kernel(mH1)
+  normal_cyclic_and_contained = Main.ForeignGAP.MPtr[]
+  for i = 1:length(normal_subgroups)
+    g = normal_subgroups[i]
+    if !GAP.Globals.IsSubgroup(K, g)
+      continue
+    end
+    fg = GAP.Globals.FactorGroup(K, g)
+    order = fmpz(GAP.gap_to_julia(Int, GAP.Globals.Size(fg)))
+    np = remove(order, p)[2]
+    if isone(np) && GAP.Globals.IsCyclic(fg)
+      push!(normal_cyclic_and_contained, g)
+    end  
+  end
+  #Almost done. I only want the minimal ones, so I need to sieve.
+  res = Main.ForeignGAP.MPtr[]
+  for i = 1:length(normal_cyclic_and_contained)
+    g = normal_cyclic_and_contained[i]
+    found = false
+    for j = 1:length(normal_cyclic_and_contained)
+      if j != i && GAP.Globals.IsSubgroup(g, normal_cyclic_and_contained[j])
+        found = true
+        break
+      end
+    end
+    if !found
+      push!(res, g)
+    end
+  end
+  return res, target_grp
+end
 ###############################################################################
 #
 #  Function to check the cocycle condition
@@ -201,14 +284,35 @@ end
 #  Brauer Obstruction: prime case
 #
 ###############################################################################
+function assure_automorphisms(T::FieldsTower)
+  assure_automorphisms(T.field, T.generators_of_automorphisms)
+end
+
+function assure_automorphisms(K::AnticNumberField, gens::Vector{NfToNfMor})
+  try
+    _get_automorphisms_nf(K)::Vector{NfToNfMor}
+  catch e
+    if !isa(e, AccessorNotSetError)
+      rethrow(e)
+    end
+    auts = closure(gens, degree(K))
+    _set_automorphisms_nf(K, auts)
+  end
+  return nothing
+end
+
 
 function _Brauer_prime_case(list::Vector{FieldsTower}, L::Main.ForeignGAP.MPtr, i::Int, p::Int)
   
+  if p == 2
+    return _Brauer_at_two(list, L, i)
+  end
   list1 = falses(length(list))  
   mH, autos, coc = cocycle_computation(L, i)
   H = GAP.Globals.ImagesSource(mH)
   for t = 1:length(list)
     @vprint :Fields 1 "$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())Fields to test: $(length(list)-t+1)"
+    assure_automorphisms(list[t])
     K = list[t].field
     lp = ramified_primes(list[t])
     if all(x -> (isone(mod(x, p)) || x == p), lp)
@@ -545,6 +649,7 @@ function check_Brauer_obstruction_pp(list::Vector{FieldsTower}, L::Main.ForeignG
   for t = 1:length(list)
     @vprint :Fields 1 "$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())Fields to test: $(length(list)-t+1)"
     lp = ramified_primes(list[t])
+    assure_automorphisms(list[t])
     if all(x -> (isone(mod(x, pv)) || x == p), lp)
       list1[t] = _Brauer_no_extend_pp(list[t], mH, autos, coc, p, v, Elems, pv, action_grp)
       continue
@@ -750,38 +855,7 @@ function _Brauer_no_extend_pp(F, mH, autos, coc, p, v, Elems, pv, action_grp)
   end
   
 end
-###############################################################################
-#
-#  Brauer obstruction: interface
-#
-###############################################################################
 
-function check_Brauer_obstruction(list::Vector{FieldsTower}, L::Main.ForeignGAP.MPtr, i::Int, l::Int)
-  d = degree(list[1])
-  if gcd(d, l) == 1
-    return list
-  end
-  fac = factor(l)
-  for (p, v) in fac
-    if d % Int(p) != 0
-      continue
-    end
-    if p == 2
-      list = _Brauer_at_two(list, L, i)
-      if v > 1
-        @vprint :Fields 1 "Fields after first step: $(length(list))\n"
-        list = check_Brauer_obstruction_pp(list, L, i, 2, v)
-      end
-    else
-      if v > 1
-        list = check_Brauer_obstruction_pp(list, L, i, Int(p), v)
-      else
-        list = _Brauer_prime_case(list, L, i, Int(p))
-      end
-    end
-  end
-  return list
-end
 
 ###############################################################################
 #

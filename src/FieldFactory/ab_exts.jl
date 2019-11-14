@@ -1332,7 +1332,7 @@ function _from_relative_to_absQQ(L::NfRelNS{T}, auts::Array{NfRelNSToNfRelNSMor{
     #@assert iszero(Ks.pol(y))
     autos[i] = hom(Ks, Ks, y, check = false)
   end
-  _set_automorphisms_nf(Ks, closure(autos, degree(Ks)))
+  #_set_automorphisms_nf(Ks, closure(autos, degree(Ks)))
   
   @vprint :AbExt 2 "Finished\n"
   return Ks, autos
@@ -1423,6 +1423,7 @@ function _from_relative_to_abs(L::NfRelNS{T}, auts::Array{NfRelNSToNfRelNSMor{T}
   @vprint :AbExt 2 "Finished\n"
   return Ks, autos
 end 
+
 
 #######################################################################################
 #

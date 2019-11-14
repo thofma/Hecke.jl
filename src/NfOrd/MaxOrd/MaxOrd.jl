@@ -122,8 +122,9 @@ function pmaximal_overorder_at(O::NfOrd, primes::Array{fmpz, 1})
         OO = sum_as_Z_modules(OO, O1, M)
       end
     else
+      #Instead of starting the computation with O, I create the maximal suborder of O of p-power index
       O1 = pmaximal_overorder(O, p)
-      if discriminant(O1) != discriminant(OO)
+      if discriminant(O1) != discriminant(O)
         OO = sum_as_Z_modules(OO, O1, M)
       end
     end
@@ -135,6 +136,7 @@ function pmaximal_overorder_at(O::NfOrd, primes::Array{fmpz, 1})
   @assert isdefined(OO, :disc)
   return OO
 end
+
 ################################################################################
 #
 #  Buchmann Lenstra heuristic
@@ -675,7 +677,6 @@ end
 
 @doc Markdown.doc"""
     factor_shape_refined(f::gfp_poly)
-
 Given a polynomial f over a finite field, it returns an array having one
 entry for every irreducible factor giving its degree and its multiplicity.
 """
@@ -693,7 +694,6 @@ function factor_shape_refined(x::gfp_poly) where {T <: RingElem}
   end
   return res
 end
-
 
 function pradical_frobenius1(O::NfOrd, p::Integer)
   R = GF(p, cached = false)

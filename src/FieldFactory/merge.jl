@@ -152,6 +152,7 @@ function _to_composite(x::FieldsTower, y::FieldsTower)
   end
   
   #Computing closure of the automorphisms
+  #=
   all_autos = Vector{NfToNfMor}(undef, degree(K))
   ind = 1
   aut1 = automorphisms(x.field, copy = false)
@@ -167,6 +168,7 @@ function _to_composite(x::FieldsTower, y::FieldsTower)
     end
   end
   Hecke._set_automorphisms_nf(K, all_autos)
+  =#
 
   #Last thing: I have to add the maps of the subfields!
   emb1 = NfToNfMor(x.field, K, mK\(mx.prim_img))
