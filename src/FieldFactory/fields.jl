@@ -13,6 +13,7 @@ mutable struct FieldsTower
   
   #Solvable embedding problems for the extension
   #They are here to improve the conductor computation
+  has_info::Bool
   imgs_autos::Vector{Main.ForeignGAP.MPtr}
   auts_for_conductors::Vector{Main.ForeignGAP.MPtr}
   proj_ext::Main.ForeignGAP.MPtr
@@ -22,6 +23,7 @@ mutable struct FieldsTower
     z.field = K
     z.generators_of_automorphisms = auts
     z.subfields = subfields
+    z.has_info = false
     return z
   end
 
@@ -82,7 +84,7 @@ function permutation_group(G::Vector{Hecke.NfRelNSToNfRelNSMor{nf_elem}})
 end
 
 
-function permutation_group(G::Array{Hecke.NfToNfMor, 1})
+function permutations(G::Array{Hecke.NfToNfMor, 1})
   K = domain(G[1])
   n = length(G)
   dK = degree(K)
@@ -164,7 +166,11 @@ function permutation_group(G::Array{Hecke.NfToNfMor, 1})
       permutations[s][i] = D[Hecke.compose_mod(gen_pols[s], pols[i], fmod)]
     end
   end
-  return _perm_to_gap_grp(permutations)
+  return permutations
+end
+
+function permutation_group(G::Array{Hecke.NfToNfMor, 1})
+  return _perm_to_gap_grp(permutations(G))
 end
 
 function _from_autos_to_perm(G::Array{Hecke.NfToNfMor,1})
@@ -326,13 +332,13 @@ function _from_relative_to_abs_with_embedding(L::Hecke.NfRelNS{T}, autL::Array{H
     autos[i] = Hecke.NfToNfMor(Ks, Ks, x)
   end
   #And the generators are done. Now the closure
-  @vtime :Fields 3 Hecke._set_automorphisms_nf(Ks, closure(autos, degree(Ks)))
+  #@vtime :Fields 3 Hecke._set_automorphisms_nf(Ks, closure(autos, degree(Ks)))
+  #No! I set the automorphisms only if I need them
   #Hecke._set_automorphisms_nf(Ks, autsKs)
   @vprint :Fields 2 "Finished\n"
     #@assert codomain(embed) == Ks
   return Ks, autos, embed
 end 
-
 
 function find_inverse(f::NfToNfMor)
   v = Vector{nf_elem}(undef, degree(domain(f)))
@@ -568,19 +574,12 @@ function fields(a::Int, b::Int, absolute_bound::fmpz; using_direct_product::Bool
     lG = snf(DiagonalGroup(l))[1]
     invariants = map(Int, lG.snf) 
     onlyreal = (lvl > i || only_real)
-    ext_to_check = invariants[end]
-    if length(invariants) > 1
-      ext_to_check = ppio(invariants[end], invariants[end-1])[2]
-    end
-    #First, I search for obstruction.
-    if !isone(ext_to_check)
-      @vprint :Fields 1 "Computing obstructions\n"
-      @vprint :FieldsNonFancy 1 "Computing obstructions\n"
-      #@vtime :Fields 1 
-      list = check_Brauer_obstruction(list, L, i, ext_to_check)
-      @vprint :Fields 1 "Fields to check: $(length(list))\n\n"
-      @vprint :FieldsNonFancy 1 "Fields to check: $(length(list))\n\n"
-    end
+    @vprint :Fields 1 "Computing obstructions\n"
+    @vprint :FieldsNonFancy 1 "Computing obstructions\n"
+    #@vtime :Fields 1 
+    list = check_Brauer_obstruction(list, L, i, invariants)
+    @vprint :Fields 1 "Fields to check: $(length(list))\n\n"
+    @vprint :FieldsNonFancy 1 "Fields to check: $(length(list))\n\n"
     if isempty(list)
       return FieldsTower[]
     end

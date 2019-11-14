@@ -49,19 +49,12 @@ mutable struct Polygon
 end 
 
 
-mutable struct NewtonPolygon{T}
+mutable struct NewtonPolygon{T} 
   P::Polygon
   f::T
   phi::T
   p::fmpz
-  
-  function NewtonPolygon(f::T, phi::T) where T
-    NP = new{T}()
-    NP.f = f
-    NP.phi = phi
-    NP.P = _newton_polygon(f, phi)
-    return NP
-  end
+  development::Vector{T}
 end 
 
 lines(N::NewtonPolygon) = N.P.lines
@@ -115,7 +108,7 @@ function sortpoints(x::Array{Tuple{Int, Int},1})
   return x
 end
 
-function lowerconvexhull(points::Array{Tuple{Int, Int},1})
+function lower_convex_hull(points::Array{Tuple{Int, Int},1})
 
   points = sortpoints(points)
 
@@ -159,14 +152,18 @@ end
 
 ###############################################################################
 #
-#  Construction of Newton polygon
+#  Computation of the phi-development
 #
 ###############################################################################
 
+@doc Markdown.doc"""
+    phi_development(f::PolyElem, phi::PolyElem) -> Vector{PolyElem}
+Computes an array of polynomials $[a_0, \ldots, a_s]$ such that $\sum a_i \phi^i = f$.
+"""
 function phi_development(f::T, phi::T) where T <: PolyElem
   dev = Array{T, 1}()
   g = f
-  while degree(g)>=degree(phi)
+  while degree(g) >= degree(phi)
     g, r = divrem(g, phi)
     push!(dev, r)
   end
@@ -174,36 +171,18 @@ function phi_development(f::T, phi::T) where T <: PolyElem
   return dev
 end
 
-function valuation(f::fmpz_poly, p::Union{fmpz, Int})
-  l = [Int(valuation(coeff(f,i), p)) for i= 0:degree(f) if coeff(f,i)!=0]
-  return minimum(l)
-end
+###############################################################################
+#
+#  Construction of Newton polygon
+#
+###############################################################################
 
-function _valuation(f::Generic.Poly{T}) where T <: Union{qadic, padic}
-  return minimum([valuation(coeff(f, i)) for i = 0:degree(f)])
-end
-
-
-function _newton_polygon(dev::Array{fmpz_poly, 1}, p::Union{fmpz, Int})
-  a = Tuple{Int, Int}[]
-  for i = 0:length(dev)-1
-    if !iszero(dev[i+1])
-      push!(a, (i, valuation(dev[i+1], p)))
-    end
-  end 
-  return lowerconvexhull(a)
-end
-
-function _newton_polygon(f::fmpz_poly, phi::fmpz_poly, p::Union{fmpz, Int})
-  if !(isprime(p))
-    error("Not a prime")
-  end
-  #Compute the development
-  dev = phi_development(f, phi)
-  return _newton_polygon(dev, p)
-end
-
-function _newton_polygon(f::Generic.Poly{T}, phi::Generic.Poly{T}) where T <: Union{padic, qadic}
+@doc Markdown.doc"""
+    newton_polygon(f::PolyElem{T}, phi::PolyElem{T}) where T <: Union{padic, qadic}
+Computes the $\phi$-polygon of $f$, i.e. the lower convex hull of the points $(i, v(a_i))$
+where $a_i$ are the coefficient of the $\phi$-development of $f$.
+"""
+function newton_polygon(f::T, phi::T) where T <: Generic.Poly{S} where S <: Union{qadic, padic}
   dev = phi_development(f, phi)
   a = Tuple{Int, Int}[]
   for i = 0:length(dev) -1
@@ -211,9 +190,64 @@ function _newton_polygon(f::Generic.Poly{T}, phi::Generic.Poly{T}) where T <: Un
       push!(a, (i, _valuation(dev[i+1])))
     end
   end 
-  return lowerconvexhull(a)
+  P = lower_convex_hull(a)
+  p = prime(base_ring(f))
+  return NewtonPolygon(P, f, phi, p, dev)
+end
+ 
+@doc Markdown.doc"""
+    newton_polygon(f::fmpz_poly, phi::fmpz_poly, p::fmpz) 
+Computes the $\phi$-polygon of $f$, i.e. the lower convex hull of the points $(i, v_p(a_i))$
+where $a_i$ are the coefficient of the $\phi$-development of $f$.
+"""
+function newton_polygon(f::T, phi::T, p::fmpz) where T
+  dev = phi_development(f, phi)
+  a = Tuple{Int, Int}[]
+  for i = 0:length(dev) -1
+    if !iszero(dev[i+1])
+      push!(a, (i, valuation(dev[i+1], p)))
+    end
+  end 
+  P = lower_convex_hull(a)
+  return NewtonPolygon(P, f, phi, p, dev)
 end
 
+function _newton_polygon(dev, p)
+  a = Tuple{Int, Int}[]
+  for i = 0:length(dev) -1
+    if !iszero(dev[i+1])
+      push!(a, (i, valuation(dev[i+1], p)))
+    end
+  end 
+  return lower_convex_hull(a)
+end
+
+
+function valuation(f::fmpz_poly, p::Union{fmpz, Int})
+  l = Int[Int(valuation(coeff(f, i), p)) for i = 0:degree(f) if coeff(f, i)!=0]
+  return minimum(l)
+end
+
+function _valuation(f::Generic.Poly{T}) where T <: Union{qadic, padic}
+  return minimum([valuation(coeff(f, i)) for i = 0:degree(f)])
+end
+
+################################################################################
+#
+#  Construction of the residual polynomial
+#
+################################################################################
+
+@doc Markdown.doc"""
+    residual_polynomial(N::NewtonPolygon{fmpz_poly}, L::Line)
+Computes the residual polynomial of the side $L$ of the Newton Polygon $N$.
+"""
+function residual_polynomial(N::NewtonPolygon{fmpz_poly}, L::Line)
+  F = GF(N.p, cached = false)
+  Ft = PolynomialRing(F, "t", cached = false)[1]
+  FF = FiniteField(Ft(N.phi), "a", cached = false)[1]
+  return residual_polynomial(FF, L, N.development, N.p) 
+end
 
 function residual_polynomial(F, L::Line, dev::Array{fmpz_poly, 1}, p::Union{Int, fmpz})
 
@@ -248,20 +282,6 @@ function phi_development_with_quos(f::fmpz_poly, phi::fmpz_poly)
   return dev, quos
 end
 
-function phi_development_with_quos(f::fmpz_poly, phi::fmpz_poly, Rx::FmpzModPolyRing)
-  dev=Array{fmpz_poly, 1}()
-  quos=Array{fmpz_poly, 1}()
-  Zx = parent(f)
-  g = Rx(f)
-  h = Rx(phi)
-  while degree(g)>=degree(h)
-    g, r = divrem(g, h)
-    push!(dev, lift(Zx,r))
-    push!(quos, lift(Zx,g))
-  end
-  push!(dev, lift(Zx,g))
-  return dev, quos
-end
 
 function _floor_newton_polygon(N::Polygon, i::Int)
   j = 1
@@ -288,13 +308,11 @@ function isregular_at(f::fmpz_poly, p::fmpz)
     isone(v) && continue
     fac = factor(g)
     for (gg, v1) in fac
-      F, a = FiniteField(gg, "a", cached = false)
       phi = lift(Zx, gg)
-      dev, quos = phi_development_with_quos(f, phi)#, R1x)
-      N = _newton_polygon(dev, p)
-      for lin in N.lines
+      N = newton_polygon(f, phi, p)
+      for lin in N.P.lines
         if slope(lin) < 0 && degree(lin) != 1
-          rp = residual_polynomial(F, lin, dev, p)
+          rp = residual_polynomial(N, lin)
           if !issquarefree(rp)
             return false
           end
@@ -645,11 +663,11 @@ function _decomposition(O::NfAbsOrd, I::NfAbsOrdIdl, Ip::NfAbsOrdIdl, T::NfAbsOr
       
       @hassert :NfOrd 1 containment_by_matrices(u, P)
       modulo = norm(P)*p
-      #if iszero(_normmod(modulo, u))#isnorm_divisible(u.elem_in_nf, modulo)
+      #if iszero(_normmod(modulo, u))#isnorm_divisible_pp(u.elem_in_nf, modulo)
       if iszero(mod(norm(u), modulo))
         if !iszero(mod(norm(u+p), modulo))
           add!(u, u, p)
-        elseif !iszero(mod(norm(u-p), modulo))#!isnorm_divisible(u.elem_in_nf-p, modulo)
+        elseif !iszero(mod(norm(u-p), modulo))#!isnorm_divisible_pp(u.elem_in_nf-p, modulo)
           sub!(u, u, p)
         else
           Ba = basis(P, copy = false)

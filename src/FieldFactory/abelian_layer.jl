@@ -332,6 +332,7 @@ function from_class_fields_to_fields(class_fields::Vector{Hecke.ClassField{Hecke
     # I can compute the fields over a subfield.
     #First, I need the subfields.
     K = base_field(class_fields[1])
+    assure_automorphisms(K, autos)
     subfields = compute_subfields(K, E, H, S)
     computing_over_subfields(cfieldsp, subfields, idE, autos, right_grp, ab_inv)
     pclassfields[ind] = cfieldsp
@@ -760,7 +761,6 @@ function compute_subfields(K::AnticNumberField, E, H, S)
       push!(orbitS, Sn)
     end 
   end
-  
   auts = automorphisms(K, copy = false)
   Hperm = _from_autos_to_perm(auts)
   Hauts = _perm_to_gap_grp(Hperm)

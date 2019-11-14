@@ -969,6 +969,13 @@ function number_positive_roots(f::fmpz_poly)
 
 end
 
+function number_real_roots(f::fmpz_poly)
+  s = sturm_sequence(f)
+  evinf = Int[sign(coeff(x, degree(x))) for x in s]
+  evminf = Int[((-1)^degree(x))*sign(coeff(x,degree(x))) for x in s]
+  return _number_changes(evminf)-_number_changes(evinf)
+end
+
 function number_positive_roots(f::PolyElem{nf_elem}, P::InfPlc)
   fsq = squarefree_factorization(f)
   p = 0
