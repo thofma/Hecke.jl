@@ -1227,3 +1227,106 @@ function primsplit(f::PolyElem{T}) where T <: ResElem{S} where S <: Union{fmpz, 
   g = deepcopy(f)
   return primsplit!(g)
 end
+
+function quo(R::FqNmodPolyRing, f::fq_nmod_poly)
+  Q = ResidueRing(R, f)
+  mQ = MapFromFunc(x -> Q(x), y -> lift(y), R, Q)
+  return Q, mQ
+end
+
+#= not finished
+function unit_group(R::Generic.ResRing{fq_nmod_poly})
+  f = modulus(R)
+  lf = factor(f)
+  lu = [unit_group_pp(p, k) for (p,k) = f.fac]
+  return lu
+end
+
+function unit_group_pp(f::fq_nmod_poly, k::Int)
+  @assert isirreducible(f)
+  k, o = GF(characteristic(parent(f)), degree(base_ring(f))*degree(f))
+  #o is a primitive element as per Bill's semantic...
+  #however, I need it written wrt. "my" poly
+end
+
+=#
+function basis(K::FqNmodFiniteField)
+  b = fq_nmod[]
+  for i=1:degree(K)
+    x = K()
+    setcoeff!(x, i-1, UInt(1))
+    push!(b, x)
+  end
+  return b
+end
+
+function unit_group_1_part(f::fq_nmod_poly, k::Int)
+  pr = [k]
+  while k>1
+    k = div(k+1, 2)
+    push!(pr, k)
+  end
+
+  K = base_ring(f)
+  x = gen(parent(f))
+  p = characteristic(K)
+
+  b = basis(K)
+  gens = [1+f*x^i*c for i=0:degree(f)-1 for c = b]
+  rels = identity_matrix(FlintZZ, length(gens))*p
+
+  for i=length(pr)-1:-1:2
+    p1 = pr[i]
+    p2 = pr[i-1]
+    f1 = f^p1
+    f2 = f^p2
+    # 1 -> 1+f^p1/1+f^p2 -> 1+f/1+f^p2 -> 1+f/1+f^p1 -> 1
+    # by induction, we have  presentation for 1+f/1+f^p1
+    # gens are polys and rels is a matrix with the relations
+    #
+    # new gens:
+    # 1+f^p1/1+f^p2 = f^p1/f^p2 = f^(p2-p1), latter additively
+    ngens = [1+(x^i)*f1*c for i=0:(degree(f)*(p2-p1)-1) for c = b]
+    nr = matrix(FlintZZ, 0, length(ngens), [])
+    for j=1:nrows(rels)
+      g = rem(prod(powmod(gens[k], rels[j, k], f2) for k=1:ncols(rels)), f2) - 1
+      q,r = divrem(g, f1)
+      @assert iszero(r)
+      nr = vcat(nr, matrix(FlintZZ, 1, ncols(nr), [(coeff(coeff(q, k), l)) for k = 0:degree(f)*(p2-p1)-1 for l = 0:degree(K)-1]))
+    end
+    rels = [rels -nr; zero_matrix(FlintZZ, length(ngens), ncols(rels)) identity_matrix(FlintZZ, length(ngens))*p]
+    append!(gens, ngens)
+  end
+  return gens, rels
+end
+
+#=
+function FlintFiniteField(f::fq_nmod_poly, s::AbstractString = "o"; cached::Bool = true, check::Bool = true)
+  if check && !isirreducible(f)
+    error("poly not irreducible")
+  end
+  k = base_ring(f)
+  p = characteristic(k)
+  K, o = FlintFiniteField(p, degree(k)*degree(f), s, cached = cached)
+  r = roots(f, K)[1]  # not working, embeddings are missing
+  fl || error("s.th. went wrong")
+  return K, r
+end
+=#
+
+function eulerphi(f::T) where {T <: Union{gfp_poly, fq_nmod_poly, gfp_fmpz_poly}}
+  lf = factor(f)
+  q = size(base_ring(f))
+  return prod((q^degree(p)-1)*q^(degree(p)*k) for (p,k) = lf.fac)
+end
+
+function carmichael_lambda(f::T) where {T <: Union{gfp_poly, fq_nmod_poly, gfp_fmpz_poly}}
+  lf = factor(f)
+  pp = characteristic(base_ring(f))
+  q = size(base_ring(f))
+  #ala Auer... (Diss, DOI:10.4064/aa-95-2-97-122)
+  l = reduce(lcm, [(q^degree(p)-1)*pp^ceil(Int, log(k)/log(pp)) for (p,k) = lf.fac], init = fmpz(1))
+  #l = reduce(lcm, [(q^degree(p)-1)*largest_elementary_divisor(unit_group_1_part(p, k)[2]) for (p,k) = lf.fac], init = fmpz(1))
+  return l
+end
+
