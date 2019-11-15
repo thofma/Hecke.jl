@@ -23,12 +23,15 @@ end
 # Contexts for sharpening.
 
 # Reminicent of the "qAdicConj" context, but more general.
+# Structure to keep track of information while performing a newton lift. The polynomial
+# is always exact. However, the root can either live in an approximate field, or 
 mutable struct RootSharpenCtx{T}
     polynomial             # Should be an exact polynomial
     #derivative_polynomial # cached derivative of polynomial. Not clear if this should be cached.
     field                  # field of definition of root
     prime                  # The prime with respect to which newton lifting will be done.
     root                   # the root of a polynomial
+    root_derivative_inv    # Basically, `1/f'(a)`.
     precision              # current precision of the root
 
     function RootSharpenCtx{T}(polynomial, root::T) where T
@@ -41,12 +44,13 @@ mutable struct RootSharpenCtx{T}
         return ctx
     end
 
-    function RootSharpenCtx{nf_elem}(polynomial, root::nf_elem, prime, prec)
+    function RootSharpenCtx{nf_elem}(polynomial, root::nf_elem, rt_der_inv, prime, prec)
         ctx = new()
         ctx.polynomial = change_base_ring(FlintZZ, polynomial)
         ctx.field = parent(root)
         ctx.prime = prime
         ctx.root  = root
+        ctx.root_derivative_inv = rt_der_inv
         ctx.precision = prec
         return ctx
     end
@@ -54,7 +58,7 @@ mutable struct RootSharpenCtx{T}
 end
 
 # Sharpen the root in the context to level `n`
-function sharpen!(ctx::RootSharpenCtx{T}, prec) where T<:NALocalFieldElem
+function sharpen_root!(ctx::RootSharpenCtx{T}, prec) where T<:NALocalFieldElem
         
     f  = ctx.polynomial
     ctx.precision > prec  && error("Cannot sharpen to lower precision.")
@@ -78,7 +82,7 @@ function sharpen!(ctx::RootSharpenCtx{T}, prec) where T<:NALocalFieldElem
 end
 
 # Sharpen the root in the context to level `n`
-function sharpen!(ctx::RootSharpenCtx, prec)
+function sharpen_root!(ctx::RootSharpenCtx, prec)
         
     ctx.precision > prec  && error("Cannot sharpen to lower precision.")
     ctx.precision == prec && return
@@ -91,9 +95,11 @@ function sharpen!(ctx::RootSharpenCtx, prec)
     ppow = ctx.prime ^ ctx.precision
     a = ctx.root
     k = ctx.precision
-    o = 1/(derivative(f)(a))
+    o = ctx.root_derivative_inv
     
     while k < prec
+
+        @info "" mod_sym!(f(a),ppow)
         ppow *= ppow
         k *= 2
 
@@ -108,18 +114,13 @@ function sharpen!(ctx::RootSharpenCtx, prec)
         a = a - fa*o
         mod_sym!(o, ppow)
         mod_sym!(a, ppow)
+
     end
     #### End Claus' code.
     
     ctx.precision = prec
     ctx.root = a
     
-    # Then newton lift the roots
-    # Hope it is continuous.
-    #test = newton_lift!(f, ctx.root, ctx.prime, ctx.prec)
-
-    @info "" a
-
     return ctx
 end
 
@@ -135,6 +136,7 @@ mutable struct DixonSharpenCtx
     pi
     delta
 end
+
 
 #****************************************************************************
 
@@ -185,11 +187,12 @@ NOTE: This method will sharpen the base field of `Kp`, which will affect anythin
 reference to it. The precision can only be increased by `sharpen!`.
 """
 function sharpen!(completion_map, new_prec)
-    sharpen!(completion_map, new_prec, sharpening_context(completion_map))
+    completion_map = sharpen_forward_map!(completion_map, new_prec,
+                                          forward_sharpening_context(completion_map))
 end
 
 
-function sharpen!(completion_map, new_prec, DixCtx::DixonSharpenCtx)
+function sharpen_forward_map!(completion_map, new_prec, DixCtx::DixonSharpenCtx)
 
     K   = domain(completion_map)
     Kp = codomain(completion_map)
@@ -273,7 +276,6 @@ function sharpen!(completion_map, new_prec, DixCtx::DixonSharpenCtx)
     return completion_map
 end
 
-# Unsafe methods should actually return, to be able to use them on immutable types..
 
 @doc Markdown.doc"""
     sharpen!(K::FlintLocalField, new_prec)
@@ -472,7 +474,7 @@ function ramified_completion(K::NumField{T} where T, P::NfOrdIdl; prec=10, skip_
                    for j=0:f-1 for i=0:length(qadic_coeffs)-1 )        
     end
 
-    completion_map = NACompletionMap(K, Kp, embedding_map, lift_map, DixCtx)
+    completion_map = NACompletionMap(K, Kp, embedding_map, lift_map, DixCtx, nothing)
     
     #TODO: Move to proper tests
     # Sanity check the returns
@@ -574,7 +576,7 @@ function unramified_completion(K::AnticNumberField, gen_img::qadic; prec=10, ski
     ### End insertion.
 
     # Initialize the sharpening context for later increases to precision.
-    sharpening_ctx = RootSharpenCtx(K.pol, gen_img)
+    forward_sharpening_ctx = RootSharpenCtx{typeof(gen_img)}(K.pol, gen_img)
     
     if !skip_map_inverse
         
@@ -607,6 +609,8 @@ function unramified_completion(K::AnticNumberField, gen_img::qadic; prec=10, ski
         end
 
         # Construct the derivative of the Conway root in the number field.
+        #
+        # Update: Apparently, this is doing something spookier. 
         f = defining_polynomial(parent(gen_img), FlintZZ)
         fso = inv(derivative(f)(gen(R)))
         o = matrix(GF(p), d, 1, [coeff(fso, j-1) for j=1:d])
@@ -616,9 +620,11 @@ function unramified_completion(K::AnticNumberField, gen_img::qadic; prec=10, ski
             _num_setcoeff!(b, i-1, lift(s[i,1]))
         end
 
+        
         # Lift the data from the residue field back to the number field.
-        d = lift_root(f, a, b, p, 10)
-        pc = fmpz(10)
+        backward_sharpening_ctx = RootSharpenCtx{nf_elem}(f, a, b, p, 1)
+        sharpen_root!(backward_sharpening_ctx, 10)
+
 
         lift_map = function(x::qadic)
             iszero(x) && return K(0)
@@ -627,12 +633,14 @@ function unramified_completion(K::AnticNumberField, gen_img::qadic; prec=10, ski
             r = K(lift(coeff(x, n-1)))
             while n > 1
                 n -= 1
-                r = r*d + lift(coeff(x, n-1))
+                r = r*backward_sharpening_ctx.root + lift(coeff(x, n-1))
             end
             return r
         end
-
         
+        #d = lift_root(f, a, b, p, 10)
+        #pc = fmpz(10)
+
         # lift_map = function(x::qadic) 
         #     if iszero(x)
         #         return K(0)
@@ -666,10 +674,12 @@ function unramified_completion(K::AnticNumberField, gen_img::qadic; prec=10, ski
     else
         lift_map(x::qadic) = (
             error("Completion lift map definition was skipped during initialization."))
+        backward_sharpening_ctx = nothing
     end
 
     Kp = parent(gen_img)
-    return Kp, NACompletionMap(K, Kp, embedding_map, lift_map, sharpening_ctx)
-    #MapFromFunc(inj, lif, K, parent(gen_img))
+    comp_map = NACompletionMap(K, Kp, embedding_map, lift_map,
+                               forward_sharpening_ctx, backward_sharpening_ctx)
+    return Kp, comp_map
 end
 
