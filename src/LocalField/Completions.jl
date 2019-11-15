@@ -130,8 +130,7 @@ function sharpen!(Kp::EisensteinField, P::NfAbsOrdIdl, completion_maps, new_prec
     img_nf_gen = let
         avec = matrix(FlintZZ, length(coeffs(a)), 1, coeffs(a))        
         N = underdetermined_solve_first(local_basis_lift, avec)
-
-        return sum(gen(Kp)^i*delta_p^j * N[i*f + j + 1] for j=0:f-1 for i=0:e-1)
+        sum(gen(Kp)^i*delta_p^j * N[i*f + j + 1] for j=0:f-1 for i=0:e-1)
     end
     
     # Reconstruct the forward map, embedding $K$ into its completion.
@@ -349,7 +348,7 @@ function ramified_completion(K::NumField{T} where T, P::NfOrdIdl; prec=10, skip_
         avec = matrix(FlintZZ, length(coeffs(a)), 1, coeffs(a))        
         N = underdetermined_solve_first(local_basis_lift, avec)
 
-        return sum(Y^i*delta_p^j * N[i*f + j + 1] for j=0:f-1 for i=0:e-1)
+        sum(Y^i*delta_p^j * N[i*f + j + 1] for j=0:f-1 for i=0:e-1)
     end
 
     @info "Printing nf gen image:" img_nf_gen
