@@ -90,40 +90,39 @@ function sharpen_root!(ctx::RootSharpenCtx, prec)
     ctx.precision > prec  && error("Cannot sharpen to lower precision.")
     ctx.precision == prec && return
 
-    # Perform a newton iteration, but over the number field.
-    # Input:  f(a) = 0 mod p, o*f'(a) = 1 mod p,
-    # Output: `a` such that f(a) = 0 mod p^n
-    
-    f  = ctx.polynomial
-    ppow = ctx.prime ^ ctx.precision
-    a = ctx.root
-    k = ctx.precision
-    o = ctx.root_derivative_inv
-    
-    while k < prec
+    a = let
+        # Perform a newton iteration, but over the number field.
+        # Input:  f(a) = 0 mod p, o*f'(a) = 1 mod p,
+        # Output: `a` such that f(a) = 0 mod p^n
+        
+        f  = ctx.polynomial
+        ppow = ctx.prime ^ ctx.precision
+        a = ctx.root
+        k = ctx.precision
+        o = ctx.root_derivative_inv
+        
+        while k < prec
+            @info "" mod_sym!(f(a),ppow)
+            ppow *= ppow
+            k *= 2
 
-        @info "" mod_sym!(f(a),ppow)
-        ppow *= ppow
-        k *= 2
-
-        pa = [one(a)]
-        while length(pa) <= degree(f)
-            push!(pa, pa[end]*a)
-            mod_sym!(pa[end], ppow)
+            pa = [one(a)]
+            while length(pa) <= degree(f)
+                push!(pa, pa[end]*a)
+                mod_sym!(pa[end], ppow)
+            end
+            fa  = sum(coeff(f, i-1) * pa[i] for i=1:length(pa))
+            fsa = sum(coeff(f, i) * i * pa[i] for i=1:length(pa)-1)  
+            o = o*(2-fsa*o)
+            a = a - fa*o
+            mod_sym!(o, ppow)
+            mod_sym!(a, ppow)
         end
-        fa  = sum(coeff(f, i-1) * pa[i] for i=1:length(pa))
-        fsa = sum(coeff(f, i) * i * pa[i] for i=1:length(pa)-1)  
-        o = o*(2-fsa*o)
-        a = a - fa*o
-        mod_sym!(o, ppow)
-        mod_sym!(a, ppow)
-
-    end
-    #### End Claus' code.
+        a
+    end #### End Claus' code.
     
     ctx.precision = prec
     ctx.root = a
-    
     return ctx
 end
 
@@ -143,7 +142,6 @@ end
 
 #****************************************************************************
 
-# Mock code to support changing precision on objects.
 """
     sharpen!(K::EisensteinField, g::PolyElem, new_prec)
 Given a polynomial `g` whose coefficients are coercible into the base ring of `K`, and a
@@ -214,12 +212,8 @@ function sharpen_forward_map!(completion_map, new_prec, DixCtx::DixonSharpenCtx)
     
     # TODO: The sharpening methods can be improved a lot with a decent caching strategy.
     # TODO: Replace asserts with something compiler-safe
-
-    # P.norm != prime(base_field(Kp)) && (
-    #     error("Prime ideal and characteristic of residue field are different"))
         
     lif = preimage_function(completion_map)
-
 
     # Sharpen the base ring.
     sharpen_base!(Kp, new_prec)
@@ -276,15 +270,6 @@ function sharpen_forward_map!(completion_map, new_prec, DixCtx::DixonSharpenCtx)
         sum(gen(Kp)^i*delta_p^j * N[i*f + j + 1] for j=0:f-1 for i=0:e-1)
     end
     
-    # Reconstruct the forward map, embedding $K$ into its completion.
-    # function inj(a::nf_elem)
-    #     return sum(coeffs(a)[j+1] * img_nf_gen^j for j=0:degree(K)-1)
-    # end
-    
-    # Update the completion maps 
-    #completion_maps.f = inj
-    #completion_maps.header.image = inj
-
     DixCtx.img_nf_gen = img_nf_gen
     return completion_map
 end
@@ -341,14 +326,6 @@ end
 #
 #########################################################################################
 
-#=
-Commentary on precisions:
-
-See the org file.
-=#
-
-# TODO: Add branching based on optimization parameter.
-# TODO: Add various sharpening contexts.
 function completion(K::NumField{T} where T, P::NfOrdIdl; prec=10, skip_map_inverse=false)
     if ramification_index(P) == 1
         return unramified_completion(K, P, skip_map_inverse=skip_map_inverse)
@@ -520,14 +497,8 @@ function unramified_completions(K::AnticNumberField, p::fmpz; prec=10)
     # TODO: This is the last bastion of the qAdicConj structure!
     # Since in the unramified case we complete via factorizations, we first
     # construct the roots data needed to define/sharpen the extension.
-    C = qAdicConj(K, Int(p))
-    
-    #### Insertion of old "conjugates(gen(K), C, all = true, flat = false)[i]" logic #####
-    # This seems to be the line where the roots are actually computed.
-    R = roots(C.C, prec)
-
-    display(R)
-    
+    C = qAdicConj(K, Int(p))    
+    R = roots(C.C, prec)    
     return [unramified_completion(K, rt, prec=prec) for rt in R]
 end
 
@@ -539,9 +510,7 @@ end
 # gen_img satisfied `change_base_ring(Kp, K.pol)(gen_img) == 0`.
 function unramified_completion(K::AnticNumberField, gen_img::qadic; prec=10, skip_map_inverse=false)
 
-    p = prime(parent(gen_img))
-    
-    #### Resume insertion of old "conjugates(gen(K), C, all = true, flat = false)[i]" logic #####
+    p = prime(parent(gen_img))    
     Zx = PolynomialRing(FlintZZ, cached = false)[1]
 
     # The element `a` is replaced by a polynomial. It is assumed that the variable
@@ -552,18 +521,12 @@ function unramified_completion(K::AnticNumberField, gen_img::qadic; prec=10, ski
         f = Zx(d*a)
         return inv(parent(gen_img)(d))*f(gen_img)
     end    
-    ### End insertion.
 
     # Initialize the sharpening context for later increases to precision.
     forward_sharpening_ctx = RootSharpenCtx{typeof(gen_img)}(K.pol, gen_img)
     
     if !skip_map_inverse
         
-        # function inj(a::nf_elem)
-        #   return conjugates(a, C, precision(parent(ca)))[i]
-        # end
-        # gen(K) -> conj(a, p)[i] -> a = sum a_i o^i
-        # need o = sum o_i a^i
         R, mR = ResidueField(parent(gen_img))
 
         # Construct the array of powers of the primitive element.
@@ -587,6 +550,9 @@ function unramified_completion(K::AnticNumberField, gen_img::qadic; prec=10, ski
             _num_setcoeff!(a, i-1, lift(s[i,1]))
         end
 
+        ####
+        # Block of mysterious code I understand poorly
+        #
         # Construct the derivative of the Conway root in the number field.
         #
         # Update: Apparently, this is doing something spookier. 
@@ -599,6 +565,8 @@ function unramified_completion(K::AnticNumberField, gen_img::qadic; prec=10, ski
             _num_setcoeff!(b, i-1, lift(s[i,1]))
         end
 
+        # End block of Claus' code.
+        ####
         
         # Lift the data from the residue field back to the number field.
         backward_sharpening_ctx = RootSharpenCtx{nf_elem}(f, a, b, p, 1)
@@ -616,39 +584,6 @@ function unramified_completion(K::AnticNumberField, gen_img::qadic; prec=10, ski
             end
             return r
         end
-        
-        #d = lift_root(f, a, b, p, 10)
-        #pc = fmpz(10)
-
-        # lift_map = function(x::qadic) 
-        #     if iszero(x)
-        #         return K(0)
-        #     end
-        #     if precision(x) > pc
-        #         #XXX this changes (c, pc) inplace as a cache
-        #         #probably should be done with a new map type that can
-        #         #store c, pc on the map.
-        #         d = lift_root(f, a, b, p, precision(x))
-
-        #         # Manipulate the values c, pc by the implicit pointers stored inside this function.
-        #         # Unfortunately this cannot be done at the julia level...
-        #         ccall((:nf_elem_set, :libantic), Nothing,
-        #               (Ref{nf_elem}, Ref{nf_elem}, Ref{AnticNumberField}), c, d, K)
-        #         ccall((:fmpz_set_si, :libflint), Nothing, (Ref{fmpz}, Cint), pc, precision(x))
-
-        #     elseif precision(x) < pc
-        #         d = mod_sym(c, p^precision(x))
-        #     else
-        #         d = c
-        #     end
-        #     n = x.length
-        #     r = K(lift(coeff(x, n-1)))
-        #     while n > 1
-        #         n -= 1
-        #         r = r*d + lift(coeff(x, n-1))
-        #     end
-        #     return r#*K(p)^valuation(x)
-        # end
         
     else
         lift_map(x::qadic) = (
