@@ -46,6 +46,8 @@ residue_characteristic(K::NALocalField) = residue_characteristic(base_field(K))
 
 residue_characteristic(Q::FlintLocalField) = prime(Q)
 
+#elem_type(::Type{NALocalField}) = NALocalFieldElem
+
 @doc Markdown.doc"""
     log(a::NALocalFieldElem)
 Return the Iwasawa logarithm of `a`. See `https://en.wikipedia.org/wiki/P-adic_exponential_function`.

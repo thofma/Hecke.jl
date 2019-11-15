@@ -310,51 +310,21 @@ The point of this interface is to allow the sharpening of the completion map to 
 by fixing the defining polynomials and sharpening the root. 
 =#
 
-# Reminicent of the "qAdicConj" context, but more general.
-mutable struct RootSharpenCtx
-    polynomial             # Should be an exact polynomial
-    #derivative_polynomial # cached derivative of polynomial. Not clear if this should be cached.
-    field                  # field of definition of root
-    root                   # the root of a polynomial
-    precision              # current precision of the root
 
-    function RootSharpenCtx(polynomial, root)
-        ctx = new()
-        ctx.polynomial = change_base_ring(FlintZZ, polynomial)
-        ctx.field = parent(root)
-        ctx.root  = root 
-        ctx.precision = precision(root)
-        return ctx
-    end
-end
 
-function sharpen!(maps, ctx::RootSharpenCtx, n)
+function sharpen!(maps, n, ctx::RootSharpenCtx)
 
     # TODO: also sharpen lifting map properly.
 
     inj = maps.f
-    
-    f  = ctx.polynomial
-    ctx.precision > n  && error("Cannot sharpen to lower precision.")
-    ctx.precision == n && return
-    ctx.precision = n
-    
-    # sharpen field defining polynomials trivially
-    K = ctx.field
-    sharpen_base!(K,n)
-    setprecision!(K.pol, n)
-    K.prec_max = n
-    
-    # Then newton lift the roots
-    # Hope it is continuous.
-    test = newton_lift!(f, ctx.root)
+    ctx = maps.sharpening_ctx
 
-    display(test)
-    display(precision(ctx.root))
+    # Sharpening the base field makes sense here.
+    
+    sharpen!(ctx, n)
     
     # Now we need to sharpen the maps...
     img_nf_gen = ctx.root
-    display(precision(img_nf_gen))
     
     # Construct the forward map, embedding $K$ into its completion.
     # The map is determined by the image of the number field generators.
@@ -605,7 +575,9 @@ function unramified_completion(K::AnticNumberField, gen_img::qadic; prec=10, ski
     end    
     ### End insertion.
 
-
+    # Initialize the sharpening context for later increases to precision.
+    sharpening_ctx = RootSharpenCtx(K.pol, gen_img)
+    
     if !skip_map_inverse
         
         # function inj(a::nf_elem)
@@ -646,42 +618,60 @@ function unramified_completion(K::AnticNumberField, gen_img::qadic; prec=10, ski
             _num_setcoeff!(b, i-1, lift(s[i,1]))
         end
 
-        # Lift the data from the residue field back to Qp.
-        c = lift_root(f, a, b, p, 10)
+        # Lift the data from the residue field back to the number field.
+        d = lift_root(f, a, b, p, 10)
         pc = fmpz(10)
-        lif = function(x::qadic) 
-            if iszero(x)
-                return K(0)
-            end
-            if precision(x) > pc
-                #XXX this changes (c, pc) inplace as a cache
-                #probably should be done with a new map type that can
-                #store c, pc on the map.
-                d = lift_root(f, a, b, p, precision(x))
 
-                # Manipulate the values c, pc by the implicit pointers stored inside this function.
-                # Unfortunately this cannot be done at the julia level...
-                ccall((:nf_elem_set, :libantic), Nothing,
-                      (Ref{nf_elem}, Ref{nf_elem}, Ref{AnticNumberField}), c, d, K)
-                ccall((:fmpz_set_si, :libflint), Nothing, (Ref{fmpz}, Cint), pc, precision(x))
-
-            elseif precision(x) < pc
-                d = mod_sym(c, p^precision(x))
-            else
-                d = c
-            end
+        lift_map = function(x::qadic)
+            iszero(x) && return K(0)
+            
             n = x.length
             r = K(lift(coeff(x, n-1)))
             while n > 1
                 n -= 1
                 r = r*d + lift(coeff(x, n-1))
             end
-            return r#*K(p)^valuation(x)
+            return r
         end
+
+        
+        # lift_map = function(x::qadic) 
+        #     if iszero(x)
+        #         return K(0)
+        #     end
+        #     if precision(x) > pc
+        #         #XXX this changes (c, pc) inplace as a cache
+        #         #probably should be done with a new map type that can
+        #         #store c, pc on the map.
+        #         d = lift_root(f, a, b, p, precision(x))
+
+        #         # Manipulate the values c, pc by the implicit pointers stored inside this function.
+        #         # Unfortunately this cannot be done at the julia level...
+        #         ccall((:nf_elem_set, :libantic), Nothing,
+        #               (Ref{nf_elem}, Ref{nf_elem}, Ref{AnticNumberField}), c, d, K)
+        #         ccall((:fmpz_set_si, :libflint), Nothing, (Ref{fmpz}, Cint), pc, precision(x))
+
+        #     elseif precision(x) < pc
+        #         d = mod_sym(c, p^precision(x))
+        #     else
+        #         d = c
+        #     end
+        #     n = x.length
+        #     r = K(lift(coeff(x, n-1)))
+        #     while n > 1
+        #         n -= 1
+        #         r = r*d + lift(coeff(x, n-1))
+        #     end
+        #     return r#*K(p)^valuation(x)
+        # end
+        
     else
-        lif(x::qadic) = error("Completion lift map definition was skipped during initialization.")
+        lift_map(x::qadic) = (
+            error("Completion lift map definition was skipped during initialization."))
     end
-    
-    return parent(gen_img), MapFromFunc(inj, lif, K, parent(gen_img))
+
+    Kp = parent(gen_img)
+    return Kp, NACompletionMap(K, Kp, embedding_map, lift_map, sharpening_ctx)
+    #MapFromFunc(inj, lif, K, parent(gen_img))
 end
 
