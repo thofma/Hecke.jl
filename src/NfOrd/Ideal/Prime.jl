@@ -1032,6 +1032,9 @@ Computes the $\mathfrak p$-adic valuation of $a$, that is, the largest $i$
 such that $a$ is contained in $\mathfrak p^i$.
 """
 function valuation(a::nf_elem, p::NfOrdIdl, no::fmpq = fmpq(0))
+  if parent(a) !== nf(order(p))
+    throw(error("Incompatible parents"))
+  end
   if !isdefining_polynomial_nice(parent(a)) || order(p).ismaximal != 1
     return valuation_naive(a, p)::Int
   end

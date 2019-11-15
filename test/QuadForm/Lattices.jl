@@ -29,4 +29,19 @@
   @test islocally_isometric(H, H, p)
   @test Hecke.genus(H, p) == genus(HermLat, L, p, [(3, 3, -1)])
 
+  V = hermitian_space(L, L(a) * identity_matrix(L, 3))
+  M = Hecke.maximal_integral_lattice(V)
+  @test Hecke.genus(M, p) == genus(HermLat, L, p, [(0, 2, 1), (1, 1, -1)])
+  q = prime_decomposition(maximal_order(K), 11)[1][1]
+  @test Hecke.genus(M, q) == genus(HermLat, L, q, [(-1, 2, 1), (0, 1, 1)])
+
+  L, _ = number_field(t^2 - gen(K) * t + 1)
+  V = hermitian_space(L, L(a) * identity_matrix(L, 3))
+  M = Hecke.maximal_integral_lattice(V)
+  @test Hecke.genus(M, p) == genus(HermLat, L, p, [(-2, 2, 1, 0), (0, 1, -1, 0)])
+  
+  V = hermitian_space(L, L(10) * identity_matrix(L, 3))
+  M = Hecke.maximal_integral_lattice(V)
+  @test Hecke.genus(M, p) == genus(HermLat, L, p, [(-2, 2, 1, 0), (0, 1, 1, 0)])
+
 end

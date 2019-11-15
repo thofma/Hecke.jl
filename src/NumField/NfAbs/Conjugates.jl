@@ -506,3 +506,37 @@ function complex_conjugation(K::AnticNumberField)
     end
   end
 end
+
+
+function iscomplex_conjugation(f::NfToNfMor)
+  K = domain(f)
+  @assert K == codomain(f)
+  !istotally_complex(K) && error("Number field must be totally complex")
+  p = 32 
+  d = degree(K)
+  a = gen(K)
+  img_a = f.prim_img 
+  while true
+    c = conjugates(a, p)
+    cc = conj.(conjugates(img_a, p))
+    if !overlaps(c[d], cc[d])
+      return false
+    end
+    #Now I need to assure that the precision is enough.
+    found = true
+    for j in 1:d-1
+      if overlaps(c[d], cc[j])
+        found = false
+        break
+      end
+    end
+    if found
+      return true
+    end
+    p = 2 * p
+    if p > 2^18
+      error("Precision too high in complex_conjugation")
+    end
+  end
+
+end

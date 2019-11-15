@@ -22,18 +22,18 @@ mutable struct HenselCtxQadic <: Hensel
       f2 = lfp[i+1]
       g, a, b = gcdx(f1, f2)
       @assert isone(g)
-      push!(la, setprecision(map_coeffs(x->preimage(mK, x), a, parent = Qx), 1))
-      push!(la, setprecision(map_coeffs(x->preimage(mK, x), b, parent = Qx), 1))
+      push!(la, setprecision(map_coeffs(x->preimage(mK, x), a, cached = false, parent = Qx), 1))
+      push!(la, setprecision(map_coeffs(x->preimage(mK, x), b, cached = false, parent = Qx), 1))
       push!(lfp, f1*f2)
       i += 2
     end
-    return new(f, map(x->setprecision(map_coeffs(y->preimage(mK, y), x, parent = Qx), 1), lfp), la, uniformizer(Q), n)
+    return new(f, map(x->setprecision(map_coeffs(y->preimage(mK, y), x, cached = false, parent = Qx), 1), lfp), la, uniformizer(Q), n)
   end
 
   function HenselCtxQadic(f::PolyElem{qadic})
     Q = base_ring(f)
     K, mK = ResidueField(Q)
-    fp = map_coeffs(mK, f)
+    fp = map_coeffs(mK, f, cached = false)
     lfp = collect(keys(factor(fp).fac))
     return HenselCtxQadic(f, lfp)
   end
@@ -299,9 +299,9 @@ function zassenhaus(f::PolyElem{nf_elem}, P::NfOrdIdl; degset::Set{Int} = Set{In
 
   vH = vanHoeijCtx()
   if degree(P) == 1
-    vH.H = HenselCtxPadic(map_coeffs(x->coeff(mC(x), 0), f))
+    vH.H = HenselCtxPadic(map_coeffs(x->coeff(mC(x), 0), f, cached = false))
   else
-    vH.H = HenselCtxQadic(map_coeffs(mC, f))
+    vH.H = HenselCtxQadic(map_coeffs(mC, f, cached = false))
   end
   vH.C = C
   vH.P = P
@@ -454,7 +454,7 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 20)
 
   _, mK = ResidueField(order(P), P)
   mK = extend(mK, K)
-  r = length(factor(map_coeffs(mK, f)))
+  r = length(factor(map_coeffs(mK, f, cached = false)))
   N = degree(f)
   @vprint :PolyFactor 1  "Having $r local factors for degree ", N
 
@@ -574,16 +574,19 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 20)
     # can happen if the CLD coeffs are too large for the current Hensel level
     
     while length(have) > length(used)
-      m = (b[1], 1)
+      local m
+      m_empty = true
       for i=1:length(have)
         if have[i] in used
           continue
         end
-        if b[i] < m[1]
+        if m_empty || b[i] < m[1]
+          m_empty = false
           m = (b[i], i)
         end
       end
       n = have[m[2]]
+      @assert !(n in used)
       push!(used, n)
       
       i = findfirst(x->x == n, have) #new data will be in block i of C
@@ -596,12 +599,12 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 20)
       sz = floor(Int, degree(K)*av_bits/degree(P) - b[i])
 
       B = sub(C, 1:r, (i-1)*degree(K)+1:i*degree(K))
-#      B = sub(C, 1:r, (i-1)*degree(K)+5:(i-1)*degree(K)+7) #attempt to use parts of a coeff
 #      @show i, maximum(nbits, B)
       
       T = sub(M, 1:nrows(M), 1:r)
       B = T*B   # T contains the prec_scale 
       mod_sym!(B, vH.pM[2]*fmpz(2)^prec_scale)
+
 #      @show maximum(nbits, B), nbits(vH.pM[2]), b[i]
       if sz + prec_scale >= nbits(vH.pM[2]) || sz < 0
         println("Loss of precision for this col: ", sz, " ", nbits(vH.pM[2]))
@@ -612,7 +615,6 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 20)
         sz = nbits(vH.pM[2]) - 2 * prec_scale
       end
       push!(really_used, n)
-#      @show sz, nbits(vH.pM[2])
       ccall((:fmpz_mat_scalar_tdiv_q_2exp, :libflint), Nothing, (Ref{fmpz_mat}, Ref{fmpz_mat}, Cint), B, B, sz)
       s = max(0, sz - prec_scale)
       d = tdivpow2(vH.pM[2], s)
@@ -620,7 +622,7 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 20)
   #    @show map(nbits, Array(M))
 #      @show maximum(nbits, Array(M)), size(M)
       @vtime :PolyFactor 1 l, M = lll_with_removal(M, r*fmpz(2)^(2*prec_scale) + div(r+1, 2)*N*degree(K))
-  #    @show hnf(sub(M, 1:l, 1:r))
+#      @show hnf(sub(M, 1:l, 1:r))
       @hassert :PolyFactor 1 !iszero(sub(M, 1:l, 1:r))
       M = sub(M, 1:l, 1:ncols(M))
       d = Dict{fmpz_mat, Array{Int, 1}}()

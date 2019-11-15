@@ -313,8 +313,8 @@ function find_frob(A::ClassField_pp)
 end
 
 #Finds prime such that the Frobenius automorphisms generate the automorphism group of the kummer extension
-function find_gens(KK::KummerExt, gens_imgs::Array{Array{FacElem{nf_elem, AnticNumberField}, 1}, 1}, A::ClassField)
 
+function find_gens(KK::KummerExt, gens_imgs::Array{Array{FacElem{nf_elem, AnticNumberField}, 1}, 1}, A::ClassField)
   K = base_field(KK)
   m = minimum(defining_modulus(A)[1])
   O = maximal_order(K)
@@ -449,8 +449,8 @@ function extend_aut_pp(A::ClassField, autos::Array{NfToNfMor, 1}, p::fmpz)
 
   
   if !isone(gcd(d, m)) && d != minimum(degree(x) for x in Cp)
-  #Difficult case. Think about it...
-    error("Not yet implemented")
+    #Difficult case. Think about it...
+    @warn "May loop forever, careful"
   end
 
   #the extension and the cyclotomic extensions are linearly disjoint!
@@ -543,7 +543,7 @@ function restriction(K::NfRelNS{nf_elem}, Cp::Vector{ClassField_pp{S, T}}, autos
     all_pe[j] = (pe, tau_pe)
   end
   #AA is the target field 
-  AA, gAA = number_field([c.A.pol for c = Cp], cached = false, check = true)
+  AA, gAA = number_field([c.A.pol for c = Cp], cached = false, check = false)
   #And now, linear algebra to compute the restriction
   #I need the product basis fo all the primitive elements of Cp
   B = Array{NfRelNSElem, 1}(undef, degree(AA))

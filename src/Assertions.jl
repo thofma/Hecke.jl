@@ -56,11 +56,11 @@ export @vprint, @hassert, @vtime, add_verbose_scope, get_verbose_level,
 # julia> f()
 # test
 
-global VERBOSE_SCOPE = Symbol[]
+global const VERBOSE_SCOPE = Symbol[]
 
-global VERBOSE_LOOKUP = Dict{Symbol, Int}()
+global const VERBOSE_LOOKUP = Dict{Symbol, Int}()
 
-global VERBOSE_PRINT_INDENT = [ 0 ]
+global const VERBOSE_PRINT_INDENT = Int[ 0 ]
 
 function add_verbose_scope(s::Symbol)
   !(s in VERBOSE_SCOPE) && push!(VERBOSE_SCOPE, s)
@@ -177,9 +177,9 @@ end
 #  [3] top-level scope at REPL[15]:1
 
 
-global ASSERT_SCOPE = Symbol[]
+global const ASSERT_SCOPE = Symbol[]
 
-global ASSERT_LOOKUP = Dict{Symbol, Int}()
+global const ASSERT_LOOKUP = Dict{Symbol, Int}()
 
 function add_assert_scope(s::Symbol)
   !(s in ASSERT_SCOPE) && push!(ASSERT_SCOPE, s)

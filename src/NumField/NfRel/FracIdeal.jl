@@ -397,8 +397,6 @@ end
 
 *(a::NfRelOrdFracIdl{T, S}, b::NfRelOrdIdl{T, S}) where {T, S} = a*fractional_ideal(order(b), b)
 
-Base.:(^)(A::NfRelOrdFracIdl, b::Int) = Base.power_by_squaring(A, b)
-
 ################################################################################
 #
 #  Division

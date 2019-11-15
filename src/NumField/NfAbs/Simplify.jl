@@ -44,9 +44,9 @@ function _simplify(O::NfOrd)
   K = nf(O)
   Qx, x = PolynomialRing(FlintQQ)
   Zx = PolynomialRing(FlintZZ, "x", cached = false)[1]
-  f = Zx(K.pol)
+  f = Zx(K.pol*denominator(K.pol))
   
-  a = O(gen(K), false)
+  a = O(gen(K)*denominator(K.pol), false)
   p, d = _find_prime(f)
 
   B = basis(O, copy = false)
@@ -149,7 +149,7 @@ function _find_prime(f::fmpz_poly)
     R = GF(p, cached=false)
     Rt = PolynomialRing(R, "t", cached = false)[1]
     fR = change_base_ring(R, f, parent = Rt)
-    if !issquarefree(fR)
+    if degree(fR) != degree(f) || !issquarefree(fR)
       continue
     end
     FS = factor_shape(fR)

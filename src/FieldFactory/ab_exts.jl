@@ -571,7 +571,6 @@ function conductorsQQ(O::NfOrd, a::Array{Int, 1}, bound::fmpz, tame::Bool=false)
     boundsubext = root(bound, Int(divexact(n, q^v)))
     obound = flog(boundsubext, q)
     nnbound = valuation_bound_discriminant(n, q)
-    k = div(expo, Int(q)-1)
     bound_max_ap = min(nbound, obound, nnbound)  #bound on ap
     bound_max_exp = div(bound_max_ap, (q^(v-1))*(q-1)) #bound on the exponent in the conductor
     if nisc != 1
@@ -850,16 +849,18 @@ function _action_on_quo(mq::GrpAbFinGenMap, act::Array{GrpAbFinGenMap,1})
 
 end
 
-function _are_there_subs(G::GrpAbFinGen,gtype::Array{Int,1})
-
+function _are_there_subs(G::GrpAbFinGen, gtype::Array{Int,1})
+  
   H = DiagonalGroup(gtype)
   H = snf(H)[1]
   G1 = snf(G)[1]
-  if length(G1.snf) < length(H.snf)
+  arr_snfG1 = filter(x -> x != 1, G1.snf)
+  arr_snfH = filter(x -> x != 1, H.snf)
+  if length(arr_snfG1) < length(arr_snfH)
     return false
   end
-  for i=0:length(H.snf)-1
-    if !divisible(G1.snf[end-i],H.snf[end-i])
+  for i=0:length(arr_snfH)-1
+    if !divisible(arr_snfG1[end-i], arr_snfH[end-i])
       return false
     end
   end
@@ -1331,7 +1332,7 @@ function _from_relative_to_absQQ(L::NfRelNS{T}, auts::Array{NfRelNSToNfRelNSMor{
     #@assert iszero(Ks.pol(y))
     autos[i] = hom(Ks, Ks, y, check = false)
   end
-  _set_automorphisms_nf(Ks, closure(autos, degree(Ks)))
+  #_set_automorphisms_nf(Ks, closure(autos, degree(Ks)))
   
   @vprint :AbExt 2 "Finished\n"
   return Ks, autos
@@ -1422,6 +1423,7 @@ function _from_relative_to_abs(L::NfRelNS{T}, auts::Array{NfRelNSToNfRelNSMor{T}
   @vprint :AbExt 2 "Finished\n"
   return Ks, autos
 end 
+
 
 #######################################################################################
 #
