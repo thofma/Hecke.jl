@@ -52,11 +52,11 @@ function deepcopy(a::eisf_elem)
     return r
 end
 
-#TODO: UNSAFE ZERO SHOULD NOT RETURN AN ELEMENT. The fix should occur in AbstractAlgebra.
+
 #TODO: Make this more efficient.
 function zero!(a::eisf_elem)
     a.data_ring_elt = zero(parent(a)).data_ring_elt
-    a
+    return a
 end
 
 

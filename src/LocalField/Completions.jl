@@ -55,28 +55,37 @@ function sharpen!(K::EisensteinField, g::PolyElem, new_prec)
     
     Rdat.modulus = gp
     K.pol = Rdat.modulus    
-    return
+    return K
 end
 
 @doc Markdown.doc"""
-    sharpen!(Kp::EisensteinField, P::NfAbsOrdIdl, completion_maps, new_prec)
+    sharpen!(completion_map, new_prec)
 
-Given a local field `Kp`, assumed to be constructed as a completion, a place `P`, the 
-map data for the completion, and a new precision `new_prec`, mutate `Kp` and the maps to/from
-the completion so that `Kp` has element precision `new_prec`.
+Given a completion map `map: K -> Kp` from a number field `K` to a local field `Kp`, and a new precision `new_prec`, mutate `map` and `Kp` so that `Kp` has element precision `new_prec` and so that the elements in the image of the map are defined at the higher precision.
 
 NOTE: This method will sharpen the base field of `Kp`, which will affect anything with a 
 reference to it. The precision can only be increased by `sharpen!`.
 """
-function sharpen!(Kp::EisensteinField, P::NfAbsOrdIdl, completion_maps, new_prec)
+function sharpen!(completion_map, new_prec)
+    sharpen!(completion_map, new_prec, sharpening_context(completion_map))
+end
 
+
+function sharpen!(completion_map, new_prec, DixCtx::DixonSharpenCtx)
+
+    K   = domain(completion_map)
+    Kp = codomain(completion_map)
+
+    P = DixCtx.prime_ideal
+    
     # TODO: The sharpening methods can be improved a lot with a decent caching strategy.
     # TODO: Replace asserts with something compiler-safe
-    P.norm != prime(base_field(Kp)) && error("Prime ideal and characteristic of residue field are different")
 
-    inj = completion_maps.f
-    lif = completion_maps.g
-    K   = domain(completion_maps)
+    # P.norm != prime(base_field(Kp)) && (
+    #     error("Prime ideal and characteristic of residue field are different"))
+        
+    lif = preimage_function(completion_map)
+
 
     # Sharpen the base ring.
     sharpen_base!(Kp, new_prec)
@@ -103,8 +112,7 @@ function sharpen!(Kp::EisensteinField, P::NfAbsOrdIdl, completion_maps, new_prec
     BKp = [pi^i*delta^j for j=0:f-1 for i=0:e-1]
     BPn = basis(P^new_prec)
     local_basis_lift = hcat(matrix(coordinates.(BKp)), matrix(coordinates.(BPn)))
-
-    # Sharpen the defining polynomial.
+    
 
     @info "" precision(base_ring(Kp)) new_prec
 
@@ -128,20 +136,23 @@ function sharpen!(Kp::EisensteinField, P::NfAbsOrdIdl, completion_maps, new_prec
     delta_p = unram_gen(Kp_unram)
     
     img_nf_gen = let
+        a = gen(K)
         avec = matrix(FlintZZ, length(coeffs(a)), 1, coeffs(a))        
         N = underdetermined_solve_first(local_basis_lift, avec)
         sum(gen(Kp)^i*delta_p^j * N[i*f + j + 1] for j=0:f-1 for i=0:e-1)
     end
     
     # Reconstruct the forward map, embedding $K$ into its completion.
-    function inj(a::nf_elem)
-        return sum(coeffs(a)[j+1] * img_nf_gen^j for j=0:degree(K)-1)
-    end
+    # function inj(a::nf_elem)
+    #     return sum(coeffs(a)[j+1] * img_nf_gen^j for j=0:degree(K)-1)
+    # end
     
     # Update the completion maps 
-    completion_maps.f = inj
-    completion_maps.header.image = inj
-    return Kp
+    #completion_maps.f = inj
+    #completion_maps.header.image = inj
+
+    DixCtx.img_nf_gen = img_nf_gen
+    return completion_map
 end
 
 # Unsafe methods should actually return, to be able to use them on immutable types..
@@ -153,12 +164,12 @@ created in `K`.
 """
 function sharpen!(K::FlintPadicField, new_prec)
     K.prec_max = new_prec
-    return
+    return K
 end
 
 function sharpen!(K::FlintQadicField, new_prec)
     K.prec_max = new_prec
-    return
+    return K
 end
 
 @doc Markdown.doc"""
@@ -169,7 +180,7 @@ function sharpen_base!(K::EisensteinField, new_prec)
     Q = base_ring(K)
     @assert typeof(Q) <: FlintLocalField
     sharpen!(Q, new_prec)
-    return
+    return K
 end
 
 
@@ -244,7 +255,7 @@ function setprecision!(a::eisf_elem, N)
     for c in coeffs(a)
         setprecision!(c, N)
     end
-    return
+    return a
 end
 
                        
@@ -253,7 +264,7 @@ function setprecision!(f::AbstractAlgebra.Generic.Poly{<:NALocalFieldElem}, N::I
   for i=1:length(f)
     setprecision!(f.coeffs[i], N)
   end
-  return
+  return f
 end
 
 
@@ -307,20 +318,18 @@ function ramified_completion(K::NumField{T} where T, P::NfOrdIdl; prec=10, skip_
     Kp_unram = QadicField(p, f, prec)
 
     # Lift the conway generator of the finite field to the number field.
-    function conway_gen_lift()
+    delta = let
         BO = basis(max_order)
 
         A = matrix(coeffs.(res.(BO)))
         b = matrix(coeffs(gen(k)))
-
         y = underdetermined_solve_first(A,b)
 
         # This is the lift of the generator of the Qadic subfield of the completion.
-        return sum([a*b for (a,b) in zip(BO,lift(y))])
+        sum([a*b for (a,b) in zip(BO,lift(y))])
     end
 
-    delta = conway_gen_lift()
-    display(delta)    
+    @info "" delta    
     delta_p = unram_gen(Kp_unram)
 
     # Construct the integer matrix encoding coordinates with respect to pi, delta modulo P^N.
@@ -352,51 +361,38 @@ function ramified_completion(K::NumField{T} where T, P::NfOrdIdl; prec=10, skip_
     end
 
     @info "Printing nf gen image:" img_nf_gen
+
+    # Cache the sharpening data in some way.
+    DixCtx = DixonSharpenCtx(local_basis_lift,
+                             P,
+                             matrix(FlintZZ, length(coeffs(a)), 1, coeffs(a)),
+                             -matrix([coordinates(pi^e)]),
+                             img_nf_gen, pi, delta)
+
+
     
     # Construct the forward map, embedding $K$ into its completion.
     # The map is determined by the image of the number field generators.
-    function inj(a::nf_elem)
-        return sum(coeffs(a)[j+1] * img_nf_gen^j for j=0:d-1)
+    function embedding_map(a::nf_elem)
+        return sum(coeffs(a)[j+1] * DixCtx.img_nf_gen^j for j=0:d-1)
     end
 
     # Construct the lifting map, from the completion back to $K$. The map is determined by
     # the lifts of the generators of the ramified/unramified parts of the eisenstein extension.
-    function lif(x::eisf_elem)
+    function lift_map(x::eisf_elem)
         iszero(x) && return zero(K)
         qadic_coeffs = coeffs(x)
         return sum(pi^i * delta^j * K(sym_lift(coeffs(qadic_coeffs[i])[j+1]))
                    for j=0:f-1 for i=0:length(qadic_coeffs)-1 )        
     end
 
-    # TODO: Cache the sharpening data in some way.
-
+    completion_map = NACompletionMap(K, Kp, embedding_map, lift_map, DixCtx)
+    
     #TODO: Move to proper tests
     # Sanity check the returns
-    @assert iszero(change_base_ring(Kp,K.pol)(inj(gen(K))))
-    @assert lif(inj(gen(K) + 1)) == gen(K) + 1
-    return Kp, MapFromFunc(inj, lif, K, Kp)
-end
-
-function lift_root(f::fmpz_poly, a::nf_elem, o::nf_elem, p::fmpz, n::Int)
-  #f(a) = 0 mod p, o*f'(a) = 1 mod p, want f(a) = 0 mod p^n
-  k = 1
-  while k < n
-    p *= p
-    k *= 2
-
-    pa = [one(a)]
-    while length(pa) <= degree(f)
-      push!(pa, pa[end]*a)
-      mod_sym!(pa[end], p)
-    end
-    fa  = sum(coeff(f, i-1) * pa[i] for i=1:length(pa))
-    fsa = sum(coeff(f, i) * i * pa[i] for i=1:length(pa)-1)  
-    o = o*(2-fsa*o)
-    a = a - fa*o
-    mod_sym!(o, p)
-    mod_sym!(a, p)
-  end
-  return a
+    @assert iszero(change_base_ring(Kp,K.pol)(embedding_map(gen(K))))
+    @assert lift_map(embedding_map(gen(K) + 1)) == gen(K) + 1
+    return Kp, completion_map
 end
 
 
@@ -441,7 +437,7 @@ The completion corresponding to the $i$-th conjugate in the non-canonical orderi
 {{{conjugates}}}.
 """
 function completion(K::AnticNumberField, p::fmpz, i::Int)
-    @assert 0<i<= degree(K)
+    @assert 0<i<=degree(K)
     return unramified_completions(K, fmpz(p))[i]
 end
 
@@ -483,7 +479,7 @@ function unramified_completion(K::AnticNumberField, gen_img::qadic; prec=10, ski
 
     # The element `a` is replaced by a polynomial. It is assumed that the variable
     # in the polynomial is identified with the generator of the number field.    
-    function inj(a)
+    function embedding_map(a)
         @assert parent(a) == K
         d = denominator(a)
         f = Zx(d*a)

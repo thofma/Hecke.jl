@@ -11,6 +11,9 @@ include("LocalField/Eisenstein_roots.jl")
 # NALocalField abstract methods.
 include("LocalField/NALocalField_elem.jl")
 
+# NACompletionMap map type
+include("LocalField/CompletionMap.jl")
+
 # Conjugates, regulators, and local polynomials.
 include("LocalField/Conjugates.jl")
 include("LocalField/LocalRegulator.jl")

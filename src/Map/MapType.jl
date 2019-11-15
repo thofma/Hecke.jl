@@ -55,6 +55,7 @@ mutable struct MapCache{D, C, De, Ce}
   end
 end
 
+# The point of the MapHeader is to package shared fields common to all subtypes of the abstract type `Map`. For example, the functions `domain, codomain, image, preimage` and any cacheing behaviour are encapsulated by the header. 
 mutable struct MapHeader{D, C}
   domain::D
   codomain::C
