@@ -31,7 +31,7 @@ mutable struct RootSharpenCtx{T}
     root                   # the root of a polynomial
     precision              # current precision of the root
 
-    function RootSharpenCtx{T}(polynomial, root::T)
+    function RootSharpenCtx{T}(polynomial, root::T) where T
         ctx = new()
         ctx.polynomial = change_base_ring(FlintZZ, polynomial)
         ctx.field = parent(root)
@@ -72,7 +72,7 @@ function sharpen!(ctx::RootSharpenCtx{T}, prec) where T<:NALocalFieldElem
     # Hope it is continuous.
     test = newton_lift!(f, ctx.root)
 
-    @info "" test precision(ctx.root) precision(ctx.root)
+    @info "" test precision(ctx.root)
 
     return ctx
 end
@@ -309,24 +309,6 @@ end
 The point of this interface is to allow the sharpening of the completion map to a field 
 by fixing the defining polynomials and sharpening the root. 
 =#
-
-# Reminicent of the "qAdicConj" context, but more general.
-mutable struct RootSharpenCtx
-    polynomial             # Should be an exact polynomial
-    #derivative_polynomial # cached derivative of polynomial. Not clear if this should be cached.
-    field                  # field of definition of root
-    root                   # the root of a polynomial
-    precision              # current precision of the root
-
-    function RootSharpenCtx(polynomial, root)
-        ctx = new()
-        ctx.polynomial = change_base_ring(FlintZZ, polynomial)
-        ctx.field = parent(root)
-        ctx.root  = root 
-        ctx.precision = precision(root)
-        return ctx
-    end
-end
 
 function sharpen!(maps, ctx::RootSharpenCtx, n)
 
