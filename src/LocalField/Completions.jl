@@ -90,7 +90,7 @@ function sharpen_root!(ctx::RootSharpenCtx, prec)
     ctx.precision > prec  && error("Cannot sharpen to lower precision.")
     ctx.precision == prec && return
 
-    a = let
+    (a,o) = let
         # Perform a newton iteration, but over the number field.
         # Input:  f(a) = 0 mod p, o*f'(a) = 1 mod p,
         # Output: `a` such that f(a) = 0 mod p^n
@@ -118,11 +118,12 @@ function sharpen_root!(ctx::RootSharpenCtx, prec)
             mod_sym!(o, ppow)
             mod_sym!(a, ppow)
         end
-        a
+        (a,o)
     end #### End Claus' code.
-    
+
     ctx.precision = prec
     ctx.root = a
+    ctx.root_derivative_inv = o
     return ctx
 end
 
@@ -190,6 +191,9 @@ reference to it. The precision can only be increased by `sharpen!`.
 function sharpen!(completion_map, new_prec)
     completion_map = sharpen_forward_map!(completion_map, new_prec,
                                           forward_sharpening_context(completion_map))
+    completion_map = sharpen_backward_map!(completion_map, new_prec,
+                                           backward_sharpening_context(completion_map))
+    return completion_map
 end
 
 
@@ -198,10 +202,23 @@ end
 The point of this interface is to allow the sharpening of the completion map to a field 
 by fixing the defining polynomials and sharpening the root. 
 =#
+
+#TODO: Once Contexts encapsulate the principal sharpening problem,
+# There is no need for the multitude of functions.
 function sharpen_forward_map!(completion_map, new_prec, ctx::RootSharpenCtx)
     sharpen_root!(ctx, new_prec)
     return completion_map
 end
+
+function sharpen_backward_map!(completion_map, new_prec, ctx::RootSharpenCtx)
+    sharpen_root!(ctx, new_prec)
+    return completion_map
+end
+
+function sharpen_backward_map!(completion_map, new_prec, ctx::Nothing)
+    return completion_map
+end
+
 
 function sharpen_forward_map!(completion_map, new_prec, DixCtx::DixonSharpenCtx)
 
