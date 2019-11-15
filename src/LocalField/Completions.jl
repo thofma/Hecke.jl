@@ -20,6 +20,124 @@ end
 #
 #########################################################################################
 
+# Contexts for sharpening.
+
+# Reminicent of the "qAdicConj" context, but more general.
+mutable struct RootSharpenCtx{T}
+    polynomial             # Should be an exact polynomial
+    #derivative_polynomial # cached derivative of polynomial. Not clear if this should be cached.
+    field                  # field of definition of root
+    prime                  # The prime with respect to which newton lifting will be done.
+    root                   # the root of a polynomial
+    precision              # current precision of the root
+
+    function RootSharpenCtx{T}(polynomial, root::T)
+        ctx = new()
+        ctx.polynomial = change_base_ring(FlintZZ, polynomial)
+        ctx.field = parent(root)
+        ctx.prime = prime(parent(root))
+        ctx.root  = root 
+        ctx.precision = precision(root)
+        return ctx
+    end
+
+    function RootSharpenCtx{nf_elem}(polynomial, root::nf_elem, prime, prec)
+        ctx = new()
+        ctx.polynomial = change_base_ring(FlintZZ, polynomial)
+        ctx.field = parent(root)
+        ctx.prime = prime
+        ctx.root  = root
+        ctx.precision = prec
+        return ctx
+    end
+
+end
+
+# Sharpen the root in the context to level `n`
+function sharpen!(ctx::RootSharpenCtx{T}, prec) where T<:NALocalFieldElem
+        
+    f  = ctx.polynomial
+    ctx.precision > prec  && error("Cannot sharpen to lower precision.")
+    ctx.precision == prec && return
+    ctx.precision = prec
+
+    
+    # sharpen field defining polynomials trivially
+    K = ctx.field
+    sharpen_base!(K,prec)
+    setprecision!(K.pol, prec)
+    K.prec_max = prec
+
+    # Then newton lift the roots
+    # Hope it is continuous.
+    test = newton_lift!(f, ctx.root)
+
+    @info "" test precision(ctx.root) precision(ctx.root)
+
+    return ctx
+end
+
+# Sharpen the root in the context to level `n`
+function sharpen!(ctx::RootSharpenCtx, prec)
+        
+    ctx.precision > prec  && error("Cannot sharpen to lower precision.")
+    ctx.precision == prec && return
+
+    # Perform a newton iteration, but over the number field.
+    # Input:  f(a) = 0 mod p, o*f'(a) = 1 mod p,
+    # Output: `a` such that f(a) = 0 mod p^n
+    
+    f  = ctx.polynomial
+    ppow = ctx.prime ^ ctx.precision
+    a = ctx.root
+    k = ctx.precision
+    o = 1/(derivative(f)(a))
+    
+    while k < prec
+        ppow *= ppow
+        k *= 2
+
+        pa = [one(a)]
+        while length(pa) <= degree(f)
+            push!(pa, pa[end]*a)
+            mod_sym!(pa[end], ppow)
+        end
+        fa  = sum(coeff(f, i-1) * pa[i] for i=1:length(pa))
+        fsa = sum(coeff(f, i) * i * pa[i] for i=1:length(pa)-1)  
+        o = o*(2-fsa*o)
+        a = a - fa*o
+        mod_sym!(o, ppow)
+        mod_sym!(a, ppow)
+    end
+    #### End Claus' code.
+    
+    ctx.precision = prec
+    ctx.root = a
+    
+    # Then newton lift the roots
+    # Hope it is continuous.
+    #test = newton_lift!(f, ctx.root, ctx.prime, ctx.prec)
+
+    @info "" a
+
+    return ctx
+end
+
+
+# Sharpening context for defining a completion map via linear algebra.
+# TODO: Investigate name.
+mutable struct DixonSharpenCtx
+    local_basis_lift
+    prime_ideal # Thing to understand maximal_order/P^N
+    avec    # coordinates of the number field generator
+    pie_vec # coordinates of uniformizer^e
+    img_nf_gen
+    pi
+    delta
+end
+
+#****************************************************************************
+
 # Mock code to support changing precision on objects.
 """
     sharpen!(K::EisensteinField, g::PolyElem, new_prec)
