@@ -68,10 +68,13 @@ function sharpen_root!(ctx::RootSharpenCtx{T}, prec) where T<:NALocalFieldElem
     
     # sharpen field defining polynomials trivially
     K = ctx.field
-    sharpen_base!(K,prec)
-    setprecision!(K.pol, prec)
-    K.prec_max = prec
 
+    if !isa(K, FlintLocalField)
+        sharpen_base!(K,prec)
+        setprecision!(K.pol, prec)        
+    end
+    K.prec_max = prec
+    
     # Then newton lift the roots
     # Hope it is continuous.
     test = newton_lift!(f, ctx.root)
@@ -192,6 +195,16 @@ function sharpen!(completion_map, new_prec)
 end
 
 
+# Sharpen via polynomial (RootSharpenCtx)
+#=
+The point of this interface is to allow the sharpening of the completion map to a field 
+by fixing the defining polynomials and sharpening the root. 
+=#
+function sharpen_forward_map!(completion_map, new_prec, ctx::RootSharpenCtx)
+    sharpen_root!(ctx, new_prec)
+    return completion_map
+end
+
 function sharpen_forward_map!(completion_map, new_prec, DixCtx::DixonSharpenCtx)
 
     K   = domain(completion_map)
@@ -304,40 +317,6 @@ function sharpen_base!(K::EisensteinField, new_prec)
 end
 
 
-#####
-# Sharpen via polynomial (RootSharpenCtx)
-
-#=
-The point of this interface is to allow the sharpening of the completion map to a field 
-by fixing the defining polynomials and sharpening the root. 
-=#
-
-function sharpen!(maps, n, ctx::RootSharpenCtx)
-
-    # TODO: also sharpen lifting map properly.
-
-    inj = maps.f
-    ctx = maps.sharpening_ctx
-
-    # Sharpening the base field makes sense here.
-    
-    sharpen!(ctx, n)
-    
-    # Now we need to sharpen the maps...
-    img_nf_gen = ctx.root
-    
-    # Construct the forward map, embedding $K$ into its completion.
-    # The map is determined by the image of the number field generators.
-    function inj(a::nf_elem)
-        return sum(coeffs(a)[j+1] * img_nf_gen^j for j=0:degree(parent(a))-1)
-    end
-
-    # TODO: Add sharpening of lifting map so that things are compatible.
-
-    maps.f = inj
-    
-    return
-end
 
 function setprecision!(a::eisf_elem, N)
     for c in coeffs(a)
