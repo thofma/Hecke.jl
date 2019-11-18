@@ -244,19 +244,17 @@ end
 # i.e, a factorization method is present in the unramified case.
 
 
-# TODO: There should be versions of these functions that use preexisting completion maps.
-
-function embedding_classes(a, p)    
+function embedding_classes(a, p, precision=10)
     K = parent(a)
 
     if any(isramified(maximal_order(K), p))
-        return embedding_classes_ramified(a,p)
+        return embedding_classes_ramified(a, p, precision)
     else
-        return embedding_classes_unramified(a,p)
+        return embedding_classes_unramified(a, p, precision)
     end
 end
 
-function embedding_classes_ramified(a,p)
+function embedding_classes_ramified(a::nf_elem, p, precision=10)
     K = parent(a)
     lp = prime_decomposition(maximal_order(K), p)
     prime_ideals = [P[1] for P in lp]
@@ -266,8 +264,7 @@ function embedding_classes_ramified(a,p)
     return embeddings_up_to_equiv
 end
 
-# function _conjugates(a::nf_elem, C::qAdicConj, n::Int, op::Function)
-function embedding_classes_unramified(a, p::fmpz, precision=10)
+function embedding_classes_unramified(a::nf_elem, p::fmpz, precision=10)
     K = parent(a)
     completions = unramified_completions(K, p, prec=precision)
     embeddings_up_to_equiv = [mp(a) for (field, mp) in completions]
@@ -275,7 +272,7 @@ function embedding_classes_unramified(a, p::fmpz, precision=10)
     return embeddings_up_to_equiv
 end
 
-function embedding_classes_unramified(a, p::Integer, precision=10)
+function embedding_classes_unramified(a::nf_elem, p::Integer, precision=10)
     embedding_classes_unramified(a, FlintZZ(p), precision=precision)
 end
 
@@ -302,31 +299,127 @@ If {{{all = false}}}, then for each $P_i$ only one conjugate is returned, the ot
 xomputed using automorphisms (the Frobenius).
 If {{{flat = true}}}, then instead of the conjugates, only the $p$-adic coefficients are returned.
 """
-function conjugates(a::nf_elem, p::fmpz, precision=10)
-  return frobenius_orbit.(embedding_classes_unramified(a, p, precision))
+function local_conjugates(a::nf_elem, p::fmpz, precision=10)
+    return galois_orbit.(embedding_classes(a, p, precision))
 end
 
-function conjugates(a::nf_elem, p::Integer, precision=10)
-    return conjugates(a, fmpz(p), precision=precision)
+function local_conjugates(a::nf_elem, p::Integer, precision=10)
+    return local_conjugates(a, fmpz(p), precision=precision)
 end
 
 
-# Expansion logic to apply frobenius to the partial result.
+#########################################################################################
+#
+#   Frobenius application interface
+#
+#########################################################################################
+
+@doc Markdown.doc"""
+    frobenius(f::PolyElem)
+Apply frobenius to the coefficients of the polynomial `f`, returns a new polynomial.
+"""
+function frobenius(f::PolyElem)
+    g = deepcopy(f)
+    g.coeffs = frobenius.(f.coeffs)
+    return g
+end
+
 #TODO: implement a proper Frobenius - with caching of the frobenius_a element
-
-#function expand(a::Array{qadic, 1}; all::Bool, flat::Bool)
-function frobenius_orbit(a::qadic)
+# Function to apply each of [id, frob, frob^2, ..., frob^n] to an object,
+# whatever that might mean.
+function _frobenius_orbit(a, n)
     result = [a]
     y = a
-    for i=2:degree(parent(a))
+    for i=2:n
         y = frobenius(y)
         push!(result, y)
     end
     return result
 end
 
+@doc Markdown.doc"""
+    frobenius_orbit(a)
+Returns the array [a, frob(a), ..., frob^d(a)]. The number `d` is defined as:
+-- the degree of the parent of `a`, if `a` is a `qadic` element.
+-- the degree of the base_field of the parent of `a`, if `a` is a polynomial.
+"""
+function frobenius_orbit(a::FieldElem)
+    return _frobenius_orbit(a, degree(parent(a)))
+end
 
-# This interface is now obsolete. Use coeffs.(embedding_classes(a))
+function frobenius_orbit(f::PolyElem{qadic})
+    return _frobenius_orbit(f, degree(base_ring(parent(f))))
+end
+
+
+#########################################################################################
+#
+#   Orbits under the galois group (of a local field).
+#
+#########################################################################################
+
+
+function galois_orbit(a::qadic)
+    return frobenius_orbit(a)
+end
+
+function galois_orbit(f::PolyElem{qadic})
+    return frobenius_orbit(f)
+end
+
+function galois_orbit(a::eisf_elem)
+    G = galois_group(parent(a))
+    return [mp(a) for mp in G]
+end
+
+@doc Markdown.doc"""
+    galois_group(K)
+Return the galois group of the galois closure of $K$. Rather, return a list of julia functions
+defining the field automorphisms over the prime field.
+"""
+function galois_group(K)
+    #TODO: At the time of writing, there wasn't a clear paradigm for how Galois groups of fields
+    # should work. Please update this code once the appropriate design has been determined.
+    
+    Kgal, mp = galois_closure(K)
+    @assert gen(Kgal) == mp(gen(K))
+    
+    f = defining_polynomial(Kgal)
+    f_orbit = galois_orbit(f)
+    
+    gen_rts = vcat([map(x->x[1], roots(g, Kgal)) for g in f_orbit]...)
+    galois_maps = [a->sum(coeff(a,i)*rt^i for i=0:degree(Kgal)-1) for rt in gen_rts]
+
+    return galois_maps
+end
+
+function galois_group(K::FlintQadicField)
+    #TODO: At the time of writing, there wasn't a clear paradigm for how Galois groups of fields
+    # should work. Please update this code once the appropriate design has been determined.
+    d = absolute_degree(K)
+    return [x->frobenius(x,i) for i=1:d]
+end
+
+function galois_group(K::FlintPadicField)
+    #TODO: At the time of writing, there wasn't a clear paradigm for how Galois groups of fields
+    # should work. Please update this code once the appropriate design has been determined.
+    return [identity]
+end
+
+
+#########################################################################################
+#
+#   Misc group functions.
+#
+#########################################################################################
+
+function orbit(G,a)
+    return [mp(a) for mp in G]
+end
+
+
+# This function is now obsolete. Use coeffs.(embedding_classes(a)) instead.
+#
 # function flat(a::Array{qadic, 1})
 #   if flat
 #     r = padic[]
@@ -389,7 +482,7 @@ function _galois_closure_tamely_ramified(K::EisensteinField)
     # The size of the Galois closure of a tamely ramified extension is given by
     # the classification of tamely ramified extensions. (given by a poly of the form `X^e-u*p`.)
     # 
-    frob_orbit_size = lcm(map(degree_of_field_of_definition, coeffs(L.pol)))
+    frob_orbit_size = lcm(map(degree_of_field_of_definition, coefficients(L.pol)))
 
     g = change_base_ring(L, L.pol)
     X = gen(parent(g))
@@ -404,7 +497,6 @@ function _galois_closure_tamely_ramified(K::EisensteinField)
     Lgal, _, mp_to_gal = unramified_extension(L, frob_orbit_size*lcm(ext_degrees))
     
     return Lgal, x->mp_to_gal(mp_to_squash(x))
-
 end
 
 @doc Markdown.doc"""
@@ -413,25 +505,4 @@ end
 function is_tamely_ramified(K::NALocalField)
     return gcd(prime(K), ramification_degree(K)) == 1
 end
-
-#########################################################################################
-#
-#   Conjugates in ramified completions.
-#
-#########################################################################################
-
-
-#=
-#1. Need to construct the ramified completion.
-
-#2. Need to determine the unramified sub-extension of the splitting field 
-#   (possible in stupid cases, but in general requires factorizations.)
-
-# For now, give up if the splitting field is not just an unramified extension.
-
-#3. Compute the roots in the local splitting field.
-
-Generally, this will work so long as there is no wild ramification. The wild case is easy
-to detect.
-=#
 

@@ -61,8 +61,7 @@ my_setprecision!(f,N) = f
 #TODO: See if newton lift needs to be modified in characteristic `p`.
 function newton_lift(f::Hecke.Generic.Poly{T}, r::T, num_input_correct_digits=1::Integer) where T<:NALocalFieldElem
     rt = deepcopy(r)
-    cond = newton_lift!(f, rt, num_input_correct_digits)
-    return rt, cond
+    return newton_lift!(f, rt, num_input_correct_digits)
 end
 
 @doc Markdown.doc"""
@@ -102,7 +101,6 @@ function newton_lift!(f::Hecke.Generic.Poly{T}, r::T, num_input_correct_digits=1
     current_precision = num_input_correct_digits
         
     while true
-        display(current_precision)
         
         current_precision =  2*current_precision
         current_precision <= 0 && error("Integer overflow error in precision quantity.") 
@@ -111,7 +109,6 @@ function newton_lift!(f::Hecke.Generic.Poly{T}, r::T, num_input_correct_digits=1
         setprecision!(df_at_r_inverse, current_precision)
 
         test = deepcopy(df_at_r_inverse)
-        display(df_at_r_inverse)
         
         # NOTE: The correct functioning of this algorithm depends on setprecision!
         # not obliterating the extra digits automatically.
@@ -121,8 +118,6 @@ function newton_lift!(f::Hecke.Generic.Poly{T}, r::T, num_input_correct_digits=1
         mul!(expr_container, fK(r), df_at_r_inverse)
         sub!(r, r, expr_container)
 
-        display(fK(r))
-        
         if current_precision > N
             break
         end
@@ -138,7 +133,7 @@ function newton_lift!(f::Hecke.Generic.Poly{T}, r::T, num_input_correct_digits=1
         @assert test*(2-dfK(r)*test) == df_at_r_inverse
     end
 
-    return condition_number
+    return r, condition_number
 end
 
 function newton_lift!(f::fmpz_poly, r::NALocalFieldElem, num_input_correct_digits=1::Integer)

@@ -117,6 +117,9 @@ function basis(K::EisensteinField)
     return d
 end
 
+function defining_polynomial(K::EisensteinField)
+    return K.pol
+end
 
 ################################################################################
 #
