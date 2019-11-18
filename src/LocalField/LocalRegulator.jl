@@ -19,6 +19,7 @@ If {{{all = false}}}, then for each $P_i$ only one logarithm of a conjugate if r
 xomputed using automorphisms (the Frobenius).
 If {{{flat = true}}}, then instead of the conjugates, only the $p$-adic coefficients are returned.
 """
+#=
 function conjugates_log(a::nf_elem, C::qAdicConj, n::Int = 10;
                         all::Bool = false, flat::Bool = true)
   if haskey(C.cache, a)
@@ -27,10 +28,10 @@ function conjugates_log(a::nf_elem, C::qAdicConj, n::Int = 10;
       return expand(b, all = all, flat = flat)
     end
   end
-  C.cache[a] = b = _conjugates(a, C, n, _log)
+  C.cache[a] = b = _conjugates(a, C, n, iwasawa_log)
   return expand(b, all = all, flat = flat)
 end
-
+=#
 
 #=
 function conjugates_log(a::FacElem{nf_elem, AnticNumberField}, C::qAdicConj, n::Int = 10;
@@ -135,24 +136,35 @@ end
 For a totally real field $K$, the regulator as defined by Iwasawa: the determinant of the
 matrix containing the logarithms of the conjugates, supplemented by a column containing all $1$.
 """
-function regulator_iwasawa(u::Array{T, 1}, C::qAdicConj, n::Int = 10) where {T<: Union{nf_elem, FacElem{nf_elem, AnticNumberField}}}
-  k = base_ring(u[1])
-  @assert istotally_real(k)
-  c = map(x -> conjugates_log(x, C, n, all = true, flat = false), u)
-  m = matrix(c)
-  m = hcat(m, matrix(base_ring(m), nrows(m), 1, [one(base_ring(m)) for i=1:nrows(m)]))
-  return det(m)//degree(k)
+function regulator_iwasawa(u::Array{T, 1}, p, prec::Int = 10) where {T<: Union{nf_elem, FacElem{nf_elem, AnticNumberField}}}
+
+    # Needs to be a bit more robust...
+    #k = base_ring(u[1])
+    #@assert istotally_real(k)
+    #c = map(x -> conjugates_log(x, C, prec, all = true, flat = false), u)
+
+
+    log_embeddings = map(x->iwasawa_log.(embedding_classes(x,p,prec)), u)
+
+    @info "" log_embeddings
+    
+    log_conjugates = map(x->galois_orbit(x), log_embeddings)
+
+    @info log_conjugates
+    
+    m = matrix(c)
+    m = hcat(m, matrix(base_ring(m), nrows(m), 1, [one(base_ring(m)) for i=1:nrows(m)]))
+    return det(m)//degree(k)
 end
 
-function regulator_iwasawa(K::AnticNumberField, C::qAdicConj, n::Int = 10)
-  @assert istotally_real(K)
-  return regulator_iwasawa(maximal_order(K), C, n)
+function regulator_iwasawa(K::AnticNumberField, p, prec::Int = 10)  
+  return regulator_iwasawa(maximal_order(K), p, prec)
 end
 
-function regulator_iwasawa(R::NfAbsOrd, C::qAdicConj, n::Int = 10)
-  @assert istotally_real(nf(R))
+function regulator_iwasawa(R::NfAbsOrd, p, prec::Int = 10)
+  # Why factored elements?
   u, mu = unit_group_fac_elem(R)
-  return regulator_iwasawa([mu(u[i]) for i=2:ngens(u)], C, n)
+  return regulator_iwasawa([mu(u[i]) for i=2:ngens(u)], p, prec)
 end
 
 function matrix(a::Array{Array{T, 1}, 1}) where {T}

@@ -259,7 +259,7 @@ function embedding_classes_ramified(a::nf_elem, p, precision=10)
     lp = prime_decomposition(maximal_order(K), p)
     prime_ideals = [P[1] for P in lp]
 
-    completions = [Hecke.completion(K,P) for P in prime_ideals]
+    completions = [Hecke.completion(K,P, prec=precision) for P in prime_ideals]
     embeddings_up_to_equiv = [mp(a) for (field,mp) in completions]
     return embeddings_up_to_equiv
 end
@@ -273,7 +273,7 @@ function embedding_classes_unramified(a::nf_elem, p::fmpz, precision=10)
 end
 
 function embedding_classes_unramified(a::nf_elem, p::Integer, precision=10)
-    embedding_classes_unramified(a, FlintZZ(p), precision=precision)
+    embedding_classes_unramified(a, FlintZZ(p), precision)
 end
 
 #########################################################################################
