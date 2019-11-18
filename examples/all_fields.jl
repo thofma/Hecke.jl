@@ -141,7 +141,7 @@ function main()
 
   set_verbose_level(:FieldsNonFancy, 1)
 
-  l = fields(n, i, dbound, only_real = only_real)
+  l = fields(n, i, dbound, only_real = only_real, simplify = false)
 
   ll = map(v -> v.field, l)
   ffields = [ (x, discriminant(maximal_order(x))) for x in ll ]

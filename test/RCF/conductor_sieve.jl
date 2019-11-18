@@ -14,7 +14,7 @@
   
     K,a=NumberField(x^2+1, "a")
     O=maximal_order(K)
-    l=Hecke.abelian_normal_extensions(O, [2], fmpz(10)^5, with_autos=Val{true})
+    l=Hecke.abelian_normal_extensions(O, Int[2], fmpz(10)^5, with_autos=Val{true})
     @test length(l)==41
     for x in l[1:5]
       K, autos=Hecke._from_relative_to_abs(x[1], x[2])

@@ -87,4 +87,10 @@ end
   f = t^5 -3 * t^4 - 104 * t^3 + 312 * t^2 + 400t -1200
   @test length(factor(f)) == 5
   @test length(factor(f*t)) == 6
+
+  #Tommys
+  K, a = number_field(x^2 - x - 4)
+  Ky, y = K["y"] 
+  f = y^16+(39)*y^14+(449)*y^12+(1794)*y^10+(2830)*y^8+(1794)*y^6+(449)*y^4+(39)*y^2+(1)
+  @test length(factor(f)) == 2
 end

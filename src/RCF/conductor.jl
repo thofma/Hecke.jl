@@ -715,7 +715,7 @@ end
 
 
 
-function norm_group(mL::NfToNfMor, mR::Hecke.MapRayClassGrp, expected_degree::Int = 1)
+function norm_group(mL::NfToNfMor, mR::Hecke.MapRayClassGrp, expected_index::Int = 1)
   
   K = domain(mL)
   L = codomain(mL)
@@ -735,25 +735,20 @@ function norm_group(mL::NfToNfMor, mR::Hecke.MapRayClassGrp, expected_degree::In
   #  Adding small primes until it stabilizes
   #
   n = divexact(degree(L), degree(K))
-  max_stable = 2*n
+  max_stable = 20*n
   stable = max_stable
-  p = 2^10
+  p = next_prime(N)
   Q, mQ = quo(R, els, false)
   while true
-    if order(Q) == expected_degree
-      break
-    end
-    if order(Q) <= n && stable <= 0
+    if order(Q) == expected_index || (order(Q) <= n && stable <= 0)
       break
     end
     p = next_prime(p)
-    while N % p == 0
-      p = next_prime(p)
-    end
     lP = prime_decomposition(O, p)
+    
     for (P, e) in lP
       lQ = prime_decomposition_type(mL, P)
-      s = gcd([x[1] for x in lQ])
+      s = gcd(Int[x[1] for x in lQ])
       candidate = s*(mR\P) 
       if !iszero(mQ(candidate))
         push!(els, candidate)
