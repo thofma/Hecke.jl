@@ -5,14 +5,6 @@
 #
 #########################################################################################
 
-function _log(a::qadic)
-  q = prime(parent(a))^degree(parent(a))
-  if iseven(q) # an error in flint
-    return log((a^(q-1))^2)//2//(q-1)
-  end
-  return log(a^(q-1))//(q-1) # faster than the teichmuller stuff
-  return log(a*inv(teichmuller(a)))
-end
 
 @doc Markdown.doc"""
     conjugates_log(a::nf_elem, C::qAdicConj, n::Int = 10; flat::Bool = false, all:Bool = true) -> []
@@ -39,6 +31,8 @@ function conjugates_log(a::nf_elem, C::qAdicConj, n::Int = 10;
   return expand(b, all = all, flat = flat)
 end
 
+
+#=
 function conjugates_log(a::FacElem{nf_elem, AnticNumberField}, C::qAdicConj, n::Int = 10;
                         all::Bool = false, flat::Bool = true)
   first = true
@@ -57,9 +51,14 @@ function conjugates_log(a::FacElem{nf_elem, AnticNumberField}, C::qAdicConj, n::
         lp = prime_decomposition(maximal_order(parent(k)), C.C.p)
         @assert Base.all(x -> has_2_elem_normal(x[1]), lp)
         val = map(x -> valuation(k, x[1]), lp)
+
+        # Adjust the valuation of `a` so that it has valuation 0 at all the prime places
         pe = prod(lp[i][1].gen_two^val[i] for i = 1:length(lp) if val[i] != 0)
-        aa = k//pe
+          aa = k//pe
+
+        # Then take the logarithm again...
         y = conjugates_log(aa, C, n, all = false, flat = false)
+
         if first
           res = v .* y
           first = false
@@ -73,7 +72,7 @@ function conjugates_log(a::FacElem{nf_elem, AnticNumberField}, C::qAdicConj, n::
   end
   return expand(res, all = all, flat = flat)
 end
-
+=#
 
 function special_gram(m::Array{Array{qadic, 1}, 1})
   g = Array{padic, 1}[]
@@ -159,3 +158,10 @@ end
 function matrix(a::Array{Array{T, 1}, 1}) where {T}
   return matrix(hcat(a...))
 end
+
+
+############################################################################################
+#
+# New stuff.
+
+
