@@ -5,7 +5,7 @@
 #
 #########################################################################################
 
-
+#=
 @doc Markdown.doc"""
     conjugates_log(a::nf_elem, C::qAdicConj, n::Int = 10; flat::Bool = false, all:Bool = true) -> []
     conjugates_log(a::FacElem{nf_elem, AnticNumberField}, C::qAdicConj, n::Int = 10; flat::Bool = false, all:Bool = true) -> []
@@ -19,7 +19,7 @@ If {{{all = false}}}, then for each $P_i$ only one logarithm of a conjugate if r
 xomputed using automorphisms (the Frobenius).
 If {{{flat = true}}}, then instead of the conjugates, only the $p$-adic coefficients are returned.
 """
-#=
+
 function conjugates_log(a::nf_elem, C::qAdicConj, n::Int = 10;
                         all::Bool = false, flat::Bool = true)
   if haskey(C.cache, a)
@@ -75,6 +75,9 @@ function conjugates_log(a::FacElem{nf_elem, AnticNumberField}, C::qAdicConj, n::
 end
 =#
 
+# TODO: The special gram matrix does not always faithfully remember the rank of the original matrix.
+# However, it would be interesting if we could construct a reasonable square matrix where
+# this is the case.
 function special_gram(m::Array{Array{qadic, 1}, 1})
   g = Array{padic, 1}[]
   for i = m
@@ -109,10 +112,11 @@ end
     regulator(K::AnticNumberField, C::qAdicConj, n::Int = 10; flat::Bool = true)
     regulator(R::NfAbsOrd, C::qAdicConj, n::Int = 10; flat::Bool = true)
 
-Returns the determinant of $m^t m$ where the columns of $m$ are the {{{conjugates_log}}} of the units
-in either the array, or the fundamental units for $K$ (the maximal order of $K$) or $R$.
+Returns the determinant of $m^t m$ where the columns of $m$ are the {{{conjugates_log}}} of the units in either the array, or the fundamental units for $K$ (the maximal order of $K$) or $R$.
+
 If {{{flat = false}}}, then all prime ideals over $p$ need to have the same degree.
-In either case, Leopold's conjectue states that the regulator is zero iff the units are dependent.
+
+In either case, Leopold's conjecture states that the regulator is zero iff the units are dependent.
 """
 function regulator(u::Array{T, 1}, C::qAdicConj, n::Int = 10; flat::Bool = true) where {T<: Union{nf_elem, FacElem{nf_elem, AnticNumberField}}}
   c = map(x -> conjugates_log(x, C, n, all = !flat, flat = flat), u)
