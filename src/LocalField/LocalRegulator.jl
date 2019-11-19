@@ -147,6 +147,11 @@ function regulator_iwasawa(u::Array{T, 1}, p, prec::Int = 10) where {T<: Union{n
     log_embeddings = map(x->iwasawa_log.(embedding_classes(x,p,prec)), u)
 
     @info "" log_embeddings
+
+    # TODO: One needs to construct a common embedding into Cp of the various embeddings,
+    #       before the conjugates can be properly computed.
+
+    error("Function still in development. The present issue is a lack of `compositum` method.")
     
     log_conjugates = map(x->galois_orbit(x), log_embeddings)
 

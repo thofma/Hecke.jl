@@ -86,37 +86,63 @@ residue_characteristic(Q::FlintLocalField) = prime(Q)
 
 @doc Markdown.doc"""
     log(a::NALocalFieldElem)
-Return the Iwasawa logarithm of `a`. See `https://en.wikipedia.org/wiki/P-adic_exponential_function`. If `a` is defined over a ramified extension, the result may be defined over an extension of the parent of `a` (of the same type).
+Return the Iwasawa logarithm of `a`. See `https://en.wikipedia.org/wiki/P-adic_exponential_function`. The result is defined in the parent of `a`.
 """
 function log(a::NALocalFieldElem)
+
+    # This is an implementation of Algorithm 2.8 of:
+    # "An application of the p-adic analytic class number formula"
+    # Claus Fieker and Yinan Zhang
     @assert !iszero(a)
     
-    N = precision(a)
-    K = parent(a)
-    k,res = ResidueField(K)
+    K   = parent(a)
+    k,_ = ResidueField(K)
     card_kx = order(k)-1
+
+    pi = uniformizer(K)
+    u  = unit_part(a) # a = pi^valuation(a) * u
+
+    # Since `log` is normalized so that `log(p)=0`, and `pi^e` is not necessarily
+    # a power of `p`, we need to compute a correction factor. More generally, `p` is the
+    # uniformizer of the unramified subfield.
+    correction_factor = let
+        p_K = K(prime(K))
+        p_unit    = unit_part(p_K) # p = pi^e * p_unit
+        p_unit_kx = p_unit^card_kx
+        va  = fmpq(valuation(a))
+        vpi = fmpq(valuation(pi))
+        
+        -K(va*vpi//card_kx)*log_power_series(p_unit_kx, _num_terms_for_log(p_unit_kx))
+    end
     
-    # Remove the root of unity factor, write the new element as 1 + b.
-    b = remove_pth_powers(a)^card_kx - one(K)
-    bsqrd = b*b
+    logu = let
+        b = u^card_kx        
+        log_power_series(b, _num_terms_for_log(b)) // K(card_kx)
+    end
+    
+    return logu + correction_factor
+end
+
+_num_terms_for_log(a::NALocalFieldElem) = Int(ceil(precision(a)//valuation(a - one(parent(a)))))
+
+
+@doc Markdown.doc"""
+    log_power_series(a)
+Generic implenentation to evaluate the power series expression for `log(a)`, to number of terms 'num_terms'. There is no convergence check in this method.
+"""
+function log_power_series(a, num_terms::Integer)
+    # Write `a = 1 - b`, and use the simpler power series expression.
+    K = parent(a)
+    b = one(K) - a
     
     # Evaluate the power series for log.
-    # Split into two iterations to avoid if statements
-    num_terms = Int(ceil(N//valuation(b)))
-    result = zero(K)
+    minus_result = zero(K)
     powb = b
-    for j=1:2:num_terms
-        result += powb // j
-        powb   *= bsqrd
+    for j=1:num_terms
+        minus_result += powb // j
+        powb *= b
     end
-
-    powb = b^2
-    for j=2:2:num_terms
-        result -= powb // j
-        powb   *= bsqrd
-    end
-    
-    return result // K(card_kx)
+    return -minus_result
 end
 
 @doc Markdown.doc"""
@@ -144,7 +170,7 @@ function exp(a::NALocalFieldElem)
     
     N = precision(a)
     K = parent(a)
-    p = residue_characteristic(K)
+    p = Int(residue_characteristic(K))
 
     if valuation(a) <= 1//(p-1)
         error("$a is not in the radius of convergence of `exp`.")
