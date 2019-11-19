@@ -206,15 +206,6 @@ function modord(a::Integer, m::Integer)
   return i
 end
 
-
-function isodd(a::fmpz)
-  ccall((:fmpz_is_odd, :libflint), Int, (Ref{fmpz},), a) == 1
-end
-
-function iseven(a::fmpz)
-  ccall((:fmpz_is_even, :libflint), Int, (Ref{fmpz},), a) == 1
-end
-
 function neg!(a::fmpz)
   ccall((:fmpz_neg, :libflint), Nothing, (Ref{fmpz}, Ref{fmpz}), a, a)
   return a
