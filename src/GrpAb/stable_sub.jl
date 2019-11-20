@@ -164,6 +164,8 @@ function dual_module(M::ZpnGModule)
   
 end
 
+change_base_ring(R::NmodRing, M::fmpz_mat) = MatrixSpace(R, nrows(M), ncols(M))(M)
+
 function _dualize(M::nmod_mat, V::GrpAbFinGen, v::Array{fmpz,1})    
   #  First, compute the kernel of the corresponding homomorphisms
   K = DiagonalGroup(fmpz[V.snf[end] for j=1:nrows(M)])

@@ -237,21 +237,6 @@ Then
   P(W=x) = exp(-l)l^x/x!
 =#  
 
-@doc Markdown.doc"""
-    euler_phi(n::Int) -> Int
-
-The Euler ϕ function of n
-ie. the number of integers 0<= i = n coprime to n
-"""
-function euler_phi(a::Int)
-  f = factor(a)
-  e = 1
-  for (p, l) in f
-    e *= (p-1)*p^(l-1)
-  end
-  return e
-end 
-
 #= computes (hopefully) the 
   vol(prod x_i <= b meet [0,1]^n)
 an easy excercise in induction...

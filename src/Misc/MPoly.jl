@@ -8,13 +8,6 @@ function Nemo.PolynomialRing(R::Nemo.Ring, n::Int, s::String="x";
                                                     ordering = ordering)
 end
 
-function add!(c::fmpq_mpoly, a::fmpq_mpoly, b::fmpq_mpoly)
-  ccall((:fmpq_mpoly_add, :libflint), Nothing,
-        (Ref{fmpq_mpoly}, Ref{fmpq_mpoly}, Ref{fmpq_mpoly}, Ref{FmpqMPolyRing}),
-        c, a, b, c.parent)
-  return c
-end
-
 #TODO: makes only sense if f is univ (uses only one var)
 function (Rx::FmpzPolyRing)(f::fmpq_mpoly)
   fp = Rx()

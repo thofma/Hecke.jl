@@ -104,7 +104,7 @@ function issquare(x::ResElem{fmpz})
     p = modulus(R)
     xnew = x.data
     
-    j = jacobi(xnew, p)
+    j = jacobi_symbol(xnew, p)
     if j == 0
         return true, zero(R)
     elseif j == 1
@@ -120,7 +120,7 @@ function issquare(x::Union{nmod, gfp_elem})
     p = modulus(R)
     xnew = x.data
     
-    j = jacobi(fmpz(xnew), fmpz(p))
+    j = jacobi_symbol(fmpz(xnew), fmpz(p))
     if j == 0
         return true, zero(R)
     elseif j == 1
@@ -247,8 +247,4 @@ function characteristic(R::ResRing{fmpz})
   return abs(modulus(R))
 end
 
-function characteristic(R::FlintRationalField)
-  return fmpz(0)
-end
-
-jacobi(x::Integer, y::fmpz) = jacobi(fmpz(x), y)
+jacobi_symbol(x::Integer, y::fmpz) = jacobi_symbol(fmpz(x), y)

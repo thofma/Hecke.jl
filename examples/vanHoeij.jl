@@ -81,7 +81,7 @@ function vanHoeji(f_orig::fmpz_poly, trunk::Bool = true)
   n = degree(f)
   mmb = mahler_measure_bound(f)*n
   cld_bound = function(i)
-    a = mmb*binom(n-1, i)
+    a = mmb*binomial(n-1, i)
     b = fmpz()
     ccall((:fmpz_poly_CLD_bound, :libflint), Nothing, (Ref{fmpz}, Ref{fmpz_poly}, Int64), b, f, i)
     println("Compare: $(nbits(a)) vs $(nbits(b)) as a bound for $i")

@@ -220,13 +220,13 @@ function subsets(s::Set{T}, k::Int) where T
   # this iterator could indexed, the other one below not
   # maybe use "The coolest way to generate combinations" instead
   b = collect(unique(s))
-  m = Int(binom(length(b), k))
+  m = Int(binomial(length(b), k))
   C = Array{Array{Int, 1}, 1}()
   while k >= 1
     B = Int[]
     i = k-1
     while true
-      c = Int(binom(i, k))
+      c = Int(binomial(i, k))
       if c < m && length(B) < length(b)
         push!(B, c)
         i += 1

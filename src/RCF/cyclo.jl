@@ -172,8 +172,8 @@ function cyclotomic_extension(k::AnticNumberField, n::Int; cached::Bool = true, 
         end
       end
       ZKa = Hecke.NfOrd(B_k)
-      if degree(Kr) == eulerphi(n)
-        ZKa.disc = (discriminant(Zk)^eulerphi(n))*discriminant(f)^degree(k)
+      if degree(Kr) == euler_phi(n)
+        ZKa.disc = (discriminant(Zk)^euler_phi(n))*discriminant(f)^degree(k)
         ZKa.index = root(divexact(numerator(discriminant(Ka)), discriminant(ZKa)), 2)
         ZKa.gen_index = fmpz(ZKa.index)
       else
@@ -244,7 +244,7 @@ function automorphisms(C::CyclotomicExt; gens::Vector{NfToNfMor} = small_generat
   U, mU = unit_group(R)
   if iscyclic(U)
     k = degree(C.Kr)
-    expo = divexact(eulerphi(fmpz(C.n)), k)
+    expo = divexact(euler_phi(fmpz(C.n)), k)
     l = hom(C.Kr, C.Kr, gen(C.Kr)^Int(lift(mU(U[1])^expo)), check = false)
     l1 = hom(C.Ka, C.Ka, C.mp[1]\(l(C.mp[1](gen(C.Ka)))), check = false)
     push!(gnew, l1)

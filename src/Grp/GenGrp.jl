@@ -39,7 +39,7 @@ mutable struct GrpGen
     # Because it is cheap, let us check some properties
     n = z.order
     z.isabelian = defines_abelian_group(M)
-    e = eulerphi(n)
+    e = Int(euler_phi(n))
     # There are e generators in case it is cyclic
     # If I find n - e + 1 elements of the wrong order, we are done
     z.iscyclic = false

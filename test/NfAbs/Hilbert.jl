@@ -20,7 +20,7 @@
         a = fmpz(a)
         b = fmpz(b)
         r = (-1)^(valuation(a, p) * valuation(b, p)) * a^(valuation(b, p)) * b^(valuation(a, p))
-        @test h == jacobi(r, fmpz(p))
+        @test h == jacobi_symbol(r, fmpz(p))
       end
     end
   end
