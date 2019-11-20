@@ -562,9 +562,14 @@ function isprincipal(A::NfOrdIdl)
     return isprincipal_non_maximal(A)
   end
   fl, a = isprincipal_fac_elem(A)
-  ev = O(evaluate(a))
-  A.is_principal = 1
-  A.princ_gen = ev
+  if fl
+    ev = O(evaluate(a))
+    A.is_principal = 1
+    A.princ_gen = ev
+  else
+    ev = O(1)
+    A.is_principal = 2
+  end
   return fl, ev
 end
 
