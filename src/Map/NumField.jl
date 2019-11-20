@@ -181,6 +181,7 @@ end
 
 function image(f::NumFieldMor, x)
   return image(f.image_data, x)
+
 end
 
 function preimage(f::NumFieldMor, x)
@@ -197,4 +198,12 @@ end
 
 function image_primitive_element(f::NumFieldMor{<:NfRel})
   return f.image_data.prim_img
+end
+
+function domain(f::NumFieldMor)
+  return f.header.domain
+end
+
+function codomain(f::NumFieldMor)
+  return f.header.codomain
 end
