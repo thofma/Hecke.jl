@@ -26,7 +26,7 @@ function _unit_group_init(O::NfOrd)
   return u
 end
 
-function _add_dependent_unit(U::UnitGrpCtx{S}, y::T; rel_only = false) where {S, T}
+function _add_dependent_unit(U::UnitGrpCtx{S}, y::S; rel_only = false) where {S <: Union{nf_elem, FacElem{nf_elem, AnticNumberField}}}
   K = nf(order(U))
   
   deg = degree(K)

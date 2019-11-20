@@ -1,6 +1,6 @@
 # Checks whether x[1]^z[1] * ... x[n]^z[n]*y^[n+1] is a torsion unit
 # This can be improved
-function _check_relation_mod_torsion(x::Array{T, 1}, y::T, z::Array{fmpz, 1}, p::Int = 16) where T
+function _check_relation_mod_torsion(x::Array{FacElem{nf_elem, AnticNumberField}, 1}, y::FacElem{nf_elem, AnticNumberField}, z::Array{fmpz, 1}, p::Int = 16) 
   (length(x) + 1 != length(z)) && error("Lengths of arrays does not fit")
   r = x[1]^z[1]
 
