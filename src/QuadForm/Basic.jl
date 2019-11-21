@@ -377,21 +377,19 @@ function _gram_schmidt(M::MatElem, a)
     for i in 1:n
       if iszero(F[i,i])
         T = identity_matrix(K, n)
-        let F = F, i = i
-          ok = findfirst(j -> !iszero(F[j, j]), (i + 1):n)
-        end
+        ok = findfirst(j -> !iszero(F[j, j]), (i + 1):n)
         if ok !== nothing
+          j = ok + i # findfirst gives the index
           T[i,i] = 0
           T[j,j] = 0
           T[i,j] = 1
           T[j,i] = 1
         else
-          let F = F, i = i,
-            ok = findfirst(j -> !iszero(F[i, j]), (i + 1):n)
-          end
+          ok = findfirst(j -> !iszero(F[i, j]), (i + 1):n)
           if ok === nothing
             error("Matrix is not of full rank")
           end
+          j = ok + i # findfirst gives the index
           T[i, j] = 1 // (2 * F[j, i])
         end
         S = T * S

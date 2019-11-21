@@ -1403,6 +1403,7 @@ function _ismaximal_integral(L::AbsLat, p)
   else
     s = elem_in_nf(p_uniformizer(D[1][1]))^e
   end
+  @assert valuation(s, D[1][1]) == 2
 
   M = local_basis_matrix(L, p, type = :submodule)
   G = gram_matrix(ambient_space(L), M)
@@ -1424,8 +1425,8 @@ function _ismaximal_integral(L::AbsLat, p)
     valv = iszero(t) ? inf : valuation(t, D[1][1])
     if valv >= 2
       # I don't want to compute the generators
-      #X = [ iszero(inner_product(ambient_space(L), resvec, g)) ? inf : valuation(inner_product(ambient_space(L), resvec, g), D[1][1]) for g in generators(L) ]
-      #@assert minimum(X) >= 1 - e
+      X = [ iszero(inner_product(ambient_space(L), resvec, g)) ? inf : valuation(inner_product(ambient_space(L), resvec, g), D[1][1]) for g in generators(L) ]
+      @assert minimum(X) >= 1 - e
       return false, v * M
     end
   end
@@ -1506,7 +1507,7 @@ function _maximal_integral_lattice(L::AbsLat, p, minimal = true)
       @assert (k !== nothing) k && nrows(B[k]) >= 2
       r = h\rand(kk)
       # The following might throw ...
-      while valuation(G[k][1, 1] + G[k][2, 2] * norm(r), D[1][1]) < 2
+      while valuation(G[k][1, 1] + G[k][2, 2] * elem_in_nf(norm(r)), D[1][1]) < 2
         r = h\rand(kk)
       end
       M = pseudo_matrix(matrix(nf(R), 1, ncols(B[k]), [B[k][1, j] + r * B[k][2, j] for j in 1:ncols(B[k])]), [inv(P)])
@@ -1677,12 +1678,14 @@ end
 
 function find_lattice(M::HermLat, L::HermLat, p)
   @assert base_ring(M) == base_ring(L)
-  @show p
-  @show pseudo_matrix(M)
-  @show pseudo_matrix(L)
+  #@show p
+  #@show pseudo_matrix(M)
+  #@show pseudo_matrix(L)
   @assert isrationally_equivalent(M, L, p)
   @assert ismaximal_integral(M, p)[1]
   D = prime_decomposition(base_ring(L), p)
+  #@show D
+  #@show length(D)
   P = D[1][1]
   #@assert isintegral(L, P)
   if length(D) == 2 # split case
@@ -1700,7 +1703,8 @@ function find_lattice(M::HermLat, L::HermLat, p)
     _new_pmat = _sum_modules(pseudo_matrix(BMall), fractional_ideal(order(P), P)^maximum(E) * pseudo_matrix(M))
     _new_pmat = _intersect_modules(_new_pmat, P^minimum(E) * pseudo_matrix(M))
     LL = lattice(ambient_space(M), _new_pmat)
-  elseif length(D) == 1 && D[1, 1] == 1 # inert case
+  elseif length(D) == 1 && D[1][2] == 1 # inert case
+    #@show "================= intert"
     genL = genus(L, p)
     r0 = sum( rank(genL, i) for i in 1:length(genL) if iseven(scale(genL, i)))
     if isdyadic(p)
@@ -1715,7 +1719,7 @@ function find_lattice(M::HermLat, L::HermLat, p)
       BB = [ B[1][i, :] for i in 1:nrows(B[1])]
       m = div(length(BB) - r0, 2)
       k, h = ResidueField(base_ring(base_ring(L)), p)
-      hext = extend(h, nf(base_ring(L)))
+      hext = extend(h, nf(base_ring(base_ring(L))))
       Y = [ BB[i] for i in (2*m + 1):length(BB) ]
       for i in 1:m
         # transform <BB[2i-1], BB[2i]> into H(0). Then go from there.
@@ -1731,7 +1735,7 @@ function find_lattice(M::HermLat, L::HermLat, p)
       if length(B) == 2
         Y = vcat(reduce(vcat, Y), B[2])
       end
-      _new_pmat = _sum_modules(pseudo_matrix(y), P * pseudo_matrix(M))
+      _new_pmat = _sum_modules(pseudo_matrix(Y), _module_scale_ideal(P, pseudo_matrix(M)))
       _new_pmat = _intersect_modules(_new_pmat, pseudo_matrix(M))
       LL = lattice(ambient_space(M), _new_pmat)
     else
@@ -1742,7 +1746,7 @@ function find_lattice(M::HermLat, L::HermLat, p)
 #    // Now Y generates the Gerstein reduction of L_p locally.
 #    // So we simply rescale the generators in Y appropriately and assemble
 #    // the global solution. 
-    pi = p_uniformizer(p)
+    pi = elem_in_nf(p_uniformizer(p))
     i = 1
     j = r0 + 1
     for l in 1:length(genL)
@@ -1760,7 +1764,7 @@ function find_lattice(M::HermLat, L::HermLat, p)
       end
     end
     max = scale(genL, length(genL))
-    _new_pmat = _sum_modules(pseudo_matrix(Y), P^max * pseudo_matrix(M))
+    _new_pmat = _sum_modules(pseudo_matrix(Y), _module_scale_ideal(P^max, pseudo_matrix(M)))
     _new_pmat = _intersect_modules(_new_pmat, pseudo_matrix(M))
     LL = lattice(ambient_space(M), _new_pmat)
   elseif !isdyadic(p) # odd ramified
@@ -1787,6 +1791,9 @@ function find_lattice(M::HermLat, L::HermLat, p)
       push!(C, c)
     end
     B, G, S = jordan_decomposition(M, p)
+    #@show S
+    #@show M
+    #@show p
     @assert all(s in [-1, 0] for s in S)
     B0 = S[end] == 0 ? [ B[end][i, :] for i in 1:nrows(B[end]) ] : []
     B1 = S[1] == -1 ? [ B[1][i, :] for i in 1:nrows(B[1]) ] : []
@@ -1905,12 +1912,19 @@ function find_lattice(M::HermLat, L::HermLat, p)
         KM = map_entries(x -> E(h\x), KM)
         _new_pmat = _sum_modules(pseudo_matrix(KM * BM), pM)
         LL = lattice(ambient_space(M), _new_pmat)
+        #@show "trying $LL"
+        #@show ambient_space(LL)
+        #@show coefficient_ideals(pseudo_matrix(LL))
+        #@show matrix(pseudo_matrix(LL))
+        #@show genus(X, p)
+        #@show genus(LL, p)
         if islocally_isometric(X, LL, p)
           break
         end
       end
     end
   end
+  #@show p, LL
   @assert islocally_isometric(L, LL, p)
   return LL
 end
@@ -2023,8 +2037,15 @@ function _local_basis_matrix_prime_below_submodule(a::PMat, p)
     if length(f) == 0
       x = one(nf(R))
     else
+      for Q in D
+        if !(haskey(f, Q[1]))
+          f[Q[1]] = 0
+        end
+      end
       x = approximate([e for (_, e) in f], [p for (p, _) in f])
+      @assert all(valuation(x, p) == e for (p, e) in f)
     end
+    @assert valuation(x, D[1][1]) == valuation(c, D[1][1])
     #x = unis[1]^valuation(c, D[1][1])
     #for k in 2:length(D)
     #  x = x * unis[k]^valuation(c, D[k][1])
@@ -2032,6 +2053,11 @@ function _local_basis_matrix_prime_below_submodule(a::PMat, p)
     for j in 1:ncols(a)
       z[i, j] = x * matrix(a)[i, j]
     end
+  end
+  if true
+    _z = pseudo_matrix(z, [one(nf(R)) * R for i in 1:nrows(z)])
+    @assert _spans_subset_of_pseudohnf(_z, a, :lowerleft)
+    @assert valuation(det(_z), D[1][1]) == valuation(det(a), D[1][1])
   end
   return z
 end
@@ -2337,6 +2363,9 @@ function _find_quaternion_algebra(b, P, I)
 
   _J = b * R
   _P = Dict{}()
+  for p in P
+    _P[p] = true
+  end
   for p in keys(factor(_J))
     _P[p] = true
   end
@@ -2490,7 +2519,7 @@ end
 
 p_uniformizer(P::NfOrdIdl) = uniformizer(P)
 
-isdyadic(p) = 2 in p
+isdyadic(p) = order(p)(2) in p
 
 isdyadic(p::fmpz) = p == 2
 
@@ -2521,7 +2550,12 @@ function _non_norm_rep(E, K, p)
       end
     end
   else
-    error("This dosses not make any sense!")
+    lP = prime_decomposition(maximal_order(E), p)
+    if length(lP) == 2
+      error("This dosses not make any sense!")
+    else
+      return elem_in_nf(p_uniformizer(p))
+     end
   end
 end
 
@@ -2576,12 +2610,13 @@ function _non_square_norm(P)
   #@assert isinert(P)
   R = order(P)
   p = minimum(P)
-  k, h = ResidueField(base_ring(P), P)
-  kp, hp = ResidueField(base_ring(p), p)
+  k, h = ResidueField(order(P), P)
+  kp, hp = ResidueField(order(p), p)
+  local u
   while true
     r = rand(k)
     u = h\r
-    if !iszero(r) && !issquare(hp(norm(u)))
+    if !iszero(r) && !issquare(hp(norm(u)))[1]
       break
     end
   end
