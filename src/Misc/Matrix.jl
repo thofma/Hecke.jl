@@ -1385,20 +1385,22 @@ Base.IteratorSize(M::MatElem) = Base.HasLength()
 Base.IteratorEltype(M::MatElem) = Base.HasEltype()
 Base.eltype(M::MatElem) = elem_type(base_ring(M))
 
-function setindex!(A::MatElem{T}, b::MatElem{T}, ::Colon, i::Int) where T
-  @assert ncols(b) == 1 && nrows(b) == nrows(A) 
-  for j=1:nrows(A)
-    A[j,i] = b[j]
+if Nemo.version() <= v"0.15.1"
+  function setindex!(A::MatElem{T}, b::MatElem{T}, ::Colon, i::Int) where T
+    @assert ncols(b) == 1 && nrows(b) == nrows(A) 
+    for j=1:nrows(A)
+      A[j,i] = b[j]
+    end
+    b
   end
-  b
-end
 
-function setindex!(A::MatElem{T}, b::MatElem{T}, i::Int, ::Colon) where T
-  @assert nrows(b) == 1 && ncols(b) == ncols(A)
-  for j=1:ncols(A)
-    A[i,j] = b[j]
+  function setindex!(A::MatElem{T}, b::MatElem{T}, i::Int, ::Colon) where T
+    @assert nrows(b) == 1 && ncols(b) == ncols(A)
+    for j=1:ncols(A)
+      A[i,j] = b[j]
+    end
+    b
   end
-  b
 end
 
 function setindex!(A::MatElem, b::Array{<: Any, 1}, ::Colon, i::Int) 
