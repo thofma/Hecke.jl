@@ -232,6 +232,14 @@ function __init__()
   end
 end
 
+module Globals
+  using Hecke
+  const Qx, _ = PolynomialRing(FlintQQ, "x", cached = false)
+  const Zx, _ = PolynomialRing(FlintZZ, "x", cached = false)
+end
+using .Globals
+
+
 ################################################################################
 #
 #  Verbose printing and custom assertions
