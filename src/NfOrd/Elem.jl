@@ -561,11 +561,11 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    ^(x::NfAbsOrdElem, y::Int)
+    ^(x::NfAbsOrdElem, y::Union{fmpz, Int})
 
 Returns $x^y$.
 """
-function ^(x::NfAbsOrdElem, y::Int)
+function ^(x::NfAbsOrdElem, y::Union{fmpz, Int})
   z = parent(x)()
   z.elem_in_nf = x.elem_in_nf^y
   return z
