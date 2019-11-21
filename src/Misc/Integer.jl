@@ -4,6 +4,9 @@
 #
 ################################################################################
 
+isodd(x::fmpz) = x%2==1
+iseven(x::fmpz) = x%2==0
+
 function rem(a::fmpz, b::UInt)
   return ccall((:fmpz_fdiv_ui, :libflint), UInt, (Ref{fmpz}, UInt), a, b)
 end
