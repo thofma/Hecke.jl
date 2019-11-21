@@ -4,9 +4,6 @@
 #
 ################################################################################
 
-isodd(x::fmpz) = x%2==1
-iseven(x::fmpz) = x%2==0
-
 function rem(a::fmpz, b::UInt)
   return ccall((:fmpz_fdiv_ui, :libflint), UInt, (Ref{fmpz}, UInt), a, b)
 end
@@ -207,6 +204,17 @@ function modord(a::Integer, m::Integer)
     b = b*a % m
   end
   return i
+end
+
+
+if Nemo.version() <= v"0.15.1"
+  function isodd(a::fmpz)
+    ccall((:fmpz_is_odd, :libflint), Int, (Ref{fmpz},), a) == 1
+  end
+
+  function iseven(a::fmpz)
+    ccall((:fmpz_is_even, :libflint), Int, (Ref{fmpz},), a) == 1
+  end
 end
 
 function neg!(a::fmpz)
