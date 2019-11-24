@@ -375,7 +375,7 @@ function ramified_completion(K::NumField{T} where T, P::NfOrdIdl, prec=10; skip_
         y = underdetermined_solve_first(A,b)
 
         # This is the lift of the generator of the Qadic subfield of the completion.
-        delta_appx = K(sum([a*b for (a,b) in zip(BO,lift(y))]))
+        delta_appx = sum([a*b for (a,b) in zip(BO,lift(y))])
 
         # Set up the root sharpen context with the Conway polynomial
         con_pol = defining_polynomial(Kp_unram)
@@ -385,21 +385,28 @@ function ramified_completion(K::NumField{T} where T, P::NfOrdIdl, prec=10; skip_
             con_pol = polynomial(lift.(coefficients(con_pol)))(gen(parent(K.pol)))
         end
 
+        @info "" delta_appx typeof(delta_appx)
+
+        @info "" con_pol typeof(con_pol)
+        
+        @info "" typeof(map_coeffs(x->res(max_order(FlintZZ(x))), con_pol))
+        
         # Root derivative inverse approximation
-        b2 = matrix(coeffs(inv(k(derivative(con_pol)(gen(Kp_unram))))))
+        rt_der_in_k = derivative(map_coeffs(x->res(max_order(FlintZZ(x))), con_pol))(res(delta_appx))
+        b2 = matrix(coeffs(inv(rt_der_in_k)))
         y2 = underdetermined_solve_first(A,b2)
 
         # This is the lift of the generator of the Qadic subfield of the completion.
         root_der_appx = K(sum([a*b for (a,b) in zip(BO,lift(y2))]))
         
-        RootSharpenCtx{typeof(delta_appx)}(con_pol, delta_appx, root_der_appx, p, 1)
+        RootSharpenCtx{typeof(K(delta_appx))}(con_pol, K(delta_appx), root_der_appx, p, 1)
     end
 
-    sharpen!(conway_root_ctx, prec)
-    delta = root(conway_root_ctx)
+    sharpen_root!(conway_root_ctx, prec)
+    delta = max_order(root(conway_root_ctx))
     
     delta_p = unram_gen(Kp_unram)
-    @info "" Kp_unram delta delta_p
+    #@info "" Kp_unram delta delta_p
     
     # Construct the integer matrix encoding coordinates with respect to pi, delta modulo P^N.
     # Basis elements for the local field and the ideal P^(prec*e). This gives `prec` digits of
@@ -466,7 +473,8 @@ function ramified_completion(K::NumField{T} where T, P::NfOrdIdl, prec=10; skip_
     #@info change_base_ring(Kp,K.pol)(embedding_map(gen(K)))
     
     @assert iszero(change_base_ring(Kp,K.pol)(embedding_map(gen(K))))
-    @assert lift_map(embedding_map(gen(K) + 1)) == gen(K) + 1
+    #@info lift_map(embedding_map(gen(K) + 1))
+
     return Kp, completion_map
 end
 
