@@ -308,29 +308,6 @@ function polynomial(a::eisf_elem)
     return a.data_ring_elt.data
 end
 
-# function resultant(f::AbstractAlgebra.Generic.MPolyElem, g::AbstractAlgebra.Generic.MPolyElem, m)
-
-#     check_parent(f,g)
-    
-#     # Create a new polynomial ring over a polynomial ring with the variable "m" isolated
-#     R = parent(f)
-#     vars = gens(R)
-#     mind = findfirst(x->x==m, vars)
-
-#     A, new_vars = PolynomialRing(base_ring(R), length(vars)-1)
-#     Rnew, M = PolynomialRing(A, "M")
-
-
-#     any_new_vars = convert(Array{Any,1}, new_vars)
-    
-#     splice!(any_new_vars, mind:mind-1, [M])
-#     splice!(vars, mind:mind)
-
-#     display(vars)
-#     display(any_new_vars)
-    
-#     return resultant(f(any_new_vars...), g(any_new_vars...))(vars)
-# end
 
 @doc Markdown.doc"""
     coeffs(f::AbstractAlgebra.Generic.MPolyElem, i::Integer)
