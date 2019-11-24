@@ -101,8 +101,7 @@ function sharpen_root!(ctx::RootSharpenCtx, prec)
         k = ctx.precision
         o = ctx.root_derivative_inv
         
-        while k < prec
-            @info "" mod_sym!(f(a),ppow)
+        while k < prec            
             ppow *= ppow
             k *= 2
 
@@ -319,7 +318,6 @@ function sharpen_base!(K::EisensteinField, new_prec)
 end
 
 
-
 function setprecision!(a::eisf_elem, N)
     for c in coeffs(a)
         setprecision!(c, N)
@@ -339,19 +337,19 @@ end
 
 #########################################################################################
 #
-#   Completions
+#   Completion (single)
 #
 #########################################################################################
 
-function completion(K::NumField{T} where T, P::NfOrdIdl; prec=10, skip_map_inverse=false)
+function completion(K::NumField{T} where T, P::NfOrdIdl, prec=10; skip_map_inverse=false)
     if ramification_index(P) == 1
         return unramified_completion(K, P, skip_map_inverse=skip_map_inverse)
     else
-        return ramified_completion(K, P, prec=prec, skip_map_inverse=skip_map_inverse)
+        return ramified_completion(K, P, prec, skip_map_inverse=skip_map_inverse)
     end
 end
 
-function ramified_completion(K::NumField{T} where T, P::NfOrdIdl; prec=10, skip_map_inverse=false)
+function ramified_completion(K::NumField{T} where T, P::NfOrdIdl, prec=10; skip_map_inverse=false)
 
     # Determine a polynomial over Kp_unram which annihilates pi.
 
@@ -359,7 +357,7 @@ function ramified_completion(K::NumField{T} where T, P::NfOrdIdl; prec=10, skip_
     # the residue image of `b` is a (Conway) generator for the residue field.
 
     # This is definitely not the best algorithm. In the unramified, non-index-divisor
-    # case, computing powers of `P` is trivial. However, in the other (likely important)
+    # case, computing powers of `P` is trivial. In the other (likely important)
     # cases, it is likely worthwhile to see if computing powers is also easy.
     
     @assert has_2_elem(P)
@@ -464,27 +462,27 @@ to be unramifed.
 The map giving the embedding of $K$ into the completion, admits a pointwise pre-image to obtain a lift.
 Note, that the map is not well defined by this data: $K$ will have $\deg P$ many embeddings.
 """
-function unramified_completion(K::AnticNumberField, P::NfOrdIdl; prec=10, skip_map_inverse=false)
+function unramified_completion(K::AnticNumberField, P::NfOrdIdl, prec=10; skip_map_inverse=false)
     #non-unique!! will have deg(P) many
     p = minimum(P)
     pi = P.gen_two.elem_in_nf
     predicate = (Kp,inj) -> valuation(inj(pi)) > 0
     
-    return unramified_completion(K, p, predicate; prec=prec, skip_map_inverse=skip_map_inverse)
+    return unramified_completion(K, p, predicate, prec, skip_map_inverse=skip_map_inverse)
 end
 
 # Find the first unramified completion over `p` such that `predicate(Kp,inj)` is `true`.
-function unramified_completion(K::AnticNumberField, p::fmpz, predicate;
-                               prec=10, skip_map_inverse=false)
+# the default value of predicate is `x->false`
+function unramified_completion(K::AnticNumberField, p::fmpz, predicate=x->false, prec=10;
+                               skip_map_inverse=false)
 
     C = qAdicConj(K, Int(p))
-    R = roots(C.C, prec)
-    display(R)
+    R = roots(C.C, prec)    
     
     for rt in R
-        (Kp, inj) = unramified_completion(K, rt, prec=prec, skip_map_inverse=true)
+        (Kp, inj) = unramified_completion(K, rt, prec, skip_map_inverse=true)
         if predicate(Kp,inj)
-            return unramified_completion(K, rt, prec=prec, skip_map_inverse=skip_map_inverse)
+            return unramified_completion(K, rt, prec, skip_map_inverse=skip_map_inverse)
         end
     end
     error("Predicate is false for every unramified completion.")
@@ -505,27 +503,9 @@ end
 completion(K::AnticNumberField, p::Integer, i::Int) = completion(K, FlintZZ(p), i)
 
 
-# Returns the unramified completions of $K$ over the prime $p$.
-function unramified_completions(K::AnticNumberField, p::fmpz; prec=10)
-
-    # TODO: The HenselCtx fails to properly detect the correct unramified completion
-    # if `K.pol mod p` is pathological.
-    
-    # TODO: This is the last bastion of the qAdicConj structure!
-    # Since in the unramified case we complete via factorizations, we first
-    # construct the roots data needed to define/sharpen the extension.
-    C = qAdicConj(K, Int(p))    
-    R = roots(C.C, prec)    
-    return [unramified_completion(K, rt, prec=prec) for rt in R]
-end
-
-function unramified_completions(K::AnticNumberField, p::Integer; prec=10)
-    unramified_completions(K::AnticNumberField, FlintZZ(p); prec=10)
-end
-
 # Give the unramified completion where gen(K) is mapped to `gen_img`. It is assumed that
 # gen_img satisfied `change_base_ring(Kp, K.pol)(gen_img) == 0`.
-function unramified_completion(K::AnticNumberField, gen_img::qadic; prec=10, skip_map_inverse=false)
+function unramified_completion(K::AnticNumberField, gen_img::qadic, prec=10; skip_map_inverse=false)
 
     p = prime(parent(gen_img))    
     Zx = PolynomialRing(FlintZZ, cached = false)[1]
@@ -614,3 +594,46 @@ function unramified_completion(K::AnticNumberField, gen_img::qadic; prec=10, ski
     return Kp, comp_map
 end
 
+#########################################################################################
+#
+#   Completions (plural)
+#
+#########################################################################################
+
+
+# Returns the unramified completions of $K$ over the prime $p$.
+function unramified_completions(K::AnticNumberField, p::fmpz, prec=10)
+
+    # TODO: The HenselCtx fails to properly detect the correct unramified completion
+    # if `K.pol mod p` is pathological.
+    
+    # TODO: This is the last bastion of the qAdicConj structure!
+    # Since in the unramified case we complete via factorizations, we first
+    # construct the roots data needed to define/sharpen the extension.
+    C = qAdicConj(K, Int(p))    
+    R = roots(C.C, prec)    
+    return [unramified_completion(K, rt, prec) for rt in R]
+end
+
+function unramified_completions(K::AnticNumberField, p, prec=10)
+    unramified_completions(K::AnticNumberField, FlintZZ(p), prec)
+end
+
+function ramified_completions(K::AnticNumberField, p, prec=10)
+    lp = prime_decomposition(maximal_order(K), p)
+    ramified_prime_ideals = [P[1] for P in lp if isramified(P)]
+
+    T = Array{EisensteinField, 1}
+    return T([Hecke.completion(K,P, precision) for P in ramified_prime_ideals])
+end
+
+function completions(K::AnticNumberField, p, prec=10)
+    
+    if isramified(maximal_order(K), p)
+        lp = prime_decomposition(maximal_order(K), p)
+        prime_ideals = [P[1] for P in lp]
+        return [completion(K,P,prec) for P in prime_ideals]
+    else
+        return unramified_completions(K, p, prec)
+    end
+end

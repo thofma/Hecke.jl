@@ -244,37 +244,39 @@ end
 # i.e, a factorization method is present in the unramified case.
 
 
-function embedding_classes(a, p, precision=10)
+
+function embedding_classes(a::nf_elem, p, prec=10)
     K = parent(a)
-
-    if any(isramified(maximal_order(K), p))
-        return embedding_classes_ramified(a, p, precision)
-    else
-        return embedding_classes_unramified(a, p, precision)
-    end
-end
-
-function embedding_classes_ramified(a::nf_elem, p, precision=10)
-    K = parent(a)
-    lp = prime_decomposition(maximal_order(K), p)
-    prime_ideals = [P[1] for P in lp]
-
-    completions = [Hecke.completion(K,P, prec=precision) for P in prime_ideals]
-    embeddings_up_to_equiv = [mp(a) for (field,mp) in completions]
+    comps = completions(K,p, prec)
+    embeddings_up_to_equiv = [mp(a) for (field,mp) in comps]
     return embeddings_up_to_equiv
 end
 
-function embedding_classes_unramified(a::nf_elem, p::fmpz, precision=10)
+function embedding_classes_unramified(a::nf_elem, p::fmpz, prec=10)
     K = parent(a)
-    completions = unramified_completions(K, p, prec=precision)
+    completions = unramified_completions(K, p, prec)
     embeddings_up_to_equiv = [mp(a) for (field, mp) in completions]
     
     return embeddings_up_to_equiv
 end
 
-function embedding_classes_unramified(a::nf_elem, p::Integer, precision=10)
-    embedding_classes_unramified(a, FlintZZ(p), precision)
+function embedding_classes_ramified(a::nf_elem, p::fmpz, prec=10)
+    K = parent(a)
+    completions = ramified_completions(K, p, prec)
+    embeddings_up_to_equiv = [mp(a) for (field, mp) in completions]
+    
+    return embeddings_up_to_equiv
 end
+
+
+function embedding_classes_unramified(a::nf_elem, p::Integer, prec=10)
+    embedding_classes_unramified(a, FlintZZ(p), prec)
+end
+
+function embedding_classes_ramified(a::nf_elem, p::Integer, prec=10)
+    embedding_classes_ramified(a, FlintZZ(p), prec)
+end
+
 
 #########################################################################################
 #
@@ -299,12 +301,12 @@ If {{{all = false}}}, then for each $P_i$ only one conjugate is returned, the ot
 xomputed using automorphisms (the Frobenius).
 If {{{flat = true}}}, then instead of the conjugates, only the $p$-adic coefficients are returned.
 """
-function local_conjugates(a::nf_elem, p::fmpz, precision=10)
-    return galois_orbit.(embedding_classes(a, p, precision))
+function local_conjugates(a::nf_elem, p::fmpz, prec=10)
+    return galois_orbit.(embedding_classes(a, p, prec))
 end
 
-function local_conjugates(a::nf_elem, p::Integer, precision=10)
-    return local_conjugates(a, fmpz(p), precision=precision)
+function local_conjugates(a::nf_elem, p::Integer, prec=10)
+    return local_conjugates(a, fmpz(p), prec)
 end
 
 
