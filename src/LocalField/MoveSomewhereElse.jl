@@ -60,11 +60,12 @@ function underdetermined_solve(A,b)
     M = hcat(A,-b)
     nu,N = nullspace(M)
 
-    display(N)
+    @info "" display(N)
 
+    # If a solution exists, one of the entries in the last column must be a unit.
     ind = 0
     for j=1:size(N,2)
-        if isone(N[size(N,1),j])
+        if isunit(N[size(N,1),j])
             ind=j
             break
         end

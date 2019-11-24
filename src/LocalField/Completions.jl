@@ -43,6 +43,7 @@ mutable struct RootSharpenCtx{T}
 
 end
 
+root(C::RootSharpenCtx) = C.root
 
 # Sharpen the root in the context to level `n`
 function sharpen_root!(ctx::RootSharpenCtx{T}, prec) where T<:NALocalFieldElem
@@ -401,12 +402,13 @@ function ramified_completion(K::NumField{T} where T, P::NfOrdIdl, prec=10; skip_
     
     img_nf_gen = let
         avec = matrix(FlintZZ, length(coeffs(a)), 1, coeffs(a))        
-        N = underdetermined_solve_first(local_basis_lift, avec)
+        #N = underdetermined_solve_first(local_basis_lift, avec)
+        N = solve(local_basis_lift, avec)
 
         sum(Y^i*delta_p^j * N[i*f + j + 1] for j=0:f-1 for i=0:e-1)
     end
 
-    @info "Printing nf gen image:" img_nf_gen
+    #@info "Printing nf gen image:" img_nf_gen
 
     # Cache the sharpening data in some way.
     DixCtx = DixonSharpenCtx(local_basis_lift,
@@ -436,6 +438,9 @@ function ramified_completion(K::NumField{T} where T, P::NfOrdIdl, prec=10; skip_
     
     #TODO: Move to proper tests
     # Sanity check the returns
+
+    #@info change_base_ring(Kp,K.pol)(embedding_map(gen(K)))
+    
     @assert iszero(change_base_ring(Kp,K.pol)(embedding_map(gen(K))))
     @assert lift_map(embedding_map(gen(K) + 1)) == gen(K) + 1
     return Kp, completion_map
@@ -554,7 +559,7 @@ function unramified_completion(K::AnticNumberField, gen_img::qadic, prec=10; ski
         
         # Lift the data from the residue field back to the number field.
         backward_sharpening_ctx = RootSharpenCtx{nf_elem}(f, a, b, p, 1)
-        sharpen_root!(backward_sharpening_ctx, 10)
+        sharpen_root!(backward_sharpening_ctx, prec)
 
 
         lift_map = function(x::qadic)
