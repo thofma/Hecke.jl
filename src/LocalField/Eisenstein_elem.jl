@@ -546,37 +546,6 @@ function coerce_down(a::FlintLocalField, b::FlintLocalFieldElem)
     return a(b)
 end
 
-####
-## Coercion for qadic fields (because FLINT didn't bother...)
-
-# TODO: The map should be a local field map type, not Any.
-const RegisteredQadicCoercions = Dict{Tuple{FlintQadicField, FlintQadicField}, Any}()
-
-function _create_qadic_coercion(a::FlintQadicField, b::FlintQadicField)
-    i = degree(a)
-    j = degree(b)
-    i > j && error("Coercion to qadic subfields not implemented.")
-    !divides(j,i)[1] && error("Degrees of qadic fields are incompatible for coercion.")
-    
-    if i==j
-        RegisteredQadicCoercions[a,b] = x->b(x)
-    else
-        f = defining_polynomial(a)
-        gen_img = roots(f, b)[1][1]
-        coerce_func = x->sum(gen_img^i*coeffs(x)[i+1] for i=0:degree(a)-1)
-        
-        RegisteredQadicCoercions[a,b] = coerce_func
-    end
-    return
-end
-
-# TODO: turn this into (a::FlintQadicField)(b::qadic) and move to NEMO.
-function coerce_up(a::FlintQadicField, b::qadic)
-    if !haskey(RegisteredQadicCoercions, (parent(b), a))
-        _create_qadic_coercion(parent(b), a)
-    end
-    return RegisteredQadicCoercions[parent(b), a](b)
-end
 
 ######
 # Ad hoc coercions (Needed as methods cannot be added to abstract types.)

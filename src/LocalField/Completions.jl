@@ -1,19 +1,5 @@
 export sharpen!, completion
     
-# Nemo fixes
-
-# Ensure the generator of a degree 1 extension is just 1.
-function unram_gen(Q::FlintQadicField)
-    return degree(Q)==1 ? one(Q) : gen(Q)
-end
-
-# Check to ensure that the balls around the centers of the specified elements
-# overlap.
-function error_balls_disjoint(a,b)
-    # We rely on the current FLINT implementation of `==`.
-    return a != b
-end
-
 #########################################################################################
 #
 #   Sharpening
@@ -56,6 +42,7 @@ mutable struct RootSharpenCtx{T}
     end
 
 end
+
 
 # Sharpen the root in the context to level `n`
 function sharpen_root!(ctx::RootSharpenCtx{T}, prec) where T<:NALocalFieldElem

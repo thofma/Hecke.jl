@@ -2,6 +2,9 @@ include("LocalField/pAdic.jl")
 include("LocalField/qAdic.jl")
 include("LocalField/Ring.jl")
 
+# Stuff that should honestly be somewhere else...
+include("LocalField/MoveSomewhereElse.jl")
+
 # New Eisenstein stuff.
 include("LocalField/EisensteinTypes.jl")
 include("LocalField/Eisenstein.jl")

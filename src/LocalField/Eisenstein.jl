@@ -309,36 +309,6 @@ function polynomial(a::eisf_elem)
 end
 
 
-@doc Markdown.doc"""
-    coeffs(f::AbstractAlgebra.Generic.MPolyElem, i::Integer)
-Return the coefficients of the polynomial with respect to the $i$-th variable.
-"""
-function coeffs(f::AbstractAlgebra.Generic.MPolyElem, i::Integer)
-    e_vecs = collect(exponent_vectors(f))
-    t_list = collect(terms(f))
-
-    m = gens(parent(f))[i]
-    D = Dict(e=>t for (e,t) in zip(e_vecs, t_list))
-    
-    max_j = maximum(e[i] for e in e_vecs)
-
-    output = AbstractAlgebra.Generic.MPolyElem[]
-    for j = 0:max_j
-        j_term_exps = filter(e-> e[i] == j, e_vecs)
-        push!(output, sum(divexact(D[e], m^j)  for e in j_term_exps))
-    end
-    return output
-end
-
-@doc Markdown.doc"""
-    coeffs(f::AbstractAlgebra.Generic.MPolyElem, m::AbstractAlgebra.Generic.MPolyElem)
-Return the coefficients of the polynomial with respect to the variable $m$.
-"""
-function coeffs(f::AbstractAlgebra.Generic.MPolyElem, m::AbstractAlgebra.Generic.MPolyElem)
-    i = findfirst(a->a==m, gens(parent(f)))
-    return coeffs(f, i)
-end
-
 ################################################################################
 #
 #  Unramified extension
