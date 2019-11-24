@@ -60,7 +60,7 @@ function underdetermined_solve(A,b)
     M = hcat(A,-b)
     nu,N = nullspace(M)
 
-    @info "" display(N)
+    #@info "" display(N)
 
     # If a solution exists, one of the entries in the last column must be a unit.
     ind = 0

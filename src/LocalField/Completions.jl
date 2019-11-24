@@ -367,6 +367,8 @@ function ramified_completion(K::NumField{T} where T, P::NfOrdIdl, prec=10; skip_
     # Lift the conway generator of the finite field to the number field.
     # TODO: We are actually forced to use a root of the Conway polynomial (lifted to ZZ).
     #       Thus, we need to use a RootSharpenCtx to define/sharpen the unramified extension.
+    #
+    # TODO: This code is a mess...
     conway_root_ctx = let
         BO = basis(max_order)
 
@@ -385,14 +387,14 @@ function ramified_completion(K::NumField{T} where T, P::NfOrdIdl, prec=10; skip_
             con_pol = polynomial(lift.(coefficients(con_pol)))(gen(parent(K.pol)))
         end
 
-        @info "" delta_appx typeof(delta_appx)
-
-        @info "" con_pol typeof(con_pol)
-        
-        @info "" typeof(map_coeffs(x->res(max_order(FlintZZ(x))), con_pol))
+        #@info "" delta_appx typeof(delta_appx)
+        #@info "" con_pol typeof(con_pol)        
+        #@info "" typeof(map_coeffs(x->res(max_order(FlintZZ(x))), con_pol))
         
         # Root derivative inverse approximation
-        rt_der_in_k = derivative(map_coeffs(x->res(max_order(FlintZZ(x))), con_pol))(res(delta_appx))
+        con_pol_sk = derivative(map_coeffs(x->res(max_order(FlintZZ(x))), con_pol))
+        rt_der_in_k = con_pol_sk(res(delta_appx))
+        
         b2 = matrix(coeffs(inv(rt_der_in_k)))
         y2 = underdetermined_solve_first(A,b2)
 
