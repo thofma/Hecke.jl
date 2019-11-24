@@ -365,7 +365,9 @@ function ramified_completion(K::NumField{T} where T, P::NfOrdIdl, prec=10; skip_
     Kp_unram = QadicField(p, f, prec)
 
     # Lift the conway generator of the finite field to the number field.
-    delta = let
+    # TODO: We are actually forced to use a root of the Conway polynomial (lifted to ZZ).
+    #       Thus, we need to use a RootSharpenCtx to define/sharpen the unramified extension.
+    conway_root_ctx = let
         BO = basis(max_order)
 
         A = matrix(coeffs.(res.(BO)))
@@ -373,28 +375,50 @@ function ramified_completion(K::NumField{T} where T, P::NfOrdIdl, prec=10; skip_
         y = underdetermined_solve_first(A,b)
 
         # This is the lift of the generator of the Qadic subfield of the completion.
-        sum([a*b for (a,b) in zip(BO,lift(y))])
+        delta_appx = K(sum([a*b for (a,b) in zip(BO,lift(y))]))
+
+        # Set up the root sharpen context with the Conway polynomial
+        con_pol = defining_polynomial(Kp_unram)
+        if degree(con_pol) == 1
+            con_pol = gen(parent(K.pol)) - 1
+        else
+            con_pol = polynomial(lift.(coefficients(con_pol)))(gen(parent(K.pol)))
+        end
+
+        # Root derivative inverse approximation
+        b2 = matrix(coeffs(inv(k(derivative(con_pol)(gen(Kp_unram))))))
+        y2 = underdetermined_solve_first(A,b2)
+
+        # This is the lift of the generator of the Qadic subfield of the completion.
+        root_der_appx = K(sum([a*b for (a,b) in zip(BO,lift(y2))]))
+        
+        RootSharpenCtx{typeof(delta_appx)}(con_pol, delta_appx, root_der_appx, p, 1)
     end
 
-    @info "" delta    
+    sharpen!(conway_root_ctx, prec)
+    delta = root(conway_root_ctx)
+    
     delta_p = unram_gen(Kp_unram)
-
+    @info "" Kp_unram delta delta_p
+    
     # Construct the integer matrix encoding coordinates with respect to pi, delta modulo P^N.
-    # Basis elements for the local field and the ideal P^prec
+    # Basis elements for the local field and the ideal P^(prec*e). This gives `prec` digits of
+    # precision on the ground field.
     BKp = [pi^i*delta^j for j=0:f-1 for i=0:e-1]
-    BPn = basis(P^prec)
+    BPn = basis(P^(prec*e))
     local_basis_lift = hcat(matrix(coordinates.(BKp)), matrix(coordinates.(BPn)))
 
     ##################################################
     # Build the completion structure.
     g = let
-        N = underdetermined_solve_first(local_basis_lift, -matrix([coordinates(pi^e)]))
+        #N = underdetermined_solve_first(local_basis_lift, -matrix([coordinates(pi^e)]))
+        N = solve(local_basis_lift, -matrix([coordinates(pi^e)]))
         RX,X = PolynomialRing(Kp_unram,"X")
         
         X^e + sum(X^i*delta_p^j * N[i*f + j + 1] for j=0:f-1 for i=0:e-1 )
     end
 
-    @info "" g
+    #@info "" g
     Kp, Y = EisensteinField(g,"_\$")
 
     ##################################################
