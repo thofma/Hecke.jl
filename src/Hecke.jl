@@ -232,6 +232,14 @@ function __init__()
   end
 end
 
+module Globals
+  using Hecke
+  const Qx, _ = PolynomialRing(FlintQQ, "x", cached = false)
+  const Zx, _ = PolynomialRing(FlintZZ, "x", cached = false)
+end
+using .Globals
+
+
 ################################################################################
 #
 #  Verbose printing and custom assertions
@@ -354,7 +362,7 @@ Base.adjoint(x) = transpose(x)
 #
 ################################################################################
 
-global VERSION_NUMBER = v"0.6.6"
+global VERSION_NUMBER = v"0.6.7"
 
 ######################################################################
 # named printing support

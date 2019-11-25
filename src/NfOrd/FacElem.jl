@@ -45,7 +45,7 @@ end
 function FacElem(x::nf_elem)
   z = FacElem{nf_elem, AnticNumberField}()
   z.fac[x] = fmpz(1)
-  z.parent = FacElemMon(parent(x))
+  z.parent = FacElemMon(parent(x)::AnticNumberField)::FacElemMon{AnticNumberField}
   return z
 end
 
@@ -53,7 +53,7 @@ function istorsion_unit(x::FacElem{T}, checkisunit::Bool = false, p::Int = 16) w
   @vprint :UnitGroup 2 "Checking if factored element is torsion\n"
 
   if checkisunit
-    _isunit(x) ? nothing : return false
+    _isunit(x) ? nothing : return false, p
   end
 
   K = base_ring(x)
@@ -318,7 +318,7 @@ function conjugates_arb_log_normalise(x::FacElem{nf_elem, AnticNumberField}, p::
   return c
 end
  
-function _conj_arb_log_matrix_normalise_cutoff(u::Array{T, 1}, prec::Int = 32) where T
+function _conj_arb_log_matrix_normalise_cutoff(u::Array{T, 1}, prec::Int = 32)::arb_mat where T
   z = conjugates_arb_log_normalise(u[1], prec)
   A = ArbMatSpace(parent(z[1]), length(u), length(z)-1, false)()
   for i=1:length(z)-1

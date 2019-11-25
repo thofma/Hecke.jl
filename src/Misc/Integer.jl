@@ -207,12 +207,14 @@ function modord(a::Integer, m::Integer)
 end
 
 
-function isodd(a::fmpz)
-  ccall((:fmpz_is_odd, :libflint), Int, (Ref{fmpz},), a) == 1
-end
+if Nemo.version() <= v"0.15.1"
+  function isodd(a::fmpz)
+    ccall((:fmpz_is_odd, :libflint), Int, (Ref{fmpz},), a) == 1
+  end
 
-function iseven(a::fmpz)
-  ccall((:fmpz_is_even, :libflint), Int, (Ref{fmpz},), a) == 1
+  function iseven(a::fmpz)
+    ccall((:fmpz_is_even, :libflint), Int, (Ref{fmpz},), a) == 1
+  end
 end
 
 function neg!(a::fmpz)

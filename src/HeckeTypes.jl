@@ -543,17 +543,17 @@ mutable struct FacElemMon{S} <: Ring
 
   function FacElemMon{AnticNumberField}(R::AnticNumberField, cached::Bool = true)
     if haskey(FacElemMonDict, R)
-      return FacElemMonDict[R]::FacElemMon{S}
+      return FacElemMonDict[R]::FacElemMon{AnticNumberField}
     end
     try
-      F = _get_fac_elem_mon_of_nf(R)
+      F = _get_fac_elem_mon_of_nf(R)::FacElemMon{AnticNumberField}
       return F
     catch e
       if !isa(e, AccessorNotSetError)
         rethrow(e)
       end
     end
-    z = new()
+    z = new()::FacElemMon{AnticNumberField}
     z.base_ring = R
     z.basis_conjugates_log = Dict{RingElem, Array{arb, 1}}()
     z.basis_conjugates = Dict{RingElem, Array{arb, 1}}()

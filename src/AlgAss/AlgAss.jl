@@ -1889,3 +1889,40 @@ function direct_product(fields::AnticNumberField...)
   A.maps_to_numberfields = [ (fields[i], maps_to_fields[i]) for i = 1:length(fields) ]
   return A, maps_to_fields
 end
+
+################################################################################
+#
+#  Quaternion algebras
+#
+################################################################################
+
+function quaternion_algebra(K::Field, a::T, b::T) where { T <: FieldElem }
+
+  M = zeros(K, 4, 4, 4)
+
+  M[1, 1, 1] = one(K) # 1*1=1
+  M[1, 2, 2] = one(K) # 1*i=i
+  M[1, 3, 3] = one(K) # 1*j=j
+  M[1, 4, 4] = one(K) # 1*ij=1
+
+  M[2, 1, 2] = one(K)
+  M[2, 2, 1] = a
+  M[2, 3, 4] = one(K)
+  M[2, 4, 3] = a
+
+  M[3, 1, 3] = one(K)
+  M[3, 2, 4] = -one(K)
+  M[3, 3, 1] = b
+  M[3, 4, 2] = -b
+
+  M[4, 1, 4] = one(K)
+  M[4, 2, 3] = -a
+  M[4, 3, 2] = b
+  M[4, 4, 1] = -a*b
+
+  return AlgAss(K, M, [ one(K), zero(K), zero(K), zero(K) ])
+end
+
+quaternion_algebra(K::Field, a::Int, b::Int) = quaternion_algebra(K, K(a), K(b))
+
+quaternion_algebra(a::Int, b::Int) = quaternion_algebra(FlintQQ, fmpq(a), fmpq(b))

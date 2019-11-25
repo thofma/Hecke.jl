@@ -140,7 +140,7 @@ function _unit_group_find_units_with_transform(u::UnitGrpCtx, x::ClassGrpCtx)
     @v_do :UnitGroup 2 popindent()
 
     @v_do :UnitGroup 2 pushindent()
-    time_add_dep_unit += @elapsed m = _add_dependent_unit(u, y)
+    time_add_dep_unit += @elapsed m = _add_dependent_unit(u, y)::Bool
     @v_do :UnitGroup 2 popindent()
 
     if !m
@@ -267,7 +267,7 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx)
       @v_do :UnitGroup 2 pushindent()
 
       if u.full_rank
-        time_add_dep_unit += @elapsed m = _add_dependent_unit(u, y)
+        time_add_dep_unit += @elapsed m = _add_dependent_unit(u, y)::Bool
         if m
           @vprint :UnitGroup 1 "improved reg, reg is $(regulator(u.units, 16))\n"
         end

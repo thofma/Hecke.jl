@@ -260,7 +260,7 @@ end
 function matrix_to_ideal(O::NfAbsOrd, M::fmpz_mat)
   f = charpoly(M)
   K = nf(O)
-  @assert K.pol == change_base_ring(base_ring(K.pol), f)
+  @assert K.pol == parent(K.pol)(f)
   result = zeros(K, degree(K))
   MK = change_base_ring(K, M) - gen(K)*identity_matrix(K, degree(K))
   _, B = nullspace(MK)
