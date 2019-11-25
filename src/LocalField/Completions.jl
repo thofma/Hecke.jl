@@ -20,7 +20,7 @@ mutable struct RootSharpenCtx{T}
     root_derivative_inv    # Basically, `1/f'(a)`.
     precision              # current precision of the root
 
-    function RootSharpenCtx{T}(polynomial, root::T) where T
+    function RootSharpenCtx{T}(polynomial, root::T) where T <: NALocalFieldElem
         ctx = new()
         ctx.polynomial = change_base_ring(FlintZZ, polynomial)
         ctx.field = parent(root)
@@ -30,7 +30,7 @@ mutable struct RootSharpenCtx{T}
         return ctx
     end
 
-    function RootSharpenCtx{nf_elem}(polynomial, root::nf_elem, rt_der_inv, prime, prec)
+    function RootSharpenCtx{T}(polynomial, root::T, rt_der_inv, prime, prec) where T
         ctx = new()
         ctx.polynomial = change_base_ring(FlintZZ, polynomial)
         ctx.field = parent(root)
@@ -38,10 +38,57 @@ mutable struct RootSharpenCtx{T}
         ctx.root  = root
         ctx.root_derivative_inv = rt_der_inv
         ctx.precision = prec
+
+        #@info "Before the struct is returned" polynomial typeof(polynomial)
         return ctx
     end
-
 end
+
+
+"""
+    RootSharpenCtx(polynomial, root_appx::nf_elem, res_mp, prime, prec)
+Given a polynomial `f`, and an approximate root such that `f(res_mp(root_appx)) = 0`,
+and maps to/from the residue ring, construct a RootSharpenContext that solves 
+`f(root_appx) = 0 mod P^n`, where `P` is the kernel of `res_mp: maximal_order(K) --> k`.
+
+The root is assumed to be simple in the residue ring.
+"""
+function RootSharpenCtx(R, f, root_appx, res_mp, prime, prec)
+
+    k = parent(root_appx)
+    BO = basis(R)
+
+    A = matrix(coeffs.(res_mp.(BO)))
+    b = matrix(coeffs(root_appx))
+
+    #@info A
+    y = underdetermined_solve_first(A,b) # should be solve(A,b) in the future.
+    @hassert :qAdic 1 A*b == y
+    
+    # This is the lift of the generator of the Qadic subfield of the completion.
+    root_appx_nf = sum([a*b for (a,b) in zip(BO,lift(y))])
+
+    # Root derivative inverse approximation
+    fp  = change_base_ring(k, f)
+    fps = derivative(fp)
+    rt_der_in_k = fps(root_appx)
+
+    b = matrix(coeffs(inv(rt_der_in_k)))
+    y = underdetermined_solve_first(A,b) # should be solve(A,b)
+    @hassert :qAdic 1 A*b == y
+    
+    
+    # This is the lift of the generator of the Qadic subfield of the completion.
+    root_der_appx = R(sum([a*b for (a,b) in zip(BO,lift(y))]))
+    
+    #@info "Before constructor call:" f typeof(f)
+    ctx = RootSharpenCtx{typeof(root_appx_nf)}(f, root_appx_nf, root_der_appx, prime, 1)
+    #@info "After constructor call:" f typeof(f)
+    
+    return ctx
+end
+
+
 
 root(C::RootSharpenCtx) = C.root
 
@@ -313,8 +360,6 @@ function setprecision!(a::eisf_elem, N)
     return a
 end
 
-                       
-
 function setprecision!(f::AbstractAlgebra.Generic.Poly{<:NALocalFieldElem}, N::Int)
   for i=1:length(f)
     setprecision!(f.coeffs[i], N)
@@ -367,41 +412,21 @@ function ramified_completion(K::NumField{T} where T, P::NfOrdIdl, prec=10; skip_
     # Lift the conway generator of the finite field to the number field.
     # TODO: We are actually forced to use a root of the Conway polynomial (lifted to ZZ).
     #       Thus, we need to use a RootSharpenCtx to define/sharpen the unramified extension.
-    #
-    # TODO: This code is a mess...
     conway_root_ctx = let
-        BO = basis(max_order)
-
-        A = matrix(coeffs.(res.(BO)))
-        b = matrix(coeffs(gen(k)))
-        y = underdetermined_solve_first(A,b)
-
-        # This is the lift of the generator of the Qadic subfield of the completion.
-        delta_appx = sum([a*b for (a,b) in zip(BO,lift(y))])
 
         # Set up the root sharpen context with the Conway polynomial
         con_pol = defining_polynomial(Kp_unram)
         if degree(con_pol) == 1
-            con_pol = gen(parent(K.pol)) - 1
+            con_pol = polynomial([fmpz(-1),fmpz(1)]) # x-1
         else
-            con_pol = polynomial(lift.(coefficients(con_pol)))(gen(parent(K.pol)))
+            con_pol = polynomial(lift.(coefficients(con_pol)))
         end
 
         #@info "" delta_appx typeof(delta_appx)
         #@info "" con_pol typeof(con_pol)        
         #@info "" typeof(map_coeffs(x->res(max_order(FlintZZ(x))), con_pol))
-        
-        # Root derivative inverse approximation
-        con_pol_sk = derivative(map_coeffs(x->res(max_order(FlintZZ(x))), con_pol))
-        rt_der_in_k = con_pol_sk(res(delta_appx))
-        
-        b2 = matrix(coeffs(inv(rt_der_in_k)))
-        y2 = underdetermined_solve_first(A,b2)
-
-        # This is the lift of the generator of the Qadic subfield of the completion.
-        root_der_appx = K(sum([a*b for (a,b) in zip(BO,lift(y2))]))
-        
-        RootSharpenCtx{typeof(K(delta_appx))}(con_pol, K(delta_appx), root_der_appx, p, 1)
+                
+        RootSharpenCtx(max_order, con_pol, gen(k), res, p, 1)
     end
 
     sharpen_root!(conway_root_ctx, prec)
@@ -574,11 +599,8 @@ function unramified_completion(K::AnticNumberField, gen_img::qadic, prec=10; ski
         end
 
         ####
-        # Block of mysterious code I understand poorly
+        # Construct a lift of the inverse of the derivative of the Conway root in the number field.
         #
-        # Construct the derivative of the Conway root in the number field.
-        #
-        # Update: Apparently, this is doing something spookier. 
         f = defining_polynomial(parent(gen_img), FlintZZ)
         fso = inv(derivative(f)(gen(R)))
         o = matrix(GF(p), d, 1, [coeff(fso, j-1) for j=1:d])
@@ -590,9 +612,15 @@ function unramified_completion(K::AnticNumberField, gen_img::qadic, prec=10; ski
 
         # End block of Claus' code.
         ####
-        
+
+        # Something incomprehensable happens when uncommented...
+        #g = deepcopy(f)
+        #@info "Before call:" f (f===g)        
+        #RootSharpenCtx_constructor(K, g, mR(gen_img), x->mR(embedding_map(x)), p, 1)
+        #@info "After return statement: " f typeof(f) f===g parent(f) f(0)
+
         # Lift the data from the residue field back to the number field.
-        backward_sharpening_ctx = RootSharpenCtx{nf_elem}(f, a, b, p, 1)
+        backward_sharpening_ctx = RootSharpenCtx{nf_elem}(f, a, b, p, 1)        
         sharpen_root!(backward_sharpening_ctx, prec)
 
 

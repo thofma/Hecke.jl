@@ -159,3 +159,13 @@ end
 function factor_dict(a::FacElem{nf_elem, AnticNumberField})
     return a.fac
 end
+
+
+function mod_sym!(a::NfAbsOrdElem, p)
+    mod_sym!(a.elem_in_nf, p)
+    if isassigned(a.coordinates)
+        @info "" a.coordinates
+        a.coordinates = [mod_sym!(c,p) for c in a.coordinates]
+    end
+    return a
+end
