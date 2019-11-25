@@ -54,10 +54,12 @@ function find_subgroups_cyclic_in_derived(L::Main.ForeignGAP.MPtr, i::Int, p::fm
   mH1 = GAP.Globals.NaturalHomomorphismByNormalSubgroup(target_grp, GAP.Globals.Image(proj, L[i]))
   G = GAP.Globals.ImagesSource(mH1)
   K = GAP.Globals.Kernel(mH1)
+  oK = GAP.Globals.Size(K)
   normal_cyclic_and_contained = Main.ForeignGAP.MPtr[]
   for i = 1:length(normal_subgroups)
     g = normal_subgroups[i]
-    if !GAP.Globals.IsSubgroup(K, g)
+    oG = GAP.Globals.Size(g)
+    if !GAP.Globals.IsSubgroup(K, g) || oG == oK
       continue
     end
     fg = GAP.Globals.FactorGroup(K, g)
