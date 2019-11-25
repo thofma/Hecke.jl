@@ -567,7 +567,7 @@ function unramified_completion(K::AnticNumberField, gen_img::qadic, prec=10; ski
         s = solve(m, o)
         @hassert :qAdic 1 m*s == o
 
-        # Construct the Conway root in the number field.
+        # Construct the Conway root approximation in the number field.
         a = K()
         for i=1:d
             _num_setcoeff!(a, i-1, lift(s[i,1]))

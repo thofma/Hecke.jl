@@ -151,3 +151,11 @@ function coerce_up(a::FlintQadicField, b::qadic)
     end
     return RegisteredQadicCoercions[parent(b), a](b)
 end
+
+
+#################
+# Hecke
+
+function factor_dict(a::FacElem{nf_elem, AnticNumberField})
+    return a.fac
+end
