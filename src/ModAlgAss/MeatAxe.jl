@@ -753,8 +753,8 @@ end
 
 function _submodules_direct_sum(gens::Vector{T}, N::ModAlgAss{S, T, V}) where {S, T, V}
   K = base_ring(N)
-  closures = [closure(x, N.action) for x in gens]
-  all_combinations = [_all_combinations(x) for x in closures]
+  closures = T[closure(x, N.action) for x in gens]
+  all_combinations = Vector{T}[_all_combinations(x) for x in closures]
   res = Vector{T}()
   for i = 1:length(gens)-1
     #I have to list all the elements that have 1 in the first component and all the possible elements in the other.
@@ -790,7 +790,6 @@ end
 Given a Fq[G]-module M, it returns all the minimal submodules of M
 """
 function minimal_submodules(M::ModAlgAss{S, T, V}, dim::Int=M.dimension+1, lf = Tuple{ModAlgAss{S, T, V}, Int}[]) where {S, T, V}
-  
   K = base_ring(M)
   n = dimension(M)
   if isone(M.isirreducible)
@@ -806,7 +805,11 @@ function minimal_submodules(M::ModAlgAss{S, T, V}, dim::Int=M.dimension+1, lf = 
     lf = composition_factors(M)
   end
   if isone(length(lf)) && isone(lf[1][2])
-    return T[identity_matrix(K, n)]
+    if dim >= n
+      return T[identity_matrix(K, n)]
+    else
+      return T[]
+    end
   end
   if dim != n+1
     lf = Tuple{ModAlgAss{S, T, V}, Int}[x for x in lf if x[1].dimension == dim]
