@@ -610,7 +610,7 @@ function ring_of_multipliers(a::NfAbsOrdIdl)
   n = degree(O)
   bmatinv = basis_mat_inv(a, copy = false)
   if isdefined(a, :gens) && length(a.gens) < n
-    B = a.gens
+    B = vcat(elem_type(O)[O(minimum(a))], a.gens)
   else
     B = basis(a, copy = false)
   end
@@ -645,7 +645,7 @@ function ring_of_multipliers(a::NfAbsOrdIdl)
   end
   hnf_modular_eldiv!(m, minimum(a, copy = false))
   mhnf = view(m, 1:n, 1:n)
-  s = prod(fmpz[mhnf[i,i] for i = 1:n])
+  s = prod_diagonal(mhnf)
   if isone(s)
     return O
   end
@@ -665,7 +665,7 @@ function ring_of_multipliers(a::NfAbsOrdIdl)
   if isdefined(O, :basis_mat_inv)
     O1.basis_mat_inv = O.basis_mat_inv * mhnf
   end
-  O1.primesofmaximality = O.primesofmaximality
+  O1.primesofmaximality = fmpz[ppp for ppp in O.primesofmaximality]
   return O1
 end
 
@@ -695,7 +695,123 @@ function factor_shape_refined(x::gfp_poly) where {T <: RingElem}
   return res
 end
 
-function pradical_frobenius1(O::NfOrd, p::Integer)
+function new_pradical_frobenius1(O::NfOrd, p::Int)
+  R = GF(p, cached = false)
+  d = degree(O)
+  K = nf(O)
+  Rx = PolynomialRing(R, "x", cached = false)[1]
+  res = factor_shape_refined(Rx(K.pol))
+  md = 1
+  for i = 1:length(res)
+    md = max(md, res[i][2])
+  end
+  j = clog(fmpz(md), p)
+  sqf = factor_squarefree(Rx(K.pol))
+  p1 = one(Rx)
+  for (x, v) in sqf
+    if v > 1
+      p1 = mul!(p1, p1, x)
+    end
+  end
+  gen2 = O(lift(K, p1))
+  M1 = representation_matrix_mod(gen2, fmpz(p))
+  hnf_modular_eldiv!(M1, fmpz(p), :lowerleft)
+  powers = Dict{Int, Vector{fmpz}}()
+  gens = NfOrdElem[O(p), gen2]
+  B = basis(O, copy = false)
+  it = 0
+  while true
+    if it == j
+      I = ideal(O, M1)
+      reverse!(gens)
+      I.gens = gens
+      I.minimum = fmpz(p)
+      return I
+    end
+    it += 1
+    indices = Int[]
+    for i = 1:d
+      if !isone(M1[i, i])
+        push!(indices, i)
+      end
+    end
+    nr = length(indices)
+    A = zero_matrix(R, d, nr + d)
+    ind = 0
+    for i in 1:d
+      if !(i in indices)
+        continue
+      end
+      ind += 1
+      if haskey(powers, i)
+        ar = copy(powers[i])
+        for k in 1:d
+          A[k, ind] = ar[k]
+        end
+      else
+        t = powermod(B[i], p, p)
+        ar = coordinates(t, copy = true)
+        powers[i] = copy(ar)
+        if iszero(t)
+          continue
+        end
+        for k in 1:d
+          A[k, ind] = R(ar[k])
+        end
+      end
+    end
+    for s = 1:d
+      for i = 1:s
+        A[i, s+nr] = R(M1[s, i])
+      end
+    end
+    X = right_kernel_basis(A)
+    if isempty(X)
+      I = ideal(O, M1)
+      reverse!(gens)
+      I.gens = gens
+      I.minimum = fmpz(p)
+      return I
+    end
+    #First, find the generators
+    new_gens = Vector{NfOrdElem}()
+    for i = 1:length(X)
+      coords = zeros(FlintZZ, d)
+      for j=1:nr
+        coords[indices[j]] = lift(X[i][j])
+      end
+      if !iszero(coords)
+        new_el = O(coords)
+        push!(new_gens, new_el)
+      end
+    end
+    if iszero(length(new_gens))
+      I = ideal(O, M1)
+      reverse!(gens)
+      I.gens = gens
+      I.minimum = fmpz(p)
+      return I
+    end
+    #Then, construct the basis matrix of the ideal
+    m1 = zero_matrix(FlintZZ, length(new_gens) + d, d)
+    for i = 1:length(new_gens)
+      el = coordinates(new_gens[i], copy = true)
+      for j = 1:nr
+        m1[i, indices[j]] = el[indices[j]]
+      end
+    end
+    for i = 1:d
+      for s = 1:i
+        m1[i+length(new_gens), s] = M1[i, s]
+      end
+    end
+    hnf_modular_eldiv!(m1, fmpz(p), :lowerleft)
+    M1 = sub(m1, length(new_gens)+1:nrows(m1), 1:d)
+    append!(gens, new_gens)
+  end
+end
+
+function pradical_frobenius1(O::NfOrd, p::Int)
   R = GF(p, cached = false)
   d = degree(O)
   K = nf(O)
@@ -842,6 +958,7 @@ function pradical_trace1(O::NfOrd, p::Union{Integer, fmpz})
   return I
 end
 
+
 function pradical1(O::NfOrd, p::Union{Integer, fmpz})
   if p isa fmpz && fits(Int, p)
     return pradical1(O, Int(p))
@@ -856,7 +973,9 @@ function pradical1(O::NfOrd, p::Union{Integer, fmpz})
   if p > d
     return pradical_trace1(O, p)
   else
-    return pradical_frobenius1(O, p)
+    res1 = new_pradical_frobenius1(O, p)
+    @hassert :NfOrd 1 res1 == pradical_frobenius1(O, p)
+    return res1
   end
 end
 

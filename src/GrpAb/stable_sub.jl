@@ -2,6 +2,7 @@
 export stable_subgroups
 
 add_verbose_scope(:StabSub)
+add_assert_scope(:StabSub)
 
 ###############################################################################
 #
@@ -22,10 +23,7 @@ end
 #
 
 function lift(M::fq_nmod_mat, R::Nemo.NmodRing)
-
-  x=factor(fmpz(R.n))
-  @assert length(x.fac)==1
-  @assert order(parent(M[1,1]))==first(keys(x.fac))
+  @hassert :StabSub isprime_power(modulus(R))
   N=zero_matrix(R,nrows(M),ncols(M))
   for i=1:nrows(M)
     for j=1:ncols(M)
@@ -33,14 +31,10 @@ function lift(M::fq_nmod_mat, R::Nemo.NmodRing)
     end
   end
   return N
-  
 end
 
 function lift(M::gfp_mat, R::Nemo.NmodRing)
-  
-  x=factor(fmpz(R.n))
-  @assert length(x.fac)==1
-  @assert order(parent(M[1,1]))==first(keys(x.fac))
+  @hassert :StabSub isprime_power(modulus(R))
   N=zero_matrix(R, nrows(M), ncols(M))
   for i=1:nrows(M)
     for j=1:ncols(M)
@@ -48,57 +42,36 @@ function lift(M::gfp_mat, R::Nemo.NmodRing)
     end
   end
   return N
-
 end
 
-#
 #  Action of a matrix on an element of the group
-#
-
 function *(x::GrpAbFinGenElem, M::nmod_mat)
-
-  G=parent(x)
-  @assert ngens(G)==nrows(M)
-  R=parent(M[1,1]) 
-  coeff=zero_matrix(R,1,ncols(M))
-  for i=1:ncols(M)
-    coeff[1,i]=x.coeff[1,i]
-  end
-  y=coeff*M
+  G = parent(x)
+  @assert ngens(G) == nrows(M)
+  R = base_ring(M)
+  coeff = map_entries(R, x.coeff)
+  y = coeff*M
   l = lift(y)
-  l.base_ring = FlintZZ # TODO: Remove this once Nemo is updated
   return G(l)
 end
 
 
-#
 #  Smith Normal Form for a ZpnGModule
-#
-
-
 function Nemo.snf(M::ZpnGModule)
-
-  A=M.V
-  G=M.G
+  A = M.V
+  G = M.G
   if issnf(A)
     return M, id_hom(A)
   end
-  S,mS=snf(A)
-  W=[mS(s) for s in gens(S)]
-  R=M.R
-  H=Array{nmod_mat,1}(undef, length(G))
+  R = base_ring(M)
+  S, mS = snf(A)
+  image_mS = map_entries(R, mS.map)
+  preimage_mS = map_entries(R, mS.imap)
+  H = Array{nmod_mat,1}(undef, length(G))
   for i=1:length(G)
-    N=zero_matrix(R, ngens(S),ngens(S))
-    for j=1:length(W)
-      y=mS\(W[j]*G[i])
-      for k=1:ngens(S)
-        N[j,k]=y.coeff[1,k]
-      end
-    end
-    H[i]=N
+    H[i] = image_mS*G[i]*preimage_mS
   end
-  return ZpnGModule(S,H), mS
-    
+  return ZpnGModule(S, H), mS
 end
 
 function isstable(act::Array{T, 1}, mS::GrpAbFinGenMap) where T <: Map{GrpAbFinGen, GrpAbFinGen} 
@@ -119,7 +92,7 @@ end
 function issubmodule(M::ZpnGModule, S::nmod_mat)
   
   #@assert issnf(M.V)
-  s, ms=subm_to_subg(M, S)
+  s, ms = submodule_to_subgroup(M, S)
   for x in gens(s)
     el=ms(x)
     for g in M.G
@@ -138,14 +111,14 @@ end
 
 function action(V::GrpAbFinGen, act::Array{T,1}) where T<: Map{GrpAbFinGen, GrpAbFinGen} 
 
-  expon=Int(exponent(V))
-  @assert length(factor(order(V)).fac)==1
-  RR=ResidueRing(FlintZZ, expon, cached=false)
-  act_mat=Array{nmod_mat,1}(undef, length(act))
+  expon = Int(exponent(V))
+  @hassert :StabSub 1 length(factor(order(V)).fac)==1
+  RR = ResidueRing(FlintZZ, expon, cached=false)
+  act_mat = Array{nmod_mat,1}(undef, length(act))
   for z = 1:length(act)
-    A =zero_matrix(RR, ngens(V), ngens(V))
+    A = zero_matrix(RR, ngens(V), ngens(V))
     for i = 1:ngens(V)
-      y=act[z](V[i])
+      y = act[z](V[i])
       for j=1:ngens(V)
         A[i,j]=y.coeff[1,j]
       end
@@ -192,20 +165,17 @@ function dual_module(M::ZpnGModule)
 end
 
 function _dualize(M::nmod_mat, V::GrpAbFinGen, v::Array{fmpz,1})    
-  #
   #  First, compute the kernel of the corresponding homomorphisms
-  # 
-  K=DiagonalGroup([V.snf[end] for j=1:nrows(M)])
-  A=lift(transpose(M))
+  K = DiagonalGroup(fmpz[V.snf[end] for j=1:nrows(M)])
+  A = lift(transpose(M))
   for j=1:nrows(A)
     for k=1:ncols(A)
-      A[j,k]*=v[j]
+      A[j, k] *= v[j]
     end
   end 
-  mH=Hecke.GrpAbFinGenMap(V,K,A)
-  newel=kernel_as_submodule(mH)
+  mH = Hecke.GrpAbFinGenMap(V, K, A)
+  newel = kernel_as_submodule(mH)
   return change_base_ring(base_ring(M), newel)
-
 end
 
 function _dualize_1(M::nmod_mat, snf_struct::Array{fmpz,1})
@@ -269,6 +239,9 @@ end
 
 function sub(M::ZpnGModule, n::Int)
   
+  if issnf(M.V)
+    return _sub_snf(M, n)
+  end
   sg,msg=sub(M.V, n, false)
   G=Array{nmod_mat,1}(undef, length(M.G))
   for k=1:length(M.G)
@@ -284,6 +257,23 @@ function sub(M::ZpnGModule, n::Int)
   end
   return ZpnGModule(sg,G), msg
   
+end
+
+function _sub_snf(M::ZpnGModule, n::Int)
+  V = M.V
+  nfmpz = fmpz(n)
+  ind = 1
+  while V.snf[ind] <= nfmpz
+    ind += 1
+  end
+  invariants = Vector{fmpz}(undef, length(V.snf)-ind+1)
+  for i = ind:length(V.snf)
+    invariants[i-ind+1] = divexact(V.snf[i], n)
+  end
+  Gnew = DiagonalGroup(invariants)
+  action = nmod_mat[sub(x, ind:ngens(V), ind:ngens(V)) for x in M.G]
+  mGnew = hom(Gnew, M.V, [n*M.V[i] for i = ind:ngens(M.V)], check = true)
+  return ZpnGModule(Gnew, action), mGnew
 end
 
 
@@ -310,8 +300,8 @@ function _exponent_p_sub(M::ZpnGModule)
   
 end
 
-function subm_to_subg(M::ZpnGModule, S::nmod_mat; op=sub)
-  return op(M.V, lift(S))
+function submodule_to_subgroup(M::ZpnGModule, S::nmod_mat)
+  return sub(M.V, lift(S), false)
 end
 
 
@@ -502,7 +492,7 @@ function submodules_all(M::ZpnGModule)
   #
   
   for x in minlist
-    N, _ = quo(S,x)
+    N, _ = quo(S, x)
     newlist = submodules_all(N)
     for y in newlist
       push!(list,vcat(y,x))
@@ -616,18 +606,17 @@ function _submodules_with_struct_main(M::ZpnGModule, typesub::Array{Int,1})
     list1 = nmod_mat[]
     new_typesub1 = _update_typesub(new_typesub)
     diag = typesub - new_typesub1
-    Gtest = snf(DiagonalGroup([p^x for x in diag]))[1]
+    Gtest = snf(DiagonalGroup(Int[p^x for x in diag]))[1]
     for x in list  
       L, _ = quo(M, x)
       newlist = _submodules_with_struct(L, new_typesub)
-      
       for s = 1:length(newlist)
         newlist[s] = vcat(newlist[s], x)
       end
       #First, I sieve for the subgroups with the correct structure.
       for s = 1:length(newlist)
-        t, mt = subm_to_subg(M, newlist[s])
-        if isisomorphic(t, Gtest)
+        t, mt = submodule_to_subgroup(M, newlist[s])
+        if _special_is_isomorphic(t, Gtest)
           push!(list1, newlist[s])
         end
       end
@@ -640,6 +629,13 @@ function _submodules_with_struct_main(M::ZpnGModule, typesub::Array{Int,1})
     list = list1
   end
   return list
+end
+
+function _special_is_isomorphic(G::GrpAbFinGen, Gtest::GrpAbFinGen)
+  mat = hnf_modular_eldiv(G.rels, exponent(Gtest))
+  mm = snf(mat)
+  inv = fmpz[mm[i, i] for i = 1:ncols(mm) if !isone(mm[i, i])]
+  return inv == Gtest.snf
 end
 
 function _submodules_with_struct(M::ZpnGModule, typesub::Array{Int, 1})
@@ -661,7 +657,7 @@ function _submodules_with_struct(M::ZpnGModule, typesub::Array{Int, 1})
   #
 
   list1 = Array{nmod_mat, 1}(undef, length(submod))
-  v = [divexact(S.V.snf[i], M.p) for i = 1:ngens(S.V)]
+  v = fmpz[divexact(S.V.snf[i], M.p) for i = 1:ngens(S.V)]
   for i = 1:length(submod)
     @inbounds list1[i] = lift(submod[i], R)
     for j = 1:nrows(list1[i])
@@ -765,7 +761,7 @@ function submodules_order(M::ZpnGModule, ord::Int)
           A[s,t]*=v[t]
         end
       end
-      L, _=quo(S,A)
+      L, _=quo(S, A, false)
       newlist=Hecke.submodules_order(L,ord-i)
       for z=1:length(newlist)
         push!(list,vcat(newlist[z],A))
@@ -794,7 +790,7 @@ function submodules_order(M::ZpnGModule, ord::Int)
   
   minlist=minimal_submodules(N,ord, lf)
   for x in minlist
-    push!(list, vcat([W((mS( S.V([FlintZZ(coeff(x[k,i],0))*((M.p)^(v[i]-1)) for i=1:ngens(S.V)]))).coeff) for k=1:nrows(x) ]))
+    push!(list, vcat([W((mS( S.V(fmpz[FlintZZ(coeff(x[k,i],0))*((M.p)^(v[i]-1)) for i=1:ngens(S.V)]))).coeff) for k=1:nrows(x) ]))
   end
   return (x for x in list)
   
@@ -807,7 +803,7 @@ end
 ###############################################################################
 
 function submodules_with_quo_struct(M::ZpnGModule, typequo::Array{Int,1})
-  
+
   R = base_ring(M)
   p = M.p 
   S, mS = snf(M)
@@ -834,7 +830,7 @@ function submodules_with_quo_struct(M::ZpnGModule, typequo::Array{Int,1})
   #
   #  Dualize the modules
   #
-  v = [divexact(S.V.snf[end],S.V.snf[j]) for j=1:ngens(S.V) ]
+  v = fmpz[divexact(S.V.snf[end],S.V.snf[j]) for j=1:ngens(S.V) ]
   list = (_dualize(x, S.V, v) for x in candidates) 
    
   #
@@ -875,13 +871,13 @@ function stable_subgroups(R::GrpAbFinGen, act::Array{T, 1}; op = sub, quotype::A
     DG = DiagonalGroup(quotype)
     quotype = map(Int, snf(DG)[1].snf)
   end
-  c = lcm(quotype[end], Int(order(R)))
+  c = lcm(quotype[end], Int(exponent(R)))
   Q, mQ = quo(R, c, false)
-  lf = factor(order(Q)).fac
+  lf = factor(exponent(Q)).fac
   list = []
   for p in keys(lf)
     
-    x1 = valuation(lcm(quotype[end], Int(order(R))), p)
+    x1 = valuation(c, p)
     if iszero(x1)
       continue
     end
@@ -938,7 +934,7 @@ function stable_subgroups(R::GrpAbFinGen, act::Array{T, 1}; op = sub, quotype::A
       push!(list, it)
 
     else    
-    
+      
       RR = ResidueRing(FlintZZ, Int(p)^x1, cached=false)
       act_mat1 = Array{nmod_mat,1}(undef, length(act))
       auxmat1 = hcat(mG.map', rels(Q)')
@@ -975,7 +971,7 @@ function stable_subgroups(R::GrpAbFinGen, act::Array{T, 1}; op = sub, quotype::A
           plist = submodules(M1)
         end
       end
-      it = (_lift_and_construct(x, mQ, mG, mS, lcm(quotype[end], Int(order(R)))) for x in plist)
+      it = (_lift_and_construct(x, mQ, mG, mS, lcm(quotype[end], Int(exponent(R)))) for x in plist)
       push!(list, it)
     end
   end

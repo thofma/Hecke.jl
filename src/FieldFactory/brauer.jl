@@ -25,17 +25,16 @@ function check_Brauer_obstruction(list::Vector{FieldsTower}, L::Main.ForeignGAP.
       #The extension is not cyclic. I need to search for a normal cyclic subextension.
       #I list the subgroup of the derived subgroup, sieve for the one that are normal in the entire group
       #and then take the maximal ones. I need to check all of them.
-      @show "here!"
+
       subs, target_grp = find_subgroups_cyclic_in_derived(L, i, p)
-      @show subs, target_grp
       for i = 1:length(subs)
         new_target = GAP.Globals.FactorGroup(target_grp, subs[i])
         L1 = GAP.Globals.DerivedSeries(new_target)
         order = divexact(prod(invariants), GAP.gap_to_julia(Int, GAP.Globals.Size(subs[i])))
         if order == p
-          list =  _Brauer_prime_case(list, L1, length(L)-1, Int(p))
+          list =  _Brauer_prime_case(list, L1, length(L1)-1, Int(p))
         else
-          list = check_Brauer_obstruction_pp(list, L1, length(L)-1, Int(p), Int(valuation(order, p)))
+          list = check_Brauer_obstruction_pp(list, L1, length(L1)-1, Int(p), Int(valuation(order, p)))
         end
       end
     end

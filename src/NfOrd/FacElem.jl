@@ -99,8 +99,8 @@ function istorsion_unit(x::FacElem{T}, checkisunit::Bool = false, p::Int = 16) w
   error("precision was not sufficient")
 end
 
-function factored_norm(x::FacElem{nf_elem})
-  b = fmpz[]
+function factored_norm(x::FacElem{nf_elem, AnticNumberField})
+  b = fmpq[]
   c = fmpz[] 
   for (a, e) in x.fac
     n = norm(a)
@@ -116,9 +116,9 @@ function factored_norm(x::FacElem{nf_elem})
     end
   end
   if length(b) == 0
-    push!(b, fmpz(1))
+    push!(b, fmpq(1))
     push!(c, 0)
-  end
+  end 
   f = FacElem(b, c)
   simplify!(f)
   return f
