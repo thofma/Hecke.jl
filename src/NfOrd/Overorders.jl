@@ -374,7 +374,7 @@ function _minimal_poverorders_in_ring_of_multipliers(O, P, excess = Int[0], use_
 
 
   if iszero(length(autos))
-    subs = subgroups(A, subtype = [Int(p)^f], fun = (G, z) -> sub(G, z, false))
+    subs = subgroups(A, subtype = [Int(p) for i = 1:f], fun = (G, z) -> sub(G, z, false))
   else
     subs = stable_subgroups(A, autos, minimal = true, op = (G, z) -> sub(G, z, false))
   end
@@ -489,15 +489,6 @@ function _minimal_poverorders_at_2(O, P, excess = Int[])
   push!(autos, induce(mA, x -> x^2))
 
   filter!(x -> !iszero(x.map), autos)
-
-  if iszero(length(autos))
-    subs = subgroups(A, subtype = [2], fun = (G, z) -> sub(G, z, false))
-  else
-    R = GF(2)
-    V = ModAlgAss([change_base_ring(R, l.map) for l in autos])
-    subm = minimal_submodules(V, f)
-    subs = (sub(A, lift(x), false) for x in subm)
-  end
   
   potential_basis = Vector{elem_type(K)}(undef, d)
 
@@ -506,6 +497,63 @@ function _minimal_poverorders_at_2(O, P, excess = Int[])
     potential_basis[i] = mA.bottom_snf_basis[i]
   end
 
+  if iszero(length(autos))
+    subs = subgroups(A, subtype = [2 for i = 1:f], fun = (G, z) -> sub(G, z, false))
+  else
+    R = GF(2)
+    V = ModAlgAss([change_base_ring(R, l.map) for l in autos])
+    subm = minimal_submodules(V, f)
+    subs = (sub(A, lift(x), false) for x in subm)
+  end
+
+  lQ = prime_ideals_over(M, P)
+  rel_fs = fmpz[divexact(valuation(norm(Q), 2), f) for Q in lQ]
+  fac = factor(lcm(rel_fs))
+  for (q, _) in fac
+    if q == 2
+      continue
+    else
+      if iszero(length(autos))
+        subs1 = subgroups(A, subtype = [2 for i = 1:Int(f)*(Int(q) - 1)], fun = (G, z) -> sub(G, z, false))
+      else
+        R = GF(2)
+        V = ModAlgAss([change_base_ring(R, l.map) for l in autos])
+        subm1 = submodules(V, dimension(V)-Int(f)*(Int(q) - 1))
+        subs1 = (sub(A, lift(x), false) for x in subm1)
+      end
+      for s in subs1
+        T = image(s[2], false)
+        G = domain(T[2])
+        new_element = 0
+        for i in 1:(d - offset)
+          v = T[2](G[i]).coeff
+          if iszero(v)
+            potential_basis[i + offset] = mA.bottom_snf_basis[i + offset]
+          else
+            @assert ncols(v) == d - offset
+            potential_basis[i + offset] = sum(v[1, j] * mA.top_snf_basis[j + offset] for j in 1:(d - offset))
+            new_element = i + offset
+          end
+        end
+        @assert new_element != 0
+        b, bL = defines_order(K, potential_basis)
+        if !b
+          excess[] = excess[] + 1
+          continue
+        end
+        L = Order(K, bL, check = false, cached = false)
+        lQL = prime_ideals_over(L, P)
+        if length(lQL) == 1 && norm(lQL[1]) == norm(P)^q
+          push!(orders, L)
+        end
+      end
+    end
+  end
+  
+  if !(2 in fac) && length(lQ) == 1 && norm(P)^rel_fs[1] == order(A)
+    return orders
+  end
+  
   for s in subs
     T = image(s[2], false)
     G = domain(T[2])
@@ -525,6 +573,8 @@ function _minimal_poverorders_at_2(O, P, excess = Int[])
     L = Order(K, bL, check = false, cached = false)
     push!(orders, L)
   end
+  
+  
   return orders
 end
 

@@ -302,6 +302,7 @@ function _preproc(p::NfOrdIdl, elems::Array{FacElem{nf_elem, AnticNumberField},1
   return newelems
 end
 
+
 function _powmod(a::nf_elem, i::Int, p::fmpz)
   if iszero(i)
     return one(parent(a))
