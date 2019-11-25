@@ -268,17 +268,7 @@ end
 #
 ###############################################################################
 
-function _Brauer_at_two(list::Vector{FieldsTower}, L::Main.ForeignGAP.MPtr, i::Int)
-  mH, autos, _cocycle_values = cocycle_computation(L, i)
-  domcoc = GAP.Globals.ImagesSource(mH)
-  admit_ext = falses(length(list))
-  for t = 1:length(list)
-    @vprint :Fields 1 "$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())Fields to test: $(length(list)-t+1)"
-    admit_ext[t] = _Brauer_no_extend(list[t], mH, autos, _cocycle_values, domcoc, 2)
-  end
-  @vprint :Fields 1 "$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())"
-  return list[findall(admit_ext)]
-end
+
 
 ###############################################################################
 #
@@ -300,6 +290,19 @@ function assure_automorphisms(K::AnticNumberField, gens::Vector{NfToNfMor})
     _set_automorphisms_nf(K, auts)
   end
   return nothing
+end
+
+function _Brauer_at_two(list::Vector{FieldsTower}, L::Main.ForeignGAP.MPtr, i::Int)
+  mH, autos, _cocycle_values = cocycle_computation(L, i)
+  domcoc = GAP.Globals.ImagesSource(mH)
+  admit_ext = falses(length(list))
+  for t = 1:length(list)
+    @vprint :Fields 1 "$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())Fields to test: $(length(list)-t+1)"
+    assure_automorphisms(list[t])
+    admit_ext[t] = _Brauer_no_extend(list[t], mH, autos, _cocycle_values, domcoc, 2)
+  end
+  @vprint :Fields 1 "$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())"
+  return list[findall(admit_ext)]
 end
 
 

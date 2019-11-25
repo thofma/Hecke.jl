@@ -862,7 +862,6 @@ Given a group R, an array of endomorphisms of the group and the type of the quot
 subgroups of R such that the corresponding quotient has the required type.
 """
 function stable_subgroups(R::GrpAbFinGen, act::Array{T, 1}; op = sub, quotype::Array{Int,1}=Int[-1], minimal::Bool = false) where T <: Map{GrpAbFinGen, GrpAbFinGen} 
-
   if quotype[1] != -1 && minimal
     error("Cannot compute minimal submodules with prescribed quotient type")
   end
