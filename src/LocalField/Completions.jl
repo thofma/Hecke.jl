@@ -420,66 +420,46 @@ end
 return ctx
 =#
 
-# This function returns a root data context which lifts a root of a polynomial
-# over a finite field to the number field (non-canonicall). Generally, we use
-# this method for lifting the root of a Conway polynomial.
-#
-# The function requires a basis of *some* order of the number field surjecting
-# onto the residue field.
-#
+#=
+    _root_ctx_for_number_field(basis, basis_img, f, ff_root, prime, prec)
+
+Given a `basis` for some order in a number field, mapping to `basis_img` in the parent
+of `ff_root`, a polynomial `f` such that `f(ff_root) == 0`, a `prime` and a precision `prec`,
+returns a RootSharpenCtx for solving `f(a) = 0 mod P^n` in the number field.
+
+=#
 function _root_ctx_for_number_field(basis, basis_img, f, ff_root, prime, prec)
 
     k = parent(ff_root)
     d = degree(k)
     
     # Solve a linear system to figure out how to express the root of the
-    # Conway Polynomial defining the completion in terms of the image of the
-    # primitive element of the number field $K$.
-
-    # A = matrix(GF(prime), d, length(basis), hcat([coordinates(b)[1:d] for b in basis]...))
-    # ...is incorrect. One needs to compute the image of the basis under the residue map.
-    # This is not the same as reducing the coefficients modulo `p`.
-    
+    # polynomial defining the completion in terms of the image of the basis.
     a_entries = hcat(coeffs.(basis_img)...)    
     A = matrix(a_entries)
-    b = matrix(GF(Int64(prime)), d, 1, [coeff(ff_root, j-1) for j=1:d]) #Finite field types...
 
-    #@info "" b typeof(b)
-
-    y = underdetermined_solve_first(A, b)
-    @hassert :qAdic 1 A*y == b
-
-    # Lift the root approximation to the number field using the basis.
-
-    lift_to_nf = sum([a*b for (a,b) in zip(basis, lift(y))])
+    lift_to_nf = let        
+        b = matrix(GF(Int64(prime)), d, 1, [coeff(ff_root, j-1) for j=1:d]) #Finite field types...
+        #@info "" b typeof(b)
+        y = underdetermined_solve_first(A, b)
+        @hassert :qAdic 1 A*y == b
+        
+        lift_to_nf = sum([a*b for (a,b) in zip(basis, lift(y))])
+    end
     
-    ####
-    # Construct a lift of the inverse of the derivative of the Conway root in the number field.
-    #
-    fso = inv(derivative(f)(ff_root))
-    b = matrix(GF(Int64(prime)), d, 1, [coeff(fso, j-1) for j=1:d])
-    z = underdetermined_solve_first(A, b)
-    @assert A*z == b
-    
-    invder_in_nf = sum([a*b for (a,b) in zip(basis, lift(z))])
-    
+    invder_in_nf = let
+        fso = inv(derivative(f)(ff_root))
+        b = matrix(GF(Int64(prime)), d, 1, [coeff(fso, j-1) for j=1:d])
+        z = underdetermined_solve_first(A, b)
+        @assert A*z == b
+        
+        sum([a*b for (a,b) in zip(basis, lift(z))])
+    end
     #@info "" f f(ff_root) invder_in_nf*derivative
-
-    # End block of Claus' code.
-    ####
-
-    # Something incomprehensable happens when uncommented...
-    #g = deepcopy(f)
-    #@info "Before call:" f (f===g)        
-    #RootSharpenCtx_constructor(K, g, mR(gen_img), x->mR(embedding_map(x)), p, 1)
-    #@info "After return statement: " f typeof(f) f===g parent(f) f(0)
 
     # Lift the data from the residue field back to the number field.
     T = typeof(lift_to_nf)
-
-    @info "" T
-    ctx = RootSharpenCtx{T}(f, lift_to_nf, invder_in_nf, prime, 1)        
-
+    ctx = RootSharpenCtx{T}(f, lift_to_nf, invder_in_nf, prime, 1)
     return ctx
 
 end
@@ -530,8 +510,8 @@ function generic_completion(K::NumField{T} where T, P::NfOrdIdl, prec=10; skip_m
     Kp_unram = QadicField(p, f, prec)
     
     # Lift the conway generator of the finite field to the number field.
-    # TODO: We are actually forced to use a root of the Conway polynomial (lifted to ZZ).
-    #       Thus, we need to use a RootSharpenCtx to define/sharpen the unramified extension.
+    # We are actually forced to use a root of the Conway polynomial (lifted to ZZ).
+    # Thus, we need to use a RootSharpenCtx to define/sharpen the unramified extension.
 
     # Set up the root sharpen context with the Conway polynomial
 
@@ -548,29 +528,15 @@ function generic_completion(K::NumField{T} where T, P::NfOrdIdl, prec=10; skip_m
     B = basis(max_order)
     conway_root_ctx = _root_ctx_for_number_field(B, res.(B), con_pol, rt, p, 2)
 
-    @info "" (derivative(conway_root_ctx.polynomial)(root(conway_root_ctx))*conway_root_ctx.root_derivative_inv -1) in P
+    #@info "" (derivative(conway_root_ctx.polynomial)(root(conway_root_ctx))*conway_root_ctx.root_derivative_inv -1) in P
     
     sharpen_root!(conway_root_ctx, prec)
 
-    @info conway_root_ctx conway_root_ctx.polynomial(root(conway_root_ctx)) in P^2
-    
-    # conway_root_ctx = let
-
-    #     @info "" k degree(k) (degree(k)==1 ? one(k) : gen(k))
-    #     @info "" con_pol typeof(con_pol)        
-    #     @info "" typeof(map_coeffs(x->res(max_order(FlintZZ(x))), con_pol))
-
-    #     @info "" con_pol(gen(k)) con_pol minpoly(gen(k))
-
-    #     # TODO: Somehow get the Conway logic working in general.
-    #     RootSharpenCtx(max_order, con_pol, degree(k)==1 ? one(k) : gen(k), res, p, 1)
-    # end
-
-    @info "" Kp_unram con_pol con_pol(root(conway_root_ctx))
+    #@info conway_root_ctx conway_root_ctx.polynomial(root(conway_root_ctx)) in P^2
+    #@info "" Kp_unram con_pol con_pol(root(conway_root_ctx))
     
     sharpen_root!(conway_root_ctx, prec)
     delta = max_order(root(conway_root_ctx))
-    
     delta_p = unram_gen(Kp_unram)
 
     @assert (con_pol(delta) in P)
@@ -636,9 +602,7 @@ function generic_completion(K::NumField{T} where T, P::NfOrdIdl, prec=10; skip_m
     
     #TODO: Move to proper tests
     # Sanity check the returns
-
-    #@info "" embedding_map(K(delta)) delta_p
-    
+    #@info "" embedding_map(K(delta)) delta_p    
     #@info "" Kp.pol embedding_map(gen(K)) change_base_ring(Kp,K.pol)(embedding_map(gen(K)))
     
     @assert iszero(change_base_ring(Kp,K.pol)(embedding_map(gen(K))))
@@ -726,53 +690,11 @@ function unramified_completion(K::AnticNumberField, gen_img::qadic, prec=10; ski
             push!(pa, pa[end]*pa[2])
         end
 
-        #=
-        # Solve a linear system to figure out how to express the root of the
-        # Conway Polynomial defining the completion in terms of the image of the
-        # primitive element of the number field $K$.
-        m = matrix(GF(p), d, d, [coeff(pa[i], j-1) for j=1:d for i=1:d])
-        o = matrix(GF(p), d, 1, [coeff(gen(R), j-1) for j=1:d])
-        s = solve(m, o)
-        @hassert :qAdic 1 m*s == o
-
-        # Construct the Conway root approximation in the number field.
-        a = K()
-        for i=1:d
-            _num_setcoeff!(a, i-1, lift(s[i,1]))
-        end
-
-        ####
-        # Construct a lift of the inverse of the derivative of the Conway root in the number field.
-        #
-        f = defining_polynomial(parent(gen_img), FlintZZ)
-        fso = inv(derivative(f)(gen(R)))
-        o = matrix(GF(p), d, 1, [coeff(fso, j-1) for j=1:d])
-        s = solve(m, o)
-        b = K()
-        for i=1:d
-            _num_setcoeff!(b, i-1, lift(s[i,1]))
-        end
-
-        # End block of Claus' code.
-        ####
-        
-        # Lift the data from the residue field back to the number field.
-        backward_sharpening_ctx = RootSharpenCtx{nf_elem}(f, a, b, p, 1)       
-        =#
-
         f = defining_polynomial(parent(gen_img), FlintZZ)
         pows = d==1 ? [one(K)] : powers(gen(K), d-1)
         
         backward_sharpening_ctx = _root_ctx_for_number_field(pows, pa, f, gen(R), p, prec)
-        
-        # Something incomprehensable happens when uncommented...
-        #g = deepcopy(f)
-        #@info "Before call:" f (f===g)        
-        #RootSharpenCtx_constructor(K, g, mR(gen_img), x->mR(embedding_map(x)), p, 1)
-        #@info "After return statement: " f typeof(f) f===g parent(f) f(0)
-
         sharpen_root!(backward_sharpening_ctx, prec)
-
 
         lift_map = function(x::qadic)
             iszero(x) && return K(0)
@@ -793,7 +715,6 @@ function unramified_completion(K::AnticNumberField, gen_img::qadic, prec=10; ski
     end
 
     Kp = parent(gen_img)
-
     @assert iszero(change_base_ring(Kp,K.pol)(embedding_map(gen(K))))
     
     comp_map = NACompletionMap(K, Kp, embedding_map, lift_map,
