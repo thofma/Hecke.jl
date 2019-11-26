@@ -50,13 +50,17 @@ function SRow(R::Ring)
   return SRow{elem_type(R)}()
 end
 
+const _sort = sort
 @doc Markdown.doc"""
     sparse_row(R::Ring, J::Vector{Tuple{Int, T}}) -> SRow{T}
 
 > Constructs the sparse row $(a_i)_i$ with $a_{i_j} = x_j$, where $J = (i_j, x_j)_j$.
 > The elements $x_i$ must belong to the ring $R$.
 """
-function sparse_row(R::Ring, A::Vector{Tuple{Int, T}}) where T
+function sparse_row(R::Ring, A::Vector{Tuple{Int, T}}; sort::Bool = true) where T
+  if sort
+    A = _sort(A, lt=(a,b) -> isless(a[1], b[1]))
+  end
   return SRow{T}(A)
 end
 
@@ -66,7 +70,10 @@ end
 Constructs the sparse row $(a_i)_i$ over $R$ with $a_{i_j} = x_j$,
 where $J = (i_j, x_j)_j$.
 """
-function sparse_row(R::Ring, A::Vector{Tuple{Int, Int}})
+function sparse_row(R::Ring, A::Vector{Tuple{Int, Int}}; sort::Bool = true)
+  if sort
+    A = _sort(A, lt=(a,b)->isless(a[1], b[1]))
+  end
   return SRow{elem_type(R)}(A)
 end
 
@@ -76,7 +83,12 @@ end
 Constructs the sparse row $(a_i)_i$ over $R$ with $a_{i_j} = x_j$, where
 $J = (i_j)_j$ and $V = (x_j)_j$.
 """
-function sparse_row(R::Ring, pos::Vector{Int}, val::Vector{T}) where T
+function sparse_row(R::Ring, pos::Vector{Int}, val::Vector{T}; sort::Bool = true) where T
+  if sort
+    p = sortperm(pos)
+    pos = pos[p]
+    val = val[p]
+  end
   if T === elem_type(R)
     return SRow{T}(pos, val)
   else

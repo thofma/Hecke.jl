@@ -196,8 +196,8 @@ function _picard_group(O::NfOrd)
   # to compute Pic(O).
 
   OK = maximal_order(nf(O))
-  U, UtoOK = unit_group(OK)
   Cl, CltoOK = class_group(OK)
+  U, UtoOK = unit_group(OK)
   G, GtoQ, OKtoQ = OO_mod_F_mod_O_mod_F(O)
   @assert issnf(U) && issnf(Cl) && issnf(G)
 

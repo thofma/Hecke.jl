@@ -676,11 +676,39 @@ end
 function msubst(f::fmpq_mpoly, v::Array{T, 1}) where {T}
   n = length(v)
   @assert n == nvars(parent(f))
+  powers = Dict{Int, Dict{Int, T}}()
+  for i = 1:n
+    powers[i] = Dict{Int, T}()
+  end
   exps = exponent_vector(f, 1)
-  r = coeff(f, 1) * prod(v[j]^exps[j] for j=1:n)
+  powers[1][exps[1]] = v[1]^exps[1]
+  r = coeff(f, 1) * powers[1][exps[1]]
+  for j = 2:n
+    if iszero(exps[j])
+      continue
+    end
+    el = v[j]^exps[j]
+    powers[j][exps[j]] = el
+    r *= el
+  end
+  R = parent(r)
   for i = 2:length(f)
     exps = exponent_vector(f, i)
-    r += coeff(f, i) * prod(v[j]^exps[j] for j=1:n)
+    #r += coeff(f, i) * prod(v[j]^exps[j] for j=1:n)
+    r1 = coeff(f, i)*one(R)
+    for j = 1:n
+      if iszero(exps[j])
+        continue
+      end
+      if haskey(powers[j], exps[j])
+        r1 *= powers[j][exps[j]]
+      else
+        el = v[j]^exps[j]
+        powers[j][exps[j]] = el
+        r1 *= el
+      end
+    end
+    r += r1
   end
   return r
 end
@@ -1100,3 +1128,12 @@ function factor(f::PolyElem{NfAbsNSElem})
   return r
 end
 
+################################################################################
+#
+#  Hashing
+#
+################################################################################
+
+function Base.hash(a::NfAbsNSElem, h::UInt)
+  return Base.hash(a.data, h)
+end

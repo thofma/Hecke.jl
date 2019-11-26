@@ -768,12 +768,13 @@ function primitive_element(A::AbsAlgAss{fmpq})
   return a
 end
 
-function _primitive_element(A::AbsAlgAss)
-  error("Not implemented yet")
-  return nothing
-end
+# TODO: Fix this with the types once a new version is released
+#function _primitive_element(A::AbsAlgAss)
+#  error("Not implemented yet")
+#  return nothing
+#end
 
-function _primitive_element(A::AbsAlgAss{T}) where T <: Union{nmod, fq, fq_nmod, Generic.Res{fmpz}, fmpq, Generic.ResF{fmpz}, gfp_elem}
+function _primitive_element(A::AbsAlgAss{T}) where T #<: Union{nmod, fq, fq_nmod, Generic.Res{fmpz}, fmpq, Generic.ResF{fmpz}, gfp_elem}
   d = dim(A)
   a = rand(A)
   f = minpoly(a)
@@ -817,14 +818,14 @@ function _as_field(A::AbsAlgAss{T}) where T
   return a, mina, f
 end
 
-function _as_field_with_isomorphism(A::AbsAlgAss{S}) where { S <: Union{fmpq, gfp_elem, Generic.ResF{fmpz}, fq_nmod, fq} }
+function _as_field_with_isomorphism(A::AbsAlgAss{S}) where { S } #<: Union{fmpq, gfp_elem, Generic.ResF{fmpz}, fq_nmod, fq} }
   return _as_field_with_isomorphism(A, _primitive_element(A)...)
 end
 
 # Assuming a is a primitive element of A and mina its minimal polynomial, this
 # functions constructs the field base_ring(A)/mina and the isomorphism between
 # A and this field.
-function _as_field_with_isomorphism(A::AbsAlgAss{S}, a::AbsAlgAssElem{S}, mina::T) where { S <: Union{fmpq, gfp_elem, Generic.ResF{fmpz}, fq_nmod, fq}, T <: Union{fmpq_poly, gfp_poly, gfp_fmpz_poly, fq_nmod_poly, fq_poly} }
+function _as_field_with_isomorphism(A::AbsAlgAss{S}, a::AbsAlgAssElem{S}, mina::T) where {S, T} # where { S <: Union{fmpq, gfp_elem, Generic.ResF{fmpz}, fq_nmod, fq}, T <: Union{fmpq_poly, gfp_poly, gfp_fmpz_poly, fq_nmod_poly, fq_poly} }
   s = one(A)
   M = zero_matrix(base_ring(A), dim(A), dim(A))
   elem_to_mat_row!(M, 1, s)
@@ -846,7 +847,8 @@ function __as_field_with_isomorphism(A::AbsAlgAss{gfp_elem}, f::gfp_poly, M::gfp
   return Fq, AbsAlgAssToFqMor(A, Fq, inv(M), M, parent(f))
 end
 
-function __as_field_with_isomorphism(A::AbsAlgAss{Generic.ResF{fmpz}}, f::gfp_fmpz_poly, M::Generic.MatSpaceElem{Generic.ResF{fmpz}})
+function __as_field_with_isomorphism(A, f::gfp_fmpz_poly, M)
+#function __as_field_with_isomorphism(A::AbsAlgAss{Generic.ResF{fmpz}}, f::gfp_fmpz_poly, M::Generic.MatSpaceElem{Generic.ResF{fmpz}})
   Fq = FqFiniteField(f, Symbol("a"), false)
   return Fq, AbsAlgAssToFqMor(A, Fq, inv(M), M, parent(f))
 end
@@ -988,46 +990,6 @@ function CrossedProductAlgebra(O::NfOrd, G::Array{T,1}, cocval::Array{nf_elem, 2
 
 end
 
-################################################################################
-#
-#  Quaternion algebras
-#
-################################################################################
-
-function quaternion_algebra(a::Int, b::Int)
-  
-  M = Array{fmpq,3}(undef, 4,4,4)
-  for i = 1:4
-    for j = 1:4
-      for k = 1:4
-        M[i,j,k] = 0
-      end
-    end
-  end  
-  M[1,1,1] = 1 # 1*1=1
-  M[1,2,2] = 1 # 1*i=i
-  M[1,3,3] = 1 # 1*j=j
-  M[1,4,4] = 1 # 1*ij=1
-  
-  M[2,1,2] = 1
-  M[2,2,1] = a
-  M[2,3,4] = 1
-  M[2,4,3] = a
-  
-  M[3,1,3] = 1
-  M[3,2,4] = -1
-  M[3,3,1] = b
-  M[3,4,2] = -b
-  
-  M[4,1,4] = 1
-  M[4,2,3] = -a
-  M[4,3,2] = b
-  M[4,4,1] = -a*b
-  O = fmpq[1, 0, 0, 0]
-  return AlgAss(FlintQQ, M, O)
-  
-end
-
 ###############################################################################
 #
 #  Trace Matrix
@@ -1114,12 +1076,13 @@ end
 
 > Returns the Jacobson-Radical of $A$.
 """
-function radical(A::AbsAlgAss{T}) where { T <: Union{ gfp_elem, Generic.ResF{fmpz}, fq_nmod, fq, fmpq, nf_elem } }
+function radical(A::AbsAlgAss{T}) where { T } #<: Union{ gfp_elem, Generic.ResF{fmpz}, fq_nmod, fq, fmpq, nf_elem } }
   return ideal_from_gens(A, _radical(A), :twosided)
 end
 
 # Section 2.3.2 in W. Eberly: Computations for Algebras and Group Representations
-function _radical(A::AbsAlgAss{T}) where { T <: Union{ gfp_elem, Generic.ResF{fmpz} } }
+# TODO: Fix the type
+function _radical(A::AbsAlgAss{T}) where { T } #<: Union{ gfp_elem, Generic.ResF{fmpz} } }
   F = base_ring(A)
   p = characteristic(F)
   k = flog(fmpz(dim(A)), p)
@@ -1263,13 +1226,15 @@ end
 #
 ################################################################################
 
+# TODO: Fix this once we have a new Nemo version
+
 # TODO: Make sure this always returns 1 or 2. So far we only have _radical for
 # algebras over Fp, Fq, QQ, and number fields
-function _issemisimple(A::AbsAlgAss)
-  return A.issemisimple
-end
+#function _issemisimple(A::AbsAlgAss)
+#  return A.issemisimple
+#end
 
-function _issemisimple(A::AbsAlgAss{T}) where { T <: Union{ gfp_elem, Generic.ResF{fmpz}, fq, fq_nmod, fmpq, nf_elem } }
+function _issemisimple(A::AbsAlgAss{T}) where { T } #<: Union{ gfp_elem, Generic.ResF{fmpz}, fq, fq_nmod, fmpq, nf_elem } }
   if A.issemisimple == 0
     if isempty(_radical(A))
       A.issemisimple = 1

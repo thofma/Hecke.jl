@@ -1,131 +1,5 @@
 ################################################################################
 #
-#  Some types
-#
-################################################################################
-
-# Given maximal orders O_1, ..., O_k in the algebra A over a field K, this
-# helps to construct field extensions of K, whose maximal order is a submodule
-# of one of the O_i.
-mutable struct FieldOracle{S, T, U}
-  algebra::S
-  maximal_orders::Vector{T}
-
-  hnf_basis_pmats::Vector{<: PMat}
-  small_elements::Vector{U}
-  fields::Vector{Vector{NfRelToAbsAlgAssMor}}
-  phase::Int
-  rounds::Int
-  last_generated_field::Vector{Int}
-  last_returned_field::Vector{Int}
-  rand_coeff_bound::Int
-
-  function FieldOracle{S, T, U}(A::S, orders::Vector{T}) where { S, T, U}
-    z = new{S, T, U}()
-    z.algebra = A
-    z.maximal_orders = orders
-
-    # basis_pmatrices of orders are not required to be in HNF, so we compute them here
-    z.hnf_basis_pmats = Vector{typeof(basis_pmatrix(orders[1], copy = false))}(undef, length(orders))
-    for i = 1:length(orders)
-      z.hnf_basis_pmats[i] = pseudo_hnf(basis_pmatrix(orders[i], copy = false), :lowerleft, true)
-    end
-    z.small_elements = Vector{elem_type(A)}()
-    for O in orders
-      append!(z.small_elements, small_elements(O))
-    end
-
-    z.fields = Vector{Vector{NfRelToAbsAlgAssMor}}(undef, length(orders))
-
-    for i = 1:length(orders)
-      z.fields[i] = Vector{NfRelToAbsAlgAssMor}()
-    end
-
-    z.phase = 1
-    # Phase 1: Construct fields using all possible sums of elements in
-    #          small_elements with <= z.rounds summands.
-    # Phase 2: Use random linear combinations of elements in small_elements.
-
-    z.rounds = 10 # Magic number
-    z.last_generated_field = zeros(Int, z.rounds)
-    z.last_returned_field = zeros(Int, length(orders))
-    z.rand_coeff_bound = Int(ceil(log(length(z.small_elements), 10^6))) # So we get around 10^6 random fields. Hopefully that's enough.
-
-    return z
-  end
-end
-
-function FieldOracle(A::AbsAlgAss, orders::Vector{<: AlgAssRelOrd})
-  return FieldOracle{typeof(A), typeof(orders[1]), elem_type(A)}(A, orders)
-end
-
-mutable struct NormCache{S, T, U}
-  algebra::S
-  maximal_orders::Vector{T}
-  n::Int # n^2 == dim(algebra)
-
-  field_oracle::FieldOracle{S, T, U}
-
-  a::NfAbsOrdElem
-  primes::Vector{NfAbsOrdIdl}
-  valuations::Vector{Int}
-  fac_elem_mon::FacElemMon{S}
-  partial_solutions::Vector{Dict{Set{Int}, Vector{FacElem{U, S}}}}
-  solutions_mod_units::Vector{Dict{FacElem{U, S},  GrpAbFinGenElem}}
-  UktoOk::MapUnitGrp
-  GtoUk::Vector{GrpAbFinGenMap}
-  GtoUk_surjective::BitVector
-  fields_in_product::Vector{Vector{Tuple{NfRelToAbsAlgAssMor, NfToNfRel}}}
-
-  function NormCache{S, T, U}(A::S, orders::Vector{T}, a::NfAbsOrdElem) where { S, T, U }
-    primes = collect(keys(factor(a*parent(a))))
-    vals = [ valuation(a, p) for p in primes ]
-    z = NormCache{S, T, U}(A, orders, parent(a), primes, vals)
-    z.a = a
-    return z
-  end
-
-  function NormCache{S, T, U}(A::S, orders::Vector{T}, Ok::NfAbsOrd, primes::Vector{<: NfAbsOrdIdl}, valuations::Vector{Int}) where { S, T, U }
-    z = new{S, T, U}()
-    z.algebra = A
-    z.maximal_orders = orders
-    z.n = isqrt(dim(A))
-    @assert z.n^2 == dim(A)
-
-    z.field_oracle = FieldOracle(A, orders)
-
-    Uk, UktoOk = unit_group(Ok)
-    z.UktoOk = UktoOk
-    z.primes = primes
-    z.valuations = valuations
-    z.fac_elem_mon = FacElemMon(A)
-    z.partial_solutions = Vector{Dict{Set{Int}, Vector{FacElem{U, S}}}}(undef, length(orders))
-    z.solutions_mod_units = Vector{Dict{FacElem{U, S}, GrpAbFinGenElem}}(undef, length(orders))
-    z.GtoUk = Vector{GrpAbFinGenMap}(undef, length(orders))
-    z.GtoUk_surjective = falses(length(orders))
-    z.fields_in_product = Vector{Vector{Tuple{NfRelToAbsAlgAssMor, NfToNfRel}}}(undef, length(orders))
-    for i = 1:length(orders)
-      z.partial_solutions[i] = Dict{Set{Int}, Vector{FacElem{U, S}}}()
-      z.partial_solutions[i][Set{Int}()] = [ z.fac_elem_mon() ]
-      z.solutions_mod_units[i] = Dict{FacElem{U, S}, GrpAbFinGenElem}()
-      z.GtoUk[i] = hom([ GrpAbFinGen(fmpz[])() ], [ Uk() ])
-      z.fields_in_product[i] = Vector{Tuple{NfRelToAbsAlgAssMor, NfToNfRel}}()
-    end
-
-    return z
-  end
-end
-
-function NormCache(A::AbsAlgAss, orders::Vector{<: AlgAssRelOrd}, a::NfAbsOrdElem)
-  return NormCache{typeof(A), typeof(orders[1]), elem_type(A)}(A, orders, a)
-end
-
-function NormCache(A::AbsAlgAss, orders::Vector{<: AlgAssRelOrd}, Ok::NfAbsOrd, primes::Vector{<: NfAbsOrdIdl}, valuations::Vector{Int})
-  return NormCache{typeof(A), typeof(orders[1]), elem_type(A)}(A, orders, Ok, primes, valuations)
-end
-
-################################################################################
-#
 #  Integral norm equations
 #
 ################################################################################
@@ -148,7 +22,7 @@ function norm_equation_fac_elem(orders::Vector{<: AlgAssRelOrd}, a::NfAbsOrdElem
   while true
     # We test the orders alternately until we find a solution in one of them
     for i = 1:length(orders)
-      b, d = _norm_equation(NC, i)
+      b, d = _norm_equation_relative(NC, i)
       if b
         return d, i
       end
@@ -159,7 +33,7 @@ end
 # This tests max_num_fields fields. If max_num_fields == 0, we try until we
 # find a solution (although at some point NC.field_oracle does not return any
 # new fields).
-function _norm_equation(NC::NormCache, order_num::Int; max_num_fields::Int = 10)
+function _norm_equation_relative(NC::NormCache, order_num::Int; max_num_fields::Int = 10)
   A = NC.algebra
   n = NC.n
   primes = NC.primes
@@ -500,7 +374,7 @@ function __neq_lift_unit(NC::NormCache, order_num::Int, g::GrpAbFinGenElem)
   return x
 end
 
-function __neq_find_good_primes(NC::NormCache, OL::NfRelOrd, verbose::Bool = false)
+function __neq_find_good_primes(NC::NormCache, OL::NfRelOrd)
   n = NC.n
   m = degree(nf(OL))
   mn = m//n
@@ -529,8 +403,20 @@ end
 ################################################################################
 
 # Let K = base_ring(A). Then this returns the field K(x) and a map to A.
-function _as_subfield(A::AbsAlgAss{T}, x::AbsAlgAssElem{T}) where { T <: Union{ nf_elem, NfRelElem } }
+function _as_subfield(A::AbsAlgAss{T}, x::AbsAlgAssElem{T}) where { T <: Union{ fmpq, nf_elem, NfRelElem } }
   return _as_subfield(A, x, minpoly(x))
+end
+
+function _as_subfield(A::AbsAlgAss{fmpq}, x::AbsAlgAssElem{fmpq}, f::PolyElem{fmpq})
+  s = one(A)
+  M = zero_matrix(FlintQQ, degree(f), dim(A))
+  elem_to_mat_row!(M, 1, s)
+  for i = 2:degree(f)
+    s = mul!(s, s, x)
+    elem_to_mat_row!(M, i, s)
+  end
+  K = number_field(f)[1]
+  return K, NfAbsToAbsAlgAssMor(K, A, M)
 end
 
 function _as_subfield(A::AbsAlgAss{T}, x::AbsAlgAssElem{T}, f::PolyElem{T}) where { T <: Union{ nf_elem, NfRelElem } }
@@ -571,6 +457,29 @@ function _issubmodule(modules::Vector{<: PMat}, O::NfRelOrd, LtoA::NfRelToAbsAlg
   return result
 end
 
+function _issubmodule(modules::Vector{<: AlgAssAbsOrd}, O::NfAbsOrd, LtoA::NfAbsToAbsAlgAssMor)
+  L = domain(LtoA)
+  A = codomain(LtoA)
+  B = basis(O)
+  result = Vector{Int}()
+  for i = 1:length(modules)
+    issub = true
+    for b in B
+      if !(LtoA(elem_in_nf(b, copy = false)) in modules[i])
+        issub = false
+        break
+      end
+    end
+    if issub
+      push!(result, i)
+    end
+  end
+  return result
+end
+
+_issubmodule(FO::FieldOracle, OL::NfRelOrd, LtoA::NfRelToAbsAlgAssMor) = _issubmodule(FO.hnf_basis_pmats, OL, LtoA)
+_issubmodule(FO::FieldOracle, OL::NfAbsOrd, LtoA::NfAbsToAbsAlgAssMor) = _issubmodule(FO.maximal_orders, OL, LtoA)
+
 # Returns a LLL-reduced basis of O
 function small_elements(O::AlgAssRelOrd)
   A = algebra(O)
@@ -594,6 +503,18 @@ function small_elements(O::AlgAssRelOrd)
   return res
 end
 
+function small_elements(O::AlgAssAbsOrd)
+  A = algebra(O)
+  M = basis_matrix(O, copy = false)
+  L = lll(M.num)
+  res = Vector{elem_type(A)}()
+  for i = 1:dim(A)
+    t = elem_from_mat_row(A, L, i, M.den)
+    push!(res, t)
+  end
+  return res
+end
+
 # Adds a field for order number i (and possibly for other orders too)
 function add_field(FO::FieldOracle, i::Int; no_restriction::Bool = false)
   A = FO.algebra
@@ -611,7 +532,7 @@ function add_field(FO::FieldOracle, i::Int; no_restriction::Bool = false)
     end
 
     # Find the orders in which maximal_order(L) lies
-    good_orders = _issubmodule(FO.hnf_basis_pmats, maximal_order(L), LtoA)
+    good_orders = _issubmodule(FO, maximal_order(L), LtoA)
     for o in good_orders
       push!(FO.fields[o], LtoA)
     end

@@ -546,8 +546,8 @@ function direct_product(G::GrpAbFinGen...
   Dp = AbelianGroup(cat([rels(x) for x = G]..., dims = (1,2)))
 
   set_special(Dp, :direct_product =>G, :show => show_direct_product)
-  inj = []
-  pro = []
+  inj = GrpAbFinGenMap[]
+  pro = GrpAbFinGenMap[]
   j = 0
   for g = G
     if task in [:sum, :both]
@@ -1697,6 +1697,66 @@ function abelian_groups(n::Int)
     push!(grps, G)
   end
   return grps
+end
+
+################################################################################
+#
+#  Sum of maps
+#
+################################################################################
+
+function +(f::GrpAbFinGenMap, g::GrpAbFinGenMap)
+  @assert domain(f) == domain(g)
+  @assert codomain(f) == codomain(g)
+  return hom(domain(f), codomain(g), GrpAbFinGenElem[f(x)+g(x) for x in gens(domain(f))])
+end 
+
+function -(f::GrpAbFinGenMap, g::GrpAbFinGenMap)
+  @assert domain(f) == domain(g)
+  @assert codomain(f) == codomain(g)
+  return hom(domain(f), codomain(g), GrpAbFinGenElem[f(x)-g(x) for x in gens(domain(f))])
+end 
+
+
+################################################################################
+#
+#  Functions related to the action of a group of endomorphisms
+#
+################################################################################
+
+function induce_action_on_subgroup(mS::GrpAbFinGenMap, acts::Vector{GrpAbFinGenMap})
+  res = Vector{GrpAbFinGenMap}(undef, length(acts))
+  S = domain(mS)
+  for i = 1:length(acts)
+    imgs = Vector{GrpAbFinGenElem}(undef, ngens(S))
+    for j = 1:length(imgs)
+      imgs[j] = mS\(acts[i](mS(S[j])))
+    end
+    res[i] = hom(S, S, imgs)
+  end
+  return res
+end
+
+
+
+
+function fixed_subgroup(f::GrpAbFinGenMap)
+  @assert domain(f) == codomain(f)
+  return kernel(f - id_hom(domain(f)))
+end
+
+function isfixed_point_free(act::Vector{GrpAbFinGenMap})
+  G = domain(act[1])
+  intersection_of_kernels = G
+  minus_id = hom(G, G, GrpAbFinGenElem[-x for x in gens(G)])
+  for i = 1:length(act)
+    k, mk = fixed_subgroup(act[i])
+    intersection_of_kernels = intersect(intersection_of_kernels, k)
+    if order(intersection_of_kernels) == 1
+      return true
+    end
+  end
+  return false
 end
 
 ################################################################################

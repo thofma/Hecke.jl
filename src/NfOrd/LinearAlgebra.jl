@@ -63,6 +63,11 @@ function _get_coeff_raw(x::nmod_poly, i::Int)
   return u
 end
 
+function _get_coeff_raw(x::gfp_poly, i::Int)
+  u = ccall((:nmod_poly_get_coeff_ui, :libflint), UInt, (Ref{gfp_poly}, Int), x, i)
+  return u
+end
+
 @doc Markdown.doc"""
     det(M::Generic.Mat{NfOrdElem}) -> NfOrdElem
 Uses a modular algorithm to compute the determinant.    

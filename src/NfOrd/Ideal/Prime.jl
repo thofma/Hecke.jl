@@ -81,6 +81,12 @@ function intersect_prime(f::Map, P::NfOrdIdl, Ok::NfOrd = maximal_order(domain(f
   
   @assert isprime(P)
   p = minimum(P)
+  if isone(degree(Ok))
+    res = ideal(Ok, p)
+    res.is_prime = 1
+    res.splitting_type = (1, 1)
+    return res
+  end
   k = domain(f)
   K = codomain(f)
   OK = maximal_order(K)
@@ -133,7 +139,6 @@ the maximal order of $K$ above.
 The ideals will belong to $Z_K$ which defaults to "the" maximal order of $K$.
 """
 function prime_decomposition(f::Map, p::NfOrdIdl, ZK::NfOrd = maximal_order(codomain(f)))
-  
   @assert p.is_prime == 1
   k = domain(f)
   K = codomain(f)
@@ -287,14 +292,14 @@ Note that in this case it may happen that $p\mathcal O$ is not the product of th
 $\mathfrak p_i^{e_i}$.
 """
 function prime_decomposition(O::NfAbsOrd{S, T}, p::Union{Integer, fmpz}, degree_limit::Int = 0, lower_limit::Int = 0; cached::Bool = true) where {S, T}
-  if typeof(p) == fmpz && nbits(p) < 64
+  if typeof(p) == fmpz && fits(Int, p)
     return prime_decomposition(O, Int(p), degree_limit, lower_limit)
   end
   return prime_dec_nonindex(O, p, degree_limit, lower_limit)
 end
 
 function prime_decomposition(O::NfOrd, p::Union{Integer, fmpz}, degree_limit::Int = degree(O), lower_limit::Int = 0; cached::Bool = false)
-  if typeof(p) == fmpz && nbits(p) < 64
+  if typeof(p) == fmpz && fits(Int, p)
     return prime_decomposition(O, Int(p), degree_limit, lower_limit)
   end
   if isdefining_polynomial_nice(nf(O))
@@ -394,7 +399,7 @@ function prime_dec_nonindex(O::NfOrd, p::Union{Integer, fmpz}, degree_limit::Int
     # otherwise we need to take p+b
     # I SHOULD CHECK THAT THIS WORKS
 
-    if ei == 1 && isnorm_divisible(b, (I.norm)^2) 
+    if ei == 1 && isnorm_divisible_pp(b, p*I.norm) 
       I.gen_two = I.gen_two + O(p)
     end
 
@@ -649,7 +654,7 @@ function divides(A::NfOrdIdl, B::NfOrdIdl)
     #I can just test the polynomials!
     K = nf(order(A))
     Qx = parent(K.pol)
-    if nbits(minimum(B)) > 60
+    if fits(Int, minimum(B))
       R = ResidueRing(FlintZZ, minimum(B), cached = false)
       Rx = PolynomialRing(R, "t", cached = false)[1]
       f1 = Rx(Qx(A.gen_two.elem_in_nf))
@@ -1027,6 +1032,9 @@ Computes the $\mathfrak p$-adic valuation of $a$, that is, the largest $i$
 such that $a$ is contained in $\mathfrak p^i$.
 """
 function valuation(a::nf_elem, p::NfOrdIdl, no::fmpq = fmpq(0))
+  if parent(a) !== nf(order(p))
+    throw(error("Incompatible parents"))
+  end
   if !isdefining_polynomial_nice(parent(a)) || order(p).ismaximal != 1
     return valuation_naive(a, p)::Int
   end

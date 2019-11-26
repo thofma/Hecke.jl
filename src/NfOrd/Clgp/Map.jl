@@ -324,10 +324,14 @@ end
 
 mutable struct MapClassGrp <: Map{GrpAbFinGen, NfOrdIdlSet, HeckeMap, MapClassGrp}
   header::MapHeader{GrpAbFinGen, NfOrdIdlSet}
+  
+  quo::Int
   princ_gens::Array{Tuple{FacElem{NfOrdIdl,NfOrdIdlSet}, FacElem{nf_elem, AnticNumberField}},1}
   small_gens::Vector{NfOrdIdl}
   function MapClassGrp()
-    return new()
+    mp = new()
+    mp.quo = -1
+    return mp
   end
 end
 
@@ -355,7 +359,6 @@ function class_group(c::ClassGrpCtx, O::NfOrd = order(c); redo::Bool = false)
       return C, mC
     end
   end  
-  
   C = class_group_grp(c, redo = redo)
   r = MapClassGrp()
   
@@ -498,7 +501,7 @@ function isprincipal_fac_elem(A::NfOrdIdl)
   if c == nothing
     L = lll(maximal_order(nf(O)))
     class_group(L)
-    c = _get_ClassGrpCtx_of_order(L)
+    c = _get_ClassGrpCtx_of_order(L)::Hecke.ClassGrpCtx{SMat{fmpz}}
     A = IdealSet(L)(A)
   else 
     L = O
@@ -506,8 +509,8 @@ function isprincipal_fac_elem(A::NfOrdIdl)
 
   module_trafo_assure(c.M)
 
-  H = c.M.basis
-  T = c.M.trafo
+  H = c.M.basis::SMat{fmpz}
+  T = c.M.trafo::Vector
 
   x, r = class_group_ideal_relation(A, c)
   #so(?) x*A is c-smooth and x*A = evaluate(r)
@@ -518,8 +521,10 @@ function isprincipal_fac_elem(A::NfOrdIdl)
     A.is_principal = 2
     return false, FacElem([nf(O)(1)], fmpz[1])
   end
-
-  rs = zeros(fmpz, c.M.bas_gens.r + c.M.rel_gens.r)
+  
+  
+  rrows = (c.M.bas_gens.r + c.M.rel_gens.r)::Int
+  rs = zeros(fmpz, rrows)
 
   for (p,v) = R
     rs[p] = v
@@ -528,12 +533,12 @@ function isprincipal_fac_elem(A::NfOrdIdl)
   for i in length(T):-1:1
     apply_right!(rs, T[i])
   end
-  
-  e = FacElem(vcat(c.R_gen, c.R_rel), rs)
+  base = vcat(c.R_gen, c.R_rel)::Vector{Union{nf_elem, FacElem{nf_elem, AnticNumberField}}}
+  e = FacElem(base, rs)::FacElem{nf_elem, AnticNumberField}
   add_to_key!(e.fac, x, -1)  
 
   #reduce e modulo units.
-  e = reduce_mod_units([e], _get_UnitGrpCtx_of_order(L))[1]
+  e = reduce_mod_units(FacElem{nf_elem, AnticNumberField}[e], _get_UnitGrpCtx_of_order(L))[1]
   #A.is_principal = 1
   # TODO: if we set it to be principal, we need to set the generator. Otherwise the ^ function is broken
   return true, e
@@ -557,9 +562,14 @@ function isprincipal(A::NfOrdIdl)
     return isprincipal_non_maximal(A)
   end
   fl, a = isprincipal_fac_elem(A)
-  ev = O(evaluate(a))
-  A.is_principal = 1
-  A.princ_gen = ev
+  if fl
+    ev = O(evaluate(a))
+    A.is_principal = 1
+    A.princ_gen = ev
+  else
+    ev = O(1)
+    A.is_principal = 2
+  end
   return fl, ev
 end
 
@@ -631,7 +641,7 @@ end
   
 #a is an array of FacElem's
 #the elements are reduced modulo the units in U
-function reduce_mod_units(a::Array{T, 1}, U) where T
+function reduce_mod_units(a::Array{FacElem{nf_elem, AnticNumberField}, 1}, U) 
   #for T of type FacElem, U cannot be found from the order as the order
   #is not known
   #TODO:
@@ -647,10 +657,13 @@ function reduce_mod_units(a::Array{T, 1}, U) where T
   b = deepcopy(a)
   cnt = 10
   V = zero_matrix(FlintZZ, 1, 1)
+
+  local B::arb_mat
+
   if isdefined(U, :tentative_regulator)
     #TODO: improve here - it works, kind of...
-    B = Hecke._conj_arb_log_matrix_normalise_cutoff(b, prec)
-    bd = maximum(sqrt(sum(B[i,j]^2 for j=1:ncols(B))) for i=1:nrows(B))
+    B = Hecke._conj_arb_log_matrix_normalise_cutoff(b, prec)::arb_mat
+    bd = maximum(sqrt(sum((B[i,j]::arb)^2 for j=1:ncols(B)))::arb for i=1:nrows(B))
     bd = bd/root(U.tentative_regulator, length(U.units))
     if isfinite(bd)
       s = ccall((:arb_bits, :libarb), Int, (Ref{arb}, ), bd)
@@ -662,9 +675,9 @@ function reduce_mod_units(a::Array{T, 1}, U) where T
   end
 
   while true
-    prec, A = Hecke._conj_log_mat_cutoff_inv(U, prec)
-    B = Hecke._conj_arb_log_matrix_normalise_cutoff(b, prec)
-    nB = (B*B')[1,1]
+    prec::Int, A::arb_mat = Hecke._conj_log_mat_cutoff_inv(U, prec)
+    B = Hecke._conj_arb_log_matrix_normalise_cutoff(b, prec)::arb_mat
+    nB::arb = (B*B')[1,1]
     C = B*A
     exact = true
     try
@@ -779,7 +792,7 @@ function sunit_mod_units_group_fac_elem(I::Array{NfOrdIdl, 1})
     # We only track the valuation of the prime ideals in S.
     # Even though S might intersect the class group factor base
     # non-trivially, this should still be correct.
-    push!(vals_of_rels, sparse_row(FlintZZ, [(i, fmpz(-1))]))
+    push!(vals_of_rels, sparse_row(FlintZZ, [(i, fmpz(-1))], sort = false))
   end
 
   @vprint :ClassGroup 1 "... done\n"
@@ -880,9 +893,12 @@ end
 mutable struct MapSUnitGrpFacElem{T} <: Map{T, FacElemMon{AnticNumberField}, HeckeMap, MapSUnitGrpFacElem}
   header::MapHeader
   idl::Array{NfOrdIdl, 1}
+  isquotientmap::Int
 
   function MapSUnitGrpFacElem{T}() where {T}
-    return new{T}()
+    z = new{T}()
+    z.isquotientmap = -1
+    return z
   end
 end
 
@@ -890,7 +906,10 @@ function show(io::IO, mC::MapSUnitGrpFacElem)
   @show_name(io, mC)
   print(io, "SUnits (in factored form) map of ")
   show(IOContext(io, :compact => true), codomain(mC))
-  println(io, " for $(mC.idl)")
+  println(io, " for S of length ", length(mC.idl))
+  if mC.isquotientmap != -1
+    println(io, " This is the quotient modulo $(mC.isquotientmap)")
+  end
 end
 
 @doc Markdown.doc"""
@@ -988,10 +1007,10 @@ Returns a class group map such that the representatives for every classes are co
 $lp$ is the factorization of $m$. 
 """
 function find_coprime_representatives(mC::MapClassGrp, m::NfOrdIdl, lp::Dict{NfOrdIdl, Int} = factor(m))
- 
+  C = domain(mC)
   O = order(m)
   K = nf(O)
-  C = domain(mC)
+  
   L = Array{NfOrdIdl,1}(undef, ngens(C))
   el = Array{nf_elem,1}(undef, ngens(C))
   ppp = 1.0
@@ -1001,6 +1020,7 @@ function find_coprime_representatives(mC::MapClassGrp, m::NfOrdIdl, lp::Dict{NfO
   
   prob = ppp > 0.1
   for i = 1:ngens(C)
+    @assert length(mC.princ_gens[i][1].fac) == 1
     a = first(keys(mC.princ_gens[i][1].fac))
     if iscoprime(a, m)
       L[i] = a
@@ -1020,7 +1040,7 @@ function find_coprime_representatives(mC::MapClassGrp, m::NfOrdIdl, lp::Dict{NfO
       e = Dict{NfOrdIdl,fmpz}()
       for i = 1:ngens(C)
         if !iszero(a[i])
-          e[L[i]]= a[i]
+          e[L[i]] = a[i]
         end
       end
       if isempty(e)

@@ -207,12 +207,14 @@ function modord(a::Integer, m::Integer)
 end
 
 
-function isodd(a::fmpz)
-  ccall((:fmpz_is_odd, :libflint), Int, (Ref{fmpz},), a) == 1
-end
+if Nemo.version() <= v"0.15.1"
+  function isodd(a::fmpz)
+    ccall((:fmpz_is_odd, :libflint), Int, (Ref{fmpz},), a) == 1
+  end
 
-function iseven(a::fmpz)
-  ccall((:fmpz_is_even, :libflint), Int, (Ref{fmpz},), a) == 1
+  function iseven(a::fmpz)
+    ccall((:fmpz_is_even, :libflint), Int, (Ref{fmpz},), a) == 1
+  end
 end
 
 function neg!(a::fmpz)
@@ -726,7 +728,7 @@ mutable struct flint_rand_ctx_t
 end  
 
 function show(io::IO, A::flint_rand_ctx_t)
-  println(io, "Flint random state\n")
+  println(io, "Flint random state")
 end
 
 function flint_rand_state()
@@ -765,7 +767,7 @@ function ecm(a::fmpz, max_digits::Int = div(ndigits(a), 2)+1, rnd = flint_rand_c
 
   i = 1
   s = div(max_digits-15, 5)+2
-  s = max(i, s)
+  #i = s = max(i, s)
   while i <= s
     e,f = ecm(a, B1[i]*1000, B1[i]*1000*100, nC[i], rnd)
     if e != 0
@@ -801,12 +803,7 @@ function factor(N::fmpz)
   for (p, v) = r
     N = divexact(N, p^v)
   end
-#  if length(r)==0
-#    r[1] = 1
-#  end
-#  @assert prod(p^v for (p, v) = r)*N == N_in
   if isunit(N)
-#    @assert all(isprime, keys(r))
     @assert N == c
     return Nemo.Fac(c, r)
   end
@@ -820,74 +817,73 @@ function factor(N::fmpz)
       r[p] = v
     end
   end
-#  @assert prod(p^v for (p, v) = r)*N == N_in
-  fac, N = ispower(N)
-
- #TODO: problem(s)
- # Nemo.factor = mpqs is hopeless if > n digits, but asymptotically and practically
- # faster than ecm.
- # ecm is much better if there are "small" factors.
- # p-1 and p+1 methods are missing
- # so probably
- # if n is small enough -> Nemo
- # if n is too large: ecm
- # otherwise
- #  need ecm to find small factors
- # then recurse...
-
-  if ndigits(N) > 60  # TODO: needs revision!
-    e, f = ecm(N, div(ndigits(N), 3))
-    #TODO: use coprime basis to refine stuff...
-    while e != 0
-      ee, f = ispower(f)
-      ee = valuation(N, f) #careful, f does not need to be prime, so N/f^ee is not coprime to f
-      if isprime(f)
-        add_to_key!(r, f, fac*ee)
-        #if haskey(r, f)
-        #  r[f] += fac*ee
-        #else
-        #  r[f] = fac*ee
-        #end
-      else
-        s = factor(f)
-        for (p, ex) = s.fac
-          add_to_key!(r, p, fac*ex*ee)
-          #if haskey(r, p)
-          #  r[p] += fac*ex*ee
-          #else
-          #  r[p] = fac*ex*ee
-          #end
-        end
-      end
-  #    @assert N % f^ee == 0
-  #    @assert N % f^(ee+1) != 0
-      N = divexact(N, f^ee)
-  #    @assert prod(p^v for (p, v) = r)*N == N_in
-      if isone(N)
-        break
-      end
-      e, f = ecm(N, div(ndigits(N), 3))
-    end
-  end
-  s = Nemo.factor(N)
-  for (p, ex) = s.fac
-    add_to_key!(r, p, fac*ex)
-    #if haskey(r, p)
-    #  r[p] += fac*ex
-    #else
-    #  r[p] = fac*ex
-    #end
-  end
+  factor_insert!(r, N)
   for p = keys(r)
     if nbits(p) > 60 && !(p in big_primes)
       push!(big_primes, p)
     end
   end
-  @assert all(isprime, keys(r))
-  @assert prod(a^b for (a,b) = r) * c == N_in
   return Nemo.Fac(c, r)
 end
 
+function factor_insert!(r::Dict{fmpz, Int}, N::fmpz, scale::Int = 1)
+  #assumes N to be positive
+  #        no small divisors 
+  #        no big_primes
+  if isone(N)
+    return r
+  end
+  fac, N = ispower(N)
+  if fac > 1
+    return factor_insert!(r, N, fac)
+  end
+  if isprime(N)
+    @assert !haskey(r, N)
+    r[N] = fac
+    return r
+  end
+  if ndigits(N) < 60
+    s = Nemo.factor(N) #MPQS
+    for (p, k) in s
+      if haskey(r, p)
+        r[p] += k*scale
+      else
+        r[p] = k*scale
+      end
+    end
+    return r
+  end
+
+  e, f = ecm(N)
+  if e == 0
+    s = Nemo.factor(N)
+    for (p, k) in s
+      if haskey(r, p)
+        r[p] += k*scale
+      else
+        r[p] = k*scale
+      end
+    end
+    return r
+  end
+  k, N = remove(N, f)
+  @assert k > 0
+  factor_insert!(r, N, scale)
+  factor_insert!(r, f, scale*k)
+  return r
+end
+  
+#TODO: problem(s)
+# Nemo.factor = mpqs is hopeless if > n digits, but asymptotically and practically
+# faster than ecm.
+# ecm is much better if there are "small" factors.
+# p-1 and p+1 methods are missing
+# so probably
+# if n is small enough -> Nemo
+# if n is too large: ecm
+# otherwise
+#  need ecm to find small factors
+# then recurse...
 
 function ceil(::Type{fmpz}, a::BigFloat)
   return fmpz(ceil(BigInt, a))
@@ -910,9 +906,6 @@ function rand!(A::Vector{fmpz}, v::StepRange{fmpz, fmpz})
   return A
 end
 
-
-#Base.isless(a::fmpz, b::fmpz) = a < b
-
 Base.isless(a::Int, b::fmpz) = a < b
 
 Base.isless(a::fmpz, b::Int) = a < b
@@ -921,7 +914,7 @@ function (::Type{Base.Rational{BigInt}})(x::fmpq)
   return Rational{BigInt}(BigInt(numerator(x)), BigInt(denominator(x)))
 end
 
-export eulerphi_inv
+export eulerphi_inv, Divisors, carmichael_lambda
 
 @doc Markdown.doc"""
     Divisors{T}
@@ -1090,7 +1083,7 @@ The inverse of the Euler totient functions: find all $x$ s.th. $phi(x) = n$
 holde. The elements are returned in factored form.
 """
 function eulerphi_inv_fac_elem(n::fmpz)
-  lp = []
+  lp = fmpz[]
   for d = Divisors(n)
     if isprime(d+1)
       push!(lp, d+1)
@@ -1098,8 +1091,8 @@ function eulerphi_inv_fac_elem(n::fmpz)
   end
 #  println("possible primes: ", lp)
 
-  E = []
-  res = []
+  E = Tuple{fmpz, Vector{Tuple{fmpz, Int}}}[]
+  res = FacElem{fmpz, FlintIntegerRing}[]
   for p = lp
     v = valuation(n, p)
     for i=0:v
@@ -1148,6 +1141,50 @@ end
 
 function eulerphi(n::T) where {T <: Integer}
   return T(eulerphi(fmpz(n)))
+end
+
+function carmichael_lambda(x::Fac{fmpz})
+  if haskey(x.fac, fmpz(2))
+    y = deepcopy(x.fac)
+    v = y[fmpz(2)]
+    delete!(y, fmpz(2))
+    if v > 2
+      c = fmpz(2)^(v-2)
+    else
+      c = fmpz(1)
+    end
+  else
+    c = fmpz(1)
+    y = x.fac
+  end
+  if length(y) == 0
+    return c
+  end
+  return c * reduce(lcm, (p-1)*p^(v-1) for (p,v) = y)
+end
+
+function carmichael_lambda(x::fmpz)
+  v, x = remove(x, fmpz(2))
+  if isone(x)
+    c = x
+  else
+    x = factor(x)
+    c = reduce(lcm, (p-1)*p^(v-1) for (p,v) = x.fac)
+  end
+  if v < 2
+    return c
+  else 
+    return fmpz(2)^(v-2)*c
+  end
+end
+
+function carmichael_lambda(x::FacElem{fmpz, FlintIntegerRing})
+  x = factor(x)
+  return carmichael_lambda(x)
+end
+
+function carmichael_lambda(n::T) where {T <: Integer}
+  return T(carmichael_lambda(fmpz(n)))
 end
 
 @doc Markdown.doc"""
@@ -1220,4 +1257,153 @@ function (::FlintIntegerRing)(x::Rational{Int})
   @assert denominator(x) == 1
   return fmpz(numerator(x))
 end
+
+module BitsMod
+
+using Hecke
+import Nemo
+import Base: ^, show, getindex, iterate, length
+import Hecke.bits
+export bits, Limbs
+
+
+const hb = UInt(1)<<63
+
+#= not used - lacks length
+struct BitsUInt
+  a::UInt
+end
+
+function bits(a::UInt)
+  l = nbits(a)
+  return BitsUInt(a<<(sizeof(a)*8-l))
+end
+
+
+function Base.iterate(x::BitsUInt)
+  return iterate(x, x.a)
+end
+
+@inline function Base.iterate(x::BitsUInt, u::UInt)
+  iszero(u) && return nothing
+  return (u&hb) != 0, u<<1
+end
+=#
+
+
+struct Limbs
+  a::fmpz
+  len::Int
+  b::Ptr{UInt}
+  function Limbs(a::fmpz)
+    if Nemo._fmpz_is_small(a)
+      return new(a, 0, convert(Ptr{UInt}, 0))
+    end
+    z = convert(Ptr{Cint}, unsigned(a.d)<<2)
+    len = unsafe_load(z, 2)
+    d = convert(Ptr{Ptr{UInt}}, unsigned(a.d) << 2) + 2*sizeof(Cint)
+    p = unsafe_load(d)
+    return new(a, len, p)
+  end
+end
+
+function show(io::IO, L::Limbs)
+  print(io, "limb-access for: ", L.a)
+end
+
+@inline function getindex(L::Limbs, i::Int)
+  @boundscheck @assert i <= L.len
+  if L.len == 0
+    return UInt(abs(L.a.d)) #error???
+  end
+  return unsafe_load(L.b, i)
+end
+
+function iterate(L::Limbs)
+  return L[L.len], L.len
+end
+
+function iterate(L::Limbs, i::Int)
+  i == 0 && return nothing
+  return L[i-1], i-1
+end
+
+length(L::Limbs) = L.len+1
+
+#=
+#from https://github.com/JuliaLang/julia/issues/11592
+#compiles directly down to the ror/rol in assembly
+for T in Base.BitInteger_types
+  mask = UInt8(sizeof(T) << 3 - 1)
+  @eval begin
+    ror(x::$T, k::Integer) = (x >>> ($mask & k)) | (x <<  ($mask & -k))
+    rol(x::$T, k::Integer) = (x <<  ($mask & k)) | (x >>> ($mask & -k))
+  end
+end
+=#
+
+struct BitsFmpz
+  L::Limbs
+
+  function BitsFmpz(b::fmpz)
+    return new(Limbs(b))
+  end
+end
+
+function iterate(B::BitsFmpz)
+  L = B.L
+  a = L[L.len]
+  b = UInt(1) << (nbits(a)-1)
+  return true, (b, L.len)
+end
+
+function iterate(B::BitsFmpz, s::Tuple{UInt, Int})
+  b = s[1] >> 1
+  if b == 0
+    l = s[2] - 1
+    if l < 1
+      return nothing
+    end
+    b = hb
+    a = B.L[l]
+    return a&b != 0, (b, l)
+  end
+  return B.L[s[2]]&b != 0, (b, s[2])
+end
+
+function show(io::IO, B::BitsFmpz)
+  print(io, "bit iterator for:", B.L.a)
+end
+
+length(B::BitsFmpz) = nbits(B.L.a)
+
+bits(a::fmpz) = BitsFmpz(a)
+#= wrong order, thus disabled
+
+function getindex(B::BitsFmpz, i::Int) 
+  return ccall((:fmpz_tstbit, :libflint), Int, (Ref{fmpz}, Int), B.L.a, i) != 0
+end
+=#
+
+function ^(a::T, n::fmpz) where {T}
+  fits(Int, n) && return a^Int(n)
+  if isnegative(n)
+    a = inv(a)
+    n = -n
+  end
+  r = one(parent(a))
+  for b = bits(n)
+    r = mul!(r, r, r)
+    if b 
+      r = mul!(r, r, a)
+    end
+  end
+  return r
+end
+
+end
+
+using .BitsMod
+export bits, Limbs
+
 

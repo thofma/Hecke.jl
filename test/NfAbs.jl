@@ -4,4 +4,6 @@
   include("NfAbs/Hilbert.jl")
   include("NfAbs/Subfields.jl")
   include("NfAbs/Elem.jl")
+  include("NfAbs/Simplify.jl")
+  include("NfAbs/NormRelation.jl")
 end

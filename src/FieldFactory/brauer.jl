@@ -1,7 +1,91 @@
 
 add_verbose_scope(:BrauerObst)
 
+###############################################################################
+#
+#  Brauer obstruction: interface
+#
+###############################################################################
 
+function check_Brauer_obstruction(list::Vector{FieldsTower}, L::Main.ForeignGAP.MPtr, i::Int, invariants::Vector{Int})
+  d = degree(list[1])
+  common_degree = ppio(invariants[end], d)[1]
+  if isone(common_degree)
+    return list
+  end
+  fac = factor(common_degree)
+  for (p, v) in fac
+    if length(invariants) == 1 || iscoprime(invariants[end-1], p)
+      if v > 1
+        list = check_Brauer_obstruction_pp(list, L, i, Int(p), v)
+      else
+        list = _Brauer_prime_case(list, L, i, Int(p))
+      end
+    else
+      #The extension is not cyclic. I need to search for a normal cyclic subextension.
+      #I list the subgroup of the derived subgroup, sieve for the one that are normal in the entire group
+      #and then take the maximal ones. I need to check all of them.
+
+      subs, target_grp = find_subgroups_cyclic_in_derived(L, i, p)
+      for i = 1:length(subs)
+        new_target = GAP.Globals.FactorGroup(target_grp, subs[i])
+        L1 = GAP.Globals.DerivedSeries(new_target)
+        order = divexact(prod(invariants), GAP.gap_to_julia(Int, GAP.Globals.Size(subs[i])))
+        if order == p
+          list =  _Brauer_prime_case(list, L1, length(L1)-1, Int(p))
+        else
+          list = check_Brauer_obstruction_pp(list, L1, length(L1)-1, Int(p), Int(valuation(order, p)))
+        end
+      end
+    end
+  end
+  if length(invariants) == 1 && isprime_power(invariants[1])
+    for el in list
+      el.has_info = true
+    end
+  end
+  return list
+end
+
+function find_subgroups_cyclic_in_derived(L::Main.ForeignGAP.MPtr, i::Int, p::fmpz)
+  proj = GAP.Globals.NaturalHomomorphismByNormalSubgroup(L[1], L[i+1])
+  target_grp = GAP.Globals.ImagesSource(proj)
+  normal_subgroups = GAP.Globals.NormalSubgroups(target_grp)
+  mH1 = GAP.Globals.NaturalHomomorphismByNormalSubgroup(target_grp, GAP.Globals.Image(proj, L[i]))
+  G = GAP.Globals.ImagesSource(mH1)
+  K = GAP.Globals.Kernel(mH1)
+  oK = GAP.Globals.Size(K)
+  normal_cyclic_and_contained = Main.ForeignGAP.MPtr[]
+  for i = 1:length(normal_subgroups)
+    g = normal_subgroups[i]
+    oG = GAP.Globals.Size(g)
+    if !GAP.Globals.IsSubgroup(K, g) || oG == oK
+      continue
+    end
+    fg = GAP.Globals.FactorGroup(K, g)
+    order = fmpz(GAP.gap_to_julia(Int, GAP.Globals.Size(fg)))
+    np = remove(order, p)[2]
+    if isone(np) && GAP.Globals.IsCyclic(fg)
+      push!(normal_cyclic_and_contained, g)
+    end  
+  end
+  #Almost done. I only want the minimal ones, so I need to sieve.
+  res = Main.ForeignGAP.MPtr[]
+  for i = 1:length(normal_cyclic_and_contained)
+    g = normal_cyclic_and_contained[i]
+    found = false
+    for j = 1:length(normal_cyclic_and_contained)
+      if j != i && GAP.Globals.IsSubgroup(g, normal_cyclic_and_contained[j])
+        found = true
+        break
+      end
+    end
+    if !found
+      push!(res, g)
+    end
+  end
+  return res, target_grp
+end
 ###############################################################################
 #
 #  Function to check the cocycle condition
@@ -142,17 +226,19 @@ function cocycle_computation(L::Main.ForeignGAP.MPtr, i::Int)
       MatCoc[i,j] = _find_exp(gen, x1*y1*GAP.Globals.Inverse(xy1))
     end
   end
-  
-  function cocycle(x::Main.ForeignGAP.MPtr, y::Main.ForeignGAP.MPtr)  
-    i = 1
-    while Elems[i] != x
-      i += 1
+  local cocycle
+  let Elems = Elems, MatCoc = MatCoc
+    function cocycle(x::Main.ForeignGAP.MPtr, y::Main.ForeignGAP.MPtr)  
+      i = 1
+      while Elems[i] != x
+        i += 1
+      end
+      j = 1
+      while Elems[j] != y
+        j += 1
+      end
+      return MatCoc[i, j]
     end
-    j = 1
-    while Elems[j] != y
-      j += 1
-    end
-    return MatCoc[i, j]
   end
   
   autos = _autos_to_check(H1, target_grp, mH1)
@@ -178,9 +264,25 @@ end
 
 ###############################################################################
 #
-#  Brauer obstruction using Crossed Product Algebras: degree 2 case
+#  Brauer Obstruction: prime case
 #
 ###############################################################################
+function assure_automorphisms(T::FieldsTower)
+  assure_automorphisms(T.field, T.generators_of_automorphisms)
+end
+
+function assure_automorphisms(K::AnticNumberField, gens::Vector{NfToNfMor})
+  try
+    _get_automorphisms_nf(K)::Vector{NfToNfMor}
+  catch e
+    if !isa(e, AccessorNotSetError)
+      rethrow(e)
+    end
+    auts = closure(gens, degree(K))
+    _set_automorphisms_nf(K, auts)
+  end
+  return nothing
+end
 
 function _Brauer_at_two(list::Vector{FieldsTower}, L::Main.ForeignGAP.MPtr, i::Int)
   mH, autos, _cocycle_values = cocycle_computation(L, i)
@@ -188,25 +290,25 @@ function _Brauer_at_two(list::Vector{FieldsTower}, L::Main.ForeignGAP.MPtr, i::I
   admit_ext = falses(length(list))
   for t = 1:length(list)
     @vprint :Fields 1 "$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())Fields to test: $(length(list)-t+1)"
+    assure_automorphisms(list[t])
     admit_ext[t] = _Brauer_no_extend(list[t], mH, autos, _cocycle_values, domcoc, 2)
   end
   @vprint :Fields 1 "$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())"
   return list[findall(admit_ext)]
 end
 
-###############################################################################
-#
-#  Brauer Obstruction: prime case
-#
-###############################################################################
 
 function _Brauer_prime_case(list::Vector{FieldsTower}, L::Main.ForeignGAP.MPtr, i::Int, p::Int)
   
+  if p == 2
+    return _Brauer_at_two(list, L, i)
+  end
   list1 = falses(length(list))  
   mH, autos, coc = cocycle_computation(L, i)
   H = GAP.Globals.ImagesSource(mH)
   for t = 1:length(list)
     @vprint :Fields 1 "$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())Fields to test: $(length(list)-t+1)"
+    assure_automorphisms(list[t])
     K = list[t].field
     lp = ramified_primes(list[t])
     if all(x -> (isone(mod(x, p)) || x == p), lp)
@@ -222,9 +324,18 @@ function _Brauer_prime_case(list::Vector{FieldsTower}, L::Main.ForeignGAP.MPtr, 
     #I construct the group and the isomorphisms between the automorphisms and the gap group.
     permGC = _from_autos_to_perm(autsK) 
     Gperm = _perm_to_gap_grp(permGC)
-    dautsK1 = Dict{NfToNfMor, Int}()
+    d = discriminant(K.pol)
+    d1 = discriminant(K1.pol)
+    Pcomp = 2
+    while iszero(mod(numerator(d), Pcomp)) || iszero(mod(numerator(d1), Pcomp)) || iszero(mod(p, Pcomp))
+      Pcomp = next_prime(Pcomp)
+    end
+    R = GF(Pcomp, cached = false)
+    Rx = PolynomialRing(R, "x", cached = false)[1]
+    fmod = Rx(K.pol)
+    dautsK1 = Dict{gfp_poly, Int}()
     for w = 1:length(autsK1)
-      dautsK1[autsK1[w]] = w
+      dautsK1[Rx(autsK1[w].prim_img)] = w
     end 
     iso = GAP.Globals.IsomorphismGroups(Gperm, H)
     ElemGAP = Vector{Main.ForeignGAP.MPtr}(undef, length(permGC))
@@ -240,8 +351,8 @@ function _Brauer_prime_case(list::Vector{FieldsTower}, L::Main.ForeignGAP.MPtr, 
     for g in autos
       #I create the cocycle
       local cocycle
-      let restr = restr, dautsK1 = dautsK1, g = g, ElemGAP = ElemGAP, coc = coc, p = p
-        function cocycle(aut1::NfToNfMor, aut2::NfToNfMor)
+      let restr = restr, dautsK1 = dautsK1, g = g, ElemGAP = ElemGAP, coc = coc, p = p, Rx = Rx
+        function cocycle(aut1::gfp_poly, aut2::gfp_poly)
           s1 = restr[dautsK1[aut1]]
           a1 = GAP.Globals.Image(g, ElemGAP[s1])
           s2 = restr[dautsK1[aut2]]
@@ -251,7 +362,7 @@ function _Brauer_prime_case(list::Vector{FieldsTower}, L::Main.ForeignGAP.MPtr, 
         end
       end
       
-      if cpa_issplit(K1, Gp, cocycle, p)
+      if cpa_issplit(K1, Gp, cocycle, p, Rx)
         obstruction = true
         push!(auts_for_conductor, g)
       end
@@ -273,11 +384,18 @@ function _Brauer_no_extend(x::FieldsTower, mH, autos, _cocycle_values, domcoc, p
   K = x.field
   OK = maximal_order(K)
   GC = automorphisms(K, copy = false)
-  DGCvect = Vector{Tuple{NfToNfMor, Int}}(undef, length(GC))
-  for i = 1:length(GC)
-    DGCvect[i] = (GC[i], i)
+  d = discriminant(K.pol)
+  Pcomp = 2
+  while iszero(mod(numerator(d), Pcomp)) || iszero(mod(p, Pcomp))
+    Pcomp = next_prime(Pcomp)
   end
-  DGC = Dict{NfToNfMor, Int}(DGCvect)
+  R = GF(Pcomp, cached = false)
+  Rx = PolynomialRing(R, "x", cached = false)[1]
+  DGCvect = Vector{Tuple{gfp_poly, Int}}(undef, length(GC))
+  for i = 1:length(GC)
+    DGCvect[i] = (Rx(GC[i].prim_img), i)
+  end
+  DGC = Dict{gfp_poly, Int}(DGCvect)
   permGC = _from_autos_to_perm(GC) #TODO: Improve a little.
   Gperm = _perm_to_gap_grp(permGC)
   PermGAP = Vector{Main.ForeignGAP.MPtr}(undef, length(permGC))
@@ -298,17 +416,17 @@ function _Brauer_no_extend(x::FieldsTower, mH, autos, _cocycle_values, domcoc, p
     #I create the cocycle
     local cocycle
     let DGC = DGC, g = g, ElemGAP = ElemGAP
-      function cocycle(aut1::NfToNfMor, aut2::NfToNfMor)
+      function cocycle(aut1::gfp_poly, aut2::gfp_poly)
         s1 = DGC[aut1]
         a1 = GAP.Globals.Image(g, ElemGAP[s1])
         s2 = DGC[aut2]
         b1 = GAP.Globals.Image(g, ElemGAP[s2])
-        return mod(_cocycle_values(a1, b1), p)
+        return mod(_cocycle_values(a1, b1), p)::Int
       end
     end
   
     #Now, we have to see if it splits
-    fl = cpa_issplit(K, Gp, cocycle, p)
+    fl = cpa_issplit(K, Gp, cocycle, p, Rx)
     if fl
       obstruction = true
       push!(auts_for_conductors, g)
@@ -527,6 +645,7 @@ function check_Brauer_obstruction_pp(list::Vector{FieldsTower}, L::Main.ForeignG
   for t = 1:length(list)
     @vprint :Fields 1 "$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())Fields to test: $(length(list)-t+1)"
     lp = ramified_primes(list[t])
+    assure_automorphisms(list[t])
     if all(x -> (isone(mod(x, pv)) || x == p), lp)
       list1[t] = _Brauer_no_extend_pp(list[t], mH, autos, coc, p, v, Elems, pv, action_grp)
       continue
@@ -540,9 +659,17 @@ function check_Brauer_obstruction_pp(list::Vector{FieldsTower}, L::Main.ForeignG
     #I construct the group and the isomorphisms between the automorphisms and the gap group.
     permGC = _from_autos_to_perm(autsK) 
     Gperm = _perm_to_gap_grp(permGC)
-    dautsK1 = Dict{NfToNfMor, Int}()
+    d1 = numerator(discriminant(K.pol))
+    d2 = numerator(discriminant(K1.pol))
+    Pcomp = 7
+    while iszero(mod(d1, Pcomp)) || iszero(mod(d2, Pcomp))
+      Pcomp = next_prime(Pcomp)
+    end
+    R = GF(Pcomp, cached = false)
+    Rx, x = PolynomialRing(R, "x", cached = false)
+    dautsK1 = Dict{gfp_poly, Int}()
     for w = 1:length(autsK1)
-      dautsK1[autsK1[w]] = w
+      dautsK1[Rx(autsK1[w].prim_img)] = w
     end 
     iso = GAP.Globals.IsomorphismGroups(Gperm, H)
     ElemGAP = Vector{Main.ForeignGAP.MPtr}(undef, length(permGC))
@@ -559,8 +686,8 @@ function check_Brauer_obstruction_pp(list::Vector{FieldsTower}, L::Main.ForeignG
     for (g1, g2) in autos
       #I create the cocycle
       local cocycle
-      let restr = restr, ElemGAP = ElemGAP, dautsK1 = dautsK1, coc = coc, pv = pv
-        function cocycle(aut1::NfToNfMor, aut2::NfToNfMor)
+      let restr = restr, ElemGAP = ElemGAP, dautsK1 = dautsK1, coc = coc, pv = pv, Rx = Rx, g2 = g2, g1 = g1
+        function cocycle(aut1::gfp_poly, aut2::gfp_poly)
           s1 = restr[dautsK1[aut1]]
           a1 = GAP.Globals.PreImagesRepresentative(g1, ElemGAP[s1])
           s2 = restr[dautsK1[aut2]]
@@ -577,7 +704,7 @@ function check_Brauer_obstruction_pp(list::Vector{FieldsTower}, L::Main.ForeignG
           push!(Stab, Gp[w])
           continue
         end
-        s1 = restr[dautsK1[Gp[w]]]
+        s1 = restr[dautsK1[Rx(Gp[w].prim_img)]]
         img_el = GAP.Globals.PreImagesRepresentative(g1, ElemGAP[s1])
         ind = 1
         for s = 1:length(Elems)
@@ -595,7 +722,7 @@ function check_Brauer_obstruction_pp(list::Vector{FieldsTower}, L::Main.ForeignG
       #If the group acts as the roots of unity, we have a Brauer embedding problem, so
       # we only have to check one algebra.
       if length(Stab) == length(Gp)
-        fl = cpa_issplit(K1, Gp, cocycle, pv)
+        fl = cpa_issplit(K1, Gp, cocycle, pv, Rx)
         if fl
           obstruction = true
           push!(auts_for_conductors, g1)
@@ -606,7 +733,7 @@ function check_Brauer_obstruction_pp(list::Vector{FieldsTower}, L::Main.ForeignG
       #One corresponds to the subextension of prime degree, the other one corresponds
       # the the embedding problem given by the subgroup of G having the same action on G and
       # on the roots of unity.
-      fl = cpa_issplit(K1, Gp, cocycle, p) && cpa_issplit(K1, Gp, Stab, cocycle, p, v)
+      fl = cpa_issplit(K1, Gp, cocycle, p, Rx) && cpa_issplit(K1, Gp, Stab, cocycle, p, v, Rx)
       
       if fl
         obstruction = true
@@ -634,9 +761,16 @@ function _Brauer_no_extend_pp(F, mH, autos, coc, p, v, Elems, pv, action_grp)
   #I construct the group and the isomorphisms between the automorphisms and the gap group.
   permGC = _from_autos_to_perm(autsK) 
   Gperm = _perm_to_gap_grp(permGC)
-  dautsK = Dict{NfToNfMor, Int}()
+  d1 = numerator(discriminant(K.pol))
+  Pcomp = 7
+  while iszero(mod(d1, Pcomp))
+    Pcomp = next_prime(Pcomp)
+  end
+  R = GF(Pcomp, cached = false)
+  Rx, x = PolynomialRing(R, "x", cached = false)
+  dautsK = Dict{gfp_poly, Int}()
   for w = 1:length(autsK)
-    dautsK[autsK[w]] = w
+    dautsK[Rx(autsK[w].prim_img)] = w
   end 
   H = GAP.Globals.ImagesSource(mH)
   iso = GAP.Globals.IsomorphismGroups(Gperm, H)
@@ -653,8 +787,8 @@ function _Brauer_no_extend_pp(F, mH, autos, coc, p, v, Elems, pv, action_grp)
   for (g1, g2) in autos
     #I create the cocycle
     local cocycle
-    let  ElemGAP = ElemGAP, dautsK = dautsK, coc = coc, pv = pv
-      function cocycle(aut1::NfToNfMor, aut2::NfToNfMor)
+    let  ElemGAP = ElemGAP, dautsK = dautsK, coc = coc, pv = pv, Rx = Rx
+      function cocycle(aut1::gfp_poly, aut2::gfp_poly)
         s1 = dautsK[aut1]
         a1 = GAP.Globals.PreImagesRepresentative(g1, ElemGAP[s1])
         s2 = dautsK[aut2]
@@ -671,7 +805,7 @@ function _Brauer_no_extend_pp(F, mH, autos, coc, p, v, Elems, pv, action_grp)
         push!(Stab, Gp[w])
         continue
       end
-      s1 = dautsK[Gp[w]]
+      s1 = dautsK[Rx(Gp[w].prim_img)]
       img_el = GAP.Globals.PreImagesRepresentative(g1, ElemGAP[s1])
       ind = 1
       for s = 1:length(Elems)
@@ -689,7 +823,7 @@ function _Brauer_no_extend_pp(F, mH, autos, coc, p, v, Elems, pv, action_grp)
     #If the group acts as the roots of unity, we have a Brauer embedding problem, so
     # we only have to check one algebra.
     if length(Stab) == length(Gp)
-      fl = cpa_issplit(K, Gp, cocycle, pv)
+      fl = cpa_issplit(K, Gp, cocycle, pv, Rx)
       if fl
         obstruction = true
         push!(auts_for_conductors, g1)
@@ -700,7 +834,7 @@ function _Brauer_no_extend_pp(F, mH, autos, coc, p, v, Elems, pv, action_grp)
     #One corresponds to the subextension of prime degree, the other one corresponds
     # the the embedding problem given by the subgroup of G having the same action on G and
     # on the roots of unity.
-    fl = cpa_issplit(K, Gp, cocycle, p) && cpa_issplit(K, Gp, Stab, cocycle, p, v)
+    fl = cpa_issplit(K, Gp, cocycle, p, Rx) && cpa_issplit(K, Gp, Stab, cocycle, p, v, Rx)
     if fl
       obstruction = true
       push!(auts_for_conductors, g1)
@@ -717,38 +851,7 @@ function _Brauer_no_extend_pp(F, mH, autos, coc, p, v, Elems, pv, action_grp)
   end
   
 end
-###############################################################################
-#
-#  Brauer obstruction: interface
-#
-###############################################################################
 
-function check_Brauer_obstruction(list::Vector{FieldsTower}, L::Main.ForeignGAP.MPtr, i::Int, l::Int)
-  d = degree(list[1])
-  if gcd(d, l) == 1
-    return list
-  end
-  fac = factor(l)
-  for (p, v) in fac
-    if d % Int(p) != 0
-      continue
-    end
-    if p == 2
-      list = _Brauer_at_two(list, L, i)
-      if v > 1
-        @vprint :Fields 1 "Fields after first step: $(length(list))\n"
-        list = check_Brauer_obstruction_pp(list, L, i, 2, v)
-      end
-    else
-      if v > 1
-        list = check_Brauer_obstruction_pp(list, L, i, Int(p), v)
-      else
-        list = _Brauer_prime_case(list, L, i, Int(p))
-      end
-    end
-  end
-  return list
-end
 
 ###############################################################################
 #
@@ -758,9 +861,11 @@ end
 ###############################################################################
 
 #p must be a prime power 
-function cpa_issplit(K::AnticNumberField, G::Vector{NfToNfMor}, Coc::Function, pv::Int, lp::Vector{fmpz} = Hecke.ramified_primes(maximal_order(K)))
+function cpa_issplit(K::AnticNumberField, G::Vector{NfToNfMor}, Coc::Function, pv::Int, Rx::GFPPolyRing)
   p = ispower(pv)[2]
-  @vtime :BrauerObst 1 if p == 2 && !istotally_real(K) && !is_split_at_infinity(K, Coc)
+  O = maximal_order(K)
+  r, s = signature(O)
+  @vtime :BrauerObst 1 if p == 2 && r!= degree(O) && !is_split_at_infinity(K, Coc, Rx)
     return false    
   end
   # Now, the finite primes.
@@ -768,14 +873,14 @@ function cpa_issplit(K::AnticNumberField, G::Vector{NfToNfMor}, Coc::Function, p
   # of the cocycle, but our cocycle has values in the roots of unity...
   # I only need to check the tame ramification.
   # The exact sequence on Brauer groups and completion tells me that I have one degree of freedom! :)
-  O = maximal_order(K)
+  lp = Hecke.ramified_primes(O)
   if !(p in lp) && divisible(discriminant(O), p)
     push!(lp, p)
   end 
   if p in lp
     for q in lp
       if q != p 
-        @vtime :BrauerObst 1 fl = is_split_at_p(O, G, Coc, Int(q), pv)
+        @vtime :BrauerObst 1 fl = is_split_at_p(O, G, Coc, Int(q), pv, Rx)
         if !fl
           return false
         end
@@ -783,7 +888,7 @@ function cpa_issplit(K::AnticNumberField, G::Vector{NfToNfMor}, Coc::Function, p
     end
   else
     for i = 1:length(lp)-1
-      @vtime :BrauerObst 1 fl = is_split_at_p(O, G, Coc, Int(lp[i]), pv)
+      @vtime :BrauerObst 1 fl = is_split_at_p(O, G, Coc, Int(lp[i]), pv, Rx)
       if !fl
         return false
       end
@@ -793,9 +898,9 @@ function cpa_issplit(K::AnticNumberField, G::Vector{NfToNfMor}, Coc::Function, p
 end
 
 
-function is_split_at_infinity(K::AnticNumberField, Coc::Function)
+function is_split_at_infinity(K::AnticNumberField, Coc::Function, Rx::GFPPolyRing)
   aut = complex_conjugation(K)
-  if Coc(aut, aut) == 1
+  if Coc(Rx(aut.prim_img), Rx(aut.prim_img)) == 1
     @vprint :Fields 3 "Real places!\n"
     return false
   else
@@ -899,7 +1004,7 @@ end
 #See Gerald J. Janusz (1980) Crossed product orders and the schur index,
 #Communications in Algebra, 8:7, 697-706
 
-function is_split_at_p(O::NfOrd, GC::Array{NfToNfMor, 1}, Coc::Function, p::Int, n::Int)
+function is_split_at_p(O::NfOrd, GC::Array{NfToNfMor, 1}, Coc::Function, p::Int, n::Int, Rx::GFPPolyRing)
 
   lp = prime_decomposition(O, p, cached = true)
   e = gcd(length(GC), lp[1][2])
@@ -928,8 +1033,11 @@ function is_split_at_p(O::NfOrd, GC::Array{NfToNfMor, 1}, Coc::Function, p::Int,
   q = p^f1 #Cardinality of the residue field
   
   F, mF = Hecke.ResidueFieldSmall(O, P)
-  theta = _find_theta(Gp, F, mF, e)
+  theta1 = _find_theta(Gp, F, mF, e)
+  theta = Rx(theta1.prim_img)
   
+  K = nf(O)
+  fmod = Rx(K.pol)
   #I have found my generators. Now, we find the elements to test if it splits.
   @assert divisible(norm(P)-1, e)
   c = divexact(norm(P)-1, e)
@@ -937,8 +1045,8 @@ function is_split_at_p(O::NfOrd, GC::Array{NfToNfMor, 1}, Coc::Function, p::Int,
     powtheta = theta
     zeta = 0
     for k = 1:e-1
-      zeta += Coc(powtheta, theta)
-      powtheta *= theta
+      zeta += Coc(powtheta, theta)::Int
+      powtheta = compose_mod(powtheta, theta, fmod)
     end
     zeta = mod(zeta * c, n)
     if !iszero(zeta)
@@ -951,31 +1059,55 @@ function is_split_at_p(O::NfOrd, GC::Array{NfToNfMor, 1}, Coc::Function, p::Int,
   if f == 1
     return true
   end
-  frob = _find_frob(Gp, F, mF, e, f, q, theta)
+  frob = Rx(_find_frob(Gp, F, mF, e, f, q, theta1).prim_img)
   if iszero(mod(q-1, e*n))
-    lambda = mod(Coc(frob, theta)- Coc(theta, frob), n)
+    lambda = mod(Coc(frob, theta)- Coc(theta, frob), n)::Int
     return iszero(lambda)
   end
-  lambda = Coc(frob, theta)
+  lambda = Coc(frob, theta)::Int
   powtheta = theta
   s, t = divrem(q-1, e)
   if !iszero(mod(s+1, n))
     for k = 1:t
-      lambda -= (s+1) * Coc(powtheta, theta)
-      powtheta *= theta
+      lambda -= (s+1) * Coc(powtheta, theta)::Int
+      powtheta = compose_mod(powtheta, theta, fmod)
     end
   else
-    powtheta = theta^(t+1)
+    powtheta = _pow_as_comp(theta, t+1, fmod)
   end
   if !iszero(mod(s, n))
     for k = t+1:(e-1)
-      lambda -= s * Coc(powtheta, theta)
-      powtheta *= theta
+      lambda -= s * Coc(powtheta, theta)::Int
+      powtheta = compose_mod(powtheta, theta, fmod)
     end
   end
-  powtheta = theta^mod(q, e)
-  lambda = mod(lambda - Coc(powtheta, frob), n)
+  powtheta = _pow_as_comp(theta, mod(q, e), fmod)
+  lambda = mod(lambda - Coc(powtheta, frob), n)::Int
   return iszero(lambda)
+end
+
+function _pow_as_comp(f::gfp_poly, b::Int, fmod::gfp_poly)
+  Rx = base_ring(f)
+  if b == 0
+    error("what is that?!")
+  elseif b == 1
+    return f
+  else
+    bit = ~((~UInt(0)) >> 1)
+    while (UInt(bit) & b) == 0
+      bit >>= 1
+    end
+    z = f
+    bit >>= 1
+    while bit != 0
+      z = Hecke.compose_mod(z, z, fmod)
+      if (UInt(bit) & b) != 0
+        z = Hecke.compose_mod(f, z, fmod)
+      end
+      bit >>= 1
+    end
+    return z
+  end
 end
 
 ################################################################################
@@ -985,9 +1117,11 @@ end
 ################################################################################
 
 
-function cpa_issplit(K::AnticNumberField, G::Vector{NfToNfMor}, Stab::Vector{NfToNfMor}, Coc::Function, p::Int, v::Int)
+function cpa_issplit(K::AnticNumberField, G::Vector{NfToNfMor}, Stab::Vector{NfToNfMor}, Coc::Function, p::Int, v::Int, Rx::GFPPolyRing)
 
-  @vtime :BrauerObst 1 if p == 2 && !istotally_real(K) && !is_split_at_infinity(K, Coc)
+  O = maximal_order(K)
+  r, s = signature(O)
+  @vtime :BrauerObst 1 if p == 2 && r != degree(K) && !is_split_at_infinity(K, Coc, Rx)
     return false    
   end
   # Now, the finite primes.
@@ -995,12 +1129,12 @@ function cpa_issplit(K::AnticNumberField, G::Vector{NfToNfMor}, Stab::Vector{NfT
   # of the cocycle, but our cocycle has values in the roots of unity...
   # I only need to check the tame ramification.
   # The exact sequence on Brauer groups and completion tells me that I have one degree of freedom! :)
-  O = maximal_order(K)
+  
   lp = Hecke.ramified_primes(O)
   if p in lp
     for q in lp
       if q != p 
-        @vtime :BrauerObst 1 fl = is_split_at_p(O, G, Stab, Coc, Int(q), p^v)
+        @vtime :BrauerObst 1 fl = is_split_at_p(O, G, Stab, Coc, Int(q), p^v, Rx)
         if !fl
           return false
         end
@@ -1008,7 +1142,7 @@ function cpa_issplit(K::AnticNumberField, G::Vector{NfToNfMor}, Stab::Vector{NfT
     end
   else
     for i = 1:length(lp)-1
-      @vtime :BrauerObst 1 fl = is_split_at_p(O, G, Stab, Coc, Int(lp[i]), p^v)
+      @vtime :BrauerObst 1 fl = is_split_at_p(O, G, Stab, Coc, Int(lp[i]), p^v, Rx)
       if !fl
         return false
       end
@@ -1019,7 +1153,7 @@ function cpa_issplit(K::AnticNumberField, G::Vector{NfToNfMor}, Stab::Vector{NfT
 end
 
 
-function is_split_at_p(O::NfOrd, GC::Vector{NfToNfMor}, Stab::Vector{NfToNfMor}, Coc::Function, p::Int, n::Int)
+function is_split_at_p(O::NfOrd, GC::Vector{NfToNfMor}, Stab::Vector{NfToNfMor}, Coc::Function, p::Int, n::Int, Rx::GFPPolyRing)
 
   lp = prime_decomposition(O, p, cached = true)
   e = gcd(length(GC), lp[1][2])
@@ -1068,14 +1202,16 @@ function is_split_at_p(O::NfOrd, GC::Vector{NfToNfMor}, Stab::Vector{NfToNfMor},
   f1 = divexact(degree(P), f)
   q = p^f1 #Cardinality of the residue field
 
-  theta = _find_theta(GpStab, F, mF, e)
+  theta1 = _find_theta(GpStab, F, mF, e)
+  theta = Rx(theta1.prim_img)
+  fmod = Rx(nf(O).pol)
   #I have found my generators. Now, we find the elements to test if it splits.
   if !iszero(mod(c, n))
     powtheta = theta
     zeta = 0
     for k = 1:e-1
       zeta += Coc(powtheta, theta)
-      powtheta *= theta
+      powtheta = compose_mod(powtheta, theta, fmod)
     end
     zeta = mod(zeta * c, n)
     if !iszero(zeta)
@@ -1086,7 +1222,7 @@ function is_split_at_p(O::NfOrd, GC::Vector{NfToNfMor}, Stab::Vector{NfToNfMor},
   if f == 1
     return true
   end
-  frob = _find_frob(GpStab, F, mF, e, f, q, theta)
+  frob = Rx(_find_frob(GpStab, F, mF, e, f, q, theta1).prim_img)
   if iszero(mod(q-1, e*n))
     lambda = mod(Coc(frob, theta)- Coc(theta, frob), n)
     return iszero(lambda)
@@ -1097,19 +1233,19 @@ function is_split_at_p(O::NfOrd, GC::Vector{NfToNfMor}, Stab::Vector{NfToNfMor},
   if !iszero(mod(s+1, n))
     for k = 1:t
       lambda -= (s+1) * Coc(powtheta, theta)
-      powtheta *= theta
+      powtheta = compose_mod(powtheta, theta, fmod)
     end
   else
-    powtheta = theta^(t+1)
+    powtheta = _pow_as_comp(theta, t+1, fmod)
   end
   lambda -= Coc(powtheta, frob)
   if !iszero(mod(s, n))
     for k = t+1:(e-1)
       lambda -= s * Coc(powtheta, theta)
-      powtheta *= theta
+      powtheta = compose_mod(powtheta, theta, fmod)
     end
   end
-  powtheta = theta^mod(q, e)
+  powtheta = _pow_as_comp(theta, mod(q, e), fmod)
   lambda = mod(lambda - Coc(powtheta, frob), n)
   return iszero(lambda)
 

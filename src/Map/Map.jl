@@ -63,21 +63,37 @@ end
 
 
 function change(D::Dict{K, V}, k::K, def::V, new::Function) where {K, V}
-  i = Base.ht_keyindex(D, k)
+  i = Base.ht_keyindex2!(D, k)
   if i>0
     D.vals[i] = new(D.vals[i])
   else
-    D[k] = def
+    pos = -i
+    D.keys[pos] = k
+    D.vals[pos] = def
+    D.count += 1
+    if pos < D.idxfloor
+      D.idxfloor = pos
+    end
+    D.slots[pos] = 0x1
   end
+  return nothing
 end
 
 function inc(D::Dict{K, Int}, k::K, def::Int = 0) where K
-  i = Base.ht_keyindex(D, k)
+  i = Base.ht_keyindex2!(D, k)
   if i>0
     D.vals[i] += 1
   else
-    D[k] = def
+    pos = -i
+    D.keys[pos] = k
+    D.vals[pos] = def
+    D.count += 1
+    if pos < D.idxfloor
+      D.idxfloor = pos
+    end
+    D.slots[pos] = 0x1
   end
+  return nothing
 end
 
 

@@ -609,12 +609,12 @@ Tests if $x$ represents $1$ without an evaluation.
 """
 function isone(x::FacElem{fmpq})
   y = simplify(x)
-  return all(iszero, values(y.fac))
+  return all(iszero, values(y.fac)) || all(isone, keys(y.fac))
 end
 
 function isone(x::FacElem{fmpz})
   y = simplify(x)
-  return all(iszero, values(y.fac))
+  return all(iszero, values(y.fac)) || all(isone, keys(y.fac))
 end
 
 
@@ -808,22 +808,31 @@ end
 
 #used (hopefully) only inside the class group
 function FacElem(A::Array{nf_elem_or_fac_elem, 1}, v::Array{fmpz, 1})
+  local B::FacElem{nf_elem, AnticNumberField}
   if typeof(A[1]) == nf_elem
-    B = FacElem(A[1])
+    B = FacElem(A[1]::nf_elem)
   else
-    B = A[1]
+    B = A[1]::FacElem{nf_elem, AnticNumberField}
   end
   B = B^v[1]
   for i=2:length(A)
+    if iszero(v[i])
+      continue
+    end
     if typeof(A[i]) == nf_elem
-      add_to_key!(B.fac, A[i], v[i])
+      local t::nf_elem = A[i]::nf_elem
+      add_to_key!(B.fac, t, v[i])
     else
-      for (k, v1) in A[i]
+      local s::FacElem{nf_elem, AnticNumberField} = A[i]::FacElem{nf_elem, AnticNumberField}
+      for (k, v1) in s
+        if iszero(v1)
+          continue
+        end
         add_to_key!(B.fac, k, v1*v[i])
       end
     end
   end
-  return B
+  return B::FacElem{nf_elem, AnticNumberField}
 end
 
 #################################################################################

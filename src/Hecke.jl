@@ -210,6 +210,10 @@ function __init__()
   global _get_nf_conjugate_data_qAdic = t[1]
   global _set_nf_conjugate_data_qAdic = t[2]
 
+  t = Hecke.create_accessors(AnticNumberField, Tuple{Int, Int}, get_handle())
+  global _get_nf_signature = t[1]
+  global _set_nf_signature = t[2]
+
 
   global R = _RealRing()
 
@@ -230,7 +234,17 @@ function __init__()
   @require Polymake="d720cf60-89b5-51f5-aff5-213f193123e7" begin
     include("AlgAssRelOrd/NEQ_polymake.jl")
   end
+
+  @eval global signature(K::AnticNumberField) = _signature(K)
 end
+
+module Globals
+  using Hecke
+  const Qx, _ = PolynomialRing(FlintQQ, "x", cached = false)
+  const Zx, _ = PolynomialRing(FlintZZ, "x", cached = false)
+end
+using .Globals
+
 
 ################################################################################
 #
@@ -338,6 +352,20 @@ function torsion_units_gen(K::AnticNumberField)
   return g
 end
 
+function _signature(K::AnticNumberField)
+  try
+    sig = _get_nf_signature(K)::Tuple{Int, Int}
+    return sig
+  catch e
+    if !isa(e, AccessorNotSetError)
+      rethrow(e)
+    end
+  end
+  sig = signature(defining_polynomial(K))
+  _set_nf_signature(K, sig)
+  return sig::Tuple{Int, Int}
+end
+
 ################################################################################
 #
 #  Intermediate backwards compatibility
@@ -354,11 +382,12 @@ Base.adjoint(x) = transpose(x)
 #
 ################################################################################
 
-global VERSION_NUMBER = v"0.6.5"
+global VERSION_NUMBER = v"0.6.7"
 
 ######################################################################
 # named printing support
 ######################################################################
+
 # to use:
 # in HeckeMap
 #   in the show function, start with @show_name(io, map)

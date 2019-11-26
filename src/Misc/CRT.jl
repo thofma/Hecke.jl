@@ -544,8 +544,7 @@ the residue class fields of the associated primes ideals above $p$.
 Returns data that can be used by \code{modular_proj} and \code{modular_lift}.
 """
 function modular_init(K::AnticNumberField, p::fmpz; deg_limit::Int=0, max_split::Int = 0)
-  @assert isprime(p)
-
+  @hassert :NfOrd 1 isprime(p)
   me = modular_env()
   me.Fpx = PolynomialRing(ResidueRing(FlintZZ, Int(p), cached = false), "_x", cached=false)[1]
   fp = me.Fpx(K.pol)
@@ -624,7 +623,9 @@ function modular_proj(A::FacElem{nf_elem, AnticNumberField}, me::modular_env)
       ccall((:fq_nmod_set, :libflint), Nothing,
                   (Ref{fq_nmod}, Ref{nmod_poly}, Ref{FqNmodFiniteField}),
                   u, me.rp[i], F)
-      u = u^(v % (size(F)-1))            
+      eee = mod(v, size(F)-1)
+      #@show v, eee, size(F)-1
+      u = u^eee          
       me.res[i] *= u
     end
   end  

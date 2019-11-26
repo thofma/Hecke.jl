@@ -88,13 +88,16 @@ end
 
 function number_field(K::KummerExt)
   k = base_field(K)
-  kt, t = PolynomialRing(k, "t", cached = false)
-  pols = Array{typeof(t), 1}(undef, length(K.gen))
+  kt = PolynomialRing(k, "t", cached = false)[1]
+  pols = Array{elem_type(kt), 1}(undef, length(K.gen))
   for i = 1:length(pols)
-    p = kt()
-    setcoeff!(p, Int(order(K.AutG[i])), k(1))
-    setcoeff!(p, 0, -evaluate(K.gen[i]))
-    pols[i] = p
+    p = Vector{nf_elem}(undef, Int(order(K.AutG[i]))+1)
+    p[1] = -evaluate(K.gen[i])
+    for i = 2:Int(order(K.AutG[i]))
+      p[i] = zero(k)
+    end 
+    p[end] = one(k)
+    pols[i] = kt(p)
   end
   return number_field(pols, check = false, cached = false)
 end
@@ -178,7 +181,7 @@ function can_frobenius(p::NfOrdIdl, K::KummerExt)
     throw(BadPrime(p))
   end
 
-  if nbits(minimum(p)) > 64
+  if !fits(Int, minimum(p, copy = false))
     error("Oops")
   end
 
@@ -227,7 +230,7 @@ function can_frobenius1(p::NfOrdIdl, K::KummerExt)
     throw(BadPrime(p))
   end
 
-  if nbits(minimum(p)) > 64
+  if !fits(Int, minimum(p, copy = false))
     error("Oops")
   end
 
@@ -281,7 +284,7 @@ function can_frobenius(p::NfOrdIdl, K::KummerExt, g::FacElem{nf_elem})
     throw(BadPrime(p))
   end
 
-  if nbits(minimum(p)) > 64
+  if !fits(Int, minimum(p, copy = false))
     error("Oops")
   end
 

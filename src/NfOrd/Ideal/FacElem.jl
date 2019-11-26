@@ -1,8 +1,8 @@
 function factored_norm(A::FacElem{NfOrdIdl, NfOrdIdlSet})
-  b = Dict{fmpz, fmpz}()
+  b = Dict{fmpq, fmpz}()
   for (p, k) = A.fac
     n = norm(p)
-    add_to_key!(b, n, k)
+    add_to_key!(b, fmpq(n), k)
     #if haskey(b, n)
     #  b[n] += k
     #else
@@ -20,22 +20,22 @@ end
 
 function factored_norm(A::NfOrdFracIdl)
   n = norm(A)
-  return FacElem(Dict(numerator(n) => 1, denominator(n) => -1))
+  return FacElem(Dict(fmpq(numerator(n)) => 1, fmpq(denominator(n)) => -1))
 end
 
 function factored_norm(A::FacElem{NfOrdFracIdl, NfOrdFracIdlSet})
-  b = Dict{fmpz, fmpz}()
+  b = Dict{fmpq, fmpz}()
   for (p, k) = A.fac
     n = norm(p)
     v = numerator(n)
-    add_to_key!(b, v, k)
+    add_to_key!(b, fmpq(v), k)
     #if haskey(b, v)
     #  b[v] += k
     #else
     #  b[v] = k
     #end
-    v = denominator(n)
-    add_to_key!(b, v, -k)
+    v1 = denominator(n)
+    add_to_key!(b, fmpq(v1), -k)
     #if haskey(b, v)
     #  b[v] -= k
     #else
@@ -65,7 +65,7 @@ function abs(A::FacElemQ)
     #end
   end
   if length(B) == 0
-    return FacElem(FlintZZ)
+    return FacElem(Dict(one(base_ring(A)) => fmpz(1)))
   end
   return FacElem(B)
 end
@@ -73,12 +73,12 @@ end
 function ==(A::T, B::T) where {T <: FacElemQ}
   C = A*B^-1
   simplify!(C)
-  return all(iszero, values(C.fac))
+  return isone(C)
 end
 
 function isone(A::FacElemQ)
   C = simplify(A)
-  return all(iszero, values(C.fac))
+  return all(iszero, values(C.fac)) || all(isone, keys(C.fac))
 end
 
 function ==(A::NfOrdIdl, B::FacElem{NfOrdIdl, NfOrdIdlSet})

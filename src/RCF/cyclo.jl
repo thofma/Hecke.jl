@@ -37,7 +37,6 @@ both as an absolute extension, as a relative extension (of $k$) and the maps
 between them.
 """
 function cyclotomic_extension(k::AnticNumberField, n::Int; cached::Bool = true,  compute_maximal_order::Bool = true, compute_LLL_basis::Bool = true)
-
   Ac = CyclotomicExt[]
   if cached
     try 
@@ -60,7 +59,7 @@ function cyclotomic_extension(k::AnticNumberField, n::Int; cached::Bool = true, 
   c.k = k
   c.n = n
   
-  if n == 2
+  if n <= 2
     #Easy, just return the field
     Kr = number_field(t+1, cached = false, check = false)[1]
     if compute_maximal_order
@@ -143,53 +142,7 @@ function cyclotomic_extension(k::AnticNumberField, n::Int; cached::Bool = true, 
     end
     return c
   end
-  if n == 8 
-    if !isone(gcd(degree(fk), degree(k))) && !isone(gcd(discriminant(maximal_order(k)), 2)) 
-      if istotally_real(k)
-        f1k = kt(nf_elem[k(-2), zero(k), one(k)])
-        rt = _roots_hensel(f1k, max_roots = 1, isnormal = true)
-        if length(rt) == 1
-          fk = kt(nf_elem[one(k), zero(k), one(k)])
-        end
-      else
-        lf = factor(fk)
-        fk = first(keys(lf.fac))
-      end
-    end
-    
-    Kr, Kr_gen = number_field(fk, "z_$n", cached = false, check = false)
-    Ka, abs2rel, small2abs = Hecke.absolute_field(Kr, false)
-    if compute_maximal_order
-      Zk = maximal_order(k)
-      b_k = basis(Zk, k)
-      B_k = Vector{nf_elem}(undef, degree(Ka))
-      for i = 1:length(b_k)
-        B_k[i] = small2abs(b_k[i])
-      end
-      g = abs2rel\(Kr_gen)
-      for j = 1:length(B_k)-length(b_k)
-        B_k[j+length(b_k)] = B_k[j]*g
-      end
-      ZKa = Hecke.NfOrd(B_k)
-      if divisible(discriminant(Zk), 2)
-        ZKa = pmaximal_overorder(ZKa, 2)
-      end
-      ZKa.ismaximal = 1
-      if compute_LLL_basis
-        ZKa = lll(ZKa)
-      end
-      Hecke._set_maximal_order_of_nf(Ka, ZKa)
-    end
-    c.Kr = Kr
-    c.Ka = Ka
-    c.mp = (abs2rel, small2abs)
-    if cached
-      push!(Ac, c)
-      Hecke._set_cyclotomic_ext_nf(k, Ac)
-    end
-    return c
-  end
-  
+   
   if gcd(degree(fk), degree(k)) != 1 && !isone(gcd(discriminant(maximal_order(k)), n))
     lf = factor(fk)
     fk = first(keys(lf.fac))

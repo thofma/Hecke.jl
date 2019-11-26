@@ -122,8 +122,9 @@ function pmaximal_overorder_at(O::NfOrd, primes::Array{fmpz, 1})
         OO = sum_as_Z_modules(OO, O1, M)
       end
     else
+      #Instead of starting the computation with O, I create the maximal suborder of O of p-power index
       O1 = pmaximal_overorder(O, p)
-      if discriminant(O1) != discriminant(OO)
+      if discriminant(O1) != discriminant(O)
         OO = sum_as_Z_modules(OO, O1, M)
       end
     end
@@ -135,6 +136,7 @@ function pmaximal_overorder_at(O::NfOrd, primes::Array{fmpz, 1})
   @assert isdefined(OO, :disc)
   return OO
 end
+
 ################################################################################
 #
 #  Buchmann Lenstra heuristic
@@ -150,12 +152,12 @@ function new_maximal_order(O::NfOrd; index_divisors::Vector{fmpz} = fmpz[], disc
     return O
   end
 
-  if isdefining_polynomial_nice(K) && !isone(denominator(basis_mat_inv(O)))
+  if isdefining_polynomial_nice(K) && !contains_equation_order(O)
     #The order does not contain the equation order. We add them
     O = O + EquationOrder(K)
   end
 
-  if isdefining_polynomial_nice(K) && (isequation_order(O) || isone(denominator(basis_mat_inv(O))))
+  if isdefining_polynomial_nice(K) && (isequation_order(O) || contains_equation_order(O))
     Zx, x = PolynomialRing(FlintZZ, "x", cached = false)
     f1 = Zx(K.pol)
     ds = gcd(rres(f1, derivative(f1)), discriminant(O))
@@ -391,7 +393,8 @@ function _cycleBL(O::NfOrd, q::fmpz)
     end
   end
   @vprint :NfOrd 1 "(OO:I)/OO is free\n"
-  return _cycleBL2(O, q, I)
+  res = _cycleBL2(O, q, I)
+  return res
 
 end
 
@@ -607,7 +610,7 @@ function ring_of_multipliers(a::NfAbsOrdIdl)
   n = degree(O)
   bmatinv = basis_mat_inv(a, copy = false)
   if isdefined(a, :gens) && length(a.gens) < n
-    B = a.gens
+    B = vcat(elem_type(O)[O(minimum(a))], a.gens)
   else
     B = basis(a, copy = false)
   end
@@ -626,8 +629,8 @@ function ring_of_multipliers(a::NfAbsOrdIdl)
     end
     M = representation_matrix_mod(B[i], modu)
     _copy_matrix_into_matrix(id_gen, 1, 1, M)
-    hnf_modular_eldiv!(id_gen, minimum(a), :lowerleft)
-    mod!(M, minimum(a)*bmatinv.den)
+    hnf_modular_eldiv!(id_gen, minimum(a, copy = false), :lowerleft)
+    mod!(M, minimum(a, copy = false)*bmatinv.den)
     mul!(M, M, bmatinv.num)
     M = transpose(M)
     _copy_matrix_into_matrix(m, n*(ind-1)+1, 1, M)
@@ -640,9 +643,9 @@ function ring_of_multipliers(a::NfAbsOrdIdl)
   if !isone(bmatinv.den)
     divexact!(m, m, bmatinv.den)
   end
-  hnf_modular_eldiv!(m, minimum(a))
+  hnf_modular_eldiv!(m, minimum(a, copy = false))
   mhnf = view(m, 1:n, 1:n)
-  s = prod(mhnf[i,i] for i = 1:n)
+  s = prod_diagonal(mhnf)
   if isone(s)
     return O
   end
@@ -662,7 +665,7 @@ function ring_of_multipliers(a::NfAbsOrdIdl)
   if isdefined(O, :basis_mat_inv)
     O1.basis_mat_inv = O.basis_mat_inv * mhnf
   end
-  O1.primesofmaximality = O.primesofmaximality
+  O1.primesofmaximality = fmpz[ppp for ppp in O.primesofmaximality]
   return O1
 end
 
@@ -674,7 +677,6 @@ end
 
 @doc Markdown.doc"""
     factor_shape_refined(f::gfp_poly)
-
 Given a polynomial f over a finite field, it returns an array having one
 entry for every irreducible factor giving its degree and its multiplicity.
 """
@@ -693,8 +695,123 @@ function factor_shape_refined(x::gfp_poly) where {T <: RingElem}
   return res
 end
 
+function new_pradical_frobenius1(O::NfOrd, p::Int)
+  R = GF(p, cached = false)
+  d = degree(O)
+  K = nf(O)
+  Rx = PolynomialRing(R, "x", cached = false)[1]
+  res = factor_shape_refined(Rx(K.pol))
+  md = 1
+  for i = 1:length(res)
+    md = max(md, res[i][2])
+  end
+  j = clog(fmpz(md), p)
+  sqf = factor_squarefree(Rx(K.pol))
+  p1 = one(Rx)
+  for (x, v) in sqf
+    if v > 1
+      p1 = mul!(p1, p1, x)
+    end
+  end
+  gen2 = O(lift(K, p1))
+  M1 = representation_matrix_mod(gen2, fmpz(p))
+  hnf_modular_eldiv!(M1, fmpz(p), :lowerleft)
+  powers = Dict{Int, Vector{fmpz}}()
+  gens = NfOrdElem[O(p), gen2]
+  B = basis(O, copy = false)
+  it = 0
+  while true
+    if it == j
+      I = ideal(O, M1)
+      reverse!(gens)
+      I.gens = gens
+      I.minimum = fmpz(p)
+      return I
+    end
+    it += 1
+    indices = Int[]
+    for i = 1:d
+      if !isone(M1[i, i])
+        push!(indices, i)
+      end
+    end
+    nr = length(indices)
+    A = zero_matrix(R, d, nr + d)
+    ind = 0
+    for i in 1:d
+      if !(i in indices)
+        continue
+      end
+      ind += 1
+      if haskey(powers, i)
+        ar = copy(powers[i])
+        for k in 1:d
+          A[k, ind] = ar[k]
+        end
+      else
+        t = powermod(B[i], p, p)
+        ar = coordinates(t, copy = true)
+        powers[i] = copy(ar)
+        if iszero(t)
+          continue
+        end
+        for k in 1:d
+          A[k, ind] = R(ar[k])
+        end
+      end
+    end
+    for s = 1:d
+      for i = 1:s
+        A[i, s+nr] = R(M1[s, i])
+      end
+    end
+    X = right_kernel_basis(A)
+    if isempty(X)
+      I = ideal(O, M1)
+      reverse!(gens)
+      I.gens = gens
+      I.minimum = fmpz(p)
+      return I
+    end
+    #First, find the generators
+    new_gens = Vector{NfOrdElem}()
+    for i = 1:length(X)
+      coords = zeros(FlintZZ, d)
+      for j=1:nr
+        coords[indices[j]] = lift(X[i][j])
+      end
+      if !iszero(coords)
+        new_el = O(coords)
+        push!(new_gens, new_el)
+      end
+    end
+    if iszero(length(new_gens))
+      I = ideal(O, M1)
+      reverse!(gens)
+      I.gens = gens
+      I.minimum = fmpz(p)
+      return I
+    end
+    #Then, construct the basis matrix of the ideal
+    m1 = zero_matrix(FlintZZ, length(new_gens) + d, d)
+    for i = 1:length(new_gens)
+      el = coordinates(new_gens[i], copy = true)
+      for j = 1:nr
+        m1[i, indices[j]] = el[indices[j]]
+      end
+    end
+    for i = 1:d
+      for s = 1:i
+        m1[i+length(new_gens), s] = M1[i, s]
+      end
+    end
+    hnf_modular_eldiv!(m1, fmpz(p), :lowerleft)
+    M1 = sub(m1, length(new_gens)+1:nrows(m1), 1:d)
+    append!(gens, new_gens)
+  end
+end
 
-function pradical_frobenius1(O::NfOrd, p::Union{Integer, fmpz})
+function pradical_frobenius1(O::NfOrd, p::Int)
   R = GF(p, cached = false)
   d = degree(O)
   K = nf(O)
@@ -841,11 +958,10 @@ function pradical_trace1(O::NfOrd, p::Union{Integer, fmpz})
   return I
 end
 
+
 function pradical1(O::NfOrd, p::Union{Integer, fmpz})
-  if p isa fmpz
-    if nbits(p) < 64
-      return pradical1(O, Int(p))
-    end
+  if p isa fmpz && fits(Int, p)
+    return pradical1(O, Int(p))
   end
   d = degree(O)
 
@@ -857,7 +973,9 @@ function pradical1(O::NfOrd, p::Union{Integer, fmpz})
   if p > d
     return pradical_trace1(O, p)
   else
-    return pradical_frobenius1(O, p)
+    res1 = new_pradical_frobenius1(O, p)
+    @hassert :NfOrd 1 res1 == pradical_frobenius1(O, p)
+    return res1
   end
 end
 
@@ -900,9 +1018,37 @@ function prefactorization(f::fmpz_poly, d::fmpz)
       factors = coprime_base(factors)
     end
   end
-  return coprime_base(final_factors)
+  cb = coprime_base(final_factors)
+  return cb
 end
 
+function _squarefree_decomposition(f::fmpz_mod_poly)
+  D = Dict{Int, fmpz_mod_poly}()
+  fail, d = Hecke._gcd_with_failure(f, derivative(f))
+  if !isone(fail)
+    return fail, D
+  end
+  g = divexact(f, d)
+  f1 = deepcopy(f)
+  j = 1
+  m = modulus(base_ring(f))
+  while !isone(f1)
+    f1 = divexact(f1, g)
+    fail, h = Hecke._gcd_with_failure(f1, g)
+    @show fail
+    @show fail = gcd(fail, m)
+    if !isone(fail)
+      return fail, D
+    end
+    t = divexact(g, h)
+    if !isone(t)
+      D[j] = t
+    end
+    g = h
+    j += 1
+  end
+  return fail, D
+end
 
 
 function _gcd_with_failure(a::fmpz_mod_poly, b::fmpz_mod_poly)

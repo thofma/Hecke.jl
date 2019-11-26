@@ -384,7 +384,7 @@ end
 
 function listprimes(f::Array{fmpq_poly, 1}, p::fmpz, M::Int)
    # static 
-   i=0; L = []
+   i=0; L = fmpz[]
    while true
     i += 1
     if all(x-> testPrime_jl(x,p), f)

@@ -459,6 +459,18 @@ function lift(a::Generic.Mat{Generic.Res{fmpz}})
   return z
 end
 
+if Nemo.version() > v"0.15.1"
+  function lift(a::Generic.Mat{Nemo.fmpz_mod})
+    z = zero_matrix(FlintZZ, nrows(a), ncols(a))
+    for i in 1:nrows(a)
+      for j in 1:ncols(a)
+        z[i, j] = lift(a[i, j])
+      end
+    end
+    return z
+  end
+end
+
 function lift_unsigned(a::nmod_mat)
   z = zero_matrix(FlintZZ, nrows(a), ncols(a))
   ccall((:fmpz_mat_set_nmod_mat_unsigned, :libflint), Nothing,
@@ -625,32 +637,62 @@ function left_kernel(a::nmod_mat)
   return n, transpose(M)
 end
 
-function right_kernel(M::Generic.Mat{Nemo.Generic.Res{Nemo.fmpz}})
-  R = base_ring(M)
-  N = hcat(M', identity_matrix(R, ncols(M)))
-  if nrows(N) < ncols(N)
-    N = vcat(N, zero_matrix(R, ncols(N) - nrows(N), ncols(N)))
-  end
-  H = howell_form!(N)
-  nr = 1
-  while nr <= nrows(H) && !iszero_row(H, nr)
-    nr += 1
-  end
-  nr -= 1
-  h = sub(H, 1:nr, 1:nrows(M))
-  for i=1:nrows(h)
-    if iszero_row(h, i)
-      k = sub(H, i:nrows(h), nrows(M)+1:ncols(H))
-      return nrows(k), k'
+if Nemo.version() > v"0.15.1"
+  function right_kernel(M::Generic.Mat{Nemo.fmpz_mod})
+    R = base_ring(M)
+    N = hcat(M', identity_matrix(R, ncols(M)))
+    if nrows(N) < ncols(N)
+      N = vcat(N, zero_matrix(R, ncols(N) - nrows(N), ncols(N)))
     end
+    H = howell_form!(N)
+    nr = 1
+    while nr <= nrows(H) && !iszero_row(H, nr)
+      nr += 1
+    end
+    nr -= 1
+    h = sub(H, 1:nr, 1:nrows(M))
+    for i=1:nrows(h)
+      if iszero_row(h, i)
+        k = sub(H, i:nrows(h), nrows(M)+1:ncols(H))
+        return nrows(k), k'
+      end
+    end
+    return 0, zero_matrix(R,nrows(M),0)
   end
-  return 0, zero_matrix(R,nrows(M),0)
+
+  function left_kernel(a::Generic.Mat{Nemo.fmpz_mod})
+    n, M = right_kernel(transpose(a))
+    return n, transpose(M)
+  end
+else
+  function right_kernel(M::Generic.Mat{Nemo.Generic.Res{Nemo.fmpz}})
+    R = base_ring(M)
+    N = hcat(M', identity_matrix(R, ncols(M)))
+    if nrows(N) < ncols(N)
+      N = vcat(N, zero_matrix(R, ncols(N) - nrows(N), ncols(N)))
+    end
+    H = howell_form!(N)
+    nr = 1
+    while nr <= nrows(H) && !iszero_row(H, nr)
+      nr += 1
+    end
+    nr -= 1
+    h = sub(H, 1:nr, 1:nrows(M))
+    for i=1:nrows(h)
+      if iszero_row(h, i)
+        k = sub(H, i:nrows(h), nrows(M)+1:ncols(H))
+        return nrows(k), k'
+      end
+    end
+    return 0, zero_matrix(R,nrows(M),0)
+  end
+
+  function left_kernel(a::Generic.Mat{Nemo.Generic.Res{Nemo.fmpz}})
+    n, M = right_kernel(transpose(a))
+    return n, transpose(M)
+  end
 end
 
-function left_kernel(a::Generic.Mat{Nemo.Generic.Res{Nemo.fmpz}})
-  n, M = right_kernel(transpose(a))
-  return n, transpose(M)
-end
 ################################################################################
 #
 #  Kernel over different rings
@@ -954,7 +996,7 @@ end
 
 function Base.hcat(A::Array{T, 1}) where {S <: RingElem, T <: MatElem{S}}
   if any(x->nrows(x) != nrows(A[1]), A)
-    error("Matrices must have same number of columns")
+    error("Matrices must have same number of rows")
   end
   M = zero_matrix(base_ring(A[1]), nrows(A[1]), sum(ncols, A))
   s = 0
@@ -1134,6 +1176,38 @@ end
 
 ################################################################################
 #
+#  IsUpper\Lower triangular 
+#
+################################################################################
+
+function isupper_triangular(M::MatElem)
+  n = nrows(M)
+  @assert n == ncols(M)
+  for i = 2:n
+    for j = 1:i-1
+      if !iszero(M[i, j])
+        return false
+      end
+    end
+  end
+  return true
+end
+
+function islower_triangular(M::MatElem)
+  n = nrows(M)
+  @assert n == ncols(M)
+  for i = 1:n
+    for j = i+1:n
+      if !iszero(M[i, j])
+        return false
+      end
+    end
+  end
+  return true
+end
+
+################################################################################
+#
 #  Is diagonal
 #
 ################################################################################
@@ -1187,7 +1261,7 @@ function solve_ut(A::MatElem{T}, b::MatElem{T}) where T
   n = ncols(A)
   @assert m == nrows(b)
   @assert m <= n
-  x = similar(A, n, 1)
+  x = zero_matrix(base_ring(A), n, 1)
   pivot_cols = Vector{Int}()
   r = 0
   last_pivot = n + 1
@@ -1222,7 +1296,7 @@ function solve_lt(A::MatElem{T}, b::MatElem{T}) where T
   n = ncols(A)
   @assert m == nrows(b)
   @assert m <= n
-  x = similar(A, n, 1)
+  x = zero_matrix(base_ring(A), n, 1)
   pivot_cols = Vector{Int}()
   r = 0
   last_pivot = 0
@@ -1311,20 +1385,22 @@ Base.IteratorSize(M::MatElem) = Base.HasLength()
 Base.IteratorEltype(M::MatElem) = Base.HasEltype()
 Base.eltype(M::MatElem) = elem_type(base_ring(M))
 
-function setindex!(A::MatElem{T}, b::MatElem{T}, ::Colon, i::Int) where T
-  @assert ncols(b) == 1 && nrows(b) == nrows(A) 
-  for j=1:nrows(A)
-    A[j,i] = b[j]
+if Nemo.version() <= v"0.15.1"
+  function setindex!(A::MatElem{T}, b::MatElem{T}, ::Colon, i::Int) where T
+    @assert ncols(b) == 1 && nrows(b) == nrows(A) 
+    for j=1:nrows(A)
+      A[j,i] = b[j]
+    end
+    b
   end
-  b
-end
 
-function setindex!(A::MatElem{T}, b::MatElem{T}, i::Int, ::Colon) where T
-  @assert nrows(b) == 1 && ncols(b) == ncols(A)
-  for j=1:ncols(A)
-    A[i,j] = b[j]
+  function setindex!(A::MatElem{T}, b::MatElem{T}, i::Int, ::Colon) where T
+    @assert nrows(b) == 1 && ncols(b) == ncols(A)
+    for j=1:ncols(A)
+      A[i,j] = b[j]
+    end
+    b
   end
-  b
 end
 
 function setindex!(A::MatElem, b::Array{<: Any, 1}, ::Colon, i::Int) 

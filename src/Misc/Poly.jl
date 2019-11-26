@@ -81,6 +81,28 @@ function (::FlintIntegerRing)(a::Nemo.nmod)
   return fmpz(a.data)
 end
 
+if Nemo.version() > v"0.15.1"
+  function fmpz(a::Nemo.fmpz_mod)
+    return a.data
+  end
+
+  function lift(::FlintIntegerRing, a::Nemo.fmpz_mod)
+    return a.data
+  end
+
+  function (::FlintIntegerRing)(a::Nemo.fmpz_mod)
+    return a.data
+  end
+
+  function lift(a::Nemo.fmpz_mod)
+    return a.data
+  end
+
+  function lift(a::Nemo.gfp_fmpz_elem)
+    return a.data
+  end
+end
+
 function div(f::PolyElem, g::PolyElem)
   q, r = divrem(f,g)
   return q
@@ -288,7 +310,7 @@ end
  G = g mod p, H = h mod p.
 """
 function hensel_lift(f::fmpz_poly, g::fmpz_poly, h::fmpz_poly, p::fmpz, k::Int)
-  Rx, x = PolynomialRing(ResidueField(FlintZZ, p, cached=false), cached=false)
+  Rx, x = PolynomialRing(GF(p, cached=false), cached=false)
   fl, a, b = gcdx(Rx(g), Rx(h))
   @assert isone(fl)
   @assert k>= 2
@@ -339,11 +361,14 @@ end
  Given f and g such that g is a divisor of f mod p and g and f/g are coprime, compute a hensel lift of g modulo p^k.
 """
 function hensel_lift(f::fmpz_poly, g::fmpz_poly, p::fmpz, k::Int)
-  Rx, x = PolynomialRing(ResidueField(FlintZZ, p, cached=false), cached=false)
+  Rx, x = PolynomialRing(GF(p, cached=false), cached=false)
   h = lift(parent(f), div(Rx(f), Rx(g)))
   return hensel_lift(f, g, h, p, k)[1]
 end  
-  
+
+modulus(F::Generic.ResRing{fmpz}) = F.modulus
+
+modulus(F::Generic.ResField{fmpz}) = F.modulus
 
 function fmpq_poly_to_nmod_poly_raw!(r::nmod_poly, a::fmpq_poly)
   ccall((:fmpq_poly_get_nmod_poly, :libflint), Nothing, (Ref{nmod_poly}, Ref{fmpq_poly}), r, a)
@@ -358,7 +383,7 @@ function fmpq_poly_to_fmpz_mod_poly_raw!(r::fmpz_mod_poly, a::fmpq_poly, t1::fmp
   ccall((:fmpz_mod_poly_set_fmpz_poly, :libflint), Nothing, (Ref{fmpz_mod_poly}, Ref{fmpz_poly}), r, t1)
   ccall((:fmpq_poly_get_denominator, :libflint), Nothing, (Ref{fmpz}, Ref{fmpq_poly}), t2, a)
   if !isone(t2)
-    res = ccall((:fmpz_invmod, :libflint), Cint, (Ref{fmpz}, Ref{fmpz}, Ref{fmpz}), t2, t2, base_ring(r).modulus)
+    res = ccall((:fmpz_invmod, :libflint), Cint, (Ref{fmpz}, Ref{fmpz}, Ref{fmpz}), t2, t2, modulus(base_ring(r)))
     @assert res != 0
     ccall((:fmpz_mod_poly_scalar_mul_fmpz, :libflint), Nothing, (Ref{fmpz_mod_poly}, Ref{fmpz_mod_poly}, Ref{fmpz}), r, r, t2)
   end
@@ -369,7 +394,7 @@ function fmpq_poly_to_gfp_fmpz_poly_raw!(r::gfp_fmpz_poly, a::fmpq_poly, t1::fmp
   ccall((:fmpz_mod_poly_set_fmpz_poly, :libflint), Nothing, (Ref{gfp_fmpz_poly}, Ref{fmpz_poly}), r, t1)
   ccall((:fmpq_poly_get_denominator, :libflint), Nothing, (Ref{fmpz}, Ref{fmpq_poly}), t2, a)
   if !isone(t2)
-    res = ccall((:fmpz_invmod, :libflint), Cint, (Ref{fmpz}, Ref{fmpz}, Ref{fmpz}), t2, t2, base_ring(r).modulus)
+    res = ccall((:fmpz_invmod, :libflint), Cint, (Ref{fmpz}, Ref{fmpz}, Ref{fmpz}), t2, t2, modulus(base_ring(r)))
     @assert res != 0
     ccall((:fmpz_mod_poly_scalar_mul_fmpz, :libflint), Nothing, (Ref{gfp_fmpz_poly}, Ref{gfp_fmpz_poly}, Ref{fmpz}), r, r, t2)
   end
@@ -942,6 +967,13 @@ function number_positive_roots(f::fmpz_poly)
   ev0 = Int[sign(coeff(x,0)) for x in s]
   return _number_changes(ev0)-_number_changes(evinf)
 
+end
+
+function number_real_roots(f::fmpz_poly)
+  s = sturm_sequence(f)
+  evinf = Int[sign(coeff(x, degree(x))) for x in s]
+  evminf = Int[((-1)^degree(x))*sign(coeff(x,degree(x))) for x in s]
+  return _number_changes(evminf)-_number_changes(evinf)
 end
 
 function number_positive_roots(f::PolyElem{nf_elem}, P::InfPlc)

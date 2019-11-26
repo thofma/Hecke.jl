@@ -340,11 +340,11 @@ end
 # where the first return value indicates if the result is good enough
 function _minkowski_map_and_apply(a, abs_tol, G, work_tol = abs_tol)
   K = parent(a)
-  r, s = signature(K)
   A = Array{arb}(undef, degree(K))
   c = conjugates_arb(a, work_tol)
-
-  for i in 1:r
+  r, s = signature(K)
+  
+  for i = 1:r
     @assert isreal(c[i])
     A[i] = real(c[i])
     if !radiuslttwopower(A[i], -abs_tol)
@@ -359,7 +359,7 @@ function _minkowski_map_and_apply(a, abs_tol, G, work_tol = abs_tol)
     A[r + 2*i - 1] = sqrt2 * real(c[r + i])
     A[r + 2*i] = sqrt2 * imag(c[r + i])
     if !radiuslttwopower(A[r + 2*i], -abs_tol)
-      return _minkowski_map_and_apply(a, abs_tol, G, Int(floor(work_tol * 1.1)))
+      return _minkowski_map_and_apply(a, abs_tol, G, Int(floor(work_tol * 2)))
     end
   end
 
@@ -505,4 +505,38 @@ function complex_conjugation(K::AnticNumberField)
       error("Precision too high in complex_conjugation")
     end
   end
+end
+
+
+function iscomplex_conjugation(f::NfToNfMor)
+  K = domain(f)
+  @assert K == codomain(f)
+  !istotally_complex(K) && error("Number field must be totally complex")
+  p = 32 
+  d = degree(K)
+  a = gen(K)
+  img_a = f.prim_img 
+  while true
+    c = conjugates(a, p)
+    cc = conj.(conjugates(img_a, p))
+    if !overlaps(c[d], cc[d])
+      return false
+    end
+    #Now I need to assure that the precision is enough.
+    found = true
+    for j in 1:d-1
+      if overlaps(c[d], cc[j])
+        found = false
+        break
+      end
+    end
+    if found
+      return true
+    end
+    p = 2 * p
+    if p > 2^18
+      error("Precision too high in complex_conjugation")
+    end
+  end
+
 end

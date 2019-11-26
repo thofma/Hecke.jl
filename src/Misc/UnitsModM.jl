@@ -21,6 +21,16 @@ function isprimitive_root(x::Generic.Res{fmpz}, M::fmpz, fM::Fac{fmpz})
   return true
 end
 
+if Nemo.version() > v"0.15.1"
+  function isprimitive_root(x::Nemo.fmpz_mod, M::fmpz, fM::Fac{fmpz})
+    for (p, l) in fM
+      if x^divexact(M, p) == 1
+        return false
+      end
+    end
+    return true
+  end
+end
 
 #=
   for p = 2 this is trivial, as <-1, 5> are generators independently of 
@@ -351,12 +361,12 @@ function disc_log_mod(a::fmpz, b::fmpz, M::fmpz)
 end
 
 @doc Markdown.doc"""
-    disc_log_bs_gs{T}(a::Generic.Res{T}, b::Generic.Res{T}, o::fmpz)
+    disc_log_bs_gs{T}(a::T, b::T, o::fmpz)
 
 Tries to find g s.th. a^g == b under the assumption that g <= o.
-Uses Baby-Step-Giant-Step
+Uses Baby-Step-Giant-Step, requires a to be invertable.
 """
-function disc_log_bs_gs(a::Generic.ResF{T}, b::Generic.ResF{T}, o::fmpz) where {T <: Union{PolyElem, fmpz, fq_nmod_poly, fq_poly, nmod_poly}}
+function disc_log_bs_gs(a::T, b::T, o::fmpz) where {T <: RingElem}
   b==1 && return fmpz(0)  
   b==a && return fmpz(1)
   if o < 100 
@@ -391,49 +401,14 @@ function disc_log_bs_gs(a::Generic.ResF{T}, b::Generic.ResF{T}, o::fmpz) where {
   end
 end
 
-function disc_log_bs_gs(a::nmod, b::nmod, o::Int) where {T <: Union{PolyElem, fmpz, fq_nmod_poly, fq_poly, nmod_poly}}
-  b==1 && return 0  
-  b==a && return 1
-  r = root(o, 2)
-  r = Int(r)
-  baby = Dict{typeof(a), Int}()
-  baby[a] = 1
-  baby[parent(a)(1)] = 0
-  pows = a
-  i = 1
-  while i+1 < r
-    pows *= a
-    i += 1
-    pows == b && return i
-    baby[pows] = i
-  end
-  giant = pows*a
-  @assert giant == a^r
-  b == giant && return r
-  giant = inv(giant)
-  g = fmpz(0)
-  for i=1:r
-    b *= giant
-    g += r
-    if haskey(baby, b)
-      return g + baby[b]
-    end
-  end
-  throw("disc_log failed")
-end
-
-
 @doc Markdown.doc"""
-    disc_log_ph{T <:PolyElem}(a::Residue{T}, b::Residue{T}, o::fmpz, r::Int)
-    disc_log_ph(a::Residue{fmpz}, b::Residue{fmpz}, o::fmpz, r::Int)
-    disc_log_ph(a::Residue{fq_nmod_poly}, b::Residue{fq_nmod_poly}, o::fmpz, r::Int)
-    disc_log_ph(a::Residue{fq_poly}, b::Residue{fq_poly}, o::fmpz, r::Int)
-    disc_log_ph(a::Residue{nmod_poly}, b::Residue{nmod_poly}, o::fmpz, r::Int)
+    disc_log_ph(a::T, b::T, o::fmpz, r::Int)
 
 Tries to find g s.th. a^g == b under the assumption that ord(a) | o^r
 Uses Pohlig-Hellmann and Baby-Step-Giant-Step for the size(o) steps.
+Requires a to be invertable.
 """
-function disc_log_ph(a::Generic.Res{T}, b::Generic.Res{T}, o::fmpz, r::Int) where {T <: Union{PolyElem, fmpz, fq_nmod_poly, fq_poly, nmod_poly}}
+function disc_log_ph(a::T, b::T, o::fmpz, r::Int) where {T <: RingElem}
   #searches for g sth. a^g = b
   # a is of order o^r
   # Pohlig-Hellmann a^g = b => (a^o)^g = b^g
@@ -593,7 +568,7 @@ function _unit_pk_mod_n(p::Int, v::Int, n::Int)
       ord = gcd(2^(v-2), n)
       gens = Int[-1,5]
       exps = divexact(2^(v-2), ord)
-      z = 5^exps
+      z = R(5)^exps
       local disc_log6
       let R = R, exps = exps, ord = ord, z = z
       function disc_log6(x::Int)

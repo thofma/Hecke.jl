@@ -504,26 +504,33 @@ function generators(L::AbsLat; minimal::Bool = false)
   St = _steinitz_form(pseudo_matrix(L), Val{false})
   d = nrows(St)
   n = degree(L)
-  T = elem_type(base_algebra(L))
+  K = nf(base_ring(L))
+  T = elem_type(K)
   v = Vector{T}[]
   for i in 1:(d - 1)
-    @assert isprincipal(coefficient_ideals(St)[i])[1]
-    push!(v, T[basis_matrix(L)[i, j] for j in 1:d])
+    #@assert isprincipal(coefficient_ideals(St)[i])[1]
+    push!(v, T[matrix(St)[i, j] for j in 1:d])
   end
 
   I = numerator(coefficient_ideals(St)[d])
   den = denominator(coefficient_ideals(St)[d])
-  if minimal && base_algebra(L) isa AnticNumberField
+  if minimal && base_ring(L) isa NfOrd
     b, a = isprincipal(I)
     if b
-      push!(v, T[base_algebra(L)(a)//den * basis_matrix(L)[n, j] for j in 1:d])
+      push!(v, T[K(a)//den * matrix(St)[n, j] for j in 1:d])
     end
     return v
   end
 
-  _assure_weakly_normal_presentation(I)
-  push!(v, T[base_algebra(L)(I.gen_one)//den * basis_matrix(L)[n, j] for j in 1:d])
-  push!(v, T[base_algebra(L)(I.gen_two)//den * basis_matrix(L)[n, j] for j in 1:d])
+  if base_ring(L) isa NfOrd
+    _assure_weakly_normal_presentation(I)
+    push!(v, T[K(I.gen_one)//den * matrix(St)[n, j] for j in 1:d])
+    push!(v, T[K(I.gen_two)//den * matrix(St)[n, j] for j in 1:d])
+  else
+    for g in absolute_basis(I)
+      push!(v, T[K(g)//den * matrix(St)[n, j] for j in 1:d])
+    end
+  end
 
   return v
 end
@@ -735,12 +742,12 @@ end
 
 function Base.:(*)(a, L::HermLat)
   @assert has_ambient_space(L)
-  return hermitian_lattice(base_algebra(L), _module_scale_ideal(a, pseudo_matrix(L)), gram_ambient_space = gram_matrix(ambient_space(L)))
+  return lattice(ambient_space(L), _module_scale_ideal(a, pseudo_matrix(L)))
 end
 
 function Base.:(*)(L::HermLat, a)
   @assert has_ambient_space(L)
-  return hermitian_lattice(base_algebra(L), _module_scale_ideal(a, pseudo_matrix(L)), gram_ambient_space = gram_matrix(ambient_space(L)))
+  return lattice(ambient_space(L), _module_scale_ideal(a, pseudo_matrix(L)))
 end
 
 ################################################################################
@@ -936,8 +943,8 @@ end
     ismodular(L::AbsLat) -> Bool, NfOrdFracIdl
 
 Returns whether $L$ is modular. In this case, the second return value is a
-fractional ideal $\mathfrak a$ such that $\mathfrak a L^\perp = L$, where
-$L^\perp$ is the dual of $L$.
+fractional ideal $\mathfrak a$ such that $\mathfrak a L^\# = L$, where
+$L^\#$ is the dual of $L$.
 """
 function ismodular(L::AbsLat)
   a = scale(L)
@@ -1026,6 +1033,10 @@ function local_basis_matrix(L::AbsLat, p; type::Symbol = :any)
   elseif S === base_ring(R)
     if type == :any
       return _local_basis_matrix_prime_below(pseudo_matrix(L), p)
+    elseif type == :submodule
+      return _local_basis_matrix_prime_below_submodule(pseudo_matrix(L), p)
+    elseif type == :supermodule
+      throw(NotImplemented())
     else
       throw(error("""Invalid :type keyword :$(type).
                      Must be either :any, :submodule, or :supermodule"""))
@@ -1137,14 +1148,10 @@ function jordan_decomposition(L::QuadLat, p)
   return matrices, typeof(F)[ m * F * transpose(m) for m in matrices], exponents
 end
 
-_contains_2(p) = 2 in p
-
-_contains_2(p::fmpz) = p == 2
-
 function jordan_decomposition(L::HermLat, p)
   R = base_ring(L)
   aut = involution(L)
-  even = _contains_2(p)
+  even = isdyadic(p)
 
   S = local_basis_matrix(L, p)
 
@@ -1175,7 +1182,7 @@ function jordan_decomposition(L::HermLat, p)
   k = 1
   while k <= n
     G = S * F * transpose(_map(S, aut))
-    X = Union{Int, PosInf}[ valuation(G[i, i], P) for i in k:n]
+    X = Union{Int, PosInf}[ iszero(G[i, i]) ? inf : valuation(G[i, i], P) for i in k:n]
     m, ii = findmin(X)
     ii = ii + (k - 1)
     pair = (ii, ii)
@@ -1249,428 +1256,6 @@ function jordan_decomposition(L::HermLat, p)
   return matrices, typeof(F)[ m * F * transpose(_map(m, aut)) for m in matrices], exponents
 end
 
-################################################################################
-#
-#  Genus symbol
-#
-################################################################################
-
-mutable struct LocalGenusSymbol{S}
-  P
-  data
-  x
-  iseven::Bool
-  E
-  isramified
-  non_norm
-end
-
-prime(G::LocalGenusSymbol) = G.P
-
-uniformizer(G::LocalGenusSymbol{QuadLat}) = G.x
-
-data(G::LocalGenusSymbol) = G.data
-
-base_field(G::LocalGenusSymbol) = G.E
-
-function Base.show(io::IO, G::LocalGenusSymbol)
-  print(io, "Local genus symbol at\n")
-  print(IOContext(io, :compact => true), G.P)
-  compact = get(io, :compact, false)
-  if !compact
-    print(io, "\nwith base field\n")
-    print(io, base_field(G))
-  end
-  println(io, "\nWith data ", data(G))
-  !G.iseven ? println(io, "and unifomizer\n", G.x) : nothing
-end
-
-# TODO: I have to redo this
-function _genus_symbol_kirschmer(L::QuadLat, p::NfOrdIdl; uniformizer = zero(order(p)))
-  O = order(p)
-  nf(O) != base_field(L) && throw(error("Prime ideal must be an ideal of the base field of the lattice"))
-  # If you pull from cache, you might have to adjust the symbol according
-  # to the uniformizer flag
-
-  J, G, E = jordan_decomposition(L, p)
-  if !iszero(uniformizer)
-    unif = uniformizer
-    if valuation(unif, p) != 1
-      throw(error("Wrong uniformizer"))
-    end
-  else
-    unif = elem_in_nf(Hecke.uniformizer(p))
-  end
-
-  if minimum(p) != 2
-    _, _h = ResidueField(O, p)
-    h = extend(_h, nf(O))
-    Gs = [ h(prod(diagonal(G[i]))//unif^(E[i] * nrows(J[i]))) for i in 1:length(J)]
-    @assert !(0 in Gs)
-    x  = [ (nrows(J[i]), E[i], issquare(Gs[i])[1] ? 1 : -1) for i in 1:length(J)]
-    return LocalGenusSymbol{QuadLat}(p, x, unif, false, base_field(L), nothing, nothing)
-  else
-    t = length(G)
-    sL = [ minimum(iszero(g[i, j]) ? inf : valuation(g[i, j], p) for j in 1:ncols(g) for i in 1:j) for g in G]
-    @assert sL == E
-    e = ramification_index(p)
-    aL = []
-    uL = []
-    wL = []
-    for i in 1:t
-      GG = diagonal_matrix([ j < i ? unif^(2*(sL[i] - sL[j])) * G[j] : G[j] for j in 1:t])
-      D = diagonal(GG)
-      m, pos = findmin([valuation(d, p) for d in D])
-      if e + sL[i] <= m
-        push!(aL, unif^(e + sL[i]))
-      else
-        push!(aL, D[pos])
-      end
-      push!(uL, valuation(aL[i], p))
-      push!(wL, min(e + sL[i], minimum(uL[i] + quadratic_defect(d//aL[i], p) for d in D)))
-    end
-    fL = []
-    for k in 1:(t - 1)
-      exp = uL[k] + uL[k + 1]
-      push!(fL, (isodd(exp) ? exp : min(quadratic_defect(aL[k] * aL[k + 1], p), uL[k] + wL[k + 1], uL[k + 1], wL[k], e + div(exp, 2) + sL[k])) - 2*sL[k])
-    end
-    return LocalGenusSymbol{QuadLat}(p, ([nrows(G[k]) for k in 1:t], sL, wL, aL, fL, G), unif, true, base_field(L), nothing, nothing)
-  end
-end
-
-function Base.:(==)(G1::LocalGenusSymbol{QuadLat}, G2::LocalGenusSymbol{QuadLat})
-  if uniformizer(G1) != uniformizer(G2)
-    error("Uniformizers of the genus symbols must be equal")
-  end
-  return data(G1) == data(G2)
-end
-
-################################################################################
-#
-#  Local genus symbol
-#
-################################################################################
-
-mutable struct LocalGenusSymbolHerm
-  E                # Field
-  p                # prime of base_field(E)
-  data             # data
-  norm_val         # additional norm valuation (for the dyadic case)
-  isdyadic::Bool   # 2 in p
-  isramified::Bool # p ramified in E
-  non_norm_rep     # u in K*\N(E*)
-  ni::Vector{Int}  # ni for the ramified, dyadic case
-
-  function LocalGenusSymbolHerm()
-    z = new()
-    return z
-  end
-end
-
-function Base.show(io::IO, ::MIME"text/plain", G::LocalGenusSymbolHerm)
-#function Base.show(io::IO, G::LocalGenusSymbolHerm)
-  compact = get(io, :compact, false)
-  if !compact
-    print(io, "Local genus symbol at\n")
-    print(io, prime(G))
-    print(io, "\n")
-  end
-  if isdyadic(G) && isramified(G)
-    for i in 1:length(G)
-      print(io, "(", scale(G, i), ", ", rank(G, i), ", ", det(G, i) == 1 ? "+" : "-", ", ", norm(G, i), ")")
-    end
-  else
-    for i in 1:length(G)
-      print(io, "(", scale(G, i), ", ", rank(G, i), ", ", det(G, i) == 1 ? "+" : "-",  ")")
-    end
-  end
-end
-
-function Base.show(io::IO, G::LocalGenusSymbolHerm)
-  if isdyadic(G) && isramified(G)
-    for i in 1:length(G)
-      print(io, "(", scale(G, i), ", ", rank(G, i), ", ", det(G, i) == 1 ? "+" : "-", ", ", norm(G, i), ")")
-      if i < length(G)
-        print(io, " ")
-      end
-    end
-  else
-    for i in 1:length(G)
-      print(io, "(", scale(G, i), ", ", rank(G, i), ", ", det(G, i) == 1 ? "+" : "-",  ")")
-      if i < length(G)
-        print(io, " ")
-      end
-    end
-  end
-end
-
-# Basic properties
-
-scale(G::LocalGenusSymbolHerm, i::Int) = G.data[i][1]
-
-rank(G::LocalGenusSymbolHerm, i::Int) = G.data[i][2]
-
-det(G::LocalGenusSymbolHerm, i::Int) = G.data[i][3]
-
-norm(G::LocalGenusSymbolHerm, i::Int) = begin @assert isdyadic(G); G.norm_val[i] end # this only works if it is dyadic
-
-isramified(G::LocalGenusSymbolHerm) = G.isramified
-
-isdyadic(G::LocalGenusSymbolHerm) = G.isdyadic
-
-data(G::LocalGenusSymbolHerm) = G.data
-
-length(G::LocalGenusSymbolHerm) = length(G.data)
-
-base_field(G::LocalGenusSymbolHerm) = G.E
-
-prime(G::LocalGenusSymbolHerm) = G.p
-
-# Get the "ni" for the ramified dyadic case
-function _get_ni_from_genus_symbol(G::LocalGenusSymbolHerm)
-  @assert isramified(G)
-  @assert isdyadic(G)
-  z = data(G)
-  t = length(z)
-  z = Vector{Int}(undef, t)
-  for i in 1:t
-    ni = minimum(2 * max(0, scale(G, i) - scale(G, j)) + 2 * norm(G, j) for j in 1:t)
-    z[i] = ni
-  end
-  return z
-end
-
-function det(G::LocalGenusSymbolHerm)
-  return prod(det(G, i) for i in 1:length(G))
-end
-
-@doc Markdown.doc"""
-    det_representative(G::LocalGenusSymbolHerm) -> NumFieldElem
-
-Return a representative for the norm class of the determinant of $G$.
-"""
-function det_representative(G::LocalGenusSymbolHerm)
-  z = G.data
-  d = prod(b[3] for b in z)
-  v = sum(b[1] * b[2] for b in z)
-  if isramified(maximal_order(G.E), G.P)
-    v = div(v, 2)
-  end
-  if d == 1
-    u = base_field(base_field(G))(1)
-  else
-    @assert isramified(G)
-    u = _non_norm(G)
-  end
-  return u * uniformizer(G)^v
-end
-
-function rank(G::LocalGenusSymbolHerm)
-  return sum(rank(G, i) for i in 1:length(G))
-end
-
-################################################################################
-#
-#  Constructor
-#
-################################################################################
-
-function genus_symbol(::Type{HermLat}, E, p, data)
-  z = LocalGenusSymbolHerm()
-  z.E = E
-  z.p = p
-  z.isdyadic = _contains_2(p)
-  z.isramified = isramified(maximal_order(E), p)
-  if isramified(z) && isdyadic(z)
-    z.data = Tuple{Int, Int, Int}[Base.front(v) for v in data]
-    z.norm_val = Int[v[end] for v in data]
-    z.ni = _get_ni_from_genus_symbol(z)
-  else
-    z.data = data
-  end
-  return z
-end
-
-################################################################################
-#
-#  Genus symbol of a lattice
-#
-################################################################################
-
-# TODO: caching
-# TODO: better documentation
-
-@doc Markdown.doc"""
-    genus_symbol(L::HermLat, p::NfOrdIdl) -> LocalGenusSymbolHerm
-
-Returns the genus symbol of $L$ at the prime ideal $\mathfrak{p}$.
-
-See [Kir16, Definition 8.3.1].
-"""
-function genus_symbol(L::HermLat, p)
-  sym = _genus_symbol(L, p)
-  G = genus_symbol(HermLat, nf(base_ring(L)), p, sym)
-  # Just for debugging 
-  if isdyadic(G) && isramified(G)
-    GG = _genus_symbol_kirschmer(L, p)
-    for i in 1:length(G)
-      @assert GG[i][4] == G.ni[i]
-    end
-    #
-  end
-  return G
-end
-
-################################################################################
-#
-#  Equality
-#
-################################################################################
-
-function ==(G1::LocalGenusSymbolHerm, G2::LocalGenusSymbolHerm)
-  if base_field(G1) != base_field(G2)
-    return false
-  end
-
-  if prime(G1) != prime(G2)
-    return false
-  end
-
-  if length(G1) != length(G2)
-    return false
-  end
-
-  t = length(G1)
-
-  p = prime(G1)
-
-  # We now check the Jordan type
-
-  if any(i -> scale(G1, i) != scale(G2, i), 1:t)
-    return false
-  end
-
-  if any(i -> (rank(G1, i) != rank(G2, i)), 1:t)
-    return false
-  end
-
-  if det(G1) != det(G2) # rational spans must be isometric
-    return false
-  end
-
-  if any(i -> (rank(G1, i) != rank(G2, i)), 1:t)
-    return false
-  end
-
-  if !isramified(G1) # split or unramified
-    return true
-    # Everything is normal and the Jordan decomposition types agree
-    #return all(det(G1, i) == det(G2, i) for i in 1:t)
-  end
-
-  if isramified(G1) && !isdyadic(G1) # ramified, but not dyadic
-    # If s(L_i) is odd, then L_i = H(s(L_i))^(rk(L_i)/2) = H(s(L_i'))^(rk(L_i')/2) = L_i'
-    # So all L_i, L_i' are locally isometric, in particular L_i is normal if and only if L_i' is normal
-    # If s(L_i) = s(L_i') is even, then both L_i and L_i' have orthgonal bases, so they are
-    # in particular normal.
-
-    # Thus we only have to check Theorem 3.3.6 4.
-    return all(i -> det(G1, i) == det(G2, i), 1:t)
-    # TODO: If think I only have to do something if the scale is even. Check this!
-  end
-
-  # Dyadic ramified case
-
-  # First check if L_i is normal if and only if L_i' is normal, i.e.,
-  # that the Jordan decompositions agree
-  for i in 1:t
-    if (scale(G1, i) == 2 * norm(G1, i)) != (scale(G2, i) == 2 * norm(G2, i))
-      return false
-    end
-  end
-
-  if any(i -> G1.ni[i] != G2.ni[i], 1:t)
-    return false
-  end
-
-  E = base_field(G1)
-  lQ = prime_decomposition(maximal_order(E), p)
-  @assert length(lQ) == 1 && lQ[1][2] == 2
-  Q = lQ[1][1]
-
-  e = valuation(different(maximal_order(E)), Q)
-
-  for i in 1:(t - 1)
-    dL1prod = prod(det(G1, j) for j in 1:i)
-    dL2prod = prod(det(G2, j) for j in 1:i)
-
-    d = dL1prod * dL2prod
-
-    if d != 1
-      if 2 * (e - 1) < G1.ni[i] + G1.ni[i + 1] - 2 * scale(G1, i)
-        return false
-      end
-    end
-  end
-
-  return true
-end
-
-function _genus_symbol(L::HermLat, p)
-  @assert order(p) == base_ring(base_ring(L))
-  B, G, S = jordan_decomposition(L, p)
-  R = base_ring(L)
-  E = nf(R)
-  K = base_field(E)
-  if !_contains_2(p) || !isramified(R, p)
-    sym = Tuple{Int, Int, Int}[ (nrows(B[i]), S[i], islocal_norm(E, coeff(det(G[i]), 0), p) ? 1 : -1) for i in 1:length(B)]
-  else
-    P = prime_decomposition(R, p)[1][1]
-    pi = E(K(Hecke.uniformizer(p)))
-    sym = Tuple{Int, Int, Int, Int}[]
-    for i in 1:length(B)
-      normal = _get_norm_valuation_from_gram_matrix(G[i], P) == S[i]
-      GG = diagonal_matrix([pi^(max(0, S[i] - S[j])) * G[j] for j in 1:length(B)])
-      v = _get_norm_valuation_from_gram_matrix(GG, P)
-      @assert v == valuation(R * norm(lattice(hermitian_space(E, GG), identity_matrix(E, nrows(GG)))), P)
-      r = nrows(B[i]) # rank
-      s = S[i] # P-valuation of scale(L_i)
-      det_class = islocal_norm(E, coeff(det(G[i]), 0), p) ? 1 : -1  # Norm class of determinant
-      normi = _get_norm_valuation_from_gram_matrix(G[i], P) # P-valuation of norm(L_i)
-      @assert mod(normi, 2) == 0 # I only want p-valuation
-      push!(sym, (r, s, det_class, div(normi, 2)))
-    end
-  end
-  return sym
-end
-
-
-
-# This is the "Magma" Genus symbol
-function _genus_symbol_kirschmer(L::HermLat, p; uniformizer = zero(order(p)))
-  @assert order(p) == base_ring(base_ring(L))
-
-  B, G, S = jordan_decomposition(L, p)
-  R = base_ring(L)
-  E = nf(R)
-  K = base_field(E)
-  if !_contains_2(p) || !isramified(R, p)
-    sym = [ (nrows(B[i]), S[i], islocal_norm(E, coeff(det(G[i]), 0), p)) for i in 1:length(B)]
-  else
-    P = prime_decomposition(R, p)[1][1]
-    pi = E(K(Hecke.uniformizer(p)))
-    sym = []
-    for i in 1:length(B)
-      normal = _get_norm_valuation_from_gram_matrix(G[i], P) == S[i]
-      GG = diagonal_matrix([pi^(max(0, S[i] - S[j])) * G[j] for j in 1:length(B)])
-      v = _get_norm_valuation_from_gram_matrix(GG, P)
-      @assert v == valuation(R * norm(lattice(hermitian_space(E, GG), identity_matrix(E, nrows(GG)))), P)
-      s = (nrows(B[i]), S[i], normal, v, coeff(det(diagonal_matrix([G[j] for j in 1:i])), 0))
-      push!(sym, s)
-    end
-  end
-  return sym
-end
 
 ################################################################################
 #
@@ -1681,15 +1266,15 @@ end
 # base case for order(p) == base_ring(base_ring(L1))
 function islocally_isometric(L1::HermLat, L2::HermLat, p)
   # Test first rational equivalence
-  return genus_symbol(L1, p) == genus_symbol(L2, p)
+  return genus(L1, p) == genus(L2, p)
 end
 
 function _islocally_isometric_kirschmer(L1::HermLat, L2::HermLat, p)
   R = base_ring(L1)
   E = nf(R)
-  S1 = _genus_symbol(L1, p)
-  S2 = _genus_symbol(L2, p)
-  if !_contains_2(p) || !isramified(R, p)
+  S1 = _genus_symbol_kirschmer(L1, p)
+  S2 = _genus_symbol_kirschmer(L2, p)
+  if !isdyadic(p) || !isramified(R, p)
     return S1 == S2
   end
 
@@ -1718,99 +1303,6 @@ function _islocally_isometric_kirschmer(L1::HermLat, L2::HermLat, p)
     end
   end
   return true
-end
-
-################################################################################
-#
-#  Global genus symbol
-#
-################################################################################
-
-mutable struct GlobalGenusSymbol{S}
-  E
-  primes::Vector
-  LGS::Vector
-  rank::Int
-  signatures
-
-  function GlobalGenusSymbol{S}(LGS::Vector, signatures) where {S}
-    @assert !isempty(LGS)
-    @assert all(N >= 0 for (_,N) in signatures)
-    if !_check_global_genus_symbol(LGS, signatures)
-      throw(error("Invariants violate the product formula."))
-    end
-    g = first(LGS)
-    E = base_field(g)
-    r = rank(g)
-    primes = Vector(undef, length(LGS))
-
-
-    for i in 1:length(LGS)
-      primes[i] = prime(LGS[i])
-      @assert r == rank(LGS[i])
-    end
-    z = new{S}(E, primes, LGS, r, signatures)
-    return z
-  end
-end
-
-function _check_global_genus_symbol(LGS, signatures)
-  _non_norm = _non_norm_primes(LGS)
-  P = length(_non_norm)
-  I = length([(s, N) for (s, N) in signatures if mod(N, 2) == 1])
-  if mod(P + I, 2) == 1
-    return false
-  end
-  return true
-end
-
-function _non_norm_primes(LGS::Vector)
-  z = []
-  for g in LGS
-    p = prime(g)
-    d = det(g)
-    if d != 1
-      push!(z, g)
-    end
-  end
-  return z
-end
-
-function Base.getindex(G::GlobalGenusSymbol, P)
-  i = findfirst(isequal(P), G.primes)
-  if i === nothing
-    throw(error("No local genus symbol at $P"))
-  end
-  return G.LGS[i]
-end
-
-################################################################################
-#
-#  Change the uniformizer of a Genus symbol
-#
-################################################################################
-
-@doc Markdown.doc"""
-    change_uniformizer(G::LocalGenusSymbol, a::NfOrdElem) -> LocalGenusSymbol
-
-Returns an equivalent? genus symbol with uniformizer $a$.
-"""
-function change_uniformizer(G::LocalGenusSymbol{QuadLat}, unif::NfOrdElem)
-  if unif == uniformizer(G)
-    return G
-  end
-  P = prime(G)
-  @assert isodd(minimum(P))
-  @assert valuation(unif, P) == 1
-  _, mF = ResidueField(order(P), P)
-  mFF = extend(mF, nf(order(P)))
-  b,_ = issquare(mFF(unif//uniformizer(G)))
-  if b
-    return LocalGenusSymbol{QuadLat}(P, G.data, unif, G.iseven, G.E, nothing, nothing)
-  else
-    e = G.data[1]
-    return LocalGenusSymbol{QuadLat}(P, (e[1], e[2], isodd(e[1] * e[2]) ? -e[3] : e[3]), unif, G.iseven, G.E, nothing, nothing)
-  end
 end
 
 ################################################################################
@@ -1895,310 +1387,546 @@ end
 
 ################################################################################
 #
-#  Compute representatives of genera
+#  Maximal integral lattices
 #
 ################################################################################
 
-function _hermitian_form_with_invariants(E, dim, P, N)
-  K = base_field(E)
-  R = maximal_order(K)
-#  require forall{n: n in N | n in {0..dim}}: "Number of negative entries is impossible";
-  infinite_pl = [ p for p in real_places(K) if _decomposition_number(E, p) == 1 ]
-  length(N) != length(infinite_pl) && error("Wrong number of real places")
-  S = maximal_order(E)
-  prim = [ p for p in P if length(prime_decomposition(S, p)) == 1 ] # only take non-split primes
-  I = [ p for p in keys(N) if isodd(N[p]) ]
-  !iseven(length(I) + length(P)) && error("Invariants do not satisfy the product formula")
-  e = gen(E)
-  x = 2 * e - trace(e)
-  b = coeff(x^2, 0) # b = K(x^2)
-  a = _find_quaternion_algebra(b, prim, I)
-  D = elem_type(E)[]
-  for i in 1:(dim - 1)
-    if length(I) == 0
-      push!(D, one(E))
+#{Checks whether L is p-maximal integral. If not, a minimal integral over-lattice at p is returned}
+
+function _ismaximal_integral(L::AbsLat, p)
+  R = base_ring(L)
+  E = nf(R)
+  D = prime_decomposition(R, p)
+  e = valuation(discriminant(R), p)
+  if e == 0
+    s = one(E)
+  else
+    s = elem_in_nf(p_uniformizer(D[1][1]))^e
+  end
+  @assert valuation(s, D[1][1]) == 2
+
+  M = local_basis_matrix(L, p, type = :submodule)
+  G = gram_matrix(ambient_space(L), M)
+  F, h = ResidueField(R, D[1][1])
+  hext = extend(h, E)
+  sGmodp = map_entries(hext, s * G)
+  Vnullity, V = kernel(sGmodp, side = :left)
+  if Vnullity == 0
+    return true, L
+  end
+
+  hprim = u -> elem_in_nf((h\u))
+
+  for x in _enumerate_lines(F, nrows(V))
+    v = map_entries(hprim, matrix(F, 1, nrows(V), x) * V)
+    res = v * M
+    resvec = [res[1, i] for i in 1:ncols(res)]
+    t = inner_product(ambient_space(L), resvec, resvec)
+    valv = iszero(t) ? inf : valuation(t, D[1][1])
+    if valv >= 2
+      # I don't want to compute the generators
+      X = [ iszero(inner_product(ambient_space(L), resvec, g)) ? inf : valuation(inner_product(ambient_space(L), resvec, g), D[1][1]) for g in generators(L) ]
+      @assert minimum(X) >= 1 - e
+      return false, v * M
+    end
+  end
+  return true, L
+end
+
+  #// Check if L is max. integral at p. If not, return either:
+  #// - a minimal integral overlattice at p (minimal flag set)
+  #// - a maximal integral overlattice at p (minimal flag not set).
+function _maximal_integral_lattice(L::AbsLat, p, minimal = true)
+  R = base_ring(L)
+  # already maximal?
+  if valuation(norm(volume(L)), p) == 0 && !isramified(R, p)
+    return true, L
+  end
+
+  B, G, S = jordan_decomposition(L, p)
+  D = prime_decomposition(R, p)
+  P = D[1][1]
+  is_max = true
+
+  if length(D) == 2 # split
+    @assert S[end] != 0
+    if minimal
+      max = 1
+      M = pseudo_matrix(matrix(nf(R), 1, ncols(B[1]), elem_type(nf(R))[B[length(S)][1, i] for i in 1:ncols(B[1])]), [inv(P)])
     else
-      push!(D, E(_weak_approximation(infinite_pl, [N[p] >= i ? -1 : 1 for p in infinite_pl])))
-    end
-  end
-  push!(D, a * prod(D))
-  Dmat = diagonal_matrix(D)
-  dim0, P0, N0 = _hermitian_form_invariants(Dmat)
-  @assert dim == dim0
-  @assert P == P0
-  @assert N == N0
-  return Dmat
-end
-
-function _hermitian_form_invariants(M)
-  E = base_ring(M)
-  K = base_field(E)
-  @assert degree(E) == 2
-  A = automorphisms(E)
-  a = gen(E)
-  v = A[1](a) == a ? A[2] : A[1]
-
-  @assert M == transpose(_map(M, v))
-  d = coeff(det(M), 0) # K(det(M))
-  P = Dict()
-  for p in keys(factor(d * maximal_order(K)))
-    if islocal_norm(E, d, p)
-      continue
-    end
-    P[p] = true
-  end
-  for p in keys(factor(discriminant(maximal_order(E))))
-    if islocal_norm(E, d, p)
-      continue
-    end
-    P[p] = true
-  end
-  D = diagonal(_gram_schmidt(M, v)[1])
-  I = Dict([ p=>length([coeff(d, 0) for d in D if isnegative(coeff(d, 0), p)]) for p in real_places(K) if _decomposition_number(E, p) == 1])
-  return ncols(M), collect(keys(P)), I
-end
-
-################################################################################
-#
-#  Enumeration of local genera
-#
-################################################################################
-
-function _local_genera_symbols(E, p, rank, det_val, max_scale, is_ramified)
-  if is_ramified
-    # the valuation is with respect to p
-    # but the scale is with respect to P
-    # in the ramified case p = P**2 and thus
-    # the determinant of a block is
-    # P^(scale*rank) = p^(scale*rank/2)
-    det_val *= 2
-  end
-
-  K = number_field(order(p))
-
-  scales_rks = [] # possible scales and ranks
-
-  for rkseq in _integer_lists(rank, max_scale + 1)
-    d = 0
-    pgensymbol = []
-    for i in 0:(max_scale + 1) - 1
-      d += i * rkseq[i + 1]
-      if rkseq[i + 1] != 0
-        push!(pgensymbol, (i, rkseq[i + 1]))
-      end
-    end
-    if d == det_val
-        push!(scales_rks, pgensymbol)
-    end
-  end
-
-  if !is_ramified
-    return [ genus_symbol(HermLat, E,p, [(b..., 1) for b in g]) for g in scales_rks]
-  end
-
-  scales_rks = [g for g in scales_rks if all((mod(b[1]*b[2], 2) == 0) for b in g)]
-
-  symbols = []
-  hyperbolic_det = hilbert_symbol(K(-1), gen(K)^2//4 - 1, p)
-  if !_contains_2(p) # non-dyadic
-    for g in scales_rks
-      n = length(g)
-      dets = []
-      for b in g
-        if mod(b[1], 2) == 0
-          push!(dets, [1, -1])
+      max = S[end]
+      coeff_ideals = fractional_ideal_type(R)[]
+      _matrix = zero_matrix(nf(R), 0, ncols(B[1]))
+      for i in 1:length(B)
+        if S[i] == 0
+          continue
         end
-        if mod(b[1], 2) == 1
-          push!(dets, [hyperbolic_det^(div(b[2], 2))])
+        _matrix = vcat(_matrix, B[i])
+        for k in 1:nrows(B[i])
+          push!(coeff_ideals, inv(P)^(S[i]))
         end
       end
-
-      for d in Iterators.product(dets...)
-        g1 = copy(g)
-        for k in 1:n
-          # this is wrong
-          push!(symbols, genus_symbol(HermLat, E, p, (g1[k]..., d[k])))
+      M = pseudo_matrix(_matrix, coeff_ideals)
+    end
+    _new_pmat = _sum_modules(pseudo_matrix(L), M)
+    _new_pmat = _intersect_modules(_new_pmat, inv(P)^(max) * pseudo_matrix(L))
+    return false, lattice(ambient_space(L), _new_pmat)
+  elseif D[1][2] == 1 # The inert case
+    if S[end] >= 2
+      if minimal
+        max = 1
+        M = pseudo_matrix(matrix(nf(R), 1, ncols(B[1]), elem_type(nf(R))[B[length(S)][1, i] for i in 1:ncols(B[1])]), inv(P)^(div(S[end], 2)))
+      else
+        max = S[end]
+        coeff_ideals = fractional_ideal_type(R)[]
+        _matrix = zero_matrix(nf(R), 0, ncols(B[1]))
+        for i in 1:length(B)
+          if !(S[i] >= 2)
+            continue
+          end
+          _matrix = vcat(_matrix, B[i])
+          for k in 1:nrows(B[i])
+            push!(coeff_ideals, inv(P)^(div(S[i], 2)))
+          end
         end
+        M = pseudo_matrix(_matrix, coeff_ideals)
       end
+      _new_pmat = _sum_modules(pseudo_matrix(L), M)
+      _new_pmat = _intersect_modules(_new_pmat, inv(P)^(max) * pseudo_matrix(L))
+      L = lattice(ambient_space(L), _new_pmat)
+      if minimal
+        return false, L
+      end
+      B, G, S = jordan_decomposition(L, p)
+      is_max = false
     end
-    return symbols
-  end
-
-  # Ramified case
-  lp = prime_decomposition(maximal_order(E), p)
-  @assert length(lp) == 1 && lp[1][2] == 2
-  P = lp[1][1]
-  
-  e = valuation(different(maximal_order(E)), P)
-  # only for debugging
-  scales_rks = reverse(scales_rks)
-
-  for g in scales_rks
-    n = length(g)
-    det_norms = []
-    #println(" === g: $g")
-    for b in g
-      #println(" ======== b: $b")
-      if mod(b[2], 2) == 1
-        @assert iseven(b[1])
-        push!(det_norms, [[1, div(b[1], 2)], [-1, div(b[1], 2)]])
+    # new we look for zeros of ax^2 + by^2
+    kk, h = ResidueField(R, D[1][1])
+    while sum(S[i] * nrows(B[i]) for i in 1:length(B)) > 1
+      k = findfirst(i -> S[i] == 1, 1:length(S))
+      @assert (k !== nothing) k && nrows(B[k]) >= 2
+      r = h\rand(kk)
+      # The following might throw ...
+      while valuation(G[k][1, 1] + G[k][2, 2] * elem_in_nf(norm(r)), D[1][1]) < 2
+        r = h\rand(kk)
       end
-      if mod(b[2], 2) == 0
-        dn = []
-        i = b[1]
-        # (i + e) // 2 => k >= i/2
-        for k in (ceil(Int, Int(i)//2)):(div(Int(i + e), 2) - 1)
-          push!(dn, [1, k])
-          push!(dn, [-1, k])
+      M = pseudo_matrix(matrix(nf(R), 1, ncols(B[k]), [B[k][1, j] + r * B[k][2, j] for j in 1:ncols(B[k])]), [inv(P)])
+      _new_pmat = _sum_modules(pseudo_matrix(L), M)
+      _new_pmat = _intersect_modules(_new_pmat, inv(P) * pseudo_matrix(L))
+      L = lattice(ambient_space(L), _new_pmat)
+      if minimal
+        return false, L
+      end
+      is_max = false
+      B, G, S = jordan_decomposition(L, p)
+      @assert S[1] >= 0
+    end
+    return is_max, L
+  else # ramified case
+    if S[end] >= 2
+      if minimal
+        max = 1
+        M = pseudo_matrix(matrix(nf(R), 1, ncols(B[1]), elem_type(nf(R))[B[length(S)][1, i] for i in 1:ncols(B[1])]), [inv(P)^(div(S[end], 2))])
+      else
+        max = S[end]
+        coeff_ideals = fractional_ideal_type(R)[]
+        _matrix = zero_matrix(nf(R), 0, ncols(B[1]))
+        for i in 1:length(B)
+          if !(S[i] >= 2)
+            continue
+          end
+          _matrix = vcat(_matrix, B[i])
+          for k in 1:nrows(B[i])
+            push!(coeff_ideals, inv(P)^(div(S[i], 2)))
+          end
         end
-        push!(dn, [hyperbolic_det^(div(b[2], 2)), div(i + e, 2)])
-        if mod(i + e, 2) == 1
-          push!(dn, [-hyperbolic_det^(div(b[2], 2)), div(i + e, 2)])
-        end
-        push!(det_norms, dn)
+        M = pseudo_matrix(_matrix, coeff_ideals)
       end
-    end
-    #println("================ det_norms: $det_norms")
-    for dn in Iterators.product(det_norms...)
-      g1 = deepcopy(g)
-      #println("g1 before: $g1")
-      for k in 1:n
-        g1[k] = (g1[k]..., dn[k]...)
+      _new_pmat = _sum_modules(pseudo_matrix(L), M)
+      _new_pmat = _intersect_modules(_new_pmat, inv(P)^(max) * pseudo_matrix(L))
+      L = lattice(ambient_space(L), _new_pmat)
+      if minimal
+        return false, L
       end
-      h = genus_symbol(HermLat, E, p, g1)
-      if !(h in symbols)
-        push!(symbols, h)
+      B, G, S = jordan_decomposition(L, p)
+    end
+    v = valuation(volume(L), P)
+    ok, x = _ismaximal_integral(L, p)
+    while !ok
+      LL = L
+      L = lattice(ambient_space(L), _sum_modules(pseudo_matrix(L), pseudo_matrix(x, [inv(P)])))
+      v = v - 2
+      @assert v == valuation(volume(L), P)
+      @assert valuation(norm(L), p) >= 0
+      if minimal
+        return false, L
       end
+      is_max = false
+      ok, x = _ismaximal_integral(L, p)
     end
-  end
-  return symbols
-end
-
-function hermitian_genera(E, rank, signatures, determinant; max_scale = nothing)
-  K = base_field(E)
-  OE = maximal_order(E)
-  if max_scale === nothing
-    _max_scale = determinant
-  else
-    _max_scale = max_scale
-  end
-
-  primes = support(discriminant(OE))
-  for p in support(norm(determinant))
-    if !(p in primes)
-      push!(primes, p)
-    end
-  end
-
-  local_symbols = []
-
-  ms = norm(_max_scale)
-  ds = norm(determinant)
-  for p in primes
-    det_val = valuation(ds, p)
-    mscale_val = valuation(ms, p)
-    det_val = div(det_val, 2)
-    is_ram = isramified(OE, p)
-    if !is_ram
-      mscale_val = div(mscale_val, 2)
-    end
-    push!(local_symbols, _local_genera_symbols(E, p, rank, det_val, mscale_val, is_ram))
-  end
-
-  res = []
-  it = Iterators.product(local_symbols...)
-  for gs in it
-    c = collect(gs)
-    b = _check_global_genus_symbol(c, signatures)
-    if b
-      push!(res, GlobalGenusSymbol{HermLat}(c, signatures))
-    end
-  end
-
-  return res
-end
-
-function _non_norm_rep(G::LocalGenusSymbolHerm)
-  if isdefined(G, :non_norm_rep)
-    return G.non_norm_rep
-  end
-  E = base_field(G)
-  K = base_field(E)
-  if isramified(G)
-    if !isdyadic(G)
-      U, mU = unit_group(maximal_order(K))
-      local u
-      for i in 1:ngens(U)
-        u = mU(U[i])
-        if !islocal_norm(E, u, prime(G))
-          G.non_norm_rep = u
-          return u
-          break
-        end
-      end
-    else
-      lP = prime_decomposition(maximal_order(E), prime(G))
-      @assert length(lP) == 1 && lP[1][2] == 2
-      Q = lP[1][1]
-      e = valuation(different(maximal_order(E)), Q)
-      local u
-      U, mU = unit_group(maximal_order(K))
-      for i in 1:ngens(U)
-        u = mU(U[i])
-        if !islocal_norm(E, elem_in_nf(u), prime(G)) && (valuation(u - 1, prime(G)) == e - 1)
-          G.non_norm_rep = u
-          return u
-          break
-        end
-      end
-    end
-  else
-    error("This does not make any sense!")
-  end
-end
-
-function uniformizer(G::LocalGenusSymbol{HermLat})
-  E = base_field(G)
-  K = base_field(E)
-  if isramified(G)
-    lP = prime_decomposition(maximal_order(E), prime(G))
-    @assert length(lP) == 1 && lP[1][2] == 2
-    Q = lP[1][1]
-    pi = uniformizer(Q)
-    A = automorphisms(E)
-    uni = A[1](elem_in_nf(pi)) * A[2](elem_in_nf(pi))
-    @assert iszero(coeff(uni, 1))
-    @assert islocal_norm(E, coeff(uni , 0), prime(G))
-    return coeff(uni, 0)
-  else
-    return uniformizer(prime(G))
-  end
-end
-
-@doc Markdown.doc"""
-    det(G::LocalGenusSymbol) -> NumFieldElem
-
-Return the norm class of the determinant of $G$.
-"""
-function det(G::LocalGenusSymbol{HermLat})
-  z = G.data
-  d = prod(b[3] for b in z)
-  v = sum(b[1] * b[2] for b in z)
-  if isramified(maximal_order(G.E), G.P)
+    @assert iseven(v)
     v = div(v, 2)
+    m = rank(L)
+    e = valuation(discriminant(R), p)
+    if isodd(m)
+      valmax = - div(m - 1, 2) * e
+    else
+      valmax = -div(m, 2) * e
+      disc = discriminant(ambient_space(L))
+      if !islocal_norm(nf(R), disc, p)
+        valmax += 1
+      end
+    end
+    @assert v == valmax
+    return is_max, L
   end
-  if d == 1
-    u = base_field(G.E)(1)
-  else
-    @assert isramified(G)
-    u = _non_norm(G)
-  end
-  return u * uniformizer(G)^v
 end
 
-function rank(G::LocalGenusSymbol{HermLat})
-  z = G.data
-  return sum(b[2] for b in z)::Int
+#{Checks whether L is p-maximal integral. If not, a minimal integral over-lattice at p is returned}
+function ismaximal_integral(L::HermLat, p)
+  valuation(norm(L), p) < 0 && error("The lattice must be integral at the prime ideal")
+  return _maximal_integral_lattice(L, p, true)
+end
+
+#{Checks whether L is maximal integral. If not, a minimal integral over-lattice is returned}
+function ismaximal_integral(L::HermLat) 
+  !isintegral(norm(L)) && throw(error("The lattice is not integral"))
+  S = base_ring(L)
+  f = factor(discriminant(S))
+  ff = factor(norm(volume(L)))
+  for (p, e) in ff
+    f[p] = 0
+  end
+  bad = collect(keys(f))
+  for p in bad 
+    ok, LL = _maximal_integral_lattice(L, p, true)
+    if !ok
+      return false, LL
+    end
+  end
+  return true, L
+end
+
+#{Checks if L_p is Norm(L_p)-maximal}
+function ismaximal(L::HermLat, p)
+  iszero(L) && error("The lattice must be non-zero")
+  v = valuation(norm(L), p)
+  x = elem_in_nf(p_uniformizer(p))^(-v)
+  b, LL = ismaximal_integral(rescale(L, x), p)
+  if b
+    return b, L
+  else
+    return lattice(ambient_space(L), pseudo_matrix(LL))
+  end
+end
+
+#{A maximal integral lattice containing L}
+function maximal_integral_lattice(L::HermLat)
+  !isintegral(norm(L)) && throw(error("The lattice is not integral"))
+  S = base_ring(L)
+  f = factor(discriminant(S))
+  ff = factor(norm(volume(L)))
+  for (p, e) in ff
+    f[p] = 0
+  end
+  bad = collect(keys(f))
+  for p in bad
+    _, L = _maximal_integral_lattice(L, p, false)
+  end
+  return L
+end
+
+#{A p-maximal integral lattice over L}
+function maximal_integral_lattice(L::HermLat, p)
+  valuation(norm(L), p) < 0 && throw(error("Lattice is not locally integral"))
+  _, L = _maximal_integral_lattice(L, p, false)
+  return L
+end
+
+function maximal_integral_lattice(V::HermSpace)
+  L = lattice(V, identity_matrix(base_ring(V), rank(V)))
+  fac = collect(factor(scale(L)))
+  S = base_ring(L)
+  s = one(nf(S)) * S
+  while length(fac) > 0
+    nrm = norm(fac[1][1])
+    i = findfirst(i -> norm(fac[i][1]) == nrm, 2:length(fac))
+    if i !== nothing
+      i = i + 1 # findfirst gives the index and not the element
+      @assert fac[i][2] == fac[1][2]
+      s = s * fractional_ideal(S, fac[1][1])^fac[1][2]
+      deleteat!(fac, i)
+    else
+      s = s * inv(fac[1][1])^(div(fac[1][2], 2))
+    end
+    deleteat!(fac, 1)
+  end
+  if !isone(s)
+    L = s * L
+  end
+  return maximal_integral_lattice(L)
+end
+
+################################################################################
+#
+#  Find a given lattice locally
+#
+################################################################################
+# {Constructs a sublattice X of M such that X_p is isometrix to L_p and X_q =
+# M_q for all other primes q}
+#
+
+function find_lattice(M::HermLat, L::HermLat, p)
+  @assert base_ring(M) == base_ring(L)
+  #@show p
+  #@show pseudo_matrix(M)
+  #@show pseudo_matrix(L)
+  @assert isrationally_equivalent(M, L, p)
+  @assert ismaximal_integral(M, p)[1]
+  D = prime_decomposition(base_ring(L), p)
+  #@show D
+  #@show length(D)
+  P = D[1][1]
+  #@assert isintegral(L, P)
+  if length(D) == 2 # split case
+    pi = p_uniformizer(P)
+    BM, _, SM = jordan_decomposition(M, p)
+    BL, _, SL = jordan_decomposition(L, p)
+    SMall = reduce(vcat, [ [SM[i] for j in 1:nrows(BM[i])] for i in 1:length(BM)])
+    SLall = reduce(vcat, [ [SL[i] for j in 1:nrows(BL[i])] for i in 1:length(BL)])
+    BMall = reduce(vcat, BM)
+    E = [ SLall[i] - SMall[i] for i in 1:nrows(BMall) ]
+    @assert nrows(BMall) == rank(M)
+    for i in 1:nrows(BMall)
+      multiply_row!(BMall, pi^E[i], i)
+    end
+    _new_pmat = _sum_modules(pseudo_matrix(BMall), fractional_ideal(order(P), P)^maximum(E) * pseudo_matrix(M))
+    _new_pmat = _intersect_modules(_new_pmat, P^minimum(E) * pseudo_matrix(M))
+    LL = lattice(ambient_space(M), _new_pmat)
+  elseif length(D) == 1 && D[1][2] == 1 # inert case
+    #@show "================= intert"
+    genL = genus(L, p)
+    r0 = sum( rank(genL, i) for i in 1:length(genL) if iseven(scale(genL, i)))
+    if isdyadic(p)
+      nsn = zero(nf(base_ring(L)))
+    else
+      nsn = _non_square_norm(P)
+    end
+
+    B, G, S = jordan_decomposition(M, p)
+    @assert all(s in [0, 1] for s in S)
+    if S[1] == 0
+      BB = [ B[1][i, :] for i in 1:nrows(B[1])]
+      m = div(length(BB) - r0, 2)
+      k, h = ResidueField(base_ring(base_ring(L)), p)
+      hext = extend(h, nf(base_ring(base_ring(L))))
+      Y = [ BB[i] for i in (2*m + 1):length(BB) ]
+      for i in 1:m
+        # transform <BB[2i-1], BB[2i]> into H(0). Then go from there.
+        b, s = issquare(hext(-G[1][2*i, 2*i]//G[1][2*i - 1, 2*i - 1]))
+        if b
+          push!(Y, BB[2*i] + (h\s)*BB[2*i - 1])
+        else
+          b, s = issquare(hext(-G[1][2*i, 2*i]//G[1][2*i - 1, 2*i - 1] * norm(nsn)))
+          @assert b
+          push!(Y, nsn * BB[2*i] + (h\s) * BB[2*i - 1])
+        end
+      end
+      if length(B) == 2
+        Y = vcat(reduce(vcat, Y), B[2])
+      end
+      _new_pmat = _sum_modules(pseudo_matrix(Y), _module_scale_ideal(P, pseudo_matrix(M)))
+      _new_pmat = _intersect_modules(_new_pmat, pseudo_matrix(M))
+      LL = lattice(ambient_space(M), _new_pmat)
+    else
+      LL = M
+    end
+    B, _, _ = jordan_decomposition(LL, p)
+    Y = reduce(vcat, B)
+#    // Now Y generates the Gerstein reduction of L_p locally.
+#    // So we simply rescale the generators in Y appropriately and assemble
+#    // the global solution. 
+    pi = elem_in_nf(p_uniformizer(p))
+    i = 1
+    j = r0 + 1
+    for l in 1:length(genL)
+      s = pi^div(scale(genL, l), 2)
+      if iseven(scale(genL, l))
+        for k in 1:rank(genL, l)
+          multiply_row!(Y, s, i)
+          i = i + 1
+        end
+      else
+        for k in 1:rank(genL, l)
+          multiply_row!(Y, s, j)
+          j = j + 1
+        end
+      end
+    end
+    max = scale(genL, length(genL))
+    _new_pmat = _sum_modules(pseudo_matrix(Y), _module_scale_ideal(P^max, pseudo_matrix(M)))
+    _new_pmat = _intersect_modules(_new_pmat, pseudo_matrix(M))
+    LL = lattice(ambient_space(M), _new_pmat)
+  elseif !isdyadic(p) # odd ramified
+#   // C contains the genus symbols of all Gerstein reduced lattices above L_p.
+    c = genus(L, p)
+    C = [ c ]
+    while scale(c, length(c)) >= 2
+      c0 = genus(HermLat, nf(base_ring(L)), p, [(scale(c, i), rank(c, i), det(c, i)) for i in 1:length(c) if scale(c, i) in [0, 2]])
+      if length(c0) == 2
+        c0 = genus(HermLat, nf(base_ring(L)), p, [(0, rank(c0, 1) + rank(c0, 2), det(c0, 1) == det(c0, 2) ? 1 : -1)])
+      elseif length(c0) == 1
+        c0 = genus(HermLat, nf(base_ring(L)), p, [(0, rank(c0, 1), det(c0, 1))])
+      end
+      c1 = genus(HermLat, nf(base_ring(L)), p, [(scale(c, i), rank(c, i), det(c, i)) for i in 1:length(c) if scale(c, i) in [1, 3]])
+      if length(c1) == 2
+        c1 = genus(HermLat, nf(base_ring(L)), p, [(1, rank(c1, 1) + rank(c1, 2), det(c1, 1) == det(c1, 2) ? 1 : -1)])
+      elseif length(c1) == 1
+        c1 = genus(HermLat, nf(base_ring(L)), p, [(1, rank(c1, 1), det(c1, 1))])
+      end
+      genus(HermLat, nf(base_ring(L)), p , 
+            vcat([(scale(c0, i), rank(c0, i), det(c0, i)) for i in 1:length(c0)],
+                 [(scale(c1, i), rank(c1, i), det(c1, i)) for i in 1:length(c1)],
+                 [(scale(c, i) - 2, rank(c, i), det(c, i)) for i in 1:length(c) if scale(c, i) >= 4]))
+      push!(C, c)
+    end
+    B, G, S = jordan_decomposition(M, p)
+    #@show S
+    #@show M
+    #@show p
+    @assert all(s in [-1, 0] for s in S)
+    B0 = S[end] == 0 ? [ B[end][i, :] for i in 1:nrows(B[end]) ] : []
+    B1 = S[1] == -1 ? [ B[1][i, :] for i in 1:nrows(B[1]) ] : []
+    r0 = scale(c, 1) == 0 ? rank(c, 1) : 0
+    for i in 1:div(r0 - length(B0), 2)
+      push!(B0, B1[2*i - 1])
+    end
+    if length(B0) == 0
+      LL = lattice(ambient_space(M), P * pseudo_matrix(M))
+    else
+      _new_pmat = _sum_modules(pseudo_matrix(reduce(vcat, B0)), P*pseudo_matrix(M))
+      _new_pmat = _intersect_modules(_new_pmat, pseudo_matrix(M))
+      LL = lattice(ambient_space(M), _new_pmat)
+    end
+    @assert genus_symbol(LL) == c
+
+    K = base_field(nf(base_ring(M)))
+    k, h = ResidueField(order(p), p)
+    hext = extend(h, K)
+    for j in length(C)-1:-1:1
+      c = C[j]
+      if all(!(scale(c, i) in [0, 1]) for i in 1:length(c))
+        @assert scale(C[1], 1) - valuation(scale(LL), P) >= 0
+        s = div(scale(C[1], 1) - valuation(scale(LL), P), 2)
+        LL = lattice(ambient_space(LL), P^s * pseudo_matrix(LL))
+        break
+      end
+      B, G, S = jordan_decomposition(LL, p)
+      r = findfirst(i -> scale(c, i) == 1, 1:length(c))
+      if r !== nothing
+        r = rank(c, r)
+        i = findfirst(j -> j == 1, S)
+        @assert i !== nothing
+        Y1 = [ B[i][j,:] for j in 1:r] 
+      else
+        Y1 = []
+      end
+      Y0 = []
+      r = findfirst(i -> scale(c, i) == 0, 1:length(c))
+      if r !== nothing
+        @assert S[1] == 0
+        B = [ B[i][j, :] for j in 1:nrows(B[i]) ]
+        n = length(B)
+        G = G[1]
+        NN = [ i for i in 1:length(B) if !issquare(hext(coeff(G[i, i], 0)))]
+        if length(NN) == 0 && det(c, 1) == -1
+          while true
+            s = h\rand(k)
+            if !issquare(hext(coeff(G[n - 1, n - 1] + s^2 * G[n, n], 0)))
+              break
+            end
+          end
+          Y0 = vcat(B[1:r-1], [B[n - 1] + s * B[n]])
+        else
+          SS = [ i for i in 1:n if !(i in NN)]
+        end
+        if det(c, 1) == 1
+          Y0 = []
+        else
+          Y0 = [ NN[1] ]
+          popfirst!(NN, 1)
+        end
+        if isodd(r- length(Y0))
+          if length(SS) == 0
+            while true
+              s = h\rand(k)
+              if issquare(hext(coeff(G[n - 1, n - 1] + s^2 * G[n, n], 0)))
+                break
+              end
+            end
+            v = B[n - 1]
+            B[n - 1] = B[n - 1] + s * B[n]
+            B[n] = B[n] - s * G[n, n]//G[n - 1, n - 1] * v
+            NN = [i for i in NN if i < n - 1]
+            SS = [n - 1, n]
+          end
+          push!(Y0, SS[1])
+          popfirst!(SS, 1)
+        end
+        Y0 = vcat(Y0, NN[1:2*div(length(NN), 2)], SS)
+        Y0 = B[Y0[1:r]]
+      end
+    end
+    _new_pmat = _sum_modules(pseudo_matrix(reduce(vcat, vcat(Y0, Y1))), P * pseudo_matrix(LL))
+    _new_pmat = _intersect_modules(_new_pmat, pseudo_matrix(LL))
+    @assert genus_symbol(LL, p) == c
+  else
+#  // The even ramified case
+#  // The approach below is VERY lame.
+#  // What we should do is the following:
+#  // 1. Find an (suffiently good approximation of an) isometry between the ambient spaces of M_p and L_p.
+#  // 2. Let Y_p be the image of L_p under this map. If it is good enough, then Y_p \isom L_p.
+#  // 3. Contsruct a lattice X in the space of M such that X_p = Y_p and X_q = M_q for all q \ne p.
+#  else
+    k, h = ResidueField(order(P), P)
+    m = rank(M)
+    chain = [ L ]
+    ok, LL = ismaximal_integral(L, p)
+    E = nf(order(P))
+    while !ok
+      push!(chain, LL)
+      ok, LL = ismaximal_integral(LL, p)
+    end
+    pop!(chain)
+    LL = M
+    reverse!(chain)
+    for X in chain 
+      BM = local_basis_matrix(LL, P, type = :submodule)
+      pM = fractional_ideal(order(P), P) * pseudo_matrix(LL)
+      while true
+        v = [ rand(k) for i in 1:m ]
+        while all(i -> iszero(v[i]), 1:m)
+          v = [ rand(k) for i in 1:m ]
+        end
+        _, KM = kernel(matrix(k, length(v), 1, v), side = :left)
+        KM = map_entries(x -> E(h\x), KM)
+        _new_pmat = _sum_modules(pseudo_matrix(KM * BM), pM)
+        LL = lattice(ambient_space(M), _new_pmat)
+        #@show "trying $LL"
+        #@show ambient_space(LL)
+        #@show coefficient_ideals(pseudo_matrix(LL))
+        #@show matrix(pseudo_matrix(LL))
+        #@show genus(X, p)
+        #@show genus(LL, p)
+        if islocally_isometric(X, LL, p)
+          break
+        end
+      end
+    end
+  end
+  #@show p, LL
+  @assert islocally_isometric(L, LL, p)
+  return LL
 end
 
 ################################################################################
@@ -2208,20 +1936,22 @@ end
 ################################################################################
 
 function _sum_modules(a::PMat, b::PMat)
-  c = vcat(a, b)
+  H = vcat(a, b)
   H = pseudo_hnf(H, :lowerleft)
   r = 0
   for i in 1:nrows(H)
     if !iszero_row(matrix(H), i)
       r = i
+      break
     end
   end
   @assert r != 0
-  return sub(H, r:nrows(H), 1:cols(H))
+  return sub(H, r:nrows(H), 1:ncols(H))
 end
 
 function _intersect_modules(a::PMat, b::PMat)
   M1 = hcat(a, deepcopy(a))
+  d = ncols(b)
   z = zero_matrix(base_ring(matrix(a)), d, d)
   M2 = hcat(pseudo_matrix(z, b.coeffs), b)
   M = vcat(M1, M2)
@@ -2239,22 +1969,24 @@ end
 _module_scale_ideal(a::PMat, b::NfAbsOrdIdl) = _module_scale_ideal(b, a)
 
 function _module_scale_ideal(a::NfOrdFracIdl, b::PMat)
-  return pseudo_matrix(matrix(b), a .* coefficient_ideals(b))
+  return pseudo_matrix(matrix(b), Ref(a) .* coefficient_ideals(b))
 end
 
 _module_scale_ideal(a::PMat, b::NfOrdFracIdl) = _module_scale_ideal(b, a)
 
 function _module_scale_ideal(a::NfRelOrdIdl, b::PMat)
-  return pseudo_matrix(matrix(b), a .* coefficient_ideals(b))
+  return pseudo_matrix(matrix(b), Ref(a) .* coefficient_ideals(b))
 end
 
 _module_scale_ideal(a::PMat, b::NfRelOrdIdl) = _module_scale_ideal(b, a)
 
 function _module_scale_ideal(a::NfRelOrdFracIdl, b::PMat)
-  return pseudo_matrix(matrix(b), a .* coefficient_ideals(b))
+  return pseudo_matrix(matrix(b), Ref(a) .* coefficient_ideals(b))
 end
 
 _module_scale_ideal(a::PMat, b::NfRelOrdFracIdl) = _module_scale_ideal(b, a)
+
+*(a::NfRelOrdFracIdl, b::PMat) = _module_scale_ideal(a, b)
 
 function _local_basis_matrix(a::PMat, p::NfOrdIdl)
   @assert base_ring(a) == order(p)
@@ -2291,14 +2023,54 @@ function _local_basis_matrix_prime_below(a::PMat, p)
   return z
 end
 
-function _local_basis_submodule_matrix(a::PMat, p::NfOrdIdl)
+function _local_basis_matrix_prime_below_submodule(a::PMat, p)
+  @assert base_ring(base_ring(a)) == order(p)
+  R = base_ring(a)
+  D = prime_decomposition(R, p)
+#  unis = [p_uniformizer(q[1]) for q in D]
+#  @assert all(valuation(unis[i], D[i][1]) == 1 for i in 1:length(D))
+#  @assert all(sum(valuation(unis[i], D[j][1]) for j in 1:length(D)) == 1 for i in 1:length(D))
+  z = zero_matrix(base_ring(matrix(a)), nrows(a), ncols(a))
+  for i in 1:nrows(a)
+    c = coefficient_ideals(a)[i]
+    f = factor(c)
+    if length(f) == 0
+      x = one(nf(R))
+    else
+      for Q in D
+        if !(haskey(f, Q[1]))
+          f[Q[1]] = 0
+        end
+      end
+      x = approximate([e for (_, e) in f], [p for (p, _) in f])
+      @assert all(valuation(x, p) == e for (p, e) in f)
+    end
+    @assert valuation(x, D[1][1]) == valuation(c, D[1][1])
+    #x = unis[1]^valuation(c, D[1][1])
+    #for k in 2:length(D)
+    #  x = x * unis[k]^valuation(c, D[k][1])
+    #end
+    for j in 1:ncols(a)
+      z[i, j] = x * matrix(a)[i, j]
+    end
+  end
+  if true
+    _z = pseudo_matrix(z, [one(nf(R)) * R for i in 1:nrows(z)])
+    @assert _spans_subset_of_pseudohnf(_z, a, :lowerleft)
+    @assert valuation(det(_z), D[1][1]) == valuation(det(a), D[1][1])
+  end
+  return z
+end
+
+function _local_basis_submodule_matrix(a::PMat, p)
+  #@assert base_ring(base_ring(a)) == order(p)
   z = zero_matrix(base_ring(matrix(a)), nrows(a), ncols(a))
   for i in 1:nrows(a)
     c = coefficient_ideals(a)[i]
     vpc = valuation(c, p)
     found = false
     local x
-    for b in basis(c)
+    for b in absolute_basis(c) # could use generators here
       if valuation(b, p) == vpc
         found = true
         x = b
@@ -2314,14 +2086,7 @@ function _local_basis_submodule_matrix(a::PMat, p::NfOrdIdl)
 end
 
 function _local_basis_supermodule_matrix(a::PMat, p::NfOrdIdl)
-  z = zero_matrix(base_ring(matrix(a)), nrows(a), ncols(a))
-  for i in 1:nrows(a)
-    # need to do an approximate or approximate_simple
-    for j in 1:ncols(a)
-      z[i, j] = x * matrix(a)[i, j]
-    end
-  end
-  return z
+  throw(NotImplemented())
 end
 
 function image(S::T, A::NfOrdFracIdl) where {T <: Map}
@@ -2474,7 +2239,7 @@ function _get_norm_valuation_from_gram_matrix(G, P)
     T = valuation(trrr, P)
   end
   #T = trace_ideal_valuation((G[i, j] for i in 1:n for j in i+1:n), P)
-  diag = minimum(valuation(G[i, i], P) for i in 1:n)
+  diag = minimum(iszero(G[i, i]) ? inf : valuation(G[i, i], P) for i in 1:n)
   if T isa PosInf
     return diag
   else
@@ -2495,6 +2260,17 @@ function absolute_basis(I::NfOrdFracIdl)
 end
 
 function absolute_basis(I::NfRelOrdFracIdl)
+  res = elem_type(nf(order(I)))[]
+  pb = pseudo_basis(I)
+  for (e, I) in pb
+    for b in absolute_basis(I)
+      push!(res, e * b)
+    end
+  end
+  return res
+end
+
+function absolute_basis(I::NfRelOrdIdl)
   res = elem_type(nf(order(I)))[]
   pb = pseudo_basis(I)
   for (e, I) in pb
@@ -2531,7 +2307,7 @@ function _decomposition_number(E::NfRel{nf_elem}, p::InfPlc)
   f = defining_polynomial(E)
   prec = 32
   while true
-    g = change_base_ring(f, x -> evaluate(x, p, 32))
+    g = map_coeffs(x -> evaluate(x, p, 32), f)
     @assert all(i -> isreal(coeff(g, i)), 0:degree(g))
     try
       rts = roots(g, isolate_real = true)
@@ -2571,11 +2347,10 @@ function _sign(x::acb)
   end
 end
 
-#// Given an element b in a number field K and sets of finite and infinite 
-#// places P and I of K, return an element a in K such that 
-#// { v: (a,b)_v = -1 } = P \cup I
-#// Note that the function coputes the unit and class groups of K!
-
+# Given an element b in a number field K and sets of finite and infinite 
+# places P and I of K, return an element a in K such that 
+# { v: (a,b)_v = -1 } = P \cup I
+# Note that the function computes the unit and class groups of K!
 function _find_quaternion_algebra(b, P, I)
   @assert iseven(length(I) + length(P))
   @assert all(p -> !islocal_square(b, p), P)
@@ -2588,6 +2363,9 @@ function _find_quaternion_algebra(b, P, I)
 
   _J = b * R
   _P = Dict{}()
+  for p in P
+    _P[p] = true
+  end
   for p in keys(factor(_J))
     _P[p] = true
   end
@@ -2663,7 +2441,6 @@ function _find_quaternion_algebra(b, P, I)
   end
   fl, v = can_solve(M, target, side = :left)
   @assert fl
-  #@show v
   z = evaluate(FacElem(Dict(elts[i] => Int(lift(v[1, i])) for i in 1:ncols(v))))
   @assert sign_vector(z) == target
   return z
@@ -2681,12 +2458,15 @@ function _weak_approximation(I::Vector{InfPlc}, val::Vector{Int})
     for i in 1:ngens(A)
       if v.coeff[i] == 1
         target_signs[i] = val[i] == -1 ? 1 : 0
+        break
       end
-      break
     end
   end
-
-  return K(exp(A(target_signs)))
+  c = K(exp(A(target_signs)))
+  for i in 1:length(I)
+    @assert sign(c, I[i]) == val[i]
+  end
+  return c
 end
 
 # Compute all decreasing non-negative integer sequenes of length len with sum
@@ -2738,3 +2518,107 @@ function support(a::NumFieldElem)
 end
 
 p_uniformizer(P::NfOrdIdl) = uniformizer(P)
+
+isdyadic(p) = order(p)(2) in p
+
+isdyadic(p::fmpz) = p == 2
+
+# find an element of K, which is not a local norm at p
+# p must be ramified
+function _non_norm_rep(E, K, p)
+  K = base_field(E)
+  if isramified(maximal_order(E), p)
+    if !isdyadic(p)
+      U, mU = unit_group(maximal_order(K))
+      for i in 1:ngens(U)
+        u = mU(U[i])
+        if !islocal_norm(E, u, p)
+          return u
+        end
+      end
+    else
+      lP = prime_decomposition(maximal_order(E), p)
+      @assert length(lP) == 1 && lP[1][2] == 2
+      Q = lP[1][1]
+      e = valuation(different(maximal_order(E)), Q)
+      U, mU = unit_group(maximal_order(K))
+      for i in 1:ngens(U)
+        u = mU(U[i])
+        if !islocal_norm(E, elem_in_nf(u), p) && (valuation(u - 1, p) == e - 1)
+          return u
+        end
+      end
+    end
+  else
+    lP = prime_decomposition(maximal_order(E), p)
+    if length(lP) == 2
+      error("This dosses not make any sense!")
+    else
+      return elem_in_nf(p_uniformizer(p))
+     end
+  end
+end
+
+function _enumerate_lines(K, n)
+  if n == 1
+    return Vector{elem_type(K)}[elem_type(K)[one(K)]]
+  end
+  _all_nminusone = Iterators.product([K for i in 1:n-1]...)
+  res = Vector{elem_type(K)}[]
+  for w in _all_nminusone
+    v = elem_type(K)[one(K)]
+    append!(v, collect(w))
+    push!(res, v)
+  end
+  _all_rest = _enumerate_lines(K, n - 1)
+  for w in _all_rest
+    v = elem_type(K)[zero(K)]
+    append!(v, w)
+    push!(res, v)
+  end
+  return res
+end
+
+function ^(A::NfRelOrdFracIdl, a::Int)
+  if a == 0
+    B = one(nf(order(A))) * order(A)
+    return B
+  end
+
+  if a == 1
+    return A # copy?
+  end
+
+  if a < 0
+    return inv(A^(-a))
+  end
+
+  if a == 2
+    return A*A
+  end
+
+  if mod(a, 2) == 0
+    return (A^div(a, 2))^2
+  else
+    return A * A^(a - 1)
+  end
+end
+
+# P must be inert and odd
+function _non_square_norm(P)
+  @assert !isdyadic(P)
+  #@assert isinert(P)
+  R = order(P)
+  p = minimum(P)
+  k, h = ResidueField(order(P), P)
+  kp, hp = ResidueField(order(p), p)
+  local u
+  while true
+    r = rand(k)
+    u = h\r
+    if !iszero(r) && !issquare(hp(norm(u)))[1]
+      break
+    end
+  end
+  return u
+end

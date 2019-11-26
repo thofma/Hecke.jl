@@ -302,6 +302,7 @@ function conductors(O::NfOrd, a::Array{Int, 1}, bound::fmpz, tame::Bool=false)
   list = conductors_tame(O, expo, bound_tame)
 
   if tame
+    reverse!(list)
     return Tuple{Int, Dict{NfOrdIdl, Int}}[(x[1], Dict{NfOrdIdl, Int}()) for x in list]  
   end
   #
@@ -391,6 +392,7 @@ function conductors(O::NfOrd, a::Array{Int, 1}, bound::fmpz, tame::Bool=false)
       push!(final_list, (el*q,d))
     end
   end
+  reverse!(final_list)
   return final_list
   
 end
@@ -569,7 +571,6 @@ function conductorsQQ(O::NfOrd, a::Array{Int, 1}, bound::fmpz, tame::Bool=false)
     boundsubext = root(bound, Int(divexact(n, q^v)))
     obound = flog(boundsubext, q)
     nnbound = valuation_bound_discriminant(n, q)
-    k = div(expo, Int(q)-1)
     bound_max_ap = min(nbound, obound, nnbound)  #bound on ap
     bound_max_exp = div(bound_max_ap, (q^(v-1))*(q-1)) #bound on the exponent in the conductor
     if nisc != 1
@@ -848,16 +849,18 @@ function _action_on_quo(mq::GrpAbFinGenMap, act::Array{GrpAbFinGenMap,1})
 
 end
 
-function _are_there_subs(G::GrpAbFinGen,gtype::Array{Int,1})
-
-  H=DiagonalGroup(gtype)
-  H, _=snf(H)
-  G1, _=snf(G)
-  if length(G1.snf)<length(H.snf)
+function _are_there_subs(G::GrpAbFinGen, gtype::Array{Int,1})
+  
+  H = DiagonalGroup(gtype)
+  H = snf(H)[1]
+  G1 = snf(G)[1]
+  arr_snfG1 = filter(x -> x != 1, G1.snf)
+  arr_snfH = filter(x -> x != 1, H.snf)
+  if length(arr_snfG1) < length(arr_snfH)
     return false
   end
-  for i=0:length(H.snf)-1
-    if !divisible(G1.snf[end-i],H.snf[end-i])
+  for i=0:length(arr_snfH)-1
+    if !divisible(arr_snfG1[end-i], arr_snfH[end-i])
       return false
     end
   end
@@ -936,12 +939,20 @@ function _quad_ext(bound::Int, only_real::Bool = false)
   fields_list = Array{Tuple{AnticNumberField, Vector{NfToNfMor}, Vector{NfToNfMor}}, 1}(undef, length(final_list))
   for i = 1:length(final_list)
     if mod(final_list[i],4) != 1
-      L, gL = number_field(x^2-final_list[i], cached=false, check = false)
+      cp = Vector{fmpz}(undef, 3)
+      cp[1] = -final_list[i]
+      cp[2] = 0
+      cp[3] = 1
+      L, gL = number_field(Qx(cp), cached=false, check = false)
       auts = NfToNfMor[hom(L, L, -gL, check = false)]
       emb = NfToNfMor[hom(K, L, one(L), check = false)]
       fields_list[i] = (L, auts, emb)
     else
-      L, gL = number_field(x^2-x+divexact(1-final_list[i], 4), cached=false, check = false)
+      cp = Vector{fmpz}(undef, 3)
+      cp[1] = divexact(1-final_list[i], 4)
+      cp[2] = -1
+      cp[3] = 1
+      L, gL = number_field(Qx(cp), cached=false, check = false)
       auts = NfToNfMor[hom(L, L, 1-gL, check = false)]
       emb = NfToNfMor[hom(K, L, one(L), check = false)]
       fields_list[i] = (L, auts, emb)
@@ -1227,7 +1238,7 @@ function _from_relative_to_absQQ(L::NfRelNS{T}, auts::Array{NfRelNSToNfRelNSMor{
   polys = Vector{fmpq_poly}(undef, length(L.pol))
   for i = 1:length(L.pol)
     fK = isunivariate(L.pol[i])[2]
-    f = Qx([coeff(coeff(fK, j), 0) for j = 0:degree(fK)])
+    f = Qx(fmpq[coeff(coeff(fK, j), 0) for j = 0:degree(fK)])
     polys[i] = f
   end
   NS, gNS = number_field(polys, check = false, cached = false)
@@ -1267,7 +1278,7 @@ function _from_relative_to_absQQ(L::NfRelNS{T}, auts::Array{NfRelNSToNfRelNSMor{
   imgs = Vector{NfAbsNSElem}(undef, length(auts))
   for i = 1:length(auts)
     fK = isunivariate(auts[i].emb[i].data)[2]
-    f = Qx([coeff(coeff(fK, j), 0) for j = 0:degree(fK)])
+    f = Qx(fmpq[coeff(coeff(fK, j), 0) for j = 0:degree(fK)])
     imgs[i] = NS(evaluate(f, gpols[i]))
   end
   autsNS = Vector{NfAbsNSToNfAbsNS}(undef, length(auts))
@@ -1275,7 +1286,7 @@ function _from_relative_to_absQQ(L::NfRelNS{T}, auts::Array{NfRelNSToNfRelNSMor{
     imgs = Vector{NfAbsNSElem}(undef, length(polys))
     for s = 1:length(polys)
       fK = isunivariate(auts[t].emb[s].data)[2]
-      f = Qx([coeff(coeff(fK, j), 0) for j = 0:degree(fK)])
+      f = Qx(fmpq[coeff(coeff(fK, j), 0) for j = 0:degree(fK)])
       imgs[s] = NS(evaluate(f, gpols[s]))
     end
     autsNS[t] = NfAbsNSToNfAbsNS(NS, NS, imgs)
@@ -1318,10 +1329,10 @@ function _from_relative_to_absQQ(L::NfRelNS{T}, auts::Array{NfRelNSToNfRelNSMor{
     elem_to_mat_row!(M, 1, denominator(x), x)
     mul!(M, M, M1.num)
     y=Hecke.elem_from_mat_row(Ks, M, 1, M1.den*denominator(x))
-    @assert iszero(Ks.pol(y))
+    #@assert iszero(Ks.pol(y))
     autos[i] = hom(Ks, Ks, y, check = false)
   end
-  _set_automorphisms_nf(Ks, closure(autos, degree(Ks)))
+  #_set_automorphisms_nf(Ks, closure(autos, degree(Ks)))
   
   @vprint :AbExt 2 "Finished\n"
   return Ks, autos
@@ -1412,6 +1423,7 @@ function _from_relative_to_abs(L::NfRelNS{T}, auts::Array{NfRelNSToNfRelNSMor{T}
   @vprint :AbExt 2 "Finished\n"
   return Ks, autos
 end 
+
 
 #######################################################################################
 #

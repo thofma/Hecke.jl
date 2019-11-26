@@ -133,7 +133,7 @@ function _abelian_extensionsQQ(gtype::Array{Int,1}, absolute_discriminant_bound:
   complex = iseven(expo) && !only_real
   
   #Now, the big loop
-  class_fields = Vector{Hecke.ClassField}()
+  class_fields = Vector{Hecke.ClassField{MapRayClassGrp, GrpAbFinGenMap}}()
   for (i, k) in enumerate(l_conductors)
     if iszero(mod(i, 1000)) 
       pt = len - i
@@ -145,7 +145,7 @@ function _abelian_extensionsQQ(gtype::Array{Int,1}, absolute_discriminant_bound:
     end
     ls = subgroups(r, quotype = gtype, fun = (x, y) -> quo(x, y, false)[2])
     for s in ls
-      C = ray_class_field(mr, s)
+      C = ray_class_field(mr, s)::ClassField{MapRayClassGrp, GrpAbFinGenMap}
       if Hecke._is_conductor_minQQ(C, n) && Hecke.discriminant_conductorQQ(O, C, k, absolute_discriminant_bound, n)
         push!(class_fields, C)
       end
@@ -226,7 +226,9 @@ function _abelian_normal_extensions(F::FieldsTower, gtype::Array{Int, 1}, absbou
     return Vector{Hecke.ClassField{Hecke.MapRayClassGrp, GrpAbFinGenMap}}[]
   end
   @vprint :Fields 2 "\n"
+  @vprint :Fields 1 "Computing class group"
   @vtime :Fields 2 Cl, mCl = class_group(O, use_aut = true)
+  @vprint :Fields 1 "$(Hecke.clear_to_eol())"
   if mod(n, 2) == 0 && !only_real
     inf_plc = real_places(K)
   end
@@ -258,6 +260,7 @@ function _abelian_normal_extensions(F::FieldsTower, gtype::Array{Int, 1}, absbou
     end
     mr.clgrpmap.small_gens = rcg_ctx.class_group_map.small_gens
     @vtime :Fields 3 act = Hecke.induce_action(mr, autos)
+    
     @vtime :Fields 3 ls = stable_subgroups(r, act, op = (x, y) -> quo(x, y, false)[2], quotype = gtype)
     Dcond = Dict{Int, Array{GrpAbFinGenElem, 1}}()
     Ddisc = Dict{Tuple{Int, Int}, Array{GrpAbFinGenElem, 1}}()
@@ -283,6 +286,7 @@ function _abelian_normal_extensions(F::FieldsTower, gtype::Array{Int, 1}, absbou
   class_fields = Hecke.check_abelian_extensions(class_fields_with_act, autos, emb_sub)
   return class_fields
 end
+
 
 ################################################################################
 #
@@ -312,14 +316,14 @@ function from_class_fields_to_fields(class_fields::Vector{Hecke.ClassField{Hecke
       cfieldsp[i] = Hecke.maximal_p_subfield(class_fields[i], Int(p))
     end
     idE = grp_to_be_checked[p]
-    if mod(order(torsion_unit_group(maximal_order(K))[1]), exponent(cfieldsp[1])) == 0 
+    if iszero(mod(order(torsion_unit_group(maximal_order(K))[1]), p^(valuation(exponent(class_fields[1]), p))))
       compute_fields(cfieldsp, autos, idE, right_grp)
       pclassfields[ind] = cfieldsp
       ind += 1
       continue
     end
     E = GAP.Globals.SmallGroup(idE)
-    S, H = max_ab_norm_sub_containing(E)
+    S, H, ab_inv = max_ab_norm_sub_containing(E)
     if S == H 
       compute_fields(cfieldsp, autos, idE, right_grp)
       pclassfields[ind] = cfieldsp
@@ -330,8 +334,9 @@ function from_class_fields_to_fields(class_fields::Vector{Hecke.ClassField{Hecke
     # I can compute the fields over a subfield.
     #First, I need the subfields.
     K = base_field(class_fields[1])
+    assure_automorphisms(K, autos)
     subfields = compute_subfields(K, E, H, S)
-    computing_over_subfields(cfieldsp, subfields, idE, autos, right_grp)
+    computing_over_subfields(cfieldsp, subfields, idE, autos, right_grp, ab_inv)
     pclassfields[ind] = cfieldsp
     ind += 1
   end
@@ -350,55 +355,24 @@ function from_class_fields_to_fields(class_fields::Vector{Hecke.ClassField{Hecke
   
 end
 
-
 function compute_fields(class_fields::Vector{Hecke.ClassField{Hecke.MapRayClassGrp, GrpAbFinGenMap}}, autos::Vector{NfToNfMor}, grp_to_be_checked::Main.ForeignGAP.MPtr, right_grp)
-  K = base_field(class_fields[1])
-  fields = Tuple{Hecke.NfRelNS{nf_elem}, Vector{Hecke.NfRelNSToNfRelNSMor{nf_elem}}}[]
-  expo = Int(exponent(codomain(class_fields[1].quotientmap)))
-  #Since I want to compute as few Frobenius as possible, I want to first compute the extensions
-  #whose set of divisors is maximal
   it = findall(right_grp)
-  mins = Vector{fmpz}(undef, length(it))
-  for i = 1:length(mins)
-    mins[i] = minimum(defining_modulus(class_fields[it[i]])[1])
-  end
-  ismax = trues(length(mins))
-  for i = 1:length(ismax)
-    for j = i+1:length(ismax)
-      if ismax[j] 
-        i2 = ppio(mins[i], mins[j])[2]
-        if isone(i2)
-          ismax[i] = false
-          break
-        end 
-        i3 = ppio(mins[j], mins[i])[2]
-        if isone(i3)
-          ismax[j] = false
-        end
-      end
-    end
-  end
-  ord_class_fields = Vector{Int}(undef, length(ismax))
-  j1 = 1
-  j2 = length(ismax)
-  for i = 1:length(ismax)
-    if ismax[i]
-      ord_class_fields[j1] = it[i]
-      j1 += 1
-    else
-      ord_class_fields[j2] = it[i]
-      j2 -= 1
-    end
-  end
-  set_up_cycl_ext(K, expo, autos)
+  K = base_field(class_fields[it[1]])
+  fields = Tuple{Hecke.NfRelNS{nf_elem}, Vector{Hecke.NfRelNSToNfRelNSMor{nf_elem}}}[]
+  expo = Int(exponent(codomain(class_fields[it[1]].quotientmap)))
   
+  set_up_cycl_ext(K, expo, autos)
+  @vprint :Fields 3 "Computing the fields directly\n"
   for i in it
-    C = class_fields[ord_class_fields[i]]
-    L = number_field(C)
+    C = class_fields[i]
+    L = NumberField(C)
+    #L = NumberField_using_Brauer(C)
     autL = Hecke.absolute_automorphism_group(C, autos)
-    Cpperm = permutation_group(autL)
-    if !isone(gcd(degree(K), expo)) && GAP.Globals.IdGroup(Cpperm) != grp_to_be_checked
-      right_grp[ord_class_fields[i]] = false
+    if !isone(gcd(degree(K), expo)) 
+      Cpperm = permutation_group(autL)
+      if GAP.Globals.IdGroup(Cpperm) != grp_to_be_checked
+        right_grp[i] = false
+      end
     end
   end
   return right_grp
@@ -469,6 +443,7 @@ function set_up_cycl_ext(K::AnticNumberField, n::Int, autK::Array{NfToNfMor, 1})
     @vprint :FieldsNonFancy 1 "computing class group of cyclotomic extension of order $e\n"
     Cl, mCl = class_group(maximal_order(C.Ka), use_aut = true)
     Hecke.allow_cache!(mCl)
+    @vprint :Fields 1 "$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())"
   end
   return nothing
 
@@ -499,17 +474,18 @@ function max_ab_norm_sub_containing(G::Main.ForeignGAP.MPtr)
   H = D[end-1]
   G1 = GAP.Globals.Centralizer(G, H)
   if G1 == H
-    return H, H
+    return H, H, Int[]
   end
   #First, I check if the centralizer split directly as a direct product.
   sc = GAP.Globals.ComplementClassesRepresentatives(G1, H)
   if !GAP.Globals.IsEmpty(sc)
-    return sc[1], H
+    return G1, H, GAP.gap_to_julia(Vector{Int}, GAP.Globals.AbelianInvariants(sc[1]))
   end
   lS = GAP.gap_to_julia(GAP.Globals.ConjugacyClassesSubgroups(G1))
   #TODO: Subgroups in the quotient by H and not in the full group
   candidate = H
   sizecandidate = GAP.Globals.Size(H)
+  ab_invariants = GAP.gap_to_julia(Vector{Int}, GAP.Globals.AbelianInvariants(H))
   for S in lS
     s = GAP.Globals.Representative(S)
     if !GAP.Globals.IsSubset(s, H)
@@ -523,9 +499,10 @@ function max_ab_norm_sub_containing(G::Main.ForeignGAP.MPtr)
     if sncandidate > sizecandidate
       candidate = s
       sizecandidate = sncandidate
+      ab_invariants = GAP.gap_to_julia(Vector{Int}, GAP.Globals.AbelianInvariants(sc[1]))
     end
   end
-  return candidate, H
+  return candidate, H, ab_invariants
 end
 
 ################################################################################
@@ -534,9 +511,24 @@ end
 #
 ################################################################################
 
-function computing_over_subfields(class_fields, subfields, idE, autos, right_grp)
+function computing_over_subfields(class_fields, subfields, idE, autos, right_grp, ab_invariants::Vector{Int})
+
   it = findall(right_grp)
-  new_class_fields, subs = translate_class_field_down(subfields, class_fields, it)
+  new_class_fields, subs, to_be_done = translate_class_field_down(subfields, class_fields, it, ab_invariants)
+  for x in to_be_done
+    C = class_fields[x]
+    L = number_field(C)
+    auts = absolute_automorphism_group(C, autos)
+    Cpperm = permutation_group(auts)
+    if GAP.Globals.IdGroup(Cpperm) == idE
+      error("Something went wrong")
+    end
+    right_grp[x] = false
+  end
+  it = findall(right_grp)
+  if isempty(it)
+    return Vector{Tuple{Hecke.NfRelNS{nf_elem}, Vector{Hecke.NfRelNSToNfRelNSMor{nf_elem}}}}()
+  end
   translate_fields_up(class_fields, new_class_fields, subs, it)
   #Now, finally, the automorphisms computation and the isomorphism check
   for i in it
@@ -559,9 +551,11 @@ function computing_over_subfields(class_fields, subfields, idE, autos, right_grp
     rel_extend = Hecke.new_extend_aut(C, autos)
     autsA = vcat(rel_extend, autsrelC)
     C.AbsAutGrpA = autsA
-    Cpperm = permutation_group(autsA)
-    if GAP.Globals.IdGroup(Cpperm) != idE
-      right_grp[i] = false
+    if !iscoprime(degree(C), degree(base_field(C)))
+      Cpperm = permutation_group(autsA)
+      if GAP.Globals.IdGroup(Cpperm) != idE
+        right_grp[i] = false
+      end
     end
   end
   it = findall(right_grp)
@@ -575,19 +569,20 @@ function computing_over_subfields(class_fields, subfields, idE, autos, right_grp
   return fields 
 end
 
-function translate_extensions(mL::NfToNfMor, class_fields, new_class_fields, ctxK, it)
-  
+
+function translate_extensions(mL::NfToNfMor, class_fields, new_class_fields, ctxK, it, ab_invariants::Vector{Int})
   to_be_done = Int[]
   L = domain(mL)
   OL = maximal_order(L)
   K = codomain(mL)
   OK = maximal_order(K)
-  n = Int(exponent(codomain(class_fields[1].quotientmap)))
-  ordext = Int(order(codomain(class_fields[1].quotientmap)))
+  n = Int(exponent(codomain(class_fields[it[1]].quotientmap)))
+  ordext = Int(order(codomain(class_fields[it[1]].quotientmap)))
   ctx = Hecke.rayclassgrp_ctx(OL, n)
   d = divexact(discriminant(maximal_order(K)), discriminant(OL)^(divexact(degree(K), degree(L))))
   f = factor(ideal(OL, d))
   F = factor(ideal(OK, d))
+  ab_invariants_mod = map(x -> mod(x, n), ab_invariants)
   for indclf in it
     if isassigned(new_class_fields, indclf)
       continue
@@ -596,12 +591,16 @@ function translate_extensions(mL::NfToNfMor, class_fields, new_class_fields, ctx
     #First, I need a modulus.
     #I take the intersection of the modulus of C with L
     mR = C.rayclassgroupmap
-    fM0 = mR.fact_mod
+    fM0 = copy(mR.fact_mod)
     fm0 = Dict{NfOrdIdl, Int}()
     for (p, v) in fM0
       p1 = Hecke.intersect_prime(mL, p)
       if !haskey(fm0, p1)
-        fm0[p1] = v
+        if iscoprime(minimum(p1, copy = false), n) 
+          fm0[p1] = 1
+        else
+          fm0[p1] = v
+        end
       end
       ep = divexact(ramification_index(p), ramification_index(p1))
       fM0[p] = ep*v
@@ -619,27 +618,55 @@ function translate_extensions(mL::NfToNfMor, class_fields, new_class_fields, ctx
           fm0[p] = max(v, fm0[p]) 
         end
       end
+      lPP = prime_decomposition(mL, p)
+      for (P, vP) in lPP
+        if haskey(fM0, P)
+          fM0[P] = max(fM0[P], 2*vP*fm0[p])
+        else
+          fM0[P] = vP*fm0[p]*2
+        end
+      end
     end
     infplc = InfPlc[]
     if iszero(mod(n, 2)) 
       infplc = real_places(L)
     end
-    r, mr = Hecke.ray_class_group_quo(OL, fm0, infplc, ctx, check = false)
-    if order(r) < degree(C)
+    @vprint :Fields 3 "Checking if I can compute $(indclf) over a subfield\n\n "
+    @vtime :Fields 3 r, mr = Hecke.ray_class_group_quo(OL, fm0, infplc, ctx, check = false)
+    if exponent(r) < n || order(r) < degree(C)
       push!(to_be_done, indclf)
       continue
     end 
     #Now, the norm group of K over L
-    ngL, mngL = Hecke.norm_group(mL, mr)
-    if !divisible(order(ngL), degree(C))
+    
+    @vtime :Fields 3 ngL, mngL = Hecke.norm_group(mL, mr, prod(ab_invariants_mod))
+    @hassert :Fields 1 divisible(divexact(fmpz(degree(codomain(mL))), degree(domain(mL))), divexact(order(r), order(ngL))) 
+    if !divisible(order(ngL), degree(C)) || !divisible(exponent(C), n)
       push!(to_be_done, indclf)
       continue
     end
     #Finally, the norm group of C over L
     #I use the usual strategy, as in check_abelian_extension
-    fM0 = merge(F, fM0)
-    RM, mRM = Hecke.ray_class_group_quo(OK, fM0, InfPlc[], ctxK, check = false)
-    lP, gS = Hecke.find_gens(mRM)
+    for (p, v) in F
+      if iscoprime(minimum(p, copy = false), degree(C))
+        fM0[p] = 1
+      else
+        if haskey(fM0, p)
+          fM0[p] = max(v, fM0[p])
+        else
+          fM0[p] = v
+        end 
+      end
+    end
+    inf_plc2 = InfPlc[]
+    if !isempty(infplc)
+      inf_plc2 = real_places(K)
+    end
+    @vtime :Fields 3 RM, mRM = Hecke.ray_class_group_quo(OK, fM0, inf_plc2, ctxK, check = false)
+    if !isdefined(ctxK.class_group_map, :small_gens)
+      ctxK.class_group_map.small_gens = find_gens(pseudo_inv(ctxK.class_group_map), PrimesSet(101, -1))[1]
+    end
+    @vtime :Fields 3 lP, gS = Hecke.find_gens(mRM)
     listn = NfOrdIdl[norm(mL, x) for x in lP]
     # Create the map between R and r by taking norms
     preimgs = Vector{GrpAbFinGenElem}(undef, length(listn))
@@ -654,15 +681,19 @@ function translate_extensions(mL::NfToNfMor, class_fields, new_class_fields, ctx
     end
     RMtoR = hom(gS, prms)
     k, mk = kernel(RMtoR)
+    @hassert :Fields 1 isisomorphic(cokernel(mk)[1], codomain(C.quotientmap))
     mp = mk*proj
     ck, mck = cokernel(mp)
-    expected_order = divexact(order(r), order(ngL)) * degree(C)
-    if order(ck) != expected_order
+    #If everything could work, then ck should be the direct product of the abelian extension I am searching for and 
+    #the maximal abelian subextension of K/L
+    G1 = snf(cokernel(mngL)[1])[1]
+    G2 = snf(codomain(C.quotientmap))[1]
+    if !_are_there_subs(ck, map(Int, vcat(G1.snf, G2.snf)))
       push!(to_be_done, indclf)
       continue
     end
     @vprint :Fields 1 "$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())Doing field $(indclf) / $(length(class_fields))"
-    s, ms = sub(ck, GrpAbFinGenElem[mck(mngL(x)) for x in gens(ngL)])
+    s, ms = image(mngL*mck)#sub(ck, GrpAbFinGenElem[mck(mngL(x)) for x in gens(ngL)])
     mq1 = find_complement(ms)
     mqq = mck * mq1 
     @hassert :Fields 1 domain(mqq) == r
@@ -674,6 +705,10 @@ function translate_extensions(mL::NfToNfMor, class_fields, new_class_fields, ctx
   @vprint :Fields 1 "$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())"
   return to_be_done
   
+end
+
+function divisible(x::Integer, y::Integer)
+  return divisible(fmpz(x), fmpz(y))
 end
 
 
@@ -728,7 +763,6 @@ function compute_subfields(K::AnticNumberField, E, H, S)
       push!(orbitS, Sn)
     end 
   end
-  
   auts = automorphisms(K, copy = false)
   Hperm = _from_autos_to_perm(auts)
   Hauts = _perm_to_gap_grp(Hperm)
@@ -741,28 +775,28 @@ function compute_subfields(K::AnticNumberField, E, H, S)
 
 end
 
-function translate_class_field_down(subfields, class_fields, it)
+function translate_class_field_down(subfields, class_fields, it, ab_invariants)
   new_class_fields = similar(class_fields)
   #Now, I translate the fields over the subfields.
   to_be_done = Int[i for i in it]
   created_subfields = NfToNfMor[]
-  K = base_field(class_fields[1])
+  K = base_field(class_fields[to_be_done[1]])
   OK = maximal_order(K)
-  ctxK = Hecke.rayclassgrp_ctx(OK, exponent(class_fields[1]))
+  ctxK = Hecke.rayclassgrp_ctx(OK, exponent(class_fields[to_be_done[1]]))
   for mL in subfields
     push!(created_subfields, mL)
-    to_be_done_new = translate_extensions(mL, class_fields, new_class_fields, ctxK, it)
+    to_be_done_new = translate_extensions(mL, class_fields, new_class_fields, ctxK, it, ab_invariants)
     if length(to_be_done_new) == 0 
-      return new_class_fields, created_subfields
+      return new_class_fields, created_subfields, to_be_done_new
     end
     to_be_done = to_be_done_new
   end
-  error("Something went wrong!")
+  return new_class_fields, created_subfields, to_be_done
 end
 
 
 function translate_fields_up(class_fields, new_class_fields, subfields, it)
-  K = base_field(class_fields[1])
+  K = base_field(class_fields[it[1]])
   Ky = PolynomialRing(K, "y", cached = false)[1]
   for i in it
     C = class_fields[i]
@@ -775,8 +809,8 @@ function translate_fields_up(class_fields, new_class_fields, subfields, it)
     end
     L = domain(mL)
     D = Dict{Int, NfToNfMor}()
-    for i = 1:length(new_class_fields[i].cyc)
-      d = degree(new_class_fields[1].cyc[i])
+    for j = 1:length(new_class_fields[i].cyc)
+      d = degree(new_class_fields[i].cyc[j])
       if !haskey(D, d)
         CEK = cyclotomic_extension(K, d)
         CEL = cyclotomic_extension(L, d)
@@ -834,17 +868,3 @@ function translate_fields_up(class_fields, new_class_fields, subfields, it)
   return nothing
 
 end
-
-
-function isconsistent(f::NfRelToNfRelMor)
-  
-  K = domain(f)
-  p = K.pol
-  p1 = map_coeffs(f.coeff_aut, p, cached = false)
-  if !iszero(p1(f.prim_img))
-    error("Wrong")
-  end
-  return true
-  
-end
-

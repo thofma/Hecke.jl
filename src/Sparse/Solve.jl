@@ -192,7 +192,7 @@ function det(A::SMat{fmpz})
     return prod([A[i,i] for i=1:A.r]) end
 
   b = div(nbits(hadamard_bound2(A)), 2)
-  lp = fmpz[p]
+  lp = fmpz[p_start]
   while b > 0
     push!(lp, next_prime(lp[end]))
     b -= nbits(lp[end])
@@ -285,7 +285,7 @@ function solve_dixon_sf(A::SMat{fmpz}, B::SMat{fmpz}, is_int::Bool = false)
     bp = change_ring(b, R)
 
     sol = sparse_row(FlintZZ)
-    last = (sol, 1)
+    last = (sol, fmpz(1))
 
     while true
       bp = mul(bp, Tp)

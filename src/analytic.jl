@@ -407,6 +407,6 @@ function expected_yield(D::fmpz, n::Int, B1::Integer, B2::Integer=0, steps::Int=
     push!(s, (v_l-v_l1)*r)
     v_l1 = v_l
   end
-  
+  @show typeof(s)
   return s
 end

@@ -233,16 +233,41 @@ an integer.
 function isnorm_divisible(a::nf_elem, n::fmpz)
   K = parent(a)
   s, t = ppio(denominator(a), n)
-  if s == 1
-    R = ResidueRing(FlintZZ, n, cached = false)
-    Rx, x = PolynomialRing(R, "x", cached = false)
-    el = resultant_ideal(Rx(numerator(a)), Rx(K.pol))
-  else
+  if !isone(s)
     m = n*s^degree(K)
-    R = ResidueRing(FlintZZ, m, cached = false)
-    Rx, x = PolynomialRing(R, "x", cached = false)
-    el = resultant_ideal(Rx(numerator(a)), Rx(K.pol))
-  end 
+  else
+    m = n
+  end
+  if fits(Int, m)
+    R1 = ResidueRing(FlintZZ, Int(m), cached = false)
+    R1x = PolynomialRing(R1, "x", cached = false)[1]
+    el = resultant_ideal(R1x(numerator(a)), R1x(K.pol))
+    return iszero(el)
+  end
+  R = ResidueRing(FlintZZ, m, cached = false)
+  Rx = PolynomialRing(R, "x", cached = false)[1]
+  el = resultant_ideal(Rx(numerator(a)), Rx(K.pol))
+  return iszero(el) 
+end
+
+#In this version, n is supposed to be a prime power
+function isnorm_divisible_pp(a::nf_elem, n::fmpz)
+  K = parent(a)
+  s, t = ppio(denominator(a), n)
+  if !isone(s)
+    m = n*s^degree(K)
+  else
+    m = n
+  end
+  if fits(Int, m)
+    R1 = ResidueRing(FlintZZ, Int(m), cached = false)
+    R1x = PolynomialRing(R1, "x", cached = false)[1]
+    el = resultant_ideal_pp(R1x(numerator(a)), R1x(K.pol))
+    return iszero(el)
+  end
+  R = ResidueRing(FlintZZ, m, cached = false)
+  Rx = PolynomialRing(R, "x", cached = false)[1]
+  el = resultant_ideal_pp(Rx(numerator(a)), Rx(K.pol))
   return iszero(el) 
 end
 

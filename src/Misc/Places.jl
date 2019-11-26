@@ -311,16 +311,15 @@ A uniformizer of a real place P is an element of the field which is negative
 at $P$ and positive at all the other real places. 
 """
 function infinite_places_uniformizers(K::AnticNumberField)
-  #if !redo
-    try 
-      c = _get_places_uniformizers(K)::Dict{InfPlc, nf_elem}
-      return c
-    catch e
-      if !isa(e, AccessorNotSetError)
-        rethrow(e)
-      end
+  try 
+    c = _get_places_uniformizers(K)::Dict{InfPlc, nf_elem}
+    return c
+  catch e
+    if !isa(e, AccessorNotSetError)
+      rethrow(e)
     end
-  #end
+  end
+  
   r, s = signature(K)
   if iszero(r)
     return Dict{InfPlc, nf_elem}()
@@ -335,12 +334,12 @@ function infinite_places_uniformizers(K::AnticNumberField)
   q, mq = quo(S, GrpAbFinGenElem[], false)
   b = 10
   cnt = 0
+  pr = 16
   while b > 0
     a = rand(K, collect(-b:b))
     if iszero(a)
       continue
     end
-    pr = 16
     lc = conjugates(a, pr)
     pr = 16
     done = true
@@ -465,8 +464,13 @@ function infinite_places_uniformizers(K::AnticNumberField)
     auxr = one(K)
     for w = 1:length(p)
       if !iszero(y[w])
-        mul!(auxr, auxr, g[w]^Int(y[w]))
+        mul!(auxr, auxr, g[w])
       end
+    end
+    lc = conjugates(auxr, pr)
+    while !isnegative(reim(lc[i])[1] + 1)
+      auxr *= 2
+      lc = conjugates(auxr, pr)
     end
     r[i] = auxr
   end

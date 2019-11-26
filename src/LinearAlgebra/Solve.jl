@@ -202,7 +202,7 @@ function solve_dixon(A::Generic.Mat{nf_elem}, B::Generic.Mat{nf_elem})
 #    @assert iszero(t)
     if fl 
       if last_SOL == SOL && A*SOL == B
-        println("used $nd $p-adic digits")
+        #println("used $nd $p-adic digits")
         return SOL
       else
         last_SOL = SOL

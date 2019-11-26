@@ -112,7 +112,7 @@ function saturate_exp(c::Hecke.ClassGrpCtx, p::Int, stable = 1.5)
   zeta = mT(T[1])
   if gcd(sT, p) != 1 && !(hash(zeta) in c.RS) # && order is promising...
     push!(R, K(zeta))
-  else
+#  else
 #    println("NOT doint zeta")
   end
   T = GF(p, cached = false)
@@ -139,11 +139,11 @@ function saturate_exp(c::Hecke.ClassGrpCtx, p::Int, stable = 1.5)
       try
         z = mod_p(R, Q[1], Int(p), T)
         z = z*A
-        z = nullspace(z)
-        if z[1] == 0
-          return matrix(FlintZZ, 0, length(R), fmpz[])
+        rrz, z = nullspace(z)
+        if iszero(rrz)
+          return zero_matrix(FlintZZ, 0, length(R))
         end
-        A = A*sub(z[2], 1:nrows(z[2]), 1:z[1])
+        A = A*sub(z, 1:nrows(z), 1:rrz)
         if cA == ncols(A) 
           break #the other ideals are going to give the same info
                 #for multi-quad as the field is normal
@@ -171,8 +171,7 @@ fe(a::FacElem) = a
 fe(a::nf_elem) = FacElem(a)
 
 function elems_from_sat(c::Hecke.ClassGrpCtx, z)
-  res = []
-  fac = []
+  res = []#Tuple{FacElem{nf_elem, AnticNumberField}, }[]
   for i=1:ncols(z)
     a = fe(c.R_gen[1])^FlintZZ(z[1, i])
     b = FlintZZ(z[1, i]) * c.M.bas_gens[1]
@@ -184,7 +183,7 @@ function elems_from_sat(c::Hecke.ClassGrpCtx, z)
       a *= fe(c.R_rel[j])^FlintZZ(z[j + length(c.R_gen), i])
       b += FlintZZ(z[j + length(c.R_gen), i]) * c.M.rel_gens[j]
     end
-
+    @show typeof(a), typeof(b)
     push!(res, (a, b))
   end
   return res
@@ -216,19 +215,30 @@ function saturate!(d::Hecke.ClassGrpCtx, U::Hecke.UnitGrpCtx, n::Int, stable = 3
       a = FacElem(K(1))
       fac_a = SRow(FlintZZ)
       for j = 1:length(c.R_gen)
-        a *= fe(c.R_gen[j])^r[j, 1]
-        fac_a += r[j, 1] * c.M.bas_gens[j]
+        if !iszero(r[j, 1])
+          mul!(a, a, fe(c.R_gen[j])^r[j, 1])
+          fac_a += r[j, 1] * c.M.bas_gens[j]
+        end
       end
       for j=1:length(c.R_rel)
-        a *= fe(c.R_rel[j])^r[j + length(c.R_gen), 1]
-        fac_a += r[j + length(c.R_gen), 1] * c.M.rel_gens[j]
+        if !iszero(r[j + length(c.R_gen), 1])
+          mul!(a, a, fe(c.R_rel[j])^r[j + length(c.R_gen), 1])
+          fac_a += r[j + length(c.R_gen), 1] * c.M.rel_gens[j]
+        end
       end
-      if nrows(e) > length(c.R_gen) + length(c.R_rel)
+      if nrows(e) > length(c.R_gen) + length(c.R_rel) && !iszero(r[nrows(e), 1])
         @assert length(c.R_gen) + length(c.R_rel) + 1 == nrows(e)
         a *= fe(zeta)^r[nrows(e), 1]
       end
       
       decom = Dict((c.FB.ideals[k], v) for (k,v) = fac_a)
+
+      #for (k, v) in a.fac
+      #  if iszero(v)
+      #    delete!(a.fac, k)
+      #  end
+      #end
+
       fl, x = ispower(a, n, decom = decom)
 
       if fl

@@ -10,15 +10,18 @@ function issquarefree(f::PolyElem)
   return isconstant(gcd(f, derivative(f)))
 end
 
-function conjugates_init(f::Union{fmpz_poly, fmpq_poly})
-  if typeof(f) == fmpq_poly
-    f = f*denominator(f)
-    g = Array{fmpz}(undef, length(f))
-    for i = 1:f.length
-      g[i] = FlintZZ(numerator(coeff(f, i-1)))
+function conjugates_init(f_in::Union{fmpz_poly, fmpq_poly})
+  local f::fmpz_poly
+  if typeof(f_in) == fmpq_poly
+    f_in = f_in*denominator(f_in)
+    gz = Array{fmpz}(undef, length(f_in))
+    for i = 1:f_in.length
+      gz[i] = FlintZZ(numerator(coeff(f_in, i-1)))
     end
-    g = PolynomialRing(FlintZZ, string(var(parent(f))), cached = false)[1](g)
+    g = PolynomialRing(FlintZZ, string(var(parent(f_in))), cached = false)[1](gz)
     f = g
+  else 
+    f = f_in
   end
   isconstant(gcd(f, derivative(f))) || error("poly should be square-free")
   c = roots_ctx()

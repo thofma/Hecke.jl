@@ -85,8 +85,43 @@ local_basis_matrix(L::AbsLat, p; type::Symbol = :any)
 ismodular(L::AbsLat, p)
 bad_primes(L::AbsLat; even::Bool = false)
 jordan_decomposition(L::AbsLat, p::NfOrdIdl)
-genus_symbol(::AbsLat, ::NfOrdIdl; uniformizer::Any = 0)
-change_uniformizer(G::GenusSymbol, unif::NfOrdElem)
 islocally_isometric(::AbsLat, ::AbsLat, ::NfOrdIdl)
 ```
 ---
+
+## Genera
+
+### Creation of genera from lattices
+
+```@docs
+genus(L::HermLat, p)
+genus(L::HermLat)
+```
+---
+
+### Properties of genera
+
+```@docs
+rank(G::LocalGenusHerm)
+rank(G::LocalGenusHerm, i::Int)
+ranks(G::LocalGenusHerm)
+det(G::LocalGenusHerm)
+det_representative(G::LocalGenusHerm)
+gram_matrix(G::LocalGenusHerm)
+primes(G::GenusHerm)
+```
+---
+
+### Check if lattice is contained in genus
+
+```@docs
+Base.in(L::HermLat, G::LocalGenusHerm)
+Base.in(L::HermLat, G::GenusHerm)
+```
+---
+
+### Creating representatives
+
+```@docs
+representative(G::LocalGenusHerm)
+```

@@ -7,6 +7,7 @@
 function conductors_after_Brauer(F::FieldsTower, st::Vector{Int}, l_cond::Vector)
   lp = ramified_primes(F)
   autsH = F.auts_for_conductors
+  assure_automorphisms(F)
   auts = automorphisms(F.field, copy = false)
   imgH = F.imgs_autos
   proj = F.proj_ext
@@ -38,8 +39,8 @@ function conductors_after_Brauer(F::FieldsTower, st::Vector{Int}, l_cond::Vector
         subgs[i] = Vector{Main.ForeignGAP.MPtr}(undef, length(els))
       end
       for j = 1:length(els)
-        el2 = GAP.GAP.Globals.Images(aut, els[j])
-        pels = GAP.GAP.Globals.List(GAP.GAP.Globals.PreImages(proj, el2))
+        el2 = GAP.Globals.Images(aut, els[j])
+        pels = GAP.Globals.List(GAP.Globals.PreImages(proj, el2))
         for i = 1:length(pels)
           subgs[i][j] = pels[i]
         end
@@ -113,6 +114,7 @@ end
 function conductor_general_case(F::FieldsTower, st::Vector{Int}, IdG::Main.ForeignGAP.MPtr, bound::fmpz, l_cond::Vector)
   n = prod(st)
   O = maximal_order(F)
+  assure_automorphisms(F)
   auts = automorphisms(nf(O), copy = false)
   Hperm = _from_autos_to_perm(auts)
   H = _perm_to_gap_grp(Hperm)
@@ -226,7 +228,7 @@ function conductors_with_restrictions(F::FieldsTower, st::Vector{Int}, IdG::Main
 
   O = maximal_order(F)
   l_cond = Hecke.conductors(O, st, bound)
-  if isdefined(F, :auts_for_conductors)
+  if F.has_info
     new_conds = conductors_after_Brauer(F, st, l_cond)
   else
     new_conds = conductor_general_case(F, st, IdG, bound, l_cond)
@@ -288,7 +290,7 @@ function conductors_with_restrictions(F::FieldsTower, st::Vector{Int}, IdG::Main
   list_tame = coprime_base(list_tame)
   for q in list_tame
     q == 1 && continue
-    @assert isprime(q)
+    #@assert isprime(q)
     v = valuation(discriminant(O), q)
     is_square_disc_base_field = iszero(mod(v*p, 2))
     td = prime_decomposition_type(O, q)
