@@ -33,11 +33,27 @@ function setprecision!(q::qadic, N::Int)
 end
 
 function setprecision!(Q::FlintQadicField, n::Int)
-  Q.prec_max = n
+    old_key = (prime(Q), degree(Q), Q.prec_max)
+    Q.prec_max = n
+
+    #Also Update the dictionary for cached object creation, if in the dictionary already.
+    if Nemo.QadicBase[old_key] === Q
+        delete!(Nemo.QadicBase, old_key)
+        Nemo.QadicBase[(prime(Q), degree(Q), Q.prec_max)] = Q
+    end
+    return Q
 end
 
 function setprecision!(Q::FlintPadicField, n::Int)
-  Q.prec_max = n
+    old_key = (prime(Q), Q.prec_max)
+    Q.prec_max = n
+
+    #Also Update the dictionary for cached object creation, if in the dictionary already.
+    if Nemo.PadicBase[old_key] === Q
+        delete!(Nemo.PadicBase, old_key)
+        Nemo.PadicBase[(prime(Q), Q.prec_max)] = Q
+    end
+    return Q
 end
 
 function setprecision!(f::Generic.Poly{qadic}, N::Int)

@@ -335,14 +335,8 @@ end
 Change the `prec_max` field of `K`. Effectively, this increases the precision of new elements
 created in `K`.
 """
-function sharpen!(K::FlintPadicField, new_prec)
-    K.prec_max = new_prec
-    return K
-end
-
-function sharpen!(K::FlintQadicField, new_prec)
-    K.prec_max = new_prec
-    return K
+function sharpen!(K::FlintLocalField, new_prec)
+    setprecision!(K, new_prec)
 end
 
 @doc Markdown.doc"""
@@ -682,15 +676,17 @@ function unramified_completion(K::AnticNumberField, gen_img::qadic, prec=10; ski
 
         # The choice is correct here because the correct residue image function.
         R, mR = ResidueField(parent(gen_img))
-
-        # Construct the array of powers of the primitive element.
-        pa = [one(R), mR(gen_img)]
         d = degree(R)
-        while length(pa) < d
-            push!(pa, pa[end]*pa[2])
-        end
+        
+        # Construct the array of powers of the primitive element.
+        # pa = [one(R), mR(gen_img)]
+        # d = degree(R)
+        # while length(pa) < d
+        #     push!(pa, pa[end]*pa[2])
+        # end
 
         f = defining_polynomial(parent(gen_img), FlintZZ)
+        pa   = d==1 ? [one(R)] : powers(mR(gen_img), d-1)
         pows = d==1 ? [one(K)] : powers(gen(K), d-1)
         
         backward_sharpening_ctx = _root_ctx_for_number_field(pows, pa, f, gen(R), p, prec)
@@ -755,8 +751,7 @@ function ramified_completions(K::AnticNumberField, p, prec=10)
     return T([Hecke.completion(K,P, precision) for P in ramified_prime_ideals])
 end
 
-function completions(K::AnticNumberField, p, prec=10)
-    
+function completions(K::AnticNumberField, p, prec=10)    
     if isramified(maximal_order(K), p)
         lp = prime_decomposition(maximal_order(K), p)
         prime_ideals = [P[1] for P in lp]
