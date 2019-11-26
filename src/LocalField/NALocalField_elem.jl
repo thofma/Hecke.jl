@@ -207,3 +207,15 @@ function valuation_of_factorial(n::Integer, p::Integer)
     end
     return result
 end
+
+
+#########################################################################################
+#
+#   Tropicalization
+#
+#########################################################################################
+
+function tropicalization(g::Hecke.Generic.Poly{<:NALocalFieldElem})
+    return valuation.(coefficients(g))
+end
+

@@ -47,6 +47,11 @@ function sym_lift(a::padic)
     return mod_sym(u, p^(N-v))*FlintQQ(p)^v
 end
 
+function lift(A::AbstractAlgebra.Generic.MatSpaceElem{AbstractAlgebra.Generic.ResF{fmpz}})
+    return matrix(lift.(A.entries))
+end
+
+
 #############
 # Linear Algebra
 
@@ -161,8 +166,8 @@ function factor_dict(a::FacElem{nf_elem, AnticNumberField})
 end
 
 
-function mod_sym!(a::NfAbsOrdElem, p)
-    mod_sym!(a.elem_in_nf, p)
+function mod_sym!(a::NfAbsOrdElem, p)    
+    a.elem_in_nf = mod_sym!(a.elem_in_nf, p)
     if isassigned(a.coordinates)
         @info "" a.coordinates
         a.coordinates = [mod_sym!(c,p) for c in a.coordinates]
