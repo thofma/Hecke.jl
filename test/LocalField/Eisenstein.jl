@@ -39,7 +39,12 @@
 
         @test [r[1] for r in rts2] == correct
     end
-    
+
+    @testset "Valuation normalizations" begin
+        @test valuation(zero(K)) == precision(K)
+
+        @test precision(gen(K)) == 10
+    end
 end
    
 
