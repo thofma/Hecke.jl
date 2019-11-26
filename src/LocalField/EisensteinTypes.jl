@@ -31,6 +31,7 @@ const EisensteinFieldID = Dict{Tuple{FmpqPolyRing, fmpq_poly, Symbol}, Field}()
 
 # TODO: Investigate the type of coefficient field element (whether padic/qadic should be allowed).
 
+# TODO: Should cache the prime and absolute degree for an eisenstein field.
 # Coefficients of the defining polynomial are approximate.
 # Defining polynomial *can* change precision.
 @doc Markdown.doc"""
@@ -61,9 +62,13 @@ mutable struct EisensteinField{NonArchLocalFieldElem} <: NonArchLocalField
     base_ring
     pol
     S::Symbol
+    prec_max # Eisenstein fields are defined by an approximate polynomial, so
+             # element precision will not exceed `prec_max` after a division.
+    
     auxilliary_data::Array{Any, 1} # Storage for extensible data.
 
     ## Temporary to get things off the ground. This may well be a poor choice.
+    ## Actually, this has been working fairly well! Just need to be careful with division...
     data_ring::AbstractAlgebra.Generic.ResField{<:AbstractAlgebra.Generic.Poly}
     
     function EisensteinField(pol::AbstractAlgebra.Generic.Poly{T}, s::Symbol,
@@ -79,7 +84,8 @@ mutable struct EisensteinField{NonArchLocalFieldElem} <: NonArchLocalField
         eisf.pol = pol
         eisf.base_ring = base_ring(pol)
         eisf.S = s
-
+        eisf.prec_max = precision(eisf.base_ring)
+        
         # Construct a new parent to actually print a generator nicely.
         P,Pvar = PolynomialRing(base_ring(pol), string(s))
         eisf.data_ring = ResidueField(P, pol(Pvar), cached=cached)
@@ -115,9 +121,11 @@ end
 > - data_ring_elt -- The representative in the data ring.
 """
 mutable struct eisf_elem <: NALocalFieldElem
-    u::eisf_unit_internal
-    v::Integer
-    N::Integer
+
+    # Cached data (unclear if these should be updated after every arithmetic operation.)
+    #u::eisf_unit_internal
+    #v::Integer
+    #N::Integer
     
     data_ring_elt
     parent::EisensteinField

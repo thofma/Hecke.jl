@@ -97,6 +97,11 @@ function setprecision!(f::Generic.Poly{padic}, N::Int)
   return f
 end
 
+function setprecision!(a::padic, N::Int)
+    a.N = N
+    return a
+end
+
 ################################################################################
 #
 #  Misc

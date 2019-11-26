@@ -40,10 +40,8 @@ end
 #
 ###############################################################################
 
-
-function hash(a::eisf_elem, h::UInt)
-    error("Not Implemented")
-    return
+function Base.hash(a::eisf_elem, h::UInt)
+    return hash(a.data_ring_elt, h)
 end
 
 function deepcopy(a::eisf_elem)
@@ -52,11 +50,11 @@ function deepcopy(a::eisf_elem)
     return r
 end
 
-#TODO: UNSAFE ZERO SHOULD NOT RETURN AN ELEMENT. The fix should occur in AbstractAlgebra.
+
 #TODO: Make this more efficient.
 function zero!(a::eisf_elem)
     a.data_ring_elt = zero(parent(a)).data_ring_elt
-    a
+    return a
 end
 
 
@@ -96,43 +94,27 @@ end
 isunit(a::eisf_elem) = !iszero(a)
 
 
+@doc Markdown.doc"""
+    precision(a::eisf_elem)
+Return the minimum precision of the coefficients of `a`.
+"""
+# TODO: XXX: Figure out how the precision of the zeros works.
+# Eisenstein elements can store the different zeroes in the polynomial representation.
+# Empty zeros are treated like `zero(K)`.
+function precision(a::eisf_elem)
+    a_coeffs = coefficients(a)
+    isempty(a_coeffs) && return precision(parent(a))
+    return minimum(precision.(coefficients(a)))
+end
+
+function relative_precision(a::eisf_elem)
+    return precision(a) - Integer(valuation(a)//valuation(uniformizer(parent(a))))
+end
+
 #######################################################
 if false
 
-@doc Markdown.doc"""
-    coeff(x::eisf_elem, n::Int)
-> Return the $n$-th coefficient of the polynomial representation of the given
-> number field element. Coefficients are numbered from $0$, starting with the
-> constant coefficient.
-"""
-function coeff(x::eisf_elem, n::Int)
-   n < 0 && throw(DomainError("Index must be non-negative: $n"))
-   z = fmpq()
-   ccall((:eisf_elem_get_coeff_fmpq, :libantic), Nothing,
-     (Ref{fmpq}, Ref{eisf_elem}, Int, Ref{EisensteinField}), z, x, n, parent(x))
-   return z
-end
-
-function num_coeff!(z::fmpz, x::eisf_elem, n::Int)
-   n < 0 && throw(DomainError("Index must be non-negative: $n"))
-   ccall((:eisf_elem_get_coeff_fmpz, :libantic), Nothing,
-     (Ref{fmpz}, Ref{eisf_elem}, Int, Ref{EisensteinField}), z, x, n, parent(x))
-   return z
-end
-
-@doc Markdown.doc"""
-    denominator(a::eisf_elem)
-> Return the denominator of the polynomial representation of the given number
-> field element.
-"""
-function denominator(a::eisf_elem)
-   z = fmpz()
-   ccall((:eisf_elem_get_den, :libantic), Nothing,
-         (Ref{fmpz}, Ref{eisf_elem}, Ref{EisensteinField}),
-         z, a, a.parent)
-   return z
-end
-
+# These should be kept. Here, `i` is the i-th matrix row.
 function elem_from_mat_row(a::EisensteinField, b::fmpz_mat, i::Int, d::fmpz)
    Generic._checkbounds(nrows(b), i) || throw(BoundsError())
    ncols(b) == degree(a) || error("Wrong number of columns")
@@ -179,7 +161,7 @@ canonical_unit(x::eisf_elem) = x
 ###############################################################################
 
 function -(a::eisf_elem)
-    b = a.parent(a)
+    b = deepcopy(a)
     b.data_ring_elt = -a.data_ring_elt
     return b
 end
@@ -189,7 +171,7 @@ function valuation(a::eisf_elem)
 
     min = valuation(coeffs[0])
     for i = 1:length(coeffs)-1
-        newv = valuation(coeffs[i]) + (i)//absolute_degree(parent(a))
+        newv = valuation(coeffs[i]) + (i)//ramification_degree(parent(a))
         if newv < min
             min = newv
         end
@@ -200,46 +182,16 @@ end
 #TODO: Replace `inv` with a Hensel lifting version.
 inv(a::eisf_elem) = one(parent(a))//a
 
+
 ################################################################################
 #
 #  Lifting and residue fields
 #
 ################################################################################
 
-
 function lift(x::FinFieldElem, K::EisensteinField)
     return K(lift(x, base_ring(K)))
 end
-
-
-# function residue_image(a::padic)
-#     Fp = ResidueRing(FlintZZ,parent(a).p)
-#     return Fp(lift(a))
-# end
-
-# function residue_image(a::qadic)
-#     display("WARNING!!!! Lazy testing code, assumes that the residue field is given "*
-#             "by a Conway polynomial.")
-
-#     Qq = parent(a)
-#     R,x = PolynomialRing(FlintZZ,"x")
-
-#     Fp = FlintFiniteField(prime(Qq))
-#     Fq = FlintFiniteField(prime(Qq), degree(Qq), "b")[1]
-#     return Fq(change_base_ring(lift(R,a),Fp))
-# end
-
-# function residue_image(a::eisf_elem)
-#     coeffs = coefficients(a.data_ring_elt.data)
-    
-#     for i = 0:length(coeffs)-1
-#         newv = valuation(coeffs[i]) + (i)//degree(a.parent.pol)
-#         if newv < 0
-#             error("Valuation of input is negative.")
-#         end
-#     end
-#     return residue_image(coeffs[0])
-# end
 
 ###############################################################################
 #
@@ -249,7 +201,9 @@ end
 
 coefficients(a::eisf_elem) = coefficients(a.data_ring_elt.data)
 
-coeff(a::eisf_elem,i::Int) = coeff(a.data_ring_elt.data, i)
+coeffs(a::eisf_elem) = coefficients(a)
+
+coeff(a::eisf_elem, i::Int) = coeff(a.data_ring_elt.data, i)
 
 function setcoeff!(a::eisf_elem, i::Int64, c::NALocalFieldElem)
     setcoeff!(a.data_ring_elt.data, i, c)
@@ -417,6 +371,22 @@ end
   return z
 end
 
+#TODO: Move this to FLINT.
+@inline function sub!(z::qadic, x::qadic, y::qadic)
+    z.N = min(x.N, y.N)
+    ctx = parent(x)
+    ccall((:qadic_sub, :libflint), Nothing,
+          (Ref{qadic}, Ref{qadic}, Ref{qadic}, Ref{FlintQadicField}),
+          z, x, y, ctx)
+    return z
+end
+
+@inline function sub!(c::AbstractAlgebra.ResFieldElem{T}, a::AbstractAlgebra.ResFieldElem{T}, b::AbstractAlgebra.ResFieldElem{T}) where {T <: RingElement}
+   c.data = mod(data(a) - data(b), modulus(a))
+   return c
+end
+####
+
 @inline function mul!(z::eisf_elem, x::eisf_elem, y::eisf_elem)
   mul!(z.data_ring_elt, x.data_ring_elt, y.data_ring_elt)
   return z
@@ -446,26 +416,128 @@ function (a::EisensteinField)()
     return z
 end
 
-#TODO: Perhaps do some santiy checks as to not to drive the user insane.
-#TODO: The number field case likely has a useful pattern here.
-function (a::EisensteinField)(b::eisf_elem)
-    parent(b) == a && return b
 
+###############################################################################
+#
+#    Coercion logic
+#
+###############################################################################
+
+"""
+    The logic here enables coercion to go up/down a tower
+    with no fear of infinite recursion. At the start, 
+    we calculate the absolute degree of the element and the
+    target field. Comparing these, we then know whether we
+    need to pull the element up the tower or move it down
+    the tower of it's parent.
+
+    Since the base of a tower is always a Flint type, one of
+    the specialized methods will catch the recursion call, and
+    succeed or fail accordingly.
+
+    NOTE: NALocalFields must have an `absolute_degree` method.
+"""
+
+function check_coercion_compatible(K::NALocalField, L::NALocalField)
+    characteristic(K) != characteristic(L) && error("Cannot coerce element. Characteristics do not agree.")
+    prime(K) != prime(L) && error("Cannot coerce element. Topologies do not agree.")
+    return true
+end
+
+function (a::EisensteinField)(b::NALocalFieldElem)
+    parent(b) == a && return b
+    K = a
+    L = parent(b)
+    check_coercion_compatible(K, L)
+
+    dK = absolute_degree(K)
+    dL = absolute_degree(L)
+
+    if dK > dL
+        return coerce_up(a,b)
+    elseif dK < dL
+        return coerce_down(a,b)
+    end
+    error("Cannot coerce element.")        
+end
+
+function coerce_up(a::NALocalField, b::NALocalFieldElem)
     if parent(b) == base_ring(a)
         r = eisf_elem(a)
         r.data_ring_elt = a.data_ring(b)
         return r
     end
-    
-    return a(base_ring(a)(b))
+    return coerce_up(a, coerce_up(base_ring(a),b))
 end
 
-function (a::EisensteinField)(b::FlintLocalFieldElem)
-    parent(b) != base_ring(a) && error("Cannot coerce element")
-    r = eisf_elem(a)
-    r.data_ring_elt = a.data_ring(b)
-   return r
+function coerce_up(a::FlintLocalField, b::eisf_elem)
+    error("Cannot coerce element.")
 end
+
+# We add a redundant characteristic check just to be safe. We anticipate the addition
+# of the FLINT function fields eventually. We advise the user not to call this method directly.
+function coerce_up(a::FlintLocalField, b::FlintLocalFieldElem)
+    characteristic(a) != characteristic(parent(b)) && error("Cannot coerce element. Characteristics do not agree.")
+    
+    if typeof(a) == FlintPadicField && typeof(parent(b)) == FlintQadicField
+        error("Cannot coerce element.")
+    else
+        return a(b)
+    end
+end
+
+function coerce_down(a::NALocalField, b::NALocalFieldElem)
+    K = parent(b)
+    
+    for j=1:degree(K)-1
+        !iszero(coeff(b,j)) && error("Cannot coerce element.")
+    end
+    
+    L  = base_ring(K)
+    b0 = coeff(b,0)
+    
+    # If the parents agree, return.    
+    if L == a
+        @assert parent(b0) == L
+        return deepcopy(b0)
+    else
+        return coerce_down(a, b0)
+    end
+end
+
+function coerce_down(a::NALocalField, b::FlintLocalFieldElem)
+    error("Cannot coerce element.")
+end
+
+function coerce_down(a::FlintLocalField, b::FlintLocalFieldElem)
+    return a(b)
+end
+
+
+######
+# Ad hoc coercions (Needed as methods cannot be added to abstract types.)
+
+function (a::FlintPadicField)(b::qadic)
+    # TODO: add various asserts? Asserts in Qp() might catch errors already.
+    return a(coeff(b,0))
+end
+
+function (a::FlintPadicField)(b::eisf_elem)
+    parent(b) == a && return b
+    K = a
+    L = parent(b)
+    check_coercion_compatible(K, L)
+    return coerce_down(a,b)
+end
+
+function (a::FlintQadicField)(b::eisf_elem)
+    parent(b) == a && return b
+    K = a
+    L = parent(b)
+    check_coercion_compatible(K, L)
+    return coerce_down(a,b)
+end
+
 
 function (a::EisensteinField)(c::fmpz)
     z = eisf_elem(a)

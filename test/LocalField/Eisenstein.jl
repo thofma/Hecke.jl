@@ -24,7 +24,7 @@
         correct = fmpz(5) + 138118274 + O(Qp,7^10)
         # + O(7^10)
 
-        @test length(rts1) == 1 && K(correct) == rts1[1]
+        @test length(rts1) == 1 && K(correct) == rts1[1][1]
 
         rts2 = roots(x^6 - 7, K)
 
@@ -37,9 +37,14 @@
             (6 + 6*7^1 + 6*7^2 + 6*7^3 + 6*7^4 + 6*7^5 + 6*7^6 + 6*7^7 + 6*7^8 + O(Qp,7^9))*θ
         ]
 
-        @test rts2 == correct
+        @test [r[1] for r in rts2] == correct
     end
-    
+
+    @testset "Valuation normalizations" begin
+        @test valuation(zero(K)) == precision(K)
+
+        @test precision(gen(K)) == 10
+    end
 end
    
 

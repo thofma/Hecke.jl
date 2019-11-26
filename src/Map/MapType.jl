@@ -55,6 +55,7 @@ mutable struct MapCache{D, C, De, Ce}
   end
 end
 
+# The point of the MapHeader is to package shared fields common to all subtypes of the abstract type `Map`. For example, the functions `domain, codomain, image, preimage` and any cacheing behaviour are encapsulated by the header. 
 mutable struct MapHeader{D, C}
   domain::D
   codomain::C
@@ -210,9 +211,9 @@ function Base.show(io::IO, M::MapFromFunc)
   io = IOContext(io, :compact => true)
 #  println(io, "Map from the $(M.f) julia-function")
   println(io, "Map from")
-  show(io, domain(M)) 
-  print(io, " to ")
-  show(io, codomain(M))
+  println(io, domain(M)) 
+  println(io, " to ")
+  println(io, codomain(M))
   print(io, " defined by a julia-function")
   if isdefined(M, :g)
 #    println(io, "with inverse by $(M.g)")

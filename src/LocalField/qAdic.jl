@@ -28,17 +28,32 @@ function Base.setprecision(q::padic, N::Int)
 end
 
 function setprecision!(q::qadic, N::Int)
-  @assert N >= q.N
   q.N = N
   return q
 end
 
 function setprecision!(Q::FlintQadicField, n::Int)
-  Q.prec_max = n
+    old_key = (prime(Q), degree(Q), Q.prec_max)
+    Q.prec_max = n
+
+    #Also Update the dictionary for cached object creation, if in the dictionary already.
+    if Nemo.QadicBase[old_key] === Q
+        delete!(Nemo.QadicBase, old_key)
+        Nemo.QadicBase[(prime(Q), degree(Q), Q.prec_max)] = Q
+    end
+    return Q
 end
 
 function setprecision!(Q::FlintPadicField, n::Int)
-  Q.prec_max = n
+    old_key = (prime(Q), Q.prec_max)
+    Q.prec_max = n
+
+    #Also Update the dictionary for cached object creation, if in the dictionary already.
+    if Nemo.PadicBase[old_key] === Q
+        delete!(Nemo.PadicBase, old_key)
+        Nemo.PadicBase[(prime(Q), Q.prec_max)] = Q
+    end
+    return Q
 end
 
 function setprecision!(f::Generic.Poly{qadic}, N::Int)
@@ -246,7 +261,7 @@ end
 ###############################################################################
 
 function rand(K::FlintQadicField)
-    a = gen(K)
+    a = degree(K)==1 ? one(K) : gen(K)
     p = prime(K)
     N  = precision(K)
     n  = degree(K)
