@@ -114,40 +114,7 @@ end
 #######################################################
 if false
 
-@doc Markdown.doc"""
-    coeff(x::eisf_elem, n::Int)
-> Return the $n$-th coefficient of the polynomial representation of the given
-> number field element. Coefficients are numbered from $0$, starting with the
-> constant coefficient.
-"""
-function coeff(x::eisf_elem, n::Int)
-   n < 0 && throw(DomainError("Index must be non-negative: $n"))
-   z = fmpq()
-   ccall((:eisf_elem_get_coeff_fmpq, :libantic), Nothing,
-     (Ref{fmpq}, Ref{eisf_elem}, Int, Ref{EisensteinField}), z, x, n, parent(x))
-   return z
-end
-
-function num_coeff!(z::fmpz, x::eisf_elem, n::Int)
-   n < 0 && throw(DomainError("Index must be non-negative: $n"))
-   ccall((:eisf_elem_get_coeff_fmpz, :libantic), Nothing,
-     (Ref{fmpz}, Ref{eisf_elem}, Int, Ref{EisensteinField}), z, x, n, parent(x))
-   return z
-end
-
-@doc Markdown.doc"""
-    denominator(a::eisf_elem)
-> Return the denominator of the polynomial representation of the given number
-> field element.
-"""
-function denominator(a::eisf_elem)
-   z = fmpz()
-   ccall((:eisf_elem_get_den, :libantic), Nothing,
-         (Ref{fmpz}, Ref{eisf_elem}, Ref{EisensteinField}),
-         z, a, a.parent)
-   return z
-end
-
+# These should be kept. Here, `i` is the i-th matrix row.
 function elem_from_mat_row(a::EisensteinField, b::fmpz_mat, i::Int, d::fmpz)
    Generic._checkbounds(nrows(b), i) || throw(BoundsError())
    ncols(b) == degree(a) || error("Wrong number of columns")
