@@ -427,7 +427,7 @@ return ctx
 # The function requires a basis of *some* order of the number field surjecting
 # onto the residue field.
 #
-function _root_ctx_for_number_field(basis, res_mp, f, ff_root, prime, prec)
+function _root_ctx_for_number_field(basis, basis_img, f, ff_root, prime, prec)
 
     k = parent(ff_root)
     d = degree(k)
@@ -440,14 +440,11 @@ function _root_ctx_for_number_field(basis, res_mp, f, ff_root, prime, prec)
     # ...is incorrect. One needs to compute the image of the basis under the residue map.
     # This is not the same as reducing the coefficients modulo `p`.
     
-    a_entries = hcat(coeffs.(res_mp.(basis))...)
-
-    @info "" a_entries typeof(a_entries)
-    
+    a_entries = hcat(coeffs.(basis_img)...)    
     A = matrix(a_entries)
-    b = matrix(GF(Int64(prime)), d, 1, [coeff(ff_root, j-1) for j=1:d])
+    b = matrix(GF(Int64(prime)), d, 1, [coeff(ff_root, j-1) for j=1:d]) #Finite field types...
 
-    @info "" b typeof(b)
+    #@info "" b typeof(b)
 
     y = underdetermined_solve_first(A, b)
     @hassert :qAdic 1 A*y == b
@@ -547,8 +544,9 @@ function generic_completion(K::NumField{T} where T, P::NfOrdIdl, prec=10; skip_m
         end
         pol, roots(change_base_ring(k, pol))[1]
     end
-    
-    conway_root_ctx = _root_ctx_for_number_field(basis(max_order), res, con_pol, rt, p, 2)
+
+    B = basis(max_order)
+    conway_root_ctx = _root_ctx_for_number_field(B, res.(B), con_pol, rt, p, 2)
 
     @info "" (derivative(conway_root_ctx.polynomial)(root(conway_root_ctx))*conway_root_ctx.root_derivative_inv -1) in P
     
@@ -728,6 +726,7 @@ function unramified_completion(K::AnticNumberField, gen_img::qadic, prec=10; ski
             push!(pa, pa[end]*pa[2])
         end
 
+        #=
         # Solve a linear system to figure out how to express the root of the
         # Conway Polynomial defining the completion in terms of the image of the
         # primitive element of the number field $K$.
@@ -756,15 +755,22 @@ function unramified_completion(K::AnticNumberField, gen_img::qadic, prec=10; ski
 
         # End block of Claus' code.
         ####
+        
+        # Lift the data from the residue field back to the number field.
+        backward_sharpening_ctx = RootSharpenCtx{nf_elem}(f, a, b, p, 1)       
+        =#
 
+        f = defining_polynomial(parent(gen_img), FlintZZ)
+        pows = d==1 ? [one(K)] : powers(gen(K), d-1)
+        
+        backward_sharpening_ctx = _root_ctx_for_number_field(pows, pa, f, gen(R), p, prec)
+        
         # Something incomprehensable happens when uncommented...
         #g = deepcopy(f)
         #@info "Before call:" f (f===g)        
         #RootSharpenCtx_constructor(K, g, mR(gen_img), x->mR(embedding_map(x)), p, 1)
         #@info "After return statement: " f typeof(f) f===g parent(f) f(0)
 
-        # Lift the data from the residue field back to the number field.
-        backward_sharpening_ctx = RootSharpenCtx{nf_elem}(f, a, b, p, 1)        
         sharpen_root!(backward_sharpening_ctx, prec)
 
 
