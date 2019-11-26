@@ -286,6 +286,13 @@ function simple_extension(K::EisensteinField)
         L, next_mp = squash(L)
         push!(map_list, next_mp)
     end
+
+    if isempty(map_list)
+        return L, identity
+    end
+
+    # Prefice the map with a coercion call so base ring elements are mapped
+    # automatically.
     push!(map_list, x->K(x))
 
     # The map from K->L is the composition of the maps in reverse order.
@@ -326,7 +333,7 @@ function unramified_extension(K::EisensteinField, n::Integer)
     if n <= 0
         error("Extension degree must be a positive integer.")
     elseif n==1
-        return K, one(K), x->x
+        return K, one(K), identity
     end
 
     Q = base_ring(K)

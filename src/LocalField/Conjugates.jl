@@ -326,7 +326,6 @@ function galois_group(K::FlintPadicField)
     return [identity]
 end
 
-
 #########################################################################################
 #
 #   Misc group functions.
@@ -392,7 +391,7 @@ function galois_closure(K::EisensteinField)
 end
 
 function galois_closure(K::FlintLocalField)
-    return K, x->x
+    return K, identity
 end
 
 function _galois_closure_tamely_ramified(K::EisensteinField)
@@ -415,8 +414,10 @@ function _galois_closure_tamely_ramified(K::EisensteinField)
     ext_degrees = map(x->degree(x[1]), factor(map_coeffs(res, h)))
 
     Lgal, _, mp_to_gal = unramified_extension(L, frob_orbit_size*lcm(ext_degrees))
+
+    #@info "" mp_to_gal mp_to_squash
     
-    return Lgal, x->mp_to_gal(mp_to_squash(x))
+    return Lgal, (mp_to_gal === mp_to_squash === identity) ? identity : x->mp_to_gal(mp_to_squash(x))
 end
 
 @doc Markdown.doc"""

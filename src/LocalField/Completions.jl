@@ -214,7 +214,8 @@ function sharpen!(K::EisensteinField, g::PolyElem, new_prec)
     end
     
     Rdat.modulus = gp
-    K.pol = Rdat.modulus    
+    K.pol = Rdat.modulus
+    K.prec_max = new_prec
     return K
 end
 
@@ -260,7 +261,7 @@ end
 
 function sharpen_forward_map!(completion_map, new_prec, DixCtx::DixonSharpenCtx)
 
-    K   = domain(completion_map)
+    K  = domain(completion_map)
     Kp = codomain(completion_map)
 
     P = DixCtx.prime_ideal
@@ -414,14 +415,13 @@ end
 return ctx
 =#
 
-#=
+"""
     _root_ctx_for_number_field(basis, basis_img, f, ff_root, prime, prec)
 
 Given a `basis` for some order in a number field, mapping to `basis_img` in the parent
 of `ff_root`, a polynomial `f` such that `f(ff_root) == 0`, a `prime` and a precision `prec`,
 returns a RootSharpenCtx for solving `f(a) = 0 mod P^n` in the number field.
-
-=#
+"""
 function _root_ctx_for_number_field(basis, basis_img, f, ff_root, prime, prec)
 
     k = parent(ff_root)

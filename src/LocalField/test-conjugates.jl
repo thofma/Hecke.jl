@@ -15,7 +15,7 @@ using Hecke
 end
 
 
-@testset "Completions" begin
+@testset "Completions    " begin
     k, a = wildanger_field(3, 131)
     # (Number field over Rational Field with defining polynomial x^3-131*x^2+131*x-131, _$)
 
@@ -61,5 +61,40 @@ end
 
     @test preimage(mC2, mC2a) - (-2511552483050448743793433955969332899552*a^2 + 5365463224081720212664744523051098506912*a + 3530047674421867860891817239846622123868) in lp[2][1]^10
 
+end
+
+
+@testset "Galois closures" begin
+    
+    my_prime = 131
+    K, a = wildanger_field(3, my_prime)
+    lp = prime_decomposition(maximal_order(K), my_prime)
+    P  = lp[1][1]
+
+    Kp, inj = Hecke.completion(K,P)
+    Kpgal, mp = Hecke.galois_closure(Kp)
+    Kpgg, mpgg = Hecke.galois_closure(Kpgal)
+    
+    @test length(roots(change_base_ring(Kpgal, K.pol))) == degree(K.pol)
+
+    @test Kpgal === Kpgg
+
+    @test mpgg === identity
+
+    @test iszero(mp(zero(Kp)))
+    
+    G = Hecke.galois_group(Kpgal)
+    rts = [x[1] for x in Hecke.roots(change_base_ring(Kpgal, K.pol))]
+
+    @test length(G) == Hecke.absolute_degree(Kpgal)
+    
+    @test all(Set(g.(rts)) == Set(rts) for g in G)
+
+    @test all( let
+               alpha = sum(rand(-10:10) * gen(K)^j for j=0:degree(K))
+               alpha_poly = minpoly(alpha)
+               all(change_base_ring(Kpgal, alpha_poly)(g(mp(inj(alpha)))) == 0 for g in G)
+               end for i=1:20)
+    
 end
 nothing
