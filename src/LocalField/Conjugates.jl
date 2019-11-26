@@ -395,7 +395,7 @@ function galois_closure(K::FlintLocalField)
 end
 
 function _galois_closure_tamely_ramified(K::EisensteinField)
-    L, mp_to_squash = simple_extension(K)
+    L, mp_to_squash, _ = simple_extension(K)
 
     # TODO: Add reference.
     # The size of the Galois closure of a tamely ramified extension is given by

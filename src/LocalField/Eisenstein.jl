@@ -228,10 +228,10 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    squash(L::NALocalField)
+    squash(L::NALocalField) [Presently, L::EisensteinField]
 Given a Non-archimedean local field $L$, which is defined as an extension of the form $L/K/F$,
-construct the new field extension of the form $L/F$, as well as a map $mp: L-->L/F$. The 
-generator of the new extension is the generator of $L$.
+construct the new field extension of the form $L/F$, as well as a map $mp: L-->L/F$ and the
+inverse map $mp_inv: L/F --> L$. The generator of the new extension is the generator of $L$.
 """
 function squash(L::NALocalField)
 
@@ -260,17 +260,24 @@ function squash(L::NALocalField)
     # `g(x,y) == 0` (as `g` is the bivariate version of the minimal polynomial of `y`
     # over `K`.
     
-    roots_in_Lsquash = roots(K.pol, Lsquash)
+    roots_in_Lsquash = map(x->x[1], roots(K.pol, Lsquash))
     g_Ls = map_coeffs(c->c(y_img), g)
 
     rt_index = findfirst(rt->iszero(g_Ls(rt)), roots_in_Lsquash)
     x_img = roots_in_Lsquash[rt_index]
     
     mp = function(elt)
+        iszero(elt) && return zero(Lsquash)
         return map_coeffs(c->polynomial(c)(x_img), polynomial(elt))(y_img)
     end
+
+    # The inverse map.
+    mp_inv = function(elt)
+        iszero(elt) && return zero(L)
+        return polynomial(elt)(gen(L))
+    end
     
-    return Lsquash, mp
+    return Lsquash, mp, mp_inv
 end
 
 """
@@ -281,14 +288,16 @@ function simple_extension(K::EisensteinField)
 
     L = K
     map_list = Array{Any,1}()
-
+    inv_map_list = Array{Any, 1}()
+    
     while !isa(base_ring(L), FlintLocalField)
-        L, next_mp = squash(L)
+        L, next_mp, next_mp_inv = squash(L)
         push!(map_list, next_mp)
+        push!(inv_map_list, next_mp_inv)
     end
 
     if isempty(map_list)
-        return L, identity
+        return L, identity, identity
     end
 
     # Prefice the map with a coercion call so base ring elements are mapped
@@ -303,8 +312,17 @@ function simple_extension(K::EisensteinField)
         end
         return a
     end
-    
-    return L,mp
+
+    splice!(inv_map_list, 1:0, [x->L(x)])
+    inv_mp = function(elt)
+        a = elt
+        for j=1:length(inv_map_list)
+            a = inv_map_list[j](a)
+        end
+        return a
+    end
+
+    return L, mp, inv_mp
 end
 
 @doc Markdown.doc"""

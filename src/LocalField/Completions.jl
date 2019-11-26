@@ -1,4 +1,4 @@
-export sharpen!, completion
+export sharpen!, sharpen_base!, completion, completions, ramified_completion, unramified_completion, ramified_completions, unramified_completions
     
 #########################################################################################
 #
@@ -183,6 +183,23 @@ end
 
 """
     sharpen!(K::EisensteinField, g::PolyElem, new_prec)
+Mutate the Eisenstein field so that the defining polynomial has coefficients
+with precision `new_prec`. The base ring of `K` must have precision at least `new_prec`. For
+further information, see the documentation.
+"""
+function sharpen!(K::EisensteinField, new_prec)
+
+    if new_prec > base_ring(K).prec_max
+        error("Base field must be explicitly sharpened to the desired precision prior "*
+              "to sharpening the extension. For more information, see the documentation.")
+    end
+    f = K.pol
+    f = setprecision!(f, new_prec)
+    sharpen!(K, f, new_prec)
+end
+
+"""
+    sharpen!(K::EisensteinField, g::PolyElem, new_prec)
 Given a polynomial `g` whose coefficients are coercible into the base ring of `K`, and a
 new precision, mutate the Eisenstein field so that the defining polynomial has coefficients
 with precision `new_prec`. The base ring of `K` must have precision at least `new_prec`. For
@@ -227,7 +244,7 @@ Given a completion map `map: K -> Kp` from a number field `K` to a local field `
 NOTE: This method will sharpen the base field of `Kp`, which will affect anything with a 
 reference to it. The precision can only be increased by `sharpen!`.
 """
-function sharpen!(completion_map, new_prec)
+function sharpen!(completion_map::NACompletionMap, new_prec)
     completion_map = sharpen_forward_map!(completion_map, new_prec,
                                           forward_sharpening_context(completion_map))
     completion_map = sharpen_backward_map!(completion_map, new_prec,
@@ -341,16 +358,39 @@ function sharpen!(K::FlintLocalField, new_prec)
 end
 
 @doc Markdown.doc"""
-    sharpen_base!(K::EisensteinField, new_prec)
-Apply `sharpen!` to the base field of `K`.
+    sharpen_base!(K::NALocalField, new_prec)
+    sharpen_base!(K::EisensteinField, g::PolyElem, new_prec)
+
+Apply `sharpen!` to the base field of `K`. If the base field is an Eisenstein field, a polynomial
+may be provided.
 """
-function sharpen_base!(K::EisensteinField, new_prec)
+function sharpen_base!(K::NALocalField, new_prec)
     Q = base_ring(K)
-    @assert typeof(Q) <: FlintLocalField
     sharpen!(Q, new_prec)
     return K
 end
 
+function sharpen_base!(K::EisensteinField, g::PolyElem, new_prec)
+    Q = base_ring(K)
+    typeof(Q) <: FlintLocalField && (
+        error("Polynomial cannot be provided if base field is a FlintLocalField"))
+    sharpen!(Q, g, new_prec)
+    return K
+end
+
+@doc Markdown.doc"""
+    sharpen_tower!(K::NALocalField, new_prec)
+
+Apply `sharpen!(*, new_prec)` to all fields in the tower defining `K` (including `K`).
+"""
+function sharpen_tower!(K::FlintLocalField, new_prec)
+    if isa(K, FlintLocalField)
+        sharpen!(K, new_prec)
+        return K
+    end
+    sharpen_tower!(base_field(K), new_prec)
+    return K
+end
 
 function setprecision!(a::eisf_elem, N)
     for c in coeffs(a)
