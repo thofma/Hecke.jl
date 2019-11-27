@@ -646,5 +646,8 @@ function fields(list::Vector{FieldsTower}, G, absolute_bound::fmpz; only_real::B
       return FieldsTower[]
     end
   end
+  if first
+    error("The fields given can not be extended!")
+  end
   return list
 end

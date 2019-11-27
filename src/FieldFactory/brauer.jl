@@ -327,11 +327,17 @@ function _Brauer_prime_case(list::Vector{FieldsTower}, L::Main.ForeignGAP.MPtr, 
     d = discriminant(K.pol)
     d1 = discriminant(K1.pol)
     Pcomp = 2
-    while iszero(mod(numerator(d), Pcomp)) || iszero(mod(numerator(d1), Pcomp)) || iszero(mod(p, Pcomp))
-      Pcomp = next_prime(Pcomp)
-    end
     R = GF(Pcomp, cached = false)
     Rx = PolynomialRing(R, "x", cached = false)[1]
+    ff1 = Rx(K.pol)
+    ff2 = Rx(K1.pol)
+    while iszero(mod(p, Pcomp)) || iszero(discriminant(ff1)) || iszero(discriminant(ff2))
+      Pcomp = next_prime(Pcomp)
+      R = GF(Pcomp, cached = false)
+      Rx = PolynomialRing(R, "x", cached = false)[1]
+      ff1 = Rx(K.pol)
+      ff2 = Rx(K1.pol)
+    end
     fmod = Rx(K.pol)
     dautsK1 = Dict{gfp_poly, Int}()
     for w = 1:length(autsK1)
@@ -384,13 +390,16 @@ function _Brauer_no_extend(x::FieldsTower, mH, autos, _cocycle_values, domcoc, p
   K = x.field
   OK = maximal_order(K)
   GC = automorphisms(K, copy = false)
-  d = discriminant(K.pol)
   Pcomp = 2
-  while iszero(mod(numerator(d), Pcomp)) || iszero(mod(p, Pcomp))
-    Pcomp = next_prime(Pcomp)
-  end
   R = GF(Pcomp, cached = false)
   Rx = PolynomialRing(R, "x", cached = false)[1]
+  ff = Rx(K.pol)
+  while iszero(mod(p, Pcomp)) || iszero(discriminant(ff))
+    Pcomp = next_prime(Pcomp)
+    R = GF(Pcomp, cached = false)
+    Rx = PolynomialRing(R, "x", cached = false)[1]
+    ff = Rx(K.pol)
+  end
   DGCvect = Vector{Tuple{gfp_poly, Int}}(undef, length(GC))
   for i = 1:length(GC)
     DGCvect[i] = (Rx(GC[i].prim_img), i)
@@ -547,7 +556,6 @@ function cocycle_computation_pp(L::Main.ForeignGAP.MPtr, i::Int)
 end
 
 function _ext_cycl(G::Array{Hecke.NfToNfMor, 1}, d::Int)
-
   K = domain(G[1])
   Kc = cyclotomic_extension(K, d, compute_maximal_order = true, compute_LLL_basis = false, cached = false)
   automorphisms(Kc; gens = G, copy = false)
@@ -928,44 +936,115 @@ function inertia_subgroup(F, mF, G::Array{NfToNfMor, 1})
   return inertia_grp 
 end
 
-
-
 function decomposition_group(G::Array{NfToNfMor, 1}, P::NfOrdIdl, orderG::Int = length(G))
   @assert !isempty(G)
+  if isindex_divisor(order(P), minimum(P, copy = false))
+    O = order(P)
+    K = nf(O)
+    q = 2
+    R = ResidueRing(FlintZZ, q, cached = false)
+    Rx = PolynomialRing(R, "x", cached = false)[1]
+    fmod = Rx(K.pol)
+    while iszero(discriminant(fmod))
+      q = next_prime(q)
+      R = ResidueRing(FlintZZ, q, cached = false)
+      Rx = PolynomialRing(R, "x", cached = false)[1]
+      fmod = Rx(K.pol)
+    end
+    D = Dict{nmod_poly, Int}()
+    for i = 1:length(G)
+      D[Rx(G[i].prim_img)] = i
+    end
+    dec_group = NfToNfMor[]
+    F, mF = Hecke.ResidueFieldSmall(O, P)
+    local ppp
+    let fmod = fmod
+      function ppp(a::nmod_poly, b::nmod_poly)
+        return compose_mod(a, b, fmod)
+      end
+    end
+    for g in G
+      if G[D[Rx(g.prim_img)]] in dec_group
+        continue
+      end
+      if g.prim_img == gen(K)
+        push!(dec_group, g)
+        continue
+      end
+      y = O(g(K(P.gen_two)), false)
+      if y in P
+      #if iszero(image(mF, y))
+        push!(dec_group, g)
+        #I take the closure of dec_group modularly
+        elems = nmod_poly[Rx(el.prim_img) for el in dec_group]
+        new_elems = closure(elems, ppp, gen(Rx))
+        dec_group = NfToNfMor[G[D[x]] for x in new_elems]
+      end
+      if length(dec_group) == orderG
+        break
+      end
+    end
+    return dec_group
+  else
+    return decomposition_group_easy(G, P)
+  end 
+end
+
+
+
+function decomposition_group_easy(G, P)
   O = order(P)
   K = nf(O)
-  dec_group = NfToNfMor[]
-  F, mF = Hecke.ResidueFieldSmall(O, P)
-  for g in G
-    if g.prim_img == gen(K)
-      push!(dec_group, g)
-      continue
-    end
-    y = O(g(K(P.gen_two)), false)
-    if iszero(image(mF, y))
-      push!(dec_group, g)
-    end
-    if length(dec_group) == orderG
-      break
+  R = ResidueRing(FlintZZ, Int(minimum(P, copy = false)), cached = false)
+  Rt, t = PolynomialRing(R, "t", cached = false)
+  fmod = Rt(K.pol)
+  pols = nmod_poly[Rt(x.prim_img) for x in G]
+  indices = Int[]
+  second_gen = Rt(P.gen_two.elem_in_nf)
+  for i = 1:length(G)
+    p1 = compose_mod(second_gen, pols[i], fmod)
+    if iszero(mod(p1, second_gen))
+      push!(indices, i)
     end
   end
-  return dec_group 
+  return G[indices]
 end
 
 function _find_theta(G::Vector{NfToNfMor}, F::FqNmodFiniteField, mF::Hecke.NfOrdToFqNmodMor, e::Int)
+  #G is the decomposition group of a prime ideal P
+  # F is the quotient, mF the map
   K = domain(G[1])
   O = maximal_order(K)
   p = ispower(e)[2]
   t = div(e, p)
   gF = gen(F)
   igF = K(mF\gF)
-  gK = gen(K)
+  q = 2
+  R = ResidueRing(FlintZZ, q, cached = false)
+  Rt = PolynomialRing(R, "t", cached = false)[1]
+  fmod = Rt(K.pol)
+  while iszero(discriminant(fmod))
+    q = next_prime(q)
+    R = ResidueRing(FlintZZ, q, cached = false)
+    Rt = PolynomialRing(R, "t", cached = false)[1]
+    fmod = Rt(K.pol)
+  end
+  igFq = Rt(igF)
   theta = G[1]
   for i = 1:length(G)
     theta = G[i]
+    theta_q = Rt(theta.prim_img)
+    img = compose_mod(igFq, theta_q, fmod)
+    res = O(lift(K, img), false)
     #I make sure that the element is a generator of the inertia subgroup
-    if mF(O(theta(igF), false)) == gF && (theta^t).prim_img != gK
-      break
+    if mF(res) == gF 
+      pp = theta_q
+      for i = 2:t
+        pp = compose_mod(theta_q, pp, fmod)
+      end
+      if pp == gen(Rt)
+        break
+      end
     end
   end
   return theta
@@ -974,6 +1053,16 @@ end
 function _find_frob(G::Vector{NfToNfMor}, F::FqNmodFiniteField, mF::Hecke.NfOrdToFqNmodMor, e::Int, f::Int, q::Int, theta::NfToNfMor)
   K = domain(G[1])
   O = maximal_order(K)
+  q = 2
+  R = ResidueRing(FlintZZ, q, cached = false)
+  Rt = PolynomialRing(R, "t", cached = false)[1]
+  fmod = Rt(K.pol)
+  while iszero(discriminant(fmod))
+    q = next_prime(q)
+    R = ResidueRing(FlintZZ, q, cached = false)
+    Rt = PolynomialRing(R, "t", cached = false)[1]
+    fmod = Rt(K.pol)
+  end
   gK = gen(K)
   p = ispower(e)[2]
   t = div(e, p)
@@ -981,19 +1070,31 @@ function _find_frob(G::Vector{NfToNfMor}, F::FqNmodFiniteField, mF::Hecke.NfOrdT
   expo = mod(q, e)
   gF = gen(F)
   igF = K(mF\gF)
+  igFq = Rt(igF)
   rhs = gF^q
+  theta_q = Rt(theta.prim_img)
   for i = 1:length(G)
     frob = G[i]
     if frob == theta
       continue
     end
+    frob_q = Rt(frob.prim_img)
+    res = compose_mod(igFq, frob_q, fmod)
+    resO = O(lift(K, res), false)
     #I make sure that g1 is a Frobenius
-    if mF(O(frob(igF), false)) != rhs
+    if mF(resO) != rhs
       continue
     end
     #Now, I check the relation
-    gc = frob * theta 
-    gq = (theta^expo) * frob
+    #gc = frob * theta 
+    gc = compose_mod(theta_q, frob_q, fmod)
+    #gq = (theta^expo) * frob
+    #TODO: Binary powering
+    gq = theta_q
+    for i = 2:expo
+      gq = compose_mod(theta_q, theta_q, fmod)
+    end
+    gq = compose_mod(frob_q, gq, fmod)
     if gc == gq
       break
     end

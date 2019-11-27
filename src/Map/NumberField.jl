@@ -232,6 +232,7 @@ end
 #_D = Dict()
 
 function evaluate(f::fmpq_poly, a::nf_elem)
+  #Base.show_backtrace(stdout, Base.stacktrace())
   R = parent(a)
   if iszero(f)
     return zero(R)
@@ -256,7 +257,7 @@ function *(f::NfToNfMor, g::NfToNfMor)
 #    Base.show_backtrace(stdout, Base.stacktrace()[2:3])
 #  end
   codomain(f) == domain(g) || throw("Maps not compatible")
-
+  #Base.show_backtrace(stdout, Base.stacktrace())
   a = gen(domain(f))
   y = g(f(a))
 
@@ -559,6 +560,11 @@ function induce_image(f::NfToNfMor, x::NfOrdIdl)
   domain(f) !== codomain(f) && throw(error("Map must be an automorphism"))
   OK = order(x)
   K = nf(OK)
+  if x.is_prime == 1 && !isindex_divisor(OK, minimum(x, copy = false)) && fits(Int, minimum(x, copy = false))
+    #The conjugate of the prime will still be a prime over the minimum
+    #I just need to apply the automorphism modularly
+    return induce_image_prime(f, x)
+  end
   I = ideal(OK)
   if isdefined(x, :gen_two)
     I.gen_two = OK(f(K(x.gen_two)))
@@ -590,6 +596,26 @@ function induce_image(f::NfToNfMor, x::NfOrdIdl)
     I.basis_matrix = M
   end
   return I
+end
+
+function induce_image_prime(f::NfToNfMor, P::NfOrdIdl)
+  OK = order(P)
+  K = nf(OK)
+  R = ResidueRing(FlintZZ, Int(minimum(P, copy = false))^2, cached = false)
+  Rx = PolynomialRing(R, "t", cached = false)[1]
+  fmod = Rx(K.pol)
+  prim_img = Rx(f.prim_img)
+  gen_two = Rx(P.gen_two.elem_in_nf)
+  img = compose_mod(gen_two, prim_img, fmod)
+  new_gen = OK(lift(K, img), false)
+  res = ideal(OK, minimum(P), new_gen)
+  for i in [:is_prime, :gens_normal, :gens_weakly_normal, :is_principal, 
+          :minimum, :norm, :splitting_type]
+    if isdefined(P, i)
+      setfield!(res, i, getfield(P, i))
+    end
+  end
+  return res
 end
 
 ################################################################################
@@ -635,4 +661,58 @@ function haspreimage(m::NfAbsToAbsAlgAssMor, a::AbsAlgAssElem)
   else
     return false, zero(domain(m))
   end
+end
+
+################################################################################
+#
+#  Order of an automorphism in the automorphisms group
+#
+################################################################################
+function isinvolution(f::NfToNfMor)
+  K = domain(f)
+  @assert K == codomain(f)
+  if f.prim_img == gen(K)
+    return false
+  end
+  p = 2
+  R = ResidueRing(FlintZZ, p, cached = false)
+  Rt = PolynomialRing(R, "t", cached = false)[1]
+  fmod = Rt(K.pol)
+  while iszero(discriminant(fmod))
+    p = next_prime(p)
+    R = ResidueRing(FlintZZ, p, cached = false)
+    Rt = PolynomialRing(R, "t", cached = false)[1]
+    fmod = Rt(K.pol)
+  end
+  i = 2
+  ap = Rt(f.prim_img)
+  fp = compose_mod(ap, ap, fmod)
+  return fp == gen(Rt)
+end
+
+
+function _order(f::NfToNfMor)
+  K = domain(f)
+  @assert K == codomain(f)
+  if f.prim_img == gen(K)
+    return 1
+  end
+  p = 2
+  R = ResidueRing(FlintZZ, p, cached = false)
+  Rt = PolynomialRing(R, "t", cached = false)[1]
+  fmod = Rt(K.pol)
+  while iszero(discriminant(fmod))
+    p = next_prime(p)
+    R = ResidueRing(FlintZZ, p, cached = false)
+    Rt = PolynomialRing(R, "t", cached = false)[1]
+    fmod = Rt(K.pol)
+  end
+  i = 2
+  ap = Rt(f.prim_img)
+  fp = compose_mod(ap, ap, fmod)
+  while fp != gen(Rt)
+    i += 1
+    fp = compose_mod(ap, fp, fmod)
+  end
+  return i
 end

@@ -633,9 +633,9 @@ end
 
 function _rcf_find_kummer(CF::ClassField_pp{S, T}) where {S, T}
 
-  if isdefined(CF, :K)
-    return nothing
-  end
+  #if isdefined(CF, :K)
+  #  return nothing
+  #end
   f = defining_modulus(CF)[1]
   @vprint :ClassField 2 "Kummer extension with modulus $f\n"
   k1 = base_field(CF)

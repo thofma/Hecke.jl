@@ -36,7 +36,7 @@ Computes $k(\zeta_n)$, in particular, a structure containing $k(\zeta_n)$
 both as an absolute extension, as a relative extension (of $k$) and the maps
 between them.
 """
-function cyclotomic_extension(k::AnticNumberField, n::Int; cached::Bool = true,  compute_maximal_order::Bool = true, compute_LLL_basis::Bool = true)
+function cyclotomic_extension(k::AnticNumberField, n::Int; cached::Bool = true, compute_maximal_order::Bool = true, compute_LLL_basis::Bool = true)
   Ac = CyclotomicExt[]
   if cached
     try 
@@ -172,8 +172,13 @@ function cyclotomic_extension(k::AnticNumberField, n::Int; cached::Bool = true, 
         end
       end
       ZKa = Hecke.NfOrd(B_k)
+      if degree(Kr) == eulerphi(n)
+        ZKa.disc = (discriminant(Zk)^eulerphi(n))*discriminant(f)^degree(k)
+      else
+        ZKa.disc = (discriminant(Zk)^degree(Kr))*numerator(norm(discriminant(fk)))
+      end
       for (p, v) in factor(gcd(discriminant(Zk), fmpz(n)))
-        ZKa = pmaximal_overorder_at(ZKa, [p])
+        ZKa = pmaximal_overorder(ZKa, p)
       end
       if compute_LLL_basis
         ZKa = lll(ZKa)

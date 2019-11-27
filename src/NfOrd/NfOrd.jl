@@ -478,12 +478,7 @@ end
 Returns the signature of the ambient number field of $\mathcal O$.
 """
 function signature(x::NfOrd)
-  if x.signature[1] != -1
-    return x.signature
-  else
-    x.signature = signature(nf(x))
-    return x.signature
-  end
+  return signature(nf(x))
 end
 
 ################################################################################

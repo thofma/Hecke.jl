@@ -109,14 +109,14 @@ function +(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
     gen_2 = OK(nf(OK)(ggZ))
     return ideal(OK, g, gen_2)
   end
-  H = vcat(basis_matrix(x, copy = false), basis_matrix(y, copy = false))::fmpz_mat
+  H = vcat(basis_matrix(x, copy = false), basis_matrix(y, copy = false))
   hnf_modular_eldiv!(H, g, :lowerleft)
-  H = view(H, (d + 1):2*d, 1:d)::fmpz_mat
+  H = view(H, (d + 1):2*d, 1:d)
   res = ideal(OK, H, false, true)
   if isone(basis(OK, copy = false)[1])
-    res.minimum = H[1, 1]::fmpz
+    res.minimum = H[1, 1]
   end
-  res.norm = prod(H[i, i]::fmpz for i = 1:d)::fmpz
+  res.norm = prod_diagonal(H)
   return res
 end
 

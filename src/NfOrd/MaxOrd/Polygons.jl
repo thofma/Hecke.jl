@@ -660,6 +660,7 @@ function _decomposition(O::NfAbsOrd, I::NfAbsOrdIdl, Ip::NfAbsOrdIdl, T::NfAbsOr
       #u = u1*(u2+v2) + u2*v1
       #v = v1*v2
       @hassert :NfOrd 1 isone(u + v)
+      u = O(mod(u.elem_in_nf, p))
       
       @hassert :NfOrd 1 containment_by_matrices(u, P)
       modulo = norm(P)*p
@@ -705,6 +706,7 @@ function _decomposition(O::NfAbsOrd, I::NfAbsOrdIdl, Ip::NfAbsOrdIdl, T::NfAbsOr
     P = ideals[1][1]
     f = P.splitting_type[2]
     u, v = idempotents(P, T)
+    u = O(mod(u.elem_in_nf, p))
     x = zero(parent(u))
     modulo = norm(P)*p
 
@@ -765,8 +767,9 @@ end
 
 function find_random_second_gen(A::NfAbsOrdIdl{S, T}) where {S, T}
   O = order(A)
-  Amin2 = minimum(A)^2
-  Amind = gcd(minimum(A)^degree(O), minimum(A)*norm(A))
+  K = nf(O)
+  Amin2 = minimum(A, copy = false)^2
+  Amind = gcd(minimum(A)^degree(O), minimum(A, copy = false)*norm(A))
 
   B = Array{fmpz}(undef, degree(O))
 
@@ -777,6 +780,7 @@ function find_random_second_gen(A::NfAbsOrdIdl{S, T}) where {S, T}
   m = zero_matrix(FlintZZ, 1, degree(O))
 
   cnt = 0
+  dBmat = denominator(basis_matrix(O, copy = false))
   while true
     cnt += 1
     if cnt > 1000
@@ -795,12 +799,9 @@ function find_random_second_gen(A::NfAbsOrdIdl{S, T}) where {S, T}
     end
 
     mul!(m, m, basis_matrix(A, copy = false))
-    d = denominator(basis_matrix(O, copy = false))
     mul!(m, m, basis_matrix(O, copy = false).num)
-    gen = elem_from_mat_row(nf(O), m, 1, d)
-    d = denominator(gen)
-    f, e = ppio(d, minimum(A, copy = false))
-    gen = mod(numerator(gen), f*minimum(A)^2)//f
+    gen = elem_from_mat_row(K, m, 1, dBmat)
+    gen = mod(gen, Amin2)
     if iszero(gen)
       continue
     end

@@ -361,7 +361,7 @@ function compute_fields(class_fields::Vector{Hecke.ClassField{Hecke.MapRayClassG
   fields = Tuple{Hecke.NfRelNS{nf_elem}, Vector{Hecke.NfRelNSToNfRelNSMor{nf_elem}}}[]
   expo = Int(exponent(codomain(class_fields[it[1]].quotientmap)))
   
-  set_up_cycl_ext(K, expo, autos)
+  #set_up_cycl_ext(K, expo, autos)
   @vprint :Fields 3 "Computing the fields directly\n"
   for i in it
     C = class_fields[i]

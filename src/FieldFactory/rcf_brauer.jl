@@ -68,6 +68,7 @@ function ray_class_field_cyclic_pp_Brauer(CF::ClassField{S, T}, mQ::GrpAbFinGenM
       _rcf_S_units_enlarge(CFpp)
       @assert length(CFpp.sup) == length(unique(CFpp.sup))
       @vtime :ClassField 1 _rcf_reduce(CFpp)
+      @show CFpp.K
     end
   end
 
