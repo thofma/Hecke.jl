@@ -111,31 +111,6 @@ function relative_precision(a::eisf_elem)
     return precision(a) - Integer(valuation(a)//valuation(uniformizer(parent(a))))
 end
 
-#######################################################
-if false
-
-# These should be kept. Here, `i` is the i-th matrix row.
-function elem_from_mat_row(a::EisensteinField, b::fmpz_mat, i::Int, d::fmpz)
-   Generic._checkbounds(nrows(b), i) || throw(BoundsError())
-   ncols(b) == degree(a) || error("Wrong number of columns")
-   z = a()
-   ccall((:eisf_elem_set_fmpz_mat_row, :libantic), Nothing,
-        (Ref{eisf_elem}, Ref{fmpz_mat}, Int, Ref{fmpz}, Ref{EisensteinField}),
-        z, b, i - 1, d, a)
-   return z
-end
-
-function elem_to_mat_row!(a::fmpz_mat, i::Int, d::fmpz, b::eisf_elem)
-   ccall((:eisf_elem_get_fmpz_mat_row, :libantic), Nothing,
-         (Ref{fmpz_mat}, Int, Ref{fmpz}, Ref{eisf_elem}, Ref{EisensteinField}),
-         a, i - 1, d, b, b.parent)
-   nothing
- end
-
-
-end #if
-
-
 ###############################################################################
 #
 #   AbstractString I/O
@@ -573,4 +548,38 @@ function rand(K::NALocalField)
     B  = base_ring(K)
     n  = degree(K)
    return sum(K(rand(B))*pi^j for j=0:n-1)
+end
+
+
+###############################################################################
+#
+#   To/From matrix row (padic base only!)
+#
+###############################################################################
+
+# These functions exist, but are completely unmaintained. If you need them,
+# please modify accordingly.
+
+function elem_to_mat_row!(a::fmpz_mat, i::Int, b::eisf_elem)
+    Generic._checkbounds(nrows(b), i) || throw(BoundsError())
+    ncols(b) == absolute_degree(a) || error("Wrong number of columns")
+    base_ring(a) <: FlintPadicField || error("Base field must be a p-adic field.")
+
+    for j=1:ncols(b)
+        a[i,j] = coeff(b,j-1)
+    end
+   return a
+ end
+
+
+function elem_from_mat_row(a::EisensteinField, b::AbstractAlgebra.Generic.MatElem{padic}, i::Int)
+    Generic._checkbounds(nrows(b), i) || throw(BoundsError())
+    ncols(b) == absolute_degree(a) || error("Wrong number of columns")
+    base_ring(a) <: FlintPadicField || error("Base field must be a p-adic field.")
+
+    z = a()
+    for j=1:ncols(b)
+        setcoeff!(a, j-1, b[i,j])
+    end
+   return z
 end
