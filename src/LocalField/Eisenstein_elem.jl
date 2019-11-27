@@ -176,9 +176,11 @@ end
 
 coefficients(a::eisf_elem) = coefficients(a.data_ring_elt.data)
 
+coefficient(a::eisf_elem, i::Int) = coeff(a.data_ring_elt.data, i)
+
 coeffs(a::eisf_elem) = coefficients(a)
 
-coeff(a::eisf_elem, i::Int) = coeff(a.data_ring_elt.data, i)
+coeff(a::eisf_elem, i::Int) = coefficient(a,i)
 
 function setcoeff!(a::eisf_elem, i::Int64, c::NALocalFieldElem)
     setcoeff!(a.data_ring_elt.data, i, c)
@@ -344,16 +346,6 @@ end
 @inline function sub!(z::eisf_elem, x::eisf_elem, y::eisf_elem)
   sub!(z.data_ring_elt, x.data_ring_elt, y.data_ring_elt)
   return z
-end
-
-#TODO: Move this to FLINT.
-@inline function sub!(z::qadic, x::qadic, y::qadic)
-    z.N = min(x.N, y.N)
-    ctx = parent(x)
-    ccall((:qadic_sub, :libflint), Nothing,
-          (Ref{qadic}, Ref{qadic}, Ref{qadic}, Ref{FlintQadicField}),
-          z, x, y, ctx)
-    return z
 end
 
 @inline function sub!(c::AbstractAlgebra.ResFieldElem{T}, a::AbstractAlgebra.ResFieldElem{T}, b::AbstractAlgebra.ResFieldElem{T}) where {T <: RingElement}

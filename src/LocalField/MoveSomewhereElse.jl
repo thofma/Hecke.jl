@@ -1,5 +1,25 @@
 
+#TODO: Move all the functions here to their proper homes.
 # Nemo fixes
+
+@inline function sub!(z::padic, x::padic, y::padic)
+    z.N = min(x.N, y.N)
+    ctx = parent(x)
+    ccall((:padic_sub, :libflint), Nothing,
+          (Ref{padic}, Ref{padic}, Ref{padic}, Ref{FlintPadicField}),
+          z, x, y, ctx)
+    return z
+end
+
+@inline function sub!(z::qadic, x::qadic, y::qadic)
+    z.N = min(x.N, y.N)
+    ctx = parent(x)
+    ccall((:qadic_sub, :libflint), Nothing,
+          (Ref{qadic}, Ref{qadic}, Ref{qadic}, Ref{FlintQadicField}),
+          z, x, y, ctx)
+    return z
+end
+
 
 # Ensure the generator of a degree 1 extension is just 1.
 function unram_gen(Q::FlintQadicField)
