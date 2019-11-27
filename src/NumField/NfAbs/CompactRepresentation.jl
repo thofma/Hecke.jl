@@ -37,8 +37,8 @@ function compact_presentation(a::FacElem{nf_elem, AnticNumberField}, nn::Int = 2
   #Step 1: reduce the ideal in a p-power way...
 
   A = ideal(ZK, 1)
-  for _k = floor(Int, log(Int(n), Int(_v))):-1:0
-    B = Dict((p, div(v, Int(n^_k)) % Int(n)) for (p, v) = de)
+  for _k = Int(flog(_v, n)):-1:0
+    B = Dict((p, Int(div(v, n^_k) % nn)) for (p, v) = de)
     add_to_key!(B, A, n)
     A, alpha = reduce_ideal2(FacElem(B))
     mul!(be, be, alpha^(-n^_k))
