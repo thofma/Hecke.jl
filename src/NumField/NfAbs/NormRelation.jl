@@ -1158,7 +1158,10 @@ function sunit_group_fac_elem_quo_via_brauer(K::AnticNumberField, S, n::Int, inv
   return _sunit_group_fac_elem_quo_via_brauer(N, S, n, invariant)
 end
 
+global _debug = []
+
 function _sunit_group_fac_elem_quo_via_brauer(N::NormRelation, S, n::Int, invariant::Bool = false)
+  push!(_debug, (N, S, n))
   O = order(S[1])
 
   K = N.K
@@ -1211,14 +1214,22 @@ function _sunit_group_fac_elem_quo_via_brauer(N::NormRelation, S, n::Int, invari
         end
       end
     end
+    sort!(ind)
+    # ind = indices of S inside c.FB.ideals
     @assert length(Sclosed) == length(c.FB.ideals)
     @assert length(ind) == length(S)
+    @show length(Sclosed)
+    @show length(S)
+    @show length(Sclosed) - length(S)
     z = zero_matrix(FlintZZ, length(c.R_gen), length(Sclosed) - length(S))
     for i in 1:length(c.R_gen)
       k = 1
       for j in 1:length(Sclosed)
         if !(j in ind)
           z[i, k] = c.M.bas_gens[i, j]
+          if k == ncols(z)
+            break
+          end
           k = k + 1
         end
       end
@@ -1231,6 +1242,7 @@ function _sunit_group_fac_elem_quo_via_brauer(N::NormRelation, S, n::Int, invari
       push!(sunitsmodunits, FacElem(c.R_gen, fmpz[K[i, j] for j in 1:ncols(K)]))
     end
   end
+
   unitsmodtorsion = UZK.units # These are generators for the units (mod n)
   T, mT = torsion_unit_group(O)
   Q, mQ = quo(T, n)
@@ -1290,5 +1302,10 @@ function _sunit_group_fac_elem_quo_via_brauer(N::NormRelation, S, n::Int, invari
   r.isquotientmap = n
 
   r.header = MapHeader(res_group, FacElemMon(nf(O)), exp, disclog)
+  _S, _mS = sunit_group_fac_elem(S)
+  _Q, _mQ = quo(_S, n)
+  V = quo(_Q, [_mQ(_mS\(r(res_group[i]))) for i in 1:ngens(res_group)])
+  @assert order(_Q) == order(res_group)
+  @assert order(V[1]) == 1
   return res_group, r
 end

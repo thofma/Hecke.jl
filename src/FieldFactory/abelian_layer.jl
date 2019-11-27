@@ -365,8 +365,8 @@ function compute_fields(class_fields::Vector{Hecke.ClassField{Hecke.MapRayClassG
   @vprint :Fields 3 "Computing the fields directly\n"
   for i in it
     C = class_fields[i]
-    L = NumberField(C)
-    #L = NumberField_using_Brauer(C)
+    #L = NumberField(C)
+    L = NumberField_using_Brauer(C)
     autL = Hecke.absolute_automorphism_group(C, autos)
     if !isone(gcd(degree(K), expo)) 
       Cpperm = permutation_group(autL)
