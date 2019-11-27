@@ -329,29 +329,57 @@ function show(io::IO, E::EllCrv)
   if E.short
     print(io, "Elliptic curve with equation y^2 = x^3")
     if !iszero(E.coeff[1])
-      print(io, " + $(E.coeff[1])*x")
+      if needs_parentheses(E.coeff[1])
+        print(io, " + ($(E.coeff[1]))*x")
+      else
+        print(io, " + $(E.coeff[1])*x")
+      end
     end
     if !iszero(E.coeff[2])
-      print(io, " + $(E.coeff[2])")
+      if needs_parentheses(E.coeff[2])
+        print(io, " + ($(E.coeff[2]))")
+      else
+        print(io, " + $(E.coeff[2])")
+      end
     end
     print(io, "\n")
   else
     print(io, "Elliptic curve with equation y^2")
     if !iszero(E.coeff[1])
-      print(io, " + $(E.coeff[1])*xy")
+      if needs_parentheses(E.coeff[1])
+        print(io, " + ($(E.coeff[1]))*xy")
+      else
+        print(io, " + $(E.coeff[1])*xy")
+      end
     end
     if !iszero(E.coeff[3])
-      print(io, " + $(E.coeff[3])*y")
+      if needs_parentheses(E.coeff[3])
+        print(io, " + ($(E.coeff[3]))*y")
+      else
+        print(io, " + $(E.coeff[3])*y")
+    end
     end
     print(io, " = x^3")
     if !iszero(E.coeff[2])
-      print(io, " + $(E.coeff[2])*x^2")
+      if needs_parentheses(E.coeff[2])
+        print(io, " + ($(E.coeff[2]))*x^2")
+      else
+        print(io, " + $(E.coeff[2])*x^2")
+      end
     end
     if !iszero(E.coeff[4])
-      print(io, " + $(E.coeff[4])*x")
+      if needs_parentheses(E.coeff[4])
+        print(io, " + ($(E.coeff[4]))*x")
+      else
+        print(io, " + $(E.coeff[4])*x")
+      end
     end
     if !iszero(E.coeff[5])
-      print(io, " + $(E.coeff[5])")
+      if needs_parentheses(E.coeff[5])
+        print(io, " + ($(E.coeff[5]))")
+      else
+        print(io, " + $(E.coeff[5])")
+      end
     end
     print(io, "\n")
   end

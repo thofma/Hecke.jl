@@ -28,7 +28,7 @@ function compact_presentation(a::FacElem{nf_elem, AnticNumberField}, nn::Int = 2
 
   if !(decom isa Bool)
     @hassert :CompactPresentation 1 length(de) == 0 && isone(abs(factored_norm(a))) ||
-                                    abs(factored_norm(a)) == factored_norm(FacElem(de))
+                                    abs(evaluate(factored_norm(a))) == evaluate(factored_norm(FacElem(de)))
   end
 
   v = conjugates_arb_log_normalise(a, arb_prec)
@@ -194,7 +194,7 @@ function evaluate_mod(a::FacElem{nf_elem, AnticNumberField}, B::NfOrdFracIdl)
   K = base_ring(a)
   ZK = order(B)
   dB = denominator(B)*index(ZK)
-
+  
   @hassert :CompactPresentation 1 factored_norm(B) == abs(factored_norm(a))
   @hassert :CompactPresentation 2 B == ideal(order(B), a)
 
@@ -221,6 +221,7 @@ function evaluate_mod(a::FacElem{nf_elem, AnticNumberField}, B::NfOrdFracIdl)
     p = next_prime(p)
   end
 end
+
 
 function Hecke.ispower(a::FacElem{nf_elem, AnticNumberField}, n::Int; with_roots_unity = false, decom = false)
   if n == 1

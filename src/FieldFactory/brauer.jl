@@ -25,17 +25,16 @@ function check_Brauer_obstruction(list::Vector{FieldsTower}, L::Main.ForeignGAP.
       #The extension is not cyclic. I need to search for a normal cyclic subextension.
       #I list the subgroup of the derived subgroup, sieve for the one that are normal in the entire group
       #and then take the maximal ones. I need to check all of them.
-      @show "here!"
+
       subs, target_grp = find_subgroups_cyclic_in_derived(L, i, p)
-      @show subs, target_grp
       for i = 1:length(subs)
         new_target = GAP.Globals.FactorGroup(target_grp, subs[i])
         L1 = GAP.Globals.DerivedSeries(new_target)
         order = divexact(prod(invariants), GAP.gap_to_julia(Int, GAP.Globals.Size(subs[i])))
         if order == p
-          list =  _Brauer_prime_case(list, L1, length(L)-1, Int(p))
+          list =  _Brauer_prime_case(list, L1, length(L1)-1, Int(p))
         else
-          list = check_Brauer_obstruction_pp(list, L1, length(L)-1, Int(p), Int(valuation(order, p)))
+          list = check_Brauer_obstruction_pp(list, L1, length(L1)-1, Int(p), Int(valuation(order, p)))
         end
       end
     end
@@ -55,10 +54,12 @@ function find_subgroups_cyclic_in_derived(L::Main.ForeignGAP.MPtr, i::Int, p::fm
   mH1 = GAP.Globals.NaturalHomomorphismByNormalSubgroup(target_grp, GAP.Globals.Image(proj, L[i]))
   G = GAP.Globals.ImagesSource(mH1)
   K = GAP.Globals.Kernel(mH1)
+  oK = GAP.Globals.Size(K)
   normal_cyclic_and_contained = Main.ForeignGAP.MPtr[]
   for i = 1:length(normal_subgroups)
     g = normal_subgroups[i]
-    if !GAP.Globals.IsSubgroup(K, g)
+    oG = GAP.Globals.Size(g)
+    if !GAP.Globals.IsSubgroup(K, g) || oG == oK
       continue
     end
     fg = GAP.Globals.FactorGroup(K, g)
@@ -263,24 +264,6 @@ end
 
 ###############################################################################
 #
-#  Brauer obstruction using Crossed Product Algebras: degree 2 case
-#
-###############################################################################
-
-function _Brauer_at_two(list::Vector{FieldsTower}, L::Main.ForeignGAP.MPtr, i::Int)
-  mH, autos, _cocycle_values = cocycle_computation(L, i)
-  domcoc = GAP.Globals.ImagesSource(mH)
-  admit_ext = falses(length(list))
-  for t = 1:length(list)
-    @vprint :Fields 1 "$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())Fields to test: $(length(list)-t+1)"
-    admit_ext[t] = _Brauer_no_extend(list[t], mH, autos, _cocycle_values, domcoc, 2)
-  end
-  @vprint :Fields 1 "$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())"
-  return list[findall(admit_ext)]
-end
-
-###############################################################################
-#
 #  Brauer Obstruction: prime case
 #
 ###############################################################################
@@ -299,6 +282,19 @@ function assure_automorphisms(K::AnticNumberField, gens::Vector{NfToNfMor})
     _set_automorphisms_nf(K, auts)
   end
   return nothing
+end
+
+function _Brauer_at_two(list::Vector{FieldsTower}, L::Main.ForeignGAP.MPtr, i::Int)
+  mH, autos, _cocycle_values = cocycle_computation(L, i)
+  domcoc = GAP.Globals.ImagesSource(mH)
+  admit_ext = falses(length(list))
+  for t = 1:length(list)
+    @vprint :Fields 1 "$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())Fields to test: $(length(list)-t+1)"
+    assure_automorphisms(list[t])
+    admit_ext[t] = _Brauer_no_extend(list[t], mH, autos, _cocycle_values, domcoc, 2)
+  end
+  @vprint :Fields 1 "$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())"
+  return list[findall(admit_ext)]
 end
 
 

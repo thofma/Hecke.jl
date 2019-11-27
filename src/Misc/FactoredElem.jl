@@ -609,12 +609,12 @@ Tests if $x$ represents $1$ without an evaluation.
 """
 function isone(x::FacElem{fmpq})
   y = simplify(x)
-  return all(iszero, values(y.fac))
+  return all(iszero, values(y.fac)) || all(isone, keys(y.fac))
 end
 
 function isone(x::FacElem{fmpz})
   y = simplify(x)
-  return all(iszero, values(y.fac))
+  return all(iszero, values(y.fac)) || all(isone, keys(y.fac))
 end
 
 

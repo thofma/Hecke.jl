@@ -785,8 +785,7 @@ function issimultaneous_diagonalizable(L::Vector{S}) where S <: Hecke.MatElem{T}
 end
 
 
-function _intersect(A::Hecke.MatElem{T}, B::Hecke.MatElem{T}) where T <:
-Hecke.FieldElem
+function _intersect(A::Hecke.MatElem{T}, B::Hecke.MatElem{T}) where T <: Hecke.FieldElem
 
   n = Hecke.nrows(A)
   M = Hecke.vcat(A, B)

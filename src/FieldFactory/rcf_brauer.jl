@@ -30,7 +30,7 @@ function NumberField_using_Brauer(CF::ClassField{S, T}; redo::Bool = false) wher
     q[i] = G[i]
   end
   CF.cyc = res
-  CF.A = number_field([x.A.pol for x = CF.cyc], check = false, cached = false)[1]
+  CF.A = number_field(Generic.Poly{nf_elem}[x.A.pol for x = CF.cyc], check = false, cached = false)[1]
   return CF.A
 end
 

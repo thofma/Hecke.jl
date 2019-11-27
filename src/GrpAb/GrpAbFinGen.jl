@@ -546,8 +546,8 @@ function direct_product(G::GrpAbFinGen...
   Dp = AbelianGroup(cat([rels(x) for x = G]..., dims = (1,2)))
 
   set_special(Dp, :direct_product =>G, :show => show_direct_product)
-  inj = []
-  pro = []
+  inj = GrpAbFinGenMap[]
+  pro = GrpAbFinGenMap[]
   j = 0
   for g = G
     if task in [:sum, :both]

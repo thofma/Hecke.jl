@@ -680,6 +680,43 @@ function ==(G1::GenusHerm, G2::GenusHerm)
   return true
 end
 
+function Base.show(io::IO, G::GenusHerm)
+  print(io, "Genus symbol over")
+  print(io, G.E)
+  print(io, "\n", "and local genera",)
+  for g in G.LGS
+    print(io, "\n")
+    print(IOContext(io, :compact => true), prime(g), " => ", g)
+  end
+  print(io, "\n and signature")
+  for (pl, v) in G.signatures
+    print(io, "\n")
+    _print_short(io, pl.r)
+    print(io, " => ")
+    print(io, v)
+  end
+end
+
+function _print_short(io::IO, a::arb)
+  r = BigFloat(a)
+  s = string(r)
+  if length(s) >= 10
+    ss = s[1:9] * "…"
+  else
+    ss = s
+  end
+  print(io, ss)
+end
+
+function _print_short(io::IO, a::acb)
+  _print_short(io, real(a))
+  if !iszero(imag(a))
+    print(io, " + ")
+    _print_short(io, imag(a))
+    print(io, " * i")
+  end
+end
+
 ################################################################################
 #
 #  Test if lattice is contained in genus
@@ -708,6 +745,12 @@ function Base.show(io::IO, ::MIME"text/plain", G::GenusHerm)
     if i < length(G.primes)
       print(io, "\n")
     end
+  end
+  for (pl, v) in G.signatures
+    print(io, "\n")
+    _print_short(io, pl.r)
+    print(io, " => ")
+    print(io, v)
   end
 end
 
@@ -839,6 +882,7 @@ end
 ################################################################################
 
 function _hermitian_form_with_invariants(E, dim, P, N)
+  #@show E, dim, N, [minimum(p) for p in P]
   K = base_field(E)
   R = maximal_order(K)
 #  require forall{n: n in N | n in {0..dim}}: "Number of negative entries is impossible";
@@ -846,12 +890,14 @@ function _hermitian_form_with_invariants(E, dim, P, N)
   length(N) != length(infinite_pl) && error("Wrong number of real places")
   S = maximal_order(E)
   prim = [ p for p in P if length(prime_decomposition(S, p)) == 1 ] # only take non-split primes
+  #@show prim
   I = [ p for p in keys(N) if isodd(N[p]) ]
   !iseven(length(I) + length(P)) && error("Invariants do not satisfy the product formula")
   e = gen(E)
   x = 2 * e - trace(e)
   b = coeff(x^2, 0) # b = K(x^2)
   a = _find_quaternion_algebra(b, prim, I)
+  #@show a
   D = elem_type(E)[]
   for i in 1:(dim - 1)
     if length(I) == 0
@@ -864,7 +910,7 @@ function _hermitian_form_with_invariants(E, dim, P, N)
   Dmat = diagonal_matrix(D)
   dim0, P0, N0 = _hermitian_form_invariants(Dmat)
   @assert dim == dim0
-  @assert P == P0
+  @assert Set(prim) == Set(P0)
   @assert N == N0
   return Dmat
 end
@@ -905,11 +951,23 @@ function representative(G::GenusHerm)
   P = _non_norm_primes(G.LGS)
   E = base_field(G)
   V = hermitian_space(E, _hermitian_form_with_invariants(base_field(G), rank(G), P, G.signatures))
+  print("Find maximal integral lattice ...")
   M = maximal_integral_lattice(V)
+  println("DONE")
   for g in G.LGS
     p = prime(g)
+    #@show g
+    print("Finding representative for ")
+    print(IOContext(stdout, :compact => true), p)
+    print("$g ... ")
     L = representative(g)
+    println("Done")
+    @assert genus(L, p) == g
+    #@show coefficient_ideals(pseudo_matrix(L))
+    #@show matrix(pseudo_matrix(L))
+    println("Finding sublattice ...")
     M = find_lattice(M, L, p)
+    println("Done")
   end
   return M
 end
@@ -947,6 +1005,8 @@ rank `rank`, scale valuation bounded by `max_scale` and determinant valuation
 bounded by `det_val`.
 """
 function local_genera_hermitian(E, p, rank, det_val, max_scale, is_ramified = isramified(maximal_order(E), p))
+  #@show E, p, rank, det_val, max_scale, is_ramified
+  is_inert = !is_ramified && length(prime_decomposition(maximal_order(E), p)) == 1
   if is_ramified
     # the valuation is with respect to p
     # but the scale is with respect to P
@@ -976,7 +1036,22 @@ function local_genera_hermitian(E, p, rank, det_val, max_scale, is_ramified = is
   
   if !is_ramified
     # I add the 0 to make the compiler happy
-    return [ genus(HermLat, E,p, Tuple{Int, Int, Int, Int}[(b..., 1, 0) for b in g]) for g in scales_rks]
+    symbols = Vector{LocalGenusHerm{typeof(E), typeof(p)}}(undef, length(scales_rks))
+    for i in 1:length(scales_rks)
+      g = scales_rks[i]
+      z = Tuple{Int, Int, Int, Int}[]
+      for b in g
+        # We have to be careful.
+        # If p is inert, then the norm is not surjective. 
+        if !is_inert || iseven(b[1] * b[2])
+          push!(z, (b[1], b[2], 1, 0))
+        else
+          push!(z, (b[1], b[2], -1, 0))
+        end
+      end
+      symbols[i] = genus(HermLat, E, p, z)
+    end
+    return symbols
   end
 
   scales_rks = Vector{Tuple{Int, Int}}[g for g in scales_rks if all((mod(b[1]*b[2], 2) == 0) for b in g)]
@@ -1040,10 +1115,8 @@ function local_genera_hermitian(E, p, rank, det_val, max_scale, is_ramified = is
         push!(det_norms, dn)
       end
     end
-    #println("================ det_norms: $det_norms")
     for dn in Iterators.product(det_norms...)
       g2 = Vector{Tuple{Int, Int, Int, Int}}(undef, length(g))
-      #println("g1 before: $g1")
       for k in 1:n
         g2[k] = (g[k]..., dn[k]...)
       end

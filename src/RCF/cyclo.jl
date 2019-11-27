@@ -37,7 +37,6 @@ both as an absolute extension, as a relative extension (of $k$) and the maps
 between them.
 """
 function cyclotomic_extension(k::AnticNumberField, n::Int; cached::Bool = true,  compute_maximal_order::Bool = true, compute_LLL_basis::Bool = true)
-
   Ac = CyclotomicExt[]
   if cached
     try 
@@ -60,7 +59,7 @@ function cyclotomic_extension(k::AnticNumberField, n::Int; cached::Bool = true, 
   c.k = k
   c.n = n
   
-  if n == 2
+  if n <= 2
     #Easy, just return the field
     Kr = number_field(t+1, cached = false, check = false)[1]
     if compute_maximal_order
