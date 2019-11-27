@@ -1403,7 +1403,7 @@ function _ismaximal_integral(L::AbsLat, p)
   else
     s = elem_in_nf(p_uniformizer(D[1][1]))^e
   end
-  @assert valuation(s, D[1][1]) == 2
+  @assert valuation(s, D[1][1]) == valuation(discriminant(R), p)
 
   M = local_basis_matrix(L, p, type = :submodule)
   G = gram_matrix(ambient_space(L), M)

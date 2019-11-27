@@ -372,23 +372,40 @@ function _gram_schmidt(M::MatElem, a)
   K = base_ring(F)
   n = nrows(F)
   S = identity_matrix(K, n)
-  ok = isdiagonal(F)
-  if !ok
+  okk = isdiagonal(F)
+  if !okk
     for i in 1:n
       if iszero(F[i,i])
         T = identity_matrix(K, n)
-        ok = findfirst(j -> !iszero(F[j, j]), (i + 1):n)
-        if ok !== nothing
-          j = ok + i # findfirst gives the index
+        ok = 0
+        for j in (i + 1):n
+          if !iszero(F[j, j])
+            ok = j
+            break
+          end
+        end
+        #ok = findfirst(j -> !iszero(F[j, j]), (i + 1):n)
+        if ok != 0 # ok !== nothing
+          #j = ok + i # findfirst gives the index
           T[i,i] = 0
           T[j,j] = 0
           T[i,j] = 1
           T[j,i] = 1
         else
-          ok = findfirst(j -> !iszero(F[i, j]), (i + 1):n)
-          if ok === nothing
+          ok = 0
+          for j in (i + 1):n
+            if !iszero(F[i, j])
+              ok = j
+              break
+            end
+          end
+          if ok == 0
             error("Matrix is not of full rank")
           end
+          #ok = findfirst(j -> !iszero(F[i, j]), (i + 1):n)
+          #if ok === nothing
+          #  error("Matrix is not of full rank")
+          #end
           j = ok + i # findfirst gives the index
           T[i, j] = 1 // (2 * F[j, i])
         end
@@ -586,7 +603,7 @@ isequivalent(L::AbsSpace, M::AbsSpace, p)
 ################################################################################
 
 function _quadratic_form_invariants(M; minimal = true)
-  G, _ = _gram_schmidt(M, identity);
+  G, _ = _gram_schmidt(M, identity)
   D = diagonal(G)
   K = base_ring(M)
   O = maximal_order(K)
