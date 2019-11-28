@@ -651,3 +651,61 @@ function fields(list::Vector{FieldsTower}, G, absolute_bound::fmpz; only_real::B
   end
   return list
 end
+
+function new_fields_direct_product(g1, g2, red, redfirst, absolute_bound; only_real = false, simplify = true)
+  b1 = root(absolute_bound, g2[1])
+  b2 = root(absolute_bound, g1[1])
+  l2 = new_fields(g2[1], g2[2], b2, only_real = only_real)
+  if isempty(l2)
+    return FieldsTower[]
+  end
+  if g1 == g2
+    return _merge(l2, l2, absolute_bound, red, redfirst)
+  end
+  l1 = new_fields(g1[1], g1[2], b1, only_real = only_real)
+  if isempty(l1)
+    return FieldsTower[]
+  end
+  return _merge(l1, l2, absolute_bound, red, redfirst)
+end
+
+
+function new_fields(a::Int, b::Int, absolute_bound::fmpz; only_real::Bool = false, simplify::Bool = true)
+  if a == 1
+    @assert b == 1
+    Qx, x = PolynomialRing(FlintQQ, "x", cached = false)
+    K, a = NumberField(x-1, cached = false)
+    g = NfToNfMor(K, K, K(1))
+    return FieldsTower[FieldsTower(K, NfToNfMor[g], Array{NfToNfMor, 1}())]
+  end
+  G = GAP.Globals.SmallGroup(a, b)
+  g1, g2, red, redfirst = direct_product_decomposition(G, (a, b))
+  if g2 != (1, 1)    
+    return new_fields_direct_product(g1, g2, red, redfirst, absolute_bound; only_real = false)
+  end
+  L = GAP.Globals.DerivedSeries(G)
+  G1 = GAP.Globals.FactorGroup(L[1], L[end-1])
+  invariants = GAP.gap_to_julia(Vector{Int}, GAP.Globals.AbelianInvariants(L[end-1]))
+  lG = snf(DiagonalGroup(invariants))[1]
+  if GAP.Globals.IsAbelian(G)
+    return abelian_extensionsQQ(invariants, absolute_bound, only_real)
+  end
+  lvl = _real_level(L)
+  IdGroupGAP = GAP.Globals.IdGroup(G1)
+  IdGroup = GAP.gap_to_julia(Vector{Int}, IdGroupGAP)
+  bound = root(absolute_bound, prod(invariants))
+  list = new_fields(IdGroup[1], IdGroup[2], bound; only_real = (only_real || lvl == length(L)-1))
+  @vprint :Fields 1 "Number of fields at this step: $(length(list)) \n"
+  @vprint :FieldsNonFancy 1 "Number of fields at this step: $(length(list)) \n"
+  
+  @vprint :Fields 1 "Computing obstructions\n"
+  @vprint :FieldsNonFancy 1 "Computing obstructions\n"
+  #@vtime :Fields 1 
+  list = check_Brauer_obstruction(list, L, length(L)-1, invariants)
+  @vprint :Fields 1 "Fields to check: $(length(list))\n\n"
+  @vprint :FieldsNonFancy 1 "Fields to check: $(length(list))\n\n"
+  if isempty(list)
+    return FieldsTower[]
+  end
+  return field_extensions(list, absolute_bound, IdGroupGAP, invariants, only_real, simplify)
+end

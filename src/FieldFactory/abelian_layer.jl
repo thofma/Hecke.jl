@@ -356,7 +356,7 @@ function from_class_fields_to_fields(class_fields::Vector{Hecke.ClassField{Hecke
 end
 
 function compute_fields(class_fields::Vector{Hecke.ClassField{Hecke.MapRayClassGrp, GrpAbFinGenMap}}, autos::Vector{NfToNfMor}, grp_to_be_checked::Main.ForeignGAP.MPtr, right_grp)
-  use_brauer = true
+  use_brauer = false
 
   it = findall(right_grp)
   K = base_field(class_fields[it[1]])

@@ -475,8 +475,9 @@ function complex_conjugation(K::AnticNumberField)
   end
   #First, quick and dirty. If only one automorphism works, then we return it
   p = 32 
-  c = conjugates(a, p)
+  
   while true
+    c = conjugates(a, p)
     for i = 1:d
       if !isinvolution(A[i])
         continue
@@ -491,6 +492,7 @@ function complex_conjugation(K::AnticNumberField)
             end
             if overlaps(c[j], cc[k])
               found = false
+              break
             end
           end
           if found
@@ -506,7 +508,6 @@ function complex_conjugation(K::AnticNumberField)
   end
   error("something went wrong!")
 end
-
 
 function iscomplex_conjugation(f::NfToNfMor)
   K = domain(f)

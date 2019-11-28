@@ -956,7 +956,6 @@ function decomposition_group(G::Array{NfToNfMor, 1}, P::NfOrdIdl, orderG::Int = 
       D[Rx(G[i].prim_img)] = i
     end
     dec_group = NfToNfMor[]
-    F, mF = Hecke.ResidueFieldSmall(O, P)
     local ppp
     let fmod = fmod
       function ppp(a::nmod_poly, b::nmod_poly)
@@ -964,16 +963,11 @@ function decomposition_group(G::Array{NfToNfMor, 1}, P::NfOrdIdl, orderG::Int = 
       end
     end
     for g in G
-      if G[D[Rx(g.prim_img)]] in dec_group
-        continue
-      end
-      if g.prim_img == gen(K)
-        push!(dec_group, g)
+      if g in dec_group
         continue
       end
       y = O(g(K(P.gen_two)), false)
       if y in P
-      #if iszero(image(mF, y))
         push!(dec_group, g)
         #I take the closure of dec_group modularly
         elems = nmod_poly[Rx(el.prim_img) for el in dec_group]
@@ -986,11 +980,10 @@ function decomposition_group(G::Array{NfToNfMor, 1}, P::NfOrdIdl, orderG::Int = 
     end
     return dec_group
   else
-    return decomposition_group_easy(G, P)
+    res = decomposition_group_easy(G, P)
+    return res
   end 
 end
-
-
 
 function decomposition_group_easy(G, P)
   O = order(P)
@@ -1009,6 +1002,7 @@ function decomposition_group_easy(G, P)
   end
   return G[indices]
 end
+
 
 function _find_theta(G::Vector{NfToNfMor}, F::FqNmodFiniteField, mF::Hecke.NfOrdToFqNmodMor, e::Int)
   #G is the decomposition group of a prime ideal P
@@ -1029,20 +1023,20 @@ function _find_theta(G::Vector{NfToNfMor}, F::FqNmodFiniteField, mF::Hecke.NfOrd
     Rt = PolynomialRing(R, "t", cached = false)[1]
     fmod = Rt(K.pol)
   end
-  igFq = Rt(igF)
   theta = G[1]
   for i = 1:length(G)
     theta = G[i]
-    theta_q = Rt(theta.prim_img)
-    img = compose_mod(igFq, theta_q, fmod)
-    res = O(lift(K, img), false)
+    res = O(theta(igF), false)
+    #img = compose_mod(theta_q, igFq, fmod)
+    #res = O(lift(K, img), false)
     #I make sure that the element is a generator of the inertia subgroup
     if mF(res) == gF 
+      theta_q = Rt(theta.prim_img)
       pp = theta_q
       for i = 2:t
         pp = compose_mod(theta_q, pp, fmod)
       end
-      if pp == gen(Rt)
+      if pp != gen(Rt)
         break
       end
     end
@@ -1053,24 +1047,22 @@ end
 function _find_frob(G::Vector{NfToNfMor}, F::FqNmodFiniteField, mF::Hecke.NfOrdToFqNmodMor, e::Int, f::Int, q::Int, theta::NfToNfMor)
   K = domain(G[1])
   O = maximal_order(K)
-  q = 2
-  R = ResidueRing(FlintZZ, q, cached = false)
+  q1 = 2
+  R = ResidueRing(FlintZZ, q1, cached = false)
   Rt = PolynomialRing(R, "t", cached = false)[1]
   fmod = Rt(K.pol)
   while iszero(discriminant(fmod))
-    q = next_prime(q)
-    R = ResidueRing(FlintZZ, q, cached = false)
+    q1 = next_prime(q1)
+    R = ResidueRing(FlintZZ, q1, cached = false)
     Rt = PolynomialRing(R, "t", cached = false)[1]
     fmod = Rt(K.pol)
   end
   gK = gen(K)
   p = ispower(e)[2]
   t = div(e, p)
-  frob = G[1]
   expo = mod(q, e)
   gF = gen(F)
   igF = K(mF\gF)
-  igFq = Rt(igF)
   rhs = gF^q
   theta_q = Rt(theta.prim_img)
   for i = 1:length(G)
@@ -1078,28 +1070,28 @@ function _find_frob(G::Vector{NfToNfMor}, F::FqNmodFiniteField, mF::Hecke.NfOrdT
     if frob == theta
       continue
     end
-    frob_q = Rt(frob.prim_img)
-    res = compose_mod(igFq, frob_q, fmod)
-    resO = O(lift(K, res), false)
-    #I make sure that g1 is a Frobenius
-    if mF(resO) != rhs
+    if mF(O(frob(igF), false)) != rhs
       continue
     end
+    frob_q = Rt(frob.prim_img)
     #Now, I check the relation
     #gc = frob * theta 
-    gc = compose_mod(theta_q, frob_q, fmod)
+    gc = compose_mod(frob_q, theta_q, fmod)
     #gq = (theta^expo) * frob
     #TODO: Binary powering
     gq = theta_q
     for i = 2:expo
       gq = compose_mod(theta_q, theta_q, fmod)
     end
-    gq = compose_mod(frob_q, gq, fmod)
-    if gc == gq
-      break
+    gq = compose_mod(gq, frob_q, fmod)
+    fl = gc == gq
+    @hassert :Fields 1 fl == ((theta^expo) * frob == frob * theta)
+    if fl
+      return frob
     end
   end
-  return frob
+  error("something went wrong!")
+  
 end
 
 #See Gerald J. Janusz (1980) Crossed product orders and the schur index,
