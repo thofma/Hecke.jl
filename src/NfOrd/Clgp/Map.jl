@@ -630,8 +630,7 @@ function round_approx(::Type{fmpz_mat}, C::Nemo.arb_mat)
       a = upper_bound(C[i,j], fmpz)
       b = lower_bound(C[i,j], fmpz)
       if (b-a) > sqrt(abs(C[i,j]))
-        @show "cannot round:", C[i,j]
-        throw(InexactError())
+        throw(InexactError(:round_approx, arb, C[i,j]))
       end
       v[i,j] = div(a+b, 2)
     end
