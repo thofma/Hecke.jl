@@ -356,17 +356,24 @@ function from_class_fields_to_fields(class_fields::Vector{Hecke.ClassField{Hecke
 end
 
 function compute_fields(class_fields::Vector{Hecke.ClassField{Hecke.MapRayClassGrp, GrpAbFinGenMap}}, autos::Vector{NfToNfMor}, grp_to_be_checked::Main.ForeignGAP.MPtr, right_grp)
+  use_brauer = true
+
   it = findall(right_grp)
   K = base_field(class_fields[it[1]])
   fields = Tuple{Hecke.NfRelNS{nf_elem}, Vector{Hecke.NfRelNSToNfRelNSMor{nf_elem}}}[]
   expo = Int(exponent(codomain(class_fields[it[1]].quotientmap)))
   
-  #set_up_cycl_ext(K, expo, autos)
+  if !use_brauer
+    set_up_cycl_ext(K, expo, autos)
+  end
   @vprint :Fields 3 "Computing the fields directly\n"
   for i in it
     C = class_fields[i]
-    #L = NumberField(C)
-    L = NumberField_using_Brauer(C)
+    if use_brauer
+      L = NumberField_using_Brauer(C)
+    else
+      L = NumberField(C)
+    end
     autL = Hecke.absolute_automorphism_group(C, autos)
     if !isone(gcd(degree(K), expo)) 
       Cpperm = permutation_group(autL)

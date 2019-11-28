@@ -45,7 +45,6 @@ function ray_class_field_cyclic_pp_Brauer(CF::ClassField{S, T}, mQ::GrpAbFinGenM
   @vtime :ClassField 1 _rcf_S_units_using_Brauer(CFpp)
   @vprint :ClassField 1 "finding the Kummer extension...\n"
   @vtime :ClassField 1 _rcf_find_kummer(CFpp)
-  @show issurjective(CFpp.h)
   while !issurjective(CFpp.h)
     _rcf_S_units_enlarge(CFpp)
   end
@@ -59,16 +58,12 @@ function ray_class_field_cyclic_pp_Brauer(CF::ClassField{S, T}, mQ::GrpAbFinGenM
       _aut_A_over_k(CE, CFpp)
       isgood = true
     catch err
-      if !(err isa AssertionError) || err.msg != "fl"
+      if !(err isa ExtendAutoError)
         rethrow(err)
       end
-      @show err
-      C, mC = class_group(CE.Ka)
-      @show order(quo(C, [mC\p for p in CFpp.sup])[1])
       _rcf_S_units_enlarge(CFpp)
-      @assert length(CFpp.sup) == length(unique(CFpp.sup))
+      @hassert :ClassField 1 length(CFpp.sup) == length(unique(CFpp.sup))
       @vtime :ClassField 1 _rcf_reduce(CFpp)
-      @show CFpp.K
     end
   end
 
@@ -113,8 +108,6 @@ function _rcf_S_units_enlarge(CF::ClassField_pp)
   KK.gen_mod_nth_power = gens_mod_nth
   CF.bigK = KK
   _rcf_find_kummer(CF)
-  @show [minimum(p) for p in lP]
-  @show minimum(defining_modulus(CF)[1])
 end
 
 

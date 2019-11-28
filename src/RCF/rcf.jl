@@ -821,6 +821,8 @@ function _aut_A_over_k(C::CyclotomicExt, CF::ClassField_pp)
   
 end
 
+struct ExtendAutoError <: Exception end
+
 function _extend_auto(K::Hecke.NfRel{nf_elem}, h::Hecke.NfToNfMor)
   @hassert :ClassField 1 iskummer_extension(K)
   #@assert iskummer_extension(K)
@@ -846,12 +848,16 @@ function _extend_auto(K::Hecke.NfRel{nf_elem}, h::Hecke.NfToNfMor)
   if r <= div(degree(K), 2)
     a = h(a)//a^r
     @vtime :ClassField 3 fl, b = ispower(a, degree(K), with_roots_unity = true)
-    @assert fl
+    if !fl
+      throw(ExtendAutoError())
+    end
     return NfRelToNfRelMor(K, K, h, b*gen(K)^r)
   else
     a = h(a)*(a^(degree(K)-r))
     @vtime :ClassField 3 fl, b = ispower(a, degree(K), with_roots_unity = true)
-    @assert fl
+    if !fl
+      throw(ExtendAutoError())
+    end
     return NfRelToNfRelMor(K, K, h, b*gen(K)^(r-degree(K)))
   end
 end
