@@ -110,7 +110,27 @@ function underdetermined_solve_first(A,b)
 end
 
 ##############
-# Mpoly
+# Poly/ Mpoly
+
+import Base.keys
+function keys(a::PolyCoeffs)
+    return keys(0:degree(polynomial(a)))
+end
+
+
+@doc Markdown.doc"""
+    polynomial(a::PolyCoeffs)
+Return the polynomial whose coefficients are `a`. Note that `polynomial(coefficients(f)) === f`.
+"""
+function polynomial(a::PolyCoeffs)
+    return a.f
+end             
+
+## TODO: Move this to AbstractAlgebra?? 
+function gen(a::AbstractAlgebra.Generic.ResField{<:AbstractAlgebra.Generic.Poly{<:RingElem}})
+    return a(gen(parent(a.modulus)))
+end
+
 
 @doc Markdown.doc"""
     coeffs(f::AbstractAlgebra.Generic.MPolyElem, i::Integer)

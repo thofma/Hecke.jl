@@ -224,7 +224,7 @@ end
 #
 ################################################################################
 
-function Nemo.prec(g::Generic.Poly{T}) where T <: FlintLocalFieldElem
+function Nemo.prec(g::Generic.Poly{T}) where T <: NALocalFieldElem
   N = coeff(g, 0).N
   for i = 1:degree(g)
     N = min(N, coeff(g, i).N)

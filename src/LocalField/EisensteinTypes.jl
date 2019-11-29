@@ -19,14 +19,6 @@
 #
 ############################################################################################
 
-
-## Doing things with Eisenstein extensions.
-
-## TODO: Move this to AbstractAlgebra?? 
-function gen(a::AbstractAlgebra.Generic.ResField{<:AbstractAlgebra.Generic.Poly{<:RingElem}})
-    return a(gen(parent(a.modulus)))
-end
-
 const EisensteinFieldID = Dict{Tuple{FmpqPolyRing, fmpq_poly, Symbol}, Field}()
 
 # TODO: Investigate the type of coefficient field element (whether padic/qadic should be allowed).
@@ -59,17 +51,17 @@ mutable struct EisensteinField{NonArchLocalFieldElem} <: NonArchLocalField
     #traces_alloc::Int
     #traces_length::Int
 
-    base_ring
-    pol
+    base_ring::NonArchLocalField
+    pol::PolyElem{NonArchLocalFieldElem}
     S::Symbol
-    prec_max # Eisenstein fields are defined by an approximate polynomial, so
-             # element precision will not exceed `prec_max` after a division.
+    prec_max::Int # Eisenstein fields are defined by an approximate polynomial, so
+                  # element precision will not exceed `prec_max` after a division.
     
     auxilliary_data::Array{Any, 1} # Storage for extensible data.
 
     ## Temporary to get things off the ground. This may well be a poor choice.
     ## Actually, this has been working fairly well! Just need to be careful with division...
-    data_ring::AbstractAlgebra.Generic.ResField{<:AbstractAlgebra.Generic.Poly}
+    data_ring::AbstractAlgebra.Generic.ResField{<:AbstractAlgebra.Generic.Poly{<:NALocalFieldElem}}
     
     function EisensteinField(pol::AbstractAlgebra.Generic.Poly{T}, s::Symbol,
                              cached::Bool = false, check::Bool = true) where T<:NALocalFieldElem
@@ -103,16 +95,6 @@ mutable struct EisensteinField{NonArchLocalFieldElem} <: NonArchLocalField
 end
 
 
-# Internal structure of elements could be a residue ring class.
-# (Perhaps better is to have an internal polynomial representation, and do the reductions myself.)
-
-mutable struct eisf_unit_internal <: NALocalFieldElem
-    
-    elem_coeffs
-    data_ring_elt     # Very likely we will need to implement operations from scratch.
-    debug_parent::EisensteinField # This should be removed eventually.
-end
-
 @doc Markdown.doc"""
     eisf_elem <: NALocalFieldElem
 
@@ -127,7 +109,7 @@ mutable struct eisf_elem <: NALocalFieldElem
     #v::Integer
     #N::Integer
     
-    data_ring_elt
+    data_ring_elt::AbstractAlgebra.Generic.ResF{<:AbstractAlgebra.Generic.Poly{<:NALocalFieldElem}}
     parent::EisensteinField
 
     function eisf_elem(p::EisensteinField)

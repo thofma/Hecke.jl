@@ -174,7 +174,9 @@ end
 #
 ###############################################################################
 
-coefficients(a::eisf_elem) = coefficients(a.data_ring_elt.data)
+coefficients(a::eisf_elem) = (
+    coefficients(a.data_ring_elt.data)::PolyCoeffs{
+        <:AbstractAlgebra.Generic.Poly{<:NALocalFieldElem}})
 
 coefficient(a::eisf_elem, i::Int) = coeff(a.data_ring_elt.data, i)
 
