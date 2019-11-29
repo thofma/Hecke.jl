@@ -284,7 +284,7 @@ function _abelian_normal_extensions(F::FieldsTower, gtype::Array{Int, 1}, absbou
   emb_sub = F.subfields[end]
   @vprint :Fields 1 "\e[1F$(Hecke.clear_to_eol())Sieving $(length(class_fields_with_act)) abelian extensions\n"
   class_fields = Hecke.check_abelian_extensions(class_fields_with_act, autos, emb_sub)
-  @vprint :Fields 1 "$(Hecke.clear_to_eol())"
+  @vprint :Fields 1 "$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())"
   return class_fields
 end
 

@@ -506,7 +506,6 @@ end
 #  Maximal abelian subfield for fields function
 #
 ###############################################################################
-
 function check_abelian_extensions(class_fields::Vector{Tuple{Hecke.ClassField{Hecke.MapRayClassGrp,GrpAbFinGenMap}, Vector{GrpAbFinGenMap}}}, autos::Array{NfToNfMor, 1}, emb_sub::NfToNfMor)
 
   @vprint :MaxAbExt 3 "Starting checking abelian extension\n"
@@ -537,62 +536,20 @@ function check_abelian_extensions(class_fields::Vector{Tuple{Hecke.ClassField{He
     if mp_pol ==  Hecke.compose_mod(mp_pol, pol, fmod)
       push!(act_indices, i)
       #I compute the order of the automorphisms. I need the exponent of the relative extension!
-      j = 2
-      att = Hecke.compose_mod(pol, pol, fmod)
-      while att != x
-        att = Hecke.compose_mod(pol, att, fmod)
-        j += 1
-      end
-      push!(expG_arr, j)
+      push!(expG_arr, _order(autos[i]))
     end
   end
   expG = lcm(expG_arr)
   expG1 = ppio(expG, com)[1]
-  com1 = ppio(com, expG1)[1]
   @vprint :MaxAbExt 3 "Context for ray class groups\n"
   
   OK = maximal_order(K)
-  rcg_ctx = Hecke.rayclassgrp_ctx(OK, com1*expG1)
-  
-  @vprint :MaxAbExt 3 "Ordering the class fields\n"
-  
-  mins = Vector{fmpz}(undef, length(class_fields))
-  for i = 1:length(mins)
-    mins[i] = minimum(defining_modulus(class_fields[i][1])[1])
-  end
-  ismax = trues(length(mins))
-  for i = 1:length(ismax)
-    for j = i+1:length(ismax)
-      if ismax[j] 
-        i2 = ppio(mins[i], mins[j])[2]
-        if isone(i2)
-          ismax[i] = false
-          break
-        end 
-        i3 = ppio(mins[j], mins[i])[2]
-        if isone(i3)
-          ismax[j] = false
-        end
-      end
-    end
-  end
-  ord_class_fields = Vector{Int}(undef, length(ismax))
-  j1 = 1
-  j2 = length(ismax)
-  for i = 1:length(ismax)
-    if ismax[i]
-      ord_class_fields[j1] = i
-      j1 += 1
-    else
-      ord_class_fields[j2] = i
-      j2 -= 1
-    end
-  end
-  
+  rcg_ctx = Hecke.rayclassgrp_ctx(OK, com*expG1)
+   
   cfields = Hecke.ClassField{Hecke.MapRayClassGrp, GrpAbFinGenMap}[]
   for i = 1:length(class_fields)
     @vprint :MaxAbExt 3 "Class Field $i\n"
-    C, res_act = class_fields[ord_class_fields[i]]
+    C, res_act = class_fields[i]
     res_act_new = Vector{GrpAbFinGenMap}(undef, length(act_indices))
     for i = 1:length(act_indices)
       res_act_new[i] = res_act[act_indices[i]]
@@ -627,7 +584,6 @@ function check_abelian_extension(C::Hecke.ClassField, res_act::Vector{GrpAbFinGe
   if isempty(prime_to_test)
     return true
   end
-
   n = prod(prime_to_test)
   n1, m = ppio(Int(G.snf[end]), n)
   if m != 1

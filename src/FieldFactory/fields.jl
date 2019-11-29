@@ -412,6 +412,7 @@ end
 function check_group_extension(TargetGroup::Main.ForeignGAP.MPtr, autos::Array{NfToNfMor, 1}, res_act::Array{GrpAbFinGenMap, 1})
   
   GS = domain(res_act[1])
+  @assert issnf(GS)
   expo = Int(GS.snf[end])
   K = domain(autos[1])
   d = degree(K)
@@ -420,6 +421,10 @@ function check_group_extension(TargetGroup::Main.ForeignGAP.MPtr, autos::Array{N
   if com == 1  
     # I only need to check the split extension, since the second cohomology group is
     # trivial, regardless of the action
+    if length(res_act) == 1 && ngens(GS) == 1 && iscoprime(d, order(GS))
+      #Just need to check if the action is non trivial
+      return !isone(mod(res_act[1].map[1, 1], GS.snf[1]))
+    end
     H = _split_extension(autos, res_act)
     return GAP.Globals.IdGroup(H) == TargetGroup
   end
@@ -655,6 +660,7 @@ end
 function new_fields_direct_product(g1, g2, red, redfirst, absolute_bound; only_real = false, simplify = true)
   b1 = root(absolute_bound, g2[1])
   b2 = root(absolute_bound, g1[1])
+  @vprint :Fields 1 "The Galois group is the product of $(g1) and $(g2)\n"
   l2 = new_fields(g2[1], g2[2], b2, only_real = only_real)
   if isempty(l2)
     return FieldsTower[]
@@ -683,11 +689,15 @@ function new_fields(a::Int, b::Int, absolute_bound::fmpz; only_real::Bool = fals
   if g2 != (1, 1)    
     return new_fields_direct_product(g1, g2, red, redfirst, absolute_bound; only_real = false)
   end
+
   L = GAP.Globals.DerivedSeries(G)
   G1 = GAP.Globals.FactorGroup(L[1], L[end-1])
   invariants = GAP.gap_to_julia(Vector{Int}, GAP.Globals.AbelianInvariants(L[end-1]))
   lG = snf(DiagonalGroup(invariants))[1]
+  invariants = map(Int, lG.snf)
   if GAP.Globals.IsAbelian(G)
+    @vprint :Fields 1 "computing abelian extension of Q with invariants $(invariants) and bound ~10^$(clog(absolute_bound, 10))\n"
+    @vprint :FieldsNonFancy 1 "Doing Group ($a, $b) with bound $absolute_bound\n"
     return abelian_extensionsQQ(invariants, absolute_bound, only_real)
   end
   lvl = _real_level(L)
@@ -695,6 +705,7 @@ function new_fields(a::Int, b::Int, absolute_bound::fmpz; only_real::Bool = fals
   IdGroup = GAP.gap_to_julia(Vector{Int}, IdGroupGAP)
   bound = root(absolute_bound, prod(invariants))
   list = new_fields(IdGroup[1], IdGroup[2], bound; only_real = (only_real || lvl == length(L)-1))
+  @vprint :Fields 1 "computing extensions with Galois group ($a, $b) and bound ~10^$(clog(absolute_bound, 10))\n"
   @vprint :Fields 1 "Number of fields at this step: $(length(list)) \n"
   @vprint :FieldsNonFancy 1 "Number of fields at this step: $(length(list)) \n"
   
@@ -707,5 +718,6 @@ function new_fields(a::Int, b::Int, absolute_bound::fmpz; only_real::Bool = fals
   if isempty(list)
     return FieldsTower[]
   end
-  return field_extensions(list, absolute_bound, IdGroupGAP, invariants, only_real, simplify)
+  Id = GAP.Globals.IdGroup(G)
+  return field_extensions(list, absolute_bound, Id, invariants, only_real, simplify)
 end

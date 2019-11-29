@@ -920,21 +920,72 @@ function inertia_subgroup(F, mF, G::Array{NfToNfMor, 1})
   @assert !isempty(G)
   K = domain(G[1])
   O = maximal_order(K)
+  P = mF.P
+  if !isindex_divisor(O, minimum(P, copy = false)) && fits(Int, minimum(P, copy = false))
+    return inertia_subgroup_easy(F, mF, G)
+  end
   gF = gen(F)
   igF = K(mF\gF)
   inertia_grp = NfToNfMor[]
+  q = 2
+  R = ResidueRing(FlintZZ, q, cached = false)
+  Rx = PolynomialRing(R, "x", cached = false)[1]
+  fmod = Rx(K.pol)
+  while iszero(discriminant(fmod))
+    q = next_prime(q)
+    R = ResidueRing(FlintZZ, q, cached = false)
+    Rx = PolynomialRing(R, "x", cached = false)[1]
+    fmod = Rx(K.pol)
+  end
+  D = Dict{nmod_poly, Int}()
+  for i = 1:length(G)
+    D[Rx(G[i].prim_img)] = i
+  end
+  local ppp
+  let fmod = fmod
+    function ppp(a::nmod_poly, b::nmod_poly)
+      return compose_mod(a, b, fmod)
+    end
+  end
   for g in G
-    if g.prim_img == gen(K)
-      push!(inertia_grp, g)
+    if g in inertia_grp
       continue
     end
     y = mF(O(g(igF), false))
     if y == gF
       push!(inertia_grp, g)
+      elems = nmod_poly[Rx(el.prim_img) for el in inertia_grp]
+      new_elems = closure(elems, ppp, gen(Rx))
+      inertia_grp = NfToNfMor[G[D[x]] for x in new_elems]
     end
   end
   return inertia_grp 
 end
+
+function inertia_subgroup_easy(F, mF, G::Vector{NfToNfMor})
+  P = mF.P
+  OK = order(P)
+  K = nf(OK)
+  p = minimum(P, copy = false)
+  R = ResidueRing(FlintZZ, Int(p), cached = false)
+  Rt = PolynomialRing(R, "t", cached = false)[1]
+  fmod = Rt(K.pol)
+  gF = gen(F)
+  igF = K(mF\gF)
+  igFq = Rt(igF)
+  indices = Int[]
+  for i = 1:length(G)
+    g = G[i]
+    img = Rt(g.prim_img)
+    res = compose_mod(igFq, img, fmod)
+    resK = OK(lift(K, res), false)
+    if mF(resK) == gF
+      push!(indices, i)
+    end
+  end
+  return G[indices]
+end
+
 
 function decomposition_group(G::Array{NfToNfMor, 1}, P::NfOrdIdl, orderG::Int = length(G))
   @assert !isempty(G)

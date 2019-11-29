@@ -293,7 +293,7 @@ function conductors(O::NfOrd, a::Array{Int, 1}, bound::fmpz, tame::Bool=false)
   d=degree(O)
   n = prod(a)
   expo = a[end]
-  wild_ram=collect(keys(factor(fmpz(n)).fac))
+  wild_ram = collect(keys(factor(fmpz(n)).fac))
 
   #
   # First, conductors for tamely ramified extensions
@@ -308,7 +308,7 @@ function conductors(O::NfOrd, a::Array{Int, 1}, bound::fmpz, tame::Bool=false)
   #
   # now, we have to multiply the obtained conductors by proper powers of wildly ramified ideals. 
   #
-  wild_list=Tuple{Int, Dict{NfOrdIdl, Int}, fmpz}[(1, Dict{NfOrdIdl, Int}(), fmpz(1))]
+  wild_list = Tuple{Int, Dict{NfOrdIdl, Int}, fmpz}[(1, Dict{NfOrdIdl, Int}(), fmpz(1))]
   for q in wild_ram
     lp = prime_decomposition(O, Int(q))
     fq = divexact(d, lp[1][2]*length(lp))
