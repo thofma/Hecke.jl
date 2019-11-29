@@ -120,12 +120,15 @@ function _norm_relation_setup_generic(K::AnticNumberField; small_degree::Bool = 
   A = automorphisms(K)
   G, AtoG, GtoA = generic_group(A, *)
   if iszero(target_den)
-    b, den, ls = _has_norm_relation_abstract(G, [f for f in subgroups(G, conjugacy_classes = true) if order(f[1]) > 1], pure = pure)
+    b, den, ls = _has_norm_relation_abstract(G, [f for f in subgroups(G, conjugacy_classes = false) if order(f[1]) > 1], pure = pure)
   else
-    b, den, ls = _has_norm_relation_abstract(G, [f for f in subgroups(G, conjugacy_classes = true) if order(f[1]) > 1], target_den = target_den, pure = pure)
+    b, den, ls = _has_norm_relation_abstract(G, [f for f in subgroups(G, conjugacy_classes = false) if order(f[1]) > 1], target_den = target_den, pure = pure)
   end
 
-  @assert b
+  if !b
+    @show find_small_group(G)
+    throw(error("Galois group does not admit Brauer relation"))
+  end
   n = length(ls)
 
   z = NormRelation{Int}()

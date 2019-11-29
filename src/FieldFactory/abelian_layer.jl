@@ -284,6 +284,7 @@ function _abelian_normal_extensions(F::FieldsTower, gtype::Array{Int, 1}, absbou
   emb_sub = F.subfields[end]
   @vprint :Fields 1 "\e[1F$(Hecke.clear_to_eol())Sieving $(length(class_fields_with_act)) abelian extensions\n"
   class_fields = Hecke.check_abelian_extensions(class_fields_with_act, autos, emb_sub)
+  @vprint :Fields 1 "$(Hecke.clear_to_eol())"
   return class_fields
 end
 
@@ -356,7 +357,7 @@ function from_class_fields_to_fields(class_fields::Vector{Hecke.ClassField{Hecke
 end
 
 function compute_fields(class_fields::Vector{Hecke.ClassField{Hecke.MapRayClassGrp, GrpAbFinGenMap}}, autos::Vector{NfToNfMor}, grp_to_be_checked::Main.ForeignGAP.MPtr, right_grp)
-  use_brauer = false
+  use_brauer = true
 
   it = findall(right_grp)
   K = base_field(class_fields[it[1]])

@@ -26,7 +26,8 @@ end
 
 function absolute_automorphism_group(C::ClassField, aut_gen_of_base_field::Array{NfToNfMor, 1})
   L = number_field(C)
-  aut_L_rel = rel_auto(C)::Vector{NfRelNSToNfRelNSMor{nf_elem}}
+  @vprint :ClassField 1 "Computing rel_auto "
+  @vtime :ClassField 1 aut_L_rel = rel_auto(C)::Vector{NfRelNSToNfRelNSMor{nf_elem}}
   if iscyclic(C) && length(aut_L_rel) > 1
     aut = aut_L_rel[1]
     for i = 2:length(aut_L_rel)
@@ -34,7 +35,8 @@ function absolute_automorphism_group(C::ClassField, aut_gen_of_base_field::Array
     end
     aut_L_rel = NfRelNSToNfRelNSMor{nf_elem}[aut]
   end
-  rel_extend = Hecke.new_extend_aut(C, aut_gen_of_base_field)
+  @vprint :ClassField 1 "Extending automorphisms"
+  @vtime :ClassField 1 rel_extend = Hecke.new_extend_aut(C, aut_gen_of_base_field)
   rel_gens = vcat(aut_L_rel, rel_extend)::Vector{NfRelNSToNfRelNSMor{nf_elem}}
   C.AbsAutGrpA = rel_gens
   return rel_gens::Vector{NfRelNSToNfRelNSMor{nf_elem}}
@@ -207,7 +209,8 @@ function new_extend_aut(A::ClassField, autos::Array{T, 1}) where T <: Map
   #P-Sylow subgroups are invariant, I can reduce to the prime power case.
   res = Array{NfRelNSToNfRelNSMor{nf_elem}, 1}(undef, length(autos))
   for (p, v) = lp.fac
-    imgs = extend_aut_pp(A, autos, p)
+    @vprint :ClassField 1 "Extending auto pp ..."
+    @vtime :ClassField 1 imgs = extend_aut_pp(A, autos, p)
     # The output are the images of the cyclic components in A.A
     indices = Array{Int, 1}(undef, length(imgs[1]))
     j = 1

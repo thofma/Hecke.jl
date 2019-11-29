@@ -31,6 +31,7 @@ function NumberField_using_Brauer(CF::ClassField{S, T}; redo::Bool = false) wher
   end
   CF.cyc = res
   CF.A = number_field(Generic.Poly{nf_elem}[x.A.pol for x = CF.cyc], check = false, cached = false)[1]
+  @vprint :ClassField 1 "NumberField_using_Brauer finished\n"
   return CF.A
 end
 
@@ -61,9 +62,13 @@ function ray_class_field_cyclic_pp_Brauer(CF::ClassField{S, T}, mQ::GrpAbFinGenM
       if !(err isa ExtendAutoError)
         rethrow(err)
       end
+      @vprint :ClassField 1 "Extending again ... "
       _rcf_S_units_enlarge(CFpp)
+      @vprint :ClassField "size is now $(length(CFpp.sup))\n"
       @hassert :ClassField 1 length(CFpp.sup) == length(unique(CFpp.sup))
+      @vprint :ClassField "Reducing ..."
       @vtime :ClassField 1 _rcf_reduce(CFpp)
+      @vprint :ClassField 1 "done\n"
     end
   end
 
