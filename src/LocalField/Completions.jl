@@ -684,9 +684,8 @@ function _unram_gen_images(K::AnticNumberField, p::fmpz, prec)
     H  = Hecke.factor_mod_pk_init(f, Int(p))
     lf = factor_mod_pk(H, prec)
 
-
-    fields = [QadicField(p, g, prec) for g = Set(degree(y) for y = keys(lf))]
-
+    # Note there is only one qadic field per degree here.
+    fields = [QadicField(p, d, prec) for d = Set(degree(y) for y = keys(lf))]
     rts = qadic[]
     for Q in fields
         for g = keys(lf)
@@ -795,8 +794,9 @@ function unramified_completions(K::AnticNumberField, p::fmpz, prec=10)
     # TODO: This is the last bastion of the qAdicConj structure!
     # Since in the unramified case we complete via factorizations, we first
     # construct the roots data needed to define/sharpen the extension.
-    C = qAdicConj(K, Int(p))    
-    R = roots(C.C, prec)    
+    #C = qAdicConj(K, Int(p))
+    #roots(C.C, prec)
+    R = _unram_gen_images(K, p, prec) 
     return [unramified_completion(K, rt, prec) for rt in R]
 end
 

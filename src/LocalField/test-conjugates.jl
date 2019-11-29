@@ -1,6 +1,8 @@
 using Test
 using Hecke
 
+include("old-qadic-conj.jl")
+
 @testset "Flint Hensel contexts are broken" begin
     # Specifically, for polynomials defining extensions with non-trivial ramification, it
     # goes very wrong.
@@ -20,6 +22,7 @@ end
     # (Number field over Rational Field with defining polynomial x^3-131*x^2+131*x-131, _$)
 
     C = qAdicConj(k, 31)
+    roots(C.C, 10)
 
     conjugate_fields = C.C.Q
     conjugate_fields = [conjugate_fields[1], conjugate_fields[1], conjugate_fields[2]]
@@ -33,8 +36,8 @@ end
 
     conj_test_values = [F(b) for (F,b) in zip(conjugate_fields, raw_values)]
 
-    @test vcat(Hecke.local_conjugates(a, fmpz(31))...) == conj_test_values
-
+    @test string(Set(vcat(Hecke.local_conjugates(a, fmpz(31))...))) == string(Set(conj_test_values))
+    
     lp = prime_decomposition(maximal_order(k), 37)
     # 2-element Array{Tuple{NfAbsOrdIdl{AnticNumberField,nf_elem},Int64},1}:
     #  (<37, _$+2>

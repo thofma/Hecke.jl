@@ -206,9 +206,9 @@ function __init__()
   global _get_automorphisms_nf_rel = t[1]
   global _set_automorphisms_nf_rel = t[2]
 
-  t = Hecke.create_accessors(AnticNumberField, Dict{Int, Tuple{qAdicRootCtx, Dict{nf_elem, Any}}}, get_handle())
-  global _get_nf_conjugate_data_qAdic = t[1]
-  global _set_nf_conjugate_data_qAdic = t[2]
+  #t = Hecke.create_accessors(AnticNumberField, Dict{Int, Tuple{qAdicRootCtx, Dict{nf_elem, Any}}}, get_handle())
+  #global _get_nf_conjugate_data_qAdic = t[1]
+  #global _set_nf_conjugate_data_qAdic = t[2]
 
   t = Hecke.create_accessors(AnticNumberField, Tuple{Int, Int}, get_handle())
   global _get_nf_signature = t[1]
