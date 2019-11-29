@@ -1,8 +1,23 @@
 
-#TODO: Update citation.
 
 # The root finding algorithm in this file is based off of Panayi's algorithm,
-# a description of which can be found here:  "krasner.pdf".
+# a description of which can be found here:
+#=
+\bib{MR1836924}{article}{
+   author={Pauli, Sebastian},
+   author={Roblot, Xavier-Fran\c{c}ois},
+   title={On the computation of all extensions of a $p$-adic field of a
+   given degree},
+   journal={Math. Comp.},
+   volume={70},
+   date={2001},
+   number={236},
+   pages={1641--1659},
+   issn={0025-5718},
+   review={\MR{1836924}},
+   doi={10.1090/S0025-5718-01-01306-0},
+}
+=#
 
 @doc Markdown.doc"""
     number_of_roots(K, f)
@@ -51,14 +66,14 @@ function number_of_roots(f::Hecke.Generic.Poly{<:NALocalFieldElem}, K::NALocalFi
     return number_of_roots(change_base_ring(K,f))
 end
 
-############################################################
 
-my_setprecision!(f,N) = f
+###############################################################################
+#
+#   Newton Lifiting methods.
+#
+###############################################################################
 
 
-# Should use a precision access function rather than a "__.N".
-
-#TODO: See if newton lift needs to be modified in characteristic `p`.
 function newton_lift(f::Hecke.Generic.Poly{T}, r::T, num_input_correct_digits=1::Integer) where T<:NALocalFieldElem
     rt = deepcopy(r)
     return newton_lift!(f, rt, num_input_correct_digits)
@@ -110,11 +125,6 @@ function newton_lift!(f::Hecke.Generic.Poly{T}, r::T, num_input_correct_digits=1
 
         test = deepcopy(df_at_r_inverse)
         
-        # NOTE: The correct functioning of this algorithm depends on setprecision!
-        # not obliterating the extra digits automatically.
-        my_setprecision!(fK, current_precision)
-        my_setprecision!(dfK, current_precision)
-
         mul!(expr_container, fK(r), df_at_r_inverse)
         sub!(r, r, expr_container)
 
@@ -146,46 +156,21 @@ function newton_lift(f::fmpz_poly, r::NALocalFieldElem, num_input_correct_digits
     return newton_lift(change_base_ring(K, f), r, num_input_correct_digits)
 end
 
+###############################################################################
+#
+#   Root finding methods.
+#
+###############################################################################
 
-#=
-function newton_lift(f::fmpz_poly, r::NALocalFieldElem)
-  Q = parent(r)
-  n = Q.prec_max
-  i = n
-  chain = [n]
-  while i>2
-    i = div(i+1, 2)
-    push!(chain, i)
-  end
-  fs = derivative(f)
-  qf = change_base_ring(Q, f, cached = false)
-  qfs = change_base_ring(Q, fs, cached = false)
-  o = Q(r)
-  o.N = 1
-  s = qf(r)
-    
-  setprecision!(qfs, 1)
-  o = inv(qfs(o))
-  @assert r.N == 1
-  for p = reverse(chain)
-    r.N = p
-    o.N = p
-    Q.prec_max = r.N
-    setprecision!(qf, r.N)
-    setprecision!(qfs, r.N)
-    r = r - qf(r)*o
-    if precision(r) >= n
-      Q.prec_max = n
-      return r
-    end
-    o = o*(2-qfs(r)*o)
-  end
-end
-=#
-
-# TODO: XXX: f is assumed to be "square-free".
+@doc Markdown.doc"""
+    integral_roots(f::Hecke.Generic.Poly{<:Hecke.NALocalFieldElem})
+Return an array of tuples `(root, multiplicity, condition_number)`, where `iszero(f(root))`
+for each root.
+"""
 function integral_roots(f::Hecke.Generic.Poly{<:Hecke.NALocalFieldElem})
 
+    iszero(f) && throw(DomainError(f, "Cannot compute roots of the zero polynomial."))
+    
     K = base_ring(parent(f))
     k, mp_struct = ResidueField(K)
 
@@ -193,12 +178,12 @@ function integral_roots(f::Hecke.Generic.Poly{<:Hecke.NALocalFieldElem})
     res  = mp_struct.f
     lift = mp_struct.g
 
-    x = gen(parent(f))
+    x  = gen(parent(f))
     pi = uniformizer(K)
     roots_type = elem_type(K)
     
     fprim = fprimitive_part(f)
-    fp = map_coeffs(res, fprim)
+    fp = map_coeffs(res, fprim) # type instability here.
 
     rts = roots(fp)
     
@@ -209,15 +194,30 @@ function integral_roots(f::Hecke.Generic.Poly{<:Hecke.NALocalFieldElem})
     elseif degree(fp) == 1
         # There is exactly one root, which can be Hensel lifted
         rr = lift(rts[1])
-        return [newton_lift(fprim,rr)]
+        rt = newton_lift(fprim,rr)
+        return [(rt[1], 1, rt[2])]
 
+    elseif iszero(coeff(fprim, 0))
+        
+        # TODO: Prove the following lemma:
+        # `f` has a root of multiplicity >= m if and only if some recursive call `g` is
+        # divisible by `x^m`. Moreover, the first recursive call for which this happens
+        # is the correct multiplicity.
+
+        rt_mul = findfirst(!iszero, coefficients(f))::Int - 1
+        cond_num = precision(K) // rt_mul
+        f_new = polynomial([coeff(f,i) for i=(rt_mul+1):degree(f)])
+        
+        return vcat([(zero(K), rt_mul, cond_num)], integral_roots(f_new))
     else
         # There are multiple roots in the unit disk. Zoom in on each.
         roots_out = roots_type[]
         for beta in rts
             beta_lift = lift(beta)
-            roots_near_beta = integral_roots( fprim(pi*x + beta_lift) )
-            roots_out = vcat(roots_out, [(pi*r[1] + beta_lift,r[2]) for r in roots_near_beta] )
+            new_f = fprim(pi*x + beta_lift)
+                        
+            roots_near_beta = integral_roots(new_f)
+            roots_out = vcat(roots_out, [(pi*r[1] + beta_lift, 1, r[2]) for r in roots_near_beta])
         end
         
         return roots_out
@@ -243,4 +243,14 @@ end
 
 function integral_roots(f, K::Hecke.Field)
     return integral_roots(change_base_ring(K,f))
+end
+
+function any_root(f::fmpz_poly, Q::FlintQadicField)
+    # NOTE: Both a Hensel factorization and a newton iteration are required to refine the roots,
+    #       since the Hensel context only works for polynomials over ZZ.
+    k, mk = ResidueField(Q)
+    rts = roots(f, k)
+    isempty(rts) && throw(DomainError((f,Q), "Polynomial has no roots in $Q."))
+    
+    return newton_lift(f, preimage(mk, rts[1]))
 end

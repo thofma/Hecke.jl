@@ -108,21 +108,6 @@ end
 The roots of $f$ in $Q$, $f$ has to be square-free (at least the roots have to be simple roots).    
 """
 
-# NOTE: Both a Hensel factorization and a newton iteration are required to refine the roots,
-#       since the Hensel context only works for polynomials over ZZ.
-function roots(f::fmpz_poly, Q::FlintQadicField; max_roots::Int = degree(f))
-    k, mk = ResidueField(Q)
-    rt = roots(f, k)
-    RT = qadic[]
-    for r = rt
-        new_rt, cond = newton_lift(f, preimage(mk, r))
-        push!(RT, new_rt)
-        if length(RT) >= max_roots
-            return RT
-        end
-    end
-    return RT
-end
 
 function roots(C::qAdicRootCtx, n::Int = 10)
   if isdefined(C, :R) && all(x -> x.N >= n, C.R)

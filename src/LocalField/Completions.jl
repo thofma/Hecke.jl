@@ -662,13 +662,11 @@ function unramified_completion(K::AnticNumberField, P::NfOrdIdl, prec=10; skip_m
 end
 
 # Find the first unramified completion over `p` such that `predicate(Kp,inj)` is `true`.
-# the default value of predicate is `x->false`
-function unramified_completion(K::AnticNumberField, p::fmpz, predicate=x->false, prec=10;
+# the default value of predicate is `(x,y)->false`
+function unramified_completion(K::AnticNumberField, p::fmpz, predicate=(x,y)->false, prec=10;
                                skip_map_inverse=false)
 
-    C = qAdicConj(K, Int(p))
-    R = roots(C.C, prec)    
-    
+    R = _unram_gen_images(K,p,prec)    
     for rt in R
         (Kp, inj) = unramified_completion(K, rt, prec, skip_map_inverse=true)
         if predicate(Kp,inj)
@@ -676,6 +674,29 @@ function unramified_completion(K::AnticNumberField, p::fmpz, predicate=x->false,
         end
     end
     error("Predicate is false for every unramified completion.")
+end
+
+""" Compute the different q-adic roots of K.pol"""
+function _unram_gen_images(K::AnticNumberField, p::fmpz, prec)
+    
+    # TODO: The Hensel context will fail if K.pol is a power modulo p.
+    f = change_base_ring(FlintZZ, K.pol)
+    H  = Hecke.factor_mod_pk_init(f, Int(p))
+    lf = factor_mod_pk(H, prec)
+
+
+    fields = [QadicField(p, g, prec) for g = Set(degree(y) for y = keys(lf))]
+
+    rts = qadic[]
+    for Q in fields
+        for g = keys(lf)
+            if degree(g) == degree(Q)
+                push!(rts, any_root(g, Q)[1])
+            end
+        end
+    end
+
+    return rts
 end
 
 
