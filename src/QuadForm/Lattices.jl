@@ -103,7 +103,7 @@ function quadratic_lattice(K::NumField, B::MatElem; gram_ambient_space = nothing
 end
 
 @doc Markdown.doc"""
-    quadratic_lattice(V::QuadSpace, B::PMat) -> QuadLat
+    lattice(V::QuadSpace, B::PMat) -> QuadLat
 
 Given a quadratic space $V$ and a pseudo-matrix $B$, returns the quadratic lattice
 spanned by the pseudo-matrix $B$ inside $V$.
@@ -119,7 +119,7 @@ function lattice(V::QuadSpace, B::PMat)
 end
 
 @doc Markdown.doc"""
-    quadratic_lattice(V::QuadSpace, B::MatElem) -> QuadLat
+    lattice(V::QuadSpace, B::MatElem) -> QuadLat
 
 Given a quadratic space $V$ and a matrix $B$, returns the quadratic lattice
 spanned by the rows of $B$ inside $V$.
@@ -255,7 +255,7 @@ function hermitian_lattice(K::NumField, B::MatElem; gram_ambient_space = nothing
 end
 
 @doc Markdown.doc"""
-    hermitian_lattice(V::HermSpace, B::PMat) -> HermLat
+    lattice(V::HermSpace, B::PMat) -> HermLat
 
 Given a hermitian space $V$ and a pseudo-matrix $B$, returns the hermitian lattice
 spanned by the pseudo-matrix $B$ inside $V$.
@@ -273,7 +273,7 @@ function lattice(V::HermSpace, B::PMat)
 end
 
 @doc Markdown.doc"""
-    hermitian_lattice(V::QuadSpace, B::MatElem) -> HermLat
+    lattice(V::QuadSpace, B::MatElem) -> HermLat
 
 Given a Hermitian space $V$ and a matrix $B$, returns the Hermitian lattice
 spanned by the rows of $B$ inside $V$.
@@ -334,7 +334,7 @@ end
 @doc Markdown.doc"""
     has_ambient_space(L::AbsLat) -> Bool
 
-Returns wether the ambient space of $L$ is known.
+Returns whether the ambient space of $L$ is known.
 """
 function has_ambient_space(L::AbsLat)
   return isdefined(L, :space)
@@ -350,7 +350,7 @@ function ambient_space(L::AbsLat)
   if has_ambient_space(L)
     return L.space
   else
-    throw(error("Ambient quadratic space not defined"))
+    throw(error("Ambient space not defined"))
   end
 end
 
@@ -412,11 +412,26 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    pseudo_matrix(L::Abs) -> PMat
+    pseudo_matrix(L::AbsLat) -> PMat
 
 Returns the basis pseudo-matrix of $L$.
 """
 pseudo_matrix(L::AbsLat) = L.pmat
+
+@doc Markdown.doc"""
+    pseudo_basis(L::AbsLat) -> Vector{Tuple{Vector, Ideal}}
+
+Returns the pseudo-basis of $L$.
+"""
+function pseudo_basis(L::AbsLat)
+  M = matrix(pseudo_matrix(L))
+  LpM = pseudo_matrix(L)
+  z = Vector{Tuple{Vector{elem_type(base_ring(M))}, eltype(coefficient_ideals(LpM))}}(undef, nrows(M))
+  for i in 1:nrows(M)
+    z[i] = (elem_type(base_ring(M))[ M[i, j] for j in 1:ncols(M) ], coefficient_ideals(LpM)[i])
+  end
+  return z
+end
 
 @doc Markdown.doc"""
     coefficient_ideals(L::Abs) -> Vector{NfOrdIdl}
@@ -764,7 +779,15 @@ end
 Returns a $\mathbf{Z}$-basis of $L$.
 """
 function absolute_basis(L::AbsLat)
-  throw(NotImplemented())
+  pb = pseudo_basis(L)
+  z = Vector{typeof(pb[1][1])}()
+  for (v, a) in pb
+    for w in absolute_basis(a)
+      push!(z, w .* v)
+    end
+  end
+  @assert length(z) == absolute_degree(base_field(L)) * rank(L)
+  return z
 end
 
 @doc Markdown.doc"""
@@ -773,7 +796,20 @@ end
 Returns a $\mathbf{Z}$-basis matrix of $L$.
 """
 function absolute_basis_matrix(L::AbsLat)
-  throw(NotImplemented())
+  pb = pseudo_basis(L)
+  E = base_field(L)
+  c = ncols(matrix(pseudo_matrix(L)))
+  z = zero_matrix(E, rank(L) * absolute_degree(E), c)
+  k = 1
+  for (v, a) in pb
+    for w in absolute_basis(a)
+      for j in 1:c
+        z[k, j] = w * v[j]
+      end
+      k += 1
+    end
+  end
+  return z
 end
 
 ################################################################################
@@ -964,11 +1000,22 @@ $\mathfrak{p}^v$-modular.
 """
 function ismodular(L::AbsLat, p)
   a = scale(L)
-  v = valuation(a, p)
-  if v * rank(L) == valuation(volume(L), p)
-    return true, v
+  if base_ring(L) == order(p)
+    v = valuation(a, p)
+    if v * rank(L) == valuation(volume(L), p)
+      return true, v
+    else
+      return false, 0
+    end
   else
-    return false, 0
+    @assert base_ring(base_ring(L)) == order(p)
+    q = prime_decomposition(base_ring(L), p)[1][1]
+    v = valuation(a, q)
+    if v * rank(L) == valuation(volume(L), q)
+      return true, v
+    else
+      return false, 0
+    end
   end
 end
 
@@ -1384,6 +1431,14 @@ function islocally_isometric(L::QuadLat, M::QuadLat, p::NfOrdIdl)
 
   return true
 end
+
+################################################################################
+#
+#  Isotropy
+#
+################################################################################
+
+isisotropic(L::AbsLat, p) = isisotropic(rational_span(L), p)
 
 ################################################################################
 #
@@ -2262,7 +2317,8 @@ end
 function absolute_basis(I::NfRelOrdFracIdl)
   res = elem_type(nf(order(I)))[]
   pb = pseudo_basis(I)
-  for (e, I) in pb
+  for i in 1:length(pb)
+    (e, I) = pb[i]
     for b in absolute_basis(I)
       push!(res, e * b)
     end
