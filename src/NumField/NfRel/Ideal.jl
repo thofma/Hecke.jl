@@ -534,6 +534,8 @@ function +(a::NfRelOrdIdl{T, S}, b::NfRelOrdIdl{T, S}) where {T, S}
   return ideal(order(a), H, false, true)
 end
 
+gcd(a::NfRelOrdIdl{T, S}, b::NfRelOrdIdl{T, S}) where {T, S} = a + b
+
 ################################################################################
 #
 #  Ideal multiplication

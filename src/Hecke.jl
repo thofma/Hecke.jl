@@ -56,7 +56,7 @@ using LinearAlgebra, Markdown, InteractiveUtils, Libdl, Distributed, Printf, Spa
 
 import AbstractAlgebra
 
-import LinearAlgebra: dot, istriu, nullspace, rank
+import LinearAlgebra: dot, istriu, nullspace, rank, ishermitian
 
 import SparseArrays: nnz
 
