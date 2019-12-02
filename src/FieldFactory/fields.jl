@@ -90,13 +90,15 @@ function permutations(G::Array{Hecke.NfToNfMor, 1})
   dK = degree(K)
   d = numerator(discriminant(K.pol))
   p = 11
-  while mod(d, p) == 0
-    p = next_prime(p)
-  end
   R = GF(p, cached = false)
   Rx, x = PolynomialRing(R, "x", cached = false)
   fmod = Rx(K.pol)
-
+  while iszero(discriminant(fmod))
+    p = next_prime(p)
+    R = GF(p, cached = false)
+    Rx, x = PolynomialRing(R, "x", cached = false)
+    fmod = Rx(K.pol)
+  end
 
   pols = gfp_poly[x]
   gpol = Rx(G[1].prim_img)
@@ -159,7 +161,7 @@ function permutations(G::Array{Hecke.NfToNfMor, 1})
   for i = 1:n
     permutations[i] = Vector{Int}(undef, dK)
   end
-  gen_pols = [Rx(x.prim_img) for x in G]
+  gen_pols = gfp_poly[Rx(x.prim_img) for x in G]
   D = Dict{gfp_poly, Int}(Dcreation)
   for s = 1:n
     for i = 1:length(pols)
@@ -412,6 +414,7 @@ end
 function check_group_extension(TargetGroup::Main.ForeignGAP.MPtr, autos::Array{NfToNfMor, 1}, res_act::Array{GrpAbFinGenMap, 1})
   
   GS = domain(res_act[1])
+  @assert issnf(GS)
   expo = Int(GS.snf[end])
   K = domain(autos[1])
   d = degree(K)
@@ -420,6 +423,10 @@ function check_group_extension(TargetGroup::Main.ForeignGAP.MPtr, autos::Array{N
   if com == 1  
     # I only need to check the split extension, since the second cohomology group is
     # trivial, regardless of the action
+    if length(res_act) == 1 && ngens(GS) == 1 && iscoprime(d, order(GS))
+      #Just need to check if the action is non trivial
+      return !isone(mod(res_act[1].map[1, 1], GS.snf[1]))
+    end
     H = _split_extension(autos, res_act)
     return GAP.Globals.IdGroup(H) == TargetGroup
   end
@@ -484,7 +491,7 @@ function field_extensions(x::FieldsTower, bound::fmpz, IsoE1::Main.ForeignGAP.MP
     @vprint :FieldsNonFancy 1 "Number of new fields found: 0\n"
     return Vector{FieldsTower}()
   end
-  list = from_class_fields_to_fields(list_cfields, x.generators_of_automorphisms, grp_to_be_checked)
+  list = from_class_fields_to_fields(list_cfields, x.generators_of_automorphisms, grp_to_be_checked, IsoG)
   @vprint :Fields 1 "Computing maximal orders"
   @vprint :FieldsNonFancy 1 "Computing maximal orders\n"
   final_list = Vector{FieldsTower}(undef, length(list))
@@ -497,6 +504,7 @@ function field_extensions(x::FieldsTower, bound::fmpz, IsoE1::Main.ForeignGAP.MP
     previous_fields[end] = embed 
     final_list[j] = FieldsTower(fld, autos, previous_fields)
   end
+
   @vprint :Fields 1 "$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())"
   @vprint :Fields 1 "Number of new fields found: $(length(final_list))\n\n"
   @vprint :FieldsNonFancy 1 "Number of new fields found: $(length(final_list))\n"
@@ -628,14 +636,12 @@ function fields(list::Vector{FieldsTower}, G, absolute_bound::fmpz; only_real::B
     invariants = map(Int, lG.snf) 
     onlyreal = (lvl > i || only_real)
     #First, I search for obstruction.
-    if iscyclic(lG) 
-      @vprint :Fields 1 "Computing obstructions\n"
-      @vprint :FieldsNonFancy 1 "Computing obstructions\n"
-      #@vtime :Fields 1 
-      list = check_Brauer_obstruction(list, L, i, invariants[1])
-      @vprint :Fields 1 "Fields to check: $(length(list))\n\n"
-      @vprint :FieldsNonFancy 1 "Fields to check: $(length(list))\n\n"
-    end
+    @vprint :Fields 1 "Computing obstructions\n"
+    @vprint :FieldsNonFancy 1 "Computing obstructions\n"
+    #@vtime :Fields 1 
+    list = check_Brauer_obstruction(list, L, i, invariants)
+    @vprint :Fields 1 "Fields to check: $(length(list))\n\n"
+    @vprint :FieldsNonFancy 1 "Fields to check: $(length(list))\n\n"
     if isempty(list)
       return FieldsTower[]
     end
@@ -646,5 +652,73 @@ function fields(list::Vector{FieldsTower}, G, absolute_bound::fmpz; only_real::B
       return FieldsTower[]
     end
   end
+  if first
+    error("The fields given can not be extended!")
+  end
   return list
+end
+
+function new_fields_direct_product(g1, g2, red, redfirst, absolute_bound; only_real = false, simplify = true)
+  b1 = root(absolute_bound, g2[1])
+  b2 = root(absolute_bound, g1[1])
+  @vprint :Fields 1 "The Galois group is the product of $(g1) and $(g2)\n"
+  l2 = new_fields(g2[1], g2[2], b2, only_real = only_real)
+  if isempty(l2)
+    return FieldsTower[]
+  end
+  if g1 == g2
+    return _merge(l2, l2, absolute_bound, red, redfirst)
+  end
+  l1 = new_fields(g1[1], g1[2], b1, only_real = only_real)
+  if isempty(l1)
+    return FieldsTower[]
+  end
+  return _merge(l1, l2, absolute_bound, red, redfirst)
+end
+
+
+function new_fields(a::Int, b::Int, absolute_bound::fmpz; only_real::Bool = false, simplify::Bool = true)
+  if a == 1
+    @assert b == 1
+    Qx, x = PolynomialRing(FlintQQ, "x", cached = false)
+    K, a = NumberField(x-1, cached = false)
+    g = NfToNfMor(K, K, K(1))
+    return FieldsTower[FieldsTower(K, NfToNfMor[g], Array{NfToNfMor, 1}())]
+  end
+  G = GAP.Globals.SmallGroup(a, b)
+  g1, g2, red, redfirst = direct_product_decomposition(G, (a, b))
+  if g2 != (1, 1)    
+    return new_fields_direct_product(g1, g2, red, redfirst, absolute_bound; only_real = false)
+  end
+
+  L = GAP.Globals.DerivedSeries(G)
+  G1 = GAP.Globals.FactorGroup(L[1], L[end-1])
+  invariants = GAP.gap_to_julia(Vector{Int}, GAP.Globals.AbelianInvariants(L[end-1]))
+  lG = snf(DiagonalGroup(invariants))[1]
+  invariants = map(Int, lG.snf)
+  if GAP.Globals.IsAbelian(G)
+    @vprint :Fields 1 "computing abelian extension of Q with invariants $(invariants) and bound ~10^$(clog(absolute_bound, 10))\n"
+    @vprint :FieldsNonFancy 1 "Doing Group ($a, $b) with bound $absolute_bound\n"
+    return abelian_extensionsQQ(invariants, absolute_bound, only_real)
+  end
+  lvl = _real_level(L)
+  IdGroupGAP = GAP.Globals.IdGroup(G1)
+  IdGroup = GAP.gap_to_julia(Vector{Int}, IdGroupGAP)
+  bound = root(absolute_bound, prod(invariants))
+  list = new_fields(IdGroup[1], IdGroup[2], bound; only_real = (only_real || lvl == length(L)-1))
+  @vprint :Fields 1 "computing extensions with Galois group ($a, $b) and bound ~10^$(clog(absolute_bound, 10))\n"
+  @vprint :Fields 1 "Number of fields at this step: $(length(list)) \n"
+  @vprint :FieldsNonFancy 1 "Number of fields at this step: $(length(list)) \n"
+  
+  @vprint :Fields 1 "Computing obstructions\n"
+  @vprint :FieldsNonFancy 1 "Computing obstructions\n"
+  #@vtime :Fields 1 
+  list = check_Brauer_obstruction(list, L, length(L)-1, invariants)
+  @vprint :Fields 1 "Fields to check: $(length(list))\n\n"
+  @vprint :FieldsNonFancy 1 "Fields to check: $(length(list))\n\n"
+  if isempty(list)
+    return FieldsTower[]
+  end
+  Id = GAP.Globals.IdGroup(G)
+  return field_extensions(list, absolute_bound, Id, invariants, only_real, simplify)
 end

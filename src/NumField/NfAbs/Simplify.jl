@@ -443,7 +443,6 @@ function _lll_for_simplify(M::NfOrd; prec = 100)
   if isdefined(M, :gen_index)
     On.gen_index = M.gen_index
   end
-  On.signature = M.signature
   if fl
     M.lllO = On
     return On

@@ -56,17 +56,17 @@ function NumberField(f::fmpq_poly; cached::Bool = true, check::Bool = true)
 end
 
 function NumberField(f::fmpz_poly, s::Symbol; cached::Bool = true, check::Bool = true)
-  Qx, x = PolynomialRing(FlintQQ, string(parent(f).S))
+  Qx = Globals.Qx
   return NumberField(Qx(f), String(s), cached = cached, check = check)
 end
 
 function NumberField(f::fmpz_poly, s::AbstractString; cached::Bool = true, check::Bool = true)
-  Qx, x = PolynomialRing(FlintQQ, string(parent(f).S))
+  Qx = Globals.Qx
   return NumberField(Qx(f), s, cached = cached, check = check)
 end
 
 function NumberField(f::fmpz_poly; cached::Bool = true, check::Bool = true)
-  Qx, x = PolynomialRing(FlintQQ, string(parent(f).S))
+  Qx = Globals.Qx
   return NumberField(Qx(f), cached = cached, check = check)
 end
 
@@ -81,7 +81,7 @@ function radical_extension(n::Int, gen::Integer; cached::Bool = true, check::Boo
 end
 
 function radical_extension(n::Int, gen::fmpz; cached::Bool = true, check::Bool = true)
-  kx, x = FlintQQ["x"]
+  x = gen(Globals.Qx)
   return number_field(x^n - gen, cached = cached, check = check)
 end
 
@@ -102,7 +102,7 @@ Returns the field with defining polynomial $x^n + \sum_{i=0}^{n-1} (-1)^{n-i}Bx^
 These fields tend to have non-trivial class groups.
 """
 function wildanger_field(n::Int, B::fmpz; check::Bool = true, cached::Bool = true)
-  Qx, x = PolynomialRing(FlintQQ, "x", cached = false)
+  x = gen(Globals.Qx)
   f = x^n
   for i=0:n-1
     f += (-1)^(n-i)*B*x^i
@@ -121,7 +121,7 @@ end
 Returns the field with defining polynomial $x^n -d$.
 """
 function quadratic_field(d::fmpz; cached::Bool = true, check::Bool = true)
-  Qx, x = PolynomialRing(FlintQQ)
+  x = gen(Globals.Qx)
   if nbits(d) > 100
     a = div(d, fmpz(10)^(ndigits(d, 10) - 4))
     b = mod(abs(d), 10^4)
@@ -148,7 +148,7 @@ function quadratic_field(d::Integer; cached::Bool = true, check::Bool = true)
 end
 
 function rationals_as_number_field()
-  Qx, x = FlintQQ["x"]
+  x = gen(Globals.Qx)
   return number_field(x-1)
 end
 

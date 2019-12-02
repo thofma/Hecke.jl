@@ -458,8 +458,8 @@ end
 @doc Markdown.doc"""
     complex_conjugation(K::AnticNumberField)
 
-Given a totally complex normal number field, this function returns the
-automorphism which is the restrition of complex conjugation.
+Given a totally complex normal number field, this function returns an
+automorphism which is the restrition of complex conjugation at one embedding.
 """
 function complex_conjugation(K::AnticNumberField)
   A = automorphisms(K)
@@ -470,34 +470,35 @@ function complex_conjugation(K::AnticNumberField)
   d = degree(K)
   !istotally_complex(K) && error("Number field must be totally complex")
   imgs = Vector{nf_elem}(undef, d)
-
   for i in 1:d
-    imgs[i] = A[i](a)
+    imgs[i] = A[i].prim_img
   end
-
+  #First, quick and dirty. If only one automorphism works, then we return it
   p = 32 
-
+  
   while true
     c = conjugates(a, p)
-    cc = Vector{acb}[ conj.(conjugates(imgs[i], p)) for i in 1:d ]
-    for i in 1:d
-      if !overlaps(c[d], cc[i][d])
+    for i = 1:d
+      if !isinvolution(A[i])
         continue
       end
-      found = true
-      for j in 1:d
-        if j == i
-          continue
+      cc = conj.(conjugates(imgs[i], p))
+      for k = 1:d
+        if overlaps(c[k], cc[k])
+          found = true
+          for j = 1:d
+            if j == k
+              continue
+            end
+            if overlaps(c[j], cc[k])
+              found = false
+              break
+            end
+          end
+          if found
+            return A[i]
+          end
         end
-        if overlaps(c[d], cc[j][d])
-          found = false
-          break
-        end
-      end
-      if !found
-        continue
-      else
-        return A[i]
       end
     end
     p = 2 * p
@@ -505,8 +506,8 @@ function complex_conjugation(K::AnticNumberField)
       error("Precision too high in complex_conjugation")
     end
   end
+  error("something went wrong!")
 end
-
 
 function iscomplex_conjugation(f::NfToNfMor)
   K = domain(f)

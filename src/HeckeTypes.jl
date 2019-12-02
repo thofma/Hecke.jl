@@ -543,17 +543,17 @@ mutable struct FacElemMon{S} <: Ring
 
   function FacElemMon{AnticNumberField}(R::AnticNumberField, cached::Bool = true)
     if haskey(FacElemMonDict, R)
-      return FacElemMonDict[R]::FacElemMon{S}
+      return FacElemMonDict[R]::FacElemMon{AnticNumberField}
     end
     try
-      F = _get_fac_elem_mon_of_nf(R)
+      F = _get_fac_elem_mon_of_nf(R)::FacElemMon{AnticNumberField}
       return F
     catch e
       if !isa(e, AccessorNotSetError)
         rethrow(e)
       end
     end
-    z = new()
+    z = new()::FacElemMon{AnticNumberField}
     z.base_ring = R
     z.basis_conjugates_log = Dict{RingElem, Array{arb, 1}}()
     z.basis_conjugates = Dict{RingElem, Array{arb, 1}}()
@@ -627,7 +627,7 @@ mutable struct NfAbsOrd{S, T} <: Ring
                                    #  in the given order)
   disc::fmpz                       # Discriminant
   isequation_order::Bool           # Equation order of ambient number field?
-  signature::Tuple{Int, Int}       # Signature of the ambient number field
+  #signature::Tuple{Int, Int}       # Signature of the ambient number field
                                    # (-1, 0) means "not set"
   #conjugate_data::acb_root_ctx
   minkowski_matrix::Tuple{arb_mat, Int}        # Minkowski matrix
@@ -668,7 +668,7 @@ mutable struct NfAbsOrd{S, T} <: Ring
     # "Default" constructor with default values.
     r = new{S, elem_type(S)}()
     r.nf = a
-    r.signature = (-1,0)
+    #r.signature = (-1,0)
     r.primesofmaximality = Vector{fmpz}()
     r.norm_change_const = (-1.0, -1.0)
     r.auxilliary_data = Array{Any}(undef, 10)

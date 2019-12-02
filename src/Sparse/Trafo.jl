@@ -473,11 +473,11 @@ function apply_right!(x::Vector{T}, t::SparseTrafoElem{T, S}) where {T, S}
     x[t.i] = r
     x[t.j] = s
   elseif i == 5
-    s = matrix(parent(x[1]), 1, nrows(t.U), x[t.rows])
+    sm = matrix(parent(x[1]), 1, nrows(t.U), x[t.rows])
     #println("s :$s")
-    s = s*t.U
+    sm = sm*t.U
     for (i, j) in zip(t.rows,1:nrows(t.U))
-      x[i] = s[1, j]
+      x[i] = sm[1, j]
     end
   elseif i == 6
     for j in t.j:-1:t.i+1

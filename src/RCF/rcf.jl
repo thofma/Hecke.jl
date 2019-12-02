@@ -368,7 +368,7 @@ function find_gens(K::KummerExt, S::PrimesSet, cp::fmpz=fmpz(1))
     end
     local f::GrpAbFinGenElem
     try
-      f = can_frobenius1(P, K)
+      f = can_frobenius(P, K)
     catch e
       if !isa(e, BadPrime)
         rethrow(e)
@@ -415,7 +415,7 @@ function find_gens(K::KummerExt, S::PrimesSet, cp::fmpz=fmpz(1))
     f = R[1]
     for (P, e) = lP
       try
-        f = can_frobenius1(P, K)
+        f = can_frobenius(P, K)
       catch e
         if !isa(e, BadPrime)
           rethrow(e)
@@ -633,9 +633,9 @@ end
 
 function _rcf_find_kummer(CF::ClassField_pp{S, T}) where {S, T}
 
-  if isdefined(CF, :K)
-    return nothing
-  end
+  #if isdefined(CF, :K)
+  #  return nothing
+  #end
   f = defining_modulus(CF)[1]
   @vprint :ClassField 2 "Kummer extension with modulus $f\n"
   k1 = base_field(CF)
@@ -821,6 +821,8 @@ function _aut_A_over_k(C::CyclotomicExt, CF::ClassField_pp)
   
 end
 
+struct ExtendAutoError <: Exception end
+
 function _extend_auto(K::Hecke.NfRel{nf_elem}, h::Hecke.NfToNfMor)
   @hassert :ClassField 1 iskummer_extension(K)
   #@assert iskummer_extension(K)
@@ -846,12 +848,16 @@ function _extend_auto(K::Hecke.NfRel{nf_elem}, h::Hecke.NfToNfMor)
   if r <= div(degree(K), 2)
     a = h(a)//a^r
     @vtime :ClassField 3 fl, b = ispower(a, degree(K), with_roots_unity = true)
-    @assert fl
+    if !fl
+      throw(ExtendAutoError())
+    end
     return NfRelToNfRelMor(K, K, h, b*gen(K)^r)
   else
     a = h(a)*(a^(degree(K)-r))
     @vtime :ClassField 3 fl, b = ispower(a, degree(K), with_roots_unity = true)
-    @assert fl
+    if !fl
+      throw(ExtendAutoError())
+    end
     return NfRelToNfRelMor(K, K, h, b*gen(K)^(r-degree(K)))
   end
 end
@@ -1060,7 +1066,7 @@ is also mot permitted (and will produce a {{{BadPrime}}} error.
 """
 function extend_easy(f::Hecke.NfOrdToFqNmodMor, K::AnticNumberField)
   nf(domain(f)) != K && error("Number field is not the number field of the order")
-  return NfToFqMor_easy(f, K)
+  return NfToFqNmodMor_easy(f, K)
 end
 
 #a stop-gap, mainly for non-monic polynomials

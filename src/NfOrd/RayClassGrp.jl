@@ -302,26 +302,34 @@ function _preproc(p::NfOrdIdl, elems::Array{FacElem{nf_elem, AnticNumberField},1
   return newelems
 end
 
+
 function _powmod(a::nf_elem, i::Int, p::fmpz)
   if iszero(i)
     return one(parent(a))
-  end
-  if isone(i)
+  elseif isone(i)
     b = mod(a, p)
     return b
+  else
+    bit = ~((~UInt(0)) >> 1)
+    while (UInt(bit) & i) == 0
+      bit >>= 1
+    end
+    z = deepcopy(a)
+    bit >>= 1
+    while bit != 0
+      mul!(z, z, z)
+      z = mod(z, p)
+      if (UInt(bit) & i) != 0
+        mul!(z, z, a)
+        z = mod(z, p)
+      end
+      bit >>= 1
+    end
+    return z
   end
-  if iseven(i)
-    j = div(i, 2)
-    b = _powmod(a, j, p)
-    mul!(b, b, b)
-    b = mod(b, p)
-    return b
-  end
-  b1 = _powmod(a, i - 1, p)
-  mul!(b1, b1, a)
-  b = mod(b1, p)
-  return b
 end
+
+
 
 function _ev_quo(Q, mQ, elems, p, exponent, multiplicity::Int)
   el = elem_type(Q)[one(Q) for i = 1:length(elems)]

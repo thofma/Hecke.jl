@@ -1128,3 +1128,12 @@ function factor(f::PolyElem{NfAbsNSElem})
   return r
 end
 
+################################################################################
+#
+#  Hashing
+#
+################################################################################
+
+function Base.hash(a::NfAbsNSElem, h::UInt)
+  return Base.hash(a.data, h)
+end

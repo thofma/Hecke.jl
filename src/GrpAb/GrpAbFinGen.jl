@@ -546,8 +546,8 @@ function direct_product(G::GrpAbFinGen...
   Dp = AbelianGroup(cat([rels(x) for x = G]..., dims = (1,2)))
 
   set_special(Dp, :direct_product =>G, :show => show_direct_product)
-  inj = []
-  pro = []
+  inj = GrpAbFinGenMap[]
+  pro = GrpAbFinGenMap[]
   j = 0
   for g = G
     if task in [:sum, :both]
@@ -1737,12 +1737,9 @@ function induce_action_on_subgroup(mS::GrpAbFinGenMap, acts::Vector{GrpAbFinGenM
   return res
 end
 
-
-
-
-function fixed_subgroup(f::GrpAbFinGenMap)
+function fixed_subgroup(f::GrpAbFinGenMap, to_lattice::Bool = true)
   @assert domain(f) == codomain(f)
-  return kernel(f - id_hom(domain(f)))
+  return kernel(f - id_hom(domain(f)), to_lattice)
 end
 
 function isfixed_point_free(act::Vector{GrpAbFinGenMap})

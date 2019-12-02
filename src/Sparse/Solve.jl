@@ -285,7 +285,7 @@ function solve_dixon_sf(A::SMat{fmpz}, B::SMat{fmpz}, is_int::Bool = false)
     bp = change_ring(b, R)
 
     sol = sparse_row(FlintZZ)
-    last = (sol, 1)
+    last = (sol, fmpz(1))
 
     while true
       bp = mul(bp, Tp)

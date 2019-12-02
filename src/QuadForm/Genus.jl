@@ -8,6 +8,9 @@ export genus, representative, rank, det, uniformizer, det_representative,
 #
 ################################################################################
 
+add_verbose_scope(:Lattice)
+add_assert_scope(:Lattice)
+
 # Need to make this type stable once we have settled on a design
 mutable struct LocalGenusHerm{S, T}
   E::S                                # Field
@@ -469,16 +472,23 @@ Returns the genus of $L$ at the prime ideal $\mathfrak p$.
 
 See [Kir16, Definition 8.3.1].
 """
-function genus(L::HermLat, p)
+function genus(L::HermLat, q)
+  if order(q) != base_ring(base_ring(L))
+    p = minimum(q)
+  else
+    p = q
+  end
+  
   sym = _genus_symbol(L, p)
   G = genus(HermLat, nf(base_ring(L)), p, sym)
   # Just for debugging 
-  if isdyadic(G) && isramified(G)
-    GG = _genus_symbol_kirschmer(L, p)
-    for i in 1:length(G)
-      @assert GG[i][4] == G.ni[i]
+  @hassert :Lattice 1 begin
+    if isdyadic(G) && isramified(G)
+      GG = _genus_symbol_kirschmer(L, p)
+      all(i -> GG[i][4] == G.ni[i], 1:length(G))
+    else
+      true
     end
-    #
   end
   return G
 end
@@ -596,7 +606,13 @@ function ==(G1::LocalGenusHerm, G2::LocalGenusHerm)
   return true
 end
 
-function _genus_symbol(L::HermLat, p)
+function _genus_symbol(L::HermLat, q)
+  if order(q) != base_ring(base_ring(L))
+    p = minimum(q)
+  else
+    p = q
+  end
+  @show p
   @assert order(p) == base_ring(base_ring(L))
   B, G, S = jordan_decomposition(L, p)
   R = base_ring(L)
@@ -680,6 +696,43 @@ function ==(G1::GenusHerm, G2::GenusHerm)
   return true
 end
 
+function Base.show(io::IO, G::GenusHerm)
+  print(io, "Genus symbol over")
+  print(io, G.E)
+  print(io, "\n", "and local genera",)
+  for g in G.LGS
+    print(io, "\n")
+    print(IOContext(io, :compact => true), prime(g), " => ", g)
+  end
+  print(io, "\n and signature")
+  for (pl, v) in G.signatures
+    print(io, "\n")
+    _print_short(io, pl.r)
+    print(io, " => ")
+    print(io, v)
+  end
+end
+
+function _print_short(io::IO, a::arb)
+  r = BigFloat(a)
+  s = string(r)
+  if length(s) >= 10
+    ss = s[1:9] * "…"
+  else
+    ss = s
+  end
+  print(io, ss)
+end
+
+function _print_short(io::IO, a::acb)
+  _print_short(io, real(a))
+  if !iszero(imag(a))
+    print(io, " + ")
+    _print_short(io, imag(a))
+    print(io, " * i")
+  end
+end
+
 ################################################################################
 #
 #  Test if lattice is contained in genus
@@ -708,6 +761,12 @@ function Base.show(io::IO, ::MIME"text/plain", G::GenusHerm)
     if i < length(G.primes)
       print(io, "\n")
     end
+  end
+  for (pl, v) in G.signatures
+    print(io, "\n")
+    _print_short(io, pl.r)
+    print(io, " => ")
+    print(io, v)
   end
 end
 
@@ -756,12 +815,6 @@ function genus(L::HermLat)
   signatures = Dict{InfPlc, Int}(s => count(d -> isnegative(d, s), D) for s in S)
   return genus([genus(L, p) for p in bad], signatures)
 end
-
-#  Bad:= IsHermitian(L1) select BadPrimes(L1) join { p: p in MySupport( Discriminant(BaseRing(L1)) ) | Minimum(p) eq 2 } 
-#                          else BadPrimes(L1 : Even);
-# return forall{ p: p in Bad | IsLocallyIsometric(L1, L2, p) };
-
-
 
 ################################################################################
 #
@@ -839,6 +892,7 @@ end
 ################################################################################
 
 function _hermitian_form_with_invariants(E, dim, P, N)
+  #@show E, dim, N, [minimum(p) for p in P]
   K = base_field(E)
   R = maximal_order(K)
 #  require forall{n: n in N | n in {0..dim}}: "Number of negative entries is impossible";
@@ -846,12 +900,14 @@ function _hermitian_form_with_invariants(E, dim, P, N)
   length(N) != length(infinite_pl) && error("Wrong number of real places")
   S = maximal_order(E)
   prim = [ p for p in P if length(prime_decomposition(S, p)) == 1 ] # only take non-split primes
+  #@show prim
   I = [ p for p in keys(N) if isodd(N[p]) ]
   !iseven(length(I) + length(P)) && error("Invariants do not satisfy the product formula")
   e = gen(E)
   x = 2 * e - trace(e)
   b = coeff(x^2, 0) # b = K(x^2)
   a = _find_quaternion_algebra(b, prim, I)
+  #@show a
   D = elem_type(E)[]
   for i in 1:(dim - 1)
     if length(I) == 0
@@ -864,7 +920,7 @@ function _hermitian_form_with_invariants(E, dim, P, N)
   Dmat = diagonal_matrix(D)
   dim0, P0, N0 = _hermitian_form_invariants(Dmat)
   @assert dim == dim0
-  @assert P == P0
+  @assert Set(prim) == Set(P0)
   @assert N == N0
   return Dmat
 end
@@ -905,32 +961,23 @@ function representative(G::GenusHerm)
   P = _non_norm_primes(G.LGS)
   E = base_field(G)
   V = hermitian_space(E, _hermitian_form_with_invariants(base_field(G), rank(G), P, G.signatures))
+  @vprint :Lattice 1 "Finding maximal integral lattice ..."
   M = maximal_integral_lattice(V)
+  @vprint :Lattice 1 "done\n"
   for g in G.LGS
     p = prime(g)
+    @vprint :Lattice 1 "Finding representative for $g ..."
     L = representative(g)
+    @vprint :Lattice 1 "done\n"
+    @hassert :Lattice 1 genus(L, p) == g
+    #@show coefficient_ideals(pseudo_matrix(L))
+    #@show matrix(pseudo_matrix(L))
+    @vprint :Lattice 1 "Finding sublattice ..."
     M = find_lattice(M, L, p)
+    @vprint :Lattice 1 "done\n"
   end
   return M
 end
-
-#  V = m.HermitianFormWithInvariants(E, self._rank, Pm, self._signatures)
-#  if rational:
-#      return V.ChangeRing(Em).sage()
-#  M = V.MaximalIntegralHermitianLattice()
-#  #M = 27*M
-#  #M = M.MaximalIntegralLattice()
-#  for sym in self._local_symbols:
-#      p = sym._prime
-#      g = sym.gram_matrix()
-#      g = m(g).ChangeRing(E)
-#      L = m.HermitianLattice(g)
-#      pm = self._ideal_to_magma(Km, p)
-#      if Km.sage() == QQ:
-#          pm = gcd([ZZ(a) for a in p.gens()])
-#      M = m.FindLattice(M, L, pm)
-#  return M
-#
 
 ################################################################################
 #
@@ -947,6 +994,8 @@ rank `rank`, scale valuation bounded by `max_scale` and determinant valuation
 bounded by `det_val`.
 """
 function local_genera_hermitian(E, p, rank, det_val, max_scale, is_ramified = isramified(maximal_order(E), p))
+  #@show E, p, rank, det_val, max_scale, is_ramified
+  is_inert = !is_ramified && length(prime_decomposition(maximal_order(E), p)) == 1
   if is_ramified
     # the valuation is with respect to p
     # but the scale is with respect to P
@@ -976,7 +1025,22 @@ function local_genera_hermitian(E, p, rank, det_val, max_scale, is_ramified = is
   
   if !is_ramified
     # I add the 0 to make the compiler happy
-    return [ genus(HermLat, E,p, Tuple{Int, Int, Int, Int}[(b..., 1, 0) for b in g]) for g in scales_rks]
+    symbols = Vector{LocalGenusHerm{typeof(E), typeof(p)}}(undef, length(scales_rks))
+    for i in 1:length(scales_rks)
+      g = scales_rks[i]
+      z = Tuple{Int, Int, Int, Int}[]
+      for b in g
+        # We have to be careful.
+        # If p is inert, then the norm is not surjective. 
+        if !is_inert || iseven(b[1] * b[2])
+          push!(z, (b[1], b[2], 1, 0))
+        else
+          push!(z, (b[1], b[2], -1, 0))
+        end
+      end
+      symbols[i] = genus(HermLat, E, p, z)
+    end
+    return symbols
   end
 
   scales_rks = Vector{Tuple{Int, Int}}[g for g in scales_rks if all((mod(b[1]*b[2], 2) == 0) for b in g)]
@@ -1040,10 +1104,8 @@ function local_genera_hermitian(E, p, rank, det_val, max_scale, is_ramified = is
         push!(det_norms, dn)
       end
     end
-    #println("================ det_norms: $det_norms")
     for dn in Iterators.product(det_norms...)
       g2 = Vector{Tuple{Int, Int, Int, Int}}(undef, length(g))
-      #println("g1 before: $g1")
       for k in 1:n
         g2[k] = (g[k]..., dn[k]...)
       end
@@ -1055,6 +1117,15 @@ function local_genera_hermitian(E, p, rank, det_val, max_scale, is_ramified = is
   end
   return symbols
 end
+
+@doc Markdown.doc"""
+    local_genera_hermitian(E::NumField, p::NfOrdIdl, rank::Int,
+                 det_val::Int, max_scale::Int) -> Vector{LocalGenusHerm}
+
+Return all local genera of Hermitian lattices over $E$ at $\mathfrak p$ with
+rank `rank`, scale valuation bounded by `max_scale` and determinant valuation
+bounded by `det_val`.
+"""
 
 function genera_hermitian(E, rank, signatures, determinant; max_scale = nothing)
   K = base_field(E)
@@ -1072,7 +1143,7 @@ function genera_hermitian(E, rank, signatures, determinant; max_scale = nothing)
     end
   end
 
-  local_symbols = []
+  local_symbols = Vector{LocalGenusHerm{typeof(E), typeof(primes[1])}}[]
 
   ms = norm(_max_scale)
   ds = norm(determinant)
@@ -1099,10 +1170,256 @@ function genera_hermitian(E, rank, signatures, determinant; max_scale = nothing)
   return res
 end
 
+################################################################################
+#
+#  Genus representatives
+#
+################################################################################
+
+# Return b, p, bad
+# b = isdefinite(L)
+# p = prime ideal of base_ring(L) which can be used for the neighbor method
+# bad = bad primes of L, where L,p is not modular or p is dyadic and dividing disc(S)
+function smallest_neighbour_prime(L)
+  S = base_ring(L)
+  R = base_ring(S)
+  lp = bad_primes(L)
+  bad = [p for p in lp if !ismodular(L, p)[1] ]
+  for (p,_) in factor(discriminant(S))
+    if isdyadic(p) && !(p in bad)
+      push!(bad, p)
+    end
+  end
+
+  if !isdefinite(L)
+    return false, 1*S, bad
+  end
+
+  # TODO: This does not find the prime ideal with smallest norm,
+  # but with smallest minimum ...
+
+  m = rank(L)
+  p = 1
+  P = ideal_type(R)[]
+  while length(P) == 0
+    p = next_prime(p)
+    lp = [ p[1] for p in prime_decomposition(R, p)]
+    P = setdiff(lp, bad)
+    if m == 2
+      P = filter(p -> isisotropic(L, p), P)
+    end
+  end
+  Q = prime_decomposition(S, P[1])[1][1]
+
+  if isempty(bad)
+    I = 1 * S
+  else
+    I = prod(bad) * S
+  end
+  n = absolute_norm(Q)
+  if n >= 1000
+    PP = prime_ideals_up_to(S, 1000)
+    for QQ in PP
+      if !iscoprime(QQ, I)
+        continue
+      end
+
+      if isisotropic(L, QQ)
+        return true, QQ, bad
+      end
+    end
+  end
+  PP = prime_ideals_up_to(S, n)
+  for QQ in PP
+    if !iscoprime(QQ, I)
+      continue
+    end
+    if isisotropic(L, QQ)
+      return true, QQ, bad
+    end
+  end
+  throw(error("Impossible"))
+end
+
+function genus_generators(L)
+  R = base_ring(L)
+  E = nf(R)
+  D = different(R)
+  b, P0, bad = smallest_neighbour_prime(L)
+  if isempty(bad)
+    bad_prod = 1 * base_ring(R)
+  else
+    bad_prod = prod(bad)
+  end
+
+  # First the ideals coming from the C/C0 quotient
+  Eabs, EabstoE, _ = absolute_field(E)
+  Rabs = maximal_order(Eabs)
+  C, h = class_group(Rabs)
+  RR = base_ring(R)
+  C0 = support(D)
+  CC, hh = class_group(RR)
+  for p in find_gens(pseudo_inv(h), PrimesSet(2, -1))[1]
+    @show p
+    if !(p in C0)
+      push!(C0, p * R)
+    end
+  end
+  Q0, q0 = quo(C, [ h\ideal(Rabs, [Rabs(EabstoE\b) for b in absolute_basis(i)]) for i in C0])
+  q00 = pseudo_inv(q0) * h
+  PP = []
+  if iseven(rank(L))
+    for (P, e) in factor(D)
+      G = genus(L, P)
+      if any(i -> isodd(rank(G, i)), 1:length(G))
+        continue
+      elseif !isdyadic(P)
+        if any(i -> iseven(scale(G, i)), 1:length(G))
+          continue
+        end
+      else
+        if any(i -> isodd(e  + scale(G, i)) || (e + scale(G, i) != G.ni[i]), 1:length(G))
+          continue
+        end
+      end
+      push!(PP, P)
+    end
+
+    if !isempty(PP)
+      U, f = unit_group_fac_elem(Rabs)
+      UU, ff = unit_group_fac_elem(RR)
+      nnorm = hom(U, UU, [ff\FacElem(nf(RR)(norm(f(U[i])))) for i in 1:ngens(U)])
+      l = length(PP)
+      VD = Int[ valuation(D, P) for P in PP ]
+      K, k = kernel(nnorm)
+      F = GF(2, cached = false)
+      V = VectorSpace(F, length(PP))
+      S = elem_type(V)[]
+      for u in gens(K)
+        z = elem_type(F)[]
+        for i in 1:length(PP)
+          zz = R(EabstoE(evaluate(f(k(u))))) - 1
+          if iszero(zz) || (valuation(zz, PP[i]) >= VD[i])
+            push!(z, F(0))
+          else
+            push!(z, F(1))
+          end
+        end
+        push!(S, V(z))
+      end
+      #S = [ V(elem_type(F)[valuation(R(EabstoE(evaluate(f(k(u)))) - 1), PP[i]) >= VD[i] ? F(0) : F(1) for i in 1:length(PP)]) for u in gens(K)]
+      _T, _ = sub(V, S)
+      W, w = quo(V, _T)
+      @show dim(W)
+      if dim(W) == 0
+        PP = []
+      end
+    end
+  end
+
+  Gens = []
+  if isempty(PP)
+    S = GrpAbFinGenElem[]
+    Q, q = quo(Q0, S)
+    Work = isdefinite(L) ? [ P0 ] : []
+    p = 2
+    while order(Q) > 1
+      while isempty(Work)
+        p = next_prime(p)
+        Work = [ QQ for QQ in support(p * R) if issplit(QQ) && valuation(bad, QQ) == 0 ]
+      end
+      P = popfirst!(Work)
+      c = q00\P
+      o = order(q(c))
+      if o != 1
+        push!(S, c)
+        Q, q = quo(Q0, S)
+        push!(Gens, (P, o))
+      end
+    end
+  else
+    ll = Int(order(Q0))
+    cocycle = Matrix(undef, ll, ll)
+    for i in 1:ll
+      for j in 1:ll
+        cocycle = zero(W)
+      end
+    end
+    C = collect(Q0)
+    ideals = [ q00(C[i]) for i in 1:length(C) ]
+    for i in 1:ll
+      for j in 1:ll
+        ij = findfirst(isequal(C[i] * C[j]), C)
+        I = ideals[i] * ideals[j] * inv(ideals[ij])
+        J = I * inv(a(I))
+        ok, x = isprincipal(J)
+        u = f(nnorm(-(ff\FacElem(nf(RR)(norm(x))))))
+        x = x * u
+        @assert norm(x) == 1
+        y = w(V([ valuation(x - 1, PP[i]) >= VD[i] ? F(0) : F(1) for i in 1:length(PP)]))
+        cocycle[i, j] = y
+        cocycle[j, i] = y
+      end
+    end
+
+    S = [(id(Q0), zero(W))]
+    Work = isdefinite(L) ? [ P0 ] : []
+    p = 2
+    while length(S) != order(Q0) * length(W)
+      while isempty(Work)
+        p = next_prime(p)
+        Work = [ QQ for QQ in support(p * R) if issplit(QQ) && valuation(bad, QQ) == 0 ]
+      end
+      P = popfirst!(Work)
+      c = q00\P
+      i = findfirst(isequal(c), C)
+      I = P * inv(ideals[i])
+      J = I * inv(a(I))
+      ok, x = isprincipal(J)
+      u = f(nnorm(-(ff\FacElem(nf(RR)(norm(x))))))
+      x = x * u
+      @assert norm(x) == 1
+      y = V([ valuation(x - 1, PP[i]) >= VD[i] ? F(0) : F(1) for i in 1:length(PP)])
+      idx = findfirst(isequal(P), PP)
+      if idx !== nothing
+        y = V([i == idx ? y[i] : y[i] + 1] for i in 1:dim(V)) #w(V([y[idx] = y[idx] + 1
+      end
+      elt = (c, w(y))
+      elt1 = elt
+      o = 1
+      size = length(S)
+      while !(elt1 in S)
+        j = findfirst(isequal(elt1[1]), C)
+        for l in 1:size
+          elt2 = S[l]
+          k = findfirst(isequal(elt2[1]), C)
+          prod = (elt1[1] * elt2[1], elt1[2] + elt2[2] + cycycle[j, k])
+          if !(prod in S)
+            push!(S, prod)
+          end
+        end
+        elt1 = (elt[1] * elt1[1], elt[2] + elt[1] + cocycle[i, j])
+        o = o + 1
+      end
+      @assert length(S) == size * o
+      if o != 1
+        push!(Gens, (P, o))
+      end
+    end
+  end
+
+  if isdefinite(L)
+    return Gens, P0
+  else
+    return Gens, false
+  end
+end
 
 ################################################################################
 #
 #  First attempt, which mirrors Markus' Magma code
+#
+#  This is only used for debugging purposes
 #
 ################################################################################
 
@@ -1213,79 +1530,4 @@ function _genus_symbol_kirschmer(L::HermLat, p; uniformizer = zero(order(p)))
     end
   end
   return sym
-end
-
-
-#@doc Markdown.doc"""
-#    change_uniformizer(G::LocalGenusSymbol, a::NfOrdElem) -> LocalGenus
-#
-#Returns an equivalent? genus symbol with uniformizer $a$.
-#"""
-function change_uniformizer(G::LocalGenusSymbol{QuadLat}, unif::NfOrdElem)
-  if unif == uniformizer(G)
-    return G
-  end
-  P = prime(G)
-  @assert isodd(minimum(P))
-  @assert valuation(unif, P) == 1
-  _, mF = ResidueField(order(P), P)
-  mFF = extend(mF, nf(order(P)))
-  b,_ = issquare(mFF(unif//uniformizer(G)))
-  if b
-    return LocalGenusSymbol{QuadLat}(P, G.data, unif, G.iseven, G.E, nothing, nothing)
-  else
-    e = G.data[1]
-    return LocalGenusSymbol{QuadLat}(P, (e[1], e[2], isodd(e[1] * e[2]) ? -e[3] : e[3]), unif, G.iseven, G.E, nothing, nothing)
-  end
-end
-
-function Base.:(==)(G1::LocalGenusSymbol{QuadLat}, G2::LocalGenusSymbol{QuadLat})
-  if uniformizer(G1) != uniformizer(G2)
-    error("Uniformizers of the genus symbols must be equal")
-  end
-  return data(G1) == data(G2)
-end
-
-function uniformizer(G::LocalGenusSymbol{HermLat})
-  E = base_field(G)
-  K = base_field(E)
-  if isramified(G)
-    lP = prime_decomposition(maximal_order(E), prime(G))
-    @assert length(lP) == 1 && lP[1][2] == 2
-    Q = lP[1][1]
-    pi = uniformizer(Q)
-    A = automorphisms(E)
-    uni = A[1](elem_in_nf(pi)) * A[2](elem_in_nf(pi))
-    @assert iszero(coeff(uni, 1))
-    @assert islocal_norm(E, coeff(uni , 0), prime(G))
-    return coeff(uni, 0)
-  else
-    return uniformizer(prime(G))
-  end
-end
-
-@doc Markdown.doc"""
-    det(G::LocalGenusSymbol) -> NumFieldElem
-
-Return the norm class of the determinant of $G$.
-"""
-function det(G::LocalGenusSymbol{HermLat})
-  z = G.data
-  d = prod(b[3] for b in z)
-  v = sum(b[1] * b[2] for b in z)
-  if isramified(maximal_order(G.E), G.P)
-    v = div(v, 2)
-  end
-  if d == 1
-    u = base_field(G.E)(1)
-  else
-    @assert isramified(G)
-    u = _non_norm_rep(G)
-  end
-  return u * uniformizer(G)^v
-end
-
-function rank(G::LocalGenusSymbol{HermLat})
-  z = G.data
-  return sum(b[2] for b in z)::Int
 end

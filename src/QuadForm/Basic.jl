@@ -147,6 +147,28 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
+    isquadratic(V::AbsSpace) -> Bool
+
+Returns whether $V$ is quadratic.
+"""
+isquadratic(V::AbsSpace)
+
+isquadratic(V::QuadSpace) = true
+
+isquadratic(V::HermSpace) = false
+
+@doc Markdown.doc"""
+    ishermitian(V::AbsSpace) -> Bool
+
+Returns whether $V$ is hermitian.
+"""
+ishermitian(V::AbsSpace)
+
+ishermitian(V::QuadSpace) = true
+
+ishermitian(V::HermSpace) = false
+
+@doc Markdown.doc"""
     rank(V::AbsSpace) -> Int
 
 Return the rank of the space `V`.
@@ -372,26 +394,41 @@ function _gram_schmidt(M::MatElem, a)
   K = base_ring(F)
   n = nrows(F)
   S = identity_matrix(K, n)
-  ok = isdiagonal(F)
-  if !ok
+  okk = isdiagonal(F)
+  if !okk
     for i in 1:n
       if iszero(F[i,i])
         T = identity_matrix(K, n)
-        let F = F, i = i
-          ok = findfirst(j -> !iszero(F[j, j]), (i + 1):n)
+        ok = 0
+        for j in (i + 1):n
+          if !iszero(F[j, j])
+            ok = j
+            break
+          end
         end
-        if ok !== nothing
+        #ok = findfirst(j -> !iszero(F[j, j]), (i + 1):n)
+        if ok != 0 # ok !== nothing
+          #j = ok + i # findfirst gives the index
           T[i,i] = 0
           T[j,j] = 0
           T[i,j] = 1
           T[j,i] = 1
         else
-          let F = F, i = i,
-            ok = findfirst(j -> !iszero(F[i, j]), (i + 1):n)
+          ok = 0
+          for j in (i + 1):n
+            if !iszero(F[i, j])
+              ok = j
+              break
+            end
           end
-          if ok === nothing
+          if ok == 0
             error("Matrix is not of full rank")
           end
+          #ok = findfirst(j -> !iszero(F[i, j]), (i + 1):n)
+          #if ok === nothing
+          #  error("Matrix is not of full rank")
+          #end
+          j = ok + i # findfirst gives the index
           T[i, j] = 1 // (2 * F[j, i])
         end
         S = T * S
@@ -588,7 +625,7 @@ isequivalent(L::AbsSpace, M::AbsSpace, p)
 ################################################################################
 
 function _quadratic_form_invariants(M; minimal = true)
-  G, _ = _gram_schmidt(M, identity);
+  G, _ = _gram_schmidt(M, identity)
   D = diagonal(G)
   K = base_ring(M)
   O = maximal_order(K)
@@ -668,10 +705,10 @@ end
 # Returns 0 if V is not definite
 # Returns an element a != 0 such that a * canonical_basis of V has
 # positive Gram matrix
-function _isdefinite(V::QuadSpace)
+function _isdefinite(V::AbsSpace)
   K = base_ring(V)
   R = maximal_order(K)
-  if !istotally_real(K)
+  if !istotally_real(K) || (ishermitian(V) && !istotally_complex(K))
     return zero(R)
   end
   D = diagonal(V)
@@ -691,8 +728,13 @@ function _isdefinite(V::QuadSpace)
   end
 end
 
-function ispositive_definite(V::QuadSpace)
-  K = base_ring(V)
+function ispositive_definite(V::AbsSpace)
+  E = base_ring(V)
+  if isquadratic(V)
+    K = E
+  else
+    K = base_field(E)
+  end
   R = maximal_order(K)
   if !istotally_real(K)
     return false
@@ -706,9 +748,14 @@ function ispositive_definite(V::QuadSpace)
   return true
 end
 
-function isnegative_definite(V::QuadSpace)
-  K = base_ring(V)
-  R = maximal_order(K)
+function isnegative_definite(V::AbsSpace)
+  E = base_ring(V)
+  if isquadratic(V)
+    K = E
+  else
+    K = base_field(E)
+  end
+
   if !istotally_real(K)
     return false
   end
@@ -721,7 +768,7 @@ function isnegative_definite(V::QuadSpace)
   return true
 end
 
-function isdefinite(V::QuadSpace)
+function isdefinite(V::AbsSpace)
   return ispositive_definite(V) || isnegative_definite(V)
 end
 
@@ -730,6 +777,62 @@ end
 #  Isotropic
 #
 ################################################################################
+
+function isisotropic(V::QuadSpace, p)
+  @assert base_ring(V) == nf(order(p))
+  d = det(V)
+  n = rank(V)
+  K = base_ring(V)
+  if d == 0
+    return true
+  elseif n <= 1
+    return false
+  elseif n == 2
+    return islocal_square(-d, p)
+  elseif n == 3
+    return hasse_invariant(L, p) == hilbert_symbol(K(-1), K(-1), p)
+  elseif n == 4
+    return !islocal_square(d, p) || (hasse_invariant(L, p) == hilbert_symbol(K(-1), K(-1), p))
+  else
+    return true
+  end
+end
+
+function isisotropic(V::HermSpace, q)
+  if nf(order(q)) == base_ring(V)
+    p = minimum(q)
+  else
+    p = q
+  end
+  @assert fixed_field(V) == nf(order(p))
+  r = rank(V)
+  if r >= 3
+    return true
+  elseif r == 0
+    return false
+  end
+  d = det(V)
+  if r == 1
+    return d == 0
+  end
+  return islocal_norm(base_ring(V), -d, p)
+end
+
+function isisotropic(V::AbsSpace, p::InfPlc)
+  n = rank(V)
+  d = det(V)
+  E = base_ring(L)
+  if d == 0
+    return true
+  elseif n <= 1
+    return false
+  elseif iscomplex(p)
+    return true
+  else
+    D = diagonal(V)
+    return length(unique!([sign(evaluate(d, p)) for d in p])) == 2
+  end
+end
 
 function _islocally_hyperbolic_hermitian_detclass(rk, d, E, K, p)
   if isodd(rk)
@@ -827,3 +930,26 @@ end
 function element_with_signs(K, A::Vector{Tuple{InfPlc, Int}})
   return _element_with_signs(K, A)
 end
+
+function prime_ideals_up_to(O::NfRelOrd, n::Union{Int, fmpz})
+  p = 2
+  z = ideal_type(O)[]
+  while p <= n
+    lp = prime_decomposition(base_ring(O), p)
+    for q in lp
+      if norm(q[1]) > n
+        continue
+      else
+        lq = prime_decomposition(O, q[1])
+        for Q in lq
+          if absolute_norm(Q[1]) <= n
+            push!(z, Q[1])
+          end
+        end
+      end
+    end
+    p = next_prime(p)
+  end
+  return sort!(z, by = a -> absolute_norm(a))
+end
+

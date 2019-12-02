@@ -274,12 +274,7 @@ function ideal(O::NfAbsOrd, x::fmpz_mat, check::Bool = false, x_in_hnf::Bool = f
   #_trace_call(;print = true)
   I = NfAbsOrdIdl(O, x)
   if check
-    J = ideal(O, 0)
-    for i = 1:degree(O)
-      e = O(fmpz[x[i, j] for j = 1:degree(O)])
-      J += ideal(O, e)
-    end
-    
+    J = ideal(O, basis(I))
     @assert J == I
   end
 

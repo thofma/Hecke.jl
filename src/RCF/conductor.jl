@@ -591,11 +591,11 @@ end
 Computes the subgroup of the Ray Class Group $R$ given by the norm of the extension.
 """
 function norm_group(K::NfRel{nf_elem}, mR::Hecke.MapRayClassGrp, isabelian::Bool = true; of_closure::Bool = false)
-  base_ring(K) == nf(order(codomain(mR))) || error("field has to be over the same field as the ray class group")
+  base_field(K) == nf(order(codomain(mR))) || error("field has to be over the same field as the ray class group")
   return norm_group(K.pol, mR, isabelian, of_closure = of_closure)
 end
 function norm_group(K::NfRelNS{nf_elem}, mR::Hecke.MapRayClassGrp, isabelian::Bool = true; of_closure::Bool = false)
-  base_ring(K) == nf(order(codomain(mR))) || error("field has to be over the same field as the ray class group")
+  base_field(K) == nf(order(codomain(mR))) || error("field has to be over the same field as the ray class group")
   return norm_group([isunivariate(x)[2] for x = K.pol], mR, isabelian, of_closure = of_closure)
 end
  
@@ -626,7 +626,6 @@ function norm_group(f::Array{T, 1}, mR::Hecke.MapRayClassGrp, isabelian::Bool = 
   @assert all(x->base_ring(x) == K, f)
 
   n = lcm([degree(x) for x = f])
- 
   if of_closure  
     #we cannot work in the quotient, it "could" be lcm(factorial(degree(x)) for x = f)
     Q,mQ=quo(R, elem_type(R)[])
@@ -638,23 +637,21 @@ function norm_group(f::Array{T, 1}, mR::Hecke.MapRayClassGrp, isabelian::Bool = 
   
   listprimes = typeof(R[1])[]  
   
-  #
   # Adding small primes until it stabilizes
-  #
-  
+  B = prod(Int[degree(x) for x in f])  
   max_stable = 2*n
   stable = max_stable
-  denom = lcm([denominator(coeff(x, i)) for x in f for i = 1:degree(x) ])
+  denom = lcm([denominator(coeff(x, i)) for x in f for i = 0:degree(x) ])
   while true
-    if isabelian && order(Q) == n
+    if isabelian && order(Q) == B
       break
     end
-    if !isabelian && order(Q) <= n && stable <= 0
+    if !isabelian && order(Q) <= B && stable <= 0
       break
     end
     p = next_prime(p)
     if !divisible(N,p) && !divisible(N1,p) && !divisible(denom, p)
-      L = prime_decomposition(O,p,1)
+      L = prime_decomposition(O, p, 1)
       for i=1:length(L)
         candidate = mR\L[i][1]
         if iszero(mQ(candidate))
@@ -712,7 +709,6 @@ function norm_group(f::Array{T, 1}, mR::Hecke.MapRayClassGrp, isabelian::Bool = 
   end
   return sub(R, subgrp, true)
 end
-
 
 
 function norm_group(mL::NfToNfMor, mR::Hecke.MapRayClassGrp, expected_index::Int = 1)
@@ -918,6 +914,59 @@ function maximal_abelian_subfield(A::ClassField, mp::NfToNfMor)
   mS1 = compose(mS, proj)
   G, mG = Hecke.cokernel(mS1)
   return ray_class_field(mr, mG)
+end
+
+function norm_group(KK::KummerExt, mp::NfToNfMor, mR::MapRayClassGrp)
+  k = domain(mp)
+  K = codomain(mp)
+  ZK = maximal_order(K)
+  zk = maximal_order(k)
+  # disc(ZK/Q) = N(disc(ZK/zk)) * disc(zk)^deg
+  # we need the disc ZK/k, well a conductor.
+  
+  n = degree(KK)
+  els = GrpAbFinGenElem[]
+  stable = 0
+  max_stable = n*degree(k)
+  R = domain(mR)
+  Q, mQ = quo(R, els, false)
+  modu = minimum(defining_modulus(mR)[1])
+  prev = length(els)
+  #S = PrimesSet(minimum(defining_modulus(mR)[1]), fmpz(-1), minimum(defining_modulus(mR)[1]), fmpz(1))
+  S = PrimesSet(200, -1)
+  for p in S
+    if !iscoprime(p, modu)
+      continue
+    end
+    lp = prime_decomposition(zk, p)
+    for i = 1:length(lp)
+      P = lp[i][1]
+      if iszero(mR\P)
+        continue
+      end
+      
+      lP = prime_decomposition(mp, P)
+      @assert length(lP) == 1
+      z = can_frobenius(lP[1][1], KK)
+      f1 = order(z)
+      f2 = divexact(degree(lP[1][1]), degree(P))
+      @assert f2 == 1
+      el = f1*f2*(mR\P)
+      if !iszero(mQ(el))
+        push!(els, el)
+        Q, mQ = quo(R, els, false)
+      end
+    end
+    if length(els) == prev
+      stable += 1
+    else
+      stable = 0
+    end
+    if stable == max_stable
+      break
+    end
+  end
+  return sub(R, els)
 end
 
 @doc Markdown.doc"""

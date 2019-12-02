@@ -260,6 +260,7 @@ function _abelian_normal_extensions(F::FieldsTower, gtype::Array{Int, 1}, absbou
     end
     mr.clgrpmap.small_gens = rcg_ctx.class_group_map.small_gens
     @vtime :Fields 3 act = Hecke.induce_action(mr, autos)
+    
     @vtime :Fields 3 ls = stable_subgroups(r, act, op = (x, y) -> quo(x, y, false)[2], quotype = gtype)
     Dcond = Dict{Int, Array{GrpAbFinGenElem, 1}}()
     Ddisc = Dict{Tuple{Int, Int}, Array{GrpAbFinGenElem, 1}}()
@@ -283,8 +284,10 @@ function _abelian_normal_extensions(F::FieldsTower, gtype::Array{Int, 1}, absbou
   emb_sub = F.subfields[end]
   @vprint :Fields 1 "\e[1F$(Hecke.clear_to_eol())Sieving $(length(class_fields_with_act)) abelian extensions\n"
   class_fields = Hecke.check_abelian_extensions(class_fields_with_act, autos, emb_sub)
+  @vprint :Fields 1 "$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())"
   return class_fields
 end
+
 
 ################################################################################
 #
@@ -292,7 +295,7 @@ end
 #
 ################################################################################
 
-function from_class_fields_to_fields(class_fields::Vector{Hecke.ClassField{Hecke.MapRayClassGrp, GrpAbFinGenMap}}, autos::Vector{NfToNfMor}, grp_to_be_checked::Dict{Int, Main.ForeignGAP.MPtr})
+function from_class_fields_to_fields(class_fields::Vector{Hecke.ClassField{Hecke.MapRayClassGrp, GrpAbFinGenMap}}, autos::Vector{NfToNfMor}, grp_to_be_checked::Dict{Int, Main.ForeignGAP.MPtr}, target_group::Main.ForeignGAP.MPtr)
   
   if isempty(class_fields)
     @vprint :Fields 1 "\e[1F$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())"
@@ -339,32 +342,58 @@ function from_class_fields_to_fields(class_fields::Vector{Hecke.ClassField{Hecke
     ind += 1
   end
   it = findall(right_grp)
-  fields = Vector{Tuple{NfRelNS{nf_elem}, Vector{Hecke.NfRelNSToNfRelNSMor{nf_elem}}}}(undef, length(it))
-  ind = 1
-  for i in it
-    res = Vector{typeof(class_fields[1])}(undef, length(divisors_of_n))
-    for j = 1:length(divisors_of_n)
-      res[j] = pclassfields[j][i]
+  if isempty(it)
+    return Vector{Tuple{NfRelNS{nf_elem}, Vector{Hecke.NfRelNSToNfRelNSMor{nf_elem}}}}()
+  end
+  if length(divisors_of_n) == 1 || iscoprime(degree(class_fields[it[1]]), degree(K))
+    fields = Vector{Tuple{NfRelNS{nf_elem}, Vector{Hecke.NfRelNSToNfRelNSMor{nf_elem}}}}(undef, length(it))
+    ind = 1
+    for i in it
+      res = Vector{typeof(class_fields[1])}(undef, length(divisors_of_n))
+      for j = 1:length(divisors_of_n)
+        res[j] = pclassfields[j][i]
+      end
+      fields[ind] = _ext_and_autos(res, autos)
+      ind += 1
     end
-    fields[ind] = _ext_and_autos(res, autos)
-    ind += 1
+  else
+    #I need to check the isomorphism class of the Galois group
+    fields = Vector{Tuple{NfRelNS{nf_elem}, Vector{Hecke.NfRelNSToNfRelNSMor{nf_elem}}}}()
+    for i in it
+      res = Vector{typeof(class_fields[1])}(undef, length(divisors_of_n))
+      for j = 1:length(divisors_of_n)
+        res[j] = pclassfields[j][i]
+      end
+      fres = _ext_and_autos(res, autos)
+      Cperm = permutation_group(fres[2])
+      if GAP.Globals.IdGroup(Cperm) == target_group
+        push!(fields, fres)
+      end
+    end
   end
   return fields
   
 end
 
 function compute_fields(class_fields::Vector{Hecke.ClassField{Hecke.MapRayClassGrp, GrpAbFinGenMap}}, autos::Vector{NfToNfMor}, grp_to_be_checked::Main.ForeignGAP.MPtr, right_grp)
+  use_brauer = false
+
   it = findall(right_grp)
   K = base_field(class_fields[it[1]])
   fields = Tuple{Hecke.NfRelNS{nf_elem}, Vector{Hecke.NfRelNSToNfRelNSMor{nf_elem}}}[]
   expo = Int(exponent(codomain(class_fields[it[1]].quotientmap)))
   
-  set_up_cycl_ext(K, expo, autos)
+  if !use_brauer
+    set_up_cycl_ext(K, expo, autos)
+  end
   @vprint :Fields 3 "Computing the fields directly\n"
   for i in it
     C = class_fields[i]
-    L = NumberField(C)
-    #L = NumberField_using_Brauer(C)
+    if use_brauer
+      L = NumberField_using_Brauer(C)
+    else
+      L = NumberField(C)
+    end
     autL = Hecke.absolute_automorphism_group(C, autos)
     if !isone(gcd(degree(K), expo)) 
       Cpperm = permutation_group(autL)

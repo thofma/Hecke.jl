@@ -102,18 +102,77 @@ function number_field(K::KummerExt)
   return number_field(pols, check = false, cached = false)
 end
 
-###############################################################################
+################################################################################
 #
-#  Computation of Frobenius automorphisms
+#  Extension of residue field map to localization
 #
-###############################################################################
+################################################################################
 
-mutable struct NfToFqMor_easy <: Map{AnticNumberField, FqNmodFiniteField, HeckeMap, NfToFqMor_easy}
+mutable struct NfToFqMor_easy <: Map{AnticNumberField, FqFiniteField, HeckeMap, NfToFqMor_easy}
+  header::MapHeader
+  Fq::FqFiniteField
+  s::fq
+  t::gfp_fmpz_poly
+  function NfToFqMor_easy(a::Map, k::AnticNumberField)
+    r = new()
+    r.Fq = codomain(a)
+    r.header = MapHeader(k, r.Fq)
+    r.s = r.Fq()
+    r.t = PolynomialRing(GF(characteristic(r.Fq), cached = false), cached = false)[1]()
+    return r
+  end
+end
+
+function image(mF::NfToFqMor_easy, a::FacElem{nf_elem, AnticNumberField}, quo::Int = 0)
+  Fq = mF.Fq
+  q = one(Fq)
+  t = mF.t
+  s = mF.s
+  for (k, v) = a.fac
+    vv = v
+    if quo != 0
+      vv = v %quo 
+      if vv < 0
+        vv += quo
+      end
+    end
+    @assert vv < order(Fq)  #please complain if this is triggered
+    if !iszero(vv)
+      if denominator(k) % characteristic(Fq) == 0
+        throw(BadPrime(characteristic(Fq)))
+      end
+      _nf_to_fq!(s, k, Fq, t)
+      if iszero(s)
+        throw(BadPrime(1))
+      end
+      if vv < 0
+        ccall((:fq_inv, :libflint), Nothing, (Ref{fq}, Ref{fq}, Ref{FqFiniteField}), s, s, Fq)
+        vv = -vv
+      end
+      ccall((:fq_pow_ui, :libflint), Nothing, (Ref{fq}, Ref{fq}, Int, Ref{FqFiniteField}), s, s, vv, Fq)
+      mul!(q, q, s)
+    end
+  end
+  return q
+end
+
+function image(mF::NfToFqMor_easy, a::nf_elem, n_quo::Int = 0)
+  Fq = mF.Fq
+  q = Fq()
+  if denominator(a) % characteristic(Fq) == 0
+    throw(BadPrime(characteristic(Fq)))
+  end
+  _nf_to_fq!(q, a, Fq, mF.t)
+  return q
+end
+
+
+mutable struct NfToFqNmodMor_easy <: Map{AnticNumberField, FqNmodFiniteField, HeckeMap, NfToFqNmodMor_easy}
   header::MapHeader
   Fq::FqNmodFiniteField
   s::fq_nmod
   t::gfp_poly
-  function NfToFqMor_easy(a::Map, k::AnticNumberField)
+  function NfToFqNmodMor_easy(a::Map, k::AnticNumberField)
     r = new()
     r.Fq = codomain(a)
     r.header = MapHeader(k, r.Fq)
@@ -123,7 +182,7 @@ mutable struct NfToFqMor_easy <: Map{AnticNumberField, FqNmodFiniteField, HeckeM
   end
 end
 
-function image(mF::NfToFqMor_easy, a::FacElem{nf_elem, AnticNumberField}, quo::Int = 0)
+function image(mF::NfToFqNmodMor_easy, a::FacElem{nf_elem, AnticNumberField}, quo::Int = 0)
   Fq = mF.Fq
   q = one(Fq)
   t = mF.t
@@ -156,7 +215,7 @@ function image(mF::NfToFqMor_easy, a::FacElem{nf_elem, AnticNumberField}, quo::I
   return q
 end
 
-function image(mF::NfToFqMor_easy, a::nf_elem, n_quo::Int = 0)
+function image(mF::NfToFqNmodMor_easy, a::nf_elem, n_quo::Int = 0)
   Fq = mF.Fq
   q = Fq()
   if denominator(a) % characteristic(Fq) == 0
@@ -165,6 +224,12 @@ function image(mF::NfToFqMor_easy, a::nf_elem, n_quo::Int = 0)
   _nf_to_fq!(q, a, Fq, mF.t)
   return q
 end
+
+###############################################################################
+#
+#  Computation of Frobenius automorphisms
+#
+###############################################################################
 
 # the Frobenius at p in K:
 #K is an extension of k, p a prime in k,
@@ -180,12 +245,57 @@ function can_frobenius(p::NfOrdIdl, K::KummerExt)
     # ex: x^2-10, rcf of 29*Zk, 7. 239 is tricky...
     throw(BadPrime(p))
   end
-
   if !fits(Int, minimum(p, copy = false))
-    error("Oops")
+    return can_frobenius_fmpz(p, K)
   end
 
   F, mF = ResidueFieldSmall(Zk, p)::Tuple{FqNmodFiniteField,NfOrdToFqNmodMor}
+  #_mF = extend_easy(mF, number_field(Zk))
+  mF = NfToFqNmodMor_easy(mF, number_field(Zk))
+  z_p = image(mF, K.zeta)^(K.n-1)
+
+  # K = k(sqrt[n_i](gen[i]) for i=1:length(gen)), an automorphism will be
+  # K[i] -> zeta^divexact(n, n_i) * ? K[i]
+  # Frob(sqrt[n](a), p) = sqrt[n](a)^N(p) (mod p) = zeta^r sqrt[n](a)
+  # sqrt[n](a)^N(p) = a^(N(p)-1 / n) = zeta^r mod p
+
+  aut = Array{fmpz, 1}(undef, length(K.gen))
+  for j = 1:length(K.gen)
+    ord_genj = Int(order(K.AutG[j]))
+    ex = div(norm(p)-1, ord_genj)
+    if isdefined(K, :gen_mod_nth_power)
+      mu = image(mF, K.gen_mod_nth_power[j])^ex
+    else
+      mu = image(mF, K.gen[j], K.n)^ex  # can throw bad prime!
+    end
+    i = 0
+    z_pj = z_p^divexact(K.n, ord_genj)
+    while !isone(mu)
+      i += 1
+      @assert i <= K.n
+      mul!(mu, mu, z_pj)
+    end
+    aut[j] = fmpz(i)
+  end
+  z = K.AutG(aut)
+  K.frob_cache[p] = z
+  return z
+end
+
+function can_frobenius_fmpz(p::NfOrdIdl, K::KummerExt)
+  @assert norm(p) % K.n == 1
+  if haskey(K.frob_cache, p)
+    return K.frob_cache[p]
+  end
+  Zk = order(p)
+  if index(Zk) % minimum(p) == 0 
+    #index divisors and residue class fields don't agree
+    # ex: x^2-10, rcf of 29*Zk, 7. 239 is tricky...
+    throw(BadPrime(p))
+  end
+
+
+  F, mF = ResidueField(Zk, p)
   #_mF = extend_easy(mF, number_field(Zk))
   mF = NfToFqMor_easy(mF, number_field(Zk))
   z_p = image(mF, K.zeta)^(K.n-1)
@@ -217,63 +327,6 @@ function can_frobenius(p::NfOrdIdl, K::KummerExt)
   K.frob_cache[p] = z
   return z
 end
-
-function can_frobenius1(p::NfOrdIdl, K::KummerExt)
-  @assert norm(p) % K.n == 1
-  if haskey(K.frob_cache, p)
-    return K.frob_cache[p]
-  end
-  Zk = order(p)
-  if index(Zk) % minimum(p) == 0 
-    #index divisors and residue class fields don't agree
-    # ex: x^2-10, rcf of 29*Zk, 7. 239 is tricky...
-    throw(BadPrime(p))
-  end
-
-  if !fits(Int, minimum(p, copy = false))
-    error("Oops")
-  end
-
-  F, mF = ResidueFieldSmall(Zk, p)
-  mF = NfToFqMor_easy(mF, number_field(Zk))
-  #mF = extend_easy(mF, number_field(Zk))
-  z_p = mF(K.zeta)^(K.n-1)
-
-  # K = k(sqrt[n_i](gen[i]) for i=1:length(gen)), an automorphism will be
-  # K[i] -> zeta^divexact(n, n_i) * ? K[i]
-  # Frob(sqrt[n](a), p) = sqrt[n](a)^N(p) (mod p) = zeta^r sqrt[n](a)
-  # sqrt[n](a)^N(p) = a^(N(p)-1 / n) = zeta^r mod p
-  ex = div(norm(p)-1, K.n)
-  gens = Vector{fq_nmod}(undef, length(K.gen))
-  for i = 1:length(K.gen)
-    if isdefined(K, :eval_mod_nth)
-      gens[i] = image(mF, K.eval_mod_nth[i])^ex
-      if iszero(gens[i])
-        throw(BadPrime(p))
-      end
-    elseif isdefined(K, :gen_mod_nth_power)
-      gens[i] = image(mF, K.gen_mod_nth_power[i])^ex
-    else
-      gens[i] = image(mF, K.gen[i], K.n)^ex  # can throw bad prime!
-    end
-  end
-  
-  aut = Array{fmpz, 1}(undef, length(K.gen))
-  for j = 1:length(K.gen)
-    mu = gens[j]
-    i = 0
-    while !isone(mu)
-      i += 1
-      @assert i <= K.n
-      mul!(mu, mu, z_p)
-    end
-    aut[j] = fmpz(i)
-  end
-  z = K.AutG(aut)
-  K.frob_cache[p] = z
-  return z
-end
-
 
 #In this function, we are computing the image of $sqrt[n](g) under the Frobenius automorphism of p
 function can_frobenius(p::NfOrdIdl, K::KummerExt, g::FacElem{nf_elem})

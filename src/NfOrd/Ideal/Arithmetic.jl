@@ -90,21 +90,21 @@ function +(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
     if fits(Int, g)
       R1 = ResidueRing(FlintZZ, Int(g), cached = false)
       R1x = PolynomialRing(R1, "x", cached = false)[1]
-      ggp = gcd(R1x(x.gen_two.elem_in_nf), R1x(y.gen_two.elem_in_nf))
-      if isone(ggp)
+      ggp_small = gcd(R1x(x.gen_two.elem_in_nf), R1x(y.gen_two.elem_in_nf))
+      if isone(ggp_small)
         return ideal(OK, 1)
       end
       Zx = PolynomialRing(FlintZZ, "x", cached = false)[1]
-      ggZ = lift(Zx, ggp)
+      ggZ = lift(Zx, ggp_small)
     else
       R = ResidueRing(FlintZZ, g, cached = false)
       Rx = PolynomialRing(R, "x", cached = false)[1]
-      ggp = gcd(Rx(x.gen_two.elem_in_nf), Rx(y.gen_two.elem_in_nf))
-      if isone(ggp)
+      ggp_large = gcd(Rx(x.gen_two.elem_in_nf), Rx(y.gen_two.elem_in_nf))
+      if isone(ggp_large)
         return ideal(OK, 1)
       end
       Zx = PolynomialRing(FlintZZ, "x", cached = false)[1]
-      ggZ = lift(Zx, ggp)
+      ggZ = lift(Zx, ggp_large)
     end
     gen_2 = OK(nf(OK)(ggZ))
     return ideal(OK, g, gen_2)
@@ -112,11 +112,11 @@ function +(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
   H = vcat(basis_matrix(x, copy = false), basis_matrix(y, copy = false))
   hnf_modular_eldiv!(H, g, :lowerleft)
   H = view(H, (d + 1):2*d, 1:d)
-  res = ideal(order(x), H, false, true)
+  res = ideal(OK, H, false, true)
   if isone(basis(OK, copy = false)[1])
     res.minimum = H[1, 1]
   end
-  res.norm = prod(H[i, i] for i = 1:d)
+  res.norm = prod_diagonal(H)
   return res
 end
 

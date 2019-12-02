@@ -168,13 +168,21 @@ function prime_decomposition_nonindex(f::Map, p::NfOrdIdl, ZK = maximal_order(co
   K = codomain(f)
   G = K.pol
   Qx = parent(G)
-
-  Fp = PolynomialRing(GF(Int(minimum(p)), cached = false), cached = false)[1]
-  Gp = factor(ppio(Fp(G), Fp(f(K(p.gen_two))))[1])
   res = Tuple{NfOrdIdl, Int}[]
-  for (ke, e) in Gp
-    P = ideal_from_poly(ZK, Int(minimum(p)), ke, e)
-    push!(res, (P, divexact(e, ramification_index(p))))
+  if fits(Int, minimum(p))
+    Fp = PolynomialRing(GF(Int(minimum(p)), cached = false), cached = false)[1]
+    Gp = factor(ppio(Fp(G), Fp(f(K(p.gen_two))))[1])
+    for (ke, e) in Gp
+      P = ideal_from_poly(ZK, Int(minimum(p)), ke, e)
+      push!(res, (P, divexact(e, ramification_index(p))))
+    end
+  else
+    Fp1 = PolynomialRing(GF(minimum(p), cached = false), cached = false)[1]
+    Gp1 = factor(ppio(Fp1(G), Fp1(Qx(f(K(p.gen_two)))))[1])
+    for (ke, e) in Gp1
+      P = ideal_from_poly(ZK, minimum(p), ke, e)
+      push!(res, (P, divexact(e, ramification_index(p))))
+    end
   end
   return res
 end
@@ -253,6 +261,35 @@ function ideal_from_poly(O::NfOrd, p::Int, fi::Zmodn_poly, ei::Int)
   idl.splitting_type = ei, degree(fi)
   idl.norm = FlintZZ(p)^degree(fi)
   idl.minimum = FlintZZ(p)
+
+  # We have to do something to get 2-normal presentation:
+  # if ramified or valuation val(b,P) == 1, (p,b)
+  # is a P(p)-normal presentation
+  # otherwise we need to take p+b
+  # I SHOULD CHECK THAT THIS WORKS
+
+  if !((mod(norm(b),(idl.norm)^2) != 0) || (ei > 1))
+    idl.gen_two = idl.gen_two + O(p)
+  end
+
+  idl.gens_normal = p
+  idl.gens_weakly_normal = true
+
+  if idl.splitting_type[2] == degree(O)
+    # Prime number is inert, in particular principal
+    idl.is_principal = 1
+    idl.princ_gen = O(p)
+  end
+  return idl
+end
+
+function ideal_from_poly(O::NfOrd, p::fmpz, fi::gfp_fmpz_poly, ei::Int)
+  b = lift(nf(O), fi)
+  idl = ideal(O, p, O(b, false))
+  idl.is_prime = 1
+  idl.splitting_type = ei, degree(fi)
+  idl.norm = p^degree(fi)
+  idl.minimum = p
 
   # We have to do something to get 2-normal presentation:
   # if ramified or valuation val(b,P) == 1, (p,b)
