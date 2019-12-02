@@ -361,7 +361,7 @@ function image(f::NfOrdToFqMor, x::NfOrdElem)
     F = codomain(f)
     O = domain(f)
     u = F()
-    gg = parent(nf(O).pol)(elem_in_nf(x))::fmpq_poly
+    gg = parent(nf(O).pol)(elem_in_nf(x, copy = false))::fmpq_poly
     fmpq_poly_to_gfp_fmpz_poly_raw!(f.tmp_gfp_fmpz_poly, gg, f.t_fmpz_poly, f.t_fmpz)
     ccall((:fmpz_mod_poly_rem, :libflint), Nothing, (Ref{gfp_fmpz_poly}, Ref{gfp_fmpz_poly}, Ref{gfp_fmpz_poly}), f.tmp_gfp_fmpz_poly, f.tmp_gfp_fmpz_poly, f.poly_of_the_field)
     ccall((:fq_set, :libflint), Nothing, (Ref{fq}, Ref{gfp_fmpz_poly}, Ref{FqFiniteField}), u, f.tmp_gfp_fmpz_poly, F)

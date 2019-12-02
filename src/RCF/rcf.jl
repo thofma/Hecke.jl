@@ -368,7 +368,7 @@ function find_gens(K::KummerExt, S::PrimesSet, cp::fmpz=fmpz(1))
     end
     local f::GrpAbFinGenElem
     try
-      f = can_frobenius1(P, K)
+      f = can_frobenius(P, K)
     catch e
       if !isa(e, BadPrime)
         rethrow(e)
@@ -415,7 +415,7 @@ function find_gens(K::KummerExt, S::PrimesSet, cp::fmpz=fmpz(1))
     f = R[1]
     for (P, e) = lP
       try
-        f = can_frobenius1(P, K)
+        f = can_frobenius(P, K)
       catch e
         if !isa(e, BadPrime)
           rethrow(e)
@@ -1066,7 +1066,7 @@ is also mot permitted (and will produce a {{{BadPrime}}} error.
 """
 function extend_easy(f::Hecke.NfOrdToFqNmodMor, K::AnticNumberField)
   nf(domain(f)) != K && error("Number field is not the number field of the order")
-  return NfToFqMor_easy(f, K)
+  return NfToFqNmodMor_easy(f, K)
 end
 
 #a stop-gap, mainly for non-monic polynomials

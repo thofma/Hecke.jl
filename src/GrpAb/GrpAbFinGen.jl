@@ -1737,12 +1737,9 @@ function induce_action_on_subgroup(mS::GrpAbFinGenMap, acts::Vector{GrpAbFinGenM
   return res
 end
 
-
-
-
-function fixed_subgroup(f::GrpAbFinGenMap)
+function fixed_subgroup(f::GrpAbFinGenMap, to_lattice::Bool = true)
   @assert domain(f) == codomain(f)
-  return kernel(f - id_hom(domain(f)))
+  return kernel(f - id_hom(domain(f)), to_lattice)
 end
 
 function isfixed_point_free(act::Vector{GrpAbFinGenMap})

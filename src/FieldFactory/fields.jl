@@ -90,13 +90,15 @@ function permutations(G::Array{Hecke.NfToNfMor, 1})
   dK = degree(K)
   d = numerator(discriminant(K.pol))
   p = 11
-  while mod(d, p) == 0
-    p = next_prime(p)
-  end
   R = GF(p, cached = false)
   Rx, x = PolynomialRing(R, "x", cached = false)
   fmod = Rx(K.pol)
-
+  while iszero(discriminant(fmod))
+    p = next_prime(p)
+    R = GF(p, cached = false)
+    Rx, x = PolynomialRing(R, "x", cached = false)
+    fmod = Rx(K.pol)
+  end
 
   pols = gfp_poly[x]
   gpol = Rx(G[1].prim_img)
@@ -159,7 +161,7 @@ function permutations(G::Array{Hecke.NfToNfMor, 1})
   for i = 1:n
     permutations[i] = Vector{Int}(undef, dK)
   end
-  gen_pols = [Rx(x.prim_img) for x in G]
+  gen_pols = gfp_poly[Rx(x.prim_img) for x in G]
   D = Dict{gfp_poly, Int}(Dcreation)
   for s = 1:n
     for i = 1:length(pols)
@@ -489,7 +491,7 @@ function field_extensions(x::FieldsTower, bound::fmpz, IsoE1::Main.ForeignGAP.MP
     @vprint :FieldsNonFancy 1 "Number of new fields found: 0\n"
     return Vector{FieldsTower}()
   end
-  list = from_class_fields_to_fields(list_cfields, x.generators_of_automorphisms, grp_to_be_checked)
+  list = from_class_fields_to_fields(list_cfields, x.generators_of_automorphisms, grp_to_be_checked, IsoG)
   @vprint :Fields 1 "Computing maximal orders"
   @vprint :FieldsNonFancy 1 "Computing maximal orders\n"
   final_list = Vector{FieldsTower}(undef, length(list))
@@ -502,6 +504,7 @@ function field_extensions(x::FieldsTower, bound::fmpz, IsoE1::Main.ForeignGAP.MP
     previous_fields[end] = embed 
     final_list[j] = FieldsTower(fld, autos, previous_fields)
   end
+
   @vprint :Fields 1 "$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())"
   @vprint :Fields 1 "Number of new fields found: $(length(final_list))\n\n"
   @vprint :FieldsNonFancy 1 "Number of new fields found: $(length(final_list))\n"
@@ -633,14 +636,12 @@ function fields(list::Vector{FieldsTower}, G, absolute_bound::fmpz; only_real::B
     invariants = map(Int, lG.snf) 
     onlyreal = (lvl > i || only_real)
     #First, I search for obstruction.
-    if iscyclic(lG) 
-      @vprint :Fields 1 "Computing obstructions\n"
-      @vprint :FieldsNonFancy 1 "Computing obstructions\n"
-      #@vtime :Fields 1 
-      list = check_Brauer_obstruction(list, L, i, invariants[1])
-      @vprint :Fields 1 "Fields to check: $(length(list))\n\n"
-      @vprint :FieldsNonFancy 1 "Fields to check: $(length(list))\n\n"
-    end
+    @vprint :Fields 1 "Computing obstructions\n"
+    @vprint :FieldsNonFancy 1 "Computing obstructions\n"
+    #@vtime :Fields 1 
+    list = check_Brauer_obstruction(list, L, i, invariants)
+    @vprint :Fields 1 "Fields to check: $(length(list))\n\n"
+    @vprint :FieldsNonFancy 1 "Fields to check: $(length(list))\n\n"
     if isempty(list)
       return FieldsTower[]
     end

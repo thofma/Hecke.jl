@@ -146,6 +146,15 @@ function _reduce(a::fq_nmod)
   end
 end
 
+function _reduce(a::fq)
+  A = parent(a)
+  #if a.length < 2*degree(A)
+    ccall((:fq_reduce, :libflint), Nothing, (Ref{fq}, Ref{FqFiniteField}), a, A)
+  #else
+  #  ccall((:fmpz_mod_poly_rem, :libflint), Nothing, (Ref{fq}, Ref{fq}, Ref{Nothing}, Ref{Nothing}), a, a, pointer_from_objref(A)+6*sizeof(Int) + 2*sizeof(Ptr{Nothing}), pointer_from_objref(A)+sizeof(fmpz))
+  #end
+end
+
 function (R::FqFiniteField)(x::fmpz_mod_poly)
   z = R()
   ccall((:fq_set, :libflint), Nothing, (Ref{Nemo.fq}, Ref{Nemo.fmpz_mod_poly}, Ref{Nemo.FqFiniteField}), z, x, R)
@@ -191,6 +200,14 @@ function _nf_to_fq!(a::fq_nmod, b::nf_elem, K::FqNmodFiniteField, a_tmp::gfp_pol
   nf_elem_to_gfp_poly!(a_tmp, b)
   ccall((:fq_nmod_set, :libflint), Nothing,
                      (Ref{fq_nmod}, Ref{gfp_poly}, Ref{FqNmodFiniteField}),
+                                     a, a_tmp, K)
+  _reduce(a)
+end
+
+function _nf_to_fq!(a::fq, b::nf_elem, K::FqFiniteField, a_tmp::gfp_fmpz_poly)
+  nf_elem_to_gfp_fmpz_poly!(a_tmp, b)
+  ccall((:fq_set, :libflint), Nothing,
+                     (Ref{fq}, Ref{gfp_fmpz_poly}, Ref{FqFiniteField}),
                                      a, a_tmp, K)
   _reduce(a)
 end

@@ -35,6 +35,7 @@ function NumberField_using_Brauer(CF::ClassField{S, T}; redo::Bool = false) wher
   return CF.A
 end
 
+
 function ray_class_field_cyclic_pp_Brauer(CF::ClassField{S, T}, mQ::GrpAbFinGenMap) where {S, T}
   @vprint :ClassField 1 "cyclic prime power class field of degree $(degree(CF))\n"
   CFpp = ClassField_pp{S, T}()
@@ -42,38 +43,41 @@ function ray_class_field_cyclic_pp_Brauer(CF::ClassField{S, T}, mQ::GrpAbFinGenM
   CFpp.rayclassgroupmap = CF.rayclassgroupmap
   @assert domain(CFpp.rayclassgroupmap) == domain(CFpp.quotientmap)
   
-  @vprint :ClassField 1 "computing the S-units...\n"
-  @vtime :ClassField 1 _rcf_S_units_using_Brauer(CFpp)
-  @vprint :ClassField 1 "finding the Kummer extension...\n"
-  @vtime :ClassField 1 _rcf_find_kummer(CFpp)
-  while !issurjective(CFpp.h)
-    _rcf_S_units_enlarge(CFpp)
-  end
-  isgood = false
   e = degree(CFpp)
   k = base_field(CFpp)
   CE = cyclotomic_extension(k, e)
-  @vtime :ClassField 1 _rcf_reduce(CFpp)
-  while !isgood
-    try
-      _aut_A_over_k(CE, CFpp)
-      isgood = true
-    catch err
-      if !(err isa ExtendAutoError)
-        rethrow(err)
-      end
-      @vprint :ClassField 1 "Extending again ... "
-      _rcf_S_units_enlarge(CFpp)
-      @vprint :ClassField "size is now $(length(CFpp.sup))\n"
-      @hassert :ClassField 1 length(CFpp.sup) == length(unique(CFpp.sup))
-      @vprint :ClassField "Reducing ..."
-      @vtime :ClassField 1 _rcf_reduce(CFpp)
-      @vprint :ClassField 1 "done\n"
+  
+  @vprint :ClassField 1 "computing the S-units...\n"
+  @vtime :ClassField 1 _rcf_S_units_using_Brauer(CFpp)
+  lf = copy(CF.rayclassgroupmap.fact_mod)
+  for P in CFpp.sup
+    P1 = intersect_prime(CE.mp[2], P)
+    if !(P1 in keys(lf))
+      lf[P1] = 1
+    elseif divisible(fmpz(e), minimum(P1, copy = false))
+      lf[P1] = 4  
     end
   end
-
-#  @vprint :ClassField 1 "reducing the generator...\n"
-#  @vtime :ClassField 1 _rcf_reduce(CFpp)
+  r, mr = ray_class_group(maximal_order(k), lf, real_places(k), n_quo = degree(CE.Kr)*e)
+  ng, mng = norm_group(CFpp.bigK, CE.mp[2], mr)
+  lP, sR = find_gens(mr)
+  mp = hom(sR, [CFpp.quotientmap(CF.rayclassgroupmap\x) for x in lP])
+  while !issubgroup(ng, kernel(mp)[1])[1]
+    _rcf_S_units_enlarge(CFpp)
+    for P in CFpp.sup
+      if !(P in keys(lf))
+        lf[P] = 1
+      end
+    end
+    r, mr = ray_class_group(maximal_order(k), lf, real_places(k), n_quo = degree(CE)*e)
+    ng, mng = norm_group(CFpp.bigK, CE.mp[2], mr)
+    lP, sR = find_gens(mr)
+    mp = hom(sR, [CFpp.quotientmap(CF.rayclassgroupmap\x) for x in lP])
+  end
+  @vprint :ClassField 1 "finding the Kummer extension...\n"
+  @vtime :ClassField 1 _rcf_find_kummer(CFpp)
+  @vprint :ClassField 1 "reducing the generator...\n"
+  @vtime :ClassField 1 _rcf_reduce(CFpp)
   @vprint :ClassField 1 "descending ...\n"
   @vtime :ClassField 1 _rcf_descent(CFpp)
   return CFpp
@@ -112,7 +116,6 @@ function _rcf_S_units_enlarge(CF::ClassField_pp)
   end
   KK.gen_mod_nth_power = gens_mod_nth
   CF.bigK = KK
-  _rcf_find_kummer(CF)
 end
 
 
@@ -167,6 +170,7 @@ function _s_unit_for_kummer_using_Brauer(C::CyclotomicExt, f::fmpz)
     end
   end
   
+  
   if length(lP) < 10
     #add some primes
     pp = f+1
@@ -175,6 +179,19 @@ function _s_unit_for_kummer_using_Brauer(C::CyclotomicExt, f::fmpz)
       push!(lP, prime_decomposition(ZK, pp)[1][1])
     end
   end
+  #=
+  if length(lP) < 10
+    #add some primes
+    pp = f+1
+    while length(lP) < 10
+      pp = next_prime(pp)
+      lpp = prime_decomposition(ZK, pp)
+      if length(lpp) == degree(K)
+        push!(lP, lpp[1][1])
+      end
+    end
+  end
+  =#
   
   @vprint :Fields 3 "Computing S-units with $(length(lP)) primes\n"
   @vtime :Fields 3 S, mS = Hecke.sunit_group_fac_elem_quo_via_brauer(C.Ka, lP, e)

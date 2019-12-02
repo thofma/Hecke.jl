@@ -295,7 +295,7 @@ end
 #
 ################################################################################
 
-function from_class_fields_to_fields(class_fields::Vector{Hecke.ClassField{Hecke.MapRayClassGrp, GrpAbFinGenMap}}, autos::Vector{NfToNfMor}, grp_to_be_checked::Dict{Int, Main.ForeignGAP.MPtr})
+function from_class_fields_to_fields(class_fields::Vector{Hecke.ClassField{Hecke.MapRayClassGrp, GrpAbFinGenMap}}, autos::Vector{NfToNfMor}, grp_to_be_checked::Dict{Int, Main.ForeignGAP.MPtr}, target_group::Main.ForeignGAP.MPtr)
   
   if isempty(class_fields)
     @vprint :Fields 1 "\e[1F$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())"
@@ -342,22 +342,41 @@ function from_class_fields_to_fields(class_fields::Vector{Hecke.ClassField{Hecke
     ind += 1
   end
   it = findall(right_grp)
-  fields = Vector{Tuple{NfRelNS{nf_elem}, Vector{Hecke.NfRelNSToNfRelNSMor{nf_elem}}}}(undef, length(it))
-  ind = 1
-  for i in it
-    res = Vector{typeof(class_fields[1])}(undef, length(divisors_of_n))
-    for j = 1:length(divisors_of_n)
-      res[j] = pclassfields[j][i]
+  if isempty(it)
+    return Vector{Tuple{NfRelNS{nf_elem}, Vector{Hecke.NfRelNSToNfRelNSMor{nf_elem}}}}()
+  end
+  if length(divisors_of_n) == 1 || iscoprime(degree(class_fields[it[1]]), degree(K))
+    fields = Vector{Tuple{NfRelNS{nf_elem}, Vector{Hecke.NfRelNSToNfRelNSMor{nf_elem}}}}(undef, length(it))
+    ind = 1
+    for i in it
+      res = Vector{typeof(class_fields[1])}(undef, length(divisors_of_n))
+      for j = 1:length(divisors_of_n)
+        res[j] = pclassfields[j][i]
+      end
+      fields[ind] = _ext_and_autos(res, autos)
+      ind += 1
     end
-    fields[ind] = _ext_and_autos(res, autos)
-    ind += 1
+  else
+    #I need to check the isomorphism class of the Galois group
+    fields = Vector{Tuple{NfRelNS{nf_elem}, Vector{Hecke.NfRelNSToNfRelNSMor{nf_elem}}}}()
+    for i in it
+      res = Vector{typeof(class_fields[1])}(undef, length(divisors_of_n))
+      for j = 1:length(divisors_of_n)
+        res[j] = pclassfields[j][i]
+      end
+      fres = _ext_and_autos(res, autos)
+      Cperm = permutation_group(fres[2])
+      if GAP.Globals.IdGroup(Cperm) == target_group
+        push!(fields, fres)
+      end
+    end
   end
   return fields
   
 end
 
 function compute_fields(class_fields::Vector{Hecke.ClassField{Hecke.MapRayClassGrp, GrpAbFinGenMap}}, autos::Vector{NfToNfMor}, grp_to_be_checked::Main.ForeignGAP.MPtr, right_grp)
-  use_brauer = true
+  use_brauer = false
 
   it = findall(right_grp)
   K = base_field(class_fields[it[1]])

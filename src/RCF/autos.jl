@@ -377,7 +377,6 @@ end
 
 #extension of automorphisms in the case of extensions of exponent 2
 function extend_aut2(A::ClassField, autos::Array{NfToNfMor, 1})
-  
   Cp = [x for x in A.cyc if degree(x) % 2 == 0]
   AA, gAA = number_field([c.A.pol for c in Cp], check = false)
   KK = kummer_extension([2 for i = 1:length(Cp)], [x.a for x in Cp])
@@ -632,9 +631,6 @@ function extend_auto(KK::KummerExt, tau_a::FacElem{nf_elem, AnticNumberField}, k
   return el, rt
   
 end
-
-
-
 
 ################################################################################
 #

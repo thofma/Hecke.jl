@@ -66,6 +66,9 @@ function _improve_subfield_basis(K, bas)
   return maybesmaller
 end
 
+
+
+
 # Compute a primitive element given a basis of a subfield
 function _subfield_primitive_element_from_basis(K::S, as::Vector{T}) where {
     S <: Union{AnticNumberField, Hecke.NfRel},
@@ -92,6 +95,71 @@ function _subfield_primitive_element_from_basis(K::S, as::Vector{T}) where {
   while true
     ca = sum(c*a for (c,a) in zip(cs,as))
     if degree(minpoly(ca)) == d
+      return ca
+    end
+
+    # increment the components of cs
+    cs[1] += 1
+    let i = 2
+      while i <= d && cs[i-1] > cs[i]+1
+        cs[i-1] = zero(ZZ)
+        cs[i] += 1
+        i += 1
+      end
+    end
+  end
+end
+
+#As above, but for AnticNumberField type
+#In this case, we can use block system to find if an element is primitive.
+function _subfield_primitive_element_from_basis(K::AnticNumberField, as::nf_elem)
+  if isempty(as)
+    return gen(K)
+  end
+
+  d = length(as)
+
+  # First check basis elements
+  Zx = PolynomialRing(FlintZZ, "x", cached = false)[1]
+  f = Zx(K.pol*denominator(K.pol))
+  p, d = _find_prime(f)
+
+  #First, we search for elements that are primitive using block systems
+  F = FlintFiniteField(p, d, "w", cached = false)[1]
+  Ft = PolynomialRing(F, "t", cached = false)[1]
+  ap = zero(Ft)
+  fit!(ap, degree(K)+1)
+  rt = roots(f, F)
+  indices = Int[]
+  for i = 1:length(as)
+    b = _block(as[i], rt, ap)
+    if length(b) == d
+      push!(indices, i)
+    end
+  end
+  #Now, we select the one of smallest T2 norm
+  if !isempty(indices)
+    a = as[indices[1]]
+    I = t2(a)    
+    for i = 2:length(indices)
+      t2n = t2(as[indices[i]])
+      if t2n < I
+        a = as[indices[i]]
+        I = t2n
+      end
+    end
+    return a
+  end
+  
+  k = base_field(K)
+  # Notation: cs the coefficients in a linear combination of the as, ca the dot
+  # product of these vectors.
+  cs = fmpz[zero(ZZ) for n in 1:d]
+  cs[1] = one(ZZ)
+  while true
+    ca = sum(c*a for (c,a) in zip(cs,as))
+    b = _block(as[i], rt, ap)
+    if length(b) == d
       return ca
     end
 
