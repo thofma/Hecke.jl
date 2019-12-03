@@ -581,6 +581,16 @@ end
 Checks whether $a$ lies in $\mathcal O$.
 """
 function in(a::nf_elem, O::NfOrd)
+  if isdefining_polynomial_nice(nf(O)) && contains_equation_order(O) 
+    d = denominator(a)
+    if isone(d)
+      return true
+    end
+    d1 = ppio(d, index(O))[1]
+    if d1 != d
+      return false
+    end
+  end
   return _check_elem_in_order(a, O, Val{true})
 end
 
