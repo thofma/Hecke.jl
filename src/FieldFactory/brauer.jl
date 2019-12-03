@@ -1095,6 +1095,7 @@ function _find_theta(G::Vector{NfToNfMor}, F::FqNmodFiniteField, mF::Hecke.NfOrd
   return theta
 end
 
+
 function _find_frob(G::Vector{NfToNfMor}, F::FqNmodFiniteField, mF::Hecke.NfOrdToFqNmodMor, e::Int, f::Int, q::Int, theta::NfToNfMor)
   K = domain(G[1])
   O = maximal_order(K)
@@ -1132,7 +1133,7 @@ function _find_frob(G::Vector{NfToNfMor}, F::FqNmodFiniteField, mF::Hecke.NfOrdT
     #TODO: Binary powering
     gq = theta_q
     for i = 2:expo
-      gq = compose_mod(theta_q, theta_q, fmod)
+      gq = compose_mod(gq, theta_q, fmod)
     end
     gq = compose_mod(gq, frob_q, fmod)
     fl = gc == gq
@@ -1142,7 +1143,6 @@ function _find_frob(G::Vector{NfToNfMor}, F::FqNmodFiniteField, mF::Hecke.NfOrdT
     end
   end
   error("something went wrong!")
-  
 end
 
 #See Gerald J. Janusz (1980) Crossed product orders and the schur index,
