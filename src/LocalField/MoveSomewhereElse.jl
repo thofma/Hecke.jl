@@ -109,12 +109,13 @@ function underdetermined_solve_first(A,b)
     return N[1:size(N,1)-1,ind]
 end
 
+
 ##############
 # Poly/ Mpoly
 
 import Base.keys
 function keys(a::PolyCoeffs)
-    return keys(0:degree(polynomial(a)))
+    return [i for i=0:degree(polynomial(a))]
 end
 
 
@@ -165,9 +166,8 @@ end
 ##################
 # Qadic
 
-####
-## Coercion for qadic fields (because FLINT didn't bother...)
 
+# Coercion for qadic fields
 # TODO: The map should be a local field map type, not Any.
 const RegisteredQadicCoercions = Dict{Tuple{FlintQadicField, FlintQadicField}, Any}()
 

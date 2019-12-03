@@ -204,9 +204,9 @@ function integral_roots(f::Hecke.Generic.Poly{<:Hecke.NALocalFieldElem})
         # divisible by `x^m`. Moreover, the first recursive call for which this happens
         # is the correct multiplicity.
 
-        rt_mul = findfirst(!iszero, coefficients(f))::Int - 1
-        cond_num = precision(K) // rt_mul
-        f_new = polynomial([coeff(f,i) for i=(rt_mul+1):degree(f)])
+        rt_mul = findfirst(!iszero, coefficients(f))::Int
+        cond_num = precision(K)//rt_mul
+        f_new = polynomial([coeff(f,i) for i=rt_mul:degree(f)])
         
         return vcat([(zero(K), rt_mul, cond_num)], integral_roots(f_new))
     else
