@@ -8,24 +8,33 @@ using Hecke
   assume sum gamma_i alpha_i + gamma alpha = 0
   (gamma are the dependency)
   Now P := 
-  (A_i gamma_i)
-  ( A  gamma  )
+  (inv(A_i) gamma_i)
+  ( inv(A)  gamma  )
   is a (n+1) x 1 pseudo matrix. Using the (pseudo) HNF we find a matrix
   T in Gl(n+1, K) and ideals C_i s.th.
   T*P = H is a pseudo-HNF. By construction, H has 1. row 1, all other rows 0
   and the coeff. ideals C_i
   Then T is an isomorphism between
-  sum A_i + A and sum C_i
+  sum inv(A_i) + inv(A) and sum C_i
   as zk-modules
   The inverse-transpose of T is an isomorphism between
-  sum inv(C_i) and sum inv(A_i) + inv(A)
+  sum inv(C_i) and sum A_i + A
   the dual modules to the ones above
+
+  The idea:
+  T is an iso between all modules given by the ideals
+  The construction forces inv(T) to have the relation as 1. row/col
+  The dual of an abstract module is giving by the inverse ideals
+  The corresponding map is transpose(inv(T)) = inv(T)'
+  Thus it works...
 =#
+
 function extend(M::Hecke.PMat, b::Generic.MatSpaceElem{nf_elem}, gamma::Generic.MatSpaceElem{nf_elem})
 
   zk = base_ring(M)
-  p = pseudo_matrix(gamma, vcat((coefficient_ideals(M)), [1*zk]))
+  p = pseudo_matrix(gamma, vcat(map(inv, coefficient_ideals(M)), [1*zk]))
   h, T = Hecke.pseudo_hnf_with_transform(p)
+  #for n x 1 matrices, the trasform, especially the inverse can more easily be computed
 #  @assert prod(coefficient_ideals(p)) ==  (det(T))*(prod(coefficient_ideals(h)))
 #  @assert all(T[j,i] in (coefficient_ideals(p)[i])*inv(coefficient_ideals(h)[j]) for i=1:nrows(M) for j=1:nrows(M))
   Ti = inv(T)
