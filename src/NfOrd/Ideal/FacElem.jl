@@ -128,6 +128,6 @@ end
 
 function isone(A::FacElem{NfOrdFracIdl, NfOrdFracIdlSet})
   A = simplify(A)
-  return length(A.fac) == 1 && isone(first(keys(A.fac)))
+  return length(A.fac) == 1 && (isone(first(keys(A.fac))) || iszero(first(values(A.fac))))
 end
 

@@ -376,10 +376,16 @@ function from_class_fields_to_fields(class_fields::Vector{Hecke.ClassField{Hecke
 end
 
 function compute_fields(class_fields::Vector{Hecke.ClassField{Hecke.MapRayClassGrp, GrpAbFinGenMap}}, autos::Vector{NfToNfMor}, grp_to_be_checked::Main.ForeignGAP.MPtr, right_grp)
-  use_brauer = false
-
+  
+  use_brauer = true
   it = findall(right_grp)
   K = base_field(class_fields[it[1]])
+  OK = maximal_order(K)
+  if divisible(order(torsion_unit_group(OK)[1]), exponent(class_fields[it[1]]))
+    use_brauer = false
+  end
+
+  
   fields = Tuple{Hecke.NfRelNS{nf_elem}, Vector{Hecke.NfRelNSToNfRelNSMor{nf_elem}}}[]
   expo = Int(exponent(codomain(class_fields[it[1]].quotientmap)))
   

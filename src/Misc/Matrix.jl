@@ -526,6 +526,7 @@ It returns a basis for the left kernel of the matrix
 left_kernel_basis(a::MatElem{T}) where T <: AbstractAlgebra.FieldElem = right_kernel_basis(transpose(a))
 
 
+
 @doc Markdown.doc"""
     kernel(a::MatElem{T}; side::Symbol = :right) -> Int, MatElem{T}
 
@@ -555,8 +556,8 @@ function right_kernel(x::gfp_mat)
 end
 
 function left_kernel(x::gfp_mat)
-   n, M = right_kernel(transpose(x))
-   return n, transpose(M)
+  n, M = right_kernel(transpose(x))
+  return n, transpose(M)
 end
 
 @doc Markdown.doc"""

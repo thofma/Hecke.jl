@@ -655,11 +655,7 @@ function _maximal_abelian_subfield(A::Hecke.ClassField, mp::Hecke.NfToNfMor, ctx
   fm0 = Dict{NfOrdIdl, Int}()
   for (P, e) in mR1.fact_mod
     p = intersect_prime(mp, P)
-    if haskey(fm0, p)
-      if !iscoprime(minimum(P, copy = false), deg*expo)
-        fm0[p] += e
-      end
-    else
+    if !haskey(fm0, p)
       if !iscoprime(minimum(P, copy = false), deg*expo)
         fm0[p] = e
       else
@@ -671,14 +667,11 @@ function _maximal_abelian_subfield(A::Hecke.ClassField, mp::Hecke.NfToNfMor, ctx
   for (P, e) in lp
     if haskey(fm0, P)
       if !iscoprime(minimum(P, copy = false), deg*expo)
-        candidate = fm0[P] + e
-        max_exp = _bound_exp_conductor_wild(zk, exp_extension*expo, Int(minimum(P)), discriminant(ZK))
-        fm0[P] = min(candidate, max_exp)
+        fm0[P] = max(e, fm0[P])
       end
     else
       if !iscoprime(minimum(P, copy = false), deg*expo)
-        max_exp = _bound_exp_conductor_wild(zk, exp_extension*expo, Int(minimum(P)), discriminant(ZK))
-        fm0[P] = min(e, max_exp)
+        fm0[P] = e
       else
         fm0[P] = 1
       end

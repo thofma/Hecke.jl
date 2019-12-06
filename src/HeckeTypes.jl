@@ -1718,6 +1718,7 @@ mutable struct GrpAbFinGen <: GrpAb
   issnf::Bool
   snf::Array{fmpz, 1}
   snf_map::Map{GrpAbFinGen, GrpAbFinGen}
+  exponent::fmpz
   isfinalized::Bool
   @declare_other
 

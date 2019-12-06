@@ -44,38 +44,24 @@ function ray_class_field_cyclic_pp_Brauer(CF::ClassField{S, T}, mQ::GrpAbFinGenM
   @assert domain(CFpp.rayclassgroupmap) == domain(CFpp.quotientmap)
   
   e = degree(CFpp)
+  v, q = ispower(e)
   k = base_field(CFpp)
   CE = cyclotomic_extension(k, e)
   
   @vprint :ClassField 1 "computing the S-units...\n"
   @vtime :ClassField 1 _rcf_S_units_using_Brauer(CFpp)
-  lf = copy(CF.rayclassgroupmap.fact_mod)
-  for P in CFpp.sup
-    P1 = intersect_prime(CE.mp[2], P)
-    if !(P1 in keys(lf))
-      lf[P1] = 1
-    elseif divisible(fmpz(e), minimum(P1, copy = false))
-      lf[P1] = 4  
-    end
-  end
-  r, mr = ray_class_group(maximal_order(k), lf, real_places(k), n_quo = degree(CE.Kr)*e)
-  ng, mng = norm_group(CFpp.bigK, CE.mp[2], mr)
-  lP, sR = find_gens(mr)
-  mp = hom(sR, [CFpp.quotientmap(CF.rayclassgroupmap\x) for x in lP])
-  while !issubgroup(ng, kernel(mp)[1])[1]
+  mr = CF.rayclassgroupmap
+  mq = CFpp.quotientmap
+  KK = kummer_extension(e, FacElem{nf_elem, AnticNumberField}[CFpp.a])
+  ng, mng = norm_group(KK, CE.mp[2], mr)
+  attempt = 1
+  while !iszero(mng*mq)
+    attempt += 1
+    @show "attempt number $(attempt)"
     _rcf_S_units_enlarge(CFpp)
-    for P in CFpp.sup
-      if !(P in keys(lf))
-        lf[P] = 1
-      end
-    end
-    r, mr = ray_class_group(maximal_order(k), lf, real_places(k), n_quo = degree(CE)*e)
-    ng, mng = norm_group(CFpp.bigK, CE.mp[2], mr)
-    lP, sR = find_gens(mr)
-    mp = hom(sR, [CFpp.quotientmap(CF.rayclassgroupmap\x) for x in lP])
+    KK = kummer_extension(e, FacElem{nf_elem, AnticNumberField}[CFpp.a])
+    ng, mng = norm_group(KK, CE.mp[2], mr)
   end
-  @vprint :ClassField 1 "finding the Kummer extension...\n"
-  @vtime :ClassField 1 _rcf_find_kummer(CFpp)
   @vprint :ClassField 1 "reducing the generator...\n"
   @vtime :ClassField 1 _rcf_reduce(CFpp)
   @vprint :ClassField 1 "descending ...\n"
@@ -116,6 +102,8 @@ function _rcf_S_units_enlarge(CF::ClassField_pp)
   end
   KK.gen_mod_nth_power = gens_mod_nth
   CF.bigK = KK
+  _rcf_find_kummer(CF)
+  return nothing
 end
 
 
@@ -139,6 +127,7 @@ function _rcf_S_units_using_Brauer(CF::ClassField_pp)
   
   CF.bigK = KK
   CF.sup = lP
+  _rcf_find_kummer(CF)
   return nothing
 end
 

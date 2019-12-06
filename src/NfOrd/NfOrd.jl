@@ -383,7 +383,11 @@ function gen_index(O::NfAbsOrd)
   if isdefined(O, :gen_index)
     return deepcopy(O.gen_index)
   else
-    O.gen_index = inv(det(basis_matrix(O, copy = false)))#FlintQQ(O.basis_matrix.den^degree(O), det(O.basis_matrix.num))
+    #TODO: Remove once the determinant checks if a matrix is upper/lower triangular.
+    if islower_triangular(basis_matrix(O, copy = false).num)
+      return basis_matrix(O, copy = false).den^degree(O)//prod_diagonal(basis_matrix(O, copy = false).num)
+    end
+    O.gen_index = inv(det(basis_matrix(O, copy = false)))
     return deepcopy(O.gen_index)
   end
 end

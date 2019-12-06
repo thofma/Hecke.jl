@@ -924,11 +924,13 @@ function norm_group(KK::KummerExt, mp::NfToNfMor, mR::MapRayClassGrp)
   # disc(ZK/Q) = N(disc(ZK/zk)) * disc(zk)^deg
   # we need the disc ZK/k, well a conductor.
   
+ 
   n = degree(KK)
   els = GrpAbFinGenElem[]
   stable = 0
-  max_stable = n*degree(k)
+  max_stable = 10*n*degree(k)
   R = domain(mR)
+  expo = exponent(R)
   Q, mQ = quo(R, els, false)
   modu = minimum(defining_modulus(mR)[1])
   prev = length(els)
@@ -944,25 +946,30 @@ function norm_group(KK::KummerExt, mp::NfToNfMor, mR::MapRayClassGrp)
       if iszero(mR\P)
         continue
       end
-      
       lP = prime_decomposition(mp, P)
-      @assert length(lP) == 1
-      z = can_frobenius(lP[1][1], KK)
-      f1 = order(z)
-      f2 = divexact(degree(lP[1][1]), degree(P))
-      @assert f2 == 1
-      el = f1*f2*(mR\P)
+      local z::GrpAbFinGenElem
+      try
+        z = can_frobenius(lP[1][1], KK)
+      catch e
+        if !isa(e, BadPrime)
+          rethrow(e)
+        end
+        continue
+      end
+      f = order(z)*divexact(degree(lP[1][1]), degree(P))
+      if divisible(f, expo)
+        stable += 1
+        continue
+      end
+      el = f*(mR\P)
       if !iszero(mQ(el))
         push!(els, el)
         Q, mQ = quo(R, els, false)
+      else
+        stable += 1
       end
     end
-    if length(els) == prev
-      stable += 1
-    else
-      stable = 0
-    end
-    if stable == max_stable
+    if stable >= max_stable
       break
     end
   end

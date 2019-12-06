@@ -384,7 +384,7 @@ function find_invariant_complement(M::MatElem{T}, C::MatElem{T}) where T <: Fiel
     end
   end
   k, K = kernel(N, side = :left)
-  return K*S
+  return view(K, 1:k, 1:ncols(K))*S
 end
 
 function _closure(M::MatElem{T}, v::MatElem{T}, d::Int) where T <: FieldElem
@@ -410,9 +410,15 @@ function restriction(M::MatElem{T}, S::MatElem{T}) where T <: FieldElem
   if !fl
     error("The subspace is not invariant!")
   end
-  return R
+  return view(R, 1:nrows(S), 1:nrows(S))
 end
 
+
+@doc Markdown.doc"""
+    _rational_canonical_form_setup(M)
+Returns minpolys, the basis transformation and the vectors generating the blocks of the
+rational canonical form of M.
+"""
 function _rational_canonical_form_setup(M::MatElem{T}) where T <: FieldElem
   K = base_ring(M)
   Kt, t = PolynomialRing(K, "t", cached = false)

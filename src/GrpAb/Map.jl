@@ -56,7 +56,7 @@ function haspreimage(M::GrpAbFinGenMap, a::GrpAbFinGenElem)
   m = vcat(M.map, rels(codomain(M)))
   fl, p = can_solve(m, a.coeff, side = :left)
   if fl
-    return true, domain(M)(view(p, 1:1, 1:ngens(domain(M))))
+    return true, GrpAbFinGenElem(domain(M), view(p, 1:1, 1:ngens(domain(M))))
   else
     return false, domain(M)[1]
   end
@@ -162,7 +162,7 @@ function check_mat(A::GrpAbFinGen, B::GrpAbFinGen, M::fmpz_mat)
   # need to check if Y -> X --> U lands in V
   # if Y -> X -> B is zero.
   R = rels(A) * M
-  return all(x -> iszero(B(R[x, :])), 1:nrows(R))
+  return all(x -> iszero(GrpAbFinGenElem(B, R[x, :])), 1:nrows(R))
 end
 
 function hom(A::GrpAbFinGen, B::GrpAbFinGen, M::fmpz_mat; check::Bool = true)

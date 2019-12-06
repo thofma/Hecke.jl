@@ -52,7 +52,7 @@ function *(x::GrpAbFinGenElem, M::nmod_mat)
   coeff = map_entries(R, x.coeff)
   y = coeff*M
   l = lift(y)
-  return G(l)
+  return GrpAbFinGenElem(G, l)
 end
 
 
@@ -242,18 +242,15 @@ function sub(M::ZpnGModule, n::Int)
   if issnf(M.V)
     return _sub_snf(M, n)
   end
-  sg,msg=sub(M.V, n, false)
-  G=Array{nmod_mat,1}(undef, length(M.G))
-  for k=1:length(M.G)
-    A=zero_matrix(M.R, ngens(sg), ngens(sg))
-    for i=1:ngens(sg)
-      x=msg(sg[i])*M.G[k]
-      x=haspreimage(msg, x)[2].coeff
-      for j=1:ngens(sg)
-        A[i,j]=x[1,j]
-      end
-    end
-    G[k]=A
+  sg, msg = sub(M.V, n, false)
+  R = base_ring(M)
+  G = Array{nmod_mat,1}(undef, length(M.G))
+  big_m = vcat(msg.map, rels(M.V))
+  for k = 1:length(M.G)
+    A = map_entries(R, msg.map)*M.G[k]
+    fl, res = can_solve(big_m, lift(A), side = :left)
+    @assert fl
+    G[k] = map_entries(R, view(res, 1:ngens(sg), 1:ngens(sg)))
   end
   return ZpnGModule(sg,G), msg
   
@@ -272,18 +269,21 @@ function _sub_snf(M::ZpnGModule, n::Int)
   end
   Gnew = DiagonalGroup(invariants)
   action = nmod_mat[sub(x, ind:ngens(V), ind:ngens(V)) for x in M.G]
-  mGnew = hom(Gnew, M.V, [n*M.V[i] for i = ind:ngens(M.V)], check = true)
+  mat_map = zero_matrix(FlintZZ, length(invariants), ngens(V))
+  for i = 1:ngens(Gnew)
+    mat_map[i, ind+i-1] = n
+  end
+  mGnew = hom(Gnew, M.V, mat_map)
   return ZpnGModule(Gnew, action), mGnew
 end
 
 
-function _exponent_p_sub(M::ZpnGModule)
+function _exponent_p_sub(M::ZpnGModule; F::GaloisField = GF(M.p, cached = false))
 
   @assert issnf(M.V)
   G = M.G
   V = M.V
   p = M.p
-  F = GF(Int(p), cached=false)
   v = fmpz[divexact(V.snf[i], p) for i=1:ngens(V)]
   G1 = Array{gfp_mat,1}(undef, length(G))
   for s=1:length(G1)
@@ -376,15 +376,15 @@ end
 #  Given a list of square matrices G, it returns a list of matrices given by the minors 
 #  (n-s) x (n-s) of the matrices G[i] mod p 
 #
-function _change_ring(G::Array{nmod_mat,1}, F::Nemo.FqNmodFiniteField, s::Int)
+function _change_ring(G::Array{nmod_mat,1}, F::GaloisField, s::Int)
   
-  G1=Array{fq_nmod_mat,1}(undef, length(G))
-  n=nrows(G[1])
-  for i=1:length(G)
-    M=zero_matrix(F,n-s+1,n-s+1)
-    for j=s:n
-      for k=s:n
-        M[j-s+1,k-s+1]=(G[i][j,k]).data
+  G1 = Array{gfp_mat, 1}(undef, length(G))
+  n = nrows(G[1])
+  for i = 1:length(G)
+    M = zero_matrix(F,n-s+1,n-s+1)
+    for j = s:n
+      for k = s:n
+        M[j-s+1,k-s+1] = F(deepcopy((G[i][j,k]).data))
       end
     end
     G1[i] = M
@@ -397,53 +397,54 @@ end
 #  Cut the module in submodules with exponent p, returning the quotients p^i M /p^(i+1) M
 #
 function _mult_by_p(M::ZpnGModule)
-  G=M.G
-  V=M.V
-  p=M.p
+  G = M.G
+  V = M.V
+  p = M.p
   @assert issnf(V)
-  #
   #  First, the quotient M/pM
-  #
-  F = GF(p, cached=false)
+  F = GF(p, cached = false)
   n = ngens(V)
   Gq = _change_ring(G, F, 1)
-  spaces = ModAlgAss[ModAlgAss(Gq)]
+  spaces = [ModAlgAss(Gq)]
   #
   #  Now, the others
   #
-  s=valuation(fmpz(M.R.n),p)
-  j=1
-  for i=2:s
-    while !divisible(V.snf[j],p^i)
-      j+=1
+  s = valuation(fmpz(M.R.n),p)
+  j = 1
+  for i = 2:s
+    while !divisible(V.snf[j], p^i)
+      j += 1
     end
-    GNew=_change_ring(G,F,j)
+    GNew = _change_ring(G, F, j)
     push!(spaces, ModAlgAss(GNew))
   end
   return spaces  
 end
 
-function composition_factors(M::ZpnGModule)
-
-  N,_=snf(M)
-  list_sub=_mult_by_p(N)
-  list=[]
+function composition_factors(M::ZpnGModule; dimension::Int = -1)
+  N, _ = snf(M)
+  list_sub = _mult_by_p(N)
+  list = Vector{Tuple{ModAlgAss{GaloisField, gfp_mat, gfp_elem}, Int}}()
   for x in list_sub
-    append!(list, composition_factors(x))
+    append!(list, composition_factors(x, dimension = dimension))
   end
-  for i=1:length(list)
-    j=i+1
-    while j<=length(list)
-      if Hecke.isisomorphic(list[i][1], list[j][1])
-        list[i][2]+=list[j][2]
-        deleteat!(list,j)
-      else 
-        j+=1
+  final_list = Vector{Tuple{ModAlgAss{GaloisField, gfp_mat, gfp_elem}, Int}}()
+  done = falses(length(list))
+  for i = 1:length(list)
+    if done[i]
+      continue
+    end
+    done[i] = true
+    mult = list[i][2]
+    for j = i+1:length(list)
+      if !done[j] && isisomorphic(list[i][1], list[j][1])
+        mult += list[j][2]
+        done[j] = true
       end    
     end
+    push!(final_list, (list[i][1], mult))
   end
-  return list
-
+  return final_list
 end
 
 ###############################################################################
@@ -521,16 +522,20 @@ end
 ###############################################################################
 
 function main_submodules_cyclic(M::ZpnGModule, ord::Int)
-
-  list = _submodules_with_struct_cyclic(M, ord)
+  
+  lf = composition_factors(M, dimension = 1)
+  list = _submodules_with_struct_cyclic(M, ord, lf)
   for step = 1:ord-1
-    c = M.p^step 
+    c = fmpz(M.p^step) 
     list1 = nmod_mat[]
     for x in list  
       L, _ = quo(M, x)
-      newlist = _submodules_with_struct_cyclic(L, ord-step)
+      newlist = _submodules_with_struct_cyclic(L, ord-step, lf)
       for i = 1:length(newlist)
-        if !iszero(c * M.V( lift(newlist[i]) ))
+        mat_test = lift(newlist[i])
+        mul!(mat_test, mat_test, c)
+        el = GrpAbFinGenElem(M.V, mat_test)
+        if !iszero(el)
           push!(list1, newlist[i])
         end
       end
@@ -541,21 +546,14 @@ function main_submodules_cyclic(M::ZpnGModule, ord::Int)
   
 end
 
-function _submodules_with_struct_cyclic(M::ZpnGModule, ord::Int)
+function _submodules_with_struct_cyclic(M::ZpnGModule, ord::Int, lf)
   
   R = M.R
-  #
   #  We search for an element in p^(ord-1)*G
-  #
   s, ms = sub(M, M.p^(ord-1))
   S, mS = snf(s)
-  N = _exponent_p_sub(S)
-  submod = gfp_mat[]
-  if N.dimension == 1
-    push!(submod, identity_matrix(base_ring(N), 1))
-  else
-    @vtime :StabSub 1 submod = minimal_submodules(N, 1, composition_factors(N, dimension = 1))
-  end
+  N = _exponent_p_sub(S, F = base_ring(lf[1][1]))
+  @vtime :StabSub 1 submod = minimal_submodules(N, 1, lf)
   list1 = Array{nmod_mat,1}(undef, length(submod))
   v = nmod[R(divexact(S.V.snf[i], M.p)) for i = 1:ngens(S.V)]
   for i = 1:length(submod)
@@ -565,7 +563,7 @@ function _submodules_with_struct_cyclic(M::ZpnGModule, ord::Int)
       list1[i][1, k] *= v[k]
     end
   end  
-  MatSnf=change_base_ring(R, mS.map*ms.map)
+  MatSnf = change_base_ring(R, mS.map*ms.map)
   for j=1:length(list1)
     list1[j] = list1[j]*MatSnf
   end
@@ -803,7 +801,7 @@ end
 ###############################################################################
 
 function submodules_with_quo_struct(M::ZpnGModule, typequo::Array{Int,1})
-
+  
   R = base_ring(M)
   p = M.p 
   S, mS = snf(M)
@@ -822,20 +820,16 @@ function submodules_with_quo_struct(M::ZpnGModule, typequo::Array{Int,1})
     end
   end
 
-  #
+
   #  Dual Module and candidate submodules
-  #
   M_dual = dual_module(S)
   candidates = submodules_with_struct(M_dual, typequo)
-  #
+
   #  Dualize the modules
-  #
   v = fmpz[divexact(S.V.snf[end],S.V.snf[j]) for j=1:ngens(S.V) ]
   list = (_dualize(x, S.V, v) for x in candidates) 
    
-  #
   #  Write the submodules in terms of the given generators
-  #
   MatSnf = change_base_ring(R, mS.map)
   return (final_check_and_ans(x, MatSnf, M) for x in list)
   

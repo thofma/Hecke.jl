@@ -145,8 +145,17 @@ function DiagonalGroup(M::fmpz_mat; name :: String = "")
   end
   if issnf(N)
     G = GrpAbFinGen(fmpz[M[1, i] for i = 1:ncols(M)])
+    if ncols(M) != 0 && !iszero(M[1, ncols(M)])
+      G.exponent = M[1, ncols(M)]
+    end
   else
     G = GrpAbFinGen(N)
+    if ncols(M) != 0
+      res = lcm(fmpz[M[1, i] for i = 1:ncols(M)])
+      if !iszero(res)
+        G.exponent = res
+      end
+    end 
   end
   name == "" || set_name!(G, name)
   return G
@@ -167,6 +176,12 @@ function DiagonalGroup(M::Array{T, 1}; name :: String = "") where T <: Union{Int
     G = GrpAbFinGen(M)
   else
     G = GrpAbFinGen(N)
+  end
+  if !isempty(M)
+    res = lcm(M)
+    if !iszero(res)
+      G.exponent = res
+    end
   end
   name == "" || set_name!(G, name)
   return G
@@ -336,8 +351,15 @@ end
 ################################################################################
 
 function assure_has_hnf(A::GrpAbFinGen)
-  isdefined(A, :hnf) && return
-  A.hnf = hnf(A.rels)
+  if isdefined(A, :hnf) 
+    return nothing
+  end
+  if isdefined(A, :exponent)
+    A.hnf = hnf_modular_eldiv(A.rels, A.exponent)
+  else
+    A.hnf = hnf(A.rels)
+  end
+  return nothing
 end
 
 ################################################################################
@@ -408,6 +430,10 @@ function _reduce_snf(G::GrpAbFinGen, S::fmpz_mat, T::fmpz_mat, Ti::fmpz_mat)
   end
 
   H = GrpAbFinGen(s)
+  if !isempty(s) && !iszero(s[end])
+    H.exponent = s[end]
+    G.exponent = s[end]
+  end
   mp = hom(H, G, TTi, TT, check = false)
   G.snf_map = mp
   return H, mp::GrpAbFinGenMap
@@ -486,7 +512,24 @@ order_gen(A::GrpAbFinGen) = order(snf(A)[1])
 
 Returns the exponent of $A$. It is assumed that $A$ is finite.
 """
-exponent(A::GrpAbFinGen) = issnf(A) ? exponent_snf(A) : exponent_gen(A)
+function exponent(A::GrpAbFinGen)
+  if isdefined(A, :exponent)
+    return A.exponent
+  end
+  if issnf(A) 
+    res = exponent_snf(A) 
+    if !iszero(res)
+      A.exponent = res
+    end
+    return res
+  else
+    res = exponent_gen(A)
+    if !iszero(res)
+      A.exponent = res
+    end
+    return res
+  end
+end
 
 function exponent_snf(A::GrpAbFinGen)
   isinfinite(A) && error("Group must be finite")
@@ -1153,7 +1196,11 @@ function sub(G::GrpAbFinGen, s::Array{GrpAbFinGenElem, 1},
       end
     end
   end
-  h = hnf(m)
+  if isdefined(G, :exponent)
+    h = hnf_modular_eldiv(m, G.exponent)
+  else
+    h = hnf(m)
+  end
   fstWithoutOldGens = 1
   for i in nrows(h):-1:1, j in ngens(p):-1:1
     if !iszero(h[i,j])
@@ -1161,10 +1208,10 @@ function sub(G::GrpAbFinGen, s::Array{GrpAbFinGenElem, 1},
       break
     end
   end
-  r = sub(h, fstWithoutOldGens:nrows(h), ngens(p) + 1:ncols(h))
+  r = view(h, fstWithoutOldGens:nrows(h), ngens(p) + 1:ncols(h))
   S = AbelianGroup(r)
 
-  mS = hom(S, p, sub(m, (nrels(p) + 1):nrows(h), 1:ngens(p)), check = false)
+  mS = hom(S, p, view(m, (nrels(p) + 1):nrows(h), 1:ngens(p)), check = false)
 
   if add_to_lattice
     append!(L, mS)
@@ -1211,8 +1258,12 @@ function sub(G::GrpAbFinGen, M::fmpz_mat,
       end
     end
   end
-
-  h = hnf(m)
+  
+  if isdefined(G, :exponent) && !iszero(G.exponent) 
+    h = hnf_modular_eldiv(m, G.exponent)
+  else
+    h = hnf(m)
+  end
   fstWithoutOldGens = 1
 
   for i in nrows(h):-1:1, j in ngens(G):-1:1
@@ -1221,14 +1272,49 @@ function sub(G::GrpAbFinGen, M::fmpz_mat,
       break
     end
   end
-  r = sub(h, fstWithoutOldGens:nrows(h), ngens(G) + 1:ncols(h))
+  r = view(h, fstWithoutOldGens:nrows(h), ngens(G) + 1:ncols(h))
   S = AbelianGroup(r)
-  mS = hom(S, G, sub(m, (nrels(G) + 1):nrows(h), 1:ngens(G)), check = false)
+  mS = hom(S, G, view(m, (nrels(G) + 1):nrows(h), 1:ngens(G)), check = false)
 
   if add_to_lattice
     append!(L, mS)
   end
   return S, mS
+end
+
+function _sub_integer_snf(G::GrpAbFinGen, n::fmpz, add_to_lattice::Bool = true, L::GrpAbLattice = GroupLattice)
+  ind = 1
+  while gcd(n, G.snf[ind]) == G.snf[ind] || ind <= ngens(G)
+    ind += 1
+  end
+  if ind == ngens(G) && gcd(n, G.snf[ind]) == G.snf[ind]
+    Gnew = GrpAbFinGenElem(Int[])
+    mp = hom(Gnew, G, GrpAbFinGenElem[])
+    if add_to_lattice
+      append!(L, mp)
+    end
+    return Gnew, mp
+  end
+  invariants = Vector{fmpz}(undef, ngens(G)-ind+1)
+  for_map = Vector{fmpz}(undef, ngens(G)-ind+1)
+  for i = ind:length(G.snf)
+    if iszero(G.snf[i])
+      invariants[i-ind+1] = 0
+    else
+      res = gcd(n, V.snf[i])
+      invariants[i-ind+1] = divexact(G.snf[i], res)
+    end
+  end
+  Gnew = DiagonalGroup(invariants)
+  mat_map = zero_matrix(FlintZZ, length(invariants), ngens(G))
+  for i = 1:ngens(Gnew)
+    mat_map[i, ind+i-1] = n
+  end
+  mp = hom(Gnew, G, mat_map)
+  if add_to_lattice
+    append!(L, mp)
+  end
+  return Gnew, mp
 end
 
 @doc Markdown.doc"""
@@ -1239,8 +1325,17 @@ with the injection $\iota : n\cdot G \to G$.
 """
 function sub(G::GrpAbFinGen, n::fmpz,
              add_to_lattice::Bool = true, L::GrpAbLattice = GroupLattice)
-  sg = [ n*g for g in gens(G) if !iszero(n*g)]
-  return sub(G, sg, add_to_lattice, L)
+  if issnf(G)
+    return _sub_integer_snf(G, n, add_to_lattice, L)
+  end
+  H, mH = sub(G, scalar_matrix(FlintZZ, ngens(G), deepcopy(n)), add_to_lattice, L)
+  if isdefined(G, :exponent)
+    res = divexact(G.exponent, gcd(n, G.exponent))
+    if !iszero(res)
+      H.exponent = res
+    end
+  end
+  return H, mH
 end
 
 @doc Markdown.doc"""
@@ -1335,7 +1430,7 @@ function quo(G::GrpAbFinGen, n::Union{fmpz, Integer},
   if issnf(G)
     return quo_snf(G, n, add_to_lattice, L)
   else
-    quo_gen(G, n, add_to_lattice, L)
+    return quo_gen(G, n, add_to_lattice, L)
   end
 end
 
@@ -1355,6 +1450,9 @@ function quo_gen(G::GrpAbFinGen, n::Union{fmpz, Integer},
                  add_to_lattice::Bool = true, L::GrpAbLattice = GroupLattice)
   m = vcat(G.rels, n*identity_matrix(FlintZZ, ngens(G)))
   Q = AbelianGroup(m)
+  if isdefined(G, :exponent)
+    Q.exponent = gcd(n, G.exponent)
+  end
   I = identity_matrix(FlintZZ, ngens(G))
   m = hom(G, Q, I, I, check = false)
   if add_to_lattice
@@ -1679,7 +1777,7 @@ Given a positive integer $n$, return a list of all abelian groups of order $n$.
 """
 function abelian_groups(n::Int)
   if n == 1
-    return [DiagonalGroup(Int[])]
+    return GrpAbFinGen[DiagonalGroup(Int[])]
   end
   nn = fmpz(n)
   fac = factor(nn)

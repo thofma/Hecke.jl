@@ -16,10 +16,17 @@ function check_Brauer_obstruction(list::Vector{FieldsTower}, L::Main.ForeignGAP.
   fac = factor(common_degree)
   for (p, v) in fac
     if length(invariants) == 1 || iscoprime(invariants[end-1], p)
-      if v > 1
-        list = check_Brauer_obstruction_pp(list, L, i, Int(p), v)
+      if p == 2
+        list = _Brauer_prime_case(list, L, i, 2)
+        if v > 1
+          list = check_Brauer_obstruction_pp(list, L, i, 2, v)
+        end
       else
-        list = _Brauer_prime_case(list, L, i, Int(p))
+        if v > 1
+          list = check_Brauer_obstruction_pp(list, L, i, Int(p), v)
+        else
+          list = _Brauer_prime_case(list, L, i, Int(p))
+        end
       end
     else
       #The extension is not cyclic. I need to search for a normal cyclic subextension.
@@ -324,8 +331,6 @@ function _Brauer_prime_case(list::Vector{FieldsTower}, L::Main.ForeignGAP.MPtr, 
     #I construct the group and the isomorphisms between the automorphisms and the gap group.
     permGC = _from_autos_to_perm(autsK) 
     Gperm = _perm_to_gap_grp(permGC)
-    d = discriminant(K.pol)
-    d1 = discriminant(K1.pol)
     Pcomp = 2
     R = GF(Pcomp, cached = false)
     Rx = PolynomialRing(R, "x", cached = false)[1]
@@ -570,17 +575,18 @@ end
 
 function action_on_roots(G::Vector{NfToNfMor}, zeta::nf_elem, pv::Int)
   act_on_roots = Array{Int, 1}(undef, length(G))
-  #@assert isone(zeta^pv)
   p = 11
   K = domain(G[1])
   Qx = parent(K.pol)
-  d = discriminant(K.pol)
-  while iszero(mod(numerator(d), p)) || iszero(mod(pv, p))
-    p = next_prime(p)
-  end
   R = GF(p, cached = false)
   Rx, x = PolynomialRing(R, "x", cached = false)
   fmod = Rx(K.pol)
+  while iszero(discriminant(fmod)) || iszero(mod(pv, p))
+    p = next_prime(p)
+    R = GF(p, cached = false)
+    Rx, x = PolynomialRing(R, "x", cached = false)
+    fmod = Rx(K.pol)
+  end
   polsG = gfp_poly[Rx(g.prim_img) for g in G]
   zetaP = Rx(zeta)
   units = Vector{gfp_poly}(undef, pv-1)
@@ -604,14 +610,17 @@ function restriction(autsK1::Vector{NfToNfMor}, autsK::Vector{NfToNfMor}, mp::Nf
   K = domain(mp)
   K1 = codomain(mp)
   p = 11
-  d1 = numerator(discriminant(K.pol))
-  d2 = numerator(discriminant(K1.pol))
-  while iszero(mod(d1, p)) || iszero(mod(d2, p))
-    p = next_prime(p)
-  end
   R = GF(p, cached = false)
   Rx, x = PolynomialRing(R, "x", cached = false)
+  ff1 = Rx(K.pol)
   fmod = Rx(K1.pol)
+  while iszero(discriminant(ff1)) || iszero(discriminant(fmod))
+    p = next_prime(p)
+    R = GF(p, cached = false)
+    Rx, x = PolynomialRing(R, "x", cached = false)
+    ff1 = Rx(K.pol)
+    fmod = Rx(K1.pol)
+  end
   mp_pol = Rx(mp.prim_img)
   imgs = Vector{gfp_poly}(undef, length(autsK))
   for i = 1:length(imgs)
@@ -667,14 +676,18 @@ function check_Brauer_obstruction_pp(list::Vector{FieldsTower}, L::Main.ForeignG
     #I construct the group and the isomorphisms between the automorphisms and the gap group.
     permGC = _from_autos_to_perm(autsK) 
     Gperm = _perm_to_gap_grp(permGC)
-    d1 = numerator(discriminant(K.pol))
-    d2 = numerator(discriminant(K1.pol))
     Pcomp = 7
-    while iszero(mod(d1, Pcomp)) || iszero(mod(d2, Pcomp))
-      Pcomp = next_prime(Pcomp)
-    end
     R = GF(Pcomp, cached = false)
     Rx, x = PolynomialRing(R, "x", cached = false)
+    ff1 = Rx(K.pol)
+    ff2 = Rx(K1.pol)
+    while iszero(discriminant(ff1)) || iszero(discriminant(ff2))
+      Pcomp = next_prime(Pcomp)
+      R = GF(Pcomp, cached = false)
+      Rx, x = PolynomialRing(R, "x", cached = false)
+      ff1 = Rx(K.pol)
+      ff2 = Rx(K1.pol)
+    end
     dautsK1 = Dict{gfp_poly, Int}()
     for w = 1:length(autsK1)
       dautsK1[Rx(autsK1[w].prim_img)] = w
@@ -769,13 +782,16 @@ function _Brauer_no_extend_pp(F, mH, autos, coc, p, v, Elems, pv, action_grp)
   #I construct the group and the isomorphisms between the automorphisms and the gap group.
   permGC = _from_autos_to_perm(autsK) 
   Gperm = _perm_to_gap_grp(permGC)
-  d1 = numerator(discriminant(K.pol))
   Pcomp = 7
-  while iszero(mod(d1, Pcomp))
-    Pcomp = next_prime(Pcomp)
-  end
   R = GF(Pcomp, cached = false)
   Rx, x = PolynomialRing(R, "x", cached = false)
+  ff1 = Rx(K.pol)
+  while iszero(discriminant(ff1))
+    Pcomp = next_prime(Pcomp)
+    R = GF(Pcomp, cached = false)
+    Rx, x = PolynomialRing(R, "x", cached = false)
+    ff1 = Rx(K.pol)
+  end
   dautsK = Dict{gfp_poly, Int}()
   for w = 1:length(autsK)
     dautsK[Rx(autsK[w].prim_img)] = w
@@ -908,12 +924,7 @@ end
 
 function is_split_at_infinity(K::AnticNumberField, Coc::Function, Rx::GFPPolyRing)
   aut = complex_conjugation(K)
-  if Coc(Rx(aut.prim_img), Rx(aut.prim_img)) == 1
-    @vprint :Fields 3 "Real places!\n"
-    return false
-  else
-    return true
-  end
+  return !isone(Coc(Rx(aut.prim_img), Rx(aut.prim_img)))
 end
 
 function inertia_subgroup(F, mF, G::Array{NfToNfMor, 1})
