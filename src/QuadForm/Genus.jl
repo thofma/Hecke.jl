@@ -612,7 +612,6 @@ function _genus_symbol(L::HermLat, q)
   else
     p = q
   end
-  @show p
   @assert order(p) == base_ring(base_ring(L))
   B, G, S = jordan_decomposition(L, p)
   R = base_ring(L)
