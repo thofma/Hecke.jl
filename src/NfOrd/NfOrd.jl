@@ -652,9 +652,9 @@ and
 $\sum_i^d x_i^2 \leq c_2 \cdot T_2(x)$,
 where $(\omega_i)_i$ is the $\mathbf Z$-basis of $\mathcal O$.
 """
-function norm_change_const(O::NfOrd)
-  if O.norm_change_const[1] > 0
-    return O.norm_change_const::Tuple{Float64, Float64}
+function norm_change_const(O::NfOrd; cached::Bool = true)
+  if cached && isdefined(O, :norm_change_const)
+    return O.norm_change_const::Tuple{BigFloat, BigFloat}
   else
     d = degree(O)
     M = minkowski_matrix(O, 64)
@@ -670,15 +670,15 @@ function norm_change_const(O::NfOrd)
     N = Symmetric([ Float64(M[i, j]) for i in 1:nrows(M), j in 1:ncols(M) ])
     #forcing N to really be Symmetric helps julia - aparently
     r = sort(LinearAlgebra.eigvals(N))
-    if !(r[1] > 0)
+    if !(r[1] > 0) || any(isnan, r)
       # more complicated methods are called for...
       m = ceil(Int, log(d)/log(2))
       m += m%2
       @assert iseven(m)
       l_max = root(tr(M^m), m) #an upper bound within a factor of 2
-                                    #according to a paper by Victor Pan
-                                    #https://doi.org/10.1016/0898-1221(90)90236-D
-                                    #formula (1) and discussion
+                                #according to a paper by Victor Pan
+                                #https://doi.org/10.1016/0898-1221(90)90236-D
+                                #formula (1) and discussion
       pr = 128
       l_min = l_max
       if isodd(d) d+=1; end
@@ -687,9 +687,9 @@ function norm_change_const(O::NfOrd)
           M = inv(M)
           l_min = root(tr(M^d), d) #as above...
           if isfinite(l_min)
-            z = (Float64(l_max), Float64(l_min))
+            z = (BigFloat(l_max), BigFloat(l_min))
             O.norm_change_const = z
-            return z::Tuple{Float64, Float64}
+            return z::Tuple{BigFloat, BigFloat}
           end
           M = minkowski_matrix(O, pr)
           M = M*M'
@@ -703,28 +703,10 @@ function norm_change_const(O::NfOrd)
     end
 
     @assert r[1]>0
-#    N = transpose(M)*M
-#    N = MatrixSpace(AcbField(prec(base_ring(N))), nrows(N), ncols(N))(N)
-#    chi = charpoly(PolynomialRing(base_ring(N), "x")[1], N)
-#    return chi
-#    r = roots(chi)
-#    # I want upper bound for the largest and lower bound for the smallest root
-#
-#    tm = arf_struct(0, 0, 0, 0)
-#    ccall((:arf_init, :libarb), Nothing, (Ref{arf_struct}, ), tm)
-#    ccall((:arb_get_abs_ubound_arf, :libarb), Nothing, (Ref{arf_struct}, Ref{arb}), tm, real(r[end]))
-#    # 3 is round to infinity
-#    c1 = ccall((:arf_get_d, :libarb), Cdouble, (Ref{arf_struct}, Cint), tm, 3)
-#
-#    ccall((:arb_get_abs_ubound_arf, :libarb), Nothing, (Ref{arf_struct}, Ref{arb}), tm, &(inv(real(r[1]))))
-#    c2 = ccall((:arf_get_d, :libarb), Cdouble, (Ref{arf_struct}, Cint), tm, 3)
-#
-#    ccall((:arf_clear, :libarb), Nothing, (Ref{arf_struct}, ), tm)
-#
-#    z = (c1, c2)
-    z = (r[end], inv(r[1]))
+
+    z = (BigFloat(r[end]), BigFloat(inv(r[1])))
     O.norm_change_const = z
-    return z::Tuple{Float64, Float64}
+    return z::Tuple{BigFloat, BigFloat}
   end
 end
 
@@ -733,7 +715,9 @@ end
 #  Construction of orders
 #
 ################################################################################
+
 @doc Markdown.doc"""
+
     Order(B::Array{nf_elem, 1}; check::Bool = true, cached::Bool = true) -> NfOrd
 
 Returns the order generated $B$. If `check` is set, it is checked
