@@ -82,6 +82,11 @@ end
 
 parent(f::NfToNfMor) = NfMorSet(domain(f))
 
+function image(f::NfToNfMor, a::FacElem{nf_elem, AnticNumberField})
+  D = Dict{nf_elem, fmpz}(f(b) => e for (b, e) in a)
+  return FacElem(D)
+end
+
 ################################################################################
 #
 #  NfToNfRelMor

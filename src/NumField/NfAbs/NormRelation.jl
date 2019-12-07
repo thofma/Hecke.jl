@@ -4,8 +4,14 @@
 #
 ################################################################################
 
-add_verbose_scope(:NormRelation)
-add_assert_scope(:NormRelation)
+module NormRel
+
+using Hecke
+
+import Hecke: one, can_solve_with_kernel, lcm!, simplify, NfFactorBase
+
+Hecke.add_verbose_scope(:NormRelation)
+Hecke.add_assert_scope(:NormRelation)
 
 # Example
 # 
@@ -179,11 +185,6 @@ index(N::NormRelation) = N.denominator
 norm(N::NormRelation, i::Int, a) = norm(N.embeddings[i], a)
 
 ispure(N::NormRelation) = N.ispure
-
-function image(f::NfToNfMor, a::FacElem{nf_elem, AnticNumberField})
-  D = Dict{nf_elem, fmpz}(f(b) => e for (b, e) in a)
-  return FacElem(D)
-end
 
 function check_relation(N::NormRelation, a::nf_elem)
   @assert !iszero(a)
@@ -451,7 +452,7 @@ end
 function _setup_for_norm_relation_fun(K, S = prime_ideals_up_to(maximal_order(K), factor_base_bound_grh(maximal_order(K))))
   ZK = order(S[1])
   FB = NfFactorBase(ZK, S)
-  c = class_group_init(FB)
+  c = Hecke.class_group_init(FB)
   UZK = Hecke.UnitGrpCtx{FacElem{nf_elem, AnticNumberField}}(ZK)
   return c, UZK
 end
@@ -611,7 +612,7 @@ end
 
 one(T::FacElemMon{AnticNumberField}) = T()
 
-function simplify(c::Hecke.ClassGrpCtx)
+function Hecke.simplify(c::Hecke.ClassGrpCtx)
   d = Hecke.class_group_init(c.FB, SMat{fmpz}, add_rels = false)
   U = Hecke.UnitGrpCtx{FacElem{nf_elem, AnticNumberField}}(order(d))
 
@@ -717,7 +718,12 @@ function _has_norm_relation_abstract(G::GrpGen, H::Vector{Tuple{GrpGen, GrpGenTo
                                      greedy::Bool = false,
                                      large_index::Bool = false,
                                      pure::Bool = false,
+                                     index_bound::Int = -1,
                                      target_den::fmpz = zero(fmpz))
+  if index_bound != -1
+    H = [h for h in H if order(G) <= order(h[1]) * index_bound]
+  end
+    
   QG = AlgGrp(FlintQQ, G)
   norms_rev = Dict{elem_type(QG), Int}()
   norms = Vector{elem_type(QG)}(undef, length(H))
@@ -1165,7 +1171,7 @@ function class_group_via_brauer(O::NfOrd, N::NormRelation, do_lll = true)
   OK = maximal_order(K)
   S = prime_ideals_up_to(OK, factor_base_bound_grh(OK))
   c, UZK = Hecke._setup_for_norm_relation_fun(K, S)
-  Hecke._add_sunits_from_brauer_relation!(c, UZK, N)
+  _add_sunits_from_brauer_relation!(c, UZK, N)
   if index(N) != 1
     # I need to saturate
     @vprint :NormRelation 1 "Saturating at "
@@ -1194,7 +1200,7 @@ function _sunit_group_fac_elem_quo_via_brauer(N::NormRelation, S, n::Int, invari
 
   if invariant
     c, UZK = Hecke._setup_for_norm_relation_fun(K, S)
-    Hecke._add_sunits_from_brauer_relation!(c, UZK, N)
+    _add_sunits_from_brauer_relation!(c, UZK, N)
   else
     cp = sort!(collect(Set(minimum(x) for x = S)))
     Sclosed = NfOrdIdl[]
@@ -1204,9 +1210,13 @@ function _sunit_group_fac_elem_quo_via_brauer(N::NormRelation, S, n::Int, invari
         push!(Sclosed, P)
       end
     end
+    if length(Sclosed) == length(S)
+      invariant = true
+      Sclosed = S
+    end
     @vprint :NormRelation 1 "I am not Galois invariant. Working with S of size $(length(Sclosed))\n"
-    c, UZK = Hecke._setup_for_norm_relation_fun(K, Sclosed)
-    Hecke._add_sunits_from_brauer_relation!(c, UZK, N)
+    c, UZK = _setup_for_norm_relation_fun(K, Sclosed)
+    _add_sunits_from_brauer_relation!(c, UZK, N)
   end
 
   if gcd(index(N), n) != 1
@@ -1279,9 +1289,9 @@ function _sunit_group_fac_elem_quo_via_brauer(N::NormRelation, S, n::Int, invari
 
     exp = function(a::GrpAbFinGenElem)
       @assert parent(a) == res_group
-      zz = FacElem(convert(Vector{nf_elem_or_fac_elem}, unitsmodtorsion), fmpz[1 + a[i] for i in 1:length(unitsmodtorsion)])
+      zz = FacElem(convert(Vector{Hecke.nf_elem_or_fac_elem}, unitsmodtorsion), fmpz[1 + a[i] for i in 1:length(unitsmodtorsion)])
       z = mul!(zz, zz, tomodn)
-      zzz = FacElem(convert(Vector{nf_elem_or_fac_elem}, sunitsmodunits), fmpz[a[1 + length(unitsmodtorsion) + i] for i in 1:length(sunitsmodunits)])
+      zzz = FacElem(convert(Vector{Hecke.nf_elem_or_fac_elem}, sunitsmodunits), fmpz[a[1 + length(unitsmodtorsion) + i] for i in 1:length(sunitsmodunits)])
       mul!(z, z, zzz)
       
       for (k, v) in z.fac
@@ -1320,11 +1330,11 @@ function _sunit_group_fac_elem_quo_via_brauer(N::NormRelation, S, n::Int, invari
     end
   end
 
-  r = MapSUnitGrpFacElem{typeof(res_group)}()
+  r = Hecke.MapSUnitGrpFacElem{typeof(res_group)}()
   r.idl = S
   r.isquotientmap = n
 
-  r.header = MapHeader(res_group, FacElemMon(nf(O)), exp, disclog)
+  r.header = Hecke.MapHeader(res_group, FacElemMon(nf(O)), exp, disclog)
   @hassert :NormRelation 9000 begin
     _S, _mS = sunit_group_fac_elem(S)
     _Q, _mQ = quo(_S, n)
@@ -1333,3 +1343,5 @@ function _sunit_group_fac_elem_quo_via_brauer(N::NormRelation, S, n::Int, invari
   end
   return res_group, r
 end
+
+end # module
