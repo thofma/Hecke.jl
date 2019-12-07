@@ -1151,6 +1151,41 @@ function sunit_group_fac_elem_quo_via_brauer(K::AnticNumberField, S, n::Int, inv
   return _sunit_group_fac_elem_quo_via_brauer(N, S, n, invariant)
 end
 
+function sunit_group_fac_elem_via_brauer(N::NormRelation, S, invariant::Bool = false)
+  return _sunit_group_fac_elem_quo_via_brauer(N, S, 0, invariant)
+end
+
+function class_group_via_brauer(O::NfOrd, N::NormRelation, do_lll = true)
+  K = N.K
+  if do_lll
+    OK = lll(maximal_order(nf(O)))
+  else
+    OK = O
+  end
+  OK = maximal_order(K)
+  S = prime_ideals_up_to(OK, factor_base_bound_grh(OK))
+  c, UZK = Hecke._setup_for_norm_relation_fun(K, S)
+  Hecke._add_sunits_from_brauer_relation!(c, UZK, N)
+  if index(N) != 1
+    # I need to saturate
+    @vprint :NormRelation 1 "Saturating at "
+    for (p, e) in factor(index(N))
+      @vprint :NormRelation 1 "$p "
+      b = Hecke.saturate!(c, UZK, Int(p))
+      while b
+        b = Hecke.saturate!(c, UZK, Int(p))
+      end
+    end
+  end
+  @vprint :NormRelation 1 "\n"
+  c, _ = simplify(c)
+
+  c.finished = true
+  UZK.finished = true
+
+  return class_group(c, O)
+end
+
 function _sunit_group_fac_elem_quo_via_brauer(N::NormRelation, S, n::Int, invariant::Bool = false)
   O = order(S[1])
 
@@ -1187,6 +1222,7 @@ function _sunit_group_fac_elem_quo_via_brauer(N::NormRelation, S, n::Int, invari
   end
   @vprint :NormRelation 1 "\n"
 
+  # This makes c.R.gen be a basis of the S-units (modulo torsion)
   c, _ = simplify(c)
 
   if invariant
