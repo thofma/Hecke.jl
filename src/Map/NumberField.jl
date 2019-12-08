@@ -1,4 +1,4 @@
-export extend, NfToNfMor, automorphisms
+export extend, NfToNfMor, automorphisms, automorphism_group
 
 struct NfMorSet{T}
   field::T

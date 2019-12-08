@@ -12,10 +12,6 @@ parent_type(::Type{AlgGrpElem{T, S}}) where {T, S} = S
 
 parent(a::AbsAlgAssElem) = a.parent
 
-function Base.hash(x::AlgGrpElem, h::UInt)
-  return Base.hash(x.coeffs, h)
-end
-
 ################################################################################
 #
 #  elem_in_algebra
@@ -613,7 +609,7 @@ Base.copy(a::AbsAlgAssElem) = deepcopy(a)
 #
 ################################################################################
 
-function Base.hash(a::AbsAlgAssElem, h::UInt)
+function Base.hash(a::AbsAlgAssElem{T}, h::UInt) where {T}
   return Base.hash(coeffs(a, copy = false), h)
 end
 
