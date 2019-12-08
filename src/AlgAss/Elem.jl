@@ -12,6 +12,10 @@ parent_type(::Type{AlgGrpElem{T, S}}) where {T, S} = S
 
 parent(a::AbsAlgAssElem) = a.parent
 
+function Base.hash(x::AlgGrpElem, h::UInt)
+  return Base.hash(x.coeffs, h)
+end
+
 ################################################################################
 #
 #  elem_in_algebra
