@@ -67,10 +67,6 @@ function Base.show(io::IO, N::NormRelation)
   end
 end
 
-function Base.hash(x::AlgGrpElem, h::UInt)
-  return Base.hash(x.coeffs, h)
-end
-
 function _norm_relation_setup_abelian(K::AnticNumberField; small_degree::Bool = true, pure::Bool = true, index::fmpz = zero(fmpz))
   G = automorphisms(K)
   A, GtoA, AtoG = find_isomorphism_with_abelian_group(G, *);
