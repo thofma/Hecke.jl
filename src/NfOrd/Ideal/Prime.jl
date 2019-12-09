@@ -32,7 +32,7 @@
 #
 ################################################################################
 
-export PrimeIdealsSet, prime_ideals_over, ramification_index
+export PrimeIdealsSet, prime_ideals_over, ramification_index, prime_ideals_up_to
 
 @doc Markdown.doc"""
     isramified(O::NfOrd, p::Int) -> Bool

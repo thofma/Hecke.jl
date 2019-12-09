@@ -1856,6 +1856,27 @@ end
 
 ################################################################################
 #
+#  Elementary divisors
+#
+################################################################################
+
+@doc Markdown.doc"""
+    elementary_divisors(G::GrpAbFinGen) -> Vector{fmpz}
+
+Given $G$, returns the elementary divisors of $G$, that is, the unique positive
+integers $e_1,\dotsc,e_k$ with $e_i \mid e_{i + 1}$ and
+$G \cong \mathbf{Z}/e_1\mathbf{Z} \times \dotsb \times \mathbf{Z}/e_k\mathbf{Z}$.
+"""
+function elementary_divisors(G::GrpAbFinGen)
+  if issnf(G)
+    return copy(G.snf)
+  else
+    return elementary_divisors(snf(G)[1])
+  end
+end
+
+################################################################################
+#
 #  Identity
 #
 ################################################################################
