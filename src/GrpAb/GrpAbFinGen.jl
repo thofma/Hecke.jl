@@ -1530,12 +1530,6 @@ end
 function iseq(G::GrpAbFinGen, H::GrpAbFinGen, L::GrpAbLattice = GroupLattice)
   isfinite(G) && (order(G) == order(H) || return false)
   return issubgroup(G, H)[1] && issubgroup(H, G)[1]
-  #TODO: this is crap
-  fl, GH, mG, mH = can_map_into_overstructure(L, G, H)
-  if !fl
-    return false
-  end
-  return order(G+H) == order(G)
 end
 
 function Base.isequal(G::GrpAbFinGen, H::GrpAbFinGen)

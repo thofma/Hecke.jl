@@ -197,8 +197,7 @@ function assure_has_basis_mat_inv(O::NfAbsOrd)
     #The order contains the equation order and the matrix is lower triangular
     #The inverse is lower triangular and it has denominator 1
     #to exploit this, I call can_solve
-    fl, I = can_solve(M.num, scalar_matrix(FlintZZ, nrows(M), M.den), side = :left)
-    @assert fl
+    I = solve_lt(M.num, scalar_matrix(FlintZZ, nrows(M), M.den))
     O.basis_mat_inv = FakeFmpqMat(I)
     return nothing
   end

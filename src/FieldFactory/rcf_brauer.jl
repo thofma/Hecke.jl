@@ -58,10 +58,11 @@ function ray_class_field_cyclic_pp_Brauer(CF::ClassField{S, T}, mQ::GrpAbFinGenM
   while !iszero(mng*mq)
     attempt += 1
     @show "attempt number $(attempt)"
-    _rcf_S_units_enlarge(CFpp)
+    _rcf_S_units_enlarge(CE, CFpp)
     KK = kummer_extension(e, FacElem{nf_elem, AnticNumberField}[CFpp.a])
     ng, mng = norm_group(KK, CE.mp[2], mr)
   end
+  
   @vprint :ClassField 1 "reducing the generator...\n"
   @vtime :ClassField 1 _rcf_reduce(CFpp)
   @vprint :ClassField 1 "descending ...\n"
@@ -75,7 +76,7 @@ end
 #
 ################################################################################
 
-function _rcf_S_units_enlarge(CF::ClassField_pp)
+function _rcf_S_units_enlarge(CE, CF::ClassField_pp)
   lP = CF.sup
   OK = order(lP[1])
   f = maximum(minimum(p) for p in lP)
@@ -102,6 +103,7 @@ function _rcf_S_units_enlarge(CF::ClassField_pp)
   end
   KK.gen_mod_nth_power = gens_mod_nth
   CF.bigK = KK
+  CE.kummer_ext = (lP, KK)
   _rcf_find_kummer(CF)
   return nothing
 end
@@ -118,7 +120,7 @@ function _rcf_S_units_using_Brauer(CF::ClassField_pp)
   C = cyclotomic_extension(k1, degree(CF))
   automorphisms(C, copy = false)
   G, mG = automorphism_group(C.Ka)
-  @vtime :ClassField 3 fl = has_useful_brauer_relation(G)
+  @vtime :ClassField 3 fl = NormRel.has_useful_brauer_relation(G)
   if fl
     @vtime :ClassField 3 lP, KK = _s_unit_for_kummer_using_Brauer(C, minimum(f))
   else
@@ -137,12 +139,12 @@ function _s_unit_for_kummer_using_Brauer(C::CyclotomicExt, f::fmpz)
   
   e = C.n
   lf = factor(f)
-#  lfs = Set(collect(keys(lf.fac)))
-#  for (k, v) in C.kummer_exts
-#    if issubset(lfs, k)
-#      return v
-#    end
-#  end  
+  lfs = Set(collect(keys(lf.fac)))
+  for (k, v) in C.kummer_exts
+    if issubset(lfs, k)
+      return v
+    end
+  end  
   K = absolute_field(C)
   @vprint :ClassField 2 "Maximal order of cyclotomic extension\n"
   ZK = maximal_order(K)
@@ -159,16 +161,6 @@ function _s_unit_for_kummer_using_Brauer(C::CyclotomicExt, f::fmpz)
     end
   end
   
-  
-  if length(lP) < 10
-    #add some primes
-    pp = f+1
-    while length(lP) < 10
-      pp = next_prime(pp)
-      push!(lP, prime_decomposition(ZK, pp)[1][1])
-    end
-  end
-  #=
   if length(lP) < 10
     #add some primes
     pp = f+1
@@ -180,7 +172,7 @@ function _s_unit_for_kummer_using_Brauer(C::CyclotomicExt, f::fmpz)
       end
     end
   end
-  =#
+
   
   @vprint :Fields 3 "Computing S-units with $(length(lP)) primes\n"
   @vtime :Fields 3 S, mS = NormRelation.sunit_group_fac_elem_quo_via_brauer(C.Ka, lP, e)
@@ -200,5 +192,6 @@ function _s_unit_for_kummer_using_Brauer(C::CyclotomicExt, f::fmpz)
     gens_mod_nth[i] = FacElem(el)
   end
   KK.gen_mod_nth_power = gens_mod_nth
+  C.kummer_ext = (lP, KK)
   return lP, KK
 end
