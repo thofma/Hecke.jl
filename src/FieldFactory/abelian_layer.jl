@@ -337,7 +337,7 @@ function from_class_fields_to_fields(class_fields::Vector{Hecke.ClassField{Hecke
     K = base_field(class_fields[1])
     assure_automorphisms(K, autos)
     subfields = compute_subfields(K, E, H, S)
-    computing_over_subfields(cfieldsp, subfields, idE, autos, right_grp, ab_inv)
+    computing_over_subfields(cfieldsp, subfields, idE, autos, right_grp, ab_inv, GAP.Globals.IsNormal(E, S))
     pclassfields[ind] = cfieldsp
     ind += 1
   end
@@ -376,10 +376,16 @@ function from_class_fields_to_fields(class_fields::Vector{Hecke.ClassField{Hecke
 end
 
 function compute_fields(class_fields::Vector{Hecke.ClassField{Hecke.MapRayClassGrp, GrpAbFinGenMap}}, autos::Vector{NfToNfMor}, grp_to_be_checked::Main.ForeignGAP.MPtr, right_grp)
-  use_brauer = false
-
+  
+  use_brauer = true
   it = findall(right_grp)
   K = base_field(class_fields[it[1]])
+  OK = maximal_order(K)
+  if divisible(order(torsion_unit_group(OK)[1]), exponent(class_fields[it[1]]))
+    use_brauer = false
+  end
+
+  
   fields = Tuple{Hecke.NfRelNS{nf_elem}, Vector{Hecke.NfRelNSToNfRelNSMor{nf_elem}}}[]
   expo = Int(exponent(codomain(class_fields[it[1]].quotientmap)))
   
@@ -538,7 +544,7 @@ end
 #
 ################################################################################
 
-function computing_over_subfields(class_fields, subfields, idE, autos, right_grp, ab_invariants::Vector{Int})
+function computing_over_subfields(class_fields, subfields, idE, autos, right_grp, ab_invariants::Vector{Int}, is_normal_subfield::Bool)
 
   it = findall(right_grp)
   new_class_fields, subs, to_be_done = translate_class_field_down(subfields, class_fields, it, ab_invariants)
@@ -553,6 +559,17 @@ function computing_over_subfields(class_fields, subfields, idE, autos, right_grp
     right_grp[x] = false
   end
   it = findall(right_grp)
+  use_brauer = true
+  if !is_normal_subfield || !iszero(mod(order(torsion_unit_group(base_ring(new_class_fields[it[1]]))[1]), exponent(new_class_fields[it[1]])))
+    use_brauer = false
+  end
+  for i in it
+    if use_brauer
+      NumberField_using_Brauer(new_class_fields[i])
+    else
+      number_field(new_class_fields[i])
+    end
+  end
   if isempty(it)
     return Vector{Tuple{Hecke.NfRelNS{nf_elem}, Vector{Hecke.NfRelNSToNfRelNSMor{nf_elem}}}}()
   end

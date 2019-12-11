@@ -51,6 +51,7 @@ end
 ################################################################################
 
 # This destroy's the input. If you don't want this, use A(::fmpz_mat)
+
 function GrpAbFinGenElem(A::GrpAbFinGen, a::fmpz_mat)
   if issnf(A)
     return elem_snf(A, a)
@@ -324,14 +325,14 @@ where the $1$ is at the $i$-th position.
 function getindex(A::GrpAbFinGen, i::Int)
   (i < 0 || i > ngens(A)) && error("Index ($i) out of range (1:$(ngens(A)))")
   if i==0
-    return A(zero_matrix(FlintZZ, 1, ngens(A)))
+    return GrpAbFinGenElem(A, zero_matrix(FlintZZ, 1, ngens(A)))
   end
   z = zero_matrix(FlintZZ, 1, ngens(A))
   for j in 1:ngens(A)
     z[1, j] = fmpz()
   end
   z[1, i] = fmpz(1)
-  return A(z)
+  return GrpAbFinGenElem(A, z)
 end
 
 ################################################################################

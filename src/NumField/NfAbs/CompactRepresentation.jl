@@ -138,7 +138,7 @@ function compact_presentation(a::FacElem{nf_elem, AnticNumberField}, nn::Int = 2
     @hassert :CompactPresentation 2 length(de) == 0 || ideal(ZK, a*be) == FacElem(de)
     k -= 1
   end
-  if length(de) == 0
+  if isempty(de)
     de[ideal(ZK, 1)] = 1
   end
   @hassert :CompactPresentation 2 length(de) != 0 || isone(ideal(ZK, a*be)) 

@@ -378,7 +378,16 @@ end
 #extension of automorphisms in the case of extensions of exponent 2
 function extend_aut2(A::ClassField, autos::Array{NfToNfMor, 1})
   Cp = [x for x in A.cyc if degree(x) % 2 == 0]
+  autos_extended = Vector{Vector{NfRelNSElem{nf_elem}}}(undef, length(autos))
   AA, gAA = number_field([c.A.pol for c in Cp], check = false)
+  if length(Cp) == 1
+    for i = 1:length(autos)
+      fl, el = ispower(autos[i](Cp[1].a)*inv(Cp[1].a), 2)
+      @assert fl
+      autos_extended[i] = NfRelNSElem{nf_elem}[AA(evaluate(el))*gAA[1]]
+    end
+    return autos_extended
+  end
   KK = kummer_extension([2 for i = 1:length(Cp)], [x.a for x in Cp])
   act_on_gens = Array{Array{FacElem{nf_elem, AnticNumberField}, 1}, 1}(undef, length(KK.gen))
   for i = 1:length(KK.gen)
@@ -389,7 +398,6 @@ function extend_aut2(A::ClassField, autos::Array{NfToNfMor, 1})
     act_on_gens[i] = act_on_gen_i
   end
   frob_gens = find_gens(KK, act_on_gens, A)
-  autos_extended = Vector{Vector{NfRelNSElem{nf_elem}}}(undef, length(autos))
   #I will compute a possible image cyclic component by cyclic component
   for w = 1:length(autos)
     images_KK = Array{Tuple{GrpAbFinGenElem, FacElem{nf_elem, AnticNumberField}}, 1}(undef, length(Cp))

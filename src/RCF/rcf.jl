@@ -1189,22 +1189,24 @@ function reduce_mod_powers(a::nf_elem, n::Int, primes::Array{NfOrdIdl, 1})
   return c
 end
 
-function reduce_mod_powers(a::FacElem{nf_elem, AnticNumberField}, n::Int, decom::Dict{NfOrdIdl, Int})
+function reduce_mod_powers(a::FacElem{nf_elem, AnticNumberField}, n::Int, decom::Dict{NfOrdIdl, fmpz})
   b = compact_presentation(a, n, decom = decom)
-  b = prod([k^(v % n) for (k,v) = b.fac if !iszero(v % n)])
-  b *= denominator(b, maximal_order(parent(b)))^n  #non-optimal, but integral...
-  return FacElem(b)  
+  b1 = prod(nf_elem[k^(v % n) for (k, v) = b.fac if !iszero(v % n)])
+  d = denominator(b1, maximal_order(parent(b1)))
+  b1 *= d^n  #non-optimal, but integral...
+  return FacElem(b1)  
 end
 
 function reduce_mod_powers(a::FacElem{nf_elem, AnticNumberField}, n::Int, primes::Array{NfOrdIdl, 1})
-  lp = Dict{NfOrdIdl, Int}((p, Int(valuation(a, p))) for p = primes)
+  vals = fmpz[valuation(a, p) for p in primes]
+  lp = Dict{NfOrdIdl, fmpz}(primes[i] => vals[i] for i = 1:length(primes) if !iszero(vals[i]))
   return reduce_mod_powers(a, n, lp)  
 end
 
 function reduce_mod_powers(a::FacElem{nf_elem, AnticNumberField}, n::Int)
   Zk = maximal_order(base_ring(a))
   lp = factor_coprime(a, IdealSet(Zk))
-  return reduce_mod_powers(a, n, Dict((p, Int(v)) for (p, v) = lp))
+  return reduce_mod_powers(a, n, lp)
 end
 
 ###############################################################################

@@ -645,10 +645,9 @@ mutable struct NfAbsOrd{S, T} <: Ring
   primesofmaximality::Vector{fmpz} # primes at the which the order is known to
                                    # to be maximal
 
-  norm_change_const::Tuple{Float64, Float64}
+  norm_change_const::Tuple{BigFloat, BigFloat}
                                    # Tuple c1, c2 as in the paper of
                                    # Fieker-Friedrich
-                                   # (-1, -1) means "not set"
   trace_mat::fmpz_mat              # The trace matrix (if known)
 
   auxilliary_data::Array{Any, 1}   # eg. for the class group: the
@@ -670,7 +669,7 @@ mutable struct NfAbsOrd{S, T} <: Ring
     r.nf = a
     #r.signature = (-1,0)
     r.primesofmaximality = Vector{fmpz}()
-    r.norm_change_const = (-1.0, -1.0)
+    #r.norm_change_const = (-1.0, -1.0)
     r.auxilliary_data = Array{Any}(undef, 10)
     r.isequation_order = false
     r.ismaximal = 0
@@ -1718,6 +1717,7 @@ mutable struct GrpAbFinGen <: GrpAb
   issnf::Bool
   snf::Array{fmpz, 1}
   snf_map::Map{GrpAbFinGen, GrpAbFinGen}
+  exponent::fmpz
   isfinalized::Bool
   @declare_other
 

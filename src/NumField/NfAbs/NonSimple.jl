@@ -672,17 +672,60 @@ end
 #
 ################################################################################
 
+function isunivariate(f::fmpq_mpoly)
+  deg = 0
+  var = 0
+  for i = 1:length(f)
+    exps = exponent_vector(f, i)
+    for j = 1:length(exps)
+      if !iszero(exps[j])
+        if iszero(var)
+          var = j
+          deg = exps[j]
+        elseif var != j
+          return false, fmpq_poly(), 0
+        elseif deg < exps[j]
+          deg = exps[j]
+        end
+      end
+    end
+  end
+
+  Qx = PolynomialRing(FlintQQ, "x")[1]
+  coeffs = Vector{fmpq}(undef, deg+1)
+  if iszero(deg)
+    #f is a constant
+    coeffs[1] = coeff(f, 1)
+    return true, Qx(coeffs), 1
+  end
+  for i = 1:length(f)
+    exps = exponent_vector(f, i)
+    coeffs[exps[var]+1] = coeff(f, i)
+  end
+  for i = 1:length(coeffs)
+    if !isassigned(coeffs, i)
+      coeffs[i] = fmpq(0)
+    end
+  end
+  return true, Qx(coeffs), var
+
+end
+
 # TODO: Preallocate the exps array
 function msubst(f::fmpq_mpoly, v::Array{T, 1}) where {T}
   n = length(v)
   @assert n == nvars(parent(f))
+  fl, p, var = isunivariate(f)
+  if fl
+    return evaluate(p, v[var])
+  end
   powers = Dict{Int, Dict{Int, T}}()
   for i = 1:n
     powers[i] = Dict{Int, T}()
   end
-  exps = exponent_vector(f, 1)
+  exps = exponent_vector(f, length(f))
   powers[1][exps[1]] = v[1]^exps[1]
-  r = coeff(f, 1) * powers[1][exps[1]]
+  r = coeff(f, length(f)) * powers[1][exps[1]]
   for j = 2:n
     if iszero(exps[j])
       continue
@@ -692,7 +735,7 @@ function msubst(f::fmpq_mpoly, v::Array{T, 1}) where {T}
     r *= el
   end
   R = parent(r)
-  for i = 2:length(f)
+  for i = length(f)-1:-1:1
     exps = exponent_vector(f, i)
     #r += coeff(f, i) * prod(v[j]^exps[j] for j=1:n)
     r1 = coeff(f, i)*one(R)

@@ -1,4 +1,4 @@
-@testset "NormRelation" begin
+@testset "NormRel" begin
   Qx, x = PolynomialRing(FlintQQ, "x")
   f = x^8 - x^4 + 1
   K, a = NumberField(f, "a", cached = false)
@@ -6,7 +6,7 @@
   class_group(maximal_order(K))
   C, mC = Hecke.sunit_group_fac_elem(S)
   Q, mQ = quo(C, 3)
-  CC, mCC = Hecke.sunit_group_fac_elem_quo_via_brauer(K, S, 3)
+  CC, mCC = Hecke.NormRel.sunit_group_fac_elem_quo_via_brauer(K, S, 3)
   elts = GrpAbFinGenElem[]
   for i in 1:ngens(CC)
     u = mCC(CC[i])
@@ -15,7 +15,7 @@
   V = sub(Q, elts)[1]
   @test order(V) == order(Q)
   S = prime_ideals_up_to(maximal_order(K), Hecke.factor_base_bound_grh(maximal_order(K)))
-  c, U = Hecke.sunit_group_fac_elem_quo_via_brauer(K, S, 2)
+  c, U = Hecke.NormRel.sunit_group_fac_elem_quo_via_brauer(K, S, 2)
 
   # Test a non-normal group
 
@@ -33,7 +33,7 @@
   push!(lP, ideal(OK, 37, OK(a^2 + 12*a - 3)));
   push!(lP, ideal(OK, 41, OK(a-15)));
   push!(lP, ideal(OK, 5, OK(a^2 + 1*a + 2)))
-  U, mU = Hecke.sunit_group_fac_elem_quo_via_brauer(K, lP, 8)
+  U, mU = Hecke.NormRel.sunit_group_fac_elem_quo_via_brauer(K, lP, 8)
   S, mS = Hecke.sunit_group_fac_elem(lP)
   Q, mQ = quo(S, 8)
   V = quo(Q, [mQ(mS\(mU(U[i]))) for i in 1:ngens(U)])

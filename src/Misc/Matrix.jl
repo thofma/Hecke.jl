@@ -526,6 +526,7 @@ It returns a basis for the left kernel of the matrix
 left_kernel_basis(a::MatElem{T}) where T <: AbstractAlgebra.FieldElem = right_kernel_basis(transpose(a))
 
 
+
 @doc Markdown.doc"""
     kernel(a::MatElem{T}; side::Symbol = :right) -> Int, MatElem{T}
 
@@ -555,8 +556,8 @@ function right_kernel(x::gfp_mat)
 end
 
 function left_kernel(x::gfp_mat)
-   n, M = right_kernel(transpose(x))
-   return n, transpose(M)
+  n, M = right_kernel(transpose(x))
+  return n, transpose(M)
 end
 
 @doc Markdown.doc"""
@@ -1253,15 +1254,16 @@ diagonal(A::Generic.Mat{T}) where {T} = T[A[i, i] for i in 1:nrows(A)]
     solve_ut(A::MatElem{T}, b::MatElem{T}) -> MatElem{T})
 
 Given an upper triangular $m \times m$ matrix $A$ and a matrix $b$ of size $m
-\times 1$, this function computes $x$ such that $Ax = b$.  It is assumed that
-the pivots of $A$ are invertible.
+\times k$, this function computes $x$ such that $Ax = b$. Might fail if
+the pivots of $A$ are not invertible.
 """
 function solve_ut(A::MatElem{T}, b::MatElem{T}) where T
   m = nrows(A)
   n = ncols(A)
+  s = ncols(b)
   @assert m == nrows(b)
   @assert m <= n
-  x = zero_matrix(base_ring(A), n, 1)
+  x = zero_matrix(base_ring(A), n, s)
   pivot_cols = Vector{Int}()
   r = 0
   last_pivot = n + 1
@@ -1270,11 +1272,15 @@ function solve_ut(A::MatElem{T}, b::MatElem{T}) where T
       if iszero(A[i, j])
         continue
       end
-      x[j, 1] = b[i, 1]
-      for k = 1:r
-        x[j, 1] -= A[i, pivot_cols[k]]*x[pivot_cols[k], 1]
+      for z = 1:s
+        x[j, z] = b[i, z]
+        for k = 1:r
+          x[j, z] -= A[i, pivot_cols[k]]*x[pivot_cols[k], z]
+        end
+        q, re = divrem(x[j, z], A[i, j])
+        @assert iszero(re)
+        x[j, z] = q
       end
-      x[j, 1] *= inv(A[i, j])
       last_pivot = j
       r += 1
       push!(pivot_cols, j)
@@ -1288,15 +1294,16 @@ end
     solve_lt(A::MatElem{T}, b::MatElem{T}) -> MatElem{T})
 
 Given a lower triangular $m \times m$ matrix $A$ and a matrix $b$ of size
-$m \times 1$, this function computes $x$ such that $Ax = b$.  It is assumed
-that the pivots of $A$ are invertible.
+$m \times k$, this function computes $x$ such that $Ax = b$. Might fail if
+that the pivots of $A$ are not invertible.
 """
 function solve_lt(A::MatElem{T}, b::MatElem{T}) where T
   m = nrows(A)
   n = ncols(A)
+  s = ncols(b)
   @assert m == nrows(b)
   @assert m <= n
-  x = zero_matrix(base_ring(A), n, 1)
+  x = zero_matrix(base_ring(A), n, s)
   pivot_cols = Vector{Int}()
   r = 0
   last_pivot = 0
@@ -1305,11 +1312,15 @@ function solve_lt(A::MatElem{T}, b::MatElem{T}) where T
       if iszero(A[i, j])
         continue
       end
-      x[j, 1] = b[i, 1]
-      for k = 1:r
-        x[j, 1] -= A[i, pivot_cols[k]]*x[pivot_cols[k], 1]
+      for z = 1:s
+        x[j, z] = b[i, z]
+        for k = 1:r
+          x[j, z] -= A[i, pivot_cols[k]]*x[pivot_cols[k], z]
+        end
+        q, re = divrem(x[j, z], A[i, j])
+        @assert iszero(re)
+        x[j, z] = q
       end
-      x[j, 1] *= inv(A[i, j])
       last_pivot = j
       r += 1
       push!(pivot_cols, j)

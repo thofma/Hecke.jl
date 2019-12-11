@@ -197,8 +197,7 @@ function assure_has_basis_mat_inv(O::NfAbsOrd)
     #The order contains the equation order and the matrix is lower triangular
     #The inverse is lower triangular and it has denominator 1
     #to exploit this, I call can_solve
-    fl, I = can_solve(M.num, scalar_matrix(FlintZZ, nrows(M), M.den), side = :left)
-    @assert fl
+    I = solve_lt(M.num, scalar_matrix(FlintZZ, nrows(M), M.den))
     O.basis_mat_inv = FakeFmpqMat(I)
     return nothing
   end
@@ -383,7 +382,11 @@ function gen_index(O::NfAbsOrd)
   if isdefined(O, :gen_index)
     return deepcopy(O.gen_index)
   else
-    O.gen_index = inv(det(basis_matrix(O, copy = false)))#FlintQQ(O.basis_matrix.den^degree(O), det(O.basis_matrix.num))
+    #TODO: Remove once the determinant checks if a matrix is upper/lower triangular.
+    if islower_triangular(basis_matrix(O, copy = false).num)
+      return basis_matrix(O, copy = false).den^degree(O)//prod_diagonal(basis_matrix(O, copy = false).num)
+    end
+    O.gen_index = inv(det(basis_matrix(O, copy = false)))
     return deepcopy(O.gen_index)
   end
 end
@@ -581,6 +584,16 @@ end
 Checks whether $a$ lies in $\mathcal O$.
 """
 function in(a::nf_elem, O::NfOrd)
+  if isdefining_polynomial_nice(nf(O)) && contains_equation_order(O) 
+    d = denominator(a)
+    if isone(d)
+      return true
+    end
+    d1 = ppio(d, index(O))[1]
+    if d1 != d
+      return false
+    end
+  end
   return _check_elem_in_order(a, O, Val{true})
 end
 
@@ -642,9 +655,9 @@ and
 $\sum_i^d x_i^2 \leq c_2 \cdot T_2(x)$,
 where $(\omega_i)_i$ is the $\mathbf Z$-basis of $\mathcal O$.
 """
-function norm_change_const(O::NfOrd)
-  if O.norm_change_const[1] > 0
-    return O.norm_change_const::Tuple{Float64, Float64}
+function norm_change_const(O::NfOrd; cached::Bool = true)
+  if cached && isdefined(O, :norm_change_const)
+    return O.norm_change_const::Tuple{BigFloat, BigFloat}
   else
     d = degree(O)
     M = minkowski_matrix(O, 64)
@@ -660,15 +673,15 @@ function norm_change_const(O::NfOrd)
     N = Symmetric([ Float64(M[i, j]) for i in 1:nrows(M), j in 1:ncols(M) ])
     #forcing N to really be Symmetric helps julia - aparently
     r = sort(LinearAlgebra.eigvals(N))
-    if !(r[1] > 0)
+    if !(r[1] > 0) || any(isnan, r)
       # more complicated methods are called for...
       m = ceil(Int, log(d)/log(2))
       m += m%2
       @assert iseven(m)
       l_max = root(tr(M^m), m) #an upper bound within a factor of 2
-                                    #according to a paper by Victor Pan
-                                    #https://doi.org/10.1016/0898-1221(90)90236-D
-                                    #formula (1) and discussion
+                                #according to a paper by Victor Pan
+                                #https://doi.org/10.1016/0898-1221(90)90236-D
+                                #formula (1) and discussion
       pr = 128
       l_min = l_max
       if isodd(d) d+=1; end
@@ -677,9 +690,9 @@ function norm_change_const(O::NfOrd)
           M = inv(M)
           l_min = root(tr(M^d), d) #as above...
           if isfinite(l_min)
-            z = (Float64(l_max), Float64(l_min))
+            z = (BigFloat(l_max), BigFloat(l_min))
             O.norm_change_const = z
-            return z::Tuple{Float64, Float64}
+            return z::Tuple{BigFloat, BigFloat}
           end
           M = minkowski_matrix(O, pr)
           M = M*M'
@@ -693,28 +706,10 @@ function norm_change_const(O::NfOrd)
     end
 
     @assert r[1]>0
-#    N = transpose(M)*M
-#    N = MatrixSpace(AcbField(prec(base_ring(N))), nrows(N), ncols(N))(N)
-#    chi = charpoly(PolynomialRing(base_ring(N), "x")[1], N)
-#    return chi
-#    r = roots(chi)
-#    # I want upper bound for the largest and lower bound for the smallest root
-#
-#    tm = arf_struct(0, 0, 0, 0)
-#    ccall((:arf_init, :libarb), Nothing, (Ref{arf_struct}, ), tm)
-#    ccall((:arb_get_abs_ubound_arf, :libarb), Nothing, (Ref{arf_struct}, Ref{arb}), tm, real(r[end]))
-#    # 3 is round to infinity
-#    c1 = ccall((:arf_get_d, :libarb), Cdouble, (Ref{arf_struct}, Cint), tm, 3)
-#
-#    ccall((:arb_get_abs_ubound_arf, :libarb), Nothing, (Ref{arf_struct}, Ref{arb}), tm, &(inv(real(r[1]))))
-#    c2 = ccall((:arf_get_d, :libarb), Cdouble, (Ref{arf_struct}, Cint), tm, 3)
-#
-#    ccall((:arf_clear, :libarb), Nothing, (Ref{arf_struct}, ), tm)
-#
-#    z = (c1, c2)
-    z = (r[end], inv(r[1]))
+
+    z = (BigFloat(r[end]), BigFloat(inv(r[1])))
     O.norm_change_const = z
-    return z::Tuple{Float64, Float64}
+    return z::Tuple{BigFloat, BigFloat}
   end
 end
 
@@ -723,7 +718,9 @@ end
 #  Construction of orders
 #
 ################################################################################
+
 @doc Markdown.doc"""
+
     Order(B::Array{nf_elem, 1}; check::Bool = true, cached::Bool = true) -> NfOrd
 
 Returns the order generated $B$. If `check` is set, it is checked

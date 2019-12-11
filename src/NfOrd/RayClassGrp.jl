@@ -225,6 +225,7 @@ end
 
 function _preproc(el::FacElem{nf_elem, AnticNumberField}, exponent::fmpz)
   K = base_ring(el)
+  OK = maximal_order(K)
   Qx = parent(K.pol)
   x = Dict{nf_elem, fmpz}()
   for (f, k) in el
@@ -232,17 +233,19 @@ function _preproc(el::FacElem{nf_elem, AnticNumberField}, exponent::fmpz)
     if iszero(l)
       continue
     end
-    n = numerator(f)
-    d = denominator(f)
-    if !isone(d)
-      add_to_key!(x, K(d), exponent-l)
-    end
-    c = numerator(content(Qx(n)))
-    if isone(c)
-      add_to_key!(x, n, l)
+    if f in OK
+      add_to_key!(x, f, l)
     else
-      add_to_key!(x, divexact(n, c), l)
-      add_to_key!(x, K(c), l)
+      d = denominator(f, OK)
+      add_to_key!(x, K(d), exponent-l)
+      n = d*f
+      c = numerator(content(Qx(n)))
+      if isone(c)
+        add_to_key!(x, n, l)
+      else
+        add_to_key!(x, divexact(n, c), l)
+        add_to_key!(x, K(c), l)
+      end
     end
   end
   if !isempty(x)
@@ -329,8 +332,6 @@ function _powmod(a::nf_elem, i::Int, p::fmpz)
   end
 end
 
-
-
 function _ev_quo(Q, mQ, elems, p, exponent, multiplicity::Int)
   el = elem_type(Q)[one(Q) for i = 1:length(elems)]
   anti_uni = anti_uniformizer(p)
@@ -371,7 +372,11 @@ function _ev_quo(Q, mQ, elems, p, exponent, multiplicity::Int)
         powers[val] = anti_val
         act_el = O(anti_val*f, false)
       end
-      mul!(el[i], el[i], mQ(act_el)^k)
+      if !isone(k)
+        mul!(el[i], el[i], mQ(act_el)^k)
+      else
+        mul!(el[i], el[i], mQ(act_el))
+      end
     end
     vp = mod(vp, exponent)
     if !iszero(vp)
@@ -381,7 +386,11 @@ function _ev_quo(Q, mQ, elems, p, exponent, multiplicity::Int)
         powers[ramification_index(p)] = _powmod(anti_uni, ramification_index(p), minimum(p)^(multiplicity+1))
         eli = minimum(p, copy = false)*powers[ramification_index(p)]
       end
-      mul!(el[i], el[i], mQ(O(eli, false))^vp)
+      if isone(vp)
+        mul!(el[i], el[i], mQ(O(eli, false)))
+      else
+        mul!(el[i], el[i], mQ(O(eli, false))^vp)
+      end
     end
   end
   return NfOrdElem[mQ\el[i] for i=1:length(el)]
@@ -720,7 +729,7 @@ function ray_class_group(m::NfOrdIdl, inf_plc::Vector{InfPlc} = Vector{InfPlc}()
         inv!(s)
         add_to_key!(s.fac, J, 1) 
         pow!(s, diffC)
-        @vprint :RayFacElem 1 "This ideal is principal: $I \n"
+        @vprint :RayFacElem 1 "This ideal is principal: $s \n"
         z = principal_gen_fac_elem(s)
       end
       ii = 1
@@ -971,6 +980,7 @@ function find_gens(mR::MapRayClassGrp; coprime_to::fmpz = fmpz(-1))
   if coprime_to != -1
     mm = lcm(mm, coprime_to)
   end
+  mm = lcm(mm, discriminant(EquationOrder(nf(O))))
 
   sR = GrpAbFinGenElem[]
   lp = NfOrdIdl[]
@@ -1045,119 +1055,54 @@ function find_gens(mR::MapRayClassGrp; coprime_to::fmpz = fmpz(-1))
   
   end
   
+  #This means that the class group is non trivial. I need primes generating the class group
   mC = mR.clgrpmap
+  C = domain(mC)
+  primes_class_group = Vector{NfOrdIdl}()
+  disc_log_primes_class_grp = Vector{GrpAbFinGenElem}()
   if isdefined(mC, :small_gens)
     for x in mC.small_gens
-      if !iscoprime(coprime_to, minimum(x, copy = false))
+      if !iscoprime(mm, minimum(x, copy = false))
         continue
       end
-      f = mR\x
-      el_in_snf = ms\(mq(f))
+      push!(primes_class_group, x)
+      push!(disc_log_primes_class_grp, mC\x)
+    end
+  end
+  Q1, mQ1 = quo(C, disc_log_primes_class_grp)
+  S1, mS1 = snf(Q1)
+  p1 = fmpz(2)
+  while order(S1) != 1
+    p1 = next_prime(p1)
+    if !iscoprime(p1, mm)
+      continue
+    end
+    lP = prime_decomposition(O, p1)
+    for i = 1:length(lP)-1
+      x = lP[i][1]
+      f = mC\x
+      el_in_snf = mS1\(mQ1(f))
       found = false
-      for j = 1:ngens(s)
-        if iscoprime(s.snf[j], el_in_snf[j])
+      for j = 1:ngens(S1)
+        if iscoprime(S1.snf[j], el_in_snf[j])
           found = true
           break
         end
       end
       if found
-        push!(lp, x)
-        push!(sR, f)
-        q, mq = quo(R, sR, false)
-        s, ms = snf(q)
-        if order(s)==1
-          return lp, sR
+        push!(primes_class_group, x)
+        push!(disc_log_primes_class_grp, f)
+        Q1, mQ1 = quo(C, disc_log_primes_class_grp, false)
+        S1, mS1 = snf(Q1)
+        if order(S1) == 1
+          break
         end
       end
     end
   end
-
-  ctx = _get_ClassGrpCtx_of_order(O, false)
-  if ctx == nothing
-    fb = elem_type(IdealSet(O))[]
-  else
-    fb = ctx.FB.ideals
-  end
-  l = length(fb)
-  
-  q, mq = quo(R, sR, false)
-  for i = l:-1:1
-    P = fb[i]
-    if gcd(minimum(P), mm) != 1
-      continue
-    end
-    if coprime_to != -1 &&  gcd(minimum(P), coprime_to) != 1
-      continue
-    end
-    if haskey(mR.prime_ideal_preimage_cache, P)
-      f = mR.prime_ideal_preimage_cache[P]
-    else
-      f = mR\P
-      mR.prime_ideal_preimage_cache[P] = f
-    end
-    if iszero(mq(f))
-      continue
-    end
-    el_in_snf = ms\(mq(f))
-    found = true
-    for j = 1:ngens(s)
-      if iscoprime(s.snf[j], el_in_snf[j])
-        found = true
-        break
-      end
-    end
-    if found
-      push!(sR, f)
-      push!(lp, P)
-      q, mq = quo(R, sR, false)
-      s, ms = snf(q)
-      if order(s) == 1 
-        return lp, sR
-      end
-    end
-  end
-
-  if order(q) != 1
-    if length(fb) > 0
-      p1 = minimum(fb[1])
-    else
-      p1 = fmpz(2)
-    end
-    while order(q) != 1
-      p1 = next_prime(p1)
-      if gcd(p1, mm) != 1 || !iscoprime(p1, coprime_to)
-        continue
-      end
-      lp1 = prime_decomposition(O, p1)
-      for (P, e) in lp1
-        if haskey(mR.prime_ideal_preimage_cache, P)
-          f = mR.prime_ideal_preimage_cache[P]
-        else
-          f = mR\P
-          mR.prime_ideal_preimage_cache[P] = f
-        end
-        if iszero(mq(f))
-          continue
-        end
-        el_in_snf = ms\mq(f)
-        found = false
-        for j = 1:ngens(s)
-          if iscoprime(s.snf[j], el_in_snf[j])
-            found = true
-            break
-          end
-        end
-        if found
-          push!(sR, f)
-          push!(lp, P)
-          q, mq = quo(R, sR, false)
-          s, ms = snf(q)
-          if order(s) == 1 
-            break
-          end
-        end
-      end
-    end
+  for i = 1:length(primes_class_group)
+    push!(lp, primes_class_group[i])
+    push!(sR, mR\primes_class_group[i])
   end
   return lp, sR
 end

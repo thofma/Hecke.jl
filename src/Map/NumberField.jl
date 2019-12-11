@@ -1,4 +1,4 @@
-export extend, NfToNfMor, automorphisms
+export extend, NfToNfMor, automorphisms, automorphism_group
 
 struct NfMorSet{T}
   field::T
@@ -81,6 +81,11 @@ mutable struct NfToNfMor <: Map{AnticNumberField, AnticNumberField, HeckeMap, Nf
 end
 
 parent(f::NfToNfMor) = NfMorSet(domain(f))
+
+function image(f::NfToNfMor, a::FacElem{nf_elem, AnticNumberField})
+  D = Dict{nf_elem, fmpz}(f(b) => e for (b, e) in a)
+  return FacElem(D)
+end
 
 ################################################################################
 #

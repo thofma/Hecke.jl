@@ -807,6 +807,17 @@ function islinearly_disjoint(K1::AnticNumberField, K2::AnticNumberField)
   if gcd(d1, d2) == 1
     return true
   end
+  try
+    OK1 = _get_maximal_order(K1)
+    OK2 = _get_maximal_order(K2)
+    if iscoprime(discriminant(K1), discriminant(K2))
+      return true
+    end
+  catch e
+    if !isa(e, AccessorNotSetError)
+      rethrow(e)
+    end
+  end
   f = change_base_ring(K2, K1.pol)
   return isirreducible(f)
 end

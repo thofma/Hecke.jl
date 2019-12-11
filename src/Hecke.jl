@@ -246,6 +246,7 @@ end
 using .Globals
 
 
+
 ################################################################################
 #
 #  Verbose printing and custom assertions
@@ -823,5 +824,7 @@ function clear_cache()
 end
 
 @inline __get_rounding_mode() = Base.MPFR.rounding_raw(BigFloat)
+
+using .NormRel
 
 end # module

@@ -609,7 +609,7 @@ Base.copy(a::AbsAlgAssElem) = deepcopy(a)
 #
 ################################################################################
 
-function Base.hash(a::AbsAlgAssElem, h::UInt)
+function Base.hash(a::AbsAlgAssElem{T}, h::UInt) where {T}
   return Base.hash(coeffs(a, copy = false), h)
 end
 

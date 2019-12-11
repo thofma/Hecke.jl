@@ -92,7 +92,7 @@ end
 ###############################################################################
 
 function _to_composite(x::FieldsTower, y::FieldsTower)
-  
+
   Kns, mx, my = NumberField(x.field, y.field, cached = false, check = false)
   K, mK = simple_extension(Kns, check = false)
 
@@ -122,7 +122,7 @@ function _to_composite(x::FieldsTower, y::FieldsTower)
   inde = root(divexact(numerator(discriminant(K)), discr), 2)
   MatOrdNum = MatOrd.num
   Hecke.hnf_modular_eldiv!(MatOrdNum, MatOrd.den, :lowerleft)
-  OK = NfAbsOrd(K, FakeFmpqMat(MatOrdNum, MatOrd.den))
+  OK = NfOrd(K, FakeFmpqMat(MatOrdNum, MatOrd.den))
   #Careful: we need to compute also the sign of the discriminant!
   OK.disc = discr
   OK.index = inde  
@@ -151,25 +151,6 @@ function _to_composite(x::FieldsTower, y::FieldsTower)
     autK[j+length(x.generators_of_automorphisms)] = NfToNfMor(K, K, ima)
   end
   
-  #Computing closure of the automorphisms
-  #=
-  all_autos = Vector{NfToNfMor}(undef, degree(K))
-  ind = 1
-  aut1 = automorphisms(x.field, copy = false)
-  aut2 = automorphisms(y.field, copy = false)
-  for a1 in aut1
-    for a2 in aut2
-      ima1 = mx(a1.prim_img)
-      ima2 = my(a2.prim_img)
-      autns = Hecke.NfAbsNSToNfAbsNS(Kns, Kns, NfAbsNSElem[ima1, ima2])
-      ima = mK\(autns(el))
-      all_autos[ind] = NfToNfMor(K, K, ima)
-      ind += 1
-    end
-  end
-  Hecke._set_automorphisms_nf(K, all_autos)
-  =#
-
   #Last thing: I have to add the maps of the subfields!
   emb1 = NfToNfMor(x.field, K, mK\(mx.prim_img))
   emb2 = NfToNfMor(y.field, K, mK\(my.prim_img))
@@ -250,8 +231,8 @@ function check_norm_group_and_disc(lfieldsK::Array{AnticNumberField, 1}, lfields
   y = PolynomialRing(QQ, "y", cached = false)[2]
   K = NumberField(y-1, cached = false)[1]
   O = maximal_order(K)
-  n_quo1 = lcm([degree(x) for x in lfieldsK])
-  n_quo2 = lcm([degree(x) for x in lfieldsL])
+  n_quo1 = lcm(Int[degree(x) for x in lfieldsK])
+  n_quo2 = lcm(Int[degree(x) for x in lfieldsL])
   r, mr = Hecke.ray_class_groupQQ(O, modulo, true, lcm(n_quo1, n_quo2))
   Kt = PolynomialRing(K, "t", cached = false)[1]
   h = change_ring(lfieldsK[1].pol, Kt)
@@ -302,41 +283,29 @@ function _first_sieve(list1::Vector{FieldsTower}, list2::Vector{FieldsTower}, ab
       for x in lfieldsL
         rL1 = union(rL1, Hecke.ramified_primes(maximal_order(x)))
       end
-      if length(lfieldsL) == 1 && length(lfieldsK) == 1
-        if degree(lfieldsL[1]) == 2 && degree(lfieldsK[1]) == 2
-          if isempty(intersect(rL1, rK1)) || discriminant(maximal_order(lfieldsK[1])) != discriminant(maximal_order(lfieldsL[1]))
-            k =  Set(vcat(rK, rL))
-            k1 = union(rK1, rL1)
-            if haskey(DK, (k, k1))
-              push!(DK[(k, k1)],  i2)
-            else
-              DK[(k, k1)] = Int[i2]
-            end
-          end
-        else
-          if isempty(intersect(rL1, rK1)) || Hecke.islinearly_disjoint(lfieldsK[1], lfieldsL[1])
-            k =  Set(vcat(rK, rL))
-            k1 = union(rK1, rL1)
-            if haskey(DK, (k, k1))
-              push!(DK[(k, k1)],  i2)
-            else
-              DK[(k, k1)] = Int[i2]
-            end
-          end
+      fl = false
+      if isempty(intersect(rL1, rK1))
+        fl = true
+      elseif length(lfieldsL) == 1 && length(lfieldsK) == 1
+        if degree(lfieldsL[1]) == 2 && degree(lfieldsK[1]) == 2 && discriminant(maximal_order(lfieldsK[1])) != discriminant(maximal_order(lfieldsL[1]))
+          fl = true
+        elseif Hecke.islinearly_disjoint(lfieldsK[1], lfieldsL[1])
+          fl = true
         end
-      else
-        if isempty(intersect(rL1, rK1)) || check_norm_group_and_disc(lfieldsK, lfieldsL, bound_max_ab_sub)
-          k =  Set(vcat(rK, rL))
-          k1 = union(rK1, rL1)
-          if haskey(DK, (k, k1))
-            push!(DK[(k, k1)],  i2)
-          else
-            DK[(k, k1)] = Int[i2]
-          end
+      elseif check_norm_group_and_disc(lfieldsK, lfieldsL, bound_max_ab_sub)
+        fl = true
+      end
+      if fl
+        k =  Set(vcat(rK, rL))
+        k1 = union(rK1, rL1)
+        if haskey(DK, (k, k1))
+          push!(DK[(k, k1)],  i2)
+        else
+          DK[(k, k1)] = Int[i2]
         end
       end
     end
-    #Now, I look at the length of the lists. I know that this must be divisible by redfirst...
+    #Now, I sieve also by infinite places.
     for (k, v) in DK
       if length(v) < redfirst
         continue
@@ -379,98 +348,176 @@ function _first_sieve(list1::Vector{FieldsTower}, list2::Vector{FieldsTower}, ab
   return D
 end
 
-function _second_sieve(list1::Vector{FieldsTower}, list2::Vector{FieldsTower}, absolute_bound::fmpz, red::Int, redsecond::Int, D::Dict)
-  redfirst = divexact(red, redsecond)
-  res = FieldsTower[]
-  indD = 0
-  lD = length(D)
-  for v in values(D)
-    indD += 1
-    @vprint :Fields 1 "$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())Cluster $(indD)/$(lD) of length $(length(v))"
-    @vprint :FieldsNonFancy 1 "Cluster $(indD)/$(lD) of length $(length(v))\n"
-    if length(v) < red
-      continue
-    elseif length(v) == red
-      @vtime :Fields 2 composite = _to_composite(list1[v[1][1]], list2[v[1][2]])
-      disccomp = abs(discriminant(maximal_order(composite)))
-      if disccomp <= absolute_bound
-        push!(res, composite)
+function _some_combinatorics(l::Vector{Tuple{Int, Int}}, red1, red2)
+  #every entry must appear multiples of red1 or red2 times.
+  while true
+    entries1 = Dict{Int, Int}()
+    entries2 = Dict{Int, Int}()
+    for i = 1:length(l)
+      if !haskey(entries1, l[i][1])
+        entries1[l[i][1]] = 1
+      else
+        entries1[l[i][1]] += 1
       end
-    else
-      number_expected_fields = div(length(v), red)
-      to_discard = 0
-      small_res = FieldsTower[]
-      small_res_ind = Tuple{Int, Int}[]
-      permu = randperm(length(v))
-      for idx = 1:length(v)
-        if length(small_res) == number_expected_fields || idx + to_discard > length(v)
-          break
-        end
-        i = permu[idx]
-        #I compute the field only if at least redfirst first fields appear in the list
-        # and at least red/redfirst second fields appear
-        ind1 = v[i][1]
-        cnt = 1
-        for j = i+1:length(v)
-          if v[j][1] == ind1
-            cnt += 1
-          end
-          if cnt == redfirst
-            break
-          end
-        end
-        if cnt != redfirst
-          to_discard -= 1
-          continue
-        end
-        ind2 = v[i][2]
-        cnt = 1
-        for j = i+1:length(v)
-          if v[j][2] == ind2
-            cnt += 1
-          end
-          if cnt == redsecond
-            break
-          end
-        end
-        if cnt != redsecond
-          to_discard -= 1
-          continue
-        end
-        @vtime :Fields 2 composite = _to_composite(list1[v[i][1]], list2[v[i][2]])
-        disccomp = abs(discriminant(maximal_order(composite)))
-        if disccomp <= absolute_bound
-          #Check if I already have that field.
-          found = false
-          for j = 1:length(small_res)
-            fj = small_res[j].field
-            if first_check_isom(fj, composite.field)
-              if v[i][1] != small_res_ind[j][1] && !Hecke.issubfield_normal(list1[v[i][1]].field, fj)[1] 
-                continue
-              elseif v[i][2] != small_res_ind[j][2] && !Hecke.issubfield_normal(list2[v[i][2]].field, fj)[1]
-                continue
-              else
-                found = true
-                break
-              end
-            end
-          end
-          if found 
-            to_discard -= 1
-            continue
-          end
-          to_discard += redfirst - 1
-          push!(small_res, composite)
-          push!(small_res_ind, (v[i][1], v[i][2]))
-        end
+      if !haskey(entries2, l[i][2])
+        entries2[l[i][2]] = 1
+      else
+        entries2[l[i][2]] += 1
       end
-      append!(res, small_res)
+    end
+    done = false
+    for (k, v) in entries1
+      if red1 <= v
+        continue
+      end
+      done = true
+      #remove all the tuples
+      filter!(x -> x[1] != k, l)
+    end
+    for (k, v) in entries2
+      if red1 > v
+        done = true
+        filter!(x -> x[2] != k, l)
+      end
+    end
+    if !done
+      break
     end
   end
-  return res
-
-
+  return l
 end
+
+function sieve_by_discriminant(list1, list2, v)
+
+  d1 = degree(list1[1].field)
+  d2 = degree(list2[1].field)
+  D = Dict{fmpz, Vector{Int}}()
+  
+  for i = 2:length(v)
+    candidate = abs(discriminant(maximal_order(list1[v[i][1]].field))^d2)*abs(discriminant(maximal_order(list2[v[i][2]].field))^d1)
+    found = false
+    for (d, l) in D
+      if _differ_by_square(d, candidate)
+        push!(l, i)
+        found = true
+        break
+      end
+    end 
+    if !found
+      D[candidate] = Int[i]
+    end
+  end
+  res = Vector{Vector{Tuple{Int, Int}}}()
+  for val in values(D)
+    to_push = Vector{Tuple{Int, Int}}(undef, length(val))
+    for i = 1:length(val)
+      to_push[i] = v[val[i]]
+    end
+    push!(res, to_push)
+  end
+  return res
+end
+
+function issquare(x::fmpq)
+  return x > 0 && issquare(numerator(x)) && issquare(denominator(x))
+end
+
+function _differ_by_square(n::fmpz, m::fmpz)
+  return issquare(divexact(fmpq(n), fmpq(m)))
+end
+
+function sieve_by_norm_group(list1::Vector{FieldsTower}, list2::Vector{FieldsTower}, v::Vector{Tuple{Int, Int}}, ramified_primes::Vector{Int})
+
+  target_deg = prod(degree(x) for x in maximal_abelian_subextension(list1[1])) * prod(degree(x) for x in maximal_abelian_subextension(list2[1]))
+  expo = lcm(vcat([degree(x) for x in maximal_abelian_subextension(list1[1])], [degree(x) for x in maximal_abelian_subextension(list2[1])]))
+  modulo = 1
+  for p in ramified_primes
+    if !divisible(expo, p)
+      modulo *= p
+    else
+      bound_disc = valuation_bound_discriminant(ppio(expo, p)[1], p)
+      bound_exp = div(bound_disc, (p-1)*p^(valuation(expo, p)-1))
+      modulo *= p^bound_exp
+    end
+  end
+  K = rationals_as_number_field()[1]
+  O = maximal_order(K)
+  r, mr = Hecke.ray_class_groupQQ(O, modulo, true, expo)
+  Kt = PolynomialRing(K, "t", cached = false)[1]
+  norm_groups = Vector{GrpAbFinGen}(undef, length(v))
+  for i = 1:length(v)
+    lfieldsK = maximal_abelian_subextension(list1[v[i][1]])
+    lfieldsL = maximal_abelian_subextension(list2[v[i][2]])
+    h = change_ring(lfieldsK[1].pol, Kt)
+    S = norm_group(h, mr)[1]
+    for i = 2:length(lfieldsK)
+      h = change_ring(lfieldsK[i].pol, Kt)
+      s = norm_group(h, mr)[1]
+      S = intersect(s, S)
+    end
+    for i = 1:length(lfieldsL)
+      h = change_ring(lfieldsL[i].pol, Kt)
+      s = norm_group(h, mr)[1]
+      S = intersect(s, S)
+    end
+    norm_groups[i] = S
+  end
+  #Now that I have the norm groups, I need to compare them.
+  done = falses(length(v))
+  res = Vector{Vector{Tuple{Int, Int}}}()
+  for i = 1:length(v)
+    if done[i]
+      continue
+    end
+    done[i] = true
+    S = norm_groups[i]
+    new_v = Vector{Tuple{Int, Int}}()
+    push!(new_v, v[i])
+    for j = i+1:length(v)
+      if done[j]
+        continue
+      end
+      if iseq(S, norm_groups[j])
+        done[j] = true
+        push!(new_v, v[j])
+      end
+    end
+    push!(res, new_v)
+  end
+  return res
+end
+
+function refine_clusters(list1, list2, clusters, red, redfirst, redsecond)
+  new_clusters = Vector{Vector{Tuple{Int, Int}}}()
+  for i = 1:length(clusters)
+    v1 = _some_combinatorics(clusters[i], redfirst, redsecond)
+    if length(v1) < red
+      continue
+    end
+    if length(v1) == red
+      push!(new_clusters, v1)
+      continue
+    end
+    mK = maximal_abelian_subextension(list1[v1[1][1]])
+    mL = maximal_abelian_subextension(list2[v1[1][2]])
+    ram_primes = Int[]
+    for s = 1:length(mK)
+      ram_primes = map(Int, collect(unique(vcat(ram_primes, ramified_primes(maximal_order(mK[s]))))))
+    end
+    for s = 1:length(mL)
+      ram_primes = map(Int, collect(unique(vcat(ram_primes, ramified_primes(maximal_order(mL[s]))))))
+    end
+    lv = sieve_by_norm_group(list1, list2, v1, ram_primes)
+    for s = 1:length(lv)
+      vnew = _some_combinatorics(lv[s], redfirst, redsecond)
+      if length(vnew) >= red
+        push!(new_clusters, vnew)
+      end
+    end
+  end
+  return new_clusters
+end
+
 
 function _merge(list1::Vector{FieldsTower}, list2::Vector{FieldsTower}, absolute_bound::fmpz, red::Int, redsecond::Int)
 
@@ -482,10 +529,6 @@ function _merge(list1::Vector{FieldsTower}, list2::Vector{FieldsTower}, absolute
   end
 
   redfirst = divexact(red, redsecond)
-  if redfirst < redsecond
-    #switch the lists
-    return _merge(list2, list1, absolute_bound, red, redfirst)
-  end
   #Bad case: a mess.
   #I check that the maximal abelian subextensions are linearly disjoint.
   #Working with polynomials may be more expensive.
@@ -498,44 +541,128 @@ function _merge(list1::Vector{FieldsTower}, list2::Vector{FieldsTower}, absolute
   @vprint :FieldsNonFancy 1 "Redundancy: $(red), $(redfirst), $(div(red, redfirst))\n"
 
   res = FieldsTower[]
-  D = _first_sieve(list1, list2, absolute_bound, redfirst)
-  if isempty(D)
+  D1 = _first_sieve(list1, list2, absolute_bound, redfirst)
+  if isempty(D1)
     return res
   end
-  @vprint :Fields 1 "$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())"
+  clusters = [x for x in values(D1)]
+  @vprint :Fields 1 "$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())Candidates after first sieve: $(sum(length(x) for x in clusters))\n"
   
-  nfields_after = sum(length(v) for v in values(D))
-  @vprint :Fields 1 "$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())Fields after first part of sieving: $(nfields_after)\n"
-  @vprint :FieldsNonFancy 1 "Fields after first part of sieving: $(nfields_after)\n"
+  @vprint :Fields 1 "Sieving by discriminant\n"
+  #Now, I sieve by discriminant
+  clusters1 = Vector{Vector{Tuple{Int, Int}}}()
+  for v in clusters
+    append!(clusters1, sieve_by_discriminant(list1, list2, v))
+  end
+  @vprint :Fields 1 "Candidates: $(sum(length(x) for x in clusters1))\n"
   
-  res = _second_sieve(list1, list2, absolute_bound, red, redsecond, D)
+  @vprint :Fields 1 "Sieving by maximal abelian subextension\n"
+  new_clusters = refine_clusters(list1, list2, clusters1, red, redfirst, redsecond)
+  @vprint :Fields 1 "Candidates: $(sum(length(x) for x in new_clusters))\n"
+  @vprint :Fields 1 "Sieving by prime_splitting\n"
   
+  @show [length(x) for x in new_clusters]
+  fields_to_be_computed = _sieve_by_prime_splitting(list1, list2, new_clusters, red, redfirst, redsecond)
+
+  @vprint :Fields 1 "Computing maximal order of $(length(fields_to_be_computed)) fields\n"
+  for i = 1:length(fields_to_be_computed)
+    @vprint :Fields 1 "Doing $(i) / $(length(fields_to_be_computed))"
+    pair = fields_to_be_computed[i]
+    candidate = _to_composite(list1[pair[1]], list2[pair[2]])
+    if abs(discriminant(maximal_order(candidate.field))) <= absolute_bound
+      push!(res, candidate)
+    end
+    @vprint :Fields 1 "$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())"
+  end
   @vprint :Fields 1 "$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())Fields found: $(length(res))\n"
   @vprint :FieldsNonFancy 1 "Fields found: $(length(res))\n"
   return res
-  
 end
 
-function first_check_isom(K::AnticNumberField, L::AnticNumberField)
-  OK = maximal_order(K)
-  OL = maximal_order(L)
-  if discriminant(OK) != discriminant(OL)
-    return false
-  end
-  
-  p = 200
-  cnt = 1
-  while cnt < 20
-    cnt += 1
-    p = next_prime(p)
-    lp1 = prime_decomposition_type(OK, p)
-    lp2 = prime_decomposition_type(OL, p)
-    if length(lp1) != length(lp2)
-      return false
+function _sieve_by_prime_splitting(list1, list2, clusters, red, redfirst, redsecond)
+
+  fields_to_be_computed = Vector{Tuple{Int, Int}}()
+  d1 = degree(list1[1].field)
+  d2 = degree(list2[1].field)
+
+  for v in clusters
+    if length(v) == red
+      push!(fields_to_be_computed, v[1])
+      continue
     end
-    if lp1[1] != lp2[1]
-      return false
+    if length(v) < red
+      continue
+    end
+    p = next_prime(1000)
+    iso_classes = Vector{Int}[Int[i for i = 1:length(v)]]
+    to_be_assigned = Int[]
+    while true
+      splitting_types = Dict{Tuple{Int, Int}, Vector{Int}}()
+      for i = 1:length(v)
+        pd1 = prime_decomposition_type(maximal_order(list1[v[i][1]].field), p)
+        r1 = length(pd1)
+        f1 = pd1[1][1]
+        pd2 = prime_decomposition_type(maximal_order(list2[v[i][2]].field), p)
+        r2 = length(pd2)
+        f2 = pd2[1][1]
+        if iscoprime(f1, f2)
+          r = r1*r2
+          f = f1*f2
+          if haskey(splitting_types, (r, f))
+            push!(splitting_types[(r, f)], i)
+          else
+            splitting_types[(r, f)] = Int[i]
+          end
+        else
+          push!(to_be_assigned, i)
+        end
+      end
+      if isempty(to_be_assigned)
+        if all(x -> length(x) <= red, values(splitting_types))
+          #I intersect the data with the one that I already have
+          for vals in values(splitting_types)
+            to_be = intersect_infos(vals, iso_classes)
+            for j in to_be
+              if length(j) == red
+                push!(fields_to_be_computed, v[j[1]])
+              end
+            end
+          end
+          break
+        else
+          #I save the information provided by the splitting
+          new_iso_classes = Vector{Int}[]
+          for vals in values(splitting_types)
+            append!(new_iso_classes, intersect_infos(vals, iso_classes))
+          end
+          iso_classes = new_iso_classes
+          if all(x -> length(x) <= red, iso_classes)
+            for j in iso_classes
+              if length(j) == red
+                push!(fields_to_be_computed, v[j[1]])
+              end
+            end
+            break
+          else
+            p = next_prime(p)
+          end
+        end
+      else
+        to_be_assigned = Int[]
+        p = next_prime(p)
+      end
+    end 
+  end
+  return fields_to_be_computed
+end
+
+function intersect_infos(v::Vector{Int}, iso_classes::Vector{Vector{Int}})
+  res = Vector{Vector{Int}}()
+  for w in iso_classes
+    r = collect(intersect(v, w))
+    if !isempty(r)
+      push!(res, r)
     end
   end
-  return true
+  return res
 end

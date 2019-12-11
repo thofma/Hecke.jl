@@ -174,8 +174,12 @@ function cyclotomic_extension(k::AnticNumberField, n::Int; cached::Bool = true, 
       ZKa = Hecke.NfOrd(B_k)
       if degree(Kr) == eulerphi(n)
         ZKa.disc = (discriminant(Zk)^eulerphi(n))*discriminant(f)^degree(k)
+        ZKa.index = root(divexact(numerator(discriminant(Ka)), discriminant(ZKa)), 2)
+        ZKa.gen_index = fmpz(ZKa.index)
       else
         ZKa.disc = (discriminant(Zk)^degree(Kr))*numerator(norm(discriminant(fk)))
+        ZKa.index = root(divexact(numerator(discriminant(Ka)), discriminant(ZKa)), 2)
+        ZKa.gen_index = fmpz(ZKa.index)
       end
       for (p, v) in factor(gcd(discriminant(Zk), fmpz(n)))
         ZKa = pmaximal_overorder(ZKa, p)

@@ -32,7 +32,7 @@
 #
 ################################################################################
 
-export PrimeIdealsSet, prime_ideals_over, ramification_index
+export PrimeIdealsSet, prime_ideals_over, ramification_index, prime_ideals_up_to
 
 @doc Markdown.doc"""
     isramified(O::NfOrd, p::Int) -> Bool
@@ -171,7 +171,7 @@ function prime_decomposition_nonindex(f::Map, p::NfOrdIdl, ZK = maximal_order(co
   res = Tuple{NfOrdIdl, Int}[]
   if fits(Int, minimum(p))
     Fp = PolynomialRing(GF(Int(minimum(p)), cached = false), cached = false)[1]
-    Gp = factor(ppio(Fp(G), Fp(f(K(p.gen_two))))[1])
+    Gp = factor(ppio(Fp(G), Fp(f(p.gen_two.elem_in_nf)))[1])
     for (ke, e) in Gp
       P = ideal_from_poly(ZK, Int(minimum(p)), ke, e)
       push!(res, (P, divexact(e, ramification_index(p))))

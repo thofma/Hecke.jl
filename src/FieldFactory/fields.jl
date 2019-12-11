@@ -99,7 +99,6 @@ function permutations(G::Array{Hecke.NfToNfMor, 1})
     Rx, x = PolynomialRing(R, "x", cached = false)
     fmod = Rx(K.pol)
   end
-
   pols = gfp_poly[x]
   gpol = Rx(G[1].prim_img)
   if gpol != x
@@ -122,7 +121,7 @@ function permutations(G::Array{Hecke.NfToNfMor, 1})
         order = order + 1
         push!(pols, compose_mod(pols[j], pi, fmod))
       end
-      if order == n
+      if order == dK
         break
       end
       rep_pos = previous_order + 1
@@ -157,18 +156,18 @@ function permutations(G::Array{Hecke.NfToNfMor, 1})
   for i = 1:length(pols)
     Dcreation[i] = (pols[i], i)
   end
-  permutations = Array{Array{Int, 1},1}(undef, n)
+  perms = Array{Array{Int, 1},1}(undef, n)
   for i = 1:n
-    permutations[i] = Vector{Int}(undef, dK)
+    perms[i] = Vector{Int}(undef, dK)
   end
-  gen_pols = gfp_poly[Rx(x.prim_img) for x in G]
+  gen_pols = gfp_poly[Rx(s.prim_img) for s in G]
   D = Dict{gfp_poly, Int}(Dcreation)
   for s = 1:n
     for i = 1:length(pols)
-      permutations[s][i] = D[Hecke.compose_mod(gen_pols[s], pols[i], fmod)]
+      perms[s][i] = D[Hecke.compose_mod(gen_pols[s], pols[i], fmod)]
     end
   end
-  return permutations
+  return perms
 end
 
 function permutation_group(G::Array{Hecke.NfToNfMor, 1})
@@ -412,7 +411,7 @@ end
 ###############################################################################
 
 function check_group_extension(TargetGroup::Main.ForeignGAP.MPtr, autos::Array{NfToNfMor, 1}, res_act::Array{GrpAbFinGenMap, 1})
-  
+
   GS = domain(res_act[1])
   @assert issnf(GS)
   expo = Int(GS.snf[end])
