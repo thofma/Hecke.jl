@@ -687,10 +687,10 @@ function splitting_field(fl::Array{fmpq_poly, 1}; coprime::Bool = false, do_root
   K, a = number_field(fl[1])#, check = false, cached = false)
 
   @assert fl[1](a) == 0
-  gl = [change_base_ring(fl[1], K)]
+  gl = [change_base_ring(K, fl[1])]
   gl[1] = divexact(gl[1], gen(parent(gl[1])) - a)
   for i=2:length(fl)
-    push!(gl, change_base_ring(fl[i], K))
+    push!(gl, change_base_ring(K, fl[i]))
   end
 
   if do_roots
@@ -738,11 +738,11 @@ function splitting_field(fl::Array{<:PolyElem{nf_elem}, 1}; do_roots::Bool = fal
   K, a = number_field(lg[1])#, check = false)
   Ks, nk, mk = absolute_field(K)
   
-  ggl = [change_base_ring(lg[1], mk)]
+  ggl = [map_coeffs(mk, lg[1])]
   ggl[1] = divexact(ggl[1], gen(parent(ggl[1])) - preimage(nk, a))
 
   for i = 2:length(lg)
-    push!(ggl, change_base_ring(lg[i], mk))
+    push!(ggl, map_coeffs(mk, lg[i]))
   end
   if do_roots
     R = [mk(x) for x = r] 
