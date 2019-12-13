@@ -1,6 +1,8 @@
 module RelSaturate
 using Hecke
 
+Hecke.add_verbose_scope(:Saturate)
+
 export saturate!
 
 function dlog(dl::Dict, x, p::Int) 
@@ -195,7 +197,8 @@ function saturate!(d::Hecke.ClassGrpCtx, U::Hecke.UnitGrpCtx, n::Int, stable = 3
   c = simplify(d, U) 
   success = false
   while true
-    e = saturate_exp(c, n, stable)
+    @vprint :Saturate 1 "Computing candidates for the saturation ...\n"
+    @vtime :Saturate 1 e = saturate_exp(c, n, stable)
     if nrows(e) == 0
       @vprint :ClassGroup 1  "sat yielded nothing new at ", stable, success, "\n"
       return success
@@ -240,7 +243,7 @@ function saturate!(d::Hecke.ClassGrpCtx, U::Hecke.UnitGrpCtx, n::Int, stable = 3
       #  end
       #end
 
-      fl, x = ispower(a, n, decom = decom)
+      @vtime :Saturate 1 fl, x = ispower(a, n, decom = decom)
 
       if fl
         @assert isa(x, FacElem)
