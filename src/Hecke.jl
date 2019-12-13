@@ -214,6 +214,9 @@ function __init__()
   global _get_nf_signature = t[1]
   global _set_nf_signature = t[2]
 
+  t = Hecke.create_accessors(AnticNumberField, Any, get_handle())
+  global _get_nf_prime_data_lifting = t[1]
+  global _set_nf_prime_data_lifting = t[2]
 
   global R = _RealRing()
 
@@ -286,6 +289,17 @@ function conjugate_data_arb(K::AnticNumberField)
     c = acb_root_ctx(K.pol)
     _set_nf_conjugate_data_arb(K, c)
     return c::acb_root_ctx
+  end
+end
+
+function _get_prime_data_lifting(K::AnticNumberField)
+  try
+    c = _get_nf_prime_data_lifting(K)
+    return c
+  catch
+    c = Dict()
+    _set_nf_prime_data_lifting(K, c)
+    return c
   end
 end
 

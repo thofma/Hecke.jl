@@ -105,7 +105,7 @@ end
 
 # General comments
 # ispure means that f = X^deg(f) + coeff(f, 0)
-# isnormal means that if there are either no or all roots
+# isnormal means that f has degree(f) roots or no roots at all
 
 function _roots_hensel(f::Generic.Poly{nf_elem};
                        max_roots::Int = degree(f),
@@ -133,7 +133,8 @@ function _roots_hensel(f::Generic.Poly{nf_elem};
   # First we find a prime ideal such that f is squarefree modulo P 
   # (The discriminant of f has only finitely many divisors).
 
-  p = degree(f)+1
+  p = degree(f) + 1
+
   deg_p = 1
 
   good_deg_p = 0
@@ -292,10 +293,37 @@ function _hensel(f::Generic.Poly{nf_elem},
   # This function lifts the roots of f mod P to P^k and reconstructs them.
   
   # f is pure if and only if f = x^deg(f) + coeff(f, 0)
+
+  _cache = _get_prime_data_lifting(base_ring(f))
+  _p = Int(characteristic(base_ring(fac_pol_mod_p)))
+  if haskey(_cache, _p)
+    _cache_p = _cache[_p]
+    @vprint :Saturate 1 "Hitting the cache for the prime $(_p)\n"
+    fac_pol_mod_p.parent = parent(first(keys(_cache_p)))
+    if haskey(_cache_p, fac_pol_mod_p)
+      @vprint :Saturate 1 "  Hitting the cache for the prime ideal\n"
+      _cache_lll = _cache_p[fac_pol_mod_p]
+    else
+      @vprint :Saturate 1 "  Not hitting the cache for the prime ideal\n"
+      _cache_lll = Dict()
+      _cache_p[fac_pol_mod_p] = _cache_lll
+    end
+  else
+    @vprint :Saturate 1 "No hitting the cache for the prime $(_p)\n"
+    _cache_p = Dict()
+    _cache_lll = Dict()
+    _cache_p[fac_pol_mod_p] = _cache_lll
+    _cache[_p] = _cache_p
+  end
   
   @assert max_roots > 0
 
   k = max(k, 2)
+  
+  new_k = Int(round(fmpz(k)//10^flog(fmpz(k), 10))) * 10^flog(fmpz(k), 10)
+  new_k < k ? new_k = (1 + Int(round(fmpz(new_k)//10^flog(fmpz(new_k), 10)))) * 10^flog(fmpz(new_k), 10) : new_k = new_k
+  k = new_k
+
   Rp = base_ring(fac_pol_mod_p)
   Rpt = parent(fac_pol_mod_p)
   t = gen(Rpt)
@@ -361,6 +389,7 @@ function _hensel(f::Generic.Poly{nf_elem},
   #we'll be working in (Z/p^k)[t]/gg
 
   #an "optimal" lifting chain:
+
   pr = Int[k]
   while k>1
     k = div(k+1, 2)
@@ -368,6 +397,7 @@ function _hensel(f::Generic.Poly{nf_elem},
   end
   pr = reverse(pr)
 
+  @vprint :Saturate 1 "This is my optimized chain: $pr\n"
   ##lets start:
   
   f_coeff_ZX = Vector{fmpz_poly}(undef, length(f))
@@ -393,28 +423,34 @@ function _hensel(f::Generic.Poly{nf_elem},
 
     pgg = Qt(gg) #we'll do the reductions by hand - possibly not optimal
 
-    #the lattice for reco:
-    zero!(M)
-    for j=1:degree(pgg)
-      M[j,j] = pp
-    end
-    coeffarr = Vector{elem_type(Q)}(undef, degree(pgg))
-    for j = 1:degree(pgg)-1
-      coeffarr[j] = zero(Q)
-    end
-    coeffarr[degree(pgg)] = one(Q)
-    pt = Qt(coeffarr)
-    for j=degree(pgg)+1:n
-      pt = shift_left(pt, 1)
-      rem!(pt, pt, pgg)
-      M[j,j] = 1
-      for k=0:degree(pt)
-        M[j, k+1] = -lift(coeff(pt, k))
+    if haskey(_cache_lll, pr[i])
+      M, Mi, d = _cache_lll[pr[i]]
+    else
+      M = zero_matrix(FlintZZ, n, n)
+      #the lattice for reco:
+      zero!(M)
+      for j=1:degree(pgg)
+        M[j,j] = pp
       end
+      coeffarr = Vector{elem_type(Q)}(undef, degree(pgg))
+      for j = 1:degree(pgg)-1
+        coeffarr[j] = zero(Q)
+      end
+      coeffarr[degree(pgg)] = one(Q)
+      pt = Qt(coeffarr)
+      for j=degree(pgg)+1:n
+        pt = shift_left(pt, 1)
+        rem!(pt, pt, pgg)
+        M[j,j] = 1
+        for k=0:degree(pt)
+          M[j, k+1] = -lift(coeff(pt, k))
+        end
+      end
+      #this is (or should be) the HNF basis for P^??
+      M = lll(M)
+      Mi, d = pseudo_inv(M)
+      _cache_lll[pr[i]] = (M, Mi, d)
     end
-    #this is (or should be) the HNF basis for P^??
-    M = lll(M)
-    Mi, d = pseudo_inv(M)
 
     if ispure
       ap = Qt(ZX(-coeff(f, 0)))

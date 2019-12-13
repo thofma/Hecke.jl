@@ -1,6 +1,8 @@
 module RelSaturate
 using Hecke
 
+add_verbose_scope(:Saturate)
+
 export saturate!
 
 function dlog(dl::Dict, x, p::Int) 
@@ -120,9 +122,13 @@ function saturate_exp(c::Hecke.ClassGrpCtx, p::Int, stable = 1.5)
   cA = ncols(A)
   i = 1
 
+  l = 0
   S = Hecke.PrimesSet(Hecke.p_start, -1, Int(p), 1)
   for q in S
-    @vprint :ClassGroup 1 "Finding primes for saturation: $i/$(stable*ncols(A))\n"
+    if l > length(c.FB.ideals) + Hecke.unit_rank(ZK) + 64
+      break
+    end
+
     if isdefining_polynomial_nice(K) && isindex_divisor(ZK, q)
       continue
     end
@@ -149,6 +155,7 @@ function saturate_exp(c::Hecke.ClassGrpCtx, p::Int, stable = 1.5)
           break #the other ideals are going to give the same info
                 #for multi-quad as the field is normal
         end        
+        l += 1
       catch e
         if !isa(e, Hecke.BadPrime)
           rethrow(e)
@@ -194,10 +201,11 @@ function saturate!(d::Hecke.ClassGrpCtx, U::Hecke.UnitGrpCtx, n::Int, stable = 3
   @assert isprime(n)
   c = simplify(d, U) 
   success = false
+  cnt = 0
   while true
-    e = saturate_exp(c, n, stable)
+    @vtime :Saturate 1 e = saturate_exp(c, n, stable)
     if nrows(e) == 0
-      @vprint :ClassGroup 1  "sat yielded nothing new at ", stable, success, "\n"
+      @vprint :Saturate 1  "sat yielded nothing new at ", stable, success, "\n"
       return success
     end
     se = sparse_matrix(e)'
@@ -207,7 +215,7 @@ function saturate!(d::Hecke.ClassGrpCtx, U::Hecke.UnitGrpCtx, n::Int, stable = 3
     t, mt = torsion_unit_group(maximal_order(K))
     zeta = K(mt(t[1]))
 
-    @vprint :ClassGroup 1 "sat: (Hopefully) enlarging by $(ncols(e)) elements\n"
+    @vprint :Saturate 1 "sat: (Hopefully) enlarging by $(ncols(e)) elements\n"
 
     wasted = false
     for i=1:ncols(e)
@@ -240,29 +248,31 @@ function saturate!(d::Hecke.ClassGrpCtx, U::Hecke.UnitGrpCtx, n::Int, stable = 3
       #  end
       #end
 
-      fl, x = ispower(a, n, decom = decom)
+      @vtime :Saturate 1 fl, x = ispower(a, n, decom = decom)
 
       if fl
         @assert isa(x, FacElem)
         success = true
         fac_a = divexact(fac_a, n)
         Hecke.class_group_add_relation(d, x, fac_a)
-        @vprint :ClassGroup 1  "sat added new relation\n"
+        @vprint :Saturate 1  "sat added new relation\n"
         if iszero(fac_a) #to make sure the new unit is used!
           #find units can be randomised...
           #maybe that should also be addressed elsewhere
-          @vprint :ClassGroup 2  "sat added new unit\n"
+          @vprint :Saturate 2  "sat added new unit\n"
           Hecke._add_dependent_unit(U, x)
+          cnt += 1
+          println("COOOOUNT: $cnt")
         end
       else
-        @vprint :ClassGroup 2  "sat wasted time, local power wasn't global\n"
+        @vprint :Saturate 2  "sat wasted time, local power wasn't global\n"
         wasted = true
       end
     end
     if wasted 
       stable *= 2
     else
-      @vprint :ClassGroup  1 "sat success at ", stable, "\n"
+      @vprint :Saturate  1 "sat success at ", stable, "\n"
       return success
     end
   end
