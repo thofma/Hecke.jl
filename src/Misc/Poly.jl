@@ -899,6 +899,18 @@ function ispower(a::RingElem, n::Int)
   end
 end
 
+function ispower(a::PolyElem, n::Int)
+  #not the best algorithm... but it works generically
+  #probably a equal-degree-factorisation would be good + some more gcd's
+  #implement some Newton-type algo?
+  degree(a) % n == 0 || return false, a
+  fl, x = ispower(leading_coefficient(a), n)
+  fl || return false, a
+  f = factor(a)
+  all(i -> i % n == 0, values(f.fac)) || return false, a
+  return true, x*prod(p^div(k, n) for (p,k) = f.fac)
+end
+
 function root(a::RingElem, n::Int)
   fl, b = ispower(a, n)
   fl || error("element does not have a $n-th root")
