@@ -32,14 +32,16 @@ using Hecke
 function extend(M::Hecke.PMat, b::Generic.MatSpaceElem{nf_elem}, gamma::Generic.MatSpaceElem{nf_elem})
 
   zk = base_ring(M)
-  p = pseudo_matrix(gamma, vcat(map(inv, coefficient_ideals(M)), [1*zk]))
+  nc = ncols(gamma)
+  @assert nc == ncols(b)
+  p = pseudo_matrix(gamma, vcat(map(inv, coefficient_ideals(M)), [1*zk for i=1:nc]))
   h, T = Hecke.pseudo_hnf_with_transform(p)
   #for n x 1 matrices, the trasform, especially the inverse can more easily be computed
 #  @assert prod(coefficient_ideals(p)) ==  (det(T))*(prod(coefficient_ideals(h)))
 #  @assert all(T[j,i] in (coefficient_ideals(p)[i])*inv(coefficient_ideals(h)[j]) for i=1:nrows(M) for j=1:nrows(M))
   Ti = inv(T)
 #  @assert all(Ti[i,j] in inv(coefficient_ideals(p)[i])*(coefficient_ideals(h)[j]) for i=1:nrows(M) for j=1:nrows(M))
-  e = pseudo_matrix((Ti'*hcat(M.matrix', b)')[2:nrows(M)+1, :], map(inv, coefficient_ideals(h)[2:nrows(M)+1]))
+  e = pseudo_matrix((Ti'*hcat(M.matrix', b)')[nc+1:nrows(M)+nc, :], map(inv, coefficient_ideals(h)[nc+1:nrows(M)+nc]))
   return e
 end
 
@@ -48,6 +50,7 @@ function Hecke.denominator(P::Hecke.PMat, M::NfOrd)
   p = matrix(P)
   for i=1:nrows(P)
     I = coefficient_ideals(P)[i]
+    Hecke.assure_2_normal(I.num)
     for j=1:ncols(P)
       l = lcm(l, denominator(simplify(p[i,j]*I)))
     end
@@ -66,9 +69,16 @@ function Hecke.simplify(P::Hecke.PMat)
   return pseudo_matrix(m, c)
 end
 
+function Hecke.dual(P::Hecke.PMat)
+  return pseudo_matrix(inv(P.matrix)', map(inv, coefficient_ideals(P)))
+end
+
 end
 
 #= example
+
+Hecke.example("Suri.jl")
+Hecke.revise("Suri.jl")
 
 k, a = wildanger_field(3, 13)
 m = rand(MatrixSpace(k, 10, 10), 1:10);
