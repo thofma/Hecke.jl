@@ -1261,6 +1261,7 @@ function simplify(A::NfAbsOrdIdl)
       A.gen_two = order(A)(1)
       A.minimum = fmpz(1)
       A.norm = fmpz(1)
+      A.gens_normal = fmpz(2)
       @hassert :NfOrd 1 isconsistent(A)
       return A
     end
