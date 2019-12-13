@@ -816,6 +816,21 @@ function factor(f::fmpq_poly, R::T) where T <: Union{Nemo.FqNmodFiniteField, Nem
   return factor(Rt(f))
 end
 
+#TODO: better signature? better name?
+function factor(f::FracElem, R::Ring) 
+  fn = factor(R(numerator(f)))
+  fd = factor(R(denominator(f)))
+  fn.unit = divexact(fn.unit, fd.unit)
+  for (k,v) = fd.fac
+    if Base.haskey(fn.fac, k)
+      fn.fac[k] -= v
+    else
+      fn.fac[k] = -v
+    end
+  end
+  return fn
+end
+
 function roots(f::PolyElem, R::Field)
   Rt = PolynomialRing(R, "t", cached = false)[1]
   f1 = change_base_ring(R, f, parent = Rt)
