@@ -137,12 +137,6 @@ function Nemo.one!(a::NfAbsNSElem)
   return a
 end
 
-function Nemo.zero!(a::fmpq_mpoly)
-  ccall((:fmpq_mpoly_zero, :libflint), Nothing,
-      (Ref{fmpq_mpoly}, Ref{FmpqMPolyRing}), a, parent(a))
-  return a
-end
-
 function Nemo.one!(a::fmpq_mpoly)
   ccall((:fmpq_mpoly_one, :libflint), Nothing,
       (Ref{fmpq_mpoly}, Ref{FmpqMPolyRing}), a, parent(a))

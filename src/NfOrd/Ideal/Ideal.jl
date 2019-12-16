@@ -1261,6 +1261,7 @@ function simplify(A::NfAbsOrdIdl)
       A.gen_two = order(A)(1)
       A.minimum = fmpz(1)
       A.norm = fmpz(1)
+      A.gens_normal = fmpz(2)
       @hassert :NfOrd 1 isconsistent(A)
       return A
     end
@@ -2198,13 +2199,13 @@ end
 
 #############################################################################
 @doc Markdown.doc"""
-    eulerphi(A::NfOrdIdl) -> fmpz
+    euler_phi(A::NfOrdIdl) -> fmpz
 The ideal verision of the totient functionm returns the size of the unit group
 of the residue ring modulo the ideal.
 """
-Hecke.eulerphi(A::NfOrdIdl) = Hecke.eulerphi(factor(A))
-Hecke.eulerphi(A::FacElem{NfOrdIdl}) = Hecke.eulerphi(factor(A))
-function Hecke.eulerphi(A::Dict{NfOrdIdl, Int})
+Hecke.euler_phi(A::NfOrdIdl) = Hecke.euler_phi(factor(A))
+Hecke.euler_phi(A::FacElem{NfOrdIdl}) = Hecke.euler_phi(factor(A))
+function Hecke.euler_phi(A::Dict{NfOrdIdl, Int})
   return prod((norm(p)-1)*norm(p)^(k-1) for (p,k) = A if k < 0 error("ideal not integral"))
 end
 
@@ -2212,11 +2213,11 @@ end
 #http://people.math.gatech.edu/~ecroot/shparlinski_final.pdf
 #Contini, Croot, Shparlinski: Complexity of inverting the Euler function
 @doc Markdown.doc"""
-    eulerphi_inv_fac_elem(n::fmpz, zk::NfAbsOrd{AnticNumberField, nf_elem})
+    euler_phi_inv_fac_elem(n::fmpz, zk::NfAbsOrd{AnticNumberField, nf_elem})
 The inverse of the ideal totient funcction: all ideals $A$ s.th the unit group of the 
 residue ring has the required size. Here, the ideals are returned in factorisaed form.
 """
-function eulerphi_inv_fac_elem(n::fmpz, zk::NfAbsOrd{AnticNumberField, nf_elem})
+function euler_phi_inv_fac_elem(n::fmpz, zk::NfAbsOrd{AnticNumberField, nf_elem})
   lp = []
   for d = Divisors(n)
     k, p = ispower(d+1)
@@ -2273,9 +2274,9 @@ function eulerphi_inv_fac_elem(n::fmpz, zk::NfAbsOrd{AnticNumberField, nf_elem})
 end
 
 @doc Markdown.doc"""
-    eulerphi_inv(n::fmpz, zk::NfAbsOrd{AnticNumberField, nf_elem}) -> Array{NfOrdIdl, 1}
+    euler_phi_inv(n::fmpz, zk::NfAbsOrd{AnticNumberField, nf_elem}) -> Array{NfOrdIdl, 1}
 The inverse of the ideal totient funcction: all ideals $A$ s.th the unit group of the 
 residue ring has the required size. 
 """
-eulerphi_inv(n::fmpz, zk::NfAbsOrd) = [ numerator(evaluate(x)) for x = eulerphi_inv_fac_elem(n, zk)]
-eulerphi_inv(n::Integer, zk::NfAbsOrd) = [ numerator(evaluate(x)) for x = eulerphi_inv_fac_elem(fmpz(n), zk)]
+euler_phi_inv(n::fmpz, zk::NfAbsOrd) = [ numerator(evaluate(x)) for x = euler_phi_inv_fac_elem(n, zk)]
+euler_phi_inv(n::Integer, zk::NfAbsOrd) = [ numerator(evaluate(x)) for x = euler_phi_inv_fac_elem(fmpz(n), zk)]

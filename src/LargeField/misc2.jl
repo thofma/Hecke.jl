@@ -345,7 +345,7 @@ function basis_rels_5(b::Array{nf_elem, 1}, no_b::Int = 250, no_rel::Int = 10000
     for j=1:length(lpx)
       zero!(lcp[j])
       for k=lc
-        Nemo.set_entry!(lcp[j], k, 1, Nemo.getindex_raw(lcp[j], k, 1) + UInt(1))
+        Nemo.setindex_raw!!(lcp[j], Nemo.getindex_raw(lcp[j], k, 1) + UInt(1), k, 1)
         #should be unlikely - but seems to happen a lot:
         # duplication!
       end

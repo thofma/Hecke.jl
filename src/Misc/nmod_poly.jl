@@ -1314,7 +1314,7 @@ function FlintFiniteField(f::fq_nmod_poly, s::AbstractString = "o"; cached::Bool
 end
 =#
 
-function eulerphi(f::T) where {T <: Union{gfp_poly, fq_nmod_poly, gfp_fmpz_poly}}
+function euler_phi(f::T) where {T <: Union{gfp_poly, fq_nmod_poly, gfp_fmpz_poly}}
   lf = factor(f)
   q = size(base_ring(f))
   return prod((q^degree(p)-1)*q^(degree(p)*k) for (p,k) = lf.fac)

@@ -4,7 +4,7 @@
 #
 ###############################################################################
 @doc Markdown.doc"""
-    NumberField_using_Brauer(CF::ClassField) -> Hecke.NfRelNS{Nemo.nf_elem}
+    NumberField_using_Brauer(CF::ClassField) -> NfRelNS{Nemo.nf_elem}
 Given a (formal) abelian extension, compute the class field by
 finding defining polynomials
 for all prime power cyclic subfields using Brauer relations.

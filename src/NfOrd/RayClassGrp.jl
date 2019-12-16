@@ -512,7 +512,7 @@ function make_positive(x::NfOrdElem, a::fmpz)
       continue
     end
     y = abs(lower_bound(els[i], fmpz))
-    mu = divexact(y, a)
+    mu = div(y, a)
     m = max(m, mu+1)
   end
   @hassert :RayFacElem 1 iscoprime(ideal(parent(x),x), ideal(parent(x), a))

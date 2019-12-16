@@ -170,9 +170,6 @@ function round(a::fmpq)
   return round(fmpz, a)
 end
 
-function zero(::Type{Nemo.fmpz})
-  return fmpz(0)
-end
 
 function one(::Type{Nemo.fmpz})
   return fmpz(1)
@@ -694,11 +691,6 @@ function sunit_group(S::Array{fmpz, 1})
   return u, mp
 end
 
-gcd(a::fmpz, b::Integer) = gcd(a, fmpz(b))
-gcd(a::Integer, b::fmpz) = gcd(fmpz(a), b)
-lcm(a::fmpz, b::Integer) = lcm(a, fmpz(b))
-lcm(a::Integer, b::fmpz) = lcm(fmpz(a), b)
-
 @doc Markdown.doc"""
     isprime_power(n::fmpz) -> Bool
     isprime_power(n::Integer) -> Bool
@@ -914,7 +906,7 @@ function (::Type{Base.Rational{BigInt}})(x::fmpq)
   return Rational{BigInt}(BigInt(numerator(x)), BigInt(denominator(x)))
 end
 
-export eulerphi_inv, Divisors, carmichael_lambda
+export euler_phi_inv, Divisors, carmichael_lambda
 
 @doc Markdown.doc"""
     Divisors{T}
@@ -1078,11 +1070,11 @@ end
 #http://people.math.gatech.edu/~ecroot/shparlinski_final.pdf
 #Contini, Croot, Shparlinski: Complexity of inverting the Euler function
 @doc Markdown.doc"""
-    eulerphi_inv_fac_elem(n::fmpz)
+    euler_phi_inv_fac_elem(n::fmpz)
 The inverse of the Euler totient functions: find all $x$ s.th. $phi(x) = n$
 holde. The elements are returned in factored form.
 """
-function eulerphi_inv_fac_elem(n::fmpz)
+function euler_phi_inv_fac_elem(n::fmpz)
   lp = fmpz[]
   for d = Divisors(n)
     if isprime(d+1)
@@ -1130,17 +1122,13 @@ function eulerphi_inv_fac_elem(n::fmpz)
   end
 end
 
-function eulerphi(x::Fac{fmpz})
+function euler_phi(x::Fac{fmpz})
   return prod((p-1)*p^(v-1) for (p,v) = x.fac)
 end
 
-function eulerphi(x::FacElem{fmpz, FlintIntegerRing})
+function euler_phi(x::FacElem{fmpz, FlintIntegerRing})
   x = factor(x)
   return prod((p-1)*p^(v-1) for (p,v) = x.fac)
-end
-
-function eulerphi(n::T) where {T <: Integer}
-  return T(eulerphi(fmpz(n)))
 end
 
 function carmichael_lambda(x::Fac{fmpz})
@@ -1188,21 +1176,21 @@ function carmichael_lambda(n::T) where {T <: Integer}
 end
 
 @doc Markdown.doc"""
-    eulerphi_inv(n::Integer) -> Array{fmpz, 1}
+    euler_phi_inv(n::Integer) -> Array{fmpz, 1}
 The inverse of the Euler totient functions: find all $x$ s.th. $phi(x) = n$
 holds.
 """
-function eulerphi_inv(n::Integer)
-  return eulerphi_inv(fmpz(n))
+function euler_phi_inv(n::Integer)
+  return euler_phi_inv(fmpz(n))
 end
 
 @doc Markdown.doc"""
-    eulerphi_inv(n::fmpz) -> Array{fmpz, 1}
+    euler_phi_inv(n::fmpz) -> Array{fmpz, 1}
 The inverse of the Euler totient functions: find all $x$ s.th. $phi(x) = n$
 holds.
 """
-function eulerphi_inv(n::fmpz)
-  return [ evaluate(x) for x = eulerphi_inv_fac_elem(n)]
+function euler_phi_inv(n::fmpz)
+  return [ evaluate(x) for x = euler_phi_inv_fac_elem(n)]
 end
 
 function factor(a::FacElem{fmpz, FlintIntegerRing})
@@ -1232,7 +1220,7 @@ end
 
 #= for torsion units:
 
-   [maximum([maximum(vcat([fmpz(-1)], eulerphi_inv(x))) for x = Divisors(fmpz(n))]) for n = 1:250]
+   [maximum([maximum(vcat([fmpz(-1)], euler_phi_inv(x))) for x = Divisors(fmpz(n))]) for n = 1:250]
 
 =# 
 

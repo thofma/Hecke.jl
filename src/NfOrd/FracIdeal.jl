@@ -445,6 +445,7 @@ function simplify(A::NfAbsOrdFracIdl)
 
   if g != 1
     A.num = divexact(A.num, g)
+    simplify(A.num)
     A.den = divexact(A.den, g)
   end
 

@@ -816,6 +816,21 @@ function factor(f::fmpq_poly, R::T) where T <: Union{Nemo.FqNmodFiniteField, Nem
   return factor(Rt(f))
 end
 
+#TODO: better signature? better name?
+function factor(f::FracElem, R::Ring) 
+  fn = factor(R(numerator(f)))
+  fd = factor(R(denominator(f)))
+  fn.unit = divexact(fn.unit, fd.unit)
+  for (k,v) = fd.fac
+    if Base.haskey(fn.fac, k)
+      fn.fac[k] -= v
+    else
+      fn.fac[k] = -v
+    end
+  end
+  return fn
+end
+
 function roots(f::PolyElem, R::Field)
   Rt = PolynomialRing(R, "t", cached = false)[1]
   f1 = change_base_ring(R, f, parent = Rt)
@@ -897,6 +912,18 @@ function ispower(a::RingElem, n::Int)
   else
     return true, r[1]
   end
+end
+
+function ispower(a::PolyElem, n::Int)
+  #not the best algorithm... but it works generically
+  #probably a equal-degree-factorisation would be good + some more gcd's
+  #implement some Newton-type algo?
+  degree(a) % n == 0 || return false, a
+  fl, x = ispower(leading_coefficient(a), n)
+  fl || return false, a
+  f = factor(a)
+  all(i -> i % n == 0, values(f.fac)) || return false, a
+  return true, x*prod(p^div(k, n) for (p,k) = f.fac)
 end
 
 function root(a::RingElem, n::Int)

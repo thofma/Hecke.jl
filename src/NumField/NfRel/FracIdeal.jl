@@ -234,6 +234,12 @@ function ==(a::NfRelOrdFracIdl, b::NfRelOrdFracIdl)
   return basis_pmatrix(a, copy = false) == basis_pmatrix(b, copy = false)
 end
 
+function ==(a::NfRelOrdIdl, b::NfRelOrdFracIdl)
+  order(a) !== order(b) && return false
+  return basis_pmatrix(a, copy = false) == basis_pmatrix(b, copy = false)
+end
+==(a::NfRelOrdFracIdl, b::NfRelOrdIdl) = b == a
+
 ################################################################################
 #
 #  Norm

@@ -52,7 +52,7 @@ function quadratic_defect(a::fmpq, p::fmpz)
   a = a // p^v
 
   if isodd(p) 
-    return jacobi( mod(a, p), p) == 1 ? inf : v
+    return jacobi_symbol( mod(a, p), p) == 1 ? inf : v
   end 
 
   a = mod(a, 8)
@@ -243,7 +243,7 @@ function hilbert_symbol(a::fmpz, b::fmpz, p::fmpz)
   a = divexact(a, p^v)
 
   if isodd(p)
-    return (isodd(w) && jacobi( mod(a, p), p) == -1) ? -1 : 1
+    return (isodd(w) && jacobi_symbol( mod(a, p), p) == -1) ? -1 : 1
   end
 
   a = mod(a, 8)

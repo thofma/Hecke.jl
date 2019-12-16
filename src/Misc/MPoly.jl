@@ -8,13 +8,6 @@ function Nemo.PolynomialRing(R::Nemo.Ring, n::Int, s::String="x";
                                                     ordering = ordering)
 end
 
-function add!(c::fmpq_mpoly, a::fmpq_mpoly, b::fmpq_mpoly)
-  ccall((:fmpq_mpoly_add, :libflint), Nothing,
-        (Ref{fmpq_mpoly}, Ref{fmpq_mpoly}, Ref{fmpq_mpoly}, Ref{FmpqMPolyRing}),
-        c, a, b, c.parent)
-  return c
-end
-
 #TODO: makes only sense if f is univ (uses only one var)
 function (Rx::FmpzPolyRing)(f::fmpq_mpoly)
   fp = Rx()
@@ -55,3 +48,16 @@ function (Rx::GFPPolyRing)(f::fmpq_mpoly)
   return fp * inv(R(d))
 end
 
+function derivative(f::Generic.Frac{T}, x::T) where {T <: MPolyElem}
+  return derivative(f, var_index(x))
+end
+
+function derivative(f::Generic.Frac{T}, i::Int) where {T <: MPolyElem}
+  n = numerator(f)
+  d = denominator(f)
+  return (derivative(n, i)*d - n*derivative(d, i))//d^2
+end
+
+function evaluate(f::Generic.Frac{T}, V::Vector{U}) where {T <: RingElem, U <: RingElem}
+  return evaluate(numerator(f), V)//evaluate(denominator(f), V)
+end

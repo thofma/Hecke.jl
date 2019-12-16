@@ -358,7 +358,7 @@ end
 ###############################################################################
 
 function _sqrtmod4P(d::fmpz, p::fmpz)
-    if jacobi(mod(d, p), p) == -1
+    if jacobi_symbol(mod(d, p), p) == -1
         @error("$d is no square modulo $p")
     end
     if p == 2
@@ -378,7 +378,7 @@ function _sqrtmod4P(d::fmpz, p::fmpz)
 end
 
 function _number_of_primeforms(d::fmpz, p::fmpz)
-    return jacobi(mod(d, p), p) + 1
+    return jacobi_symbol(mod(d, p), p) + 1
 end
 
 @doc Markdown.doc"""

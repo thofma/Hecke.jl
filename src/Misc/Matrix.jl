@@ -639,13 +639,14 @@ function left_kernel(a::nmod_mat)
 end
 
 if Nemo.version() > v"0.15.1"
-  function right_kernel(M::Generic.Mat{Nemo.fmpz_mod})
+  function right_kernel(M::fmpz_mod_mat)
     R = base_ring(M)
     N = hcat(M', identity_matrix(R, ncols(M)))
     if nrows(N) < ncols(N)
       N = vcat(N, zero_matrix(R, ncols(N) - nrows(N), ncols(N)))
     end
-    H = howell_form!(N)
+    howell_form!(N)
+    H = N
     nr = 1
     while nr <= nrows(H) && !iszero_row(H, nr)
       nr += 1
@@ -661,7 +662,7 @@ if Nemo.version() > v"0.15.1"
     return 0, zero_matrix(R,nrows(M),0)
   end
 
-  function left_kernel(a::Generic.Mat{Nemo.fmpz_mod})
+  function left_kernel(a::fmpz_mod_mat)
     n, M = right_kernel(transpose(a))
     return n, transpose(M)
   end
@@ -672,7 +673,7 @@ else
     if nrows(N) < ncols(N)
       N = vcat(N, zero_matrix(R, ncols(N) - nrows(N), ncols(N)))
     end
-    H = howell_form!(N)
+    H = howell_form(N)
     nr = 1
     while nr <= nrows(H) && !iszero_row(H, nr)
       nr += 1

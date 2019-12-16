@@ -1,5 +1,7 @@
 export overorders, isbass, isgorenstein, poverorders
 
+change_base_ring(R::GaloisField, M::fmpz_mat) = MatrixSpace(R, nrows(M), ncols(M))(M)
+
 ################################################################################
 #
 #  Defines minimal overorder

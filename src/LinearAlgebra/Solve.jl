@@ -156,6 +156,49 @@ function algebraic_reconstruction(a::nf_elem, M::NfAbsOrdIdl)
   return true, n//d
 end
 
+@doc Markdown.doc"""
+    algebraic_split(a::nf_elem) -> nf_elem, nf_elem
+
+Writes the input as a quotient of two "small" algebraic integers.    
+"""
+function algebraic_split(a::nf_elem)
+  n = degree(parent(a))
+  d = denominator(a)
+  M, dd = representation_matrix_q(a)
+  @assert d == dd
+  M = [M identity_matrix(FlintZZ, n); -d*identity_matrix(FlintZZ, n) zero_matrix(FlintZZ, n, n)]
+  L = lll(M)[1, n+1:2*n]
+  ga = parent(a)(collect(L))
+  be = a*ga
+  @assert denominator(be) == 1
+  return be, ga
+end
+
+#function denominator_ideal(M::Generic.MatSpaceElem{nf_elem}, den::nf_elem)
+function denominator_ideal(M::Array{nf_elem, 1}, den::nf_elem)
+  k = parent(M[1,1])
+  zk = maximal_order(k)
+  _, d = integral_split(M[1]//den * zk)
+  g = simplify(den*zk * inv(d)).num ## should be small
+  if isone(g)
+    return d
+  end
+  
+  for m = M
+    i = simplify(ideal(zk, minimum(g)^2, zk(m)))
+    j = simplify(i*inv(g))
+    if denominator(j) == 1
+      continue
+    end
+    _, dd = integral_split(m//den * zk)
+    d = lcm(d, dd)
+    g = simplify(simplify(den*zk * inv(d)).num)
+    if isone(g)
+      break
+    end
+  end
+  return d
+end
 
 @doc Markdown.doc"""
     divexact!(A::Generic.Mat{nf_elem}, p::fmpz) 

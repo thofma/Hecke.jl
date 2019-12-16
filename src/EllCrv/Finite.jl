@@ -105,7 +105,7 @@ function order_via_legendre(E::EllCrv{T}) where {T <: Union{nmod, Generic.Res{fm
   while x < p
     C = x^3 + (E.coeff[1])*x + (E.coeff[2])
     Cnew = C.data # convert to fmpz
-    a = jacobi(Cnew, p) # can be used to compute (C/F_p) since p prime
+    a = jacobi_symbol(Cnew, p) # can be used to compute (C/F_p) since p prime
     grouporder = grouporder + a
     x = x + 1
   end
@@ -477,7 +477,7 @@ function t_mod_prime(l, E)
   end
 
   # case where l != 2
-  k = mod(q, l) # reduce q mod l
+  k = Int(mod(q, l)) # reduce q mod l
   k_mod = Z(k)
 
   fk = Fnschoof[k+2]
@@ -495,7 +495,7 @@ function t_mod_prime(l, E)
   end
 
   if ggT != 1 # case 1
-    if jacobi(FlintZZ(k), FlintZZ(l)) == -1
+    if jacobi_symbol(FlintZZ(k), FlintZZ(l)) == -1
       return FlintZZ(0)
     else
       # need square root of q (mod l)

@@ -345,7 +345,9 @@ function meataxe(M::ModAlgAss{S, T, V}) where {S, T, V}
   end
   
   
-  G = T[matr for matr in H if !iszero(matr)]
+  G = deepcopy(H)
+  @assert typeof(G) == typeof(H)
+  filter!(x -> !iszero(x), G)
 
   if isempty(G)
     return false, matrix(K, 1, n, V[one(K) for i = 1:n])
