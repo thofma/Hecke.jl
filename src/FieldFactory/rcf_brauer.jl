@@ -85,7 +85,7 @@ function _rcf_S_units_enlarge(CE, CF::ClassField_pp)
     push!(lP, prime_decomposition(OK, f)[1][1])
   end
   e = degree(CF)
-  @vtime :Fields 3 S, mS = NormRelation.sunit_group_fac_elem_quo_via_brauer(nf(OK), lP, e)
+  @vtime :Fields 3 S, mS = NormRel.sunit_group_fac_elem_quo_via_brauer(nf(OK), lP, e)
   KK = kummer_extension(e, FacElem{nf_elem, AnticNumberField}[mS(S[i]) for i=1:ngens(S)])
 
   #gens mod n-th power - to speed up the frobenius computation
@@ -103,7 +103,9 @@ function _rcf_S_units_enlarge(CE, CF::ClassField_pp)
   end
   KK.gen_mod_nth_power = gens_mod_nth
   CF.bigK = KK
-  CE.kummer_ext = (lP, KK)
+  lf = factor(minimum(defining_modulus(CF)[1]))
+  lfs = Set(collect(keys(lf.fac)))
+  CE.kummer_exts[lfs] = (lP, KK)
   _rcf_find_kummer(CF)
   return nothing
 end
@@ -175,7 +177,7 @@ function _s_unit_for_kummer_using_Brauer(C::CyclotomicExt, f::fmpz)
 
   
   @vprint :Fields 3 "Computing S-units with $(length(lP)) primes\n"
-  @vtime :Fields 3 S, mS = NormRelation.sunit_group_fac_elem_quo_via_brauer(C.Ka, lP, e)
+  @vtime :Fields 3 S, mS = NormRel.sunit_group_fac_elem_quo_via_brauer(C.Ka, lP, e)
   KK = kummer_extension(e, FacElem{nf_elem, AnticNumberField}[mS(S[i]) for i=1:ngens(S)])
   
   #gens mod n-th power - to speed up the frobenius computation
@@ -192,6 +194,6 @@ function _s_unit_for_kummer_using_Brauer(C::CyclotomicExt, f::fmpz)
     gens_mod_nth[i] = FacElem(el)
   end
   KK.gen_mod_nth_power = gens_mod_nth
-  C.kummer_ext = (lP, KK)
+  C.kummer_exts[lfs] = (lP, KK)
   return lP, KK
 end

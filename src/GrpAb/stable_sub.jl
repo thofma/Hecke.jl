@@ -906,7 +906,7 @@ function stable_subgroups(R::GrpAbFinGen, act::Array{T, 1}; op = sub, quotype::A
         for i=1:length(quotype)
           v = valuation(quotype[i],p)
           if v > 0
-            push!(quotype_p,v)
+            push!(quotype_p, v)
           end
         end
         if Int(p)*quotype_p == S.snf

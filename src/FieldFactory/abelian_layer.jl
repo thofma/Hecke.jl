@@ -209,6 +209,7 @@ function max_ramified_prime(O::NfOrd, gtype::Vector{Int}, bound::fmpz)
   return b1
 end
 
+
 function _abelian_normal_extensions(F::FieldsTower, gtype::Array{Int, 1}, absbound::fmpz, IdCheck::Main.ForeignGAP.MPtr, only_real::Bool, IdG::Main.ForeignGAP.MPtr)
   K = F.field
   O = maximal_order(K) 
@@ -260,7 +261,6 @@ function _abelian_normal_extensions(F::FieldsTower, gtype::Array{Int, 1}, absbou
     end
     mr.clgrpmap.small_gens = rcg_ctx.class_group_map.small_gens
     @vtime :Fields 3 act = Hecke.induce_action(mr, autos)
-    
     @vtime :Fields 3 ls = stable_subgroups(r, act, op = (x, y) -> quo(x, y, false)[2], quotype = gtype)
     Dcond = Dict{Int, Array{GrpAbFinGenElem, 1}}()
     Ddisc = Dict{Tuple{Int, Int}, Array{GrpAbFinGenElem, 1}}()

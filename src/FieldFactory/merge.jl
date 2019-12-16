@@ -91,7 +91,7 @@ end
 #
 ###############################################################################
 
-function _to_composite(x::FieldsTower, y::FieldsTower)
+function _to_composite(x::FieldsTower, y::FieldsTower, abs_disc::fmpz)
 
   Kns, mx, my = NumberField(x.field, y.field, cached = false, check = false)
   K, mK = simple_extension(Kns, check = false)
@@ -132,6 +132,9 @@ function _to_composite(x::FieldsTower, y::FieldsTower)
   end
   OK.ismaximal = 1
   Hecke._set_maximal_order_of_nf(K, OK)
+  if abs(discriminant(OK)) > abs_disc
+    return false, x
+  end
 
   # Now, I have to translate the automorphisms.
   # Easy thing: first, I write the automorphisms of the non simple extension
@@ -156,19 +159,51 @@ function _to_composite(x::FieldsTower, y::FieldsTower)
   emb2 = NfToNfMor(y.field, K, mK\(my.prim_img))
   l1 = append!(NfToNfMor[emb1, emb2], x.subfields)
   embs = append!(l1, y.subfields)
-  return FieldsTower(K, autK, embs)
+  return true, FieldsTower(K, autK, embs)
   
 end
 
+function simplify!(x::FieldsTower)
+  push!(deb, x)
+  K = x.field
+  OK = maximal_order(K)
+  Ks, mKs = simplify(K)
+  #I need to translate everything...
+  mKi = find_inverse(mKs)
+  #First, translate the lll of the maximal order
+  if isdefined(OK, :lllO)
+    OKs = NfOrd(nf_elem[mKi(y) for y in basis(OK.lllO, K)])
+    OKs.lllO = OKs
+  else
+    OKs = lll(NfOrd(nf_elem[mKi(y) for y in basis(OK, K)])) 
+  end
+  OKs.disc = OK.disc
+  OKs.index = root(divexact(numerator(discriminant(Ks.pol)), OKs.disc), 2)
+  Hecke._set_maximal_order(Ks, OKs)
+  gens_autos = NfToNfMor[hom(Ks, Ks, mKi(el(mKs.prim_img))) for el in x.generators_of_automorphisms]
+  for i = 1:length(x.subfields)
+    if codomain(x.subfields[i]) == K
+      x.subfields[i] = x.subfields[i]*mKi
+    end
+  end
+  x.field = K
+  x.generators_of_automorphisms = gens_autos
+  return nothing
+end
+
 #merge function when all the fields are automatically linearly disjoint
-function _easy_merge(list1, list2, absolute_bound::fmpz)
+function _easy_merge(list1, list2, absolute_bound::fmpz, simpl::Bool = false)
 
   res = FieldsTower[]
+  @vprint :Fields 1 "Number of candidates = $(length(list1)*length(list2)) \n"
   for x in list1
     for y in list2
       check_bound_disc(x, y, absolute_bound) || continue
-      composite = _to_composite(x, y)
-      if abs(discriminant(maximal_order(composite.field))) <= absolute_bound
+      fl, composite = _to_composite(x, y, absolute_bound)
+      if fl
+        if simpl
+          simplify!(composite)
+        end
         push!(res, composite)
       end
     end
@@ -196,19 +231,97 @@ function _disjoint_ab_subs(list1::Vector{FieldsTower}, list2::Vector{FieldsTower
 end
 
 function check_bound_disc(K::FieldsTower, L::FieldsTower, bound::fmpz)
-  dK = degree(K)
-  dL = degree(L)
-  discK = abs(discriminant(maximal_order(K)))
-  discL = abs(discriminant(maximal_order(L)))
-  d = gcd(discK, discL)
-  if issquare(d)
-    d = root(d, 2)
+  #First, I check the bound for the fields
+  if !new_check_disc(K, L, bound)
+    @hassert :Fields 1 !_to_composite(K, L, bound)[1]
+    return false
   end
-  d = d^(2*dK*dL - 2)
-  d1 = gcd(discK^dL, discL^dK)
-  d = gcd(d, d1)
-  n = discK^dL * discL^dK
-  return div(n, d) <= bound
+  #In the other cases, before returning true, I try to check if the
+  #maximal abelian subextension is admissible
+  Kab = maximal_abelian_subextension(K)
+  Lab = maximal_abelian_subextension(L)
+  disc_comp = abs(discriminant(maximal_order(Kab[1])))
+  deg = degree(Kab[1])
+  for i = 2:length(Kab)
+    disc_new = abs(discriminant(maximal_order(Kab[i])))
+    d = gcd(disc_new, disc_comp)
+    if issquare(d)
+      d = root(d, 2)
+    end
+    n = disc_comp^(degree(Kab[i]))*disc_new^deg
+    d = gcd(d^(2*(deg*degree(Kab[i])-1)), n)
+    disc_comp = divexact(n, d)
+    deg *= degree(Kab[i])
+  end
+  for i = 1:length(Lab)
+    disc_new = abs(discriminant(maximal_order(Lab[i])))
+    d = gcd(disc_new, disc_comp)
+    if issquare(d)
+      d = root(d, 2)
+    end
+    n = disc_comp^(degree(Kab[i]))*disc_new^deg
+    d = gcd(d^(2*(deg*degree(Lab[i])-1)), n)
+    disc_comp = divexact(n, d)
+    deg *= degree(Lab[i])
+  end
+  bound_max_ab_subext = root(bound, divexact(degree(K.field)*degree(L.field), deg))
+  if disc_comp <= bound_max_ab_subext
+    return true
+  else
+    @hassert :Fields 1 !_to_composite(K, L, bound)[1]
+    return false
+  end
+end
+
+function new_check_disc(K::FieldsTower, L::FieldsTower, absolute_bound::fmpz)
+  Kf = K.field
+  OKf = maximal_order(Kf)
+  Lf = L.field
+  OLf = maximal_order(Lf)
+  d1 = discriminant(maximal_order(Kf))
+  d2 = discriminant(maximal_order(Lf))
+  g1 = gcd(d1, d2)
+  wild, g = ppio(g1, fmpz(degree(Kf)*degree(Lf)))
+  disc1 = abs(ppio(d1, g1)[2])^degree(Lf)
+  disc2 = abs(ppio(d2, g1)[2])^degree(Kf)
+  disc = disc1*disc2
+  if disc > absolute_bound
+    return false
+  end
+  lf = factor(g)
+  ramification_indices = Vector{Tuple{fmpz, Int}}(undef, length(lf))
+  ind = 1
+  for (p, v) in lf
+    pd1 = prime_decomposition_type(OKf, Int(p))
+    pd2 = prime_decomposition_type(OLf, Int(p))
+    ramification_indices[ind] = (p, lcm(pd1[1][2], pd2[1][2]))
+    ind += 1
+  end
+
+  for i = 1:length(ramification_indices)
+    expo = (ramification_indices[i][2] - 1)*divexact(degree(Kf)*degree(Lf), ramification_indices[i][2])
+    disc *= ramification_indices[i][1]^expo
+  end
+  if disc > absolute_bound
+    return false
+  end
+  lwild = factor(wild)
+  for (q, v) in lwild
+    v1 = valuation(d1, q)
+    v2 = valuation(d2, q)
+    valnum = degree(Lf)*v1 + degree(Kf)*v2  
+    valden = valuation(g1, q)
+    if iseven(valden)
+      valden = divexact(valden, 2)
+    end
+    valden *= (2*degree(Lf)*degree(Kf) -2)
+    if valnum - valden > max(degree(Lf)*v1, degree(Kf)*v2)
+      disc *= q^(valnum-valden)
+    else
+      disc *= q^max(degree(Lf)*v1, degree(Kf)*v2)
+    end
+  end
+  return disc <= absolute_bound
 end
 
 function maximal_abelian_subextension(F::FieldsTower)
@@ -266,7 +379,7 @@ function _first_sieve(list1::Vector{FieldsTower}, list2::Vector{FieldsTower}, ab
     @vprint :FieldsNonFancy 1 "Fields $(i1)/$(length(list1))\n"
     K = list1[i1]
     DK = Dict{Tuple{Set{fmpz}, Set{fmpz}}, Array{Int, 1}}()
-    rK = Hecke.ramified_primes(maximal_order(K))
+    rK = ramified_primes(K)
     lfieldsK = maximal_abelian_subextension(K)
     rK1 = Set(fmpz[])
     for x in lfieldsK
@@ -277,7 +390,7 @@ function _first_sieve(list1::Vector{FieldsTower}, list2::Vector{FieldsTower}, ab
       L = list2[i2]
       check_bound_disc(K, L, absolute_bound) || continue
       #First, I check if the discriminants are coprime
-      rL = Hecke.ramified_primes(maximal_order(L))
+      rL = Hecke.ramified_primes(L)
       lfieldsL = maximal_abelian_subextension(L)
       rL1 = Set(fmpz[])
       for x in lfieldsL
@@ -309,38 +422,37 @@ function _first_sieve(list1::Vector{FieldsTower}, list2::Vector{FieldsTower}, ab
     for (k, v) in DK
       if length(v) < redfirst
         continue
-      else 
-        if !istotally_real(K.field)
-          ar = Array{Tuple{Int, Int}, 1}(undef, length(v))
-          for j = 1:length(v)
-            ar[j] = (i1, v[j])
+      end
+      if !istotally_real(K.field)
+        ar = Array{Tuple{Int, Int}, 1}(undef, length(v))
+        for j = 1:length(v)
+          ar[j] = (i1, v[j])
+        end
+        if haskey(D, (k[1], k[2], false))
+          append!(ar, D[(k[1], k[2], false)])  
+        end
+        D[(k[1], k[2], false)] = ar
+      else
+        ar_real = Array{Tuple{Int, Int}, 1}()
+        ar_not_real = Array{Tuple{Int, Int}, 1}()
+        for j = 1:length(v)
+          if istotally_real(list2[v[j]].field)
+            push!(ar_real, (i1, v[j]))
+          else
+            push!(ar_not_real, (i1, v[j]))
           end
+        end
+        if !isempty(ar_real)
+          if haskey(D, (k[1], k[2], true))
+            append!(ar_real, D[(k[1], k[2], true)])  
+          end
+          D[(k[1], k[2], true)] = ar_real
+        end
+        if !isempty(ar_not_real)
           if haskey(D, (k[1], k[2], false))
-            append!(ar, D[(k[1], k[2], false)])  
+            append!(ar_not_real, D[(k[1], k[2], false)])  
           end
-          D[(k[1], k[2], false)] = ar
-        else
-          ar_real = Array{Tuple{Int, Int}, 1}()
-          ar_not_real = Array{Tuple{Int, Int}, 1}()
-          for j = 1:length(v)
-            if istotally_real(list2[v[j]].field)
-              push!(ar_real, (i1, v[j]))
-            else
-              push!(ar_not_real, (i1, v[j]))
-            end
-          end
-          if !isempty(ar_real)
-            if haskey(D, (k[1], k[2], true))
-              append!(ar_real, D[(k[1], k[2], true)])  
-            end
-            D[(k[1], k[2], true)] = ar_real
-          end
-          if !isempty(ar_not_real)
-            if haskey(D, (k[1], k[2], false))
-              append!(ar_not_real, D[(k[1], k[2], false)])  
-            end
-            D[(k[1], k[2], false)] = ar_not_real
-          end
+          D[(k[1], k[2], false)] = ar_not_real
         end
       end
     end
@@ -393,7 +505,7 @@ function sieve_by_discriminant(list1, list2, v)
   d2 = degree(list2[1].field)
   D = Dict{fmpz, Vector{Int}}()
   
-  for i = 2:length(v)
+  for i = 1:length(v)
     candidate = abs(discriminant(maximal_order(list1[v[i][1]].field))^d2)*abs(discriminant(maximal_order(list2[v[i][2]].field))^d1)
     found = false
     for (d, l) in D
@@ -519,13 +631,44 @@ function refine_clusters(list1, list2, clusters, red, redfirst, redsecond)
 end
 
 
-function _merge(list1::Vector{FieldsTower}, list2::Vector{FieldsTower}, absolute_bound::fmpz, red::Int, redsecond::Int)
+function isnormal(K::AnticNumberField)
+  #Before computing the automorphisms, I split a few primes and check if the 
+  #splitting behaviour is fine
+  E = EquationOrder(K)
+  d = discriminant(E)
+  p = 1000
+  ind = 0
+  while ind < 15
+    p = next_prime(p)
+    if divisible(d, p)
+      continue
+    end
+    ind += 1
+    dt = prime_decomposition_type(E, p)
+    if !divisible(degree(K), length(dt))
+      return false
+    end
+    f = dt[1][1]
+    for i = 2:length(dt)
+      if f != dt[i][1]
+        return false
+      end
+    end
+  end
+  return length(automorphisms(K)) == degree(K)
+
+
+
+end
+
+
+function _merge(list1::Vector{FieldsTower}, list2::Vector{FieldsTower}, absolute_bound::fmpz, red::Int, redsecond::Int, simpl::Bool = false)
 
   if red == 1
     #All the fields are automatically linearly disjoint
     @vprint :Fields 1 "All the fields are linearly disjoint, easy case \n"
     @vprint :FieldsNonFancy 1 "All the fields are linearly disjoint, easy case \n"
-    return _easy_merge(list1, list2, absolute_bound)
+    return _easy_merge(list1, list2, absolute_bound, simpl)
   end
 
   redfirst = divexact(red, redsecond)
@@ -545,7 +688,8 @@ function _merge(list1::Vector{FieldsTower}, list2::Vector{FieldsTower}, absolute
   if isempty(D1)
     return res
   end
-  clusters = [x for x in values(D1)]
+  clusters = Vector{Tuple{Int, Int}}[x for x in values(D1)]
+  @show [length(x) for x in clusters]
   @vprint :Fields 1 "$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())Candidates after first sieve: $(sum(length(x) for x in clusters))\n"
   
   @vprint :Fields 1 "Sieving by discriminant\n"
@@ -558,18 +702,23 @@ function _merge(list1::Vector{FieldsTower}, list2::Vector{FieldsTower}, absolute
   
   @vprint :Fields 1 "Sieving by maximal abelian subextension\n"
   new_clusters = refine_clusters(list1, list2, clusters1, red, redfirst, redsecond)
+  if isempty(new_clusters)
+    return res
+  end
   @vprint :Fields 1 "Candidates: $(sum(length(x) for x in new_clusters))\n"
-  @vprint :Fields 1 "Sieving by prime_splitting\n"
-  
   @show [length(x) for x in new_clusters]
+  @vprint :Fields 1 "Sieving by prime_splitting\n"
   fields_to_be_computed = _sieve_by_prime_splitting(list1, list2, new_clusters, red, redfirst, redsecond)
 
   @vprint :Fields 1 "Computing maximal order of $(length(fields_to_be_computed)) fields\n"
   for i = 1:length(fields_to_be_computed)
     @vprint :Fields 1 "Doing $(i) / $(length(fields_to_be_computed))"
     pair = fields_to_be_computed[i]
-    candidate = _to_composite(list1[pair[1]], list2[pair[2]])
-    if abs(discriminant(maximal_order(candidate.field))) <= absolute_bound
+    fl, candidate = _to_composite(list1[pair[1]], list2[pair[2]], absolute_bound)
+    if fl
+      if simpl
+        simplify!(candidate)
+      end
       push!(res, candidate)
     end
     @vprint :Fields 1 "$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())"
@@ -584,8 +733,12 @@ function _sieve_by_prime_splitting(list1, list2, clusters, red, redfirst, redsec
   fields_to_be_computed = Vector{Tuple{Int, Int}}()
   d1 = degree(list1[1].field)
   d2 = degree(list2[1].field)
-
+  total = length(clusters)
+  @vprint :Fields 1 "\n Number of clusters: $(total)\n"
+  total = length(clusters)
+  nclu = 0
   for v in clusters
+    nclu += 1
     if length(v) == red
       push!(fields_to_be_computed, v[1])
       continue
@@ -593,63 +746,58 @@ function _sieve_by_prime_splitting(list1, list2, clusters, red, redfirst, redsec
     if length(v) < red
       continue
     end
+    @vprint :Fields 1 "$(Hecke.set_cursor_col())$(Hecke.clear_to_eol()) Doing cluster $(nclu)/$(total) of length $(length(v))"
     p = next_prime(1000)
     iso_classes = Vector{Int}[Int[i for i = 1:length(v)]]
-    to_be_assigned = Int[]
     while true
       splitting_types = Dict{Tuple{Int, Int}, Vector{Int}}()
       for i = 1:length(v)
         pd1 = prime_decomposition_type(maximal_order(list1[v[i][1]].field), p)
-        r1 = length(pd1)
+        if pd1[1][2] != 1
+          break
+        end
         f1 = pd1[1][1]
         pd2 = prime_decomposition_type(maximal_order(list2[v[i][2]].field), p)
-        r2 = length(pd2)
+        if pd2[1][2] != 1
+          break
+        end
         f2 = pd2[1][1]
-        if iscoprime(f1, f2)
-          r = r1*r2
-          f = f1*f2
-          if haskey(splitting_types, (r, f))
-            push!(splitting_types[(r, f)], i)
-          else
-            splitting_types[(r, f)] = Int[i]
-          end
+        f = lcm(f1, f2)
+        r = divexact(d1*d2, f)
+        if haskey(splitting_types, (r, f))
+          push!(splitting_types[(r, f)], i)
         else
-          push!(to_be_assigned, i)
+          splitting_types[(r, f)] = Int[i]
         end
       end
-      if isempty(to_be_assigned)
-        if all(x -> length(x) <= red, values(splitting_types))
-          #I intersect the data with the one that I already have
-          for vals in values(splitting_types)
-            to_be = intersect_infos(vals, iso_classes)
-            for j in to_be
-              if length(j) == red
-                push!(fields_to_be_computed, v[j[1]])
-              end
+      if all(x -> length(x) <= red, values(splitting_types))
+        #I intersect the data with the one that I already have
+        for vals in values(splitting_types)
+          to_be = intersect_infos(vals, iso_classes)
+          for j in to_be
+            if length(j) == red
+              push!(fields_to_be_computed, v[j[1]])
+            end
+          end
+        end
+        break
+      else
+        #I save the information provided by the splitting
+        new_iso_classes = Vector{Int}[]
+        for vals in values(splitting_types)
+          append!(new_iso_classes, intersect_infos(vals, iso_classes))
+        end
+        iso_classes = new_iso_classes
+        if all(x -> length(x) <= red, iso_classes)
+          for j in iso_classes
+            if length(j) == red
+              push!(fields_to_be_computed, v[j[1]])
             end
           end
           break
         else
-          #I save the information provided by the splitting
-          new_iso_classes = Vector{Int}[]
-          for vals in values(splitting_types)
-            append!(new_iso_classes, intersect_infos(vals, iso_classes))
-          end
-          iso_classes = new_iso_classes
-          if all(x -> length(x) <= red, iso_classes)
-            for j in iso_classes
-              if length(j) == red
-                push!(fields_to_be_computed, v[j[1]])
-              end
-            end
-            break
-          else
-            p = next_prime(p)
-          end
+          p = next_prime(p)
         end
-      else
-        to_be_assigned = Int[]
-        p = next_prime(p)
       end
     end 
   end

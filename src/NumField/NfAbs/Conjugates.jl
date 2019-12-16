@@ -469,20 +469,15 @@ function complex_conjugation(K::AnticNumberField)
   a = gen(K)
   d = degree(K)
   !istotally_complex(K) && error("Number field must be totally complex")
-  imgs = Vector{nf_elem}(undef, d)
-  for i in 1:d
-    imgs[i] = A[i].prim_img
-  end
   #First, quick and dirty. If only one automorphism works, then we return it
   p = 32 
-  
   while true
     c = conjugates(a, p)
     for i = 1:d
       if !isinvolution(A[i])
         continue
       end
-      cc = conj.(conjugates(imgs[i], p))
+      cc = conj.(conjugates(A[i].prim_img, p))
       for k = 1:d
         if overlaps(c[k], cc[k])
           found = true
@@ -501,7 +496,7 @@ function complex_conjugation(K::AnticNumberField)
         end
       end
     end
-    p = 2 * p
+    @show p = 2 * p
     if p > 2^18
       error("Precision too high in complex_conjugation")
     end

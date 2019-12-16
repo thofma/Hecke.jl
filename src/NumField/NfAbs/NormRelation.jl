@@ -865,10 +865,10 @@ function _has_norm_relation_abstract(G::GrpGen, H::Vector{Tuple{GrpGen, GrpGenTo
   right_cosets_for_normalizer = Vector{GrpGenElem}[]
 
   for i in 1:length(subgroups_needed)
-    lc = left_cosets(G, H[subgroups_needed[i]][2])
+    lc = Hecke.left_cosets(G, H[subgroups_needed[i]][2])
     push!(left_cosets_for_sub, lc)
-    NGH = normalizer(G, H[subgroups_needed[i]][2])
-    push!(right_cosets_for_normalizer, right_cosets(G, NGH[2]))
+    NGH = Hecke.normalizer(G, H[subgroups_needed[i]][2])
+    push!(right_cosets_for_normalizer, Hecke.right_cosets(G, NGH[2]))
   end
 
   if iszero(target_den)
@@ -1165,8 +1165,8 @@ function class_group_via_brauer(O::NfOrd, N::NormRelation, do_lll = true)
     OK = O
   end
   OK = maximal_order(K)
-  S = prime_ideals_up_to(OK, factor_base_bound_grh(OK))
-  c, UZK = Hecke._setup_for_norm_relation_fun(K, S)
+  S = prime_ideals_up_to(OK, Hecke.factor_base_bound_grh(OK))
+  c, UZK = _setup_for_norm_relation_fun(K, S)
   _add_sunits_from_brauer_relation!(c, UZK, N)
   if index(N) != 1
     # I need to saturate

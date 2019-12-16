@@ -813,7 +813,7 @@ function minimal_submodules(M::ModAlgAss{S, T, V}, dim::Int=M.dimension+1, lf = 
   if isempty(lf)
     lf = composition_factors(M)
   end
-  if isone(length(lf)) && isone(lf[1][2])
+  if meataxe(M)[1]
     if dim >= n
       return T[identity_matrix(K, n)]
     else
@@ -922,10 +922,10 @@ Given a $G$-module $M$, it returns all the submodules of M of index q^index, whe
 """
 function submodules(M::ModAlgAss{S, T, V}, index::Int; comp_factors = Tuple{ModAlgAss{S, T, V}, Int}[]) where {S, T, V}
   K=M.base_ring
-  if index==M.dimension
+  if index == M.dimension
     return T[zero_matrix(K,1,M.dimension)]
   end
-  list=T[]
+  list = T[]
   if index >= div(M.dimension, 2)
     if index == M.dimension -1
       if isempty(comp_factors)
@@ -933,7 +933,7 @@ function submodules(M::ModAlgAss{S, T, V}, index::Int; comp_factors = Tuple{ModA
       else
         lf = comp_factors
       end
-      list = minimal_submodules(M, 1,lf)
+      list = minimal_submodules(M, 1, lf)
       return list
     end
     if isempty(comp_factors)
@@ -947,21 +947,20 @@ function submodules(M::ModAlgAss{S, T, V}, index::Int; comp_factors = Tuple{ModA
         N, pivotindex = _actquo(x, M.action)
         #  Recover the composition factors of the quotient
         Sub = _actsub(x, M.action)
-        lf1=[(y[1], y[2]) for y in lf]
-        for j=1:length(lf1)
-          if isisomorphic(lf1[j][1], Sub)
-            if lf1[j][2]==1
-              deleteat!(lf1,j)
-            else
-              lf1[j]=(lf1[j][1], lf1[j][2]-1)
+        lf1 = Tuple{typeof(M), Int}[(y[1], y[2]) for y in lf]
+        for j = 1:length(lf)
+          if isisomorphic(lf[j][1], Sub)
+            if !isone(lf[j][2])
+              push!(lf1, (lf[j][1], lf[j][2]-1))
             end
-            break
+          else
+            push!(lf1, lf[j])
           end
         end
         #
         #  Recursively ask for submodules and write their bases in terms of the given set of generators
         #
-        ls=submodules(N,index, comp_factors=lf1)
+        ls=submodules(N, index, comp_factors = lf1)
         for a in ls
           s=zero_matrix(K,nrows(a)+nrows(x), M.dimension)
           for t=1:nrows(a)
@@ -984,10 +983,7 @@ function submodules(M::ModAlgAss{S, T, V}, index::Int; comp_factors = Tuple{ModA
       end
     end
    
-  #
-  #  Eliminating repeatitions
-  #
-
+    #  Eliminating repeatitions
     for x in list
       rref!(x)
     end

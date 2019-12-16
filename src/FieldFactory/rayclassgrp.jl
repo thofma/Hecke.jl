@@ -508,7 +508,6 @@ end
 ###############################################################################
 
 function check_abelian_extensions(class_fields::Vector{Tuple{Hecke.ClassField{Hecke.MapRayClassGrp,GrpAbFinGenMap}, Vector{GrpAbFinGenMap}}}, autos::Array{NfToNfMor, 1}, emb_sub::NfToNfMor)
-
   @vprint :MaxAbExt 3 "Starting checking abelian extension\n"
   K = base_field(class_fields[1][1])
   d = degree(K)

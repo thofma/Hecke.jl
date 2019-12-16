@@ -71,7 +71,7 @@ function _simplify(O::NfOrd)
     if isone(denominator(B[indices[i]].elem_in_nf))
       continue
     end 
-    t2n = t2(B[indices[i]].elem_in_nf, 5)
+    t2n = t2(B[indices[i]].elem_in_nf)
     if t2n < I
       a = B[indices[i]]
       I = t2n

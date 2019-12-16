@@ -29,6 +29,11 @@ mutable struct FieldsTower
 
 end
 
+function Base.show(io::IO, F::FieldsTower)
+  print(io, "Field context for the number field defined by $(F.field.pol)")
+  return nothing
+end
+
 include("./brauer.jl")
 include("./merge.jl")
 include("./abelian_layer.jl")
@@ -180,14 +185,16 @@ function _from_autos_to_perm(G::Array{Hecke.NfToNfMor,1})
   @assert degree(K) == length(G)
   n = length(G)
   #First, find a good prime
-  p = 2
-  d = numerator(discriminant(K.pol))
-  while mod(d, p) == 0
-    p = next_prime(p)
-  end
+  p = 3
   R = GF(p, cached = false)
   Rx, x = PolynomialRing(R, "x", cached = false)
   fmod = Rx(K.pol)
+  while iszero(discriminant(fmod))
+    p = next_prime(p)
+    R = GF(p, cached = false)
+    Rx, x = PolynomialRing(R, "x", cached = false)
+    fmod = Rx(K.pol)
+  end
   pols = Vector{Tuple{gfp_poly, Int}}(undef, n)
   for i = 1:n
     pols[i] = (Rx(G[i].prim_img), i)
@@ -332,12 +339,8 @@ function _from_relative_to_abs_with_embedding(L::Hecke.NfRelNS{T}, autL::Array{H
     #@assert Ks.pol(y) == 0
     autos[i] = Hecke.NfToNfMor(Ks, Ks, x)
   end
-  #And the generators are done. Now the closure
-  #@vtime :Fields 3 Hecke._set_automorphisms_nf(Ks, closure(autos, degree(Ks)))
-  #No! I set the automorphisms only if I need them
-  #Hecke._set_automorphisms_nf(Ks, autsKs)
   @vprint :Fields 2 "Finished\n"
-    #@assert codomain(embed) == Ks
+  #@assert codomain(embed) == Ks
   return Ks, autos, embed
 end 
 
@@ -517,101 +520,8 @@ end
 #
 ###############################################################################
 
-function fields_direct_product(g1, g2, red, redfirst, absolute_bound; only_real = false)
-  b1 = root(absolute_bound, g2[1])
-  b2 = root(absolute_bound, g1[1])
-  l2 = fields(g2[1], g2[2], b2, only_real = only_real)
-  if isempty(l2)
-    return FieldsTower[]
-  end
-  if g1 == g2
-    return _merge(l2, l2, absolute_bound, red, redfirst)
-  end
-  l1 = fields(g1[1], g1[2], b1, only_real = only_real)
-  if isempty(l1)
-    return FieldsTower[]
-  end
-  return _merge(l1, l2, absolute_bound, red, redfirst)
-end
-
-
-function fields(a::Int, b::Int, absolute_bound::fmpz; using_direct_product::Bool = true, only_real::Bool = false, simplify::Bool = true)
-  @assert absolute_bound > 0
-  if a == 1
-    @assert b == 1
-    Qx, x = PolynomialRing(FlintQQ, "x", cached = false)
-    K, a = NumberField(x-1, cached = false)
-    g = NfToNfMor(K, K, K(1))
-    return FieldsTower[FieldsTower(K, NfToNfMor[g], Array{NfToNfMor, 1}())]
-  end
-  G = GAP.Globals.SmallGroup(a, b)
-  @assert GAP.Globals.IsSolvable(G)
-  if using_direct_product
-    g1, g2, red, redfirst = direct_product_decomposition(G, (a, b))
-    if g2 != (1, 1)    
-      return fields_direct_product(g1, g2, red, redfirst, absolute_bound; only_real = false)
-    end
-  end
-  @vprint :Fields 1 "Doing Group ($a, $b) with bound $absolute_bound\n"
-  @vprint :FieldsNonFancy 1 "Doing Group ($a, $b) with bound $absolute_bound\n"
-  L = GAP.Globals.DerivedSeries(G)
-  lvl = _real_level(L)
-  #First step by hand
-  l = GAP.gap_to_julia(Vector{Int64}, GAP.Globals.AbelianInvariants(G))
-  @vprint :Fields 1 "contructing abelian extensions with invariants $l \n" 
-  @vprint :FieldsNonFancy 1 "contructing abelian extensions with invariants $l \n" 
-  #@vtime :Fields 2 
-  list = abelian_extensionsQQ(l, root(absolute_bound, div(a,prod(l))), (lvl > 1 || only_real))
-  if isempty(list)
-    return list
-  end
-  @vprint :Fields 1 "First step completed\n \n"
-  @vprint :FieldsNonFancy 1 "First step completed\n \n"
-  for i = 2:length(L)-1
-
-    E1 = GAP.Globals.FactorGroup(L[1], L[i+1])
-    l = GAP.gap_to_julia(Vector{Int64}, GAP.Globals.AbelianInvariants(L[i]))
-    @vprint :Fields 1 "contructing abelian extensions with invariants $l \n" 
-    @vprint :FieldsNonFancy 1 "contructing abelian extensions with invariants $l \n" 
-    o = divexact(a, GAP.Globals.Size(E1))
-    bound = root(absolute_bound, o)
-    IsoE1 = GAP.Globals.IdGroup(E1)
-    @vprint :Fields 1 "Number of fields at the $i -th step: $(length(list)) \n"
-    @vprint :FieldsNonFancy 1 "Number of fields at the $i -th step: $(length(list)) \n"
-    lG = snf(DiagonalGroup(l))[1]
-    invariants = map(Int, lG.snf) 
-    onlyreal = (lvl > i || only_real)
-    @vprint :Fields 1 "Computing obstructions\n"
-    @vprint :FieldsNonFancy 1 "Computing obstructions\n"
-    #@vtime :Fields 1 
-    list = check_Brauer_obstruction(list, L, i, invariants)
-    @vprint :Fields 1 "Fields to check: $(length(list))\n\n"
-    @vprint :FieldsNonFancy 1 "Fields to check: $(length(list))\n\n"
-    if isempty(list)
-      return FieldsTower[]
-    end
-    simplify_i_th = true
-    if i == length(L)-1 && simplify == false
-      simplify_i_th = false
-    end
-    list = field_extensions(list, bound, IsoE1, invariants, onlyreal, simplify)
-    @vprint :Fields 1 "Step $i completed\n"
-    @vprint :FieldsNonFancy 1 "Step $i completed\n"
-    if isempty(list)
-      return FieldsTower[]
-    end
-  end
-  return list
-  
-end
-
 function fields(a::Int, b::Int, list::Vector{FieldsTower}, absolute_bound::fmpz; only_real::Bool = false, simplify::Bool = true)
   G = GAP.Globals.SmallGroup(a, b)
-  return fields(list, G, absolute_bound, only_real = only_real, simplify = simplify)
-end
-
-
-function fields(list::Vector{FieldsTower}, G, absolute_bound::fmpz; only_real::Bool = false, simplify::Bool = true)
   L = GAP.Globals.DerivedSeries(G)
   lvl = _real_level(L)
   first = true
@@ -657,26 +567,26 @@ function fields(list::Vector{FieldsTower}, G, absolute_bound::fmpz; only_real::B
   return list
 end
 
-function new_fields_direct_product(g1, g2, red, redfirst, absolute_bound; only_real = false, simplify = true)
+function fields_direct_product(g1, g2, red, redfirst, absolute_bound; only_real = false, simplify = true)
   b1 = root(absolute_bound, g2[1])
   b2 = root(absolute_bound, g1[1])
-  @vprint :Fields 1 "The Galois group is the product of $(g1) and $(g2)\n"
-  l2 = new_fields(g2[1], g2[2], b2, only_real = only_real)
+  @vprint :Fields 1 "The group is the product of $(g1) and $(g2)\n"
+  l2 = fields(g2[1], g2[2], b2, only_real = only_real)
   if isempty(l2)
     return FieldsTower[]
   end
   if g1 == g2
-    return _merge(l2, l2, absolute_bound, red, redfirst)
+    return _merge(l2, l2, absolute_bound, red, redfirst, simplify)
   end
-  l1 = new_fields(g1[1], g1[2], b1, only_real = only_real)
+  l1 = fields(g1[1], g1[2], b1, only_real = only_real)
   if isempty(l1)
     return FieldsTower[]
   end
-  return _merge(l1, l2, absolute_bound, red, redfirst)
+  return _merge(l1, l2, absolute_bound, red, redfirst, simplify)
 end
 
 
-function new_fields(a::Int, b::Int, absolute_bound::fmpz; only_real::Bool = false, simplify::Bool = true)
+function fields(a::Int, b::Int, absolute_bound::fmpz; using_direct_product::Bool = true, only_real::Bool = false, simplify::Bool = true)
   if a == 1
     @assert b == 1
     Qx, x = PolynomialRing(FlintQQ, "x", cached = false)
@@ -685,9 +595,12 @@ function new_fields(a::Int, b::Int, absolute_bound::fmpz; only_real::Bool = fals
     return FieldsTower[FieldsTower(K, NfToNfMor[g], Array{NfToNfMor, 1}())]
   end
   G = GAP.Globals.SmallGroup(a, b)
-  g1, g2, red, redfirst = direct_product_decomposition(G, (a, b))
-  if g2 != (1, 1)    
-    return new_fields_direct_product(g1, g2, red, redfirst, absolute_bound; only_real = false)
+  if using_direct_product
+    g1, g2, red, redfirst = direct_product_decomposition(G, (a, b))
+    if g2 != (1, 1)   
+      @vprint :Fields 1 "computing extensions with Galois group ($a, $b) and bound ~10^$(clog(absolute_bound, 10))\n" 
+      return fields_direct_product(g1, g2, red, redfirst, absolute_bound; only_real = false, simplify = simplify)
+    end
   end
 
   L = GAP.Globals.DerivedSeries(G)
@@ -704,7 +617,7 @@ function new_fields(a::Int, b::Int, absolute_bound::fmpz; only_real::Bool = fals
   IdGroupGAP = GAP.Globals.IdGroup(G1)
   IdGroup = GAP.gap_to_julia(Vector{Int}, IdGroupGAP)
   bound = root(absolute_bound, prod(invariants))
-  list = new_fields(IdGroup[1], IdGroup[2], bound; only_real = (only_real || lvl == length(L)-1))
+  list = fields(IdGroup[1], IdGroup[2], bound; using_direct_product = using_direct_product, only_real = (only_real || lvl == length(L)-1))
   @vprint :Fields 1 "computing extensions with Galois group ($a, $b) and bound ~10^$(clog(absolute_bound, 10))\n"
   @vprint :Fields 1 "Number of fields at this step: $(length(list)) \n"
   @vprint :FieldsNonFancy 1 "Number of fields at this step: $(length(list)) \n"
