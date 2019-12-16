@@ -1101,8 +1101,9 @@ function _add_sunits_from_brauer_relation!(c, UZK, N)
   return nothing
 end
 
-function induce_action_just_from_subfield(N::NormRelation, i, s, FB, invariant::Bool = true)
-  @assert invariant
+# TODO: Encode that the i-th field is normal over Q
+function induce_action_just_from_subfield(N::NormRelation, i, s, FB)
+  invariant = false
   S = FB.ideals
   ZK = order(S[1])
 
