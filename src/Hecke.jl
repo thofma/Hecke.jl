@@ -383,7 +383,7 @@ Base.adjoint(x) = transpose(x)
 #
 ################################################################################
 
-global VERSION_NUMBER = v"0.7.0"
+global VERSION_NUMBER = v"0.7.1-dev"
 
 ######################################################################
 # named printing support
