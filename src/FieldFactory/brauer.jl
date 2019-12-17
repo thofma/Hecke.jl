@@ -18,14 +18,23 @@ function check_Brauer_obstruction(list::Vector{FieldsTower}, L::Main.ForeignGAP.
     if length(invariants) == 1 || iscoprime(invariants[end-1], p)
       if p == 2
         list = _Brauer_prime_case(list, L, i, 2)
+        if isempty(list)
+          return list
+        end
         if v > 1
           list = check_Brauer_obstruction_pp(list, L, i, 2, v)
         end
       else
         if v > 1
           list = check_Brauer_obstruction_pp(list, L, i, Int(p), v)
+          if isempty(list)
+            return list
+          end
         else
           list = _Brauer_prime_case(list, L, i, Int(p))
+          if isempty(list)
+            return list
+          end
         end
       end
     else
@@ -42,6 +51,9 @@ function check_Brauer_obstruction(list::Vector{FieldsTower}, L::Main.ForeignGAP.
           list =  _Brauer_prime_case(list, L1, length(L1)-1, Int(p))
         else
           list = check_Brauer_obstruction_pp(list, L1, length(L1)-1, Int(p), Int(valuation(order, p)))
+        end
+        if isempty(list)
+          return list
         end
       end
     end

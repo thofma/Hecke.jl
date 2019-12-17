@@ -283,7 +283,7 @@ function _abelian_normal_extensions(F::FieldsTower, gtype::Array{Int, 1}, absbou
   end
   emb_sub = F.subfields[end]
   @vprint :Fields 1 "\e[1F$(Hecke.clear_to_eol())Sieving $(length(class_fields_with_act)) abelian extensions\n"
-  class_fields = Hecke.check_abelian_extensions(class_fields_with_act, autos, emb_sub)
+  class_fields = check_abelian_extensions(class_fields_with_act, autos, emb_sub)
   @vprint :Fields 1 "$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())"
   return class_fields
 end
@@ -331,7 +331,7 @@ function from_class_fields_to_fields(class_fields::Vector{Hecke.ClassField{Hecke
       ind += 1
       continue
     end
-    @vprint :Fields 1 "\e[1F$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())"
+    @vprint :Fields 1 "$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())"
     # I can compute the fields over a subfield.
     #First, I need the subfields.
     K = base_field(class_fields[1])
@@ -559,6 +559,9 @@ function computing_over_subfields(class_fields, subfields, idE, autos, right_grp
     right_grp[x] = false
   end
   it = findall(right_grp)
+  if isempty(it)
+    return Vector{Tuple{Hecke.NfRelNS{nf_elem}, Vector{Hecke.NfRelNSToNfRelNSMor{nf_elem}}}}()
+  end
   use_brauer = true
   if !is_normal_subfield || !iszero(mod(order(torsion_unit_group(base_ring(new_class_fields[it[1]]))[1]), exponent(new_class_fields[it[1]])))
     use_brauer = false
@@ -569,9 +572,6 @@ function computing_over_subfields(class_fields, subfields, idE, autos, right_grp
     else
       number_field(new_class_fields[i])
     end
-  end
-  if isempty(it)
-    return Vector{Tuple{Hecke.NfRelNS{nf_elem}, Vector{Hecke.NfRelNSToNfRelNSMor{nf_elem}}}}()
   end
   translate_fields_up(class_fields, new_class_fields, subs, it)
   #Now, finally, the automorphisms computation and the isomorphism check

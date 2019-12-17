@@ -253,7 +253,7 @@ function conductors_tame(O::NfOrd, n::Int, bound::fmpz)
     tr = prime_decomposition_type(O, Int(q))
     f = tr[1][1]
     nq = q^f 
-    if gcd(nq-1,n) == 1
+    if iscoprime(nq - 1, fmpz(n))
       continue
     end
     nq = nq^(length(tr)*e)
@@ -348,7 +348,7 @@ function conductors(O::NfOrd, a::Array{Int, 1}, bound::fmpz, tame::Bool=false)
     bound_max_exp = min(ram_groups_bound, bound_max_exp)
     
     #The prime may be also tamely ramified!
-    nisc = gcd(q^(fq)-1, expo)
+    nisc = gcd(q^(fq)-1, fmpz(expo))
     if nisc != 1
       fnisc=minimum(keys(factor(nisc).fac))
       nq=sq^((fnisc-1)*(divexact(n, fnisc)))

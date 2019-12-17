@@ -1276,7 +1276,9 @@ function solve_ut(A::MatElem{T}, b::MatElem{T}) where T
       for z = 1:s
         x[j, z] = b[i, z]
         for k = 1:r
-          x[j, z] -= A[i, pivot_cols[k]]*x[pivot_cols[k], z]
+          if !iszero(A[i, pivot_cols[k]])
+            x[j, z] -= A[i, pivot_cols[k]]*x[pivot_cols[k], z]
+          end
         end
         q, re = divrem(x[j, z], A[i, j])
         @assert iszero(re)
@@ -1316,7 +1318,9 @@ function solve_lt(A::MatElem{T}, b::MatElem{T}) where T
       for z = 1:s
         x[j, z] = b[i, z]
         for k = 1:r
-          x[j, z] -= A[i, pivot_cols[k]]*x[pivot_cols[k], z]
+          if !iszero(A[i, pivot_cols[k]]) && !iszero(x[pivot_cols[k], z])
+            x[j, z] -= A[i, pivot_cols[k]]*x[pivot_cols[k], z]
+          end
         end
         q, re = divrem(x[j, z], A[i, j])
         @assert iszero(re)

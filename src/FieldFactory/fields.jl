@@ -494,7 +494,7 @@ function field_extensions(x::FieldsTower, bound::fmpz, IsoE1::Main.ForeignGAP.MP
     return Vector{FieldsTower}()
   end
   list = from_class_fields_to_fields(list_cfields, x.generators_of_automorphisms, grp_to_be_checked, IsoG)
-  @vprint :Fields 1 "Computing maximal orders"
+  @vprint :Fields 1 "\e[1F$Computing maximal orders"
   @vprint :FieldsNonFancy 1 "Computing maximal orders\n"
   final_list = Vector{FieldsTower}(undef, length(list))
   for j = 1:length(list)
@@ -589,8 +589,7 @@ end
 function fields(a::Int, b::Int, absolute_bound::fmpz; using_direct_product::Bool = true, only_real::Bool = false, simplify::Bool = true)
   if a == 1
     @assert b == 1
-    Qx, x = PolynomialRing(FlintQQ, "x", cached = false)
-    K, a = NumberField(x-1, cached = false)
+    K = rationals_as_number_field()[1]
     g = NfToNfMor(K, K, K(1))
     return FieldsTower[FieldsTower(K, NfToNfMor[g], Array{NfToNfMor, 1}())]
   end
@@ -618,7 +617,11 @@ function fields(a::Int, b::Int, absolute_bound::fmpz; using_direct_product::Bool
   IdGroup = GAP.gap_to_julia(Vector{Int}, IdGroupGAP)
   bound = root(absolute_bound, prod(invariants))
   list = fields(IdGroup[1], IdGroup[2], bound; using_direct_product = using_direct_product, only_real = (only_real || lvl == length(L)-1))
+  if isempty(list)
+    return list
+  end
   @vprint :Fields 1 "computing extensions with Galois group ($a, $b) and bound ~10^$(clog(absolute_bound, 10))\n"
+  @vprint :Fields 1 "Abelian invariants of the relative extension: $(invariants)\n"
   @vprint :Fields 1 "Number of fields at this step: $(length(list)) \n"
   @vprint :FieldsNonFancy 1 "Number of fields at this step: $(length(list)) \n"
   

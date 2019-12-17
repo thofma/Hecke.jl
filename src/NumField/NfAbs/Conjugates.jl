@@ -496,7 +496,7 @@ function complex_conjugation(K::AnticNumberField)
         end
       end
     end
-    @show p = 2 * p
+    p = 2 * p
     if p > 2^18
       error("Precision too high in complex_conjugation")
     end

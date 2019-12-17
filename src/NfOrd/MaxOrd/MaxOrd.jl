@@ -651,7 +651,7 @@ function ring_of_multipliers(a::NfAbsOrdIdl)
   end
   # mhnf is upper right HNF
   mhnf = transpose(mhnf)
-  b = FakeFmpqMat(pseudo_inv(mhnf))
+  b = FakeFmpqMat(pseudo_inv(mhnf))#FakeFmpqMat(pseudo_inv(mhnf))
   mul!(b, b, basis_matrix(O, copy = false))
   @hassert :NfOrd 1 defines_order(nf(O), b)[1]
   O1 = NfAbsOrd(nf(O), b)
@@ -667,6 +667,14 @@ function ring_of_multipliers(a::NfAbsOrdIdl)
   end
   O1.primesofmaximality = fmpz[ppp for ppp in O.primesofmaximality]
   return O1
+end
+
+
+function pseudo_inv_lt(x::fmpz_mat)
+  @assert islower_triangular(x)
+  d = lcm(fmpz[x[i, i] for i = 1:nrows(x)])
+  sol = solve_lt(x, scalar_matrix(FlintZZ, nrows(x), d))
+  return FakeFmpqMat(sol, d)
 end
 
 ################################################################################
