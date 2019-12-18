@@ -17,9 +17,7 @@ function conductors_after_Brauer(F::FieldsTower, st::Vector{Int}, l_cond::Vector
   O = maximal_order(F)
   for p in lp
     lP = prime_decomposition(O, p)
-    F, mF = Hecke.ResidueFieldSmall(O, lP[1][1])
-    Gp = decomposition_group(auts, lP[1][1])
-    Hp = inertia_subgroup(F, mF, Gp)
+    Hp = inertia_subgroup(lP[1][1])
     gHp = small_generating_set(Hp)
     gensind = Int[]
     for x in gHp
@@ -126,12 +124,10 @@ function conductor_general_case(F::FieldsTower, st::Vector{Int}, IdG::Main.Forei
   AutHn = GAP.Globals.AutomorphismGroup(Hn)
   autH = GAP.Globals.Elements(AutHn)
   
-  lp = Hecke.ramified_primes(O)
+  lp = ramified_primes(F)
   for p in lp
     lP = prime_decomposition(O, p)
-    F, mF = Hecke.ResidueFieldSmall(O, lP[1][1])
-    Gp = decomposition_group(auts, lP[1][1])
-    Hp = inertia_subgroup(F, mF, Gp)
+    Hp = inertia_subgroup(lP[1][1])
     gHp = small_generating_set(Hp)
     gensind = Int[]
     for x in gHp
@@ -330,6 +326,3 @@ function conductors_with_restrictions(F::FieldsTower, st::Vector{Int}, IdG::Main
   end
   return newer_conds
 end
-
-
-

@@ -302,7 +302,7 @@ function _from_relative_to_abs_with_embedding(L::Hecke.NfRelNS{T}, autL::Array{H
     @vtime :Fields 3 Ks, mKs = Hecke.simplify(K)
     #Now, we have to construct the maximal order of this field.
     #I compute the inverse of mKs
-    @vtime :Fields 3 mKsI = find_inverse(mKs)
+    @vtime :Fields 3 mKsI = inv(mKs)
     if isdefined(O1, :lllO)
       lO = O1.lllO::NfOrd
       O2 = NfOrd(nf_elem[mKsI(x) for x in basis(lO, K, copy = false)], false)
@@ -343,35 +343,6 @@ function _from_relative_to_abs_with_embedding(L::Hecke.NfRelNS{T}, autL::Array{H
   #@assert codomain(embed) == Ks
   return Ks, autos, embed
 end 
-
-function find_inverse(f::NfToNfMor)
-  v = Vector{nf_elem}(undef, degree(domain(f)))
-  v[1] = one(codomain(f))
-  v[2] = f.prim_img
-  for i = 3:degree(domain(f))
-    v[i] = v[2]*v[i-1]
-  end
-  M = basis_matrix(v)
-  w = zero_matrix(FlintQQ, 1, nrows(M))
-  w[1, 2] = 1
-  fl, s = can_solve(M, w, side = :left)
-  @assert fl
-  s1 = FakeFmpqMat(s)
-  pre_img = elem_from_mat_row(domain(f), s1.num, 1, s1.den)
-  return hom(codomain(f), domain(f), pre_img)
-end
-
-function find_inverse2(f::NfToNfMor)
-  K = codomain(f)
-  arr_prim_img = Array{nf_elem, 1}(undef, degree(K))
-  arr_prim_img[1] = K(1)
-  arr_prim_img[2] = f.prim_img
-  for i = 3:degree(K)
-    arr_prim_img[i] = arr_prim_img[i-1]*f.prim_img
-  end
-  M1 = inv(basis_matrix(arr_prim_img, FakeFmpqMat))
-  return M1
-end
 
 
 ###############################################################################
@@ -494,7 +465,7 @@ function field_extensions(x::FieldsTower, bound::fmpz, IsoE1::Main.ForeignGAP.MP
     return Vector{FieldsTower}()
   end
   list = from_class_fields_to_fields(list_cfields, x.generators_of_automorphisms, grp_to_be_checked, IsoG)
-  @vprint :Fields 1 "\e[1F$Computing maximal orders"
+  @vprint :Fields 1 "\e[1FComputing maximal orders"
   @vprint :FieldsNonFancy 1 "Computing maximal orders\n"
   final_list = Vector{FieldsTower}(undef, length(list))
   for j = 1:length(list)

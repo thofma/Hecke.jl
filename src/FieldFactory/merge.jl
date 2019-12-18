@@ -169,7 +169,7 @@ function simplify!(x::FieldsTower)
   OK = maximal_order(K)
   Ks, mKs = simplify(K)
   #I need to translate everything...
-  mKi = find_inverse(mKs)
+  mKi = inv(mKs)
   #First, translate the lll of the maximal order
   if isdefined(OK, :lllO)
     OKs = NfOrd(nf_elem[mKi(y) for y in basis(OK.lllO, K)])
@@ -530,10 +530,6 @@ function sieve_by_discriminant(list1, list2, v)
   return res
 end
 
-function issquare(x::fmpq)
-  return x > 0 && issquare(numerator(x)) && issquare(denominator(x))
-end
-
 function _differ_by_square(n::fmpz, m::fmpz)
   return issquare(divexact(fmpq(n), fmpq(m)))
 end
@@ -628,37 +624,6 @@ function refine_clusters(list1, list2, clusters, red, redfirst, redsecond)
     end
   end
   return new_clusters
-end
-
-
-function isnormal(K::AnticNumberField)
-  #Before computing the automorphisms, I split a few primes and check if the 
-  #splitting behaviour is fine
-  E = EquationOrder(K)
-  d = discriminant(E)
-  p = 1000
-  ind = 0
-  while ind < 15
-    p = next_prime(p)
-    if divisible(d, p)
-      continue
-    end
-    ind += 1
-    dt = prime_decomposition_type(E, p)
-    if !divisible(degree(K), length(dt))
-      return false
-    end
-    f = dt[1][1]
-    for i = 2:length(dt)
-      if f != dt[i][1]
-        return false
-      end
-    end
-  end
-  return length(automorphisms(K)) == degree(K)
-
-
-
 end
 
 

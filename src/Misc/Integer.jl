@@ -175,6 +175,10 @@ function one(::Type{Nemo.fmpz})
   return fmpz(1)
 end
 
+function divisible(x::Integer, y::Integer)
+  return iszero(rem(x, y))
+end
+
 @doc Markdown.doc"""
   modord(a::fmpz, m::fmpz) -> Int
   modord(a::Integer, m::Integer)
@@ -455,6 +459,10 @@ function ispower(a::fmpq, n::Int)
   end
   fl, de = ispower(denominator(a), n)
   return fl, fmpq(nu, de)
+end
+
+function issquare(x::fmpq)
+  return x > 0 && issquare(numerator(x)) && issquare(denominator(x))
 end
 
 ################################################################################
@@ -1393,5 +1401,102 @@ end
 
 using .BitsMod
 export bits, Limbs
+
+################################################################################
+#
+#  Prime numbers up to
+#
+################################################################################
+
+@doc Markdown.doc"""
+    primes_up_to(n::Int) -> Vector{Int}
+Returns a vector containing all the prime numbers up to $n$
+"""
+function primes_up_to(n::Int)
+  list = trues(n)
+  list[1] = false
+  i = 2
+  s = 4
+  while s <= n
+    list[s] = false
+    s += 2
+  end
+  i = 3
+  b = sqrt(n)
+  while i <= b
+    if list[i]
+      j = 3*i
+      s = 2*i
+      while j <= n
+        list[j] = false
+        j += s
+      end
+    end
+    i += 1
+  end
+  return findall(list)
+end
+
+################################################################################
+#
+#  Squarefree numbers up to
+#
+################################################################################
+
+@doc Markdown.doc"""
+    squarefree_up_to(n::Int) -> Vector{Int}
+Returns a vector containing all the squarefree numbers up to $n$
+"""
+function squarefree_up_to(n::Int; coprime_to::Array{fmpz,1}=fmpz[])
+  list = trues(n)
+  for x in coprime_to
+    if !fits(Int, x)
+      continue
+    end
+    t = Int(x)
+    while t <= n
+      list[t]=false
+      t += Int(x)
+    end
+  end
+  i = 2
+  b = root(n, 2)
+  lp = primes_up_to(b)
+  for i = 1:length(lp)
+    p2 = lp[i]^2
+    ind = p2
+    while ind <= n
+      list[ind] = false
+      ind += p2
+    end
+  end
+  return findall(list)
+end
+
+################################################################################
+#
+#  issquarefree
+#
+################################################################################
+
+#TODO (Hard): Implement this properly.
+@doc Markdown.doc"""
+    issquarefree(n::Union{Int, fmpz}) -> Bool
+Returns true if $n$ is squarefree, false otherwise.
+"""
+function issquarefree(n::Union{Int,fmpz})
+  if iszero(n)
+    error("Argument must be non-zero")
+  end
+  if isone(abs(n))
+    return true
+  end
+  e, b = ispower(n)
+  if e > 1
+    return false
+  end
+  return isone(maximum(values(factor(n).fac)))
+end
+
 
 

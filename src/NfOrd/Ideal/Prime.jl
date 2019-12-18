@@ -388,8 +388,11 @@ end
 
 function _fac_and_lift(f::fmpz_poly, p, degree_limit, lower_limit)
   Zx = parent(f)
-  Zmodpx = PolynomialRing(GF(p, cached = false), "y", cached = false)[1]
+  Zmodpx, x = PolynomialRing(GF(p, cached = false), "y", cached = false)
   fmodp = Zmodpx(f)
+  if isone(degree_limit) 
+    fmodp = ppio(fmodp, powmod(x, p, fmodp)-x)[1]
+  end
   fac = factor(fmodp)
   lifted_fac = Array{Tuple{fmpz_poly, Int}, 1}()
   for (k, v) in fac
@@ -1851,4 +1854,184 @@ function approximate(a::nf_elem, I::NfAbsOrdIdl, pos_places::Vector{InfPlc})
     end
   end
   return b
+end
+
+################################################################################
+#
+#  Decomposition Group of a prime ideal
+#
+################################################################################
+@doc Markdown.doc"""
+    decomposition_group(P::NfOrdIdl; G::Vector{NfToNfMor}) -> Vector{NfToNfMor}
+
+Given a prime ideal P in a normal number field G, it returns a vector of the automorphisms $\sigma_1, \dots, \sigma_s$
+such that $\sigma_i(P) = P$ for all $i = 1,\dots, s$.
+If a subgroup $G$ of automorphisms is given, the output is the intersection of the decomposition group with that subgroup.
+"""  
+function decomposition_group(P::NfOrdIdl; G::Array{NfToNfMor, 1} = NfToNfMor[], orderG::Int = degree(P)*ramification_index(P))
+  @assert isprime(P)
+  OK = order(P)
+  K = nf(OK)
+  if isempty(G)
+    G = automorphisms(K, copy = false)
+    if length(G) != degree(K)
+      error("The field is not normal!")
+    end
+  end
+  if orderG == length(G)
+    return NfToNfMor[g for g in G]
+  end
+  if isindex_divisor(OK, minimum(P, copy = false))
+    q = 2
+    R = ResidueRing(FlintZZ, q, cached = false)
+    Rx = PolynomialRing(R, "x", cached = false)[1]
+    fmod = Rx(K.pol)
+    while iszero(discriminant(fmod))
+      q = next_prime(q)
+      R = ResidueRing(FlintZZ, q, cached = false)
+      Rx = PolynomialRing(R, "x", cached = false)[1]
+      fmod = Rx(K.pol)
+    end
+    D = Dict{nmod_poly, Int}()
+    for i = 1:length(G)
+      D[Rx(G[i].prim_img)] = i
+    end
+    dec_group = NfToNfMor[]
+    local ppp
+    let fmod = fmod
+      function ppp(a::nmod_poly, b::nmod_poly)
+        return compose_mod(a, b, fmod)
+      end
+    end
+    for g in G
+      if g in dec_group
+        continue
+      end
+      y = OK(g(K(P.gen_two)), false)
+      if y in P
+        push!(dec_group, g)
+        #I take the closure of dec_group modularly
+        elems = nmod_poly[Rx(el.prim_img) for el in dec_group]
+        new_elems = closure(elems, ppp, gen(Rx))
+        dec_group = NfToNfMor[G[D[x]] for x in new_elems]
+      end
+      if length(dec_group) == orderG
+        break
+      end
+    end
+    return dec_group
+  else
+    res = decomposition_group_easy(G, P)
+    return res
+  end 
+end
+
+function decomposition_group_easy(G, P)
+  O = order(P)
+  K = nf(O)
+  R = ResidueRing(FlintZZ, Int(minimum(P, copy = false)), cached = false)
+  Rt, t = PolynomialRing(R, "t", cached = false)
+  fmod = Rt(K.pol)
+  pols = nmod_poly[Rt(x.prim_img) for x in G]
+  indices = Int[]
+  second_gen = Rt(P.gen_two.elem_in_nf)
+  for i = 1:length(G)
+    p1 = compose_mod(second_gen, pols[i], fmod)
+    if iszero(mod(p1, second_gen))
+      push!(indices, i)
+    end
+  end
+  return G[indices]
+end
+
+################################################################################
+#
+#  Inertia subgroup of a prime ideal
+#
+################################################################################
+@doc Markdown.doc"""
+   inertia_subgroup(P::NfOrdIdl; G::Vector{NfToNfMor}) -> Vector{NfToNfMor}
+
+Given a prime ideal P in a normal number field, it returns a vector of the automorphisms $\sigma_1, \dots, \sigma_s$
+such that $\sigma_i(P) = P$ for all $i = 1,\dots, s$ and induce the identity on the residue field.
+If a subgroup $G$ of automorphisms is given, the output is the intersection of the inertia group with $G$.
+"""  
+function inertia_subgroup(P::NfOrdIdl; G::Array{NfToNfMor, 1} = NfToNfMor[])
+  @assert isprime(P)
+  O = order(P)
+  K = nf(O)
+  orderG = ramification_index(P)
+  if isone(orderG)
+    return NfToNfMor[id_hom(K)]
+  end 
+  F, mF = ResidueField(O, P)
+  if isempty(G)
+    G = decomposition_group(P)
+  end
+  if !isindex_divisor(O, minimum(P, copy = false)) && fits(Int, minimum(P, copy = false))
+    return inertia_subgroup_easy(F, mF, G)
+  end
+  gF = gen(F)
+  igF = K(mF\gF)
+  inertia_grp = NfToNfMor[]
+  q = 2
+  R = ResidueRing(FlintZZ, q, cached = false)
+  Rx = PolynomialRing(R, "x", cached = false)[1]
+  fmod = Rx(K.pol)
+  while iszero(discriminant(fmod))
+    q = next_prime(q)
+    R = ResidueRing(FlintZZ, q, cached = false)
+    Rx = PolynomialRing(R, "x", cached = false)[1]
+    fmod = Rx(K.pol)
+  end
+  D = Dict{nmod_poly, Int}()
+  for i = 1:length(G)
+    D[Rx(G[i].prim_img)] = i
+  end
+  local ppp
+  let fmod = fmod
+    function ppp(a::nmod_poly, b::nmod_poly)
+      return compose_mod(a, b, fmod)
+    end
+  end
+  for g in G
+    if g in inertia_grp
+      continue
+    end
+    y = mF(O(g(igF), false))
+    if y == gF
+      push!(inertia_grp, g)
+      elems = nmod_poly[Rx(el.prim_img) for el in inertia_grp]
+      new_elems = closure(elems, ppp, gen(Rx))
+      inertia_grp = NfToNfMor[G[D[x]] for x in new_elems]
+      if length(inertia_grp) == orderG
+        break
+      end
+    end
+  end
+  return inertia_grp 
+end
+
+function inertia_subgroup_easy(F, mF, G::Vector{NfToNfMor})
+  P = mF.P
+  OK = order(P)
+  K = nf(OK)
+  p = minimum(P, copy = false)
+  R = ResidueRing(FlintZZ, Int(p), cached = false)
+  Rt = PolynomialRing(R, "t", cached = false)[1]
+  fmod = Rt(K.pol)
+  gF = gen(F)
+  igF = K(mF\gF)
+  igFq = Rt(igF)
+  indices = Int[]
+  for i = 1:length(G)
+    g = G[i]
+    img = Rt(g.prim_img)
+    res = compose_mod(igFq, img, fmod)
+    resK = OK(lift(K, res), false)
+    if mF(resK) == gF
+      push!(indices, i)
+    end
+  end
+  return G[indices]
 end

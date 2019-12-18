@@ -888,7 +888,6 @@ function _Brauer_no_extend_pp(F, mH, autos, coc, p, v, Elems, pv, action_grp)
   
 end
 
-
 ###############################################################################
 #
 #  IsSplit for crossed product algebras: the action of G on the extension 
@@ -938,145 +937,6 @@ function is_split_at_infinity(K::AnticNumberField, Coc::Function, Rx::GFPPolyRin
   aut = complex_conjugation(K)
   return !isone(Coc(Rx(aut.prim_img), Rx(aut.prim_img)))
 end
-
-function inertia_subgroup(F, mF, G::Array{NfToNfMor, 1})
-  @assert !isempty(G)
-  K = domain(G[1])
-  O = maximal_order(K)
-  P = mF.P
-  if !isindex_divisor(O, minimum(P, copy = false)) && fits(Int, minimum(P, copy = false))
-    return inertia_subgroup_easy(F, mF, G)
-  end
-  gF = gen(F)
-  igF = K(mF\gF)
-  inertia_grp = NfToNfMor[]
-  q = 2
-  R = ResidueRing(FlintZZ, q, cached = false)
-  Rx = PolynomialRing(R, "x", cached = false)[1]
-  fmod = Rx(K.pol)
-  while iszero(discriminant(fmod))
-    q = next_prime(q)
-    R = ResidueRing(FlintZZ, q, cached = false)
-    Rx = PolynomialRing(R, "x", cached = false)[1]
-    fmod = Rx(K.pol)
-  end
-  D = Dict{nmod_poly, Int}()
-  for i = 1:length(G)
-    D[Rx(G[i].prim_img)] = i
-  end
-  local ppp
-  let fmod = fmod
-    function ppp(a::nmod_poly, b::nmod_poly)
-      return compose_mod(a, b, fmod)
-    end
-  end
-  for g in G
-    if g in inertia_grp
-      continue
-    end
-    y = mF(O(g(igF), false))
-    if y == gF
-      push!(inertia_grp, g)
-      elems = nmod_poly[Rx(el.prim_img) for el in inertia_grp]
-      new_elems = closure(elems, ppp, gen(Rx))
-      inertia_grp = NfToNfMor[G[D[x]] for x in new_elems]
-    end
-  end
-  return inertia_grp 
-end
-
-function inertia_subgroup_easy(F, mF, G::Vector{NfToNfMor})
-  P = mF.P
-  OK = order(P)
-  K = nf(OK)
-  p = minimum(P, copy = false)
-  R = ResidueRing(FlintZZ, Int(p), cached = false)
-  Rt = PolynomialRing(R, "t", cached = false)[1]
-  fmod = Rt(K.pol)
-  gF = gen(F)
-  igF = K(mF\gF)
-  igFq = Rt(igF)
-  indices = Int[]
-  for i = 1:length(G)
-    g = G[i]
-    img = Rt(g.prim_img)
-    res = compose_mod(igFq, img, fmod)
-    resK = OK(lift(K, res), false)
-    if mF(resK) == gF
-      push!(indices, i)
-    end
-  end
-  return G[indices]
-end
-
-
-function decomposition_group(G::Array{NfToNfMor, 1}, P::NfOrdIdl, orderG::Int = length(G))
-  @assert !isempty(G)
-  if isindex_divisor(order(P), minimum(P, copy = false))
-    O = order(P)
-    K = nf(O)
-    q = 2
-    R = ResidueRing(FlintZZ, q, cached = false)
-    Rx = PolynomialRing(R, "x", cached = false)[1]
-    fmod = Rx(K.pol)
-    while iszero(discriminant(fmod))
-      q = next_prime(q)
-      R = ResidueRing(FlintZZ, q, cached = false)
-      Rx = PolynomialRing(R, "x", cached = false)[1]
-      fmod = Rx(K.pol)
-    end
-    D = Dict{nmod_poly, Int}()
-    for i = 1:length(G)
-      D[Rx(G[i].prim_img)] = i
-    end
-    dec_group = NfToNfMor[]
-    local ppp
-    let fmod = fmod
-      function ppp(a::nmod_poly, b::nmod_poly)
-        return compose_mod(a, b, fmod)
-      end
-    end
-    for g in G
-      if g in dec_group
-        continue
-      end
-      y = O(g(K(P.gen_two)), false)
-      if y in P
-        push!(dec_group, g)
-        #I take the closure of dec_group modularly
-        elems = nmod_poly[Rx(el.prim_img) for el in dec_group]
-        new_elems = closure(elems, ppp, gen(Rx))
-        dec_group = NfToNfMor[G[D[x]] for x in new_elems]
-      end
-      if length(dec_group) == orderG
-        break
-      end
-    end
-    return dec_group
-  else
-    res = decomposition_group_easy(G, P)
-    return res
-  end 
-end
-
-function decomposition_group_easy(G, P)
-  O = order(P)
-  K = nf(O)
-  R = ResidueRing(FlintZZ, Int(minimum(P, copy = false)), cached = false)
-  Rt, t = PolynomialRing(R, "t", cached = false)
-  fmod = Rt(K.pol)
-  pols = nmod_poly[Rt(x.prim_img) for x in G]
-  indices = Int[]
-  second_gen = Rt(P.gen_two.elem_in_nf)
-  for i = 1:length(G)
-    p1 = compose_mod(second_gen, pols[i], fmod)
-    if iszero(mod(p1, second_gen))
-      push!(indices, i)
-    end
-  end
-  return G[indices]
-end
-
 
 function _find_theta(G::Vector{NfToNfMor}, F::FqNmodFiniteField, mF::Hecke.NfOrdToFqNmodMor, e::Int)
   #G is the decomposition group of a prime ideal P
@@ -1184,14 +1044,14 @@ function is_split_at_p(O::NfOrd, GC::Array{NfToNfMor, 1}, Coc::Function, p::Int,
     return true
   end
   if length(lp) != 1
-    @vtime :BrauerObst 1  Gp = decomposition_group(GC, P, e*f) 
+    @vtime :BrauerObst 1  Gp = decomposition_group(P, G = GC, orderG = e*f) 
     #I don't really want the decomposition group of the p-sylow, but the p-sylow of the decomposition group.
     #Therefore, if the p-sylow is not normal, I have to try different primes.
     i = 1
     while length(Gp) != e*f
       i += 1
       P = lp[i][1]
-      Gp = decomposition_group(GC, P, e*f)
+      Gp = decomposition_group(P, G = GC, orderG = e*f) 
     end
   else
     Gp = GC
@@ -1319,7 +1179,6 @@ function cpa_issplit(K::AnticNumberField, G::Vector{NfToNfMor}, Stab::Vector{NfT
   
 end
 
-
 function is_split_at_p(O::NfOrd, GC::Vector{NfToNfMor}, Stab::Vector{NfToNfMor}, Coc::Function, p::Int, n::Int, Rx::GFPPolyRing)
 
   lp = prime_decomposition(O, p, cached = true)
@@ -1336,14 +1195,14 @@ function is_split_at_p(O::NfOrd, GC::Vector{NfToNfMor}, Stab::Vector{NfToNfMor},
     return true
   end 
   if length(lp) != 1
-    @vtime :BrauerObst 1  Gp = decomposition_group(GC, P, e*f) 
+    @vtime :BrauerObst 1  Gp = decomposition_group(GC, G = GC, orderG = e*f)
     #I don't really want the decomposition group of the p-sylow, but the p-sylow of the decomposition group.
     #Therefore, if the p-sylow is not normal, I have to try different primes.
     i = 1
     while length(Gp) != e*f
       i += 1
       P = lp[i][1]
-      Gp = decomposition_group(GC, P, e*f)
+      Gp = decomposition_group(GC, G = GC, orderG = e*f)
     end
   else
     Gp = GC
@@ -1355,8 +1214,7 @@ function is_split_at_p(O::NfOrd, GC::Vector{NfToNfMor}, Stab::Vector{NfToNfMor},
     end
   end
   #I need the inertia subgroup to determine e and f
-  F, mF = Hecke.ResidueFieldSmall(O, P)
-  InGrp = inertia_subgroup(F, mF, GpStab)
+  InGrp = inertia_subgroup(P, G = GpStab)
   e = length(InGrp)
   if e == 1
     return true
@@ -1369,6 +1227,7 @@ function is_split_at_p(O::NfOrd, GC::Vector{NfToNfMor}, Stab::Vector{NfToNfMor},
   f1 = divexact(degree(P), f)
   q = p^f1 #Cardinality of the residue field
 
+  F, mF = Hecke.ResidueFieldSmall(O, P)
   theta1 = _find_theta(GpStab, F, mF, e)
   theta = Rx(theta1.prim_img)
   fmod = Rx(nf(O).pol)

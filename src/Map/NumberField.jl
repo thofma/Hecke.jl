@@ -80,12 +80,50 @@ mutable struct NfToNfMor <: Map{AnticNumberField, AnticNumberField, HeckeMap, Nf
   end
 end
 
+function hom(K::AnticNumberField, L::AnticNumberField, a::nf_elem; check::Bool = true, compute_inverse::Bool = false)
+ if check
+   if !iszero(evaluate(K.pol, a))
+     error("The data does not define a homomorphism")
+   end
+ end
+ return NfToNfMor(K, L, a, compute_inverse)
+end
+
+function hom(K::AnticNumberField, L::AnticNumberField, a::nf_elem, a_inv::nf_elem; check::Bool = true)
+ if check
+   if !iszero(evaluate(K.pol, a))
+     error("The data does not define a homomorphism")
+   end
+   if !iszero(evaluate(L.pol, a_inv))
+     error("The data does not define a homomorphism")
+   end
+ end
+ return NfToNfMor(K, L, a, a_inv)
+end
+
 parent(f::NfToNfMor) = NfMorSet(domain(f))
 
 function image(f::NfToNfMor, a::FacElem{nf_elem, AnticNumberField})
   D = Dict{nf_elem, fmpz}(f(b) => e for (b, e) in a)
   return FacElem(D)
 end
+
+
+################################################################################
+#
+#  Some basic properties of NfToNfMor
+#
+################################################################################
+
+id_hom(K::AnticNumberField) = hom(K, K, gen(K), check = false)
+
+morphism_type(::Type{AnticNumberField}) = NfToNfMor
+
+isinjective(m::NfToNfMor) = true
+
+issurjective(m::NfToNfMor) = (degree(domain(m)) == degree(codomain(m)))
+
+isbijective(m::NfToNfMor) = issurjective(m)
 
 ################################################################################
 #
@@ -176,6 +214,12 @@ function preimage(f::GrpGenToNfMorSet, a::NfToNfMor)
   error("something wrong")
 end
 
+
+@doc Markdown.doc"""
+    inv(f::NfToNfMor)
+
+Assuming that $f$ is an isomorphisms, it returns the inverse of f
+"""  
 function inv(f::NfToNfMor)
   if degree(domain(f)) != degree(codomain(f))
     error("The map is not invertible")
@@ -183,28 +227,8 @@ function inv(f::NfToNfMor)
   if isdefined(f, :prim_preimg)
     return hom(codomain(f), domain(f), f.prim_preimg, check = false)
   end
-  L = codomain(f)
-  K = domain(f)
-  M = zero_matrix(FlintQQ, degree(L), degree(L))
-  a = f.prim_img
-  el = one(L)
-  M[1, 1] = 1
-  for i = 2:degree(L)
-    mul!(el, el, a)
-    for j = 1:degree(L)
-      M[j, i] = coeff(el, j - 1)
-    end
-  end
-  t = zero_matrix(FlintQQ, degree(L), 1)
-  if degree(L) == 1
-    t[1, 1] = coeff(gen(L), 0)
-  else
-    t[2, 1] = fmpq(1) # coefficient vector of gen(L)
-  end
-
-  s = solve(M, t)
-  img = K(parent(K.pol)([ s[i, 1] for i = 1:degree(K) ]))
-  return hom(L, K, img, check = false)
+  img = _compute_preimg(f)
+  return hom(codomain(f), domain(f), img, check = false)
 end
 
 function _compute_preimg(m::NfToNfMor)
@@ -254,18 +278,8 @@ function evaluate(f::fmpq_poly, a::nf_elem)
 end
 
 function *(f::NfToNfMor, g::NfToNfMor)
-#  global _D
-#  _s = Base.stacktrace()[2:3]
-#  if !(_s in keys(_D))
-#    _D[_s] = true
-#    println("Called ...")
-#    Base.show_backtrace(stdout, Base.stacktrace()[2:3])
-#  end
   codomain(f) == domain(g) || throw("Maps not compatible")
-  #Base.show_backtrace(stdout, Base.stacktrace())
-  a = gen(domain(f))
-  y = g(f(a))
-
+  y = g(f.prim_img)
   return hom(domain(f), codomain(g), y, check = false)
 end
 
@@ -309,6 +323,12 @@ function show(io::IO, h::NfToNfMor)
   println(io, "defined by ", gen(domain(h)), " -> ", h.prim_img)
 end
 
+################################################################################
+#
+#  Automorphisms
+#
+################################################################################
+
 function _automorphisms(K::AnticNumberField)
   if degree(K) == 1
     auts = NfToNfMor[hom(K, K, one(K))]
@@ -329,6 +349,11 @@ function _automorphisms(K::AnticNumberField)
   return auts
 end
 
+@doc Markdown.doc"""
+    automorphisms(K::AnticNumberField) -> Vector{NfToNfMor}
+
+Returns the set of automorphisms of K
+"""  
 function automorphisms(K::AnticNumberField; copy::Bool = true)
   try
     Aut = _get_automorphisms_nf(K)::Vector{NfToNfMor}
@@ -351,6 +376,53 @@ function automorphisms(K::AnticNumberField; copy::Bool = true)
   end
 end
 
+################################################################################
+#
+#  is normal
+#
+################################################################################
+@doc Markdown.doc"""
+    isnormal(K::AnticNumberField) -> Bool
+
+Returns true if $K$ is a normal extension of $\mathbb Q$, false otherwise.
+"""  
+function isnormal(K::AnticNumberField)
+  #Before computing the automorphisms, I split a few primes and check if the 
+  #splitting behaviour is fine
+  E = EquationOrder(K)
+  d = discriminant(E)
+  p = 1000
+  ind = 0
+  while ind < 15
+    p = next_prime(p)
+    if divisible(d, p)
+      continue
+    end
+    ind += 1
+    dt = prime_decomposition_type(E, p)
+    if !divisible(degree(K), length(dt))
+      return false
+    end
+    f = dt[1][1]
+    for i = 2:length(dt)
+      if f != dt[i][1]
+        return false
+      end
+    end
+  end
+  return length(automorphisms(K, copy = false)) == degree(K)
+end
+
+################################################################################
+#
+#  Automorphism Group
+#
+################################################################################
+@doc Markdown.doc"""
+    automorphism_group(K::AnticNumberField) -> GenGrp, GrpGenToNfMorSet
+
+Given a number field $K$, this function returns a group $G$ and a map from $G$ to the automorphisms of $K$.
+"""  
 function automorphism_group(K::AnticNumberField)
   aut = automorphisms(K)
   n = degree(K)
@@ -364,9 +436,6 @@ function automorphism_group(K::AnticNumberField)
   Rx, x = PolynomialRing(R, "x", cached = false)
   fmod = Rx(K.pol)
   pols = gfp_poly[Rx(g.prim_img) for g in aut]
-  #if g in aut
-  #  push!(pols, Rx(g.prim_img))
-  #end
   Dcreation = Vector{Tuple{gfp_poly, Int}}(undef, length(pols))
   for i = 1:length(pols)
     Dcreation[i] = (pols[i], i)
@@ -374,49 +443,14 @@ function automorphism_group(K::AnticNumberField)
   D = Dict{gfp_poly, Int}(Dcreation)
   @assert length(D) == n
   mult_table = Array{Int, 2}(undef, n, n)
-  #permutations = Array{Array{Int, 1},1}(undef, n)
   for s = 1:n
-    #perm = Array{Int, 1}(undef, length(aut))
     for i = 1:length(aut)
       mult_table[s, i] = D[Hecke.compose_mod(pols[s], pols[i], fmod)]
     end
   end
   G = GrpGen(mult_table)
   return G, GrpGenToNfMorSet(G, K)
-  #return _perm_to_gap_grp(permutations)
 end
-
-function hom(K::AnticNumberField, L::AnticNumberField, a::nf_elem; check::Bool = true, compute_inverse::Bool = false)
- if check
-   if !iszero(evaluate(K.pol, a))
-     error("The data does not define a homomorphism")
-   end
- end
- return NfToNfMor(K, L, a, compute_inverse)
-end
-
-function hom(K::AnticNumberField, L::AnticNumberField, a::nf_elem, a_inv::nf_elem; check::Bool = true)
- if check
-   if !iszero(evaluate(K.pol, a))
-     error("The data does not define a homomorphism")
-   end
-   if !iszero(evaluate(L.pol, a_inv))
-     error("The data does not define a homomorphism")
-   end
- end
- return NfToNfMor(K, L, a, a_inv)
-end
-
-
-id_hom(K::AnticNumberField) = hom(K, K, gen(K), check = false)
-
-morphism_type(::Type{AnticNumberField}) = NfToNfMor
-
-isinjective(m::NfToNfMor) = true
-
-issurjective(m::NfToNfMor) = (degree(domain(m)) == degree(codomain(m)))
-
-isbijective(m::NfToNfMor) = issurjective(m)
 
 ###############################################################################
 #
@@ -673,6 +707,11 @@ end
 #  Order of an automorphism in the automorphisms group
 #
 ################################################################################
+@doc Markdown.doc"""
+    isinvolution(f::NfToNfMor) -> Bool
+
+Returns true if $f$ is an involution, i.e. if f^2 is the identity, false otherwise.
+"""  
 function isinvolution(f::NfToNfMor)
   K = domain(f)
   @assert K == codomain(f)
@@ -695,7 +734,11 @@ function isinvolution(f::NfToNfMor)
   return fp == gen(Rt)
 end
 
+@doc Markdown.doc"""
+    _order(f::NfToNfMor) -> Int
 
+If $f$ is an automorphism of a field $K$, it returns the order of $f$ in the automorphism group of $K$.
+"""  
 function _order(f::NfToNfMor)
   K = domain(f)
   @assert K == codomain(f)

@@ -1871,6 +1871,69 @@ end
 
 ################################################################################
 #
+#  Has quotient
+#
+################################################################################
+
+@doc Markdown.doc"""
+    has_quotient(G::GrpAbFinGen, invariant::Vector{Int}) -> Bool
+
+Given an abelian group $G$, returns true if it has a quotient with given elementary
+divisors and false otherwise. 
+"""
+function has_quotient(G::GrpAbFinGen, invariants::Array{Int,1})
+  H = DiagonalGroup(invariants)
+  H = snf(H)[1]
+  G1 = snf(G)[1]
+  arr_snfG1 = filter(x -> x != 1, G1.snf)
+  arr_snfH = filter(x -> x != 1, H.snf)
+  if length(arr_snfG1) < length(arr_snfH)
+    return false
+  end
+  for i = 0:length(arr_snfH)-1
+    if !divisible(arr_snfG1[end-i], arr_snfH[end-i])
+      return false
+    end
+  end
+  return true
+end
+
+################################################################################
+#
+#  Find complement
+#
+################################################################################
+
+#TODO: a better algorithm?
+@doc Markdown.doc"""
+    has_complement(f::GrpAbFinGenMap) -> Bool, GrpAbFinGenMap
+
+Given a map representing a subgroup of a group $G$, returns either true and
+an injection of a complement in $G$, or false.
+"""
+function has_complement(m::GrpAbFinGenMap)
+  G = codomain(m)
+  S, mS = snf(G)
+  H, mH = image(m*inv(mS))
+  els = GrpAbFinGenElem[]
+  for i = 1:ngens(S)
+    new_els = vcat(els, GrpAbFinGenElem[S[i]])
+    new_sub, map_new_sub = sub(S, new_els)
+    if isone(order(intersect(new_sub, H)))
+      els = new_els
+    end
+  end
+  ss, mss = sub(S, els)
+  if order(ss)*order(H) != order(S)
+    return false, mss
+  else
+    els_G = GrpAbFinGenElem[mS(x) for x in els]
+    return true, sub(G, els_G)[2]
+  end
+end
+
+################################################################################
+#
 #  Identity
 #
 ################################################################################

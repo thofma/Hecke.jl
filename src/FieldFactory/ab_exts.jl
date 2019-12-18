@@ -3,69 +3,6 @@ add_assert_scope(:AbExt)
 
 add_verbose_scope(:MaxAbExt)
 
-##############################################################################
-#
-#  Sieves for primes and squarefree numbers
-#
-##############################################################################
-
-function squarefree_up_to(n::Int; coprime_to::Array{fmpz,1}=fmpz[])
-
-  list = trues(n)
-  for x in coprime_to
-    t = Int(x)
-    while t <= n
-      list[t]=false
-      t += Int(x)
-    end
-  end
-  i = 2
-  b = root(n, 2)
-  lp = primes_up_to(b)
-  for i = 1:length(lp)
-    p2 = lp[i]*lp[i]
-    ind = p2
-    while ind <= n
-      list[ind] = false
-      ind += p2
-    end
-  end
-  return findall(list)
-
-end
-
-function SqfSet(n::fmpz; coprime_to::Int=-1)
-  return (i for i=-n:n if i!= -1 && i!=0 && issquarefree(i))
-end
-
-function primes_up_to(n::Int)
-  
-  list= trues(n)
-  list[1]=false
-  i=2
-  s=4
-  while s<=n
-    list[s]=false
-    s+=2
-  end
-  i=3
-  b=sqrt(n)
-  while i<=b
-    if list[i]
-      j=3*i
-      s=2*i
-      while j<= n
-        list[j]=false
-        j+=s
-      end
-    end
-    i+=1
-  end
-  return findall(list)
-  
-end
-
-       
 ##########################################################################################################
 #
 #  Functions for conductors
@@ -671,7 +608,7 @@ function abelian_extensions(O::NfOrd, gtype::Array{Int,1}, absolute_discriminant
     @vprint :AbExt 1 "Conductor: $k \n"
     @vprint :AbExt 1 "Left: $(length(l_conductors) - i)\n"
     r,mr=Hecke.ray_class_groupQQ(O, k, !real, expo)
-    if !Hecke._are_there_subs(r,gtype)
+    if !has_quotient(r, gtype)
       continue
     end
     ls=subgroups(r,quotype=gtype, fun= (x, y) -> quo(x, y, false)[2])
@@ -747,7 +684,7 @@ function abelian_normal_extensions(O::NfOrd, gtype::Array{Int,1}, absolute_discr
     @vprint :AbExt 1 "Conductor: $k \n"
     @vprint :AbExt 1 "Left: $(length(l_conductors) - i)\n"
     r,mr = ray_class_group_quo(O, k[1], k[2], inf_plc, ctx)
-    if !_are_there_subs(r,gtype)
+    if !has_quotient(r,gtype)
       continue
     end
     act = induce_action(mr,gens)
@@ -849,31 +786,6 @@ function _action_on_quo(mq::GrpAbFinGenMap, act::Array{GrpAbFinGenMap,1})
 
 end
 
-function _are_there_subs(G::GrpAbFinGen, gtype::Array{Int,1})
-  
-  H = DiagonalGroup(gtype)
-  H = snf(H)[1]
-  G1 = snf(G)[1]
-  arr_snfG1 = filter(x -> x != 1, G1.snf)
-  arr_snfH = filter(x -> x != 1, H.snf)
-  if length(arr_snfG1) < length(arr_snfH)
-    return false
-  end
-  for i=0:length(arr_snfH)-1
-    if !divisible(arr_snfG1[end-i], arr_snfH[end-i])
-      return false
-    end
-  end
-  return true
-end
-
-function issquarefree(n::Union{Int,fmpz})
-  if iszero(n)
-    throw(error("Argument must be non-zero"))
-  end
-  return isone(abs(n)) || maximum(values(factor(n).fac)) == 1
-end
-
 ###############################################################################
 #
 #  Quadratic Extensions of Q
@@ -961,9 +873,6 @@ function _quad_ext(bound::Int, only_real::Bool = false)
   return fields_list
 
 end
-
-
-
 
 ###############################################################################
 #

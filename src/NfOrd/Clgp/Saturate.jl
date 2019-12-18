@@ -186,7 +186,6 @@ function elems_from_sat(c::Hecke.ClassGrpCtx, z)
       a *= fe(c.R_rel[j])^FlintZZ(z[j + length(c.R_gen), i])
       b += FlintZZ(z[j + length(c.R_gen), i]) * c.M.rel_gens[j]
     end
-    @show typeof(a), typeof(b)
     push!(res, (a, b))
   end
   return res

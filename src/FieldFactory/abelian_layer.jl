@@ -140,7 +140,7 @@ function _abelian_extensionsQQ(gtype::Array{Int,1}, absolute_discriminant_bound:
       @vprint :Fields 1 "\e[1F$(Hecke.set_cursor_col())$(Hecke.clear_to_eol()) Conductors to test: $(pt)\n"
     end
     r, mr = Hecke.ray_class_groupQQ(O, k, complex, expo)
-    if !Hecke._are_there_subs(r, gtype)
+    if !has_quotient(r, gtype)
       continue
     end
     ls = subgroups(r, quotype = gtype, fun = (x, y) -> quo(x, y, false)[2])
@@ -169,7 +169,7 @@ end
 #
 ###############################################################################
 
-function check_ext(C::Hecke.ClassField, bound::fmpz, Dcond::Dict, Ddisc::Dict)
+function check_extension(C::Hecke.ClassField, bound::fmpz, Dcond::Dict, Ddisc::Dict)
 
   @vtime :Fields 3 fl2 = Hecke._is_conductor_min_normal(C, lwp = Dcond)
   if !fl2
@@ -250,7 +250,7 @@ function _abelian_normal_extensions(F::FieldsTower, gtype::Array{Int, 1}, absbou
     @vprint :Fields 1 "\e[1FConductors to test: $(length(l_conductors)-j) \n"
     @vprint :Fields 3 "\n\n"
     @vtime :Fields 3 r, mr = Hecke.ray_class_group_quo(O, k[1], k[2], inf_plc, rcg_ctx)
-    if !Hecke._are_there_subs(r, gtype)
+    if !Hecke.has_quotient(r, gtype)
       continue
     end
     if first_group
@@ -267,7 +267,7 @@ function _abelian_normal_extensions(F::FieldsTower, gtype::Array{Int, 1}, absbou
     for s in ls
       @hassert :Fields 1 order(codomain(s)) == n
       C = ray_class_field(mr, s)
-      fl = check_ext(C, bound, Dcond, Ddisc)
+      fl = check_extension(C, bound, Dcond, Ddisc)
       if fl
         res_act = _action(s, act)
         @vtime :Fields 3 fl1 = check_group_extension(IdCheck, autos, res_act)
@@ -732,13 +732,15 @@ function translate_extensions(mL::NfToNfMor, class_fields, new_class_fields, ctx
     #the maximal abelian subextension of K/L
     G1 = snf(cokernel(mngL)[1])[1]
     G2 = snf(codomain(C.quotientmap))[1]
-    if !_are_there_subs(ck, map(Int, vcat(G1.snf, G2.snf)))
+    if !has_quotient(ck, map(Int, vcat(G1.snf, G2.snf)))
       push!(to_be_done, indclf)
       continue
     end
     @vprint :Fields 1 "$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())Doing field $(indclf) / $(length(class_fields))"
-    s, ms = image(mngL*mck)#sub(ck, GrpAbFinGenElem[mck(mngL(x)) for x in gens(ngL)])
-    mq1 = find_complement(ms)
+    s, ms = image(mngL*mck)
+    fl, ms1 = has_complement(ms)
+    @assert fl
+    mq1 = cokernel(ms1)[2]
     mqq = mck * mq1 
     @hassert :Fields 1 domain(mqq) == r
     C1 = ray_class_field(mr, mqq)
@@ -750,36 +752,6 @@ function translate_extensions(mL::NfToNfMor, class_fields, new_class_fields, ctx
   return to_be_done
   
 end
-
-function divisible(x::Integer, y::Integer)
-  return divisible(fmpz(x), fmpz(y))
-end
-
-
-#m is the injection representing a subgroup
-#we want a complement of m 
-function find_complement(m::GrpAbFinGenMap)
-  q, mq = cokernel(m)
-  s, ms = snf(q)
-  cmpl = GrpAbFinGenElem[]
-  for x in gens(s)
-    push!(cmpl, mq\(ms(x)))
-  end
-  return quo(codomain(m), cmpl, false)[2]
-end
-
-mutable struct BadField <: Exception
-  K
-end
-
-function Base.show(io::IO, E::BadField)
-  if isdefined(E, :K)
-    println("Bad field $(K) encountered")
-  else
-    println("Bad field encountered")
-  end
-end
-
 
 function create_sub(ss, iso, PermGAP, auts, K)
   lS = GAP.Globals.MinimalGeneratingSet(ss)
