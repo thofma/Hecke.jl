@@ -235,7 +235,7 @@ function __init__()
     include("AlgAssRelOrd/NEQ_polymake.jl")
   end
 
-  #@eval global signature(K::AnticNumberField) = _signature(K)
+  @eval global signature(K::AnticNumberField) = _signature(K)
 end
 
 module Globals
@@ -383,7 +383,7 @@ Base.adjoint(x) = transpose(x)
 #
 ################################################################################
 
-global VERSION_NUMBER = v"0.7.1"
+global VERSION_NUMBER = v"0.7.2-dev"
 
 ######################################################################
 # named printing support
