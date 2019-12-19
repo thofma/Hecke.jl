@@ -164,7 +164,6 @@ function _to_composite(x::FieldsTower, y::FieldsTower, abs_disc::fmpz)
 end
 
 function simplify!(x::FieldsTower)
-  push!(deb, x)
   K = x.field
   OK = maximal_order(K)
   Ks, mKs = simplify(K)

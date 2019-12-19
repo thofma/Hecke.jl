@@ -1195,14 +1195,14 @@ function is_split_at_p(O::NfOrd, GC::Vector{NfToNfMor}, Stab::Vector{NfToNfMor},
     return true
   end 
   if length(lp) != 1
-    @vtime :BrauerObst 1  Gp = decomposition_group(GC, G = GC, orderG = e*f)
+    @vtime :BrauerObst 1  Gp = decomposition_group(P, G = GC, orderG = e*f)
     #I don't really want the decomposition group of the p-sylow, but the p-sylow of the decomposition group.
     #Therefore, if the p-sylow is not normal, I have to try different primes.
     i = 1
     while length(Gp) != e*f
       i += 1
       P = lp[i][1]
-      Gp = decomposition_group(GC, G = GC, orderG = e*f)
+      Gp = decomposition_group(P, G = GC, orderG = e*f)
     end
   else
     Gp = GC
