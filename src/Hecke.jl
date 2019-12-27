@@ -68,7 +68,7 @@ import Nemo
 
 exclude = [:Nemo, :AbstractAlgebra, :RealField, :zz, :qq, :factor, :call,
            :factors, :parseint, :strongequal, :window, :xgcd, :rows, :cols,
-           :can_solve]
+           :can_solve, :set_entry!]
 
 for i in names(Nemo)
   i in exclude && continue
@@ -383,7 +383,7 @@ Base.adjoint(x) = transpose(x)
 #
 ################################################################################
 
-global VERSION_NUMBER = v"0.7.1-dev"
+global VERSION_NUMBER = v"0.7.2-dev"
 
 ######################################################################
 # named printing support
