@@ -78,7 +78,7 @@ function abelian_extensionsQQ(gtype::Array{Int, 1}, bound::fmpz, only_real::Bool
     end
     return res
   end
-  if gtype == [2,2]
+  if gtype == Int[2,2]
     l = Hecke._C22_exts_abexts(Int(bound), only_real)
     @vprint :Fields 1 "Computing maximal orders\n"
     @vprint :FieldsNonFancy 1 "Computing maximal orders\n"
@@ -281,11 +281,30 @@ function _abelian_normal_extensions(F::FieldsTower, gtype::Array{Int, 1}, absbou
   if isempty(class_fields_with_act)
     return Vector{Hecke.ClassField{Hecke.MapRayClassGrp, GrpAbFinGenMap}}[]
   end
-  emb_sub = F.subfields[end]
   @vprint :Fields 1 "\e[1F$(Hecke.clear_to_eol())Sieving $(length(class_fields_with_act)) abelian extensions\n"
-  class_fields = check_abelian_extensions(class_fields_with_act, autos, emb_sub)
+  candidates = trues(length(class_fields_with_act))
+  for i = 1:length(F.subfields)
+    if codomain(F.subfields[i]) != K
+      continue
+    end
+    indices =  Int[j for j = 1:length(candidates) if candidates[j]]
+    if isempty(indices)
+      break
+    end
+    admissibles = check_abelian_extensions(class_fields_with_act[indices], autos, F.subfields[i])
+    ind = 0
+    for j = 1:length(candidates)
+      if !candidates[j] 
+	ind += 1
+	continue
+      end
+      if !admissibles[j-ind]
+	candidates[j] = false
+      end
+    end
+  end
   @vprint :Fields 1 "$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())"
-  return class_fields
+  return ClassField{Hecke.MapRayClassGrp, GrpAbFinGenMap}[class_fields_with_act[i][1] for i = 1:length(class_fields_with_act) if candidates[i]]
 end
 
 

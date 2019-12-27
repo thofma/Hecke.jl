@@ -1311,26 +1311,24 @@ function solve_lt(A::MatElem{T}, b::MatElem{T}) where T
   r = 0
   last_pivot = 0
   for i = 1:m
-    for j = n:-1:last_pivot + 1
-      if iszero(A[i, j])
-        continue
-      end
-      for z = 1:s
-        x[j, z] = b[i, z]
-        for k = 1:r
-          if !iszero(A[i, pivot_cols[k]]) && !iszero(x[pivot_cols[k], z])
-            x[j, z] -= A[i, pivot_cols[k]]*x[pivot_cols[k], z]
-          end
-        end
-        q, re = divrem(x[j, z], A[i, j])
-        @assert iszero(re)
-        x[j, z] = q
-      end
-      last_pivot = j
-      r += 1
-      push!(pivot_cols, j)
-      break
+    j = n
+    while iszero(A[i, j])
+      j -= 1
     end
+    for z = 1:s
+      x[j, z] = b[i, z]
+      for k = 1:r
+        if !iszero(A[i, pivot_cols[k]]) && !iszero(x[pivot_cols[k], z])
+          x[j, z] -= A[i, pivot_cols[k]]*x[pivot_cols[k], z]
+        end
+      end
+      q, re = divrem(x[j, z], A[i, j])
+      @assert iszero(re)
+      x[j, z] = q
+    end
+    last_pivot = j
+    r += 1
+    push!(pivot_cols, j)
   end
   return x
 end

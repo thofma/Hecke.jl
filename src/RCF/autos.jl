@@ -264,13 +264,13 @@ function find_frob(A::ClassField_pp, K::KummerExt, emb::NfToNfMor)
     lp = prime_decomposition(O1, p)
     for i = 1:length(lp)
       try
-        z = can_frobenius(lp[i][1], K1)
+        z = canonical_frobenius(lp[i][1], K1)
         if order(z) != d
           continue
         end
         lP = prime_decomposition_nonindex(emb, lp[i][1])
         P = lP[1][1]
-        zK = can_frobenius(P, K)
+        zK = canonical_frobenius(P, K)
       catch e
         if typeof(e) != BadPrime
           rethrow(e)
@@ -299,7 +299,7 @@ function find_frob(A::ClassField_pp)
     lp = prime_decomposition(O, p)
     for i = 1:length(lp)
       try
-        zK1 = can_frobenius(lp[i][1], K1)
+        zK1 = canonical_frobenius(lp[i][1], K1)
         if order(zK1) != d
           continue
         end
@@ -334,7 +334,7 @@ function find_gens(KK::KummerExt, gens_imgs::Array{Array{FacElem{nf_elem, AnticN
     lp = prime_decomposition(O, q)
     for i = 1:length(lp)
       try
-        z = can_frobenius(lp[i][1], KK)
+        z = canonical_frobenius(lp[i][1], KK)
         el_in_quo = ms\(mQ(z))
         if iszero(el_in_quo)
           continue
@@ -351,7 +351,7 @@ function find_gens(KK::KummerExt, gens_imgs::Array{Array{FacElem{nf_elem, AnticN
         end
         for x in gens_imgs
           for y in x
-            can_frobenius(lp[i][1], KK, y)
+            canonical_frobenius(lp[i][1], KK, y)
           end
         end
         push!(frob_gens, lp[i][1])
@@ -606,8 +606,8 @@ function extend_auto(KK::KummerExt, tau_a::FacElem{nf_elem, AnticNumberField}, k
   i = 0
   for P in frob_gens
     i += 1
-    imgs_lhs[i] = can_frobenius(P, KK)
-    imgs_rhs[i] = can_frobenius(P, KK, tau_a)*divexact(KK.n, k)
+    imgs_lhs[i] = canonical_frobenius(P, KK)
+    imgs_rhs[i] = canonical_frobenius(P, KK, tau_a)*divexact(KK.n, k)
   end
   # Now, I have to solve the system.
   # Careful! I have to multiply the components with their difference with the exponent :(
@@ -733,9 +733,9 @@ function extend_hom(C::ClassField_pp, D::Array{ClassField_pp, 1}, tau)
       local fa
       local tfa
       try
-        f = can_frobenius(p, D[im].bigK).coeff
-        fa = [can_frobenius(p, D[im].bigK, a[1]) for a = all_emb]
-        tfa = can_frobenius(p, D[im].bigK, b)
+        f = canonical_frobenius(p, D[im].bigK).coeff
+        fa = [canonical_frobenius(p, D[im].bigK, a[1]) for a = all_emb]
+        tfa = canonical_frobenius(p, D[im].bigK, b)
       catch e
         if typeof(e) != BadPrime
           rethrow(e)

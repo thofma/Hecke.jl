@@ -1276,3 +1276,70 @@ function is_split_at_p(O::NfOrd, GC::Vector{NfToNfMor}, Stab::Vector{NfToNfMor},
   return iszero(lambda)
 
 end
+
+################################################################################
+#
+#  Enumerate embedding problems
+#
+################################################################################
+
+mutable struct cocycle_ctx
+  projection::Main.ForeignGAP.MPtr
+  inclusion::Main.ForeignGAP.MPtr
+  cocycle::Array{Main.ForeignGAP.MPtr, 2}
+end
+
+function cocycles_computation(L::Main.ForeignGAP.MPtr, i::Int)
+
+  proj = GAP.Globals.NaturalHomomorphismByNormalSubgroup(L[1], L[i+1])
+  target_grp = GAP.Globals.ImagesSource(proj)
+  mH1 = GAP.Globals.NaturalHomomorphismByNormalSubgroup(target_grp, GAP.Globals.Image(proj, L[i]))
+  H1 = GAP.Globals.ImagesSource(mH1)
+  K = GAP.Globals.Kernel(mH1)
+    
+  Elems = GAP.Globals.Elements(H1)
+  MatCoc = Array{Main.ForeignGAP.MPtr, 2}(undef, length(Elems), length(Elems))
+  Preimags = Vector{Main.ForeignGAP.MPtr}(undef, length(Elems))
+  for i = 1:length(Elems)
+    Preimags[i] = GAP.Globals.PreImagesRepresentative(mH1, Elems[i])
+  end
+  for i = 1:length(Elems)
+    x1 = Preimags[i]
+    for j = 1:length(Elems)
+      y1 = Preimags[j]
+      xy = Elems[i] * Elems[j]
+      k = 1
+      while Elems[k] != xy
+        k += 1
+      end
+      xy1 = Preimags[k]
+      MatCoc[i, j] = x1*y1*GAP.Globals.Inverse(xy1)
+    end
+  end
+  autos = _autos_to_check(H1, K, target_grp, mH1)
+  
+  cocycles = Vector{cocycle_ctx}(undef, length(autos))
+  for i = 1:length(autos)
+    aut1, aut2 = autos[i]
+    local cocycle
+    let Elems = Elems, MatCoc = MatCoc, aut1, aut2
+      function cocycle(x::Main.ForeignGAP.MPtr, y::Main.ForeignGAP.MPtr)  
+        new_x = GAP.Globals.PreImagesRepresentative(aut2, x)
+        new_y = GAP.Globals.PreImagesRepresentative(aut2, y)
+        i = 1
+        while Elems[i] != new_x
+          i += 1
+        end
+        j = 1
+        while Elems[j] != new_y
+          j += 1
+        end
+        return GAP.Globals.PreImagesrepresentative(aut1, MatCoc[i, j])
+      end
+    end
+    cocycles[i] = cocycle_ctx(aut2*mH1, aut1, cocycle)
+  end
+  return cocycles
+
+end
+

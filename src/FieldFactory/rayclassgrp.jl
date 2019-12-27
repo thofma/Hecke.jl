@@ -515,7 +515,7 @@ function check_abelian_extensions(class_fields::Vector{Tuple{Hecke.ClassField{He
   expo = G.snf[end]
   com, uncom = ppio(Int(expo), d)
   if com == 1
-    return Hecke.ClassField{Hecke.MapRayClassGrp,GrpAbFinGenMap}[x[1] for x in class_fields]
+    return trues(length(class_fields))
   end 
   #I extract the generators that restricted to the domain of emb_sub are the identity.
   #Notice that I can do this only because I know the way I am constructing the generators of the group.
@@ -546,7 +546,7 @@ function check_abelian_extensions(class_fields::Vector{Tuple{Hecke.ClassField{He
   OK = maximal_order(K)
   rcg_ctx = Hecke.rayclassgrp_ctx(OK, com*expG1)
    
-  cfields = Hecke.ClassField{Hecke.MapRayClassGrp, GrpAbFinGenMap}[]
+  cfields = trues(length(class_fields))
   for i = 1:length(class_fields)
     @vprint :MaxAbExt 3 "Class Field $i\n"
     C, res_act = class_fields[i]
@@ -554,10 +554,7 @@ function check_abelian_extensions(class_fields::Vector{Tuple{Hecke.ClassField{He
     for i = 1:length(act_indices)
       res_act_new[i] = res_act[act_indices[i]]
     end
-    fl = check_abelian_extension(C, res_act_new, emb_sub, rcg_ctx, expG)
-    if fl
-      push!(cfields, C)
-    end
+    cfields[i] = check_abelian_extension(C, res_act_new, emb_sub, rcg_ctx, expG)
   end
   return cfields
   
@@ -655,8 +652,10 @@ function _maximal_abelian_subfield(A::Hecke.ClassField, mp::Hecke.NfToNfMor, ctx
   for (P, e) in mR1.fact_mod
     p = intersect_prime(mp, P)
     if !haskey(fm0, p)
-      if !iscoprime(minimum(P, copy = false), deg*expo)
-        fm0[p] = e
+      if !iscoprime(minimum(P, copy = false), deg*expo) 
+        if e > 1
+          fm0[p] = e
+        end
       else
         fm0[p] = 1
       end
@@ -676,7 +675,6 @@ function _maximal_abelian_subfield(A::Hecke.ClassField, mp::Hecke.NfToNfMor, ctx
       end
     end
   end
-
   #Now, I extend this modulus to K
   fM0 = Dict{NfOrdIdl, Int}()
   for (p, v) in fm0

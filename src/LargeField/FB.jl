@@ -57,20 +57,6 @@ function induce(FB::Hecke.NfFactorBase, A::Map)
         @assert id !== nothing        
         push!(prm, (i, FP.lp[id][1]))
       end
-      #anti_ = [anti_uniformizer(x[2]) for x in FP.lp]
-      #for (i, P) in FP.lp 
-      #  b = A(P.gen_two.elem_in_nf)
-      #  id = -1
-      #  for j in 1:length(FP.lp)
-      #    if elem_in_nf(b * anti_[j]) in O
-      #      id = j
-      #      break
-      #    end
-      #  end
-      #  #Q = induce_image(P, A)
-      #  #id = findfirst(isequal(Q), lp)
-      #  push!(prm, (i, FP.lp[id][1]))
-      #end
     else
       px = PolynomialRing(GF(Int(p), cached=false), "x", cached=false)[1]
       fpx = px(f)

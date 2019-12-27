@@ -949,7 +949,7 @@ function norm_group(KK::KummerExt, mp::NfToNfMor, mR::MapRayClassGrp)
       lP = prime_decomposition(mp, P)
       local z::GrpAbFinGenElem
       try
-        z = can_frobenius(lP[1][1], KK)
+        z = canonical_frobenius(lP[1][1], KK)
       catch e
         if !isa(e, BadPrime)
           rethrow(e)

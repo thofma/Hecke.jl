@@ -1,6 +1,3 @@
-using Random
-
-
 ###############################################################################
 #
 #  Direct product decomposition
@@ -164,7 +161,6 @@ function _to_composite(x::FieldsTower, y::FieldsTower, abs_disc::fmpz)
 end
 
 function simplify!(x::FieldsTower)
-  push!(deb, x)
   K = x.field
   OK = maximal_order(K)
   Ks, mKs = simplify(K)
@@ -177,16 +173,17 @@ function simplify!(x::FieldsTower)
   else
     OKs = lll(NfOrd(nf_elem[mKi(y) for y in basis(OK, K)])) 
   end
+  OKs.ismaximal = 1
   OKs.disc = OK.disc
   OKs.index = root(divexact(numerator(discriminant(Ks.pol)), OKs.disc), 2)
   Hecke._set_maximal_order(Ks, OKs)
-  gens_autos = NfToNfMor[hom(Ks, Ks, mKi(el(mKs.prim_img))) for el in x.generators_of_automorphisms]
+  gens_autos = NfToNfMor[hom(Ks, Ks, mKi(el(mKs.prim_img)), check = true) for el in x.generators_of_automorphisms]
   for i = 1:length(x.subfields)
     if codomain(x.subfields[i]) == K
       x.subfields[i] = x.subfields[i]*mKi
     end
   end
-  x.field = K
+  x.field = Ks
   x.generators_of_automorphisms = gens_autos
   return nothing
 end
@@ -259,7 +256,7 @@ function check_bound_disc(K::FieldsTower, L::FieldsTower, bound::fmpz)
     if issquare(d)
       d = root(d, 2)
     end
-    n = disc_comp^(degree(Kab[i]))*disc_new^deg
+    n = disc_comp^(degree(Lab[i]))*disc_new^deg
     d = gcd(d^(2*(deg*degree(Lab[i])-1)), n)
     disc_comp = divexact(n, d)
     deg *= degree(Lab[i])

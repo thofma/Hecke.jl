@@ -980,7 +980,7 @@ function find_gens(mR::MapRayClassGrp; coprime_to::fmpz = fmpz(-1))
   if coprime_to != -1
     mm = lcm(mm, coprime_to)
   end
-  mm = lcm(mm, discriminant(EquationOrder(nf(O))))
+  mm = lcm(mm, discriminant(EquationOrder(nf(O))))  
 
   sR = GrpAbFinGenElem[]
   lp = NfOrdIdl[]

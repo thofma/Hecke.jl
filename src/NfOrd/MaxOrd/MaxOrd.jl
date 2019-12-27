@@ -669,14 +669,6 @@ function ring_of_multipliers(a::NfAbsOrdIdl)
   return O1
 end
 
-
-function pseudo_inv_lt(x::fmpz_mat)
-  @assert islower_triangular(x)
-  d = lcm(fmpz[x[i, i] for i = 1:nrows(x)])
-  sol = solve_lt(x, scalar_matrix(FlintZZ, nrows(x), d))
-  return FakeFmpqMat(sol, d)
-end
-
 ################################################################################
 #
 #  radical for maximal order

@@ -368,7 +368,7 @@ function find_gens(K::KummerExt, S::PrimesSet, cp::fmpz=fmpz(1))
     end
     local f::GrpAbFinGenElem
     try
-      f = can_frobenius(P, K)
+      f = canonical_frobenius(P, K)
     catch e
       if !isa(e, BadPrime)
         rethrow(e)
@@ -415,7 +415,7 @@ function find_gens(K::KummerExt, S::PrimesSet, cp::fmpz=fmpz(1))
     f = R[1]
     for (P, e) = lP
       try
-        f = can_frobenius(P, K)
+        f = canonical_frobenius(P, K)
       catch e
         if !isa(e, BadPrime)
           rethrow(e)
@@ -600,8 +600,6 @@ function build_map(CF::ClassField_pp, K::KummerExt, c::CyclotomicExt)
   ZK = maximal_order(base_ring(K.gen[1]))
   cp = lcm(minimum(m), discriminant(ZK))
   
-  #cf = Hecke.MapFromFunc(x->can_frobenius1(x, K), IdealSet(ZK), K.AutG)
-
   mp = c.mp[2]
   cp = lcm(cp, index(maximal_order(domain(mp))))
   ZK = maximal_order(c.Ka)
