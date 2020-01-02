@@ -1778,17 +1778,21 @@ function find_lattice(M::HermLat, L::HermLat, p)
       Y = [ BB[i] for i in (2*m + 1):length(BB) ]
       for i in 1:m
         # transform <BB[2i-1], BB[2i]> into H(0). Then go from there.
-        b, s = issquare(hext(-G[1][2*i, 2*i]//G[1][2*i - 1, 2*i - 1]))
+        el = coeff(-G[1][2*i, 2*i]//G[1][2*i - 1, 2*i - 1], 0)
+        b, s = issquare(hext(el))
         if b
-          push!(Y, BB[2*i] + (h\s)*BB[2*i - 1])
+          push!(Y, BB[2*i] + nf(base_ring(L))(hext\s)*BB[2*i - 1])
         else
-          b, s = issquare(hext(-G[1][2*i, 2*i]//G[1][2*i - 1, 2*i - 1] * norm(nsn)))
+          el = coeff(-G[1][2*i, 2*i]//G[1][2*i - 1, 2*i - 1] * norm(nsn), 0)
+          b, s = issquare(hext(el))
           @assert b
-          push!(Y, nsn * BB[2*i] + (h\s) * BB[2*i - 1])
+          push!(Y, nsn * BB[2*i] + nf(base_ring(L))(hext\s) * BB[2*i - 1])
         end
       end
       if length(B) == 2
         Y = vcat(reduce(vcat, Y), B[2])
+      else
+        Y = reduce(vcat, Y)
       end
       _new_pmat = _sum_modules(pseudo_matrix(Y), _module_scale_ideal(P, pseudo_matrix(M)))
       _new_pmat = _intersect_modules(_new_pmat, pseudo_matrix(M))
@@ -1842,7 +1846,7 @@ function find_lattice(M::HermLat, L::HermLat, p)
       genus(HermLat, nf(base_ring(L)), p , 
             vcat([(scale(c0, i), rank(c0, i), det(c0, i)) for i in 1:length(c0)],
                  [(scale(c1, i), rank(c1, i), det(c1, i)) for i in 1:length(c1)],
-                 [(scale(c, i) - 2, rank(c, i), det(c, i)) for i in 1:length(c) if scale(c, i) >= 4]))
+                 Tuple{Int, Int, Int}[(scale(c, i) - 2, rank(c, i), det(c, i)) for i in 1:length(c) if scale(c, i) >= 4]))
       push!(C, c)
     end
     B, G, S = jordan_decomposition(M, p)
@@ -1857,18 +1861,19 @@ function find_lattice(M::HermLat, L::HermLat, p)
       push!(B0, B1[2*i - 1])
     end
     if length(B0) == 0
-      LL = lattice(ambient_space(M), P * pseudo_matrix(M))
+      LL = lattice(ambient_space(M), _module_scale_ideal(P, pseudo_matrix(M)))
     else
-      _new_pmat = _sum_modules(pseudo_matrix(reduce(vcat, B0)), P*pseudo_matrix(M))
+      _new_pmat = _sum_modules(pseudo_matrix(reduce(vcat, B0)), _module_scale_ideal(P, pseudo_matrix(M)))
       _new_pmat = _intersect_modules(_new_pmat, pseudo_matrix(M))
       LL = lattice(ambient_space(M), _new_pmat)
     end
-    @assert genus_symbol(LL) == c
+    @assert genus(LL, p) == c
 
     K = base_field(nf(base_ring(M)))
     k, h = ResidueField(order(p), p)
     hext = extend(h, K)
     for j in length(C)-1:-1:1
+      @show j
       c = C[j]
       if all(!(scale(c, i) in [0, 1]) for i in 1:length(c))
         @assert scale(C[1], 1) - valuation(scale(LL), P) >= 0
@@ -1931,10 +1936,10 @@ function find_lattice(M::HermLat, L::HermLat, p)
         Y0 = vcat(Y0, NN[1:2*div(length(NN), 2)], SS)
         Y0 = B[Y0[1:r]]
       end
+      _new_pmat = _sum_modules(pseudo_matrix(reduce(vcat, vcat(Y0, Y1))), _module_scale_ideal(P, pseudo_matrix(LL)))
+      _new_pmat = _intersect_modules(_new_pmat, pseudo_matrix(LL))
+      @assert genus_symbol(LL, p) == c
     end
-    _new_pmat = _sum_modules(pseudo_matrix(reduce(vcat, vcat(Y0, Y1))), P * pseudo_matrix(LL))
-    _new_pmat = _intersect_modules(_new_pmat, pseudo_matrix(LL))
-    @assert genus_symbol(LL, p) == c
   else
 #  // The even ramified case
 #  // The approach below is VERY lame.
@@ -2677,4 +2682,207 @@ function _non_square_norm(P)
     end
   end
   return u
+end
+
+################################################################################
+#
+#  Restrict scalars
+#
+################################################################################
+
+mutable struct ZLattice
+  space::QuadSpace{FlintRationalField, fmpq_mat}  
+  basis_matrix::fmpq_mat
+  gram_matrix::fmpq_mat
+
+  function ZLattice(V::QuadSpace{FlintRationalField, fmpq_mat}, B::fmpq_mat)
+    z = new()
+    z.space = V
+    z.basis_matrix = B
+    return z
+  end
+end
+
+basis_matrix(L::ZLattice) = L.basis_matrix
+
+ambient_space(L::ZLattice) = L.space
+
+function gram_matrix(L::ZLattice)
+  b = basis_matrix(L)
+  return b * gram_matrix(ambient_space(L)) * transpose(b)
+end
+
+function restrict_scalars(L::AbsLat)
+  V = ambient_space(L)
+  Vabs, f, g = restrict_scalars(V)
+  Babs = absolute_basis(L)
+  Mabs = zero_matrix(FlintQQ, length(Babs), rank(Vabs))
+  for i in 1:length(Babs)
+    v = g(Babs[i])
+    for j in 1:length(v)
+      Mabs[i, j] = v[j]
+    end
+  end
+  return ZLattice(Vabs, Mabs)
+end
+
+################################################################################
+#
+#  Isometry
+#
+################################################################################
+
+function _get_vectors_of_length(G::Union{fmpz_mat, FakeFmpqMat}, max::fmpz)
+  C = enum_ctx_from_gram(G)
+  enum_ctx_start(C, max)
+  res = Tuple{fmpz_mat, fmpz}[]
+  while enum_ctx_next(C)
+    push!(res, (deepcopy(C.x), (C.x * G * transpose(C.x))[1, 1]))
+    push!(res, (-deepcopy(C.x), (C.x * G * transpose(C.x))[1, 1]))
+  end
+  return res
+end
+
+function _get_vectors_of_length(G::ZLattice, max::fmpz)
+  return _get_vectors_of_length(FakeFmpqMat(gram_matrix(G)), max)
+end
+
+function _back_track(source_grams::Vector, target_grams::Vector, max = inf)
+  n = nrows(source_grams[1])
+  lengths = [source_grams[1][i, i] for i in 1:n]
+  max_length = maximum(lengths)
+  all_vec = _get_vectors_of_length(target_grams[1], max_length)
+  return __back_track(source_grams, target_grams, all_vec, lengths, n, max)
+end
+
+function _back_track(source_gram, target_gram, max = inf)
+  n = nrows(source_gram)
+  lengths = [source_gram[i, i] for i in 1:n]
+  max_length = maximum(lengths)
+  all_vec = _get_vectors_of_length(target_gram, max_length)
+  return __back_track(source_gram, target_gram, all_vec, lengths, n, max)
+end
+
+function __back_track(source_gram, target_gram, all_vec, lengths, n, max = inf)
+  vecs_for_coordinates = Vector{Vector{Int}}(undef, n)
+  t = Dict{fmpz, Int}()
+  for i in 1:n
+    if haskey(t, lengths[i])
+      vecs_for_coordinates[i] = vecs_for_coordinates[t[lengths[i]]]
+    else
+      u = Int[]
+      for j in 1:length(all_vec)
+        v = all_vec[j]
+        if v[2] == lengths[i]
+          push!(u, j)
+        end
+      end
+      vecs_for_coordinates[i] = u
+      t[lengths[i]] = i
+    end
+  end
+
+  auto = Vector{Vector{Int}}()
+
+  z = ones(Int, n)
+  level = 1
+
+  while level > 0 && length(auto) < max
+    @show z, length(auto)
+    if _can_extend(source_gram, target_gram, z, level, all_vec)
+      if level == n
+        push!(auto, deepcopy(z))
+        z[level] += 1
+      else
+        level += 1
+        continue
+      end
+    else
+      z[level] += 1
+    end
+
+    while z[level] > length(vecs_for_coordinates[level])
+      z[level] = 1
+      level -= 1
+      if level == 0
+        break
+      end
+      z[level] += 1
+    end
+  end
+  return auto, all_vec
+end
+
+@inline function _can_extend(source_gram, target_gram, curr, level, all_vec)
+  # I always assume that the target vectors have the correct size
+  if level == 1
+    return true
+  end
+  zlevel = all_vec[curr[level]][1]
+  for i in 1:level
+    zi = all_vec[curr[i]][1]
+    g = (zi * target_gram * transpose(zlevel))[1, 1]
+    if g != source_gram[i, level]
+      return false
+    end
+  end
+  return true
+end
+
+@inline function _can_extend(source_grams::Vector, target_grams::Vector, curr, level, all_vec)
+  # I always assume that the target vectors have the correct size
+  if level == 1
+    return true
+  end
+  zlevel = all_vec[curr[level]][1]
+  for i in 1:level
+    zi = all_vec[curr[i]][1]
+    for j in 1:length(source_grams)
+      source_gram = source_grams[j]
+      target_gram = target_grams[j]
+      g = (zi * target_gram * transpose(zlevel))[1, 1]
+      if g != source_gram[i, level]
+        return false
+      end
+    end
+  end
+  return true
+end
+
+function _is_isometric(source_gram, target_gram)
+  t, all_vec = _back_track(source_gram, target_gram, 1)
+  if length(t) == 0
+    return false, zero_matrix(FlintZZ, 0, 0)
+  else
+    n = length(t[1])
+    T = zero_matrix(FlintZZ, n, n)
+    for i in 1:length(t[1])
+      v = all_vec[t[1][i]][1]
+      for j in 1:nrows(target_gram)
+        T[i, j] = v[j]
+      end
+    end
+    return true, T
+  end
+end
+
+function _morphisms(source_gram, target_gram)
+  t, all_vec = _back_track(source_gram, target_gram)
+  if length(t) == 0
+    return fmpz_mat[]
+  else
+    n = length(t[1])
+    res = Vector{fmpz_mat}(undef, length(t))
+    for k in 1:length(t)
+      T = zero_matrix(FlintZZ, n, n)
+      for i in 1:n
+        v = all_vec[t[k][i]][1]
+        for j in 1:nrows(target_gram)
+          T[i, j] = v[j]
+        end
+      end
+      res[k] = T
+    end
+    return res
+  end
 end

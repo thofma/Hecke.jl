@@ -350,7 +350,7 @@ function gram_matrix(G::LocalGenusHerm, l::Int)
   if !isdyadic(G)
     # non-dyadic
     if iseven(i)
-      return diagonal_matrix(append!([p^div(i, 2) for j in 1:(m - 1)], u * p^div(i, 2)))
+      return diagonal_matrix(push!([E(p)^div(i, 2) for j in 1:(m - 1)], u * E(p)^div(i, 2)))
     else
       @assert iseven(m)
       return diagonal_matrix([H for j in 1:div(m, 2)])
@@ -1386,12 +1386,14 @@ function genus_generators(L)
       elt = (c, w(y))
       elt1 = elt
       o = 1
-      size = length(S)
+      siz = length(S)
       while !(elt1 in S)
         j = findfirst(isequal(elt1[1]), C)
-        for l in 1:size
+        @assert !isnothing(j)
+        for l in 1:siz
           elt2 = S[l]
           k = findfirst(isequal(elt2[1]), C)
+          @assert !isnothing(k)
           prod = (elt1[1] * elt2[1], elt1[2] + elt2[2] + cycycle[j, k])
           if !(prod in S)
             push!(S, prod)
@@ -1400,7 +1402,7 @@ function genus_generators(L)
         elt1 = (elt[1] * elt1[1], elt[2] + elt[1] + cocycle[i, j])
         o = o + 1
       end
-      @assert length(S) == size * o
+      @assert length(S) == siz * o
       if o != 1
         push!(Gens, (P, o))
       end
@@ -1412,6 +1414,208 @@ function genus_generators(L)
   else
     return Gens, false
   end
+end
+
+# TODO: add max keyword
+function genus_representatives(L)
+  rank(L) < 2 && error("Rank of the lattice must be a least 2")
+  definite = isdefinite(L)
+  gens, P0 = genus_generators(L)
+  a = involution(L)
+  LL = [ L ]
+  for g in gens
+    if definite && g[1] == P0
+      continue
+    end
+    I = g[1]^(g[2] - 1)
+    J = a(I)
+    N = neighbours_with_ppower(L, g[1], g[2] - 1)
+    inter= []
+    for i in 2:length(LL)
+      M = pseudo_matrix(LL[i])
+      IM = I * M
+      JM = J * M
+      inter = append!(inter, lattice(ambient_space(L), meet(IM + pseudo_matrix(x), JM) for x in N))
+    end
+    LL = vcat(LL, N, inter)
+  end
+  @assert length(LL) == prod(Int[g[2] for g in gens if !definite || g[1] != P0])
+  @assert all(X -> genus(X) == genus(L), LL)
+  
+  if definite
+    result = []
+    for L in LL
+      # Should never happen!
+      @assert all(X -> !isisometric(X, L), result)
+      result = append!(result, iterated_neighbours(L, P0))# : AutoOrbits:= AutoOrbits, Max:= Max);
+      #max = max - length(result)
+    end
+    for i in 1:length(result)
+      for j in 1:i-1
+        @assert !isometric(result[i], result[j])
+      end
+    end
+  else
+    result = LL
+  end
+  return result
+end
+
+function _neighbours(L, P, result, max, callback = stdcallback)
+#//  "Entering _Neighbours, #Result=", #Result, "Max=", Max;
+  ok, scale = ismodular(L, P);
+  !ok && error("Non-modular lattice!")
+  R = base_ring(L)
+  K = nf(R)
+  a = involution(L)
+  C = a(P)
+  B = local_basis_matrix(L, P, type = :submodule)
+  k, h = ResidueField(R, C)
+  form = gram_matrix(ambient_space(L))
+  special = false
+  if scale != 0
+    if isramified(R, minimum(P))
+      special = isodd(scale)
+      scale = div(scale + 1, 2)
+    end
+    form = E(elem_in_nf(uniformizer(minimum(P))))^(-scale) * form
+  end
+  n = rank(L)
+  W = vector_space(k, n)
+
+  LO = enumerate_lines(k, n)
+
+  keep = true
+  cont = true
+
+  if P != C
+    _G = T * form * _map(T, a)
+    G = _map(_G, h)
+    pi = p_uniformizer(C)
+    pih = h(pi)
+    for i in 1:length(LO)
+      w = LO[i]
+      x = [ sum(B[i, j] * (h\w[i]) for i in 1:n) for j in 1:ncols(B)]
+      LL = neighbour(L, B, phi * w * G, pi * x, h, P, C, true)
+      keep, cont = callback(result, LL)
+      if keep
+        push!(result, LL)
+      end
+      if !cont || lenght(result) >= max
+        break
+      end
+    end
+  elseif special
+    pi = uniformizer(P)
+    _G = T * form * _map(T, a)
+    G = _map(_G, h)
+    for i in 1:length(LO)
+      w = LO[i]
+      Gw = G * matrix(k, length(w), 1, w)
+      ok = 0
+      for d in 1:n
+        if !iszero(Gw[d])
+          ok = d
+          break
+        end
+      end
+      @assert ok != 0
+      x = [ sum(B[i, j] * (h\w[i]) for i in 1:n) for j in 1:ncols(B)]
+      nrm = _inner_product(form, x, x, a)
+      b = h\(-h(nrm) / (2*Gw[d, 1]))
+      x = x + b * pi * B[d]
+      nrm = _inner_product(form, x, x, a)
+      LL = neighbour(L, B, w * G, x, h, P, P, false)
+      keep, cont = callback(result, LL)
+      if keep
+        push!(result, LL)
+      end
+      if !cont || lenght(result) >= max
+        break
+      end
+    end
+  else
+    _G = T * form * _map(T, a)
+    G = _map(_G, h)
+    ram = isramified(R, minimum(P))
+    if ram
+      pi = uniformizer(P)
+      S = [ h\x for x in k ]
+    else
+      p = minimum(P)
+      pi = uniformizer(p)
+      kp, hp = ResidueField(order(p), p)
+      alpha = h\(degree(k) == 1 ? one(k) : gen(k))
+      T = matrix(kp, 2, 1, [2, hp(tr(alpha))])
+    end
+    for i in 1:length(LO)
+      w = LO[i]
+      x = [ sum(B[i, j] * (h\w[i]) for i in 1:n) for j in 1:ncols(B)]
+      Gw = G * matrix(k, length(w), 1, w)
+      ok = 0
+      for j in 1:n
+        if !iszero(Gw[j])
+          ok = j
+          break
+        end
+      end
+      @assert ok != 0
+      NL = []
+      if !ram
+        s, V = solution(T, vector(kp, [hp(-nrm//pi)]))
+        l = a(h\(1//wG[j]))
+        S = [ l * (h\((s + v)[1]) + (h\(s + v)[2])*alpha) for v in v ]
+      end
+      for s in S
+        LL = neighbour(L, B, wG, x+pi*s*B[j], h, P, P, false);
+      end
+      keep, cont = callback(result, LL)
+      if keep
+        push!(result, LL)
+      end
+      if !cont || lenght(result) >= max
+        break
+      end
+    end
+  end
+  return result
+end
+
+function neighbours(L, P, max = inf)
+#{The immediate P-neighbours of L}
+#  require Order(P) eq BaseRing(L): "Arguments are incompatible";
+#  require IsPrime(P): "Second argument must be prime";
+#  require not IsRamified(P) or Minimum(P) ne 2: "Second argument cannot be a ramified prime over 2";
+#  require IsModular(L, P) : "The lattice must be locally modular";
+#  require Rank(L) ge 2: "The rank of the lattice must be at least 2";
+#  require IsIsotropic(L, P): "The lattice must be locally isotropic";
+#
+  return _neighbours(L, P, [], max)
+end
+
+function stdcallback(list, L)
+  keep = all(LL -> isisometric(LL, L), list)
+#//  keep, #List;
+  return keep, true;
+end
+
+function iterated_neighbours(L::HermLat, P; max = inf)# AutoOrbits, CallBack:= false, Max:= Infinity()) -> []
+  #require Order(P) eq BaseRing(L): "Arguments are incompatible";
+  #require IsPrime(P): "Second argument must be prime";
+  #require not IsRamified(P) or Minimum(P) ne 2: "Second argument cannot be a ramified prime over 2";
+  #require IsModular(L, P) : "The lattice must be locally modular";
+  #require Rank(L) ge 2: "The rank of the lattice must be at least 2";
+  #require IsIsotropic(L, P): "The lattice must be locally isotropic";
+
+  result = [ L ]
+  i = 1
+  while length(result) < max && i <= length(result)
+    # _Neighbours and the callback only add new lattices if not isometric to known ones and stop if Max is reached.
+    # So we have nothing to at all.
+    result = _neighbours(result[i], P, result, max)# : CallBack:= CallBack);
+    i = i + 1
+  end
+  return result
 end
 
 ################################################################################
