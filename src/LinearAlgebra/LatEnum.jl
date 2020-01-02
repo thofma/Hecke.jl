@@ -163,7 +163,6 @@ function enum_ctx_local_bound(a::Number, b::Number) where Number
   return L, U
 end
 
-
 function enum_ctx_start(E::enum_ctx{A,B,C}, c::fmpz) where {A,B,C}
   E.c = c
   zero!(E.x)
@@ -177,13 +176,13 @@ function enum_ctx_start(E::enum_ctx{A,B,C}, c::fmpz) where {A,B,C}
     E.U[i] = U
     E.L[i] = L
   end
-  E.U[1] = min(E.U[1], 1)
+  E.U[1] = max(E.U[1], 1)
   E.L[1] = -E.U[1]
   E.last_non_zero = 1
   E.cnt = 0
 end
 
-function enum_ctx_start(E::enum_ctx{A,B,C}, x::fmpz_mat; eps::Float64=1) where {A,B,C}
+function enum_ctx_start(E::enum_ctx{A,B,C}, x::fmpz_mat; eps::Float64=1.0) where {A,B,C}
   E.x = x
   for i=E.limit-1:-1:1
     E.tail[i] = sum(E.C[i, j]*C(E.x[1,j]) for j=i+1:E.limit)
