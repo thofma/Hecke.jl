@@ -401,7 +401,7 @@ end
 
 Returns the trace of $a$.
 """
-tr(a::NfRelOrdElem) = tr(a.elem_in_nf)
+tr(a::NfRelOrdElem) = base_ring(parent(a))(tr(a.elem_in_nf))
 
 ################################################################################
 #

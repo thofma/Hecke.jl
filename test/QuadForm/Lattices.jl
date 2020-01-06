@@ -44,4 +44,17 @@
   M = Hecke.maximal_integral_lattice(V)
   @test Hecke.genus(M, p) == genus(HermLat, L, p, [(-2, 2, 1, 0), (0, 1, 1, 0)])
 
+
+   Qx, x = QQ["x"]
+   f = x^3-39*x-65
+   K, a = MaximalRealSubfield(8, "a")
+   Kt, t = K["t"]
+   E, b = number_field(t^2 - a * t + 1, "b")
+   p = prime_decomposition(maximal_order(K), 2)[1][1]
+   P = prime_decomposition(maximal_order(E), p)[1][1]
+   pm = pseudo_matrix(matrix(E, 3, 3, [1, 0, 0, b, 1, 0, 0, 0, 1]), [P^0, inv(P)^2, P^0])
+   V = hermitian_space(E, identity_matrix(E, 3))
+   L = lattice(V, pm)
+   A = Hecke.automorphism_group(L)
+   @test A[2] == 1536
 end

@@ -43,7 +43,7 @@ end
 Create the quadratic space over `K` with dimension `n` and Gram matrix
 equal to the identity matrix.
 """
-function quadratic_space(K::NumField, n::Int)
+function quadratic_space(K::Field, n::Int)
   G = identity_matrix(K, n)
   return QuadSpace(K, G)
 end
@@ -54,10 +54,6 @@ end
 Create the quadratic space over `K` with Gram matrix `G`.
 The matrix `G` must be square and symmetric.
 """
-function quadratic_space(K::NumField, G::MatElem)
-  return QuadSpace(K, G)
-end
-
 function quadratic_space(K::Field, G::MatElem)
   return QuadSpace(K, G)
 end
@@ -872,6 +868,62 @@ end
 #
 ################################################################################
 
+function image(f::NfRelToNfRelMor{T, T}, I::NfRelOrdIdl{T, S}) where {T, S}
+  #f has to be an automorphism!!!!
+  O = order(I)
+  @assert ismaximal(O) # Otherwise the order might change
+  K = nf(O)
+
+  B = absolute_basis(I)
+
+  if I.is_prime == 1
+    lp = prime_decomposition(O, minimum(I))
+    for (Q, e) in lp
+      if I.splitting_type[2] == e
+        if all(b -> f(b) in Q, B)
+          return Q
+        end
+      end
+    end
+  end
+
+  pb = pseudo_basis(I)
+  pm = basis_pmatrix(I)
+
+  m = zero(matrix(pm))
+
+  c = coefficient_ideals(pm)
+
+  for i in 1:length(pb)
+    cc = coordinates(O(f(pb[i][1])))
+    for j in 1:length(cc)
+      m[i, j] = cc[j]
+    end
+  end
+
+  J = ideal(O, pseudo_matrix(m, c))
+
+  if isdefined(I, :minimum)
+    J.minimum = I.minimum
+  end
+
+  J.has_norm = I.has_norm
+
+  if isdefined(I, :norm)
+    J.norm = I.norm
+  end
+
+  if isdefined(I, :is_prime)
+    J.is_prime = I.is_prime
+  end
+
+  if isdefined(I, :splitting_type)
+    J.splitting_type = I.splitting_type
+  end
+
+  return J
+end
+
 function image(f::NfRelToNfRelMor{T, T}, I::NfRelOrdFracIdl{T, S}) where {T, S}
   #S has to be an automorphism!!!!
   O = order(I)
@@ -964,7 +1016,7 @@ end
 #
 ################################################################################
 
-function restrict_scalars(V::AbsSpace, alpha = one(base_ring(V)))
+function restrict_scalars(V::AbsSpace, K::Field = FlintQQ, alpha = one(base_ring(V)))
   E = base_ring(V)
   n = rank(V)
   d = absolute_degree(E)
@@ -1048,5 +1100,15 @@ end
 
 function absolute_basis(K::NumField{fmpq})
   return basis(K)
+end
+
+#
+
+function (K::AnticNumberField)(a::NfRelElem{nf_elem})
+  K != base_field(parent(a)) && error("Cannot coerce")
+  for i in 2:degree(parent(a))
+    @assert coeff(a, i - 1) == 0
+  end
+  return coeff(a, 0)
 end
 

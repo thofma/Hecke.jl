@@ -495,10 +495,14 @@ function _enumerate(E::EnumCtxArb, c::arb, i::Int, x::fmpz_mat)
       x[1,i] = j
       l = _enumerate(E, t, i - 1, x)
       for k in 1:length(l)
+        if n == length(l[k]) + 1 && iszero(j) && all(iszero, l[k]) 
+          continue
+        end
         push!(A, push!(l[k], fmpz(j)))
       end
     end
   end
+
   return A
 end
 
