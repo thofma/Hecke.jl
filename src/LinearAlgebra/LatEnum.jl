@@ -131,7 +131,6 @@ function enum_ctx_local_bound(a::Rational{T}, b::Rational{T}) where T
   #return L <= U sth.
   #L = ceil(a-sqrt(b)), U = floor(a+sqrt(b))
   #solves (gives bounds) for (a-x)^2 <= b
-  b >=0 || error("out of mind")
   b >= 0 || return a, a-1
   @hassert :LatEnum 1 b >= 0
   d = denominator(b)
@@ -155,7 +154,6 @@ function enum_ctx_local_bound(a::Number, b::Number) where Number
   #return L <= U sth.
   #L = ceil(a-sqrt(b)), U = floor(a+sqrt(b))
   #solves (gives bounds) for (a-x)^2 <= b
-  b >=0 || error("out of mind")
   b >= 0 || return a, a-1
   @hassert :LatEnum b >= 0
   i = sqrt(b)
