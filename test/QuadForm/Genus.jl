@@ -43,4 +43,13 @@
   @test all(x -> x in Gs, myG)
   @test all(x -> x in myG, Gs)
 
+  # Representatives
+  
+  K, a = NumberField(x - 1, "a")
+  Kt, t = K["t"]
+  E, b = NumberField(t^2 + 1, "b")
+  p = prime_decomposition(maximal_order(K), 2)[1][1]
+  G = genus(HermLat, E, p, [(0, 3, -1, 0)])
+  L = representative(G)
+  @test length(Hecke.genus_representatives(L)) == 1
 end

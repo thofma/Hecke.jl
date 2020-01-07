@@ -58,6 +58,10 @@ function quadratic_space(K::NumField, G::MatElem)
   return QuadSpace(K, G)
 end
 
+function quadratic_space(K::Field, G::MatElem)
+  return QuadSpace(K, G)
+end
+
 mutable struct HermSpace{S, T, U, W} <: AbsSpace{S}
   E::S
   K::T
@@ -409,6 +413,7 @@ function _gram_schmidt(M::MatElem, a)
         #ok = findfirst(j -> !iszero(F[j, j]), (i + 1):n)
         if ok != 0 # ok !== nothing
           #j = ok + i # findfirst gives the index
+          j = ok
           T[i,i] = 0
           T[j,j] = 0
           T[i,j] = 1
@@ -428,7 +433,7 @@ function _gram_schmidt(M::MatElem, a)
           #if ok === nothing
           #  error("Matrix is not of full rank")
           #end
-          j = ok + i # findfirst gives the index
+          j = ok
           T[i, j] = 1 // (2 * F[j, i])
         end
         S = T * S
@@ -951,5 +956,97 @@ function prime_ideals_up_to(O::NfRelOrd, n::Union{Int, fmpz})
     p = next_prime(p)
   end
   return sort!(z, by = a -> absolute_norm(a))
+end
+
+################################################################################
+#
+#  Restriction of scalars
+#
+################################################################################
+
+function restrict_scalars(V::AbsSpace, alpha = one(base_ring(V)))
+  E = base_ring(V)
+  n = rank(V)
+  d = absolute_degree(E)
+  B = absolute_basis(E)
+  v = elem_type(E)[zero(E) for i in 1:n]
+  w = elem_type(E)[zero(E) for i in 1:n]
+  G = zero_matrix(FlintQQ, d * n, d * n)
+  r = 1
+  c = 1
+  indices = Vector{Tuple{Int, Int}}(undef, n * d)
+  for i in 1:n
+    for bi in 1:length(B)
+      v[i] = B[bi]
+      c = 1
+      for j in 1:n
+        for bj in 1:length(B)
+          w[j] = B[bj]
+          G[r, c] = trace(alpha * inner_product(V, v, w), FlintQQ)
+          w[j] = zero(E)
+          c = c + 1
+        end
+      end
+      v[i] = zero(E)
+      indices[r] = (i, bi)
+      r = r + 1
+    end
+  end
+  
+  VabstoV = function(v)
+    @assert length(v) == d * n
+    z = Vector{elem_type(E)}(undef, n)
+    for i in 1:n
+      z[i] = zero(E)
+    end
+    for k in 1:(d * n)
+      (i, j) = indices[k]
+      z[i] = z[i] + v[k] * B[j]
+    end
+    return z
+  end
+
+  VtoVabs = function(w)
+    z = Vector{fmpq}(undef, d * n)
+    k = 1
+    for i in 1:n
+      y = w[i]
+      for j in 1:d
+        z[k] = absolute_coeff(y, j - 1)
+        k = k + 1
+      end
+    end
+    return z
+  end
+
+  return quadratic_space(FlintQQ, G), VabstoV, VtoVabs
+end
+
+# Careful, starts at 0!
+function absolute_coeff(z::nf_elem, i)
+  return coeff(z, i)
+end
+
+function absolute_coeff(z::NumFieldElem, i)
+  d = absolute_degree(base_field(parent(z)))
+  rowindex = fld(i, d)
+  colindex = (i % d)
+  return absolute_coeff(coeff(z, rowindex), colindex)
+end
+
+function absolute_basis(K::NumField)
+  k = base_field(K)
+  kabs = absolute_basis(k)
+  res = elem_type(K)[]
+  for b in basis(K)
+    for bb in kabs
+      push!(res, bb * b)
+    end
+  end
+  return res
+end
+
+function absolute_basis(K::NumField{fmpq})
+  return basis(K)
 end
 
