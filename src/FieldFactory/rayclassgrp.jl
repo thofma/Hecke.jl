@@ -652,7 +652,7 @@ function _maximal_abelian_subfield(A::Hecke.ClassField, mp::Hecke.NfToNfMor, ctx
   for (P, e) in mR1.fact_mod
     p = intersect_prime(mp, P)
     if !haskey(fm0, p)
-      if !iscoprime(minimum(P, copy = false), deg*expo) 
+      if !iscoprime(minimum(P, copy = false), expo) 
         if e > 1
           fm0[p] = e
         end
@@ -737,8 +737,7 @@ function _maximal_abelian_subfield(A::Hecke.ClassField, mp::Hecke.NfToNfMor, ctx
     #@vtime :MaxAbExt 1 
     r, mr = Hecke.ray_class_groupQQ(zk, modulo, rel_plc, ctx.n)
   end
-  @vtime :MaxAbExt 1 lP, gS = Hecke.find_gens(mR, coprime_to = minimum(defining_modulus(mR1)[1]))
-  
+  @vtime :MaxAbExt 1 lP, gS = Hecke.find_gens(mR, coprime_to = minimum(defining_modulus(mR1)[1]))  
   listn = NfOrdIdl[norm(mp, x) for x in lP]
   # Create the map between R and r by taking norms
   preimgs = Vector{GrpAbFinGenElem}(undef, length(listn))
