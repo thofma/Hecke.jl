@@ -147,9 +147,9 @@ function compact_presentation(a::FacElem{nf_elem, AnticNumberField}, nn::Int = 2
                                     factored_norm(ideal(ZK, a*be)) == abs(factored_norm(FacElem(de)))
   @vprint :CompactPresentation 1 "Final eval...\n"
   @vtime :CompactPresentation 1 A = evaluate(FacElem(de), coprime = true)
-  @vtime :CompactPresentation 1 b = evaluate_mod(a*be, A)
+  @vtime :CompactPresentation 1 b_ev = evaluate_mod(a*be, A)
   inv!(be)
-  add_to_key!(be.fac, b, fmpz(1))
+  add_to_key!(be.fac, b_ev, fmpz(1))
   return be
 end
 
@@ -222,6 +222,33 @@ function evaluate_mod(a::FacElem{nf_elem, AnticNumberField}, B::NfOrdFracIdl)
   end
 end
 
+function ispower_new(a::FacElem{nf_elem, AnticNumberField}, n::Int; with_roots_unity = false, decom = false)
+  anew_fac = Dict{nf_elem, fmpz}()
+  rt = Dict{nf_elem, fmpz}()
+  for (k, v) in a
+    q, r = divrem(v, n)
+    if !iszero(q)
+      rt[k] = q
+    end
+    if !iszero(r)
+      anew_fac[k] = r
+    end
+  end
+  anew = FacElem(anew_fac)
+  c = conjugates_arb_log(a, 64)
+  c1 = conjugates_arb_log(anew, 64)
+  b = maximum(fmpz[upper_bound(abs(x), fmpz) for x in c])
+  b1 = maximum(fmpz[upper_bound(abs(x), fmpz) for x in c1])
+  if b <= b1
+    return ispower(a, n, with_roots_unity = with_roots_unity, decom = decom)
+  end
+  fl, res = ispower(anew, n, with_roots_unity = with_roots_unity)
+  if !fl
+    return fl, res
+  end
+  el_rt = FacElem(rt)*res
+  return true, el_rt
+end
 
 function Hecke.ispower(a::FacElem{nf_elem, AnticNumberField}, n::Int; with_roots_unity = false, decom = false)
   if n == 1
