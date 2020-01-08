@@ -370,9 +370,12 @@ function _hensel(f::Generic.Poly{nf_elem},
 
   ##lets start:
   
+  
   f_coeff_ZX = Vector{fmpz_poly}(undef, length(f))
-  for j in 0:degree(f)
-    f_coeff_ZX[j + 1] = ZX(coeff(f, j))
+  if !ispure
+    for j in 0:degree(f)
+      f_coeff_ZX[j + 1] = ZX(coeff(f, j))
+    end
   end
 
   n = degree(K)
@@ -417,7 +420,7 @@ function _hensel(f::Generic.Poly{nf_elem},
     Mi, d = pseudo_inv(M)
 
     if ispure
-      ap = Qt(ZX(-coeff(f, 0)))
+      ap = Qt((-coeff(f, 0)))
       bp = powmod(ap, degree(f)-1, pgg)
       minv = invmod(fmpz(degree(f)), pp)
     end
@@ -570,13 +573,6 @@ end
 
 #identical to hasroot - which one do we want?
 function ispower(a::NfOrdElem, n::Int)
-  Ox, x = PolynomialRing(parent(a), "x", cached=false)
-  f = x^n - a
-  r = _roots_hensel(f, max_roots = 1)
-  
-  if length(r) == 0
-    return false, zero(parent(a))
-  else
-    return true, r[1]
-  end
+  fl, r = ispower(nf(parent(a))(a), n, isintegral = true)
+  return fl, parent(a)(r)
 end

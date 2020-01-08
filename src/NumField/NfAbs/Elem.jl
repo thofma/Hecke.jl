@@ -714,7 +714,7 @@ the root is returned.
 If the field $K$ is known to contain the $n$-th roots of unity,
 one can set `with_roots_unity` to `true`.
 """
-function ispower(a::nf_elem, n::Int; with_roots_unity::Bool = false)
+function ispower(a::nf_elem, n::Int; with_roots_unity::Bool = false, isintegral::Bool = false)
   @assert n > 0
   if n == 1
     return true, a
@@ -723,7 +723,11 @@ function ispower(a::nf_elem, n::Int; with_roots_unity::Bool = false)
     return true, a
   end
 
-  d = denominator(a)
+  if isintegral
+    d = fmpz(1)
+  else
+    d = denominator(a)
+  end
 
   Ky, y = PolynomialRing(parent(a), "y", cached = false)
 
