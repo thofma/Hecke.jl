@@ -222,7 +222,15 @@ function evaluate_mod(a::FacElem{nf_elem, AnticNumberField}, B::NfOrdFracIdl)
   end
 end
 
-function ispower_new(a::FacElem{nf_elem, AnticNumberField}, n::Int; with_roots_unity = false, decom = false)
+function Hecke.ispower(a::FacElem{nf_elem, AnticNumberField}, n::Int; with_roots_unity = false, decom = false)
+  if n == 1
+    return true, a
+  end
+  @assert n > 1
+  if isempty(a.fac)
+    K = base_ring(a)
+    return ispower(one(K), n)
+  end
   anew_fac = Dict{nf_elem, fmpz}()
   rt = Dict{nf_elem, fmpz}()
   for (k, v) in a
@@ -234,29 +242,35 @@ function ispower_new(a::FacElem{nf_elem, AnticNumberField}, n::Int; with_roots_u
       anew_fac[k] = r
     end
   end
+  if isempty(anew_fac)
+    K = base_ring(a)
+    if isempty(rt)
+      rt[one(K)] = 1
+    end
+    return true, FacElem(rt)
+  end
   anew = FacElem(anew_fac)
   c = conjugates_arb_log(a, 64)
   c1 = conjugates_arb_log(anew, 64)
   b = maximum(fmpz[upper_bound(abs(x), fmpz) for x in c])
   b1 = maximum(fmpz[upper_bound(abs(x), fmpz) for x in c1])
   if b <= b1
-    return ispower(a, n, with_roots_unity = with_roots_unity, decom = decom)
+    return _ispower(a, n, with_roots_unity = with_roots_unity, decom = decom)
   end
-  fl, res = ispower(anew, n, with_roots_unity = with_roots_unity)
+  fl, res = _ispower(anew, n, with_roots_unity = with_roots_unity)
   if !fl
     return fl, res
   end
-  el_rt = FacElem(rt)*res
-  return true, el_rt
+  if !isempty(rt)
+    res = FacElem(rt)*res
+  end
+  return true, res
 end
 
-function Hecke.ispower(a::FacElem{nf_elem, AnticNumberField}, n::Int; with_roots_unity = false, decom = false)
-  if n == 1
-    return true, a
-  end
-  @assert n > 1
+function _ispower(a::FacElem{nf_elem, AnticNumberField}, n::Int; with_roots_unity = false, decom = false)
+
   if typeof(decom) == Bool
-    ZK = maximal_order(base_ring(a))
+    ZK = lll(maximal_order(base_ring(a)))
     de::Dict{NfOrdIdl, fmpz} = factor_coprime(a, IdealSet(ZK))
   else
     de = Dict((p, v) for (p, v) = decom)
