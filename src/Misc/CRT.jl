@@ -605,7 +605,7 @@ function modular_proj(a::nf_elem, me::modular_env)
 end
 
 @doc Markdown.doc"""
-  modular_proj(a::FacElem{nf_elem, AnticNumberField}, me::modular_env) -> Array{fq_nmod, 1}
+    modular_proj(a::FacElem{nf_elem, AnticNumberField}, me::modular_env) -> Array{fq_nmod, 1}
 
 Given an algebraic number $a$ in factored form and data \code{me} as computed by
 \code{modular_init}, project $a$ onto the residue class fields.
@@ -624,6 +624,9 @@ function modular_proj(A::FacElem{nf_elem, AnticNumberField}, me::modular_env)
                   (Ref{fq_nmod}, Ref{nmod_poly}, Ref{FqNmodFiniteField}),
                   u, me.rp[i], F)
       eee = mod(v, size(F)-1)
+      if abs(eee-size(F)+1) < div(eee, 2)
+        eee = eee+1-size(F)
+      end
       #@show v, eee, size(F)-1
       u = u^eee          
       me.res[i] *= u
@@ -634,7 +637,7 @@ end
 
 
 @doc Markdown.doc"""
-  modular_lift(a::Array{fq_nmod}, me::modular_env) -> nf_elem
+    modular_lift(a::Array{fq_nmod}, me::modular_env) -> nf_elem
 
 Given an array of elements as computed by \code{modular_proj},
 compute a global pre-image using some efficient CRT.
