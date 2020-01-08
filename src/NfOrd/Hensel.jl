@@ -413,7 +413,7 @@ function _hensel(f::Generic.Poly{nf_elem},
       end
     end
     #this is (or should be) the HNF basis for P^??
-    M = lll(M)
+    @vtime :Saturate 1 M = lll(M)
     Mi, d = pseudo_inv(M)
 
     if ispure

@@ -135,8 +135,9 @@ function enum_ctx_local_bound(a::Rational{T}, b::Rational{T}) where T
   @hassert :LatEnum 1 b >= 0
   d = denominator(b)
   i = isqrt(numerator(b*d*d))
-  L = Base.ceil(a-i//d)
-  U = Base.floor(a+i//d)
+  L = Base.ceil(a-(i+1)//d)
+  U = Base.floor(a+(i+1)//d)
+#  @show L, U, Base.ceil(BigFloat(a) - sqrt(BigFloat(b))), Base.floor(BigFloat(a) + sqrt(BigFloat(b)))
   if (a-L)^2 >b 
     L +=1
   end
@@ -156,6 +157,7 @@ function enum_ctx_local_bound(a::Number, b::Number) where Number
   b >= 0 || return a, a-1
   @hassert :LatEnum b >= 0
   i = sqrt(b)
+  @show i, b
   L = Base.ceil(a-i)
   U = Base.floor(a+i)
 #println("local bound for ", a, " and ", b)
@@ -188,6 +190,7 @@ function enum_ctx_start(E::enum_ctx{A,B,C}, x::fmpz_mat; eps::Float64=1.0) where
     E.tail[i] = sum(E.C[i, j]*C(E.x[1,j]) for j=i+1:E.limit)
   end    
   b = sum(E.C[i,i]*(C(E.x[1,i]) + E.tail[i])^2 for i=1:E.limit) #curr. length
+  @assert b == C((x*E.G*x')[1,1])
   E.c = ceil(fmpz, b*C(E.d)*eps)
   E.l[E.limit] = C(E.c//E.d)
   for i=E.limit-1:-1:1

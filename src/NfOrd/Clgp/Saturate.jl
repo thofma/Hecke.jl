@@ -241,7 +241,7 @@ function saturate!(d::Hecke.ClassGrpCtx, U::Hecke.UnitGrpCtx, n::Int, stable = 3
       #    delete!(a.fac, k)
       #  end
       #end
-
+      @vprint :Saturate 1 "Testing if element is an n-th power\n"
       @vtime :Saturate 1 fl, x = ispower(a, n, decom = decom)
 
       if fl

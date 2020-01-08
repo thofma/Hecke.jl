@@ -1286,8 +1286,8 @@ function _sunit_group_fac_elem_quo_via_brauer(N::NormRelation, S, n::Int, invari
 
     exp = function(a::GrpAbFinGenElem)
       @assert parent(a) == res_group
-      zz = FacElem(convert(Vector{Hecke.nf_elem_or_fac_elem}, unitsmodtorsion), fmpz[1 + a[i] for i in 1:length(unitsmodtorsion)])
-      z = mul!(zz, zz, tomodn)
+      zz = FacElem(convert(Vector{Hecke.nf_elem_or_fac_elem}, unitsmodtorsion), fmpz[a[1 + i] for i in 1:length(unitsmodtorsion)])
+      z = mul!(zz, zz, tomodn^a[1])
       zzz = FacElem(convert(Vector{Hecke.nf_elem_or_fac_elem}, sunitsmodunits), fmpz[a[1 + length(unitsmodtorsion) + i] for i in 1:length(sunitsmodunits)])
       mul!(z, z, zzz)
       

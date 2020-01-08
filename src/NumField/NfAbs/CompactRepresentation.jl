@@ -275,7 +275,7 @@ function _ispower(a::FacElem{nf_elem, AnticNumberField}, n::Int; with_roots_unit
   else
     de = Dict((p, v) for (p, v) = decom)
   end
-  c = Hecke.compact_presentation(a, n, decom = de)
+  @vtime :Saturate 1 c = Hecke.compact_presentation(a, n, decom = de)
   K = base_ring(c)
   b = one(K)
   d = Dict{nf_elem, fmpz}()
