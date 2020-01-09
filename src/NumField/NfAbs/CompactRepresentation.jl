@@ -11,13 +11,14 @@ function compact_presentation(a::FacElem{nf_elem, AnticNumberField}, nn::Int = 2
   n = fmpz(nn)
 
   K = base_ring(a)
-  ZK = maximal_order(K)
+ 
   if typeof(decom) == Bool
+    ZK = lll(maximal_order(K))
     de::Dict{NfOrdIdl, fmpz} = factor_coprime(a, IdealSet(ZK))
   else
     de = Dict((p, v) for (p, v) = decom)
     if length(decom) == 0
-      ZK = maximal_order(K)
+      ZK = lll(maximal_order(K))
     else
       ZK = order(first(keys(decom)))
     end
@@ -41,7 +42,7 @@ function compact_presentation(a::FacElem{nf_elem, AnticNumberField}, nn::Int = 2
     B = Dict((p, Int(div(v, n^_k) % nn)) for (p, v) = de)
     add_to_key!(B, A, n)
     A, alpha = reduce_ideal2(FacElem(B))
-    mul!(be, be, alpha^(-n^_k))
+    mul!(be, be, alpha^(-(n^_k)))
     #be *= alpha^(-(n^_k))
     v -= Ref(n^_k) .* conjugates_arb_log_normalise(alpha, arb_prec)
   end
@@ -273,7 +274,13 @@ function _ispower(a::FacElem{nf_elem, AnticNumberField}, n::Int; with_roots_unit
     ZK = lll(maximal_order(base_ring(a)))
     de::Dict{NfOrdIdl, fmpz} = factor_coprime(a, IdealSet(ZK))
   else
-    de = Dict((p, v) for (p, v) = decom)
+    if !isempty(decom)
+      ZK = order(first(keys(decom)))
+      de = Dict((p, v) for (p, v) = decom)
+    else
+      ZK = lll(maximal_order(base_ring(a)))
+      de = Dict{NfOrdIdl, fmpz}()
+    end
   end
   @vtime :Saturate 1 c = Hecke.compact_presentation(a, n, decom = de)
   K = base_ring(c)
@@ -290,14 +297,21 @@ function _ispower(a::FacElem{nf_elem, AnticNumberField}, n::Int; with_roots_unit
     d[k] = q
     mul!(b, b, k^r)
   end
+  
   if isempty(d)
     d[one(K)] = fmpz(1)
   end
   df = FacElem(d) 
   @hassert :CompactPresentation 2 evaluate(df^n*b *inv(a))== 1
-  fl, x = ispower(b, n, with_roots_unity = with_roots_unity)
+  den = denominator(b, ZK)
+  fl, den1 = ispower(den, n)
   if fl
-    @hassert :CompactPresentation 2 x^n == b
+    den = den1
+  end
+  fl, x = ispower((den^n)*b, n, with_roots_unity = with_roots_unity, isintegral = true)
+  if fl
+    @hassert :CompactPresentation 2 x^n == b*(den^n)
+    add_to_key!(df.fac, K(den), -1)
     return fl, df*x
   else
     return fl, df
