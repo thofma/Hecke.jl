@@ -214,6 +214,9 @@ function __init__()
   global _get_nf_signature = t[1]
   global _set_nf_signature = t[2]
 
+  t = Hecke.create_accessors(AnticNumberField, Any, get_handle())
+  global _get_nf_prime_data_lifting = t[1]
+  global _set_nf_prime_data_lifting = t[2]
 
   global R = _RealRing()
 
@@ -365,6 +368,17 @@ function _signature(K::AnticNumberField)
   sig = signature(defining_polynomial(K))
   _set_nf_signature(K, sig)
   return sig::Tuple{Int, Int}
+end
+
+function _get_prime_data_lifting(K::AnticNumberField)
+  try
+    c = _get_nf_prime_data_lifting(K)
+    return c
+  catch
+    c = Dict()
+    _set_nf_prime_data_lifting(K, c)
+    return c
+  end
 end
 
 ################################################################################
