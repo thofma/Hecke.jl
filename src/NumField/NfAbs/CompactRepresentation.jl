@@ -16,6 +16,7 @@ function compact_presentation(a::FacElem{nf_elem, AnticNumberField}, nn::Int = 2
     ZK = lll(maximal_order(K))
     de::Dict{NfOrdIdl, fmpz} = factor_coprime(a, IdealSet(ZK))
   else
+    #de = Dict{NfOrdIdl, fmpz}((p, v) for (p, v) = decom)
     de = Dict((p, v) for (p, v) = decom)
     if length(decom) == 0
       ZK = lll(maximal_order(K))
@@ -23,7 +24,7 @@ function compact_presentation(a::FacElem{nf_elem, AnticNumberField}, nn::Int = 2
       ZK = order(first(keys(decom)))
     end
   end
-  de_inv =Dict{NfOrdIdl, NfOrdFracIdl}()
+  de_inv = Dict{NfOrdIdl, NfOrdFracIdl}()
 
   be = FacElem(K(1))
 
@@ -33,7 +34,11 @@ function compact_presentation(a::FacElem{nf_elem, AnticNumberField}, nn::Int = 2
   end
 
   v = conjugates_arb_log_normalise(a, arb_prec)
-  _v = maximum(abs, values(de))+1
+  if length(de) == 0
+    _v = FlintZZ(1)
+  else
+    _v = maximum(abs, values(de))+1
+  end
 
   #Step 1: reduce the ideal in a p-power way...
 
