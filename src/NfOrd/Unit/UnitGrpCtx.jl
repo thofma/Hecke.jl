@@ -303,6 +303,10 @@ function _add_unit(u::UnitGrpCtx, x::FacElem{nf_elem, AnticNumberField})
   if isindep
     push!(u.units, x)
     return true
+  else
+    if u.full_rank
+      _add_dependent_unit(u, x)
+    end
   end
   return false
 end
