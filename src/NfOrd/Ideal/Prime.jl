@@ -387,6 +387,9 @@ function prime_dec_gen(O, p, degree_limit = degree(O), lower_limit = 0)
 end
 
 function _fac_and_lift(f::fmpz_poly, p, degree_limit, lower_limit)
+  if p > 2 && isone(degree_limit)
+    return _fac_and_lift_deg1(f, p)
+  end
   Zx = parent(f)
   Zmodpx, x = PolynomialRing(GF(p, cached = false), "y", cached = false)
   fmodp = Zmodpx(f)
@@ -402,6 +405,37 @@ function _fac_and_lift(f::fmpz_poly, p, degree_limit, lower_limit)
   end
   return lifted_fac
 end
+
+function _fac_and_lift_deg1(f::fmpz_poly, p)
+  lifted_fac = Vector{Tuple{fmpz_poly, Int}}()
+  Zx = parent(f)
+  Zmodpx, x = PolynomialRing(GF(p, cached = false), "y", cached = false)
+  fmodp = Zmodpx(f)
+  fsq = factor_squarefree(fmodp)
+  pw = powmod(x, div(p-1, 2), fmodp)
+  for (g, v) in fsq
+    gcd1 = gcd(g, pw-1)
+    gcd2 = gcd(g, pw+1)
+    divisible_by_x = iszero(coeff(g, 0))
+    if divisible_by_x
+      push!(lifted_fac, (gen(Zx), v))
+    end
+    if !isone(gcd1)
+      fac1 = factor_equal_deg(gcd1, 1)
+      for k in fac1
+        push!(lifted_fac, (lift(Zx, k), v))
+      end
+    end
+    if !isone(gcd2)
+      fac2 = factor_equal_deg(gcd2, 1)
+      for k in fac2
+        push!(lifted_fac, (lift(Zx, k), v))
+      end
+    end
+  end
+  return lifted_fac
+end
+
 
 function prime_dec_nonindex(O::NfOrd, p::Union{Integer, fmpz}, degree_limit::Int = 0, lower_limit::Int = 0)
 
@@ -767,7 +801,6 @@ function coprime_base(A::Array{NfOrdIdl, 1})
         found = false
         for i = 1:length(A)
           if divisible(minimum(A[i], copy = false), p) && valuation(A[i], P) > 0
-          #if divides(A[i], P)
             found = true
             break
           end

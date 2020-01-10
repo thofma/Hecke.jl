@@ -805,6 +805,9 @@ end
 # for fun: ispower(a::nf_elem)
 #
 
+
+
+
 function factor(f::PolyElem, R::Field)
   Rt = PolynomialRing(R, "t", cached = false)[1]
   f1 = change_base_ring(f, R, Rt)
@@ -1063,6 +1066,25 @@ function squarefree_factorization(f::PolyElem)
     ei = eii
   end
   return Fac(parent(f)(c), res)
+end
+
+
+function factor_equal_deg(x::gfp_poly, d::Int)
+  if degree(x) == d
+    return gfp_poly[x]
+  end
+  fac = Nemo.gfp_poly_factor(x.mod_n)
+  ccall((:nmod_poly_factor_equal_deg, :libflint), UInt,
+          (Ref{Nemo.gfp_poly_factor}, Ref{gfp_poly}, Int),
+          fac, x, d)
+  res = Vector{gfp_poly}(undef, fac.num)
+  for i in 1:fac.num
+    f = parent(x)()
+    ccall((:nmod_poly_factor_get_nmod_poly, :libflint), Nothing,
+            (Ref{gfp_poly}, Ref{Nemo.gfp_poly_factor}, Int), f, fac, i-1)
+    res[i] = f
+  end
+  return res
 end
 
 ################################################################################

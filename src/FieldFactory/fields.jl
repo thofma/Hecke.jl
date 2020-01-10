@@ -10,7 +10,7 @@ mutable struct FieldsTower
   generators_of_automorphisms::Vector{NfToNfMor}
   subfields::Vector{NfToNfMor}
   ramified_primes::Vector{fmpz}
-  
+  isabelian::Bool
   #Solvable embedding problems for the extension
   #They are here to improve the conductor computation
   has_info::Bool
@@ -24,6 +24,7 @@ mutable struct FieldsTower
     z.generators_of_automorphisms = auts
     z.subfields = subfields
     z.has_info = false
+    z.isabelian = false
     return z
   end
 
@@ -39,6 +40,7 @@ include("./merge.jl")
 include("./abelian_layer.jl")
 include("./read_write.jl")
 include("./conductors.jl")
+include("./new_brauer.jl")
 
 Generic.degree(F::FieldsTower) = degree(F.field)
 Hecke.maximal_order(F::FieldsTower) = maximal_order(F.field)
@@ -465,7 +467,7 @@ function field_extensions(x::FieldsTower, bound::fmpz, IsoE1::Main.ForeignGAP.MP
     return Vector{FieldsTower}()
   end
   list = from_class_fields_to_fields(list_cfields, x.generators_of_automorphisms, grp_to_be_checked, IsoG)
-  @vprint :Fields 1 "\e[1FComputing maximal orders"
+  @vprint :Fields 1 "\e[1F$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())Computing maximal orders"
   @vprint :FieldsNonFancy 1 "Computing maximal orders\n"
   final_list = Vector{FieldsTower}(undef, length(list))
   for j = 1:length(list)

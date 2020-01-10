@@ -172,9 +172,7 @@ function conjugates_arb(x::FacElem{nf_elem, AnticNumberField}, abs_tol::Int)
         res[j] = res[j] * z[j]^e
       end
     end
-    i = i + 1
   end
-
   return res
 end
 
