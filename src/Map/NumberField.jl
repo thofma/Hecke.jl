@@ -424,6 +424,24 @@ end
 Given a number field $K$, this function returns a group $G$ and a map from $G$ to the automorphisms of $K$.
 """  
 function automorphism_group(K::AnticNumberField)
+  if Nemo.iscyclo_type(K)
+    return _automorphism_group_cyclo(K)
+  else
+    return _automorphism_group_generic(K)
+  end
+end
+
+function _automorphism_group_cyclo(K)
+  f = get_special(K, :cyclo)
+  a = gen(K)
+  A, mA = unit_group(ResidueRing(FlintZZ, f))
+  G, AtoG, GtoA = generic_group(collect(A), +)
+  aut = NfToNfMor[ hom(K, K, a^lift(mA(GtoA[g]))) for g in G]
+  _set_automorphisms_nf(K, aut)
+  return G, GrpGenToNfMorSet(G, K)
+end
+
+function _automorphism_group_generic(K)
   aut = automorphisms(K)
   n = degree(K)
   #First, find a good prime
