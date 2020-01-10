@@ -124,7 +124,7 @@ function saturate_exp(c::Hecke.ClassGrpCtx, p::Int, stable = 1.5)
 
   S = Hecke.PrimesSet(Hecke.p_start, -1, Int(p), 1)
   for q in S
-    @vprint :Saturate 1 "Finding primes for saturation: $i/$(stable*ncols(A))\n"
+    @vprint :Saturate 3 "Finding primes for saturation: $i/$(stable*ncols(A))\n"
     if isdefining_polynomial_nice(K) && isindex_divisor(ZK, q)
       continue
     end
@@ -140,7 +140,7 @@ function saturate_exp(c::Hecke.ClassGrpCtx, p::Int, stable = 1.5)
     end
     for Q in lq
       try
-        @vtime :Saturate 1 z = mod_p(R, Q[1], Int(p), T)
+        @vtime :Saturate 3 z = mod_p(R, Q[1], Int(p), T)
         z = z*A
         rrz, z = nullspace(z)
         if iszero(rrz)
