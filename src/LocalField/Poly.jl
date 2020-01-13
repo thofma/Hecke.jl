@@ -574,12 +574,12 @@ mutable struct HenselCtxdr{S}
       f2 = lfp[i+1]
       g, a, b = gcdx(f1, f2)
       @assert isone(g)
-      push!(la, map_coeff(x -> setprecision(lift(x, Q), 1), a, parent = Qx))
-      push!(la, map_coeff(x -> setprecision(lift(x, Q), 1), b, parent = Qx))
+      push!(la, map_coeffs(x -> setprecision(lift(x, Q), 1), a, parent = Qx))
+      push!(la, map_coeffs(x -> setprecision(lift(x, Q), 1), b, parent = Qx))
       push!(lfp, f1*f2)
       i += 2
     end
-    return new(f, map(x -> map_coeff(y -> setprecision(lift(y, Q), 1), x, parent = Qx), lfp), la, uniformizer(Q), n)
+    return new(f, map(x -> map_coeffs(y -> setprecision(lift(y, Q), 1), x, parent = Qx), lfp), la, uniformizer(Q), n)
   end
 
   function HenselCtxdr{S}(f::PolyElem{S}) where S

@@ -75,6 +75,7 @@ function abelian_extensionsQQ(gtype::Array{Int, 1}, bound::fmpz, only_real::Bool
       auts[2] = x[2][1]
       Hecke._set_automorphisms_nf(x[1], auts)
       res[i] = FieldsTower(x[1], x[2], x[3])
+      res[i].isabelian = true
     end
     return res
   end
@@ -86,6 +87,7 @@ function abelian_extensionsQQ(gtype::Array{Int, 1}, bound::fmpz, only_real::Bool
     res1 = Vector{FieldsTower}(undef, length(lf))
     for i = 1:length(lf)
       res1[i] = FieldsTower(lf[i][1], lf[i][2], lf[i][3])
+      res1[i].isabelian = true
     end
     return res1
   end
@@ -108,6 +110,7 @@ function abelian_extensionsQQ(gtype::Array{Int, 1}, bound::fmpz, only_real::Bool
     else
       list1[i] = FieldsTower(K, auts, [Hecke.NfToNfMor(base_field(x[1]), K, K(1))])
     end
+    list1[i].isabelian = true
   end
   @vprint :Fields 1 "\e[1F$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())"
   return list1
@@ -281,7 +284,7 @@ function _abelian_normal_extensions(F::FieldsTower, gtype::Array{Int, 1}, absbou
   if isempty(class_fields_with_act)
     return Vector{Hecke.ClassField{Hecke.MapRayClassGrp, GrpAbFinGenMap}}[]
   end
-  @vprint :Fields 1 "\e[1F$(Hecke.clear_to_eol())Sieving $(length(class_fields_with_act)) abelian extensions\n"
+  @vprint :Fields 1 "\e[1F$(Hecke.clear_to_eol())Sieving $(length(class_fields_with_act)) abelian extensions"
   candidates = trues(length(class_fields_with_act))
   for i = 1:length(F.subfields)
     if codomain(F.subfields[i]) != K
@@ -295,15 +298,15 @@ function _abelian_normal_extensions(F::FieldsTower, gtype::Array{Int, 1}, absbou
     ind = 0
     for j = 1:length(candidates)
       if !candidates[j] 
-	ind += 1
-	continue
+	      ind += 1
+	      continue
       end
       if !admissibles[j-ind]
-	candidates[j] = false
+	      candidates[j] = false
       end
     end
   end
-  @vprint :Fields 1 "$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())"
+  @vprint :Fields 1 "$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())\n"
   return ClassField{Hecke.MapRayClassGrp, GrpAbFinGenMap}[class_fields_with_act[i][1] for i = 1:length(class_fields_with_act) if candidates[i]]
 end
 

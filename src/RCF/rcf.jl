@@ -1221,7 +1221,8 @@ basis from the principal ideals in the factorisation of $a$.
 function factor_coprime(a::FacElem{nf_elem, AnticNumberField}, I::NfOrdIdlSet)
   Zk = order(I)
   A = Dict{NfOrdIdl, fmpz}()
-  for (e,v) = a.fac
+  sizehint!(A, length(a.fac))
+  for (e, v) = a.fac
     N, D = integral_split(ideal(Zk, e))
     if !isone(N)
       add_to_key!(A, N, v)

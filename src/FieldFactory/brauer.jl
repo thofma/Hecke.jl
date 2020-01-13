@@ -8,6 +8,7 @@ add_verbose_scope(:BrauerObst)
 ###############################################################################
 
 function check_Brauer_obstruction(list::Vector{FieldsTower}, L::Main.ForeignGAP.MPtr, i::Int, invariants::Vector{Int})
+  #return check_obstruction(list, L, i, invariants)
   d = degree(list[1])
   common_degree = ppio(invariants[end], d)[1]
   if isone(common_degree)
@@ -189,6 +190,9 @@ end
 ###############################################################################
 
 function _find_exp(x::Main.ForeignGAP.MPtr, y::Main.ForeignGAP.MPtr)
+  if GAP.Globals.One(x) == y
+    return 0
+  end
   # I want to find i such that x^i = y
   i = 1
   z = GAP.Globals.ShallowCopy(x)
@@ -1086,7 +1090,10 @@ function is_split_at_p(O::NfOrd, GC::Array{NfToNfMor, 1}, Coc::Function, p::Int,
   if f == 1
     return true
   end
-  frob = Rx(_find_frob(Gp, F, mF, e, f, q, theta1).prim_img)
+  frob1 = _find_frob(Gp, F, mF, e, f, q, theta1)
+  frob = Rx(frob1.prim_img)
+
+  
   if iszero(mod(q-1, e*n))
     lambda = mod(Coc(frob, theta)- Coc(theta, frob), n)::Int
     return iszero(lambda)
@@ -1264,7 +1271,6 @@ function is_split_at_p(O::NfOrd, GC::Vector{NfToNfMor}, Stab::Vector{NfToNfMor},
   else
     powtheta = _pow_as_comp(theta, t+1, fmod)
   end
-  lambda -= Coc(powtheta, frob)
   if !iszero(mod(s, n))
     for k = t+1:(e-1)
       lambda -= s * Coc(powtheta, theta)
@@ -1274,72 +1280,6 @@ function is_split_at_p(O::NfOrd, GC::Vector{NfToNfMor}, Stab::Vector{NfToNfMor},
   powtheta = _pow_as_comp(theta, mod(q, e), fmod)
   lambda = mod(lambda - Coc(powtheta, frob), n)
   return iszero(lambda)
-
-end
-
-################################################################################
-#
-#  Enumerate embedding problems
-#
-################################################################################
-
-mutable struct cocycle_ctx
-  projection::Main.ForeignGAP.MPtr
-  inclusion::Main.ForeignGAP.MPtr
-  cocycle::Array{Main.ForeignGAP.MPtr, 2}
-end
-
-function cocycles_computation(L::Main.ForeignGAP.MPtr, i::Int)
-
-  proj = GAP.Globals.NaturalHomomorphismByNormalSubgroup(L[1], L[i+1])
-  target_grp = GAP.Globals.ImagesSource(proj)
-  mH1 = GAP.Globals.NaturalHomomorphismByNormalSubgroup(target_grp, GAP.Globals.Image(proj, L[i]))
-  H1 = GAP.Globals.ImagesSource(mH1)
-  K = GAP.Globals.Kernel(mH1)
-    
-  Elems = GAP.Globals.Elements(H1)
-  MatCoc = Array{Main.ForeignGAP.MPtr, 2}(undef, length(Elems), length(Elems))
-  Preimags = Vector{Main.ForeignGAP.MPtr}(undef, length(Elems))
-  for i = 1:length(Elems)
-    Preimags[i] = GAP.Globals.PreImagesRepresentative(mH1, Elems[i])
-  end
-  for i = 1:length(Elems)
-    x1 = Preimags[i]
-    for j = 1:length(Elems)
-      y1 = Preimags[j]
-      xy = Elems[i] * Elems[j]
-      k = 1
-      while Elems[k] != xy
-        k += 1
-      end
-      xy1 = Preimags[k]
-      MatCoc[i, j] = x1*y1*GAP.Globals.Inverse(xy1)
-    end
-  end
-  autos = _autos_to_check(H1, K, target_grp, mH1)
-  
-  cocycles = Vector{cocycle_ctx}(undef, length(autos))
-  for i = 1:length(autos)
-    aut1, aut2 = autos[i]
-    local cocycle
-    let Elems = Elems, MatCoc = MatCoc, aut1, aut2
-      function cocycle(x::Main.ForeignGAP.MPtr, y::Main.ForeignGAP.MPtr)  
-        new_x = GAP.Globals.PreImagesRepresentative(aut2, x)
-        new_y = GAP.Globals.PreImagesRepresentative(aut2, y)
-        i = 1
-        while Elems[i] != new_x
-          i += 1
-        end
-        j = 1
-        while Elems[j] != new_y
-          j += 1
-        end
-        return GAP.Globals.PreImagesrepresentative(aut1, MatCoc[i, j])
-      end
-    end
-    cocycles[i] = cocycle_ctx(aut2*mH1, aut1, cocycle)
-  end
-  return cocycles
 
 end
 
