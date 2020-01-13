@@ -199,7 +199,7 @@ function saturate!(d::Hecke.ClassGrpCtx, U::Hecke.UnitGrpCtx, n::Int, stable = 3
     @vprint :Saturate 1 "Computing candidates for the saturation ...\n"
     @vtime :Saturate 1 e = saturate_exp(c, n, stable)
     if nrows(e) == 0
-      @vprint :Saturate 1  "sat yielded nothing new at ", stable, success, "\n"
+      @vprint :Saturate 1  "sat yielded nothing new at $stable, $success, \n"
       return success
     end
     se = sparse_matrix(e)'
