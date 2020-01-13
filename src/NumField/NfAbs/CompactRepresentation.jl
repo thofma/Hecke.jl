@@ -59,7 +59,11 @@ function compact_presentation(a::FacElem{nf_elem, AnticNumberField}, nn::Int = 2
 
   r1, r2 = signature(K)
  
-  m = maximum(abs, values(de))
+  if length(de) == 0
+    m = FlintZZ(1)
+  else
+    m = maximum(abs, values(de))
+  end
   m = max(m, 1)
   mm = abs_upper_bound(log(1+maximum(abs, v))//log(n), fmpz)
   k = max(ceil(Int, log(m)/log(n)), Int(mm))
