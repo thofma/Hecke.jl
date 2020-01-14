@@ -1463,6 +1463,33 @@ end
 
 ################################################################################
 #
+#  Intersection
+#
+################################################################################
+
+@doc Markdown.doc"""
+    intersect(mG::GrpAbFinGenMap, mH::GrpAbFinGenMap) -> GrpAbFinGen, Map
+
+Given two injective maps of abelian groups witht the same codomain $G$,
+return the intersection of the images as a subgroup of $G$.
+"""
+function Base.intersect(mG::GrpAbFinGenMap, mH::GrpAbFinGenMap)
+  G = domain(mG)
+  GH = codomain(mG)
+  @assert GH == codomain(mH)
+  M1 = hcat(mG.map, identity_matrix(FlintZZ, nrows(mG.map)))
+  M = vcat(vcat(M1, hcat(mH.map, zero_matrix(FlintZZ, nrows(mH.map), nrows(mG.map)))), hcat(rels(GH), zero_matrix(FlintZZ, nrels(GH), nrows(mG.map))))
+  h = hnf(M)
+  i = nrows(h)
+  while i > 0 && iszero(sub(h, i:i, 1:ngens(GH)))
+    i -= 1
+  end
+  return sub(GH, [mG(G(sub(h, j:j, ngens(GH)+1:ncols(h)))) for j=i+1:nrows(h)])
+end
+
+
+################################################################################
+#
 #  use lattice...
 #
 ################################################################################
@@ -1498,7 +1525,6 @@ function Base.intersect(A::Array{GrpAbFinGen, 1})
   end
   return a
 end
-
 
 function Base.issubset(G::GrpAbFinGen, H::GrpAbFinGen, L::GrpAbLattice = GroupLattice)
   fl, GH, mG, mH = can_map_into_overstructure(L, G, H)
