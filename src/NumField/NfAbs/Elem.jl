@@ -744,6 +744,26 @@ function ispower(a::nf_elem, n::Int; with_roots_unity::Bool = false, isintegral:
   end
 end
 
+function ispower_trager(a::nf_elem, n::Int)
+  # This is done using Trager factorization, but we can do some short cuts
+  # The norm will be the minpoly_a(x^n), which will always be squarefree.
+  K = parent(a)
+  f = minpoly(a)
+  Qx = parent(f)
+  x = gen(Qx)
+  N = compose(f, x^n)
+  fac = factor(N)
+  Kt, t = PolynomialRing(K, "a", cached = false)
+  for (p, _) in fac
+    if degree(p) == degree(f)
+      t = gcd(change_ring(p, Kt), t^n - a)
+      @assert degree(t) == 1
+      return true, -divexact(coeff(t, 0), coeff(t, 1))
+    end
+  end
+  return false, a
+end
+
 @doc Markdown.doc"""
     issquare(a::nf_elem) -> Bool, nf_elem
 Tests if $a$ is a square and return the root if possible.
