@@ -714,13 +714,17 @@ the root is returned.
 If the field $K$ is known to contain the $n$-th roots of unity,
 one can set `with_roots_unity` to `true`.
 """
-function ispower(a::nf_elem, n::Int; with_roots_unity::Bool = false, isintegral::Bool = false)
+function ispower(a::nf_elem, n::Int; with_roots_unity::Bool = false, isintegral::Bool = false, trager = false)
   @assert n > 0
   if n == 1
     return true, a
   end
   if iszero(a)
     return true, a
+  end
+
+  if trager
+    return ispower_trager(a, n)
   end
 
   if isintegral
