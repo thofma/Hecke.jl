@@ -59,7 +59,11 @@ function compact_presentation(a::FacElem{nf_elem, AnticNumberField}, nn::Int = 2
 
   r1, r2 = signature(K)
  
-  m = maximum(abs, values(de))
+  if length(de) == 0
+    m = FlintZZ(1)
+  else
+    m = maximum(abs, values(de))
+  end
   m = max(m, 1)
   mm = abs_upper_bound(log(1+maximum(abs, v))//log(n), fmpz)
   k = max(ceil(Int, log(m)/log(n)), Int(mm))
@@ -228,14 +232,14 @@ function evaluate_mod(a::FacElem{nf_elem, AnticNumberField}, B::NfOrdFracIdl)
   end
 end
 
-function Hecke.ispower(a::FacElem{nf_elem, AnticNumberField}, n::Int; with_roots_unity = false, decom = false)
+function Hecke.ispower(a::FacElem{nf_elem, AnticNumberField}, n::Int; with_roots_unity = false, decom = false, trager = false)
   if n == 1
     return true, a
   end
   @assert n > 1
   if isempty(a.fac)
     K = base_ring(a)
-    return ispower(one(K), n)
+    return true, FacElem(one(K))
   end
   anew_fac = Dict{nf_elem, fmpz}()
   rt = Dict{nf_elem, fmpz}()
@@ -261,9 +265,9 @@ function Hecke.ispower(a::FacElem{nf_elem, AnticNumberField}, n::Int; with_roots
   b = maximum(fmpz[upper_bound(abs(x), fmpz) for x in c])
   b1 = maximum(fmpz[upper_bound(abs(x), fmpz) for x in c1])
   if b <= b1
-    return _ispower(a, n, with_roots_unity = with_roots_unity, decom = decom)
+    return _ispower(a, n, with_roots_unity = with_roots_unity, decom = decom, trager = trager)
   end
-  fl, res = _ispower(anew, n, with_roots_unity = with_roots_unity)
+  fl, res = _ispower(anew, n, with_roots_unity = with_roots_unity, trager = trager)
   if !fl
     return fl, res
   end
@@ -273,7 +277,7 @@ function Hecke.ispower(a::FacElem{nf_elem, AnticNumberField}, n::Int; with_roots
   return true, res
 end
 
-function _ispower(a::FacElem{nf_elem, AnticNumberField}, n::Int; with_roots_unity = false, decom = false)
+function _ispower(a::FacElem{nf_elem, AnticNumberField}, n::Int; with_roots_unity = false, decom = false, trager = false)
 
   if typeof(decom) == Bool
     ZK = lll(maximal_order(base_ring(a)))
@@ -313,7 +317,7 @@ function _ispower(a::FacElem{nf_elem, AnticNumberField}, n::Int; with_roots_unit
   if fl
     den = den1
   end
-  fl, x = ispower((den^n)*b, n, with_roots_unity = with_roots_unity, isintegral = true)
+  fl, x = ispower((den^n)*b, n, with_roots_unity = with_roots_unity, isintegral = true, trager = trager)
   if fl
     @hassert :CompactPresentation 2 x^n == b*(den^n)
     add_to_key!(df.fac, K(den), -1)

@@ -356,18 +356,23 @@ end
 function norm(f::PolyElem{nf_elem})
   Kx = parent(f)
   K = base_ring(f)
-  if degree(f) > 10 # TODO: find a good cross-over
+  f, i = deflate(f)
+  if degree(f) == 1 && ismonic(f)
+    N = charpoly(-constant_coefficient(f))
+  elseif degree(f) > 10 # TODO: find a good cross-over, 
+                         # do this using CRT modular?
     P = polynomial_to_power_sums(f, degree(f)*degree(K))
     PQ = fmpq[tr(x) for x in P]
-    return power_sums_to_polynomial(PQ)
+    N = power_sums_to_polynomial(PQ)
+  else
+    Qx = PolynomialRing(FlintQQ, "x", cached = false)[1]
+    Qxy = PolynomialRing(Qx, "y", cached = false)[1]
+
+    T = change_ring(K.pol, Qxy)
+    h = nf_poly_to_xy(f, Qxy, Qx)
+    N = resultant(T, h)
   end
-
-  Qx = PolynomialRing(FlintQQ, "x", cached = false)[1]
-  Qxy = PolynomialRing(Qx, "y", cached = false)[1]
-
-  T = change_ring(K.pol, Qxy)
-  h = nf_poly_to_xy(f, Qxy, Qx)
-  return resultant(T, h)
+  return inflate(N, i)
 end
 
 ################################################################################
@@ -714,13 +719,17 @@ the root is returned.
 If the field $K$ is known to contain the $n$-th roots of unity,
 one can set `with_roots_unity` to `true`.
 """
-function ispower(a::nf_elem, n::Int; with_roots_unity::Bool = false, isintegral::Bool = false)
+function ispower(a::nf_elem, n::Int; with_roots_unity::Bool = false, isintegral::Bool = false, trager = false)
   @assert n > 0
   if n == 1
     return true, a
   end
   if iszero(a)
     return true, a
+  end
+
+  if trager
+    return ispower_trager(a, n)
   end
 
   if isintegral
@@ -742,6 +751,49 @@ function ispower(a::nf_elem, n::Int; with_roots_unity::Bool = false, isintegral:
   else
     return false, zero(a)
   end
+end
+
+function ispower_trager(a::nf_elem, n::Int)
+  # This is done using Trager factorization, but we can do some short cuts
+  # The norm will be the minpoly_a(x^n), which will always be squarefree.
+  K = parent(a)
+  f = minpoly(a)
+  b = K(1)
+  c = a*b^n
+  if degree(f) < degree(K)
+    i = 0
+    while true
+      b = (gen(K)+i)
+      c = a*b^n
+      f = minpoly(c)
+      if degree(f) == degree(K)
+        break
+      end
+      i += 1
+    end
+  end
+  Qx = parent(f)
+  x = gen(Qx)
+  N = inflate(f, n)
+  fac = factor(N)
+  Kt, t = PolynomialRing(K, "a", cached = false)
+  for (p, _) in fac
+    if degree(p) == degree(f)
+      t = gcd(change_ring(p, Kt), t^n - c)
+      @assert degree(t) == 1
+      return true, -divexact(coeff(t, 0), coeff(t, 1))//b
+    end
+  end
+
+  return false, a
+end
+
+function _height(a::nf_elem)
+  h = fmpz(1)
+  for i in 1:degree(parent(a))
+    h = max(h, height(coeff(a, i - 1)))
+  end
+  return h
 end
 
 @doc Markdown.doc"""

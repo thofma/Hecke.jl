@@ -77,6 +77,9 @@ function coerces the element into $\mathcal O$. It will be checked that $a$
 is contained in $\mathcal O$ if and only if `check` is `true`.
 """
 (O::NfAbsOrd{S, T})(a::T, check::Bool = true) where {S, T} = begin
+  if nf(O) !== parent(a)
+    throw(error("Underlying number fields not equal"))
+  end
   if check
     (x, y) = _check_elem_in_order(a,O)
     !x && error("Number field element not in the order")

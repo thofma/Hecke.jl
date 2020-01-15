@@ -436,7 +436,7 @@ function _automorphism_group_cyclo(K)
   a = gen(K)
   A, mA = unit_group(ResidueRing(FlintZZ, f))
   G, AtoG, GtoA = generic_group(collect(A), +)
-  aut = NfToNfMor[ hom(K, K, a^lift(mA(GtoA[g]))) for g in G]
+  aut = NfToNfMor[ hom(K, K, a^lift(mA(GtoA[g])), check = false) for g in G]
   _set_automorphisms_nf(K, aut)
   return G, GrpGenToNfMorSet(G, K)
 end
@@ -490,7 +490,7 @@ function closure(S::Vector{NfToNfMor}, final_order::Int = -1)
 
   t = length(S)
   order = 1
-  elements = [id_hom(K)]
+  elements = NfToNfMor[id_hom(K)]
   pols = gfp_poly[x]
   gpol = Rx(S[1].prim_img)
   if gpol != x
@@ -507,6 +507,7 @@ function closure(S::Vector{NfToNfMor}, final_order::Int = -1)
       gpol = compose_mod(gpol, pols[2], fmod)
     end
   end
+
   if order == final_order
     return elements
   end
