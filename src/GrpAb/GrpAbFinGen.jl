@@ -1419,6 +1419,12 @@ function quo(G::GrpAbFinGen, M::fmpz_mat,
   return Q, m
 end
 
+function quo(G::GrpAbFinGen, f::GrpAbFinGenMap,
+             add_to_lattice::Bool = true, L::GrpAbLattice = GroupLattice)
+  M = f.map
+  return quo(G, M, add_to_lattice, L)
+end
+
 @doc Markdown.doc"""
     quo(G::GrpAbFinGen, n::Integer}) -> GrpAbFinGen, Map
     quo(G::GrpAbFinGen, n::fmpz}) -> GrpAbFinGen, Map

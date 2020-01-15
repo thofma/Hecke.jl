@@ -784,7 +784,16 @@ function ispower_trager(a::nf_elem, n::Int)
       return true, -divexact(coeff(t, 0), coeff(t, 1))//b
     end
   end
+
   return false, a
+end
+
+function _height(a::nf_elem)
+  h = fmpz(1)
+  for i in 1:degree(parent(a))
+    h = max(h, height(coeff(a, i - 1)))
+  end
+  return h
 end
 
 @doc Markdown.doc"""

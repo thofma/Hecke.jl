@@ -15,8 +15,8 @@ http://beta.lmfdb.org/knowledge/show/nf.polredabs.
 
 Both version require a LLL reduced basis for the maximal order.
 """
-function simplify(K::AnticNumberField; canonical::Bool = false, cached = false)
-  Qx, x = PolynomialRing(FlintQQ)
+function simplify(K::AnticNumberField; canonical::Bool = false, cached = true)
+  Qx, x = PolynomialRing(FlintQQ, "x")
   if degree(K) == 1
     L = number_field(x - 1, cached = cached, check = false)[1]
     return L, hom(L, K, gen(K), check = false)
