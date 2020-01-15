@@ -461,13 +461,17 @@ end
 Given a totally complex normal number field, this function returns an
 automorphism which is the restrition of complex conjugation at one embedding.
 """
-function complex_conjugation(K::AnticNumberField)
-  A = automorphisms(K)
-  if length(A) < degree(K)
-    error("Number field must be normal")
+function complex_conjugation(K::AnticNumberField; auts::Vector{NfToNfMor} = NfToNfMor[])
+  if !isempty(auts)
+    A = auts
+  else
+    A = automorphisms(K)
+    if length(A) < degree(K)
+      error("Number field must be normal")
+    end
   end
   a = gen(K)
-  d = degree(K)
+  d = length(A)
   !istotally_complex(K) && error("Number field must be totally complex")
   #First, quick and dirty. If only one automorphism works, then we return it
   p = 32 
@@ -502,6 +506,48 @@ function complex_conjugation(K::AnticNumberField)
     end
   end
   error("something went wrong!")
+end
+
+
+function _find_complex_conjugation(K::AnticNumberField, A::Vector{NfToNfMor})
+  a = gen(K)
+  #First, quick and dirty. If only one automorphism works, then we return it
+  p = 32 
+  while true
+    c = conjugates(a, p)
+    overlap = false
+    for i = 1:length(A)
+      if !isinvolution(A[i])
+        continue
+      end
+      cc = conj.(conjugates(A[i].prim_img, p))
+      for k = 1:degree(K)
+        if overlaps(c[k], cc[k])
+          overlap = true
+          found = true
+          for j = 1:degree(K)
+            if j == k
+              continue
+            end
+            if overlaps(c[j], cc[k])
+              found = false
+              break
+            end
+          end
+          if found
+            return true, A[i]
+          end
+        end
+      end
+    end
+    if !overlap
+      break
+    end
+    if p > 2^18
+      error("Precision too high in complex_conjugation")
+    end
+  end
+  return false, A[1]
 end
 
 function iscomplex_conjugation(f::NfToNfMor)

@@ -386,7 +386,10 @@ function _lll_for_simplify(M::NfOrd; prec = 100)
   local d::fmpz_mat
   fl = true
   ctx = Nemo.lll_ctx(0.75, 0.51, :gram)
+  att = 0 
   while true
+    att += 1
+    @vprint :Simplify 3 "Attempt number : $(att)\n"
     
     while true
       try
@@ -396,6 +399,7 @@ function _lll_for_simplify(M::NfOrd; prec = 100)
         prec = prec*2
       end
     end
+    @vprint :Simplify 3 "Minkowski matrix computed\n"
     g = identity_matrix(FlintZZ, n)
     
     prec = div(prec, 2)
@@ -447,6 +451,7 @@ function _lll_for_simplify(M::NfOrd; prec = 100)
     M.lllO = On
     return On
   else
+    @vprint :Simplify 3 "Restarting\n"
     On1 = _lll_for_simplify(On, prec = prec*4)
     M.lllO = On1
     return On1

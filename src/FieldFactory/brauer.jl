@@ -59,11 +59,6 @@ function check_Brauer_obstruction(list::Vector{FieldsTower}, L::Main.ForeignGAP.
       end
     end
   end
-  if length(invariants) == 1 && isprime_power(invariants[1])
-    for el in list
-      el.has_info = true
-    end
-  end
   return list
 end
 
@@ -369,7 +364,6 @@ function _Brauer_prime_case(list::Vector{FieldsTower}, L::Main.ForeignGAP.MPtr, 
     for w = 1:length(permGC)
       ElemGAP[w] = GAP.Globals.Image(iso, _perm_to_gap_perm(permGC[w]))
     end
-    list[t].imgs_autos = ElemGAP
     #Restrict to the p-Sylow
     #Unfortunately, I need to compute the group structure.
     Gp = pSylow(autsK1, p)
@@ -391,14 +385,11 @@ function _Brauer_prime_case(list::Vector{FieldsTower}, L::Main.ForeignGAP.MPtr, 
       
       if cpa_issplit(K1, Gp, cocycle, p, Rx)
         obstruction = true
-        push!(auts_for_conductor, g)
       end
     
     end
     #If I am here, all the algebras don't split. I return false
     if obstruction
-      list[t].auts_for_conductors = auts_for_conductor
-      list[t].proj_ext = mH
       list1[t] = true
     end
   end
@@ -439,9 +430,7 @@ function _Brauer_no_extend(x::FieldsTower, mH, autos, _cocycle_values, domcoc, p
   for w = 1:length(permGC)
     ElemGAP[w] = GAP.Globals.Image(iso, PermGAP[w])
   end
-  x.imgs_autos = ElemGAP
   obstruction = false
-  auts_for_conductors = Vector{Main.ForeignGAP.MPtr}()
   for g in autos
     #I create the cocycle
     local cocycle
@@ -459,13 +448,10 @@ function _Brauer_no_extend(x::FieldsTower, mH, autos, _cocycle_values, domcoc, p
     fl = cpa_issplit(K, Gp, cocycle, p, Rx)
     if fl
       obstruction = true
-      push!(auts_for_conductors, g)
     end
      
   end
   if obstruction
-    x.proj_ext = mH
-    x.auts_for_conductors = auts_for_conductors
     return true
   else
     return false
@@ -713,13 +699,11 @@ function check_Brauer_obstruction_pp(list::Vector{FieldsTower}, L::Main.ForeignG
     for w = 1:length(permGC)
       ElemGAP[w] = GAP.Globals.Image(iso, _perm_to_gap_perm(permGC[w]))
     end
-    list[t].imgs_autos = ElemGAP
     #Restrict to the p-Sylow
     #Unfortunately, I need to compute the group structure.
     Gp = pSylow(autsK1, p)
     act_on_roots = action_on_roots(Gp, Kc.mp[1]\(gen(Kc.Kr)), pv)
     obstruction = false
-    auts_for_conductors = Vector{Main.ForeignGAP.MPtr}()
     for (g1, g2) in autos
       #I create the cocycle
       local cocycle
@@ -755,14 +739,12 @@ function check_Brauer_obstruction_pp(list::Vector{FieldsTower}, L::Main.ForeignG
         end
       end
       #@assert check_cocycle(Stab, cocycle, pv)
-
       #If the group acts as the roots of unity, we have a Brauer embedding problem, so
       # we only have to check one algebra.
       if length(Stab) == length(Gp)
         fl = cpa_issplit(K1, Gp, cocycle, pv, Rx)
         if fl
           obstruction = true
-          push!(auts_for_conductors, g1)
           continue
         end
       end
@@ -771,18 +753,14 @@ function check_Brauer_obstruction_pp(list::Vector{FieldsTower}, L::Main.ForeignG
       # the the embedding problem given by the subgroup of G having the same action on G and
       # on the roots of unity.
       fl = cpa_issplit(K1, Gp, cocycle, p, Rx) && cpa_issplit(K1, Gp, Stab, cocycle, p, v, Rx)
-      
       if fl
         obstruction = true
-        push!(auts_for_conductors, g1)
         continue
       end
     
     end
     #If I am here, all the algebras don't split. I return false
     if obstruction
-      list[t].auts_for_conductors = auts_for_conductors
-      list[t].proj_ext = mH
       list1[t] = true
     end
   end
@@ -818,7 +796,6 @@ function _Brauer_no_extend_pp(F, mH, autos, coc, p, v, Elems, pv, action_grp)
   for w = 1:length(permGC)
     ElemGAP[w] = GAP.Globals.Image(iso, _perm_to_gap_perm(permGC[w]))
   end
-  F.imgs_autos = ElemGAP
   #Restrict to the p-Sylow
   #Unfortunately, I need to compute the group structure.
   Gp = pSylow(autsK, p)
@@ -859,14 +836,13 @@ function _Brauer_no_extend_pp(F, mH, autos, coc, p, v, Elems, pv, action_grp)
       end
     end
     #@assert check_cocycle(Stab, cocycle, pv)
-
+   
     #If the group acts as the roots of unity, we have a Brauer embedding problem, so
     # we only have to check one algebra.
     if length(Stab) == length(Gp)
       fl = cpa_issplit(K, Gp, cocycle, pv, Rx)
       if fl
         obstruction = true
-        push!(auts_for_conductors, g1)
         continue
       end
     end
@@ -877,14 +853,11 @@ function _Brauer_no_extend_pp(F, mH, autos, coc, p, v, Elems, pv, action_grp)
     fl = cpa_issplit(K, Gp, cocycle, p, Rx) && cpa_issplit(K, Gp, Stab, cocycle, p, v, Rx)
     if fl
       obstruction = true
-      push!(auts_for_conductors, g1)
       continue
     end
   end
   #If I am here, all the algebras don't split. I return false
   if obstruction
-    F.auts_for_conductors = auts_for_conductors
-    F.proj_ext = mH
     return true
   else
     return false
@@ -1034,7 +1007,6 @@ end
 
 #See Gerald J. Janusz (1980) Crossed product orders and the schur index,
 #Communications in Algebra, 8:7, 697-706
-
 function is_split_at_p(O::NfOrd, GC::Array{NfToNfMor, 1}, Coc::Function, p::Int, n::Int, Rx::GFPPolyRing)
 
   lp = prime_decomposition(O, p, cached = true)
@@ -1255,7 +1227,8 @@ function is_split_at_p(O::NfOrd, GC::Vector{NfToNfMor}, Stab::Vector{NfToNfMor},
   if f == 1
     return true
   end
-  frob = Rx(_find_frob(GpStab, F, mF, e, f, q, theta1).prim_img)
+  frob1 = _find_frob(GpStab, F, mF, e, f, q, theta1)
+  frob = Rx(frob1.prim_img)
   if iszero(mod(q-1, e*n))
     lambda = mod(Coc(frob, theta)- Coc(theta, frob), n)
     return iszero(lambda)

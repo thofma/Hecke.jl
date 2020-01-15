@@ -1911,9 +1911,6 @@ function decomposition_group(P::NfOrdIdl; G::Array{NfToNfMor, 1} = NfToNfMor[], 
       error("The field is not normal!")
     end
   end
-  if orderG == length(G)
-    return NfToNfMor[g for g in G]
-  end
   if isindex_divisor(OK, minimum(P, copy = false))
     q = 2
     R = ResidueRing(FlintZZ, q, cached = false)

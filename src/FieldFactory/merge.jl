@@ -651,7 +651,6 @@ function _merge(list1::Vector{FieldsTower}, list2::Vector{FieldsTower}, absolute
     return res
   end
   clusters = Vector{Tuple{Int, Int}}[x for x in values(D1)]
-  @show [length(x) for x in clusters]
   @vprint :Fields 1 "$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())Candidates after first sieve: $(sum(length(x) for x in clusters))\n"
   
   @vprint :Fields 1 "Sieving by discriminant\n"
@@ -668,7 +667,6 @@ function _merge(list1::Vector{FieldsTower}, list2::Vector{FieldsTower}, absolute
     return res
   end
   @vprint :Fields 1 "Candidates: $(sum(length(x) for x in new_clusters))\n"
-  @show [length(x) for x in new_clusters]
   @vprint :Fields 1 "Sieving by prime_splitting\n"
   fields_to_be_computed = _sieve_by_prime_splitting(list1, list2, new_clusters, red, redfirst, redsecond)
 

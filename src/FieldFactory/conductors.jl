@@ -4,158 +4,37 @@
 #
 ###############################################################################
 
-function conductors_after_Brauer(F::FieldsTower, st::Vector{Int}, l_cond::Vector)
+function _conductors_using_cocycles(F::FieldsTower, st::Vector{Int}, l_cond::Vector, E)
   lp = ramified_primes(F)
-  autsH = F.auts_for_conductors
-  assure_automorphisms(F)
   auts = automorphisms(F.field, copy = false)
-  imgH = F.imgs_autos
-  proj = F.proj_ext
+  cocycles = F.admissible_cocycles
+  G = GAP.Globals.ImagesSource(cocycles[1].projection)
+  E = GAP.Globals.Source(cocycles[1].projection)
+  D = F.isomorphism
   n = prod(st)
-  Hn = GAP.Globals.ImagesSource(proj)
-  G = GAP.Globals.Source(proj)
   O = maximal_order(F)
   for p in lp
     lP = prime_decomposition(O, p)
     Hp = inertia_subgroup(lP[1][1])
     gHp = small_generating_set(Hp)
-    gensind = Int[]
-    for x in gHp
-      i = 1
-      while x != auts[i]
-        i += 1
-      end
-      push!(gensind, i)
-    end
-    els = Main.ForeignGAP.MPtr[imgH[i] for i in gensind]
-    sub = GAP.Globals.Subgroup(Hn, GAP.julia_to_gap(els))
+    els = [D[g] for g in gHp]
+    sub = GAP.Globals.Subgroup(G, GAP.julia_to_gap(els))
     ord = GAP.Globals.Size(sub)
     sizes_preimages = Int[]
-    for aut in autsH
+    for c in cocycles
+      proj = c.projection
       subgs = Vector{Vector{Main.ForeignGAP.MPtr}}(undef, n)
       for i = 1:n
         subgs[i] = Vector{Main.ForeignGAP.MPtr}(undef, length(els))
       end
       for j = 1:length(els)
-        el2 = GAP.Globals.Images(aut, els[j])
-        pels = GAP.Globals.List(GAP.Globals.PreImages(proj, el2))
+        pels = GAP.Globals.List(GAP.Globals.PreImages(proj, els[j]))
         for i = 1:length(pels)
           subgs[i][j] = pels[i]
         end
       end
       for lelem in subgs
-        sub = GAP.Globals.Subgroup(G, GAP.julia_to_gap(lelem))
-        onew = GAP.Globals.Size(sub)
-        push!(sizes_preimages, onew)
-      end
-    end
-    if minimum(sizes_preimages) != ord
-      #The prime must ramify!
-      l1 = Vector{Tuple{Int, Dict{NfOrdIdl, Int}}}()
-      if !divisible(fmpz(n), p)
-        for x in l_cond
-          if divisible(fmpz(x[1]), p) 
-            push!(l1, x)
-          end
-        end
-      else
-        for x in l_cond
-          if !isempty(x[2])
-            lI = keys(x[2])
-            found = false
-            for k in lI
-              if minimum(k) == p
-                found = true
-                break
-              end
-            end
-            if found
-              push!(l1, x)
-            end
-          end
-        end
-      end
-      l_cond = l1
-    elseif maximum(sizes_preimages) == ord && !divisible(fmpz(n), p)
-      #The prime must be unramified!
-      l1 = Vector{Tuple{Int, Dict{NfOrdIdl, Int}}}()
-      if !divisible(fmpz(n), p)
-        for x in l_cond
-          if !divisible(fmpz(x[1]), p) 
-            push!(l1, x)
-          end
-        end
-      else
-        for x in l_cond
-          if !isempty(x[2])
-            lI = keys(x[2])
-            found = false
-            for k in lI
-              if minimum(k) == p
-                found = true
-                break
-              end
-            end
-            if !found
-              push!(l1, x)
-            end
-          end
-        end
-      end
-      l_cond = l1
-    end
-  end
-  return l_cond
-
-end
-
-function conductor_general_case(F::FieldsTower, st::Vector{Int}, IdG::Main.ForeignGAP.MPtr, bound::fmpz, l_cond::Vector)
-  n = prod(st)
-  O = maximal_order(F)
-  assure_automorphisms(F)
-  auts = automorphisms(nf(O), copy = false)
-  Hperm = _from_autos_to_perm(auts)
-  H = _perm_to_gap_grp(Hperm)
-  G = GAP.Globals.SmallGroup(IdG)
-  D = GAP.Globals.DerivedSeries(G)
-  proj = GAP.Globals.NaturalHomomorphismByNormalSubgroup(G, D[end-1])
-  Hn = GAP.Globals.ImagesSource(proj)
-  iso = GAP.Globals.IsomorphismGroups(Hn, H)
-  AutHn = GAP.Globals.AutomorphismGroup(Hn)
-  autH = GAP.Globals.Elements(AutHn)
-  
-  lp = ramified_primes(F)
-  for p in lp
-    lP = prime_decomposition(O, p)
-    Hp = inertia_subgroup(lP[1][1])
-    gHp = small_generating_set(Hp)
-    gensind = Int[]
-    for x in gHp
-      i = 1
-      while x != auts[i]
-        i += 1
-      end
-      push!(gensind, i)
-    end
-    els = Main.ForeignGAP.MPtr[GAP.Globals.PreImagesRepresentative(iso, _perm_to_gap_perm(Hperm[i])) for i in gensind]
-    sub = GAP.Globals.Subgroup(Hn, GAP.julia_to_gap(els))
-    ord = GAP.Globals.Size(sub)
-    sizes_preimages = Int[]
-    for s = 1:length(autH)
-      aut = autH[s]
-      subgs = Vector{Vector{Main.ForeignGAP.MPtr}}(undef, n)
-      for i = 1:n
-        subgs[i] = Vector{Main.ForeignGAP.MPtr}(undef, length(els))
-      end
-      for j = 1:length(els)
-        el2 = GAP.Globals.Images(aut, els[j])
-        pels = GAP.Globals.List(GAP.Globals.PreImages(proj, el2))
-        for i = 1:length(pels)
-          subgs[i][j] = pels[i]
-        end
-      end
-      for lelem in subgs
-        sub = GAP.Globals.Subgroup(G, GAP.julia_to_gap(lelem))
+        sub = GAP.Globals.Subgroup(E, GAP.julia_to_gap(lelem))
         onew = GAP.Globals.Size(sub)
         push!(sizes_preimages, onew)
       end
@@ -224,11 +103,8 @@ function conductors_with_restrictions(F::FieldsTower, st::Vector{Int}, IdG::Main
 
   O = maximal_order(F)
   l_cond = Hecke.conductors(O, st, bound)
-  if F.has_info
-    new_conds = conductors_after_Brauer(F, st, l_cond)
-  else
-    new_conds = conductor_general_case(F, st, IdG, bound, l_cond)
-  end
+  G = GAP.Globals.SmallGroup(IdG)
+  new_conds = _conductors_using_cocycles(F, st, l_cond, G)
   if length(st) != 1 || !isprime(st[1]) || isempty(new_conds)
     return new_conds
   end

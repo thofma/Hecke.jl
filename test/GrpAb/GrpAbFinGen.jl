@@ -236,6 +236,14 @@
 
     H, mH = @inferred sub(G, fmpz(2))
     @test isisomorphic(H, DiagonalGroup([3, 3, 6, 5]))
+    
+    G = DiagonalGroup([2, 2, 6, 6])
+    H, mH = @inferred sub(G, 2)
+    @test isisomorphic(H, DiagonalGroup([3, 3]))
+    H, mH = @inferred sub(G, 1)
+    @test isisomorphic(H, G)
+    H, mH = @inferred sub(G, 3)
+    @test isisomorphic(H, DiagonalGroup([2, 2, 2, 2]))
   end
 
   @testset "Quotient" begin
