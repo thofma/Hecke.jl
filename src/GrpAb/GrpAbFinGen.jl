@@ -1284,7 +1284,7 @@ end
 
 function _sub_integer_snf(G::GrpAbFinGen, n::fmpz, add_to_lattice::Bool = true, L::GrpAbLattice = GroupLattice)
   ind = 1
-  while gcd(n, G.snf[ind]) == G.snf[ind] || ind <= ngens(G)
+  while gcd(n, G.snf[ind]) == G.snf[ind] && ind <= ngens(G)
     ind += 1
   end
   if ind == ngens(G) && gcd(n, G.snf[ind]) == G.snf[ind]
@@ -1301,7 +1301,7 @@ function _sub_integer_snf(G::GrpAbFinGen, n::fmpz, add_to_lattice::Bool = true, 
     if iszero(G.snf[i])
       invariants[i-ind+1] = 0
     else
-      res = gcd(n, V.snf[i])
+      res = gcd(n, G.snf[i])
       invariants[i-ind+1] = divexact(G.snf[i], res)
     end
   end

@@ -9,7 +9,6 @@ add_assert_scope(:RayFacElem)
 #
 ###############################################################################
 
-
 mutable struct MapRayClassGrp <: Map{GrpAbFinGen, FacElemMon{Hecke.NfOrdIdlSet}, HeckeMap, MapRayClassGrp}
   header::Hecke.MapHeader{GrpAbFinGen, FacElemMon{Hecke.NfOrdIdlSet}}
   defining_modulus::Tuple{NfOrdIdl, Array{InfPlc, 1}}
@@ -520,6 +519,19 @@ function make_positive(x::NfOrdElem, a::fmpz)
   @hassert :RayFacElem 1 istotally_positive(x+m*a)
   el_to_add = m*a
   return x+el_to_add
+end
+
+###################################################################################
+#
+#  Narrow Class Group
+#
+###################################################################################
+
+function narrow_class_group(O::NfOrd)
+  @assert ismaximal_known_and_maximal(O)
+  K = nf(O)
+  plc = real_places(K)
+  return ray_class_group(ideal(O, 1), real_places(K))
 end
 
 ###################################################################################

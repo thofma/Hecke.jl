@@ -5,6 +5,31 @@ add_assert_scope(:Fields)
 
 add_verbose_scope(:FieldsNonFancy)
 
+
+################################################################################
+#
+#  Types
+#
+################################################################################
+
+mutable struct cocycle_ctx
+  projection::Main.ForeignGAP.MPtr
+  inclusion::Main.ForeignGAP.MPtr
+  cocycle::Function
+  values_cyclic::Function
+  gen_kernel::Main.ForeignGAP.MPtr
+  inclusion_of_pSylow::Main.ForeignGAP.MPtr
+  
+  function cocycle_ctx(proj::Main.ForeignGAP.MPtr, incl::Main.ForeignGAP.MPtr, cocycle::Function)
+    z = new()
+    z.projection = proj
+    z.inclusion = incl
+    z.cocycle = cocycle
+    return z
+  end
+end
+
+
 mutable struct FieldsTower
   field::AnticNumberField
   generators_of_automorphisms::Vector{NfToNfMor}
@@ -13,17 +38,14 @@ mutable struct FieldsTower
   isabelian::Bool
   #Solvable embedding problems for the extension
   #They are here to improve the conductor computation
-  has_info::Bool
-  imgs_autos::Vector{Main.ForeignGAP.MPtr}
-  auts_for_conductors::Vector{Main.ForeignGAP.MPtr}
-  proj_ext::Main.ForeignGAP.MPtr
+  isomorphism::Dict{NfToNfMor, Main.ForeignGAP.MPtr}
+  admissible_cocycles::Vector{cocycle_ctx}
   
   function FieldsTower(K::AnticNumberField, auts::Vector{NfToNfMor}, subfields::Vector{NfToNfMor})
     z = new()
     z.field = K
     z.generators_of_automorphisms = auts
     z.subfields = subfields
-    z.has_info = false
     z.isabelian = false
     return z
   end
@@ -41,6 +63,7 @@ include("./abelian_layer.jl")
 include("./read_write.jl")
 include("./conductors.jl")
 include("./new_brauer.jl")
+include("./tests.jl")
 
 Generic.degree(F::FieldsTower) = degree(F.field)
 Hecke.maximal_order(F::FieldsTower) = maximal_order(F.field)
@@ -521,7 +544,7 @@ function fields(a::Int, b::Int, list::Vector{FieldsTower}, absolute_bound::fmpz;
     @vprint :Fields 1 "Computing obstructions\n"
     @vprint :FieldsNonFancy 1 "Computing obstructions\n"
     #@vtime :Fields 1 
-    list = check_Brauer_obstruction(list, L, i, invariants)
+    list = check_obstruction(list, L, i, invariants)
     @vprint :Fields 1 "Fields to check: $(length(list))\n\n"
     @vprint :FieldsNonFancy 1 "Fields to check: $(length(list))\n\n"
     if isempty(list)
@@ -601,7 +624,7 @@ function fields(a::Int, b::Int, absolute_bound::fmpz; using_direct_product::Bool
   @vprint :Fields 1 "Computing obstructions\n"
   @vprint :FieldsNonFancy 1 "Computing obstructions\n"
   #@vtime :Fields 1 
-  list = check_Brauer_obstruction(list, L, length(L)-1, invariants)
+  list = check_obstruction(list, L, length(L)-1, invariants)
   @vprint :Fields 1 "Fields to check: $(length(list))\n\n"
   @vprint :FieldsNonFancy 1 "Fields to check: $(length(list))\n\n"
   if isempty(list)
