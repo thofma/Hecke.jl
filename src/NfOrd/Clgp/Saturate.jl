@@ -147,7 +147,7 @@ function saturate_exp(c::Hecke.ClassGrpCtx, p::Int, stable = 1.5)
           return zero_matrix(FlintZZ, 0, length(R))
         end
         A = A*sub(z, 1:nrows(z), 1:rrz)
-        if cA == ncols(A) 
+        if false && cA == ncols(A) 
           break #the other ideals are going to give the same info
                 #for multi-quad as the field is normal
         end        
@@ -235,15 +235,10 @@ function saturate!(d::Hecke.ClassGrpCtx, U::Hecke.UnitGrpCtx, n::Int, stable = 3
       end
       
       decom = Dict((c.FB.ideals[k], v) for (k,v) = fac_a)
-
-      #for (k, v) in a.fac
-      #  if iszero(v)
-      #    delete!(a.fac, k)
-      #  end
-      #end
       @vprint :Saturate 1 "Testing if element is an n-th power\n"
+      
+      
       @vtime :Saturate 1 fl, x = ispower(a, n, decom = decom)
-
       if fl
         @assert isa(x, FacElem)
         success = true
@@ -257,6 +252,7 @@ function saturate!(d::Hecke.ClassGrpCtx, U::Hecke.UnitGrpCtx, n::Int, stable = 3
           Hecke._add_dependent_unit(U, x)
         end
       else
+        
         @vprint :Saturate 2  "sat wasted time, local power wasn't global\n"
         wasted = true
       end
