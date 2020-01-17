@@ -861,7 +861,7 @@ end
 function ispower(a::fq_nmod, m::Int)
   s = size(parent(a))
   if gcd(s-1, m) == 1
-    return true, a^invmod(m, s-1)
+    return true, a^invmod(FlintZZ(m), s-1)
   end
   St, t = PolynomialRing(parent(a), "t", cached=false)
   f = t^m-a
