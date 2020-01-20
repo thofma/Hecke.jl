@@ -292,7 +292,7 @@ function _hensel(f::Generic.Poly{nf_elem},
   # This function lifts the roots of f mod P to P^k and reconstructs them.
   
   # f is pure if and only if f = x^deg(f) + coeff(f, 0)
-  
+
   @assert max_roots > 0
 
   caching = degree(base_ring(f)) > 20
@@ -365,19 +365,19 @@ function _hensel(f::Generic.Poly{nf_elem},
 
   # Do something else in the pure case
   if ispure
-    rt = [inv(x^(degree(f)-1)) for x = rt]
+    rt = eltype(rt)[inv(x^(degree(f)-1)) for x = rt]
   end
 
   # Now if we are in the normal case and want max_roots, we only have
   # to lift max_roots 
   
   if isnormal
-    rt = rt[1:max(max_roots, degree(f))]
+    rt = eltype(rt)[1:max(max_roots, degree(f))]
   end
 
   #we're going to lift the roots - and for efficiency 1/f'(rt) as well:
   fps = derivative(fp)
-  irt = [inv(fps(x)) for x= rt]
+  irt = eltype(rt)[inv(fps(x)) for x in rt]
 
   # this is in the finite field, but now I need it in the res. ring.
   # in ZX for ease of transport.
@@ -469,9 +469,6 @@ function _hensel(f::Generic.Poly{nf_elem},
     end
 
     for j=1:length(RT)
-      if iszero(RT[j])
-        continue
-      end
       #to eval fp and the derivative, we pre-compute the powers of the
       #evaluation point - to save on large products...
 
