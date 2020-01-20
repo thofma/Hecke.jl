@@ -67,13 +67,13 @@ function Base.setprecision(a::Generic.MatSpaceElem{qadic}, N::Int)
 end
 
 function trace(r::qadic)
-  t = base_ring(parent(r))()
+  t = coefficient_ring(parent(r))()
   ccall((:qadic_trace, :libflint), Nothing, (Ref{padic}, Ref{qadic}, Ref{FlintQadicField}), t, r, parent(r))
   return t
 end
 
 function norm(r::qadic)
-  t = base_ring(parent(r))()
+  t = coefficient_ring(parent(r))()
   ccall((:qadic_norm, :libflint), Nothing, (Ref{padic}, Ref{qadic}, Ref{FlintQadicField}), t, r, parent(r))
   return t
 end
