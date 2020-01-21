@@ -68,6 +68,17 @@
   @testset "FundamentalDiscriminant" begin
     @test isfundamental_discriminant(12) == true
     @test isfundamental_discriminant(-12) == false
+    D =	[1, 5, 8, 12, 13, 17, 21, 24, 28, 29, 33, 37, 40, 41, 44, 53, 56, 57,
+         60, 61, 65, 69, 73, 76, 77, 85, 88, 89, 92, 93, 97, 101, 104, 105,
+         109, 113, 120, 124, 129, 133, 136, 137]
+    @test all(isfundamental_discriminant, D)
+    D =	map(x -> -x, [3, 4, 7, 8, 11, 15, 19, 20, 23, 24, 31, 35, 39, 40, 43,
+                      47, 51, 52, 55, 56, 59, 67, 68, 71, 79, 83, 84, 87, 88,
+                      91, 95, 103])
+    @test all(isfundamental_discriminant, D)
+
+    @test fundamental_discriminant(20) == 5
+    @test fundamental_discriminant(-20) == -20
   end
 
   @testset "DefiniteForms" begin

@@ -1,4 +1,5 @@
-export binary_quadratic_form, can_solve, discriminant, isdiscriminant, QuadBin,
+export binary_quadratic_form, can_solve, discriminant,
+       fundamental_discriminant, isdiscriminant, QuadBin,
        isfundamental_discriminant, prime_form, prime_power_form, cycle,
        isindefinite, ispositive_definite, isnegative_definite, isreduced
 
@@ -132,10 +133,10 @@ function fundamental_discriminant(D)
     end
   end
   # sqf = is the squarefree-part, so D = sqf * square and sqf square-free
-  if mod(sqf, 4) == 1
-    return sqf
+  if mod(sign(D) * sqf, 4) == 1
+    return sign(D) * sqf
   else
-    return sqf * 4
+    return sign(D) * sqf * 4
   end
 end
 
