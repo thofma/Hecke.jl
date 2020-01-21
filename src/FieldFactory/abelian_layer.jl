@@ -307,7 +307,8 @@ function _abelian_normal_extensions(F::FieldsTower, gtype::Array{Int, 1}, absbou
     end
   end
   @vprint :Fields 1 "$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())\n"
-  return ClassField{Hecke.MapRayClassGrp, GrpAbFinGenMap}[class_fields_with_act[i][1] for i = 1:length(class_fields_with_act) if candidates[i]]
+  res_cfields = ClassField{Hecke.MapRayClassGrp, GrpAbFinGenMap}[class_fields_with_act[i][1] for i = 1:length(class_fields_with_act) if candidates[i]]
+  return res_cfields
 end
 
 

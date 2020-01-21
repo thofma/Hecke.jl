@@ -84,6 +84,7 @@ function FFtests()
   printstyled("\n Some examples\n", color = :red)
   @time begin
     @assert length(fields(6, 1, fmpz(10)^8, simplify = false)) == 107
+    @assert length(fields(24, 8, fmpz(10)^30, simplify = false)) == 15
   end
 
   printstyled("\n Tests were successful", color = :red)

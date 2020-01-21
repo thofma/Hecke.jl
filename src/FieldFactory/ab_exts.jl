@@ -1602,28 +1602,19 @@ function _is_conductor_min_normal(C::Hecke.ClassField; lwp::Dict{Int, Array{GrpA
       gens = lwp[Int(p.minimum)]
     else
       k = lp[p]-1
-      if isone(k)
-        #In this particular case, the generators that I need are cached in the map
-        v = groups_and_maps[i][2].wild[p]
-        gens = Vector{GrpAbFinGenElem}(undef, length(v.generators))
-        for i = 1:length(gens)
-          gens[i] = mr\(ideal(O, v.generators[i]))
-        end
-      else
-        pk = p^k
-        pv = q
-        gens_els = _1pluspk_1pluspk1(K, p, pk, pv, powers, a, e)
-        gens = Vector{GrpAbFinGenElem}(undef, length(gens_els))
-        for i = 1:length(gens)
-          gens[i] = mr\(ideal(O, gens_els[i]))
-        end
+      pk = p^k
+      pv = q
+      gens_els = _1pluspk_1pluspk1(K, p, pk, pv, powers, a, e)
+      gens = Vector{GrpAbFinGenElem}(undef, length(gens_els))
+      for i = 1:length(gens)
+        gens[i] = mr\(ideal(O, gens_els[i]))
       end
       lwp[Int(p.minimum)] = gens
     end
     iscond = false
     for i in 1:length(gens)
       if !iszero(C.quotientmap(gens[i]))
-        iscond=true
+        iscond = true
         break
       end
     end

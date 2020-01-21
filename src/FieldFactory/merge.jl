@@ -245,9 +245,19 @@ function check_bound_disc(K::FieldsTower, L::FieldsTower, bound::fmpz)
     if issquare(d)
       d = root(d, 2)
     end
-    n = disc_comp^(degree(Kab[i]))*disc_new^deg
-    d = gcd(d^(2*(deg*degree(Kab[i])-1)), n)
-    disc_comp = divexact(n, d)
+    n = ppio(disc_comp, d)[2]^(degree(Kab[i]))*ppio(disc_new, d)[2]^deg
+    ld = factor(d)
+    for (q, v) in ld
+      vnum = degree(Kab[i])*valuation(disc_comp, q) + deg*valuation(disc_new, q)
+      vden = 2*(deg*degree(Kab[i])-1)*valuation(d, q)
+      vfirst = vnum - vden
+      v1 = degree(Kab[i])*valuation(disc_comp, q)
+      v2 = deg*valuation(disc_new, q)
+      vsecond = max(v1, v2)
+      vd = max(vfirst, vsecond)
+      n *= q^vd
+    end
+    disc_comp = n
     deg *= degree(Kab[i])
   end
   for i = 1:length(Lab)
@@ -256,9 +266,19 @@ function check_bound_disc(K::FieldsTower, L::FieldsTower, bound::fmpz)
     if issquare(d)
       d = root(d, 2)
     end
-    n = disc_comp^(degree(Lab[i]))*disc_new^deg
-    d = gcd(d^(2*(deg*degree(Lab[i])-1)), n)
-    disc_comp = divexact(n, d)
+    n = ppio(disc_comp, d)[2]^(degree(Lab[i]))*ppio(disc_new, d)[2]^deg
+    ld = factor(d)
+    for (q, v) in ld
+      vnum = degree(Lab[i])*valuation(disc_comp, q) + deg*valuation(disc_new, q)
+      vden = 2*(deg*degree(Lab[i])-1)*valuation(d, q)
+      vfirst = vnum - vden
+      v1 = degree(Lab[i])*valuation(disc_comp, q)
+      v2 = deg*valuation(disc_new, q)
+      vv = max(v1, v2)
+      vd = max(vfirst, vv)
+      n *= q^vd
+    end
+    disc_comp = n
     deg *= degree(Lab[i])
   end
   bound_max_ab_subext = root(bound, divexact(degree(K.field)*degree(L.field), deg))
@@ -689,13 +709,11 @@ function _merge(list1::Vector{FieldsTower}, list2::Vector{FieldsTower}, absolute
 end
 
 function _sieve_by_prime_splitting(list1, list2, clusters, red, redfirst, redsecond)
-
   fields_to_be_computed = Vector{Tuple{Int, Int}}()
   d1 = degree(list1[1].field)
   d2 = degree(list2[1].field)
   total = length(clusters)
   @vprint :Fields 1 "\n Number of clusters: $(total)\n"
-  total = length(clusters)
   nclu = 0
   for v in clusters
     nclu += 1
@@ -761,6 +779,7 @@ function _sieve_by_prime_splitting(list1, list2, clusters, red, redfirst, redsec
       end
     end 
   end
+  @vprint :Fields 1 "$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())"
   return fields_to_be_computed
 end
 

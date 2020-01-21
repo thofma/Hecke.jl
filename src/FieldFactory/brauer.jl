@@ -469,7 +469,7 @@ function _autos_to_check(G::Main.ForeignGAP.MPtr, K::Main.ForeignGAP.MPtr, E::Ma
   AutK = GAP.Globals.AutomorphismGroup(K)
   AutE = GAP.Globals.AutomorphismGroup(E)
   #I want to construct the map between the automorphism groups. The kernel is characteristic!
-  gens = GAP.Globals.GeneratorsOfGroup(AutE)
+  gens = GAP.Globals.MinimalGeneratingSet(AutE)#GeneratorsOfGroup(AutE)
   ind_auts_quo = Array{Main.ForeignGAP.MPtr, 1}(undef, length(gens))
   ind_auts_sub = Array{Main.ForeignGAP.MPtr, 1}(undef, length(gens))
   for s = 1:length(gens)
@@ -484,13 +484,16 @@ function _autos_to_check(G::Main.ForeignGAP.MPtr, K::Main.ForeignGAP.MPtr, E::Ma
     gensubs[s] = GAP.Globals.Image(EmbAutG, ind_auts_quo[s]) * GAP.Globals.Image(EmbAutK, ind_auts_sub[s])
   end
   S = GAP.Globals.Subgroup(GProd, GAP.julia_to_gap(gensubs))
-  T = GAP.Globals.List(GAP.Globals.RightTransversal(GProd, S))
+  iso = GAP.Globals.IsomorphismPermGroup(GProd)
+  Prod_as_perm = GAP.Globals.ImagesSource(iso)
+  S_as_perm = GAP.Globals.Image(iso, S)
+  Tperm = GAP.Globals.List(GAP.Globals.RightTransversal(Prod_as_perm, S_as_perm))
   #Now, I have to recover the automorphisms in AutG and AutK
   ProjAutG = GAP.Globals.Projection(GProd, 1)
   ProjAutK = GAP.Globals.Projection(GProd, 2)
-  res = Vector{Tuple{Main.ForeignGAP.MPtr, Main.ForeignGAP.MPtr}}(undef, length(T))
-  for i = 1:length(T)
-    res[i] = (GAP.Globals.Image(ProjAutG, T[i]), GAP.Globals.Image(ProjAutK, T[i]))
+  res = Vector{Tuple{Main.ForeignGAP.MPtr, Main.ForeignGAP.MPtr}}(undef, length(Tperm))
+  for i = 1:length(Tperm)
+    res[i] = (GAP.Globals.Image(ProjAutG, GAP.Globals.PreImagesRepresentative(iso, Tperm[i])), GAP.Globals.Image(ProjAutK, GAP.Globals.PreImagesRepresentative(iso, Tperm[i])))
   end
   return res
 end
