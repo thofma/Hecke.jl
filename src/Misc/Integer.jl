@@ -797,6 +797,9 @@ end
 const big_primes = fmpz[]
 
 function factor(N::fmpz)
+  if iszero(N)
+    throw(ArgumentError("Argument is not non-zero"))
+  end
   N_in = N
   global big_primes
   r, c = factor_trial_range(N)
