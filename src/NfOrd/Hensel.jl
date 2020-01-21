@@ -413,6 +413,9 @@ function _hensel(f::Generic.Poly{nf_elem},
     end
   end
 
+  # Keep a bit array to keep track of what we have to still lift
+  roots_to_lift = trues(length(rt))
+
   n = degree(K)
   M = zero_matrix(FlintZZ, n, n)
   for i=2:length(pr)
@@ -469,6 +472,9 @@ function _hensel(f::Generic.Poly{nf_elem},
     end
 
     for j=1:length(RT)
+      if !roots_to_lift[j]
+        continue
+      end
       #to eval fp and the derivative, we pre-compute the powers of the
       #evaluation point - to save on large products...
 
@@ -525,7 +531,7 @@ function _hensel(f::Generic.Poly{nf_elem},
           if length(rs) >= max_roots
             return rs
           end
-          RT[j] = zero(ZX)
+          roots_to_lift[j] = false
         end
         # I lifted to the end and one root did not lift to a root of f
         # and f is normal. Then there are no roots.
