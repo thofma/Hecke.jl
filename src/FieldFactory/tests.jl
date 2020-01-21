@@ -77,6 +77,11 @@ function FFtests()
   
   printstyled("\n Obstructions: reduction to cyclic case\n", color = :red)
   @time begin
+    l = fields(8, 2, fmpz(10)^10)
+    G = GAP.Globals.SmallGroup(96, 13)
+    L = GAP.Globals.DerivedSeries(G)
+    lsieved = check_obstruction(l, L, 2, [2, 6])
+    @assert length(l) == length(lsieved)
     @assert length(fields(32, 30, fmpz(10)^39, simplify = false)) == 2
   end
   

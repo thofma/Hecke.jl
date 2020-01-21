@@ -137,6 +137,7 @@ function _to_prime_power_groups(cocycle::cocycle_ctx, p::Int)
   G = GAP.Globals.ImagesSource(proj)
   Ep = GAP.Globals.SylowSubgroup(E, p)
   gensEp = GAP.Globals.GeneratorsOfGroup(Ep)
+  inj_Ep = GAP.Globals.GroupHomomorphismByImages(Ep, E, gensEp, gensEp)
   imgs_new_proj = []
   for i = 1:length(gensEp)
     push!(imgs_new_proj, GAP.Globals.Image(proj, gensEp[i]))
@@ -151,7 +152,7 @@ function _to_prime_power_groups(cocycle::cocycle_ctx, p::Int)
   images_inclusion = []
   gensA = GAP.Globals.GeneratorsOfGroup(A)
   for i = 1:length(gensA)
-    push!(images_inclusion, GAP.Globals.Image(inc, gensA[i])) 
+    push!(images_inclusion, GAP.Globals.PreImagesRepresentative(inj_Ep, GAP.Globals.Image(inc, gensA[i])))
   end
   imgs_inclusion = GAP.julia_to_gap(images_inclusion)
   new_incl = GAP.Globals.GroupHomomorphismByImages(A, Ep, gensA, imgs_inclusion)
