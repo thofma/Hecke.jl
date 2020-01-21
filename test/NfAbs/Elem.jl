@@ -94,3 +94,12 @@ end
   f = y^16+(39)*y^14+(449)*y^12+(1794)*y^10+(2830)*y^8+(1794)*y^6+(449)*y^4+(39)*y^2+(1)
   @test length(factor(f)) == 2
 end
+
+@testset "Root computation" begin
+  Qx, x = QQ["x"]
+  f = x^3-39*x-65
+  K, a = number_field(f, "a")
+  r = @inferred roots(f, K)
+  @test length(r) == 3
+  @test all(iszero, (f(b) for b in r))
+end

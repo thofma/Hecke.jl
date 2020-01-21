@@ -147,7 +147,8 @@ function saturate_exp(c::Hecke.ClassGrpCtx, p::Int, stable = 1.5)
           return zero_matrix(FlintZZ, 0, length(R))
         end
         A = A*sub(z, 1:nrows(z), 1:rrz)
-        if false && cA == ncols(A) 
+        # TODO: Remove or understand the following condition
+        if false && cA == ncols(A)
           break #the other ideals are going to give the same info
                 #for multi-quad as the field is normal
         end        
