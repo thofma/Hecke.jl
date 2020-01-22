@@ -761,15 +761,15 @@ end
 B1 = [2, 11, 50, 250, 1000, 3000, 11000, 43000, 110000, 260000, 850000, 2900000];
 nC = [25, 90, 300, 700, 1800, 5100, 10600, 19300, 49000, 124000, 210000, 340000];
 
-function ecm(a::fmpz, max_digits::Int = div(ndigits(a), 2)+1, rnd = flint_rand_ctx)
+function ecm(a::fmpz, max_digits::Int = div(ndigits(a), 3), rnd = flint_rand_ctx)
   n = ndigits(a, 10)
   B1s = 15
 
   i = 1
-  s = div(max_digits-15, 5)+2
+  s = max(div(max_digits - 10, 5), 1)
   #i = s = max(i, s)
   while i <= s
-    e,f = ecm(a, B1[i]*1000, B1[i]*1000*100, nC[i], rnd)
+    e, f = ecm(a, B1[i]*1000, B1[i]*1000*100, nC[i], rnd)
     if e != 0
       return (e,f)
     end

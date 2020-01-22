@@ -1469,8 +1469,9 @@ function _neighbours(L, P, result, max, callback = stdcallback)
   K = nf(R)
   a = involution(L)
   C = a(P)
-  B = local_basis_matrix(L, P, type = :submodule)
+  T = local_basis_matrix(L, P, type = :submodule)
   k, h = ResidueField(R, C)
+  hext = extend(h, K)
   form = gram_matrix(ambient_space(L))
   special = false
   if scale != 0
@@ -1483,20 +1484,20 @@ function _neighbours(L, P, result, max, callback = stdcallback)
   n = rank(L)
   W = vector_space(k, n)
 
-  LO = enumerate_lines(k, n)
+  LO = _enumerate_lines(k, n)
 
   keep = true
   cont = true
 
   if P != C
     _G = T * form * _map(T, a)
-    G = _map(_G, h)
-    pi = p_uniformizer(C)
+    G = map_entries(hext, _G)
+    pi = p_uniformizer(P)
     pih = h(pi)
     for i in 1:length(LO)
       w = LO[i]
-      x = [ sum(B[i, j] * (h\w[i]) for i in 1:n) for j in 1:ncols(B)]
-      LL = neighbour(L, B, phi * w * G, pi * x, h, P, C, true)
+      x = [ sum(T[i, j] * (hext\w[i]) for i in 1:n) for j in 1:ncols(T)]
+      LL = neighbour(L, T, pih * matrix(k, 1, length(w), w) * G, K(pi) .* x, hext, P, C, true)
       keep, cont = callback(result, LL)
       if keep
         push!(result, LL)
@@ -1508,7 +1509,7 @@ function _neighbours(L, P, result, max, callback = stdcallback)
   elseif special
     pi = uniformizer(P)
     _G = T * form * _map(T, a)
-    G = _map(_G, h)
+    G = map_entries(hext, _G)
     for i in 1:length(LO)
       w = LO[i]
       Gw = G * matrix(k, length(w), 1, w)
@@ -1536,7 +1537,7 @@ function _neighbours(L, P, result, max, callback = stdcallback)
     end
   else
     _G = T * form * _map(T, a)
-    G = _map(_G, h)
+    G = map_entries(hext, _G)
     ram = isramified(R, minimum(P))
     if ram
       pi = uniformizer(P)
@@ -1546,15 +1547,29 @@ function _neighbours(L, P, result, max, callback = stdcallback)
       pi = uniformizer(p)
       kp, hp = ResidueField(order(p), p)
       alpha = h\(degree(k) == 1 ? one(k) : gen(k))
-      T = matrix(kp, 2, 1, [2, hp(tr(alpha))])
+      Tram = matrix(kp, 2, 1, [2, hp(tr(alpha))])
     end
     for i in 1:length(LO)
       w = LO[i]
-      x = [ sum(B[i, j] * (h\w[i]) for i in 1:n) for j in 1:ncols(B)]
-      Gw = G * matrix(k, length(w), 1, w)
+      #@show base_ring(T)
+      #for j in 1:ncols(T)
+      #  for i in 1:n
+      #    @show T[i, j] * (h\w[i])
+      #    @show parent(T[i, j])
+      #    @show parent(h\w[i])
+      #    @show @which T[i, j] * (h\w[i])
+      #    @show parent(T[i, j] * (h\w[i]))
+      #  end
+      #end
+      x = [ sum(T[i, j] * (hext\w[i]) for i in 1:n) for j in 1:ncols(T)]
+      nrm = _inner_product(form, x, x, a) #(x*Form, v) where v:= Vector([ a(e): e in Eltseq(x) ]);
+      if !(nrm in P)
+        continue
+      end
+      wG = matrix(k, 1, length(w), w) * G
       ok = 0
       for j in 1:n
-        if !iszero(Gw[j])
+        if !iszero(wG[j])
           ok = j
           break
         end
@@ -1562,12 +1577,16 @@ function _neighbours(L, P, result, max, callback = stdcallback)
       @assert ok != 0
       NL = []
       if !ram
-        s, V = solution(T, vector(kp, [hp(-nrm//pi)]))
-        l = a(h\(1//wG[j]))
-        S = [ l * (h\((s + v)[1]) + (h\(s + v)[2])*alpha) for v in v ]
+        el = order(p)(base_field(K)(nrm)//pi)
+        b, s, V = can_solve_with_kernel(Tram, matrix(kp, 1, 1, [hp(-el)]), side = :left)
+        @assert b
+        @assert s * Tram == matrix(kp, 1, 1, [hp(-el)])
+        #s, V = solution(Tram, vector(kp, [hp(-el)]))
+        l = a(hext\(inv(wG[ok])))
+        S = [ l * (hext\((s + v)[1]) + (hext\(s + v)[2])*alpha) for v in V ]
       end
       for s in S
-        LL = neighbour(L, B, wG, x+pi*s*B[j], h, P, P, false);
+        LL = neighbour(L, T, wG, [x[o] + pi*s*T[ok, o] for o in 1:ncols(T)], hext, P, P, false);
       end
       keep, cont = callback(result, LL)
       if keep
@@ -1579,6 +1598,42 @@ function _neighbours(L, P, result, max, callback = stdcallback)
     end
   end
   return result
+end
+
+function neighbour(L, B, xG, x, h, P, C, split)
+  R = order(P)
+  K = nf(R)
+  n = nrows(B)
+  if C isa Int 
+    C = split ? involution(L)(P) : P
+  end 
+  I = [ i for i in 1:n if !iszero(xG[i])]
+  @assert length(I) != 0
+  i = I[1]
+  a = involution(L)
+  M = zero_matrix(K, n - length(I), ncols(B))
+  for (k, nk) in enumerate(setdiff(1:n, I))
+    for j in 1:ncols(B)
+      M[k, j] = B[nk, j]
+    end
+  end
+  CI = [ K(1) * R for j in 1:(n - length(I)) ]
+  for j in I
+    if j != i
+      M = vcat(M, matrix(K, 1, ncols(B), [B[j, k] - a(h\(divexact(xG[j], xG[i]))) * B[i, k] for k in 1:ncols(B)]))
+      push!(CI, K(1) * R)
+    end
+  end
+  M = vcat(M, sub(B, i:i, 1:ncols(B)))
+  push!(CI, fractional_ideal(order(P), P))
+  M = vcat(M, matrix(K, 1, ncols(B), x))
+  push!(CI, inv(C))
+  pm = pseudo_hnf(pseudo_matrix(M, CI))
+  M = _sum_modules(pm, _module_scale_ideal((split ? P : P * C), pseudo_matrix(L)))
+  LL = lattice(ambient_space(L), M)
+
+  @assert islocally_isometric(L, LL, P)
+  return LL
 end
 
 function neighbours(L, P, max = inf)
@@ -1599,20 +1654,26 @@ function stdcallback(list, L)
   return keep, true;
 end
 
-function iterated_neighbours(L::HermLat, P; max = inf)# AutoOrbits, CallBack:= false, Max:= Infinity()) -> []
+function iterated_neighbours(L::HermLat, P; max = inf, callback = false)# AutoOrbits, CallBack:= false, Max:= Infinity()) -> []
   #require Order(P) eq BaseRing(L): "Arguments are incompatible";
   #require IsPrime(P): "Second argument must be prime";
   #require not IsRamified(P) or Minimum(P) ne 2: "Second argument cannot be a ramified prime over 2";
   #require IsModular(L, P) : "The lattice must be locally modular";
   #require Rank(L) ge 2: "The rank of the lattice must be at least 2";
   #require IsIsotropic(L, P): "The lattice must be locally isotropic";
+  
+  if callback == false && isdefinite(L)
+    _callback = stdcallback
+  else
+    _callback = callback
+  end
 
   result = [ L ]
   i = 1
   while length(result) < max && i <= length(result)
     # _Neighbours and the callback only add new lattices if not isometric to known ones and stop if Max is reached.
     # So we have nothing to at all.
-    result = _neighbours(result[i], P, result, max)# : CallBack:= CallBack);
+    result = _neighbours(result[i], P, result, max, _callback)# : CallBack:= CallBack);
     i = i + 1
   end
   return result

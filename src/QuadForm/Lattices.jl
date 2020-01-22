@@ -2728,24 +2728,107 @@ end
 
 ################################################################################
 #
-#  Isometry
+#  Automorphism group
 #
 ################################################################################
 
-function _get_vectors_of_length(G::Union{fmpz_mat, FakeFmpqMat}, max::fmpz)
-  C = enum_ctx_from_gram(G)
-  enum_ctx_start(C, max)
-  res = Tuple{fmpz_mat, fmpz}[]
-  while enum_ctx_next(C)
-    push!(res, (deepcopy(C.x), (C.x * G * transpose(C.x))[1, 1]))
-    push!(res, (-deepcopy(C.x), (C.x * G * transpose(C.x))[1, 1]))
+# Compute the automorphism group of the lattice
+# per default, the are given with respect to the basis of the ambient space
+# if natural_action = true, they are given with respect to the coordinate
+# space/ambient space
+function automorphism_group(L::AbsLat; check::Bool = true,
+                                       natural_action::Bool = true)
+  V = ambient_space(L)
+  E = base_ring(V)
+  K = base_field(E)
+  Eabs, EabsToE = absolute_field(E)
+  a = EabsToE(gen(Eabs))
+  B = absolute_basis(L)
+  res = fmpz_mat[]
+  _absolute_basis = EabsToE.(basis(Eabs))
+  for b in _absolute_basis
+    Vres3, Vres3ToV, VtoVres3 = restrict_scalars(V, FlintQQ, b)
+    G3 = gram_matrix(Vres3, VtoVres3.(B))
+    G3Z = change_base_ring(FlintZZ, G3)
+    push!(res, G3Z)
   end
-  return res
+  @assert isone(_absolute_basis[1])
+  # So the first one is either positive definite or negative definite
+  # Make it positive definite. This does not change the automorphisms.
+  if res[1][1, 1] < 0
+    res[1] = -res[1]
+  end
+
+  # Make the Gram matrix small
+  Glll, T = lll_gram_with_transform(res[1])
+  Ttr = transpose(T)
+  res_orig = copy(res)
+  for i in 1:length(res)
+    res[i] = T * res[i] * Ttr
+  end
+
+  # Create the automorphism context and compute generators as well as orders
+  C = ZLatAutoCtx(res)
+  init(C)
+  auto(C)
+  gens, order = _get_generators(C)
+
+  # Now translate back
+  Tinv = inv(T)
+  for i in 1:length(gens)
+    gens[i] = Tinv * gens[i] * T
+  end
+  
+  # Now gens are with respect to the absolute basis of L
+  @assert all( gens[i] * res_orig[j] * transpose(gens[i]) == res_orig[j] for i in 1:length(gens), j in 1:length(res))
+
+  # Now translate to get the automorphisms with respect to basis_matrix(L)
+  bm = basis_matrix(L)
+  abs_bm = zero_matrix(E, length(B), ncols(bm))
+  for i in 1:length(B)
+    for j in 1:ncols(bm)
+      abs_bm[i, j] = B[i][j]
+    end
+  end
+
+  b1, s1 = can_solve(abs_bm, bm, side = :left)
+  b2, s2 = can_solve(bm, abs_bm, side = :left)
+
+  translate_gens = Vector{typeof(bm)}(undef, length(gens))
+
+  for i in 1:length(gens)
+    translate_gens[i] = s1 * change_base_ring(E, gens[i]) * s2
+  end
+
+  G = gram_matrix_of_basis(L)
+
+  # Translate_gens are the automorphisms of L with respect to basis_matrix(L)
+  
+  pm = pseudo_matrix(L)
+  C = coefficient_ideals(pm)
+
+  if check
+    @assert all(g * G * _map(transpose(g), involution(L)) == G for g in translate_gens)
+    for g in translate_gens
+      @assert all(g[i, j] in C[j] * inv(C[i]) for i in 1:nrows(g), j in 1:nrows(g))
+    end
+  end
+
+  # Now set the generators and the order
+
+  if !natural_action
+    return translate_gens, order
+  else
+    bminv = inv(bm)
+    return [ bminv * g * bm for g in G], order
+  end
 end
 
-function _get_vectors_of_length(G::ZLattice, max::fmpz)
-  return _get_vectors_of_length(FakeFmpqMat(gram_matrix(G)), max)
-end
+################################################################################
+#
+#  Isometry
+#
+################################################################################
 
 function _back_track(source_grams::Vector, target_grams::Vector, max = inf)
   n = nrows(source_grams[1])
@@ -2788,7 +2871,6 @@ function __back_track(source_gram, target_gram, all_vec, lengths, n, max = inf)
   level = 1
 
   while level > 0 && length(auto) < max
-    @show z, length(auto)
     if _can_extend(source_gram, target_gram, z, level, all_vec)
       if level == n
         push!(auto, deepcopy(z))
@@ -2885,4 +2967,52 @@ function _morphisms(source_gram, target_gram)
     end
     return res
   end
+end
+
+function to_magma(L::HermLat)
+  return to_magma(stdout, L)
+end
+
+function to_magma(io::IO, L::HermLat)
+  E = nf(base_ring(L))
+  K = base_field(E)
+  println(io, "Qx<x> := PolynomialRing(Rationals());")
+  f = defining_polynomial(K)
+  pol = replace(string(f), "//" => "/")
+  pol = replace(pol, string(var(parent(f))) => "x")
+  println(io, "f := ", pol, ";")
+  println(io, "K<a> := NumberField(f);")
+  println(io, "Kt<t> := PolynomialRing(K);")
+  f = defining_polynomial(E)
+  pol = replace(string(f), "//" => "/")
+  pol = replace(pol, string(var(parent(f))) => "t")
+  println(io, "g := ", pol, ";")
+  println(io, "E<b> := NumberField(g);")
+  F = gram_matrix(ambient_space(L))
+  Fst = "[" * split(string([F[i, j] for i in 1:nrows(F) for j in 1:ncols(F)]), '[')[2]
+  println(io, "F := Matrix(E, ", nrows(F), ", ", ncols(F), ", ", Fst, ");")
+  pm = pseudo_matrix(L)
+  M = matrix(pm)
+  Mst = "[" * split(string([M[i, j] for i in 1:nrows(M) for j in 1:ncols(M)]), '[')[2]
+  println(io, "M := Matrix(E, ", nrows(M), ", ", ncols(M), ", ", Mst, ");")
+  println(io, "OE := MaximalOrder(E);")
+  print(io, "C := [ ")
+  for (i, I) in enumerate(coefficient_ideals(pm))
+    print(io, "ideal< OE | ")
+    bas = "[" * split(string(absolute_basis(I)), '[')[2]
+    bas = replace(bas, string(var(K)) => "a")
+    bas = replace(bas, string(var(E)) => "b")
+    bas = replace(bas, "//" => "/")
+    if i < length(coefficient_ideals(pm))
+      print(io, bas, ">, ")
+    else
+      println(io, bas, ">];")
+    end
+  end
+  println(io, "M := Module(PseudoMatrix(C, M));")
+  println(io, "L := HermitianLattice(M, F);")
+end
+
+function var(E::NfRel)
+  return E.S
 end
