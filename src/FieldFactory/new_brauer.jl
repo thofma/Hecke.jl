@@ -43,7 +43,7 @@ function check_obstruction(list::Vector{FieldsTower}, L::Main.ForeignGAP.MPtr,
     else
       all_cocycles = Vector{Vector{cocycle_ctx}}(undef, length(cocycles))
       for i = 1:length(cocycles)
-        all_cocycles[i] = _cocycles_with_cyclic_kernel(cocycles[i], Int(p))
+        all_cocycles[i] = _cocycles_with_cyclic_kernel(cocycles_p[i], Int(p))
       end
       for i = 1:length(list)
         @vprint :Fields 1 "$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())Fields to test: $(length(list)-i+1)"
@@ -152,7 +152,9 @@ function _to_prime_power_groups(cocycle::cocycle_ctx, p::Int)
   images_inclusion = []
   gensA = GAP.Globals.GeneratorsOfGroup(A)
   for i = 1:length(gensA)
-    push!(images_inclusion, GAP.Globals.PreImagesRepresentative(inj_Ep, GAP.Globals.Image(inc, gensA[i])))
+    el = GAP.Globals.Image(inc, gensA[i])
+    prel = GAP.Globals.PreImagesRepresentative(inj_Ep, el)
+    push!(images_inclusion, prel)
   end
   imgs_inclusion = GAP.julia_to_gap(images_inclusion)
   new_incl = GAP.Globals.GroupHomomorphismByImages(A, Ep, gensA, imgs_inclusion)
@@ -374,10 +376,9 @@ function cocycles_computation(L::Main.ForeignGAP.MPtr, level::Int)
       end
     end
     #I change aut2 so that its codomain is really target_grp
-    new_aut2 = GAP.Globals.GroupHomomorphismByImages(K, target_grp, GAP.Globals.GeneratorsOfGroup(K), GAP.Globals.GeneratorsOfGroup(K))
+    new_aut2 = aut2*GAP.Globals.GroupHomomorphismByImages(K, target_grp, GAP.Globals.GeneratorsOfGroup(K), GAP.Globals.GeneratorsOfGroup(K))
     cocycles[i] = cocycle_ctx(mH1*aut1, new_aut2, cocycle)
-  end
-  
+  end  
   return cocycles
 
 end
@@ -792,7 +793,13 @@ function issplit_at_p(F::FieldsTower, G::Vector{NfToNfMor}, Coc::Function, p::In
   O = maximal_order(K)
   lp = prime_decomposition(O, p, cached = true)
   if degree(O) == length(G) || F.isabelian
-    return issplit_at_P(O, G, Coc, lp[1][1], n, Rx)
+    if !iscoprime(length(G), p)
+      q = ispower(n)[2]
+      Gq = pSylow(G, q)
+      return issplit_at_P(O, Gq, Coc, lp[1][1], n, Rx)
+    else
+      return issplit_at_P(O, G, Coc, lp[1][1], n, Rx)
+    end
   else
     for i = 1:length(lp)
       if !issplit_at_P(O, G, Coc, lp[i][1], n, Rx)
@@ -805,16 +812,16 @@ end
 
 
 function issplit_at_P(O::NfOrd, G::Vector{NfToNfMor}, Coc::Function, P::NfOrdIdl, n::Int, Rx::GFPPolyRing)
- 
   e = gcd(length(G), ramification_index(P))
   if e == 1
     return true
   end
-  @assert divisible(norm(P)-1, e)
-  c = divexact(norm(P)-1, e)
   f = gcd(length(G), degree(P))
-  if f == 1 && iszero(mod(c, n))
-    return true
+  if divisible(norm(P)-1, e)
+    c = divexact(norm(P)-1, e)
+    if f == 1 && iszero(mod(c, n))
+      return true
+    end
   end 
   @vtime :BrauerObst 1  Gp = decomposition_group(P, G = G, orderG = e*f)
   InGrp = inertia_subgroup(P, G = Gp)
@@ -823,6 +830,7 @@ function issplit_at_P(O::NfOrd, G::Vector{NfToNfMor}, Coc::Function, P::NfOrdIdl
     return true
   end
   f = divexact(length(Gp), e)
+  @assert divisible(norm(P)-1, e)
   c = divexact(norm(P)-1, e)
   if f == 1 && iszero(mod(c, n))
     return true
