@@ -23,9 +23,9 @@ function _conductors_using_cocycles(F::FieldsTower, st::Vector{Int}, l_cond::Vec
     sizes_preimages = Int[]
     for c in cocycles
       proj = c.projection
-      subgs = Vector{Vector{GapObj}}(undef, n)
+      subgs = Vector{Vector{GAP.GapObj}}(undef, n)
       for i = 1:n
-        subgs[i] = Vector{GapObj}(undef, length(els))
+        subgs[i] = Vector{GAP.GapObj}(undef, length(els))
       end
       for j = 1:length(els)
         pels = GAP.Globals.List(GAP.Globals.PreImages(proj, els[j]))
@@ -99,7 +99,7 @@ function _conductors_using_cocycles(F::FieldsTower, st::Vector{Int}, l_cond::Vec
 
 end
 
-function conductors_with_restrictions(F::FieldsTower, st::Vector{Int}, IdG::GapObj, bound::fmpz)
+function conductors_with_restrictions(F::FieldsTower, st::Vector{Int}, IdG::GAP.GapObj, bound::fmpz)
 
   O = maximal_order(F)
   l_cond = Hecke.conductors(O, st, bound)
