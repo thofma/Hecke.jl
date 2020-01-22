@@ -245,7 +245,11 @@ function _to_subgroup_of_kernel(cocycle::cocycle_ctx, S)
       return GAP.Globals.Image(pr, cocycle.cocycle(x, y))
     end
   end
-  return cocycle_ctx(projection, inclusion, new_coc)
+  res = cocycle_ctx(projection, inclusion, new_coc)
+  if isdefined(cocycle, :inclusion_of_pSylow)
+    res.inclusion_of_pSylow = cocycle.inclusion_of_pSylow
+  end
+  return res
 end
 
 
@@ -453,13 +457,24 @@ function _obstruction_prime_no_extend(x::FieldsTower, cocycles, p::Int)
     Gp = GC
   end
   D1 = Dict{gfp_poly, GAP.GapObj}()
-  for g in Gp
+  for g in GC
     pol = Rx(g.prim_img)
     el = D[g]
     D1[pol] = el
   end 
   obstruction = falses(length(cocycles)) 
   for i = 1:length(obstruction)
+    if isdefined(cocycles[i], :inclusion_of_pSylow)
+      #I need to assert that I took the right pSylow.
+      Gp1 = NfToNfMor[]
+      for g in GC
+        el = D1[Rx(g.prim_img)]
+        if GAP.Globals.IN(el, GAP.Globals.Image(cocycles[i].inclusion_of_pSylow))
+          push!(Gp1, g)
+        end
+      end
+      Gp = Gp1
+    end
     #I create the cocycle
     local cocycle
     let D1 = D1, i = i, p = p
@@ -620,7 +635,7 @@ function _obstruction_pp(F::FieldsTower, cocycles::Vector{cocycle_ctx}, pv::Int)
   #Unfortunately, I need to compute the group structure.
   Gp = pSylow(autsK1, p)
   D1 = Dict{gfp_poly, GAP.GapObj}()
-  for g in Gp
+  for g in autsK1
     pol = Rx(g.prim_img)
     mp = autsK[restr[dautsK1[pol]]]
     el = D[mp]
@@ -631,14 +646,24 @@ function _obstruction_pp(F::FieldsTower, cocycles::Vector{cocycle_ctx}, pv::Int)
   Fext = FieldsTower(K1, autsK1, [id_hom(K1)])
   for i = 1:length(obstruction)
     #I create the cocycle
+    if isdefined(cocycles[i], :inclusion_of_pSylow)
+      Gp1 = NfToNfMor[]
+      for g in autsK1
+        el = D1[Rx(g.prim_img)]
+        if GAP.Globals.IN(el, GAP.Globals.Image(cocycles[i].inclusion_of_pSylow))
+          push!(Gp1, g)
+        end
+      end
+      Gp = Gp1
+    end
     local cocycle
     let D1 = D1, cocycles = cocycles, pv = pv, i = i
       function cocycle(aut1::gfp_poly, aut2::gfp_poly)
         s1 = D1[aut1]
         s2 = D1[aut2]
         if isdefined(cocycles[i], :inclusion_of_pSylow)
-          s1 = GAP.Globals.PreImagesRepresentative(cocycles[i].inclusion_of_pSylow, el1)
-          s2 = GAP.Globals.PreImagesRepresentative(cocycles[i].inclusion_of_pSylow, el2)
+          s1 = GAP.Globals.PreImagesRepresentative(cocycles[i].inclusion_of_pSylow, s1)
+          s2 = GAP.Globals.PreImagesRepresentative(cocycles[i].inclusion_of_pSylow, s2)
         end
         rescoc = cocycles[i].values_cyclic(s1, s2)
         return mod(rescoc, pv)::Int
@@ -655,8 +680,11 @@ function _obstruction_pp(F::FieldsTower, cocycles::Vector{cocycle_ctx}, pv::Int)
         push!(Stab, Gp[w])
         continue
       end
-      s1 = D1[Rx(Gp[w].prim_img)]
-      img_el = GAP.Globals.PreImagesRepresentative(projection, s1)
+      ss1 = D1[Rx(Gp[w].prim_img)]
+      if isdefined(cocycles[i], :inclusion_of_pSylow)
+        ss1 = GAP.Globals.PreImagesRepresentative(cocycles[i].inclusion_of_pSylow, ss1)
+      end
+      img_el = GAP.Globals.PreImagesRepresentative(projection, ss1)
       conj_elem = img_el*inc_gen*GAP.Globals.Inverse(img_el)
       ex = _find_exp(inc_gen, conj_elem)
       if ex == act_on_roots[w]
@@ -785,6 +813,7 @@ function is_split_at_infinity(K::AnticNumberField, G::Vector{NfToNfMor}, Coc::Fu
   if !fl
     return true
   end
+  @assert aut in G
   return !isone(Coc(Rx(aut.prim_img), Rx(aut.prim_img)))
 end
 
