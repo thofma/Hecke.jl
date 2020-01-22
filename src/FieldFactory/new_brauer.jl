@@ -4,7 +4,7 @@
 # 
 ################################################################################
 
-function check_obstruction(list::Vector{FieldsTower}, L::Main.ForeignGAP.MPtr,
+function check_obstruction(list::Vector{FieldsTower}, L::GapObj,
            i::Int, invariants::Vector{Int})
            
   d = degree(list[1])
@@ -171,7 +171,7 @@ function  _cocycles_with_cyclic_kernel(old_cocycle::cocycle_ctx, p::Int)
   G = GAP.Globals.ImagesSource(proj)
   K = GAP.Globals.Source(cocycle.inclusion)
   oK = GAP.Globals.Size(K)
-  normal_cyclic_and_contained = Main.ForeignGAP.MPtr[]
+  normal_cyclic_and_contained = GapObj[]
   for i = 1:length(normal_subgroups)
     g = normal_subgroups[i]
     oG = GAP.Globals.Size(g)
@@ -186,7 +186,7 @@ function  _cocycles_with_cyclic_kernel(old_cocycle::cocycle_ctx, p::Int)
     end  
   end
   #Almost done. I only want the minimal ones, so I need to sieve.
-  res = Main.ForeignGAP.MPtr[]
+  res = GapObj[]
   for i = 1:length(normal_cyclic_and_contained)
     g = normal_cyclic_and_contained[i]
     found = false
@@ -239,7 +239,7 @@ function _to_subgroup_of_kernel(cocycle::cocycle_ctx, S)
   projection = GAP.Globals.GroupHomomorphismByImages(E_new, G, gensE_new, GAP.julia_to_gap(images_proj))
   local new_coc
   let cocycle = cocycle, pr = pr 
-    function new_coc(x::Main.ForeignGAP.MPtr, y::Main.ForeignGAP.MPtr)
+    function new_coc(x::GapObj, y::GapObj)
       return GAP.Globals.Image(pr, cocycle.cocycle(x, y))
     end
   end
@@ -286,7 +286,7 @@ function _to_prime_power_kernel(cocycle::cocycle_ctx, p::Int)
   projection = GAP.Globals.GroupHomomorphismByImages(E_new, G, gensE_new, GAP.julia_to_gap(images_proj))
   local new_coc
   let cocycle = cocycle, pr = pr 
-    function new_coc(x::Main.ForeignGAP.MPtr, y::Main.ForeignGAP.MPtr)
+    function new_coc(x::GapObj, y::GapObj)
       return GAP.Globals.Image(pr, cocycle.cocycle(x, y))
     end
   end
@@ -309,7 +309,7 @@ function assure_isomorphism(F::FieldsTower, G)
   permGC = _from_autos_to_perm(autsK)
   Gperm = _perm_to_gap_grp(permGC)
   iso = GAP.Globals.IsomorphismGroups(Gperm, G)
-  D = Dict{NfToNfMor, Main.ForeignGAP.MPtr}()
+  D = Dict{NfToNfMor, GapObj}()
   for i = 1:length(autsK)
     permgap = _perm_to_gap_perm(permGC[i])
     k = GAP.Globals.Image(iso, permgap)
@@ -325,7 +325,7 @@ end
 #
 ################################################################################
 
-function cocycles_computation(L::Main.ForeignGAP.MPtr, level::Int)
+function cocycles_computation(L::GapObj, level::Int)
 
   proj = GAP.Globals.NaturalHomomorphismByNormalSubgroup(L[1], L[level+1])
   target_grp = GAP.Globals.ImagesSource(proj)
@@ -334,8 +334,8 @@ function cocycles_computation(L::Main.ForeignGAP.MPtr, level::Int)
   K = GAP.Globals.Kernel(mH1)
     
   Elems = GAP.Globals.Elements(H1)
-  MatCoc = Array{Main.ForeignGAP.MPtr, 2}(undef, length(Elems), length(Elems))
-  Preimags = Vector{Main.ForeignGAP.MPtr}(undef, length(Elems))
+  MatCoc = Array{GapObj, 2}(undef, length(Elems), length(Elems))
+  Preimags = Vector{GapObj}(undef, length(Elems))
   for i = 1:length(Elems)
     Preimags[i] = GAP.Globals.PreImagesRepresentative(mH1, Elems[i])
   end
@@ -359,7 +359,7 @@ function cocycles_computation(L::Main.ForeignGAP.MPtr, level::Int)
     aut1, aut2 = autos[i]
     local cocycle
     let Elems = Elems, MatCoc = MatCoc, aut1 = aut1, aut2 = aut2, Elems = Elems
-      function cocycle(x::Main.ForeignGAP.MPtr, y::Main.ForeignGAP.MPtr)  
+      function cocycle(x::GapObj, y::GapObj)  
         new_x = GAP.Globals.PreImagesRepresentative(aut1, x)
         new_y = GAP.Globals.PreImagesRepresentative(aut1, y)
         ind1 = 1
@@ -389,7 +389,7 @@ function _cocycle_to_exponent!(cocycle::cocycle_ctx)
   gen = GAP.Globals.MinimalGeneratingSet(GAP.Globals.Source(cocycle.inclusion))[1]
   local cocycle_val
   let cocycle = cocycle, gen = gen
-    function cocycle_val(x::Main.ForeignGAP.MPtr, y::Main.ForeignGAP.MPtr)
+    function cocycle_val(x::GapObj, y::GapObj)
       return _find_exp(gen, cocycle.cocycle(x, y))
     end
   end
@@ -440,7 +440,7 @@ function _obstruction_prime_no_extend(x::FieldsTower, cocycles, p::Int)
   end
   permGC = _from_autos_to_perm(GC)
   Gperm = _perm_to_gap_grp(permGC)
-  PermGAP = Vector{Main.ForeignGAP.MPtr}(undef, length(permGC))
+  PermGAP = Vector{GapObj}(undef, length(permGC))
   for w = 1:length(permGC)
     PermGAP[w] = _perm_to_gap_perm(permGC[w])
   end
@@ -451,7 +451,7 @@ function _obstruction_prime_no_extend(x::FieldsTower, cocycles, p::Int)
   else
     Gp = GC
   end
-  D1 = Dict{gfp_poly, Main.ForeignGAP.MPtr}()
+  D1 = Dict{gfp_poly, GapObj}()
   for g in Gp
     pol = Rx(g.prim_img)
     el = D[g]
@@ -513,7 +513,7 @@ function _obstruction_prime(x::FieldsTower, cocycles::Vector{cocycle_ctx}, p)
   #Restrict to the p-Sylow
   #Unfortunately, I need to compute the group structure.
   Gp = pSylow(autsK1, p)
-  D1 = Dict{gfp_poly, Main.ForeignGAP.MPtr}()
+  D1 = Dict{gfp_poly, GapObj}()
   for g in Gp
     pol = Rx(g.prim_img)
     mp = autsK[restr[dautsK1[aut1]]]
@@ -618,7 +618,7 @@ function _obstruction_pp(F::FieldsTower, cocycles::Vector{cocycle_ctx}, pv::Int)
   #Restrict to the p-Sylow
   #Unfortunately, I need to compute the group structure.
   Gp = pSylow(autsK1, p)
-  D1 = Dict{gfp_poly, Main.ForeignGAP.MPtr}()
+  D1 = Dict{gfp_poly, GapObj}()
   for g in Gp
     pol = Rx(g.prim_img)
     mp = autsK[restr[dautsK1[pol]]]
@@ -694,7 +694,7 @@ function _obstruction_pp_no_extend(F::FieldsTower, cocycles::Vector{cocycle_ctx}
   end 
   H = GAP.Globals.ImagesSource(cocycles[1].projection)
   iso = GAP.Globals.IsomorphismGroups(Gperm, H)
-  ElemGAP = Vector{Main.ForeignGAP.MPtr}(undef, length(permGC))
+  ElemGAP = Vector{GapObj}(undef, length(permGC))
   for w = 1:length(permGC)
     ElemGAP[w] = GAP.Globals.Image(iso, _perm_to_gap_perm(permGC[w]))
   end

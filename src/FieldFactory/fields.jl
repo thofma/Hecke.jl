@@ -13,14 +13,14 @@ add_verbose_scope(:FieldsNonFancy)
 ################################################################################
 
 mutable struct cocycle_ctx
-  projection::Main.ForeignGAP.MPtr
-  inclusion::Main.ForeignGAP.MPtr
+  projection::GapObj
+  inclusion::GapObj
   cocycle::Function
   values_cyclic::Function
-  gen_kernel::Main.ForeignGAP.MPtr
-  inclusion_of_pSylow::Main.ForeignGAP.MPtr
+  gen_kernel::GapObj
+  inclusion_of_pSylow::GapObj
   
-  function cocycle_ctx(proj::Main.ForeignGAP.MPtr, incl::Main.ForeignGAP.MPtr, cocycle::Function)
+  function cocycle_ctx(proj::GapObj, incl::GapObj, cocycle::Function)
     z = new()
     z.projection = proj
     z.inclusion = incl
@@ -38,7 +38,7 @@ mutable struct FieldsTower
   isabelian::Bool
   #Solvable embedding problems for the extension
   #They are here to improve the conductor computation
-  isomorphism::Dict{NfToNfMor, Main.ForeignGAP.MPtr}
+  isomorphism::Dict{NfToNfMor, GapObj}
   admissible_cocycles::Vector{cocycle_ctx}
   
   function FieldsTower(K::AnticNumberField, auts::Vector{NfToNfMor}, subfields::Vector{NfToNfMor})
@@ -238,7 +238,7 @@ function _from_autos_to_perm(G::Array{Hecke.NfToNfMor,1})
 end
 
 function _perm_to_gap_grp(perm::Array{Array{Int, 1},1})
-  g = Main.ForeignGAP.MPtr[]
+  g = GapObj[]
   for x in perm
     z = _perm_to_gap_perm(x)
     push!(g, z)
@@ -383,9 +383,9 @@ function _split_extension(G::Array{Hecke.NfToNfMor, 1}, mats::Array{Hecke.GrpAbF
   gensG1 = GAP.Globals.GeneratorsOfGroup(G1)
   A = GAP.Globals.AbelianGroup(GAP.julia_to_gap(gtype))
   gens = GAP.Globals.GeneratorsOfGroup(A)
-  auts = Array{Main.ForeignGAP.MPtr, 1}(undef, length(mats))
+  auts = Array{GapObj, 1}(undef, length(mats))
   for i = 1:length(mats)
-    images = Array{Main.ForeignGAP.MPtr, 1}(undef, length(gtype))
+    images = Array{GapObj, 1}(undef, length(gtype))
     for j = 1:length(gtype)
       g = GAP.Globals.Identity(A)
       for k = 1:length(gtype)
@@ -409,7 +409,7 @@ end
 #
 ###############################################################################
 
-function check_group_extension(TargetGroup::Main.ForeignGAP.MPtr, autos::Array{NfToNfMor, 1}, res_act::Array{GrpAbFinGenMap, 1})
+function check_group_extension(TargetGroup::GapObj, autos::Array{NfToNfMor, 1}, res_act::Array{GrpAbFinGenMap, 1})
 
   GS = domain(res_act[1])
   @assert issnf(GS)
@@ -456,9 +456,9 @@ end
 #
 ###############################################################################
 
-function field_extensions(list::Vector{FieldsTower}, bound::fmpz, IsoE1::Main.ForeignGAP.MPtr, l::Array{Int, 1}, only_real::Bool, simplify::Bool)
+function field_extensions(list::Vector{FieldsTower}, bound::fmpz, IsoE1::GapObj, l::Array{Int, 1}, only_real::Bool, simplify::Bool)
 
-  grp_to_be_checked = Dict{Int, Main.ForeignGAP.MPtr}()
+  grp_to_be_checked = Dict{Int, GapObj}()
   d = degree(list[1])
   n = lcm(l)
   com, uncom = ppio(n, d)
@@ -481,7 +481,7 @@ function field_extensions(list::Vector{FieldsTower}, bound::fmpz, IsoE1::Main.Fo
 
 end
 
-function field_extensions(x::FieldsTower, bound::fmpz, IsoE1::Main.ForeignGAP.MPtr, l::Array{Int, 1}, only_real::Bool, grp_to_be_checked::Dict{Int, Main.ForeignGAP.MPtr}, IsoG::Main.ForeignGAP.MPtr, simplify::Bool)
+function field_extensions(x::FieldsTower, bound::fmpz, IsoE1::GapObj, l::Array{Int, 1}, only_real::Bool, grp_to_be_checked::Dict{Int, GapObj}, IsoG::GapObj, simplify::Bool)
   
   list_cfields = _abelian_normal_extensions(x, l, bound, IsoE1, only_real, IsoG)
   if isempty(list_cfields)
