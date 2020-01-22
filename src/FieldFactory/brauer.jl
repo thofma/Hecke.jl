@@ -7,7 +7,7 @@ add_verbose_scope(:BrauerObst)
 #
 ###############################################################################
 
-function check_Brauer_obstruction(list::Vector{FieldsTower}, L::Main.ForeignGAP.MPtr, i::Int, invariants::Vector{Int})
+function check_Brauer_obstruction(list::Vector{FieldsTower}, L::GapObj, i::Int, invariants::Vector{Int})
   #return check_obstruction(list, L, i, invariants)
   d = degree(list[1])
   common_degree = ppio(invariants[end], d)[1]
@@ -62,7 +62,7 @@ function check_Brauer_obstruction(list::Vector{FieldsTower}, L::Main.ForeignGAP.
   return list
 end
 
-function find_subgroups_cyclic_in_derived(L::Main.ForeignGAP.MPtr, i::Int, p::fmpz)
+function find_subgroups_cyclic_in_derived(L::GapObj, i::Int, p::fmpz)
   proj = GAP.Globals.NaturalHomomorphismByNormalSubgroup(L[1], L[i+1])
   target_grp = GAP.Globals.ImagesSource(proj)
   normal_subgroups = GAP.Globals.NormalSubgroups(target_grp)
@@ -70,7 +70,7 @@ function find_subgroups_cyclic_in_derived(L::Main.ForeignGAP.MPtr, i::Int, p::fm
   G = GAP.Globals.ImagesSource(mH1)
   K = GAP.Globals.Kernel(mH1)
   oK = GAP.Globals.Size(K)
-  normal_cyclic_and_contained = Main.ForeignGAP.MPtr[]
+  normal_cyclic_and_contained = GapObj[]
   for i = 1:length(normal_subgroups)
     g = normal_subgroups[i]
     oG = GAP.Globals.Size(g)
@@ -85,7 +85,7 @@ function find_subgroups_cyclic_in_derived(L::Main.ForeignGAP.MPtr, i::Int, p::fm
     end  
   end
   #Almost done. I only want the minimal ones, so I need to sieve.
-  res = Main.ForeignGAP.MPtr[]
+  res = GapObj[]
   for i = 1:length(normal_cyclic_and_contained)
     g = normal_cyclic_and_contained[i]
     found = false
@@ -143,7 +143,7 @@ end
 #
 ###############################################################################
 
-function pSylow(Gperm::Main.ForeignGAP.MPtr, permGAP::Vector{Main.ForeignGAP.MPtr}, G::Vector{NfToNfMor}, p::Int)
+function pSylow(Gperm::GapObj, permGAP::Vector{GapObj}, G::Vector{NfToNfMor}, p::Int)
   p2 = ispower(length(G))[2]
   if p == p2
     return G
@@ -171,7 +171,7 @@ function pSylow(G::Vector{NfToNfMor}, p::Int)
   end
   permGC = _from_autos_to_perm(G) 
   Gperm = _perm_to_gap_grp(permGC)
-  PermGAP = Vector{Main.ForeignGAP.MPtr}(undef, length(permGC))
+  PermGAP = Vector{GapObj}(undef, length(permGC))
   for w = 1:length(permGC)
     PermGAP[w] = _perm_to_gap_perm(permGC[w])
   end
@@ -184,7 +184,7 @@ end
 #
 ###############################################################################
 
-function _find_exp(x::Main.ForeignGAP.MPtr, y::Main.ForeignGAP.MPtr)
+function _find_exp(x::GapObj, y::GapObj)
   if GAP.Globals.One(x) == y
     return 0
   end
@@ -199,12 +199,12 @@ function _find_exp(x::Main.ForeignGAP.MPtr, y::Main.ForeignGAP.MPtr)
   return i
 end
 
-function _autos_to_check(G::Main.ForeignGAP.MPtr, E::Main.ForeignGAP.MPtr, mG::Main.ForeignGAP.MPtr)
+function _autos_to_check(G::GapObj, E::GapObj, mG::GapObj)
   AutG = GAP.Globals.AutomorphismGroup(G)
   AutE = GAP.Globals.AutomorphismGroup(E)
   #I want to construct the map between the automorphism groups. The kernel is charachteristic!
   gens = GAP.Globals.GeneratorsOfGroup(AutE)
-  ind_auts = Array{Main.ForeignGAP.MPtr, 1}(undef, length(gens))
+  ind_auts = Array{GapObj, 1}(undef, length(gens))
   for s = 1:length(gens)
     ind_auts[s] = GAP.Globals.InducedAutomorphism(mG, gens[s])
   end
@@ -213,7 +213,7 @@ function _autos_to_check(G::Main.ForeignGAP.MPtr, E::Main.ForeignGAP.MPtr, mG::M
   return GAP.gap_to_julia(T)
 end
 
-function cocycle_computation(L::Main.ForeignGAP.MPtr, i::Int)
+function cocycle_computation(L::GapObj, i::Int)
 
   proj = GAP.Globals.NaturalHomomorphismByNormalSubgroup(L[1], L[i+1])
   target_grp = GAP.Globals.ImagesSource(proj)
@@ -227,7 +227,7 @@ function cocycle_computation(L::Main.ForeignGAP.MPtr, i::Int)
     
   Elems = GAP.Globals.Elements(H1)
   MatCoc = Array{Int, 2}(undef, length(Elems), length(Elems))
-  Preimags = Vector{Main.ForeignGAP.MPtr}(undef, length(Elems))
+  Preimags = Vector{GapObj}(undef, length(Elems))
   for i = 1:length(Elems)
     Preimags[i] = GAP.Globals.PreImagesRepresentative(mH1, Elems[i])
   end
@@ -246,7 +246,7 @@ function cocycle_computation(L::Main.ForeignGAP.MPtr, i::Int)
   end
   local cocycle
   let Elems = Elems, MatCoc = MatCoc
-    function cocycle(x::Main.ForeignGAP.MPtr, y::Main.ForeignGAP.MPtr)  
+    function cocycle(x::GapObj, y::GapObj)  
       i = 1
       while Elems[i] != x
         i += 1
@@ -264,7 +264,7 @@ function cocycle_computation(L::Main.ForeignGAP.MPtr, i::Int)
 
 end
 
-function _reduce_to_prime(L::Main.ForeignGAP.MPtr, i::Int, d::Int)
+function _reduce_to_prime(L::GapObj, i::Int, d::Int)
 
   p = ispower(d)[2]
   G = GAP.Globals.FactorGroup(L[1], L[i+1]) 
@@ -302,7 +302,7 @@ function assure_automorphisms(K::AnticNumberField, gens::Vector{NfToNfMor})
   return nothing
 end
 
-function _Brauer_at_two(list::Vector{FieldsTower}, L::Main.ForeignGAP.MPtr, i::Int)
+function _Brauer_at_two(list::Vector{FieldsTower}, L::GapObj, i::Int)
   mH, autos, _cocycle_values = cocycle_computation(L, i)
   domcoc = GAP.Globals.ImagesSource(mH)
   admit_ext = falses(length(list))
@@ -316,7 +316,7 @@ function _Brauer_at_two(list::Vector{FieldsTower}, L::Main.ForeignGAP.MPtr, i::I
 end
 
 
-function _Brauer_prime_case(list::Vector{FieldsTower}, L::Main.ForeignGAP.MPtr, i::Int, p::Int)
+function _Brauer_prime_case(list::Vector{FieldsTower}, L::GapObj, i::Int, p::Int)
   
   if p == 2
     return _Brauer_at_two(list, L, i)
@@ -360,7 +360,7 @@ function _Brauer_prime_case(list::Vector{FieldsTower}, L::Main.ForeignGAP.MPtr, 
       dautsK1[Rx(autsK1[w].prim_img)] = w
     end 
     iso = GAP.Globals.IsomorphismGroups(Gperm, H)
-    ElemGAP = Vector{Main.ForeignGAP.MPtr}(undef, length(permGC))
+    ElemGAP = Vector{GapObj}(undef, length(permGC))
     for w = 1:length(permGC)
       ElemGAP[w] = GAP.Globals.Image(iso, _perm_to_gap_perm(permGC[w]))
     end
@@ -368,7 +368,7 @@ function _Brauer_prime_case(list::Vector{FieldsTower}, L::Main.ForeignGAP.MPtr, 
     #Unfortunately, I need to compute the group structure.
     Gp = pSylow(autsK1, p)
     obstruction = false
-    auts_for_conductor = Vector{Main.ForeignGAP.MPtr}()
+    auts_for_conductor = Vector{GapObj}()
     for g in autos
       #I create the cocycle
       local cocycle
@@ -419,14 +419,14 @@ function _Brauer_no_extend(x::FieldsTower, mH, autos, _cocycle_values, domcoc, p
   DGC = Dict{gfp_poly, Int}(DGCvect)
   permGC = _from_autos_to_perm(GC) #TODO: Improve a little.
   Gperm = _perm_to_gap_grp(permGC)
-  PermGAP = Vector{Main.ForeignGAP.MPtr}(undef, length(permGC))
+  PermGAP = Vector{GapObj}(undef, length(permGC))
   for w = 1:length(permGC)
     PermGAP[w] = _perm_to_gap_perm(permGC[w])
   end
   #Restrict to the p-Sylow
   Gp = pSylow(Gperm, PermGAP, GC, p)
   iso = GAP.Globals.IsomorphismGroups(Gperm, domcoc)
-  ElemGAP = Vector{Main.ForeignGAP.MPtr}(undef, length(permGC))
+  ElemGAP = Vector{GapObj}(undef, length(permGC))
   for w = 1:length(permGC)
     ElemGAP[w] = GAP.Globals.Image(iso, PermGAP[w])
   end
@@ -464,14 +464,14 @@ end
 #
 ###############################################################################
 
-function _autos_to_check(G::Main.ForeignGAP.MPtr, K::Main.ForeignGAP.MPtr, E::Main.ForeignGAP.MPtr, mG::Main.ForeignGAP.MPtr)
+function _autos_to_check(G::GapObj, K::GapObj, E::GapObj, mG::GapObj)
   AutG = GAP.Globals.AutomorphismGroup(G)
   AutK = GAP.Globals.AutomorphismGroup(K)
   AutE = GAP.Globals.AutomorphismGroup(E)
   #I want to construct the map between the automorphism groups. The kernel is characteristic!
   gens = GAP.Globals.MinimalGeneratingSet(AutE)#GeneratorsOfGroup(AutE)
-  ind_auts_quo = Array{Main.ForeignGAP.MPtr, 1}(undef, length(gens))
-  ind_auts_sub = Array{Main.ForeignGAP.MPtr, 1}(undef, length(gens))
+  ind_auts_quo = Array{GapObj, 1}(undef, length(gens))
+  ind_auts_sub = Array{GapObj, 1}(undef, length(gens))
   for s = 1:length(gens)
     ind_auts_quo[s] = GAP.Globals.InducedAutomorphism(mG, gens[s])
     ind_auts_sub[s] = GAP.Globals.RestrictedMapping(gens[s], K)
@@ -479,7 +479,7 @@ function _autos_to_check(G::Main.ForeignGAP.MPtr, K::Main.ForeignGAP.MPtr, E::Ma
   GProd = GAP.Globals.DirectProduct(AutG, AutK)
   EmbAutG = GAP.Globals.Embedding(GProd, 1)
   EmbAutK = GAP.Globals.Embedding(GProd, 2)
-  gensubs = Vector{Main.ForeignGAP.MPtr}(undef, length(gens))
+  gensubs = Vector{GapObj}(undef, length(gens))
   for s = 1:length(gens)
     gensubs[s] = GAP.Globals.Image(EmbAutG, ind_auts_quo[s]) * GAP.Globals.Image(EmbAutK, ind_auts_sub[s])
   end
@@ -491,7 +491,7 @@ function _autos_to_check(G::Main.ForeignGAP.MPtr, K::Main.ForeignGAP.MPtr, E::Ma
   #Now, I have to recover the automorphisms in AutG and AutK
   ProjAutG = GAP.Globals.Projection(GProd, 1)
   ProjAutK = GAP.Globals.Projection(GProd, 2)
-  res = Vector{Tuple{Main.ForeignGAP.MPtr, Main.ForeignGAP.MPtr}}(undef, length(Tperm))
+  res = Vector{Tuple{GapObj, GapObj}}(undef, length(Tperm))
   for i = 1:length(Tperm)
     res[i] = (GAP.Globals.Image(ProjAutG, GAP.Globals.PreImagesRepresentative(iso, Tperm[i])), GAP.Globals.Image(ProjAutK, GAP.Globals.PreImagesRepresentative(iso, Tperm[i])))
   end
@@ -499,7 +499,7 @@ function _autos_to_check(G::Main.ForeignGAP.MPtr, K::Main.ForeignGAP.MPtr, E::Ma
 end
 
 
-function cocycle_computation_pp(L::Main.ForeignGAP.MPtr, i::Int)
+function cocycle_computation_pp(L::GapObj, i::Int)
 
   proj = GAP.Globals.NaturalHomomorphismByNormalSubgroup(L[1], L[i+1])
   target_grp = GAP.Globals.ImagesSource(proj)
@@ -513,7 +513,7 @@ function cocycle_computation_pp(L::Main.ForeignGAP.MPtr, i::Int)
 
   Elems = GAP.Globals.Elements(H1)
   MatCoc = Array{Int, 2}(undef, length(Elems), length(Elems))
-  Preimags = Vector{Main.ForeignGAP.MPtr}(undef, length(Elems))
+  Preimags = Vector{GapObj}(undef, length(Elems))
   for i = 1:length(Elems)
     Preimags[i] = GAP.Globals.PreImagesRepresentative(mH1, Elems[i])
   end
@@ -532,7 +532,7 @@ function cocycle_computation_pp(L::Main.ForeignGAP.MPtr, i::Int)
   end
   local cocycle
   let Elems = Elems, MatCoc = MatCoc
-    function cocycle(x::Main.ForeignGAP.MPtr, y::Main.ForeignGAP.MPtr)  
+    function cocycle(x::GapObj, y::GapObj)  
       i = 1
       while Elems[i] != x
         i += 1
@@ -548,7 +548,7 @@ function cocycle_computation_pp(L::Main.ForeignGAP.MPtr, i::Int)
   autos = _autos_to_check(H1, K, target_grp, mH1)
   #For the automorphisms of K, since K is cyclic, I only need the image of 
   # 1 under the automorphism.
-  autos_new = Vector{Tuple{Main.ForeignGAP.MPtr, Int}}(undef, length(autos))
+  autos_new = Vector{Tuple{GapObj, Int}}(undef, length(autos))
   for i = 1:length(autos)
     ex = _find_exp(gen, GAP.Globals.Image(autos[i][2], gen))
     autos_new[i] = (autos[i][1], ex)
@@ -652,14 +652,14 @@ function pSylow(G::Vector{NfToNfMor}, p::Int)
   end
   permGC = _from_autos_to_perm(G) 
   Gperm = _perm_to_gap_grp(permGC)
-  PermGAP = Vector{Main.ForeignGAP.MPtr}(undef, length(permGC))
+  PermGAP = Vector{GapObj}(undef, length(permGC))
   for w = 1:length(permGC)
     PermGAP[w] = _perm_to_gap_perm(permGC[w])
   end
   return pSylow(Gperm, PermGAP, G, p)
 end
 
-function check_Brauer_obstruction_pp(list::Vector{FieldsTower}, L::Main.ForeignGAP.MPtr, i::Int, p::Int, v::Int)
+function check_Brauer_obstruction_pp(list::Vector{FieldsTower}, L::GapObj, i::Int, p::Int, v::Int)
   list1 = falses(length(list))
   pv = p^v
   mH, autos, coc, action_grp, Elems = cocycle_computation_pp(L, i)
@@ -698,7 +698,7 @@ function check_Brauer_obstruction_pp(list::Vector{FieldsTower}, L::Main.ForeignG
       dautsK1[Rx(autsK1[w].prim_img)] = w
     end 
     iso = GAP.Globals.IsomorphismGroups(Gperm, H)
-    ElemGAP = Vector{Main.ForeignGAP.MPtr}(undef, length(permGC))
+    ElemGAP = Vector{GapObj}(undef, length(permGC))
     for w = 1:length(permGC)
       ElemGAP[w] = GAP.Globals.Image(iso, _perm_to_gap_perm(permGC[w]))
     end
@@ -795,7 +795,7 @@ function _Brauer_no_extend_pp(F, mH, autos, coc, p, v, Elems, pv, action_grp)
   end 
   H = GAP.Globals.ImagesSource(mH)
   iso = GAP.Globals.IsomorphismGroups(Gperm, H)
-  ElemGAP = Vector{Main.ForeignGAP.MPtr}(undef, length(permGC))
+  ElemGAP = Vector{GapObj}(undef, length(permGC))
   for w = 1:length(permGC)
     ElemGAP[w] = GAP.Globals.Image(iso, _perm_to_gap_perm(permGC[w]))
   end
@@ -803,7 +803,7 @@ function _Brauer_no_extend_pp(F, mH, autos, coc, p, v, Elems, pv, action_grp)
   #Unfortunately, I need to compute the group structure.
   Gp = pSylow(autsK, p)
   obstruction = false
-  auts_for_conductors = Vector{Main.ForeignGAP.MPtr}()
+  auts_for_conductors = Vector{GapObj}()
   for (g1, g2) in autos
     #I create the cocycle
     local cocycle

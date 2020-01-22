@@ -4,16 +4,16 @@
 #
 ###############################################################################
 
-function direct_product_decomposition(G::Main.ForeignGAP.MPtr, ab::Tuple{Int, Int})
+function direct_product_decomposition(G::GapObj, ab::Tuple{Int, Int})
 
-  decompositions = Tuple{Main.ForeignGAP.MPtr, Main.ForeignGAP.MPtr}[]
+  decompositions = Tuple{GapObj, GapObj}[]
   if GAP.Globals.IsAbelian(G)
     return ab, (1, 1), 1, 1
   end
   n = ab[1]
   subs = GAP.Globals.NormalSubgroups(G)
   #First, I collect all the possible decompositions
-  decompositions = Tuple{Main.ForeignGAP.MPtr, Main.ForeignGAP.MPtr}[]
+  decompositions = Tuple{GapObj, GapObj}[]
   for i = 1:length(subs)
     g1 = subs[i]
     if isone(GAP.Globals.Size(g1))
