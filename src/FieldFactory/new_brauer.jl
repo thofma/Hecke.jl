@@ -168,10 +168,11 @@ end
 function  _cocycles_with_cyclic_kernel(old_cocycle::cocycle_ctx, p::Int)
   cocycle = _to_prime_power_groups(old_cocycle, p)
   proj = cocycle.projection
+  inc = cocycle.inclusion
   E = GAP.Globals.Source(proj)
   normal_subgroups = GAP.Globals.NormalSubgroups(E)
   G = GAP.Globals.ImagesSource(proj)
-  K = GAP.Globals.Source(cocycle.inclusion)
+  K = GAP.Globals.Source(inc)
   oK = GAP.Globals.Size(K)
   normal_cyclic_and_contained = GAP.GapObj[]
   for i = 1:length(normal_subgroups)
@@ -180,11 +181,12 @@ function  _cocycles_with_cyclic_kernel(old_cocycle::cocycle_ctx, p::Int)
     if !GAP.Globals.IsSubgroup(K, g) || oG == oK
       continue
     end
-    fg = GAP.Globals.FactorGroup(K, g)
+    prmg = GAP.Globals.PreImage(inc, g)
+    fg = GAP.Globals.FactorGroup(K, prmg)
     order = fmpz(GAP.gap_to_julia(Int, GAP.Globals.Size(fg)))
     np = remove(order, p)[2]
     if isone(np) && GAP.Globals.IsCyclic(fg)
-      push!(normal_cyclic_and_contained, g)
+      push!(normal_cyclic_and_contained, prmg)
     end  
   end
   #Almost done. I only want the minimal ones, so I need to sieve.
@@ -221,11 +223,11 @@ function _to_subgroup_of_kernel(cocycle::cocycle_ctx, S)
   sizeG = GAP.Globals.Size(G)
   pr = GAP.Globals.NaturalHomomorphismByNormalSubgroup(A, S)
   #I still need to create the maps.
-  pr1 = GAP.Globals.NaturalHomomorphismByNormalSubgroup(E, S)
+  pr1 = GAP.Globals.NaturalHomomorphismByNormalSubgroup(E, GAP.Globals.Image(cocycle.inclusion, S))
   E_new = GAP.Globals.ImagesSource(pr1)
   A_new = GAP.Globals.ImagesSource(pr)
   gensA_new = GAP.Globals.GeneratorsOfGroup(A_new)
-  images_inclusion = []
+  images_inclusion = GAP.GapObj[]
   for i = 1:length(gensA_new)
     el_A = GAP.Globals.PreImagesRepresentative(pr, gensA_new[i])
     el_E = GAP.Globals.Image(cocycle.inclusion, el_A)
