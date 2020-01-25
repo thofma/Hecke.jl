@@ -2106,25 +2106,3 @@ mutable struct HenselCtx
   end
 end
 
-mutable struct qAdicRootCtx
-  f::fmpz_poly
-  p::Int
-  n::Int
-  Q::Array{FlintQadicField, 1}
-  H::Hecke.HenselCtx
-  R::Array{qadic, 1}
-  function qAdicRootCtx(f::fmpz_poly, p::Int)
-    r = new()
-    r.f = f
-    r.p = p
-    r.H = H = Hecke.factor_mod_pk_init(f, p)
-    lf = Hecke.factor_mod_pk(H, 1)
-    #TODO:XXX: Careful: QadicField ONLY works, currently, in Conway range
-    Q = [QadicField(p, x, 1) for x = Set(degree(y) for y = keys(lf))]
-    @assert all(isone, values(lf))
-    r.Q = Q
-    return r
-  end
-end
-
-

@@ -3,6 +3,16 @@ add_assert_scope(:qAdic)
 
 export setprecision!, defining_polynomial
 
+################################################################################
+#
+#  Precision
+#
+################################################################################
+
+#TODO: Looks like most of this file belongs in Nemo.
+
+Base.precision(Q::FlintQadicField) = Q.prec_max
+
 function Base.setprecision(q::qadic, N::Int)
   r = parent(q)()
   r.N = N
@@ -18,17 +28,32 @@ function Base.setprecision(q::padic, N::Int)
 end
 
 function setprecision!(q::qadic, N::Int)
-  @assert N >= q.N
   q.N = N
   return q
 end
 
 function setprecision!(Q::FlintQadicField, n::Int)
-  Q.prec_max = n
+    old_key = (prime(Q), degree(Q), Q.prec_max)
+    Q.prec_max = n
+
+    #Also Update the dictionary for cached object creation, if in the dictionary already.
+    if Nemo.QadicBase[old_key] === Q
+        delete!(Nemo.QadicBase, old_key)
+        Nemo.QadicBase[(prime(Q), degree(Q), Q.prec_max)] = Q
+    end
+    return Q
 end
 
 function setprecision!(Q::FlintPadicField, n::Int)
-  Q.prec_max = n
+    old_key = (prime(Q), Q.prec_max)
+    Q.prec_max = n
+
+    #Also Update the dictionary for cached object creation, if in the dictionary already.
+    if Nemo.PadicBase[old_key] === Q
+        delete!(Nemo.PadicBase, old_key)
+        Nemo.PadicBase[(prime(Q), Q.prec_max)] = Q
+    end
+    return Q
 end
 
 function setprecision!(f::Generic.Poly{qadic}, N::Int)
@@ -66,6 +91,13 @@ function Base.setprecision(a::Generic.MatSpaceElem{qadic}, N::Int)
   return B
 end
 
+################################################################################
+#
+#  Unary operations
+#
+################################################################################
+
+
 function trace(r::qadic)
   t = coefficient_ring(parent(r))()
   ccall((:qadic_trace, :libflint), Nothing, (Ref{padic}, Ref{qadic}, Ref{FlintQadicField}), t, r, parent(r))
@@ -77,6 +109,12 @@ function norm(r::qadic)
   ccall((:qadic_norm, :libflint), Nothing, (Ref{padic}, Ref{qadic}, Ref{FlintQadicField}), t, r, parent(r))
   return t
 end
+
+################################################################################
+#
+#  Coefficients
+#
+################################################################################
 
 function setcoeff!(x::fq_nmod, n::Int, u::UInt)
   ccall((:nmod_poly_set_coeff_ui, :libflint), Nothing, 
@@ -103,6 +141,21 @@ function setcoeff!(x::qadic, i::Int, y::UInt)
            (Ref{qadic}, Int, Ref{padic}, Ref{FlintQadicField}), x, i, Y, parent(x))
 end
 
+
+function coefficient_ring(Q::FlintQadicField)
+  return FlintPadicField(prime(Q), precision(Q))
+end
+coefficient_field(Q::FlintQadicField) = coefficient_ring(Q)
+
+
+
+################################################################################
+#
+#  Lifting and residue fields
+#
+################################################################################
+
+
 function ResidueField(Q::FlintQadicField)
   k = GF(Int(prime(Q)), degree(Q))[1]
   pro = function(x::qadic)
@@ -125,73 +178,52 @@ function ResidueField(Q::FlintQadicField)
   return k, MapFromFunc(pro, lif, Q, k)
 end
 
-function ResidueField(Q::FlintPadicField)
-  k = GF(Int(prime(Q)))
-  pro = function(x::padic)
-    v = valuation(x)
-    v < 0 && error("elt non integral")
-    v > 0 && return k(0)
-    z = k(lift(x))
-    return z
+@doc Markdown.doc"""
+    lift(x::fq_nmod, Q::QadicField) -> qadic
+
+Computes a lift of the element from the residue ring.
+"""
+function lift(x::Union{fq,fq_nmod}, Q::QadicField)
+  z = Q()
+  for i=0:degree(Q)-1
+    setcoeff!(z, i, coeff(x, i))
   end
-  lif = function(x::gfp_elem)
-    z = Q(lift(x))
-    return z
+  return setprecision(z, 1)
+end
+
+@doc Markdown.doc"""
+    lift(x::fq_nmod_poly, Kt) -> Generic.Poly{qadic}
+
+Computes a lift of the polynomial lifting every coefficient of the residue ring.
+"""
+function lift(x::fq_nmod_poly, Kt)
+  K = base_ring(Kt)
+  coeffs = Vector{qadic}(undef, degree(x)+1)
+  for i = 1:degree(x)+1
+    coeffs[i] = lift(coeff(x, i-1), K)
   end
-  return k, MapFromFunc(pro, lif, Q, k)
+  return Kt(coeffs)
 end
 
-function coefficient_ring(Q::FlintQadicField)
-  return FlintPadicField(prime(Q), precision(Q))
-end
-coefficient_field(Q::FlintQadicField) = coefficient_ring(Q)
 
-function prime(R::PadicField, i::Int)
-  p = fmpz()
-  ccall((:padic_ctx_pow_ui, :libflint), Cvoid, (Ref{fmpz}, Int, Ref{PadicField}), p, i, R)
-  return p
-end
+################################################################################
+#
+#  Misc
+#
+################################################################################
 
-function getUnit(a::padic)
-  u = fmpz()
-  ccall((:fmpz_set, :libflint), Cvoid, (Ref{fmpz}, Ref{Int}), u, a.u)
-  return u, a.v, a.N
-end
-
-function lift_reco(::FlintRationalField, a::padic; reco::Bool = false)
-  if reco
-    u, v, N = getUnit(a)
-    R = parent(a)
-    fl, c, d = rational_reconstruction(u, prime(R, N-v))
-    !fl && return nothing
-    
-    x = FlintQQ(c, d)
-    if v < 0
-      return x//prime(R, -v)
-    else
-      return x*prime(R, v)
-    end
-  else
-    return lift(FlintQQ, a)
-  end
-end
 
 function *(A::fmpz_mat, B::MatElem{padic})
   return matrix(base_ring(B), A) * B
 end
 
 uniformizer(Q::FlintQadicField) = Q(prime(Q))
-Base.precision(Q::FlintQadicField) = Q.prec_max
-
-uniformizer(Q::FlintPadicField) = Q(prime(Q))
-Base.precision(Q::FlintPadicField) = Q.prec_max
 
 nrows(A::Array{T, 2}) where {T} = size(A)[1]
 ncols(A::Array{T, 2}) where {T} = size(A)[2]
 
 import Base.^
 ^(a::qadic, b::qadic) = exp(b*log(a))
-^(a::padic, b::padic) = exp(b*log(a))
 
 import Base.//
 //(a::qadic, b::qadic) = divexact(a, b)
@@ -222,4 +254,16 @@ function defining_polynomial(Q::FqNmodFiniteField, P::Ring = GF(characteristic(Q
   return f
 end
 
+###############################################################################
+#
+#   Random generation
+#
+###############################################################################
 
+function rand(K::FlintQadicField)
+    a = degree(K)==1 ? one(K) : gen(K)
+    p = prime(K)
+    N  = precision(K)
+    n  = degree(K)
+   return sum(K(rand(0:p^N))*a^j for j=0:n-1)
+end

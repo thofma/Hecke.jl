@@ -109,6 +109,8 @@ function _allow_cache!(M::Map, lim::Int, ::Type{D}, ::Type{C}, ::Type{De}, ::Typ
   if length(methods(M.header.image)) > 1
     println("Cannot do image cache, too many types")
   else
+    # Wrap the old function with a method that interacts with the cache dictionary for the
+    # map.
     function im(a::De)
       if haskey(M.header.cache.im, a)
         inc(M.header.cache.imStat, a)
