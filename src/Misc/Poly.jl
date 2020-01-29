@@ -506,27 +506,6 @@ end
 
 ################################################################################
 #
-#  change_base_ring
-#
-################################################################################
-
-@doc Markdown.doc"""
-    change_ring(Rx::PolyRing, f::PolyElem) -> PolyElem{elem_type(base_ring(Rx))}
-Given a polynomial $f$ in $S[x]$, returns a polynomial in $Rx$ whose coefficient
-are the coefficient of $f$ coerced to the base ring of $Rx$
-"""
-function change_ring(Rx::PolyRing, f::PolyElem)
-  R = base_ring(Rx)
-  coeffs = Vector{elem_type(R)}(undef, degree(f)+1)
-  for i = 1:length(coeffs)
-    coeffs[i] = R(coeff(f, i-1))
-  end
-  return Rx(coeffs)
-end
-
-
-################################################################################
-#
 #  Reduced resultant
 #
 ################################################################################
