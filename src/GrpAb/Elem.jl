@@ -116,6 +116,8 @@ end
 ################################################################################
 
 function show(io::IO, a::GrpAbFinGenElem)
+  @show_special_elem(io, a)
+
   if get(io, :compact, false)
     print(io, a.coeff)
   else

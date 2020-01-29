@@ -507,6 +507,20 @@ macro show_special(io, O)
   end )
 end
 
+macro show_special_elem(io, e)
+  return :( begin
+    local i = $(esc(io))
+    local a = $(esc(e))
+    local o = parent(a)
+    s = get_special(o, :show_elem)
+    if s !== nothing
+      s(i, a)
+      return
+    end
+  end )
+end
+
+
 ################################################################################
 #
 #  Custom test function

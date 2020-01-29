@@ -36,7 +36,7 @@ export AbelianGroup, DiagonalGroup, issnf, ngens, nrels, rels, snf, isfinite,
        isinfinite, rank, order, exponent, istrivial, isisomorphic,
        direct_product, istorsion, torsion_subgroup, sub, quo, iscyclic,
        psylow_subgroup, issubgroup, abelian_groups, flat, tensor_product,
-       dual, chain_complex, isexact, homology, free_resolution
+       dual, chain_complex, isexact, homology, free_resolution, FreeAbelianGroup
 
 import Base.+, Nemo.snf, Nemo.parent, Base.rand, Nemo.issnf
 
@@ -185,6 +185,10 @@ function DiagonalGroup(M::Array{T, 1}; name :: String = "") where T <: Union{Int
   end
   name == "" || set_name!(G, name)
   return G
+end
+
+function FreeAbelianGroup(n::Int)
+  return DiagonalGroup(zeros(Int, n))
 end
 
 ################################################################################
