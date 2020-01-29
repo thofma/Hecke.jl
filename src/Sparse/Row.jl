@@ -1,4 +1,4 @@
-export sparse_row, change_ring, dot, scale_row!, add_scaled_row
+export sparse_row, dot, scale_row!, add_scaled_row
 
 ################################################################################
 #
@@ -231,7 +231,7 @@ end
 #
 ################################################################################
 
-function change_ring(A::SRow, f)
+function map_entries(f, A::SRow)
   iszero(A) && error("Can change ring only for non-zero rows")
   T = typeof(f(A.values[1]))
   z = SRow{T}()
@@ -248,11 +248,11 @@ function change_ring(A::SRow, f)
 end
 
 @doc Markdown.doc"""
-    change_ring(A::SRow, R::Ring) -> SRow
+    change_base_ring(R::Ring, A::SRow) -> SRow
 
 Create a new sparse row by coercing all elements into the ring $R$.
 """
-function change_ring(A::SRow{T}, R::S) where {T <: RingElem, S <: Ring}
+function change_base_ring(R::S, A::SRow{T}) where {T <: RingElem, S <: Ring}
   z = SRow{elem_type(R)}()
   for (i, v) in A
     nv = R(v)

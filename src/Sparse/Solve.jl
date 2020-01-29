@@ -162,7 +162,7 @@ function det_mc(A::SMat{fmpz})
   last = fmpz(0)
   while true
     R = ResidueRing(FlintZZ, q, cached = false)
-    d = det(matrix(change_ring(A, R)))*inv(R(qq))
+    d = det(matrix(change_base_ring(R, A)))*inv(R(qq))
     if first
       dd = fmpz(d)
       mm = fmpz(q)
@@ -202,7 +202,7 @@ function det(A::SMat{fmpz})
   ld = fmpz[]
   for q in lp
     R = ResidueRing(FlintZZ, Int(q), cached = false)
-    push!(ld, fmpz(det(matrix(change_ring(A, R)))))
+    push!(ld, fmpz(det(matrix(change_base_ring(R, A)))))
   end
   #ld = [fmpz(det(matrix(sparse_matrix(A, Int(q))))) for q = lp]
   return crt_signed(ld, crt_env(lp))
@@ -247,7 +247,7 @@ function solve_dixon_sf(A::SMat{fmpz}, B::SMat{fmpz}, is_int::Bool = false)
   p = next_prime(2^20)
   R = ResidueRing(FlintZZ, p, cached = false)
 
-  Ap = change_ring(A, R)
+  Ap = change_base_ring(R, A)
 
   #want AT = upper_triag.
   #Let J = anti-identity, so JA inverts the rows of A and AJ the columns
@@ -282,7 +282,7 @@ function solve_dixon_sf(A::SMat{fmpz}, B::SMat{fmpz}, is_int::Bool = false)
     pp = fmpz(1)
     b_orig = b
 
-    bp = change_ring(b, R)
+    bp = change_base_ring(R, b)
 
     sol = sparse_row(FlintZZ)
     last = (sol, fmpz(1))
@@ -334,7 +334,7 @@ function solve_dixon_sf(A::SMat{fmpz}, B::SMat{fmpz}, is_int::Bool = false)
   #      @hassert :HNF 1  b.values[i] % p == 0
         b.values[i] = div(b.values[i], p)
       end  
-      bp = change_ring(b, R)
+      bp = change_base_ring(R, b)
     end
   end
   return sol_all, den_all

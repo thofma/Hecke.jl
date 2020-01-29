@@ -24,7 +24,7 @@ function _principal_subfields_basis(K::SimpleNumField)
   #determine roots
   rts = roots(f, K)
   ar_lin_fac = elem_type(Kx)[x - root for root in rts]
-  fK = change_ring(f, Kx)
+  fK = change_base_ring(K, f, parent = Kx)
   ##divide by roots
   for lin_fac in ar_lin_fac
     fK = div(fK, lin_fac)#divaxa

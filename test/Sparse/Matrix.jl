@@ -114,7 +114,7 @@ using SparseArrays
 
   R = ResidueRing(FlintZZ, 5)
   D = sparse_matrix(FlintZZ, [1 5 3; 5 5 5; -4 1 1])
-  D_R = @inferred change_ring(D, R)
+  D_R = @inferred change_base_ring(R, D)
   @test D_R == sparse_matrix(R, map(R, [1 0 3; 0 0 0; 1 1 1]))
 
   # Transpose

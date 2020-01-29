@@ -82,7 +82,7 @@ function cyclotomic_extension(k::AnticNumberField, n::Int; cached::Bool = true, 
   
   ZX, X = PolynomialRing(FlintZZ, cached = false)
   f = cyclotomic(n, X)
-  fk = change_ring(f, kt)
+  fk = change_base_ring(k, f, parent = kt)
   if n < 5
     #For n = 3, 4 the cyclotomic polynomial has degree 2,
     #so we can just ask for the roots.

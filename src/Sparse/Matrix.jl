@@ -315,12 +315,12 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    change_ring(A::SMat, f) -> SMat
+    map_entries(f, A::SMat) -> SMat
 
 Given a sparse matrix $A$ and a callable object $f$, this function will
 construct a new sparse matrix by applying $f$ to all elements of $A$.
 """
-function change_ring(A::SMat{T}, f) where {T}
+function map_entries(f, A::SMat{T}) where {T}
   x = zero(base_ring(A))
   y = f(x)
   S = parent(y)
@@ -331,7 +331,7 @@ function change_ring(A::SMat{T}, f) where {T}
     if iszero(r)
       push!(z, sparse_row(S))
     else
-      rf = change_ring(r, f)
+      rf = map_entries(f, r)
       push!(z, rf)
     end
   end
@@ -339,15 +339,15 @@ function change_ring(A::SMat{T}, f) where {T}
 end
 
 @doc Markdown.doc"""
-    change_ring(A::SMat, R::Ring)
+    change_base_ring(R::Ring, A::SMat)
 
 Create a new sparse matrix by coercing all elements into the ring $R$.
 """
-function change_ring(A::SMat, R::Ring)
+function change_base_ring(R::Ring, A::SMat)
   z = sparse_matrix(R)
   z.c = A.c
   for r in A
-    rz = change_ring(r, R)
+    rz = change_base_ring(R, r)
     push!(z, rz)
   end
   return z

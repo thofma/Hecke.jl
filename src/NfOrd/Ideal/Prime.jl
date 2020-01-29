@@ -115,7 +115,7 @@ function intersect_nonindex(f::Map, P::NfOrdIdl, Zk = maximal_order(domain(f)))
   K = codomain(f)
   G = K.pol
   Qx = parent(G)
-  g = change_ring(k.pol, Qx)
+  g = change_base_ring(base_ring(Qx), k.pol, parent = Qx)
   h = Qx(f(gen(k)))
 
   Fp, xp = PolynomialRing(GF(Int(minimum(P)), cached=false), cached=false)

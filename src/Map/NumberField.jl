@@ -335,7 +335,7 @@ function _automorphisms(K::AnticNumberField)
   else
     f = K.pol
     Kt, t = PolynomialRing(K, "t", cached = false)
-    f1 = change_ring(f, Kt)
+    f1 = change_base_ring(K, f, parent = Kt)
     divpol = Kt(nf_elem[-gen(K), K(1)])
     f1 = divexact(f1, divpol)
     lr = roots(f1, max_roots = div(degree(K), 2))

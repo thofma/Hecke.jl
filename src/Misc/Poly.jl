@@ -511,11 +511,11 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    change_ring(f::PolyElem, Rx::PolyRing) -> PolyElem{elem_type(base_ring(Rx))}
+    change_ring(Rx::PolyRing, f::PolyElem) -> PolyElem{elem_type(base_ring(Rx))}
 Given a polynomial $f$ in $S[x]$, returns a polynomial in $Rx$ whose coefficient
 are the coefficient of $f$ coerced to the base ring of $Rx$
 """
-function change_ring(f::PolyElem, Rx::PolyRing)
+function change_ring(Rx::PolyRing, f::PolyElem)
   R = base_ring(Rx)
   coeffs = Vector{elem_type(R)}(undef, degree(f)+1)
   for i = 1:length(coeffs)
@@ -524,42 +524,6 @@ function change_ring(f::PolyElem, Rx::PolyRing)
   return Rx(coeffs)
 end
 
-
-#@doc Markdown.doc"""
-#    change_base_ring(f::PolyElem, R::Ring) -> PolyElem{elem_type(R)}
-#Given a polynomial $f$ over a ring $S$, returns a polynomial whose coefficient
-#are the coefficient of $f$ coerced to $R$
-#"""
-#function change_base_ring(f::PolyElem, R::Ring)
-#  Rx, x = PolynomialRing(R, "_\$", cached = false)
-#  coeffs = Vector{elem_type(R)}(undef, degree(f)+1)
-#  for i = 1:length(coeffs)
-#    coeffs[i] = R(coeff(f, i-1))
-#  end
-#  return Rx(coeffs)
-#end
-#
-#function change_base_ring(f::PolyElem, g::T, Rt::PolyRing) where T <: Union{Function, Map}
-#  h0 = g(coeff(f, 0))
-#  coeffs = Vector{typeof(h0)}(undef, degree(f) + 1)
-#  coeffs[1] = h0
-#  for i=1:degree(f)
-#    coeffs[i + 1] = g(coeff(f, i))
-#  end
-#  return Rt(coeffs)
-#end  
-#
-#function change_base_ring(f::PolyElem, g::T) where T <: Union{Function, Map}
-#  h0 = g(coeff(f, 0))
-#  R = parent(h0)
-#  Rt, t = PolynomialRing(R, cached = false)
-#  coeffs = Vector{typeof(h0)}(undef, degree(f) + 1)
-#  coeffs[1] = h0
-#  for i=1:degree(f)
-#    coeffs[i + 1] = g(coeff(f, i))
-#  end
-#  return Rt(coeffs)
-#end  
 
 ################################################################################
 #
@@ -810,7 +774,7 @@ end
 
 function factor(f::PolyElem, R::Field)
   Rt = PolynomialRing(R, "t", cached = false)[1]
-  f1 = change_base_ring(f, R, Rt)
+  f1 = change_base_ring(R, f, parent = Rt)
   return factor(f1)
 end
 
@@ -1342,7 +1306,7 @@ function roots(f::fmpz_poly, ::FlintRationalField; max_roots::Int = degree(f))
   while true
     p = next_prime(p)
     k = GF(p)
-    hp = change_base_ring(h, k)
+    hp = change_base_ring(k, h)
     if !issquarefree(hp)
       continue
     end

@@ -49,7 +49,7 @@ add_scaled_row(::SRow{fmpz}, ::SRow{fmpz}, ::fmpz)
 ### Change of base ring
 
 ```@docs
-change_ring(::SRow{fmpz}, ::FlintIntegerRing)
+change_base_ring(::FlintIntegerRing, ::SRow{fmpz})
 ```
 
 ### Maximum, minimum and 2-norm

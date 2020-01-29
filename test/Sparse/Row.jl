@@ -63,11 +63,11 @@
   G = sparse_row(FlintZZ, collect(1:5), map(fmpz, collect(1:5)))
 
   f = x -> (x^2 - 4)
-  H = @inferred change_ring(G, f)
+  H = @inferred map_entries(f, G)
   @test H == sparse_row(FlintZZ, [1, 3, 4, 5], fmpz[-3, 5, 12, 21])
 
   Rx, x = PolynomialRing(R, "x", cached = false)
-  H = @inferred change_ring(G, Rx)
+  H = @inferred change_base_ring(Rx, G)
   @test H == sparse_row(Rx, collect(1:5), map(Rx, collect(1:5)))
 
   # Iterator interface
@@ -103,15 +103,15 @@
   for T in [Int, BigInt, fmpz]
     b = T(2)
     B = @inferred b * A
-    @test B == change_ring(A, x -> T(2) * x)
+    @test B == map_entries(x -> T(2) * x, A)
 
     b = T(2)
     B = @inferred div(A, b)
-    @test B == change_ring(A, x -> div(x, fmpz(2)))
+    @test B == map_entries(x -> div(x, fmpz(2)), A)
 
     b = T(2)
     B = @inferred divexact(A, b)
-    @test B == change_ring(A, x -> divexact(x, fmpz(2)))
+    @test B == map_entries(x -> divexact(x, fmpz(2)), A)
   end
 
   # Elementary row operation
