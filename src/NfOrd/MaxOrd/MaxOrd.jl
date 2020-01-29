@@ -266,6 +266,10 @@ function _TameOverorderBL(O::NfOrd, lp::Array{fmpz,1})
   while !isempty(M)
     @vprint :NfOrd 1 "List of factors: $M\n"
     q = pop!(M)
+    if iscoprime(q, discriminant(OO))
+      continue
+    end
+    _, q = ispower(q) 
     if isprime(q)
       OO1 = pmaximal_overorder(O, q)
       if valuation(discriminant(OO1), q) < valuation(discriminant(OO), q)
@@ -353,11 +357,13 @@ function _qradical(O::NfOrd, q::fmpz)
 end
 
 function _cycleBL(O::NfOrd, q::fmpz)
-
+  
   q1, I = _qradical(O, q)
   if !isone(q1)
     return O, q1
   elseif isdefined(I, :princ_gens) && q == I.princ_gens
+    return O, fmpz(1)
+  elseif I == ideal(O, q)
     return O, fmpz(1)
   end
   @vprint :NfOrd 1 "ring of multipliers\n"
@@ -411,23 +417,23 @@ function _cycleBL2(O::NfOrd, q::fmpz, I::NfOrdIdl)
     end
     I1 = (ideals[1] + ideal(O, q))*(ideals[3] + ideal(O, q))
     I2 = (ideals[2] + ideal(O, q))^2
-    M2 = basis_matrix(I2, copy = false)*basis_mat_inv(I1, copy = false)
-    @assert isone(M2.den)
-    G2 = divisors(M2.num, q)
-    if isempty(G2)
+    if I1 != I2
+      M2 = basis_matrix(I2, copy = false)*basis_mat_inv(I1, copy = false)
+      @assert isone(M2.den)
+      G2 = divisors(M2.num, q)
+      for i = 1:length(G2)
+        q1 = gcd(q, G2[i])
+        if q1 != q && !isone(q1)
+          return O, q1
+        end
+      end
+      break
+    else
       h += 1
       ideals[1] = ideals[2]
       ideals[2] = ideals[3]
       ideals[3] = ideals[2]*I
-      continue
     end
-    for i = 1:length(G2)
-      q1 = gcd(q, G2[i])
-      if q1 != q && !isone(q1)
-        return O, q1
-      end
-    end
-    break
   end
   f, r = ispower(q, h)
   if f
