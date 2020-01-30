@@ -148,7 +148,11 @@ function _preproc_pol(a::Generic.Poly{nf_elem}, b::Generic.Poly{nf_elem})
   b2 = b1*db
   Kt = parent(a)
   K = base_ring(Kt)
-  fsa = evaluate(derivative(K.pol), gen(K))*d
+  if isdefining_polynomial_nice(K)
+    fsa = evaluate(derivative(K.pol), gen(K))*d
+  else
+    fsa = short_elem(different(any_order(K)))*d
+  end
   return a2, b2, fsa
 end
 
@@ -218,7 +222,7 @@ function gcd_modular_kronnecker(a::Generic.Poly{nf_elem}, b::Generic.Poly{nf_ele
       end
     end
     if g == last_g && iszero(mod(a, g)) && iszero(mod(b, g))
-      return g
+      return divexact(g, lead(g))
     else
       last_g = g
     end
