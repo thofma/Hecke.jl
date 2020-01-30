@@ -335,7 +335,7 @@ function _automorphisms(L::NfRel)
   else
     f = L.pol
     Lt, t = PolynomialRing(L, "t", cached = false)
-    f1 = change_ring(f, Lt)
+    f1 = change_base_ring(L, f, parent = Lt)
     divpol = Lt([ -gen(L), L(1) ])
     f1 = divexact(f1, divpol)
     lr = roots(f1)

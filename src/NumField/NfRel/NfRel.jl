@@ -547,13 +547,13 @@ function _absolute_field(K::NfRel, cached::Bool = false)
 
   gg = zero(KaT)
   for i=degree(g):-1:0
-    auxp = change_ring(Qx(coeff(g, i)), KaT)
+    auxp = change_base_ring(Ka, Qx(coeff(g, i)), parent = KaT)
     gg = gg*gKa
     add!(gg, gg, auxp)
     #gg = gg*gKa + auxp
   end
   
-  q = gcd(gg, change_ring(k.pol, KaT))
+  q = gcd(gg, change_base_ring(Ka, k.pol, parent = KaT))
   @assert degree(q) == 1
   al = -trailing_coefficient(q)//lead(q)
   be = gKa - l*al
@@ -842,6 +842,6 @@ function islinearly_disjoint(K1::NfRel, K2::NfRel)
     return true
   end
 
-  f = change_base_ring(defining_polynomial(K1), K2)
+  f = change_base_ring(K2, defining_polynomial(K1))
   return isirreducible(f)
 end

@@ -1149,7 +1149,7 @@ function factor(f::PolyElem{NfAbsNSElem})
   res = Dict{PolyElem{NfAbsNSElem}, Int64}()
 
   for i in keys(fac.fac)
-    t = change_ring(i, Kx)
+    t = change_base_ring(K, i, parent = Kx)
     t = compose(t, gen(Kx) + k*pe)
     @vtime :PolyFactor 2 t = gcd(f, t)
     res[t] = 1

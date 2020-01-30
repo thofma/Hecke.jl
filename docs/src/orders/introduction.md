@@ -26,7 +26,9 @@ call $(1,\alpha,\alpha^2,\dotsc,\alpha^{d-1})$, where $d$ is the degree $[K :
 the *representation matrix* of $\beta$ is the matrix representing $K \to K,
 \gamma \mapsto \beta \gamma$ with respect to the power basis, that is,
 
-$$\beta \cdot (1,\alpha,\dotsc,\alpha^{d-1}) = M_\alpha (1, \alpha, \dotsc, \alpha^{d-1}).$$
+```math
+\beta \cdot (1,\alpha,\dotsc,\alpha^{d-1}) = M_\alpha (1, \alpha, \dotsc, \alpha^{d-1}).
+```
 
 Let $(r,s)$ be the signature of $K$, that is, $K$ has $r$ real embeddings $\sigma_i \colon K \to \mathbf{R}$, $1 \leq i \leq r$, and $2s$ complex embeddings $\sigma_i \colon K \to \mathbf{C}$, $1 \leq i \leq 2s$.
 In Hecke the complex embeddings are always ordered such that $\sigma_i = \overline{\sigma_{i+s}}$ for $r + 1 \leq i \leq r + s$.
@@ -47,21 +49,24 @@ which is refered to as the *basis* of $\mathcal O$. If
 $(\omega_1,\dotsc,\omega_d)$ is the basis of $\mathcal O$, then the matrix $B
 \in \operatorname{Mat}_{d \times d}(\mathbf Q)$ with
 
-\\[ \begin{pmatrix} \omega_1 \\\\ \vdots \\\\ \omega_d \end{pmatrix} = B \begin{pmatrix} 1 \\\\ \vdots \\\\ \alpha^{d - 1} \end{pmatrix} \\]
+```math
+\begin{pmatrix} \omega_1 \\\\ \vdots \\\\ \omega_d \end{pmatrix} = B \begin{pmatrix} 1 \\\\ \vdots \\\\ \alpha^{d - 1} \end{pmatrix}
+```
 
 is called the *basis matrix* of $\mathcal O$. We call $\det(B)$ the *generalized
 index* of $\mathcal O$.  In case $\mathbf Z[\alpha] \subseteq \mathcal O$, the
 determinant $\det(B)^{-1}$ is in fact equal to $[ \mathcal O : \mathbf Z[\alpha]]$
 and is called the *index* of $\mathcal O$.
 The matrix
-\\[ \begin{pmatrix} 
+```math
+\begin{pmatrix} 
 \sigma_1(\omega_1) & \dotsc & \sigma_r(\omega_1) & \sqrt{2}\operatorname{Re}(\sigma_{r+1}(\omega_1)) & \sqrt{2}\operatorname{Im}(\sigma_{r+1}(\omega_1)) & \dotsc & \sqrt{2}\operatorname{Im}(\sigma_{r+s}(\omega_1)) \\\\
 \sigma_1(\omega_2) & \dotsc & \sigma_r(\omega_2) & \sqrt{2}\operatorname{Re}(\sigma_{r+1}(\omega_2)) & \sqrt{2}\operatorname{Im}(\sigma_{r+1}(\omega_2)) & \dotsc  & \sqrt{2}\operatorname{Im}(\sigma_{r+s}(\omega_2)) \\\\
 \vdots & \dotsc & \vdots & \vdots & \dotsc & \vdots & \vdots\\\\
 \sigma_1(\omega_d) & \dotsc & \sigma_r(\omega_d) & \sqrt{2}\operatorname{Re}(\sigma_{r+1}(\omega_d)) & \sqrt{2}\operatorname{Im}(\sigma_{r+2}(\omega_d)) & \dotsc & \sqrt{2}\operatorname{Im}(\sigma_{r+s}(\omega_d))
 \end{pmatrix}
 \in \operatorname{Mat}_{d\times d}(\mathbf R).
-\\]
+```
 is called the *Minkowski matrix* of $\mathcal O$.
 
 

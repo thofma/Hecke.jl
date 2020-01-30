@@ -368,7 +368,7 @@ function norm(f::PolyElem{nf_elem})
     Qx = PolynomialRing(FlintQQ, "x", cached = false)[1]
     Qxy = PolynomialRing(Qx, "y", cached = false)[1]
 
-    T = change_ring(K.pol, Qxy)
+    T = change_base_ring(Qx, K.pol, parent = Qxy)
     h = nf_poly_to_xy(f, Qxy, Qx)
     N = resultant(T, h)
   end
@@ -506,7 +506,7 @@ function factor_trager(f::PolyElem{nf_elem})
   res = typeof(f)[]
 
   for i in keys(fac.fac)
-    t = change_ring(i, Kx)
+    t = change_base_ring(K, i, parent = Kx)
     t = compose(t, gen(Kx) + k*gen(K))
     @vtime :PolyFactor 2 t = gcd(f, t)
     push!(res, t)
@@ -779,7 +779,7 @@ function ispower_trager(a::nf_elem, n::Int)
   Kt, t = PolynomialRing(K, "a", cached = false)
   for (p, _) in fac
     if degree(p) == degree(f)
-      t = gcd(change_ring(p, Kt), t^n - c)
+      t = gcd(change_base_ring(K, p, parent = Kt), t^n - c)
       @assert degree(t) == 1
       return true, -divexact(coeff(t, 0), coeff(t, 1))//b
     end

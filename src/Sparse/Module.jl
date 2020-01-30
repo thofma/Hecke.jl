@@ -49,7 +49,7 @@ function add_gen!(M::ModuleCtxNmod, g::SRow{nmod})
 end
 
 function add_gen!(M::ModuleCtx_fmpz, g::SRow{fmpz}, always::Bool = true)
-  gp = change_ring(g, M.Mp.R)
+  gp = change_base_ring(M.Mp.R, g)
   M.new = true
   if add_gen!(M.Mp, gp)
     push!(M.bas_gens, g)
@@ -101,7 +101,7 @@ function check_index(M::ModuleCtx_fmpz)
 
   for i=length(M.rel_reps_p)+1:length(M.rel_gens)
     reduce(C, M.rel_gens[i])
-    push!(M.rel_reps_p, solve_ut(M.Mp.basis, change_ring(M.rel_gens[i], M.Mp.R)))
+    push!(M.rel_reps_p, solve_ut(M.Mp.basis, change_base_ring(M.Mp.R, M.rel_gens[i])))
   end
 
 #=

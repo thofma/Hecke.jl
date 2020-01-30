@@ -365,15 +365,15 @@ function check_norm_group_and_disc(lfieldsK::Array{AnticNumberField, 1}, lfields
   n_quo2 = lcm(Int[degree(x) for x in lfieldsL])
   r, mr = Hecke.ray_class_groupQQ(O, modulo, true, lcm(n_quo1, n_quo2))
   Kt = PolynomialRing(K, "t", cached = false)[1]
-  h = change_ring(lfieldsK[1].pol, Kt)
+  h = change_base_ring(K, lfieldsK[1].pol, parent = Kt)
   S = norm_group(h, mr)[1]
   for i = 2:length(lfieldsK)
-    h = change_ring(lfieldsK[i].pol, Kt)
+    h = change_base_ring(K, lfieldsK[i].pol, parent = Kt)
     s = norm_group(h, mr)[1]
     S = intersect(s, S)
   end
   for i = 1:length(lfieldsL)
-    h = change_ring(lfieldsL[i].pol, Kt)
+    h = change_base_ring(K, lfieldsL[i].pol, parent = Kt)
     s = norm_group(h, mr)[1]
     S = intersect(s, S)
   end
@@ -573,15 +573,15 @@ function sieve_by_norm_group(list1::Vector{FieldsTower}, list2::Vector{FieldsTow
   for i = 1:length(v)
     lfieldsK = maximal_abelian_subextension(list1[v[i][1]])
     lfieldsL = maximal_abelian_subextension(list2[v[i][2]])
-    h = change_ring(lfieldsK[1].pol, Kt)
+    h = change_base_ring(K, lfieldsK[1].pol, parent = Kt)
     S = norm_group(h, mr)[1]
     for i = 2:length(lfieldsK)
-      h = change_ring(lfieldsK[i].pol, Kt)
+      h = change_base_ring(K, lfieldsK[i].pol, parent = Kt)
       s = norm_group(h, mr)[1]
       S = intersect(s, S)
     end
     for i = 1:length(lfieldsL)
-      h = change_ring(lfieldsL[i].pol, Kt)
+      h = change_base_ring(K, lfieldsL[i].pol, parent = Kt)
       s = norm_group(h, mr)[1]
       S = intersect(s, S)
     end

@@ -148,7 +148,11 @@ function _preproc_pol(a::Generic.Poly{nf_elem}, b::Generic.Poly{nf_elem})
   b2 = b1*db
   Kt = parent(a)
   K = base_ring(Kt)
-  fsa = evaluate(derivative(K.pol), gen(K))*d
+  if isdefining_polynomial_nice(K)
+    fsa = evaluate(derivative(K.pol), gen(K))*d
+  else
+    fsa = short_elem(different(any_order(K)))*d
+  end
   return a2, b2, fsa
 end
 
@@ -218,7 +222,7 @@ function gcd_modular_kronnecker(a::Generic.Poly{nf_elem}, b::Generic.Poly{nf_ele
       end
     end
     if g == last_g && iszero(mod(a, g)) && iszero(mod(b, g))
-      return g
+      return divexact(g, lead(g))
     else
       last_g = g
     end
@@ -319,7 +323,7 @@ function gcdx_mod_res(a::Generic.Poly{nf_elem}, b::Generic.Poly{nf_elem})
   b = b*db
   Kt = parent(a)
   K = base_ring(Kt)
-  fsa = change_ring(derivative(K.pol), Kt)*d
+  fsa = change_base_ring(K, derivative(K.pol), parent = Kt)*d
   #now gcd(a, b)*fsa should be in the equation order...
   global p_start
   p = p_start  
@@ -432,7 +436,7 @@ function nf_poly_to_xy(f::PolyElem{Nemo.nf_elem}, Qxy::PolyRing, Qx::PolyRing)
   res = zero(Qxy)
   for i=degree(f):-1:0
     res *= y
-    res += change_ring(Qy(coeff(f, i)), Qxy)
+    res += change_base_ring(Qx, Qy(coeff(f, i)), parent = Qxy)
   end
   return res
 end

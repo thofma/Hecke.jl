@@ -1241,7 +1241,7 @@ end
 
 Returns the diagonal of `A` is an array.
 """
-diagonal(A::Generic.Mat{T}) where {T} = T[A[i, i] for i in 1:nrows(A)]
+diagonal(A::MatrixElem{T}) where {T} = T[A[i, i] for i in 1:nrows(A)]
 
 ################################################################################
 #
