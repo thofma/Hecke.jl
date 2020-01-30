@@ -326,6 +326,7 @@ function berlekamp_massey_mod(L::Array{fmpq, 1})
   kp = 10  
   pp = FlintZZ(1)
   j = 0
+  local N
   while true
     kp = 2*kp
     L = _modpResults(f,p,kp)
@@ -334,10 +335,13 @@ function berlekamp_massey_mod(L::Array{fmpq, 1})
        N = L[1]; pp = L[2]
     else
        N, pp = induce_crt(N, pp, L[1], L[2])
+      j=1
     end
-    j=1
     fl, nu_rat_f = induce_rational_reconstruction(N, FlintZZ(pp))
     if fl
+      return true, nu_rat_f
+      #the check for roots is ONLY useful in multivariate interpolation
+      #in general, the poly can be anyhting of course
       if length(factor(nu_rat_f)) == degree(nu_rat_f) #TODO write and use roots
           return true,  nu_rat_f
       end
@@ -358,7 +362,7 @@ function _modpResults(f, p::fmpz, M::Int)
      RNp = ResidueRing(FlintZZ, Np[j], cached=false)
      Rp, t = PolynomialRing(RNp, "t", cached=false)
      fp = Rp(f)
-     L1 = Generic.Res{fmpz}[]
+     L1 = Nemo.fmpz_mod[]
      for i in 0:degree(fp)
         push!(L1, coeff(fp, i))
      end
