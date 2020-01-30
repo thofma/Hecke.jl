@@ -736,7 +736,6 @@ function ispositive_definite(V::AbsSpace)
   else
     K = base_field(E)
   end
-  R = maximal_order(K)
   if !istotally_real(K)
     return false
   end
@@ -1110,5 +1109,20 @@ function (K::AnticNumberField)(a::NfRelElem{nf_elem})
     @assert coeff(a, i - 1) == 0
   end
   return coeff(a, 0)
+end
+
+istotally_real(::FlintRationalField) = true
+
+istotally_positive(x::fmpq) = x > 0
+
+# This function is really slow...
+function denominator(M::fmpq_mat)
+  d = one(FlintZZ)
+  for i in 1:nrows(M)
+    for j in 1:ncols(M)
+      d = lcm!(d, d, denominator(M[i, j]))
+    end
+  end
+  return d
 end
 

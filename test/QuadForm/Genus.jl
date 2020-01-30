@@ -45,6 +45,7 @@
 
   # Representatives
   
+  Qx, x = FlintQQ["x"]
   K, a = NumberField(x - 1, "a")
   Kt, t = K["t"]
   E, b = NumberField(t^2 + 1, "b")

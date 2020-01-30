@@ -292,7 +292,7 @@ function _get_vectors_of_length(G::Union{fmpz_mat, FakeFmpqMat}, max::fmpz)
   return res
 end
 
-function _get_vectors_of_length(G::ZLattice, max::fmpz)
+function _get_vectors_of_length(G::ZLat, max::fmpz)
   return _get_vectors_of_length(FakeFmpqMat(gram_matrix(G)), max)
 end
 
