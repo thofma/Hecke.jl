@@ -834,7 +834,7 @@ function decomposition_type_polygon(O::NfOrd, p::Union{fmpz, Int})
   f = Zx(K.pol)
   R = GF(p, cached = false)
   Rx, y = PolynomialRing(R, "y", cached = false)
-  f1 = change_ring(Rx, f)
+  f1 = change_base_ring(R, f, parent = Rx)
   @vprint :NfOrd 1 "Factoring the polynomial \n"
   fac = factor(f1) #TODO: We don't need the factorization directly, but only the factorization of the non-squarefree part
   res = Tuple{Int, Int}[]
