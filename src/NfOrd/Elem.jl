@@ -1080,3 +1080,35 @@ Nemo.promote_rule(::Type{NfAbsOrdElem{S, T}}, ::Type{fmpz}) where {S, T} = NfAbs
 Nemo.promote_rule(::Type{NfAbsOrdElem{S, T}}, ::Type{T}) where {S, T} = T
 
 Nemo.promote_rule(::Type{T}, ::Type{NfAbsOrdElem{S, T}}) where {S, T} = T
+
+################################################################################
+#
+#  Factorization
+#
+################################################################################
+
+@doc Markdown.doc"""
+    factor(a::NfOrdElem) -> Fac{NfOrdElem}
+
+Computes a factorization of `a` into irreducible elements. The return value
+is a factorization `fac`, which satisfies `a = unit(fac) * prod(p^e for (p, e)
+in fac)`.
+
+The function requires that `a` is non-zero and that all prime ideals containing
+`a` are principal, which is for example satisfied if class group of the order
+of `a` is trivial.
+"""
+function factor(a::NfOrdElem)
+  iszero(a) && throw(error("Element must be non-zero"))
+  OK = parent(a)
+  I = a * OK
+  D = Dict{NfOrdElem, Int}()
+  u = a
+  for (p, e) in factor(I)
+    b, c = isprincipal(p)
+    !b && throw(error("Prime ideal dividing the element not principal"))
+    D[c] = e
+    u = divexact(u, c^e)
+  end
+  return Nemo.Fac(u, D)
+end

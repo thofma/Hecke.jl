@@ -52,7 +52,7 @@ mod(::NfOrdElem, ::Int)
 powermod(::NfOrdElem, ::fmpz, ::Int)
 ```
 
-## Miscallenous
+## Miscellaneous
 
 ```@docs
 representation_matrix(::NfOrdElem)
@@ -66,5 +66,6 @@ conjugates_arb_log(::NfOrdElem, ::Int)
 t2(::NfOrdElem, ::Int)
 minpoly(::NfOrdElem)
 charpoly(::NfOrdElem)
+factor(::NfOrdElem)
 ```
 
