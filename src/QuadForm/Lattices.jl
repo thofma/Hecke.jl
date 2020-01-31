@@ -7,7 +7,7 @@ export *, +, absolute_basis, absolute_basis_matrix, ambient_space, bad_primes,
        ispositive_definite, isrationally_equivalent, jordan_decomposition,
        local_basis_matrix, norm, pseudo_matrix, quadratic_lattice, rank,
        rational_span, rescale, scale, volume, witt_invariant, lattice, Zlattice,
-       automorphism_group_generators, automorphism_group_order
+       automorphism_group_generators, automorphism_group_order, isisometric
 
 export HermLat, QuadLat
 
@@ -2856,6 +2856,30 @@ end
 function automorphism_group_order(L::ZLat)
   assert_has_automorphisms(L)
   return L.automorphism_group_order
+end
+
+function isisometric(L::ZLat, M::ZLat; natural_action::Bool = false)
+  GL = gram_matrix(L)
+  GM = gram_matrix(M)
+  dL = denominator(GL)
+  GLint = change_base_ring(FlintZZ, dL * GL)
+  dM = denominator(GM)
+  GMint = change_base_ring(FlintZZ, dM * GM)
+  GLlll, TL = lll_gram_with_transform(GLint)
+  GMlll, TM = lll_gram_with_transform(GMint)
+  CL, CM = _iso_setup(fmpz_mat[GLlll], fmpz_mat[GMlll])
+  b, T = isometry(CL, CM)
+  if b
+    T = inv(T)
+    trafo_coord = change_base_ring(FlintQQ, inv(TM)*T*TL)
+    if !natural_action
+      return true, trafo_coord
+    else
+      return true, inv(basis_matrix(M)) * trafo_coord * basis_matrix(L)
+    end
+  else
+    return false, zero_matrix(FlintQQ, 0, 0)
+  end
 end
 
 ################################################################################

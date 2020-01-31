@@ -1,3 +1,24 @@
+function _random_invertible_matrix(n, B)
+  A = identity_matrix(FlintZZ, n)
+  if n == 1
+    return A
+  end
+  for k in 1:10
+    i = rand(1:(n - 1))
+    j = rand((i + 1):n)
+    A[i, j] += rand(B)
+  end
+  @assert det(A) == 1
+  C = identity_matrix(FlintZZ, n)
+  for k in 1:10
+    i = rand(1:(n - 1))
+    j = rand((i + 1):n)
+    C[i, j] += rand(B)
+  end
+  @assert det(C) == 1
+  return transpose(C) * A
+end
+
 @testset "Lattices" begin
   # Smoke test for genus symbol
   Qx, x = PolynomialRing(FlintQQ, "x")
@@ -158,5 +179,26 @@ end
     Ge = automorphism_group_generators(L, natural_action = false)
     test_automorphisms(L, Ge, false)
     @test automorphism_group_order(L) == o
+  end
+end
+
+@testset "Z-lattice isomorphisms" begin
+  for (m, o) in lattices_and_aut_order 
+    n = length(m[1])
+    G = matrix(FlintZZ, n, n, reduce(vcat, m))
+    L = Zlattice(gram = G)
+    X = _random_invertible_matrix(n, -3:3)
+    @assert abs(det(X)) == 1
+    L2 = Zlattice(gram = X * G * X')
+    b, T = isisometric(L, L2, natural_action = false)
+    @test b
+    @test T * gram_matrix(L) * T' == gram_matrix(L2)
+    L2 = Zlattice(X, gram = G)
+    b, T = isisometric(L, L2, natural_action = false)
+    @test b
+    @test T * gram_matrix(L) * T' == gram_matrix(L2)
+    b, T = isisometric(L, L2, natural_action = true)
+    @test b
+    @test T * gram_matrix(ambient_space(L)) * T' == gram_matrix(ambient_space(L2))
   end
 end

@@ -24,6 +24,7 @@ mutable struct ZLatAutoCtx
   G::Vector{fmpz_mat}
   Gtr::Vector{fmpz_mat}
   dim::Int
+  max::fmpz
   V::Vector{fmpz_mat}
   V_length::Vector{Vector{fmpz}}
   v::Vector{fmpz_mat}
@@ -55,33 +56,35 @@ end
 
 dim(C::ZLatAutoCtx) = C.dim
 
-function init(C::ZLatAutoCtx)
+function init(C::ZLatAutoCtx, auto::Bool = true, max::fmpz = fmpz(-1))
   # Compute the necessary short vectors
-  compute_short_vectors(C)
+  compute_short_vectors(C, max)
 
   # Compute the fingerprint
   fingerprint(C)
 
-  # Find the standard basis vectors
-  C.std_basis = Vector{Int}(undef, dim(C))
-  z = zero_matrix(FlintZZ, 1, dim(C))
-  for i in 1:dim(C)
-    z[1, C.per[i]] = 1
-    k = findfirst(isequal(z), C.V)
-    if k === nothing
-      z[1, C.per[i]] = -1
+  if max == fmpz(-1)
+    # Find the standard basis vectors
+    C.std_basis = Vector{Int}(undef, dim(C))
+    z = zero_matrix(FlintZZ, 1, dim(C))
+    for i in 1:dim(C)
+      z[1, C.per[i]] = 1
       k = findfirst(isequal(z), C.V)
-      @assert k !== nothing
-      C.V[k] = -z
-      C.std_basis[i] = k
-    else
-      C.std_basis[i] = k  
+      if k === nothing
+        z[1, C.per[i]] = -1
+        k = findfirst(isequal(z), C.V)
+        @assert k !== nothing
+        C.V[k] = -z
+        C.std_basis[i] = k
+      else
+        C.std_basis[i] = k  
+      end
+      z[1, C.per[i]] = 0
     end
-    z[1, C.per[i]] = 0
   end
 
   # 
-  
+
   C.v = Vector{fmpz_mat}(undef, length(C.G))
 
   for i in 1:length(C.G)
@@ -126,19 +129,21 @@ function init(C::ZLatAutoCtx)
 
   H = Vector{fmpz_mat}(undef, nH)
 
-  for i in 1:dim(C)
-    if C.ng[i] > 0
-      nH = 0
-      for j in i:dim(C)
-        for k in 1:C.ng[j]
-          nH += 1
-          H[nH] = C.g[j][k]
+  if max == fmpz(-1)
+    for i in 1:dim(C)
+      if C.ng[i] > 0
+        nH = 0
+        for j in i:dim(C)
+          for k in 1:C.ng[j]
+            nH += 1
+            H[nH] = C.g[j][k]
+          end
         end
+        #@assert _orbitlen_naive(C.std_basis[i], C.fp_diagonal[i], H, nH, C.V) == _orbitlen(C.std_basis[i], C.fp_diagonal[i], H, nH, C.V)
+        C.orders[i] = _orbitlen(C.std_basis[i], C.fp_diagonal[i], H, nH, C.V)
+      else
+        C.orders[i] = 1
       end
-      @assert _orbitlen_naive(C.std_basis[i], C.fp_diagonal[i], H, nH, C.V) == _orbitlen(C.std_basis[i], C.fp_diagonal[i], H, nH, C.V)
-			C.orders[i] = _orbitlen(C.std_basis[i], C.fp_diagonal[i], H, nH, C.V)
-		else
-			C.orders[i] = 1
     end
   end
 
@@ -244,11 +249,13 @@ function __compute_short_vectors(C::ZLatAutoCtx)
   @show length(C.V), length(C.V_length)
 end
 
-function compute_short_vectors(C::ZLatAutoCtx)
+function compute_short_vectors(C::ZLatAutoCtx, max::fmpz = fmpz(-1))
   #V = enumerate_using_gram(G, R(max))
   C.V = fmpz_mat[]
   C.V_length = Vector{fmpz}[]
-  max = maximum(C.G[1][i, i] for i in 1:dim(C))
+  if max == -1
+    max = maximum(C.G[1][i, i] for i in 1:dim(C))
+  end
   E = enum_ctx_from_gram(C.G[1])
   enum_ctx_start(E, max)
   n = ncols(C.G[1])
@@ -278,6 +285,7 @@ function compute_short_vectors(C::ZLatAutoCtx)
     push!(C.V, m)
     push!(C.V_length, z)
   end
+  C.max = max
   return C
 end
 
@@ -294,92 +302,6 @@ end
 
 function _get_vectors_of_length(G::ZLat, max::fmpz)
   return _get_vectors_of_length(FakeFmpqMat(gram_matrix(G)), max)
-end
-
-mutable struct auto_group
-  ord
-  ng
-  nsg
-  g
-end
-
-mutable struct fingerprint
-  diag
-  per
-  e
-end
-
-mutable struct qfauto
-  dim
-  F
-  U
-  V
-  W
-  v 
-  p
-end
-
-mutable struct qfcand
-  cdep
-  comb
-  bacher_pol
-end
-
-function possible2(C::ZLatAutoCtx, per, I, J)
-  V = C.V
-  W = C.V_length
-  n = length(C.V)
-  F = C.G
-  count = 0
-  for j in 1:n
-    v = V[j]
-    w = W[j]
-    good = true
-    for k in 1:length(F)
-      if w[k] != F[k][J, J]
-        good = false
-        break
-      end
-    end
-    if !good
-      continue
-    end
-    for k in 1:length(F)
-      for i in 1:I
-        z = zero_matrix(FlintZZ, dim(C), 1)
-        z[per[i], 1] = 1
-        if (v * F[k] * z)[1, 1] != F[k][per[i], J]
-          good = false
-          break
-        end
-      end
-      if !good
-        break
-      end
-    end
-
-    if good
-      count += 1
-    end
-
-    good = true
-    for k in 1:length(F)
-      for i in 1:I
-        z = zero_matrix(FlintZZ, dim(C), 1)
-        z[per[i], 1] = 1
-        if (v * F[k] * z)[1, 1] != -F[k][per[i], J]
-          good = false
-          break
-        end
-      end
-    end
-
-    if good
-      count += 1
-    end
-
-  end
-  return count
 end
 
 function possible(C::ZLatAutoCtx, per, I, J)
@@ -542,7 +464,7 @@ function fingerprint(C::ZLatAutoCtx)
 end
 
 # computes min(#O, orblen), where O is the orbit of pt under the first nG matrices in G
-function _orbitlen(point::Int, orblen::Int, G::Vector{fmpz_mat}, nG::Int, V)
+function _orbitlen(point::Int, orblen::Int, G::Vector{fmpz_mat}, nG, V)
   n = length(V)
   orb = ones(Int, orblen)
   orb[1] = point
@@ -605,28 +527,6 @@ function _find_point(w, V)
     return -k
   end
 end
-#
-#{
-#	int	i, im, *w;
-#
-#	if ((w = (int*)malloc(V.dim * sizeof(int))) == 0)
-#		exit (1);
-#	vecmatmul(V.v[abs(nr)], A, V.dim, w);
-#	if (nr < 0)
-#	{
-#		for (i = 0; i < V.dim; ++i)
-#			w[i] *= -1;
-#	}
-#	im = numberof(w, V);
-#	if (abs(im) > V.n)
-#/* the vector is not in the list */
-#	{
-#		fprintf(stderr, "Error: image of vector %d not found\n", nr);
-#		exit (2);
-#	}
-#	free(w);
-#	return(im);
-#}
 
 function _orbitlen_naive(point::Int, orblen::Int, G::Vector{fmpz_mat}, nG::Int, V)
   working_list = Int[point]
@@ -646,7 +546,6 @@ function _orbitlen_naive(point::Int, orblen::Int, G::Vector{fmpz_mat}, nG::Int, 
       end
     end
   end
-  #@show length(orbit)
   return min(orblen, length(orbit))
 end
 
@@ -1345,6 +1244,261 @@ function matgen(x, dim, per, v)
   return X
 end
 
+# Isomorphism computation
+
+function _iso_setup(Gi, Go)
+  Ci = ZLatAutoCtx(Gi)
+  Co = ZLatAutoCtx(Go)
+  init(Ci, false)
+  init(Co, true, Ci.max)
+  return Ci, Co
+end
+
+function isometry(Ci, Co)
+  d = dim(Co)
+  C = Vector{Vector{Int}}(undef, d)
+  if length(Ci.V) != length(Co.V)
+    return false, zero_matrix(FlintZZ, 0, 0)
+  end
+  for i in 1:d
+    C[i] = zeros(Int, Ci.fp_diagonal[i])
+  end
+  x = zeros(Int, d)
+  # compute the candidates for x[0]
+  H = Vector{fmpz_mat}(undef, sum(length(gg) for gg in Co.g))
+  k = 1
+  for i in 1:length(Co.g)
+    for j in 1:length(Co.g[i])
+      H[k] = Co.g[i][j]
+      k += 1
+    end
+  end
+  isocand(C[1], 1, x, Ci, Co)
+  found = iso(1, x, C, Ci, Co, H)
+  if found
+    T = matgen(x, d, Ci.per, Co.V)
+    @assert all(T * Co.G[k] * T' == Ci.G[k] for k in 1:length(Ci.G))
+    return true, T
+  else
+    return false, zero_matrix(FlintZZ, 0, 0)
+  end
+end
+
+function iso(step, x, C, Ci, Co, G)
+  d = dim(Ci)
+  found = false
+  while C[step][1] != 0 && !found
+    if step < d
+      # choose the image of the base vector nr. step
+      x[step] = C[step][1]
+        # check whether x[1]..x[step]
+      nbc = isocand(C[step + 1], step + 1, x, Ci, Co)
+      if nbc == Ci.fp_diagonal[step + 1]
+        # go deeper in the recursion
+        Maxfail = 0
+        # determine the heuristic value of Maxfail for the break condition in isostab
+        for i in 1:step
+          if Ci.fp_diagonal[i] > 1
+            Maxfail += 1
+          end
+        end
+        for i in (step + 1):d
+          if Ci.fp_diagonal[i] > 1
+            Maxfail += 2
+          end
+        end
+        H = isostab(x[step], G, Co, Maxfail)
+        found = iso(step + 1, x, C, Ci, Co, H)
+      end
+      if found
+        return found
+      end
+      orb = orbit(x[step], 1, G, length(G), Co.V)
+      setdiff!(C[step], orb)
+    else
+      x[d] = C[d][1]
+      found = true
+    end
+  end
+  return found
+end
+
+function isostab(pt, G, C, Maxfail)
+# computes the orbit of V.v[pt] 
+# under the generators 
+#	G[0],...,G[nG-1] and elements
+#	stabilizing V.v[pt], which are 
+#	stored in H, returns the number
+#	of generators in H
+# a heuristic break condition for the computation of stabilizer elements:
+# it would be too expensive to calculate all the stabilizer generators, which
+# are obtained from the orbit, since this is highly redundant, 
+# on the other hand every new generator which enlarges the group reduces the
+# number of orbits and hence the number of candidates to be tested,
+# after Maxfail subsequent stabilizer elements, that do not enlarge the group,
+# the procedure stops,
+# increasing Maxfail will possibly decrease the number of tests,
+# but will increase the running time of the stabilizer computation
+# there is no magic behind the heuristic, tuning might be appropriate */
+#
+  nG = length(G)
+  d = dim(C)
+#/* H are the generators of the stabilizer of C.V[pt] */
+  V = C.V
+  H = Vector{fmpz_mat}(undef, 1)
+  nH = 0
+  n = length(C.V)
+  w = Vector{fmpz_mat}(undef, 2 * n + 2)
+  orb = zeros(Int, 2 * n)
+  orblen = 1
+  flag = zeros(Bool, 2*n + 1)
+#/* if flag[i + n + 1] = 1, then the point i is already in the orbit */
+  orb[1] = pt
+  flag[orb[1] + n + 1] = 1
+#/* w[pt+V.n] is the Identity */
+  w[orb[1] + n + 1] = identity_matrix(FlintZZ, d)
+  cnd = 1
+  len = 1
+  fail = 0
+#/* fail is the number of successive failures */
+  A = zero_matrix(FlintZZ, d, d)
+  B = zero_matrix(FlintZZ, d, d)
+  while (cnd <= len && fail < Maxfail)
+    for i in 1:nG
+      if fail >= Maxfail
+        break
+      end
+      #@show G, i
+      #@show orb[cnd]
+      im = _operate(orb[cnd], G[i], V)
+      #@show im
+      if !flag[im + n  + 1]
+#/* a new element is found, appended to the orbit and an element mapping
+        len += 1
+        orb[len] = im
+        flag[im + n + 1] = true
+        w[im + n + 1] = w[orb[cnd] + n + 1] * G[i]
+#   V.v[pt] to im is stored in w[im+V.n] */
+      else
+#/* the image was already in the orbit */
+        B = w[orb[cnd] + n + 1] * G[i]
+        #@show B
+        #@show w[im + n + 1]
+#/* check, whether the old and the new element mapping pt on im differ */
+        if B != w[im + n + 1]
+#/* new stabilizer element H[nH] = w[orb[cnd]+V.n] * G[i] * (w[im+V.n])^-1 */
+          H[nH + 1] = w[orb[cnd] + n + 1] * G[i] * inv(w[im + n + 1])
+          #	psolve((*H)[nH], A, B, dim, V.prime);
+          rpt = rand(1:(n + 1))
+          templen = _orbitlen(rpt, 2*n, H, nH + 1, V)
+          while templen < orblen
+#/* the orbit of this vector is shorter than a previous one, hence choose a new
+#   random vector */
+            rpt = rand(1:(n + 1))
+            tmplen = _orbitlen(rpt, 2*n, H, nH + 1, V)
+          end
+          if tmplen > orblen
+#/* the new stabilizer element H[nH] enlarges the group generated by H */
+            orblen = tmplen
+            nH += 1
+            resize!(H, nH)
+            fail = 0
+          else
+            fail += 1
+          end
+        end
+        # if H[nH]is the identity, nothing is done
+      end
+    end
+    cnd += 1
+  end
+  resize!(H, nH)
+  return H
+end
+
+function isocand(CI, I, x, Ci, Co)
+  d = dim(Ci)
+  n = length(Ci.V)
+  @assert n == length(Co.V)
+  # Do something with bacher polynomials ...
+  vec = zeros(Int, d)
+  for i in 1:Ci.fp_diagonal[I]
+    CI[i] = 0
+  end
+  nr = 0
+  fail = false
+  for j in 1:n
+    if fail
+      break
+    end
+    Vvj = Co.V[j]
+    okp = 0
+    okm = 0
+    # do something with scpvec
+    for i in 1:length(Co.G)
+      # GiI = Ci.G[i][Ci.per[I]] this is the Ci.per[I]-th row of Ci.G[i]
+      Fvi = Co.v[i]
+      # vec is the vector of scalar products of Co.v[j] with the first I base vectors
+      # x[1]...x[I-1]
+      for k in 1:(I - 1)
+        xk = x[k]
+        if xk > 0
+          #vec[k] = (Vvj * Co.G[i] * Co.V[xk]')[1, 1]
+          vec[k] = _dot_product(Vvj, Fvi, xk)
+        else
+          #vec[k] = -(Vvj * Co.G[i] * Co.V[xk]')[1, 1]
+          vec[k] = -_dot_product(Vvj, Fvi, -xk)
+        end
+      end
+      good = true
+      for k in 1:(I - 1)
+        if vec[k] != Ci.G[i][Ci.per[I], Ci.per[k]]
+          good = false
+          break
+        end
+      end
+      if good && Co.V_length[j][i] == Ci.G[i][Ci.per[I], Ci.per[I]]
+        okp += 1
+      end
+      good = true
+      for k in 1:(I - 1)
+        if vec[k] != -Ci.G[i][Ci.per[I], Ci.per[k]]
+          good = false
+          break
+        end
+      end
+      if good && Co.V_length[j][i] == Ci.G[i][Ci.per[I], Ci.per[I]]
+        okm += 1
+      end
+      # do something with scpvec
+    end
+    # do something with scpvec and DEP
+    if okp == length(Ci.G)
+      if nr < Ci.fp_diagonal[I]
+        nr += 1
+        CI[nr] = j
+      else
+        fail = true
+      end
+    end
+    if okm == length(Ci.G)
+      if nr < Ci.fp_diagonal[I]
+        nr += 1
+        CI[nr] = -j
+      else
+        fail = true
+      end
+    end
+  end
+  if fail
+    nr = 0
+  end
+
+  #if nr == Ci.fp_diagonal[I] # DEP
+  # update the blabla
+  return nr
+end
+
 function assert_auto(C, order)
   G, o = _get_generators(C)
   if o != order
@@ -1399,56 +1553,3 @@ end
 #
 # Hecke.fingerprint(C)
 # reduce(hcat, [C.fp[:, i] for i in 1:8][C.per]) == [240 240 2160 240 240 240 240 240; 0 56 126 126 126 126 126 126; 0 0 27 27 72 72 72 72; 0 0 0 10 40 16 40 40; 0 0 0 0 8 8 24 24; 0 0 0 0 0 4 6 12; 0 0 0 0 0 0 3 6; 0 0 0 0 0 0 0 2]
-
-const lattices = [
-(([[2]]), 2), 
-# 2
-(([[1, 0], [0, 2]]), 4),
-(([[2, -1], [-1, 2]]), 12),
-# 3
-(([[2, 1, 0], [1, 2, 0], [0, 0, 26]]), 24),
-# 4
-(([[1, 0, 0, 0], [0, 2, -1, 1], [0, -1, 3, -1], [0, 1, -1, 3]]), 16),
-# 5
-(([[2, 1, 1, 1, -1], [1, 2, 1, 1, 0], [1, 1, 2, 1, -1], [1, 1, 1, 2, -1], [-1, 0, -1, -1, 2]]), 3840),
-(([[1, 0, 0, 0, 0], [0, 1, 0, 0, 0], [0, 0, 1, 0, 0], [0, 0, 0, 2, 1], [0, 0, 0, 1, 3]]), 192),
-# 6
-(([[2, -1, 0, 0, 0, 0], [-1, 2, -1, 0, 0, 0], [0, -1, 2, -1, 0, -1], [0, 0, -1, 2, -1, 0], [0, 0, 0, -1, 2, 0], [0, 0, -1, 0, 0, 2]]), 103680),
-(([[1, 0, 0, 0, 0, 0], [0, 1, 0, 0, 0, 0], [0, 0, 2, 1, 0, 1], [0, 0, 1, 3, 1, 1], [0, 0, 0, 1, 2, 1], [0, 0, 1, 1, 1, 3]]), 512),
-#(([[8, 4, 4, 4, 4, 4, 4, 2, 4, 4, 4, 2, 4, 2, 2, 2, 4, 2, 2, 2, 0, 0, 0, -3],
-#   [4, 4, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 2, 1, 1, 2, 1, 0, 0, -1],
-#   [4, 2, 4, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 1, 2, 2, 1, 1, 1, 0, 0, -1],
-#   [4, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 2, 2, 1, 2, 1, 1, 0, 0, -1],
-#   [4, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 1, 0, 0, -1],
-#   [4, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 1, 2, 2, 1, 1, 2, 1, 2, 1, 0, 0, 0, -1],
-#   [4, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 1, 2, 1, 2, 1, 2, 1, 1, 2, 0, 0, 0, -1],
-#   [2, 2, 2, 2, 2, 2, 2, 4, 1, 1, 1, 2, 1, 2, 2, 2, 1, 2, 2, 2, 2, 0, 0, 1],
-#   [4, 2, 2, 2, 2, 2, 2, 1, 4, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, -1],
-#   [4, 2, 2, 2, 2, 2, 2, 1, 2, 4, 2, 2, 2, 2, 1, 1, 2, 2, 1, 1, 0, 1, 0, -1],
-#   [4, 2, 2, 2, 2, 2, 2, 1, 2, 2, 4, 2, 2, 1, 2, 1, 2, 1, 2, 1, 0, 0, 1, -1],
-#   [2, 2, 2, 2, 1, 1, 1, 2, 2, 2, 2, 4, 1, 2, 2, 2, 1, 2, 2, 2, 2, 1, 1, 1],
-#   [4, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 1, 4, 2, 2, 2, 2, 1, 1, 1, 1, 1, 1, -1],
-#   [2, 2, 1, 1, 2, 2, 1, 2, 2, 2, 1, 2, 2, 4, 2, 2, 1, 2, 2, 2, 2, 2, 1, 1],
-#   [2, 1, 2, 1, 2, 1, 2, 2, 2, 1, 2, 2, 2, 2, 4, 2, 1, 2, 2, 2, 2, 1, 2, 1],
-#   [2, 1, 1, 2, 2, 1, 1, 2, 2, 1, 1, 2, 2, 2, 2, 4, 1, 2, 2, 2, 2, 1, 1, 1],
-#   [4, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 1, 2, 1, 1, 1, 4, 2, 2, 2, 1, 1, 1, -1],
-#   [2, 1, 2, 1, 2, 1, 1, 2, 2, 2, 1, 2, 1, 2, 2, 2, 2, 4, 2, 2, 2, 2, 1, 1],
-#   [2, 1, 1, 2, 2, 2, 1, 2, 2, 1, 2, 2, 1, 2, 2, 2, 2, 2, 4, 2, 2, 1, 2, 1],
-#   [2, 2, 1, 1, 2, 1, 2, 2, 2, 1, 1, 2, 1, 2, 2, 2, 2, 2, 2, 4, 2, 1, 1, 1],
-#   [0, 1, 1, 1, 1, 0, 0, 2, 1, 0, 0, 2, 1, 2, 2, 2, 1, 2, 2, 2, 4, 2, 2, 2],
-#   [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 1, 1, 2, 1, 1, 1, 2, 1, 1, 2, 4, 2, 2],
-#   [0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 1, 1, 2, 1, 1, 1, 2, 1, 2, 2, 4, 2],
-#   [-3, -1, -1, -1, -1, -1, -1, 1, -1, -1, -1, 1, -1, 1, 1, 1, -1, 1, 1, 1, 2,
-#    2, 2, 4]]), 8315553613086720000)]
-(([[2, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [-1, 2, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, -1, 2, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, -1, 2, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, -1, 2, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, -1, 2, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, -1, 2, -1, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, -1, 2, -1, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, -1, 2, -1, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, -1, 2, -1, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, -1, 2, -1, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, 2, -1, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, 2, -1, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, 2, -1, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, 2, -1], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, 2]]), 711374856192000)]
-
-function test_auto()
-  for (m, o) in lattices
-    n = length(m[1])
-    G = matrix(FlintZZ, n, n, reduce(vcat, m))
-    C = Hecke.ZLatAutoCtx([G]);
-    init(C)
-    auto(C)
-    assert_auto(C, o)
-  end
-end
