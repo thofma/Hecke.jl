@@ -293,7 +293,7 @@
   end
 
   @testset "Factorization" begin
-    K, a = NumberField(x^2 - 1, "a")
+    K, a = NumberField(x^2 + 1, "a")
     OK = maximal_order(K)
     b = OK(2 * 3 * a)
     fac = @inferred factor(b)
@@ -302,7 +302,7 @@
     
     K, a = NumberField(x^3 - 2, "a")
     OK = maximal_order(K)
-    b = rand(factor(OK, -10:10))
+    b = rand(OK, -10:10)
     fac = @inferred factor(b)
     @test isunit(unit(fac))
     @test b == unit(fac) * prod(p^e for (p, e) in fac)
