@@ -1,11 +1,15 @@
 module PolymakeOscar
 
-using Polymake, Hecke
+using Polymake, Hecke, Markdown
 
 Hecke.nrows(A::Polymake.pm_MatrixAllocated) = Int(size(A)[1])
 Hecke.ncols(A::Polymake.pm_MatrixAllocated) = Int(size(A)[2])
 
-#solves Ax <= b
+@doc Markdown.doc"""
+    solve_ineq(A::fmpz_mat, b::fmpz_mat)
+
+Solves $Ax<=b$, assumes finite set of solutions.
+"""
 function solve_ineq(A::fmpz_mat, b::fmpz_mat)
   bA = Array{BigInt, 2}(hcat(-b, A))
   p = @pm Polytope.Polytope( :INEQUALITIES => bA)
@@ -28,6 +32,11 @@ function solve_ineq(A::fmpz_mat, b::fmpz_mat)
   return res
 end
 
+@doc Markdown.doc"""
+    solve_non_negative(A::fmpz_mat, b::fmpz_mat)
+
+Finds all solutions to $Ax = b$, $x>=0$. Assumes a finite set of solutions.
+"""
 function solve_non_negative(A::fmpz_mat, b::fmpz_mat)
   bA = Array{BigInt, 2}(hcat(-b, A))
   zI = Array{BigInt, 2}(hcat(zero_matrix(FlintZZ, ncols(A), 1), MatrixSpace(FlintZZ, ncols(A), ncols(A))(1)))
@@ -51,11 +60,26 @@ function solve_non_negative(A::fmpz_mat, b::fmpz_mat)
   return res
 end
 
+@doc Markdown.doc"""
+    solve_mixed(A::fmpz_mat, b::fmpz_mat, C::fmpz_mat)
+
+Solves $Ax = b$ under $Cx >= 0$, assumes a finite solution set.
+"""
 function solve_mixed(A::fmpz_mat, b::fmpz_mat, C::fmpz_mat)  # Ax == b && Cx >= 0
   bA = Array{BigInt, 2}(hcat(-b, A))
+  z = findall(i->!iszero_row(bA, i), 1:nrows(bA))
+  zbA = Array{BigInt, 2}(bA[z, :])
   z = findall(i->!iszero_row(C, i), 1:nrows(C))
   zI = Array{BigInt, 2}(hcat(zero_matrix(FlintZZ, nrows(C), 1), C))[z, :]
-  p = @pm Polytope.Polytope(:EQUATIONS => bA, :INEQUALITIES => zI)
+  if length(zbA) == 0
+    p = @pm Polytope.Polytope(:INEQUALITIES => zI)
+  else
+    if nrows(zI) == 0
+      p = @pm Polytope.Polytope(:EQUATIONS => zbA)
+    else
+      p = @pm Polytope.Polytope(:EQUATIONS => zbA, :INEQUALITIES => zI)
+    end
+  end
   inner = p.INTERIOR_LATTICE_POINTS
   out = p.BOUNDARY_LATTICE_POINTS
 
@@ -75,10 +99,23 @@ function solve_mixed(A::fmpz_mat, b::fmpz_mat, C::fmpz_mat)  # Ax == b && Cx >= 
   return res
 end
 
+@doc Markdown.doc"""
+    solve_mixed(A::fmpz_mat, b::fmpz_mat, C::fmpz_mat, d::fmpz_mat)
+
+Solves $Ax = b$ under $Cx >= d$, assumes a finite solution set.
+"""
+function solve_mixed(A::fmpz_mat, b::fmpz_mat, C::fmpz_mat, d::fmpz_mat)
+  n = ncols(A)
+  A = cat(A, identity_matrix(FlintZZ, ncols(d)), dims=(1,2))
+  b = vcat(b, identity_matrix(FlintZZ, ncols(d)))
+  C = [C -d; zero_matrix(FlintZZ, ncols(d), ncols(C)) identity_matrix(FlintZZ, ncols(d))]
+  s = solve_mixed(A, b, C)
+  return s[:, 1:n]
+end
+
 function Hecke.valuation(a::FacElem{fmpz, FlintIntegerRing}, p::fmpz)
   return sum(k*valuation(b, p) for (b, k) = a.fac)
 end
-
 
 function norm_equation2_fac_elem(R::NfAbsOrd, k::fmpz; abs::Bool = false)
   @assert Hecke.ismaximal(R)
@@ -192,6 +229,111 @@ function norm_equation_fac_elem(R::Hecke.NfRelOrd{nf_elem,Hecke.NfOrdFracIdl}, a
   return sol
 end
 
+function Hecke.isirreducible(a::NfAbsOrdElem{AnticNumberField,nf_elem})
+  if iszero(a)
+    return false
+  end
+  O = parent(a)
+  S = collect(keys(factor(a*O)))
+  if length(S) == 0
+    return false
+  end
+  s, ms = Hecke.sunit_mod_units_group_fac_elem(S)
+  V = matrix([fmpz[valuation(ms(x), y) for y = S] for x = gens(s)])
+  b = matrix([fmpz[valuation(a, y) for y = S]])
+  sol = solve(V, b)
 
+  #want to write sol = x+y where
+  # Cx, Cy > 0
+  # if this is possible, then a is not irreducible as a
+  # is then ms(Ax) * ms(Ay) and neither is trivial.
+
+  I = identity_matrix(FlintZZ, length(S))
+  A = hcat(I, I)
+  #so A*(x|y) = x+y = sol is the  1. condition
+  C = cat(V, V, dims=(1,2))
+  # C(x|y) >=0 iff Cx >=0 and Cy >=0
+  #Cx <> 0 iff (1,..1)*Cx >= 1
+  one = matrix(FlintZZ, 1, length(S), [1 for p = S])
+  zer = matrix(FlintZZ, 1, length(S), [0 for p = S])
+  C = vcat(C, hcat(one, zer), hcat(zer, one))
+  d = matrix(FlintZZ, 2*length(S)+2, 1, [0 for i = 1:2*length(S) + 2])
+  d[end-1, 1] = 1
+  d[end, 1] = 1
+
+  pt = solve_mixed(A, sol, C, d)
+  return nrows(pt) == 0
+end
+
+function irreducibles(S::Array{NfAbsOrdIdl{AnticNumberField,nf_elem},1})
+  if length(S) == 0
+    return []
+  end
+  @assert all(isprime, S)
+  #TODO: try to get a better bound - in general if S is too large
+  #      it cannot work 
+  
+  O = order(S[1])
+  @assert all(x-> order(x) == O, S)
+
+  s, ms = Hecke.sunit_mod_units_group_fac_elem(S)
+  if length(S) == 1
+    return O(evaluate(ms(s[1])))
+  end
+  c, mc = class_group(O)
+
+  V = matrix([[valuation(ms(x), y) for y = S] for x = gens(s)])
+  o = matrix([[order(preimage(mc, p))-1 for p = S]]) #TODO: this info is in V!
+  if length(S) > sum(o)
+    @show "fast"
+    return []
+  end
+  #potential elements x
+  # have valuation Vx
+  # if the support is supposed to be S, then Vx >= 1
+  # Vx < o (or else I can remove primes from the support)
+  # have to be irreducible...
+  so = solve_mixed(zero_matrix(FlintZZ, 1, length(S)), zero_matrix(FlintZZ, 1, 1), vcat(V, -V), vcat(matrix(FlintZZ, length(S), 1, [1 for p = S]), -o))
+
+  res = []
+  for i = 1:nrows(so)
+    x = O(evaluate(ms(s(so[i, :]))))
+    if isirreducible(x)
+      push!(res, x)
+    end
+  end
+  return res
+end
+
+function factorisations(a::NfAbsOrdElem{AnticNumberField,nf_elem})
+  O = parent(a)
+  S = collect(keys(factor(a*O)))
+  if length(S) == 0
+    return []
+  end
+  irr = reduce(vcat, irreducibles(collect(x)) for x = Hecke.subsets(Set(S)))
+  A = matrix([fmpz[valuation(x, y) for y = S] for x = irr])
+  b = matrix([fmpz[valuation(a, y) for y = S]])
+  sol = solve_non_negative(A, b)
+  res = Fac{NfAbsOrdElem{AnticNumberField,nf_elem}}[]
+  for j=1:nrows(sol)
+    x = Dict{typeof(a), Int}()
+    y = a
+    for i=1:length(irr)
+      if sol[j,i] != 0
+        x[irr[i]] = sol[j,i]
+        y = divexact(y, irr[i]^sol[j,i])
+      end
+    end
+    push!(res, Fac(y, x))
+  end
+  return res
+end
+
+function Base.lastindex(a::fmpz_mat, i::Int)
+  i==1 && return nrows(a)
+  i==2 && return ncols(a)
+  error("illegal dimension")
+end
 
 end
