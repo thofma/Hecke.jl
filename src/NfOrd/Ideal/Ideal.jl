@@ -235,7 +235,7 @@ function ideal(O::NfOrd, v::Vector{NfOrdElem})
   if isone(basis(O)[1])
     m = M1[1, 1]
   else
-    m = prod(M1[i, i] for i = 1:nrows(M1))
+    m = prod(fmpz[M1[i, i] for i = 1:nrows(M1)])
   end
   for i = 2:length(v)
     M1 = representation_matrix_mod(v[i], m)
@@ -244,7 +244,7 @@ function ideal(O::NfOrd, v::Vector{NfOrdElem})
     if isone(basis(O)[1])
       m = M[degree(O)+1, 1]
     else
-      m = prod(M[i+degree(O), i] for i = 1:ncols(M))
+      m = prod(fmpz[M[i+degree(O), i] for i = 1:ncols(M)])
     end
     if isone(m)
       return ideal(O, 1)
@@ -646,7 +646,7 @@ function assure_has_minimum(A::NfAbsOrdIdl)
     A.minimum = basis_matrix(A, copy = false)[1, 1]
   else
     M = basis_matrix(A, copy = false)
-    d = prod(M[i, i] for i = 1:nrows(M))
+    d = prod(fmpz[M[i, i] for i = 1:nrows(M)])
     v = matrix(FlintZZ, 1, nrows(M), coordinates(order(A)(d)))
     fl, s = can_solve(M, v, side = :left)
     @assert fl

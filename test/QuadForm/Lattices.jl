@@ -1,3 +1,24 @@
+function _random_invertible_matrix(n, B)
+  A = identity_matrix(FlintZZ, n)
+  if n == 1
+    return A
+  end
+  for k in 1:10
+    i = rand(1:(n - 1))
+    j = rand((i + 1):n)
+    A[i, j] += rand(B)
+  end
+  @assert det(A) == 1
+  C = identity_matrix(FlintZZ, n)
+  for k in 1:10
+    i = rand(1:(n - 1))
+    j = rand((i + 1):n)
+    C[i, j] += rand(B)
+  end
+  @assert det(C) == 1
+  return transpose(C) * A
+end
+
 @testset "Lattices" begin
   # Smoke test for genus symbol
   Qx, x = PolynomialRing(FlintQQ, "x")
@@ -55,6 +76,129 @@
    pm = pseudo_matrix(matrix(E, 3, 3, [1, 0, 0, b, 1, 0, 0, 0, 1]), [P^0, inv(P)^2, P^0])
    V = hermitian_space(E, identity_matrix(E, 3))
    L = lattice(V, pm)
-   A = Hecke.automorphism_group(L)
-   @test A[2] == 1536
+   o = Hecke.automorphism_group_order(L)
+   @test o == 1536
+end
+
+const lattices_and_aut_order = [
+(([[2]]), 2), 
+# 2
+(([[1, 0], [0, 2]]), 4),
+(([[2, -1], [-1, 2]]), 12),
+# 3
+(([[2, 1, 0],
+   [1, 2, 0],
+   [0, 0, 26]]), 24),
+# 4
+(([[1, 0, 0, 0],
+   [0, 2, -1, 1],
+   [0, -1, 3, -1],
+   [0, 1, -1, 3]]), 16),
+# 5
+(([[2, 1, 1, 1, -1],
+   [1, 2, 1, 1, 0],
+   [1, 1, 2, 1, -1],
+   [1, 1, 1, 2, -1],
+   [-1, 0, -1, -1, 2]]), 3840),
+(([[1, 0, 0, 0, 0],
+   [0, 1, 0, 0, 0],
+   [0, 0, 1, 0, 0],
+   [0, 0, 0, 2, 1],
+   [0, 0, 0, 1, 3]]), 192),
+# 6
+(([[2, -1, 0, 0, 0, 0],
+   [-1, 2, -1, 0, 0, 0],
+   [0, -1, 2, -1, 0, -1],
+   [0, 0, -1, 2, -1, 0],
+   [0, 0, 0, -1, 2, 0],
+   [0, 0, -1, 0, 0, 2]]), 103680),
+# 6
+(([[1, 0, 0, 0, 0, 0],
+   [0, 1, 0, 0, 0, 0],
+   [0, 0, 2, 1, 0, 1],
+   [0, 0, 1, 3, 1, 1],
+   [0, 0, 0, 1, 2, 1],
+   [0, 0, 1, 1, 1, 3]]), 512),
+#(([[8, 4, 4, 4, 4, 4, 4, 2, 4, 4, 4, 2, 4, 2, 2, 2, 4, 2, 2, 2, 0, 0, 0, -3],
+#   [4, 4, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 2, 1, 1, 2, 1, 0, 0, -1],
+#   [4, 2, 4, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 1, 2, 2, 1, 1, 1, 0, 0, -1],
+#   [4, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 2, 2, 1, 2, 1, 1, 0, 0, -1],
+#   [4, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 1, 0, 0, -1],
+#   [4, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 1, 2, 2, 1, 1, 2, 1, 2, 1, 0, 0, 0, -1],
+#   [4, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 1, 2, 1, 2, 1, 2, 1, 1, 2, 0, 0, 0, -1],
+#   [2, 2, 2, 2, 2, 2, 2, 4, 1, 1, 1, 2, 1, 2, 2, 2, 1, 2, 2, 2, 2, 0, 0, 1],
+#   [4, 2, 2, 2, 2, 2, 2, 1, 4, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, -1],
+#   [4, 2, 2, 2, 2, 2, 2, 1, 2, 4, 2, 2, 2, 2, 1, 1, 2, 2, 1, 1, 0, 1, 0, -1],
+#   [4, 2, 2, 2, 2, 2, 2, 1, 2, 2, 4, 2, 2, 1, 2, 1, 2, 1, 2, 1, 0, 0, 1, -1],
+#   [2, 2, 2, 2, 1, 1, 1, 2, 2, 2, 2, 4, 1, 2, 2, 2, 1, 2, 2, 2, 2, 1, 1, 1],
+#   [4, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 1, 4, 2, 2, 2, 2, 1, 1, 1, 1, 1, 1, -1],
+#   [2, 2, 1, 1, 2, 2, 1, 2, 2, 2, 1, 2, 2, 4, 2, 2, 1, 2, 2, 2, 2, 2, 1, 1],
+#   [2, 1, 2, 1, 2, 1, 2, 2, 2, 1, 2, 2, 2, 2, 4, 2, 1, 2, 2, 2, 2, 1, 2, 1],
+#   [2, 1, 1, 2, 2, 1, 1, 2, 2, 1, 1, 2, 2, 2, 2, 4, 1, 2, 2, 2, 2, 1, 1, 1],
+#   [4, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 1, 2, 1, 1, 1, 4, 2, 2, 2, 1, 1, 1, -1],
+#   [2, 1, 2, 1, 2, 1, 1, 2, 2, 2, 1, 2, 1, 2, 2, 2, 2, 4, 2, 2, 2, 2, 1, 1],
+#   [2, 1, 1, 2, 2, 2, 1, 2, 2, 1, 2, 2, 1, 2, 2, 2, 2, 2, 4, 2, 2, 1, 2, 1],
+#   [2, 2, 1, 1, 2, 1, 2, 2, 2, 1, 1, 2, 1, 2, 2, 2, 2, 2, 2, 4, 2, 1, 1, 1],
+#   [0, 1, 1, 1, 1, 0, 0, 2, 1, 0, 0, 2, 1, 2, 2, 2, 1, 2, 2, 2, 4, 2, 2, 2],
+#   [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 1, 1, 2, 1, 1, 1, 2, 1, 1, 2, 4, 2, 2],
+#   [0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 1, 1, 2, 1, 1, 1, 2, 1, 2, 2, 4, 2],
+#   [-3, -1, -1, -1, -1, -1, -1, 1, -1, -1, -1, 1, -1, 1, 1, 1, -1, 1, 1, 1, 2,
+#    2, 2, 4]]), 8315553613086720000)]
+(([[2, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+   [-1, 2, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+   [0, -1, 2, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+   [0, 0, -1, 2, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+   [0, 0, 0, -1, 2, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+   [0, 0, 0, 0, -1, 2, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+   [0, 0, 0, 0, 0, -1, 2, -1, 0, 0, 0, 0, 0, 0, 0, 0],
+   [0, 0, 0, 0, 0, 0, -1, 2, -1, 0, 0, 0, 0, 0, 0, 0],
+   [0, 0, 0, 0, 0, 0, 0, -1, 2, -1, 0, 0, 0, 0, 0, 0],
+   [0, 0, 0, 0, 0, 0, 0, 0, -1, 2, -1, 0, 0, 0, 0, 0],
+   [0, 0, 0, 0, 0, 0, 0, 0, 0, -1, 2, -1, 0, 0, 0, 0],
+   [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, 2, -1, 0, 0, 0],
+   [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, 2, -1, 0, 0],
+   [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, 2, -1, 0],
+   [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, 2, -1],
+   [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, 2]]), 711374856192000)]
+
+function test_automorphisms(L, G, natural_action)
+  if natural_action
+    @test all(g * gram_matrix(ambient_space(L)) * transpose(g)  == gram_matrix(ambient_space(L)) for g in G)
+  else
+    @test all(g * gram_matrix(L) * transpose(g) == gram_matrix(L) for g in G)
+  end
+end
+
+@testset "Z-lattice automorphisms" begin
+  for (m, o) in lattices_and_aut_order
+    n = length(m[1])
+    G = matrix(FlintZZ, n, n, reduce(vcat, m))
+    L = Zlattice(gram = G)
+    Ge = automorphism_group_generators(L, natural_action = true)
+    test_automorphisms(L, Ge, true)
+    Ge = automorphism_group_generators(L, natural_action = false)
+    test_automorphisms(L, Ge, false)
+    @test automorphism_group_order(L) == o
+  end
+end
+
+@testset "Z-lattice isomorphisms" begin
+  for (m, o) in lattices_and_aut_order 
+    n = length(m[1])
+    G = matrix(FlintZZ, n, n, reduce(vcat, m))
+    L = Zlattice(gram = G)
+    X = _random_invertible_matrix(n, -3:3)
+    @assert abs(det(X)) == 1
+    L2 = Zlattice(gram = X * G * X')
+    b, T = isisometric(L, L2, natural_action = false)
+    @test b
+    @test T * gram_matrix(L) * T' == gram_matrix(L2)
+    L2 = Zlattice(X, gram = G)
+    b, T = isisometric(L, L2, natural_action = false)
+    @test b
+    @test T * gram_matrix(L) * T' == gram_matrix(L2)
+    b, T = isisometric(L, L2, natural_action = true)
+    @test b
+    @test T * gram_matrix(ambient_space(L)) * T' == gram_matrix(ambient_space(L2))
+  end
 end

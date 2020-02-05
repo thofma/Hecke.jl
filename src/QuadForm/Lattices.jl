@@ -6,7 +6,8 @@ export *, +, absolute_basis, absolute_basis_matrix, ambient_space, bad_primes,
        islocally_isometric, ismodular, isnegative_definite,
        ispositive_definite, isrationally_equivalent, jordan_decomposition,
        local_basis_matrix, norm, pseudo_matrix, quadratic_lattice, rank,
-       rational_span, rescale, scale, volume, witt_invariant, lattice
+       rational_span, rescale, scale, volume, witt_invariant, lattice, Zlattice,
+       automorphism_group_generators, automorphism_group_order, isisometric
 
 export HermLat, QuadLat
 
@@ -24,6 +25,8 @@ mutable struct QuadLat{S, T, U} <: AbsLat{S}
   gram::T                        # gram matrix of the matrix part of pmat
   rational_span::QuadSpace{S, T}
   base_algebra::S
+  automorphism_group_generators::Vector{T}
+  automorphism_group_order::fmpz
   @declare_other
 
   function QuadLat{S, T, U}() where {S, T, U}
@@ -143,6 +146,8 @@ mutable struct HermLat{S, T, U, V, W} <: AbsLat{S}
   rational_span::HermSpace{S, T, U, W}
   base_algebra::S
   involution::W
+  automorphism_group_generators::Vector{U}
+  automorphism_group_order::fmpz
   @declare_other
 
   function HermLat{S, T, U, V, W}() where {S, T, U, V, W}
@@ -2690,12 +2695,17 @@ end
 #
 ################################################################################
 
-mutable struct ZLattice
+mutable struct ZLat <: AbsLat{FlintRationalField}
   space::QuadSpace{FlintRationalField, fmpq_mat}  
+  rational_span::QuadSpace{FlintRationalField, fmpq_mat}  
   basis_matrix::fmpq_mat
   gram_matrix::fmpq_mat
+  aut_grp_gen::fmpq_mat
+  aut_grp_ord::fmpz
+  automorphism_group_generators::Vector{fmpz_mat}
+  automorphism_group_order::fmpz
 
-  function ZLattice(V::QuadSpace{FlintRationalField, fmpq_mat}, B::fmpq_mat)
+  function ZLat(V::QuadSpace{FlintRationalField, fmpq_mat}, B::fmpq_mat)
     z = new()
     z.space = V
     z.basis_matrix = B
@@ -2703,14 +2713,18 @@ mutable struct ZLattice
   end
 end
 
-basis_matrix(L::ZLattice) = L.basis_matrix
+basis_matrix(L::ZLat) = L.basis_matrix
 
-ambient_space(L::ZLattice) = L.space
+ambient_space(L::ZLat) = L.space
 
-function gram_matrix(L::ZLattice)
+base_ring(L::ZLat) = FlintZZ
+
+function gram_matrix(L::ZLat)
   b = basis_matrix(L)
   return b * gram_matrix(ambient_space(L)) * transpose(b)
 end
+
+gram_matrix_of_basis(L::ZLat) = gram_matrix(L)
 
 function restrict_scalars(L::AbsLat)
   V = ambient_space(L)
@@ -2723,7 +2737,149 @@ function restrict_scalars(L::AbsLat)
       Mabs[i, j] = v[j]
     end
   end
-  return ZLattice(Vabs, Mabs)
+  return ZLat(Vabs, Mabs)
+end
+
+function lattice(V::QuadSpace{FlintRationalField, fmpq_mat}, B::MatElem)
+  Gc = change_base_ring(FlintQQ, B)
+  if typeof(Gc) !== fmpq_mat
+    throw(error("Cannot convert entries of the matrix to the rationals"))
+  end
+  return ZLat(V, Gc)
+end
+
+function rational_span(L::ZLat)
+  if isdefined(L, :rational_span)
+    return L.rational_span
+  else
+    G = gram_matrix(L)
+    V = quadratic_space(FlintQQ, G)
+    L.rational_span = V
+    return V
+  end
+end
+
+function Zlattice(B::fmpq_mat; gram = identity_matrix(ncols(B)))
+  V = quadratic_space(FlintQQ, gram)
+  return lattice(V, B)
+end
+
+
+function Zlattice(B::fmpz_mat; gram = identity_matrix(ncols(B)))
+  V = quadratic_space(FlintQQ, gram)
+  return lattice(V, B)
+end
+function Zlattice(;gram)
+  n = nrows(gram)
+  return lattice(quadratic_space(FlintQQ, gram), identity_matrix(FlintQQ, n))
+end
+
+# if natural_action = true, they are given with respect to the ambient space
+function Base.show(io::IO, L::ZLat)
+  print(io, "Quadratic lattice of rank ", rank(L),
+            " and degree ", degree(L), " over the rationals")
+end
+
+function assert_has_automorphisms(L::ZLat)
+  if isdefined(L, :automorphism_group_generators)
+    return nothing
+  end
+
+  V = ambient_space(L)
+  GL = gram_matrix(L)
+  d = denominator(GL)
+  res = fmpz_mat[change_base_ring(FlintZZ, d * GL)]
+  # So the first one is either positive definite or negative definite
+  # Make it positive definite. This does not change the automorphisms.
+  if res[1][1, 1] < 0
+    res[1] = -res[1]
+  end
+  Glll, T = lll_gram_with_transform(res[1])
+  Ttr = transpose(T)
+  res_orig = copy(res)
+  res[1] = Glll
+
+  bm = basis_matrix(L)
+
+  # Make the Gram matrix small
+
+  C = ZLatAutoCtx(res)
+  init(C)
+  auto(C)
+  gens, order = _get_generators(C)
+
+  # Now translate back
+  Tinv = inv(T)
+  for i in 1:length(gens)
+    gens[i] = Tinv * gens[i] * T
+  end
+  
+  # Now gens are with respect to the absolute basis of L
+  @assert all( gens[i] * res_orig[j] * transpose(gens[i]) == res_orig[j] for i in 1:length(gens), j in 1:length(res))
+
+  # Now translate to get the automorphisms with respect to basis_matrix(L)
+  
+  L.automorphism_group_generators = gens
+  L.automorphism_group_order = order
+
+  return nothing
+end
+
+# natural action = action on ambient_space
+
+@doc Markdown.doc"""
+    automorphism_group_generators(L::ZLat; check::Bool = true,
+                                           natural_action::Bool = false)
+
+Returns generators of the automorphism group of $L$. By default, the
+automorphisms are acting on the coordinate vectors of lattice elements.
+If `natural_action = true`, the automorphisms act on elements in the
+ambient space of `L`.
+"""
+function automorphism_group_generators(L::ZLat; check::Bool = true,
+                                                natural_action::Bool = false)
+
+  assert_has_automorphisms(L)
+
+  gens = L.automorphism_group_generators
+  if !natural_action
+    return fmpq_mat[ change_base_ring(FlintQQ, g) for g in gens]
+  else
+    # Now translate to get the automorphisms with respect to basis_matrix(L)
+    bm = basis_matrix(L)
+    bminv = inv(bm)
+    gens = L.automorphism_group_generators
+    return fmpq_mat[bminv * change_base_ring(FlintQQ, g) * bm for g in gens]
+  end
+end
+
+function automorphism_group_order(L::ZLat)
+  assert_has_automorphisms(L)
+  return L.automorphism_group_order
+end
+
+function isisometric(L::ZLat, M::ZLat; natural_action::Bool = false)
+  GL = gram_matrix(L)
+  GM = gram_matrix(M)
+  dL = denominator(GL)
+  GLint = change_base_ring(FlintZZ, dL * GL)
+  dM = denominator(GM)
+  GMint = change_base_ring(FlintZZ, dM * GM)
+  GLlll, TL = lll_gram_with_transform(GLint)
+  GMlll, TM = lll_gram_with_transform(GMint)
+  CL, CM = _iso_setup(fmpz_mat[GLlll], fmpz_mat[GMlll])
+  b, T = isometry(CL, CM)
+  if b
+    T = inv(T)
+    trafo_coord = change_base_ring(FlintQQ, inv(TM)*T*TL)
+    if !natural_action
+      return true, trafo_coord
+    else
+      return true, inv(basis_matrix(M)) * trafo_coord * basis_matrix(L)
+    end
+  else
+    return false, zero_matrix(FlintQQ, 0, 0)
+  end
 end
 
 ################################################################################
@@ -2736,8 +2892,13 @@ end
 # per default, the are given with respect to the basis of the ambient space
 # if natural_action = true, they are given with respect to the coordinate
 # space/ambient space
-function automorphism_group(L::AbsLat; check::Bool = true,
-                                       natural_action::Bool = true)
+function assert_has_automorphisms(L::AbsLat; check::Bool = true,
+                                             natural_action::Bool = false)
+
+  if isdefined(L, :automorphism_group_generators)
+    return nothing
+  end
+  
   V = ambient_space(L)
   E = base_ring(V)
   K = base_field(E)
@@ -2780,7 +2941,9 @@ function automorphism_group(L::AbsLat; check::Bool = true,
   end
   
   # Now gens are with respect to the absolute basis of L
-  @assert all( gens[i] * res_orig[j] * transpose(gens[i]) == res_orig[j] for i in 1:length(gens), j in 1:length(res))
+  if check
+    all(gens[i] * res_orig[j] * transpose(gens[i]) == res_orig[j] for i in 1:length(gens), j in 1:length(res))
+  end
 
   # Now translate to get the automorphisms with respect to basis_matrix(L)
   bm = basis_matrix(L)
@@ -2816,12 +2979,30 @@ function automorphism_group(L::AbsLat; check::Bool = true,
 
   # Now set the generators and the order
 
+  L.automorphism_group_generators = translate_gens
+  L.automorphism_group_order = order
+  return nothing
+end
+
+function autmorphism_group_generators(L::AbsLat; check::Bool = true,
+                                                 natural_action::Bool = false)
+
+  assert_has_automorphisms(L)
+
+  gens = L.automorphismc
+
   if !natural_action
-    return translate_gens, order
+    return copy(gens)
   else
+    bm = basis_matrix(L)
     bminv = inv(bm)
-    return [ bminv * g * bm for g in G], order
+    return typeof(bm)[ bminv * g * bm for g in G]
   end
+end
+
+function automorphism_group_order(L::AbsLat)
+  assert_has_automorphisms(L)
+  return L.automorphism_group_order
 end
 
 ################################################################################

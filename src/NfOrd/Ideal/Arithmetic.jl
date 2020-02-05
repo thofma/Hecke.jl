@@ -63,7 +63,8 @@ function +(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
     if has_2_elem(y)
       genx = x.princ_gen_special[2]+x.princ_gen_special[3]
       gen1 = gcd(genx, y.gen_one)
-      return ideal(OK, gen1, y.gen_two)   
+      res_1 = ideal(OK, gen1, y.gen_two)
+			return res_1
     else
       M1 = _hnf_modular_eldiv(basis_matrix(y, copy = false), x.princ_gen_special[2]+x.princ_gen_special[3], :lowerleft)
       return ideal(OK, M1, false, true)
@@ -73,7 +74,8 @@ function +(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
     if has_2_elem(x)
       geny = y.princ_gen_special[2]+y.princ_gen_special[3]
       gen2 = gcd(geny, x.gen_one)
-      return ideal(order(x), gen2, x.gen_two)  
+      res_2 = ideal(order(x), gen2, x.gen_two)
+			return res_2
     else
       M1 = _hnf_modular_eldiv(basis_matrix(x, copy = false), y.princ_gen_special[2]+y.princ_gen_special[3], :lowerleft)
       return ideal(OK, M1, false, true)
@@ -83,7 +85,6 @@ function +(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
   if isone(g)
     return ideal(order(x), g)
   end
-  
   d = degree(OK)
   if isdefining_polynomial_nice(nf(OK)) && issimple(nf(OK)) && contains_equation_order(OK) && isprime(g) && !isindex_divisor(OK, g) && has_2_elem(x) && has_2_elem(y)
     #I can use polynomial arithmetic
