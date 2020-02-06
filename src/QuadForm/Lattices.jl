@@ -2774,7 +2774,7 @@ function Zlattice(;gram)
   return lattice(quadratic_space(FlintQQ, gram), identity_matrix(FlintQQ, n))
 end
 
-# if natural_action = true, they are given with respect to the ambient space
+# if ambient_representation = true, they are given with respect to the ambient space
 function Base.show(io::IO, L::ZLat)
   print(io, "Quadratic lattice of rank ", rank(L),
             " and degree ", degree(L), " over the rationals")
@@ -2829,27 +2829,48 @@ end
 
 @doc Markdown.doc"""
     automorphism_group_generators(L::ZLat; check::Bool = true,
-                                           natural_action::Bool = false)
+                                           ambient_representation::Bool = false)
 
 Returns generators of the automorphism group of $L$. By default, the
 automorphisms are acting on the coordinate vectors of lattice elements.
-If `natural_action = true`, the automorphisms act on elements in the
+If `ambient_representation = true`, the automorphisms act on elements in the
 ambient space of `L`.
 """
 function automorphism_group_generators(L::ZLat; check::Bool = true,
-                                                natural_action::Bool = false)
+                                                ambient_representation::Bool = true)
 
   assert_has_automorphisms(L)
 
   gens = L.automorphism_group_generators
-  if !natural_action
+  if !ambient_representation
     return fmpq_mat[ change_base_ring(FlintQQ, g) for g in gens]
   else
     # Now translate to get the automorphisms with respect to basis_matrix(L)
     bm = basis_matrix(L)
     bminv = inv(bm)
     gens = L.automorphism_group_generators
-    return fmpq_mat[bminv * change_base_ring(FlintQQ, g) * bm for g in gens]
+    V = ambient_space(L)
+    if rank(L) == rank(V)
+      res = fmpq_mat[bminv * change_base_ring(FlintQQ, g) * bm for g in gens]
+    else
+      # Extend trivially to the orthogonal complement of the rational span
+      !isregular(V) &&
+        throw(error(
+          """Can compute ambient representation only if ambient space is
+             regular"""))
+      C = orthogonal_complement(V, basis_matrix(L))
+      @show C
+      C = vcat(basis_matrix(L), C)
+      Cinv = inv(C)
+      D = identity_matrix(FlintQQ, rank(V) - rank(L))
+      res = fmpq_mat[Cinv * diagonal_matrix(change_base_ring(FlintQQ, g), D) * C for g in gens]
+    end
+    if check
+      for g in res
+        @assert g * gram_matrix(V) * g' == gram_matrix(V)
+      end
+    end
+    return res
   end
 end
 
@@ -2858,24 +2879,87 @@ function automorphism_group_order(L::ZLat)
   return L.automorphism_group_order
 end
 
-function isisometric(L::ZLat, M::ZLat; natural_action::Bool = false)
+@doc Markdown.doc"""
+    isisometric(L::ZLat, M::ZLat; ambient_representation::Bool = true
+                                  check::Bool = true)
+        -> (Bool, MatElem)
+
+Tests if $L$ and $M$ are isometric. If this is the case, the second return value
+is an isometriy $T$ from $L$ to $M$.
+
+By default, that isometry is represented with respect to the bases of the
+ambient spaces, that is, $T V_M T^t = V_L$ where $V_L$ and $V_M$ are the gram
+matrices of the ambient spaces of $L$ and $M$ respectively. If
+`ambient_representation = true`, then the isometry is represented with respect
+to the bases of $L$ and $M$, that is, $T G_M T^t = G_L$ where $G_M$ and $G_L$ are
+the gram matrices of $L$ and $M$ respectively.
+"""
+function isisometric(L::ZLat, M::ZLat; ambient_representation::Bool = true,
+                                       check::Bool = true)
   GL = gram_matrix(L)
-  GM = gram_matrix(M)
   dL = denominator(GL)
   GLint = change_base_ring(FlintZZ, dL * GL)
+  cL = content(GLint)
+  GLint = divexact(GLint, cL)
+
+  GM = gram_matrix(M)
   dM = denominator(GM)
   GMint = change_base_ring(FlintZZ, dM * GM)
+  cM = content(GMint)
+  GMint = divexact(GMint, cM)
+
+  # GLint, GMint are integral, primitive scalings of GL and GM
+  # If they are isometric, then the scalars must be identitcal.
+  if dL//cL != dM//cM
+    return false, zero_matrix(FlintQQ, 0, 0)
+  end
+ 
+  # Now compute LLL reduces gram matrices
+
   GLlll, TL = lll_gram_with_transform(GLint)
+  @assert TL * change_base_ring(FlintZZ, GL) * TL' * dL == GLlll * cL
   GMlll, TM = lll_gram_with_transform(GMint)
+  @assert TM * change_base_ring(FlintZZ, GM) * TM' * dM == GMlll * cM
+
+  # Setup for Plesken--Souvignier
   CL, CM = _iso_setup(fmpz_mat[GLlll], fmpz_mat[GMlll])
+  # Call Plesken Souvignier
   b, T = isometry(CL, CM)
+
   if b
-    T = inv(T)
-    trafo_coord = change_base_ring(FlintQQ, inv(TM)*T*TL)
-    if !natural_action
-      return true, trafo_coord
+    T = change_base_ring(FlintQQ, inv(TL)*T*TM)
+    if !ambient_representation
+      if check
+        @assert T * gram_matrix(M) * T' == gram_matrix(L)
+      end
+      return true, T
     else
-      return true, inv(basis_matrix(M)) * trafo_coord * basis_matrix(L)
+      V = ambient_space(L)
+      W = ambient_space(L)
+      if rank(L) == rank(V)
+        T = inv(basis_matrix(L)) * T * basis_matrix(M)
+      else
+        (!isregular(V) || !isregular(W)) &&
+          throw(error(
+            """Can compute ambient representation only if ambient space is
+               regular"""))
+          (rank(V) != rank(W)) &&
+          throw(error(
+            """Can compute ambient representation only if ambient spaces
+            have the same dimension."""))
+
+        CV = orthogonal_complement(V, basis_matrix(L))
+        CV = vcat(basis_matrix(L), CV)
+        CW = orthogonal_complement(V, basis_matrix(M))
+        CW = vcat(basis_matrix(M), CW)
+        D = identity_matrix(FlintQQ, rank(V) - rank(L))
+        T = inv(CV) * diagonal_matrix(T, D) * CW
+      end
+      if check
+        @assert T * gram_matrix(ambient_space(M))  * T' ==
+                  gram_matrix(ambient_space(L))
+      end
+      return true, T
     end
   else
     return false, zero_matrix(FlintQQ, 0, 0)
@@ -2888,53 +2972,65 @@ end
 #
 ################################################################################
 
+_eltseq(M::MatElem) = [M[i, j] for i in 1:nrows(M) for j in 1:ncols(M)]
+
 # Compute the automorphism group of the lattice
 # per default, the are given with respect to the basis of the ambient space
-# if natural_action = true, they are given with respect to the coordinate
+# if ambient_representation = true, they are given with respect to the coordinate
 # space/ambient space
 function assert_has_automorphisms(L::AbsLat; check::Bool = true,
-                                             natural_action::Bool = false)
+                                             ambient_representation::Bool = true,
+                                             redo::Bool = false)
 
-  if isdefined(L, :automorphism_group_generators)
+  if !redo && isdefined(L, :automorphism_group_generators)
     return nothing
   end
-  
-  V = ambient_space(L)
-  E = base_ring(V)
-  K = base_field(E)
-  Eabs, EabsToE = absolute_field(E)
-  a = EabsToE(gen(Eabs))
-  B = absolute_basis(L)
-  res = fmpz_mat[]
-  _absolute_basis = EabsToE.(basis(Eabs))
-  for b in _absolute_basis
-    Vres3, Vres3ToV, VtoVres3 = restrict_scalars(V, FlintQQ, b)
-    G3 = gram_matrix(Vres3, VtoVres3.(B))
-    G3Z = change_base_ring(FlintZZ, G3)
-    push!(res, G3Z)
-  end
-  @assert isone(_absolute_basis[1])
+
+  E = base_ring(ambient_space(L))
+
+  ZgramL, scalarsL, BabsmatL, generatorsL = Zforms(L)
+  @assert isone(generatorsL[1])
   # So the first one is either positive definite or negative definite
   # Make it positive definite. This does not change the automorphisms.
-  if res[1][1, 1] < 0
-    res[1] = -res[1]
+  if ZgramL[1][1, 1] < 0
+    ZgramL[1] = -ZgramL[1]
   end
 
   # Make the Gram matrix small
-  Glll, T = lll_gram_with_transform(res[1])
+  Glll, T = lll_gram_with_transform(ZgramL[1])
   Ttr = transpose(T)
-  res_orig = copy(res)
-  for i in 1:length(res)
-    res[i] = T * res[i] * Ttr
+  ZgramLorig = ZgramL
+  ZgramL = copy(ZgramL)
+  for i in 1:length(ZgramL)
+    ZgramL[i] = T * ZgramL[i] * Ttr
+  end
+  CC = ZLatAutoCtx(ZgramLorig)
+  init(CC)
+  auto(CC)
+  gens, order = _get_generators(CC)
+  if check
+    for g in gens
+      for i in 1:length(ZgramLorig)
+        @assert g * ZgramLorig[i] * g' == ZgramLorig[i]
+      end
+    end
   end
 
   # Create the automorphism context and compute generators as well as orders
-  C = ZLatAutoCtx(res)
+  C = ZLatAutoCtx(ZgramL)
   init(C)
   auto(C)
   gens, order = _get_generators(C)
 
-  # Now translate back
+  if check
+    for g in gens
+      for i in 1:length(ZgramL)
+        @assert g * ZgramL[i] * g' == ZgramL[i]
+      end
+    end
+  end
+
+  # Now undo the LLL transformation
   Tinv = inv(T)
   for i in 1:length(gens)
     gens[i] = Tinv * gens[i] * T
@@ -2942,66 +3038,67 @@ function assert_has_automorphisms(L::AbsLat; check::Bool = true,
   
   # Now gens are with respect to the absolute basis of L
   if check
-    all(gens[i] * res_orig[j] * transpose(gens[i]) == res_orig[j] for i in 1:length(gens), j in 1:length(res))
+    all(gens[i] * ZgramLorig[j] * transpose(gens[i]) == ZgramLorig[j] for i in 1:length(gens), j in 1:length(ZgramL))
   end
 
   # Now translate to get the automorphisms with respect to basis_matrix(L)
-  bm = basis_matrix(L)
-  abs_bm = zero_matrix(E, length(B), ncols(bm))
-  for i in 1:length(B)
-    for j in 1:ncols(bm)
-      abs_bm[i, j] = B[i][j]
-    end
-  end
+  BmatL = basis_matrix(L)
 
-  b1, s1 = can_solve(abs_bm, bm, side = :left)
-  b2, s2 = can_solve(bm, abs_bm, side = :left)
+  b1, s1 = can_solve(BabsmatL, BmatL, side = :left)
+  b2, s2 = can_solve(BmatL, BabsmatL, side = :left)
 
-  translate_gens = Vector{typeof(bm)}(undef, length(gens))
+  t_gens = Vector{typeof(BmatL)}(undef, length(gens))
 
   for i in 1:length(gens)
-    translate_gens[i] = s1 * change_base_ring(E, gens[i]) * s2
+    t_gens[i] = s1 * change_base_ring(E, gens[i]) * s2
   end
 
-  G = gram_matrix_of_basis(L)
-
-  # Translate_gens are the automorphisms of L with respect to basis_matrix(L)
-  
-  pm = pseudo_matrix(L)
-  C = coefficient_ideals(pm)
 
   if check
-    @assert all(g * G * _map(transpose(g), involution(L)) == G for g in translate_gens)
-    for g in translate_gens
-      @assert all(g[i, j] in C[j] * inv(C[i]) for i in 1:nrows(g), j in 1:nrows(g))
+    G = gram_matrix_of_basis(L)
+    @assert all(g * G * _map(transpose(g), involution(L)) == G
+                  for g in t_gens)
+    pm = pseudo_matrix(L)
+    C = coefficient_ideals(pm)
+
+    for g in t_gens
+      @assert all(g[i, j] in C[j] * inv(C[i])
+                    for i in 1:nrows(g), j in 1:nrows(g))
     end
   end
 
   # Now set the generators and the order
 
-  L.automorphism_group_generators = translate_gens
+  L.automorphism_group_generators = t_gens
   L.automorphism_group_order = order
   return nothing
 end
 
-function autmorphism_group_generators(L::AbsLat; check::Bool = true,
-                                                 natural_action::Bool = false)
+function automorphism_group_generators(L::AbsLat; check::Bool = true,
+                                                  ambient_representation::Bool = true)
 
   assert_has_automorphisms(L)
 
-  gens = L.automorphismc
+  gens = L.automorphism_group_generators
 
-  if !natural_action
+  if !ambient_representation
     return copy(gens)
   else
     bm = basis_matrix(L)
     bminv = inv(bm)
-    return typeof(bm)[ bminv * g * bm for g in G]
+    gens = typeof(bm)[bminv * g * bm for g in gens]
+    if check
+      Gamb = gram_matrix(ambient_space(L))
+      for g in gens
+        @assert g * Gamb * _map(g, involution(L)) == Gamb
+      end
+    end
+    return gens
   end
 end
 
-function automorphism_group_order(L::AbsLat)
-  assert_has_automorphisms(L)
+function automorphism_group_order(L::AbsLat; redo::Bool = false)
+  assert_has_automorphisms(L, redo = redo)
   return L.automorphism_group_order
 end
 
@@ -3011,144 +3108,141 @@ end
 #
 ################################################################################
 
-function _back_track(source_grams::Vector, target_grams::Vector, max = inf)
-  n = nrows(source_grams[1])
-  lengths = [source_grams[1][i, i] for i in 1:n]
-  max_length = maximum(lengths)
-  all_vec = _get_vectors_of_length(target_grams[1], max_length)
-  return __back_track(source_grams, target_grams, all_vec, lengths, n, max)
-end
-
-function _back_track(source_gram, target_gram, max = inf)
-  n = nrows(source_gram)
-  lengths = [source_gram[i, i] for i in 1:n]
-  max_length = maximum(lengths)
-  all_vec = _get_vectors_of_length(target_gram, max_length)
-  return __back_track(source_gram, target_gram, all_vec, lengths, n, max)
-end
-
-function __back_track(source_gram, target_gram, all_vec, lengths, n, max = inf)
-  vecs_for_coordinates = Vector{Vector{Int}}(undef, n)
-  t = Dict{fmpz, Int}()
-  for i in 1:n
-    if haskey(t, lengths[i])
-      vecs_for_coordinates[i] = vecs_for_coordinates[t[lengths[i]]]
-    else
-      u = Int[]
-      for j in 1:length(all_vec)
-        v = all_vec[j]
-        if v[2] == lengths[i]
-          push!(u, j)
-        end
-      end
-      vecs_for_coordinates[i] = u
-      t[lengths[i]] = i
-    end
-  end
-
-  auto = Vector{Vector{Int}}()
-
-  z = ones(Int, n)
-  level = 1
-
-  while level > 0 && length(auto) < max
-    if _can_extend(source_gram, target_gram, z, level, all_vec)
-      if level == n
-        push!(auto, deepcopy(z))
-        z[level] += 1
-      else
-        level += 1
-        continue
-      end
-    else
-      z[level] += 1
-    end
-
-    while z[level] > length(vecs_for_coordinates[level])
-      z[level] = 1
-      level -= 1
-      if level == 0
-        break
-      end
-      z[level] += 1
-    end
-  end
-  return auto, all_vec
-end
-
-@inline function _can_extend(source_gram, target_gram, curr, level, all_vec)
-  # I always assume that the target vectors have the correct size
-  if level == 1
-    return true
-  end
-  zlevel = all_vec[curr[level]][1]
-  for i in 1:level
-    zi = all_vec[curr[i]][1]
-    g = (zi * target_gram * transpose(zlevel))[1, 1]
-    if g != source_gram[i, level]
-      return false
-    end
-  end
-  return true
-end
-
-@inline function _can_extend(source_grams::Vector, target_grams::Vector, curr, level, all_vec)
-  # I always assume that the target vectors have the correct size
-  if level == 1
-    return true
-  end
-  zlevel = all_vec[curr[level]][1]
-  for i in 1:level
-    zi = all_vec[curr[i]][1]
-    for j in 1:length(source_grams)
-      source_gram = source_grams[j]
-      target_gram = target_grams[j]
-      g = (zi * target_gram * transpose(zlevel))[1, 1]
-      if g != source_gram[i, level]
-        return false
-      end
-    end
-  end
-  return true
-end
-
-function _is_isometric(source_gram, target_gram)
-  t, all_vec = _back_track(source_gram, target_gram, 1)
-  if length(t) == 0
-    return false, zero_matrix(FlintZZ, 0, 0)
+function matrix(K, R::Vector{<:Vector})
+  if length(R) == 0
+    return zero_matrix(K, 0, 0)
   else
-    n = length(t[1])
-    T = zero_matrix(FlintZZ, n, n)
-    for i in 1:length(t[1])
-      v = all_vec[t[1][i]][1]
-      for j in 1:nrows(target_gram)
-        T[i, j] = v[j]
+    n = length(R)
+    m = length(R[1])
+    z = zero_matrix(K, n, m)
+    for i in 1:n
+      @assert length(R[i]) == m
+      for j in 1:m
+        z[i, j] = R[i][j]
       end
     end
-    return true, T
+    return z
   end
 end
 
-function _morphisms(source_gram, target_gram)
-  t, all_vec = _back_track(source_gram, target_gram)
-  if length(t) == 0
-    return fmpz_mat[]
-  else
-    n = length(t[1])
-    res = Vector{fmpz_mat}(undef, length(t))
-    for k in 1:length(t)
-      T = zero_matrix(FlintZZ, n, n)
-      for i in 1:n
-        v = all_vec[t[k][i]][1]
-        for j in 1:nrows(target_gram)
-          T[i, j] = v[j]
-        end
-      end
-      res[k] = T
+function orthogonal_complement(V::AbsSpace, M::MatElem)
+  N = gram_matrix(V) * _map(transpose(M), involution(V))
+  r, K = left_kernel(N)
+  @assert r == nrows(K)
+  return K
+end
+
+function Zforms(L::AbsLat)
+  E = base_ring(ambient_space(L))
+  Eabs, EabsToE = absolute_field(E)
+  generators = elem_type(E)[E(1), absolute_primitive_element(E)]
+  return _Zforms(L, generators)
+end
+
+function absolute_primitive_element(K::NumField)
+  B = basis(K)
+  for i in 1:length(B)
+    if degree(absolute_minpoly(B[i])) == absolute_degree(K)
+      return B[i]
     end
-    return res
   end
 end
+
+absolute_minpoly(a::nf_elem) = minpoly(a)
+
+function _Zforms(L::AbsLat, generators::Vector)
+  V = ambient_space(L)
+  E = base_ring(V)
+  Babs = absolute_basis(L)
+  Babsmat = matrix(E, Babs)
+  forms = fmpz_mat[]
+  scalars = fmpq[]
+  for b in generators
+    Vres, VresToV, VtoVres = restrict_scalars(V, FlintQQ, b)
+    G = gram_matrix(Vres, VtoVres.(Babs))
+    d = denominator(G)
+    Gint = change_base_ring(FlintZZ, d * G)
+    c = content(Gint)
+    G = divexact(Gint, c)
+    push!(forms, G)
+    push!(scalars, d//c)
+  end
+  return forms, scalars, Babsmat, generators
+end
+
+function isisometric(L::AbsLat, M::AbsLat; ambient_representation::Bool = true, check::Bool = true)
+
+  V = ambient_space(L)
+  W = ambient_space(M)
+  E = base_ring(V)
+  K = base_field(E)
+  @assert base_ring(V) == base_ring(W)
+  @assert base_ring(L) == base_ring(M)
+
+  ZgramL, scalarsL, BabsmatL, generatorsL = Zforms(L)
+  ZgramM, scalarsM, BabsmatM, generatorsM = Zforms(M)
+  @assert generatorsL == generatorsM
+  if scalarsL != scalarsM
+    return false, zero_matrix(E, 0, 0)
+  end
+
+  # So the first one is either positive definite or negative definite
+  # Make it positive definite. This does not change the automorphisms.
+  if ZgramL[1][1, 1] < 0
+    ZgramL[1] = -ZgramL[1]
+    ZgramM[1] = -ZgramM[1]
+  end
+
+  ZgramLsmall = copy(ZgramL)
+  ZgramMsmall = copy(ZgramM)
+
+  # Make the Gram matrix small
+  _, TL = lll_gram_with_transform(ZgramL[1])
+  _, TM = lll_gram_with_transform(ZgramM[1])
+  TLtr = transpose(TL)
+  TMtr = transpose(TM)
+  for i in 1:length(ZgramL)
+    ZgramLsmall[i] = TL * ZgramL[i] * TLtr
+    ZgramMsmall[i] = TM * ZgramM[i] * TMtr
+  end
+
+  CL, CM = _iso_setup(ZgramLsmall, ZgramMsmall)
+  b, T = isometry(CL, CM)
+  if b
+    T = inv(T)
+    T = change_base_ring(FlintQQ, inv(TL)*T*TM)
+    fl, s1 = can_solve(BabsmatM, basis_matrix(M), side = :left)
+    fl, s2 = can_solve(basis_matrix(L), BabsmatL, side = :left)
+    T = s1 * change_base_ring(E, T) * s2
+    if check
+      @assert T * gram_matrix(rational_span(M)) * _map(involution(L), transpose(T)) == gram_matrix(rational_span(L))
+    end
+    if !ambient_representation
+      return T
+    else
+      T = inv(basis_matrix(L)) * T * basis_matrix(M)
+      @assert T * gram_matrix(ambient_space(M)) * _map(involution(L), transpose(T)) == gram_matrix(ambient_space(L))
+    end
+  else
+    return false, zero_matrix(E, 0, 0)
+  end
+end
+
+  #pm = pseudo_matrix(L)
+  #C = coefficient_ideals(pm)
+
+  #if check
+  #  @assert all(g * G * _map(transpose(g), involution(L)) == G for g in translate_gens)
+  #  for g in translate_gens
+  #    @assert all(g[i, j] in C[j] * inv(C[i]) for i in 1:nrows(g), j in 1:nrows(g))
+  #  end
+  #end
+
+################################################################################
+#
+#  Conversion to Magma
+#
+################################################################################
 
 function to_magma(L::HermLat)
   return to_magma(stdout, L)

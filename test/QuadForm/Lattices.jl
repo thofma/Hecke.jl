@@ -161,8 +161,8 @@ const lattices_and_aut_order = [
    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, 2, -1],
    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, 2]]), 711374856192000)]
 
-function test_automorphisms(L, G, natural_action)
-  if natural_action
+function test_automorphisms(L, G, ambient_representation)
+  if ambient_representation
     @test all(g * gram_matrix(ambient_space(L)) * transpose(g)  == gram_matrix(ambient_space(L)) for g in G)
   else
     @test all(g * gram_matrix(L) * transpose(g) == gram_matrix(L) for g in G)
@@ -174,9 +174,9 @@ end
     n = length(m[1])
     G = matrix(FlintZZ, n, n, reduce(vcat, m))
     L = Zlattice(gram = G)
-    Ge = automorphism_group_generators(L, natural_action = true)
+    Ge = automorphism_group_generators(L, ambient_representation = true)
     test_automorphisms(L, Ge, true)
-    Ge = automorphism_group_generators(L, natural_action = false)
+    Ge = automorphism_group_generators(L, ambient_representation = false)
     test_automorphisms(L, Ge, false)
     @test automorphism_group_order(L) == o
   end
@@ -190,15 +190,16 @@ end
     X = _random_invertible_matrix(n, -3:3)
     @assert abs(det(X)) == 1
     L2 = Zlattice(gram = X * G * X')
-    b, T = isisometric(L, L2, natural_action = false)
+    b, T = isisometric(L, L2, ambient_representation = false)
     @test b
-    @test T * gram_matrix(L) * T' == gram_matrix(L2)
+    @test T * gram_matrix(L2) * T' == gram_matrix(L)
     L2 = Zlattice(X, gram = G)
-    b, T = isisometric(L, L2, natural_action = false)
+    b, T = isisometric(L, L2, ambient_representation = false)
     @test b
-    @test T * gram_matrix(L) * T' == gram_matrix(L2)
-    b, T = isisometric(L, L2, natural_action = true)
+    @test T * gram_matrix(L2) * T' == gram_matrix(L)
+    b, T = isisometric(L, L2, ambient_representation = true)
     @test b
-    @test T * gram_matrix(ambient_space(L)) * T' == gram_matrix(ambient_space(L2))
+    @test T * gram_matrix(ambient_space(L2)) * T' ==
+            gram_matrix(ambient_space(L))
   end
 end

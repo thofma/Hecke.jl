@@ -39,6 +39,8 @@ mutable struct ZLatAutoCtx
   nsg::Vector{Int}
   g::Vector{Vector{fmpz_mat}}
 
+  issymmetric::BitArray{1}
+
   ZLatAutoCtx() = new()
 
   function ZLatAutoCtx(G::Vector{fmpz_mat})
@@ -46,6 +48,7 @@ mutable struct ZLatAutoCtx
     z.G = G
     z.Gtr = fmpz_mat[transpose(g) for g in G]
     z.dim = nrows(G[1])
+    z.issymmetric = falses(length(G))
     return z
   end
 end
@@ -55,6 +58,17 @@ function Base.show(io::IO, C::ZLatAutoCtx)
 end
 
 dim(C::ZLatAutoCtx) = C.dim
+
+function issymmetric(M::MatElem)
+  for i in 1:nrows(M)
+    for j in i:ncols(M)
+      if M[i, j] != M[j, i]
+        return false
+      end
+    end
+  end
+  return true
+end
 
 function init(C::ZLatAutoCtx, auto::Bool = true, max::fmpz = fmpz(-1))
   # Compute the necessary short vectors
@@ -317,14 +331,22 @@ function possible(C::ZLatAutoCtx, per, I, J)
     Vj = V[j]
     good_scalar = true
     good_length = true
-    i = I + 1
     for k in 1:f
       if Wj[k] != F[k][J, J]
         good_length = false
         break
       end
+    end
+
+    if !good_length
+      continue
+    end
+
+    for k in 1:f
       for i in 1:I
-        if _dot_product(Vj, Ftr[k], per[i]) != F[k][J, per[i]]
+        #@assert _dot_product(Vj, F[k], per[i]) == (Vj * sub(Ftr[k], 1:nrows(Ftr[k]), per[i]:per[i]))[1, 1]
+        if (Vj * sub(F[k], 1:ncols(F[k]), per[i]:per[i]))[1, 1] != F[k][J, per[i]] || (sub(F[k], per[i]:per[i], 1:nrows(F[k])) * Vj')[1, 1] != F[k][per[i], J]
+        #if _dot_product(Vj, Ftr[k], per[i]) != F[k][J, per[i]]
           good_scalar = false
           break
         end
@@ -349,7 +371,8 @@ function possible(C::ZLatAutoCtx, per, I, J)
 
     for k in 1:f
       for i in 1:I
-        if _dot_product(Vj, Ftr[k], per[i]) != -F[k][J, per[i]]
+        if (Vj * sub(F[k], 1:ncols(F[k]), per[i]:per[i]))[1, 1] != -F[k][J, per[i]] || (sub(F[k], per[i]:per[i], 1:nrows(F[k])) * Vj')[1, 1] != -F[k][per[i], J]
+        #if _dot_product(Vj, Ftr[k], per[i]) != -F[k][J, per[i]]# || _dot_product(Vj, Ftr[k], per[i]) !=  -F[k][per[i], J]
           good_scalar = false
           break
         end
@@ -563,7 +586,6 @@ function auto(C)
 
   sta = 1
   for step in sta:dim
-    #@show step
     nH = 0
     for i in step:dim
       nH += C.ng[i]
@@ -582,11 +604,10 @@ function auto(C)
       bad[i] = 0
     end
     nbad = 0
-    for i in 1:step
+    for i in 1:(step - 1)
       x[i] = C.std_basis[i]
     end
     #@show C.fp_diagonal[step]
-    #@show x
     #@show candidates
     if C.fp_diagonal[step] > 1
       nC = cand(candidates[step], step, x, C, 0)#comb)
@@ -643,6 +664,7 @@ function auto(C)
         ##@show C.g, step
         Gstep = resize!(C.g[step], C.ng[step])
         ##@show C.g, step
+        matgen(x, dim, C.per, C.V)
         Gstep[C.ng[step]] = matgen(x, dim, C.per, C.V)
         C.g[step] = Gstep
         nH += 1
@@ -729,7 +751,7 @@ end
 function aut(step, x, candidates, C, comb)
   dim = Hecke.dim(C)
   found = 0
-  #@show step, x, candidates, C
+  x[step + 1:length(x)] .= 0
   while candidates[step][1] != 0 && found == 0
     if step < dim
       x[step] = candidates[step][1]
@@ -766,7 +788,8 @@ function cand(candidates, I, x, C, comb)
   DEP = 0 # this is bs
   dim = Hecke.dim(C)
   len = length(C.G) * DEP
-  vec = Vector{Int}(undef, dim)
+  vec = Vector{fmpz}(undef, dim)
+  vec2 = Vector{fmpz}(undef, dim)
   scpvec = Vector{Int}(undef, len)
   if I >= 2 && DEP > 0
     com = comb[I - 1]
@@ -816,16 +839,18 @@ function cand(candidates, I, x, C, comb)
         xk = x[k]
         if xk > 0
           vec[k] = (Vvj * C.G[i] * C.V[xk]')[1, 1]
+          vec2[k] = (C.V[xk] * C.G[i] * Vvj')[1, 1]
           #vec[k] = _dot_product(Vvj, C.v[i], xk)
         else
           vec[k] = -(Vvj * C.G[i] * C.V[-xk]')[1, 1]
+          vec2[k] = -(C.V[-xk] * C.G[i] * Vvj')[1, 1]
           #vec[k] = -_dot_product(VVj, C.v[i], -xk)
         end
       end
 
       good = true
       for k in 1:(I - 1)
-        if vec[k] != C.G[i][C.per[I], C.per[k]]
+        if vec[k] != C.G[i][C.per[I], C.per[k]] || vec2[k] != C.G[i][C.per[k], C.per[I]]
           good = false
           break
         end
@@ -840,7 +865,7 @@ function cand(candidates, I, x, C, comb)
 
       good = true
       for k in 1:(I - 1)
-        if vec[k] != -C.G[i][C.per[I], C.per[k]]
+        if vec[k] != -C.G[i][C.per[I], C.per[k]] || vec2[k] != -C.G[i][C.per[k], C.per[I]]
           good = false
           break
         end
@@ -855,37 +880,37 @@ function cand(candidates, I, x, C, comb)
       end
 
 
-      if I >= 2 && DEP > 0
-        for k in I-1:-1:1
-          if k <= I - 1 - DEP
-            continue
-          end
-          scpvec[(i - 1) * DEP + I - k] = vec[k]
-        end
-      end
+      #if I >= 2 && DEP > 0
+      #  for k in I-1:-1:1
+      #    if k <= I - 1 - DEP
+      #      continue
+      #    end
+      #    scpvec[(i - 1) * DEP + I - k] = vec[k]
+      #  end
+      #end
     end
 
-    if I >= 2 && DEP > 0
-      # check whether the scalar product combination scpvec is contained in the list comb[I - 1].list
-      if all(iszero, scpvec)
-        num = 0
-      else
-        num = find_vector(scpvec, com.list)
-        sign = num > 0 ? 1 : -1
-        num = sign * num
-      end
+    #if I >= 2 && DEP > 0
+    #  # check whether the scalar product combination scpvec is contained in the list comb[I - 1].list
+    #  if all(iszero, scpvec)
+    #    num = 0
+    #  else
+    #    num = find_vector(scpvec, com.list)
+    #    sign = num > 0 ? 1 : -1
+    #    num = sign * num
+    #  end
 
-      if num > n
-        # scpvec is not found, hence x[1],...,x[I - 1] is not a partial automorphism
-        fail = 1
-      elseif num > 0
-        # scpvec is found and the vector is added to the corresponding vector sum
-        xnum = xvec[num]
-        for k in 1:dim
-          xnum[k] += sign * Vvj[k]
-        end
-      end
-    end
+    #  if num > n
+    #    # scpvec is not found, hence x[1],...,x[I - 1] is not a partial automorphism
+    #    fail = 1
+    #  elseif num > 0
+    #    # scpvec is found and the vector is added to the corresponding vector sum
+    #    xnum = xvec[num]
+    #    for k in 1:dim
+    #      xnum[k] += sign * Vvj[k]
+    #    end
+    #  end
+    #end
 
     if okp == length(C.G)
       # V.v[j] is a candidate for x[I]
@@ -982,7 +1007,6 @@ function cand(candidates, I, x, C, comb)
       end
     end
   end
-  #@show candidates
   return nr
 end
 
@@ -1421,7 +1445,8 @@ function isocand(CI, I, x, Ci, Co)
   n = length(Ci.V)
   @assert n == length(Co.V)
   # Do something with bacher polynomials ...
-  vec = zeros(Int, d)
+  vec = Vector{fmpz}(undef, d)
+  vec2 = Vector{fmpz}(undef, d)
   for i in 1:Ci.fp_diagonal[I]
     CI[i] = 0
   end
@@ -1443,16 +1468,18 @@ function isocand(CI, I, x, Ci, Co)
       for k in 1:(I - 1)
         xk = x[k]
         if xk > 0
-          #vec[k] = (Vvj * Co.G[i] * Co.V[xk]')[1, 1]
-          vec[k] = _dot_product(Vvj, Fvi, xk)
+          vec[k] = (Vvj * Co.G[i] * Co.V[xk]')[1, 1]
+          vec2[k] = (Co.V[xk] * Co.G[i] * Vvj')[1, 1]
+          #vec[k] = _dot_product(Vvj, Fvi, -xk)
         else
-          #vec[k] = -(Vvj * Co.G[i] * Co.V[xk]')[1, 1]
-          vec[k] = -_dot_product(Vvj, Fvi, -xk)
+          vec[k] = -(Vvj * Co.G[i] * Co.V[-xk]')[1, 1]
+          vec2[k] = -(Co.V[-xk] * Co.G[i] * Vvj')[1, 1]
+          #vec[k] = -_dot_product(Vvj, Fvi, -xk)
         end
       end
       good = true
       for k in 1:(I - 1)
-        if vec[k] != Ci.G[i][Ci.per[I], Ci.per[k]]
+        if vec[k] != Ci.G[i][Ci.per[I], Ci.per[k]] || vec2[k] != Ci.G[i][Ci.per[k], Ci.per[I]] 
           good = false
           break
         end
@@ -1462,7 +1489,8 @@ function isocand(CI, I, x, Ci, Co)
       end
       good = true
       for k in 1:(I - 1)
-        if vec[k] != -Ci.G[i][Ci.per[I], Ci.per[k]]
+        if vec[k] != -Ci.G[i][Ci.per[I], Ci.per[k]] || vec2[k] != -Ci.G[i][Ci.per[k], Ci.per[I]] 
+
           good = false
           break
         end
