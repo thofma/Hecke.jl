@@ -5,14 +5,41 @@ using Polymake, Hecke, Markdown
 Hecke.nrows(A::Polymake.pm_MatrixAllocated) = Int(size(A)[1])
 Hecke.ncols(A::Polymake.pm_MatrixAllocated) = Int(size(A)[2])
 
+function _polytope(; A::fmpz_mat=zero_matrix(FlintZZ, 1, 1), b::fmpz_mat=zero_matrix(FlintZZ, ncols(A), 1), C::fmpz_mat=zero_matrix(FlintZZ, 1, 1))
+  if !iszero(A)
+    bA = Array{BigInt, 2}(hcat(-b, A))
+    z = findall(i->!iszero_row(bA, i), 1:nrows(bA))
+    zbA = Array{BigInt, 2}(bA[z, :])
+  else
+    zbA = Array{BigInt, 2}(undef, 0, 0)
+  end
+  if !iszero(C)
+    z = findall(i->!iszero_row(C, i), 1:nrows(C))
+    zI = Array{BigInt, 2}(hcat(zero_matrix(FlintZZ, nrows(C), 1), C))[z, :]
+  else
+    zI = Array{BigInt, 2}(undef, 0, 0)
+  end
+  if length(zbA) == 0
+    p = @pm Polytope.Polytope(:INEQUALITIES => zI)
+  else
+    if nrows(zI) == 0
+      p = @pm Polytope.Polytope(:EQUATIONS => zbA)
+    else
+      p = @pm Polytope.Polytope(:EQUATIONS => zbA, :INEQUALITIES => zI)
+    end
+  end
+  return p
+end
+
+
+
 @doc Markdown.doc"""
     solve_ineq(A::fmpz_mat, b::fmpz_mat)
 
 Solves $Ax<=b$, assumes finite set of solutions.
 """
 function solve_ineq(A::fmpz_mat, b::fmpz_mat)
-  bA = Array{BigInt, 2}(hcat(-b, A))
-  p = @pm Polytope.Polytope( :INEQUALITIES => bA)
+  p = _polytope(C = hcat(b, -A))
   inner = p.INTERIOR_LATTICE_POINTS
   out = p.BOUNDARY_LATTICE_POINTS
 
@@ -38,9 +65,7 @@ end
 Finds all solutions to $Ax = b$, $x>=0$. Assumes a finite set of solutions.
 """
 function solve_non_negative(A::fmpz_mat, b::fmpz_mat)
-  bA = Array{BigInt, 2}(hcat(-b, A))
-  zI = Array{BigInt, 2}(hcat(zero_matrix(FlintZZ, ncols(A), 1), MatrixSpace(FlintZZ, ncols(A), ncols(A))(1)))
-  p = @pm Polytope.Polytope(:EQUATIONS => deepcopy(bA), :INEQUALITIES => deepcopy(zI))
+  p = _polytope(A = A, b = b, C = identity_matrix(FlintZZ, ncols(A)))
   inner = p.INTERIOR_LATTICE_POINTS
   out = p.BOUNDARY_LATTICE_POINTS
 
@@ -66,31 +91,26 @@ end
 Solves $Ax = b$ under $Cx >= 0$, assumes a finite solution set.
 """
 function solve_mixed(A::fmpz_mat, b::fmpz_mat, C::fmpz_mat)  # Ax == b && Cx >= 0
-  bA = Array{BigInt, 2}(hcat(-b, A))
-  z = findall(i->!iszero_row(bA, i), 1:nrows(bA))
-  zbA = Array{BigInt, 2}(bA[z, :])
-  z = findall(i->!iszero_row(C, i), 1:nrows(C))
-  zI = Array{BigInt, 2}(hcat(zero_matrix(FlintZZ, nrows(C), 1), C))[z, :]
-  if length(zbA) == 0
-    p = @pm Polytope.Polytope(:INEQUALITIES => zI)
-  else
-    if nrows(zI) == 0
-      p = @pm Polytope.Polytope(:EQUATIONS => zbA)
-    else
-      p = @pm Polytope.Polytope(:EQUATIONS => zbA, :INEQUALITIES => zI)
-    end
-  end
+  p = _polytope(A = A, b = b, C = C)
   inner = p.INTERIOR_LATTICE_POINTS
   out = p.BOUNDARY_LATTICE_POINTS
 
   res = zero_matrix(FlintZZ, nrows(inner) + nrows(out), ncols(A))
   for i=1:nrows(out)
+    if out[i,1] != 1
+      println("unbounded polytope!!")
+      global last_in = (A, b, C)
+    end
     @assert out[i,1] == 1
     for j=1:ncols(A)
       res[i,j] = out[i, j+1]
     end
   end
   for i=1:nrows(inner)
+    if inner[i,1] != 1
+      println("unbounded polytope!!")
+      global last_in = (A, b, C)
+    end
     @assert inner[i,1] == 1
     for j=1:ncols(A)
       res[i+nrows(out), j] = inner[i, j+1]
@@ -260,11 +280,16 @@ function Hecke.isirreducible(a::NfAbsOrdElem{AnticNumberField,nf_elem})
   d = matrix(FlintZZ, 2*length(S)+2, 1, [0 for i = 1:2*length(S) + 2])
   d[end-1, 1] = 1
   d[end, 1] = 1
-
+  global last_irr = a
   pt = solve_mixed(A, sol, C, d)
   return nrows(pt) == 0
 end
 
+@doc Markdown.doc"""
+    irreducibles(S::Array{NfAbsOrdIdl{AnticNumberField,nf_elem},1}) -> Array{NfAbsOrdElem, 1}
+
+Computes all irreducibles whose support is contained in $S$.
+"""
 function irreducibles(S::Array{NfAbsOrdIdl{AnticNumberField,nf_elem},1})
   if length(S) == 0
     return []
@@ -283,35 +308,26 @@ function irreducibles(S::Array{NfAbsOrdIdl{AnticNumberField,nf_elem},1})
   c, mc = class_group(O)
 
   V = matrix([[valuation(ms(x), y) for y = S] for x = gens(s)])
-  o = matrix([[order(preimage(mc, p))-1 for p = S]]) #TODO: this info is in V!
-  if length(S) > sum(o)
-    @show "fast"
-    return []
-  end
-  #potential elements x
-  # have valuation Vx
-  # if the support is supposed to be S, then Vx >= 1
-  # Vx < o (or else I can remove primes from the support)
-  # have to be irreducible...
-  so = solve_mixed(zero_matrix(FlintZZ, 1, length(S)), zero_matrix(FlintZZ, 1, 1), vcat(V, -V), vcat(matrix(FlintZZ, length(S), 1, [1 for p = S]), -o))
 
-  res = []
-  for i = 1:nrows(so)
-    x = O(evaluate(ms(s(so[i, :]))))
-    if isirreducible(x)
-      push!(res, x)
-    end
-  end
+  p = _polytope(C = V)
+  z = p.HILBERT_BASIS_GENERATORS
+  @assert nrows(z[2]) == 0 #no idea....
+  res = [O(evaluate(ms(s(map(fmpz, Array(z[1][i, 2:end])))))) for i=1:nrows(z[1]) if z[1][i,1] == 0]
   return res
 end
 
+@doc Markdown.doc"""
+    factorisations(a::NfAbsOrdElem{AnticNumberField,nf_elem}) -> Array{Fac{OrdElem}, 1}
+
+Computes all factorisations of $a$ into irreducibles.
+"""
 function factorisations(a::NfAbsOrdElem{AnticNumberField,nf_elem})
   O = parent(a)
   S = collect(keys(factor(a*O)))
   if length(S) == 0
     return []
   end
-  irr = reduce(vcat, irreducibles(collect(x)) for x = Hecke.subsets(Set(S)))
+  irr = irreducibles(S)
   A = matrix([fmpz[valuation(x, y) for y = S] for x = irr])
   b = matrix([fmpz[valuation(a, y) for y = S]])
   sol = solve_non_negative(A, b)
@@ -336,4 +352,8 @@ function Base.lastindex(a::fmpz_mat, i::Int)
   error("illegal dimension")
 end
 
+export irreducibles, factorisations
+
 end
+
+using Main.PolymakeOscar
