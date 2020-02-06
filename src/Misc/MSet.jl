@@ -15,7 +15,7 @@ Base.similar(s::MSet{T}) where {T} = MSet{T}()
 Base.similar(s::MSet, T::Type) = MSet{T}()
 
 #TODO: compact printing, remove trailing , ... the works...
-function Base.show(io::IO, s::MSet)
+function Base.show(io::IO, ::MIME"text/plain", s::MSet)
     print(io,"MSet")
     if isempty(s)
         print(io,"{",eltype(s),"}()")
