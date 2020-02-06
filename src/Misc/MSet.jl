@@ -22,11 +22,14 @@ function Base.show(io::IO, ::MIME"text/plain", s::MSet)
         return
     end
     print(io,"(")
+    first = true
     for (k,v) = s.dict
+      first || print(io, ", ")
+      first = false
       if v > 1
-        print(io, "$k : $v, ") # ugly
+        print(io, "$k : $v") 
       else
-        print(io, "$k, ") # ugly
+        print(io, "$k") 
       end
     end
     print(io,")")
