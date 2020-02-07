@@ -59,7 +59,7 @@ end
 
 dim(C::ZLatAutoCtx) = C.dim
 
-function Base.issymmetric(M::MatElem)
+function LinearAlgebra.issymmetric(M::MatElem)
   for i in 1:nrows(M)
     for j in i:ncols(M)
       if M[i, j] != M[j, i]
