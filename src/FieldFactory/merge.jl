@@ -193,7 +193,10 @@ function _easy_merge(list1, list2, absolute_bound::fmpz, simpl::Bool = false)
 
   res = FieldsTower[]
   @vprint :Fields 1 "Number of candidates = $(length(list1)*length(list2)) \n"
+  ind = 0
   for x in list1
+    ind += 1
+    @vprint :Fields 1 "Doing field $(ind)/$(length(list1))"
     for y in list2
       check_bound_disc(x, y, absolute_bound) || continue
       fl, composite = _to_composite(x, y, absolute_bound)
@@ -204,6 +207,7 @@ function _easy_merge(list1, list2, absolute_bound::fmpz, simpl::Bool = false)
         push!(res, composite)
       end
     end
+    @vprint :Fields 1 "$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())"
   end
   return res
   

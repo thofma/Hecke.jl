@@ -329,6 +329,13 @@ function assure_2_normal(A::NfAbsOrdIdl)
     A.gens_normal = fmpz(1)
     return nothing
   end
+  
+  if norm(A) == 0
+    A.gen_one = fmpz(0)
+    A.gen_two = zero(O)
+    A.gens_normal = fmpz(1)
+    return nothing
+  end
 
   if has_2_elem(A)
     if defines_2_normal(A)

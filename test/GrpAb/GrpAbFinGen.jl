@@ -325,5 +325,19 @@
     @test isisomorphic(hom(tensor_product(A, B, task = :none), C)[1], 
                        hom(A, hom(B, C)[1])[1])
   end
+  
+  @testset "Complement" begin
+    d = rand(2:1000)
+    d1 = rand(2:1000)
+    while !issquarefree(d) || !issquarefree(d1)
+      d = rand(2:1000)
+      d1 = rand(3:1000)
+    end
+    G = DiagonalGroup(Int[d, d1])
+    ls = subgroups(G)
+    for s in ls
+      @test Hecke.has_complement(s[2])[1]
+    end
+  end
 
 end

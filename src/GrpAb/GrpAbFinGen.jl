@@ -1950,22 +1950,35 @@ an injection of a complement in $G$, or false.
 function has_complement(m::GrpAbFinGenMap)
   G = codomain(m)
   S, mS = snf(G)
-  H, mH = image(m*inv(mS))
-  els = GrpAbFinGenElem[]
+  mH = m*inv(mS)
+  mat_map = mH.map
+  inc, lmat, rmat = snf_with_transform(mat_map)
+  rmat_inv = inv(rmat)
+  new_basis = Vector{GrpAbFinGenElem}(undef, ngens(S))
   for i = 1:ngens(S)
-    new_els = vcat(els, GrpAbFinGenElem[S[i]])
-    new_sub, map_new_sub = sub(S, new_els)
-    if isone(order(intersect(new_sub, H)))
-      els = new_els
+    new_basis[i] = S(view(rmat_inv, i:i, 1:ngens(S)))
+  end
+  new_S, mnew_S = sub(S, new_basis)
+  new_Sinv = inv(mnew_S)
+  new_H_map = mH*new_Sinv
+  Im, mIm = image(new_H_map) 
+  els = GrpAbFinGenElem[]
+  for i = 1:ngens(new_S)
+    g = gcd(fmpz[mIm(x)[i] for x in gens(Im)])
+    if iszero(g)
+      push!(els, new_S[i])
+    else
+      if g != ppio(order(new_S[i]), g)[1]
+        return false, sub(G, GrpAbFinGenElem[])[2]
+      end
+      push!(els, divexact(order(new_S[i]), g)*new_S[i])
     end
   end
-  ss, mss = sub(S, els)
-  if order(ss)*order(H) != order(S)
-    return false, mss
-  else
-    els_G = GrpAbFinGenElem[mS(x) for x in els]
-    return true, sub(G, els_G)[2]
-  end
+  els_G = GrpAbFinGenElem[mS(mnew_S(x)) for x in els]
+  res = sub(G, els_G)[2]
+  @assert order(domain(res))*order(domain(m)) == order(S)
+  @assert order(intersect(res, m)[1]) == 1
+  return true, res
 end
 
 ################################################################################
