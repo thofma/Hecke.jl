@@ -59,15 +59,27 @@ function _improve_subfield_basis(K, bas)
   end
   S = saturate(matrix(FlintZZ, basinOK * deno))
   SS = S * basis_matrix(OK, copy = false)
-  lllOK = lll(OK)
+  lllOK = _weak_lll(OK)
   N = (SS * basis_mat_inv(lllOK)).num
   lllN = lll(N)
   maybesmaller = lllN * basis_matrix(lllOK)
   return maybesmaller
 end
 
-
-
+function _improve_subfield_basis_no_lll(K, bas)
+  OK = maximal_order(K)
+  OKbmatinv = basis_mat_inv(OK, copy = false)
+  basinOK = bas * matrix(FlintQQ, OKbmatinv.num) * fmpq(1, OKbmatinv.den)
+  deno = fmpz(1)
+  for i in 1:nrows(basinOK)
+    for j in 1:ncols(basinOK)
+      deno = lcm(deno, denominator(basinOK[i, j]))
+    end
+  end
+  S = saturate(matrix(FlintZZ, basinOK * deno))
+  SS = S * basis_matrix(OK, copy = false)
+  return SS
+end
 
 # Compute a primitive element given a basis of a subfield
 function _subfield_primitive_element_from_basis(K::S, as::Vector{T}) where {
@@ -112,12 +124,12 @@ end
 
 #As above, but for AnticNumberField type
 #In this case, we can use block system to find if an element is primitive.
-function _subfield_primitive_element_from_basis(K::AnticNumberField, as::nf_elem)
+function _subfield_primitive_element_from_basis(K::AnticNumberField, as::Vector{nf_elem})
   if isempty(as)
     return gen(K)
   end
 
-  d = length(as)
+  dsubfield = length(as)
 
   # First check basis elements
   Zx = PolynomialRing(FlintZZ, "x", cached = false)[1]
@@ -133,14 +145,15 @@ function _subfield_primitive_element_from_basis(K::AnticNumberField, as::nf_elem
   indices = Int[]
   for i = 1:length(as)
     b = _block(as[i], rt, ap)
-    if length(b) == d
+    if length(b) == dsubfield
       push!(indices, i)
     end
   end
+
   #Now, we select the one of smallest T2 norm
   if !isempty(indices)
     a = as[indices[1]]
-    I = t2(a)    
+    I = t2(a)
     for i = 2:length(indices)
       t2n = t2(as[indices[i]])
       if t2n < I
@@ -150,23 +163,38 @@ function _subfield_primitive_element_from_basis(K::AnticNumberField, as::nf_elem
     end
     return a
   end
-  
+
   k = base_field(K)
   # Notation: cs the coefficients in a linear combination of the as, ca the dot
   # product of these vectors.
-  cs = fmpz[zero(ZZ) for n in 1:d]
+  cs = fmpz[zero(ZZ) for n in 1:dsubfield]
   cs[1] = one(ZZ)
+  k = 0
+  local I
+  found = false
   while true
     ca = sum(c*a for (c,a) in zip(cs,as))
-    b = _block(as[i], rt, ap)
-    if length(b) == d
-      return ca
+    b = _block(ca, rt, ap)
+    if length(b) == dsubfield
+      t2n = t2(a)
+      if found
+        k += 1
+        if t2n < I
+          a = ca
+        end
+        if k == 5
+          return a
+        end
+      else
+        found = true
+        I = t2n
+      end
     end
 
     # increment the components of cs
     cs[1] += 1
     let i = 2
-      while i <= d && cs[i-1] > cs[i]+1
+      while i <= dsubfield && cs[i-1] > cs[i]+1
         cs[i-1] = zero(ZZ)
         cs[i] += 1
         i += 1
@@ -305,11 +333,13 @@ function fixed_field(K::SimpleNumField, A::Vector{T}; simplify::Bool = true) whe
           bas[i] = elem_from_mat_row(K, KasFMat.num, i, KasFMat.den)
         end
       else
+        #KasFMat = _improve_subfield_basis_no_lll(K, Ker)
         KasFMat = FakeFmpqMat(Ker)
         Ksat = saturate(KasFMat.num)
         Ksat = lll(Ksat)
         onee = one(fmpz)
         for i in 1:k
+          #bas[i] = elem_from_mat_row(K, KasFMat.num, i, KasFMat.den)
           bas[i] = elem_from_mat_row(K, Ksat, i, onee)
         end
       end

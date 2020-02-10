@@ -355,6 +355,14 @@ end
 #
 ################################################################################
 
+function _weak_lll(M::NfOrd)
+  if isdefined(M, :lllO)
+    return M.lllO
+  else
+    return _lll_for_simplify(M)
+  end
+end
+
 function _lll_for_simplify(M::NfOrd; prec = 100)
 
   K = nf(M)
