@@ -192,7 +192,7 @@ function _roots!(roots::Ptr{acb_struct}, x::Union{fmpq_poly, fmpz_poly},
 
   while true
     in_roots = roots
-    step_max_iter = (max_iter >= 1) ? max_iter : min(max(deg, 32), wp)
+    step_max_iter = (max_iter >= 1) ? max_iter : min(max(deg, div(wp, 4)), wp)
     y = acb_poly(x, wp) 
 
     if have_approx
