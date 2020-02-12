@@ -134,6 +134,49 @@ determinant is local norm or not.
 det(G::LocalGenusHerm, i::Int) = G.data[i][3]
 
 @doc Markdown.doc"""
+    disc(G::LocalGenusHerm, i::Int) -> Int
+
+Given a genus symbol for Hermitian lattices over $E/K$, return the discriminant
+of the $i$th Jordan block of $G$. This will be `1` or `-1` depending on whether
+the discriminant is local norm or not.
+"""
+function disc(G::LocalGenusHerm, i::Int)
+  d = det(G)
+  r = rank(G, i) % 4
+  if r == 0 || r == 1
+    return d
+  end
+  E = base_field(G)
+  fl = islocal_norm(E, base_field(E)(-1), prime(G))
+  if fl
+    return d
+  else
+    return -d
+  end
+end
+
+@doc Markdown.doc"""
+    disc(G::LocalGenusHerm) -> Int
+
+Given a genus symbol $G$, return the discriminant of a lattice in $G$. This will be
+`1` or `-1` depending on whether the discriminant is a local norm or not.
+"""
+function disc(G::LocalGenusHerm)
+  d = det(G)
+  r = rank(G) % 4
+  if r == 0 || r == 1
+    return d
+  end
+  E = base_field(G)
+  fl = islocal_norm(E, base_field(K)(-1), prime(G))
+  if fl
+    return d
+  else
+    return -d
+  end
+end
+
+@doc Markdown.doc"""
     det(G::LocalGenusHerm) -> Int
 
 Given a genus symbol $G$, return the determinant of a lattice in $G$. This will be
@@ -352,7 +395,6 @@ function gram_matrix(G::LocalGenusHerm, l::Int)
     if iseven(i)
       return diagonal_matrix(push!([E(p)^div(i, 2) for j in 1:(m - 1)], u * E(p)^div(i, 2)))
     else
-      @assert iseven(m)
       return diagonal_matrix([H for j in 1:div(m, 2)])
     end
   end
@@ -891,6 +933,7 @@ end
 ################################################################################
 
 function _hermitian_form_with_invariants(E, dim, P, N)
+  #@show dim, P, N
   #@show E, dim, N, [minimum(p) for p in P]
   K = base_field(E)
   R = maximal_order(K)
@@ -905,6 +948,7 @@ function _hermitian_form_with_invariants(E, dim, P, N)
   e = gen(E)
   x = 2 * e - trace(e)
   b = coeff(x^2, 0) # b = K(x^2)
+  #@show b, prim, I
   a = _find_quaternion_algebra(b, prim, I)
   #@show a
   D = elem_type(E)[]
@@ -917,7 +961,10 @@ function _hermitian_form_with_invariants(E, dim, P, N)
   end
   push!(D, a * prod(D))
   Dmat = diagonal_matrix(D)
+  #@show Dmat
   dim0, P0, N0 = _hermitian_form_invariants(Dmat)
+  #@show P0
+  #@show prim
   @assert dim == dim0
   @assert Set(prim) == Set(P0)
   @assert N == N0

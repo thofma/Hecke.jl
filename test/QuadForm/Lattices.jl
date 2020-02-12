@@ -80,6 +80,18 @@ end
    @test o == 1536
 end
 
+@testset "Misc" begin
+  Qx, x = FlintQQ["x"]
+  K, a = NumberField(x - 1, "a")
+  Kt, t = K["t"]
+  E, b = NumberField(t^2 - 2, "b")
+  p = prime_decomposition(maximal_order(K), 2)[1][1]
+  u = Hecke._non_norm_rep(E, K, p)
+  @test parent(u) == K
+  @test !islocal_norm(E, u, p)
+  @test valuation(u - 1, p) == normic_defect(E, u, p)
+end
+
 const lattices_and_aut_order = [
 (([[2]]), 2), 
 # 2
