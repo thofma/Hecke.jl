@@ -516,7 +516,7 @@ function genus(::Type{HermLat}, E::S, p::T, data::Vector{Tuple{Int, Int, Int}}; 
   return z
 end
 
-function genus(::Type{HermLat}, E::S, p::T, data::Vector{Tuple{Int, Int, Int, Int}}) where {S <: NumField, T}
+function genus(::Type{HermLat}, E::S, p::T, data::Vector{Tuple{Int, Int, Int, Int}}; type = :det) where {S <: NumField, T}
   z = LocalGenusHerm{S, T}()
   z.E = E
   z.p = p
@@ -529,6 +529,25 @@ function genus(::Type{HermLat}, E::S, p::T, data::Vector{Tuple{Int, Int, Int, In
   else
     z.data = Tuple{Int, Int, Int}[Base.front(v) for v in data]
   end
+
+  if type !== :det && type !== :disc
+    throw(error("type :$type must be :disc or :det"))
+  end
+
+  if type === :disc
+    fl = islocal_norm(E, base_field(E)(-1), p)
+    if !fl
+      for i in 1:length(z.data)
+        r = z.data[i][2] % 4
+        if r == 0 || r == 1
+          continue
+        else
+          z.data[i] = (z.data[i][1], z.data[i][2], (-1) * z.data[i][3])
+        end
+      end
+    end
+  end
+
   return z
 end
 
@@ -1533,7 +1552,7 @@ function genus_representatives(L)
     end
     for i in 1:length(result)
       for j in 1:i-1
-        @assert !isometric(result[i], result[j])
+        @assert !(isisometric(result[i], result[j])[1])
       end
     end
   else
@@ -1545,7 +1564,7 @@ end
 function _neighbours(L, P, result, max, callback = stdcallback)
 #//  "Entering _Neighbours, #Result=", #Result, "Max=", Max;
   ok, scale = ismodular(L, P);
-  !ok && error("Non-modular lattice!")
+  !ok && throw(error("Non-modular lattice!"))
   R = base_ring(L)
   K = nf(R)
   a = involution(L)
@@ -1571,7 +1590,7 @@ function _neighbours(L, P, result, max, callback = stdcallback)
   cont = true
 
   if P != C
-    _G = T * form * _map(T, a)
+    _G = T * form * _map(transpose(T), a)
     G = map_entries(hext, _G)
     pi = p_uniformizer(P)
     pih = h(pi)
@@ -1583,13 +1602,13 @@ function _neighbours(L, P, result, max, callback = stdcallback)
       if keep
         push!(result, LL)
       end
-      if !cont || lenght(result) >= max
+      if !cont || (length(result) >= max)
         break
       end
     end
   elseif special
     pi = uniformizer(P)
-    _G = T * form * _map(T, a)
+    _G = T * form * _map(transpose(T), a)
     G = map_entries(hext, _G)
     for i in 1:length(LO)
       w = LO[i]
@@ -1617,7 +1636,7 @@ function _neighbours(L, P, result, max, callback = stdcallback)
       end
     end
   else
-    _G = T * form * _map(T, a)
+    _G = T * form * _map(transpose(T), a)
     G = map_entries(hext, _G)
     ram = isramified(R, minimum(P))
     if ram
@@ -1673,7 +1692,7 @@ function _neighbours(L, P, result, max, callback = stdcallback)
       if keep
         push!(result, LL)
       end
-      if !cont || lenght(result) >= max
+      if !cont || (lenght(result) >= max)
         break
       end
     end
@@ -1730,7 +1749,7 @@ function neighbours(L, P, max = inf)
 end
 
 function stdcallback(list, L)
-  keep = all(LL -> isisometric(LL, L), list)
+  keep = all(LL -> !isisometric(LL, L)[1], list)
 #//  keep, #List;
   return keep, true;
 end

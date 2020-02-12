@@ -1057,6 +1057,9 @@ end
 #
 ################################################################################
 
+# The docstring is confusing.
+# If p is a prime ideal of base_ring(L), then it actually does
+# local_basis_matrix(L, minimum(p),...)
 @doc Markdown.doc"""
     local_basis_matrix(L::AbsLat, p::NfOrdIdl; type = :any) -> MatElem
 
