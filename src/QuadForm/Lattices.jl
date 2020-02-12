@@ -1072,16 +1072,17 @@ function local_basis_matrix(L::AbsLat, p; type::Symbol = :any)
   R = base_ring(L)
   S = order(p)
   if R === S
-    if type == :any
-      return _local_basis_matrix(pseudo_matrix(L), p)
-    elseif type == :submodule
-      return _local_basis_submodule_matrix(pseudo_matrix(L), p)
-    elseif type == :supermodule
-      return _local_basis_supermodule_matrix(pseudo_matrix(L), p)
-    else
-      throw(error("""Invalid :type keyword :$(type).
-                     Must be either :any, :submodule, or :supermodule"""))
-    end
+    return local_basis_matrix(L, minimum(p), type = type)
+    #if type == :any
+    #  return _local_basis_matrix(pseudo_matrix(L), p)
+    #elseif type == :submodule
+    #  return _local_basis_submodule_matrix(pseudo_matrix(L), p)
+    #elseif type == :supermodule
+    #  return _local_basis_supermodule_matrix(pseudo_matrix(L), p)
+    #else
+    #  throw(error("""Invalid :type keyword :$(type).
+    #                 Must be either :any, :submodule, or :supermodule"""))
+    #end
   elseif S === base_ring(R)
     if type == :any
       return _local_basis_matrix_prime_below(pseudo_matrix(L), p)
