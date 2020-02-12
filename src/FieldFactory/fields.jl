@@ -594,7 +594,7 @@ function fields(a::Int, b::Int, absolute_bound::fmpz; using_direct_product::Bool
     g1, g2, red, redfirst = direct_product_decomposition(G, (a, b))
     if g2 != (1, 1)   
       @vprint :Fields 1 "computing extensions with Galois group ($a, $b) and bound ~10^$(clog(absolute_bound, 10))\n" 
-      return fields_direct_product(g1, g2, red, redfirst, absolute_bound; only_real = false, simplify = simplify)
+      return fields_direct_product(g1, g2, red, redfirst, absolute_bound; only_real = only_real, simplify = simplify)
     end
   end
 
@@ -608,6 +608,7 @@ function fields(a::Int, b::Int, absolute_bound::fmpz; using_direct_product::Bool
     @vprint :FieldsNonFancy 1 "Doing Group ($a, $b) with bound $absolute_bound\n"
     return abelian_extensionsQQ(invariants, absolute_bound, only_real)
   end
+
   lvl = _real_level(L)
   IdGroupGAP = GAP.Globals.IdGroup(G1)
   IdGroup = GAP.gap_to_julia(Vector{Int}, IdGroupGAP)

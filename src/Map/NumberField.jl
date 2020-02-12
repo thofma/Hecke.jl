@@ -247,6 +247,14 @@ function _compute_preimg(m::NfToNfMor)
   t[2, 1] = fmpq(1) # coefficient vector of gen(L)
   s = solve(M, t)
   m.prim_preimg = K(parent(K.pol)([ s[i, 1] for i = 1:degree(K) ]))
+  local prmg
+  let L = L, m = m
+    function prmg(x::nf_elem)
+      g = parent(L.pol)(x)
+      return evaluate(g, m.prim_preimg)
+    end
+  end
+  m.header.preimage = prmg
   return m.prim_preimg
 end
 

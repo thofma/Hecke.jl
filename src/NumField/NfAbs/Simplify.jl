@@ -29,6 +29,24 @@ function simplify(K::AnticNumberField; canonical::Bool = false, cached = true)
     @vtime :Simplify 3 if isdefined(OK, :lllO)
       ZK = OK.lllO
     else
+      b = _simplify(OK)
+      if b != gen(K)
+        f1 = Qx(minpoly(representation_matrix(OK(b))))
+        L1 = NumberField(f1, cached = cached, check = false)[1]
+        #Before calling again the simplify on L1, we need to define the maximal order of L1
+        mp = hom(L1, K, b, check = false)
+        _compute_preimg(mp)
+        B = basis(OK, K)
+        BOL1 = Vector{nf_elem}(undef, degree(L1))
+        for i = 1:degree(L1)
+          BOL1[i] = mp\(B[i])
+        end
+        OL1 = NfOrd(BOL1, false)
+        OL1.ismaximal = 1
+        Hecke._set_maximal_order(L1, OL1)
+        L2, mL2 = simplify(L1)
+        return L2, mL2*mp
+      end
       prec = 100 + 25*div(degree(K), 3) + Int(round(log(abs(discriminant(OK)))))
       ZK = _lll_for_simplify(OK, prec = prec)
     end
@@ -60,6 +78,9 @@ function _simplify(O::NfOrd)
   n = degree(K)
   indices = Int[]
   for i = 1:length(B)
+    if isone(denominator(B[i].elem_in_nf))
+      continue
+    end 
     b = _block(B[i].elem_in_nf, rt, ap)
     if length(b) == n
       push!(indices, i)
@@ -68,9 +89,6 @@ function _simplify(O::NfOrd)
   #Now, we select the one of smallest T2 norm
   I = t2(a)    
   for i = 1:length(indices)
-    if isone(denominator(B[indices[i]].elem_in_nf))
-      continue
-    end 
     t2n = t2(B[indices[i]].elem_in_nf)
     if t2n < I
       a = B[indices[i]]
@@ -336,6 +354,14 @@ end
 #  LLL for simplify
 #
 ################################################################################
+
+function _weak_lll(M::NfOrd)
+  if isdefined(M, :lllO)
+    return M.lllO
+  else
+    return _lll_for_simplify(M)
+  end
+end
 
 function _lll_for_simplify(M::NfOrd; prec = 100)
 
