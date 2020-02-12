@@ -3247,13 +3247,14 @@ function isisometric(L::AbsLat, M::AbsLat; ambient_representation::Bool = true, 
     fl, s2 = can_solve(basis_matrix(M), BabsmatM, side = :left)
     T = s1 * change_base_ring(E, T) * s2
     if check
-      @assert T * gram_matrix(rational_span(M)) * _map(involution(L), transpose(T)) == gram_matrix(rational_span(L))
+      @assert T * gram_matrix(rational_span(M)) * _map(transpose(T), involution(L)) == gram_matrix(rational_span(L))
     end
     if !ambient_representation
-      return T
+      return true, T
     else
       T = inv(basis_matrix(L)) * T * basis_matrix(M)
-      @assert T * gram_matrix(ambient_space(M)) * _map(involution(L), transpose(T)) == gram_matrix(ambient_space(L))
+      @assert T * gram_matrix(ambient_space(M)) * _map(transpose(T), involution(L)) == gram_matrix(ambient_space(L))
+      return true, T
     end
   else
     return false, zero_matrix(E, 0, 0)
