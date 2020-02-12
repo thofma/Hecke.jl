@@ -38,7 +38,7 @@ end
 function Base.show(io::IO, ::MIME"text/plain", G::LocalGenusHerm)
   compact = get(io, :compact, false)
   if !compact
-    print(io, "Local genus symbol at ")
+    print(io, "Local genus symbol (rank, scale, det) at ")
     print(IOContext(io, :compact => true), prime(G), ":")
     print(io, "\n")
   end
@@ -471,14 +471,48 @@ end
 #
 ################################################################################
 
-function genus(::Type{HermLat}, E::S, p::T, data::Vector{Tuple{Int, Int, Int}}) where {S <: NumField, T}
+@doc Markdown.doc"""
+    genus(HermLat, E::NumField, p::Idl, data::Vector{Tuple{Int, Int, Int}};
+                                        type = :det)
+                                                              -> LocalGenusHerm
+
+Construct the local genus symbol of hermitian lattices over $E$ at the prime ideal
+$\mathfrak p$ with the invariants specified by `data`.
+
+If the prime ideal is good, the vector `data` contain for each block of the
+Jordan decomposition a pair `(s, r, d)`, where `s` is the scale, `r` the
+rank. The value `d` must be in `[-1, 1]` and indicates whether the determinant
+of the block is a local norm or not.
+
+If the optional `type` keyword is set to `:disc`, then `d` is interpreted as the
+norm class of the discriminant of the corresponding Jordan block.
+"""
+function genus(::Type{HermLat}, E::S, p::T, data::Vector{Tuple{Int, Int, Int}}; type = :det) where {S <: NumField, T}
   z = LocalGenusHerm{S, T}()
   z.E = E
   z.p = p
   z.isdyadic = isdyadic(p)
   z.isramified = isramified(maximal_order(E), p)
   @assert !(isramified(z) && isdyadic(z))
-  z.data = data
+  if !z.isramified || type === :det
+    z.data = copy(data)
+  else
+    type !== :disc && throw(error("type :$type must be :disc or :det"))
+    fl = islocal_norm(E, base_field(E)(-1), p)
+    if fl
+      z.data = copy(data)
+    end
+    # Now -1 is not a local norm, so we adjust whenever the rank is 2, 3 mod 4.
+    z.data = Vector{Tuple{Int, Int, Int}}(undef, length(data))
+    for i in 1:length(data)
+      r = data[i][2] % 4
+      if r == 0 || r == 1
+        z.data[i] = data[i]
+      else
+        z.data[i] = (data[i][1], data[i][2], (-1) * data[i][3])
+      end
+    end
+  end
   return z
 end
 
@@ -1753,7 +1787,7 @@ data(G::LocalGenusSymbol) = G.data
 base_field(G::LocalGenusSymbol) = G.E
 
 function Base.show(io::IO, G::LocalGenusSymbol)
-  print(io, "Local genus symbol at\n")
+  print(io, "Local genus symbol (scale, rank, det) at\n")
   print(IOContext(io, :compact => true), G.P)
   compact = get(io, :compact, false)
   if !compact
