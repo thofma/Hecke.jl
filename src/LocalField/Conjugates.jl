@@ -54,13 +54,13 @@ function roots(C::qAdicRootCtx, n::Int = 10)
   if isdefined(C, :R) && all(x -> x.N >= n, C.R)
     return [setprecision(x, n) for x = C.R]
   end
-  lf = factor_mod_pk(C.H, n)
+  lf = factor_mod_pk(Array, C.H, n)
   rt = qadic[]
   for Q = C.Q
     Q.prec_max = n
-    for x = keys(lf)
-      if degree(x) == degree(Q)
-        append!(rt, roots(x, Q, max_roots = 1))
+    for x = lf
+      if degree(x[1]) == degree(Q)
+        append!(rt, roots(x[1], Q, max_roots = 1))
       end
     end
   end
@@ -330,20 +330,104 @@ function matrix(a::Array{Array{T, 1}, 1}) where {T}
   return matrix(hcat(a...))
 end
 
+
+function eval_f_fs(f::PolyElem, x::RingElem)
+  d = Int[]
+  for i=1:degree(f)
+    if !iszero(coeff(f, i))
+      if i>0 && !((i-1) in d)
+        push!(d, i-1)
+      end
+      push!(d, i)
+    end
+  end
+  p = Dict{Int, typeof(x)}()
+  p[0] = one(x)
+  p[1] = x
+  p[d[1]] = x^d[1]
+    
+  for i = 2:length(d)
+    q, r = divrem(d[i], d[i-1])
+    if haskey(p, r)
+      xr = p[r]
+    else
+      xr = p[r] = x^r
+    end
+    p[d[i]] = p[d[i-1]]^q * xr
+  end
+  s1 = zero(x)
+  s2 = zero(x)
+  for i=0:degree(f)
+    c = coeff(f, i)
+    if !iszero(c)
+      s1 += c*p[i]
+      if i>0
+        s2 += i*c*p[i-1]
+      end
+    end
+  end
+  return s1, s2
+end
+
+struct nf_elem_mod <: RingElem
+  a::nf_elem
+  p::fmpz
+end
+function *(a::fmpz, b::nf_elem_mod)
+  c = a*b.a
+  return nf_elem_mod(mod_sym(c, b.p), b.p)
+end
+function *(a::nf_elem_mod, b::nf_elem_mod)
+  c = a.a*b.a
+  return nf_elem_mod(mod_sym(c, a.p), a.p)
+end
+function one(a::nf_elem_mod)
+  return nf_elem_mod(one(a.a), a.p)
+end
+function zero(a::nf_elem_mod)
+  return nf_elem_mod(zero(a.a), a.p)
+end
+function +(a::nf_elem_mod, b::nf_elem_mod)
+  return nf_elem_mod(a.a+b.a, a.p)
+end
+function ^(a::nf_elem_mod, i::Int)
+  b = one(a)
+  c = a
+  while i > 0
+    if isodd(i)
+      b *= c
+    end
+    i >>= 1
+    if !iszero(i)
+      c *= c
+    end
+  end
+  return b
+end
 function lift_root(f::fmpz_poly, a::nf_elem, o::nf_elem, p::fmpz, n::Int)
   #f(a) = 0 mod p, o*f'(a) = 1 mod p, want f(a) = 0 mod p^n
   k = 1
   while k < n
     p *= p
     k *= 2
+    #TODO: here f wil be sparse (and possibly large degree), so
+    #      this evaluation is bad.
+    # in the calling cite: don't work in the large field, restrict
+    # to working (mod p^k) in the field defined by the factor
 
-    pa = [one(a)]
-    while length(pa) <= degree(f)
-      push!(pa, pa[end]*a)
-      mod_sym!(pa[end], p)
+    if false
+      pa = [one(a)]
+      while length(pa) <= degree(f)
+        push!(pa, pa[end]*a)
+        mod_sym!(pa[end], p)
+      end
+      fa  = sum(coeff(f, i-1) * pa[i] for i=1:length(pa))
+      fsa = sum(coeff(f, i) * i * pa[i] for i=1:length(pa)-1)  
+    else
+      _fa, _fsa = eval_f_fs(f, nf_elem_mod(a, p))
+      fa = _fa.a
+      fsa = _fsa.a
     end
-    fa  = sum(coeff(f, i-1) * pa[i] for i=1:length(pa))
-    fsa = sum(coeff(f, i) * i * pa[i] for i=1:length(pa)-1)  
     o = o*(2-fsa*o)
     a = a - fa*o
     mod_sym!(o, p)
@@ -383,8 +467,24 @@ function completion(K::AnticNumberField, p::fmpz, i::Int)
   @assert 0<i<= degree(K)
 
   ca = conjugates(gen(K), C, all = true, flat = false)[i]
+  return completion(K, ca)
+end
+
+function completion(K::AnticNumberField, ca::qadic)  
+  p = prime(parent(ca))
+  C = qAdicConj(K, Int(p))
+  r = roots(C.C, precision(ca))
+  i = findfirst(x->r[x] == ca, 1:length(r))
+  Zx = PolynomialRing(FlintZZ, cached = false)[1]
   function inj(a::nf_elem)
-    return conjugates(a, C, precision(parent(ca)))[i]
+    d = denominator(a)
+    pr = precision(parent(ca))
+    if pr > precision(ca)
+      ri = roots(C.C, precision(parent(ca)))[i]
+    else
+      ri = ca
+    end
+    return inv(parent(ca)(d))*(Zx(a*d)(ri))
   end
   # gen(K) -> conj(a, p)[i] -> a = sum a_i o^i
   # need o = sum o_i a^i
@@ -411,6 +511,16 @@ function completion(K::AnticNumberField, p::fmpz, i::Int)
     _num_setcoeff!(b, i-1, lift(s[i,1]))
   end
 
+  #TODO: don't use f, use the factors i the HenselCtx
+  #seems to be slower...
+#  lf = factor_mod_pk(Array, C.C.H, Int(C.C.H.N))
+#  jj = findfirst(x->iszero(x[1](ca)), lf)
+#  Kjj = number_field(lf[jj][1], check = false, cached = false)[1]
+#  ajj = Kjj(parent(Kjj.pol)(a))
+#  bjj = Kjj(parent(Kjj.pol)(b))
+#  cjj = lift_root(f, ajj, bjj, p, 10)
+#  c = K(parent(K.pol)(cjj))
+
   c = lift_root(f, a, b, p, 10)
   pc = fmpz(10)
   function lif(x::qadic)
@@ -422,6 +532,11 @@ function completion(K::AnticNumberField, p::fmpz, i::Int)
       #probably should be done with a new map type that can
       #store c, pc on the map.
       d = lift_root(f, a, b, p, precision(x))
+#  Kjj = number_field(lf[jj][1], check = false, cached = false)[1]
+#  ajj = Kjj(parent(Kjj.pol)(a))
+#  bjj = Kjj(parent(Kjj.pol)(b))
+#  djj = lift_root(f, ajj, bjj, p, 10)
+#  d = K(parent(K.pol)(djj))
       ccall((:nf_elem_set, :libantic), Nothing, (Ref{nf_elem}, Ref{nf_elem}, Ref{AnticNumberField}), c, d, K)
       ccall((:fmpz_set_si, :libflint), Nothing, (Ref{fmpz}, Cint), pc, precision(x))
     elseif precision(x) < pc
@@ -431,9 +546,10 @@ function completion(K::AnticNumberField, p::fmpz, i::Int)
     end
     n = x.length
     r = K(lift(coeff(x, n-1)))
+    pk = p^precision(x)
     while n > 1
       n -= 1
-      r = r*d + lift(coeff(x, n-1))
+      r = mod_sym(r*d, pk) + lift(coeff(x, n-1))
     end
     return r#*K(p)^valuation(x)
   end

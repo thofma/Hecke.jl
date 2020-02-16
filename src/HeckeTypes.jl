@@ -2118,10 +2118,10 @@ mutable struct qAdicRootCtx
     r.f = f
     r.p = p
     r.H = H = Hecke.factor_mod_pk_init(f, p)
-    lf = Hecke.factor_mod_pk(H, 1)
+    lf = Hecke.factor_mod_pk(Array, H, 1)
     #TODO:XXX: Careful: QadicField ONLY works, currently, in Conway range
-    Q = [QadicField(p, x, 1) for x = Set(degree(y) for y = keys(lf))]
-    @assert all(isone, values(lf))
+    Q = [QadicField(p, x, 1) for x = Set(degree(y[1]) for y = lf)]
+    @assert all(x->isone(x[2]), lf)
     r.Q = Q
     return r
   end
