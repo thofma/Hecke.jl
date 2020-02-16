@@ -926,7 +926,7 @@ The ideal bust be maximal, however, this is not tested.
 function NumberField(f::Array{fmpq_poly, 1}, s::String="_\$"; cached::Bool = false, check::Bool = true)
   S = Symbol(s)
   n = length(f)
-  Qx, x = PolynomialRing(FlintQQ, n, s)
+  Qx, x = PolynomialRing(FlintQQ, n, s, cached = false)
   K = NfAbsNS(fmpq_mpoly[f[i](x[i]) for i=1:n],
               Symbol[Symbol("$s$i") for i=1:n], cached)
   K.degrees = [degree(f[i]) for i in 1:n]
@@ -942,7 +942,7 @@ end
 function NumberField(f::Array{fmpz_poly, 1}, s::String="_\$"; cached::Bool = false, check::Bool = true)
   S = Symbol(s)
   n = length(f)
-  Qx, x = PolynomialRing(FlintQQ, n, s)
+  Qx, x = PolynomialRing(FlintQQ, n, s, cached = false)
   K = NfAbsNS(fmpq_mpoly[f[i](x[i]) for i=1:n],
               Symbol[Symbol("$s$i") for i=1:n], cached)
   K.degrees = [degree(f[i]) for i in 1:n]
@@ -956,6 +956,24 @@ function NumberField(f::Array{fmpz_poly, 1}, s::String="_\$"; cached::Bool = fal
 end
 
 gens(K::NfAbsNS) = [K(x) for x = gens(parent(K.pol[1]))]
+
+function symbols(E::NfAbsNS)
+  return E.S
+end
+function Base.names(E::NfAbsNS)
+  return map(string, symbols(E))
+end
+function set_names!(E::NfAbsNS, n::Array{String, 1})
+  @assert length(n) == length(E.S)
+  set_symbols!(E, map(Symbol, n))
+end
+function set_symbols!(E::NfAbsNS, n::Array{Symbol, 1})
+  @assert length(n) == length(E.S)
+  E.S = n
+  parent(E.pol[1]).S = n #TODO: make this into an API function
+end
+#... and propagate all of this for all number field types...
+#I guess 2 cases are required: NS and normal?
 
 function (K::NfAbsNS)(a::fmpq_mpoly)
   q, w = divrem(a, K.pol)
