@@ -623,6 +623,14 @@ end
 (f::NfToNfMor)(x::NfOrdIdl) = induce_image(f, x)
 
 function induce_image(f::NfToNfMor, x::NfOrdIdl)
+  if domain(f) != codomain(f)
+    OK = maximal_order(codomain(f))
+    @assert ismaximal(order(x))
+    assure_2_normal(x)
+    I = ideal(OK, x.gen_one, OK(f(x.gen_two.elem_in_nf)))
+    I.gens_normal = x.gens_normal
+    return I
+  end
   domain(f) !== codomain(f) && throw(error("Map must be an automorphism"))
   OK = order(x)
   K = nf(OK)
