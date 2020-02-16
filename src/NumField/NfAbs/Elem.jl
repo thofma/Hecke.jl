@@ -959,15 +959,14 @@ function rem(a::nf_elem, b::fmpz)
   return c
 end
 
-function mod_sym(a::nf_elem, b::fmpz)
-  z = mod_sym(a, b, div(b, 2))
-  #@assert z == _mod_sym_antic(a, b)
+function mod_sym(a::nf_elem, b::fmpz, b2::fmpz)
+  return mod_sym(a, b)
   return z
 end
 
-function mod_sym(a::nf_elem, b::fmpz, b2::fmpz)
+function mod_sym(a::nf_elem, b::fmpz)
   c = deepcopy(a)
-  mod_sym!(c, b, b2)
+  mod_sym!(c, b)
   return c
 end
 
