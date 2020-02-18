@@ -260,7 +260,6 @@ function conductors(O::NfOrd, a::Array{Int, 1}, bound::fmpz, tame::Bool=false)
       Since m is the conductor, h_(m/p^i, C)<= h_(m,C)/q.
       Consequently, we get
         v_p(m)<= (q*ap)/(h_(m,C)*(q-1))
-      To find ap, it is enough to compute a logarithm.
     =#
     v = valuation(expo, q)
     # First, we compute the bound coming from the bound on the discriminant

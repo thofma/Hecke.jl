@@ -17,6 +17,7 @@ Both version require a LLL reduced basis for the maximal order.
 """
 function simplify(K::AnticNumberField; canonical::Bool = false, cached = true)
   Qx, x = PolynomialRing(FlintQQ, "x")
+  
   if degree(K) == 1
     L = number_field(x - 1, cached = cached, check = false)[1]
     return L, hom(L, K, gen(K), check = false)
@@ -25,6 +26,7 @@ function simplify(K::AnticNumberField; canonical::Bool = false, cached = true)
     a, f1 = polredabs(K)
     f = Qx(f1)
   else
+    n = degree(K)
     OK = maximal_order(K)
     @vtime :Simplify 3 if isdefined(OK, :lllO)
       ZK = OK.lllO
@@ -44,11 +46,15 @@ function simplify(K::AnticNumberField; canonical::Bool = false, cached = true)
         OL1 = NfOrd(BOL1, false)
         OL1.ismaximal = 1
         Hecke._set_maximal_order(L1, OL1)
+        @vprint :Simplify 3 "Trying to simplify $(L1)\n"
         L2, mL2 = simplify(L1)
         return L2, mL2*mp
       end
-      prec = 100 + 25*div(degree(K), 3) + Int(round(log(abs(discriminant(OK)))))
-      ZK = _lll_for_simplify(OK, prec = prec)
+      prec = 100 + 25*div(n, 3) + Int(round(log(abs(discriminant(OK)))))
+      OK1 = _ordering_by_T2(OK)
+      ZK = _lll_for_simplify(OK1, prec = prec)
+      ZK = lll(ZK)
+      OK.lllO = ZK
     end
     @vtime :Simplify 3 a = _simplify(ZK)
     @vtime :Simplify 3 f = Qx(minpoly(representation_matrix(OK(a))))
@@ -68,6 +74,15 @@ function _simplify(O::NfOrd)
   p, d = _find_prime(f)
 
   B = basis(O, copy = false)
+  nrep = min(3, degree(K))
+  Bnew = NfOrdElem[]
+  for i = 1:length(B)
+    push!(Bnew, B[i])
+    for j = 1:nrep
+      push!(Bnew, B[i]+B[j])
+      push!(Bnew, B[i]-B[j])
+    end
+  end
   #First, we search for elements that are primitive using block systems
   F = FlintFiniteField(p, d, "w", cached = false)[1]
   Ft = PolynomialRing(F, "t", cached = false)[1]
@@ -77,11 +92,11 @@ function _simplify(O::NfOrd)
   
   n = degree(K)
   indices = Int[]
-  for i = 1:length(B)
-    if isone(denominator(B[i].elem_in_nf))
+  for i = 1:length(Bnew)
+    if isone(denominator(Bnew[i].elem_in_nf))
       continue
     end 
-    b = _block(B[i].elem_in_nf, rt, ap)
+    b = _block(Bnew[i].elem_in_nf, rt, ap)
     if length(b) == n
       push!(indices, i)
     end
@@ -89,9 +104,9 @@ function _simplify(O::NfOrd)
   #Now, we select the one of smallest T2 norm
   I = t2(a)    
   for i = 1:length(indices)
-    t2n = t2(B[indices[i]].elem_in_nf)
+    t2n = t2(Bnew[indices[i]].elem_in_nf)
     if t2n < I
-      a = B[indices[i]]
+      a = Bnew[indices[i]]
       I = t2n
     end
   end
@@ -355,6 +370,131 @@ end
 #
 ################################################################################
 
+function _ordering_by_T2(M::NfOrd)
+  
+  K = nf(M)
+  B = basis(M, K)
+  ints = fmpz[lower_bound(t2(x), fmpz) for x in B]
+  p = sortperm(ints)
+  On = NfOrd(B[p])
+  On.ismaximal = M.ismaximal
+  if isdefined(M, :index)
+    On.index = M.index
+  end
+  if isdefined(M, :disc)
+    On.disc = M.disc
+  end
+  if isdefined(M, :gen_index)
+    On.gen_index = M.gen_index
+  end
+  return On
+end
+
+
+function lll_precomputation(M::NfOrd, prec::Int, k::Int = 10)
+
+  n = degree(M)
+  K = nf(M)
+  natt, re = divrem(n, k)
+  if re > 0
+    natt += 1
+  end
+  g = identity_matrix(FlintZZ, n)
+  new_prec = prec
+  for i = 1:natt
+    @vprint :Simplify 3 "Simplifying block $i\n"
+    new_prec, g1 = _lll_sublattice(M, (k*(i-1)+1):min(k*(i), n), prec = prec)
+    _copy_matrix_into_matrix(g, k*(i-1)+1, k*(i-1)+1, g1)
+    if new_prec > prec
+      break
+    end
+  end
+  @vprint :Simplify 3 "Precision: $(new_prec)\n"
+  On = NfOrd(K, g*basis_matrix(M, copy = false))
+  On.ismaximal = M.ismaximal
+  if isdefined(M, :index)
+    On.index = M.index
+  end
+  if isdefined(M, :disc)
+    On.disc = M.disc
+  end
+  if isdefined(M, :gen_index)
+    On.gen_index = M.gen_index
+  end
+  if new_prec > prec 
+    return lll_precomputation(On, new_prec, k)
+  elseif n > 40 && k < 20
+    return lll_precomputation(On, new_prec, 20)
+  elseif n > 60 && k < 40
+    return lll_precomputation(On, new_prec, 40)
+  elseif n > 100 && k < 60
+    return lll_precomputation(On, new_prec, 60)
+  else
+    return prec, On
+  end
+end
+
+function _lll_sublattice(M::NfOrd, u::UnitRange{Int}; prec = 100)
+  K = nf(M)
+  n = degree(M)
+  l = length(u)
+  prec = max(prec, 10*n)
+  local g::fmpz_mat
+  local d::fmpz_mat
+  local d1::fmpz_mat
+  ctx = Nemo.lll_ctx(0.99, 0.51, :gram)
+  att = 0 
+  tr_mat = sub(trace_matrix(M), u, u)
+  disc = abs(det(tr_mat))
+  while true
+    att += 1
+    @vprint :Simplify 3 "Attempt number : $(att)\n"  
+    while true
+      try
+        d = minkowski_gram_mat_scaled(M, prec)
+        break
+      catch e
+        prec = prec*2
+      end
+    end
+    @vprint :Simplify 3 "Minkowski matrix computed\n"
+    g = identity_matrix(FlintZZ, l)
+    d1 = sub(d, u, u)
+    
+    prec = div(prec, 2)
+    shift!(d1, -prec)  #TODO: remove?
+
+    for i=1:l
+      fmpz_mat_entry_add_ui!(d1, i, i, UInt(nrows(d1)))
+    end
+    @vtime :Simplify 3 ccall((:fmpz_lll, :libflint), Nothing, (Ref{fmpz_mat}, Ref{fmpz_mat}, Ref{Nemo.lll_ctx}), d1, g, ctx)
+    
+    fl = true
+    if nbits(maximum(abs, g)) >  div(prec, 2)
+      fl = false
+    else
+      di = root(disc, l)+1
+      di *= fmpz(2)^(div(l+1,2)) * fmpz(2)^prec
+      if cmpindex(d1, 1, 1, di) > 0
+        fl = false
+      else
+        pr = prod_diagonal(d1)
+        if pr > fmpz(2)^(div(l*(l-1), 2)) * disc * fmpz(2)^(l*prec)
+          fl = false
+        end
+      end
+    end
+    if fl
+      prec *= 2
+      break
+    end
+    @vprint :Simplify 3 "Still in the loop\n"
+    prec *= 4
+  end
+  return prec, g
+end
+
+
 function _lll_for_simplify(M::NfOrd; prec = 100)
 
   K = nf(M)
@@ -400,6 +540,10 @@ function _lll_for_simplify(M::NfOrd; prec = 100)
 
   n = degree(M)
   prec = max(prec, 10*n)
+  
+  if n > 10
+    prec, M = lll_precomputation(M, prec)
+  end
   local g::fmpz_mat
   local d::fmpz_mat
   fl = true
@@ -427,7 +571,7 @@ function _lll_for_simplify(M::NfOrd; prec = 100)
       fmpz_mat_entry_add_ui!(d, i, i, UInt(nrows(d)))
     end
     @vtime :Simplify 3 ccall((:fmpz_lll, :libflint), Nothing, (Ref{fmpz_mat}, Ref{fmpz_mat}, Ref{Nemo.lll_ctx}), d, g, ctx)
- 
+    fl = true
     nb = nbits(maximum(abs, g))
     if nb <=  prec
       if nb > div(prec, 2)
@@ -442,7 +586,6 @@ function _lll_for_simplify(M::NfOrd; prec = 100)
   ## lll needs to yield a basis sth
   ## l[1,1] = |b_i|^2 <= 2^((n-1)/2) disc^(1/n)  
   ## and prod(l[i,i]) <= 2^(n(n-1)/2) disc
-
   disc = abs(discriminant(M))
   di = root(disc, n)+1
   di *= fmpz(2)^(div(n+1,2)) * fmpz(2)^prec
