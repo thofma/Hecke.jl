@@ -239,7 +239,7 @@ function conjugates_log(x::nf_elem, abs_tol::Int = 32, T = arb)
   if T === arb
     return conjugates_arb_log(x, abs_tol)
   else
-    error("Cannot return real conjugates as type $T")
+    throw(error("Cannot return real conjugates as type ", T))
   end
 end
 
@@ -332,7 +332,8 @@ Every entry of the array returned is of type `arb` with radius less then
 `2^(-abs_tol)`.
 """
 function minkowski_map(a::nf_elem, abs_tol::Int = 32)
-  _minkowski_map_and_apply(a, abs_tol, identity)
+  z = _minkowski_map_and_apply(a, abs_tol, identity)
+  return z
 end
 
 # The following function computes the minkowski_map, applies G to the output.
@@ -387,9 +388,10 @@ function t2(x::nf_elem, abs_tol::Int = 32, T = arb)
       z = mapreduce(y -> y^2, +, w)
       return radiuslttwopower(z, -abs_tol), z
     end
-    return _minkowski_map_and_apply(x, abs_tol, g)
+    c = _minkowski_map_and_apply(x, abs_tol, g)
+    return c
   else
-    error("Not yet implemented")
+    throw(NotImplemented())
   end
 end
 

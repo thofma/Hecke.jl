@@ -7,7 +7,7 @@ export *, +, absolute_basis, absolute_basis_matrix, ambient_space, bad_primes,
        ispositive_definite, isrationally_equivalent, jordan_decomposition,
        local_basis_matrix, norm, pseudo_matrix, quadratic_lattice, rank,
        rational_span, rescale, scale, volume, witt_invariant, lattice, Zlattice,
-       automorphism_group_generators, automorphism_group_order, isisometric
+       automorphism_group_generators, automorphism_group_order, isisometric, islocal_norm, normic_defect
 
 export HermLat, QuadLat
 
@@ -2417,6 +2417,7 @@ end
 # places P and I of K, return an element a in K such that 
 # { v: (a,b)_v = -1 } = P \cup I
 # Note that the function computes the unit and class groups of K!
+# TODO: use factored elements
 function _find_quaternion_algebra(b, P, I)
   @assert iseven(length(I) + length(P))
   @assert all(p -> !islocal_square(b, p), P)
@@ -2428,39 +2429,47 @@ function _find_quaternion_algebra(b, P, I)
   m = length(I)
 
   _J = b * R
-  _P = Dict{}()
-  for p in P
-    _P[p] = true
-  end
+  #_P = Dict{}()
+  __P = copy(P)
+  #for p in P
+  #  _P[p] = true
+  #end
   for p in keys(factor(_J))
-    _P[p] = true
+    if !(p in __P)
+      push!(__P, p)
+    end
+      #_P[p] = true
   end
   for p in prime_decomposition(R, 2)
-    _P[p[1]] = true
+    if !(p[1] in __P)
+      push!(__P, p[1])
+    end
   end
   for p in real_places(K)
     if !(p in I) && isnegative(b, p)
       push!(I, p)
     end
   end
+
   F = Nemo.GF(2)
-  target = matrix(F, 1, length(_P) + length(I), vcat(fill(1, n), fill(0, length(_P) - n), fill(1, m), fill(0, length(I) - m)))
+
+  target = matrix(F, 1, length(__P) + length(I), vcat(fill(1, n), fill(0, length(__P) - n), fill(1, m), fill(0, length(I) - m)))
   if iszero(target)
     return one(K)
   end
 
-  __P = convert(Vector{NfOrdIdl}, collect(keys(_P)))
+  #__P = convert(Vector{NfOrdIdl}, collect(keys(_P)))
 
   found = false
   U, h = unit_group(R)
   sign_vector = g -> begin
-    return matrix(F, 1, length(_P) + length(I),
+    return matrix(F, 1, length(__P) + length(I),
                  vcat([div(1 - hilbert_symbol(K(g), b, p), 2) for p in __P ], [ div(1 - _sign(evaluate(g, p)), 2) for p in I]))
   end
 
 
   L, f = sunit_group(__P)
-  M = zero_matrix(F, 0, length(_P) + length(I))
+  M = zero_matrix(F, 0, length(__P) + length(I))
   elts = []
 
   for i in 1:ngens(L)
@@ -2488,7 +2497,7 @@ function _find_quaternion_algebra(b, P, I)
     while !found
       p = next_prime(p)
       for (q, e) in prime_decomposition(R, p)
-        if haskey(_P, q)
+        if q in __P
           continue
         end
         o = order(mQ(mCl\(q)))
@@ -2591,6 +2600,7 @@ isdyadic(p::fmpz) = p == 2
 
 # find an element of K, which is not a local norm at p
 # p must be ramified
+# See [Kir16, Corollary 3.3.17]
 function _non_norm_rep(E, K, p)
   K = base_field(E)
   if isramified(maximal_order(E), p)
@@ -2598,8 +2608,8 @@ function _non_norm_rep(E, K, p)
       U, mU = unit_group(maximal_order(K))
       for i in 1:ngens(U)
         u = mU(U[i])
-        if !islocal_norm(E, u, p)
-          return u
+        if !islocal_norm(E, elem_in_nf(u), p)
+          return elem_in_nf(u)
         end
       end
     else
@@ -2611,10 +2621,28 @@ function _non_norm_rep(E, K, p)
       for i in 1:ngens(U)
         u = mU(U[i])
         if !islocal_norm(E, elem_in_nf(u), p) && (valuation(u - 1, p) == e - 1)
-          return u
+          return elem_in_nf(u)
         end
       end
+      # We look for a local unit u such that v_p(u - 1) = e - 1 and
+      # u not a local norm
+      tu = elem_in_nf(mU(U[1]))
+      tuo = order(U[1])
+      B = elem_in_nf.(basis(p^(e - 1)))
+      k = 0
+      while true
+        if k > 10000
+          throw(error("Something wrong in non_norm_rep"))
+        end
+        y = (1 + rand(B, -1:1)) * tu^(rand(1:tuo))
+        @assert valuation(y, p) == 0
+        if !islocal_norm(E, y, p) && valuation(y - 1, p) == e - 1
+          return elem_in_nf(y)
+        end
+        k += 1
+      end
     end
+    throw(error("This should not happen ..."))
   else
     lP = prime_decomposition(maximal_order(E), p)
     if length(lP) == 2
@@ -2979,7 +3007,6 @@ _eltseq(M::MatElem) = [M[i, j] for i in 1:nrows(M) for j in 1:ncols(M)]
 # if ambient_representation = true, they are given with respect to the coordinate
 # space/ambient space
 function assert_has_automorphisms(L::AbsLat; check::Bool = true,
-                                             ambient_representation::Bool = true,
                                              redo::Bool = false)
 
   if !redo && isdefined(L, :automorphism_group_generators)
@@ -3082,6 +3109,12 @@ function automorphism_group_generators(L::AbsLat; check::Bool = true,
   gens = L.automorphism_group_generators
 
   if !ambient_representation
+    if check
+      Grel = gram_matrix(rational_span(L))
+      for g in gens
+        @assert g * Grel * _map(transpose(g), involution(L)) == Grel
+      end
+    end
     return copy(gens)
   else
     bm = basis_matrix(L)
@@ -3090,7 +3123,7 @@ function automorphism_group_generators(L::AbsLat; check::Bool = true,
     if check
       Gamb = gram_matrix(ambient_space(L))
       for g in gens
-        @assert g * Gamb * _map(g, involution(L)) == Gamb
+        @assert g * Gamb * _map(transpose(g), involution(L)) == Gamb
       end
     end
     return gens
@@ -3209,19 +3242,19 @@ function isisometric(L::AbsLat, M::AbsLat; ambient_representation::Bool = true, 
   CL, CM = _iso_setup(ZgramLsmall, ZgramMsmall)
   b, T = isometry(CL, CM)
   if b
-    T = inv(T)
     T = change_base_ring(FlintQQ, inv(TL)*T*TM)
-    fl, s1 = can_solve(BabsmatM, basis_matrix(M), side = :left)
-    fl, s2 = can_solve(basis_matrix(L), BabsmatL, side = :left)
+    fl, s1 = can_solve(BabsmatL, basis_matrix(L), side = :left)
+    fl, s2 = can_solve(basis_matrix(M), BabsmatM, side = :left)
     T = s1 * change_base_ring(E, T) * s2
     if check
-      @assert T * gram_matrix(rational_span(M)) * _map(involution(L), transpose(T)) == gram_matrix(rational_span(L))
+      @assert T * gram_matrix(rational_span(M)) * _map(transpose(T), involution(L)) == gram_matrix(rational_span(L))
     end
     if !ambient_representation
-      return T
+      return true, T
     else
       T = inv(basis_matrix(L)) * T * basis_matrix(M)
-      @assert T * gram_matrix(ambient_space(M)) * _map(involution(L), transpose(T)) == gram_matrix(ambient_space(L))
+      @assert T * gram_matrix(ambient_space(M)) * _map(transpose(T), involution(L)) == gram_matrix(ambient_space(L))
+      return true, T
     end
   else
     return false, zero_matrix(E, 0, 0)
@@ -3269,6 +3302,7 @@ function to_magma(io::IO, L::HermLat)
   pm = pseudo_matrix(L)
   M = matrix(pm)
   Mst = "[" * split(string([M[i, j] for i in 1:nrows(M) for j in 1:ncols(M)]), '[')[2]
+  Mst = replace(Mst, "//" => "/")
   println(io, "M := Matrix(E, ", nrows(M), ", ", ncols(M), ", ", Mst, ");")
   println(io, "OE := MaximalOrder(E);")
   print(io, "C := [ ")

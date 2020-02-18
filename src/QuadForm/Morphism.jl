@@ -70,12 +70,18 @@ function LinearAlgebra.issymmetric(M::MatElem)
   return true
 end
 
+global _debug = []
+
 function init(C::ZLatAutoCtx, auto::Bool = true, max::fmpz = fmpz(-1))
+  push!(_debug, C)
   # Compute the necessary short vectors
-  compute_short_vectors(C, max)
+  @vprint :Lattice 1 "Computing short vectors of length $max\n"
+  @vtime :Lattice 1 compute_short_vectors(C, max)
 
   # Compute the fingerprint
+  @vprint :Lattice 1 "Computing fingerprint: "
   fingerprint(C)
+  @vprint :Lattice 1 "$(C.fp_diagonal)\n"
 
   if max == fmpz(-1)
     # Find the standard basis vectors
@@ -270,6 +276,7 @@ function compute_short_vectors(C::ZLatAutoCtx, max::fmpz = fmpz(-1))
   if max == -1
     max = maximum(C.G[1][i, i] for i in 1:dim(C))
   end
+  @vprint :Lattice 1 "Computing short vectors of actual length $max\n"
   E = enum_ctx_from_gram(C.G[1])
   enum_ctx_start(E, max)
   n = ncols(C.G[1])
@@ -284,17 +291,25 @@ function compute_short_vectors(C::ZLatAutoCtx, max::fmpz = fmpz(-1))
       end
       break
     end
+
+    l = (E.x * C.G[1] * transpose(E.x))[1, 1]
+    if l > max
+      continue
+    end
+
+    z = Vector{fmpz}(undef, length(C.G))
+    z[1] = l
+
     if !positive
       m = -deepcopy(E.x)
     else
       m = deepcopy(E.x)#matrix(FlintZZ, 1, dim(C), v)
     end
-    z = Vector{fmpz}(undef, length(C.G))
-    for k in 1:length(z)
-      z[k] = (m * C.G[k] * transpose(m))[1, 1]
-    end
-    if z[1] > max
-      continue
+
+    mt = transpose(m)
+
+    for k in 2:length(z)
+      z[k] = (m * C.G[k] * mt)[1, 1]
     end
     push!(C.V, m)
     push!(C.V_length, z)
@@ -586,6 +601,7 @@ function auto(C)
 
   sta = 1
   for step in sta:dim
+    @vprint :Lattice 1 "Entering step $step\n"
     nH = 0
     for i in step:dim
       nH += C.ng[i]
@@ -625,6 +641,7 @@ function auto(C)
     nC = length(candidates[step])
     #@show step, nC
     while nC > 0 && ((im = candidates[step][1]) != 0)
+      @vprint :Lattice 1 "Step $(step), number of candidates left $(nC)\n"
       #@show im
       found = 0
       # try C.V[im] as the image of the step-th basis vector
