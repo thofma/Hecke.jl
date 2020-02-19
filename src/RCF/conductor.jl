@@ -194,8 +194,7 @@ function conductor(C::Hecke.ClassField)
     v = L[p]
     if isone(v)
       tmg = mG.tame[p]
-      Q, mQ = quo(G, GrpAbFinGenElem[mS(tmg.disc_log)], false)
-      if order(Q) == E
+      if iszero(mS(tmg.disc_log))
         Base.delete!(L, p)
       end  
     else
@@ -240,8 +239,7 @@ function conductor(C::Hecke.ClassField)
   if !isempty(inf_plc)
     D = mR.disc_log_inf_plc
     for (Pl, el) in D
-      Q, mQ = quo(G, [mS(el)], false)
-      if order(Q) != E
+      if !iszero(mS(el))
         push!(cond_inf, Pl)
       end
     end

@@ -838,7 +838,7 @@ function ray_class_group(m::NfOrdIdl, inf_plc::Vector{InfPlc} = Vector{InfPlc}()
   end
   
   local expo
-  let C = C, O = O, groups_and_maps = groups_and_maps, exp_class = exp_class, eH = eH, H = H, K = K, Dgens = Dgens, X = X
+  let C = C, O = O, groups_and_maps = groups_and_maps, exp_class = exp_class, eH = eH, H = H, K = K, Dgens = Dgens, X = X, p = p
     function expo(a::GrpAbFinGenElem)
       b = C(sub(a.coeff, 1:1, 1:ngens(C)))
       res = exp_class(b)
@@ -873,7 +873,7 @@ function ray_class_group(m::NfOrdIdl, inf_plc::Vector{InfPlc} = Vector{InfPlc}()
   disc_log_inf = Dict{InfPlc, GrpAbFinGenElem}()
   for i = 1:length(p)
     eldi = zeros(FlintZZ, ngens(X))
-    eldi[ngens(X) - length(inf_plc) + i] = 1
+    eldi[ngens(X) - length(p) + i] = 1
     disc_log_inf[p[i]] = X(eldi)
   end
   
