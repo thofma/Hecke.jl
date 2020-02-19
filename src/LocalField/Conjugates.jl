@@ -477,7 +477,7 @@ function completion(K::AnticNumberField, ca::qadic)
   p = prime(parent(ca))
   C = qAdicConj(K, Int(p))
   r = roots(C.C, precision(ca))
-  i = findfirst(x->r[x] == ca, 1:length(r))
+  i = findfirst(x->parent(r[x]) == parent(ca) && r[x] == ca, 1:length(r))
   Zx = PolynomialRing(FlintZZ, cached = false)[1]
   function inj(a::nf_elem)
     d = denominator(a)
