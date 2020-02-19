@@ -276,4 +276,28 @@ function set_vars!(L::NonSimpleNumField{T}, a::Array{Symbol, 1}) where {T}
   nothing
 end
 
+iscyclotomic_type(K::NonSimpleNumField{T}) where {T} = false, fmpz(1)
+iscyclotomic_type(K::NfRel) = false, fmpz(1)
+function iscyclotomic_type(L::AnticNumberField)
+  f = get_special(L, :cyclo)
+  if f === nothing
+    return false, fmpz(1)
+  end
+  return true, f
+end
+
+isquadratic_type(K::NonSimpleNumField{T}) where {T} = false, fmpz(1)
+isquadratic_type(K::NfRel) = false, fmpz(1)
+function isquadratic_type(L::AnticNumberField)
+  f = get_special(L, :show)
+  if f === Hecke.show_quad
+    return true, -coeff(L.pol, 0)
+  end
+  return false, fmpz(1)
+end
+
+
+
+
+
 
