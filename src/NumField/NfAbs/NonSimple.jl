@@ -1016,6 +1016,20 @@ function (K::NfAbsNS)(a::NfAbsNSElem)
   error("not compatible")
 end
 
+function show_sparse_cyclo(io::IO, a::NfAbsNS)
+  print(io, "Sparse cyclotomic field of order $(get_special(a, :cyclo))")
+end
+
+function cyclotomic_field(::Type{NonSimpleNumField}, n::Int; cached::Bool = false)
+  lf = factor(n)
+  x = gen(Hecke.Globals.Zx)
+  lp = [cyclotomic(Int(p^k), x) for (p,k) = lf.fac]
+  ls = ["z($n)_$(p^k)" for (p,k) = lf.fac]
+  C, g = number_field(lp, ls, cached = cached, check = false)
+  set_special(C, :show => show_sparse_cyclo, :cyclo => n)
+  return C, g
+end
+
 function trace_assure(K::NfAbsNS)
   if isdefined(K, :traces)
     return
