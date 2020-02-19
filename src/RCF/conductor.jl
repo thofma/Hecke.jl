@@ -811,7 +811,7 @@ abelian subfield in $K$ over its base field. If `of_closure` is set to true, the
 the algorithm is applied to the normal closure if $K$ (without computing it).
 """
 function maximal_abelian_subfield(K::NfRel{nf_elem}; of_closure::Bool = false)
-  zk = maximal_order(base_ring(K))
+  zk = maximal_order(base_field(K))
   d = ideal(zk, discriminant(K))
   try
     ZK = _get_maximal_order_of_nf_rel(K)
@@ -822,8 +822,8 @@ function maximal_abelian_subfield(K::NfRel{nf_elem}; of_closure::Bool = false)
     end
   end
 
-  r1, r2 = signature(base_ring(K))
-  C, mC = ray_class_group(d.num, infinite_places(base_ring(K))[1:r1], n_quo = degree(K))
+  r1, r2 = signature(base_field(K))
+  C, mC = ray_class_group(d.num, infinite_places(base_field(K))[1:r1], n_quo = degree(K))
   N, iN = norm_group(K, mC, of_closure = of_closure)
   return ray_class_field(mC, quo(C, N)[2])
 end
