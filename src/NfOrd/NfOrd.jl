@@ -523,7 +523,7 @@ end
 @doc Markdown.doc"""
     minkowski_gram_mat_scaled(O::NfOrd, prec::Int = 64) -> fmpz_mat
 
-Let $c$ be the Minkowski matrix as computed by {{{minkowski_matrix}}} with precision $p$.
+Let $c$ be the Minkowski matrix as computed by `minkowski_matrix` with precision $p$.
 This function computes $d = round(c 2^p)$ and returns $round(d d^t/2^p)$.
 """
 function minkowski_gram_mat_scaled(O::NfOrd, prec::Int = 64)

@@ -1412,7 +1412,7 @@ end
     ispower(A::NfAbsOrdIdl, n::Int) -> Bool, NfAbsOrdIdl
     ispower(A::NfOrdFracIdl, n::Int) -> Bool, NfOrdFracIdl
 Computes, if possible, an ideal $B$ s.th. $B^n==A$ holds. In this
-case, {{{true}}} and $B$ are returned.
+case, `true` and $B$ are returned.
 """
 function ispower(A::NfAbsOrdIdl, n::Int)
   m = minimum(A)

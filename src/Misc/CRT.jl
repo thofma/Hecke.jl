@@ -420,8 +420,8 @@ end
 
 @doc Markdown.doc"""
     induce_crt(L::Array{PolyElem, 1}, c::crt_env{fmpz}) -> fmpz_poly
-Given fmpz\_poly polynomials $L[i]$ and a {{{crt\_env}}}, apply the
-{{{crt}}} function to each coefficient resulting in a polynomial $f = L[i] \bmod p[i]$.
+Given fmpz\_poly polynomials $L[i]$ and a `crt\_env`, apply the
+`crt` function to each coefficient resulting in a polynomial $f = L[i] \bmod p[i]$.
 """
 function induce_crt(L::Array{T, 1}, c::crt_env{fmpz}) where {T <: PolyElem}
   Zx, x = FlintZZ["x"]
@@ -481,8 +481,8 @@ end
 
 @doc Markdown.doc"""
     induce_crt(L::Array{MatElem, 1}, c::crt_env{fmpz}) -> fmpz_mat
-Given matrices $L[i]$ and a {{{crt\_env}}}, apply the
-{{{crt}}} function to each coefficient resulting in a matrix $M = L[i] \bmod p[i]$.
+Given matrices $L[i]$ and a `crt\_env`, apply the
+`crt` function to each coefficient resulting in a matrix $M = L[i] \bmod p[i]$.
 """
 function induce_crt(L::Array{T, 1}, c::crt_env{fmpz}, signed::Bool = false) where {T <: MatElem}
   res = zero_matrix(FlintZZ, nrows(L[1]), ncols(L[1]))

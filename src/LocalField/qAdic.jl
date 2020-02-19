@@ -104,7 +104,11 @@ function setcoeff!(x::qadic, i::Int, y::UInt)
 end
 
 function ResidueField(Q::FlintQadicField)
-  k = GF(Int(prime(Q)), degree(Q))[1]
+  Fp = GF(Int(prime(Q)))
+  Fpt = PolynomialRing(Fp, cached = false)[1]
+  g = defining_polynomial(Q) #no Conway if parameters are too large!
+  f = Fpt([Fp(lift(coeff(g, i))) for i=0:degree(Q)])
+  k = FiniteField(f, "o", cached = false)[1]
   pro = function(x::qadic)
     v = valuation(x)
     v < 0 && error("elt non integral")

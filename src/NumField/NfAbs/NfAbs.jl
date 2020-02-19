@@ -176,7 +176,7 @@ end
 @doc Markdown.doc"""
     class_group(K::AnticNumberField) -> GrpAbFinGen, Map
 
-Shortcut for {{{class_group(maximal_order(K))}}}: returns the class
+Shortcut for `class_group(maximal_order(K))`: returns the class
 group as an abelian group and a map from this group to the set
 of ideals of the maximal order.
 """

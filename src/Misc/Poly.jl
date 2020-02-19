@@ -153,7 +153,7 @@ end
 
 @doc Markdown.doc"""
     induce_rational_reconstruction(a::fmpz_poly, M::fmpz) -> fmpq_poly
-Apply {{{rational_reconstruction}}} to each coefficient of $a$, resulting
+Apply `rational_reconstruction` to each coefficient of $a$, resulting
 in either a fail (return (false, s.th.)) or (true, g) for some rational
 polynomial $g$ s.th. $g \equiv a \bmod M$.
 """
@@ -212,6 +212,17 @@ function factor_to_dict(a::fmpz_poly_factor)
     f = Zx()
     ccall((:fmpz_poly_set, :libflint), Nothing, (Ref{fmpz_poly}, Ref{fmpz_poly_raw}), f, a.poly+(i-1)*sizeof(fmpz_poly_raw))
     res[f] = unsafe_load(a.exp, i)
+  end  
+  return res
+end
+
+function factor_to_array(a::fmpz_poly_factor)
+  res = Array{Tuple{fmpz_poly, Int}, 1}()
+  Zx,x = PolynomialRing(FlintZZ, "x", cached = false)
+  for i in 1:a._num
+    f = Zx()
+    ccall((:fmpz_poly_set, :libflint), Nothing, (Ref{fmpz_poly}, Ref{fmpz_poly_raw}), f, a.poly+(i-1)*sizeof(fmpz_poly_raw))
+    push!(res, (f, unsafe_load(a.exp, i)))
   end  
   return res
 end
@@ -296,6 +307,19 @@ function factor_mod_pk(H::HenselCtx, k::Int)
     continue_lift(H, k)
   end
   return factor_to_dict(H.LF)
+end
+
+function factor_mod_pk(::Type{Array}, H::HenselCtx, k::Int)
+  if H.r == 1
+    return [(H.f, 1)]
+  end
+  @assert k>= H.N
+  if H.N == 0
+    start_lift(H, k)
+  else
+    continue_lift(H, k)
+  end
+  return factor_to_array(H.LF)
 end
 
 #I think, experimentally, that p = Q^i, p1 = Q^j and j<= i is the condition to make it tick.

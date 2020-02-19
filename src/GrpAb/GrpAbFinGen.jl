@@ -581,7 +581,7 @@ end
 @doc Markdown.doc"""
     direct_product(G::GrpAbFinGen...; task::Symbol = :sum) -> GrpAbFinGen, GrpAbFinGenMap, GrpAbFinGenMap
 
-Returns the direct product $D$ of the abelian groups $G_i$. {{{task}}} can be
+Returns the direct product $D$ of the abelian groups $G_i$. `task` can be
 ":sum", ":prod", ":both" or ":none" and determines which canonical maps
 are computed as well: ":sum" for the injections, ":prod" for the 
    projections.
@@ -1050,7 +1050,7 @@ parent(t::Tuple) = TupleParent(t)
 @doc Markdown.doc"""
     tensor_product(G::GrpAbFinGen...; task::Symbol = :map) -> GrpAbFinGen, Map
 Given groups $G_i$ compute the tensor product $G_1\otimes \cdots \otimes G_n$.
-If {{{task}}} is set to ":map", a map $\phi$ is returned that
+If `task` is set to ":map", a map $\phi$ is returned that
 maps tuples in $G_1 \times \cdots \times G_n$ to pure tensors
 $g_1 \otimes \cdots \otimes g_n$. The map admits a preimage as well.
 """

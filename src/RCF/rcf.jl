@@ -51,7 +51,7 @@ end
 
 @doc Markdown.doc"""
     ray_class_field(I::NfAbsOrdIdl; n_quo = 0) -> ClassField
-The ray class field modulo $I$. If {{{n_quo}}} is given, then the largest
+The ray class field modulo $I$. If `n_quo` is given, then the largest
 subfield of exponent $n$ is computed.
 """
 function ray_class_field(I::NfAbsOrdIdl; n_quo = -1)
@@ -60,7 +60,7 @@ end
 
 @doc Markdown.doc"""
     ray_class_field(I::NfAbsOrdIdl, inf::Array{InfPlc, 1}; n_quo = 0) -> ClassField
-The ray class field modulo $I$ and the infinite places given. If {{{n_quo}}} is given, then the largest
+The ray class field modulo $I$ and the infinite places given. If `n_quo` is given, then the largest
 subfield of exponent $n$ is computed.
 """
 function ray_class_field(I::NfAbsOrdIdl, inf::Array{InfPlc, 1}; n_quo = -1)
@@ -1054,13 +1054,13 @@ For a residue field map from a prime ideal, extend the domain of the map
 to the entire field.
 Requires the prime ideal to be coprime to the index, unramified and
 over a small integer. The resulting map can very efficiently be
-evaluated using {{{image(map, elem}}}.
+evaluated using `image(map, elem`.
 The resulting map can be applied to
-  * {{{nf_elem}}}
-  * {{{FacElem{nf_elem}}}}
-Will throw a {{{BadPrime}}} exception if applied to an element in the 
-field with a $p$ in the denominator. In the case of {{{FacElem}}}, zero
-is also mot permitted (and will produce a {{{BadPrime}}} error.
+  * `nf_elem`
+  * `FacElem{nf_elem}`
+Will throw a `BadPrime` exception if applied to an element in the 
+field with a $p$ in the denominator. In the case of `FacElem`, zero
+is also mot permitted (and will produce a `BadPrime` error.
 """
 function extend_easy(f::Hecke.NfOrdToFqNmodMor, K::AnticNumberField)
   nf(domain(f)) != K && error("Number field is not the number field of the order")
