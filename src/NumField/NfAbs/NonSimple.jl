@@ -258,8 +258,19 @@ end
 
 #TODO: this is a terrible show func.
 function Base.show(io::IO, a::NfAbsNSElem)
-  f = data(a)
-  show(io, f)
+  x = data(a)
+  if length(x) == 0
+     print(io, "0")
+  else
+     cstr = ccall((:fmpq_mpoly_get_str_pretty, :libflint), Ptr{UInt8},
+         (Ref{fmpq_mpoly}, Ptr{Ptr{UInt8}}, Ref{FmpqMPolyRing}),
+         x, [string(s) for s in symbols(parent(a))], x.parent)
+     print(io, unsafe_string(cstr))
+
+     ccall((:flint_free, :libflint), Nothing, (Ptr{UInt8},), cstr)
+  end
+ 
+#  show(io, f)
 end
 
 ################################################################################
@@ -924,11 +935,26 @@ we construct
 The ideal bust be maximal, however, this is not tested.
 """
 function NumberField(f::Array{fmpq_poly, 1}, s::String="_\$"; cached::Bool = false, check::Bool = true)
-  S = Symbol(s)
   n = length(f)
-  Qx, x = PolynomialRing(FlintQQ, n, s, cached = false)
-  K = NfAbsNS(fmpq_mpoly[f[i](x[i]) for i=1:n],
-              Symbol[Symbol("$s$i") for i=1:n], cached)
+  if occursin('#', s)
+    lS = Symbol[Symbol(replace(s, "#"=>"$i")) for i=1:n]
+  else
+    lS = Symbol[Symbol("$s$i") for i=1:n]
+  end
+  return NumberField(f, lS, cached = cached, check = check)
+end
+
+function NumberField(f::Array{fmpq_poly, 1}, s::Array{String, 1}; cached::Bool = false, check::Bool = true)
+  lS = Symbol[Symbol(x) for x=s]
+  return NumberField(f, lS, cached = cached, check = check)
+end
+
+function NumberField(f::Array{fmpq_poly, 1}, S::Array{Symbol, 1}; cached::Bool = false, check::Bool = true)
+  length(S) == length(f) || error("number of names must match the number of polynomials")
+  n = length(S)
+  s = var(parent(f[1]))
+  Qx, x = PolynomialRing(FlintQQ, ["$s$i" for i=1:n], cached = false)
+  K = NfAbsNS(fmpq_mpoly[f[i](x[i]) for i=1:n], S, cached)
   K.degrees = [degree(f[i]) for i in 1:n]
   K.degree = prod(K.degrees)
   if check
@@ -940,40 +966,31 @@ function NumberField(f::Array{fmpq_poly, 1}, s::String="_\$"; cached::Bool = fal
 end
 
 function NumberField(f::Array{fmpz_poly, 1}, s::String="_\$"; cached::Bool = false, check::Bool = true)
-  S = Symbol(s)
-  n = length(f)
-  Qx, x = PolynomialRing(FlintQQ, n, s, cached = false)
-  K = NfAbsNS(fmpq_mpoly[f[i](x[i]) for i=1:n],
-              Symbol[Symbol("$s$i") for i=1:n], cached)
-  K.degrees = [degree(f[i]) for i in 1:n]
-  K.degree = prod(K.degrees)
-  if check
-    if !_check_consistency(K)
-      error("The fields are not linearly disjoint!")
-    end
-  end
-  return K, gens(K)
+  Qx, _ = PolynomialRing(FlintQQ, var(parent(f[1])), cached = false)
+  return NumberField(fmpq_poly[Qx(x) for x = f], s, cached = cached, check = check)
+end
+
+function NumberField(f::Array{fmpz_poly, 1}, s::Array{String, 1}; cached::Bool = false, check::Bool = true)
+  Qx, _ = PolynomialRing(FlintQQ, var(parent(f[1])), cached = false)
+  return NumberField(fmpq_poly[Qx(x) for x = f], s, cached = cached, check = check)
+end
+
+function NumberField(f::Array{fmpz_poly, 1}, S::Array{Symbol, 1}; cached::Bool = false, check::Bool = true)
+  Qx, _ = PolynomialRing(FlintQQ, var(parent(f[1])), cached = false)
+  return NumberField(fmpq_poly[Qx(x) for x = f], S, cached = cached, check = check)
 end
 
 gens(K::NfAbsNS) = [K(x) for x = gens(parent(K.pol[1]))]
 
-function symbols(E::NfAbsNS)
+function vars(E::NfAbsNS)
   return E.S
 end
+function symbols(E::NfAbsNS)
+  return vars(E)
+end
 function Base.names(E::NfAbsNS)
-  return map(string, symbols(E))
+  return map(string, vars(E))
 end
-function set_names!(E::NfAbsNS, n::Array{String, 1})
-  @assert length(n) == length(E.S)
-  set_symbols!(E, map(Symbol, n))
-end
-function set_symbols!(E::NfAbsNS, n::Array{Symbol, 1})
-  @assert length(n) == length(E.S)
-  E.S = n
-  parent(E.pol[1]).S = n #TODO: make this into an API function
-end
-#... and propagate all of this for all number field types...
-#I guess 2 cases are required: NS and normal?
 
 function (K::NfAbsNS)(a::fmpq_mpoly)
   q, w = divrem(a, K.pol)
