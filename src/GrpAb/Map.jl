@@ -409,9 +409,9 @@ end
 @doc Markdown.doc"""
     hom(G::GrpAbFinGen, H::GrpAbFinGen; task::Symbol = :map) -> GrpAbFinGen, Map
 Computes the group of all homomorpisms from $G$ to $H$ as an abstract group.
-If {{{task}}} is ":map", then a map $\phi$ is computed that can be used
+If `task` is ":map", then a map $\phi$ is computed that can be used
 to obtain actual homomorphisms. This map also allows preimages.
-Set {{{task}}} to ":none" to not compute the map.
+Set `task` to ":none" to not compute the map.
 """
 function hom(G::GrpAbFinGen, H::GrpAbFinGen; task::Symbol = :map)
   @assert task in [:map, :none]

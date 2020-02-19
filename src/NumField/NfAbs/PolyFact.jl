@@ -166,7 +166,7 @@ end
 @doc Markdown.doc"""
     round(::fmpz, a::fmpz, b::fmpz, bi::fmpz) -> fmpz
 
-Computes {{{round(a//b)}}} using the pre-inverse of {{{2b}}}    
+Computes `round(a//b)` using the pre-inverse of `2b`    
 """
 function Base.round(::Type{fmpz}, a::fmpz, b::fmpz, bi::fmpz_preinvn_struct)
   s = sign(a)
@@ -180,7 +180,7 @@ end
 @doc Markdown.doc"""
     round(::fmpz, a::fmpz, b::fmpz) -> fmpz
 
-Computes {{{round(a//b)}}}.
+Computes `round(a//b)`.
 """
 function Base.round(::Type{fmpz}, a::fmpz, b::fmpz)
   s = sign(a)

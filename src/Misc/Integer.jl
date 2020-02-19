@@ -441,7 +441,7 @@ end
     ispower(a::fmpz, n::Int) -> Bool, fmpz
     ispower(a::fmpq, n::Int) -> Bool, fmpq
     ispower(a::Integer, n::Int) -> Bool, Integer
-Tests if $a$ is an $n$-th power. Return {{{true}}} and the root if successful.
+Tests if $a$ is an $n$-th power. Return `true` and the root if successful.
 """    
 function ispower(a::fmpz, n::Int)
   b = root(a, n)
