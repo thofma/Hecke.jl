@@ -126,10 +126,10 @@ Returns an array of the q-adic conjugates of $a$: Let $p Z_K = \prod P_i$ for th
 $Z_K$ of the parent of $a$. Then $K \otimes Q_p = \prod K_{P_i}$. For each of the $P_i$
 a $q$-adic (unramifed) extension $K_{P_i}$ of $Q_p$ is computed, sth. $a$ has $\deg P_i = \deg K_{P_i}$
 many cojugates in $K_{P_i}$.
-If {{{all = true}}} and {{{ flat = false}}}, the default, then all $n$ conjugates are returned.
-If {{{all = false}}}, then for each $P_i$ only one conjugate is returned, the others could be 
+If `all = true` and `flat = false`, the default, then all $n$ conjugates are returned.
+If `all = false`, then for each $P_i$ only one conjugate is returned, the others could be 
 xomputed using automorphisms (the Frobenius).
-If {{{flat = true}}}, then instead of the conjugates, only the $p$-adic coefficients are returned.
+If `flat = true`, then instead of the conjugates, only the $p$-adic coefficients are returned.
 """
 function conjugates(a::nf_elem, C::qAdicConj, n::Int = 10; flat::Bool = false, all::Bool = true)
   return expand(_conjugates(a, C, n, x -> x), flat = flat, all = all)
@@ -194,10 +194,10 @@ Returns an array of the logarithms of the q-adic conjugates of $a$: Let $p Z_K =
 $Z_K$ of the parent of $a$. Then $K \otimes Q_p = \prod K_{P_i}$. For each of the $P_i$
 a $q$-adic (unramifed) extension $K_{P_i}$ of $Q_p$ is computed, sth. $a$ has $\deg P_i = \deg K_{P_i}$
 many cojugates in $K_{P_i}$.
-If {{{all = true}}} and {{{ flat = false}}} then all $n$ logarithms of conjugates are returned.
-If {{{all = false}}}, then for each $P_i$ only one logarithm of a conjugate if returned, the others could be 
+If `all = true` and `flat = false` then all $n$ logarithms of conjugates are returned.
+If `all = false`, then for each $P_i$ only one logarithm of a conjugate if returned, the others could be 
 xomputed using automorphisms (the Frobenius).
-If {{{flat = true}}}, then instead of the conjugates, only the $p$-adic coefficients are returned.
+If `flat = true`, then instead of the conjugates, only the $p$-adic coefficients are returned.
 """
 function conjugates_log(a::nf_elem, C::qAdicConj, n::Int = 10; all::Bool = false, flat::Bool = true)
   if haskey(C.cache, a)
@@ -279,9 +279,9 @@ end
     regulator(K::AnticNumberField, C::qAdicConj, n::Int = 10; flat::Bool = true)
     regulator(R::NfAbsOrd, C::qAdicConj, n::Int = 10; flat::Bool = true)
 
-Returns the determinant of $m^t m$ where the columns of $m$ are the {{{conjugates_log}}} of the units
+Returns the determinant of $m^t m$ where the columns of $m$ are the `conjugates_log` of the units
 in either the array, or the fundamental units for $K$ (the maximal order of $K$) or $R$.
-If {{{flat = false}}}, then all prime ideals over $p$ need to have the same degree.
+If `flat = false`, then all prime ideals over $p$ need to have the same degree.
 In either case, Leopold's conjectue states that the regulator is zero iff the units are dependent.
 """
 function regulator(u::Array{T, 1}, C::qAdicConj, n::Int = 10; flat::Bool = true) where {T<: Union{nf_elem, FacElem{nf_elem, AnticNumberField}}}
@@ -347,6 +347,9 @@ function eval_f_fs(f::PolyElem, x::RingElem)
   p[d[1]] = x^d[1]
     
   for i = 2:length(d)
+    if haskey(p, d[i]) 
+      continue
+    end
     q, r = divrem(d[i], d[i-1])
     if haskey(p, r)
       xr = p[r]
@@ -460,7 +463,7 @@ completion(K::AnticNumberField, p::Integer, i::Int) = completion(K, fmpz(p), i)
     completion(K::AnticNumberField, p::fmpz, i::Int) -> FlintQadicField, Map
 
 The completion corresponding to the $i$-th conjugate in the non-canonical ordering of
-{{{conjugates}}}.
+`conjugates`.
 """
 function completion(K::AnticNumberField, p::fmpz, i::Int)
   C = qAdicConj(K, Int(p))
