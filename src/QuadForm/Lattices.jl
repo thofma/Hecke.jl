@@ -3331,11 +3331,17 @@ end
 #
 ################################################################################
 
-function to_magma(L::HermLat)
-  return to_magma(stdout, L)
+function to_magma(L::HermLat, target = "L")
+  return to_magma(stdout, L, target = target)
 end
 
-function to_magma(io::IO, L::HermLat)
+function to_magma_string(L::HermLat; target = "L")
+  b = IOBuffer()
+  to_magma(b, L, target = target)
+  return String(take!(b))
+end
+
+function to_magma(io::IO, L::HermLat; target = "L")
   E = nf(base_ring(L))
   K = base_field(E)
   println(io, "Qx<x> := PolynomialRing(Rationals());")
@@ -3373,7 +3379,7 @@ function to_magma(io::IO, L::HermLat)
     end
   end
   println(io, "M := Module(PseudoMatrix(C, M));")
-  println(io, "L := HermitianLattice(M, F);")
+  println(io, "$target := HermitianLattice(M, F);")
 end
 
 function var(E::NfRel)
