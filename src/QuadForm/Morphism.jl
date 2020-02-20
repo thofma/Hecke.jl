@@ -20,14 +20,14 @@ mutable struct SCPComb
   SCPComb() = new()
 end
 
-mutable struct ZLatAutoCtx
-  G::Vector{fmpz_mat}
-  Gtr::Vector{fmpz_mat}
+mutable struct ZLatAutoCtx{S, T}
+  G::Vector{T}
+  Gtr::Vector{T}
   dim::Int
-  max::fmpz
-  V::Vector{fmpz_mat}
-  V_length::Vector{Vector{fmpz}}
-  v::Vector{fmpz_mat}
+  max::S
+  V::Vector{T}
+  V_length::Vector{Vector{S}}
+  v::Vector{T}
   per::Vector{Int}
   fp::Matrix{Int}
   fp_diagonal::Vector{Int}
@@ -37,19 +37,21 @@ mutable struct ZLatAutoCtx
   orders::Vector{Int}
   ng::Vector{Int}
   nsg::Vector{Int}
-  g::Vector{Vector{fmpz_mat}}
+  g::Vector{Vector{T}}
 
   issymmetric::BitArray{1}
 
-  ZLatAutoCtx() = new()
-
   function ZLatAutoCtx(G::Vector{fmpz_mat})
-    z = new()
+    z = new{fmpz, fmpz_mat}()
     z.G = G
     z.Gtr = fmpz_mat[transpose(g) for g in G]
     z.dim = nrows(G[1])
     z.issymmetric = falses(length(G))
     return z
+  end
+
+  function ZLatAutoCtx{S, T}() where {S, T}
+    return new{S, T}()
   end
 end
 
@@ -70,18 +72,22 @@ function LinearAlgebra.issymmetric(M::MatElem)
   return true
 end
 
-global _debug = []
-
 function init(C::ZLatAutoCtx, auto::Bool = true, max::fmpz = fmpz(-1))
-  push!(_debug, C)
   # Compute the necessary short vectors
   @vprint :Lattice 1 "Computing short vectors of length $max\n"
   @vtime :Lattice 1 compute_short_vectors(C, max)
 
+  for i in 1:length(C.G)
+    C.issymmetric[i] = issymmetric(C.G[i])
+  end
+
+  @assert C.issymmetric[1]
+
   # Compute the fingerprint
   @vprint :Lattice 1 "Computing fingerprint: "
-  fingerprint(C)
+  @vtime :Lattice 1 fingerprint(C)
   @vprint :Lattice 1 "$(C.fp_diagonal)\n"
+
 
   if max == fmpz(-1)
     # Find the standard basis vectors
@@ -340,7 +346,16 @@ function possible(C::ZLatAutoCtx, per, I, J)
   Ftr = C.Gtr
   n = length(W)
   f = length(F)
+  _issymmetric = C.issymmetric
+  return possible(V, W, F, Ftr, _issymmetric, n, f, per, I, J)
+end
+
+function possible(V, W, F, Ftr, _issymmetric, n, f, per, I, J)
   count = 0
+
+  tmp1 = zero(eltype(V[1]))
+  tmp2 = zero(eltype(V[1]))
+
   for j in 1:n
     Wj = W[j]
     Vj = V[j]
@@ -359,9 +374,8 @@ function possible(C::ZLatAutoCtx, per, I, J)
 
     for k in 1:f
       for i in 1:I
-        #@assert _dot_product(Vj, F[k], per[i]) == (Vj * sub(Ftr[k], 1:nrows(Ftr[k]), per[i]:per[i]))[1, 1]
-        if (Vj * sub(F[k], 1:ncols(F[k]), per[i]:per[i]))[1, 1] != F[k][J, per[i]] || (sub(F[k], per[i]:per[i], 1:nrows(F[k])) * Vj')[1, 1] != F[k][per[i], J]
-        #if _dot_product(Vj, Ftr[k], per[i]) != F[k][J, per[i]]
+        if !(_dot_product_with_column!(tmp1, Vj, F[k], per[i], tmp2) == F[k][J, per[i]]) ||
+              (!_issymmetric[k] && _dot_product_with_row!(tmp1, Vj, F[k], per[i], tmp2) != F[k][per[i], J])
           good_scalar = false
           break
         end
@@ -386,11 +400,12 @@ function possible(C::ZLatAutoCtx, per, I, J)
 
     for k in 1:f
       for i in 1:I
-        if (Vj * sub(F[k], 1:ncols(F[k]), per[i]:per[i]))[1, 1] != -F[k][J, per[i]] || (sub(F[k], per[i]:per[i], 1:nrows(F[k])) * Vj')[1, 1] != -F[k][per[i], J]
-        #if _dot_product(Vj, Ftr[k], per[i]) != -F[k][J, per[i]]# || _dot_product(Vj, Ftr[k], per[i]) !=  -F[k][per[i], J]
+        if !(_dot_product_with_column!(tmp1, Vj, F[k], per[i], tmp2) == -F[k][J, per[i]]) ||
+              (!_issymmetric[k] && _dot_product_with_row!(tmp1, Vj, F[k], per[i], tmp2) != -F[k][per[i], J])
           good_scalar = false
           break
         end
+
       end
 
       if !good_scalar
@@ -448,8 +463,9 @@ function fingerprint(C::ZLatAutoCtx)
   for i in 1:n
     for j in 1:length(C.V)
       good = true
+      cvl = @inbounds C.V_length[j]
       for l in 1:k
-        if C.V_length[j][l] != C.G[l][i, i]
+        if cvl[l] != C.G[l][i, i]
           good = false
           break
         end
@@ -666,6 +682,8 @@ function auto(C)
         # x[1],...,x[step] cannot be continued
         oc = orbit(im, 1, H, nH, C.V)
         # delete the orbit of im from the candidates for x[step]
+        #
+        # This could go very bad ...
         candidates[step] = setdiff!(candidates[step], oc)
         nC = length(candidates[step])
         #nC = delete(candidates[step], nC, oc, noc)
@@ -1315,6 +1333,7 @@ function isometry(Ci, Co)
     end
   end
   isocand(C[1], 1, x, Ci, Co)
+
   found = iso(1, x, C, Ci, Co, H)
   if found
     T = matgen(x, d, Ci.per, Co.V)
@@ -1328,7 +1347,7 @@ end
 function iso(step, x, C, Ci, Co, G)
   d = dim(Ci)
   found = false
-  while C[step][1] != 0 && !found
+  while !isempty(C[step]) && C[step][1] != 0 && !found
     if step < d
       # choose the image of the base vector nr. step
       x[step] = C[step][1]
@@ -1354,8 +1373,18 @@ function iso(step, x, C, Ci, Co, G)
       if found
         return found
       end
+      # This is horrible
+      # this is remove orb from C[step], and then adding 0's at the end to make
+      # it again as big as in the beginning. This can be done more efficiently.
+      nc = length(C[step])
       orb = orbit(x[step], 1, G, length(G), Co.V)
+      no = length(orb)
       setdiff!(C[step], orb)
+      newnc = length(C[step])
+      resize!(C[step], nc)
+      for i in newnc + 1:nc
+        C[step][i] = 0
+      end
     else
       x[d] = C[d][1]
       found = true
@@ -1560,6 +1589,59 @@ function assert_auto(C, order)
   return true
 end
 
+################################################################################
+#
+#  Rewrite
+#
+################################################################################
+
+################################################################################
+#
+#  Computational kernels
+#
+################################################################################
+
+function _dot_product_with_column!(t::fmpz, v::fmpz_mat, A::fmpz_mat, k::Int, tmp::fmpz)
+  mul!(t, v[1, 1], A[1, k])
+  for i in 2:ncols(v)
+    mul!(tmp, v[1, i], A[i, k])
+    addeq!(t, tmp)
+  end
+  return t
+end
+
+function _dot_product_with_column(v::fmpz_mat, A::fmpz_mat, k::Int, tmp::fmpz = zero(FlintZZ))
+  t = zero(FlintZZ)
+  t = _dot_product_with_column!(t, v, A, k, tmp)
+  return t
+end
+
+function _dot_product_with_row!(t::fmpz, v::fmpz_mat, A::fmpz_mat, k::Int, tmp::fmpz)
+  mul!(t, v[1, 1], A[k, 1])
+  for i in 2:ncols(v)
+    mul!(tmp, v[1, i], A[k, i])
+    addeq!(t, tmp)
+  end
+  return t
+end
+
+function _dot_product_with_row(v::fmpz_mat, A::fmpz_mat, k::Int, tmp::fmpz = zero(FlintZZ))
+  t = zero(FlintZZ)
+  t = _dot_product_with_row!(t, v, A, k, tmp)
+  return t
+end
+
+function _dot_product_with_column!(t::Int, v::Vector{Int}, A::Matrix{Int}, k::Int, tmp::Int)
+  t = v[1] * A[1, k]
+  @inbounds for i in 2:length(v)
+    t = t + v[i] * A[i, k]
+  end
+  return t
+end
+
+function _dot_product_with_column(v::Vector{Int}, A::Matrix{Int}, k::Int, tmp::Int = zero(Int))
+  return _dot_product_with_column!(t, v, A, k, tmp)
+end
 
 #orbit(pt, npt, G, nG, V, orb)	/*****	computes the orbit of npt points in pt 
 #					under the nG matrices in G and puts the

@@ -47,6 +47,8 @@ const inf = PosInf()
 
 +(::PosInf, ::PosInf) = inf
 
+-(::PosInf, ::Int) = inf
+
 max(::Int, ::PosInf) = inf
 
 max(::PosInf, ::Int) = inf

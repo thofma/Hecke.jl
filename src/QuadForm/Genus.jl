@@ -38,7 +38,11 @@ end
 function Base.show(io::IO, ::MIME"text/plain", G::LocalGenusHerm)
   compact = get(io, :compact, false)
   if !compact
-    print(io, "Local genus symbol (rank, scale, det) at ")
+    if isdyadic(G) && isramified(G)
+      print(io, "Local genus symbol (rank, scale, det, norm) at ")
+    else
+      print(io, "Local genus symbol (rank, scale, det) at ")
+    end
     print(IOContext(io, :compact => true), prime(G), ":")
     print(io, "\n")
   end
@@ -393,7 +397,8 @@ function gram_matrix(G::LocalGenusHerm, l::Int)
   if !isdyadic(G)
     # non-dyadic
     if iseven(i)
-      return diagonal_matrix(push!([E(p)^div(i, 2) for j in 1:(m - 1)], u * E(p)^div(i, 2)))
+      # According to Kir16, there the last exponent should be i/2 * (1 - m)
+      return diagonal_matrix(push!([E(p)^div(i, 2) for j in 1:(m - 1)], u * E(p)^(div(i, 2))))
     else
       return diagonal_matrix([H for j in 1:div(m, 2)])
     end
@@ -434,11 +439,12 @@ function gram_matrix(G::LocalGenusHerm, l::Int)
     # even rank
     r = div(m, 2) - 1
     if islocal_norm(E, K((-1)^div(m, 2)), prime(G)) == (d == 1)
+      # hyperbolic
       @assert i + e >= 2 * k
       @assert 2 * k >= i
       U = matrix(E, 2, 2, [p^k, pi^i, conj(pi)^i, 0])
       return diagonal_matrix(append!(typeof(U)[U], [H for j in 1:r]))
-    else
+    else # not hyperbolic
       @assert i + e > 2 * k
       @assert 2 * k >= i
       u = _non_norm_rep(G)
@@ -487,6 +493,8 @@ of the block is a local norm or not.
 If the optional `type` keyword is set to `:disc`, then `d` is interpreted as the
 norm class of the discriminant of the corresponding Jordan block.
 """
+genus(::Type{HermLat}, E, p, data; type)
+
 function genus(::Type{HermLat}, E::S, p::T, data::Vector{Tuple{Int, Int, Int}}; type = :det) where {S <: NumField, T}
   z = LocalGenusHerm{S, T}()
   z.E = E
@@ -526,6 +534,18 @@ function genus(::Type{HermLat}, E::S, p::T, data::Vector{Tuple{Int, Int, Int, In
     z.data = Tuple{Int, Int, Int}[Base.front(v) for v in data]
     z.norm_val = Int[v[end] for v in data]
     z.ni = _get_ni_from_genus(z)
+    
+    for i in 1:length(z.data)
+      # If the rank is odd, then n(L) * O_E = s(L), so n = 2 * s,
+      # since n is the valuation in K and the extension is ramified.
+      v = z.data[i]
+      if isodd(v[2])
+        if 2 * z.norm_val[i] != v[1]
+          throw(error("""Not a valid local genus in block $(i):
+                      Scale ($(v[1])) must be twice the norm ($(z.norm_val[i]))"""))
+        end
+      end
+    end
   else
     z.data = Tuple{Int, Int, Int}[Base.front(v) for v in data]
   end
@@ -900,10 +920,17 @@ Given a Hermitian lattice, return the genus it belongs to.
 function genus(L::HermLat)
   bad = bad_primes(L)
   for p in support(discriminant(base_ring(L)))
-    if isdyadic(p) && !(p in bad)
+    if !(p in bad)
       push!(bad, p)
     end
   end
+
+  for p in support(2 * base_ring(base_ring(L)))
+    if !(p in bad)
+      push!(bad, p)
+    end
+  end
+
   S = real_places(base_field(base_field(L)))
   D = diagonal(rational_span(L))
   signatures = Dict{InfPlc, Int}(s => count(d -> isnegative(d, s), D) for s in S)
@@ -1065,7 +1092,7 @@ function representative(G::GenusHerm)
   @vprint :Lattice 1 "done\n"
   for g in G.LGS
     p = prime(g)
-    @vprint :Lattice 1 "Finding representative for $g ..."
+    @vprint :Lattice 1 "Finding representative for $g at $(prime(g))..."
     L = representative(g)
     @vprint :Lattice 1 "done\n"
     @hassert :Lattice 1 genus(L, p) == g
@@ -1092,7 +1119,7 @@ Return all local genera of Hermitian lattices over $E$ at $\mathfrak p$ with
 rank `rank`, scale valuation bounded by `max_scale` and determinant valuation
 bounded by `det_val`.
 """
-function local_genera_hermitian(E, p, rank, det_val, max_scale, is_ramified = isramified(maximal_order(E), p))
+function local_genera_hermitian(E, p, rank::Int, det_val::Int, max_scale::Int, is_ramified = isramified(maximal_order(E), p))
   #@show E, p, rank, det_val, max_scale, is_ramified
   is_inert = !is_ramified && length(prime_decomposition(maximal_order(E), p)) == 1
   if is_ramified
@@ -1145,7 +1172,8 @@ function local_genera_hermitian(E, p, rank, det_val, max_scale, is_ramified = is
   scales_rks = Vector{Tuple{Int, Int}}[g for g in scales_rks if all((mod(b[1]*b[2], 2) == 0) for b in g)]
 
   symbols = LocalGenusHerm{typeof(E), typeof(p)}[]
-  hyperbolic_det = hilbert_symbol(K(-1), gen(K)^2//4 - 1, p)
+  #hyperbolic_det = hilbert_symbol(K(-1), gen(K)^2//4 - 1, p)
+  hyperbolic_det = islocal_norm(E, K(-1), p) ? 1 : -1
   if !isdyadic(p) # non-dyadic
     for g in scales_rks
       n = length(g)
@@ -1192,15 +1220,26 @@ function local_genera_hermitian(E, p, rank, det_val, max_scale, is_ramified = is
         dn = Vector{Int}[]
         i = b[1]
         # (i + e) // 2 => k >= i/2
-        for k in (ceil(Int, Int(i)//2)):(div(Int(i + e), 2) - 1)
+        k = ceil(Int, i//2) 
+        while 2 * k < i + e
           push!(dn, Int[1, k])
           push!(dn, Int[-1, k])
+          k += 1
         end
-        push!(dn, Int[hyperbolic_det^(div(b[2], 2)), div(i + e, 2)])
-        if mod(i + e, 2) == 1
-          push!(dn, Int[-hyperbolic_det^(div(b[2], 2)), div(i + e, 2)])
+
+        if mod(i + e, 2) == 0
+          push!(dn, Int[hyperbolic_det^(div(b[2], 2)), k])
         end
         push!(det_norms, dn)
+        #for k in (ceil(Int, Int(i)//2)):(div(Int(i + e), 2) - 1)
+        #  push!(dn, Int[1, k])
+        #  push!(dn, Int[-1, k])
+        #end
+        #push!(dn, Int[hyperbolic_det^(div(b[2], 2)), div(i + e, 2)])
+        #if mod(i + e, 2) == 1
+        #  push!(dn, Int[-hyperbolic_det^(div(b[2], 2)), div(i + e, 2)])
+        #end
+        #push!(det_norms, dn)
       end
     end
     for dn in Iterators.product(det_norms...)
@@ -1218,14 +1257,13 @@ function local_genera_hermitian(E, p, rank, det_val, max_scale, is_ramified = is
 end
 
 @doc Markdown.doc"""
-    local_genera_hermitian(E::NumField, p::NfOrdIdl, rank::Int,
-                 det_val::Int, max_scale::Int) -> Vector{LocalGenusHerm}
+    genera_hermitian(E::NumField, p::NfOrdIdl, rank::Int,
+                    det_val::Int, max_scale::Int) -> Vector{LocalGenusHerm}
 
 Return all local genera of Hermitian lattices over $E$ at $\mathfrak p$ with
 rank `rank`, scale valuation bounded by `max_scale` and determinant valuation
 bounded by `det_val`.
 """
-
 function genera_hermitian(E, rank, signatures, determinant; max_scale = nothing)
   K = base_field(E)
   OE = maximal_order(E)
@@ -1359,9 +1397,8 @@ function genus_generators(L)
   C0 = support(D)
   CC, hh = class_group(RR)
   for p in find_gens(pseudo_inv(h), PrimesSet(2, -1))[1]
-    @show p
     if !(p in C0)
-      push!(C0, p * R)
+      push!(C0, sum(R * R(EabstoE(elem_in_nf(b))) for b in basis(p)))
     end
   end
   Q0, q0 = quo(C, [ h\ideal(Rabs, [Rabs(EabstoE\b) for b in absolute_basis(i)]) for i in C0])
@@ -1409,7 +1446,6 @@ function genus_generators(L)
       #S = [ V(elem_type(F)[valuation(R(EabstoE(evaluate(f(k(u)))) - 1), PP[i]) >= VD[i] ? F(0) : F(1) for i in 1:length(PP)]) for u in gens(K)]
       _T, _ = sub(V, S)
       W, w = quo(V, _T)
-      @show dim(W)
       if dim(W) == 0
         PP = []
       end
@@ -1516,8 +1552,12 @@ function genus_generators(L)
   end
 end
 
+function representatives(G::GenusHerm)
+  return genus_representatives(representative(G))
+end
+
 # TODO: add max keyword
-function genus_representatives(L)
+function genus_representatives(L, max = inf)
   rank(L) < 2 && error("Rank of the lattice must be a least 2")
   definite = isdefinite(L)
   gens, P0 = genus_generators(L)
@@ -1530,7 +1570,7 @@ function genus_representatives(L)
     I = g[1]^(g[2] - 1)
     J = a(I)
     N = neighbours_with_ppower(L, g[1], g[2] - 1)
-    inter= []
+    inter = []
     for i in 2:length(LL)
       M = pseudo_matrix(LL[i])
       IM = I * M
@@ -1547,8 +1587,8 @@ function genus_representatives(L)
     for L in LL
       # Should never happen!
       @assert all(X -> !isisometric(X, L), result)
-      result = append!(result, iterated_neighbours(L, P0))# : AutoOrbits:= AutoOrbits, Max:= Max);
-      #max = max - length(result)
+      result = append!(result, iterated_neighbours(L, P0, max = max))# : AutoOrbits:= AutoOrbits, Max:= Max);
+      max = max - length(result)
     end
     for i in 1:length(result)
       for j in 1:i-1

@@ -1276,6 +1276,7 @@ function jordan_decomposition(L::HermLat, p)
     end
 
     if i != j
+      @assert i < j
       swap_rows!(S, i, k)
       swap_rows!(S, j, k + 1)
       SF = S * F
@@ -1283,9 +1284,11 @@ function jordan_decomposition(L::HermLat, p)
       X2 = SF * transpose(_map(view(S, (k + 1):(k + 1), 1:ncols(S)), aut))
       for l in k+2:n
         den = norm(X2[k, 1]) - X1[k, 1] * X2[k + 1, 1]
+        t1 = (X2[l, 1] * X1[k + 1, 1] - X1[l, 1] * X2[k + 1, 1])//den 
+        t2 = (X1[l, 1] * X2[k, 1] - X2[l, 1] * X1[k, 1])//den 
+
         for o in 1:ncols(S)
-          S[l, o] = S[l, o] - (X2[l, 1] * X1[k + 1, 1] - X1[l, 1] * X2[k + 1, 1])//den * S[k, o] +
-                    (X1[l, 1] * X2[k, 1] - X2[l, 1] * X1[k, 1])//den * S[k + 1, o]
+          S[l, o] = S[l, o] - (t1 * S[k, o] + t2 * S[k + 1, o])
         end
       end
       k = k + 2
@@ -1741,6 +1744,7 @@ end
 #
 
 function find_lattice(M::HermLat, L::HermLat, p)
+  E = nf(base_ring(M))
   @assert base_ring(M) == base_ring(L)
   #@show p
   #@show pseudo_matrix(M)
@@ -1770,11 +1774,17 @@ function find_lattice(M::HermLat, L::HermLat, p)
   elseif length(D) == 1 && D[1][2] == 1 # inert case
     #@show "================= intert"
     genL = genus(L, p)
-    r0 = sum( rank(genL, i) for i in 1:length(genL) if iseven(scale(genL, i)))
+    r0 = 0
+    for i in 1:length(genL)
+      if iseven(scale(genL, i))
+        r0 += rank(genL, i)
+      end
+    end
+    #r0 = sum( rank(genL, i) for i in 1:length(genL) if iseven(scale(genL, i)))
     if isdyadic(p)
       nsn = zero(nf(base_ring(L)))
     else
-      nsn = _non_square_norm(P)
+      nsn = elem_in_nf(_non_square_norm(P))
     end
 
     B, G, S = jordan_decomposition(M, p)
@@ -1792,7 +1802,7 @@ function find_lattice(M::HermLat, L::HermLat, p)
         if b
           push!(Y, BB[2*i] + nf(base_ring(L))(hext\s)*BB[2*i - 1])
         else
-          el = coeff(-G[1][2*i, 2*i]//G[1][2*i - 1, 2*i - 1] * norm(nsn), 0)
+          el = coeff(-G[1][2*i, 2*i]//G[1][2*i - 1, 2*i - 1], 0) * norm(nsn)
           b, s = issquare(hext(el))
           @assert b
           push!(Y, nsn * BB[2*i] + nf(base_ring(L))(hext\s) * BB[2*i - 1])
@@ -1842,26 +1852,23 @@ function find_lattice(M::HermLat, L::HermLat, p)
     while scale(c, length(c)) >= 2
       c0 = genus(HermLat, nf(base_ring(L)), p, [(scale(c, i), rank(c, i), det(c, i)) for i in 1:length(c) if scale(c, i) in [0, 2]])
       if length(c0) == 2
-        c0 = genus(HermLat, nf(base_ring(L)), p, [(0, rank(c0, 1) + rank(c0, 2), det(c0, 1) == det(c0, 2) ? 1 : -1)])
+        c0 = genus(HermLat, E, p, [(0, rank(c0, 1) + rank(c0, 2), det(c0, 1) == det(c0, 2) ? 1 : -1)])
       elseif length(c0) == 1
-        c0 = genus(HermLat, nf(base_ring(L)), p, [(0, rank(c0, 1), det(c0, 1))])
+        c0 = genus(HermLat, E, p, [(0, rank(c0, 1), det(c0, 1))])
       end
-      c1 = genus(HermLat, nf(base_ring(L)), p, [(scale(c, i), rank(c, i), det(c, i)) for i in 1:length(c) if scale(c, i) in [1, 3]])
+      c1 = genus(HermLat, E, p, Tuple{Int, Int, Int}[(scale(c, i), rank(c, i), det(c, i)) for i in 1:length(c) if scale(c, i) in [1, 3]])
       if length(c1) == 2
-        c1 = genus(HermLat, nf(base_ring(L)), p, [(1, rank(c1, 1) + rank(c1, 2), det(c1, 1) == det(c1, 2) ? 1 : -1)])
+        c1 = genus(HermLat, E, p, Tuple{Int, Int, Int}[(1, rank(c1, 1) + rank(c1, 2), det(c1, 1) == det(c1, 2) ? 1 : -1)])
       elseif length(c1) == 1
-        c1 = genus(HermLat, nf(base_ring(L)), p, [(1, rank(c1, 1), det(c1, 1))])
+        c1 = genus(HermLat, E, p, Tuple{Int, Int, Int}[(1, rank(c1, 1), det(c1, 1))])
       end
-      genus(HermLat, nf(base_ring(L)), p , 
-            vcat([(scale(c0, i), rank(c0, i), det(c0, i)) for i in 1:length(c0)],
-                 [(scale(c1, i), rank(c1, i), det(c1, i)) for i in 1:length(c1)],
+      c = genus(HermLat, E, p, 
+            vcat(Tuple{Int, Int, Int}[(scale(c0, i), rank(c0, i), det(c0, i)) for i in 1:length(c0)],
+                 Tuple{Int, Int, Int}[(scale(c1, i), rank(c1, i), det(c1, i)) for i in 1:length(c1)],
                  Tuple{Int, Int, Int}[(scale(c, i) - 2, rank(c, i), det(c, i)) for i in 1:length(c) if scale(c, i) >= 4]))
       push!(C, c)
     end
     B, G, S = jordan_decomposition(M, p)
-    #@show S
-    #@show M
-    #@show p
     @assert all(s in [-1, 0] for s in S)
     B0 = S[end] == 0 ? [ B[end][i, :] for i in 1:nrows(B[end]) ] : []
     B1 = S[1] == -1 ? [ B[1][i, :] for i in 1:nrows(B[1]) ] : []
@@ -1878,11 +1885,11 @@ function find_lattice(M::HermLat, L::HermLat, p)
     end
     @assert genus(LL, p) == c
 
-    K = base_field(nf(base_ring(M)))
+    E = nf(base_ring(M))
+    K = base_field(E)
     k, h = ResidueField(order(p), p)
     hext = extend(h, K)
     for j in length(C)-1:-1:1
-      @show j
       c = C[j]
       if all(!(scale(c, i) in [0, 1]) for i in 1:length(c))
         @assert scale(C[1], 1) - valuation(scale(LL), P) >= 0
@@ -1903,51 +1910,55 @@ function find_lattice(M::HermLat, L::HermLat, p)
       Y0 = []
       r = findfirst(i -> scale(c, i) == 0, 1:length(c))
       if r !== nothing
+        r = rank(c, r)
         @assert S[1] == 0
-        B = [ B[i][j, :] for j in 1:nrows(B[i]) ]
+        B = [ B[1][j, :] for j in 1:nrows(B[1]) ]
         n = length(B)
         G = G[1]
-        NN = [ i for i in 1:length(B) if !issquare(hext(coeff(G[i, i], 0)))]
+        NN = [ i for i in 1:n if !(issquare(hext(coeff(G[i, i], 0)))[1])]
         if length(NN) == 0 && det(c, 1) == -1
           while true
-            s = h\rand(k)
-            if !issquare(hext(coeff(G[n - 1, n - 1] + s^2 * G[n, n], 0)))
+            s = hext\rand(k)
+            tmp = hext(coeff(G[n - 1, n - 1] + s^2 * G[n, n], 0))
+            if !iszero(tmp) && issquare(tmp)[1]
               break
             end
           end
           Y0 = vcat(B[1:r-1], [B[n - 1] + s * B[n]])
         else
           SS = [ i for i in 1:n if !(i in NN)]
-        end
-        if det(c, 1) == 1
-          Y0 = []
-        else
-          Y0 = [ NN[1] ]
-          popfirst!(NN, 1)
-        end
-        if isodd(r- length(Y0))
-          if length(SS) == 0
-            while true
-              s = h\rand(k)
-              if issquare(hext(coeff(G[n - 1, n - 1] + s^2 * G[n, n], 0)))
-                break
-              end
-            end
-            v = B[n - 1]
-            B[n - 1] = B[n - 1] + s * B[n]
-            B[n] = B[n] - s * G[n, n]//G[n - 1, n - 1] * v
-            NN = [i for i in NN if i < n - 1]
-            SS = [n - 1, n]
+          if det(c, 1) == 1
+            Y0 = []
+          else
+            Y0 = [ NN[1] ]
+            popfirst!(NN)
           end
-          push!(Y0, SS[1])
-          popfirst!(SS, 1)
+          if isodd(r- length(Y0))
+            if length(SS) == 0
+              while true
+                s = hext\rand(k)
+                tmp = hext(coeff(G[n - 1, n - 1] + s^2 * G[n, n], 0))
+                if !iszero(tmp) && issquare(tmp)[1]
+                  break
+                end
+              end
+              v = B[n - 1]
+              B[n - 1] = B[n - 1] + E(s) * B[n]
+              B[n] = B[n] - s * G[n, n]//G[n - 1, n - 1] * v
+              NN = [i for i in NN if i < n - 1]
+              SS = [n - 1, n]
+            end
+            push!(Y0, SS[1])
+            popfirst!(SS)
+          end
+          Y0 = vcat(Y0, NN[1:2*div(length(NN), 2)], SS)
+          Y0 = B[Y0[1:r]]
         end
-        Y0 = vcat(Y0, NN[1:2*div(length(NN), 2)], SS)
-        Y0 = B[Y0[1:r]]
       end
       _new_pmat = _sum_modules(pseudo_matrix(reduce(vcat, vcat(Y0, Y1))), _module_scale_ideal(P, pseudo_matrix(LL)))
       _new_pmat = _intersect_modules(_new_pmat, pseudo_matrix(LL))
-      @assert genus_symbol(LL, p) == c
+      LL = lattice(ambient_space(M), _new_pmat)
+      @assert genus(LL, p) == c
     end
   else
 #  // The even ramified case
@@ -2616,6 +2627,21 @@ function _non_norm_rep(E, K, p)
           return elem_in_nf(u)
         end
       end
+      B = elem_in_nf.(basis(p))
+      k = 0
+      while true
+        if k > 10000
+          throw(error("Something wrong in non_norm_rep"))
+        end
+        y = rand(K, -5:5)
+        if iszero(y)
+          continue
+        end
+        if !islocal_norm(E, y, p)
+          return y
+        end
+        k += 1
+      end
     else
       lP = prime_decomposition(maximal_order(E), p)
       @assert length(lP) == 1 && lP[1][2] == 2
@@ -2641,7 +2667,7 @@ function _non_norm_rep(E, K, p)
         y = (1 + rand(B, -1:1)) * tu^(rand(1:tuo))
         @assert valuation(y, p) == 0
         if !islocal_norm(E, y, p) && valuation(y - 1, p) == e - 1
-          return elem_in_nf(y)
+          return y
         end
         k += 1
       end
@@ -2791,7 +2817,7 @@ function rational_span(L::ZLat)
   end
 end
 
-function Zlattice(B::fmpq_mat; gram = identity_matrix(ncols(B)))
+function Zlattice(B::fmpq_mat; gram = identity_matrix(FlintQQ, ncols(B)))
   V = quadratic_space(FlintQQ, gram)
   return lattice(V, B)
 end
@@ -2834,7 +2860,7 @@ function assert_has_automorphisms(L::ZLat)
   bm = basis_matrix(L)
 
   # Make the Gram matrix small
-
+  
   C = ZLatAutoCtx(res)
   init(C)
   auto(C)
@@ -2891,7 +2917,6 @@ function automorphism_group_generators(L::ZLat; check::Bool = true,
           """Can compute ambient representation only if ambient space is
              regular"""))
       C = orthogonal_complement(V, basis_matrix(L))
-      @show C
       C = vcat(basis_matrix(L), C)
       Cinv = inv(C)
       D = identity_matrix(FlintQQ, rank(V) - rank(L))
@@ -3208,7 +3233,6 @@ function _Zforms(L::AbsLat, generators::Vector)
 end
 
 function isisometric(L::AbsLat, M::AbsLat; ambient_representation::Bool = true, check::Bool = true)
-
   V = ambient_space(L)
   W = ambient_space(M)
   E = base_ring(V)
@@ -3274,6 +3298,32 @@ end
   #    @assert all(g[i, j] in C[j] * inv(C[i]) for i in 1:nrows(g), j in 1:nrows(g))
   #  end
   #end
+
+################################################################################
+#
+#  Root lattice
+#
+################################################################################
+
+function root_lattice(R::Symbol, n::Int)
+  if R === :A
+    return Zlattice(gram = _root_lattice_A(n))
+  end
+end
+
+function _root_lattice_A(n::Int)
+  z = zero_matrix(FlintQQ, n, n)
+  for i in 1:n
+    z[i, i] = 2
+    if i > 1 
+      z[i, i - 1] = -1
+    end
+    if i < n
+      z[i, i + 1] = -1
+    end
+  end
+  return z
+end
 
 ################################################################################
 #
