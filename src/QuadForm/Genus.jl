@@ -376,11 +376,6 @@ function gram_matrix(G::LocalGenusHerm, l::Int)
   A = automorphisms(E)
   _a = gen(E)
   conj = A[1](_a) == _a ? A[2] : A[1] 
-  if d == 1
-    u = one(K)
-  else
-    u = _non_norm_rep(G)
-  end
 
   if !isramified(G)
     return diagonal_matrix([E(p)^i for j in 1:m])
@@ -398,7 +393,12 @@ function gram_matrix(G::LocalGenusHerm, l::Int)
     # non-dyadic
     if iseven(i)
       # According to Kir16, there the last exponent should be i/2 * (1 - m)
-      return diagonal_matrix(push!([E(p)^div(i, 2) for j in 1:(m - 1)], u * E(p)^(div(i, 2))))
+      if d == 1
+        u = one(E)
+      else
+        u = _non_norm_rep(G)
+      end
+      return diagonal_matrix(push!([E(p)^div(i, 2) for j in 1:(m - 1)], u * E(p)^(div(i, 2) * (1 - m))))
     else
       return diagonal_matrix([H for j in 1:div(m, 2)])
     end
@@ -1087,20 +1087,18 @@ function representative(G::GenusHerm)
   P = _non_norm_primes(G.LGS)
   E = base_field(G)
   V = hermitian_space(E, _hermitian_form_with_invariants(base_field(G), rank(G), P, G.signatures))
-  @vprint :Lattice 1 "Finding maximal integral lattice ..."
+  @vprint :Lattice 1 "Finding maximal integral lattice\n"
   M = maximal_integral_lattice(V)
-  @vprint :Lattice 1 "done\n"
+  lp = G.primes
   for g in G.LGS
     p = prime(g)
-    @vprint :Lattice 1 "Finding representative for $g at $(prime(g))..."
+    @vprint :Lattice 1 "Finding representative for $g at $(prime(g))...\n"
     L = representative(g)
-    @vprint :Lattice 1 "done\n"
     @hassert :Lattice 1 genus(L, p) == g
     #@show coefficient_ideals(pseudo_matrix(L))
     #@show matrix(pseudo_matrix(L))
-    @vprint :Lattice 1 "Finding sublattice ..."
+    @vprint :Lattice 1 "Finding sublattice\n"
     M = find_lattice(M, L, p)
-    @vprint :Lattice 1 "done\n"
   end
   return M
 end
