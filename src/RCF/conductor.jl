@@ -764,7 +764,7 @@ is computed and the corresponding `ray_class_field` created.
 """
 function maximal_abelian_subfield(::Type{ClassField}, K::AnticNumberField)
   Zx, x = PolynomialRing(FlintZZ, cached = false)
-  QQ = number_field(x-1)[1]
+  QQ = rationals_as_number_field()[1]
   R, mR = ray_class_group(discriminant(maximal_order(K))*maximal_order(QQ), infinite_places(QQ), n_quo = degree(K))
   f = NfToNfMor(QQ, K, K(1))
   N, mN = norm_group(f, mR)
@@ -776,9 +776,13 @@ end
 
 The $n$-th cyclotomic field as a `ray_class_field`
 """
-function cyclotomic_field(::Type{ClassField}, n::Int)
+function cyclotomic_field(::Type{ClassField}, n::Integer)
+  return cyclotomic_field(ClassField, fmpz(n))
+end
+
+function cyclotomic_field(::Type{ClassField}, n::fmpz)
   Zx, x = PolynomialRing(FlintZZ, cached = false)
-  QQ = number_field(x-1)[1]
+  QQ = rationals_as_number_field()[1]
   return ray_class_field(n*maximal_order(QQ), infinite_places(QQ))
 end
 
@@ -838,6 +842,10 @@ function maximal_abelian_subfield(A::ClassField, k::AnticNumberField)
   fl, mp = issubfield(k, K)
   @assert fl
   return maximal_abelian_subfield(A, mp)
+end
+
+function maximal_abelian_subfield(A::ClassField, ::FlintRationalField)
+  return maximal_abelian_subfield(A, Hecke.rationals_as_number_field()[1])
 end
   
 function maximal_abelian_subfield(A::ClassField, mp::NfToNfMor)
