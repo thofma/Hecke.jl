@@ -771,6 +771,11 @@ function maximal_abelian_subfield(::Type{ClassField}, K::AnticNumberField)
   return ray_class_field(mR, quo(R, N)[2])
 end
 
+function show_cyclo(io::IO, C::ClassField)
+  f = get_special(C, :cyclo)
+  print(io, "Cyclotomic field mod $f as a class field")
+end
+
 @doc Markdown.doc"""
     cyclotomic_field(::Type{ClassField}, n::Int) -> ClassField
 
@@ -783,7 +788,9 @@ end
 function cyclotomic_field(::Type{ClassField}, n::fmpz)
   Zx, x = PolynomialRing(FlintZZ, cached = false)
   QQ = rationals_as_number_field()[1]
-  return ray_class_field(n*maximal_order(QQ), infinite_places(QQ))
+  C = ray_class_field(n*maximal_order(QQ), infinite_places(QQ))
+  set_special(C, :cyclo => n, :show => show_cyclo)
+  return C
 end
 
 function norm_group_map(R::ClassField{S, T}, r::Vector{<:ClassField}, map = false) where {S, T}
