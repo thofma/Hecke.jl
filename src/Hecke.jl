@@ -735,6 +735,9 @@ elem_type(::Type{Generic.ResRing{T}}) where {T} = Generic.Res{T}
 hasroot(a...) = ispower(a...)  # catch all... needs revisiting:
                                #hasroot(poly) != ispower(poly)....
 
+Base.issubset(K::NumField, L::NumField) = issubfield(K, L)[1]
+Base.issubset(C::ClassField, B::ClassField) = issubfield(C, B)
+
 ################################################################################
 #
 #  Trace function calls
