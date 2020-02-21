@@ -56,6 +56,7 @@ end
 
 
 mutable struct ClassField{S, T}
+  @declare_other
   rayclassgroupmap::S#Union{MapRayClassGrp{GrpAbFinGen}, MapClassGrp{GrpAbFinGen}}
   quotientmap::T#GrpAbFinGenMap
 
@@ -77,6 +78,8 @@ mutable struct ClassField{S, T}
 end
 
 function Base.show(io::IO, CF::ClassField)
+  @show_name(io, CF)
+  @show_special(io, CF)
   print(IOContext(io, :compact => true), "Class field defined mod ", 
                    defining_modulus(CF), " of structure ",
                    codomain(CF.quotientmap))
