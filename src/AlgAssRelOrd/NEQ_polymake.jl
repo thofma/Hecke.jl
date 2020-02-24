@@ -6,7 +6,7 @@ function solve_mixed(A::fmpz_mat, b::fmpz_mat, C::fmpz_mat)
   bA = Array{BigInt, 2}(hcat(-b, A))
   z = findall(i->!iszero_row(C, i), 1:nrows(C))
   zI = Array{BigInt, 2}(hcat(zero_matrix(FlintZZ, nrows(C), 1), C))[z, :]
-  p = Polymake.@pm Polytope.Polytope(:EQUATIONS => bA, :INEQUALITIES => zI)
+  p = polytope.Polytope(EQUATIONS = bA, INEQUALITIES = zI)
 
   res = Vector{fmpz_mat}(undef, p.N_LATTICE_POINTS)
   if p.N_LATTICE_POINTS == 0
@@ -35,3 +35,4 @@ function solve_mixed(A::fmpz_mat, b::fmpz_mat, C::fmpz_mat)
   end
   return res
 end
+

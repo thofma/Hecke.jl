@@ -1057,7 +1057,7 @@ function Base.cat(A::MatElem...;dims)
   end
   return X
 end
-
+#= seems to be in AA now
 function Base.hvcat(rows::Tuple{Vararg{Int}}, A::MatElem...)
   B = hcat([A[i] for i=1:rows[1]]...)
   o = rows[1]
@@ -1068,7 +1068,7 @@ function Base.hvcat(rows::Tuple{Vararg{Int}}, A::MatElem...)
   end
   return B
 end
-
+=#
 ################################################################################
 #
 #  Smith normal form with trafo

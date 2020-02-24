@@ -799,11 +799,16 @@ is computed and the corresponding `ray_class_field` created.
 """
 function maximal_abelian_subfield(::Type{ClassField}, K::AnticNumberField)
   Zx, x = PolynomialRing(FlintZZ, cached = false)
-  QQ = number_field(x-1)[1]
+  QQ = rationals_as_number_field()[1]
   R, mR = ray_class_group(discriminant(maximal_order(K))*maximal_order(QQ), infinite_places(QQ), n_quo = degree(K))
   f = NfToNfMor(QQ, K, K(1))
   N, mN = norm_group(f, mR)
   return ray_class_field(mR, quo(R, N)[2])
+end
+
+function show_cyclo(io::IO, C::ClassField)
+  f = get_special(C, :cyclo)
+  print(io, "Cyclotomic field mod $f as a class field")
 end
 
 @doc Markdown.doc"""
@@ -811,10 +816,16 @@ end
 
 The $n$-th cyclotomic field as a `ray_class_field`
 """
-function cyclotomic_field(::Type{ClassField}, n::Int)
+function cyclotomic_field(::Type{ClassField}, n::Integer)
+  return cyclotomic_field(ClassField, fmpz(n))
+end
+
+function cyclotomic_field(::Type{ClassField}, n::fmpz)
   Zx, x = PolynomialRing(FlintZZ, cached = false)
-  QQ = number_field(x-1)[1]
-  return ray_class_field(n*maximal_order(QQ), infinite_places(QQ))
+  QQ = rationals_as_number_field()[1]
+  C = ray_class_field(n*maximal_order(QQ), infinite_places(QQ))
+  set_special(C, :cyclo => n, :show => show_cyclo)
+  return C
 end
 
 function norm_group_map(R::ClassField{S, T}, r::Vector{<:ClassField}, map = false) where {S, T}
@@ -846,7 +857,7 @@ abelian subfield in $K$ over its base field. If `of_closure` is set to true, the
 the algorithm is applied to the normal closure if $K$ (without computing it).
 """
 function maximal_abelian_subfield(K::NfRel{nf_elem}; of_closure::Bool = false)
-  zk = maximal_order(base_ring(K))
+  zk = maximal_order(base_field(K))
   d = ideal(zk, discriminant(K))
   try
     ZK = _get_maximal_order_of_nf_rel(K)
@@ -857,8 +868,8 @@ function maximal_abelian_subfield(K::NfRel{nf_elem}; of_closure::Bool = false)
     end
   end
 
-  r1, r2 = signature(base_ring(K))
-  C, mC = ray_class_group(d.num, infinite_places(base_ring(K))[1:r1], n_quo = degree(K))
+  r1, r2 = signature(base_field(K))
+  C, mC = ray_class_group(d.num, infinite_places(base_field(K))[1:r1], n_quo = degree(K))
   N, iN = norm_group(K, mC, of_closure = of_closure)
   return ray_class_field(mC, quo(C, N)[2])
 end
@@ -873,6 +884,10 @@ function maximal_abelian_subfield(A::ClassField, k::AnticNumberField)
   fl, mp = issubfield(k, K)
   @assert fl
   return maximal_abelian_subfield(A, mp)
+end
+
+function maximal_abelian_subfield(A::ClassField, ::FlintRationalField)
+  return maximal_abelian_subfield(A, Hecke.rationals_as_number_field()[1])
 end
   
 function maximal_abelian_subfield(A::ClassField, mp::NfToNfMor)

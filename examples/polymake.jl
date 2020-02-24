@@ -2,8 +2,8 @@ module PolymakeOscar
 
 using Polymake, Hecke, Markdown
 
-Hecke.nrows(A::Polymake.pm_MatrixAllocated) = Int(size(A)[1])
-Hecke.ncols(A::Polymake.pm_MatrixAllocated) = Int(size(A)[2])
+Hecke.nrows(A::Polymake.MatrixAllocated) = Int(size(A)[1])
+Hecke.ncols(A::Polymake.MatrixAllocated) = Int(size(A)[2])
 
 function _polytope(; A::fmpz_mat=zero_matrix(FlintZZ, 1, 1), b::fmpz_mat=zero_matrix(FlintZZ, ncols(A), 1), C::fmpz_mat=zero_matrix(FlintZZ, 1, 1))
   if !iszero(A)
@@ -20,12 +20,12 @@ function _polytope(; A::fmpz_mat=zero_matrix(FlintZZ, 1, 1), b::fmpz_mat=zero_ma
     zI = Array{BigInt, 2}(undef, 0, 0)
   end
   if length(zbA) == 0
-    p = @pm Polytope.Polytope(:INEQUALITIES => zI)
+    p =  polytope.Polytope(INEQUALITIES = zI)
   else
     if nrows(zI) == 0
-      p = @pm Polytope.Polytope(:EQUATIONS => zbA)
+      p = polytope.Polytope(EQUATIONS = zbA)
     else
-      p = @pm Polytope.Polytope(:EQUATIONS => zbA, :INEQUALITIES => zI)
+      p = polytope.Polytope(EQUATIONS = zbA, INEQUALITIES = zI)
     end
   end
   return p
@@ -303,7 +303,7 @@ function irreducibles(S::Array{NfAbsOrdIdl{AnticNumberField,nf_elem},1})
 
   s, ms = Hecke.sunit_mod_units_group_fac_elem(S)
   if length(S) == 1
-    return O(evaluate(ms(s[1])))
+    return [O(evaluate(ms(s[1])))]
   end
   c, mc = class_group(O)
 

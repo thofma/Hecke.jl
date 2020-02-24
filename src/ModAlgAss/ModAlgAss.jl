@@ -2,6 +2,7 @@ mutable struct ModAlgAss{S, T, V}
   base_ring::S
   action::Vector{T}
   dimension::Int
+  M::AbstractAlgebra.FPModule{V}
   isirreducible::Int
   dimension_splitting_field::Int
   algebra::AlgAss{V}
@@ -35,6 +36,10 @@ mutable struct Lat{S, T}
   end
 end
 
+function vector_space(M::ModAlgAss)
+  return M.M
+end
+
 function algebra(M::ModAlgAss)
   if isdefined(M :algebra)
     return M.algebra
@@ -61,6 +66,13 @@ function ModAlgAss(action::Vector{T}) where {T}
   @assert length(action) > 0
   S = typeof(base_ring(action[1]))
   return ModAlgAss{S, T}(action)
+end
+
+function ModAlgAss(M::AbstractAlgebra.FPModule{T}, action::Vector{<:Generic.ModuleHomomorphism{T}}) where {T <: FieldElem}
+  all(x->domain(x) == codomain(x) == M, action) || error("module and maps do not match")
+  V = ModAlgAss([x.matrix for x = action])
+  V.M = M
+  return V
 end
 
 function isirreducible_known(M::ModAlgAss)
