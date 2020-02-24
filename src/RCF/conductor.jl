@@ -131,6 +131,41 @@ function _1pluspk_1pluspk1(K::AnticNumberField, p::NfOrdIdl, pk::NfOrdIdl, pv::N
 end
 
 
+#######################################################################################
+#
+#  Signature
+#
+#######################################################################################
+
+@doc Markdown.doc"""
+    signature(C::ClassField) -> Int, Int
+
+Return the signature of the number field defined by C.
+"""
+function signature(C::ClassField)
+  mR = C.rayclassgroupmap
+  mS = C.quotientmap
+  inf_plc = mR.defining_modulus[2]
+  K = base_field(C)
+  rK, sK = signature(K)
+  if isempty(inf_plc)
+    r = degree(C)*rK
+    s = div(degree(K)*degree(C) - r, 2)
+    return r, s
+  end
+  D = mR.disc_log_inf_plc
+  r = rK - length(D)
+  for (P, el) in D
+    if iszero(mS(el))
+      r += 1
+    end
+  end
+  r *= degree(C)
+  s = div(degree(K)*degree(C) - r, 2)
+  return r, s
+end
+
+
 
 #######################################################################################
 #
@@ -139,7 +174,7 @@ end
 #######################################################################################
 
 @doc Markdown.doc"""
-  conductor(C::Hecke.ClassField) -> NfOrdIdl, Array{InfPlc,1}
+    conductor(C::ClassField) -> NfOrdIdl, Array{InfPlc,1}
 
 Return the conductor of the abelian extension corresponding to C
 """

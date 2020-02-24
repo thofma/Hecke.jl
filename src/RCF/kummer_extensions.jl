@@ -76,12 +76,32 @@ end
 
 ###############################################################################
 #
+#  Exponent of a Kummer extension
+#
+###############################################################################
+
+function exponent(K::KummerExt)
+  return Int(exponent(K.AutG))
+end
+
+###############################################################################
+#
 #  Degree
 #
 ###############################################################################
 
 function degree(K::KummerExt)
   return Int(order(K.AutG))
+end
+
+###############################################################################
+#
+#  IsCyclic
+#
+###############################################################################
+
+function iscyclic(K::KummerExt)
+  return isone(length(K.gen)) || iscyclic(K.AutG)
 end
 
 ###############################################################################
@@ -357,7 +377,6 @@ function canonical_frobenius(p::NfOrdIdl, K::KummerExt, g::FacElem{nf_elem})
   # K[i] -> zeta^? K[i]
   # Frob(sqrt[n](a), p) = sqrt[n](a)^N(p) (mod p) = zeta^r sqrt[n](a)
   # sqrt[n](a)^N(p) = a^(N(p)-1 / n) = zeta^r mod p
-
   z_p = inv(mF(K.zeta))
   @assert norm(p) % K.n == 1
   ex = div(norm(p)-1, K.n)
@@ -374,6 +393,45 @@ function canonical_frobenius(p::NfOrdIdl, K::KummerExt, g::FacElem{nf_elem})
   end
   return i
 end
+
+################################################################################
+#
+#  IsSubfield
+#
+################################################################################
+
+@doc Markdown.doc"""
+    issubfield(K::KummerExt, L::KummerExt) -> Bool, Vector{Tuple{nf_elem, Vector{Int}}}
+Given two kummer extensions of a base field $k$, returns true and and the data 
+to define an injection from K to L if K is a subfield of L. Otherwise
+the function returns false and a some meaningless data.
+"""
+function issubfield(K::KummerExt, L::KummerExt)
+  @assert base_field(K) == base_field(L)  
+  @assert divisible(exponent(L), exponent(K))
+  #First, find prime number that might be ramified.
+  norms = Vector{fmpz}(undef, length(K.gen)+length(L.gen)+1)
+  for i = 1:length(K.gen)
+    norms[i] = numerator(norm(K.gen[i]))
+  end
+  for i = 1:length(L.gen)
+    norms[i+length(K.gen)] = numerator(norm(L.gen[i]))
+  end
+  norms[end] = fmpz(exponent(L))
+  norms = coprime_base(norms)
+  coprime_to = lcm(norms)
+  res = Vector{Tuple{FacElem{nf_elem, AnticNumberField}, Vector{Int}}}(undef, length(K.gen))
+  lP = find_gens(L, Vector{FacElem{nf_elem, AnticNumberField}}[K.gen], coprime_to)
+  for i = 1:length(K.gen)
+    fl, coord, rt = _find_embedding(L, K.gen[i], Int(order(K.AutG[i])), lP)
+    if !fl
+      return fl, res
+    end
+    res[i] = (rt, Int[Int(coord[j]) for j = 1:length(L.gen)])
+  end
+  return true, res
+end
+
 
 ################################################################################
 #

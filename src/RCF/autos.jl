@@ -316,16 +316,14 @@ function find_frob(A::ClassField_pp)
 end
 
 #Finds prime such that the Frobenius automorphisms generate the automorphism group of the kummer extension
-
-function find_gens(KK::KummerExt, gens_imgs::Array{Array{FacElem{nf_elem, AnticNumberField}, 1}, 1}, A::ClassField)
+function find_gens(KK::KummerExt, gens_imgs::Array{Array{FacElem{nf_elem, AnticNumberField}, 1}, 1}, coprime_to::fmpz)
   K = base_field(KK)
-  m = minimum(defining_modulus(A)[1])
   O = maximal_order(K)
   els = GrpAbFinGenElem[]
   Q, mQ = quo(KK.AutG, els, false)
   s, ms = snf(Q)
-  Sp = Hecke.PrimesSet(200, -1)
-  cp = lcm(discriminant(O), m)
+  Sp = Hecke.PrimesSet(1000, -1)
+  cp = lcm(discriminant(O), coprime_to)
   frob_gens = NfOrdIdl[]
   for q in Sp
     if cp % q == 0
@@ -397,12 +395,14 @@ function extend_aut2(A::ClassField, autos::Array{NfToNfMor, 1})
     end
     act_on_gens[i] = act_on_gen_i
   end
-  frob_gens = find_gens(KK, act_on_gens, A)
+  frob_gens = find_gens(KK, act_on_gens, minimum(defining_modulus(A)[1]))
   #I will compute a possible image cyclic component by cyclic component
   for w = 1:length(autos)
     images_KK = Array{Tuple{GrpAbFinGenElem, FacElem{nf_elem, AnticNumberField}}, 1}(undef, length(Cp))
     for i = 1:length(Cp)
-      images_KK[i] = extend_auto(KK, act_on_gens[i][w], 2, frob_gens)
+      fl, coord, rt = _find_embedding(KK, act_on_gens[i][w], 2, frob_gens)
+      @assert fl
+      images_KK[i] = (coord, rt)
     end
   
     #Now, I can define the automorphism on AA
@@ -502,14 +502,16 @@ function extend_aut_pp(A::ClassField, autos::Array{NfToNfMor, 1}, p::fmpz)
     end
     act_on_gens[i] = act_on_gen_i
   end
-  frob_gens = find_gens(KK, act_on_gens, A)
+  frob_gens = find_gens(KK, act_on_gens, minimum(defining_modulus(A)[1]))
   
   autos_extended = Array{NfRelNSToNfRelNSMor, 1}(undef, length(autos))
   #I will compute a possible image cyclic component by cyclic component
   for w = 1:length(autos)
     images_KK = Array{Tuple{GrpAbFinGenElem, FacElem{nf_elem, AnticNumberField}}, 1}(undef, length(Cp))
     for i = 1:length(Cp)
-      images_KK[i] = extend_auto(KK, act_on_gens[i][w], Int(order(KK.AutG[i])), frob_gens)
+      fl, coord_img_emb, rt_img_emb = _find_embedding(KK, act_on_gens[i][w], Int(order(KK.AutG[i])), frob_gens)
+      @assert fl
+      images_KK[i] = (coord_img_emb, rt_img_emb)
     end
   
     #Now, I can define the automorphism on K
@@ -597,9 +599,7 @@ function restriction(K::NfRelNS{nf_elem}, Cp::Vector{ClassField_pp{S, T}}, autos
 
 end
 
-
-function extend_auto(KK::KummerExt, tau_a::FacElem{nf_elem, AnticNumberField}, k::Int, frob_gens::Array{NfOrdIdl, 1})
-
+function _find_embedding(KK::KummerExt, el::FacElem{nf_elem, AnticNumberField}, ord_el::Int, frob_gens::Array{NfOrdIdl, 1})
   #Compute the action of the Frobenius on the generators and on tau(a)
   imgs_rhs = Array{Int, 1}(undef, length(frob_gens))
   imgs_lhs = Array{GrpAbFinGenElem, 1}(undef, length(frob_gens))
@@ -607,7 +607,7 @@ function extend_auto(KK::KummerExt, tau_a::FacElem{nf_elem, AnticNumberField}, k
   for P in frob_gens
     i += 1
     imgs_lhs[i] = canonical_frobenius(P, KK)
-    imgs_rhs[i] = canonical_frobenius(P, KK, tau_a)*divexact(KK.n, k)
+    imgs_rhs[i] = canonical_frobenius(P, KK, el)*divexact(KK.n, ord_el)
   end
   # Now, I have to solve the system.
   # Careful! I have to multiply the components with their difference with the exponent :(
@@ -625,19 +625,19 @@ function extend_auto(KK::KummerExt, tau_a::FacElem{nf_elem, AnticNumberField}, k
   end
   mp = hom(gens(G), imgs, check = true)
   b = H(imgs_rhs)
-  fl, el = haspreimage(mp, b)
-  @assert fl
+  fl, coord = haspreimage(mp, b)
+  if !fl
+    return false, coord, el
+  end
 
   #Now, I need the element of the base field
-  prod_gens = KK.gen[1]^(div(-el[1]*k, Int(order(KK.AutG[1]))))
+  prod_gens = KK.gen[1]^(div(-coord[1]*ord_el, Int(order(KK.AutG[1]))))
   for i = 2:length(KK.gen)
-    mul!(prod_gens, prod_gens, KK.gen[i]^(div(-el[i]*k, Int(order(KK.AutG[i])))))
+    mul!(prod_gens, prod_gens, KK.gen[i]^(div(-coord[i]*ord_el, Int(order(KK.AutG[i])))))
   end
-  mul!(prod_gens, prod_gens, tau_a)
-  fl2, rt = ispower(prod_gens, k, with_roots_unity = true)
-  @assert fl2
-  return el, rt
-  
+  mul!(prod_gens, prod_gens, el)
+  fl2, rt = ispower(prod_gens, ord_el, with_roots_unity = true)
+  return fl2, coord, rt
 end
 
 ################################################################################

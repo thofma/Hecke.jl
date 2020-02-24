@@ -391,22 +391,27 @@ function _ordering_by_T2(M::NfOrd)
 end
 
 
-function lll_precomputation(M::NfOrd, prec::Int, k::Int = 10)
+function lll_precomputation(M::NfOrd, prec::Int)
 
   n = degree(M)
   K = nf(M)
-  natt, re = divrem(n, k)
-  if re > 0
-    natt += 1
-  end
+  natt, re = divrem(n, 2)
   g = identity_matrix(FlintZZ, n)
   new_prec = prec
-  for i = 1:natt
-    @vprint :Simplify 3 "Simplifying block $i\n"
-    new_prec, g1 = _lll_sublattice(M, (k*(i-1)+1):min(k*(i), n), prec = prec)
-    _copy_matrix_into_matrix(g, k*(i-1)+1, k*(i-1)+1, g1)
-    if new_prec > prec
-      break
+  block = 1
+  while block < 3
+    @vprint :Simplify 3 "Simplifying block $(block)\n"
+    if block == 1
+      rg = 1:natt
+    else
+      rg = (natt+1):n
+    end
+    new_prec, g1 = _lll_sublattice(M, rg, prec = prec)
+    _copy_matrix_into_matrix(g, first(rg), first(rg), g1)
+    if new_prec == prec
+      block += 1
+    else
+      prec = new_prec
     end
   end
   @vprint :Simplify 3 "Precision: $(new_prec)\n"
@@ -421,17 +426,7 @@ function lll_precomputation(M::NfOrd, prec::Int, k::Int = 10)
   if isdefined(M, :gen_index)
     On.gen_index = M.gen_index
   end
-  if new_prec > prec 
-    return lll_precomputation(On, new_prec, k)
-  elseif n > 40 && k < 20
-    return lll_precomputation(On, new_prec, 20)
-  elseif n > 60 && k < 40
-    return lll_precomputation(On, new_prec, 40)
-  elseif n > 100 && k < 60
-    return lll_precomputation(On, new_prec, 60)
-  else
-    return prec, On
-  end
+  return prec, On
 end
 
 function _lll_sublattice(M::NfOrd, u::UnitRange{Int}; prec = 100)

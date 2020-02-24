@@ -791,7 +791,7 @@ end
 #
 ###############################################################################
 
-function quadratic_extensions(bound::Int; tame::Bool=false, real::Bool=false, complex::Bool=false, with_autos::Type{Val{T}}=Val{false}) where T
+function quadratic_fields(bound::Int; tame::Bool=false, real::Bool=false, complex::Bool=false, with_autos::Type{Val{T}}=Val{false}) where T
 
   @assert !(real && complex)
   Qx,x=PolynomialRing(FlintQQ, "x")

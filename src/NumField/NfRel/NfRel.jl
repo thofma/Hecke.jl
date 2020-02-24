@@ -845,3 +845,61 @@ function islinearly_disjoint(K1::NfRel, K2::NfRel)
   f = change_base_ring(K2, defining_polynomial(K1))
   return isirreducible(f)
 end
+
+################################################################################
+#
+#  Random elements
+#
+################################################################################
+
+function rand(L::NfRel, B::UnitRange{Int})
+  k = base_field(L)
+  pb = basis(L)
+  z = zero(L)
+  for i = 1:length(pb)
+    t = rand(k, B)
+    z += t*pb[i]
+  end
+  return z
+end
+
+################################################################################
+#
+#  Find Kummer generator
+#
+################################################################################
+
+function kummer_generator(K::NfRel{nf_elem})
+  n = degree(K)
+  k = base_field(K)
+  tuo, gen_tu = _torsion_units_gen(k)
+  if !divisible(tuo, n)
+    error("Not a Kummer extension!")
+  end
+  zeta = gen_tu^divexact(tuo, n)
+  roots = powers(zeta, n-1)
+  auts = automorphisms(K)
+  if length(auts) != n
+    error("Not a Kummer extension!")
+  end
+  #TODO: Not very serious, fix this.
+  gens = small_generating_set(auts, *)
+  if length(gens) > 1
+    error("Not a Kummer extension!")
+  end
+  gen = gens[1]
+  a = zero(K)
+  while iszero(a)
+    b = rand(K, -5:5)
+    a = b
+    new_b = b
+    for i = 1:n-1
+      new_b = gen(new_b)
+      a += roots[i+1]*new_b
+    end
+  end
+  res = k(a^n)
+  #We even reduce the support....
+  res1 = reduce_mod_powers(res, n)
+  return res1
+end
