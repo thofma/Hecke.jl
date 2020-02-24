@@ -361,6 +361,16 @@ function Base.show(io::IO, ::MIME"text/html", b::Bool)
    print(io, b ? "true" : "false")
 end
 
+function math_html(io::IO, S::FacElemMon)
+  print(io, "\\text{Factored elements over }")
+  math_html(io, base_ring(S))
+end
+
+function Base.show(io::IO, ::MIME"text/html", S::FacElemMon)
+  print(io, "\$")
+  math_html(io, S)
+  print(io, "\$")
+end
 
 function find_name(A, M = Main)
   for a = names(Main)
