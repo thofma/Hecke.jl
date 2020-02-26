@@ -1605,19 +1605,19 @@ function stabil(x1, x2, per, G::Matrix{Int}, V, C)
 # /* S = XG * X2^-1 */
 
   SS = zeros(Int, dim, dim)
-  _psolve(SS, deepcopy(X2), deepcopy(XG), dim, C.prime)
+  _psolve(SS, X2, XG, dim, C.prime)
 
-  @show SS, X2, XG
-  @assert SS * X2 == XG
+  #@assert SS * X2 == XG
   
-  b, S = can_solve(fmpz_mat(X2), fmpz_mat(XG), side = :left)
-  if false
-    @assert b
-    @assert S * fmpz_mat(X2) == fmpz_mat(XG)
-  end
-  @assert S == SS
-  #@show S
-  return Matrix{Int}(S)
+  #b, S = can_solve(fmpz_mat(X2), fmpz_mat(XG), side = :left)
+  #if false
+  #  @assert b
+  #  @assert S * fmpz_mat(X2) == fmpz_mat(XG)
+  #end
+  #@assert S == SS
+  ##@show S
+  #return Matrix{Int}(S)
+  return SS
 end
 
 fmpz_mat(M::Matrix{Int}) = matrix(FlintZZ, M)
@@ -1956,7 +1956,6 @@ end
 
 function _dot_product_with_column(v::fmpz_mat, A::fmpz_mat, k::Int, tmp::fmpz = zero(FlintZZ))
   t = zero(FlintZZ)
-  @show size(A)
   t = _dot_product_with_column!(t, v, A, k, tmp)
   return t
 end
@@ -2037,7 +2036,7 @@ end
 
 #
 
-function _pgauss(r, A, B, n, p, t)
+function _pgauss(r, A, B, n, p)
   ainv = invmod(A[r, r], p)
   for j in (r + 1):n
     if A[r, j] % p != 0
@@ -2048,9 +2047,6 @@ function _pgauss(r, A, B, n, p, t)
       for i in 1:n
         B[i, j] = (B[i, j] - f * B[i, r]) % p
       end
-      for i in 1:n
-        t[i, j] = (t[i, j] - f * t[i, r]) % p
-      end
       A[r, j] = 0
     end
   end
@@ -2058,15 +2054,12 @@ end
 
 global _debug = []
 
-function _psolve(X, A, B, n, p, t = Matrix{Int}(identity_matrix(ZZ, n)))
+function _psolve(X, A, B, n, p)
   for i in 1:(n - 1)
     j = i
-    @show fmpz_mat(A), i
-    @show [ A[i, k] % p for k in j:n]
     while A[i, j] % p == 0 && j <= n
       j += 1
     end
-    @show j
     if j == n + 1
       throw(error("Not possible"))
     end
@@ -2074,12 +2067,12 @@ function _psolve(X, A, B, n, p, t = Matrix{Int}(identity_matrix(ZZ, n)))
     if j != i
       for k in i:n
         A[k, i], A[k, j] = A[k, j], A[k, i]
+      end
+      for k in 1:n
         B[k, i], B[k, j] = B[k, j], B[k, i]
-        t[k, i], t[k, j] = t[k, j], t[k, i]
       end
     end
     _pgauss(i, A, B, n, p, t)
-    @show t
   end
   for i in 1:n
     for j in n:-1:1
