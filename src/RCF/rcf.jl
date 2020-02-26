@@ -1218,8 +1218,12 @@ function _get_support(a::FacElem{nf_elem, AnticNumberField}, I::NfOrdIdlSet)
   Zk = order(I)
   A = Dict{NfOrdIdl, fmpz}()
   sizehint!(A, length(a.fac))
+  l = 0
   for (e, v) = a.fac
-    N, D = integral_split(ideal(Zk, e))
+    l += 1
+    @vprint :CompactPresentation 3 "Splitting element $l/$(length(a.fac))\n"
+    b = ideal(Zk, e)
+    N, D = integral_split(b)
     if !isone(N)
       add_to_key!(A, N, v)
     end

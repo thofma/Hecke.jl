@@ -126,6 +126,7 @@ function compact_presentation(a::FacElem{nf_elem, AnticNumberField}, nn::Int = 2
     B1 = B.num   
     @assert norm(B1) <= abs(discriminant(ZK))
 
+    @vprint :CompactPresentation 1 "Factoring $B1 of norm $(norm(B1))\n"
     @vtime :CompactPresentation 1 for (p, _v) = factor(B1)
       if haskey(de, p)
         de[p] += _v*n^k
@@ -281,6 +282,7 @@ function _ispower(a::FacElem{nf_elem, AnticNumberField}, n::Int; with_roots_unit
 
   if typeof(decom) == Bool
     ZK = lll(maximal_order(base_ring(a)))
+    @vprint :Saturate 1 "Computing coprime factorization of ideal\n"
     de::Dict{NfOrdIdl, fmpz} = factor_coprime(a, IdealSet(ZK))
   else
     if !isempty(decom)
@@ -291,6 +293,7 @@ function _ispower(a::FacElem{nf_elem, AnticNumberField}, n::Int; with_roots_unit
       de = Dict{NfOrdIdl, fmpz}()
     end
   end
+  @vprint :Saturate 1 "Computing compact presentation\n"
   @vtime :Saturate 1 c = Hecke.compact_presentation(a, n, decom = de)
   K = base_ring(c)
   b = one(K)
