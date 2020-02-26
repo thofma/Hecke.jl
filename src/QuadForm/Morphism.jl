@@ -20,13 +20,125 @@ mutable struct SCPComb
   SCPComb() = new()
 end
 
-mutable struct ZLatAutoCtx{S, T}
+mutable struct VectorList{S, T}
+  vectors::Vector{S}
+  lengths::Vector{Vector{T}}
+  lookup::Dict{S, Int}
+  issorted::Bool
+  use_dict::Bool
+
+  function VectorList{S, T}() where {S, T}
+    return new{S, T}()
+  end
+end
+
+function VectorList(vectors::Vector{S}, lengths::Vector{Vector{T}},
+                    use_dict::Bool = true) where {S, T}
+
+  V = VectorList{S, T}()
+  if use_dict
+    V.lookup = Dict{S, Int}(vectors[i] => i for i in 1:length(vectors))
+    V.lengths = lengths
+    V.vectors = vectors
+    V.use_dict = true
+  else
+    p = sortperm(vectors)
+    permute!(vectors, p)       # apply the permutation to V
+    permute!(lengths, p)       # apply the permutation to lengths
+    V.use_dict = false
+    V.vectors = vectors
+    V.lengths = lengths
+  end
+
+  return V
+end
+
+length(V::VectorList) = length(V.vectors)
+
+issorted(V::VectorList) = V.issorted
+
+getindex(V::VectorList, i::Int) = i > 0 ? V.vectors[i] : -V.vectors[-i]
+
+function isnormalized(w::fmpz_mat)
+  for k in 1:ncols(w)
+    if !iszero(w[1, k])
+      return w[1, k] > 0
+    end
+  end
+end
+
+function isnormalized(w::Vector{Int})
+  for k in 1:length(w)
+    if !iszero(w[k])
+      return w[k] > 0
+    end
+  end
+end
+
+function neg!(w::Vector{Int})
+  w .*= -1
+end
+
+function neg!(w::fmpz_mat)
+  ccall((:fmpz_mat_neg, libflint), Cvoid, (Ref{fmpz_mat}, Ref{fmpz_mat}), w, w)
+  return w
+end
+
+function find_point(w, V::VectorList)
+  positive = isnormalized(w)
+
+  if positive
+    k = V.lookup[w]
+    #k = findfirst(isequal(w), V.vectors)
+    #@assert k !== nothing
+    #@assert V[k] == w
+    #return k
+    return k
+  end
+
+  neg!(w)
+  #k = findfirst(isequal(w), V.vectors)
+  #@assert k !== nothing
+  k = V.lookup[w]
+  neg!(w)
+  @assert V[-k] == w
+  return -k
+end
+
+function _find_point(w::fmpz_mat, V::VectorList{fmpz_mat, T}) where T
+  positive = false
+  for k in 1:length(w)
+    if !iszero(w[1, k])
+      positive = w[1, k] > 0
+      break
+    end
+  end
+  if positive
+    if issorted(V)
+      k = searchsortedfirst(V.vectors, w)
+    else
+      k = findfirst(isequal(w), V.vectors)
+    end
+    @assert k !== nothing
+    return k
+  else
+    mw = -w
+    if issorted(V)
+      k = searchsortedfirst(V.vectos, mw)
+    else
+      k = findfirst(isequal(mw), V.vectors)
+    end
+    @assert k !== nothing
+    return -k
+  end
+end
+
+mutable struct ZLatAutoCtx{S, T, V}
   G::Vector{T}
   Gtr::Vector{T}
   dim::Int
   max::S
-  V::Vector{T}
-  V_length::Vector{Vector{S}}
+  V::VectorList{V, S}
   v::Vector{T}
   per::Vector{Int}
   fp::Matrix{Int}
@@ -38,25 +150,33 @@ mutable struct ZLatAutoCtx{S, T}
   ng::Vector{Int}
   nsg::Vector{Int}
   g::Vector{Vector{T}}
+  prime::S
 
   issymmetric::BitArray{1}
+  operate_tmp::V
 
   function ZLatAutoCtx(G::Vector{fmpz_mat})
-    z = new{fmpz, fmpz_mat}()
+    z = new{fmpz, fmpz_mat, fmpz_mat}()
     z.G = G
     z.Gtr = fmpz_mat[transpose(g) for g in G]
     z.dim = nrows(G[1])
     z.issymmetric = falses(length(G))
+    z.operate_tmp = zero_matrix(FlintZZ, 1, ncols(G[1]))
+
+    for i in 1:length(z.G)
+      z.issymmetric[i] = issymmetric(z.G[i])
+    end
+ 
     return z
   end
 
-  function ZLatAutoCtx{S, T}() where {S, T}
-    return new{S, T}()
+  function ZLatAutoCtx{S, T, V}() where {S, T, V}
+    return new{S, T, V}()
   end
 end
 
 function Base.show(io::IO, C::ZLatAutoCtx)
-  return C.G
+  print(io, "Automorphism context for ", C.G)
 end
 
 dim(C::ZLatAutoCtx) = C.dim
@@ -72,10 +192,53 @@ function LinearAlgebra.issymmetric(M::MatElem)
   return true
 end
 
-function init(C::ZLatAutoCtx, auto::Bool = true, max::fmpz = fmpz(-1))
+function init(C::ZLatAutoCtx, auto::Bool = true, bound::fmpz = fmpz(-1), use_dict::Bool = true)
   # Compute the necessary short vectors
-  @vprint :Lattice 1 "Computing short vectors of length $max\n"
-  @vtime :Lattice 1 compute_short_vectors(C, max)
+  @vprint :Lattice 1 "Computing short vectors of length $bound\n"
+
+  r = length(C.G)
+  
+  n = nrows(C.G[1])
+
+  if bound == -1
+    bound = maximum(diagonal(C.G[1]))
+    C.max = bound
+  end
+  @assert bound > 0
+
+  @vtime :Lattice 1 V = _short_vectors_gram_integral(C.G[1], bound) 
+
+  vectors = Vector{fmpz_mat}(undef, length(V))
+
+  lengths = Vector{Vector{fmpz}}(undef, length(V))
+
+  tmp = zero_matrix(FlintZZ, 1, n)
+
+  for i in 1:length(V)
+    # First canonicalize them
+    cand = V[i]
+    v = cand[1]
+    k = 1
+    while iszero(v[k])
+      k += 1
+    end
+    if v[k] < 0
+      v .*= -1 
+    end
+
+    vfmpz = matrix(FlintZZ, 1, n, v)
+
+    w = Vector{fmpz}(undef, r)
+    w[1] = cand[2]
+    for k in 2:r
+      w[2] = _norm(vfmpz, C.G[k], tmp)
+    end
+
+    lengths[i] = w
+    vectors[i] = vfmpz
+  end
+
+  V = VectorList(vectors, lengths, use_dict)
 
   for i in 1:length(C.G)
     C.issymmetric[i] = issymmetric(C.G[i])
@@ -83,28 +246,22 @@ function init(C::ZLatAutoCtx, auto::Bool = true, max::fmpz = fmpz(-1))
 
   @assert C.issymmetric[1]
 
+  C.V = V
+
   # Compute the fingerprint
   @vprint :Lattice 1 "Computing fingerprint: "
   @vtime :Lattice 1 fingerprint(C)
   @vprint :Lattice 1 "$(C.fp_diagonal)\n"
 
 
-  if max == fmpz(-1)
+  if auto
     # Find the standard basis vectors
     C.std_basis = Vector{Int}(undef, dim(C))
     z = zero_matrix(FlintZZ, 1, dim(C))
     for i in 1:dim(C)
       z[1, C.per[i]] = 1
-      k = findfirst(isequal(z), C.V)
-      if k === nothing
-        z[1, C.per[i]] = -1
-        k = findfirst(isequal(z), C.V)
-        @assert k !== nothing
-        C.V[k] = -z
-        C.std_basis[i] = k
-      else
-        C.std_basis[i] = k  
-      end
+      k = find_point(z, C.V)
+      C.std_basis[i] = k  
       z[1, C.per[i]] = 0
     end
   end
@@ -117,7 +274,7 @@ function init(C::ZLatAutoCtx, auto::Bool = true, max::fmpz = fmpz(-1))
     A = zero_matrix(FlintZZ, length(C.V), dim(C))
     for j in 1:length(C.V)
       for k in 1:dim(C)
-        A[j, k] = _dot_product(C.V[j], C.G[i], k)
+        A[j, k] = _dot_product_with_row(C.V[j], C.G[i], k)
       end
     end
     C.v[i] = A
@@ -155,7 +312,7 @@ function init(C::ZLatAutoCtx, auto::Bool = true, max::fmpz = fmpz(-1))
 
   H = Vector{fmpz_mat}(undef, nH)
 
-  if max == fmpz(-1)
+  if auto
     for i in 1:dim(C)
       if C.ng[i] > 0
         nH = 0
@@ -166,7 +323,7 @@ function init(C::ZLatAutoCtx, auto::Bool = true, max::fmpz = fmpz(-1))
           end
         end
         #@assert _orbitlen_naive(C.std_basis[i], C.fp_diagonal[i], H, nH, C.V) == _orbitlen(C.std_basis[i], C.fp_diagonal[i], H, nH, C.V)
-        C.orders[i] = _orbitlen(C.std_basis[i], C.fp_diagonal[i], H, nH, C.V)
+        C.orders[i] = _orbitlen(C.std_basis[i], C.fp_diagonal[i], H, nH, C.V, C)
       else
         C.orders[i] = 1
       end
@@ -174,6 +331,187 @@ function init(C::ZLatAutoCtx, auto::Bool = true, max::fmpz = fmpz(-1))
   end
 
   return C
+end
+
+# The following functions tries to initialize a ZLatAutoCtx with entries in Int.
+# The return value is flag, Csmall
+function try_init_small(C::ZLatAutoCtx, auto::Bool = true, bound::fmpz = fmpz(-1), use_dict::Bool = true)
+  # Compute the necessary short vectors
+  @vprint :Lattice 1 "Computing short vectors of length $max\n"
+  automorphism_mode = bound == fmpz(-1)
+
+  Csmall = ZLatAutoCtx{Int, Matrix{Int}, Vector{Int}}()
+
+  if bound == -1
+    bound = maximum(diagonal(C.G[1]))
+    Csmall.max = Int(bound)
+  else
+    Csmall.max = -1
+  end
+  @assert bound > 0
+
+  @vtime :Lattice 1 V = _short_vectors_gram_integral(C.G[1], bound) 
+
+  vectors = Vector{Vector{Int}}(undef, length(V))
+
+  lengths = Vector{Vector{Int}}(undef, length(V))
+
+  r = length(C.G)
+
+  Gsmall = Matrix{Int}[Matrix{Int}(g) for g in C.G]
+
+  Gsmall_nbits = 0
+  for k in 1:r
+    Gsmall_nbits = max(Gsmall_nbits, maximum(nbits, Gsmall[k]))
+  end
+
+  n = nrows(C.G[1])
+
+  Gsmall_nbits = Gsmall_nbits + 1 # for the sign
+
+  vectors_nbits = 0
+
+  nrows_nbits = nbits(size(Gsmall[1], 1))
+
+  bitbound = Int == Int64 ? 64 : 32
+
+  abs_maxbits_vectors = Int == Int64 ? 30 : 15
+
+  tmp = Vector{Int}(undef, n)
+
+  for i in 1:length(V)
+    # First canonicalize them
+    cand = V[i]
+    v = cand[1]
+    vectors_nbits = max(vectors_nbits, maximum(nbits, v) + 1)
+    k = 1
+    while iszero(v[k])
+      k += 1
+    end
+    if v[k] < 0
+      v .*= -1 
+    end
+
+    if vectors_nbits > abs_maxbits_vectors
+      return false, Csmall
+    end
+
+    if Gsmall_nbits + vectors_nbits + nrows_nbits + 1 > bitbound
+      return false, Csmall
+    end
+
+    w = Vector{Int}(undef, r)
+    w[1] = cand[2]
+    for k in 2:r
+      w[2] = _norm(v, Gsmall[k], tmp)
+    end
+
+    lengths[i] = w
+    vectors[i] = v
+  end
+
+  V = VectorList(vectors, lengths, use_dict)
+  
+
+  Csmall.V = V
+
+  Csmall.prime = next_prime(2^(vectors_nbits + 1) + 1)
+
+  Csmall.G = Matrix{Int}[Matrix{Int}(g) for g in C.G]
+  Csmall.Gtr = Matrix{Int}[transpose(g) for g in Gsmall]
+  Csmall.dim = n
+  Csmall.issymmetric = C.issymmetric
+  Csmall.operate_tmp = zeros(Int, n)
+
+  @assert C.issymmetric[1]
+
+  # Compute the fingerprint
+  @vprint :Lattice 1 "Computing fingerprint: "
+  @vtime :Lattice 1 fingerprint(Csmall)
+  @vprint :Lattice 1 "$(Csmall.fp_diagonal)\n"
+
+  if automorphism_mode
+    # Find the standard basis vectors
+    Csmall.std_basis = Vector{Int}(undef, dim(Csmall))
+    z = zeros(Int, dim(Csmall))
+    for i in 1:dim(Csmall)
+      z[Csmall.per[i]] = 1
+      k = find_point(z, V)
+      Csmall.std_basis[i] = k  
+      z[Csmall.per[i]] = 0
+    end
+  end
+
+  # 
+
+  Csmall.v = Vector{Matrix{Int}}(undef, length(C.G))
+
+  # Here needs to be another overflow check
+  @inbounds for i in 1:length(Csmall.G)
+    A = zeros(Int, length(Csmall.V.vectors), dim(C))
+    for j in 1:length(Csmall.V.vectors)
+      for k in 1:dim(Csmall)
+        A[j, k] = _dot_product_with_row(Csmall.V.vectors[j], Csmall.G[i], k)
+      end
+    end
+    Csmall.v[i] = A
+  end
+
+  if false
+    for i in 1:length(Csmall.G)
+      for j in 1:length(Csmall.V.vectors)
+        for k in 1:length(Csmall.V.vectors)
+          @assert  _dot_product_with_row(Csmall.V.vectors[j], Csmall.v[i], k) == dot(reshape(Csmall.V[j], (1, dim(C))) * Csmall.G[i], Csmall.V[k])
+        end
+      end
+    end
+  end
+
+  Csmall.g = Vector{Vector{Matrix{Int}}}(undef, dim(C))
+  for i in 1:dim(Csmall)
+    Csmall.g[i] = Matrix{Int}[]
+  end
+  Csmall.ng = zeros(Int, dim(Csmall))
+  Csmall.nsg = zeros(Int, dim(Csmall))
+  Csmall.orders = Vector{Int}(undef, dim(Csmall))
+
+  # -Id is always an automorphism
+  mid = zeros(Int, dim(Csmall), dim(Csmall))
+  for i in 1:dim(Csmall)
+    mid[i, i] = -1
+  end
+  Csmall.g[1] = Matrix{Int}[mid]
+  Csmall.ng[1] = 1
+
+  # Calculate orbit lengths
+  
+  nH = 0
+
+  for i in 1:dim(Csmall)
+    nH += Csmall.ng[i]
+  end
+
+  H = Vector{Matrix{Int}}(undef, nH)
+
+  if automorphism_mode
+    for i in 1:dim(Csmall)
+      if Csmall.ng[i] > 0
+        nH = 0
+        for j in i:dim(Csmall)
+          for k in 1:Csmall.ng[j]
+            nH += 1
+            H[nH] = Csmall.g[j][k]
+          end
+        end
+        #@assert _orbitlen_naive(Csmall.std_basis[i], Csmall.fp_diagonal[i], H, nH, Csmall.V) == _orbitlen(Csmall.std_basis[i], Csmall.fp_diagonal[i], H, nH, Csmall.V)
+        Csmall.orders[i] = _orbitlen(Csmall.std_basis[i], Csmall.fp_diagonal[i], H, nH, Csmall.V, Csmall)
+      else
+        Csmall.orders[i] = 1
+      end
+    end
+  end
+
+  return true, Csmall
 end
 
 #function compute_scpcomb(C::ZAutLatCtx, depth::Int)
@@ -217,94 +555,33 @@ end
 #		}
 #	}
 
-
-# This is currently broken, since the enumeration is not working
-function _compute_short_vectors(C::ZLatAutoCtx)
-  E = enum_ctx_from_gram(C.G[1])
-  max = maximum(C.G[1][i, i] for i in 1:dim(C))
-  enum_ctx_start(E, max)
-  V = fmpz_mat[]
-  V_length = Vector{fmpz}[]
-  while enum_ctx_next(E)
-    push!(V, deepcopy(E.x))
-    z = Vector{fmpz}(undef, length(C.G))
-    for k in 1:length(z)
-      z[k] = (E.x * C.G[k] * transpose(E.x))[1, 1]
-    end
-    push!(V_length, z)
-  end
-  return V, V_length
-end
-
-function __compute_short_vectors(C::ZLatAutoCtx)
-  max = maximum(C.G[1][i, i] for i in 1:dim(C))
-  R = ArbField(256)
-  G = change_base_ring(R, C.G[1])
-  V = enumerate_using_gram(G, R(max))
-  C.V = fmpz_mat[]
-  C.V_length = Vector{fmpz}[]
-  for v in V
-    positive = false
-    for k in 1:length(v)
-      if iszero(v[k])
-        continue
-      end
-      if v[k] > 0
-        positive = true
-      end
-      break
-    end
-    if !positive
-      continue
-    end
-    @assert v[findfirst(!iszero, v)] > 0
-    m = matrix(FlintZZ, 1, dim(C), v)
-    z = Vector{fmpz}(undef, length(C.G))
-    for k in 1:length(z)
-      z[k] = (m * C.G[k] * transpose(m))[1, 1]
-    end
-    if z[1] > max
-      continue
-    end
-    push!(C.V, m)
-    push!(C.V_length, z)
-  end
-  W, Wl = _compute_short_vectors(C)
-  @show Set(W) == Set(C.V)
-  @show length(W), length(Wl)
-  @show length(C.V), length(C.V_length)
-end
-
 function short_vectors(L::ZLat, ub)
   _G = gram_matrix(L)
-  d = denominator(_G)
-  G = change_base_ring(FlintZZ, d * _G)
-  Glll, T = lll_gram_with_transform(G)
-  V = _short_vectors(1//d * change_base_ring(FlintQQ, Glll), 0, ub, T)
-  return V
+  return _short_vectors(_G, ub)
 end
 
 function short_vectors(L::ZLat, lb, ub)
   _G = gram_matrix(L)
-  d = denominator(_G)
-  G = change_base_ring(FlintZZ, d * _G)
-  Glll, T = lll_gram_with_transform(G)
-  V = _short_vectors(1//d * change_base_ring(FlintQQ, Glll), lb, ub, T)
+  return _short_vectors_gram(_G, lb, ub)
+end
+
+function shortest_vectors(L::ZLat, ::Type{Vector{Int}})
+  _G = gram_matrix(L)
+  min, V = _shortest_vectors_gram(_G)
+  L.minimum = min
   return V
 end
 
 function shortest_vectors(L::ZLat)
   _G = gram_matrix(L)
-  d = denominator(_G)
-  G = change_base_ring(FlintZZ, d * _G)
-  Glll, T = lll_gram_with_transform(G)
-  max = maximum([G[i, i] for i in 1:nrows(G)])
-  max = max//d
-  @assert max > 0
-  V = short_vectors(L, max)
-  min = minimum(v[2] for v in V)
+  min, V = _shortest_vectors_gram(_G)
+  W = Vector{fmpz_mat}(undef, length(V))
+  n = rank(L)
+  for i in 1:length(V)
+    W[i] = matrix(FlintZZ, 1, n, V[i])
+  end
   L.minimum = min
-  return [ v for v in V if v[2] == min]
+  return W
 end
 
 function minimum(L::ZLat)
@@ -315,110 +592,46 @@ function minimum(L::ZLat)
   return L.minimum
 end
 
-_transform(m::fmpz_mat, T) = m * T
-
-_transform(m, ::Nothing) = deepcopy(m)
-
-# Compute the short vectors and apply transform
-# If transform == nothing, don't apply a transform
-
-_round_up(::Type{fmpz}, x::fmpq) = round(fmpz, x) + 1
-
-_round_up(::Type{fmpz}, x::fmpz) = x
-
-function _short_vectors(G, lb, ub, transform)
-  d = denominator(G)
-  N = change_base_ring(FlintZZ, d * G)
-  V = _short_vectors_integral(N, d * lb, d * ub, transform)
-  W = Vector{Tuple{fmpz_mat, fmpq}}(undef, length(V))
-  for i in 1:length(V)
-    W[i] = (V[i][1], V[i][2]//d)
-  end
-  return W
+function kissing_number(L::ZLat)
+  return 2 * length(shortest_vectors(L))
 end
 
-function _short_vectors_integral(G, lb, ub, transform)
-  C = ZLatAutoCtx([G])
-  E = enum_ctx_from_gram(C.G[1])
-  max = _round_up(fmpz, ub)
-  enum_ctx_start(E, max)
-  n = ncols(C.G[1])
-  V = Vector{Tuple{fmpz_mat, fmpz}}()
-  while enum_ctx_next(E)
+function compute_short_vectors(C::ZLatAutoCtx{Int, Matrix{Int}, Vector{Int}}, max = fmpz(-1))
+  #V = enumerate_using_gram(G, R(max))
 
-    l = (E.x * C.G[1] * transpose(E.x))[1, 1]
-    if l < lb || l > ub
-      continue
-    end
-
-    m = _transform(E.x, transform)
-
-    positive = false
-    for k in 1:n
-      if iszero(m[1, k])
-        continue
-      end
-      if m[1, k] > 0
-        positive = true
-      end
-      break
-    end
-
-    if !positive
-      m = -m
-    end
-
-    push!(V, (m, l))
+  if max == -1
+    max = maximum(C.G[1][i, i] for i in 1:dim(C))
   end
+
+  @vprint :Lattice 1 "Computing short vectors of actual length $max\n"
+  V = _short_vectors_gram_integral(C.G[1], max)
   return V
 end
 
 function compute_short_vectors(C::ZLatAutoCtx, max::fmpz = fmpz(-1))
   #V = enumerate_using_gram(G, R(max))
-  C.V = fmpz_mat[]
-  C.V_length = Vector{fmpz}[]
+
   if max == -1
     max = maximum(C.G[1][i, i] for i in 1:dim(C))
   end
   @vprint :Lattice 1 "Computing short vectors of actual length $max\n"
-  E = enum_ctx_from_gram(C.G[1])
-  enum_ctx_start(E, max)
+  V = _short_vectors_gram_integral(C.G[1], max)
   n = ncols(C.G[1])
-  while enum_ctx_next(E)
-    positive = false
-    for k in 1:n
-      if iszero(E.x[1, k])
-        continue
-      end
-      if E.x[1, k] > 0
-        positive = true
-      end
-      break
-    end
-
-    l = (E.x * C.G[1] * transpose(E.x))[1, 1]
-    if l > max
-      continue
-    end
-
+  C.V = Vector{fmpz_mat}(undef, length(V))
+  C.V_length = Vector{Vector{fmpz}}(undef, length(V))
+  for i in 1:length(V)
     z = Vector{fmpz}(undef, length(C.G))
-    z[1] = l
-
-    if !positive
-      m = -deepcopy(E.x)
-    else
-      m = deepcopy(E.x)#matrix(FlintZZ, 1, dim(C), v)
-    end
-
+    z[1] = V[i][2]
+    m = matrix(FlintZZ, 1, n, V[i][1])
     mt = transpose(m)
-
-    for k in 2:length(z)
+    for k in 2:length(C.G)
       z[k] = (m * C.G[k] * mt)[1, 1]
     end
-    push!(C.V, m)
-    push!(C.V_length, z)
+    C.V[i] = m 
+    C.V_length[i] = z
   end
-  C.max = max
+  #@show length(C.V)
+  C.max = max 
   return C
 end
 
@@ -438,8 +651,8 @@ function _get_vectors_of_length(G::ZLat, max::fmpz)
 end
 
 function possible(C::ZLatAutoCtx, per, I, J)
-  V = C.V
-  W = C.V_length
+  V = C.V.vectors
+  W = C.V.lengths
   F = C.G
   Ftr = C.Gtr
   n = length(W)
@@ -459,7 +672,7 @@ function possible(V, W, F, Ftr, _issymmetric, n, f, per, I, J)
     Vj = V[j]
     good_scalar = true
     good_length = true
-    for k in 1:f
+    @inbounds for k in 1:f
       if Wj[k] != F[k][J, J]
         good_length = false
         break
@@ -470,7 +683,7 @@ function possible(V, W, F, Ftr, _issymmetric, n, f, per, I, J)
       continue
     end
 
-    for k in 1:f
+    @inbounds for k in 1:f
       for i in 1:I
         if !(_dot_product_with_column!(tmp1, Vj, F[k], per[i], tmp2) == F[k][J, per[i]]) ||
               (!_issymmetric[k] && _dot_product_with_row!(tmp1, Vj, F[k], per[i], tmp2) != F[k][per[i], J])
@@ -496,7 +709,7 @@ function possible(V, W, F, Ftr, _issymmetric, n, f, per, I, J)
     
     good_scalar = true
 
-    for k in 1:f
+    @inbounds for k in 1:f
       for i in 1:I
         if !(_dot_product_with_column!(tmp1, Vj, F[k], per[i], tmp2) == -F[k][J, per[i]]) ||
               (!_issymmetric[k] && _dot_product_with_row!(tmp1, Vj, F[k], per[i], tmp2) != -F[k][per[i], J])
@@ -518,21 +731,21 @@ function possible(V, W, F, Ftr, _issymmetric, n, f, per, I, J)
   return count
 end
 
-function _dot_product(V::Vector, M, i)
-  z = zero(base_ring(V))
-  for j in 1:length(V)
-    z = z + V[j] * M[i, j]
-  end
-  return z
-end
-
-function _dot_product(V::fmpz_mat, M, i)
-  z = zero(base_ring(V))
-  for j in 1:length(V)
-    z = z + V[1, j] * M[i, j]
-  end
-  return z
-end
+#function _dot_product(V::Vector, M, i)
+#  z = zero(base_ring(V))
+#  for j in 1:length(V)
+#    z = z + V[j] * M[i, j]
+#  end
+#  return z
+#end
+#
+#function _dot_product(V::fmpz_mat, M, i)
+#  z = zero(base_ring(V))
+#  for j in 1:length(V)
+#    z = z + V[1, j] * M[i, j]
+#  end
+#  return z
+#end
 
 # a permutation per for the
 #	order of the basis-vectors is chosen
@@ -548,6 +761,7 @@ end
 #	invariant forms
 
 function fingerprint(C::ZLatAutoCtx)
+  V = C.V
   n = dim(C)
   k = length(C.G)
   per = Vector{Int}(undef, n)
@@ -558,10 +772,10 @@ function fingerprint(C::ZLatAutoCtx)
   fp = zeros(Int, n, n)
 
   # fp[1, i] = # vectors v such that v has same length as b_i for all forms
-  for i in 1:n
-    for j in 1:length(C.V)
+  @inbounds for i in 1:n
+    for j in 1:length(V)
       good = true
-      cvl = @inbounds C.V_length[j]
+      cvl = @inbounds V.lengths[j]
       for l in 1:k
         if cvl[l] != C.G[l][i, i]
           good = false
@@ -575,7 +789,7 @@ function fingerprint(C::ZLatAutoCtx)
     end
   end
 
-  for i in 1:(n - 1)
+  @inbounds for i in 1:(n - 1)
     # Find the minimal non-zero entry in the i-th row
     mini = i
     for j in (i+1):n
@@ -602,7 +816,7 @@ function fingerprint(C::ZLatAutoCtx)
 
   res = Vector{Int}(undef, n)
 
-  for i in 1:n
+  @inbounds for i in 1:n
     res[i] = fp[i, per[i]]
   end
 
@@ -616,7 +830,7 @@ function fingerprint(C::ZLatAutoCtx)
 end
 
 # computes min(#O, orblen), where O is the orbit of pt under the first nG matrices in G
-function _orbitlen(point::Int, orblen::Int, G::Vector{fmpz_mat}, nG, V)
+function _orbitlen(point::Int, orblen::Int, G::Vector{T}, nG, V, C) where {T}
   n = length(V)
   orb = ones(Int, orblen)
   orb[1] = point
@@ -633,7 +847,7 @@ function _orbitlen(point::Int, orblen::Int, G::Vector{fmpz_mat}, nG, V)
   while cnd <= len && len < orblen
     i = 1
     while i <= nG && len < orblen
-      imag = _operate(orb[cnd], G[i], V)
+      imag = _operate(orb[cnd], G[i], V, C.operate_tmp)
       if !flag[imag + n + 1]
         # the image is a new point in the orbit
         len += 1
@@ -647,20 +861,68 @@ function _orbitlen(point::Int, orblen::Int, G::Vector{fmpz_mat}, nG, V)
   return len
 end
 
-function _operate(point, A, V)
+
+function _operate(point, A::Matrix{Int}, V)
+  return _operate(point, A, V, zeros(Int, size(A, 2)), sorted)
+end
+
+function _operate(point, A::fmpz_mat, V)
+  return _operate(point, A, V, zero_matrix(FlintZZ, 1, ncols(A)))
+end
+
+Base.replace!(::typeof(-), m::fmpz_mat) = -m
+
+function _operate(point, A, V, tmp)
 # 	V.v is a sorted list of length V.n of vectors
 #				of dimension V.dim, the number of V.v[nr]*A in
 #				the list is returned, where a negative number 
 #				indicates the negative of a vector
-  w = V[abs(point)] * A
-  if point < 0
-    w = -w
-  end
-  k = _find_point(w, V)
+  tmp = _vec_times_matrix!(tmp, V[point], A)
+  #w = V[abs(point)] * A
+  #if point < 0
+  #  if tmp isa fmpz_mat
+  #    for i in 1:ncols(tmp)
+  #      tmp[1, i] = -tmp[1, i]
+  #    end
+  #  else
+  #    tmp .*= -1 # tmp = -tmp
+  #  end
+  #end
+  k = find_point(tmp, V)
+  #@assert V[k] == tmp
   return k
 end
 
-function _find_point(w, V)
+function _find_point(w::Vector{Int}, V)
+  positive = false
+  for k in 1:length(w)
+    if !iszero(w[k])
+      positive = w[k] > 0
+      break
+    end
+  end
+  if positive
+    if sorted
+      k = searchsortedfirst(V, w)
+    else
+      k = findfirst(isequal(w), V)
+    end
+    @assert k !== nothing
+    return k
+  else
+    w .*= -1 # w = -w
+    if sorted
+      k = searchsortedfirst(V, w)
+    else
+      k = findfirst(isequal(w), V)
+    end
+    @assert k !== nothing
+    w .*= -1 # w = -w
+    return -k
+  end
+end
+
+function _find_point(w::fmpz_mat, V)
   positive = false
   for k in 1:length(w)
     if !iszero(w[1, k])
@@ -669,12 +931,20 @@ function _find_point(w, V)
     end
   end
   if positive
-    k = findfirst(isequal(w), V)
+    if sorted
+      k = searchsortedfirst(V, w)
+    else
+      k = findfirst(isequal(w), V)
+    end
     @assert k !== nothing
     return k
   else
     mw = -w
-    k = findfirst(isequal(mw), V)
+    if sorted
+      k = searchsortedfirst(V, mw)
+    else
+      k = findfirst(isequal(mw), V)
+    end
     @assert k !== nothing
     return -k
   end
@@ -691,7 +961,7 @@ function _orbitlen_naive(point::Int, orblen::Int, G::Vector{fmpz_mat}, nG::Int, 
       else
         new_point_coord = V[current_point] * G[i]
       end
-      new_point = _find_point(new_point_coord, V)
+      new_point = find_point(new_point_coord, V)
       if !(new_point in orbit)
         push!(orbit, new_point)
         push!(working_list, new_point)
@@ -701,7 +971,7 @@ function _orbitlen_naive(point::Int, orblen::Int, G::Vector{fmpz_mat}, nG::Int, 
   return min(orblen, length(orbit))
 end
 
-function auto(C)
+function auto(C::ZLatAutoCtx{S, T, U}) where {S, T, U}
   dim = Hecke.dim(C)
 
   candidates = Vector{Vector{Int}}(undef, dim) # candidate list for the image of the i-th basis vector
@@ -721,20 +991,20 @@ function auto(C)
       nH += C.ng[i]
     end
     #@show nH
-    H = Vector{fmpz_mat}(undef, nH)
+    H = Vector{T}(undef, nH)
     nH = 0
-    for i in step:dim
+    @inbounds for i in step:dim
       for j in 1:C.ng[i]
         nH += 1
         #@show C.g[i]
         H[nH] = C.g[i][j]
       end
     end
-    for i in 1:2*length(C.V)
+    @inbounds for i in 1:2*length(C.V)
       bad[i] = 0
     end
     nbad = 0
-    for i in 1:(step - 1)
+    @inbounds for i in 1:(step - 1)
       x[i] = C.std_basis[i]
     end
     #@show C.fp_diagonal[step]
@@ -742,12 +1012,12 @@ function auto(C)
     if C.fp_diagonal[step] > 1
       nC = cand(candidates[step], step, x, C, 0)#comb)
     else # there is only one candidates
-      candidates[step] = [C.std_basis[step]]
+      candidates[step] = Int[C.std_basis[step]]
       nC = 1
     end
     #@show nC
     #@show candidates
-    orb = orbit(C.std_basis[step], 1, H, nH, C.V)
+    orb = orbit(C.std_basis[step], 1, H, nH, C.V, C)
     C.orders[step] = length(orb)
     # delete the orbit of the step-th basis vector from the candidates
     #nC = delete(candidates[step], nC, orb, C.orders[step])
@@ -778,7 +1048,7 @@ function auto(C)
 
       if found == 0
         # x[1],...,x[step] cannot be continued
-        oc = orbit(im, 1, H, nH, C.V)
+        oc = orbit(im, 1, H, nH, C.V, C)
         # delete the orbit of im from the candidates for x[step]
         #
         # This could go very bad ...
@@ -801,23 +1071,23 @@ function auto(C)
         Gstep[C.ng[step]] = matgen(x, dim, C.per, C.V)
         C.g[step] = Gstep
         nH += 1
-        H = Vector{fmpz_mat}(undef, nH)
+        H = Vector{T}(undef, nH)
         nH = 0
-        for i in step:dim
+        @inbounds for i in step:dim
           for j in 1:C.ng[i]
             nH += 1
             H[nH] = C.g[i][j]
           end
         end
         # compute the new orbit of std_basis[step]
-        orb = orbit(C.std_basis[step], 1, H, nH, C.V)
+        orb = orbit(C.std_basis[step], 1, H, nH, C.V, C)
         C.orders[step] = length(orb)
         # delete the orbit from the candidates for x[step]
         setdiff!(candidates[step], orb)
         nC = length(candidates[step])
         #nC = delete(candidates[step], nC, orb, C.orders[step])
         # compute the new orbit of the vectors, which could be continued to an automorphism
-        oc = orbit(bad, nbad, H, nH, C.V)
+        oc = orbit(bad, nbad, H, nH, C.V, C)
         # delete the orbit from the candidates
         setdiff!(candidates[step], oc)
         nC = length(candidates[step])
@@ -843,7 +1113,7 @@ function auto(C)
           for j in 1:C.ng[i]
             nH += 1
             H[nH] = C.g[i][j]
-            if _orbitlen(C.std_basis[step], C.orders[step], H, nH, C) == C.orders[step]
+            if false #_orbitlen(C.std_basis[step], C.orders[step], H, nH, C.V) == C.orders[step]
               # /* the generator g[step][tries] can be omitted */
               C.ng[step] -= 1
               for i in tries:(C.ng[step] - 1)
@@ -865,12 +1135,12 @@ function auto(C)
   return _get_generators(C)
 end
 
-function _get_generators(C)
+function _get_generators(C::ZLatAutoCtx{S, T, U}) where {S, T, U}
   # Extract generators
   
-  gens = fmpz_mat[]
+  gens = T[]
 
-  orde = prod(C.orders)
+  orde = prod(fmpz.(C.orders))
 
   for i in 1:dim(C)
     for j in (C.nsg[i] + 1):C.ng[i]
@@ -916,13 +1186,13 @@ function aut(step, x, candidates, C, comb)
   return found
 end
 
-function cand(candidates, I, x, C, comb)
+function cand(candidates, I, x, C::ZLatAutoCtx{S, T, U}, comb) where {S, T, U}
   #@show candidates, I, x, C, comb
   DEP = 0 # this is bs
   dim = Hecke.dim(C)
   len = length(C.G) * DEP
-  vec = Vector{fmpz}(undef, dim)
-  vec2 = Vector{fmpz}(undef, dim)
+  vec = Vector{S}(undef, dim)
+  vec2 = Vector{S}(undef, dim)
   scpvec = Vector{Int}(undef, len)
   if I >= 2 && DEP > 0
     com = comb[I - 1]
@@ -938,17 +1208,19 @@ function cand(candidates, I, x, C, comb)
     end
 #/* xbase should be a basis for the lattice generated by the vectors in xvec,
 #   it is obtained via the transformation matrix comb[I-1].trans */
-    xbase = zero_matrix(FlintZZ, rank, dim)
-    Fxbase = zero_matrix(FlintZZ, rank, dim)
+    #xbase = zero_matrix(FlintZZ, rank, dim)
+    #Fxbase = zero_matrix(FlintZZ, rank, dim)
   end
   # candidates is the list for the candidates
   #@show C.fp_diagonal[I], length(candidates)
   for i in 1:C.fp_diagonal[I]
     candidates[i] = 0
   end
+
+
   nr = 0
   fail = 0
-  for j in 1:length(C.V)
+  @inbounds for j in 1:length(C.V)
     if fail != 0
       break
     end
@@ -960,6 +1232,7 @@ function cand(candidates, I, x, C, comb)
     end
     #@show C.V[j]
     for i in 1:length(C.G)
+      _issym = C.issymmetric[i]
       CAiI = C.G[i][C.per[I]] 
       Cvi = C.v[i]
       #@show Cvi
@@ -971,19 +1244,30 @@ function cand(candidates, I, x, C, comb)
         #@show x[k]
         xk = x[k]
         if xk > 0
-          vec[k] = (Vvj * C.G[i] * C.V[xk]')[1, 1]
-          vec2[k] = (C.V[xk] * C.G[i] * Vvj')[1, 1]
-          #vec[k] = _dot_product(Vvj, C.v[i], xk)
+          #vec[k] = _dot_product(Vvj, C.G[i], C.V[xk])
+          vec[k] = _dot_product_with_row(Vvj, C.v[i], xk)
+          #@assert _tutut == vec[k]
+          if !_issym
+            #vec2[k] = _dot_product(C.V[xk], C.G[i], Vvj)
+            vec2[k] = _dot_product_with_row(C.V[xk], C.v[i], j)
+            #@assert vec2[k] == _tutut2
+          end
         else
-          vec[k] = -(Vvj * C.G[i] * C.V[-xk]')[1, 1]
-          vec2[k] = -(C.V[-xk] * C.G[i] * Vvj')[1, 1]
-          #vec[k] = -_dot_product(VVj, C.v[i], -xk)
+          #vec[k] = -_dot_product(Vvj, C.G[i], C.V[-xk])
+          vec[k] = -_dot_product_with_row(Vvj, C.v[i], -xk)
+          #@assert _tutut == vec[k]
+
+          if !_issym
+            #vec2[k] = -_dot_product(C.V[-xk], C.G[i], Vvj)
+            vec2[k] = -_dot_product_with_row(C.V[-xk], C.v[i], j)
+            #@assert vec2[k] == _tutut2
+          end
         end
       end
 
       good = true
       for k in 1:(I - 1)
-        if vec[k] != C.G[i][C.per[I], C.per[k]] || vec2[k] != C.G[i][C.per[k], C.per[I]]
+        if vec[k] != C.G[i][C.per[I], C.per[k]] || (!_issym && vec2[k] != C.G[i][C.per[k], C.per[I]])
           good = false
           break
         end
@@ -991,14 +1275,14 @@ function cand(candidates, I, x, C, comb)
 
       #@show "pos", Vvj, good
 
-      if good && C.V_length[j][i] == C.G[i][C.per[I], C.per[I]]
+      if good && C.V.lengths[j][i] == C.G[i][C.per[I], C.per[I]]
         # C.V[j] is a candidate for x[I] with respec to the form C.G[i]
         okp += 1
       end
 
       good = true
       for k in 1:(I - 1)
-        if vec[k] != -C.G[i][C.per[I], C.per[k]] || vec2[k] != -C.G[i][C.per[k], C.per[I]]
+        if vec[k] != -C.G[i][C.per[I], C.per[k]] || (!_issym && vec2[k] != -C.G[i][C.per[k], C.per[I]])
           good = false
           break
         end
@@ -1006,12 +1290,15 @@ function cand(candidates, I, x, C, comb)
 
       #@show "neg", Vvj, good
 
-      if good && C.V_length[j][i] == C.G[i][C.per[I], C.per[I]]
+      if good && C.V.lengths[j][i] == C.G[i][C.per[I], C.per[I]]
         # C.V[j] is a candidate for x[I] with respec to the form C.G[i]
         #@show "here"
         okm += 1
       end
 
+      if okp < i && okm < i
+        break
+      end
 
       #if I >= 2 && DEP > 0
       #  for k in I-1:-1:1
@@ -1143,7 +1430,8 @@ function cand(candidates, I, x, C, comb)
   return nr
 end
 
-function orbit(pt, npt, G, nG, V)
+function orbit(pt, npt, G, nG, V, C::ZLatAutoCtx{S, T, U}) where {S, T, U}
+  # Assumes that V is sorted
   orb = Vector{Int}(undef, npt)
   n = length(V)
   flag = zeros(Bool, 2*n + 1)
@@ -1156,7 +1444,7 @@ function orbit(pt, npt, G, nG, V)
   cnd = 1
   while cnd <= norb
     for i in 1:nG
-      im = _operate(orb[cnd], G[i], V)
+      im = _operate(orb[cnd], G[i], V, C.operate_tmp)
       if !flag[im + n + 1]
         # this is a new point
         norb += 1
@@ -1169,7 +1457,7 @@ function orbit(pt, npt, G, nG, V)
   return orb
 end
 
-function stab(I, C)
+function stab(I, C::ZLatAutoCtx{SS, T, U}) where {SS, T, U}
   V = C.V
 #     	computes the orbit of fp.e[I] under the 
 #				generators in G->g[I]...G->g[n-1] and elements 
@@ -1225,8 +1513,8 @@ function stab(I, C)
     nH += C.ng[i]
   end
 
-  Hj = Vector{fmpz_mat}(undef, nH + 1)
-  H = Vector{fmpz_mat}(undef, nH)
+  Hj = Vector{T}(undef, nH + 1)
+  H = Vector{T}(undef, nH)
 
 #/* H are the generators of the group in which the stabilizer is computed */
 
@@ -1248,7 +1536,6 @@ function stab(I, C)
 #/* if flag[i + V.n] = 1, then the point i is already in the orbit */
 #/* S is a matrix to hold a stabilizer element temporarily */
 
-  S = zero_matrix(FlintZZ, dim, dim)
   #@show I
   orb[1] = C.std_basis[I]
   flag[orb[1] + n + 1] = true
@@ -1273,7 +1560,7 @@ function stab(I, C)
       end
       #@show orb, flag
       #@show cnd
-      im = _operate(orb[cnd], H[i], V)
+      im = _operate(orb[cnd], H[i], V, C.operate_tmp)
       #@show im
       #@show w
       if !flag[im + n + 1]
@@ -1286,12 +1573,12 @@ function stab(I, C)
         #@show w[orb[cnd] + n + 1]
         #@show H[i]
         #@show Int[_operate(w[orb[cnd] + n + 1][j], H[i], V) for j in 1:dim]
-        w[im + n + 1] = Int[_operate(w[orb[cnd] + n + 1][j], H[i], V) for j in 1:dim]
+        w[im + n + 1] = Int[_operate(w[orb[cnd] + n + 1][j], H[i], V, C.operate_tmp) for j in 1:dim]
       else
 #/* the image was already in the orbit */
         j = I
         while j <= dim
-          if _operate(w[orb[cnd] + n + 1][j], H[i], V) == w[im + n + 1][j]
+          if _operate(w[orb[cnd] + n + 1][j], H[i], V, C.operate_tmp) == w[im + n + 1][j]
             break
           end
           j += 1
@@ -1300,7 +1587,7 @@ function stab(I, C)
 #   mapping e[I] on im differ */
         if j <= dim && (C.orders[j] < C.fp_diagonal[j]  || fail >= Maxfail)
 #/* new stabilizer element S = w[orb[cnd]+V.n] * H[i] * (w[im+V.n])^-1 */
-          S = stabil(w[orb[cnd] + n + 1], w[im + n + 1], C.per, H[i], V)
+          S = stabil(w[orb[cnd] + n + 1], w[im + n + 1], C.per, H[i], V, C)
           #@show S
           Hj[1] = S
           nHj = 1
@@ -1310,7 +1597,7 @@ function stab(I, C)
               Hj[nHj] = C.g[k][l]
             end
           end
-          tmplen = _orbitlen(C.std_basis[j], C.fp_diagonal[j], Hj, nHj, V)
+          tmplen = _orbitlen(C.std_basis[j], C.fp_diagonal[j], Hj, nHj, V, C)
           if tmplen > C.orders[j] || fail >= Maxfail
 #/* the new stabilizer element S either enlarges the orbit of e[j]
 #   or it is one of the additional elements after MAXFAIL failures */
@@ -1355,36 +1642,66 @@ end
 #						p2 and G is a generator mapping
 #						p1 on p2, then S = X1*G*X2^-1
 #						stabilizes e	*****/
-function stabil(x1, x2, per, G, V)
-  #@show x1, x2
+function stabil(x1, x2, per, G, V, C)
   dim = length(x1)
   XG = zero_matrix(FlintZZ, dim, dim)
   X2 = zero_matrix(FlintZZ, dim, dim)
   x = Vector{Int}(undef, dim)
   for i in 1:dim
-    x[i] = _operate(x1[i], G, V)
+    x[i] = _operate(x1[i], G, V, C.operate_tmp) # fmpz case
   end
-  #@show x
-  #@show x2
+
   XG = matgen(x, dim, per, V)
   X2 = matgen(x2, dim, per, V)
-  #@show XG, X2
-  #X2i, d = pseudo_inv(X2)
-  #@show XG * X2i, d
-  #S = divexact(XG * X2i, d)
-# /* S = XG * X2^-1 */
+  
   b, S = can_solve(X2, XG, side = :left)
-  @assert b
-  @assert S * X2 == XG
-  #@show S
   return S
 end
+
+function stabil(x1, x2, per, G::Matrix{Int}, V, C)
+  #@show x1, x2
+  dim = length(x1)
+  x = Vector{Int}(undef, dim)
+  for i in 1:dim
+    x[i] = _operate(x1[i], G, V, C.operate_tmp)
+  end
+
+  XG = matgen(x, dim, per, V)
+  X2 = matgen(x2, dim, per, V)
+
+  @hassert :Lattice 1 begin XGG = deepcopy(XG); X22 = deepcopy(X2) end
+  SS = zeros(Int, dim, dim)
+  _psolve(SS, X2, XG, dim, C.prime)
+  @hassert :Lattice 1 SS * X22 == XGG
+  
+  return SS
+end
+
+fmpz_mat(M::Matrix{Int}) = matrix(FlintZZ, M)
+
+zero_matrix(Int, r, c) = zeros(Int, r, c)
+
+base_ring(::Vector{Int}) = Int
+
+function _one(::Type{Matrix{Int}}, n::Int) 
+  z = zeros(Int, n, n)
+  for i in 1:n
+    z[i, i] = 1
+  end
+  return z
+end
+
+_one(::Type{fmpz_mat}, n::Int) = identity_matrix(FlintZZ, n)
+
+_zero(::Type{Matrix{Int}}, n::Int, m::Int) = zeros(Int, n, m)
+
+_zero(::Type{fmpz_mat}, n::Int, m::Int) = zero_matrix(FlintZZ, n, m)
 
 function matgen(x, dim, per, v)
 #/*****	generates the matrix X which has as row
 #					per[i] the vector nr. x[i] from the 
-#					list v	*****/
-  X = zero_matrix(FlintZZ, dim, dim)
+#					list v	*****
+  X = zero_matrix(base_ring(v[1]), dim, dim)
   #@show x
   for i in 1:dim
     xi = x[i]
@@ -1403,6 +1720,20 @@ end
 
 # Isomorphism computation
 
+function _try_iso_setup_small(Gi, Go)
+  Ci = ZLatAutoCtx(Gi)
+  fl, Cismall = try_init_small(Ci, false)
+  if fl
+    Co = ZLatAutoCtx(Go)
+    fl2, Cosmall = try_init_small(Co, true, fmpz(Cismall.max))
+    if fl2
+      return true, Cismall, Cosmall
+    end
+  end
+
+  return false, Cismall, Cismall
+end
+
 function _iso_setup(Gi, Go)
   Ci = ZLatAutoCtx(Gi)
   Co = ZLatAutoCtx(Go)
@@ -1411,18 +1742,19 @@ function _iso_setup(Gi, Go)
   return Ci, Co
 end
 
-function isometry(Ci, Co)
+function isometry(Ci::ZLatAutoCtx{SS, T, U}, Co::ZLatAutoCtx{SS, T, U}) where {SS, T, U}
   d = dim(Co)
   C = Vector{Vector{Int}}(undef, d)
+  # I could actually also test the minimum
   if length(Ci.V) != length(Co.V)
-    return false, zero_matrix(FlintZZ, 0, 0)
+    return false, _zero(T, n, n)
   end
   for i in 1:d
     C[i] = zeros(Int, Ci.fp_diagonal[i])
   end
   x = zeros(Int, d)
   # compute the candidates for x[0]
-  H = Vector{fmpz_mat}(undef, sum(length(gg) for gg in Co.g))
+  H = Vector{T}(undef, sum(length(gg) for gg in Co.g))
   k = 1
   for i in 1:length(Co.g)
     for j in 1:length(Co.g[i])
@@ -1434,11 +1766,13 @@ function isometry(Ci, Co)
 
   found = iso(1, x, C, Ci, Co, H)
   if found
-    T = matgen(x, d, Ci.per, Co.V)
-    @assert all(T * Co.G[k] * T' == Ci.G[k] for k in 1:length(Ci.G))
-    return true, T
+    ISO = matgen(x, d, Ci.per, Co.V)
+    for k in 1:length(Ci.G)
+      ISO * Co.G[k] * ISO' == Ci.G[k]
+    end
+    return true, ISO
   else
-    return false, zero_matrix(FlintZZ, 0, 0)
+    return false, _zero(T, 0, 0)
   end
 end
 
@@ -1475,7 +1809,7 @@ function iso(step, x, C, Ci, Co, G)
       # this is remove orb from C[step], and then adding 0's at the end to make
       # it again as big as in the beginning. This can be done more efficiently.
       nc = length(C[step])
-      orb = orbit(x[step], 1, G, length(G), Co.V)
+      orb = orbit(x[step], 1, G, length(G), Co.V, Co)
       no = length(orb)
       setdiff!(C[step], orb)
       newnc = length(C[step])
@@ -1491,7 +1825,7 @@ function iso(step, x, C, Ci, Co, G)
   return found
 end
 
-function isostab(pt, G, C, Maxfail)
+function isostab(pt, G, C::ZLatAutoCtx{S, T, U}, Maxfail) where {S, T, U}
 # computes the orbit of V.v[pt] 
 # under the generators 
 #	G[0],...,G[nG-1] and elements
@@ -1513,10 +1847,10 @@ function isostab(pt, G, C, Maxfail)
   d = dim(C)
 #/* H are the generators of the stabilizer of C.V[pt] */
   V = C.V
-  H = Vector{fmpz_mat}(undef, 1)
+  H = Vector{T}(undef, 1)
   nH = 0
   n = length(C.V)
-  w = Vector{fmpz_mat}(undef, 2 * n + 2)
+  w = Vector{T}(undef, 2 * n + 2)
   orb = zeros(Int, 2 * n)
   orblen = 1
   flag = zeros(Bool, 2*n + 1)
@@ -1524,13 +1858,13 @@ function isostab(pt, G, C, Maxfail)
   orb[1] = pt
   flag[orb[1] + n + 1] = 1
 #/* w[pt+V.n] is the Identity */
-  w[orb[1] + n + 1] = identity_matrix(FlintZZ, d)
+  w[orb[1] + n + 1] = _one(T, d)
   cnd = 1
   len = 1
   fail = 0
 #/* fail is the number of successive failures */
-  A = zero_matrix(FlintZZ, d, d)
-  B = zero_matrix(FlintZZ, d, d)
+  #A = zero_matrix(FlintZZ, d, d)
+  #B = zero_matrix(FlintZZ, d, d)
   while (cnd <= len && fail < Maxfail)
     for i in 1:nG
       if fail >= Maxfail
@@ -1538,7 +1872,7 @@ function isostab(pt, G, C, Maxfail)
       end
       #@show G, i
       #@show orb[cnd]
-      im = _operate(orb[cnd], G[i], V)
+      im = _operate(orb[cnd], G[i], V, C.operate_tmp)
       #@show im
       if !flag[im + n  + 1]
 #/* a new element is found, appended to the orbit and an element mapping
@@ -1611,13 +1945,17 @@ function isocand(CI, I, x, Ci, Co)
       # x[1]...x[I-1]
       for k in 1:(I - 1)
         xk = x[k]
+        # TODO: Check for symmetry as in the cand function
+        # TODO: Use dot_product_with_row
         if xk > 0
-          vec[k] = (Vvj * Co.G[i] * Co.V[xk]')[1, 1]
-          vec2[k] = (Co.V[xk] * Co.G[i] * Vvj')[1, 1]
+          vec[k] = _dot_product(Vvj, Co.G[i], Co.V[xk])
+          vec2[k] = _dot_product(Co.V[xk], Co.G[i], Vvj)
           #vec[k] = _dot_product(Vvj, Fvi, -xk)
         else
-          vec[k] = -(Vvj * Co.G[i] * Co.V[-xk]')[1, 1]
-          vec2[k] = -(Co.V[-xk] * Co.G[i] * Vvj')[1, 1]
+          vec[k] = -_dot_product(Vvj, Co.G[i], Co.V[-xk])
+          vec2[k] = -_dot_product(Co.V[-xk], Co.G[i], Vvj)
+          #vec[k] = -(Vvj * Co.G[i] * Co.V[-xk]')[1, 1]
+          #vec2[k] = -(Co.V[-xk] * Co.G[i] * Vvj')[1, 1]
           #vec[k] = -_dot_product(Vvj, Fvi, -xk)
         end
       end
@@ -1628,7 +1966,7 @@ function isocand(CI, I, x, Ci, Co)
           break
         end
       end
-      if good && Co.V_length[j][i] == Ci.G[i][Ci.per[I], Ci.per[I]]
+      if good && Co.V.lengths[j][i] == Ci.G[i][Ci.per[I], Ci.per[I]]
         okp += 1
       end
       good = true
@@ -1639,7 +1977,7 @@ function isocand(CI, I, x, Ci, Co)
           break
         end
       end
-      if good && Co.V_length[j][i] == Ci.G[i][Ci.per[I], Ci.per[I]]
+      if good && Co.V.lengths[j][i] == Ci.G[i][Ci.per[I], Ci.per[I]]
         okm += 1
       end
       # do something with scpvec
@@ -1730,7 +2068,7 @@ function _dot_product_with_row(v::fmpz_mat, A::fmpz_mat, k::Int, tmp::fmpz = zer
 end
 
 function _dot_product_with_column!(t::Int, v::Vector{Int}, A::Matrix{Int}, k::Int, tmp::Int)
-  t = v[1] * A[1, k]
+  @inbounds t = v[1] * A[1, k]
   @inbounds for i in 2:length(v)
     t = t + v[i] * A[i, k]
   end
@@ -1738,37 +2076,146 @@ function _dot_product_with_column!(t::Int, v::Vector{Int}, A::Matrix{Int}, k::In
 end
 
 function _dot_product_with_column(v::Vector{Int}, A::Matrix{Int}, k::Int, tmp::Int = zero(Int))
-  return _dot_product_with_column!(t, v, A, k, tmp)
+  t = zero(Int)
+  t = _dot_product_with_column!(t, v, A, k, tmp)
+  #@show size(A)
+  #@assert (reshape(v, (1, length(v))) * A[1:size(A, 1), k:k])[1, 1] == t
+  return t
 end
 
-#orbit(pt, npt, G, nG, V, orb)	/*****	computes the orbit of npt points in pt 
-#					under the nG matrices in G and puts the
-#					orbit in orb, allocates the memory for 
-#					orb, returns the length of the orbit, 
-#					the points are the indices in the
-#					list V.v	*****/
+function _dot_product_with_row!(t::Int, v::Vector{Int}, A::Matrix{Int}, k::Int, tmp::Int)
+  @inbounds t = v[1] * A[k, 1]
+  @inbounds for i in 2:length(v)
+    t = t + v[i] * A[k, i]
+  end
+  return t
+end
 
-#cand(CI, I, x, V, F, fp, comb, bach, flags)
-#			/*****	tests, whether x[0],...,x[I-1] is a partial 
-#				automorphism, using scalar product combinations
-#				and Bacher-polynomials depending on the chosen 
-#				options, puts the candidates for x[I] (i.e. the
-#				vectors vec such that the scalar products of 
-#				x[0],...,x[I-1],vec are correct) on CI, returns
-#				their number (should be fp.diag[I])	*****/
-#veclist	V;
-#invar	F;
-#fpstruct fp;
-#scpcomb	*comb;
-#bachpol	*bach;
-#flagstruct flags;
-#int	*CI, I, *x;
-#{
-#	int	i, j, k, dim, okp, okm, sign, nr, fail, num;
-#	int	*vec, *scpvec, **xvec, **xbase, **Fxbase, DEP, len, rank, n;
-#	int	*Vvj, *FAiI, **Fvi, *xnum, xk, *comtri, *comcoi, xbij, vj;
-#	scpcomb	com;
+function _dot_product_with_row(v::Vector{Int}, A::Matrix{Int}, k::Int, tmp::Int = zero(Int))
+  t = zero(Int)
+  return _dot_product_with_row!(t, v, A, k, tmp)
+end
+
+# Generic vector times matrix
+
+_vec_times_matrix!(w, v, A) = mul!(w, v, A)
+
+_vec_times_matrix(v::Vector{Int}, A) = _vec_times_matrix!(zeros(Int, size(A, 2)), v , A)
+
+function _vec_times_matrix!(w::Vector{Int}, v::Vector{Int}, A::Matrix{Int})
+  c = size(A, 2)
+  r = size(A, 1)
+  for i in 1:c
+    @inbounds w[i] = v[1] * A[1, i]
+    for j in 2:r
+      @inbounds w[i] += v[j] * A[j, i]
+    end
+  end
+  #@assert reshape(w, 1, length(w)) == reshape(v, 1, length(v)) * A
+  return w
+end
+
+function _dot_product(v::Vector{Int}, M::Matrix{Int}, w::Vector{Int})
+  z = M * w
+  zz = dot(v, z)
+  #@assert zz == (reshape(v, 1, length(v)) * M * w)[1, 1]
+  return zz
+end
+
+function _norm(v::Vector{Int}, M::Matrix{Int}, tmp::Vector{Int} = Vector{Int}(undef, length(v)))
+  LinearAlgebra.mul!(tmp, M, v)
+  return dot(v, tmp)
+end
+
+function _norm(v::fmpz_mat, M::fmpz_mat, tmp::fmpz_mat = zero_matrix(FlintZZ, 1, ncols(v)))
+  mul!(tmp, v, M)
+  return (v * tmp')[1, 1]
+end
+
+function _dot_product(v::fmpz_mat, M::fmpz_mat, w::fmpz_mat)
+  return (v * M * w')[1, 1]
+end
+
 #
+
+function _pgauss(r, A, B, n, p)
+  ainv = invmod(A[r, r], p)
+  for j in (r + 1):n
+    if A[r, j] % p != 0
+      f = A[r, j] * ainv % p
+      for i in (r+1):n
+        A[i, j] = (A[i, j] - f * A[i, r]) % p
+      end
+      for i in 1:n
+        B[i, j] = (B[i, j] - f * B[i, r]) % p
+      end
+      A[r, j] = 0
+    end
+  end
+end
+
+global _debug = []
+
+function _psolve(X, A, B, n, p)
+  for i in 1:(n - 1)
+    j = i
+    while A[i, j] % p == 0 && j <= n
+      j += 1
+    end
+    if j == n + 1
+      throw(error("Not possible"))
+    end
+
+    if j != i
+      for k in i:n
+        A[k, i], A[k, j] = A[k, j], A[k, i]
+      end
+      for k in 1:n
+        B[k, i], B[k, j] = B[k, j], B[k, i]
+      end
+    end
+    _pgauss(i, A, B, n, p)
+  end
+  for i in 1:n
+    for j in n:-1:1
+      sum = 0
+      for k in n:-1:(j+1)
+        sum = (sum + X[i, k] * A[k, j]) % p
+      end
+      ainv = invmod(A[j, j], p)
+      X[i, j] = ((B[i, j] - sum) * ainv) % p
+      c = 2 * X[i, j]
+      if 2*c > p
+        X[i, j] -= p
+      elseif c <= -p
+        X[i, j] += p
+      end
+    end
+  end
+end
+
+###########################################
+#
+#  isless for fmpz_mat (vectors)
+#
+##########################################
+
+function _isless(x::fmpz_mat, y::fmpz_mat)
+  i = 0
+  c = ncols(x)
+  while i < c
+    i += 1
+    if x[i] == y[i]
+      continue
+    else
+      return x[i] < y[i]
+    end
+  end
+  return false
+end
+
+# should do this more C style
+max_nbits(v::fmpz_mat) = maximum([nbits(v[1, i]) for i in 1:ncols(v)])
 
 # Some tests that I need to add:
 #
