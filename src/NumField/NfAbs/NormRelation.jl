@@ -1166,8 +1166,11 @@ function class_group_via_brauer(O::NfOrd, N::NormRelation, do_lll = true)
     OK = O
   end
   OK = maximal_order(K)
+  @vprint :NormRelation 1 "Computing prime ideals ...\n "
   S = prime_ideals_up_to(OK, Hecke.factor_base_bound_grh(OK))
+  @vprint :NormRelation 1 "Setting up class group context\n "
   c, UZK = _setup_for_norm_relation_fun(K, S)
+  @vprint :NormRelation 1 "Adding Sunits from subfields\n "
   _add_sunits_from_brauer_relation!(c, UZK, N)
   if index(N) != 1
     # I need to saturate
