@@ -100,7 +100,10 @@ global const maximal_order = MaximalOrder
 
 function __init__()
 
-  if myid() == 1
+  show_banner = isinteractive() &&
+                !any(x->x.name in ["Oscar"], keys(Base.package_locks))
+
+  if show_banner
     println("")
     print("Welcome to \n")
     printstyled("
@@ -119,8 +122,6 @@ function __init__()
     println()
     println("(c) 2015-2019 by Claus Fieker, Tommy Hofmann and Carlo Sircana")
     println()
-  else
-    println("Hecke $VERSION_NUMBER ...")
   end
 
   if inNotebook()  # to make toggle work in IJulia
