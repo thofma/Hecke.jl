@@ -1060,7 +1060,7 @@ end
 function _gcd_with_failure(a::fmpz_mod_poly, b::fmpz_mod_poly)
   f = fmpz()
   G = parent(a)()
-  ccall((:fmpz_mod_poly_gcd_euclidean_f, :libflint), Nothing,
+  ccall((:fmpz_mod_poly_gcd_euclidean_f, libflint), Nothing,
               (Ref{fmpz}, Ref{fmpz_mod_poly}, Ref{fmpz_mod_poly}, Ref{fmpz_mod_poly}), f, G, a, b)
   return f, G
 end

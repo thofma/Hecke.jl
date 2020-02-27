@@ -9,7 +9,7 @@ function compose_mod(x::nmod_poly, y::nmod_poly, z::nmod_poly)
   check_parent(x,y)
   check_parent(x,z)
   r = parent(x)()
-  ccall((:nmod_poly_compose_mod, :libflint), Nothing,
+  ccall((:nmod_poly_compose_mod, libflint), Nothing,
           (Ref{nmod_poly}, Ref{nmod_poly}, Ref{nmod_poly}, Ref{nmod_poly}), r, x, y, z)
   return r
 end
@@ -18,7 +18,7 @@ function compose_mod(x::gfp_poly, y::gfp_poly, z::gfp_poly)
   check_parent(x,y)
   check_parent(x,z)
   r = parent(x)()
-  ccall((:nmod_poly_compose_mod, :libflint), Nothing,
+  ccall((:nmod_poly_compose_mod, libflint), Nothing,
           (Ref{gfp_poly}, Ref{gfp_poly}, Ref{gfp_poly}, Ref{gfp_poly}), r, x, y, z)
   return r
 end
@@ -31,7 +31,7 @@ end
 """
 function taylor_shift(x::nmod_poly, c::UInt)
   r = parent(x)()
-  ccall((:nmod_poly_taylor_shift, :libflint), Nothing,
+  ccall((:nmod_poly_taylor_shift, libflint), Nothing,
           (Ref{nmod_poly}, Ref{nmod_poly}, UInt), r, x, c)
   return r
 end

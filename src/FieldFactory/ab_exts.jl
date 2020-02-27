@@ -956,7 +956,7 @@ end
 
 function __get_term(a::fmpq_mpoly, exps::Vector{UInt})
    z = fmpq()
-   ccall((:fmpq_mpoly_get_coeff_fmpq_ui, :libflint), Nothing,
+   ccall((:fmpq_mpoly_get_coeff_fmpq_ui, libflint), Nothing,
          (Ref{fmpq}, Ref{fmpq_mpoly}, Ptr{UInt}, Ref{FmpqMPolyRing}),
          z, a, exps, parent(a))
    return z

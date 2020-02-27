@@ -439,14 +439,14 @@ function isdivisible(x::AbsOrdQuoRingElem, y::AbsOrdQuoRingElem)
   for i in 2:(d + 1)
     if !iszero(V[1, i])
   #if !iszero(sub(V, 1:1, 2:(d + 1)))
-      ccall((:fmpz_mat_zero, :libflint), Nothing, (Ref{fmpz_mat}, ), V)
+      ccall((:fmpz_mat_zero, libflint), Nothing, (Ref{fmpz_mat}, ), V)
       return false, zero(parent(x))
     end
   end
   
   z = R(-base_ring(R)(fmpz[ V[1, i] for i in (d + 2):(2*d + 1)])) # V[1, i] is always a copy
 
-  ccall((:fmpz_mat_zero, :libflint), Nothing, (Ref{fmpz_mat}, ), V)
+  ccall((:fmpz_mat_zero, libflint), Nothing, (Ref{fmpz_mat}, ), V)
 
   @hassert :NfOrdQuoRing 1 z*y == x
   return true, z
@@ -709,7 +709,7 @@ function xxgcd(x::NfOrdQuoRingElem, y::NfOrdQuoRingElem)
 
   @hassert :NfOrdQuoRing 1 Q(O(1)) == u*e - (v*(-f))
 
-  ccall((:fmpz_mat_zero, :libflint), Nothing, (Ref{fmpz_mat}, ), V)
+  ccall((:fmpz_mat_zero, libflint), Nothing, (Ref{fmpz_mat}, ), V)
 
   return g, u, v, -f, e
 end

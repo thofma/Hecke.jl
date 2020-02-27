@@ -73,7 +73,7 @@ end
 function norm(m::fmpz_mat, NC::NormCtx_split, div::fmpz = fmpz(1))
   l = Array{fmpz, 1}()
   for i = 1:length(NC.lp)
-    ccall((:fmpz_mat_get_nmod_mat, :libflint), Cvoid, (Ref{gfp_mat}, Ref{fmpz_mat}), NC.mp[i], m)
+    ccall((:fmpz_mat_get_nmod_mat, libflint), Cvoid, (Ref{gfp_mat}, Ref{fmpz_mat}), NC.mp[i], m)
     mul!(NC.np[i], NC.mp[i], NC.lC[i])
     n = NC.np[i]
     p = n[1,1]

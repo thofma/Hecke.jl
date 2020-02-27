@@ -2,13 +2,13 @@ import Nemo.isone, Nemo.divexact, Base.copy
 export divexact!, gcd_into!, coprime_base, coprime_base_insert
 
 function divexact!(a::fmpz, b::fmpz)
-  ccall((:fmpz_divexact, :libflint), Nothing, 
+  ccall((:fmpz_divexact, libflint), Nothing, 
           (Ref{fmpz}, Ref{fmpz}, Ref{fmpz}), a, a, b)
   return a
 end
 
 function gcd_into!(a::fmpz, b::fmpz, c::fmpz)
-  ccall((:fmpz_gcd, :libflint), Nothing, 
+  ccall((:fmpz_gcd, libflint), Nothing, 
           (Ref{fmpz}, Ref{fmpz}, Ref{fmpz}), a, b, c)
   return a
 end
@@ -35,7 +35,7 @@ function copy_into!(a, b)
 end
 
 function copy_into!(a::fmpz, b::fmpz)
-  ccall((:fmpz_set, :libflint), Nothing, (Ref{fmpz}, Ref{fmpz}), a, b)
+  ccall((:fmpz_set, libflint), Nothing, (Ref{fmpz}, Ref{fmpz}), a, b)
   return a
 end
 

@@ -6,14 +6,14 @@ export setprecision!, defining_polynomial
 function Base.setprecision(q::qadic, N::Int)
   r = parent(q)()
   r.N = N
-  ccall((:padic_poly_set, :libflint), Nothing, (Ref{qadic}, Ref{qadic}, Ref{FlintQadicField}), r, q, parent(q))
+  ccall((:padic_poly_set, libflint), Nothing, (Ref{qadic}, Ref{qadic}, Ref{FlintQadicField}), r, q, parent(q))
   return r
 end
 
 function Base.setprecision(q::padic, N::Int)
   r = parent(q)()
   r.N = N
-  ccall((:padic_set, :libflint), Nothing, (Ref{padic}, Ref{padic}, Ref{FlintPadicField}), r, q, parent(q))
+  ccall((:padic_set, libflint), Nothing, (Ref{padic}, Ref{padic}, Ref{FlintPadicField}), r, q, parent(q))
   return r
 end
 
@@ -68,38 +68,38 @@ end
 
 function trace(r::qadic)
   t = coefficient_ring(parent(r))()
-  ccall((:qadic_trace, :libflint), Nothing, (Ref{padic}, Ref{qadic}, Ref{FlintQadicField}), t, r, parent(r))
+  ccall((:qadic_trace, libflint), Nothing, (Ref{padic}, Ref{qadic}, Ref{FlintQadicField}), t, r, parent(r))
   return t
 end
 
 function norm(r::qadic)
   t = coefficient_ring(parent(r))()
-  ccall((:qadic_norm, :libflint), Nothing, (Ref{padic}, Ref{qadic}, Ref{FlintQadicField}), t, r, parent(r))
+  ccall((:qadic_norm, libflint), Nothing, (Ref{padic}, Ref{qadic}, Ref{FlintQadicField}), t, r, parent(r))
   return t
 end
 
 function setcoeff!(x::fq_nmod, n::Int, u::UInt)
-  ccall((:nmod_poly_set_coeff_ui, :libflint), Nothing, 
+  ccall((:nmod_poly_set_coeff_ui, libflint), Nothing, 
                 (Ref{fq_nmod}, Int, UInt), x, n, u)
 end
 
 function coeff(x::qadic, i::Int)
   R = FlintPadicField(prime(parent(x)), parent(x).prec_max)
   c = R()
-  ccall((:padic_poly_get_coeff_padic, :libflint), Nothing, 
+  ccall((:padic_poly_get_coeff_padic, libflint), Nothing, 
            (Ref{padic}, Ref{qadic}, Int, Ref{FlintQadicField}), c, x, i, parent(x))
   return c         
 end
 
 function setcoeff!(x::qadic, i::Int, y::padic)
-  ccall((:padic_poly_set_coeff_padic, :libflint), Nothing, 
+  ccall((:padic_poly_set_coeff_padic, libflint), Nothing, 
            (Ref{qadic}, Int, Ref{padic}, Ref{FlintQadicField}), x, i, y, parent(x))
 end
 
 function setcoeff!(x::qadic, i::Int, y::UInt)
   R = FlintPadicField(prime(parent(x)), parent(x).prec_max)
   Y = R(fmpz(y))
-  ccall((:padic_poly_set_coeff_padic, :libflint), Nothing, 
+  ccall((:padic_poly_set_coeff_padic, libflint), Nothing, 
            (Ref{qadic}, Int, Ref{padic}, Ref{FlintQadicField}), x, i, Y, parent(x))
 end
 
@@ -152,13 +152,13 @@ coefficient_field(Q::FlintQadicField) = coefficient_ring(Q)
 
 function prime(R::PadicField, i::Int)
   p = fmpz()
-  ccall((:padic_ctx_pow_ui, :libflint), Cvoid, (Ref{fmpz}, Int, Ref{PadicField}), p, i, R)
+  ccall((:padic_ctx_pow_ui, libflint), Cvoid, (Ref{fmpz}, Int, Ref{PadicField}), p, i, R)
   return p
 end
 
 function getUnit(a::padic)
   u = fmpz()
-  ccall((:fmpz_set, :libflint), Cvoid, (Ref{fmpz}, Ref{Int}), u, a.u)
+  ccall((:fmpz_set, libflint), Cvoid, (Ref{fmpz}, Ref{Int}), u, a.u)
   return u, a.v, a.N
 end
 
@@ -208,7 +208,7 @@ function defining_polynomial(Q::FlintQadicField, P::Ring = coefficient_ring(Q))
   for i=0:Q.len-1
     j = unsafe_load(reinterpret(Ptr{Int}, Q.j), i+1)
     a = fmpz()
-    ccall((:fmpz_set, :libflint), Nothing, (Ref{fmpz}, Int64), a, Q.a+i*sizeof(Ptr))
+    ccall((:fmpz_set, libflint), Nothing, (Ref{fmpz}, Int64), a, Q.a+i*sizeof(Ptr))
     setcoeff!(f, j, P(a))
   end
   return f
@@ -220,7 +220,7 @@ function defining_polynomial(Q::FqNmodFiniteField, P::Ring = GF(characteristic(Q
   for i=0:Q.len-1
     j = unsafe_load(reinterpret(Ptr{Int}, Q.j), i+1)
     a = fmpz()
-    ccall((:fmpz_set, :libflint), Nothing, (Ref{fmpz}, Int64), a, Q.a+i*sizeof(Ptr))
+    ccall((:fmpz_set, libflint), Nothing, (Ref{fmpz}, Int64), a, Q.a+i*sizeof(Ptr))
     setcoeff!(f, j, P(a))
   end
   return f

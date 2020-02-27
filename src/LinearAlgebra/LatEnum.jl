@@ -211,20 +211,20 @@ end
 #         proper lattice type
 
 function fmpz_mat_entry(a::fmpz_mat, r::Int, c::Int)
-  return ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz},
+  return ccall((:fmpz_mat_entry, libflint), Ptr{fmpz},
                (Ref{fmpz_mat}, Int, Int), a, r - 1, c - 1)
 end
 
 function fmpz_mat_entry_incref!(a::fmpz_mat, r::Int, c::Int)
-  z = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz},
+  z = ccall((:fmpz_mat_entry, libflint), Ptr{fmpz},
                (Ref{fmpz_mat}, Int, Int), a, r - 1, c - 1)
-  ccall((:fmpz_add_ui, :libflint), Nothing, (Ptr{fmpz}, Ptr{fmpz}, Int), z, z, 1)
+  ccall((:fmpz_add_ui, libflint), Nothing, (Ptr{fmpz}, Ptr{fmpz}, Int), z, z, 1)
 end
 
 function fmpz_mat_entry_add_ui!(a::fmpz_mat, r::Int, c::Int, v::UInt)
-  z = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz},
+  z = ccall((:fmpz_mat_entry, libflint), Ptr{fmpz},
                (Ref{fmpz_mat}, Int, Int), a, r - 1, c - 1)
-  ccall((:fmpz_add_ui, :libflint), Nothing, (Ptr{fmpz}, Ptr{fmpz}, Int), z, z, v)
+  ccall((:fmpz_add_ui, libflint), Nothing, (Ptr{fmpz}, Ptr{fmpz}, Int), z, z, v)
 end
 
 function enum_ctx_advance_level(E::enum_ctx{A,B,C}, i::Int) where {A,B,C}

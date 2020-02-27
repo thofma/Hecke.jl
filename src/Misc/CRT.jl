@@ -8,17 +8,17 @@ function zero(a::PolyElem)
 end
 
 @inline function rem!(a::fmpz, b::fmpz, c::fmpz)
-  ccall((:fmpz_mod, :libflint), Nothing, (Ref{fmpz}, Ref{fmpz}, Ref{fmpz}), a, b, c)
+  ccall((:fmpz_mod, libflint), Nothing, (Ref{fmpz}, Ref{fmpz}, Ref{fmpz}), a, b, c)
   return a
 end
 
 @inline function sub!(a::fmpz, b::fmpz, c::fmpz)
-  ccall((:fmpz_sub, :libflint), Nothing, (Ref{fmpz}, Ref{fmpz}, Ref{fmpz}), a, b, c)
+  ccall((:fmpz_sub, libflint), Nothing, (Ref{fmpz}, Ref{fmpz}, Ref{fmpz}), a, b, c)
   return a
 end
 
 function rem!(a::fmpz_mod_poly, b::fmpz_mod_poly, c::fmpz_mod_poly)
-  ccall((:fmpz_mod_poly_rem, :libflint), Nothing, (Ref{fmpz_mod_poly}, Ref{fmpz_mod_poly}, Ref{fmpz_mod_poly}), a, b, c)
+  ccall((:fmpz_mod_poly_rem, libflint), Nothing, (Ref{fmpz_mod_poly}, Ref{fmpz_mod_poly}, Ref{fmpz_mod_poly}), a, b, c)
   return a
 end
 
@@ -446,14 +446,14 @@ function _num_setcoeff!(a::nf_elem, n::Int, c::fmpz)
   ra = pointer_from_objref(a)
   if degree(K) == 1
     @assert n == 0
-    ccall((:fmpz_set, :libflint), Nothing, (Ref{Nothing}, Ref{fmpz}), ra, c)
-    ccall((:fmpq_canonicalise, :libflint), Nothing, (Ref{nf_elem}, ), a)
+    ccall((:fmpz_set, libflint), Nothing, (Ref{Nothing}, Ref{fmpz}), ra, c)
+    ccall((:fmpq_canonicalise, libflint), Nothing, (Ref{nf_elem}, ), a)
   elseif degree(K) == 2
      @assert n >= 0  && n <= 3
-     ccall((:fmpz_set, :libflint), Nothing, (Ref{Nothing}, Ref{fmpz}), ra+n*sizeof(Int), c)
+     ccall((:fmpz_set, libflint), Nothing, (Ref{Nothing}, Ref{fmpz}), ra+n*sizeof(Int), c)
   else
     @assert n < degree(K) && n >=0
-    ccall((:fmpq_poly_set_coeff_fmpz, :libflint), Nothing, (Ref{nf_elem}, Int, Ref{fmpz}), a, n, c)
+    ccall((:fmpq_poly_set_coeff_fmpz, libflint), Nothing, (Ref{nf_elem}, Int, Ref{fmpz}), a, n, c)
    # includes canonicalisation and treatment of den.
   end
 end
@@ -465,12 +465,12 @@ function _num_setcoeff!(a::nf_elem, n::Int, c::UInt)
   ra = pointer_from_objref(a)
    
   if degree(K) == 1
-    ccall((:fmpz_set_ui, :libflint), Nothing, (Ref{Nothing}, UInt), ra, c)
-    ccall((:fmpq_canonicalise, :libflint), Nothing, (Ref{nf_elem}, ), a)
+    ccall((:fmpz_set_ui, libflint), Nothing, (Ref{Nothing}, UInt), ra, c)
+    ccall((:fmpq_canonicalise, libflint), Nothing, (Ref{nf_elem}, ), a)
   elseif degree(K) == 2
-    ccall((:fmpz_set_ui, :libflint), Nothing, (Ref{Nothing}, UInt), ra+n*sizeof(Int), c)
+    ccall((:fmpz_set_ui, libflint), Nothing, (Ref{Nothing}, UInt), ra+n*sizeof(Int), c)
   else
-    ccall((:fmpq_poly_set_coeff_ui, :libflint), Nothing, (Ref{nf_elem}, Int, UInt), a, n, c)
+    ccall((:fmpq_poly_set_coeff_ui, libflint), Nothing, (Ref{nf_elem}, Int, UInt), a, n, c)
    # includes canonicalisation and treatment of den.
   end
 end
@@ -572,7 +572,7 @@ function modular_init(K::AnticNumberField, p::fmpz; deg_limit::Int=0, max_split:
   me.p = p
   me.K = K
   me.up = UInt(p)
-  me.upinv = ccall((:n_preinvert_limb, :libflint), UInt, (UInt, ), me.up)
+  me.upinv = ccall((:n_preinvert_limb, libflint), UInt, (UInt, ), me.up)
   return me
 end
 
@@ -596,7 +596,7 @@ function modular_proj(a::nf_elem, me::modular_env)
     else
       u = F()
     end
-    ccall((:fq_nmod_set, :libflint), Nothing,
+    ccall((:fq_nmod_set, libflint), Nothing,
                 (Ref{fq_nmod}, Ref{nmod_poly}, Ref{FqNmodFiniteField}),
                 u, me.rp[i], F)
     me.res[i] = u
@@ -620,7 +620,7 @@ function modular_proj(A::FacElem{nf_elem, AnticNumberField}, me::modular_env)
     for i=1:me.ce.n
       F = me.fld[i]
       u = F()
-      ccall((:fq_nmod_set, :libflint), Nothing,
+      ccall((:fq_nmod_set, libflint), Nothing,
                   (Ref{fq_nmod}, Ref{nmod_poly}, Ref{FqNmodFiniteField}),
                   u, me.rp[i], F)
       eee = mod(v, size(F)-1)
@@ -644,12 +644,12 @@ compute a global pre-image using some efficient CRT.
 """
 function modular_lift(a::Array{fq_nmod, 1}, me::modular_env)
   for i=1:me.ce.n
-    ccall((:nmod_poly_set, :libflint), Nothing, (Ref{nmod_poly}, Ref{fq_nmod}), me.rp[i], a[i])
+    ccall((:nmod_poly_set, libflint), Nothing, (Ref{nmod_poly}, Ref{fq_nmod}), me.rp[i], a[i])
   end
   ap = crt(me.rp, me.ce)
   r = me.K()
   for i=0:ap.length-1
-    u = ccall((:nmod_poly_get_coeff_ui, :libflint), UInt, (Ref{nmod_poly}, Int), ap, i)
+    u = ccall((:nmod_poly_get_coeff_ui, libflint), UInt, (Ref{nmod_poly}, Int), ap, i)
     _num_setcoeff!(r, i, u)
   end
   return r
@@ -683,7 +683,7 @@ function modular_proj(a::Generic.Poly{nf_elem}, me::modular_env)
     crt_inv!(me.rp, me.Fpx(c), me.ce)
     for j=1:me.ce.n
       u = coeff(me.Rp[j], i)
-      ccall((:fq_nmod_set, :libflint), Nothing,
+      ccall((:fq_nmod_set, libflint), Nothing,
                    (Ref{fq_nmod}, Ref{nmod_poly}, Ref{FqNmodFiniteField}),
                    u, me.rp[j], me.fld[j])
       setcoeff!(me.Rp[j], i, u)
@@ -703,12 +703,12 @@ function modular_lift(a::Array{fq_nmod_poly, 1}, me::modular_env)
   d = maximum([x.length for x = a])
   for i=0:d-1
     for j=1:me.ce.n
-      ccall((:nmod_poly_set, :libflint), Nothing, (Ref{nmod_poly}, Ref{fq_nmod}), me.rp[j], coeff(a[j], i))
+      ccall((:nmod_poly_set, libflint), Nothing, (Ref{nmod_poly}, Ref{fq_nmod}), me.rp[j], coeff(a[j], i))
     end
     ap = crt(me.rp, me.ce)
     r = coeff(res, i)
     for j=0:ap.length-1
-      u = ccall((:nmod_poly_get_coeff_ui, :libflint), UInt, (Ref{nmod_poly}, Int), ap, j)
+      u = ccall((:nmod_poly_get_coeff_ui, libflint), UInt, (Ref{nmod_poly}, Int), ap, j)
       _num_setcoeff!(r, j, u)
     end
     setcoeff!(res, i, r)

@@ -438,6 +438,8 @@ function hasspecial(G)
 end
 
 import Nemo: get_special, set_special
+const libflint = Nemo.libflint
+const libantic = Nemo.libantic
 
 function get_special(G, s::Symbol)
   fl, D = hasspecial(G)

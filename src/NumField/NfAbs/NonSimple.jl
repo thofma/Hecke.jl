@@ -138,7 +138,7 @@ function Nemo.one!(a::NfAbsNSElem)
 end
 
 function Nemo.one!(a::fmpq_mpoly)
-  ccall((:fmpq_mpoly_one, :libflint), Nothing,
+  ccall((:fmpq_mpoly_one, libflint), Nothing,
       (Ref{fmpq_mpoly}, Ref{FmpqMPolyRing}), a, parent(a))
   return a
 end
@@ -262,12 +262,12 @@ function Base.show(io::IO, a::NfAbsNSElem)
   if length(x) == 0
      print(io, "0")
   else
-     cstr = ccall((:fmpq_mpoly_get_str_pretty, :libflint), Ptr{UInt8},
+     cstr = ccall((:fmpq_mpoly_get_str_pretty, libflint), Ptr{UInt8},
          (Ref{fmpq_mpoly}, Ptr{Ptr{UInt8}}, Ref{FmpqMPolyRing}),
          x, [string(s) for s in symbols(parent(a))], x.parent)
      print(io, unsafe_string(cstr))
 
-     ccall((:flint_free, :libflint), Nothing, (Ptr{UInt8},), cstr)
+     ccall((:flint_free, libflint), Nothing, (Ptr{UInt8},), cstr)
   end
  
 #  show(io, f)
@@ -438,7 +438,7 @@ function elem_to_mat_row!(M::fmpz_mat, i::Int, d::fmpz, a::NfAbsNSElem)
     M[i, j] = z_q.num[1, j]
   end
 
-  ccall((:fmpz_set, :libflint), Nothing, (Ref{fmpz}, Ref{fmpz}), d, z_q.den)
+  ccall((:fmpz_set, libflint), Nothing, (Ref{fmpz}, Ref{fmpz}), d, z_q.den)
 
   return nothing
 end

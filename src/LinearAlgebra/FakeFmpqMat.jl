@@ -221,14 +221,14 @@ end
 
 function fmpq_mat(x::fmpz_mat)
   z = zero_matrix(FlintQQ, nrows(x), ncols(x))
-  ccall((:fmpq_mat_set_fmpz_mat, :libflint), Nothing, (Ref{fmpq_mat}, Ref{fmpz_mat}), z, x)
+  ccall((:fmpq_mat_set_fmpz_mat, libflint), Nothing, (Ref{fmpq_mat}, Ref{fmpz_mat}), z, x)
   return z
 end
 
 function _fmpq_mat_to_fmpz_mat_den(x::fmpq_mat)
   z = zero_matrix(FlintZZ, nrows(x), ncols(x))
   d = fmpz()
-  ccall((:fmpq_mat_get_fmpz_mat_matwise, :libflint), Nothing, (Ref{fmpz_mat}, Ref{fmpz}, Ref{fmpq_mat}), z, d, x)
+  ccall((:fmpq_mat_get_fmpz_mat_matwise, libflint), Nothing, (Ref{fmpz_mat}, Ref{fmpz}, Ref{fmpq_mat}), z, d, x)
   return z, d
 end
 

@@ -209,22 +209,22 @@ end
 degree(F::Union{ GaloisField, Generic.ResField{fmpz} }) = 1
 
 function get_coeff_fmpz!(x::fq_nmod, n::Int, z::fmpz)
-  ccall((:fmpz_set_ui, :libflint), Nothing, (Ref{fmpz}, UInt), z, ccall((:nmod_poly_get_coeff_ui, :libflint), UInt, (Ref{fq_nmod}, Int), x, n))
+  ccall((:fmpz_set_ui, libflint), Nothing, (Ref{fmpz}, UInt), z, ccall((:nmod_poly_get_coeff_ui, libflint), UInt, (Ref{fq_nmod}, Int), x, n))
   return z
 end
 
 function get_coeff_fmpz!(x::fq, n::Int, z::fmpz)
-  ccall((:fmpz_poly_get_coeff_fmpz, :libflint), Nothing, (Ref{fmpz}, Ref{fq}, Int), z, x, n)
+  ccall((:fmpz_poly_get_coeff_fmpz, libflint), Nothing, (Ref{fmpz}, Ref{fq}, Int), z, x, n)
   return z
 end
 
 function lift!(x::gfp_elem, z::fmpz)
-  ccall((:fmpz_set_ui, :libflint), Nothing, (Ref{fmpz}, UInt), z, x.data)
+  ccall((:fmpz_set_ui, libflint), Nothing, (Ref{fmpz}, UInt), z, x.data)
   return z
 end
 
 function lift!(x::Generic.ResF{fmpz}, z::fmpz)
-  ccall((:fmpz_set, :libflint), Nothing, (Ref{fmpz}, Ref{fmpz}), z, x.data)
+  ccall((:fmpz_set, libflint), Nothing, (Ref{fmpz}, Ref{fmpz}), z, x.data)
   return z
 end
 

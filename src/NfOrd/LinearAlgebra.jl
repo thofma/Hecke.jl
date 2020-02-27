@@ -59,12 +59,12 @@ end
 #end
 
 function _get_coeff_raw(x::nmod_poly, i::Int)
-  u = ccall((:nmod_poly_get_coeff_ui, :libflint), UInt, (Ref{nmod_poly}, Int), x, i)
+  u = ccall((:nmod_poly_get_coeff_ui, libflint), UInt, (Ref{nmod_poly}, Int), x, i)
   return u
 end
 
 function _get_coeff_raw(x::gfp_poly, i::Int)
-  u = ccall((:nmod_poly_get_coeff_ui, :libflint), UInt, (Ref{gfp_poly}, Int), x, i)
+  u = ccall((:nmod_poly_get_coeff_ui, libflint), UInt, (Ref{gfp_poly}, Int), x, i)
   return u
 end
 
@@ -150,11 +150,11 @@ end
 # s, t are auxillary variables, r1, r2 are the residues, m1, m2 are the moduli
 # aliasing is not allowed (?)
 function crt!(z::nmod_poly, r1::nmod_poly, r2::Union{nmod_poly, fq_nmod}, m1::nmod_poly, m2::nmod_poly, s::nmod_poly, t::nmod_poly)
-  ccall((:nmod_poly_xgcd, :libflint), Nothing, (Ref{nmod_poly}, Ref{nmod_poly}, Ref{nmod_poly}, Ref{nmod_poly}, Ref{nmod_poly}), z, s, t, m1, m2)
-  @assert Bool(ccall((:nmod_poly_is_one, :libflint), Cint, (Ref{nmod_poly}, ), z))
+  ccall((:nmod_poly_xgcd, libflint), Nothing, (Ref{nmod_poly}, Ref{nmod_poly}, Ref{nmod_poly}, Ref{nmod_poly}, Ref{nmod_poly}), z, s, t, m1, m2)
+  @assert Bool(ccall((:nmod_poly_is_one, libflint), Cint, (Ref{nmod_poly}, ), z))
   # z = s*m1*r2 + t*m2*r1
   mul!(z, s, m1)
-  ccall((:nmod_poly_mul, :libflint), Nothing, (Ref{nmod_poly}, Ref{nmod_poly}, Ref{fq_nmod}), z, z, r2)
+  ccall((:nmod_poly_mul, libflint), Nothing, (Ref{nmod_poly}, Ref{nmod_poly}, Ref{fq_nmod}), z, z, r2)
   mul!(t, t, m2)
   mul!(t, t, r1)
   add!(z, z, t)
@@ -163,7 +163,7 @@ function crt!(z::nmod_poly, r1::nmod_poly, r2::Union{nmod_poly, fq_nmod}, m1::nm
 end
 
 function set!(z::nmod_poly, x::nmod_poly)
-  ccall((:nmod_poly_set, :libflint), Nothing, (Ref{nmod_poly}, Ref{nmod_poly}), z, x)
+  ccall((:nmod_poly_set, libflint), Nothing, (Ref{nmod_poly}, Ref{nmod_poly}), z, x)
 end
 
 function __helper!(z, mF, entries)

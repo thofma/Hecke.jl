@@ -535,7 +535,7 @@ function minkowski_gram_mat_scaled(O::NfOrd, prec::Int = 64)
     d = zero_matrix(FlintZZ, degree(O), degree(O))
     A = zero_matrix(FlintZZ, degree(O), degree(O))
     round_scale!(d, c, prec)
-    ccall((:fmpz_mat_gram, :libflint), Nothing, (Ref{fmpz_mat}, Ref{fmpz_mat}), A, d)
+    ccall((:fmpz_mat_gram, libflint), Nothing, (Ref{fmpz_mat}, Ref{fmpz_mat}), A, d)
     shift!(A, -prec)
     O.minkowski_gram_mat_scaled = (A, prec)
     A = deepcopy(A)
@@ -1467,7 +1467,7 @@ function _lll(O::NfOrd; prec::Int = 100)
   end
 
   ctx = Nemo.lll_ctx(0.99, 0.51, :gram)
-  ccall((:fmpz_lll, :libflint), Nothing, (Ref{fmpz_mat}, Ref{fmpz_mat}, Ref{Nemo.lll_ctx}), d, g, ctx)
+  ccall((:fmpz_lll, libflint), Nothing, (Ref{fmpz_mat}, Ref{fmpz_mat}, Ref{Nemo.lll_ctx}), d, g, ctx)
 
   ## test if entries in l are small enough, if not: increase precision
   ## or signal that prec was too low

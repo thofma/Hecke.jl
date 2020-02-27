@@ -18,7 +18,7 @@ end
 ################################################################################
 
 function next_prime(x::UInt, proof::Bool)
-  z = ccall((:n_nextprime, :libflint), UInt, (UInt, Cint), x, Cint(proof))
+  z = ccall((:n_nextprime, libflint), UInt, (UInt, Cint), x, Cint(proof))
   return z
 end
 

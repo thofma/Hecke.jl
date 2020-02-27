@@ -540,8 +540,8 @@ function completion(K::AnticNumberField, ca::qadic)
 #  bjj = Kjj(parent(Kjj.pol)(b))
 #  djj = lift_root(f, ajj, bjj, p, 10)
 #  d = K(parent(K.pol)(djj))
-      ccall((:nf_elem_set, :libantic), Nothing, (Ref{nf_elem}, Ref{nf_elem}, Ref{AnticNumberField}), c, d, K)
-      ccall((:fmpz_set_si, :libflint), Nothing, (Ref{fmpz}, Cint), pc, precision(x))
+      ccall((:nf_elem_set, libantic), Nothing, (Ref{nf_elem}, Ref{nf_elem}, Ref{AnticNumberField}), c, d, K)
+      ccall((:fmpz_set_si, libflint), Nothing, (Ref{fmpz}, Cint), pc, precision(x))
     elseif precision(x) < pc
       d = mod_sym(c, p^precision(x))
     else

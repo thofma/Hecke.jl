@@ -5,7 +5,7 @@
 ################################################################################
 
 function rem(a::fmpz, b::UInt)
-  return ccall((:fmpz_fdiv_ui, :libflint), UInt, (Ref{fmpz}, UInt), a, b)
+  return ccall((:fmpz_fdiv_ui, libflint), UInt, (Ref{fmpz}, UInt), a, b)
 end
 
 
@@ -19,7 +19,7 @@ function isless(a::BigFloat, b::Nemo.fmpz)
 end
 
 function mulmod(a::UInt, b::UInt, n::UInt, ni::UInt)
-  ccall((:n_mulmod2_preinv, :libflint), UInt, (UInt, UInt, UInt, UInt), a, b, n, ni)
+  ccall((:n_mulmod2_preinv, libflint), UInt, (UInt, UInt, UInt, UInt), a, b, n, ni)
 end
 
 
@@ -65,31 +65,31 @@ function valuation(z::Rational{T}, p::T) where T <: Integer
 end 
 
 function remove!(a::fmpz, b::fmpz)
-  v = ccall((:fmpz_remove, :libflint), Clong, (Ref{fmpz}, Ref{fmpz}, Ref{fmpz}), a, a, b)
+  v = ccall((:fmpz_remove, libflint), Clong, (Ref{fmpz}, Ref{fmpz}, Ref{fmpz}), a, a, b)
   return v, a
 end
 
 function remove!(a::fmpq, b::fmpz)
-  nr = ccall((:fmpq_numerator_ptr, :libflint), Ptr{fmpz}, (Ref{fmpq}, ), a)
-  vn = ccall((:fmpz_remove, :libflint), Clong, (Ptr{fmpz}, Ptr{fmpz}, Ref{fmpz}), nr, nr, b)
+  nr = ccall((:fmpq_numerator_ptr, libflint), Ptr{fmpz}, (Ref{fmpq}, ), a)
+  vn = ccall((:fmpz_remove, libflint), Clong, (Ptr{fmpz}, Ptr{fmpz}, Ref{fmpz}), nr, nr, b)
   #fmpq's are simplified: either num OR den will be non-trivial
   if vn != 0
     return vn, a
   end
-  nr = ccall((:fmpq_denominator_ptr, :libflint), Ptr{fmpz}, (Ref{fmpq}, ), a)
-  vn = ccall((:fmpz_remove, :libflint), Clong, (Ptr{fmpz}, Ptr{fmpz}, Ref{fmpz}), nr, nr, b)
+  nr = ccall((:fmpq_denominator_ptr, libflint), Ptr{fmpz}, (Ref{fmpq}, ), a)
+  vn = ccall((:fmpz_remove, libflint), Clong, (Ptr{fmpz}, Ptr{fmpz}, Ref{fmpz}), nr, nr, b)
   return -vn, a
 end
 
 function valuation!(a::fmpq, b::fmpz)
-  nr = ccall((:fmpq_numerator_ptr, :libflint), Ptr{fmpz}, (Ref{fmpq}, ), a)
-  vn = ccall((:fmpz_remove, :libflint), Clong, (Ptr{fmpz}, Ptr{fmpz}, Ref{fmpz}), nr, nr, b)
+  nr = ccall((:fmpq_numerator_ptr, libflint), Ptr{fmpz}, (Ref{fmpq}, ), a)
+  vn = ccall((:fmpz_remove, libflint), Clong, (Ptr{fmpz}, Ptr{fmpz}, Ref{fmpz}), nr, nr, b)
   #fmpq's are simplified: either num OR den will be non-trivial
   if vn != 0
     return vn
   end
-  nr = ccall((:fmpq_denominator_ptr, :libflint), Ptr{fmpz}, (Ref{fmpq}, ), a)
-  vn = ccall((:fmpz_remove, :libflint), Clong, (Ptr{fmpz}, Ptr{fmpz}, Ref{fmpz}), nr, nr, b)
+  nr = ccall((:fmpq_denominator_ptr, libflint), Ptr{fmpz}, (Ref{fmpq}, ), a)
+  vn = ccall((:fmpz_remove, libflint), Clong, (Ptr{fmpz}, Ptr{fmpz}, Ref{fmpz}), nr, nr, b)
   return -vn
 end
 
@@ -99,7 +99,7 @@ end
 
 function BigFloat(a::fmpq)
   r = BigFloat(0)
-  ccall((:fmpq_get_mpfr, :libflint), Nothing, (Ref{BigFloat}, Ref{fmpq}, Int32), r, a, __get_rounding_mode())
+  ccall((:fmpq_get_mpfr, libflint), Nothing, (Ref{BigFloat}, Ref{fmpq}, Int32), r, a, __get_rounding_mode())
   return r
 end
 
@@ -210,16 +210,16 @@ end
 
 if Nemo.version() <= v"0.15.1"
   function isodd(a::fmpz)
-    ccall((:fmpz_is_odd, :libflint), Int, (Ref{fmpz},), a) == 1
+    ccall((:fmpz_is_odd, libflint), Int, (Ref{fmpz},), a) == 1
   end
 
   function iseven(a::fmpz)
-    ccall((:fmpz_is_even, :libflint), Int, (Ref{fmpz},), a) == 1
+    ccall((:fmpz_is_even, libflint), Int, (Ref{fmpz},), a) == 1
   end
 end
 
 function neg!(a::fmpz)
-  ccall((:fmpz_neg, :libflint), Nothing, (Ref{fmpz}, Ref{fmpz}), a, a)
+  ccall((:fmpz_neg, libflint), Nothing, (Ref{fmpz}, Ref{fmpz}), a, a)
   return a
 end
 
@@ -330,36 +330,36 @@ one(::Type{fmpq}) = fmpq(1)
 
 
 function mod!(z::fmpz, x::fmpz, y::fmpz)
-  ccall((:fmpz_mod, :libflint), Nothing, (Ref{fmpz}, Ref{fmpz}, Ref{fmpz}), z, x, y)
+  ccall((:fmpz_mod, libflint), Nothing, (Ref{fmpz}, Ref{fmpz}, Ref{fmpz}), z, x, y)
   return z
 end
 
 function divexact!(z::fmpz, x::fmpz, y::fmpz)
   iszero(y) && throw(DivideError())
-  ccall((:fmpz_divexact, :libflint), Nothing, 
+  ccall((:fmpz_divexact, libflint), Nothing, 
         (Ref{fmpz}, Ref{fmpz}, Ref{fmpz}), z, x, y)
   return z
 end
 
 function lcm!(z::fmpz, x::fmpz, y::fmpz)
-   ccall((:fmpz_lcm, :libflint), Nothing, 
+   ccall((:fmpz_lcm, libflint), Nothing, 
          (Ref{fmpz}, Ref{fmpz}, Ref{fmpz}), z, x, y)
    return z
 end
 
 function gcd!(z::fmpz, x::fmpz, y::fmpz)
-   ccall((:fmpz_gcd, :libflint), Nothing, 
+   ccall((:fmpz_gcd, libflint), Nothing, 
          (Ref{fmpz}, Ref{fmpz}, Ref{fmpz}), z, x, y)
    return z
 end
 
 function mul!(z::fmpz, x::fmpz, y::Int)
-  ccall((:fmpz_mul_si, :libflint), Nothing, (Ref{fmpz}, Ref{fmpz}, Int), z, x, y)
+  ccall((:fmpz_mul_si, libflint), Nothing, (Ref{fmpz}, Ref{fmpz}, Int), z, x, y)
   return z
 end
 
 function mul!(z::fmpz, x::fmpz, y::UInt)
-  ccall((:fmpz_mul_ui, :libflint), Nothing, (Ref{fmpz}, Ref{fmpz}, UInt), z, x, y)
+  ccall((:fmpz_mul_ui, libflint), Nothing, (Ref{fmpz}, Ref{fmpz}, UInt), z, x, y)
   return z
 end
 
@@ -369,7 +369,7 @@ function mul!(z::fmpz, x::fmpz, y::Integer)
 end
 
 function one!(a::fmpz)
-  ccall((:fmpz_one, :libflint), Nothing, (Ref{fmpz}, ), a)
+  ccall((:fmpz_one, libflint), Nothing, (Ref{fmpz}, ), a)
   return a
 end
 
@@ -402,7 +402,7 @@ function ispower(a::fmpz)
   rt = fmpz()
   e = 1
   while true
-    ex = ccall((:fmpz_is_perfect_power, :libflint), Int, (Ref{fmpz}, Ref{fmpz}), rt, a)
+    ex = ccall((:fmpz_is_perfect_power, libflint), Int, (Ref{fmpz}, Ref{fmpz}), rt, a)
     if ex == 1 || ex == 0
       return e, a
     end
@@ -483,7 +483,7 @@ mutable struct fmpz_comb
 
   function fmpz_comb(primes::Array{UInt, 1})
     z = new()
-    ccall((:fmpz_comb_init, :libflint), Nothing, (Ref{fmpz_comb}, Ptr{UInt}, Int),
+    ccall((:fmpz_comb_init, libflint), Nothing, (Ref{fmpz_comb}, Ptr{UInt}, Int),
             z, primes, length(primes))
     finalizer(z, _fmpz_comb_clear_fn)
     return z
@@ -491,7 +491,7 @@ mutable struct fmpz_comb
 end
 
 function _fmpz_comb_clear_fn(z::fmpz_comb)
-  ccall((:fmpz_comb_clear, :libflint), Nothing, (Ref{fmpz_comb}, ), z)
+  ccall((:fmpz_comb_clear, libflint), Nothing, (Ref{fmpz_comb}, ), z)
 end
 
 mutable struct fmpz_comb_temp
@@ -502,7 +502,7 @@ mutable struct fmpz_comb_temp
 
   function fmpz_comb_temp(comb::fmpz_comb)
     z = new()
-    ccall((:fmpz_comb_temp_init, :libflint), Nothing,
+    ccall((:fmpz_comb_temp_init, libflint), Nothing,
             (Ref{fmpz_comb_temp}, Ref{fmpz_comb}), z, comb)
     finalizer(z, _fmpz_comb_temp_clear_fn)
     return z
@@ -510,27 +510,27 @@ mutable struct fmpz_comb_temp
 end
 
 function _fmpz_comb_temp_clear_fn(z::fmpz_comb_temp)
-  ccall((:fmpz_comb_temp_clear, :libflint), Nothing, (Ref{fmpz_comb_temp}, ), z)
+  ccall((:fmpz_comb_temp_clear, libflint), Nothing, (Ref{fmpz_comb_temp}, ), z)
 end
 
 
 function fmpz_multi_crt_ui!(z::fmpz, a::Array{UInt, 1}, b::fmpz_comb, c::fmpz_comb_temp)
-  ccall((:fmpz_multi_CRT_ui, :libflint), Nothing,
+  ccall((:fmpz_multi_CRT_ui, libflint), Nothing,
           (Ref{fmpz}, Ptr{UInt}, Ref{fmpz_comb}, Ref{fmpz_comb_temp}, Cint),
           z, a, b, c, 1)
   return z
 end
 
 function _fmpz_preinvn_struct_clear_fn(z::fmpz_preinvn_struct)
-  ccall((:fmpz_preinvn_clear, :libflint), Nothing, (Ref{fmpz_preinvn_struct}, ), z)
+  ccall((:fmpz_preinvn_clear, libflint), Nothing, (Ref{fmpz_preinvn_struct}, ), z)
 end
 
 function fdiv_qr_with_preinvn!(q::fmpz, r::fmpz, g::fmpz, h::fmpz, hinv::fmpz_preinvn_struct)
-  ccall((:fmpz_fdiv_qr_preinvn, :libflint), Nothing, (Ref{fmpz}, Ref{fmpz}, Ref{fmpz}, Ref{fmpz}, Ref{fmpz_preinvn_struct}), q, r, g, h, hinv)
+  ccall((:fmpz_fdiv_qr_preinvn, libflint), Nothing, (Ref{fmpz}, Ref{fmpz}, Ref{fmpz}, Ref{fmpz}, Ref{fmpz_preinvn_struct}), q, r, g, h, hinv)
 end
 
 function submul!(z::fmpz, x::fmpz, y::fmpz)
-  ccall((:fmpz_submul, :libflint), Nothing, (Ref{fmpz}, Ref{fmpz}, Ref{fmpz}), z, x, y)
+  ccall((:fmpz_submul, libflint), Nothing, (Ref{fmpz}, Ref{fmpz}, Ref{fmpz}), z, x, y)
 end
 
 ################################################################################
@@ -733,12 +733,12 @@ end
 
 function flint_rand_state()
   A = flint_rand_ctx_t()
-  A.a = ccall((:flint_rand_alloc, :libflint), Ptr{Nothing}, (Int, ), 1)
-  ccall((:flint_randinit, :libflint), Nothing, (Ptr{Nothing}, ), A.a)
+  A.a = ccall((:flint_rand_alloc, libflint), Ptr{Nothing}, (Int, ), 1)
+  ccall((:flint_randinit, libflint), Nothing, (Ptr{Nothing}, ), A.a)
   
   function clean_rand_state(A::flint_rand_ctx_t)
-    ccall((:flint_randclear, :libflint), Nothing, (Ptr{Nothing}, ), A.a)
-    ccall((:flint_rand_free, :libflint), Nothing, (Ptr{Nothing}, ), A.a)
+    ccall((:flint_randclear, libflint), Nothing, (Ptr{Nothing}, ), A.a)
+    ccall((:flint_rand_free, libflint), Nothing, (Ptr{Nothing}, ), A.a)
     nothing
   end  
   finalizer(clean_rand_state, A)
@@ -749,7 +749,7 @@ global flint_rand_ctx
 
 function ecm(a::fmpz, B1::UInt, B2::UInt, ncrv::UInt, rnd = flint_rand_ctx)
   f = fmpz()
-  r = ccall((:fmpz_factor_ecm, :libflint), Int32, (Ref{fmpz}, UInt, UInt, UInt, Ptr{Nothing}, Ref{fmpz}), f, ncrv, B1, B2, rnd.a, a)
+  r = ccall((:fmpz_factor_ecm, libflint), Int32, (Ref{fmpz}, UInt, UInt, UInt, Ptr{Nothing}, Ref{fmpz}), f, ncrv, B1, B2, rnd.a, a)
   return r, f
 end  
 
@@ -783,11 +783,11 @@ end
 
 function factor_trial_range(N::fmpz, start::Int=0, np::Int=10^5)
    F = Nemo.fmpz_factor()
-   ccall((:fmpz_factor_trial_range, :libflint), Nothing, (Ref{Nemo.fmpz_factor}, Ref{fmpz}, UInt, UInt), F, N, start, np)
+   ccall((:fmpz_factor_trial_range, libflint), Nothing, (Ref{Nemo.fmpz_factor}, Ref{fmpz}, UInt, UInt), F, N, start, np)
    res = Dict{fmpz, Int}()
    for i in 1:F.num
      z = fmpz()
-     ccall((:fmpz_factor_get_fmpz, :libflint), Nothing,
+     ccall((:fmpz_factor_get_fmpz, libflint), Nothing,
            (Ref{fmpz}, Ref{Nemo.fmpz_factor}, Int), z, F, i - 1)
      res[z] = unsafe_load(F.exp, i)
    end
@@ -1380,7 +1380,7 @@ bits(a::fmpz) = BitsFmpz(a)
 #= wrong order, thus disabled
 
 function getindex(B::BitsFmpz, i::Int) 
-  return ccall((:fmpz_tstbit, :libflint), Int, (Ref{fmpz}, Int), B.L.a, i) != 0
+  return ccall((:fmpz_tstbit, libflint), Int, (Ref{fmpz}, Int), B.L.a, i) != 0
 end
 =#
 

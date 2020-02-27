@@ -462,7 +462,7 @@ function _lll_sublattice(M::NfOrd, u::UnitRange{Int}; prec = 100)
     for i=1:l
       fmpz_mat_entry_add_ui!(d1, i, i, UInt(nrows(d1)))
     end
-    @vtime :Simplify 3 ccall((:fmpz_lll, :libflint), Nothing, (Ref{fmpz_mat}, Ref{fmpz_mat}, Ref{Nemo.lll_ctx}), d1, g, ctx)
+    @vtime :Simplify 3 ccall((:fmpz_lll, libflint), Nothing, (Ref{fmpz_mat}, Ref{fmpz_mat}, Ref{Nemo.lll_ctx}), d1, g, ctx)
     
     fl = true
     if nbits(maximum(abs, g)) >  div(prec, 2)
@@ -574,7 +574,7 @@ function _lll_for_simplify(M::NfOrd; prec = 100)
     for i=1:n
       fmpz_mat_entry_add_ui!(d, i, i, UInt(nrows(d)))
     end
-    @vtime :Simplify 3 ccall((:fmpz_lll, :libflint), Nothing, (Ref{fmpz_mat}, Ref{fmpz_mat}, Ref{Nemo.lll_ctx}), d, g, ctx)
+    @vtime :Simplify 3 ccall((:fmpz_lll, libflint), Nothing, (Ref{fmpz_mat}, Ref{fmpz_mat}, Ref{Nemo.lll_ctx}), d, g, ctx)
     fl = true
     nb = nbits(maximum(abs, g))
     if nb <=  prec

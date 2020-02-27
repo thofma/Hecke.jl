@@ -34,11 +34,11 @@ mutable struct FqPolyRingToFqMor{S, T, PolyType, MatType} <: Map{S, T, HeckeMap,
     Fpx = PolynomialRing(Fp, "x", cached = false)[1]
     g = Fpx()
     if isnmod
-      pt = ccall((:fq_nmod_ctx_modulus, :libflint), Ptr{nmod_poly}, (Ref{FqNmodFiniteField}, ), Fq)
-      ccall((:nmod_poly_set, :libflint), Nothing, (Ref{gfp_poly}, Ptr{nmod_poly}), g, pt)
+      pt = ccall((:fq_nmod_ctx_modulus, libflint), Ptr{nmod_poly}, (Ref{FqNmodFiniteField}, ), Fq)
+      ccall((:nmod_poly_set, libflint), Nothing, (Ref{gfp_poly}, Ptr{nmod_poly}), g, pt)
     else
-      pt = ccall((:fq_ctx_modulus, :libflint), Ptr{fmpz_mod_poly}, (Ref{FqFiniteField}, ), Fq)
-      ccall((:fmpz_mod_poly_set, :libflint), Nothing, (Ref{gfp_fmpz_poly}, Ptr{fmpz_mod_poly}), g, pt)
+      pt = ccall((:fq_ctx_modulus, libflint), Ptr{fmpz_mod_poly}, (Ref{FqFiniteField}, ), Fq)
+      ccall((:fmpz_mod_poly_set, libflint), Nothing, (Ref{gfp_fmpz_poly}, Ptr{fmpz_mod_poly}), g, pt)
     end
     n = degree(Fq)
     @assert n == degree(g)
@@ -103,9 +103,9 @@ mutable struct FqPolyRingToFqMor{S, T, PolyType, MatType} <: Map{S, T, HeckeMap,
       t = parent(g)([ x_mat[k, 1] for k = 1:n*m ])
       x = Fqm()
       if isnmod
-        ccall((:fq_nmod_set, :libflint), Nothing, (Ref{fq_nmod}, Ref{gfp_poly}, Ref{FqNmodFiniteField}), x, t, Fqm)
+        ccall((:fq_nmod_set, libflint), Nothing, (Ref{fq_nmod}, Ref{gfp_poly}, Ref{FqNmodFiniteField}), x, t, Fqm)
       else
-        ccall((:fq_set, :libflint), Nothing, (Ref{fq}, Ref{gfp_fmpz_poly}, Ref{FqFiniteField}), x, t, Fqm)
+        ccall((:fq_set, libflint), Nothing, (Ref{fq}, Ref{gfp_fmpz_poly}, Ref{FqFiniteField}), x, t, Fqm)
       end
       return x
     end
@@ -122,9 +122,9 @@ mutable struct FqPolyRingToFqMor{S, T, PolyType, MatType} <: Map{S, T, HeckeMap,
       for j = 0:m - 1
         tt = parent(g)([ x_mat[i + n*j + 1, 1] for i = 0:n - 1 ])
         if isnmod
-          ccall((:fq_nmod_set, :libflint), Nothing, (Ref{fq_nmod}, Ref{gfp_poly}, Ref{FqNmodFiniteField}), t, tt, Fq)
+          ccall((:fq_nmod_set, libflint), Nothing, (Ref{fq_nmod}, Ref{gfp_poly}, Ref{FqNmodFiniteField}), t, tt, Fq)
         else
-          ccall((:fq_set, :libflint), Nothing, (Ref{fq}, Ref{gfp_fmpz_poly}, Ref{FqFiniteField}), t, tt, Fq)
+          ccall((:fq_set, libflint), Nothing, (Ref{fq}, Ref{gfp_fmpz_poly}, Ref{FqFiniteField}), t, tt, Fq)
         end
         setcoeff!(f, j, t)
       end

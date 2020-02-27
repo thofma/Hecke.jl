@@ -129,19 +129,19 @@ end
 ################################################################################
 
 function sub!(a::nf_elem, b::nf_elem, c::nf_elem)
-   ccall((:nf_elem_sub, :libantic), Nothing,
+   ccall((:nf_elem_sub, libantic), Nothing,
          (Ref{nf_elem}, Ref{nf_elem}, Ref{nf_elem}, Ref{AnticNumberField}),
          a, b, c, a.parent)
 end
 
 function set_den!(a::nf_elem, d::fmpz)
-  ccall((:nf_elem_set_den, :libflint), Nothing,
+  ccall((:nf_elem_set_den, libflint), Nothing,
         (Ref{nf_elem}, Ref{fmpz}, Ref{AnticNumberField}),
         a, d, parent(a))
 end
 
 function divexact!(z::nf_elem, x::nf_elem, y::fmpz)
-  ccall((:nf_elem_scalar_div_fmpz, :libantic), Nothing,
+  ccall((:nf_elem_scalar_div_fmpz, libantic), Nothing,
         (Ref{nf_elem}, Ref{nf_elem}, Ref{fmpz}, Ref{AnticNumberField}),
         z, x, y, parent(x))
   return z
@@ -149,14 +149,14 @@ end
 
 function gen!(r::nf_elem)
    a = parent(r)
-   ccall((:nf_elem_gen, :libantic), Nothing,
+   ccall((:nf_elem_gen, libantic), Nothing,
          (Ref{nf_elem}, Ref{AnticNumberField}), r, a)
    return r
 end
 
 function one!(r::nf_elem)
    a = parent(r)
-   ccall((:nf_elem_one, :libantic), Nothing,
+   ccall((:nf_elem_one, libantic), Nothing,
          (Ref{nf_elem}, Ref{AnticNumberField}), r, a)
    return r
 end
@@ -212,7 +212,7 @@ function norm_div(a::nf_elem, d::fmpz, nb::Int)
      return no//1
    end
    de = denominator(a)
-   ccall((:nf_elem_norm_div, :libantic), Nothing,
+   ccall((:nf_elem_norm_div, libantic), Nothing,
          (Ref{fmpq}, Ref{nf_elem}, Ref{AnticNumberField}, Ref{fmpz}, UInt),
          z, (a*de), a.parent, (d*de^n), UInt(nb))
    return z
@@ -286,7 +286,7 @@ This function returns $b$.
 function numerator(a::nf_elem)
    _one = one(FlintZZ)
    z = deepcopy(a)
-   ccall((:nf_elem_set_den, :libantic), Nothing,
+   ccall((:nf_elem_set_den, libantic), Nothing,
          (Ref{nf_elem}, Ref{fmpz}, Ref{AnticNumberField}),
          z, _one, a.parent)
    return z
@@ -921,18 +921,18 @@ end
 
 function __mod(a::nf_elem, b::fmpz, fl::Bool = true)#, sym::Bool = false) # Not yet
   z = parent(a)()
-  ccall((:nf_elem_mod_fmpz_den, :libantic), Nothing, (Ref{nf_elem}, Ref{nf_elem}, Ref{fmpz}, Ref{AnticNumberField}, Cint), z, a, b, parent(a), Cint(fl))
+  ccall((:nf_elem_mod_fmpz_den, libantic), Nothing, (Ref{nf_elem}, Ref{nf_elem}, Ref{fmpz}, Ref{AnticNumberField}, Cint), z, a, b, parent(a), Cint(fl))
   return z
 end
 
 function coprime_denominator(a::nf_elem, b::fmpz)
   z = parent(a)()
-  ccall((:nf_elem_coprime_den, :libantic), Nothing, (Ref{nf_elem}, Ref{nf_elem}, Ref{fmpz}, Ref{AnticNumberField}), z, a, b, parent(a))
+  ccall((:nf_elem_coprime_den, libantic), Nothing, (Ref{nf_elem}, Ref{nf_elem}, Ref{fmpz}, Ref{AnticNumberField}), z, a, b, parent(a))
   return z
 end
 
 function mod_sym!(a::nf_elem, b::fmpz)
-  ccall((:nf_elem_smod_fmpz, :libantic), Nothing,
+  ccall((:nf_elem_smod_fmpz, libantic), Nothing,
         (Ref{nf_elem}, Ref{nf_elem}, Ref{fmpz}, Ref{AnticNumberField}),
         a, a, b, parent(a))
   return a
@@ -947,7 +947,7 @@ mod(x::nf_elem, y::Integer) = mod(x, fmpz(y))
 #Assuming that the denominator of a is one, reduces all the coefficients modulo p
 # non-symmetric (positive) residue system
 function mod!(a::nf_elem, b::fmpz)
-  ccall((:nf_elem_mod_fmpz, :libantic), Nothing,
+  ccall((:nf_elem_mod_fmpz, libantic), Nothing,
         (Ref{nf_elem}, Ref{nf_elem}, Ref{fmpz}, Ref{AnticNumberField}),
         a, a, b, parent(a))
   return a
@@ -977,14 +977,14 @@ end
 ################################################################################
 
 function nf_elem_to_nmod_poly!(r::nmod_poly, a::nf_elem, useden::Bool = true)
-  ccall((:nf_elem_get_nmod_poly_den, :libantic), Nothing,
+  ccall((:nf_elem_get_nmod_poly_den, libantic), Nothing,
         (Ref{nmod_poly}, Ref{nf_elem}, Ref{AnticNumberField}, Cint),
         r, a, a.parent, Cint(useden))
   return nothing
 end
 
 function nf_elem_to_gfp_poly!(r::gfp_poly, a::nf_elem, useden::Bool = true)
-  ccall((:nf_elem_get_nmod_poly_den, :libantic), Nothing,
+  ccall((:nf_elem_get_nmod_poly_den, libantic), Nothing,
         (Ref{gfp_poly}, Ref{nf_elem}, Ref{AnticNumberField}, Cint),
         r, a, a.parent, Cint(useden))
   return nothing
@@ -1003,14 +1003,14 @@ function (R::Nemo.GFPPolyRing)(a::nf_elem)
 end
 
 function nf_elem_to_fmpz_mod_poly!(r::fmpz_mod_poly, a::nf_elem, useden::Bool = true)
-  ccall((:nf_elem_get_fmpz_mod_poly_den, :libantic), Nothing,
+  ccall((:nf_elem_get_fmpz_mod_poly_den, libantic), Nothing,
         (Ref{fmpz_mod_poly}, Ref{nf_elem}, Ref{AnticNumberField}, Cint),
         r, a, a.parent, Cint(useden))
   return nothing
 end
 
 function nf_elem_to_gfp_fmpz_poly!(r::gfp_fmpz_poly, a::nf_elem, useden::Bool = true)
-  ccall((:nf_elem_get_fmpz_mod_poly_den, :libantic), Nothing,
+  ccall((:nf_elem_get_fmpz_mod_poly_den, libantic), Nothing,
         (Ref{gfp_fmpz_poly}, Ref{nf_elem}, Ref{AnticNumberField}, Cint),
         r, a, a.parent, Cint(useden))
   return nothing
@@ -1045,10 +1045,10 @@ function conjugate_quad(a::nf_elem)
     p_ptr = reinterpret(Ptr{Int}, k.pol_coeffs)
     s = sizeof(Ptr{fmpz})
 
-    ccall((:fmpz_mul, :libflint), Cvoid, (Ref{fmpz}, Ptr{Int}, Ptr{Int}), q, p_ptr+s, a_ptr +s)
-    ccall((:fmpz_sub, :libflint), Cvoid, (Ptr{fmpz}, Ptr{fmpz}, Ref{fmpz}), reinterpret(Ptr{Int}, pointer_from_objref(b)), a_ptr, q)
-    ccall((:fmpz_neg, :libflint), Cvoid, (Ptr{fmpz}, Ptr{fmpz}), reinterpret(Ptr{Int}, pointer_from_objref(b))+1*s, a_ptr + s)
-    ccall((:fmpz_set, :libflint), Cvoid, (Ptr{fmpz}, Ptr{fmpz}), reinterpret(Ptr{Int}, pointer_from_objref(b))+3*s, a_ptr+3*s)
+    ccall((:fmpz_mul, libflint), Cvoid, (Ref{fmpz}, Ptr{Int}, Ptr{Int}), q, p_ptr+s, a_ptr +s)
+    ccall((:fmpz_sub, libflint), Cvoid, (Ptr{fmpz}, Ptr{fmpz}, Ref{fmpz}), reinterpret(Ptr{Int}, pointer_from_objref(b)), a_ptr, q)
+    ccall((:fmpz_neg, libflint), Cvoid, (Ptr{fmpz}, Ptr{fmpz}), reinterpret(Ptr{Int}, pointer_from_objref(b))+1*s, a_ptr + s)
+    ccall((:fmpz_set, libflint), Cvoid, (Ptr{fmpz}, Ptr{fmpz}), reinterpret(Ptr{Int}, pointer_from_objref(b))+3*s, a_ptr+3*s)
   end
   #TODO: 
   # - write in c?

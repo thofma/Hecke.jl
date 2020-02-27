@@ -7,7 +7,7 @@
 function lift(a::padic)
   b = fmpz()
   R = parent(a)
-  ccall((:padic_get_fmpz, :libflint), Nothing, (Ref{fmpz}, Ref{padic}, Ref{FlintPadicField}), b, a, R)
+  ccall((:padic_get_fmpz, libflint), Nothing, (Ref{fmpz}, Ref{padic}, Ref{FlintPadicField}), b, a, R)
   return b
 end
 

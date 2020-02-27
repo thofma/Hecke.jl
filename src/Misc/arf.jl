@@ -248,7 +248,7 @@ end
 function show(io::IO, a::arf)
   #cstr = ccall((:arf_get_str, :libarb), Ref{UInt8}, (Ref{arf}, ), a.data)
   #print(io, bytestring(cstr))
-  #ccall((:flint_free, :libflint), Nothing, (Ref{UInt8},), cstr)
+  #ccall((:flint_free, libflint), Nothing, (Ref{UInt8},), cstr)
   return show(io, BigFloat(a))
 end
 
