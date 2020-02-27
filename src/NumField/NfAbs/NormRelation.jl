@@ -118,7 +118,7 @@ function _norm_relation_setup_abelian(K::AnticNumberField; small_degree::Bool = 
   return z
 end
 
-function _norm_relation_setup_generic(K::AnticNumberField; small_degree::Bool = true, pure::Bool = false, target_den::fmpz = zero(fmpz), max_degree::Int)
+function _norm_relation_setup_generic(K::AnticNumberField; small_degree::Bool = true, pure::Bool = false, target_den::fmpz = zero(fmpz), max_degree::Int = degree(K))
   A = automorphisms(K)
   G, AtoG, GtoA = generic_group(A, *)
   if iszero(target_den)
