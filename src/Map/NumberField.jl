@@ -631,13 +631,12 @@ function induce_image(f::NfToNfMor, x::NfOrdIdl)
     I.gens_normal = x.gens_normal
     return I
   end
-  domain(f) !== codomain(f) && throw(error("Map must be an automorphism"))
   OK = order(x)
   K = nf(OK)
-  if x.is_prime == 1 && !isindex_divisor(OK, minimum(x, copy = false)) && fits(Int, minimum(x, copy = false)^2)
+  if has_2_elem(x) && !isindex_divisor(OK, minimum(x, copy = false)) && fits(Int, minimum(x, copy = false)^2)
     #The conjugate of the prime will still be a prime over the minimum
     #I just need to apply the automorphism modularly
-    return induce_image_prime(f, x)
+    return induce_image_easy(f, x)
   end
   I = ideal(OK)
   if isdefined(x, :gen_two)
@@ -672,7 +671,7 @@ function induce_image(f::NfToNfMor, x::NfOrdIdl)
   return I
 end
 
-function induce_image_prime(f::NfToNfMor, P::NfOrdIdl)
+function induce_image_easy(f::NfToNfMor, P::NfOrdIdl)
   OK = order(P)
   K = nf(OK)
   R = ResidueRing(FlintZZ, Int(minimum(P, copy = false))^2, cached = false)
@@ -683,6 +682,9 @@ function induce_image_prime(f::NfToNfMor, P::NfOrdIdl)
   img = compose_mod(gen_two, prim_img, fmod)
   new_gen = OK(lift(K, img), false)
   res = ideal(OK, minimum(P), new_gen)
+  if isdefined(P, :princ_gen)
+    res.princ_gen = OK(f(K(P.princ_gen)))
+  end
   for i in [:is_prime, :gens_normal, :gens_weakly_normal, :is_principal, 
           :minimum, :norm, :splitting_type]
     if isdefined(P, i)

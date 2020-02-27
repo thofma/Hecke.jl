@@ -46,7 +46,7 @@ function compact_presentation(a::FacElem{nf_elem, AnticNumberField}, nn::Int = 2
   for _k = Int(flog(_v, n)):-1:0
     B = Dict((p, Int(div(v, n^_k) % nn)) for (p, v) = de)
     add_to_key!(B, A, n)
-    A, alpha = reduce_ideal2(FacElem(B))
+    @vtime :CompactPresentation 3 A, alpha = reduce_ideal2(FacElem(B))
     mul!(be, be, alpha^(-(n^_k)))
     #be *= alpha^(-(n^_k))
     v -= Ref(n^_k) .* conjugates_arb_log_normalise(alpha, arb_prec)

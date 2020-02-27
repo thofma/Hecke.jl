@@ -1835,4 +1835,18 @@ function charpoly(M::MatElem)
   return charpoly(kx, M)
 end
 
+###############################################################################
+#
+#  Sub
+#
+###############################################################################
 
+function sub(M::MatElem, rows::Vector{Int}, cols::Vector{Int})
+  N = zero_matrix(base_ring(M), length(rows), length(cols))
+  for i = 1:length(rows)
+    for j = 1:length(cols)
+      N[i, j] = M[rows[i], cols[j]]
+    end
+  end
+  return N
+end

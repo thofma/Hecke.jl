@@ -392,6 +392,29 @@ function representation_matrix(x::AlgAssAbsOrdElem, action::Symbol = :left)
   return B.num
 end
 
+function representation_matrix_mod(x::AlgAssAbsOrdElem, d::fmpz, action::Symbol = :left)
+  O = parent(x)
+  M = basis_matrix(O, copy = false)
+  M1 = basis_mat_inv(O, copy = false)
+
+  A = FakeFmpqMat(representation_matrix(elem_in_algebra(x, copy = false), action))
+  d2 = M.den * M1.den*A.den
+  d2c, d2nc = ppio(d2, d)
+  d1 = d * d2c
+  A1 = A.num 
+  mod!(A.num, d1)
+  S1 = mod(M.num, d1)
+  mul!(A1, S1, A1)
+  S2 = mod(M1.num, d1)
+  mul!(A1, A1, S2)
+  mod!(A1, d1)
+  divexact!(A1, A1, d2c)
+  inver = invmod(d2nc, d1)
+  mul!(A1, A1, inver)
+  mod!(A1, d)
+  return A1
+end
+
 ################################################################################
 #
 #  Trace

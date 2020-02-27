@@ -550,7 +550,7 @@ function simplify!(x::FacElem{fmpq})
     end
   end
   x.fac = ev
-  nothing
+  return nothing
 end
 
 function simplify!(x::FacElem{fmpz})
@@ -641,18 +641,21 @@ function simplify!(x::FacElem{NfOrdIdl, NfOrdIdlSet})
   end
   cp = coprime_base(collect(base(x)))
   ev = Dict{NfOrdIdl, fmpz}()
+  OK = order(cp[1])
   for p = cp
     if isone(p)
       continue
     end
     P = minimum(p)
+    @vprint :CompactPresentation 3 "Computing valuation at an ideal lying over $P"
     assure_2_normal(p)
     v = fmpz(0)
     for (b, e) in x
-      if divisible(minimum(b, copy = false), P) 
+      if divisible(norm(b, copy = false), P) 
         v += valuation(b, p)*e
       end
     end
+    @vprint :CompactPresentation 3 "$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())"
     if !iszero(v)
       ev[p] = v
     end

@@ -28,7 +28,7 @@ function simplify(K::AnticNumberField; canonical::Bool = false, cached = true)
   else
     n = degree(K)
     OK = maximal_order(K)
-    @vtime :Simplify 3 if isdefined(OK, :lllO)
+    if isdefined(OK, :lllO)
       ZK = OK.lllO
     else
       b = _simplify(OK)
@@ -46,18 +46,21 @@ function simplify(K::AnticNumberField; canonical::Bool = false, cached = true)
         OL1 = NfOrd(BOL1, false)
         OL1.ismaximal = 1
         Hecke._set_maximal_order(L1, OL1)
-        @vprint :Simplify 3 "Trying to simplify $(L1)\n"
+        @vprint :Simplify 3 "Trying to simplify $(L1.pol)\n"
         L2, mL2 = simplify(L1)
         return L2, mL2*mp
       end
       prec = 100 + 25*div(n, 3) + Int(round(log(abs(discriminant(OK)))))
       OK1 = _ordering_by_T2(OK)
-      ZK = _lll_for_simplify(OK1, prec = prec)
-      ZK = lll(ZK)
+      @vtime :Simplify 3 ZK = _lll_for_simplify(OK1, prec = prec)
       OK.lllO = ZK
     end
     @vtime :Simplify 3 a = _simplify(ZK)
-    @vtime :Simplify 3 f = Qx(minpoly(representation_matrix(OK(a))))
+    if a == gen(K)
+      f = K.pol
+    else
+      @vtime :Simplify 3 f = Qx(minpoly(representation_matrix(OK(a))))
+    end
   end
   L = NumberField(f, cached = cached, check = false)[1]
   m = hom(L, K, a, check = false)
@@ -390,21 +393,20 @@ function _ordering_by_T2(M::NfOrd)
   return On
 end
 
-
 function lll_precomputation(M::NfOrd, prec::Int)
 
   n = degree(M)
   K = nf(M)
-  natt, re = divrem(n, 2)
+  natt = div(n, 2)
   g = identity_matrix(FlintZZ, n)
   new_prec = prec
   block = 1
   while block < 3
     @vprint :Simplify 3 "Simplifying block $(block)\n"
     if block == 1
-      rg = 1:natt
+      rg = collect(1:natt)
     else
-      rg = (natt+1):n
+      rg = collect((natt+1):n)
     end
     new_prec, g1 = _lll_sublattice(M, rg, prec = prec)
     _copy_matrix_into_matrix(g, first(rg), first(rg), g1)
@@ -426,21 +428,100 @@ function lll_precomputation(M::NfOrd, prec::Int)
   if isdefined(M, :gen_index)
     On.gen_index = M.gen_index
   end
-  return prec, On
+  #In pratice, we have changed the main diagonal blocks of the gram matrix. 
+  #Now, we do the other blocks
+  g = identity_matrix(FlintZZ, n)
+  new_prec = prec
+  block = 1
+  natt = div(n, 4)
+  first_part = 1:natt
+  second_part = (natt+1):(2*natt)
+  third_part = (2*natt+1):3*natt
+  fourth_part = (3*natt+1):n
+  while block < 3
+    @vprint :Simplify 3 "Simplifying block $(block)\n"
+    if block == 1
+      b1 = first_part
+      b2 = third_part
+    else
+      b1 = second_part
+      b2 = fourth_part
+    end
+    rg = vcat(b1, b2)
+    new_prec, g1 = _lll_sublattice(On, rg, prec = prec)
+    _copy_matrix_into_matrix(g, first(b1), first(b1), view(g1, 1:length(b1), 1:length(b1)))
+    _copy_matrix_into_matrix(g, first(b1), first(b2), view(g1, 1:length(b1), length(b1)+1:length(rg)))
+    _copy_matrix_into_matrix(g, first(b2), first(b2), view(g1, length(b1)+1:length(rg), length(b1)+1:length(rg)))
+    _copy_matrix_into_matrix(g, first(b2), first(b1), view(g1, length(b1)+1:length(rg), 1:length(b1)))
+    if new_prec == prec
+      block += 1
+    else
+      prec = new_prec
+    end
+  end
+  @vprint :Simplify 3 "Precision: $(new_prec)\n"
+  On1 = NfOrd(K, g*basis_matrix(On, copy = false))
+  On1.ismaximal = M.ismaximal
+  if isdefined(M, :index)
+    On1.index = M.index
+  end
+  if isdefined(M, :disc)
+    On1.disc = M.disc
+  end
+  if isdefined(M, :gen_index)
+    On1.gen_index = M.gen_index
+  end
+  g = identity_matrix(FlintZZ, n)
+  block = 1
+  while block < 3
+    @vprint :Simplify 3 "Simplifying block $(block)\n"
+    if block == 1
+      b1 = first_part
+      b2 = fourth_part
+    else
+      b1 = second_part
+      b2 = third_part
+    end
+    rg = vcat(b1, b2)
+    new_prec, g1 = _lll_sublattice(On1, rg, prec = prec)
+    _copy_matrix_into_matrix(g, first(b1), first(b1), view(g1, 1:length(b1), 1:length(b1)))
+    _copy_matrix_into_matrix(g, first(b1), first(b2), view(g1, 1:length(b1), length(b1)+1:length(rg)))
+    _copy_matrix_into_matrix(g, first(b2), first(b2), view(g1, length(b1)+1:length(rg), length(b1)+1:length(rg)))
+    _copy_matrix_into_matrix(g, first(b2), first(b1), view(g1, length(b1)+1:length(rg), 1:length(b1)))
+    if new_prec == prec
+      block += 1
+    else
+      prec = new_prec
+    end
+  end
+  On2 = NfOrd(K, g*basis_matrix(On1, copy = false))
+  On2.ismaximal = M.ismaximal
+  if isdefined(M, :index)
+    On2.index = M.index
+  end
+  if isdefined(M, :disc)
+    On2.disc = M.disc
+  end
+  if isdefined(M, :gen_index)
+    On2.gen_index = M.gen_index
+  end
+  @vprint :Simplify 3 "Precomputation finished with precision $(prec)\n"
+  return prec, On2
 end
 
-function _lll_sublattice(M::NfOrd, u::UnitRange{Int}; prec = 100)
+
+
+function _lll_sublattice(M::NfOrd, u::Vector{Int}; prec = 100)
   K = nf(M)
   n = degree(M)
   l = length(u)
   prec = max(prec, 10*n)
   local g::fmpz_mat
   local d::fmpz_mat
-  local d1::fmpz_mat
   ctx = Nemo.lll_ctx(0.99, 0.51, :gram)
   att = 0 
-  tr_mat = sub(trace_matrix(M), u, u)
-  disc = abs(det(tr_mat))
+  #TODO: If one can compute the exact discriminant of the lattice, we could check correctness. 
+  # At the moment it is just heuristic.
   while true
     att += 1
     @vprint :Simplify 3 "Attempt number : $(att)\n"  
@@ -455,31 +536,15 @@ function _lll_sublattice(M::NfOrd, u::UnitRange{Int}; prec = 100)
     @vprint :Simplify 3 "Minkowski matrix computed\n"
     g = identity_matrix(FlintZZ, l)
     d1 = sub(d, u, u)
-    
     prec = div(prec, 2)
     shift!(d1, -prec)  #TODO: remove?
 
     for i=1:l
-      fmpz_mat_entry_add_ui!(d1, i, i, UInt(nrows(d1)))
+      fmpz_mat_entry_add_ui!(d1, i, i, UInt(l))
     end
     @vtime :Simplify 3 ccall((:fmpz_lll, :libflint), Nothing, (Ref{fmpz_mat}, Ref{fmpz_mat}, Ref{Nemo.lll_ctx}), d1, g, ctx)
-    
-    fl = true
-    if nbits(maximum(abs, g)) >  div(prec, 2)
-      fl = false
-    else
-      di = root(disc, l)+1
-      di *= fmpz(2)^(div(l+1,2)) * fmpz(2)^prec
-      if cmpindex(d1, 1, 1, di) > 0
-        fl = false
-      else
-        pr = prod_diagonal(d1)
-        if pr > fmpz(2)^(div(l*(l-1), 2)) * disc * fmpz(2)^(l*prec)
-          fl = false
-        end
-      end
-    end
-    if fl
+
+    if nbits(maximum(abs, g)) <= div(prec, 2)
       prec *= 2
       break
     end
@@ -503,7 +568,7 @@ function _lll_for_simplify(M::NfOrd; prec = 100)
 
   K = nf(M)
 
-  if signature(M)[1] == degree(K)
+  if istotally_real(K)
     #in this case the gram-matrix of the minkowski lattice is the trace-matrix
     #which is exact. 
     BM = _lll_gram(ideal(M, 1))[2]
@@ -544,13 +609,12 @@ function _lll_for_simplify(M::NfOrd; prec = 100)
 
   n = degree(M)
   prec = max(prec, 10*n)
-  
+  disc = abs(discriminant(M))
   if n > 10
     prec, M = lll_precomputation(M, prec)
   end
   local g::fmpz_mat
   local d::fmpz_mat
-  fl = true
   ctx = Nemo.lll_ctx(0.75, 0.51, :gram)
   att = 0 
   while true
@@ -566,6 +630,7 @@ function _lll_for_simplify(M::NfOrd; prec = 100)
       end
     end
     @vprint :Simplify 3 "Minkowski matrix computed\n"
+    diag_d = prod_diagonal(d)
     g = identity_matrix(FlintZZ, n)
     
     prec = div(prec, 2)
@@ -575,32 +640,50 @@ function _lll_for_simplify(M::NfOrd; prec = 100)
       fmpz_mat_entry_add_ui!(d, i, i, UInt(nrows(d)))
     end
     @vtime :Simplify 3 ccall((:fmpz_lll, :libflint), Nothing, (Ref{fmpz_mat}, Ref{fmpz_mat}, Ref{Nemo.lll_ctx}), d, g, ctx)
-    fl = true
-    nb = nbits(maximum(abs, g))
-    if nb <=  prec
-      if nb > div(prec, 2)
+    
+    if nbits(maximum(abs, g)) <= div(prec, 2)
+      fl = true
+      disc = abs(discriminant(M))
+      di = root(disc, n)+1
+      di *= fmpz(2)^(div(n+1,2)+prec)
+      if cmpindex(d, 1, 1, di) > 0 
         fl = false
+      else
+        pr = prod_diagonal(d)
+        if pr > fmpz(2)^(div(n*(n-1), 2)+(n*prec)) * disc 
+          fl = false
+        end
       end
-      break
+      if fl
+        break
+      end
+    end
+    On = NfOrd(K, g*basis_matrix(M, copy = false))
+    On.ismaximal = M.ismaximal
+    if isdefined(M, :index)
+      On.index = M.index
+    end
+    if isdefined(M, :disc)
+      On.disc = M.disc
+    end
+    if isdefined(M, :gen_index)
+      On.gen_index = M.gen_index
+    end
+    prec *= 2
+    d1 = minkowski_gram_mat_scaled(On, prec)
+    if prod_diagonal(d1) < diag_d
+      @vprint :Simplify 3 "I use the transformation\n"
+      M = On
+    else
+      prec *= 2
     end
     @vprint :Simplify 3 "Still in the loop\n"
-    prec *= 4
   end
   ## lattice has lattice disc = order_disc * norm^2
   ## lll needs to yield a basis sth
   ## l[1,1] = |b_i|^2 <= 2^((n-1)/2) disc^(1/n)  
   ## and prod(l[i,i]) <= 2^(n(n-1)/2) disc
-  disc = abs(discriminant(M))
-  di = root(disc, n)+1
-  di *= fmpz(2)^(div(n+1,2)) * fmpz(2)^prec
-  if cmpindex(d, 1, 1, di) > 0 
-    fl = false
-  else
-    pr = prod_diagonal(d)
-    if pr > fmpz(2)^(div(n*(n-1), 2)) * disc * fmpz(2)^(n*prec)
-      fl = false
-    end
-  end
+  
   On = NfOrd(K, g*basis_matrix(M, copy = false))
   On.ismaximal = M.ismaximal
   if isdefined(M, :index)
@@ -612,13 +695,8 @@ function _lll_for_simplify(M::NfOrd; prec = 100)
   if isdefined(M, :gen_index)
     On.gen_index = M.gen_index
   end
-  if fl
-    M.lllO = On
-    return On
-  else
-    @vprint :Simplify 3 "Restarting\n"
-    On1 = _lll_for_simplify(On, prec = prec*4)
-    M.lllO = On1
-    return On1
-  end
+  #Now, I compute a LLL basis with parameters 0.99, 0.51
+  res = lll(On, prec = prec)
+  @vprint :Simplify 3 "LLL finished\n"
+  return res
 end

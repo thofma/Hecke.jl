@@ -54,7 +54,7 @@ function MaximalOrder(K::AnticNumberField; discriminant::fmpz = fmpz(-1), ramifi
       rethrow(e)
     end
     #O = MaximalOrder(K)::NfOrd
-    O = new_maximal_order(any_order(K))
+    O = new_maximal_order(any_order(K), ramified_primes = ramified_primes)
     O.ismaximal = 1
     _set_maximal_order(K, O)
     return O
@@ -301,7 +301,7 @@ function _qradical(O::NfOrd, q::fmpz)
   #First, we compute the q-radical as the kernel of the trace matrix mod q.
   #By theory, this is free if q is prime; if I get a non free module, I have found a factor of q.
   @vprint :NfOrd 1 "\nradical computation\n "
-  if isone(gcd(index(O), q))
+  if isdefining_polynomial_nice(K) && isone(gcd(index(O), q))
     Rx = PolynomialRing(R, "x", cached = false)[1]
     f = Rx(K.pol)
     f1 = derivative(f)
@@ -991,10 +991,12 @@ end
 #
 ################################################################################
 
-function prefactorization(f::fmpz_poly, d::fmpz)
+function prefactorization(f::fmpz_poly, d::fmpz, f1::fmpz_poly = derivative(f))
+  if isone(d)
+    return fmpz[]
+  end
   factors = fmpz[d]
   final_factors = fmpz[]
-  f1 = derivative(f)
   while !isempty(factors)
     d1 = pop!(factors)
     d1 = ispower(d1)[2]

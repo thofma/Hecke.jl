@@ -1213,12 +1213,14 @@ end
 #
 ###############################################################################
 
-
 function _get_support(a::FacElem{nf_elem, AnticNumberField}, I::NfOrdIdlSet)
   Zk = order(I)
   A = Dict{NfOrdIdl, fmpz}()
   sizehint!(A, length(a.fac))
+  i = 0
   for (e, v) = a.fac
+    i += 1
+    @vprint :CompactPresentation 3 "Element $i / $(length(a.fac))"
     N, D = integral_split(ideal(Zk, e))
     if !isone(N)
       add_to_key!(A, N, v)
@@ -1226,9 +1228,10 @@ function _get_support(a::FacElem{nf_elem, AnticNumberField}, I::NfOrdIdlSet)
     if !isone(D)
       add_to_key!(A, D, -v)
     end
+    @vprint :CompactPresentation 3 "$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())"
   end
+  @vprint :CompactPresentation 3 "\n"
   return A
-
 end
 @doc Markdown.doc"""
     factor_coprime(a::FacElem{nf_elem, AnticNumberField}, I::NfOrdIdlSet) -> Dict{NfOrdIdl, fmpz}

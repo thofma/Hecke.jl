@@ -230,7 +230,7 @@ function AlgAss(O::Union{NfAbsOrd, AlgAssAbsOrd}, I::Union{NfAbsOrdIdl, AlgAssAb
 
   basis_elts = Vector{Int}()
   for i = 1:n
-    if valuation(bmatI[i, i], p) == 0
+    if iscoprime(bmatI[i, i], p)
       continue
     end
 
@@ -266,7 +266,7 @@ function AlgAss(O::Union{NfAbsOrd, AlgAssAbsOrd}, I::Union{NfAbsOrdIdl, AlgAssAb
   BO = basis(O, copy = false)
   mult_table = Array{elem_type(Fp), 3}(undef, r, r, r)
   for i = 1:r
-    M = representation_matrix(BO[basis_elts[i]])
+    M = representation_matrix_mod(BO[basis_elts[i]], fmpz(p))
     if r != degree(O)
       M = reduce_rows_mod_hnf!(M, bmatI, basis_elts)
     end

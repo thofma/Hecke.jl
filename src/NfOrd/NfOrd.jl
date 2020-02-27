@@ -1204,7 +1204,7 @@ end
     lll(M::NfOrd) -> NfOrd
 The same order, but with the basis now being LLL reduced wrt. the Minkowski metric.
 """
-function lll(M::NfOrd)
+function lll(M::NfOrd; prec::Int = 100)
   if isdefined(M, :lllO)
     return M.lllO::NfOrd
   end
@@ -1219,7 +1219,7 @@ function lll(M::NfOrd)
 
 
   #TODO HARD: find proper parameters
-  prec = 100 + 25*div(degree(M), 3) + Int(round(log(abs(discriminant(M)))))
+  prec = max(prec, 100 + 25*div(degree(M), 3) + Int(round(log(abs(discriminant(M))))))
   #prec = 100
   i = 0
   while true
