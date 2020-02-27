@@ -233,7 +233,7 @@ function lift(K::AnticNumberField, f::T) where {T <: Zmodn_poly}
   end
   r = K()
   for i=0:f.length-1
-    u = ccall((:nmod_poly_get_coeff_ui, :libflint), UInt, (Ref{T}, Int), f, i)
+    u = ccall((:nmod_poly_get_coeff_ui, libflint), UInt, (Ref{T}, Int), f, i)
     _num_setcoeff!(r, i, u)
   end
   return r
@@ -246,7 +246,7 @@ function lift(K::AnticNumberField, f::gfp_fmpz_poly)
   r = K()
   for i=0:f.length-1
     u = fmpz()
-    ccall((:fmpz_mod_poly_get_coeff_fmpz, :libflint), Nothing, (Ref{fmpz}, Ref{gfp_fmpz_poly}, Int), u, f, i)
+    ccall((:fmpz_mod_poly_get_coeff_fmpz, libflint), Nothing, (Ref{fmpz}, Ref{gfp_fmpz_poly}, Int), u, f, i)
     _num_setcoeff!(r, i, u)
   end
   return r
@@ -1050,12 +1050,12 @@ end
 # cost of an mod(nmod_poly, nmod_poly) operation.
 # Isn't it nice?
 function valuation(a::UInt, b::UInt)
-  return ccall((:n_remove, :libflint), Int, (Ref{UInt}, UInt), a, b)
+  return ccall((:n_remove, libflint), Int, (Ref{UInt}, UInt), a, b)
 end
 
 #=
 function valuation(a::UInt, b::UInt, bi::Cdouble)
-  return ccall((:n_remove2_precomp, :libflint), Int, (Ref{UInt}, UInt, Cdouble), a, b, bi)
+  return ccall((:n_remove2_precomp, libflint), Int, (Ref{UInt}, UInt, Cdouble), a, b, bi)
 end
 =#
 

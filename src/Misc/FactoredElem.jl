@@ -411,12 +411,12 @@ function _ev(d::Dict{fq_nmod, fmpz}, z::fq_nmod)
     if abs(v) < 10
       if v >0 
         kv = Fq()
-        ccall((:fq_nmod_pow, :libflint), Nothing, (Ref{fq_nmod}, Ref{fq_nmod}, Ref{fmpz}, Ref{FqNmodFiniteField}), kv, k, v, Fq)
+        ccall((:fq_nmod_pow, libflint), Nothing, (Ref{fq_nmod}, Ref{fq_nmod}, Ref{fmpz}, Ref{FqNmodFiniteField}), kv, k, v, Fq)
         mul!(z, z, kv)
       else
         kv = Fq()
-        ccall((:fq_nmod_inv, :libflint), Nothing, (Ref{fq_nmod}, Ref{fq_nmod}, Ref{FqNmodFiniteField}), kv, k, Fq)
-        ccall((:fq_nmod_pow, :libflint), Nothing, (Ref{fq_nmod}, Ref{fq_nmod}, Ref{fmpz}, Ref{FqNmodFiniteField}), kv, kv, -v, Fq)
+        ccall((:fq_nmod_inv, libflint), Nothing, (Ref{fq_nmod}, Ref{fq_nmod}, Ref{FqNmodFiniteField}), kv, k, Fq)
+        ccall((:fq_nmod_pow, libflint), Nothing, (Ref{fq_nmod}, Ref{fq_nmod}, Ref{fmpz}, Ref{FqNmodFiniteField}), kv, kv, -v, Fq)
         mul!(z, z, kv)
       end
     else

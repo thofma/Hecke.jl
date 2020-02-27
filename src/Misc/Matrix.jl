@@ -178,7 +178,7 @@ end
 function iszero_row(M::nmod_mat, i::Int)
   zero = UInt(0)
   for j in 1:ncols(M)
-    t = ccall((:nmod_mat_get_entry, :libflint), Base.GMP.Limb, (Ref{nmod_mat}, Int, Int), M, i - 1, j - 1)
+    t = ccall((:nmod_mat_get_entry, libflint), Base.GMP.Limb, (Ref{nmod_mat}, Int, Int), M, i - 1, j - 1)
     if t != zero
       return false
     end
@@ -223,12 +223,12 @@ function iszero_row(M::Array{T, 2}, i::Int) where T <: RingElem
 end
 
 function divexact!(a::fmpz_mat, b::fmpz_mat, d::fmpz)
-  ccall((:fmpz_mat_scalar_divexact_fmpz, :libflint), Nothing,
+  ccall((:fmpz_mat_scalar_divexact_fmpz, libflint), Nothing,
                (Ref{fmpz_mat}, Ref{fmpz_mat}, Ref{fmpz}), a, a, d)
 end
 
 function mul!(a::fmpz_mat, b::fmpz_mat, c::fmpz)
-  ccall((:fmpz_mat_scalar_mul_fmpz, :libflint), Nothing, 
+  ccall((:fmpz_mat_scalar_mul_fmpz, libflint), Nothing, 
                   (Ref{fmpz_mat}, Ref{fmpz_mat}, Ref{fmpz}), a, b, c)
 end                  
 
@@ -255,7 +255,7 @@ function _hnf!(x::fmpz_mat, shape::Symbol = :upperright)
 end
 
 function hnf!(x::fmpz_mat)
-  ccall((:fmpz_mat_hnf, :libflint), Nothing, (Ref{fmpz_mat}, Ref{fmpz_mat}), x, x)
+  ccall((:fmpz_mat_hnf, libflint), Nothing, (Ref{fmpz_mat}, Ref{fmpz_mat}), x, x)
   return x
 end
 
@@ -276,12 +276,12 @@ function hnf_modular_eldiv!(x::fmpz_mat, d::fmpz, shape::Symbol = :upperright)
    (nrows(x) < ncols(x)) &&
                 error("Matrix must have at least as many rows as columns")
    if shape == :upperright
-     ccall((:fmpz_mat_hnf_modular_eldiv, :libflint), Nothing,
+     ccall((:fmpz_mat_hnf_modular_eldiv, libflint), Nothing,
                   (Ref{fmpz_mat}, Ref{fmpz}), x, d)
      return x
    elseif shape == :lowerleft
      reverse_cols!(x)
-     ccall((:fmpz_mat_hnf_modular_eldiv, :libflint), Nothing,
+     ccall((:fmpz_mat_hnf_modular_eldiv, libflint), Nothing,
                  (Ref{fmpz_mat}, Ref{fmpz}), x, d)
      reverse_cols!(x)
      reverse_rows!(x)
@@ -333,7 +333,7 @@ end
 ################################################################################
 
 function islll_reduced(x::fmpz_mat, ctx::lll_ctx = lll_ctx(0.99, 0.51))
-  b = ccall((:fmpz_lll_is_reduced_d, :libflint), Cint, 
+  b = ccall((:fmpz_lll_is_reduced_d, libflint), Cint, 
             (Ref{fmpz_mat}, Ref{lll_ctx}), x, ctx)
   return Bool(b)
 end
@@ -343,47 +343,47 @@ end
 ################################################################################
 
 function maximum(f::typeof(abs), a::fmpz_mat)
-  m = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ref{fmpz_mat}, Int, Int), a, 0,0)
+  m = ccall((:fmpz_mat_entry, libflint), Ptr{fmpz}, (Ref{fmpz_mat}, Int, Int), a, 0,0)
   for i=1:nrows(a)
     for j=1:ncols(a)
-      z = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ref{fmpz_mat}, Int, Int), a, i-1, j-1)
-      if ccall((:fmpz_cmpabs, :libflint), Cint, (Ptr{fmpz}, Ptr{fmpz}), m, z) < 0
+      z = ccall((:fmpz_mat_entry, libflint), Ptr{fmpz}, (Ref{fmpz_mat}, Int, Int), a, i-1, j-1)
+      if ccall((:fmpz_cmpabs, libflint), Cint, (Ptr{fmpz}, Ptr{fmpz}), m, z) < 0
         m = z
       end
     end
   end
   r = fmpz()
-  ccall((:fmpz_abs, :libflint), Nothing, (Ref{fmpz}, Ptr{fmpz}), r, m)
+  ccall((:fmpz_abs, libflint), Nothing, (Ref{fmpz}, Ptr{fmpz}), r, m)
   return r
 end
 
 function maximum(a::fmpz_mat)  
-  m = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ref{fmpz_mat}, Int, Int), a, 0,0)
+  m = ccall((:fmpz_mat_entry, libflint), Ptr{fmpz}, (Ref{fmpz_mat}, Int, Int), a, 0,0)
   for i=1:nrows(a)
     for j=1:ncols(a)
-      z = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ref{fmpz_mat}, Int, Int), a, i-1, j-1)
-      if ccall((:fmpz_cmp, :libflint), Cint, (Ptr{fmpz}, Ptr{fmpz}), m, z) < 0
+      z = ccall((:fmpz_mat_entry, libflint), Ptr{fmpz}, (Ref{fmpz_mat}, Int, Int), a, i-1, j-1)
+      if ccall((:fmpz_cmp, libflint), Cint, (Ptr{fmpz}, Ptr{fmpz}), m, z) < 0
         m = z
       end
     end
   end
   r = fmpz()
-  ccall((:fmpz_set, :libflint), Nothing, (Ref{fmpz}, Ptr{fmpz}), r, m)
+  ccall((:fmpz_set, libflint), Nothing, (Ref{fmpz}, Ptr{fmpz}), r, m)
   return r
 end
 
 function minimum(a::fmpz_mat) 
-  m = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ref{fmpz_mat}, Int, Int), a, 0,0)
+  m = ccall((:fmpz_mat_entry, libflint), Ptr{fmpz}, (Ref{fmpz_mat}, Int, Int), a, 0,0)
   for i=1:nrows(a)
     for j=1:ncols(a)
-      z = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ref{fmpz_mat}, Int, Int), a, i-1, j-1)
-      if ccall((:fmpz_cmp, :libflint), Cint, (Ptr{fmpz}, Ptr{fmpz}), m, z) > 0
+      z = ccall((:fmpz_mat_entry, libflint), Ptr{fmpz}, (Ref{fmpz_mat}, Int, Int), a, i-1, j-1)
+      if ccall((:fmpz_cmp, libflint), Cint, (Ptr{fmpz}, Ptr{fmpz}), m, z) > 0
         m = z
       end
     end
   end
   r = fmpz()
-  ccall((:fmpz_set, :libflint), Nothing, (Ref{fmpz}, Ptr{fmpz}), r, m)
+  ccall((:fmpz_set, libflint), Nothing, (Ref{fmpz}, Ptr{fmpz}), r, m)
   return r
 end
 
@@ -473,7 +473,7 @@ end
 
 function lift_unsigned(a::nmod_mat)
   z = zero_matrix(FlintZZ, nrows(a), ncols(a))
-  ccall((:fmpz_mat_set_nmod_mat_unsigned, :libflint), Nothing,
+  ccall((:fmpz_mat_set_nmod_mat_unsigned, libflint), Nothing,
           (Ref{fmpz_mat}, Ref{nmod_mat}), z, a)
   return z
 end
@@ -551,7 +551,7 @@ the kernel and n is the dimension of the kernel.
 """
 function right_kernel(x::gfp_mat) 
   z = zero_matrix(base_ring(x), ncols(x), max(nrows(x),ncols(x)))
-  n = ccall((:nmod_mat_nullspace, :libflint), Int, (Ref{gfp_mat}, Ref{gfp_mat}), z, x)
+  n = ccall((:nmod_mat_nullspace, libflint), Int, (Ref{gfp_mat}, Ref{gfp_mat}), z, x)
   return n, z
 end
 
@@ -609,7 +609,7 @@ function right_kernel(M::nmod_mat)
   R = base_ring(M)
   if isprime(modulus(R))
     k = zero_matrix(R, ncols(M), ncols(M))
-    n = ccall((:nmod_mat_nullspace, :libflint), Int, (Ref{nmod_mat}, Ref{nmod_mat}), k, M)
+    n = ccall((:nmod_mat_nullspace, libflint), Int, (Ref{nmod_mat}, Ref{nmod_mat}), k, M)
     return n, k
   end
 
@@ -757,11 +757,11 @@ end
 function _copy_matrix_into_matrix(A::fmpz_mat, i::Int, j::Int, B::fmpz_mat)
   for k in 0:nrows(B) - 1
     for l in 0:ncols(B) - 1
-      d = ccall((:fmpz_mat_entry, :libflint),
+      d = ccall((:fmpz_mat_entry, libflint),
                 Ptr{fmpz}, (Ref{fmpz_mat}, Int, Int), B, k, l)
-      t = ccall((:fmpz_mat_entry, :libflint),
+      t = ccall((:fmpz_mat_entry, libflint),
                 Ptr{fmpz}, (Ref{fmpz_mat}, Int, Int), A, i - 1 + k, j - 1 + l)
-      ccall((:fmpz_set, :libflint), Nothing, (Ptr{fmpz}, Ptr{fmpz}), t, d)
+      ccall((:fmpz_set, libflint), Nothing, (Ptr{fmpz}, Ptr{fmpz}), t, d)
     end
   end
 end
@@ -820,11 +820,11 @@ function round_scale!(b::fmpz_mat, a::Array{BigFloat, 2}, l::Int)
       a[i,j].exp = e
       f = ccall((:mpfr_get_z_2exp, :libmpfr), Clong, (Ref{BigInt}, Ref{BigFloat}),
         tmp_mpz, tmp_mpfr)
-      ccall((:fmpz_set_mpz, :libflint), Nothing, (Ref{fmpz}, Ref{BigInt}), tmp_fmpz, tmp_mpz)
+      ccall((:fmpz_set_mpz, libflint), Nothing, (Ref{fmpz}, Ref{BigInt}), tmp_fmpz, tmp_mpz)
       if f > 0  
-        ccall((:fmpz_mul_2exp, :libflint), Nothing, (Ref{fmpz}, Ref{fmpz}, UInt), tmp_fmpz, tmp_fmpz, f)
+        ccall((:fmpz_mul_2exp, libflint), Nothing, (Ref{fmpz}, Ref{fmpz}, UInt), tmp_fmpz, tmp_fmpz, f)
       else
-        ccall((:fmpz_tdiv_q_2exp, :libflint), Nothing, (Ref{fmpz}, Ref{fmpz}, UInt), tmp_fmpz, tmp_fmpz, -f);
+        ccall((:fmpz_tdiv_q_2exp, libflint), Nothing, (Ref{fmpz}, Ref{fmpz}, UInt), tmp_fmpz, tmp_fmpz, -f);
       end
       setindex!(b, tmp_fmpz, i, j)
     end
@@ -851,11 +851,11 @@ end
 function shift!(g::fmpz_mat, l::Int)
   for i=1:nrows(g)
     for j=1:ncols(g)
-      z = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ref{fmpz_mat}, Int, Int), g, i-1, j-1)
+      z = ccall((:fmpz_mat_entry, libflint), Ptr{fmpz}, (Ref{fmpz_mat}, Int, Int), g, i-1, j-1)
       if l > 0
-        ccall((:fmpz_mul_2exp, :libflint), Nothing, (Ptr{fmpz}, Ptr{fmpz}, Int), z, z, l)
+        ccall((:fmpz_mul_2exp, libflint), Nothing, (Ptr{fmpz}, Ptr{fmpz}, Int), z, z, l)
       else
-        ccall((:fmpz_tdiv_q_2exp, :libflint), Nothing, (Ptr{fmpz}, Ptr{fmpz}, Int), z, z, -l)
+        ccall((:fmpz_tdiv_q_2exp, libflint), Nothing, (Ptr{fmpz}, Ptr{fmpz}, Int), z, z, -l)
       end
     end
   end
@@ -876,8 +876,8 @@ Positive residue system.
 function mod!(M::fmpz_mat, p::fmpz)
   for i=1:nrows(M)
     for j=1:ncols(M)
-      z = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ref{fmpz_mat}, Int, Int), M, i - 1, j - 1)
-      ccall((:fmpz_mod, :libflint), Nothing, (Ptr{fmpz}, Ptr{fmpz}, Ref{fmpz}), z, z, p)
+      z = ccall((:fmpz_mat_entry, libflint), Ptr{fmpz}, (Ref{fmpz_mat}, Int, Int), M, i - 1, j - 1)
+      ccall((:fmpz_mod, libflint), Nothing, (Ptr{fmpz}, Ptr{fmpz}, Ref{fmpz}), z, z, p)
     end
   end
   nothing
@@ -899,7 +899,7 @@ Reduces every entry modulo $p$ in-place, into the symmetric residue system.
 """
 function mod_sym!(M::fmpz_mat, B::fmpz)
   @assert !iszero(B)
-  ccall((:fmpz_mat_scalar_smod, :libflint), Nothing, (Ref{fmpz_mat}, Ref{fmpz_mat}, Ref{fmpz}), M, M, B)
+  ccall((:fmpz_mat_scalar_smod, libflint), Nothing, (Ref{fmpz_mat}, Ref{fmpz_mat}, Ref{fmpz}), M, M, B)
 end
 mod_sym!(M::fmpz_mat, B::Integer) = mod_sym!(M, fmpz(B))
 
@@ -909,7 +909,7 @@ Reduces every entry modulo $p$ into the symmetric residue system.
 """
 function mod_sym(M::fmpz_mat, B::fmpz)
   N = zero_matrix(FlintZZ, nrows(M), ncols(M))
-  ccall((:fmpz_mat_scalar_smod, :libflint), Nothing, (Ref{fmpz_mat}, Ref{fmpz_mat}, Ref{fmpz}), N, M, B)
+  ccall((:fmpz_mat_scalar_smod, libflint), Nothing, (Ref{fmpz_mat}, Ref{fmpz_mat}, Ref{fmpz}), N, M, B)
   return N
 end
 mod_sym(M::fmpz_mat, B::Integer) = mod_sym(M, fmpz(B))

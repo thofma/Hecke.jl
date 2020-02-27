@@ -135,7 +135,7 @@ function factor(C::HenselCtxPadic)
   for i = 1:C.X.LF._num #from factor_to_dict
     #cannot use factor_to_dict as the order will be random (hashing!)
     g = parent(C.f)()
-    ccall((:fmpz_poly_set, :libflint), Nothing, (Ref{fmpz_poly}, Ref{fmpz_poly_raw}), h, C.X.LF.poly+(i-1)*sizeof(fmpz_poly_raw))
+    ccall((:fmpz_poly_set, libflint), Nothing, (Ref{fmpz_poly}, Ref{fmpz_poly_raw}), h, C.X.LF.poly+(i-1)*sizeof(fmpz_poly_raw))
     for j=0:degree(h)
       setcoeff!(g, j, Qp(coeff(h, j)))
     end
@@ -615,7 +615,7 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 20)
         sz = nbits(vH.pM[2]) - 2 * prec_scale
       end
       push!(really_used, n)
-      ccall((:fmpz_mat_scalar_tdiv_q_2exp, :libflint), Nothing, (Ref{fmpz_mat}, Ref{fmpz_mat}, Cint), B, B, sz)
+      ccall((:fmpz_mat_scalar_tdiv_q_2exp, libflint), Nothing, (Ref{fmpz_mat}, Ref{fmpz_mat}, Cint), B, B, sz)
       s = max(0, sz - prec_scale)
       d = tdivpow2(vH.pM[2], s)
       M = [M B; zero_matrix(FlintZZ, ncols(B), ncols(M)) d*identity_matrix(FlintZZ, ncols(B))]

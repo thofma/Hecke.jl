@@ -1054,8 +1054,8 @@ function powmod(f::Zmodn_poly, e::fmpz, g::Zmodn_poly)
   else
     _e = BigInt()
     z = parent(f)()
-    ccall((:fmpz_get_mpz, :libflint), Nothing, (Ref{BigInt}, Ref{fmpz}), _e, e)
-    ccall((:nmod_poly_powmod_mpz_binexp, :libflint), Nothing,
+    ccall((:fmpz_get_mpz, libflint), Nothing, (Ref{BigInt}, Ref{fmpz}), _e, e)
+    ccall((:nmod_poly_powmod_mpz_binexp, libflint), Nothing,
           (Ref{Zmodn_poly}, Ref{Zmodn_poly}, Ref{BigInt}, Ref{Zmodn_poly}),
            z, f, e, g)
     return z

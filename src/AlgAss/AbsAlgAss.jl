@@ -1200,7 +1200,7 @@ function _lift_fq_mat!(M1::MatElem{T}, M2::MatElem{nf_elem}, M3::MatElem{fmpq_po
       for k = 0:(n - 1)
         M3[i, j] = setcoeff!(M3[i, j], k, fmpq(coeff(M1[i, j], k)))
       end
-      ccall((:nf_elem_set_fmpq_poly, :libantic), Nothing, (Ref{nf_elem}, Ref{fmpq_poly}, Ref{AnticNumberField}), M2[i, j], M3[i, j], K)
+      ccall((:nf_elem_set_fmpq_poly, libantic), Nothing, (Ref{nf_elem}, Ref{fmpq_poly}, Ref{AnticNumberField}), M2[i, j], M3[i, j], K)
     end
   end
   return M2

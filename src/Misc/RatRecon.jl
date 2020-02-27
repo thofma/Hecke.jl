@@ -67,7 +67,7 @@ Tries to solve ay=x mod b for x,y < sqrt(M/2). If possible, returns
 function rational_reconstruction(a::fmpz, b::fmpz)
   res = fmpq()
   a = mod(a, b)
-  fl = ccall((:fmpq_reconstruct_fmpz, :libflint), Int, (Ref{fmpq}, Ref{fmpz}, Ref{fmpz}), res, a, b)
+  fl = ccall((:fmpq_reconstruct_fmpz, libflint), Int, (Ref{fmpq}, Ref{fmpz}, Ref{fmpz}), res, a, b)
   return fl!=0, numerator(res), denominator(res)
 end
 
@@ -83,7 +83,7 @@ satisfying $x/y \equiv a \bmod b$ or $a \equiv ya \bmod b$.
 function rational_reconstruction(a::fmpz, b::fmpz, N::fmpz, D::fmpz)
   res = fmpq()
   a = mod(a, b)
-  fl = ccall((:fmpq_reconstruct_fmpz_2, :libflint), Int, (Ref{fmpq}, Ref{fmpz}, Ref{fmpz}, Ref{fmpz}, Ref{fmpz}), res, a, b, N, D)
+  fl = ccall((:fmpq_reconstruct_fmpz_2, libflint), Int, (Ref{fmpq}, Ref{fmpz}, Ref{fmpz}, Ref{fmpz}, Ref{fmpz}), res, a, b, N, D)
   return fl!=0, numerator(res), denominator(res)
 end
 

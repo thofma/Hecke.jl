@@ -88,7 +88,7 @@ function _exp(a::fmpz_mod_abs_series)
     setcoeff!(A, i, lift(coeff(a, i)))
   end
   E = Rx()
-  ccall((:nmod_poly_exp_series, :libflint), Nothing, (Ref{nmod_poly}, Ref{nmod_poly}, Int64), E, A, length(a))
+  ccall((:nmod_poly_exp_series, libflint), Nothing, (Ref{nmod_poly}, Ref{nmod_poly}, Int64), E, A, length(a))
   r = parent(a)()
   for i=0:Nemo.length(E)-1
     setcoeff!(r, i, lift(coeff(E, i)))

@@ -494,7 +494,7 @@ function _strong_echelon_form_nonsplit(M)
           forflint[i, j] = f(M[i, j]).data
         end
       end
-      ccall((:fmpz_mat_strong_echelon_form_mod, :libflint), Nothing, (Ref{fmpz_mat}, Ref{fmpz}), forflint, modulus(RmodIZ))
+      ccall((:fmpz_mat_strong_echelon_form_mod, libflint), Nothing, (Ref{fmpz_mat}, Ref{fmpz}), forflint, modulus(RmodIZ))
       for i in 1:n
         for j in 1:m
           M_cur[i, j] = Q(forflint[i, j])

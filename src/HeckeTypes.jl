@@ -152,7 +152,7 @@ mutable struct fmpz_preinvn_struct
 
   function fmpz_preinvn_struct(f::fmpz)
     z = new()
-    ccall((:fmpz_preinvn_init, :libflint), Nothing,
+    ccall((:fmpz_preinvn_init, libflint), Nothing,
           (Ref{fmpz_preinvn_struct}, Ref{fmpz}), z, f)
     finalizer(_fmpz_preinvn_struct_clear_fn, z)
     return z
@@ -2020,13 +2020,13 @@ mutable struct fmpz_poly_raw  ## fmpz_poly without parent like in c
   function fmpz_poly_raw()
     error("should not get called")
     z = new()
-    ccall((:fmpz_poly_init, :libflint), Nothing, (Ref{fmpz_poly},), z)
+    ccall((:fmpz_poly_init, libflint), Nothing, (Ref{fmpz_poly},), z)
     finalizer(_fmpz_poly_raw_clear_fn, z)
     return z
   end
 
   function _fmpz_poly_raw_clear_fn(a::fmpz_poly)
-    ccall((:fmpz_poly_clear, :libflint), Nothing, (Ref{fmpz_poly},), a)
+    ccall((:fmpz_poly_clear, libflint), Nothing, (Ref{fmpz_poly},), a)
   end
 end
 
@@ -2039,14 +2039,14 @@ mutable struct fmpz_poly_factor
     
   function fmpz_poly_factor()
     z = new()
-    ccall((:fmpz_poly_factor_init, :libflint), Nothing,
+    ccall((:fmpz_poly_factor_init, libflint), Nothing,
             (Ref{fmpz_poly_factor}, ), z)
     finalizer(_fmpz_poly_factor_clear_fn, z)
     return z
   end
 
   function _fmpz_poly_factor_clear_fn(a::fmpz_poly_factor)
-    ccall((:fmpz_poly_factor_clear, :libflint), Nothing,
+    ccall((:fmpz_poly_factor_clear, libflint), Nothing,
             (Ref{fmpz_poly_factor}, ), a)
   end
 end
@@ -2071,19 +2071,19 @@ mutable struct HenselCtx
     Zx,x = PolynomialRing(FlintZZ, "x", cached=false)
     Rx,x = PolynomialRing(GF(UInt(p), cached=false), "x", cached=false)
     a.lf = Nemo.nmod_poly_factor(UInt(p))
-    ccall((:nmod_poly_factor, :libflint), UInt,
+    ccall((:nmod_poly_factor, libflint), UInt,
           (Ref{Nemo.nmod_poly_factor}, Ref{gfp_poly}), (a.lf), Rx(f))
     r = a.lf.num
     a.r = r  
     a.LF = fmpz_poly_factor()
 #    @assert r > 1  #flint restriction
-    a.v = ccall((:flint_malloc, :libflint), Ptr{fmpz_poly_raw}, (Int, ), (2*r-2)*sizeof(fmpz_poly_raw))
-    a.w = ccall((:flint_malloc, :libflint), Ptr{fmpz_poly_raw}, (Int, ), (2*r-2)*sizeof(fmpz_poly_raw))
+    a.v = ccall((:flint_malloc, libflint), Ptr{fmpz_poly_raw}, (Int, ), (2*r-2)*sizeof(fmpz_poly_raw))
+    a.w = ccall((:flint_malloc, libflint), Ptr{fmpz_poly_raw}, (Int, ), (2*r-2)*sizeof(fmpz_poly_raw))
     for i=1:(2*r-2)
-      ccall((:fmpz_poly_init, :libflint), Nothing, (Ptr{fmpz_poly_raw}, ), a.v+(i-1)*sizeof(fmpz_poly_raw))
-      ccall((:fmpz_poly_init, :libflint), Nothing, (Ptr{fmpz_poly_raw}, ), a.w+(i-1)*sizeof(fmpz_poly_raw))
+      ccall((:fmpz_poly_init, libflint), Nothing, (Ptr{fmpz_poly_raw}, ), a.v+(i-1)*sizeof(fmpz_poly_raw))
+      ccall((:fmpz_poly_init, libflint), Nothing, (Ptr{fmpz_poly_raw}, ), a.w+(i-1)*sizeof(fmpz_poly_raw))
     end
-    a.link = ccall((:flint_calloc, :libflint), Ptr{Int}, (Int, Int), 2*r-2, sizeof(Int))
+    a.link = ccall((:flint_calloc, libflint), Ptr{Int}, (Int, Int), 2*r-2, sizeof(Int))
     a.N = 0
     a.prev = 0
     finalizer(HenselCtx_free, a)
@@ -2092,12 +2092,12 @@ mutable struct HenselCtx
 
   function free_fmpz_poly_array(p::Ref{fmpz_poly_raw}, r::Int)
     for i=1:(2*r-2)
-      ccall((:fmpz_poly_clear, :libflint), Nothing, (Ref{fmpz_poly_raw}, ), p+(i-1)*sizeof(fmpz_poly_raw))
+      ccall((:fmpz_poly_clear, libflint), Nothing, (Ref{fmpz_poly_raw}, ), p+(i-1)*sizeof(fmpz_poly_raw))
     end
-    ccall((:flint_free, :libflint), Nothing, (Ref{fmpz_poly_raw}, ), p)
+    ccall((:flint_free, libflint), Nothing, (Ref{fmpz_poly_raw}, ), p)
   end
   function free_int_array(a::Ref{Int})
-    ccall((:flint_free, :libflint), Nothing, (Ref{Int}, ), a)
+    ccall((:flint_free, libflint), Nothing, (Ref{Int}, ), a)
   end
   function HenselCtx_free(a::HenselCtx)
     free_fmpz_poly_array(a.v, a.r)

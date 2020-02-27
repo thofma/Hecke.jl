@@ -34,7 +34,7 @@ function ^(a::ResElem, f::fmpz)
 end
 
 function set!(z::fq_nmod, x::fq_nmod)
-  ccall((:fq_nmod_set, :libflint), Nothing,
+  ccall((:fq_nmod_set, libflint), Nothing,
           (Ref{fq_nmod}, Ref{fq_nmod}, Ref{FqNmodFiniteField}),
           z, x, parent(z))
 end

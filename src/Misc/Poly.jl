@@ -175,7 +175,7 @@ const constant_coefficient = trailing_coefficient
 
 function resultant(f::fmpz_poly, g::fmpz_poly, d::fmpz, nb::Int)
   z = fmpz()
-  ccall((:fmpz_poly_resultant_modular_div, :libflint), Nothing, 
+  ccall((:fmpz_poly_resultant_modular_div, libflint), Nothing, 
      (Ref{fmpz}, Ref{fmpz_poly}, Ref{fmpz_poly}, Ref{fmpz}, Int), 
      z, f, g, d, nb)
   return z
@@ -210,7 +210,7 @@ function factor_to_dict(a::fmpz_poly_factor)
   Zx,x = PolynomialRing(FlintZZ, "x", cached = false)
   for i in 1:a._num
     f = Zx()
-    ccall((:fmpz_poly_set, :libflint), Nothing, (Ref{fmpz_poly}, Ref{fmpz_poly_raw}), f, a.poly+(i-1)*sizeof(fmpz_poly_raw))
+    ccall((:fmpz_poly_set, libflint), Nothing, (Ref{fmpz_poly}, Ref{fmpz_poly_raw}), f, a.poly+(i-1)*sizeof(fmpz_poly_raw))
     res[f] = unsafe_load(a.exp, i)
   end  
   return res
@@ -221,14 +221,14 @@ function factor_to_array(a::fmpz_poly_factor)
   Zx,x = PolynomialRing(FlintZZ, "x", cached = false)
   for i in 1:a._num
     f = Zx()
-    ccall((:fmpz_poly_set, :libflint), Nothing, (Ref{fmpz_poly}, Ref{fmpz_poly_raw}), f, a.poly+(i-1)*sizeof(fmpz_poly_raw))
+    ccall((:fmpz_poly_set, libflint), Nothing, (Ref{fmpz_poly}, Ref{fmpz_poly_raw}), f, a.poly+(i-1)*sizeof(fmpz_poly_raw))
     push!(res, (f, unsafe_load(a.exp, i)))
   end  
   return res
 end
 
 function show(io::IO, a::fmpz_poly_factor)
-  ccall((:fmpz_poly_factor_print, :libflint), Nothing, (Ref{fmpz_poly_factor}, ), a)
+  ccall((:fmpz_poly_factor_print, libflint), Nothing, (Ref{fmpz_poly_factor}, ), a)
 end
 
 function show(io::IO, a::HenselCtx)
@@ -247,7 +247,7 @@ function start_lift(a::HenselCtx, N::Int)
   if a.r == 1
     return
   end
-  a.prev = ccall((:_fmpz_poly_hensel_start_lift, :libflint), UInt, 
+  a.prev = ccall((:_fmpz_poly_hensel_start_lift, libflint), UInt, 
        (Ref{fmpz_poly_factor}, Ref{Int}, Ref{fmpz_poly_raw}, Ref{fmpz_poly_raw}, Ref{fmpz_poly}, Ref{Nemo.nmod_poly_factor}, Int),
        a.LF, a.link, a.v, a.w, a.f, a.lf, N)
   a.N = N
@@ -260,7 +260,7 @@ function continue_lift(a::HenselCtx, N::Int)
   if a.N >= N 
     return
   end
-  a.prev = ccall((:_fmpz_poly_hensel_continue_lift, :libflint), Int, 
+  a.prev = ccall((:_fmpz_poly_hensel_continue_lift, libflint), Int, 
        (Ref{fmpz_poly_factor}, Ref{Int}, Ref{fmpz_poly_raw}, Ref{fmpz_poly_raw}, Ref{fmpz_poly}, UInt, UInt, Int, Ref{fmpz}),
        a.LF, a.link, a.v, a.w, a.f, a.prev, a.N, N, fmpz(a.p))
   a.N = N
@@ -324,7 +324,7 @@ end
 
 #I think, experimentally, that p = Q^i, p1 = Q^j and j<= i is the condition to make it tick.
 function hensel_lift!(G::fmpz_poly, H::fmpz_poly, A::fmpz_poly, B::fmpz_poly, f::fmpz_poly, g::fmpz_poly, h::fmpz_poly, a::fmpz_poly, b::fmpz_poly, p::fmpz, p1::fmpz)
-  ccall((:fmpz_poly_hensel_lift, :libflint), Nothing, (Ref{fmpz_poly}, Ref{fmpz_poly},  Ref{fmpz_poly},  Ref{fmpz_poly},  Ref{fmpz_poly},  Ref{fmpz_poly},  Ref{fmpz_poly}, Ref{fmpz_poly}, Ref{fmpz_poly}, Ref{fmpz}, Ref{fmpz}), G, H, A, B, f, g, h, a, b, p, p1)
+  ccall((:fmpz_poly_hensel_lift, libflint), Nothing, (Ref{fmpz_poly}, Ref{fmpz_poly},  Ref{fmpz_poly},  Ref{fmpz_poly},  Ref{fmpz_poly},  Ref{fmpz_poly},  Ref{fmpz_poly}, Ref{fmpz_poly}, Ref{fmpz_poly}, Ref{fmpz}, Ref{fmpz}), G, H, A, B, f, g, h, a, b, p, p1)
 end
 
 @doc Markdown.doc"""
@@ -395,32 +395,32 @@ modulus(F::Generic.ResRing{fmpz}) = F.modulus
 modulus(F::Generic.ResField{fmpz}) = F.modulus
 
 function fmpq_poly_to_nmod_poly_raw!(r::nmod_poly, a::fmpq_poly)
-  ccall((:fmpq_poly_get_nmod_poly, :libflint), Nothing, (Ref{nmod_poly}, Ref{fmpq_poly}), r, a)
+  ccall((:fmpq_poly_get_nmod_poly, libflint), Nothing, (Ref{nmod_poly}, Ref{fmpq_poly}), r, a)
 end
 
 function fmpq_poly_to_gfp_poly_raw!(r::gfp_poly, a::fmpq_poly)
-  ccall((:fmpq_poly_get_nmod_poly, :libflint), Nothing, (Ref{gfp_poly}, Ref{fmpq_poly}), r, a)
+  ccall((:fmpq_poly_get_nmod_poly, libflint), Nothing, (Ref{gfp_poly}, Ref{fmpq_poly}), r, a)
 end
 
 function fmpq_poly_to_fmpz_mod_poly_raw!(r::fmpz_mod_poly, a::fmpq_poly, t1::fmpz_poly = fmpz_poly(), t2::fmpz = fmpz())
-  ccall((:fmpq_poly_get_numerator, :libflint), Nothing, (Ref{fmpz_poly}, Ref{fmpq_poly}), t1, a)
-  ccall((:fmpz_mod_poly_set_fmpz_poly, :libflint), Nothing, (Ref{fmpz_mod_poly}, Ref{fmpz_poly}), r, t1)
-  ccall((:fmpq_poly_get_denominator, :libflint), Nothing, (Ref{fmpz}, Ref{fmpq_poly}), t2, a)
+  ccall((:fmpq_poly_get_numerator, libflint), Nothing, (Ref{fmpz_poly}, Ref{fmpq_poly}), t1, a)
+  ccall((:fmpz_mod_poly_set_fmpz_poly, libflint), Nothing, (Ref{fmpz_mod_poly}, Ref{fmpz_poly}), r, t1)
+  ccall((:fmpq_poly_get_denominator, libflint), Nothing, (Ref{fmpz}, Ref{fmpq_poly}), t2, a)
   if !isone(t2)
-    res = ccall((:fmpz_invmod, :libflint), Cint, (Ref{fmpz}, Ref{fmpz}, Ref{fmpz}), t2, t2, modulus(base_ring(r)))
+    res = ccall((:fmpz_invmod, libflint), Cint, (Ref{fmpz}, Ref{fmpz}, Ref{fmpz}), t2, t2, modulus(base_ring(r)))
     @assert res != 0
-    ccall((:fmpz_mod_poly_scalar_mul_fmpz, :libflint), Nothing, (Ref{fmpz_mod_poly}, Ref{fmpz_mod_poly}, Ref{fmpz}), r, r, t2)
+    ccall((:fmpz_mod_poly_scalar_mul_fmpz, libflint), Nothing, (Ref{fmpz_mod_poly}, Ref{fmpz_mod_poly}, Ref{fmpz}), r, r, t2)
   end
 end
 
 function fmpq_poly_to_gfp_fmpz_poly_raw!(r::gfp_fmpz_poly, a::fmpq_poly, t1::fmpz_poly = fmpz_poly(), t2::fmpz = fmpz())
-  ccall((:fmpq_poly_get_numerator, :libflint), Nothing, (Ref{fmpz_poly}, Ref{fmpq_poly}), t1, a)
-  ccall((:fmpz_mod_poly_set_fmpz_poly, :libflint), Nothing, (Ref{gfp_fmpz_poly}, Ref{fmpz_poly}), r, t1)
-  ccall((:fmpq_poly_get_denominator, :libflint), Nothing, (Ref{fmpz}, Ref{fmpq_poly}), t2, a)
+  ccall((:fmpq_poly_get_numerator, libflint), Nothing, (Ref{fmpz_poly}, Ref{fmpq_poly}), t1, a)
+  ccall((:fmpz_mod_poly_set_fmpz_poly, libflint), Nothing, (Ref{gfp_fmpz_poly}, Ref{fmpz_poly}), r, t1)
+  ccall((:fmpq_poly_get_denominator, libflint), Nothing, (Ref{fmpz}, Ref{fmpq_poly}), t2, a)
   if !isone(t2)
-    res = ccall((:fmpz_invmod, :libflint), Cint, (Ref{fmpz}, Ref{fmpz}, Ref{fmpz}), t2, t2, modulus(base_ring(r)))
+    res = ccall((:fmpz_invmod, libflint), Cint, (Ref{fmpz}, Ref{fmpz}, Ref{fmpz}), t2, t2, modulus(base_ring(r)))
     @assert res != 0
-    ccall((:fmpz_mod_poly_scalar_mul_fmpz, :libflint), Nothing, (Ref{gfp_fmpz_poly}, Ref{gfp_fmpz_poly}, Ref{fmpz}), r, r, t2)
+    ccall((:fmpz_mod_poly_scalar_mul_fmpz, libflint), Nothing, (Ref{gfp_fmpz_poly}, Ref{gfp_fmpz_poly}, Ref{fmpz}), r, r, t2)
   end
 end
 
@@ -437,13 +437,13 @@ function fmpq_poly_to_gfp_poly(Rx::Nemo.GFPPolyRing, f::fmpq_poly)
 end
 
 function fmpz_poly_to_nmod_poly_raw!(r::nmod_poly, a::fmpz_poly)
-  ccall((:fmpz_poly_get_nmod_poly, :libflint), Nothing,
+  ccall((:fmpz_poly_get_nmod_poly, libflint), Nothing,
                   (Ref{nmod_poly}, Ref{fmpz_poly}), r, a)
 
 end
 
 function fmpz_poly_to_gfp_poly_raw!(r::gfp_poly, a::fmpz_poly)
-  ccall((:fmpz_poly_get_nmod_poly, :libflint), Nothing,
+  ccall((:fmpz_poly_get_nmod_poly, libflint), Nothing,
                   (Ref{gfp_poly}, Ref{fmpz_poly}), r, a)
 
 end
@@ -467,7 +467,7 @@ function fmpq_poly_to_gfp_fmpz_poly(Rx::Nemo.GFPFmpzPolyRing, f::fmpq_poly)
 end
 
 function fmpz_poly_to_fmpz_mod_poly_raw!(r::fmpz_mod_poly, a::fmpz_poly)
-  ccall((:fmpz_poly_get_fmpz_mod_poly, :libflint), Nothing,
+  ccall((:fmpz_poly_get_fmpz_mod_poly, libflint), Nothing,
                   (Ref{fmpz_mod_poly}, Ref{fmpz_poly}), r, a)
 
 end
@@ -642,7 +642,7 @@ end
 function (a::FmpzPolyRing)(b::fmpq_poly)
   (!isone(denominator(b))) && error("Denominator has to be 1")
   z = a()
-  ccall((:fmpq_poly_get_numerator, :libflint), Nothing,
+  ccall((:fmpq_poly_get_numerator, libflint), Nothing,
               (Ref{fmpz_poly}, Ref{fmpq_poly}), z, b)
   return z
 end
@@ -903,7 +903,7 @@ function root(a::RingElem, n::Int)
 end
 
 function setcoeff!(z::fq_nmod_poly, n::Int, x::fmpz)
-   ccall((:fq_nmod_poly_set_coeff_fmpz, :libflint), Nothing,
+   ccall((:fq_nmod_poly_set_coeff_fmpz, libflint), Nothing,
          (Ref{fq_nmod_poly}, Int, Ref{fmpz}, Ref{FqNmodFiniteField}),
          z, n, x, base_ring(parent(z)))
      return z
@@ -1041,13 +1041,13 @@ function factor_equal_deg(x::gfp_poly, d::Int)
     return gfp_poly[x]
   end
   fac = Nemo.gfp_poly_factor(x.mod_n)
-  ccall((:nmod_poly_factor_equal_deg, :libflint), UInt,
+  ccall((:nmod_poly_factor_equal_deg, libflint), UInt,
           (Ref{Nemo.gfp_poly_factor}, Ref{gfp_poly}, Int),
           fac, x, d)
   res = Vector{gfp_poly}(undef, fac.num)
   for i in 1:fac.num
     f = parent(x)()
-    ccall((:nmod_poly_factor_get_nmod_poly, :libflint), Nothing,
+    ccall((:nmod_poly_factor_get_nmod_poly, libflint), Nothing,
             (Ref{gfp_poly}, Ref{Nemo.gfp_poly_factor}, Int), f, fac, i-1)
     res[i] = f
   end
@@ -1072,17 +1072,17 @@ end
 function _factor_squarefree(x::fmpq_poly)
    res = Dict{fmpq_poly, Int}()
    y = fmpz_poly()
-   ccall((:fmpq_poly_get_numerator, :libflint), Nothing,
+   ccall((:fmpq_poly_get_numerator, libflint), Nothing,
          (Ref{fmpz_poly}, Ref{fmpq_poly}), y, x)
    fac = Nemo.fmpz_poly_factor()
-   ccall((:fmpz_poly_factor_squarefree, :libflint), Nothing,
+   ccall((:fmpz_poly_factor_squarefree, libflint), Nothing,
               (Ref{Nemo.fmpz_poly_factor}, Ref{fmpz_poly}), fac, y)
    z = fmpz()
-   ccall((:fmpz_poly_factor_get_fmpz, :libflint), Nothing,
+   ccall((:fmpz_poly_factor_get_fmpz, libflint), Nothing,
             (Ref{fmpz}, Ref{Nemo.fmpz_poly_factor}), z, fac)
    f = fmpz_poly()
    for i in 1:fac.num
-      ccall((:fmpz_poly_factor_get_fmpz_poly, :libflint), Nothing,
+      ccall((:fmpz_poly_factor_get_fmpz_poly, libflint), Nothing,
             (Ref{fmpz_poly}, Ref{Nemo.fmpz_poly_factor}, Int), f, fac, i - 1)
       e = unsafe_load(fac.exp, i)
       res[parent(x)(f)] = e
@@ -1231,7 +1231,7 @@ end
 function mulhigh_n(a::fmpz_poly, b::fmpz_poly, n::Int)
   c = parent(a)()
   #careful: as part of the interface, the coeffs 0 - (n-1) are random garbage
-  ccall((:fmpz_poly_mulhigh_n, :libflint), Nothing, (Ref{fmpz_poly}, Ref{fmpz_poly}, Ref{fmpz_poly}, Cint), c, a, b, n)
+  ccall((:fmpz_poly_mulhigh_n, libflint), Nothing, (Ref{fmpz_poly}, Ref{fmpz_poly}, Ref{fmpz_poly}, Cint), c, a, b, n)
   return c
 end
 function mulhigh(a::PolyElem{T}, b::PolyElem{T}, n::Int) where {T} 

@@ -761,7 +761,7 @@ function idempotents(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
   @hassert :NfOrd 2 -z in x
   @hassert :NfOrd 2 1 + z in y
 
-  ccall((:fmpz_mat_zero, :libflint), Nothing, (Ref{fmpz_mat}, ), V)
+  ccall((:fmpz_mat_zero, libflint), Nothing, (Ref{fmpz_mat}, ), V)
 
   return -z, 1 + z
 end

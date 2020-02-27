@@ -93,6 +93,7 @@ function math_html(io::IO, a::nf_elem)
     fs = string(a)
   end
   f = replace(fs, "*" => "")
+  f = replace(f, r"sqrt\(([-0-9]*)\)" => s"\\sqrt{\1}")
   f = replace(f, r"\^([0-9]*)" => s"^{\1}")
   f = replace(f, r"([0-9]*)//([0-9]*)" => s"\\frac{\1}{\2}")
   if true
@@ -305,17 +306,38 @@ function Base.show(io::IO, ::MIME"text/html", G::GrpAbFinGen)
   print(io, "\$")
 end
 
+function show_tensor_product(io::IO, ::MIME"text/html", G::GrpAbFinGen)
+  T = get_special(G, :tensor_product)
+  @assert T !== nothing
+  io = IOContext(io, :compact => true)
+  math_html(io, T[1])
+  for i=2:length(T)
+    println(io, " \\otimes ")
+    math_html(io, T[i])
+  end
+end
+#TODO: other special show functions for abelian groups
+#      add special(?) for class group
+#      add parent of tuple... (occurs in tensor product)
 function math_html(io::IO, G::GrpAbFinGen)
   n = find_name(G)
   if !(n === nothing) && get(io, :compact, false)
     print(io, string(n))
     return 
   end
+  s = get_special(G, :show)
+  if s !== nothing
+    try
+      s(io, MIME("text/html"), G)
+      return
+    catch 
+    end
+  end
   if issnf(G)
     if get(io, :compact, false)
-      print(io, "\\text{Abelian Group with Invariants: }")
-    else
       print(io, "\\text{GrpAb: }")
+    else
+      print(io, "\\text{Abelian Group with Invariants: }")
     end
     show_snf_structure(io, G, "\\times")
   else
@@ -361,6 +383,16 @@ function Base.show(io::IO, ::MIME"text/html", b::Bool)
    print(io, b ? "true" : "false")
 end
 
+function math_html(io::IO, S::FacElemMon)
+  print(io, "\\text{Factored elements over }")
+  math_html(io, base_ring(S))
+end
+
+function Base.show(io::IO, ::MIME"text/html", S::FacElemMon)
+  print(io, "\$")
+  math_html(io, S)
+  print(io, "\$")
+end
 
 function find_name(A, M = Main)
   for a = names(Main)

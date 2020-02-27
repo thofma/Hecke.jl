@@ -406,7 +406,7 @@ function gram_matrix(G::LocalGenusHerm, l::Int)
           return diagonal_matrix([(!fl ? _non_norm_rep(G) : one(E)) * E(p)^div(i, 2)]) 
         end
       end
-      return diagonal_matrix(push!([E(p)^div(i, 2) for j in 1:(m - 1)], u * E(p)^(div(i, 2) * (1 - m))))
+      return diagonal_matrix(push!([E(p)^div(i, 2) for j in 1:(m - 1)], u * E(p)^(div(i, 2) * (m - 1))))
     else
       return diagonal_matrix([H for j in 1:div(m, 2)])
     end

@@ -748,7 +748,7 @@ end
 
 function Base.:(^)(a::nf_elem, e::UInt)
   b = parent(a)()
-  ccall((:nf_elem_pow, :libantic), Nothing,
+  ccall((:nf_elem_pow, libantic), Nothing,
         (Ref{nf_elem}, Ref{nf_elem}, UInt, Ref{AnticNumberField}),
         b, a, e, parent(a))
   return b

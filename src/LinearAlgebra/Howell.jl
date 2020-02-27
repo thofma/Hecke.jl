@@ -1,5 +1,5 @@
 function _raw_setindex(A::nmod_mat, i::Int, j::Int, x::UInt)
-  ccall((:nmod_mat_set_entry, :libflint), Nothing, (Ref{nmod_mat}, Int, Int, UInt), A, i - 1, j - 1, x)
+  ccall((:nmod_mat_set_entry, libflint), Nothing, (Ref{nmod_mat}, Int, Int, UInt), A, i - 1, j - 1, x)
 end
 
 
@@ -18,7 +18,7 @@ if Nemo.version() > v"0.15.1"
       B = lift(A)
     end
     R = base_ring(A)
-    ccall((:fmpz_mat_howell_form_mod, :libflint), Nothing,
+    ccall((:fmpz_mat_howell_form_mod, libflint), Nothing,
                 (Ref{fmpz_mat}, Ref{fmpz}), B, modulus(R))
     return change_base_ring(B, R)
   end
@@ -30,7 +30,7 @@ if Nemo.version() > v"0.15.1"
     
     R = base_ring(A)
     A1 = lift(A)
-    ccall((:fmpz_mat_howell_form_mod, :libflint), Nothing,
+    ccall((:fmpz_mat_howell_form_mod, libflint), Nothing,
                   (Ref{fmpz_mat}, Ref{fmpz}), A1, modulus(R))
     for i in 1:nrows(A)
       for j in 1:ncols(A)
@@ -74,7 +74,7 @@ else
       B = lift(A)
     end
     R = base_ring(A)
-    ccall((:fmpz_mat_howell_form_mod, :libflint), Nothing,
+    ccall((:fmpz_mat_howell_form_mod, libflint), Nothing,
           (Ref{fmpz_mat}, Ref{fmpz}), B, modulus(R))
     return change_base_ring(B, R)
   end
@@ -86,7 +86,7 @@ else
 
     R = base_ring(A)
     A1 = lift(A)
-    ccall((:fmpz_mat_howell_form_mod, :libflint), Nothing,
+    ccall((:fmpz_mat_howell_form_mod, libflint), Nothing,
           (Ref{fmpz_mat}, Ref{fmpz}), A1, modulus(R))
     for i in 1:nrows(A)
       for j in 1:ncols(A)

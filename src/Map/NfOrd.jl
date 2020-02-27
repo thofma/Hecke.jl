@@ -39,13 +39,13 @@ mutable struct NfOrdToFqNmodMor <: Map{NfOrd, FqNmodFiniteField, HeckeMap, NfOrd
       u = F()
       gg = parent(nf(O).pol)(elem_in_nf(x))::fmpq_poly
       fmpq_poly_to_gfp_poly_raw!(tmp_gfp_poly, gg)
-      ccall((:nmod_poly_rem, :libflint), Nothing,
+      ccall((:nmod_poly_rem, libflint), Nothing,
             (Ref{gfp_poly}, Ref{gfp_poly}, Ref{gfp_poly}, Ptr{Nothing}),
             tmp_gfp_poly, tmp_gfp_poly, g, pointer_from_objref(F)+sizeof(fmpz))
-      ccall((:fq_nmod_set, :libflint), Nothing,
+      ccall((:fq_nmod_set, libflint), Nothing,
             (Ref{fq_nmod}, Ref{gfp_poly}, Ref{FqNmodFiniteField}),
             u, tmp_gfp_poly, F)
-      ccall((:fq_nmod_reduce, :libflint), Nothing,
+      ccall((:fq_nmod_reduce, libflint), Nothing,
             (Ref{fq_nmod}, Ref{FqNmodFiniteField}), u, F)
       return u
     end
@@ -85,7 +85,7 @@ mutable struct NfOrdToFqNmodMor <: Map{NfOrd, FqNmodFiniteField, HeckeMap, NfOrd
       for j in 1:d
         setcoeff!(c, j - 1, b[i][1, j])
       end
-      ccall((:fq_nmod_set, :libflint), Nothing, (Ref{fq_nmod}, Ref{gfp_poly}, Ref{FqNmodFiniteField}), ib, c, F)
+      ccall((:fq_nmod_set, libflint), Nothing, (Ref{fq_nmod}, Ref{gfp_poly}, Ref{FqNmodFiniteField}), ib, c, F)
       imageofbasis[i] = ib
     end
 
@@ -101,7 +101,7 @@ mutable struct NfOrdToFqNmodMor <: Map{NfOrd, FqNmodFiniteField, HeckeMap, NfOrd
       v = coordinates(x, copy = false)
       zz = zero(F)
       for i in 1:n
-        ccall((:fq_nmod_mul_fmpz, :libflint), Nothing,
+        ccall((:fq_nmod_mul_fmpz, libflint), Nothing,
               (Ref{fq_nmod}, Ref{fq_nmod}, Ref{fmpz}, Ref{FqNmodFiniteField}),
               tempF, imageofbasis[i], v[i], F)
         add!(zz, zz, tempF)
@@ -215,13 +215,13 @@ function evaluate!(z::fq_nmod, f::fmpz_poly, r::fq_nmod)
 end
 
 function _get_coeff_raw(x::fq_nmod, i::Int)
-  u = ccall((:nmod_poly_get_coeff_ui, :libflint), UInt, (Ref{fq_nmod}, Int), x, i)
+  u = ccall((:nmod_poly_get_coeff_ui, libflint), UInt, (Ref{fq_nmod}, Int), x, i)
   return u
 end
 
 function _get_coeff_raw(x::fq, i::Int)
   t = FlintZZ
-  ccall((:fmpz_poly_get_coeff_fmpz, :libflint), Nothing, (Ref{fmpz}, Ref{fq}, Int), t, x, i)
+  ccall((:fmpz_poly_get_coeff_fmpz, libflint), Nothing, (Ref{fmpz}, Ref{fq}, Int), t, x, i)
   return t
 end
 
@@ -319,7 +319,7 @@ function NfOrdToFqMor(O::NfOrd, P::NfOrdIdl)#, g::fmpz_poly, a::NfOrdElem, b::Ve
     for j in 1:d
       setcoeff!(c, j - 1, b[i][1, j])
     end
-    ccall((:fq_set, :libflint), Nothing, (Ref{fq}, Ref{gfp_fmpz_poly}, Ref{FqFiniteField}), ib, c, F)
+    ccall((:fq_set, libflint), Nothing, (Ref{fq}, Ref{gfp_fmpz_poly}, Ref{FqFiniteField}), ib, c, F)
     imageofbasis[i] = ib
   end
 
@@ -334,7 +334,7 @@ function NfOrdToFqMor(O::NfOrd, P::NfOrdIdl)#, g::fmpz_poly, a::NfOrdElem, b::Ve
     v = coordinates(x, copy = false)
     zz = zero(F)
     for i in 1:n
-      ccall((:fq_mul_fmpz, :libflint), Nothing,
+      ccall((:fq_mul_fmpz, libflint), Nothing,
             (Ref{fq}, Ref{fq}, Ref{fmpz}, Ref{FqFiniteField}),
             tempF, imageofbasis[i], v[i], F)
       add!(zz, zz, tempF)
@@ -363,9 +363,9 @@ function image(f::NfOrdToFqMor, x::NfOrdElem)
     u = F()
     gg = parent(nf(O).pol)(elem_in_nf(x, copy = false))::fmpq_poly
     fmpq_poly_to_gfp_fmpz_poly_raw!(f.tmp_gfp_fmpz_poly, gg, f.t_fmpz_poly, f.t_fmpz)
-    ccall((:fmpz_mod_poly_rem, :libflint), Nothing, (Ref{gfp_fmpz_poly}, Ref{gfp_fmpz_poly}, Ref{gfp_fmpz_poly}), f.tmp_gfp_fmpz_poly, f.tmp_gfp_fmpz_poly, f.poly_of_the_field)
-    ccall((:fq_set, :libflint), Nothing, (Ref{fq}, Ref{gfp_fmpz_poly}, Ref{FqFiniteField}), u, f.tmp_gfp_fmpz_poly, F)
-    ccall((:fq_reduce, :libflint), Nothing, (Ref{fq}, Ref{FqFiniteField}), u, F)
+    ccall((:fmpz_mod_poly_rem, libflint), Nothing, (Ref{gfp_fmpz_poly}, Ref{gfp_fmpz_poly}, Ref{gfp_fmpz_poly}), f.tmp_gfp_fmpz_poly, f.tmp_gfp_fmpz_poly, f.poly_of_the_field)
+    ccall((:fq_set, libflint), Nothing, (Ref{fq}, Ref{gfp_fmpz_poly}, Ref{FqFiniteField}), u, f.tmp_gfp_fmpz_poly, F)
+    ccall((:fq_reduce, libflint), Nothing, (Ref{fq}, Ref{FqFiniteField}), u, F)
     return u
   else
     return f.header.image(x)

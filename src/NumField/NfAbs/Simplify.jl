@@ -542,7 +542,7 @@ function _lll_sublattice(M::NfOrd, u::Vector{Int}; prec = 100)
     for i=1:l
       fmpz_mat_entry_add_ui!(d1, i, i, UInt(l))
     end
-    @vtime :Simplify 3 ccall((:fmpz_lll, :libflint), Nothing, (Ref{fmpz_mat}, Ref{fmpz_mat}, Ref{Nemo.lll_ctx}), d1, g, ctx)
+    @vtime :Simplify 3 ccall((:fmpz_lll, libflint), Nothing, (Ref{fmpz_mat}, Ref{fmpz_mat}, Ref{Nemo.lll_ctx}), d1, g, ctx)
 
     if nbits(maximum(abs, g)) <= div(prec, 2)
       prec *= 2
@@ -639,14 +639,14 @@ function _lll_for_simplify(M::NfOrd; prec = 100)
     for i=1:n
       fmpz_mat_entry_add_ui!(d, i, i, UInt(nrows(d)))
     end
-    @vtime :Simplify 3 ccall((:fmpz_lll, :libflint), Nothing, (Ref{fmpz_mat}, Ref{fmpz_mat}, Ref{Nemo.lll_ctx}), d, g, ctx)
+    @vtime :Simplify 3 ccall((:fmpz_lll, libflint), Nothing, (Ref{fmpz_mat}, Ref{fmpz_mat}, Ref{Nemo.lll_ctx}), d, g, ctx)
     
     if nbits(maximum(abs, g)) <= div(prec, 2)
       fl = true
       disc = abs(discriminant(M))
       di = root(disc, n)+1
       di *= fmpz(2)^(div(n+1,2)+prec)
-      if cmpindex(d, 1, 1, di) > 0 
+      if cmpindex(d, 1, 1, di) > 0
         fl = false
       else
         pr = prod_diagonal(d)

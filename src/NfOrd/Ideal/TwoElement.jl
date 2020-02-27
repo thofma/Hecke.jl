@@ -179,8 +179,8 @@ function _assure_weakly_normal_presentation(A::NfAbsOrdIdl)
 
     # Put the entries of B into the (1 x d)-Matrix m
     for i in 1:degree(O)
-      s = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ref{fmpz_mat}, Int, Int), m, 0, i - 1)
-      ccall((:fmpz_set, :libflint), Nothing, (Ptr{fmpz}, Ref{fmpz}), s, B[i])
+      s = ccall((:fmpz_mat_entry, libflint), Ptr{fmpz}, (Ref{fmpz_mat}, Int, Int), m, 0, i - 1)
+      ccall((:fmpz_set, libflint), Nothing, (Ptr{fmpz}, Ref{fmpz}), s, B[i])
     end
 
     if iszero(m)
