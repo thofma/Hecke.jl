@@ -25,8 +25,12 @@ function class_group_proof(clg::ClassGrpCtx, lb::fmpz, ub::fmpz; extra :: fmpz=f
     if no_primes % 100 == 0
       println("did $no_primes prime numbers so far, now $p, need to reach $ub")
     end
-    deg_lim = Int(floor(log(ub)/log(p)))
-    low_lim = Int(floor(log(lb)/log(p)))
+    deg_lim = Int(flog(ub, p))
+    if deg_lim == 1
+      low_lim = 1
+    else
+      low_lim = Int(flog(lb, p))
+    end
     fac = prime_decomposition(O, Int(p), deg_lim, low_lim)
     for _k in fac
       k = _k[1]
