@@ -633,7 +633,7 @@ function induce_image(f::NfToNfMor, x::NfOrdIdl)
   end
   OK = order(x)
   K = nf(OK)
-  if has_2_elem(x) && !isindex_divisor(OK, minimum(x, copy = false)) && fits(Int, minimum(x, copy = false)^2)
+  if has_2_elem(x) && ismaximal_known(OK) && ismaximal(OK) && !isindex_divisor(OK, minimum(x, copy = false)) && fits(Int, minimum(x, copy = false)^2)
     #The conjugate of the prime will still be a prime over the minimum
     #I just need to apply the automorphism modularly
     return induce_image_easy(f, x)
