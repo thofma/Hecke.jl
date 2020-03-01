@@ -19,14 +19,19 @@ function class_group_proof(clg::ClassGrpCtx, lb::fmpz, ub::fmpz; extra :: fmpz=f
     p = fmpz(next_prime(do_it.start))
   end
   r = fmpz()
+  _no_of_primes = Hecke.logarithmic_integral(Float64(ub))
   #gc_enable(false)
   while p < do_it.stop
     no_primes += 1
-    if no_primes % 100 == 0
-      println("did $no_primes prime numbers so far, now $p, need to reach $ub")
+    if no_primes % 1000 == 0
+      println("did $no_primes prime numbers so far, now $p, need to reach $ub (~$(no_primes/_no_of_primes))")
     end
-    deg_lim = Int(floor(log(ub)/log(p)))
-    low_lim = Int(floor(log(lb)/log(p)))
+    deg_lim = Int(flog(ub, p))
+    if deg_lim == 1
+      low_lim = 1
+    else
+      low_lim = Int(flog(lb, p))
+    end
     fac = prime_decomposition(O, Int(p), deg_lim, low_lim)
     for _k in fac
       k = _k[1]

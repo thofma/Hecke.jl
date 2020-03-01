@@ -157,7 +157,6 @@ function enum_ctx_local_bound(a::Number, b::Number) where Number
   b >= 0 || return a, a-1
   @hassert :LatEnum b >= 0
   i = sqrt(b)
-  @show i, b
   L = Base.ceil(a-i)
   U = Base.floor(a+i)
 #println("local bound for ", a, " and ", b)
