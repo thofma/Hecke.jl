@@ -116,6 +116,12 @@ struct PrimesSet{T}
       end
       p = next_prime(p, false)
     end
+    if mod < 2
+      error("modulus needs to be > 1")
+    end
+    if val < 1 || val >= mod
+      error("wrong congruence condition: value needs to be > 0 and < modulus")
+    end
     if !isone(gcd(mod, val))
       error("Modulus and value need to be coprime.")
     end  
@@ -163,7 +169,11 @@ function Base.iterate(A::PrimesSet{T}) where {T <: Integer}
     if A.to != -1 && p > A.to
       return nothing
     else
-      return p, p
+      if p % A.mod != A.a
+        return nothing
+      else
+        @show return p, p
+      end
     end
   end
 
@@ -179,6 +189,9 @@ function Base.iterate(A::PrimesSet{T}) where {T <: Integer}
   while gcd(c_U + i * c_M, A.sv) != UInt(1) || !isprime(fmpz(curr))
     curr += A.mod
     i += UIntone
+    if A.to != -1 && curr > A.to
+      break
+    end
   end
 
   if A.to != -1 && curr > A.to
@@ -203,7 +216,11 @@ function Base.iterate(A::PrimesSet{fmpz})
     if A.to != -1 && p > A.to
       return nothing
     else
-      return p, p
+      if p % A.mod != A.a
+        return nothing
+      else
+        return p, p
+      end
     end
   end
 
@@ -220,6 +237,9 @@ function Base.iterate(A::PrimesSet{fmpz})
   while !isone(gcd(c_U + i * c_M, A.sv)) || !isprime(fmpz(curr))
     curr += A.mod
     i += UIntone
+    if A.to != -1 && curr > A.to
+      break
+    end
   end
   
   if A.to != -1 && curr > A.to
@@ -264,6 +284,9 @@ function Base.iterate(A::PrimesSet{T}, p) where T<: Union{Integer, fmpz}
   while !isone(gcd(c_U + i * c_M, A.sv)) || !isprime(fmpz(nextp))
     nextp += m
     i += UIntone
+    if A.to != -1 && nextp > A.to
+      break
+    end
   end
 
   if A.to != -1 && nextp > A.to
