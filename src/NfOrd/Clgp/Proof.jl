@@ -19,11 +19,12 @@ function class_group_proof(clg::ClassGrpCtx, lb::fmpz, ub::fmpz; extra :: fmpz=f
     p = fmpz(next_prime(do_it.start))
   end
   r = fmpz()
+  _no_of_primes = Hecke.logarithmic_integral(Float64(ub))
   #gc_enable(false)
   while p < do_it.stop
     no_primes += 1
-    if no_primes % 10000 == 0
-      println("did $no_primes prime numbers so far, now $p, need to reach $ub $(Int(ub)/p)")
+    if no_primes % 1000 == 0
+      println("did $no_primes prime numbers so far, now $p, need to reach $ub (~$(no_primes/_no_of_primes))")
     end
     deg_lim = Int(flog(ub, p))
     if deg_lim == 1
