@@ -22,8 +22,8 @@ function class_group_proof(clg::ClassGrpCtx, lb::fmpz, ub::fmpz; extra :: fmpz=f
   #gc_enable(false)
   while p < do_it.stop
     no_primes += 1
-    if no_primes % 100 == 0
-      println("did $no_primes prime numbers so far, now $p, need to reach $ub")
+    if no_primes % 10000 == 0
+      println("did $no_primes prime numbers so far, now $p, need to reach $ub $(Int(ub)/p)")
     end
     deg_lim = Int(flog(ub, p))
     if deg_lim == 1
