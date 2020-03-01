@@ -56,7 +56,7 @@
 
       for i in 1:10
         B = rand(100:200)
-        modd = rand(1:20)
+        modd = rand(2:20)
         a = rand(0:modd)
         while gcd(modd, a) != 1
           a = rand(0:modd)
