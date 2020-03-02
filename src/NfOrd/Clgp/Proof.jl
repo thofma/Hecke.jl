@@ -64,10 +64,16 @@ function class_group_proof(clg::ClassGrpCtx, lb::fmpz, ub::fmpz; extra :: fmpz=f
   #gc_enable(false)
   rate = 0.0
   length_eta = 0
+  if _no_of_primes < 1000
+    interval = 10
+  else
+    interval = 1000
+  end
+
   while p < do_it.stop
     no_primes += 1
     
-    @v_do :ClassGroupProof if no_primes % 1000 == 0
+    @v_do :ClassGroupProof if no_primes % interval == 0
       #println("did $no_primes prime numbers so far, now $p, need to reach $ub (~$(no_primes/_no_of_primes))")
       last_time = PB.time_shown
       cur_time = time()
@@ -91,7 +97,8 @@ function class_group_proof(clg::ClassGrpCtx, lb::fmpz, ub::fmpz; extra :: fmpz=f
         length_eta = length(ETA)
       end
 
-      showprogress(stdout, PB, " (current prime $p) $ETA")
+      showprogress(stdout, PB, ETA)
+      flush(stdout)
     end
     deg_lim = Int(flog(ub, p))
     if deg_lim == 1
@@ -145,7 +152,8 @@ function class_group_proof(clg::ClassGrpCtx, lb::fmpz, ub::fmpz; extra :: fmpz=f
   end
   @v_do :ClassGroupProof begin
     PB.current = 1.0
-    showprogress(stdout, PB, " (current prime $p) (ETA: 00:00:00)" * " "^(max(length_eta - 15, 0)))
+    showprogress(stdout, PB, " (ETA: 00:00:00)" * " "^(max(length_eta - 15, 0)))
+    println()
   end
   #println("success: used $no_primes numbers and $no_ideals ideals")
   #gc_enable(true)

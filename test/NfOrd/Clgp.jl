@@ -234,5 +234,13 @@ using Random
       C, mC = class_group(OK, redo = true, use_aut = true)
       @test order(C) == 3
     end
+
+    @testset "Proof" begin
+      Qx, x = PolynomialRing(FlintQQ, "x")
+      f = x^2 - 3 * 5 * 7 * 11
+      K, a = NumberField(f)
+      OK = maximal_order(K)
+      C, mC = class_group(OK, proof = true)
+      @test order(C) == 8
   end
 end
