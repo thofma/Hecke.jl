@@ -225,6 +225,12 @@ function try_init_small(C::ZLatAutoCtx, auto::Bool = true, max::fmpz = fmpz(-1))
     Csmall.V_length[i] = Int[Int(w[j]) for j in 1:f]
   end
 
+  # Sort the result! Important!
+  
+  p = sortperm(Csmall.V)
+  permute!(Csmall.V, p) # actually sortperm! should work?
+  permute!(Csmall.V_length, p) # apply permutation to Csmall.V_length
+
   Csmall.prime = next_prime(2^(cur_maxbits + 1) + 1)
 
   Csmall.G = Matrix{Int}[Matrix{Int}(g) for g in C.G]
@@ -247,10 +253,10 @@ function try_init_small(C::ZLatAutoCtx, auto::Bool = true, max::fmpz = fmpz(-1))
     z = zeros(Int, dim(Csmall))
     for i in 1:dim(Csmall)
       z[Csmall.per[i]] = 1
-      k = findfirst(isequal(z), Csmall.V)
+      k = searchsortedfirst(Csmall.V, z)
       if k === nothing
         z[Csmall.per[i]] = -1
-        k = findfirst(isequal(z), Csmall.V)
+        k = searchsortedfirst(Csmall.V, z)
         @assert k !== nothing
         Csmall.V[k] = -z
         Csmall.std_basis[i] = k
@@ -276,7 +282,7 @@ function try_init_small(C::ZLatAutoCtx, auto::Bool = true, max::fmpz = fmpz(-1))
     Csmall.v[i] = A
   end
 
-  if true
+  if false
     for i in 1:length(Csmall.G)
       for j in 1:length(Csmall.V)
         for k in 1:length(Csmall.V)
@@ -773,7 +779,7 @@ function fingerprint(C::ZLatAutoCtx)
 end
 
 # computes min(#O, orblen), where O is the orbit of pt under the first nG matrices in G
-function _orbitlen(point::Int, orblen::Int, G::Vector, nG, V, C)
+function _orbitlen(point::Int, orblen::Int, G::Vector{T}, nG, V, C) where {T}
   n = length(V)
   orb = ones(Int, orblen)
   orb[1] = point
@@ -790,7 +796,7 @@ function _orbitlen(point::Int, orblen::Int, G::Vector, nG, V, C)
   while cnd <= len && len < orblen
     i = 1
     while i <= nG && len < orblen
-      imag = _operate(orb[cnd], G[i], V, C.operate_tmp)
+      imag = _operate(orb[cnd], G[i], V, C.operate_tmp, T === Matrix{Int} )
       if !flag[imag + n + 1]
         # the image is a new point in the orbit
         len += 1
@@ -805,17 +811,17 @@ function _orbitlen(point::Int, orblen::Int, G::Vector, nG, V, C)
 end
 
 
-function _operate(point, A::Matrix{Int}, V)
-  return _operate(point, A, V, zeros(Int, size(A, 2)))
+function _operate(point, A::Matrix{Int}, V, sorted::Bool = true)
+  return _operate(point, A, V, zeros(Int, size(A, 2)), sorted)
 end
 
-function _operate(point, A::fmpz_mat, V)
-  return _operate(point, A, V, zero_matrix(FlintZZ, 1, ncols(A)))
+function _operate(point, A::fmpz_mat, V, sorted::Bool = true)
+  return _operate(point, A, V, zero_matrix(FlintZZ, 1, ncols(A)), sorted)
 end
 
 Base.replace!(::typeof(-), m::fmpz_mat) = -m
 
-function _operate(point, A, V, tmp)
+function _operate(point, A, V, tmp, sorted::Bool = true)
 # 	V.v is a sorted list of length V.n of vectors
 #				of dimension V.dim, the number of V.v[nr]*A in
 #				the list is returned, where a negative number 
@@ -823,13 +829,19 @@ function _operate(point, A, V, tmp)
   tmp = _vec_times_matrix!(tmp, V[abs(point)], A)
   #w = V[abs(point)] * A
   if point < 0
-    tmp = replace!(-, tmp)
+    if tmp isa fmpz_mat
+      for i in 1:ncols(tmp)
+        tmp[1, i] = -tmp[1, i]
+      end
+    else
+      tmp .*= -1 # tmp = -tmp
+    end
   end
-  k = _find_point(tmp, V)
+  k = _find_point(tmp, V, sorted)
   return k
 end
 
-function _find_point(w::Vector{Int}, V)
+function _find_point(w::Vector{Int}, V, sorted::Bool = true)
   positive = false
   for k in 1:length(w)
     if !iszero(w[k])
@@ -838,18 +850,27 @@ function _find_point(w::Vector{Int}, V)
     end
   end
   if positive
-    k = findfirst(isequal(w), V)
+    if sorted
+      k = searchsortedfirst(V, w)
+    else
+      k = findfirst(isequal(w), V)
+    end
     @assert k !== nothing
     return k
   else
-    mw = -w
-    k = findfirst(isequal(mw), V)
+    w .*= -1 # w = -w
+    if sorted
+      k = searchsortedfirst(V, w)
+    else
+      k = findfirst(isequal(w), V)
+    end
     @assert k !== nothing
+    w .*= -1 # w = -w
     return -k
   end
 end
 
-function _find_point(w::fmpz_mat, V)
+function _find_point(w::fmpz_mat, V, sorted::Bool = true)
   positive = false
   for k in 1:length(w)
     if !iszero(w[1, k])
@@ -858,12 +879,20 @@ function _find_point(w::fmpz_mat, V)
     end
   end
   if positive
-    k = findfirst(isequal(w), V)
+    if sorted
+      k = searchsortedfirst(V, w)
+    else
+      k = findfirst(isequal(w), V)
+    end
     @assert k !== nothing
     return k
   else
     mw = -w
-    k = findfirst(isequal(mw), V)
+    if sorted
+      k = searchsortedfirst(V, mw)
+    else
+      k = findfirst(isequal(mw), V)
+    end
     @assert k !== nothing
     return -k
   end
@@ -967,7 +996,7 @@ function auto(C::ZLatAutoCtx{S, T, U}) where {S, T, U}
 
       if found == 0
         # x[1],...,x[step] cannot be continued
-        oc = orbit(im, 1, H, nH, C.V)
+        oc = orbit(im, 1, H, nH, C.V, C)
         # delete the orbit of im from the candidates for x[step]
         #
         # This could go very bad ...
@@ -1105,13 +1134,13 @@ function aut(step, x, candidates, C, comb)
   return found
 end
 
-function cand(candidates, I, x, C, comb)
+function cand(candidates, I, x, C::ZLatAutoCtx{S, T, U}, comb) where {S, T, U}
   #@show candidates, I, x, C, comb
   DEP = 0 # this is bs
   dim = Hecke.dim(C)
   len = length(C.G) * DEP
-  vec = Vector{fmpz}(undef, dim)
-  vec2 = Vector{fmpz}(undef, dim)
+  vec = Vector{S}(undef, dim)
+  vec2 = Vector{S}(undef, dim)
   scpvec = Vector{Int}(undef, len)
   if I >= 2 && DEP > 0
     com = comb[I - 1]
@@ -1169,7 +1198,7 @@ function cand(candidates, I, x, C, comb)
           if !_issym
             #vec2[k] = _dot_product(C.V[xk], C.G[i], Vvj)
             vec2[k] = _dot_product_with_row(C.V[xk], C.G[i], j)
-            @assert vec2[k] == _tutut2
+            #@assert vec2[k] == _tutut2
           end
         else
           #vec[k] = -_dot_product(Vvj, C.G[i], C.V[-xk])
@@ -1349,7 +1378,8 @@ function cand(candidates, I, x, C, comb)
   return nr
 end
 
-function orbit(pt, npt, G, nG, V, C)
+function orbit(pt, npt, G, nG, V, C::ZLatAutoCtx{S, T, U}, sorted::Bool = S === Int) where {S, T, U}
+  # Assumes that V is sorted
   orb = Vector{Int}(undef, npt)
   n = length(V)
   flag = zeros(Bool, 2*n + 1)
@@ -1362,7 +1392,7 @@ function orbit(pt, npt, G, nG, V, C)
   cnd = 1
   while cnd <= norb
     for i in 1:nG
-      im = _operate(orb[cnd], G[i], V, C.operate_tmp)
+      im = _operate(orb[cnd], G[i], V, C.operate_tmp, sorted)
       if !flag[im + n + 1]
         # this is a new point
         norb += 1
@@ -1377,6 +1407,7 @@ end
 
 function stab(I, C::ZLatAutoCtx{SS, T, U}) where {SS, T, U}
   V = C.V
+  sorted = SS === Int
 #     	computes the orbit of fp.e[I] under the 
 #				generators in G->g[I]...G->g[n-1] and elements 
 #				stabilizing fp.e[I],
@@ -1478,7 +1509,7 @@ function stab(I, C::ZLatAutoCtx{SS, T, U}) where {SS, T, U}
       end
       #@show orb, flag
       #@show cnd
-      im = _operate(orb[cnd], H[i], V, C.operate_tmp)
+      im = _operate(orb[cnd], H[i], V, C.operate_tmp, sorted)
       #@show im
       #@show w
       if !flag[im + n + 1]
@@ -1491,12 +1522,12 @@ function stab(I, C::ZLatAutoCtx{SS, T, U}) where {SS, T, U}
         #@show w[orb[cnd] + n + 1]
         #@show H[i]
         #@show Int[_operate(w[orb[cnd] + n + 1][j], H[i], V) for j in 1:dim]
-        w[im + n + 1] = Int[_operate(w[orb[cnd] + n + 1][j], H[i], V) for j in 1:dim]
+        w[im + n + 1] = Int[_operate(w[orb[cnd] + n + 1][j], H[i], V, sorted) for j in 1:dim]
       else
 #/* the image was already in the orbit */
         j = I
         while j <= dim
-          if _operate(w[orb[cnd] + n + 1][j], H[i], V) == w[im + n + 1][j]
+          if _operate(w[orb[cnd] + n + 1][j], H[i], V, sorted) == w[im + n + 1][j]
             break
           end
           j += 1
@@ -1567,7 +1598,7 @@ function stabil(x1, x2, per, G, V, C)
   X2 = zero_matrix(FlintZZ, dim, dim)
   x = Vector{Int}(undef, dim)
   for i in 1:dim
-    x[i] = _operate(x1[i], G, V)
+    x[i] = _operate(x1[i], G, V, false) # fmpz case
   end
   #@show x
   #@show x2
@@ -1592,7 +1623,7 @@ function stabil(x1, x2, per, G::Matrix{Int}, V, C)
   dim = length(x1)
   x = Vector{Int}(undef, dim)
   for i in 1:dim
-    x[i] = _operate(x1[i], G, V, C.operate_tmp)
+    x[i] = _operate(x1[i], G, V, C.operate_tmp, true)
   end
   #@show x
   #@show x2
@@ -1784,7 +1815,7 @@ function isostab(pt, G, C, Maxfail)
       end
       #@show G, i
       #@show orb[cnd]
-      im = _operate(orb[cnd], G[i], V, C.operate_tmp)
+      im = _operate(orb[cnd], G[i], V, C.operate_tmp, true)
       #@show im
       if !flag[im + n  + 1]
 #/* a new element is found, appended to the orbit and an element mapping
@@ -2072,7 +2103,7 @@ function _psolve(X, A, B, n, p)
         B[k, i], B[k, j] = B[k, j], B[k, i]
       end
     end
-    _pgauss(i, A, B, n, p, t)
+    _pgauss(i, A, B, n, p)
   end
   for i in 1:n
     for j in n:-1:1
@@ -2090,7 +2121,26 @@ function _psolve(X, A, B, n, p)
       end
     end
   end
-  return t
+end
+
+###########################################
+#
+# isless for fmpz_mat (vectors)
+#
+##########################################
+
+function _isless(x::fmpz_mat, y::fmpz_mat)
+  i = 0
+  c = ncols(x)
+  while i < c
+    i += 1
+    if x[i] == y[i]
+      continue
+    else
+      return x[i] < y[i]
+    end
+  end
+  return false
 end
 
 # should do this more C style
