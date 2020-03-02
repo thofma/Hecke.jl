@@ -240,7 +240,8 @@ using Random
       f = x^2 - 3 * 5 * 7 * 11
       K, a = NumberField(f)
       OK = maximal_order(K)
-      C, mC = class_group(OK, proof = true)
+      C, mC = class_group(OK, GRH = false)
       @test order(C) == 8
+    end
   end
 end
