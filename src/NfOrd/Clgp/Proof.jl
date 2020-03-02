@@ -1,10 +1,49 @@
+# Import the progress bar and Dates for the conversion of seconds
+import Pkg.GitTools.MiniProgessBar
+
+import Dates
+
+# This is a modified showprogress from Pkg.GitTools
+
+function showprogress(io::IO, p::Pkg.GitTools.MiniProgressBar, info)
+  perc = p.current / p.max * 100
+  prev_perc = p.prev / p.max * 100
+  # Bail early if we are not updating the progress bar,
+  # Saves printing to the terminal
+  if p.has_shown && !((perc - prev_perc) > PROGRESS_BAR_PERCENTAGE_GRANULARITY[])
+    return
+  end
+  if !isinteractive()
+    t = time()
+    if p.has_shown && (t - p.time_shown) < NONINTERACTIVE_TIME_GRANULARITY[]
+      return
+    end
+    p.time_shown = t
+  end
+  p.time_shown = time()
+  p.prev = p.current
+  p.has_shown = true
+  n_filled = ceil(Int, p.width * perc / 100)
+  n_left = p.width - n_filled
+  print(io, "    ")
+  printstyled(io, p.header, color=p.color, bold=true)
+  print(io, " [")
+  print(io, "="^n_filled, ">")
+  print(io, " "^n_left, "]  ", )
+  @printf io "%2.1f %%" perc
+  print(io, info)
+  print(io, "\r")
+end
+
 function class_group_proof(clg::ClassGrpCtx, lb::fmpz, ub::fmpz; extra :: fmpz=fmpz(0), prec::Int = 100, do_it=1:ub)
+  PB = Pkg.GitTools.MiniProgressBar(header = "Class group proof")
+
   #for all prime ideals P with lb <= norm <= ub, find a relation
   #tying that prime to the factor base
   # if extra is useful, assume that the function was already run for all primes
   # up to norm extra
 
-  if extra==0
+  if extra == 0
     extra = norm(clg.FB.ideals[1])
   end
   lb = max(lb, norm(clg.FB.ideals[1]))
@@ -19,12 +58,38 @@ function class_group_proof(clg::ClassGrpCtx, lb::fmpz, ub::fmpz; extra :: fmpz=f
     p = fmpz(next_prime(do_it.start))
   end
   r = fmpz()
-  _no_of_primes = Hecke.logarithmic_integral(Float64(ub))
+  _no_of_primes = logarithmic_integral(Float64(ub) - logarithmic_integral(Float64(lb)))
   #gc_enable(false)
+  rate = 0.0
+  length_eta = 0
   while p < do_it.stop
     no_primes += 1
-    if no_primes % 1000 == 0
-      println("did $no_primes prime numbers so far, now $p, need to reach $ub (~$(no_primes/_no_of_primes))")
+    
+    @v_do :ClassGroup if no_primes % 1000 == 0
+      #println("did $no_primes prime numbers so far, now $p, need to reach $ub (~$(no_primes/_no_of_primes))")
+      last_time = PB.time_shown
+      cur_time = time()
+      prev = PB.prev
+      PB.current = no_primes/_no_of_primes
+      # from PB.current to prev it took cur_time - last_time seconds
+      
+      if rate == 0.0
+        rate = ((PB.current - PB.prev)/(cur_time - last_time))
+      else
+        rate = (((PB.current - PB.prev)/(cur_time - last_time)) + rate)/2
+      end
+
+      duration = (1 - PB.current)/rate
+
+      duration = round(Int, duration)
+      ETA = "(ETA: $(Dates.Time(Dates.Nanosecond(duration * 10^9))))"
+      if length(ETA) < length_eta
+        ETA = ETA * " "^(length_eta - length(ETA))
+      else
+        length_eta = length(ETA)
+      end
+
+      showprogress(stdout, PB, " (current prime $p) $ETA")
     end
     deg_lim = Int(flog(ub, p))
     if deg_lim == 1
@@ -75,6 +140,10 @@ function class_group_proof(clg::ClassGrpCtx, lb::fmpz, ub::fmpz; extra :: fmpz=f
       end
     end
     p = next_prime(p)
+  end
+  @v_do :ClassGroup begin
+    PB.current = 1.0
+    showprogress(stdout, PB, " (current prime $p) (ETA: 00:00:00)" * " "^(max(length_eta - 15, 0)))
   end
   #println("success: used $no_primes numbers and $no_ideals ideals")
   #gc_enable(true)
