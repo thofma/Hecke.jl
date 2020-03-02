@@ -23,7 +23,7 @@ function class_group_proof(clg::ClassGrpCtx, lb::fmpz, ub::fmpz; extra :: fmpz=f
   while p < do_it.stop
     no_primes += 1
     if no_primes % 100 == 0
-      println("did $no_primes prime numbers so far, now $p, need to reach $ub")
+      println("did $no_primes prime numbers so far, now $p, need to reach $ub,  $(no_primes/Int(ub))")
     end
     deg_lim = Int(floor(log(ub)/log(p)))
     low_lim = Int(floor(log(lb)/log(p)))

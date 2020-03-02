@@ -157,7 +157,6 @@ function enum_ctx_local_bound(a::Number, b::Number) where Number
   b >= 0 || return a, a-1
   @hassert :LatEnum b >= 0
   i = sqrt(b)
-  @show i, b
   L = Base.ceil(a-i)
   U = Base.floor(a+i)
 #println("local bound for ", a, " and ", b)
@@ -210,15 +209,18 @@ end
 #         length
 #         proper lattice type
 
-function fmpz_mat_entry(a::fmpz_mat, r::Int, c::Int)
-  return ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz},
-               (Ref{fmpz_mat}, Int, Int), a, r - 1, c - 1)
+@inline function fmpz_mat_entry(a::fmpz_mat, r::Int, c::Int)
+    return unsafe_load(reinterpret(Ptr{Ptr{fmpz}}, a.rows), r)+(c-1)*sizeof(Ptr)
+   #return ccall((:fmpz_mat_entry, libflint), Ptr{fmpz},
+    #               (Ref{fmpz_mat}, Int, Int), a, r - 1, c - 1)
 end
-
+    
 function fmpz_mat_entry_incref!(a::fmpz_mat, r::Int, c::Int)
-  z = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz},
-               (Ref{fmpz_mat}, Int, Int), a, r - 1, c - 1)
-  ccall((:fmpz_add_ui, :libflint), Nothing, (Ptr{fmpz}, Ptr{fmpz}, Int), z, z, 1)
+#  z = ccall((:fmpz_mat_entry, libflint), Ptr{fmpz},
+#               (Ref{fmpz_mat}, Int, Int), a, r - 1, c - 1)
+  z = fmpz_mat_entry(a, r, c)
+  unsafe_store!(reinterpret(Ptr{Int}, z), unsafe_load(reinterpret(Ptr{Int}, z), 1)+1, 1)
+  #ccall((:fmpz_add_ui, libflint), Nothing, (Ptr{fmpz}, Ptr{fmpz}, Int), z, z, 1)
 end
 
 function fmpz_mat_entry_add_ui!(a::fmpz_mat, r::Int, c::Int, v::UInt)
