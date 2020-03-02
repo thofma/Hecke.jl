@@ -90,7 +90,7 @@ function class_group_proof(clg::ClassGrpCtx, lb::fmpz, ub::fmpz; extra :: fmpz=f
       duration = (1 - PB.current)/rate
 
       duration = round(Int, duration)
-      ETA = "(ETA: $(Dates.Time(Dates.Nanosecond(duration * 10^9))))"
+      ETA = " (ETA: $(Dates.Time(Dates.Nanosecond(duration * 10^9))))"
       if length(ETA) < length_eta
         ETA = ETA * " "^(length_eta - length(ETA))
       else
