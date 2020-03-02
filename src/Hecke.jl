@@ -413,116 +413,43 @@ global VERSION_NUMBER = v"0.7.4-dev"
 #   optionally, add @show_special(io, obj) as well
 # on creation, or whenever, call set_name!(obj, string)
 # @show_name will set on printing if bound in the REPL
+# moved into AbstractAlgebra
 
-macro declare_other()
-  esc(quote other::Dict{Symbol, Any} end )
-end
+#maps are different - as are number fields
 
+################################################################################
+#
+#  Abstract map type
+#
+################################################################################
 
-function set_name!(G, name::String)
-  set_special(G, :name => name)
-end
+abstract type HeckeMap <: SetMap end  #needed here for the hasspecial stuff
+             #maybe move to Maps?
 
-function hasspecial(G)
-  if isa(G, Map{<:Any, <:Any, HeckeMap, <:Any})
-    if isdefined(G.header, :other)
-      return true, G.header.other
-    else
-      return false, nothing
-    end
-  end
-  if !isdefined(G, :other)
+import AbstractAlgebra: get_special, set_special, @show_name, @show_special, 
+       @show_special_elem, @declare_other, extra_name, set_name!, find_name
+
+function hasspecial(G::T) where T <: Map{<:Any, <:Any, HeckeMap, <:Any}
+  if isdefined(G.header, :other)
+    return true, G.header.other
+  else
     return false, nothing
-  else
-    return true, G.other
   end
 end
 
-import Nemo: get_special, set_special
-const libflint = Nemo.libflint
-const libantic = Nemo.libantic
-
-function get_special(G, s::Symbol)
-  fl, D = hasspecial(G)
-  fl && return get(D, s, nothing)
-  nothing
-end
-
-function set_name!(G)
-  s = get_special(G, :name)
-  s === nothing || return
-  sy = find_name(G)
-  sy === nothing && return
-  set_name!(G, string(sy))
-end
-
-function set_special(G, data::Pair{Symbol, <:Any}...)
-  if isa(G, Map{<:Any, <:Any, HeckeMap, <:Any})
-    if !isdefined(G.header, :other)
-      G.header.other = Dict{Symbol, Any}()
-    end
-    D = G.header.other
-  elseif !isdefined(G, :other)
-    D = G.other = Dict{Symbol, Any}()
-  else
-    D = G.other
+function set_special(G::T, data::Pair{Symbol, <:Any}...) where T <: Map{<:Any, <:Any, HeckeMap, <:Any}
+  if !isdefined(G.header, :other)
+    G.header.other = Dict{Symbol, Any}()
   end
+  D = G.header.other
 
   for d in data
     push!(D, d)
   end
 end
 
-extra_name(G) = nothing
-
-macro show_name(io, O)
-  return :( begin
-    local i = $(esc(io))
-    local o = $(esc(O))
-    s = get_special(o, :name)
-    if s === nothing
-      sy = find_name(o)
-      if sy === nothing
-        sy = extra_name(o)
-      end
-      if sy !== nothing
-        s = string(sy)
-        set_name!(o, s)
-      end
-    end
-    if get(i, :compact, false) &&
-       s !== nothing
-      print(i, s)
-      return
-    end
-  end )
-end
-
-macro show_special(io, O)
-  return :( begin
-    local i = $(esc(io))
-    local o = $(esc(O))
-    s = get_special(o, :show)
-    if s !== nothing
-      s(i, o)
-      return
-    end
-  end )
-end
-
-macro show_special_elem(io, e)
-  return :( begin
-    local i = $(esc(io))
-    local a = $(esc(e))
-    local o = parent(a)
-    s = get_special(o, :show_elem)
-    if s !== nothing
-      s(i, a)
-      return
-    end
-  end )
-end
-
+import Nemo: libflint, libantic  #to be able to reference libraries by full path
+                                 #to avoid calling the "wrong" copy
 
 ################################################################################
 #
