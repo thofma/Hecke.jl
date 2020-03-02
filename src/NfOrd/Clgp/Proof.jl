@@ -1,9 +1,11 @@
 # Import the progress bar and Dates for the conversion of seconds
-import Pkg.GitTools.MiniProgessBar
-
 import Dates
 
+add_verbose_scope(:ClassGroupProof)
+
 # This is a modified showprogress from Pkg.GitTools
+
+PROGRESS_BAR_PERCENTAGE_GRANULARITY = Ref(0.1)
 
 function showprogress(io::IO, p::Pkg.GitTools.MiniProgressBar, info)
   perc = p.current / p.max * 100
@@ -65,7 +67,7 @@ function class_group_proof(clg::ClassGrpCtx, lb::fmpz, ub::fmpz; extra :: fmpz=f
   while p < do_it.stop
     no_primes += 1
     
-    @v_do :ClassGroup if no_primes % 1000 == 0
+    @v_do :ClassGroupProof if no_primes % 1000 == 0
       #println("did $no_primes prime numbers so far, now $p, need to reach $ub (~$(no_primes/_no_of_primes))")
       last_time = PB.time_shown
       cur_time = time()
@@ -141,7 +143,7 @@ function class_group_proof(clg::ClassGrpCtx, lb::fmpz, ub::fmpz; extra :: fmpz=f
     end
     p = next_prime(p)
   end
-  @v_do :ClassGroup begin
+  @v_do :ClassGroupProof begin
     PB.current = 1.0
     showprogress(stdout, PB, " (current prime $p) (ETA: 00:00:00)" * " "^(max(length_eta - 15, 0)))
   end

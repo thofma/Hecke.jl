@@ -124,6 +124,8 @@ function class_group_ctx(O::NfOrd; bound::Int = -1, method::Int = 3, large::Int 
     class_group_via_lll(c)
   end
 
+  c.GRH = true
+
   return c
 end
 
@@ -217,6 +219,16 @@ function _class_unit_group(O::NfOrd; bound::Int = -1, method::Int = 3, large::In
     U = _get_UnitGrpCtx_of_order(O)
     @assert U.finished
     @vprint :UnitGroup 1 "... done (retrieved).\n"
+    if c.GRH == true && GRH == false
+      if !GRH
+        class_group_proof(c, fmpz(2), factor_base_bound_minkowski(O))
+        for (p, _) in factor(c.h)
+          while saturate!(c, U, Int(p), 3.5)
+          end
+        end
+      end
+      c.GRH = false
+    end
     return c, U, fmpz(1)
   end
 
@@ -303,6 +315,7 @@ function _class_unit_group(O::NfOrd; bound::Int = -1, method::Int = 3, large::In
       while saturate!(c, U, Int(p), 3.5)
       end
     end
+    c.GRH = false
   end
 
   return c, U, _validate_class_unit_group(c, U)

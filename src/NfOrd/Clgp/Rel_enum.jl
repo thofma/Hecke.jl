@@ -105,7 +105,7 @@ function class_group_small_real_elements_relation_next(I::IdealRelationsCtx)
     @v_do :ClassGroup 2 println(" length now ", I.E.c*2)
 #    throw(NoElements())
     I.restart += 1
-    if I.restart > 10
+    if I.restart > 100
       _elt = I
       error("too much restarting");
     end

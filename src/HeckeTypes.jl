@@ -1578,6 +1578,8 @@ mutable struct ClassGrpCtx{T}  # T should be a matrix type: either fmpz_mat or S
   normCtx::NormCtx
   sat_done::Int
 
+  GRH::Bool # Indicate whether correctness of result depends on GRH
+
   function ClassGrpCtx{T}() where {T}
     r = new{T}()
     r.R_gen = Array{nf_elem_or_fac_elem, 1}()
