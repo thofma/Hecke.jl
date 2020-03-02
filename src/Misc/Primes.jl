@@ -116,6 +116,9 @@ struct PrimesSet{T}
       end
       p = next_prime(p, false)
     end
+    if mod == 1 && val == 0
+      return new{T}(f, t, false, false, mod, val, sv)
+    end
     if mod < 2
       error("modulus needs to be > 1")
     end
