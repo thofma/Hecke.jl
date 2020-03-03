@@ -105,7 +105,6 @@ function FacElem(d::Dict{B, T}) where {B, T <: Integer}
   return z
 end
 
-
 parent(x::FacElem) = x.parent
 
 base_ring(x::FacElemMon) = x.base_ring
@@ -139,6 +138,8 @@ Base.iterate(a::FacElem) = Base.iterate(a.fac)
 Base.iterate(a::FacElem, state) = Base.iterate(a.fac, state)
 
 Base.length(a::FacElem) = Base.length(a.fac)
+
+check_parent(x::FacElem, y::FacElem) = parent(x) === parent(y)
 
 ################################################################################
 #
@@ -224,6 +225,8 @@ end
 ################################################################################
 
 function mul!(z::FacElem{B, S}, x::FacElem{B, S}, y::FacElem{B, S}) where {B, S}
+  @assert check_parent(x, y) "Elements must have the same parent"
+  @assert check_parent(x, z) "Elements must have the same parent"
   z.fac = copy(x.fac)
   for (a, v) in y
     add_to_key!(z.fac, a, v)
@@ -232,6 +235,7 @@ function mul!(z::FacElem{B, S}, x::FacElem{B, S}, y::FacElem{B, S}) where {B, S}
 end
 
 function *(x::FacElem{B, S}, y::FacElem{B, S}) where {B, S}
+  @assert check_parent(x, y) "Elements must have the same parent"
   if length(x.fac) == 0
     return copy(y)
   end
@@ -248,18 +252,21 @@ function *(x::FacElem{B, S}, y::FacElem{B, S}) where {B, S}
 end
 
 function *(x::FacElem{B}, y::B) where B
+  @assert base_ring(x) === parent(y)
   z = copy(x)
   add_to_key!(z.fac, y, 1)
   return z
 end
 
 function *(y::B, x::FacElem{B}) where B
+  @assert base_ring(x) === parent(y)
   z = copy(x)
   add_to_key!(z.fac, y, 1)
   return z
 end
 
 function div(x::FacElem{B}, y::FacElem{B}) where B
+  @assert check_parent(x, y) "Elements must have the same parent"
   z = copy(x)
   for (a, v) in y
     add_to_key!(z.fac, a, -v)
