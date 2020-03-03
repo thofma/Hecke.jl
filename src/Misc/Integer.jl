@@ -842,7 +842,7 @@ function factor_insert!(r::Dict{fmpz, Int}, N::fmpz, scale::Int = 1)
   end
   if isprime(N)
     @assert !haskey(r, N)
-    r[N] = fac
+    r[N] = scale
     return r
   end
   if ndigits(N) < 60
