@@ -79,6 +79,15 @@ function group_algebra(K::Field, G::GrpAbFinGen)
   return A
 end
 
+@doc Markdown.doc"""
+    (K::Ring)[G::Group] -> AlgGrp
+    (K::Ring)[G::GrpAbFinGen] -> AlgGrp
+
+> Returns the group ring $K[G]$.
+"""
+getindex(K::Ring, G::Group) = group_algebra(K, G)
+getindex(K::Ring, G::GrpAbFinGen) = group_algebra(K, G)
+
 ################################################################################
 #
 #  Commutativity
@@ -436,16 +445,14 @@ end
 
 # Returns the group algebra Q[G] where G = Gal(K/Q) and a Q-linear map from K
 # to Q[G] and one from Q[G] to K
-_as_group_algebra(K::AnticNumberField) = _as_group_algebra(K, normal_basis(K))
-
-# alpha should be a "generator" for a normal basis of K
-function _as_group_algebra(K::AnticNumberField, alpha::nf_elem)
-  G, Gtoaut = automorphism_group(K)
-  A = group_algebra(FlintQQ, G)
+function group_algebra(K::AnticNumberField, to_automorphisms::GrpGenToNfMorSet{AnticNumberField} = automorphism_group(K)[2]; normal_basis_generator = normal_basis(K))
+  G = domain(to_automorphisms)
+  A = FlintQQ[G]
+  alpha = normal_basis_generator
 
   basis_alpha = Vector{elem_type(K)}(undef, dim(A))
   for (i, g) in enumerate(G)
-    f = Gtoaut(g)
+    f = to_automorphisms(g)
     basis_alpha[A.group_to_base[g]] = f(alpha)
   end
 
@@ -459,7 +466,7 @@ function _as_group_algebra(K::AnticNumberField, alpha::nf_elem)
 
   invM = inv(M)
 
-  function KtoA(x::Union{ nf_elem, NfRelElem })
+  function KtoA(x::nf_elem)
     t = zero_matrix(base_field(K), 1, degree(K))
     for i = 1:degree(K)
       t[1, i] = coeff(x, i - 1)
