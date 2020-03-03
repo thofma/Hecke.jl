@@ -139,7 +139,7 @@ Base.iterate(a::FacElem, state) = Base.iterate(a.fac, state)
 
 Base.length(a::FacElem) = Base.length(a.fac)
 
-check_parent(x::FacElem, y::FacElem) = parent(x) === parent(y)
+check_parent(x::FacElem, y::FacElem) = base_ring(x) == base_ring(y)
 
 ################################################################################
 #
@@ -252,14 +252,14 @@ function *(x::FacElem{B, S}, y::FacElem{B, S}) where {B, S}
 end
 
 function *(x::FacElem{B}, y::B) where B
-  @assert base_ring(x) === parent(y)
+  @assert base_ring(x) == parent(y)
   z = copy(x)
   add_to_key!(z.fac, y, 1)
   return z
 end
 
 function *(y::B, x::FacElem{B}) where B
-  @assert base_ring(x) === parent(y)
+  @assert base_ring(x) == parent(y)
   z = copy(x)
   add_to_key!(z.fac, y, 1)
   return z

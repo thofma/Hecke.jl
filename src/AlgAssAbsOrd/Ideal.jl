@@ -35,10 +35,6 @@ function isone(I::AlgAssAbsOrdIdl)
   return isone(norm(I, copy = false))
 end
 
-function Base.one(S::AlgAssAbsOrdIdlSet)
-  return ideal(order(S), one(order(S)))
-end
-
 function one(I::AlgAssAbsOrdIdl)
   return ideal(order(I), one(order(I)))
 end
@@ -1352,6 +1348,12 @@ elem_type(::Type{AlgAssAbsOrdIdlSet{S, T}}) where {S, T} = AlgAssAbsOrdIdl{S, T}
 elem_type(::AlgAssAbsOrdIdlSet{S, T}) where {S, T} = AlgAssAbsOrdIdl{S, T}
 
 parent_type(::Type{AlgAssAbsOrdIdl{S, T}}) where {S, T} = AlgAssAbsOrdIdlSet{S, T}
+
+function Base.one(S::AlgAssAbsOrdIdlSet)
+  return ideal(order(S), one(order(S)))
+end
+
+==(x::AlgAssAbsOrdIdlSet, y::AlgAssAbsOrdIdlSet) = x.order === y.order
 
 ################################################################################
 #
