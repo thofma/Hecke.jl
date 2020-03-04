@@ -168,7 +168,7 @@ change_base_ring(R::NmodRing, M::fmpz_mat) = MatrixSpace(R, nrows(M), ncols(M))(
 
 function _dualize(M::nmod_mat, V::GrpAbFinGen, v::Array{fmpz,1})    
   #  First, compute the kernel of the corresponding homomorphisms
-  K = DiagonalGroup(fmpz[V.snf[end] for j=1:nrows(M)])
+  K = abelian_group(fmpz[V.snf[end] for j=1:nrows(M)])
   A = lift(transpose(M))
   for j=1:nrows(A)
     for k=1:ncols(A)
@@ -269,7 +269,7 @@ function _sub_snf(M::ZpnGModule, n::Int)
   for i = ind:length(V.snf)
     invariants[i-ind+1] = divexact(V.snf[i], n)
   end
-  Gnew = DiagonalGroup(invariants)
+  Gnew = abelian_group(invariants)
   action = nmod_mat[sub(x, ind:ngens(V), ind:ngens(V)) for x in M.G]
   mat_map = zero_matrix(FlintZZ, length(invariants), ngens(V))
   for i = 1:ngens(Gnew)
@@ -353,7 +353,7 @@ function maximal_submodules(M::ZpnGModule, ind::Int=-1)
   list=Array{nmod_mat,1}(undef, length(minlist))
   v=[divexact(fmpz(R.n),S.V.snf[j]) for j=1:ngens(S.V) ]
   for x in minlist
-    K = DiagonalGroup([fmpz(R.n) for j=1:nrows(x)])
+    K = abelian_group([fmpz(R.n) for j=1:nrows(x)])
     A = lift(transpose(x))
     for j=1:nrows(A)
       for k=1:ncols(A)
@@ -606,7 +606,7 @@ function _submodules_with_struct_main(M::ZpnGModule, typesub::Array{Int,1})
     list1 = nmod_mat[]
     new_typesub1 = _update_typesub(new_typesub)
     diag = typesub - new_typesub1
-    Gtest = snf(DiagonalGroup(Int[p^x for x in diag]))[1]
+    Gtest = snf(abelian_group(Int[p^x for x in diag]))[1]
     for x in list  
       L, _ = quo(M, x)
       newlist = _submodules_with_struct(L, new_typesub)
@@ -808,7 +808,7 @@ function submodules_with_quo_struct(M::ZpnGModule, typequo::Array{Int,1})
   p = M.p 
   S, mS = snf(M)
   sort!(typequo)
-  wish = DiagonalGroup(Int[p^i for i in typequo])
+  wish = abelian_group(Int[p^i for i in typequo])
 
   if isisomorphic(wish, S.V)
     return (nmod_mat[zero_matrix(R, 1, ngens(M.V))])
@@ -863,7 +863,7 @@ function stable_subgroups(R::GrpAbFinGen, act::Array{T, 1}; op = sub, quotype::A
   end
   if quotype[1]!= -1
     #I write quotype as the diagonal entries of the snf form.
-    DG = DiagonalGroup(quotype)
+    DG = abelian_group(quotype)
     quotype = map(Int, snf(DG)[1].snf)
   end
   c = lcm(quotype[end], Int(exponent(R)))

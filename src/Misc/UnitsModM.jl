@@ -166,7 +166,7 @@ function UnitGroup(R::Generic.ResRing{fmpz}, mod::fmpz=fmpz(0))
     end
   end
 
-  G = DiagonalGroup(r)
+  G = abelian_group(r)
   function dexp(x::GrpAbFinGenElem)
     return prod(Res{fmpz}[R(g[i])^x[i] for i=1:ngens(G)])
   end
@@ -234,7 +234,7 @@ function UnitGroup(R::Nemo.NmodRing, mod::fmpz=fmpz(0))
     end
   end
 
-  G = DiagonalGroup(r)
+  G = abelian_group(r)
   function dexp(x::GrpAbFinGenElem)
     return prod([R(g[i])^x[i] for i=1:ngens(G)])
   end
@@ -445,7 +445,7 @@ function unit_group_mod(R::Nemo.NmodRing, n::Int)
     push!(disclogs, disclog_p)
   end
 
-  G = DiagonalGroup(structt)
+  G = abelian_group(structt)
   local disclog
   let G = G, disclogs = disclogs
     function disclog(x::nmod)

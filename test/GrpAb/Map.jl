@@ -1,6 +1,6 @@
 @testset "Map" begin
   @testset "Existence of (pre)image" begin
-    G = DiagonalGroup([3, 5, 0])
+    G = abelian_group([3, 5, 0])
     H, mH = sub(G, [G[1]])
     a = G[1]
     b = G[3]
@@ -13,8 +13,8 @@
   end
 
   @testset "Homomorphisms" begin
-    G = DiagonalGroup([4, 4, 4])
-    H = DiagonalGroup([4, 4, 4])
+    G = abelian_group([4, 4, 4])
+    H = abelian_group([4, 4, 4])
     h = @inferred hom(gens(G), gens(H))
     @test h(G[1]) == H[1]
     @test h(G[2]) == H[2]
@@ -27,8 +27,8 @@
   end
 
   @testset "Kernel" begin
-    G = DiagonalGroup([4, 4, 4])
-    H = DiagonalGroup([4, 4, 4])
+    G = abelian_group([4, 4, 4])
+    H = abelian_group([4, 4, 4])
     h = @inferred hom(G, [2*h for h in gens(H)])
     @test h(G[1]) == 2*H[1]
     @test h(G[2]) == 2*H[2]
@@ -40,8 +40,8 @@
   end
 
   @testset "Image" begin
-    G = DiagonalGroup([4, 4, 4])
-    H = DiagonalGroup([4, 4, 4])
+    G = abelian_group([4, 4, 4])
+    H = abelian_group([4, 4, 4])
     h = @inferred hom(G, [2*h for h in gens(H)])
     @test h(G[1]) == 2*H[1]
     @test h(G[2]) == 2*H[2]
@@ -53,8 +53,8 @@
   end
 
   @testset "Injectivity" begin
-    G = DiagonalGroup([4, 4, 4])
-    H = DiagonalGroup([4, 4, 4])
+    G = abelian_group([4, 4, 4])
+    H = abelian_group([4, 4, 4])
 
     h = @inferred hom(G, [2*h for h in gens(H)])
     b = @inferred isinjective(h)
@@ -66,8 +66,8 @@
   end
 
   @testset "Surjectivity" begin
-    G = DiagonalGroup([4, 4, 4])
-    H = DiagonalGroup([4, 4, 4])
+    G = abelian_group([4, 4, 4])
+    H = abelian_group([4, 4, 4])
 
     h = @inferred hom(G, [2*h for h in gens(H)])
     b = @inferred issurjective(h)
@@ -79,8 +79,8 @@
   end
   
   @testset "Bijectivity" begin
-    G = DiagonalGroup([4, 4, 4])
-    H = DiagonalGroup([4, 4, 4])
+    G = abelian_group([4, 4, 4])
+    H = abelian_group([4, 4, 4])
 
     h = @inferred hom(G, [2*h for h in gens(H)])
     b = @inferred isbijective(h)

@@ -91,7 +91,7 @@ function unit_group_fac_elem(c::ClassGrpCtx, u::UnitGrpCtx)
   for i=1:r
     push!(d, fmpz(0))
   end
-  U = DiagonalGroup(d)
+  U = abelian_group(d)
 
   r = MapUnitGrp{typeof(FacElemMon(nf(O)))}()
 

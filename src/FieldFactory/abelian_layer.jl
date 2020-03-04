@@ -57,7 +57,7 @@ end
 
 function abelian_extensionsQQ(gtype::Array{Int, 1}, bound::fmpz, only_real::Bool = false)
   
-  gtype = map(Int, snf(DiagonalGroup(gtype))[1].snf)
+  gtype = map(Int, snf(abelian_group(gtype))[1].snf)
   #Easy case: quadratic and biquadratic extensions
   if gtype == [2]
     lq = Hecke._quad_ext(Int(bound), only_real)

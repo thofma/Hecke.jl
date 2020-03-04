@@ -34,7 +34,7 @@
 
 export GrpAbFinGen, GrpAbFinGenElem, parent, isfinite, isinfinite, rank,
        getindex, show, +, *, ngens, snf_with_transform, nrels,
-       -, ==, istrivial, order, exponent, AbelianGroup, DiagonalGroup,
+       -, ==, istrivial, order, exponent,
        quo, sub, rels, hasimage, haspreimage, issnf, iscyclic, hom, kernel,
        psylow_subgroup
 

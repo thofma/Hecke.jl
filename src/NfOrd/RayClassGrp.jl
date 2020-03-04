@@ -184,7 +184,7 @@ function class_as_ray_class(C::GrpAbFinGen, mC::MapClassGrp, exp_class::Function
 
   local disclog
   O = order(m)
-  X = AbelianGroup(rels(C))
+  X = abelian_group(rels(C))
   
   
   let X = X, mC = mC 
@@ -428,7 +428,7 @@ function n_part_class_group(mC::Hecke.MapClassGrp, n::Integer)
   @assert issnf(C)
   K = nf(O)
   if iscoprime(C.snf[end], n)
-    G = DiagonalGroup(Int[])
+    G = abelian_group(Int[])
     local exp1 
     let O = O
       function exp1(a::GrpAbFinGenElem)
@@ -453,7 +453,7 @@ function n_part_class_group(mC::Hecke.MapClassGrp, n::Integer)
   ind = findfirst(x -> !iscoprime(x, n), C.snf)
   diff = ppio(C.snf[end], fmpz(n))[2]
 
-  G = DiagonalGroup(fmpz[ppio(x, fmpz(n))[1] for x in C.snf[ind:end]])
+  G = abelian_group(fmpz[ppio(x, fmpz(n))[1] for x in C.snf[ind:end]])
   local exp2
   let O = O, G = G
     function exp2(a::GrpAbFinGenElem)
@@ -707,7 +707,7 @@ function ray_class_group(m::NfOrdIdl, inf_plc::Vector{InfPlc} = Vector{InfPlc}()
     end
   end  
   
-  X = AbelianGroup(R)
+  X = abelian_group(R)
   
   local disclog
   let X = X, mC = mC, C = C, exp_class = exp_class, powers = powers, groups_and_maps = groups_and_maps, quo_rings = quo_rings, lH = lH, diffC = diffC, n_quo = n_quo, m = m, expon = expon
@@ -1250,7 +1250,7 @@ function has_principal_gen_1_mod_m(I::Union{NfOrdIdl, FacElem{NfOrdIdl, NfOrdIdl
   for x in inf_plc
     push!(invariants, fmpz(2))
   end
-  G = DiagonalGroup(invariants)
+  G = abelian_group(invariants)
   
   expo = exponent(G)
   tobeeval1 = FacElem{nf_elem, AnticNumberField}[mU(x) for x in gens(U)]

@@ -1,13 +1,13 @@
 @testset "Elements" begin
   @testset "Constructors" begin
     M = FlintZZ[1 2 3; 4 5 6]
-    G = @inferred AbelianGroup(M)
+    G = @inferred abelian_group(M)
     N = FlintZZ[1 2 3]
     a = @inferred GrpAbFinGenElem(G, N)
     @test parent(a) == G
     @test a.coeff == N
 
-    G = @inferred DiagonalGroup([3, 0])
+    G = @inferred abelian_group([3, 0])
     N = FlintZZ[1 1]
     a = @inferred GrpAbFinGenElem(G, N)
     @test @inferred parent(a) == G
@@ -16,7 +16,7 @@
 
   @testset "Generators" begin
     M = FlintZZ[1 2 3; 4 5 6]
-    G = AbelianGroup(M)
+    G = abelian_group(M)
     ge = @inferred gens(G)
     @test length(ge) == 3
     @test ge[1] == G[1]
@@ -25,28 +25,28 @@
   end
 
   @testset "Parent" begin
-    G = @inferred DiagonalGroup([3, 0])
+    G = @inferred abelian_group([3, 0])
     N = FlintZZ[1 1]
     a = @inferred GrpAbFinGenElem(G, N)
     @test @inferred parent(a) == G
   end
 
   @testset "String I/O" begin
-    G = DiagonalGroup([3, 0])
+    G = abelian_group([3, 0])
     N = FlintZZ[1 1]
     a = GrpAbFinGenElem(G, N)
     @test isa(string(a), String)
   end
 
   @testset "Hashing" begin
-    G = DiagonalGroup([3, 0])
+    G = abelian_group([3, 0])
     N = FlintZZ[1 1]
     a = GrpAbFinGenElem(G, N)
     @test isa(hash(a), UInt)
   end
 
   @testset "Indexing" begin
-    G = DiagonalGroup([3, 0])
+    G = abelian_group([3, 0])
     N = FlintZZ[1 2]
     a = GrpAbFinGenElem(G, N)
     @test @inferred a[1] == 1
@@ -54,19 +54,19 @@
   end
 
   @testset "Comparison" begin
-    G = DiagonalGroup([3, 0])
+    G = abelian_group([3, 0])
     N = FlintZZ[1 2]
     a = GrpAbFinGenElem(G, N)
     b = GrpAbFinGenElem(G, deepcopy(N))
     @test @inferred a == b
 
-    H = DiagonalGroup([3, 0])
+    H = abelian_group([3, 0])
     c = GrpAbFinGenElem(H, N)
     @test_throws ErrorException a == c
   end
 
   @testset "Arithmetic" begin
-    G = DiagonalGroup([3, 3, 3])
+    G = abelian_group([3, 3, 3])
     a = G[1]
     b = G[2]
     c = G([1, 1, 0])
@@ -85,7 +85,7 @@
   end
 
   @testset "Neutral element" begin
-    G = DiagonalGroup([3, 3, 3])
+    G = abelian_group([3, 3, 3])
     a = G[1]
    
     aa = @inferred(a * fmpz(2))
@@ -98,7 +98,7 @@
   end
 
   @testset "Parent object overloading" begin
-    G = DiagonalGroup([3, 3, 3])
+    G = abelian_group([3, 3, 3])
     a = @inferred G(fmpz[1, 1, 1])
     @test parent(a) == G
     @test a.coeff == FlintZZ[1 1 1]
@@ -119,11 +119,11 @@
   end
 
   @testset "Order" begin
-    G = DiagonalGroup([3, 3, 0])
+    G = abelian_group([3, 3, 0])
     a = G[1]
     @test @inferred order(a) == 3
 
-    G = DiagonalGroup([3, 5, 0])
+    G = abelian_group([3, 5, 0])
     a = G[1]
     @test @inferred order(a) == 3
 
@@ -132,15 +132,15 @@
   end
 
   @testset "Random elements" begin
-    G = DiagonalGroup([3, 5])
+    G = abelian_group([3, 5])
     a = @inferred rand(G)
     @test parent(a) == G
 
-    G = DiagonalGroup([3, 15])
+    G = abelian_group([3, 15])
     a = @inferred rand(G)
     @test parent(a) == G
 
-    G = DiagonalGroup([3, 0])
+    G = abelian_group([3, 0])
     @test_throws ErrorException rand(G)
 
     a = @inferred rand(G, 10)
@@ -151,7 +151,7 @@
     @test parent(a) == G
     @test -10 <= a[2] <= 10
 
-    G = DiagonalGroup([3, 0, 5, 0])
+    G = abelian_group([3, 0, 5, 0])
     @test_throws ErrorException rand(G)
 
     a = @inferred rand(G, 10)
@@ -166,16 +166,16 @@
   end
 
   @testset "Iterator" begin
-    G = DiagonalGroup([2, 0])
+    G = abelian_group([2, 0])
     @test_throws ErrorException begin for a in G end end
-    G = DiagonalGroup([fmpz(2)^100])
+    G = abelian_group([fmpz(2)^100])
     @test_throws ErrorException begin for a in G end end
 
-    G = DiagonalGroup([3, 5, 10])
+    G = abelian_group([3, 5, 10])
     @test length(G) == 3*5*10
     @test length(collect(G)) == 3*5*10
 
-    G = DiagonalGroup([3, 9, 27])
+    G = abelian_group([3, 9, 27])
     @test length(G) == 3*9*27
     @test length(collect(G)) == 3*9*27
   end

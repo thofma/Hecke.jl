@@ -312,7 +312,7 @@ function Hecke.evaluate(N::Norm1Group)
       R[ngens(s2) + i, j] = -x[j]
     end
   end
-  A = AbelianGroup(R)
+  A = abelian_group(R)
   ZK = maximal_order(N.A.K)
   function exp(a::GrpAbFinGenElem)
     a1 = sub(a.coeff, 1:1, 1:ngens(s2))

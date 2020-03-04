@@ -58,7 +58,7 @@ end
 
 function empty_ray_class(m::NfOrdIdl)
   O = order(parent(m))
-  X = DiagonalGroup(Int[])
+  X = abelian_group(Int[])
   
   local exp
   let O = O
@@ -227,7 +227,7 @@ function ray_class_group_quo(m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Dict{NfOrd
     end
   end  
   
-  X = AbelianGroup(R)
+  X = abelian_group(R)
   
   invd = invmod(fmpz(diffC), expon)
   local disclog
@@ -418,7 +418,7 @@ end
 
 function log_infinite_primes(O::NfOrd, p::Array{InfPlc,1})
   if isempty(p)
-    S = DiagonalGroup(Int[])
+    S = abelian_group(Int[])
     
     local log1
     let S = S
@@ -429,7 +429,7 @@ function log_infinite_primes(O::NfOrd, p::Array{InfPlc,1})
     return S, log1
   end
   
-  S = DiagonalGroup(Int[2 for i=1:length(p)])
+  S = abelian_group(Int[2 for i=1:length(p)])
   local log
   let S = S, p = p
     function log(B::T) where T <: Union{nf_elem ,FacElem{nf_elem, AnticNumberField}}

@@ -633,7 +633,7 @@ end
 
 function sunit_group_fac_elem(S::Array{fmpz, 1})
   S = coprime_base(S)  #TODO: for S-units use factor???
-  G = DiagonalGroup(vcat([fmpz(2)], fmpz[0 for i=S]))
+  G = abelian_group(vcat([fmpz(2)], fmpz[0 for i=S]))
   S = vcat(fmpz[-1], S)
 
   mp = MapSUnitGrpZFacElem{typeof(G)}()
@@ -1048,7 +1048,7 @@ end
 The unit group of Z, ie. C_2 and the map translating between the group and Z.    
 """
 function unit_group(::FlintIntegerRing)
-  G = DiagonalGroup([2])
+  G = abelian_group([2])
   exp = function(z::GrpAbFinGenElem)
     return isodd(z[1]) ? fmpz(-1) : fmpz(1)
   end
@@ -1064,7 +1064,7 @@ end
 The unit group of , ie. C_2 and the map translating between the group and Z.    
 """
 function unit_group(R::AbstractAlgebra.Integers{T}) where {T}
-  G = DiagonalGroup([2])
+  G = abelian_group([2])
   exp = function(z::GrpAbFinGenElem)
     return isodd(z[1]) ? T(-1) : T(1)
   end

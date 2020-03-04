@@ -116,7 +116,7 @@ mutable struct GrpAbFinGenToNfOrdQuoNfOrd{T1, T2, S, U} <:
 
     # offset is the first index - 1, where the diagonal of S is not one.
 
-    A = DiagonalGroup(fmpz[S[i, i] for i in (offset + 1):d])
+    A = abelian_group(fmpz[S[i, i] for i in (offset + 1):d])
 
     z.offset = offset
     z.domain = A
@@ -1163,7 +1163,7 @@ function ideals_with_norm(O::NfOrd, p::fmpz, n::Int)
 
   autos = GrpAbFinGenMap[]
 
-  A = DiagonalGroup(fmpz[pn for i in 1:d])
+  A = abelian_group(fmpz[pn for i in 1:d])
 
   for i in 1:d
     m = representation_matrix(B[i])
@@ -1230,7 +1230,7 @@ function poverorders_goursat(O1::NfOrd, O2::NfOrd, p::fmpz)
 end
 
 function abelian_group(Q::NfOrdQuoRing)
-  A = AbelianGroup(Q.basis_matrix)
+  A = abelian_group(Q.basis_matrix)
   S, mS = snf(A)
   B = basis(Q.base_ring, copy = false)
   f = a -> begin aa = mS(a); Q(sum(aa.coeff[i] * B[i] for i in 1:degree(Q.base_ring))) end

@@ -397,7 +397,7 @@ function class_group_grp(c::ClassGrpCtx; redo::Bool = false)
   @assert h>0
 
   if h==1 # group is trivial...
-    C = DiagonalGroup([1])
+    C = abelian_group([1])
     #mC = x -> 1*O, inv x-> [1]
     c.dl_data = (1, identity_matrix(FlintZZ, 1), C)
     return C
@@ -414,7 +414,7 @@ function class_group_grp(c::ClassGrpCtx; redo::Bool = false)
 
   p = findall(x->S[x,x]>1, 1:ncols(S))
 
-  C = DiagonalGroup([S[x, x] for x in p])
+  C = abelian_group([S[x, x] for x in p])
   c.dl_data = (s, T, C)
   return C
 end
@@ -846,7 +846,7 @@ function sunit_mod_units_group_fac_elem(I::Array{NfOrdIdl, 1})
   #  @assert (O(evaluate(U[j]))*O) == prod(I[i]^Int(valuations[j][i]) for i in 1:length(I))
   #end
 
-  C = DiagonalGroup(fmpz[0 for i=U])
+  C = abelian_group(fmpz[0 for i=U])
   r = MapSUnitModUnitGrpFacElem{typeof(C)}()
   r.idl = I_in
  
@@ -923,7 +923,7 @@ function sunit_group_fac_elem(I::Array{NfOrdIdl, 1})
   S, mS = sunit_mod_units_group_fac_elem(I)
   U, mU = unit_group_fac_elem(O)
 
-  G = DiagonalGroup(vcat(U.snf, S.snf))
+  G = abelian_group(vcat(U.snf, S.snf))
 
   r = MapSUnitGrpFacElem{typeof(G)}()
   r.idl = I

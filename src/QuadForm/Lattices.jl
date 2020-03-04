@@ -2503,7 +2503,7 @@ function _find_quaternion_algebra(b, P, I)
 
   if !found
     Cl, mCl = class_group(R)
-    A = DiagonalGroup(fill(0, length(_lP)))
+    A = abelian_group(fill(0, length(_lP)))
     hh = hom(A, Cl, [mCl\(p) for p in _lP])
     S, mS = image(hh)
     Q, mQ = quo(Cl, [mS(S[i]) for i in 1:ngens(S)])

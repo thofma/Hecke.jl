@@ -49,7 +49,7 @@ end
 
 @testset "Picard group of non maximal orders of algebras" begin
 
-  G = DiagonalGroup([2, 3])
+  G = abelian_group([2, 3])
   A = AlgGrp(FlintQQ, G)
   O = Order(A, basis(A))
   P, mP = picard_group(O)
@@ -65,7 +65,7 @@ end
   @test ngens(P) == 0
   @test mP\ideal(O, one(O)) in P
 
-  G = DiagonalGroup([3, 3])
+  G = abelian_group([3, 3])
   A = AlgGrp(FlintQQ, G)
   O = Order(A, basis(A))
   P, mP = picard_group(O)

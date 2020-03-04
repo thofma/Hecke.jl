@@ -112,7 +112,7 @@
           @test verify_order(gens[i],SNF[i])
         end
         @test order(G) == 3
-        H = DiagonalGroup([ 3 ])
+        H = abelian_group([ 3 ])
         @test Hecke.isisomorphic(G,H)
         @test M(G(G.snf)) == Q(O(1))
         for g in gens
@@ -135,7 +135,7 @@
           @test verify_order(gens[i],SNF[i])
         end
         @test order(G) == 12
-        H = DiagonalGroup([ 3, 2, 2 ])
+        H = abelian_group([ 3, 2, 2 ])
         @test Hecke.isisomorphic(G,H)
         @test M(G(G.snf)) == Q(O(1))
         for g in gens
@@ -161,7 +161,7 @@
         end
         @test M(G(G.snf)) == Q(O(1))
         @test order(G) == 16
-        H = DiagonalGroup([4, 4])
+        H = abelian_group([4, 4])
         @test Hecke.isisomorphic(G,H)
         for g in gens
           for exp in [ -3, 2, 4 ]
@@ -184,7 +184,7 @@
         end
         @test M(G(G.snf)) == Q(O(1))
         @test order(G) == 192
-        H = DiagonalGroup([3, 2, 2, 4, 4])
+        H = abelian_group([3, 2, 2, 4, 4])
         @test Hecke.isisomorphic(G,H)
         for g in gens
           for exp in [ -4, 1, 7 ]
@@ -208,7 +208,7 @@
       #=   println(snf(G)[1].snf) =#
       #=   @test order(G) == 512000 =#
       #=   structt = [80,80,80] =#
-      #=   H = DiagonalGroup(structt) =#
+      #=   H = abelian_group(structt) =#
       #=   @test Hecke.is_isomorphic(G,H) =#
       #=   @test M(G(G.snf)) == Q(O(1)) =#
       #=   for g in gens =#
@@ -227,7 +227,7 @@
       #=   println(snf(G)[1].snf) =#
       #=   @test order(G) == 14745600 =#
       #=   structt = [15,2,2,2,2,15,4,4,4,4,2,2,2,2] =#
-      #=   H = DiagonalGroup(structt) =#
+      #=   H = abelian_group(structt) =#
       #=   @test Hecke.is_isomorphic(G,H) =#
       #=   @test M(G(G.snf)) == Q(O(1)) =#
       #=   for g in gens =#
@@ -246,7 +246,7 @@
       #=   println(snf(G)[1].snf) =#
       #=   @test order(G) == 187500000 =#
       #=   structt = [24,5,5,5,5,5,5,4,5,5,5] =#
-      #=   H = DiagonalGroup(structt) =#
+      #=   H = abelian_group(structt) =#
       #=   @test Hecke.is_isomorphic(G,H) =#
       #=   @test M(G(G.snf)) == Q(O(1)) =#
       #=   for g in gens =#
@@ -265,7 +265,7 @@
       #=   println(snf(G)[1].snf) =#
       #=   @test order(G) == 14155776*fmpz(10)^14 =#
       #=   structt = [15,2,2,2,2,15,4,4,4,4,2,2,2,2,80,80,80,24,5,5,5,5,5,5,4,5,5,5] =#
-      #=   H = DiagonalGroup(structt) =#
+      #=   H = abelian_group(structt) =#
       #=   @test Hecke.is_isomorphic(G,H) =#
       #=   @test M(G(G.snf)) == Q(O(1)) =#
       #=   for g in gens =#
@@ -356,7 +356,7 @@
           @test verify_order(gens[i].elem, pv, d[i])
         end
         @test order(G) == prod(structures[v])
-        H = DiagonalGroup(structures[v])
+        H = abelian_group(structures[v])
         @test Hecke.isisomorphic(S, H)
         # Test discrete logarithm
         Q = NfOrdQuoRing(O, pv)
@@ -387,7 +387,7 @@
           @test verify_order(gens[i].elem, pv, d[i])
         end
         @test order(G) == prod(structures[v])
-        H = DiagonalGroup(structures[v])
+        H = abelian_group(structures[v])
         @test Hecke.isisomorphic(S, H)
         # Test discrete logarithm
         Q = NfOrdQuoRing(O,pv)
@@ -418,7 +418,7 @@
           @test verify_order(gens[i].elem, pv, d[i])
         end
         @test order(G) == prod(structures[v])
-        H = DiagonalGroup(structures[v])
+        H = abelian_group(structures[v])
         @test Hecke.isisomorphic(S, H)
         # Test discrete logarithm
         Q = NfOrdQuoRing(O, pv)

@@ -100,7 +100,7 @@
   @testset "Lattice of groups" begin
     # For testing don't use the global lattice
     L = Hecke.GrpAbLatticeCreate()
-    G = DiagonalGroup([3,3,4,5])
+    G = abelian_group([3,3,4,5])
     H, mH = sub(G, [G[1]], true, L)
     Q, mQ = quo(G, [G[2]], true, L)
 

@@ -89,7 +89,7 @@ function rel_auto_intersect(A::ClassField_pp)
   if !isdefined(A, :AutG)
     _aut_A_over_k(C, A)
   end
-  G, mG = snf(AbelianGroup(A.AutR))
+  G, mG = snf(abelian_group(A.AutR))
   #Now, I restrict them to A.A
   M = sparse_matrix(base_field(A.K))
   b = A.K(1)
@@ -613,7 +613,7 @@ function _find_embedding(KK::KummerExt, el::FacElem{nf_elem, AnticNumberField}, 
   # Careful! I have to multiply the components with their difference with the exponent :(
   G = KK.AutG
   #In H, I need a copy for every relation I have
-  H = DiagonalGroup(fmpz[KK.n for i = 1:length(imgs_rhs)])
+  H = abelian_group(fmpz[KK.n for i = 1:length(imgs_rhs)])
   imgs = Array{GrpAbFinGenElem, 1}(undef, ngens(G))
   for i = 1:length(KK.gen)
     m = Array{Int, 1}(undef, length(imgs_lhs))
@@ -722,9 +722,9 @@ function extend_hom(C::ClassField_pp, D::Array{ClassField_pp, 1}, tau)
     end
     b = FacElem(Dict(tau_Ka(k) => v for (k,v) = C.a.fac))
 
-    G = DiagonalGroup([om for i=1:length(D[im].bigK.gen)])
+    G = abelian_group([om for i=1:length(D[im].bigK.gen)])
     Q, mQ = quo(G, elem_type(G)[])
-    U = DiagonalGroup([om for i = D])
+    U = abelian_group([om for i = D])
     s_gen = elem_type(U)[]
     tau_b = fmpz[]
 
@@ -755,7 +755,7 @@ function extend_hom(C::ClassField_pp, D::Array{ClassField_pp, 1}, tau)
       end
     end
 
-    T_grp = DiagonalGroup([om for i= s_gen])
+    T_grp = abelian_group([om for i= s_gen])
     @show t_gen = [T_grp([x[i] for x = s_gen]) for i=1:length(D)]
     @show t_tau_g = T_grp(tau_b)
     @show t_corr = [gcd(content(x.coeff), om) for x = t_gen]

@@ -5,7 +5,7 @@
     F, a = FiniteField(3,1,"a")
     R = ResidueRing(FlintZZ,9)
     
-    V=DiagonalGroup([3,3,9,9])
+    V=abelian_group([3,3,9,9])
     
     l=[1,1,3,0,2,1,3,3,1,1,1,1,0,0,0,1]
     l1=[1,1,1,0,2,1,1,1,0,0,1,1,0,0,0,1]
@@ -28,7 +28,7 @@
   @testset "Dual Module" begin
   
     R=ResidueRing(FlintZZ,9)
-    V=DiagonalGroup([3,3,9,9])
+    V=abelian_group([3,3,9,9])
     V.issnf=true
     V.snf=[3,3,9,9]
     l=[1,1,3,0,2,1,3,3,1,1,1,1,0,0,0,1]
@@ -47,7 +47,7 @@
   @testset "submodules with given structure" begin
   
     R=ResidueRing(FlintZZ,8)
-    V=DiagonalGroup([2,4,8,8])
+    V=abelian_group([2,4,8,8])
     V.issnf=true
     V.snf=[2,4,8,8]
     l=[1,2,4,0,1,1,0,2,1,1,1,1,0,2,0,1]
@@ -88,7 +88,7 @@
   @testset "submodules" begin
   
     R=ResidueRing(FlintZZ,4)
-    V=DiagonalGroup([2,2,4])
+    V=abelian_group([2,2,4])
     V.issnf=true
     V.snf=[2,2,4]
     A=MatrixSpace(R,3,3)(1)

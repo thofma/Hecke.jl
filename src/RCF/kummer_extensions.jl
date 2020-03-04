@@ -54,7 +54,7 @@ function kummer_extension(exps::Array{Int, 1}, gens::Vector{FacElem{nf_elem, Ant
   K.zeta = k(zeta)^div(o, n)
   K.n = n
   K.gen = gens
-  K.AutG = DiagonalGroup(exps)
+  K.AutG = abelian_group(exps)
   K.frob_cache = Dict{NfOrdIdl, GrpAbFinGenElem}()
   return K
 end

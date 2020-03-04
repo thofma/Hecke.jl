@@ -1,9 +1,9 @@
 @testset "Subgroup enumeration" begin
   @testset "p-subgroups" begin
-    G = DiagonalGroup([9, 3, 3])
-    H = DiagonalGroup([9, 3, 3, 5, 7])
+    G = abelian_group([9, 3, 3])
+    H = abelian_group([9, 3, 3, 5, 7])
 
-    GG = DiagonalGroup([8])
+    GG = abelian_group([8])
     @test 4 == length(collect(subgroups(GG)))
 
     @testset "All subgroups" begin
@@ -171,7 +171,7 @@
   end
 
   @testset "Arbitrary groups" begin
-    G = DiagonalGroup([3, 5, 7, 9, 25])
+    G = abelian_group([3, 5, 7, 9, 25])
 
     @test_throws ErrorException subgroups(G, index = 3, subtype = [3, 1])
 

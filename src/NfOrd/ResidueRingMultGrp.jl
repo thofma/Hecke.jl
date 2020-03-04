@@ -435,7 +435,7 @@ function _pu_mod_pv(pu::NfOrdIdl, pv::NfOrdIdl)
   b=basis(pu)
   N = basis_matrix(pv, copy = false)*basis_mat_inv(pu, copy = false)
   @assert isone(N.den)
-  G = AbelianGroup(N.num)
+  G = abelian_group(N.num)
   S, mS=snf(G)
   
   #Generators
@@ -918,7 +918,7 @@ function _mult_grp(Q::NfOrdQuoRing, p::Integer)
   end
 
   if isempty(y1) && isempty(y2)
-    G = DiagonalGroup(fmpz[])
+    G = abelian_group(fmpz[])
     disc_log = function(x::NfOrdQuoRingElem)
       return fmpz[]
     end
@@ -1037,7 +1037,7 @@ function _n_part_multgrp_mod_p(p::NfOrdIdl, n::Int)
       end
     end
   end
-  G = DiagonalGroup([k])
+  G = abelian_group([k])
   gens = Vector{NfOrdElem}(undef, 1)
   gens[1] = preimage(mQ, g)
   map = GrpAbFinGenToNfAbsOrdMap(G, O, gens, disclog)::GrpAbFinGenToAbsOrdMap{NfOrd, NfOrdElem}
@@ -1067,7 +1067,7 @@ function _mult_grp_mod_n(Q::NfOrdQuoRing, y1::Dict{NfOrdIdl, Int}, y2::Dict{NfOr
   wild_part = Dict{NfOrdIdl, GrpAbFinGenToNfAbsOrdMap}()
 
   if isempty(y1) && isempty(y2)
-    G = DiagonalGroup(fmpz[])
+    G = abelian_group(fmpz[])
     disc_log = function(x::NfOrdQuoRingElem)
       return fmpz[]
     end

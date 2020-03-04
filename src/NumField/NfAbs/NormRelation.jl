@@ -1282,7 +1282,7 @@ function _sunit_group_fac_elem_quo_via_brauer(N::NormRelation, S, n::Int, invari
 
   if !isone(m)
     tomodn = FacElem(elem_in_nf(mT(mQ\Q[1])))
-    res_group = DiagonalGroup(append!(fmpz[m], [fmpz(n) for i in 1:(length(sunitsmodunits) + length(unitsmodtorsion))]))
+    res_group = abelian_group(append!(fmpz[m], [fmpz(n) for i in 1:(length(sunitsmodunits) + length(unitsmodtorsion))]))
 
     exp = function(a::GrpAbFinGenElem)
       @assert parent(a) == res_group
@@ -1304,7 +1304,7 @@ function _sunit_group_fac_elem_quo_via_brauer(N::NormRelation, S, n::Int, invari
       throw(NotImplemented())
     end
   else # torsion part is one
-    res_group = DiagonalGroup([fmpz(n) for i in 1:(length(sunitsmodunits) + length(unitsmodtorsion))])
+    res_group = abelian_group([fmpz(n) for i in 1:(length(sunitsmodunits) + length(unitsmodtorsion))])
 
     exp = function(a::GrpAbFinGenElem)
       @assert parent(a) == res_group

@@ -394,7 +394,7 @@ function _1_plus_pu_plus_q_mod_1_plus_pv_plus_q(puq::AlgAssAbsOrdIdl, pvq::AlgAs
   # Compute (p^u + q)/(p^v + q)
   N = basis_matrix(pvq, copy = false)*basis_mat_inv(puq, copy = false)
   @assert denominator(N, copy = false) == 1
-  G = AbelianGroup(numerator(N, copy = false))
+  G = abelian_group(numerator(N, copy = false))
   S, StoG = snf(G)
 
   gens = Vector{elem_type(O)}(undef, ngens(S))

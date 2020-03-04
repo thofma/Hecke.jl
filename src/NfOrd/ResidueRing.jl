@@ -763,7 +763,7 @@ function group_structure(Q::NfOrdQuoRing)
     structure_pvp = [repeat([pnum^q],inner=[Int((r+1)*f)]) ; repeat([pnum^(q-1)],inner=[Int((e-r-1)*f)])]
     append!(structure,structure_pvp)
   end
-  G = DiagonalGroup(structure)
+  G = abelian_group(structure)
   S, Smap = snf(G)
   return S
 end

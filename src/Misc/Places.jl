@@ -326,7 +326,7 @@ function infinite_places_uniformizers(K::AnticNumberField)
   end
   
   p = real_places(K) #Important: I assume these are ordered as the roots of the defining polynomial!
-  S = DiagonalGroup(Int[2 for i = 1:length(p)])
+  S = abelian_group(Int[2 for i = 1:length(p)])
 
   s = Vector{GrpAbFinGenElem}(undef, length(p))
   g = Vector{nf_elem}(undef, length(p))
@@ -488,7 +488,7 @@ function infinite_primes_map(O::NfOrd, p::Vector{InfPlc}, lying_in::NfOrdIdl)
   K = nf(O)
   
   if isempty(p)
-    S = DiagonalGroup(Int[])
+    S = abelian_group(Int[])
     local exp1
     let S = S, lying_in = lying_in, O = O
       function exp1(A::GrpAbFinGenElem)
@@ -508,7 +508,7 @@ function infinite_primes_map(O::NfOrd, p::Vector{InfPlc}, lying_in::NfOrdIdl)
   
   D = infinite_places_uniformizers(K)
   
-  S = DiagonalGroup([2 for i = 1:length(p)])
+  S = abelian_group([2 for i = 1:length(p)])
 
   local exp
   let S = S, D = D, p = p, O = O, lying_in = lying_in, K = K

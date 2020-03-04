@@ -99,7 +99,7 @@ function _1pluspk_1pluspk1(K::AnticNumberField, p::NfOrdIdl, pk::NfOrdIdl, pv::N
   O = maximal_order(K)
   b = basis(pk, copy = false)
   N = basis_matrix(pv, copy = false)*basis_mat_inv(pk, copy = false)
-  G = AbelianGroup(N.num)
+  G = abelian_group(N.num)
   S, mS = snf(G)
   #Generators
   gens = Array{NfOrdElem, 1}(undef, ngens(S))
@@ -236,7 +236,7 @@ function conductor(C::Hecke.ClassField)
       k1 = v-1
       k2 = v
       gens = GrpAbFinGenElem[]
-      Q = DiagonalGroup(Int[])
+      Q = abelian_group(Int[])
       while k1 >= 1
         multg = _1pluspk_1pluspk1(K, p, p^k1, p^k2, powers, minimum(cond), expo)
         for i = 1:length(multg)
@@ -541,7 +541,7 @@ function isabelian(f::Nemo.PolyElem, K::Nemo.AnticNumberField)
   lp=collect(keys(factor(n)))
   M=zero_matrix(FlintZZ,0,0)
   Grps=Any[]
-  R=AbelianGroup(fmpz[])
+  R=abelian_group(fmpz[])
   for i=1:length(lp)
     T,mT=ray_class_group_p_part(Int(lp[i]),m,inf_plc)
     if valuation(order(T),lp[i])<valuation(n,lp[i])

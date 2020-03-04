@@ -250,7 +250,7 @@ function _picard_group(O::NfOrd)
   M = vcat(M, hcat(zero_matrix(FlintZZ, ngens(G), ngens(Cl)), rels(G)))
   M = vcat(M, hcat(zero_matrix(FlintZZ, nrows(Q), ngens(Cl)), Q))
 
-  P = AbelianGroup(M)
+  P = abelian_group(M)
 
   S, StoP = snf(P)
 

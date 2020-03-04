@@ -32,11 +32,11 @@
 #
 ################################################################################
 
-export AbelianGroup, DiagonalGroup, issnf, ngens, nrels, rels, snf, isfinite,
+export abelian_group, free_abelian_group, issnf, ngens, nrels, rels, snf, isfinite,
        isinfinite, rank, order, exponent, istrivial, isisomorphic,
        direct_product, istorsion, torsion_subgroup, sub, quo, iscyclic,
        psylow_subgroup, issubgroup, abelian_groups, flat, tensor_product,
-       dual, chain_complex, isexact, homology, free_resolution, FreeAbelianGroup
+       dual, chain_complex, isexact, homology, free_resolution
 
 import Base.+, Nemo.snf, Nemo.parent, Base.rand, Nemo.issnf
 
@@ -57,14 +57,14 @@ parent_type(::Type{GrpAbFinGenElem}) = GrpAbFinGen
 #  Constructors
 #
 ##############################################################################
-# We do we have AbelianGroup and DiagonalGroup?
+
 @doc Markdown.doc"""
-    AbelianGroup(M::fmpz_mat) -> GrpAbFinGen
+    abelian_group(M::fmpz_mat) -> GrpAbFinGen
 
 Creates the abelian group with relation matrix `M`. That is, the group will
 have `ncols(M)` generators and each row of `M` describes one relation.
 """
-function AbelianGroup(M::fmpz_mat; name :: String = "")
+function abelian_group(M::fmpz_mat; name::String = "")
   G = GrpAbFinGen(M)
   if name != ""
     set_name!(G, name)
@@ -73,13 +73,13 @@ function AbelianGroup(M::fmpz_mat; name :: String = "")
 end
 
 @doc Markdown.doc"""
-    AbelianGroup(M::Array{fmpz, 2}) -> GrpAbFinGen
+    abelian_group(M::Array{fmpz, 2}) -> GrpAbFinGen
 
 Creates the abelian group with relation matrix `M`. That is, the group will
 have `ncols(M)` generators and each row of `M` describes one relation.
 """
-function AbelianGroup(M::Array{fmpz, 2}; name :: String = "")
-  G = AbelianGroup(matrix(FlintZZ, M))
+function abelian_group(M::Array{fmpz, 2}; name :: String = "")
+  G = abelian_group(matrix(FlintZZ, M))
   if name != ""
     set_name!(G, name)
   end
@@ -87,13 +87,13 @@ function AbelianGroup(M::Array{fmpz, 2}; name :: String = "")
 end
 
 @doc Markdown.doc"""
-    AbelianGroup(M::Array{Integer, 2}) -> GrpAbFinGen
+    abelian_group(M::Array{Integer, 2}) -> GrpAbFinGen
 
 Creates the abelian group with relation matrix `M`. That is, the group will
 have `ncols(M)` generators and each row of `M` describes one relation.
 """
-function AbelianGroup(M::Array{T, 2}; name :: String = "") where T <: Integer
-  G = AbelianGroup(matrix(FlintZZ, M))
+function abelian_group(M::Array{T, 2}; name :: String = "") where T <: Integer
+  G = abelian_group(matrix(FlintZZ, M))
   if name != ""
     set_name!(G, name)
   end
@@ -101,73 +101,13 @@ function AbelianGroup(M::Array{T, 2}; name :: String = "") where T <: Integer
 end
 
 @doc Markdown.doc"""
-    AbelianGroup(M::Array{fmpz, 1}) -> GrpAbFinGen
-
-Creates the abelian group with relation matrix `M`. That is, the group will
-have `length(M)` generators and one relation.
-"""
-function AbelianGroup(M::Array{fmpz, 1}; name :: String = "")
-  G = AbelianGroup(matrix(FlintZZ, 1, length(M), M))
-  if name != ""
-    set_name!(G, name)
-  end
-  return G
-end
-
-@doc Markdown.doc"""
-    AbelianGroup(M::Array{Integer, 1}) -> GrpAbFinGen
-
-Creates the abelian group with relation matrix `M`. That is, the group will
-have `length(M)` generators and one relation.
-"""
-function AbelianGroup(M::Array{T, 1}; name :: String = "") where T <: Integer
-  G = AbelianGroup(matrix(FlintZZ, 1, length(M), M))
-  if name != ""
-    set_name!(G, name)
-  end
-  return G
-end
-
-@doc Markdown.doc"""
-    DiagonalGroup(M::fmpz_mat) -> GrpAbFinGen
-
-Assuming that $M$ has only one row, this function creates the direct product of
-the cyclic groups $\mathbf{Z}/m_i$, where $m_i$ is the $i$th entry of `M`.
-"""
-function DiagonalGroup(M::fmpz_mat; name :: String = "")
-  if nrows(M) != 1
-    error("The argument must have only one row")
-  end
-
-  N = zero_matrix(FlintZZ, ncols(M), ncols(M))
-  for i = 1:ncols(M)
-    N[i,i] = M[1, i]
-  end
-  if issnf(N)
-    G = GrpAbFinGen(fmpz[M[1, i] for i = 1:ncols(M)])
-    if ncols(M) != 0 && !iszero(M[1, ncols(M)])
-      G.exponent = M[1, ncols(M)]
-    end
-  else
-    G = GrpAbFinGen(N)
-    if ncols(M) != 0
-      res = lcm(fmpz[M[1, i] for i = 1:ncols(M)])
-      if !iszero(res)
-        G.exponent = res
-      end
-    end 
-  end
-  name == "" || set_name!(G, name)
-  return G
-end
-
-@doc Markdown.doc"""
-    DiagonalGroup(M::Array{Union{fmpz, Integer}, 1}) -> GrpAbFinGen
+    abelian_group(M::Vector{Union{fmpz, Integer}}) -> GrpAbFinGen
+    abelian_group(M::Union{fmpz, Integer}...) -> GrpAbFinGen
 
 Creates the direct product of the cyclic groups $\mathbf{Z}/m_i$,
 where $m_i$ is the $i$th entry of `M`.
 """
-function DiagonalGroup(M::Array{T, 1}; name :: String = "") where T <: Union{Integer, fmpz}
+function abelian_group(M::Array{T, 1}; name :: String = "") where T <: Union{Integer, fmpz}
   N = zero_matrix(FlintZZ, length(M), length(M))
   for i = 1:length(M)
     N[i,i] = M[i]
@@ -187,8 +127,17 @@ function DiagonalGroup(M::Array{T, 1}; name :: String = "") where T <: Union{Int
   return G
 end
 
-function FreeAbelianGroup(n::Int)
-  return DiagonalGroup(zeros(Int, n))
+function abelian_group(M::T...; name::String = "") where T <: Union{ Integer, fmpz }
+  return abelian_group(collect(M), name = name)
+end
+
+@doc Markdown.doc"""
+    free_abelian_group(n::Int) -> GrpAbFinGen
+
+Creates the free abelian group of rank `n`.
+"""
+function free_abelian_group(n::Int)
+  return abelian_group(zeros(Int, n))
 end
 
 ################################################################################
@@ -590,7 +539,7 @@ function direct_product(G::GrpAbFinGen...
              ; add_to_lattice::Bool = false, L::GrpAbLattice = GroupLattice, task::Symbol = :sum)
   @assert task in [:prod, :sum, :both, :none]
 
-  Dp = AbelianGroup(cat([rels(x) for x = G]..., dims = (1,2)))
+  Dp = abelian_group(cat([rels(x) for x = G]..., dims = (1,2)))
 
   set_special(Dp, :direct_product =>G, :show => show_direct_product)
   inj = GrpAbFinGenMap[]
@@ -753,7 +702,7 @@ end
 Create the map $G \to \{0\}$.
 """
 function zero_map(G::GrpAbFinGen)
-  Z = AbelianGroup([1])
+  Z = abelian_group([1])
   set_name!(Z, "Zero")
   return hom(G, Z, [Z[0] for i=1:ngens(G)])
 end
@@ -881,12 +830,12 @@ A free resultion for $G$, ie. a chain complex terminating in
 $G \to \{0\}$ that is exact.
 """
 function free_resolution(G::GrpAbFinGen)
-  A = DiagonalGroup(zeros(FlintZZ, ngens(G)))
+  A = free_abelian_group(ngens(G))
   R = rels(G)
-  B = DiagonalGroup(zeros(FlintZZ, nrows(R)))
+  B = free_abelian_group(nrows(R))
   h_A_G = hom(A, G, gens(G))
   h_B_A = hom(B, A, [A(R[i, :]) for i=1:ngens(B)])
-  Z = AbelianGroup(Int[1])
+  Z = abelian_group(Int[1])
   set_name!(Z, "Zero")
   return chain_complex(hom(Z, B, [B[0]]), h_B_A, h_A_G, hom(G, Z, [Z[0] for i = 1:ngens(G)]))
 end
@@ -1029,7 +978,7 @@ function tensor_product2(G::GrpAbFinGen, H::GrpAbFinGen)
   RH = rels(H)
   R = vcat(kronecker_product(RG', identity_matrix(FlintZZ, ngens(H)))', 
            kronecker_product(identity_matrix(FlintZZ, ngens(G)), RH')')
-  G = AbelianGroup(R)
+  G = abelian_group(R)
 end
 
 struct TupleParent{T <: Tuple}
@@ -1213,7 +1162,7 @@ function sub(G::GrpAbFinGen, s::Array{GrpAbFinGenElem, 1},
     end
   end
   r = view(h, fstWithoutOldGens:nrows(h), ngens(p) + 1:ncols(h))
-  S = AbelianGroup(r)
+  S = abelian_group(r)
 
   mS = hom(S, p, view(m, (nrels(p) + 1):nrows(h), 1:ngens(p)), check = false)
 
@@ -1277,7 +1226,7 @@ function sub(G::GrpAbFinGen, M::fmpz_mat,
     end
   end
   r = view(h, fstWithoutOldGens:nrows(h), ngens(G) + 1:ncols(h))
-  S = AbelianGroup(r)
+  S = abelian_group(r)
   mS = hom(S, G, view(m, (nrels(G) + 1):nrows(h), 1:ngens(G)), check = false)
 
   if add_to_lattice
@@ -1309,7 +1258,7 @@ function _sub_integer_snf(G::GrpAbFinGen, n::fmpz, add_to_lattice::Bool = true, 
       invariants[i-ind+1] = divexact(G.snf[i], res)
     end
   end
-  Gnew = DiagonalGroup(invariants)
+  Gnew = abelian_group(invariants)
   mat_map = zero_matrix(FlintZZ, length(invariants), ngens(G))
   for i = 1:ngens(Gnew)
     mat_map[i, ind+i-1] = n
@@ -1396,7 +1345,7 @@ function quo(G::GrpAbFinGen, s::Array{GrpAbFinGenElem, 1},
     end
   end
 
-  Q = AbelianGroup(m)
+  Q = abelian_group(m)
   I = identity_matrix(FlintZZ, ngens(p))
   m = hom(p, Q, I, I, check = false)
   if add_to_lattice
@@ -1414,7 +1363,7 @@ corresponding to the rows of $M$. together with the projection $p : G \to H$.
 function quo(G::GrpAbFinGen, M::fmpz_mat,
              add_to_lattice::Bool = true, L::GrpAbLattice = GroupLattice)
   m = vcat(rels(G), M)
-  Q = AbelianGroup(m)
+  Q = abelian_group(m)
   I = identity_matrix(FlintZZ, ngens(G))
   m = hom(G, Q, I, I, check = false)
   if add_to_lattice
@@ -1448,7 +1397,7 @@ function quo_snf(G::GrpAbFinGen, n::Union{fmpz, Integer},
                  add_to_lattice::Bool = true, L::GrpAbLattice = GroupLattice)
   r = [gcd(x, n) for x = G.snf]
   I = identity_matrix(FlintZZ, ngens(G))
-  Q = DiagonalGroup(r)
+  Q = abelian_group(r)
   m = hom(G, Q, I, I, check = false)
   if add_to_lattice
     append!(L, m)
@@ -1459,7 +1408,7 @@ end
 function quo_gen(G::GrpAbFinGen, n::Union{fmpz, Integer},
                  add_to_lattice::Bool = true, L::GrpAbLattice = GroupLattice)
   m = vcat(G.rels, n*identity_matrix(FlintZZ, ngens(G)))
-  Q = AbelianGroup(m)
+  Q = abelian_group(m)
   if isdefined(G, :exponent)
     Q.exponent = gcd(n, G.exponent)
   end
@@ -1658,7 +1607,7 @@ function multgrp_of_cyclic_grp(n::fmpz)
       push!(composition,(p-1)*p^(mp-1))
     end
   end
-  return DiagonalGroup(composition)
+  return abelian_group(composition)
 end
 
 multgrp_of_cyclic_grp(n::Integer) = multgrp_of_cyclic_grp(fmpz(n))
@@ -1756,7 +1705,7 @@ function find_isomorphism_with_abelian_group(G, op)
     end
   end
 
-  A = AbelianGroup(rel_mat)
+  A = abelian_group(rel_mat)
   Asnf, mAsnf = snf(A)
   GtoAsnf = Dict{eltype(G), GrpAbFinGenElem}()
   AsnftoG = Dict{GrpAbFinGenElem, eltype(G)}()
@@ -1807,13 +1756,13 @@ Given a positive integer $n$, return a list of all abelian groups of order $n$.
 """
 function abelian_groups(n::Int)
   if n == 1
-    return GrpAbFinGen[DiagonalGroup(Int[])]
+    return GrpAbFinGen[abelian_group(Int[])]
   end
   nn = fmpz(n)
   fac = factor(nn)
   sylow_lists = Vector{Vector{GrpAbFinGen}}()
   for (p, e) in fac
-    push!(sylow_lists, GrpAbFinGen[DiagonalGroup(fmpz[p^i for i in reverse(t)]) for t in AllParts(e)])
+    push!(sylow_lists, GrpAbFinGen[abelian_group(fmpz[p^i for i in reverse(t)]) for t in AllParts(e)])
   end
   C = Base.Iterators.product(sylow_lists...)
   grps = GrpAbFinGen[]
@@ -1918,7 +1867,7 @@ Given an abelian group $G$, returns true if it has a quotient with given element
 divisors and false otherwise. 
 """
 function has_quotient(G::GrpAbFinGen, invariants::Array{Int,1})
-  H = DiagonalGroup(invariants)
+  H = abelian_group(invariants)
   H = snf(H)[1]
   G1 = snf(G)[1]
   arr_snfG1 = filter(x -> x != 1, G1.snf)

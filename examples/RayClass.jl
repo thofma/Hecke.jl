@@ -132,7 +132,7 @@ function ray_class_group_std(m::NfOrdIdl, primes::Array{InfPlc,1}=InfPlc[])
   end
 
   R=hcat(A,B)
-  X=AbelianGroup(R)
+  X=abelian_group(R)
 
 #
 # Discrete logarithm
@@ -328,7 +328,7 @@ function ray_class_group_p_part(p::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1
     end 
   end
   
-  X=AbelianGroup(R)
+  X=abelian_group(R)
   
   
 #

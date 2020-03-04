@@ -537,7 +537,7 @@ function fields(a::Int, b::Int, list::Vector{FieldsTower}, absolute_bound::fmpz;
     IsoE1 = GAP.Globals.IdGroup(E1)
     @vprint :Fields 1 "Number of fields at the $i -th step: $(length(list)) \n"
     @vprint :FieldsNonFancy 1 "Number of fields at the $i -th step: $(length(list)) \n"
-    lG = snf(DiagonalGroup(l))[1]
+    lG = snf(abelian_group(l))[1]
     invariants = map(Int, lG.snf) 
     onlyreal = (lvl > i || only_real)
     #First, I search for obstruction.
@@ -601,7 +601,7 @@ function fields(a::Int, b::Int, absolute_bound::fmpz; using_direct_product::Bool
   L = GAP.Globals.DerivedSeries(G)
   G1 = GAP.Globals.FactorGroup(L[1], L[end-1])
   invariants = GAP.gap_to_julia(Vector{Int}, GAP.Globals.AbelianInvariants(L[end-1]))
-  lG = snf(DiagonalGroup(invariants))[1]
+  lG = snf(abelian_group(invariants))[1]
   invariants = map(Int, lG.snf)
   if GAP.Globals.IsAbelian(G)
     @vprint :Fields 1 "computing abelian extension of Q with invariants $(invariants) and bound ~10^$(clog(absolute_bound, 10))\n"

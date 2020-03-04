@@ -120,7 +120,7 @@ mutable struct AbToNfOrdMultGrp <: Map{GrpAbFinGen, NfOrd, SetMap, AbToNfOrdMult
   @declare_other
 
   function AbToNfOrdMultGrp(O::NfOrd, order::Int, generator::NfOrdElem)
-    G = DiagonalGroup([order])
+    G = abelian_group([order])
     z = new()
     z.domain = G
     z.codomain = O
@@ -186,7 +186,7 @@ mutable struct GrpAbFinGenToAbsOrdMap{S, T} <: Map{GrpAbFinGen, S, HeckeMap, Grp
   function GrpAbFinGenToAbsOrdMap{S, T}(O::S, generators::Vector{T}, snf_structure::Vector{fmpz}, disc_log::Function, modulus...) where {S, T}
     @assert length(generators) == length(snf_structure)
 
-    G = DiagonalGroup(snf_structure)
+    G = abelian_group(snf_structure)
 
     return GrpAbFinGenToAbsOrdMap{S, T}(G, O, generators, disc_log, modulus...)
   end
@@ -260,7 +260,7 @@ mutable struct GrpAbFinGenToAbsOrdQuoRingMultMap{S, T, U} <: Map{GrpAbFinGen, Ab
   function GrpAbFinGenToAbsOrdQuoRingMultMap{S, T, U}(Q::AbsOrdQuoRing{S, T}, generators::Vector{AbsOrdQuoRingElem{S, T, U}}, snf_structure::Vector{fmpz}, disc_log::Function) where {S, T, U}
     @assert length(generators) == length(snf_structure)
 
-    G = DiagonalGroup(snf_structure)
+    G = abelian_group(snf_structure)
 
     return GrpAbFinGenToAbsOrdQuoRingMultMap{S, T, U}(G, Q, generators, disc_log)
   end

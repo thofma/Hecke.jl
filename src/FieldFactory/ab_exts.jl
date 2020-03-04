@@ -341,7 +341,7 @@ end
 
 function squarefree_for_conductorsQQ(O::NfOrd, n::Int, a::Array{Int, 1}; coprime_to::Array{fmpz,1}=fmpz[])
   
-  G = map(Int, snf(DiagonalGroup(a))[1].snf)
+  G = map(Int, snf(abelian_group(a))[1].snf)
   sqf= trues(n)
   primes= trues(n)
   deg = G[end]
@@ -588,7 +588,7 @@ function abelian_extensions(O::NfOrd, gtype::Array{Int,1}, absolute_discriminant
   
   K=nf(O) 
   @assert degree(K)==1
-  gtype = map(Int, snf(DiagonalGroup(gtype))[1].snf)
+  gtype = map(Int, snf(abelian_group(gtype))[1].snf)
   n = prod(gtype)
     
   expo = lcm(gtype)
