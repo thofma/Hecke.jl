@@ -181,7 +181,6 @@ end
 
 function image(f::NumFieldMor, x)
   return image(f.image_data, x)
-
 end
 
 function preimage(f::NumFieldMor, x)

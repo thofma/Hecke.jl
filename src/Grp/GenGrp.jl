@@ -17,7 +17,7 @@ max_order, gen_2_ab, orbit, stabilizer
 #
 ################################################################################
 
-mutable struct GrpGen
+mutable struct GrpGen <: Group
   identity::Int
   order::Int
   mult_table::Array{Int, 2}
@@ -58,7 +58,7 @@ mutable struct GrpGen
   end
 end
 
-struct GrpGenElem
+struct GrpGenElem <: GroupElem
   group::GrpGen
   i::Int
   function GrpGenElem(group::GrpGen, i::Int)

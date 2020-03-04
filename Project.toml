@@ -1,9 +1,10 @@
 name = "Hecke"
 uuid = "3e1990a7-5d81-5526-99ce-9ba3ff248f21"
-version = "0.7.2"
+version = "0.7.3"
 
 [deps]
 AbstractAlgebra = "c3fe647b-3220-5bb0-a1ea-a7954cac585d"
+Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
 Distributed = "8ba89e20-285c-5b6f-9357-94700520ee1b"
 InteractiveUtils = "b77e0a4c-d291-57a0-90e8-8db25a27a240"
 Libdl = "8f399da3-3557-5675-b5ff-fb832c97cbdb"
@@ -20,7 +21,7 @@ SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [compat]
-AbstractAlgebra = "^0.8.0"
-Nemo = "^0.16.1"
+AbstractAlgebra = "^0.8.1"
+Nemo = "^0.16.4"
 Requires = "^0.5.2"
 julia = "1"

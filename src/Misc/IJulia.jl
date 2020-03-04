@@ -394,18 +394,3 @@ function Base.show(io::IO, ::MIME"text/html", S::FacElemMon)
   print(io, "\$")
 end
 
-function find_name(A, M = Main)
-  for a = names(Main)
-    a === :ans && continue
-    d = Meta.parse("$M.$a")
-    try
-      z = eval(d);
-      if z === A
-        return a
-      end
-    catch e
-    end
-  end
-end
-
-

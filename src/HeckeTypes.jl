@@ -247,14 +247,6 @@ end
 
 ################################################################################
 #
-#  Abstract map type
-#
-################################################################################
-
-abstract type HeckeMap <: SetMap end
-
-################################################################################
-#
 #  Sparse rows
 #
 ################################################################################
@@ -1577,6 +1569,8 @@ mutable struct ClassGrpCtx{T}  # T should be a matrix type: either fmpz_mat or S
 
   normCtx::NormCtx
   sat_done::Int
+
+  GRH::Bool # Indicate whether correctness of result depends on GRH
 
   function ClassGrpCtx{T}() where {T}
     r = new{T}()
