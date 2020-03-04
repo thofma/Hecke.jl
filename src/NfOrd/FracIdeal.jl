@@ -190,6 +190,8 @@ elem_type(::NfAbsOrdFracIdlSet{S, T}) where {S, T} = NfAbsOrdFracIdl{S, T}
 
 parent_type(::Type{NfAbsOrdFracIdl{S, T}}) where {S, T} = NfAbsOrdFracIdlSet{S, T}
 
+==(a::NfAbsOrdFracIdlSet, b::NfAbsOrdFracIdlSet) = order(a) === order(b)
+
 ################################################################################
 #
 #  Order

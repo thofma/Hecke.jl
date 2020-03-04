@@ -99,12 +99,15 @@ function isone(A::NfOrdFracIdl)
 end
 
 function ==(A::FacElem{NfOrdFracIdl,NfOrdFracIdlSet}, B::FacElem{NfOrdFracIdl,NfOrdFracIdlSet})
+  @assert check_parent(A, B) "Elements must have same parent"
   return isone(A*inv(B))
 end
 function ==(A::FacElem{NfOrdIdl,NfOrdIdlSet}, B::FacElem{NfOrdIdl,NfOrdIdlSet})
+  @assert check_parent(A, B) "Elements must have same parent"
   return isone(A*inv(B))
 end
 function ==(A::FacElem{NfOrdIdl,NfOrdIdlSet}, B::FacElem{NfOrdFracIdl,NfOrdFracIdlSet})
+  @assert order(base_ring(A)) === order(base_ring(B)) "Elements must be defined over the same order"
   return isone(A*inv(B))
 end
 
@@ -113,6 +116,7 @@ end
 ==(A::NfOrdFracIdl, B::FacElem{NfOrdIdl,NfOrdIdlSet}) = isone(A*inv(B))
 
 function *(A::FacElem{NfOrdIdl,NfOrdIdlSet}, B::FacElem{NfOrdFracIdl,NfOrdFracIdlSet})
+  @assert order(base_ring(A)) === order(base_ring(B)) "Elements must be defined over the same order"
   C = deepcopy(B)
   for (i,k) = A.fac
     C *= FacElem(Dict(i//1 => k))

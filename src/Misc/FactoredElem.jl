@@ -139,7 +139,7 @@ Base.iterate(a::FacElem, state) = Base.iterate(a.fac, state)
 
 Base.length(a::FacElem) = Base.length(a.fac)
 
-check_parent(x::FacElem, y::FacElem) = base_ring(x) == base_ring(y)
+check_parent(x::FacElem{S, T}, y::FacElem{S, T}) where { S, T } = base_ring(x) == base_ring(y)
 
 ################################################################################
 #
