@@ -219,6 +219,10 @@ function __init__()
   global _get_nf_prime_data_lifting = t[1]
   global _set_nf_prime_data_lifting = t[2]
 
+  t = Hecke.create_accessors(AnticNumberField, Any, get_handle())
+  global _get_nf_norm_relation = t[1]
+  global _set_nf_norm_relation = t[2]
+
   global R = _RealRing()
 
   global flint_rand_ctx = flint_rand_state()

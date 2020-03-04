@@ -219,11 +219,15 @@ function show_snf_structure(io::IO, A::GrpAbFinGen, mul = "x")
     end
     if iszero(inv)
       print(io, "Z")
+      if j > 1
+        print(io, "^($j)")
+      end
     else
-      print(io, "Z/$(inv)")
-    end
-    if j > 1
-      print(io, "^$(j)")
+      if j > 1
+        print(io, "(Z/$(inv))^$(j)")
+      else
+        print(io, "Z/$(inv)")
+      end
     end
     if i + j - 1 < len
       print(io, " $mul ")
