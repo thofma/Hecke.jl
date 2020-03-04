@@ -633,16 +633,14 @@ function simplify(x::FacElem{NfOrdIdl, NfOrdIdlSet})
   return z
 end
 
-function simplify!(x::FacElem{NfOrdIdl, NfOrdIdlSet})
-  if length(x.fac) <= 1
-    p = first(keys(x.fac))
-    x.fac =  Dict(p => x.fac[p])
-    return nothing
-  end
-  cp = coprime_base(collect(base(x)))
+
+function factor_over_coprime_base(x::FacElem{NfOrdIdl, NfOrdIdlSet}, coprime_base::Vector{NfOrdIdl})
   ev = Dict{NfOrdIdl, fmpz}()
-  OK = order(cp[1])
-  for p = cp
+  if isempty(coprime_base)
+    return ev
+  end
+  OK = order(coprime_base[1])
+  for p in coprime_base
     if isone(p)
       continue
     end
@@ -660,6 +658,17 @@ function simplify!(x::FacElem{NfOrdIdl, NfOrdIdlSet})
       ev[p] = v
     end
   end
+  return ev
+end
+
+function simplify!(x::FacElem{NfOrdIdl, NfOrdIdlSet})
+  if length(x.fac) <= 1
+    p = first(keys(x.fac))
+    x.fac =  Dict(p => x.fac[p])
+    return nothing
+  end
+  cp = coprime_base(collect(base(x)))
+  ev = factor_over_coprime_base(x, cp)
   x.fac = ev
   return nothing
 end  
@@ -686,12 +695,12 @@ of pariwise coprime integral ideals.
 function factor_coprime(x::FacElem{NfOrdIdl, NfOrdIdlSet})
   z = deepcopy(x)
   simplify!(z)
-  return Dict(p=>Int(v) for (p,v) = z.fac)
+  return Dict{NfOrdIdl, Int}(p=>Int(v) for (p,v) = z.fac)
 end
 
 function factor_coprime!(x::FacElem{NfOrdIdl, NfOrdIdlSet})
   simplify!(x)
-  return Dict(p=>Int(v) for (p,v) = x.fac)
+  return Dict{NfOrdIdl, Int}(p => Int(v) for (p,v) = x.fac)
 end
 
 @doc Markdown.doc"""
