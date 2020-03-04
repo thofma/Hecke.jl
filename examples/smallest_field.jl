@@ -118,11 +118,7 @@ function main()
   println("========================================")
 
   if dbound == -1
-    if mod(n, 2) == 0
-      dbound = Hecke.lower_discriminant_bound(n, div(n, 2))
-    else
-      dbound = Hecke.lower_discriminant_bound(n, 0)
-    end
+    dbound = Hecke.lower_discriminant_bound(n, n)
   end
 
   dbound = 10 * dbound
