@@ -459,7 +459,6 @@ function principal_gen_fac_elem(I::FacElem{NfOrdIdl, NfOrdIdlSet})
   #@hassert :PID_Test 1 ideal(order(J), evaluate(x)) == J
   mul!(x, x, a) #x=x*a
   return x
-  
 end
 
 @doc Markdown.doc"""
