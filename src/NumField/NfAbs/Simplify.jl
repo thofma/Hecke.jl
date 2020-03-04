@@ -670,7 +670,15 @@ function _lll_for_simplify(M::NfOrd; prec = 100)
       On.gen_index = M.gen_index
     end
     prec *= 2
-    d1 = minkowski_gram_mat_scaled(On, prec)
+    local d1::fmpz_mat
+    while true
+      try
+        d1 = minkowski_gram_mat_scaled(On, prec)
+        break
+      catch e
+        prec = prec+10
+      end
+    end
     if prod_diagonal(d1) < diag_d
       @vprint :Simplify 3 "I use the transformation\n"
       M = On

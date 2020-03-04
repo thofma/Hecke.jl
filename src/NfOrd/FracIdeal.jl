@@ -95,7 +95,7 @@ fractional_ideal(O::NfAbsOrd, x::fmpz_mat, y::Integer) = fractional_ideal(O, x, 
 Turns the ideal $I$ into a fractional ideal of $\mathcal O$.
 """
 function fractional_ideal(O::NfAbsOrd, x::NfAbsOrdIdl)
-  order(x) != O && throw(error("Incompatible orders"))
+  order(x) !== O && throw(error("Incompatible orders"))
   z = NfAbsOrdFracIdl(O, x, fmpz(1))
   return z
 end
@@ -106,6 +106,7 @@ end
 Creates the fractional ideal $I/b$ of $\mathcal O$.
 """
 function fractional_ideal(O::NfAbsOrd, x::NfAbsOrdIdl, y::fmpz)
+  @assert order(x) === O
   z = NfAbsOrdFracIdl(O, x, deepcopy(y)) # deepcopy x?
   return z
 end
@@ -129,6 +130,7 @@ end
 Creates the principal fractional ideal $(a)$ of $\mathcal O$.
 """
 function fractional_ideal(O::NfAbsOrd, x::NfAbsOrdElem)
+  @assert parent(x) === O
   z = NfAbsOrdFracIdl(O, elem_in_nf(x))
   return z
 end
@@ -433,6 +435,9 @@ end
 
 function simplify(A::NfAbsOrdFracIdl)
   assure_has_numerator_and_denominator(A)
+  if isone(A.den)
+    return A
+  end
   simplify(A.num)
 
   if has_2_elem(A.num)

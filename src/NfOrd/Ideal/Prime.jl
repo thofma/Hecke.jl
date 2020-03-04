@@ -755,7 +755,9 @@ function divides(A::NfOrdIdl, B::NfOrdIdl)
   if has_2_elem(A)
     OK = order(A)
     el = anti_uniformizer(B)
-    return el*A.gen_two.elem_in_nf in OK
+    d = denominator(el)
+    el1 = mod(A.gen_two.elem_in_nf, d)
+    return el*el1 in OK
   end
   return (valuation(A, B) > 0)::Bool
 end
@@ -805,6 +807,9 @@ function coprime_base(A::Array{NfOrdIdl, 1})
     end
   end
   OK = order(A[1])
+  if isempty(a1)
+    return NfOrdIdl[]
+  end
   a = coprime_base(collect(a1))
   C = Array{NfOrdIdl, 1}()
   for p = a
@@ -1008,24 +1013,7 @@ end
 function val_func_no_index(p::NfOrdIdl)
   P = p.gen_one
   K = nf(order(p))
-  pi = inv(p)
-  d1 = denominator(K(pi.num.gen_two))
-  @assert gcd(d1, P) == 1
-  e = K(pi.num.gen_two)*d1
-  M = zero_matrix(FlintZZ, 1, degree(K))
-  elem_to_mat_row!(M, 1, d1, e)
-  @assert d1 == 1
-  P2 = P^2
-  P22 = div(P2, 2)
-  for i=1:degree(K)
-    x1 = M[1,i] % P2
-    if x1 > P22
-      x1 -= P2
-    end
-    M[1,i] = x1
-  end
-  e = elem_from_mat_row(K, M, 1, P)
-  # e is still a valuation element, but with smaller coefficients.
+  e = anti_uniformizer(p)
   local val
   let e = e, P = P, p = p
     function val(x::nf_elem, no::fmpq = fmpq(0))
@@ -1123,6 +1111,42 @@ function val_func_index(p::NfOrdIdl)
   return val
 end
 
+function val_func_index_large(p::NfOrdIdl)
+  P = p.gen_one
+  K = nf(order(p))
+  O = order(p)
+  e = anti_uniformizer(p)
+  local val
+  let e = e, P = P, p = p, O = O
+    function val(x::nf_elem, no::fmpq = fmpq(0))
+      nn = fmpz(0)
+      v = 0
+      p_mod = fmpz(0)
+      d = denominator(x)
+      if !iszero(no)
+        nn = numerator(no*d^degree(O))
+        p_mod = P^(div(valuation(nn, norm(p)), ramification_index(p))+1)
+	      x = mod(x, p_mod)
+      end
+      x *= d
+      x = x*e
+      while x in O
+        v += 1
+        if !iszero(no) 
+          nn = divexact(nn, norm(p))
+          if !divisible(nn, norm(p))
+            break
+          end
+          x = mod(x, p_mod)
+        end 
+        mul!(x, x, e)
+      end
+      return v-valuation(d, P)*p.splitting_type[1]
+    end
+  end
+  return val
+end
+
 function valuation_with_anti_uni(a::nf_elem, anti_uni::nf_elem, I::NfOrdIdl)
   O = order(I)
   b = a*anti_uni
@@ -1191,7 +1215,7 @@ function assure_valuation_function(p::NfOrdIdl)
       end
     end
     p.valuation = val3
-  elseif mod(index(O), P) != 0 && p.splitting_type[1] == 1
+  elseif mod(index(O), P) != 0 && ramification_index(p) == 1
     if fits(UInt, P^2)
       f1 = val_func_no_index_small(p)
       f2 = val_func_no_index(p)
@@ -1211,7 +1235,7 @@ function assure_valuation_function(p::NfOrdIdl)
     else
       p.valuation = val_func_no_index(p)
     end
-  elseif p.splitting_type[1] == 1 && fits(UInt, P^2) && !_isindex_divisor(O, p)
+  elseif ramification_index(p) == 1 && fits(UInt, P^2) && !_isindex_divisor(O, p)
     f3 = val_func_no_index_small(p)
     f4 = val_func_index(p)
     local val4
@@ -1227,6 +1251,8 @@ function assure_valuation_function(p::NfOrdIdl)
         end
       end
       p.valuation = val4
+  elseif degree(O) > 80
+    p.valuation = val_func_index_large(p)
   else
     p.valuation = val_func_index(p)
   end
@@ -1250,8 +1276,6 @@ function valuation(a::nf_elem, p::NfOrdIdl, no::fmpq = fmpq(0))
     return valuation_naive(a, p)::Int
   end
   @hassert :NfOrd 0 !iszero(a)
-  #assert(a !=0) # can't handle infinity yet
-  
   assure_valuation_function(p)
   if p.is_prime != 1 
     return Int(p.valuation(a, no))::Int
@@ -1272,7 +1296,8 @@ function valuation(a::nf_elem, p::NfOrdIdl, no::fmpq = fmpq(0))
     nno = divexact(nno, c^degree(K))
   end
   res = Int(p.valuation(b, nno))::Int
-  return valnum + res
+  res += valnum
+  return res
 end
 
 @doc Markdown.doc"""
@@ -1358,8 +1383,12 @@ function valuation(A::NfOrdIdl, p::NfOrdIdl)
   if has_minimum(A) && has_minimum(p) && !divisible(minimum(A, copy = false), minimum(p, copy = false))
     return 0
   end
+  if has_princ_gen_special(A)
+    gen = princ_gen_special(A)
+    return valuation(gen, p)
+  end
   if A.is_principal == 1 && isdefined(A, :princ_gen)
-    return valuation(A.princ_gen, p)
+    return valuation(A.princ_gen.elem_in_nf, p, fmpq(norm(A)))
   end
   _assure_weakly_normal_presentation(A)
   if !isdefined(p, :splitting_type) || p.splitting_type[1] == 0 #ie. if p is non-prime...
@@ -1368,7 +1397,8 @@ function valuation(A::NfOrdIdl, p::NfOrdIdl)
   if iszero(A.gen_two)
     return valuation(A.gen_one, p)
   end
-  return min(valuation(A.gen_one, p), valuation(elem_in_nf(A.gen_two), p))
+  v1 = valuation(A.gen_one, p)
+  return min(v1, valuation(A.gen_two.elem_in_nf, p, fmpq(norm(A))))
 end
 
 ################################################################################

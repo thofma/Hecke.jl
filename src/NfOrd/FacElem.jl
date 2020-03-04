@@ -103,6 +103,9 @@ function factored_norm(x::FacElem{nf_elem, AnticNumberField})
   b = fmpq[]
   c = fmpz[] 
   for (a, e) in x.fac
+    if iszero(e)
+      continue
+    end
     n = norm(a)
     d = numerator(n)
     if !isone(d)
@@ -161,6 +164,9 @@ function conjugates_arb(x::FacElem{nf_elem, AnticNumberField}, abs_tol::Int)
   first = true
 
   for (a, e) in x.fac
+    if iszero(e)
+      continue
+    end
     z = conjugates_arb(a, abs_tol)
     if first
       for j in 1:d
@@ -181,6 +187,10 @@ function conjugates_arb_log(x::FacElem{nf_elem, AnticNumberField}, abs_tol::Int)
   r1, r2 = signature(K)
   d = r1 + r2
   res = Array{arb}(undef, d)
+  
+  if isempty(x.fac) || all(x -> iszero(x), values(x.fac))
+    x.fac[one(K)] = fmpz(1)
+  end
 
 
   target_tol = abs_tol
@@ -190,6 +200,9 @@ function conjugates_arb_log(x::FacElem{nf_elem, AnticNumberField}, abs_tol::Int)
     prec_too_low = false
     first = true
     for (a, e) in x.fac
+      if iszero(e)
+        continue
+      end
       z = _conjugates_arb_log(parent(x), a, pr)
       if first
         for j in 1:d
@@ -240,7 +253,9 @@ The valuation of $a$ at $P$.
 function valuation(a::FacElem{nf_elem, AnticNumberField}, P::NfOrdIdl)
   val = fmpz(0)
   for (a, e) = a.fac
-    val += valuation(a, P)*e
+    if !iszero(e)
+      val += valuation(a, P)*e
+    end
   end
   return val
 end
@@ -265,13 +280,10 @@ The factored fractional ideal $a*O$.
 function ideal(O::NfOrd, a::FacElem{nf_elem, AnticNumberField})
   de = Dict{NfOrdFracIdl, fmpz}()
   for (e, k) = a.fac
-    I = ideal(O, e)
-    add_to_key!(de, I, k)
-    #if haskey(de, I)
-    #  de[I] += k
-    #else
-    #  de[I] = k
-    #end
+    if !iszero(k)
+      I = ideal(O, e)
+      add_to_key!(de, I, k)
+    end
   end
   return FacElem(de)
 end

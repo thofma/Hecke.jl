@@ -656,6 +656,9 @@ function factor_over_coprime_base(x::FacElem{NfOrdIdl, NfOrdIdlSet}, coprime_bas
     assure_2_normal(p)
     v = fmpz(0)
     for (b, e) in x
+      if iszero(e)
+        continue
+      end
       if divisible(norm(b, copy = false), P) 
         v += valuation(b, p)*e
       end
@@ -669,12 +672,16 @@ function factor_over_coprime_base(x::FacElem{NfOrdIdl, NfOrdIdlSet}, coprime_bas
 end
 
 function simplify!(x::FacElem{NfOrdIdl, NfOrdIdlSet})
-  if length(x.fac) <= 1
+  if length(x.fac) <= 1 
     p = first(keys(x.fac))
     x.fac =  Dict(p => x.fac[p])
     return nothing
+  elseif all(x -> iszero(x), values(x.fac)) 
+    x.fac = Dict{NfOrdIdl, fmpz}()
+    return nothing
   end
-  cp = coprime_base(collect(base(x)))
+  base_x = NfOrdIdl[y for (y, v) in x if !iszero(v)]
+  cp = coprime_base(base_x)
   ev = factor_over_coprime_base(x, cp)
   x.fac = ev
   return nothing

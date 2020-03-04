@@ -593,8 +593,32 @@ function in(a::nf_elem, O::NfOrd)
     if d1 != d
       return false
     end
+    M = basis_mat_inv(O, copy = false)
+    d2 = ppio(M.den, d1)[1]
+    t = O.tcontain
+    elem_to_mat_row!(t.num, 1, t.den, a)
+    if fits(Int, d1*d2)
+      R = ResidueRing(FlintZZ, Int(d1*d2), cached = false)
+      return _check_containment(R, M.num, t.num)
+    else
+      R1 = ResidueRing(FlintZZ, d1*d2, cached = false)
+      return _check_containment(R1, M.num, t.num)
+    end
+    a1 = mod(a, d1*d2)
+    M1 = mod(M.num, d1*d2)
+    t = O.tcontain
+    elem_to_mat_row!(t.num, 1, t.den, a1)
+    mul!(t.num, t.num, M1)
+    mod!(t.num, d1*d2)
+    return iszero(t.num)
   end
   return _check_elem_in_order(a, O, Val{true})
+end
+
+function _check_containment(R, M, t)
+  M1 = change_base_ring(R, M)
+  t1 = change_base_ring(R, t)
+  return iszero(t1*M1)
 end
 
 ################################################################################
@@ -609,13 +633,41 @@ end
 Returns the smallest positive integer $k$ such that $k \cdot a$ is contained in
 $\mathcal O$.
 """
-function denominator(a::Union{nf_elem, NfAbsNSElem}, O::NfAbsOrd)
-  assure_has_basis_mat_inv(O)
+function denominator(a::NfAbsNSElem, O::NfAbsOrd)
   M = O.tcontain
   elem_to_mat_row!(M.num, 1, M.den, a)
-  M = mul!(M, M, O.basis_mat_inv)
+  M = mul!(M, M, basis_mat_inv(O, copy = false))
   return deepcopy(M.den)
 end
+
+
+function denominator(a::nf_elem, O::NfOrd)
+  if isdefining_polynomial_nice(nf(O)) && contains_equation_order(O)
+    d = denominator(a)
+    if isone(d)
+      return d
+    end
+    d1, d2 = ppio(d, index(O))
+    if isone(d1)
+      return d2
+    end
+    a1 = d2*a
+    M = basis_mat_inv(O, copy = false)
+    d3 = ppio(M.den, d1)[1]
+    M1 = mod(M.num, d1*d3)
+    t = O.tcontain
+    elem_to_mat_row!(t.num, 1, t.den, a1)
+    mul!(t.num, t.num, M1)
+    c = gcd(content(t.num), d1*d3)
+    c1 = divexact(d1*d3, c)
+    return d2*c1
+  end
+  M = O.tcontain
+  elem_to_mat_row!(M.num, 1, M.den, a)
+  M = mul!(M, M, basis_mat_inv(O, copy = false))
+  return deepcopy(M.den)
+end
+
 
 function integral_split(a::nf_elem, O::NfOrd)
   assure_has_basis_mat_inv(O)

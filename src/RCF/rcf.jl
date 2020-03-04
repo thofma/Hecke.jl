@@ -1221,7 +1221,8 @@ function _get_support(a::FacElem{nf_elem, AnticNumberField}, I::NfOrdIdlSet)
   for (e, v) = a.fac
     i += 1
     @vprint :CompactPresentation 3 "Element $i / $(length(a.fac))"
-    N, D = integral_split(ideal(Zk, e))
+    Id = ideal(Zk, e)
+    N, D = integral_split(Id)
     if !isone(N)
       add_to_key!(A, N, v)
     end
@@ -1240,6 +1241,7 @@ basis from the principal ideals in the factorisation of $a$.
 """
 function factor_coprime(a::FacElem{nf_elem, AnticNumberField}, I::NfOrdIdlSet)
   Zk = order(I)
+  @assert nf(Zk) == base_ring(a)
   A = _get_support(a, I)
   if length(A) == 0
     A[ideal(Zk, 1)] = 1
