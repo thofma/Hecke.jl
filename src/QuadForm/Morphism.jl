@@ -276,18 +276,24 @@ function __compute_short_vectors(C::ZLatAutoCtx)
 end
 
 function short_vectors(L::ZLat, lb, ub)
-  G = change_base_ring(FlintZZ, gram_matrix(L))
+  _G = gram_matrix(L)
+  d = denominator(_G)
+  G = change_base_ring(FlintZZ, d * _G)
   Glll, T = lll_gram_with_transform(G)
-  V = _short_vectors(Glll, lb, ub, T)
+  V = _short_vectors(1//d * change_base_ring(FlintQQ, Glll), lb, ub, T)
   return V
 end
 
 function shortest_vectors(L::ZLat)
-  G = change_base_ring(FlintZZ, gram_matrix(L))
+  _G = gram_matrix(L)
+  d = denominator(_G)
+  G = change_base_ring(FlintZZ, d * _G)
   Glll, T = lll_gram_with_transform(G)
   max = maximum([G[i, i] for i in 1:nrows(G)])
+  max = max//d
   @assert max > 0
   V = short_vectors(L, 1, max)
+  @show V
   min = minimum(v[2] for v in V)
   L.minimum = min
   return [ v for v in V if [2] == min]
@@ -313,6 +319,17 @@ _round_up(::Type{fmpz}, x::fmpq) = round(fmpz, x) + 1
 _round_up(::Type{fmpz}, x::fmpz) = x
 
 function _short_vectors(G, lb, ub, transform)
+  d = denominator(G)
+  N = change_base_ring(FlintZZ, d * G)
+  V = _short_vectors_integral(N, d * lb, d * ub, transform)
+  W = Vector{Tuple{fmpz_mat, fmpq}}(undef, length(V))
+  for i in 1:length(V)
+    W[i] = (V[i][1], V[i][2]//d)
+  end
+  return W
+end
+
+function _short_vectors_integral(G, lb, ub, transform)
   C = ZLatAutoCtx([G])
   E = enum_ctx_from_gram(C.G[1])
   max = _round_up(fmpz, ub)
