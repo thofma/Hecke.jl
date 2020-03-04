@@ -611,6 +611,7 @@ include("AlgAssRelOrd.jl")
 include("LocalField.jl")
 include("QuadForm.jl")
 include("FieldFactory.jl")
+include("Voronoi.jl")
 
 ################################################################################
 #

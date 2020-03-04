@@ -2762,6 +2762,7 @@ mutable struct ZLat <: AbsLat{FlintRationalField}
   aut_grp_ord::fmpz
   automorphism_group_generators::Vector{fmpz_mat}
   automorphism_group_order::fmpz
+  minimum::fmpz
 
   function ZLat(V::QuadSpace{FlintRationalField, fmpq_mat}, B::fmpq_mat)
     z = new()

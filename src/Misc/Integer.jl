@@ -841,6 +841,7 @@ function factor_insert!(r::Dict{fmpz, Int}, N::fmpz, scale::Int = 1)
     return factor_insert!(r, N, fac)
   end
   if isprime(N)
+    # We already have fac = 1
     @assert !haskey(r, N)
     r[N] = scale
     return r

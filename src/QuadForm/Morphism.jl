@@ -275,6 +275,79 @@ function __compute_short_vectors(C::ZLatAutoCtx)
   @show length(C.V), length(C.V_length)
 end
 
+function short_vectors(L::ZLat, lb, ub)
+  G = change_base_ring(FlintZZ, gram_matrix(L))
+  Glll, T = lll_gram_with_transform(G)
+  V = _short_vectors(Glll, lb, ub, T)
+  return V
+end
+
+function shortest_vectors(L::ZLat)
+  G = change_base_ring(FlintZZ, gram_matrix(L))
+  Glll, T = lll_gram_with_transform(G)
+  max = maximum([G[i, i] for i in 1:nrows(G)])
+  @assert max > 0
+  V = short_vectors(L, 1, max)
+  min = minimum(v[2] for v in V)
+  L.minimum = min
+  return [ v for v in V if [2] == min]
+end
+
+function minimum(L::ZLat)
+  if !isdefined(L, :minimum)
+    shortest_vectors(L)
+  end
+
+  return L.minimum
+end
+
+_transform(m::fmpz_mat, T) = m * T
+
+_transform(m, ::Nothing) = deepcopy(m)
+
+# Compute the short vectors and apply transform
+# If transform == nothing, don't apply a transform
+
+_round_up(::Type{fmpz}, x::fmpq) = round(fmpz, x) + 1
+
+_round_up(::Type{fmpz}, x::fmpz) = x
+
+function _short_vectors(G, lb, ub, transform)
+  C = ZLatAutoCtx([G])
+  E = enum_ctx_from_gram(C.G[1])
+  max = _round_up(fmpz, ub)
+  enum_ctx_start(E, max)
+  n = ncols(C.G[1])
+  V = Vector{Tuple{fmpz_mat, fmpz}}()
+  while enum_ctx_next(E)
+
+    l = (E.x * C.G[1] * transpose(E.x))[1, 1]
+    if l < lb || l > ub
+      continue
+    end
+
+    m = _transform(E.x, transform)
+
+    positive = false
+    for k in 1:n
+      if iszero(m[1, k])
+        continue
+      end
+      if m[1, k] > 0
+        positive = true
+      end
+      break
+    end
+
+    if !positive
+      m = -m
+    end
+
+    push!(V, (m, l))
+  end
+  return V
+end
+
 function compute_short_vectors(C::ZLatAutoCtx, max::fmpz = fmpz(-1))
   #V = enumerate_using_gram(G, R(max))
   C.V = fmpz_mat[]
