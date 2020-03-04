@@ -630,6 +630,11 @@ function induce_image(f::NfToNfMor, x::NfOrdIdl)
     I.gens_normal = x.gens_normal
     return I
   end
+
+  if isone(x)
+    return x
+  end
+
   OK = order(x)
   K = nf(OK)
   if has_2_elem(x) && ismaximal_known(OK) && ismaximal(OK) && iscoprime(index(OK), minimum(x, copy = false)) && fits(Int, minimum(x, copy = false)^2)

@@ -1506,7 +1506,7 @@ function isone(I::NfAbsOrdIdl)
   if isdefined(I, :norm)
     return isone(norm(I))
   end
-  return isone(minimum(I))
+  return isone(minimum(I, copy = false))
 end
 
 isunit(I::NfAbsOrdIdl) = isone(I)
