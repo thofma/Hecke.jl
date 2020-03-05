@@ -526,6 +526,9 @@ end
 function main_submodules_cyclic(M::ZpnGModule, ord::Int)
   
   lf = composition_factors(M, dimension = 1)
+  if isempty(lf)
+    return Vector{nmod_mat}()
+  end
   list = _submodules_with_struct_cyclic(M, ord, lf)
   for step = 1:ord-1
     c = fmpz(M.p^step) 
@@ -549,7 +552,6 @@ function main_submodules_cyclic(M::ZpnGModule, ord::Int)
 end
 
 function _submodules_with_struct_cyclic(M::ZpnGModule, ord::Int, lf)
-  
   R = M.R
   #  We search for an element in p^(ord-1)*G
   s, ms = sub(M, M.p^(ord-1))
