@@ -3385,3 +3385,7 @@ end
 function var(E::NfRel)
   return E.S
 end
+
+function absolute_field(K::AnticNumberField)
+  return K, id_hom(K)
+end
