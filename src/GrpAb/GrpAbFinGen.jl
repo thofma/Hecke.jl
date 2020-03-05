@@ -720,7 +720,7 @@ end
 
 mutable struct ChainComplex{T}
   @declare_other
-  maps::Array{<:Map{<:T, <:T}, 1}
+  maps::Array{<:Map, 1}
   direction::Symbol
   exact::Array{Bool, 1}
   function ChainComplex(A::S; check::Bool = true, direction:: Symbol = :left) where {S <:Array{<:Map{<:T, <:T}, 1}} where {T}
@@ -732,6 +732,16 @@ mutable struct ChainComplex{T}
     r.direction = direction
     return r
   end
+  function ChainComplex(X::Type, A::S; check::Bool = true, direction:: Symbol = :left) where {S <:Array{<:Map, 1}}
+    if check
+      @assert all(i-> iszero(A[i]*A[i+1]), 1:length(A)-1)
+    end
+    r = new{X}()
+    r.maps = A
+    r.direction = direction
+    return r
+  end
+
 end
 
 length(C::ChainComplex) = length(C.maps)
