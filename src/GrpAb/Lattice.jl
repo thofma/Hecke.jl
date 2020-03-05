@@ -345,9 +345,9 @@ end
 # contains the groups which must not be gc'ed.
 #
 # More details:
-# - L.weak_vertices_rev is the "inverse" of L.weak_vertices. For for each
+# - L.weak_vertices_rev is the "inverse" of L.weak_vertices. For each
 #   objectid it contains the corresponding group as a WeakRef.
-# - Whenever a group (or a map)) is added to a lattice, we check if the
+# - Whenever a group (or a map) is added to a lattice, we check if the
 #   degree of a vertex is > 1. If so, we add to L.block_gc.
 # - Whenever a group is added to a lattice, a finalizer is added. If then
 #   the group is gc'ed, its objectid is added to L.to_delete.
@@ -361,7 +361,7 @@ end
 # Thus, it is important that we update the lattice before we add a new group.
 # This way the correspondence G -> objectid(G) is always faithful.
 
-# T is the type of the objetcs i the lattice
+# T is the type of the objects i the lattice
 # D is the type of the data attached to the edges, usually some matrix
 #  objects of type D need to support products
 #  if would be useful if hom(::T, ::T, ::D) would exist
