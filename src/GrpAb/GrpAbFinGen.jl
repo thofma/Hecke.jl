@@ -1911,37 +1911,45 @@ Given a map representing a subgroup of a group $G$, returns either true and
 an injection of a complement in $G$, or false.
 """
 function has_complement(m::GrpAbFinGenMap)
+  
   G = codomain(m)
-  S, mS = snf(G)
-  mH = m*inv(mS)
-  mat_map = mH.map
-  inc, lmat, rmat = snf_with_transform(mat_map)
-  rmat_inv = inv(rmat)
-  new_basis = Vector{GrpAbFinGenElem}(undef, ngens(S))
-  for i = 1:ngens(S)
-    new_basis[i] = S(view(rmat_inv, i:i, 1:ngens(S)))
+  if !isfinite(G)
+    error("Not yet implemented")
   end
-  new_S, mnew_S = sub(S, new_basis)
-  new_Sinv = inv(mnew_S)
-  new_H_map = mH*new_Sinv
-  Im, mIm = image(new_H_map) 
-  els = GrpAbFinGenElem[]
-  for i = 1:ngens(new_S)
-    g = gcd(fmpz[mIm(x)[i] for x in gens(Im)])
-    if iszero(g)
-      push!(els, new_S[i])
-    else
-      if g != ppio(order(new_S[i]), g)[1]
-        return false, sub(G, GrpAbFinGenElem[])[2]
-      end
-      push!(els, divexact(order(new_S[i]), g)*new_S[i])
+  H, mH = cokernel(m)
+  SH, mSH = snf(H)
+  mH = mH*inv(mSH)
+  
+  s, ms = snf(domain(m))
+  m1 = ms*m
+  gens_complement = GrpAbFinGenElem[]
+  for i = 1:ngens(SH)
+    igSH = mH\SH[i]
+    test_el = SH.snf[i]*igSH
+    if iszero(test_el)
+      push!(gens_complement, igSH)
+      continue
     end
+    #I search for an element y in s such that SH.snf[i]*y = SH.snf[i]*igSH
+    #If I can't find this, the complement does not exists, otherwise we push in the list
+    #of generators igSH-s
+    S1, mS1 = sub(s, SH.snf[i])
+    fl, el = haspreimage(mS1*m1, test_el)
+    if !fl
+      return false, sub(G, GrpAbFinGenElem[])[2]
+    end
+    el1 = mS1(el)
+    coeffs = zero_matrix(FlintZZ, 1, ngens(s))
+    for j = 1:ngens(s)
+      if !iszero(el1[j])
+        coeffs[1, j] = divexact(el1[j], SH.snf[i])
+      end
+    end
+    el_sub = s(coeffs)
+    push!(gens_complement, igSH - m1(el_sub))
   end
-  els_G = GrpAbFinGenElem[mS(mnew_S(x)) for x in els]
-  res = sub(G, els_G)[2]
-  @assert order(domain(res))*order(domain(m)) == order(S)
-  @assert order(intersect(res, m)[1]) == 1
-  return true, res
+  
+  return true, sub(G, gens_complement)[2]
 end
 
 ################################################################################

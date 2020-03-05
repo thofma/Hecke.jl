@@ -408,7 +408,6 @@ function compute_fields(class_fields::Vector{Hecke.ClassField{Hecke.MapRayClassG
     use_brauer = false
   end
 
-  
   fields = Tuple{Hecke.NfRelNS{nf_elem}, Vector{Hecke.NfRelNSToNfRelNSMor{nf_elem}}}[]
   expo = Int(exponent(codomain(class_fields[it[1]].quotientmap)))
   
@@ -638,6 +637,7 @@ end
 
 
 function translate_extensions(mL::NfToNfMor, class_fields, new_class_fields, ctxK, it, ab_invariants::Vector{Int})
+
   to_be_done = Int[]
   L = domain(mL)
   OL = maximal_order(L)
