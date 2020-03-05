@@ -35,7 +35,7 @@
 
  ## Renaming
  
- * [ ] `DiagonalGroup` and `AbelianGroup` to `abelian_group`.
+ * [x] `DiagonalGroup` and `AbelianGroup` to `abelian_group`.
  * [ ] `princ_gen` to `principal_generator`
  * [ ] `nf` to `number_field`
  * [x] Group algebra renaming
@@ -47,4 +47,4 @@
  * [ ] Make FF robust for the use of `fmpz`.
  * [ ] `next_prime(::fmpz, ::Bool)`
  * [ ] `round(::Type{fmpq}, ::fmpz)` is doing funky things. Also needs the `RoundUp/RoundDown` versions.
- * [ ] Parent checks for factored elements
+ * [x] Parent checks for factored elements
