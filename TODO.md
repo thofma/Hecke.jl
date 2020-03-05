@@ -39,6 +39,7 @@
  * [ ] `princ_gen` to `principal_generator`
  * [ ] `nf` to `number_field`
  * [x] Group algebra renaming
+ * [ ] Make `has*` and `*_known` consistent.
   
  ## Misc
  * [ ] `exp_map_unit_grp_mod`
