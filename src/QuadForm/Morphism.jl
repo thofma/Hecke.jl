@@ -275,6 +275,15 @@ function __compute_short_vectors(C::ZLatAutoCtx)
   @show length(C.V), length(C.V_length)
 end
 
+function short_vectors(L::ZLat, ub)
+  _G = gram_matrix(L)
+  d = denominator(_G)
+  G = change_base_ring(FlintZZ, d * _G)
+  Glll, T = lll_gram_with_transform(G)
+  V = _short_vectors(1//d * change_base_ring(FlintQQ, Glll), 0, ub, T)
+  return V
+end
+
 function short_vectors(L::ZLat, lb, ub)
   _G = gram_matrix(L)
   d = denominator(_G)
@@ -292,11 +301,10 @@ function shortest_vectors(L::ZLat)
   max = maximum([G[i, i] for i in 1:nrows(G)])
   max = max//d
   @assert max > 0
-  V = short_vectors(L, 1, max)
-  @show V
+  V = short_vectors(L, max)
   min = minimum(v[2] for v in V)
   L.minimum = min
-  return [ v for v in V if [2] == min]
+  return [ v for v in V if v[2] == min]
 end
 
 function minimum(L::ZLat)
