@@ -615,6 +615,13 @@ function //(A::NfAbsOrdIdl, d::Integer)
 end
 
 function +(A::NfAbsOrdIdl, B::NfAbsOrdFracIdl)
+  if iszero(A)
+    return B
+  end
+
+  if iszero(B)
+    return fractional_ideal(order(A), A)
+  end
   n = A*denominator(B)+numerator(B)
   return n//denominator(B)
 end
