@@ -728,7 +728,7 @@ function divides(A::NfOrdIdl, B::NfOrdIdl)
     #I can just test the polynomials!
     K = nf(order(A))
     Qx = parent(K.pol)
-    if fits(Int, minimum(B))
+    if !fits(Int, minimum(B))
       R = ResidueRing(FlintZZ, minimum(B), cached = false)
       Rx = PolynomialRing(R, "t", cached = false)[1]
       f1 = Rx(Qx(A.gen_two.elem_in_nf))
@@ -1005,30 +1005,9 @@ end
 #
 ################################################################################
 
-# CF:
-# Classical algorithm of Cohen, but take a valuation element with smaller (?)
-# coefficients. Core idea is that the valuation element is, originally, den*gen_two(p)^-1
-# where gen_two(p) is "small". Actually, we don't care about gen_two, we
-# need gen_two^-1 to be small, hence this version.
-function val_func_no_index(p::NfOrdIdl)
-  P = p.gen_one
-  K = nf(order(p))
-  e = anti_uniformizer(p)
-  local val
-  let e = e, P = P, p = p
-    function val(x::nf_elem, no::fmpq = fmpq(0))
-      v = 0
-      d = denominator(x)
-      x *= d
-      x = x*e
-      while denominator(x) % P != 0
-        v += 1
-        mul!(x, x, e)
-      end
-      return v-valuation(d, P)*p.splitting_type[1]
-    end
-  end
-  return val
+
+function valuation(a::UInt, b::UInt)
+  return ccall((:n_remove, libflint), Int, (Ref{UInt}, UInt), a, b)
 end
 
 # CF:
@@ -1037,16 +1016,6 @@ end
 # at small precision and can thus compute (small) valuation at the effective
 # cost of an mod(nmod_poly, nmod_poly) operation.
 # Isn't it nice?
-function valuation(a::UInt, b::UInt)
-  return ccall((:n_remove, libflint), Int, (Ref{UInt}, UInt), a, b)
-end
-
-#=
-function valuation(a::UInt, b::UInt, bi::Cdouble)
-  return ccall((:n_remove2_precomp, libflint), Int, (Ref{UInt}, UInt, Cdouble), a, b, bi)
-end
-=#
-
 function val_func_no_index_small(p::NfOrdIdl)
   P = p.gen_one
   @assert P <= typemax(UInt)
@@ -1111,7 +1080,12 @@ function val_func_index(p::NfOrdIdl)
   return val
 end
 
-function val_func_index_large(p::NfOrdIdl)
+# CF:
+# Classical algorithm of Cohen, but take a valuation element with smaller (?)
+# coefficients. Core idea is that the valuation element is, originally, den*gen_two(p)^-1
+# where gen_two(p) is "small". Actually, we don't care about gen_two, we
+# need gen_two^-1 to be small, hence this version.
+function val_func_generic(p::NfOrdIdl)
   P = p.gen_one
   K = nf(order(p))
   O = order(p)
@@ -1172,7 +1146,7 @@ function _isindex_divisor(O::NfOrd, P::NfOrdIdl)
   f = Rt(nf(P).pol)
   g = Rt(P.gen_two.elem_in_nf)
   d = gcd(f, g)
-  if isirreducible(d) && !divides(f, d^2)[1]
+  if !divides(f, d^2)[1] && isirreducible(d)
     return false
   else
     return true
@@ -1189,8 +1163,7 @@ function assure_valuation_function(p::NfOrdIdl)
   # for generic ideals
   if p.splitting_type[2] == 0
     assure_2_normal(p)
-    pinv = inv(p)
-    anti_uni = pinv.num.gen_two.elem_in_nf//pinv.den
+    anti_uni = anti_uniformizer(p)
     local val2
     let O = O, p = p, anti_uni = anti_uni, K = K
       function val2(s::nf_elem, no::fmpq = fmpq(0))
@@ -1218,7 +1191,7 @@ function assure_valuation_function(p::NfOrdIdl)
   elseif mod(index(O), P) != 0 && ramification_index(p) == 1
     if fits(UInt, P^2)
       f1 = val_func_no_index_small(p)
-      f2 = val_func_no_index(p)
+      f2 = val_func_generic(p)
       local val1
       let f1 = f1, f2 = f2
         function val1(x::nf_elem, no::fmpq = fmpq(0))
@@ -1233,7 +1206,7 @@ function assure_valuation_function(p::NfOrdIdl)
       end
       p.valuation = val1
     else
-      p.valuation = val_func_no_index(p)
+      p.valuation = val_func_generic(p)
     end
   elseif ramification_index(p) == 1 && fits(UInt, P^2) && !_isindex_divisor(O, p)
     f3 = val_func_no_index_small(p)
@@ -1252,7 +1225,7 @@ function assure_valuation_function(p::NfOrdIdl)
       end
       p.valuation = val4
   elseif degree(O) > 80
-    p.valuation = val_func_index_large(p)
+    p.valuation = val_func_generic(p)
   else
     p.valuation = val_func_index(p)
   end
