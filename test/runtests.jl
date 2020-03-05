@@ -7,8 +7,21 @@ using LinearAlgebra
 Hecke.assertions(true)
 
 k, a = quadratic_field(5)
-@assert fmpz(1) - a == -(a - 1)
-@assert 1 - a == -(a - 1)
+@test fmpz(1) - a == -(a - 1)
+@test 1 - a == -(a - 1)
+
+push!(Base.LOAD_PATH, "@v#.#")
+
+try
+  using GAP
+  @time include("FieldFactory.jl")
+catch e
+  if !(isa(e, ArgumentError))
+    rethrow(e)
+  else
+    println("using GAP failed. Not running FieldFactory tests")
+  end
+end
 
 @time include("NumField.jl")
 @time include("AlgAss.jl")
@@ -28,3 +41,5 @@ k, a = quadratic_field(5)
 @time include("Sparse.jl")
 @time include("QuadForm.jl")
 @time include("LocalField.jl")
+
+
