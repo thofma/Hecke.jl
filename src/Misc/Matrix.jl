@@ -781,6 +781,13 @@ function isposdef(a::fmpz_mat)
   return true
 end
 
+#Returns a positive integer if A[i, j] > b, negative if A[i, j] < b, 0 otherwise
+function compare_index(A::fmpz_mat, i::Int, j::Int, b::fmpz)
+  a = ccall((:fmpz_mat_entry, libflint), Ptr{fmpz}, (Ref{fmpz_mat}, Int, Int), A, i-1, j-1)
+  return ccall((:fmpz_cmp, libflint), Int32, (Ptr{fmpz}, Ref{fmpz}), a, b)
+end
+
+
 #scales the i-th column of a by 2^d[1,i]
 function mult_by_2pow_diag!(a::Array{BigFloat, 2}, d::fmpz_mat)
   s = size(a)
@@ -1242,6 +1249,23 @@ end
 Returns the diagonal of `A` is an array.
 """
 diagonal(A::MatrixElem{T}) where {T} = T[A[i, i] for i in 1:nrows(A)]
+
+################################################################################
+#
+#  Product of the diagonal entries
+#
+################################################################################
+
+function prod_diagonal(A::fmpz_mat)
+  a = one(fmpz)
+  GC.@preserve a begin
+    for i=1:nrows(A)
+      b = ccall((:fmpz_mat_entry, libflint), Ptr{fmpz}, (Ref{fmpz_mat}, Int, Int), A, i - 1, i - 1)
+      ccall((:fmpz_mul, libflint), Nothing, (Ref{fmpz}, Ref{fmpz}, Ptr{fmpz}), a, a, b)
+    end
+  end
+  return a
+end
 
 ################################################################################
 #

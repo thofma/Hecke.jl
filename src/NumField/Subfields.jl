@@ -59,7 +59,7 @@ function _improve_subfield_basis(K, bas)
   end
   S = saturate(matrix(FlintZZ, basinOK * deno))
   SS = S * basis_matrix(OK, copy = false)
-  lllOK = _weak_lll(OK)
+  lllOK = lll(OK)
   N = (SS * basis_mat_inv(lllOK)).num
   lllN = lll(N)
   maybesmaller = lllN * basis_matrix(lllOK)
