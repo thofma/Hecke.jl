@@ -153,13 +153,13 @@ function class_group_small_lll_elements_relation_start(clg::ClassGrpCtx{T},
     bd::fmpz = abs(discriminant(order(A)))*norm(A)^2
     bd = root(bd, degree(K))::fmpz
     bd *= L.den
-    f = findall(i-> cmpindex(L.num, i, i, bd) < 0, 1:degree(K))
+    f = findall(i-> compare_index(L.num, i, i, bd) < 0, 1:degree(K))
     m = div(degree(K), 4)
     if m < 2
       m = degree(K)
     end
     while length(f) < m 
-      f = findall(i-> cmpindex(L.num, i, i, bd) < 0, 1:degree(K))
+      f = findall(i-> compare_index(L.num, i, i, bd) < 0, 1:degree(K))
         bd *= 2
       end
       I.b = fmpz_mat[]
