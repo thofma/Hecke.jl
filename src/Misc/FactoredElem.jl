@@ -48,17 +48,19 @@ function (x::FacElemMon{S})() where S
   z.parent = x
   return z
 end
+
 @doc Markdown.doc"""
-    FacElem{B}(base::Array{B, 1}, exp::Array{fmpz, 1}) -> FacElem{B}
+    FacElem{B}(R, base::Array{B, 1}, exp::Array{fmpz, 1}) -> FacElem{B}
 Returns the element $\prod b_i^{e_i}$, un-expanded.
 """
-function FacElem(base::Array{B, 1}, exp::Array{fmpz, 1}) where B
+function FacElem(R, base::Vector{B}, exp::Vector{fmpz}) where {B}
+  if elem_type(R) !== B
+    throw(ArgumentError("Parent of elements wrong."))
+  end
 
-  length(base) == 0 && error("Array must not be empty")
+  length(base) != length(exp) && throw(error("not the same length"))
 
-  length(base) != length(exp) && error("not the same length")
-
-  z = FacElem{B, typeof(parent(base[1]))}()
+  z = FacElem{B, typeof(R)}()
 
   for i in 1:length(base)
     if iszero(exp[i])
@@ -67,7 +69,36 @@ function FacElem(base::Array{B, 1}, exp::Array{fmpz, 1}) where B
     add_to_key!(z.fac, base[i], exp[i])
   end
 
-  z.parent = FacElemMon(parent(base[1]))
+  z.parent = FacElemMon(R)
+  return z
+end
+
+@doc Markdown.doc"""
+    FacElem{B}(base::Array{B, 1}, exp::Array{fmpz, 1}) -> FacElem{B}
+Returns the element $\prod b_i^{e_i}$, un-expanded.
+"""
+function FacElem(base::Array{B, 1}, exp::Array{fmpz, 1}) where B
+
+  length(base) == 0 && error("Array must not be empty")
+
+  R = parent(base[1])
+
+  return FacElem(R, base, exp)
+end
+
+@doc Markdown.doc"""
+    FacElem{B}(R, d::Dict{B, fmpz}) -> FacElem{B}
+    FacElem{B}(R, d::Dict{B, Integer}) -> FacElem{B}
+Returns the element $\prod b^{d[p]}$, un-expanded.
+"""
+function FacElem(R, d::Dict{B, fmpz}) where B
+  if elem_type(R) !== B
+    throw(ArgumentError("Parent of elements wrong."))
+  end
+
+  z = FacElem{B, typeof(R)}()
+  z.fac = d
+  z.parent = FacElemMon(R)
   return z
 end
 
@@ -80,11 +111,9 @@ function FacElem(d::Dict{B, fmpz}) where B
 
   length(d) == 0 && error("Dictionary must not be empty")
 
-  z = FacElem{B, typeof(parent(first(keys(d))))}()
-  z.fac = d
+  R = parent(first(keys(d)))
 
-  z.parent = FacElemMon(parent(first(keys(d))))
-  return z
+  return FacElem(R, d)
 end
 
 function FacElem(R::Ring)
@@ -94,15 +123,22 @@ function FacElem(R::Ring)
   return z
 end
 
+function FacElem(R, d::Dict{B, T}) where {B, T <: Integer}
+
+  z = FacElem{B, typeof(R)}()
+  z.fac = Dict{B, fmpz}((k,fmpz(v)) for (k,v) = d) 
+
+  z.parent = FacElemMon(R)
+  return z
+end
+
 function FacElem(d::Dict{B, T}) where {B, T <: Integer}
 
   length(d) == 0 && error("Dictionary must not be empty")
 
-  z = FacElem{B, typeof(parent(first(keys(d))))}()
-  z.fac = Dict{B, fmpz}((k,fmpz(v)) for (k,v) = d) 
+  R = parent(first(keys(d)))
 
-  z.parent = FacElemMon(parent(first(keys(d))))
-  return z
+  return FacElem(R, d)
 end
 
 parent(x::FacElem) = x.parent

@@ -40,9 +40,9 @@ end
   @test P.snf == fmpz[ 2 ]
   @test test_disc_log_picard(P, mP, O)
   I = mP(P[1])
-  @test_throws ErrorException Hecke.principal_gen(I)
+  @test_throws ErrorException Hecke.principal_generator(I)
   I2 = I^2
-  a = Hecke.principal_gen(I2)
+  a = Hecke.principal_generator(I2)
   @test I2 == ideal(O, a)
 
 end
@@ -83,12 +83,12 @@ end
   @test P.snf == fmpz[ 2 ]
   @test test_disc_log_picard(P, mP, O)
   I = mP(P[1])
-  @test_throws ErrorException principal_gen(I)
+  @test_throws ErrorException principal_generator(I)
   I2 = I^2
-  a = principal_gen(I2)
+  a = principal_generator(I2)
   @test I2 == ideal(O, a)
   I = ideal(O, 7*one(O)) # not coprime to the conductor of O in the maximal order
-  a = principal_gen(I)
+  a = principal_generator(I)
   @test I == ideal(O, a)
   # Test the refined discrete logarithm
   @test isdefined(mP, :betas)

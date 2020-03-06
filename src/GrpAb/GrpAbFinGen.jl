@@ -36,7 +36,7 @@ export abelian_group, free_abelian_group, issnf, ngens, nrels, rels, snf, isfini
        isinfinite, rank, order, exponent, istrivial, isisomorphic,
        direct_product, istorsion, torsion_subgroup, sub, quo, iscyclic,
        psylow_subgroup, issubgroup, abelian_groups, flat, tensor_product,
-       dual, chain_complex, isexact, homology, free_resolution
+       dual, chain_complex, isexact, homology, free_resolution, obj, map
 
 import Base.+, Nemo.snf, Nemo.parent, Base.rand, Nemo.issnf
 
@@ -156,14 +156,14 @@ function show(io::IO, A::GrpAbFinGen)
   end
 end
 
-function show_hom(io::IO, G::GrpAbFinGen)
+function show_hom(io::IO, G)#::GrpAbFinGen)
   D = get_special(G, :hom)
   D === nothing && error("only for hom")
   print(io, "hom of ")
   print(IOContext(io, :compact => true), D)
 end
 
-function show_direct_product(io::IO, G::GrpAbFinGen)
+function show_direct_product(io::IO, G)#::GrpAbFinGen)
   D = get_special(G, :direct_product)
   D === nothing && error("only for direct products")
   print(io, "direct product of ")
@@ -827,7 +827,7 @@ function chain_complex(A::Array{<:Map{GrpAbFinGen, GrpAbFinGen, <:Any, <:Any}, 1
 end
 
 Base.lastindex(C::ChainComplex) = length(C)
-getindex(C::ChainComplex, u::UnitRange) = ChainComplex(C.maps[u], check = false)
+getindex(C::ChainComplex{T}, u::UnitRange) where {T} = ChainComplex(T, C.maps[u], check = false)
 
 @doc Markdown.doc"""
     isexact(C::ChainComplex) -> Bool

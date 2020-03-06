@@ -55,6 +55,16 @@ function iszero(x::NfAbsOrdFracIdl)
   return iszero(numerator(x))
 end
 
+#################################################################################
+#
+#  Parent constructor
+#
+#################################################################################
+
+function FractionalIdealSet(O::NfOrd)
+  return NfAbsOrdFracIdlSet{AnticNumberField, nf_elem}(O)
+end
+
 ################################################################################
 #
 #  Construction

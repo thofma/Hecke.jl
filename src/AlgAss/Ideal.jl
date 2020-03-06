@@ -620,7 +620,7 @@ end
 #
 ################################################################################
 
-function left_principal_gen(a::AbsAlgAssIdl{S, T, U}) where { S <: AlgMat, T, U }
+function left_principal_generator(a::AbsAlgAssIdl{S, T, U}) where { S <: AlgMat, T, U }
   @assert isleft_ideal(a) "Not a left ideal"
   A = algebra(a)
   if dim(A) != degree(A)^2*dim_of_coefficient_ring(A)
@@ -651,7 +651,7 @@ function left_principal_gen(a::AbsAlgAssIdl{S, T, U}) where { S <: AlgMat, T, U 
   return x
 end
 
-function right_principal_gen(a::AbsAlgAssIdl{S, T, U}) where { S <: AlgMat, T, U }
+function right_principal_generator(a::AbsAlgAssIdl{S, T, U}) where { S <: AlgMat, T, U }
   @assert isright_ideal(a) "Not a right ideal"
   A = algebra(a)
   if dim(A) != degree(A)^2*dim_of_coefficient_ring(A)

@@ -36,7 +36,7 @@
  ## Renaming
  
  * [x] `DiagonalGroup` and `AbelianGroup` to `abelian_group`.
- * [ ] `princ_gen` to `principal_generator`
+ * [x] `princ_gen` to `principal_generator`
  * [ ] `nf` to `number_field`
  * [x] Group algebra renaming
  * [ ] Make `has*` and `*_known` consistent.

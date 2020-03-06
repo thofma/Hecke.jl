@@ -339,10 +339,10 @@ end
 # The following function computes the minkowski_map, applies G to the output.
 # G mus be a function (::Vector{arb}, abs_tol::Int) -> Bool, *
 # where the first return value indicates if the result is good enough
-function _minkowski_map_and_apply(a, abs_tol, G, work_tol = abs_tol)
+function _minkowski_map_and_apply(a, abs_tol, G, work_tol::Int = abs_tol)
   K = parent(a)
   A = Array{arb}(undef, degree(K))
-  c = conjugates_arb(a, work_tol)
+  c = conjugates_arb(a, work_tol)::Vector{acb}
   r, s = signature(K)
   
   for i = 1:r
@@ -353,12 +353,18 @@ function _minkowski_map_and_apply(a, abs_tol, G, work_tol = abs_tol)
     end
   end
 
-  sqrt2 = sqrt(ArbField(prec(parent(c[1])), false)(2))
+  if work_tol > 2^18 || abs_tol > 2^18
+    throw(error("asdsd"))
+  end
+
+  #R = ArbField(prec(parent(c[1])), false)
+  R = ArbField(2 * work_tol, false)
+  sqrt2 = sqrt(R(2))
 
   for i in 1:s
     t = c[r + i]
-    A[r + 2*i - 1] = sqrt2 * real(c[r + i])
-    A[r + 2*i] = sqrt2 * imag(c[r + i])
+    A[r + 2*i - 1] = sqrt2 * real(t)
+    A[r + 2*i] = sqrt2 * imag(t)
     if !radiuslttwopower(A[r + 2*i], -abs_tol)
       return _minkowski_map_and_apply(a, abs_tol, G, Int(floor(work_tol * 2)))
     end

@@ -263,7 +263,7 @@ function ray_class_group_quo(m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Dict{NfOrd
         add_to_key!(eL.fac, J, 1) 
         pow!(eL, diffC)
         @vprint :RayFacElem 1 "This ideal is principal: $eL \n"
-        z = principal_gen_fac_elem(eL)
+        z = principal_generator_fac_elem(eL)
       end
       ii = 1
       z1 = _preproc(z, expon)

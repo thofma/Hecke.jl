@@ -285,7 +285,7 @@ function ideal(O::NfOrd, a::FacElem{nf_elem, AnticNumberField})
       add_to_key!(de, I, k)
     end
   end
-  return FacElem(de)
+  return FacElem(FractionalIdealSet(O), de)
 end
 
 #the normalise bit ensures that the "log" vector lies in the same vector space

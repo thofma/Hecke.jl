@@ -116,4 +116,12 @@ end
   @test Hecke.radiuslttwopower(s, -512)
 end
 
+@testset "Kluners example" begin
+  k, a = quadratic_field(-3364)
+  z = minkowski_map(a, 64)
+  @test Hecke.radiuslttwopower(z[1], -64)
+  @test Hecke.radiuslttwopower(z[2], -64)
+  @test contains(z[1], 0)
+end
+
 end

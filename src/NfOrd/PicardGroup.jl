@@ -222,7 +222,7 @@ function _picard_group(O::NfOrd)
   for i = 1:length(generators)
     I = generators[i]^Int(Cl.snf[i])
     IOK = extend(I, OK)
-    a = principal_gen(IOK)
+    a = principal_generator(IOK)
     push!(Z, GtoQ\(OKtoQ(a)))
   end
 
@@ -296,7 +296,7 @@ function _picard_group(O::NfOrd)
     z = x*iy
     zOK = extend(z.num, OK)//z.den
     simplify(zOK)
-    a1 = OKtoQ(principal_gen(zOK.num))
+    a1 = OKtoQ(principal_generator(zOK.num))
     a2 = OKtoQ(OK(zOK.den))
     b1, a = isdivisible(a1, a2)
     @assert b1

@@ -1871,7 +1871,7 @@ function maximal_integral_ideal_containing(I::AlgAssAbsOrdIdl, p::Union{ fmpz, I
   C, toC = _as_matrix_algebra(B)
 
   JinC = ideal_from_gens(C, [ toC(OPtoB(toOP(O(b)))) for b in absolute_basis(J) ])
-  y = left_principal_gen(JinC)
+  y = left_principal_generator(JinC)
   m = matrix(y)
   r = rref!(m)
   k = degree(C)
