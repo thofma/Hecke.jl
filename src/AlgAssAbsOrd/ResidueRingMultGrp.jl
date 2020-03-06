@@ -11,7 +11,7 @@
 
 > Returns the group $Q^\times$ and the injection $Q^\times -> Q$.
 """
-function multiplicative_group(Q::AlgAssAbsOrdQuoRing)
+function multiplicative_group(Q::AlgAssAbsOrdQuoRing{S, T}) where {S, T}
   if !isdefined(Q, :multiplicative_group)
     O = base_ring(Q)
     OO = maximal_order(algebra(O))
@@ -22,13 +22,13 @@ function multiplicative_group(Q::AlgAssAbsOrdQuoRing)
     end
     Q.multiplicative_group = GtoQ
   end
-  mQ = Q.multiplicative_group
+  mQ = Q.multiplicative_group::GrpAbFinGenToAbsOrdQuoRingMultMap{typeof(base_ring(Q)), ideal_type(base_ring(Q)), elem_type(base_ring(Q))}
   return domain(mQ), mQ
 end
 
 unit_group(Q::AlgAssAbsOrdQuoRing) = multiplicative_group(Q)
 
-function _multgrp_non_maximal(Q::AlgAssAbsOrdQuoRing)
+function _multgrp_non_maximal(Q::AbsOrdQuoRing{U, T}) where {U, T}
   O = base_ring(Q)
   a = ideal(Q)
   A = algebra(O)
@@ -43,7 +43,7 @@ function _multgrp_non_maximal(Q::AlgAssAbsOrdQuoRing)
     if haskey(prime_ideals, q)
       push!(prime_ideals[q], p)
     else
-      prime_ideals[q] = [ p ]
+      prime_ideals[q] = ideal_type(OO)[ p ]
     end
   end
 
@@ -59,7 +59,7 @@ function _multgrp_non_maximal(Q::AlgAssAbsOrdQuoRing)
   end
 
   groups = Vector{GrpAbFinGen}()
-  maps = Vector{GrpAbFinGenToAbsOrdQuoRingMultMap}()
+  maps = Vector{GrpAbFinGenToAbsOrdQuoRingMultMap{U, T, elem_type(OO)}}()
   ideals = Vector{ideal_type(O)}() # values of primary_ideals, but in the "right" order
   for (p, q) in primary_ideals
     G, GtoQ = _multgrp_mod_q(p, q, prime_ideals[p][1])
@@ -73,13 +73,13 @@ function _multgrp_non_maximal(Q::AlgAssAbsOrdQuoRing)
   return S, StoQ
 end
 
-function _multgrp(Q::AlgAssAbsOrdQuoRing)
+function _multgrp(Q::AbsOrdQuoRing{U, T}) where {U, T}
   O = base_ring(Q)
   OtoQ = AbsOrdQuoMap(O, Q)
   a = ideal(Q)
   A = algebra(O)
   fields_and_maps = as_number_fields(A)
-  groups = Vector{Tuple{GrpAbFinGen, GrpAbFinGenToAbsOrdQuoRingMultMap}}()
+  groups = Vector{Tuple{GrpAbFinGen, GrpAbFinGenToAbsOrdQuoRingMultMap{NfOrd, NfOrdIdl, NfOrdElem}}}()
   for i = 1:length(fields_and_maps)
     K, AtoK = fields_and_maps[i]
     ai = _as_ideal_of_number_field(a, AtoK)

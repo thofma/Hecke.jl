@@ -518,61 +518,68 @@ function ray_class_group(m::AlgAssAbsOrdIdl, inf_plc::Vector{Vector{InfPlc}} = V
 
   C = groups[1][1]
   for i = 2:length(groups)
-    C = direct_product(C, groups[i][1])[1]
+    C = direct_product(C, groups[i][1], task = :none)::GrpAbFinGen
   end
   S, StoC = snf(C)
 
   one_ideals = _lift_one_ideals(O)
   fac_elem_mon = FacElemMon(parent(m))
 
-  function disc_exp(x::GrpAbFinGenElem)
-    z = StoC(x).coeff
-    y = fac_elem_mon()
-    j = 1
-    for k = 1:length(groups)
-      G, GtoIdl = groups[k]
-      zz = sub(z, 1:1, j:(j + ngens(G) - 1))
-      Ifac = GtoIdl(G(zz))
-      y *= _as_ideal_of_algebra(Ifac, k, O, one_ideals)
-      j += ngens(G)
-    end
-    return y
-  end
-
-  function disc_log(x::AlgAssAbsOrdIdl)
-    ideals = Vector{NfOrdIdl}()
-    for i = 1:length(fields_and_maps)
-      push!(ideals, _as_ideal_of_number_field(x, fields_and_maps[i][2]))
-    end
-
-    c = zero_matrix(FlintZZ, 1, 0)
-    for i = 1:length(ideals)
-      G, GtoIdl = groups[i]
-      g = GtoIdl\ideals[i]
-      c = hcat(c, g.coeff)
-    end
-    return StoC\C(c)
-  end
-
-  function disc_log(x::FacElem)
-    ideals = Vector{FacElem}()
-    for i = 1:length(fields_and_maps)
-      base = Vector{NfOrdIdl}()
-      exp = Vector{fmpz}()
-      for (I, e) in x
-        push!(base, _as_ideal_of_number_field(I, fields_and_maps[i][2]))
-        push!(exp, e)
+  local disc_exp
+  let StoC = StoC, groups = groups, O = O, one_ideals = one_ideals
+    function disc_exp(x::GrpAbFinGenElem)
+      z = StoC(x).coeff
+      y = fac_elem_mon()
+      j = 1
+      for k = 1:length(groups)
+        G, GtoIdl = groups[k]
+        zz = sub(z, 1:1, j:(j + ngens(G) - 1))
+        Ifac = GtoIdl(G(zz))
+        y *= _as_ideal_of_algebra(Ifac, k, O, one_ideals)
+        j += ngens(G)
       end
-      push!(ideals, FacElem(base, exp))
+      return y
     end
+  end
+  
+  local disc_log
+  let fields_and_maps = fields_and_maps, C = C, StoC = StoC
+    function disc_log(x::AlgAssAbsOrdIdl)
+      ideals = Vector{NfOrdIdl}()
+      for i = 1:length(fields_and_maps)
+        push!(ideals, _as_ideal_of_number_field(x, fields_and_maps[i][2]))
+      end
 
-    c = zero_matrix(FlintZZ, 1, 0)
-    for i = 1:length(ideals)
-      G, GtoIdl = groups[i]
-      g = GtoIdl\ideals[i]
-      c = hcat(c, g.coeff)
+      c = zero_matrix(FlintZZ, 1, 0)
+      for i = 1:length(ideals)
+        G, GtoIdl = groups[i]
+        g = GtoIdl\ideals[i]
+        c = hcat(c, g.coeff)
+      end
+      return StoC\C(c)
     end
-    return StoC\C(c)
+ 
+
+    function disc_log(x::FacElem)
+      ideals = Vector{FacElem{NfOrdIdl, NfOrdIdlSet}}()
+      for i = 1:length(fields_and_maps)
+        base = Vector{NfOrdIdl}()
+        exp = Vector{fmpz}()
+        for (I, e) in x
+          push!(base, _as_ideal_of_number_field(I, fields_and_maps[i][2]))
+          push!(exp, e)
+        end
+        push!(ideals, FacElem(base, exp))
+      end
+
+      c = zero_matrix(FlintZZ, 1, 0)
+      for i = 1:length(ideals)
+        G, GtoIdl = groups[i]
+        g = GtoIdl\ideals[i]
+        c = hcat(c, g.coeff)
+      end
+      return StoC\C(c)
+    end
   end
 
   StoIdl = MapRayClassGroupAlg{typeof(S), typeof(fac_elem_mon)}()

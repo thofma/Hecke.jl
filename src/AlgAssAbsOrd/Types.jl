@@ -42,7 +42,7 @@ mutable struct AlgAssAbsOrd{S, T} <: Ring
 
   function AlgAssAbsOrd{S, T}(A::S, M::FakeFmpqMat, Minv::FakeFmpqMat, B::Vector{T}, cached::Bool = false) where {S, T}
     if cached && haskey(AlgAssAbsOrdID, (A, M))
-      return AlgAssAbsOrdID[(A, M)]
+      return AlgAssAbsOrdID[(A, M)]::AlgAssAbsOrd{S, T}
     end
     O = AlgAssAbsOrd{S, T}(A)
     O.basis_alg = B
@@ -56,7 +56,7 @@ mutable struct AlgAssAbsOrd{S, T} <: Ring
 
   function AlgAssAbsOrd{S, T}(A::S, M::FakeFmpqMat, cached::Bool = false) where {S, T}
     if cached && haskey(AlgAssAbsOrdID, (A, M))
-      return AlgAssAbsOrdID[(A, M)]
+      return AlgAssAbsOrdID[(A, M)]::AlgAssAbsOrd{S, T}
     end
     O = AlgAssAbsOrd{S, T}(A)
     d = dim(A)
@@ -75,7 +75,7 @@ mutable struct AlgAssAbsOrd{S, T} <: Ring
     O = AlgAssAbsOrd{S, T}(A)
     M = basis_matrix(B, FakeFmpqMat)
     if cached && haskey(AlgAssAbsOrdID, (A, M))
-      return AlgAssAbsOrdID[(A, M)]
+      return AlgAssAbsOrdID[(A, M)]::AlgAssAbsOrd{S, T}
     end
     O.basis_alg = B
     O.basis_matrix = M

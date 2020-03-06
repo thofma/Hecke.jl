@@ -1398,10 +1398,13 @@ function _direct_product(groups::Vector{GrpAbFinGen}, maps::Vector{U}, ideals::V
     end
 
     gens = map(Q, [ g.elem for g in maps[1].generators ])
-
-    function disc_log1(x::AbsOrdQuoRingElem)
-      xx = codomain(maps[1])(x.elem)
-      return maps[1].discrete_logarithm(xx)
+    
+    local disc_log1
+    let maps = maps
+      function disc_log1(x::AbsOrdQuoRingElem)
+        xx = codomain(maps[1])(x.elem)
+        return maps[1].discrete_logarithm(xx)
+      end
     end
 
     m = GrpAbFinGenToAbsOrdQuoRingMultMap(groups[1], Q, gens, disc_log1)
@@ -1412,7 +1415,7 @@ function _direct_product(groups::Vector{GrpAbFinGen}, maps::Vector{U}, ideals::V
     return groups[1], m
   end
 
-  G = direct_product(groups..., task = :none)
+  G = direct_product(groups..., task = :none)::GrpAbFinGen
 
   if tame_wild
     tame = Dict{T, GrpAbFinGenToAbsOrdMap{S}}()
@@ -1446,9 +1449,12 @@ function _direct_product(groups::Vector{GrpAbFinGen}, maps::Vector{U}, ideals::V
   end
 
   if length(groups) == 1
-    function disc_log2(x::AbsOrdQuoRingElem)
-      xx = codomain(map[1])(x.elem)
-      return maps[1].discrete_logarithm(xx)
+    local disc_log2
+    let maps = maps
+      function disc_log2(x::AbsOrdQuoRingElem)
+        xx = codomain(maps[1])(x.elem)
+        return maps[1].discrete_logarithm(xx)
+      end
     end
 
     m = GrpAbFinGenToAbsOrdQuoRingMultMap(G, Q, generators, disc_log2)
@@ -1459,15 +1465,19 @@ function _direct_product(groups::Vector{GrpAbFinGen}, maps::Vector{U}, ideals::V
     return G, m
   end
 
-  function disc_log(a::AbsOrdQuoRingElem)
-    result = Vector{fmpz}()
-    for map in maps
-      aa = codomain(map)(a.elem)
-      append!(result, map.discrete_logarithm(aa))
+  local disc_log
+  let maps = maps
+    function disc_log(a::AbsOrdQuoRingElem)
+      result = Vector{fmpz}()
+      for map in maps
+        aa = codomain(map)(a.elem)
+        append!(result, map.discrete_logarithm(aa))
+      end
+      return result
     end
-    return result
   end
-
+  
+  
   m = GrpAbFinGenToAbsOrdQuoRingMultMap(G, Q, generators, disc_log)
   if tame_wild
     m.tame = tame

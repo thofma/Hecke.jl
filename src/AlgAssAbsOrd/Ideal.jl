@@ -1367,7 +1367,7 @@ end
 > Returns $O \cdot a \cdot O$.
 > It is assumed that the order of $a$ is contained in $O$.
 """
-function extend(A::AlgAssAbsOrdIdl, O::AlgAssAbsOrd, action::Symbol = :twosided)
+function extend(A::AlgAssAbsOrdIdl{S, T}, O::AlgAssAbsOrd{S, T}, action::Symbol = :twosided) where S where T
   if action == :left || action == :twosided
     A = (O(1)*O)*A
   end

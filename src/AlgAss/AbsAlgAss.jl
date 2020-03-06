@@ -460,7 +460,7 @@ function as_number_fields(A::AbsAlgAss{fmpq})
     OA = maximal_order(A)
     L = lll(basis_matrix(OA, copy = false).num)
     n = basis_matrix(OA, copy = false).den
-    basis_lll = [ elem_from_mat_row(A, L, i, n) for i = 1:d ]
+    basis_lll = elem_type(A)[ elem_from_mat_row(A, L, i, n) for i = 1:d ]
   end
 
   M = zero_matrix(FlintQQ, 0, d)
@@ -486,13 +486,14 @@ function as_number_fields(A::AbsAlgAss{fmpq})
       end
       @assert found_field "This should not happen..."
     else
-      K, BtoK = B.maps_to_numberfields[1]
+      K, BtoK = B.maps_to_numberfields[1]::Tuple{AnticNumberField, AbsAlgAssToNfAbsMor{typeof(A), elem_type(A)}}
       push!(fields, K)
     end
 
     if length(Adec) == 1
-      A.maps_to_numberfields = Tuple{AnticNumberField, AbsAlgAssToNfAbsMor{typeof(A), elem_type(A)}}[(K, BtoK)]
-      return A.maps_to_numberfields
+      res = Tuple{AnticNumberField, AbsAlgAssToNfAbsMor{typeof(A), elem_type(A)}}[(K, BtoK)]
+      A.maps_to_numberfields = res
+      return res
     end
 
     # Construct the map from K to A

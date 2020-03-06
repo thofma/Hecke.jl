@@ -616,17 +616,17 @@ end
 #
 ################################################################################
 
-function pmaximal_overorder(O::AlgAssAbsOrd, p::Union{fmpz, Int})
+function pmaximal_overorder(O::AlgAssAbsOrd{S, T}, p::Union{fmpz, Int}) where S where T
   d = discriminant(O)
   if rem(d, p^2) != 0
     return O
   end
 
   if p > degree(O)
-    @vtime :AlgAssOrd 1 O1 = pmaximal_overorder_tr(O,p)::AlgAssAbsOrd
+    @vtime :AlgAssOrd 1 O1 = pmaximal_overorder_tr(O,p)::AlgAssAbsOrd{S, T}
     return O1
   else
-    @vtime :AlgAssOrd 1 O1 = pmaximal_overorder_meataxe(O,p)::AlgAssAbsOrd
+    @vtime :AlgAssOrd 1 O1 = pmaximal_overorder_meataxe(O,p)::AlgAssAbsOrd{S, T}
     return O1
   end
 end
@@ -743,12 +743,12 @@ end
 
 > Given an order $O$, this function returns a maximal order containing $O$.
 """
-function MaximalOrder(O::AlgAssAbsOrd)
+function MaximalOrder(O::AlgAssAbsOrd{S, T}) where S where T
   A = algebra(O)
 
   if isdefined(A, :maximal_order)
     # Check whether O \subseteq OO
-    OO = A.maximal_order
+    OO = A.maximal_order::AlgAssAbsOrd{S, T}
     d = denominator(basis_matrix(O, copy = false)*basis_mat_inv(OO, copy = false))
     if isone(d)
       return OO
@@ -840,9 +840,9 @@ end
 
 > Returns a maximal order of $A$.
 """
-function MaximalOrder(A::AbsAlgAss)
+function MaximalOrder(A::AbsAlgAss{S}) where S
   if isdefined(A, :maximal_order)
-    return A.maximal_order
+    return A.maximal_order::AlgAssAbsOrd{typeof(A), elem_type(A)}
   end
 
   O = any_order(A)
