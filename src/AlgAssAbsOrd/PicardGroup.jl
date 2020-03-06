@@ -1,4 +1,4 @@
-export principal_gen, kernel_group
+export principal_generator, kernel_group
 
 ################################################################################
 #
@@ -275,7 +275,7 @@ function _picard_group_non_maximal(O::AlgAssAbsOrd, prepare_ref_disc_log::Bool =
     # Compute the additional data needed for the refined discrete logarithm.
     princ_gens_ray = Vector{elem_type(fac_elem_mon_A)}()
     for i = 1:ngens(R)
-      b, a = has_principal_gen_1_mod_m(gens_of_R[i]^R.snf[i], FOO)
+      b, a = has_principal_generator_1_mod_m(gens_of_R[i]^R.snf[i], FOO)
       @assert b
       push!(princ_gens_ray, a)
     end
@@ -420,12 +420,12 @@ function refined_disc_log_picard_group(a::AlgAssAbsOrdIdl, mP::MapPicardGrp)
 end
 
 @doc Markdown.doc"""
-    principal_gen(a::AlgAssAbsOrdIdl) -> AlgAssAbsOrdElem
+    principal_generator(a::AlgAssAbsOrdIdl) -> AlgAssAbsOrdElem
 
 > Given an principal ideal $a$ in an order $O$ in a commutative algebra over
 > $\mathbb Q$, this function returns a principal generator of $a$.
 """
-function principal_gen(a::AlgAssAbsOrdIdl)
+function principal_generator(a::AlgAssAbsOrdIdl)
   a, g = isprincipal(a)
   if !a
     error("Ideal is not principal")
@@ -433,7 +433,7 @@ function principal_gen(a::AlgAssAbsOrdIdl)
   return g
 end
 
-function principal_gen_fac_elem(a::AlgAssAbsOrdIdl)
+function principal_generator_fac_elem(a::AlgAssAbsOrdIdl)
   @assert ismaximal(order(a)) "Not implemented"
   a, g = isprincipal_maximal_fac_elem(a)
   if !a
@@ -622,7 +622,7 @@ function _make_disc_exp_deterministic(mR::MapRayClassGrp)
   return S, mRR
 end
 
-function has_principal_gen_1_mod_m(I::Union{ AlgAssAbsOrdIdl, FacElem{ <: AlgAssAbsOrdIdl, <: AlgAssAbsOrdIdlSet} }, m::AlgAssAbsOrdIdl)
+function has_principal_generator_1_mod_m(I::Union{ AlgAssAbsOrdIdl, FacElem{ <: AlgAssAbsOrdIdl, <: AlgAssAbsOrdIdlSet} }, m::AlgAssAbsOrdIdl)
   O = order(m)
   A = algebra(O)
   fields_and_maps = as_number_fields(A)
@@ -636,7 +636,7 @@ function has_principal_gen_1_mod_m(I::Union{ AlgAssAbsOrdIdl, FacElem{ <: AlgAss
     K, AtoK = fields_and_maps[i]
     mi = _as_ideal_of_number_field(m, AtoK)
     Ii = _as_ideal_of_number_field(I, AtoK)
-    a, g = has_principal_gen_1_mod_m(Ii, mi)
+    a, g = has_principal_generator_1_mod_m(Ii, mi)
     if !a
       return false, FacElem(base, exps)
     end

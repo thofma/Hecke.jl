@@ -301,7 +301,7 @@ end
 #
 ################################################################################
 
-# A special case needed for principal_gen_eichler.
+# A special case needed for principal_generator_eichler.
 # Finds a in O such that v_{p_i}(normred(a)) == v_i where p_i = primes[i] and
 # v_i = valuations[i] and such that v_q(normred(a)) == 0 for all other primes q,
 # assuming that such an element exists.

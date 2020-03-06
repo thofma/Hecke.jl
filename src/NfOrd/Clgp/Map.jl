@@ -436,10 +436,10 @@ function isprincipal_fac_elem(I::FacElem{NfOrdIdl, NfOrdIdlSet})
 end
 
 @doc Markdown.doc"""
-    principal_gen_fac_elem(A::NfOrdIdl) -> FacElem{nf_elem, NumberField}
+    principal_generator_fac_elem(A::NfOrdIdl) -> FacElem{nf_elem, NumberField}
 For a principal ideal $A$, find a generator in factored form.
 """
-function principal_gen_fac_elem(A::NfOrdIdl)
+function principal_generator_fac_elem(A::NfOrdIdl)
   fl, e = isprincipal_fac_elem(A)
   if !fl
     error("Ideal is not principal")
@@ -449,23 +449,23 @@ end
 
 
 @doc Markdown.doc"""
-    principal_gen_fac_elem(I::FacElem) -> FacElem{nf_elem, NumberField}
+    principal_generator_fac_elem(I::FacElem) -> FacElem{nf_elem, NumberField}
 For a principal ideal $A$ in factored form, find a generator in factored form.
 """
-function principal_gen_fac_elem(I::FacElem{NfOrdIdl, NfOrdIdlSet})
+function principal_generator_fac_elem(I::FacElem{NfOrdIdl, NfOrdIdlSet})
   J, a= reduce_ideal2(I)
   #@hassert :PID_Test 1 evaluate(a)*J == evaluate(I)
-  x = Hecke.principal_gen_fac_elem(J)
+  x = Hecke.principal_generator_fac_elem(J)
   #@hassert :PID_Test 1 ideal(order(J), evaluate(x)) == J
   mul!(x, x, a) #x=x*a
   return x
 end
 
 @doc Markdown.doc"""
-    principal_gen(A::NfOrdIdl) -> NfOrdElem
+    principal_generator(A::NfOrdIdl) -> NfOrdElem
 For a principal ideal $A$, find a generator.
 """
-function principal_gen(A::NfOrdIdl)
+function principal_generator(A::NfOrdIdl)
   O = order(A)
   if ismaximal(O)
     fl, e = isprincipal_fac_elem(A)
@@ -489,8 +489,15 @@ Tests if $A$ is principal and returns $(\mathtt{true}, \alpha)$ if $A =
 The generator will be in factored form.
 """
 function isprincipal_fac_elem(A::NfOrdIdl)
-  if A.is_principal == 1 && isdefined(A, :princ_gen)
-    return true, FacElem(A.princ_gen.elem_in_nf)
+  if A.is_principal == 1
+    if isdefined(A, :princ_gen_fac_elem)
+      return true, A.princ_gen_fac_elem
+    else
+      if isdefined(A, :princ_gen)
+        A.princ_gen_fac_elem = A.princ_gen.elem_in_nf
+      end
+      return true, FacElem(A.princ_gen_fac_elem)
+    end
   end
   O = order(A)
   if A.is_principal == 2
@@ -538,7 +545,8 @@ function isprincipal_fac_elem(A::NfOrdIdl)
 
   #reduce e modulo units.
   e = reduce_mod_units(FacElem{nf_elem, AnticNumberField}[e], _get_UnitGrpCtx_of_order(L))[1]
-  #A.is_principal = 1
+  A.is_principal = 1
+  A.princ_gen_fac_elem = e
   # TODO: if we set it to be principal, we need to set the generator. Otherwise the ^ function is broken
   return true, e
 end

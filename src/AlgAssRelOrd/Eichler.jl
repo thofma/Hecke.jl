@@ -1,4 +1,4 @@
-function principal_gen_eichler(I::AlgAssRelOrdIdl)
+function principal_generator_eichler(I::AlgAssRelOrdIdl)
   O = left_order(I)
   @assert ismaximal(O)
   A = algebra(O)

@@ -43,7 +43,7 @@
     L = GAP.Globals.DerivedSeries(G)
     forQ8_old = Hecke.check_obstruction(l, L, 2, [2])
     @test length(forQ8_old) == 53
-    forQ8 = [FieldsTower(x.field, x.generators_of_automorphisms, x.subfields) for x in forQ8_old]
+    forQ8 = [Hecke.FieldsTower(x.field, x.generators_of_automorphisms, x.subfields) for x in forQ8_old]
   
     lQ8 = fields(8, 4, fmpz(10)^12)
     @test length(lQ8) == 2
@@ -66,12 +66,12 @@
     l = fields(4, 2, fmpz(10)^5);
     G = GAP.Globals.SmallGroup(16, 9)
     L = GAP.Globals.DerivedSeries(G)
-    lsieved = check_obstruction(l, L, 2, [4])
+    lsieved = Hecke.check_obstruction(l, L, 2, [4])
     @test length(lsieved) == 78
     l = fields(4, 2, fmpz(10)^6);
     G = GAP.Globals.SmallGroup(32, 20)
     L = GAP.Globals.DerivedSeries(G)
-    lsieved = check_obstruction(l, L, 2, [8])
+    lsieved = Hecke.check_obstruction(l, L, 2, [8])
     @test length(lsieved) == 232
   end
   
@@ -80,7 +80,7 @@
     l = fields(8, 2, fmpz(10)^10)
     G = GAP.Globals.SmallGroup(96, 13)
     L = GAP.Globals.DerivedSeries(G)
-    lsieved = check_obstruction(l, L, 2, [2, 6])
+    lsieved = Hecke.check_obstruction(l, L, 2, [2, 6])
     @test length(l) == length(lsieved)
     @test length(fields(32, 30, fmpz(10)^39, simplify = false)) == 2
   end

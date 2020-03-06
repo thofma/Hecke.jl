@@ -742,7 +742,7 @@ function ray_class_group(m::NfOrdIdl, inf_plc::Vector{InfPlc} = Vector{InfPlc}()
         add_to_key!(s.fac, J, 1) 
         pow!(s, diffC)
         @vprint :RayFacElem 1 "This ideal is principal: $s \n"
-        z = principal_gen_fac_elem(s)
+        z = principal_generator_fac_elem(s)
       end
       ii = 1
       z1 = _preproc(m, z, expon)
@@ -1218,12 +1218,12 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    has_principal_gen_1_mod_m(I::NfOrdIdl, m::NfOrdIdl, inf_plc::Array{InfPlc, 1} = InfPlc[]) -> Bool, NfOrdElem
+    has_principal_generator_1_mod_m(I::NfOrdIdl, m::NfOrdIdl, inf_plc::Array{InfPlc, 1} = InfPlc[]) -> Bool, NfOrdElem
     
 Given an ideal I, this function checks if the ideal is trivial in the ray class group mod ($m$, inf_plc).
 If this is the case, we also return a generator which is 1 mod $m$. If not, the second return value is wrong.
 """
-function has_principal_gen_1_mod_m(I::Union{NfOrdIdl, FacElem{NfOrdIdl, NfOrdIdlSet}}, m::NfOrdIdl, inf_plc::Array{InfPlc, 1} = InfPlc[]; GRH::Bool = true)
+function has_principal_generator_1_mod_m(I::Union{NfOrdIdl, FacElem{NfOrdIdl, NfOrdIdlSet}}, m::NfOrdIdl, inf_plc::Array{InfPlc, 1} = InfPlc[]; GRH::Bool = true)
 
   # This function could be optimized if I cache some stuff from the construction
   # of the ray class group, but only in the case of the full ray_class_group
@@ -1302,7 +1302,7 @@ function disc_log_generalized_ray_class_grp(I::Union{NfOrdIdl, FacElem{NfOrdIdl,
   el = mr\I
   J = mr(el)
   I1 = I * inv(J)
-  fl1, gen1 = has_principal_gen_1_mod_m(I1, mr.defining_modulus[1], mr.defining_modulus[2])
+  fl1, gen1 = has_principal_generator_1_mod_m(I1, mr.defining_modulus[1], mr.defining_modulus[2])
   @assert fl1
   return gen1, el
 end

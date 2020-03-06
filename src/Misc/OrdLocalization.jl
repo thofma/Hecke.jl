@@ -405,7 +405,7 @@ end
 #
 ###############################################################################
 
-function principal_gen(L::OrdLoc{T}, I::NfAbsOrdIdl{AnticNumberField,T}) where {T <: nf_elem}
+function principal_generator(L::OrdLoc{T}, I::NfAbsOrdIdl{AnticNumberField,T}) where {T <: nf_elem}
   #possible for !L.comp due to semi local
   #theoretical for L.comp if L.prime large enough...
    valuation(L(I.gen_one)) >= valuation(L(I.gen_two)) ? L(I.gen_two) : L(I.gen_one)

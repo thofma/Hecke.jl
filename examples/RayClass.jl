@@ -120,7 +120,7 @@ function ray_class_group_std(m::NfOrdIdl, primes::Array{InfPlc,1}=InfPlc[])
 
   for i=1: ngens(C)
     if order(C[i])!=1
-      y=Hecke.principal_gen((mC(C[i]))^(Int(order(C[i]))))
+      y=Hecke.principal_generator((mC(C[i]))^(Int(order(C[i]))))
       b=(mG\(pi(y))).coeff
       if primes != []
         b=hcat(b, (lH(K(y))).coeff)
@@ -148,7 +148,7 @@ function ray_class_group_std(m::NfOrdIdl, primes::Array{InfPlc,1}=InfPlc[])
       s=mC(L)
       I= J // s
       simplify(I)
-      gamma=Hecke.principal_gen(I.num)
+      gamma=Hecke.principal_generator(I.num)
       y=((mG\(pi(gamma)))-(mG\(pi(O(I.den))))).coeff
       if primes!=[]
         z=lH(K(gamma))
@@ -351,7 +351,7 @@ function ray_class_group_p_part(p::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1
       s=exp_class(L)
       I=J* inv(s)
       I=I^Int(nonppartclass)
-      z=Hecke.principal_gen_fac_elem(I)
+      z=Hecke.principal_generator_fac_elem(I)
       el=Hecke._fac_elem_evaluation(O, Q, quots, idemps, z, lp, expo)
       y=((mG\pi(el))*inverse_d).coeff
       if p==2 && !isempty(pr)
