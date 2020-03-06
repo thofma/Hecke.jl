@@ -1916,10 +1916,9 @@ function has_complement(m::GrpAbFinGenMap)
   if !isfinite(G)
     error("Not yet implemented")
   end
-  H, mH = cokernel(m)
+  H, mH = cokernel(m, false)
   SH, mSH = snf(H)
-  mH = mH*inv(mSH)
-  
+  mH = mH*inv(mSH)	
   s, ms = snf(domain(m))
   m1 = ms*m
   gens_complement = GrpAbFinGenElem[]
@@ -1933,7 +1932,7 @@ function has_complement(m::GrpAbFinGenMap)
     #I search for an element y in s such that SH.snf[i]*y = SH.snf[i]*igSH
     #If I can't find this, the complement does not exists, otherwise we push in the list
     #of generators igSH-s
-    S1, mS1 = sub(s, SH.snf[i])
+    S1, mS1 = sub(s, SH.snf[i], false)
     fl, el = haspreimage(mS1*m1, test_el)
     if !fl
       return false, sub(G, GrpAbFinGenElem[])[2]
@@ -1942,14 +1941,20 @@ function has_complement(m::GrpAbFinGenMap)
     coeffs = zero_matrix(FlintZZ, 1, ngens(s))
     for j = 1:ngens(s)
       if !iszero(el1[j])
-        coeffs[1, j] = divexact(el1[j], SH.snf[i])
+        R = ResidueRing(FlintZZ, s.snf[j], cached = false)
+        r1 = R(el1[j])
+				r2 = R(SH.snf[i])
+				fl1, r = divides(r1, r2)
+				@assert fl1
+        coeffs[1, j] = lift(r)
       end
     end
     el_sub = s(coeffs)
     push!(gens_complement, igSH - m1(el_sub))
   end
-  
-  return true, sub(G, gens_complement)[2]
+  res, mres = sub(G, gens_complement, false)
+  @assert order(res)*order(s) == order(G)
+  return true, mres
 end
 
 ################################################################################

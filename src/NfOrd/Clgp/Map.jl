@@ -43,6 +43,8 @@ function reduce_ideal2(I::FacElem{NfOrdIdl, NfOrdIdlSet})
       end
     end
   end
+  #@show evaluate(a)*A
+  #@show evaluate(I)
   @hassert :PID_Test 1 A*evaluate(a) == evaluate(I)
   return A, a
 end

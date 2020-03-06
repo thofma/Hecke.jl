@@ -172,3 +172,30 @@ function ResidueFieldSmall(O::NfOrd, P::NfOrdIdl)
     return _residue_field_generic(O, P, Val{true})
   end
 end
+
+function ResidueFieldDegree1(O::NfOrd, P::NfOrdIdl)
+  p = minimum(P)
+  !fits(Int, p) && error("Minimum of prime ideal must be small (< 64 bits)")
+  if !ismaximal_known(O) || !ismaximal(O) || !isdefining_polynomial_nice(nf(O))
+    return _residue_field_generic(O, P, Val{true})
+  end
+  if !isindex_divisor(O, minimum(P))
+    return _residue_field_nonindex_divisor(O, P, Val{true})
+  else
+    return _residue_field_generic(O, P, Val{true})
+  end
+end
+
+
+function ResidueFieldSmallDegree1(O::NfOrd, P::NfOrdIdl)
+  p = minimum(P)
+  !fits(Int, p) && error("Minimum of prime ideal must be small (< 64 bits)")
+  if !ismaximal_known(O) || !ismaximal(O) || !isdefining_polynomial_nice(nf(O))
+    return _residue_field_generic(O, P, Val{true})
+  end
+  if !isindex_divisor(O, minimum(P))
+    return _residue_field_nonindex_divisor(O, P, Val{true})
+  else
+    return _residue_field_generic(O, P, Val{true})
+  end
+end

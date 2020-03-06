@@ -103,8 +103,8 @@ function abelian_extensionsQQ(gtype::Array{Int, 1}, bound::fmpz, only_real::Bool
       #If the group is cyclic, I prefer to have a generator!
       new_auts = Vector{NfToNfMor}(undef, 1)
       new_auts[1] = auts[1]
-      for i = 2:length(auts)
-        new_auts[1] *= auts[i]
+      for j = 2:length(auts)
+        new_auts[1] *= auts[j]
       end
       list1[i] = FieldsTower(K, new_auts, [Hecke.NfToNfMor(base_field(x[1]), K, K(1))])
     else
@@ -417,11 +417,7 @@ function compute_fields(class_fields::Vector{Hecke.ClassField{Hecke.MapRayClassG
   @vprint :Fields 3 "Computing the fields directly\n"
   for i in it
     C = class_fields[i]
-    if use_brauer
-      L = NumberField_using_Brauer(C)
-    else
-      L = NumberField(C)
-    end
+    L = number_field(C, using_brauer = use_brauer)
     autL = Hecke.absolute_automorphism_group(C, autos)
     if !isone(gcd(degree(K), expo)) 
       Cpperm = permutation_group(autL)
@@ -589,11 +585,7 @@ function computing_over_subfields(class_fields, subfields, idE, autos, right_grp
     use_brauer = false
   end
   for i in it
-    if use_brauer
-      NumberField_using_Brauer(new_class_fields[i])
-    else
-      number_field(new_class_fields[i])
-    end
+    number_field(new_class_fields[i], using_brauer = use_brauer)
   end
   translate_fields_up(class_fields, new_class_fields, subs, it)
   #Now, finally, the automorphisms computation and the isomorphism check
@@ -733,7 +725,7 @@ function translate_extensions(mL::NfToNfMor, class_fields, new_class_fields, ctx
     if !isdefined(ctxK.class_group_map, :small_gens)
       ctxK.class_group_map.small_gens = find_gens(pseudo_inv(ctxK.class_group_map), PrimesSet(101, -1))[1]
     end
-    @vtime :Fields 3 lP, gS = Hecke.find_gens(mRM)
+    @vtime :Fields 3 lP, gS = Hecke.find_gens(mRM, coprime_to = minimum(defining_modulus(mR)[1]))
     listn = NfOrdIdl[norm(mL, x) for x in lP]
     # Create the map between R and r by taking norms
     preimgs = Vector{GrpAbFinGenElem}(undef, length(listn))
