@@ -353,7 +353,7 @@ function _minkowski_map_and_apply(a, abs_tol, G, work_tol = abs_tol)
     end
   end
 
-  sqrt2 = sqrt(ArbField(prec(parent(c[1])), false)(2))
+  sqrt2 = sqrt(ArbField(work_tol, false)(2))
 
   for i in 1:s
     t = c[r + i]
