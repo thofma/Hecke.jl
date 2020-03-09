@@ -1874,3 +1874,89 @@ function sub(M::MatElem, rows::Vector{Int}, cols::Vector{Int})
   end
   return N
 end
+
+################################################################################
+#
+#  Kernel of matrix over Z/nZ
+#
+################################################################################
+
+function _left_kernel_of_howell_form_aurel(A::nmod_mat)
+  n = nrows(A)
+  m = ncols(A)
+  K = zero_matrix(base_ring(A), n, n)
+  for j in 1:n
+    piv = 1
+    while iszero(A[j, piv])
+      piv += 1
+    end
+    @assert piv <= m
+    an = annihilator(A[j, piv])
+    K[j, j] = an
+    if j < n
+      fk = K[1:j, 1:j] * A[1:j, (piv + 1):(piv + 1)] 
+      pivnext = piv
+      while iszero(A[j + 1, pivnext])
+        pivnext += 1
+      end
+      for jp in 1:j
+        fl, c = divides(fk[jp, 1], A[j + 1, pivnext])
+        @assert fl
+        K[jp, j + 1] = -c
+      end
+    end
+  end
+  return K
+end
+
+function _left_kernel_naive(A::nmod_mat)
+  m = Int(modulus(base_ring(A)))
+  D1 = abelian_group(Int[m for i in 1:nrows(A)])
+  D2 = abelian_group(Int[m for i in 1:ncols(A)])
+  im_gens = [ D2([lift(A[i, j]) for j in 1:ncols(A)]) for i in 1:nrows(A) ]
+  h = hom(D1, D2, im_gens)
+  K, mK = kernel(h)
+  l = ngens(K)
+  z = zero_matrix(base_ring(A), l, nrows(A))
+  for i in 1:l
+    b = mK(K[i])
+    for j in 1:nrows(A)
+      z[i, j] = b[j]
+    end
+  end
+  return z
+end
+
+function left_kernel_prime_power(A::nmod_mat, p::Int, l::Int)
+  R = base_ring(A)
+  Alift = lift(A)
+  F = GF(p)
+  _, _M = left_kernel(change_base_ring(F, Alift))
+  M = lift(_M)
+  Mi = hnf_modular_eldiv(M, fmpz(p))
+  r = nrows(Mi)
+  while iszero_row(Mi, r)
+    r -= 1
+  end
+  Mi = sub(Mi, 1:r, 1:ncols(Mi))
+  Mfi = Mi * Alift
+  local H
+  for i in 1:(l - 1)
+    _, K = left_kernel(change_base_ring(F, divexact(Mfi, p^i)))
+    H = hnf_modular_eldiv(lift(K), fmpz(p))
+    r = nrows(H)
+    while iszero_row(H, r)
+      r -= 1
+    end
+    H = sub(H, 1:r, 1:ncols(H))
+
+    Mi = H * Mi
+    Mfi = H * Mfi
+  end
+  Khow = howell_form(change_base_ring(R, Mi))
+  i = 1
+  while !iszero_row(Khow, i)
+    i += 1
+  end
+  return i - 1, Khow
+end
