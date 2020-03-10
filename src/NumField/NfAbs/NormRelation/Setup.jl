@@ -37,6 +37,7 @@ mutable struct NormRelation{T}
   mor_cache::Dict{NfToNfMor, Dict{nf_elem, nf_elem}}
   induced::Dict{NfToNfMor, Perm{Int}}
   embed_cache_triv::Vector{Dict{nf_elem, nf_elem}}
+  nonredundant::Vector{Int}
 
   function NormRelation{T}() where {T}
     z = new{T}()
@@ -876,3 +877,165 @@ function has_useful_generalized_norm_relation(G)
   end
   return false
 end
+
+################################################################################
+#
+#  Get smallest norm relation coprime to something
+#
+################################################################################
+
+function _smallest_scalar_norm_relation_coprime(G::GrpGen, m::fmpz)
+
+  @assert isprime(m)
+
+  S = Localization(FlintZZ, m)
+
+  all_non_trivial_subs = [ (H, mH) for (H, mH) in subgroups(G) if order(H) > 1]
+
+  sort!(all_non_trivial_subs, by = x -> order(x[1]))
+
+  reverse!(all_non_trivial_subs)
+
+  QG = AlgGrp(FlintQQ, G)
+  norms_rev = Dict{elem_type(QG), Int}()
+  norms = Vector{elem_type(QG)}(undef, length(all_non_trivial_subs))
+  for i in 1:length(all_non_trivial_subs)
+    norms_rev[sum([QG(all_non_trivial_subs[i][2](h)) for h in all_non_trivial_subs[i][1]])] = i
+    norms[i] = sum([QG(all_non_trivial_subs[i][2](h)) for h in all_non_trivial_subs[i][1]])
+  end
+
+  n = Int(order(G))
+
+  M = zero_matrix(S, length(all_non_trivial_subs), n)
+
+  for i in 1:length(all_non_trivial_subs)
+    for j in 1:n
+      M[i, j] = norms[i].coeffs[j]
+    end
+  end
+
+  onee = matrix(S, 1, n, coeffs(one(QG)))
+
+  fl, v = can_solve(M, onee, side = :left)
+
+  if !fl
+    solutions = Vector{Tuple{Vector{GrpGenElem}, Vector{Tuple{fmpz, GrpGenElem, GrpGenElem}}}}()
+    return false, fmpz(0), solutions
+  end
+
+  k = 0
+
+  for i in 1:length(all_non_trivial_subs)
+    fl, v = can_solve(view(M, 1:i, 1:ncols(M)), onee, side = :left)
+    if fl
+      k = i
+      break
+    end
+  end
+
+  subgroups_needed = Int[ i for i in 1:k if !iszero(v[1, i])]
+
+  den = denominator(v[1, 1])
+  for i in 2:k
+    den = lcm!(den, den, denominator(v[1, i]))
+  end
+
+  @assert iscoprime(den, m)
+
+  vvv = Vector{Vector{Tuple{fmpz, GrpGenElem, GrpGenElem}}}(undef, length(subgroups_needed))
+  for i in 1:length(vvv)
+    vvv[i] = Vector{Tuple{fmpz, GrpGenElem, GrpGenElem}}()
+  end
+
+  solutions = Vector{Tuple{Vector{GrpGenElem}, Vector{Tuple{fmpz, GrpGenElem, GrpGenElem}}}}()
+
+  for i in 1:length(subgroups_needed)
+    push!(vvv[i], (numerator(den * v[1, subgroups_needed[i]]), id(G), id(G)))
+    sgroup = [all_non_trivial_subs[subgroups_needed[i]][2](h) for h in all_non_trivial_subs[subgroups_needed[i]][1]]
+    push!(solutions, (sgroup, vvv[i]))
+  end
+
+  z = zero(QG)
+  for cc in 1:length(subgroups_needed)
+    z = z + v[1, subgroups_needed[cc]].data * norms[subgroups_needed[cc]]
+  end
+
+  @assert isone(z)
+
+  return true, den, solutions
+end
+
+function has_coprime_norm_relation(K::AnticNumberField, m::fmpz)
+  G, mG = automorphism_group(K)
+  b, den, ls = _smallest_scalar_norm_relation_coprime(G, m)
+
+  if !b
+    return false, NormRelation{Int}()
+  end
+
+  nonredundant = Dict{Int, Bool}()
+
+  for i in 1:length(ls)
+    red = false
+    @show i
+    for j in keys(nonredundant)
+      if Base.issubset(ls[j][1], ls[i][1])
+        red = true
+        @show "$i th field is redundant"
+        break
+      elseif Base.issubset(ls[i][1], ls[j][1])
+        @show "$i th field contains $j th field"
+        @show "deleting entry $i from $nonredundant"
+        delete!(nonredundant, j)
+        @show nonredundant
+        nonredundant[i] = true
+      end
+    end
+
+    @show red
+
+    if !red
+      nonredundant[i] = true
+    end
+  end
+
+  @show collect(keys(nonredundant))
+
+
+  n = length(ls)
+
+  z = NormRelation{Int}()
+  z.K = K
+  z.subfields = Vector{Tuple{AnticNumberField, NfToNfMor}}(undef, n)
+  z.denominator = den
+  z.ispure = true
+  z.embed_cache_triv = Vector{Dict{nf_elem, nf_elem}}(undef, n)
+  z.nonredundant = collect(keys(nonredundant))
+
+  for i in 1:n
+    z.embed_cache_triv[i] = Dict{nf_elem, nf_elem}()
+  end
+ 
+  for i in 1:n
+    F, mF = fixed_field(K, NfToNfMor[mG(f) for f in ls[i][1]])
+    S, mS = simplify(F, cached = true)
+    L = S
+    mL = mS * mF
+    z.subfields[i] = L, mL
+  end
+
+  z.coefficients_gen = Vector{Vector{Tuple{Int, NfToNfMor, NfToNfMor}}}(undef, n)
+
+  for i in 1:n
+    w = Vector{Tuple{Int, NfToNfMor, NfToNfMor}}(undef, length(ls[i][2]))
+    for (j, (expo, auto_pre, auto_post)) in enumerate(ls[i][2])
+      w[j] = (expo, mG(auto_pre), mG(auto_post))
+    end
+    z.coefficients_gen[i] = w
+  end
+
+  z.isabelian = false
+
+  return z
+end
+

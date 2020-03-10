@@ -70,7 +70,7 @@ function FacElem(Q::FacElem{NfOrdFracIdl, NfOrdFracIdlSet}, O::NfOrdIdlSet)
       add_to_key!(D, d, -v)
     end
   end
-  return FacElem(D)
+  return FacElem(O, D)
 end
 
 

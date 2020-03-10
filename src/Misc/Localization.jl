@@ -12,7 +12,7 @@ import AbstractAlgebra: base_ring, parent, check_parent, isunit, inv, +, -, *,
       Base.iszero, Base.isone, Base.==, Base.gcd, Base.deepcopy_internal,
       needs_parentheses, Base.show, displayed_with_minus_in_front, show_minus_one,
       Base.^, data, Base.numerator, Base.denominator, canonical_unit, Base.gcdx,
-      Base.div, divides, Base.lcm, Base.rand
+      divides, Base.lcm, Base.rand
 import Nemo: prime
 
 #prime might be product of several primes if localized at several primes, those primes are in array primes
@@ -283,7 +283,7 @@ function divexact(a::LocElem, b::LocElem, checked::Bool = true)
 end
 
 @doc Markdown.doc"""
-     div(a::LocElem{T}, b::LocElem{T}, checked::Bool = true)  where {T <: RingElem}
+     divrem(a::LocElem{T}, b::LocElem{T}, checked::Bool = true)  where {T <: RingElem}
 In case the ring is euclidean, return a euclidean division.     
 """
 function divrem(a::LocElem{T}, b::LocElem{T}, checked::Bool = true)  where {T <: RingElem}
@@ -302,10 +302,11 @@ function divrem(a::LocElem{T}, b::LocElem{T}, checked::Bool = true)  where {T <:
   end
 end
 
-function div(a::Loc{T}, b::Loc{T}) where {T}
+function Base.div(a::LocElem{T}, b::LocElem{T}) where {T}
   return divrem(a, b)[1]
 end
-function rem(a::Loc{T}, b::Loc{T}) where {T}
+
+function rem(a::LocElem{T}, b::LocElem{T}) where {T}
   return divrem(a, b)[2]
 end
 

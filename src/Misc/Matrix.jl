@@ -1663,7 +1663,7 @@ end
 function _can_solve(a::MatElem{S}, b::MatElem{S}, side = :left) where S <: RingElem
   H, T = hnf_with_transform(transpose(a))
   b = deepcopy(b)
-  z = similar(a, ncols(b), ncols(a))
+  z = zero_matrix(base_ring(a), ncols(b), ncols(a))
   l = min(nrows(a), ncols(a))
   for i = 1:ncols(b)
     for j = 1:l
