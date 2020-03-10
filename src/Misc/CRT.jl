@@ -22,6 +22,11 @@ function rem!(a::fmpz_mod_poly, b::fmpz_mod_poly, c::fmpz_mod_poly)
   return a
 end
 
+function rem!(a::gfp_fmpz_poly, b::gfp_fmpz_poly, c::gfp_fmpz_poly)
+  ccall((:gfp_fmpz_poly_rem, libflint), Nothing, (Ref{gfp_fmpz_poly}, Ref{gfp_fmpz_poly}, Ref{gfp_fmpz_poly}), a, b, c)
+  return a
+end
+
 mutable struct crt_env{T}
   pr::Array{T, 1}
   id::Array{T, 1}
