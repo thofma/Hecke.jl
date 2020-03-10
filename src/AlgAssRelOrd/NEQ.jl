@@ -342,7 +342,7 @@ function __neq_sunit(ktoK::NfToNfMor, primes_in_k::Vector{<: NfAbsOrdIdl}, vals:
       rethrow(e)
     end
   end
-  return elem_type(codomain(mSK))[ mSK(SK(s)) for s in sols ]
+  return elem_type(codomain(mSK))[ mSK(SK(sols[i, :])) for i in 1:nrows(sols) ]
 end
 
 function __neq_lift_unit(NC::NormCache, order_num::Int, g::GrpAbFinGenElem)
