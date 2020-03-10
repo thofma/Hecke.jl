@@ -1326,3 +1326,28 @@ function Array(A::SMat{T}) where T
   end
   return R
 end
+
+#TODO: write a kronnecker-row-product, this is THE 
+# Kronecker product corresponding to the matrix of a tensor
+# product of homs represented as column vectors
+#in Oscar, we should be doing row vectors...
+function kronecker_product(A::SMat{T}, B::SMat{T}) where {T}
+  C = sparse_matrix(base_ring(A))
+
+  for rA = A.rows
+    for rB = B.rows
+      p = Int[]
+      v = T[]
+      o = (rA.pos[1]-1)*ncols(B)
+      for (pp, vv) = rA
+        for (qq, ww) = rB
+          push!(p, qq+o)
+          push!(v, vv*ww)
+        end
+        o += ncols(B)
+      end
+      push!(C, sparse_row(base_ring(A), p, v))
+    end
+  end
+  return C
+end
