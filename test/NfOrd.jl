@@ -10,6 +10,8 @@
   @time include("NfOrd/FracIdl.jl")
   println("ResidueRing.jl")
   @time include("NfOrd/ResidueRing.jl")
+  println("ResidueField.jl")
+  @time include("NfOrd/ResidueField.jl")
   println("Clgp.jl")
   @time include("NfOrd/Clgp.jl")
   println("RayClassGroup.jl")

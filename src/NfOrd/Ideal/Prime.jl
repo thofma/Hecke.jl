@@ -802,6 +802,7 @@ function coprime_base(A::Array{NfOrdIdl, 1})
       for p in lf
         push!(a1, p)
       end
+      push!(a1, minimum(I))
     else
       push!(a1, minimum(I))
     end

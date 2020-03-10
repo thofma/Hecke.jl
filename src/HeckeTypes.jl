@@ -975,7 +975,6 @@ mutable struct NfAbsOrdIdl{S, T}
     C.princ_gen = O(x)
     C.princ_gen_fac_elem = FacElem(nf(O)(x))
     C.is_principal = 1
-    C.basis_matrix = abs(x)*identity_matrix(FlintZZ, degree(O))
     C.princ_gen_special = (1, abs(x), fmpz(0))
     C.gen_one = fmpz(x)
     C.gen_two = O(x)
@@ -993,7 +992,6 @@ mutable struct NfAbsOrdIdl{S, T}
     C.princ_gen = O(x)
     C.princ_gen_fac_elem = FacElem(nf(O)(x))
     C.is_principal = 1
-    C.basis_matrix = abs(x)*identity_matrix(FlintZZ, degree(O))
     C.princ_gen_special = (2, Int(0), abs(x))
     C.gen_one = x
     C.gen_two = O(x)

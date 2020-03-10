@@ -507,3 +507,151 @@ end
 function AbsOrdToAlgAssMor(O::Union{ NfAbsOrd, AlgAssAbsOrd }, A::AlgAss{T}, _image, _preimage) where {T}
   return AbsOrdToAlgAssMor{typeof(O), T}(O, A, _image, _preimage)
 end
+
+
+################################################################################
+#
+#  ResidueField degree 1 primes
+#
+################################################################################
+
+
+mutable struct NfOrdToGFMor <: Map{NfOrd, GaloisField, HeckeMap, NfOrdToFqNmodMor}
+  header::MapHeader{NfOrd, GaloisField}
+  poly_of_the_field::gfp_poly
+  P::NfOrdIdl
+  
+  function NfOrdToGFMor()
+    r = new()
+    r.header = MapHeader{NfOrd, GaloisField}()
+    return r
+  end
+
+  function NfOrdToGFMor(O::NfOrd, F::GaloisField, g::gfp_poly)
+    # assume that F = F_p[X]/(g) and g is a factor of f mod p of degree 1
+
+    z = new()
+    tmp_gfp_poly = parent(g)()
+    z.poly_of_the_field = g
+		local _image
+    let g = g, tmp_gfp_poly = tmp_gfp_poly, O = O, F = F
+    	function _image(x::NfOrdElem)
+      	gg = parent(nf(O).pol)(elem_in_nf(x))::fmpq_poly
+      	fmpq_poly_to_gfp_poly_raw!(tmp_gfp_poly, gg)
+      	ccall((:nmod_poly_rem, libflint), Nothing,
+        	    (Ref{gfp_poly}, Ref{gfp_poly}, Ref{gfp_poly}, Ptr{Nothing}),
+          	  tmp_gfp_poly, tmp_gfp_poly, g, pointer_from_objref(F)+sizeof(fmpz))
+      	return coeff(tmp_gfp_poly, 0)
+			end
+    end
+
+    z.header = MapHeader{NfOrd, GaloisField}(O, F, _image)
+    return z
+  end
+  
+  function NfOrdToGFMor(O::NfOrd, P::NfOrdIdl)
+    z = NfOrdToGFMor()
+    z.P = P
+    p = minimum(P)
+    a, g, b = get_residue_field_data(P)
+    psmall = Int(p)
+		n = degree(O)
+    F = GF(psmall, cached = false)
+    imageofbasis = Vector{gfp_elem}(undef, n)
+    for i in 1:n
+      imageofbasis[i] = F(b[i][1, 1])
+    end
+
+    tempF = F()
+		local _image
+		let tempF = tempF, imageofbasis = imageofbasis, F = F, n = n
+   		function _image(x::NfOrdElem)
+      	v = coordinates(x, copy = false)
+      	zz = zero(F)
+      	for i in 1:n
+          tempF = mul!(tempF, imageofbasis[i], F(v[i]))
+        	zz = add!(zz, zz, tempF)
+      	end
+      	return zz
+			end
+    end
+
+    z.header = MapHeader{NfOrd, GaloisField}(O, F, _image)
+    return z
+  end
+end
+
+function preimage(f::NfOrdToGFMor, a::gfp_elem)
+  return domain(f)(a.data)
+end
+
+Mor(O::NfOrd, F::GaloisField, g::gfp_poly) = NfOrdToGFMor(O, F, g)
+
+
+
+mutable struct NfOrdToGFFmpzMor <: Map{NfOrd, Nemo.GaloisFmpzField, HeckeMap, NfOrdToGFFmpzMor}
+  header::MapHeader{NfOrd, Nemo.GaloisFmpzField}
+  poly_of_the_field::gfp_fmpz_poly
+  P::NfOrdIdl
+  
+  function NfOrdToGFFmpzMor()
+    r = new()
+    return r
+  end
+
+  function NfOrdToGFFmpzMor(O::NfOrd, F::Nemo.GaloisFmpzField, g::gfp_fmpz_poly)
+    # assume that F = F_p[X]/(g) and g is a factor of f mod p of degree 1
+
+    z = new()
+    tmp_gfp_poly = parent(g)()
+    z.poly_of_the_field = g
+		local _image
+    let g = g, tmp_gfp_poly = tmp_gfp_poly, O = O, F = F
+    	function _image(x::NfOrdElem)
+      	gg = parent(nf(O).pol)(elem_in_nf(x))::fmpq_poly
+      	fmpq_poly_to_gfp_fmpz_poly_raw!(tmp_gfp_poly, gg)
+				rem!(tmp_gfp_poly, tmp_gfp_poly, g)
+      	return coeff(tmp_gfp_poly, 0)
+			end
+    end
+
+    z.header = MapHeader{NfOrd, Nemo.GaloisFmpzField}(O, F, _image)
+    return z
+  end
+  
+  function NfOrdToGFFmpzMor(O::NfOrd, P::NfOrdIdl)
+    z = NfOrdToGFFmpzMor()
+    z.P = P
+    p = minimum(P)
+    a, g, b = get_residue_field_data(P)
+		n = degree(O)
+    F = GF(p, cached = false)
+    imageofbasis = Vector{Nemo.gfp_fmpz_elem}(undef, n)
+    for i in 1:n
+      imageofbasis[i] = F(b[i][1, 1])
+    end
+
+    tempF = F()
+		local _image
+		let tempF = tempF, imageofbasis = imageofbasis, F = F, n = n
+   		function _image(x::NfOrdElem)
+      	v = coordinates(x, copy = false)
+      	zz = zero(F)
+      	for i in 1:n
+          mul!(tempF, imageofbasis[i], F(v[i]))
+        	add!(zz, zz, tempF)
+      	end
+      	return zz
+			end
+    end
+
+    z.header = MapHeader{NfOrd, Nemo.GaloisFmpzField}(O, F, _image)
+    return z
+  end
+end
+
+function preimage(f::NfOrdToGFFmpzMor, a::Nemo.gfp_fmpz_elem)
+  return domain(f)(lift(a))
+end
+
+Mor(O::NfOrd, F::Nemo.GaloisFmpzField, h::gfp_fmpz_poly) = NfOrdToGFFmpzMor(O, F, h)

@@ -469,7 +469,7 @@ function _autos_to_check(G::GAP.GapObj, K::GAP.GapObj, E::GAP.GapObj, mG::GAP.Ga
   AutK = GAP.Globals.AutomorphismGroup(K)
   AutE = GAP.Globals.AutomorphismGroup(E)
   #I want to construct the map between the automorphism groups. The kernel is characteristic!
-  gens = GAP.Globals.MinimalGeneratingSet(AutE)#GeneratorsOfGroup(AutE)
+  gens = GAP.Globals.GeneratorsOfGroup(AutE)
   ind_auts_quo = Array{GAP.GapObj, 1}(undef, length(gens))
   ind_auts_sub = Array{GAP.GapObj, 1}(undef, length(gens))
   for s = 1:length(gens)

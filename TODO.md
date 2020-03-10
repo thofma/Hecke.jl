@@ -16,6 +16,7 @@
  * [ ] Clean up uniformizer (p-uniformizer? strong uniformizer?)
  * [ ] Residue fields of degree one
  * [ ] Parent checks for `(::Order)(::NumFieldElem)`.
+ * [ ] Coercion of nf_elem in NfOrd
 
 ## Number fields
  * [ ] Overhaul the morphisms

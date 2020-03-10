@@ -30,6 +30,24 @@ function _lll_quad(A::NfOrdIdl)
   return FakeFmpqMat(l, fmpz(1)), t::fmpz_mat
 end
 
+function _lll_CM(A::NfOrdIdl, f::NfToNfMor)
+  b = basis(A)
+  n = degree(order(A))
+  g = zero_matrix(FlintZZ, n, n)
+  conjs = nf_elem[f(x.elem_in_nf) for x in b]
+  for i = 1:n
+    g[i, i] = numerator(trace(b[i].elem_in_nf * conjs[i]))
+    for j = i+1:n
+      el = numerator(trace(b[i].elem_in_nf * conjs[j]))
+      g[i, j] = el
+      g[j, i] = el
+    end
+  end
+  @hassert :LLL 1 isposdef(g)
+  l, t = lll_gram_with_transform(g)
+  return FakeFmpqMat(l, fmpz(1)), t::fmpz_mat
+end
+
 ################################################################################
 #
 #  lll for ideals
@@ -40,17 +58,21 @@ function lll(A::NfOrdIdl, v::fmpz_mat = zero_matrix(FlintZZ, 1, 1); prec::Int = 
 
   K = nf(order(A))
 
-  if iszero(v) && istotally_real(K)
-    #in this case the gram-matrix of the minkowski lattice is the trace-matrix
-    #which is exact.
-    return _lll_gram(A)
-  end
-
-  if iszero(v) && degree(K) == 2 && discriminant(order(A)) < 0
-    #in this case the gram-matrix of the minkowski lattice is related to the
-    #trace-matrix which is exact.
-    #could be extended to CM-fields
-    return _lll_quad(A)
+  if iszero(v) 
+    if istotally_real(K)
+      #in this case the gram-matrix of the minkowski lattice is the trace-matrix
+      #which is exact.
+      return _lll_gram(A)
+    elseif degree(K) == 2 && discriminant(order(A)) < 0
+       #in this case the gram-matrix of the minkowski lattice is related to the
+      #trace-matrix which is exact.
+      return _lll_quad(A)
+    elseif isautomorphisms_known(K)
+      fl, f_conj = iscm_field(K)
+      if fl
+        return _lll_CM(A, f_conj)
+      end
+    end
   end
 
   n = degree(order(A))
@@ -82,13 +104,10 @@ function lll(A::NfOrdIdl, v::fmpz_mat = zero_matrix(FlintZZ, 1, 1); prec::Int = 
 
     round_scale!(g, c, prec)
 
-    sv = fmpz(0)
-    if !iszero(v)
-      @v_do :ClassGroup 2 println("using inf val", v)
-      c = deepcopy(c)
-      mult_by_2pow_diag!(c, v)
-      sv = max(fmpz(0), sum(v[1,i] for i=1:ncols(l)))
-    end
+    @v_do :ClassGroup 2 println("using inf val", v)
+    c = deepcopy(c)
+    mult_by_2pow_diag!(c, v)
+    sv = max(fmpz(0), sum(v[1,i] for i=1:ncols(l)))
 
 
     round_scale!(d, c, prec)
@@ -163,7 +182,6 @@ function lll(M::NfOrd; prec::Int = 100)
   if isdefined(M, :lllO)
     return M.lllO::NfOrd
   end
-
   K = nf(M)
 
   if istotally_real(K)
@@ -178,6 +196,15 @@ function lll(M::NfOrd; prec::Int = 100)
     return On::NfOrd
   end
   
+  if isautomorphisms_known(K)
+    fl, f_conj = iscm_field(K)
+    if fl
+      On = _lll_CM(M, f_conj)
+      M.lllO = On
+      return On
+    end
+  end
+  
   return _lll(M, prec)
 end
 # don't know what this is doing
@@ -188,6 +215,36 @@ function _lll_gram(M::NfOrd)
   @assert istotally_real(K)
   g = trace_matrix(M)
 
+  w = lll_gram_with_transform(g)[2]
+  On = NfOrd(K, w*basis_matrix(M, copy = false))
+  On.ismaximal = M.ismaximal
+  if isdefined(M, :index)
+    On.index = M.index
+  end
+  if isdefined(M, :disc)
+    On.disc = M.disc
+  end
+  if isdefined(M, :gen_index)
+    On.gen_index = M.gen_index
+  end
+  return On
+end
+
+function _lll_CM(M::NfOrd, f::NfToNfMor)
+  K = nf(M)
+  b = basis(M, K)
+  n = degree(M)
+  g = zero_matrix(FlintZZ, n, n)
+  conjs = nf_elem[f(x) for x in b]
+  for i = 1:n
+    g[i, i] = numerator(trace(b[i] * conjs[i]))
+    for j = i+1:n
+      el = numerator(trace(b[i] * conjs[j]))
+      g[i, j] = el
+      g[j, i] = el
+    end
+  end
+  @hassert :LLL 1 isposdef(g)
   w = lll_gram_with_transform(g)[2]
   On = NfOrd(K, w*basis_matrix(M, copy = false))
   On.ismaximal = M.ismaximal

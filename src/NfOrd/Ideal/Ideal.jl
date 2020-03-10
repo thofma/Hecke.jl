@@ -467,9 +467,16 @@ function assure_has_basis_matrix(A::NfAbsOrdIdl)
   if isdefined(A, :basis_matrix)
     return nothing
   end
+  
+  n = degree(order(A))
 
   if iszero(A)
-    A.basis_matrix = zero_matrix(FlintZZ, degree(order(A)), degree(order(A)))
+    A.basis_matrix = zero_matrix(FlintZZ, n, n)
+    return nothing
+  end
+  
+  if has_princ_gen_special(A)
+    A.basis_matrix = scalar_matrix(FlintZZ, n, princ_gen_special(A))
     return nothing
   end
 
@@ -492,8 +499,6 @@ function assure_has_basis_matrix(A::NfAbsOrdIdl)
   end
 
   @hassert :NfOrd 1 has_2_elem(A)
-  K = nf(order(A))
-  n = degree(K)
 
   m = abs(A.gen_one)
   be = elem_in_nf(A.gen_two)

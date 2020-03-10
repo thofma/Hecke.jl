@@ -43,65 +43,6 @@ function multiplicative_group_generators(Q::NfOrdQuoRing)
   return multiplicative_group(Q).generators
 end
 
-function factor(Q::FacElem{NfOrdIdl, NfOrdIdlSet})
-  if !all(isprime, keys(Q.fac))
-    S = factor_coprime(Q)
-    fac = Dict{NfOrdIdl, Int}()
-    for (p, e)=S
-      lp = factor(p)
-      for (q, v) in lp
-        fac[q] = Int(v*e)
-      end
-    end
-  else
-    fac = Dict(p=>Int(e) for (p,e) = Q.fac)
-  end
-  return fac
-end
-
-function FacElem(Q::FacElem{NfOrdFracIdl, NfOrdFracIdlSet}, O::NfOrdIdlSet)
-  D = Dict{NfOrdIdl, fmpz}()
-  for (I, v) = Q.fac
-    if isone(I.den)
-      add_to_key!(D, I.num, v)
-    else
-      n,d = integral_split(I)
-      add_to_key!(D, n, v)
-      add_to_key!(D, d, -v)
-    end
-  end
-  return FacElem(O, D)
-end
-
-
-@doc Markdown.doc"""
-    factor_coprime(Q::FacElem{NfOrdFracIdl, NfOrdFracIdlSet}) -> Dict{NfOrdIdl, Int}
-A coprime factorisation of $Q$: each ideal in $Q$ is split using \code{integral_split} and then
-a coprime basis is computed.
-This does {\bf not} use any factorisation.
-"""
-function factor_coprime(Q::FacElem{NfOrdFracIdl, NfOrdFracIdlSet})
-  D = FacElem(Q, NfOrdIdlSet(order(base_ring(Q))))
-  S = factor_coprime(D)
-  return S
-end
-
-@doc Markdown.doc"""
-     factor(Q::FacElem{NfOrdFracIdl, NfOrdFracIdlSet}) -> Dict{NfOrdIdl, Int}
-The factorisation of $Q$, by refining a coprime factorisation.
-"""
-function factor(Q::FacElem{NfOrdFracIdl, NfOrdFracIdlSet})
-  S = factor_coprime(Q)
-  fac = Dict{NfOrdIdl, Int}()
-  for (p, e)=S
-    lp = factor(p)
-    for (q, v) in lp
-      fac[q] = Int(v*e)
-    end
-  end
-  return fac
-end
-
 # Factors Q.ideal, the result is saved in Q.factor
 function factor(Q::NfOrdQuoRing)
   if !isdefined(Q, :factor)

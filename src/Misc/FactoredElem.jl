@@ -567,17 +567,25 @@ end
 
 function simplify!(x::FacElem{fmpq})
   if length(x.fac) <= 1
-    return
+    return nothing
   end
-  cp = coprime_base(vcat([denominator(y) for y = base(x)], [numerator(y) for y=base(x)]))
+  cp = vcat([denominator(y) for (y, v) in x if !iszero(v)], [numerator(y) for (y, v) in x if !iszero(v)])
   ev = Dict{fmpq, fmpz}()
+  if isempty(cp)
+    ev[fmpq(1)] = 0
+    x.fac = ev
+    return nothing
+  end
+  cp = coprime_base(cp)
   for p = cp
     if p == 1 || p == -1
       continue
     end
     v = fmpz(0)
     for (b, vb) in x
-      v += valuation(b, abs(p))*vb
+      if !iszero(vb)
+        v += valuation(b, abs(p))*vb
+      end
     end
     if v != 0
       ev[fmpq(abs(p))] = v
@@ -709,8 +717,6 @@ end
 
 function simplify!(x::FacElem{NfOrdIdl, NfOrdIdlSet})
   if length(x.fac) <= 1 
-    p = first(keys(x.fac))
-    x.fac =  Dict(p => x.fac[p])
     return nothing
   elseif all(x -> iszero(x), values(x.fac)) 
     x.fac = Dict{NfOrdIdl, fmpz}()

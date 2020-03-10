@@ -71,7 +71,7 @@ end
 ################################################################################
 
 # It is assumed that p is not an index divisor
-function _residue_field_nonindex_divisor_helper(f::fmpq_poly, g::fmpq_poly, p)
+function _residue_field_nonindex_divisor_helper(f::fmpq_poly, g::fmpq_poly, p, degree_one::Type{Val{S}} = Val{false}) where S
   R = GF(p, cached = false)
 
   Zy, y = PolynomialRing(FlintZZ, "y", cached = false)
@@ -81,17 +81,21 @@ function _residue_field_nonindex_divisor_helper(f::fmpq_poly, g::fmpq_poly, p)
   fmodp = Rx(f)
 
   h = gcd(gmodp,fmodp)
-
-  if typeof(p) == Int
-    F = FqNmodFiniteField(h, :$, false)
-  elseif typeof(p) == fmpz
-    F = FqFiniteField(h, :$, false)
-  end
-
-  return F, h
+	
+	if degree_one == Val{true}
+    return R, h
+	else
+  	if typeof(p) == Int
+    	F3 = FqNmodFiniteField(h, :$, false)
+      return F3, h
+  	elseif typeof(p) == fmpz
+    	F4 = FqFiniteField(h, :$, false)
+      return F4, h
+  	end
+	end
 end
 
-function _residue_field_nonindex_divisor(O, P, small::Type{Val{T}} = Val{false}) where {T}
+function _residue_field_nonindex_divisor(O, P, small::Type{Val{T}} = Val{false}, degree_one::Type{Val{S}} = Val{false}) where {S, T}
   # This code assumes that P comes from prime_decomposition
   @assert has_2_elem(P) && isprime_known(P) && isprime(P)
 
@@ -102,16 +106,12 @@ function _residue_field_nonindex_divisor(O, P, small::Type{Val{T}} = Val{false})
 
   if small == Val{true}
     @assert fits(Int, minimum(P, copy = false))
-    F, h = _residue_field_nonindex_divisor_helper(f, g, Int(minimum(P)))
-
-    #return F, Mor(O, F, gen(F))
+    F, h = _residue_field_nonindex_divisor_helper(f, g, Int(minimum(P)), degree_one)
     mF = Mor(O, F, h)
     mF.P = P
     return F, mF
   elseif small == Val{false}
-    F, h = _residue_field_nonindex_divisor_helper(f, g, minimum(P))
-
-    #return F, Mor(O, F, gen(F))
+    F, h = _residue_field_nonindex_divisor_helper(f, g, minimum(P), degree_one)
     mF = Mor(O, F, h)
     mF.P = P
     return F, mF
@@ -124,14 +124,24 @@ end
 #
 ################################################################################
 
-function _residue_field_generic(O, P, small::Type{Val{T}} = Val{false}) where {T}
-  if small == Val{true}
+function _residue_field_generic(O, P, small::Type{Val{T}} = Val{false}, degree_one::Type{Val{S}} = Val{false}) where {S, T}
+  if small == Val{true} 
     @assert fits(Int, minimum(P, copy = false))
-    f = NfOrdToFqNmodMor(O, P)
-    return codomain(f), f
+    if degree_one == Val{true}
+			f1 = NfOrdToGFMor(O, P)
+      return codomain(f1), f1
+		else
+    	f = NfOrdToFqNmodMor(O, P)
+    	return codomain(f), f
+    end
   elseif small == Val{false}
-    f = NfOrdToFqMor(O, P)
-    return codomain(f), f
+    if degree_one == Val{true}
+    	f3 = NfOrdToGFFmpzMor(O, P)
+      return codomain(f3), f3
+		else
+			f2 = NfOrdToFqMor(O, P)
+    	return codomain(f2), f2
+		end
   end
 end
 
@@ -174,28 +184,28 @@ function ResidueFieldSmall(O::NfOrd, P::NfOrdIdl)
 end
 
 function ResidueFieldDegree1(O::NfOrd, P::NfOrdIdl)
-  p = minimum(P)
-  !fits(Int, p) && error("Minimum of prime ideal must be small (< 64 bits)")
-  if !ismaximal_known(O) || !ismaximal(O) || !isdefining_polynomial_nice(nf(O))
-    return _residue_field_generic(O, P, Val{true})
+  @assert degree(P) == 1
+  if !ismaximal_known(O) || !ismaximal(O)
+    return _residue_field_generic(O, P, Val{false}, Val{true})
   end
-  if !isindex_divisor(O, minimum(P))
-    return _residue_field_nonindex_divisor(O, P, Val{true})
+  if !isindex_divisor(O, minimum(P)) && has_2_elem(P)
+    return _residue_field_nonindex_divisor(O, P, Val{false}, Val{true})
   else
-    return _residue_field_generic(O, P, Val{true})
-  end
+    return _residue_field_generic(O, P, Val{false}, Val{true})
+  end	
 end
 
 
 function ResidueFieldSmallDegree1(O::NfOrd, P::NfOrdIdl)
   p = minimum(P)
   !fits(Int, p) && error("Minimum of prime ideal must be small (< 64 bits)")
+  @assert degree(P) == 1
   if !ismaximal_known(O) || !ismaximal(O) || !isdefining_polynomial_nice(nf(O))
-    return _residue_field_generic(O, P, Val{true})
+    return _residue_field_generic(O, P, Val{true}, Val{true})
   end
   if !isindex_divisor(O, minimum(P))
-    return _residue_field_nonindex_divisor(O, P, Val{true})
+    return _residue_field_nonindex_divisor(O, P, Val{true}, Val{true})
   else
-    return _residue_field_generic(O, P, Val{true})
+    return _residue_field_generic(O, P, Val{true}, Val{true})
   end
 end

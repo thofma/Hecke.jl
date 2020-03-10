@@ -21,7 +21,7 @@ function reduce_ideal2(I::FacElem{NfOrdIdl, NfOrdIdlSet})
   fst = true
   a = FacElem(Dict(K(1) => fmpz(1)))
   A = ideal(O, 1)
-  for (k,v) = I.fac
+  for (k, v) = I.fac
     @assert order(k) === O
     if iszero(v)
       continue
@@ -43,8 +43,6 @@ function reduce_ideal2(I::FacElem{NfOrdIdl, NfOrdIdlSet})
       end
     end
   end
-  #@show evaluate(a)*A
-  #@show evaluate(I)
   @hassert :PID_Test 1 A*evaluate(a) == evaluate(I)
   return A, a
 end

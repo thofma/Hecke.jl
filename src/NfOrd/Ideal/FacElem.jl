@@ -58,11 +58,6 @@ function abs(A::FacElemQ)
   for (k,v) = A.fac
     ak = abs(k)
     add_to_key!(B, ak, v)
-    #if haskey(B, ak)
-    #  B[ak] += v
-    #else
-    #  B[ak] = v
-    #end
   end
   if length(B) == 0
     return FacElem(Dict(one(base_ring(A)) => fmpz(1)))
@@ -126,12 +121,77 @@ end
 *(A::FacElem{NfOrdFracIdl,NfOrdFracIdlSet}, B::FacElem{NfOrdIdl,NfOrdIdlSet}) = B*A
 
 function isone(A::FacElem{NfOrdIdl, NfOrdIdlSet})
-  A = simplify(A)
-  return length(A.fac) == 1 && isone(first(keys(A.fac)))
+  if all(x -> iszero(x), values(A.fac))
+    return true
+  end
+  simplify!(A)
+  return length(A.fac) == 1 && (isone(first(keys(A.fac))) || iszero(first(values(A.fac))))
 end
 
 function isone(A::FacElem{NfOrdFracIdl, NfOrdFracIdlSet})
   A = simplify(A)
   return length(A.fac) == 1 && (isone(first(keys(A.fac))) || iszero(first(values(A.fac))))
+end
+
+function factor(Q::FacElem{NfOrdIdl, NfOrdIdlSet})
+  if !all(isprime, keys(Q.fac))
+    S = factor_coprime(Q)
+    fac = Dict{NfOrdIdl, Int}()
+    for (p, e)=S
+      lp = factor(p)
+      for (q, v) in lp
+        fac[q] = Int(v*e)
+      end
+    end
+  else
+    fac = Dict(p=>Int(e) for (p,e) = Q.fac)
+  end
+  return fac
+end
+
+function FacElem(Q::FacElem{NfOrdFracIdl, NfOrdFracIdlSet}, O::NfOrdIdlSet)
+  D = Dict{NfOrdIdl, fmpz}()
+  for (I, v) = Q.fac
+    if iszero(v)
+      continue
+    end
+    if isone(I.den)
+      add_to_key!(D, I.num, v)
+    else
+      n,d = integral_split(I)
+      add_to_key!(D, n, v)
+      add_to_key!(D, d, -v)
+    end
+  end
+  return FacElem(O, D)
+end
+
+
+@doc Markdown.doc"""
+    factor_coprime(Q::FacElem{NfOrdFracIdl, NfOrdFracIdlSet}) -> Dict{NfOrdIdl, Int}
+A coprime factorisation of $Q$: each ideal in $Q$ is split using \code{integral_split} and then
+a coprime basis is computed.
+This does {\bf not} use any factorisation.
+"""
+function factor_coprime(Q::FacElem{NfOrdFracIdl, NfOrdFracIdlSet})
+  D = FacElem(Q, NfOrdIdlSet(order(base_ring(Q))))
+  S = factor_coprime(D)
+  return S
+end
+
+@doc Markdown.doc"""
+     factor(Q::FacElem{NfOrdFracIdl, NfOrdFracIdlSet}) -> Dict{NfOrdIdl, Int}
+The factorisation of $Q$, by refining a coprime factorisation.
+"""
+function factor(Q::FacElem{NfOrdFracIdl, NfOrdFracIdlSet})
+  S = factor_coprime(Q)
+  fac = Dict{NfOrdIdl, Int}()
+  for (p, e)=S
+    lp = factor(p)
+    for (q, v) in lp
+      fac[q] = Int(v*e)
+    end
+  end
+  return fac
 end
 

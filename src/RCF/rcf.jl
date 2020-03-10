@@ -663,7 +663,6 @@ function _s_unit_for_kummer(C::CyclotomicExt, f::fmpz)
   @vprint :ClassField 2 "Maximal order of cyclotomic extension\n"
   ZK = maximal_order(K)
   @vprint :ClassField 2 "Class group of cyclotomic extension\n"
-  #@vtime :ClassField 2 
   c, mc = class_group(ZK)
   allow_cache!(mc)
   @vprint :ClassField 2 "... $c\n"
@@ -717,7 +716,7 @@ function _s_unit_for_kummer(C::CyclotomicExt, f::fmpz)
   end
   KK.gen_mod_nth_power = gens_mod_nth
   #@vtime :ClassField 3 
-  KK.eval_mod_nth = nf_elem[evaluate(x) for x in gens_mod_nth]
+  #KK.eval_mod_nth = nf_elem[evaluate(x) for x in gens_mod_nth]
   C.kummer_exts[lfs] = (lP, KK)
   return lP, KK
 end

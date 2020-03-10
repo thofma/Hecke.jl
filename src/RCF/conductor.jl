@@ -744,7 +744,14 @@ function norm_group(f::Array{T, 1}, mR::Hecke.MapRayClassGrp, isabelian::Bool = 
 end
 
 
-function norm_group(mL::NfToNfMor, mR::Hecke.MapRayClassGrp, expected_index::Int = 1)
+function defining_modulus(mC::MapClassGrp)
+  OK = order(codomain(mC))
+  I = ideal(OK, 1)
+  lp = Vector{InfPlc}()
+  return I, lp
+end
+
+function norm_group(mL::NfToNfMor, mR::Union{MapRayClassGrp, MapClassGrp}, expected_index::Int = 1)
   
   K = domain(mL)
   L = codomain(mL)
@@ -774,7 +781,6 @@ function norm_group(mL::NfToNfMor, mR::Hecke.MapRayClassGrp, expected_index::Int
     end
     p = next_prime(p)
     lP = prime_decomposition(O, p)
-    
     for (P, e) in lP
       lQ = prime_decomposition_type(mL, P)
       s = gcd(Int[x[1] for x in lQ])

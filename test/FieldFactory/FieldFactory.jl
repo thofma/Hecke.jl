@@ -57,8 +57,16 @@
   
   printstyled("\n Obstructions: prime degree\n", color = :red)
   @time begin
-    @test length(fields(54, 5, fmpz(10)^70, simplify = false)) == 3
-    @test length(fields(27, 3, fmpz(10)^60, simplify = false)) == 10
+    l = fields(6, 2, fmpz(10)^8)
+    G = GAP.Globals.SmallGroup(54, 5)
+    L = GAP.Globals.DerivedSeries(G)
+    lsieved = Hecke.check_obstruction(l, L, 2, [3, 3])
+    @test length(lsieved) == length(l)
+    l = fields(9, 2, fmpz(10)^20)
+    G = GAP.Globals.SmallGroup(27, 3)
+    L = GAP.Globals.DerivedSeries(G)
+    lsieved = Hecke.check_obstruction(l, L, 2, [3])
+    @test length(lsieved) == 24
   end
   
   printstyled("\n Obstructions: prime_power_case\n", color = :red)
@@ -92,5 +100,5 @@
     @test length(fields(24, 8, fmpz(10)^30, simplify = false)) == 15
   end
 
-  printstyled("\n Tests were successful", color = :red)
+  printstyled("\n Tests were successful\n", color = :red)
 end
