@@ -23,7 +23,7 @@ function rem!(a::fmpz_mod_poly, b::fmpz_mod_poly, c::fmpz_mod_poly)
 end
 
 function rem!(a::gfp_fmpz_poly, b::gfp_fmpz_poly, c::gfp_fmpz_poly)
-  ccall((:gfp_fmpz_poly_rem, libflint), Nothing, (Ref{gfp_fmpz_poly}, Ref{gfp_fmpz_poly}, Ref{gfp_fmpz_poly}), a, b, c)
+  ccall((:fmpz_mod_poly_rem, libflint), Nothing, (Ref{gfp_fmpz_poly}, Ref{gfp_fmpz_poly}, Ref{gfp_fmpz_poly}), a, b, c)
   return a
 end
 
