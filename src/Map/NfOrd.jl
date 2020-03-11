@@ -508,7 +508,6 @@ function AbsOrdToAlgAssMor(O::Union{ NfAbsOrd, AlgAssAbsOrd }, A::AlgAss{T}, _im
   return AbsOrdToAlgAssMor{typeof(O), T}(O, A, _image, _preimage)
 end
 
-
 ################################################################################
 #
 #  ResidueField degree 1 primes
@@ -655,3 +654,23 @@ function preimage(f::NfOrdToGFFmpzMor, a::Nemo.gfp_fmpz_elem)
 end
 
 Mor(O::NfOrd, F::Nemo.GaloisFmpzField, h::gfp_fmpz_poly) = NfOrdToGFFmpzMor(O, F, h)
+# Helper
+
+function mul!(z::gfp_elem, x::gfp_elem, y::fmpz)
+  R = parent(x)
+  d = ccall((:fmpz_fdiv_ui, libflint), UInt, (Ref{fmpz}, UInt), y, R.n)
+  r = ccall((:n_mulmod2_preinv, libflint), UInt, (UInt, UInt, UInt, UInt),
+             x.data, d, R.n, R.ninv)
+  return gfp_elem(r, R)
+end
+
+function mul!(z::Nemo.gfp_fmpz_elem, x::Nemo.gfp_fmpz_elem, y::fmpz)
+  R = parent(x)
+  ccall((:fmpz_mod, libflint), Nothing, (Ref{fmpz}, Ref{fmpz}, Ref{fmpz}),
+        z.data, y, R.n)
+
+  ccall((:fmpz_mod_mul, libflint), Nothing,
+        (Ref{fmpz}, Ref{fmpz}, Ref{fmpz}, Ref{Nemo.fmpz_mod_ctx_struct}),
+        z.data, x.data, z.data, R.ninv)
+  return z
+end
