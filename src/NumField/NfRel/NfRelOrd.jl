@@ -635,7 +635,7 @@ function dedekind_test(O::NfRelOrd, p::Union{NfOrdIdl, NfRelOrdIdl}, compute_ord
   for (t, e) in fac
     mul!(g, g, fq_poly_to_nf_elem_poly(Kx, immF, t))
   end
-  gmodp = map_coeffs(mmF, g, Fy)
+  gmodp = map_coeffs(mmF, g, parent = Fy)
   hmodp = divexact(Tmodp, gmodp)
   h = fq_poly_to_nf_elem_poly(Kx, immF, hmodp)
   a = anti_uniformizer(p)

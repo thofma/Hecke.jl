@@ -307,7 +307,7 @@ function _class_unit_group(O::NfOrd; bound::Int = -1, method::Int = 3, large::In
   c.finished = true
   U.finished = true
 
-  @vprint :ClassGroup 1 "hnftime $(c.time[:hnf_time])\n"
+  #@vprint :ClassGroup 1 "hnftime $(c.time[:hnf_time])\n"
 
   if !GRH
     class_group_proof(c, fmpz(2), factor_base_bound_minkowski(O))
