@@ -1064,7 +1064,17 @@ function val_func_index(p::NfOrdIdl)
   let P = P, O = O, M = M, p = p
     function val(x::nf_elem, no::fmpq = fmpq(0))
       v = 0
+      max_v = -1
+      nn = fmpz(0)
       d, x_mat = integral_split(x, O)
+      #=
+      if !iszero(no)
+        nn = numerator(no*d^(degree(O)))
+        if iscoprime(nn, P)
+          return v
+        end
+      end
+      =#
       Nemo.mul!(x_mat, x_mat, M)
       c = content(x_mat)
       vc = valuation(c, P)
@@ -1098,8 +1108,14 @@ function val_func_generic(p::NfOrdIdl)
       v = 0
       p_mod = fmpz(0)
       d = denominator(x)
+      
       if !iszero(no)
         nn = numerator(no*d^degree(O))
+        #=
+        if iscoprime(nn, P)
+          return -valuation(d, P)*p.splitting_type[1]
+        end
+        =#
         p_mod = P^(div(valuation(nn, norm(p)), ramification_index(p))+1)
 	      x = mod(x, p_mod)
       end
@@ -1196,10 +1212,10 @@ function assure_valuation_function(p::NfOrdIdl)
       local val1
       let f1 = f1, f2 = f2
         function val1(x::nf_elem, no::fmpq = fmpq(0))
-          v = f1(x)
+          v = f1(x, no)
           if v > 100  # can happen ONLY if the precision in the .._small function
                       # was too small.
-            return f2(x)::Int
+            return f2(x, no)::Int
           else
             return v::Int
           end
@@ -1215,10 +1231,10 @@ function assure_valuation_function(p::NfOrdIdl)
     local val4
       let f3 = f3, f4 = f4
         function val4(x::nf_elem, no::fmpq = fmpq(0))
-          v = f3(x)
+          v = f3(x, no)
           if v > 100  # can happen ONLY if the precision in the .._small function
                       # was too small.
-            return f4(x)::Int
+            return f4(x, no)::Int
           else
             return v::Int
           end
@@ -1340,11 +1356,6 @@ function valuation_naive(x::nf_elem, B::NfOrdIdl)
   O = order(B)
   d = denominator(x, O)
   return valuation_naive(O(x*d), B) - valuation_naive(O(d), B)
-  #while x in C
-  #  i += 1
-  #  C *= B
-  #end
-  #return i
 end
 
 @doc Markdown.doc"""

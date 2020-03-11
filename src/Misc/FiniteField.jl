@@ -309,5 +309,3 @@ function minpoly(Rx::GFPFmpzPolyRing, a::fq)
   end
   return g
 end
-
-

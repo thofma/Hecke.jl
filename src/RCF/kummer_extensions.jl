@@ -157,11 +157,23 @@ function canonical_frobenius(p::NfOrdIdl, K::KummerExt)
     return canonical_frobenius_fmpz(p, K)
   end
 
-  F, mF = ResidueFieldSmall(Zk, p)
-  #_mF = extend_easy(mF, number_field(Zk))
-  mF1 = NfToFqNmodMor_easy(mF, number_field(Zk))
-  z_p = image(mF1, K.zeta)^(K.n-1)
+  if degree(p) != 1
+    F, mF = ResidueFieldSmall(Zk, p)
+    mF1 = NfToFqNmodMor_easy(mF, number_field(Zk))
+    aut = _compute_frob(K, mF1, p)
+  else
+    F2, mF2 = ResidueFieldSmallDegree1(Zk, p)
+    mF3 = NfToGFMor_easy(mF2, number_field(Zk))
+    aut = _compute_frob(K, mF3, p)
+  end
+  z = K.AutG(aut)
+  K.frob_cache[p] = z
+  return z
+end
 
+function _compute_frob(K, mF, p)
+  z_p = image(mF, K.zeta)^(K.n-1)
+ 
   # K = k(sqrt[n_i](gen[i]) for i=1:length(gen)), an automorphism will be
   # K[i] -> zeta^divexact(n, n_i) * ? K[i]
   # Frob(sqrt[n](a), p) = sqrt[n](a)^N(p) (mod p) = zeta^r sqrt[n](a)
@@ -172,22 +184,20 @@ function canonical_frobenius(p::NfOrdIdl, K::KummerExt)
     ord_genj = Int(order(K.AutG[j]))
     ex = div(norm(p)-1, ord_genj)
     if isdefined(K, :gen_mod_nth_power)
-      mu = image(mF1, K.gen_mod_nth_power[j])^ex
+      mu = image(mF, K.gen_mod_nth_power[j])^ex
     else
-      mu = image(mF1, K.gen[j], K.n)^ex  # can throw bad prime!
+      mu = image(mF, K.gen[j], K.n)^ex  # can throw bad prime!
     end
     i = 0
     z_pj = z_p^divexact(K.n, ord_genj)
     while !isone(mu)
       i += 1
       @assert i <= K.n
-      mul!(mu, mu, z_pj)
+      mu = mul!(mu, mu, z_pj)
     end
     aut[j] = fmpz(i)
   end
-  z = K.AutG(aut)
-  K.frob_cache[p] = z
-  return z
+  return aut
 end
 
 function canonical_frobenius_fmpz(p::NfOrdIdl, K::KummerExt)
@@ -246,28 +256,46 @@ function canonical_frobenius(p::NfOrdIdl, K::KummerExt, g::FacElem{nf_elem})
   if !fits(Int, minimum(p, copy = false))
     error("Oops")
   end
-
-  F, mF = ResidueFieldSmall(Zk, p)
-  mF1 = extend_easy(mF, nf(Zk))
-
+  
+  @assert norm(p) % K.n == 1
+  ex = div(norm(p)-1, K.n)
+  
   #K = sqrt[n](gen), an automorphism will be
   # K[i] -> zeta^? K[i]
   # Frob(sqrt[n](a), p) = sqrt[n](a)^N(p) (mod p) = zeta^r sqrt[n](a)
   # sqrt[n](a)^N(p) = a^(N(p)-1 / n) = zeta^r mod p
-  z_p = inv(mF1(K.zeta))
-  @assert norm(p) % K.n == 1
-  ex = div(norm(p)-1, K.n)
-  mu = image(mF1, g, K.n)^ex  # can throw bad prime!
-  i = 0
-  while true
-    if isone(mu)
-      break
+  
+  if degree(p) != 1
+    F, mF = ResidueFieldSmall(Zk, p)
+    mF1 = extend_easy(mF, nf(Zk))
+    z_p = inv(mF1(K.zeta))
+    mu = image(mF1, g, K.n)^ex  # can throw bad prime!
+    i = 0
+    while true
+      if isone(mu)
+        break
+      end
+      i += 1
+      @assert i <= K.n
+      mu = mul!(mu, mu, z_p)
     end
-    i += 1
-    @assert i <= K.n
-    mul!(mu, mu, z_p)
+    return i
+  else
+    F2, mF2 = ResidueFieldSmallDegree1(Zk, p)
+    mF3 = extend_easy(mF2, nf(Zk))
+    z_p1 = inv(mF3(K.zeta))
+    mu1 = image(mF3, g, K.n)^ex  # can throw bad prime!
+    i = 0
+    while true
+      if isone(mu1)
+        break
+      end
+      i += 1
+      @assert i <= K.n
+      mu1 = mul!(mu1, mu1, z_p1)
+    end
+    return i
   end
-  return i
 end
 
 ################################################################################

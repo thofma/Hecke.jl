@@ -54,6 +54,14 @@ function size(R::FqNmodFiniteField)
   return order(R)
 end
 
+function size(F::GaloisField)
+  return order(F)
+end
+
+function size(F::Nemo.GaloisFmpzField)
+  return order(F)
+end
+
 function order(R::Nemo.NmodRing)
   return fmpz(R.n)
 end

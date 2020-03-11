@@ -53,7 +53,7 @@ end
 function mod_p(R, Q::NfOrdIdl, p::Int, T)
   Zk = order(Q)
   F, mF = Hecke.ResidueFieldSmallDegree1(Zk, Q)
-  mF1 = Hecke.NfToFqNmodMor_easy(mF, number_field(Zk))
+  mF1 = Hecke.extend_easy(mF, number_field(Zk))
   @assert size(F) % p == 1
   pp, e = Hecke.ppio(Int(size(F)-1), p)
   dl = Dict{elem_type(F), Int}()

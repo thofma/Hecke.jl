@@ -397,7 +397,6 @@ function Mor(O::NfOrd, F::FqFiniteField, h::gfp_fmpz_poly)
 end
 
 
-
 ################################################################################
 #
 #  ResidueField degree 1 primes
@@ -451,19 +450,15 @@ mutable struct NfOrdToGFMor <: Map{NfOrd, GaloisField, HeckeMap, NfOrdToFqNmodMo
       imageofbasis[i] = F(b[i][1, 1])
     end
 
-    tempF = F()
 		local _image
-		let tempF = tempF, imageofbasis = imageofbasis, F = F, n = n
+		let imageofbasis = imageofbasis, F = F, n = n
    		function _image(x::NfOrdElem)
       	v = coordinates(x, copy = false)
-      	zz = zero(F)
+      	tempF = zero(UInt)
       	for i in 1:n
-      	  if !iszero(v[i])
-            tempF = mul!(tempF, imageofbasis[i], v[i])
-        	  zz = add!(zz, zz, tempF)
-        	end
-      	end
-      	return zz
+          tempF += mul_mod(imageofbasis[i].data, v[i], F)
+       	end
+      	return F(tempF)
 			end
     end
 
@@ -567,7 +562,7 @@ end
 function extend(f::T, K::AnticNumberField) where T <: Union{NfOrdToFqNmodMor, NfOrdToFqMor, NfOrdToGFMor, NfOrdToGFFmpzMor}
   nf(domain(f)) != K && error("Number field is not the number field of the order")
 
-  z = NfToFinFldMor{T}()
+  z = NfToFinFldMor{typeof(codomain(f))}()
 
   z.header.domain = K
   z.header.codomain = f.header.codomain
@@ -622,7 +617,15 @@ end
 
 #a stop-gap, mainly for non-monic polynomials
 function extend_easy(f::Hecke.NfOrdToFqMor, K::AnticNumberField)
-  return extend(f, K)
+  return NfToFqMor_easy(f, K)
+end
+
+function extend_easy(f::Hecke.NfOrdToGFMor, K::AnticNumberField)
+  return NfToGFMor_easy(f, K)
+end
+
+function extend_easy(f::Hecke.NfOrdToGFFmpzMor, K::AnticNumberField)
+  return NfToGFFmpzMor_easy(f, K)
 end
 
 
@@ -649,7 +652,7 @@ function image(mF::NfToFqMor_easy, a::FacElem{nf_elem, AnticNumberField}, quo::I
   for (k, v) = a.fac
     vv = v
     if quo != 0
-      vv = v %quo 
+      vv = v % quo 
       if vv < 0
         vv += quo
       end
@@ -743,6 +746,139 @@ function image(mF::NfToFqNmodMor_easy, a::nf_elem, n_quo::Int = 0)
   return q
 end
 
+function _nf_to_gfp_elem(b::nf_elem, a_tmp::gfp_poly, def_pol::gfp_poly)
+  nf_elem_to_gfp_poly!(a_tmp, b)
+  rem!(a_tmp, a_tmp, def_pol)
+  return coeff(a_tmp, 0)
+end
+
+function _nf_to_gfp_elem(b::nf_elem, a_tmp::gfp_fmpz_poly, def_pol::gfp_fmpz_poly)
+  nf_elem_to_gfp_fmpz_poly!(a_tmp, b)
+  rem!(a_tmp, a_tmp, def_pol)
+  return coeff(a_tmp, 0)
+end
+
+mutable struct NfToGFMor_easy <: Map{AnticNumberField, GaloisField, HeckeMap, NfToGFMor_easy}
+  header::MapHeader{AnticNumberField, GaloisField}
+  Fq::GaloisField
+  defining_pol::gfp_poly
+  s::gfp_elem
+  t::gfp_poly
+  function NfToGFMor_easy(a::NfOrdToGFMor, k::AnticNumberField)
+    r = new()
+    r.Fq = codomain(a)
+    r.defining_pol = a.poly_of_the_field
+    r.header = MapHeader(k, r.Fq)
+    r.s = r.Fq()
+    r.t = zero(parent(r.defining_pol))
+    return r
+  end
+end
+
+function image(mF::NfToGFMor_easy, a::FacElem{nf_elem, AnticNumberField}, quo::Int = 0)
+  Fq = mF.Fq
+  p = mF.defining_pol
+  q = one(Fq)
+  t = mF.t
+  for (k, v) = a.fac
+    vv = v
+    if quo != 0
+      vv = v %quo 
+      if vv < 0
+        vv += quo
+      end
+    end
+    @assert vv < order(Fq)  #please complain if this is triggered
+    if !iszero(vv)
+      if denominator(k) % characteristic(Fq) == 0
+        throw(BadPrime(characteristic(Fq)))
+      end
+      s = _nf_to_gfp_elem(k, t, p)
+      if iszero(s)
+        throw(BadPrime(1))
+      end
+      if vv < 0
+        s = inv(s)
+        vv = -vv
+      end
+      s = s^vv
+      q = mul!(q, q, s)
+    end
+  end
+  return q
+end
+
+function image(mF::NfToGFMor_easy, a::nf_elem, n_quo::Int = 0)
+  Fq = mF.Fq
+  p = mF.defining_pol
+  t = mF.t
+  if denominator(a) % characteristic(Fq) == 0
+    throw(BadPrime(characteristic(Fq)))
+  end
+  return _nf_to_gfp_elem(a, t, p)
+end
+
+
+mutable struct NfToGFFmpzMor_easy <: Map{AnticNumberField, Nemo.GaloisFmpzField, HeckeMap, NfToGFFmpzMor_easy}
+  header::MapHeader{AnticNumberField, Nemo.GaloisFmpzField}
+  Fq::Nemo.GaloisFmpzField
+  defining_pol::Nemo.gfp_fmpz_poly
+  s::Nemo.gfp_fmpz_elem
+  t::Nemo.gfp_fmpz_poly
+  function NfToGFFmpzMor_easy(a::NfOrdToGFFmpzMor, k::AnticNumberField)
+    r = new()
+    r.Fq = codomain(a)
+    r.header = MapHeader(k, r.Fq)
+    r.s = r.Fq()
+    r.defining_pol = a.poly_of_the_field
+    r.t = zero(parent(a.poly_of_the_field))
+    return r
+  end
+end
+
+function image(mF::NfToGFFmpzMor_easy, a::FacElem{nf_elem, AnticNumberField}, quo::Int = 0)
+  Fq = mF.Fq
+  p = mF.defining_pol
+  q = one(Fq)
+  t = mF.t
+  for (k, v) = a.fac
+    vv = v
+    if quo != 0
+      vv = v %quo 
+      if vv < 0
+        vv += quo
+      end
+    end
+    @assert vv < order(Fq)  #please complain if this is triggered
+    if !iszero(vv)
+      if denominator(k) % characteristic(Fq) == 0
+        throw(BadPrime(characteristic(Fq)))
+      end
+      s = _nf_to_gfp_fmpz_elem(k, t, p)
+      if iszero(s)
+        throw(BadPrime(1))
+      end
+      if vv < 0
+        s = inv(s)
+        vv = -vv
+      end
+      s = s^vv
+      mul!(q, q, s)
+    end
+  end
+  return q
+end
+
+function image(mF::NfToGFFmpzMor_easy, a::nf_elem, n_quo::Int = 0)
+  Fq = mF.Fq
+  p = mF.defining_pol
+  t = mF.t
+  if denominator(a) % characteristic(Fq) == 0
+    throw(BadPrime(characteristic(Fq)))
+  end
+  return _nf_to_gfp_fmpz_elem(a, t, p)
+end
+
 ################################################################################
 #
 #  AbsOrdToAlgAssMor type
@@ -763,3 +899,39 @@ function AbsOrdToAlgAssMor(O::Union{ NfAbsOrd, AlgAssAbsOrd }, A::AlgAss{T}, _im
   return AbsOrdToAlgAssMor{typeof(O), T}(O, A, _image, _preimage)
 end
 
+
+# Helper
+
+function mul!(z::gfp_elem, x::gfp_elem, y::fmpz)
+  R = parent(x)
+  d = ccall((:fmpz_fdiv_ui, libflint), UInt, (Ref{fmpz}, UInt), y, R.n)
+  r = ccall((:n_mulmod2_preinv, libflint), UInt, (UInt, UInt, UInt, UInt),
+             x.data, d, R.n, R.ninv)
+  z.data = r
+  return z
+end
+
+function mul_mod(x::UInt, y::fmpz, R)
+  d = ccall((:fmpz_fdiv_ui, libflint), UInt, (Ref{fmpz}, UInt), y, R.n)
+  r = ccall((:n_mulmod2_preinv, libflint), UInt, (UInt, UInt, UInt, UInt),
+             x, d, R.n, R.ninv)
+  return r
+end
+
+function mul!(z::Nemo.gfp_fmpz_elem, x::Nemo.gfp_fmpz_elem, y::fmpz)
+  R = parent(x)
+  ccall((:fmpz_mod, libflint), Nothing, (Ref{fmpz}, Ref{fmpz}, Ref{fmpz}),
+        z.data, y, R.n)
+
+  ccall((:fmpz_mod_mul, libflint), Nothing,
+        (Ref{fmpz}, Ref{fmpz}, Ref{fmpz}, Ref{Nemo.fmpz_mod_ctx_struct}),
+        z.data, x.data, z.data, R.ninv)
+  return z
+end
+
+function rem!(z::gfp_poly, a::gfp_poly, b::gfp_poly)
+  ccall((:nmod_poly_rem, libflint), Nothing,
+        	    (Ref{gfp_poly}, Ref{gfp_poly}, Ref{gfp_poly}, Ptr{Nothing}),
+          	  z, a, b, pointer_from_objref(base_ring(z))+sizeof(fmpz))
+  return z
+end
