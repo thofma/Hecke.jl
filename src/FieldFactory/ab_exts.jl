@@ -1208,7 +1208,7 @@ function _from_relative_to_absQQ(L::NfRelNS{T}, auts::Array{NfRelNSToNfRelNSMor{
   
   
   @vprint :AbExt 2 "Done. Now simplify and translate information\n"
-  @vtime :AbExt 2 Ks, mKs = simplify(K)
+  @vtime :AbExt 2 Ks, mKs = simplify(K, cached = false)
   #Now, we have to construct the maximal order of this field.
   #I am computing the preimages of mKs by hand, by inverting the matrix.
   arr_prim_img = Array{nf_elem, 1}(undef, degree(Ks))
@@ -1296,7 +1296,7 @@ function _from_relative_to_abs(L::NfRelNS{T}, auts::Array{NfRelNSToNfRelNSMor{T}
   O1.ismaximal = 1
   _set_maximal_order_of_nf(K, O1)
   @vprint :AbExt 2 "Done. Now simplify and translate information\n"
-  @vtime :AbExt 2 Ks, mKs = simplify(K)
+  @vtime :AbExt 2 Ks, mKs = simplify(K, cached = false)
   #Now, we have to construct the maximal order of this field.
   #I am computing the preimages of mKs by hand, by inverting the matrix.
   arr_prim_img = Array{nf_elem, 1}(undef, degree(Ks))

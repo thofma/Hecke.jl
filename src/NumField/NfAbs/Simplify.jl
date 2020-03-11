@@ -47,7 +47,7 @@ function simplify(K::AnticNumberField; canonical::Bool = false, cached = true)
         OL1.ismaximal = 1
         Hecke._set_maximal_order(L1, OL1)
         @vprint :Simplify 3 "Trying to simplify $(L1.pol)\n"
-        L2, mL2 = simplify(L1)
+        L2, mL2 = simplify(L1, cached = cached)
         return L2, mL2*mp
       end
       prec = 100 + 25*div(n, 3) + Int(round(log(abs(discriminant(OK)))))

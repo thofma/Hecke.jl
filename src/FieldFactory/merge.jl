@@ -163,7 +163,7 @@ end
 function simplify!(x::FieldsTower)
   K = x.field
   OK = maximal_order(K)
-  Ks, mKs = simplify(K)
+  Ks, mKs = simplify(K, cached = false)
   #I need to translate everything...
   mKi = inv(mKs)
   #First, translate the lll of the maximal order

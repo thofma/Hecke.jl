@@ -323,7 +323,7 @@ function _from_relative_to_abs_with_embedding(L::Hecke.NfRelNS{T}, autL::Array{H
   O1.ismaximal = 1
   Hecke._set_maximal_order_of_nf(K, O1)
   if use_simplify
-    @vtime :Fields 3 Ks, mKs = Hecke.simplify(K)
+    @vtime :Fields 3 Ks, mKs = Hecke.simplify(K, cached = false)
     #Now, we have to construct the maximal order of this field.
     #I compute the inverse of mKs
     @vtime :Fields 3 mKsI = inv(mKs)
