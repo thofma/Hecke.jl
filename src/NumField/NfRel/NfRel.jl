@@ -813,7 +813,7 @@ function normal_basis(L::NfRel{nf_elem}, check::Bool = false)
     F, mF = ResidueField(OK, p)
     mmF = extend(mF, K)
     Ft, t = PolynomialRing(F, "t", cached = false)
-    ft = nf_elem_poly_to_fq_poly(Ft, mmF, L.pol)
+    ft = map_coeffs(mmF, L.pol, parent = Ft)
     pt = powmod(t, order(F), ft)
 
     if degree(gcd(ft, pt - t)) == degree(ft)

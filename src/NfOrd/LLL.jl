@@ -234,6 +234,7 @@ function _lll_CM(M::NfOrd, f::NfToNfMor)
   K = nf(M)
   b = basis(M, K)
   n = degree(M)
+  @vprint :LLL 1 "Computing the gram matrix\n"
   g = zero_matrix(FlintZZ, n, n)
   conjs = nf_elem[f(x) for x in b]
   for i = 1:n
@@ -244,6 +245,7 @@ function _lll_CM(M::NfOrd, f::NfToNfMor)
       g[j, i] = el
     end
   end
+  @vprint :LLL 1 "Now LLL\n"
   @hassert :LLL 1 isposdef(g)
   w = lll_gram_with_transform(g)[2]
   On = NfOrd(K, w*basis_matrix(M, copy = false))

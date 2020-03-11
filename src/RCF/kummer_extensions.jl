@@ -126,129 +126,6 @@ function number_field(K::KummerExt)
   return number_field(pols, check = false, cached = false)
 end
 
-################################################################################
-#
-#  Extension of residue field map to localization
-#
-################################################################################
-
-mutable struct NfToFqMor_easy <: Map{AnticNumberField, FqFiniteField, HeckeMap, NfToFqMor_easy}
-  header::MapHeader
-  Fq::FqFiniteField
-  s::fq
-  t::gfp_fmpz_poly
-  function NfToFqMor_easy(a::Map, k::AnticNumberField)
-    r = new()
-    r.Fq = codomain(a)
-    r.header = MapHeader(k, r.Fq)
-    r.s = r.Fq()
-    r.t = PolynomialRing(GF(characteristic(r.Fq), cached = false), cached = false)[1]()
-    return r
-  end
-end
-
-function image(mF::NfToFqMor_easy, a::FacElem{nf_elem, AnticNumberField}, quo::Int = 0)
-  Fq = mF.Fq
-  q = one(Fq)
-  t = mF.t
-  s = mF.s
-  for (k, v) = a.fac
-    vv = v
-    if quo != 0
-      vv = v %quo 
-      if vv < 0
-        vv += quo
-      end
-    end
-    @assert vv < order(Fq)  #please complain if this is triggered
-    if !iszero(vv)
-      if denominator(k) % characteristic(Fq) == 0
-        throw(BadPrime(characteristic(Fq)))
-      end
-      _nf_to_fq!(s, k, Fq, t)
-      if iszero(s)
-        throw(BadPrime(1))
-      end
-      if vv < 0
-        ccall((:fq_inv, libflint), Nothing, (Ref{fq}, Ref{fq}, Ref{FqFiniteField}), s, s, Fq)
-        vv = -vv
-      end
-      ccall((:fq_pow_ui, libflint), Nothing, (Ref{fq}, Ref{fq}, Int, Ref{FqFiniteField}), s, s, vv, Fq)
-      mul!(q, q, s)
-    end
-  end
-  return q
-end
-
-function image(mF::NfToFqMor_easy, a::nf_elem, n_quo::Int = 0)
-  Fq = mF.Fq
-  q = Fq()
-  if denominator(a) % characteristic(Fq) == 0
-    throw(BadPrime(characteristic(Fq)))
-  end
-  _nf_to_fq!(q, a, Fq, mF.t)
-  return q
-end
-
-
-mutable struct NfToFqNmodMor_easy <: Map{AnticNumberField, FqNmodFiniteField, HeckeMap, NfToFqNmodMor_easy}
-  header::MapHeader
-  Fq::FqNmodFiniteField
-  s::fq_nmod
-  t::gfp_poly
-  function NfToFqNmodMor_easy(a::Map, k::AnticNumberField)
-    r = new()
-    r.Fq = codomain(a)
-    r.header = MapHeader(k, r.Fq)
-    r.s = r.Fq()
-    r.t = PolynomialRing(GF(UInt(characteristic(r.Fq)), cached=false), cached=false)[1]()
-    return r
-  end
-end
-
-function image(mF::NfToFqNmodMor_easy, a::FacElem{nf_elem, AnticNumberField}, quo::Int = 0)
-  Fq = mF.Fq
-  q = one(Fq)
-  t = mF.t
-  s = mF.s
-  for (k, v) = a.fac
-    vv = v
-    if quo != 0
-      vv = v %quo 
-      if vv < 0
-        vv += quo
-      end
-    end
-    @assert vv < order(Fq)  #please complain if this is triggered
-    if !iszero(vv)
-      if denominator(k) % characteristic(Fq) == 0
-        throw(BadPrime(characteristic(Fq)))
-      end
-      _nf_to_fq!(s, k, Fq, t)
-      if iszero(s)
-        throw(BadPrime(1))
-      end
-      if vv < 0
-        ccall((:fq_nmod_inv, libflint), Nothing, (Ref{fq_nmod}, Ref{fq_nmod}, Ref{FqNmodFiniteField}), s, s, Fq)
-        vv = -vv
-      end
-      ccall((:fq_nmod_pow_ui, libflint), Nothing, (Ref{fq_nmod}, Ref{fq_nmod}, Int, Ref{FqNmodFiniteField}), s, s, vv, Fq)
-      mul!(q, q, s)
-    end
-  end
-  return q
-end
-
-function image(mF::NfToFqNmodMor_easy, a::nf_elem, n_quo::Int = 0)
-  Fq = mF.Fq
-  q = Fq()
-  if denominator(a) % characteristic(Fq) == 0
-    throw(BadPrime(characteristic(Fq)))
-  end
-  _nf_to_fq!(q, a, Fq, mF.t)
-  return q
-end
-
 ###############################################################################
 #
 #  Computation of Frobenius automorphisms
@@ -280,10 +157,10 @@ function canonical_frobenius(p::NfOrdIdl, K::KummerExt)
     return canonical_frobenius_fmpz(p, K)
   end
 
-  F, mF = ResidueFieldSmall(Zk, p)::Tuple{FqNmodFiniteField,NfOrdToFqNmodMor}
+  F, mF = ResidueFieldSmall(Zk, p)
   #_mF = extend_easy(mF, number_field(Zk))
-  mF = NfToFqNmodMor_easy(mF, number_field(Zk))
-  z_p = image(mF, K.zeta)^(K.n-1)
+  mF1 = NfToFqNmodMor_easy(mF, number_field(Zk))
+  z_p = image(mF1, K.zeta)^(K.n-1)
 
   # K = k(sqrt[n_i](gen[i]) for i=1:length(gen)), an automorphism will be
   # K[i] -> zeta^divexact(n, n_i) * ? K[i]
@@ -295,9 +172,9 @@ function canonical_frobenius(p::NfOrdIdl, K::KummerExt)
     ord_genj = Int(order(K.AutG[j]))
     ex = div(norm(p)-1, ord_genj)
     if isdefined(K, :gen_mod_nth_power)
-      mu = image(mF, K.gen_mod_nth_power[j])^ex
+      mu = image(mF1, K.gen_mod_nth_power[j])^ex
     else
-      mu = image(mF, K.gen[j], K.n)^ex  # can throw bad prime!
+      mu = image(mF1, K.gen[j], K.n)^ex  # can throw bad prime!
     end
     i = 0
     z_pj = z_p^divexact(K.n, ord_genj)
@@ -328,8 +205,8 @@ function canonical_frobenius_fmpz(p::NfOrdIdl, K::KummerExt)
 
   F, mF = ResidueField(Zk, p)
   #_mF = extend_easy(mF, number_field(Zk))
-  mF = NfToFqMor_easy(mF, number_field(Zk))
-  z_p = image(mF, K.zeta)^(K.n-1)
+  mF1 = NfToFqMor_easy(mF, number_field(Zk))
+  z_p = image(mF1, K.zeta)^(K.n-1)
 
   # K = k(sqrt[n_i](gen[i]) for i=1:length(gen)), an automorphism will be
   # K[i] -> zeta^divexact(n, n_i) * ? K[i]
@@ -341,9 +218,9 @@ function canonical_frobenius_fmpz(p::NfOrdIdl, K::KummerExt)
     ord_genj = Int(order(K.AutG[j]))
     ex = div(norm(p)-1, ord_genj)
     if isdefined(K, :gen_mod_nth_power)
-      mu = image(mF, K.gen_mod_nth_power[j])^ex
+      mu = image(mF1, K.gen_mod_nth_power[j])^ex
     else
-      mu = image(mF, K.gen[j], K.n)^ex  # can throw bad prime!
+      mu = image(mF1, K.gen[j], K.n)^ex  # can throw bad prime!
     end
     i = 0
     z_pj = z_p^divexact(K.n, ord_genj)
@@ -371,17 +248,16 @@ function canonical_frobenius(p::NfOrdIdl, K::KummerExt, g::FacElem{nf_elem})
   end
 
   F, mF = ResidueFieldSmall(Zk, p)
-  mF = extend_easy(mF, nf(Zk))
+  mF1 = extend_easy(mF, nf(Zk))
 
   #K = sqrt[n](gen), an automorphism will be
   # K[i] -> zeta^? K[i]
   # Frob(sqrt[n](a), p) = sqrt[n](a)^N(p) (mod p) = zeta^r sqrt[n](a)
   # sqrt[n](a)^N(p) = a^(N(p)-1 / n) = zeta^r mod p
-  z_p = inv(mF(K.zeta))
+  z_p = inv(mF1(K.zeta))
   @assert norm(p) % K.n == 1
   ex = div(norm(p)-1, K.n)
-
-  mu = image(mF, g, K.n)^ex  # can throw bad prime!
+  mu = image(mF1, g, K.n)^ex  # can throw bad prime!
   i = 0
   while true
     if isone(mu)

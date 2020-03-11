@@ -396,117 +396,6 @@ function Mor(O::NfOrd, F::FqFiniteField, h::gfp_fmpz_poly)
   return NfOrdToFqMor(O, F, h)
 end
 
-function sub(M::Nemo.MatElem{T}, r::UnitRange{<:Integer}, c::UnitRange{<:Integer}) where {T}
-  z = similar(M, length(r), length(c))
-  for i in 1:length(r)
-    for j in 1:length(c)
-      z[i, j] = M[r[i], c[j]]
-    end
-  end
-  return z
-end
-
-mutable struct NfToFqNmodMor <: Map{AnticNumberField, FqNmodFiniteField, HeckeMap, NfToFqNmodMor}
-  header::MapHeader{AnticNumberField, FqNmodFiniteField}
-
-  function NfToFqNmodMor()
-    r = new()
-    r.header = MapHeader{AnticNumberField, FqNmodFiniteField}()
-    return r
-  end
-end
-
-mutable struct NfToFqMor <: Map{AnticNumberField, FqFiniteField, HeckeMap, NfToFqMor}
-  header::MapHeader{AnticNumberField, FqFiniteField}
-
-  function NfToFqMor()
-    r = new()
-    r.header = MapHeader{AnticNumberField, FqFiniteField}()
-    return r
-  end
-end
-
-function extend(f::Union{NfOrdToFqNmodMor, NfOrdToFqMor}, K::AnticNumberField)
-  nf(domain(f)) != K && error("Number field is not the number field of the order")
-
-  if f isa NfOrdToFqNmodMor
-    z = NfToFqNmodMor()
-  elseif f isa NfOrdToFqMor
-    z = NfToFqMor()
-  end
-
-  z.header.domain = K
-  z.header.codomain = f.header.codomain
-
-  p = characteristic(z.header.codomain)
-  Zx = PolynomialRing(FlintZZ, "x", cached = false)[1]
-  y = f(NfOrdElem(domain(f), gen(K)))
-  pia = anti_uniformizer(f.P)
-  O = domain(f)
-  P = f.P
-
-  #function _image(x::nf_elem)
-  #  g = parent(K.pol)(x)
-  #  u = inv(z.header.codomain(denominator(g)))
-
-  #  g = Zx(denominator(g)*g)
-  #  return u*evaluate(g, y)
-  #end
-  function _image(x::nf_elem)
-    m = denominator(x, domain(f))
-    l = valuation(m, P)
-    if l == 0
-      return f(O(m*x))//f(O(m))
-    else
-      return f(O(pia^l * m * x))//f(O(pia^l * m))
-    end
-  end
-
-  function _preimage(x::Union{fq, fq_nmod})
-    return elem_in_nf(preimage(f, x))
-  end
-
-  z.header.image = _image
-  z.header.preimage = _preimage
-
-  return z
-end
-
-function (f::NfOrdToFqNmodMor)(p::PolyElem{NfOrdElem})
-  F = codomain(f)
-  Fx,_ = PolynomialRing(F, "_\$", cached = false)
-
-  ar = NfOrdElem[ coeff(p, i) for i in 0:degree(p) ]
-
-  z = Fx(map(f, ar))
-
-  return z
-end
-
-function (f::NfOrdToFqMor)(p::PolyElem{NfOrdElem})
-  F = codomain(f)
-  Fx,_ = PolynomialRing(F, "_\$", cached = false)
-
-  ar = NfOrdElem[ coeff(p, i) for i in 0:degree(p) ]
-
-  z = Fx(map(f, ar))
-
-  return z
-end
-
-mutable struct AbsOrdToAlgAssMor{S, T} <: Map{S, AlgAss{T}, HeckeMap, AbsOrdToAlgAssMor}
-  header::MapHeader
-
-  function AbsOrdToAlgAssMor{S, T}(O::S, A::AlgAss{T}, _image::Function, _preimage::Function) where {S <: Union{ NfAbsOrd, AlgAssAbsOrd }, T}
-    z = new{S, T}()
-    z.header = MapHeader(O, A, _image, _preimage)
-    return z
-  end
-end
-
-function AbsOrdToAlgAssMor(O::Union{ NfAbsOrd, AlgAssAbsOrd }, A::AlgAss{T}, _image, _preimage) where {T}
-  return AbsOrdToAlgAssMor{typeof(O), T}(O, A, _image, _preimage)
-end
 
 
 ################################################################################
@@ -569,8 +458,10 @@ mutable struct NfOrdToGFMor <: Map{NfOrd, GaloisField, HeckeMap, NfOrdToFqNmodMo
       	v = coordinates(x, copy = false)
       	zz = zero(F)
       	for i in 1:n
-          tempF = mul!(tempF, imageofbasis[i], F(v[i]))
-        	zz = add!(zz, zz, tempF)
+      	  if !iszero(v[i])
+            tempF = mul!(tempF, imageofbasis[i], v[i])
+        	  zz = add!(zz, zz, tempF)
+        	end
       	end
       	return zz
 			end
@@ -638,7 +529,7 @@ mutable struct NfOrdToGFFmpzMor <: Map{NfOrd, Nemo.GaloisFmpzField, HeckeMap, Nf
       	v = coordinates(x, copy = false)
       	zz = zero(F)
       	for i in 1:n
-          mul!(tempF, imageofbasis[i], F(v[i]))
+          mul!(tempF, imageofbasis[i], v[i])
         	add!(zz, zz, tempF)
       	end
       	return zz
@@ -655,3 +546,220 @@ function preimage(f::NfOrdToGFFmpzMor, a::Nemo.gfp_fmpz_elem)
 end
 
 Mor(O::NfOrd, F::Nemo.GaloisFmpzField, h::gfp_fmpz_poly) = NfOrdToGFFmpzMor(O, F, h)
+
+################################################################################
+#
+#  Extend to number field
+#
+################################################################################
+
+mutable struct NfToFinFldMor{T} <: Map{AnticNumberField, T, HeckeMap, NfToFinFldMor{T}} 
+  header::MapHeader{AnticNumberField, T}
+
+  function NfToFinFldMor{T}() where T
+    r = new{T}()
+    r.header = MapHeader{AnticNumberField, T}()
+    return r
+  end
+end
+
+
+function extend(f::T, K::AnticNumberField) where T <: Union{NfOrdToFqNmodMor, NfOrdToFqMor, NfOrdToGFMor, NfOrdToGFFmpzMor}
+  nf(domain(f)) != K && error("Number field is not the number field of the order")
+
+  z = NfToFinFldMor{T}()
+
+  z.header.domain = K
+  z.header.codomain = f.header.codomain
+
+  pia = anti_uniformizer(f.P)
+  O = domain(f)
+  P = f.P
+
+  function _image(x::nf_elem)
+    m = denominator(x, domain(f))
+    l = valuation(m, P)
+    if l == 0
+      return f(O(m*x))//f(O(m))
+    else
+      return f(O(pia^l * m * x))//f(O(pia^l * m))
+    end
+  end
+
+  function _preimage(x)
+    return elem_in_nf(preimage(f, x))
+  end
+
+  z.header.image = _image
+  z.header.preimage = _preimage
+
+  return z
+end
+
+#=
+function (f::Union{NfOrdToFqNmodMor, NfOrdToFqMor, NfOrdToGFMor, NfOrdToGFFmpzMor})(p::PolyElem{NfOrdElem})
+  return map_coeffs(f, p)
+end
+=#
+@doc Markdown.doc"""
+    extend_easy(f::Hecke.NfOrdToFqNmodMor, K::AnticNumberField) -> NfToFqNmodMor
+For a residue field map from a prime ideal, extend the domain of the map
+to the entire field.
+Requires the prime ideal to be coprime to the index, unramified and
+over a small integer. The resulting map can very efficiently be
+evaluated using `image(map, elem)`.
+The resulting map can be applied to
+  * `nf_elem`
+  * `FacElem{nf_elem}`
+Will throw a `BadPrime` exception if applied to an element in the 
+field with a $p$ in the denominator. In the case of `FacElem`, zero
+is also not permitted (and will produce a `BadPrime` error).
+"""
+function extend_easy(f::Hecke.NfOrdToFqNmodMor, K::AnticNumberField)
+  nf(domain(f)) != K && error("Number field is not the number field of the order")
+  return NfToFqNmodMor_easy(f, K)
+end
+
+#a stop-gap, mainly for non-monic polynomials
+function extend_easy(f::Hecke.NfOrdToFqMor, K::AnticNumberField)
+  return extend(f, K)
+end
+
+
+mutable struct NfToFqMor_easy <: Map{AnticNumberField, FqFiniteField, HeckeMap, NfToFqMor_easy}
+  header::MapHeader{AnticNumberField, FqFiniteField}
+  Fq::FqFiniteField
+  s::fq
+  t::gfp_fmpz_poly
+  function NfToFqMor_easy(a::Map, k::AnticNumberField)
+    r = new()
+    r.Fq = codomain(a)
+    r.header = MapHeader(k, r.Fq)
+    r.s = r.Fq()
+    r.t = PolynomialRing(GF(characteristic(r.Fq), cached = false), cached = false)[1]()
+    return r
+  end
+end
+
+function image(mF::NfToFqMor_easy, a::FacElem{nf_elem, AnticNumberField}, quo::Int = 0)
+  Fq = mF.Fq
+  q = one(Fq)
+  t = mF.t
+  s = mF.s
+  for (k, v) = a.fac
+    vv = v
+    if quo != 0
+      vv = v %quo 
+      if vv < 0
+        vv += quo
+      end
+    end
+    @assert vv < order(Fq)  #please complain if this is triggered
+    if !iszero(vv)
+      if denominator(k) % characteristic(Fq) == 0
+        throw(BadPrime(characteristic(Fq)))
+      end
+      _nf_to_fq!(s, k, Fq, t)
+      if iszero(s)
+        throw(BadPrime(1))
+      end
+      if vv < 0
+        ccall((:fq_inv, libflint), Nothing, (Ref{fq}, Ref{fq}, Ref{FqFiniteField}), s, s, Fq)
+        vv = -vv
+      end
+      ccall((:fq_pow_ui, libflint), Nothing, (Ref{fq}, Ref{fq}, Int, Ref{FqFiniteField}), s, s, vv, Fq)
+      mul!(q, q, s)
+    end
+  end
+  return q
+end
+
+function image(mF::NfToFqMor_easy, a::nf_elem, n_quo::Int = 0)
+  Fq = mF.Fq
+  q = Fq()
+  if denominator(a) % characteristic(Fq) == 0
+    throw(BadPrime(characteristic(Fq)))
+  end
+  _nf_to_fq!(q, a, Fq, mF.t)
+  return q
+end
+
+
+mutable struct NfToFqNmodMor_easy <: Map{AnticNumberField, FqNmodFiniteField, HeckeMap, NfToFqNmodMor_easy}
+  header::MapHeader{AnticNumberField, FqNmodFiniteField}
+  Fq::FqNmodFiniteField
+  s::fq_nmod
+  t::gfp_poly
+  function NfToFqNmodMor_easy(a::Map, k::AnticNumberField)
+    r = new()
+    r.Fq = codomain(a)
+    r.header = MapHeader(k, r.Fq)
+    r.s = r.Fq()
+    r.t = PolynomialRing(GF(UInt(characteristic(r.Fq)), cached=false), cached=false)[1]()
+    return r
+  end
+end
+
+function image(mF::NfToFqNmodMor_easy, a::FacElem{nf_elem, AnticNumberField}, quo::Int = 0)
+  Fq = mF.Fq
+  q = one(Fq)
+  t = mF.t
+  s = mF.s
+  for (k, v) = a.fac
+    vv = v
+    if quo != 0
+      vv = v %quo 
+      if vv < 0
+        vv += quo
+      end
+    end
+    @assert vv < order(Fq)  #please complain if this is triggered
+    if !iszero(vv)
+      if denominator(k) % characteristic(Fq) == 0
+        throw(BadPrime(characteristic(Fq)))
+      end
+      _nf_to_fq!(s, k, Fq, t)
+      if iszero(s)
+        throw(BadPrime(1))
+      end
+      if vv < 0
+        ccall((:fq_nmod_inv, libflint), Nothing, (Ref{fq_nmod}, Ref{fq_nmod}, Ref{FqNmodFiniteField}), s, s, Fq)
+        vv = -vv
+      end
+      ccall((:fq_nmod_pow_ui, libflint), Nothing, (Ref{fq_nmod}, Ref{fq_nmod}, Int, Ref{FqNmodFiniteField}), s, s, vv, Fq)
+      mul!(q, q, s)
+    end
+  end
+  return q
+end
+
+function image(mF::NfToFqNmodMor_easy, a::nf_elem, n_quo::Int = 0)
+  Fq = mF.Fq
+  q = Fq()
+  if denominator(a) % characteristic(Fq) == 0
+    throw(BadPrime(characteristic(Fq)))
+  end
+  _nf_to_fq!(q, a, Fq, mF.t)
+  return q
+end
+
+################################################################################
+#
+#  AbsOrdToAlgAssMor type
+#
+################################################################################
+
+mutable struct AbsOrdToAlgAssMor{S, T} <: Map{S, AlgAss{T}, HeckeMap, AbsOrdToAlgAssMor}
+  header::MapHeader
+
+  function AbsOrdToAlgAssMor{S, T}(O::S, A::AlgAss{T}, _image::Function, _preimage::Function) where {S <: Union{ NfAbsOrd, AlgAssAbsOrd }, T}
+    z = new{S, T}()
+    z.header = MapHeader(O, A, _image, _preimage)
+    return z
+  end
+end
+
+function AbsOrdToAlgAssMor(O::Union{ NfAbsOrd, AlgAssAbsOrd }, A::AlgAss{T}, _image, _preimage) where {T}
+  return AbsOrdToAlgAssMor{typeof(O), T}(O, A, _image, _preimage)
+end
+

@@ -598,28 +598,6 @@ end
 #
 ################################################################################
 
-function nf_elem_poly_to_fq_poly(R::FqPolyRing, m::Union{NfToFqMor, NfRelToFqMor}, f::Generic.Poly{T}) where {T <: Union{nf_elem, NfRelElem}}
-  @assert codomain(m) == base_ring(R)
-  @assert domain(m) == base_ring(parent(f))
-
-  g = zero(R)
-  for i = 0:degree(f)
-    setcoeff!(g, i, m(coeff(f, i)))
-  end
-  return g
-end
-
-function nf_elem_poly_to_fq_nmod_poly(R::FqNmodPolyRing, m::NfToFqNmodMor, f::Generic.Poly{nf_elem})
-  @assert codomain(m) == base_ring(R)
-  @assert domain(m) == base_ring(parent(f))
-
-  g = zero(R)
-  for i = 0:degree(f)
-    setcoeff!(g, i, m(coeff(f, i)))
-  end
-  return g
-end
-
 function fq_nmod_poly_to_nf_elem_poly(R::Generic.PolyRing{nf_elem}, m::InverseMap, f::fq_nmod_poly)
   @assert codomain(m) == base_ring(R)
   @assert domain(m) == base_ring(parent(f))
@@ -632,14 +610,7 @@ function fq_nmod_poly_to_nf_elem_poly(R::Generic.PolyRing{nf_elem}, m::InverseMa
 end
 
 function fq_poly_to_nf_elem_poly(R::Generic.PolyRing{T}, m::InverseMap, f::fq_poly) where {T <: Union{nf_elem, NfRelElem}}
-  @assert codomain(m) == base_ring(R)
-  @assert domain(m) == base_ring(parent(f))
-
-  g = zero(R)
-  for i = 0:degree(f)
-    setcoeff!(g, i, m(coeff(f, i)))
-  end
-  return g
+  return map_coeffs(m, f, parent = R)
 end
 
 # Algorithm IV.6. in "Berechnung relativer Ganzheitsbasen mit dem
@@ -658,18 +629,18 @@ function dedekind_test(O::NfRelOrd, p::Union{NfOrdIdl, NfRelOrdIdl}, compute_ord
   immF = pseudo_inv(mmF)
   Fy, y = PolynomialRing(F,"y", cached=false)
 
-  Tmodp = nf_elem_poly_to_fq_poly(Fy, mmF, T)
+  Tmodp = map_coeffs(mmF, T, parent = Fy)
   fac = factor(Tmodp)
   g = Kx(1)
   for (t, e) in fac
     mul!(g, g, fq_poly_to_nf_elem_poly(Kx, immF, t))
   end
-  gmodp = nf_elem_poly_to_fq_poly(Fy, mmF, g)
+  gmodp = map_coeffs(mmF, g, Fy)
   hmodp = divexact(Tmodp, gmodp)
   h = fq_poly_to_nf_elem_poly(Kx, immF, hmodp)
   a = anti_uniformizer(p)
   f = a*(g*h - T)
-  fmodp = nf_elem_poly_to_fq_poly(Fy, mmF, f)
+  fmodp = map_coeffs(mmF, f, parent = Fy)
 
   d = gcd(fmodp, gcd(gmodp, hmodp))
 

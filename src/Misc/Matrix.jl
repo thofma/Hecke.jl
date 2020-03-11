@@ -1875,6 +1875,16 @@ function sub(M::MatElem, rows::Vector{Int}, cols::Vector{Int})
   return N
 end
 
+function sub(M::Nemo.MatElem{T}, r::UnitRange{<:Integer}, c::UnitRange{<:Integer}) where {T}
+  z = similar(M, length(r), length(c))
+  for i in 1:length(r)
+    for j in 1:length(c)
+      z[i, j] = M[r[i], c[j]]
+    end
+  end
+  return z
+end
+
 ################################################################################
 #
 #  Kernel of matrix over Z/nZ

@@ -1218,30 +1218,6 @@ function grp_elem_to_map(A::Array{NfRelToNfRelMor{nf_elem, nf_elem}, 1}, b::GrpA
   return res
 end
 
-
-@doc Markdown.doc"""
-    extend_easy(f::Hecke.NfOrdToFqNmodMor, K::AnticNumberField) -> NfToFqNmodMor
-For a residue field map from a prime ideal, extend the domain of the map
-to the entire field.
-Requires the prime ideal to be coprime to the index, unramified and
-over a small integer. The resulting map can very efficiently be
-evaluated using `image(map, elem`.
-The resulting map can be applied to
-  * `nf_elem`
-  * `FacElem{nf_elem}`
-Will throw a `BadPrime` exception if applied to an element in the 
-field with a $p$ in the denominator. In the case of `FacElem`, zero
-is also mot permitted (and will produce a `BadPrime` error.
-"""
-function extend_easy(f::Hecke.NfOrdToFqNmodMor, K::AnticNumberField)
-  nf(domain(f)) != K && error("Number field is not the number field of the order")
-  return NfToFqNmodMor_easy(f, K)
-end
-
-#a stop-gap, mainly for non-monic polynomials
-function extend_easy(f::Hecke.NfOrdToFqMor, K::AnticNumberField)
-  return extend(f, K)
-end
 ###############################################################################
 #
 #  Reduction of generators
