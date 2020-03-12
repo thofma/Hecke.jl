@@ -253,7 +253,7 @@ end
 #
 ################################################################################
 
-Base.enumerate(G::Generic.PermGroup) = enumerate(AllPerms(G.n))
+Base.enumerate(G::Generic.SymmetricGroup) = enumerate(AllPerms(G.n))
 
 ################################################################################
 #

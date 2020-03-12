@@ -484,7 +484,7 @@ function find_pseudo_hnf_modulus(P::PMat{T, S}) where {T, S}
     m = det(P)
   else
     p = next_prime(2^61)
-    permGroup = PermGroup(nrows(P))
+    permGroup = SymmetricGroup(nrows(P))
     rowPerm = permGroup()
     rank = 0
     while rank != ncols(P)
