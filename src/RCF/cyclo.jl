@@ -80,13 +80,18 @@ function cyclotomic_extension(k::AnticNumberField, n::Int; cached::Bool = true, 
     return c
   end
   
+  if compute_LLL_basis && iscoprime(discriminant(maximal_order(k)), n)
+    return _cyclotomic_extension_non_simple(k, n, cached = cached)
+  end
+  
+  
   ZX, X = PolynomialRing(FlintZZ, cached = false)
   f = cyclotomic(n, X)
   fk = change_base_ring(k, f, parent = kt)
   if n < 5
     #For n = 3, 4 the cyclotomic polynomial has degree 2,
     #so we can just ask for the roots.
-    if !isone(gcd(degree(fk), degree(k))) && !isone(gcd(discriminant(maximal_order(k)), n)) && !istotally_real(k)  
+    if !isone(gcd(degree(fk), degree(k))) && !istotally_real(k)  
       rt = _roots_hensel(fk, max_roots = 1, isnormal = true)
     else
       rt = nf_elem[]
@@ -128,7 +133,7 @@ function cyclotomic_extension(k::AnticNumberField, n::Int; cached::Bool = true, 
         end
         ZKa.ismaximal = 1
         if compute_LLL_basis
-          ZKa = lll(ZKa)
+          lll(ZKa)
         end
         Hecke._set_maximal_order_of_nf(Ka, ZKa)
       end
@@ -143,7 +148,7 @@ function cyclotomic_extension(k::AnticNumberField, n::Int; cached::Bool = true, 
     return c
   end
    
-  if gcd(degree(fk), degree(k)) != 1 && !isone(gcd(discriminant(maximal_order(k)), n))
+  if gcd(degree(fk), degree(k)) != 1
     lf = factor(fk)
     fk = first(keys(lf.fac))
   end
@@ -185,7 +190,7 @@ function cyclotomic_extension(k::AnticNumberField, n::Int; cached::Bool = true, 
         ZKa = pmaximal_overorder(ZKa, p)
       end
       if compute_LLL_basis
-        ZKa = lll(ZKa)
+        lll(ZKa)
       end
       ZKa.ismaximal = 1
       Hecke._set_maximal_order_of_nf(Ka, ZKa)
@@ -212,6 +217,138 @@ function cyclotomic_extension(k::AnticNumberField, n::Int; cached::Bool = true, 
   return c
   
 end
+
+function _isprobably_primitive(x::NfAbsOrdElem)
+  S = parent(x)
+  OS = maximal_order(S)
+  d = discriminant(OS)
+  M, d1 = representation_matrix_q(x.elem_in_nf)
+  p = next_prime(1000)
+  for i = 1:3
+    while divisible(d, p)[1] || divisible(d1, p)
+      p = next_prime(p)
+    end
+    R = GF(p, cached = false)
+    MR = map_entries(R, M)
+    if degree(minpoly(MR)) == degree(S)
+      return true
+    end
+  end
+  return false
+end
+
+function _cyclotomic_extension_non_simple(k::AnticNumberField, n::Int; cached::Bool = true)
+  
+  L, zeta = cyclotomic_field(n, cached = false)
+  automorphisms(L)
+  OL = maximal_order(L)
+  lOL = lll(OL)
+  
+  OK = maximal_order(k)
+  lOK = lll(OK)
+  
+  S, mK, mL = number_field(k, L)
+  BK = map(mK, basis(lOK, k))
+  BL = map(mL, basis(lOL, L))
+  BOS = product_basis(BK, BL)
+  OS = NfAbsOrd(BOS)
+  OS.ismaximal = 1
+  OS.disc = discriminant(OL)^(degree(k))*discriminant(OK)^(degree(L))
+  Hecke._set_maximal_order(S, OS)
+  
+  Zx = PolynomialRing(FlintZZ, "x")[1]
+  prim_elems = elem_type(OS)[x for x in basis(OS) if _isprobably_primitive(x)]
+  if !isempty(prim_elems)
+    #Now, I need to compare the elements and understand which is better.
+    a = prim_elems[1]
+    poly = minpoly(prim_elems[1], Zx)
+    M = maximum([abs(coeff(poly, i)) for i = 0:degree(poly)-1])
+    for i = 2:length(prim_elems)
+      poly2 = minpoly(prim_elems[i], Zx)
+      M2 = maximum([abs(coeff(poly2, i)) for i = 0:degree(poly2)-1])
+      if M2 < M
+        poly = poly2
+        M = M2
+        a = prim_elems[i]
+      end
+    end
+  else
+    a1 = S[1]+S[2]
+    poly = minpoly(Zx, a1)
+    while degree(poly) < degree(S)
+      a1 += S[2]
+      poly = minpoly(Zx, a1)
+    end
+    a = OS(a1)
+  end
+  Ka, gKa = number_field(poly, cached = false, check = false)
+
+  kt, t = PolynomialRing(k, "t", cached = false)
+  fL = L.pol(t)
+  Kr, gKr = number_field(fL, check = false, cached = false)
+  M = zero_matrix(FlintQQ, degree(Ka), degree(Ka))
+  z = one(S)
+  elem_to_mat_row!(M, 1, z)
+  elem_to_mat_row!(M, 2, elem_in_nf(a))
+  mul!(z, z, elem_in_nf(a))
+  for i=3:degree(Ka)
+    mul!(z, z, elem_in_nf(a))
+    elem_to_mat_row!(M, i, z)
+  end
+  N = zero_matrix(FlintQQ, 2, degree(S))
+  for i = 1:2
+    elem_to_mat_row!(N, i, S[i])
+  end
+  s = solve(M', N')
+  b = basis(Ka)
+  emb = Vector{typeof(b[1])}(undef, 2)
+  for i = 1:2
+    emb[i] = zero(Ka)
+    for j = 1:degree(Ka)
+      emb[i] += b[j] * s[j, i]
+    end
+  end
+  abs2ns = NfAbsToNfAbsNS(Ka, S, elem_in_nf(a), emb)
+  
+  BKa = Vector{nf_elem}(undef, degree(Ka))
+  for i = 1:length(BKa)
+    BKa[i] = abs2ns\(BOS[i])
+  end
+  OKa = NfOrd(BKa)
+  OKa.ismaximal = 1
+  OKa.disc = OS.disc
+  OKa.index = root(divexact(abs(numerator(discriminant(Ka))), abs(discriminant(OK))), 2)
+  lll(OKa)
+  Hecke._set_maximal_order_of_nf(Ka, OKa)
+  img_gen_k = abs2ns\(S[1])
+  img_gen_Kr = abs2ns\(S[2])
+  img_gen_Ka = evaluate(elem_in_nf(a).data, NfRelElem{nf_elem}[Kr(gen(k)), gKr])
+  small2abs = hom(k, Ka, img_gen_k)
+  abs2rel = NfToNfRel(Ka, Kr, img_gen_k, img_gen_Kr, img_gen_Ka)
+  C = CyclotomicExt()
+  C.kummer_exts = Dict{Set{fmpz}, Tuple{Vector{NfOrdIdl}, KummerExt}}()
+  C.k = k
+  C.n = n
+  C.Ka = Ka
+  C.Kr = Kr
+  C.mp = (abs2rel, small2abs)
+  if cached 
+    try 
+      Ac = Hecke._get_cyclotomic_ext_nf(k)::Vector{CyclotomicExt}
+      push!(Ac, C)
+      Hecke._set_cyclotomic_ext_nf(k, Ac)
+    catch e
+      if !(e isa AbstractAlgebra.AccessorNotSetError)
+        rethrow(e)
+      end
+      Ac1 = CyclotomicExt[C]
+      Hecke._set_cyclotomic_ext_nf(k, Ac1)
+    end
+  end
+  return C
+  
+end
+
 
 absolute_field(C::CyclotomicExt) = C.Ka
 base_field(C::CyclotomicExt) = C.k

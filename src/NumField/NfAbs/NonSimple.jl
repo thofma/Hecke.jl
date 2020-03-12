@@ -570,7 +570,7 @@ function minpoly(a::NfAbsNSElem)
   return minpoly_via_trace(a)::fmpq_poly
 end
 
-function minpoly(Rx::FmpqPolyRing, a::NfAbsNSElem)
+function minpoly(Qx::FmpqPolyRing, a::NfAbsNSElem)
   return Qx(minpoly(a))
 end
 

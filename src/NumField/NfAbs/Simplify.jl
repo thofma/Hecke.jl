@@ -29,10 +29,12 @@ function simplify(K::AnticNumberField; canonical::Bool = false, cached = true)
     n = degree(K)
     OK = maximal_order(K)
     if isdefined(OK, :lllO)
+      @vprint :Simplify 1 "LLL basis was already there\n"
       ZK = OK.lllO
     else
       b = _simplify(OK)
       if b != gen(K)
+        @vprint :Simplify 1 "The basis of the maximal order contains a better primitive element\n"
         f1 = Qx(minpoly(representation_matrix(OK(b))))
         L1 = NumberField(f1, cached = cached, check = false)[1]
         #Before calling again the simplify on L1, we need to define the maximal order of L1

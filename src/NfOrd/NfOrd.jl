@@ -179,6 +179,14 @@ function assure_has_basis(O::NfAbsOrd)
   return nothing
 end
 
+function Base.getindex(O::NfAbsOrd, i::Int)
+  if iszero(i)
+    return zero(O)
+  end
+  @assert i <= degree(O) && i > 0 "Index must be a positive integer smaller than the dimension"
+  return O.basis_ord[i]
+end
+
 function assure_has_basis_matrix(O::NfAbsOrd)
   if isdefined(O, :basis_matrix)
     return nothing
