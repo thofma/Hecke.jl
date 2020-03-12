@@ -1064,17 +1064,7 @@ function val_func_index(p::NfOrdIdl)
   let P = P, O = O, M = M, p = p
     function val(x::nf_elem, no::fmpq = fmpq(0))
       v = 0
-      max_v = -1
-      nn = fmpz(0)
       d, x_mat = integral_split(x, O)
-      #=
-      if !iszero(no)
-        nn = numerator(no*d^(degree(O)))
-        if iscoprime(nn, P)
-          return v
-        end
-      end
-      =#
       Nemo.mul!(x_mat, x_mat, M)
       c = content(x_mat)
       vc = valuation(c, P)
@@ -1108,14 +1098,8 @@ function val_func_generic(p::NfOrdIdl)
       v = 0
       p_mod = fmpz(0)
       d = denominator(x)
-      
       if !iszero(no)
         nn = numerator(no*d^degree(O))
-        #=
-        if iscoprime(nn, P)
-          return -valuation(d, P)*p.splitting_type[1]
-        end
-        =#
         p_mod = P^(div(valuation(nn, norm(p)), ramification_index(p))+1)
 	      x = mod(x, p_mod)
       end
