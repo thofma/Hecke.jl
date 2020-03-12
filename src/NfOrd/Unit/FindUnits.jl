@@ -176,7 +176,7 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx)
   r = unit_rank(O)
 
   if r == 0
-    Ar = ArbField(u.indep_prec, false)
+    Ar = ArbField(u.indep_prec, cached = false)
     u.tentative_regulator = Ar(1)
     u.regulator = Ar(1)
     u.regulator_precision = u.indep_prec

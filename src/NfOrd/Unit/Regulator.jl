@@ -30,7 +30,7 @@ function regulator(x::Array{T, 1}, abs_tol::Int) where T
       end
     end
 
-    A = zero_matrix(ArbField(q, false), r, r)
+    A = zero_matrix(ArbField(q, cached = false), r, r)
 
     for i in 1:r
       for j in 1:r
@@ -49,5 +49,5 @@ function regulator(x::Array{T, 1}, abs_tol::Int) where T
 end
 
 function lower_regulator_bound(K::AnticNumberField)
-  return ArbField(64, false)("0.054")
+  return ArbField(64, cached = false)("0.054")
 end

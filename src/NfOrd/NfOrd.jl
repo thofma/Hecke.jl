@@ -508,7 +508,7 @@ function minkowski_matrix(O::NfOrd, abs_tol::Int = 64)
       T[i] = minkowski_map(B[i], abs_tol)
     end
     p = maximum(Int[ prec(parent(T[i][j])) for i in 1:degree(O), j in 1:degree(O) ])
-    M = ArbMatSpace(ArbField(p, false), degree(O), degree(O), false)()
+    M = zero_matrix(ArbField(p, cached = false), degree(O), degree(O))
     for i in 1:degree(O)
       for j in 1:degree(O)
         M[i, j] = T[i][j]

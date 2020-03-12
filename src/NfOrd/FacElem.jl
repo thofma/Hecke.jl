@@ -64,7 +64,7 @@ function istorsion_unit(x::FacElem{T}, checkisunit::Bool = false, p::Int = 16) w
   l = 0
   @vprint :UnitGroup 2 "Computing conjugates ... \n"
   @v_do :UnitGroup 2 pushindent()
-  A = ArbField(p, false)
+  A = ArbField(p, cached = false)
   B = log(A(1) + A(1)//A(6) * log(A(d))//A(d^2))
   p = Int(upper_bound(-log(B)/log(A(2)), fmpz)) + 2
 
@@ -330,7 +330,7 @@ end
  
 function _conj_arb_log_matrix_normalise_cutoff(u::Array{T, 1}, prec::Int = 32)::arb_mat where T
   z = conjugates_arb_log_normalise(u[1], prec)
-  A = ArbMatSpace(parent(z[1]), length(u), length(z)-1, false)()
+  A = zero_matrix(parent(z[1]), length(u), length(z)-1)
   for i=1:length(z)-1
     A[1,i] = z[i]
   end

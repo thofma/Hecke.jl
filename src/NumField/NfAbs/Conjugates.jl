@@ -61,8 +61,8 @@ function __conjugates_arb(x::nf_elem, prec::Int = 32)
 
   c = conjugate_data_arb_roots(K, -1)
 
-  CC = AcbField(prec, false)
-  RR = ArbField(prec, false)
+  CC = AcbField(prec, cached = false)
+  RR = ArbField(prec, cached = false)
 
   xpoly = arb_poly(parent(K.pol)(x), prec)
 
@@ -111,8 +111,8 @@ function conjugates_arb(x::nf_elem, abs_tol::Int = 32)
       error("Something wrong in conjugates_arb_log")
     end
 
-    CC = AcbField(abs_tol, false)
-    RR = ArbField(abs_tol, false)
+    CC = AcbField(abs_tol, cached = false)
+    RR = ArbField(abs_tol, cached = false)
 
     xpoly = arb_poly(parent(K.pol)(x), abs_tol)
 
@@ -260,7 +260,7 @@ function conjugates_arb_log(x::nf_elem, abs_tol::Int)
       error("Something wrong in conjugates_arb_log")
     end
     xpoly = arb_poly(parent(K.pol)(x), abs_tol)
-    RR = ArbField(abs_tol, false)
+    RR = ArbField(abs_tol, cached = false)
     for i in 1:r1
       o = RR()
       ccall((:arb_poly_evaluate, :libarb), Nothing,
@@ -281,7 +281,7 @@ function conjugates_arb_log(x::nf_elem, abs_tol::Int)
       continue
     end
 
-    CC = AcbField(abs_tol, false)
+    CC = AcbField(abs_tol, cached = false)
 
     tacb = CC()
     for i in 1:r2
@@ -358,7 +358,7 @@ function _minkowski_map_and_apply(a, abs_tol, G, work_tol::Int = abs_tol)
   end
 
   #R = ArbField(prec(parent(c[1])), false)
-  R = ArbField(2 * work_tol, false)
+  R = ArbField(2 * work_tol, cached = false)
   sqrt2 = sqrt(R(2))
 
   for i in 1:s

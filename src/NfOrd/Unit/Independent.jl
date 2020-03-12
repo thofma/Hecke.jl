@@ -53,7 +53,7 @@ function _isindependent(x::Array{T, 1}, p::Int = 32) where T
       end
     end
 
-    A = zero_matrix(ArbField(q, false), length(x), rr)
+    A = zero_matrix(ArbField(q, cached = false), length(x), rr)
 
     for i in 1:length(x)
       for j in 1:rr

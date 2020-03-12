@@ -26,7 +26,7 @@
       while p<4096
         sgtposf=0
         sgtnegf=0
-        R=AcbField(p, false)
+        R=AcbField(p, cached = false)
         Rx=AcbPolyRing(R, Symbol("x"), false)
         g=Rx(h)
         l=roots(g)

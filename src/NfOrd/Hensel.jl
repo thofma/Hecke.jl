@@ -258,7 +258,7 @@ function _roots_hensel(f::Generic.Poly{nf_elem};
   else
     bound_root = Vector{arb}(undef, r1 + r2)
 
-    CC = AcbField(64, false)
+    CC = AcbField(64, cached = false)
     CCt, t = PolynomialRing(CC, "t", cached=false)
     conjugates_of_coeffs = Vector{acb}[ conjugates_arb(c, 32) for c in coeffs_f ]
 

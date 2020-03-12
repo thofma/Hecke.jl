@@ -156,7 +156,7 @@ function _roots(x::Union{fmpq_poly, fmpz_poly}, abs_tol::Int = 32, initial_prec:
 
   wp = _roots!(roots, x, abs_tol, initial_prec, max_iter, false)
 
-  res = array(AcbField(wp, false), roots, d)
+  res = array(AcbField(wp, cached = false), roots, d)
   acb_vec_clear(roots, d)
   return res
 end
@@ -170,7 +170,7 @@ function _refine_roots!(x::Union{fmpq_poly, fmpz_poly}, roots::Ptr{acb_struct},
                                                         initial_prec::Int = 0,
                                                         max_iter::Int = 0)
   wp = _roots!(roots, x, abs_tol, initial_prec, max_iter, true)
-  res = array(AcbField(wp, false), roots, degree(x))
+  res = array(AcbField(wp, cached = false), roots, degree(x))
   return res
 end
 
@@ -264,13 +264,13 @@ function radiuslttwopower(x::acb, e::Int)
 end
 
 function round(x::arb, p::Int)
-  z = ArbField(p, false)()
+  z = ArbField(p, cached = false)()
   ccall((:arb_set_round, :libarb), Nothing, (Ref{Nemo.arb}, Ref{Nemo.arb}, Int), z, x, p)
   return z
 end
 
 function round(x::acb, p::Int)
-  z = AcbField(p, false)()
+  z = AcbField(p, cached = false)()
   ccall((:acb_set_round, :libarb), Nothing, (Ref{Nemo.acb}, Ref{Nemo.acb}, Int), z, x, p)
   return z
 end
@@ -278,19 +278,19 @@ end
 function arb_trim(x::arb)
   z = arb()
   ccall((:arb_trim, :libarb), Nothing, (Ref{Nemo.arb}, Ref{Nemo.arb}), z, x)
-  z.parent = ArbField(arb_bits(z), false)
+  z.parent = ArbField(arb_bits(z), cached = false)
   return z
 end
 
 function round!(z::arb, x::arb, p::Int)
   ccall((:arb_set_round, :libarb), Nothing, (Ref{Nemo.arb}, Ref{Nemo.arb}, Int), z, x, p)
-  z.parent = ArbField(p, false)
+  z.parent = ArbField(p, cached = false)
   return z
 end
 
 function round!(z::acb, x::acb, p::Int)
   ccall((:acb_set_round, :libarb), Nothing, (Ref{Nemo.acb}, Ref{Nemo.acb}, Int), z, x, p)
-  z.parent = AcbField(p, false)
+  z.parent = AcbField(p, cached = false)
   return z
 end
 

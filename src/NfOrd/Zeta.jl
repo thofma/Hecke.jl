@@ -301,7 +301,7 @@ function _residue_approx_bf(O::NfOrd, error::Float64)
 
   prec = 64 
 
-  val = _term_bf(O, x0, ArbField(prec, false))
+  val = _term_bf(O, x0, ArbField(prec, cached = false))
 
   valaddederror = deepcopy(val)
   ccall((:arb_add_error_arf, :libarb), Nothing,
@@ -318,7 +318,7 @@ function _residue_approx_bf(O::NfOrd, error::Float64)
 
     prec = 2*prec
     #println("increasing precision to $prec")
-    val = _term_bf(O, x0, ArbField(prec, false))
+    val = _term_bf(O, x0, ArbField(prec, cached = false))
     valaddederror = deepcopy(val)
     ccall((:arb_add_error_arf, :libarb), Nothing,
                 (Ref{arb}, Ref{arf_struct}), valaddederror, error_prime_arf)

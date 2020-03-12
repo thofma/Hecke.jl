@@ -172,7 +172,7 @@ end
 
     test_mat_alg_morphism(AtoB, 3)
 
-    G = PermutationGroup(4)
+    G = SymmetricGroup(4)
     A = AlgAss(AlgGrp(Fp, G))[1]
     Adec = Hecke.decompose(A)
 
