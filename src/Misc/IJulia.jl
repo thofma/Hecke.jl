@@ -156,7 +156,7 @@ end
 function math_html(io::IO, M::MatElem)
   print(io, "\\begin{bmatrix}")
   for i=1:nrows(M)
-    for j=1:nrows(M)
+    for j=1:ncols(M)
       math_html(io, M[i,j])
       if j<nrows(M)
         print(io, "&")
@@ -341,7 +341,8 @@ function math_html(io::IO, G::GrpAbFinGen)
     end
     show_snf_structure(io, G, "\\times")
   else
-    print(io, G)
+    print(io, "\\text{General) abelian Group with relation matrix: }")
+    math_html(io, G.rels)
   end
 end
 
