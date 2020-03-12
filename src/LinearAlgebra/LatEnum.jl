@@ -738,7 +738,7 @@ function next(E::EnumCtx{T}) where {T}
   return true
 end
 
-function enumerate(E, c)
+function _enumerate(E, c)
   Q = E.C
   res = []
   n = E.n
@@ -758,7 +758,8 @@ function enumerate(E, c)
   @show x, i
   Z = divexact(T[i], Q[i, i])
   if Z < 0
-    @goto main_loop
+    i = i + 1
+    @goto compute_bounds
   end
   d = denominator(Z)
   ZZ = isqrt(numerator(Z*d*d))
