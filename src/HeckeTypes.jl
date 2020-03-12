@@ -1703,9 +1703,9 @@ const NfOrdQuoRingElem = AbsOrdQuoRingElem{NfOrd, NfOrdIdl, NfOrdElem}
 #
 ################################################################################
 
-abstract type GrpAb <: Nemo.Group end
+abstract type GrpAb <: AbstractAlgebra.AdditiveGroup end
 
-abstract type GrpAbElem <: Nemo.GroupElem end
+abstract type GrpAbElem <: AbstractAlgebra.AdditiveGroupElem end
 
 mutable struct GrpAbFinGen <: GrpAb
   rels::fmpz_mat

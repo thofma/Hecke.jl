@@ -23,7 +23,7 @@ isfrom_db(G::GrpGen) = G.isfromdb
 function small_group(i, j)
   i < 1 || i > 63 && error("Group order ($i) must be between 1 and $small_groups_limit")
   j < 1 || j > number_of_small_groups(i) && error("Index ($j) must be between 1 and $(number_of_small_groups(i))")
-  P = PermGroup(i)
+  P = SymmetricGroup(i)
   Gens = [P()]
   for p in small_groups_1_63[i][j][1]
     push!(Gens, P(p))

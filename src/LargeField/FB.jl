@@ -44,7 +44,7 @@ function induce(FB::Hecke.NfFactorBase, A::Map)
   prm = Array{Tuple{Int, Int}, 1}()
 
   if f == gen(K)
-    return PermutationGroup(length(FB.ideals))()
+    return SymmetricGroup(length(FB.ideals))()
   end
 
   for p in FB.fb_int.base
@@ -86,7 +86,7 @@ function induce(FB::Hecke.NfFactorBase, A::Map)
     end
   end
   sort!(prm, lt=(a,b) -> a[1] < b[1])
-  G = PermutationGroup(length(prm))
+  G = SymmetricGroup(length(prm))
   return G([x[2] for x = prm])
 end
 

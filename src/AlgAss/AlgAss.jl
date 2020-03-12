@@ -818,7 +818,7 @@ function _build_subalgebra_mult_table!(A::AlgAss{T}, B::MatElem{T}, return_LU::T
   r = rref!(B)
   if r == 0
     if return_LU == Val{true}
-      return Array{elem_type(K), 3}(undef, 0, 0, 0), PermGroup(ncols(B))(), zero_matrix(K, 0, 0), zero_matrix(K, 0, 0)
+      return Array{elem_type(K), 3}(undef, 0, 0, 0), SymmetricGroup(ncols(B))(), zero_matrix(K, 0, 0), zero_matrix(K, 0, 0)
     else
       return Array{elem_type(K), 3}(undef, 0, 0, 0)
     end

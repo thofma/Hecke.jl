@@ -771,7 +771,7 @@ function valence_mc(A::SMat{T}; extra_prime = 2, trans = Array{SMatSLP_add_row{T
       k = FiniteField(p)
       copy!(c1, c)
       v[1] = k(c1[1])
-      @time for i=1:2*degree(f)
+      for i=1:2*degree(f)
         mm(c2, A, c1, p)
         if length(trans) >0
           apply_t!(c2, trans)

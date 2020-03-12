@@ -60,7 +60,7 @@ function _factorbase_bound_bdf_right_side(O::NfOrd, x0::Float64, D::Dict{Int, Ar
 
   curval = Int(ceil(x0))
 
-  R = ArbField(64, false)
+  R = ArbField(64, cached = false)
 
   summ = R(0)
 
@@ -115,7 +115,7 @@ function _factor_base_bound_bdf(O::NfOrd, x0::Float64 = 50.0, ste::Float64 = 20.
   d = degree(K)
   r, s = signature(O)
 
-  R = ArbField(64, false)
+  R = ArbField(64, cached = false)
 
   summ = R(0)
 
@@ -181,7 +181,7 @@ ideals of norm bounded by $B$.
 """
 function factor_base_bound_bach(O::NfOrd)
   p = 64
-  R = ArbField(p, false)
+  R = ArbField(p, cached = false)
   if degree(O)==2
     r = ceil(6*log(R(abs(discriminant(O))))^2)
   else
