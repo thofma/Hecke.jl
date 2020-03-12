@@ -20,6 +20,13 @@ mutable struct SCPComb
   SCPComb() = new()
 end
 
+mutable struct VectorList{S, T}
+  V::Vector{S}
+  V_length::Vector{Vector{T}}
+  issorted::Bool
+end
+
+
 mutable struct ZLatAutoCtx{S, T, V}
   G::Vector{T}
   Gtr::Vector{T}
