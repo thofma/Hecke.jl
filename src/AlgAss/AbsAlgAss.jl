@@ -192,6 +192,10 @@ end
 
 # Generic function for everything besides AlgAss
 function decompose(A::AbsAlgAss{T}) where T
+  return __decompose(A)
+end
+
+function __decompose(A::AbsAlgAss{T}) where {T}
   if isdefined(A, :decomposition)
     return A.decomposition::Vector{Tuple{AlgAss{T}, morphism_type(AlgAss{T}, typeof(A))}}
   end
@@ -438,11 +442,22 @@ end
 > decomposition of $A$ as direct sum of number fields and maps from $A$ to
 > these fields.
 """
-function as_number_fields(A::AbsAlgAss{fmpq})
+function as_number_fields(A::AbsAlgAss{T}) where {T}
   if isdefined(A, :maps_to_numberfields)
-    return A.maps_to_numberfields::Vector{Tuple{AnticNumberField, AbsAlgAssToNfAbsMor{typeof(A), elem_type(A)}}}
+    NF = A.maps_to_numberfields::Vector{Tuple{_ext_type(T), _abs_alg_ass_to_nf_abs_mor_type(A)}}
+    return NF
   end
 
+  result = _as_number_fields(A)
+  A.maps_to_numberfields = result
+  return result
+end
+
+_ext_type(::Type{fmpq}) = AnticNumberField
+
+_ext_type(::Type{nf_elem}) = NfRel{nf_elem}
+
+function _as_number_fields(A::AbsAlgAss{T}) where {T}
   d = dim(A)
 
   Adec = decompose(A)
@@ -454,18 +469,22 @@ function as_number_fields(A::AbsAlgAss{fmpq})
     end
   end
 
-  if fields_not_cached
+  if fields_not_cached && T === fmpq
     # Compute a LLL reduced basis of the maximal order of A to find "small"
     # polynomials for the number fields.
     OA = maximal_order(A)
     L = lll(basis_matrix(OA, copy = false).num)
     n = basis_matrix(OA, copy = false).den
     basis_lll = elem_type(A)[ elem_from_mat_row(A, L, i, n) for i = 1:d ]
+  elseif fields_not_cached
+    basis_lll = basis(A)
   end
 
-  M = zero_matrix(FlintQQ, 0, d)
-  matrices = Vector{fmpq_mat}()
-  fields = Vector{AnticNumberField}()
+  KK = base_ring(A)
+
+  M = zero_matrix(KK, 0, d)
+  matrices = Vector{dense_matrix_type(T)}()
+  fields = Vector{_ext_type(T)}()
   for i = 1:length(Adec)
     # For each small algebra construct a number field and the isomorphism
     B, BtoA = Adec[i]
@@ -479,25 +498,25 @@ function as_number_fields(A::AbsAlgAss{fmpq})
         if degree(mint) == dB
           found_field = true
           K, BtoK = _as_field_with_isomorphism(B, t, mint)
-          B.maps_to_numberfields = Tuple{AnticNumberField, AbsAlgAssToNfAbsMor{typeof(B), elem_type(B)}}[(K, BtoK)]
+          B.maps_to_numberfields = Tuple{_ext_type(T), _abs_alg_ass_to_nf_abs_mor_type(B)}[(K, BtoK)]
           push!(fields, K)
           break
         end
       end
       @assert found_field "This should not happen..."
     else
-      K, BtoK = B.maps_to_numberfields[1]::Tuple{AnticNumberField, AbsAlgAssToNfAbsMor{typeof(A), elem_type(A)}}
+      K, BtoK = B.maps_to_numberfields[1]::Tuple{_ext_type(T), _abs_alg_ass_to_nf_abs_mor_type(B)}
       push!(fields, K)
     end
 
     if length(Adec) == 1
-      res = Tuple{AnticNumberField, AbsAlgAssToNfAbsMor{typeof(A), elem_type(A)}}[(K, BtoK)]
+      res = Tuple{_ext_type(T), _abs_alg_ass_to_nf_abs_mor_type(A)}[(K, BtoK)]
       A.maps_to_numberfields = res
       return res
     end
 
     # Construct the map from K to A
-    N = zero_matrix(FlintQQ, degree(K), d)
+    N = zero_matrix(KK, degree(K), d)
     for j = 1:degree(K)
       t = BtoA(BtoK\basis(K)[j])
       elem_to_mat_row!(N, j, t)
@@ -508,7 +527,7 @@ function as_number_fields(A::AbsAlgAss{fmpq})
   @assert nrows(M) == d
 
   invM = inv(M)
-  matrices2 = Vector{fmpq_mat}(undef, length(matrices))
+  matrices2 = Vector{dense_matrix_type(T)}(undef, length(matrices))
   offset = 1
   for i = 1:length(matrices)
     r = nrows(matrices[i])
@@ -517,11 +536,11 @@ function as_number_fields(A::AbsAlgAss{fmpq})
     offset += r
   end
 
-  result = Vector{Tuple{AnticNumberField, AbsAlgAssToNfAbsMor{typeof(A), elem_type(A)}}}()
+  result = Vector{Tuple{_ext_type(T), _abs_alg_ass_to_nf_abs_mor_type(A)}}()
   for i = 1:length(fields)
     push!(result, (fields[i], AbsAlgAssToNfAbsMor(A, fields[i], matrices2[i], matrices[i])))
   end
-  A.maps_to_numberfields = result
+
   return result
 end
 
@@ -533,6 +552,11 @@ end
 
 function rand(A::AbsAlgAss{T}) where T
   c = T[rand(base_ring(A)) for i = 1:dim(A)]
+  return A(c)
+end
+
+function rand(A::AbsAlgAss{nf_elem}, rng::UnitRange{Int} = -10:10)
+  c = nf_elem[rand(base_ring(A), rng) for i = 1:dim(A)]
   return A(c)
 end
 
@@ -838,7 +862,7 @@ function _as_field_with_isomorphism(A::AbsAlgAss{S}, a::AbsAlgAssElem{S}, mina::
   return __as_field_with_isomorphism(A, mina, M)
 end
 
-function __as_field_with_isomorphism(A::AbsAlgAss{fmpq}, f::fmpq_poly, M::fmpq_mat)
+function __as_field_with_isomorphism(A::AbsAlgAss{S}, f, M) where {S <: Union{fmpq, nf_elem}}
   K = number_field(f, cached = false)[1]
   return K, AbsAlgAssToNfAbsMor(A, K, inv(M), M)
 end
@@ -1051,16 +1075,19 @@ end
 > function returns the restriction $B$ of $A$ to $K$ and maps from $A$ to $B$
 > and from $B$ to $A$.
 """
-function restrict_scalars(A::AbsAlgAss, K::Field)
-  B, BtoA = AlgAss(A)
+function restrict_scalars(A::AbsAlgAss{T}, K::Field) where {T}
+  #K == base_ring(A) && throw(error("Not yet implemented"))
+  B, BtoA = AlgAss(A)::Tuple{AlgAss{T}, morphism_type(AlgAss{T}, typeof(A))}
   C, BtoC, CtoB = restrict_scalars(B, K)
 
   function CtoA(x::AbsAlgAssElem)
+    @assert parent(x) === C
     return BtoA(CtoB(x))
   end
 
   function AtoC(x::AbsAlgAssElem)
-    return BtoA\(BtoC(x))
+    @assert parent(x) === A
+    return BtoC(BtoA\x)
   end
 
   return C, AtoC, CtoA
@@ -1207,7 +1234,7 @@ function _lift_fq_mat!(M1::MatElem{T}, M2::MatElem{nf_elem}, M3::MatElem{fmpq_po
   return M2
 end
 
-function _radical(A::AbsAlgAss{T}) where { T <: Union{ fmpq, nf_elem } }
+function _radical(A::AbsAlgAss{T}) where { T <: Union{ fmpq, NumFieldElem } }
   M = trace_matrix(A)
   n, N = nullspace(M)
   b = Vector{elem_type(A)}(undef, n)

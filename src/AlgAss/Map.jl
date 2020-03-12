@@ -1,3 +1,5 @@
+export opposite_algebra
+
 mutable struct AbsAlgAssMor{R, S, T} <: Map{R, S, HeckeMap, AbsAlgAssMor}
   header::MapHeader{R, S}
 
@@ -194,20 +196,20 @@ end
 ################################################################################
 
 # S is the type of the algebra, T the element type of the algebra
-mutable struct AbsAlgAssToNfAbsMor{S, T} <: Map{S, AnticNumberField, HeckeMap, AbsAlgAssToNfAbsMor}
-  header::MapHeader{S, AnticNumberField}
-  mat::fmpq_mat
-  imat::fmpq_mat
-  t::fmpq_mat # dummy vector used in image and preimage
-  tt::fmpq_mat # another dummy vector
+mutable struct AbsAlgAssToNfAbsMor{S, T, U, V} <: Map{S, U, HeckeMap, AbsAlgAssToNfAbsMor}
+  header::MapHeader{S, U}
+  mat::V
+  imat::V
+  t::V # dummy vector used in image and preimage
+  tt::V # another dummy vector
 
-  function AbsAlgAssToNfAbsMor{S, T}(A::S, K::AnticNumberField, M::fmpq_mat, N::fmpq_mat) where { S <: AbsAlgAss{fmpq}, T <: AbsAlgAssElem{fmpq} }
+  function AbsAlgAssToNfAbsMor{S, T, U, V}(A::S, K::U, M::V, N::V) where {S, T, U, V}
 
-    z = new{S, T}()
+    z = new{S, T, U, V}()
     z.mat = M
     z.imat = N
-    z.t = zero_matrix(FlintQQ, 1, dim(A))
-    z.tt = zero_matrix(FlintQQ, 1, degree(K))
+    z.t = zero_matrix(base_field(K), 1, dim(A))
+    z.tt = zero_matrix(base_field(K), 1, degree(K))
 
     function _image(x::T)
       for i = 1:dim(A)
@@ -217,7 +219,7 @@ mutable struct AbsAlgAssToNfAbsMor{S, T} <: Map{S, AnticNumberField, HeckeMap, A
       return K(parent(K.pol)([ s[1, i] for i = 1:degree(K) ]))
     end
 
-    function _preimage(x::nf_elem)
+    function _preimage(x)
       for i = 1:degree(K)
         z.tt[1, i] = coeff(x, i - 1)
       end
@@ -225,13 +227,17 @@ mutable struct AbsAlgAssToNfAbsMor{S, T} <: Map{S, AnticNumberField, HeckeMap, A
       return A([ s[1, i] for i = 1:dim(A) ])
     end
 
-    z.header = MapHeader{S, AnticNumberField}(A, K, _image, _preimage)
+    z.header = MapHeader{S, U}(A, K, _image, _preimage)
     return z
   end
 end
 
-function AbsAlgAssToNfAbsMor(A::AbsAlgAss{fmpq}, K::AnticNumberField, M::fmpq_mat, N::fmpq_mat)
-  return AbsAlgAssToNfAbsMor{typeof(A), elem_type(A)}(A, K, M, N)
+function AbsAlgAssToNfAbsMor(A::S, K::U, M::V, N::V) where {S, U, V}
+  return AbsAlgAssToNfAbsMor{S, elem_type(A), U, V}(A, K, M, N)
+end
+
+function _abs_alg_ass_to_nf_abs_mor_type(A::AbsAlgAss{T}) where {T}
+  return AbsAlgAssToNfAbsMor{typeof(A), elem_type(A), _ext_type(T), dense_matrix_type(T)}
 end
 
 ################################################################################
@@ -351,4 +357,24 @@ end
 
 function AbsAlgAssToFqMor(A::AbsAlgAss{fq}, Fq::FqFiniteField, M::fq_mat, N::fq_mat, R::FqPolyRing, RtoFq::FqPolyRingToFqMor)
   return AbsAlgAssToFqMor{typeof(A), FqFiniteField, fq_mat, FqPolyRing}(A, Fq, M, N, R, RtoFq)
+end
+
+################################################################################
+#
+#  Maps to orders
+#
+################################################################################
+
+function (f::AbsAlgAssMor)(O::AlgAssAbsOrd)
+  domain(f) != algebra(O) && throw(error("Order not an order of the domain"))
+  B = codomain(f)
+  C = Order(B, elem_type(B)[f(b) for b in O.basis_alg])
+  return C
+end
+
+function (f::AbsAlgAssMor)(I::AlgAssAbsOrdIdl)
+  domain(f) != algebra(I) && throw(error("Order not an order of the domain"))
+  B = codomain(f)
+  J = ideal_from_lattice_gens(B, elem_type(B)[f(b) for b in basis(I)])
+  return J
 end

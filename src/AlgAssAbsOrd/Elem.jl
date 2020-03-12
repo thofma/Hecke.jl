@@ -298,7 +298,13 @@ end
 
 > Returns $x^y$.
 """
-function ^(x::Union{ AlgAssAbsOrdElem, AlgAssRelOrdElem }, y::Union{fmpz, Int})
+function ^(x::Union{ AlgAssAbsOrdElem, AlgAssRelOrdElem }, y::fmpz)
+  z = parent(x)()
+  z.elem_in_algebra = elem_in_algebra(x, copy = false)^y
+  return z
+end
+
+function ^(x::Union{ AlgAssAbsOrdElem, AlgAssRelOrdElem }, y::Integer)
   z = parent(x)()
   z.elem_in_algebra = elem_in_algebra(x, copy = false)^y
   return z

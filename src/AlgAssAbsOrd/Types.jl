@@ -30,12 +30,17 @@ mutable struct AlgAssAbsOrd{S, T} <: Ring
 
   tcontain::FakeFmpqMat
 
+  isnice::Bool
+  nice_order#Tuple{AlgAssAbsOrd, T}
+  nice_order_ideal::fmpz
+
   function AlgAssAbsOrd{S, T}(A::S) where {S, T}
     # "Default" constructor with default values.
     O = new{S, T}()
     O.algebra = A
     O.dim = dim(A)
     O.ismaximal = 0
+    O.isnice = false
     O.tcontain = FakeFmpqMat(zero_matrix(FlintZZ, 1, dim(A)))
     return O
   end

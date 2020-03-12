@@ -428,7 +428,7 @@ function +(a::AlgAssAbsOrdIdl{S, T}, b::AlgAssAbsOrdIdl{S, T}) where {S, T}
 
   d = dim(algebra(a))
   M = vcat(basis_matrix(a, copy = false), basis_matrix(b, copy = false))
-  M = sub(hnf(M, :lowerleft), (d + 1):2*d, 1:d)
+  M = sub(hnf(M, :lowerleft, triangular_top = true), (d + 1):2*d, 1:d)
   c = ideal(algebra(a), M, true)
   if isdefined(a, :order) && isdefined(b, :order) && order(a) === order(b)
     c.order = order(a)
@@ -643,8 +643,12 @@ end
 
 # This only works if a.order is defined, otherwise order(a) throws an error.
 function _test_ideal_sidedness(a::AlgAssAbsOrdIdl, side::Symbol)
-  A = algebra(a)
   O = order(a)
+  return _test_ideal_sidedness(a, O, side)
+end
+
+function _test_ideal_sidedness(a::AlgAssAbsOrdIdl, O::AlgAssAbsOrd, side::Symbol)
+  A = algebra(a)
   ba = basis(a, copy = false)
   bO = basis_alg(O, copy = false)
   t = A()
@@ -747,7 +751,7 @@ end
 """
 function ring_of_multipliers(a::AlgAssAbsOrdIdl, action::Symbol = :left)
   M = _colon_raw(a, a, action)
-  return Order(algebra(a), M)
+  return Order(algebra(a), hnf(M))
 end
 
 @doc Markdown.doc"""
@@ -895,7 +899,7 @@ normred(a::AlgAssAbsOrdIdl; copy::Bool = true) = normred(a, order(a), copy = cop
 > where $p$ is a prime of $\mathbb Z$.
 > See also `islocally_free`.
 """
-locally_free_basis(I::AlgAssAbsOrdIdl, p::Union{ Int, fmpz }) = locally_free_basis(order(I), I, p)
+locally_free_basis(I::AlgAssAbsOrdIdl, p::Union{Int, fmpz}; side::Symbol = :right) = locally_free_basis(order(I), I, p, side = side)
 
 @doc Markdown.doc"""
     locally_free_basis(O::AlgAssAbsOrd, a::AlgAssAbsOrdIdl,
@@ -906,8 +910,8 @@ locally_free_basis(I::AlgAssAbsOrdIdl, p::Union{ Int, fmpz }) = locally_free_bas
 > It is assumed that $a$ is an ideal of $O$ and $a \subseteq O$.
 > See also `islocally_free`.
 """
-function locally_free_basis(O::AlgAssAbsOrd, I::AlgAssAbsOrdIdl, p::Union{ Int, fmpz })
-  b, x = islocally_free(O, I, p)
+function locally_free_basis(O::AlgAssAbsOrd, I::AlgAssAbsOrdIdl, p::Union{Int, fmpz}; side::Symbol = :right)
+  b, x = islocally_free(O, I, p, side = side)
   if !b
     error("The ideal is not locally free at the prime")
   end
@@ -923,20 +927,40 @@ end
 > $p$ is a prime of $\mathbb Z$.
 > See also `locally_free_basis`.
 """
-islocally_free(I::AlgAssAbsOrdIdl, p::Union{ Int, fmpz }) = islocally_free(order(I), I, p)
+islocally_free(I::AlgAssAbsOrdIdl, p::Union{Int,fmpz}; side::Symbol = :right) = islocally_free(order(I), I, p, side = side)
 
 # See Bley, Wilson "Computations in relative algebraic K-groups", section 4.2
 @doc Markdown.doc"""
-    islocally_free(O::AlgAssAbsOrd, a::AlgAssAbsOrdIdl,
-                   p::Union{ Int, fmpz }) -> Bool, AlgAssAbsOrdElem
+    islocally_free(O::AlgAssAbsOrd, a::AlgAssAbsOrdIdl, p::fmpz
+                   side = :right) -> Bool, AlgAssAbsOrdElem
 
-> Returns a tuple `(true, x)` with an element $x$ of $O$ such that $a_p = O_p x$
-> if $a$ is locally free at $p$, and `(false, 0)` otherwise.
-> $p$ is a prime of $\mathbb Z$.
-> It is assumed that $a$ is an ideal of $O$ and $a \subseteq O$.
-> See also `locally_free_basis`.
+Returns a tuple `(true, x)` with an element $x$ of $O$ such that $a O_p = x
+O_p$ resp. $O_p a = O_p x$ if $a$ is locally free right (resp. left) ideal at
+$p$, and `(false, 0)` otherwise.  It is assumed that $a$ is an ideal of $O$ and
+$a \subseteq O$.
+
+See also `locally_free_basis`.
 """
-function islocally_free(O::AlgAssAbsOrd, I::AlgAssAbsOrdIdl, p::Union{ Int, fmpz })
+function islocally_free(O::AlgAssAbsOrd, I::AlgAssAbsOrdIdl, p::Union{Int, fmpz}; side::Symbol = :right)
+  b = _test_ideal_sidedness(I, O, side)
+  d = denominator(I, O)
+  !isone(d) && throw(error("Ideal must be contained in the order"))
+  !b && throw(error("Ideal is not a $(side) ideal of the order"))
+  if side === :left
+    return _islocally_free_right(O, I, p)
+  elseif side === :right
+    B, mB = opposite_algebra(algebra(O))
+    OB = mB(O)
+    IB = mB(I)
+    IB.order = mB(order(I))
+    fl, x = _islocally_free_left(OB, IB, p)
+    return fl, O(mB\elem_in_algebra(x))
+  else
+    throw(error("side (:$(side)) must be either :left or :right"))
+  end
+end
+
+function _islocally_free_left(O::AlgAssAbsOrd, I::AlgAssAbsOrdIdl, p::Union{Int, fmpz})
   OpO, toOpO = AlgAss(O, p*O, p)
   J = radical(OpO)
   OJ, toOJ = quo(OpO, J)
@@ -971,7 +995,7 @@ function islocally_free(O::AlgAssAbsOrd, I::AlgAssAbsOrdIdl, p::Union{ Int, fmpz
 
     # Construct an Fq-basis for e*IJ where Fq \cong centre(A)
     Z, ZtoA = center(A)
-    basisZ = [ toOpO\(toOJ\(AtoOJ(ZtoA(Z[i])))) for i = 1:dim(Z) ]
+    basisZ = elem_type(O)[ toOpO\(toOJ\(AtoOJ(ZtoA(Z[i])))) for i = 1:dim(Z) ]
 
     basiseIJoverZ = Vector{elem_type(O)}()
     M = zero_matrix(base_ring(IJ), dim(Z), dim(IJ))

@@ -249,6 +249,14 @@ function (A::AlgMat{T, S})(a::T) where { T, S }
   return a*one(A)
 end
 
+function (A::AlgMat)(x::fmpz)
+  return x * one(A)
+end
+
+function (A::AlgMat)(x::Integer)
+  return x * one(A)
+end
+
 function (A::AlgMat{T, S})(v::Vector{T}) where { T, S }
   @assert length(v) == dim(A)
   R = coefficient_ring(A)

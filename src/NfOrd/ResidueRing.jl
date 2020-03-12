@@ -72,6 +72,9 @@ parent(x::AbsOrdQuoRingElem) = x.parent
 
 parent_type(::Type{AbsOrdQuoRingElem{S, T, U}}) where {S, T, U} = AbsOrdQuoRing{S, T}
 
+(R::AbsOrdQuoRing)() = zero(R)
+
+
 ################################################################################
 #
 #  Hashing
@@ -185,6 +188,15 @@ function lift(O::NfOrd, a::NfOrdQuoRingElem)
   return preimage(f, a)
 end
 
+@doc Markdown.doc"""
+    lift(a::NfOrdQuoRingElem) -> NfOrdElem
+Given an element of the quotient ring $\mathcal O/I$, return a lift in
+$\mathcal O$.
+"""
+function lift(a::NfOrdQuoRingElem)
+  return a.elem
+end
+
 ################################################################################
 #
 #  Parent check
@@ -234,6 +246,8 @@ function add!(z::AbsOrdQuoRingElem, x::AbsOrdQuoRingElem, y::AbsOrdQuoRingElem)
   z.elem = mod!(z.elem, parent(z))
   return z
 end
+
+addeq!(x::AbsOrdQuoRingElem, y::AbsOrdQuoRingElem) = add!(x, x, y)
 
 function sub!(z::AbsOrdQuoRingElem, x::AbsOrdQuoRingElem, y::AbsOrdQuoRingElem)
   z.elem = sub!(z.elem, x.elem, y.elem)
@@ -512,6 +526,14 @@ function inv(x::AbsOrdQuoRingElem)
   @assert t "Element is not invertible"
   return y
 end
+
+################################################################################
+#
+#  Unit
+#
+################################################################################
+
+isunit(x::AbsOrdQuoRingElem) = isinvertible(x)[1]
 
 ################################################################################
 #

@@ -520,11 +520,15 @@ function _short_vectors_gram(_G, lb, ub)
   G = change_base_ring(FlintZZ, d * _G)
   Glll, T = lll_gram_with_transform(G)
   if isone(T)
-    V = _short_vectors_gram_nolll(1//d * change_base_ring(FlintQQ, Glll), lb, ub, nothing)
+    V = _short_vectors_gram_nolll_integral(Glll, d * lb, d * ub, nothing)
   else
-    V = _short_vectors_gram_nolll(1//d * change_base_ring(FlintQQ, Glll), lb, ub, T)
+    V = _short_vectors_gram_nolll_integral(Glll, d * lb, d * ub, T)
   end
-  return V
+  W = Vector{Tuple{Vector{Int}, elem_type(base_ring(_G))}}(undef, length(V))
+  for i in 1:length(V)
+    W[i] = (V[i][1], V[i][2]//d)
+  end
+  return W
 end
 
 # No assumption on _G, algorithm applies LLL
@@ -545,7 +549,7 @@ function _shortest_vectors_gram(_G)
     V = _short_vectors_gram_nolll_integral(Glll, 0, max, T)
   end
   min = minimum(v[2] for v in V)
-  return min, Vector{Int}[ v[1] for v in V if v[2] == min]
+  return min//d, Vector{Int}[ v[1] for v in V if v[2] == min]
 end
 
 function _short_vectors_gram_integral(_G, ub)

@@ -887,6 +887,11 @@ end
 # algebras", Prop. 5.1.
 function _simple_maximal_order(O::AlgAssAbsOrd{S1, S2}, with_trafo::Type{Val{T}} = Val{false}) where { S1 <: AlgMat, S2, T }
   A = algebra(O)
+
+  if !(A isa AlgMat)
+    throw(ArgumentError("Order must be an order in a matrix algebra"))
+  end
+
   n = degree(A)
 
   # Build a matrix with the first rows of basis elements of O
@@ -900,17 +905,42 @@ function _simple_maximal_order(O::AlgAssAbsOrd{S1, S2}, with_trafo::Type{Val{T}}
   M = hnf!(M, :upperright)
   M = fmpq_mat(sub(M, 1:n, 1:n))
 
-  # Compute M^(-1)*O*M
+  # Compute M * O * M^-1
   iM = inv(M)
   bb = Vector{elem_type(A)}()
   for i = 1:degree(O)
-    push!(bb, iM*elem_in_algebra(basis(O, copy = false)[i], copy = false)*M)
+    push!(bb, M*elem_in_algebra(basis(O, copy = false)[i], copy = false)*iM)
   end
 
+  simpleOrder = Order(A, bb)
+  simpleOrder.isnice = true
+
+  @assert basis_matrix(simpleOrder) == FakeFmpqMat(identity_matrix(FlintQQ, n^2))
+
   if with_trafo == Val{true}
-    return Order(A, bb), A(M)
+    return simpleOrder, A(M)
   else
-    return Order(A, bb)
+    return simpleOrder
+  end
+end
+
+function issimple(O::AlgAssAbsOrd)
+  return O.issimple
+end
+
+@doc Markdown.doc"""
+    nice_order(O::AlgAssAbsOrd) -> AlgAssAbsOrd, AlgElem
+
+Given a maximal order `O` in a full matrix algebra over the rationals, return a
+nice maximal order `R` and element `a` such that `a O a^-1 = R`.
+"""
+function nice_order(O::AlgAssAbsOrd)
+  if isdefined(O, :nice_order)
+    return O.nice_order
+  else
+    sO, A = _simple_maximal_order(O, Val{true})
+    O.nice_order = sO, A
+    return sO, A
   end
 end
 
@@ -1035,5 +1065,5 @@ function representatives_of_maximal_orders(O::AlgAssAbsOrd)
   @assert issimple(A)
   @assert iseichler(A)
   @assert ismaximal(O)
-  return [ O ]
+  return typeof(O)[ O ]
 end

@@ -102,6 +102,8 @@ end
 function find_small_group(G::GrpGen)
   l = order(G)
 
+  D = DefaultSmallGroupDB.db
+
   elements_by_orders = Dict{Int, Array{GrpGenElem, 1}}()
 
   for i in 1:l
@@ -118,8 +120,8 @@ function find_small_group(G::GrpGen)
 
   local ordershape
 
-  for j in 1:length(small_groups_1_63[order(G)])
-    ordershape = small_groups_1_63[order(G)][j][4]
+  for j in 1:length(D[order(G)])
+    ordershape = D[order(G)][j].orderdis
 
     candidate = true
     for (o, no) in ordershape
@@ -148,13 +150,13 @@ function find_small_group(G::GrpGen)
   idG = id(G)
 
   for j in candidates
-    H = small_groups_1_63[order(G)][j]
+    H = D[order(G)][j]
 
-    elbyord = [elements_by_orders[order(o)] for o in H[1]]
+    elbyord = [elements_by_orders[order(o)] for o in H.gens]
 
     it = Iterators.product(elbyord...)
 
-    words = H[2]
+    words = H.rels
 
     for poss in it
       is_hom = true
@@ -387,3 +389,14 @@ end
 divisors(n::Int64) =  findall(x -> mod(n,x) == 0, 1:n)
 
 multiples(n::Int64, b::Int64) =  [i * n for i in 1:Int64(floor(b/n))]
+
+function isisomorphic(G::GrpGen, H::GrpGen)
+  idG, A, AtoG = find_small_group(G)
+  idH, B, BtoH = find_small_group(H)
+  if idG != idH
+    return false, id_hom(G) # I am too lazy
+  else
+    h = _spin_up_morphism(gens(A), gens(B)) # they must be equal
+    return true, _spin_up_morphism(gens(G), [ BtoH(h(preimage(AtoG, g))) for g in gens(G)])
+  end
+end

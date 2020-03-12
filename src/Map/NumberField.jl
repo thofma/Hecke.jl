@@ -192,22 +192,31 @@ end
 ################################################################################
 
 mutable struct GrpGenToNfMorSet{T} <: Map{GrpGen, NfMorSet{T}, HeckeMap, GrpGenToNfMorSet{T}}
+  G::GrpGen
+  aut::Vector{NfToNfMor}
   header::MapHeader{GrpGen, NfMorSet{T}}
 
-  function GrpGenToNfMorSet(G::GrpGen, S::NfMorSet{T}) where {T}
+  function GrpGenToNfMorSet(aut::Vector{NfToNfMor}, G::GrpGen, S::NfMorSet{T}) where {T}
     z = new{T}()
     z.header = MapHeader(G, S)
+    z.aut = aut
+    z.G = G
     return z
   end
 end
 
 function GrpGenToNfMorSet(G::GrpGen, K::AnticNumberField)
-  return GrpGenToNfMorSet(G, NfMorSet(K))
+  return GrpGenToNfMorSet(automorphisms(K), G, NfMorSet(K))
+end
+
+function GrpGenToNfMorSet(G::GrpGen, aut::Vector{NfToNfMor}, K::AnticNumberField)
+  return GrpGenToNfMorSet(aut, G, NfMorSet(K))
 end
 
 function image(f::GrpGenToNfMorSet, g::GrpGenElem)
+  @assert parent(g) == f.G
   K = codomain(f).field
-  return automorphisms(K)[g[]]
+  return f.aut[g[]]
 end
 
 function (f::GrpGenToNfMorSet)(g::GrpGenElem)
@@ -498,7 +507,7 @@ function _automorphism_group_cyclo(K)
   G, AtoG, GtoA = generic_group(collect(A), +)
   aut = NfToNfMor[ hom(K, K, a^lift(mA(GtoA[g])), check = false) for g in G]
   _set_automorphisms_nf(K, aut)
-  return G, GrpGenToNfMorSet(G, K)
+  return G, GrpGenToNfMorSet(G, aut, K)
 end
 
 function _automorphism_group_generic(K)
@@ -527,7 +536,7 @@ function _automorphism_group_generic(K)
     end
   end
   G = GrpGen(mult_table)
-  return G, GrpGenToNfMorSet(G, K)
+  return G, GrpGenToNfMorSet(G, aut, K)
 end
 
 ###############################################################################
@@ -615,7 +624,7 @@ function closure(S::Vector{NfToNfMor}, final_order::Int = -1)
   return elements
 end
 
-function generic_group(G::Vector{NfToNfMor}, ::typeof(*))
+function generic_group(G::Vector{NfToNfMor}, ::typeof(*), full::Bool = true)
   K = domain(G[1])
   n = length(G)
   #First, find a good prime
@@ -633,7 +642,7 @@ function generic_group(G::Vector{NfToNfMor}, ::typeof(*))
     Dcreation[i] = (pols[i], i)
   end
   D = Dict{gfp_poly, Int}(Dcreation)
-  @assert length(D) == degree(K)
+  full && @assert length(D) == degree(K)
   permutations = Array{Array{Int, 1},1}(undef, n)
 
   m_table = Array{Int, 2}(undef, n, n)

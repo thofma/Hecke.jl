@@ -47,6 +47,12 @@
     O1 = Hecke.maximal_order_via_absolute(KG)
     O2 = Hecke.maximal_order_via_relative(KG)
     @test discriminant(O1) == discriminant(O2)
+
+    Qx, x = FlintQQ["x"]
+    K, a = NumberField(x^4 - 4 * x^2 + 2)
+    A = Hecke.quaternion_algebra(K, -1, -1)
+    M = maximal_order(A)
+    @test norm(discriminant(M)) == 1
   end
 
 end

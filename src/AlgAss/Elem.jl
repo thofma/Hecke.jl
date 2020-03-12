@@ -900,7 +900,7 @@ function normred(a::AbsAlgAssElem)
   return (-one(base_ring(parent(a))))^n*coeff(f, 0)
 end
 
-function _normred_over_center_simple(a::AbsAlgAssElem{fmpq}, ZtoA::AbsAlgAssMor)
+function _normred_over_center_simple(a::AbsAlgAssElem, ZtoA::AbsAlgAssMor)
   A = parent(a)
   Z = domain(ZtoA)
   fields = as_number_fields(Z)

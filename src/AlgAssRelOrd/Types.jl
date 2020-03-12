@@ -24,11 +24,16 @@ mutable struct AlgAssRelOrd{S, T} <: Ring
 
   inv_coeff_ideals::Vector{T}
 
+  isnice::Bool
+  nice_order#Tuple{AlgAssAbsOrd, T}
+  nice_order_ideal::T
+
   function AlgAssRelOrd{S, T}(A::AbsAlgAss{S}) where {S, T}
     z = new{S, T}()
     z.algebra = A
     z.dim = dim(A)
     z.ismaximal = 0
+    z.isnice = false
     return z
   end
 
