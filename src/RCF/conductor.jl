@@ -970,7 +970,7 @@ function maximal_abelian_subfield(A::ClassField, mp::NfToNfMor)
   return ray_class_field(mr, mG)
 end
 
-function norm_group(KK::KummerExt, mp::NfToNfMor, mR::MapRayClassGrp)
+function norm_group(KK::KummerExt, mp::NfToNfMor, mR::Union{MapRayClassGrp, MapClassGrp})
   k = domain(mp)
   K = codomain(mp)
   ZK = maximal_order(K)
