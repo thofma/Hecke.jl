@@ -174,6 +174,17 @@ function show(io::IO, h::NfToNfRel)
   println(io, "Morphism between ", domain(h), "\nand ", codomain(h))
 end
 
+function hom(K::AnticNumberField, L::NfRel{nf_elem}, a::NfRelElem{nf_elem}, b::nf_elem, c::nf_elem; check::Bool = true)
+	if check
+		mp = hom(base_field(L), K, b)
+		p = map_coeffs(mp, L.pol)
+		@assert iszero(p(c)) "Data does not define a homomorphism"
+		@assert iszero(K.pol(a)) "Data does not define a homomorphism"
+	end
+	return NfToNfRel(K, L, b, c, a)
+
+end
+
 ################################################################################
 #
 #  Generic groups to set of homomorphisms

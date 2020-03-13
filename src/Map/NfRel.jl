@@ -74,6 +74,18 @@ function show(io::IO, h::NfRelToNf)
   println(io, "Isomorphism between ", domain(h), "\nand ", codomain(h))
 end
 
+function hom(K::NfRel{nf_elem}, L::AnticNumberField, a::nf_elem, b::nf_elem, c::NfRelElem{nf_elem}; check::Bool = true)
+  if check
+		@assert iszero(base_field(K).pol(a)) "Data does not define an homomorphism"
+		mp = hom(base_field(K), L, a)
+		p = map_coeffs(mp, K.pol)
+		@assert iszero(p(b)) "Data does not define an homomorphism"
+		@assert iszero(L.pol(c)) "Data does not define an homomorphism"
+	end
+	return NfRelToNf(K, L, a, b, c)
+end
+
+
 mutable struct NfRelRelToNfRel{T} <: Map{NfRel{NfRelElem{T}}, NfRel{T}, HeckeMap, NfRelRelToNfRel}
   header::MapHeader{NfRel{NfRelElem{T}}, NfRel{T}}
 

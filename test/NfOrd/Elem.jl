@@ -303,6 +303,9 @@
     K, a = NumberField(x^3 - 2, "a")
     OK = maximal_order(K)
     b = rand(OK, -10:10)
+		while isone(abs(norm(b)))
+      b = rand(OK, -10:10)
+		end
     fac = @inferred factor(b)
     @test isunit(unit(fac))
     @test b == unit(fac) * prod(p^e for (p, e) in fac)

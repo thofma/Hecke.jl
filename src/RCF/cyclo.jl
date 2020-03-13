@@ -308,7 +308,7 @@ function _cyclotomic_extension_non_simple(k::AnticNumberField, n::Int; cached::B
       emb[i] += b[j] * s[j, i]
     end
   end
-  abs2ns = NfAbsToNfAbsNS(Ka, S, elem_in_nf(a), emb)
+  abs2ns = hom(Ka, S, elem_in_nf(a), emb)
   
   BKa = Vector{nf_elem}(undef, degree(Ka))
   for i = 1:length(BKa)
@@ -317,14 +317,15 @@ function _cyclotomic_extension_non_simple(k::AnticNumberField, n::Int; cached::B
   OKa = NfOrd(BKa)
   OKa.ismaximal = 1
   OKa.disc = OS.disc
-  OKa.index = root(divexact(abs(numerator(discriminant(Ka))), abs(discriminant(OK))), 2)
+  OKa.index = root(divexact(abs(numerator(discriminant(Ka))), abs(discriminant(OKa))), 2)
   lll(OKa)
   Hecke._set_maximal_order_of_nf(Ka, OKa)
   img_gen_k = abs2ns\(S[1])
   img_gen_Kr = abs2ns\(S[2])
   img_gen_Ka = evaluate(elem_in_nf(a).data, NfRelElem{nf_elem}[Kr(gen(k)), gKr])
+
   small2abs = hom(k, Ka, img_gen_k)
-  abs2rel = NfToNfRel(Ka, Kr, img_gen_k, img_gen_Kr, img_gen_Ka)
+  abs2rel = hom(Ka, Kr, img_gen_Ka, img_gen_k, img_gen_Kr)
   C = CyclotomicExt()
   C.kummer_exts = Dict{Set{fmpz}, Tuple{Vector{NfOrdIdl}, KummerExt}}()
   C.k = k
