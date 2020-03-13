@@ -550,6 +550,7 @@ function compute_short_vectors(C::ZLatAutoCtx, max::fmpz = fmpz(-1))
   if max == -1
     max = maximum(C.G[1][i, i] for i in 1:dim(C))
   end
+  @show max
   @vprint :Lattice 1 "Computing short vectors of actual length $max\n"
   E = enum_ctx_from_gram(C.G[1])
   enum_ctx_start(E, max)

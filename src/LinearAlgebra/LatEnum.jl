@@ -117,6 +117,7 @@ function enum_ctx_from_gram(G::fmpz_mat, den = 1; Tx = BigInt, TC = Rational{Big
   E.limit = limit
   E.d = den
   E.C = pseudo_cholesky(E.G, den, TC = TC, limit = limit)
+  @show E.C
   E.x = zero_matrix(FlintZZ, 1, n)
     #coeffs limit+1:n are going to be zero, always
   E.L = Vector{TU}(undef, limit) #lower and
@@ -744,9 +745,14 @@ function next(E::EnumCtx{T}) where {T}
 end
 
 function _enumerate(E, c)
-  Q = E.C
+  d = denominator(E.C)
+  return __enumerate(E.C, c)
+  #return __enumerate(d * E.C, c * d)
+end
+
+function __enumerate(Q, c)
   res = []
-  n = E.n
+  n = nrows(Q)
   i = n
   T = Vector{fmpq}(undef, n)
   U = Vector{fmpq}(undef, n)
@@ -760,19 +766,43 @@ function _enumerate(E, c)
 
   @label compute_bounds
 
-  @show x, i
-  Z = divexact(T[i], Q[i, i])
-  if Z < 0
-    i = i + 1
-    @goto compute_bounds
+
+  #@show x, i
+  #@show "Entering main loop", x, i, U[i]
+  #@show T[i], Q[i, i]
+  #Z = isqrt(FlintZZ(floor(divexact(T[i], Q[i, i]))))
+
+  #xc = Int(FlintZZ(Base.ceil(-Z - U[i]))) - 1
+  #@assert !(Q[i, i] * (xc - 1 + U[i])^2 <= T[i])
+  #@assert (Q[i, i] * (xc + 1 + U[i])^2 <= T[i])
+  #up =  Int(FlintZZ(Base.floor(Z - U[i])))
+  #x[i] = Int(FlintZZ(Base.ceil((-Z - U[i])))) - 1
+  #L[i] = Int(FlintZZ(Base.floor(Z - U[i])))
+  #@assert (Q[i, i] * (xc + 1 + U[i])^2 <= T[i])
+  #@show i, x, Z, U[i], L[i]
+
+  xc = -U[i]
+  while (Q[i, i] * (xc + U[i])^2 <= T[i])
+    xc -= 1
   end
-  d = denominator(Z)
-  ZZ = isqrt(numerator(Z*d*d))
-  x[i] = Int(FlintZZ(Base.ceil((-(ZZ+1) - U[i])//d))) - 1
-  L[i] = Int(FlintZZ(Base.floor(((ZZ+1) - U[i])//d)))
+  x[i] = Int(FlintZZ(floor(xc)))
+
+  upperbound_can = -U[i]
+  while (Q[i, i] * (upperbound_can + U[i])^2 <= T[i])
+    upperbound_can += 1
+  end
+  L[i] = Int(FlintZZ(ceil(upperbound_can)))
 
   @label main_loop
+  
+  if x[n] > L[n]
+    return res
+  end
+
+  #println("Main loop", x, " ", L[i])
+  #@show "start of main loop", x
   x[i] = x[i] + 1
+  #@show "increasing i", i, x
   if x[i] > L[i]
     i = i + 1
     @goto main_loop
@@ -781,16 +811,24 @@ function _enumerate(E, c)
       T[i - 1] = T[i] - Q[i, i] * (x[i] + U[i])^2
       i = i - 1
       U[i] = sum(Q[i, j] * x[j] for j in (i + 1):n)
+      #@show U[i]
       @goto compute_bounds 
     end
   end
 
+  #@show x
+
   if iszero(x)
     return res
   else
-    push!(res, (deepcopy(x), c - T[1] + Q[1, 1]*(x[1] + U[1])^2))
+    len = c - T[1] + Q[1, 1]*(x[1] + U[1])^2
+    if len <= c
+      push!(res, (deepcopy(x), len))
+    end
+    #v = matrix(FlintQQ, 1, n, res[end][1])
+    #@assert (v * Q *v')[1, 1] == res[end][2]
+    #@show res
+    @goto main_loop
   end
 end
-
-#function _compute_stupid
 
