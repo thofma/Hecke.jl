@@ -170,7 +170,7 @@ function show_direct_product(io::IO, G)#::GrpAbFinGen)
   show(IOContext(io, :compact => true), D)
 end
 
-function show_tensor_product(io::IO, G::GrpAbFinGen)
+function show_tensor_product(io::IO, G)#::GrpAbFinGen)
   D = get_special(G, :tensor_product)
   D === nothing && error("only for tensor products")
   print(io, "tensor product of ")

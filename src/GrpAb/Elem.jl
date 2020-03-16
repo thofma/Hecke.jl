@@ -126,9 +126,9 @@ function show(io::IO, a::GrpAbFinGenElem)
     if s === nothing
       print(io, "Element of\n")
       print(io, parent(a)) 
-      print(io, "\nwith components\n", a.coeff)
+      print(io, "\nwith components ", a.coeff)
     else
-      print(io, "Element of ", s, " with components\n", a.coeff)
+      print(io, "Element of ", s, " with components ", a.coeff)
     end
   end
 end
