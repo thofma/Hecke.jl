@@ -20,11 +20,13 @@ struct LatticeDB
   end
 end
 
+# TODO: Write a parser for the data
+
 function show(io::IO, L::LatticeDB)
   print(io, "Nebe-Sloan database of lattices (rank limit = ", L.max_rank, ")")
 end
 
-const default_lattice_db = Ref(joinpath(@__DIR__, "nebe_sloan_1_20"))
+const default_lattice_db = Ref(joinpath(pkgdir, "data/lattices"))
 
 ################################################################################
 #
@@ -33,6 +35,9 @@ const default_lattice_db = Ref(joinpath(@__DIR__, "nebe_sloan_1_20"))
 ################################################################################
 
 function lattice_database()
+  if !isfile(joinpath(pkgdir, "data/lattices"))
+    download_lattice_data()
+  end
   return LatticeDB(default_lattice_db[])
 end
 

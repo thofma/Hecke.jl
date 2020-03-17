@@ -209,15 +209,20 @@ end
 #         length
 #         proper lattice type
 
-function fmpz_mat_entry(a::fmpz_mat, r::Int, c::Int)
+@inline function fmpz_mat_entry(a::fmpz_mat, r::Int, c::Int)
   return ccall((:fmpz_mat_entry, libflint), Ptr{fmpz},
                (Ref{fmpz_mat}, Int, Int), a, r - 1, c - 1)
+#@inline function fmpz_mat_entry(a::fmpz_mat, r::Int, c::Int)
+    #return unsafe_load(reinterpret(Ptr{Ptr{fmpz}}, a.rows), r)+(c-1)*sizeof(Ptr)
 end
-
-function fmpz_mat_entry_incref!(a::fmpz_mat, r::Int, c::Int)
+    
+@inline function fmpz_mat_entry_incref!(a::fmpz_mat, r::Int, c::Int)
   z = ccall((:fmpz_mat_entry, libflint), Ptr{fmpz},
                (Ref{fmpz_mat}, Int, Int), a, r - 1, c - 1)
   ccall((:fmpz_add_ui, libflint), Nothing, (Ptr{fmpz}, Ptr{fmpz}, Int), z, z, 1)
+  #z = fmpz_mat_entry(a, r, c)
+  #unsafe_store!(reinterpret(Ptr{Int}, z), unsafe_load(reinterpret(Ptr{Int}, z), 1)+1, 1)
+  ##ccall((:fmpz_add_ui, libflint), Nothing, (Ptr{fmpz}, Ptr{fmpz}, Int), z, z, 1)
 end
 
 function fmpz_mat_entry_add_ui!(a::fmpz_mat, r::Int, c::Int, v::UInt)
@@ -262,7 +267,7 @@ function enum_ctx_next(E::enum_ctx{A,B,C}) where {A,B,C}
   while true 
     enum_ctx_advance_level(E, i)
     getindex!(t, E.x, 1, i)
-    if E.L[i] <= C(t) <= E.U[i] #coordinate is valid
+    if E.L[i] <= A(t) <= E.U[i] #coordinate is valid
       if i==1
         @v_do :ClassGroup_time 2 _next += time_ns()-rt
         return true
@@ -539,253 +544,4 @@ function gamma_half(n::Int)
   return sqrt(pi)*semi_factorial(n-2)/2^((n-1)/2)
 end
 
-################################################################################
-#
-#  Lattice enumeration take 2
-#
-################################################################################
-
-mutable struct EnumCtx{TU}
-  G::fmpz_mat
-  n::Int
-  limit::Int # stop recursion at level limit, defaults to n
-  C::fmpq_mat # the pseudo-cholesky form - we don't have fmpq_mat
-  last_non_zero::Int
-  x::fmpz_mat # 1 x n
-  U::Array{TU, 1}
-  L::Array{TU, 1}
-  l::Array{TU, 1}
-  tail::Array{TU, 1}
-  c::Int # the length of the elements we want
-  clarge::fmpz
-  t::fmpz_mat # if set, a transformation to be applied to all elements
-  t_den::fmpz
-  cnt::Int
-
-  function EnumCtx{TU}() where {TU}
-    return new{TU}()
-  end
-end
-
-function EnumCtx(G::fmpz_mat, ::Type{T}) where {T}
-  E = EnumCtx{T}()
-  E.G = G
-  n = nrows(G)
-  E.n = n 
-  E.limit = n
-  E.C = _pseudo_cholesky(E.G)
-  E.x = zero_matrix(FlintZZ, 1, n)
-    #coeffs limit+1:n are going to be zero, always
-  E.L = Vector{T}(undef, n) #lower and
-  E.U = Vector{T}(undef, n) #upper bounds for the coordinates
-
-  E.l = Vector{T}(undef, n) #current length
-  E.tail = Vector{T}(undef, n)
-  return E
-end
-
-function _pseudo_cholesky(G::fmpz_mat)
-  n = ncols(G)
-  @hassert :LatEnum 1 nrows(G) == n
-  limit = n
-  t = fmpz()
-  C = zero_matrix(FlintQQ, n, n)
-  for i=1:limit
-    for j=1:limit
-      C[i,j] = G[i, j]
-    end
-  end
-  for i = 1:limit-1 
-    for j = i+1:limit
-      C[j,i] = C[i,j]
-      C[i,j] = divexact(C[i,j], C[i,i])
-    end
-    for k = i+1:limit
-      for l = i+1:limit
-        C[k,l] = C[k,l] - C[k,i]*C[i,l]
-      end
-    end
-  end
-  for j = 1:limit-1
-    if C[j,j] <= 0
-      throw(LowPrecisionCholesky())
-    end
-    for i=j+1:limit
-      C[i,j] = 0
-    end
-  end
-  if C[limit, limit] <= 0
-    throw(LowPrecisionCholesky())
-  end
-  return C
-end
-
-function start(E::EnumCtx{T}, c::fmpz) where {T}
-  E.c = c
-  zero!(E.x)
-  for i=1:E.limit
-    E.l[i] = T(E.c)
-    E.tail[i] = 0
-    L, U = enum_ctx_local_bound(T(0), T(E.c)//T(E.C[i,i]))
-    E.U[i] = U
-    E.L[i] = L
-  end
-  E.U[1] = max(E.U[1], 1)
-  E.L[1] = -E.U[1]
-  E.last_non_zero = 1
-  E.cnt = 0
-end
-
-function advance_level(E::EnumCtx{T}, i::Int) where {T}
-#  println("i: ", i, "                                   "[1:2*i], "|")
-  t = fmpz()
-  if i == E.last_non_zero-1
-    fmpz_mat_entry_incref!(E.x, 1, i)
-#    E.x[1, i] = getindex!(t, E.x, 1, i) + 1
-  elseif i == E.last_non_zero
-#    @hassert :LatEnum 1 E.x[1, i] == 0
-    E.last_non_zero += 1
-    fmpz_mat_entry_incref!(E.x, 1, i)
-#    E.x[1, i] = getindex!(t, E.x, 1, i) + 1
-  else
-    s = E.U[i] + E.L[i]
-    getindex!(t, E.x, 1, i)
-    x = fmpz(t)
-    if s < 2*Rational{BigInt}(x)  # larger than the middle
-      setindex!(E.x, -x + fmpz(BigInt(Base.floor(s))), 1, i)
-    else
-      setindex!(E.x, -x + fmpz(BigInt(Base.floor(s))) + 1, 1, i)
-    end
-  end
-end
-
-Rational{BigInt}(a::fmpz) = BigInt(a)//1
-
-function next(E::EnumCtx{T}) where {T}
-  E.cnt += 1
-  n = E.limit
-  i=1
-  t = fmpz()
-  while true 
-    advance_level(E, i)
-    getindex!(t, E.x, 1, i)
-    if E.L[i] <= Rational{BigInt}(t) <= E.U[i] #coordinate is valid
-      if i==1
-        return true
-      else
-        i -= 1
-      end
-    else # coordinate is invalid
-      i += 1
-      if i>n
-        return false
-      end
-      continue
-    end
-
-    @hassert :LatEnum 1 i < n
-    while true
-      getindex!(t, E.x, 1, i+1)
-      t1 = Rational{BigInt}(t)
-      E.tail[i] = E.C[i, i+1]*t1
-      for j = i+2:n
-        getindex!(t, E.x, 1, j)
-        E.tail[i] += E.C[i, j] * fmpz(t)
-      end
-      #E.tail[i] = sum C[i,j]x[j]
-      E.l[i]    = E.l[i+1] - E.C[i+1, i+1]*(t1 + E.tail[i+1])^2
-      #l[i] = l[i+1] - C[i+1, i+1]^2*(x[i+1] + tail[i+1])
-
-      if E.l[i] >= 0
-        Z = Rational{BigInt}(E.l[i]//E.C[i,i])
-#        @hassert :LatEnum 1 E.l[i] >= 0
-#        @hassert :LatEnum 1 E.C[i,i] > 0
-#        @hassert :LatEnum 1 Z >= 0
-        L, U = enum_ctx_local_bound(-E.tail[i], Z)
-#        @hassert :LatEnum 1 typeof(L) == C
-        E.L[i] = L
-        E.U[i] = U
-        
-        x = fmpz(BigInt(Base.ceil((E.L[i] +E.U[i])/2)))
-        E.x[1, i] = x
-        if -E.L[i] == E.U[i] && E.last_non_zero == i+1
-          E.last_non_zero = i
-#          @hassert :LatEnum 1 x == 0 
-        end
-        if Rational{BigInt}(x) <= E.U[i] # coordinate is valid
-          i -= 1       # go further up
-          if i==0
-            return true
-          end
-          continue
-        else  # coordinate invalid, need to try next on i+1
-          i += 1
-          if i>n
-            return false
-          end
-          break
-        end
-      else # intervall too short
-        i += 1
-        if i>n
-          return false
-        end
-        break
-      end
-    end
-  end
-  @v_do :ClassGroup_time 2 _next += time_ns()-rt
-  return true
-end
-
-function _enumerate(E, c)
-  Q = E.C
-  res = []
-  n = E.n
-  i = n
-  T = Vector{fmpq}(undef, n)
-  U = Vector{fmpq}(undef, n)
-  x = Vector{Int}(undef, n)
-  L = Vector{Int}(undef, n)
-
-  T[i] = c
-  U[i] = 0
-
-  @show Q
-
-  @label compute_bounds
-
-  @show x, i
-  Z = divexact(T[i], Q[i, i])
-  if Z < 0
-    i = i + 1
-    @goto compute_bounds
-  end
-  d = denominator(Z)
-  ZZ = isqrt(numerator(Z*d*d))
-  x[i] = Int(FlintZZ(Base.ceil((-(ZZ+1) - U[i])//d))) - 1
-  L[i] = Int(FlintZZ(Base.floor(((ZZ+1) - U[i])//d)))
-
-  @label main_loop
-  x[i] = x[i] + 1
-  if x[i] > L[i]
-    i = i + 1
-    @goto main_loop
-  else
-    if i > 1
-      T[i - 1] = T[i] - Q[i, i] * (x[i] + U[i])^2
-      i = i - 1
-      U[i] = sum(Q[i, j] * x[j] for j in (i + 1):n)
-      @goto compute_bounds 
-    end
-  end
-
-  if iszero(x)
-    return res
-  else
-    push!(res, (deepcopy(x), c - T[1] + Q[1, 1]*(x[1] + U[1])^2))
-  end
-end
-
-#function _compute_stupid
 

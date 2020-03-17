@@ -2762,6 +2762,7 @@ mutable struct ZLat <: AbsLat{FlintRationalField}
   aut_grp_ord::fmpz
   automorphism_group_generators::Vector{fmpz_mat}
   automorphism_group_order::fmpz
+  minimum::fmpz
 
   function ZLat(V::QuadSpace{FlintRationalField, fmpq_mat}, B::fmpq_mat)
     z = new()
@@ -2838,8 +2839,8 @@ function Base.show(io::IO, L::ZLat)
             " and degree ", degree(L), " over the rationals")
 end
 
-function assert_has_automorphisms(L::ZLat)
-  if isdefined(L, :automorphism_group_generators)
+function assert_has_automorphisms(L::ZLat; redo::Bool = false, try_small::Bool = true)
+  if !redo && isdefined(L, :automorphism_group_generators)
     return nothing
   end
 
@@ -2862,9 +2863,18 @@ function assert_has_automorphisms(L::ZLat)
   # Make the Gram matrix small
   
   C = ZLatAutoCtx(res)
-  init(C)
-  auto(C)
-  gens, order = _get_generators(C)
+  if try_small
+    fl, Csmall = try_init_small(C)
+    if fl
+      auto(Csmall)
+      _gens, order = _get_generators(Csmall)
+      gens = fmpz_mat[matrix(ZZ, g) for g in _gens]
+    end
+  else
+    init(C)
+    auto(C)
+    gens, order = _get_generators(C)
+  end
 
   # Now translate back
   Tinv = inv(T)
@@ -2979,9 +2989,19 @@ function isisometric(L::ZLat, M::ZLat; ambient_representation::Bool = true,
   @assert TM * change_base_ring(FlintZZ, GM) * TM' * dM == GMlll * cM
 
   # Setup for Plesken--Souvignier
-  CL, CM = _iso_setup(fmpz_mat[GLlll], fmpz_mat[GMlll])
-  # Call Plesken Souvignier
-  b, T = isometry(CL, CM)
+  
+  G1 = fmpz_mat[GLlll]
+  G2 = fmpz_mat[GMlll]
+
+  fl, CLsmall, CMsmall = _try_iso_setup_small(G1, G2)
+  if fl
+    b, _T = isometry(CLsmall, CMsmall)
+    T = matrix(FlintZZ, _T)
+  else
+    CL, CM = _iso_setup(fmpz_mat[GLlll], fmpz_mat[GMlll])
+    b, T = isometry(CL, CM)
+  end
+
 
   if b
     T = change_base_ring(FlintQQ, inv(TL)*T*TM)
