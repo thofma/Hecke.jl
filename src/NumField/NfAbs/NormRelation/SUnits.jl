@@ -262,23 +262,52 @@ function induce_action_just_from_subfield(N::NormRelation, i, s, FB)
   return z
 end
 
-function norm_relation(K::AnticNumberField)
+function norm_relation(K::AnticNumberField, coprime::Int = 0)
   local N
   try
-    N = _get_nf_norm_relation(K)::NormRelation{Int}
+    N = _get_nf_norm_relation(K)::Vector{NormRelation{Int}}
+    if coprime == 0
+      return true, N[1]::NormRelation{Int}
+    else
+      for i in 1:length(N)
+        if coprime == N[i].isoptimal
+          return true, N[i]::NormRelation{Int}
+        end
+      end
+      fl, M = has_coprime_norm_relation(K, fmpz(coprime))
+      if fl
+        push!(N, M)
+        return true, M
+      end
+      return false, NormRelation{Int}()
+    end
   catch e
     if !isa(e, AccessorNotSetError)
       rethrow(e)
     end
-    N = _norm_relation_setup_generic(K, pure = true, small_degree = true)
-    _set_nf_norm_relation(K, N)
+    if coprime == 0
+      M = _norm_relation_setup_generic(K, pure = true, small_degree = true)
+      _set_nf_norm_relation(K, NormRelation{Int}[M])
+      return true, M::NormRelation{Int}
+    else
+      fl, M = has_coprime_norm_relation(K, fmpz(coprime))
+      if fl
+        _set_nf_norm_relation(K, NormRelation{Int}[M])
+        return true, M::NormRelation{Int}
+      end
+      return false, NormRelation{Int}()
+    end
   end
-  return N::NormRelation{Int}
 end
 
 function _sunit_group_fac_elem_quo_via_brauer(K::AnticNumberField, S, n::Int, invariant::Bool = false)
   @vprint :NormRelation 1 "Setting up the norm relation context ... \n"
-  N = norm_relation(K)
+  fl, N = norm_relation(K, n)
+  if !fl
+    fl, N = norm_relation(K, 0)
+  end
+  @assert fl
+  @vprint :NormRelation 1 "Using norm relation $N\n"
   return __sunit_group_fac_elem_quo_via_brauer(N, S, n, invariant)
 end
 

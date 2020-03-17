@@ -38,6 +38,7 @@ mutable struct NormRelation{T}
   induced::Dict{NfToNfMor, Perm{Int}}
   embed_cache_triv::Vector{Dict{nf_elem, nf_elem}}
   nonredundant::Vector{Int}
+  isoptimal::Int
 
   function NormRelation{T}() where {T}
     z = new{T}()
@@ -48,6 +49,7 @@ mutable struct NormRelation{T}
     z.embed_cache = Dict{Tuple{Int, Int}, Dict{nf_elem, nf_elem}}()
     z.mor_cache = Dict{NfToNfMor, Dict{nf_elem, nf_elem}}()
     z.induced = Dict{NfToNfMor, Perm{Int}}()
+    z.isoptimal = -1
     return z
   end
 end
@@ -978,30 +980,20 @@ function has_coprime_norm_relation(K::AnticNumberField, m::fmpz)
 
   for i in 1:length(ls)
     red = false
-    @show i
     for j in keys(nonredundant)
       if Base.issubset(ls[j][1], ls[i][1])
         red = true
-        @show "$i th field is redundant"
         break
       elseif Base.issubset(ls[i][1], ls[j][1])
-        @show "$i th field contains $j th field"
-        @show "deleting entry $i from $nonredundant"
         delete!(nonredundant, j)
-        @show nonredundant
         nonredundant[i] = true
       end
     end
-
-    @show red
 
     if !red
       nonredundant[i] = true
     end
   end
-
-  @show collect(keys(nonredundant))
-
 
   n = length(ls)
 
@@ -1036,7 +1028,8 @@ function has_coprime_norm_relation(K::AnticNumberField, m::fmpz)
   end
 
   z.isabelian = false
+  z.isoptimal = m
 
-  return z
+  return true, z
 end
 
