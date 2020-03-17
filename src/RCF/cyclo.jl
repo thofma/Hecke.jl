@@ -366,7 +366,7 @@ It assumes that the base field is normal. gens must be a set of generators for t
 """
 function automorphisms(C::CyclotomicExt; gens::Vector{NfToNfMor} = small_generating_set(automorphisms(base_field(C))), copy::Bool = true)
 
-  if degree(absolute_field(C)) == degree(base_field(C))
+  if degree(absolute_field(C)) == degree(base_field(C)) || isautomorphisms_known(C.Ka)
     return automorphisms(C.Ka, copy = copy)
   end
   genK = C.mp[1](gen(C.Ka))

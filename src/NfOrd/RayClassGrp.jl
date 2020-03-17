@@ -555,6 +555,14 @@ end
 #
 # We compute the group using the sequence U -> (O/m)^* _> Cl^m -> Cl -> 1
 # 
+@doc Markdown.doc"""
+    ray_class_group(m::NfOrdIdl, inf_plc::Array{InfPlc, 1}; n_quo::Int) -> GrpAbFinGen, MapRayClassGrp
+    
+Given an ideal m and a set of infinite places of $K$,
+ this function returns the corresponding ray class group as an abstract group $\mathcal {Cl}_m$ and a map going
+ from the group into the group of ideals of $K$ that are coprime to $m$.
+"""
+
 function ray_class_group(m::NfOrdIdl, inf_plc::Vector{InfPlc} = Vector{InfPlc}(); GRH::Bool = true, n_quo::Int = -1, lp::Dict{NfOrdIdl, Int} = factor(m))
 
   O = order(m)
@@ -1119,7 +1127,7 @@ function find_gens(mR::MapRayClassGrp; coprime_to::fmpz = fmpz(-1))
   return lp, sR
 end
 
-function induce_action(mR::MapRayClassGrp, Aut::Vector{Hecke.NfToNfMor}, mp::GrpAbFinGenMap = id_hom(domain(mR)))
+function induce_action(mR::Union{MapRayClassGrp, MapClassGrp}, Aut::Vector{Hecke.NfToNfMor}, mp::GrpAbFinGenMap = id_hom(domain(mR)))
   R = domain(mR)
   G = Vector{GrpAbFinGenMap}(undef, length(Aut))
   if isempty(Aut)
@@ -1154,6 +1162,15 @@ function induce_action(mR::MapRayClassGrp, Aut::Vector{Hecke.NfToNfMor}, mp::Grp
   end
   return G
   
+end
+
+function find_gens_for_action(mR::MapClassGrp)
+
+	lp, sR = find_gens(pseudo_inv(mR), PrimesSet(20, -1))
+  ip = InfPlc[]
+  sR1 = GrpAbFinGenElem[]
+	return lp, ip, sR, sR1
+
 end
 
 #  Find places that generate the ray class group

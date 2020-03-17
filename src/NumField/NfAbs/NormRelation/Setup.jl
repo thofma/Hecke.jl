@@ -61,14 +61,14 @@ end
 
 function _norm_relation_setup_abelian(K::AnticNumberField; small_degree::Bool = true, pure::Bool = true, index::fmpz = zero(fmpz))
   G = automorphisms(K)
-  A, GtoA, AtoG = find_isomorphism_with_abelian_group(G, *);
+  A, GtoA, AtoG = Hecke.find_isomorphism_with_abelian_group(G);
   if iszero(index)
     subs = [f for f in subgroups(A) if order(f[1]) > 1]
   else
     subs = [f for f in subgroups(A) if order(f[1]) > 1 && order(f[1]) == index || order(f[1]) == index^2]
   end
 
-  b, den, ls = _has_norm_relation_abstract(A, subs, large_index = !small_degree, pure = pure)
+  b, den, ls = Hecke._has_norm_relation_abstract(A, subs, large_index = !small_degree, pure = pure)
   @assert b
   n = length(ls)
 
@@ -79,7 +79,7 @@ function _norm_relation_setup_abelian(K::AnticNumberField; small_degree::Bool = 
   z.ispure = false
 
   for i in 1:n
-    F, mF = fixed_field(K, NfToNfMor[AtoG[f] for f in ls[i][2]])
+    F, mF = fixed_field1(K, NfToNfMor[AtoG[f] for f in ls[i][2]])
     maximal_order(F)
     S, mS = simplify(F)
     L = S
@@ -114,7 +114,7 @@ function _norm_relation_setup_generic(K::AnticNumberField; small_degree::Bool = 
   A = automorphisms(K)
   G, AtoG, GtoA = generic_group(A, *)
   if iszero(target_den)
-    b, den, ls = _has_norm_relation_abstract(G, [f for f in subgroups(G, conjugacy_classes = false) if order(f[1]) > 1 && div(order(G), order(f[1])) <= max_degree], pure = pure)
+     b, den, ls = _has_norm_relation_abstract(G, [f for f in subgroups(G, conjugacy_classes = false) if order(f[1]) > 1 && div(order(G), order(f[1])) <= max_degree], pure = pure)
   else
     b, den, ls = _has_norm_relation_abstract(G, [f for f in subgroups(G, conjugacy_classes = false) if order(f[1]) > 1 && div(order(G), order(f[1])) <= max_degree], target_den = target_den, pure = pure)
   end
@@ -136,7 +136,8 @@ function _norm_relation_setup_generic(K::AnticNumberField; small_degree::Bool = 
   end
  
   for i in 1:n
-    F, mF = fixed_field(K, NfToNfMor[GtoA[f] for f in ls[i][1]])
+		auts = NfToNfMor[GtoA[f] for f in ls[i][1]]
+    F, mF = Hecke.fixed_field1(K, small_generating_set(auts))
     S, mS = simplify(F, cached = true)
     L = S
     mL = mS * mF

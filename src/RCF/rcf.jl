@@ -215,7 +215,7 @@ function _rcf_S_units_using_Brauer(CF::ClassField_pp)
   #@assert Hecke.isprime_power(e)
   @vprint :ClassField 2 "Adjoining the root of unity\n"
   C = cyclotomic_extension(k1, degree(CF))
-  automorphisms(C, copy = false)
+  @vtime :ClassField 2 automorphisms(C, copy = false)
   G, mG = automorphism_group(C.Ka)
   @vtime :ClassField 3 fl = NormRel.has_useful_brauer_relation(G)
   if fl
@@ -271,8 +271,8 @@ function _s_unit_for_kummer_using_Brauer(C::CyclotomicExt, f::fmpz)
   end
 
   
-  @vprint :Fields 3 "Computing S-units with $(length(lP)) primes\n"
-  @vtime :Fields 3 S, mS = NormRel._sunit_group_fac_elem_quo_via_brauer(C.Ka, lP, e)
+  @vprint :ClassField 3 "Computing S-units with $(length(lP)) primes\n"
+  @vtime :ClassField 3 S, mS = NormRel._sunit_group_fac_elem_quo_via_brauer(C.Ka, lP, e)
   KK = kummer_extension(e, FacElem{nf_elem, AnticNumberField}[mS(S[i]) for i=1:ngens(S)])
   
   #gens mod n-th power - to speed up the frobenius computation

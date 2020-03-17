@@ -1666,6 +1666,100 @@ function find_isomorphism(G, op, A::GrpAb)
   return GtoA, AtoG
 end
 
+function find_isomorphism_with_abelian_group(G::Vector{NfToNfMor})
+	id = id_hom(domain(G[1]))
+	S = small_generating_set(G)
+  p = 2
+  R = GF(p, cached = false)
+  K = domain(G[1])
+  Rx = PolynomialRing(R, "x", cached = false)[1]
+  while iszero(discriminant(Rx(K.pol)))
+    p = next_prime(p)
+		R = GF(p, cached = false)
+	  Rx = PolynomialRing(R, "x", cached = false)[1]
+	end
+  list = gfp_poly[Rx(x.prim_img) for x in S]
+  push!(list, gen(Rx))
+  n = length(G)
+  elem_to_index = Dict{NfToNfMor, Int}()
+  words = Dict{gfp_poly, Array{Int}}()
+  rels = Vector{Vector{Int}}()
+
+  l = length(list)
+
+  for i in 1:length(S)
+    v = zeros(Int, length(S))
+    v[i] = 1
+    words[Rx(S[i].prim_img)] = v
+  end
+
+  words[list[end]] = zeros(Int, length(S))
+
+  for i in 1:length(G)
+    elem_to_index[G[i]] = i
+  end
+
+  first_round = true # One has to do this once even if length(list) == n
+  while first_round || length(list) != n
+    first_round = false
+    for g in list
+      for i in 1:length(S)
+        s = S[i]
+ 				sRx = Rx(s.prim_img)
+        m = compose_mod(g, sRx, Rx(K.pol))
+
+        if m in list
+          w = words[sRx] .+ words[g] .- words[m]
+          if !iszero(w)
+            push!(rels, w)
+          end
+        end
+
+        if !(m in list)
+          push!(list, m)
+          words[m] = words[sRx] .+ words[g]
+        end
+      end
+    end
+  end
+
+  rel_mat = zero_matrix(FlintZZ, length(rels), length(S))
+  for i in 1:length(rels)
+    for j in 1:length(S)
+      rel_mat[i, j] = rels[i][j]
+    end
+  end
+
+  A = abelian_group(rel_mat)
+  Asnf, mAsnf = snf(A)
+  GtoAsnf = Dict{eltype(G), GrpAbFinGenElem}()
+  AsnftoG = Dict{GrpAbFinGenElem, eltype(G)}()
+  for g in G
+    w = words[Rx(g.prim_img)]
+    GtoAsnf[g] = sum(w[i] * (mAsnf \ A[i]) for i in 1:length(S))
+  end
+  for a in Asnf
+    el = gen(Rx)
+    v = Int[mAsnf(a).coeff[1, i] for i in 1:length(S)]
+    for i in 1:length(S)
+      el = compose_mod(el, pow(Rx(S[i].prim_img), (x, y) -> Hecke.compose_mod(x, y, Rx(K.pol)), v[i], gen(Rx)), Rx(K.pol))
+    end
+		ind = findfirst(x -> Rx(x.prim_img) == el, G)
+		@assert ind != nothing
+    AsnftoG[a] = G[ind]
+  end
+
+  for g in G
+    @assert AsnftoG[GtoAsnf[g]] == g
+  end
+  for a in Asnf
+    @assert GtoAsnf[AsnftoG[a]] == a
+  end
+
+  return Asnf, GtoAsnf, AsnftoG
+end
+
+
 function find_isomorphism_with_abelian_group(G, op)
   id = find_identity(G, op)
   S = small_generating_set(G, op, id)

@@ -349,7 +349,7 @@ function _qradical(O::NfOrd, q::fmpz)
       return M2[i, i], ideal(O, q)
     end
   end
-  I = ideal(O, M2)
+  I = ideal(O, M2, false, true)
   I.minimum = q
   I.gens = gens
   return fmpz(1), I
@@ -728,7 +728,7 @@ function new_pradical_frobenius1(O::NfOrd, p::Int)
   it = 0
   while true
     if it == j
-      I = ideal(O, M1)
+      I = ideal(O, M1, false, true)
       reverse!(gens)
       I.gens = gens
       I.minimum = fmpz(p)
@@ -773,7 +773,7 @@ function new_pradical_frobenius1(O::NfOrd, p::Int)
     end
     X = right_kernel_basis(A)
     if isempty(X)
-      I = ideal(O, M1)
+      I = ideal(O, M1, false, true)
       reverse!(gens)
       I.gens = gens
       I.minimum = fmpz(p)
@@ -792,7 +792,7 @@ function new_pradical_frobenius1(O::NfOrd, p::Int)
       end
     end
     if iszero(length(new_gens))
-      I = ideal(O, M1)
+      I = ideal(O, M1, false, true)
       reverse!(gens)
       I.gens = gens
       I.minimum = fmpz(p)
@@ -958,7 +958,7 @@ function pradical_trace1(O::NfOrd, p::Union{Integer, fmpz})
   end
   hnf_modular_eldiv!(M2, fmpz(p), :lowerleft)
   M2 = view(M2, nrows(M2)-d+1:nrows(M2), 1:d)
-  I = ideal(O, M2)
+  I = ideal(O, M2, false, true)
   I.minimum = p
   I.gens = gens
   return I

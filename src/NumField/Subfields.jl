@@ -354,3 +354,63 @@ function fixed_field(K::SimpleNumField, A::Vector{T}; simplify::Bool = true) whe
 end
 
 
+function fixed_field1(K::AnticNumberField, auts::Vector{NfToNfMor})
+
+	auts_new = small_generating_set(auts)
+  orderG = _order(auts)
+  degree_subfield = divexact(degree(K), orderG)
+  if length(auts_new) == 1 && isprime_power(degree_subfield)
+    #In this case, one of the coefficients of the minpoly of gen(K)
+		#over the subfield is a generator for the subfield.
+		gens = auts
+		if orderG != length(auts)
+		  gens = closure(auts, orderG)
+    end
+		conjs = nf_elem[x.prim_img for x in gens]
+		prim_el = sum(conjs)
+		def_pol = minpoly(prim_el)
+    if degree(def_pol) != degree_subfield
+			conjs1 = copy(conjs)
+      while degree(def_pol) != degree_subfield
+				for i = 1:length(conjs)
+          conjs1[i] *= conjs[i] 
+				end
+				prim_el = sum(conjs1)
+       	def_pol = minpoly(prim_el)
+			end
+		end
+    subK = number_field(def_pol, cached = false)[1]
+    mp = hom(subK, K, prim_el, check = false)
+    return subK, mp
+	end 
+  
+	@show length(auts_new)
+	OK = maximal_order(K)
+	B = basis(OK, K)
+  M = zero_matrix(FlintZZ, degree(K), degree(K)*length(auts_new))
+  v = Vector{nf_elem}(undef, degree(K))
+	MOK = basis_matrix(OK, copy = false)
+  MOKinv = basis_mat_inv(OK, copy = false)
+  for i = 1:length(auts_new)
+		v[1] = one(K)
+    v[2] = auts_new[i].prim_img
+    for j = 3:degree(K)
+      v[j] = v[j-1]*v[2]
+		end
+    B = basis_matrix(v, FakeFmpqMat)
+  	M_to_insert = MOK*B*MOKinv
+		@assert isone(M_to_insert.den)
+		for i = 1:degree(K)
+			M_to_insert.num[i, i] -= 1
+		end
+		_copy_matrix_into_matrix(M, 1, (i-1)*degree(K)+1, M_to_insert.num)
+	end
+	rk, Ker = kernel(M, side = :left)
+	@assert rk == degree_subfield
+	#The kernel is the maximal order of the subfield.
+  bas = Vector{nf_elem}(undef, degree_subfield)
+	for i = 1:degree_subfield
+    bas[i] = elem_from_mat_row(OK, Ker, i).elem_in_nf
+	end
+  return subfield(K, bas, isbasis = true)
+end

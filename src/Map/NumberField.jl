@@ -610,21 +610,6 @@ function closure(S::Vector{NfToNfMor}, final_order::Int = -1)
   return elements
 end
 
-
-function small_generating_set(Aut::Array{NfToNfMor, 1})
-  K = domain(Aut[1])
-  a = gen(K)
-  Identity = Aut[1]
-  for i in 1:length(Aut)
-    Au = Aut[i]
-    if Au.prim_img == a
-      Identity = Aut[i]
-      break
-    end
-  end
-  return small_generating_set(Aut, *, Identity)
-end
-
 function generic_group(G::Vector{NfToNfMor}, ::typeof(*))
   K = domain(G[1])
   n = length(G)
@@ -852,3 +837,86 @@ function _order(f::NfToNfMor)
   end
   return i
 end
+
+
+function small_generating_set(G::Vector{NfToNfMor})
+
+  if length(G) == 1
+    return G
+  end
+	
+  firsttry = 10
+  secondtry = 20
+  thirdtry = 30
+	
+	K = domain(G[1])
+	p = 2
+  R = GF(p, cached = false)
+	Rx = PolynomialRing(R, "x", cached = false)[1]
+	while iszero(discriminant(Rx(K.pol)))
+		p = next_prime(p)
+	  R = GF(p, cached = false)
+		Rx = PolynomialRing(R, "x", cached = false)[1]
+	end 
+
+	given_gens = gfp_poly[Rx(x.prim_img) for x in G]
+	orderG = length(closure(given_gens, (x, y) -> Hecke.compose_mod(x, y, Rx(K.pol)), gen(Rx)))
+  # First try one element
+  
+  for i in 1:firsttry
+    trygen = _non_trivial_randelem(G, id_hom(K))
+    if length(closure(gfp_poly[Rx(trygen.prim_img)], (x, y) -> Hecke.compose_mod(x, y, Rx(K.pol)), gen(Rx))) == orderG
+      return NfToNfMor[trygen]
+    end
+  end
+
+  for i in 1:secondtry
+    gens = NfToNfMor[_non_trivial_randelem(G, id_hom(K)) for i in 1:2]
+		gens_mod = gfp_poly[Rx(x.prim_img) for x in gens]
+    if length(closure(gens_mod, (x, y) -> Hecke.compose_mod(x, y, Rx(K.pol)), gen(Rx))) == orderG
+      return unique(gens)
+    end
+  end
+
+  for i in 1:thirdtry
+    gens = NfToNfMor[_non_trivial_randelem(G, id_hom(K)) for i in 1:3]
+		gens_mod = gfp_poly[Rx(x.prim_img) for x in gens]
+    if length(closure(gens_mod, (x, y) -> Hecke.compose_mod(x, y, Rx(K.pol)), gen(Rx))) == orderG
+      return unique(gens)
+    end
+  end
+
+  # Now use that unconditionally log_2(|G|) elements generate G
+
+  b = ceil(Int, log(2, orderG))
+  @assert orderG <= 2^b
+
+  j = 0
+  while true
+    if j > 2^20
+      error("Something wrong with generator search")
+    end
+    j = j + 1
+    gens = NfToNfMor[_non_trivial_randelem(G, id_hom(K)) for i in 1:b]
+		gens_mod = gfp_poly[Rx(x.prim_img) for x in gens]
+    if length(closure(gens_mod, (x, y) -> Hecke.compose_mod(x, y, Rx(K.pol)), gen(Rx))) == orderG
+      return unique(gens)
+    end
+  end
+end
+
+function _order(G::Vector{NfToNfMor})
+  K = domain(G[1])
+	p = 2
+  R = GF(p, cached = false)
+	Rx = PolynomialRing(R, "x", cached = false)[1]
+	while iszero(discriminant(Rx(K.pol)))
+		p = next_prime(p)
+	  R = GF(p, cached = false)
+		Rx = PolynomialRing(R, "x", cached = false)[1]
+	end 
+	given_gens = gfp_poly[Rx(x.prim_img) for x in G]
+	return length(closure(given_gens, (x, y) -> Hecke.compose_mod(x, y, Rx(K.pol)), gen(Rx)))
+end
+
+
