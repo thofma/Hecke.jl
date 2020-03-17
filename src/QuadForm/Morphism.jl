@@ -1669,7 +1669,7 @@ function stabil(x1, x2, per, G::Matrix{Int}, V, C)
   XG = matgen(x, dim, per, V)
   X2 = matgen(x2, dim, per, V)
 
-  @hassert :Lattice 1 begin XGG = deepcopy(XG); X22 = deepcopy(X2) end
+  @hassert :Lattice 1 begin XGG = deepcopy(XG); X22 = deepcopy(X2); true end
   SS = zeros(Int, dim, dim)
   _psolve(SS, X2, XG, dim, C.prime)
   @hassert :Lattice 1 SS * X22 == XGG
