@@ -33,6 +33,7 @@
  * [ ] `relative_extension`
  * [ ] `is_locally_power` (at given primes or up to given bound)
  * [ ] Frobenius automorphism of a field at a prime ideal
+ * [ ] Redo the `automorphism_group` properly.
 
  ## Renaming
  
