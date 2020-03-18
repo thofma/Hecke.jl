@@ -85,14 +85,14 @@ function compact_presentation(a::FacElem{nf_elem, AnticNumberField}, nn::Int = 2
     else
       A = FacElem(D)
     end
-    vv = [x//n^k for x = v]
+    vv = arb[x//n^k for x = v]
     vvv = fmpz[]
     el_embs = a*be
     for i=1:r1
       while !radiuslttwopower(vv[i], -5)
         arb_prec *= 2
         v = conjugates_arb_log_normalise(el_embs, arb_prec)
-        vv = [x//n^k for x = v]
+        vv = arb[x//n^k for x = v]
       end
       push!(vvv, round(fmpz, vv[i]//log(2)))
     end
@@ -100,7 +100,7 @@ function compact_presentation(a::FacElem{nf_elem, AnticNumberField}, nn::Int = 2
       while !radiuslttwopower(vv[i], -5)
         arb_prec *= 2
         v = conjugates_arb_log_normalise(el_embs, arb_prec)
-        vv = [x//n^k for x = v]
+        vv = arb[x//n^k for x = v]
       end
       local r = round(fmpz, vv[i]//log(2)//2)
       push!(vvv, r)
@@ -126,8 +126,8 @@ function compact_presentation(a::FacElem{nf_elem, AnticNumberField}, nn::Int = 2
     B1 = B.num   
     @assert norm(B1) <= abs(discriminant(ZK))
 
-    @vprint :CompactPresentation 1 "Factoring $B1 of norm $(norm(B1))\n"
-    @vtime :CompactPresentation 1 for (p, _v) = factor(B1)
+    @vprint :CompactPresentation 1 "Factoring ($(B1.gen_one), $(B1.gen_two)) of norm $(norm(B1))\n"
+    @vtime :CompactPresentation 5 for (p, _v) = factor(B1)
       if haskey(de, p)
         de[p] += _v*n^k
         continue
@@ -193,6 +193,7 @@ function insert_prime_into_coprime(de::Dict{NfOrdIdl, fmpz}, p::NfOrdIdl, e::fmp
   return nothing
 end
 
+global deb = []
 #TODO: use the log as a stopping condition as well
 @doc Markdown.doc"""
     evaluate_mod(a::FacElem{nf_elem, AnticNumberField}, B::NfOrdFracIdl) -> nf_elem
@@ -204,6 +205,8 @@ function evaluate_mod(a::FacElem{nf_elem, AnticNumberField}, B::NfOrdFracIdl)
   K = base_ring(a)
   ZK = order(B)
   dB = denominator(B)*index(ZK)
+
+  push!(deb, (a, B))
   
   @hassert :CompactPresentation 1 factored_norm(B) == abs(factored_norm(a))
   @hassert :CompactPresentation 2 B == ideal(order(B), a)
@@ -211,12 +214,16 @@ function evaluate_mod(a::FacElem{nf_elem, AnticNumberField}, B::NfOrdFracIdl)
   @assert order(B) === ZK
   pp = fmpz(1)
   re = K(0)
+  threshold = 3
+  if degree(K) > 20
+    threshold = div(degree(K), 5)
+  end
   while (true)
     dt = prime_decomposition_type(ZK, Int(p))
-    fl = false
+    fl = true
     for i = 1:length(dt)
-      if dt[i][1] < 4
-        fl = true
+      if dt[i][1] > threshold
+        fl = false
         break
       end
     end
@@ -224,7 +231,7 @@ function evaluate_mod(a::FacElem{nf_elem, AnticNumberField}, B::NfOrdFracIdl)
       p = next_prime(p)
       continue
     end
-    me = modular_init(K, p, deg_limit = 3)
+    me = modular_init(K, p)
     mp = Ref(dB) .* modular_proj(a, me)
     m = modular_lift(mp, me)
     if pp == 1
