@@ -55,6 +55,11 @@ mutable struct NormRelation{T}
 end
 
 function Base.show(io::IO, N::NormRelation)
+  if !isdefined(N, :K)
+    print(io, "Invalid norm relation")
+    return
+  end
+
   print(io, "Norm relation of\n  ", N.K, "\nof index ", index(N), " and the subfields")
   for i in 1:length(N)
     print(io, "\n  ", subfields(N)[i][1])
@@ -889,9 +894,9 @@ end
 
 function _smallest_scalar_norm_relation_coprime(G::GrpGen, m::fmpz)
 
-  @assert isprime(m)
+  primes = fmpz[ p for (p, _) in factor(m)]
 
-  S = Localization(FlintZZ, m)
+  S = Localization(FlintZZ, primes)
 
   all_non_trivial_subs = [ (H, mH) for (H, mH) in subgroups(G) if order(H) > 1]
 
