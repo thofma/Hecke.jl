@@ -135,7 +135,6 @@ function _subfield_primitive_element_from_basis(K::AnticNumberField, as::Vector{
   Zx = PolynomialRing(FlintZZ, "x", cached = false)[1]
   f = Zx(K.pol*denominator(K.pol))
   p, d = _find_prime(f)
-
   #First, we search for elements that are primitive using block systems
   F = FlintFiniteField(p, d, "w", cached = false)[1]
   Ft = PolynomialRing(F, "t", cached = false)[1]
@@ -164,42 +163,48 @@ function _subfield_primitive_element_from_basis(K::AnticNumberField, as::Vector{
     return a
   end
 
-  k = base_field(K)
   # Notation: cs the coefficients in a linear combination of the as, ca the dot
   # product of these vectors.
-  cs = fmpz[zero(ZZ) for n in 1:dsubfield]
-  cs[1] = one(ZZ)
+  cs = fmpz[rand(FlintZZ, -2:2) for n in 1:dsubfield]
   k = 0
-  local I
-  found = false
+  s = 1
+  first = true
+  a = one(K)
+  I = t2(a)
   while true
+    s += 1
     ca = sum(c*a for (c,a) in zip(cs,as))
     b = _block(ca, rt, ap)
     if length(b) == dsubfield
-      t2n = t2(a)
-      if found
-        k += 1
-        if t2n < I
-          a = ca
-        end
-        if k == 5
-          return a
-        end
-      else
-        found = true
+      t2n = t2(ca)
+      if first
+        a = ca
         I = t2n
+        first = false
+      elseif t2n < I
+        a = ca
+        I = t2n
+      end
+      k += 1
+      if k == 5
+        return a
       end
     end
 
     # increment the components of cs
-    cs[1] += 1
-    let i = 2
-      while i <= dsubfield && cs[i-1] > cs[i]+1
-        cs[i-1] = zero(ZZ)
-        cs[i] += 1
-        i += 1
-      end
+    bb = div(s, 10)+1
+    for n = 1:dsubfield
+      cs[n] = rand(FlintZZ, -bb:bb) 
     end
+    #= 
+    cs[1] += 1
+    i = 2
+    while i <= dsubfield && cs[i-1] > cs[i]+1
+      cs[i-1] = zero(ZZ)
+      cs[i] += 1
+      i += 1
+    end
+    =#
   end
 end
 
@@ -236,7 +241,7 @@ end
 function _subfield_from_primitive_element(K, s)
   f = minpoly(s)
   L,_ = NumberField(f, cached = false)
-  return L, hom(L, K, s)
+  return L, hom(L, K, s, check = false)
 end
 
 ################################################################################
@@ -361,7 +366,8 @@ function fixed_field1(K::AnticNumberField, auts::Vector{NfToNfMor})
   degree_subfield = divexact(degree(K), orderG)
   if length(auts_new) == 1 && isprime_power(degree_subfield)
     #In this case, one of the coefficients of the minpoly of gen(K)
-		#over the subfield is a generator for the subfield.
+    #over the subfield is a generator for the subfield.
+    #if the given generator was not too large, also this element will be ok
 		gens = auts
 		if orderG != length(auts)
 		  gens = closure(auts, orderG)
@@ -384,12 +390,14 @@ function fixed_field1(K::AnticNumberField, auts::Vector{NfToNfMor})
     return subK, mp
 	end 
   
-	@show length(auts_new)
-	OK = maximal_order(K)
+  OK = maximal_order(K)
+  if isdefined(OK, :lllO)
+    OK = lll(OK)
+  end
 	B = basis(OK, K)
   M = zero_matrix(FlintZZ, degree(K), degree(K)*length(auts_new))
   v = Vector{nf_elem}(undef, degree(K))
-	MOK = basis_matrix(OK, copy = false)
+  MOK = basis_matrix(OK, copy = false)
   MOKinv = basis_mat_inv(OK, copy = false)
   for i = 1:length(auts_new)
 		v[1] = one(K)
@@ -398,15 +406,18 @@ function fixed_field1(K::AnticNumberField, auts::Vector{NfToNfMor})
       v[j] = v[j-1]*v[2]
 		end
     B = basis_matrix(v, FakeFmpqMat)
-  	M_to_insert = MOK*B*MOKinv
-		@assert isone(M_to_insert.den)
-		for i = 1:degree(K)
-			M_to_insert.num[i, i] -= 1
-		end
-		_copy_matrix_into_matrix(M, 1, (i-1)*degree(K)+1, M_to_insert.num)
+    mul!(B, B, MOKinv)
+    mul!(B, MOK, B)
+    @assert isone(B.den) 
+    for i = 1:degree(K)
+      B.num[i, i] -= 1
+    end
+		_copy_matrix_into_matrix(M, 1, (i-1)*degree(K)+1, B.num)
 	end
 	rk, Ker = kernel(M, side = :left)
-	@assert rk == degree_subfield
+  @assert rk == degree_subfield
+  Ker = view(Ker, 1:rk, 1:degree(K))
+  Ker = lll(Ker)
 	#The kernel is the maximal order of the subfield.
   bas = Vector{nf_elem}(undef, degree_subfield)
 	for i = 1:degree_subfield

@@ -134,11 +134,13 @@ function _norm_relation_setup_generic(K::AnticNumberField; small_degree::Bool = 
   for i in 1:n
     z.embed_cache_triv[i] = Dict{nf_elem, nf_elem}()
   end
- 
+
+  @vprint :NormRelation 1 "Computing subfields\n"
   for i in 1:n
+    @vprint :NormRelation 3 "Computing subfield $i / $n \n"
 		auts = NfToNfMor[GtoA[f] for f in ls[i][1]]
-    F, mF = Hecke.fixed_field1(K, small_generating_set(auts))
-    S, mS = simplify(F, cached = true)
+    @vtime :NormRelation 3 F, mF = Hecke.fixed_field1(K, auts)
+    @vtime :NormRelation 3 S, mS = simplify(F, cached = false)
     L = S
     mL = mS * mF
     z.subfields[i] = L, mL

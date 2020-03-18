@@ -168,7 +168,7 @@ function _meet(b1::Vector{Vector{Int}}, b2::Vector{Vector{Int}})
       for h = b2
         if j in h
           s = intersect(i, h)
-          if ! (s in b)
+          if !(s in b)
             push!(b, s)
           end
         end
@@ -179,9 +179,11 @@ function _meet(b1::Vector{Vector{Int}}, b2::Vector{Vector{Int}})
 end
 
 function _find_prime(f::fmpz_poly)
-  p = 2^20
-  d = 1
-  while true
+  p = 2^10
+  n_attempts = min(degree(f), 10)
+  candidates = Vector{Tuple{Int, Int}}(undef, n_attempts)
+  i = 1
+  while i < n_attempts+1
     p = next_prime(p)
     R = GF(p, cached=false)
     Rt = PolynomialRing(R, "t", cached = false)[1]
@@ -190,12 +192,19 @@ function _find_prime(f::fmpz_poly)
       continue
     end
     FS = factor_shape(fR)
-    d = lcm([x for (x, v) in FS])
+    d = lcm(Int[x for (x, v) in FS])
     if d < degree(fR)^2
-      break
+      candidates[i] = (p, d)
+      i += 1
     end
   end
-  return p, d
+  res =  candidates[1]
+  for j = 2:n_attempts
+    if candidates[j][2] < res[2]
+      res = candidates[j]
+    end
+  end
+  return res[1], res[2]
 end
 
 function polredabs(K::AnticNumberField)
