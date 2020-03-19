@@ -133,6 +133,24 @@ function (f::AbToNfOrdMultGrp)(a::GrpAbFinGenElem)
   return f.generator^a[1]
 end
 
+mutable struct AbToNfMultGrp <: Map{GrpAbFinGen, AnticNumberField, SetMap, AbToNfMultGrp}
+  domain::GrpAbFinGen
+  codomain::AnticNumberField
+  generator::nf_elem
+  @declare_other
+
+  function AbToNfMultGrp(K::AnticNumberField, order::Int, generator::nf_elem)
+    G = abelian_group(Int[order])
+    z = new()
+    z.domain = G
+    z.codomain = O
+    z.generator = generator
+    return z
+  end
+
+end
+
+
 ################################################################################
 #
 #  Morphisms from finite abelian groups to orders

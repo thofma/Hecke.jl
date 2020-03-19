@@ -619,11 +619,12 @@ mutable struct NfAbsOrd{S, T} <: Ring
                                    #  in the given order)
   disc::fmpz                       # Discriminant
   isequation_order::Bool           # Equation order of ambient number field?
-  #signature::Tuple{Int, Int}       # Signature of the ambient number field
-                                   # (-1, 0) means "not set"
-  #conjugate_data::acb_root_ctx
+
   minkowski_matrix::Tuple{arb_mat, Int}        # Minkowski matrix
   minkowski_gram_mat_scaled::Tuple{fmpz_mat, Int} # Minkowski matrix - gram * 2^prec and rounded
+  minkowski_gram_CMfields::fmpz_mat
+  complex_conjugation_CM::Map
+
   torsion_units#::Tuple{Int, NfAbsOrdElem}
   unit_group::Map                  # Abstract types in the field is usually bad,
                                    # but here it can be neglected.

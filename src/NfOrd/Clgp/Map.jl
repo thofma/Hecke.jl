@@ -10,16 +10,18 @@ export isprincipal
 #
 ################################################################################
 
+global examples = []
 @doc Markdown.doc"""
     reduce_ideal2(A::FacElem{NfOrdIdl}) -> NfOrdIdl, FacElem{nf_elem}
 Computes $B$ and $\alpha$ in factored form, such that $\alpha B = A$.
 """
 function reduce_ideal2(I::FacElem{NfOrdIdl, NfOrdIdlSet})
+  push!(examples, I)
   @assert !isempty(I.fac)
   O = order(first(keys(I.fac)))
   K = nf(O)
   fst = true
-  a = FacElem(Dict(K(1) => fmpz(1)))
+  a = FacElem(Dict{nf_elem, fmpz}(K(1) => fmpz(1)))
   A = ideal(O, 1)
   for (k, v) = I.fac
     @assert order(k) === O
@@ -28,18 +30,17 @@ function reduce_ideal2(I::FacElem{NfOrdIdl, NfOrdIdlSet})
     end
     if fst
       A, a = power_reduce2(k, v)
-      @hassert :PID_Test 1 (v>0 ? k^Int(v) : inv(k)^Int(-v)) == A*evaluate(a)
+      @hassert :PID_Test 1 (v>0 ? fractional_ideal(O, k)^Int(v) : inv(k)^Int(-v)) == A*evaluate(a)
       fst = false
     else
       B, b = power_reduce2(k, v)
-      @hassert :PID_Test (v>0 ? k^Int(v) : inv(k)^Int(-v)) == B*evaluate(b)
+      @hassert :PID_Test (v>0 ? fractional_ideal(O, k)^Int(v) : inv(k)^Int(-v)) == B*evaluate(b)
       A = A*B
       mul!(a, a, b)
       #a = a*b
       if norm(A) > abs(discriminant(O))
-        A, c = reduce_ideal2(A)
+        A, c = reduce_ideal(A)
         add_to_key!(a.fac, K(c), fmpz(-1))
-        #a = a*FacElem(Dict(K(c) => fmpz(-1)))
       end
     end
   end
@@ -66,7 +67,7 @@ function power_reduce2(A::NfOrdIdl, e::fmpz)
   O = order(A)
   K= nf(O)
   if norm(A) > abs(discriminant(O))
-    A, a = reduce_ideal2(A)
+    A, a = reduce_ideal(A)
     @hassert :PID_Test 1 a*A_orig == A
     # A_old * inv(a) = A_new
     #so a^e A_old^e = A_new^e
@@ -94,7 +95,7 @@ function power_reduce2(A::NfOrdIdl, e::fmpz)
     mul!(al, al, cl^2)
     #al = al*cl^2
     if norm(C2) > abs(discriminant(O))
-      C2, a = reduce_ideal2(C2)
+      C2, a = reduce_ideal(C2)
       add_to_key!(al.fac, inv(a), 1)
       #mul!(al, al, inv(a))# al *= inv(a)
     end
@@ -102,7 +103,7 @@ function power_reduce2(A::NfOrdIdl, e::fmpz)
     if isodd(e)
       A = C2*A
       if norm(A) > abs(discriminant(O))
-        A, a = reduce_ideal2(A)
+        A, a = reduce_ideal(A)
         add_to_key!(al.fac, inv(a), 1)
         #mul!(al, al, inv(a)) #al *= inv(a)
       end
@@ -235,7 +236,7 @@ function class_group_ideal_relation(I::NfOrdIdl, c::ClassGrpCtx)
   end
   # ok, we have to work
   
-  _I, b = reduce_ideal2(I) # do the obvious reduction to an ideal of bounded norm
+  _I, b = reduce_ideal(I) # do the obvious reduction to an ideal of bounded norm
   @hassert :PID_Test 1 b*I == _I
   I = _I
   n = norm(I)

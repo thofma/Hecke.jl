@@ -375,8 +375,7 @@
   end
 
   @testset "Torsion units" begin
-    f = x^2 +
- 3
+    f = x^2 + 3
     K, a = NumberField(f, "a")
     M = EquationOrder(K)
     A, mA = @inferred torsion_unit_group(M)

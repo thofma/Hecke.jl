@@ -245,6 +245,9 @@ function _s_unit_for_kummer_using_Brauer(C::CyclotomicExt, f::fmpz)
   K = absolute_field(C)
   @vprint :ClassField 2 "Maximal order of cyclotomic extension\n"
   ZK = maximal_order(K)
+  if isdefined(ZK, :lllO)
+    ZK = ZK.lllO
+  end
   
   lP = Hecke.NfOrdIdl[]
 

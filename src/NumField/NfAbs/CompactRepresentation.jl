@@ -1,3 +1,5 @@
+
+global deb = []
 @doc Markdown.doc"""
     compact_presentation(a::FacElem{nf_elem, AnticNumberField}, n::Int = 2; decom, arb_prec = 100, short_prec = 1000) -> FacElem
 Computes a presentation $a = \prod a_i^{n_i}$ where all the exponents $n_i$ are powers of $n$
@@ -8,6 +10,7 @@ be passed in in \code{decom}.
 """
 function compact_presentation(a::FacElem{nf_elem, AnticNumberField}, nn::Int = 2; decom=false, arb_prec = 100, short_prec = 128)
 
+  push!(deb, (a, nn, decom))
   n = fmpz(nn)
 
   K = base_ring(a)
@@ -43,8 +46,39 @@ function compact_presentation(a::FacElem{nf_elem, AnticNumberField}, nn::Int = 2
   #Step 1: reduce the ideal in a p-power way...
 
   A = ideal(ZK, 1)
-  for _k = Int(flog(_v, n)):-1:0
-    B = Dict((p, Int(div(v, n^_k) % nn)) for (p, v) = de)
+  @vprint :CompactPresentation 1 "First reduction step\n"
+  cached_red = Dict{NfOrdIdl, Dict{Int, Tuple{NfOrdIdl, FacElem{nf_elem, AnticNumberField}}}}()
+  n_iterations = Int(flog(_v, n))
+  for _k = n_iterations:-1:0
+    @vprint :CompactPresentation 3 "Reducing the support: step $(_k) / $(n_iterations)\n"
+    B = Dict{NfOrdIdl, Int}()
+    for (p, vv) in de
+      e_p = Int(div(vv, n^_k) % nn)
+      if iszero(e_p)
+        continue
+      end
+      if haskey(cached_red, p)
+        Dp = cached_red[p]
+        if haskey(Dp, e_p)
+          Ap, ap = Dp[e_p]       
+        else
+          Ap, ap = power_reduce2(p, fmpz(e_p))
+          Dp[e_p] = (Ap, ap)
+        end
+        add_to_key!(B, Ap, 1)
+        mul!(be, be, ap^(-(n^_k)))
+        v -= Ref(n^_k) .* conjugates_arb_log_normalise(ap, arb_prec)
+      else
+        Dp = Dict{Int, Tuple{NfOrdIdl, FacElem{nf_elem, AnticNumberField}}}()
+        Ap, ap = power_reduce2(p, fmpz(e_p))
+        Dp[e_p] = (Ap, ap)
+        cached_red[p] = Dp
+        add_to_key!(B, Ap, 1)
+        v -= Ref(n^_k) .* conjugates_arb_log_normalise(ap, arb_prec)
+        mul!(be, be, ap^(-(n^_k)))
+      end
+    end
+    @show B
     add_to_key!(B, A, n)
     @vtime :CompactPresentation 3 A, alpha = reduce_ideal2(FacElem(B))
     mul!(be, be, alpha^(-(n^_k)))
@@ -234,7 +268,7 @@ function evaluate_mod(a::FacElem{nf_elem, AnticNumberField}, B::NfOrdFracIdl)
     me = modular_init(K, p)
     mp = Ref(dB) .* modular_proj(a, me)
     m = modular_lift(mp, me)
-    if pp == 1
+    if isone(pp)
       re = m
       pp = p
     else

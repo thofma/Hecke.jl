@@ -179,7 +179,7 @@ function _add_sunits_from_brauer_relation!(c, UZK, N)
   K = N.K
   for i = 1:length(N)
     k, mk = subfield(N, i)
-    @vprint :NormRelation 1 "Looking at the subfield $k \n"
+    @vprint :NormRelation 1 "Looking at the subfield $i / $(length(N)) with defining equation $(k.pol) \n"
     @vprint :NormRelation 1 "Computing lll basis of maximal order ...\n"
     zk = maximal_order(k)
     zk = lll(zk)
@@ -192,25 +192,30 @@ function _add_sunits_from_brauer_relation!(c, UZK, N)
     Szk, mS = Hecke.sunit_mod_units_group_fac_elem(lpk)
 
     @vprint :NormRelation 1 "Coercing the sunits into the big field ...\n"
-    for j in 1:length(N)
+    #for j in 1:length(N)
       z = induce_action_just_from_subfield(N, i, lpk, c.FB)
 
       for l=1:ngens(Szk)
+        @vprint :NormRelation 3 "Sunits $l / $(ngens(Szk))\n"
         u = mS(Szk[l])  #do compact rep here???
         valofnewelement = mul(mS.valuations[l], z)
         @hassert :NormRelation 1 begin zz = mk(evaluate(u)); true; end
         @hassert :NormRelation 1 sparse_row(FlintZZ, [ (i, valuation(zz, p)) for (i, p) in enumerate(c.FB.ideals) if valuation(zz, p) != 0]) == valofnewelement
-        Hecke.class_group_add_relation(c, FacElem(Dict((_embed(N, i, x), v) for (x,v) = u.fac)), valofnewelement)
+        @vtime :NormRelation 4 img_u = FacElem(Dict{nf_elem, fmpz}((_embed(N, i, x), v) for (x,v) = u.fac))
+        @vtime :NormRelation 4 Hecke.class_group_add_relation(c, img_u, valofnewelement)
       end
-    end
+    #end
 
     @vprint :NormRelation 1 "Coercing the units into the big field ... \n"
     U, mU = unit_group_fac_elem(zk)
     for j=2:ngens(U) # I cannot add a torsion unit. He will hang forever.
+      @vprint :NormRelation 3 "Unit $j / $(ngens(U))\n"
       u = mU(U[j])
-      Hecke._add_unit(UZK, FacElem(Dict((_embed(N, i, x), v) for (x,v) = u.fac)))
+      @vtime :NormRelation 4 img_u = FacElem(Dict{nf_elem, fmpz}((_embed(N, i, x), v) for (x,v) = u.fac))
+      @vtime :NormRelation 4 Hecke._add_unit(UZK, img_u)
     end
-    UZK.units = Hecke.reduce(UZK.units, UZK.tors_prec)
+    @vprint :NormRelation 4 "Reducing the units\n"
+    @vtime :NormRelation 4 UZK.units = Hecke.reduce(UZK.units, UZK.tors_prec)
   end
   return nothing
 end

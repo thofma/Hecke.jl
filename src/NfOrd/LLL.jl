@@ -31,21 +31,14 @@ function _lll_quad(A::NfOrdIdl)
 end
 
 function _lll_CM(A::NfOrdIdl, f::NfToNfMor)
-  b = basis(A)
-  n = degree(order(A))
-  g = zero_matrix(FlintZZ, n, n)
-  conjs = nf_elem[f(x.elem_in_nf) for x in b]
-  for i = 1:n
-    g[i, i] = numerator(trace(b[i].elem_in_nf * conjs[i]))
-    for j = i+1:n
-      el = numerator(trace(b[i].elem_in_nf * conjs[j]))
-      g[i, j] = el
-      g[j, i] = el
-    end
-  end
+  OK = order(A)
+  @vprint :LLL 3 "Reduction\n"
+  M = _minkowski_matrix_CM(OK, f)
+  @vtime :LLL 3 BM, T = lll_with_transform(basis_matrix(A, copy = false), lll_ctx(0.71, 0.51))
+  g = BM*M*transpose(BM)
   @hassert :LLL 1 isposdef(g)
-  l, t = lll_gram_with_transform(g)
-  return FakeFmpqMat(l, fmpz(1)), t::fmpz_mat
+  @vtime :LLL 3 l, t = lll_gram_with_transform(g)
+  return FakeFmpqMat(l, fmpz(1)), t*T::fmpz_mat
 end
 
 ################################################################################
@@ -90,7 +83,7 @@ function lll(A::NfOrdIdl, v::fmpz_mat = zero_matrix(FlintZZ, 1, 1); prec::Int = 
   else
     c = minkowski_matrix(nf(order(A)), prec) ## careful: current iteration
                                           ## c is NOT a copy, so don't change.
-    b = FakeFmpqMat(l)*basis_matrix(order(A), copy = false)
+    b = l*basis_matrix(order(A), copy = false)
 
 
     rt_c = roots_ctx(K)
@@ -230,7 +223,10 @@ function _lll_gram(M::NfOrd)
   return On
 end
 
-function _lll_CM(M::NfOrd, f::NfToNfMor)
+function _minkowski_matrix_CM(M::NfOrd, f::NfToNfMor)
+  if isdefined(M,  :minkowski_gram_CMfields)
+    return M.minkowski_gram_CMfields
+  end
   K = nf(M)
   b = basis(M, K)
   n = degree(M)
@@ -245,6 +241,13 @@ function _lll_CM(M::NfOrd, f::NfToNfMor)
       g[j, i] = el
     end
   end
+  M.minkowski_gram_CMfields = g
+  return g
+end
+
+function _lll_CM(M::NfOrd, f::NfToNfMor)
+  K = nf(M)
+  g = _minkowski_matrix_CM(M, f)
   @vprint :LLL 1 "Now LLL\n"
   @hassert :LLL 1 isposdef(g)
   w = lll_gram_with_transform(g)[2]
@@ -614,10 +617,7 @@ function short_elem(A::NfOrdFracIdl,
                 v::fmpz_mat=zero_matrix(FlintZZ, 1,1); prec::Int = 100)
   return divexact(short_elem(A.num, v, prec = prec), A.den)
 end
-function _short_elem(A::NfOrdFracIdl,
-                v::fmpz_mat=zero_matrix(FlintZZ, 1, 1))
-  return divexact(_short_elem(A.num, v), A.den)
-end
+
 
 function short_elem(A::NfOrdIdl,
                 v::fmpz_mat = zero_matrix(FlintZZ, 1,1); prec::Int = 100)
@@ -647,57 +647,18 @@ function short_elem(A::NfOrdIdl,
   return q
 end
 
-function _short_elem(A::NfOrdIdl,
-                v::fmpz_mat = zero_matrix(FlintZZ, 1, 1))
-  p = 64
-  while true
-    if p > 40000
-      error("Something wrong in reduce_ideal")
-    end
-    try
-      b = short_elem(A, v, prec = p)
-      return b
-    catch e
-      if e isa LowPrecisionLLL || e isa InexactError
-        p = 2*p
-      else
-        rethrow(e)
-      end
-    end
-  end
-end
-
 function reduce_ideal(A::NfOrdIdl)
   B = inv(A)
-  success = false
-  b = _short_elem(B)
-  C = b*A
-  simplify(C)
-  @assert C.den == 1
-  return C.num
-end
-
-function reduce_ideal(A::NfOrdFracIdl)
-  B = inv(A)
-  b = _short_elem(B.num)
-  C = divexact(b, B.den)*A
-  simplify(C)
-  @assert C.den == 1
-  return C.num
-end
-
-function reduce_ideal2(A::NfOrdIdl)
-  B = inv(A)
-  b = _short_elem(B)
+  b = short_elem(B)
   C = b*A
   simplify(C)
   @assert C.den == 1
   return C.num, b
 end
 
-function reduce_ideal2(A::NfOrdFracIdl)
+function reduce_ideal(A::NfOrdFracIdl)
   B = inv(A)
-  b = _short_elem(B.num)
+  b = short_elem(B.num)
   C = divexact(b, B.den)*A
   simplify(C)
   @assert C.den == 1
