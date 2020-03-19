@@ -243,7 +243,6 @@ function __init__()
     include("AlgAssRelOrd/NEQ_polymake.jl")
   end
 
-  @eval global signature(K::AnticNumberField) = _signature(K)
 end
 
 module Globals
@@ -251,9 +250,8 @@ module Globals
   const Qx, _ = PolynomialRing(FlintQQ, "x", cached = false)
   const Zx, _ = PolynomialRing(FlintZZ, "x", cached = false)
 end
+
 using .Globals
-
-
 
 ################################################################################
 #
@@ -369,6 +367,8 @@ function torsion_units_gen(K::AnticNumberField)
   return g
 end
 
+signature(K::AnticNumberField) = _signature(K)
+
 function _signature(K::AnticNumberField)
   try
     sig = _get_nf_signature(K)::Tuple{Int, Int}
@@ -410,7 +410,7 @@ Base.adjoint(x) = transpose(x)
 #
 ################################################################################
 
-global VERSION_NUMBER = v"0.7.4-dev"
+global VERSION_NUMBER = v"0.8.0"
 
 ######################################################################
 # named printing support
