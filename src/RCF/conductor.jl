@@ -253,7 +253,7 @@ function conductor(C::Hecke.ClassField)
       if k2 == 1 && order(Q) == E
         tmgD = mG.tame
         if haskey(tmgD, p)
-          push!(gens, mS(tmgD[p].disc_log[1]))
+          push!(gens, mS(tmgD[p].disc_log))
           Q,mQ = quo(G, gens,false)
           if order(Q) == E
             delete!(L, p)
