@@ -348,27 +348,6 @@ function conjugate_data_arb_roots(K::AnticNumberField, p::Int)
   return c[p]::acb_roots
 end
 
-function _torsion_units(K::AnticNumberField)
-  try
-    c = _get_nf_torsion_units(K)::Tuple{Int, nf_elem}
-    return c
-  catch
-    ord, gen = _torsion_units_gen(K)
-    _set_nf_torsion_units(K, (ord, gen))
-    return ord, gen
-  end
-end
-
-function torsion_units(K::AnticNumberField)
-  ord, g = _torsion_units(K)
-  return nf_elem[g^i for i = 0:ord-1]
-end
-
-function torsion_units_gen(K::AnticNumberField)
-  ar, g = _torsion_units(K)
-  return g
-end
-
 function _signature(K::AnticNumberField)
   try
     sig = _get_nf_signature(K)::Tuple{Int, Int}

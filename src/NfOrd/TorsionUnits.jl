@@ -74,7 +74,46 @@ end
 
 ################################################################################
 #
-#  Functions for user
+#  Interface: number fields
+#
+################################################################################
+
+function istorsion_unit_group_known(K::AnticNumberField)
+  return _get_nf_torsion_units(K, false) != nothing
+end
+
+function torsion_unit_group(K::AnticNumberField)
+  ord, gen = _torsion_units_gen(K)
+  mp = AbToNfMultGrp(K, ord, gen)
+  return domain(mp), mp
+end
+
+function torsion_units(K::AnticNumberField)
+  ord, gen = _torsion_units_gen(K)
+  res = Vector{nf_elem}(undef, ord)
+    res[1] = one(K)
+    res[2] = gen
+    for i = 1:length(res)
+      res[i] = c[2]*res[2]
+    end
+    return res
+  mp = AbToNfMultGrp(K, ord, gen)
+  return domain(mp), mp
+end
+
+function torsion_units_generator(K::AnticNumberField)
+  ord, gen = _torsion_units_gen(K)
+  return gen
+end
+
+function torsion_units_order(K::AnticNumberField)
+  ord, gen = _torsion_units_gen(K)
+  return ord
+end
+
+################################################################################
+#
+# Interface: orders
 #
 ################################################################################
 
@@ -84,23 +123,17 @@ end
 Given an order $O$, compute the torsion units of $O$.
 """
 function torsion_units(O::NfOrd)
-  ord, g = _torsion_units(O)
-  res = Array{NfOrdElem, 1}(undef, ord)
-  res[1] = O(1)
-  res[2] = g
-  for i = 3:ord
-    res[i] = g*res[i-1]
-  end
-  return res
+  g, ord = torsion_units_gen_order(O)
+  return powers(g, ord-1)
 end
 
 @doc Markdown.doc"""
-    torsion_units_gen(O::NfOrd) -> NfOrdElem
+    torsion_units_generator(O::NfOrd) -> NfOrdElem
 
 Given an order $O$, compute a generator of the torsion units of $O$.
 """
-function torsion_units_gen(O::NfOrd)
-  return _torsion_units(O)[2]
+function torsion_units_generator(O::NfOrd)
+  return torsion_units_gen_order(O::NfOrd)[1]
 end
 
 @doc Markdown.doc"""
@@ -109,8 +142,32 @@ end
 Given an order $O$, compute a generator of the torsion units of $O$ as well as its order.
 """
 function torsion_units_gen_order(O::NfOrd)
-  ord, g = _torsion_units(O)
-  return g, ord
+  ord, g = _torsion_units_gen(nf(O))
+  if ismaximal_known_and_maximal(O)
+    return O(g), ord
+  end
+  #We need to check which torsion units are in the order.
+  lf = factor(ord)
+  ord_O = 1
+  for (p, v) in lf
+    if p == 2 && isone(v)
+      ord_O *= 2
+      continue
+    end
+    p_int = Int(p)
+    ord_p = p_int^v
+    u = g^divexact(ord, ord_p)
+    while !(u in O)
+      u = u^p_int
+      ord_p = divexact(ord_p, p_int) 
+    end
+    ord_O *= ord_p
+  end
+  #ord_O is the order of the torsion units in O
+  @show ord_O, ord
+  @assert iszero(mod(ord, ord_O))
+  genO = O(g^divexact(ord, ord_O))
+  return genO, ord_O
 end
 
 @doc Markdown.doc"""
@@ -120,19 +177,9 @@ Given an order $O$, returns the torsion units as an abelian group $G$
 together with a map $G \to \mathcal O^\times$.
 """
 function torsion_unit_group(O::NfOrd)
-  ord, g = _torsion_units(O)
-  f = AbToNfOrdMultGrp(O, ord, g)
+  g, ord = torsion_units_gen_order(O)
+  f = AbToNfOrdMultGrp(O, ord, O(g))
   return domain(f), f
-end
-
-function _torsion_units(O::NfOrd)
-   if isdefined(O, :torsion_units)
-    return O.torsion_units
-  end
-
-  z = _torsion_units_gen(O)
-  O.torsion_units = z
-  return O.torsion_units
 end
 
 ################################################################################
@@ -323,6 +370,10 @@ function _torsion_group_order_divisor(K::AnticNumberField)
 end
 
 function _torsion_units_gen(K::AnticNumberField)
+  if istorsion_unit_group_known(K)
+    c = _get_nf_torsion_units(K)
+    return c[1], c[2]
+  end
   r1, r2 = signature(K)
   if r1 > 0
     return 2, K(-1)
@@ -355,7 +406,7 @@ function _torsion_units_gen(K::AnticNumberField)
       end
     end  
   end
-
+  _set_nf_torsion_units(K, (ord, gen))
   return ord, gen
 end
 
