@@ -49,8 +49,8 @@ function induce(FB::Hecke.NfFactorBase, A::Map)
 
   for p in FB.fb_int.base
     FP = FB.fb[p]
-    if length(FP.lp) < 3 || isindex_divisor(O, p) || p > 2^60
-      lp = [x[2] for x = FP.lp]
+    if length(FP.lp) < 3 || isindex_divisor(O, p) || !fits(Int, p)
+      lp = NfOrdIdl[x[2] for x = FP.lp]
       for (i, P) in FP.lp
         Q = induce_image(A, P)
         id = findfirst(isequal(Q), lp)
@@ -67,7 +67,7 @@ function induce(FB::Hecke.NfFactorBase, A::Map)
       # an ideal is divisible by P iff the canonical 2nd generator of the prime ideal
       # divides the 2nd generator of the target (CRT)
       # so 
-      lp = [gcd(px(K(P[2].gen_two)), gpx) for P = FP.lp]
+      lp = gfp_poly[gcd(px(K(P[2].gen_two)), gpx) for P = FP.lp]
       # this makes lp canonical (should be doing nothing actually)
 
       for (i,P) in FP.lp

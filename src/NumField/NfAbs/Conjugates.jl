@@ -14,7 +14,7 @@ Returns true if and only if $K$ is totally real, that is, if all roots of the
 defining polynomial are real.
 """
 function istotally_real(K::AnticNumberField)
-  return signature(K)[1] == degree(K)
+  return signature(K)[2] == 0
 end
 
 @doc Markdown.doc"""
@@ -569,8 +569,10 @@ function iscomplex_conjugation(f::NfToNfMor)
   while true
     c = conjugates(a, p)
     cc = conj.(conjugates(img_a, p))
-    if !overlaps(c[d], cc[d])
-      return false
+    for i = 1:degree(K)
+      if !overlaps(c[i], cc[i])
+        return false
+      end
     end
     #Now I need to assure that the precision is enough.
     found = true
