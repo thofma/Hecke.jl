@@ -85,6 +85,7 @@ function NumberField(CF::ClassField{S, T}; redo::Bool = false, using_brauer = fa
   end
   
   res = ClassField_pp{S, T}[]
+  ord = torsion_units_order(base_field(CF))
   G = codomain(CF.quotientmap)
   @assert issnf(G)
   q = GrpAbFinGenElem[G[i] for i=1:ngens(G)]
@@ -94,7 +95,7 @@ function NumberField(CF::ClassField{S, T}; redo::Bool = false, using_brauer = fa
     for (p, e) = lo.fac
       q[i] = p^e*G[i]
       S1, mQ = quo(G, q, false)
-      if using_brauer
+      if using_brauer && !divides(fmpz(ord), order(S1))[1]
         push!(res, ray_class_field_cyclic_pp_Brauer(CF, mQ))
       else
         push!(res, ray_class_field_cyclic_pp(CF, mQ))

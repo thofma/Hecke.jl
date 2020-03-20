@@ -136,10 +136,19 @@ function cyclotomic_extension(k::AnticNumberField, n::Int; cached::Bool = true, 
           lll(ZKa)
         end
         Hecke._set_maximal_order_of_nf(Ka, ZKa)
+        c.Kr = Kr
+        c.Ka = Ka
+        c.mp = (abs2rel, small2abs)
       end
-      c.Kr = Kr
-      c.Ka = Ka
-      c.mp = (abs2rel, small2abs)
+      if istorsion_unit_group_known(k)
+        ok, gTk = _torsion_units_gen(k)
+        expected = Int(_torsion_group_order_divisor(Ka))
+        if expected == lcm(ok, n)
+          #In this case, we know that the generator is the product.
+          genTKa = small2abs(gTk)*(abs2rel\(gen(Kr)))
+          _set_nf_torsion_units(Ka, (expected, genTKa))
+        end
+      end
     end
     if cached
       push!(Ac, c)
@@ -210,6 +219,15 @@ function cyclotomic_extension(k::AnticNumberField, n::Int; cached::Bool = true, 
   c.Kr = Kr
   c.Ka = Ka
   c.mp = (abs2rel, small2abs)
+  if istorsion_unit_group_known(k)
+    ok, gTk = _torsion_units_gen(k)
+    expected = Int(_torsion_group_order_divisor(Ka))
+    if expected == lcm(ok, n)
+      #In this case, we know that the generator is the product.
+      genTKa = small2abs(gTk)*abs2rel\(gen(Kr))
+      _set_nf_torsion_units(Ka, (expected, genTKa))
+    end
+  end
   if cached
     push!(Ac, c)
     Hecke._set_cyclotomic_ext_nf(k, Ac)
@@ -326,6 +344,17 @@ function _cyclotomic_extension_non_simple(k::AnticNumberField, n::Int; cached::B
 
   small2abs = hom(k, Ka, img_gen_k)
   abs2rel = hom(Ka, Kr, img_gen_Ka, img_gen_k, img_gen_Kr)
+
+  if istorsion_unit_group_known(k)
+    ok, gTk = _torsion_units_gen(k)
+    expected = Int(_torsion_group_order_divisor(Ka))
+    if expected == lcm(ok, n)
+      #In this case, we know that the generator is the product.
+      genTKa = small2abs(gTk)*img_gen_Kr
+      _set_nf_torsion_units(Ka, (expected, genTKa))
+    end
+  end
+
   C = CyclotomicExt()
   C.kummer_exts = Dict{Set{fmpz}, Tuple{Vector{NfOrdIdl}, KummerExt}}()
   C.k = k
