@@ -10,13 +10,11 @@ export isprincipal
 #
 ################################################################################
 
-global examples = []
 @doc Markdown.doc"""
     reduce_ideal2(A::FacElem{NfOrdIdl}) -> NfOrdIdl, FacElem{nf_elem}
 Computes $B$ and $\alpha$ in factored form, such that $\alpha B = A$.
 """
 function reduce_ideal2(I::FacElem{NfOrdIdl, NfOrdIdlSet})
-  push!(examples, I)
   @assert !isempty(I.fac)
   O = order(first(keys(I.fac)))
   K = nf(O)

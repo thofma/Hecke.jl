@@ -1,5 +1,3 @@
-
-global deb = []
 @doc Markdown.doc"""
     compact_presentation(a::FacElem{nf_elem, AnticNumberField}, n::Int = 2; decom, arb_prec = 100, short_prec = 1000) -> FacElem
 Computes a presentation $a = \prod a_i^{n_i}$ where all the exponents $n_i$ are powers of $n$
@@ -10,7 +8,6 @@ be passed in in \code{decom}.
 """
 function compact_presentation(a::FacElem{nf_elem, AnticNumberField}, nn::Int = 2; decom=false, arb_prec = 100, short_prec = 128)
 
-  push!(deb, (a, nn, decom))
   n = fmpz(nn)
 
   K = base_ring(a)
@@ -78,7 +75,6 @@ function compact_presentation(a::FacElem{nf_elem, AnticNumberField}, nn::Int = 2
         mul!(be, be, ap^(-(n^_k)))
       end
     end
-    @show B
     add_to_key!(B, A, n)
     @vtime :CompactPresentation 3 A, alpha = reduce_ideal2(FacElem(B))
     mul!(be, be, alpha^(-(n^_k)))
