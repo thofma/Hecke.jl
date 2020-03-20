@@ -164,7 +164,6 @@ function torsion_units_gen_order(O::NfOrd)
     ord_O *= ord_p
   end
   #ord_O is the order of the torsion units in O
-  @show ord_O, ord
   @assert iszero(mod(ord, ord_O))
   genO = O(g^divexact(ord, ord_O))
   return genO, ord_O
