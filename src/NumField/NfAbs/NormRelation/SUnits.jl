@@ -178,6 +178,9 @@ function _add_sunits_from_brauer_relation!(c, UZK, N)
   cp = sort!(collect(Set(minimum(x) for x = c.FB.ideals)))
   K = N.K
   for i = 1:length(N)
+    if !(i in N.nonredundant)
+      continue
+    end
     k, mk = subfield(N, i)
     @vprint :NormRelation 1 "Looking at the subfield $i / $(length(N)) with defining equation $(k.pol) \n"
     @vprint :NormRelation 1 "Computing lll basis of maximal order ...\n"

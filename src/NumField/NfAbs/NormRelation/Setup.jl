@@ -86,7 +86,7 @@ function _norm_relation_setup_abelian(K::AnticNumberField; small_degree::Bool = 
   z.ispure = false
 
   for i in 1:n
-    F, mF = fixed_field1(K, NfToNfMor[AtoG[f] for f in ls[i][2]])
+    F, mF = Hecke.fixed_field1(K, NfToNfMor[AtoG[f] for f in ls[i][2]])
     maximal_order(F)
     S, mS = simplify(F)
     L = S
@@ -1017,7 +1017,7 @@ function has_coprime_norm_relation(K::AnticNumberField, m::fmpz)
   end
  
   for i in 1:n
-    F, mF = fixed_field(K, NfToNfMor[mG(f) for f in ls[i][1]])
+    F, mF = Hecke.fixed_field1(K, NfToNfMor[mG(f) for f in ls[i][1]])
     S, mS = simplify(F, cached = true)
     L = S
     mL = mS * mF
