@@ -173,7 +173,7 @@ end
 
 # pure
 
-function _add_sunits_from_brauer_relation!(c, UZK, N)
+function _add_sunits_from_brauer_relation!(c, UZK, N; invariant = false)
   # I am assuming that c.FB.ideals is invariant under the action of the Galois group
   cp = sort!(collect(Set(minimum(x) for x = c.FB.ideals)))
   K = N.K
@@ -195,19 +195,17 @@ function _add_sunits_from_brauer_relation!(c, UZK, N)
     Szk, mS = Hecke.sunit_mod_units_group_fac_elem(lpk)
 
     @vprint :NormRelation 1 "Coercing the sunits into the big field ...\n"
-    #for j in 1:length(N)
-      z = induce_action_just_from_subfield(N, i, lpk, c.FB)
+    z = induce_action_just_from_subfield(N, i, lpk, c.FB, invariant)
 
-      for l=1:ngens(Szk)
-        @vprint :NormRelation 3 "Sunits $l / $(ngens(Szk))\n"
-        u = mS(Szk[l])  #do compact rep here???
-        valofnewelement = mul(mS.valuations[l], z)
-        @hassert :NormRelation 1 begin zz = mk(evaluate(u)); true; end
-        @hassert :NormRelation 1 sparse_row(FlintZZ, [ (i, valuation(zz, p)) for (i, p) in enumerate(c.FB.ideals) if valuation(zz, p) != 0]) == valofnewelement
-        @vtime :NormRelation 4 img_u = FacElem(Dict{nf_elem, fmpz}((_embed(N, i, x), v) for (x,v) = u.fac))
-        @vtime :NormRelation 4 Hecke.class_group_add_relation(c, img_u, valofnewelement)
-      end
-    #end
+    for l=1:ngens(Szk)
+      @vprint :NormRelation 3 "Sunits $l / $(ngens(Szk))\n"
+      u = mS(Szk[l])  #do compact rep here???
+      valofnewelement = mul(mS.valuations[l], z)
+      @hassert :NormRelation 1 begin zz = mk(evaluate(u)); true; end
+      @hassert :NormRelation 1 sparse_row(FlintZZ, [ (i, valuation(zz, p)) for (i, p) in enumerate(c.FB.ideals) if valuation(zz, p) != 0]) == valofnewelement
+      @vtime :NormRelation 4 img_u = FacElem(Dict{nf_elem, fmpz}((_embed(N, i, x), v) for (x,v) = u.fac))
+      @vtime :NormRelation 4 Hecke.class_group_add_relation(c, img_u, valofnewelement)
+    end
 
     @vprint :NormRelation 1 "Coercing the units into the big field ... \n"
     U, mU = unit_group_fac_elem(zk)
@@ -224,8 +222,7 @@ function _add_sunits_from_brauer_relation!(c, UZK, N)
 end
 
 # TODO: Encode that the i-th field is normal over Q
-function induce_action_just_from_subfield(N::NormRelation, i, s, FB)
-  invariant = false
+function induce_action_just_from_subfield(N::NormRelation, i, s, FB, invariant = false)
   S = FB.ideals
   ZK = order(S[1])
 
@@ -258,7 +255,7 @@ function induce_action_just_from_subfield(N::NormRelation, i, s, FB)
           push!(v, (k, divexact(ramification_index(Q), ramification_index(s[l]))))
         end
       end
-      if invariant
+      if invariant && N.isnormal[i]
 				if found == numb_ideal
 					break
 				end
@@ -362,7 +359,7 @@ function __sunit_group_fac_elem_quo_via_brauer(N::NormRelation, S, n::Int, invar
 
   if invariant
     c, UZK = Hecke._setup_for_norm_relation_fun(K, S)
-    _add_sunits_from_brauer_relation!(c, UZK, N)
+    _add_sunits_from_brauer_relation!(c, UZK, N, invariant = true)
   else
     cp = sort!(collect(Set(minimum(x) for x = S)))
     Sclosed = NfOrdIdl[]
@@ -378,7 +375,7 @@ function __sunit_group_fac_elem_quo_via_brauer(N::NormRelation, S, n::Int, invar
     end
     @vprint :NormRelation 1 "I am not Galois invariant. Working with S of size $(length(Sclosed))\n"
     c, UZK = _setup_for_norm_relation_fun(K, Sclosed)
-    _add_sunits_from_brauer_relation!(c, UZK, N)
+    _add_sunits_from_brauer_relation!(c, UZK, N, invariant = true)
   end
 
   if gcd(index(N), n) != 1

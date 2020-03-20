@@ -657,7 +657,6 @@ function extend_hom(A::ClassField, B::ClassField, tau::T) where T <: Map
   lp = factor(fmpz(degree(B)))
   all_h = [A.A() for x in A.cyc]
   for (p, v) = lp.fac
-    println("doin' $p^$v")
     Cp = [Ap for Ap = A.cyc if degree(Ap) % Int(p) == 0]
     Dp = [Bp for Bp = B.cyc if degree(Bp) % Int(p) == 0]
     h = [extend_hom(X, Cp, tau) for x = Dp]
