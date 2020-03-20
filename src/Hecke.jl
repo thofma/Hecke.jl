@@ -242,7 +242,6 @@ function __init__()
   @require Polymake="d720cf60-89b5-51f5-aff5-213f193123e7" begin
     include("AlgAssRelOrd/NEQ_polymake.jl")
   end
-
 end
 
 module Globals
@@ -346,7 +345,7 @@ function conjugate_data_arb_roots(K::AnticNumberField, p::Int)
   return c[p]::acb_roots
 end
 
-function _signature(K::AnticNumberField)
+function signature(K::AnticNumberField)
   try
     sig = _get_nf_signature(K)::Tuple{Int, Int}
     return sig
