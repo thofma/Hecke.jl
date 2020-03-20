@@ -178,7 +178,7 @@ function _add_sunits_from_brauer_relation!(c, UZK, N)
   cp = sort!(collect(Set(minimum(x) for x = c.FB.ideals)))
   K = N.K
   for i = 1:length(N)
-    if !(i in N.nonredundant)
+    if isdefined(N, :nonredundant) && !(i in N.nonredundant)
       continue
     end
     k, mk = subfield(N, i)
