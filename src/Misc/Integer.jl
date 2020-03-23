@@ -150,27 +150,6 @@ end
 log(a::fmpz) = log(BigInt(a))
 log(a::fmpq) = log(numerator(a)) - log(denominator(a))
 
-function round(::Type{fmpz}, a::fmpq)
-  s = sign(numerator(a))
-  n = abs(numerator(a))
-  d = denominator(a)
-  if isone(d)
-    return numerator(a)
-  end
-  q = div(n, d)
-  r = mod(n, d)
-  if r >= div(d, 2)
-    return s*(q+1)
-  else
-    return s*q
-  end
-end
-
-function round(a::fmpq)
-  return round(fmpz, a)
-end
-
-
 function one(::Type{Nemo.fmpz})
   return fmpz(1)
 end
@@ -1522,5 +1501,54 @@ function issquarefree(n::Union{Int,fmpz})
   return isone(maximum(values(factor(n).fac)))
 end
 
+################################################################################
+#
+#  Rounding and friends
+#
+################################################################################
 
+Base.floor(::Type{fmpz}, x::fmpq) = fdiv(numerator(x), denominator(x))
 
+Base.ceil(::Type{fmpz}, x::fmpq) = cdiv(numerator(x), denominator(x))
+
+Base.round(x::fmpq, ::RoundingMode{:Up}) = ceil(x)
+
+Base.round(::Type{fmpz}, x::fmpq, ::RoundingMode{:Up}) = ceil(fmpz, x)
+
+Base.round(x::fmpq, ::RoundingMode{:Down}) = floor(x)
+
+Base.round(::Type{fmpz}, x::fmpq, ::RoundingMode{:Down}) = floor(fmpz, x)
+
+function Base.round(x::fmpq, ::RoundingMode{:Nearest})
+  d = denominator(x)
+  n = numerator(x)
+  if d == 2
+    if mod(n, 4) == 1
+      if n > 0
+        return div(n, d)
+      else
+        return div(n, d) - 1
+      end
+    else
+      if n > 0
+        return div(n, d) + 1
+      else
+        return div(n, d)
+      end
+    end
+  end
+
+  return floor(x + 1//2)
+end
+
+Base.round(x::fmpq, ::RoundingMode{:NearestTiesAway}) = sign(x) * floor(abs(x) + 1//2)
+
+Base.round(::Type{fmpz}, x::fmpq, ::RoundingMode{:NearestTiesAway}) = sign(x) == 1 ? floor(fmpz, abs(x) + 1//2) : -floor(fmpz, abs(x) + 1//2)
+
+function round(::Type{fmpz}, a::fmpq)
+  return round(fmpz, a, RoundNearestTiesAway)
+end
+
+function round(a::fmpq)
+  return round(fmpz, a)
+end

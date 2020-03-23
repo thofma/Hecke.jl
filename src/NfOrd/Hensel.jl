@@ -518,7 +518,7 @@ function _hensel(f::Generic.Poly{nf_elem},
 
       ve = matrix(FlintZZ, 1, n, [coeff(cf, k) for k=0:n-1])
       _ve = ve*Mi
-      mu = matrix(FlintZZ, 1, n,  [ round(_ve[1, k]//d) for k=1:n])
+      mu = matrix(FlintZZ, 1, n,  [ round(fmpz, _ve[1, k]//d) for k=1:n])
       ve = ve - mu*M
       z = ZX()
       for kk=1:n

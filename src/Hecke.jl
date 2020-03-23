@@ -672,8 +672,8 @@ Base.issubset(C::ClassField, B::ClassField) = issubfield(C, B)
 
 _trace_cache = Dict()
 
-function _trace_call(;cache = _trace_cache, depth = 2, print = false)
-  s = Base.stacktrace()[4:4 + depth - 1]
+function _trace_call(;cache = _trace_cache, depth = 5, print = false)
+  s = Base.stacktrace()[3:3 + depth - 1]
   if !haskey(cache, s)
     if print
       println("\n Trace call ... \n ")
