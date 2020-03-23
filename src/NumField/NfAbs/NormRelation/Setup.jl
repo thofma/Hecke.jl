@@ -39,6 +39,7 @@ mutable struct NormRelation{T}
   embed_cache_triv::Vector{Dict{nf_elem, nf_elem}}
   nonredundant::Vector{Int}
   isoptimal::Int
+  isnormal::BitArray{1} # if i-th subfield is normal
 
   function NormRelation{T}() where {T}
     z = new{T}()
@@ -63,6 +64,7 @@ function Base.show(io::IO, N::NormRelation)
   print(io, "Norm relation of\n  ", N.K, "\nof index ", index(N), " and the subfields")
   for i in 1:length(N)
     print(io, "\n  ", subfields(N)[i][1])
+    N.isnormal[i] ? print(io, " (normal)") : nothing
   end
 end
 
@@ -134,6 +136,7 @@ function _norm_relation_setup_generic(K::AnticNumberField; small_degree::Bool = 
 
   z = NormRelation{Int}()
   z.K = K
+  z.isnormal = falses(n)
   z.subfields = Vector{Tuple{AnticNumberField, NfToNfMor}}(undef, n)
   z.denominator = den
   z.ispure = pure
@@ -151,6 +154,7 @@ function _norm_relation_setup_generic(K::AnticNumberField; small_degree::Bool = 
     L = S
     mL = mS * mF
     z.subfields[i] = L, mL
+    z.isnormal[i] = Hecke._isnormal(ls[i][1])
   end
 
   z.coefficients_gen = Vector{Vector{Tuple{Int, NfToNfMor, NfToNfMor}}}(undef, n)
@@ -1006,6 +1010,7 @@ function has_coprime_norm_relation(K::AnticNumberField, m::fmpz)
 
   z = NormRelation{Int}()
   z.K = K
+  z.isnormal = falses(n)
   z.subfields = Vector{Tuple{AnticNumberField, NfToNfMor}}(undef, n)
   z.denominator = den
   z.ispure = true
@@ -1022,6 +1027,7 @@ function has_coprime_norm_relation(K::AnticNumberField, m::fmpz)
     L = S
     mL = mS * mF
     z.subfields[i] = L, mL
+    z.isnormal[i] = Hecke._isnormal(ls[i][1])
   end
 
   z.coefficients_gen = Vector{Vector{Tuple{Int, NfToNfMor, NfToNfMor}}}(undef, n)

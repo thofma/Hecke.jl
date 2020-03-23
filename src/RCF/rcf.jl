@@ -620,7 +620,7 @@ function find_gens(K::KummerExt, S::PrimesSet, cp::fmpz=fmpz(1))
       q, mq = quo(R, sR[1:ind-1], false)
       s, ms = snf(q)
     end
-    @vprint :ClassField 3 order(s)
+    @vprint :ClassField 3 "$(order(s))\n"
     if order(s) == 1   
       break
     end

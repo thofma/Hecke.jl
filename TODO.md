@@ -12,7 +12,7 @@
  * [ ] composite Round Two algorithm
  * [ ] implement information about containment (O_1 \sub O_2) 
  * [ ] save prime factors of discriminant
- * [ ] `princ_gen` should be cached
+ * [x] `princ_gen` should be cached
  * [ ] Clean up uniformizer (p-uniformizer? strong uniformizer?)
  * [ ] Residue fields of degree one
  * [ ] Parent checks for `(::Order)(::NumFieldElem)`.
@@ -34,6 +34,7 @@
  * [ ] `is_locally_power` (at given primes or up to given bound)
  * [ ] Frobenius automorphism of a field at a prime ideal
  * [ ] Redo the `automorphism_group` properly.
+ * [ ] `coeff(z, i)` and `coeffs(z)` "inconsistensies"
 
  ## Renaming
  
