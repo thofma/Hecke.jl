@@ -1716,7 +1716,7 @@ end
 
 function _can_solve_with_kernel(a::MatElem{S}, b::MatElem{S}) where S <: RingElem
   H, T = hnf_with_transform(transpose(a))
-  z = similar(a, ncols(b), ncols(a))
+  z = zero_matrix(base_ring(a), ncols(b), ncols(a))
   l = min(nrows(a), ncols(a))
   b = deepcopy(b)
   for i=1:ncols(b)
@@ -1745,7 +1745,7 @@ function _can_solve_with_kernel(a::MatElem{S}, b::MatElem{S}) where S <: RingEle
   for i = nrows(H):-1:1
     for j = 1:ncols(H)
       if !iszero(H[i,j])
-        N = similar(a, ncols(a), nrows(H) - i)
+        N = zero_matrix(base_ring(a), ncols(a), nrows(H) - i)
         for k = 1:nrows(N)
           for l = 1:ncols(N)
             N[k,l] = T[nrows(T) - l + 1, k]

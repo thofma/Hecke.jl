@@ -200,7 +200,7 @@ function check_relation(N::NormRelation, a::nf_elem)
     # I applied the exponent when embedding
     z = one(field(N))
     for i in 1:length(N)
-      z = z * N([norm(embedding(N, i), auto(a)^exp) for  (exp, auto, _) in N.coefficients_gen[i]], i)
+      z = z * N([Hecke.norm(embedding(N, i), auto(a)^exp) for  (exp, auto, _) in N.coefficients_gen[i]], i)
     end
     return a^index(N) == z
   end
