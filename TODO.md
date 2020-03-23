@@ -50,5 +50,5 @@
  * [ ] Squarefree factorization over number fields (?)
  * [ ] Make FF robust for the use of `fmpz`.
  * [ ] `next_prime(::fmpz, ::Bool)`
- * [ ] `round(::Type{fmpq}, ::fmpz)` is doing funky things. Also needs the `RoundUp/RoundDown` versions.
+ * [x] `round(::Type{fmpq}, ::fmpz)` is doing funky things. Also needs the `RoundUp/RoundDown` versions.
  * [x] Parent checks for factored elements
