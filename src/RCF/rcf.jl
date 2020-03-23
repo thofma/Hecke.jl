@@ -133,7 +133,7 @@ end
 ################################################################################
 
 function ray_class_field_cyclic_pp_Brauer(CF::ClassField{S, T}, mQ::GrpAbFinGenMap) where {S, T}
-  @vprint :ClassField 1 "cyclic prime power class field of degree $(degree(CF))\n"
+  @vprint :ClassField 1 "cyclic prime power class field of degree $(order(codomain(mQ)))\n"
   CFpp = ClassField_pp{S, T}()
   CFpp.quotientmap = compose(CF.quotientmap, mQ)
   CFpp.rayclassgroupmap = CF.rayclassgroupmap
@@ -153,7 +153,7 @@ function ray_class_field_cyclic_pp_Brauer(CF::ClassField{S, T}, mQ::GrpAbFinGenM
   attempt = 1
   while !iszero(mng*mq)
     attempt += 1
-    @show "attempt number $(attempt)"
+    @vprint :ClassField 1 "attempt number $(attempt)\n"
     _rcf_S_units_enlarge(CE, CFpp)
     KK = kummer_extension(e, FacElem{nf_elem, AnticNumberField}[CFpp.a])
     ng, mng = norm_group(KK, CE.mp[2], mr)
@@ -181,7 +181,7 @@ function _rcf_S_units_enlarge(CE, CF::ClassField_pp)
     push!(lP, prime_decomposition(OK, f)[1][1])
   end
   e = degree(CF)
-  @vtime :ClassFields 3 S, mS = NormRel._sunit_group_fac_elem_quo_via_brauer(nf(OK), lP, e)
+  @vtime :ClassField 3 S, mS = NormRel._sunit_group_fac_elem_quo_via_brauer(nf(OK), lP, e)
   KK = kummer_extension(e, FacElem{nf_elem, AnticNumberField}[mS(S[i]) for i=1:ngens(S)])
 
   #gens mod n-th power - to speed up the frobenius computation
