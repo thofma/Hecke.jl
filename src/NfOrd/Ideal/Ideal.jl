@@ -501,11 +501,15 @@ function assure_has_basis_matrix(A::NfAbsOrdIdl)
   @hassert :NfOrd 1 has_2_elem(A)
 
   m = abs(A.gen_one)
+  if has_minimum(A)
+    m = minimum(A, copy = false)
+  end
   be = elem_in_nf(A.gen_two)
   be = mod(be, m)
 
-  c = hnf_modular_eldiv!(representation_matrix_mod(order(A)(be), m), m, :lowerleft)
-  A.basis_matrix = c
+  rm = representation_matrix_mod(order(A)(be), m)
+  hnf_modular_eldiv!(rm, m, :lowerleft)
+  A.basis_matrix = rm
   return nothing
 end
 
@@ -865,11 +869,19 @@ $AB = \mathcal O_K$.
 """
 function inv(A::NfAbsOrdIdl)
   @assert !iszero(A)
-  if ismaximal_known_and_maximal(order(A))
+  if ismaximal_known_and_maximal(order(A)) 
     return inv_maximal(A)
-  else
-    return inv_generic(A)
   end
+  if has_2_elem(A)
+    m = A.gen_one
+    if has_minimum(A)
+      m = minimum(A)
+    end
+    if iscoprime(m, discriminant(order(A)))
+      return inv_maximal(A)
+    end
+  end
+  return inv_generic(A)
 end
 
 # If I is not coprime to the conductor of O in the maximal order, then this might

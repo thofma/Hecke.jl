@@ -699,6 +699,10 @@ function isunivariate(f::fmpq_mpoly)
   Qx = PolynomialRing(FlintQQ, "x")[1]
   coeffs = Vector{fmpq}(undef, deg+1)
   if iszero(deg)
+    if iszero(f)
+      coeffs[1] = 0
+      return true, Qx(coeffs), 1
+    end
     #f is a constant
     coeffs[1] = coeff(f, 1)
     return true, Qx(coeffs), 1

@@ -370,18 +370,18 @@ function check_norm_group_and_disc(lfieldsK::Array{AnticNumberField, 1}, lfields
   r, mr = Hecke.ray_class_groupQQ(O, modulo, true, lcm(n_quo1, n_quo2))
   Kt = PolynomialRing(K, "t", cached = false)[1]
   h = change_base_ring(K, lfieldsK[1].pol, parent = Kt)
-  S = norm_group(h, mr)[1]
+  S, mS = norm_group(h, mr, cached = false)
   for i = 2:length(lfieldsK)
-    h = change_base_ring(K, lfieldsK[i].pol, parent = Kt)
-    s = norm_group(h, mr)[1]
-    S = intersect(s, S)
+    h = map_coeffs(K, lfieldsK[i].pol, parent = Kt)
+    s, ms = norm_group(h, mr, cached = false)
+    S, mS = intersect(ms, mS)
   end
   for i = 1:length(lfieldsL)
-    h = change_base_ring(K, lfieldsL[i].pol, parent = Kt)
-    s = norm_group(h, mr)[1]
-    S = intersect(s, S)
+    h = map_coeffs(K, lfieldsL[i].pol, parent = Kt)
+    s, ms = norm_group(h, mr, cached = false)
+    S, mS = intersect(ms, mS)
   end
-  Q, mQ = quo(r, S)
+  Q, mQ = cokernel(mS, false)
   if order(Q) != target_deg
     return false
   else
