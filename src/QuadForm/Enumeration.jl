@@ -610,14 +610,14 @@ end
 @inline function floor!(z::fmpz, y::fmpq, t0::fmpz, t1::fmpz)
   numerator!(t0, y)
   denominator!(t1, y)
-  ccall((:fmpz_fdiv_q, :libflint), Cvoid, (Ref{fmpz}, Ref{fmpz}, Ref{fmpz}), z, t0, t1)
+  ccall((:fmpz_fdiv_q, libflint), Cvoid, (Ref{fmpz}, Ref{fmpz}, Ref{fmpz}), z, t0, t1)
   return z
 end
 
 @inline function ceil!(z::fmpz, y::fmpq, t0::fmpz, t1::fmpz)
   numerator!(t0, y)
   denominator!(t1, y)
-  ccall((:fmpz_cdiv_q, :libflint), Cvoid, (Ref{fmpz}, Ref{fmpz}, Ref{fmpz}), z, t0, t1)
+  ccall((:fmpz_cdiv_q, libflint), Cvoid, (Ref{fmpz}, Ref{fmpz}, Ref{fmpz}), z, t0, t1)
   return z
 end
 
