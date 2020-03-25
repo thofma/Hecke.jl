@@ -757,12 +757,14 @@ function ispower_trager(a::nf_elem, n::Int)
   # This is done using Trager factorization, but we can do some short cuts
   # The norm will be the minpoly_a(x^n), which will always be squarefree.
   K = parent(a)
-  f = minpoly(a)
+  @vprint :PolyFactor 1 "Computing the minpoly\n"
+  @vtime :PolyFactor 1 f = minpoly(a)
   b = K(1)
   c = a*b^n
   if degree(f) < degree(K)
     i = 0
     while true
+      @vprint :PolyFactor 1 "Need to shift it\n"
       b = (gen(K)+i)
       c = a*b^n
       f = minpoly(c)
@@ -775,10 +777,12 @@ function ispower_trager(a::nf_elem, n::Int)
   Qx = parent(f)
   x = gen(Qx)
   N = inflate(f, n)
-  fac = factor(N)
+  @vprint :PolyFactor 1 "Factoring the minpoly\n"
+  @vtime :PolyFactor 1 fac = factor(N)
   Kt, t = PolynomialRing(K, "a", cached = false)
   for (p, _) in fac
     if degree(p) == degree(f)
+      @vprint :PolyFactor 1 "Computing final gcd\n"
       t = gcd(change_base_ring(K, p, parent = Kt), t^n - c)
       @assert degree(t) == 1
       return true, -divexact(coeff(t, 0), coeff(t, 1))//b
