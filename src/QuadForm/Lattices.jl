@@ -105,6 +105,27 @@ function quadratic_lattice(K::NumField, B::MatElem; gram_ambient_space = nothing
   end
 end
 
+function quadratic_lattice(K::NumField; generators::Vector = Vector{elem_type(K)}[], gram_ambient_space)
+  if length(generators) == 0
+    pm = pseudo_matrix(identity_matrix(K, nrows(gram_ambient_space)))
+  else
+    z = zero_matrix(K, length(generators), ncols(gram_ambient_space))
+    for i in 1:length(generators)
+      for j in 1:ncols(gram_ambient_space)
+        z[i, j] = generators[i][j]
+      end
+    end
+    pm = pseudo_hnf(pseudo_matrix(z), :lowerleft)
+    i = 1
+    while iszero_row(pm.matrix, i)
+      i += 1
+    end
+    pm = sub(pm, i:nrows(pm), 1:ncols(pm))
+  end
+  return quadratic_lattice(K, pm, gram_ambient_space = gram_ambient_space)
+end
+
+
 @doc Markdown.doc"""
     lattice(V::QuadSpace, B::PMat) -> QuadLat
 
@@ -521,34 +542,56 @@ Returns a set of generators of $L$.
 If `minimal == true`, the number of generators is minimal.
 """
 function generators(L::AbsLat; minimal::Bool = false)
-  St = _steinitz_form(pseudo_matrix(L), Val{false})
-  d = nrows(St)
-  n = degree(L)
-  K = nf(base_ring(L))
-  T = elem_type(K)
-  v = Vector{T}[]
-  for i in 1:(d - 1)
-    #@assert isprincipal(coefficient_ideals(St)[i])[1]
-    push!(v, T[matrix(St)[i, j] for j in 1:d])
-  end
-
-  I = numerator(coefficient_ideals(St)[d])
-  den = denominator(coefficient_ideals(St)[d])
-  if minimal && base_ring(L) isa NfOrd
-    b, a = isprincipal(I)
-    if b
-      push!(v, T[K(a)//den * matrix(St)[n, j] for j in 1:d])
+  if !minimal
+    K = nf(base_ring(L))
+    T = elem_type(K)
+    v = Vector{T}[]
+    St = pseudo_matrix(L)
+    d = ncols(St)
+    for i in 1:nrows(St)
+      if base_ring(L) isa NfOrd
+        I = numerator(St.coeffs[i])
+        den = denominator(St.coeffs[i])
+        _assure_weakly_normal_presentation(I)
+        push!(v, T[K(I.gen_one)//den * matrix(St)[i, j] for j in 1:d])
+        push!(v, T[K(I.gen_two)//den * matrix(St)[i, j] for j in 1:d])
+      else
+        for g in absolute_basis(I)
+          push!(v, T[K(g)//den * matrix(St)[i, j] for j in 1:d])
+        end
+      end
     end
     return v
-  end
+  else # minimal
+    St = _steinitz_form(pseudo_matrix(L), Val{false})
+    d = nrows(St)
+    n = degree(L)
+    K = nf(base_ring(L))
+    T = elem_type(K)
+    v = Vector{T}[]
+    for i in 1:(d - 1)
+      #@assert isprincipal(coefficient_ideals(St)[i])[1]
+      push!(v, T[matrix(St)[i, j] for j in 1:d])
+    end
 
-  if base_ring(L) isa NfOrd
-    _assure_weakly_normal_presentation(I)
-    push!(v, T[K(I.gen_one)//den * matrix(St)[n, j] for j in 1:d])
-    push!(v, T[K(I.gen_two)//den * matrix(St)[n, j] for j in 1:d])
-  else
-    for g in absolute_basis(I)
-      push!(v, T[K(g)//den * matrix(St)[n, j] for j in 1:d])
+    I = numerator(coefficient_ideals(St)[d])
+    den = denominator(coefficient_ideals(St)[d])
+    if minimal && base_ring(L) isa NfOrd
+      b, a = isprincipal(I)
+      if b
+        push!(v, T[K(a)//den * matrix(St)[n, j] for j in 1:d])
+      end
+      return v
+    end
+
+    if base_ring(L) isa NfOrd
+      _assure_weakly_normal_presentation(I)
+      push!(v, T[K(I.gen_one)//den * matrix(St)[n, j] for j in 1:d])
+      push!(v, T[K(I.gen_two)//den * matrix(St)[n, j] for j in 1:d])
+    else
+      for g in absolute_basis(I)
+        push!(v, T[K(g)//den * matrix(St)[n, j] for j in 1:d])
+      end
     end
   end
 
@@ -1036,7 +1079,7 @@ end
 Returns the prime ideals dividing the scale and volume of $L$. If `even == true`
 also the prime ideals dividing $2$ are included.
 """
-function bad_primes(L::AbsLat; even::Bool = false)
+function bad_primes(L::HermLat; even::Bool = false)
   s = scale(L)
   f = factor(norm(scale(L)))
   ff = factor(norm(volume(L)))
@@ -1046,6 +1089,20 @@ function bad_primes(L::AbsLat; even::Bool = false)
   if even
     for p in prime_decomposition(s, 2)
       f[p] = 0
+    end
+  end
+  return collect(keys(f))
+end
+
+function bad_primes(L::QuadLat; even::Bool = false)
+  f = factor(scale(L))
+  ff = factor(volume(L))
+  for (p, e) in ff
+    f[p] = 0
+  end
+  if even
+    for p in prime_decomposition(base_ring(L), 2)
+      f[p[1]] = 0
     end
   end
   return collect(keys(f))
@@ -1136,7 +1193,7 @@ function jordan_decomposition(L::QuadLat, p)
   k = 1
   while k <= n
     G = S * F * transpose(S)
-    X = Union{Int, PosInf}[ valuation(G[i, i], p) for i in k:n]
+    X = Union{Int, PosInf}[ iszero(G[i, i]) ? inf : valuation(G[i, i], p) for i in k:n]
     m, ii = findmin(X)
     ii = ii + (k - 1)
     pair = (ii, ii)
@@ -1145,7 +1202,7 @@ function jordan_decomposition(L::QuadLat, p)
       for j in (i + 1):n
         tmp = iszero(G[i, j]) ? inf : valuation(G[i, j], p)
         if tmp < m
-          m = temp
+          m = tmp
           pair = (i, j)
         end
       end
@@ -1175,7 +1232,7 @@ function jordan_decomposition(L::QuadLat, p)
         tl = T12 * T(k + 1, l) - T22 * T(k, l)
         ul = T12 * T(k, l) - T11 * T(k + 1, l)
         for u in 1:ncols(S)
-          S[l, u] = (tl//d) * S[k, l] + (ul//d) * S[k + 1, u]
+          S[l, u] = S[l, u] + (tl//d) * S[k, u] + (ul//d) * S[k + 1, u]
         end
       end
       k = k + 2
@@ -1185,8 +1242,8 @@ function jordan_decomposition(L::QuadLat, p)
       else
         for u in 1:ncols(S)
           S[pair[1], u] = S[pair[1], u] + S[pair[2], u]
-          swap_rows!(S, pair[1], k)
         end
+        swap_rows!(S, pair[1], k)
       end
       nrm = (sub(S, k:k, 1:ncols(S)) * F * transpose(sub(S, k:k, 1:ncols(S))))[1, 1]
       XX = sub(S, k:k, 1:ncols(S)) * F * transpose(S)
@@ -1392,7 +1449,7 @@ function islocally_isometric(L::QuadLat, M::QuadLat, p::NfOrdIdl)
   if minimum(p) != 2
     SL = _genus_symbol_kirschmer(L, p)
     SM = _genus_symbol_kirschmer(M, p, uniformizer = uniformizer(SL))
-    return SL == SM
+    return data(SL) == data(SM)
   end
 
   if !isrationally_equivalent(L, M, p)
@@ -2485,7 +2542,7 @@ function _find_quaternion_algebra(b, P, I)
 
   L, f = sunit_group(__P)
   M = zero_matrix(F, 0, length(__P) + length(I))
-  elts = []
+  elts = nf_elem[]
 
   for i in 1:ngens(L)
     v = sign_vector(f(L[i]))
@@ -2503,8 +2560,8 @@ function _find_quaternion_algebra(b, P, I)
 
   if !found
     Cl, mCl = class_group(R)
-    A = abelian_group(fill(0, length(_lP)))
-    hh = hom(A, Cl, [mCl\(p) for p in _lP])
+    A = abelian_group(fill(0, length(__P)))
+    hh = hom(A, Cl, [mCl\(p) for p in __P])
     S, mS = image(hh)
     Q, mQ = quo(Cl, [mS(S[i]) for i in 1:ngens(S)])
 
@@ -2517,13 +2574,13 @@ function _find_quaternion_algebra(b, P, I)
         end
         o = order(mQ(mCl\(q)))
         c = -(hh\(o * (mCl\(q))))
-        fl, x = isprincipal(q * prod(_lP[i]^Int(c.coeff[i]) for i in 1:length(_lP)))
+        fl, x = isprincipal(q * prod(__P[i]^Int(c.coeff[i]) for i in 1:length(__P)))
         @assert fl
-        v = sign_vector(x)
+        v = sign_vector(elem_in_nf(x))
         if rank(M) == rank(vcat(M, v + target))
           found = true
           M = vcat(M, v)
-          push!(elts, x)
+          push!(elts, elem_in_nf(x))
           break
         end
       end
@@ -2536,12 +2593,68 @@ function _find_quaternion_algebra(b, P, I)
   return z
 end
 
+#function _weak_approximation(I::Vector{InfPlc}, val::Vector{Int})
+#  K = number_field(first(I))
+#  OK = maximal_order(K)
+#  A, exp, log = infinite_primes_map(OK, I, 1 * OK)
+#  uni = infinite_places_uniformizers(K)
+#  target_signs = zeros(Int, ngens(A))
+#
+#  for P in I
+#    v = log(uni[P])
+#    for i in 1:ngens(A)
+#      if v.coeff[i] == 1
+#        target_signs[i] = val[i] == -1 ? 1 : 0
+#        break
+#      end
+#    end
+#  end
+#  c = K(exp(A(target_signs)))
+#  for i in 1:length(I)
+#    @assert sign(c, I[i]) == val[i]
+#  end
+#  return c
+#end
+
+function _find_quaternion_algebra(b::fmpq, P, I)
+  K, a = rationals_as_number_field()
+  bK = K(b)
+  OK = maximal_order(K)
+  PK = ideal_type(OK)[]
+  for p in P
+    push!(PK, prime_decomposition(OK, p)[1][1])
+  end
+  if length(I) == 0
+    IK = InfPlc[]
+  else
+    @assert length(I) == 1
+    IK = infinite_places(K)
+  end
+  c = _find_quaternion_algebra(bK, PK, IK)
+  return coeff(c, 0)
+end
+
 function _weak_approximation(I::Vector{InfPlc}, val::Vector{Int})
+  K = number_field(first(I))
+  if degree(K) == 2
+    return _weak_approximation_quadratic(I, val)
+  else
+    return _weak_approximation_generic(I, val)
+  end
+end
+
+function _weak_approximation_generic(I::Vector{InfPlc}, val::Vector{Int})
   K = number_field(first(I))
   OK = maximal_order(K)
   A, exp, log = infinite_primes_map(OK, I, 1 * OK)
   uni = infinite_places_uniformizers(K)
   target_signs = zeros(Int, ngens(A))
+
+  if all(isequal(1), val)
+    return one(K)
+  elseif all(isequal(-1), val)
+    return -one(K)
+  end
 
   for P in I
     v = log(uni[P])
@@ -2557,6 +2670,28 @@ function _weak_approximation(I::Vector{InfPlc}, val::Vector{Int})
     @assert sign(c, I[i]) == val[i]
   end
   return c
+end
+
+function _weak_approximation_quadratic(I::Vector{InfPlc}, val::Vector{Int})
+  K = number_field(first(I))
+  if length(I) == 1
+    return K(val)
+  else
+    if val[1] == val[2]
+      return K(val)
+    else
+      x = gen(K)
+      s1 = sign(x, I[1])
+      s2 = sign(x, I[2])
+      if s1 == val[1] && s2 == val[2]
+        return x
+      elseif s1 == -val[1] && s2 == -val[2]
+        return -x
+      else
+        return _weak_approximation_generic(I, val)
+      end
+    end
+  end
 end
 
 # Compute all decreasing non-negative integer sequenes of length len with sum
@@ -3351,11 +3486,11 @@ end
 #
 ################################################################################
 
-function to_magma(L::HermLat, target = "L")
+function to_magma(L::AbsLat; target = "L")
   return to_magma(stdout, L, target = target)
 end
 
-function to_magma_string(L::HermLat; target = "L")
+function to_magma_string(L::AbsLat; target = "L")
   b = IOBuffer()
   to_magma(b, L, target = target)
   return String(take!(b))
@@ -3402,10 +3537,72 @@ function to_magma(io::IO, L::HermLat; target = "L")
   println(io, "$target := HermitianLattice(M, F);")
 end
 
+function to_magma(io::IO, L::AbsLat{AnticNumberField}; target = "L")
+  K = nf(base_ring(L))
+  println(io, "Qx<x> := PolynomialRing(Rationals());")
+  f = defining_polynomial(K)
+  pol = replace(string(f), "//" => "/")
+  pol = replace(pol, string(var(parent(f))) => "x")
+  println(io, "f := ", pol, ";")
+  println(io, "K<a> := NumberField(f);")
+  F = gram_matrix(ambient_space(L))
+  Fst = "[" * split(string([F[i, j] for i in 1:nrows(F) for j in 1:ncols(F)]), '[')[2]
+  Fst = replace(Fst, "//" => "/")
+  Fst = replace(Fst, string(var(K)) => "a")
+  println(io, "F := Matrix(K, ", nrows(F), ", ", ncols(F), ", ", Fst, ");")
+  pm = pseudo_matrix(L)
+  M = matrix(pm)
+  Mst = "[" * split(string([M[i, j] for i in 1:nrows(M) for j in 1:ncols(M)]), '[')[2]
+  Mst = replace(Mst, "//" => "/")
+  println(io, "M := Matrix(K, ", nrows(M), ", ", ncols(M), ", ", Mst, ");")
+  println(io, "OK := MaximalOrder(K);")
+  print(io, "C := [ ")
+  for (i, I) in enumerate(coefficient_ideals(pm))
+    print(io, "ideal< OK | ")
+    bas = "[" * split(string(absolute_basis(I)), '[')[2]
+    bas = replace(bas, string(var(K)) => "a")
+    bas = replace(bas, "//" => "/")
+    if i < length(coefficient_ideals(pm))
+      print(io, bas, ">, ")
+    else
+      println(io, bas, ">];")
+    end
+  end
+  println(io, "M := Module(PseudoMatrix(C, M));")
+  if L isa HermLat
+    println(io, "$target := HermitianLattice(M, F);")
+  else
+    println(io, "$target := LatticeModule(M, F);")
+  end
+end
+
 function var(E::NfRel)
   return E.S
 end
 
 function absolute_field(K::AnticNumberField)
   return K, id_hom(K)
+end
+
+function evaluate(a::fmpz, ::PosInf, p::Int = 64)
+  return ArbField(p, cached = false)(a)
+end
+
+function support(a::fmpq)
+  d = denominator(a)
+  n = numerator(a)
+  res = fmpz[]
+  for (p, _) in factor(d)
+    push!(res, p)
+  end
+  for (p, _) in factor(n)
+    push!(res, p)
+  end
+  return res
+end
+
+function gram_matrix_of_generators(L::AbsLat, minimal = true)
+  m = generators(L, minimal = minimal)
+  M = matrix(nf(base_ring(L)), m)
+  return gram_matrix(ambient_space(L), M)
 end

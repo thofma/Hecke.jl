@@ -130,3 +130,43 @@ function lattice(L::LatticeDB, i::Int)
   _check_range(L, i)
   return lattice(L, from_linear_index(L, i)...)
 end
+
+################################################################################
+#
+#  Quadratic lattices DB
+#
+################################################################################
+
+const default_quad_lattice_db = Ref(joinpath(pkgdir, "data/quadratic_lattices"))
+
+struct QuadLatDB
+  path::String
+  db::Vector{Tuple{Vector{BigInt}, Vector{Vector{Rational{BigInt}}}, Vector{Vector{Rational{BigInt}}}, Int}}
+
+  function QuadLatDB(path::String)
+    db = Meta.eval(Meta.parse(Base.read(path, String)))
+    return new(path, db)
+  end
+end
+
+function lattice(L::QuadLatDB, i::Int)
+  data = L.db[i]
+  f = Globals.Qx(data[1])
+  K, a = NumberField(f, "a", cached = false)
+  diag = map(K, data[2])
+  gens = map(K, data[3])
+  D = diagonal_matrix(diag)
+  n = nrows(D)
+  @assert iszero(mod(length(gens), n))
+  k = div(length(gens), n)
+  gens_split = collect(Iterators.partition(gens, k))
+  return quadratic_lattice(K, generators = gens_split, gram_ambient_space = D)
+end
+
+function quadratic_lattice_database()
+  if !isfile(joinpath(pkgdir, "data/quadratic_lattices"))
+    download_lattice_data()
+  end
+  return QuadLatDB(default_quad_lattice_db[])
+end
+

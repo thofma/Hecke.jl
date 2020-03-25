@@ -85,24 +85,54 @@ function neg!(w::fmpz_mat)
 end
 
 function find_point(w, V::VectorList)
+  fl, k = has_point(w, V)
+  @assert fl
+  return k
+end
+#  positive = isnormalized(w)
+#
+#  if positive
+#    k = V.lookup[w]
+#    #k = findfirst(isequal(w), V.vectors)
+#    #@assert k !== nothing
+#    #@assert V[k] == w
+#    #return k
+#    return k
+#  end
+#
+#  neg!(w)
+#  #k = findfirst(isequal(w), V.vectors)
+#  #@assert k !== nothing
+#  k = V.lookup[w]
+#  neg!(w)
+#  @assert V[-k] == w
+#  return -k
+#end
+
+function has_point(w, V::VectorList)
   positive = isnormalized(w)
 
   if positive
-    k = V.lookup[w]
-    #k = findfirst(isequal(w), V.vectors)
-    #@assert k !== nothing
-    #@assert V[k] == w
-    #return k
-    return k
+    k = get(V.lookup, w, 0)
+    if k == 0
+      return false, 0
+    else
+      @assert V[k] == w
+      return true, k
+    end
   end
 
   neg!(w)
   #k = findfirst(isequal(w), V.vectors)
   #@assert k !== nothing
-  k = V.lookup[w]
+  k = get(V.lookup, w, 0)
   neg!(w)
-  @assert V[-k] == w
-  return -k
+  if k == 0
+    return false, 0
+  else
+    @assert V[-k] == w
+    return true, -k
+  end
 end
 
 function _find_point(w::fmpz_mat, V::VectorList{fmpz_mat, T}) where T
@@ -204,6 +234,7 @@ function init(C::ZLatAutoCtx, auto::Bool = true, bound::fmpz = fmpz(-1), use_dic
     bound = maximum(diagonal(C.G[1]))
     C.max = bound
   end
+
   @assert bound > 0
 
   @vtime :Lattice 1 V = _short_vectors_gram_integral(C.G[1], bound) 
@@ -250,9 +281,10 @@ function init(C::ZLatAutoCtx, auto::Bool = true, bound::fmpz = fmpz(-1), use_dic
 
   # Compute the fingerprint
   @vprint :Lattice 1 "Computing fingerprint: "
-  @vtime :Lattice 1 fingerprint(C)
-  @vprint :Lattice 1 "$(C.fp_diagonal)\n"
-
+  if auto
+    @vtime :Lattice 1 fingerprint(C)
+    @vprint :Lattice 1 "$(C.fp_diagonal)\n"
+  end
 
   if auto
     # Find the standard basis vectors
@@ -1737,8 +1769,8 @@ end
 function _iso_setup(Gi, Go)
   Ci = ZLatAutoCtx(Gi)
   Co = ZLatAutoCtx(Go)
-  init(Ci, false)
-  init(Co, true, Ci.max)
+  init(Ci, true)
+  init(Co, false, Ci.max)
   return Ci, Co
 end
 
@@ -1747,7 +1779,7 @@ function isometry(Ci::ZLatAutoCtx{SS, T, U}, Co::ZLatAutoCtx{SS, T, U}) where {S
   C = Vector{Vector{Int}}(undef, d)
   # I could actually also test the minimum
   if length(Ci.V) != length(Co.V)
-    return false, _zero(T, n, n)
+    return false, _zero(T, 0, 0)
   end
   for i in 1:d
     C[i] = zeros(Int, Ci.fp_diagonal[i])
@@ -2153,8 +2185,6 @@ function _pgauss(r, A, B, n, p)
     end
   end
 end
-
-global _debug = []
 
 function _psolve(X, A, B, n, p)
   for i in 1:(n - 1)
