@@ -665,7 +665,6 @@ function reduce_ideal(A::NfOrdFracIdl)
   return C.num, divexact(b, B.den)
 end
 
-
 ################################################################################
 #
 #  Short basis of product of ideals
@@ -684,4 +683,3 @@ function lll_basis_product(I::NfOrdIdl, J::NfOrdIdl)
   @time res =  lll_basis(IJ)
   return res
 end
-

@@ -1018,20 +1018,24 @@ function _extend_auto(K::Hecke.NfRel{nf_elem}, h::Hecke.NfToNfMor)
   end
   
   a = -coeff(K.pol, 0)
+  dict = Dict{nf_elem, fmpz}()
+  dict[h(a)] = 1
   if r <= div(degree(K), 2)
-    a = h(a)//a^r
-    @vtime :ClassField 3 fl, b = ispower(a, degree(K), with_roots_unity = true)
+    add_to_key!(dict, a, r)
+    aa = FacElem(dict)
+    @vtime :ClassField 3 fl, b = ispower(aa, degree(K), with_roots_unity = true, trager = true)
     if !fl
       throw(ExtendAutoError())
     end
-    return NfRelToNfRelMor(K, K, h, b*gen(K)^r)
+    return NfRelToNfRelMor(K, K, h, evaluate(b)*gen(K)^r)
   else
-    a = h(a)*(a^(degree(K)-r))
-    @vtime :ClassField 3 fl, b = ispower(a, degree(K), with_roots_unity = true)
+    add_to_key!(dict, a, degree(K)-r)
+    aa = FacElem(dict)
+    @vtime :ClassField 3 fl, b = ispower(aa, degree(K), with_roots_unity = true, trager = true)
     if !fl
       throw(ExtendAutoError())
     end
-    return NfRelToNfRelMor(K, K, h, b*gen(K)^(r-degree(K)))
+    return NfRelToNfRelMor(K, K, h, evaluate(b)*gen(K)^(r-degree(K)))
   end
 end
 
