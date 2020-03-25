@@ -475,7 +475,7 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 20)
   mK = extend(mK, K)
   r = length(factor(map_coeffs(mK, f, cached = false)))
   N = degree(f)
-  @vprint :PolyFactor 1  "Having $r local factors for degree ", N
+  @vprint :PolyFactor 1  "Having $r local factors for degree $N \n"
 
   setprecision!(C, 5)
 
@@ -500,7 +500,7 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 20)
   # needs to be larger than anticipated...
   c1, c2 = norm_change_const(order(P))
   b = Int[ceil(Int, degree(K)/2/degree(P)*(log2(c1*c2) + 2*nbits(x)+ 2*prec_scale)) for x = b]
-  @vprint :PolyFactor 2 "using CLD precsion bounds ", b
+  @vprint :PolyFactor 2 "using CLD precision bounds $b \n"
 
   used = []
   really_used = []

@@ -318,7 +318,16 @@ function _torsion_group_order_divisor(K::AnticNumberField)
   # This can be replaced by any multiple of the discriminant of the maximal
   # order
   # TODO: Fix this for non-monic, non-integral defining polynomials
-  disc = FlintZZ(discriminant(K.pol))
+  
+  if ismaximal_order_known(K)
+    disc = abs(discriminant(maximal_order(K)))
+  elseif isdefining_polynomial_nice(K)
+    disc = discriminant(EquationOrder(K))
+  else
+    disc_1 = discriminant(K.pol)
+    disc = numerator(disc_1)*denominator(disc_1)
+  end
+  threshold = max(div(degree(K), 10), 5)
 
   while true
     p = next_prime(p)
@@ -326,18 +335,13 @@ function _torsion_group_order_divisor(K::AnticNumberField)
     Rpt, t = PolynomialRing(Rp, "t", cached=false)
     gp = Rpt(K.pol)
 
-    if iszero(discriminant(gp))
+    if degree(gp) != degree(K) || !issquarefree(gp)
       continue
     end
 
-    lp = _prime_decomposition_type(gp)
+    lp = collect(keys(factor_shape(gp)))
 
-    minf = lp[1][1]
-    for i = 2:length(lp)
-      if lp[i][1] < minf
-        minf = lp[i][1]
-      end
-    end
+    minf = minimum(lp)
 
     if first
       m_new = fmpz(p)^minf - 1
@@ -349,7 +353,7 @@ function _torsion_group_order_divisor(K::AnticNumberField)
     else
       m_new =  gcd(m, powmod(fmpz(p), minf, m) - 1)
     end
-    
+
     if m_new == 2
       return fmpz(2)
     end
@@ -360,7 +364,7 @@ function _torsion_group_order_divisor(K::AnticNumberField)
       stable = 0
     end
 
-    if stable == 5 && m_new <= upper_bound
+    if stable == threshold && m_new <= upper_bound && divisible(fmpz(degree(K)), euler_phi(m_new))
       return m_new
     end
 

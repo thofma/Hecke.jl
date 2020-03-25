@@ -732,13 +732,18 @@ function ispower(a::nf_elem, n::Int; with_roots_unity::Bool = false, isintegral:
     return ispower_trager(a, n)
   end
 
+  K = parent(a)
   if isintegral
     d = fmpz(1)
   else
-    d = denominator(a)
+    if ismaximal_order_known(K)
+      OK = maximal_order(K)
+      d = denominator(a, OK)
+    else
+      d = denominator(a)
+    end
   end
-
-  Ky, y = PolynomialRing(parent(a), "y", cached = false)
+  Ky, y = PolynomialRing(K, "y", cached = false)
 
   if n == 2 || with_roots_unity
     rt = roots(y^n - a*d^n, max_roots = 1, ispure = true, isnormal = true)
@@ -759,7 +764,7 @@ function ispower_trager(a::nf_elem, n::Int)
   K = parent(a)
   f = minpoly(a)
   b = K(1)
-  c = a*b^n
+  c = a*b
   if degree(f) < degree(K)
     i = 0
     while true
