@@ -218,7 +218,11 @@ The decision is based on the number of local factors.
 """
 function factor_new(f::PolyElem{nf_elem})
   k = base_ring(f)
-  zk = maximal_order(k)
+  if ismaximal_order_known(k)
+    zk = maximal_order(k)
+  else
+    zk = EquationOrder(k)
+  end
   p = degree(f)
   f *= lcm(map(denominator, coefficients(f)))
   np = 0
@@ -226,6 +230,7 @@ function factor_new(f::PolyElem{nf_elem})
   br = 0
   s = Set{Int}()
   while true
+    @vprint :PolyFactor 3 "Trying with $p\n "
     p = next_prime(p)
     if isindex_divisor(zk, p) || iszero(discriminant(zk) % p) 
       continue
@@ -234,36 +239,37 @@ function factor_new(f::PolyElem{nf_elem})
     if length(P) == 0
       continue
     end
-    F, mF = ResidueField(zk, P[1][1])
-    mF = extend(mF, k)
+    F, mF1 = ResidueFieldSmallDegree1(zk, P[1][1])
+    mF = extend(mF1, k)
     fp = map_coeffs(mF, f, cached = false)
     if degree(fp) < degree(f) || iszero(trailing_coefficient(fp)) || iszero(trailing_coefficient(fp))
       continue
     end
-    lf = factor(fp)
-    if any(i -> i>1, values(lf.fac))
+    if !issquarefree(fp)
       continue
     end
-    ns = _ds(lf)
+    lf = factor_shape(fp)
+    ns = degree_set(lf)
     if length(s) == 0
       s = ns
     else
       s = Base.intersect(s, ns)
     end
+    @vprint :PolyFactor :3 "$s\n"
 
     if length(s) == 1
-      return [f]
+      return typeof(f)[f]
     end
 
-    if br == 0 || br > length(lf.fac)
-      br = length(lf.fac)
+    if br == 0 || br > sum(values(lf))
+      br = sum(values(lf))
       bp = P[1][1]
     end
     np += 1
     if np > 2 && br > 10
       break
     end
-    if np > 2*degree(f)
+    if np > min(100, 2*degree(f))
       break
     end
   end
@@ -273,6 +279,19 @@ function factor_new(f::PolyElem{nf_elem})
   else
     return van_hoeij(f, bp)
   end
+end
+
+function degree_set(fa::Dict{Int, Int})
+  T = Vector{Int}(undef, sum(values(fa)))
+  ind = 0
+  for (k, v) in fa
+    for j = 1:v
+      T[j+ind] = k
+    end
+    ind += v
+  end
+  M = MSet(T)
+  return Set(sum(s) for s = subsets(M) if length(s) > 0)
 end
 
 @doc Markdown.doc"""
@@ -480,7 +499,7 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 20)
   # from Fieker/Friedrichs, still wrong here
   # needs to be larger than anticipated...
   c1, c2 = norm_change_const(order(P))
-  b = [ceil(Int, degree(K)/2/degree(P)*(log2(c1*c2) + 2*nbits(x)+ 2*prec_scale)) for x = b]
+  b = Int[ceil(Int, degree(K)/2/degree(P)*(log2(c1*c2) + 2*nbits(x)+ 2*prec_scale)) for x = b]
   @vprint :PolyFactor 2 "using CLD precsion bounds ", b
 
   used = []

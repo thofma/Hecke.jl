@@ -873,6 +873,7 @@ mutable struct NfAbsOrdIdl{S, T}
   basis::Array{NfAbsOrdElem{S, T}, 1}
   basis_matrix::fmpz_mat
   basis_mat_inv::FakeFmpqMat
+  lll_basis_matrix::fmpz_mat
   gen_one::fmpz
   gen_two::NfAbsOrdElem{S, T}
   gens_short::Bool

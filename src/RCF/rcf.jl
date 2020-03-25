@@ -1254,92 +1254,13 @@ $\beta$ is "small" and $\alpha/\beta$ is an $n$-th power.
 If the factorisation of $a$ into prime ideals is known, the ideals
 should be passed in.
 """
-function reduce_mod_powers(a::nf_elem, n::Int)
-  M = maximal_order(parent(a))
-  p = factor(M(a)*M)
-  return reduce_mod_powers(a, n, collect(keys(p)))
-end
-
 function reduce_mod_powers(a::nf_elem, n::Int, primes::Array{NfOrdIdl, 1})
   # works quite well if a is not too large. There has to be an error
   # somewhere in the precision stuff...
   @vprint :ClassField 2 "reducing modulo $(n)-th powers\n"
   @vprint :ClassField 3 "starting with $a\n"
-  Zk = maximal_order(parent(a))
-  val = [ div(valuation(a, x), n) for x = primes if !isone(x)]
-  if all(x->x==0, val)
-    I = ideal(maximal_order(parent(a)), 1)
-  else
-    I = prod([primes[x]^val[x] for x=1:length(primes)])
-  end
-  Iinv = inv(I)
-
-  p = 100
-  old = precision(BigFloat)
-  r1, r2 = signature(parent(a))
-  no = abs(norm(a))
-  l = Int[]
-  while true
-   if p > 40000
-      error("Something wrong in reduce_mod_powers")
-    end
-    setprecision(BigFloat, p)
-    l = Int[]
-    try
-      fn = log2(BigFloat(no))/n/degree(parent(a))
-      m = Hecke.minkowski(a, p)
-      for i=1:r1
-        push!(l, Int(BigInt(round(fn - 1/n*log2(abs(m[i]))))))
-      end
-      for i=1:r2
-        v = Int(BigFloat(round(fn - 1/2*1/n*log2((m[r1+2*i-1]^2 + m[r1+2*i]^2)))))
-        push!(l, v)
-        push!(l, v)
-      end
-    catch e
-      p *= 2
-      continue
-    end
-    if abs(sum(l)) <= length(l) 
-      try
-        b = Hecke.short_elem(Iinv, -matrix(FlintZZ, 1, length(l), l), prec=p)
-      catch e
-        if e != Hecke.LowPrecisionLLL() 
-          rethrow(e)
-        end
-        p *= 2
-        if p> 40000
-          println("\n\nELT\n\n", a, "\n\nn: $n $primes\n\n")
-          error("too much prec")
-        end
-        continue
-      end
-#=
-  N(x) = prod x_i 
-  N(x)^(2/n) <= 1/n sum x_i^2 <= 1/n 2^((n-1)/2) disc^(1/n) (LLL)
- so
-  N(x) <= (2^((n-1)/4)/n)^(n/2) disc^(1/2)
-=#
-      if abs(norm(b)//norm(Iinv)) <= abs(discriminant(Zk)) 
-        c = a*b^n
-        @vprint :ClassField 3 "leaving with $c\n"
-        return c
-      end
-      println("bad norm")
-      println(abs(norm(b)//norm(Iinv)))
-      println("should be")
-      println(abs(discriminant(Zk)))
-    end
-    p *= 2
-    if p> 40000
-      println("abs sum ", l)
-      error("too much prec")
-    end
-  end
-  b = Hecke.short_elem(Iinv, -matrix(FlintZZ, 1, length(l), l), prec=p)
-  c = a*b^n
-  @vprint :ClassField 3 "leaving with $c\n"
-  return c
+  return reduce_mod_powers(FacElem(a), n, primes)
+  
 end
 
 function reduce_mod_powers(a::FacElem{nf_elem, AnticNumberField}, n::Int, decom::Dict{NfOrdIdl, fmpz})

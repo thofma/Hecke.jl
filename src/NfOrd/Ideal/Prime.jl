@@ -337,7 +337,7 @@ end
 
 function prime_decomposition(O::NfOrd, p::Union{Integer, fmpz}, degree_limit::Int = degree(O), lower_limit::Int = 0; cached::Bool = false)
   if typeof(p) == fmpz && fits(Int, p)
-    return prime_decomposition(O, Int(p), degree_limit, lower_limit)
+    return prime_decomposition(O, Int(p), degree_limit, lower_limit, cached = cached)
   end
   if isdefining_polynomial_nice(nf(O))
     if cached || isindex_divisor(O, p)
@@ -352,8 +352,8 @@ function prime_decomposition(O::NfOrd, p::Union{Integer, fmpz}, degree_limit::In
         return z
       end
     end
-    @assert O.ismaximal == 1 || p in O.primesofmaximality
     if isindex_divisor(O, p)
+      @assert O.ismaximal == 1 || p in O.primesofmaximality
       lp = prime_decomposition_polygons(O, p, degree_limit, lower_limit)
       if degree_limit == degree(O) && lower_limit == 0
         O.index_div[fmpz(p)] = lp
@@ -362,6 +362,7 @@ function prime_decomposition(O::NfOrd, p::Union{Integer, fmpz}, degree_limit::In
         return lp
       end
     else
+      @assert O.ismaximal == 1 || p in O.primesofmaximality || !divisible(discriminant(O), p)
       lp = prime_dec_nonindex(O, p, degree_limit, lower_limit)
       if cached && degree_limit == degree(O) && lower_limit == 0
         O.index_div[fmpz(p)] = lp

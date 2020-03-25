@@ -664,3 +664,22 @@ function reduce_ideal(A::NfOrdFracIdl)
   @assert C.den == 1
   return C.num, divexact(b, B.den)
 end
+
+################################################################################
+#
+#  Short basis of product of ideals
+#
+################################################################################
+
+function lll_basis_product(I::NfOrdIdl, J::NfOrdIdl)
+
+  @time A = lll(I)[2]*basis_matrix(I, copy = false)
+  @time IJ = I*J
+  @time C = basis_matrix(IJ, copy = false)
+  @time T = (C * FakeFmpqMat(pseudo_inv(A))).num
+  @time T1 = lll(T)
+  new_basis_IJ = T1*A
+  IJ = NfOrdIdl(order(I), new_basis_IJ)
+  @time res =  lll_basis(IJ)
+  return res
+end
