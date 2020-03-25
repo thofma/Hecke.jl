@@ -164,7 +164,10 @@ function ispower_mod_p(a::nf_elem, i::Int)
       end
 #      va = [Hecke.mod_sym(preimage(mC[mp[x]], co[x]), fmpz(p)^pr) for x = pa]
       @assert length(mo) == length(va)
-      return crt(map(Hecke.Globals.Zx, va), mo, C.C.H, fmpz(p)^pr)
+      pk = fmpz(C.C.H.p)^Int(C.C.H.prev)
+      res = crt(map(Hecke.Globals.Zx, va), mo, C.C.H, pk)
+      return res(gen(K)), pk
+      return res
       return va, mo, C
     end
     if j > 40 error("") end
@@ -315,7 +318,7 @@ function Hecke.mod_sym!(f::fmpz_poly, n::fmpz)
   return f
 end
 
-function Hecke.crt(v::Array{fmpz_poly, 1}, m::Array{fmpz_poly, 1}, H::Hecke.HenselCtx, pk::fmpz = fmpz(H.p)^H.prev)
+function Hecke.crt(v::Array{fmpz_poly, 1}, m::Array{fmpz_poly, 1}, H::Hecke.HenselCtx, pk::fmpz = fmpz(H.p)^Int(H.prev))
   if length(v) == 1
     return v[1]
   end
