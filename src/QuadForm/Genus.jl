@@ -1384,7 +1384,7 @@ function smallest_neighbour_prime(L)
   throw(error("Impossible"))
 end
 
-function genus_generators(L)
+function genus_generators(L::HermLat)
   R = base_ring(L)
   E = nf(R)
   D = different(R)
@@ -1563,7 +1563,7 @@ function representatives(G::GenusHerm)
 end
 
 # TODO: add max keyword
-function genus_representatives(L, max = inf)
+function genus_representatives(L::HermLat; max = inf)
   rank(L) < 2 && error("Rank of the lattice must be a least 2")
   definite = isdefinite(L)
   gens, P0 = genus_generators(L)
@@ -1782,7 +1782,7 @@ function neighbour(L, B, xG, x, h, P, C, split)
   return LL
 end
 
-function neighbours(L, P, max = inf)
+function neighbours(L::HermLat, P, max = inf)
 #{The immediate P-neighbours of L}
 #  require Order(P) eq BaseRing(L): "Arguments are incompatible";
 #  require IsPrime(P): "Second argument must be prime";
@@ -1800,7 +1800,7 @@ function stdcallback(list, L)
   return keep, true;
 end
 
-function iterated_neighbours(L::HermLat, P; max = inf, callback = false)# AutoOrbits, CallBack:= false, Max:= Infinity()) -> []
+function iterated_neighbours(L::HermLat, P; use_auto = false, max = inf, callback = false)# AutoOrbits, CallBack:= false, Max:= Infinity()) -> []
   #require Order(P) eq BaseRing(L): "Arguments are incompatible";
   #require IsPrime(P): "Second argument must be prime";
   #require not IsRamified(P) or Minimum(P) ne 2: "Second argument cannot be a ramified prime over 2";
@@ -1864,6 +1864,7 @@ function Base.show(io::IO, G::LocalGenusSymbol)
 end
 
 # TODO: I have to redo this
+
 function _genus_symbol_kirschmer(L::QuadLat, p::NfOrdIdl; uniformizer = zero(order(p)))
   O = order(p)
   nf(O) != base_field(L) && throw(error("Prime ideal must be an ideal of the base field of the lattice"))
@@ -1941,3 +1942,5 @@ function _genus_symbol_kirschmer(L::HermLat, p; uniformizer = zero(order(p)))
   end
   return sym
 end
+
+

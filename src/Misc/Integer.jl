@@ -1546,10 +1546,33 @@ Base.round(x::fmpq, ::RoundingMode{:NearestTiesAway}) = sign(x) * floor(abs(x) +
 
 Base.round(::Type{fmpz}, x::fmpq, ::RoundingMode{:NearestTiesAway}) = sign(x) == 1 ? floor(fmpz, abs(x) + 1//2) : -floor(fmpz, abs(x) + 1//2)
 
-function round(::Type{fmpz}, a::fmpq)
+function Base.round(::Type{fmpz}, a::fmpq)
   return round(fmpz, a, RoundNearestTiesAway)
 end
 
-function round(a::fmpq)
+function Base.round(a::fmpq)
   return round(fmpz, a)
+end
+
+################################################################################
+#
+#  Squarefree part
+#
+################################################################################
+
+@doc Markdown.doc"""
+    squarefree_part(a::fmpz) -> fmpz
+
+Returns the squarefee part $b$ of $a$, which is the smallest (absolute value)
+integer $b$ such that $a/b$ is positive and squarefree.
+"""
+function squarefree_part(a::fmpz)
+  f = factor(a)
+  s = sign(a)
+  for (p, e) in f
+    if isodd(e)
+      s = s * p
+    end
+  end
+  return s
 end
