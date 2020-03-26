@@ -4,7 +4,6 @@
 #
 # This file is part of Hecke.
 #
-# Copyright (c) 2015: Claus Fieker, Tommy Hofmann
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -28,9 +27,17 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 # (C) 2015-2019 Claus Fieker, Tommy Hofmann
+# (C) 2020      Claus Fieker, Tommy Hofmann, Carlo Sircana
 #
 ################################################################################
 
+@doc Markdown.doc"""
+Hecke is a Julia package for algorithmic algebraic number theory.
+For more information please visit
+
+    `https://github.com/thofma/Hecke.jl`
+
+"""
 module Hecke
 
 ################################################################################
