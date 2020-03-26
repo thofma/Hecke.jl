@@ -538,6 +538,9 @@ function find_gens(K::KummerExt, S::PrimesSet, cp::fmpz=fmpz(1))
   end
   
   for P in fb
+    if degree(P) > max(div(degree(K), 5), 5)
+      continue
+    end
     p = minimum(P)
     if p % K.n != 1 || cp % p == 0 || index(ZK) % p == 0
       continue
@@ -590,6 +593,9 @@ function find_gens(K::KummerExt, S::PrimesSet, cp::fmpz=fmpz(1))
 
     f = R[1]
     for (P, e) = lP
+      if degree(P) > max(div(degree(K), 5), 5)
+        continue
+      end
       try
         f = canonical_frobenius(P, K)
       catch e
@@ -1021,7 +1027,7 @@ function _extend_auto(K::Hecke.NfRel{nf_elem}, h::Hecke.NfToNfMor)
   dict = Dict{nf_elem, fmpz}()
   dict[h(a)] = 1
   if r <= div(degree(K), 2)
-    add_to_key!(dict, a, r)
+    add_to_key!(dict, a, -r)
     aa = FacElem(dict)
     @vtime :ClassField 3 fl, b = ispower(aa, degree(K), with_roots_unity = true, trager = true)
     if !fl
