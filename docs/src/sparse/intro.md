@@ -71,7 +71,7 @@ maximum(::typeof(abs), ::SRow{fmpz})
 
 ## Sparse matrices
 
-Let $R$ be a commutative ring. Sparse matrices with base ring $R$ are modlled by
+Let $R$ be a commutative ring. Sparse matrices with base ring $R$ are modelled by
 objects of type `SMat`. More precisely, the type is of parametrized form `SRow{T}`, where `T` is the element type of the base ring.
 For example, `SMat{fmpz}` is the type for sparse matrices over the integers.
 
@@ -81,4 +81,21 @@ Internally, sparse matrices are implemented as an array of sparse rows.
 As a consequence, Unlike their dense counterparts, sparse matrices have a mutable number of rows and it is very performant to add additional rows.
 
 ### Construction
+```@docs
+sparse_matrix(::Ring)
+```
+
+Sparse matrices can also be created from dense matrices as well as from julia arrays:
+
+```@docs
+sparse_matrix(::MatElem; keepzrows)
+sparse_matrix(::Array{T, 2}) where {T}
+sparse_matrix(::Ring, ::Array{T, 2}) where {T}
+```
+The normal way however, is to add rows:
+
+```@docs
+push!(::SMat, ::SRow)
+```
+
 

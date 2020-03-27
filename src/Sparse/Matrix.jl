@@ -693,6 +693,8 @@ function sub(A::SMat{T}, r::UnitRange, c::UnitRange) where T
   return B
 end
 
+#TODO: map to getindex with ranges and slices
+
 ################################################################################
 #
 #  Valence
@@ -933,7 +935,10 @@ end
 #  Append sparse row to sparse matrix
 #
 ################################################################################
-
+@doc Markdown.doc"""
+    push!(A::SMat{T}, B::SRow{T}) where T 
+Appends the sparse row ```B``` to ```A```.
+"""
 function push!(A::SMat{T}, B::SRow{T}) where T
   push!(A.rows, B)
   A.r += 1
