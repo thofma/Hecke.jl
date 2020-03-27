@@ -428,7 +428,8 @@ function ispower(a::fmpz, n::Int)
 end
 
 function ispower(a::Integer, n::Int)
-  return ispower(fmpz(a), n)
+  fl, b = ispower(fmpz(a), n)
+  return fl, typeof(a)(b)
 end
 
 function ispower(a::fmpq, n::Int)
