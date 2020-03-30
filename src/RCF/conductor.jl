@@ -938,7 +938,7 @@ function norm_group(KK::KummerExt, mp::NfToNfMor, mR::Union{MapRayClassGrp, MapC
   k = domain(mp)
   K = codomain(mp)
   ZK = maximal_order(K)
-  zk = maximal_order(k)
+  zk = order(codomain(mR))
   # disc(ZK/Q) = N(disc(ZK/zk)) * disc(zk)^deg
   # we need the disc ZK/k, well a conductor.
   

@@ -158,7 +158,7 @@ function ispower_mod_p(a::nf_elem, i::Int)
         j = findfirst(j-> h in j, di)
         @show x, mp[x], h, di[j]
         for k in di[j]
-          @assert iszero(va[k])
+          #@assert iszero(va[k])
           va[k] = y
         end
       end

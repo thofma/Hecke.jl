@@ -223,7 +223,6 @@ function insert_prime_into_coprime(de::Dict{NfOrdIdl, fmpz}, p::NfOrdIdl, e::fmp
   return nothing
 end
 
-global deb = []
 #TODO: use the log as a stopping condition as well
 @doc Markdown.doc"""
     evaluate_mod(a::FacElem{nf_elem, AnticNumberField}, B::NfOrdFracIdl) -> nf_elem
@@ -235,8 +234,6 @@ function evaluate_mod(a::FacElem{nf_elem, AnticNumberField}, B::NfOrdFracIdl)
   K = base_ring(a)
   ZK = order(B)
   dB = denominator(B)*index(ZK)
-
-  push!(deb, (a, B))
   
   @hassert :CompactPresentation 1 factored_norm(B) == abs(factored_norm(a))
   @hassert :CompactPresentation 2 B == ideal(order(B), a)

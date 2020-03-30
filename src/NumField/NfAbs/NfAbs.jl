@@ -369,17 +369,18 @@ function _issubfield_first_checks(K::AnticNumberField, L::AnticNumberField)
     end
     # We could factorize the discriminant of f, but we only test small primes.
     p = 3
-    df = discriminant(f)
-    dg = discriminant(g)
     while p < 10000
-      if p > df || p > dg
-        break
-      end
-      if mod(valuation(df, p), 2) == 0
+      F = GF(p, cached = false)
+      Fx = PolynomialRing(F, "x", cached = false)[1]
+      fp = Fx(f)
+      gp = Fx(g)
+      if !issquarefree(fp) && !issquarefree(gp)
         p = next_prime(p)
-        continue
+	continue
       end
-      if mod(dg, p^t) != 0
+      fs = factor_shape(fp)
+      gs = factor_shape(gp)
+      if !divisible(lcm(collect(keys(gs))), lcm(collect(keys(fs))))
         return false
       end
       p = next_prime(p)

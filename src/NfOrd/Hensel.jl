@@ -418,6 +418,9 @@ function _hensel(f::Generic.Poly{nf_elem},
 
   n = degree(K)
   M = zero_matrix(FlintZZ, n, n)
+  local Mi::fmpz_mat
+  local d::fmpz
+  ttt = 0.0
   for i=2:length(pr)
     pp = fmpz(p)^pr[i]
     Q = ResidueRing(FlintZZ, pp, cached=false)
@@ -436,12 +439,48 @@ function _hensel(f::Generic.Poly{nf_elem},
 
     if caching && haskey(_cache_lll, pr[i])
       M, Mi, d = _cache_lll[pr[i]]::Tuple{fmpz_mat, fmpz_mat, fmpz}
+    elseif ttt > 50.0
+      Mold = M
+      Miold = Mi
+      dold = d
+      M = zero_matrix(FlintZZ, n, n)
+      #the lattice for reco:
+      #zero!(M)
+      for j = 1:degree(pgg)
+        M[j, j] = pp
+      end
+      coeffarr = Vector{elem_type(Q)}(undef, degree(pgg))
+      for j = 1:degree(pgg)-1
+        coeffarr[j] = zero(Q)
+      end
+      coeffarr[degree(pgg)] = one(Q)
+      pt = Qt(coeffarr)
+      for j=degree(pgg)+1:n
+        pt = shift_left(pt, 1)
+        rem!(pt, pt, pgg)
+        M[j,j] = 1
+        for k=0:degree(pt)
+          M[j, k+1] = -lift(coeff(pt, k))
+        end
+      end
+      @vtime :Saturate 1 begin
+        Ms_1 = M*Miold
+	@assert divides(content(Ms_1), dold)[1]
+	Ms_1 = divexact(Ms_1, dold)
+        U1 = lll(Ms_1)
+        M = U1*Mold
+        M = lll(M)
+        Mi, d = pseudo_inv(M)
+        if caching
+          _cache_lll[pr[i]] = (M, Mi, d)
+        end
+      end
     else
       M = zero_matrix(FlintZZ, n, n)
       #the lattice for reco:
       #zero!(M)
-      for j=1:degree(pgg)
-        M[j,j] = pp
+      for j = 1:degree(pgg)
+        M[j, j] = pp
       end
       coeffarr = Vector{elem_type(Q)}(undef, degree(pgg))
       for j = 1:degree(pgg)-1
@@ -458,7 +497,8 @@ function _hensel(f::Generic.Poly{nf_elem},
         end
       end
       #this is (or should be) the HNF basis for P^??
-      @vtime :Saturate 1 M = lll(M)
+      ttt = @elapsed M = lll(M)
+      @vprint :Saturate 1 "Time for LLL: $(ttt) \n"
       Mi, d = pseudo_inv(M)
       if caching
         _cache_lll[pr[i]] = (M, Mi, d)

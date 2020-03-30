@@ -520,7 +520,8 @@ function find_gens(K::KummerExt, S::PrimesSet, cp::fmpz=fmpz(1))
   if isdefined(K, :frob_gens)
     return K.frob_gens[1], K.frob_gens[2]
   end
-  ZK = maximal_order(base_field(K))
+  k = base_field(K)
+  ZK = maximal_order(k)
   R = K.AutG 
   sR = Vector{GrpAbFinGenElem}(undef, length(K.gen))
   lp = Vector{NfOrdIdl}(undef, length(K.gen))
@@ -593,7 +594,7 @@ function find_gens(K::KummerExt, S::PrimesSet, cp::fmpz=fmpz(1))
 
     f = R[1]
     for (P, e) = lP
-      if degree(P) > max(div(degree(K), 5), 5)
+      if degree(P) > max(div(degree(k), 5), 5)
         continue
       end
       try
@@ -781,11 +782,9 @@ function build_map(CF::ClassField_pp, K::KummerExt, c::CyclotomicExt)
   ZK = maximal_order(base_ring(K.gen[1]))
   cp = lcm(minimum(m), discriminant(ZK))
   
-  mp = c.mp[2]
-  cp = lcm(cp, index(maximal_order(domain(mp))))
-  ZK = maximal_order(c.Ka)
-  #@hassert :ClassField 1 order(domain(cf)) == ZK
   Zk = order(m)
+  mp = c.mp[2]
+  cp = lcm(cp, index(Zk))
   Sp = Hecke.PrimesSet(100, -1, c.n, 1) #primes = 1 mod n, so totally split in cyclo
 
   #@vtime :ClassField 3 
@@ -794,7 +793,7 @@ function build_map(CF::ClassField_pp, K::KummerExt, c::CyclotomicExt)
   sR = Array{GrpAbFinGenElem, 1}(undef, length(lp))
   #@vtime :ClassField 3 
   for i = 1:length(lp)
-    p = intersect_nonindex(mp, lp[i])
+    p = intersect_nonindex(mp, lp[i], Zk)
     #Since the prime are totally split in the cyclotomic extension by our choice, we can ignore the valuation of the norm
     #sR[i] = valuation(norm(lp[i]), norm(p))*CF.quotientmap(preimage(CF.rayclassgroupmap, p))
     sR[i] = CF.quotientmap(preimage(CF.rayclassgroupmap, p))
@@ -970,7 +969,7 @@ function _aut_A_over_k(C::CyclotomicExt, CF::ClassField_pp)
     si = hom(Kr, Kr, gen(Kr)^Int(lift(mg(g[i]))), check = false)
     @vprint :ClassField 2 "... extending zeta -> zeta^$(mg(g[i]))\n"
     to_be_ext = hom(K, K, C.mp[1]\(si(image(C.mp[1], gen(K)))), check = false)
-    sigma = _extend_auto(A, to_be_ext)
+    sigma = _extend_auto(A, to_be_ext, Int(lift(mg(g[i]))))
     AutA_gen[i+1] = sigma
 
     @vprint :ClassField 2 "... finding relation ...\n"
@@ -1002,24 +1001,27 @@ end
 
 struct ExtendAutoError <: Exception end
 
-function _extend_auto(K::Hecke.NfRel{nf_elem}, h::Hecke.NfToNfMor)
+function _extend_auto(K::Hecke.NfRel{nf_elem}, h::Hecke.NfToNfMor, r::Int = -1)
   @hassert :ClassField 1 iskummer_extension(K)
   #@assert iskummer_extension(K)
   k = base_field(K)
   Zk = maximal_order(k)
 
-  if degree(K) == 2
-    r = 1
-  else
-    zeta, ord = Hecke.torsion_units_gen_order(Zk)
-    @assert ord % degree(K) == 0
-    zeta = k(zeta)^div(ord, degree(K))
-    im_zeta = h(zeta)
-    r = 1
-    z = deepcopy(zeta)
-    while im_zeta != z
-      r += 1
-      mul!(z, z, zeta)
+  if r != -1
+    if degree(K) == 2
+      r = 1
+    else
+      #TODO: Do this modularly.
+      zeta, ord = Hecke.torsion_units_gen_order(Zk)
+      @assert ord % degree(K) == 0
+      zeta = k(zeta)^div(ord, degree(K))
+      im_zeta = h(zeta)
+      r = 1
+      z = deepcopy(zeta)
+      while im_zeta != z
+        r += 1
+        mul!(z, z, zeta)
+      end
     end
   end
   
@@ -1029,7 +1031,7 @@ function _extend_auto(K::Hecke.NfRel{nf_elem}, h::Hecke.NfToNfMor)
   if r <= div(degree(K), 2)
     add_to_key!(dict, a, -r)
     aa = FacElem(dict)
-    @vtime :ClassField 3 fl, b = ispower(aa, degree(K), with_roots_unity = true, trager = true)
+    @vtime :ClassField 3 fl, b = ispower(aa, degree(K), with_roots_unity = true)
     if !fl
       throw(ExtendAutoError())
     end
@@ -1037,7 +1039,7 @@ function _extend_auto(K::Hecke.NfRel{nf_elem}, h::Hecke.NfToNfMor)
   else
     add_to_key!(dict, a, degree(K)-r)
     aa = FacElem(dict)
-    @vtime :ClassField 3 fl, b = ispower(aa, degree(K), with_roots_unity = true, trager = true)
+    @vtime :ClassField 3 fl, b = ispower(aa, degree(K), with_roots_unity = true)
     if !fl
       throw(ExtendAutoError())
     end
