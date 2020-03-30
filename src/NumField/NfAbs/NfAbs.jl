@@ -766,18 +766,8 @@ function normal_closure(K::AnticNumberField)
   return s, hom(K, s, r, check = false)
 end
 
-function show_name(io::IO, K::AnticNumberField)
-  if get(io, :compact, false)
-    n = Nemo.get_special(K, :name)
-    print(io, n)
-  else
-    print(io, "Number field over Rational Field")
-    print(io, " with defining polynomial ", K.pol)
-  end
-end
-
 function set_name!(K::AnticNumberField, s::String)
-  Nemo.set_special(K, :name => s, :show => show_name)
+  Nemo.set_special(K, :name => s)
 end
 
 function set_name!(K::AnticNumberField)
