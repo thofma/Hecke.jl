@@ -140,7 +140,7 @@ function cyclotomic_extension(k::AnticNumberField, n::Int; cached::Bool = true, 
         c.Ka = Ka
         c.mp = (abs2rel, small2abs)
       end
-      if istorsion_unit_group_known(k)
+      if istorsion_unit_group_known(k) || istotally_real(k)
         ok, gTk = _torsion_units_gen(k)
         expected = Int(_torsion_group_order_divisor(Ka))
         if expected == lcm(ok, n)
@@ -219,7 +219,7 @@ function cyclotomic_extension(k::AnticNumberField, n::Int; cached::Bool = true, 
   c.Kr = Kr
   c.Ka = Ka
   c.mp = (abs2rel, small2abs)
-  if istorsion_unit_group_known(k)
+  if istorsion_unit_group_known(k) || istotally_real(k)
     ok, gTk = _torsion_units_gen(k)
     expected = Int(_torsion_group_order_divisor(Ka))
     if expected == lcm(ok, n)
@@ -345,7 +345,7 @@ function _cyclotomic_extension_non_simple(k::AnticNumberField, n::Int; cached::B
   small2abs = hom(k, Ka, img_gen_k)
   abs2rel = hom(Ka, Kr, img_gen_Ka, img_gen_k, img_gen_Kr)
 
-  if istorsion_unit_group_known(k)
+  if istorsion_unit_group_known(k) || istotally_real(k)
     ok, gTk = _torsion_units_gen(k)
     expected = Int(_torsion_group_order_divisor(Ka))
     if expected == lcm(ok, n)

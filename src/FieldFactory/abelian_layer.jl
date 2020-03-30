@@ -1,25 +1,5 @@
 ################################################################################
 #
-#  Contained in the alternating group
-#
-################################################################################
-
-function is_discriminant_square(IdG::GAP.GapObj)
-  G = GAP.Globals.SmallGroup(IdG)
-  mp = GAP.Globals.RegularActionHomomorphism(G)
-  S = GAP.Globals.ImagesSource(mp)
-  lg = GAP.Globals.GeneratorsOfGroup(S)
-  for i = 1:length(lg)
-    s = GAP.Globals.SignPerm(lg[i])
-    if !isone(s)
-      return false
-    end
-  end
-  return true
-end
-
-################################################################################
-#
 #  Ramification at infinite places
 #
 ################################################################################
@@ -222,7 +202,8 @@ function _abelian_normal_extensions(F::FieldsTower, gtype::Array{Int, 1}, absbou
     return Vector{Hecke.ClassField{Hecke.MapRayClassGrp, GrpAbFinGenMap}}[]
   end
   bound = div(absbound, abs(discriminant(O))^n)
-  l_conductors = conductors_with_restrictions(F, gtype, IdG, bound)
+  @vprint :Fields 2 "\n"
+  @vtime :Fields 2 l_conductors = conductors_with_restrictions(F, gtype, IdG, bound)
   @vprint :Fields 1 "   Number of conductors: $(length(l_conductors))\n"
   @vprint :FieldsNonFancy 1 "Number of conductors: $(length(l_conductors))\n"
   if length(l_conductors) == 0
@@ -231,6 +212,7 @@ function _abelian_normal_extensions(F::FieldsTower, gtype::Array{Int, 1}, absbou
   end
   @vprint :Fields 2 "\n"
   @vprint :Fields 1 "Computing class group"
+  @vprint :Fields 2 "\n"
   @vtime :Fields 2 Cl, mCl = class_group(O, use_aut = true)
   @vprint :Fields 1 "$(Hecke.clear_to_eol())"
   if mod(n, 2) == 0 && !only_real

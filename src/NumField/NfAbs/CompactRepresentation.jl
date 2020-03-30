@@ -151,13 +151,14 @@ function compact_presentation(a::FacElem{nf_elem, AnticNumberField}, nn::Int = 2
       de[p] -= n^k*v
     end
 
-    B = simplify(ideal(ZK, b)*eA)
+    @vtime :CompactPresentation 1 B = simplify(ideal(ZK, b)*eA)
     @assert isone(B.den)
     B1 = B.num   
     @assert norm(B1) <= abs(discriminant(ZK))
 
     @vprint :CompactPresentation 1 "Factoring ($(B1.gen_one), $(B1.gen_two)) of norm $(norm(B1))\n"
-    @vtime :CompactPresentation 5 for (p, _v) = factor(B1)
+    @vtime :CompactPresentation 1 lfB1 = factor(B1)
+    for (p, _v) = lfB1
       if haskey(de, p)
         de[p] += _v*n^k
         continue

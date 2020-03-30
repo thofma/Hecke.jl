@@ -615,6 +615,7 @@ end
 
 function short_elem(A::NfOrdFracIdl,
                 v::fmpz_mat=zero_matrix(FlintZZ, 1,1); prec::Int = 100)
+  assure_has_numerator_and_denominator(A)
   return divexact(short_elem(A.num, v, prec = prec), A.den)
 end
 
@@ -622,16 +623,13 @@ end
 function short_elem(A::NfOrdIdl,
                 v::fmpz_mat = zero_matrix(FlintZZ, 1,1); prec::Int = 100)
   K = nf(order(A))
-  temp = basis_matrix(A, copy = false)*basis_matrix(order(A), copy = false)
-  b = temp.num
-  b_den = temp.den
-  local t
+  local t::fmpz_mat
   while true
     if prec > 2^18
       error("Something wrong in short_elem")
     end
     try
-      l, t = lll(A, v, prec = prec)
+      t = lll(A, v, prec = prec)[2]
       break
     catch e
       if !(e isa LowPrecisionLLL || e isa InexactError)
@@ -640,10 +638,10 @@ function short_elem(A::NfOrdIdl,
     end
     prec = 2 * prec
   end
-
   w = view(t, 1:1, 1:ncols(t))
-  c = w*b
-  q = elem_from_mat_row(K, c, 1, b_den)
+  mul!(w, w, basis_matrix(A, copy = false))
+  c = w*basis_matrix(order(A), copy = false)
+  q = elem_from_mat_row(K, c.num, 1, c.den)
   return q
 end
 
@@ -653,6 +651,19 @@ function reduce_ideal(A::NfOrdIdl)
   C = b*A
   simplify(C)
   @assert C.den == 1
+  return C.num, b
+end
+
+function reduce_product(A::NfOrdIdl, B::NfOrdIdl)
+  I = inv(A)
+  J = inv(B)
+  @vtime :LLL 3 bIJ = _lll_product_basis(I.num, J.num)
+  pp = NfOrdIdl(order(A), bIJ)
+  @vtime :LLL 3 b = divexact(short_elem(pp), I.den * J.den)
+  AB = A*B
+  C = b*AB
+  simplify(C)
+  @assert isone(C.den)
   return C.num, b
 end
 
@@ -671,15 +682,27 @@ end
 #
 ################################################################################
 
+#From Claus and Tommy: 
+# We express the basis of IJ in terms of the basis of I (I contains IJ)
+# Then we compute the lll of the matrix of the coordinates. This way we get a 
+# better basis to start the computation of LLL
+function _lll_product_basis(I::NfOrdIdl, J::NfOrdIdl)
+  A = lll(I)[2]
+  mul!(A, A, basis_matrix(I, copy = false))
+  IJ = I*J
+  C = basis_matrix(IJ)
+  @vtime :LLL 3 iA = FakeFmpqMat(pseudo_inv(A))
+  mul!(C, C, iA.num)
+  C = divexact(C, iA.den)
+  @vtime :LLL 3 T1 = lll(C) 
+  return T1*A
+end
+
+
 function lll_basis_product(I::NfOrdIdl, J::NfOrdIdl)
 
-  @time A = lll(I)[2]*basis_matrix(I, copy = false)
-  @time IJ = I*J
-  @time C = basis_matrix(IJ, copy = false)
-  @time T = (C * FakeFmpqMat(pseudo_inv(A))).num
-  @time T1 = lll(T)
-  new_basis_IJ = T1*A
-  IJ = NfOrdIdl(order(I), new_basis_IJ)
-  @time res =  lll_basis(IJ)
+  basis_IJ = _lll_product_basis(I, J)
+  IJ = NfOrdIdl(order(I), basis_IJ)
+  res =  lll_basis(IJ)
   return res
 end

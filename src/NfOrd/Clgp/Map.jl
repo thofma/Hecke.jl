@@ -88,20 +88,19 @@ function power_reduce2(A::NfOrdIdl, e::fmpz)
   if e>1
     C, cl = power_reduce2(A, div(e, 2))
     @hassert :PID_Test 1 C*evaluate(cl) == A^Int(div(e, 2))
-
-    C2 = C^2
-    mul!(al, al, cl^2)
-    #al = al*cl^2
-    if norm(C2) > abs(discriminant(O))
-      C2, a = reduce_ideal(C2)
+    if norm(C)^2 > abs(discriminant(O))
+      @vtime :CompactPresentation :4 C2, a = reduce_product(C, C)
+      mul!(al, al, cl^2)
       add_to_key!(al.fac, inv(a), 1)
-      #mul!(al, al, inv(a))# al *= inv(a)
+    else
+      C2 = C^2
+      mul!(al, al, cl^2)
+      #al = al*cl^2
     end
 
     if isodd(e)
-      A = C2*A
-      if norm(A) > abs(discriminant(O))
-        A, a = reduce_ideal(A)
+      if norm(A)*norm(C2) > abs(discriminant(O))
+        @vtime :CompactPresentation :4 A, a = reduce_product(C2, A)
         add_to_key!(al.fac, inv(a), 1)
         #mul!(al, al, inv(a)) #al *= inv(a)
       end

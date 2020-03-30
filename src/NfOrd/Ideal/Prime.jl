@@ -105,7 +105,7 @@ function intersect_prime(f::Map, P::NfOrdIdl, Ok::NfOrd = maximal_order(domain(f
 
 end
 
-function intersect_nonindex(f::Map, P::NfOrdIdl, Zk = maximal_order(domain(f)))
+function intersect_nonindex(f::Map, P::NfOrdIdl, Zk::NfOrd = maximal_order(domain(f)))
   @assert isprime(P)
   #let g be minpoly of k, G minpoly of K and h in Qt the primitive
   #element of k in K (image of gen(k))

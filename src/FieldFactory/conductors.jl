@@ -114,7 +114,7 @@ function conductors_with_restrictions(F::FieldsTower, st::Vector{Int}, IdG::GAP.
   v = valuation(discriminant(O), p)
   is_square_disc_base_field = iszero(mod(v*p, 2))
   td = prime_decomposition_type(O, p)
-  if iszero(mod(length(td) * td[1][1]*(p-1), 2))
+  if iseven(length(td)) || iseven(td[1][1]) || isodd(p)
     #Regardless of the exponents, the norm of the discriminant will be a square
     if issquare && is_square_disc_base_field
       return new_conds

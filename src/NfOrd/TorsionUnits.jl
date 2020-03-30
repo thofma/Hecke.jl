@@ -315,10 +315,6 @@ function _torsion_group_order_divisor(K::AnticNumberField)
 
   first = true
 
-  # This can be replaced by any multiple of the discriminant of the maximal
-  # order
-  # TODO: Fix this for non-monic, non-integral defining polynomials
-  
   if ismaximal_order_known(K)
     disc = abs(discriminant(maximal_order(K)))
   elseif isdefining_polynomial_nice(K)
@@ -327,7 +323,7 @@ function _torsion_group_order_divisor(K::AnticNumberField)
     disc_1 = discriminant(K.pol)
     disc = numerator(disc_1)*denominator(disc_1)
   end
-  threshold = max(div(degree(K), 10), 5)
+  threshold = 50
 
   while true
     p = next_prime(p)
@@ -363,8 +359,11 @@ function _torsion_group_order_divisor(K::AnticNumberField)
     else
       stable = 0
     end
+    if !divisible(fmpz(degree(K)), euler_phi(m_new))
+      stable = 0
+    end
 
-    if stable == threshold && m_new <= upper_bound && divisible(fmpz(degree(K)), euler_phi(m_new))
+    if stable == threshold && m_new <= upper_bound
       return m_new
     end
 
@@ -411,25 +410,4 @@ function _torsion_units_gen(K::AnticNumberField)
   end
   _set_nf_torsion_units(K, (ord, gen))
   return ord, gen
-end
-
-function _torsion_units_gen(O::NfOrd)
-  ord, a = _torsion_units(nf(O)) # This is the cached version
-
-  # The following could be improved by factoring n
-  # and doing something prime by prime.
-  m = 1
-  b = a
-  while true
-    if b in O
-      break
-    else
-      b = b * a
-      m = m + 1
-    end
-  end
-
-  @assert mod(ord, m) == 0
-
-  return divexact(ord, m), O(b)
 end

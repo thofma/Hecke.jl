@@ -143,7 +143,7 @@ mutable struct AbToNfMultGrp <: Map{GrpAbFinGen, AnticNumberField, SetMap, AbToN
     G = abelian_group(Int[order])
     z = new()
     z.domain = G
-    z.codomain = O
+    z.codomain = K
     z.generator = generator
     return z
   end

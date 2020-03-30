@@ -261,7 +261,7 @@ function saturate!(d::Hecke.ClassGrpCtx, U::Hecke.UnitGrpCtx, n::Int, stable = 3
     if wasted 
       stable *= 2
     else
-      @vprint :Saturate  1 "sat success at ", stable, "\n"
+      @vprint :Saturate  1 "sat success at $(stable)\n"
       return success
     end
   end
