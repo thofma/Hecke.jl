@@ -1,48 +1,48 @@
 import Nemo.characteristic, Nemo.gen, Nemo.size
 export gen, characteristic, size, elem_to_mat_row!, rand
 
-function gen(R::Generic.ResRing{T}) where T<:PolyElem  
+function gen(R::Union{Generic.ResRing{T},Generic.ResField{T}}) where T<:PolyElem  
   return R(gen(base_ring(R)))
 end
 
-function gen(R::Generic.ResRing{fq_nmod_poly}) ## this is not covered by above
+function gen(R::Union{Generic.ResRing{fq_nmod_poly},Generic.ResField{fq_nmod_poly}}) ## this is not covered by above
   return R(gen(base_ring(R)))              ## and I don't know why
 end
 
-function gen(R::Generic.ResRing{nmod_poly}) 
+function gen(R::Union{Generic.ResRing{nmod_poly},Generic.ResField{nmod_poly}}) 
   return R(gen(base_ring(R)))     
 end
 
-function characteristic(R::Generic.ResRing{Nemo.fmpz})
+function characteristic(R::Union{Generic.ResRing{Nemo.fmpz},Generic.ResField{Nemo.fmpz}})
   return modulus(R)
 end
 
-function characteristic(R::Generic.ResRing{nmod_poly})
+function characteristic(R::Union{Generic.ResRing{nmod_poly},Generic.ResField{nmod_poly}})
   return characteristic(base_ring(base_ring(R)))
 end
 
-function characteristic(R::Generic.ResRing{T}) where T<:PolyElem
+function characteristic(R::Union{Generic.ResRing{T},Generic.ResField{T}}) where T<:PolyElem
   return characteristic(base_ring(base_ring(R)))
 end
 
 # discuss: size = order? order = size?
-function size(R::Nemo.Generic.ResRing{Nemo.nmod_poly})
+function size(R::Nemo.Union{Generic.ResRing{Nemo.nmod_poly},Generic.ResField{Nemo.nmod_poly}})
   return characteristic(R)^degree(modulus(R))
 end
 
-function size(R::Nemo.Generic.ResRing{T}) where T <: ResElem
+function size(R::Nemo.Union{Generic.ResRing{T},Generic.ResField{T}}) where T <: ResElem
   return size(base_ring(base_ring(R)))^degree(modulus(R))
 end
 
-function size(R::Nemo.Generic.ResRing{fmpz})
+function size(R::Nemo.Union{Generic.ResRing{fmpz},Generic.ResField{fmpz}})
   return modulus(R)
 end
 
-function size(R::Nemo.Generic.ResRing{T}) where T<:PolyElem
+function size(R::Nemo.Union{Generic.ResRing{T},Generic.ResField{T}}) where T<:PolyElem
   return size(base_ring(base_ring(R)))^degree(R.modulus)
 end
 
-function size(R::Nemo.Generic.ResRing{fq_nmod_poly})
+function size(R::Nemo.Union{Generic.ResRing{fq_nmod_poly},Generic.ResField{fq_nmod_poly}})
   return size(base_ring(base_ring(R)))^degree(R.modulus)
 end
 
@@ -96,7 +96,7 @@ function elem_to_mat_row!(M::MatElem, i::Int, a::ResElem{fq_nmod_poly})
   end
 end
 
-function rand(R::Generic.ResRing{fmpz})
+function rand(R::Union{Generic.ResRing{fmpz},Generic.ResField{fmpz}})
   return R(rand(fmpz(0):(size(R)-1)))
 end
 
@@ -104,7 +104,7 @@ function rand(R::Generic.ResField{fmpz})
   return R(rand(fmpz(0):(order(R)-1)))
 end
 
-function rand(R::Generic.ResRing{T}) where T<:PolyElem
+function rand(R::Union{Generic.ResRing{T},Generic.ResField{T}}) where T<:PolyElem
   r = rand(base_ring(base_ring(R)))
   g = gen(R)
   for i=1:degree(R.modulus)
@@ -113,7 +113,7 @@ function rand(R::Generic.ResRing{T}) where T<:PolyElem
   return r
 end
 
-function rand(R::Generic.ResRing{fq_nmod_poly})
+function rand(R::Union{Generic.ResRing{fq_nmod_poly},Generic.ResField{fq_nmod_poly}})
   r = rand(base_ring(base_ring(R)))
   g = gen(R)
   for i=1:degree(R.modulus)
@@ -122,7 +122,7 @@ function rand(R::Generic.ResRing{fq_nmod_poly})
   return r
 end
 
-function rand(R::Generic.ResRing{fq_poly})
+function rand(R::Union{Generic.ResRing{fq_poly},Generic.ResField{fq_poly}})
   r = rand(base_ring(base_ring(R)))
   g = gen(R)
   for i=1:degree(R.modulus)
@@ -131,7 +131,7 @@ function rand(R::Generic.ResRing{fq_poly})
   return r
 end
 
-function rand(R::Generic.ResRing{nmod_poly})
+function rand(R::Union{Generic.ResRing{nmod_poly},Generic.ResField{nmod_poly}})
   r = rand(base_ring(base_ring(R)))
   g = gen(R)
   for i=1:degree(R.modulus)
@@ -147,7 +147,7 @@ end
 ##
 #######################################################
 
-function gens(R::Generic.ResRing{T}) where T<:PolyElem ## probably needs more cases
+function gens(R::Union{Generic.ResRing{T},Generic.ResField{T}}) where T<:PolyElem ## probably needs more cases
                                           ## as the other residue functions
   g = gen(R)
   r = Array{typeof(g), 1}()
@@ -162,7 +162,7 @@ function gens(R::Generic.ResRing{T}) where T<:PolyElem ## probably needs more ca
   return r
 end
 
-function gens(R::Generic.ResRing{nmod_poly}) 
+function gens(R::Union{Generic.ResRing{nmod_poly},Generic.ResField{nmod_poly}}) 
   g = gen(R)
   r = Array{typeof(g), 1}()
   push!(r, one(R))
