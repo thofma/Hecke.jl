@@ -464,11 +464,15 @@ function _hensel(f::Generic.Poly{nf_elem},
         end
       end
       @vtime :Saturate 1 begin
-        Ms_1 = M*Miold
-	@assert divides(content(Ms_1), dold)[1]
-	Ms_1 = divexact(Ms_1, dold)
-        U1 = lll(Ms_1)
-        M = U1*Mold
+        mul!(M, M, Miold)
+        divexact!(M, M, dold)
+        exp_mod = div(pr[i], 2)
+        if isodd(pr[i])
+          exp_mod += 1
+        end
+        hnf_modular_eldiv!(M, fmpz(p)^exp_mod)
+        M = lll(M)
+        mul!(M, M, Mold)
         M = lll(M)
         Mi, d = pseudo_inv(M)
         if caching

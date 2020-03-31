@@ -695,15 +695,17 @@ end
 # We express the basis of IJ in terms of the basis of I (I contains IJ)
 # Then we compute the lll of the matrix of the coordinates. This way we get a 
 # better basis to start the computation of LLL
+#We compute the hnf to have a guaranteed bound on the entries
 function _lll_product_basis(I::NfOrdIdl, J::NfOrdIdl)
   A = lll(I)[2]
   mul!(A, A, basis_matrix(I, copy = false))
   IJ = I*J
-  C = basis_matrix(IJ)
-  @vtime :LLL 3 iA = FakeFmpqMat(pseudo_inv(A))
-  mul!(C, C, iA.num)
-  C = divexact(C, iA.den)
-  @vtime :LLL 3 T1 = lll(C) 
+  C = basis_matrix(IJ, copy = false)
+  @vtime :LLL 3 iA, de = pseudo_inv(A)
+  mul!(iA, C, iA)
+  divexact!(iA, iA, de)
+  hnf_modular_eldiv!(iA, minimum(J))
+  @vtime :LLL 3 T1 = lll(iA) 
   return T1*A
 end
 

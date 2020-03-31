@@ -804,8 +804,10 @@ function coprime_base(A::Array{NfOrdIdl, 1})
         push!(a1, p)
       end
       push!(a1, minimum(I))
+      push!(a1, norm(I))
     else
       push!(a1, minimum(I))
+      push!(a1, norm(I))
     end
   end
   OK = order(A[1])

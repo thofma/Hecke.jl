@@ -198,10 +198,11 @@ function cyclotomic_extension(k::AnticNumberField, n::Int; cached::Bool = true, 
       for (p, v) in factor(gcd(discriminant(Zk), fmpz(n)))
         ZKa = pmaximal_overorder(ZKa, p)
       end
+      ZKa.ismaximal = 1
       if compute_LLL_basis
         lll(ZKa)
       end
-      ZKa.ismaximal = 1
+
       Hecke._set_maximal_order_of_nf(Ka, ZKa)
     end
   else
