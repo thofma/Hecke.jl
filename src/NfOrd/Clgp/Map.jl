@@ -19,7 +19,7 @@ function reduce_ideal2(I::FacElem{NfOrdIdl, NfOrdIdlSet})
   O = order(first(keys(I.fac)))
   K = nf(O)
   fst = true
-  a = FacElem(Dict{nf_elem, fmpz}(K(1) => fmpz(1)))
+  a = FacElem(Dict{nf_elem, fmpz}(one(K) => fmpz(1)))
   A = ideal(O, 1)
   for (k, v) = I.fac
     @assert order(k) === O
@@ -32,13 +32,13 @@ function reduce_ideal2(I::FacElem{NfOrdIdl, NfOrdIdlSet})
       fst = false
     else
       B, b = power_reduce2(k, v)
-      @hassert :PID_Test (v>0 ? fractional_ideal(O, k)^Int(v) : inv(k)^Int(-v)) == B*evaluate(b)
-      A = A*B
       mul!(a, a, b)
-      #a = a*b
-      if norm(A) > abs(discriminant(O))
-        A, c = reduce_ideal(A)
-        add_to_key!(a.fac, K(c), fmpz(-1))
+      @hassert :PID_Test (v>0 ? fractional_ideal(O, k)^Int(v) : inv(k)^Int(-v)) == B*evaluate(b)
+      if norm(A)*norm(B) > abs(discriminant(O))
+        A, c = reduce_product(A, B)
+        add_to_key!(a.fac, c, -1)
+      else
+        A = A*B
       end
     end
   end
@@ -59,16 +59,12 @@ Computes $B$ and $\alpha$ in factored form, such that $\alpha B = A^e$
 $B$ has small norm.
 """
 function power_reduce2(A::NfOrdIdl, e::fmpz)
-  A_orig = deepcopy(A)
-  e_orig = e
-
   O = order(A)
   K= nf(O)
   if norm(A) > abs(discriminant(O))
-    A, a = reduce_ideal(A)
-    @hassert :PID_Test 1 a*A_orig == A
-    # A_old * inv(a) = A_new
-    #so a^e A_old^e = A_new^e
+    A1, a = reduce_ideal(A)
+    @hassert :PID_Test 1 a*A == A1
+    A = A1
     al = FacElem(Dict(a=>-e))
   else
     al = FacElem(Dict(K(1) => fmpz(1)))
@@ -79,39 +75,39 @@ function power_reduce2(A::NfOrdIdl, e::fmpz)
   if e < 0
     B = inv(A)
     A = numerator(B)
-    #al *= FacElem(Dict(K(denominator(B)) => fmpz(e)))
     add_to_key!(al.fac, K(denominator(B)), fmpz(e))
     e = -e
   end
-  # A^e = A^(e/2)^2 A or A^(e/2)^2
-  # al * A^old^(e/2) = A_new
-  if e>1
-    C, cl = power_reduce2(A, div(e, 2))
-    @hassert :PID_Test 1 C*evaluate(cl) == A^Int(div(e, 2))
-    if norm(C)^2 > abs(discriminant(O))
-      @vtime :CompactPresentation :4 C2, a = reduce_product(C, C)
-      mul!(al, al, cl^2)
-      add_to_key!(al.fac, inv(a), 1)
-    else
-      C2 = C^2
-      mul!(al, al, cl^2)
-      #al = al*cl^2
-    end
 
-    if isodd(e)
-      if norm(A)*norm(C2) > abs(discriminant(O))
-        @vtime :CompactPresentation :4 A, a = reduce_product(C2, A)
-        add_to_key!(al.fac, inv(a), 1)
-        #mul!(al, al, inv(a)) #al *= inv(a)
-      end
-    else
-      A = C2
-    end
-    return A, al
-  else
-    @assert e==1
+  if isone(e)
     return A, al
   end
+  # A^e = A^(e/2)^2 A or A^(e/2)^2
+  # al * A^old^(e/2) = A_new
+  C, cl = power_reduce2(A, div(e, 2))
+  @hassert :PID_Test 1 C*evaluate(cl) == A^Int(div(e, 2))
+  mul!(al, al, cl^2)
+  if norm(C)^2 > abs(discriminant(O))
+    @vtime :CompactPresentation :4 C2, a = reduce_product(C, C)
+    add_to_key!(al.fac, a, -1)
+  else
+    C2 = C^2
+  end
+  
+  
+
+  if isodd(e)
+    if norm(A)*norm(C2) > abs(discriminant(O))
+      @vtime :CompactPresentation :4 A1, a = reduce_product(C2, A)
+      A = A1
+      add_to_key!(al.fac, a, -1)
+    else
+      A = C2*A
+    end
+  else
+    A = C2
+  end
+  return A, al
 end
 
 # TODO: Agree on a name for power_class vs power_reduce2

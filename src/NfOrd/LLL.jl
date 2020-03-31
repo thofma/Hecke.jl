@@ -67,7 +67,30 @@ function lll(A::NfOrdIdl, v::fmpz_mat = zero_matrix(FlintZZ, 1, 1); prec::Int = 
       end
     end
   end
+  #General case. _lll could fail, we need a try and catch in a loop
+  local t::fmpz_mat
+  local l::FakeFmpqMat
+  while true
+    if prec > 2^18
+      error("Something wrong in short_elem")
+    end
+    try
+      l, t = _lll(A, v, prec = prec)
+      break
+    catch e
+      if !(e isa LowPrecisionLLL || e isa InexactError)
+        rethrow(e)
+      end
+    end
+    prec = 2 * prec
+  end
+  return l, t
 
+end
+
+
+function _lll(A::NfOrdIdl, v::fmpz_mat = zero_matrix(FlintZZ, 1, 1); prec::Int = 100)
+  K = nf(order(A))
   n = degree(order(A))
   prec = max(prec, 4*n)
 
@@ -623,21 +646,7 @@ end
 function short_elem(A::NfOrdIdl,
                 v::fmpz_mat = zero_matrix(FlintZZ, 1,1); prec::Int = 100)
   K = nf(order(A))
-  local t::fmpz_mat
-  while true
-    if prec > 2^18
-      error("Something wrong in short_elem")
-    end
-    try
-      t = lll(A, v, prec = prec)[2]
-      break
-    catch e
-      if !(e isa LowPrecisionLLL || e isa InexactError)
-        rethrow(e)
-      end
-    end
-    prec = 2 * prec
-  end
+  t = lll(A, v, prec = prec)[2]
   w = view(t, 1:1, 1:ncols(t))
   mul!(w, w, basis_matrix(A, copy = false))
   c = w*basis_matrix(order(A), copy = false)

@@ -224,7 +224,7 @@ function cyclotomic_extension(k::AnticNumberField, n::Int; cached::Bool = true, 
     expected = Int(_torsion_group_order_divisor(Ka))
     if expected == lcm(ok, n)
       #In this case, we know that the generator is the product.
-      genTKa = small2abs(gTk)*abs2rel\(gen(Kr))
+      genTKa = small2abs(gTk)*(abs2rel\(gen(Kr)))
       _set_nf_torsion_units(Ka, (expected, genTKa))
     end
   end
