@@ -615,6 +615,8 @@ function _has_norm_relation_abstract(G::GrpGen, H::Vector{Tuple{GrpGen, GrpGenTo
 
     @assert b
 
+    v = _reduce_modulo(v, K)
+
     subgroups_needed = Int[ i for i in 1:length(H) if !iszero(v[1, i])]
 
     den = denominator(v[1, 1])
@@ -947,6 +949,10 @@ function _smallest_scalar_norm_relation_coprime(G::GrpGen, m::fmpz)
     end
   end
 
+  _,_, K = can_solve_with_kernel(view(M, 1:k, 1:ncols(M)), onee, side = :left)
+
+  v = _reduce_modulo(v, K)
+
   subgroups_needed = Int[ i for i in 1:k if !iszero(v[1, i])]
 
   den = denominator(v[1, 1])
@@ -1046,3 +1052,22 @@ function has_coprime_norm_relation(K::AnticNumberField, m::fmpz)
   return true, z
 end
 
+function _reduce_modulo(v, K)
+  H = hnf(K)
+  w = deepcopy(v)
+  for i in nrows(H):-1:1
+    k = ncols(H)
+    while iszero(H[i, k])
+      k = k - 1
+    end
+    if !iszero(w[1, k])
+      fl, c = divides(w[1, k], H[i, k])
+      if fl
+        for j in 1:ncols(H)
+          w[1, j] = w[1, j] - c * H[i, j]
+        end
+      end
+    end
+  end
+  return w
+end
