@@ -499,7 +499,10 @@ function compositum(K::AnticNumberField, L::AnticNumberField)
   end
   KK = NumberField(first(lf.fac)[1])[1]
   Ka, m1, m2 = absolute_field(KK)
-  return Ka, hom(K, Ka, preimage(m1, gen(KK))), m2
+  m3 = hom(K, Ka, preimage(m1, gen(KK)))
+  embed(m2)
+  embed(m3)
+  return Ka, m3, m2
 end
 
 ################################################################################
@@ -804,3 +807,202 @@ function islinearly_disjoint(K1::AnticNumberField, K2::AnticNumberField)
   f = change_base_ring(K2, K1.pol)
   return isirreducible(f)
 end
+
+Nemo.iscyclo_type(::NumField) = false
+
+function force_coerce(a::NumField, b::NumFieldElem; show_error::Bool = true)
+  if Nemo.iscyclo_type(a) && Nemo.iscyclo_type(parent(b))
+    return force_coerce_cyclo(a, b, show_error = show_error)
+  end
+  if absolute_degree(parent(b)) <= absolute_degree(a)
+    c = find_one_chain(parent(b), a)
+    if c !== nothing
+      x = b
+      for f = c
+        @assert parent(x) == domain(f)
+        x = f(x)
+      end
+      return x
+    end
+  end
+  show_error && error("no coercion possible")
+  return false
+end
+
+function collect_all_chains(a::NumField, filter::Function = x->true)
+  s = get_special(a, :subs)
+  if s === nothing
+    return s
+  end
+  all_chain = Dict{UInt, Array{Any}}(objectid(domain(f)) => [f] for f = s if filter(f))
+  if isa(base_field(a), NumField)
+    all_chain[objectid(base_field(a))] = [MapFromFunc(x->a(x), base_field(a), a)]
+  end
+  new_k = Any[domain(f) for f = s]
+  while length(new_k) > 0
+    k = pop!(new_k)
+    s = get_special(k, :subs)
+    s === nothing && continue
+    for f in s
+      if filter(domain(f))
+        o = objectid(domain(f))
+        if haskey(all_chain, o)
+          continue
+        end
+        @assert !haskey(all_chain, o)
+        all_chain[o] = vcat([f], all_chain[objectid(codomain(f))])
+        @assert !(o in new_k)
+        push!(new_k, domain(f))
+        if isa(base_field(domain(f)), NumField)
+          b = base_field(domain(f))
+          ob = objectid(b)
+          if !haskey(all_chain, ob)
+            g = MapFromFunc(x->domain(f)(x), b, domain(f))
+            all_chain[ob] = vcat([g], all_chain[objectid(domain(f))])
+            push!(new_k, b)
+          end
+        end
+      end
+    end
+  end
+  return all_chain
+end
+
+function find_one_chain(t::NumField, a::NumField)
+  s = get_special(a, :subs)
+  if s === nothing
+    return s
+  end
+  ot = objectid(t)
+  all_chain = Dict{UInt, Array{Any}}(objectid(domain(f)) => [f] for f = s)
+  if isa(base_field(a), NumField)
+    all_chain[objectid(base_field(a))] = [MapFromFunc(x->a(x), base_field(a), a)]
+  end
+  new_k = Any[domain(f) for f = s]
+  if haskey(all_chain, ot)
+    return all_chain[ot]
+  end
+  new_k = Any[domain(f) for f = s]
+  while length(new_k) > 0
+    k = pop!(new_k)
+    s = get_special(k, :subs)
+    s === nothing && continue
+    for f in s
+      o = objectid(domain(f))
+      if o == ot
+        return vcat([f], all_chain[objectid(codomain(f))])
+      end
+      if o in keys(all_chain)
+        continue
+      end
+      @assert !haskey(all_chain, o)
+      all_chain[o] = vcat([f], all_chain[objectid(codomain(f))])
+      @assert !(o in new_k)
+      push!(new_k, domain(f))
+      if isa(base_field(domain(f)), NumField)
+        b = base_field(domain(f))
+        ob = objectid(b)
+        if !haskey(all_chain, ob)
+          g = MapFromFunc(x->domain(f)(x), b, domain(f))
+          all_chain[ob] = vcat([g], all_chain[objectid(domain(f))])
+          push!(new_k, b)
+        end
+        if ob == ot
+          return all_chain[ob]
+        end
+      end
+    end
+  end
+  return nothing
+end
+
+function embed(f::Map{<:NumField, <:NumField})
+  d = domain(f)
+  c = codomain(f)
+  @assert absolute_degree(d) <= absolute_degree(c)
+  cn = find_one_chain(d, c)
+  if cn !== nothing
+    error("embedding already installed")
+  end
+  s = get_special(c, :subs)
+  if s === nothing
+    s = Any[f]
+  else
+    push!(s, f)
+  end
+  set_special(c, :subs => s)
+end
+
+function embedding(k::NumField, K::NumField)
+  if issimple(k)
+    return hom(k, K, K(gen(k)))
+  else
+    return hom(k, K, map(K, gens(k)))
+  end
+end
+
+function force_coerce_cyclo(a::AnticNumberField, b::nf_elem; show_error::Bool = true)
+  fa = get_special(a, :cyclo)
+  sign = 1
+  if isodd(fa)
+    fa *= 2
+    sign *= -1
+  end
+  fb = get_special(parent(b), :cyclo)
+  if isodd(fb)
+    fb *= 2
+    sign *= -1
+  end
+  if fa % fb == 0 #coerce up, includes fa == fb
+    q = divexact(fa, fb)
+    sign = sign^q
+    s = 1
+    c = parent(a.pol)()
+    for i=0:b.elem_length
+      setcoeff!(c, i*q, s*coeff(b, i))
+      s *= sign
+    end
+    return a(c)
+  elseif fb % fa == 0 #coerce down
+    cb = [i for i=1:fb if gcd(i, fb) == 1] # the "conjugates" in the large field
+    ca = [[i for i = cb if i % fa == j] for j=1:fa if gcd(j, fa) == 1] #broken into blocks 
+    k = parent(b)
+    ky = PolynomialRing(k, cached = false)[1]
+    za = gen(a)
+    zb = gen(k)
+    fb = parent(k.pol)(b)
+    #in general one could test first if the evaluation is constant on a block
+    #equivalently, if the element is Galois invariant under the fix group of a.
+    #the result of the interpolation is supposed to be over Q, so we could
+    #do this modulo deg-1-primes as well
+    #using a fast(er) interpolation would be nice as well
+    #but, this is avoiding matrices, so teh complexity is better
+    #
+    #Idea
+    # b is a poly in Qx, evaluating at gen(a)... will produce the conjugates
+    # b in a is also a poly, of smaller degree producing the same conjugates
+    # so I compute the conjugates from the large field and interpolate them to get
+    # the small degree poly
+    f = interpolate(ky, [(k(za))^(ca[i][1] % fa) for i=1:length(ca)],
+                        [fb(zb^ca[i][1]) for i=1:length(ca)])
+    g = parent(fb)()
+    for i=0:length(f)
+      c = coeff(f, i)
+      if !isrational(c)
+        show_error && error("no coercion possible")
+        return false
+      end
+      setcoeff!(g, i, FlintQQ(c))
+    end
+    ba = a(g)
+    if k(ba) == b # not sure if this can fail
+      return ba
+    end
+  end #missing: (?) b could be in a subfield and thus still in a
+  show_error && error("no coercion possible")
+end
+
+(::FlintRationalField)(a::nf_elem) = (isrational(a) && return coeff(a, 0)) || error("not a rational")
+(::FlintIntegerRing)(a::nf_elem) = (isinteger(a) && return numerator(coeff(a, 0))) || error("not an integer")
+
+
