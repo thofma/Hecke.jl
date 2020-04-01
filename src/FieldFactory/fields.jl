@@ -323,33 +323,17 @@ function _from_relative_to_abs_with_embedding(L::Hecke.NfRelNS{T}, autL::Array{H
   O1.ismaximal = 1
   Hecke._set_maximal_order_of_nf(K, O1)
   if use_simplify
+    #simplify takes care of translating the order.
     @vtime :Fields 3 Ks, mKs = Hecke.simplify(K, cached = false)
-    #Now, we have to construct the maximal order of this field.
-    #I compute the inverse of mKs
-    @vtime :Fields 3 mKsI = inv(mKs)
-    if isdefined(O1, :lllO)
-      lO = O1.lllO::NfOrd
-      O2 = NfOrd(nf_elem[mKsI(x) for x in basis(lO, K, copy = false)], false)
-      #O2.lllO = O2
-    else
-      O2 = NfOrd(nf_elem[mKsI(x) for x in basis(O1, K, copy = false)], false)
-    end
-    O2.ismaximal = 1
-    @assert isdefined(O1, :disc)
-    O2.disc = O1.disc
-    O2.index = root(divexact(numerator(discriminant(Ks)), O2.disc), 2)
-    @vtime :Fields 3 OLLL = lll(O2)
-    Hecke._set_maximal_order_of_nf(Ks, OLLL)
   else
     Ks = K
     mKs = id_hom(K)
-    mKsI = id_hom(K)
   end
   #I want also the embedding of the old field into the new one. 
   #It is enough to find the image of the primitive element.
   k = base_field(S)
   a = MK(gen(k)) 
-  embed = NfToNfMor(k, Ks, mKsI(a))
+  embed = hom(k, Ks, mKs\a, check = false)
   #@assert iszero(k.pol(img_a)) 
   @vprint :Fields 3 "MaximalOrder Computed. Now Automorphisms\n"
   #Now, the automorphisms.
@@ -359,9 +343,9 @@ function _from_relative_to_abs_with_embedding(L::Hecke.NfRelNS{T}, autL::Array{H
   el1 = mS(mK(gen(K)))
   for i=1:length(autL)
     #@assert iszero(K.pol(mK(mS\(autL[i](el1)))))
-    x = mKsI(mK\(mS\(autL[i](el))))
+    x = mKs\(mK\(mS\(autL[i](el))))
     #@assert Ks.pol(y) == 0
-    autos[i] = Hecke.NfToNfMor(Ks, Ks, x)
+    autos[i] = hom(Ks, Ks, x, check = false)
   end
   @vprint :Fields 2 "Finished\n"
   #@assert codomain(embed) == Ks

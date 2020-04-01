@@ -1018,7 +1018,7 @@ function find_coprime_representatives(mC::MapClassGrp, m::NfOrdIdl, lp::Dict{NfO
     ppp *= (1 - 1/Float64(norm(p)))
   end
   
-  prob = ppp > 0.1
+  prob = ppp > 0.1 && degree(K) < 10
   for i = 1:ngens(C)
     @assert length(mC.princ_gens[i][1].fac) == 1
     a = first(keys(mC.princ_gens[i][1].fac))

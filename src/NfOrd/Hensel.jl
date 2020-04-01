@@ -420,8 +420,9 @@ function _hensel(f::Generic.Poly{nf_elem},
   M = zero_matrix(FlintZZ, n, n)
   local Mi::fmpz_mat
   local d::fmpz
-  ttt = 0.0
+  @vprint :Saturate 1 "Maximum number of steps: $(length(pr))\n"
   for i=2:length(pr)
+    @vprint :Saturate 1 "Step number $i\n"
     pp = fmpz(p)^pr[i]
     Q = ResidueRing(FlintZZ, pp, cached=false)
     Qt, t = PolynomialRing(Q, "t", cached=false)
@@ -439,7 +440,7 @@ function _hensel(f::Generic.Poly{nf_elem},
 
     if caching && haskey(_cache_lll, pr[i])
       M, Mi, d = _cache_lll[pr[i]]::Tuple{fmpz_mat, fmpz_mat, fmpz}
-    elseif ttt > 50.0
+    elseif i > 3
       Mold = M
       Miold = Mi
       dold = d
@@ -495,14 +496,17 @@ function _hensel(f::Generic.Poly{nf_elem},
       for j=degree(pgg)+1:n
         pt = shift_left(pt, 1)
         rem!(pt, pt, pgg)
-        M[j,j] = 1
+        M[j, j] = 1
         for k=0:degree(pt)
-          M[j, k+1] = -lift(coeff(pt, k))
+          el = -lift(coeff(pt, k))
+          if -el > div(pp, 2)
+            el += pp
+          end
+          M[j, k+1] = el
         end
       end
       #this is (or should be) the HNF basis for P^??
-      ttt = @elapsed M = lll(M)
-      @vprint :Saturate 1 "Time for LLL: $(ttt) \n"
+      @vtime :Saturate 1  M = lll(M)
       Mi, d = pseudo_inv(M)
       if caching
         _cache_lll[pr[i]] = (M, Mi, d)

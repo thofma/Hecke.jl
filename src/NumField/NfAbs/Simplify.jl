@@ -15,7 +15,7 @@ http://beta.lmfdb.org/knowledge/show/nf.polredabs.
 
 Both version require a LLL reduced basis for the maximal order.
 """
-function simplify(K::AnticNumberField; canonical::Bool = false, cached = true)
+function simplify(K::AnticNumberField; canonical::Bool = false, cached::Bool = true, save_LLL_basis::Bool = true)
   Qx, x = PolynomialRing(FlintQQ, "x")
   
   if degree(K) == 1
@@ -25,46 +25,63 @@ function simplify(K::AnticNumberField; canonical::Bool = false, cached = true)
   if canonical
     a, f1 = polredabs(K)
     f = Qx(f1)
+    L = NumberField(f, cached = cached, check = false)[1]
+    m = hom(L, K, a, check = false)
+    return L, m
+  end
+  n = degree(K)
+  OK = maximal_order(K)
+  if isdefined(OK, :lllO)
+    @vprint :Simplify 1 "LLL basis was already there\n"
+    ZK = OK.lllO
   else
-    n = degree(K)
-    OK = maximal_order(K)
-    if isdefined(OK, :lllO)
-      @vprint :Simplify 1 "LLL basis was already there\n"
-      ZK = OK.lllO
-    else
-      b = _simplify(OK)
-      if b != gen(K)
-        @vprint :Simplify 1 "The basis of the maximal order contains a better primitive element\n"
-        f1 = Qx(minpoly(representation_matrix(OK(b))))
-        L1 = NumberField(f1, cached = cached, check = false)[1]
-        #Before calling again the simplify on L1, we need to define the maximal order of L1
-        mp = hom(L1, K, b, check = false)
-        _compute_preimg(mp)
-        B = basis(OK, K)
-        BOL1 = Vector{nf_elem}(undef, degree(L1))
-        for i = 1:degree(L1)
-          BOL1[i] = mp\(B[i])
-        end
-        OL1 = NfOrd(BOL1, false)
-        OL1.ismaximal = 1
-        Hecke._set_maximal_order(L1, OL1)
-        @vprint :Simplify 3 "Trying to simplify $(L1.pol)\n"
-        L2, mL2 = simplify(L1, cached = cached)
-        return L2, mL2*mp
+    b = _simplify(OK)
+    if b != gen(K)
+      @vprint :Simplify 1 "The basis of the maximal order contains a better primitive element\n"
+      f1 = Qx(minpoly(representation_matrix(OK(b))))
+      L1 = NumberField(f1, cached = cached, check = false)[1]
+      #Before calling again the simplify on L1, we need to define the maximal order of L1
+      mp = hom(L1, K, b, check = false)
+      _compute_preimg(mp)
+      B = basis(OK, K)
+      BOL1 = Vector{nf_elem}(undef, degree(L1))
+      for i = 1:degree(L1)
+        BOL1[i] = mp\(B[i])
       end
-      prec = 100 + 25*div(n, 3) + Int(round(log(abs(discriminant(OK)))))
-      @vtime :Simplify 3 ZK = lll(OK, prec = prec)
-      OK.lllO = ZK
+      OL1 = NfOrd(BOL1, false)
+      OL1.ismaximal = 1
+      Hecke._set_maximal_order(L1, OL1)
+      @vprint :Simplify 3 "Trying to simplify $(L1.pol)\n"
+      L2, mL2 = simplify(L1, cached = cached, save_LLL_basis = save_LLL_basis)
+      return L2, mL2*mp
     end
-    @vtime :Simplify 3 a = _simplify(ZK)
-    if a == gen(K)
-      f = K.pol
-    else
-      @vtime :Simplify 3 f = Qx(minpoly(representation_matrix(OK(a))))
-    end
+    prec = 100 + 25*div(n, 3) + Int(round(log(abs(discriminant(OK)))))
+    @vtime :Simplify 3 ZK = lll(OK, prec = prec)
+    OK.lllO = ZK
+  end
+  @vtime :Simplify 3 a = _simplify(ZK)
+  if a == gen(K)
+    f = K.pol
+  else
+    @vtime :Simplify 3 f = Qx(minpoly(representation_matrix(OK(a))))
   end
   L = NumberField(f, cached = cached, check = false)[1]
   m = hom(L, K, a, check = false)
+  if save_LLL_basis
+    _compute_preimg(m)
+    B = basis(ZK, K)
+    BOL = Vector{nf_elem}(undef, degree(L))
+    for i = 1:degree(L)
+      BOL[i] = m\(B[i])
+    end
+    OL = NfOrd(BOL, false)
+    if isdefined(ZK, :disc)
+      OL.disc = ZK.disc
+      OL.index = root(divexact(numerator(discriminant(L.pol)), OL.disc), 2)
+    end
+    OL.ismaximal = 1
+    Hecke._set_maximal_order(L, OL)
+  end
   return L, m
 end
 

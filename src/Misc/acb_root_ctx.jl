@@ -186,7 +186,7 @@ function _roots!(roots::Ptr{acb_struct}, x::Union{fmpq_poly, fmpz_poly},
                                          have_approx::Bool = false)
   deg = degree(x)
 
-  initial_prec = (initial_prec >= 2) ? initial_prec : 32
+  initial_prec = (initial_prec >= 2) ? initial_prec : abs_tol
 
   wp = initial_prec
 
@@ -205,8 +205,12 @@ function _roots!(roots::Ptr{acb_struct}, x::Union{fmpq_poly, fmpz_poly},
               roots, y, C_NULL, step_max_iter, wp)
     end
 
+    if iszero(isolated)
+      wp *= 2
+      continue
+    end
     have_approx = true
-
+    
     if isolated == deg
       ok = _validate_size_of_zeros(roots, deg, abs_tol)
       real_ok = ccall((:acb_poly_validate_real_roots, :libarb),

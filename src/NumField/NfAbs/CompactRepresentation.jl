@@ -151,7 +151,7 @@ function compact_presentation(a::FacElem{nf_elem, AnticNumberField}, nn::Int = 2
       de[p] -= n^k*v
     end
 
-    @vtime :CompactPresentation 1 B = simplify(ideal(ZK, b)*eA)
+    @vtime :CompactPresentation 1 B = simplify(b*eA)
     @assert isone(B.den)
     B1 = B.num   
     @assert norm(B1) <= abs(discriminant(ZK))
@@ -243,8 +243,8 @@ function evaluate_mod(a::FacElem{nf_elem, AnticNumberField}, B::NfOrdFracIdl)
   pp = fmpz(1)
   re = K(0)
   threshold = 3
-  if degree(K) > 20
-    threshold = div(degree(K), 5)
+  if degree(K) > 30
+    threshold = div(degree(K), 10)
   end
   while (true)
     dt = prime_decomposition_type(ZK, Int(p))
@@ -326,21 +326,8 @@ end
 
 function _ispower(a::FacElem{nf_elem, AnticNumberField}, n::Int; with_roots_unity = false, decom = false, trager = false)
 
-  if typeof(decom) == Bool
-    ZK = lll(maximal_order(base_ring(a)))
-    @vprint :Saturate 1 "Computing coprime factorization of ideal\n"
-    de::Dict{NfOrdIdl, fmpz} = factor_coprime(a, IdealSet(ZK))
-  else
-    if !isempty(decom)
-      ZK = order(first(keys(decom)))
-      de = Dict((p, v) for (p, v) = decom)
-    else
-      ZK = lll(maximal_order(base_ring(a)))
-      de = Dict{NfOrdIdl, fmpz}()
-    end
-  end
   @vprint :Saturate 1 "Computing compact presentation\n"
-  @vtime :Saturate 1 c = Hecke.compact_presentation(a, n, decom = de)
+  @vtime :Saturate 1 c = Hecke.compact_presentation(a, n, decom = decom)
   K = base_ring(c)
   b = one(K)
   d = Dict{nf_elem, fmpz}()
@@ -361,6 +348,7 @@ function _ispower(a::FacElem{nf_elem, AnticNumberField}, n::Int; with_roots_unit
   end
   df = FacElem(d) 
   @hassert :CompactPresentation 2 evaluate(df^n*b *inv(a))== 1
+  ZK = maximal_order(K)
   den = denominator(b, ZK)
   fl, den1 = ispower(den, n)
   if fl

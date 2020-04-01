@@ -810,7 +810,8 @@ function _rresx_sircana_pp(f1::PolyElem{T}, g1::PolyElem{T}) where T <: ResElem{
       rr, uu, vv = _rresx_sircana_pp(f, g2)
       res = rr*c
       u_ = uu*c
-      v_ = inv(g1)*vv
+      v_ = inv(g1)
+      mul!(v_, v_, vv)
       return res, (u_*U + v_*u), (u_*V + v_*v)
     end
 

@@ -115,7 +115,7 @@ end
 #
 ################################################################################
 
-id_hom(K::AnticNumberField) = hom(K, K, gen(K), check = false)
+id_hom(K::AnticNumberField) = hom(K, K, gen(K), gen(K), check = false)
 
 morphism_type(::Type{AnticNumberField}) = NfToNfMor
 
@@ -299,7 +299,12 @@ end
 function *(f::NfToNfMor, g::NfToNfMor)
   codomain(f) == domain(g) || throw("Maps not compatible")
   y = g(f.prim_img)
-  return hom(domain(f), codomain(g), y, check = false)
+  if isdefined(f, :prim_preimg) && isdefined(g, :prim_preimg)
+    z = f\(g.prim_preimg)
+    return hom(domain(f), codomain(g), y, z, check = false)
+  else
+    return hom(domain(f), codomain(g), y, check = false)
+  end
 end
 
 function ^(f::NfToNfMor, b::Int)

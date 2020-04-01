@@ -333,7 +333,7 @@ function find_gens(mR::Map, S::PrimesSet, cp::fmpz=fmpz(1))
         break # try new prime number
       end
       if iszero(mq(f))
-        continue
+        break
       end
       #At least one of the coefficient of the element 
       #must be invertible in the snf form.
@@ -366,6 +366,7 @@ function find_gens_descent(mR::Map, A::ClassField_pp, cp::fmpz)
   ZK = order(domain(mR))
   C = cyclotomic_extension(nf(ZK), degree(A))
   R = codomain(mR) 
+  Zk = order(codomain(A.rayclassgroupmap))
   sR = GrpAbFinGenElem[]
   lp = elem_type(domain(mR))[]
   q, mq = quo(R, sR, false)
@@ -373,7 +374,7 @@ function find_gens_descent(mR::Map, A::ClassField_pp, cp::fmpz)
   
   PPS = A.bigK.frob_gens[1]
   for p in PPS
-    P = intersect_prime(C.mp[2], p)
+    P = intersect_prime(C.mp[2], p, Zk)
     local f::GrpAbFinGenElem
     try
       f = mR(P)
@@ -1069,7 +1070,7 @@ function _rcf_descent(CF::ClassField_pp)
     return nothing
   end
   
-  Zk = maximal_order(k)
+  Zk = order(codomain(CF.rayclassgroupmap))
   ZK = maximal_order(absolute_field(CE))
   
   n = degree(A)

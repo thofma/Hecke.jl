@@ -164,19 +164,8 @@ function simplify!(x::FieldsTower)
   K = x.field
   OK = maximal_order(K)
   Ks, mKs = simplify(K, cached = false)
-  #I need to translate everything...
   mKi = inv(mKs)
-  #First, translate the lll of the maximal order
-  if isdefined(OK, :lllO)
-    OKs = NfOrd(nf_elem[mKi(y) for y in basis(OK.lllO, K)])
-    OKs.lllO = OKs
-  else
-    OKs = lll(NfOrd(nf_elem[mKi(y) for y in basis(OK, K)])) 
-  end
-  OKs.ismaximal = 1
-  OKs.disc = OK.disc
-  OKs.index = root(divexact(numerator(discriminant(Ks.pol)), OKs.disc), 2)
-  Hecke._set_maximal_order(Ks, OKs)
+  #I need to translate the autos
   gens_autos = NfToNfMor[hom(Ks, Ks, mKi(el(mKs.prim_img)), check = true) for el in x.generators_of_automorphisms]
   for i = 1:length(x.subfields)
     if codomain(x.subfields[i]) == K

@@ -1217,7 +1217,6 @@ function find_gens_for_action(mR::MapRayClassGrp)
     end
   end
   #Now, gens of class group. Those are cached in the class group map
-
   mC = mR.clgrpmap
   for P in mC.small_gens
     push!(lp, P)
