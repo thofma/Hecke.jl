@@ -146,16 +146,26 @@ end
 #  Constructors
 #
 ################################################################################
-
+#TODO: I don't understand those
 (K::NfRel)(x::NfRelElem) = K(base_field(K)(x))
 
 (K::NfRel)(x::nf_elem) = K(base_field(K)(x))
 
 (K::NfRel{T})(x::NfRelElem{T}) where {T} = K(x.data)
 
-(K::NfRel{NfRelElem{T}})(x::NfRelElem{T}) where {T} = K(parent(K.pol)(x))
+function (K::NfRel{NfRelElem{T}})(x::NfRelElem{T}) where {T}
+  if parent(x) == base_field(K)
+    return K(parent(K.pol)(x))
+  end
+  return force_coerce(K, x)
+end
 
-(K::NfRel{nf_elem})(x::nf_elem) = K(parent(K.pol)(x))
+function (K::NfRel{nf_elem})(x::nf_elem)
+  if parent(x) == base_field(K)
+    return K(parent(K.pol)(x))
+  end
+  return force_coerce(K, x)
+end
 
 
 ################################################################################
