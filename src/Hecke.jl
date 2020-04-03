@@ -73,6 +73,8 @@ import Random: rand!
 
 import Nemo
 
+import Pkg
+
 exclude = [:Nemo, :AbstractAlgebra, :RealField, :zz, :qq, :factor, :call,
            :factors, :parseint, :strongequal, :window, :xgcd, :rows, :cols,
            :can_solve, :set_entry!]
@@ -395,7 +397,27 @@ Base.adjoint(x) = transpose(x)
 #
 ################################################################################
 
-global VERSION_NUMBER = v"0.8.0"
+if VERSION >= v"1.4"
+  deps = Pkg.dependencies()
+  if haskey(deps, Base.UUID("3e1990a7-5d81-5526-99ce-9ba3ff248f21"))
+    ver = Pkg.dependencies()[Base.UUID("3e1990a7-5d81-5526-99ce-9ba3ff248f21")]
+    if occursin("/dev/", ver.source)
+      global VERSION_NUMBER = VersionNumber("$(ver.version)-dev")
+    else
+      global VERSION_NUMBER = VersionNumber("$(ver.version)")
+    end
+  else
+    global VERSION_NUMBER = "building"
+  end
+else
+  ver = Pkg.installed()["Hecke"]
+  dir = dirname(@__DIR__)
+  if occursin("/dev/", dir)
+    global VERSION_NUMBER = VersionNumber("$(ver)-dev")
+  else
+    global VERSION_NUMBER = VersionNumber("$(ver)")
+  end
+end
 
 ######################################################################
 # named printing support
