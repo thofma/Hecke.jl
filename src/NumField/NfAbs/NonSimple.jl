@@ -290,14 +290,17 @@ end
 ################################################################################
 
 function Base.:(+)(a::NfAbsNSElem, b::NfAbsNSElem)
+  parent(a) == parent(b) || force_op(+, a, b)::NfAbsNSElem
   return parent(a)(data(a) + data(b))
 end
 
 function Base.:(-)(a::NfAbsNSElem, b::NfAbsNSElem)
+  parent(a) == parent(b) || force_op(-, a, b)::NfAbsNSElem
   return parent(a)(data(a) - data(b))
 end
 
 function Base.:(*)(a::NfAbsNSElem, b::NfAbsNSElem)
+  parent(a) == parent(b) || force_op(*, a, b)::NfAbsNSElem
   return parent(a)(data(a) * data(b))
 end
 
@@ -306,6 +309,7 @@ function Base.:(//)(a::NfAbsNSElem, b::NfAbsNSElem)
 end
 
 function Nemo.div(a::NfAbsNSElem, b::NfAbsNSElem)
+  parent(a) == parent(b) || force_op(div, a, b)::NfAbsNSElem
   return a * inv(b)
 end
 
@@ -356,6 +360,7 @@ end
 function Base.:(==)(a::NfAbsNSElem, b::NfAbsNSElem)
   reduce!(a)
   reduce!(b)
+  parent(a) == parent(b) || force_op(==, a, b)::Bool
   return data(a) == data(b)
 end
 
@@ -913,7 +918,10 @@ function simple_extension(K::NfAbsNS; check = true)
       emb[i] += b[j] * s[j, i]
     end
   end
-  return Ka, NfAbsToNfAbsNS(Ka, K, pe, emb)
+  h = NfAbsToNfAbsNS(Ka, K, pe, emb)
+  embed(h)
+  embed(MapFromFunc(x->preimage(h, x), K, Ka))
+  return Ka, h
 end
 
 function NumberField(K1::AnticNumberField, K2::AnticNumberField; cached::Bool = false, check::Bool = false)
@@ -921,6 +929,8 @@ function NumberField(K1::AnticNumberField, K2::AnticNumberField; cached::Bool = 
   K , l = number_field([K1.pol, K2.pol], "_\$", check = check, cached = cached)
   mp1 = NfAbsToNfAbsNS(K1, K, l[1])
   mp2 = NfAbsToNfAbsNS(K2, K, l[2])
+  embed(mp1)
+  embed(mp2)
   return K, mp1, mp2
 
 end
@@ -1012,6 +1022,8 @@ end
 (K::NfAbsNS)(a::fmpq) = K(parent(K.pol[1])(a))
 
 (K::NfAbsNS)() = zero(K)
+
+(K::NfAbsNS)(a::NumFieldElem) = force_coerce(K, a)
 
 function (K::NfAbsNS)(a::NfAbsNSElem)
   if parent(a) === K

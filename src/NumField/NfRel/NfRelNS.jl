@@ -250,14 +250,17 @@ end
 ################################################################################
 
 function Base.:(+)(a::NfRelNSElem{T}, b::NfRelNSElem{T}) where {T}
+  parent(a) == parent(b) || force_op(+, a, b)::NfRelNSElem{T}
   return parent(a)(data(a) + data(b))
 end
 
 function Base.:(-)(a::NfRelNSElem{T}, b::NfRelNSElem{T}) where {T}
+  parent(a) == parent(b) || force_op(-, a, b)::NfRelNSElem{T}
   return parent(a)(data(a) - data(b))
 end
 
 function Base.:(*)(a::NfRelNSElem{T}, b::NfRelNSElem{T}) where {T}
+  parent(a) == parent(b) || force_op(+, a, b)::NfRelNSElem{T}
   return parent(a)(data(a) * data(b))
 end
 
@@ -266,6 +269,7 @@ function Base.:(//)(a::NfRelNSElem{T}, b::NfRelNSElem{T}) where {T}
 end
 
 function Nemo.div(a::NfRelNSElem{T}, b::NfRelNSElem{T}) where {T}
+  parent(a) == parent(b) || force_op(div, a, b)::NfRelNSElem{T}
   return a*inv(b)
 end
 
@@ -316,6 +320,7 @@ end
 function Base.:(==)(a::NfRelNSElem{T}, b::NfRelNSElem{T}) where T
   reduce!(a)
   reduce!(b)
+  parent(a) == parent(b) || force_op(==, a, b)::Bool
   return data(a) == data(b)
 end
 
