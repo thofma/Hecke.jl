@@ -808,11 +808,17 @@ function islinearly_disjoint(K1::AnticNumberField, K2::AnticNumberField)
   return isirreducible(f)
 end
 
+################################################################################
+#
+#  more general coercion, field lattice
+#
+################################################################################
+
 Nemo.iscyclo_type(::NumField) = false
 
-function force_coerce(a::NumField, b::NumFieldElem; show_error::Bool = true)
+function force_coerce(a::NumField{T}, b::NumFieldElem; throw_error::Bool = true) where {T}
   if Nemo.iscyclo_type(a) && Nemo.iscyclo_type(parent(b))
-    return force_coerce_cyclo(a, b, show_error = show_error)
+    return force_coerce_cyclo(a, b, throw_error = throw_error)::elem_type(a)
   end
   if absolute_degree(parent(b)) <= absolute_degree(a)
     c = find_one_chain(parent(b), a)
@@ -822,13 +828,15 @@ function force_coerce(a::NumField, b::NumFieldElem; show_error::Bool = true)
         @assert parent(x) == domain(f)
         x = f(x)
       end
-      return x
+      return x::elem_type(a)
     end
   end
-  show_error && error("no coercion possible")
+  throw_error && error("no coercion possible")
   return false
 end
 
+#(large) fields have a list of embeddings from subfields stored (special -> subs)
+#this traverses the lattice downwards collecting all chains of embeddings
 function collect_all_chains(a::NumField, filter::Function = x->true)
   s = get_special(a, :subs)
   if s === nothing
@@ -868,6 +876,7 @@ function collect_all_chains(a::NumField, filter::Function = x->true)
   return all_chain
 end
 
+#tries to find one chain (array of embeddings) from a -> .. -> t
 function find_one_chain(t::NumField, a::NumField)
   s = get_special(a, :subs)
   if s === nothing
@@ -916,13 +925,31 @@ function find_one_chain(t::NumField, a::NumField)
   return nothing
 end
 
+@doc Markdown.doc"""
+    embed(f::Map{<:NumField, <:NumField})
+
+Registers `f` as a canonical embedding from the domain into the co-domain.
+Once this embedding is registered, it cannot be changed.
+"""
 function embed(f::Map{<:NumField, <:NumField})
   d = domain(f)
   c = codomain(f)
+  if c == d
+    return
+  end
   @assert absolute_degree(d) <= absolute_degree(c)
   cn = find_one_chain(d, c)
   if cn !== nothing
-    error("embedding already installed")
+    if issimple(d)
+      if c(gen(d)) != f(gen(d))
+        error("different embedding already installed")
+        return
+      end
+    else
+      if any(x->c(x) != f(x), gens(d))
+        error("different embedding already installed")
+      end
+    end
   end
   s = get_special(c, :subs)
   if s === nothing
@@ -931,8 +958,121 @@ function embed(f::Map{<:NumField, <:NumField})
     push!(s, f)
   end
   set_special(c, :subs => s)
+  s = get_special(c, :sub_of)
+
+  if s === nothing
+    s = Any[WeakRef(c)]
+  else
+    push!(s, WeakRef(c))
+  end
+
+  set_special(d, :sub_of => s)
 end
 
+@doc Markdown.doc"""
+    hasembedding(F::NumField, G::NumField) -> Bool
+
+Checks if an embedding from $F$ into $G$ is already known.
+"""
+function hasembedding(F::NumField, G::NumField)
+  if F == G
+    return true
+  end
+  if absolute_degree(G) % absolute_degree(F) != 0
+    return false
+  end
+  cn = find_one_chain(d, c)
+  return cn !== nothing
+end
+
+#in (small) fields, super fields are stored via WeakRef's
+# special -> :sub_of
+#this find all superfields registered
+function find_all_super(A::NumField, filter::Function = x->true)
+  s = get_special(A, :sub_of)
+  s === nothing && return Set([A])
+
+  ls = length(s)
+  filter!(x->x.value !== nothing, s)
+  if length(s) < ls #pruning old superfields
+    set_special(A, :sub_of)
+  end
+
+  #the gc could(?) run anytime, so even after the pruning above
+  #things could get deleted
+
+  all_s = Set([x.value for x = s if x.value !== nothing && filter(x.value)])
+  new_s = copy(all_s)
+  while length(new_s) > 0
+    B = pop!(new_s)
+    s = get_special(B, :sub_of)
+    s === nothing && continue
+    ls = length(s)
+    filter!(x->x.value !== nothing, s)
+    if length(s) < ls
+      set_special(B, :sub_of)
+    end
+    for x = s
+      v = x.value
+      if v !== nothing && filter(v)
+        push!(new_s, v)
+        push!(all_s, v)
+      end
+    end
+  end
+  return all_s
+end
+
+#finds a common super field for A and B, using the weak-refs 
+# in special -> :sub_of
+function common_super(A::NumField, B::NumField)
+  A === B && return A
+  if Nemo.iscyclo_type(A) && Nemo.iscyclo_type(B)
+    return cyclotomic_field(lcm(get_special(A, :cyclotomic_field), get_special(B, :cyclotomic_field)))[1]
+  end
+
+  c = intersect(find_all_super(A), find_all_super(B))
+  first = true
+  m = nothing
+  for C = c
+    if first
+      m = C
+      first = false
+    else
+      if absolute_degree(C) < absolute_degree(m)
+        m = C
+      end
+    end
+  end
+  return m
+end
+
+function common_super(a::NumFieldElem, b::NumFieldElem)
+  C = common_super(parent(a), parent(b))
+  if C === nothing
+    return C, C
+  end
+  return C(a), C(b)
+end
+
+#tries to find a common parent for all "a" and then calls op on it.
+function force_op(op::T, a::NumFieldElem...; throw_error::Bool = true) where {T <: Function}
+  C = parent(a[1])
+  for b = a
+    C = common_super(parent(b), C)
+    if C === nothing
+      throw_error && error("no common parent known")
+      return nothing
+    end
+  end
+  return op(map(C, a)...)
+end
+
+@doc Markdown.doc"""
+    embedding(k::NumField, K::NumField) -> Map
+
+Assuming $k$ is known to be a subfield of $K$, return the embedding map.    
+"""
 function embedding(k::NumField, K::NumField)
   if issimple(k)
     return hom(k, K, K(gen(k)))
@@ -941,7 +1081,7 @@ function embedding(k::NumField, K::NumField)
   end
 end
 
-function force_coerce_cyclo(a::AnticNumberField, b::nf_elem; show_error::Bool = true)
+function force_coerce_cyclo(a::AnticNumberField, b::nf_elem; throw_error::Bool = true)
   fa = get_special(a, :cyclo)
   sign = 1
   if isodd(fa)
@@ -989,7 +1129,7 @@ function force_coerce_cyclo(a::AnticNumberField, b::nf_elem; show_error::Bool = 
     for i=0:length(f)
       c = coeff(f, i)
       if !isrational(c)
-        show_error && error("no coercion possible")
+        throw_error && error("no coercion possible")
         return false
       end
       setcoeff!(g, i, FlintQQ(c))
@@ -999,7 +1139,7 @@ function force_coerce_cyclo(a::AnticNumberField, b::nf_elem; show_error::Bool = 
       return ba
     end
   end #missing: (?) b could be in a subfield and thus still in a
-  show_error && error("no coercion possible")
+  throw_error && error("no coercion possible")
 end
 
 (::FlintRationalField)(a::nf_elem) = (isrational(a) && return coeff(a, 0)) || error("not a rational")

@@ -86,23 +86,12 @@ end
 import Nemo: acb_struct, Ring, Group, Field, NmodRing, nmod, arf_struct,
              elem_to_mat_row!, elem_from_mat_row, gfp_elem, gfp_mat,
              Zmodn_poly, Zmodn_mat, GaloisField, acb_vec, array, acb_vec_clear,
-             force_coerce
+             force_coerce, force_op
 
 export show, StepRange, domain, codomain, image, preimage, modord, resultant,
        next_prime, ispower, number_field, factor
 
 
-###############################################################################
-function force_coerce(a, b; show_error::Bool = true) #-> into AA
-  show_error && error("coercion not possible")
-  return false
-end
-
-function (a::AnticNumberField)(b::nf_elem) # -> into Nemo
-   parent(b) == a && return b
-   force_coerce(a, b)
-end
-###############################################################################
 ###############################################################################
 #
 #   Library initialisation
@@ -140,7 +129,7 @@ function __init__()
     printstyled(" $VERSION_NUMBER ", color = :green)
     print("... \n ... which comes with absolutely no warranty whatsoever")
     println()
-    println("(c) 2015-2019 by Claus Fieker, Tommy Hofmann and Carlo Sircana")
+    println("(c) 2015-2020 by Claus Fieker, Tommy Hofmann and Carlo Sircana")
     println()
   end
 

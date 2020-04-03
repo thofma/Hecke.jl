@@ -65,6 +65,8 @@ function simplify(K::AnticNumberField; canonical::Bool = false, cached = true)
   end
   L = NumberField(f, cached = cached, check = false)[1]
   m = hom(L, K, a, check = false)
+  embed(m)
+  embed(inv(m))
   return L, m
 end
 
