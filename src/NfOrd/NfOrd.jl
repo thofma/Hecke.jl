@@ -1107,6 +1107,14 @@ function ==(R::NfAbsOrd, S::NfAbsOrd)
   return hnf(R.basis_matrix) == hnf(S.basis_matrix)
 end
 
+@doc Markdown.doc"""
+    iscontained(R::NfAbsOrd, S::NfAbsOrd) -> Bool
+Checks if $R$ is contained in $S$.
+"""
+function iscontained(R::NfAbsOrd, S::NfAbsOrd)
+  return (basis_matrix(R, copy = false)*basis_mat_inv(S, copy = false)).den == 1
+end
+
 function ==(R::NfAbsOrdSet, S::NfAbsOrdSet)
   return R.nf === S.nf
 end

@@ -89,8 +89,7 @@ function _norm_relation_setup_abelian(K::AnticNumberField; small_degree::Bool = 
 
   for i in 1:n
     F, mF = Hecke.fixed_field1(K, NfToNfMor[AtoG[f] for f in ls[i][2]])
-    maximal_order(F)
-    S, mS = simplify(F)
+    S, mS = simplify(F, cached = false)
     L = S
     mL = mS * mF
     z.subfields[i] = L, mL

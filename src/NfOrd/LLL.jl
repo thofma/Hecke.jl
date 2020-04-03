@@ -321,6 +321,9 @@ function _lll(M::NfOrd, prec::Int)
   prec = max(prec, 100 + 25*div(degree(M), 3) + Int(round(log(abs(discriminant(M))))))
   
   if n > 10
+    if n > 100
+      prec, M1 = lll_precomputation(M1, prec, 4)
+    end
     prec, M1 = lll_precomputation(M1, prec)
   end
   M1, prec = _lll_with_parameters(M1, (0.75, 0.51), prec)
@@ -349,120 +352,97 @@ function _ordering_by_T2(M::NfOrd)
   return On
 end
 
-function lll_precomputation(M::NfOrd, prec::Int)
+#Inefficient, but at least it works.
+function subsets(n::Int, k::Int)
+  if n == k
+    return Vector{Int}[Int[i for i = 1:n]]
+  end
+  if k == 1
+    return Vector{Int}[Int[i] for i = 1:n]
+  end
+  res = subsets(n-1, k-1)
+  for x in res
+    push!(x, n)
+  end
+  append!(res, subsets(n-1, k))
+  return res
+end
 
+
+function subsets(v::Vector{T}, k::Int) where T
+  indices = subsets(length(v), k)
+  res = Vector{T}[]
+  for i in indices
+    si = Vector{T}(undef, k)
+    ind = 1
+    for j in i
+      si[ind] = v[j]
+      ind += 1
+    end
+    push!(res, si)
+  end
+  return res
+end
+
+function _has_trivial_intersection(v::Vector{Vector{Int}}, V::Vector{Vector{Int}})
+  for z in v
+    for w in V
+      if !isempty(intersect(z, w))
+        return false
+      end
+    end
+  end
+  return true
+end
+
+function lll_precomputation(M::NfOrd, prec::Int, nblocks::Int = 2)
   n = degree(M)
   K = nf(M)
-  natt = div(n, 2)
+  dimension_blocks = div(n, nblocks)
+  blocks = Vector{Int}[]
+  for i = 1:nblocks-1
+    int = (dimension_blocks*(i-1)+1):dimension_blocks*i
+    push!(blocks, collect(int))
+  end
+  int = (dimension_blocks*(nblocks-1)+1):n
+  push!(blocks, collect(int))
   g = identity_matrix(FlintZZ, n)
   new_prec = prec
-  block = 1
-  while block < 3
-    @vprint :LLL 3 "Simplifying block $(block)\n"
-    if block == 1
-      rg = collect(1:natt)
-    else
-      rg = collect((natt+1):n)
-    end
-    new_prec, g1 = _lll_sublattice(M, rg, prec = prec)
-    _copy_matrix_into_matrix(g, first(rg), first(rg), g1)
-    if new_prec == prec
+  to_do = subsets(blocks, 2)
+  done = falses(length(to_do))
+  blocks_selection = Vector{Int}[]
+  while !all(done)
+    block = 1
+    while block < length(to_do)+1 && (done[block] || !_has_trivial_intersection(to_do[block], blocks_selection))
       block += 1
-    else
-      prec = new_prec
     end
-  end
-  @vprint :LLL 3 "Precision: $(new_prec)\n"
-  On = NfOrd(K, g*basis_matrix(M, copy = false))
-  On.ismaximal = M.ismaximal
-  if isdefined(M, :index)
-    On.index = M.index
-  end
-  if isdefined(M, :disc)
-    On.disc = M.disc
-  end
-  if isdefined(M, :gen_index)
-    On.gen_index = M.gen_index
-  end
-  #In pratice, we have changed the main diagonal blocks of the gram matrix. 
-  #Now, we do the other blocks
-  g = identity_matrix(FlintZZ, n)
-  new_prec = prec
-  block = 1
-  natt = div(n, 4)
-  first_part = 1:natt
-  second_part = (natt+1):(2*natt)
-  third_part = (2*natt+1):3*natt
-  fourth_part = (3*natt+1):n
-  while block < 3
+    if block == length(to_do)+1
+      blocks_selection = Vector{Int}[]
+      On = NfOrd(K, g*basis_matrix(M, copy = false))
+      On.ismaximal = M.ismaximal
+      if isdefined(M, :index)
+      On.index = M.index
+      end
+      if isdefined(M, :disc)
+        On.disc = M.disc
+      end
+      if isdefined(M, :gen_index)
+        On.gen_index = M.gen_index
+      end
+      M = On
+      g = identity_matrix(FlintZZ, n)
+      continue
+    end
+    indices = vcat(to_do[block][1], to_do[block][2])
     @vprint :LLL 3 "Simplifying block $(block)\n"
-    if block == 1
-      b1 = first_part
-      b2 = third_part
-    else
-      b1 = second_part
-      b2 = fourth_part
-    end
-    rg = vcat(b1, b2)
-    new_prec, g1 = _lll_sublattice(On, rg, prec = prec)
-    _copy_matrix_into_matrix(g, first(b1), first(b1), view(g1, 1:length(b1), 1:length(b1)))
-    _copy_matrix_into_matrix(g, first(b1), first(b2), view(g1, 1:length(b1), length(b1)+1:length(rg)))
-    _copy_matrix_into_matrix(g, first(b2), first(b2), view(g1, length(b1)+1:length(rg), length(b1)+1:length(rg)))
-    _copy_matrix_into_matrix(g, first(b2), first(b1), view(g1, length(b1)+1:length(rg), 1:length(b1)))
-    if new_prec == prec
-      block += 1
-    else
-      prec = new_prec
-    end
-  end
-  @vprint :LLL 3 "Precision: $(new_prec)\n"
-  On1 = NfOrd(K, g*basis_matrix(On, copy = false))
-  On1.ismaximal = M.ismaximal
-  if isdefined(M, :index)
-    On1.index = M.index
-  end
-  if isdefined(M, :disc)
-    On1.disc = M.disc
-  end
-  if isdefined(M, :gen_index)
-    On1.gen_index = M.gen_index
-  end
-  g = identity_matrix(FlintZZ, n)
-  block = 1
-  while block < 3
-    @vprint :LLL 3 "Simplifying block $(block)\n"
-    if block == 1
-      b1 = first_part
-      b2 = fourth_part
-    else
-      b1 = second_part
-      b2 = third_part
-    end
-    rg = vcat(b1, b2)
-    new_prec, g1 = _lll_sublattice(On1, rg, prec = prec)
-    _copy_matrix_into_matrix(g, first(b1), first(b1), view(g1, 1:length(b1), 1:length(b1)))
-    _copy_matrix_into_matrix(g, first(b1), first(b2), view(g1, 1:length(b1), length(b1)+1:length(rg)))
-    _copy_matrix_into_matrix(g, first(b2), first(b2), view(g1, length(b1)+1:length(rg), length(b1)+1:length(rg)))
-    _copy_matrix_into_matrix(g, first(b2), first(b1), view(g1, length(b1)+1:length(rg), 1:length(b1)))
-    if new_prec == prec
-      block += 1
-    else
-      prec = new_prec
-    end
-  end
-  On2 = NfOrd(K, g*basis_matrix(On1, copy = false))
-  On2.ismaximal = M.ismaximal
-  if isdefined(M, :index)
-    On2.index = M.index
-  end
-  if isdefined(M, :disc)
-    On2.disc = M.disc
-  end
-  if isdefined(M, :gen_index)
-    On2.gen_index = M.gen_index
+    prec, g1 = _lll_sublattice(M, indices, prec = prec)
+    _copy_matrix_into_matrix(g, indices, indices, g1)
+    done[block] = true
+    push!(blocks_selection, indices)
+    @vprint :LLL 3 "Precision: $(prec)\n"
   end
   @vprint :LLL 3 "Precomputation finished with precision $(prec)\n"
-  return prec, On2
+  return prec, M
 end
 
 
@@ -475,12 +455,9 @@ function _lll_sublattice(M::NfOrd, u::Vector{Int}; prec = 100)
   local g::fmpz_mat
   local d::fmpz_mat
   ctx = Nemo.lll_ctx(0.99, 0.51, :gram)
-  att = 0 
   #TODO: If one can compute the exact discriminant of the lattice, we could check correctness. 
   # At the moment it is just heuristic.
   while true
-    att += 1
-    @vprint :LLL 3 "Attempt number : $(att)\n"  
     while true
       try
         d = minkowski_gram_mat_scaled(M, prec)
@@ -489,7 +466,7 @@ function _lll_sublattice(M::NfOrd, u::Vector{Int}; prec = 100)
         prec = prec*2
       end
     end
-    @vprint :Simplify 3 "Minkowski matrix computed\n"
+    @vprint :LLL 3 "Minkowski matrix computed\n"
     g = identity_matrix(FlintZZ, l)
     d1 = sub(d, u, u)
     prec = div(prec, 2)

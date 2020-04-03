@@ -150,6 +150,11 @@ mutable struct AbToNfMultGrp <: Map{GrpAbFinGen, AnticNumberField, SetMap, AbToN
 
 end
 
+function (f::AbToNfMultGrp)(a::GrpAbFinGenElem)
+  return f.generator^a[1]
+end
+
+
 
 ################################################################################
 #

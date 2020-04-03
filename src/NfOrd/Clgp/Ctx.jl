@@ -20,7 +20,7 @@ end
 
 function class_group_init(FB::NfFactorBase, T::DataType = SMat{fmpz}; add_rels::Bool = true, use_aut::Bool = false)
   O = order(FB.ideals[1])
-
+  n = degree(O)
   clg = ClassGrpCtx{T}()
 
   clg.FB = FB
@@ -36,14 +36,14 @@ function class_group_init(FB::NfFactorBase, T::DataType = SMat{fmpz}; add_rels::
   clg.c = conjugates_init(nf(O).pol)
   add_rels && for I in clg.FB.ideals
     a = I.gen_one
-    class_group_add_relation(clg, nf(O)(a), fmpq(abs(a)^degree(O)), fmpz(1), orbit = false)
+    class_group_add_relation(clg, nf(O)(a), fmpq(abs(a)^n), fmpz(1), orbit = false)
     b = nf(O)(I.gen_two)
     bn = norm_div(b, fmpz(1), 600)
     if nbits(numerator(bn)) < 550
       class_group_add_relation(clg, b, abs(bn), fmpz(1), orbit = false)
     end
   end
-  n = degree(O)
+  
   l = zero_matrix(FlintZZ, n, 1+clg.c.r2)
   for i = 1:n
     l[i,1] = 1
@@ -55,17 +55,17 @@ function class_group_init(FB::NfFactorBase, T::DataType = SMat{fmpz}; add_rels::
   # what I want is a lll-reduced basis for the kernel
   # it probably should be a sep. function
   # however, there is nullspace - which is strange...
-  l,t = hnf_with_transform(l)
+  l, t = hnf_with_transform(l)
   if 1 + clg.c.r2 + 1 > nrows(l)
     t = zero_matrix(FlintZZ, 0, 0)
   else
-    t = sub(t, (1+clg.c.r2+1):nrows(l), 1:nrows(l))
+    t = view(t, (1+clg.c.r2+1):nrows(l), 1:nrows(l))
   end
-    l = lll(t)
+  l = lll(t)
   clg.val_base = l
 
   if use_aut
-    au = automorphisms(nf(O))
+    au = automorphisms(nf(O), copy = false)
     class_group_add_auto(clg, au[1])
     i = 2
     while length(clg.aut_grp) < length(au)

@@ -766,6 +766,15 @@ function _copy_matrix_into_matrix(A::fmpz_mat, i::Int, j::Int, B::fmpz_mat)
   end
 end
 
+function _copy_matrix_into_matrix(A::MatElem, r::Vector{Int}, c::Vector{Int}, B::MatElem)
+  for i = 1:length(r)
+    for j = 1:length(c)
+      A[r[i], c[j]] = B[i, j]
+    end
+  end
+  return nothing
+end
+
 @doc Markdown.doc"""
     isposdef(a::fmpz_mat) -> Bool
 

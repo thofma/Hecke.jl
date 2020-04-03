@@ -141,51 +141,32 @@ function class_group_small_lll_elements_relation_start(clg::ClassGrpCtx{T},
                 limit::Int = 0) where {T}
   global _start = A
   O = order(A)
-  K = nf(O)
-
-  local I, S, bd
-
-  while true
-    try
-    L::FakeFmpqMat, Tr::fmpz_mat = lll(A, prec = prec)
-    I = SmallLLLRelationsCtx(zero_matrix(FlintZZ, 1, 1))
-    S::FakeFmpqMat = FakeFmpqMat(Tr*basis_matrix(A, copy = false))
-    bd::fmpz = abs(discriminant(order(A)))*norm(A)^2
-    bd = root(bd, degree(K))::fmpz
-    bd *= L.den
-    f = findall(i-> compare_index(L.num, i, i, bd) < 0, 1:degree(K))
-    m = div(degree(K), 4)
-    if m < 2
-      m = degree(K)
-    end
-    while length(f) < m 
-      f = findall(i-> compare_index(L.num, i, i, bd) < 0, 1:degree(K))
-        bd *= 2
-      end
-      I.b = fmpz_mat[]
-      @assert S.den == 1
-      for i=f
-        push!(I.b, view(S.num, i:i, 1:ncols(S.num)))
-      end
-      #println([Float64(numerator(L)[i,i]//denominator(L)*1.0) for i=1:degree(K)])
-      #now select a subset that can yield "small" relations, where
-      #small means of effective norm <= sqrt(disc)
-      I.A = A
-      I.elt = zero_matrix(FlintZZ, 1, degree(O))
-      return I
-    catch e
-      if isa(e, LowPrecisionLLL) || isa(e, InexactError)
-        #printstyled("prec too low in LLL\n", color = :red)
-        prec = Int(ceil(1.2*prec))
-#        println(" increasing to ", prec)
-        if prec > 3000
-          error("2:too much prec")
-        end
-      else
-        rethrow(e)
-      end
-    end
+  n = degree(O)
+  L, Tr = lll(A, prec = prec)
+  I = SmallLLLRelationsCtx(zero_matrix(FlintZZ, 1, 1))
+  S = Tr*basis_matrix(A, copy = false)
+  bd = abs(discriminant(O))*norm(A)^2
+  bd = root(bd, n)
+  bd *= L.den
+  f = Int[i for i = 1:n if compare_index(L.num, i, i, bd) < 0]
+  m = div(n, 4)
+  if m < 2
+    m = n
   end
+  while length(f) < m 
+    f = Int[i for i = 1:n if compare_index(L.num, i, i, bd) < 0]
+    bd *= 2
+  end
+  I.b = Vector{fmpz_mat}(undef, length(f))
+  for j = 1:length(f)
+    I.b[j] = view(S, f[j]:f[j], 1:ncols(S))
+  end
+  #println([Float64(numerator(L)[i,i]//denominator(L)*1.0) for i=1:degree(K)])
+  #now select a subset that can yield "small" relations, where
+  #small means of effective norm <= sqrt(disc)
+  I.A = A
+  I.elt = zero_matrix(FlintZZ, 1, n)
+  return I
 end
 
 function class_group_small_lll_elements_relation_next(I::SmallLLLRelationsCtx)
@@ -229,7 +210,6 @@ function class_group_small_lll_elements_relation_next(I::SmallLLLRelationsCtx)
     for i in 2:min(length(I.b), 5)
       I.elt = I.elt + rand(-I.bd:I.bd) * rand(I.b)
     end
-
     if !iszero(I.elt)
       return deepcopy(I.elt)
     end

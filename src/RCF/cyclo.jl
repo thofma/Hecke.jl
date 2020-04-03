@@ -205,6 +205,15 @@ function cyclotomic_extension(k::AnticNumberField, n::Int; cached::Bool = true, 
 
       Hecke._set_maximal_order_of_nf(Ka, ZKa)
     end
+    if istorsion_unit_group_known(k) || istotally_real(k)
+      ok, gTk = _torsion_units_gen(k)
+      expected = Int(_torsion_group_order_divisor(Ka))
+      if expected == lcm(ok, n)
+        #In this case, we know that the generator is the product.
+        genTKa = small2abs(gTk)*(abs2rel\(gen(Kr)))
+        _set_nf_torsion_units(Ka, (expected, genTKa))
+      end
+    end
   else
     Ka = k
     abs2rel = NfToNfRel(Ka, Kr, gen(Ka), -coeff(fk, 0), Kr(gen(Ka)))
@@ -220,15 +229,6 @@ function cyclotomic_extension(k::AnticNumberField, n::Int; cached::Bool = true, 
   c.Kr = Kr
   c.Ka = Ka
   c.mp = (abs2rel, small2abs)
-  if istorsion_unit_group_known(k) || istotally_real(k)
-    ok, gTk = _torsion_units_gen(k)
-    expected = Int(_torsion_group_order_divisor(Ka))
-    if expected == lcm(ok, n)
-      #In this case, we know that the generator is the product.
-      genTKa = small2abs(gTk)*(abs2rel\(gen(Kr)))
-      _set_nf_torsion_units(Ka, (expected, genTKa))
-    end
-  end
   if cached
     push!(Ac, c)
     Hecke._set_cyclotomic_ext_nf(k, Ac)

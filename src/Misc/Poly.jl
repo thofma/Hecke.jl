@@ -108,6 +108,10 @@ function div(f::PolyElem, g::PolyElem)
   return q
 end
 
+function div(f::PolyElem{T}, g::T) where T
+  return div(f, parent(f)(g))
+end
+
 function rem(f::PolyElem, g::PolyElem)
   return mod(f, g)
 end

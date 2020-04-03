@@ -386,7 +386,7 @@ function compute_fields(class_fields::Vector{Hecke.ClassField{Hecke.MapRayClassG
   it = findall(right_grp)
   K = base_field(class_fields[it[1]])
   OK = maximal_order(K)
-  if divisible(order(torsion_unit_group(OK)[1]), exponent(class_fields[it[1]]))
+  if divisible(torsion_units_order(K), exponent(class_fields[it[1]]))
     use_brauer = false
   end
 

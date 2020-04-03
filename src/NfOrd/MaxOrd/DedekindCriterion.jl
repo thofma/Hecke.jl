@@ -131,21 +131,15 @@ dedekind_poverorder(O::NfOrd, p::Integer) = dedekind_poverorder(O, FlintZZ(p))
 ###############################################################################
 
 function dedekind_test_composite(O::NfOrd, p::fmpz)
-  !isequation_order(O) && error("Order must be an equation order")
+  @assert iscoprime(index(O), p)
+  
+  Zy = PolynomialRing(FlintZZ, "y")[1]
+  R = ResidueRing(FlintZZ, p, cached = false)
+  Rx = PolynomialRing(R, "x", cached=false)[1]
 
-  if rem(discriminant(O), p) != 0
-    return fmpz(1), true, O
-  end
+  f = Zy(nf(O).pol)
 
-  Zy, y = PolynomialRing(FlintZZ, "y")
-  R = GF(p, cached=false)
-  Kx, x = PolynomialRing(R, "x", cached=false)
-
-  f = nf(O).pol
-
-  Zyf = Zy(f)
-
-  fmodp = Kx(Zyf) 
+  fmodp = Rx(f) 
   
   # Now, I would like to have the squarefree factorization of fmodp
   # I go for the f/gcd(f,f')
@@ -153,53 +147,44 @@ function dedekind_test_composite(O::NfOrd, p::fmpz)
   divs, gcdfderf = _gcd_with_failure(fmodp, derivative(fmodp))
   
   if !isone(divs)
-    return gcd(lift(divs), p), false, O
+    return gcd(divs, p), O
   end
   
-  sqff = divexact(fmodp,gcdfderf)
+  sqff = divexact(fmodp, gcdfderf)
   
 
   # first build 1/p ( f - g*h)
   gZ = lift(Zy,sqff)
   hZ = lift(Zy,gcdfderf)
 
-  g1 = Zyf - gZ*hZ
-
-  for i in 0:degree(g1)
-    q,r = divrem(coeff(g1,i),p)
-    @assert r == 0
-    setcoeff!(g1,i,q)
-  end
+  g1 = f - gZ*hZ
+  g1 = divexact(g1, p)
   
-  g1modp = Kx(g1)
+  g1modp = Rx(g1)
 
-  pmaximal = true
-
-  divs, par1= _gcd_with_failure(gcdfderf, sqff) 
+  divs, par1 = _gcd_with_failure(gcdfderf, sqff) 
   if !isone(divs)
-    return gcd(lift(divs), p), false, O
+    return gcd(divs, p), O
   end
   divs, U = _gcd_with_failure(par1, g1modp)  
   if !isone(divs)
-    return gcd(lift(divs), p), false, O
+    return gcd(divs, p), O
   end
-  pmaximal = (isone(U)) 
 
-  if pmaximal
-    return fmpz(1), true, O
+  if isone(U)
+    return fmpz(1), O
   end
 
   U = divexact(fmodp, U)
   alpha = nf(O)(parent(f)(lift(Zy,U)))
 
   Malpha, d = representation_matrix_q(alpha)
-  n = _hnf_modular_eldiv(Malpha, p, :lowerleft)
-  b = FakeFmpqMat(sub(n, degree(O)+1:2*degree(O), 1:degree(O)),p)
+  hnf_modular_eldiv!(Malpha, p, :lowerleft)
+  b = FakeFmpqMat(Malpha, p)
 
-  OO = Order(nf(O), b)
-  OO.isequation_order = false
+  @hassert :NfOrd 1 defines_order(nf(O), b)[1]
+  OO = NfOrd(nf(O), b) + O
+  
 
-  OO.disc = divexact(O.disc, p^(2*(degree(O)-degree(U))))
-
-  return fmpz(1), false, OO
+  return fmpz(1), OO
 end

@@ -1211,37 +1211,13 @@ function _from_relative_to_absQQ(L::NfRelNS{T}, auts::Array{NfRelNSToNfRelNSMor{
   @vtime :AbExt 2 Ks, mKs = simplify(K, cached = false)
   #Now, we have to construct the maximal order of this field.
   #I am computing the preimages of mKs by hand, by inverting the matrix.
-  arr_prim_img = Array{nf_elem, 1}(undef, degree(Ks))
-  arr_prim_img[1] = K(1)
-  for i = 2:degree(Ks)
-    arr_prim_img[i] = arr_prim_img[i-1]*mKs.prim_img
-  end
-  M1 = inv(basis_matrix(arr_prim_img, FakeFmpqMat))
-  
-  basisO2 = Array{nf_elem, 1}(undef, degree(Ks))
-  M = zero_matrix(FlintZZ, 1, degree(Ks))
-  for i=1:length(basisO2)
-    elem_to_mat_row!(M, 1, denominator(O1.basis_nf[i]), O1.basis_nf[i])
-    mul!(M, M, M1.num)
-    basisO2[i] = elem_from_mat_row(Ks, M, 1, M1.den*denominator(O1.basis_nf[i]))
-  end
-  O2 = NfAbsOrd(Ks, basis_matrix(O1, copy = false)*M1)
-  O2.ismaximal = 1
-  _set_maximal_order_of_nf(Ks, O2)
-
   #Now, the automorphisms.
   autos = Array{NfToNfMor, 1}(undef, length(auts_abs))
   el = mKs(gen(Ks))
   for i = 1:length(auts)
-    x = auts_abs[i](el)
-    elem_to_mat_row!(M, 1, denominator(x), x)
-    mul!(M, M, M1.num)
-    y=Hecke.elem_from_mat_row(Ks, M, 1, M1.den*denominator(x))
-    #@assert iszero(Ks.pol(y))
-    autos[i] = hom(Ks, Ks, y, check = false)
+    autos[i] = hom(Ks, Ks, mKs\(auts_abs[i](el)), check = false)
   end
-  #_set_automorphisms_nf(Ks, closure(autos, degree(Ks)))
-  
+
   @vprint :AbExt 2 "Finished\n"
   return Ks, autos
 
@@ -1255,8 +1231,6 @@ function _from_relative_to_abs(L::NfRelNS{T}, auts::Array{NfRelNSToNfRelNSMor{T}
   #Since the computation of the relative maximal order is slow, I bring to the absolute field the elements
   # generating the equation order.
   @vprint :AbExt 2 "Computing the maximal order\n"
-  
-  
   #First, I construct the product basis of the relative extension
   pols = L.pol
   gL = gens(L)
@@ -1299,31 +1273,13 @@ function _from_relative_to_abs(L::NfRelNS{T}, auts::Array{NfRelNSToNfRelNSMor{T}
   @vtime :AbExt 2 Ks, mKs = simplify(K, cached = false)
   #Now, we have to construct the maximal order of this field.
   #I am computing the preimages of mKs by hand, by inverting the matrix.
-  arr_prim_img = Array{nf_elem, 1}(undef, degree(Ks))
-  arr_prim_img[1] = K(1)
-  for i = 2:degree(Ks)
-    arr_prim_img[i] = arr_prim_img[i-1]*mKs.prim_img
-  end
-  M1 = inv(basis_matrix(arr_prim_img, FakeFmpqMat))
-  basisO2 = Array{nf_elem, 1}(undef, degree(Ks))
-  M = zero_matrix(FlintZZ, 1, degree(Ks))
-  for i=1:length(basisO2)
-    elem_to_mat_row!(M, 1, denominator(O1.basis_nf[i]), O1.basis_nf[i])
-    mul!(M, M, M1.num)
-    basisO2[i] = elem_from_mat_row(Ks, M, 1, M1.den*denominator(O1.basis_nf[i]))
-  end
-  O2 = Order(Ks, basisO2, check = false, cached = false)
-  O2.ismaximal = 1
-  _set_maximal_order_of_nf(Ks, O2)
+
 
   #Now, the automorphisms.
   autos=Array{NfToNfMor, 1}(undef, length(auts))
   el=mS(mK((mKs(gen(Ks)))))
   for i=1:length(auts)
-    x = mK\(mS\(auts[i](el)))
-    elem_to_mat_row!(M, 1, denominator(x), x)
-    mul!(M, M, M1.num)
-    y=Hecke.elem_from_mat_row(Ks, M, 1, M1.den*denominator(x))
+    y = mKs\(mK\(mS\(auts[i](el))))
     autos[i] = hom(Ks, Ks, y, check = false)
   end
   _set_automorphisms_nf(Ks, closure(autos, degree(Ks)))

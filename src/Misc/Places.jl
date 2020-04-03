@@ -472,6 +472,15 @@ function infinite_places_uniformizers(K::AnticNumberField)
       auxr *= 2
       lc = conjugates(auxr, pr)
     end
+    for j = 1:length(p)
+      if j == i
+        continue
+      end
+      while !ispositive(reim(lc[j])[1] - 1)
+        auxr *= 2
+        lc = conjugates(auxr, pr)
+      end
+    end
     r[i] = auxr
   end
   D = Dict{InfPlc, nf_elem}()

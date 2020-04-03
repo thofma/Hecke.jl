@@ -111,6 +111,11 @@ function torsion_units_order(K::AnticNumberField)
   return ord
 end
 
+function torsion_units_gen_order(K::AnticNumberField)
+  ord, gen = _torsion_units_gen(K)
+  return gen, ord
+end
+
 ################################################################################
 #
 # Interface: orders
@@ -382,10 +387,11 @@ function _torsion_units_gen(K::AnticNumberField)
   end
 
   m = _torsion_group_order_divisor(K)
-  Ky, y = PolynomialRing(K, "y", cached = false)
+  Ky = PolynomialRing(K, "y", cached = false)[1]
   fac = factor(m).fac
   gen = K(1)
   ord = 1
+  Zx, x = PolynomialRing(FlintZZ, "x")
   for (p, v) in fac
     if p == 2 && v == 1
       mul!(gen, gen, K(-1))
@@ -393,14 +399,9 @@ function _torsion_units_gen(K::AnticNumberField)
       continue
     end
     for i = 1:v
-      f1 = Ky()
-      setcoeff!(f1, 0, -K(1))
-      setcoeff!(f1, Int(p)^(v+1-i), K(1))
-      f2 = Ky()
-      setcoeff!(f2, 0, -K(1))
-      setcoeff!(f2, Int(p)^(v-i), K(1))
-      f = divexact(f1, f2)
-      r = _roots_hensel(f, max_roots = 1, isnormal = true, root_bound = fmpz[one(fmpz) for i in 1:(r1 + r2)])
+      f = cyclotomic(Int(p)^v, x)
+      fK = map_coeffs(K, f, parent = Ky)
+      r = _roots_hensel(fK, max_roots = 1, isnormal = true, root_bound = fmpz[one(fmpz) for i in 1:(r1 + r2)])
       if length(r) > 0
         mul!(gen, gen, r[1])
         ord *= Int(p)^(v+1-i)
