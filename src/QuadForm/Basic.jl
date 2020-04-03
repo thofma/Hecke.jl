@@ -625,6 +625,37 @@ isequivalent(L::AbsSpace, M::AbsSpace, p)
 #
 ################################################################################
 
+function _quadratic_form_invariants(M::fmpq_mat; minimal = true)
+  G, _ = _gram_schmidt(M, identity)
+  D = diagonal(G)
+  sup = fmpz[]
+  for i in 1:length(D)
+    for (p, e) in factor(numerator(D[i]))
+      if isodd(e)
+        push!(sup, p)
+      end
+    end
+    for (p, e) in factor(denominator(D[i]))
+      if isodd(e)
+        push!(sup, p)
+      end
+    end
+  end
+  push!(sup, fmpz(2))
+  sup = unique!(sup)
+  F = Dict{fmpz, Int}()
+  for p in sup
+    e = _hasse_invariant(D, p)
+    if e == -1 | !minimal
+      F[p] = e
+    end
+  end
+  I = [ (inf, count(x -> x < 0, D)) ]
+  nu = numerator(prod(D))
+  de = denominator(prod(D))
+  return squarefree_part(de * nu), F, I
+end
+
 function _quadratic_form_invariants(M; minimal = true)
   G, _ = _gram_schmidt(M, identity)
   D = diagonal(G)
@@ -693,6 +724,275 @@ function isequivalent(M::HermSpace, L::HermSpace)
   # I could replace this with a islocal_norm at the ramified primes + primes
   # dividing right hand side
   return isnorm(E, det(M) * det(L))[1]
+end
+
+# The following is over Q
+function _quadratic_form_with_invariants(dim::Int, det::fmpz,
+                                         finite::Vector{fmpz}, negative::Int)
+#{Computes a quadratic form of dimension Dim and determinant Det that has Hasse invariants -1 at the primes in Finite.
+ #The number of negative entries of the real signature is given in Negative}
+  @assert dim >= 1
+  @assert !iszero(det)
+  @assert negative in 0:dim
+
+  sign(det) != (-1)^(negative % 2) && throw(error("Real place information does not match the sign of the determinant"))
+
+  if dim == 1
+    !isempty(finite) && throw(error("Impossible Hasse invariants"))
+    return matrix(FlintQQ, 1, 1, fmpz[det])
+  end
+ 
+  finite = unique(finite)
+  @assert all(isprime(p) for p in finite)
+
+  if dim == 2
+    ok = all(!islocal_square(-det, p) for p in finite)
+    if !ok
+      q = [p for p in finite if islocal_square(-det, p)][1]
+      throw(error("A binary form with determinant $det must have Hasse invariant +1 at the prime $q"))
+    end
+  end
+
+  # product formula check
+  
+  !iseven((negative % 4 >= 2 ? 1 : 0) + length(finite)) && throw(error("The number of places (finite or infinite) with Hasse invariant -1 must be even"))
+
+  # reduce the number of bad primes
+  det = squarefree_part(det)
+
+  dim0 = dim
+  det0 = det
+  finite0 = copy(finite)
+  negative0 = negative
+
+#  // Pad with ones
+  k = max(0, dim - max(3, negative))
+  D = ones(Int, k)
+  dim = dim - k
+
+#  // Pad with minus ones
+  if dim >= 4
+    @assert dim == negative
+    k = dim - 3
+    d = (-1)^k
+    f = (k % 4 >= 2) ? Set(fmpz[2]) : Set(fmpz[])
+    PP = append!(fmpz[p for (p, e) in factor(2 * det)], finite)
+    PP = unique!(PP)
+    finite = fmpz[ p for p in PP if hilbert_symbol(d, -det, p) * (p in f ? -1 : 1) * (p in finite ? -1 : 1) == -1]
+    finite = unique!(finite)
+    D = append!(D, Int[-1 for i in 1:k])
+    det = isodd(k) ? -det : det
+    dim = 3
+    negative = 3
+  end
+
+  # ternary case
+  if dim == 3
+#    // The primes at which the form is anisotropic
+    PP = append!(fmpz[p for (p, e) in factor(2 * det)], finite)
+    PP = unique!(PP)
+    PP = filter!(p -> hilbert_symbol(-1, -det, p) != (p in finite ? -1 : 1), PP)
+#    // Find some a such that for all p in PP: -a*Det is not a local square
+#    // TODO: Find some smaller a?! The approach below is very lame.
+    a = prod(det % p == 0 ? one(FlintZZ) : p for p in PP)
+    if negative == 3
+      a = -a
+      negative = 2
+    end
+
+    PP = append!(fmpz[p for (p, e) in factor(2 * det * a)], finite)
+    PP = unique!(PP)
+    finite = fmpz[ p for p in PP if hilbert_symbol(a, -det, p) * (p in finite ? -1 : 1) == -1]
+    det = squarefree_part(det * a)
+    dim = 2
+    push!(D, a)
+  end
+
+#  // The binary case
+  a = _find_quaternion_algebra(fmpq(-det), finite, negative == 2 ? PosInf[inf] : PosInf[])
+  Drat = map(FlintQQ, D)
+  Drat = append!(Drat, fmpq[a, squarefree_part(FlintZZ(det * a))])
+
+  M = diagonal_matrix(Drat)
+  
+  d, f, n = _quadratic_form_invariants(M)
+
+  @assert dim0 == length(Drat)
+  @assert d == det0
+  @assert issetequal(collect(keys(f)), finite0)
+  @assert n[1][2] == negative0
+  return M;
+end
+
+function _quadratic_form_with_invariants(dim::Int, det::fmpq,
+                                         finite::Vector{fmpz}, negative::Int)
+  _det = numerator(det) * denominator(det)
+  return _quadratic_form_with_invariants(dim, _det, finite, negative)
+end
+
+#{Computes a quadratic form of dimension Dim and determinant Det that has Hasse invariants -1 at the primes in Finite.
+# The number of negative entries of the i-th real signature is given in Negative[i]}
+function _quadratic_form_with_invariants(dim::Int, det::nf_elem, finite::Vector, negative::Dict{InfPlc, Int})
+  @assert dim >= 1
+  @assert !iszero(det)
+  K = parent(det)
+  inf_plcs = real_places(K)
+  @assert length(inf_plcs) == length(negative)
+  # All real places must be present
+  @assert all(c in 0:dim for (_, c) in negative)
+  # Impossible negative entry at plc
+  @assert all(sign(det, p) == (-1)^(negative[p]) for p in inf_plcs)
+  # Information at the real place plc does not match the sign of the determinant
+
+  if dim == 1
+    @assert isempty(finite) # Impossible Hasse invariants
+    return matrix(K, 1, 1, nf_elem[det])
+  end
+
+  if !isempty(finite)
+    OK = maximal_order(K)
+  else
+    OK = oder(finite[1])
+    @assert ismaximal(OK)
+  end
+
+  finite = unique(finite)
+
+  # Finite places check
+
+  if dim == 2
+    ok = all(!islocal_square(-det, p) for p in finite)
+    if !ok
+      q = [p for p in finite if islocal_square(-det, p)][1]
+      throw(error("A binary form with determinant $det must have Hasse invariant +1 at the prime $q"))
+    end
+  end
+
+  @assert iseven(length([ p for (p, n) in negative if n % 4 >= 2]) + length(finite))
+#    "The number of places (finite or infinite) with Hasse invariant -1 must be even";
+#
+#  // OK, a space with these invariants must exist.
+#  // For final testing, we store the invariants.
+
+  dim0 = dim
+  det0 = det
+  finite0 = copy(finite)
+  negative0 = copy(negative)
+
+  # det = _reduce_modulo_squares(det)
+
+  k = max(0, dim - max(3, maximum(values(negative))))
+  D = elem_type(K)[one(K) for i in 1:k]
+  dim = dim - k
+
+  if dim >= 4
+#    // Pad with minus ones
+    k = min(dim - 3, minimum(values(negative)))
+    D2 = elem_type(K)[-one(K) for i in 1:k]
+    dim = dim - k
+    negative = Dict{InfPlc, Int}(p => (n - k) for (p, n) in negative)
+#    // Pad with other entries
+    while dim >= 4
+      V = InfPlc[]
+      _signs = Int[]
+      for (p, n) in negative
+        if n == 0
+          push!(V, p)
+          push!(_signs, +1)
+        elseif n == dim
+          push!(V, p)
+          push!(_signs, -1)
+        end
+      end
+      @show V, _signs
+
+      x = _weak_approximation(V, _signs)
+      @show x
+      s = signs(x)
+      @assert all(i -> sign(x, V[i]) == _signs[i], 1:length(V))
+      k = minimum(vcat(Int[dim - 3], [s[p] == 1 ? (dim - c) : c for (p, c) in negative]))
+      @show k
+      D2 = append!(D2, elem_type(K)[x for i in 1:k])
+      dim = dim - k
+      for (p, n) in negative
+        if s[p] == -1
+          negative[p] = negative[p] - k
+        end
+      end
+      @show negative
+    end
+
+    _d, _f = _quadratic_form_invariants(diagonal_matrix(D2))
+    @show _d, _f
+
+    PP = append!(support(K(2)), finite)
+    PP = unique!(PP)
+    finite = ideal_type(OK)[ p for p in PP if hilbert_symbol(_d, -det, p) * (haskey(_f, p) ? -1 : 1) * (p in finite ? -1 : 1) == -1]
+    @show finite
+    D = append!(D, D2)
+    det = det * _d
+    # TODO: reduce det modulo squares
+  end
+
+#  // The ternary case
+  if dim == 3
+    PP = append!(support(K(2)), finite)
+    append!(PP, support(det))
+    PP = unique!(PP)
+    PP = ideal_type(OK)[p for p in PP if hilbert_symbol(K(-1), -det, p) != (p in finite ? -1 : 1)]
+#    // The primes at which the form is anisotropic
+
+#    // Find some a such that for all p in PP: -a*Det is not a local square
+#    // TODO: Find some smaller a?! The approach below is very lame.
+#    // We simply make sure that a*Det has valuation 1 at each prime in PP....
+
+    if length(PP) == 0
+      a = one(K)
+    else
+      a = approximate(Int[(1 + valuation(det, p)) % 2 for p in PP], PP)
+    end
+#    // Fix the signs of a if necessary.
+    s = signs(a)
+    idx = InfPlc[ p for (p, n) in negative if n in [0, 3]]
+    S = Int[ negative[p] == 0 ? s[p] : -s[p] for p in idx]
+    if length(PP) > 0
+      b = _weak_approximation_coprime(idx, S, prod(PP))
+      @assert iscoprime(b * OK, prod(PP))
+    else
+      b = _weak_approximation_coprime(idx, S)
+    end
+    a = a * b
+
+#    // Adjust invariants for the last time:
+    s = signs(a)
+    for p in InfPlc[p for (p,c) in negative if s[p] < 0]
+      negative[p] = negative[p] - 1
+    end
+    PP = support(K(2))
+    append!(PP, support(det))
+    append!(PP, support(a))
+    append!(PP, finite)
+    PP = unique!(PP)
+    finite = ideal_type(OK)[p for p in PP if hilbert_symbol(a, -det, p) * (p in finite ? -1 : 1) == -1]
+    det = det * a
+    # TODO: reduce det
+    push!(D, a)
+  end
+
+
+#  // The binary case
+  a = _find_quaternion_algebra(-det, finite, [p for (p, n) in negative if n == 2])
+  push!(D, a)
+  push!(D, det * a)
+  M = diagonal_matrix(D)
+
+  d, f, n = _quadratic_form_invariants(M)
+  @assert dim0 == length(D)
+  @assert issquare(d * det0)[1]
+  @assert issetequal(collect(keys(f)), finite0)
+  @assert issetequal(n, collect((p, n) for (p, n) in negative0))
+
+  return M
 end
 
 ################################################################################
@@ -790,9 +1090,9 @@ function isisotropic(V::QuadSpace, p)
   elseif n == 2
     return islocal_square(-d, p)
   elseif n == 3
-    return hasse_invariant(L, p) == hilbert_symbol(K(-1), K(-1), p)
+    return hasse_invariant(V, p) == hilbert_symbol(K(-1), K(-1), p)
   elseif n == 4
-    return !islocal_square(d, p) || (hasse_invariant(L, p) == hilbert_symbol(K(-1), K(-1), p))
+    return !islocal_square(d, p) || (hasse_invariant(V, p) == hilbert_symbol(K(-1), K(-1), p))
   else
     return true
   end
@@ -818,10 +1118,14 @@ function isisotropic(V::HermSpace, q)
   return islocal_norm(base_ring(V), -d, p)
 end
 
-function isisotropic(V::AbsSpace, p::InfPlc)
+isisotropic(V::QuadSpace, p::InfPlc) = _isisotropic(V, p)
+
+isisotropic(V::HermSpace, p::InfPlc) = _isisotropic(V, p)
+
+function _isisotropic(V::AbsSpace, p::InfPlc)
   n = rank(V)
   d = det(V)
-  E = base_ring(L)
+  E = base_ring(V)
   if d == 0
     return true
   elseif n <= 1
@@ -830,7 +1134,7 @@ function isisotropic(V::AbsSpace, p::InfPlc)
     return true
   else
     D = diagonal(V)
-    return length(unique!([sign(evaluate(d, p)) for d in p])) == 2
+    return length(unique!([sign(d, p) for d in D])) == 2
   end
 end
 
@@ -1126,3 +1430,11 @@ function denominator(M::fmpq_mat)
   return d
 end
 
+function _weak_approximation_coprime(IP, S, M)
+  R = order(M)
+  A, _exp, _log = infinite_primes_map(R, IP, M)
+
+  t = (1 + _exp(A([ S[j] == 1 ? 0 : -1 for j in 1:length(IP)])))
+  @assert all(i -> sign(t, IP[i]) == S[i], 1:length(IP))
+  return t
+end

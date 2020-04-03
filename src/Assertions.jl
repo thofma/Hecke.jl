@@ -220,3 +220,18 @@ function assertions(flag::Bool)
     flag ? set_assert_level(s, 8999) : set_assert_level(s, 0)
   end
 end
+
+################################################################################
+#
+#  Require
+#
+################################################################################
+
+macro req(args...)
+  @assert length(args) == 2
+  quote
+    if !($(esc(args[1])))
+      throw(ArgumentError($(esc(args[2]))))
+    end
+  end
+end

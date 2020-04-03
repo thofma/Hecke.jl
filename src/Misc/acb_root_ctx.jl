@@ -150,7 +150,7 @@ end
 
 # Return the roots of x with radii < 2^(-abs_tol) as Vector{acb}.
 # It is assumed that x is squarefree
-function _roots(x::Union{fmpq_poly, fmpz_poly}, abs_tol::Int = 32, initial_prec::Int = 0, max_iter = 0::Int)
+function _roots(x::Union{fmpq_poly, fmpz_poly}, abs_tol::Int = 32, initial_prec::Int = abs_tol, max_iter = 0::Int)
   d = degree(x)
   roots = acb_vec(d)
 
@@ -167,7 +167,7 @@ end
 # It is assumed that x is squarefree
 function _refine_roots!(x::Union{fmpq_poly, fmpz_poly}, roots::Ptr{acb_struct},
                                                         abs_tol::Int = 32,
-                                                        initial_prec::Int = 0,
+                                                        initial_prec::Int = abs_tol,
                                                         max_iter::Int = 0)
   wp = _roots!(roots, x, abs_tol, initial_prec, max_iter, true)
   res = array(AcbField(wp, cached = false), roots, degree(x))
@@ -205,13 +205,14 @@ function _roots!(roots::Ptr{acb_struct}, x::Union{fmpq_poly, fmpz_poly},
               roots, y, C_NULL, step_max_iter, wp)
     end
 
-    if iszero(isolated)
+    if isolated < deg
       wp *= 2
       continue
     end
     have_approx = true
     
     if isolated == deg
+      have_approx = true
       ok = _validate_size_of_zeros(roots, deg, abs_tol)
       real_ok = ccall((:acb_poly_validate_real_roots, :libarb),
           Bool, (Ptr{acb_struct}, Ref{acb_poly}, Int), roots, y, wp)
