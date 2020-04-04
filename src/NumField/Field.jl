@@ -71,7 +71,12 @@ Given a number field $L/K$, this function returns the degree of $L$ over
 $\mathbf Q$.
 """
 function absolute_degree(A::NumField)
-  return absolute_degree(base_field(A)) * degree(A)
+  b = base_field(A)
+  if isa(b, NumField)
+    return absolute_degree(base_field(A)) * degree(A)
+  else
+    return degree(A)
+  end
 end
 
 ################################################################################

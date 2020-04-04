@@ -73,6 +73,8 @@ import Random: rand!
 
 import Nemo
 
+import Pkg
+
 exclude = [:Nemo, :AbstractAlgebra, :RealField, :zz, :qq, :factor, :call,
            :factors, :parseint, :strongequal, :window, :xgcd, :rows, :cols,
            :can_solve, :set_entry!]
@@ -85,10 +87,12 @@ end
 
 import Nemo: acb_struct, Ring, Group, Field, NmodRing, nmod, arf_struct,
              elem_to_mat_row!, elem_from_mat_row, gfp_elem, gfp_mat,
-             Zmodn_poly, Zmodn_mat, GaloisField, acb_vec, array, acb_vec_clear
+             Zmodn_poly, Zmodn_mat, GaloisField, acb_vec, array, acb_vec_clear,
+             force_coerce, force_op
 
 export show, StepRange, domain, codomain, image, preimage, modord, resultant,
        next_prime, ispower, number_field, factor
+
 
 ###############################################################################
 #
@@ -127,7 +131,7 @@ function __init__()
     printstyled(" $VERSION_NUMBER ", color = :green)
     print("... \n ... which comes with absolutely no warranty whatsoever")
     println()
-    println("(c) 2015-2019 by Claus Fieker, Tommy Hofmann and Carlo Sircana")
+    println("(c) 2015-2020 by Claus Fieker, Tommy Hofmann and Carlo Sircana")
     println()
   end
 
@@ -393,7 +397,27 @@ Base.adjoint(x) = transpose(x)
 #
 ################################################################################
 
-global VERSION_NUMBER = v"0.8.0"
+if VERSION >= v"1.4"
+  deps = Pkg.dependencies()
+  if haskey(deps, Base.UUID("3e1990a7-5d81-5526-99ce-9ba3ff248f21"))
+    ver = Pkg.dependencies()[Base.UUID("3e1990a7-5d81-5526-99ce-9ba3ff248f21")]
+    if occursin("/dev/", ver.source)
+      global VERSION_NUMBER = VersionNumber("$(ver.version)-dev")
+    else
+      global VERSION_NUMBER = VersionNumber("$(ver.version)")
+    end
+  else
+    global VERSION_NUMBER = "building"
+  end
+else
+  ver = Pkg.installed()["Hecke"]
+  dir = dirname(@__DIR__)
+  if occursin("/dev/", dir)
+    global VERSION_NUMBER = VersionNumber("$(ver)-dev")
+  else
+    global VERSION_NUMBER = VersionNumber("$(ver)")
+  end
+end
 
 ######################################################################
 # named printing support

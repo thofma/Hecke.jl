@@ -146,16 +146,26 @@ end
 #  Constructors
 #
 ################################################################################
-
+#TODO: I don't understand those
 (K::NfRel)(x::NfRelElem) = K(base_field(K)(x))
 
 (K::NfRel)(x::nf_elem) = K(base_field(K)(x))
 
 (K::NfRel{T})(x::NfRelElem{T}) where {T} = K(x.data)
 
-(K::NfRel{NfRelElem{T}})(x::NfRelElem{T}) where {T} = K(parent(K.pol)(x))
+function (K::NfRel{NfRelElem{T}})(x::NfRelElem{T}) where {T}
+  if parent(x) == base_field(K)
+    return K(parent(K.pol)(x))
+  end
+  return force_coerce(K, x)
+end
 
-(K::NfRel{nf_elem})(x::nf_elem) = K(parent(K.pol)(x))
+function (K::NfRel{nf_elem})(x::nf_elem)
+  if parent(x) == base_field(K)
+    return K(parent(K.pol)(x))
+  end
+  return force_coerce(K, x)
+end
 
 
 ################################################################################
@@ -303,19 +313,23 @@ end
 ################################################################################
 
 function Base.:(+)(a::NfRelElem{T}, b::NfRelElem{T}) where {T}
+  parent(a) == parent(b) || force_op(+, a, b)::NfRelElem{T}
   return parent(a)(data(a) + data(b))
 end
 
 function Base.:(-)(a::NfRelElem{T}, b::NfRelElem{T}) where {T}
+  parent(a) == parent(b) || force_op(-, a, b)::NfRelElem{T}
   return parent(a)(data(a) - data(b))
 end
 
 function Base.:(*)(a::NfRelElem{T}, b::NfRelElem{T}) where {T}
+  parent(a) == parent(b) || force_op(*, a, b)::NfRelElem{T}
   return parent(a)(data(a) * data(b))
 end
 
 function divexact(a::NfRelElem{T}, b::NfRelElem{T}) where {T}
   b == 0 && error("Element not invertible")
+  parent(a) == parent(b) || force_op(divexact, a, b)::NfRelElem{T}
   return a*inv(b)
 end
 
@@ -383,6 +397,7 @@ end
 function Base.:(==)(a::NfRelElem{T}, b::NfRelElem{T}) where T
   reduce!(a)
   reduce!(b)
+  parent(a) == parent(b) || force_op(==, a, b)::Bool
   return data(a) == data(b)
 end
 
@@ -497,8 +512,12 @@ end
 #"""
 function absolute_field(K::NfRel{nf_elem}, cached::Bool = false)
   Ka, a, b, c = _absolute_field(K, cached)
-  #return Ka, NfRelToNf(K, Ka, a, b, c), hom(base_ring(K), Ka, a, check = false)
-  return Ka, NfToNfRel(Ka, K, a, b, c), hom(base_field(K), Ka, a, check = false)
+  h1 = NfToNfRel(Ka, K, a, b, c)
+  h2 = hom(base_field(K), Ka, a, check = false)
+  embed(h1)
+  embed(MapFromFunc(x->preimage(h1, x), K, Ka))
+  embed(h2)
+  return Ka, h1, h2
 end
 
 #@doc Markdown.doc"""
@@ -508,7 +527,12 @@ end
 #"""
 function absolute_field(K::NfRel{NfRelElem{T}}, cached::Bool = false) where T
   Ka, a, b, c = _absolute_field(K)
-  return Ka, NfRelToNfRelRel(Ka, K, a, b, c), hom(base_field(K), Ka, a, check = false)
+  h1 = NfRelToNfRelRel(Ka, K, a, b, c)
+  h2 = hom(base_field(K), Ka, a, check = false)
+  embed(h1)
+  embed(MapFromFunc(x->preimage(h1, x), K, Ka))
+  embed(h2)
+  return Ka, h1, h2
 end
 
 
@@ -585,6 +609,9 @@ function simplified_absolute_field(L::NfRel{nf_elem}, cached::Bool = false)
   cc = KatoL(KtoKa(gen(K)))
   ktoK = hom(base_field(L), K, aa, check = false)
   KtoL = NfToNfRel(K, L, aa, bb, cc)
+  embed(KtoL)
+  embed(MapFromFunc(x->preimage(KtoL, x), L, K))
+  embed(ktoK)
   return K, KtoL, ktoK
 end
 
@@ -696,10 +723,10 @@ end
 Given an element $a$ in an extension $L/K$, this function returns the minimal
 polynomial of $a$ of $K$.
 """
-function minpoly(a::NfRelElem)
+function minpoly(a::NfRelElem{S}) where {S}
   M = representation_matrix(a)
   R = PolynomialRing(base_field(parent(a)), cached = false)[1]
-  return minpoly(R, M, false)
+  return minpoly(R, M, false)::Generic.Poly{S}
 end
 
 function charpoly(a::NfRelElem, k::Union{NfRel, AnticNumberField, FlintRationalField})

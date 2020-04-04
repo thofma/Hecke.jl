@@ -96,7 +96,8 @@
     @test @inferred isfinite(P)
     @test @inferred !isinfinite(P)
 
-    @test_throws MethodError E43_a1([K(-1), K(0)])
+# the error is/was from doing QQ(K(0)) - which is possible now    
+#    @test_throws MethodError E43_a1([gen(K), gen(K)])
 
     @test_throws ErrorException E43_a1([2, 2])
 
