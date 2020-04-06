@@ -195,7 +195,7 @@ function gcd_modular_kronnecker(a::Generic.Poly{nf_elem}, b::Generic.Poly{nf_ele
       continue
     end
     fs = factor_shape(Fp)
-    if any(x -> x > 4, values(fs))
+    if any(x -> x > 4, keys(fs))
       continue
     end
     local me, fp, gp, fsap

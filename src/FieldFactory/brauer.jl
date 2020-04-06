@@ -1,107 +1,964 @@
+add_verbose_scope(:BrauerObst)
 
 
+################################################################################
+#
+#  Obstruction Interface
+# 
+################################################################################
 
-
-#See Gerald J. Janusz (1980) Crossed product orders and the schur index,
-#Communications in Algebra, 8:7, 697-706
-function is_split_at_p(O::NfOrd, GC::Array{NfToNfMor, 1}, Coc::Function, p::Int, n::Int, Rx::GFPPolyRing)
-
-  lp = prime_decomposition(O, p, cached = true)
-  e = gcd(length(GC), lp[1][2])
-  if e == 1
-    return true
+function check_obstruction(list::Vector{FieldsTower}, L::GAP.GapObj,
+           i::Int, invariants::Vector{Int})
+           
+  d = degree(list[1])
+  common_degree = ppio(invariants[end], d)[1]
+  cocycles = cocycles_computation(L, i)
+  G = GAP.Globals.ImagesSource(cocycles[1].projection)
+  for F in list
+    assure_isomorphism(F, G)
   end
-  P = lp[1][1]
-  f = gcd(length(GC), degree(P))
-  if f == 1 && iszero(mod(norm(P)-1, e*n))
-    return true
-  end
-  if length(lp) != 1
-    @vtime :BrauerObst 1  Gp = decomposition_group(P, G = GC, orderG = e*f) 
-    #I don't really want the decomposition group of the p-sylow, but the p-sylow of the decomposition group.
-    #Therefore, if the p-sylow is not normal, I have to try different primes.
-    i = 1
-    while length(Gp) != e*f
-      i += 1
-      P = lp[i][1]
-      Gp = decomposition_group(P, G = GC, orderG = e*f) 
+  if isone(common_degree)
+    for i = 1:length(list)
+      list[i].admissible_cocycles = cocycles
     end
-  else
-    Gp = GC
+    return list
   end
-  f1 = divexact(degree(P), f)
-  q = p^f1 #Cardinality of the residue field
-  
-  F, mF = Hecke.ResidueFieldSmall(O, P)
-  theta1 = _find_theta(Gp, F, mF, e)
-  theta = Rx(theta1.prim_img)
-  
-  K = nf(O)
-  fmod = Rx(K.pol)
-  #I have found my generators. Now, we find the elements to test if it splits.
-  @assert divisible(norm(P)-1, e)
-  c = divexact(norm(P)-1, e)
-  if !iszero(mod(c, n))
-    powtheta = theta
-    zeta = 0
-    for k = 1:e-1
-      zeta += Coc(powtheta, theta)::Int
-      powtheta = compose_mod(powtheta, theta, fmod)
+  obstructions = Vector{Vector{Bool}}(undef, length(list))
+  for i = 1:length(obstructions)
+    obstructions[i] = falses(length(cocycles))
+  end
+  fac = factor(common_degree)
+  for (p, v) in fac
+    cocycles_p = [_to_prime_power_kernel(x, Int(p)) for x in cocycles] 
+    if length(fac) > 1
+      if iszero(cocycles_p[1])
+        continue
+      end
     end
-    zeta = mod(zeta * c, n)
-    if !iszero(zeta)
-      return false
-    end
-  end
-  
-    
-  #The second element is a little more complicated. 
-  if f == 1
-    return true
-  end
-  frob1 = _find_frob(Gp, F, mF, e, f, q, theta1)
-  frob = Rx(frob1.prim_img)
-
-  
-  if iszero(mod(q-1, e*n))
-    lambda = mod(Coc(frob, theta)- Coc(theta, frob), n)::Int
-    return iszero(lambda)
-  end
-  lambda = Coc(frob, theta)::Int
-  powtheta = theta
-  s, t = divrem(q-1, e)
-  if !iszero(mod(s+1, n))
-    for k = 1:t
-      lambda -= (s+1) * Coc(powtheta, theta)::Int
-      powtheta = compose_mod(powtheta, theta, fmod)
-    end
-  else
-    powtheta = _pow_as_comp(theta, t+1, fmod)
-  end
-  if !iszero(mod(s, n))
-    for k = t+1:(e-1)
-      lambda -= s * Coc(powtheta, theta)::Int
-      powtheta = compose_mod(powtheta, theta, fmod)
+    if length(invariants) == 1 || iscoprime(invariants[end-1], p)
+      for i = 1:length(list)
+        @vprint :Fields 1 "$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())Fields to test: $(length(list)-i+1)"
+        if !all(obstructions[i])
+          obstructions[i] = check_obstruction(list[i], cocycles_p, Int(p), obstructions[i]) 
+        end
+      end
+      @vprint :Fields 1 "$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())"
+    else
+      all_cocycles = Vector{Vector{cocycle_ctx}}(undef, length(cocycles))
+      for i = 1:length(cocycles)
+        all_cocycles[i] = _cocycles_with_cyclic_kernel(cocycles_p[i], Int(p))
+      end
+      for i = 1:length(list)
+        @vprint :Fields 1 "$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())Fields to test: $(length(list)-i+1)"
+        if !all(obstructions[i])
+          obstructions[i] = check_obstruction_non_cyclic(list[i], all_cocycles, Int(p), obstructions[i]) 
+        end
+      end
+      @vprint :Fields 1 "$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())"
     end
   end
-  powtheta = _pow_as_comp(theta, mod(q, e), fmod)
-  lambda = mod(lambda - Coc(powtheta, frob), n)::Int
-  return iszero(lambda)
+  #Now, extract the list
+  new_list = Vector{FieldsTower}()
+  for i = 1:length(list)
+    indices = Int[j for j = 1:length(obstructions[i]) if !(obstructions[i][j])]
+    if isempty(indices)
+      continue
+    end
+    list[i].admissible_cocycles = cocycles[indices]
+    push!(new_list, list[i])
+  end
+  return new_list
+end
+
+
+function check_obstruction(F::FieldsTower, cocycles::Vector{cocycle_ctx}, 
+                            p::Int, obstruction_at::Vector{Bool})
+  #I assume that the kernel of the embedding problem is a p-group
+  @assert isprime(p)  
+  indices = [i for i = 1:length(obstruction_at) if !obstruction_at[i]]
+  cocycles_to_test = cocycles[indices]
+  for i = 1:length(cocycles)
+    _cocycle_to_exponent!(cocycles[i])
+  end
+  obstruction = check_obstruction_cyclic(F, cocycles, p)
+  for i = 1:length(obstruction)
+    if obstruction[i]
+      obstruction_at[indices[i]] = true
+    end
+  end
+  return obstruction_at
+end
+
+################################################################################
+#
+#  IsZero for a cocycle
+#
+################################################################################
+
+function iszero(c::cocycle_ctx)
+  E = GAP.Globals.Source(c.projection)
+  A = GAP.Globals.Image(c.inclusion)
+  return !iszero(length(GAP.Globals.ComplementClassesRepresentatives(E, A)))
 end
 
 
 ################################################################################
 #
-#  IsSplit for crossed product algebras: prime power case
+#  Non cyclic kernel case
 #
 ################################################################################
 
+function check_obstruction_non_cyclic(F::FieldsTower, cocycles::Vector{Vector{cocycle_ctx}}, 
+                                       p::Int, obstruction_at::Vector{Bool})
+                                       
+  indices = Int[i for i = 1:length(obstruction_at) if !obstruction_at[i]]
+  new_cocycles = cocycles[indices]
+  for j = 1:length(new_cocycles)
+    for i = 1:length(new_cocycles[j])
+      if check_obstruction_cyclic(F, [new_cocycles[j][i]], p)[1]
+        obstruction_at[indices[j]] = true
+        break
+      end
+    end
+  end
+  return obstruction_at
+end
 
-function cpa_issplit(K::AnticNumberField, G::Vector{NfToNfMor}, Stab::Vector{NfToNfMor}, Coc::Function, p::Int, v::Int, Rx::GFPPolyRing)
 
-  O = maximal_order(K)
-  r, s = signature(O)
-  @vtime :BrauerObst 1 if p == 2 && r != degree(K) && !is_split_at_infinity(K, Coc, Rx)
+function _to_prime_power_groups(cocycle::cocycle_ctx, p::Int)
+  #the kernel is already of prime power order.
+  #I need to work with the projection.
+  proj = cocycle.projection
+  E = GAP.Globals.Source(proj)
+  n = GAP.Globals.Size(E)
+  np, nq = ppio(n, p)
+  if isone(nq)
+    return cocycle
+  end
+  inc = cocycle.inclusion
+  A = GAP.Globals.Source(inc)
+  G = GAP.Globals.ImagesSource(proj)
+  Ep = GAP.Globals.SylowSubgroup(E, p)
+  gensEp = GAP.Globals.GeneratorsOfGroup(Ep)
+  inj_Ep = GAP.Globals.GroupHomomorphismByImages(Ep, E, gensEp, gensEp)
+  imgs_new_proj = []
+  for i = 1:length(gensEp)
+    push!(imgs_new_proj, GAP.Globals.Image(proj, gensEp[i]))
+  end
+  imgs_proj = GAP.julia_to_gap(imgs_new_proj)
+  Gp = GAP.Globals.Subgroup(G, imgs_proj)
+  #I need the inclusion of Gp into G for strange (GAP) reasons.
+  gensGp = GAP.Globals.GeneratorsOfGroup(Gp)
+  inclusion_Gp = GAP.Globals.GroupHomomorphismByImages(Gp, G, gensGp, gensGp)
+  #now the maps.
+  new_proj = GAP.Globals.GroupHomomorphismByImages(Ep, Gp, gensEp, imgs_proj)
+  images_inclusion = []
+  gensA = GAP.Globals.GeneratorsOfGroup(A)
+  for i = 1:length(gensA)
+    el = GAP.Globals.Image(inc, gensA[i])
+    prel = GAP.Globals.PreImagesRepresentative(inj_Ep, el)
+    push!(images_inclusion, prel)
+  end
+  imgs_inclusion = GAP.julia_to_gap(images_inclusion)
+  new_incl = GAP.Globals.GroupHomomorphismByImages(A, Ep, gensA, imgs_inclusion)
+  res =  cocycle_ctx(new_proj, new_incl, cocycle.cocycle)
+  res.inclusion_of_pSylow = inclusion_Gp
+  return res
+end
+
+
+#Careful, I am discarding the cocycles that represent split extensions
+function  _cocycles_with_cyclic_kernel(old_cocycle::cocycle_ctx, p::Int)
+  cocycle = _to_prime_power_groups(old_cocycle, p)
+  proj = cocycle.projection
+  inc = cocycle.inclusion
+  E = GAP.Globals.Source(proj)
+  normal_subgroups = GAP.Globals.NormalSubgroups(E)
+  G = GAP.Globals.ImagesSource(proj)
+  K = GAP.Globals.Source(inc)
+  oK = GAP.Globals.Size(K)
+  normal_cyclic_and_contained = GAP.GapObj[]
+  for i = 1:length(normal_subgroups)
+    g = normal_subgroups[i]
+    oG = GAP.Globals.Size(g)
+    if !GAP.Globals.IsSubgroup(K, g) || oG == oK
+      continue
+    end
+    prmg = GAP.Globals.PreImage(inc, g)
+    fg = GAP.Globals.FactorGroup(K, prmg)
+    order = fmpz(GAP.gap_to_julia(Int, GAP.Globals.Size(fg)))
+    np = remove(order, p)[2]
+    if isone(np) && GAP.Globals.IsCyclic(fg)
+      push!(normal_cyclic_and_contained, prmg)
+    end  
+  end
+  #Almost done. I only want the minimal ones, so I need to sieve.
+  res = GAP.GapObj[]
+  for i = 1:length(normal_cyclic_and_contained)
+    g = normal_cyclic_and_contained[i]
+    found = false
+    for j = 1:length(normal_cyclic_and_contained)
+      if j != i && GAP.Globals.IsSubgroup(g, normal_cyclic_and_contained[j])
+        found = true
+        break
+      end
+    end
+    if !found
+      push!(res, g)
+    end
+  end
+  #Great! Now, create the corresponding cocycles.
+  res_coc =  [_to_subgroup_of_kernel(cocycle, x) for x in res]
+  final_res = Vector{cocycle_ctx}()
+  for c in res_coc
+    if !iszero(c)
+      _cocycle_to_exponent!(c)
+      push!(final_res, c)
+    end
+  end
+  return final_res
+end
+
+function _to_subgroup_of_kernel(cocycle::cocycle_ctx, S)
+  A = GAP.Globals.Source(cocycle.inclusion)
+  E = GAP.Globals.Source(cocycle.projection)
+  G = GAP.Globals.ImagesSource(cocycle.projection)
+  sizeG = GAP.Globals.Size(G)
+  pr = GAP.Globals.NaturalHomomorphismByNormalSubgroup(A, S)
+  #I still need to create the maps.
+  pr1 = GAP.Globals.NaturalHomomorphismByNormalSubgroup(E, GAP.Globals.Image(cocycle.inclusion, S))
+  E_new = GAP.Globals.ImagesSource(pr1)
+  A_new = GAP.Globals.ImagesSource(pr)
+  gensA_new = GAP.Globals.GeneratorsOfGroup(A_new)
+  images_inclusion = GAP.GapObj[]
+  for i = 1:length(gensA_new)
+    el_A = GAP.Globals.PreImagesRepresentative(pr, gensA_new[i])
+    el_E = GAP.Globals.Image(cocycle.inclusion, el_A)
+    push!(images_inclusion, GAP.Globals.Image(pr1, el_E)) 
+  end
+  inclusion = GAP.Globals.GroupHomomorphismByImages(A_new, E_new, gensA_new, GAP.julia_to_gap(images_inclusion))
+  gensE_new = GAP.Globals.GeneratorsOfGroup(E_new)
+  images_proj = []
+  for i = 1:length(gensE_new)
+    el = GAP.Globals.PreImagesRepresentative(pr1, gensE_new[i])
+    push!(images_proj, GAP.Globals.Image(cocycle.projection, el))
+  end
+  projection = GAP.Globals.GroupHomomorphismByImages(E_new, G, gensE_new, GAP.julia_to_gap(images_proj))
+  local new_coc
+  let cocycle = cocycle, pr = pr 
+    function new_coc(x::GAP.GapObj, y::GAP.GapObj)
+      return GAP.Globals.Image(pr, cocycle.cocycle(x, y))
+    end
+  end
+  res = cocycle_ctx(projection, inclusion, new_coc)
+  if isdefined(cocycle, :inclusion_of_pSylow)
+    res.inclusion_of_pSylow = cocycle.inclusion_of_pSylow
+  end
+  return res
+end
+
+
+function _to_prime_power_kernel(cocycle::cocycle_ctx, p::Int)
+  A = GAP.Globals.Source(cocycle.inclusion)
+  n = GAP.Globals.Size(A)
+  np, nq = ppio(n, p)
+  if isone(nq)
+    return cocycle
+  end
+  gens = GAP.Globals.MinimalGeneratingSet(A)
+  gens_sub = []
+  for i = 1:length(gens)
+    push!(gens_sub, gens[i]^np)
+  end
+  E = GAP.Globals.Source(cocycle.projection)
+  G = GAP.Globals.ImagesSource(cocycle.projection)
+  sizeG = GAP.Globals.Size(G)
+  S = GAP.Globals.Subgroup(A, GAP.julia_to_gap(gens_sub))
+  pr = GAP.Globals.NaturalHomomorphismByNormalSubgroup(A, S)
+  #I still need to create the maps.
+  S1 = GAP.Globals.Image(cocycle.inclusion, S)
+  pr1 = GAP.Globals.NaturalHomomorphismByNormalSubgroup(E, S1)
+  E_new = GAP.Globals.ImagesSource(pr1)
+  A_new = GAP.Globals.ImagesSource(pr)
+  gensA_new = GAP.Globals.GeneratorsOfGroup(A_new)
+  images_inclusion = []
+  for i = 1:length(gensA_new)
+    el_A = GAP.Globals.PreImagesRepresentative(pr, gensA_new[i])
+    el_E = GAP.Globals.Image(cocycle.inclusion, el_A)
+    push!(images_inclusion, GAP.Globals.Image(pr1, el_E)) 
+  end
+  inclusion = GAP.Globals.GroupHomomorphismByImages(A_new, E_new, gensA_new, GAP.julia_to_gap(images_inclusion))
+  gensE_new = GAP.Globals.GeneratorsOfGroup(E_new)
+  images_proj = []
+  for i = 1:length(gensE_new)
+    el = GAP.Globals.PreImagesRepresentative(pr1, gensE_new[i])
+    push!(images_proj, GAP.Globals.Image(cocycle.projection, el))
+  end
+  projection = GAP.Globals.GroupHomomorphismByImages(E_new, G, gensE_new, GAP.julia_to_gap(images_proj))
+  local new_coc
+  let cocycle = cocycle, pr = pr 
+    function new_coc(x::GAP.GapObj, y::GAP.GapObj)
+      return GAP.Globals.Image(pr, cocycle.cocycle(x, y))
+    end
+  end
+  return cocycle_ctx(projection, inclusion, new_coc)
+end
+
+################################################################################
+#
+#  Isomorphism computation
+#
+################################################################################
+
+function assure_isomorphism(F::FieldsTower, G)
+  if isdefined(F, :isomorphism)
+    return nothing
+  end
+  assure_automorphisms(F)
+  K = F.field
+  autsK = automorphisms(K, copy = false)
+  permGC = _from_autos_to_perm(autsK)
+  Gperm = _perm_to_gap_grp(permGC)
+  iso = GAP.Globals.IsomorphismGroups(Gperm, G)
+  D = Dict{NfToNfMor, GAP.GapObj}()
+  for i = 1:length(autsK)
+    permgap = _perm_to_gap_perm(permGC[i])
+    k = GAP.Globals.Image(iso, permgap)
+    D[autsK[i]] = k
+  end
+  F.isomorphism = D
+  return nothing
+end
+
+################################################################################
+#
+#  Enumerate embedding problems
+#
+################################################################################
+
+function _autos_to_check(G::GAP.GapObj, K::GAP.GapObj, E::GAP.GapObj, mG::GAP.GapObj)
+  AutG = GAP.Globals.AutomorphismGroup(G)
+  AutK = GAP.Globals.AutomorphismGroup(K)
+  AutE = GAP.Globals.AutomorphismGroup(E)
+  #I want to construct the map between the automorphism groups. The kernel is characteristic!
+  gens = GAP.Globals.GeneratorsOfGroup(AutE)
+  ind_auts_quo = Array{GAP.GapObj, 1}(undef, length(gens))
+  ind_auts_sub = Array{GAP.GapObj, 1}(undef, length(gens))
+  for s = 1:length(gens)
+    ind_auts_quo[s] = GAP.Globals.InducedAutomorphism(mG, gens[s])
+    ind_auts_sub[s] = GAP.Globals.RestrictedMapping(gens[s], K)
+  end
+  GProd = GAP.Globals.DirectProduct(AutG, AutK)
+  EmbAutG = GAP.Globals.Embedding(GProd, 1)
+  EmbAutK = GAP.Globals.Embedding(GProd, 2)
+  gensubs = Vector{GAP.GapObj}(undef, length(gens))
+  for s = 1:length(gens)
+    gensubs[s] = GAP.Globals.Image(EmbAutG, ind_auts_quo[s]) * GAP.Globals.Image(EmbAutK, ind_auts_sub[s])
+  end
+  S = GAP.Globals.Subgroup(GProd, GAP.julia_to_gap(gensubs))
+  iso = GAP.Globals.IsomorphismPermGroup(GProd)
+  Prod_as_perm = GAP.Globals.ImagesSource(iso)
+  S_as_perm = GAP.Globals.Image(iso, S)
+  Tperm = GAP.Globals.List(GAP.Globals.RightTransversal(Prod_as_perm, S_as_perm))
+  #Now, I have to recover the automorphisms in AutG and AutK
+  ProjAutG = GAP.Globals.Projection(GProd, 1)
+  ProjAutK = GAP.Globals.Projection(GProd, 2)
+  res = Vector{Tuple{GAP.GapObj, GAP.GapObj}}(undef, length(Tperm))
+  for i = 1:length(Tperm)
+    res[i] = (GAP.Globals.Image(ProjAutG, GAP.Globals.PreImagesRepresentative(iso, Tperm[i])), GAP.Globals.Image(ProjAutK, GAP.Globals.PreImagesRepresentative(iso, Tperm[i])))
+  end
+  return res
+end
+
+function cocycles_computation(L::GAP.GapObj, level::Int)
+
+  proj = GAP.Globals.NaturalHomomorphismByNormalSubgroup(L[1], L[level+1])
+  target_grp = GAP.Globals.ImagesSource(proj)
+  mH1 = GAP.Globals.NaturalHomomorphismByNormalSubgroup(target_grp, GAP.Globals.Image(proj, L[level]))
+  H1 = GAP.Globals.ImagesSource(mH1)
+  K = GAP.Globals.Kernel(mH1)
+    
+  Elems = GAP.Globals.Elements(H1)
+  MatCoc = Array{GAP.GapObj, 2}(undef, length(Elems), length(Elems))
+  Preimags = Vector{GAP.GapObj}(undef, length(Elems))
+  for i = 1:length(Elems)
+    Preimags[i] = GAP.Globals.PreImagesRepresentative(mH1, Elems[i])
+  end
+  for i = 1:length(Elems)
+    x1 = Preimags[i]
+    for j = 1:length(Elems)
+      y1 = Preimags[j]
+      xy = Elems[i] * Elems[j]
+      k = 1
+      while Elems[k] != xy
+        k += 1
+      end
+      xy1 = Preimags[k]
+      MatCoc[i, j] = x1*y1*GAP.Globals.Inverse(xy1)
+    end
+  end
+  
+  autos = _autos_to_check(H1, K, target_grp, mH1)
+  cocycles = Vector{cocycle_ctx}(undef, length(autos))
+  for i = 1:length(autos)
+    aut1, aut2 = autos[i]
+    local cocycle
+    let Elems = Elems, MatCoc = MatCoc, aut1 = aut1, aut2 = aut2, Elems = Elems
+      function cocycle(x::GAP.GapObj, y::GAP.GapObj)  
+        new_x = GAP.Globals.PreImagesRepresentative(aut1, x)
+        new_y = GAP.Globals.PreImagesRepresentative(aut1, y)
+        ind1 = 1
+        while Elems[ind1] != new_x
+          ind1 += 1
+        end
+        ind2 = 1
+        while Elems[ind2] != new_y
+          ind2 += 1
+        end
+        return GAP.Globals.PreImagesRepresentative(aut2, MatCoc[ind1, ind2])
+      end
+    end
+    #I change aut2 so that its codomain is really target_grp
+    new_aut2 = aut2*GAP.Globals.GroupHomomorphismByImages(K, target_grp, GAP.Globals.GeneratorsOfGroup(K), GAP.Globals.GeneratorsOfGroup(K))
+    cocycles[i] = cocycle_ctx(mH1*aut1, new_aut2, cocycle)
+  end  
+  return cocycles
+
+end
+
+function _cocycle_to_exponent!(cocycle::cocycle_ctx)
+  if isdefined(cocycle, :gen_kernel)
+    return nothing
+  end
+  gen = GAP.Globals.MinimalGeneratingSet(GAP.Globals.Source(cocycle.inclusion))[1]
+  local cocycle_val
+  let cocycle = cocycle, gen = gen
+    function cocycle_val(x::GAP.GapObj, y::GAP.GapObj)
+      return _find_exp(gen, cocycle.cocycle(x, y))
+    end
+  end
+  cocycle.values_cyclic = cocycle_val
+  cocycle.gen_kernel = gen
+  return nothing
+end
+
+function _find_exp(x::GAP.GapObj, y::GAP.GapObj)
+  if GAP.Globals.One(x) == y
+    return 0
+  end
+  # I want to find i such that x^i = y
+  i = 1
+  z = GAP.Globals.ShallowCopy(x)
+  while z != y
+    z = z*x
+    i += 1
+  end 
+  #@assert x^i == y
+  return i
+end
+
+###############################################################################
+#
+#  P-Sylow subgroup
+#
+###############################################################################
+
+function pSylow(Gperm::GAP.GapObj, permGAP::Vector{GAP.GapObj}, G::Vector{NfToNfMor}, p::Int)
+  p2 = ispower(length(G))[2]
+  if p == p2
+    return G
+  end
+  H = GAP.Globals.SylowSubgroup(Gperm, p)
+  lGp = GAP.Globals.Size(H)
+  Gp = Array{Hecke.NfToNfMor,1}(undef, lGp)
+  j = 1
+  for ind = 1:length(G)
+    if j > lGp
+      break
+    end
+    if GAP.Globals.IN(permGAP[ind], H)
+      Gp[j] = G[ind]
+      j += 1
+    end
+  end
+  return Gp  
+end
+
+function pSylow(G::Vector{NfToNfMor}, p::Int)
+  com, uncom = ppio(length(G), p)
+  if uncom == 1
+    return G
+  end
+  permGC = _from_autos_to_perm(G) 
+  Gperm = _perm_to_gap_grp(permGC)
+  PermGAP = Vector{GAP.GapObj}(undef, length(permGC))
+  for w = 1:length(permGC)
+    PermGAP[w] = _perm_to_gap_perm(permGC[w])
+  end
+  return pSylow(Gperm, PermGAP, G, p)
+end
+
+################################################################################
+#
+#  Setup of cyclotomic extension
+#
+################################################################################
+
+function _ext_cycl(G::Array{Hecke.NfToNfMor, 1}, d::Int)
+  K = domain(G[1])
+  Kc = cyclotomic_extension(K, d, compute_maximal_order = true, compute_LLL_basis = false, cached = false)
+  automorphisms(Kc; gens = G, copy = false)
+  return Kc
+end
+
+
+################################################################################
+#
+#  Obstruction cyclic prime case
+#
+################################################################################
+
+function check_obstruction_prime(F::FieldsTower, cocycles::Vector{cocycle_ctx}, p::Int)
+  if p == 2
+    return _obstruction_prime_no_extend(F, cocycles, p)
+  end
+  K = F.field
+  OK = maximal_order(K)
+  T, mT = torsion_unit_group(OK)
+  if divisible(order(T), fmpz(p))
+    return _obstruction_prime_no_extend(F, cocycles, p)
+  end
+  lp = ramified_primes(F)
+  if all(x -> (isone(mod(x, p)) || x == p), lp)
+     return _obstruction_prime_no_extend(F, cocycles, p)
+  end
+  #bad case.
+  return _obstruction_prime(F, cocycles, p)
+end
+
+function _obstruction_prime_no_extend(x::FieldsTower, cocycles, p::Int)
+  K = x.field
+  OK = maximal_order(K)
+  GC = automorphisms(K, copy = false)
+  D = x.isomorphism
+  Pcomp = 2
+  R = GF(Pcomp, cached = false)
+  Rx = PolynomialRing(R, "x", cached = false)[1]
+  ff = Rx(K.pol)
+  while iszero(mod(p, Pcomp)) || iszero(discriminant(ff))
+    Pcomp = next_prime(Pcomp)
+    R = GF(Pcomp, cached = false)
+    Rx = PolynomialRing(R, "x", cached = false)[1]
+    ff = Rx(K.pol)
+  end
+  permGC = _from_autos_to_perm(GC)
+  Gperm = _perm_to_gap_grp(permGC)
+  PermGAP = Vector{GAP.GapObj}(undef, length(permGC))
+  for w = 1:length(permGC)
+    PermGAP[w] = _perm_to_gap_perm(permGC[w])
+  end
+  #Restrict to the p-Sylow
+  H = GAP.Globals.ImagesSource(cocycles[1].projection)
+  if p != 2 || GAP.Globals.Size(H) != degree(K)
+    Gp = pSylow(Gperm, PermGAP, GC, p)
+  else
+    Gp = GC
+  end
+  D1 = Dict{gfp_poly, GAP.GapObj}()
+  for g in GC
+    pol = Rx(g.prim_img)
+    el = D[g]
+    D1[pol] = el
+  end 
+  obstruction = falses(length(cocycles)) 
+  for i = 1:length(obstruction)
+    if isdefined(cocycles[i], :inclusion_of_pSylow)
+      #I need to assert that I took the right pSylow.
+      Gp1 = NfToNfMor[]
+      for g in GC
+        el = D1[Rx(g.prim_img)]
+        if GAP.Globals.IN(el, GAP.Globals.Image(cocycles[i].inclusion_of_pSylow))
+          push!(Gp1, g)
+        end
+      end
+      Gp = Gp1
+    end
+    #I create the cocycle
+    local cocycle
+    let D1 = D1, i = i, p = p
+      function cocycle(aut1::gfp_poly, aut2::gfp_poly)
+        el1 = D1[aut1]
+        el2 = D1[aut2]
+        if isdefined(cocycles[i], :inclusion_of_pSylow)
+          el1 = GAP.Globals.PreImagesRepresentative(cocycles[i].inclusion_of_pSylow, el1)
+          el2 = GAP.Globals.PreImagesRepresentative(cocycles[i].inclusion_of_pSylow, el2)
+        end
+        res = cocycles[i].values_cyclic(el1, el2)
+        return mod(res, p)::Int
+      end
+    end
+    #Now, we have to see if it splits
+    if !issplit_cpa(x, Gp, cocycle, p, 1, Rx)
+      obstruction[i] = true
+    end
+  end
+  return obstruction
+end
+
+function _obstruction_prime(x::FieldsTower, cocycles::Vector{cocycle_ctx}, p)
+  K = x.field
+  lp = ramified_primes(x)
+  Kc = _ext_cycl(x.generators_of_automorphisms, p)
+  K1 = Kc.Ka
+  D = x.isomorphism
+  autsK = automorphisms(K, copy = false)
+  autsK1 = automorphisms(K1, copy = false)
+  restr = restriction(autsK1, autsK, Kc.mp[2])
+  #I construct the group and the isomorphisms between the automorphisms and the gap group.
+  permGC = _from_autos_to_perm(autsK) 
+  Gperm = _perm_to_gap_grp(permGC)
+  Pcomp = 2
+  R = GF(Pcomp, cached = false)
+  Rx = PolynomialRing(R, "x", cached = false)[1]
+  ff1 = Rx(K.pol)
+  ff2 = Rx(K1.pol)
+  while iszero(mod(p, Pcomp)) || iszero(discriminant(ff1)) || iszero(discriminant(ff2))
+    Pcomp = next_prime(Pcomp)
+    R = GF(Pcomp, cached = false)
+    Rx = PolynomialRing(R, "x", cached = false)[1]
+    ff1 = Rx(K.pol)
+    ff2 = Rx(K1.pol)
+  end
+  fmod = Rx(K.pol)
+  dautsK1 = Dict{gfp_poly, Int}()
+  for w = 1:length(autsK1)
+    dautsK1[Rx(autsK1[w].prim_img)] = w
+  end 
+  #Restrict to the p-Sylow
+  #Unfortunately, I need to compute the group structure.
+  Gp = pSylow(autsK1, p)
+  D1 = Dict{gfp_poly, GAP.GapObj}()
+  for g in Gp
+    pol = Rx(g.prim_img)
+    mp = autsK[restr[dautsK1[aut1]]]
+    el = D[g]
+    D1[pol] = el
+  end
+  obstruction = falses(length(cocycle))
+  for i = 1:length(obstruction)
+    #I create the cocycle
+    local cocycle
+    let restr = restr, dautsK1 = dautsK1, ElemGAP = ElemGAP, p = p
+      function cocycle(aut1::gfp_poly, aut2::gfp_poly)
+        s1 = D1[aut1]
+        s2 = D1[aut2]
+        if isdefined(cocycles[i], :inclusion_of_pSylow)
+          s1 = GAP.Globals.PreImagesRepresentative(cocycles[i].inclusion_of_pSylow, s1)
+          s2 = GAP.Globals.PreImagesRepresentative(cocycles[i].inclusion_of_pSylow, s2)
+        end
+        rescoc = cocycles[i].values_cyclic(s1, s2)
+        return mod(rescoc, p)::Int
+      end
+    end
+    
+    if !cpa_issplit(x, Gp, cocycle, p, 1, Rx)
+      obstruction[i] = true
+    end
+  end
+  return obstruction
+end
+
+
+
+
+
+
+################################################################################
+#
+#  Obstruction cyclic prime power
+#
+################################################################################
+
+function action_on_roots(G::Vector{NfToNfMor}, zeta::nf_elem, pv::Int)
+  act_on_roots = Array{Int, 1}(undef, length(G))
+  p = 11
+  K = domain(G[1])
+  Qx = parent(K.pol)
+  R = GF(p, cached = false)
+  Rx, x = PolynomialRing(R, "x", cached = false)
+  fmod = Rx(K.pol)
+  while iszero(discriminant(fmod)) || iszero(mod(pv, p))
+    p = next_prime(p)
+    R = GF(p, cached = false)
+    Rx, x = PolynomialRing(R, "x", cached = false)
+    fmod = Rx(K.pol)
+  end
+  polsG = gfp_poly[Rx(g.prim_img) for g in G]
+  zetaP = Rx(zeta)
+  units = Vector{gfp_poly}(undef, pv-1)
+  units[1] = zetaP
+  for i = 2:pv-1
+    units[i] = mod(units[i-1]*zetaP, fmod)
+  end
+  for w = 1:length(G)
+    act = Hecke.compose_mod(zetaP, polsG[w], fmod)
+    s = 1
+    while act != units[s]
+      s += 1
+    end
+    act_on_roots[w] = s
+    #@assert G[w](zeta) == zeta^s
+  end
+  return act_on_roots
+end
+
+function restriction(autsK1::Vector{NfToNfMor}, autsK::Vector{NfToNfMor}, mp::NfToNfMor)
+  K = domain(mp)
+  K1 = codomain(mp)
+  p = 11
+  R = GF(p, cached = false)
+  Rx, x = PolynomialRing(R, "x", cached = false)
+  ff1 = Rx(K.pol)
+  fmod = Rx(K1.pol)
+  while iszero(discriminant(ff1)) || iszero(discriminant(fmod))
+    p = next_prime(p)
+    R = GF(p, cached = false)
+    Rx, x = PolynomialRing(R, "x", cached = false)
+    ff1 = Rx(K.pol)
+    fmod = Rx(K1.pol)
+  end
+  mp_pol = Rx(mp.prim_img)
+  imgs = Vector{gfp_poly}(undef, length(autsK))
+  for i = 1:length(imgs)
+    imgs[i] = Hecke.compose_mod(Rx(autsK[i].prim_img), mp_pol, fmod)
+  end
+  res = Vector{Int}(undef, length(autsK1))
+  for i = 1:length(res)
+    img = Hecke.compose_mod(mp_pol, Rx(autsK1[i].prim_img), fmod)
+    for j = 1:length(autsK)
+      if img == imgs[j]
+        res[i] = j
+        break
+      end
+    end
+    #@assert mp(autsK[res[i]].prim_img) == autsK1[i](mp.prim_img)
+  end
+  return res
+end
+
+
+function check_obstruction_cyclic(F::FieldsTower, cocycles::Vector{cocycle_ctx}, p::Int)
+  n = GAP.Globals.Size(GAP.Globals.Source(cocycles[1].inclusion))
+  obstruction = check_obstruction_prime(F, cocycles, p)
+  if n == p || all(obstruction)
+    return obstruction
+  end
+  indices = [i for i = 1:length(obstruction) if !obstruction[i]]
+  new_cocycles = cocycles[indices]
+  obstruction_new = check_obstruction_pp(F, new_cocycles, n)
+  for i = 1:length(indices)
+    if obstruction_new[i]
+      obstruction[indices[i]] = true
+    end
+  end
+  return obstruction
+end
+
+function check_obstruction_pp(F::FieldsTower, cocycles::Vector{cocycle_ctx}, n::Int)
+  #=
+  lp = ramified_primes(F)
+  assure_automorphisms(F)
+  
+  v, p = ispower(n)
+  if all(x -> (isone(mod(x, n)) || x == p), lp)
+    return _obstruction_pp_no_extend(F, cocycles, n)
+  end
+  K = F.field
+  OK = maximal_order(K)
+  T, mT = torsion_unit_group(OK)
+  if divisible(order(T), n)
+    return _obstruction_pp_no_extend(F, cocycles, n)
+  end
+  =#
+  return _obstruction_pp(F, cocycles, n)
+end
+
+
+function _obstruction_pp(F::FieldsTower, cocycles::Vector{cocycle_ctx}, pv::Int)
+  v, p = ispower(pv)
+  Kc = _ext_cycl(F.generators_of_automorphisms, pv)
+  K = F.field
+  K1 = Kc.Ka
+  D = F.isomorphism
+  autsK = automorphisms(K, copy = false)
+  autsK1 = automorphisms(K1, copy = false)
+  restr = restriction(autsK1, autsK, Kc.mp[2])
+  #I construct the group and the isomorphisms between the automorphisms and the gap group.
+  permGC = _from_autos_to_perm(autsK) 
+  Gperm = _perm_to_gap_grp(permGC)
+  Pcomp = 7
+  R = GF(Pcomp, cached = false)
+  Rx, x = PolynomialRing(R, "x", cached = false)
+  ff1 = Rx(K.pol)
+  ff2 = Rx(K1.pol)
+  while iszero(discriminant(ff1)) || iszero(discriminant(ff2))
+    Pcomp = next_prime(Pcomp)
+    R = GF(Pcomp, cached = false)
+    Rx, x = PolynomialRing(R, "x", cached = false)
+    ff1 = Rx(K.pol)
+    ff2 = Rx(K1.pol)
+  end
+  dautsK1 = Dict{gfp_poly, Int}()
+  for w = 1:length(autsK1)
+    dautsK1[Rx(autsK1[w].prim_img)] = w
+  end 
+  #Restrict to the p-Sylow
+  #Unfortunately, I need to compute the group structure.
+  Gp = pSylow(autsK1, p)
+  D1 = Dict{gfp_poly, GAP.GapObj}()
+  for g in autsK1
+    pol = Rx(g.prim_img)
+    mp = autsK[restr[dautsK1[pol]]]
+    el = D[mp]
+    D1[pol] = el
+  end
+  act_on_roots = action_on_roots(Gp, Kc.mp[1]\(gen(Kc.Kr)), pv)
+  obstruction = falses(length(cocycles))
+  Fext = FieldsTower(K1, autsK1, [id_hom(K1)])
+  for i = 1:length(obstruction)
+    #I create the cocycle
+    if isdefined(cocycles[i], :inclusion_of_pSylow)
+      Gp1 = NfToNfMor[]
+      for g in autsK1
+        el = D1[Rx(g.prim_img)]
+        if GAP.Globals.IN(el, GAP.Globals.Image(cocycles[i].inclusion_of_pSylow))
+          push!(Gp1, g)
+        end
+      end
+      Gp = Gp1
+    end
+    local cocycle
+    let D1 = D1, cocycles = cocycles, pv = pv, i = i
+      function cocycle(aut1::gfp_poly, aut2::gfp_poly)
+        s1 = D1[aut1]
+        s2 = D1[aut2]
+        if isdefined(cocycles[i], :inclusion_of_pSylow)
+          s1 = GAP.Globals.PreImagesRepresentative(cocycles[i].inclusion_of_pSylow, s1)
+          s2 = GAP.Globals.PreImagesRepresentative(cocycles[i].inclusion_of_pSylow, s2)
+        end
+        rescoc = cocycles[i].values_cyclic(s1, s2)
+        return mod(rescoc, pv)::Int
+      end
+    end
+    #I have to find the subgroup of Gp such that the action of Gp on the roots of unity 
+    #coincides with the action on the kernel
+    Stab = NfToNfMor[]
+    inclusion = cocycles[i].inclusion
+    projection = cocycles[i].projection
+    inc_gen = GAP.Globals.Image(inclusion, cocycles[i].gen_kernel)
+    for w = 1:length(Gp)
+      if Gp[w].prim_img == gen(K1)
+        push!(Stab, Gp[w])
+        continue
+      end
+      ss1 = D1[Rx(Gp[w].prim_img)]
+      if isdefined(cocycles[i], :inclusion_of_pSylow)
+        ss1 = GAP.Globals.PreImagesRepresentative(cocycles[i].inclusion_of_pSylow, ss1)
+      end
+      img_el = GAP.Globals.PreImagesRepresentative(projection, ss1)
+      conj_elem = img_el*inc_gen*GAP.Globals.Inverse(img_el)
+      ex = _find_exp(inc_gen, conj_elem)
+      if ex == act_on_roots[w]
+        push!(Stab, Gp[w])
+      end
+    end
+    fl = issplit_cpa(Fext, Stab, cocycle, p, v, Rx)
+    if !fl
+      obstruction[i] = true
+    end
+    
+  end
+  return obstruction
+end
+
+function _obstruction_pp_no_extend(F::FieldsTower, cocycles::Vector{cocycle_ctx}, pv::Int)
+  v, p = ispower(pv)
+  K = F.field
+  autsK = automorphisms(K, copy = false)
+  #I construct the group and the isomorphisms between the automorphisms and the gap group.
+  permGC = _from_autos_to_perm(autsK) 
+  Gperm = _perm_to_gap_grp(permGC)
+  Pcomp = 7
+  R = GF(Pcomp, cached = false)
+  Rx, x = PolynomialRing(R, "x", cached = false)
+  ff1 = Rx(K.pol)
+  while iszero(discriminant(ff1))
+    Pcomp = next_prime(Pcomp)
+    R = GF(Pcomp, cached = false)
+    Rx, x = PolynomialRing(R, "x", cached = false)
+    ff1 = Rx(K.pol)
+  end
+  dautsK = Dict{gfp_poly, Int}()
+  for w = 1:length(autsK)
+    dautsK[Rx(autsK[w].prim_img)] = w
+  end 
+  H = GAP.Globals.ImagesSource(cocycles[1].projection)
+  iso = GAP.Globals.IsomorphismGroups(Gperm, H)
+  ElemGAP = Vector{GAP.GapObj}(undef, length(permGC))
+  for w = 1:length(permGC)
+    ElemGAP[w] = GAP.Globals.Image(iso, _perm_to_gap_perm(permGC[w]))
+  end
+  #Restrict to the p-Sylow
+  Gp = pSylow(autsK, p)
+  obstruction = falses(length(cocycles))
+  for i = 1:length(obstruction)
+    #I create the cocycle
+    local cocycle
+    let ElemGAP = ElemGAP, dautsK = dautsK, cocycles = cocycles, pv = pv
+      function cocycle(aut1::gfp_poly, aut2::gfp_poly)
+        s1 = ElemGAP[dautsK[aut1]]
+        s2 = ElemGAP[dautsK[aut2]]
+        rescoc = cocycles[i].values_cyclic(s1, s2)
+        return mod(rescoc, pv)::Int
+      end
+    end
+    #I have to find the subgroup of Gp such that the action of Gp on the roots of unity 
+    #coincides with the action on the kernel
+    Stab = NfToNfMor[]
+    inclusion = cocycles[i].inclusion
+    projection = cocycles[i].projection
+    inc_gen = GAP.Globals.Image(inclusion, cocycles[i].gen_kernel)
+    for w = 1:length(Gp)
+      if Gp[w].prim_img == gen(K)
+        push!(Stab, Gp[w])
+        continue
+      end
+      s1 = dautsK[Rx(Gp[w].prim_img)]
+      img_el = GAP.Globals.PreImagesRepresentative(projection, ElemGAP[s1])
+      el1 = img_el*inc_gen
+      el2 = inc_gen*img_el
+      if el1 == el2
+        push!(Stab, Gp[w])
+      end
+    end
+    if !issplit_cpa(F, Stab, cocycle, p, v, Rx)
+      obstruction[i] = true
+    end
+    
+  end
+
+  return obstruction  
+end
+
+################################################################################
+#
+#  IsSplit function for a crossed product algebra
+#
+################################################################################
+
+function issplit_cpa(F::FieldsTower, G::Vector{NfToNfMor}, Coc::Function, p::Int, v::Int, Rx::GFPPolyRing)
+  K = F.field
+  @vtime :BrauerObst 1 if p == 2 && istotally_complex(K) && !is_split_at_infinity(K, G, Coc, Rx)
     return false    
   end
   # Now, the finite primes.
@@ -109,12 +966,12 @@ function cpa_issplit(K::AnticNumberField, G::Vector{NfToNfMor}, Stab::Vector{NfT
   # of the cocycle, but our cocycle has values in the roots of unity...
   # I only need to check the tame ramification.
   # The exact sequence on Brauer groups and completion tells me that I have one degree of freedom! :)
-  
-  lp = Hecke.ramified_primes(O)
-  if p in lp
+  O = maximal_order(K)
+  lp = ramified_primes(F)
+  if p in lp || !(F.isabelian || (length(G) == degree(K)))
     for q in lp
       if q != p 
-        @vtime :BrauerObst 1 fl = is_split_at_p(O, G, Stab, Coc, Int(q), p^v, Rx)
+        @vtime :BrauerObst 1 fl = issplit_at_p(F, G, Coc, Int(q), p^v, Rx)
         if !fl
           return false
         end
@@ -122,66 +979,195 @@ function cpa_issplit(K::AnticNumberField, G::Vector{NfToNfMor}, Stab::Vector{NfT
     end
   else
     for i = 1:length(lp)-1
-      @vtime :BrauerObst 1 fl = is_split_at_p(O, G, Stab, Coc, Int(lp[i]), p^v, Rx)
+      q = lp[i]
+      @vtime :BrauerObst 1 fl = issplit_at_p(F, G, Coc, Int(q), p^v, Rx)
       if !fl
         return false
       end
     end
   end
-  return true
-  
+  return true 
 end
 
-function is_split_at_p(O::NfOrd, GC::Vector{NfToNfMor}, Stab::Vector{NfToNfMor}, Coc::Function, p::Int, n::Int, Rx::GFPPolyRing)
+function is_split_at_infinity(K::AnticNumberField, G::Vector{NfToNfMor}, Coc::Function, Rx::GFPPolyRing)
+  fl, aut = _find_complex_conjugation(K, G)
+  if !fl
+    return true
+  end
+  @assert aut in G
+  return !isone(Coc(Rx(aut.prim_img), Rx(aut.prim_img)))
+end
 
+function issplit_at_p(F::FieldsTower, G::Vector{NfToNfMor}, Coc::Function, p::Int, n::Int, Rx::GFPPolyRing)
+  K = F.field
+  O = maximal_order(K)
   lp = prime_decomposition(O, p, cached = true)
-  e = gcd(length(GC), lp[1][2])
+  if degree(O) == length(G) || F.isabelian
+    if !iscoprime(length(G), p)
+      q = ispower(n)[2]
+      Gq = pSylow(G, q)
+      return issplit_at_P(O, Gq, Coc, lp[1][1], n, Rx)
+    else
+      return issplit_at_P(O, G, Coc, lp[1][1], n, Rx)
+    end
+  else
+    for i = 1:length(lp)
+      if !issplit_at_P(O, G, Coc, lp[i][1], n, Rx)
+         return false
+      end
+    end
+    return true
+  end
+end
+
+
+function _find_theta(G::Vector{NfToNfMor}, F::FqNmodFiniteField, mF::Hecke.NfOrdToFqNmodMor, e::Int)
+  #G is the decomposition group of a prime ideal P
+  # F is the quotient, mF the map
+  K = domain(G[1])
+  O = maximal_order(K)
+  p = ispower(e)[2]
+  t = div(e, p)
+  gF = gen(F)
+  igF = K(mF\gF)
+  q = 2
+  R = ResidueRing(FlintZZ, q, cached = false)
+  Rt = PolynomialRing(R, "t", cached = false)[1]
+  fmod = Rt(K.pol)
+  while iszero(discriminant(fmod))
+    q = next_prime(q)
+    R = ResidueRing(FlintZZ, q, cached = false)
+    Rt = PolynomialRing(R, "t", cached = false)[1]
+    fmod = Rt(K.pol)
+  end
+  theta = G[1]
+  for i = 1:length(G)
+    theta = G[i]
+    res = O(theta(igF), false)
+    #img = compose_mod(theta_q, igFq, fmod)
+    #res = O(lift(K, img), false)
+    #I make sure that the element is a generator of the inertia subgroup
+    if mF(res) == gF 
+      theta_q = Rt(theta.prim_img)
+      pp = theta_q
+      for i = 2:t
+        pp = compose_mod(theta_q, pp, fmod)
+      end
+      if pp != gen(Rt)
+        break
+      end
+    end
+  end
+  return theta
+end
+
+
+function _find_frob(G::Vector{NfToNfMor}, F::FqNmodFiniteField, mF::Hecke.NfOrdToFqNmodMor, e::Int, f::Int, q::Int, theta::NfToNfMor)
+  K = domain(G[1])
+  O = maximal_order(K)
+  q1 = 2
+  R = ResidueRing(FlintZZ, q1, cached = false)
+  Rt = PolynomialRing(R, "t", cached = false)[1]
+  fmod = Rt(K.pol)
+  while iszero(discriminant(fmod))
+    q1 = next_prime(q1)
+    R = ResidueRing(FlintZZ, q1, cached = false)
+    Rt = PolynomialRing(R, "t", cached = false)[1]
+    fmod = Rt(K.pol)
+  end
+  gK = gen(K)
+  p = ispower(e)[2]
+  t = div(e, p)
+  expo = mod(q, e)
+  gF = gen(F)
+  igF = K(mF\gF)
+  rhs = gF^q
+  theta_q = Rt(theta.prim_img)
+  for i = 1:length(G)
+    frob = G[i]
+    if frob == theta
+      continue
+    end
+    if mF(O(frob(igF), false)) != rhs
+      continue
+    end
+    frob_q = Rt(frob.prim_img)
+    #Now, I check the relation
+    #gc = frob * theta 
+    gc = compose_mod(frob_q, theta_q, fmod)
+    #gq = (theta^expo) * frob
+    #TODO: Binary powering
+    gq = theta_q
+    for i = 2:expo
+      gq = compose_mod(gq, theta_q, fmod)
+    end
+    gq = compose_mod(gq, frob_q, fmod)
+    fl = gc == gq
+    @hassert :Fields 1 fl == ((theta^expo) * frob == frob * theta)
+    if fl
+      return frob
+    end
+  end
+  error("something went wrong!")
+end
+
+function _pow_as_comp(f::gfp_poly, b::Int, fmod::gfp_poly)
+  Rx = base_ring(f)
+  if b == 0
+    error("what is that?!")
+  elseif b == 1
+    return f
+  else
+    bit = ~((~UInt(0)) >> 1)
+    while (UInt(bit) & b) == 0
+      bit >>= 1
+    end
+    z = f
+    bit >>= 1
+    while bit != 0
+      z = Hecke.compose_mod(z, z, fmod)
+      if (UInt(bit) & b) != 0
+        z = Hecke.compose_mod(f, z, fmod)
+      end
+      bit >>= 1
+    end
+    return z
+  end
+end
+
+
+
+function issplit_at_P(O::NfOrd, G::Vector{NfToNfMor}, Coc::Function, P::NfOrdIdl, n::Int, Rx::GFPPolyRing)
+  e = gcd(length(G), ramification_index(P))
   if e == 1
     return true
   end
-  
-  P = lp[1][1]
-  @assert divisible(norm(P)-1, e)
-  c = divexact(norm(P)-1, e)
-  f = gcd(length(GC), degree(P))
-  if f == 1 && iszero(mod(c, n))
-    return true
+  f = gcd(length(G), degree(P))
+  if divisible(norm(P)-1, e)
+    c = divexact(norm(P)-1, e)
+    if f == 1 && iszero(mod(c, n))
+      return true
+    end
   end 
-  if length(lp) != 1
-    @vtime :BrauerObst 1  Gp = decomposition_group(P, G = GC, orderG = e*f)
-    #I don't really want the decomposition group of the p-sylow, but the p-sylow of the decomposition group.
-    #Therefore, if the p-sylow is not normal, I have to try different primes.
-    i = 1
-    while length(Gp) != e*f
-      i += 1
-      P = lp[i][1]
-      Gp = decomposition_group(P, G = GC, orderG = e*f)
-    end
-  else
-    Gp = GC
-  end
-  GpStab = NfToNfMor[]
-  for i = 1:length(Gp)
-    if Gp[i] in Stab
-      push!(GpStab, Gp[i])
-    end
-  end
-  #I need the inertia subgroup to determine e and f
-  InGrp = inertia_subgroup(P, G = GpStab)
+  @vtime :BrauerObst 1  Gp = decomposition_group(P, G = G, orderG = e*f)
+  InGrp = inertia_subgroup(P, G = Gp)
   e = length(InGrp)
   if e == 1
     return true
   end
-  f = divexact(length(GpStab), e)
+  f = divexact(length(Gp), e)
+  @assert divisible(norm(P)-1, e)
   c = divexact(norm(P)-1, e)
   if f == 1 && iszero(mod(c, n))
     return true
   end 
+  p = Int(minimum(P))
   f1 = divexact(degree(P), f)
   q = p^f1 #Cardinality of the residue field
 
   F, mF = Hecke.ResidueFieldSmall(O, P)
-  theta1 = _find_theta(GpStab, F, mF, e)
+  theta1 = _find_theta(InGrp, F, mF, e)
+
   theta = Rx(theta1.prim_img)
   fmod = Rx(nf(O).pol)
   #I have found my generators. Now, we find the elements to test if it splits.
@@ -201,8 +1187,9 @@ function is_split_at_p(O::NfOrd, GC::Vector{NfToNfMor}, Stab::Vector{NfToNfMor},
   if f == 1
     return true
   end
-  frob1 = _find_frob(GpStab, F, mF, e, f, q, theta1)
+  frob1 = _find_frob(Gp, F, mF, e, f, q, theta1)
   frob = Rx(frob1.prim_img)
+
   if iszero(mod(q-1, e*n))
     lambda = mod(Coc(frob, theta)- Coc(theta, frob), n)
     return iszero(lambda)
@@ -229,4 +1216,3 @@ function is_split_at_p(O::NfOrd, GC::Vector{NfToNfMor}, Stab::Vector{NfToNfMor},
   return iszero(lambda)
 
 end
-

@@ -61,7 +61,7 @@ include("./merge.jl")
 include("./abelian_layer.jl")
 include("./read_write.jl")
 include("./conductors.jl")
-include("./new_brauer.jl")
+include("./brauer.jl")
 
 Generic.degree(F::FieldsTower) = degree(F.field)
 Hecke.maximal_order(F::FieldsTower) = maximal_order(F.field)
