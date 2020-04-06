@@ -118,7 +118,7 @@ end
     end
     push!(g, gg)
     gg = monic_randpoly(Ky, 3, 3, 10) # Must be coprime to 2
-    while gg == g[1] || !isirreducible(gg)
+    while gg == g[1] || !isirreducible(gg) || isisomorphic(number_field(g[1], cached = false)[1], number_field(gg, cached = false)[1])[1]
       gg = monic_randpoly(Ky, 3, 3, 10) # Must be coprime to 2
     end
     push!(g, gg)
