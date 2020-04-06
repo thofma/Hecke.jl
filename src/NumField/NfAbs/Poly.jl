@@ -188,6 +188,16 @@ function gcd_modular_kronnecker(a::Generic.Poly{nf_elem}, b::Generic.Poly{nf_ele
   last_g = zero(Kt)
   while true
     p = next_prime(p)
+    F = GF(p, cached = false)
+    Fx = PolynomialRing(F, "x", cached = false)[1]
+    Fp = Fx(K.pol)
+    if !issquarefree(Fp)
+      continue
+    end
+    fs = factor_shape(Fp)
+    if any(x -> x > 4, values(fs))
+      continue
+    end
     local me, fp, gp, fsap
     try 
       me = modular_init(K, p)

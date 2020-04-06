@@ -57,7 +57,6 @@ function Base.show(io::IO, F::FieldsTower)
   return nothing
 end
 
-include("./brauer.jl")
 include("./merge.jl")
 include("./abelian_layer.jl")
 include("./read_write.jl")
@@ -74,6 +73,25 @@ function ramified_primes(F::FieldsTower)
     F.ramified_primes = collect(keys(f.fac))
   end
   return F.ramified_primes
+end
+
+################################################################################
+#
+#  Assure has automorphisms
+#
+################################################################################
+
+function assure_automorphisms(T::FieldsTower)
+  assure_automorphisms(T.field, T.generators_of_automorphisms)
+end
+
+function assure_automorphisms(K::AnticNumberField, gens::Vector{NfToNfMor})
+  if isautomorphisms_known(K)
+    return nothing
+  end
+  auts = closure(gens, degree(K))
+  _set_automorphisms_nf(K, auts)
+  return nothing
 end
 
 ###############################################################################

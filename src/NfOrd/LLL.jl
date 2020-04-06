@@ -332,11 +332,11 @@ function _lll(M::NfOrd, prec::Int)
   return M1
 end
 
-function _ordering_by_T2(M::NfOrd)
+function _ordering_by_T2(M::NfOrd, prec::Int = 32)
   
   K = nf(M)
   B = basis(M, K)
-  ints = fmpz[lower_bound(t2(x), fmpz) for x in B]
+  ints = fmpz[lower_bound(t2(x, prec), fmpz) for x in B]
   p = sortperm(ints)
   On = NfOrd(B[p])
   On.ismaximal = M.ismaximal
@@ -395,7 +395,7 @@ function _has_trivial_intersection(v::Vector{Vector{Int}}, V::Vector{Vector{Int}
   return true
 end
 
-function lll_precomputation(M::NfOrd, prec::Int, nblocks::Int = 2)
+function lll_precomputation(M::NfOrd, prec::Int, nblocks::Int = 4)
   n = degree(M)
   K = nf(M)
   dimension_blocks = div(n, nblocks)
@@ -488,7 +488,7 @@ function _lll_sublattice(M::NfOrd, u::Vector{Int}; prec = 100)
 end
 
 
-function _lll_with_parameters(M::NfOrd, parameters::Tuple{Float64, Float64}, prec)
+function _lll_with_parameters(M::NfOrd, parameters::Tuple{Float64, Float64}, prec; steps::Int = -1)
 
   K = nf(M)
   n = degree(M)
@@ -498,7 +498,7 @@ function _lll_with_parameters(M::NfOrd, parameters::Tuple{Float64, Float64}, pre
   local d::fmpz_mat
   ctx = Nemo.lll_ctx(parameters[1], parameters[2], :gram)
   att = 0 
-  while true
+  while steps == -1 || att < steps
     att += 1
     if att > 3 
       @vprint :LLL "Having a hard time computing a LLL basis"
@@ -512,6 +512,7 @@ function _lll_with_parameters(M::NfOrd, parameters::Tuple{Float64, Float64}, pre
         prec = prec*2
       end
     end
+
     @vprint :LLL 3 "Minkowski matrix computed\n"
     diag_d = prod_diagonal(d)
     g = identity_matrix(FlintZZ, n)

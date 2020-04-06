@@ -608,7 +608,7 @@ function norm_group(l_pols::Array{T, 1}, mR::Hecke.MapRayClassGrp, isabelian::Bo
   if check
     @assert all(x -> isirreducible(x), l_pols) "Input polynomials must be irreducible"
   end
-  N1 = fmpz(minimum(mR.defining_modulus[1]))
+  N1 = minimum(defining_modulus(mR)[1])
   #I don't want to compute the discriminant of the polynomials.
   #The degree might be large and so difficult to compute.
   #Thus I will check for every prime if the projection has discriminant 0
@@ -760,6 +760,68 @@ function norm_group(mL::NfToNfMor, mR::Union{MapRayClassGrp, MapClassGrp}, expec
   end
   return sub(R, els, !false)
 end
+
+function norm_group(KK::KummerExt, mp::NfToNfMor, mR::Union{MapRayClassGrp, MapClassGrp})
+  k = domain(mp)
+  K = codomain(mp)
+  ZK = maximal_order(K)
+  zk = order(codomain(mR))
+  # disc(ZK/Q) = N(disc(ZK/zk)) * disc(zk)^deg
+  # we need the disc ZK/k, well a conductor.
+  
+ 
+  n = degree(KK)
+  els = GrpAbFinGenElem[]
+  stable = 0
+  max_stable = 10*n*degree(k)
+  R = domain(mR)
+  expo = exponent(R)
+  Q, mQ = quo(R, els, false)
+  modu = minimum(defining_modulus(mR)[1])
+  prev = length(els)
+  #S = PrimesSet(minimum(defining_modulus(mR)[1]), fmpz(-1), minimum(defining_modulus(mR)[1]), fmpz(1))
+  S = PrimesSet(200, -1, exponent(KK), 1)
+  for p in S
+    if !iscoprime(p, modu)
+      continue
+    end
+    lp = prime_decomposition(zk, p, 1)
+    for i = 1:length(lp)
+      P = lp[i][1]
+      if iszero(mR\P)
+        continue
+      end
+      lP = prime_decomposition(mp, P)
+      local z::GrpAbFinGenElem
+      try
+        z = canonical_frobenius(lP[1][1], KK)
+      catch e
+        if !isa(e, BadPrime)
+          rethrow(e)
+        end
+        continue
+      end
+      f = order(z)*divexact(degree(lP[1][1]), degree(P))
+      if divisible(f, expo)
+        stable += 1
+        continue
+      end
+      el = f*(mR\P)
+      if !iszero(mQ(el))
+        push!(els, el)
+        Q, mQ = quo(R, els, false)
+      else
+        stable += 1
+      end
+    end
+    if stable >= max_stable
+      break
+    end
+  end
+  return sub(R, els)
+end
+
+
 
 @doc Markdown.doc"""
     maximal_abelian_subfield(::Type{ClassField}, K::AnticNumberField) -> ClassField
@@ -934,65 +996,6 @@ function maximal_abelian_subfield(A::ClassField, mp::NfToNfMor)
   return ray_class_field(mr, mG)
 end
 
-function norm_group(KK::KummerExt, mp::NfToNfMor, mR::Union{MapRayClassGrp, MapClassGrp})
-  k = domain(mp)
-  K = codomain(mp)
-  ZK = maximal_order(K)
-  zk = order(codomain(mR))
-  # disc(ZK/Q) = N(disc(ZK/zk)) * disc(zk)^deg
-  # we need the disc ZK/k, well a conductor.
-  
- 
-  n = degree(KK)
-  els = GrpAbFinGenElem[]
-  stable = 0
-  max_stable = 10*n*degree(k)
-  R = domain(mR)
-  expo = exponent(R)
-  Q, mQ = quo(R, els, false)
-  modu = minimum(defining_modulus(mR)[1])
-  prev = length(els)
-  #S = PrimesSet(minimum(defining_modulus(mR)[1]), fmpz(-1), minimum(defining_modulus(mR)[1]), fmpz(1))
-  S = PrimesSet(200, -1)
-  for p in S
-    if !iscoprime(p, modu)
-      continue
-    end
-    lp = prime_decomposition(zk, p)
-    for i = 1:length(lp)
-      P = lp[i][1]
-      if iszero(mR\P)
-        continue
-      end
-      lP = prime_decomposition(mp, P)
-      local z::GrpAbFinGenElem
-      try
-        z = canonical_frobenius(lP[1][1], KK)
-      catch e
-        if !isa(e, BadPrime)
-          rethrow(e)
-        end
-        continue
-      end
-      f = order(z)*divexact(degree(lP[1][1]), degree(P))
-      if divisible(f, expo)
-        stable += 1
-        continue
-      end
-      el = f*(mR\P)
-      if !iszero(mQ(el))
-        push!(els, el)
-        Q, mQ = quo(R, els, false)
-      else
-        stable += 1
-      end
-    end
-    if stable >= max_stable
-      break
-    end
-  end
-  return sub(R, els)
-end
 
 @doc Markdown.doc"""
     ray_class_field(K::NfRel{nf_elem}) -> ClassField

@@ -1,3 +1,6 @@
+add_verbose_scope(:BrauerObst)
+
+
 ################################################################################
 #
 #  Obstruction Interface
@@ -333,6 +336,40 @@ end
 #
 ################################################################################
 
+function _autos_to_check(G::GAP.GapObj, K::GAP.GapObj, E::GAP.GapObj, mG::GAP.GapObj)
+  AutG = GAP.Globals.AutomorphismGroup(G)
+  AutK = GAP.Globals.AutomorphismGroup(K)
+  AutE = GAP.Globals.AutomorphismGroup(E)
+  #I want to construct the map between the automorphism groups. The kernel is characteristic!
+  gens = GAP.Globals.GeneratorsOfGroup(AutE)
+  ind_auts_quo = Array{GAP.GapObj, 1}(undef, length(gens))
+  ind_auts_sub = Array{GAP.GapObj, 1}(undef, length(gens))
+  for s = 1:length(gens)
+    ind_auts_quo[s] = GAP.Globals.InducedAutomorphism(mG, gens[s])
+    ind_auts_sub[s] = GAP.Globals.RestrictedMapping(gens[s], K)
+  end
+  GProd = GAP.Globals.DirectProduct(AutG, AutK)
+  EmbAutG = GAP.Globals.Embedding(GProd, 1)
+  EmbAutK = GAP.Globals.Embedding(GProd, 2)
+  gensubs = Vector{GAP.GapObj}(undef, length(gens))
+  for s = 1:length(gens)
+    gensubs[s] = GAP.Globals.Image(EmbAutG, ind_auts_quo[s]) * GAP.Globals.Image(EmbAutK, ind_auts_sub[s])
+  end
+  S = GAP.Globals.Subgroup(GProd, GAP.julia_to_gap(gensubs))
+  iso = GAP.Globals.IsomorphismPermGroup(GProd)
+  Prod_as_perm = GAP.Globals.ImagesSource(iso)
+  S_as_perm = GAP.Globals.Image(iso, S)
+  Tperm = GAP.Globals.List(GAP.Globals.RightTransversal(Prod_as_perm, S_as_perm))
+  #Now, I have to recover the automorphisms in AutG and AutK
+  ProjAutG = GAP.Globals.Projection(GProd, 1)
+  ProjAutK = GAP.Globals.Projection(GProd, 2)
+  res = Vector{Tuple{GAP.GapObj, GAP.GapObj}}(undef, length(Tperm))
+  for i = 1:length(Tperm)
+    res[i] = (GAP.Globals.Image(ProjAutG, GAP.Globals.PreImagesRepresentative(iso, Tperm[i])), GAP.Globals.Image(ProjAutK, GAP.Globals.PreImagesRepresentative(iso, Tperm[i])))
+  end
+  return res
+end
+
 function cocycles_computation(L::GAP.GapObj, level::Int)
 
   proj = GAP.Globals.NaturalHomomorphismByNormalSubgroup(L[1], L[level+1])
@@ -403,6 +440,75 @@ function _cocycle_to_exponent!(cocycle::cocycle_ctx)
   cocycle.values_cyclic = cocycle_val
   cocycle.gen_kernel = gen
   return nothing
+end
+
+function _find_exp(x::GAP.GapObj, y::GAP.GapObj)
+  if GAP.Globals.One(x) == y
+    return 0
+  end
+  # I want to find i such that x^i = y
+  i = 1
+  z = GAP.Globals.ShallowCopy(x)
+  while z != y
+    z = z*x
+    i += 1
+  end 
+  #@assert x^i == y
+  return i
+end
+
+###############################################################################
+#
+#  P-Sylow subgroup
+#
+###############################################################################
+
+function pSylow(Gperm::GAP.GapObj, permGAP::Vector{GAP.GapObj}, G::Vector{NfToNfMor}, p::Int)
+  p2 = ispower(length(G))[2]
+  if p == p2
+    return G
+  end
+  H = GAP.Globals.SylowSubgroup(Gperm, p)
+  lGp = GAP.Globals.Size(H)
+  Gp = Array{Hecke.NfToNfMor,1}(undef, lGp)
+  j = 1
+  for ind = 1:length(G)
+    if j > lGp
+      break
+    end
+    if GAP.Globals.IN(permGAP[ind], H)
+      Gp[j] = G[ind]
+      j += 1
+    end
+  end
+  return Gp  
+end
+
+function pSylow(G::Vector{NfToNfMor}, p::Int)
+  com, uncom = ppio(length(G), p)
+  if uncom == 1
+    return G
+  end
+  permGC = _from_autos_to_perm(G) 
+  Gperm = _perm_to_gap_grp(permGC)
+  PermGAP = Vector{GAP.GapObj}(undef, length(permGC))
+  for w = 1:length(permGC)
+    PermGAP[w] = _perm_to_gap_perm(permGC[w])
+  end
+  return pSylow(Gperm, PermGAP, G, p)
+end
+
+################################################################################
+#
+#  Setup of cyclotomic extension
+#
+################################################################################
+
+function _ext_cycl(G::Array{Hecke.NfToNfMor, 1}, d::Int)
+  K = domain(G[1])
+  Kc = cyclotomic_extension(K, d, compute_maximal_order = true, compute_LLL_basis = false, cached = false)
+  automorphisms(Kc; gens = G, copy = false)
+  return Kc
 end
 
 
@@ -562,11 +668,84 @@ function _obstruction_prime(x::FieldsTower, cocycles::Vector{cocycle_ctx}, p)
   return obstruction
 end
 
+
+
+
+
+
 ################################################################################
 #
 #  Obstruction cyclic prime power
 #
 ################################################################################
+
+function action_on_roots(G::Vector{NfToNfMor}, zeta::nf_elem, pv::Int)
+  act_on_roots = Array{Int, 1}(undef, length(G))
+  p = 11
+  K = domain(G[1])
+  Qx = parent(K.pol)
+  R = GF(p, cached = false)
+  Rx, x = PolynomialRing(R, "x", cached = false)
+  fmod = Rx(K.pol)
+  while iszero(discriminant(fmod)) || iszero(mod(pv, p))
+    p = next_prime(p)
+    R = GF(p, cached = false)
+    Rx, x = PolynomialRing(R, "x", cached = false)
+    fmod = Rx(K.pol)
+  end
+  polsG = gfp_poly[Rx(g.prim_img) for g in G]
+  zetaP = Rx(zeta)
+  units = Vector{gfp_poly}(undef, pv-1)
+  units[1] = zetaP
+  for i = 2:pv-1
+    units[i] = mod(units[i-1]*zetaP, fmod)
+  end
+  for w = 1:length(G)
+    act = Hecke.compose_mod(zetaP, polsG[w], fmod)
+    s = 1
+    while act != units[s]
+      s += 1
+    end
+    act_on_roots[w] = s
+    #@assert G[w](zeta) == zeta^s
+  end
+  return act_on_roots
+end
+
+function restriction(autsK1::Vector{NfToNfMor}, autsK::Vector{NfToNfMor}, mp::NfToNfMor)
+  K = domain(mp)
+  K1 = codomain(mp)
+  p = 11
+  R = GF(p, cached = false)
+  Rx, x = PolynomialRing(R, "x", cached = false)
+  ff1 = Rx(K.pol)
+  fmod = Rx(K1.pol)
+  while iszero(discriminant(ff1)) || iszero(discriminant(fmod))
+    p = next_prime(p)
+    R = GF(p, cached = false)
+    Rx, x = PolynomialRing(R, "x", cached = false)
+    ff1 = Rx(K.pol)
+    fmod = Rx(K1.pol)
+  end
+  mp_pol = Rx(mp.prim_img)
+  imgs = Vector{gfp_poly}(undef, length(autsK))
+  for i = 1:length(imgs)
+    imgs[i] = Hecke.compose_mod(Rx(autsK[i].prim_img), mp_pol, fmod)
+  end
+  res = Vector{Int}(undef, length(autsK1))
+  for i = 1:length(res)
+    img = Hecke.compose_mod(mp_pol, Rx(autsK1[i].prim_img), fmod)
+    for j = 1:length(autsK)
+      if img == imgs[j]
+        res[i] = j
+        break
+      end
+    end
+    #@assert mp(autsK[res[i]].prim_img) == autsK1[i](mp.prim_img)
+  end
+  return res
+end
+
 
 function check_obstruction_cyclic(F::FieldsTower, cocycles::Vector{cocycle_ctx}, p::Int)
   n = GAP.Globals.Size(GAP.Globals.Source(cocycles[1].inclusion))
@@ -840,6 +1019,122 @@ function issplit_at_p(F::FieldsTower, G::Vector{NfToNfMor}, Coc::Function, p::In
     return true
   end
 end
+
+
+function _find_theta(G::Vector{NfToNfMor}, F::FqNmodFiniteField, mF::Hecke.NfOrdToFqNmodMor, e::Int)
+  #G is the decomposition group of a prime ideal P
+  # F is the quotient, mF the map
+  K = domain(G[1])
+  O = maximal_order(K)
+  p = ispower(e)[2]
+  t = div(e, p)
+  gF = gen(F)
+  igF = K(mF\gF)
+  q = 2
+  R = ResidueRing(FlintZZ, q, cached = false)
+  Rt = PolynomialRing(R, "t", cached = false)[1]
+  fmod = Rt(K.pol)
+  while iszero(discriminant(fmod))
+    q = next_prime(q)
+    R = ResidueRing(FlintZZ, q, cached = false)
+    Rt = PolynomialRing(R, "t", cached = false)[1]
+    fmod = Rt(K.pol)
+  end
+  theta = G[1]
+  for i = 1:length(G)
+    theta = G[i]
+    res = O(theta(igF), false)
+    #img = compose_mod(theta_q, igFq, fmod)
+    #res = O(lift(K, img), false)
+    #I make sure that the element is a generator of the inertia subgroup
+    if mF(res) == gF 
+      theta_q = Rt(theta.prim_img)
+      pp = theta_q
+      for i = 2:t
+        pp = compose_mod(theta_q, pp, fmod)
+      end
+      if pp != gen(Rt)
+        break
+      end
+    end
+  end
+  return theta
+end
+
+
+function _find_frob(G::Vector{NfToNfMor}, F::FqNmodFiniteField, mF::Hecke.NfOrdToFqNmodMor, e::Int, f::Int, q::Int, theta::NfToNfMor)
+  K = domain(G[1])
+  O = maximal_order(K)
+  q1 = 2
+  R = ResidueRing(FlintZZ, q1, cached = false)
+  Rt = PolynomialRing(R, "t", cached = false)[1]
+  fmod = Rt(K.pol)
+  while iszero(discriminant(fmod))
+    q1 = next_prime(q1)
+    R = ResidueRing(FlintZZ, q1, cached = false)
+    Rt = PolynomialRing(R, "t", cached = false)[1]
+    fmod = Rt(K.pol)
+  end
+  gK = gen(K)
+  p = ispower(e)[2]
+  t = div(e, p)
+  expo = mod(q, e)
+  gF = gen(F)
+  igF = K(mF\gF)
+  rhs = gF^q
+  theta_q = Rt(theta.prim_img)
+  for i = 1:length(G)
+    frob = G[i]
+    if frob == theta
+      continue
+    end
+    if mF(O(frob(igF), false)) != rhs
+      continue
+    end
+    frob_q = Rt(frob.prim_img)
+    #Now, I check the relation
+    #gc = frob * theta 
+    gc = compose_mod(frob_q, theta_q, fmod)
+    #gq = (theta^expo) * frob
+    #TODO: Binary powering
+    gq = theta_q
+    for i = 2:expo
+      gq = compose_mod(gq, theta_q, fmod)
+    end
+    gq = compose_mod(gq, frob_q, fmod)
+    fl = gc == gq
+    @hassert :Fields 1 fl == ((theta^expo) * frob == frob * theta)
+    if fl
+      return frob
+    end
+  end
+  error("something went wrong!")
+end
+
+function _pow_as_comp(f::gfp_poly, b::Int, fmod::gfp_poly)
+  Rx = base_ring(f)
+  if b == 0
+    error("what is that?!")
+  elseif b == 1
+    return f
+  else
+    bit = ~((~UInt(0)) >> 1)
+    while (UInt(bit) & b) == 0
+      bit >>= 1
+    end
+    z = f
+    bit >>= 1
+    while bit != 0
+      z = Hecke.compose_mod(z, z, fmod)
+      if (UInt(bit) & b) != 0
+        z = Hecke.compose_mod(f, z, fmod)
+      end
+      bit >>= 1
+    end
+    return z
+  end
+end
+
 
 
 function issplit_at_P(O::NfOrd, G::Vector{NfToNfMor}, Coc::Function, P::NfOrdIdl, n::Int, Rx::GFPPolyRing)
