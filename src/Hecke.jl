@@ -724,8 +724,6 @@ end
 #
 ################################################################################
 
-export example
-
 function example(s::String)
   Base.include(Main, joinpath(dirname(pathof(Hecke)), "..", "examples", s))
 end
@@ -735,7 +733,15 @@ function revise(s::String)
   Main.Revise.track(Main, s)
 end
 
-#same (copyed) as in stdlib/v1.0/InteractiveUtils/src/InteractiveUtils.jl
+function system(s::String)
+  Base.include(Main, joinpath(dirname(pathof(Hecke)), "..", "system", s))
+end
+
+function build()
+  system("Build.jl")
+end
+
+#same (copied) as in stdlib/v1.0/InteractiveUtils/src/InteractiveUtils.jl
 #difference: names(m, all = true) to also see non-exported variables, aka
 # caches...
 
