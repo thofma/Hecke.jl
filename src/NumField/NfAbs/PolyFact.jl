@@ -274,7 +274,7 @@ function factor_new(f::PolyElem{nf_elem})
     end
   end
   @vprint :PolyFactor 1 "possible degrees: $s\n"
-  if br < 5
+  if br < -5
     return zassenhaus(f, bp, degset = s)
   else
     return van_hoeij(f, bp)
@@ -444,8 +444,9 @@ end
 #the LLL_basis of the ideal
 function grow_prec!(vH::vanHoeijCtx, pr::Int)
   lift(vH.H, pr)
+  @show pr, parent(vH.P)
 
-  vH.Ml = lll(basis_matrix(vH.P^pr))
+  @time vH.Ml = lll(basis_matrix(vH.P^pr))
   pMr = pseudo_inv(vH.Ml)
   F = FakeFmpqMat(pMr)
   #M * basis_matrix(zk) is the basis wrt to the field
@@ -745,6 +746,7 @@ end
 #even better (modular resultant)
 # power series over finite fields are sub-par...or at least this usage
 # fixed "most" of it...
+#Update: f, K large enough, this wins. Need bounds...
 function norm_mod(f::PolyElem{nf_elem}, Zx)
   p = p_start
   K = base_ring(f)
@@ -768,7 +770,7 @@ function norm_mod(f::PolyElem{nf_elem}, Zx)
     if prev == g
       return g
     end
-    if nbits(d) > 2000
+    if nbits(d) > 20000
       error("too bad")
     end
   end
