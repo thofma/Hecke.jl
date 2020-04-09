@@ -754,6 +754,7 @@ function norm_mod(f::PolyElem{nf_elem}, Zx)
   g = Zx(0)
   d = fmpz(1)
 
+  stable = 0
   while true
     p = next_prime(p)
     k = GF(p)
@@ -768,7 +769,12 @@ function norm_mod(f::PolyElem{nf_elem}, Zx)
       g, d = induce_crt(g, d, tt, fmpz(p), true)
     end
     if prev == g
-      return g
+      stable += 1
+      if stable > 4
+        return g
+      end
+    else
+      stable = 0
     end
     if nbits(d) > 20000
       error("too bad")
