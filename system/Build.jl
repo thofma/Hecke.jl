@@ -8,7 +8,7 @@ using PackageCompiler, Libdl
 f = open("/tmp/CompileHecke.jl", "w")
 println(f, "using Hecke")
 println(f, "using Pkg")
-println(f, "Hecke.test_module(\"runtests\", false)")
+println(f, "Hecke.system(\"precompile.jl\")")
 close(f)
 
 PackageCompiler.create_sysimage([:Hecke], sysimage_path="/tmp/Hecke.$(Libdl.dlext)", precompile_execution_file="/tmp/CompileHecke.jl")        

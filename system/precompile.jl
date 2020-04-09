@@ -1,0 +1,7 @@
+quadratic_field(10)
+cyclotomic_field(101)
+k, a = wildanger_field(3, 13)
+h = hilbert_class_field(k)
+K = number_field(h)
+discriminant(maximal_order(K))
+norm_equation(k, 27)
