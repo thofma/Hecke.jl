@@ -11,11 +11,13 @@ function parallel_lll_precomputation(M::NfOrd, prec::Int, nblocks::Int = 4)
   push!(blocks, collect(int))
   new_prec = prec
   to_do = Hecke.subsets(blocks, 2)
+  @vprint :LLL 3 "Subsets computed\n"
   #I need first to create all the blocks to do simultaneously.
   done = falses(length(to_do))
   while !all(done)
     blocks_selection = Vector{Int}[]
     block = 1
+    @vprint :LLL 3 "Starting block selection\n"
     while block < length(to_do)+1
       while block < length(to_do)+1 && (done[block] || !Hecke._has_trivial_intersection(to_do[block], blocks_selection))
         block += 1
@@ -28,7 +30,17 @@ function parallel_lll_precomputation(M::NfOrd, prec::Int, nblocks::Int = 4)
       push!(blocks_selection, indices)
       block += 1
     end
+    @vprint :LLL 3 "Blocks selection finished\n"
     g = identity_matrix(FlintZZ, n)
+    while true
+      try
+        Hecke.minkowski_gram_mat_scaled(M, prec)
+	break
+      catch e
+        prec *= 2
+      end
+    end
+    @vprint :LLL 3 "Start computation \n"
     @Threads.threads for i = 1:length(blocks_selection)
       indices = blocks_selection[i]
       g1 = Hecke._lll_sublattice(M, indices, prec = prec)[2]

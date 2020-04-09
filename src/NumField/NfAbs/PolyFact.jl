@@ -274,7 +274,7 @@ function factor_new(f::PolyElem{nf_elem})
     end
   end
   @vprint :PolyFactor 1 "possible degrees: $s\n"
-  if br < 5
+  if br < -5
     return zassenhaus(f, bp, degset = s)
   else
     return van_hoeij(f, bp)
@@ -445,7 +445,7 @@ end
 function grow_prec!(vH::vanHoeijCtx, pr::Int)
   lift(vH.H, pr)
 
-  vH.Ml = lll(basis_matrix(vH.P^pr))
+  @time vH.Ml = lll(basis_matrix(vH.P^pr))
   pMr = pseudo_inv(vH.Ml)
   F = FakeFmpqMat(pMr)
   #M * basis_matrix(zk) is the basis wrt to the field
@@ -745,19 +745,30 @@ end
 #even better (modular resultant)
 # power series over finite fields are sub-par...or at least this usage
 # fixed "most" of it...
-function norm_mod(f::PolyElem{nf_elem}, Zx)
+#Update: f, K large enough, this wins. Need bounds...
+
+function norm_mod(f::PolyElem{nf_elem}, p::Int, Zx = Globals.Zx)
+  K = base_ring(f)
+  k = GF(p)
+  me = modular_init(K, p)
+  t = modular_proj(f, me)
+  tt = lift(Zx, power_sums_to_polynomial(sum(map(x -> map(y -> k(coeff(trace(y), 0)), polynomial_to_power_sums(x, degree(f)*degree(K))), t))))
+  return tt
+end
+
+function norm_mod(f::PolyElem{nf_elem}, Zx=Globals.Zx)
+  #assumes, implicitly, the coeffs of f are algebraic integers.
+  # equivalently: the norm is integral...
   p = p_start
   K = base_ring(f)
 
   g = Zx(0)
   d = fmpz(1)
 
+  stable = 0
   while true
     p = next_prime(p)
-    k = GF(p)
-    me = modular_init(K, p)
-    t = modular_proj(f, me)
-    tt = lift(Zx, power_sums_to_polynomial(sum(map(x -> map(y -> k(coeff(trace(y), 0)), polynomial_to_power_sums(x, degree(f)*degree(K))), t))))
+    tt = norm_mod(f, p, Zx)
     prev = g
     if isone(d)
       g = tt
@@ -766,9 +777,14 @@ function norm_mod(f::PolyElem{nf_elem}, Zx)
       g, d = induce_crt(g, d, tt, fmpz(p), true)
     end
     if prev == g
-      return g
+      stable += 1
+      if stable > 4
+        return g
+      end
+    else
+      stable = 0
     end
-    if nbits(d) > 2000
+    if nbits(d) > 20000
       error("too bad")
     end
   end
