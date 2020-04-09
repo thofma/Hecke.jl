@@ -52,3 +52,4 @@
  * [ ] `next_prime(::fmpz, ::Bool)`
  * [x] `round(::Type{fmpq}, ::fmpz)` is doing funky things. Also needs the `RoundUp/RoundDown` versions.
  * [x] Parent checks for factored elements
+ * [ ] Primitive element for all finite fields
