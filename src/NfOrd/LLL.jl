@@ -452,12 +452,12 @@ function _lll_sublattice(M::NfOrd, u::Vector{Int}; prec = 100)
   n = degree(M)
   l = length(u)
   prec = max(prec, 10*n)
-  local g::fmpz_mat
-  local d::fmpz_mat
+  g= zero_matrix(FlintZZ, n, n)
   ctx = Nemo.lll_ctx(0.99, 0.51, :gram)
   #TODO: If one can compute the exact discriminant of the lattice, we could check correctness. 
   # At the moment it is just heuristic.
   while true
+    local d::fmpz_mat
     while true
       try
         d = minkowski_gram_mat_scaled(M, prec)

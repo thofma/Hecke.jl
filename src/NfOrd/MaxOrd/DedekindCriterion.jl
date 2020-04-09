@@ -131,7 +131,7 @@ dedekind_poverorder(O::NfOrd, p::Integer) = dedekind_poverorder(O, FlintZZ(p))
 ###############################################################################
 
 function dedekind_test_composite(O::NfOrd, p::fmpz)
-  @assert iscoprime(index(O), p)
+  @assert isequation_order(O)
   
   Zy = PolynomialRing(FlintZZ, "y")[1]
   R = ResidueRing(FlintZZ, p, cached = false)
@@ -183,8 +183,13 @@ function dedekind_test_composite(O::NfOrd, p::fmpz)
   b = FakeFmpqMat(Malpha, p)
 
   @hassert :NfOrd 1 defines_order(nf(O), b)[1]
-  OO = NfOrd(nf(O), b) + O
-  
+  OO = NfOrd(nf(O), b)
+  temp = divexact(b.den^degree(O), prod_diagonal(b.num))
+  fl, qq = divides(discriminant(O), temp^2)
+  @assert fl
+  OO.disc = qq
+  @hassert :NfOrd 1 discriminant(basis(OO)) == OO.disc
+  OO.index = temp
 
   return fmpz(1), OO
 end

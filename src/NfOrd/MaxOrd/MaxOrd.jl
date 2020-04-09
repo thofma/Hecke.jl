@@ -267,6 +267,7 @@ end
 
 function _TameOverorderBL(O::NfOrd, lp::Array{fmpz,1})
 
+  K = nf(O)
   OO = O
   M = coprime_base(lp)
   Q = fmpz[]
@@ -284,13 +285,14 @@ function _TameOverorderBL(O::NfOrd, lp::Array{fmpz,1})
       end
     else
       if isdefining_polynomial_nice(nf(O)) && iscoprime(index(OO), q)
-        q1, OO = dedekind_test_composite(OO, q) 
+        q1, OOq = dedekind_test_composite(EquationOrder(K), q) 
         if !isone(q1)
           push!(M, q1)
           push!(M, divexact(q, q1))
           M = coprime_base(M)
           continue
         end
+        OO = sum_as_Z_modules(OO, OOq)
       end
       q = gcd(q, discriminant(OO))
       if isone(q)
