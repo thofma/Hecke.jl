@@ -491,15 +491,31 @@ function factor_trager(f::PolyElem{nf_elem})
   k = 0
   g = f
   @vprint :PolyFactor 1 "Using Trager's method\n"
-  @vtime :PolyFactor 2 N = norm(g)
+  p = p_start
+  F = GF(p)
 
   Kx = parent(f)
   K = base_ring(Kx)
 
-  while isconstant(N) || !issquarefree(N)
+  @vtime :PolyFactor Np = norm_mod(g, p)
+  while isconstant(Np) || !issquarefree(map_coeffs(F, Np))
     k = k + 1
     g = compose(f, gen(Kx) - k*gen(K))
+    @vtime :PolyFactor 2 Np = norm_mod(g, p)
+  end
+
+  @vprint :PolyFactor 2 "need to shift by $k, now the norm"
+  if any(x -> denominator(x) > 1, coefficients(g))
     @vtime :PolyFactor 2 N = norm(g)
+  else
+    @vtime :PolyFactor 2 N = norm_mod(g)
+  end
+
+  while isconstant(N) || !issquarefree(N)
+    error("should not happen")
+    k = k + 1
+    g = compose(f, gen(Kx) - k*gen(K))
+    @vtime :PolyFactor 2 N = norm_mod(g)
   end
   @vtime :PolyFactor 2 fac = factor(N)
   
