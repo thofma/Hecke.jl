@@ -444,7 +444,6 @@ end
 #the LLL_basis of the ideal
 function grow_prec!(vH::vanHoeijCtx, pr::Int)
   lift(vH.H, pr)
-  @show pr, parent(vH.P)
 
   @time vH.Ml = lll(basis_matrix(vH.P^pr))
   pMr = pseudo_inv(vH.Ml)
