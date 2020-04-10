@@ -179,7 +179,7 @@ function quadratic_lattice_database()
   if !isfile(joinpath(pkgdir, "data/quadratic_lattices"))
     download_lattice_data()
   end
-  return QuadLatDB(default_lattice_db[])
+  return QuadLatDB(default_quad_lattice_db[])
 end
 
 function quadratic_lattice_database(path::String)
@@ -228,8 +228,7 @@ function _get_lattice(data)
   D = diagonal_matrix(diag)
   n = nrows(D)
   @assert iszero(mod(length(gens), n))
-  k = div(length(gens), n)
-  gens_split = collect(Iterators.partition(gens, k))
+  gens_split = collect(Iterators.partition(gens, n))
   return quadratic_lattice(K, generators = gens_split, gram_ambient_space = D)
 end
 
