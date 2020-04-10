@@ -1,11 +1,17 @@
 # A draft for a "get some data" interface
-const _lattice_data_src = "https://github.com/thofma/Hecke.jl/releases/download/DBtest/lattice_test"
 
-function download_lattice_data(url::String = _lattice_data_src)
-  println("This will download xx MB of data. Proceed? [Y/n]")
+const _Data = Dict(
+  "lattices" => ("data/lattices", "https://github.com/thofma/Hecke.jl/releases/download/DBtest/lattice_test", 2),
+  "quadratic_lattices" => ("data/quadratic_lattices", "https://github.com/thofma/Hecke.jl/releases/download/DBtest/qlat_small", 6),
+ )
+
+function download_data(;data)
+  @assert haskey(_Data, data)
+  data = _Data[data]
+  println("This will download $(data[3]) MB of data. Proceed? [Y/n]")
   n = readline()
   if n == "" || n == "Y" || n == "yes" || n == "Yes"
-    Base.download(_lattice_data_src, joinpath(pkgdir, "data/lattices"))
+    Base.download(data[2], joinpath(pkgdir, data[1]))
   end
   nothing
 end

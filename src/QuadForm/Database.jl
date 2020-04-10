@@ -139,18 +139,88 @@ end
 
 const default_quad_lattice_db = Ref(joinpath(pkgdir, "data/quadratic_lattices"))
 
+function lattice_database()
+  if !isfile(joinpath(pkgdir, "data/quadratic_lattices"))
+    download_lattice_data()
+  end
+  return QuadLatDB(default_lattice_db[])
+end
+
+function lattice_database(path::String)
+  return QuadLatDB(path)
+end
+
 struct QuadLatDB
   path::String
-  db::Vector{Tuple{Vector{BigInt}, Vector{Vector{Rational{BigInt}}}, Vector{Vector{Rational{BigInt}}}, Int}}
+  #db::Vector{Tuple{Vector{BigInt}, Vector{Vector{Rational{BigInt}}}, Vector{Vector{Rational{BigInt}}}, Int}}
+  metadata
+  head::Int
+  length::Int
 
   function QuadLatDB(path::String)
-    db = Meta.eval(Meta.parse(Base.read(path, String)))
-    return new(path, db)
+    metadata = Dict()
+    f = open(path)
+    head = 0
+    while true
+      line = readline(f)
+      if line[1] == '#'
+        head += 1
+        if !(':' in line)
+          continue
+        end
+        i = 2
+        while line[i] != ':'
+          i += 1
+        end
+        key = strip(line[2:i-1])
+        val = strip(line[i+1:end])
+        metadata[key] = val
+      else
+        break
+      end
+    end
+    seekstart(f)
+    length = countlines(f)
+    close(f)
+    return new(path, metadata, head, length - head)
   end
 end
 
-function lattice(L::QuadLatDB, i::Int)
-  data = L.db[i]
+Base.length(D::QuadLatDB) = D.length
+
+class_number(D::QuadLatDB, i::Int) = _lattice_data(D, i)[4]
+
+function Base.show(io::IO, D::QuadLatDB)
+  s = get(D.metadata, "Description", "Quadratic lattices database")
+  print(io, s, "\n")
+  if haskey(D.metadata, "Author")
+    print(io, "Author: $(D.metadata["Author"])\n")
+  end
+  if haskey(D.metadata, "Source")
+    print(io, "Source: $(D.metadata["Source"])\n")
+  end
+  if haskey(D.metadata, "Version")
+    print(io, "Version: $(VersionNumber(D.metadata["Version"]))\n")
+  end
+
+  print(io, "Number of lattices: ", D.length)
+end
+
+function versioninfo(D::QuadLatDB)
+  return VersionNumber(D.metadata["Version"])
+end
+
+function _lattice_data(D::QuadLatDB, i::Int)
+  it = Iterators.drop(eachline(D.path), D.head + i - 1)
+  line = IOBuffer(first(it))
+  return _parse_quad(line, versioninfo(D))
+end
+
+function lattice(D::QuadLatDB, i::Int)
+  return _get_lattice(_lattice_data(D, i))
+end
+
+function _get_lattice(data)
   f = Globals.Qx(data[1])
   K, a = NumberField(f, "a", cached = false)
   diag = map(K, data[2])
@@ -170,3 +240,139 @@ function quadratic_lattice_database()
   return QuadLatDB(default_quad_lattice_db[])
 end
 
+################################################################################
+#
+#  Parse
+#
+################################################################################
+
+base_type(::Type{fmpq}) = fmpz
+
+base_type(::Type{Rational{T}}) where {T} = T
+
+function parse_int(io, delim = UInt8[UInt8(',')])
+  n = IOBuffer()
+  b = Base.read(io, UInt8)
+  while !(b in delim)
+    Base.write(n, b)
+    if eof(io)
+      break
+    end
+    b = Base.read(io, UInt8)
+  end
+
+  return b, parse(Int, String(take!(n)))
+end
+
+function parse_rational(::Type{T}, io, delim = [UInt8(',')]) where {T}
+  n = IOBuffer()
+  d = IOBuffer()
+  read_den = false
+  b = Base.read(io, UInt8)
+  while !(b in delim)
+    if b == UInt8('/')
+      read_den = true
+      skip(io, 1)
+      @goto read
+    end
+
+    if !read_den
+      Base.write(n, b)
+    else
+      Base.write(d, b)
+    end
+
+    @label read
+    if eof(io)
+      break
+    end
+    b = Base.read(io, UInt8)
+  end
+
+  nu = String(take!(n))
+
+  if length(nu) < 18
+    num = base_type(T)(parse(Int, nu))
+  else
+    num = parse(base_type(T), nu)
+  end
+
+  if !read_den
+    return b, T(num)
+  else
+    de = String(take!(d))
+    if length(de) < 18
+      den = base_type(T)(parse(Int, de))
+    else
+      den = parse(base_type(T), de)
+    end
+    return b, num//den
+  end
+end
+
+function parse_array(::Type{T}, io, ldelim = '[', rdelim = ']') where {T}
+  res = Vector{T}()
+  b = Base.read(io, UInt8)
+  @assert b == UInt8(ldelim)
+  mark(io)
+  b = Base.read(io, UInt8)
+  if b == UInt8(rdelim)
+    return b, res
+  else
+    reset(io)
+    unmark(io)
+    while true
+      b, z = parse_rational(T, io, map(UInt8, [',', rdelim]))
+      push!(res, z)
+      if b != UInt8(',')
+        @assert b == UInt8(rdelim)
+        break
+      end
+    end
+    return b, res
+  end
+end
+
+function parse_array(::Type{Vector{T}}, io, ldelim = '[', rdelim = ']') where {T}
+  res = Vector{Vector{T}}()
+  b = Base.read(io, UInt8)
+  @assert b == UInt8(ldelim)
+  mark(io)
+  b = Base.read(io, UInt8)
+  if b == rdelim
+    return res
+  else
+    reset(io)
+    unmark(io)
+    while true
+      b, z = parse_array(T, io)
+      push!(res, z)
+      b = Base.read(io, UInt8)
+      if b == UInt8(rdelim)
+        break
+      end
+      if b != UInt8(',')
+        @assert b == UInt8(rdelim)
+        break
+      end
+    end
+    return res
+  end
+end
+
+#db::Vector{Tuple{Vector{BigInt}, Vector{Vector{Rational{BigInt}}}, Vector{Vector{Rational{BigInt}}}, Int}}
+function _parse_quad(io, version)
+  @assert version == v"0.0.1"
+  b, def_poly = parse_array(fmpq, io)
+  @assert b == UInt8(']')
+  b = Base.read(io, UInt8)
+  @assert b == UInt8(',')
+  diagonal = parse_array(Vector{fmpq}, io)
+  b = Base.read(io, UInt8)
+  @assert b == UInt8(',')
+  gens = parse_array(Vector{fmpq}, io)
+  b = Base.read(io, UInt8)
+  @assert b == UInt8(',')
+  b, cl = parse_int(io)
+  return def_poly, diagonal, gens, cl
+end
