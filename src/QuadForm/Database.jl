@@ -139,17 +139,6 @@ end
 
 const default_quad_lattice_db = Ref(joinpath(pkgdir, "data/quadratic_lattices"))
 
-function lattice_database()
-  if !isfile(joinpath(pkgdir, "data/quadratic_lattices"))
-    download_lattice_data()
-  end
-  return QuadLatDB(default_lattice_db[])
-end
-
-function lattice_database(path::String)
-  return QuadLatDB(path)
-end
-
 struct QuadLatDB
   path::String
   #db::Vector{Tuple{Vector{BigInt}, Vector{Vector{Rational{BigInt}}}, Vector{Vector{Rational{BigInt}}}, Int}}
@@ -184,6 +173,17 @@ struct QuadLatDB
     close(f)
     return new(path, metadata, head, length - head)
   end
+end
+
+function quadratic_lattice_database()
+  if !isfile(joinpath(pkgdir, "data/quadratic_lattices"))
+    download_lattice_data()
+  end
+  return QuadLatDB(default_lattice_db[])
+end
+
+function quadratic_lattice_database(path::String)
+  return QuadLatDB(path)
 end
 
 Base.length(D::QuadLatDB) = D.length
@@ -231,13 +231,6 @@ function _get_lattice(data)
   k = div(length(gens), n)
   gens_split = collect(Iterators.partition(gens, k))
   return quadratic_lattice(K, generators = gens_split, gram_ambient_space = D)
-end
-
-function quadratic_lattice_database()
-  if !isfile(joinpath(pkgdir, "data/quadratic_lattices"))
-    download_lattice_data()
-  end
-  return QuadLatDB(default_quad_lattice_db[])
 end
 
 ################################################################################
