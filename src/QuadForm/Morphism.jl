@@ -224,7 +224,6 @@ end
 
 function init(C::ZLatAutoCtx, auto::Bool = true, bound::fmpz = fmpz(-1), use_dict::Bool = true)
   # Compute the necessary short vectors
-  @vprint :Lattice 1 "Computing short vectors of length $bound\n"
 
   r = length(C.G)
   
@@ -236,6 +235,8 @@ function init(C::ZLatAutoCtx, auto::Bool = true, bound::fmpz = fmpz(-1), use_dic
   end
 
   @assert bound > 0
+
+  @vprint :Lattice 1 "Computing short vectors of length $bound\n"
 
   @vtime :Lattice 1 V = _short_vectors_gram_integral(C.G[1], bound) 
 
@@ -1811,7 +1812,9 @@ end
 function iso(step, x, C, Ci, Co, G)
   d = dim(Ci)
   found = false
+  @vprint :Lattice "Testing $(length(C[step])) many candidates\n"
   while !isempty(C[step]) && C[step][1] != 0 && !found
+    @vprint :Lattice "Doing step $step\n"
     if step < d
       # choose the image of the base vector nr. step
       x[step] = C[step][1]
@@ -1950,13 +1953,13 @@ function isostab(pt, G, C::ZLatAutoCtx{S, T, U}, Maxfail) where {S, T, U}
   return H
 end
 
-function isocand(CI, I, x, Ci, Co)
+function isocand(CI, I, x, Ci::ZLatAutoCtx{S, T, U}, Co) where {S, T, U}
   d = dim(Ci)
   n = length(Ci.V)
   @assert n == length(Co.V)
   # Do something with bacher polynomials ...
-  vec = Vector{fmpz}(undef, d)
-  vec2 = Vector{fmpz}(undef, d)
+  vec = Vector{S}(undef, d)
+  vec2 = Vector{S}(undef, d)
   for i in 1:Ci.fp_diagonal[I]
     CI[i] = 0
   end

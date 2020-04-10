@@ -1543,7 +1543,9 @@ function _ismaximal_integral(L::AbsLat, p)
 
   hprim = u -> elem_in_nf((h\u))
 
-  for x in _enumerate_lines(F, nrows(V))
+  @vprint :GenRep 1 "Enumerating projective points over $F of length $(nrows(V))\n"
+
+  for x in enumerate_lines(F, nrows(V))
     v = map_entries(hprim, matrix(F, 1, nrows(V), x) * V)
     res = v * M
     resvec = [res[1, i] for i in 1:ncols(res)]
@@ -3006,6 +3008,10 @@ function assert_has_automorphisms(L::ZLat; redo::Bool = false, try_small::Bool =
       auto(Csmall)
       _gens, order = _get_generators(Csmall)
       gens = fmpz_mat[matrix(ZZ, g) for g in _gens]
+    else
+      init(C)
+      auto(C)
+      gens, order = _get_generators(C)
     end
   else
     init(C)
@@ -3217,23 +3223,20 @@ function assert_has_automorphisms(L::AbsLat; check::Bool = true,
   for i in 1:length(ZgramL)
     ZgramL[i] = T * ZgramL[i] * Ttr
   end
-  CC = ZLatAutoCtx(ZgramLorig)
-  init(CC)
-  auto(CC)
-  gens, order = _get_generators(CC)
-  if check
-    for g in gens
-      for i in 1:length(ZgramLorig)
-        @assert g * ZgramLorig[i] * g' == ZgramLorig[i]
-      end
-    end
-  end
 
   # Create the automorphism context and compute generators as well as orders
+  
   C = ZLatAutoCtx(ZgramL)
-  init(C)
-  auto(C)
-  gens, order = _get_generators(C)
+  fl, Csmall = try_init_small(C)
+  if fl
+    auto(Csmall)
+    _gens, order = _get_generators(Csmall)
+    gens = fmpz_mat[matrix(ZZ, g) for g in _gens]
+  else
+    init(C)
+    auto(C)
+    gens, order = _get_generators(C)
+  end
 
   if check
     for g in gens
@@ -3353,9 +3356,16 @@ end
 
 function Zforms(L::AbsLat)
   E = base_ring(ambient_space(L))
-  Eabs, EabsToE = absolute_field(E)
-  generators = elem_type(E)[E(1), absolute_primitive_element(E)]
+  if degree(E) > 1
+    generators = elem_type(E)[E(1), absolute_primitive_element(E)]
+  else
+    generators = elem_type(E)[E(1)]
+  end
   return _Zforms(L, generators)
+end
+
+function absolute_primitive_element(K::AnticNumberField)
+  return gen(K)
 end
 
 function absolute_primitive_element(K::NumField)
@@ -3365,6 +3375,7 @@ function absolute_primitive_element(K::NumField)
       return B[i]
     end
   end
+  throw(error("Fix me"))
 end
 
 absolute_minpoly(a::nf_elem) = minpoly(a)
@@ -3424,8 +3435,15 @@ function isisometric(L::AbsLat, M::AbsLat; ambient_representation::Bool = true, 
     ZgramMsmall[i] = TM * ZgramM[i] * TMtr
   end
 
-  CL, CM = _iso_setup(ZgramLsmall, ZgramMsmall)
-  b, T = isometry(CL, CM)
+  fl, CLsmall, CMsmall = _try_iso_setup_small(ZgramLsmall, ZgramMsmall)
+  if fl
+    b, _T = isometry(CLsmall, CMsmall)
+    T = matrix(FlintZZ, _T)
+  else
+    CL, CM = _iso_setup(ZgramLsmall, ZgramMsmall)
+    b, T = isometry(CL, CM)
+  end
+
   if b
     T = change_base_ring(FlintQQ, inv(TL)*T*TM)
     fl, s1 = can_solve(BabsmatL, basis_matrix(L), side = :left)
@@ -3607,4 +3625,217 @@ function gram_matrix_of_generators(L::AbsLat, minimal = true)
   m = generators(L, minimal = minimal)
   M = matrix(nf(base_ring(L)), m)
   return gram_matrix(ambient_space(L), M)
+end
+
+################################################################################
+#
+#  Projective line enumeration
+#
+################################################################################
+
+# Iterate over P^(n-1)(K)
+
+mutable struct ProjLineEnumCtx{T, S}
+  K::T
+  a::S
+  dim::Int
+  depth::Int
+  v::Vector{S}
+  length::BigInt
+end
+
+function ProjLineEnumCtx(K::T, n) where {T}
+  a = _primitive_element(K)
+  v = Vector{elem_type(K)}(undef, n)
+  for i in 1:n
+    v[i] = zero(K)
+  end
+  depth = n + 1
+  dim = n
+  q = order(K)
+  length = divexact(q^n - 1, q - 1)
+  return ProjLineEnumCtx{T, elem_type(T)}(K, a, dim, depth, v, length)
+end
+
+function enumerate_lines(K, n)
+  return ProjLineEnumCtx(K, n)
+end
+
+function Base.show(io::IO, P::ProjLineEnumCtx)
+  print(io, "Iterator for affine lines in K^n with n = ", dim(P), "\n")
+  print(io, "over ", P.K)
+end
+
+Base.length(P::ProjLineEnumCtx) = P.length
+
+Base.eltype(::Type{ProjLineEnumCtx{T, S}}) where {T, S} = Vector{S}
+
+# length
+
+depth(P::ProjLineEnumCtx) = P.depth
+
+dim(P::ProjLineEnumCtx) = P.dim
+
+primitive_element(P::ProjLineEnumCtx) = P.a
+
+function next(P::ProjLineEnumCtx)
+  if depth(P) > 0
+    i = dim(P)
+    while true
+      @show i, P.v, depth(P)
+      if i == depth(P)
+        P.v[i] = zero!(P.v[i])
+        i = i - 1
+      elseif i < depth(P)
+        P.depth = i
+        if i >= 1
+          P.v[i] = one(P.K)
+        end
+        break
+      elseif iszero(P.v[i])
+        P.v[i] = one(P.K)
+        break
+      else
+        P.v[i] = P.v[i] * primitive_element(P)
+        if isone(P.v[i])
+          P.v[i] = zero!(P.v[i])
+          i = i - 1
+        else
+          break
+        end
+      end
+    end
+  end
+  return P.v
+end
+
+function Base.iterate(P::ProjLineEnumCtx)
+  P.v[dim(P)] = one(P.K)
+  P.depth = dim(P)
+  return P.v, one(BigInt)
+end
+
+function Base.iterate(P::ProjLineEnumCtx, state)
+  if state >= P.length
+    return nothing
+  end
+
+  if depth(P) > 0
+    i = dim(P)
+    while true
+      if i == depth(P)
+        P.v[i] = zero!(P.v[i])
+        i = i - 1
+      elseif i < depth(P)
+        P.depth = i
+        if i >= 1
+          P.v[i] = one(P.K)
+        end
+        break
+      elseif iszero(P.v[i])
+        P.v[i] = one(P.K)
+        break
+      else
+        P.v[i] = P.v[i] * primitive_element(P)
+        if isone(P.v[i])
+          P.v[i] = zero!(P.v[i])
+          i = i - 1
+        else
+          break
+        end
+      end
+    end
+  end
+  return P.v, state + 1
+end
+
+#intrinsic Next(PL::ProcPL) -> ModTupFldElt
+#{The next element in the process. Returns the zero vector if no more elements left}
+#  if PL`depth ne 0 then
+#    i:= PL`dim;
+#    while true do
+#      if i eq PL`depth then
+#        PL`v[i]:= 0; i -:= 1;
+#      elif i lt PL`depth then
+#        PL`depth:= i;
+#	if i ge 1 then PL`v[i]:= 1; end if;
+#	break;
+#      elif PL`v[i] eq 0 then PL`v[i]:= 1; break;
+#      else
+#        PL`v[i] *:= PL`a;
+#	if PL`v[i] eq 1 then PL`v[i]:= 0; i -:= 1; else break; end if;
+#      end if;
+#    end while;
+#  end if;
+#  return PL`v;
+#end intrinsic;
+
+function _primitive_element(R::GaloisField)
+  S = ResidueRing(FlintZZ, Int(modulus(R)))
+  U, mU = unit_group(S)
+  return R(data(mU(U[1])))
+end
+
+function _primitive_element(R::Nemo.GaloisFmpzField)
+  S = ResidueRing(FlintZZ, fmpz(modulus(R)))
+  U, mU = unit_group(S)
+  return R(data(mU(U[1])))
+end
+
+################################################################################
+#
+#  Line orbits
+#
+################################################################################
+
+function line_orbits(G::Vector)
+  K = base_ring(G[1])
+  n = nrows(G[1])
+  # this is a not so clever way
+  P = enumerate_lines(K, n)
+  l = length(P)
+  lines = Vector{eltype(G)}(undef, l)
+  i = 1
+  for v in P
+    lines[i] = matrix(K, 1, n, deepcopy(v))
+    i += 1
+  end
+
+  res = Tuple{eltype(G), Int}[]
+    
+  visited = trues(l)
+  sofar = zero(BigInt)
+  while sofar < l
+    pt = findfirst(visited)
+    @assert pt !== nothing 
+    visited[pt] = false
+    norb = 1
+    cnd = 1
+    orb = Int[pt]
+    while cnd <= norb
+      newline = lines[orb[cnd]]
+      for i in 1:length(G)
+        _newline = newline * G[i]
+        for k in 1:n
+          if !iszero(_newline[k])
+            if !isone(_newline[k])
+              _newline = inv(_newline[k]) * _newline
+            end
+            break
+          end
+        end
+        m = findfirst(isequal(_newline), lines)
+        @assert m !== nothing
+        if visited[m]
+          visited[m] = false
+          norb += 1
+          push!(orb, m)
+        end
+      end
+      cnd += 1
+    end
+    push!(res, (lines[pt], norb))
+    sofar = sofar + norb
+  end
+  res
 end

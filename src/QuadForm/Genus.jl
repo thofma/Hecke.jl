@@ -1630,7 +1630,27 @@ function _neighbours(L, P, result, max, callback = stdcallback)
   n = rank(L)
   W = vector_space(k, n)
 
-  LO = _enumerate_lines(k, n)
+  if use_auto
+    G = automorphism_group_generators(L)
+    @hassert :GenRep 1 all(g -> g * gram_matrix(ambient_space(L)) * transpose(g) == gram_matrix(ambient_space(L)), G)
+    Tinv = inv(T)
+    adjust_gens = eltype(G)[T * g * Tinv for g in G]
+    @hassert :GenRep 1 all(g -> g * form * transpose(g) == form, adjust_gens)
+    adjust_gens_mod_p = dense_matrix_type(k)[map_entries(hext, g) for g in adjust_gens]
+    adjust_gens_mod_p = dense_matrix_type(k)[x for x in adjust_gens_mod_p if !isdiagonal(x)]
+    @hassert :GenRep 1 all(g -> g * pform * transpose(g) == pform, adjust_gens_mod_p)
+    if length(adjust_gens_mod_p) > 0
+      _LO = line_orbits(adjust_gens_mod_p)
+      LO = Vector{eltype(k)}[[x[1][1, i] for i in 1:length(x[1])] for x in _LO]
+      @vprint :GenRep 1 "Checking $(length(LO)) representatives (instead of $(div(order(k)^n - 1, order(k) - 1)))\n"
+    else
+      @vprint :GenRep 1 "Enumerating lines over $k of length $n\n"
+      LO = enumerate_lines(k, n)
+    end
+  else
+    @vprint :GenRep 1 "Enumerating lines over $k of length $n\n"
+    LO = enumerate_lines(k, n)
+  end
 
   keep = true
   cont = true

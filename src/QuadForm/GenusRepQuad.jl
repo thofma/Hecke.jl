@@ -90,8 +90,6 @@ function genus_representatives(L::QuadLat; max = inf, use_auto = false)
   # Otherwise the isomorphism to the class group fails, cf. §102 in O'Meara.
   @req max >= 1 "Must find at least one representative"
 
-  use_auto && throw(NotImplemented())
-
   if !isdefinite(L)
     @vprint :GenRep 1 "Genus representatives of indefinite lattice\n"
     return spinor_genera_in_genus(L, [])
@@ -967,7 +965,6 @@ end
 
 # TODO: Enable use_auto
 function neighbours(L::QuadLat, p; call = stdcallback, use_auto = false, max = inf)
-  use_auto && throw(NotImplemented())
   R = base_ring(L)
   F = nf(R)
   @req R == order(p) "Incompatible arguments"
@@ -989,9 +986,29 @@ function neighbours(L::QuadLat, p; call = stdcallback, use_auto = false, max = i
   end
   pform = map_entries(hext, form)
 
-  LO = _enumerate_lines(k, n)
+  if use_auto
+    G = automorphism_group_generators(L)
+    @hassert :GenRep 1 all(g -> g * gram_matrix(ambient_space(L)) * transpose(g) == gram_matrix(ambient_space(L)), G)
+    Binv = inv(B)
+    adjust_gens = eltype(G)[B * g * Binv for g in G]
+    @hassert :GenRep 1 all(g -> g * form * transpose(g) == form, adjust_gens)
+    adjust_gens_mod_p = dense_matrix_type(k)[map_entries(hext, g) for g in adjust_gens]
+    adjust_gens_mod_p = dense_matrix_type(k)[x for x in adjust_gens_mod_p if !isdiagonal(x)]
+    @hassert :GenRep 1 all(g -> g * pform * transpose(g) == pform, adjust_gens_mod_p)
+    if length(adjust_gens_mod_p) > 0
+      _LO = line_orbits(adjust_gens_mod_p)
+      LO = Vector{eltype(k)}[[x[1][1, i] for i in 1:length(x[1])] for x in _LO]
+      @vprint :GenRep 1 "Checking $(length(LO)) representatives (instead of $(div(order(k)^n - 1, order(k) - 1)))\n"
+    else
+      @vprint :GenRep 1 "Enumerating lines over $k of length $n\n"
+      LO = enumerate_lines(k, n)
+    end
+  else
+    @vprint :GenRep 1 "Enumerating lines over $k of length $n\n"
+    LO = enumerate_lines(k, n)
+  end
  
-  result = []
+  result = typeof(L)[]
 
   pMmat = _module_scale_ideal(p, pseudo_matrix(L))
 
@@ -1004,8 +1021,7 @@ function neighbours(L::QuadLat, p; call = stdcallback, use_auto = false, max = i
   cont = true
   found = false
 
-  for i in 1:length(LO)
-    w = LO[i]
+  for w in LO
     dotww = _dotk(w, w)
     if dotww != 0
       continue
@@ -1083,7 +1099,7 @@ function neighbours(L::QuadLat, p; call = stdcallback, use_auto = false, max = i
     V = VV * B
     LL = lattice(ambient_space(L), _sum_modules(pMmat, pseudo_matrix(V)))
 
-    @assert islocally_isometric(LL, L, p)
+    @hassert :GenRep 1 islocally_isometric(LL, L, p)
 
     if !(call isa Bool)
       keep, cont = call(result, LL)
@@ -1103,7 +1119,6 @@ function neighbours(L::QuadLat, p; call = stdcallback, use_auto = false, max = i
 end
 
 function iterated_neighbours(L::QuadLat, p; use_auto = false, max = inf)
-  use_auto && throw(NotImplemented())
   @req isdefinite(L) "Lattice must be definite"
   result = typeof(L)[ L ]
   i = 1
