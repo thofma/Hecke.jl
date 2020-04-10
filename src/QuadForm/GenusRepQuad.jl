@@ -28,7 +28,7 @@ function SpinorGeneraCtx(L::QuadLat)
   RCG, mRCG, Gens = _compute_ray_class_group(L)
 
   # 1) Map the generators into the class group to create the factor group.
-
+  
   subgroupgens = GrpAbFinGenElem[_map_idele_into_class_group(mRCG, [g]) for g in Gens ]
 
   for g in gens(RCG)
@@ -206,7 +206,7 @@ end
   
 function _smallest_norm_good_prime(L)
   OK = base_ring(L)
-  lp = [p for p in bad_primes(L, even = true) if isdyadic(p) || !ismodular(L, p)[1]]
+  lp = ideal_type(OK)[p for p in bad_primes(L, even = true) if isdyadic(p) || !ismodular(L, p)[1]]
   limit = 20
   while true
     lq = prime_ideals_up_to(OK, limit)
@@ -215,8 +215,8 @@ function _smallest_norm_good_prime(L)
         return q
       end
     end
-    limt = 2 * limit
-    if limit > 2^5
+    limit = 2 * limit
+    if limit > 2^8
       throw(error("Something off"))
     end
   end
@@ -307,13 +307,13 @@ function spinor_norm(L, p)
       return basis(V)[1:(dim(V) - 1)], V, g, ginv, true
     end
     # cf. Beli 2003, Thm. 1
-    SN = elem_type(V)[]
+    SN = elem_type(V)[]::Vector{elem_type(V)}
     for i in 2:rank(L)
       #SN = SN + G_function(bong[i]//bong[i - 1], V, g, ginv, p)
       _G, _mG = G_function(bong[i]//bong[i - 1], V, g, ginv, p)
-      _SN, mS = sub(V, append!(SN, [_mG(g) for g in gens(_G)]))
-      @assert length(rels(_SN)) == 0 # free
-      SN = [ mS(s) for s in gens(_SN) ]
+      new_gens = append!(SN, elem_type(V)[_mG(g) for g in gens(_G)])
+      _SN, mS = sub(V, new_gens)
+      SN = elem_type(V)[ mS(s) for s in gens(_SN) ]
     end
     # For why we can take the Minimum in what follows here, see the remark on p. 161 in Beli 2003:
     k = findfirst(i -> mod(valuation(bong[i + 2], p) - valuation(bong[i], p), 2) == 0, 1:(rank(L) - 2))
@@ -323,7 +323,7 @@ function spinor_norm(L, p)
       _G, _mG = _one_plus_power_of_p(alpha, V, g, ginv, p)
       _SN, mS = sub(V, append!(SN, [_mG(g) for g in gens(_G)]))
       @assert length(rels(_SN)) == 0 # free
-      SN = [ mS(s) for s in gens(_SN) ]
+      SN = elem_type(V)[ mS(s) for s in gens(_SN) ]
     end
   end
   # Test if S is equal to SN
@@ -331,7 +331,7 @@ function spinor_norm(L, p)
   @assert length(rels(S)) == 0
   W,_ = sub(V, append!(basis(V)[1:(dim(V) - 1)], SN))
   @assert length(rels(W)) == 0
-  if ngens(W) == dim(V) - 1 # this means SN + V[1:dim(V) -1] == V[1:dim(V) - 1]
+  if length(SN) == ngens(S) && ngens(W) == dim(V) - 1 # this means SN + V[1:dim(V) -1] == V[1:dim(V) - 1]
     fl = true
   else
     fl = false
@@ -635,9 +635,8 @@ function G_function(a, V, g, ginv, p)
   elseif 2*e < R && R <= 4 * e
     if d <= 2 * e - R//2
       @vprint :GenRep 2 "G_function case A\n"
-      I = _intersect(N_function(-a, g, ginv, p), sub(V, [ginv(a)]))
       O = _one_plus_power_of_p(R + d - 2*e, V, g, ginv, p)
-      return _sum(I, O)
+      return _intersect(N_function(-a, g, ginv, p), _sum(O, sub(V, [ginv(a)])))
     else
       @vprint :GenRep 2 "G_function case B\n"
       @assert R % 2 == 0
