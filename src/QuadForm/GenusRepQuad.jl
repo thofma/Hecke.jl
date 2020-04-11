@@ -1326,8 +1326,13 @@ function beli_correction!(L, G, JJ, steps, i, j, p)
   if nrows(G[j]) == 2
     # assert orthogonality of the vectors in JJ[Steps[i]] and those in
     # JJ[Steps[j]], i.e. those that make up G[i] and G[j]:
-    B = sub(JJ, steps[i][1]:(steps[i][1] + steps[i][2] - 1), 1:ncols(JJ))
-    C = sub(JJ, 1:steps[j][2], 1:ncols(JJ))
+    #B = sub(JJ, steps[i][1]:(steps[i][1] + steps[i][2] - 1), 1:ncols(JJ))
+    B = zero_matrix(base_ring(JJ), 2, ncols(JJ))
+    for k in 1:ncols(JJ)
+      B[1, k] = JJ[steps[i][1], k]
+      B[2, k] = JJ[steps[i][2], k]
+    end
+    C = sub(JJ, steps[j][2]:steps[j][2], 1:ncols(JJ))
     @assert iszero(C * gram_matrix(ambient_space(L)) * B')
   end
 
@@ -1387,8 +1392,8 @@ function beli_correction!(L, G, JJ, steps, i, j, p)
     # decomposed into two 1x1-lattices here)
 
     @assert all(k -> valuation(w[k], p) >= 0, 1:ncols(w))
-    for u in 1:ncols(u)
-      JJ[steps[j][1], u] = JJ[steps[j][1], u] + w[1] * JJ[steps[i][1],u] + w[2] * JJ[stepps[i][2], u]
+    for u in 1:ncols(JJ)
+      JJ[steps[j][1], u] = JJ[steps[j][1], u] + w[1] * JJ[steps[i][1],u] + w[2] * JJ[steps[i][2], u]
     end
   end
 

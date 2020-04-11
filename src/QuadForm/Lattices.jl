@@ -27,6 +27,8 @@ mutable struct QuadLat{S, T, U} <: AbsLat{S}
   base_algebra::S
   automorphism_group_generators::Vector{T}
   automorphism_group_order::fmpz
+  generators
+  minimal_generators
   @declare_other
 
   function QuadLat{S, T, U}() where {S, T, U}
@@ -122,7 +124,9 @@ function quadratic_lattice(K::NumField; generators::Vector = Vector{elem_type(K)
     end
     pm = sub(pm, i:nrows(pm), 1:ncols(pm))
   end
-  return quadratic_lattice(K, pm, gram_ambient_space = gram_ambient_space)
+  L = quadratic_lattice(K, pm, gram_ambient_space = gram_ambient_space)
+  L.generators = Vector{elem_type(K)}[map(K, v) for v in generators]
+  return L
 end
 
 
@@ -169,6 +173,8 @@ mutable struct HermLat{S, T, U, V, W} <: AbsLat{S}
   involution::W
   automorphism_group_generators::Vector{U}
   automorphism_group_order::fmpz
+  generators
+  minimal_generators
   @declare_other
 
   function HermLat{S, T, U, V, W}() where {S, T, U, V, W}
@@ -545,6 +551,9 @@ function generators(L::AbsLat; minimal::Bool = false)
   if !minimal
     K = nf(base_ring(L))
     T = elem_type(K)
+    if isdefined(L, :generators)
+      return L.generators::Vector{Vector{T}}
+    end
     v = Vector{T}[]
     St = pseudo_matrix(L)
     d = ncols(St)
@@ -563,13 +572,17 @@ function generators(L::AbsLat; minimal::Bool = false)
         end
       end
     end
+    L.generators = v
     return v
   else # minimal
+    K = nf(base_ring(L))
+    T = elem_type(K)
+    if isdefined(L, :minimal_generators)
+      return L.minimal_generators::Vector{Vector{T}}
+    end
     St = _steinitz_form(pseudo_matrix(L), Val{false})
     d = nrows(St)
     n = degree(L)
-    K = nf(base_ring(L))
-    T = elem_type(K)
     v = Vector{T}[]
     for i in 1:(d - 1)
       #@assert isprincipal(coefficient_ideals(St)[i])[1]
@@ -596,6 +609,8 @@ function generators(L::AbsLat; minimal::Bool = false)
       end
     end
   end
+
+  L.minimal_generators = v
 
   return v
 end

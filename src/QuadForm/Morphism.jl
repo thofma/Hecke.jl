@@ -459,9 +459,11 @@ function try_init_small(C::ZLatAutoCtx, auto::Bool = true, bound::fmpz = fmpz(-1
   @assert C.issymmetric[1]
 
   # Compute the fingerprint
-  @vprint :Lattice 1 "Computing fingerprint: "
-  @vtime :Lattice 1 fingerprint(Csmall)
-  @vprint :Lattice 1 "$(Csmall.fp_diagonal)\n"
+  if automorphism_mode
+    @vprint :Lattice 1 "Computing fingerprint: "
+    @vtime :Lattice 1 fingerprint(Csmall)
+    @vprint :Lattice 1 "$(Csmall.fp_diagonal)\n"
+  end
 
   if automorphism_mode
     # Find the standard basis vectors
