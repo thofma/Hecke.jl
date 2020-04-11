@@ -377,10 +377,10 @@ function _torsion_group_order_divisor(K::AnticNumberField)
 end
 
 function _torsion_units_gen(K::AnticNumberField)
-  if istorsion_unit_group_known(K)
-    c = _get_nf_torsion_units(K)
-    return c[1], c[2]
-  end
+  #if istorsion_unit_group_known(K)
+  #  c = _get_nf_torsion_units(K)
+  #  return c[1], c[2]
+  #end
   r1, r2 = signature(K)
   if r1 > 0
     return 2, K(-1)
@@ -398,13 +398,13 @@ function _torsion_units_gen(K::AnticNumberField)
       ord *= 2
       continue
     end
-    for i = 1:v
-      f = cyclotomic(Int(p)^v, x)
+    for i = v:-1:1
+      f = cyclotomic(Int(p)^i, x)
       fK = map_coeffs(K, f, parent = Ky)
       r = _roots_hensel(fK, max_roots = 1, isnormal = true, root_bound = fmpz[one(fmpz) for i in 1:(r1 + r2)])
       if length(r) > 0
         mul!(gen, gen, r[1])
-        ord *= Int(p)^(v+1-i)
+        ord *= Int(p)^(i)
         break
       end
     end  
