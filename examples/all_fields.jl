@@ -135,7 +135,13 @@ function main()
   end
 
   ll = map(v -> v.field, l)
-  ffields = [ (x, discriminant(maximal_order(x))) for x in ll if Hecke.iscm_field(x)[1]]
+
+  if only_cm
+    ffields = [ (x, discriminant(maximal_order(x))) for x in ll if Hecke.iscm_field(x)[1]]
+  else
+    ffields = [ (x, discriminant(maximal_order(x)))]
+  end
+
   sort!(ffields, lt = (x, y) -> abs(x[2]) <= abs(y[2]))
 
   @show length(ffields)
