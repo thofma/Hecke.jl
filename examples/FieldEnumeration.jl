@@ -1,3 +1,24 @@
+function _write_fields(list::Array{Tuple{AnticNumberField, fmpz},1}, filename::String)
+  f=open(filename, "a")
+  for L in list
+    x=([coeff(L[1].pol, i) for i=0:degree(L[1].pol)], L[2])
+    Base.write(f, "$x\n")
+  end
+  close(f)
+end
+
+function _read_fields(filename::String)
+  f=open(filename, "r")
+  Qx,x=PolynomialRing(FlintQQ,"x")
+  pols=Tuple{fmpq_poly, fmpz}[]
+  for s in eachline(f)
+    a=Main.eval(Meta.parse(s))
+    push!(pols,(Qx(a[1]), a[2]))
+  end
+  close(f)
+  return pols
+end 
+
 global small_solvable_groups = 
 [ (1, 1), (2, 1), (3, 1), (4, 1), (4, 2), (5, 1), (6, 1), (6, 2), (7, 1), (8, 
 1), (8, 2), (8, 3), (8, 4), (8, 5), (9, 1), (9, 2), (10, 1), (10, 2), (11, 1), 
