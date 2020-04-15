@@ -220,9 +220,13 @@ function factor_new(f::PolyElem{nf_elem})
   k = base_ring(f)
   if ismaximal_order_known(k)
     zk = maximal_order(k)
+    if isdefined(zk, :lllO)
+      zk = zk.lllO
+    end
   else
     zk = EquationOrder(k)
   end
+  zk = lll(zk) # always a good option!
   p = degree(f)
   f *= lcm(map(denominator, coefficients(f)))
   np = 0
@@ -444,9 +448,11 @@ end
 #the LLL_basis of the ideal
 function grow_prec!(vH::vanHoeijCtx, pr::Int)
   lift(vH.H, pr)
-
-  @time vH.Ml = lll(basis_matrix(vH.P^pr))
-  pMr = pseudo_inv(vH.Ml)
+ 
+  @vtime :PolyFactor 2 X1 = vH.P^pr
+  @vtime :PolyFactor 2 X2 = basis_matrix(X1)
+  @vtime :PolyFactor 2 vH.Ml = lll(X2)
+  @vtime :PolyFactor 2 pMr = pseudo_inv(vH.Ml)
   F = FakeFmpqMat(pMr)
   #M * basis_matrix(zk) is the basis wrt to the field
   #(M*B)^-1 = B^-1 * M^-1, so I need basis_mat_inv(zk) * pM
@@ -467,9 +473,17 @@ Approach is taken from Hart, Novacin, van Hoeij in ISSAC.
 """
 function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 20)
   @vprint :PolyFactor 1 "Using (relative) van Hoeij\n"
+  @assert all(x->denominator(x) == 1, coefficients(f))
 
   K = base_ring(parent(f))
   C, mC = completion(K, P)
+
+  zk = order(P)
+  if ismaximal_known_and_maximal(zk)
+    den = K(1)
+  else
+    den = derivative(K.pol)(gen(K))
+  end
 
   _, mK = ResidueField(order(P), P)
   mK = extend(mK, K)
@@ -494,7 +508,7 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 20)
   up_to = min(up_to, N)
   from = min(from, N)
   from = max(up_to, from)
-  b = cld_bound(f, vcat(0:up_to-1, from:N-1)) .* upper_bound(sqrt(t2(lead(f))), fmpz)
+  b = cld_bound(f, vcat(0:up_to-1, from:N-1)) .* upper_bound(sqrt(t2(den*lead(f))), fmpz)
 
   # from Fieker/Friedrichs, still wrong here
   # needs to be larger than anticipated...
@@ -539,9 +553,9 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 20)
 
     if degree(P) == 1
       mD = MapFromFunc(x->coeff(mC(x),0), y->K(lift(y)), K, base_ring(vH.H.f))
-      @vtime :PolyFactor 1 C = cld_data(vH.H, up_to, from, mD, vH.pM[1], lead(f)) 
+      @vtime :PolyFactor 1 C = cld_data(vH.H, up_to, from, mD, vH.pM[1], den*lead(f)) 
     else
-      @vtime :PolyFactor 1 C = cld_data(vH.H, up_to, from, mC, vH.pM[1], lead(f)) 
+      @vtime :PolyFactor 1 C = cld_data(vH.H, up_to, from, mC, vH.pM[1], den*lead(f)) 
     end
 
     # In the end, p-adic precision needs to be large enough to
@@ -664,7 +678,7 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 20)
 #        display(d)
         for v = values(d)
           #trivial test:
-          if ismonic(f) #don't know what to do for non-monics
+          if isone(den) && ismonic(f) #don't know what to do for non-monics
             a = prod(map(constant_coefficient, factor(vH.H)[v])) 
             if degree(P) == 1
               A = K(reco(order(P)(lift(a)), vH.Ml, vH.pMr))
@@ -681,11 +695,11 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 20)
           end
           @vtime :PolyFactor 2 g = prod(factor(vH.H)[v]) 
           if degree(P) == 1
-            @vtime :PolyFactor 2 G = parent(f)([K(reco(lift(coeff(mC(lead(f)), 0)*coeff(g, l)), vH.Ml, vH.pMr, order(P))) for l=0:degree(g)])
+            @vtime :PolyFactor 2 G = parent(f)([K(reco(lift(coeff(mC(den*lead(f)), 0)*coeff(g, l)), vH.Ml, vH.pMr, order(P))) for l=0:degree(g)])
           else
-            @vtime :PolyFactor 2 G = parent(f)([K(reco(order(P)(preimage(mC, mC(lead(f))*coeff(g, l))), vH.Ml, vH.pMr)) for l=0:degree(g)])
+            @vtime :PolyFactor 2 G = parent(f)([K(reco(order(P)(preimage(mC, mC(den*lead(f))*coeff(g, l))), vH.Ml, vH.pMr)) for l=0:degree(g)])
           end
-          G *= 1//lead(f)
+          G *= 1//(den*lead(f))
 
           if !iszero(rem(f, G))
             push!(fail, v)
@@ -724,7 +738,7 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 20)
     end
     used = deepcopy(really_used)
 
-    b = cld_bound(f, vcat(0:up_to-1, from:N-1)) .* upper_bound(sqrt(t2(lead(f))), fmpz)
+    b = cld_bound(f, vcat(0:up_to-1, from:N-1)) .* upper_bound(sqrt(t2(den*lead(f))), fmpz)
 
     # from Fieker/Friedrichs, still wrong here
     # needs to be larger than anticipated...
