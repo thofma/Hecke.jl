@@ -1563,7 +1563,7 @@ function representatives(G::GenusHerm)
 end
 
 # TODO: add max keyword
-function genus_representatives(L::HermLat; max = inf)
+function genus_representatives(L::HermLat; max = inf, use_auto = true)
   rank(L) < 2 && error("Rank of the lattice must be a least 2")
   definite = isdefinite(L)
   gens, P0 = genus_generators(L)
@@ -1575,7 +1575,7 @@ function genus_representatives(L::HermLat; max = inf)
     end
     I = g[1]^(g[2] - 1)
     J = a(I)
-    N = neighbours_with_ppower(L, g[1], g[2] - 1)
+    N = neighbours_with_ppower(L, g[1], g[2] - 1, use_auto = use_auto)
     inter = []
     for i in 2:length(LL)
       M = pseudo_matrix(LL[i])
@@ -1593,7 +1593,7 @@ function genus_representatives(L::HermLat; max = inf)
     for L in LL
       # Should never happen!
       @assert all(X -> !isisometric(X, L), result)
-      result = append!(result, iterated_neighbours(L, P0, max = max))# : AutoOrbits:= AutoOrbits, Max:= Max);
+      result = append!(result, iterated_neighbours(L, P0, max = max, use_auto = use_auto))# : AutoOrbits:= AutoOrbits, Max:= Max);
       max = max - length(result)
     end
     for i in 1:length(result)
@@ -1607,15 +1607,29 @@ function genus_representatives(L::HermLat; max = inf)
   return result
 end
 
-function _neighbours(L, P, result, max, callback = stdcallback)
+function _neighbours(L, P, result, max, callback = stdcallback, use_auto = true)
 #//  "Entering _Neighbours, #Result=", #Result, "Max=", Max;
   ok, scale = ismodular(L, P);
   !ok && throw(error("Non-modular lattice!"))
   R = base_ring(L)
   K = nf(R)
   a = involution(L)
-  C = a(P)
   T = local_basis_matrix(L, P, type = :submodule)
+  # This is a bit tricky, since C does not know enough to construct the residue field ...
+  # C = a(P)
+  p = minimum(P)
+  lp = prime_decomposition(R, p)
+  if length(lp) == 1
+    C = P
+  else
+    if lp[1][1] == P
+      C = lp[2][1]
+    elseif lp[2][1] == P
+      C = lp[1][1]
+    else
+      throw(error("Something wrong"))
+    end
+  end
   k, h = ResidueField(R, C)
   hext = extend(h, K)
   form = gram_matrix(ambient_space(L))
@@ -1625,7 +1639,7 @@ function _neighbours(L, P, result, max, callback = stdcallback)
       special = isodd(scale)
       scale = div(scale + 1, 2)
     end
-    form = E(elem_in_nf(uniformizer(minimum(P))))^(-scale) * form
+    form = base_ring(form)(elem_in_nf(uniformizer(minimum(P))))^(-scale) * form
   end
   n = rank(L)
   W = vector_space(k, n)
@@ -1641,7 +1655,7 @@ function _neighbours(L, P, result, max, callback = stdcallback)
     @hassert :GenRep 1 all(g -> g * pform * transpose(g) == pform, adjust_gens_mod_p)
     if length(adjust_gens_mod_p) > 0
       _LO = line_orbits(adjust_gens_mod_p)
-      LO = Vector{eltype(k)}[[x[1][1, i] for i in 1:length(x[1])] for x in _LO]
+      LO = Vector{eltype(k)}[x[1] for x in _LO]
       @vprint :GenRep 1 "Checking $(length(LO)) representatives (instead of $(div(order(k)^n - 1, order(k) - 1)))\n"
     else
       @vprint :GenRep 1 "Enumerating lines over $k of length $n\n"
@@ -1660,8 +1674,7 @@ function _neighbours(L, P, result, max, callback = stdcallback)
     G = map_entries(hext, _G)
     pi = p_uniformizer(P)
     pih = h(pi)
-    for i in 1:length(LO)
-      w = LO[i]
+    for w in LO
       x = [ sum(T[i, j] * (hext\w[i]) for i in 1:n) for j in 1:ncols(T)]
       LL = neighbour(L, T, pih * matrix(k, 1, length(w), w) * G, K(pi) .* x, hext, P, C, true)
       keep, cont = callback(result, LL)
@@ -1674,10 +1687,9 @@ function _neighbours(L, P, result, max, callback = stdcallback)
     end
   elseif special
     pi = uniformizer(P)
-    _G = T * form * _map(transpose(T), a)
+    _G = elem_in_nf(pi) * T * form * _map(transpose(T), a)
     G = map_entries(hext, _G)
-    for i in 1:length(LO)
-      w = LO[i]
+    for w in LO
       Gw = G * matrix(k, length(w), 1, w)
       ok = 0
       for d in 1:n
@@ -1687,17 +1699,20 @@ function _neighbours(L, P, result, max, callback = stdcallback)
         end
       end
       @assert ok != 0
-      x = [ sum(B[i, j] * (h\w[i]) for i in 1:n) for j in 1:ncols(B)]
+      x = [ sum(T[i, j] * (hext\w[i]) for i in 1:n) for j in 1:ncols(T)]
       nrm = _inner_product(form, x, x, a)
-      b = h\(-h(nrm) / (2*Gw[d, 1]))
-      x = x + b * pi * B[d]
+      b = hext\(-hext(nrm) // (2*Gw[ok, 1]))
+      #x = x + b * pi * B[ok]
+      for j in 1:ncols(T)
+        x[j] = x[j] + b * elem_in_nf(pi) * T[ok, j]
+      end
       nrm = _inner_product(form, x, x, a)
-      LL = neighbour(L, B, w * G, x, h, P, P, false)
+      LL = neighbour(L, T, matrix(k, 1, length(w), w) * G, x, hext, P, P, false)
       keep, cont = callback(result, LL)
       if keep
         push!(result, LL)
       end
-      if !cont || lenght(result) >= max
+      if !cont || length(result) >= max
         break
       end
     end
@@ -1715,19 +1730,9 @@ function _neighbours(L, P, result, max, callback = stdcallback)
       alpha = h\(degree(k) == 1 ? one(k) : gen(k))
       Tram = matrix(kp, 2, 1, [2, hp(tr(alpha))])
     end
-    for i in 1:length(LO)
-      w = LO[i]
-      #@show base_ring(T)
-      #for j in 1:ncols(T)
-      #  for i in 1:n
-      #    @show T[i, j] * (h\w[i])
-      #    @show parent(T[i, j])
-      #    @show parent(h\w[i])
-      #    @show @which T[i, j] * (h\w[i])
-      #    @show parent(T[i, j] * (h\w[i]))
-      #  end
-      #end
-      x = [ sum(T[i, j] * (hext\w[i]) for i in 1:n) for j in 1:ncols(T)]
+    for w in LO
+      __w = [ (hext\w[i]) for i in 1:n]
+      x = [ sum(T[i, j] * (__w[i]) for i in 1:n if !iszero(w[i])) for j in 1:ncols(T)]
       nrm = _inner_product(form, x, x, a) #(x*Form, v) where v:= Vector([ a(e): e in Eltseq(x) ]);
       if !(nrm in P)
         continue
@@ -1748,18 +1753,20 @@ function _neighbours(L, P, result, max, callback = stdcallback)
         @assert b
         @assert s * Tram == matrix(kp, 1, 1, [hp(-el)])
         #s, V = solution(Tram, vector(kp, [hp(-el)]))
+        #@show _all_row_span(V)
+        _kernel = [ matrix(kp, 1, 2, v) for v in _all_row_span(V)]
         l = a(hext\(inv(wG[ok])))
-        S = [ l * (hext\((s + v)[1]) + (hext\(s + v)[2])*alpha) for v in V ]
+        S = [ l * (hext\((s + v)[1]) + (hext\(s + v)[2])*alpha) for v in _kernel ]
       end
       for s in S
-        LL = neighbour(L, T, wG, [x[o] + pi*s*T[ok, o] for o in 1:ncols(T)], hext, P, P, false);
-      end
-      keep, cont = callback(result, LL)
-      if keep
-        push!(result, LL)
-      end
-      if !cont || (lenght(result) >= max)
-        break
+        LL = neighbour(L, T, wG, [x[o] + pi*s*T[ok, o] for o in 1:ncols(T)], hext, P, P, false)
+        keep, cont = callback(result, LL)
+        if keep
+          push!(result, LL)
+        end
+        if !cont || (length(result) >= max)
+          break
+        end
       end
     end
   end
@@ -1774,7 +1781,6 @@ function neighbour(L, B, xG, x, h, P, C, split)
     C = split ? involution(L)(P) : P
   end 
   I = [ i for i in 1:n if !iszero(xG[i])]
-  @assert length(I) != 0
   i = I[1]
   a = involution(L)
   M = zero_matrix(K, n - length(I), ncols(B))
@@ -1963,4 +1969,21 @@ function _genus_symbol_kirschmer(L::HermLat, p; uniformizer = zero(order(p)))
   return sym
 end
 
-
+function _all_row_span(M)
+  F = base_ring(M)
+  rows = Vector{Vector{elem_type(F)}}(undef, nrows(M))
+  for i in 1:nrows(M)
+    rows[i] = elem_type(F)[M[i, j] for j in 1:ncols(M)]
+  end
+  n = nrows(M)
+  it = Iterators.product([F for i in 1:n]...)
+  res = Vector{Vector{elem_type(F)}}()
+  for c in it
+    z = Ref(c[1]) .* rows[1]
+    for i in 2:n
+      z = z .+ (Ref(c[i]) .* rows[i])
+    end
+    push!(res, z)
+  end
+  return res
+end

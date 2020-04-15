@@ -234,6 +234,114 @@ end
 
 ################################################################################
 #
+#  Hermitian lattices DB
+#
+################################################################################
+
+const default_herm_lattice_db = Ref(joinpath(pkgdir, "data/hermitian_lattices"))
+
+struct HermLatDB
+  path::String
+  #db::Vector{Tuple{Vector{BigInt}, Vector{Vector{Rational{BigInt}}}, Vector{Vector{Rational{BigInt}}}, Int}}
+  metadata
+  head::Int
+  length::Int
+
+  function HermLatDB(path::String)
+    metadata = Dict()
+    f = open(path)
+    head = 0
+    while true
+      line = readline(f)
+      if line[1] == '#'
+        head += 1
+        if !(':' in line)
+          continue
+        end
+        i = 2
+        while line[i] != ':'
+          i += 1
+        end
+        key = strip(line[2:i-1])
+        val = strip(line[i+1:end])
+        metadata[key] = val
+      else
+        break
+      end
+    end
+    seekstart(f)
+    length = countlines(f)
+    close(f)
+    return new(path, metadata, head, length - head)
+  end
+end
+
+function hermitian_lattice_database()
+  if !isfile(joinpath(pkgdir, "data/hermitian_lattices"))
+    download_lattice_data()
+  end
+  return HermLatDB(default_herm_lattice_db[])
+end
+
+function hermitian_lattice_database(path::String)
+  return HermLatDB(path)
+end
+
+Base.length(D::HermLatDB) = D.length
+
+class_number(D::HermLatDB, i::Int) = _lattice_data(D, i)[5]
+
+function Base.show(io::IO, D::HermLatDB)
+  s = get(D.metadata, "Description", "Hermratic lattices database")
+  print(io, s, "\n")
+  if haskey(D.metadata, "Author")
+    print(io, "Author: $(D.metadata["Author"])\n")
+  end
+  if haskey(D.metadata, "Source")
+    print(io, "Source: $(D.metadata["Source"])\n")
+  end
+  if haskey(D.metadata, "Version")
+    print(io, "Version: $(VersionNumber(D.metadata["Version"]))\n")
+  end
+
+  print(io, "Number of lattices: ", D.length)
+end
+
+function versioninfo(D::HermLatDB)
+  return VersionNumber(D.metadata["Version"])
+end
+
+function _lattice_data(D::HermLatDB, i::Int)
+  it = Iterators.drop(eachline(D.path), D.head + i - 1)
+  line = IOBuffer(first(it))
+  return _parse_herm(line, versioninfo(D))
+end
+
+function lattice(D::HermLatDB, i::Int)
+  return _get_hermitian_lattice(_lattice_data(D, i))
+end
+
+function _get_hermitian_lattice(data)
+  f = Globals.Qx(data[1])
+  K, a = NumberField(f, "a", cached = false)
+  Kt, t = PolynomialRing(K, "t", cached = false)
+  E, b = NumberField(Kt(map(K, data[2])), "b", cached = false)
+  diag = map(E, map(K, data[3]))
+  k = degree(K)
+  #gens = [ E(map(K, collect(Iterators.partition(v, k))))  map(E, data[4])
+  D = diagonal_matrix(diag)
+  n = nrows(D)
+  @assert iszero(mod(length(data[4]), n))
+  gens_split = collect(Iterators.partition(data[4], n))
+  gens = []
+  for v in gens_split
+    push!(gens, map(E, [map(K, collect(Iterators.partition(w, k))) for w in v]))
+  end
+  return hermitian_lattice(E, generators = gens, gram_ambient_space = D)
+end
+
+################################################################################
+#
 #  Parse
 #
 ################################################################################
@@ -367,4 +475,23 @@ function _parse_quad(io, version)
   @assert b == UInt8(',')
   b, cl = parse_int(io)
   return def_poly, diagonal, gens, cl
+end
+
+function _parse_herm(io, version)
+  @assert version == v"0.0.1"
+  b, def_poly = parse_array(fmpq, io)
+  @assert b == UInt8(']')
+  b = Base.read(io, UInt8)
+  @assert b == UInt8(',')
+  ext_poly = parse_array(Vector{fmpq}, io)
+  b = Base.read(io, UInt8)
+  @assert b == UInt8(',')
+  diagonal = parse_array(Vector{fmpq}, io)
+  b = Base.read(io, UInt8)
+  @assert b == UInt8(',')
+  gens = parse_array(Vector{fmpq}, io)
+  b = Base.read(io, UInt8)
+  @assert b == UInt8(',')
+  b, cl = parse_int(io)
+  return def_poly, ext_poly, diagonal, gens, cl
 end

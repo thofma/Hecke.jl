@@ -286,6 +286,28 @@ function hermitian_lattice(K::NumField, B::MatElem; gram_ambient_space = nothing
   end
 end
 
+function hermitian_lattice(E::NumField; generators::Vector = Vector{elem_type(E)}[], gram_ambient_space)
+  if length(generators) == 0
+    pm = pseudo_matrix(identity_matrix(E, nrows(gram_ambient_space)))
+  else
+    z = zero_matrix(E, length(generators), ncols(gram_ambient_space))
+    for i in 1:length(generators)
+      for j in 1:ncols(gram_ambient_space)
+        z[i, j] = generators[i][j]
+      end
+    end
+    pm = pseudo_hnf(pseudo_matrix(z), :lowerleft)
+    i = 1
+    while iszero_row(pm.matrix, i)
+      i += 1
+    end
+    pm = sub(pm, i:nrows(pm), 1:ncols(pm))
+  end
+  L = hermitian_lattice(E, pm, gram_ambient_space = gram_ambient_space)
+  L.generators = Vector{elem_type(E)}[map(E, v) for v in generators]
+  return L
+end
+
 @doc Markdown.doc"""
     lattice(V::HermSpace, B::PMat) -> HermLat
 
@@ -1280,6 +1302,7 @@ end
 
 function jordan_decomposition(L::HermLat, p)
   R = base_ring(L)
+  E = nf(R)
   aut = involution(L)
   even = isdyadic(p)
 
@@ -1337,7 +1360,7 @@ function jordan_decomposition(L::HermLat, p)
         lambda = valuation(pi * a, P) == m ? pi : aut(pi)
       elseif ram
         @assert iseven(m)
-        lambda = norm(pi)^(div(m ,2))//a
+        lambda = E(norm(pi)^(div(m ,2)))//a
       else
         lambda = pi^m//a * su
       end
@@ -2327,7 +2350,7 @@ function _special_unit(P, p)
   x = x - trace(x)//2
   a = coeff(x^2, 0)
   K = base_field(E)
-  pi = E(elem_in_nf(uniformizer(p)))
+  pi = elem_in_nf(uniformizer(p))
   v = valuation(a, p)
   if v != 0
     @assert iseven(v)
@@ -2343,7 +2366,7 @@ function _special_unit(P, p)
   e = valuation(order(p)(2), p)
   while w < 2*e
     @assert iseven(w)
-    s = sqrt(h((a - 1)//pi^w))
+    s = sqrt(hex((a - 1)//pi^w))
     t = 1 + (hex \ s) * pi^(div(w, 2))
     a = a//t^2
     x = x//t
@@ -3369,6 +3392,11 @@ function orthogonal_complement(V::AbsSpace, M::MatElem)
   return K
 end
 
+function Zforms(L::AbsLat, generators)
+  E = base_ring(ambient_space(L))
+  return _Zforms(L, generators)
+end
+
 function Zforms(L::AbsLat)
   E = base_ring(ambient_space(L))
   if degree(E) > 1
@@ -3390,7 +3418,15 @@ function absolute_primitive_element(K::NumField)
       return B[i]
     end
   end
-  throw(error("Fix me"))
+  for i in 1:10
+    z = rand(basis(base_field(K))) * rand(basis(K)) +
+          rand(basis(base_field(K))) * rand(basis(K))
+    if degree(absolute_minpoly(z)) == absolute_degree(K)
+      return z
+    end
+  end
+  Kabs, m = absolute_field(K)
+  return m(gen(Kabs))
 end
 
 absolute_minpoly(a::nf_elem) = minpoly(a)
@@ -3424,7 +3460,7 @@ function isisometric(L::AbsLat, M::AbsLat; ambient_representation::Bool = true, 
   @assert base_ring(L) == base_ring(M)
 
   ZgramL, scalarsL, BabsmatL, generatorsL = Zforms(L)
-  ZgramM, scalarsM, BabsmatM, generatorsM = Zforms(M)
+  ZgramM, scalarsM, BabsmatM, generatorsM = Zforms(M, generatorsL)
   @assert generatorsL == generatorsM
   if scalarsL != scalarsM
     return false, zero_matrix(E, 0, 0)
@@ -3672,6 +3708,19 @@ function ProjLineEnumCtx(K::T, n) where {T}
   return ProjLineEnumCtx{T, elem_type(T)}(K, a, dim, depth, v, length)
 end
 
+function ProjLineEnumCtx(K::Nemo.GaloisField, n::Int)
+  a = zero(K)
+  v = Vector{elem_type(K)}(undef, n)
+  for i in 1:n
+    v[i] = zero(K)
+  end
+  depth = n + 1
+  dim = n
+  q = order(K)
+  length = divexact(q^n - 1, q - 1)
+  return ProjLineEnumCtx{Nemo.GaloisField, Nemo.gfp_elem}(K, a, dim, depth, v, length)
+end
+
 function enumerate_lines(K, n)
   return ProjLineEnumCtx(K, n)
 end
@@ -3724,6 +3773,41 @@ function next(P::ProjLineEnumCtx)
   return P.v
 end
 
+function Base.iterate(P::ProjLineEnumCtx{Nemo.GaloisField, Nemo.gfp_elem}, state)
+  if state >= P.length
+    return nothing
+  end
+
+  onee = one(P.K)
+
+  if depth(P) > 0
+    i = dim(P)
+    while true
+      if i == depth(P)
+        P.v[i] = zero(P.K)
+        i = i - 1
+      elseif i < depth(P)
+        P.depth = i
+        if i >= 1
+          P.v[i] = onee
+        end
+        break
+      elseif iszero(P.v[i])
+        P.v[i] = onee
+        break
+      else
+        P.v[i] = P.v[i] + 1
+        if iszero(P.v[i])
+          i = i - 1
+        else
+          break
+        end
+      end
+    end
+  end
+  return P.v, inc!(state)
+end
+
 function Base.iterate(P::ProjLineEnumCtx)
   P.v[dim(P)] = one(P.K)
   P.depth = dim(P)
@@ -3761,7 +3845,7 @@ function Base.iterate(P::ProjLineEnumCtx, state)
       end
     end
   end
-  return P.v, state + 1
+  return P.v, inc!(state)
 end
 
 #intrinsic Next(PL::ProcPL) -> ModTupFldElt
@@ -3809,17 +3893,23 @@ function line_orbits(G::Vector)
   # this is a not so clever way
   P = enumerate_lines(K, n)
   l = length(P)
-  lines = Vector{eltype(G)}(undef, l)
+  lines = Vector{eltype(P)}(undef, l)
   i = 1
   for v in P
-    lines[i] = matrix(K, 1, n, deepcopy(v))
+    lines[i] = deepcopy(v)
     i += 1
   end
 
-  res = Tuple{eltype(G), Int}[]
+  if !(K isa GaloisField)
+    sort!(lines, lt = _isless)
+  end
+
+  res = Tuple{eltype(P), Int}[]
     
   visited = trues(l)
   sofar = zero(BigInt)
+  newline = zero_matrix(K, 1, n)
+  newline2 = zero_matrix(K, 1, n)
   while sofar < l
     pt = findfirst(visited)
     @assert pt !== nothing 
@@ -3828,18 +3918,11 @@ function line_orbits(G::Vector)
     cnd = 1
     orb = Int[pt]
     while cnd <= norb
-      newline = lines[orb[cnd]]
+      set!(newline, lines[orb[cnd]])
       for i in 1:length(G)
-        _newline = newline * G[i]
-        for k in 1:n
-          if !iszero(_newline[k])
-            if !isone(_newline[k])
-              _newline = inv(_newline[k]) * _newline
-            end
-            break
-          end
-        end
-        m = findfirst(isequal(_newline), lines)
+        newline2 = mul!(newline2, newline, G[i])
+        _normalize!(newline2)
+        m = searchsortedfirst(lines, newline2, lt = _isless)
         @assert m !== nothing
         if visited[m]
           visited[m] = false
@@ -3852,5 +3935,350 @@ function line_orbits(G::Vector)
     push!(res, (lines[pt], norb))
     sofar = sofar + norb
   end
-  res
+  return res
+end
+
+#function line_orbits(G::Vector{gfp_mat})
+#  K = base_ring(G[1])
+#  n = nrows(G[1])
+#  # this is a not so clever way
+#  P = enumerate_lines(K, n)
+#  l = length(P)
+#  lines = Vector{eltype(G)}(undef, l)
+#  i = 1
+#  for v in P
+#    lines[i] = matrix(K, 1, n, deepcopy(v))
+#    i += 1
+#  end
+#
+#  res = Tuple{eltype(G), Int}[]
+#    
+#  visited = trues(l)
+#  sofar = zero(BigInt)
+#  while sofar < l
+#    pt = findfirst(visited)
+#    @assert pt !== nothing 
+#    visited[pt] = false
+#    norb = 1
+#    cnd = 1
+#    orb = Int[pt]
+#    while cnd <= norb
+#      newline = deepcopy(lines[orb[cnd]])
+#      for i in 1:length(G)
+#        newline = mul!(newline, newline, G[i])
+#        for k in 1:n
+#          if !iszero(newline[k])
+#            if !isone(newline[k])
+#              newline = inv(newline[k]) * newline
+#            end
+#            break
+#          end
+#        end
+#        m = findfirst(isequal(newline), lines)
+#        @assert m !== nothing
+#        if visited[m]
+#          visited[m] = false
+#          norb += 1
+#          push!(orb, m)
+#        end
+#      end
+#      cnd += 1
+#    end
+#    push!(res, (lines[pt], norb))
+#    sofar = sofar + norb
+#  end
+#  return res
+#end
+
+function inc!(a::BigInt)
+  ccall((:__gmpz_add_ui, :libgmp), Nothing, (Ref{BigInt}, Ref{BigInt}, UInt), a, a, UInt(1))
+  return a
+end
+
+function set!(a::fq_nmod_mat, z::Vector{fq_nmod})
+  @assert ncols(a) == length(z)
+  for i in 1:length(z)
+    ccall((:fq_nmod_mat_entry_set, libflint), Nothing,
+          (Ref{fq_nmod_mat}, Int, Int, Ref{fq_nmod}, Ref{FqNmodFiniteField}),
+          a, 0, i - 1, z[i], base_ring(a))
+  end
+end
+
+function _isequal(x::fq_nmod_mat, y::Vector{fq_nmod})
+  R = base_ring(x)
+  @GC.preserve x begin
+    for i in 1:length(y)
+      el = ccall((:fq_nmod_mat_entry, libflint), Ptr{fq_nmod}, (Ref{fq_nmod_mat}, Int, Int), x, 0, i - 1)
+      b = ccall((:fq_nmod_equal, libflint), Cint, (Ref{fq_nmod}, Ptr{fq_nmod}, Ref{FqNmodFiniteField}), y[i], el, R)
+      bb = Bool(b)
+      if !bb
+        return false
+      end
+    end
+  end
+  return true
+end
+
+function _muleq!(x::fq_nmod_mat, y::fq_nmod)
+  R = base_ring(x)
+  @GC.preserve x begin
+    for i in 1:nrows(x)
+      for j in 1:ncols(x)
+        el = ccall((:fq_nmod_mat_entry, libflint), Ptr{fq_nmod}, (Ref{fq_nmod_mat}, Int, Int), x, i - 1, j - 1)
+        ccall((:fq_nmod_mul, libflint), Cvoid, (Ptr{fq_nmod}, Ptr{fq_nmod}, Ref{fq_nmod}, Ref{FqNmodFiniteField}), el, el, y, R)
+      end
+    end
+  end
+  return x
+end
+
+function set!(a::fq_mat, z::Vector{fq})
+  @assert ncols(a) == length(z)
+  for i in 1:length(z)
+    ccall((:fq_mat_entry_set, libflint), Nothing,
+          (Ref{fq_mat}, Int, Int, Ref{fq}, Ref{FqFiniteField}),
+          a, 0, i - 1, z[i], base_ring(a))
+  end
+end
+
+function _isequal(x::fq_mat, y::Vector{fq})
+  R = base_ring(x)
+  @GC.preserve x begin
+    for i in 1:length(y)
+      el = ccall((:fq_mat_entry, libflint), Ptr{fq}, (Ref{fq_mat}, Int, Int), x, 0, i - 1)
+      b = ccall((:fq_equal, libflint), Cint, (Ref{fq}, Ptr{fq}, Ref{FqFiniteField}), y[i], el, R)
+      bb = Bool(b)
+      if !bb
+        return false
+      end
+    end
+  end
+  return true
+end
+
+function _normalize!(x::fq_nmod_mat)
+  R = base_ring(x)
+  @GC.preserve x begin
+    piv = 0
+    local ell
+    for j in 1:ncols(x)
+      el = ccall((:fq_nmod_mat_entry, libflint), Ptr{fq_nmod}, (Ref{fq_nmod_mat}, Int, Int), x, 0, j - 1)
+      b = ccall((:fq_nmod_is_zero, libflint), Cint, (Ptr{fq_nmod}, Ref{FqNmodFiniteField}), el, R)
+      if !Bool(b)
+        piv = j
+        ccall((:fq_nmod_inv, libflint), Cvoid, (Ptr{fq_nmod}, Ptr{fq_nmod}, Ref{FqNmodFiniteField}), el, el, R)
+        ell = el
+        break
+      end
+    end
+
+    @assert piv != 0
+    
+    for j in (piv+1):ncols(x)
+      el = ccall((:fq_nmod_mat_entry, libflint), Ptr{fq_nmod}, (Ref{fq_nmod_mat}, Int, Int), x, 0, j - 1)
+      ccall((:fq_nmod_mul, libflint), Cvoid, (Ptr{fq_nmod}, Ptr{fq_nmod}, Ref{fq_nmod}, Ref{FqNmodFiniteField}), el, el, ell, R)
+    end
+    ccall((:fq_nmod_one, libflint), Cvoid, (Ptr{fq_nmod}, Ref{FqNmodFiniteField}), ell, R)
+  end
+  return x
+end
+
+function _muleq!(x::fq_mat, y::fq)
+  R = base_ring(x)
+  @GC.preserve x begin
+    for i in 1:nrows(x)
+      for j in 1:ncols(x)
+        el = ccall((:fq_mat_entry, libflint), Ptr{fq}, (Ref{fq_mat}, Int, Int), x, i - 1, j - 1)
+        ccall((:fq_mul, libflint), Cvoid, (Ptr{fq}, Ptr{fq}, Ref{fq}, Ref{FqFiniteField}), el, el, y, R)
+      end
+    end
+  end
+  return x
+end
+
+function _normalize!(x::fq_mat)
+  R = base_ring(x)
+  @GC.preserve x begin
+    piv = 0
+    local ell
+    for j in 1:ncols(x)
+      el = ccall((:fq_mat_entry, libflint), Ptr{fq}, (Ref{fq_mat}, Int, Int), x, 0, j - 1)
+      b = ccall((:fq_is_zero, libflint), Cint, (Ptr{fq}, Ref{FqFiniteField}), el, R)
+      if !Bool(b)
+        piv = j
+        ccall((:fq_inv, libflint), Cvoid, (Ptr{fq}, Ptr{fq}, Ref{FqFiniteField}), el, el, R)
+        ell = el
+        break
+      end
+    end
+
+    @assert piv != 0
+    
+    for j in (piv+1):ncols(x)
+      el = ccall((:fq_mat_entry, libflint), Ptr{fq}, (Ref{fq_mat}, Int, Int), x, 0, j - 1)
+      ccall((:fq_mul, libflint), Cvoid, (Ptr{fq}, Ptr{fq}, Ref{fq}, Ref{FqFiniteField}), el, el, ell, R)
+    end
+    ccall((:fq_one, libflint), Cvoid, (Ptr{fq}, Ref{FqFiniteField}), ell, R)
+  end
+  return x
+end
+
+function _isless(x::fq_nmod, y::fq_nmod)
+  d = degree(parent(x)) - 1
+  for i in 0:d
+    xi = coeff(x, i)
+    yi = coeff(y, i)
+    if xi != yi
+      return xi < yi
+    end
+  end
+  return false
+end
+
+@inline function _isless(x::fq_nmod, y::Ptr{fq_nmod})
+  d = degree(parent(x)) - 1
+  for i in 0:d
+    xi = coeff(x, i)
+    yi = ccall((:nmod_poly_get_coeff_ui, libflint), UInt, (Ptr{fq_nmod}, Int), y, i)
+    if xi != yi
+      return xi < yi
+    end
+  end
+  return false
+end
+
+function _isless(x::Vector{fq_nmod}, y::Vector{fq_nmod})
+  d = length(x)
+  for i in 1:d
+    xi = x[i]
+    yi = y[i]
+    if xi != yi
+      return _isless(xi, yi)
+    end
+  end
+  return false
+end
+
+function _isless(x::Vector{fq_nmod}, y::fq_nmod_mat)
+  d = length(x)
+  R = base_ring(y)
+  @GC.preserve y begin
+    for i in 1:d
+      xi = x[i]
+      el = ccall((:fq_nmod_mat_entry, libflint), Ptr{fq_nmod}, (Ref{fq_nmod_mat}, Int, Int), y, 0, i - 1)
+      b = ccall((:fq_nmod_equal, libflint), Cint, (Ref{fq_nmod}, Ptr{fq_nmod}, Ref{FqNmodFiniteField}), xi, el, R)
+      if !Bool(b)
+        return _isless(xi, el)
+      end
+    end
+    return false
+  end
+end
+
+function _isless(x::fq, y::fq)
+  d = degree(parent(x)) - 1
+  for i in 0:d
+    xi = coeff(x, i)
+    yi = coeff(y, i)
+    if xi != yi
+      return xi < yi
+    end
+  end
+  return false
+end
+
+@inline function _isless(x::fq, y::Ptr{fq})
+  d = degree(parent(x)) - 1
+  for i in 0:d
+    xi = coeff(x, i)
+    yi = ccall((:nmod_poly_get_coeff_ui, libflint), UInt, (Ptr{fq}, Int), y, i)
+    if xi != yi
+      return xi < yi
+    end
+  end
+  return false
+end
+
+function _isless(x::Vector{fq}, y::Vector{fq})
+  d = length(x)
+  for i in 1:d
+    xi = x[i]
+    yi = y[i]
+    if xi != yi
+      return _isless(xi, yi)
+    end
+  end
+  return false
+end
+
+function _isless(x::Vector{fq}, y::fq_mat)
+  d = length(x)
+  R = base_ring(y)
+  @GC.preserve y begin
+    for i in 1:d
+      xi = x[i]
+      el = ccall((:fq_mat_entry, libflint), Ptr{fq}, (Ref{fq_mat}, Int, Int), y, 0, i - 1)
+      b = ccall((:fq_equal, libflint), Cint, (Ref{fq}, Ptr{fq}, Ref{FqFiniteField}), xi, el, R)
+      if !Bool(b)
+        return _isless(xi, el)
+      end
+    end
+    return false
+  end
+end
+
+function set!(a::gfp_mat, z::Vector{gfp_elem})
+  @assert ncols(a) == length(z)
+  for i in 1:length(z)
+    Nemo.setindex_raw!(a, z[i].data, 1, i) # no reduction necessary
+  end
+end
+
+function _normalize!(x::gfp_mat)
+  R = base_ring(x)
+  @GC.preserve x begin
+    piv = 0
+    local ell
+    for j in 1:ncols(x)
+      el = x[1, j]
+      if !iszero(el)
+        piv = j
+        ell = inv(el) 
+        break
+      end
+    end
+
+    @assert piv != 0
+    
+    for j in (piv+1):ncols(x)
+      el = x[j] * ell
+      Nemo.setindex_raw!(x, el.data, 1, j)
+    end
+    Nemo.setindex_raw!(x, UInt(1), 1, piv)
+  end
+  return x
+end
+
+function _isless(x::Vector{gfp_elem}, y::gfp_mat)
+  d = length(x)
+  for i in 1:d
+    xi = x[i]
+    yi = y[1, i]
+    if xi.data != yi.data
+      return xi.data < yi.data
+    end
+  end
+  return false
+end
+
+function _isless(x::Vector{gfp_elem}, y::Vector{gfp_elem})
+  d = length(x)
+  for i in 1:d
+    xi = x[i]
+    yi = y[i]
+    if xi.data != yi.data
+      return xi.data < yi.data
+    end
+  end
+  return false
 end
