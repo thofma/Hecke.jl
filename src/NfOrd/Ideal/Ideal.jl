@@ -833,7 +833,7 @@ Returns whether $x$ is contained in $y$.
 function in(x::NfAbsOrdElem, y::NfAbsOrdIdl)
   OK = order(y)
   parent(x) !== order(y) && error("Order of element and ideal must be equal")
-  if ismaximal_known_and_maximal(OK) && y.is_prime == 1 && has_2_elem(y) && has_2_elem_normal(y)
+  if isdefining_polynomial_nice(nf(OK)) && ismaximal_known_and_maximal(OK) && y.is_prime == 1 && has_2_elem(y) && has_2_elem_normal(y)
     ant = anti_uniformizer(y)
     return (elem_in_nf(x) * ant) in OK
   end
@@ -1195,7 +1195,7 @@ function _normmod(a::fmpz, b::NfOrdElem)
   end
   
   if !isdefining_polynomial_nice(nf(parent(b)))
-    return norm(b)
+    return mod(norm(b), a)
   end
 
   mods = fmpz[]

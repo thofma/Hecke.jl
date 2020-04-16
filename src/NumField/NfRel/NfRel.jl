@@ -746,7 +746,7 @@ function minpoly(a::NfRelElem, k::Union{NfRel, AnticNumberField, FlintRationalFi
   end
 
   f = minpoly(a)
-  while base_ring(f) != k
+  while base_ring(f) != k && !(base_ring(f) isa FlintRationalField && k isa FlintRationalField)
     f = norm(f)
     g = gcd(f, derivative(f))
     if !isone(g)
@@ -759,6 +759,8 @@ end
 function absolute_minpoly(a::NfRelElem)
   return minpoly(a, FlintQQ)
 end
+
+norm(a::fmpq_poly) = a
 
 #
 

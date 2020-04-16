@@ -660,7 +660,9 @@ function _decomposition(O::NfAbsOrd, I::NfAbsOrdIdl, Ip::NfAbsOrdIdl, T::NfAbsOr
       #u = u1*(u2+v2) + u2*v1
       #v = v1*v2
       @hassert :NfOrd 1 isone(u + v)
-      u = O(mod(u.elem_in_nf, p))
+      if isdefining_polynomial_nice(nf(O))
+        u = O(mod(u.elem_in_nf, p))
+      end
       
       @hassert :NfOrd 1 containment_by_matrices(u, P)
       modulo = norm(P)*p
@@ -771,6 +773,12 @@ function find_random_second_gen(A::NfAbsOrdIdl{S, T}) where {S, T}
   Amin2 = minimum(A, copy = false)^2
   Amind = gcd(minimum(A)^degree(O), minimum(A, copy = false)*norm(A))
 
+  if norm(O(minimum(A))) == norm(A)
+    A.gen_one = minimum(A)
+    A.gen_two = O(minimum(A))
+    A.gens_weakly_normal = true
+    return nothing
+  end
   B = Array{fmpz}(undef, degree(O))
 
   gen = O()
@@ -801,12 +809,14 @@ function find_random_second_gen(A::NfAbsOrdIdl{S, T}) where {S, T}
     mul!(m, m, basis_matrix(A, copy = false))
     mul!(m, m, basis_matrix(O, copy = false).num)
     gen = elem_from_mat_row(K, m, 1, dBmat)
-    gen = mod(gen, Amin2)
+    if isdefining_polynomial_nice(K)
+      gen = mod(gen, Amin2)
+    end
     if iszero(gen)
       continue
     end
     
-    if norm(A) == _normmod(Amind, O(gen, false))
+    if norm(A, copy = false) == _normmod(Amind, O(gen, false))
       A.gen_one = minimum(A)
       A.gen_two = O(gen, false)
       A.gens_weakly_normal = true

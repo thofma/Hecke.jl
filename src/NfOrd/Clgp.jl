@@ -378,10 +378,14 @@ function class_group(O::NfOrd; bound::Int = -1, method::Int = 3,
                      redo::Bool = false, unit_method::Int = 1,
                      large::Int = 1000, use_aut::Bool = false, GRH::Bool = true, do_lll::Bool = true)
   if do_lll
-    L = lll(maximal_order(nf(O)))                   
+    OK = maximal_order(nf(O))
+    @assert OK.ismaximal == 1
+    L = lll(OK)   
+    @assert L.ismaximal == 1         
   else
     L = O
   end
+    
   c, U, b = _class_unit_group(L, bound = bound, method = method, redo = redo, unit_method = unit_method, large = large, use_aut = use_aut, GRH = GRH)
 
   @assert b == 1

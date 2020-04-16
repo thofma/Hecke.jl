@@ -34,11 +34,18 @@ function MaximalOrder(O::NfAbsOrd{S, T}; index_divisors::Vector{fmpz} = fmpz[], 
   K = nf(O)
   if ismaximal_order_known(K)
     M = _get_maximal_order(K)::typeof(O)
+    @assert M.ismaximal == 1
     return M
   end
   M = new_maximal_order(O, index_divisors = index_divisors, disc = discriminant, ramified_primes = ramified_primes)
   @assert isdefined(M, :disc)
   M.ismaximal = 1
+  if M === O
+    O.ismaximal = 1
+    if isdefined(O, :lllO)
+      O.lllO.ismaximal = 1
+    end
+  end
   _set_maximal_order(K, M)
   return M
 end
@@ -60,10 +67,18 @@ julia> O = MaximalOrder(K);
 function MaximalOrder(K::AnticNumberField; discriminant::fmpz = fmpz(-1), ramified_primes::Vector{fmpz} = fmpz[])
   if ismaximal_order_known(K)
     c = _get_maximal_order(K)::NfAbsOrd{AnticNumberField, nf_elem}
+    @assert c.ismaximal == 1
     return c
   end
-  O = new_maximal_order(any_order(K), ramified_primes = ramified_primes)
+  E = any_order(K)
+  O = new_maximal_order(E, ramified_primes = ramified_primes)
   O.ismaximal = 1
+  if E === O
+    E.ismaximal == 1
+    if isdefined(E, :lllO)
+      E.lllO.ismaximal = 1
+    end
+  end
   _set_maximal_order(K, O)
   return O
 end

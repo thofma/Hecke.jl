@@ -28,7 +28,7 @@ function SpinorGeneraCtx(L::QuadLat)
   RCG, mRCG, Gens = _compute_ray_class_group(L)
 
   # 1) Map the generators into the class group to create the factor group.
-
+  
   subgroupgens = GrpAbFinGenElem[_map_idele_into_class_group(mRCG, [g]) for g in Gens ]
 
   for g in gens(RCG)
@@ -89,8 +89,6 @@ function genus_representatives(L::QuadLat; max = inf, use_auto = false)
   @req rank(L) >= 3 "Lattice must have rank >= 3"
   # Otherwise the isomorphism to the class group fails, cf. §102 in O'Meara.
   @req max >= 1 "Must find at least one representative"
-
-  use_auto && throw(NotImplemented())
 
   if !isdefinite(L)
     @vprint :GenRep 1 "Genus representatives of indefinite lattice\n"
@@ -208,7 +206,7 @@ end
   
 function _smallest_norm_good_prime(L)
   OK = base_ring(L)
-  lp = [p for p in bad_primes(L, even = true) if isdyadic(p) || !ismodular(L, p)[1]]
+  lp = ideal_type(OK)[p for p in bad_primes(L, even = true) if isdyadic(p) || !ismodular(L, p)[1]]
   limit = 20
   while true
     lq = prime_ideals_up_to(OK, limit)
@@ -217,8 +215,8 @@ function _smallest_norm_good_prime(L)
         return q
       end
     end
-    limt = 2 * limit
-    if limit > 2^5
+    limit = 2 * limit
+    if limit > 2^8
       throw(error("Something off"))
     end
   end
@@ -309,13 +307,13 @@ function spinor_norm(L, p)
       return basis(V)[1:(dim(V) - 1)], V, g, ginv, true
     end
     # cf. Beli 2003, Thm. 1
-    SN = elem_type(V)[]
+    SN = elem_type(V)[]::Vector{elem_type(V)}
     for i in 2:rank(L)
       #SN = SN + G_function(bong[i]//bong[i - 1], V, g, ginv, p)
       _G, _mG = G_function(bong[i]//bong[i - 1], V, g, ginv, p)
-      _SN, mS = sub(V, append!(SN, [_mG(g) for g in gens(_G)]))
-      @assert length(rels(_SN)) == 0 # free
-      SN = [ mS(s) for s in gens(_SN) ]
+      new_gens = append!(SN, elem_type(V)[_mG(g) for g in gens(_G)])
+      _SN, mS = sub(V, new_gens)
+      SN = elem_type(V)[ mS(s) for s in gens(_SN) ]
     end
     # For why we can take the Minimum in what follows here, see the remark on p. 161 in Beli 2003:
     k = findfirst(i -> mod(valuation(bong[i + 2], p) - valuation(bong[i], p), 2) == 0, 1:(rank(L) - 2))
@@ -325,7 +323,7 @@ function spinor_norm(L, p)
       _G, _mG = _one_plus_power_of_p(alpha, V, g, ginv, p)
       _SN, mS = sub(V, append!(SN, [_mG(g) for g in gens(_G)]))
       @assert length(rels(_SN)) == 0 # free
-      SN = [ mS(s) for s in gens(_SN) ]
+      SN = elem_type(V)[ mS(s) for s in gens(_SN) ]
     end
   end
   # Test if S is equal to SN
@@ -333,7 +331,7 @@ function spinor_norm(L, p)
   @assert length(rels(S)) == 0
   W,_ = sub(V, append!(basis(V)[1:(dim(V) - 1)], SN))
   @assert length(rels(W)) == 0
-  if ngens(W) == dim(V) - 1 # this means SN + V[1:dim(V) -1] == V[1:dim(V) - 1]
+  if length(SN) == ngens(S) && ngens(W) == dim(V) - 1 # this means SN + V[1:dim(V) -1] == V[1:dim(V) - 1]
     fl = true
   else
     fl = false
@@ -637,9 +635,8 @@ function G_function(a, V, g, ginv, p)
   elseif 2*e < R && R <= 4 * e
     if d <= 2 * e - R//2
       @vprint :GenRep 2 "G_function case A\n"
-      I = _intersect(N_function(-a, g, ginv, p), sub(V, [ginv(a)]))
       O = _one_plus_power_of_p(R + d - 2*e, V, g, ginv, p)
-      return _sum(I, O)
+      return _intersect(N_function(-a, g, ginv, p), _sum(O, sub(V, [ginv(a)])))
     else
       @vprint :GenRep 2 "G_function case B\n"
       @assert R % 2 == 0
@@ -967,7 +964,6 @@ end
 
 # TODO: Enable use_auto
 function neighbours(L::QuadLat, p; call = stdcallback, use_auto = false, max = inf)
-  use_auto && throw(NotImplemented())
   R = base_ring(L)
   F = nf(R)
   @req R == order(p) "Incompatible arguments"
@@ -979,7 +975,12 @@ function neighbours(L::QuadLat, p; call = stdcallback, use_auto = false, max = i
   @req e == 0 || valuation(norm(L), p) >= e "The lattice must be even"
   B = local_basis_matrix(L, p, type = :submodule)
   n = nrows(B)
-  k, h = ResidueField(R, p)
+  if F isa AnticNumberField
+    @assert nbits(minimum(p)) < 60
+    k, h = ResidueFieldSmall(R, p)
+  else
+    k, h = ResidueField(R, p)
+  end
   hext = extend(h, F)
   pi = uniformizer(p)
   piinv = anti_uniformizer(p)
@@ -989,9 +990,30 @@ function neighbours(L::QuadLat, p; call = stdcallback, use_auto = false, max = i
   end
   pform = map_entries(hext, form)
 
-  LO = _enumerate_lines(k, n)
+  if use_auto
+    G = automorphism_group_generators(L)
+    @hassert :GenRep 1 all(g -> g * gram_matrix(ambient_space(L)) * transpose(g) == gram_matrix(ambient_space(L)), G)
+    Binv = inv(B)
+    adjust_gens = eltype(G)[B * g * Binv for g in G]
+    @hassert :GenRep 1 all(g -> g * form * transpose(g) == form, adjust_gens)
+    adjust_gens_mod_p = dense_matrix_type(k)[map_entries(hext, g) for g in adjust_gens]
+    adjust_gens_mod_p = dense_matrix_type(k)[x for x in adjust_gens_mod_p if !isdiagonal(x)]
+    @hassert :GenRep 1 all(g -> g * pform * transpose(g) == pform, adjust_gens_mod_p)
+    q = order(k)
+    if length(adjust_gens_mod_p) > 0
+      _LO = line_orbits(adjust_gens_mod_p)
+      LO = Vector{eltype(k)}[x[1] for x in _LO]
+      @vprint :GenRep 1 "Checking $(length(LO)) representatives (instead of $(div(order(k)^n - 1, order(k) - 1)))\n"
+    else
+      @vprint :GenRep 1 "Enumerating lines over $k of length $n\n"
+      LO = enumerate_lines(k, n)
+    end
+  else
+    @vprint :GenRep 1 "Enumerating lines over $k of length $n\n"
+    LO = enumerate_lines(k, n)
+  end
  
-  result = []
+  result = typeof(L)[]
 
   pMmat = _module_scale_ideal(p, pseudo_matrix(L))
 
@@ -1004,8 +1026,7 @@ function neighbours(L::QuadLat, p; call = stdcallback, use_auto = false, max = i
   cont = true
   found = false
 
-  for i in 1:length(LO)
-    w = LO[i]
+  for w in LO
     dotww = _dotk(w, w)
     if dotww != 0
       continue
@@ -1083,7 +1104,7 @@ function neighbours(L::QuadLat, p; call = stdcallback, use_auto = false, max = i
     V = VV * B
     LL = lattice(ambient_space(L), _sum_modules(pMmat, pseudo_matrix(V)))
 
-    @assert islocally_isometric(LL, L, p)
+    @hassert :GenRep 1 islocally_isometric(LL, L, p)
 
     if !(call isa Bool)
       keep, cont = call(result, LL)
@@ -1103,7 +1124,6 @@ function neighbours(L::QuadLat, p; call = stdcallback, use_auto = false, max = i
 end
 
 function iterated_neighbours(L::QuadLat, p; use_auto = false, max = inf)
-  use_auto && throw(NotImplemented())
   @req isdefinite(L) "Lattice must be definite"
   result = typeof(L)[ L ]
   i = 1
@@ -1312,8 +1332,13 @@ function beli_correction!(L, G, JJ, steps, i, j, p)
   if nrows(G[j]) == 2
     # assert orthogonality of the vectors in JJ[Steps[i]] and those in
     # JJ[Steps[j]], i.e. those that make up G[i] and G[j]:
-    B = sub(JJ, steps[i][1]:(steps[i][1] + steps[i][2] - 1), 1:ncols(JJ))
-    C = sub(JJ, 1:steps[j][2], 1:ncols(JJ))
+    #B = sub(JJ, steps[i][1]:(steps[i][1] + steps[i][2] - 1), 1:ncols(JJ))
+    B = zero_matrix(base_ring(JJ), 2, ncols(JJ))
+    for k in 1:ncols(JJ)
+      B[1, k] = JJ[steps[i][1], k]
+      B[2, k] = JJ[steps[i][2], k]
+    end
+    C = sub(JJ, steps[j][2]:steps[j][2], 1:ncols(JJ))
     @assert iszero(C * gram_matrix(ambient_space(L)) * B')
   end
 
@@ -1373,8 +1398,8 @@ function beli_correction!(L, G, JJ, steps, i, j, p)
     # decomposed into two 1x1-lattices here)
 
     @assert all(k -> valuation(w[k], p) >= 0, 1:ncols(w))
-    for u in 1:ncols(u)
-      JJ[steps[j][1], u] = JJ[steps[j][1], u] + w[1] * JJ[steps[i][1],u] + w[2] * JJ[stepps[i][2], u]
+    for u in 1:ncols(JJ)
+      JJ[steps[j][1], u] = JJ[steps[j][1], u] + w[1] * JJ[steps[i][1],u] + w[2] * JJ[steps[i][2], u]
     end
   end
 

@@ -232,6 +232,11 @@ an integer.
 """
 function isnorm_divisible(a::nf_elem, n::fmpz)
   K = parent(a)
+  if !iscoprime(denominator(K.pol), n)
+    na = norm(a)
+    @assert isone(denominator(na))
+    return divides(numerator(na), n)[1]
+  end
   s, t = ppio(denominator(a), n)
   if !isone(s)
     m = n*s^degree(K)
@@ -253,6 +258,11 @@ end
 #In this version, n is supposed to be a prime power
 function isnorm_divisible_pp(a::nf_elem, n::fmpz)
   K = parent(a)
+  if !iscoprime(denominator(K.pol), n)
+    na = norm(a)
+    @assert isone(denominator(na))
+    return divides(numerator(na), n)[1]
+  end
   s, t = ppio(denominator(a), n)
   if !isone(s)
     m = n*s^degree(K)

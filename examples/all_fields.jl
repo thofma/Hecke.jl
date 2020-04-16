@@ -8,27 +8,6 @@ include(joinpath(Hecke.pkgdir,"examples/FieldEnumeration.jl"))
 #
 ###############################################################################
 
-function _write_fields(list::Array{Tuple{AnticNumberField, fmpz},1}, filename::String)
-  f=open(filename, "a")
-  for L in list
-    x=([coeff(L[1].pol, i) for i=0:degree(L[1].pol)], L[2])
-    Base.write(f, "$x\n")
-  end
-  close(f)
-end
-
-function _read_fields(filename::String)
-  f=open(filename, "r")
-  Qx,x=PolynomialRing(FlintQQ,"x")
-  pols=Tuple{fmpq_poly, fmpz}[]
-  for s in eachline(f)
-    a=eval(parse(s))
-    push!(pols,(Qx(a[1]), a[2]))
-  end
-  close(f)
-  return pols
-end 
-
 function ArgParse.parse_item(::Type{fmpz}, x::AbstractString)
   if in('^', x)
     l = split(x, '^')
@@ -68,6 +47,9 @@ function parse_commandline()
       help = "Discriminant bound"
       arg_type = fmpz
       required = true
+    "--only-cm"
+      help = "Only CM fields"
+      action = :store_true
   end
 
   return parse_args(s)
@@ -82,6 +64,7 @@ function main()
   local only_real::Bool
   local only_tame::Bool
   local grp_no::Int
+  local only_cm::Bool
 
   for (arg, val) in parsed_args
     println("$arg => $val")
@@ -97,6 +80,8 @@ function main()
       only_tame = val
     elseif arg == "number"
       grp_no = val
+    elseif arg == "only-cm"
+      only_cm = val
     end
   end
 
@@ -125,6 +110,7 @@ function main()
   @show dbound
   @show only_real
   @show only_tame
+  @show only_cm
   @show file
 
   if isfile(file)
@@ -143,8 +129,19 @@ function main()
 
   l = fields(n, i, dbound, only_real = only_real, simplify = false)
 
+  # Determine the automorphism groups
+  if only_cm
+    Hecke.assure_automorphisms.(l)
+  end
+
   ll = map(v -> v.field, l)
-  ffields = [ (x, discriminant(maximal_order(x))) for x in ll ]
+
+  if only_cm
+    ffields = [ (x, discriminant(maximal_order(x))) for x in ll if Hecke.iscm_field(x)[1]]
+  else
+    ffields = [ (x, discriminant(maximal_order(x)))]
+  end
+
   sort!(ffields, lt = (x, y) -> abs(x[2]) <= abs(y[2]))
 
   @show length(ffields)

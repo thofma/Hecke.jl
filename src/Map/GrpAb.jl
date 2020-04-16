@@ -109,6 +109,38 @@ end
 
 ################################################################################
 #
+#  Morphisms from finite abelian groups into finite fields
+#
+################################################################################
+
+mutable struct FiniteFieldMultGrpMap{S, T} <: Map{GrpAbFinGen, S, HeckeMap, FiniteFieldMultGrpMap{S, T}}
+  header::MapHeader{GrpAbFinGen, S}
+  domain::GrpAbFinGen
+  codomain::S
+  generator::T
+  @declare_other
+
+  function FiniteFieldMultGrpMap{S, T}(G::GrpAbFinGen, F::S, generator::T, disc_log::Function) where {S, T}
+    z = new{S, T}()
+    z.header = MapHeader(G, F)
+    z.domain = G
+    z.codomain = F
+    z.header.preimage = disc_log
+    z.generator = generator
+    return z
+  end
+end
+
+function image(f::FiniteFieldMultGrpMap, x::GrpAbFinGenElem)
+  return f.generator^x[1]
+end
+
+
+
+
+
+################################################################################
+#
 #  Morphisms from finite abelian groups onto units of orders
 #
 ################################################################################

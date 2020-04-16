@@ -377,10 +377,10 @@ function _torsion_group_order_divisor(K::AnticNumberField)
 end
 
 function _torsion_units_gen(K::AnticNumberField)
-  #if istorsion_unit_group_known(K)
-  #  c = _get_nf_torsion_units(K)
-  #  return c[1], c[2]
-  #end
+  if istorsion_unit_group_known(K)
+    c = _get_nf_torsion_units(K)
+    return c[1], c[2]
+  end
   r1, r2 = signature(K)
   if r1 > 0
     return 2, K(-1)

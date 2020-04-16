@@ -5,7 +5,6 @@ function order(x::Generic.Res{fmpz}, fp::Dict{fmpz, Int64})
   error("missing")
 end
 
-
 @doc Markdown.doc"""
     isprimitive_root(x::Generic.Res{fmpz}, M::fmpz, fM::Dict{fmpz, Int64}) Bool
 
@@ -108,9 +107,9 @@ end
 
 The unit group of R = Z/nZ together with the apropriate map.
 """
-function UnitGroup(R::Generic.ResRing{fmpz}, mod::fmpz=fmpz(0))
+function UnitGroup(R::Nemo.FmpzModRing, mod::fmpz=fmpz(0))
 
-  m = R.modulus
+  m = modulus(R)
   fm = factor(m).fac
   
   r = Array{fmpz}(undef, 0)
@@ -168,9 +167,9 @@ function UnitGroup(R::Generic.ResRing{fmpz}, mod::fmpz=fmpz(0))
 
   G = abelian_group(r)
   function dexp(x::GrpAbFinGenElem)
-    return prod(Res{fmpz}[R(g[i])^x[i] for i=1:ngens(G)])
+    return prod(Nemo.fmpz_mod[R(g[i])^x[i] for i=1:ngens(G)])
   end
-  function dlog(x::Generic.Res{fmpz})
+  function dlog(x::Nemo.fmpz_mod)
     return G(fmpz[disc_log_mod(g[i], lift(x), mi[i]) for i=1:ngens(G)])
   end
   return G, MapUnitGroupModM{typeof(R)}(G, R, dexp, dlog)
@@ -667,5 +666,5 @@ function _unit_grp_residue_field_mod_n(p::Int, n::Int)
   
 end
 
-unit_group(A::Generic.ResRing{fmpz}) = UnitGroup(A)
+unit_group(A::Nemo.FmpzModRing) = UnitGroup(A)
 unit_group(A::Nemo.NmodRing) = UnitGroup(A)

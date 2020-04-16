@@ -309,3 +309,80 @@ function minpoly(Rx::GFPFmpzPolyRing, a::fq)
   end
   return g
 end
+
+################################################################################
+#
+#  Generators multiplicative group
+#
+################################################################################
+
+function primitive_element(F::T; n_quo::Int = -1) where T <: Union{FqFiniteField, FqNmodFiniteField, GaloisField, Nemo.GaloisFmpzField}
+  n = size(F)-1
+  k = fmpz(1)
+  if n_quo != -1
+    k = ppio(n, fmpz(n_quo))[2]
+    n = n_quo
+  end
+  primefactors_n = collect(keys(factor(n).fac))
+
+  x = rand(F)^k
+  while iszero(x)
+    x = rand(F)^k
+  end
+  while true
+    found = true
+    for l in primefactors_n
+      if isone(x^div(n, l))
+        found = false
+        break
+      end
+    end
+    if found
+      break
+    end
+    x = rand(F)^k
+    while iszero(x)
+      x = rand(F)^k
+    end
+  end
+  return x
+end
+
+function unit_group(F::T; n_quo::Int = -1) where T <: Union{FqFiniteField, FqNmodFiniteField, GaloisField, Nemo.GaloisFmpzField}
+
+  @show g = primitive_element(F, n_quo = n_quo)
+  k = size(F) - 1
+  inv = 1
+  if n_quo != -1
+    k = n_quo
+    inv = ppio(div(size(F)-1, n_quo), fmpz(n_quo))[2]
+  end
+
+  G = abelian_group(Int[k])
+  ex = div(size(F)-1, k)
+  function disc_log(x)
+    @assert typeof(x) == elem_type(F)
+    iszero(x) && error("Not invertible!")
+    @show y = x^ex
+    isone(y) && return 0
+    if k < 20
+      c = 1
+      el = deepcopy(g)
+      while el != y
+        @show el
+        c += 1
+        if c > k
+          error("Something went wrong!")
+        end
+        el *= g
+      end
+      return G([mod(c*inv, k)])
+    else
+      return G([mod(inv*disc_log_bs_gs(g, y, npart), k)])
+    end
+  end    
+
+  
+  mG = FiniteFieldMultGrpMap{T, elem_type(F)}(G, F, g, disc_log)
+  return G, mG
+end

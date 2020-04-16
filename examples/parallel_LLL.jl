@@ -1,3 +1,59 @@
+################################################################################
+#
+#  Minkowski matrix
+#
+################################################################################
+
+function minkowski_matrix_parallel(O::NfOrd, abs_tol::Int = 64)
+  if isdefined(O, :minkowski_matrix) && O.minkowski_matrix[2] > abs_tol
+    A = deepcopy(O.minkowski_matrix[1])
+  else
+    T = Vector{Vector{arb}}(undef, degree(O))
+    B = O.basis_nf
+    @Threads.threads for i in 1:degree(O)
+      T[i] = minkowski_map(B[i], abs_tol)
+    end
+    p = maximum(Int[ prec(parent(T[i][j])) for i in 1:degree(O), j in 1:degree(O) ])
+    M = zero_matrix(ArbField(p, cached = false), degree(O), degree(O))
+    for i in 1:degree(O)
+      for j in 1:degree(O)
+        M[i, j] = T[i][j]
+      end
+    end
+    O.minkowski_matrix = (M, abs_tol)
+    A = deepcopy(M)
+  end
+  return A
+end
+
+@doc Markdown.doc"""
+    minkowski_gram_mat_scaled(O::NfOrd, prec::Int = 64) -> fmpz_mat
+
+Let $c$ be the Minkowski matrix as computed by `minkowski_matrix` with precision $p$.
+This function computes $d = round(c 2^p)$ and returns $round(d d^t/2^p)$.
+"""
+function minkowski_gram_mat_scaled_parallel(O::NfOrd, prec::Int = 64)
+  if isdefined(O, :minkowski_gram_mat_scaled) && O.minkowski_gram_mat_scaled[2] >= prec
+    A = deepcopy(O.minkowski_gram_mat_scaled[1])
+    Hecke.shift!(A, prec - O.minkowski_gram_mat_scaled[2])
+  else
+    c = minkowski_matrix_parallel(O, prec)
+    d = zero_matrix(FlintZZ, degree(O), degree(O))
+    A = zero_matrix(FlintZZ, degree(O), degree(O))
+    round_scale!(d, c, prec)
+    ccall((:fmpz_mat_gram, libflint), Nothing, (Ref{fmpz_mat}, Ref{fmpz_mat}), A, d)
+    Hecke.shift!(A, -prec)
+    O.minkowski_gram_mat_scaled = (A, prec)
+    A = deepcopy(A)
+  end
+  # to ensure pos. definitenes, we add n to the diag.
+  for i=1:degree(O)
+    A[i, i] += nrows(A)
+  end
+  return A
+end
+
+
 function parallel_lll_precomputation(M::NfOrd, prec::Int, nblocks::Int = 4)
   n = degree(M)
   K = nf(M)
@@ -35,7 +91,7 @@ function parallel_lll_precomputation(M::NfOrd, prec::Int, nblocks::Int = 4)
     while true
       try
         Hecke.minkowski_gram_mat_scaled(M, prec)
-	break
+	    break
       catch e
         prec *= 2
       end

@@ -352,6 +352,22 @@ function _ordering_by_T2(M::NfOrd, prec::Int = 32)
   return On
 end
 
+
+function subsets_it(n::Int, k::Int)
+  if n == k
+    return (Int[i for i = 1:n])
+  end
+  if k == 1
+    return ([Int[i] for i = 1:n])
+  end
+  res = subsets_it(n-1, k-1)
+  res1 = (push!(x, n) for x in res)
+  res2 = subsets_it(n-1, k)
+  res3 = [res1, res2]
+  return (x for y in res3 for x in y)
+end
+
+
 #Inefficient, but at least it works.
 function subsets(n::Int, k::Int)
   if n == k
@@ -566,12 +582,15 @@ function _lll_with_parameters(M::NfOrd, parameters::Tuple{Float64, Float64}, pre
     if prod_diagonal(d1) < diag_d
       @vprint :LLL 3 "I use the transformation\n"
       M = On
+      prec = Int(floor(prec*1.5))
     else
       prec *= 2
     end
+    if att == steps
+      return M, prec
+    end
     @vprint :LLL 3 "Still in the loop\n"
   end
-  
   On = NfOrd(K, g*basis_matrix(M, copy = false))
   On.ismaximal = M.ismaximal
   if isdefined(M, :index)
