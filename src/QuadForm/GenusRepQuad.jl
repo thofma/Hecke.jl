@@ -851,6 +851,8 @@ function _map_idele_into_class_group(mRCG, idele, atinfinity::Vector{Tuple{InfPl
     _to_map = _to_map * FacElem(_temp1, _temp2)
   end
 
+  _to_map = FacElem(factor_coprime(_to_map))
+
   return g = mRCG\_to_map
 end
 

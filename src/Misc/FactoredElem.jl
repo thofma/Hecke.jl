@@ -284,6 +284,9 @@ function *(x::FacElem{B, S}, y::FacElem{B, S}) where {B, S}
   for (a, v) in y
     add_to_key!(z.fac, a, v)
   end
+
+  filter!(p -> !iszero(p.second), z.fac)
+
   return z
 end
 
