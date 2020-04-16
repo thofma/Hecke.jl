@@ -3,6 +3,7 @@
 const _Data = Dict(
   "lattices" => ("data/lattices", "https://github.com/thofma/Hecke.jl/releases/download/DBtest/lattice_test", 2),
   "quadratic_lattices" => ("data/quadratic_lattices", "https://github.com/thofma/Hecke.jl/releases/download/DBtest/qlat_small", 6),
+  "hermitian_lattices" => ("data/hermitian_lattices", "https://github.com/thofma/Hecke.jl/releases/download/DBtest/hlat_small", 0.2),
  )
 
 function download_data(;data)
