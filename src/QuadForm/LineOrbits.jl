@@ -342,6 +342,7 @@ function _line_orbits(G::Vector)
   n = nrows(G[1])
   P = enumerate_lines(K, n)
   l = length(P)
+  @vprint :GenRep 1 "Computing orbits of lines of total length $l over $K\n"
   lines = Vector{eltype(P)}(undef, l)
   i = 1
   for v in P
@@ -359,7 +360,8 @@ function _line_orbits(G::Vector)
   sofar = zero(BigInt)
   newline = zero_matrix(K, 1, n)
   newline2 = zero_matrix(K, 1, n)
-  ___isless = __isless(elem_type(K)) # the comparison needs some temporary variables
+  ___isless = __isless(elem_type(K)) # the comparison needs some
+                                     # temporary variables in some cases
   while sofar < l
     pt = findfirst(visited)
     @assert pt !== nothing 
@@ -796,5 +798,3 @@ __isless(::Type{T}) where {T} = _isless
 ################################################################################
 
 defining_polynomial(F::FqFiniteField) = minpoly(gen(F))
-
-defining_polynomial(F::FqNmodFiniteField) = minpoly(gen(F))

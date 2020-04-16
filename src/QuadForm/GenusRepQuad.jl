@@ -1,3 +1,8 @@
+# Genus representatives for quadratic lattices,
+#
+# With permission ported from Magma package of Markus Kirschmer:
+# http://www.math.rwth-aachen.de/~Markus.Kirschmer/magma/lat.html
+
 add_verbose_scope(:GenRep)
 add_assert_scope(:GenRep)
 
@@ -79,13 +84,14 @@ end
 
 @doc Markdown.doc"""
     genus_representatives(L::QuadLat; max = inf, use_auto = false)
+                                                        -> Vector{QuadLat}
 
 Computes representatives for the isometry classes in the genus of $L$.
 
 At most `max` representatives are returned. The use of automorphims can be
 disabled by
 """
-function genus_representatives(L::QuadLat; max = inf, use_auto = false)
+function genus_representatives(L::QuadLat; max = inf, use_auto = true)
   @req rank(L) >= 3 "Lattice must have rank >= 3"
   # Otherwise the isomorphism to the class group fails, cf. §102 in O'Meara.
   @req max >= 1 "Must find at least one representative"
@@ -963,7 +969,7 @@ function _spinor_generators(L, C, mod_out = elem_type(codomain(C.mQ))[])
 end
 
 # TODO: Enable use_auto
-function neighbours(L::QuadLat, p; call = stdcallback, use_auto = false, max = inf)
+function neighbours(L::QuadLat, p; call = stdcallback, use_auto = true, max = inf)
   R = base_ring(L)
   F = nf(R)
   @req R == order(p) "Incompatible arguments"
@@ -1123,7 +1129,7 @@ function neighbours(L::QuadLat, p; call = stdcallback, use_auto = false, max = i
   return result
 end
 
-function iterated_neighbours(L::QuadLat, p; use_auto = false, max = inf)
+function iterated_neighbours(L::QuadLat, p; use_auto = true, max = inf)
   @req isdefinite(L) "Lattice must be definite"
   result = typeof(L)[ L ]
   i = 1

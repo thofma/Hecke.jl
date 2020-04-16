@@ -361,13 +361,13 @@ function _automorphisms(L::NfRel)
   return auts
 end
 
-function automorphisms(L::NfRel; copy::Bool = true)
+function automorphisms(L::T; copy::Bool = true) where {T <: NfRel}
   try
-    Aut = _get_automorphisms_nf_rel(L)::Vector{ <: NfRelToNfRelMor}
+    Aut = _get_automorphisms_nf_rel(L)::Vector{morphism_type(T)}
     if copy
-      return deepcopy(Aut)
+      return deepcopy(Aut)::Vector{morphism_type(T)}
     else
-      return Aut
+      return Aut::Vector{morphism_type(T)}
     end
   catch e
     if !isa(e, AccessorNotSetError)
@@ -377,9 +377,9 @@ function automorphisms(L::NfRel; copy::Bool = true)
   auts = _automorphisms(L)
   _set_automorphisms_nf_rel(L, auts)
   if copy
-    return deepcopy(auts)
+    return deepcopy(auts)::Vector{morphism_type(T)}
   else
-    return auts
+    return auts::Vector{morphism_type(T)}
   end
 end
 

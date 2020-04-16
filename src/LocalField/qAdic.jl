@@ -214,7 +214,7 @@ function defining_polynomial(Q::FlintQadicField, P::Ring = coefficient_ring(Q))
   return f
 end
 
-function defining_polynomial(Q::FqNmodFiniteField, P::Ring = GF(characteristic(Q)))
+function defining_polynomial(Q::FqNmodFiniteField, P::Ring = GF(characteristic(Q), cached = false))
   Pt, t = PolynomialRing(P, cached = false)
   f = Pt()
   for i=0:Q.len-1
@@ -225,5 +225,3 @@ function defining_polynomial(Q::FqNmodFiniteField, P::Ring = GF(characteristic(Q
   end
   return f
 end
-
-
