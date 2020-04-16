@@ -445,7 +445,7 @@ end
 function grow_prec!(vH::vanHoeijCtx, pr::Int)
   lift(vH.H, pr)
 
-  @time vH.Ml = lll(basis_matrix(vH.P^pr))
+  vH.Ml = lll(basis_matrix(vH.P^pr))
   pMr = pseudo_inv(vH.Ml)
   F = FakeFmpqMat(pMr)
   #M * basis_matrix(zk) is the basis wrt to the field
