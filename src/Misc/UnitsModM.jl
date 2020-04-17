@@ -368,6 +368,7 @@ Uses Baby-Step-Giant-Step, requires a to be invertable.
 function disc_log_bs_gs(a::T, b::T, o::fmpz) where {T <: RingElem}
   b==1 && return fmpz(0)  
   b==a && return fmpz(1)
+  @assert parent(a) === parent(b)
   if o < 100 
     ai = inv(a)
     for g=1:Int(o)
@@ -375,29 +376,27 @@ function disc_log_bs_gs(a::T, b::T, o::fmpz) where {T <: RingElem}
       b==1 && return fmpz(g)
     end
     throw("disc_log failed")
-  else
-    r = root(o, 2)
-    r = Int(r)
-    baby = Array{typeof(a), 1}(undef, r)
-    baby[1] = parent(a)(1)
-    baby[2] = a
-    for i=3:r
-      baby[i] = baby[i-1]*a
-      baby[i] == b && return fmpz(i-1)
-    end
-    giant = baby[end]*a
-    @assert giant == a^r
-    b == giant && return fmpz(r)
-    giant = inv(giant)
-    g = fmpz(0)
-    for i=1:r
-      b *= giant
-      g += r
-      f = findfirst(x -> x == b, baby)
-      f !== nothing && return fmpz(g+f-1)
-    end
-    throw("disc_log failed")
   end
+  r = Int(root(o, 2))
+  baby = Array{typeof(a), 1}(undef, r)
+  baby[1] = parent(a)(1)
+  baby[2] = a
+  for i=3:r
+    baby[i] = baby[i-1]*a
+    baby[i] == b && return fmpz(i-1)
+  end
+  giant = baby[end]*a
+  @assert giant == a^r
+  b == giant && return fmpz(r)
+  giant = inv(giant)
+  g = fmpz(0)
+  for i=1:r+1
+    b *= giant
+    g += r
+    f = findfirst(x -> x == b, baby)
+    f !== nothing && return fmpz(g+f-1)
+  end
+  throw("disc_log failed")
 end
 
 @doc Markdown.doc"""

@@ -320,8 +320,10 @@ function primitive_element(F::T; n_quo::Int = -1) where T <: Union{FqFiniteField
   n = size(F)-1
   k = fmpz(1)
   if n_quo != -1
-    k = ppio(n, fmpz(n_quo))[2]
-    n = n_quo
+    if !divisible(n, n_quo)
+      return F(1)
+    end
+    n, k = ppio(n, fmpz(n_quo))
   end
   primefactors_n = collect(keys(factor(n).fac))
 
@@ -348,30 +350,32 @@ function primitive_element(F::T; n_quo::Int = -1) where T <: Union{FqFiniteField
   return x
 end
 
+
 function unit_group(F::T; n_quo::Int = -1) where T <: Union{FqFiniteField, FqNmodFiniteField, GaloisField, Nemo.GaloisFmpzField}
 
-  @show g = primitive_element(F, n_quo = n_quo)
+  g = primitive_element(F, n_quo = n_quo)
   k = size(F) - 1
-  inv = 1
+  inv = fmpz(1)
+  npart = fmpz(k)
   if n_quo != -1
-    k = n_quo
-    inv = ppio(div(size(F)-1, n_quo), fmpz(n_quo))[2]
+    k = fmpz(n_quo)
+    npart, nnpart = ppio(size(F)-1, k)
+    inv = invmod(nnpart, npart)
   end
 
   G = abelian_group(Int[k])
-  ex = div(size(F)-1, k)
+  ex = div(size(F)-1, npart)
   function disc_log(x)
     @assert typeof(x) == elem_type(F)
     iszero(x) && error("Not invertible!")
-    @show y = x^ex
-    isone(y) && return 0
+    y = x^ex
+    isone(y) && return G[0]
     if k < 20
       c = 1
       el = deepcopy(g)
       while el != y
-        @show el
         c += 1
-        if c > k
+        if c > npart
           error("Something went wrong!")
         end
         el *= g
@@ -382,7 +386,6 @@ function unit_group(F::T; n_quo::Int = -1) where T <: Union{FqFiniteField, FqNmo
     end
   end    
 
-  
   mG = FiniteFieldMultGrpMap{T, elem_type(F)}(G, F, g, disc_log)
   return G, mG
 end
