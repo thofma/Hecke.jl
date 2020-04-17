@@ -828,18 +828,6 @@ function sub(P::PMat, rows::UnitRange{Int}, cols::UnitRange{Int})
   return PseudoMatrix(m, P.coeffs[rows])
 end
 
-function in(x::nf_elem, y::NfOrdFracIdl)
-  B = inv(basis_matrix(y))
-  O = order(y)
-  M = zero_matrix(FlintZZ, 1, degree(O))
-  t = FakeFmpqMat(M)
-  elem_to_mat_row!(t.num, 1, t.den, x)
-  v = t*basis_mat_inv(O)
-  v = v*B
-
-  return v.den == 1
-end
-
 pseudo_matrix(x...) = PseudoMatrix(x...)
 
 function pseudo_hnf_cohen(P::PMat)

@@ -262,7 +262,7 @@ function K1_semisimple(A::AlgAss{T}) where { T } #<: Union{ gfp_elem, Generic.Re
     # Consider C as a matrix algebra over F. Then the matrices with a one somewhere
     # on the diagonal are given by primitive idempotents (see also _as_matrix_algebra).
     prim_idems = _primitive_idempotents(C)
-    a = _primitive_element(F)
+    a = primitive_element(F)
     # aC is the identity matrix with a at position (1, 1)
     aC = a*prim_idems[1]
     if dim(C) > 1

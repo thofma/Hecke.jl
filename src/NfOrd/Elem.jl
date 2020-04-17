@@ -557,6 +557,11 @@ function //(x::nf_elem, y::NfOrdElem)
   return x//y.elem_in_nf
 end
 
+function //(y::NfOrdElem, x::nf_elem)
+  check_parent(x, y.elem_in_nf)
+  return y.elem_in_nf//x
+end
+
 ################################################################################
 #
 #  Exponentiation

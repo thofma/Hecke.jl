@@ -22,7 +22,7 @@ end
 # with a primitive element in the general case.
 
 function LineEnumCtx(K::T, n) where {T}
-  a = _primitive_element(K)
+  a = primitive_element(K)
   v = Vector{elem_type(K)}(undef, n)
   for i in 1:n
     v[i] = zero(K)
@@ -216,24 +216,6 @@ function Base.iterate(P::LineEnumCtx, state)
     end
   end
   return P.v, inc!(state)
-end
-
-################################################################################
-#
-#  Primitive elements for prime fields
-#
-################################################################################
-
-function _primitive_element(R::GaloisField)
-  S = ResidueRing(FlintZZ, Int(modulus(R)))
-  U, mU = unit_group(S)
-  return R(data(mU(U[1])))
-end
-
-function _primitive_element(R::GaloisFmpzField)
-  S = ResidueRing(FlintZZ, fmpz(modulus(R)))
-  U, mU = unit_group(S)
-  return R(data(mU(U[1])))
 end
 
 ################################################################################
