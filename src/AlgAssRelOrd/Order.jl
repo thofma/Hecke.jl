@@ -681,7 +681,7 @@ function phereditary_overorder(O::AlgAssRelOrd, p::Union{ NfAbsOrdIdl, NfRelOrdI
     end
   end
   if return_pradical == Val{true}
-    return order(prad), prad
+    return OO, prad
   else
     return OO
   end
