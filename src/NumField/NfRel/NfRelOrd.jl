@@ -304,7 +304,7 @@ function assure_has_discriminant(O::NfRelOrd{T, S}) where {T, S}
   if isdefined(O, :disc_abs) || isdefined(O, :disc_rel)
     return nothing
   end
-  d = det(trace_matrix(O))
+  d = det(trace_matrix(O, copy = false))
   pb = pseudo_basis(O, copy = false)
   a = pb[1][2]^2
   for i = 2:degree(O)
@@ -342,7 +342,7 @@ end
 Returns the codifferent of $\mathcal O$.
 """
 function codifferent(O::NfRelOrd)
-  T = trace_matrix(O)
+  T = trace_matrix(O, copy = false)
   R = base_ring(O)
   K = nf(R)
   pm = pseudo_matrix(inv(change_base_ring(K, T)))
@@ -570,9 +570,13 @@ end
 Returns the trace matrix of $\mathcal O$ with respect to $(\omega_1,\dotsc,\omega_d)$
 where $(\mathfrak c_i, \omega_i)$ is the pseudo-basis of $\mathcal O$.
 """
-function trace_matrix(O::NfRelOrd)
+function trace_matrix(O::NfRelOrd; copy::Bool = true)
   if isdefined(O, :trace_mat)
-    return deepcopy(O.trace_mat)
+    if copy
+      return deepcopy(O.trace_mat)
+    else
+      return O.trace_mat
+    end
   end
   L = nf(O)
   K = base_field(L)
@@ -588,8 +592,12 @@ function trace_matrix(O::NfRelOrd)
       g[j, i] = t
     end
   end
-  O.trace_mat = g
-  return deepcopy(g)
+  O.trace_mat = g    
+  if copy
+    return deepcopy(O.trace_mat)
+  else
+    return O.trace_mat
+  end
 end
 
 ################################################################################
@@ -699,15 +707,18 @@ This function finds a $p$-maximal order $R$ containing $\mathcal O$.
 """
 function pmaximal_overorder(O::NfRelOrd, p::Union{NfOrdIdl, NfRelOrdIdl})
   d = discriminant(O)
+  if valuation(d, p) < 2
+    return OO
+  end
   OO = poverorder(O, p)
   dd = discriminant(OO)
   while d != dd
-    d = dd
-    OO = poverorder(OO, p)
-    dd = discriminant(OO)
     if valuation(dd, p) < 2
       break
     end
+    d = dd
+    OO = poverorder(OO, p)
+    dd = discriminant(OO)
   end
   return OO
 end

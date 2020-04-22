@@ -12,7 +12,6 @@
   end
 
   @testset "Pseudo matrices" begin
-
     Qx, x = PolynomialRing(FlintQQ, "x")
 
     # Compute a pseudo-hnf of a matrix over Z and check result against the HNF

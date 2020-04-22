@@ -898,6 +898,11 @@ end
 #
 ################################################################################
 
+@doc Markdown.doc"""
+    kummer_generator(K::NfRel{nf_elem}) -> nf_elem
+Given an extension $K/k$ which is a cyclic Kummer extension of degree n, returns an element $a\in k$ 
+such that $K = k(\sqrt[n]{a})$. Throws an error if the extension is not a cyclic Kummer extension.
+"""
 function kummer_generator(K::NfRel{nf_elem})
   n = degree(K)
   k = base_field(K)
@@ -931,4 +936,34 @@ function kummer_generator(K::NfRel{nf_elem})
   #We even reduce the support....
   res1 = reduce_mod_powers(res, n)
   return res1
+end
+
+################################################################################
+#
+#  Relative extension
+#
+################################################################################
+
+@doc Markdown.doc"""
+    relative_extension(K::AnticNumberField, k::AnticNumberField) -> NfRel{nf_elem}
+Given two field $K\supset k$, it returns $K$ as a relative 
+extension of $k$ and an isomorphism between it and $K$..
+"""
+function relative_extension(m::NfToNfMor)
+  k = domain(m)
+  K = codomain(m)
+  lf = factor(K.pol, k)
+  rel_deg = divexact(degree(K), degree(k))
+  pols = [f for (f, v) in lf if degree(f) == rel_deg]
+  L, b = number_field(pols[1], cached = false, check = false)
+  mp = hom(K, L, b, m.prim_img, gen(K))
+  return L, mp
+end
+
+function relative_extension(K::AnticNumberField, k::AnticNumberField)
+  fl, mp = issubfield(k, K)
+  if !fl
+    error("Not a subfield!")
+  end
+  return relative_extension(mp)
 end

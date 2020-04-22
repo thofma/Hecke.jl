@@ -924,4 +924,30 @@ function _order(G::Vector{NfToNfMor})
 	return length(closure(given_gens, (x, y) -> Hecke.compose_mod(x, y, Rx(K.pol)), gen(Rx)))
 end
 
+################################################################################
+#
+#  Frobenius automorphism
+#
+################################################################################
 
+function frobenius_automorphism(P::NfOrdIdl)
+  @assert isprime(P)
+  OK = order(P)
+  K = nf(OK)
+  @assert ismaximal_known_and_maximal(OK)
+  @assert ramification_index(P) == 1
+  @assert isnormal(K)
+  K = nf(OK)
+  auts = decomposition_group(P)
+  F, mF = ResidueField(OK, P)
+  p = minimum(P, copy = false)
+  genF = elem_in_nf(mF\gen(F))
+  powgen = gen(F)^p
+  for i = 1:length(auts)
+    img = auts[i](genF)
+    if mF(OK(img, false)) == powgen
+      return auts[i]
+    end
+  end
+  error("Something went wrong")
+end

@@ -694,7 +694,7 @@ function ring_of_multipliers(a::NfAbsOrdIdl)
   end
   # mhnf is upper right HNF
   mhnf = transpose(mhnf)
-  b = FakeFmpqMat(pseudo_inv(mhnf))#FakeFmpqMat(pseudo_inv(mhnf))
+  b = FakeFmpqMat(pseudo_inv(mhnf))
   mul!(b, b, basis_matrix(O, copy = false))
   @hassert :NfOrd 1 defines_order(nf(O), b)[1]
   O1 = NfAbsOrd(nf(O), b)

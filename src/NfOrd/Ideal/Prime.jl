@@ -2047,9 +2047,12 @@ function decomposition_group_easy(G, P)
   pols = nmod_poly[Rt(x.prim_img) for x in G]
   indices = Int[]
   second_gen = Rt(P.gen_two.elem_in_nf)
+  if iszero(second_gen)
+    return G
+  end
   for i = 1:length(G)
     p1 = compose_mod(second_gen, pols[i], fmod)
-    if iszero(mod(p1, second_gen))
+    if iszero(p1) || iszero(mod(p1, second_gen))
       push!(indices, i)
     end
   end

@@ -226,7 +226,7 @@ function solve_dixon(A::Generic.Mat{nf_elem}, B::Generic.Mat{nf_elem})
   
   me = modular_init(K, p)
   ap = modular_proj(A, me)
-  @time ap = [inv(x) for x= ap]
+  ap = [inv(x) for x= ap]
   Aip = modular_lift(ap, me)
   sol = 0*B
   D = B

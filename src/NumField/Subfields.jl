@@ -276,7 +276,82 @@ $L$ and an embedding of $L$ into $K$.
 By default, the function tries to find a small defining polynomial of $L$. This
 can be disabled by setting `simplify = false`.
 """
-function fixed_field(K::SimpleNumField, A::Vector{T}; simplify::Bool = true) where {T <: Union{NfToNfMor, NfRelToNfRelMor}}
+function fixed_field(K::AnticNumberField, A::Vector{NfToNfMor}; simplify::Bool = true)
+
+  autos = small_generating_set(A)
+  if length(autos) == 0
+    return K, id_hom(K)
+  end
+
+  if ismaximal_order_known(K) 
+    OK = maximal_order(K)
+    if isdefined(OK, :lllO)
+      k, mk = fixed_field1(K, A)
+      return k, mk
+    end
+  end
+
+  a = gen(K)
+  n = degree(K)
+  ar_mat = Vector{fmpq_mat}()
+  v = Vector{nf_elem}(undef, n)
+  for i in 1:length(autos)
+    domain(autos[i]) !== codomain(autos[i]) && throw(error("Maps must be automorphisms"))
+    domain(autos[i]) !== K && throw(error("Maps must be automorphisms of K"))
+    o = one(K)
+    # Compute the image of the basis 1,a,...,a^(n - 1) under autos[i] and write
+    # the coordinates in a matrix. This is the matrix of autos[i] with respect
+    # to 1,a,...a^(n - 1).
+    as = autos[i](a)
+    if a == as
+      continue
+    end
+    v[1] = o
+    for j in 2:n
+      o = o * as
+      v[j] = o
+    end
+    bm = basis_matrix(v, FakeFmpqMat)
+    # We have to be a bit careful (clever) since in the absolute case the
+    # basis matrix is a FakeFmpqMat
+
+    m = matrix(FlintQQ, bm.num)
+    for j in 1:n
+      m[j, j] = m[j, j] - bm.den # This is autos[i] - identity
+    end
+   
+
+    push!(ar_mat, m)
+  end
+
+  if length(ar_mat) == 0
+    return K, id_hom(K)
+  else
+    bigmatrix = hcat(ar_mat)
+    k, Ker = kernel(bigmatrix, side = :left)
+    bas = Vector{elem_type(K)}(undef, k)
+    if simplify
+      KasFMat = _improve_subfield_basis(K, Ker)
+      for i in 1:k
+        bas[i] = elem_from_mat_row(K, KasFMat.num, i, KasFMat.den)
+      end
+    else
+      #KasFMat = _improve_subfield_basis_no_lll(K, Ker)
+      KasFMat = FakeFmpqMat(Ker)
+      Ksat = saturate(KasFMat.num)
+      Ksat = lll(Ksat)
+      onee = one(fmpz)
+      for i in 1:k
+        #bas[i] = elem_from_mat_row(K, KasFMat.num, i, KasFMat.den)
+        bas[i] = elem_from_mat_row(K, Ksat, i, onee)
+      end
+    end
+  end
+  return subfield(K, bas, isbasis = true)
+end
+
+
+function fixed_field(K::NfRel, A::Vector{T}; simplify::Bool = true) where {T <: NfRelToNfRelMor}
   autos = A
 
   # Everything is fixed by nothing :)
@@ -306,21 +381,9 @@ function fixed_field(K::SimpleNumField, A::Vector{T}; simplify::Bool = true) whe
       v[j] = o
     end
 
-    if isabsolute(K)
-      bm = basis_matrix(v, FakeFmpqMat)
-      # We have to be a bit careful (clever) since in the absolute case the
-      # basis matrix is a FakeFmpqMat
-
-      m = matrix(FlintQQ, bm.num)
-      for j in 1:n
-        m[j, j] = m[j, j] - bm.den # This is autos[i] - identity
-      end
-    else
-      bm = basis_matrix(v)
-      # In the generic case just subtract the identity
-      m = bm - identity_matrix(F, degree(K))
-    end
-
+    bm = basis_matrix(v)
+    # In the generic case just subtract the identity
+    m = bm - identity_matrix(F, degree(K))
     push!(ar_mat, m)
   end
 
@@ -330,32 +393,11 @@ function fixed_field(K::SimpleNumField, A::Vector{T}; simplify::Bool = true) whe
     bigmatrix = hcat(ar_mat)
     k, Ker = kernel(bigmatrix, side = :left)
     bas = Vector{elem_type(K)}(undef, k)
-    if isabsolute(K)
-      # Try to find a small basis for absolute simple number fields
-      if simplify
-        KasFMat = _improve_subfield_basis(K, Ker)
-        for i in 1:k
-          bas[i] = elem_from_mat_row(K, KasFMat.num, i, KasFMat.den)
-        end
-      else
-        #KasFMat = _improve_subfield_basis_no_lll(K, Ker)
-        KasFMat = FakeFmpqMat(Ker)
-        Ksat = saturate(KasFMat.num)
-        Ksat = lll(Ksat)
-        onee = one(fmpz)
-        for i in 1:k
-          #bas[i] = elem_from_mat_row(K, KasFMat.num, i, KasFMat.den)
-          bas[i] = elem_from_mat_row(K, Ksat, i, onee)
-        end
-      end
-    else
-      for i in 1:k
-        bas[i] = elem_from_mat_row(K, Ker, i)
-      end
+    for i in 1:k
+      bas[i] = elem_from_mat_row(K, Ker, i)
     end
-
-    return subfield(K, bas, isbasis = true)
   end
+  return subfield(K, bas, isbasis = true)
 end
 
 
@@ -364,6 +406,8 @@ function fixed_field1(K::AnticNumberField, auts::Vector{NfToNfMor})
 	auts_new = small_generating_set(auts)
   orderG = _order(auts)
   degree_subfield = divexact(degree(K), orderG)
+  #TODO: Experiments to see if this is helpful
+  #=
   if length(auts_new) == 1 && isprime_power(degree_subfield)
     #In this case, one of the coefficients of the minpoly of gen(K)
     #over the subfield is a generator for the subfield.
@@ -389,12 +433,11 @@ function fixed_field1(K::AnticNumberField, auts::Vector{NfToNfMor})
     mp = hom(subK, K, prim_el, check = false)
     return subK, mp
 	end 
-  
+  =#
   OK = maximal_order(K)
   if isdefined(OK, :lllO)
     OK = lll(OK)
   end
-	B = basis(OK, K)
   M = zero_matrix(FlintZZ, degree(K), degree(K)*length(auts_new))
   v = Vector{nf_elem}(undef, degree(K))
   MOK = basis_matrix(OK, copy = false)

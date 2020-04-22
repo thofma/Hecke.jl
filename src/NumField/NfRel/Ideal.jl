@@ -800,21 +800,12 @@ function pradical(O::NfRelOrd, P::Union{NfOrdIdl, NfRelOrdIdl})
       for j = i:d
         t = L(K(elts_with_val[i]))*pbint[i][1]*L(K(elts_with_val[j]))*pbint[j][1]
         A[i, j] = mF(OK(tr(t)))
-        A[j, i] = deepcopy(A[i, j])
+        A[j, i] = A[i, j]
       end
     end
   end
 
   B = nullspace(A)[2]
-  M1 = zero_matrix(K, d, d)
-  imF = pseudo_inv(mF)
-  # Write a basis of the kernel of A in the rows of M1.
-  for i = 1:ncols(B)
-    for j = 1:nrows(B)
-      M1[i, j] = K(imF(B[j, i])*elts_with_val[j])
-    end
-  end
-
   M1 = zero_matrix(K, d, d)
   imF = pseudo_inv(mF)
   # Write a basis of the kernel of A in the rows of M1.
@@ -870,9 +861,11 @@ function ring_of_multipliers(a::NfRelOrdIdl{T1, T2}) where {T1, T2}
   end
   PM = PseudoMatrix(transpose(M), C)
   PM = sub(pseudo_hnf(PM, :upperright, true), 1:d, 1:d)
+  #PM = sub(pseudo_hnf_full_rank_with_modulus(PM, minimum(a), :upperright), 1:d, 1:d)
   N = inv(transpose(PM.matrix))
   PN = PseudoMatrix(N, [ simplify(inv(I)) for I in PM.coeffs ])
-  return NfRelOrd{T1, T2}(nf(O), PN)
+  res =  NfRelOrd{T1, T2}(nf(O), PN)
+  return res
 end
 
 ################################################################################

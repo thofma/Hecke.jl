@@ -1058,6 +1058,24 @@ function factor_equal_deg(x::gfp_poly, d::Int)
   return res
 end
 
+function factor_equal_deg(x::gfp_fmpz_poly, d::Int)
+  if degree(x) == d
+    return gfp_fmpz_poly[x]
+  end
+  fac = Nemo.gfp_fmpz_poly_factor(x.mod_n)
+  ccall((:fmpz_mod_poly_factor_equal_deg, libflint), UInt,
+          (Ref{Nemo.gfp_fmpz_poly_factor}, Ref{gfp_fmpz_poly}, Int),
+          fac, x, d)
+  res = Vector{gfp_fmpz_poly}(undef, fac.num)
+  for i in 1:fac.num
+    f = parent(x)()
+    ccall((:fmpz_mod_poly_factor_get_nmod_poly, libflint), Nothing,
+            (Ref{gfp_fmpz_poly}, Ref{Nemo.gfp_fmpz_poly_factor}, Int), f, fac, i-1)
+    res[i] = f
+  end
+  return res
+end
+
 ################################################################################
 #
 #  Squarefree factorization for fmpq_poly

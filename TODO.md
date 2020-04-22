@@ -14,14 +14,14 @@
  * [ ] save prime factors of discriminant
  * [x] `princ_gen` should be cached
  * [ ] Clean up uniformizer (p-uniformizer? strong uniformizer?)
- * [ ] Residue fields of degree one
+ * [x] Residue fields of degree one
  * [ ] Parent checks for `(::Order)(::NumFieldElem)`.
  * [ ] Coercion of nf_elem in NfOrd
 
 ## Number fields
  * [ ] Overhaul the morphisms
  * [ ] Test functionality for non-monic defining polynomials
- * [ ] Torsion unit functionality for number fields
+ * [x] Torsion unit functionality for number fields
  * [ ] Better algorithm for normal closure
  * [ ] weak and strong approximation
  * [ ] `absolute_field` is inconsistent and needs keyword for `simplify`
@@ -30,9 +30,9 @@
  * [ ] Implement Arakelov and/or divisor type
  * [ ] Finite places
  * [ ] Need `ismaximal_order_known` and `isautomorphism_group_known`
- * [ ] `relative_extension`
+ * [x] `relative_extension`
  * [ ] `is_locally_power` (at given primes or up to given bound)
- * [ ] Frobenius automorphism of a field at a prime ideal
+ * [x] Frobenius automorphism of a field at a prime ideal
  * [ ] Redo the `automorphism_group` properly.
  * [ ] `coeff(z, i)` and `coeffs(z)` "inconsistensies"
 
