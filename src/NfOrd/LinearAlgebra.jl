@@ -16,7 +16,7 @@ function _max_max(M::Generic.Mat{NfOrdElem})
     for j in 1:ncols(M)
       if !iszero(M[i, j])
         v = coordinates(M[i, j])
-        for k in degree(base_field(M))
+        for k in degree(base_ring(M))
           d = max(d, abs(v[k]))
         end
       end
@@ -1799,13 +1799,24 @@ function steinitz_form!(M::PMat{T, S}, U::Generic.Mat{T}, with_transform::Bool =
   O = order(M.coeffs[1])
   for r = start_row:nrows(M) - 1
     a = M.coeffs[r]
+    
+    if isone(a)
+      continue
+    end
+
+    if isone(M.coeffs[r + 1])
+      swap_rows!(M, r, r + 1)
+      continue
+    end
+
     if a isa NfOrdFracIdl && a.num.is_principal == 1
       x = divexact(K(a.num.princ_gen), K(a.den))
-      divide_row!(A, r, x)
+      mul_row!(A, r, x)
       with_transform ? divide_row!(U, r, x) : nothing
       M.coeffs[r] = oneK*O
       continue
     end
+
 
     b = M.coeffs[r + 1]
     # Hoppe, Algorithm 1.8.5
@@ -1820,11 +1831,19 @@ function steinitz_form!(M::PMat{T, S}, U::Generic.Mat{T}, with_transform::Bool =
     mad = simplify(m1*iad)
     @assert denominator(mad) == 1
     x, m2 = idempotents(numerator(mad), bd)
+    @assert x + m2 == 1
     m1 = divexact(m1, d)
     m2 = divexact(elem_in_nf(m2), d)
-    n1 = divexact(x, m1)*d
+    @assert x + d * m2 == 1
+    n1 = divexact(x, m1)
+    @assert n1 * m1 + d * m2 == 1
     n2 = K(-1)*d
     # We now have m1 in a, m2 in b and n1 in a^-1, n2 in b^-1 with m1n1 - m2n2 = 1
+    @assert m1 in a
+    @assert m2 in b
+    @assert n1 in inv(a)
+    @assert n2 in inv(b)
+    @assert m1 * n1 - m2*n2 == 1
 
     for c = 1:ncols(M)
       t = deepcopy(A[r, c])
@@ -1856,4 +1875,16 @@ function steinitz_form!(M::PMat{T, S}, U::Generic.Mat{T}, with_transform::Bool =
     M.coeffs[r + 1] = a*b
   end
   return nothing
+end
+
+################################################################################
+#
+#  Inverse
+#
+################################################################################
+
+function inv(x::Generic.MatSpaceElem{NfOrdElem})
+  R = base_ring(x)
+  K = nf(R)
+  return change_base_ring(R, inv(change_base_ring(K, x)))
 end

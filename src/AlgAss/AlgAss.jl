@@ -1299,7 +1299,7 @@ function _as_algebra_over_center(A::AlgAss{T}) where { T } #<: Union{fmpq, gfp_e
     return A, AtoA, AtoA
   end
 
-  if T === fmpq
+  if T === fmpq || T === nf_elem
     fields = as_number_fields(C)
     @assert length(fields) == 1
     L, CtoL = fields[1]
@@ -1689,6 +1689,29 @@ function trace_signature(A::AlgAss, P::InfPlc)
   f = charpoly(Ky, M)
   npos = number_positive_roots(f, P)
   return (npos, degree(f) - npos)
+end
+
+function trace_signature(A::AlgAss{fmpq})
+  M = trred_matrix(basis(A))
+  Ky, y = PolynomialRing(base_ring(A), "y", cached = false)
+  f = charpoly(Ky, M)
+  Zx = Globals.Zx
+  d = denominator(f)
+  npos = number_positive_roots(change_base_ring(FlintZZ, d * f))
+  return (npos, degree(f) - npos)
+end
+
+function schur_index_at_real_plc(A::AlgAss{fmpq})
+  if dim(A) % 4 != 0
+    return 1
+  end
+  x = trace_signature(A)
+  n = root(dim(A),2)
+  if x[1] == divexact(n*(n+1),2)
+    return 1
+  else
+    return 2
+  end
 end
 
 function schur_index_at_real_plc(A::AlgAss, P::InfPlc)

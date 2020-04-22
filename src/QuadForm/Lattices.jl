@@ -2128,13 +2128,23 @@ function _sum_modules(a::PMat, b::PMat)
   return sub(H, r:nrows(H), 1:ncols(H))
 end
 
-function _intersect_modules(a::PMat, b::PMat)
+function _intersect_modules(a::PMat, b::PMat, full_rank = true)
   M1 = hcat(a, deepcopy(a))
   d = ncols(b)
   z = zero_matrix(base_ring(matrix(a)), d, d)
   M2 = hcat(pseudo_matrix(z, b.coeffs), b)
   M = vcat(M1, M2)
-  H = sub(pseudo_hnf(M, :lowerleft), 1:d, 1:d)
+  if full_rank
+    H = sub(pseudo_hnf(M, :lowerleft), 1:d, 1:d)
+    return H
+  else
+    H = pseudo_hnf_kb(M, :lowerleft)
+    i = 1
+    while iszero_row(H.matrix, i)
+      i += 1
+    end
+    return sub(H, i:d, 1:d)
+  end
 end
 
 function _modules_equality(a::PMat, b::PMat)
@@ -2939,7 +2949,7 @@ mutable struct ZLat <: AbsLat{FlintRationalField}
   aut_grp_ord::fmpz
   automorphism_group_generators::Vector{fmpz_mat}
   automorphism_group_order::fmpz
-  minimum::fmpz
+  minimum::fmpq
 
   function ZLat(V::QuadSpace{FlintRationalField, fmpq_mat}, B::fmpq_mat)
     z = new()

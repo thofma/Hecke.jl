@@ -1,4 +1,4 @@
-export group_algebra
+export group_algebra, galois_module, group
 
 ################################################################################
 #
@@ -13,6 +13,7 @@ Generic.dim(A::AlgGrp) = size(multiplication_table(A, copy = false), 1)
 elem_type(::Type{AlgGrp{T, S, R}}) where {T, S, R} = AlgGrpElem{T, AlgGrp{T, S, R}}
 
 order_type(::AlgGrp{fmpq, S, R}) where { S, R } = AlgAssAbsOrd{AlgGrp{fmpq, S, R}, elem_type(AlgGrp{fmpq, S, R})}
+
 order_type(::Type{AlgGrp{fmpq, S, R}}) where { S, R } = AlgAssAbsOrd{AlgGrp{fmpq, S, R}, elem_type(AlgGrp{fmpq, S, R})}
 
 order_type(::AlgGrp{T, S, R}) where { T <: NumFieldElem, S, R } = AlgAssRelOrd{T, fractional_ideal_type(order_type(parent_type(T)))}
@@ -193,7 +194,7 @@ function center(A::AlgGrp{T}) where {T}
   C, mC = center(B)
   mD = compose_and_squash(mB, mC)
   A.center = C, mD
-  return C, mD
+  return (C, mD)::Tuple{AlgAss{T}, morphism_type(AlgAss{T}, typeof(A))}
 end
 
 ################################################################################
@@ -230,15 +231,16 @@ function AlgAss(A::AlgGrp{T, S, R}) where {T, S, R}
   end
   if isdefined(A, :decomposition)
     dec = Tuple{AlgAss{T}, morphism_type(AlgAss{T}, typeof(B))}[]
-    for (C, CtoA) in A.decomposition
+    for (C, CtoA) in A.decomposition::Vector{Tuple{AlgAss{T}, morphism_type(AlgAss{T}, typeof(A))}}
       CtoB = compose_and_squash(AtoB, CtoA)
       push!(dec, (C, CtoB))
     end
     B.decomposition = dec
   end
   if isdefined(A, :maps_to_numberfields)
-    fields_and_maps = Tuple{AnticNumberField, AbsAlgAssToNfAbsMor{typeof(B), elem_type(B)}}[]
-    for (K, AtoK) in A.maps_to_numberfields
+    NF = A.maps_to_numberfields::Vector{Tuple{_ext_type(T),_abs_alg_ass_to_nf_abs_mor_type(A)}}
+    fields_and_maps = Tuple{AnticNumberField,_abs_alg_ass_to_nf_abs_mor_type(B)}[]
+    for (K, AtoK) in NF
       BtoK = AbsAlgAssToNfAbsMor(B, K, AtoK.mat, AtoK.imat)
       push!(fields_and_maps, (K, BtoK))
     end
@@ -443,9 +445,113 @@ function _find_isomorphism(K::Union{ AnticNumberField, NfRel{nf_elem} }, A::AlgG
   return KtoA, AtoK
 end
 
+mutable struct NfToAlgGrpMor{S, T, U} <: Map{AnticNumberField, AlgGrp{S, T, U}, HeckeMap, AbsAlgAssMor}
+  K::AnticNumberField
+  mG::GrpGenToNfMorSet{AnticNumberField}
+  A::AlgGrp{S, T, U}
+  M::fmpq_mat
+  Minv::fmpq_mat
+
+  function NfToAlgGrpMor{S, T, U}() where {S, T, U}
+    return new{S, T, U}()
+  end
+end
+
+function show(io::IO, f::NfToAlgGrpMor)
+  print(io, "Galois module map from\n")
+  print(io, f.K)
+  print(io, "\nto\n")
+  print(io, f.A)
+end
+
+function (f::NfToAlgGrpMor)(O::NfAbsOrd)
+  A = codomain(f)
+  B = basis(O)
+  G = group(A)
+  ZG = Order(A, collect(G))
+  return ideal_from_lattice_gens(A, ZG, [f(elem_in_nf(b)) for b in B], :right)
+end
+
+automorphism_map(f::NfToAlgGrpMor) = f.mG
+
+function galois_module(K::AnticNumberField, aut::Map = automorphism_group(K)[2]; normal_basis_generator = normal_basis(K))
+  G = domain(aut)
+  A = FlintQQ[G]
+  return _galois_module(K, A, aut, normal_basis_generator = normal_basis_generator)
+end
+
+function _galois_module(K::AnticNumberField, A, aut::Map = automorphism_group(K)[2]; normal_basis_generator = normal_basis(K))
+  G = domain(aut)
+  alpha = normal_basis_generator
+
+  basis_alpha = Vector{elem_type(K)}(undef, dim(A))
+  for (i, g) in enumerate(G)
+    f = aut(g)
+    basis_alpha[A.group_to_base[g]] = f(alpha)
+  end
+
+  M = zero_matrix(base_field(K), degree(K), degree(K))
+  for i = 1:degree(K)
+    a = basis_alpha[i]
+    for j = 1:degree(K)
+      M[i, j] = coeff(a, j - 1)
+    end
+  end
+
+  invM = inv(M)
+
+  z = NfToAlgGrpMor{fmpq, GrpGen, GrpGenElem}()
+  z.K = K
+  z.mG = aut
+  z.A = A
+  z.M = M
+  z.Minv = invM
+
+  return A, z
+end
+
+function galois_module(K::AnticNumberField, A::AlgGrp; normal_basis_generator = normal_basis(K))
+  G = group(A)
+  Au, mAu = automorphism_group(K)
+  fl, f = isisomorphic(G, Au)
+  @assert fl
+  aut = Vector{NfToNfMor}(undef, order(G))
+  for g in G
+    aut[g[]] = mAu(f(g))
+  end
+  h = GrpGenToNfMorSet(G, aut, K)
+
+  return _galois_module(K, A, h, normal_basis_generator = normal_basis(K))
+end
+
+domain(f::NfToAlgGrpMor) = f.K
+
+codomain(f::NfToAlgGrpMor) = f.A
+
+function image(f::NfToAlgGrpMor, x::nf_elem)
+  K = domain(f)
+  @assert parent(x) === K
+  A = codomain(f)
+
+  t = zero_matrix(base_field(K), 1, degree(K))
+  for i = 1:degree(K)
+    t[1, i] = coeff(x, i - 1)
+  end
+  y = t*f.Minv
+  return A([ y[1, i] for i = 1:degree(K) ])
+end
+
+function preimage(f::NfToAlgGrpMor, x::AlgGrpElem)
+  K = domain(f)
+  t = matrix(base_field(K), 1, degree(K), coeffs(x))
+  y = t*f.M
+  v = fmpq[ y[1, i] for i = 1:degree(K) ]
+  return K(v)
+end
+
 # Returns the group algebra Q[G] where G = Gal(K/Q) and a Q-linear map from K
 # to Q[G] and one from Q[G] to K
-function group_algebra(K::AnticNumberField, to_automorphisms::GrpGenToNfMorSet{AnticNumberField} = automorphism_group(K)[2]; normal_basis_generator = normal_basis(K))
+function _galois_module(K::AnticNumberField, to_automorphisms::Map = automorphism_group(K)[2]; normal_basis_generator = normal_basis(K))
   G = domain(to_automorphisms)
   A = FlintQQ[G]
   alpha = normal_basis_generator
@@ -482,4 +588,465 @@ function group_algebra(K::AnticNumberField, to_automorphisms::GrpGenToNfMorSet{A
   end
 
   return A, KtoA, AtoK
+end
+
+const _reps = [(i=24,j=12,n=5,dims=(1,1,2,3,3),
+                reps=Vector{Vector{Rational{BigInt}}}[[[1],[1],[1],[1]],
+                  [[-1],[1],[1],[1]],
+                  [[-1,0,-1,1],[0,-1,1,-1],[1,0,0,1],[1,0,0,1]],
+                  [[0,1,0,1,0,0,0,0,1],[0,0,1,1,0,0,0,1,0],[-1,0,0,0,1,0,0,0,-1],[1,0,0,0,-1,0,0,0,-1]],
+                  [[0,-1,0,-1,0,0,0,0,-1],[0,0,1,1,0,0,0,1,0],[-1,0,0,0,1,0,0,0,-1],[1,0,0,0,-1,0,0,0,-1]]]),
+               (i=48,j=48,n=10,dims=Int[1,1,1,1,2,2,3,3,3,3],
+                reps=Vector{Vector{Rational{BigInt}}}[[[1],[1],[1],[1],[1]],[[-1],[1],[1],[1],[1]],[[1],[-1],[1],[1],[1]],[[-1],[-1],[1],[1],[1]],[[-1,0,-1,1],[-1,0,0,-1],[0,-1,1,-1],[1,0,0,1],[1,0,0,1]],[[1,3//2,0,-1],[1,0,0,1],[1,3//2,-2,-2],[1,0,0,1],[1,0,0,1]],[[0,1,0,1,0,0,0,0,1],[1,0,0,0,1,0,0,0,1],[0,0,1,1,0,0,0,1,0],[-1,0,0,0,1,0,0,0,-1],[1,0,0,0,-1,0,0,0,-1]],[[0,-1,0,-1,0,0,0,0,-1],[1,0,0,0,1,0,0,0,1],[0,0,1,1,0,0,0,1,0],[-1,0,0,0,1,0,0,0,-1],[1,0,0,0,-1,0,0,0,-1]],[[0,1,0,1,0,0,0,0,1],[-1,0,0,0,-1,0,0,0,-1],[0,0,1,1,0,0,0,1,0],[-1,0,0,0,1,0,0,0,-1],[1,0,0,0,-1,0,0,0,-1]],[[0,-1,0,-1,0,0,0,0,-1],[-1,0,0,0,-1,0,0,0,-1],[0,0,1,1,0,0,0,1,0],[-1,0,0,0,1,0,0,0,-1],[1,0,0,0,-1,0,0,0,-1]]])
+              ]
+
+################################################################################
+#
+#  Wedderburn decomposition
+#
+################################################################################
+
+mutable struct AbsAlgAssMorGen{S, T, U, V} <: Map{S, T, HeckeMap, AbsAlgAssMorGen}
+  domain::S
+  codomain::T
+  M::U
+  Minv::V
+end
+
+#function AbsAlgAssMorGen(A::S, B::T, M::U, N::V) where {S, T, U, V}
+#  return AbsAlgAssMorGen{S, T, U, V}(A, B, M, N)
+#end
+
+domain(f::AbsAlgAssMorGen) = f.domain
+
+codomain(f::AbsAlgAssMorGen) = f.codomain
+
+function Base.show(io::IO, f::AbsAlgAssMorGen)
+  print(io, "Algebra morphism from \n$(domain(f))\n to\n$(codomain(f))\n")
+end
+
+function image(f::AbsAlgAssMorGen, z)
+  @assert parent(z) == domain(f)
+  v = matrix(base_ring(codomain(f)), 1, dim(domain(f)), coeffs(z))
+  return codomain(f)(collect(v * f.M))
+end
+
+(f::AbsAlgAssMorGen)(z::AbsAlgAssElem) = image(f, z)
+
+function preimage(f::AbsAlgAssMorGen, z)
+  @assert parent(z) == codomain(f)
+  v = matrix(FlintQQ, 1, dim(domain(f)), _coefficients_of_restricted_scalars(z)) * f.Minv
+  return domain(f)(collect(v))
+end
+
+# Write M_n(K) as M_n(Q) if [K : Q] = 1
+# We use the "restricted scalar map" to modell M_n(Q) -> M_n(K)
+function _as_full_matrix_algebra_over_Q(A::AlgMat{nf_elem})
+  K = base_ring(A)
+  @assert isabsolute(K) && degree(K) == 1
+  B = matrix_algebra(FlintQQ, degree(A))
+
+  M = identity_matrix(K, dim(B))
+  Minv = identity_matrix(FlintQQ, dim(B))
+
+  return B, AbsAlgAssMorGen(B, A, M, Minv)
+end
+
+
+function decompose(A::AlgGrp)
+  G = group(A)
+  res = __decompose(A) 
+
+  if !isdefined(res[1][1], :isomorphic_full_matrix_algebra)
+    if order(G) == 24 && find_small_group(G)[1] == (24, 12) &&
+        base_ring(A) isa FlintRationalField
+      @assert G.isfromdb
+      _compute_matrix_algebras_from_reps(A, res, _reps[1])
+    end
+    
+    if order(G) == 48 && find_small_group(G)[1] == (48, 48) &&
+        base_ring(A) isa FlintRationalField
+      @assert G.isfromdb
+      _compute_matrix_algebras_from_reps(A, res, _reps[2])
+    end
+  end
+
+  return res
+end
+
+function _compute_matrix_algebras_from_reps2(A, res)
+  G = group(A)
+  smallid, H, HtoG = find_small_group(G)
+  idempotents = elem_type(A)[r[2](one(r[1])) for r in res]
+  data = DefaultSmallGroupDB.db[smallid[1]][smallid[2]]
+  Qx = Globals.Qx
+  for j in data.galrep
+    if data.schur[j] != 1
+      continue
+    end
+    field, _ = number_field(Qx(data.fields[j]), "a", cached = false)
+    d = data.dims[j]
+    mats = dense_matrix_type(nf_elem)[ matrix(field, d, d, map(field, data.mod[j][k])) for k in 1:length(data.mod[j])]
+    D = Tuple{GrpGenElem, dense_matrix_type(nf_elem)}[(H[H.gens[i]], mats[i]) for i in 1:length(H.gens)]
+    op = (x, y) -> (x[1] * y[1], x[2] * y[2])
+    id = (Hecke.id(H), identity_matrix(field, d))
+    cl = closure(D, op, id)
+
+    k0 = 0
+    for k in 1:length(idempotents)
+      c = coeffs(idempotents[k])
+      z = zero_matrix(field, d, d)
+      for (h, M) in cl
+        i = A.group_to_base[HtoG(h)]
+        z += field(c[i]) * M
+      end
+      if isone(z)
+        k0 = k
+        break
+      end
+    end
+
+    B, mB = res[k0]
+    basisB = basis(B)
+
+    MB = matrix_algebra(field, d)
+
+    forward_matrix = zero_matrix(field, dim(B), dim(MB))
+
+    back_matrix = zero_matrix(FlintQQ, dim(B), dim(B))
+
+    BinMB = elem_type(MB)[]
+
+    for i in 1:dim(B)
+      img = MB(_evaluate_rep(mB(basisB[i]), d, cl, HtoG))
+      push!(BinMB, img)
+      elem_to_mat_row!(forward_matrix, i, img)
+      v = _coefficients_of_restricted_scalars(img)
+      for j in 1:length(v)
+        back_matrix[i, j] = v[j]
+      end
+    end
+
+    back_matrix = inv(back_matrix)
+
+
+
+    # now comes the horror
+    #
+    #
+    @show back_matrix
+
+    #v = matrix(FlintQQ, 1, dim(B), coeffs(rand(B, -10:10)))
+    #@show v
+    #@show matrix(FlintQQ, 1, dim(B), _coefficients_of_restricted_scalars(MB(collect(change_base_ring(field, v) * forward_matrix)))) * back_matrix
+
+    #BtoMB = function(z)
+    #  v = matrix(base_ring(MB), 1, dim(B), coeffs(z))
+    #  return MB(collect(v * forward_matrix))
+    #end
+
+    #MBtoB = function(z)
+    #  v = matrix(FlintQQ, 1, dim(B), _coefficients_of_restricted_scalars(z)) * back_matrix
+    #  return B(collect(v))
+    #end
+
+    f = AbsAlgAssMorGen(B, MB, forward_matrix, back_matrix)
+    B.isomorphic_full_matrix_algebra = MB, f
+  end
+end
+
+function _compute_matrix_algebras_from_reps(A, res, reps)
+  G = group(A)
+  idempotents = elem_type(A)[r[2](one(r[1])) for r in res]
+  for j in 1:reps.n
+    d = reps.dims[j]
+    @assert length(reps.reps[j]) == length(G.gens)
+    mats = fmpq_mat[ matrix(FlintQQ, d, d, reps.reps[j][k]) for k in 1:length(reps.reps[j])]
+    D = Tuple{GrpGenElem, fmpq_mat}[(G[G.gens[i]], mats[i]) for i in 1:length(G.gens)]
+    op = (x, y) -> (x[1] * y[1], x[2] * y[2])
+    id = (Hecke.id(G), identity_matrix(FlintQQ, d))
+    cl = closure(D, op, id)
+    @assert length(cl) == order(G)
+    k0 = 0
+    for k in 1:length(idempotents)
+      e = idempotents[k]
+      c = coeffs(e)
+      z = _evaluate_rep(e, d, cl)
+      if isone(z)
+        k0 = k
+        break
+      end
+    end
+
+    @assert k0 != 0
+
+    B, mB = res[k0]
+
+    @assert dim(B) == d^2
+
+    basisB = basis(B)
+
+    MB = matrix_algebra(FlintQQ, d)
+
+    h = zero_matrix(FlintQQ, d^2, d^2)
+
+    for i in 1:dim(B)
+      img = MB(_evaluate_rep(mB(basisB[i]), d, cl))
+      elem_to_mat_row!(h, i, img)
+    end
+    B.isomorphic_full_matrix_algebra = (MB, hom(B, MB, h, inv(h)))
+  end
+end
+
+function _coefficients_of_restricted_scalars(x)
+  A = parent(x)
+  K = base_ring(A)
+  m = dim(A)
+  n = degree(K)
+  nm = n * m
+  y = Vector{fmpq}(undef, nm)
+  yy = coeffs(x, copy = false)
+  k = 1
+  for i = 1:m
+    for j = 1:n
+      y[k] = coeff(yy[i], j - 1)
+      k += 1
+    end
+  end
+  return y
+end
+
+function _absolute_basis(A)
+  m = dim(A)
+  K = base_ring(A)
+  n = degree(K)
+  B = Vector{elem_type(A)}()
+  bK = basis(K)
+  for i in 1:n
+    for j in 1:m
+      v = Vector{elem_type(K)}(undef, m)
+      for k in 1:m
+        v[i] = zero(K)
+      end
+      v[j] = bK[j]
+      push!(B, A(v)) 
+    end
+  end
+  return B
+end
+
+function _evaluate_rep(el, d, rep)
+  c = coeffs(el)
+  A = parent(el)
+  z = zero_matrix(FlintQQ, d, d)
+  for (g, M) in rep
+    i = A.group_to_base[g]
+    z += c[i] * M
+  end
+  return z
+end
+
+function _evaluate_rep(el, d, rep, f)
+  c = coeffs(el)
+  A = parent(el)
+  z = zero_matrix(base_ring(rep[1][2]), d, d)
+  for (g, M) in rep
+    i = A.group_to_base[f(g)]
+    z += base_ring(M)(c[i]) * M
+  end
+  return z
+end
+
+elem_type(::Type{NfMorSet{AnticNumberField}}) = NfToNfMor
+
+################################################################################
+#
+#  Opposite algebra
+#
+################################################################################
+
+function opposite_algebra(A::AlgGrp{S, GrpAbFinGen, GrpAbFinGenElem}) where S
+  G = group(A)
+  z = zero_matrix(base_ring(A), dim(A), dim(A))
+  for g in G
+    i = A.group_to_base[g]
+    elem_to_mat_row!(z, i, A(-g))
+  end
+  return A, hom(A, A, z, z)
+end
+
+function opposite_algebra(A::AlgGrp{S, GrpGen, GrpGenElem}) where S
+  G = group(A)
+  z = zero_matrix(base_ring(A), dim(A), dim(A))
+  for g in G
+    i = A.group_to_base[g]
+    elem_to_mat_row!(z, i, A(inv(g)))
+  end
+  return A, hom(A, A, z, z)
+end
+
+################################################################################
+#
+#  Ad hoc methods
+#
+################################################################################
+
+function isfree_s4_fabi(K::AnticNumberField)
+  if istamely_ramified(K, fmpz(2))
+    println("fabi 1")
+    return true
+  end
+
+  P = prime_decomposition(maximal_order(K), 2)[1][1]
+
+  D = decomposition_group(P)
+
+  if length(D) == 24 && isweakly_ramified(K, P)
+    println("fabi 2")
+    return true
+  end
+
+  G, _, _ = generic_group(D, *, false)
+  id, _, _ = find_small_group(G)
+  if id == (12, 3) # A4
+    println("fabi 3")
+    return true
+  end
+
+  if id == (8, 3) # D4
+    if isweakly_ramified(K, P)
+      A, mA = automorphism_group(K)
+      I, mI = inertia_subgroup(K, P, mA)
+      fl = _isnormal([mI(i) for i in I])
+      if order(I) == 4 && fl
+        println("fabi 4")
+        return true
+      end
+    end
+  end
+
+  return false
+end
+
+function isfree_a4_fabi(K::AnticNumberField)
+  if istamely_ramified(K, fmpz(2))
+    println("fabi 1")
+    return true
+  end
+
+  P = prime_decomposition(maximal_order(K), 2)[1][1]
+
+  D = decomposition_group(P)
+
+  if length(D) == 12
+    println("fabi 2")
+    return true
+  end
+
+  return false
+end
+
+function isfree_a5_fabi(K::AnticNumberField)
+  if !istamely_ramified(K, fmpz(2))
+    println("fabi 1")
+    return false
+  end
+
+  if !(istamely_ramified(K, fmpz(3)) || !isalmost_maximally_ramified(K, fmpz(3)))
+    println("fabi 2")
+    return false
+  end
+  
+  if !(istamely_ramified(K, fmpz(5)) || !isalmost_maximally_ramified(K, fmpz(5)))
+    println("fabi 3")
+    return false
+  end
+
+  return true
+end
+
+function isalmost_maximally_ramified(K::AnticNumberField, p::fmpz)
+  P = prime_decomposition(maximal_order(K), p)[1][1]
+  G, mG = automorphism_group(K)
+  D, mD = decomposition_group(K, P, mG) # this is the local Galois group
+  ram_groups = []
+  t = 1
+  while true
+    R, mR = ramification_group(K, P, t, mG)
+    push!(ram_groups, [mR(r) for r in R])
+    if order(R) == 1
+      break
+    end
+    t += 1
+  end
+
+  QG = group_algebra(FlintQQ, G)
+  A, KtoA = galois_module(K)
+  I = KtoA(maximal_order(K))
+  assOrd = right_order(I)
+
+  S = subgroups(D)
+  for (H, mH) in S
+    HinG = [ mD(mH(h)) for h in H]
+    for t in 1:length(ram_groups)
+      if all(h in ram_groups[t] for h in HinG) && all(h in HinG for h in ram_groups[t + 1])
+        eH = sum(QG(h) for h in HinG) * QG(1//Order(H))
+        if !(eH in assOrd)
+          return false
+        end
+      end
+    end
+  end
+
+  return true
+end
+
+function standard_involution(A::AlgAss{T}) where {T}
+  B = copy(basis(A))
+  n = dim(A)
+  o = one(A)
+  for i in 1:n
+    if dot(o.coeffs, B[i].coeffs) != 0
+      B[i] = o
+      B[i], B[1] = B[1], B[i]
+      break
+    end
+  end
+
+  M = zero_matrix(base_ring(A), n, n)
+  N = zero_matrix(base_ring(A), n, n)
+  for i in 1:n
+    elem_to_mat_row!(M, i, B[i])
+  end
+  # This is the "adjusted" basis matrix
+  invM = inv(M)
+
+  K = base_ring(A)
+
+  @assert isone(B[1])
+  t = elem_type(base_ring(A))[]
+  push!(t, 2 * one(base_ring(A)))
+  for i in 2:n
+    v = matrix(K, 1, n, (B[i]^2).coeffs) * invM
+    ti = v[1, i]
+    push!(t, ti)
+    #_ni = B[i]^2 - ti * B[i]
+    #@assert all(i -> iszero(_ni.coeffs[i]), 2:n)
+  end
+
+  #for i in 2:n
+  #  for j in (i+1):n
+  #    nij = (B[i] + B[j])^2 - (t[i] + t[j])*(B[i] + B[j])
+  #    @assert all(i -> iszero(nij.coeffs[i]), 2:n)
+  #  end
+  #end
+  for i in 1:n
+    b = t[i] - B[i]
+    v = matrix(base_ring(A), 1, n, b.coeffs) * invM
+    for j in 1:n
+      N[i, j] = v[1, j]
+    end
+  end
+  invol = M * N * inv(M)
+  return hom(A, A, invol, inv(invol))
 end

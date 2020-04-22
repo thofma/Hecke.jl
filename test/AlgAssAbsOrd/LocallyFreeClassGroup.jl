@@ -52,7 +52,8 @@ end
   f = x^12 - x^11 + x^9 - x^8 + x^6 - x^4 + x^3 - x + 1
   K, a = number_field(f, "a") # Gal(K/Q) = C2 x C6 (aka 12T2 aka small_group(12, 5))
   OK = maximal_order(K)
-  A, KtoA, AtoK = group_algebra(K, normal_basis_generator = a)
+  G, mG = automorphism_group(K)
+  A, KtoA = galois_module(K, mG, normal_basis_generator = a)
   basisOK = [ KtoA(b.elem_in_nf) for b in basis(OK) ]
   d = lcm([ denominator(b) for b in basisOK ])
   ZG = Order(A, basis(A))
@@ -74,7 +75,8 @@ end
   f = x^8 - 3*x^7 + 22*x^6 - 60*x^5 + 201*x^4 - 450*x^3 + 1528*x^2 - 3069*x + 4561
   K, a = number_field(f, "a") # Gal(K/Q) = Q8 (aka 8T5 aka small_group(8, 4))
   OK = maximal_order(K)
-  A, KtoA, AtoK = group_algebra(K, normal_basis_generator = a)
+  G, mG = automorphism_group(K)
+  A, KtoA = galois_module(K, mG, normal_basis_generator = a)
   basisOK = [ KtoA(b.elem_in_nf) for b in basis(OK) ]
   d = lcm([ denominator(b) for b in basisOK ])
   ZG = Order(A, basis(A))

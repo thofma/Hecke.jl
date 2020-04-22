@@ -30,11 +30,9 @@ function locally_free_class_group(O::AlgAssAbsOrd, cond::Symbol = :center, retur
     bOA = basis(OA, copy = false)
     bFinZ = basis(FinZ, copy = false)
     basis_F = Vector{elem_type(A)}()
-    t = one(A)
     for x in bOA
       for y in bFinZ
-        yy = ZtoA(y)
-        t = mul!(t, yy, elem_in_algebra(x, copy = false))
+        t = ZtoA(y) * elem_in_algebra(x, copy = false)
         push!(basis_F, t)
       end
     end

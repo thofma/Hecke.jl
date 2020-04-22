@@ -764,6 +764,21 @@ end
 # functions isright_ideal and isleft_ideal are in AlgAss/Ideal.jl
 
 # This only works if a.order is defined, otherwise order(a) throws an error.
+
+function _test_ideal_sidedness(a::AlgAssRelOrdIdl, O::AlgAssRelOrd, side::Symbol)
+  b = ideal(O, one(O))
+
+  if side == :right
+    c = a*b
+  elseif side == :left
+    c = b*a
+  else
+    error("side must be either :left or :right")
+  end
+
+  return _spans_subset_of_pseudohnf(basis_pmatrix(c, copy = false), basis_pmatrix(a, copy = false), :lowerleft)
+end
+
 function _test_ideal_sidedness(a::AlgAssRelOrdIdl, side::Symbol)
   O = order(a)
   b = ideal(O, one(O))
@@ -1734,3 +1749,46 @@ function _coprime_bases(M::Union{ NfRelOrd{S, T}, AlgAssRelOrd{S, T}, NfRelOrdId
 
   return basis_M, basis_N, mat_M, mat_N
 end
+
+################################################################################
+#
+#  Preimage
+#
+################################################################################
+
+function _as_ideal_of_smaller_algebra(m::AbsAlgAssMor, I::AlgAssRelOrdIdl)
+  A = domain(m)
+  B = codomain(m)
+  K = base_ring(A)
+  @assert K === base_ring(B)
+  @assert dim(A) <= dim(B)
+  @assert algebra(I) === B
+  OA = maximal_order(A)
+  # Transport OA to B
+  M = zero_matrix(base_ring(B), dim(B), dim(B))
+  c = NfOrdFracIdl[]
+  PB = pseudo_basis(OA, copy = false)
+  for i = 1:dim(A)
+    t = m(PB[i][1])
+    elem_to_mat_row!(M, i, t)
+    push!(c, PB[i][2])
+  end
+  for i in (dim(A)+1):dim(B)
+    push!(c, one(K) * maximal_order(K))
+  end
+  J = _intersect_modules(basis_pmatrix(I), pseudo_matrix(M, c), false)
+  # Compute the intersection of M and I
+  # Map the basis to A
+  gen = elem_type(A)[]
+  for i = 1:nrows(J)
+    t = elem_from_mat_row(B, J.matrix, i)
+    b, s = haspreimage(m, t)
+    @assert b
+    for el in absolute_basis(J.coeffs[i]) # replace with generators
+      push!(gen, A(el) * s)
+    end
+  end
+  J = ideal_from_lattice_gens(A, OA, gen)
+  return J
+end
+

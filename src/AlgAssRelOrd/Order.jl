@@ -189,7 +189,7 @@ function absolute_basis(O::Union{ NfRelOrd, AlgAssRelOrd })
   pb = pseudo_basis(O, copy = false)
   res = Vector{elem_type(_algebra(O))}()
   for i = 1:degree(O)
-    for b in basis(pb[i][2])
+    for b in absolute_basis(pb[i][2])
       push!(res, b*pb[i][1])
     end
   end
@@ -557,28 +557,30 @@ _denominator_of_mult_table(A::AlgGrp{T}, R::Union{ NfAbsOrd, NfRelOrd }) where {
 
 # Requires that O is maximal and A = K^(n\times n) for a number field K.
 # Computes a maximal order of type
-#  (  O    ...   O    a )
-#  (  :          :    : )
-#  (  O    ...   O    a )
-#  (a^(-1) ... a^(-1) O )
+#  (  O    ...   O  a^-1 )
+#  (  :          :  :    )
+#  (  O    ...   O  a^-1 )
+#  (  a    ...   a  O    )
 # for an ideal a of O.
 # See Bley, Johnston "Computing generators of free modules over orders in group
 # algebras", Prop. 5.1.
-function _simple_maximal_order(O::AlgAssRelOrd, with_trafo::Type{Val{T}} = Val{false}) where T
+function _simple_maximal_order(O::AlgAssRelOrd, make_free::Bool = true, with_trafo::Type{Val{T}} = Val{false}) where T
   A = algebra(O)
   @assert A isa AlgMat
   n = degree(A)
   K = coefficient_ring(A)
 
-  # Build a matrix with the first rows of basis elements of O
+  # Build a matrix with the first columns of basis elements of O
   M = zero_matrix(K, dim(A), n)
   for i = 1:dim(A)
+    b = matrix(pseudo_basis(O, copy = false)[i][1], copy = false)
     for j = 1:n
-      M[i, j] = deepcopy(matrix(pseudo_basis(O, copy = false)[i][1], copy = false)[1, j])
+      M[i, j] = deepcopy(b[j, 1])
     end
   end
-  PM = PseudoMatrix(M, deepcopy(basis_pmatrix(O, copy = false).coeffs))
+  PM = PseudoMatrix(M, [pseudo_basis(O, copy = false)[i][2] for i in 1:dim(A)])
   PM = pseudo_hnf(PM, :upperright)
+
 
   M = sub(PM.matrix, 1:n, 1:n)
   PM = PseudoMatrix(M, PM.coeffs[1:n])
@@ -586,12 +588,20 @@ function _simple_maximal_order(O::AlgAssRelOrd, with_trafo::Type{Val{T}} = Val{f
   steinitz_form!(PM, U, false)
 
   a = PM.coeffs[end]
-  if !isone(a.den)
-    mul_row!(PM.matrix, nrows(PM.matrix), K(a.den))
+  a = simplify(a)
+  if make_free
+    fl, beta = isprincipal(a)
+    mul_row!(PM.matrix, nrows(PM.matrix), beta)
+    a = K(1) * base_ring(PM)
+  else
+    d = denominator(a)
+    if !isone(d)
+      mul_row!(PM.matrix, nrows(PM.matrix), K(1//d))
+    end
+    a = a * d
   end
 
-  # Compute M^(-1)*O*M
-  M = PM.matrix
+  M = transpose(PM.matrix)
   iM = inv(M)
   N = zero_matrix(K, dim(A), dim(A))
   for i = 1:dim(A)
@@ -601,11 +611,36 @@ function _simple_maximal_order(O::AlgAssRelOrd, with_trafo::Type{Val{T}} = Val{f
   PN = PseudoMatrix(N, deepcopy(basis_pmatrix(O, copy = false).coeffs))
   PN = pseudo_hnf(PN, :lowerleft)
 
+  niceorder = Order(A, PN)
+  niceorder.isnice = true
+  niceorder.nice_order_ideal = a
+
   if with_trafo == Val{true}
-    return Order(A, PN), A(M)
+    return niceorder, A(iM)
   else
-    return Order(A, PN)
+    return niceorder
   end
+end
+
+@doc Markdown.doc"""
+    nice_order(O::AlgAssRelOrd) -> AlgAssRelOrd, AlgElem
+
+Given a maximal order `O` in a full matrix algebra over a number field, return a
+nice maximal order `R` and element `a` such that `a O a^-1 = R`.
+"""
+function nice_order(O::AlgAssRelOrd)
+  if isdefined(O, :nice_order)
+    return O.nice_order
+  else
+    sO, A = _simple_maximal_order(O, true, Val{true})
+    O.nice_order = sO, A
+    return sO, A
+  end
+end
+
+function nice_order_ideal(O::AlgAssRelOrd)
+  !O.isnice && error(throw("Order must be nice"))
+  return O.nice_order_ideal
 end
 
 @doc Markdown.doc"""
@@ -681,7 +716,7 @@ function phereditary_overorder(O::AlgAssRelOrd, p::Union{ NfAbsOrdIdl, NfRelOrdI
     end
   end
   if return_pradical == Val{true}
-    return order(prad), prad
+    return OO, prad
   else
     return OO
   end
@@ -951,3 +986,5 @@ function representatives_of_maximal_orders(O::AlgAssRelOrd)
 
   return result
 end
+
+

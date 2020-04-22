@@ -30,6 +30,7 @@ mutable struct AlgAss{T} <: AbsAlgAss{T}
   center#Tuple{AlgAss{T}, mor(AlgAss{T}, AlgAss{T})
   maps_to_numberfields
   maximal_order
+  isomorphic_full_matrix_algebra#Tuple{AlgMat{T}, mor(AlgAss{T}, AlgMat{T})
 
   # Constructor with default values
   function AlgAss{T}(R::Ring) where {T}
@@ -102,6 +103,7 @@ mutable struct AlgGrp{T, S, R} <: AbsAlgAss{T}
   base_ring::Ring
   group::S
   group_to_base::Dict{R, Int}
+  base_to_group::Dict{Int, R}
   one::Vector{T}
   basis#::Vector{AlgAssElem{T, AlgAss{T}}
   gens#::Vector{AlgAssElem{T, AlgAss{T}} # "Small" number of algebra generators
@@ -131,10 +133,12 @@ mutable struct AlgGrp{T, S, R} <: AbsAlgAss{T}
     A.group = G
     d = Int(order(G))
     A.group_to_base = Dict{elem_type(G), Int}()
+    A.base_to_group = Dict{Int, elem_type(G)}()
     A.mult_table = zeros(Int, d, d)
 
     for (i, g) in enumerate(G)
       A.group_to_base[deepcopy(g)] = i
+      A.base_to_group[i] = deepcopy(g)
     end
 
     v = Vector{elem_type(K)}(undef, d)

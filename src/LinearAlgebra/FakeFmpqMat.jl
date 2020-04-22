@@ -243,8 +243,22 @@ function hnf!(x::FakeFmpqMat, shape = :lowerleft)
   return x
 end
 
-function hnf(x::FakeFmpqMat, shape = :lowerleft)
-  h = _hnf(x.num, shape)
+function hnf(x::FakeFmpqMat, shape = :lowerleft; triangular_top::Bool = false)
+  if triangular_top
+    @assert ncols(x) <= nrows(x)
+    z = one(FlintZZ)
+    for i in 1:(ncols(x) - 1)
+      for j in (i + 1):ncols(x)
+        @assert iszero(x.num[i, j])
+      end
+    end
+    for i in 1:ncols(x)
+      z = lcm(z, x.num[i, i])
+    end
+    h = _hnf_modular_eldiv(x.num, z, shape)
+  else
+    h = _hnf(x.num, shape)
+  end
   return FakeFmpqMat(h, denominator(x))
 end
 
@@ -280,6 +294,16 @@ end
 
 function iszero_row(M::FakeFmpqMat, i::Int)
   return iszero_row(M.num, i)
+end
+
+################################################################################
+#
+#  Zero row
+#
+################################################################################
+
+function iszero_column(M::FakeFmpqMat, i::Int)
+  return iszero_column(M.num, i)
 end
 
 ################################################################################

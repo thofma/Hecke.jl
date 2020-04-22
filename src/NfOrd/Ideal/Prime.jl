@@ -32,7 +32,9 @@
 #
 ################################################################################
 
-export PrimeIdealsSet, prime_ideals_over, ramification_index, prime_ideals_up_to
+export PrimeIdealsSet, prime_ideals_over, ramification_index,
+       prime_ideals_up_to, decomposition_group, inertia_subgroup,
+       ramification_group, isramified, istamely_ramified, isweakly_ramified
 
 @doc Markdown.doc"""
     isramified(O::NfOrd, p::Int) -> Bool
@@ -43,6 +45,49 @@ It is assumed that $p$ is prime.
 function isramified(O::NfAbsOrd, p::Union{Int, fmpz})
   @assert ismaximal_known_and_maximal(O)
   return mod(discriminant(O), p) == 0
+end
+
+@doc Markdown.doc"""
+    istamely_ramified(O::NfOrd, p::Union{Int, fmpz}) -> Bool
+
+Returns whether the integer $p$ is tamely ramified in $\mathcal O$.
+It is assumed that $p$ is prime.
+"""
+function istamely_ramified(K::AnticNumberField, p::Union{Int, fmpz})
+  lp = prime_decomposition(maximal_order(K), p)
+  for (_, q) in lp
+    if gcd(q, p) != 1
+      return false
+    end
+  end
+  return true
+end
+
+@doc Markdown.doc"""
+    istamely_ramified(K::AnticNumberField) -> Bool
+
+Returns whether the number field $K$ is tamely ramified.
+"""
+function istamely_ramified(K::AnticNumberField)
+  p = fmpz(2)
+  while p <= degree(K)
+    if !istamely_ramified(K, p)
+      return false
+    end
+    p = next_prime(p)
+  end
+  return true
+end
+
+@doc Markdown.doc"""
+    isweakly_ramified(K::AnticNumberField, P::NfOrdIdl) -> Bool
+
+Given a prime ideal $P$ of a number field $K$, return whether $P$
+is weakly ramified, that is, whether the second ramification group
+is trivial.
+"""
+function isweakly_ramified(K::AnticNumberField, P::NfOrdIdl)
+  return length(ramification_group(P, 2)) == 1
 end
 
 @doc Markdown.doc"""
@@ -1976,14 +2021,17 @@ end
 #  Decomposition Group of a prime ideal
 #
 ################################################################################
-@doc Markdown.doc"""
-    decomposition_group(P::NfOrdIdl; G::Vector{NfToNfMor}) -> Vector{NfToNfMor}
 
-Given a prime ideal P in a normal number field G, it returns a vector of the automorphisms $\sigma_1, \dots, \sigma_s$
-such that $\sigma_i(P) = P$ for all $i = 1,\dots, s$.
-If a subgroup $G$ of automorphisms is given, the output is the intersection of the decomposition group with that subgroup.
+@doc Markdown.doc"""
+    decomposition_group(P::NfOrdIdl) -> Vector{NfToNfMor}
+
+Given a prime ideal $P$ in a normal number field G, it returns a vector of the
+automorphisms $\sigma_1, \dotsc, \sigma_s$ such that $\sigma_i(P) = P$ for all
+$i = 1,\dots, s$. If a subgroup $G$ of automorphisms is given, the output is
+the intersection of the decomposition group with that subgroup.
 """  
-function decomposition_group(P::NfOrdIdl; G::Array{NfToNfMor, 1} = NfToNfMor[], orderG::Int = degree(P)*ramification_index(P))
+function decomposition_group(P::NfOrdIdl; G::Array{NfToNfMor, 1} = NfToNfMor[],
+                             orderG::Int = degree(P)*ramification_index(P))
   @assert isprime(P)
   OK = order(P)
   K = nf(OK)
@@ -2059,19 +2107,36 @@ function decomposition_group_easy(G, P)
   return G[indices]
 end
 
+@doc Markdown.doc"""
+    decomposition_group(K::AnticNumberField, P::NfOrdIdl, m::Map)
+                                                  -> Grp, GrpToGrp
+
+Given a prime ideal $P$ of a number field $K$ and a map `m` return from
+`automorphism_group(K)`, return the decompositon group of $P$ as a subgroup of 
+the domain of `m`.
+"""
+function decomposition_group(K::AnticNumberField, P::NfOrdIdl, mG::Map)
+  iner = decomposition_group(P)
+  return subgroup(domain(mG), [mG\a for a in iner])
+end
+
 ################################################################################
 #
 #  Inertia subgroup of a prime ideal
 #
 ################################################################################
-@doc Markdown.doc"""
-   inertia_subgroup(P::NfOrdIdl; G::Vector{NfToNfMor}) -> Vector{NfToNfMor}
 
-Given a prime ideal P in a normal number field, it returns a vector of the automorphisms $\sigma_1, \dots, \sigma_s$
-such that $\sigma_i(P) = P$ for all $i = 1,\dots, s$ and induce the identity on the residue field.
-If a subgroup $G$ of automorphisms is given, the output is the intersection of the inertia group with $G$.
+@doc Markdown.doc"""
+    inertia_subgroup(P::NfOrdIdl; G::Vector{NfToNfMor}) -> Vector{NfToNfMor}
+
+Given a prime ideal $P$ of a normal number field $K$, return the automorphisms
+$\sigma$ of $K$ such that $\sigma(P) = P$ and $\sigma$ induces the identity on
+the residue field of $P$.
+
+If a subgroup $G$ of automorphisms is supplied, the output is the intersection of
+the inertia group with $G$.
 """  
-function inertia_subgroup(P::NfOrdIdl; G::Array{NfToNfMor, 1} = NfToNfMor[])
+function inertia_subgroup(P::NfOrdIdl; G::Vector{NfToNfMor} = NfToNfMor[])
   @assert isprime(P)
   O = order(P)
   K = nf(O)
@@ -2149,4 +2214,51 @@ function inertia_subgroup_easy(F, mF, G::Vector{NfToNfMor})
     end
   end
   return G[indices]
+end
+
+@doc Markdown.doc"""
+    inertia_subgroup(K::AnticNumberField, P::NfOrdIdl, m::Map) -> Grp, GrpToGrp
+
+Given a prime ideal $P$ of a number field $K$ and a map `m` return from
+`automorphism_group(K)`, return the intertia subgroup of $P$ as a subgroup of
+the domain of `m`.
+"""
+function inertia_subgroup(K::AnticNumberField, P::NfOrdIdl, mG::Map)
+  iner = inertia_subgroup(P)
+  return subgroup(domain(mG), [mG\a for a in iner])
+end
+
+################################################################################
+#
+#  Ramification groups
+#
+################################################################################
+
+function ramification_group(P::NfOrdIdl, i::Int)
+  if i == 0
+    return inertia_subgroup(P)
+  end
+  A = inertia_subgroup(P)
+  pi = uniformizer(P)
+  res = NfToNfMor[]
+  a = elem_in_nf(pi)
+  for f in A
+    b = f(a)
+    if b == a || valuation(b - a, P) >= i + 1
+      push!(res, f)
+    end
+  end
+  return res
+end
+
+@doc Markdown.doc"""
+    ramification_group(K::AnticNumberField, P::NfOrdIdl, m::Map) -> Grp, GrpToGrp
+
+Given a prime ideal $P$ of a number field $K$ and a map `m` return from
+`automorphism_group(K)`, return the ramification group of $P$ as a subgroup of 
+the domain of `m`.
+"""
+function ramification_group(K::AnticNumberField, P::NfOrdIdl, i::Int, mG::Map)
+  iner = ramification_group(P, i)
+  return subgroup(domain(mG), [mG\a for a in iner])
 end
