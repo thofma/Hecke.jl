@@ -695,7 +695,7 @@ function quotient_indx(a::Int64,b::Int64)
   G = Hecke.small_group(a,b)
   subgroups = Hecke.subgroups(G, normal=true)
   return Res = sort([tuple(find_small_group(quotient(G, subgroups[i][1], subgroups[i][2])[1])[1]...) for i in 1:length(subgroups)])
-  end
+end
 
   function direct_product(G1::GrpGen, G2::GrpGen)
     S = [(g1,g2) for g1 in collect(G1), g2 in collect(G2)]
