@@ -204,7 +204,7 @@ end
 function _automorphisms(G::GrpGen)
   @assert isfrom_db(G)
   i, j = G.small_group_id
-  Gdata = small_groups_1_63[i][j]
+  Gdata = DefaultSmallGroupDB.db[i][j]
 
   l = order(G)
 
@@ -221,12 +221,11 @@ function _automorphisms(G::GrpGen)
     end
   end
 
-
-  elbyord = [elements_by_orders[order(o)] for o in Gdata[1]]
+  elbyord = [elements_by_orders[order(G[o])] for o in G.gens]
 
   it = Iterators.product(elbyord...)
 
-  words::Vector{Vector{Int}} = Gdata[2]
+  words::Vector{Vector{Int}} = Gdata.rels
 
   idG = id(G)
 
@@ -330,7 +329,7 @@ end
 function _morphisms(G::GrpGen, H::GrpGen)
   @assert isfrom_db(G)
   i, j = G.small_group_id
-  Gdata = small_groups_1_63[i][j]
+  Gdata = DefaultSmallGroupDB.db[i][j]
 
   l = order(H)
 
@@ -348,12 +347,11 @@ function _morphisms(G::GrpGen, H::GrpGen)
     end
   end
 
-
-  elbyord = [elements_by_orders[order(o)] for o in Gdata[1]]
+  elbyord = [elements_by_orders[order(G[o])] for o in G.gens]
 
   it = Iterators.product(elbyord...)
 
-  words::Vector{Vector{Int}} = Gdata[2]
+  words::Vector{Vector{Int}} = Gdata.rels
 
   idH = id(H)
 

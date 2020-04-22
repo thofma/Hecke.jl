@@ -606,45 +606,6 @@ const _reps = [(i=24,j=12,n=5,dims=(1,1,2,3,3),
 #
 ################################################################################
 
-mutable struct SmallGroupDB
-  path::String
-  max_order::Int
-  db::Vector{Vector{NamedTuple{(:name, :gens, :rels, :nontrivrels, :orderdis,
-                                :ordersubdis, :isabelian, :iscyclic,
-                                :issolvable, :isnilpotent, :autorder, :aut_gens,
-                                :nchars, :dims, :schur, :galrep, :fields, :mod),
-                               Tuple{String,Array{Perm{Int64},1},
-                                     Vector{Vector{Int64}},
-                                     Vector{Vector{Int64}},
-                                     Vector{Tuple{Int64,Int64}},
-                                     Vector{Tuple{Int64,Int64}},
-                                     Bool,Bool,Bool,Bool,BigInt,
-                                     Vector{Vector{Vector{Int64}}},Int64,
-                                     Vector{Int64},Vector{Int64}, Vector{Int},
-                                     Vector{Vector{Rational{BigInt}}},
-                                     Vector{Vector{Vector{Vector{Rational{BigInt}}}}}}}}}
-
-  function SmallGroupDB(path::String)
-    db = Hecke.eval(Meta.parse(Base.read(path, String)))
-    max_order = length(db)
-    return new(path, max_order, db)
-  end
-end
-
-# TODO: Write a parser for the data
-
-function show(io::IO, L::SmallGroupDB)
-  print(io, "Database of small groups (order limit = ", L.max_order, ")")
-end
-
-const default_small_group_db = Ref(joinpath(pkgdir, "data/small_groups"))
-
-function small_group_database()
-  return SmallGroupDB(default_small_group_db[])
-end
-
-const DefaultSmallGroupDB = small_group_database()
-
 mutable struct AbsAlgAssMorGen{S, T, U, V} <: Map{S, T, HeckeMap, AbsAlgAssMorGen}
   domain::S
   codomain::T

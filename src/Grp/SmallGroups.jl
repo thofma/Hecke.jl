@@ -6,19 +6,51 @@
 
 export number_of_small_groups, small_group, small_groups_limit
 
-#const small_groups_limit = 63
-#
-#include("small_groups_1_63")
-#
-#function number_of_small_groups(i)
-#  return length(small_groups_1_63[i])
-#end
-#
-#isfrom_db(G::GrpGen) = G.isfromdb
+mutable struct SmallGroupDB
+  path::String
+  max_order::Int
+  db::Vector{Vector{NamedTuple{(:name, :gens, :rels, :nontrivrels, :orderdis,
+                                :ordersubdis, :isabelian, :iscyclic,
+                                :issolvable, :isnilpotent, :autorder, :aut_gens,
+                                :nchars, :dims, :schur, :galrep, :fields, :mod),
+                               Tuple{String,Array{Perm{Int64},1},
+                                     Vector{Vector{Int64}},
+                                     Vector{Vector{Int64}},
+                                     Vector{Tuple{Int64,Int64}},
+                                     Vector{Tuple{Int64,Int64}},
+                                     Bool,Bool,Bool,Bool,BigInt,
+                                     Vector{Vector{Vector{Int64}}},Int64,
+                                     Vector{Int64},Vector{Int64}, Vector{Int},
+                                     Vector{Vector{Rational{BigInt}}},
+                                     Vector{Vector{Vector{Vector{Rational{BigInt}}}}}}}}}
 
-# Data in the DB:
-# <gens, rels, nontrivrels, orderdis, ordersubdis, IsAbelian(G), IsCyclic(G),
-# IsSolvable(G), IsNilpotent(G), #AutomorphismGroup(G);
+  function SmallGroupDB(path::String)
+    db = Hecke.eval(Meta.parse(Base.read(path, String)))
+    max_order = length(db)
+    return new(path, max_order, db)
+  end
+end
+
+# TODO: Write a parser for the data
+
+function show(io::IO, L::SmallGroupDB)
+  print(io, "Database of small groups (order limit = ", L.max_order, ")")
+end
+
+const default_small_group_db = [joinpath(pkgdir, "data/small_groups_extended"), joinpath(pkgdir, "data/small_groups_default")]
+
+function small_group_database()
+  for pa in default_small_group_db
+    if isfile(pa)
+      return SmallGroupDB(pa)
+    end
+  end
+  throw(error("No database for small groups found"))
+end
+
+const DefaultSmallGroupDB = small_group_database()
+
+isfrom_db(G::GrpGen) = G.isfromdb
 
 function small_group(i, j)
   data = DefaultSmallGroupDB.db[i][j]
