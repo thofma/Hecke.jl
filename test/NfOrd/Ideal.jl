@@ -197,5 +197,16 @@
     @test length(prime_decomposition(OL, 2)) == 30
   end
 
+  @testset "Frobenius automorphism" begin
+    K = number_field(x^2+1)[1]
+    OK = maximal_order(K)
+    lp = prime_decomposition(OK, 5)
+    P = lp[1][1]
+    @test Hecke.frobenius_automorphism(P) == id_hom(K)
+    lp = prime_decomposition(OK, 7)
+    P = lp[1][1]
+    @test Hecke.frobenius_automorphism(P) != id_hom(K)
+  end 
+
   include("Ideal/Prime.jl")
 end

@@ -944,6 +944,7 @@ end
 #
 ################################################################################
 
+#TODO: Put some more thought in it.
 @doc Markdown.doc"""
     relative_extension(K::AnticNumberField, k::AnticNumberField) -> NfRel{nf_elem}
 Given two field $K\supset k$, it returns $K$ as a relative 
@@ -955,7 +956,15 @@ function relative_extension(m::NfToNfMor)
   lf = factor(K.pol, k)
   rel_deg = divexact(degree(K), degree(k))
   pols = [f for (f, v) in lf if degree(f) == rel_deg]
-  L, b = number_field(pols[1], cached = false, check = false)
+  p = pols[1]
+  if length(pols) > 1
+    i = 2
+    while !iszero(map_coeffs(m, p)(gen(K)))
+      p = pols[i]
+      i += 1
+    end
+  end
+  L, b = number_field(p, cached = false, check = false)
   mp = hom(K, L, b, m.prim_img, gen(K))
   return L, mp
 end

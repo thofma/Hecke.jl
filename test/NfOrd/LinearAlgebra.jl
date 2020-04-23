@@ -4,7 +4,7 @@
     Qx, x = FlintQQ["x"]
     K, a = number_field(x^3 + 3)
     A = rand(MatrixSpace(K, 4, 4), 10:100)
-    while det(A) == 0
+    while iszero(det(A))
       A = rand(MatrixSpace(K, 4, 4), 10:100)
     end
     b = rand(MatrixSpace(K, 4 ,1), 10:100)
@@ -63,7 +63,7 @@
     # pseudo hermite normal form span the same module
     
     @testset "Q[x]/x^$i - 10)" for i in 2:5 
-       K,  a = NumberField(x^i - 10, "a")
+      K,  a = NumberField(x^i - 10, "a")
       O = maximal_order(K)
       #println("  Testing over field $(x^i - 10)")
 
@@ -72,7 +72,7 @@
         ll = rand(1:20)
         z = rand(MatrixSpace(O, l, l), fmpz(2)^ll)
         #println("    $l x $l matrix with $ll bits")
-        cc = [ (O(1)*O)::Hecke.NfOrdIdl for i in 1:l]
+        cc = NfOrdIdl[ideal(O, 1) for i in 1:l]
         pm = Hecke.PseudoMatrix(z, cc)
         d = det(pm)
         ppm = Hecke.pseudo_hnf(pm)
@@ -86,7 +86,7 @@
 
     @testset "Field towers" begin
       f = x^2 + 36*x + 16
-       K,  a = NumberField(f, "a")
+      K,  a = NumberField(f, "a")
       Ky, y = K["y"]
       g = y^3 - 51*y^2 + 30*y - 28
       L, b = NumberField(g, "b")
@@ -119,9 +119,9 @@
     end
 
     @testset "in span" begin
-       K,  a = NumberField(x^3 - 10, "a")
+      K,  a = NumberField(x^3 - 10, "a")
       O = maximal_order(K)
-      ideals = []
+      ideals = NfOrdIdl[]
       p = 2
       while length(ideals) < 5
         ideals = union(ideals, prime_decomposition(O, p))
@@ -131,7 +131,7 @@
       v = [ K(rand(p, 100)) for (p, e) in ideals ]
       @test Hecke._in_span(v, A)[1]
 
-       K,  a = NumberField(x, "a")
+      K,  a = NumberField(x, "a")
       O = maximal_order(K)
       A = Hecke.PseudoMatrix(matrix(O, map(O, [ 1 2 3 4; 0 7 8 9; 0 0 11 12; 0 0 0 13 ])), [ O(1)*O for i = 1:4 ])
       @test Hecke._in_span(map(K, [1, 2, 3, 4]), A)[1]
