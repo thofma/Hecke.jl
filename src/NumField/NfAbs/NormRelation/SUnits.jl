@@ -267,7 +267,12 @@ function induce_action_just_from_subfield(N::NormRelation, i, s, FB, invariant =
   return z
 end
 
-function norm_relation(K::AnticNumberField, coprime::Int = 0)
+function norm_relation(K::AnticNumberField, coprime::Int = 0; small_degree = true)
+  if !small_degree
+    @assert coprime == 0
+    N = _norm_relation_setup_generic(K, pure = true, small_degree = false)
+    return true, N
+  end
   local N
   try
     N = _get_nf_norm_relation(K)::Vector{NormRelation{Int}}
@@ -328,9 +333,12 @@ function class_group_via_brauer(O::NfOrd, N::NormRelation, do_lll = true)
     OK = O
   end
   OK = maximal_order(K)
-  S = prime_ideals_up_to(OK, Hecke.factor_base_bound_grh(OK))
+  fbbound = Hecke.factor_base_bound_grh(OK)
+  S = prime_ideals_up_to(OK, fbbound)
+  @vprint :NormRelation 1 "Factor base bound: $fbbound\n"
   c, UZK = _setup_for_norm_relation_fun(K, S)
   _add_sunits_from_brauer_relation!(c, UZK, N)
+  return c, UZK
   if index(N) != 1
     # I need to saturate
     @vprint :NormRelation 1 "Saturating at "
@@ -338,10 +346,17 @@ function class_group_via_brauer(O::NfOrd, N::NormRelation, do_lll = true)
       @vprint :NormRelation 1 "$p "
       b = Hecke.saturate!(c, UZK, Int(p))
       while b
+        idx = Hecke._validate_class_unit_group(c, UZK)
+        @vprint :NormRelation 1 "Index bound from analysis $idx\n"
         b = Hecke.saturate!(c, UZK, Int(p))
       end
     end
   end
+
+  idx = Hecke._validate_class_unit_group(c, UZK)
+
+  @assert idx == 1
+
   @vprint :NormRelation 1 "\n"
   c, _ = simplify(c)
 

@@ -808,6 +808,51 @@ function image(mF::NfToGFMor_easy, a::FacElem{nf_elem, AnticNumberField}, quo::I
   return q
 end
 
+function image(mF::NfToGFMor_easy, a::FacElem{nf_elem, AnticNumberField}, D::Vector, cached::Bool, quo::Int = 0)
+  Fq = mF.Fq
+  p = mF.defining_pol
+  q = one(Fq)
+  t = mF.t
+  i = 0
+  for (k, v) in a.fac
+    i += 1
+    vv = v
+    if quo != 0
+      vv = v %quo 
+      if vv < 0
+        vv += quo
+      end
+    end
+    @assert vv < order(Fq)  #please complain if this is triggered
+    if !iszero(vv)
+      if denominator(k) % characteristic(Fq) == 0
+        throw(BadPrime(characteristic(Fq)))
+      end
+
+      if cached
+        rem!(t, D[i], p)
+        s = coeff(t, 0)
+      else
+        nf_elem_to_gfp_poly!(t, k)
+        D[i] = deepcopy(t)
+        rem!(t, t, p)
+        s = coeff(t, 0)
+      end
+      #s = _nf_to_gfp_elem(k, t, p)
+      if iszero(s)
+        throw(BadPrime(1))
+      end
+      if vv < 0
+        s = inv(s)
+        vv = -vv
+      end
+      s = s^vv
+      q = mul!(q, q, s)
+    end
+  end
+  return q
+end
+
 function image(mF::NfToGFMor_easy, a::nf_elem, n_quo::Int = 0)
   Fq = mF.Fq
   p = mF.defining_pol
@@ -816,6 +861,26 @@ function image(mF::NfToGFMor_easy, a::nf_elem, n_quo::Int = 0)
     throw(BadPrime(characteristic(Fq)))
   end
   return _nf_to_gfp_elem(a, t, p)
+end
+
+function image(mF::NfToGFMor_easy, a::nf_elem, D::Vector, cached::Bool, n_quo::Int = 0)
+  Fq = mF.Fq
+  p = mF.defining_pol
+  t = mF.t
+  if denominator(a) % characteristic(Fq) == 0
+    throw(BadPrime(characteristic(Fq)))
+  end
+  if cached
+    @assert length(D) == 1
+    rem!(t, D[1], p)
+    s = coeff(t, 0)
+  else
+    nf_elem_to_gfp_poly!(t, a)
+    D[1] = deepcopy(t)
+    rem!(t, t, p)
+    s = coeff(t, 0)
+  end
+  return s
 end
 
 

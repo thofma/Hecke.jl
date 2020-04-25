@@ -464,7 +464,7 @@ function _hensel(f::Generic.Poly{nf_elem},
           M[j, k+1] = -lift(coeff(pt, k))
         end
       end
-      @vtime :Saturate 1 begin
+      @vtime :Saturate 2 begin
         mul!(M, M, Miold)
         divexact!(M, M, dold)
         exp_mod = div(pr[i], 2)

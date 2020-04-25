@@ -73,9 +73,33 @@ function mod_p(R, Q::NfOrdIdl, p::Int, T)
       break
     end
   end
-  #TODO: in the image of mF1, if the input is a FacElem, the exponents should be reduced by pp.
-  #This avoids some inverses.
   return matrix(T, 1, length(R), Int[dlog(dl, image(mF1, x, pp)^e, pp) % p for x = R])
+end
+
+function mod_p(R, Q::NfOrdIdl, p::Int, T, D::Vector, cached::Bool)
+  Zk = order(Q)
+  F, mF = Hecke.ResidueFieldSmallDegree1(Zk, Q)
+  mF1 = Hecke.extend_easy(mF, number_field(Zk))
+  @assert size(F) % p == 1
+  pp, e = Hecke.ppio(Int(size(F)-1), p)
+  dl = Dict{elem_type(F), Int}()
+  dl[F(1)] = 0
+  lp = factor(p)
+  while true
+    x = rand(F)
+    if iszero(x)
+      continue
+    end
+    x = x^e
+    if any(i-> x^div(pp, Int(i)) == 1, keys(lp.fac))
+      continue
+    else
+      dlog(dl, x, pp)
+      @assert length(dl) == pp
+      break
+    end
+  end
+  return matrix(T, 1, length(R), Int[dlog(dl, image(mF1, R[i], D[i], cached, pp)^e, pp) % p for i in 1:length(R)])
 end
 
 Hecke.lift(A::fmpz_mat) = A
@@ -104,6 +128,92 @@ function lift_nonsymmetric(a::gfp_mat)
   return z
 end
 
+function saturate_exp_normal(c::Hecke.ClassGrpCtx, p::Int, stable = 1.5)
+  ZK = order(c.FB.ideals[1])
+  T, mT = torsion_unit_group(ZK)
+  sT = Int(order(T))
+
+  R = vcat(c.R_gen, c.R_rel)
+  K = nf(ZK)
+  zeta = mT(T[1])
+  if gcd(sT, p) != 1 && !(hash(zeta) in c.RS) # && order is promising...
+    push!(R, K(zeta))
+#  else
+#    println("NOT doint zeta")
+  end
+  T = GF(p, cached = false)
+  A = identity_matrix(T, length(R))
+  cA = ncols(A)
+  i = 1
+
+  S = Hecke.PrimesSet(Hecke.p_start, -1, Int(p), 1)
+
+  D = Vector{Vector{gfp_poly}}(undef, length(R))
+  for i in 1:length(R)
+    D[i] = Vector{gfp_poly}(undef, R[i] isa FacElem ? length(R[i].fac) : 1)
+  end
+
+  for q in S
+    @vprint :Saturate 3 "Finding primes for saturation: $i/$(stable*ncols(A))\n"
+    if isdefining_polynomial_nice(K) && isindex_divisor(ZK, q)
+      continue
+    end
+    if discriminant(ZK) % q == 0
+      continue
+    end
+    #if gcd(div(q-1, Int(pp)), pp) > 1 # not possible if cond(k) is involved
+    #  continue
+    #end
+    @vtime :Saturate 3 lq = prime_decomposition(ZK, q, 1)
+    if length(lq) == 0
+      continue
+    end
+
+    first_prime = true
+
+    for Q in lq
+      try
+        if first_prime
+          @vtime :Saturate 3 z = mod_p(R, Q[1], Int(p), T, D, false)
+          first_prime = false
+        else
+          @vtime :Saturate 3 z = mod_p(R, Q[1], Int(p), T, D, true)
+        end
+        zz = mod_p(R, Q[1], Int(p), T)
+        findfirst(i -> !iszero(z[i]), 1:length(z))
+        @assert !iszero(zz[i])
+        scalar = divexact(zz[i], z[i])
+        @assert scalar * z == zz
+        z = z*A
+        rrz, z = nullspace(z)
+        if iszero(rrz)
+          return zero_matrix(FlintZZ, 0, length(R))
+        end
+        A = A*sub(z, 1:nrows(z), 1:rrz)
+        # TODO: Remove or understand the following condition
+        if false && cA == ncols(A)
+          break #the other ideals are going to give the same info
+                #for multi-quad as the field is normal
+        end        
+      catch e
+        if !isa(e, Hecke.BadPrime)
+          rethrow(e)
+        end
+      end
+    end
+    if cA == ncols(A) 
+      i += 1
+    else
+      i = 0
+      cA = ncols(A)
+    end
+    if i> stable*ncols(A)
+      break
+    end
+  end
+  return lift_nonsymmetric(A)
+end
+
 function saturate_exp(c::Hecke.ClassGrpCtx, p::Int, stable = 1.5)
   ZK = order(c.FB.ideals[1])
   T, mT = torsion_unit_group(ZK)
@@ -123,6 +233,7 @@ function saturate_exp(c::Hecke.ClassGrpCtx, p::Int, stable = 1.5)
   i = 1
 
   S = Hecke.PrimesSet(Hecke.p_start, -1, Int(p), 1)
+
   for q in S
     @vprint :Saturate 3 "Finding primes for saturation: $i/$(stable*ncols(A))\n"
     if isdefining_polynomial_nice(K) && isindex_divisor(ZK, q)
@@ -138,6 +249,7 @@ function saturate_exp(c::Hecke.ClassGrpCtx, p::Int, stable = 1.5)
     if length(lq) == 0
       continue
     end
+
     for Q in lq
       try
         @vtime :Saturate 3 z = mod_p(R, Q[1], Int(p), T)
@@ -198,7 +310,7 @@ function saturate!(d::Hecke.ClassGrpCtx, U::Hecke.UnitGrpCtx, n::Int, stable = 3
   success = false
   while true
     @vprint :Saturate 1 "Computing candidates for the saturation ...\n"
-    @vtime :Saturate 1 e = saturate_exp(c, n, stable)
+    @vtime :Saturate 1 e = saturate_exp_normal(c, n, stable)
     if nrows(e) == 0
       @vprint :Saturate 1  "sat yielded nothing new at $stable, $success, \n"
       return success

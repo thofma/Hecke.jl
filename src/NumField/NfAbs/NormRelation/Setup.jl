@@ -119,12 +119,13 @@ function _norm_relation_setup_abelian(K::AnticNumberField; small_degree::Bool = 
 end
 
 function _norm_relation_setup_generic(K::AnticNumberField; small_degree::Bool = true, pure::Bool = false, target_den::fmpz = zero(fmpz), max_degree::Int = degree(K))
+  @vprint :NormRelation 1 "Computing automorphisms\n"
   A = automorphisms(K)
   G, AtoG, GtoA = generic_group(A, *)
   if iszero(target_den)
-     b, den, ls = _has_norm_relation_abstract(G, [f for f in subgroups(G, conjugacy_classes = false) if order(f[1]) > 1 && div(order(G), order(f[1])) <= max_degree], pure = pure)
+     b, den, ls = _has_norm_relation_abstract(G, [f for f in subgroups(G, conjugacy_classes = false) if order(f[1]) > 1 && div(order(G), order(f[1])) <= max_degree], pure = pure, large_index = small_degree)
   else
-    b, den, ls = _has_norm_relation_abstract(G, [f for f in subgroups(G, conjugacy_classes = false) if order(f[1]) > 1 && div(order(G), order(f[1])) <= max_degree], target_den = target_den, pure = pure)
+    b, den, ls = _has_norm_relation_abstract(G, [f for f in subgroups(G, conjugacy_classes = false) if order(f[1]) > 1 && div(order(G), order(f[1])) <= max_degree], target_den = target_den, pure = pure, large_index = small_degree)
   end
 
   if !b
@@ -133,6 +134,25 @@ function _norm_relation_setup_generic(K::AnticNumberField; small_degree::Bool = 
   end
   n = length(ls)
 
+  nonredundant = Dict{Int, Bool}()
+
+  for i in 1:length(ls)
+    red = false
+    for j in keys(nonredundant)
+      if Base.issubset(ls[j][1], ls[i][1])
+        red = true
+        break
+      elseif Base.issubset(ls[i][1], ls[j][1])
+        delete!(nonredundant, j)
+        nonredundant[i] = true
+      end
+    end
+
+    if !red
+      nonredundant[i] = true
+    end
+  end
+
   z = NormRelation{Int}()
   z.K = K
   z.isnormal = falses(n)
@@ -140,6 +160,8 @@ function _norm_relation_setup_generic(K::AnticNumberField; small_degree::Bool = 
   z.denominator = den
   z.ispure = pure
   z.embed_cache_triv = Vector{Dict{nf_elem, nf_elem}}(undef, n)
+  z.nonredundant = collect(keys(nonredundant))
+
   for i in 1:n
     z.embed_cache_triv[i] = Dict{nf_elem, nf_elem}()
   end
@@ -149,6 +171,7 @@ function _norm_relation_setup_generic(K::AnticNumberField; small_degree::Bool = 
     @vprint :NormRelation 3 "Computing subfield $i / $n \n"
 		auts = NfToNfMor[GtoA[f] for f in ls[i][1]]
     @vtime :NormRelation 3 F, mF = Hecke.fixed_field1(K, auts)
+    @vprint :NormRelation 1 "Simplifying \n $F\n"
     @vtime :NormRelation 3 S, mS = simplify(F, cached = false)
     L = S
     mL = mS * mF
@@ -571,7 +594,13 @@ function _has_norm_relation_abstract(G::GrpGen, H::Vector{Tuple{GrpGen, GrpGenTo
   if index_bound != -1
     H = [h for h in H if order(G) <= order(h[1]) * index_bound]
   end
-    
+
+  sort!(H, by = x -> order(x[1]))
+
+  if large_index
+    reverse!(H)
+  end
+   
   QG = AlgGrp(FlintQQ, G)
   norms_rev = Dict{elem_type(QG), Int}()
   norms = Vector{elem_type(QG)}(undef, length(H))
