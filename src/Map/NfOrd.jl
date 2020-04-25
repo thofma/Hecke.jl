@@ -809,31 +809,34 @@ function image(mF::NfToGFMor_easy, a::FacElem{nf_elem, AnticNumberField}, quo::I
 end
 
 function image(mF::NfToGFMor_easy, a::FacElem{nf_elem, AnticNumberField}, D::Vector, cached::Bool, quo::Int = 0)
+  # cached == true also implies that all the denominators are coprime
   Fq = mF.Fq
   p = mF.defining_pol
   q = one(Fq)
   t = mF.t
   i = 0
+  pminusone = Fq.n - 1
   @assert ismonic(p)
   evaluateat = -coeff(p, 0)
   for (k, v) in a.fac
     i += 1
-    vv = v
-    if quo != 0
-      vv = v %quo 
-      if vv < 0
-        vv += quo
-      end
+    if v > 0 && v < pminusone
+      vv = UInt(v)
+    else
+      vv = fmpz_mod_ui(v, pminusone)
     end
-    @assert vv < order(Fq)  #please complain if this is triggered
+    if quo != 0
+      vv = vv % quo # vv will always be positive
+    end
+    @assert vv < Fq.n  #please complain if this is triggered
     if !iszero(vv)
-      if denominator(k) % characteristic(Fq) == 0
+      if !cached && (fmpz_mod_ui(denominator(k), Fq.n) == 0)
         throw(BadPrime(characteristic(Fq)))
       end
 
       if cached
-        rem!(t, D[i], p)
-        s = coeff(t, 0)
+        #rem!(t, D[i], p)
+        #s = coeff(t, 0)
         s = evaluate_raw(D[i], evaluateat)
       else
         nf_elem_to_gfp_poly!(t, k)
@@ -864,7 +867,7 @@ function image(mF::NfToGFMor_easy, a::FacElem{nf_elem, AnticNumberField}, D::Vec
         s = inv(s)
         vv = -vv
       end
-      s = s^vv
+      s = s^Int(vv)
       q = mul!(q, q, s)
     end
   end
@@ -1031,3 +1034,6 @@ function evaluate_raw(x::gfp_poly, y::gfp_elem)
   return parent(y)(z)
 end
 
+function fmpz_mod_ui(x::fmpz, y::UInt)
+  return ccall((:fmpz_fdiv_ui, libflint), UInt, (Ref{fmpz}, UInt), x, y)
+end

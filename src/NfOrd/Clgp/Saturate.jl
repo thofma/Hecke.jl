@@ -179,15 +179,16 @@ function saturate_exp_normal(c::Hecke.ClassGrpCtx, p::Int, stable = 1.5)
         else
           @vtime :Saturate 3 z = mod_p(R, Q[1], Int(p), T, D, true)
         end
-        zz = mod_p(R, Q[1], Int(p), T)
-        if iszero(z)
-          @assert iszero(zz)
-        else
-          i = findfirst(i -> !iszero(z[i]), 1:length(z))
-          @assert !iszero(zz[i])
-          scalar = divexact(zz[i], z[i])
-          @assert scalar * z == zz
-        end
+        # for debugging:
+        #zz = mod_p(R, Q[1], Int(p), T)
+        #if iszero(z)
+        #  @assert iszero(zz)
+        #else
+        #  i = findfirst(i -> !iszero(z[i]), 1:length(z))
+        #  @assert !iszero(zz[i])
+        #  scalar = divexact(zz[i], z[i])
+        #  @assert scalar * z == zz
+        #end
         z = z*A
         rrz, z = nullspace(z)
         if iszero(rrz)
@@ -308,13 +309,17 @@ function elems_from_sat(c::Hecke.ClassGrpCtx, z)
   return res
 end
 
-function saturate!(d::Hecke.ClassGrpCtx, U::Hecke.UnitGrpCtx, n::Int, stable = 3.5)
+function saturate!(d::Hecke.ClassGrpCtx, U::Hecke.UnitGrpCtx, n::Int, stable = 3.5; isnormal::Bool = false)
   @assert isprime(n)
   @vtime :Saturate 1 c = simplify(d, U) 
   success = false
   while true
     @vprint :Saturate 1 "Computing candidates for the saturation ...\n"
-    @vtime :Saturate 1 e = saturate_exp(c, n, stable)
+    if isnormal
+      @vtime :Saturate 1 e = saturate_exp_normal(c, n, stable)
+    else
+      @vtime :Saturate 1 e = saturate_exp(c, n, stable)
+    end
     if nrows(e) == 0
       @vprint :Saturate 1  "sat yielded nothing new at $stable, $success, \n"
       return success
