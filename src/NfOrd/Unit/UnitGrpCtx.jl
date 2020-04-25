@@ -311,4 +311,14 @@ function _add_unit(u::UnitGrpCtx, x::FacElem{nf_elem, AnticNumberField})
   return false
 end
 
+function tentative_regulator(U::UnitGrpCtx)
+  if isdefined(U, :tentative_regulator)
+    rreg = U.tentative_regulator
+  else
+    @vprint :UnitGroup 1 "Computing regulator of independent units with 64 bits ... \n" 
+    rreg = regulator(U.units, 64)
+    @vprint :UnitGroup 1 "done \n" 
+  end
+  return rreg
+end
 

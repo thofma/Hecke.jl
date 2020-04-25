@@ -183,7 +183,7 @@ function _validate_class_unit_group(c::ClassGrpCtx, U::UnitGrpCtx)
   @assert isfinite(loghRtrue)
 
   while true
-    loghRapprox = log(h* abs(U.tentative_regulator))
+    loghRapprox = log(h* abs(tentative_regulator(U)))
 
     @assert isfinite(loghRapprox)
 

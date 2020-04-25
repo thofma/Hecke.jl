@@ -180,10 +180,14 @@ function saturate_exp_normal(c::Hecke.ClassGrpCtx, p::Int, stable = 1.5)
           @vtime :Saturate 3 z = mod_p(R, Q[1], Int(p), T, D, true)
         end
         zz = mod_p(R, Q[1], Int(p), T)
-        findfirst(i -> !iszero(z[i]), 1:length(z))
-        @assert !iszero(zz[i])
-        scalar = divexact(zz[i], z[i])
-        @assert scalar * z == zz
+        if iszero(z)
+          @assert iszero(zz)
+        else
+          i = findfirst(i -> !iszero(z[i]), 1:length(z))
+          @assert !iszero(zz[i])
+          scalar = divexact(zz[i], z[i])
+          @assert scalar * z == zz
+        end
         z = z*A
         rrz, z = nullspace(z)
         if iszero(rrz)

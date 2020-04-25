@@ -166,6 +166,10 @@ function set!(z::nmod_poly, x::nmod_poly)
   ccall((:nmod_poly_set, libflint), Nothing, (Ref{nmod_poly}, Ref{nmod_poly}), z, x)
 end
 
+function set!(z::gfp_poly, x::gfp_poly)
+  ccall((:nmod_poly_set, libflint), Nothing, (Ref{gfp_poly}, Ref{gfp_poly}), z, x)
+end
+
 function __helper!(z, mF, entries)
   s = size(entries)
   for i in 1:s[2]

@@ -814,6 +814,8 @@ function image(mF::NfToGFMor_easy, a::FacElem{nf_elem, AnticNumberField}, D::Vec
   q = one(Fq)
   t = mF.t
   i = 0
+  @assert ismonic(p)
+  evaluateat = -coeff(p, 0)
   for (k, v) in a.fac
     i += 1
     vv = v
@@ -832,11 +834,27 @@ function image(mF::NfToGFMor_easy, a::FacElem{nf_elem, AnticNumberField}, D::Vec
       if cached
         rem!(t, D[i], p)
         s = coeff(t, 0)
+        s = evaluate_raw(D[i], evaluateat)
       else
         nf_elem_to_gfp_poly!(t, k)
-        D[i] = deepcopy(t)
-        rem!(t, t, p)
-        s = coeff(t, 0)
+        #tt = deepcopy(t)
+        if isassigned(D, i)
+          y = D[i]
+          if y.mod_n == t.mod_n
+            y.parent = t.parent
+            set!(y, t)
+          else
+            y.mod_n = t.mod_n
+            y.mod_ninv = t.mod_ninv
+            y.mod_norm = t.mod_norm
+            y.parent = t.parent
+            set!(y, t)
+          end
+        else
+          D[i] = zero(parent(t))
+          set!(D[i], t)
+        end
+        s = evaluate(t, evaluateat)
       end
       #s = _nf_to_gfp_elem(k, t, p)
       if iszero(s)
@@ -867,18 +885,24 @@ function image(mF::NfToGFMor_easy, a::nf_elem, D::Vector, cached::Bool, n_quo::I
   Fq = mF.Fq
   p = mF.defining_pol
   t = mF.t
+  
+  @assert ismonic(p)
+  evaluateat = -coeff(p, 0)
+
   if denominator(a) % characteristic(Fq) == 0
     throw(BadPrime(characteristic(Fq)))
   end
   if cached
     @assert length(D) == 1
-    rem!(t, D[1], p)
-    s = coeff(t, 0)
+    s = evaluate_raw(D[1], evaluateat)
+    #rem!(t, D[1], p)
+    #s = coeff(t, 0)
   else
     nf_elem_to_gfp_poly!(t, a)
     D[1] = deepcopy(t)
-    rem!(t, t, p)
-    s = coeff(t, 0)
+    #rem!(t, t, p)
+    #s = coeff(t, 0)
+    s = evaluate_raw(t, evaluateat)
   end
   return s
 end
@@ -1000,3 +1024,10 @@ function rem!(z::gfp_poly, a::gfp_poly, b::gfp_poly)
           	  z, a, b, pointer_from_objref(base_ring(z))+sizeof(fmpz))
   return z
 end
+
+function evaluate_raw(x::gfp_poly, y::gfp_elem)
+  z = ccall((:nmod_poly_evaluate_nmod, libflint), UInt,
+              (Ref{gfp_poly}, UInt), x, y.data)
+  return parent(y)(z)
+end
+

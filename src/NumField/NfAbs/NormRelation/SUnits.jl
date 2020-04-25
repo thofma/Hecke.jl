@@ -338,7 +338,7 @@ function class_group_via_brauer(O::NfOrd, N::NormRelation, do_lll = true)
   @vprint :NormRelation 1 "Factor base bound: $fbbound\n"
   c, UZK = _setup_for_norm_relation_fun(K, S)
   _add_sunits_from_brauer_relation!(c, UZK, N)
-  return c, UZK
+  #return c, UZK
   if index(N) != 1
     # I need to saturate
     @vprint :NormRelation 1 "Saturating at "
