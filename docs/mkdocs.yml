@@ -16,7 +16,7 @@ extra:
   search:
     tokenizer: '[\s\-\.]+'
   social:
-    - type: 'github'
+    - icon: 'fontawesome/brands/github-alt'
       link: 'https://github.com/thofma'
 
 extra_css:
