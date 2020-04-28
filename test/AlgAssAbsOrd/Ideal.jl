@@ -15,7 +15,7 @@
   end
 
   @testset "Prime ideals" begin
-    A = Hecke.quaternion_algebra(-1, -1)
+    A = Hecke.quaternion_algebra2(-1, -1)
     OA = maximal_order(A)
 
     p = prime_ideals_over(OA, 2)

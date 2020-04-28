@@ -1919,7 +1919,7 @@ end
 #
 ################################################################################
 
-function quaternion_algebra(K::Field, a::T, b::T) where { T <: FieldElem }
+function quaternion_algebra2(K::Field, a::T, b::T) where { T <: FieldElem }
 
   M = zeros(K, 4, 4, 4)
 
@@ -1946,6 +1946,6 @@ function quaternion_algebra(K::Field, a::T, b::T) where { T <: FieldElem }
   return AlgAss(K, M, [ one(K), zero(K), zero(K), zero(K) ])
 end
 
-quaternion_algebra(K::Field, a::Int, b::Int) = quaternion_algebra(K, K(a), K(b))
+quaternion_algebra2(K::Field, a::Int, b::Int) = quaternion_algebra2(K, K(a), K(b))
 
-quaternion_algebra(a::Int, b::Int) = quaternion_algebra(FlintQQ, fmpq(a), fmpq(b))
+quaternion_algebra2(a::Int, b::Int) = quaternion_algebra2(FlintQQ, fmpq(a), fmpq(b))

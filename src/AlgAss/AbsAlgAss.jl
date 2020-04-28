@@ -47,7 +47,7 @@ function basis(A::AbsAlgAss)
     B[i] = A(z)
   end
   A.basis = B
-  return B
+  return B::Vector{elem_type(A)}
 end
 
 ################################################################################

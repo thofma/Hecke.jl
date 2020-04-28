@@ -365,6 +365,10 @@ function absolute_tr(a::NfRelElem)
   return tr(a, FlintQQ)
 end
 
+absolute_tr(a::nf_elem) = tr(a)
+
+absolute_tr(x::fmpq) = x
+
 @doc Markdown.doc"""
     absolute_norm(a::NumFieldElem) -> fmpq
 
@@ -373,6 +377,10 @@ Given a number field element $a$, returns the absolute norm of $a$.
 function absolute_norm(a::NfRelElem)
   return norm(a, FlintQQ)
 end
+
+absolute_norm(a::nf_elem) = norm(a)
+
+absolute_norm(a::fmpq) = x
 
 ################################################################################
 #

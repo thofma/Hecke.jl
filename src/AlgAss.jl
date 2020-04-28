@@ -1,5 +1,6 @@
 include("AlgAss/Map.jl")
 include("AlgAss/AbsAlgAss.jl")
+include("AlgAss/AlgQuat.jl")
 include("AlgAss/AlgAss.jl")
 include("AlgAss/AlgGrp.jl")
 include("AlgAss/AlgMat.jl")

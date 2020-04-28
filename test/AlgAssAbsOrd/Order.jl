@@ -38,9 +38,9 @@
       end
     end
 
-    A=Hecke.quaternion_algebra(4,36)
+    A=Hecke.quaternion_algebra2(4,36)
     @test Hecke.issplit(A)
-    A=Hecke.quaternion_algebra(-1,-1)
+    A=Hecke.quaternion_algebra2(-1,-1)
     O= Order(A, [A[i] for i=1:4])
     @test Hecke.schur_index_at_real_plc(O)==2
 

@@ -215,7 +215,7 @@ end
     @test issplit(H, P)
 
     K, a = NumberField(x^2 - 2, "a")
-    HH = Hecke.quaternion_algebra(2, 3)
+    HH = Hecke.quaternion_algebra2(2, 3)
     A = AlgAss(K, map(K, HH.mult_table))
     Ps = real_places(K)
     @test issplit(A, Ps[1])

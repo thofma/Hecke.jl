@@ -187,10 +187,10 @@ end
 # Returns a basis of O as Z-module
 function absolute_basis(O::Union{ NfRelOrd, AlgAssRelOrd })
   pb = pseudo_basis(O, copy = false)
-  res = Vector{elem_type(_algebra(O))}()
+  res = Vector{elem_type(O)}()
   for i = 1:degree(O)
     for b in absolute_basis(pb[i][2])
-      push!(res, b*pb[i][1])
+      push!(res, O(b*pb[i][1]))
     end
   end
   return res

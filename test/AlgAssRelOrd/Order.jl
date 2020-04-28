@@ -50,7 +50,7 @@
 
     Qx, x = FlintQQ["x"]
     K, a = NumberField(x^4 - 4 * x^2 + 2)
-    A = Hecke.quaternion_algebra(K, -1, -1)
+    A = Hecke.quaternion_algebra2(K, -1, -1)
     M = maximal_order(A)
     @test norm(discriminant(M)) == 1
   end

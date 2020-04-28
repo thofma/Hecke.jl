@@ -12,6 +12,51 @@ parent_type(::Type{AlgGrpElem{T, S}}) where {T, S} = S
 
 parent(a::AbsAlgAssElem) = a.parent
 
+function (K::AnticNumberField)(a::AbsAlgAssElem{nf_elem})
+  @assert K == base_ring(parent(a))
+  @assert has_one(parent(a))
+  o = one(parent(a))
+  
+  if iszero(a)
+    return zero(K)
+  end
+
+  i = findfirst(!iszero, o.coeffs)
+
+  fl, c = divides(a.coeffs[i], o.coeffs[i])
+  
+  if fl
+    if c * o == a
+      return c
+    end
+  end
+
+  throw(error("Not an element of the base field"))
+end
+
+function (K::FlintRationalField)(a::AbsAlgAssElem{fmpq})
+  @assert K == base_ring(parent(a))
+  @assert has_one(parent(a))
+  o = one(parent(a))
+  
+  if iszero(a)
+    return zero(K)
+  end
+
+  i = findfirst(!iszero, o.coeffs)
+
+  fl, c = divides(a.coeffs[i], o.coeffs[i])
+  
+  if fl
+    if c * o == a
+      return c
+    end
+  end
+
+  throw(error("Not an element of the base field"))
+end
+
+
 ################################################################################
 #
 #  elem_in_algebra
@@ -515,11 +560,20 @@ function (A::AlgAss{T})() where {T}
   return AlgAssElem{T, AlgAss{T}}(A)
 end
 
+function (A::AlgQuat{T})() where {T}
+  return AlgAssElem{T, AlgAss{T}}(A)
+end
+
 (A::AlgGrp{T, S, R})() where {T, S, R} = AlgGrpElem{T, typeof(A)}(A)
 
 function (A::AlgAss{T})(c::Array{T, 1}) where {T}
   length(c) != dim(A) && error("Dimensions don't match.")
   return AlgAssElem{T, AlgAss{T}}(A, deepcopy(c))
+end
+
+function (A::AlgQuat{T})(c::Array{T, 1}) where {T}
+  length(c) != dim(A) && error("Dimensions don't match.")
+  return AlgAssElem{T, AlgQuat{T}}(A, deepcopy(c))
 end
 
 function Base.getindex(A::AbsAlgAss{T}, i::Int) where {T}

@@ -59,6 +59,26 @@ mutable struct AlgAss{T} <: AbsAlgAss{T}
   end
 end
 
+mutable struct AlgQuat{T} <: AbsAlgAss{T}
+  base_ring::Ring
+  mult_table::Array{T, 3}
+  one::Vector{T}
+  zero::Vector{T}
+  std::Tuple{T, T}
+  basis#::Vector{AlgAssElem{T, AlgAss{T}}
+  issimple::Int                           # Always 1
+  trace_basis_elem::Vector{T}
+  maximal_order
+  std_inv# standard involution
+  
+  function AlgQuat{T}() where {T} 
+    z = new{T}()
+    z.issimple = 1
+    return z
+  end
+
+end
+
 mutable struct AlgAssElem{T, S} <: AbsAlgAssElem{T}
   parent::S
   coeffs::Array{T, 1}
@@ -83,9 +103,19 @@ mutable struct AlgAssElem{T, S} <: AbsAlgAssElem{T}
     return z
   end
 
+  function AlgAssElem{T, S}(A::AlgQuat{T}) where {T, S}
+    z = new{T, AlgQuat{T}}()
+    z.parent = A
+    z.coeffs = Array{T, 1}(undef, 4)
+    for i = 1:4
+      z.coeffs[i] = A.base_ring()
+    end
+    return z
+  end
+
   # This does not make a copy of coeffs
   function AlgAssElem{T, S}(A::S, coeffs::Array{T, 1}) where {T, S}
-    z = new{T, AlgAss{T}}()
+    z = new{T, S}()
     z.parent = A
     z.coeffs = coeffs
     return z

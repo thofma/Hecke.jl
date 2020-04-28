@@ -1132,8 +1132,8 @@ end
 ################################################################################
 
 function _unit_group_generators(O)
-  M = maximal_order(M)
-  gens = _unit_group_generators(M)
+  M = maximal_order(O)
+  gens = _unit_group_generators_maximal(M)
   _, Y = _orbit_stabilizer(gens, one(algebra(O)), O)
   return Y
 end
@@ -1304,11 +1304,10 @@ end
 ################################################################################
 
 function _orbit_stabilizer(G, idity, a)
-  OT = [(idity, hnf(basis_matrix(a)))]
-  Y = []
+  OT = Tuple{typeof(idity), FakeFmpqMat}[(idity, hnf(basis_matrix(a)))]
+  Y = typeof(idity)[]
   m = 1
   while m <= length(OT)
-    @show length(OT), m, length(Y)
     b = OT[m][2]
     for g in G
       c = _operate(g, b)
@@ -1317,7 +1316,7 @@ function _orbit_stabilizer(G, idity, a)
         push!(OT, (OT[m][1] * g, c))
       elseif i isa Int
         w = OT[m][1] * g * inv(OT[i][1])
-        if !(w in Y)
+        if !(w in Y && inv(w) in Y)
           push!(Y, w)
         end
       end

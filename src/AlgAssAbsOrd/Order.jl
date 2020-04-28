@@ -252,6 +252,8 @@ function basis(O::AlgAssAbsOrd; copy::Bool = true)
   end
 end
 
+absolute_basis(O::AlgAssAbsOrd) = basis(O)
+
 function basis_alg(O::AlgAssAbsOrd; copy::Bool = true)
   assure_basis_alg(O)
   if copy
