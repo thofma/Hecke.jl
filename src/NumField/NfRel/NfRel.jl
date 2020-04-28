@@ -374,6 +374,9 @@ function Base.:(^)(a::NfRelElem, n::Int)
 end
 
 function Base.:(^)(a::NfRelElem, b::fmpz)
+  if fits(Int, b)
+    return a^Int(b)
+  end
   if b < 0
     return inv(a)^(-b)
   elseif b == 0
@@ -614,6 +617,33 @@ function simplified_absolute_field(L::NfRel{nf_elem}, cached::Bool = false)
   embed(ktoK)
   return K, KtoL, ktoK
 end
+
+################################################################################
+#
+#  Coercion and in function
+#
+################################################################################
+
+
+function (K::AnticNumberField)(a::NfRelElem{nf_elem})
+  K != base_field(parent(a)) && return force_coerce(K, a)
+  for i in 2:degree(parent(a))
+    @assert iszero(coeff(a, i - 1))
+  end
+  return coeff(a, 0)
+end
+
+function in(a::NfRelElem{nf_elem}, K::AnticNumberField)
+  L = parent(a)
+  @assert base_field(L) == K
+  for i in 2:degree(parent(a))
+    if !iszero(coeff(a, i - 1))
+      return false
+    end
+  end
+  return true
+end
+
 
 ################################################################################
 #
@@ -975,4 +1005,49 @@ function relative_extension(K::AnticNumberField, k::AnticNumberField)
     error("Not a subfield!")
   end
   return relative_extension(mp)
+end
+
+################################################################################
+#
+#  Simplify
+#
+################################################################################
+
+
+function simplify(K::NfRel; cached::Bool = true, prec::Int = 100)
+  Labs, mL = absolute_field(K, cached = false)
+  OLabs = maximal_order(Labs)
+  OK = maximal_order_via_absolute(mL)
+  new_basis = Vector{nf_elem}(undef, degree(Labs))
+  B = pseudo_basis(OK)
+  ideals = Dict{NfOrdIdl, Vector{nf_elem}}()
+  for i = 1:length(B)
+    I = B[i][2].num
+    if !haskey(ideals, I)
+      bas = lll_basis(I)
+      ideals[I] = nf_elem[mL\(K(x)) for x in bas]
+    end
+  end
+  ind = 1
+  for i = 1:degree(OK)
+    I = B[i][2]
+    bI = ideals[I]
+    el = mL\(B[i][1])
+    for j = 1:length(bI)
+      new_basis[ind] = el*bI[j]
+      ind += 1
+    end
+  end
+  O = NfOrd(new_basis)
+  if prec == 100
+    OLLL = lll(O)
+  else
+    OLLL = lll(O, prec = prec)
+  end
+  el = _simplify(OLLL)
+  pel = mL(el)
+  f = minpoly(pel)
+  Ks = number_field(f, cached = cached, check = false)
+  mKs = hom(Ks, K, pel)
+  return Ks, mKs
 end

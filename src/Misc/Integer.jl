@@ -868,6 +868,18 @@ end
 #  need ecm to find small factors
 # then recurse...
 
+function _factors_trial_division(n::fmpz)
+  res, u = factor_trial_range(n)
+  factors = fmpz[]
+  for (p, v) in res
+    push!(factors, p)
+    n = divexact(n, p^v)
+  end
+  return factors, n
+
+end
+
+
 function ceil(::Type{fmpz}, a::BigFloat)
   return fmpz(ceil(BigInt, a))
 end

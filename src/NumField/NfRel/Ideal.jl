@@ -727,6 +727,40 @@ function element_with_valuation(a::T, primes::Vector{T}) where {T <: Union{NfOrd
   return x
 end
 
+function _mod_coeffs(a::NfRelElem, p::fmpz)
+  K = parent(a)
+  b = data(a)
+  coeffs = Vector{nf_elem}(undef, degree(K)+1)
+  for i = 0:degree(K)
+    coeffs[i+1] = mod(coeff(b, i), p)
+  end
+  Kx = parent(b)
+  return K(Kx(coeffs))
+end
+
+#computes a^e mod the integer p. Assumes that the base field of parent(a)
+# has a nice defining equation
+function _powermod(a::NfRelElem, e::T, p::fmpz) where T <: Union{fmpz, Integer}
+  @assert e >= 0
+  K = parent(a)
+  if iszero(e)
+    return one(K)
+  end
+  b = _mod_coeffs(a, p)
+  if isone(e)
+    return b
+  end
+  if iseven(e)
+    c = _powermod(b, div(e, 2), p)
+    c = _mod_coeffs(c*c, p)
+    return c
+  else
+    c = _powermod(b, e-1, p)
+    c = _mod_coeffs(c*b, p)
+    return c
+  end
+end
+
 # Algorithm V.8. and VI.8. in "Berechnung relativer Ganzheitsbasen mit dem
 # Round-2-Algorithmus" by C. Friedrichs.
 @doc Markdown.doc"""
@@ -789,7 +823,11 @@ function pradical(O::NfRelOrd, P::Union{NfOrdIdl, NfRelOrdIdl})
     q = order(F)
     k = clog(fmpz(degree(Oint)), q)
     for i = 1:d
-      t = Oint((L(K(elts_with_val[i]))*pbint[i][1])^(q^k))
+      if is_absolute && isdefining_polynomial_nice(K) && issimple(L)
+        t = Oint(_powermod(L(K(elts_with_val[i]))*pbint[i][1], q^k, p))
+      else
+        t = Oint((L(K(elts_with_val[i]))*pbint[i][1])^(q^k))
+      end
       ar = coordinates(t)
       for j = 1:d
         A[j, i] = mmF(divexact(ar[j], K(elts_with_val[j])))

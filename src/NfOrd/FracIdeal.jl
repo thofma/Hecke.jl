@@ -256,7 +256,6 @@ function basis(a::NfAbsOrdFracIdl{S, T}) where {S, T}
   K = nf(O)
   Oba = O.basis_nf
   res = Array{T}(undef, d)
-
   for i in 1:d
     z = K()
     for j in 1:d

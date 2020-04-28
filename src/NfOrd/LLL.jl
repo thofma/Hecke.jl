@@ -629,9 +629,23 @@ function lll_basis(A::NfOrdIdl, v::fmpz_mat = zero_matrix(FlintZZ, 1, 1); prec::
   L, T = lll(A, v, prec=prec)
   S = FakeFmpqMat(T)*basis_matrix(A)*basis_matrix(order(A))
   K = nf(order(A))
-  q = nf_elem[elem_from_mat_row(K, numerator(S), i, denominator(S)) for i=1:degree(K)]
+  nS = numerator(S)
+  dS = denominator(S)
+  q = nf_elem[elem_from_mat_row(K, nS, i, dS) for i=1:degree(K)]
   return q
 end
+
+function lll_basis(A::NfOrdFracIdl, v::fmpz_mat = zero_matrix(FlintZZ, 1, 1); prec::Int = 100)
+  assure_has_numerator_and_denominator(A)
+  L, T = lll(A.num, v, prec=prec)
+  S = FakeFmpqMat(T)*basis_matrix(A.num)*basis_matrix(order(A))
+  K = nf(order(A))
+  nS = numerator(S)
+  dS = denominator(S)
+  q = nf_elem[elem_from_mat_row(K, nS, i, dS*A.den) for i=1:degree(K)]
+  return q
+end
+
 
 function short_elem(A::NfOrdFracIdl,
                 v::fmpz_mat=zero_matrix(FlintZZ, 1,1); prec::Int = 100)

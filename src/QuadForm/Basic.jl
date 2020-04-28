@@ -1407,14 +1407,6 @@ end
 
 #
 
-function (K::AnticNumberField)(a::NfRelElem{nf_elem})
-  K != base_field(parent(a)) && return force_coerce(K, a)
-  for i in 2:degree(parent(a))
-    @assert coeff(a, i - 1) == 0
-  end
-  return coeff(a, 0)
-end
-
 istotally_real(::FlintRationalField) = true
 
 istotally_positive(x::fmpq) = x > 0

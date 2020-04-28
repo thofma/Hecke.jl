@@ -183,6 +183,7 @@ function Base.getindex(O::NfAbsOrd, i::Int)
   if iszero(i)
     return zero(O)
   end
+  assure_has_basis(O)
   @assert i <= degree(O) && i > 0 "Index must be a positive integer smaller than the dimension"
   return O.basis_ord[i]
 end
@@ -1016,7 +1017,7 @@ The equation order of then number field.
 equation_order(M::NfAbsOrd) = equation_order(nf(M))
 
 
-function _order(K::S, elt::Array{T, 1}; cached::Bool = true, check::Bool = true) where {S, T}
+function _order(K::S, elt::Array{T, 1}; cached::Bool = true, check::Bool = true) where {S <: Union{AnticNumberField, NfAbsNS}, T}
   n = degree(K)
 
   bas = elem_type(K)[one(K)]
@@ -1268,7 +1269,10 @@ function defines_order(K::S, x::FakeFmpqMat) where {S}
       l[j] = d[i]*d[j]
     end
     Ml = basis_matrix(l, FakeFmpqMat)
-    if !isone((Ml * xinv).den)
+    dd = Ml.den*xinv.den
+    R = ResidueRing(FlintZZ, dd, cached = false)
+    #if !isone((Ml * xinv).den)
+    if !iszero(map_entries(R, Ml.num)*map_entries(R, xinv.num))
       return false, x, Vector{elem_type(K)}()
     end
   end
