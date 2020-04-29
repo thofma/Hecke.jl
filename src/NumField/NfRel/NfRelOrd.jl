@@ -966,7 +966,6 @@ function add_to_order(O::NfRelOrd, elt::Vector{T}; check::Bool = false) where T
       if f in O
         break
       end
-      @show "Power $i"
       bas = _get_gens(O)
       els_to_add = Vector{NfRelElem{nf_elem}}()
       for x in bas

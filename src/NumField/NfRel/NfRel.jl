@@ -1015,7 +1015,7 @@ end
 
 
 function simplify(K::NfRel; cached::Bool = true, prec::Int = 100)
-  Labs, mL = absolute_field(K, cached = false)
+  Labs, mL = absolute_field(K, false)
   OLabs = maximal_order(Labs)
   OK = maximal_order_via_absolute(mL)
   new_basis = Vector{nf_elem}(undef, degree(Labs))
@@ -1031,14 +1031,15 @@ function simplify(K::NfRel; cached::Bool = true, prec::Int = 100)
   ind = 1
   for i = 1:degree(OK)
     I = B[i][2]
-    bI = ideals[I]
+    bI = ideals[I.num]
     el = mL\(B[i][1])
     for j = 1:length(bI)
-      new_basis[ind] = el*bI[j]
+      new_basis[ind] = divexact(el*bI[j], I.den)
       ind += 1
     end
   end
   O = NfOrd(new_basis)
+  O.disc = OLabs.disc
   if prec == 100
     OLLL = lll(O)
   else

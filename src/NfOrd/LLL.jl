@@ -223,9 +223,10 @@ function lll(M::NfOrd; prec::Int = 100)
   
   return _lll(M, prec)
 end
-# don't know what this is doing
-#for totally real field, the T_2-Gram matrix is the trace matrix, hence exact.
 
+
+
+#for totally real field, the T_2-Gram matrix is the trace matrix, hence exact.
 function _lll_gram(M::NfOrd)
   K = nf(M)
   @assert istotally_real(K)
@@ -468,10 +469,11 @@ function _lll_sublattice(M::NfOrd, u::Vector{Int}; prec = 100)
   n = degree(M)
   l = length(u)
   prec = max(prec, 10*n)
-  g= zero_matrix(FlintZZ, n, n)
+  local g::fmpz_mat
   ctx = Nemo.lll_ctx(0.99, 0.51, :gram)
-  #TODO: If one can compute the exact discriminant of the lattice, we could check correctness. 
-  # At the moment it is just heuristic.
+  bas = basis(M, K)[u]
+  profile_sub = nbits(prod(Hecke.upper_bound(t2(x), fmpz) for x in bas))
+  @vprint :LLL 3 "Starting with profile $(profile_sub)\n"
   while true
     local d::fmpz_mat
     while true
@@ -500,7 +502,18 @@ function _lll_sublattice(M::NfOrd, u::Vector{Int}; prec = 100)
     @vprint :LLL 3 "Still in the loop\n"
     prec *= 4
   end
-  return prec, g
+  @vprint :LLL 3 "Computing the profile of the new basis \n"
+  new_basis = g*basis_matrix(bas, FakeFmpqMat)
+  els = nf_elem[elem_from_mat_row(K, new_basis.num, i, new_basis.den) for i = 1:nrows(new_basis)]
+  new_profile = nbits(prod(Hecke.upper_bound(t2(x), fmpz) for x in els))
+  if new_profile <= profile_sub
+    @vprint :LLL 3 "Output a better basis!\n"
+    @vprint :LLL 3 "New profile: $(new_profile)\n"
+    return prec, g
+  else
+    @vprint :LLL 3 "Output the same basis :(\n"
+    return prec, identity_matrix(FlintZZ, l)
+  end
 end
 
 
@@ -513,6 +526,9 @@ function _lll_with_parameters(M::NfOrd, parameters::Tuple{Float64, Float64}, pre
   local g::fmpz_mat
   local d::fmpz_mat
   ctx = Nemo.lll_ctx(parameters[1], parameters[2], :gram)
+  dM = nbits(prod(Hecke.upper_bound(t2(x), fmpz) for x in basis(M, K)))
+  @vprint :LLL 1 "Input profile: $(dM)\n"
+  @vprint :LLL 1 "Target profile: $(nbits(disc^2)+divexact(n*(n-1), 2)) \n"
   att = 0 
   while steps == -1 || att < steps
     att += 1
@@ -570,18 +586,12 @@ function _lll_with_parameters(M::NfOrd, parameters::Tuple{Float64, Float64}, pre
       On.gen_index = M.gen_index
     end
     prec *= 2
-    local d1::fmpz_mat
-    while true
-      try
-        d1 = minkowski_gram_mat_scaled(On, prec)
-        break
-      catch e
-        prec = prec+10
-      end
-    end
-    if prod_diagonal(d1) < diag_d
+    dOn = nbits(prod(Hecke.upper_bound(t2(x), fmpz) for x in basis(On, K)))
+    if dOn < dM
       @vprint :LLL 3 "I use the transformation\n"
+      @vprint :LLL 3 "New profile: $(dOn)\n"
       M = On
+      dM = dOn
       prec = Int(floor(prec*1.5))
     else
       prec *= 2
