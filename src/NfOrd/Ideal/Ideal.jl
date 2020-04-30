@@ -1672,11 +1672,10 @@ end
 
 function mod(x::Union{NfOrdElem, AlgAssAbsOrdElem}, Q::AbsOrdQuoRing)
   O = parent(x)
-  a = coordinates(x) # this is already a copy
 
   y = ideal(Q)
-
   if isdefined(y, :princ_gen_special) && y.princ_gen_special[1] != 0
+    a = coordinates(x) # this is already a copy
     for i in 1:length(a)
       a[i] = mod(a[i], y.princ_gen_special[1 + y.princ_gen_special[1]])
     end
@@ -1688,11 +1687,10 @@ end
 
 function mod!(x::Union{NfOrdElem, AlgAssAbsOrdElem}, Q::AbsOrdQuoRing)
   O = parent(x)
-  a = coordinates(x, copy = false) # this is already a copy
-
   y = ideal(Q)
 
   if isdefined(y, :princ_gen_special) && y.princ_gen_special[1] != 0
+    a = coordinates(x, copy = false) # this is already a copy
     for i in 1:length(a)
       a[i] = mod(a[i], y.princ_gen_special[1 + y.princ_gen_special[1]])
     end

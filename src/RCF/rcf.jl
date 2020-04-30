@@ -1255,42 +1255,6 @@ function _rcf_reduce(CF::ClassField_pp)
   return nothing
 end
 
-@doc Markdown.doc"""
-    reduce_mod_powers(a::nf_elem, n::Int) -> nf_elem
-    reduce_mod_powers(a::nf_elem, n::Int, primes::Array{NfOrdIdl, 1}) -> nf_elem
-Given some non-zero algebraic integeri $\alpha$, try to find  $\beta$ s.th.
-$\beta$ is "small" and $\alpha/\beta$ is an $n$-th power.
-If the factorisation of $a$ into prime ideals is known, the ideals
-should be passed in.
-"""
-function reduce_mod_powers(a::nf_elem, n::Int, primes::Array{NfOrdIdl, 1})
-  # works quite well if a is not too large. There has to be an error
-  # somewhere in the precision stuff...
-  @vprint :ClassField 2 "reducing modulo $(n)-th powers\n"
-  @vprint :ClassField 3 "starting with $a\n"
-  return reduce_mod_powers(FacElem(a), n, primes)
-  
-end
-
-function reduce_mod_powers(a::FacElem{nf_elem, AnticNumberField}, n::Int, decom::Dict{NfOrdIdl, fmpz})
-  b = compact_presentation(a, n, decom = decom)
-  b1 = prod(nf_elem[k^(v % n) for (k, v) = b.fac if !iszero(v % n)])
-  d = denominator(b1, maximal_order(parent(b1)))
-  b1 *= d^n  #non-optimal, but integral...
-  return FacElem(b1)  
-end
-
-function reduce_mod_powers(a::FacElem{nf_elem, AnticNumberField}, n::Int, primes::Array{NfOrdIdl, 1})
-  vals = fmpz[valuation(a, p) for p in primes]
-  lp = Dict{NfOrdIdl, fmpz}(primes[i] => vals[i] for i = 1:length(primes) if !iszero(vals[i]))
-  return reduce_mod_powers(a, n, lp)  
-end
-
-function reduce_mod_powers(a::FacElem{nf_elem, AnticNumberField}, n::Int)
-  Zk = maximal_order(base_ring(a))
-  lp = factor_coprime(a, IdealSet(Zk))
-  return reduce_mod_powers(a, n, lp)
-end
 
 ###############################################################################
 #

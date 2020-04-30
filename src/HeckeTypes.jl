@@ -1835,6 +1835,7 @@ mutable struct NfRel{T} <: SimpleNumField{T}
   base_ring::Nemo.Field
   pol::Generic.Poly{T}
   S::Symbol
+  trace_basis::Vector{T}
   auxilliary_data::Array{Any, 1}
   @declare_other
 

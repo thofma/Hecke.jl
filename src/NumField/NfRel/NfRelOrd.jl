@@ -303,8 +303,16 @@ end
 #
 ################################################################################
 
-function assure_has_discriminant(O::NfRelOrd{T, S}) where {T, S}
-  if isdefined(O, :disc_abs) || isdefined(O, :disc_rel)
+function assure_has_discriminant(O::NfRelOrd{nf_elem, NfOrdFracIdl})
+  if isdefined(O, :disc_abs)
+    return nothing
+  end
+  if isequation_order(O)
+    K = nf(O)
+    F = base_field(K)
+    OF = maximal_order(F)
+    d = OF(discriminant(K.pol))
+    O.disc_abs = ideal(OF, d)
     return nothing
   end
   d = det(trace_matrix(O, copy = false))
@@ -315,11 +323,24 @@ function assure_has_discriminant(O::NfRelOrd{T, S}) where {T, S}
   end
   disc = d*a
   simplify(disc)
-  if T == nf_elem
-    O.disc_abs = numerator(disc)
-  else
-    O.disc_rel = numerator(disc)
+  O.disc_abs = numerator(disc)
+  return nothing
+end
+
+
+function assure_has_discriminant(O::NfRelOrd{T, S}) where {T, S}
+  if isdefined(O, :disc_rel)
+    return nothing
   end
+  d = det(trace_matrix(O, copy = false))
+  pb = pseudo_basis(O, copy = false)
+  a = pb[1][2]^2
+  for i = 2:degree(O)
+    a *= pb[i][2]^2
+  end
+  disc = d*a
+  simplify(disc)
+  O.disc_rel = numerator(disc)
   return nothing
 end
 
@@ -990,5 +1011,68 @@ function add_to_order(O::NfRelOrd, elt::Vector{T}; check::Bool = false) where T
     end
   end
   return O
+end
+
+################################################################################
+#
+#  Dedekind composite
+#
+################################################################################
+
+
+function dedekind_test_composite(O::NfRelOrd{nf_elem, NfOrdFracIdl}, P::NfOrdIdl)
+  !isequation_order(O) && error("Order must be an equation order")
+  !issimple(O) && error("Not implemented for non-simple extensions")
+
+  L = nf(O)
+  K = base_field(L)::AnticNumberField
+  T = L.pol::Generic.Poly{nf_elem}
+  Kx = parent(T)
+  OK = maximal_order(K)
+  F, mF = quo(OK, P)
+  Fy, y = PolynomialRing(F,"y", cached=false)
+
+  t = map_coeffs(mF, map_coeffs(OK, T), parent = Fy)
+  fail, g = gcd_with_failure(t, derivative(t))
+  if !isone(fail)
+    return K(fail.elem), O
+  end
+  h = divrem(t, g)[1]
+
+  G = map_coeffs(K, map_coeffs(x -> x.elem, g), parent = Kx)::typeof(T)
+  H = map_coeffs(K, map_coeffs(x -> x.elem, h), parent = Kx)::typeof(T)
+  assure_2_normal(P)
+  pi = anti_uniformizer(P)
+  F = pi*(G*H - T)
+  f = map_coeffs(mF, map_coeffs(OK, F), parent = Fy)
+
+  fail, dd = gcd_with_failure(g, h)
+  if !isone(fail)
+    return K(fail.elem), O
+  end
+  fail, d = gcd_with_failure(f, dd)
+  if !isone(fail)
+    return K(fail.elem), O
+  end
+
+  if isone(d)
+    return one(K), O
+  end
+
+  u = divrem(t, d)[1]
+  U = map_coeffs(K, map_coeffs(x -> x.elem, u), parent = Kx)
+  M = representation_matrix(pi*L(U))
+  for i = 1:nrows(M)
+    for j = 1:ncols(M)
+      @assert M[i, j] in OK
+    end
+  end
+  PM = PseudoMatrix(representation_matrix(pi*L(U)), [ K(1)*OK for i = 1:degree(O) ])
+  BM = basis_pmatrix(O)::PMat{nf_elem,Hecke.NfAbsOrdFracIdl{AnticNumberField,nf_elem}}
+  PN = vcat(BM, PM)::PMat{nf_elem,Hecke.NfAbsOrdFracIdl{AnticNumberField,nf_elem}}
+  PN = sub(pseudo_hnf_mod(PN, P, :lowerleft), degree(O) + 1:2*degree(O), 1:degree(O))
+  OO = Order(L, PN)
+  OO.isequation_order = false
+  return one(K), OO
 end
 

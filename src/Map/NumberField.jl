@@ -251,6 +251,27 @@ function inv(f::NfToNfMor)
   return hom(codomain(f), domain(f), img, check = false)
 end
 
+
+function haspreimage(m::NfToNfMor, a::nf_elem)
+  @assert parent(a) == codomain(m)
+  K = domain(m)
+  L = codomain(m)
+  M = zero_matrix(FlintQQ, degree(L), degree(K))
+  b = basis(K)
+  for i = 1:degree(K)
+    c = m(b[i])
+    for j = 1:degree(L)
+      M[j, i] = coeff(c, j - 1)
+    end
+  end
+  t = transpose(basis_matrix(nf_elem[a]))
+  fl, s = can_solve(M, t)
+  if !fl
+    return false, zero(K)
+  end
+  return true,  K(parent(K.pol)([ s[i, 1] for i = 1:degree(K) ]))
+end
+
 function _compute_preimg(m::NfToNfMor)
   # build the matrix for the basis change
   K = domain(m)

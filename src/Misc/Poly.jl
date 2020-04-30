@@ -1381,3 +1381,84 @@ function polynomial(R::Ring, A::Array{T, 1}) where {T <: Rational}
   return polynomial(map(R, A))
 end
 
+
+################################################################################
+#
+#  Prefactorization discriminant relative case
+#
+################################################################################
+
+
+function gcd_with_failure(a::Generic.Poly{T}, b::Generic.Poly{T}) where T
+  if length(a) > length(b)
+    (a, b) = (b, a)
+  end
+  if !isinvertible(lead(a))[1]
+    return lead(a), a
+  end
+  if !isinvertible(lead(b))[1]
+    return lead(b), a
+  end
+  while !iszero(a)
+    (a, b) = (mod(b, a), a)
+    if !iszero(a) && !isinvertible(lead(a))[1]
+      return lead(a), a
+    end
+  end
+  d = lead(b)
+  return one(parent(d)), divexact(b, d)
+end
+
+function mod(f::AbstractAlgebra.PolyElem{T}, g::AbstractAlgebra.PolyElem{T}) where {T <: RingElem}
+  check_parent(f, g)
+  if length(g) == 0
+    throw(DivideError())
+  end
+  if length(f) >= length(g)
+    f = deepcopy(f)
+    b = lead(g)
+    g = inv(b)*g
+    c = base_ring(f)()
+    while length(f) >= length(g)
+      l = -lead(f)
+      for i = 1:length(g) - 1
+        c = mul!(c, coeff(g, i - 1), l)
+        u = coeff(f, i + length(f) - length(g) - 1)
+        u = addeq!(u, c)
+        f = setcoeff!(f, i + length(f) - length(g) - 1, u)
+      end
+      set_length!(f, normalise(f, length(f) - 1))
+    end
+  end
+  return f
+end
+
+function Base.divrem(f::AbstractAlgebra.PolyElem{T}, g::AbstractAlgebra.PolyElem{T}) where {T <: RingElem}
+  check_parent(f, g)
+  if length(g) == 0
+     throw(DivideError())
+  end
+  if length(f) < length(g)
+     return zero(parent(f)), f
+  end
+  f = deepcopy(f)
+  binv = inv(lead(g))
+  g = divexact(g, lead(g))
+  qlen = length(f) - length(g) + 1
+  q = parent(f)()
+  fit!(q, qlen)
+  c = base_ring(f)()
+  while length(f) >= length(g)
+     q1 = lead(f)
+     l = -q1
+     q = setcoeff!(q, length(f) - length(g), q1*binv)
+     for i = 1:length(g) - 1
+        c = mul!(c, coeff(g, i - 1), l)
+        u = coeff(f, i + length(f) - length(g) - 1)
+        u = addeq!(u, c)
+        f = setcoeff!(f, i + length(f) - length(g) - 1, u)
+     end
+     set_length!(f, normalise(f, length(f) - 1))
+  end
+  return q, f
+end

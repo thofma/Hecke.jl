@@ -710,9 +710,54 @@ function norm(a::NfRelElem, new::Bool = true)
   return det(M)
 end
 
+################################################################################
+#
+#  Trace
+#
+################################################################################
+
+function assure_trace_basis(K::NfRel)
+  if isdefined(K, :trace_basis)
+    return nothing
+  end
+  F = base_field(K)
+  trace_basis = Vector{elem_type(F)}(undef, degree(K))
+  trace_basis[1] = F(degree(K)) 
+  a = gen(K)
+  for i = 2:degree(K)
+    #We can do better, probably...
+    M = representation_matrix(a)
+    trace_basis[i] = tr(M)
+    a *= gen(K)
+  end
+  K.trace_basis = trace_basis
+  return nothing
+end
+
 function tr(a::NfRelElem)
-  M = representation_matrix(a)
-  return tr(M)
+  K = parent(a)
+  assure_trace_basis(K)
+  t = coeff(a, 0)*K.trace_basis[1]
+  for i = 2:degree(K)
+    c = coeff(a, i-1)
+    if !iszero(c)
+      t += c*K.trace_basis[i]
+    end
+  end
+  return t
+end
+
+function tr(a::NfRelElem{nf_elem})
+  K = parent(a)
+  assure_trace_basis(K)
+  t = coeff(a, 0)*K.trace_basis[1]
+  for i = 2:degree(K)
+    c = coeff(a, i-1)
+    if !iszero(c)
+      add!(t, t, c*K.trace_basis[i])
+    end
+  end
+  return t
 end
 
 ################################################################################

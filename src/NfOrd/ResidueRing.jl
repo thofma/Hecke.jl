@@ -350,6 +350,10 @@ function zero(Q::AbsOrdQuoRing)
   return Q(zero(Q.base_ring))
 end
 
+function zero!(Q::AbsOrdQuoRingElem)
+  return zero(parent(Q))
+end
+
 ################################################################################
 #
 #  Equality

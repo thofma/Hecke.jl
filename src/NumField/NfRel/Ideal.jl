@@ -854,7 +854,7 @@ function pradical(O::NfRelOrd, P::Union{NfOrdIdl, NfRelOrdIdl})
     end
   end
   PM1 = PseudoMatrix(M1)
-  PM2 = PseudoMatrix(identity_matrix(K, d), [ pb[i][2]*deepcopy(P) for i = 1:d ])
+  PM2 = PseudoMatrix(identity_matrix(K, d), [ pb[i][2]*P for i = 1:d ])
   m = det(PM2)
   PM = sub(pseudo_hnf_full_rank_with_modulus(vcat(PM1, PM2), numerator(m, copy = false), :lowerleft), (d + 1):2*d, 1:d)
 
@@ -899,7 +899,6 @@ function ring_of_multipliers(a::NfRelOrdIdl{T1, T2}) where {T1, T2}
   end
   PM = PseudoMatrix(transpose(M), C)
   PM = sub(pseudo_hnf(PM, :upperright, true), 1:d, 1:d)
-  #PM = sub(pseudo_hnf_full_rank_with_modulus(PM, minimum(a), :upperright), 1:d, 1:d)
   N = inv(transpose(PM.matrix))
   PN = PseudoMatrix(N, [ simplify(inv(I)) for I in PM.coeffs ])
   res =  NfRelOrd{T1, T2}(nf(O), PN)

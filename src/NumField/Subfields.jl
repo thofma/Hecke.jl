@@ -468,3 +468,27 @@ function fixed_field1(K::AnticNumberField, auts::Vector{NfToNfMor})
 	end
   return subfield(K, bas, isbasis = true)
 end
+
+
+################################################################################
+#
+#  Fixed field as relative extension
+#
+################################################################################
+
+function fixed_field(K::AnticNumberField, auts::Vector{NfToNfMor}, ::Type{NfRel{nf_elem}})
+  F, mF = fixed_field(K, auts)
+  all_auts = closure(auts, div(degree(K), degree(F)))
+  Kx, x = PolynomialRing(K, "x", cached = false)
+  p = prod(x-y.prim_img for y in all_auts)
+  def_eq = map_coeffs(x -> haspreimage(mF, x)[2], p)
+  L, gL = number_field(def_eq, cached = false, check = false)
+  iso = hom(K, L, gL, mF.prim_img, gen(K))
+  #I also set the automorphisms...
+  autsL = Vector{NfRelToNfRelMor{nf_elem, nf_elem}}(undef, length(all_auts))
+  for i = 1:length(autsL)
+    autsL[i] = hom(L, L, iso(all_auts[i].prim_img))
+  end
+  Hecke._set_automorphisms_nf_rel(L, autsL)
+  return L, iso
+end
