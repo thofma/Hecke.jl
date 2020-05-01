@@ -108,9 +108,9 @@ end
 #
 ################################################################################
 
-order_type(K::NfRel{T}) where {T} = NfRelOrd{T, fractional_ideal_type(order_type(base_field(K)))}
+order_type(K::NfRel{T}) where {T} = NfRelOrd{T, fractional_ideal_type(order_type(base_field(K))), NfRelElem{T}}
 
-order_type(::Type{NfRel{T}}) where {T} = NfRelOrd{T, fractional_ideal_type(order_type(parent_type(T)))}
+order_type(::Type{NfRel{T}}) where {T} = NfRelOrd{T, fractional_ideal_type(order_type(parent_type(T))), NfRelElem{T}}
 
 ################################################################################
 #

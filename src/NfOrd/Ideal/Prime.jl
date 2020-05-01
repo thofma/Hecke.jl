@@ -974,6 +974,23 @@ function _prefactorization(I::NfOrdIdl)
   return prefactorization(f, n, f1)
 end
 
+function prefactorization(I::NfOrdIdl)
+  OK = order(I)
+  factors = _prefactorization(I)
+  ideals = NfOrdIdl[]
+  for q in factors
+    pp, r = Hecke._factors_trial_division(q)
+    for p in pp
+      push!(ideals, ideal(OK, p, I.gen_two))
+    end
+    r = ispower(r)[2]
+    if !isone(r)
+      push!(ideals, ideal(OK, r, I.gen_two) )
+    end
+  end
+  return ideals
+end
+
 ################################################################################
 #
 #  Primality testing

@@ -365,7 +365,11 @@ function automorphisms(L::T; copy::Bool = true) where {T <: NfRel}
   try
     Aut = _get_automorphisms_nf_rel(L)::Vector{morphism_type(T)}
     if copy
-      return deepcopy(Aut)::Vector{morphism_type(T)}
+      v = Vector{morphism_type(T)}(undef, length(Aut))
+      for i = 1:length(v)
+        v[i] = Aut[i]
+      end
+      return v::Vector{morphism_type(T)}
     else
       return Aut::Vector{morphism_type(T)}
     end
@@ -377,7 +381,11 @@ function automorphisms(L::T; copy::Bool = true) where {T <: NfRel}
   auts = _automorphisms(L)
   _set_automorphisms_nf_rel(L, auts)
   if copy
-    return deepcopy(auts)::Vector{morphism_type(T)}
+    v = Vector{morphism_type(T)}(undef, length(auts))
+    for i = 1:length(v)
+      v[i] = auts[i]
+    end
+    return v::Vector{morphism_type(T)}
   else
     return auts::Vector{morphism_type(T)}
   end

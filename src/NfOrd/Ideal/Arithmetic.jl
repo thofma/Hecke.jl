@@ -696,12 +696,22 @@ function idempotents(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
   O = order(x)
   d = degree(O)
 
+  if has_2_elem(x) && has_2_elem(y)
+    g, ux, vx = gcdx(x.gen_one, y.gen_one)
+    if isone(g)
+      z = O(ux*x.gen_one)
+      @hassert :NfOrd 2 z in x
+      @hassert :NfOrd 2 (1 - z) in y
+      return z, 1 - z
+    end
+  end
+
   mx = minimum(x)
   my = minimum(y)
 
-  g, u, v = gcdx(mx, my)
+  g, ux, vy = gcdx(mx, my)
   if isone(g)
-    z = O(u*mx)
+    z = O(ux*mx)
     @hassert :NfOrd 2 z in x
     @hassert :NfOrd 2 (1 - z) in y
     return z, 1 - z

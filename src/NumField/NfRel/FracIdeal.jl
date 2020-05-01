@@ -145,9 +145,9 @@ Creates the fractional ideal of $\mathcal O$ with basis pseudo-matrix $M$. If
 M_in_hnf is set, then it is assumed that $M$ is already in lower left pseudo
 HNF.
 """
-function fractional_ideal(O::NfRelOrd{T, S}, M::PMat{T, S}, M_in_hnf::Bool = false) where {T, S}
+function fractional_ideal(O::NfRelOrd{T, S, U}, M::PMat{T, S}, M_in_hnf::Bool = false) where {T, S, U}
   !M_in_hnf && !iszero(matrix(M)) ? M = pseudo_hnf(M, :lowerleft, true) : nothing
-  return NfRelOrdFracIdl{T, S}(O, M)
+  return NfRelOrdFracIdl{T, S, U}(O, M)
 end
 
 @doc Markdown.doc"""
@@ -155,27 +155,27 @@ end
 
 Creates the fractional ideal of $\mathcal O$ with basis matrix $M$.
 """
-function fractional_ideal(O::NfRelOrd{T, S}, M::Generic.Mat{T}) where {T, S}
+function fractional_ideal(O::NfRelOrd{T, S, U}, M::Generic.Mat{T}) where {T, S, U}
   coeffs = deepcopy(basis_pmatrix(O, copy = false)).coeffs
   return fractional_ideal(O, PseudoMatrix(M, coeffs))
 end
 
-function fractional_ideal(O::NfRelOrd{T, S}, A::Vector{<:NumFieldElem}) where {T, S}
+function fractional_ideal(O::NfRelOrd{T, S, U}, A::Vector{U}) where {T, S, U}
   if all(iszero, A)
     M = zero_matrix(base_field(nf(O)), degree(O), degree(O))
     pb = pseudo_basis(O)
-    return NfRelOrdFracIdl{T, S}(O, PseudoMatrix(M, [ deepcopy(pb[i][2]) for i = 1:degree(O)]))
+    return NfRelOrdFracIdl{T, S, U}(O, PseudoMatrix(M, [ deepcopy(pb[i][2]) for i = 1:degree(O)]))
   end
 
   return sum(fractional_ideal(O, a) for a in A if !iszero(a))
 end
 
-function fractional_ideal(O::NfRelOrd{T, S}, x::NumFieldElem{T}) where {T, S}
+function fractional_ideal(O::NfRelOrd{T, S, U}, x::U) where {T, S, U}
   d = degree(O)
   pb = pseudo_basis(O, copy = false)
   M = zero_matrix(base_field(nf(O)), d, d)
   if iszero(x)
-    return NfRelOrdFracIdl{T, S}(O, PseudoMatrix(M, [ deepcopy(pb[i][2]) for i = 1:d ]))
+    return NfRelOrdFracIdl{T, S, U}(O, PseudoMatrix(M, [ deepcopy(pb[i][2]) for i = 1:d ]))
   end
   for i = 1:d
     elem_to_mat_row!(M, i, pb[i][1]*x)
@@ -183,14 +183,14 @@ function fractional_ideal(O::NfRelOrd{T, S}, x::NumFieldElem{T}) where {T, S}
   M = M*basis_mat_inv(O, copy = false)
   PM = PseudoMatrix(M, [ deepcopy(pb[i][2]) for i = 1:d ])
   PM = pseudo_hnf(PM, :lowerleft)
-  return NfRelOrdFracIdl{T, S}(O, PM)
+  return NfRelOrdFracIdl{T, S, U}(O, PM)
 end
 
-*(O::NfRelOrd{T, S}, x::NumFieldElem{T}) where {T, S} = fractional_ideal(O, x)
+*(O::NfRelOrd{T, S, U}, x::U) where {T, S, U} = fractional_ideal(O, x)
 
-*(x::NumFieldElem{T}, O::NfRelOrd{T, S}) where {T, S} = fractional_ideal(O, x)
+*(x::U, O::NfRelOrd{T, S, U}) where {T, S, U} = fractional_ideal(O, x)
 
-function fractional_ideal(O::NfRelOrd{T, S}, a::NfRelOrdIdl{T, S}) where {T, S}
+function fractional_ideal(O::NfRelOrd{T, S, U}, a::NfRelOrdIdl{T, S, U}) where {T, S, U}
   return fractional_ideal(O, basis_pmatrix(a), true)
 end
 
@@ -206,8 +206,8 @@ end
 #
 ################################################################################
 
-function Base.deepcopy_internal(a::NfRelOrdFracIdl{T, S}, dict::IdDict) where {T, S}
-  z = NfRelOrdFracIdl{T, S}(a.order)
+function Base.deepcopy_internal(a::NfRelOrdFracIdl{T, S, U}, dict::IdDict) where {T, S, U}
+  z = NfRelOrdFracIdl{T, S, U}(a.order)
   for x in fieldnames(typeof(a))
     if x != :order && x != :parent && isdefined(a, x)
       setfield!(z, x, Base.deepcopy_internal(getfield(a, x), dict))
@@ -360,7 +360,7 @@ end
 
 Returns $a \cdot b$.
 """
-function *(a::NfRelOrdFracIdl{T, S}, b::NfRelOrdFracIdl{T, S}) where {T, S}
+function *(a::NfRelOrdFracIdl{T, S, U}, b::NfRelOrdFracIdl{T, S, U}) where {T, S, U}
   if iszero(a) || iszero(b)
     return nf(order(a))()*order(a)
   end

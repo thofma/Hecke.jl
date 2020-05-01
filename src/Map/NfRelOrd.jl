@@ -1,10 +1,10 @@
-mutable struct NfRelOrdToFqMor{T, S} <: Map{NfRelOrd{T, S}, FqFiniteField, HeckeMap, NfRelOrdToFqMor}
-  header::MapHeader
+mutable struct NfRelOrdToFqMor{T, S, U} <: Map{NfRelOrd{T, S, U}, FqFiniteField, HeckeMap, NfRelOrdToFqMor}
+  header::MapHeader{NfRelOrd{T, S, U}, FqFiniteField}
   poly_of_the_field::fq_poly
-  P::NfRelOrdIdl{T, S}
+  P::NfRelOrdIdl{T, S, U}
 
-  function NfRelOrdToFqMor{T, S}(O::NfRelOrd{T, S}, P::NfRelOrdIdl{T, S}) where {T, S}
-    z = new{T, S}()
+  function NfRelOrdToFqMor{T, S, U}(O::NfRelOrd{T, S, U}, P::NfRelOrdIdl{T, S, U}) where {T, S, U}
+    z = new{T, S, U}()
     z.P = P
     p = minimum(P, copy = false)
     F, mF = ResidueField(order(p), p)

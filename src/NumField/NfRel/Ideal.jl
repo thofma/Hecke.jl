@@ -200,12 +200,12 @@ Creates the ideal of $\mathcal O$ with basis pseudo-matrix $M$. If check is set,
 then it is checked whether $M$ defines an ideal. If M_in_hnf is set, then it is
 assumed that $M$ is already in lower left pseudo HNF.
 """
-function ideal(O::NfRelOrd{T, S}, M::PMat{T, S}, check::Bool = true, M_in_hnf::Bool = false) where {T, S}
+function ideal(O::NfRelOrd{T, S, U}, M::PMat{T, S}, check::Bool = true, M_in_hnf::Bool = false) where {T, S, U}
   if check
     !defines_ideal(O, M) && error("The pseudo-matrix does not define an ideal.")
   end
   !M_in_hnf ? M = pseudo_hnf(M, :lowerleft, true) : nothing
-  return NfRelOrdIdl{T, S}(O, M)
+  return NfRelOrdIdl{T, S, U}(O, M)
 end
 
 @doc Markdown.doc"""
@@ -225,7 +225,7 @@ end
 Creates the ideal $x\cdot a + y\cdot b$ of $\mathcal O$. If check is set,
 then it is checked whether these elements define an ideal.
 """
-function ideal(O::NfRelOrd{T, S}, x::NumFieldElem{T}, y::NumFieldElem{T}, a::S, b::S, check::Bool = true) where {T, S}
+function ideal(O::NfRelOrd{T, S, U}, x::U, y::U, a::S, b::S, check::Bool = true) where {T, S, U}
   d = degree(O)
   pb = pseudo_basis(O, copy = false)
   M = zero_matrix(base_field(nf(O)), 2*d, d)
@@ -244,7 +244,7 @@ function ideal(O::NfRelOrd{T, S}, x::NumFieldElem{T}, y::NumFieldElem{T}, a::S, 
     !defines_ideal(O, PM) && error("The elements do not define an ideal.")
   end
   PM = sub(pseudo_hnf(PM, :lowerleft), (d + 1):2*d, 1:d)
-  return NfRelOrdIdl{T, S}(O, PM)
+  return NfRelOrdIdl{T, S, U}(O, PM)
 end
 
 function ideal(O::NfRelOrd{T, S}, x::NumFieldElem{T}, y::NumFieldElem{T}, a::NfOrdIdl, b::NfOrdIdl, check::Bool = true) where {T, S}
@@ -266,21 +266,21 @@ end
 
 Creates the ideal $x\cdot \mathcal O$ of $\mathcal O$.
 """
-function ideal(O::NfRelOrd{T, S}, x::NfRelOrdElem) where {T, S}
+function ideal(O::NfRelOrd{T, S, U}, x::NfRelOrdElem{T, U}) where {T, S, U}
   x = O(x)
   d = degree(O)
   pb = pseudo_basis(O, copy = false)
   M = zero_matrix(base_field(nf(O)), d, d)
   if iszero(x)
-    return NfRelOrdIdl{T, S}(O, PseudoMatrix(M, [ deepcopy(pb[i][2]) for i = 1:d ]))
+    return NfRelOrdIdl{T, S, U}(O, PseudoMatrix(M, S[ deepcopy(pb[i][2]) for i = 1:d ]))
   end
   for i = 1:d
     elem_to_mat_row!(M, i, pb[i][1]*nf(O)(x))
   end
   M = M*basis_mat_inv(O, copy = false)
-  PM = PseudoMatrix(M, [ deepcopy(pb[i][2]) for i = 1:d ])
+  PM = PseudoMatrix(M, S[ deepcopy(pb[i][2]) for i = 1:d ])
   PM = pseudo_hnf(PM, :lowerleft)
-  return NfRelOrdIdl{T, S}(O, PM)
+  return NfRelOrdIdl{T, S, U}(O, PM)
 end
 
 function ideal(O::NfRelOrd, x::Union{ Int, fmpz, NfOrdElem })
@@ -297,22 +297,22 @@ end
 Creates the ideal $a \cdot \mathcal O$ of $\mathcal O$. If check is set,
 then it is checked whether $a$ defines an (integral) ideal.
 """
-function ideal(O::NfRelOrd{T, S}, a::S, check::Bool = true) where {T, S}
+function ideal(O::NfRelOrd{T, S, U}, a::S, check::Bool = true) where {T, S, U}
   d = degree(O)
   pb = pseudo_basis(O, copy = false)
   if iszero(a)
     M = zero_matrix(base_field(nf(O)), d, d)
-    PM = PseudoMatrix(M, [ a*pb[i][2] for i = 1:d ])
-    return NfRelOrdIdl{T, S}(O, PM)
+    PM = PseudoMatrix(M, S[ a*pb[i][2] for i = 1:d ])
+    return NfRelOrdIdl{T, S, U}(O, PM)
   end
 
   M = identity_matrix(base_field(nf(O)), d)
-  PM = PseudoMatrix(M, [ a*pb[i][2] for i = 1:d ])
+  PM = PseudoMatrix(M, S[ a*pb[i][2] for i = 1:d ])
   if check
     !defines_ideal(O, PM) && error("The coefficient ideal does not define an ideal.")
   end
   PM = pseudo_hnf(PM, :lowerleft)
-  return NfRelOrdIdl{T, S}(O, PM)
+  return NfRelOrdIdl{T, S, U}(O, PM)
 end
 
 function ideal(O::NfRelOrd{nf_elem, NfOrdFracIdl}, a::NfOrdIdl, check::Bool = true)
@@ -341,19 +341,19 @@ Creates the ideal $a \cdot \mathcal O$ of $\mathcal O$.
 
 *(a::Union{NfOrdIdl, NfRelOrdIdl}, O::NfRelOrd) = ideal(O, a)
 
-function fractional_ideal(O::NfRelOrd{T, S}, a::S) where {T, S}
+function fractional_ideal(O::NfRelOrd{T, S, U}, a::S) where {T, S, U}
   d = degree(O)
   pb = pseudo_basis(O, copy = false)
   if iszero(a)
     M = zero_matrix(base_field(nf(O)), d, d)
-    PM = PseudoMatrix(M, [ a*pb[i][2] for i = 1:d ])
-    return NfRelOrdFracIdl{T, S}(O, PM)
+    PM = PseudoMatrix(M, S[ a*pb[i][2] for i = 1:d ])
+    return NfRelOrdFracIdl{T, S, U}(O, PM)
   end
 
   M = identity_matrix(base_field(nf(O)), d)
-  PM = PseudoMatrix(M, [ a*pb[i][2] for i = 1:d ])
+  PM = PseudoMatrix(M, S[ a*pb[i][2] for i = 1:d ])
   PM = pseudo_hnf(PM, :lowerleft)
-  return NfRelOrdFracIdl{T, S}(O, PM)
+  return NfRelOrdFracIdl{T, S, U}(O, PM)
 end
 
 ################################################################################
@@ -393,8 +393,8 @@ end
 #
 ################################################################################
 
-function Base.deepcopy_internal(a::NfRelOrdIdl{T, S}, dict::IdDict) where {T, S}
-  z = NfRelOrdIdl{T, S}(a.order)
+function Base.deepcopy_internal(a::NfRelOrdIdl{T, S, U}, dict::IdDict) where {T, S, U}
+  z = NfRelOrdIdl{T, S, U}(a.order)
   for x in fieldnames(typeof(a))
     if x != :order && x != :parent && isdefined(a, x)
       setfield!(z, x, Base.deepcopy_internal(getfield(a, x), dict))
@@ -901,7 +901,7 @@ function ring_of_multipliers(a::NfRelOrdIdl{T1, T2}) where {T1, T2}
   PM = sub(pseudo_hnf(PM, :upperright, true), 1:d, 1:d)
   N = inv(transpose(PM.matrix))
   PN = PseudoMatrix(N, [ simplify(inv(I)) for I in PM.coeffs ])
-  res =  NfRelOrd{T1, T2}(nf(O), PN)
+  res = typeof(O)(nf(O), PN)
   return res
 end
 
@@ -1200,10 +1200,10 @@ end
 #
 ################################################################################
 
-function ResidueField(O::NfRelOrd{T, S}, P::NfRelOrdIdl{T, S}) where {T, S}
+function ResidueField(O::NfRelOrd{T, S, U}, P::NfRelOrdIdl{T, S, U}) where {T, S, U}
   @assert order(P) == O
   @assert P.is_prime == 1
-  mF = NfRelOrdToFqMor{T, S}(O, P)
+  mF = NfRelOrdToFqMor{T, S, U}(O, P)
   return codomain(mF), mF
 end
 

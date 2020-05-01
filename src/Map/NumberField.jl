@@ -418,7 +418,11 @@ function automorphisms(K::AnticNumberField; copy::Bool = true)
   if isautomorphisms_known(K)
     Aut = _get_automorphisms_nf(K)::Vector{NfToNfMor}
     if copy
-      return Base.copy(Aut)::Vector{NfToNfMor}
+      v = Vector{NfToNfMor}(undef, length(Aut))
+      for i = 1:length(v)
+        v[i] = Aut[i]
+      end
+      return v
     else
       return Aut::Vector{NfToNfMor}
     end
@@ -426,7 +430,11 @@ function automorphisms(K::AnticNumberField; copy::Bool = true)
   auts = _automorphisms(K)
   _set_automorphisms_nf(K, auts)
   if copy
-    return Base.copy(auts)
+    v = Vector{NfToNfMor}(undef, length(auts))
+    for i = 1:length(v)
+      v[i] = auts[i]
+    end
+    return v
   else
     return auts
   end

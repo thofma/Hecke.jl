@@ -16,13 +16,13 @@ mutable struct NfRelOrdSet{T}
   end
 end
 
-mutable struct NfRelOrd{T, S} <: Ring
+mutable struct NfRelOrd{T, S, U} <: Ring
   nf::NumField{T}
-  basis_nf::Vector{NumFieldElem{T}}
+  basis_nf::Vector{U}
   basis_matrix::Generic.MatSpaceElem{T}
   basis_mat_inv::Generic.MatSpaceElem{T}
   basis_pmatrix::PMat{T, S}
-  pseudo_basis::Vector{Tuple{NumFieldElem{T}, S}}
+  pseudo_basis::Vector{Tuple{U, S}}
 
   disc_abs::NfOrdIdl # used if T == nf_elem
   disc_rel#::NfRelOrdIdl{T} # used otherwise; is a forward declaration
@@ -38,8 +38,8 @@ mutable struct NfRelOrd{T, S} <: Ring
 
   inv_coeff_ideals::Vector{S}
 
-  function NfRelOrd{T, S}(K::NumField{T}) where {T, S}
-    z = new{T, S}()
+  function NfRelOrd{T, S, U}(K::NumField{T}) where {T, S, U}
+    z = new{T, S, U}()
     z.nf = K
     z.parent = NfRelOrdSet{T}(K)
     z.isequation_order = false
@@ -47,8 +47,8 @@ mutable struct NfRelOrd{T, S} <: Ring
     return z
   end
 
-  function NfRelOrd{T, S}(K::NumField{T}, M::PMat{T, S}) where {T, S}
-    z = NfRelOrd{T, S}(K)
+  function NfRelOrd{T, S, U}(K::NumField{T}, M::PMat{T, S}) where {T, S, U}
+    z = NfRelOrd{T, S, U}(K)
     z.nf = K
     z.parent = NfRelOrdSet{T}(K)
     z.basis_pmatrix = M
@@ -56,7 +56,7 @@ mutable struct NfRelOrd{T, S} <: Ring
     return z
   end
 
-  function NfRelOrd{T, S}(K::NumField{T}, M::Generic.MatSpaceElem{T}) where {T, S}
+  function NfRelOrd{T, S, U}(K::NumField{T}, M::Generic.MatSpaceElem{T}) where {T, S, U}
     z = NfRelOrd{T, S}(K)
     z.nf = K
     z.parent = NfRelOrdSet{T}(K)
@@ -72,14 +72,14 @@ end
 #
 ###############################################################################
 
-mutable struct NfRelOrdElem{T} <: RingElem
+mutable struct NfRelOrdElem{T, U} <: RingElem
   parent#::NfRelOrd{T, S} # I don't want to drag the S around
-  elem_in_nf::NumFieldElem{T}
+  elem_in_nf::U
   coordinates::Vector{T}
   has_coord::Bool
 
-  function NfRelOrdElem{T}(O::NfRelOrd{T}) where {T}
-    z = new{T}()
+  function NfRelOrdElem{T, U}(O::NfRelOrd{T}) where {T, U}
+    z = new{T, U}()
     z.parent = O
     z.elem_in_nf = zero(nf(O))
     z.coordinates = Vector{T}(undef, degree(O))
@@ -87,8 +87,8 @@ mutable struct NfRelOrdElem{T} <: RingElem
     return z
   end
 
-  function NfRelOrdElem{T}(O::NfRelOrd{T}, a::NumFieldElem{T}) where {T}
-    z = new{T}()
+  function NfRelOrdElem{T, U}(O::NfRelOrd{T}, a::U) where {T, U}
+    z = new{T, U}()
     z.parent = O
     z.elem_in_nf = a
     z.coordinates = Vector{T}(undef, degree(O))
@@ -96,8 +96,8 @@ mutable struct NfRelOrdElem{T} <: RingElem
     return z
   end
 
-  function NfRelOrdElem{T}(O::NfRelOrd{T}, a::NumFieldElem{T}, arr::Vector{T}) where {T}
-    z = new{T}()
+  function NfRelOrdElem{T, U}(O::NfRelOrd{T}, a::U, arr::Vector{T}) where {T, U}
+    z = new{T, U}()
     z.parent = O
     z.elem_in_nf = a
     z.coordinates = arr
@@ -112,20 +112,20 @@ end
 #
 ###############################################################################
 
-mutable struct NfRelOrdFracIdlSet{T, S}
-  order::NfRelOrd{T, S}
+mutable struct NfRelOrdFracIdlSet{T, S, U}
+  order::NfRelOrd{T, S, U}
 
-  function NfRelOrdFracIdlSet{T, S}(O::NfRelOrd{T, S}) where {T, S}
+  function NfRelOrdFracIdlSet{T, S, U}(O::NfRelOrd{T, S, U}) where {T, S, U}
     a = new(O)
     return a
   end
 end
 
-mutable struct NfRelOrdFracIdl{T, S}
-  order::NfRelOrd{T, S}
-  parent::NfRelOrdFracIdlSet{T, S}
+mutable struct NfRelOrdFracIdl{T, S, U}
+  order::NfRelOrd{T, S, U}
+  parent::NfRelOrdFracIdlSet{T, S, U}
   basis_pmatrix::PMat{T, S}
-  pseudo_basis::Vector{Tuple{NumFieldElem{T}, S}}
+  pseudo_basis::Vector{Tuple{U, S}}
   basis_matrix::Generic.MatSpaceElem{T}
   basis_mat_inv::Generic.MatSpaceElem{T}
   den::fmpz
@@ -133,16 +133,16 @@ mutable struct NfRelOrdFracIdl{T, S}
   norm
   has_norm::Bool
 
-  function NfRelOrdFracIdl{T, S}(O::NfRelOrd{T, S}) where {T, S}
-    z = new{T, S}()
+  function NfRelOrdFracIdl{T, S, U}(O::NfRelOrd{T, S, U}) where {T, S, U}
+    z = new{T, S, U}()
     z.order = O
-    z.parent = NfRelOrdFracIdlSet{T, S}(O)
+    z.parent = NfRelOrdFracIdlSet{T, S, U}(O)
     z.has_norm = false
     return z
   end
 
-  function NfRelOrdFracIdl{T, S}(O::NfRelOrd{T, S}, M::PMat{T, S}) where {T, S}
-    z = NfRelOrdFracIdl{T, S}(O)
+  function NfRelOrdFracIdl{T, S, U}(O::NfRelOrd{T, S, U}, M::PMat{T, S}) where {T, S, U}
+    z = NfRelOrdFracIdl{T, S, U}(O)
     z.basis_pmatrix = M
     z.basis_matrix = M.matrix
     return z
@@ -155,20 +155,20 @@ end
 #
 ###############################################################################
 
-mutable struct NfRelOrdIdlSet{T, S}
-  order::NfRelOrd{T, S}
+mutable struct NfRelOrdIdlSet{T, S, U}
+  order::NfRelOrd{T, S, U}
 
-  function NfRelOrdIdlSet{T, S}(O::NfRelOrd{T, S}) where {T, S}
+  function NfRelOrdIdlSet{T, S, U}(O::NfRelOrd{T, S, U}) where {T, S, U}
     a = new(O)
     return a
   end
 end
 
-mutable struct NfRelOrdIdl{T, S}
-  order::NfRelOrd{T, S}
-  parent::NfRelOrdIdlSet{T, S}
+mutable struct NfRelOrdIdl{T, S, U}
+  order::NfRelOrd{T, S, U}
+  parent::NfRelOrdIdlSet{T, S, U}
   basis_pmatrix::PMat{T, S}
-  pseudo_basis::Vector{Tuple{NumFieldElem{T}, S}}
+  pseudo_basis::Vector{Tuple{U, S}}
   basis_matrix::Generic.MatSpaceElem{T}
   basis_mat_inv::Generic.MatSpaceElem{T}
 
@@ -181,21 +181,21 @@ mutable struct NfRelOrdIdl{T, S}
 
   minimum
   non_index_div_poly::fq_poly # only used if the ideal is a prime ideal not dividing the index
-  p_uniformizer::NfRelOrdElem{T}
-  anti_uniformizer::NumFieldElem{T}
+  p_uniformizer::NfRelOrdElem{T, U}
+  anti_uniformizer::U
 
-  function NfRelOrdIdl{T, S}(O::NfRelOrd{T, S}) where {T, S}
-    z = new{T, S}()
+  function NfRelOrdIdl{T, S, U}(O::NfRelOrd{T, S, U}) where {T, S, U}
+    z = new{T, S, U}()
     z.order = O
-    z.parent = NfRelOrdIdlSet{T, S}(O)
+    z.parent = NfRelOrdIdlSet{T, S, U}(O)
     z.has_norm = false
     z.is_prime = 0
     z.splitting_type = (0,0)
     return z
   end
 
-  function NfRelOrdIdl{T, S}(O::NfRelOrd{T, S}, M::PMat{T, S}) where {T, S}
-    z = NfRelOrdIdl{T, S}(O)
+  function NfRelOrdIdl{T, S, U}(O::NfRelOrd{T, S, U}, M::PMat{T, S}) where {T, S, U}
+    z = NfRelOrdIdl{T, S, U}(O)
     z.basis_pmatrix = M
     z.basis_matrix = M.matrix
     return z

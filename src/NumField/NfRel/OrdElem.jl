@@ -27,13 +27,13 @@ Given an element $a$ of the ambient number field of $\mathcal O$, this
 function coerces the element into $\mathcal O$. If `check` is `true`
 it will be checked that $a$ is contained in $\mathcal O$.
 """
-function (O::NfRelOrd)(a::NumFieldElem{T}, check::Bool = true) where T
+function (O::NfRelOrd{S, T, U})(a::U, check::Bool = true) where {S, T, U}
   if check
     x, y = _check_elem_in_order(a, O)
     !x && error("Number field element not in the order.")
-    return NfRelOrdElem{T}(O, deepcopy(a), y)
+    return NfRelOrdElem{S, U}(O, deepcopy(a), y)
   else
-    return NfRelOrdElem{T}(O, deepcopy(a))
+    return NfRelOrdElem{S, U}(O, deepcopy(a))
   end
 end
 
@@ -45,7 +45,7 @@ $\mathcal O$, this function coerces the element into $\mathcal O$.
 If `check` is `true` it will be checked that $a$ is contained in
 $\mathcal O$.
 """
-(O::NfRelOrd)(a::NfRelOrdElem{T}, check::Bool = true) where {T} = O(nf(O)(a.elem_in_nf), check)
+(O::NfRelOrd{S, T, U})(a::NfRelOrdElem{S, U}, check::Bool = true) where {S, T, U} = O(nf(O)(a.elem_in_nf), check)
 
 function (O::NfRelOrd)(a::Vector{T}, check::Bool = true) where T
   t = nf(O)()
@@ -68,7 +68,7 @@ end
 
 Constructs a new element of $\mathcal O$ which is set to $0$.
 """
-(O::NfRelOrd{T, S})() where {T, S} = NfRelOrdElem{T}(O)
+(O::NfRelOrd{T, S, U})() where {T, S, U} = NfRelOrdElem{T, U}(O)
 
 ################################################################################
 #
