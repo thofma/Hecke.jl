@@ -681,9 +681,8 @@ end
 
 # Algorithm IV.6. in "Berechnung relativer Ganzheitsbasen mit dem
 # Round-2-Algorithmus" by C. Friedrichs.
-function dedekind_test(O::NfRelOrd, p::Union{NfOrdIdl, NfRelOrdIdl}, compute_order::Type{Val{S}} = Val{true}) where S
+function dedekind_test(O::NfRelOrd{U1, V, Z}, p::Union{NfOrdIdl, NfRelOrdIdl}, compute_order::Type{Val{S}} = Val{true}) where {S, U1, V, Z <: NfRelElem}
   !isequation_order(O) && error("Order must be an equation order")
-  !issimple(O) && error("Not implemented for non-simple extensions")
 
   L = nf(O)
   K = base_field(L)
@@ -1067,12 +1066,12 @@ end
 ################################################################################
 
 
-function dedekind_test_composite(O::NfRelOrd{nf_elem, NfOrdFracIdl, NfRelElem{nf_elem}}, P::NfOrdIdl)
+function dedekind_test_composite(O::NfRelOrd{U1, V, Z}, P::Union{NfRelOrdIdl, NfOrdIdl}) where {U1, V, Z <: NfRelElem}
   !isequation_order(O) && error("Order must be an equation order")
 
   L = nf(O)
-  K = base_field(L)::AnticNumberField
-  T = L.pol::Generic.Poly{nf_elem}
+  K = base_field(L)
+  T = L.pol
   Kx = parent(T)
   OK = maximal_order(K)
   F, mF = quo(OK, P)
@@ -1109,25 +1108,24 @@ function dedekind_test_composite(O::NfRelOrd{nf_elem, NfOrdFracIdl, NfRelElem{nf
   U = map_coeffs(K, map_coeffs(x -> x.elem, u), parent = Kx)
   M = representation_matrix(pi*L(U))
   PM = PseudoMatrix(representation_matrix(pi*L(U)), [ K(1)*OK for i = 1:degree(O) ])
-  BM = basis_pmatrix(O)::PMat{nf_elem,Hecke.NfAbsOrdFracIdl{AnticNumberField,nf_elem}}
-  PN = vcat(BM, PM)::PMat{nf_elem,Hecke.NfAbsOrdFracIdl{AnticNumberField,nf_elem}}
-  #pseudo_hnf(PN, :lowerleft, true)
+  BM = basis_pmatrix(O)
+  PN = vcat(BM, PM)
   PN = sub(pseudo_hnf_full_rank_with_modulus(PN, P, :lowerleft), degree(O) + 1:2*degree(O), 1:degree(O))
-  OO = NfRelOrd{nf_elem, NfOrdFracIdl, NfRelElem{nf_elem}}(L, PN)
+  OO = typeof(O)(L, PN)
   OO.isequation_order = false
   return one(K), OO
 end
 
-function prefactorization_discriminant(K::NfRel{nf_elem}, d::NfOrdIdl)
+function prefactorization_discriminant(K::NfRel, d::Union{NfRelOrdIdl, NfOrdIdl})
   OK = order(d)
-  
+  @assert nf(OK) == base_field(K)
   f = K.pol
-  factors = NfOrdIdl[]
+  factors = typeof(d)[]
   moduli = prefactorization(d)
   while !isempty(moduli)
     I = pop!(moduli)
     I = ispower(I)[2]
-    if isprime(minimum(I))
+    if isprime(absolute_minimum(I))
       push!(factors, I)
       continue
     end
@@ -1141,27 +1139,42 @@ function prefactorization_discriminant(K::NfRel{nf_elem}, d::NfOrdIdl)
       continue
     end
     J = ideal(OK, fail.elem)
-    cp = coprime_base(NfOrdIdl[J, I])
-
+    cp = coprime_base(typeof(d)[J, I])
     append!(moduli, cp)
   end
   return factors
 end
 
-function maximal_order(O::NfRelOrd{nf_elem, NfOrdFracIdl, NfRelElem{nf_elem}})
-  K = nf(O)::NfRel{nf_elem}
+function prefactorization(I::NfRelOrdIdl)
+  OK = order(I)
+  m = absolute_minimum(I)
+  ideals = typeof(I)[]
+  pp, r = Hecke._factors_trial_division(m)
+  for p in pp
+    push!(ideals, I + ideal(OK, p))
+  end
+  r = ispower(r)[2]
+  if !isone(r)
+    push!(ideals, I + ideal(OK, r))
+  end
+  return ideals
+end
+
+function maximal_order(O::NfRelOrd{S, T, U}) where {S, T, U <: NfRelElem}
+  K = nf(O)
   L = base_field(K)
   OL = maximal_order(L)
   d = discriminant(O)
   facts = prefactorization_discriminant(K, d)
-  sort!(facts, by = x -> minimum(x, copy = false), rev = true)
+  sort!(facts, by = x -> absolute_minimum(x), rev = true)
   @vprint :NfRelOrd 1 "Factors of the discriminant lying over $([minimum(x) for x in facts]) \n"
   E = EquationOrder(K)
   OO = O
   while !isempty(facts)
     p = pop!(facts)
-    if isprime(minimum(p, copy = false))
-      @vprint :NfRelOrd 1 "Factoring ideal over $(minimum(p))\n"
+    pm = absolute_minimum(p)
+    if isprime(pm)
+      @vprint :NfRelOrd 1 "Factoring ideal over $(pm)\n"
       @vtime :NfRelOrd 1 lf = factor(p)
       for q in keys(lf)
         @vprint :NfRelOrd 1 "Computing pmaximal order for $(q)\n"
@@ -1169,11 +1182,11 @@ function maximal_order(O::NfRelOrd{nf_elem, NfOrdFracIdl, NfRelElem{nf_elem}})
         @vtime :NfRelOrd 1 OO = sum_as_OK_modules(OO, Oq)
       end
     else
-      @vprint :NfRelOrd 1 "Dedekind test for ideal lying over $(minimum(p))\n"
+      @vprint :NfRelOrd 1 "Dedekind test for ideal lying over $(pm)\n"
       @vtime :NfRelOrd 1 fail, E1 = Hecke.dedekind_test_composite(E, p)
       if !isone(fail)
         J = ideal(OL, fail.elem)
-        cp = coprime_base(NfOrdIdl[J, p])
+        cp = coprime_base(typeof(p)[J, p])
         append!(facts, cp)
         continue
       end
@@ -1182,7 +1195,7 @@ function maximal_order(O::NfRelOrd{nf_elem, NfOrdFracIdl, NfRelElem{nf_elem}})
       end
       g = gcd(discriminant(OO), p)
       if !isone(g)
-        @vprint :NfRelOrd 1 "Factoring ideal over $(minimum(g))\n"
+        @vprint :NfRelOrd 1 "Factoring ideal over $(absolute_minimum(g))\n"
         @vtime :NfRelOrd 1 lf = factor(g)
         for q in keys(lf)
           @vprint :NfRelOrd 1 "Computing pmaximal order for $(q)\n"

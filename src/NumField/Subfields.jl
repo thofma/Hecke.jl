@@ -476,8 +476,12 @@ end
 #
 ################################################################################
 
-function fixed_field(K::AnticNumberField, auts::Vector{NfToNfMor}, ::Type{NfRel{nf_elem}})
+function fixed_field(K::AnticNumberField, auts::Vector{NfToNfMor}, ::Type{NfRel{nf_elem}}; simplify_subfield::Bool = true)
   F, mF = fixed_field(K, auts)
+  if simplify_subfield
+    F, mF1 = simplify(F, cached = false)
+    mF = mF1*mF
+  end
   all_auts = closure(auts, div(degree(K), degree(F)))
   Kx, x = PolynomialRing(K, "x", cached = false)
   p = prod(x-y.prim_img for y in all_auts)

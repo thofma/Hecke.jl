@@ -996,16 +996,30 @@ function kummer_generator(K::NfRel{nf_elem})
   if length(gens) > 1
     error("Not a Kummer extension!")
   end
-  gen = gens[1]
+  gen_aut = gens[1]
   a = zero(K)
+  stable = 10
+  inter = 1
+  first = true
   while iszero(a)
-    b = rand(K, -5:5)
+    stable -= 1
+    if iszero(stable)
+      inter += 1
+      stable = 10
+    end
+    if first
+      first = false
+      b = gen(K)
+    else
+      b = rand(K, -inter:inter)
+    end
     a = b
     new_b = b
     for i = 1:n-1
-      new_b = gen(new_b)
+      new_b = gen_aut(new_b)
       a += roots[i+1]*new_b
     end
+
   end
   res = k(a^n)
   #We even reduce the support....
@@ -1060,24 +1074,23 @@ end
 
 
 function simplify(K::NfRel; cached::Bool = true, prec::Int = 100)
-  Labs, mL = absolute_field(K, false)
-  OLabs = maximal_order(Labs)
-  OK = maximal_order_via_absolute(mL)
-  new_basis = Vector{nf_elem}(undef, degree(Labs))
+  Kabs, mK = absolute_field(K, false)
+  OK = maximal_order(K)
+  new_basis = Vector{nf_elem}(undef, degree(Kabs))
   B = pseudo_basis(OK)
   ideals = Dict{NfOrdIdl, Vector{nf_elem}}()
   for i = 1:length(B)
     I = B[i][2].num
     if !haskey(ideals, I)
       bas = lll_basis(I)
-      ideals[I] = nf_elem[mL\(K(x)) for x in bas]
+      ideals[I] = nf_elem[mK\(K(x)) for x in bas]
     end
   end
   ind = 1
   for i = 1:degree(OK)
     I = B[i][2]
     bI = ideals[I.num]
-    el = mL\(B[i][1])
+    el = mK\(B[i][1])
     for j = 1:length(bI)
       new_basis[ind] = divexact(el*bI[j], I.den)
       ind += 1

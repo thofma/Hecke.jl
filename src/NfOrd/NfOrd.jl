@@ -511,22 +511,27 @@ function minkowski_matrix(O::NfOrd, abs_tol::Int = 64)
   if isdefined(O, :minkowski_matrix) && O.minkowski_matrix[2] > abs_tol
     A = deepcopy(O.minkowski_matrix[1])
   else
-    T = Vector{Vector{arb}}(undef, degree(O))
-    B = O.basis_nf
-    for i in 1:degree(O)
-      T[i] = minkowski_map(B[i], abs_tol)
-    end
-    p = maximum(Int[ prec(parent(T[i][j])) for i in 1:degree(O), j in 1:degree(O) ])
-    M = zero_matrix(ArbField(p, cached = false), degree(O), degree(O))
-    for i in 1:degree(O)
-      for j in 1:degree(O)
-        M[i, j] = T[i][j]
-      end
-    end
+    M = minkowski_matrix(O.basis_nf, abs_tol)
     O.minkowski_matrix = (M, abs_tol)
     A = deepcopy(M)
   end
   return A
+end
+
+function minkowski_matrix(B::Vector{nf_elem}, abs_tol::Int = 64)
+  K = parent(B[1])
+  T = Vector{Vector{arb}}(undef, length(B))
+  for i in 1:length(B)
+    T[i] = minkowski_map(B[i], abs_tol)
+  end
+  p = maximum(Int[ prec(parent(T[i][j])) for i in 1:length(B), j in 1:degree(K) ])
+  M = zero_matrix(ArbField(p, cached = false), length(B), degree(K))
+  for i in 1:length(B)
+    for j in 1:degree(K)
+      M[i, j] = T[i][j]
+    end
+  end
+  return M
 end
 
 @doc Markdown.doc"""
@@ -553,6 +558,17 @@ function minkowski_gram_mat_scaled(O::NfOrd, prec::Int = 64)
   for i=1:degree(O)
     fmpz_mat_entry_add_ui!(A, i, i, UInt(nrows(A)))
   end
+  return A
+end
+
+function minkowski_gram_mat_scaled(B::Vector{nf_elem}, prec::Int = 64)
+  K = parent(B[1])
+  c = minkowski_matrix(B, prec)
+  d = zero_matrix(FlintZZ, length(B), degree(K))
+  A = zero_matrix(FlintZZ, length(B), length(B))
+  round_scale!(d, c, prec)
+  ccall((:fmpz_mat_gram, libflint), Nothing, (Ref{fmpz_mat}, Ref{fmpz_mat}), A, d)
+  shift!(A, -prec)
   return A
 end
 

@@ -702,6 +702,85 @@ end
 
 ################################################################################
 #
+#  IsPower function
+#
+################################################################################
+
+
+function ispower(I::NfRelOrdIdl)
+  m = minimum(I)
+  if isone(m)
+    return 0, I
+  end
+  OL = order(I)
+  d = discriminant(order(I))
+  b, a = ppio(m, d) # hopefully: gcd(a, d) = 1 = gcd(a, b) and ab = m
+
+  e, JJ = ispower_unram(gcd(I, ideal(OL, a)))
+
+  if isone(e)
+    return 1, I
+  end
+
+  g = e
+  J = one(I)
+  lp = factor(b)
+  for p = keys(lp.fac)
+    lP = prime_decomposition(order(I), Int(p))
+    for i=1:length(lP)
+      P = lP[i][1]
+      v = valuation(I, P)
+      gn = gcd(v, g)
+      if gn == 1
+        return gn, I
+      end
+      if g != gn
+        J = J^div(g, gn)
+      end
+      if v != 0
+        J *= P^div(v, gn)
+      end
+      g = gn
+    end
+  end
+  return g, JJ^div(e, g)*J
+end
+
+function ispower_unram(I::NfRelOrdIdl)
+  m = minimum(I)
+  if isone(m)
+    return 0, I
+  end
+  OL = order(I)
+
+  e, ra = ispower(m)
+  J = gcd(I, ideal(OL, ra))
+
+  II = J^e//I
+  II = simplify(II)
+  @assert isone(denominator(II))
+
+  f, s = ispower_unram(numerator(II))
+
+  g = gcd(f, e)
+  if isone(g)
+    return 1, I
+  end
+
+  II = inv(s)^div(f, g) * J^div(e, g)
+  II = simplify(II)
+  @assert isone(denominator(II))
+  JJ = numerator(II)
+  e = g
+
+  return e, JJ
+end
+
+
+
+
+################################################################################
+#
 #  P-radical
 #
 ################################################################################
@@ -1192,6 +1271,14 @@ function assure_has_minimum(A::NfRelOrdIdl)
   M = simplify(M)
   A.minimum = numerator(M)
   return nothing
+end
+
+function absolute_minimum(I::NfOrdIdl)
+  return minimum(I)
+end
+
+function absolute_minimum(I::NfRelOrdIdl)
+  return absolute_minimum(minimum(I))::fmpz
 end
 
 ################################################################################
