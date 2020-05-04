@@ -201,7 +201,7 @@ function _assure_has_basis(O::AlgAssAbsOrd)
   if !isdefined(O, :basis)
     B = basis(algebra(O))
     M = basis_matrix(O, copy = false)
-    v = Vector{AlgAssAbsOrdElem}(undef, degree(O))
+    v = Vector{elem_type(O)}(undef, degree(O))
     for i in 1:degree(O)
       w = sum(M.num[i, j]//M.den * B[j] for j in 1:degree(O))
       v[i] = O(w)
@@ -213,7 +213,7 @@ end
 
 function assure_basis_mat_inv(O::AlgAssAbsOrd)
   if !isdefined(O, :basis_mat_inv)
-    O.basis_mat_inv=inv(basis_matrix(O, copy = false))
+    O.basis_mat_inv = inv(basis_matrix(O, copy = false))
   end
   return nothing
 end
@@ -246,20 +246,20 @@ end
 function basis(O::AlgAssAbsOrd; copy::Bool = true)
   _assure_has_basis(O)
   if copy
-    return deepcopy(O.basis)
+    return deepcopy(O.basis)::Vector{elem_type(O)}
   else
-    return O.basis
+    return O.basis::Vector{elem_type(O)}
   end
 end
 
 absolute_basis(O::AlgAssAbsOrd) = basis(O)
 
-function basis_alg(O::AlgAssAbsOrd; copy::Bool = true)
+function basis_alg(O::AlgAssAbsOrd{S, T}; copy::Bool = true) where {S, T}
   assure_basis_alg(O)
   if copy
-    return deepcopy(O.basis_alg)
+    return deepcopy(O.basis_alg)::Vector{T}
   else
-    return O.basis_alg
+    return O.basis_alg::Vector{T}
   end
 end
 
@@ -290,9 +290,9 @@ end
 function basis_mat_inv(O::AlgAssAbsOrd; copy::Bool = true)
   assure_basis_mat_inv(O)
   if copy
-    return deepcopy(O.basis_mat_inv)
+    return deepcopy(O.basis_mat_inv)::FakeFmpqMat
   else
-    return O.basis_mat_inv
+    return O.basis_mat_inv::FakeFmpqMat
   end
 end
 
@@ -751,7 +751,9 @@ function MaximalOrder(O::AlgAssAbsOrd{S, T}) where S where T
   if isdefined(A, :maximal_order)
     # Check whether O \subseteq OO
     OO = A.maximal_order::AlgAssAbsOrd{S, T}
-    d = denominator(basis_matrix(O, copy = false)*basis_mat_inv(OO, copy = false))
+    bO = basis_matrix(O, copy = false)
+    biOO = basis_mat_inv(OO, copy = false)
+    d = denominator(bO*biOO)
     if isone(d)
       return OO
     end
@@ -780,7 +782,7 @@ function MaximalOrder(O::AlgAssAbsOrd{S, T}) where { S <: AlgGrp, T <: AlgGrpEle
 
   if isdefined(A, :maximal_order)
     # Check whether O \subseteq OO
-    OO = A.maximal_order
+    OO = A.maximal_order::AlgAssAbsOrd{S, T}
     d = denominator(basis_matrix(O, copy = false)*basis_mat_inv(OO, copy = false))
     if isone(d)
       return OO

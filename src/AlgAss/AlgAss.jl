@@ -1282,6 +1282,145 @@ function restrict_scalars(A::AlgAss{nf_elem}, KtoL::NfToNfMor)
   return B, AtoB, BtoA
 end
 
+function _as_algebra_over_center(A::AlgAss{T}) where T <: Union{nf_elem, fmpq}
+  @assert !iszero(A)
+
+  K = base_ring(A)
+  C, CtoA = center(A)
+  fields = as_number_fields(C)
+  @assert length(fields) == 1
+  L, CtoL = fields[1]
+
+  iscentral = ( dim(C) == 1 )
+  if iscentral
+    mult_table_B = Array{elem_type(L), 3}(undef, dim(A), dim(A), dim(A))
+    for i = 1:dim(A)
+      for j = 1:dim(A)
+        for k = 1:dim(A)
+          mult_table_B[i, j, k] = L(multiplication_table(A, copy = false)[i, j, k])
+        end
+      end
+    end
+    if has_one(A)
+      B = AlgAss(L, mult_table_B, map(L, A.one))
+    else
+      B = AlgAss(L, mult_table_B)
+    end
+
+    let B = B, L = L
+      function AtoB(x::AlgAssElem)
+        return B(map(L, coeffs(x, copy = false)))
+      end
+    end
+
+    let A = A, K = K
+      function BtoA(x::AlgAssElem)
+        return A([ K(coeff(c, 0)) for c in coeffs(x, copy = false) ])
+      end
+    end
+    return B, AtoB, BtoA
+  end
+
+  basisC = basis(C)
+  basisCinA = Vector{elem_type(A)}(undef, dim(C))
+  basisCinL = Vector{elem_type(L)}(undef, dim(C))
+  for i = 1:dim(C)
+    basisCinA[i] = CtoA(basisC[i])
+    basisCinL[i] = CtoL(basisC[i])
+  end
+
+  # We construct a basis of A over C (respectively L) by using the following fact:
+  # A subset M of basis(A) is a C-basis of A if and only if |M| = dim(A)/dim(C)
+  # and all possible products of elements of M and basisCinA form a K-basis of A,
+  # with K := base_ring(A).
+  AoverK = basis(A)
+  AoverC = Vector{Int}()
+  M = zero_matrix(K, dim(C), dim(A))
+  MM = zero_matrix(K, 0, dim(A))
+  r = 0
+  for i = 1:dim(A)
+    b = AoverK[i]
+
+    for j = 1:dim(C)
+      elem_to_mat_row!(M, j, b*basisCinA[j])
+    end
+
+    N = vcat(MM, M)
+    s = rank(N)
+    if s > r
+      push!(AoverC, i)
+      MM = N
+      r = s
+    end
+    if r == dim(A)
+      break
+    end
+  end
+
+  m = div(dim(A), dim(C))
+
+  @assert length(AoverC) == m
+  @assert nrows(MM) == dim(A)
+
+  iMM = inv(MM)
+
+  local _new_coeffs
+  let L = L, K = K, iMM = iMM, basisCinL = basisCinL, C = C, m = m
+    _new_coeffs = x -> begin
+      y = zeros(L, m)
+      xx = matrix(K, 1, dim(A), coeffs(x, copy = false))
+      Mx = xx*iMM
+      for i = 1:m
+        for j = 1:dim(C)
+          y[i] = addeq!(y[i], basisCinL[j]*Mx[1, (i - 1)*dim(C) + j])
+        end
+      end
+      return y
+    end
+  end
+
+  mult_table = zeros(L, m, m, m)
+  Aij = A()
+  for i = 1:m
+    for j = 1:m
+      Aij = mul!(Aij, A[AoverC[i]], A[AoverC[j]])
+      if iszero(Aij)
+        continue
+      end
+
+      mult_table[i, j, :] = _new_coeffs(Aij)
+    end
+  end
+
+  B = AlgAss(L, mult_table, _new_coeffs(one(A)))
+  B.iscommutative = A.iscommutative
+
+  local AtoB
+  let B = B, _new_coeffs = _new_coeffs
+    AtoB = x -> begin
+      @assert parent(x) == A
+      return B(_new_coeffs(x))
+    end
+  end
+
+  local BtoA
+  let K = K, MM = MM, CtoA = CtoA, CtoL = CtoL, AoverC = AoverC, B = B, m = m
+    BtoA = x -> begin
+      @assert parent(x) == B
+      y = zeros(K, dim(A))
+      xx = A()
+      for i = 1:dim(B)
+        t = CtoA(CtoL\coeffs(x, copy = false)[i])
+        xx = add!(xx, xx, t*A[AoverC[i]])
+      end
+      return xx
+    end
+  end
+
+  return B, AtoB, BtoA
+end
+
+
 # TODO: Fix the types
 function _as_algebra_over_center(A::AlgAss{T}) where { T } #<: Union{fmpq, gfp_elem, Generic.ResF{fmpz}, fq, fq_nmod} }
   @assert !iszero(A)
@@ -1299,14 +1438,7 @@ function _as_algebra_over_center(A::AlgAss{T}) where { T } #<: Union{fmpq, gfp_e
     return A, AtoA, AtoA
   end
 
-  if T === fmpq || T === nf_elem
-    fields = as_number_fields(C)
-    @assert length(fields) == 1
-    L, CtoL = fields[1]
-  else
-    L, CtoL = _as_field_with_isomorphism(C)
-  end
-
+  L, CtoL = _as_field_with_isomorphism(C)
   if iscentral
     mult_table_B = Array{elem_type(L), 3}(undef, dim(A), dim(A), dim(A))
     for i = 1:dim(A)
@@ -1322,12 +1454,16 @@ function _as_algebra_over_center(A::AlgAss{T}) where { T } #<: Union{fmpq, gfp_e
       B = AlgAss(L, mult_table_B)
     end
 
-    function AtoB(x::AlgAssElem)
-      return B(map(L, coeffs(x, copy = false)))
+    let B = B, L = L
+      function AtoB(x::AlgAssElem)
+        return B(map(L, coeffs(x, copy = false)))
+      end
     end
 
-    function BtoA(x::AlgAssElem)
-      return A([ K(coeff(c, 0)) for c in coeffs(x, copy = false) ])
+    let A = A, K = K
+      function BtoA(x::AlgAssElem)
+        return A([ K(coeff(c, 0)) for c in coeffs(x, copy = false) ])
+      end
     end
     return B, AtoB, BtoA
   end
