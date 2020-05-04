@@ -1195,7 +1195,7 @@ function _normmod(a::fmpz, b::NfOrdElem)
   end
   
   if !isdefining_polynomial_nice(nf(parent(b)))
-    return mod(norm(b), a)
+    return gcd(norm(b), a)
   end
 
   mods = fmpz[]

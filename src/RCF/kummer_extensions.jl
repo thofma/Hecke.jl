@@ -129,10 +129,6 @@ end
 #
 ###############################################################################
 
-
-# the Frobenius at p in K:
-#K is an extension of k, p a prime in k,
-#returns a vector in (Z/nZ)^r representing the Frob
 @doc Markdown.doc"""
     canonical_frobenius(p::NfOrdIdl, K::KummerExt) -> GrpAbFinGenElem
 Computes the element of the automorphism group of $K$ corresponding to the
@@ -225,11 +221,7 @@ function canonical_frobenius_fmpz(p::NfOrdIdl, K::KummerExt)
   for j = 1:length(K.gen)
     ord_genj = Int(order(K.AutG[j]))
     ex = div(norm(p)-1, ord_genj)
-    if isdefined(K, :gen_mod_nth_power)
-      mu = image(mF1, K.gen_mod_nth_power[j])^ex
-    else
-      mu = image(mF1, K.gen[j], K.n)^ex  # can throw bad prime!
-    end
+    mu = image(mF1, K.gen[j], K.n)^ex  # can throw bad prime!
     i = 0
     z_pj = z_p^divexact(K.n, ord_genj)
     while !isone(mu)
@@ -294,6 +286,140 @@ function canonical_frobenius(p::NfOrdIdl, K::KummerExt, g::FacElem{nf_elem})
     end
     return i
   end
+end
+
+
+################################################################################
+#
+#  Frobenius for cft
+#
+################################################################################
+
+# In this context, we are computing the Frobenius for conjugate prime ideals 
+# We save the projection of the factor base, we can reuse them
+
+
+#Computes a set of prime ideals of the base field of K such that the corresponding Frobenius
+#automorphisms generate the automorphism group
+function find_gens(K::KummerExt, S::PrimesSet, cp::fmpz=fmpz(1))
+  if isdefined(K, :frob_gens)
+    return K.frob_gens[1], K.frob_gens[2]
+  end
+  k = base_field(K)
+  ZK = maximal_order(k)
+  R = K.AutG 
+  sR = Vector{GrpAbFinGenElem}(undef, length(K.gen))
+  lp = Vector{NfOrdIdl}(undef, length(K.gen))
+  
+  indZK = index(ZK)
+  q, mq = quo(R, GrpAbFinGenElem[], false)
+  s, ms = snf(q)
+  ind = 1
+  threshold = max(div(degree(k), 5), 5)
+
+  for p in S
+    if cp % p == 0 || indZK % p == 0
+      continue
+    end
+    @vprint :ClassField 2 "doin` $p\n"
+    lP = prime_decomposition(ZK, p)
+    LP = NfOrdIdl[P for (P, e) in lP if degree(P) < threshold]
+    if isempty(LP)
+      continue
+    end
+    #Compute the projections of the gens as gfp_poly.
+    #I can use these projections for all the prime ideals, saving some time.
+    f = R[1]
+    D = Vector{Vector{gfp_poly}}(undef, length(K.gen))
+    for i = 1:length(D)
+      D[i] = Vector{gfp_poly}(undef, length(K.gen[i].fac))
+    end
+    first = false
+    for P in LP
+      try
+        f = _canonical_frobenius_with_cache(P, K, first, D)
+        first = true
+      catch e
+        if !isa(e, BadPrime)
+          rethrow(e)
+        end
+        continue
+      end
+      if iszero(mq(f))
+        continue
+      end
+      #At least one of the coefficient of the element 
+      #must be invertible in the snf form.
+      el = ms\f
+      to_be = false
+      for w = 1:ngens(s)
+        if gcd(s.snf[w], el.coeff[w]) == 1
+          to_be = true
+          break
+        end
+      end
+      if !to_be
+        continue
+      end
+      sR[ind] = f
+      lp[ind] = P
+      ind += 1
+      q, mq = quo(R, sR[1:ind-1], false)
+      s, ms = snf(q)
+    end
+    @vprint :ClassField 3 "$(order(s))\n"
+    if order(s) == 1   
+      break
+    end
+  end
+  K.frob_gens = (lp, sR)
+  return lp, sR
+end
+
+function _canonical_frobenius_with_cache(p::NfOrdIdl, K::KummerExt, cached::Bool, D::Vector{Vector{gfp_poly}})
+  @assert norm(p) % K.n == 1
+  if haskey(K.frob_cache, p)
+    return K.frob_cache[p]
+  end
+  Zk = order(p)
+
+  if degree(p) != 1
+    F, mF = ResidueFieldSmall(Zk, p)
+    mF1 = NfToFqNmodMor_easy(mF, number_field(Zk))
+    aut = _compute_frob(K, mF1, p, cached, D)
+  else
+    F2, mF2 = ResidueFieldSmallDegree1(Zk, p)
+    mF3 = NfToGFMor_easy(mF2, number_field(Zk))
+    aut = _compute_frob(K, mF3, p, cached, D)
+  end
+  z = K.AutG(aut)
+  K.frob_cache[p] = z
+  return z
+end
+
+function _compute_frob(K, mF, p, cached, D)
+  z_p = image(mF, K.zeta)^(K.n-1)
+ 
+  # K = k(sqrt[n_i](gen[i]) for i=1:length(gen)), an automorphism will be
+  # K[i] -> zeta^divexact(n, n_i) * ? K[i]
+  # Frob(sqrt[n](a), p) = sqrt[n](a)^N(p) (mod p) = zeta^r sqrt[n](a)
+  # sqrt[n](a)^N(p) = a^(N(p)-1 / n) = zeta^r mod p
+
+  aut = Array{fmpz, 1}(undef, length(K.gen))
+  for j = 1:length(K.gen)
+    ord_genj = Int(order(K.AutG[j]))
+    ex = div(norm(p)-1, ord_genj)
+    mu = image(mF, K.gen[j], D[j], cached, K.n)^ex  # can throw bad prime!
+    i = 0
+    z_pj = z_p^divexact(K.n, ord_genj)
+    while !isone(mu)
+      i += 1
+      @assert i <= K.n
+      mu = mul!(mu, mu, z_pj)
+    end
+    aut[j] = fmpz(i)
+  end
+  return aut
 end
 
 ################################################################################

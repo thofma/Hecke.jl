@@ -596,6 +596,7 @@ function _decomposition(O::NfAbsOrd, I::NfAbsOrdIdl, Ip::NfAbsOrdIdl, T::NfAbsOr
   if !k
     #The probability of finding a random generator is high
     for j in 1:length(ideals)
+      
       P = ideals[j][1]
       f = P.splitting_type[2]
       #@vprint :NfOrd 1 "Chances for finding second generator: ~$((1-1/BigInt(p)))\n"
@@ -604,11 +605,21 @@ function _decomposition(O::NfAbsOrd, I::NfAbsOrdIdl, Ip::NfAbsOrdIdl, T::NfAbsOr
       u = P.gen_two
       modulo = norm(P)*p
       x = zero(parent(u))
-      
-      if !isnorm_divisible_pp(u.elem_in_nf, modulo)
-        x = u
-      elseif !isnorm_divisible_pp(u.elem_in_nf+p, modulo)
-        x = u + p
+
+      if isdefining_polynomial_nice(nf(O))
+        if !isnorm_divisible_pp(u.elem_in_nf, modulo)
+          x = u
+        elseif !isnorm_divisible_pp(u.elem_in_nf+p, modulo)
+          x = u + p
+        end
+      else
+        if iszero(mod(norm(u), modulo))
+          if !iszero(mod(norm(u+p), modulo))
+            add!(u, u, p)
+          elseif !iszero(mod(norm(u-p), modulo))
+            sub!(u, u, p)
+          end
+        end
       end
 
       @hassert :NfOrd 1 !iszero(x)
@@ -666,11 +677,10 @@ function _decomposition(O::NfAbsOrd, I::NfAbsOrdIdl, Ip::NfAbsOrdIdl, T::NfAbsOr
       
       @hassert :NfOrd 1 containment_by_matrices(u, P)
       modulo = norm(P)*p
-      #if iszero(_normmod(modulo, u))#isnorm_divisible_pp(u.elem_in_nf, modulo)
       if iszero(mod(norm(u), modulo))
         if !iszero(mod(norm(u+p), modulo))
           add!(u, u, p)
-        elseif !iszero(mod(norm(u-p), modulo))#!isnorm_divisible_pp(u.elem_in_nf-p, modulo)
+        elseif !iszero(mod(norm(u-p), modulo))
           sub!(u, u, p)
         else
           Ba = basis(P, copy = false)
@@ -815,7 +825,6 @@ function find_random_second_gen(A::NfAbsOrdIdl{S, T}) where {S, T}
     if iszero(gen)
       continue
     end
-    
     if norm(A, copy = false) == _normmod(Amind, O(gen, false))
       A.gen_one = minimum(A)
       A.gen_two = O(gen, false)

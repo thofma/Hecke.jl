@@ -51,29 +51,34 @@ function norm(A::FacElem{NfOrdFracIdl, NfOrdFracIdlSet})
   return evaluate(factored_norm(A))
 end
 
-const FacElemQ = Union{FacElem{fmpq, FlintRationalField}, FacElem{fmpz, FlintIntegerRing}}
 
-function abs(A::FacElemQ)
-  B = empty(A.fac)
-  for (k,v) = A.fac
-    ak = abs(k)
-    add_to_key!(B, ak, v)
-  end
-  if length(B) == 0
-    return FacElem(Dict(one(base_ring(A)) => fmpz(1)))
-  end
-  return FacElem(B)
+
+@doc Markdown.doc"""
+    valuation(A::FacElem{NfOrdFracIdl, NfOrdFracIdlSet}, p::NfOrdIdl)
+    valuation(A::FacElem{NfOrdIdl, NfOrdIdlSet}, p::NfOrdIdl)
+The valuation of $A$ at $P$.
+"""
+function valuation(A::FacElem{NfOrdIdl, NfOrdIdlSet}, p::NfOrdIdl)
+  return sum(valuation(I, p)*v for (I, v) = A.fac if !iszero(v))
 end
 
-function ==(A::T, B::T) where {T <: FacElemQ}
-  C = A*B^-1
-  simplify!(C)
-  return isone(C)
+function valuation(A::FacElem{NfOrdFracIdl, NfOrdFracIdlSet}, p::NfOrdIdl)
+  return sum(valuation(I, p)*v for (I, v) = A.fac)
 end
 
-function isone(A::FacElemQ)
-  C = simplify(A)
-  return all(iszero, values(C.fac)) || all(isone, keys(C.fac))
+@doc Markdown.doc"""
+     ideal(O::NfOrd, a::FacElem{nf_elem, AnticNumberField)
+The factored fractional ideal $a*O$.
+"""
+function ideal(O::NfOrd, a::FacElem{nf_elem, AnticNumberField})
+  de = Dict{NfOrdFracIdl, fmpz}()
+  for (e, k) = a.fac
+    if !iszero(k)
+      I = ideal(O, e)
+      add_to_key!(de, I, k)
+    end
+  end
+  return FacElem(FractionalIdealSet(O), de)
 end
 
 function ==(A::NfOrdIdl, B::FacElem{NfOrdIdl, NfOrdIdlSet})
@@ -186,7 +191,7 @@ The factorisation of $Q$, by refining a coprime factorisation.
 function factor(Q::FacElem{NfOrdFracIdl, NfOrdFracIdlSet})
   S = factor_coprime(Q)
   fac = Dict{NfOrdIdl, Int}()
-  for (p, e)=S
+  for (p, e) = S
     lp = factor(p)
     for (q, v) in lp
       fac[q] = Int(v*e)
@@ -195,3 +200,92 @@ function factor(Q::FacElem{NfOrdFracIdl, NfOrdFracIdlSet})
   return fac
 end
 
+#TODO: expand the coprime stuff to automatically also get the exponents
+@doc Markdown.doc"""
+    simplify(x::FacElem{NfOrdIdl, NfOrdIdlSet}) -> FacElem
+    simplify(x::FacElem{NfOrdFracIdl, NfOrdFracIdlSet}) -> FacElem
+
+Uses ```coprime_base``` to obtain a simplified version of $x$, ie.
+in the simplified version all base ideals will be pariwise coprime
+but not neccessarily prime!.
+"""
+function simplify(x::FacElem{NfOrdIdl, NfOrdIdlSet})
+  z = deepcopy(x)
+  simplify!(z)
+  return z
+end
+
+
+function factor_over_coprime_base(x::FacElem{NfOrdIdl, NfOrdIdlSet}, coprime_base::Vector{NfOrdIdl})
+  ev = Dict{NfOrdIdl, fmpz}()
+  if isempty(coprime_base)
+    return ev
+  end
+  OK = order(coprime_base[1])
+  for p in coprime_base
+    if isone(p)
+      continue
+    end
+    P = minimum(p)
+    @vprint :CompactPresentation 3 "Computing valuation at an ideal lying over $P"
+    assure_2_normal(p)
+    v = fmpz(0)
+    for (b, e) in x
+      if iszero(e)
+        continue
+      end
+      if divisible(norm(b, copy = false), P) 
+        v += valuation(b, p)*e
+      end
+    end
+    @vprint :CompactPresentation 3 "$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())"
+    if !iszero(v)
+      ev[p] = v
+    end
+  end
+  return ev
+end
+
+function simplify!(x::FacElem{NfOrdIdl, NfOrdIdlSet}; refine::Bool = false)
+  if length(x.fac) <= 1 
+    return nothing
+  elseif all(x -> iszero(x), values(x.fac)) 
+    x.fac = Dict{NfOrdIdl, fmpz}()
+    return nothing
+  end
+  base_x = NfOrdIdl[y for (y, v) in x if !iszero(v)]
+  cp = coprime_base(base_x, refine = refine)
+  ev = factor_over_coprime_base(x, cp)
+  x.fac = ev
+  return nothing
+end  
+
+function simplify(x::FacElem{NfOrdFracIdl, NfOrdFracIdlSet})
+  z = deepcopy(x)
+  simplify!(z)
+  return z
+end
+
+function simplify!(x::FacElem{NfOrdFracIdl, NfOrdFracIdlSet})
+  de = factor_coprime(x)
+  if length(de)==0
+    de = Dict(ideal(order(base_ring(parent(x))), 1) => fmpz(1))
+  end
+  x.fac = Dict((i//1, k) for (i,k) = de)
+end
+
+@doc Markdown.doc"""
+    factor_coprime(x::FacElem{NfOrdIdl, NfOrdIdlSet}) -> Dict{NfOrdIdl, Int}
+Computed a partial factorisation of $x$, ie. writes $x$ as a product
+of pariwise coprime integral ideals.
+"""
+function factor_coprime(x::FacElem{NfOrdIdl, NfOrdIdlSet})
+  z = deepcopy(x)
+  simplify!(z)
+  return Dict{NfOrdIdl, Int}(p=>Int(v) for (p,v) = z.fac)
+end
+
+function factor_coprime!(x::FacElem{NfOrdIdl, NfOrdIdlSet}; refine::Bool = false)
+  simplify!(x, refine = refine)
+  return Dict{NfOrdIdl, Int}(p => Int(v) for (p,v) = x.fac)
+end

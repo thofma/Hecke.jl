@@ -114,6 +114,48 @@ function (a::FlintIntegerRing)(b::fmpq)
   return deepcopy(numerator(b))
 end
 
+function ^(a::fmpz, k::fmpz)
+  if a == 0
+    if k == 0
+      return fmpz(1)
+    end
+    return fmpz(0)
+  end
+ 
+  if a == 1
+    return fmpz(1)
+  end
+  if a == -1
+    if isodd(k)
+      return fmpz(-1)
+    else
+      return fmpz(1)
+    end
+  end
+  return a^Int(k)
+end
+
+function ^(a::fmpq, k::fmpz)
+  if a == 0
+    if k == 0
+      return fmpq(1)
+    end
+    return fmpq(0)
+  end
+ 
+  if a == 1
+    return fmpq(1)
+  end
+  if a == -1
+    if isodd(k)
+      return fmpq(-1)
+    else
+      return fmpq(1)
+    end
+  end
+  return a^Int(k)
+end
+
 function //(a::fmpq, b::fmpz)
   return a//fmpq(b)
 end
@@ -1587,4 +1629,23 @@ function squarefree_part(a::fmpz)
     end
   end
   return s
+end
+
+################################################################################
+#
+#  Factorization of a rational
+#
+################################################################################
+
+@doc Markdown.doc"""
+    factor(a::fmpq, ::FlintIntegerRing) -> Fac{fmpz}
+Factor the rational number $a$ into prime numbers.
+"""
+function factor(a::fmpq, ::FlintIntegerRing)
+  fn = factor(numerator(a))
+  fd = factor(denominator(a))
+  for (p, e) = fd
+    fn.fac[p] = -e
+  end
+  return fn
 end

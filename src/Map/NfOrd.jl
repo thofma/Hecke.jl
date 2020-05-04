@@ -708,17 +708,25 @@ function image(mF::NfToFqNmodMor_easy, a::FacElem{nf_elem, AnticNumberField}, qu
   q = one(Fq)
   t = mF.t
   s = mF.s
+  oFq = order(Fq)
+  pminusone = oFq -1
+  char_Fq = characteristic(Fq)
   for (k, v) = a.fac
     vv = v
     if quo != 0
-      vv = v %quo 
+      if v > 0 && v < pminusone
+        vv = UInt(v)
+      else
+        vv = fmpz_mod_ui(v, pminusone)
+      end
+      vv = v % quo 
       if vv < 0
         vv += quo
       end
     end
-    @assert vv < order(Fq)  #please complain if this is triggered
+    @assert vv < oFq  #please complain if this is triggered
     if !iszero(vv)
-      if denominator(k) % characteristic(Fq) == 0
+      if iszero(denominator(k) % char_Fq)
         throw(BadPrime(characteristic(Fq)))
       end
       _nf_to_fq!(s, k, Fq, t)
@@ -731,6 +739,74 @@ function image(mF::NfToFqNmodMor_easy, a::FacElem{nf_elem, AnticNumberField}, qu
       end
       ccall((:fq_nmod_pow_ui, libflint), Nothing, (Ref{fq_nmod}, Ref{fq_nmod}, Int, Ref{FqNmodFiniteField}), s, s, vv, Fq)
       mul!(q, q, s)
+    end
+  end
+  return q
+end
+
+function image(mF::NfToFqNmodMor_easy, a::FacElem{nf_elem, AnticNumberField}, D::Vector, cached::Bool, quo::Int = 0)
+  # cached == true also implies that all the denominators are coprime
+  Fq = mF.Fq
+  q = one(Fq)
+  t = mF.t
+  s = mF.s
+  i = 0
+  char = UInt(Fq.n)
+  pminusone = char - 1
+  for (k, v) in a.fac
+    i += 1
+    if v > 0 && v < pminusone
+      vv = UInt(v)
+    else
+      vv = fmpz_mod_ui(v, pminusone)
+    end
+    if quo != 0
+      vv = vv % quo # vv will always be positive
+    end
+    @assert vv < Fq.n  #please complain if this is triggered
+    if !iszero(vv)
+      if !cached && iszero(fmpz_mod_ui(denominator(k), char))
+        throw(BadPrime(characteristic(Fq)))
+      end
+
+      if cached
+        s = zero(Fq)
+        ccall((:fq_nmod_set, libflint), Nothing,
+          (Ref{fq_nmod}, Ref{gfp_poly}, Ref{FqNmodFiniteField}), s, D[i], Fq)
+        _reduce(s)
+      else
+        nf_elem_to_gfp_poly!(t, k)
+        #tt = deepcopy(t)
+        if isassigned(D, i)
+          y = D[i]
+          if y.mod_n == t.mod_n
+            y.parent = t.parent
+            set!(y, t)
+          else
+            y.mod_n = t.mod_n
+            y.mod_ninv = t.mod_ninv
+            y.mod_norm = t.mod_norm
+            y.parent = t.parent
+            set!(y, t)
+          end
+        else
+          D[i] = zero(parent(t))
+          set!(D[i], t)
+        end
+        s = zero(Fq)
+        ccall((:fq_nmod_set, libflint), Nothing,
+          (Ref{fq_nmod}, Ref{gfp_poly}, Ref{FqNmodFiniteField}), s, D[i], Fq)
+        _reduce(s)
+      end
+      if iszero(s)
+        throw(BadPrime(1))
+      end
+      if vv < 0
+        s = inv(s)
+        vv = -vv
+      end
+      s = s^Int(vv)
+      q = mul!(q, q, s)
     end
   end
   return q

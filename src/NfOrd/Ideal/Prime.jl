@@ -840,22 +840,20 @@ A coprime base for the (principal) ideals in $A$, ie. the returned array
 generated multiplicatively the same ideals as the input and are pairwise
 coprime.
 """
-function coprime_base(A::Array{NfOrdIdl, 1})
-  a1 = Set{fmpz}()
-  for I in A
-    if has_2_elem(I)
-      lf = _prefactorization(I)
-      for p in lf
-        push!(a1, p)
-      end
-      push!(a1, minimum(I))
-      push!(a1, norm(I))
-    else
-      push!(a1, minimum(I))
-      push!(a1, norm(I))
-    end
+function coprime_base(A::Array{NfOrdIdl, 1}; refine::Bool = false)
+  if isempty(A)
+    return NfOrdIdl[]
   end
   OK = order(A[1])
+  if refine
+    pf = prefactorization(A[1])
+    for i = 2:length(A)
+      append!(pf, prefactorization(A[i]))
+    end
+  else
+    pf = A
+  end
+  a1 = Set{fmpz}(vcat(fmpz[minimum(x) for x in pf], fmpz[norm(x) for x in pf]) )
   if isempty(a1)
     return NfOrdIdl[]
   end
@@ -870,8 +868,8 @@ function coprime_base(A::Array{NfOrdIdl, 1})
       lp = prime_decomposition(OK, p)
       for (P, v) in lp
         found = false
-        for i = 1:length(A)
-          if divisible(norm(A[i], copy = false), p) && divides(A[i], P)
+        for i = 1:length(pf)
+          if divisible(norm(pf[i], copy = false), p) && divides(pf[i], P)
             found = true
             break
           end
@@ -881,7 +879,7 @@ function coprime_base(A::Array{NfOrdIdl, 1})
         end
       end
     else
-      cp = coprime_base(A, p)
+      cp = coprime_base(pf, p)
       append!(C, cp)
     end
   end
@@ -976,16 +974,17 @@ end
 
 function prefactorization(I::NfOrdIdl)
   OK = order(I)
+  _assure_weakly_normal_presentation(I)
   factors = _prefactorization(I)
   ideals = NfOrdIdl[]
   for q in factors
     pp, r = Hecke._factors_trial_division(q)
     for p in pp
-      push!(ideals, ideal(OK, p, I.gen_two))
+      push!(ideals, gcd(I, p))
     end
     r = ispower(r)[2]
     if !isone(r)
-      push!(ideals, ideal(OK, r, I.gen_two) )
+      push!(ideals, gcd(I, r))
     end
   end
   return ideals

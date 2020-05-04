@@ -319,3 +319,76 @@ function maximal_p_subfield(C::ClassField, p::Int)
   mg1 = GrpAbFinGenMap(mg*mq*ms)
   return ray_class_field(C.rayclassgroupmap, mg1)
 end
+
+
+@doc Markdown.doc"""
+    islocal_norm(r::ClassField, a::NfAbsOrdElem, p::NfAbsOrdIdl) -> Bool
+Tests if $a$ is a local norm at $p$ in the extension implictly given by $r$.
+Currently the conductor cannot have infinite places.
+"""
+function islocal_norm(r::ClassField, a::NfAbsOrdElem, p::NfAbsOrdIdl)
+  m0, minf = conductor(r)
+  if length(minf) > 0
+    error("not implemented yet")
+  end
+  m0 = defining_modulus(r)[1] #need the maps...
+  @assert isprime(p)
+  v1 = valuation(a, p)
+  v2 = valuation(m0, p)
+  n0 = divexact(m0, p^v2)
+  o0 = p^(v1 + v2)
+  y = crt(order(p)(1), n0, a, o0)
+  y = y*order(p)
+  y = divexact(y, p^v1)
+
+  return isone(r.quotientmap(preimage(r.rayclassgroupmap, y)))
+end
+
+################################################################################
+#
+#  Some applications
+#
+################################################################################
+
+@doc Markdown.doc"""
+    islocal_norm(r::ClassField, a::NfAbsOrdElem) -> Bool
+Tests if $a$ is a local norm at all finite places in the extension implictly given by $r$.
+"""
+function islocal_norm(r::ClassField, a::NfAbsOrdElem)
+  K = base_field(r)
+  m0, minf = conductor(r)
+  if !ispositive(a, minf)
+    return false
+  end
+  fl = factor(m0*a)
+  return all(x -> islocal_norm(r, a, x), keys(fl))
+end
+
+@doc Markdown.doc"""
+    prime_decomposition_type(C::ClassField, p::NfAbsOrdIdl) -> (Int, Int, Int)
+For a prime $p$ in the base ring of $r$, determine the splitting type of $p$ 
+in $r$. ie. the tuple $(e, f, g)$ giving the ramification degree, the inertia
+and the number of primes above $p$.
+"""
+function prime_decomposition_type(C::ClassField, p::NfAbsOrdIdl)
+  @hassert :ClassField 1 isprime(p)
+  mR = C.rayclassgroupmap
+  m0 = defining_modulus(C)[1]
+  R = domain(mR)
+
+  v = valuation(m0, p)
+  if v == 0
+    f = order(C.quotientmap(mR\p))
+    return (1, f, divexact(degree(C), f))
+  end
+  r, mr = ray_class_group(divexact(m0, p^v), defining_modulus(C)[2], n_quo = Int(exponent(R)))
+
+  lp, sR = find_gens(MapFromFunc(x->preimage(mR, x), IdealSet(base_ring(C)), domain(mR)),
+                             PrimesSet(100, -1), minimum(m0))
+  h = hom(sR, [preimage(mr, p) for p = lp])
+  k, mk = kernel(GrpAbFinGenMap(C.quotientmap))
+  q, mq = quo(r, [h(mk(k[i])) for i=1:ngens(k)])
+  f = order(mq(preimage(mr, p)))
+  e = divexact(degree(C), order(q))
+  return (e, f, divexact(order(q), f))
+end

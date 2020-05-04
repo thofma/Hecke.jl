@@ -14,7 +14,7 @@ function compact_presentation(a::FacElem{nf_elem, AnticNumberField}, nn::Int = 2
  
   if typeof(decom) == Bool
     ZK = lll(maximal_order(K))
-    de::Dict{NfOrdIdl, fmpz} = factor_coprime(a, IdealSet(ZK))
+    de::Dict{NfOrdIdl, fmpz} = factor_coprime(a, IdealSet(ZK), refine = true)
   else
     #de = Dict{NfOrdIdl, fmpz}((p, v) for (p, v) = decom)
     de = Dict((p, v) for (p, v) = decom)

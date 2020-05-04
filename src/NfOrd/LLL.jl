@@ -323,7 +323,7 @@ function _lll(M::NfOrd, prec::Int)
   
   if n > 10
     if n > 100
-      prec, M1 = lll_precomputation(M1, prec, 4)
+      prec, M1 = lll_precomputation(M1, prec)
     end
     prec, M1 = lll_precomputation(M1, prec)
   end
@@ -468,6 +468,7 @@ function _lll_sublattice(M::NfOrd, u::Vector{Int}; prec = 100)
   K = nf(M)
   n = degree(M)
   l = length(u)
+  @vprint :LLL 3 "Block of dimension $(l)\n"
   prec = max(prec, 10*n)
   local g::fmpz_mat
   ctx = Nemo.lll_ctx(0.99, 0.51, :gram)
@@ -489,7 +490,6 @@ function _lll_sublattice(M::NfOrd, u::Vector{Int}; prec = 100)
     d1 = sub(d, u, u)
     prec = div(prec, 2)
     shift!(d1, -prec)  #TODO: remove?
-
     for i=1:l
       fmpz_mat_entry_add_ui!(d1, i, i, UInt(l))
     end

@@ -830,3 +830,21 @@ function _as_fractional_ideal_of_smaller_order(O::NfAbsOrd, I::NfAbsOrdFracIdl)
   J = _as_fractional_ideal_of_smaller_order(O, numerator(I, copy = false))
   return nf(O)(fmpq(1, denominator(I, copy = false)))*J
 end
+
+################################################################################
+#
+#  Some basic functions
+#
+################################################################################
+
+function one(A::NfOrdFracIdlSet)
+  return ideal(order(A), 1)//1
+end
+
+function copy(A::NfOrdFracIdl)
+  return deepcopy(A)
+end
+
+function ^(A::NfOrdFracIdl, d::fmpz)
+  return A^Int(d)
+end
