@@ -2037,15 +2037,15 @@ function direct_product(fields::Vector{AnticNumberField})
 end
 
 function direct_product(fields::AnticNumberField...)
-  algebras = [ AlgAss(K) for K in fields ]
+  algebras = Tuple{AlgAss{fmpq}, AbsAlgAssToNfAbsMor{AlgAss{fmpq}, elem_type(AlgAss{fmpq}), AnticNumberField, fmpq_mat}}[ AlgAss(K) for K in fields ]
   A, proj, inj = direct_product([ B for (B, m) in algebras ], task = :both)
   A.decomposition = [ (algebras[i][1], inj[i]) for i = 1:length(algebras) ]
-  maps_to_fields = Vector{AbsAlgAssToNfAbsMor}(undef, length(fields))
+  maps_to_fields = Vector{AbsAlgAssToNfAbsMor{AlgAss{fmpq}, elem_type(AlgAss{fmpq}), AnticNumberField, fmpq_mat}}(undef, length(fields))
   for i = 1:length(fields)
     # Assumes, that the map algebras[i] -> K is given by the identity matrix
     maps_to_fields[i] = AbsAlgAssToNfAbsMor(A, fields[i], proj[i].mat, proj[i].imat)
   end
-  A.maps_to_numberfields = [ (fields[i], maps_to_fields[i]) for i = 1:length(fields) ]
+  A.maps_to_numberfields = Tuple{AnticNumberField, AbsAlgAssToNfAbsMor{AlgAss{fmpq}, elem_type(AlgAss{fmpq}), AnticNumberField, fmpq_mat}}[ (fields[i], maps_to_fields[i]) for i = 1:length(fields) ]
   return A, maps_to_fields
 end
 

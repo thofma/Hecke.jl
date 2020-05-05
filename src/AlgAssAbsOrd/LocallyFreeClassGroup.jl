@@ -340,21 +340,26 @@ mutable struct DiscLogLocallyFreeClassGroup{S, T} <: Map{S, T, HeckeMap, DiscLog
   RtoC::GrpAbFinGenMap # Map from the ray class group of the centre to the class group
   mR::MapRayClassGroupAlg
   FinZ::AlgAssAbsOrdIdl # Conductor of the order in the maximal order contracted to the centre
-  FinKs::Vector{<: NfAbsOrdIdl}
-  primes_in_fields::Vector{Vector{Tuple{<: NfAbsOrdIdl, fmpz, <: NfAbsOrdIdl}}}
+  FinKs::Vector{NfOrdIdl}
+  primes_in_fields::Vector{Vector{Tuple{NfOrdIdl, fmpz, NfOrdIdl}}}
+  fields_and_maps
+  ZtoA
 
   function DiscLogLocallyFreeClassGroup{S, T}(IdlSet::S, C::T, RtoC::GrpAbFinGenMap, mR::MapRayClassGroupAlg, FinZ::AlgAssAbsOrdIdl) where {S, T}
     m = new{S, T}()
     O = order(IdlSet)
     A = algebra(O)
     Z, ZtoA = center(A)
+    m.ZtoA = ZtoA
     fields_and_maps = as_number_fields(Z)
     m.RtoC = RtoC
     m.mR = mR
     m.FinZ = FinZ
+    m.fields_and_maps = fields_and_maps
 
     # Some precomputations
-    nf_idl_type = ideal_type(order_type(fields_and_maps[1][1]))
+    #nf_idl_type = ideal_type(order_type(fields_and_maps[1][1]))
+    nf_idl_type = ideal_type(order_type(AnticNumberField))
     FinKs = Vector{nf_idl_type}(undef, length(fields_and_maps))
     for i = 1:length(fields_and_maps)
       K, ZtoK = fields_and_maps[i]
@@ -371,92 +376,110 @@ mutable struct DiscLogLocallyFreeClassGroup{S, T} <: Map{S, T, HeckeMap, DiscLog
       end
     end
     m.primes_in_fields = primes_in_fields
-
-    function _image(I::AlgAssAbsOrdIdl)
-      @assert order(I) === O
-      # Bley, Wilson: "Computations in relative algebraic K-groups"
-      n = norm(I)
-      @assert isone(denominator(n)) "Ideal is not integral"
-      primes = collect(keys(factor(numerator(n)).fac))
-      c = id(C)
-      for p in primes
-        x = locally_free_basis(I, p)
-        gamma = normred_over_center(elem_in_algebra(x, copy = false), ZtoA)
-
-        elts_in_R = Vector{GrpAbFinGenElem}(undef, length(fields_and_maps))
-        for j = 1:length(fields_and_maps)
-          K, ZtoK = fields_and_maps[j]
-          OK = maximal_order(K)
-          gammaK = OK(ZtoK(gamma))
-          FinK = FinKs[j]
-          primes_in_K = primes_in_fields[j]
-          alphas = Vector{elem_type(OK)}()
-          pi = one(OK)
-          for i = 1:length(primes_in_K)
-            if valuation(p, primes_in_K[i][1]) != 0
-              push!(alphas, deepcopy(gammaK))
-              pi *= uniformizer(primes_in_K[i][1])^valuation(gammaK, primes_in_K[i][1])
-            else
-              push!(alphas, one(OK))
-            end
-          end
-
-          # This is now the "recipe" from p. 178 of Bley, Wilson "Computations
-          # in relative algebraic K-groups".
-          # Compute beta in K such that v_P(alpha[P]*beta - 1) \geq v_P(FinK) for all P | FinK
-          piinv = inv(elem_in_nf(pi, copy = false))
-          right_sides = Vector{elem_type(OK)}(undef, length(primes_in_K))
-          moduli = Vector{ideal_type(OK)}(undef, length(primes_in_K))
-          for i = 1:length(primes_in_K)
-            pe = primes_in_K[i][3]
-            moduli[i] = pe
-            if isone(alphas[i])
-              right_sides[i] = deepcopy(pi)
-            end
-            Q, OKtoQ = quo(OK, pe)
-            G, GtoQ = unit_group(Q)
-            t = alphas[i]*piinv
-            n, d = coprime_num_and_den(t, primes_in_K[i][1])
-            g = GtoQ\(OKtoQ(d)) - GtoQ\(OKtoQ(n))
-            right_sides[i] = OKtoQ\(GtoQ(g))
-          end
-          y = crt(right_sides, moduli)
-          beta = approximate(y*piinv, FinK, real_places(K))
-          @assert istotally_positive(beta)
-
-          # Compute the ideal (prod_{P | p} P^v_P(gammaK))*(beta*OK)
-          bases = Vector{ideal_type(OK)}()
-          exps = Vector{fmpz}()
-          # The discrete logarithm of the ray class group does not like fractional ideals...
-          beta_den = denominator(beta, OK)
-          push!(bases, OK(beta_den*beta)*OK)
-          push!(exps, fmpz(1))
-          push!(bases, OK(beta_den)*OK)
-          push!(exps, fmpz(-1))
-          pdec = prime_decomposition(OK, p)
-          for (q, e) in pdec
-            v = valuation(gammaK, q)
-            if iszero(v)
-              continue
-            end
-            push!(bases, q)
-            push!(exps, v)
-          end
-          b = FacElem(bases, exps)
-          elts_in_R[j] = mR.groups_in_number_fields[j][2]\b
-        end
-
-        # Put the components together and map it to C
-        G = codomain(mR.into_product_of_groups)
-        r = mR.into_product_of_groups\G(hcat([ e.coeff for e in elts_in_R ]))
-        c += RtoC(r)
-      end
-      return c
-    end
+    
+    _image = x -> x
 
     m.header = MapHeader{S, T}(IdlSet, C, _image)
     return m
   end
+end
+
+#function (f::DiscLogLocallyFreeClassGroup)(A::AlgAssAbsOrdIdl)
+function image(m::DiscLogLocallyFreeClassGroup, I::AlgAssAbsOrdIdl)
+  O = order(I)
+  A = algebra(O)
+
+  RtoC = m.RtoC
+  mR =  m.mR 
+  FinZ = m.FinZ 
+  fields_and_maps = m.fields_and_maps::Vector{Tuple{AnticNumberField, AbsAlgAssToNfAbsMor{AlgAss{fmpq}, elem_type(AlgAss{fmpq}), AnticNumberField, fmpq_mat}}}
+  ZtoA = m.ZtoA::morphism_type(AlgAss{fmpq}, typeof(A))
+  _T = _ext_type(elem_type(base_ring(A)))
+  nf_idl_type = ideal_type(order_type(_T))
+  primes_in_fields = m.primes_in_fields::Vector{Vector{Tuple{nf_idl_type, fmpz, nf_idl_type}}}
+  FinKs = m.FinKs
+
+  @assert order(I) === order(domain(m))
+
+  # Bley, Wilson: "Computations in relative algebraic K-groups"
+  n = norm(I)
+  @assert isone(denominator(n)) "Ideal is not integral"
+  primes = collect(keys(factor(numerator(n)).fac))
+  C = codomain(RtoC)
+  c = id(C)
+  for p in primes
+    x = locally_free_basis(I, p)
+    gamma = normred_over_center(elem_in_algebra(x, copy = false)::elem_type(A), ZtoA)
+
+    elts_in_R = Vector{GrpAbFinGenElem}(undef, length(fields_and_maps))
+    for j = 1:length(fields_and_maps)
+      K, ZtoK = fields_and_maps[j]
+      OK = maximal_order(K)
+      gammaK = OK(ZtoK(gamma))
+      FinK = FinKs[j]
+      primes_in_K = primes_in_fields[j]
+      alphas = Vector{elem_type(OK)}()
+      pi = one(OK)
+      for i = 1:length(primes_in_K)
+        if valuation(p, primes_in_K[i][1]) != 0
+          push!(alphas, deepcopy(gammaK))
+          pi *= uniformizer(primes_in_K[i][1])^valuation(gammaK, primes_in_K[i][1])
+        else
+          push!(alphas, one(OK))
+        end
+      end
+
+      # This is now the "recipe" from p. 178 of Bley, Wilson "Computations
+      # in relative algebraic K-groups".
+      # Compute beta in K such that v_P(alpha[P]*beta - 1) \geq v_P(FinK) for all P | FinK
+      piinv = inv(elem_in_nf(pi, copy = false))
+      right_sides = Vector{elem_type(OK)}(undef, length(primes_in_K))
+      moduli = Vector{ideal_type(OK)}(undef, length(primes_in_K))
+      for i = 1:length(primes_in_K)
+        pe = primes_in_K[i][3]
+        moduli[i] = pe
+        if isone(alphas[i])
+          right_sides[i] = deepcopy(pi)
+        end
+        Q, OKtoQ = quo(OK, pe)
+        G, GtoQ = unit_group(Q)
+        t = alphas[i]*piinv
+        n, d = coprime_num_and_den(t, primes_in_K[i][1])
+        g = GtoQ\(OKtoQ(d)) - GtoQ\(OKtoQ(n))
+        right_sides[i] = OKtoQ\(GtoQ(g))
+      end
+      y = crt(right_sides, moduli)
+      beta = approximate(y*piinv, FinK, real_places(K))
+      @assert istotally_positive(beta)
+
+      # Compute the ideal (prod_{P | p} P^v_P(gammaK))*(beta*OK)
+      bases = Vector{ideal_type(OK)}()
+      exps = Vector{fmpz}()
+      # The discrete logarithm of the ray class group does not like fractional ideals...
+      beta_den = denominator(beta, OK)
+      push!(bases, OK(beta_den*beta)*OK)
+      push!(exps, fmpz(1))
+      push!(bases, OK(beta_den)*OK)
+      push!(exps, fmpz(-1))
+      pdec = prime_decomposition(OK, p)
+      for (q, e) in pdec
+        v = valuation(gammaK, q)
+        if iszero(v)
+          continue
+        end
+        push!(bases, q)
+        push!(exps, v)
+      end
+      b = FacElem(bases, exps)
+      elts_in_R[j] = mR.groups_in_number_fields[j][2]\b
+    end
+
+    # Put the components together and map it to C
+    G = codomain(mR.into_product_of_groups)
+    r = mR.into_product_of_groups\G(hcat([ e.coeff for e in elts_in_R ]))
+    c += RtoC(r)
+  end
+  return c
 end
 
 function show(io::IO, m::DiscLogLocallyFreeClassGroup)

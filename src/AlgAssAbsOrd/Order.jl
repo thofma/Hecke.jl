@@ -750,10 +750,8 @@ function MaximalOrder(O::AlgAssAbsOrd{S, T}) where S where T
 
   if isdefined(A, :maximal_order)
     # Check whether O \subseteq OO
-    OO = A.maximal_order::AlgAssAbsOrd{S, T}
-    bO = basis_matrix(O, copy = false)
-    biOO = basis_mat_inv(OO, copy = false)
-    d = denominator(bO*biOO)
+    OO = A.maximal_order::order_type(A)
+    d = denominator(basis_matrix(O, copy = false)*basis_mat_inv(OO, copy = false))
     if isone(d)
       return OO
     end
@@ -782,7 +780,7 @@ function MaximalOrder(O::AlgAssAbsOrd{S, T}) where { S <: AlgGrp, T <: AlgGrpEle
 
   if isdefined(A, :maximal_order)
     # Check whether O \subseteq OO
-    OO = A.maximal_order::AlgAssAbsOrd{S, T}
+    OO = A.maximal_order::order_type(A)
     d = denominator(basis_matrix(O, copy = false)*basis_mat_inv(OO, copy = false))
     if isone(d)
       return OO
