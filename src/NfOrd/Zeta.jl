@@ -213,7 +213,6 @@ function _term_bf(O::NfOrd, B::Int, R::ArbField)
   # small helper function (is this fast?)
   
   while p < xx0
-
     max_exp = _max_power_in(p, xx0)
 
     #println("maximal power is $max_exp")
@@ -226,7 +225,6 @@ function _term_bf(O::NfOrd, B::Int, R::ArbField)
     #x += @elapsed 
 
     lP = prime_decomposition_type(O, p)
-
     for P in lP
       Pnorm = fmpz(p)^P[1]
       if Pnorm < xx0

@@ -911,8 +911,6 @@ function image(mF::NfToGFMor_easy, a::FacElem{nf_elem, AnticNumberField}, D::Vec
       end
 
       if cached
-        #rem!(t, D[i], p)
-        #s = coeff(t, 0)
         s = evaluate_raw(D[i], evaluateat)
       else
         nf_elem_to_gfp_poly!(t, k)

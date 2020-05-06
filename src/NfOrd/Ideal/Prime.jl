@@ -595,15 +595,32 @@ function anti_uniformizer(P::NfOrdIdl)
   return P.anti_uniformizer
 end
 
+function _factor_distinct_deg(x::gfp_poly)
+  degs = Vector{Int}(undef, degree(x))
+  degss = [ pointer(degs) ]
+  fac = Nemo.gfp_poly_factor(x.mod_n)
+  ccall((:nmod_poly_factor_distinct_deg, libflint), UInt,
+          (Ref{Nemo.gfp_poly_factor}, Ref{gfp_poly}, Ptr{Ptr{Int}}),
+          fac, x, degss)
+  res = Dict{Int, Int}()
+  f = parent(x)()
+  for i in 1:fac.num
+    ccall((:nmod_poly_factor_get_nmod_poly, libflint), Nothing,
+            (Ref{gfp_poly}, Ref{Nemo.gfp_poly_factor}, Int), f, fac, i-1)
+    res[degs[i]] = divexact(degree(f), degs[i])
+  end
+  return res
+end
+
 function _prime_decomposition_type(fmodp)
-  fac = factor_shape(fmodp)
-  g = sum([ x for x in values(fac)])
-  res = Array{Tuple{Int, Int}}(undef, g)
-  k = 1
-  for (fi, ei) in fac
-    for j in 1:ei
-      res[k] = (fi, 1)
-      k = k + 1
+  discdeg = _factor_distinct_deg(fmodp)
+  nfacts = sum(x for x in values(discdeg))
+  res = Array{Tuple{Int, Int}}(undef, nfacts)
+  s = 1
+  for (k, v) in discdeg
+    for j in 1:v
+      res[s] = (k, 1)
+      s = s + 1
     end
   end
   return res
@@ -1120,10 +1137,13 @@ function val_func_index(p::NfOrdIdl)
   # time is spent computing denominators of order elements.
   # By using the representation matrix to multiply, we can stay in the order
   # and still be fast (faster even than in field).
-  pi = inv(p)
-  M = representation_matrix(pi.num.gen_two)
   O = order(p)
+  pi = inv(p)
   P = p.gen_one
+  pi_2 = mod(pi.num.gen_two.elem_in_nf, P^2)
+  M = representation_matrix(O(pi_2, false))
+  
+  
   local val
   let P = P, O = O, M = M, p = p
     function val(x::nf_elem, no::fmpq = fmpq(0))

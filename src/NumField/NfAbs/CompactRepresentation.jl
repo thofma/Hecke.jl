@@ -279,6 +279,7 @@ function evaluate_mod(a::FacElem{nf_elem, AnticNumberField}, B::NfOrdFracIdl)
   end
 end
 
+
 function Hecke.ispower(a::FacElem{nf_elem, AnticNumberField}, n::Int; with_roots_unity = false, decom = false, trager = false)
   if n == 1
     return true, a
@@ -314,6 +315,7 @@ function Hecke.ispower(a::FacElem{nf_elem, AnticNumberField}, n::Int; with_roots
   if b <= b1
     return _ispower(a, n, with_roots_unity = with_roots_unity, decom = decom, trager = trager)
   end
+  @vprint :Saturate :3 "Using the new element with the exponent bound\n"
   fl, res = _ispower(anew, n, with_roots_unity = with_roots_unity, trager = trager)
   if !fl
     return fl, res

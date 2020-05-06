@@ -806,7 +806,7 @@ function element_with_valuation(a::T, primes::Vector{T}) where {T <: Union{NfOrd
   return x
 end
 
-function _mod_coeffs(a::NfRelElem, p::fmpz)
+function _mod_coeffs(a::NfRelElem{nf_elem}, p::fmpz)
   K = parent(a)
   b = data(a)
   coeffs = Vector{nf_elem}(undef, degree(K)+1)
@@ -819,7 +819,7 @@ end
 
 #computes a^e mod the integer p. Assumes that the base field of parent(a)
 # has a nice defining equation
-function _powermod(a::NfRelElem, e::T, p::fmpz) where T <: Union{fmpz, Integer}
+function _powermod(a::NfRelElem{nf_elem}, e::T, p::fmpz) where T <: Union{fmpz, Integer}
   @assert e >= 0
   K = parent(a)
   if iszero(e)

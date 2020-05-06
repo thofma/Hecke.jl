@@ -407,14 +407,16 @@ Assuming that the order $\mathcal O$ contains the equation order
 $\mathbf Z[\alpha]$ of the ambient number field, this function returns the
 index $[ \mathcal O : \mathbf Z]$.
 """
-function index(O::NfAbsOrd)
-  if isdefined(O, :index)
-    return deepcopy(O.index)
-  else
+function index(O::NfAbsOrd; copy::Bool = true)
+  if !isdefined(O, :index)
     i = gen_index(O)
     !isone(denominator(i)) && error("Order does not contain the equation order")
     O.index = abs(numerator(i))
+  end
+  if copy 
     return deepcopy(O.index)
+  else
+    return O.index
   end
 end
 
@@ -432,8 +434,8 @@ Returns whether $d$ is a divisor of the index of $\mathcal O$. It is assumed
 that $\mathcal O$ contains the equation order of the ambient number field.
 """
 function isindex_divisor(O::NfOrd, d::Union{fmpz, Integer})
-  i = index(O)
-  return i % d == 0
+  i = index(O, copy = false)
+  return iszero(i % d)
 end
 
 ################################################################################

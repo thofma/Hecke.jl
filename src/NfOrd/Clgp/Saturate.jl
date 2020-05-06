@@ -54,8 +54,9 @@ function mod_p(R, Q::NfOrdIdl, p::Int, T)
   Zk = order(Q)
   F, mF = Hecke.ResidueFieldSmallDegree1(Zk, Q)
   mF1 = Hecke.extend_easy(mF, number_field(Zk))
-  @assert size(F) % p == 1
-  pp, e = Hecke.ppio(Int(size(F)-1), p)
+  oF = Int(size(F)-1)
+  @assert iszero(oF % p)
+  pp, e = Hecke.ppio(oF, p)
   dl = Dict{elem_type(F), Int}()
   dl[F(1)] = 0
   lp = factor(p)
@@ -80,8 +81,9 @@ function mod_p(R, Q::NfOrdIdl, p::Int, T, D::Vector, cached::Bool)
   Zk = order(Q)
   F, mF = Hecke.ResidueFieldSmallDegree1(Zk, Q)
   mF1 = Hecke.extend_easy(mF, number_field(Zk))
-  @assert size(F) % p == 1
-  pp, e = Hecke.ppio(Int(size(F)-1), p)
+  oF = Int(size(F))-1
+  @assert iszero(oF % p)
+  pp, e = Hecke.ppio(oF, p)
   dl = Dict{elem_type(F), Int}()
   dl[F(1)] = 0
   lp = factor(p)
@@ -128,17 +130,33 @@ function lift_nonsymmetric(a::gfp_mat)
   return z
 end
 
+
+function _mod_exponents(a::FacElem{nf_elem, AnticNumberField}, p::Int)
+  pU = UInt(p)
+  a1 = copy(a.fac)
+  for i = a1.idxfloor:length(a1.vals)
+    if a1.slots[i] == 0x01
+      new_e = Hecke.fmpz_mod_ui(a1.vals[i], pU)
+      if iszero(new_e)
+        a1.slots[i] = 0x00
+        a1.count -= 1
+      else
+        a1.vals[i] = new_e
+      end
+    end
+  end
+  return FacElem(a1)
+end
+
 function saturate_exp_normal(c::Hecke.ClassGrpCtx, p::Int, stable = 1.5)
   ZK = order(c.FB.ideals[1])
   K = nf(ZK)
-  zeta, sT = torsion_units_gen_order(K)
+  zeta, sT = Hecke.torsion_units_gen_order(K)
 
   R = vcat(c.R_gen, c.R_rel)
   
   if gcd(sT, p) != 1 && !(hash(zeta) in c.RS) # && order is promising...
     push!(R, zeta)
-#  else
-#    println("NOT doint zeta")
   end
   T = GF(p, cached = false)
   cA = length(R)
@@ -152,67 +170,65 @@ function saturate_exp_normal(c::Hecke.ClassGrpCtx, p::Int, stable = 1.5)
   for i in 1:length(R)
     D[i] = Vector{gfp_poly}(undef, R[i] isa FacElem ? length(R[i].fac) : 1)
   end
+  dK = discriminant(ZK) 
+  Rq = Vector{FacElem{nf_elem, AnticNumberField}}(undef, length(R))
 
+  threshold = stable*ncols(A)
   for q in S
-    @vprint :Saturate 3 "Finding primes for saturation: $i/$(stable*ncols(A))\n"
+    @vprint :Saturate 3 "Finding primes for saturation: $i/$(threshold)\n"
     if isdefining_polynomial_nice(K) && isindex_divisor(ZK, q)
       continue
     end
-    if discriminant(ZK) % q == 0
+    if iszero(dK % q)
       continue
     end
     #if gcd(div(q-1, Int(pp)), pp) > 1 # not possible if cond(k) is involved
     #  continue
     #end
     @vtime :Saturate 3 lq = prime_decomposition(ZK, q, 1)
-    if length(lq) == 0
+    if isempty(lq)
       continue
     end
 
     first_prime = true
-
+    @vprint :Saturate 3 "Reducing exponents\n"
+    exp_to_reduce = ppio(q-1, p)[1]
+    @time for j = 1:length(R)
+      if typeof(R[j]) != nf_elem
+        Rq[j] = _mod_exponents(R[j], exp_to_reduce)
+      end
+    end
+    @vprint :Saturate 3 "Done\n"
     for Q in lq
       try
         if first_prime
-          @vtime :Saturate 3 z = mod_p(R, Q[1], Int(p), T, D, false)
+          @vtime :Saturate 3 z = mod_p(Rq, Q[1], Int(p), T, D, false)
           first_prime = false
         else
-          @vtime :Saturate 3 z = mod_p(R, Q[1], Int(p), T, D, true)
+          @vtime :Saturate 3 z = mod_p(Rq, Q[1], Int(p), T, D, true)
         end
-        # for debugging:
-        #zz = mod_p(R, Q[1], Int(p), T)
-        #if iszero(z)
-        #  @assert iszero(zz)
-        #else
-        #  i = findfirst(i -> !iszero(z[i]), 1:length(z))
-        #  @assert !iszero(zz[i])
-        #  scalar = divexact(zz[i], z[i])
-        #  @assert scalar * z == zz
-        #end
         z = z*A
         rrz, z = nullspace(z)
         if iszero(rrz)
           return zero_matrix(FlintZZ, 0, length(R))
         end
         A = A*sub(z, 1:nrows(z), 1:rrz)
-        # TODO: Remove or understand the following condition
-        if false && cA == ncols(A)
-          break #the other ideals are going to give the same info
-                #for multi-quad as the field is normal
-        end        
+        if cA == ncols(A) 
+          i += 1
+        else
+          i = 0
+          cA = ncols(A)
+        end
+        if i > threshold
+          break
+        end
       catch e
         if !isa(e, Hecke.BadPrime)
           rethrow(e)
         end
       end
     end
-    if cA == ncols(A) 
-      i += 1
-    else
-      i = 0
-      cA = ncols(A)
-    end
-    if i> stable*ncols(A)
+    if i > threshold
       break
     end
   end
@@ -238,6 +254,7 @@ function saturate_exp(c::Hecke.ClassGrpCtx, p::Int, stable = 1.5)
   i = 1
 
   S = Hecke.PrimesSet(Hecke.p_start, -1, Int(p), 1)
+
 
   for q in S
     @vprint :Saturate 3 "Finding primes for saturation: $i/$(stable*ncols(A))\n"
@@ -281,7 +298,7 @@ function saturate_exp(c::Hecke.ClassGrpCtx, p::Int, stable = 1.5)
       i = 0
       cA = ncols(A)
     end
-    if i> stable*ncols(A)
+    if i > stable*ncols(A)
       break
     end
   end

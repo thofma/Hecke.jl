@@ -755,7 +755,7 @@ function _decomposition(O::NfAbsOrd, I::NfAbsOrdIdl, Ip::NfAbsOrdIdl, T::NfAbsOr
     P = ideals[1][1]
     f = P.splitting_type[2]
     #There is only one prime ideal and the probability of finding a random generator is low.
-    #I need one element of valuation 1. Then, using the idempotents, I can get a generator easily.
+    #I need one element of valuation 1.
     P2 = P*P
     x = find_elem_of_valuation_1(P, P2)
     @hassert :NfOrd 1 !iszero(x)
@@ -774,8 +774,8 @@ function _decomposition(O::NfAbsOrd, I::NfAbsOrdIdl, Ip::NfAbsOrdIdl, T::NfAbsOr
     ideals[1] = (P, e)
   end
   return ideals
-
 end
+
 
 function find_random_second_gen(A::NfAbsOrdIdl{S, T}) where {S, T}
   O = order(A)
