@@ -264,12 +264,12 @@ prime(G::LocalGenusHerm) = G.p
 
 function _non_norm_rep(G::LocalGenusHerm)
   if isdefined(G, :non_norm_rep)
-    return G.non_norm_rep
+    return G.non_norm_rep::elem_type(base_field(base_field(G)))
   end
 
   z = _non_norm_rep(base_field(G), base_field(base_field(G)), prime(G))
   G.non_norm_rep = z
-  return z
+  return z::elem_type(base_field(base_field(G)))
 end
 
 ################################################################################
@@ -576,7 +576,7 @@ function genus(::Type{HermLat}, E::S, p::T, data::Vector{Tuple{Int, Int, Int, In
     end
   end
 
-  return z
+  return z::LocalGenusHerm{S, T}
 end
 
 ################################################################################
