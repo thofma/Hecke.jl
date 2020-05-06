@@ -381,7 +381,7 @@ end
 
 function discriminant(O::NfRelOrd{T, S}) where {T <: NumFieldElem{U} where U, S}
   assure_has_discriminant(O)
-  return deepcopy(O.disc_rel)
+  return deepcopy(O.disc_rel)::ideal_type(order_type(base_field(nf(O))))
 end
 
 ################################################################################

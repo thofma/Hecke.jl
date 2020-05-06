@@ -713,7 +713,7 @@ function ispower(I::NfRelOrdIdl)
     return 0, I
   end
   OL = order(I)
-  d = discriminant(order(I))
+  d = discriminant(OL)
   b, a = ppio(m, d) # hopefully: gcd(a, d) = 1 = gcd(a, b) and ab = m
 
   e, JJ = ispower_unram(gcd(I, ideal(OL, a)))
@@ -746,10 +746,10 @@ function ispower(I::NfRelOrdIdl)
   return g, JJ^div(e, g)*J
 end
 
-function ispower_unram(I::NfRelOrdIdl)
+function ispower_unram(I::NfRelOrdIdl{S, T, U})::Tuple{Int, NfRelOrdIdl{S, T, U}} where {S, T, U}
   m = minimum(I)
   if isone(m)
-    return 0, I
+    return (0, I)
   end
   OL = order(I)
 
@@ -760,8 +760,7 @@ function ispower_unram(I::NfRelOrdIdl)
   II = simplify(II)
   @assert isone(denominator(II))
 
-  f, s = ispower_unram(numerator(II))
-
+  f, s = ispower_unram(numerator(II)::NfRelOrdIdl{S, T, U})
   g = gcd(f, e)
   if isone(g)
     return 1, I
