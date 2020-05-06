@@ -130,16 +130,19 @@ end
 
 function saturate_exp_normal(c::Hecke.ClassGrpCtx, p::Int, stable = 1.5)
   ZK = order(c.FB.ideals[1])
-  K = nf(ZK)
-  zeta, sT = torsion_units_gen_order(K)
+
+  T, mT = torsion_unit_group(ZK)
+  sT = Int(order(T))
 
   R = vcat(c.R_gen, c.R_rel)
-  
+  K = nf(ZK)
+  zeta = mT(T[1])
   if gcd(sT, p) != 1 && !(hash(zeta) in c.RS) # && order is promising...
-    push!(R, zeta)
+    push!(R, K(zeta))
 #  else
 #    println("NOT doint zeta")
   end
+
   T = GF(p, cached = false)
   cA = length(R)
   A = identity_matrix(T, cA)
