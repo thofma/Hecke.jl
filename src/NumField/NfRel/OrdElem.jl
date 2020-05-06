@@ -1,3 +1,7 @@
+parent_type(::NfRelOrdElem{T, U}) where {T, U} = NfRelOrd{T, fractional_ideal_type(order_type(parent_type(T))), U}
+
+parent_type(::Type{NfRelOrdElem{T, U}}) where {T, U} = NfRelOrd{T, fractional_ideal_type(order_type(parent_type(T))), U}
+
 ################################################################################
 #
 #  Deepcopy
@@ -81,9 +85,9 @@ Constructs a new element of $\mathcal O$ which is set to $0$.
 
 Returns the order of which $a$ is an element.
 """
-parent(x::NfRelOrdElem{T}) where {T <: NumFieldElem{S} where {S}} = x.parent
+parent(x::NfRelOrdElem{T}) where {T <: NumFieldElem{S} where {S}} = x.parent::parent_type(typeof(x))
 
-parent(x::NfRelOrdElem{nf_elem}) = x.parent
+parent(x::NfRelOrdElem{nf_elem}) = x.parent::parent_type(typeof(x))
 
 ################################################################################
 #

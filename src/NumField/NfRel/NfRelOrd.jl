@@ -553,7 +553,7 @@ Returns the maximal order of $L$.
 function MaximalOrder(L::NumField)
   try
     O = _get_maximal_order_of_nf_rel(L)
-    return O
+    return O::order_type(L)
   catch e
     if !isa(e, AccessorNotSetError)
       rethrow(e)
@@ -561,7 +561,7 @@ function MaximalOrder(L::NumField)
     O = MaximalOrder(EquationOrder(L))
     O.ismaximal = 1
     _set_maximal_order_of_nf_rel(L, O)
-    return O
+    return O::order_type(L)
   end
 end
 

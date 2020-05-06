@@ -835,6 +835,24 @@ function force_coerce(a::NumField{T}, b::NumFieldElem; throw_error::Bool = true)
   return false
 end
 
+@noinline function force_coerce_throwing(a::NumField{T}, b::NumFieldElem) where {T}
+  if absolute_degree(parent(b)) <= absolute_degree(a)
+    c = find_one_chain(parent(b), a)
+    if c !== nothing
+      x = b
+      for f = c
+        @assert parent(x) == domain(f)
+        x = f(x)
+      end
+      return x::elem_type(a)
+    else
+    throw(error("no coercion possible"))
+  end
+  else
+    throw(error("no coercion possible"))
+  end
+end
+
 #(large) fields have a list of embeddings from subfields stored (special -> subs)
 #this traverses the lattice downwards collecting all chains of embeddings
 function collect_all_chains(a::NumField, filter::Function = x->true)

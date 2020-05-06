@@ -6,10 +6,10 @@
 
 # S is the element type of the base field of the algebra, T the fractional ideal
 # type of this field
-mutable struct AlgAssRelOrd{S, T} <: Ring
-  algebra::AbsAlgAss{S}
+mutable struct AlgAssRelOrd{S, T, U} <: Ring
+  algebra::U
   dim::Int
-  pseudo_basis::Vector{Tuple{AbsAlgAssElem{S}, T}}
+  pseudo_basis#::Vector{Tuple{AbsAlgAssElem{S}, T}}
   basis_matrix::Generic.MatSpaceElem{S}
   basis_mat_inv::Generic.MatSpaceElem{S}
   basis_pmatrix::PMat{S, T}
@@ -28,8 +28,8 @@ mutable struct AlgAssRelOrd{S, T} <: Ring
   nice_order#Tuple{AlgAssAbsOrd, T}
   nice_order_ideal::T
 
-  function AlgAssRelOrd{S, T}(A::AbsAlgAss{S}) where {S, T}
-    z = new{S, T}()
+  function AlgAssRelOrd{S, T, U}(A::AbsAlgAss{S}) where {S, T, U}
+    z = new{S, T, U}()
     z.algebra = A
     z.dim = dim(A)
     z.ismaximal = 0
@@ -37,15 +37,15 @@ mutable struct AlgAssRelOrd{S, T} <: Ring
     return z
   end
 
-  function AlgAssRelOrd{S, T}(A::AbsAlgAss{S}, M::PMat{S, T}) where {S, T}
-    z = AlgAssRelOrd{S, T}(A)
+  function AlgAssRelOrd{S, T, U}(A::U, M::PMat{S, T}) where {S, T, U}
+    z = AlgAssRelOrd{S, T, U}(A)
     z.basis_pmatrix = M
     z.basis_matrix = M.matrix
     return z
   end
 
-  function AlgAssRelOrd{S, T}(A::AbsAlgAss{S}, M::Generic.MatSpaceElem{S}) where {S, T}
-    z = AlgAssRelOrd{S, T}(A)
+  function AlgAssRelOrd{S, T, U}(A::U, M::Generic.MatSpaceElem{S}) where {S, T, U}
+    z = AlgAssRelOrd{S, T, U}(A)
     z.basis_matrix = M
     z.basis_pmatrix = pseudo_matrix(M)
     return z
@@ -58,14 +58,14 @@ end
 #
 ################################################################################
 
-mutable struct AlgAssRelOrdElem{S, T} <: RingElem
-  parent::AlgAssRelOrd{S, T}
+mutable struct AlgAssRelOrdElem{S, T, U} <: RingElem
+  parent::AlgAssRelOrd{S, T, U}
   elem_in_algebra::AbsAlgAssElem{S}
   coordinates::Vector{S}
   has_coord::Bool
 
-  function AlgAssRelOrdElem{S, T}(O::AlgAssRelOrd{S, T}) where {S, T}
-    z = new{S, T}()
+  function AlgAssRelOrdElem{S, T, U}(O::AlgAssRelOrd{S, T, U}) where {S, T, U}
+    z = new{S, T, U}()
     z.parent = O
     z.elem_in_algebra = zero(algebra(O))
     z.coordinates = Vector{S}(undef, degree(O))
@@ -73,8 +73,8 @@ mutable struct AlgAssRelOrdElem{S, T} <: RingElem
     return z
   end
 
-  function AlgAssRelOrdElem{S, T}(O::AlgAssRelOrd{S, T}, a::AbsAlgAssElem{S}) where {S, T}
-    z = new{S, T}()
+  function AlgAssRelOrdElem{S, T, U}(O::AlgAssRelOrd{S, T, U}, a::AbsAlgAssElem{S}) where {S, T, U}
+    z = new{S, T, U}()
     z.parent = O
     z.elem_in_algebra = a
     z.coordinates = Vector{S}(undef, degree(O))
@@ -82,8 +82,8 @@ mutable struct AlgAssRelOrdElem{S, T} <: RingElem
     return z
   end
 
-  function AlgAssRelOrdElem{S, T}(O::AlgAssRelOrd{S, T}, a::AbsAlgAssElem{S}, arr::Vector{S}) where {S, T}
-    z = new{S, T}()
+  function AlgAssRelOrdElem{S, T, U}(O::AlgAssRelOrd{S, T, U}, a::AbsAlgAssElem{S}, arr::Vector{S}) where {S, T, U}
+    z = new{S, T, U}()
     z.parent = O
     z.elem_in_algebra = a
     z.coordinates = arr
@@ -98,8 +98,8 @@ end
 #
 ################################################################################
 
-mutable struct AlgAssRelOrdIdl{S, T}
-  algebra::AbsAlgAss{S}
+mutable struct AlgAssRelOrdIdl{S, T, U}
+  algebra::U
 
   pseudo_basis::Vector{Tuple{AbsAlgAssElem{S}, T}}
   # The basis matrices are in the BASIS of the ALGEBRA!
@@ -112,12 +112,12 @@ mutable struct AlgAssRelOrdIdl{S, T}
 
   # Left and right order:
   # The largest orders of which the ideal is a left resp. right ideal.
-  left_order::AlgAssRelOrd{S, T}
-  right_order::AlgAssRelOrd{S, T}
+  left_order::AlgAssRelOrd{S, T, U}
+  right_order::AlgAssRelOrd{S, T, U}
 
   # Any order contained in the left or right order, that is, an order of which
   # the ideal is a (possibly fractional) ideal.
-  order::AlgAssRelOrd{S, T}
+  order::AlgAssRelOrd{S, T, U}
 
   # isleft and isright with respect to `order`
   isleft::Int                      # 0 Not known
@@ -127,24 +127,24 @@ mutable struct AlgAssRelOrdIdl{S, T}
 
   iszero::Int                      # 0: don't know, 1: known to be zero, 2: known to be not zero
 
-  norm::Dict{AlgAssRelOrd{S, T}, T} # The ideal has different norms with respect
-                                    # to different orders
-  normred::Dict{AlgAssRelOrd{S, T}, T}
+  norm::Dict{AlgAssRelOrd{S, T, U}, T} # The ideal has different norms with respect
+                                       # to different orders
+  normred::Dict{AlgAssRelOrd{S, T, U}, T}
 
-  function AlgAssRelOrdIdl{S, T}(A::AbsAlgAss{S}) where {S, T}
-    z = new{S, T}()
+  function AlgAssRelOrdIdl{S, T, U}(A::AbsAlgAss{S}) where {S, T, U}
+    z = new{S, T, U}()
     z.algebra = A
     z.isleft = 0
     z.isright = 0
     z.iszero = 0
-    z.basis_pmatrix_wrt = Dict{AlgAssRelOrd{S, T}, PMat{S, T}}()
-    z.norm = Dict{AlgAssRelOrd{S, T}, T}()
-    z.normred = Dict{AlgAssRelOrd{S, T}, T}()
+    z.basis_pmatrix_wrt = Dict{AlgAssRelOrd{S, T, U}, PMat{S, T}}()
+    z.norm = Dict{AlgAssRelOrd{S, T, U}, T}()
+    z.normred = Dict{AlgAssRelOrd{S, T, U}, T}()
     return z
   end
 
-  function AlgAssRelOrdIdl{S, T}(A::AbsAlgAss{S}, M::PMat{S, T}) where {S, T}
-    z = AlgAssRelOrdIdl{S, T}(A)
+  function AlgAssRelOrdIdl{S, T, U}(A::AbsAlgAss{S}, M::PMat{S, T}) where {S, T, U}
+    z = AlgAssRelOrdIdl{S, T, U}(A)
     z.basis_pmatrix = M
     z.basis_matrix = M.matrix
     return z

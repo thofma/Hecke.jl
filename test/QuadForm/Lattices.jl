@@ -70,5 +70,3 @@ end
   @test !islocal_norm(E, u, p)
   @test valuation(u - 1, p) == normic_defect(E, u, p)
 end
-
-

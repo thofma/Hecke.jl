@@ -557,24 +557,28 @@ function AlgAss(O::Union{ NfRelOrd{T, S}, AlgAssRelOrd{T, S} }, I::Union{ NfRelO
     A.iscommutative = 1
   end
 
-  function _image(a::Union{ NfRelOrdElem, AlgAssRelOrdElem })
-    c = _elem_in_algebra(a, copy = false)
-    coeffs_c = _coeff(c)
-    for k in reducers
-      d = -coeffs_c[k]//new_bmatI[k, k]
-      c = c + d*new_basisI[k][1]
-    end
-    coeffs_c = _coeff(c)
-    for k in 1:degree(O)
-      if !(k in basis_elts)
-        @assert iszero(coeffs_c[k])
+  local _image
+
+  let A = A, O = O
+    function _image(a::Union{ NfRelOrdElem, AlgAssRelOrdElem })
+      c = _elem_in_algebra(a, copy = false)
+      coeffs_c = _coeff(c)
+      for k in reducers
+        d = -coeffs_c[k]//new_bmatI[k, k]
+        c = c + d*new_basisI[k][1]
       end
+      coeffs_c = _coeff(c)
+      for k in 1:degree(O)
+        if !(k in basis_elts)
+          @assert iszero(coeffs_c[k])
+        end
+      end
+      b = A()
+      for k in 1:r
+        b.coeffs[k] = mmF(coeffs_c[basis_elts[k]])
+      end
+      return b
     end
-    b = A()
-    for k in 1:r
-      b.coeffs[k] = mmF(coeffs_c[basis_elts[k]])
-    end
-    return b
   end
 
   lifted_basis_of_A = []
@@ -586,8 +590,11 @@ function AlgAss(O::Union{ NfRelOrd{T, S}, AlgAssRelOrd{T, S} }, I::Union{ NfRelO
     push!(lifted_basis_of_A, b)
   end
 
-  function _preimage(v::AlgAssElem)
-    return O(sum((invmmF(v.coeffs[i]))*lifted_basis_of_A[i] for i in 1:r))
+  local _preimage
+  let lifted_basis_of_A = lifted_basis_of_A, O = O, invmmF = invmmF
+    function _preimage(v::AlgAssElem)
+      return O(sum((invmmF(v.coeffs[i]))*lifted_basis_of_A[i] for i in 1:r))
+    end
   end
 
   OtoA = RelOrdToAlgAssMor(O, A, _image, _preimage)
@@ -705,25 +712,30 @@ function AlgAss(I::Union{ NfRelOrdIdl{T, S}, AlgAssRelOrdIdl{T, S} }, J::Union{ 
     A.iscommutative = 1
   end
 
-  function _image(a::Union{ NfRelOrdElem, AlgAssRelOrdElem })
-    c = _elem_in_algebra(a, copy = false)
-    coeffs = _coeff(c)
-    for k in reducers
-      d = -coeffs[k]//new_bmatJinI[k, k]
-      c = c + d*new_basisJ[k][1]
-    end
-    coeffs = _coeff(c)
-    for k in 1:degree(O)
-      if !(k in basis_elts)
-        @assert iszero(coeffs[k])
+  local _image
+
+  let O = O, new_bmatJinI = new_bmatJinI, A = A
+    function _image(a::Union{ NfRelOrdElem, AlgAssRelOrdElem })
+      c = _elem_in_algebra(a, copy = false)
+      coeffs = _coeff(c)
+      for k in reducers
+        d = -coeffs[k]//new_bmatJinI[k, k]
+        c = c + d*new_basisJ[k][1]
       end
+      coeffs = _coeff(c)
+      for k in 1:degree(O)
+        if !(k in basis_elts)
+          @assert iszero(coeffs[k])
+        end
+      end
+      b = A()
+      for k in 1:r
+        b.coeffs[k] = mmF(coeffs[basis_elts[k]])
+      end
+      return b
     end
-    b = A()
-    for k in 1:r
-      b.coeffs[k] = mmF(coeffs[basis_elts[k]])
-    end
-    return b
   end
+
 
   lifted_basis_of_A = []
 
@@ -734,8 +746,12 @@ function AlgAss(I::Union{ NfRelOrdIdl{T, S}, AlgAssRelOrdIdl{T, S} }, J::Union{ 
     push!(lifted_basis_of_A, b)
   end
 
-  function _preimage(v::AlgAssElem)
-    return O(sum((invmmF(v.coeffs[i])) * lifted_basis_of_A[i] for i in 1:r))
+  local _preimage
+
+  let O = O, invmmF = invmmF, lifted_basis_of_A = lifted_basis_of_A
+    function _preimage(v::AlgAssElem)
+      return O(sum((invmmF(v.coeffs[i])) * lifted_basis_of_A[i] for i in 1:r))
+    end
   end
 
   OtoA = RelOrdToAlgAssMor(O, A, _image, _preimage)

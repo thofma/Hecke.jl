@@ -2,9 +2,9 @@
 
 export trred
 
-parent_type(::Type{AlgAssRelOrdElem{S, T}}) where {S, T} = AlgAssRelOrd{S, T}
+parent_type(::Type{AlgAssRelOrdElem{S, T, U}}) where {S, T, U} = AlgAssRelOrd{S, T, U}
 
-parent_type(::AlgAssRelOrdElem{S, T}) where {S, T} = AlgAssRelOrd{S, T}
+parent_type(::AlgAssRelOrdElem{S, T, U}) where {S, T, U} = AlgAssRelOrd{S, T, U}
 
 @doc Markdown.doc"""
     parent(x::AlgAssRelOrdElem) -> AlgAssRelOrd
@@ -19,7 +19,7 @@ parent_type(::AlgAssRelOrdElem{S, T}) where {S, T} = AlgAssRelOrd{S, T}
 #
 ################################################################################
 
-function check_parent(x::AlgAssRelOrdElem{S, T}, y::AlgAssRelOrdElem{S, T}) where {S, T}
+function check_parent(x::AlgAssRelOrdElem{S, T, U}, y::AlgAssRelOrdElem{S, T, U}) where {S, T, U}
   return parent(x) === parent(y)
 end
 
@@ -29,27 +29,27 @@ end
 #
 ################################################################################
 
-(O::AlgAssRelOrd{S, T})(a::AbsAlgAssElem{S}, check::Bool = true) where {S, T} = begin
+(O::AlgAssRelOrd{S, T, U})(a::AbsAlgAssElem{S}, check::Bool = true) where {S, T, U} = begin
   if check
     (x, y) = _check_elem_in_order(a, O)
     !x && error("Algebra element not in the order")
-    return AlgAssRelOrdElem{S, T}(O, deepcopy(a), y)
+    return AlgAssRelOrdElem{S, T, U}(O, deepcopy(a), y)
   else
-    return AlgAssRelOrdElem{S, T}(O, deepcopy(a))
+    return AlgAssRelOrdElem{S, T, U}(O, deepcopy(a))
   end
 end
 
-(O::AlgAssRelOrd{S, T})(a::AbsAlgAssElem{S}, arr::Vector{S}, check::Bool = false) where {S, T} = begin
+(O::AlgAssRelOrd{S, T, U})(a::AbsAlgAssElem{S}, arr::Vector{S}, check::Bool = false) where {S, T, U} = begin
   if check
     (x, y) = _check_elem_in_order(a, O)
     (!x || arr != y) && error("Algebra element not in the order")
-    return AlgAssRelOrdElem{S, T}(O, deepcopy(a), y)
+    return AlgAssRelOrdElem{S, T, U}(O, deepcopy(a), y)
   else
-    return AlgAssRelOrdElem{S, T}(O, deepcopy(a), deepcopy(arr))
+    return AlgAssRelOrdElem{S, T, U}(O, deepcopy(a), deepcopy(arr))
   end
 end
 
-(O::AlgAssRelOrd{S, T})(arr::Vector{S}, check::Bool = true) where {S, T} = begin
+(O::AlgAssRelOrd{S, T, U})(arr::Vector{S}, check::Bool = true) where {S, T, U} = begin
   M = basis_matrix(O, copy = false)
   N = matrix(base_ring(algebra(O)), 1, degree(O), arr)
   NM = N*M
@@ -57,14 +57,14 @@ end
   return O(x, arr, check)
 end
 
-(O::AlgAssRelOrd{S, T})(a::AlgAssRelOrdElem{S, T}, check::Bool = true) where {S, T} = begin
+(O::AlgAssRelOrd{S, T, U})(a::AlgAssRelOrdElem{S, T, U}, check::Bool = true) where {S, T, U} = begin
   b = elem_in_algebra(a) # already a copy
   if check
     (x, y) = _check_elem_in_order(b, O)
     !x && error("Algebra element not in the order")
-    return AlgAssRelOrdElem{S, T}(O, b, y)
+    return AlgAssRelOrdElem{S, T, U}(O, b, y)
   else
-    return AlgAssRelOrdElem{S, T}(O, b)
+    return AlgAssRelOrdElem{S, T, U}(O, b)
   end
 end
 
@@ -92,7 +92,7 @@ end
 #
 ################################################################################
 
-(O::AlgAssRelOrd{S, T})() where {S, T} = AlgAssRelOrdElem{S, T}(O)
+(O::AlgAssRelOrd{S, T, U})() where {S, T, U} = AlgAssRelOrdElem{S, T, U}(O)
 
 one(O::AlgAssRelOrd) = O(one(algebra(O)))
 
@@ -142,7 +142,7 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    tr(x::AlgAssRelOrdElem{S, T}) where { S, T } -> S
+    tr(x::AlgAssRelOrdElem{S, T, U}) where { S, T, U } -> S
 
 > Returns the trace of $x$.
 """
@@ -151,7 +151,7 @@ function tr(x::AlgAssRelOrdElem)
 end
 
 @doc Markdown.doc"""
-    trred(x::AlgAssRelOrdElem{S, T}) where { S, T } -> S
+    trred(x::AlgAssRelOrdElem{S, T, U}) where { S, T, U } -> S
 
 > Returns the reduced trace of $x$.
 """
