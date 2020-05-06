@@ -298,7 +298,7 @@ function isconjugate(M::fmpz_mat, N::fmpz_mat)
     return _isconjugate(equation_order(fields[1]), M, N)
   end
 
-  A, AtoK = direct_product(fields)
+  A, AtoK = direct_product(fields)::Tuple{AlgAss{fmpq}, Vector{AbsAlgAssToNfAbsMor{AlgAss{fmpq}, elem_type(AlgAss{fmpq}), AnticNumberField, fmpq_mat}}}
   O = _equation_order(A)
   return _isconjugate(O, M, N)
 end

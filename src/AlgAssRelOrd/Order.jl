@@ -1,12 +1,12 @@
 export iscommutative, trred_matrix, any_order, pmaximal_overorder, phereditary_overorder, ismaximal
 
-elem_type(::AlgAssRelOrd{S, T}) where {S, T} = AlgAssRelOrdElem{S, T}
+elem_type(::AlgAssRelOrd{S, T, U}) where {S, T, U} = AlgAssRelOrdElem{S, T, U}
 
-elem_type(::Type{AlgAssRelOrd{S, T}}) where {S, T} = AlgAssRelOrdElem{S, T}
+elem_type(::Type{AlgAssRelOrd{S, T, U}}) where {S, T, U} = AlgAssRelOrdElem{S, T, U}
 
-ideal_type(::AlgAssRelOrd{S, T}) where {S, T} = AlgAssRelOrdIdl{S, T}
+ideal_type(::AlgAssRelOrd{S, T, U}) where {S, T, U} = AlgAssRelOrdIdl{S, T, U}
 
-ideal_type(::Type{AlgAssRelOrd{S, T}}) where {S, T} = AlgAssRelOrdIdl{S, T}
+ideal_type(::Type{AlgAssRelOrd{S, T, U}}) where {S, T, U} = AlgAssRelOrdIdl{S, T, U}
 
 @doc Markdown.doc"""
     algebra(O::AlgAssRelOrd) -> AbsAlgAss
@@ -44,7 +44,7 @@ iscommutative(O::AlgAssRelOrd) = iscommutative(algebra(O))
 > Returns the order of $A$ with basis matrix $M$.
 """
 function Order(A::AbsAlgAss{S}, M::Generic.Mat{S}) where S <: NumFieldElem
-  return AlgAssRelOrd{S, fractional_ideal_type(order_type(base_ring(A)))}(A, deepcopy(M))
+  return AlgAssRelOrd{S, fractional_ideal_type(order_type(base_ring(A))), typeof(A)}(A, deepcopy(M))
 end
 
 @doc Markdown.doc"""
@@ -54,7 +54,7 @@ end
 > Returns the order of $A$ with basis pseudo-matrix $M$.
 """
 function Order(A::AbsAlgAss{S}, M::PMat{S, T}) where { S <: NumFieldElem, T }
-  return AlgAssRelOrd{S, T}(A, deepcopy(M))
+  return AlgAssRelOrd{S, T, typeof(A)}(A, deepcopy(M))
 end
 
 @doc Markdown.doc"""
@@ -77,7 +77,7 @@ end
 #
 ################################################################################
 
-function assure_has_basis_pmatrix(O::AlgAssRelOrd{S, T}) where {S, T}
+function assure_has_basis_pmatrix(O::AlgAssRelOrd{S, T, U}) where {S, T, U}
   if isdefined(O, :basis_pmatrix)
     return nothing
   end
@@ -96,7 +96,7 @@ function assure_has_basis_pmatrix(O::AlgAssRelOrd{S, T}) where {S, T}
   return nothing
 end
 
-function assure_has_pseudo_basis(O::AlgAssRelOrd{S, T}) where {S, T}
+function assure_has_pseudo_basis(O::AlgAssRelOrd{S, T, U}) where {S, T, U}
   if isdefined(O, :pseudo_basis)
     return nothing
   end
@@ -152,12 +152,12 @@ end
 > that $O = \bigoplus_i a_i e_i$, where $e_i$ is an element of `algebra(O)`
 > and $a_i$ a fractional ideal of `base_ring(O)`.
 """
-function pseudo_basis(O::AlgAssRelOrd; copy::Bool = true)
+function pseudo_basis(O::AlgAssRelOrd{S, T, U}; copy::Bool = true) where {S, T, U}
   assure_has_pseudo_basis(O)
   if copy
-    return deepcopy(O.pseudo_basis)
+    return deepcopy(O.pseudo_basis)::Vector{Tuple{elem_type(U), T}}
   else
-    return O.pseudo_basis
+    return O.pseudo_basis::Vector{Tuple{elem_type(U), T}}
   end
 end
 
@@ -252,7 +252,7 @@ end
 #
 ################################################################################
 
-function _check_elem_in_order(a::AbsAlgAssElem{S}, O::AlgAssRelOrd{S, T}, short::Type{Val{U}} = Val{false}) where {S, T, U}
+function _check_elem_in_order(a::AbsAlgAssElem{S}, O::AlgAssRelOrd{S, T, V}, short::Type{Val{U}} = Val{false}) where {S, T, U, V}
   t = zero_matrix(base_ring(algebra(O)), 1, degree(O))
   elem_to_mat_row!(t, 1, a)
   t = t*basis_mat_inv(O, copy = false)
@@ -283,7 +283,7 @@ end
 
 > Returns `true` if the algebra element $a$ is in $O$ and `false` otherwise.
 """
-function in(a::AbsAlgAssElem{S}, O::AlgAssRelOrd{S, T}) where {S, T}
+function in(a::AbsAlgAssElem{S}, O::AlgAssRelOrd{S, T, U}) where {S, T, U}
   return _check_elem_in_order(a, O, Val{true})
 end
 
@@ -413,9 +413,9 @@ end
 
 > Returns the discriminant of $O$.
 """
-function discriminant(O::AlgAssRelOrd)
+function discriminant(O::AlgAssRelOrd{S, T, U}) where {S, T, U}
   if isdefined(O, :disc)
-    return O.disc
+    return O.disc::ideal_type(order_type(parent_type(S)))
   end
   d = det(trred_matrix(O))
   pb = pseudo_basis(O, copy = false)
@@ -426,7 +426,7 @@ function discriminant(O::AlgAssRelOrd)
   disc = d*a
   simplify(disc)
   O.disc = numerator(disc)
-  return deepcopy(O.disc)
+  return deepcopy(O.disc)::ideal_type(order_type(parent_type(S)))
 end
 
 ################################################################################
@@ -481,12 +481,12 @@ end
 
 > Returns a maximal order of `algera(O)` containing $O$.
 """
-function maximal_order(O::AlgAssRelOrd)
+function maximal_order(O::AlgAssRelOrd{S, T, U}) where {S, T, U}
   A = algebra(O)
 
   if isdefined(A, :maximal_order)
     # Check whether O \subseteq OO
-    OO = A.maximal_order
+    OO = A.maximal_order::AlgAssRelOrd{S, T, U}
     if _spans_subset_of_pseudohnf(basis_pmatrix(O, copy = false), basis_pmatrix(OO, copy = false), :lowerleft)
       return OO
     end
@@ -507,7 +507,7 @@ function maximal_order(O::AlgAssRelOrd)
   if !isdefined(A, :maximal_order)
     A.maximal_order = OO
   end
-  return OO
+  return OO::AlgAssRelOrd{S, T, U}
 end
 
 @doc Markdown.doc"""
@@ -762,7 +762,7 @@ end
 #
 ################################################################################
 
-function +(a::AlgAssRelOrd{S, T}, b::AlgAssRelOrd{S, T}) where { S, T }
+function +(a::AlgAssRelOrd{S, T, U}, b::AlgAssRelOrd{S, T, U}) where { S, T, U}
   @assert algebra(a) === algebra(b)
   aB = basis_pmatrix(a, copy = false)
   bB = basis_pmatrix(b, copy = false)

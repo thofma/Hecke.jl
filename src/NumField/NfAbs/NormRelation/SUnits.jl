@@ -173,7 +173,7 @@ end
 
 # pure
 
-function _add_sunits_from_brauer_relation!(c, UZK, N; invariant = false)
+function _add_sunits_from_brauer_relation!(c, UZK, N; invariant = false, compact::Int = 0)
   # I am assuming that c.FB.ideals is invariant under the action of the Galois group
   cp = sort!(collect(Set(minimum(x) for x = c.FB.ideals)))
   K = N.K
@@ -200,6 +200,10 @@ function _add_sunits_from_brauer_relation!(c, UZK, N; invariant = false)
     for l=1:ngens(Szk)
       @vprint :NormRelation 3 "Sunits $l / $(ngens(Szk))\n"
       u = mS(Szk[l])  #do compact rep here???
+      if compact != 0
+        @vprint :NormRelation 3 "  Compact presentation ...\n"
+        u = Hecke.compact_presentation(u, compact)
+      end
       valofnewelement = mul(mS.valuations[l], z)
       @hassert :NormRelation 1 begin zz = mk(evaluate(u)); true; end
       @hassert :NormRelation 1 sparse_row(FlintZZ, [ (i, valuation(zz, p)) for (i, p) in enumerate(c.FB.ideals) if valuation(zz, p) != 0]) == valofnewelement
@@ -212,6 +216,10 @@ function _add_sunits_from_brauer_relation!(c, UZK, N; invariant = false)
     for j=2:ngens(U) # I cannot add a torsion unit. He will hang forever.
       @vprint :NormRelation 3 "Unit $j / $(ngens(U))\n"
       u = mU(U[j])
+      if compact != 0
+        @vprint :NormRelation 3 "  Compact presentation ...\n"
+        u = Hecke.compact_presentation(u, compact)
+      end
       @vtime :NormRelation 4 img_u = FacElem(Dict{nf_elem, fmpz}((_embed(N, i, x), v) for (x,v) = u.fac))
       @vtime :NormRelation 4 Hecke._add_unit(UZK, img_u)
     end
@@ -325,7 +333,7 @@ function sunit_group_fac_elem_via_brauer(N::NormRelation, S, invariant::Bool = f
   return _sunit_group_fac_elem_quo_via_brauer(N, S, 0, invariant)
 end
 
-function class_group_via_brauer(O::NfOrd, N::NormRelation, do_lll = true)
+function class_group_via_brauer(O::NfOrd, N::NormRelation; do_lll::Bool = true, isnormal::Bool = false, compact::Bool = true, stable = 3.5)
   K = N.K
   if do_lll
     OK = lll(maximal_order(nf(O)))
@@ -337,24 +345,44 @@ function class_group_via_brauer(O::NfOrd, N::NormRelation, do_lll = true)
   S = prime_ideals_up_to(OK, fbbound)
   @vprint :NormRelation 1 "Factor base bound: $fbbound\n"
   c, UZK = _setup_for_norm_relation_fun(K, S)
-  _add_sunits_from_brauer_relation!(c, UZK, N)
+
+  docompact = false
+  onlyp = 0
+
+  if Hecke.isprime_power(index(N)) && compact
+    docompact = true
+    _, onlyp = ispower(index(N))
+  end
+
+  @vprint :NormRelation 1 "Doing something in the subfields\n"
+  if !docompact
+    _add_sunits_from_brauer_relation!(c, UZK, N)
+  else
+    @vprint :NormRelation 1 "Using the compact presentation\n"
+    _add_sunits_from_brauer_relation!(c, UZK, N, compact = onlyp)
+  end
   #return c, UZK
+
+
   if index(N) != 1
     # I need to saturate
     @vprint :NormRelation 1 "Saturating at "
     for (p, e) in factor(index(N))
       @vprint :NormRelation 1 "$p "
-      b = Hecke.saturate!(c, UZK, Int(p))
+      b = Hecke.saturate!(c, UZK, Int(p), stable, isnormal = isnormal)
       while b
         idx = Hecke._validate_class_unit_group(c, UZK)
         @vprint :NormRelation 1 "Index bound from analysis $idx\n"
-        b = Hecke.saturate!(c, UZK, Int(p))
+        b = Hecke.saturate!(c, UZK, Int(p), stable, isnormal = isnormal)
       end
     end
   end
 
   idx = Hecke._validate_class_unit_group(c, UZK)
 
+  if idx != 1
+    @vprint :NormRelation 1 "Index is $idx (should be 1)!\n"
+  end
   @assert idx == 1
 
   @vprint :NormRelation 1 "\n"
@@ -366,7 +394,7 @@ function class_group_via_brauer(O::NfOrd, N::NormRelation, do_lll = true)
   return class_group(c, O)
 end
 
-function __sunit_group_fac_elem_quo_via_brauer(N::NormRelation, S, n::Int, invariant::Bool = false)
+function __sunit_group_fac_elem_quo_via_brauer(N::NormRelation, S, n::Int, invariant::Bool = false, isnormal::Bool = false)
   O = order(S[1])
 
   K = N.K
@@ -398,9 +426,9 @@ function __sunit_group_fac_elem_quo_via_brauer(N::NormRelation, S, n::Int, invar
     @vprint :NormRelation 1 "Saturating at "
     for (p, e) in factor(index(N))
       @vprint :NormRelation 1 "$p "
-      b = Hecke.saturate!(c, UZK, Int(p))
+      b = Hecke.saturate!(c, UZK, Int(p), isnormal = isnormal)
       while b
-        b = Hecke.saturate!(c, UZK, Int(p))
+        b = Hecke.saturate!(c, UZK, Int(p), isnormal = isnormal)
       end
     end
   end

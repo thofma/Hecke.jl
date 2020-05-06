@@ -481,12 +481,12 @@ end
 
 Returns the norm of $a$.
 """
-function norm(a::NfRelOrdIdl; copy::Bool = true)
+function norm(a::NfRelOrdIdl{T, S, U}; copy::Bool = true) where {T, S, U}
   assure_has_norm(a)
   if copy
-    return deepcopy(a.norm)
+    return deepcopy(a.norm)::ideal_type(order_type(parent_type(T)))
   else
-    return a.norm
+    return a.norm::ideal_type(order_type(parent_type(T)))
   end
 end
 
@@ -713,7 +713,7 @@ function ispower(I::NfRelOrdIdl)
     return 0, I
   end
   OL = order(I)
-  d = discriminant(order(I))
+  d = discriminant(OL)
   b, a = ppio(m, d) # hopefully: gcd(a, d) = 1 = gcd(a, b) and ab = m
 
   e, JJ = ispower_unram(gcd(I, ideal(OL, a)))
@@ -746,10 +746,10 @@ function ispower(I::NfRelOrdIdl)
   return g, JJ^div(e, g)*J
 end
 
-function ispower_unram(I::NfRelOrdIdl)
+function ispower_unram(I::NfRelOrdIdl{S, T, U})::Tuple{Int, NfRelOrdIdl{S, T, U}} where {S, T, U}
   m = minimum(I)
   if isone(m)
-    return 0, I
+    return (0, I)
   end
   OL = order(I)
 
@@ -760,8 +760,7 @@ function ispower_unram(I::NfRelOrdIdl)
   II = simplify(II)
   @assert isone(denominator(II))
 
-  f, s = ispower_unram(numerator(II))
-
+  f, s = ispower_unram(numerator(II)::NfRelOrdIdl{S, T, U})
   g = gcd(f, e)
   if isone(g)
     return 1, I
@@ -1216,10 +1215,11 @@ valuation(a::fmpz, B::NfRelOrdIdl) = valuation(order(B)(a), B)
 #
 ################################################################################
 
-function factor(A::NfRelOrdIdl{T, S}) where {T, S}
-  n = norm(A)
-  normFactors = factor(n)
-  result = Dict{NfRelOrdIdl{T, S}, Int}()
+function factor(A::NfRelOrdIdl{T, S, U}) where {T, S, U}
+  nn = norm(A)
+  normFactors = factor(nn)
+  n = fractional_ideal(order(nn), nn)
+  result = Dict{NfRelOrdIdl{T, S, U}, Int}()
   O = order(A)
   for p in keys(normFactors)
     prime_dec = prime_decomposition(O, p)
@@ -1251,12 +1251,12 @@ end
 Returns the ideal $A \cap O$ where $O$ is the maximal order of the coefficient
 ideals of $A$.
 """
-function minimum(A::NfRelOrdIdl; copy::Bool = true)
+function minimum(A::NfRelOrdIdl{T, S, U}; copy::Bool = true) where {T, S, U}
   assure_has_minimum(A)
   if copy
-    return deepcopy(A.minimum)
+    return deepcopy(A.minimum)::ideal_type(order_type(parent_type(T)))
   else
-    return A.minimum
+    return A.minimum::ideal_type(order_type(parent_type(T)))
   end
 end
 
@@ -1454,11 +1454,11 @@ end
 Returns an element $u \in P$ with valuation(u, P) == 1 and valuation 0 at all
 other prime ideals lying over minimum(P).
 """
-function p_uniformizer(P::NfRelOrdIdl)
+function p_uniformizer(P::NfRelOrdIdl{S, T, U}) where {S, T, U}
   @assert P.is_prime == 1
 
   if isdefined(P, :p_uniformizer)
-    return P.p_uniformizer
+    return P.p_uniformizer::elem_type(order(P))
   end
 
   p = minimum(P, copy = false)

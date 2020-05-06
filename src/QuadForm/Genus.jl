@@ -264,12 +264,12 @@ prime(G::LocalGenusHerm) = G.p
 
 function _non_norm_rep(G::LocalGenusHerm)
   if isdefined(G, :non_norm_rep)
-    return G.non_norm_rep
+    return G.non_norm_rep::elem_type(base_field(base_field(G)))
   end
 
   z = _non_norm_rep(base_field(G), base_field(base_field(G)), prime(G))
   G.non_norm_rep = z
-  return z
+  return z::elem_type(base_field(base_field(G)))
 end
 
 ################################################################################
@@ -576,7 +576,7 @@ function genus(::Type{HermLat}, E::S, p::T, data::Vector{Tuple{Int, Int, Int, In
     end
   end
 
-  return z
+  return z::LocalGenusHerm{S, T}
 end
 
 ################################################################################
@@ -596,12 +596,14 @@ Returns the genus of $L$ at the prime ideal $\mathfrak p$.
 See [Kir16, Definition 8.3.1].
 """
 function genus(L::HermLat, q)
-  if order(q) != base_ring(base_ring(L))
-    p = minimum(q)
+  if order(q) !== base_ring(base_ring(L))
+    return _genus(L, minimum(q))
   else
-    p = q
+    return _genus(L, q)
   end
-  
+end
+
+function _genus(L::HermLat, p)
   sym = _genus_symbol(L, p)
   G = genus(HermLat, nf(base_ring(L)), p, sym)
   # Just for debugging 
@@ -731,15 +733,19 @@ end
 
 function _genus_symbol(L::HermLat, q)
   if order(q) != base_ring(base_ring(L))
-    p = minimum(q)
+    return __genus_symbol(L, minimum(q))
   else
-    p = q
+    return __genus_symbol(L, q)
   end
+end
+
+function __genus_symbol(L::HermLat, p)
   @assert order(p) == base_ring(base_ring(L))
   B, G, S = jordan_decomposition(L, p)
   R = base_ring(L)
   E = nf(R)
   K = base_field(E)
+  local sym::Vector{Tuple{Int, Int, Int, Int}}
   if !isdyadic(p) || !isramified(R, p)
     # The last entry is a dummy to make the compiler happier
     sym = Tuple{Int, Int, Int, Int}[ (S[i], nrows(B[i]), islocal_norm(E, coeff(det(G[i]), 0), p) ? 1 : -1, 0) for i in 1:length(B)]
@@ -749,9 +755,9 @@ function _genus_symbol(L::HermLat, q)
     sym = Tuple{Int, Int, Int, Int}[]
     for i in 1:length(B)
       normal = _get_norm_valuation_from_gram_matrix(G[i], P) == S[i]
-      GG = diagonal_matrix([pi^(max(0, S[i] - S[j])) * G[j] for j in 1:length(B)])
+      GG = diagonal_matrix(dense_matrix_type(E)[pi^(max(0, S[i] - S[j])) * G[j] for j in 1:length(B)])
       v = _get_norm_valuation_from_gram_matrix(GG, P)
-      @assert v == valuation(R * norm(lattice(hermitian_space(E, GG), identity_matrix(E, nrows(GG)))), P)
+      #@assert v == valuation(R * norm(lattice(hermitian_space(E, GG), identity_matrix(E, nrows(GG)))), P)
       r = nrows(B[i]) # rank
       s = S[i] # P-valuation of scale(L_i)
       det_class = islocal_norm(E, coeff(det(G[i]), 0), p) ? 1 : -1  # Norm class of determinant
@@ -1654,6 +1660,8 @@ function _genus_symbol_kirschmer(L::QuadLat, p::NfOrdIdl; uniformizer = zero(ord
   end
 end
 
+global _debug = []
+
 # This is the "Magma" Genus symbol
 function _genus_symbol_kirschmer(L::HermLat, p; uniformizer = zero(order(p)))
   @assert order(p) == base_ring(base_ring(L))
@@ -1663,16 +1671,17 @@ function _genus_symbol_kirschmer(L::HermLat, p; uniformizer = zero(order(p)))
   E = nf(R)
   K = base_field(E)
   if !isdyadic(p) || !isramified(R, p)
-    sym = [ (nrows(B[i]), S[i], islocal_norm(E, coeff(det(G[i]), 0), p)) for i in 1:length(B)]
+    sym = Tuple{Int, Int, Bool}[ (nrows(B[i]), S[i], islocal_norm(E, coeff(det(G[i]), 0), p)) for i in 1:length(B)]
   else
     P = prime_decomposition(R, p)[1][1]
     pi = E(K(Hecke.uniformizer(p)))
-    sym = []
+    sym = Tuple{Int, Int, Bool, Int, elem_type(K)}[]
     for i in 1:length(B)
-      normal = _get_norm_valuation_from_gram_matrix(G[i], P) == S[i]
-      GG = diagonal_matrix([pi^(max(0, S[i] - S[j])) * G[j] for j in 1:length(B)])
-      v = _get_norm_valuation_from_gram_matrix(GG, P)
-      @assert v == valuation(R * norm(lattice(hermitian_space(E, GG), identity_matrix(E, nrows(GG)))), P)
+      normal = (_get_norm_valuation_from_gram_matrix(G[i], P)::Int == S[i])::Bool
+      GG = diagonal_matrix(dense_matrix_type(E)[pi^(max(0, S[i] - S[j])) * G[j] for j in 1:length(B)])::dense_matrix_type(E)
+      v = _get_norm_valuation_from_gram_matrix(GG, P)::Int
+      #_n = norm(lattice(hermitian_space(E, GG), identity_matrix(E, nrows(GG))))
+      #vv = valuation(R * norm(lattice(hermitian_space(E, GG), identity_matrix(E, nrows(GG)))), P)::Int
       s = (nrows(B[i]), S[i], normal, v, coeff(det(diagonal_matrix([G[j] for j in 1:i])), 0))
       push!(sym, s)
     end

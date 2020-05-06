@@ -17,6 +17,12 @@ mutable struct MapRayClassGroupAlg{S, T} <: Map{S, T, HeckeMap, MapRayClassGroup
   end
 end
 
+function modulus(f::MapRayClassGroupAlg{S, T}) where {S, T}
+  return f.modulus::elem_type(base_ring_type(T))
+end
+
+base_ring_type(::Type{FacElemMon{S}}) where {S} = S
+
 mutable struct MapPicardGrp{S, T} <: Map{S, T, HeckeMap, MapPicardGrp}
   header::MapHeader{S, T}
 
@@ -27,7 +33,7 @@ mutable struct MapPicardGrp{S, T} <: Map{S, T, HeckeMap, MapPicardGrp}
   right_transform::fmpz_mat
   betas # Vector of factorized algebra elements
   gammas # the same type as betas
-  ray_class_group_map::MapRayClassGroupAlg
+  ray_class_group_map::MapRayClassGroupAlg{S, FacElemMon{T}}
 
   function MapPicardGrp{S, T}() where {S, T}
     return new{S, T}()
@@ -58,7 +64,8 @@ end
 function picard_group(O::AlgAssAbsOrd, prepare_ref_disc_log::Bool = false)
   @assert iscommutative(O)
   if !prepare_ref_disc_log && isdefined(O, :picard_group)
-    return domain(O.picard_group), O.picard_group
+    res = domain(O.picard_group), O.picard_group
+    return res::Tuple{GrpAbFinGen, MapPicardGrp{GrpAbFinGen, parent_type(ideal_type(O))}}
   end
 
   if ismaximal(O)
@@ -68,10 +75,10 @@ function picard_group(O::AlgAssAbsOrd, prepare_ref_disc_log::Bool = false)
   if prepare_ref_disc_log && isdefined(O, :picard_group)
     mP = O.picard_group
     if isdefined(mP, :betas) && isdefined(mP, :gammas) && isdefined(mP, :right_transform)
-      return domain(mP), mP
+      return (domain(mP), mP)::Tuple{GrpAbFinGen, MapPicardGrp{GrpAbFinGen, parent_type(ideal_type(O))}}
     end
   end
-  return _picard_group_non_maximal(O, prepare_ref_disc_log)
+  return _picard_group_non_maximal(O, prepare_ref_disc_log)::Tuple{GrpAbFinGen, MapPicardGrp{GrpAbFinGen, parent_type(ideal_type(O))}}
 end
 
 function _picard_group_maximal(O::AlgAssAbsOrd)
@@ -121,7 +128,7 @@ function _picard_group_maximal(O::AlgAssAbsOrd)
   StoIdl = MapPicardGrp{typeof(S), typeof(Idl)}()
   StoIdl.header = MapHeader(S, Idl, disc_exp, disc_log)
   O.picard_group = StoIdl
-  return S, StoIdl
+  return (S, StoIdl)::Tuple{GrpAbFinGen, MapPicardGrp{GrpAbFinGen, parent_type(ideal_type(O))}}
 end
 
 # See Bley, Endres "Picard Groups and Refined Discrete Logarithms".
@@ -190,7 +197,6 @@ function _picard_group_non_maximal(O::AlgAssAbsOrd, prepare_ref_disc_log::Bool =
       # TODO: Can we make this work?
       gens_snf[i] = contract(evaluate(mR(r)), O)
     end
-
   else
     # This is now Algorithm 3.3 in the Bley-Endres-paper.
 
@@ -336,12 +342,15 @@ function _picard_group_non_maximal(O::AlgAssAbsOrd, prepare_ref_disc_log::Bool =
   StoIdl = MapPicardGrp{typeof(S), typeof(Idl)}()
   StoIdl.header = MapHeader(S, Idl, disc_exp, disc_log)
   StoIdl.ray_class_group_map = mR
+
   if prepare_ref_disc_log
     StoIdl.right_transform = V
     StoIdl.betas = betas
     StoIdl.gammas = gammas
   end
+
   O.picard_group = StoIdl
+
   return S, StoIdl
 end
 
@@ -658,12 +667,12 @@ function has_principal_generator_1_mod_m(I::Union{ AlgAssAbsOrdIdl, FacElem{ <: 
   return true, FacElem(bases, exps)
 end
 
-function disc_log_generalized_ray_class_grp(I::Union{ S, FacElem{S, T} }, mR::MapRayClassGroupAlg) where { S <: AlgAssAbsOrdIdl, T <: AlgAssAbsOrdIdlSet }
-  m = mR.modulus
+function disc_log_generalized_ray_class_grp(I::FacElem{S, T}, mR::MapRayClassGroupAlg) where { S <: AlgAssAbsOrdIdl, T <: AlgAssAbsOrdIdlSet }
+  m = modulus(mR)
   O = order(m)
   A = algebra(O)
 
-  if I isa FacElem && isempty(I)
+  if isempty(I)
     return FacElemMon(A)(), domain(mR)()
   end
 
@@ -671,11 +680,8 @@ function disc_log_generalized_ray_class_grp(I::Union{ S, FacElem{S, T} }, mR::Ma
 
   groups = mR.groups_in_number_fields
 
-  if I isa AlgAssAbsOrdIdl
-    ideals = Vector{NfOrdIdl}()
-  else
-    ideals = Vector{FacElem{NfOrdIdl, NfOrdIdlSet}}()
-  end
+  ideals = Vector{FacElem{NfOrdIdl, NfOrdIdlSet}}()
+
   for i = 1:length(fields_and_maps)
     push!(ideals, _as_ideal_of_number_field(I, fields_and_maps[i][2]))
   end
@@ -683,6 +689,47 @@ function disc_log_generalized_ray_class_grp(I::Union{ S, FacElem{S, T} }, mR::Ma
   idems = [ AtoK\one(K) for (K, AtoK) in fields_and_maps ]
   sum_idems = sum(idems)
   minus_idems = [ -one(A)*idem for idem in idems ]
+  bases = Vector{elem_type(A)}()
+  exps = Vector{fmpz}()
+  p = zero_matrix(FlintZZ, 1, 0)
+  ideal_gens = Vector{elem_type(O)}()
+  for i = 1:length(ideals)
+    K, AtoK = fields_and_maps[i]
+    d, lI = disc_log_generalized_ray_class_grp(ideals[i], groups[i][2])
+    p = hcat(p, lI.coeff)
+    for (b, e) in d
+      t = AtoK\b
+      t = add!(t, t, sum_idems)
+      t = add!(t, t, minus_idems[i])
+      push!(bases, t)
+      push!(exps, e)
+    end
+  end
+  RtoP = mR.into_product_of_groups
+  P = codomain(RtoP)
+  r = RtoP\P(p)
+
+  return FacElem(bases, exps), r
+end
+
+function disc_log_generalized_ray_class_grp(I::S, mR::MapRayClassGroupAlg) where {S <: AlgAssAbsOrdIdl}
+  m = modulus(mR)
+  O = order(m)
+  A = algebra(O)
+
+  fields_and_maps = as_number_fields(A)
+
+  groups = mR.groups_in_number_fields
+
+  ideals = Vector{NfOrdIdl}()
+
+  for i = 1:length(fields_and_maps)
+    push!(ideals, _as_ideal_of_number_field(I, fields_and_maps[i][2]))
+  end
+
+  idems = elem_type(A)[ AtoK\one(K) for (K, AtoK) in fields_and_maps ]
+  sum_idems = sum(idems)
+  minus_idems = elem_type(A)[ -one(A)*idem for idem in idems ]
   bases = Vector{elem_type(A)}()
   exps = Vector{fmpz}()
   p = zero_matrix(FlintZZ, 1, 0)

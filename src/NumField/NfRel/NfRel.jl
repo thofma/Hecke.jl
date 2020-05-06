@@ -157,14 +157,14 @@ function (K::NfRel{NfRelElem{T}})(x::NfRelElem{T}) where {T}
   if parent(x) == base_field(K)
     return K(parent(K.pol)(x))
   end
-  return force_coerce(K, x)
+  return force_coerce_throwing(K, x)
 end
 
 function (K::NfRel{nf_elem})(x::nf_elem)
   if parent(x) == base_field(K)
     return K(parent(K.pol)(x))
   end
-  return force_coerce(K, x)
+  return force_coerce_throwing(K, x)
 end
 
 
@@ -386,7 +386,8 @@ function Base.:(^)(a::NfRelElem, b::fmpz)
   elseif mod(b, 2) == 0
     c = a^(div(b, 2))
     return c*c
-  elseif mod(b, 2) == 1
+  else
+    #mod(b, 2) == 1
     return a^(b - 1)*a
   end
 end
@@ -626,7 +627,7 @@ end
 
 
 function (K::AnticNumberField)(a::NfRelElem{nf_elem})
-  K != base_field(parent(a)) && return force_coerce(K, a)
+  K != base_field(parent(a)) && return force_coerce_throwing(K, a)
   for i in 2:degree(parent(a))
     @assert iszero(coeff(a, i - 1))
   end

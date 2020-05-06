@@ -154,10 +154,12 @@ function saturate_exp_normal(c::Hecke.ClassGrpCtx, p::Int, stable = 1.5)
   zeta, sT = Hecke.torsion_units_gen_order(K)
 
   R = vcat(c.R_gen, c.R_rel)
-  
+  K = nf(ZK)
+  zeta = mT(T[1])
   if gcd(sT, p) != 1 && !(hash(zeta) in c.RS) # && order is promising...
     push!(R, zeta)
   end
+
   T = GF(p, cached = false)
   cA = length(R)
   A = identity_matrix(T, cA)

@@ -72,10 +72,19 @@ end
 =#
 
 
-function Base.show(io::IO, ::MIME"text/html", T::Tuple)
+function Base.show(io::IO, mime::MIME"text/html", T::Tuple)
   print(io, "(")
   for i =1:length(T)
-    show(IOContext(io, :compact => true), "text/html", T[i])
+    try
+      show(IOContext(io, :compact => true), mime, T[i])
+    catch e
+      show(io, e)
+      if isa(e, MethodError)
+        show(IOContext(io, :compact => true), T[i])
+      else
+        rethrow(e)
+      end
+    end
     if i<length(T)
       print(io, ", ")
     end
@@ -218,10 +227,19 @@ function math_html(io::IO, l::Array{T, 1}) where {T}
   print(io, "]")
 end
 
-function Base.show(io::IO, ::MIME"text/html", l::Array{T, 1}) where {T}
-  print(io, "\$")
-  math_html(io, l)
-  print(io, "\$")
+function Base.show(io::IO, mime::MIME"text/html", l::Array{T, 1}) where {T}
+  io = IOContext(io, :compact => true)
+  first = true
+  print(io, "[")
+  for i = l
+    if first
+      first = false
+    else
+      print(io, ", ")
+    end
+    show(io, mime, i)
+  end
+  print(io, "]")
 end
 
 

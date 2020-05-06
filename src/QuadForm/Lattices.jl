@@ -1193,6 +1193,8 @@ function local_basis_matrix(L::AbsLat, p; type::Symbol = :any)
       throw(error("""Invalid :type keyword :$(type).
                      Must be either :any, :submodule, or :supermodule"""))
     end
+  else
+    throw(error("Something wrong"))
   end
 end
 
@@ -1327,8 +1329,8 @@ function jordan_decomposition(L::HermLat, p)
   end
 
   oldval = inf
-  blocks = []
-  exponents = []
+  blocks = Int[]
+  exponents = Int[]
 
   F = gram_matrix(ambient_space(L))
 
@@ -2191,17 +2193,18 @@ function _local_basis_matrix(a::PMat, p::NfOrdIdl)
   return z
 end
 
-function _local_basis_matrix_prime_below(a::PMat, p)
+function _local_basis_matrix_prime_below(a::PMat, p::T) where T
   @assert base_ring(base_ring(a)) == order(p)
   R = base_ring(a)
   D = prime_decomposition(R, p)
-  unis = [p_uniformizer(q[1]) for q in D]
+  unis = elem_type(R)[p_uniformizer(q[1]) for q in D]
   @assert all(valuation(unis[i], D[i][1]) == 1 for i in 1:length(D))
   @assert all(sum(valuation(unis[i], D[j][1]) for j in 1:length(D)) == 1 for i in 1:length(D))
   z = zero_matrix(base_ring(matrix(a)), nrows(a), ncols(a))
+  _c = coefficient_ideals(a)
   for i in 1:nrows(a)
-    c = coefficient_ideals(a)[i]
-    x = unis[1]^valuation(c, D[1][1])
+    c = _c[i]
+    x = unis[1]^(valuation(c, D[1][1]))
     for k in 2:length(D)
       x = x * unis[k]^valuation(c, D[k][1])
     end
@@ -2220,8 +2223,9 @@ function _local_basis_matrix_prime_below_submodule(a::PMat, p)
 #  @assert all(valuation(unis[i], D[i][1]) == 1 for i in 1:length(D))
 #  @assert all(sum(valuation(unis[i], D[j][1]) for j in 1:length(D)) == 1 for i in 1:length(D))
   z = zero_matrix(base_ring(matrix(a)), nrows(a), ncols(a))
+  _c = coefficient_ideals(a)
   for i in 1:nrows(a)
-    c = coefficient_ideals(a)[i]
+    c = _c[i]
     f = factor(c)
     if length(f) == 0
       x = one(nf(R))
@@ -2231,7 +2235,7 @@ function _local_basis_matrix_prime_below_submodule(a::PMat, p)
           f[Q[1]] = 0
         end
       end
-      x = approximate([e for (_, e) in f], [p for (p, _) in f])
+      x = approximate(Int[e for (_, e) in f], ideal_type(base_ring(a))[p for (p, _) in f])
       @assert all(valuation(x, p) == e for (p, e) in f)
     end
     @assert valuation(x, D[1][1]) == valuation(c, D[1][1])

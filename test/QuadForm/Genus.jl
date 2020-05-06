@@ -22,7 +22,7 @@
   Kt, t = K["t"]
   L, b = number_field(t^2 - gen(K) * t + 1)
   p = prime_decomposition(maximal_order(K), 2)[1][1]
-  l =  [[(0, 3, 1, 0), (4, 1, 1, 2)],
+  l =  Vector{Tuple{Int, Int, Int, Int}}[[(0, 3, 1, 0), (4, 1, 1, 2)],
        [(0, 3, -1, 0), (4, 1, 1, 2)],
        [(0, 3, 1, 0), (4, 1, -1, 2)],
        [(0, 3, -1, 0), (4, 1, -1, 2)],
