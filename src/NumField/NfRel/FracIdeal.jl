@@ -274,12 +274,12 @@ end
 
 Returns the norm of $a$
 """
-function norm(a::NfRelOrdFracIdl, copy::Type{Val{T}} = Val{true}) where T
+function norm(a::NfRelOrdFracIdl{S, U, V}, copy::Type{Val{T}} = Val{true}) where {S, T, U, V}
   assure_has_norm(a)
   if copy == Val{true}
-    return deepcopy(a.norm)
+    return deepcopy(a.norm)::U
   else
-    return a.norm
+    return a.norm::U
   end
 end
 

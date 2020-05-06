@@ -364,7 +364,7 @@ end
 
 function ^(A::NfRelOrdIdl, a::Int)
   if a == 0
-    B = one(nf(order(A))) * order(A)
+    B = one(order(A)) * order(A)
     return B
   end
 

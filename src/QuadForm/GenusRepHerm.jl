@@ -20,18 +20,19 @@ disabled by
 """
 function genus_representatives(L::HermLat; max = inf, use_auto::Bool = true)
   @req rank(L) >= 3 "Lattice must have rank >= 2"
+  R = base_ring(L)
   definite = isdefinite(L)
-  gens, P0 = genus_generators(L)
+  gens, fl, P0 = genus_generators(L)
   a = involution(L)
   LL = typeof(L)[ L ]
   for g in gens
     if definite && g[1] == P0
       continue
     end
-    I = g[1]^(g[2] - 1)
+    I = g[1]^Int(g[2] - 1)
     J = a(I)
-    N = neighbours_with_ppower(L, g[1], g[2] - 1, use_auto = use_auto)
-    inter = []
+    N = neighbours_with_ppower(L, g[1], g[2] - 1, use_auto = use_auto)::Vector{typeof(L)}
+    inter = typeof(L)[]
     for i in 2:length(LL)
       M = pseudo_matrix(LL[i])
       IM = I * M
@@ -42,9 +43,9 @@ function genus_representatives(L::HermLat; max = inf, use_auto::Bool = true)
   end
   @assert length(LL) == prod(Int[g[2] for g in gens if !definite || g[1] != P0])
   @assert all(X -> genus(X) == genus(L), LL)
-  
+  #
   if definite
-    result = []
+    result = typeof(L)[]
     for L in LL
       # Should never happen!
       @assert all(X -> !isisometric(X, L), result)

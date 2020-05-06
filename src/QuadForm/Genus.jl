@@ -1333,7 +1333,7 @@ function smallest_neighbour_prime(L)
   S = base_ring(L)
   R = base_ring(S)
   lp = bad_primes(L)
-  bad = [p for p in lp if !ismodular(L, p)[1] ]
+  bad = ideal_type(R)[p for p in lp if !ismodular(L, p)[1] ]
   for (p,_) in factor(discriminant(S))
     if isdyadic(p) && !(p in bad)
       push!(bad, p)
@@ -1352,7 +1352,7 @@ function smallest_neighbour_prime(L)
   P = ideal_type(R)[]
   while length(P) == 0
     p = next_prime(p)
-    lp = [ p[1] for p in prime_decomposition(R, p)]
+    lp = ideal_type(R)[ p[1] for p in prime_decomposition(R, p)]
     P = setdiff(lp, bad)
     if m == 2
       P = filter(p -> isisotropic(L, p), P)
@@ -1395,6 +1395,9 @@ function genus_generators(L::HermLat)
   E = nf(R)
   D = different(R)
   b, P0, bad = smallest_neighbour_prime(L)
+
+  local bad_prod::ideal_type(base_ring(R))
+
   if isempty(bad)
     bad_prod = 1 * base_ring(R)
   else
@@ -1415,7 +1418,12 @@ function genus_generators(L::HermLat)
   end
   Q0, q0 = quo(C, [ h\ideal(Rabs, [Rabs(EabstoE\b) for b in absolute_basis(i)]) for i in C0])
   q00 = pseudo_inv(q0) * h
-  PP = []
+  PP = ideal_type(R)[]
+
+  local F::GaloisField
+
+  local W::Generic.QuotientModule{gfp_elem}
+
   if iseven(rank(L))
     for (P, e) in factor(D)
       G = genus(L, P)
@@ -1436,7 +1444,7 @@ function genus_generators(L::HermLat)
     if !isempty(PP)
       U, f = unit_group_fac_elem(Rabs)
       UU, ff = unit_group_fac_elem(RR)
-      nnorm = hom(U, UU, [ff\FacElem(nf(RR)(norm(f(U[i])))) for i in 1:ngens(U)])
+      nnorm = hom(U, UU, GrpAbFinGenElem[ff\FacElem(nf(RR)(norm(f(U[i])))) for i in 1:ngens(U)])
       l = length(PP)
       VD = Int[ valuation(D, P) for P in PP ]
       K, k = kernel(nnorm)
@@ -1459,41 +1467,42 @@ function genus_generators(L::HermLat)
       _T, _ = sub(V, S)
       W, w = quo(V, _T)
       if dim(W) == 0
-        PP = []
+        PP = ideal_type(R)[]
       end
     end
   end
 
-  Gens = []
+  Gens = Tuple{ideal_type(R), fmpz}[]
+
   if isempty(PP)
     S = GrpAbFinGenElem[]
-    Q, q = quo(Q0, S)
-    Work = isdefinite(L) ? [ P0 ] : []
+    Q, q = quo(Q0, S)::Tuple{GrpAbFinGen, GrpAbFinGenMap}
+    Work = isdefinite(L) ? typeof(P0)[ P0 ] : typeof(P0)[]
     p = 2
     while order(Q) > 1
       while isempty(Work)
         p = next_prime(p)
-        Work = [ QQ for QQ in support(p * R) if issplit(QQ) && valuation(bad, QQ) == 0 ]
+        Work = ideal_type(R)[ QQ for QQ in support(p * R) if issplit(QQ) && valuation(bad, QQ) == 0 ]
       end
       P = popfirst!(Work)
-      c = q00\P
-      o = order(q(c))
-      if o != 1
+      c = (q00\P)::GrpAbFinGenElem
+      o = order(q(c))::fmpz
+      if !isone(o)
         push!(S, c)
-        Q, q = quo(Q0, S)
+        Q, q = quo(Q0, S)::Tuple{GrpAbFinGen, GrpAbFinGenMap}
         push!(Gens, (P, o))
       end
     end
   else
     ll = Int(order(Q0))
-    cocycle = Matrix(undef, ll, ll)
+    cocycle = Matrix{elem_type(W)}(undef, ll, ll)
     for i in 1:ll
       for j in 1:ll
         cocycle = zero(W)
       end
     end
     C = collect(Q0)
-    ideals = [ q00(C[i]) for i in 1:length(C) ]
+    ideals = ideal_type(Rabs)[ q00(C[i]) for i in 1:length(C) ]
     for i in 1:ll
       for j in 1:ll
         ij = findfirst(isequal(C[i] * C[j]), C)
@@ -1503,19 +1512,19 @@ function genus_generators(L::HermLat)
         u = f(nnorm(-(ff\FacElem(nf(RR)(norm(x))))))
         x = x * u
         @assert norm(x) == 1
-        y = w(V([ valuation(x - 1, PP[i]) >= VD[i] ? F(0) : F(1) for i in 1:length(PP)]))
+        y = w(V(Int[ valuation(x - 1, PP[i]) >= VD[i] ? F(0) : F(1) for i in 1:length(PP)]))
         cocycle[i, j] = y
         cocycle[j, i] = y
       end
     end
 
-    S = [(id(Q0), zero(W))]
-    Work = isdefinite(L) ? [ P0 ] : []
+    S = Tuple{elem_type(Q0), Generic.QuotientModuleElem{elem_type(F)}}[(id(Q0), zero(W))]
+    Work = isdefinite(L) ? typeof(P0)[ P0 ] : typeof(P0)[]
     p = 2
     while length(S) != order(Q0) * length(W)
       while isempty(Work)
         p = next_prime(p)
-        Work = [ QQ for QQ in support(p * R) if issplit(QQ) && valuation(bad, QQ) == 0 ]
+        Work = ideal_type(R)[ QQ for QQ in support(p * R) if issplit(QQ) && valuation(bad, QQ) == 0 ]
       end
       P = popfirst!(Work)
       c = q00\P
@@ -1526,10 +1535,10 @@ function genus_generators(L::HermLat)
       u = f(nnorm(-(ff\FacElem(nf(RR)(norm(x))))))
       x = x * u
       @assert norm(x) == 1
-      y = V([ valuation(x - 1, PP[i]) >= VD[i] ? F(0) : F(1) for i in 1:length(PP)])
+      y = V(Int[ valuation(x - 1, PP[i]) >= VD[i] ? F(0) : F(1) for i in 1:length(PP)])
       idx = findfirst(isequal(P), PP)
       if idx !== nothing
-        y = V([i == idx ? y[i] : y[i] + 1] for i in 1:dim(V)) #w(V([y[idx] = y[idx] + 1
+        y = V(elem_type(F)[i == idx ? y[i] : y[i] + 1] for i in 1:dim(V)) #w(V([y[idx] = y[idx] + 1
       end
       elt = (c, w(y))
       elt1 = elt
@@ -1558,9 +1567,9 @@ function genus_generators(L::HermLat)
   end
 
   if isdefinite(L)
-    return Gens, P0
+    return Gens, true, P0
   else
-    return Gens, false
+    return Gens, false, P0
   end
 end
 

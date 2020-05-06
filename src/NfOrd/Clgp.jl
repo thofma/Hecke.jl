@@ -389,7 +389,7 @@ function class_group(O::NfOrd; bound::Int = -1, method::Int = 3,
   c, U, b = _class_unit_group(L, bound = bound, method = method, redo = redo, unit_method = unit_method, large = large, use_aut = use_aut, GRH = GRH)
 
   @assert b == 1
-  return class_group(c, O)
+  return class_group(c, O)::Tuple{GrpAbFinGen, MapClassGrp}
 end
 
 

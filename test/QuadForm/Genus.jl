@@ -37,7 +37,9 @@
        [(0, 1, -1, 0), (1, 2, 1, 1), (2, 1, 1, 1)],
        [(1, 4, 1, 1)],
        [(1, 4, -1, 1)]]
-  Gs = map(x -> genus(HermLat, L, p, x), l)
+  # The compiler does not like the following:
+  # Gs = map(x -> genus(HermLat, L, p, x), l)
+  Gs = Hecke.LocalGenusHerm{typeof(L), typeof(p)}[ genus(HermLat, L, p, x) for x in l ]
   myG = local_genera_hermitian(L, p, 4, 2, 4)
   @test length(Gs) == length(myG)
   @test all(x -> x in Gs, myG)
@@ -52,7 +54,7 @@
   p = prime_decomposition(maximal_order(K), 2)[1][1]
   G = genus(HermLat, E, p, [(0, 3, -1, 0)])
   L = representative(G)
-  @test length(Hecke.genus_representatives(L)) == 1
+ @test length(Hecke.genus_representatives(L)) == 1
 
   K, a = NumberField(x^2 - 15)
   gens = [[a-1, 2*a-12, 0], [-471//70*a+881//14, 12*a-471, 1//70*a+39//14], [-7367*a+33891, 38904*a-212340, -194*a+1164], [2858191//5*a-1701731, -3700688*a+8438412, 103014//5*a-40352]]
