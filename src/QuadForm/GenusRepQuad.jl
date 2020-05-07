@@ -129,30 +129,33 @@ function spinor_genera_in_genus(L, mod_out)
   C = SpinorGeneraCtx(L)
 
   # We don't need minimal generators, to make them not too large.
-  G = gram_matrix_of_generators(L, false)
+  Gr = gram_matrix_of_generators(L, false)
+
+  R = base_ring(L)
+  F = nf(R)
+
+  local spinornorm::elem_type(F)
 
   # The smaller the element, the better
-  dia = map(x -> abs(norm(x)), diagonal(G))
-  b, k = findmin(dia)
+  dia = map(x -> abs(norm(x)), diagonal(Gr))
+  b, kk = findmin(dia)
   if !iszero(b)
-    spinornorm = G[k, k]
+    spinornorm = Gr[kk, kk]
   else
     i = 1
-    while iszero(G[1, i])
+    while iszero(Gr[1, i])
       i += 1
-      if i > ncols(G)
+      if i > ncols(Gr)
         throw(error("Lattice is degenerated"))
       end
-      @assert !iszero(G[1, i])
-      spinornorm = 2 * G[1, i]
+      @assert !iszero(Gr[1, i])
+      spinornorm = 2 * Gr[1, i]
     end
   end
 
   # 2) At a place p where spinornorm does not generate norm(L_p)
   #    we add <p, spinornorm * normgenerator > to the idele
   
-  R = base_ring(L)
-  F = number_field(R)
   nor = norm(L)
 
   differ = ideal_type(R)[]
@@ -165,20 +168,21 @@ function spinor_genera_in_genus(L, mod_out)
   idele = Tuple{ideal_type(R), elem_type(F)}[]
 
   for p in unique(vcat(differ, C.rayprimes))
+    local _norm::elem_type(F)
     if isdyadic(p)
       _,_,_,a = _genus_symbol_kirschmer(L, p).data
-      norm = a[1]
+      _norm = a[1]::elem_type(F)
     else
       GS = _genus_symbol_kirschmer(L, p)
       G = GS.data
-      pi = GS.x
-      norm = pi^G[1][2]
-      if G[1][1] == 1 && G[1][3] == -1
+      pi = GS.x::elem_type(F)
+      _norm = pi^(G[1][2]::Int)
+      if G[1][1]::Int == 1 && G[1][3]::Int == -1
         k, h = ResidueField(R, p)
-        norm = norm * elem_in_nf(h\non_square(k))
+        _norm = _norm * elem_in_nf(h\non_square(k))
       end
     end
-    push!(idele, (p, spinornorm * norm))
+    push!(idele, (p, spinornorm * _norm))
   end
 
   # 3) Map the idele into the idele class group.
@@ -234,7 +238,7 @@ end
 # Returns a subspace of local_multiplicative_group_modulo_squares(p), and a
 # boolean which is true iff the spinor norm is exactly the units
 function spinor_norm(L, p)
-  V, g, ginv = local_multiplicative_group_modulo_squares(p)
+  V, g = local_multiplicative_group_modulo_squares(p)
   R = base_ring(L)
   e = valuation(R(2), p)
   if !isdyadic(p)
@@ -245,14 +249,14 @@ function spinor_norm(L, p)
       @vprint(:GenRep, 1,"""Spinor norm over $(minimum(p))
   This lattice has a 2-dimensional Jordan constituent, and p is odd. Spinor norm
   is either F^* or O_F^*(F^*)^2, i.e. we will find a vector space of dimension
-  $(rank(V)) or $(rank(V) - 1).\n""")
+  $(gens(V)) or $(ngens(V) - 1).\n""")
       # Which of the two is the case?
       # TODO: It is not a good idea to rely on implementation details of
       #       local_multiplicative_group_modulo_squares
       if length(unique([e % 2 for e in E])) == 1
-        return basis(V)[1:dim(V) - 1], V, g, ginv, true
+        return gens(V)[1:dim(V) - 1], V, g, true
       else
-        return basis(V), V, g, ginv, false 
+        return gens(V), V, g, false 
       end
     end
     # This is the obscure case where p is odd and each of its Jordan components
@@ -272,12 +276,12 @@ function spinor_norm(L, p)
        end
      end
      
-     twonormvectors = [ginv(x) for x in twonormgens]
+     twonormvectors = [g\(x) for x in twonormgens]
     
      @vprint :GenRep "Spinor norm odd p, norm generators of the $(length(G)) Jordan components are: $(normgens), $(twonormgens) $(twonormvectors)"
     # cf. Kneser 1956, Satz 3:
     _SN, mS = sub(V, twonormvectors)
-    @assert length(rels(_SN)) == 0 # free
+    #@assert length(rels(_SN)) == 0 # free
     SN = [ mS(s) for s in gens(_SN) ]
   else
     bong = good_bong(L, p)
@@ -285,16 +289,16 @@ function spinor_norm(L, p)
     if !has_propertyA(L, p)
       @vprint(:GenRep, 1,"""Spinor norm over dyadic prime:
   This lattice does not have property A. Spinor norm is either F^* or
-  O_F^*(F^*)^2, i.e. we will find a vector space of dimension $(rank(V)) or
-  $(rank(V) - 1)\n""")
+  O_F^*(F^*)^2, i.e. we will find a vector space of dimension $(ngens(V)) or
+  $(ngens(V) - 1)\n""")
       # Using section 7, Thm. 3 in Beli 2002, one can decide which of the two
       # cases applies. This is why we needed to compute a *good* BONG:
       for i in 1:(length(bong) - 1)
-        BG, mBG = G_function(bong[i + 1]//bong[i], V, g, ginv, p)
+        BG, mBG = G_function(bong[i + 1]//bong[i], V, g, p)
         for bg in gens(BG)
           if mBG(bg)[dim(V)] != 0
             # the whole group
-            return basis(V), V, g, ginv, false
+            return gens(V), V, g, false
           end
         end
       end
@@ -304,19 +308,19 @@ function spinor_norm(L, p)
           @assert iszero(mod(valuation(bong[i + 1], p) - valuation(bong[i], p), 2))
           if mod(div(valuation(bong[i + 1], p) - valuation(bong[i], p), 2), 2) != mod(e, 2)
             # the whole group
-            return basis(V), V, g, ginv, false
+            return gens(V), V, g, false
           end
         end
       end
 
       # If all checks have passed, the spinor norm is exactly the units:
-      return basis(V)[1:(dim(V) - 1)], V, g, ginv, true
+      return gens(V)[1:(ngens(V) - 1)], V, g, true
     end
     # cf. Beli 2003, Thm. 1
     SN = elem_type(V)[]::Vector{elem_type(V)}
     for i in 2:rank(L)
-      #SN = SN + G_function(bong[i]//bong[i - 1], V, g, ginv, p)
-      _G, _mG = G_function(bong[i]//bong[i - 1], V, g, ginv, p)
+      #SN = SN + G_function(bong[i]//bong[i - 1], V, g, p)
+      _G, _mG = G_function(bong[i]//bong[i - 1], V, g, p)
       new_gens = append!(SN, elem_type(V)[_mG(g) for g in gens(_G)])
       _SN, mS = sub(V, new_gens)
       SN = elem_type(V)[ mS(s) for s in gens(_SN) ]
@@ -325,116 +329,25 @@ function spinor_norm(L, p)
     k = findfirst(i -> mod(valuation(bong[i + 2], p) - valuation(bong[i], p), 2) == 0, 1:(rank(L) - 2))
     if k !== nothing
       alpha = minimum(div(valuation(bong[i + 2], p) - valuation(bong[i], p), 2) for i in 1:(rank(L) - 2) if mod(valuation(bong[i + 2], p) - valuation(bong[i], p), 2) == 0)
-      # SN = SN + one_plus_power_of_P(alpha, V, g, ginv, P)
-      _G, _mG = _one_plus_power_of_p(alpha, V, g, ginv, p)
+      # SN = SN + one_plus_power_of_P(alpha, V, g, P)
+      _G, _mG = _one_plus_power_of_p(alpha, V, g, p)
       _SN, mS = sub(V, append!(SN, [_mG(g) for g in gens(_G)]))
-      @assert length(rels(_SN)) == 0 # free
+      #@assert length(rels(_SN)) == 0 # free
       SN = elem_type(V)[ mS(s) for s in gens(_SN) ]
     end
   end
   # Test if S is equal to SN
-  S, mS = sub(V, basis(V)[1:(dim(V) - 1)])
-  @assert length(rels(S)) == 0
-  W,_ = sub(V, append!(basis(V)[1:(dim(V) - 1)], SN))
-  @assert length(rels(W)) == 0
-  if length(SN) == ngens(S) && ngens(W) == dim(V) - 1 # this means SN + V[1:dim(V) -1] == V[1:dim(V) - 1]
+  S, mS = sub(V, gens(V)[1:(ngens(V) - 1)])
+  #@assert length(rels(S)) == 0
+  W,_ = sub(V, append!(gens(V)[1:(ngens(V) - 1)], SN))
+  #@assert length(rels(W)) == 0
+  if length(SN) == ngens(S) && ngens(W) == ngens(V) - 1 # this means SN + V[1:dim(V) -1] == V[1:dim(V) - 1]
     fl = true
   else
     fl = false
   end
 
-  return SN, V, g, ginv, fl
-end
-
-# Helper function to find y such that xy^2 is integral and Valuation(xy^2, p) = 0
-function _square_rep_nice(x, p, piinv)
-  x = x * denominator(x, order(p))^2
-  v = valuation(x, p)
-  @assert v >= 0 && iseven(v)
-  if !iszero(v)
-    x = x * piinv^v
-  end
-  return order(p)(x)
-end
-
-# Given a prime ideal over some number field K, this returns a vector space
-# over GF(2) isomorphic to K_p^/(K_p^*)^2 and a map representing the isomorphism
-#
-# TODO: Proper types/maps and cache this in the dyadic case
-function local_multiplicative_group_modulo_squares(p)
-  R = order(p)
-  @assert ismaximal(R)
-  K = number_field(R)
-  @assert isabsolute(K)
-  if !isdyadic(p)
-    pi = uniformizer(p)
-    k, h = ResidueField(R, p)
-    hext = extend(h, K)
-    e = elem_in_nf(h\non_square(k))
-    F = GF(2, cached = false)
-    V = vector_space(F, 2)
-    mf = function(x)
-      if x[1] == 0
-        y = one(K)
-      else
-        y = e
-      end
-      if x[2] == 1
-        y = y * pi
-      end
-      return y
-    end
-
-    mg = function(y)
-      v = valuation(y, p)
-      if issquare(hext(y//pi^v))[1]
-        fir = F(0)
-      else
-        fir = F(1)
-      end
-
-      return V([fir, F(v)])
-    end
-
-    return V, mf, mg
-  else
-    pi = uniformizer(p)
-    e = ramification_index(p)
-    F = GF(2, cached = false)
-    dim = valuation(norm(p), 2) * e + 2
-    V = vector_space(F, dim)
-    I = p^(2*e + 1)
-    Q, h = quo(R, I)
-    U, g = unit_group(Q)
-    M, i = quo(U, 2)
-    S, mS = snf(M)
-    @assert ngens(S) == dim - 1
-    piinv = anti_uniformizer(p)
-    
-    mf = x -> begin
-      y = elem_in_nf(h\(g(i\(mS(S([lift(x[i]) for i in 1:(dim - 1)]))))))
-      if x[dim] == 1
-        y = y * pi
-      end
-      return y
-    end
-
-    mg = y -> begin
-      v = valuation(y, p)
-      w = mS\(i(g\(h(_square_rep_nice(y * pi^v, p, piinv)))))
-      return V(push!(elem_type(F)[F(w[i]) for i in 1:dim - 1], F(v)))
-    end
-
-    return V, mf, mg
-  end
-end
-
-function non_square(F::Union{GaloisField, FqFiniteField})
-  r = rand(F)
-  while iszero(r) || issquare(r)[1]
-    r = rand(F)
-  end
-  return r
+  return SN, V, g, fl
 end
 
 # Return a good BONG of L at a dyadic prime p, as defined by C. Beli.
@@ -612,12 +525,12 @@ function has_propertyA(L, p)
   return true
 end
 
-function G_function(a, V, g, ginv, p)
+function G_function(a, V, g, p)
 # Use LocalMultiplicativeGroupModSquares to calculate in F*/(O^*)^2
 # (or F^*/(F^*)^2 -- the last component of the result is the p-valuation
 # mod 2, and  F^*/(F^*)^2 =  F*/(O^*)^2 \times C_2.)
 #
-# Also we expect V, g, ginv = local_multiplicative_group_modulo_scares(p)
+# Also we expect V, g = local_multiplicative_group_modulo_scares(p)
 #
 # cf. Beli 2003, Def. 4.
   O = order(p)
@@ -628,43 +541,43 @@ function G_function(a, V, g, ginv, p)
  
   if !is_in_A(a, p)
     @vprint :GenRep 2 "G_function case F\n"
-    return N_function(-a, g, ginv, p)
-  elseif ginv(K(-1//4)) == ginv(a)
+    return N_function(-a, g, p)
+  elseif g\(K(-1//4)) == g\(a)
     @vprint :GenRep 2 "G_function case G\n"
-    return sub(V, basis(V)[1:dim(V) - 1])
+    return sub(V, gens(V)[1:gens(V) - 1])
   elseif valuation(-4 * a, p) == 0 && islocal_square(-4 * a, p)
     @vprint :GenRep 2 "G_function case G\n"
-    return sub(V, basis(V)[1:dim(V) - 1])
+    return sub(V, gens(V)[1:gens(V) - 1])
   elseif R > 4 * e
     @vprint :GenRep 2 "G_function case H\n"
-    return sub(V, [ginv(a)])
+    return sub(V, [g\(a)])
   elseif 2*e < R && R <= 4 * e
     if d <= 2 * e - R//2
       @vprint :GenRep 2 "G_function case A\n"
-      O = _one_plus_power_of_p(R + d - 2*e, V, g, ginv, p)
-      return _intersect(N_function(-a, g, ginv, p), _sum(O, sub(V, [ginv(a)])))
+      O = _one_plus_power_of_p(R + d - 2*e, V, g, p)
+      return _intersect(N_function(-a, g, p), _sum(O, sub(V, [g\(a)])))
     else
       @vprint :GenRep 2 "G_function case B\n"
       @assert R % 2 == 0
-      W, mW = _one_plus_power_of_p(div(R, 2), V, g, ginv, p)
-      @assert length(rels(W)) == 0
-      return sub(V, append!([ginv(a)], mW(w) for w in gens(W)))
+      W, mW = _one_plus_power_of_p(div(R, 2), V, g, p)
+      #@assert length(rels(W)) == 0
+      return sub(V, append!([g\(a)], mW(w) for w in gens(W)))
     end
   elseif R <= 2 * e
     if d  <= e - R//2
       @vprint :GenRep 2 "G_function case C\n"
-      return N_function(-a, g, ginv, p)
+      return N_function(-a, g, p)
     elseif (e - R//2 < d) && (d <= 3 * e//2 - R//4)
       @assert R % 2 == 0
       @vprint :GenRep 2 "G_function case D\n"
-      return _intersect(N_function(-a, g, ginv, p),
-                        _one_plus_power_of_p(div(R, 2) + d - e, V, g, ginv, p))
+      return _intersect(N_function(-a, g, p),
+                        _one_plus_power_of_p(div(R, 2) + d - e, V, g, p))
     else
       @vprint :GenRep 2 "G_function case E\n"
       # Attention! Use the floor function wherever Beli writes stuff in square
       # brackets. This is due to his citing Hsia's papers, which have this
       # convention.
-      return _one_plus_power_of_p(e - floor(Int, e//2 - R//4), V, g, ginv, p)
+      return _one_plus_power_of_p(e - floor(Int, e//2 - R//4), V, g, p)
     end
   else
     throw(error("This should never happen"))
@@ -703,9 +616,9 @@ function is_in_A(a, p)
   return false
 end
 
-function N_function(a, g, ginv, p)
+function N_function(a, g, p)
   #  g, ginv is the mapping obtained by local_multiplicative_group_modulo_squares(p).
-  b = ginv(a)
+  b = g\(a)
 
   V = parent(b)
 
@@ -715,10 +628,10 @@ function N_function(a, g, ginv, p)
 
   if q isa PosInf
     # treat the squares separately:
-    return sub(V, basis(V))
+    return sub(V, gens(V))
   end
 
-  B = basis(V)
+  B = gens(V)
   
   # cf. paragraph before 1.2 in Beli 2003:
   # N(a) := N(F(\sqrt(a))/F), i.e. the values of the norm mapping of the quadratic extension
@@ -741,7 +654,7 @@ function N_function(a, g, ginv, p)
   end
 
   S, mS = sub(V, kernel_gen)
-  @assert length(rels(S)) == 0 # free
+  #@assert length(rels(S)) == 0 # free
   return S, mS
 end
 
@@ -868,14 +781,14 @@ function _compute_ray_class_group(L)
   Mfact = Dict{ideal_type(R), Int}()
 
   for p in bad_primes(L, even = true)
-    spinors, V, g, ginv, exactlytheunits = spinor_norm(L, p)
+    spinors, V, g, exactlytheunits = spinor_norm(L, p)
     # we only need to carry around those finite places where the Spinor norm is
     # not exactly the units:
     if !exactlytheunits
       @vprint :GenRep 2 """Found a prime over $(minimum(p)) where the spinor
                            norm is not exactly the units of the order.
                              dim(spinors)=$(length(spinors)),
-                             dim(LocalMultGrpModSq)=$(rank(V))"""
+                             dim(LocalMultGrpModSq)=$(ngens(V))"""
       push!(rayprimes, p)
       # A basis of the spinor norm of L at p, when viewed (modulo squares) as an F_2-vector space
       b = spinors
@@ -944,16 +857,17 @@ function _get_critical_primes(L, mRCG, inf_plc, mQ, full = true)
 end
 
 function _spinor_generators(L, C, mod_out = elem_type(codomain(C.mQ))[])
-  bad = [ p for p in bad_primes(L) if !ismodular(L, p)[1] ]
+  R = base_ring(L)
+  bad = ideal_type(R)[ p for p in bad_primes(L) if !ismodular(L, p)[1] ]
   S, mS = sub(codomain(C.mQ), mod_out)
   n = order(codomain(C.mQ))
-  gens = []
+  gens = ideal_type(R)[]
   tmp_gens = copy(mod_out)
   R = base_ring(L)
   p = 2
   while order(S) != n
     p = next_prime(p)
-    lp = [ p[1] for p in prime_decomposition(R, p) if !(p[1] in bad) ]
+    lp = ideal_type(R)[ p[1] for p in prime_decomposition(R, p) if !(p[1] in bad) ]
     for P in lp
       g = _map_idele_into_class_group(C.mR, [(P, uniformizer(P))])
       h = C.mQ(g)
@@ -1304,23 +1218,20 @@ function _make_bong_dim_2(L, p)
   bong = [n, disc//n]
 end
 
-function _one_plus_power_of_p(k, V, g, ginv, p)
+function _one_plus_power_of_p(k, V, g, p)
   # See Beli 2003, Def. 1. 
-  # We expect V, g, ginv = local_multiplicative_group_modulo_squares(p)
-  r = rank(V)
-  F = base_ring(V)
-  it = Iterators.product([collect(F) for i in 1:r]...)
+  # We expect V, g = local_multiplicative_group_modulo_squares(p)
+  r = ngens(V)
+  it = Iterators.product([collect(0:1) for i in 1:r]...)
   S = [ g(V(collect(v))) for v in it ]
   SS = [ s for s in S if relative_quadratic_defect(s, p) >= k ]
-  return sub(V, [ginv(s) for s in SS])
+  return sub(V, [g\(s) for s in SS])
 end
 
 function _intersect(_V, _W)
   V, mV = _V
-  bigspace = codomain(mV)
   W, mW = _W
-  I, mI = intersect(V, W)
-  return sub(bigspace, [mV(mI(g)) for g in gens(I)])
+  return intersect(mV, mW)
 end
 
 function _sum(_V, _W)
@@ -1413,4 +1324,157 @@ function beli_correction!(L, G, JJ, steps, i, j, p)
 
   B = sub(JJ, steps[j][1]:steps[j][length(steps[j])], 1:ncols(JJ))
   G[j] = B * gram_matrix(ambient_space(L)) * B'
+end
+
+################################################################################
+#
+#  Local multiplicative modulo squares
+#
+################################################################################
+
+# Helper function to find y such that xy^2 is integral and Valuation(xy^2, p) = 0
+function _square_rep_nice(x, p, piinv)
+  x = x * denominator(x, order(p))^2
+  v = valuation(x, p)
+  @assert v >= 0 && iseven(v)
+  if !iszero(v)
+    x = x * piinv^v
+  end
+  return order(p)(x)
+end
+
+# Move this to a proper place
+#
+# TODO: Cache this in the dyadic case (on the lattice or the field)
+mutable struct LocMultGrpModSquMap <: Map{GrpAbFinGen, GrpAbFinGen, HeckeMap, LocMultGrpModSquMap}
+  domain::GrpAbFinGen
+  codomain::AnticNumberField
+  isdyadic::Bool
+  p::NfAbsOrdIdl{AnticNumberField, nf_elem}
+  e::nf_elem
+  pi::nf_elem
+  piinv::nf_elem
+  hext::NfToFinFldMor{FqFiniteField}
+  h::AbsOrdQuoMap{NfAbsOrd{AnticNumberField,nf_elem},NfAbsOrdIdl{AnticNumberField,nf_elem},NfAbsOrdElem{AnticNumberField,nf_elem}}
+  g::GrpAbFinGenToAbsOrdQuoRingMultMap{NfAbsOrd{AnticNumberField,nf_elem},NfAbsOrdIdl{AnticNumberField,nf_elem},NfAbsOrdElem{AnticNumberField,nf_elem}}
+  i::GrpAbFinGenMap
+  mS::GrpAbFinGenMap
+ 
+  function LocMultGrpModSquMap(K::AnticNumberField, p::NfAbsOrdIdl{AnticNumberField, nf_elem})
+    R = order(p)
+    @assert nf(R) === K
+    @assert isabsolute(K)
+    z = new()
+    z.codomain = K
+    z.p = p
+
+    if !isdyadic(p)
+      pi = elem_in_nf(uniformizer(p))
+      k, h = ResidueField(R, p)
+      hext = extend(h, K)
+      e = elem_in_nf(h\non_square(k))
+      G = abelian_group([2, 2])
+
+      z.domain = G
+      z.e = e
+      z.pi = pi
+      z.hext = hext
+      return z
+    else
+      z.isdyadic = true
+      pi = elem_in_nf(uniformizer(p))
+      e = ramification_index(p)
+      dim = valuation(norm(p), 2) * e + 2
+      #V = vector_space(F, dim)
+      I = p^(2*e + 1)
+      Q, h = quo(R, I)
+      U, g = unit_group(Q)
+      M, i = quo(U, 2)
+      SS, mSS = snf(M)
+      @assert SS.snf == fmpz[2 for i in 1:(dim - 1)]
+      #@assert ngens(S) == dim - 1
+      piinv = anti_uniformizer(p)
+      G = abelian_group([2 for i in 1:dim])
+      z.domain = G
+      z.pi = pi
+      z.piinv = piinv
+      z.h = h
+      z.g = g
+      z.i = i
+      z.mS = mSS
+      return z
+    end
+  end
+end
+
+domain(f::LocMultGrpModSquMap) = f.domain
+
+codomain(f::LocMultGrpModSquMap) = f.codomain
+
+function show(io::IO, f::LocMultGrpModSquMap)
+  print(io, "Map for local unit group modulo squares at\n")
+  print(IOContext(io, :compact => true), f.p, "\n")
+  print(io, "from\n")
+  print(IOContext(io, :compact => true), "  ", f.domain, "\n")
+  print(io, "to\n") 
+  print(IOContext(io, :compact => true), "  ", f.codomain)
+end
+
+function image(f::LocMultGrpModSquMap, x::GrpAbFinGenElem)
+  @assert parent(x) == f.domain
+  K = f.codomain
+  if !f.isdyadic
+    if iszero(x.coeff[1])
+      y = one(K)
+    else
+      y = f.e
+    end
+    if isone(x.coeff[2])
+      y = y * f.pi
+    end
+    return y
+  else
+    S = codomain(f.mS)
+    G = domain(f)
+    y = elem_in_nf(f.h\(f.g(f.i\(f.mS(S(fmpz[x.coeff[i] for i in 1:(ngens(G) - 1)]))))))
+    if x.coeff[ngens(G)] == 1
+      y = y * f.pi
+    end
+    return y
+  end
+end
+
+function preimage(f::LocMultGrpModSquMap, y::nf_elem)
+  @assert parent(y) == f.codomain
+  if !f.isdyadic
+    v = valuation(y, f.p)
+    if issquare(f.hext(y//f.pi^v))[1]
+      fir = 0
+    else
+      fir = 1
+    end
+    return f.domain([fir, v])
+  else
+    v = valuation(y, f.p)
+    w = f.mS\(f.i(f.g\(f.h(_square_rep_nice(y * f.pi^v, f.p, f.piinv)))))
+    G = domain(f)
+    return G(push!(fmpz[w.coeff[i] for i in 1:(ngens(domain(f)) - 1)], v))
+  end
+end
+
+## Given a prime ideal over some number field K, this returns a vector space
+## over GF(2) isomorphic to K_p^/(K_p^*)^2 and a map representing the isomorphism
+##
+function local_multiplicative_group_modulo_squares(p)
+  K = nf(order(p))
+  f = LocMultGrpModSquMap(K, p)
+  return domain(f), f
+end
+
+function non_square(F::Union{GaloisField, FqFiniteField})
+  r = rand(F)
+  while iszero(r) || issquare(r)[1]
+    r = rand(F)
+  end
+  return r
 end

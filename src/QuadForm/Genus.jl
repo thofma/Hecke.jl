@@ -1669,8 +1669,6 @@ function _genus_symbol_kirschmer(L::QuadLat, p::NfOrdIdl; uniformizer = zero(ord
   end
 end
 
-global _debug = []
-
 # This is the "Magma" Genus symbol
 function _genus_symbol_kirschmer(L::HermLat, p; uniformizer = zero(order(p)))
   @assert order(p) == base_ring(base_ring(L))
