@@ -78,7 +78,6 @@ function Base.show(io::IO, mime::MIME"text/html", T::Tuple)
     try
       show(IOContext(io, :compact => true), mime, T[i])
     catch e
-      show(io, e)
       if isa(e, MethodError)
         show(IOContext(io, :compact => true), T[i])
       else
