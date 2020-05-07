@@ -43,12 +43,16 @@ function genus_representatives(L::HermLat; max = inf, use_auto::Bool = true)
   end
   @assert length(LL) == prod(Int[g[2] for g in gens if !definite || g[1] != P0])
   @assert all(X -> genus(X) == genus(L), LL)
-  #
+
+  local result::Vector{typeof(L)}
+  
   if definite
     result = typeof(L)[]
     for L in LL
       # Should never happen!
       @assert all(X -> !isisometric(X, L), result)
+      neig = iterated_neighbours(L, P0, max = max, use_auto = use_auto)
+      append!(result, neigh)
       result = append!(result, iterated_neighbours(L, P0, max = max, use_auto = use_auto))# : AutoOrbits:= AutoOrbits, Max:= Max);
       max = max - length(result)
     end
@@ -87,6 +91,7 @@ function _neighbours(L, P, result, max, callback = stdcallback, use_auto = true)
   end
   k, h = ResidueField(R, C)
   hext = extend(h, K)
+  local form::dense_matrix_type(K)
   form = gram_matrix(ambient_space(L))
   special = false
   if scale != 0
@@ -94,7 +99,7 @@ function _neighbours(L, P, result, max, callback = stdcallback, use_auto = true)
       special = isodd(scale)
       scale = div(scale + 1, 2)
     end
-    form = base_ring(form)(elem_in_nf(uniformizer(minimum(P))))^(-scale) * form
+    form = K(elem_in_nf(uniformizer(minimum(P))))^(-scale) * form
   end
   n = rank(L)
   W = vector_space(k, n)
@@ -130,7 +135,7 @@ function _neighbours(L, P, result, max, callback = stdcallback, use_auto = true)
     pi = p_uniformizer(P)
     pih = h(pi)
     for w in LO
-      x = [ sum(T[i, j] * (hext\w[i]) for i in 1:n) for j in 1:ncols(T)]
+      x = elem_type(L)[ sum(T[i, j] * (hext\w[i]) for i in 1:n) for j in 1:ncols(T)]
       LL = neighbour(L, T, pih * matrix(k, 1, length(w), w) * G, K(pi) .* x, hext, P, C, true)
       keep, cont = callback(result, LL)
       if keep
@@ -144,7 +149,7 @@ function _neighbours(L, P, result, max, callback = stdcallback, use_auto = true)
     pi = uniformizer(P)
     _G = elem_in_nf(pi) * T * form * _map(transpose(T), a)
     G = map_entries(hext, _G)
-    for w in LO
+    for w::Vector{fq} in LO
       Gw = G * matrix(k, length(w), 1, w)
       ok = 0
       for d in 1:n
@@ -154,7 +159,7 @@ function _neighbours(L, P, result, max, callback = stdcallback, use_auto = true)
         end
       end
       @assert ok != 0
-      x = [ sum(T[i, j] * (hext\w[i]) for i in 1:n) for j in 1:ncols(T)]
+      x = elem_type(K)[ sum(T[i, j] * (hext\w[i]) for i in 1:n) for j in 1:ncols(T)]
       nrm = _inner_product(form, x, x, a)
       b = hext\(-hext(nrm) // (2*Gw[ok, 1]))
       #x = x + b * pi * B[ok]
@@ -185,7 +190,7 @@ function _neighbours(L, P, result, max, callback = stdcallback, use_auto = true)
       alpha = h\(degree(k) == 1 ? one(k) : gen(k))
       Tram = matrix(kp, 2, 1, [2, hp(tr(alpha))])
     end
-    for w in LO
+    for w::Vector{fq} in LO
       __w = [ (hext\w[i]) for i in 1:n]
       x = [ sum(T[i, j] * (__w[i]) for i in 1:n if !iszero(w[i])) for j in 1:ncols(T)]
       nrm = _inner_product(form, x, x, a) #(x*Form, v) where v:= Vector([ a(e): e in Eltseq(x) ]);
@@ -210,10 +215,10 @@ function _neighbours(L, P, result, max, callback = stdcallback, use_auto = true)
         #@show _all_row_span(V)
         _kernel = [ matrix(kp, 1, 2, v) for v in _all_row_span(V)]
         l = a(hext\(inv(wG[ok])))
-        S = [ l * (hext\((s + v)[1]) + (hext\(s + v)[2])*alpha) for v in _kernel ]
+        S = elem_type(K)[ l * (hext\((s + v)[1]) + (hext\(s + v)[2])*alpha) for v in _kernel ]
       end
       for s in S
-        LL = neighbour(L, T, wG, [x[o] + pi*s*T[ok, o] for o in 1:ncols(T)], hext, P, P, false)
+        LL = neighbour(L, T, wG, elem_type(K)[x[o] + pi*s*T[ok, o] for o in 1:ncols(T)], hext, P, P, false)
         keep, cont = callback(result, LL)
         if keep
           push!(result, LL)
@@ -227,14 +232,20 @@ function _neighbours(L, P, result, max, callback = stdcallback, use_auto = true)
   return result
 end
 
-function neighbour(L, B, xG, x, h, P, C, split)
+function neighbour(L, B, xG, x, h, P, CC, split)
   R = order(P)
   K = nf(R)
   n = nrows(B)
-  if C isa Int 
+
+  local C::ideal_type(R)
+
+  if CC isa Int 
     C = split ? involution(L)(P) : P
-  end 
-  I = [ i for i in 1:n if !iszero(xG[i])]
+  else
+    C = CC
+  end
+
+  I = Int[ i for i in 1:n if !iszero(xG[i])]
   i = I[1]
   a = involution(L)
   M = zero_matrix(K, n - length(I), ncols(B))
@@ -243,10 +254,10 @@ function neighbour(L, B, xG, x, h, P, C, split)
       M[k, j] = B[nk, j]
     end
   end
-  CI = [ K(1) * R for j in 1:(n - length(I)) ]
+  CI = fractional_ideal_type(R)[ K(1) * R for j in 1:(n - length(I)) ]
   for j in I
     if j != i
-      M = vcat(M, matrix(K, 1, ncols(B), [B[j, k] - a(h\(divexact(xG[j], xG[i]))) * B[i, k] for k in 1:ncols(B)]))
+      M = vcat(M, matrix(K, 1, ncols(B), elem_type(K)[B[j, k] - a(h\(divexact(xG[j], xG[i]))) * B[i, k] for k in 1:ncols(B)]))
       push!(CI, K(1) * R)
     end
   end
@@ -255,8 +266,8 @@ function neighbour(L, B, xG, x, h, P, C, split)
   M = vcat(M, matrix(K, 1, ncols(B), x))
   push!(CI, inv(C))
   pm = pseudo_hnf(pseudo_matrix(M, CI))
-  M = _sum_modules(pm, _module_scale_ideal((split ? P : P * C), pseudo_matrix(L)))
-  LL = lattice(ambient_space(L), M)
+  _M = _sum_modules(pm, _module_scale_ideal((split ? P : P * C), pseudo_matrix(L)))
+  LL = lattice(ambient_space(L), _M)
 
   @assert islocally_isometric(L, LL, P)
   return LL
@@ -294,7 +305,7 @@ function iterated_neighbours(L::HermLat, P; use_auto = false, max = inf, callbac
     _callback = callback
   end
 
-  result = [ L ]
+  result = typeof(L)[ L ]
   i = 1
   while length(result) < max && i <= length(result)
     # _Neighbours and the callback only add new lattices if not isometric to known ones and stop if Max is reached.
