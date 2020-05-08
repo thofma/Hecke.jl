@@ -83,8 +83,11 @@ function math_html(io::IO, a)
   try
     show(io, "text/html", a)
   catch e
+#    @show e
     if isa(e, MethodError)
+      print(io, " \$")
       show(io, a)
+      print(io, "\$ ")
     else
       rethrow(e)
     end
@@ -116,6 +119,7 @@ function Base.show(io::IO, mime::MIME"text/html", T::Tuple)
     try
       show(IOContext(io, :compact => true), mime, T[i])
     catch e
+#      @show e
       if isa(e, MethodError)
         show(IOContext(io, :compact => true), T[i])
       else
@@ -156,6 +160,27 @@ function math_html(io::IO, a::nf_elem)
 end
 
 function Base.show(io::IO, ::MIME"text/html", a::nf_elem)
+  print(io, "\$")
+  math_html(io, a)
+  print(io, "\$")
+end
+
+function math_html(io::IO, a::MapParent)
+  print(io, "\\text{Set of all $(a.typ) from }")
+  try
+    math_html(io, a.dom)
+  catch e
+    show(io, a.dom)
+  end
+  print(io, "\\to")
+  try
+    math_html(io, a.codom)
+  catch e
+    show(io, a.dom)
+  end
+end
+
+function Base.show(io::IO, ::MIME"text/html", a::MapParent)
   print(io, "\$")
   math_html(io, a)
   print(io, "\$")
@@ -245,11 +270,35 @@ function Base.show(io::IO, ::MIME"text/html", a::fmpq)
 end
 
 math_html(io::IO, a::Rational) = math_html(io, fmpq(a))
+
 function Base.show(io::IO, ::MIME"text/html", a::Rational) 
   print(io, "\$")
   math_html(io, a)
   print(io, "\$")
 end
+
+function Base.show(io::IO, ::MIME"text/html", ::FlintRationalField)
+  print(io, "\$")
+  math_html(io, FlintQQ)
+  print(io, "\$")
+end
+
+function math_html(io::IO, ::FlintRationalField)
+  print(io, "\\text{Rational Field}")
+end
+
+function Base.show(io::IO, ::MIME"text/html", ::FlintIntegerRing)
+  print(io, "\$")
+  math_html(io, FlintQQ)
+  print(io, "\$")
+end
+
+function math_html(io::IO, ::FlintIntegerRing)
+  print(io, "\\text{Integer Ring}")
+end
+
+
+
 
 #= infinite recursion through generic math_html, so don't
 function Base.show(io::IO, ::MIME"text/html", a) 
@@ -391,7 +440,8 @@ function math_html(io::IO, G::GrpAbFinGen)
     try
       s(io, MIME("text/html"), G)
       return
-    catch 
+    catch e
+#      @show e
     end
   end
   if issnf(G)
