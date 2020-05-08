@@ -280,6 +280,7 @@ end
 
 function _discriminant(G)
   d = det(G)
+  n = nrows(G)
   if n == 0 || n == 1
     return d
   else
@@ -904,14 +905,11 @@ function _quadratic_form_with_invariants(dim::Int, det::nf_elem, finite::Vector,
           push!(_signs, -1)
         end
       end
-      @show V, _signs
 
       x = _weak_approximation(V, _signs)
-      @show x
       s = signs(x)
       @assert all(i -> sign(x, V[i]) == _signs[i], 1:length(V))
       k = minimum(vcat(Int[dim - 3], [s[p] == 1 ? (dim - c) : c for (p, c) in negative]))
-      @show k
       D2 = append!(D2, elem_type(K)[x for i in 1:k])
       dim = dim - k
       for (p, n) in negative
@@ -919,11 +917,9 @@ function _quadratic_form_with_invariants(dim::Int, det::nf_elem, finite::Vector,
           negative[p] = negative[p] - k
         end
       end
-      @show negative
     end
 
     _d, _f = _quadratic_form_invariants(diagonal_matrix(D2))
-    @show _d, _f
 
     PP = append!(support(K(2)), finite)
     PP = unique!(PP)

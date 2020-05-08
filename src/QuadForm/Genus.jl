@@ -1663,7 +1663,7 @@ function _genus_symbol_kirschmer(L::QuadLat, p::NfOrdIdl; uniformizer = zero(ord
     fL = []
     for k in 1:(t - 1)
       exp = uL[k] + uL[k + 1]
-      push!(fL, (isodd(exp) ? exp : min(quadratic_defect(aL[k] * aL[k + 1], p), uL[k] + wL[k + 1], uL[k + 1], wL[k], e + div(exp, 2) + sL[k])) - 2*sL[k])
+      push!(fL, (isodd(exp) ? exp : min(quadratic_defect(aL[k] * aL[k + 1], p), uL[k] + wL[k + 1], uL[k + 1] + wL[k], e + div(exp, 2) + sL[k])) - 2*sL[k])
     end
     return LocalGenusSymbol{QuadLat}(p, ([nrows(G[k]) for k in 1:t], sL, wL, aL, fL, G), unif, true, base_field(L), nothing, nothing)
   end

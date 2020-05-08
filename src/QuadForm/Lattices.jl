@@ -1498,8 +1498,8 @@ function islocally_isometric(L::QuadLat, M::QuadLat, p::NfOrdIdl)
     return false
   end
 
-  dimL1, sL1, wL1, aL1, fL1, G1 = data(genus_symbol(L, p))
-  dimL2, sL2, wL2, aL2, fL2, G2 = data(genus_symbol(M, p))
+  dimL1, sL1, wL1, aL1, fL1, G1 = data(_genus_symbol_kirschmer(L, p))
+  dimL2, sL2, wL2, aL2, fL2, G2 = data(_genus_symbol_kirschmer(M, p))
 
   if (dimL1 != dimL2) || (sL1 != sL2) || (wL1 != wL2)
     return false
@@ -1524,23 +1524,32 @@ function islocally_isometric(L::QuadLat, M::QuadLat, p::NfOrdIdl)
   d2 = [ diagonal_matrix([G2[i] for i in 1:t]) for t in 1:length(G2)]
 
   # This cannot work, what is going on here
+  
   for i in 1:length(fL1)
-    detquot = determinant(d1[i])//determinant(d2[i])
+    detquot = det(d1[i])//det(d2[i])
     if valuation(detquot, p) != 0
       return false
     end
     if quadratic_defect(detquot, p) < fL1[i]
       return false
     end
-    if (fL1[i] > 2*e + uL1[i+1] - wL2[i+1]) && !(my_little_helper(d1[i], diagonal_join(d2[i], matrix(base_ring(d2[i]), 1, 1, [aL2[i+1]])), p))
+    if (fL1[i] > 2*e + uL1[i+1] - wL2[i+1]) && !(_comp_hasse(d1[i], diagonal_matrix(d2[i], matrix(base_ring(d2[i]), 1, 1, [aL2[i+1]])), p))
       return false
     end
-    if (fL1[i] > 2*e + uL1[i  ] - wL2[i  ]) && !(my_little_helper(d1[i], diagonal_joint(d2[i], matrix(base_ring(d2[i]), 1, 1, [aL2[i]])), p))
+    if (fL1[i] > 2*e + uL1[i  ] - wL2[i  ]) && !(_comp_hasse(d1[i], diagonal_matrix(d2[i], matrix(base_ring(d2[i]), 1, 1, [aL2[i]])), p))
       return false
     end
   end
 
   return true
+end
+
+# nrows(G2) = nrows(G1) + 1
+function _comp_hasse(G1, G2, p)
+  G1o = diagonal(_gram_schmidt(G1, identity)[1])
+  G2o = diagonal(_gram_schmidt(G2, identity)[1])
+  push!(G1o, prod(G1o) * prod(G2o))
+  return _hasse_invariant(G1o, p) == _hasse_invariant(G2o, p)
 end
 
 ################################################################################
@@ -1557,9 +1566,138 @@ isisotropic(L::AbsLat, p) = isisotropic(rational_span(L), p)
 #
 ################################################################################
 
-#{Checks whether L is p-maximal integral. If not, a minimal integral over-lattice at p is returned}
+# ismaximal integral for quadratic lattice
 
-function _ismaximal_integral(L::AbsLat, p)
+function guess_max_det(L::QuadLat, p)
+  m = rank(L)
+  R = base_ring(L)
+  n = div(m, 2)
+  d = det(gram_matrix_of_basis(L))
+  e = 2 * valuation(base_ring(L)(2), p)
+  if isodd(m)
+    v = mod(valuation(d, p), 2)
+    v = witt_invariant(L, p) == 1 ? v - e * n : 2 - v - e * n
+  else
+    if isodd(div(m * (m - 1), 2))
+      d = -d
+    end
+    qd = quadratic_defect(d, p)
+    if qd isa PosInf
+      v = witt_invariant(L, p) == 1 ? -e * n : 2 - e * n
+    else
+      vd = valuation(d, p)
+      v =  2 * div(qd, 2) + e * (1 - n)
+      if iseven(vd) && qd == vd + e && witt_invariant(L, p) == -1
+        v = -e*n + 2
+      end
+    end
+  end
+  return v
+end
+
+global _debug = []
+
+function ismaximal_integral(L::QuadLat, p)
+  @req order(p) == base_ring(L) "blabla do not match"
+  #if iszero(L)
+  #  return true, L
+  #end
+
+  if valuation(norm(L), p) < 0
+    # this is a weird case? Magma does not return a second argument
+    return false, L
+  end
+
+  # don't know what this does
+  if guess_max_det(L, p) == valuation(volume(L), p)
+    return true, L
+  end
+
+  R = base_ring(L)
+  K = nf(R)
+
+  k, h = ResidueField(R, p)
+  hext = extend(h, K)
+
+  BM = local_basis_matrix(L, p, type = :submodule)
+
+  G = 2 * gram_matrix(ambient_space(L), BM)
+
+  Gmodp = map(hext, G)
+
+  r, V = left_kernel(Gmodp)
+  @assert r > 0
+  if !isdyadic(p)
+    T = map(y -> hext\y, V)
+    H = inv(elem_in_nf(uniformizer(p))) * T * G * transpose(T)
+    ok, v = isisotropic_finite(idontknowwhatthematrixissupposedtobe)
+#    ok, v:= IsIsotropicFinite(Matrix(Ncols(H), [x @ h : x in Eltseq(H)] ));
+#    assert ok;
+#    e:= Eltseq( v*V ) @@ h;
+#    v:= Vector(FF, e);
+#    valv:= Valuation( ((v*G) * Matrix(FF,1,e))[1], p );
+#    assert valv ge 2;
+  else
+    val2 = valuation(R(2), p)
+    PP = enumerate_lines(k, nrows(V))
+    for x in PP
+      @assert !iszero(x)
+      xV = matrix(k, 1, length(x), x) * V
+      e = elem_type(K)[ hext\(xV[1, i]) for i in 1:ncols(xV) ] 
+      v = matrix(K, 1, length(e), e)
+      valv = valuation((v * G * transpose(v))[1, 1], p)
+      @assert valv >= 1
+      if valv >= val2 + 2
+        break
+      end
+    end
+  end
+  pia = anti_uniformizer(p)
+  LL = lattice(ambient_space(L), _sum_modules(pseudo_matrix(L), pseudo_matrix(pia * v * BM)))
+  @assert volume(L) ==  volume(LL) * p^2 && valuation(norm(LL), p) >= 0
+  return false, LL
+end
+
+#{Checks whether L is maximal integral. If not, a minimal integral over-lattice is returned}
+function ismaximal_integral(L::QuadLat)
+  #if iszero(L)
+  #  return true, L
+  #end
+
+  if !isintegral(norm(L))
+    # is L a minimal integral over-lattice? I don't think so
+    return false, L
+  end
+
+  for p in bad_primes(L, even = true)
+    ok, LL = ismaximal_integral(L, p)
+    if !ok
+      return false, LL
+    end
+  end
+  return true, L
+end
+
+#{Checks if L_p is Norm(L_p)-maximal}
+function ismaximal(L::QuadLat, p)
+  @req order(p) == base_ring(L) "Asdsads"
+  #if iszero(L)
+  #  return true, L
+  #end
+  v = valuation(norm(L), p)
+  x = uniformizer(p)^(-v)
+  ok, LL = ismaximal_integral(rescale(L, x), p)
+  if ok
+    return true, L
+  else
+    return false, rescale(LL, inv(elem_in_nf(x)))
+  end
+end
+
+# Hermitian case
+
+#{Checks whether L is p-maximal integral. If not, a minimal integral over-lattice at p is returned}
+function _ismaximal_integral(L::HermLat, p)
   R = base_ring(L)
   E = nf(R)
   D = prime_decomposition(R, p)
@@ -1604,7 +1742,7 @@ end
   #// Check if L is max. integral at p. If not, return either:
   #// - a minimal integral overlattice at p (minimal flag set)
   #// - a maximal integral overlattice at p (minimal flag not set).
-function _maximal_integral_lattice(L::AbsLat, p, minimal = true)
+function _maximal_integral_lattice(L::HermLat, p, minimal = true)
   R = base_ring(L)
   # already maximal?
   if valuation(norm(volume(L)), p) == 0 && !isramified(R, p)
@@ -1777,14 +1915,14 @@ end
 
 #{Checks if L_p is Norm(L_p)-maximal}
 function ismaximal(L::HermLat, p)
-  iszero(L) && error("The lattice must be non-zero")
+  #iszero(L) && error("The lattice must be non-zero")
   v = valuation(norm(L), p)
   x = elem_in_nf(p_uniformizer(p))^(-v)
   b, LL = ismaximal_integral(rescale(L, x), p)
   if b
     return b, L
   else
-    return lattice(ambient_space(L), pseudo_matrix(LL))
+    return false, lattice(ambient_space(L), pseudo_matrix(LL))
   end
 end
 
@@ -3692,4 +3830,118 @@ function gram_matrix_of_generators(L::AbsLat, minimal = true)
   return gram_matrix(ambient_space(L), M)
 end
 
+################################################################################
+#
+#  Maximal sublattices
+#
+################################################################################
 
+function maximal_sublattices(L::QuadLat, p; use_auto = false, callback = false, max = inf)
+  @req base_ring(L) == order(p) "asdsd"
+  
+  B = local_basis_matrix(L, p, type = :submodule)
+  n = nrows(B)
+  R = base_ring(L)
+  K = nf(R)
+  k, h = ResidueField(R, p)
+  hext = extend(h, K)
+
+  if use_auto
+    throw(NotImplemented())
+  end
+
+  Ls = maximal_subspaces(k, n)
+  pML = _module_scale_ideal(pseudo_matrix(L), p)
+  result = typeof(L)[]
+  keep = true
+  cont = true
+  E = Int[]
+  for i in 1:length(Ls)
+    m = map_entries(y -> hext\y, Ls[i])
+    LL = lattice(ambient_space(L), _sum_modules(pseudo_matrix(m * B), pML))
+    if !(callback isa Bool)
+      keep, cont = callback(result, LL)
+    end
+    if keep
+      push!(result, LL)
+      push!(E, 1)
+    end
+    if !cont
+      break
+    end
+    if length(result) >= max
+      break
+    end
+  end
+  return result, E
+end
+
+################################################################################
+#
+#  Minimal superlattices
+#
+################################################################################
+
+function minimal_superlattices(L::QuadLat, p; use_auto = false, callback = false, max = inf)
+  @req base_ring(L) == order(p) "asdsd"
+
+  B = local_basis_matrix(L, p, type = :submodule)
+  n = nrows(B)
+  R = base_ring(L)
+  K = nf(R)
+  k, h = ResidueField(R, p)
+  hext = extend(h, K)
+
+  if use_auto
+    throw(NotImplemented())
+  end
+
+  Ls = enumerate_lines(k, n)
+
+  pinv = inv(p)
+  ML = pseudo_matrix(L)
+  result = typeof(L)[]
+  keep = true
+  cont = true
+  E = Int[]
+  for v in Ls
+    # don't need to make a copy
+    m = matrix(K, 1, n, map(y -> hext\y, v))
+    LL = lattice(ambient_space(L), _sum_modules(ML, pseudo_matrix(m*B, [pinv])))
+    if !(callback isa Bool)
+      keep, cont = callback(result, LL)
+    end
+    if keep
+      push!(result, LL)
+      push!(E, 1)
+    end
+    if !cont
+      break
+    end
+    if length(result) >= max
+      break
+    end
+  end
+  return result, E
+end
+
+function maximal_subspaces(k, n)
+  I = identity_matrix(k, n)
+  L = typeof(I)[]
+  for i in 1:n
+    II = remove_row(I, i)
+    if i == 1
+      push!(L, II)
+      continue
+    end
+    V = Iterators.product([k for j in 1:(i - 1)]...)
+    for v in V
+      III = deepcopy(II)
+      for l in 1:(i - 1)
+        III[l, i] = v[l]
+      end
+      push!(L, III)
+    end
+  end
+  return L
+end

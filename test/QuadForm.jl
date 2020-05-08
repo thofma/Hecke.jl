@@ -4,4 +4,5 @@
   include("QuadForm/Genus.jl")
   include("QuadForm/Morphism.jl")
   include("QuadForm/Enumeration.jl")
+  include("QuadForm/MassQuad.jl")
 end
