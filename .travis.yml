@@ -13,6 +13,10 @@ matrix:
   allow_failures:
     - julia: nightly
 
+cache:
+  directories:
+  - $HOME/.julia/artifacts
+
 notifications:
   - email: false
 script:
