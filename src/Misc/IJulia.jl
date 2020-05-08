@@ -8,6 +8,9 @@ end
 
 function math_html(io::IO, a::PolyElem)
   f = "$a"
+  if parent(a).S in [Symbol("_\$1")]
+    f = replace(f, "_\$1" => "x")
+  end
   f = replace(f, "*" => "")
   f = replace(f, r"\^([0-9]*)" => s"^{\1}")
   print(io, f)
@@ -29,11 +32,46 @@ function math_html(io::IO, a::AnticNumberField)
   end
 end
 
+function Base.show(io::IO, ::MIME"text/html", a::NfRelNS)
+  print(io, "\$")
+  math_html(io, a)
+  print(io, "\$")
+end
+
+function math_html(io::IO, a::NfRelNS)
+  n = find_name(a)
+  if n === nothing || !get(io, :compact, false)
+    print(io, "\\text{non-simple Relative number field over }")
+    math_html(io, base_field(a))
+    print(io, "\\text{ with defining polynomials: }")
+    math_html(io, a.pol)
+  else
+    print(io, string(n))
+  end
+end
+
+function Base.show(io::IO, ::MIME"text/html", a::NfAbsNS)
+  print(io, "\$")
+  math_html(io, a)
+  print(io, "\$")
+end
+
+function math_html(io::IO, a::NfAbsNS)
+  n = find_name(a)
+  if n === nothing || !get(io, :compact, false)
+    print(io, "\\text{non-simple number field with defining polynomials: }")
+    math_html(io, a.pol)
+  else
+    print(io, string(n))
+  end
+end
+
 function Base.show(io::IO, ::MIME"text/html", a::AnticNumberField)
   print(io, "\$")
   math_html(io, a)
   print(io, "\$")
 end
+
 
 function Base.show(io::IO, ::MIME"text/html", A::Fac{T}) where {T}
   print(io, "\$")
@@ -92,14 +130,20 @@ function Base.show(io::IO, mime::MIME"text/html", T::Tuple)
 end
 
 function math_html(io::IO, a::nf_elem)
-  s = parent(a).S
-  if s in [:_a, Symbol("_\$")] 
-    parent(a).S = Symbol("\\alpha")
-    fs = string(a)
-    parent(a).S = s
-  else
-    fs = string(a)
+  s = t = parent(a).S
+  f, c = iscyclotomic_type(parent(a))
+  if f
+    if s == Symbol("z_$c")
+      t = Symbol("\\zeta_{$c}")
+    end
   end
+  if s in [:_a, Symbol("_\$")] 
+    t = Symbol("\\alpha")
+  end
+  parent(a).S = t
+  fs = string(a)
+  parent(a).S = s
+
   f = replace(fs, "*" => "")
   f = replace(f, r"sqrt\(([-0-9]*)\)" => s"\\sqrt{\1}")
   f = replace(f, r"\^([0-9]*)" => s"^{\1}")
