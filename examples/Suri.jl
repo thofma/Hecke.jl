@@ -73,6 +73,97 @@ function Hecke.dual(P::Hecke.PMat)
   return pseudo_matrix(inv(P.matrix)', map(inv, coefficient_ideals(P)))
 end
 
+function Hecke.invmod(A::Generic.MatSpaceElem{nf_elem}, X::fmpz)
+  k = base_ring(A)
+  zk = maximal_order(k)
+  q, mq = quo(zk, X*zk)
+  if true
+    iA = inv(A)
+    id = lcm([denominator(x, zk) for x = iA])
+    BX = map_entries(x->mq(zk(id*x)), iA)*invmod(id, X)
+  else
+    d = lcm([denominator(x, zk) for x= A])
+    AX = map_entries(x->mq(zk(d*x)), A)
+    BX = inv(AX)*invmod(d, X)
+  end
+  return map_entries(x->k(preimage(mq, x)), BX)
+end
+
+function Hecke.invmod(A::fmpz_mat, X::fmpz)
+  B0 = map_entries(lift, inv(map_entries(quo(ZZ, X)[1], A)))
+  mod_sym!(B0, X)
+  return B0
+end
+
+function my_mod_sym!(A::fmpz_mat, X::fmpz, ::Any)
+  mod_sym!(A, X)
+end
+
+function valuation(a::NfAbsOrdElem{AnticNumberField,nf_elem}, X::fmpz)
+  v = 0
+  first = true
+  for x = coordinates(a)
+    iszero(x) && continue
+    if first
+      v = valuation(x, X)
+      first = false
+    else
+      v = min(v, valuation(x, X))
+    end
+    iszero(v) && return v
+  end
+  return v
+end
+
+function mod_sym(A::NfAbsOrdElem{AnticNumberField,nf_elem}, X::fmpz)
+  c = coordinates(A)
+  d = map(x->Hecke.mod_sym(x, X), c)
+  return parent(A)(d)
+end
+
+function my_mod_sym!(A::Generic.MatSpaceElem{nf_elem}, X::fmpz)
+  k = base_ring(A)
+  zk = maximal_order(k)
+  for i=1:nrows(A)
+    for j=1:ncols(A)
+      A[i,j] = k(mod_sym(zk(A[i,j]), X))
+    end
+  end
+end
+
+
+function DoublePlusOne(A, X::fmpz, k::Int)
+  R = base_ring(A)
+
+  B0 = invmod(A, X)
+  R = [divexact(identity_matrix(R, nrows(A))-A*B0, X)]
+  M = []
+
+  for i=0:k
+    r = R[end]^2
+    m = B0*r
+    my_mod_sym!(m, X)
+    push!(M, m)
+    push!(R, divexact(r-A*M[end], X))
+    if iszero(R[end])
+      break
+    end
+  end
+  return B0, M, R
+end
+
+function getB(B0, M, R, X)
+  B = [B0]
+  I = identity_matrix(base_ring(B0), nrows(B0))
+  XX = X
+  for i=1:length(M)
+    push!(B, B[end]*(I + R[i]*XX) + M[i]*XX^2)
+    XX = XX^2*X
+    my_mod_sym!(B[end], XX)
+  end
+  return B
+end
+
 end
 
 #= example
@@ -81,9 +172,9 @@ Hecke.example("Suri.jl")
 Hecke.revise("Suri.jl")
 
 k, a = wildanger_field(3, 13)
-m = rand(MatrixSpace(k, 10, 10), 1:10);
+m = rand(MatrixSpace(k, 02, 02), 1:10);
 m = cat(m,m, dims=(1,2));
-b = rand(MatrixSpace(k, 20, 1), 1:10);
+b = rand(MatrixSpace(k, 04, 1), 1:10);
 S = kernel(hcat(m, b));
 
 m1 = Suri.extend(pseudo_matrix(m'), b, S[2]);
@@ -91,7 +182,7 @@ m1 = Suri.extend(pseudo_matrix(m'), b, S[2]);
 norm(det(m))
 norm(det(m1))
 
-b = rand(MatrixSpace(k, 20, 1), 1:10);
+b = rand(MatrixSpace(k, 04, 1), 1:10);
 S = kernel(hcat(m1.matrix', b));
 m2 = Suri.extend(m1, b, S[2]);
 
