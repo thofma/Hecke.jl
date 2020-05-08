@@ -50,14 +50,14 @@ function _improve_subfield_basis(K, bas)
   # Then B' defined as lllN * B_LLL_OK will hopefully be small
   OK = maximal_order(K)
   OKbmatinv = basis_mat_inv(OK, copy = false)
-  basinOK = bas * matrix(FlintQQ, OKbmatinv.num) * fmpq(1, OKbmatinv.den)
+  basinOK = bas * fmpq_mat(OKbmatinv.num) * fmpq(1, OKbmatinv.den)
   deno = fmpz(1)
   for i in 1:nrows(basinOK)
     for j in 1:ncols(basinOK)
       deno = lcm(deno, denominator(basinOK[i, j]))
     end
   end
-  S = saturate(matrix(FlintZZ, basinOK * deno))
+  S = saturate(map_entries(FlintZZ, basinOK * deno))
   SS = S * basis_matrix(OK, copy = false)
   lllOK = lll(OK)
   N = (SS * basis_mat_inv(lllOK)).num
@@ -69,14 +69,14 @@ end
 function _improve_subfield_basis_no_lll(K, bas)
   OK = maximal_order(K)
   OKbmatinv = basis_mat_inv(OK, copy = false)
-  basinOK = bas * matrix(FlintQQ, OKbmatinv.num) * fmpq(1, OKbmatinv.den)
+  basinOK = bas * fmpq_mat(OKbmatinv.num) * fmpq(1, OKbmatinv.den)
   deno = fmpz(1)
   for i in 1:nrows(basinOK)
     for j in 1:ncols(basinOK)
       deno = lcm(deno, denominator(basinOK[i, j]))
     end
   end
-  S = saturate(matrix(FlintZZ, basinOK * deno))
+  S = saturate(map_entries(FlintZZ, basinOK * deno))
   SS = S * basis_matrix(OK, copy = false)
   return SS
 end
@@ -315,7 +315,7 @@ function fixed_field(K::AnticNumberField, A::Vector{NfToNfMor}; simplify::Bool =
     # We have to be a bit careful (clever) since in the absolute case the
     # basis matrix is a FakeFmpqMat
 
-    m = matrix(FlintQQ, bm.num)
+    m = fmpq_mat(bm.num)
     for j in 1:n
       m[j, j] = m[j, j] - bm.den # This is autos[i] - identity
     end

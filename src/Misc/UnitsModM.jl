@@ -92,7 +92,7 @@ function gen_mod_pk(p::fmpz, mod::fmpz=fmpz(0))
 end
 
 mutable struct MapUnitGroupModM{T} <: Map{GrpAbFinGen, T, HeckeMap, MapUnitGroupModM}
-  header::Hecke.MapHeader
+  header::Hecke.MapHeader{GrpAbFinGen, T}
 
   function MapUnitGroupModM{T}(G::GrpAbFinGen, R::T, dexp::Function, dlog::Function) where {T}
     r = new{T}()

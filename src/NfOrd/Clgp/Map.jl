@@ -357,7 +357,7 @@ function class_group(c::ClassGrpCtx, O::NfOrd = order(c); redo::Bool = false)
   r = MapClassGrp()
   
   local disclog 
-  let c = c
+  let c = c, C = C
     function disclog(x::NfOrdIdl)
       if x.is_principal == 1
         return id(C)
@@ -408,7 +408,7 @@ function class_group_grp(c::ClassGrpCtx; redo::Bool = false)
 
   p = findall(x->S[x,x]>1, 1:ncols(S))
 
-  C = abelian_group([S[x, x] for x in p])
+  C = abelian_group(fmpz[S[x, x] for x in p])
   c.dl_data = (s, T, C)
   return C
 end
@@ -722,13 +722,13 @@ function reduce_mod_units(a::Array{FacElem{nf_elem, AnticNumberField}, 1}, U)
 end
 
 
-mutable struct MapSUnitModUnitGrpFacElem{T} <: Map{T, FacElemMon{AnticNumberField}, HeckeMap, MapSUnitModUnitGrpFacElem}
-  header::MapHeader
+mutable struct MapSUnitModUnitGrpFacElem <: Map{GrpAbFinGen, FacElemMon{AnticNumberField}, HeckeMap, MapSUnitModUnitGrpFacElem}
+  header::MapHeader{GrpAbFinGen, FacElemMon{AnticNumberField}}
   idl::Array{NfOrdIdl, 1}
   valuations::Vector{SRow{fmpz}}
 
-  function MapSUnitModUnitGrpFacElem{T}() where {T}
-    return new{T}()
+  function MapSUnitModUnitGrpFacElem()
+    return new()
   end
 end
 
@@ -848,40 +848,47 @@ function sunit_mod_units_group_fac_elem(I::Array{NfOrdIdl, 1})
   #end
 
   C = abelian_group(fmpz[0 for i=U])
-  r = MapSUnitModUnitGrpFacElem{typeof(C)}()
+  r = MapSUnitModUnitGrpFacElem()
   r.idl = I_in
  
-  function exp(a::GrpAbFinGenElem)
-    b = U[1]^a.coeff[1, 1]
-    for i = 2:length(U)
-      if iszero(a.coeff[1, i])
-        continue
+  local exp 
+  let U = U
+    function exp(a::GrpAbFinGenElem)
+      b = U[1]^a.coeff[1, 1]
+      for i = 2:length(U)
+        if iszero(a.coeff[1, i])
+          continue
+        end
+        mul!(b, b, U[i]^a.coeff[1, i])
       end
-      mul!(b, b, U[i]^a.coeff[1, i])
+      return b
     end
-    return b
   end
 
-  function log(a::FacElem{nf_elem, AnticNumberField})
-    b = SRow{fmpz}()
-    for i=1:length(I)
-      v = valuation(a, I[i])
-      if v != 0
-        push!(b.pos, i)
-        push!(b.values, v)
-      end
-    end
-    s, d = solve_ut(S1, b)
-    @assert d == 1  # this would indicate element is not in group...
-    c = zeros(fmpz, length(I))
-    for (p,v) = s
-      c[p] = v
-    end
-    return C(c)
-  end
+  local log
+  let I = I, S1 = S1, C = C
 
-  function log(a::nf_elem)
-    return log(FacElem([a], fmpz[1]))
+    function log(a::FacElem{nf_elem, AnticNumberField})
+      b = SRow{fmpz}()
+      for i=1:length(I)
+        v = valuation(a, I[i])
+        if v != 0
+          push!(b.pos, i)
+          push!(b.values, v)
+        end
+      end
+      s, d = solve_ut(S1, b)
+      @assert d == 1  # this would indicate element is not in group...
+      c = zeros(fmpz, length(I))
+      for (p,v) = s
+        c[p] = v
+      end
+      return C(c)
+    end
+
+    function log(a::nf_elem)
+      return log(FacElem(a))
+    end
   end
 
   r.header = MapHeader(C, FacElemMon(nf(O)), exp, log)
@@ -890,13 +897,13 @@ function sunit_mod_units_group_fac_elem(I::Array{NfOrdIdl, 1})
   return C, r
 end
 
-mutable struct MapSUnitGrpFacElem{T} <: Map{T, FacElemMon{AnticNumberField}, HeckeMap, MapSUnitGrpFacElem}
-  header::MapHeader
+mutable struct MapSUnitGrpFacElem <: Map{GrpAbFinGen, FacElemMon{AnticNumberField}, HeckeMap, MapSUnitGrpFacElem}
+  header::MapHeader{GrpAbFinGen, FacElemMon{AnticNumberField}}
   idl::Array{NfOrdIdl, 1}
   isquotientmap::Int
 
-  function MapSUnitGrpFacElem{T}() where {T}
-    z = new{T}()
+  function MapSUnitGrpFacElem()
+    z = new()
     z.isquotientmap = -1
     return z
   end
@@ -926,25 +933,30 @@ function sunit_group_fac_elem(I::Array{NfOrdIdl, 1})
 
   G = abelian_group(vcat(U.snf, S.snf))
 
-  r = MapSUnitGrpFacElem{typeof(G)}()
+  r = MapSUnitGrpFacElem()
   r.idl = I
 
-  function exp(a::GrpAbFinGenElem)
-    return image(mU, U(sub(a.coeff, 1:1, 1:length(U.snf))))*
-           image(mS, S(sub(a.coeff, 1:1, length(U.snf)+1:length(G.snf))))
-
+  local exp
+  let mU = mU, mS = mS, U = U, G = G
+    function exp(a::GrpAbFinGenElem)
+      return image(mU, U(sub(a.coeff, 1:1, 1:length(U.snf))))*
+             image(mS, S(sub(a.coeff, 1:1, length(U.snf)+1:length(G.snf))))
+    end
   end
 
-  function log(a::FacElem{nf_elem, AnticNumberField})
-    a1 = preimage(mS, a)
-    a2 = a*inv(image(mS, a1))
-#    @assert isunit(O(evaluate(a2)))
-    a3 = preimage(mU, a2)
-    return G(vcat([a3.coeff[1,i] for i=1:ncols(a3.coeff)], [a1.coeff[1,i] for i=1:ncols(a1.coeff)]))
-  end
+  local log
+  let mS = mS, mU = mU, G = G 
+    function log(a::FacElem{nf_elem, AnticNumberField})
+      a1 = preimage(mS, a)
+      a2 = a*inv(image(mS, a1))
+      #     @assert isunit(O(evaluate(a2)))
+      a3 = preimage(mU, a2)
+      return G(vcat([a3.coeff[1,i] for i=1:ncols(a3.coeff)], [a1.coeff[1,i] for i=1:ncols(a1.coeff)]))
+    end
 
-  function log(a::nf_elem)
-    return log(FacElem([a], fmpz[1]))
+    function log(a::nf_elem)
+      return log(FacElem(a))
+    end
   end
 
   r.header = MapHeader(G, FacElemMon(nf(O)), exp, log)
@@ -952,12 +964,12 @@ function sunit_group_fac_elem(I::Array{NfOrdIdl, 1})
   return G, r
 end
 
-mutable struct MapSUnitGrp{T} <: Map{T, AnticNumberField, HeckeMap, MapSUnitGrp}
-  header::MapHeader
+mutable struct MapSUnitGrp <: Map{GrpAbFinGen, AnticNumberField, HeckeMap, MapSUnitGrp}
+  header::MapHeader{GrpAbFinGen, AnticNumberField}
   idl::Array{NfOrdIdl, 1}
 
-  function MapSUnitGrp{T}() where {T}
-    return new{T}()
+  function MapSUnitGrp()
+    return new()
   end
 end
 
@@ -978,15 +990,21 @@ function sunit_group(I::Array{NfOrdIdl, 1})
   O = order(I[1])
   G, mG = sunit_group_fac_elem(I)
 
-  r = MapSUnitGrp{typeof(G)}()
+  r = MapSUnitGrp()
   r.idl = I
 
-  function exp(a::GrpAbFinGenElem)
-    return evaluate(image(mG, a))
+  local exp
+  let mG = mG
+    function exp(a::GrpAbFinGenElem)
+      return evaluate(image(mG, a))
+    end
   end
 
-  function log(a::nf_elem)
-    return preimage(mG, FacElem([a], fmpz[1]))
+  local log
+  let mG = mG
+    function log(a::nf_elem)
+      return preimage(mG, FacElem(a))
+    end
   end
 
   r.header = MapHeader(G, nf(O), exp, log)

@@ -532,7 +532,7 @@ function __sunit_group_fac_elem_quo_via_brauer(N::NormRelation, S, n::Int, invar
     end
   end
 
-  r = Hecke.MapSUnitGrpFacElem{typeof(res_group)}()
+  r = Hecke.MapSUnitGrpFacElem()
   r.idl = S
   r.isquotientmap = n
 

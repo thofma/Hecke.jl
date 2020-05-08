@@ -14,17 +14,17 @@
     end
 
     for b in Hecke.squarefree_up_to(100)[2:end]
-      K,a=NumberField(x^2-b)
-      O=maximal_order(K);
-      cocval=Array{nf_elem, 2}(undef, 2, 2)
-      G=[Hecke.NfToNfMor(K,K,a),Hecke.NfToNfMor(K,K,-a)]
-      cocval[1,1]=K(1)
-      cocval[1,2]=K(1)
-      cocval[2,1]=K(1)
-      cocval[2,2]=K(-1)
+      K, a = NumberField(x^2-b, check = false, cached = false)
+      O = maximal_order(K);
+      cocval = Array{nf_elem, 2}(undef, 2, 2)
+      G = NfToNfMor[Hecke.NfToNfMor(K,K,a),Hecke.NfToNfMor(K,K,-a)]
+      cocval[1,1] = K(1)
+      cocval[1,2] = K(1)
+      cocval[2,1] = K(1)
+      cocval[2,2] = K(-1)
       A = Hecke.CrossedProductAlgebra(K,G,cocval)
       if Hecke.issplit(A)
-        A1 = Hecke.CrossedProductAlgebra(O,G,cocval)
+        A1 = Hecke.CrossedProductAlgebra(O, G, cocval)
         O1 = Order(A1, basis(A1))
         d = discriminant(O1)
         fac = factor(d)
@@ -38,7 +38,7 @@
       end
     end
 
-    A=Hecke.quaternion_algebra2(4,36)
+    A = Hecke.quaternion_algebra2(4,36)
     @test Hecke.issplit(A)
     A=Hecke.quaternion_algebra2(-1,-1)
     O= Order(A, [A[i] for i=1:4])
@@ -94,7 +94,7 @@
     b = rand(O, 10)
     @test elem_in_algebra(b) in O
 
-    b = A([ fmpq(1), fmpq(1, 3) ])
+    b = A(fmpq[ fmpq(1), fmpq(1, 3) ])
     @test denominator(b, O)*b in O
   end
 

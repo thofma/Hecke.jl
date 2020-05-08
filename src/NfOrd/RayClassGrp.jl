@@ -1256,9 +1256,9 @@ function has_principal_generator_1_mod_m(I::Union{NfOrdIdl, FacElem{NfOrdIdl, Nf
   U, mU = unit_group_fac_elem(O, GRH = GRH)
   
   lp = factor(m)
-  powers = [(x, x^v) for (x, v) in lp]
-  quo_rings = [quo(O, q) for (x, q) in powers]
-  groups_and_maps = [multiplicative_group(Q[1]) for Q in quo_rings]
+  powers = Tuple{NfOrdIdl, NfOrdIdl}[(x, x^v) for (x, v) in lp]
+  quo_rings = Tuple{NfOrdQuoRing, NfOrdQuoMap}[quo(O, q) for (x, q) in powers]
+  groups_and_maps = Tuple{GrpAbFinGen, Hecke.GrpAbFinGenToAbsOrdQuoRingMultMap{NfAbsOrd{AnticNumberField,nf_elem},NfAbsOrdIdl{AnticNumberField,nf_elem},NfAbsOrdElem{AnticNumberField,nf_elem}}}[multiplicative_group(Q[1]) for Q in quo_rings]
   invariants = Vector{fmpz}()
   for x in groups_and_maps
     append!(invariants, x[1].snf)
@@ -1291,7 +1291,7 @@ function has_principal_generator_1_mod_m(I::Union{NfOrdIdl, FacElem{NfOrdIdl, Nf
     ii += ngens(groups_and_maps[i][1])
   end
   if !isempty(inf_plc)
-    H, eH, lH = Hecke._infinite_primes(O, inf_plc, m)
+    H, eH, lH = infinite_primes_map(O, inf_plc, m)
     for t = 1:length(tobeeval)
       el = lH(tobeeval[i])
       for s = 1:ngens(H)

@@ -1140,9 +1140,9 @@ function _maximal_ideals(O::AlgAssAbsOrd, I::AlgAssAbsOrdIdl, p::Union{Int, fmpz
   M = ModAlgAss(lM)
   ls = maximal_submodules(M)
   if strict_containment && isone(length(ls)) && iszero(nrows(ls[1]))
-    ls = typeof(ls)[]
+    ls = typeof(ls[1])[]
   end
-  return ( _from_submodules_to_ideals(M, O, I, x, A1, OtoA1) for x in ls )
+  return typeof(I)[_from_submodules_to_ideals(M, O, I, x, A1, OtoA1) for x in ls ]
 end
 
 function _from_submodules_to_ideals(M::ModAlgAss, O::AlgAssAbsOrd, I::AlgAssAbsOrdIdl, x::Union{Zmodn_mat, Generic.Mat{Generic.ResF{fmpz}}}, A1::AlgAss, OtoA1::AbsOrdToAlgAssMor)

@@ -850,6 +850,9 @@ function coprime_base(A::Array{NfOrdIdl, 1}, p::fmpz)
   return coprime_base_steel(Ap)
 end
 
+
+
+global deb = []
 @doc Markdown.doc"""
     coprime_base(A::Array{NfOrdIdl, 1}) -> Array{NfOrdIdl, 1}
     coprime_base(A::Array{NfOrdElem, 1}) -> Array{NfOrdIdl, 1}
@@ -858,6 +861,7 @@ generated multiplicatively the same ideals as the input and are pairwise
 coprime.
 """
 function coprime_base(A::Array{NfOrdIdl, 1}; refine::Bool = false)
+  push!(deb, A)
   if isempty(A)
     return NfOrdIdl[]
   end
@@ -867,10 +871,18 @@ function coprime_base(A::Array{NfOrdIdl, 1}; refine::Bool = false)
     for i = 2:length(A)
       append!(pf, prefactorization(A[i]))
     end
+    a1 = coprime_base(fmpz[x.gen_one for x in pf])
+    for I in pf
+      if !(I.gen_one in a1)
+        push!(a1, minimum(I.gen_one))
+        push!(a1, norm(I.gen_one))
+      end
+    end
+    a1 = coprime_base(a1)
   else
     pf = A
+    a1 = Set{fmpz}(vcat(fmpz[minimum(x) for x in pf], fmpz[norm(x) for x in pf]) )
   end
-  a1 = Set{fmpz}(vcat(fmpz[minimum(x) for x in pf], fmpz[norm(x) for x in pf]) )
   if isempty(a1)
     return NfOrdIdl[]
   end

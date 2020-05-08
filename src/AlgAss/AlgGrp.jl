@@ -404,11 +404,14 @@ function _find_isomorphism(K::Union{ AnticNumberField, NfRel{nf_elem} }, A::AlgG
     end
   end
 
-  function op(i::Int, j::Int)
-    return op_array[i, j]
+  local op
+  let op_array = op_array
+    function op(iiii::Int, jjjj::Int)
+      return op_array[iiii, jjjj]
+    end
   end
 
-  auttoG, Gtoaut = find_isomorphism([ i for i in 1:n ], op, G)
+  auttoG, Gtoaut = find_isomorphism(Int[ i for i in 1:n ], op, G)
 
   alpha = normal_basis(K)
   basis_alpha = Vector{elem_type(K)}(undef, dim(A))
@@ -427,19 +430,25 @@ function _find_isomorphism(K::Union{ AnticNumberField, NfRel{nf_elem} }, A::AlgG
 
   invM = inv(M)
 
-  function KtoA(x::Union{ nf_elem, NfRelElem })
-    t = zero_matrix(base_field(K), 1, degree(K))
-    for i = 1:degree(K)
-      t[1, i] = coeff(x, i - 1)
+  local KtoA
+  let K = K, invM = invM, A = A
+    function KtoA(x::Union{ nf_elem, NfRelElem })
+      t = zero_matrix(base_field(K), 1, degree(K))
+      for i = 1:degree(K)
+        t[1, i] = coeff(x, i - 1)
+      end
+      y = t*invM
+      return A([ y[1, i] for i = 1:degree(K) ])
     end
-    y = t*invM
-    return A([ y[1, i] for i = 1:degree(K) ])
   end
 
-  function AtoK(x::AlgGrpElem)
-    t = matrix(base_field(K), 1, degree(K), coeffs(x))
-    y = t*M
-    return K(parent(K.pol)([ y[1, i] for i = 1:degree(K) ]))
+  local AtoK
+  let K = K, M = M
+    function AtoK(x::AlgGrpElem)
+      t = matrix(base_field(K), 1, degree(K), coeffs(x))
+      y = t*M
+      return K(parent(K.pol)([ y[1, i] for i = 1:degree(K) ]))
+    end
   end
 
   return KtoA, AtoK

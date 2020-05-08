@@ -615,12 +615,12 @@ end
 #
 ################################################################################
 
-mutable struct MapSUnitGrpZFacElem{T} <: Map{T, FacElemMon{FlintRationalField}, HeckeMap, MapSUnitGrpZFacElem}
-  header::MapHeader
+mutable struct MapSUnitGrpZFacElem <: Map{GrpAbFinGen, FacElemMon{FlintRationalField}, HeckeMap, MapSUnitGrpZFacElem}
+  header::MapHeader{GrpAbFinGen, FacElemMon{FlintRationalField}}
   idl::Array{fmpz, 1}
 
-  function MapSUnitGrpZFacElem{T}() where {T}
-    return new{T}()
+  function MapSUnitGrpZFacElem()
+    return new()
   end
 end
 
@@ -628,12 +628,12 @@ function show(io::IO, mC::MapSUnitGrpZFacElem)
   println(io, "SUnits (in factored form) map of $(codomain(mC)) for $(mC.idl)")
 end
 
-mutable struct MapSUnitGrpZ{T} <: Map{T, FlintRationalField, HeckeMap, MapSUnitGrpZ}
-  header::MapHeader
+mutable struct MapSUnitGrpZ <: Map{GrpAbFinGen, FlintRationalField, HeckeMap, MapSUnitGrpZ}
+  header::MapHeader{GrpAbFinGen, FlintRationalField}
   idl::Array{fmpz, 1}
 
-  function MapSUnitGrpZ{T}() where {T}
-    return new{T}()
+  function MapSUnitGrpZ()
+    return new()
   end
 end
 
@@ -658,7 +658,7 @@ function sunit_group_fac_elem(S::Array{fmpz, 1})
   G = abelian_group(vcat([fmpz(2)], fmpz[0 for i=S]))
   S = vcat(fmpz[-1], S)
 
-  mp = MapSUnitGrpZFacElem{typeof(G)}()
+  mp = MapSUnitGrpZFacElem()
   mp.idl = S
 
   Sq = fmpq[x for x=S]
@@ -709,7 +709,7 @@ end
 function sunit_group(S::Array{fmpz, 1})
   u, mu = sunit_group_fac_elem(S)
 
-  mp = MapSUnitGrpZ{typeof(u)}()
+  mp = MapSUnitGrpZ()
   mp.idl = S
 
   function dexp(a::GrpAbFinGenElem)

@@ -215,7 +215,7 @@ function FakeFmpqMat(x::Vector{fmpq})
 end
 
 function fmpq_mat(x::FakeFmpqMat)
-  z = fmpq(1, x.den) * matrix(FlintQQ, x.num)
+  z = fmpq(1, x.den) * fmpq_mat(x.num)
   return z
 end
 

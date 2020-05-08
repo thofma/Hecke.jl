@@ -27,10 +27,11 @@
     @test p[1] == 3*OA
   end
 
+  #=
   @testset "Locally free basis" begin
     Qx, x = FlintQQ["x"]
     f = x^4 - 5x^2 + 5
-    K, a = number_field(f, "a") # Gal(K/Q) == C_4
+    K, a = number_field(f, "a", cached = false, check = false) # Gal(K/Q) == C_4
     OK = maximal_order(K)
 
     KtoQG, QGtoK = Hecke._find_isomorphism(K, QG)
@@ -46,5 +47,6 @@
 
     @test_throws ErrorException  Hecke.locally_free_basis(I, 2)
   end
+  =#
 
 end

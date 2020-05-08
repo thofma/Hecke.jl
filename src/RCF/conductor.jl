@@ -773,7 +773,7 @@ function norm_group(KK::KummerExt, mp::NfToNfMor, mR::Union{MapRayClassGrp, MapC
   n = degree(KK)
   els = GrpAbFinGenElem[]
   stable = 0
-  max_stable = 10*n*degree(k)
+  max_stable = 15*n*degree(k)
   R = domain(mR)
   expo = exponent(R)
   Q, mQ = quo(R, els, false)

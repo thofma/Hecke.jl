@@ -378,7 +378,7 @@ end
 
 function _torsion_units_gen(K::AnticNumberField)
   if istorsion_unit_group_known(K)
-    c = _get_nf_torsion_units(K)
+    c = _get_nf_torsion_units(K)::Tuple{Int, nf_elem}
     return c[1], c[2]
   end
   r1, r2 = signature(K)

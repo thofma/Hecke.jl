@@ -88,9 +88,8 @@ function _multgrp(Q::AbsOrdQuoRing{U, T}) where {U, T}
 
   G = groups[1][1]
   for i = 2:length(groups)
-    G = direct_product(G, groups[i][1])[1]
+    G = direct_product(G, groups[i][1]; task = :none)::GrpAbFinGen
   end
-
   S, StoG = snf(G)
 
   generators = Vector{elem_type(Q)}()
@@ -117,18 +116,21 @@ function _multgrp(Q::AbsOrdQuoRing{U, T}) where {U, T}
     push!(generators, y)
   end
 
-  function disc_log(x::AbsOrdQuoRingElem)
-    y = zero_matrix(FlintZZ, 1, 0)
-    for i = 1:length(groups)
-      K, AtoK = fields_and_maps[i]
-      H, HtoQK = groups[i]
-      QK = codomain(HtoQK)
-      OK = base_ring(QK)
-      h = HtoQK\(QK(OK(AtoK(elem_in_algebra(OtoQ\x, copy = false)))))
-      y = hcat(y, h.coeff)
+  local disc_log
+  let fields_and_maps = fields_and_maps, groups = groups, OtoQ = OtoQ, StoG = StoG, G = G, S = S
+    function disc_log(x::AbsOrdQuoRingElem)
+      y = zero_matrix(FlintZZ, 1, 0)
+      for i = 1:length(groups)
+        K, AtoK = fields_and_maps[i]
+        H, HtoQK = groups[i]
+        QK = codomain(HtoQK)
+        OK = base_ring(QK)
+        h = HtoQK\(QK(OK(AtoK(elem_in_algebra(OtoQ\x, copy = false)))))
+        y = hcat(y, h.coeff)
+      end
+      s = StoG\G(y)
+      return fmpz[ s.coeff[1, i] for i = 1:ngens(S) ]
     end
-    s = StoG\G(y)
-    return [ s.coeff[1, i] for i = 1:ngens(S) ]
   end
 
   return S, GrpAbFinGenToAbsOrdQuoRingMultMap(S, Q, generators, disc_log)

@@ -215,7 +215,7 @@ function _class_unit_group(O::NfOrd; bound::Int = -1, method::Int = 3, large::In
   @v_do :UnitGroup 1 popindent()
 
   if c.finished
-    U = _get_UnitGrpCtx_of_order(O)
+    U = _get_UnitGrpCtx_of_order(O)::UnitGrpCtx{FacElem{nf_elem, AnticNumberField}}
     @assert U.finished
     @vprint :UnitGroup 1 "... done (retrieved).\n"
     if c.GRH == true && GRH == false

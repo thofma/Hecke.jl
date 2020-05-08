@@ -633,7 +633,7 @@ function pmaximal_overorder(O::AlgAssAbsOrd{S, T}, p::Union{fmpz, Int}) where S 
   end
 end
 
-function pmaximal_overorder_meataxe(O::AlgAssAbsOrd, p::Union{fmpz, Int})
+function pmaximal_overorder_meataxe(O::AlgAssAbsOrd{S, T}, p::Union{fmpz, Int}) where {S, T}
 
   extend = false
   d = discriminant(O)
@@ -855,7 +855,7 @@ end
 
 function maximal_order_via_decomposition(A::AbsAlgAss{fmpq})
   if isdefined(A, :maximal_order)
-    return A.maximal_order
+    return A.maximal_order::AlgAssAbsOrd{AlgAss{fmpq},AlgAssElem{fmpq,AlgAss{fmpq}}}
   end
   fields_and_maps = as_number_fields(A)
   M = zero_matrix(FlintQQ, dim(A), dim(A))

@@ -459,6 +459,23 @@ function lift(a::Generic.Mat{Generic.Res{fmpz}})
   return z
 end
 
+function lift_nonsymmetric(a::nmod_mat)
+  z = fmpz_mat(nrows(a), ncols(a))
+  z.base_ring = FlintZZ
+  ccall((:fmpz_mat_set_nmod_mat_unsigned, Hecke.libflint), Nothing,
+          (Ref{fmpz_mat}, Ref{nmod_mat}), z, a)
+  return z
+end
+
+function lift_nonsymmetric(a::gfp_mat)
+  z = fmpz_mat(nrows(a), ncols(a))
+  z.base_ring = FlintZZ
+  ccall((:fmpz_mat_set_nmod_mat_unsigned, Hecke.libflint), Nothing,
+          (Ref{fmpz_mat}, Ref{gfp_mat}), z, a)
+  return z
+end
+
+
 if Nemo.version() > v"0.15.1"
   function lift(a::Generic.Mat{Nemo.fmpz_mod})
     z = zero_matrix(FlintZZ, nrows(a), ncols(a))

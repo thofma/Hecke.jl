@@ -15,7 +15,7 @@ mutable struct NfToNfMor <: Map{AnticNumberField, AnticNumberField, HeckeMap, Nf
 
   function NfToNfMor()
     z = new()
-    z.header = MapHeader()
+    z.header = MapHeader{AnticNumberField, AnticNumberField}()
     return r
   end
 

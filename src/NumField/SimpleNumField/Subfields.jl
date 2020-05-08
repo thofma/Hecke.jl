@@ -56,7 +56,7 @@ function _principal_subfields_basis(K::SimpleNumField)
 
     # This might be expensive for bigger fields?
     if K isa NumField{fmpq}
-      ker_rref = matrix(FlintQQ, lll(saturate(FakeFmpqMat(rref(ker)[2]).num)))
+      ker_rref = fmpq_mat(lll(saturate(FakeFmpqMat(rref(ker)[2]).num)))
     else
       ker_rref = rref(ker)[2]
     end

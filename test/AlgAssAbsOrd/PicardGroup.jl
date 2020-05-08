@@ -1,4 +1,4 @@
-function test_disc_log_picard(P, mP, O::Hecke.AlgAssAbsOrd)
+function test_disc_log_picard(P::GrpAbFinGen, mP::Hecke.MapPicardGrp, O::Hecke.AlgAssAbsOrd)
   for i = 1:5
     I = ideal(O, rand(O, 10))
     while !isinvertible(I)[1]

@@ -196,7 +196,7 @@ end
 
 # S is the type of the order (the codomain) and T is the elem_type of the order
 mutable struct GrpAbFinGenToAbsOrdMap{S, T} <: Map{GrpAbFinGen, S, HeckeMap, GrpAbFinGenToAbsOrdMap}
-  header::MapHeader
+  header::MapHeader{GrpAbFinGen, S}
   generators::Vector{T}
   discrete_logarithm::Function
   modulus # this can be anything, for which powermod(::T, ::fmpz, modulus) is defined
