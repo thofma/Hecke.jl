@@ -706,6 +706,25 @@ function reduce_ideal(A::NfOrdFracIdl)
   return C.num, divexact(b, B.den)
 end
 
+function reduce_ideal2(A::NfOrdIdl)
+  B = inv(A)
+  b = short_elem(B)
+  C = b*A
+  simplify(C)
+  @assert C.den == 1
+  return C.num, b
+end
+
+function reduce_ideal2(A::NfOrdFracIdl)
+  B = inv(A)
+  b = short_elem(B.num)
+  C = divexact(b, B.den)*A
+  simplify(C)
+  @assert C.den == 1
+  return C.num, divexact(b, B.den)
+end
+
+
 ################################################################################
 #
 #  Short basis of product of ideals
