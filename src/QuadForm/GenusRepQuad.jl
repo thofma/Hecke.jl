@@ -1367,6 +1367,7 @@ mutable struct LocMultGrpModSquMap <: Map{GrpAbFinGen, GrpAbFinGen, HeckeMap, Lo
     z = new()
     z.codomain = K
     z.p = p
+    z.isdyadic = isdyadic(p)
 
     if !isdyadic(p)
       pi = elem_in_nf(uniformizer(p))
@@ -1381,7 +1382,6 @@ mutable struct LocMultGrpModSquMap <: Map{GrpAbFinGen, GrpAbFinGen, HeckeMap, Lo
       z.hext = hext
       return z
     else
-      z.isdyadic = true
       pi = elem_in_nf(uniformizer(p))
       e = ramification_index(p)
       dim = valuation(norm(p), 2) * e + 2
