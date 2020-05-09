@@ -333,7 +333,21 @@ function sunit_group_fac_elem_via_brauer(N::NormRelation, S, invariant::Bool = f
   return _sunit_group_fac_elem_quo_via_brauer(N, S, 0, invariant)
 end
 
-function class_group_via_brauer(O::NfOrd, N::NormRelation; do_lll::Bool = true, isnormal::Bool = false, compact::Bool = true, stable = 3.5)
+
+function _class_group(O::NfOrd)
+  K = nf(O)
+  G, mG = automorphism_group(K)
+  if has_useful_brauer_relation(G)
+    lll(O)
+    fl, N = norm_relation(K, small_degree = false)
+    @assert fl
+    return class_group_via_brauer(O, N, recursive = true)
+  end
+  return class_group(O, use_aut = true)
+end
+
+
+function class_group_via_brauer(O::NfOrd, N::NormRelation; recursive::Bool = false, do_lll::Bool = true, compact::Bool = true, stable = 3.5)
   K = N.K
   if do_lll
     OK = lll(maximal_order(nf(O)))
@@ -354,6 +368,19 @@ function class_group_via_brauer(O::NfOrd, N::NormRelation; do_lll::Bool = true, 
     _, onlyp = ispower(index(N))
   end
 
+  if recursive
+    for i = 1:length(N.subfields)
+      if !(i in N.nonredundant)
+        continue
+      end
+      L = N.subfields[i]
+      if N.isnormal[i] && degree(L) > 10
+        NL = norm_relation(L, small_degree = false)
+        class_group_via_brauer(lll(maximal_order(L)), NL)
+      end
+    end
+  end
+
   @vprint :NormRelation 1 "Doing something in the subfields\n"
   if !docompact
     _add_sunits_from_brauer_relation!(c, UZK, N)
@@ -365,15 +392,13 @@ function class_group_via_brauer(O::NfOrd, N::NormRelation; do_lll::Bool = true, 
 
 
   if index(N) != 1
-    # I need to saturate
-    @vprint :NormRelation 1 "Saturating at "
     for (p, e) in factor(index(N))
-      @vprint :NormRelation 1 "$p "
-      b = Hecke.saturate!(c, UZK, Int(p), stable, isnormal = isnormal)
+      @vprint :NormRelation 1 "Saturating at $p "
+      b = Hecke.saturate!(c, UZK, Int(p), stable)
       while b
         idx = Hecke._validate_class_unit_group(c, UZK)
         @vprint :NormRelation 1 "Index bound from analysis $idx\n"
-        b = Hecke.saturate!(c, UZK, Int(p), stable, isnormal = isnormal)
+        b = Hecke.saturate!(c, UZK, Int(p), stable)
       end
     end
   end
@@ -394,7 +419,7 @@ function class_group_via_brauer(O::NfOrd, N::NormRelation; do_lll::Bool = true, 
   return class_group(c, O)
 end
 
-function __sunit_group_fac_elem_quo_via_brauer(N::NormRelation, S, n::Int, invariant::Bool = false, isnormal::Bool = false)
+function __sunit_group_fac_elem_quo_via_brauer(N::NormRelation, S, n::Int, invariant::Bool = false)
   O = order(S[1])
 
   K = N.K
@@ -426,9 +451,9 @@ function __sunit_group_fac_elem_quo_via_brauer(N::NormRelation, S, n::Int, invar
     @vprint :NormRelation 1 "Saturating at "
     for (p, e) in factor(index(N))
       @vprint :NormRelation 1 "$p "
-      b = Hecke.saturate!(c, UZK, Int(p), isnormal = isnormal)
+      b = Hecke.saturate!(c, UZK, Int(p))
       while b
-        b = Hecke.saturate!(c, UZK, Int(p), isnormal = isnormal)
+        b = Hecke.saturate!(c, UZK, Int(p))
       end
     end
   end

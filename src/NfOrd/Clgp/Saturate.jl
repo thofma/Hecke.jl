@@ -194,20 +194,25 @@ function compute_candidates_for_saturate(c::Hecke.ClassGrpCtx, p::Int, stable::F
   return Hecke.lift_nonsymmetric(A)
 end
 
-function saturate!(d::Hecke.ClassGrpCtx, U::Hecke.UnitGrpCtx, n::Int, stable = 3.5; isnormal::Bool = false)
+function saturate!(d::Hecke.ClassGrpCtx, U::Hecke.UnitGrpCtx, n::Int, stable::Float64 = 3.5)
   @assert isprime(n)
   K = nf(d)
-  @vtime :Saturate 1 c = simplify(d, U) 
+  @vprint :Saturate 1 "Simplifying the context\n"
+  @vtime :Saturate 1 c = simplify(d, U)
   success = false
   while true
-    @vprint :Saturate 1 "Computing candidates for the saturation ...\n"
+    if success
+      @vprint :Saturate 1 "Simplifying the context\n"
+      @vtime :Saturate 1 c = simplify(d, U)
+    end
+    @vprint :Saturate 1 "Computing candidates for the saturation\n"
     @vtime :Saturate 1 e = compute_candidates_for_saturate(c, n, stable)
     if nrows(e) == 0
-      @vprint :Saturate 1  "sat yielded nothing new at $stable, $success, \n"
+      @vprint :Saturate 1 "sat yielded nothing new at $stable, $success \n"
       return success
     end
     zeta = Hecke.torsion_units_generator(K)
-    @vprint :Saturate 1 "sat: (Hopefully) enlarging by $(ncols(e)) elements\n"
+    @vprint :Saturate 1 "(Hopefully) enlarging by $(ncols(e)) elements\n"
 
     R = relations(c)
     R_mat = relations_matrix(c)
@@ -230,10 +235,10 @@ function saturate!(d::Hecke.ClassGrpCtx, U::Hecke.UnitGrpCtx, n::Int, stable = 3
       @vprint :Saturate 1 "Testing if element is an n-th power\n"
       @vtime :Saturate 1 fl, x = ispower(a, n, decom = decom)
       if fl
+        @vprint :Saturate 1  "The element is an n-th power\n"
         success = true
         fac_a = divexact(fac_a, n)
         Hecke.class_group_add_relation(d, x, fac_a)
-        @vprint :Saturate 1  "sat added new relation\n"
         if iszero(fac_a) 
           #In this case, the element we have found is a unit and
           #we want to make sure it is used
@@ -243,8 +248,9 @@ function saturate!(d::Hecke.ClassGrpCtx, U::Hecke.UnitGrpCtx, n::Int, stable = 3
           Hecke._add_dependent_unit(U, x)
         end
       else
-        @vprint :Saturate 2  "sat wasted time, local power wasn't global\n"
+        @vprint :Saturate 1  "The element is not an n-th power\n"
         wasted = true
+        break
       end
     end
     if wasted 

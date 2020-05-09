@@ -851,8 +851,19 @@ function coprime_base(A::Array{NfOrdIdl, 1}, p::fmpz)
 end
 
 
+function _get_integer_in_ideal(I::NfOrdIdl)
+  if has_minimum(I)
+    return minimum(I)
+  end
+  if has_2_elem(I)
+    return I.gen_one
+  end
+  if has_norm(I)
+    return norm(I)
+  end
+  return minimum(I)
+end
 
-global deb = []
 @doc Markdown.doc"""
     coprime_base(A::Array{NfOrdIdl, 1}) -> Array{NfOrdIdl, 1}
     coprime_base(A::Array{NfOrdElem, 1}) -> Array{NfOrdIdl, 1}
@@ -861,7 +872,6 @@ generated multiplicatively the same ideals as the input and are pairwise
 coprime.
 """
 function coprime_base(A::Array{NfOrdIdl, 1}; refine::Bool = false)
-  push!(deb, A)
   if isempty(A)
     return NfOrdIdl[]
   end
@@ -874,8 +884,8 @@ function coprime_base(A::Array{NfOrdIdl, 1}; refine::Bool = false)
     a1 = coprime_base(fmpz[x.gen_one for x in pf])
     for I in pf
       if !(I.gen_one in a1)
-        push!(a1, minimum(I.gen_one))
-        push!(a1, norm(I.gen_one))
+        push!(a1, minimum(I))
+        push!(a1, norm(I))
       end
     end
     a1 = coprime_base(a1)
@@ -889,16 +899,16 @@ function coprime_base(A::Array{NfOrdIdl, 1}; refine::Bool = false)
   a = coprime_base(collect(a1))
   C = Array{NfOrdIdl, 1}()
   for p = a
-    @vprint :CompactPresentation :3 "Doing $p, isprime: $(isprime(p)), is index divisor: $(isindex_divisor(OK, p))\n"
-    if p == 1
+    if isone(p)
       continue
     end
+    @vprint :CompactPresentation :3 "Doing $p, isprime: $(isprime(p)), is index divisor: $(isindex_divisor(OK, p))\n"
     if isprime(p)
       lp = prime_decomposition(OK, p)
       for (P, v) in lp
         found = false
         for i = 1:length(pf)
-          if divisible(norm(pf[i], copy = false), p) && divides(pf[i], P)
+          if divisible(_get_integer_in_ideal(pf[i]), p) && divisible(norm(pf[i], copy = false), p) && divides(pf[i], P)
             found = true
             break
           end
@@ -917,7 +927,7 @@ end
 
 function coprime_base(A::Array{NfOrdElem, 1})
   O = parent(A[1])
-  return coprime_base([ideal(O, x) for x = A])
+  return coprime_base(NfOrdIdl[ideal(O, x) for x = A])
 end
 
 function integral_split(A::NfOrdIdl)
