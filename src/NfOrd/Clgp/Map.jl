@@ -4,112 +4,6 @@
 
 export isprincipal
 
-################################################################################
-#
-#  Finding small representatives in the class of a factored ideal
-#
-################################################################################
-
-@doc Markdown.doc"""
-    reduce_ideal2(A::FacElem{NfOrdIdl}) -> NfOrdIdl, FacElem{nf_elem}
-Computes $B$ and $\alpha$ in factored form, such that $\alpha B = A$.
-"""
-function reduce_ideal2(I::FacElem{NfOrdIdl, NfOrdIdlSet})
-  @assert !isempty(I.fac)
-  O = order(first(keys(I.fac)))
-  K = nf(O)
-  fst = true
-  a = FacElem(Dict{nf_elem, fmpz}(one(K) => fmpz(1)))
-  A = ideal(O, 1)
-  for (k, v) = I.fac
-    @assert order(k) === O
-    if iszero(v)
-      continue
-    end
-    if fst
-      A, a = power_reduce2(k, v)
-      @hassert :PID_Test 1 (v>0 ? fractional_ideal(O, k)^Int(v) : inv(k)^Int(-v)) == A*evaluate(a)
-      fst = false
-    else
-      B, b = power_reduce2(k, v)
-      mul!(a, a, b)
-      @hassert :PID_Test (v>0 ? fractional_ideal(O, k)^Int(v) : inv(k)^Int(-v)) == B*evaluate(b)
-      if norm(A)*norm(B) > abs(discriminant(O))
-        A, c = reduce_product(A, B)
-        add_to_key!(a.fac, c, -1)
-      else
-        A = A*B
-      end
-    end
-  end
-  @hassert :PID_Test 1 A*evaluate(a) == evaluate(I)
-  return A, a
-end
-
-################################################################################
-#
-#  Finding small representatives in the class of an ideal power
-#
-################################################################################
-
-# The bound should be sqrt(disc) (something from LLL)
-@doc Markdown.doc"""
-    power_reduce2(A::NfOrdIdl, e::fmpz) -> NfOrdIdl, FacElem{nf_elem}
-Computes $B$ and $\alpha$ in factored form, such that $\alpha B = A^e$
-$B$ has small norm.
-"""
-function power_reduce2(A::NfOrdIdl, e::fmpz)
-  O = order(A)
-  K= nf(O)
-  if norm(A) > abs(discriminant(O))
-    A1, a = reduce_ideal(A)
-    @hassert :PID_Test 1 a*A == A1
-    A = A1
-    al = FacElem(Dict(a=>-e))
-  else
-    al = FacElem(Dict(K(1) => fmpz(1)))
-  end
-
-  #we have A_orig^e = (A*a)^e = A^e*a^e = A^e*al and A is now small
-
-  if e < 0
-    B = inv(A)
-    A = numerator(B)
-    add_to_key!(al.fac, K(denominator(B)), fmpz(e))
-    e = -e
-  end
-
-  if isone(e)
-    return A, al
-  end
-  # A^e = A^(e/2)^2 A or A^(e/2)^2
-  # al * A^old^(e/2) = A_new
-  C, cl = power_reduce2(A, div(e, 2))
-  @hassert :PID_Test 1 C*evaluate(cl) == A^Int(div(e, 2))
-  mul!(al, al, cl^2)
-  if norm(C)^2 > abs(discriminant(O))
-    @vtime :CompactPresentation :4 C2, a = reduce_product(C, C)
-    add_to_key!(al.fac, a, -1)
-  else
-    C2 = C^2
-  end
-  
-  
-
-  if isodd(e)
-    if norm(A)*norm(C2) > abs(discriminant(O))
-      @vtime :CompactPresentation :4 A1, a = reduce_product(C2, A)
-      A = A1
-      add_to_key!(al.fac, a, -1)
-    else
-      A = C2*A
-    end
-  else
-    A = C2
-  end
-  return A, al
-end
-
 # TODO: Agree on a name for power_class vs power_reduce2
 @doc Markdown.doc"""
     power_class(A::NfOrdIdl, e::fmpz) -> NfOrdIdl
@@ -421,7 +315,7 @@ Tests if $A$ is principal and returns $(\mathtt{true}, \alpha)$ if $A =
 The generator will be in factored form.
 """
 function isprincipal_fac_elem(I::FacElem{NfOrdIdl, NfOrdIdlSet})
-  J, a = reduce_ideal2(I)
+  J, a = reduce_ideal(I)
   @hassert :PID_Test 1 evaluate(a)*J == evaluate(I)
   fl, x = isprincipal_fac_elem(J)
   @hassert :PID_Test 1 ideal(order(J), evaluate(x)) == J
@@ -447,7 +341,7 @@ end
 For a principal ideal $A$ in factored form, find a generator in factored form.
 """
 function principal_generator_fac_elem(I::FacElem{NfOrdIdl, NfOrdIdlSet})
-  J, a= reduce_ideal2(I)
+  J, a= reduce_ideal(I)
   #@hassert :PID_Test 1 evaluate(a)*J == evaluate(I)
   x = Hecke.principal_generator_fac_elem(J)
   #@hassert :PID_Test 1 ideal(order(J), evaluate(x)) == J

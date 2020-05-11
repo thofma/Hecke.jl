@@ -218,7 +218,7 @@ function Base.show(io::IO, N::Norm1Group)
 end
 
 function Hecke.isprincipal_fac_elem(A::FacElem{<:NfAbsOrdIdl})
-  a,b = Hecke.reduce_ideal2(A)
+  a,b = Hecke.reduce_ideal(A)
   # a*b == A
   fl, c = Hecke.isprincipal_fac_elem(a)
   if !fl
@@ -240,7 +240,7 @@ function Hecke.isprincipal_fac_elem(A::FacElem{<:Hecke.NfOrdFracIdl})
     end
   end
   #TODO: redude_ideal for FracIdl as well
-  a,b = Hecke.reduce_ideal2(B)
+  a,b = Hecke.reduce_ideal(B)
   # a*b == B = A*den
   fl, c = Hecke.isprincipal_fac_elem(a)
   if !fl

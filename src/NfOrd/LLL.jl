@@ -656,6 +656,11 @@ function lll_basis(A::NfOrdFracIdl, v::fmpz_mat = zero_matrix(FlintZZ, 1, 1); pr
   return q
 end
 
+################################################################################
+#
+#  Short element in ideals
+#
+################################################################################
 
 function short_elem(A::NfOrdFracIdl,
                 v::fmpz_mat=zero_matrix(FlintZZ, 1,1); prec::Int = 100)
@@ -674,6 +679,12 @@ function short_elem(A::NfOrdIdl,
   q = elem_from_mat_row(K, c.num, 1, c.den)
   return q
 end
+
+################################################################################
+#
+#  Reduction of ideals
+#
+################################################################################
 
 function reduce_ideal(A::NfOrdIdl)
   B = inv(A)
@@ -706,24 +717,101 @@ function reduce_ideal(A::NfOrdFracIdl)
   return C.num, divexact(b, B.den)
 end
 
-function reduce_ideal2(A::NfOrdIdl)
-  B = inv(A)
-  b = short_elem(B)
-  C = b*A
-  simplify(C)
-  @assert C.den == 1
-  return C.num, b
-end
 
-function reduce_ideal2(A::NfOrdFracIdl)
-  B = inv(A)
-  b = short_elem(B.num)
-  C = divexact(b, B.den)*A
-  simplify(C)
-  @assert C.den == 1
-  return C.num, divexact(b, B.den)
+@doc Markdown.doc"""
+    reduce_ideal(A::FacElem{NfOrdIdl}) -> NfOrdIdl, FacElem{nf_elem}
+Computes $B$ and $\alpha$ in factored form, such that $\alpha B = A$.
+"""
+function reduce_ideal(I::FacElem{NfOrdIdl, NfOrdIdlSet})
+  @assert !isempty(I.fac)
+  O = order(first(keys(I.fac)))
+  K = nf(O)
+  fst = true
+  a = FacElem(Dict{nf_elem, fmpz}(one(K) => fmpz(1)))
+  A = ideal(O, 1)
+  for (k, v) = I.fac
+    @assert order(k) === O
+    if iszero(v)
+      continue
+    end
+    if fst
+      A, a = power_reduce(k, v)
+      @hassert :PID_Test 1 (v>0 ? fractional_ideal(O, k)^Int(v) : inv(k)^Int(-v)) == A*evaluate(a)
+      fst = false
+    else
+      B, b = power_reduce(k, v)
+      mul!(a, a, b)
+      @hassert :PID_Test (v>0 ? fractional_ideal(O, k)^Int(v) : inv(k)^Int(-v)) == B*evaluate(b)
+      if norm(A)*norm(B) > abs(discriminant(O))
+        A, c = reduce_product(A, B)
+        add_to_key!(a.fac, c, -1)
+      else
+        A = A*B
+      end
+    end
+  end
+  @hassert :PID_Test 1 A*evaluate(a) == evaluate(I)
+  return A, a
 end
+ 
 
+# The bound should be sqrt(disc) (something from LLL)
+@doc Markdown.doc"""
+    power_reduce(A::NfOrdIdl, e::fmpz) -> NfOrdIdl, FacElem{nf_elem}
+Computes $B$ and $\alpha$ in factored form, such that $\alpha B = A^e$
+$B$ has small norm.
+"""
+function power_reduce(A::NfOrdIdl, e::fmpz)
+  O = order(A)
+  K= nf(O)
+  if norm(A) > abs(discriminant(O))
+    A1, a = reduce_ideal(A)
+    @hassert :PID_Test 1 a*A == A1
+    A = A1
+    al = FacElem(Dict(a=>-e))
+  else
+    al = FacElem(Dict(K(1) => fmpz(1)))
+  end
+
+  #we have A_orig^e = (A*a)^e = A^e*a^e = A^e*al and A is now small
+
+  if e < 0
+    B = inv(A)
+    A = numerator(B)
+    add_to_key!(al.fac, K(denominator(B)), fmpz(e))
+    e = -e
+  end
+
+  if isone(e)
+    return A, al
+  end
+  # A^e = A^(e/2)^2 A or A^(e/2)^2
+  # al * A^old^(e/2) = A_new
+  C, cl = power_reduce(A, div(e, 2))
+  @hassert :PID_Test 1 C*evaluate(cl) == A^Int(div(e, 2))
+  mul!(al, al, cl^2)
+  if norm(C)^2 > abs(discriminant(O))
+    @vtime :CompactPresentation :4 C2, a = reduce_product(C, C)
+    add_to_key!(al.fac, a, -1)
+  else
+    C2 = C^2
+  end
+  
+  
+
+  if isodd(e)
+    if norm(A)*norm(C2) > abs(discriminant(O))
+      @vtime :CompactPresentation :4 A1, a = reduce_product(C2, A)
+      A = A1
+      add_to_key!(al.fac, a, -1)
+    else
+      A = C2*A
+    end
+  else
+    A = C2
+  end
+  return A, al
+end
 
 ################################################################################
 #
@@ -731,7 +819,7 @@ end
 #
 ################################################################################
 
-#From Claus and Tommy: 
+# Claus and Tommy: 
 # We express the basis of IJ in terms of the basis of I (I contains IJ)
 # Then we compute the lll of the matrix of the coordinates. This way we get a 
 # better basis to start the computation of LLL

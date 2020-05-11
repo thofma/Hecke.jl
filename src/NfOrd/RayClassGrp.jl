@@ -100,7 +100,7 @@ function __assure_princ_gen(c::Hecke.ClassGrpCtx{SMat{fmpz}}, nquo::Int)
       end
     end
     I = FacElem(DI)
-    J, a = reduce_ideal2(I)
+    J, a = reduce_ideal(I)
     inv!(a)
     pow!(a, ex)
     mul!(e, e, a)

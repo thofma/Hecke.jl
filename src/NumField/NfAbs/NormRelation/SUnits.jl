@@ -347,14 +347,8 @@ function _class_group(O::NfOrd)
 end
 
 
-function class_group_via_brauer(O::NfOrd, N::NormRelation; recursive::Bool = false, do_lll::Bool = true, compact::Bool = true, stable = 3.5)
-  K = N.K
-  if do_lll
-    OK = lll(maximal_order(nf(O)))
-  else
-    OK = O
-  end
-  OK = maximal_order(K)
+function get_sunits_from_subfield_data(OK, N; recursive::Bool = false, compact::Bool = true)
+  K = nf(OK)
   fbbound = Hecke.factor_base_bound_grh(OK)
   S = prime_ideals_up_to(OK, fbbound)
   @vprint :NormRelation 1 "Factor base bound: $fbbound\n"
@@ -388,9 +382,20 @@ function class_group_via_brauer(O::NfOrd, N::NormRelation; recursive::Bool = fal
     @vprint :NormRelation 1 "Using the compact presentation\n"
     _add_sunits_from_brauer_relation!(c, UZK, N, compact = onlyp)
   end
-  #return c, UZK
+  return c, UZK
+end 
 
-
+function class_group_via_brauer(O::NfOrd, N::NormRelation; recursive::Bool = false, do_lll::Bool = true, compact::Bool = true, stable = 3.5)
+  K = N.K
+  if do_lll
+    OK = lll(maximal_order(nf(O)))
+  else
+    OK = O
+  end
+  
+  c, UZK = get_sunits_from_subfield_data(OK, N, recursive = recursive, compact = compact)
+  auts = automorphisms(K)
+  c.aut_grp = Hecke.class_group_add_auto(c, auts)
   if index(N) != 1
     for (p, e) in factor(index(N))
       @vprint :NormRelation 1 "Saturating at $p "

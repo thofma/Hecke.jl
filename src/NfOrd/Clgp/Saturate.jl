@@ -244,8 +244,15 @@ function saturate!(d::Hecke.ClassGrpCtx, U::Hecke.UnitGrpCtx, n::Int, stable::Fl
           #we want to make sure it is used
           #find units can be randomised...
           #maybe that should also be addressed elsewhere
-          @vprint :Saturate 2  "sat added new unit\n"
+          @vprint :Saturate 2  "The new element is a unit\n"
           Hecke._add_dependent_unit(U, x)
+          if isdefined(d, :aut_grp)
+            auts_action = Hecke._get_autos_from_ctx(d)
+            for i = 1:length(auts_action)
+              Hecke._add_dependent_unit(U, auts_action[i][1](x))
+            end
+            break
+          end
         end
       else
         @vprint :Saturate 1  "The element is not an n-th power\n"

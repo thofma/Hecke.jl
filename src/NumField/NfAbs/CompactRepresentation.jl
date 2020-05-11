@@ -59,7 +59,7 @@ function compact_presentation(a::FacElem{nf_elem, AnticNumberField}, nn::Int = 2
         if haskey(Dp, e_p)
           Ap, ap = Dp[e_p]       
         else
-          Ap, ap = power_reduce2(p, fmpz(e_p))
+          Ap, ap = power_reduce(p, fmpz(e_p))
           Dp[e_p] = (Ap, ap)
         end
         add_to_key!(B, Ap, 1)
@@ -67,7 +67,7 @@ function compact_presentation(a::FacElem{nf_elem, AnticNumberField}, nn::Int = 2
         v -= Ref(n^_k) .* conjugates_arb_log_normalise(ap, arb_prec)
       else
         Dp = Dict{Int, Tuple{NfOrdIdl, FacElem{nf_elem, AnticNumberField}}}()
-        Ap, ap = power_reduce2(p, fmpz(e_p))
+        Ap, ap = power_reduce(p, fmpz(e_p))
         Dp[e_p] = (Ap, ap)
         cached_red[p] = Dp
         add_to_key!(B, Ap, 1)
@@ -76,7 +76,7 @@ function compact_presentation(a::FacElem{nf_elem, AnticNumberField}, nn::Int = 2
       end
     end
     add_to_key!(B, A, n)
-    @vtime :CompactPresentation 3 A, alpha = reduce_ideal2(FacElem(B))
+    @vtime :CompactPresentation 3 A, alpha = reduce_ideal(FacElem(B))
     mul!(be, be, alpha^(-(n^_k)))
     #be *= alpha^(-(n^_k))
     v -= Ref(n^_k) .* conjugates_arb_log_normalise(alpha, arb_prec)

@@ -66,12 +66,7 @@ function class_group_init(FB::NfFactorBase, T::DataType = SMat{fmpz}; add_rels::
 
   if use_aut
     au = automorphisms(nf(O), copy = false)
-    class_group_add_auto(clg, au[1])
-    i = 2
-    while length(clg.aut_grp) < length(au)
-      class_group_add_auto(clg, au[i])
-      i += 1
-    end
+    clg.aut_grp = class_group_add_auto(clg, au)
     clg.normCtx = NormCtx(O, div(nbits(discriminant(O)), 2) + 20, 
                                                      length(au) == degree(O))
   else
@@ -99,15 +94,9 @@ function class_group_init(O::NfOrd, B::Int; min_size::Int = 20, add_rels::Bool =
   return class_group_init(FB, T, add_rels = add_rels, use_aut = use_aut)
 end
 
-function class_group_add_auto(clg::ClassGrpCtx, f::Map)
-  p = induce(clg.FB, f)
-  if isdefined(clg, :op)
-    push!(clg.op, (f, p))
-  else
-    clg.op = [(f, p)]
-  end
-  clg.aut_grp = generated_subgroup(clg.op)
-end  
+function _get_autos_from_ctx(ctx::ClassGrpCtx)
+  return ctx.aut_grp::Vector{Tuple{NfToNfMor, Perm{Int}}}
+end
 
 ################################################################################
 #

@@ -94,16 +94,11 @@ function class_group_add_relation(clg::ClassGrpCtx{T}, a::nf_elem, n::fmpq, nI::
     push!(clg.RS, hash(a))
     if orbit && isdefined(clg, :aut_grp)
       n = res
-      o = clg.aut_grp
-      function op_smat(n::SRow, p::Nemo.Generic.Perm)
-        r = [(p[i], v) for (i,v) = n]
-        sort!(r, lt = (a,b)->a[1]<b[1])
-        return typeof(n)(r)
-      end
-
+      o = _get_autos_from_ctx(clg)
+      
       @v_do :ClassGroup 1 println(" adding orbit with $(length(o)) elements")
       for (b, m) in o
-        nn = op_smat(n, m)
+        nn = permute_rows(n, m)
         if nn != n
           ba = b(a)
           if nn in clg.M.bas_gens || nn in clg.M.rel_gens
@@ -113,8 +108,6 @@ function class_group_add_relation(clg::ClassGrpCtx{T}, a::nf_elem, n::fmpq, nI::
             push!(clg.R_gen, ba)
             clg.rel_cnt += 1
             push!(clg.RS, hash(ba))
-          else
-            #push!(clg.R_rel, ba)
           end
         end
       end
@@ -132,6 +125,12 @@ function class_group_add_relation(clg::ClassGrpCtx{T}, a::nf_elem, n::fmpq, nI::
     clg.bad_rel += 1
     return false
   end
+end
+
+function permute_rows(n::SRow{fmpz}, p::Nemo.Generic.Perm{Int})
+  r = Tuple{Int, Int}[(p[i], v) for (i,v) = n]
+  sort!(r, lt = (a,b)->a[1]<b[1])
+  return SRow{fmpz}(r)
 end
 
 function class_group_add_relation(clg::ClassGrpCtx{SMat{fmpz}}, a::FacElem{nf_elem, AnticNumberField})
@@ -163,6 +162,25 @@ function class_group_add_relation(clg::ClassGrpCtx{SMat{fmpz}}, a::FacElem{nf_el
     push!(clg.R_rel, a)
   end
   push!(clg.RS, hash(a))
+
+  if isdefined(clg, :aut_grp)
+    o = _get_autos_from_ctx(clg)
+    @v_do :ClassGroup 1 println(" adding orbit with $(length(o)) elements")
+    for (b, m) in o
+      Rnew = permute_rows(R, m)
+      if Rnew != R
+        if Rnew in clg.M.bas_gens || Rnew in clg.M.rel_gens
+          break
+        end
+        ba = b(a)
+        if add_gen!(clg.M, Rnew, false)
+          push!(clg.R_gen, ba)
+          clg.rel_cnt += 1
+          push!(clg.RS, hash(ba))
+        end
+      end
+    end
+  end  
 
   clg.rel_cnt += 1
 #    @assert clg.rel_cnt < 2*ncols(clg.M)

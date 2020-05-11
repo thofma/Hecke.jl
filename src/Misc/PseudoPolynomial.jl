@@ -183,7 +183,7 @@ function gb(G::Vector{S}, mmod) where {S}
     r = sp
 
     A = coefficient_ideal(r)
-    C, b = reduce_ideal2(A)
+    C, b = reduce_ideal(A)
     rp = r.poly
     r = pseudo_polynomial(b * rp, fractional_ideal(order(C), C))
     Nfinv = mmod * inv(C)::NfOrdFracIdl
@@ -218,7 +218,7 @@ function gb(G::Vector{S}, mmod) where {S}
     @show r
 
     A = coefficient_ideal(r)
-    C, b = reduce_ideal2(A)
+    C, b = reduce_ideal(A)
     rp = r.poly
     r = pseudo_polynomial(b * rp, fractional_ideal(order(C), C))
     Nfinv = mmod * inv(C)::NfOrdFracIdl

@@ -1544,7 +1544,9 @@ mutable struct ClassGrpCtx{T}  # T should be a matrix type: either fmpz_mat or S
   op::Array # of pairs: Map, perm where Map is a field automorphism
             # and perm is the induced operation on the factor base
             # difficult to type since we have many map types...
-  aut_grp::Array # op contains the generators, sub_grp the entire group
+  aut_grp::Vector #For every automorphism, we have
+                  #the permutation it induces on the
+                  #factor base
 
   largePrimeCnt::Int
   B2::Int

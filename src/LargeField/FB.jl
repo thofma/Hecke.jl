@@ -1,41 +1,5 @@
 #Aim: have map operate on FB
 
-@doc Markdown.doc"""
-    compose_mod(x::nmod_poly, y::nmod_poly, z::nmod_poly) -> nmod_poly
-
-  Compute x(y) mod z
-"""
-function compose_mod(x::nmod_poly, y::nmod_poly, z::nmod_poly)
-  check_parent(x,y)
-  check_parent(x,z)
-  r = parent(x)()
-  ccall((:nmod_poly_compose_mod, libflint), Nothing,
-          (Ref{nmod_poly}, Ref{nmod_poly}, Ref{nmod_poly}, Ref{nmod_poly}), r, x, y, z)
-  return r
-end
-
-function compose_mod(x::gfp_poly, y::gfp_poly, z::gfp_poly)
-  check_parent(x,y)
-  check_parent(x,z)
-  r = parent(x)()
-  ccall((:nmod_poly_compose_mod, libflint), Nothing,
-          (Ref{gfp_poly}, Ref{gfp_poly}, Ref{gfp_poly}, Ref{gfp_poly}), r, x, y, z)
-  return r
-end
-
-
-@doc Markdown.doc"""
-    taylor_shift(x::nmod_poly, c::UInt) -> nmod_poly
-
-  Compute x(t-c)
-"""
-function taylor_shift(x::nmod_poly, c::UInt)
-  r = parent(x)()
-  ccall((:nmod_poly_taylor_shift, libflint), Nothing,
-          (Ref{nmod_poly}, Ref{nmod_poly}, UInt), r, x, c)
-  return r
-end
-
 function induce(FB::Hecke.NfFactorBase, A::Map) 
   K = domain(A)
   f = A(gen(K)) # essentially a polynomial in the primitive element
@@ -202,3 +166,102 @@ function generated_subgroup(op::Array) #pairs: permutations and Map
   return elt
 end
 
+function class_group_add_auto(ctx::ClassGrpCtx, auts::Vector{NfToNfMor})
+
+  K = domain(auts[1])
+  p = 11
+  R = GF(p, cached = false)
+  Rx, x = PolynomialRing(R, "x", cached = false)
+  fmod = Rx(K.pol)
+  while degree(fmod) != degree(K) || !issquarefree(fmod)
+    p = next_prime(p)
+    R = GF(p, cached = false)
+    Rx, x = PolynomialRing(R, "x", cached = false)
+    fmod = Rx(K.pol)
+  end
+  S = small_generating_set(auts)
+
+  Dpols = Dict{gfp_poly, NfToNfMor}()
+  for i = 1:length(auts)
+    Dpols[Rx(auts[i].prim_img)] = auts[i]
+  end
+  Gperm = SymmetricGroup(length(ctx.FB.ideals))
+
+  elements = Vector{Tuple{NfToNfMor, Generic.Perm{Int}}}(undef, length(auts))
+  elements[1] = (id_hom(K), Gperm())
+  ind_elem = 3
+  pols = gfp_poly[x, Rx(S[1].prim_img)]
+  perms = Generic.Perm{Int}[Gperm(), induce(ctx.FB, S[1])]
+  elements[2] = (S[1], perms[2])
+  gperm = perms[2]*perms[2]
+
+  while gperm != perms[1]
+    gpol = compose_mod(pols[2], pols[end], fmod)
+    elements[ind_elem] = (Dpols[gpol], gperm)
+    @hassert :ClassGroup 1 induce(ctx.FB, elements[ind_elem][1]) == elements[ind_elem][2]
+    ind_elem += 1
+    push!(pols, gpol)
+    push!(perms, gperm)
+    gperm = perms[2]*gperm
+  end
+  if length(pols) == length(auts)
+    return elements
+  end
+
+  for i in 2:length(S)
+    pi = Rx(S[i].prim_img)
+    if !(pi in pols)
+      permi = induce(ctx.FB, S[i])
+      previous_order = length(pols)
+      elements[ind_elem] = (S[i], permi)
+      push!(pols, pi)
+      push!(perms, permi)
+      ind_elem += 1
+      for j in 2:previous_order
+        push!(pols, compose_mod(pols[j], pi, fmod))
+        push!(perms, perms[j]*permi)
+        elements[ind_elem] = (Dpols[pols[end]], perms[end])
+        @hassert :ClassGroup 1 induce(ctx.FB, elements[ind_elem][1]) == elements[ind_elem][2]
+        ind_elem += 1
+      end
+      if length(pols) == length(auts)
+        return elements
+      end
+      rep_pos = previous_order + 1
+      while rep_pos <= length(pols)
+        for k in 1:i
+          s = S[k]
+          po = Rx(s.prim_img)
+          permo = elements[1][2]
+          for l = 1:length(elements)
+            if s == elements[l][1]
+              permo = elements[l][2]
+              break
+            end
+          end
+          permatt = perms[rep_pos]*permo
+          att = compose_mod(pols[rep_pos], po, fmod)
+          if !(att in pols)
+            push!(perms, permatt)
+            push!(pols, att)
+            elements[ind_elem] = (Dpols[pols[end]], perms[end])
+            @hassert :ClassGroup 1 induce(ctx.FB, elements[ind_elem][1]) == elements[ind_elem][2]
+            ind_elem += 1
+            for j in 2:previous_order
+              push!(pols, compose_mod(pols[j], att, fmod))
+              push!(perms, perms[j]*permatt)
+              elements[ind_elem] = (Dpols[pols[end]], perms[end])
+              @hassert :ClassGroup 1 induce(ctx.FB, elements[ind_elem][1]) == elements[ind_elem][2]
+              ind_elem += 1
+            end
+            if length(pols) == length(elements)
+              return elements
+            end
+          end
+        end
+        rep_pos = rep_pos + previous_order
+      end
+    end
+  end
+  return elements
+end

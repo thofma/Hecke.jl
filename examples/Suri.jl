@@ -62,7 +62,7 @@ function Hecke.simplify(P::Hecke.PMat)
   c = copy(coefficient_ideals(P))
   m = deepcopy(matrix(P))
   for i=1:length(c)
-    a, b = Hecke.reduce_ideal2(c[i])
+    a, b = Hecke.reduce_ideal(c[i])
     m[i, :] *= inv(b)
     c[i] = fractional_ideal(order(a), a)
   end
