@@ -174,10 +174,28 @@ function normal_basis(L::NumField)
   return r
 end
 
+function isnormal_basis_generator(a::NumFieldElem)
+  L = parent(a)
+  n = degree(L)
+  K = base_field(L)
+  Aut = automorphisms(L)
+
+  length(Aut) != degree(L) && error("The field is not normal over the rationals!")
+
+  A = zero_matrix(K, n, n)
+  for i = 1:n
+    y = Aut[i](a)
+    for j = 1:n
+      A[i,j] = coeff(y, j - 1)
+    end
+  end
+  return rank(A) == n
+end
 
 #trivia to make life easier
 
 gens(L::SimpleNumField{T}) where {T} = [gen(L)]
+
 function gen(L::SimpleNumField{T}, i::Int) where {T}
   i == 1 || error("index must be 1")
   return gen(L)
@@ -196,6 +214,7 @@ function Base.getindex(L::SimpleNumField{T}, i::Int) where {T}
 end
 
 ngens(L::SimpleNumField{T}) where {T} = 1
+
 function Base.getindex(L::NonSimpleNumField{T}, i::Int) where {T}
   i == 0 && return one(L)
   return gen(L, i)

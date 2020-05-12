@@ -40,7 +40,7 @@ end
 
 function show(io::IO, a::AlgAssElem{T, AlgQuat{T}}) where {T}
   v = a.coeffs
-  print(io, v[1], " + ", v[2], " * i + ", v[3], " * j + ", v[4], " * k")
+  print(io, "(", v[1], ") + (", v[2], ") * i + (", v[3], ") * j + (", v[4], ") * k")
 end
 
 dim(A::AlgQuat) = 4
@@ -110,6 +110,12 @@ function standard_involution(A::AlgAss{T}) where {T}
 end
 
 function __standard_involution(A)
+  BB = basis(A)
+
+  if isone(BB[1])
+    return ___standard_involution(A)
+  end
+
   B = copy(basis(A))
   n = dim(A)
   o = one(A)
@@ -121,42 +127,19 @@ function __standard_involution(A)
     end
   end
 
+  _A, _AtoA = _change_basis(A, B)
+
+  _f = ___standard_involution(_A)
+
   M = zero_matrix(base_ring(A), n, n)
-  N = zero_matrix(base_ring(A), n, n)
+
+  g = inv(_AtoA) * _f * _AtoA
+
   for i in 1:n
-    elem_to_mat_row!(M, i, B[i])
-  end
-  # This is the "adjusted" basis matrix
-  invM = inv(M)
-
-  K = base_ring(A)
-
-  @assert isone(B[1])
-  t = elem_type(base_ring(A))[]
-  push!(t, 2 * one(base_ring(A)))
-  for i in 2:n
-    v = matrix(K, 1, n, (B[i]^2).coeffs) * invM
-    ti = v[1, i]
-    push!(t, ti)
-    #_ni = B[i]^2 - ti * B[i]
-    #@assert all(i -> iszero(_ni.coeffs[i]), 2:n)
+    elem_to_mat_row!(M, i, g(BB[i]))
   end
 
-  #for i in 2:n
-  #  for j in (i+1):n
-  #    nij = (B[i] + B[j])^2 - (t[i] + t[j])*(B[i] + B[j])
-  #    @assert all(i -> iszero(nij.coeffs[i]), 2:n)
-  #  end
-  #end
-  for i in 1:n
-    b = t[i] - B[i]
-    v = matrix(base_ring(A), 1, n, b.coeffs) * invM
-    for j in 1:n
-      N[i, j] = v[1, j]
-    end
-  end
-  invol = M * N * inv(M)
-  return hom(A, A, invol, inv(invol))
+  return hom(A, A, M, inv(M))
 end
 
 # John Voight, "Quaternion algebra companion", Algorithm 4.6.1
@@ -207,7 +190,17 @@ function isquaternion_algebra(A::AlgAss)
 
   QA = AlgQuat(K, newa, newb)
 
-  SB = basis_matrix(stdbasis) * basis_matrix(B)
+  #@show stdbasis
+
+  #@show basis(A)
+
+  SB = basis_matrix(stdbasis)# * basis_matrix(B)
+
+  #@show SB
+
+  for i in 1:4
+    @assert sum(SB[i, j] * basis(A)[j] for j in 1:4) == stdbasis[i]
+  end
 
   SBinv = inv(SB)
 
@@ -219,6 +212,16 @@ end
 #  Reduce standard generators
 #
 ################################################################################
+
+function _reduce_standard_form(a::nf_elem, b::nf_elem)
+  K = parent(a)
+  if isrational(a) && isrational(b)
+    n, m, ap, bp = _reduce_standard_form(FlintQQ(a), FlintQQ(b))
+    return K(n), K(m), K(ap), K(bp)
+  else
+    return one(K), one(K), a, b
+  end
+end
 
 function _reduce_standard_form(a::fmpq, b::fmpq)
   n = denominator(a)
@@ -238,7 +241,8 @@ function _reduce_standard_form(a::fmpq, b::fmpq)
 
   bpabs = abs(bp)
 
-  while bpabs > issquare(numerator(bpabs))
+  while bpabs > 1 && issquare(numerator(bpabs))
+    #@show numerator(bpabs)
     sq = sqrt(numerator(bpabs))
     m = m//sq
     bpabs = bpabs//sq^2
@@ -272,7 +276,8 @@ function Base.enumerate(O::Union{AlgAssRelOrd, AlgAssAbsOrd}, b::Int, equal::Boo
   end
 
   # TODO: Replace this by short_vectors_gram(M, nrr) once it works
-  V = _short_vectors_gram(G, fmpz(b)) 
+  @assert !iszero(det(G))
+  V = _short_vectors_gram(G, fmpz(b), hard = true) 
   res = elem_type(O)[]
   for i in 1:length(V)
     y = sum(V[i][1][j] * B[j] for j in 1:d)
@@ -296,13 +301,15 @@ function unit_group_modulo_scalars(O::AlgAssRelOrd)
   A = algebra(O)
   @assert A isa AlgQuat
   OF = base_ring(O)
-  u, mu = unit_group(OF)
+  u, mu = unit_group(lll(OF))
   q, mq = quo(u, 2)
   norms = fmpz[]
   gens = elem_type(O)[]
   for e in q
-    x = mu(mq\e)
-    n = abs(FlintZZ(absolute_tr(elem_in_nf(x))))
+    _x = mu(mq\e)
+    # Reduce modulo squares, so that the trace is hopefully small
+    x = evaluate(reduce_mod_powers(elem_in_nf(_x), 2))
+    n = abs(FlintZZ(absolute_tr(x)))
     if !(n in norms)
       newel = enumerate(O, Int(n), true)
       for un in newel
@@ -335,9 +342,160 @@ function unit_group_modulo_scalars(O::AlgAssAbsOrd)
   return enumerate(O, 1)
 end
 
-function unit_group_generators(O::Union{AlgAssRelOrd, AlgAssAbsOrd})
+function _unit_group_generators_quaternion(O::Union{AlgAssRelOrd, AlgAssAbsOrd})
   gens1 = unit_group_modulo_scalars(O)
   u, mu = unit_group(base_ring(O))
-  gens2 = [ O(mu(u[i])) for i in 1:ngens(u) ]
+  A = algebra(O)
+  gens2 = [ O(A(elem_in_nf(mu(u[i])))) for i in 1:ngens(u) ]
   return append!(gens1, gens2)
 end
+
+### change basis
+
+function _change_basis(A::AlgAss, bas)
+  n = dim(A)
+  M = zero_matrix(base_ring(A), n, n)
+  N = zero_matrix(base_ring(A), n, n)
+
+  for i in 1:n
+    elem_to_mat_row!(M, i, bas[i])
+  end
+
+  # This is the "adjusted" basis matrix
+  invM = inv(M)
+
+  K = base_ring(A)
+
+  mt = Array{elem_type(K), 3}(undef, n, n, n)
+
+  for i in 1:n
+    for j in 1:n
+      c = bas[i] * bas[j]
+      t = matrix(base_ring(A), 1, dim(A), c.coeffs) * invM
+      @assert sum(t[1, i] * bas[i] for i in 1:n) == c
+      for k in 1:n
+        mt[i, j, k] = t[1, k]
+      end
+    end
+  end
+
+  B = AlgAss(K, mt)
+  h = hom(B, A, M, invM)
+  return B, h
+end
+
+function ___standard_involution(A)
+  n = dim(A)
+  o = one(A)
+
+  @assert isone(basis(A)[1])
+
+  N = zero_matrix(base_ring(A), n, n)
+
+  K = base_ring(A)
+
+  B = basis(A)
+
+  @assert isone(B[1])
+  t = elem_type(base_ring(A))[]
+  push!(t, zero(K))
+  for i in 2:n
+    v = matrix(K, 1, n, (B[i]^2).coeffs)
+    ti = v[1, i]
+    push!(t, ti)
+    _ni = B[i]^2 - ti * B[i]
+    @assert all(i -> iszero(_ni.coeffs[i]), 2:n)
+  end
+
+  for i in 2:n
+    for j in (i+1):n
+      nij = (B[i] + B[j])^2 - (t[i] + t[j])*(B[i] + B[j])
+      @assert all(i -> iszero(nij.coeffs[i]), 2:n)
+    end
+  end
+
+  for i in 1:n
+    b = i == 1 ? B[i] : t[i] - B[i]
+    v = matrix(base_ring(A), 1, n, b.coeffs)
+    for j in 1:n
+      N[i, j] = v[1, j]
+    end
+  end
+  invol = N
+  return hom(A, A, invol, inv(invol))
+end
+
+global _debug = []
+
+function _is_principal_maximal_quaternion_generic_proper(a, M, side = :right)
+  A = algebra(M)
+  f = standard_involution(A)
+  K = base_ring(A)
+  #@assert right_order(a) == M
+  @assert _test_ideal_sidedness(a, M, :right)
+  nr = normred(a)
+  nr = simplify(nr)
+  #@show norm(nr)
+  #@show nr
+  fl, c = isprincipal(nr)
+  if !fl
+    return false, zero(A)
+  end
+  #@show c
+  fl, u, reps = _reps_for_totally_positive(c, K)
+  if !fl
+    return false, zero(A)
+  end
+
+  #@show u
+  #@show istotally_positive(u * c)
+  #@show u * c
+
+  Babs = absolute_basis(a)
+  d = length(Babs)
+  G = zero_matrix(FlintZZ, d, d)
+  #@show reps
+  for z in reps
+    Nnu = z * u * c
+
+    alpha = inv(Nnu)
+
+    _d = denominator(alpha, maximal_order(K))
+    alpha = _d * alpha 
+
+    #@show isintegral(alpha)
+
+    for i in 1:d
+      for j in 1:d
+        G[i, j] = FlintZZ(absolute_tr(alpha * trred(Babs[i] * f(Babs[j]))))
+      end
+    end
+
+    B = 2 * trace(alpha * Nnu)
+
+    @assert isintegral(B)
+
+    ##@show Hecke._eltseq(G)
+    #
+    #@show denominator(G)
+
+    #_d = degree(base_ring(A))
+    
+    #@show B
+
+    v = _short_vectors_gram_integral(G, FlintZZ(B), hard = true)
+
+    #if min == degree(base_ring(A))
+    for w in v
+      xi = sum(w[1][i] * Babs[i] for i in 1:length(Babs))
+      if abs(norm(normred(xi))) == norm(normred(a))
+        @assert xi in a
+        @assert xi * M == a
+        return true, xi
+      end
+    end
+  end
+  # TODO: Replace this by short_vectors_gram(M, nrr) once it works
+  return false, zero(A)
+end
+

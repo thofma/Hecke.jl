@@ -30,14 +30,18 @@ function _isprincipal_maximal(a::AlgAssAbsOrdIdl, M, side = :right)
   Mbas = basis(M)
   @assert all(b in M for b in abas)
   gens = elem_type(A)[]
+  #@show A
+  #@show group(A)
   for i in 1:length(res)
     B, mB = res[i]
+    #@show isdefined(B, :isomorphic_full_matrix_algebra)
     MinB = Order(B, [(mB\(mB(one(B)) * elem_in_algebra(b))) for b in Mbas])
     #@show ismaximal(MinC)
     #@show hnf(basis_matrix(MinC))
     ainB = ideal_from_lattice_gens(B, [(mB\(mB(one(B))* b)) for b in abas])
     @assert all(b in MinB for b in basis(ainB))
     fl, gen = _is_principal_maximal_simple_component(ainB, MinB, side)
+    #@show "not simple for component", B
     if !fl
       return false, zero(M)
     end
@@ -52,9 +56,13 @@ end
 
 function _is_principal_maximal_simple_component(a, M, side = :right)
   A = algebra(M)
+  ZA, _ = _as_algebra_over_center(A)
+  #@show A
+  #@show ZA
   if base_ring(A) isa FlintRationalField && dim(A) == 4 && !issplit(A)
     return _is_principal_maximal_quaternion(a, M, side)
-  elseif div(dim(A), dimension_of_center(A)) == 4 && !issplit(A)
+  elseif dim(ZA) == 4 && !isdefined(A, :isomorphic_full_matrix_algebra)
+    #@show A
     return _is_principal_maximal_quaternion_generic(a, M, side)
   else
     @assert isdefined(A, :isomorphic_full_matrix_algebra)
@@ -76,38 +84,49 @@ function _is_principal_maximal_quaternion_generic(a, M, side = :right)
   b = ideal_from_lattice_gens(B, OB, [AtoB(b) for b in absolute_basis(a)])
   nr = normred(b)
   nr = simplify(nr)
-  @show nr
+  #@show nr
   fl, c = isprincipal(nr)
   if !fl
     return false, zero(A)
   end
-  @show c
+  #@show c
   fl, u, reps = _reps_for_totally_positive(c, K)
   if !fl
     return false, zero(A)
   end
+
+  #@show u
+  #@show istotally_positive(u * c)
   
-  B = absolute_basis(b)
-  d = length(B)
+  Babs = absolute_basis(b)
+  d = length(Babs)
   G = zero_matrix(FlintQQ, d, d)
-  @show reps
+  #@show reps
   for z in reps
     for i in 1:d
       for j in 1:d
-        G[i, j] = trace(inv(u * c * z) * trred(B[i] * f(B[j]))//2)
+        G[i, j] = absolute_tr(inv(u * c * z) * trred(Babs[i] * f(Babs[j]))//2)
       end
     end
-    @show G
+    #@show G
+    #@show det(G)
+    #@show lll_gram(map_entries(x -> numerator(x), G))
+    #@show Hecke._eltseq(G)
 
     min, v = _shortest_vectors_gram(G)
 
-    @show min
-
+    if min == degree(base_ring(B))
+      for w in v
+        xi = sum(w[i] * Babs[i] for i in 1:length(Babs))
+        xii = BtoA(xi)
+        @assert xii in a
+        @assert xii * M == a
+        return true, xii
+      end
+    end
   end
   # TODO: Replace this by short_vectors_gram(M, nrr) once it works
-
-
-  @assert false
+  return false, zero(A)
 end
 
 # check if there is a unit u such that c * u is totally positive
@@ -190,7 +209,7 @@ function _is_principal_maximal_full_matrix_algebra(a, M, side = :right)
     return fl, AAtoA(AAtoK\(elem_in_nf(zK)))
   elseif degree(base_ring(A)) == 1
     B, BtoA = _as_full_matrix_algebra_over_Q(A)
-    MB = Order(B, [BtoA\b for b in absolute_basis(M)])
+    MB = Order(B, [BtoA\elem_in_algebra(b) for b in absolute_basis(M)])
     aB = ideal_from_lattice_gens(B, [BtoA\b for b in absolute_basis(a)])
     fl, zK = _isprincipal_maximal_simple(aB, MB, side)
     gen = BtoA(zK)
@@ -241,6 +260,7 @@ function _isprincipal_maximal_simple_nice(I::AlgAssRelOrdIdl, M, side = :right)
   # so z contains the first columns
   pm = pseudo_matrix(transpose(z), fractional_ideal_type(O)[b[2] for b in B])
   pmh = sub(pseudo_hnf(pm, :upperright), 1:d, 1:d)
+  #@show pmh
   st = steinitz_form(pmh)
   J = st.coeffs[end] * inv(a)
   fl, _alpha = isprincipal(J)
@@ -380,6 +400,7 @@ function _isprincipal(a::AlgAssAbsOrdIdl, O, side = :right)
   # So a is locally free over O
 
   A = algebra(O)
+  #@show [isdefined(B, :isomorphic_full_matrix_algebra) for (B, mB) in decompose(A)]
   OA = maximal_order(O)
   Z, ZtoA = center(A)
   Fl = conductor(O, OA, :left)
@@ -518,7 +539,7 @@ function _solve_norm_equation_over_center_quaternion(M, x)
       nrm = FlintZZ(divexact(xalg.coeffs[i], one(A).coeffs[i]))
     end
   end
-  @show nrm
+  #@show nrm
   V = _short_vectors_gram(G, nrm) 
   for i in 1:length(V)
     if V[i][2] == nrm
@@ -537,7 +558,7 @@ function _solve_norm_equation_over_center_full_matrix_algebra(M, x)
     return M(x)
   elseif degree(base_ring(A)) == 1
     B, BtoA = _as_full_matrix_algebra_over_Q(A)
-    MB = Order(B, [BtoA\b for b in absolute_basis(M)])
+    MB = Order(B, [BtoA\elem_in_algebra(b) for b in absolute_basis(M)])
     xinB = BtoA\x
     solB = _solve_norm_equation_over_center_full_rational_matrix_algebra(MB, xinB)
     sol = M(BtoA(elem_in_algebra(solB)))
@@ -635,12 +656,12 @@ function _lift_norm_one_unit_quaternion(x, F)
     end
   end
 
-  @show M
-  @show F
+  #@show M
+  #@show F
 
-  @show elem_in_algebra(x)
+  #@show elem_in_algebra(x)
 
-  @show normred(elem_in_algebra(x))
+  #@show normred(elem_in_algebra(x))
   # TODO: Replace this by short_vectors_gram(M, nrr) once it works
   V = _short_vectors_gram(G, fmpz(1)) 
   for i in 1:length(V)
@@ -667,7 +688,7 @@ function _lift_norm_one_unit_full_matrix_algebra(x, F)
     M = parent(x)
     A = algebra(M)
     B, BtoA = _as_full_matrix_algebra_over_Q(A)
-    MinB = _get_order_from_gens(B, [BtoA\b for b in absolute_basis(M)])
+    MinB = _get_order_from_gens(B, [BtoA\elem_in_algebra(b) for b in absolute_basis(M)])
     FinB = ideal_from_lattice_gens(B, MinB, [ BtoA\(b) for b in absolute_basis(F) ], :twosided)
     y = _lift_norm_one_unit_full_rational_matrix_algebra(MinB(BtoA\(elem_in_algebra(x))), FinB)
     return BtoA(y)
@@ -1021,21 +1042,23 @@ function lift_two_by_two_matrix(M)
   #@show res
   #@show matrix(base_ring(M), res)
   #@show M
-  @assert matrix(base_ring(M), res) == M
+  @assert map_entries(base_ring(M), res) == M
   return res
 end
+
+_base_ring(A::AbsOrdQuoRing) = base_ring(A)
 
 function lift_two_by_two_elementary_matrix(E)
   R = base_ring(E)
   if iszero(E[1, 1]) && iszero(E[2, 2]) && E[1, 2] == -1 && E[2, 1] == 1
-    z = matrix(base_ring(R), 2, 2, [0, -1, 1, 0])
+    z = matrix(_base_ring(R), 2, 2, [0, -1, 1, 0])
   elseif E[1, 1] == 1 && E[2, 2] == 1 && E[1, 2] == 0 && E[2, 1] == 0
-    z = matrix(base_ring(R), 2, 2, [1, 0, 0, 1])
+    z = matrix(_base_ring(R), 2, 2, [1, 0, 0, 1])
   else
-    z = map_entries(_lift, E)
+    z = map_entries(lift, E)
   end
   #@show E, z
-  @assert matrix(base_ring(E), z) == E
+  @assert matrix(base_ring(E), 2, 2, [z[1, 1], z[1, 2], z[2, 1], z[2, 2]]) == E
   return z
 end  
 
@@ -1158,18 +1181,21 @@ end
 
 function _unit_group_generators_maximal_simple(M)
   A = algebra(M)
-  @assert isdefined(A, :isomorphic_full_matrix_algebra)
-  B, AtoB = A.isomorphic_full_matrix_algebra
-  OB = _get_order_from_gens(B, [AtoB(elem_in_algebra(b)) for b in absolute_basis(M)])
-  N, S = nice_order(OB)
-  @assert basis_matrix(N) == identity_matrix(base_ring(B), dim(B))
-  gens = [ B(u) for u in _GLn_generators(base_ring(OB), degree(B))]
-  @assert all(b in N for b in gens)
-  gens_adjusted = [ inv(S) * u * S for u in gens]
-  @assert all(b in OB for b in gens_adjusted)
-  gens_in_M = [ AtoB\u for u in gens_adjusted]
-  @assert all(b in M for b in gens_in_M)
-  return gens_in_M
+  if isdefined(A, :isomorphic_full_matrix_algebra)
+    B, AtoB = A.isomorphic_full_matrix_algebra
+    OB = _get_order_from_gens(B, [AtoB(elem_in_algebra(b)) for b in absolute_basis(M)])
+    N, S = nice_order(OB)
+    @assert basis_matrix(N) == identity_matrix(base_ring(B), dim(B))
+    gens = [ B(u) for u in _GLn_generators(base_ring(OB), degree(B))]
+    @assert all(b in N for b in gens)
+    gens_adjusted = [ inv(S) * u * S for u in gens]
+    @assert all(b in OB for b in gens_adjusted)
+    gens_in_M = [ AtoB\u for u in gens_adjusted]
+    @assert all(b in M for b in gens_in_M)
+    return gens_in_M
+  else
+    throw(NotImplemented())
+  end
 end
 
 function _SLn_generators(OK, n)
@@ -1306,6 +1332,7 @@ function _orbit_stabilizer(G, idity, a)
   Y = typeof(idity)[]
   m = 1
   while m <= length(OT)
+    @show m, length(OT)
     b = OT[m][2]
     for g in G
       c = _operate(g, b)
@@ -1325,8 +1352,430 @@ function _orbit_stabilizer(G, idity, a)
   return OT, Y
 end
 
-function _operate(g::AlgGrpElem, b)
+function _operate(g::AbsAlgAssElem, b)
   M = representation_matrix(g, :right)
   c = hnf(b * FakeFmpqMat(M))
   return c
 end
+
+################################################################################
+#
+#  PIP for Z[Q_32]
+#
+################################################################################
+
+function _isfree_Q32(K::AnticNumberField)
+  G, mG = automorphism_group(K)
+  QG, KtoQG = galois_module(K, mG)
+  OKasideal = KtoQG(lll(maximal_order(K)))
+
+  res = decompose(QG)
+  _compute_matrix_algebras_from_reps2(QG, res)
+
+
+  # lets compute a A_theta
+
+  # A_theta = { lambda in Q[G] | thetha * lambda in O_N }
+  # where theta is a normal basis element
+  # by construction KtoQG\one(QG) is our normal basis element
+  # so A_theta = { lambda in Q[G] | Z[G] * lambda \subseteq O_n }
+  # which is just a right colon ideal
+
+  n = degree(K)
+
+  ZG = Order(QG, collect(G))
+
+  # theta = one(QG)
+
+  # N = _colon_raw(OKasideal, ideal(QG, ZG, FakeFmpqMat(representation_matrix(theta, :left))), :left)
+  # #N = _colon_raw(OKasideal, ideal(QG, ZG, FakeFmpqMat(identity_matrix(FlintQQ, n))), :left)
+  # # Johannes convention is the other way around
+  # 
+  # Atheta = ideal(QG, ZG, N)
+
+  # @assert all(theta * lambda in OKasideal for lambda in basis(Atheta))
+
+  # M = maximal_order(ZG)
+
+  # AthetaM = sum(b * M  for b in basis(Atheta))
+
+  # d = denominator(AthetaM)
+
+  # dAthetaM = d * AthetaM
+
+  # fl, _delta = _isprincipal_maximal(dAthetaM, M, :right)
+
+  # @assert fl
+
+  # @assert dAthetaM == _delta * M
+
+  # delta = inv(QG(d)) * _delta
+
+  # @assert AthetaM == delta * M
+
+  # thetaprime = theta * delta
+
+  # N = _colon_raw(OKasideal, ideal(QG, ZG, FakeFmpqMat(representation_matrix(thetaprime, :left))), :left)
+
+  # Athetaprime = ideal(QG, ZG, N)
+
+  # @assert all(thetaprime * lambda in OKasideal for lambda in basis(Athetaprime))
+
+  # X = order(G) * Athetaprime
+
+  
+  res = __decompose(QG)
+  #Z, mZ = subgroups(G, order = 2)[1]
+  #k, mk = fixed_field(K, [mG(mZ(z)) for z in Z])
+  #@show k
+  #H, mH = automorphism_group(k)
+  #@show find_small_group(H)
+  #QH, ktoQH = galois_module(k, mH)
+  #res2 = decompose(QH)
+  #_compute_matrix_algebras_from_reps2(QH, res2)
+  #ZH = Order(QH, collect(H))
+  #@show ktoQH
+  #Ok = lll(maximal_order(k))
+  #Okasideal = ktoQH(lll(maximal_order(k)))
+  #@show istamely_ramified(k)
+  ##fl, x = _isprincipal(Okasideal, ZH, :right)
+
+  fl, y, Ok, Q32toD16, repsD16, ktoD16, groupmap, k_to_K = _is_D16_subfield_free(K, KtoQG, QG)
+
+  if !fl
+    return false, zero(K), "dihedral failure"
+  end
+
+  QD16 = codomain(Q32toD16)
+
+  B, BtoA = [(B, mB) for (B, mB) in res if dim(B) == div(dim(QG), 2)][1]
+  #@show B
+  #@show isdefined(B, :isomorphic_full_matrix_algebra)
+  e = BtoA(one(B))
+  C, BtoC, CtoB = Hecke._as_algebra_over_center(B)
+  @assert CtoB(one(C)) == one(B)
+  #@show C
+  Q, QtoC = isquaternion_algebra(C)
+  #@show [ QtoC\(BtoC(BtoA\(e*elem_in_algebra(b)))) for b in basis(ZG) ]
+  _eZG = Hecke._get_order_from_gens(B, [ (BtoA\(e*elem_in_algebra(b))) for b in basis(ZG) ])
+  #@show one(B) in _eZG
+  __eZG = Hecke._get_order_from_gens(C, [ BtoC(elem_in_algebra(b)) for b in basis(_eZG)])
+  #@show one(C) in __eZG
+  #@show QtoC(one(Q)) == one(C)
+
+  _e1 = rand(QG, -5:5)
+  _e2 = rand(QG, -5:5)
+
+  @assert QtoC\(BtoC(BtoA\(e * _e1 * _e2))) == QtoC\(BtoC(BtoA\(e * _e1))) * (QtoC\(BtoC(BtoA\(e * _e2))))
+
+  @assert QtoC\(BtoC(BtoA\(e * (_e1 + _e2)))) == QtoC\(BtoC(BtoA\(e * _e1))) + (QtoC\(BtoC(BtoA\(e * _e2))))
+
+  @assert QtoC\(BtoC(BtoA\(e * one(QG)))) == one(Q)
+
+  eZG = Hecke._get_order_from_gens(Q, [ QtoC\(BtoC(BtoA\(e*elem_in_algebra(b)))) for b in basis(ZG) ])
+
+  Lambda = maximal_order(eZG)
+
+  Lambda_star = _unit_group_generators_quaternion(Lambda)
+
+  #allunitsLambda = map(x -> BtoA(CtoB(QtoC(elem_in_algebra(x)))), (closure(Lambda_star, *)))
+
+   # I want to make sure that Lambda_star = eZG^times
+   
+   QoverQQ, QtoQoverQQ, theother = restrict_scalars(Q, FlintQQ)
+
+   #@show Q
+
+   eZGabs = Hecke._get_order_from_gens(QoverQQ, [ QtoQoverQQ(elem_in_algebra(u)) for u in absolute_basis(eZG) ])
+   units_abs = [ QtoQoverQQ(elem_in_algebra(u)) for u in Lambda_star ]
+   _, eZGstar = _orbit_stabilizer(units_abs, one(QoverQQ), eZGabs)
+   #@show length(eZGstar)
+   #@show issetequal(closure(eZGstar, *), [QtoQoverQQ(elem_in_algebra(u)) for u in allunitsLambda if elem_in_algebra(u) in eZG ])
+   #@show closure(eZGstar, *)
+   #@show [QtoQoverQQ(elem_in_algebra(u)) for u in allunitsLambda if elem_in_algebra(u) in eZG ]
+   eZGstar = [ theother(u) for u in eZGstar ]
+   #@assert length(eZGstar) == length(Lambda_star)
+
+
+  # #Now move O_K over to O_K Lambda
+
+  d = denominator(OKasideal)
+
+  OKasidealnum = d * OKasideal
+
+  OKLambda = sum(Lambda(QtoC\(BtoC(BtoA\(e * b)))) * Lambda for b in basis(OKasidealnum))
+
+  fl, x = _is_principal_maximal_quaternion_generic_proper(OKLambda, Lambda, :right)
+
+
+  if !fl
+    return false, zero(K), "quaternion failure1"
+  end
+
+  OKasidealnume = sum(Lambda(QtoC\(BtoC(BtoA\(e * b)))) * eZG for b in basis(OKasidealnum))
+
+  if !(x in OKasidealnume)
+  #if !(x in OKasidealnume)
+  #  found = false
+  #  for u in Lambda_star
+  #    if x * elem_in_algebra(u) in OKasidealnume
+  #      x = x * elem_in_algebra(u)
+  #      found = true
+  #    end
+  #  end
+  #  if !found
+  #    println("bad try")
+    return false, zero(K), "quaternion failure2"
+  end
+
+  x = inv(Q(d)) * x
+
+  #@assert sum(eZG(QtoC\(BtoC(BtoA\(d * e * b)))) * eZG for b in basis(OKasideal)) == (d * x) * eZG
+
+  # Now move Lambda_star (which is in fact (eZG)^\times back to ZG)
+  
+  #Lambda_star_in_QGalmost = [BtoA(CtoB(QtoC(elem_in_algebra(u)))) for u in Lambda_star]
+  Lambda_star_in_QGalmost = [BtoA(CtoB(QtoC(u))) for u in eZGstar]
+
+  @assert all(u in eZG for u in eZGstar)
+
+  Lambda_star_in_QG = elem_type(QG)[]
+
+  Me = representation_matrix(e, :left)
+
+  for i in 1:length(Lambda_star_in_QGalmost)
+    v = matrix(FlintQQ, 1, dim(QG), Lambda_star_in_QGalmost[i].coeffs);
+    d = denominator(v) * denominator(Me)
+    fl, w = can_solve(change_base_ring(FlintZZ, d * Me), change_base_ring(FlintZZ, d * v), side = :left)
+    @assert fl
+    @assert e * QG(fmpq[w[1, j] for j in 1:dim(QG)]) == Lambda_star_in_QGalmost[i]
+    push!(Lambda_star_in_QG, QG(fmpq[w[1, j] for j in 1:dim(QG)]))
+    @assert Lambda_star_in_QG[end] in ZG
+  end
+
+  F = GF(2, cached = false)
+  F2D16 = F[group(QD16)]
+
+  _units = elem_type(QG)[]
+  _units_reduced = elem_type(F2D16)[]
+  for u in Lambda_star_in_QG
+    ured = sum(FlintZZ(u.coeffs[QG.group_to_base[g]]) * F2D16(groupmap(g)) for g in group(QG))
+    if !(ured in _units_reduced)
+      push!(_units, u)
+      push!(_units_reduced, ured)
+    end
+  end
+
+  __units = collect(zip(_units, _units_reduced))
+
+  cl = closure(__units, (x, y) -> (x[1] * y[1], x[2] * y[2]), eq = (x, y) -> x[2] == y[2])
+
+  repsLambdastart = [x for (x, y) in cl]
+
+  xlift = BtoA(CtoB(QtoC(x)))
+
+  M1 = basis_matrix(Ref(e) .* basis(OKasideal)); M2 =  matrix(FlintQQ, 1, dim(QG), [xlift.coeffs[i] for i in 1:dim(QG)])
+  dd = lcm(denominator(M1), denominator(M2))
+  fl, v = can_solve(map_entries(x -> FlintZZ(x * dd), M1), map_entries(x -> FlintZZ(x * dd), M2), side = :left)
+  @assert fl
+  xxlift = dot(basis(OKasideal), fmpz[v[1, i] for i in 1:dim(QG)])
+  #xxlift = divexact_left(xlift, e)
+
+  @assert xlift == xxlift * e
+
+  @assert xxlift in OKasideal
+
+  @show "Starting the numeration ..."
+
+  Krelk, m = relative_extension(k_to_K)
+
+  xxtocheck = [ tr(m(KtoQG\(xxlift * repsLambdastart[i]))) for i in 1:length(repsLambdastart) ]
+  ytocheck = [ ktoD16\(y * repsD16[j]) for j in 1:length(repsD16) ]
+
+  F = GF(2, cached = false)
+
+  Ok = maximal_order(domain(k_to_K))
+
+  xxtocheckcoordinates = [ matrix(F, 1, 16, coordinates(Ok(x))) for x in xxtocheck]
+
+  ytocheckcoordinates = [ matrix(F, 1, 16, coordinates(Ok(y))) for y in ytocheck ]
+
+  Ok2 = 2 * maximal_order(domain(k_to_K))
+
+  @time for (i, x) in enumerate(xxtocheck)
+    @show i
+    for y in ytocheck
+      if x - y in Ok2
+        __x = KtoQG\(xxlift * repsLambdastart[i])
+        _x = __x - k_to_K(divexact(tr(m(__x)) - y, 2))
+        @assert ismaximal(Order(K, [mG(g)(_x) for g in G], isbasis = true))
+        return true, _x
+      end
+    end
+  end
+
+  return false, zero(K), "enumeration failure"
+
+  #return xxlift, y, repsD16, repsLambdastart, Ok, Q32toD16, KtoQG, ktoD16, e, BtoA
+  return xxlift, y, repsD16, repsLambdastart, Ok, Q32toD16, KtoQG, ktoD16, e, BtoA, k_to_K, groupmap
+end
+
+function _isless(x::gfp_mat, y::gfp_mat)
+  i = 0
+  c = ncols(x)
+  while i < c
+    i += 1
+    if x[i] == y[i]
+      continue
+    else
+      return x[i] < y[i]
+    end
+  end
+  return false
+end
+
+function _get_D16(QG::AlgGrp)
+  G = group(QG)
+  Z, mZ = center(group(QG))
+  Q, mQ = quotient(G, Z, mZ)
+  D16 = QQ[Q]
+  Q32toD16 = hom(QG, D16, mQ)
+  return D16, Q32toD16, mQ
+end
+
+global _cache_tmp = []
+
+function _is_D16_subfield_free(K, KtoQG, QG::AlgGrp)
+  G = group(QG)
+  Z, mZ = center(G)
+  Q, mQ = quotient(G, Z, mZ)
+  D16 = QQ[Q]
+  Q32toD16 = hom(QG, D16, mQ)
+
+  f1 = KtoQG.mG(mZ(Z[1]))
+  f2 = KtoQG.mG(mZ(Z[2]))
+  k, mk = fixed_field(K, [KtoQG.mG(mZ(Z[1])), KtoQG.mG(mZ(Z[2]))])
+  _nbK = KtoQG\one(QG)
+  _b = f1(_nbK) + f2(_nbK)
+  Krelk, m = relative_extension(mk)
+  _new_inb = k(m(_b))
+  #@show "\n $_new_inb\n"
+  #println("\n\n\ndas dsd s\n")
+  D16, Q32toD16, mQ = _get_D16(QG)
+  kauto = _adjust_automorphism_group(KtoQG.mG, mQ, mk)
+  DD16, ktoD16 = Hecke.galois_module(k, kauto, normal_basis_generator = _new_inb)
+  MM = zero_matrix(FlintQQ, degree(k), degree(k))
+  for i in 1:degree(k)
+    z = gen(k)^(i - 1)
+    v = Q32toD16(KtoQG(mk(z))).coeffs
+    for j in 1:degree(k)
+      MM[i, j] = v[j]
+    end
+  end
+  #@show MM
+  MMinv = inv(MM)
+  ktoD16.M = MMinv
+  ktoD16.Minv = MM
+  @assert DD16 === D16
+  Ok = ktoD16(lll(maximal_order(k)))
+  ZD16 = Order(D16, basis(D16))
+  res = __decompose(D16)
+  #@show [isdefined(B, :isomorphic_full_matrix_algebra) for (B, mB) in res]
+  _compute_matrix_algebras_from_reps2(D16, res)
+  #@show [isdefined(B, :isomorphic_full_matrix_algebra) for (B, mB) in res]
+  fl, x = _isprincipal(Ok, ZD16, :right)
+
+  if !fl return 
+    false
+  end
+
+  if length(_cache_tmp) == 0
+   unitss = _unit_group_generators(ZD16)
+   append!(_cache_tmp, unitss)
+  else
+    B = parent(_cache_tmp[1])
+    GG = group(B)
+    fl, f = isisomorphic(GG, group(D16))
+    @assert fl
+    ff = hom(B, D16, f)
+    unitss = ff.(_cache_tmp)
+  end
+
+  F = GF(2, cached = false)
+
+  F2D16 = F[group(D16)]
+
+  _units = elem_type(D16)[]
+  _units_reduced = elem_type(F2D16)[]
+
+  for u in unitss
+    ured = sum(FlintZZ(u.coeffs[D16.group_to_base[g]]) * F2D16(g) for g in group(D16))
+    if !(ured in _units_reduced)
+      push!(_units, u)
+      push!(_units_reduced, ured)
+    end
+  end
+
+  __units = collect(zip(_units, _units_reduced))
+
+  cl = closure(__units, (x, y) -> (x[1] * y[1], x[2] * y[2]), eq = (x, y) -> x[2] == y[2])
+  return true, x, Ok, Q32toD16, [x for (x, y) in cl], ktoD16, mQ, mk #[x for (x, y) in cl], ktoD16
+end
+
+function center(G::GrpGen)
+  if isabelian(G)
+    return subgroup(G, collect(G))
+  end
+
+  c = elem_type(G)[]
+
+  for g in G
+    cent = true
+    for h in G
+      if h * g != g *h
+        cent = false
+        break
+      end
+    end
+
+    if cent
+      push!(c, g)
+    end
+  end
+
+  return subgroup(G, c)
+end
+
+function maximal_order_via_absolute(O::AlgAssRelOrd)
+  A = algebra(O)
+  C, AtoC, CtoA = restrict_scalars(A, FlintQQ)
+  OC = maximal_order(Hecke._get_order_from_gens(C, AtoC.(elem_in_algebra.(absolute_basis(O)))))
+  M = zero_matrix(base_ring(A), degree(OC), dim(A))
+  for i = 1:degree(OC)
+    elem_to_mat_row!(M, i, CtoA(elem_in_algebra(basis(OC, copy = false)[i], copy = false)))
+  end
+  PM = sub(pseudo_hnf(PseudoMatrix(M), :lowerleft, true), (degree(OC) - dim(A) + 1):degree(OC), 1:dim(A))
+  O = Order(A, PM)
+  O.ismaximal = 1
+  return O
+end
+
+function _adjust_automorphism_group(mK, mQ, ktoK)
+  Q = codomain(mQ)
+  K = codomain(ktoK)
+  k = domain(ktoK)
+  v = Vector{NfToNfMor}(undef, degree(k))
+  au = automorphisms(k)
+  for q in Q
+    b = (mK(mQ\q))(ktoK(gen(k)))
+    fl, bb = haspreimage(ktoK, b)
+    @assert fl
+    for a in au
+      if a(gen(k)) == bb
+        v[q[]] = a
+      end
+    end
+  end
+  return GrpGenToNfMorSet(Q, v, k)
+end
+

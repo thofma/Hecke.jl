@@ -82,13 +82,13 @@ function _residue_field_nonindex_divisor_helper(f::fmpq_poly, g::fmpq_poly, p, d
 
   h = gcd(gmodp,fmodp)
 	
-	if degree_one == Val{true}
+	if degree_one === Val{true}
     return R, h
 	else
-  	if typeof(p) == Int
+    if isa(p, Int)
     	F3 = FqNmodFiniteField(h, :$, false)
       return F3, h
-  	elseif typeof(p) == fmpz
+    elseif isa(p, fmpz)
     	F4 = FqFiniteField(h, :$, false)
       return F4, h
   	end
@@ -104,13 +104,13 @@ function _residue_field_nonindex_divisor(O, P, small::Type{Val{T}} = Val{false},
   f = nf(O).pol
   g = parent(f)(elem_in_nf(gtwo))
 
-  if small == Val{true}
+  if small === Val{true}
     @assert fits(Int, minimum(P, copy = false))
     F, h = _residue_field_nonindex_divisor_helper(f, g, Int(minimum(P)), degree_one)
     mF = Mor(O, F, h)
     mF.P = P
     return F, mF
-  elseif small == Val{false}
+  elseif small === Val{false}
     F, h = _residue_field_nonindex_divisor_helper(f, g, minimum(P), degree_one)
     mF = Mor(O, F, h)
     mF.P = P
@@ -127,15 +127,15 @@ end
 function _residue_field_generic(O, P, small::Type{Val{T}} = Val{false}, degree_one::Type{Val{S}} = Val{false}) where {S, T}
   if small == Val{true} 
     @assert fits(Int, minimum(P, copy = false))
-    if degree_one == Val{true}
+    if degree_one === Val{true}
 			f1 = NfOrdToGFMor(O, P)
       return codomain(f1), f1
 		else
     	f = NfOrdToFqNmodMor(O, P)
     	return codomain(f), f
     end
-  elseif small == Val{false}
-    if degree_one == Val{true}
+  elseif small === Val{false}
+    if degree_one === Val{true}
     	f3 = NfOrdToGFFmpzMor(O, P)
       return codomain(f3), f3
 		else

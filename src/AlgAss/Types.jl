@@ -154,7 +154,11 @@ mutable struct AlgGrp{T, S, R} <: AbsAlgAss{T}
     return A
   end
 
-  function AlgGrp(K::Ring, G; op = *)
+  function AlgGrp(K::Ring, G; op = *, cached = true)
+    if cached && haskey(AlgGrpDict, (K, G, op))
+      return AlgGrpDict[(K, G, op)]::AlgGrp{elem_type(K), typeof(G), elem_type(G)}
+    end
+
     A = new{elem_type(K), typeof(G), elem_type(G)}()
     A.iscommutative = 0
     A.issimple = 0
@@ -188,9 +192,15 @@ mutable struct AlgGrp{T, S, R} <: AbsAlgAss{T}
 
     @assert all(A.mult_table[1, i] == i for i in 1:dim(A))
 
+    if cached
+      AlgGrpDict[(K, G, op)] = A
+    end
+
     return A
   end
 end
+
+const AlgGrpDict = IdDict()
 
 mutable struct AlgGrpElem{T, S} <: AbsAlgAssElem{T}
   parent::S

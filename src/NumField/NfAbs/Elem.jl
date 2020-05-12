@@ -476,7 +476,7 @@ function factor(f::PolyElem{nf_elem})
   end
 
   r = Fac{typeof(f)}()
-  r.fac = res = Dict( x=> 1 for x = lf)
+  r.fac = Dict{typeof(f), Int}( x => 1 for x = lf)
   r.unit = Kx(1)
 
   if f != f_orig

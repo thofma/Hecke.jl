@@ -960,9 +960,9 @@ function _normred_over_center_simple(a::AbsAlgAssElem, ZtoA::AbsAlgAssMor)
   fields = as_number_fields(Z)
   @assert length(fields) == 1
   K, ZtoK = fields[1]
-  B, AtoB, BtoA = _as_algebra_over_center(A)
+  B, BtoA = _as_algebra_over_center(A)
   @assert base_ring(B) === K
-  n = normred(AtoB(a))
+  n = normred(BtoA\(a))
   return ZtoK\(n)
 end
 

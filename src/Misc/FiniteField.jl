@@ -389,3 +389,21 @@ function unit_group(F::T; n_quo::Int = -1) where T <: Union{FqFiniteField, FqNmo
   mG = FiniteFieldMultGrpMap{T, elem_type(F)}(G, F, g, disc_log)
   return G, mG
 end
+
+################################################################################
+#
+#  Missing ad hoc operations
+#
+################################################################################
+
+function (R::FqFiniteField)(x::Nemo.gfp_fmpz_elem)
+  return R(lift(x))
+end
+
+function *(a::Nemo.fq, b::Nemo.gfp_fmpz_elem)
+  return a * parent(a)(b)
+end
+
+function *(a::Nemo.gfp_fmpz_elem, b::Nemo.fq)
+  return parent(b)(a) * b
+end

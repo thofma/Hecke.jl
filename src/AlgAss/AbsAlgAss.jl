@@ -206,7 +206,7 @@ function __decompose(A::AbsAlgAss{T}) where {T}
     return Tuple{AlgAss{T}, morphism_type(AlgAss{T}, typeof(A))}[ (B, mB) ]
   end
 
-  D = _decompose(B)
+  D = _decompose(B)::Vector{Tuple{AlgAss{T}, morphism_type(AlgAss{T}, AlgAss{T})}}
   res = Tuple{AlgAss{T}, morphism_type(AlgAss{T}, typeof(A))}[]
   for (S, mS) in D
     mD = compose_and_squash(mB, mS)
@@ -226,9 +226,9 @@ end
 function _decompose(A::AbsAlgAss{T}) where {T}
   @assert _issemisimple(A) != 2 "Algebra is not semisimple"
   if iscommutative(A)
-    return _dec_com(A)
+    return _dec_com(A)::Vector{Tuple{AlgAss{T}, morphism_type(AlgAss{T}, typeof(A))}}
   else
-    return _dec_via_center(A)
+    return _dec_via_center(A)::Vector{Tuple{AlgAss{T}, morphism_type(AlgAss{T}, typeof(A))}}
   end
 end
 
@@ -260,11 +260,11 @@ function _dec_via_center(A::S) where {T, S <: AbsAlgAss{T}}
   return res
 end
 
-function _dec_com(A::AbsAlgAss)
+function _dec_com(A::AbsAlgAss{T}) where {T}
   if characteristic(base_ring(A)) > 0
-    return _dec_com_finite(A)
+    return _dec_com_finite(A)::Vector{Tuple{AlgAss{T}, morphism_type(AlgAss{T}, typeof(A))}}
   else
-    return _dec_com_gen(A)
+    return _dec_com_gen(A)::Vector{Tuple{AlgAss{T}, morphism_type(AlgAss{T}, typeof(A))}}
   end
 end
 
@@ -338,7 +338,7 @@ function _dec_com_gen(A::AbsAlgAss{T}) where {T <: FieldElem}
     res = Vector{Tuple{AlgAss{T}, morphism_type(AlgAss{T}, typeof(A))}}()
     for idem in idems
       S, StoA = subalgebra(A, idem, true)
-      decS = _dec_com_gen(S)
+      decS = _dec_com_gen(S)::Vector{Tuple{AlgAss{T}, morphism_type(AlgAss{T}, typeof(S))}}
       for (B, BtoS) in decS
         BtoA = compose_and_squash(StoA, BtoS)
         push!(res, (B, BtoA))
@@ -799,7 +799,17 @@ end
 #  return nothing
 #end
 
-function _primitive_element(A::AbsAlgAss{T}) where T #<: Union{nmod, fq, fq_nmod, Generic.Res{fmpz}, fmpq, Generic.ResF{fmpz}, gfp_elem}
+# If T == fmpq, we try to find a small primitive element by
+# going "via number fields". There a procedure using LLL
+# is implemented to find primitive elements with small minimal
+# polynomial. Note that this could be improved by calling into
+# simplify for number fields. But it is a bit tricky.
+function _primitive_element(A::AbsAlgAss{fmpq})
+  a = primitive_element_via_number_fields(A)
+  return a, minpoly(a)
+end
+
+function __primitive_element(A::S) where {T <: FinFieldElem, S <: AbsAlgAss{T}} #<: Union{nmod, fq, fq_nmod, Generic.Res{fmpz}, fmpq, Generic.ResF{fmpz}, gfp_elem}
   d = dim(A)
   a = rand(A)
   f = minpoly(a)
@@ -821,7 +831,7 @@ end
 
 function _as_field(A::AbsAlgAss{T}) where T
   d = dim(A)
-  a, mina = _primitive_element(A)
+  a, mina = __primitive_element(A)
   b = one(A)
   M = zero_matrix(base_ring(A), d, d)
   elem_to_mat_row!(M, 1, b)
@@ -843,8 +853,12 @@ function _as_field(A::AbsAlgAss{T}) where T
   return a, mina, f
 end
 
-function _as_field_with_isomorphism(A::AbsAlgAss{S}) where { S } #<: Union{fmpq, gfp_elem, Generic.ResF{fmpz}, fq_nmod, fq} }
+function _as_field_with_isomorphism(A::AbsAlgAss{fmpq}) #<: Union{fmpq, gfp_elem, Generic.ResF{fmpz}, fq_nmod, fq} }
   return _as_field_with_isomorphism(A, _primitive_element(A)...)
+end
+
+function _as_field_with_isomorphism(A::AbsAlgAss{S}) where { S } #<: Union{fmpq, gfp_elem, Generic.ResF{fmpz}, fq_nmod, fq} }
+  return _as_field_with_isomorphism(A, __primitive_element(A)...)
 end
 
 # Assuming a is a primitive element of A and mina its minimal polynomial, this
@@ -1165,17 +1179,17 @@ function _radical(A::AbsAlgAss{T}) where { T <: Union{ fq_nmod, fq } }
   else
     Fp = GF(p)
   end
-  A2, AtoA2, A2toA = restrict_scalars(A, Fp)
+  A2, A2toA = restrict_scalars(A, Fp)
   n = degree(F)
 
   if n == 1
     J = _radical(A2)
-    return [ A2toA(b) for b in J ]
+    return elem_type(A)[ A2toA(b) for b in J ]
   end
 
   k = flog(fmpz(dim(A)), p)
   Qx, x = PolynomialRing(FlintQQ, "x", cached = false)
-  f = Qx(push!([ -fmpq(coeff(gen(F)^n, i)) for i = 0:(n - 1) ], fmpq(1)))
+  f = Qx(push!(fmpq[ -fmpq(coeff(gen(F)^n, i)) for i = 0:(n - 1) ], fmpq(1)))
   K, a = number_field(f, "a")
 
   MF = trace_matrix(A2)

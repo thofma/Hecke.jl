@@ -33,7 +33,7 @@ end
   f = x^2 + 47
   K, a = number_field(f, "a")
   A = AlgAss(MatrixAlgebra(K, 2))
-  A, _, _ = Hecke.restrict_scalars(A, FlintQQ)
+  A, _ = Hecke.restrict_scalars(A, FlintQQ)
   O = MaximalOrder(A)
   C = Hecke.locally_free_class_group(O) # == class_group(K)
   @test C.snf == fmpz[ 5 ]
@@ -41,7 +41,7 @@ end
   f = x^2 + 26
   K, a = number_field(f, "a")
   A = AlgAss(MatrixAlgebra(K, 2))
-  A, _, _ = Hecke.restrict_scalars(A, FlintQQ)
+  A, _ = Hecke.restrict_scalars(A, FlintQQ)
   O = MaximalOrder(A)
   C = Hecke.locally_free_class_group(O) # == class_group(K)
   @test C.snf == fmpz[ 6 ]

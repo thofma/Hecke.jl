@@ -459,7 +459,7 @@ end
 
 function maximal_order_via_absolute(A::AbsAlgAss{T}) where { T <: NumFieldElem }
   B, BtoA = AlgAss(A)
-  C, BtoC, CtoB = restrict_scalars(B, FlintQQ)
+  C, CtoB = restrict_scalars(B, FlintQQ)
   OC = maximal_order(C)
   M = zero_matrix(base_ring(A), degree(OC), dim(A))
   for i = 1:degree(OC)

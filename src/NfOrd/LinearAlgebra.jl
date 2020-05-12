@@ -1719,6 +1719,22 @@ function Base.hash(P::PMat, h::UInt)
 end
 
 # Returns x in K with xa integral and coprime to m
+
+function integral_and_coprime_to(a::NfOrdFracIdl, m::NfAbsOrdIdl)
+  O = order(m)
+  b = inv(a)
+  B = absolute_basis(b)
+  while true
+    z = rand(B, -1:1)
+    I = z * a
+    I = simplify(I)
+    @assert denominator(I) == 1
+    if iscoprime(I.num, m)
+      return z
+    end
+  end
+end
+
 function integral_and_coprime_to(a::Union{ NfOrdFracIdl, NfRelOrdFracIdl }, m::Union{ NfAbsOrdIdl, NfRelOrdIdl })
   O = order(m)
 
