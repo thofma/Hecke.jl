@@ -1,5 +1,6 @@
 module Suri
 using Hecke
+import Hecke:valuation
 
 #= follows Sebastian Posur's idea
   Start with a pseudo_matrix with ideals A_i and rows alpha_i
@@ -86,7 +87,9 @@ function Hecke.invmod(A::Generic.MatSpaceElem{nf_elem}, X::fmpz)
     AX = map_entries(x->mq(zk(d*x)), A)
     BX = inv(AX)*invmod(d, X)
   end
-  return map_entries(x->k(preimage(mq, x)), BX)
+  B = map_entries(x->k(preimage(mq, x)), BX)
+  my_mod_sym!(B, X)
+  return B
 end
 
 function Hecke.invmod(A::fmpz_mat, X::fmpz)
@@ -131,6 +134,51 @@ function my_mod_sym!(A::Generic.MatSpaceElem{nf_elem}, X::fmpz)
   end
 end
 
+#modelled after
+#  http://www.ti3.tu-harburg.de/paper/rump/NiRuOi11.pdf
+#  On the generation of very ill-conditioned integer matrices
+#  Tetsuo Nishi1a, Siegfried M. Rump, and Shin’ichi Oishi
+#  Nonlinear Theory and Its Applications, IEICE, vol. 2, no. 2, pp. 226N245
+#should generate a matrix where the entries are roughly U^2 (U a range)
+#determinant 1, and the inverse should have much larger coefficients.
+function bad_mat(R::Hecke.Ring, n::Int, U)
+  z = zero_matrix(R, n, n)
+  for i=1:n-1
+    z[i+1,i] = one(R)
+    z[i+1, i+1] = rand(R, U)
+  end
+  d = one(R)
+  for i=n:-1:1
+    k = rand(R, U)
+    z[1, i] = d+k*z[i,i]
+    d = k
+  end
+  return z
+end
+
+# a random invertable matrix with coeffs in R
+#start with identity, do i rounds of random elementary row and column 
+#operations
+function rand_gl(R::Hecke.Ring, n::Int, u, i::Int)
+  A = identity_matrix(R, n)
+  for j=1:i
+    a = rand(R, u)
+    mu = rand(1:n)
+    nu = rand(1:n)
+    if mu == nu
+      continue
+    end
+    A[mu, :] += a*A[nu, :]
+    a = rand(R, u)
+    mu = rand(1:n)
+    nu = rand(1:n)
+    if mu == nu
+      continue
+    end
+    A[:, mu] += a*A[:, nu]
+  end
+  return A
+end
 
 function DoublePlusOne(A, X::fmpz, k::Int)
   R = base_ring(A)
