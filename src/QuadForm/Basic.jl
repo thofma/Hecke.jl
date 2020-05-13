@@ -281,7 +281,7 @@ end
 function _discriminant(G)
   d = det(G)
   n = nrows(G)
-  if n == 0 || n == 1
+  if mod(n, 4) == 0 || mod(n, 4) == 1
     return d
   else
     return -d

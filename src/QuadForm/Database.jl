@@ -36,7 +36,7 @@ const default_lattice_db = Ref(joinpath(pkgdir, "data/lattices"))
 
 function lattice_database()
   if !isfile(joinpath(pkgdir, "data/lattices"))
-    download_lattice_data()
+    download_data(data = "quadratic_lattices")
   end
   return LatticeDB(default_lattice_db[])
 end
@@ -177,7 +177,7 @@ end
 
 function quadratic_lattice_database()
   if !isfile(joinpath(pkgdir, "data/quadratic_lattices"))
-    download_lattice_data()
+    download_data(data = "quadratic_lattices")
   end
   return QuadLatDB(default_quad_lattice_db[])
 end
@@ -278,7 +278,7 @@ end
 
 function hermitian_lattice_database()
   if !isfile(joinpath(pkgdir, "data/hermitian_lattices"))
-    download_lattice_data()
+    download_data(data = "hermitian_lattices")
   end
   return HermLatDB(default_herm_lattice_db[])
 end

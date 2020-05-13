@@ -681,7 +681,7 @@ end
 Returns the Witt invariant of the rational span of $L$ at $p$.
 """
 function witt_invariant(L::QuadLat, p::NfAbsOrdIdl)
-  return hasse_invariant(rational_span(L), p)
+  return witt_invariant(rational_span(L), p)
 end
 
 function witt_invariant(L::QuadLat, p::InfPlc)
@@ -1586,7 +1586,9 @@ function guess_max_det(L::QuadLat, p)
       v = witt_invariant(L, p) == 1 ? -e * n : 2 - e * n
     else
       vd = valuation(d, p)
-      v =  2 * div(qd, 2) + e * (1 - n)
+      # I cannot use div(qd, 2), because qd might be negative and I need to round
+      # toward 0, e.g., I need div(-3, 2) to be -2 and not -1.
+      v = vd - 2 * Int(fdiv(fmpz(qd), 2)) + e * (1 - n)
       if iseven(vd) && qd == vd + e && witt_invariant(L, p) == -1
         v = -e*n + 2
       end
@@ -3703,9 +3705,25 @@ end
 
 ################################################################################
 #
+#  Conversion to parseble Hecke code
+#
+################################################################################
+
+################################################################################
+#
 #  Conversion to Magma
 #
 ################################################################################
+
+function to_hecke(L::AbsLat; target = "L")
+  return to_hecke(stdout, L, target = target)
+end
+
+function to_hecke_string(L::AbsLat; target = "L")
+  b = IOBuffer()
+  to_hecke(b, L, target = target)
+  return String(take!(b))
+end
 
 function to_magma(L::AbsLat; target = "L")
   return to_magma(stdout, L, target = target)
@@ -3715,6 +3733,32 @@ function to_magma_string(L::AbsLat; target = "L")
   b = IOBuffer()
   to_magma(b, L, target = target)
   return String(take!(b))
+end
+
+function to_hecke(io::IO, L::QuadLat; target = "L")
+  K = nf(base_ring(L))
+  println(io, "Qx, x = PolynomialRing(FlintQQ, \"x\", cached = false)")
+  f = defining_polynomial(K)
+  pol = string(f)
+  pol = replace(pol, string(var(parent(f))) => "x")
+  println(io, "f = ", pol, ";")
+  println(io, "K, a = number_field(f)")
+  F = gram_matrix(ambient_space(L))
+  Fst = "[" * split(string([F[i, j] for i in 1:nrows(F) for j in 1:ncols(F)]), '[')[2]
+  Fst = replace(Fst, string(var(K)) => "a")
+  println(io, "D = matrix(K, ", nrows(F), ", ", ncols(F), ", ", Fst, ");")
+  gens = generators(L)
+  Gs = "["
+  for i in 1:length(gens)
+    g = gens[i]
+    Gs = Gs * "[" * split(string(g), "[")[2]
+    if i < length(gens)
+      Gs = Gs * ", "
+    end
+  end
+  Gs = Gs * "]"
+  println(io, "gens = ", Gs)
+  println(io, target, " = quadratic_lattice(K, generators = gens, gram_ambient_space = D)")
 end
 
 function to_magma(io::IO, L::HermLat; target = "L")

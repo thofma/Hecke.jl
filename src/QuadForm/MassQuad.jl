@@ -1,15 +1,12 @@
 export mass
 
-#// returns q^-dim(G) * #G(F_q)
+################################################################################
 #
-#function WittToHasse(Dim, Det, Finite)
-#  K:= Parent(Det);
-#  c:= K ! case < Dim mod 8 | 3: -Det, 4: -Det, 5: -1, 6: -1, 7: Det, 0: Det, default : 1 >;
-#  return { x[1] : x in Finite | x[2] ne HilbertSymbol(K ! -1, c, x[1]) };
-#end function;
+#  Local factor of a maximal lattice in K*L following Shimura and Gan-Hanke-Yu.
 #
-#// Local factor of a maximal lattice in K*L following Shimura / Gan-Hanke-Yu.
-function _local_factor_maximal(L, p)
+################################################################################
+
+function _local_mass_factor_maximal(L, p)
   m = rank(L)
   r = div(m, 2)
   if m == 1
@@ -19,6 +16,7 @@ function _local_factor_maximal(L, p)
   w = witt_invariant(L, p)
   d = discriminant(ambient_space(L))
   q = norm(p)
+
   if isodd(m)
     if isodd(valuation(d, p))
       return fmpq(q^r + w, 2)
@@ -50,7 +48,13 @@ _get_eps(::PosInf) = 1
 
 _get_eps(::Any) = -1
 
-function _local_factor_unimodular(L::QuadLat, p)
+################################################################################
+#
+#  Local factor of a unimodular lattice
+#
+################################################################################
+
+function _local_mass_factor_unimodular(L::QuadLat, p)
   d, s, w, a, _, G = data(_genus_symbol_kirschmer(L, p))
   @assert s == [0] && isdyadic(p)
   d = d[1]
@@ -66,8 +70,10 @@ function _local_factor_unimodular(L::QuadLat, p)
     c = quadratic_defect(disc, p)
     if d == 2
       if a < b && b == 2 && c == 2 * e
+        @assert e - a - 1 > 0
         lf = fmpq(q^div(e - a - 1, 2) * (q - _get_eps(c)))
       elseif b == e && a + e + 1 <= c && c < 2 * e
+        @assert c - e - a > 0
         lf = fmpq(2 * q^div(c - e - a, 2))
       else
         lf = fmpq(1)
@@ -77,7 +83,7 @@ function _local_factor_unimodular(L::QuadLat, p)
         lf = fmpq(1)
       elseif c >= 2 * e
         lf = fmpq(q^(Int((e - a)*(r - 1//2) - r)) * (q^r - _get_eps(c)))
-      elseif a + e + 1 <= e
+      elseif a + e + 1 <= c
         lf = fmpq(2 * q^(Int((c - e - a - 1) * (r - 1//2))))
       else
         lf = fmpq(q^((c - e - a -1) * (r -1)))
@@ -85,7 +91,7 @@ function _local_factor_unimodular(L::QuadLat, p)
     else # a + b odd
       if c == a + b
         lf = fmpq(1)
-      elseif c == 2 * e
+      elseif c >= 2 * e
         # We first compute the Hilbert symbol hs of (alpha, 1+gamma).
         hs = (c isa PosInf || iseven(a)) ? 1 : -1
         # Compute c'
@@ -114,7 +120,7 @@ function _local_factor_unimodular(L::QuadLat, p)
       elseif b == e
         lf = fmpq(2 * q^(Int((c - e - a) * (r - 1//2))))
       else
-        lf = fmpq(q^((2 *r - 2) - 1) * q^(Int((c - a -b - 2) * (r - 1//2) + 1)))
+        lf = fmpq(q^(2 *r - 2) - 1) * q^(Int((c - a - b - 2) * (r - 1//2) + 1))
       end
     end
   else # odd dimension
@@ -129,16 +135,178 @@ function _local_factor_unimodular(L::QuadLat, p)
       lf = (w == 1 ? fmpq(q^(2 * r +2) - 1, 2) : fmpq(q + 1)) * fmpq(q^((r + 1) * (e - b - 1)))
     end
   end
-  return _local_factor_maximal(rescale(L, 2), p) * lf
+  return _local_mass_factor_maximal(rescale(L, 2), p) * lf
 end
 
-# General local factor driver
+################################################################################
+#
+#  Local factor of lattices at dyadic unramified primes, apres S. Cho.
+#
+################################################################################
 
-function local_factor(L::QuadLat, p)
+function _local_mass_factor_cho(L, p)
+  @assert isdyadic(p) && ramification_index(p) == 1
+  m = rank(L)
+  R = base_ring(L)
+  K = nf(R)
+  _, G, S = jordan_decomposition(L, p)
+  k, h = ResidueField(R, p)
+  hext = extend(h, K)
+  V = []
+
+  for s in S
+    AG = diagonal_matrix([2^(S[j] < s ? 2*(s - S[j]) : 0) * G[j] for j in 1:length(G)])
+    _,B = left_kernel(matrix(k, nrows(AG), 1, [hext(d//2^s) for d in diagonal(AG)]))
+    @assert all(issquare(x)[1] for x in B)
+    B = map_entries(x -> sqrt(x), B)
+    BK = map_entries(x -> hext\x, B)
+    Q = 1//K(2)^(s + 1) * BK * AG * transpose(BK)
+    for i in 1:ncols(Q)
+      for j in 1:ncols(Q)
+        if i > j
+          Q[i, j] = 0
+        elseif i < j 
+          Q[i, j] *= 2
+        end
+      end
+    end
+
+    Q = map_entries(hext, Q)
+
+    BB = []
+    for i in 1:nrows(B)
+      b = zero_matrix(k, 1, nrows(B))
+      b[1, i] = 1
+      push!(BB, b)
+    end
+
+    @assert matrix(k, length(BB), length(BB), [ (b * Q * transpose(c))[1, 1] + (c * Q * transpose(b))[1, 1] for b in BB, c in BB]) == Q + transpose(Q)
+
+    _, N = left_kernel(Q + transpose(Q))
+    ok = isdiagonal(N * Q * transpose(N))
+    @assert ok
+    D = diagonal(N * Q * transpose(N))
+
+    @assert ok
+    _, rad = left_kernel(matrix(k, length(D), 1, D))
+
+    rad = rad * N
+
+    VV = vector_space(k, nrows(B))
+
+    SS, mSS = sub(VV, [ VV([rad[i, j] for j in 1:ncols(rad) ]) for i in 1:nrows(rad)])
+    W, g = quo(VV, SS)
+
+    @assert length(rels(W)) == 0
+
+    if ngens(W) == 0
+      push!(V, (s, zero_matrix(k, 0, 0)))
+    else
+      BBelts = elem_type(k)[]
+      for w in gens(W)
+        _w = preimage(g, w)
+        for j in 1:rank(VV)
+          push!(BBelts, _w[j])
+        end
+      end
+      BB = matrix(k, ngens(W), ncols(Q), BBelts)
+      push!(V, (s, BB * Q * transpose(BB)))
+    end
+  end
+
+  M = Int[ ncols(g) for g in G]
+
+  PT = Bool[ valuation(norm(quadratic_lattice(K, identity_matrix(K, nrows(G[i])), gram_ambient_space = G[i])), p) == S[i] for i in 1:length(S) ] # parity type I
+  # could try with get_norm_valuation_from_gram_matrix(G[i], p)
+  
+  alpha = Int[]
+
+  for i in 1:length(G)
+    j = findfirst(v -> v[1] == S[i], V)
+    @assert j !== nothing
+    v = V[j]
+    if ncols(v[2]) != 0 && (!((S[i] - 1) in S) || !(PT[i-1])) && (!((S[i] + 1) in S) || !PT[i + 1])
+      push!(alpha, i)
+    end
+  end
+
+  beta = Int[]
+  for i in 1:length(G)
+    if !PT[i]
+      continue
+    end
+
+    idx = findfirst(isequal(S[i] + 2), S)
+    if idx === nothing || !PT[idx]
+      push!(beta, i)
+    end
+  end
+
+  rk = - sum(divexact(ncols(Q[2]) * (ncols(Q[2]) - 1), 2) for Q in V) + divexact(m * (m - 1), 2)
+  @assert rk >= 0 # rk of maximal redundant quotient
+
+  q = norm(p)
+  res = 2^(length(alpha) + length(beta))
+  N = count(PT) - length([i for i in 1:(length(S)-1) if PT[i] && PT[i + 1] && (S[i + 1] == S[i] + 1)]) + sum(Int[M[i] for i in 1:length(S) if !PT[i]])
+
+  for i in 1:length(S)
+    N += S[i] * divexact(M[i] * (M[i] + 1), 2)
+    N += S[i] * M[i] * sum(Int[M[j] for j in (i + 1):length(S)])
+  end
+
+  for v in V
+    mi = ncols(v[2])
+    local QFT
+    if mi  == 0
+      continue
+    elseif isodd(mi)
+      QFT = "O"
+    elseif mi > 0
+      QFT = quadratic_form_type(v[2]) == 1 ? "O+" : "O-"
+    end
+    res *= fmpq(group_order(QFT, mi, q))//2
+  end
+
+  beta = fmpq(1, 2) * q^N * res
+
+  exp = fmpq(m + 1, 2) * sum(S[i] * M[i] for i in 1:length(S)) # from det
+
+  if isodd(m)
+    exp += fmpq(m + 1, 2)
+    H = group_order("O", m, q)
+  else
+    exp += m
+    d = discriminant(ambient_space(L))
+    if islocal_square(d, p)
+      H = group_order("O+", m, q)
+    else
+      Kt, t = PolynomialRing(K, "t", cached = false)
+      E, = number_field(t^2 - denominator(d)^2 * d) # broken for non-integral polynomials
+      v = valuation(discriminant(maximal_order(E)), p)
+      if v == 0
+        H = group_order("O-", m, q)
+      else
+        H = group_order("O", m - 1, q)
+        exp += v * fmpq(1 - m, 2)
+      end
+    end
+  end
+
+  @assert isintegral(exp)
+
+  return q^Int(FlintZZ(exp)) * H//2 * fmpq(1)//beta
+end
+
+################################################################################
+#
+#  Local factor
+#
+################################################################################
+
+# General local factor driver
+function local_mass_factor(L::QuadLat, p)
   # The local factor of L at the prime p in the Minkowski-Siegel mass formula
   @req order(p) == base_ring(L) "Ideal not an ideal of the base ring of the lattice"
-
-  @show "adsad", p
 
   if rank(L) == 1
     return fmpq(1)
@@ -149,13 +317,13 @@ function local_factor(L::QuadLat, p)
 
   if isdyadic(p)
     if ramification_index(p) == 1
-      return _local_factor_cho(L, p)
+      return _local_mass_factor_cho(L, p)
     elseif ismaximal(L, p)[1]
       s = uniformizer(p)^(-valuation(norm(L), p))
-      return _local_factor_maximal(rescale(L, s), p)
+      return _local_mass_factor_maximal(rescale(L, s), p)
     elseif ismodular(L, p)[1]
       s = uniformizer(p)^(-valuation(scale(L), p))
-      return _local_factor_unimodular(rescale(L, s), p)
+      return _local_mass_factor_unimodular(rescale(L, s), p)
     else
       a = _isdefinite(rational_span(L))
       def = !iszero(a)
@@ -177,7 +345,7 @@ function local_factor(L::QuadLat, p)
         push!(chain, LL)
         ok, LL = ismaximal_integral(LL, p)
       end
-      f = _local_factor_maximal(L, p)
+      f = _local_mass_factor_maximal(L, p)
 
       for i in 1:(length(chain) - 1)
         M, E = maximal_sublattices(chain[i + 1], p, use_auto = false)# should be use_auto = def)
@@ -195,14 +363,11 @@ function local_factor(L::QuadLat, p)
     return fmpq(1)
   end
 
-  @show s
-
   m = rank(L)
   q = norm(p)
   if isodd(m)
     f = group_order("O+", m, q)
   else
-    @show "here"
     d = discriminant(ambient_space(L))
     if isodd(valuation(d, p))
       f = group_order("O+", m - 1, q)
@@ -213,8 +378,6 @@ function local_factor(L::QuadLat, p)
     end
   end
 
-  @show f
-
   N = fmpq(0)
 
   for i in 1:length(s)
@@ -222,51 +385,41 @@ function local_factor(L::QuadLat, p)
     ri = sum(Int[ncols(G[j]) for j in (i + 1):length(s)])
     det = _discriminant(G[i])
     sq = islocal_square(det, p)[1]
-    @show i, mi, ri, sq, s[i]
     f = divexact(f, group_order(sq ? "O+" : "O-", mi, q))
-    @show f
     N = N - s[i] * divexact(mi*(mi+1), 2) - s[i] * mi * ri
-    @show N
     N = N + s[i] * mi * (m + 1)* 1//2 # volume?
-    @show N
   end
-
-  @show N
 
   if iseven(m) && isodd(valuation(d, p))
     N = N + fmpq(1 - m, 2)
   end
 
-  @show N
-
   @assert isintegral(N)
-  @show q^Int(FlintZZ(N)) * f
 
   return q^Int(FlintZZ(N)) * f
 end
 
-function mass_exact(L::QuadLat)
+function mass(L::QuadLat)
   fl, m = _exact_standard_mass(L)
 
   if fl
-    return m * local_mass(L)
+    return abs(m) * local_mass(L)
   end
 
   lm = local_mass(L)
 
   prec = 10
-  mu = _minkowski_multiple(rank(L) * absolute_degree(nf(base_ring(L))))
+  mu = _minkowski_multiple(nf(base_ring(L)), rank(L))
 
   d = mu * numerator(lm)
 
   while true
     z = d * _standard_mass(L, prec)
-    @show z
     fl, b = unique_integer(z)
     if fl
-      return b//d * lm
+      return abs(b)//d * lm
     end
-    prec += 1
+    prec += 2
   end
 end
 
@@ -287,7 +440,7 @@ function _exact_standard_mass(L::QuadLat)
   standard_mass = FlintQQ(2)^(-absolute_degree(K) * r)
   if isodd(m)
     #standard_mass *= prod(dedekind_zeta_exact(K, -i) for i in 1:2:(m-2))
-    if _exact_dedekind_zeta_cheap(K, false)
+    if _exact_dedekind_zeta_cheap(K)
       standard_mass *= prod(dedekind_zeta_exact(K, -i) for i in 1:2:(m-2))
     else
       return false, fmpq(0)
@@ -295,7 +448,7 @@ function _exact_standard_mass(L::QuadLat)
   else
     #standard_mass *= prod(dedekind_zeta_exact(K, -i) for i in 1:2:(m-3))
 
-    if _exact_dedekind_zeta_cheap(K, false)
+    if _exact_dedekind_zeta_cheap(K)
       standard_mass *= prod(dedekind_zeta_exact(K, -i) for i in 1:2:(m-3))
     else
       return false, fmpq(0)
@@ -303,7 +456,7 @@ function _exact_standard_mass(L::QuadLat)
 
     dis = discriminant(rational_span(L))
     if issquare(dis)[1]
-      if _exact_dedekind_zeta_cheap(K, false)
+      if _exact_dedekind_zeta_cheap(K)
         standard_mass *= dedekind_zeta_exact(K, 1 - r)
       else
         return false, fmpq(0)
@@ -311,39 +464,23 @@ function _exact_standard_mass(L::QuadLat)
     else
       Kt, t = PolynomialRing(K, "t", cached = false)
       E, = NumberField(t^2 - denominator(dis)^2 * dis, "b", cached = false)
-      #standard_mass *= dedekind_zeta_exact(E, 1 - r, true)
-      @show K, E
-      if _exact_dedekind_zeta_cheap(E, true)
-        standard_mass *= dedekind_zeta_exact(Eabs, 1 - r, true)
+      Eabs, = absolute_field(E)
+      if _exact_L_function_cheap(E)
+        standard_mass *= _exact_L_function(E, 1 - r)
       else
         return false, fmpz(0)
       end
-      #wprec = prec
-      #local relzeta
-      #while true
-      #  @show zK = dedekind_zeta(K, 1 - r, wprec)
-      #  Eabs, _ = absolute_field(E)
-      #  @show zE = dedekind_zeta(Eabs, 1 - r, wprec)
-      #  relzeta = zE//zK
-      #  if radiuslttwopower(relzeta, -prec)
-      #    break
-      #  end
-      #  wprec = wprec + 1
-      #end
-      #standard_mass *= relzeta
-      ##standard_mass *= dedekind_zeta_exact(Eabs, 1 - r, prec, true)
     end
   end
 
-  return true, standard_mass
+  return true, abs(standard_mass)
 end
 
 function local_mass(L::QuadLat)
   lf = fmpq(1)
 
   for p in bad_primes(L, even = true)
-    @show minimum(p), local_factor(L, p)
-    lf *= local_factor(L, p)
+    lf *= local_mass_factor(L, p)
   end
 
   return lf
@@ -363,13 +500,9 @@ function _standard_mass(L::QuadLat, prec::Int = 10)
 
   standard_mass = FlintQQ(2)^(-absolute_degree(K) * r)
   if isodd(m)
-    #standard_mass *= prod(dedekind_zeta_exact(K, -i) for i in 1:2:(m-2))
     standard_mass *= prod(dedekind_zeta(K, -i, prec) for i in 1:2:(m-2))
   else
-    #standard_mass *= prod(dedekind_zeta_exact(K, -i) for i in 1:2:(m-3))
     standard_mass *= prod(dedekind_zeta(K, -i, prec) for i in 1:2:(m-3))
-
-    @show standard_mass
 
     dis = discriminant(rational_span(L))
     if issquare(dis)[1]
@@ -378,15 +511,10 @@ function _standard_mass(L::QuadLat, prec::Int = 10)
     else
       Kt, t = PolynomialRing(K, "t", cached = false)
       E, = NumberField(t^2 - denominator(dis)^2 * dis, "b", cached = false)
-      #standard_mass *= dedekind_zeta_exact(E, 1 - r, true)
-      @show K, E
       wprec = prec
       local relzeta
       while true
-        @show zK = dedekind_zeta(K, 1 - r, wprec)
-        Eabs, _ = absolute_field(E)
-        @show zE = dedekind_zeta(Eabs, 1 - r, wprec)
-        relzeta = zE//zK
+        relzeta = _L_function(E, 1 - r, wprec)
         if radiuslttwopower(relzeta, -prec)
           break
         end
@@ -415,13 +543,9 @@ function _mass(L::QuadLat, standard_mass = 0, prec::Int = 10)
   if standard_mass == 0
     standard_mass = FlintQQ(2)^(-absolute_degree(K) * r)
     if isodd(m)
-      #standard_mass *= prod(dedekind_zeta_exact(K, -i) for i in 1:2:(m-2))
       standard_mass *= prod(dedekind_zeta(K, -i, prec) for i in 1:2:(m-2))
     else
-      #standard_mass *= prod(dedekind_zeta_exact(K, -i) for i in 1:2:(m-3))
       standard_mass *= prod(dedekind_zeta(K, -i, prec) for i in 1:2:(m-3))
-
-      @show standard_mass
 
       dis = discriminant(rational_span(L))
       if issquare(dis)[1]
@@ -431,14 +555,10 @@ function _mass(L::QuadLat, standard_mass = 0, prec::Int = 10)
         Kt, t = PolynomialRing(K, "t", cached = false)
         E, = NumberField(t^2 - denominator(dis)^2 * dis, "b", cached = false)
         #standard_mass *= dedekind_zeta_exact(E, 1 - r, true)
-        @show K, E
         wprec = prec
         local relzeta
         while true
-          @show zK = dedekind_zeta(K, 1 - r, wprec)
-          Eabs, _ = absolute_field(E)
-          @show zE = dedekind_zeta(Eabs, 1 - r, wprec)
-          relzeta = zE//zK
+          relzeta = _L_function(E, 1 - r, wprec)
           if radiuslttwopower(relzeta, -prec)
             break
           end
@@ -452,217 +572,18 @@ function _mass(L::QuadLat, standard_mass = 0, prec::Int = 10)
 
   mass = abs(standard_mass)
 
-  @show mass
-
   lf = fmpq(1)
 
   for p in bad_primes(L, even = true)
-    @show minimum(p), local_factor(L, p)
-    lf *= local_factor(L, p)
+    lf *= local_mass_factor(L, p)
   end
 
   return mass, lf
 end
 
-function mass(L::QuadLat, prec::Int = 10)
+function mass(L::QuadLat, prec)
   m, lf = _mass(L, 0, prec)
   return m * lf
-end
-
-# Local factor for dyadic unramified p S. Cho.
-function _local_factor_cho(L, p)
-  @assert isdyadic(p) && ramification_index(p) == 1
-  @show "here"
-  @show p
-  m = rank(L)
-  R = base_ring(L)
-  K = nf(R)
-  _, G, S = jordan_decomposition(L, p)
-  k, h = ResidueField(R, p)
-  hext = extend(h, K)
-  V = []
-
-  for s in S
-    #@show s
-    AG = diagonal_matrix([2^(S[j] < s ? 2*(s - S[j]) : 0) * G[j] for j in 1:length(G)])
-    _,B = left_kernel(matrix(k, nrows(AG), 1, [hext(d//2^s) for d in diagonal(AG)]))
-    @assert all(issquare(x)[1] for x in B)
-    B = map_entries(x -> sqrt(x), B)
-    #B:= Matrix(k, Ncols(B), [ Sqrt(x): x in Eltseq(B) ]);
-
-    #@show matrix(k, nrows(AG), 1, [hext(d//2^s) for d in diagonal(AG)])
-    BK = map_entries(x -> hext\x, B)
-    #@show BK
-    Q = 1//K(2)^(s + 1) * BK * AG * transpose(BK)
-    for i in 1:ncols(Q)
-      for j in 1:ncols(Q)
-        if i > j
-          Q[i, j] = 0
-        elseif i < j 
-          Q[i, j] *= 2
-        end
-      end
-    end
-
-    #@show Q
-    Q = map_entries(hext, Q)
-    #@show Q
-
-    BB = []
-    for i in 1:nrows(B)
-      b = zero_matrix(k, 1, nrows(B))
-      b[1, i] = 1
-      push!(BB, b)
-    end
-
-    #@show BB
-    #@show Q + transpose(Q)
-    #@show matrix(k, length(BB), length(BB), [ (b * Q * transpose(c))[1, 1] + (c * Q * transpose(b))[1, 1] for b in BB, c in BB])
-    @assert matrix(k, length(BB), length(BB), [ (b * Q * transpose(c))[1, 1] + (c * Q * transpose(b))[1, 1] for b in BB, c in BB]) == Q + transpose(Q)
-
-#    assert Matrix(k, #BB, [ (b*Q, c) + (c*Q, b): b, c in BB ]) eq Q + Transpose(Q);
-#
-    _, N = left_kernel(Q + transpose(Q))
-    #@show N
-    ok = isdiagonal(N * Q * transpose(N))
-    @assert ok
-    D = diagonal(N * Q * transpose(N))
-    #@show N * Q * transpose(N)
-    #@show D
-
-    @assert ok
-    #@show matrix(k, length(D), 1, D)
-    _, rad = left_kernel(matrix(k, length(D), 1, D))
-
-    rad = rad * N
-
-    #@show rad
-
-    VV = vector_space(k, nrows(B))
-
-    SS, mSS = sub(VV, [ VV([rad[i, j] for j in 1:ncols(rad) ]) for i in 1:nrows(rad)])
-    W, g = quo(VV, SS)
-
-    @assert length(rels(W)) == 0
-
-    if ngens(W) == 0
-      push!(V, (s, zero_matrix(k, 0, 0)))
-    else
-      #@show Q
-      #@show [ preimage(g, w) for w in gens(W)]
-      BBelts = elem_type(k)[]
-      for w in gens(W)
-        _w = preimage(g, w)
-        for j in 1:rank(VV)
-          push!(BBelts, _w[j])
-        end
-      end
-      BB = matrix(k, ngens(W), ncols(Q), BBelts)
-      push!(V, (s, BB * Q * transpose(BB)))
-    end
-  end
-
-  M = [ ncols(g) for g in G]
-
-  PT = [ valuation(norm(quadratic_lattice(K, identity_matrix(K, nrows(G[i])), gram_ambient_space = G[i])), p) == S[i] for i in 1:length(S) ] # parity type I
-  # could try with # get_norm_valuation_from_gram_matrix(G[i], p)
-  #
-  alpha = []
-  #@show PT
-  #@show M
-  for i in 1:length(G)
-    j = findfirst(v -> v[1] == S[i], V)
-    @assert j !== nothing
-    v = V[j]
-    if ncols(v[2]) != 0 && (!((S[i] - 1) in S) || !(PT[i-1])) && (!((S[i] + 1) in S) || !PT[i + 1])
-      push!(alpha, i)
-    end
-  end
-
-  beta = []
-  for i in 1:length(G)
-    if !PT[i]
-      continue
-    end
-
-    idx = findfirst(isequal(S[i] + 2), S)
-    if idx === nothing || !PT[idx]
-      push!(beta, i)
-    end
-  end
-
-  rk = - sum(divexact(ncols(Q[2]) * (ncols(Q[2]) - 1), 2) for Q in V) + divexact(m * (m - 1), 2)
-  @assert rk >= 0 # rk of maximal redundant quotient
-
-  q = norm(p)
-  res = 2^(length(alpha) + length(beta))
-  N = count(PT) - length([i for i in 1:(length(S)-1) if PT[i] && PT[i + 1] && (S[i + 1] == S[i] + 1)]) + sum(Int[M[i] for i in 1:length(S) if !PT[i]])
-
-  for i in 1:length(S)
-    N += S[i] * divexact(M[i] * (M[i] + 1), 2)
-    N += S[i] * M[i] * sum(Int[M[j] for j in (i + 1):length(S)])
-  end
-
-
-
-  for v in V
-    mi = ncols(v[2])
-    local QFT
-    if mi  == 0
-      continue
-    elseif isodd(mi)
-      QFT = "O"
-    elseif mi > 0
-      QFT = quadratic_form_type(v[2]) == 1 ? "O+" : "O-"
-    end
-
-    #@show QFT
-
-    #@show fmpq(group_order(QFT, mi, q))//2
-
-    res *= fmpq(group_order(QFT, mi, q))//2
-    #@show res
-  end
-
-  #@show res
-
-  beta = fmpq(1, 2) * q^N * res
-
-  exp = fmpq(m + 1, 2) * sum(S[i] * M[i] for i in 1:length(S)) # from det
-
-  #@show exp
-
-  if isodd(m)
-    exp += fmpq(m + 1, 2)
-    H = group_order("O", m, q)
-  else
-    exp += m
-    d = discriminant(ambient_space(L))
-    #@show d
-    #@show exp
-    if islocal_square(d, p)
-      #@show "locals"
-      H = group_order("O+", m, q)
-    else
-      #@show "localns"
-      Kt, t = PolynomialRing(K, "t", cached = false)
-      E, = number_field(t^2 - denominator(d)^2 * d) # broken for non-integral polynomials
-      v = valuation(discriminant(maximal_order(E)), p)
-      #@show v
-      if v == 0
-        H = group_order("O-", m, q)
-      else
-        H = group_order("O", m - 1, q)
-        exp += v * fmpq(1 - m, 2)
-      end
-    end
-  end
-
-  #@show exp
-
-  @assert isintegral(exp)
-
-  return q^Int(FlintZZ(exp)) * H//2 * fmpq(1)//beta
 end
 
 ################################################################################
@@ -671,42 +592,545 @@ end
 #
 ################################################################################
 
-function _exact_dedekind_zeta_cheap(K, relative = false)
+# To probe if we can compute the L-function of the relative extension E cheaply.
+function _exact_L_function_cheap(E)
+  K = base_field(E)
 
-  if absolute_degree(K) == 1
-    return true
-  elseif absolute_degree(K) == 2 && istotally_real(K)
-    return true
+  if !istotally_real(K)
+    return false
   end
 
-  return false
+  Eabs, = absolute_field(E)
+
+  if !istotally_real(Eabs)
+    return false
+  end
+
+  return true
 end
 
-function _eval_dedekind_zeta(K, z, relative)
-  if isodd(z)
-    k = 1 - z
-    if absolute_degree(K) == 1
-      return bernoulli(k)//-k
-    elseif absolute_degree(K) == 2 && istotally_real(K)
-      d = discriminant(maximal_order(K))
-      if relative
-        return _bernoulli_kronecker(k, d)//-k
-      else
-        return bernoulli(k) * _bernoulli_kronecker(k, d)//k^2
-      end
-    else
-      throw(NotImplemented())
-    end
+# L-function of a relative quadratic extension E at the negative integer s
+function _L_function(E, s, prec)
+  if s < 0
+    return _L_function_negative(E, s, prec)
   else
     throw(NotImplemented())
   end
 end
 
-function dedekind_zeta_exact(K, z, relative = false)
-  #{Evaluates the Dedekind zeta function of K at the negative integer z}
-  @req (relative && z == 0 || z < 0) "The argument must be a negative integer"
-  return _eval_dedekind_zeta(K, z, relative)
+function _L_function_negative(E, s, prec)
+  K = base_field(E)
+  Eabs, = absolute_field(E)
+  @assert istotally_complex(Eabs)
+
+  # I want to reflect to 1 - s
+  sp = 1 - s
+  d = abs(divexact(discriminant(maximal_order(Eabs)), discriminant(maximal_order(K))))
+  @assert isodd(sp)
+
+  n = degree(K)
+
+  wprec = 8 * prec 
+  R = ArbField(wprec, cached = false)
+
+  local pref::arb
+
+  while true
+    R = ArbField(wprec, cached = false)
+    pref = inv((2 * const_pi(R)))^sp * (-1)^div(sp - 1, 2) * 2  * factorial(fmpz(sp - 1))
+    pref = pref^n
+    pref = pref * R(d)^(sp - 1//2)
+    if radiuslttwopower(pref, -64)
+      break
+    end
+    wprec = 2 * wprec
+  end
+
+  i = 0
+
+  while true
+    i += 1
+    z = _L_function_positive(E, sp, prec + i)
+    res = z * pref
+    if radiuslttwopower(res, -prec)
+      return res
+    end
+  end
 end
+
+function _L_function_positive(E, s, prec)
+  K = base_field(E)
+  Eabs, = absolute_field(E)
+  @assert istotally_complex(Eabs)
+  @assert s > 1
+
+  R = ArbField(4 * prec, cached = false)
+
+  i = 0
+  while true
+    i += 1
+
+    z = dedekind_zeta(Eabs, s, prec + i)//dedekind_zeta(K, s, prec + (i + 2))
+    if radiuslttwopower(z, -prec)
+      return z
+    end
+  end
+end
+
+# This is an exact version, but I don't think.
+function _exact_L_function(E, s)
+  if absolute_degree(E) == 2
+    k = 1 - s
+    Eabs, = absolute_field(E)
+    if istotally_real(Eabs)
+      d = discriminant(maximal_order(Eabs))
+      return _bernoulli_kronecker(k, d)//-k
+    end
+  end
+
+  Eabs, = absolute_field(E)
+  K = base_field(E)
+  return dedekind_zeta_exact(Eabs, s)//dedekind_zeta_exact(K, s)
+end
+
+# Probe if the exact computation of the Dedekind zeta function is cheap
+function _exact_dedekind_zeta_cheap(K)
+  return istotally_real(K)
+end
+
+################################################################################
+#
+#  Dedekind zeta function evaluation a la Attwell-Duval
+#
+################################################################################
+
+# This works :)
+# 
+# But it is really slow for s = -1 (s = 2), since the Euler product
+# converges only "linear", that is doubling the number of primes only doubles
+# the precision.
+
+function _truncated_euler_product(K::AnticNumberField, T::Int, s, RR::ArbField)
+  z = one(RR)
+  OK = maximal_order(K)
+  p = 2
+  #@show s, T
+  while p <= T
+    dectyp = prime_decomposition_type(OK, p)
+    for (f, e) in dectyp
+      z = z * inv(1 - RR(fmpz(p)^f)^(-s))
+    end
+    p = next_prime(p)
+  end
+
+  return z
+end
+
+function _local_correction(K, p, RR)
+  lp = prime_decomposition_type(maximal_order(K), p)
+  z = one(RR)
+  for (f, e) in lp
+    z = z * inv((RR(1) - inv(RR(p)^(2 * f))))
+  end
+
+  z = z * (RR(1) - inv(RR(p)^2))^degree(K)
+  return z
+end
+
+function _dedekind_zeta_attwell_duval_positive(K::AnticNumberField, s, prec::Int)
+  RR = ArbField(512)
+  d = degree(K)
+  #@show prec
+  
+  local_cor = prod(arb[_local_correction(K, p, RR) for p in primes_up_to(100)])
+  #@show local_cor
+
+  _b = RR(s - 1) * (root(RR(2)^(-prec + 1)//(local_cor * zeta(RR(s))^d) + 1, d) - 1)
+
+  #@show _b
+
+  #@show inv(_b)
+
+  _T = upper_bound(root(inv(_b), s - 1), fmpz)
+
+  _Tint = Int(_T)
+
+  b = local_cor * zeta(RR(s))^d * (RR(d) + 1)//(RR(s - 1))//(RR(2))^(-(prec + 1))
+  bb = root(b, s - 1)
+  T = upper_bound(bb, fmpz)
+  # z_K(s) - truncated at T < 1/2^(prec + 1)
+  @assert fits(Int, T)
+  Tint = Int(T)
+
+  @assert local_cor * zeta(RR(s))^d * ((1 +1//((s - 1) * RR(Tint)^(s - 1)))^d - 1) < (RR(2))^(-(prec + 1))
+
+#  otherbound = local_cor * zeta(RR(s))^d * ((1 +1//((s - 1) * RR(div(Tint, 2))^(s - 1)))^d - 1)
+#
+#  while otherbound < RR(2)^(-prec - 1)
+#    Tint = div(Tint, 2)
+#    otherbound = local_cor * zeta(RR(s))^d * ((1 + 1//((s - 1) * RR(div(Tint, 2))^(s - 1)))^d - 1)
+#  end
+#
+#  otherbound = zeta(RR(s))^d * ((1 + 1//((s - 1) * RR(Tint)^(s - 1)))^d - 1)
+#  @assert radiuslttwopower(otherbound, -prec - 1)
+#
+
+  wprec = 3 * prec
+
+  error_arf = arf_struct(0, 0, 0, 0)
+  ccall((:arf_set_si_2exp_si, libarb), Nothing,
+        (Ref{arf_struct}, Int, Int), error_arf, Int(1), Int(-(prec + 1)))
+
+  local valaddederror
+
+  while true
+    RR = ArbField(wprec)
+    z = _truncated_euler_product(K, Tint, s, RR)
+
+    wprec = 2 * wprec
+
+    valaddederror = deepcopy(z)
+    ccall((:arb_add_error_arf, libarb), Nothing,
+                (Ref{arb}, Ref{arf_struct}), valaddederror, error_arf)
+
+    if radiuslttwopower(valaddederror, -prec)
+      break
+    end
+  end
+
+  ccall((:arf_clear, :libarb), Nothing, (Ref{arf_struct}, ), error_arf)
+
+  return valaddederror
+end
+
+function _dedekind_zeta_attwell_duval_negative(K::AnticNumberField, s, target_prec::Int)
+  @assert s < 0
+  if iseven(s)
+    return zero(ArbField(target_prec))
+  end
+  sp = 1 - s
+  z = _dedekind_zeta_attwell_duval_positive(K, sp, target_prec + 1)
+  zprec = prec(parent(z))
+  wprec = zprec * 2
+  RR = ArbField(wprec)
+  dK = abs(discriminant(maximal_order(K)))
+  d = degree(K)
+
+  local res
+
+  i = 1
+
+  local prefac
+
+  _wprec = 64
+  while true
+    RR = ArbField(_wprec)
+    CK = RR(dK)//(const_pi(RR)^d * 2^d)
+    prefac = (-1)^(div(d * sp, 2)) * CK^sp * (2 * RR(factorial(fmpz(sp) - 1)))^d//sqrt(RR(dK))
+    if radiuslttwopower(prefac, -4 * target_prec)
+      break
+    end
+    _wprec = 2 * _wprec
+  end
+
+  _target_prec = target_prec
+
+  while true
+    res = prefac * z
+
+    res_old = res
+    if radiuslttwopower(res, -target_prec)
+      break
+    end
+    _target_prec = Int(ceil(1.1 * _target_prec))
+    z = _dedekind_zeta_attwell_duval_positive(K, sp, _target_prec)
+    #@show radiuslttwopower(z, -_target_prec)
+  end
+  return res
+end
+
+function dedekind_zeta(K::AnticNumberField, s::Int, prec::Int)
+  @req s != 0 && s != 1 "Point $s is a pole"
+  r1, r2 = signature(K)
+  if r2 == 0
+    if s > 0
+      return _dedekind_zeta_attwell_duval_positive(K, s, prec)
+    else
+      return _dedekind_zeta_attwell_duval_negative(K, s, prec)
+    end
+  else
+    if s < 0
+      return zero(ArbField(prec))
+    else
+      return _dedekind_zeta_attwell_duval_positive(K, s, prec)
+    end
+  end
+end
+
+################################################################################
+#
+#  Group orders of classical linear groups groups
+#
+################################################################################
+
+# Some group orders for classical linear groups G_m(q), where
+# G is "O+", "O-", "G", "U", or "Sp"
+function group_order(G::String, m::Int, q::fmpz)
+  if G[1] != 'O'
+    if G[1] == 'G' # GL_m
+      o = prod(fmpq[ 1 - fmpq(q)^(-j) for j in 1:m ])
+    elseif G[1] == 'U' # U_m
+      o = prod(fmpq[ 1 - fmpq(-q)^(-j) for j in 1:m ])
+    else # Default Sp_m
+      o = prod(fmpq[ 1 - fmpq(q)^(-j) for j in 1:div(m, 2) ])
+    end
+  else # orthogonal case
+    if iseven(m)
+      k = div(m, 2)
+      e = G[2] == '+' ? 1 : -1
+      o = 2 * (1 - e * fmpq(q)^(-k)) * prod(fmpq[ 1 - fmpq(q)^(-j) for j in 2:2:(m-2)])
+    else
+      o = 2 * prod(fmpq[1 - fmpq(q)^(-j) for j in 2:2:m])
+    end
+  end
+  return o
+end
+
+# Determines type of an orthgonal group over a finite field of even
+# characteristic.
+function quadratic_form_type(v)
+  return _orthogonal_signum_even(v + transpose(v), v)
+end
+
+# Bring symmetric form into standard form
+function _orthogonal_signum_even(form, quad)
+	basis = form^0
+	skip = Int[]
+	for i in 1:(nrows(form)-1)
+    # find first non-zero entry in i-th row
+    d = 1
+    while d in skip || iszero(form[i, d])
+      d = d + 1
+    end
+    push!(skip, d)
+    # clear entries in row and column
+    for j in (d + 1):nrows(form)
+      c = divexact(form[i, j], form[i, d])
+      if !iszero(c)
+        for k in 1:nrows(form)
+          form[k, j] = form[k, j] - c * form[k, d]
+        end
+
+        for k in 1:ncols(form)
+          form[j, k] = form[j, k] - c * form[d, k]
+        end
+
+        for k in 1:ncols(form)
+          basis[j, k] = basis[j, k] - c * basis[d, k]
+        end
+      end
+    end
+  end
+  # reshuffle basis
+  c = typeof(basis)[]
+  j = Int[]
+  for i in 1:nrows(form)
+    if !(i in j)
+      k = form[i, skip[i]]
+      push!(c, inv(k) * sub(basis, i:i, 1:ncols(basis)))
+      push!(c, sub(basis, skip[i]:skip[i], 1:ncols(basis)))
+      push!(j, skip[i])
+    end
+  end
+
+  basis = c
+  Rt, t = PolynomialRing(base_ring(form), "t", cached = false)
+  sgn = 1
+  for i in 1:2:(nrows(form) - 1)
+    c = (basis[i] * quad * transpose(basis[i]))[1, 1]
+    if iszero(c)
+      continue
+    else
+      j = (basis[i + 1] * quad * transpose(basis[i + 1]))[1, 1]
+      if iszero(j)
+        continue
+      else
+        pol = t^2 + inv(j) * t + inv(j) * c
+        if !isirreducible(pol)
+          continue
+        else
+          sgn = -sgn
+        end
+      end
+    end
+  end
+  return sgn
+end
+
+# A multiple of orders is given by Serre in:
+# Bounds for the orders of the finite subgroups of G(k)
+# It is also in Feit:
+# Finite linear groups and .. Minkowski ... Schur
+
+# https://mathoverflow.net/questions/15127/the-maximum-order-of-finite-subgroups-in-gln-q?noredirect=1&lq=1
+#
+# https://mathoverflow.net/questions/168292/maximal-order-of-finite-subgroups-of-gln-z?noredirect=1&lq=1
+#In fact, I have a copy of a preprint by Feit of this paper. I have not checked the results, but here is what Feit says: the group of signed permutation matrices is of maximal order as a finite subgroup of GL(𝑛,ℚ), except in the following cases (Feit's Theorem A).
+#
+#𝑛=2,𝑊(𝐺2) of order 12.
+#
+#𝑛=4,𝑊(𝐹4), order 1152.
+#
+#𝑛=6,𝑊(𝐸6)×𝐶2, order 103680.
+#𝑛=7,𝑊(𝐸7), order 2903040.
+#𝑛=8,𝑊(𝐸8), order 696729600.
+#
+#𝑛=9,𝑊(𝐸8)×𝑊(𝐴1), order 1393459200 (reducible).
+#
+#𝑛=10,𝑊(𝐸8)×𝑊(𝐺2), order 8360755200 (reducible).
+
+function _multiple_of_finite_group_order_glnz(n::Int)
+  return _minkowski_multiple(n)
+end
+
+function _minkowski_multiple(n)
+  if n == 1
+    return fmpz(1)
+  elseif n == 2
+    return fmpz(24)
+  elseif n == 3
+    return fmpz(48)
+  else
+    if isodd(n)
+      return 2 * _minkowski_multiple(n - 1)
+    else
+      return denominator(divexact(bernoulli(n), n)) * _minkowski_multiple(n - 1)
+    end
+  end
+end
+
+################################################################################
+#
+#  Minkowski/Schur constants for number fields
+#
+################################################################################
+
+# Computes an integer B, such that for any finite subgroup G of GL_n(K) the order
+# of G divides B.
+#
+# Reference:
+# Robret M. Guralnick and Martin Lorenz, "Orders of Finite Groups of Matrices"
+#
+# The idea is that the p' part of divides the p' part of GL_n(O/P), where P is
+# any prime above p. Use primes until the bound does not change.
+#
+# This is in general not sharp, since it uses a heuristic. There is acutally
+# a "closed" formula for this number (see loc. cit.), but it requires a lot of
+# expensive computations.
+function _minkowski_multiple(K, n)
+  OK = maximal_order(K)
+  p = 2
+  dec = prime_decomposition_type(OK, p)
+  f2 = minimum(Int[f for (f, e) in dec])
+  p = 3
+  dec = prime_decomposition_type(OK, p)
+  f3 = minimum(Int[f for (f, e) in dec])
+  q2 = fmpz(2)^f2
+  q3 = fmpz(3)^f3
+  glf2 = prod(fmpz[q2^i - 1 for i in 1:n])
+  glf3 = prod(fmpz[q3^i - 1 for i in 1:n])
+  twopart, = ppio(glf3, fmpz(2))
+  cand = glf2 * twopart
+  stab = 0
+  while true
+    dec = prime_decomposition_type(OK, p)
+    ppart, = ppio(cand, fmpz(p))
+    f = minimum(Int[f for (f, e) in dec])
+    q = fmpz(p)^f
+    glf = prod(fmpz[q^i - 1 for i in 1:n])
+    old_can = cand
+    cand = gcd(cand, glf * ppart)
+    if old_can == cand
+      stab += 1
+    end
+    if stab > 20
+      return cand
+    end
+    p = next_prime(p)
+  end
+  return cand
+end
+
+################################################################################
+#
+#  Denominator bounds for Dedekind zeta function values
+#
+################################################################################
+
+# See Andreatta, Goren: "Hilbert Modular Forms: mod p and p-Adic Aspects" 
+# K must be totally real
+function _denominator_valuation_bound(K, ss, p)
+  s = 1 - ss
+  @assert s > 0 && iseven(s)
+
+  l(n) = n <= 2 ? n - 1 : n - 2
+  if p == 2
+    t = prime_decomposition_type(maximal_order(K), Int(p))
+    rm = Tuple{Int, fmpz}[ remove(e, p) for (f, e) in t ]
+    ew = minimum(Int[p^e for (e, _) in rm ])
+    et = minimum(Int[m for (_, m) in rm ])
+    n = 0
+    ewval = valuation(ew, p)
+    sval = valuation(s, 2)
+    while sval + ewval >= l(n)
+      n += 1
+    end
+    return max(0, n - 1 - degree(K))
+  elseif isramified(maximal_order(K), p)
+    _lp = prime_decomposition(maximal_order(K), Int(p))
+    t = prime_decomposition_type(maximal_order(K), Int(p))
+    rm = Tuple{Int, fmpz}[ remove(e, p) for (f, e) in t ]
+    ew = minimum(Int[p^e for (e, _) in rm ])
+    et = minimum(Int[m for (_, m) in rm ])
+    return valuation(s, p) + 1 + valuation(ew, p)
+  elseif mod(s, p - 1) == 0
+    ss = divexact(s, p - 1)
+    return valuation(ss, p) + 1
+  else
+    return 0
+  end
+end
+
+function _denominator_bound(K, ss)
+  s = 1 - ss
+  @assert s > 0 && iseven(s)
+
+  d = one(fmpz)
+
+  OK = maximal_order(K)
+
+  d = d * fmpz(2)^_denominator_valuation_bound(K, ss, 2)
+
+  for p in ramified_primes(maximal_order(K))
+    d = d * fmpz(p)^_denominator_valuation_bound(K, ss, p)
+  end
+
+  for p in primes_up_to(s + 1)
+    if isramified(OK, p) || p == 2
+      continue
+    end
+    if mod(s, p - 1) == 0
+      d = d * fmpz(p)^_denominator_valuation_bound(K, ss, p)
+    end
+  end
+  return d
+end
+
+################################################################################
+#
+#  Functionality for the totally real quadratic case
+#
+################################################################################
 
 function _modulus_of_kronecker_as_dirichlet(D)
   return abs(fundamental_discriminant(D))
@@ -764,6 +1188,48 @@ function _jacobi_symbol(n, m)
     end
   end
   return res
+end
+
+
+################################################################################
+#
+#  Dedekind zeta exact for totally real
+#
+################################################################################
+
+function dedekind_zeta_exact(K::AnticNumberField, s::Int)
+  @assert istotally_real(K)
+  @assert s < 0
+
+  if iseven(s)
+    return zero(fmpq)
+  end
+
+  if isodd(s)
+    k = 1 - s
+    if absolute_degree(K) == 1
+      return bernoulli(k)//-k
+    elseif absolute_degree(K) == 2
+      Kabs, = absolute_field(K)
+      if istotally_real(K)
+        d = discriminant(maximal_order(Kabs))
+        return bernoulli(k) * _bernoulli_kronecker(k, d)//k^2
+      end
+    end
+  end
+
+  d = _denominator_bound(K, s)
+  n = Int(nbits(d)) - 1
+
+  while true
+    ded = dedekind_zeta(K, s, n)
+    z  = d * ded
+    fl, b = unique_integer(z)
+    if fl
+      return b//d
+    end
+    n += 1
+  end
 end
 
 ################################################################################
@@ -1056,290 +1522,4 @@ function _tollis_cik(i, k, N0, CK, r1, r2, Z, CC)
   end
   @assert isfinite(z)
   return z
-end
-
-################################################################################
-#
-#  Dedekind zeta function evaluation a la Attwell-Duval
-#
-################################################################################
-
-# This works :)
-# 
-# But it is really slow for s = -1 (s = 2), since the Euler product
-# converges only "linear", that is doubling the number of primes only doubles
-# the precision.
-
-function _truncated_euler_product(K::AnticNumberField, T::Int, s, RR::ArbField)
-  z = one(RR)
-  OK = maximal_order(K)
-  p = 2
-  @show s, T
-  while p <= T
-    dectyp = prime_decomposition_type(OK, p)
-    for (f, e) in dectyp
-      z = z * inv(1 - RR(p^f)^(-s))
-    end
-    p = next_prime(p)
-  end
-
-  return z
-end
-
-function _local_correction(K, p, RR)
-  lp = prime_decomposition_type(maximal_order(K), p)
-  z = one(RR)
-  for (f, e) in lp
-    z = z * inv((RR(1) - inv(RR(p)^(2 * f))))
-  end
-
-  z = z * (RR(1) - inv(RR(p)^2))^degree(K)
-  return z
-end
-
-function _dedekind_zeta_attwell_duval_positive(K::AnticNumberField, s, prec::Int)
-  RR = ArbField(128)
-  d = degree(K)
-  
-  local_cor = prod(arb[_local_correction(K, p, RR) for p in primes_up_to(100)])
-  @show local_cor
-
-  b = local_cor * zeta(RR(s))^d * (RR(d) + 1)//(RR(s - 1))//(RR(2))^(-(prec + 1))
-  b = root(b, s - 1)
-  T = upper_bound(b, fmpz)
-  # z_K(s) - truncated at T < 1/2^(prec + 1)
-  @assert fits(Int, T)
-  Tint = Int(T)
-
-  @show Tint
-
-  otherbound = local_cor * zeta(RR(s))^d * ((1 +1//((s - 1) * RR(div(Tint, 2))^(s - 1)))^d - 1)
-  @show otherbound
-  @show RR(2)^(-prec - 1)
-  while otherbound < RR(2)^(-prec - 1)
-    @show Tint
-    Tint = div(Tint, 2)
-    otherbound = local_cor * zeta(RR(s))^d * ((1 + 1//((s - 1) * RR(div(Tint, 2))^(s - 1)))^d - 1)
-  end
-
-  otherbound = zeta(RR(s))^d * ((1 + 1//((s - 1) * RR(Tint)^(s - 1)))^d - 1)
-  @assert radiuslttwopower(otherbound, -prec - 1)
-
-  @show Tint
-
-  wprec = 3 * prec
-
-  error_arf = arf_struct(0, 0, 0, 0)
-  ccall((:arf_set_si_2exp_si, libarb), Nothing,
-        (Ref{arf_struct}, Int, Int), error_arf, Int(1), Int(-(prec + 1)))
-
-  local valaddederror
-
-  while true
-    @show wprec
-    RR = ArbField(wprec)
-    z = _truncated_euler_product(K, Tint, s, RR)
-
-    wprec = 2 * wprec
-
-    valaddederror = deepcopy(z)
-    ccall((:arb_add_error_arf, libarb), Nothing,
-                (Ref{arb}, Ref{arf_struct}), valaddederror, error_arf)
-
-    if radiuslttwopower(valaddederror, -prec)
-      break
-    end
-  end
-
-  return valaddederror
-end
-
-function _dedekind_zeta_attwell_duval_negative(K::AnticNumberField, s, target_prec::Int)
-  @assert s < 0
-  if iseven(s)
-    return zero(ArbField(target_prec))
-  end
-  sp = 1 - s
-  z = _dedekind_zeta_attwell_duval_positive(K, sp, target_prec + 1)
-  zprec = prec(parent(z))
-  wprec = zprec * 2
-  RR = ArbField(wprec)
-  dK = abs(discriminant(maximal_order(K)))
-  d = degree(K)
-
-  local res
-
-  @show sp
-
-  i = 1
-
-  while true
-    RR = ArbField(wprec)
-    CK = RR(dK)//(const_pi(RR)^d * 2^d)
-    prefac = (-1)^(div(d * sp, 2)) * CK^sp * (2 * RR(factorial(fmpz(sp) - 1)))^d//sqrt(RR(dK))
-    res = z * prefac
-    if radiuslttwopower(res, -target_prec)
-      break
-    end
-    wprec = 2 * wprec
-    i += 1
-    z = _dedekind_zeta_attwell_duval_positive(K, sp, target_prec + i)
-  end
-  return res
-end
-
-function dedekind_zeta(K::AnticNumberField, s::Int, prec::Int)
-  @req s != 0 && s != 1 "Point $s is a pole"
-  r1, r2 = signature(K)
-  if r2 == 0
-    if s > 0
-      return _dedekind_zeta_attwell_duval_positive(K, s, prec)
-    else
-      return _dedekind_zeta_attwell_duval_negative(K, s, prec)
-    end
-  else
-    if s < 0
-      return zero(ArbField(prec))
-    else
-      return _dedekind_zeta_attwell_duval_positive(K, s, prec)
-    end
-  end
-end
-
-################################################################################
-#
-#  Group orders of classical linear groups groups
-#
-################################################################################
-
-function group_order(G::String, m::Int, q::fmpz)
-  if G[1] != 'O'
-    if G[1] == 'G' # GL_m
-      o = prod(fmpq[ 1 - fmpq(q)^(-j) for j in 1:m ])
-    elseif G[1] == 'U' # U_m
-      o = prod(fmpq[ 1 - fmpq(-q)^(-j) for j in 1:m ])
-    else # Default Sp_m
-      o = prod(fmpq[ 1 - fmpq(q)^(-j) for j in 1:div(m, 2) ])
-    end
-  else # orthogonal case
-    if iseven(m)
-      k = div(m, 2)
-      e = G[2] == '+' ? 1 : -1
-      o = 2 * (1 - e * fmpq(q)^(-k)) * prod(fmpq[ 1 - fmpq(q)^(-j) for j in 2:2:(m-2)])
-    else
-      o = 2 * prod(fmpq[1 - fmpq(q)^(-j) for j in 2:2:m])
-    end
-  end
-  return o
-end
-
-function quadratic_form_type(v)
-  return _orthogonal_signum_even(v + transpose(v), v)
-end
-
-function _orthogonal_signum_even(form, quad)
-	# Bring symmetric form into standard form
-	basis = form^0
-	skip = Int[]
-	for i in 1:(nrows(form)-1)
-    # find first non-zero entry in i-th row
-    d = 1
-    while d in skip || iszero(form[i, d])
-      d = d + 1
-    end
-    push!(skip, d)
-    # clear entries in row and column
-    for j in (d + 1):nrows(form)
-      c = divexact(form[i, j], form[i, d])
-      if !iszero(c)
-        for k in 1:nrows(form)
-          form[k, j] = form[k, j] - c * form[k, d]
-        end
-
-        for k in 1:ncols(form)
-          form[j, k] = form[j, k] - c * form[d, k]
-        end
-
-        for k in 1:ncols(form)
-          basis[j, k] = basis[j, k] - c * basis[d, k]
-        end
-      end
-    end
-  end
-  # reshuffle basis
-  c = typeof(basis)[]
-  j = Int[]
-  for i in 1:nrows(form)
-    if !(i in j)
-      k = form[i, skip[i]]
-      push!(c, inv(k) * sub(basis, i:i, 1:ncols(basis)))
-      push!(c, sub(basis, skip[i]:skip[i], 1:ncols(basis)))
-      push!(j, skip[i])
-    end
-  end
-
-  basis = c
-  Rt, t = PolynomialRing(base_ring(form), "t", cached = false)
-  sgn = 1
-  for i in 1:2:(nrows(form) - 1)
-    c = (basis[i] * quad * transpose(basis[i]))[1, 1]
-    if iszero(c)
-      continue
-    else
-      j = (basis[i + 1] * quad * transpose(basis[i + 1]))[1, 1]
-      if iszero(j)
-        continue
-      else
-        pol = t^2 + inv(j) * t + inv(j) * c
-        if !isirreducible(pol)
-          continue
-        else
-          sgn = -sgn
-        end
-      end
-    end
-  end
-  return sgn
-end
-
-# A multiple of orders is given by Serre in:
-# Bounds for the orders of the finite subgroups of G(k)
-# It is also in Feit:
-# Finite linear groups and .. Minkowski ... Schur
-
-# https://mathoverflow.net/questions/15127/the-maximum-order-of-finite-subgroups-in-gln-q?noredirect=1&lq=1
-#
-# https://mathoverflow.net/questions/168292/maximal-order-of-finite-subgroups-of-gln-z?noredirect=1&lq=1
-#In fact, I have a copy of a preprint by Feit of this paper. I have not checked the results, but here is what Feit says: the group of signed permutation matrices is of maximal order as a finite subgroup of GL(𝑛,ℚ), except in the following cases (Feit's Theorem A).
-#
-#𝑛=2,𝑊(𝐺2) of order 12.
-#
-#𝑛=4,𝑊(𝐹4), order 1152.
-#
-#𝑛=6,𝑊(𝐸6)×𝐶2, order 103680.
-#𝑛=7,𝑊(𝐸7), order 2903040.
-#𝑛=8,𝑊(𝐸8), order 696729600.
-#
-#𝑛=9,𝑊(𝐸8)×𝑊(𝐴1), order 1393459200 (reducible).
-#
-#𝑛=10,𝑊(𝐸8)×𝑊(𝐺2), order 8360755200 (reducible).
-
-function _multiple_of_finite_group_order_glnz(n::Int)
-  return _minkowski_multiple(n)
-end
-
-function _minkowski_multiple(n)
-  if n == 1
-    return fmpz(1)
-  elseif n == 2
-    return fmpz(24)
-  elseif n == 3
-    return fmpz(48)
-  else
-    if isodd(n)
-      return 2 * _minkowski_multiple(n - 1)
-    else
-      return denominator(divexact(bernoulli(n), n)) * _minkowski_multiple(n - 1)
-    end
-  end
 end
