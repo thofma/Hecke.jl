@@ -1343,3 +1343,28 @@ function _minkowski_multiple(n)
     end
   end
 end
+
+################################################################################
+#
+#  Denominator bounds for Dedekind zeta function values
+#
+################################################################################
+
+function _denominator_valuation_bound(K, ss, p)
+  s = 1 - ss
+  @assert s > 0 && iseven(s)
+  if p == 2
+  elseif isramified(maximal_order(K), p)
+    t = prime_decomposition_type(maximal_order(K), p)
+    rm = Tuple{Int, fmpz}[ remove(e, p) for (f, e) in t ]
+    @show rm
+    ew = minimum(Int[p^e for (e, _) in rm ])
+    et = minimum(Int[m for (_, m) in rm ])
+    @show ew, et
+  elseif mod(s, p - 1) == 0
+    ss = divexact(s, p - 1)
+    return valuation(ss, p) + 1
+  else
+    return 0
+  end
+end
