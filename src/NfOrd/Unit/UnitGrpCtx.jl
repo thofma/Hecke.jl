@@ -298,6 +298,10 @@ function _conj_log_mat_cutoff(x::Array{T, 1}, p::Int) where T
 end
 
 function _add_unit(u::UnitGrpCtx, x::FacElem{nf_elem, AnticNumberField})
+  if u.full_rank
+    _add_dependent_unit(u, x)
+    return false
+  end
   isindep, p = isindependent(vcat(u.units, [x]), u.indep_prec)
   u.indep_prec = max(p, u.indep_prec)
   if isindep

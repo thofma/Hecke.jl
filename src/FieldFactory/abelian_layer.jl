@@ -186,7 +186,7 @@ end
 function max_ramified_prime(O::NfOrd, gtype::Vector{Int}, bound::fmpz)
   n = prod(gtype)
   fac = factor(n)
-  m = Int(maximum(keys(fac.fac)))
+  m = Int(minimum(keys(fac.fac)))
   k = divexact(n, m)
   b1 = Int(root(bound, degree(O)*(m-1)*k)) 
   return b1
@@ -239,8 +239,10 @@ function _abelian_normal_extensions(F::FieldsTower, gtype::Array{Int, 1}, absbou
       continue
     end
     if first_group
-      B1 = maximum([next_prime(max_ramified_prime(O, gtype, bound)), 211])
-      lP = Hecke.find_gens(pseudo_inv(rcg_ctx.class_group_map), PrimesSet(B1, -1))[1]
+      B1 = maximum(fmpz[next_prime(max_ramified_prime(O, gtype, bound)), 211])
+      rfF = ramified_primes(F)
+      B1 = max(B1, maximum(rfF))+1
+      lP = Hecke.find_gens(pseudo_inv(rcg_ctx.class_group_map), PrimesSet(B1, fmpz(-1)))[1]
       rcg_ctx.class_group_map.small_gens = lP
       first_group = false
     end

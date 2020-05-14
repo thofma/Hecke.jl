@@ -355,7 +355,7 @@ function expand!(x::Union{arb, acb}, max_radius_2exp::Int)
     set!(x, y)
     y = round!(y, y, q)
   end
-  x.parent = parent_type(typeof(x))(max(2, bits(x)))
+  x.parent = parent_type(typeof(x))(max(2, bits(x)), cached = false)
   @assert radiuslttwopower(x, max_radius_2exp)
   return x
 end

@@ -13,6 +13,7 @@ mutable struct ctx_rayclassgrp
   princ_gens::Vector{FacElem{nf_elem, AnticNumberField}}
   
   computed::Vector{Tuple{Dict{NfOrdIdl, Int}, Bool, MapRayClassGrp}}
+  multiplicative_groups::Dict{NfOrdIdl, GrpAbFinGenToAbsOrdQuoRingMultMap}
   
   function ctx_rayclassgrp()
     z = new()
@@ -30,6 +31,7 @@ function rayclassgrp_ctx(O::NfOrd, expo::Int)
   ctx.class_group_map = mC
   ctx.n = expo
   ctx.diffC = Int(divexact(exponent(C1), exponent(C)))
+  ctx.multiplicative_groups = Dict{NfOrdIdl, GrpAbFinGenToAbsOrdQuoRingMultMap}()
   return ctx
 
 end
@@ -94,7 +96,7 @@ function ray_class_group_quo(m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Dict{NfOrd
         return FacElem(Dict(mC(a) => 1))
       end
     end
-    return class_as_ray_class(quo(C, ctx.n, false)[1], mC, exp_c, m)
+    return class_as_ray_class(C, mC, exp_c, m, ctx.n)
   end
   
   O = ctx.order
@@ -121,14 +123,30 @@ function ray_class_group_quo(m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Dict{NfOrd
     QQ = PP^ee
     
     push!(powers, (PP, QQ))
-    QQQ, mQQQ = quo(O, QQ)
-    if ee == 1
-      QQQ.factor = dtame
+    if haskey(ctx.multiplicative_groups, QQ)
+      cached_map = ctx.multiplicative_groups[QQ]
+      QQQ = codomain(cached_map)
+      mQQQ = AbsOrdQuoMap(O, QQQ)
+      push!(quo_rings, (QQQ, mQQQ))
+      new_map = GrpAbFinGenToAbsOrdQuoRingMultMap(domain(cached_map), QQQ, copy(cached_map.generators), cached_map.discrete_logarithm)
+      new_map.tame = copy(cached_map.tame)
+      new_map.wild = copy(cached_map.wild)
+      push!(groups_and_maps, (domain(new_map), new_map))
     else
-      QQQ.factor = dwild
+      QQQ, mQQQ = quo(O, QQ)
+      if ee == 1
+        QQQ.factor = dtame
+      else
+        QQQ.factor = dwild
+      end
+      push!(quo_rings, (QQQ, mQQQ))
+      gandm = _mult_grp_mod_n(quo_rings[end][1], dtame, dwild, n_quo)
+      map_to_cache = GrpAbFinGenToAbsOrdQuoRingMultMap(gandm[1], QQQ, copy(gandm[2].generators), gandm[2].discrete_logarithm)
+      map_to_cache.tame = copy(gandm[2].tame)
+      map_to_cache.wild = copy(gandm[2].wild)
+      ctx.multiplicative_groups[QQ] = map_to_cache
+      push!(groups_and_maps, gandm)
     end
-    push!(quo_rings, (QQQ, mQQQ))
-    push!(groups_and_maps, _mult_grp_mod_n(quo_rings[end][1], dtame, dwild, n_quo))
   end
   
   if isempty(groups_and_maps)
@@ -228,6 +246,11 @@ function ray_class_group_quo(m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Dict{NfOrd
   end  
   
   X = abelian_group(R)
+  if isone(order(X))
+    mp = MapRayClassGrp()
+    mp.header = MapHeader(X, FacElemMon(parent(m)))
+    return X, mp
+  end
   
   invd = invmod(fmpz(diffC), expon)
   local disclog
@@ -384,12 +407,14 @@ function ray_class_group_quo(m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Dict{NfOrd
   for i = 1:length(powers)
     mG = groups_and_maps[i][2]
     for (prim, mprim) in mG.tame
+      new_mprim = GrpAbFinGenToAbsOrdMap(domain(mprim), codomain(mprim), copy(mprim.generators), mprim.discrete_logarithm)
       dis = zero_matrix(FlintZZ, 1, ngens(X))
       to_be_c = mprim.disc_log.coeff
       for i = 1:length(to_be_c)
         dis[1, ind-1+i+ngens(C)] = to_be_c[1, i]
       end
-      mprim.disc_log = X(dis)
+      new_mprim.disc_log = X(dis)
+      mG.tame[prim] = new_mprim
     end
     ind += ngens(domain(mG))
   end

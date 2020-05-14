@@ -1317,8 +1317,24 @@ function assure_valuation_function(p::NfOrdIdl)
     end
   elseif ramification_index(p) == 1 && fits(UInt, P^2) && !_isindex_divisor(O, p)
     f3 = val_func_no_index_small(p)
-    f4 = val_func_index(p)
-    local val4
+    if degree(O) > 80
+      f5 = val_func_generic(p)
+      local val5
+      let f3 = f3, f5 = f5
+        function val5(x::nf_elem, no::fmpq = fmpq(0))
+          v = f3(x, no)
+          if v > 100  # can happen ONLY if the precision in the .._small function
+                      # was too small.
+            return f5(x, no)::Int
+          else
+            return v::Int
+          end
+        end
+      end
+      p.valuation = val5
+    else
+      f4 = val_func_index(p)
+      local val4
       let f3 = f3, f4 = f4
         function val4(x::nf_elem, no::fmpq = fmpq(0))
           v = f3(x, no)
@@ -1331,6 +1347,7 @@ function assure_valuation_function(p::NfOrdIdl)
         end
       end
       p.valuation = val4
+    end
   elseif degree(O) > 80
     p.valuation = val_func_generic(p)
   else

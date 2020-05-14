@@ -1595,8 +1595,6 @@ function guess_max_det(L::QuadLat, p)
   return v
 end
 
-global _debug = []
-
 function ismaximal_integral(L::QuadLat, p)
   @req order(p) == base_ring(L) "blabla do not match"
   #if iszero(L)

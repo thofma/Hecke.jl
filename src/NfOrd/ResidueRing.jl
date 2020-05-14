@@ -131,15 +131,27 @@ end
 
 function (Q::AbsOrdQuoRing{S, T})(x::U) where {S, T, U}
   parent(x) !== base_ring(Q) && error("Cannot coerce element into the quotient ring")
-  return AbsOrdQuoRingElem(Q, x)
+  return AbsOrdQuoRingElem{S, T, U}(Q, x)
 end
 
-function (Q::AbsOrdQuoRing)(x::Integer)
-  return Q(base_ring(Q)(x))
+function (Q::AbsOrdQuoRing{S, T})(x::Integer) where {S, T}
+  I = Q.ideal
+  y = base_ring(Q)(mod(x, minimum(I, copy = false)))
+  U = elem_type(base_ring(Q))
+  res = AbsOrdQuoRingElem{S, T, U}()
+  res.parent = Q
+  res.elem = y 
+  return res
 end
 
-function (Q::AbsOrdQuoRing)(x::fmpz)
-  return Q(base_ring(Q)(x))
+function (Q::AbsOrdQuoRing{S, T})(x::fmpz) where {S, T}
+  I = Q.ideal
+  y = base_ring(Q)(mod(x, minimum(I, copy = false)))
+  U = elem_type(base_ring(Q))
+  res = AbsOrdQuoRingElem{S, T, U}()
+  res.parent = Q
+  res.elem = y 
+  return res
 end
 
 ################################################################################
@@ -157,19 +169,17 @@ The quotient ring $O/I$ as a ring together with the section $M: O/I \to O$.
 The pointwise inverse of $M$ is the canonical projection $O\to O/I$.
 """
 
-function quo(O::Union{NfAbsOrd, AlgAssAbsOrd}, I::Union{NfAbsOrdIdl, AlgAssAbsOrdIdl}; type::Symbol = :ring)
+function quo(O::Union{NfAbsOrd, AlgAssAbsOrd}, I::Union{NfAbsOrdIdl, AlgAssAbsOrdIdl})
   @assert order(I) === O
   # We should check that I is not zero
-  if type == :ring
-    Q = AbsOrdQuoRing(O, I)
-    f = AbsOrdQuoMap(O, Q)
-    return Q, f
-  elseif type == :group
-    f = GrpAbFinGenToNfOrdQuoNfOrd(O, I)
-    return domain(f), f
-  else
-    error("Type $type not supported")
-  end
+  Q = AbsOrdQuoRing(O, I)
+  f = AbsOrdQuoMap(O, Q)
+  return Q, f
+end
+
+function quo(O::Union{NfAbsOrd, AlgAssAbsOrd}, I::Union{NfAbsOrdIdl, AlgAssAbsOrdIdl}, ::Type{GrpAbFinGen})
+  f = GrpAbFinGenToNfOrdQuoNfOrd(O, I)
+  return domain(f), f
 end
 
 @doc Markdown.doc"""
@@ -773,7 +783,7 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    group_structure(Q::NfOrdQuoRing) -> GrpAbFinGenSnf
+    group_structure(Q::NfOrdQuoRing) -> GrpAbFinGen
 
 Returns an abelian group with the structure of (Q,+).
 """

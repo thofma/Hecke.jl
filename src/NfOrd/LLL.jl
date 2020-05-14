@@ -94,7 +94,9 @@ function _lll(A::NfOrdIdl, v::fmpz_mat = zero_matrix(FlintZZ, 1, 1); prec::Int =
   n = degree(order(A))
   prec = max(prec, 4*n)
 
-  l, t1 = lll_with_transform(basis_matrix(A, copy = false))
+  ctx1 = lll_ctx(0.71, 0.51)
+
+  l, t1 = lll_with_transform(basis_matrix(A, copy = false), ctx1)
 
   if iszero(v)
     d = minkowski_gram_mat_scaled(order(A), prec)
@@ -833,7 +835,8 @@ function _lll_product_basis(I::NfOrdIdl, J::NfOrdIdl)
   mul!(iA, C, iA)
   divexact!(iA, iA, de)
   hnf_modular_eldiv!(iA, minimum(J))
-  @vtime :LLL 3 T1 = lll(iA) 
+  ctx = lll_ctx(0.71, 0.51)
+  @vtime :LLL 3 T1 = lll(iA, ctx) 
   return T1*A
 end
 

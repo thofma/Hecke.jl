@@ -180,13 +180,45 @@ end
 #
 ################################################################################
 
-function class_as_ray_class(C::GrpAbFinGen, mC::MapClassGrp, exp_class::Function,  m::NfOrdIdl)
+function class_as_ray_class(C::GrpAbFinGen, mC::MapClassGrp, exp_class::Function,  m::NfOrdIdl, expo::Int)
 
-  local disclog
+  
   O = order(m)
   X = abelian_group(rels(C))
+
+  if expo != -1
+    Q, mQ = quo(C, expo, false)
+    local disclog1
+    let Q = Q, mC = mC, mQ = mQ
+      function disclog1(J::NfOrdIdl)
+        return mQ(mC\(J))
+      end
   
+      function disclog1(J::FacElem{NfOrdIdl, NfOrdIdlSet})
+        a = X[0]
+        for (f, k) in J.fac
+          a += k*disclog(f)
+        end
+        return a
+      end
+    end
+
+    local expo_map
+    let mQ = mQ, exp_class = exp_class
+      function expo_map(el::GrpAbFinGenElem)
+        return exp_class(mQ\el)
+      end
+    end
+
+    mp1 = Hecke.MapRayClassGrp()
+    mp1.header = Hecke.MapHeader(Q, FacElemMon(parent(m)), expo_map, disclog1)
+    mp1.fact_mod = Dict{NfOrdIdl, Int}()
+    mp1.defining_modulus = (m, InfPlc[])
+    mp1.clgrpmap = mC
+    return Q, mp1
+  end
   
+  local disclog
   let X = X, mC = mC 
     function disclog(J::NfOrdIdl)
       return X((mC\J).coeff)
@@ -583,7 +615,7 @@ function ray_class_group(m::NfOrdIdl, inf_plc::Vector{InfPlc} = Vector{InfPlc}()
         return FacElem(Dict(mC(a) => 1))
       end
     end
-    return class_as_ray_class(C, mC, exp_c, m)
+    return class_as_ray_class(C, mC, exp_c, m, n_quo)
   end
   _assure_princ_gen(mC)
   
@@ -946,7 +978,7 @@ function ray_class_groupQQ(O::NfOrd, modulus::Int, inf_plc::Bool, n_quo::Int)
   
   else
       
-    Q,mQ=quo(U, GrpAbFinGenElem[mU\(R(-1))])
+    Q, mQ = quo(U, GrpAbFinGenElem[mU\(R(-1))], false)
     
     function disc_log(I::NfOrdIdl)
       i=Int(mod(minimum(I), modulus))
@@ -1089,7 +1121,7 @@ function find_gens(mR::MapRayClassGrp; coprime_to::fmpz = fmpz(-1))
       push!(disc_log_primes_class_grp, mC\x)
     end
   end
-  Q1, mQ1 = quo(C, disc_log_primes_class_grp)
+  Q1, mQ1 = quo(C, disc_log_primes_class_grp, false)
   S1, mS1 = snf(Q1)
   p1 = fmpz(2)
   while order(S1) != 1

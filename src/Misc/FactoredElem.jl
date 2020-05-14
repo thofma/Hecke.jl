@@ -219,16 +219,19 @@ end
 
 function pow!(z::FacElem, x::FacElem, y::T) where T <: Union{fmpz, Integer}
   z.fac = copy(x.fac)
-  for (a, v) in x
-    # this should be inplace ... not sure anymore: using copy, inplace is bad
-    z.fac[a] = y*v
+  for i = z.fac.idxfloor:length(z.fac.vals)
+    if isassigned(z.fac.vals, i)
+      z.fac.vals[i] = z.fac.vals[i]*y
+    end
   end
+  return nothing
 end
 
-function pow!(x::FacElem, y::T) where T <: Union{fmpz, Integer}
-  for (a, v) in x
-    # this should be inplace ... not sure anymore: using copy, inplace is bad
-    x.fac[a] = y*v
+function pow!(z::FacElem, y::T) where T <: Union{fmpz, Integer}
+  for i = z.fac.idxfloor:length(z.fac.vals)
+    if isassigned(z.fac.vals, i)
+      z.fac.vals[i] = z.fac.vals[i]*y
+    end
   end
 end
 
@@ -244,9 +247,10 @@ for T in [:Integer, fmpz]
         return copy(x)
       else
         z.fac = copy(x.fac)
-        for (a, v) in x
-          # this should be inplac
-          z.fac[a] = y*v
+        for i = z.fac.idxfloor:length(z.fac.vals)
+          if isassigned(z.fac.vals, i)
+            z.fac.vals[i] = z.fac.vals[i]*y
+          end
         end
         return z
       end
@@ -331,11 +335,15 @@ function _transform(x::Array{FacElem{T, S}, 1}, y::fmpz_mat) where {T, S}
   for i in 1:ncols(y)
     z[i] = x[1]^y[1,i]
     for j in 2:nrows(y)
-      if y[j, i] == 0
+      if iszero(y[j, i])
         continue
       end
-      pow!(t, x[j], y[j, i])
-      mul!(z[i], z[i], t)
+      if isone(y[j, i])
+        mul!(z[i], z[i], x[j])
+      else
+        pow!(t, x[j], y[j, i])
+        mul!(z[i], z[i], t)
+      end
     end
   end
   return z

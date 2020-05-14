@@ -1,7 +1,5 @@
 export overorders, isbass, isgorenstein, poverorders
 
-change_base_ring(R::GaloisField, M::fmpz_mat) = MatrixSpace(R, nrows(M), ncols(M))(M)
-
 ################################################################################
 #
 #  Defines minimal overorder
@@ -503,7 +501,7 @@ function _minimal_poverorders_at_2(O, P, excess = Int[])
     subs = subgroups(A, subtype = [2 for i = 1:f], fun = (G, z) -> sub(G, z, false))
   else
     R = GF(2)
-    V = ModAlgAss([change_base_ring(R, l.map) for l in autos])
+    V = ModAlgAss(gfp_mat[map_entries(R, l.map) for l in autos])
     subm = minimal_submodules(V, f)
     subs = (sub(A, lift(x), false) for x in subm)
   end
@@ -519,7 +517,7 @@ function _minimal_poverorders_at_2(O, P, excess = Int[])
         subs1 = subgroups(A, subtype = [2 for i = 1:Int(f)*(Int(q) - 1)], fun = (G, z) -> sub(G, z, false))
       else
         R = GF(2)
-        V = ModAlgAss([change_base_ring(R, l.map) for l in autos])
+        V = ModAlgAss(gfp_mat[map_entries(R, l.map) for l in autos])
         subm1 = submodules(V, dimension(V)-Int(f)*(Int(q) - 1))
         subs1 = (sub(A, lift(x), false) for x in subm1)
       end

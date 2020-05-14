@@ -297,8 +297,6 @@ end
 
 # In this context, we are computing the Frobenius for conjugate prime ideals 
 # We save the projection of the factor base, we can reuse them
-
-
 #Computes a set of prime ideals of the base field of K such that the corresponding Frobenius
 #automorphisms generate the automorphism group
 function find_gens(K::KummerExt, S::PrimesSet, cp::fmpz=fmpz(1))
@@ -334,10 +332,12 @@ function find_gens(K::KummerExt, S::PrimesSet, cp::fmpz=fmpz(1))
     for i = 1:length(D)
       D[i] = Vector{gfp_poly}(undef, length(K.gen[i].fac))
     end
+ 
     first = false
     for P in LP
       try
         f = _canonical_frobenius_with_cache(P, K, first, D)
+        @hassert :ClassField 1 f == canonical_frobenius(P, K)
         first = true
       catch e
         if !isa(e, BadPrime)
@@ -376,6 +376,7 @@ function find_gens(K::KummerExt, S::PrimesSet, cp::fmpz=fmpz(1))
   return lp, sR
 end
 
+
 function _canonical_frobenius_with_cache(p::NfOrdIdl, K::KummerExt, cached::Bool, D::Vector{Vector{gfp_poly}})
   @assert norm(p) % K.n == 1
   if haskey(K.frob_cache, p)
@@ -404,7 +405,6 @@ function _compute_frob(K, mF, p, cached, D)
   # K[i] -> zeta^divexact(n, n_i) * ? K[i]
   # Frob(sqrt[n](a), p) = sqrt[n](a)^N(p) (mod p) = zeta^r sqrt[n](a)
   # sqrt[n](a)^N(p) = a^(N(p)-1 / n) = zeta^r mod p
-
   aut = Array{fmpz, 1}(undef, length(K.gen))
   for j = 1:length(K.gen)
     ord_genj = Int(order(K.AutG[j]))

@@ -328,9 +328,10 @@ end
 
 function _ispower(a::FacElem{nf_elem, AnticNumberField}, n::Int; with_roots_unity = false, decom = false, trager = false)
 
+  K = base_ring(a)
+  ZK = maximal_order(K)
   @vprint :Saturate 1 "Computing compact presentation\n"
   @vtime :Saturate 1 c = Hecke.compact_presentation(a, n, decom = decom)
-  K = base_ring(c)
   b = one(K)
   d = Dict{nf_elem, fmpz}()
   for (k, v) = c.fac
@@ -350,7 +351,7 @@ function _ispower(a::FacElem{nf_elem, AnticNumberField}, n::Int; with_roots_unit
   end
   df = FacElem(d) 
   @hassert :CompactPresentation 2 evaluate(df^n*b *inv(a))== 1
-  ZK = maximal_order(K)
+  
   den = denominator(b, ZK)
   fl, den1 = ispower(den, n)
   if fl

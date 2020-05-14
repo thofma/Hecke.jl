@@ -974,7 +974,13 @@ function mod_sym!(a::nf_elem, b::fmpz)
 end
 
 function mod(b::nf_elem, p::fmpz)
-  return coprime_denominator(b, p)
+  K = parent(b)
+  if isdefining_polynomial_nice(parent(b))
+    return coprime_denominator(b, p)
+  else
+    m = lcm([p, denominator(K.pol), numerator(coeff(K.pol, degree(K.pol)))])
+    return coprime_denominator(b, m)
+  end
 end
 
 mod(x::nf_elem, y::Integer) = mod(x, fmpz(y))

@@ -287,6 +287,8 @@ mutable struct GrpAbFinGenToAbsOrdQuoRingMultMap{S, T, U} <: Map{GrpAbFinGen, Ab
   # Multiplicative group, wild part
   wild::Dict{T, GrpAbFinGenToAbsOrdMap{S, U}}
 
+  
+
   function GrpAbFinGenToAbsOrdQuoRingMultMap{S, T, U}(G::GrpAbFinGen, Q::AbsOrdQuoRing{S, T}, generators::Vector{AbsOrdQuoRingElem{S, T, U}}, disc_log::Function) where {S, T, U}
     @assert ngens(G) == length(generators)
 

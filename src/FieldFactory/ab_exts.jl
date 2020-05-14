@@ -207,8 +207,8 @@ function conductors_tame(O::NfOrd, n::Int, bound::fmpz)
     end
   end
   
-  final_list=Tuple{Int, fmpz}[]
-  l=length(list)
+  final_list = Tuple{Int, fmpz}[]
+  l = length(list)
   e = Int((m-1)*k)
   for (el,norm) in extra_list
     for i=1:l

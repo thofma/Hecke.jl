@@ -190,9 +190,7 @@ function new_extend_aut(A::ClassField, auto::T) where T <: Map
   return new_extend_aut(A, T[auto])[1]
 end
 
-
 function new_extend_aut(A::ClassField, autos::Array{T, 1}) where T <: Map
-
   # tau: k -> k
   k = domain(autos[1])
   @assert k == codomain(autos[1])

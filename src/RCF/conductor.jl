@@ -777,7 +777,7 @@ function norm_group(KK::KummerExt, mp::NfToNfMor, mR::Union{MapRayClassGrp, MapC
   R = domain(mR)
   expo = exponent(R)
   Q, mQ = quo(R, els, false)
-  modu = minimum(defining_modulus(mR)[1])
+  modu = lcm(minimum(defining_modulus(mR)[1]), index(ZK))
   prev = length(els)
   #S = PrimesSet(minimum(defining_modulus(mR)[1]), fmpz(-1), minimum(defining_modulus(mR)[1]), fmpz(1))
   S = PrimesSet(200, -1, exponent(KK), 1)
@@ -786,6 +786,14 @@ function norm_group(KK::KummerExt, mp::NfToNfMor, mR::Union{MapRayClassGrp, MapC
       continue
     end
     lp = prime_decomposition(zk, p, 1)
+    if isempty(lp)
+      continue
+    end
+    D = Vector{Vector{gfp_poly}}(undef, length(KK.gen))
+    for i = 1:length(D)
+      D[i] = Vector{gfp_poly}(undef, length(KK.gen[i].fac))
+    end
+    first = false
     for i = 1:length(lp)
       P = lp[i][1]
       if iszero(mR\P)
@@ -794,7 +802,9 @@ function norm_group(KK::KummerExt, mp::NfToNfMor, mR::Union{MapRayClassGrp, MapC
       lP = prime_decomposition(mp, P)
       local z::GrpAbFinGenElem
       try
-        z = canonical_frobenius(lP[1][1], KK)
+        z = _canonical_frobenius_with_cache(lP[1][1], KK, first, D)
+        @hassert :ClassField 1 z == canonical_frobenius(lP[1][1], KK)
+        first = true
       catch e
         if !isa(e, BadPrime)
           rethrow(e)

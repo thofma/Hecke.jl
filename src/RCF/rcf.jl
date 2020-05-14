@@ -557,22 +557,6 @@ function _s_unit_for_kummer(C::CyclotomicExt, f::fmpz)
     #@vtime :ClassField 2 
     KK = kummer_extension(e, FacElem{nf_elem, AnticNumberField}[mS(S[i]) for i=1:ngens(S)])
   end
-  #gens mod n-th power - to speed up the frobenius computation
-  gens = KK.gen
-  gens_mod_nth = Vector{FacElem{nf_elem, AnticNumberField}}(undef, length(gens))
-  for i = 1:length(gens)
-    el = Dict{nf_elem, fmpz}()
-    for (s, v) in gens[i].fac
-      ex = mod(v, e)
-      if ex != 0 
-        el[s] = ex
-      end
-    end
-    gens_mod_nth[i] = FacElem(el)
-  end
-  KK.gen_mod_nth_power = gens_mod_nth
-  #@vtime :ClassField 3 
-  #KK.eval_mod_nth = nf_elem[evaluate(x) for x in gens_mod_nth]
   C.kummer_exts[lfs] = (lP, KK)
   return lP, KK
 end
@@ -617,7 +601,6 @@ end
 # builds a (projection) from B -> A identifying (pre)images of
 # prime ideals, the ideals are coprime to cp and ==1 mod n
 
-#function build_map(mR::Map, K::KummerExt, c::CyclotomicExt)
 function build_map(CF::ClassField_pp, K::KummerExt, c::CyclotomicExt)
   #mR should be GrpAbFinGen -> IdlSet
   #          probably be either "the rcg"
@@ -676,6 +659,13 @@ function _rcf_find_kummer(CF::ClassField_pp{S, T}) where {S, T}
   @vtime :ClassField 2 h = build_map(CF, KK, C)
   @vprint :ClassField 2 "... done\n"
 
+  #TODO:
+  #If the s-units are not large enough, the map might be trivial
+  #We could do something better.
+  if iszero(h)
+    CF.a = FacElem(one(C.Ka))
+    return nothing
+  end
   k, mk = kernel(h, false) 
   G = domain(h)
   

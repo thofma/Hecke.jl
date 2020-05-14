@@ -367,10 +367,10 @@ function get_sunits_from_subfield_data(OK, N; recursive::Bool = false, compact::
       if !(i in N.nonredundant)
         continue
       end
-      L = N.subfields[i]
-      if N.isnormal[i] && degree(L) > 10
-        NL = norm_relation(L, small_degree = false)
-        class_group_via_brauer(lll(maximal_order(L)), NL)
+      L = N.subfields[i][1]
+      if N.isnormal[i] && degree(L) > 25
+        NL = norm_relation(L, small_degree = false)[2]
+        class_group_via_brauer(lll(maximal_order(L)), NL, compact = false)
       end
     end
   end
@@ -421,6 +421,8 @@ function class_group_via_brauer(O::NfOrd, N::NormRelation; recursive::Bool = fal
   c.finished = true
   UZK.finished = true
 
+  Hecke._set_ClassGrpCtx_of_order(OK, c)
+  Hecke._set_UnitGrpCtx_of_order(OK, UZK)
   return class_group(c, O)
 end
 

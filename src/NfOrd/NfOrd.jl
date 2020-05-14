@@ -643,8 +643,8 @@ function in(a::nf_elem, O::NfOrd)
 end
 
 function _check_containment(R, M, t)
-  M1 = change_base_ring(R, M)
-  t1 = change_base_ring(R, t)
+  M1 = map_entries(R, M)
+  t1 = map_entries(R, t)
   return iszero(t1*M1)
 end
 
@@ -679,6 +679,7 @@ function denominator(a::nf_elem, O::NfOrd)
       return d2
     end
     a1 = d2*a
+    a1 = mod(a1, d1)
     M = basis_mat_inv(O, copy = false)
     d3 = ppio(M.den, d1)[1]
     M1 = mod(M.num, d1*d3)

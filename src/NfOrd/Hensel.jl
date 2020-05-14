@@ -303,7 +303,7 @@ function _hensel(f::Generic.Poly{nf_elem},
     _p = Int(characteristic(base_ring(fac_pol_mod_p)))
     if haskey(_cache, _p)
       _cache_p = _cache[_p]
-      @vprint :Saturate 1 "Hitting the cache for the prime $(_p)\n"
+      @vprint :Saturate 4 "Hitting the cache for the prime $(_p)\n"
       fac_pol_mod_p.parent = parent(first(keys(_cache_p)))
       if haskey(_cache_p, fac_pol_mod_p)
         @vprint :Saturate 1 "  Hitting the cache for the prime ideal\n"
@@ -314,7 +314,7 @@ function _hensel(f::Generic.Poly{nf_elem},
         _cache_p[fac_pol_mod_p] = _cache_lll
       end
     else
-      @vprint :Saturate 1 "No hitting the cache for the prime $(_p)\n"
+      @vprint :Saturate 4 "No hitting the cache for the prime $(_p)\n"
       _cache_p = Dict()
       _cache_lll = Dict()
       _cache_p[fac_pol_mod_p] = _cache_lll
@@ -438,7 +438,7 @@ function _hensel(f::Generic.Poly{nf_elem},
 
     pgg = Qt(gg) #we'll do the reductions by hand - possibly not optimal
 
-    ctx_lll = lll_ctx(0.73, 0.51)
+    ctx_lll = lll_ctx(0.60, 0.51)
     if caching && haskey(_cache_lll, pr[i])
       M, Mi, d = _cache_lll[pr[i]]::Tuple{fmpz_mat, fmpz_mat, fmpz}
     elseif i > 3
@@ -465,21 +465,19 @@ function _hensel(f::Generic.Poly{nf_elem},
           M[j, k+1] = -lift(coeff(pt, k))
         end
       end
-      @vtime :Saturate 2 begin
-        mul!(M, M, Miold)
-        divexact!(M, M, dold)
-        exp_mod = div(pr[i], 2)
-        if isodd(pr[i])
-          exp_mod += 1
-        end
-        hnf_modular_eldiv!(M, fmpz(p)^exp_mod)
-        M = lll(M, ctx_lll)
-        mul!(M, M, Mold)
-        M = lll(M)
-        Mi, d = pseudo_inv(M)
-        if caching
-          _cache_lll[pr[i]] = (M, Mi, d)
-        end
+      mul!(M, M, Miold)
+      divexact!(M, M, dold)
+      exp_mod = div(pr[i], 2)
+      if isodd(pr[i])
+        exp_mod += 1
+      end
+      hnf_modular_eldiv!(M, fmpz(p)^exp_mod)
+      M = lll(M, ctx_lll)
+      mul!(M, M, Mold)
+      @vtime :Saturate 1 M = lll(M)
+      Mi, d = pseudo_inv(M)
+      if caching
+        _cache_lll[pr[i]] = (M, Mi, d)
       end
     else
       M = zero_matrix(FlintZZ, n, n)

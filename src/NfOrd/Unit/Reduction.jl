@@ -55,7 +55,6 @@ function scaled_log_matrix(u::Array{T, 1}, pr::Int = 32) where T
   for i in 1:length(u)
     c = conjugates_arb_log(u[i], pr)
     for k in 1:length(c)
-      #@show T
       @assert radiuslttwopower(c[k], -pr)
     end
 
@@ -79,11 +78,11 @@ function scaled_log_matrix(u::Array{T, 1}, pr::Int = 32) where T
 end
 
 function row_norm(A::fmpz_mat, i::Int)
-  return sum([A[i,j]^2 for j=1:ncols(A)])
+  return sum(fmpz[A[i,j]^2 for j=1:ncols(A)])
 end
 
 function row_norms(A::fmpz_mat)
-  return [row_norm(A, i) for i=1:nrows(A)]
+  return fmpz[row_norm(A, i) for i=1:nrows(A)]
 end
 
 function reduce(u::Array{T, 1}, prec::Int = 32) where T

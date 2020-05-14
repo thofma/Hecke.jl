@@ -913,7 +913,7 @@ function mod!(M::fmpz_mat, p::fmpz)
       ccall((:fmpz_mod, libflint), Nothing, (Ptr{fmpz}, Ptr{fmpz}, Ref{fmpz}), z, z, p)
     end
   end
-  nothing
+  return nothing
 end
 
 @doc Markdown.doc"""
@@ -927,7 +927,7 @@ function mod(M::fmpz_mat, p::fmpz)
 end
 
 @doc Markdown.doc"""
-    mod!(M::fmpz_mat, p::fmpz) 
+    mod_sym!(M::fmpz_mat, p::fmpz) 
 Reduces every entry modulo $p$ in-place, into the symmetric residue system.
 """
 function mod_sym!(M::fmpz_mat, B::fmpz)

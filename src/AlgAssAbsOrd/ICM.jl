@@ -168,7 +168,7 @@ end
 
 # Computes all subgroups of S/a as fractional ideals of R.
 function ideals_containing(S::T, a::T2, R::T) where { T <: Union{ NfAbsOrd, AlgAssAbsOrd }, T2 <: Union{ NfAbsOrdIdl, AlgAssAbsOrdIdl } }
-  Q, mQ = quo(S, a, type = :group)
+  Q, mQ = quo(S, a, GrpAbFinGen)
   if order(Q) == 1
     return [ a ]
   end

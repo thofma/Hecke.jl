@@ -1367,3 +1367,40 @@ function taylor_shift(x::nmod_poly, c::UInt)
           (Ref{nmod_poly}, Ref{nmod_poly}, UInt), r, x, c)
   return r
 end
+
+function evaluate(f::gfp_poly, v::Vector{gfp_elem})
+  F = base_ring(f)
+  v1 = UInt[x.data for x in v]
+  res = UInt[UInt(1) for x in v]
+  ccall((:nmod_poly_evaluate_nmod_vec, libflint), Nothing,
+          (Ptr{UInt}, Ref{gfp_poly}, Ptr{UInt}, UInt),
+          res, f, v1, UInt(length(v)))
+  return gfp_elem[gfp_elem(x, F) for x in res]
+end
+
+function _evaluation_tree(v::Vector{gfp_elem}, dummy::gfp_poly)
+  n = length(v)
+#  mod = UInt(size(parent(v[1])))
+  v1 = UInt[x.data for x in v]
+  mod = nmod_struct(dummy.mod_n, dummy.mod_ninv, dummy.mod_norm)
+  tree = ccall((:_nmod_poly_tree_alloc, libflint), Ptr{Nothing},
+          (Int, ), length(v))
+  ccall((:_nmod_poly_tree_build, libflint), Nothing,
+    (Ptr{Nothing}, Ptr{UInt}, Int, Ref{nmod_struct}), tree, v1, n, mod)
+  return tree
+end
+
+function _evaluate_with_tree(tree, f::gfp_poly, n::Int)
+  F = base_ring(f)
+  ys = UInt[UInt(1) for i = 1:n]
+  mod = nmod_struct(f.mod_n, f.mod_ninv, f.mod_norm)
+#  co = UInt[0, 1]
+  @show mod
+  ccall((:_nmod_poly_evaluate_nmod_vec_fast_precomp, libflint), Nothing,
+    (Ref{UInt}, Ptr{Nothing}, Int, Ptr{Nothing}, Int, Ref{nmod_struct}), ys, f.coeffs, f.length, tree, n, mod)
+  return gfp_elem[F(x) for x in ys]
+end
+
+function _free_tree(tree, len)
+  ccall((:_nmod_poly_tree_free, libflint), Nothing, (Ptr{Ptr{UInt}}, Int), tree, len)
+end

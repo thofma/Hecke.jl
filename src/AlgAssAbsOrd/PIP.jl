@@ -360,8 +360,6 @@ function _isprincipal_maximal_simple(a::AlgAssAbsOrdIdl, M, side = :right)
   end
 end
 
-global __debug = []
-
 function _isprincipal(a::AlgAssAbsOrdIdl, O, side = :right)
   if hnf(basis_matrix(O)) != hnf(basis_matrix(right_order(a)))
     return false, zero(algebra(O))

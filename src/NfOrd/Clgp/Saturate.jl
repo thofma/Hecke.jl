@@ -194,11 +194,155 @@ function compute_candidates_for_saturate(c::Hecke.ClassGrpCtx, p::Int, stable::F
   return Hecke.lift_nonsymmetric(A)
 end
 
+
+function compute_candidates_for_saturate1(c::Hecke.ClassGrpCtx, p::Int, stable::Float64 = 1.5)
+  ZK = order(c.FB.ideals[1])
+  K = nf(ZK)
+  zeta, sT = Hecke.torsion_units_gen_order(K)
+
+  @vprint :Saturate 3 "Reducing exponents\n"
+  R = relations_mod_powers(c, p)
+  if gcd(sT, p) != 1 && !(hash(zeta) in c.RS) # && order is promising...
+    push!(R, FacElem(zeta))
+  end
+  @vprint :Saturate 3 "Done\n"
+
+  T = GF(p, cached = false)
+  cA = length(R)
+  A = identity_matrix(T, cA)
+  
+  S = Hecke.PrimesSet(Hecke.p_start, -1, p, 1)
+
+  dK = discriminant(ZK) 
+  threshold = stable*ncols(A)
+
+  f = K.pol
+  att = 1
+
+  #evals will contain at the same time all the evaluations at the prime ideals
+  #of every element in R
+  evals = Vector{Vector{Hecke.gfp_elem}}(undef, length(R))
+  for i = 1:length(evals)
+    evals[i] = Vector{Hecke.gfp_elem}(undef, degree(K))
+  end
+
+  evaluateat = Vector{Hecke.gfp_elem}(undef, degree(K))
+  for q in S
+    @vprint :Saturate 3 "Finding primes for saturation: $att/$(threshold)\n"
+    if isdefining_polynomial_nice(K) && isindex_divisor(ZK, q)
+      continue
+    end
+    if iszero(dK % q)
+      continue
+    end
+
+    F = GF(q, cached = false)
+    Fx, x = PolynomialRing(F, "x", cached = false)
+    fF = Fx(f)
+    g = gcd(fF, powmod(x, q, fF)-x)
+    if isone(g)
+      continue
+    end
+    facts = Hecke.factor_equal_deg(g, 1)
+    lfacts = length(facts)
+    #I take the evaluation points...
+    for i = 1:lfacts
+      evaluateat[i] = -coeff(facts[i], 0)
+    end
+
+    #Now, I evaluate the elements.
+    bad_prime = false
+    t = Fx()
+    for i = 1:length(R)
+      isfirst = true
+      for (k, v) in R[i]
+        if !iscoprime(denominator(k), q)
+          bad_prime = true
+          break
+        end
+        Hecke.nf_elem_to_gfp_poly!(t, k)
+        #evaluations = evaluate(t, evaluateat[1:lfacts])
+        for j = 1:lfacts
+          ev_t = evaluate(t, evaluateat[j])#evaluations[j]
+          if isone(ev_t)
+            continue
+          end
+          if isfirst
+            if isone(v)
+              evals[i][j] = ev_t
+            else
+              evals[i][j] = ev_t^Int(v)
+            end
+          else
+            if isone(v)
+              evals[i][j] = mul!(evals[i][j], evals[i][j], ev_t)
+            else
+              evals[i][j] = mul!(evals[i][j], evals[i][j], ev_t^Int(v))
+            end
+          end
+        end
+        isfirst = false
+      end
+      if bad_prime
+        break
+      end
+    end
+    if bad_prime
+      continue
+    end
+    #Prepare the disc log dictionary
+    disc_log = Dict{Hecke.gfp_elem, Hecke.gfp_elem}()
+    disc_log[F(1)] = zero(T)
+    pp, e = ppio(q-1, p)
+    exp_to_test = divexact(pp, p)
+    elF = rand(F)
+    while true
+      if iszero(elF)
+        continue
+      end
+      elF = elF^e
+      if !isone(elF^exp_to_test)
+        break
+      end
+      elF = rand(F)
+    end
+    y = elF
+    for i = 1:pp-1
+      disc_log[y] = T(i)
+      y *= elF
+    end 
+    #The disc log dictionary is ready. Now we need the subspace.
+    for i = 1:lfacts
+      z = matrix(T, 1, length(R), Hecke.gfp_elem[disc_log[evals[j][i]^e] for j = 1:length(R)])
+      z = z*A
+      rrz, z = nullspace(z)
+      if iszero(rrz)
+        return zero_matrix(FlintZZ, 0, length(R))
+      end
+      A = A*sub(z, 1:nrows(z), 1:rrz)
+      if cA == ncols(A) 
+        att += 1
+      else
+        att = 0
+        cA = ncols(A)
+      end
+      if att > threshold
+        break
+      end
+    end
+    if att > threshold
+      break
+    end
+  end
+  return Hecke.lift_nonsymmetric(A)
+end
+
 function saturate!(d::Hecke.ClassGrpCtx, U::Hecke.UnitGrpCtx, n::Int, stable::Float64 = 3.5)
   @assert isprime(n)
   K = nf(d)
   @vprint :Saturate 1 "Simplifying the context\n"
   @vtime :Saturate 1 c = simplify(d, U)
+  orbit = isdefined(d, :aut_grp)
   success = false
   while true
     if success
@@ -214,10 +358,11 @@ function saturate!(d::Hecke.ClassGrpCtx, U::Hecke.UnitGrpCtx, n::Int, stable::Fl
     zeta = Hecke.torsion_units_generator(K)
     @vprint :Saturate 1 "(Hopefully) enlarging by $(ncols(e)) elements\n"
 
+    rels_added = sparse_matrix(FlintZZ)
     R = relations(c)
     R_mat = relations_matrix(c)
     wasted = false
-    for i = 1:ncols(e)
+    for i = ncols(e):-1:1
       a = FacElem(K(1))
       fac_a = SRow(FlintZZ)
       for j = 1:length(R)
@@ -228,7 +373,15 @@ function saturate!(d::Hecke.ClassGrpCtx, U::Hecke.UnitGrpCtx, n::Int, stable::Fl
       end
       if nrows(e) > length(R) && !iszero(e[nrows(e), i])
         @assert length(R) + 1 == nrows(e)
-        mul!(a, a, FacElem(nf_elem[zeta], fmpz[e[nrows(e), i]]))
+        Hecke.add_to_key!(a.fac, zeta, e[nrows(e), i])
+      end
+
+      if !iszero(fac_a) && nrows(rels_added) > 0
+        candidate_rel = divexact(fac_a, n)
+        red_candidate = reduce(rels_added, candidate_rel)
+        if iszero(red_candidate)
+          continue
+        end
       end
       
       decom = Dict{NfOrdIdl, fmpz}((c.FB.ideals[k], v) for (k, v) = fac_a)
@@ -238,20 +391,31 @@ function saturate!(d::Hecke.ClassGrpCtx, U::Hecke.UnitGrpCtx, n::Int, stable::Fl
         @vprint :Saturate 1  "The element is an n-th power\n"
         success = true
         fac_a = divexact(fac_a, n)
-        Hecke.class_group_add_relation(d, x, fac_a)
         if iszero(fac_a) 
           #In this case, the element we have found is a unit and
           #we want to make sure it is used
           #find units can be randomised...
           #maybe that should also be addressed elsewhere
-          @vprint :Saturate 2  "The new element is a unit\n"
+          @vprint :Saturate 1  "The new element is a unit\n"
           Hecke._add_dependent_unit(U, x)
           if isdefined(d, :aut_grp)
             auts_action = Hecke._get_autos_from_ctx(d)
             for i = 1:length(auts_action)
-              Hecke._add_dependent_unit(U, auts_action[i][1](x))
+              new_u = auts_action[i][1](x)
+              Hecke._add_dependent_unit(U, new_u)
             end
             break
+          end
+        else
+          @vprint :Saturate 1  "The new element gives a relation\n"
+          Hecke.class_group_add_relation(d, x, fac_a)
+          if orbit
+            #We add the relation to the matrix and compute the snf
+            auts_action = Hecke._get_autos_from_ctx(d)
+            for i = 1:length(auts_action)
+              push!(rels_added, Hecke.permute_rows(fac_a, auts_action[i][2]))
+            end
+            rels_added = hnf(rels_added, truncate = true)
           end
         end
       else

@@ -118,6 +118,69 @@ function _norm_relation_setup_abelian(K::AnticNumberField; small_degree::Bool = 
   return z
 end
 
+function _norm_relation_for_sunits(K::AnticNumberField; small_degree::Bool = true,  pure::Bool = false, target_den::fmpz = zero(fmpz), max_degree::Int = degree(K))
+  @vprint :NormRelation 1 "Computing automorphisms\n"
+  A = automorphisms(K)
+  G, AtoG, GtoA = generic_group(A, *)
+  if iszero(target_den)
+     b, den, ls = _has_norm_relation_abstract(G, [f for f in subgroups(G, conjugacy_classes = false) if order(f[1]) > 1 && div(order(G), order(f[1])) <= max_degree], pure = pure, large_index = small_degree)
+  else
+    b, den, ls = _has_norm_relation_abstract(G, [f for f in subgroups(G, conjugacy_classes = false) if order(f[1]) > 1 && div(order(G), order(f[1])) <= max_degree], target_den = target_den, pure = pure, large_index = small_degree)
+  end
+
+  if !b
+    @show find_small_group(G)
+    throw(error("Galois group does not admit Brauer relation"))
+  end
+
+  nonredundant = trues(length(ls))
+
+  for i in 1:length(ls)
+    if !nonredundant[i] 
+      continue
+    end
+    for j = i+1:length(ls)
+      if Base.issubset(ls[j][1], ls[i][1])
+        nonredundant[i] = false
+        break
+      elseif Base.issubset(ls[i][1], ls[j][1])
+        nonredundant[j] = false
+      end
+    end
+  end
+  nsubs = findall(nonredundant)
+  n = length(nsubs)
+
+  z = NormRelation{Int}()
+  z.K = K
+  z.isnormal = falses(n)
+  z.subfields = Vector{Tuple{AnticNumberField, NfToNfMor}}(undef, n)
+  z.denominator = den
+  z.ispure = pure
+  z.embed_cache_triv = Vector{Dict{nf_elem, nf_elem}}(undef, n)
+  z.nonredundant = Int[i for i = 1:n]
+
+  for i in 1:n
+    z.embed_cache_triv[i] = Dict{nf_elem, nf_elem}()
+  end
+
+  @vprint :NormRelation 1 "Computing subfields\n"
+  for i in 1:n
+    @vprint :NormRelation 3 "Computing subfield $i / $n \n"
+		auts = NfToNfMor[GtoA[f] for f in ls[nsubs[i]][1]]
+    @vtime :NormRelation 3 F, mF = Hecke.fixed_field1(K, auts)
+    @vprint :NormRelation 1 "Simplifying \n $F\n"
+    @vtime :NormRelation 3 S, mS = simplify(F, cached = false)
+    L = S
+    mL = mS * mF
+    z.subfields[i] = L, mL
+    z.isnormal[i] = Hecke._isnormal(ls[i][1])
+  end
+  z.isabelian = false
+
+  return z
+end
+
 function _norm_relation_setup_generic(K::AnticNumberField; small_degree::Bool = true, pure::Bool = false, target_den::fmpz = zero(fmpz), max_degree::Int = degree(K))
   @vprint :NormRelation 1 "Computing automorphisms\n"
   A = automorphisms(K)
@@ -1057,7 +1120,7 @@ function has_coprime_norm_relation(K::AnticNumberField, m::fmpz)
  
   for i in 1:n
     F, mF = Hecke.fixed_field1(K, NfToNfMor[mG(f) for f in ls[i][1]])
-    S, mS = simplify(F, cached = true)
+    S, mS = simplify(F, cached = false)
     L = S
     mL = mS * mF
     z.subfields[i] = L, mL
