@@ -3,43 +3,9 @@ module MPolyGcd
 using Hecke
 import Nemo, Nemo.nmod_mpoly, Nemo.NmodMPolyRing
 import AbstractAlgebra
-import Base.//, Base.==
 
-export Terms, gcd
+#export Terms, gcd
 
-#=
-mutable struct MPolyBuildCtx{T}
-  f::T
-  function MPolyBuildCtx(R::T) where {T <: AbstractAlgebra.MPolyRing}
-    r = new{elem_type(T)}()
-    r.f = R()
-    return r
-  end
-end
-
-function show(io::IO, M::MPolyBuildCtx)
-  print(io, "constructing a polynomial in ", parent(M.f))
-end
-
-function finish(M::MPolyBuildCtx{<:AbstractAlgebra.MPolyElem})
-  M.f = sort_terms!(M.f)
-  M.f = combine_like_terms!(M.f)
-  return M.f
-end
-
-function push_term!(M::MPolyBuildCtx{<:AbstractAlgebra.MPolyElem}, c::RingElem, e::Vector{Int})
-  l = length(M.f)+1
-  set_exponent_vector!(M.f, l, e)
-  setcoeff!(M.f, l, c)
-end
-
-function push_term!(M::MPolyBuildCtx{nmod_mpoly}, c::UInt, e::Vector{Int})
-  ccall((:nmod_mpoly_push_term_ui_ui, :libflint), Nothing,
-               (Ref{nmod_mpoly}, UInt, Ptr{Int}, Ref{NmodMPolyRing}),
-               M.f, c, e, M.f.parent)
-end
-
-=#
 function Hecke.lead(f::AbstractAlgebra.MPolyElem)
   iszero(f) && error("zero poly")
   return coeff(f, 1)
@@ -297,7 +263,6 @@ end
 function Hecke.modular_lift(me::Hecke.modular_env, g::Array{nmod_mpoly, 1})
   bt = MPolyBuildCtx(me.Kxy)
   #TODO deal with different vectors properly (check induce_crt)
-  gt = [Terms(x) for x = g]
   @assert all(x->collect(exponent_vectors(g[1])) == collect(exponent_vectors(g[x])), 2:length(g))
   for i=1:length(g[1])
     for x=1:length(g)
@@ -501,6 +466,9 @@ function Hecke.toMagma(io::IOStream, s::Symbol, v::Any)
   print(io, ";\n")
 end
 
+#=
+import Base.//, Base.==
+
 struct Term{T}
   f::T
   i::Int
@@ -584,7 +552,7 @@ function lead_term(f::AbstractAlgebra.MPolyElem)
   return Term(f, 1)
 end
 
-
+=#
 #=TODO
   fit! for nmod_mpoly
   coeff(fq_nmod) -> UInt (should be nmod)
