@@ -1,3 +1,5 @@
+add_verbose_scope(:MPolyGcd)
+
 module MPolyGcd
 
 using Hecke
@@ -6,15 +8,18 @@ import AbstractAlgebra
 
 function Hecke.gcd(f::Hecke.Generic.MPoly{nf_elem}, g::Hecke.Generic.MPoly{nf_elem})
   Hecke.check_parent(f, g)
+  @vprint :MPolyGcd 1 "multivariate gcd of f with $(length(f)) and g with $(length(g)) terms over $(base_ring(f))\n"
 
   k = base_ring(f)
   ps = PrimesSet(Hecke.p_start, -1)
   fl, c = Hecke.iscyclotomic_type(k)
   if fl
+    @vprint :MPolyGcd 2 "field is cyclotomic with conductor $c\n"
     ps = PrimesSet(Hecke.p_start, -1, c, 1)
   end
   fl, c = Hecke.isquadratic_type(k)
   if fl && abs(c) < typemax(Int)
+    @vprint :MPolyGcd 2 "field is quadratic, using conductor $(4*c)\n"
     ps = PrimesSet(Hecke.p_start, -1, Int(4*c), 1)
   end
   return _gcd(f, g, ps)
@@ -22,7 +27,7 @@ end
 
 function _gcd(f::Hecke.Generic.MPoly{nf_elem}, g::Hecke.Generic.MPoly{nf_elem}, ps::PrimesSet{Int})
 #  @show "gcd start"
-  @show p = iterate(ps)[1]
+  p = iterate(ps)[1]
   K = base_ring(f)
   max_stable = 2
   stable = max_stable
@@ -59,18 +64,19 @@ function _gcd(f::Hecke.Generic.MPoly{nf_elem}, g::Hecke.Generic.MPoly{nf_elem}, 
 
   fl = true
   while true
-    @show p = iterate(ps, p)[1]
-    me = Hecke.modular_init(K, p, deg_limit = 1)
+    p = iterate(ps, p)[1]
+    @vprint :MPolyGcd 2 "Main loop: using $p\n"
+    @vtime :MPolyGcd 3 me = Hecke.modular_init(K, p, deg_limit = 1)
     if isempty(me)
       continue
     end
     R = ResidueRing(FlintZZ, p)
     Rt, t = PolynomialRing(R, "t", cached = false)
-    fp = Hecke.modular_proj(me, f)
-    gp = Hecke.modular_proj(me, g)
+    @vtime :MPolyGcd 3 fp = Hecke.modular_proj(me, f)
+    @vtime :MPolyGcd 3 gp = Hecke.modular_proj(me, g)
     glp = Hecke.modular_proj(gl, me)
     gcd_p = nmod_mpoly[]
-    for i=1:length(fp)
+    @vtime :MPolyGcd 3 for i=1:length(fp)
       _g = gcd(fp[i], gp[i])
       if length(_g) == 1 && iszero(exponent_vector(_g, 1))
         return inflate(one(parent(f)), shiftr, deflr)
@@ -78,7 +84,7 @@ function _gcd(f::Hecke.Generic.MPoly{nf_elem}, g::Hecke.Generic.MPoly{nf_elem}, 
       push!(gcd_p, coeff(glp[i], 0)*_g)
     end
     #gcd_p = [coeff(glp[i], 0)*gcd(fp[i], gp[i]) for i=1:length(fp)]
-    tp = Hecke.modular_lift(me, gcd_p)
+    @vtime :MPolyGcd 3 tp = Hecke.modular_lift(me, gcd_p)
     if d==1
       d = fmpz(p)
       gc = tp
