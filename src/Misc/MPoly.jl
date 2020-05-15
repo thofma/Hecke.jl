@@ -61,3 +61,29 @@ end
 function evaluate(f::Generic.Frac{T}, V::Vector{U}) where {T <: RingElem, U <: RingElem}
   return evaluate(numerator(f), V)//evaluate(denominator(f), V)
 end
+
+function evaluate(f::Generic.Frac{T}, v::U) where {T <: RingElem, U <: RingElem}
+  return evaluate(numerator(f), v)//evaluate(denominator(f), v)
+end
+
+function Hecke.lead(f::AbstractAlgebra.MPolyElem)
+  iszero(f) && error("zero poly")
+  return coeff(f, 1)
+end
+
+function Hecke.coefficients(f::AbstractAlgebra.MPolyElem)
+  return Hecke.PolyCoeffs(f)
+end
+
+function Base.iterate(PC::Hecke.PolyCoeffs{<:AbstractAlgebra.MPolyElem}, st::Int = 0)
+  st += 1
+  if st > length(PC.f)
+    return nothing
+  else
+    return coeff(PC.f, st), st
+  end
+end
+
+Base.length(M::Hecke.PolyCoeffs{<:AbstractAlgebra.MPolyElem}) = length(M.f)
+
+
