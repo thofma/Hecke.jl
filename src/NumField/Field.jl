@@ -296,7 +296,7 @@ isquadratic_type(K::NfRel) = false, fmpz(1)
 function isquadratic_type(L::AnticNumberField)
   f = get_special(L, :show)
   if f === Hecke.show_quad
-    return true, -coeff(L.pol, 0)
+    return true, numerator(-coeff(L.pol, 0))
   end
   return false, fmpz(1)
 end
