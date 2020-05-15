@@ -4,33 +4,25 @@ using Hecke
 import Nemo, Nemo.nmod_mpoly, Nemo.NmodMPolyRing
 import AbstractAlgebra
 
-#export Terms, gcd
+function Hecke.gcd(f::Hecke.Generic.MPoly{nf_elem}, g::Hecke.Generic.MPoly{nf_elem})
+  Hecke.check_parent(f, g)
 
-function Hecke.lead(f::AbstractAlgebra.MPolyElem)
-  iszero(f) && error("zero poly")
-  return coeff(f, 1)
-end
-
-function Hecke.coefficients(f::AbstractAlgebra.MPolyElem)
-  return Hecke.PolyCoeffs(f)
-end
-
-function Base.iterate(PC::Hecke.PolyCoeffs{<:AbstractAlgebra.MPolyElem}, st::Int = 0)
-  st += 1
-  if st > length(PC.f)
-    return nothing
-  else
-    return coeff(PC.f, st), st
+  k = base_ring(f)
+  ps = PrimesSet(Hecke.p_start, -1)
+  fl, c = Hecke.iscyclotomic_type(k)
+  if fl
+    ps = PrimesSet(Hecke.p_start, -1, c, 1)
   end
+  fl, c = Hecke.isquadratic_type(k)
+  if fl && abs(c) < typemax(Int)
+    ps = PrimesSet(Hecke.p_start, -1, Int(4*c), 1)
+  end
+  return _gcd(f, g, ps)
 end
 
-Base.length(M::Hecke.PolyCoeffs{<:AbstractAlgebra.MPolyElem}) = length(M.f)
-
-   
-function Hecke.gcd(f::Hecke.Generic.MPoly{nf_elem}, g::Hecke.Generic.MPoly{nf_elem}, ps::PrimesSet{Int} = PrimesSet(Hecke.p_start, -1))
-#function Hecke.gcd(f::Hecke.Generic.MPoly{nf_elem}, g::Hecke.Generic.MPoly{nf_elem}, ps::PrimesSet{Int} = PrimesSet(Hecke.p_start, -1, 23, 1))
+function _gcd(f::Hecke.Generic.MPoly{nf_elem}, g::Hecke.Generic.MPoly{nf_elem}, ps::PrimesSet{Int})
 #  @show "gcd start"
-  p = iterate(ps)[1]
+  @show p = iterate(ps)[1]
   K = base_ring(f)
   max_stable = 2
   stable = max_stable
@@ -67,7 +59,7 @@ function Hecke.gcd(f::Hecke.Generic.MPoly{nf_elem}, g::Hecke.Generic.MPoly{nf_el
 
   fl = true
   while true
-    p = iterate(ps, p)[1]
+    @show p = iterate(ps, p)[1]
     me = Hecke.modular_init(K, p, deg_limit = 1)
     if isempty(me)
       continue
