@@ -26,15 +26,7 @@ end
 
 Base.length(M::Hecke.PolyCoeffs{<:AbstractAlgebra.MPolyElem}) = length(M.f)
 
-function gcd_zippel(a::nmod_mpoly, b::nmod_mpoly)
-   z = parent(a)()
-   r = Bool(ccall((:nmod_mpoly_gcd_zippel, :libflint), Cint,
-         (Ref{nmod_mpoly}, Ref{nmod_mpoly}, Ref{nmod_mpoly}, Ref{NmodMPolyRing}),
-         z, a, b, a.parent))
-   r == false && error("Unable to compute gcd")
-   return z
-end
-    
+   
 function Hecke.gcd(f::Hecke.Generic.MPoly{nf_elem}, g::Hecke.Generic.MPoly{nf_elem}, ps::PrimesSet{Int} = PrimesSet(Hecke.p_start, -1))
 #function Hecke.gcd(f::Hecke.Generic.MPoly{nf_elem}, g::Hecke.Generic.MPoly{nf_elem}, ps::PrimesSet{Int} = PrimesSet(Hecke.p_start, -1, 23, 1))
 #  @show "gcd start"
@@ -87,13 +79,13 @@ function Hecke.gcd(f::Hecke.Generic.MPoly{nf_elem}, g::Hecke.Generic.MPoly{nf_el
     glp = Hecke.modular_proj(gl, me)
     gcd_p = nmod_mpoly[]
     for i=1:length(fp)
-      _g = gcd_zippel(fp[i], gp[i])
+      _g = gcd(fp[i], gp[i])
       if length(_g) == 1 && iszero(exponent_vector(_g, 1))
         return inflate(one(parent(f)), shiftr, deflr)
       end
       push!(gcd_p, coeff(glp[i], 0)*_g)
     end
-    #gcd_p = [coeff(glp[i], 0)*gcd_zippel(fp[i], gp[i]) for i=1:length(fp)]
+    #gcd_p = [coeff(glp[i], 0)*gcd(fp[i], gp[i]) for i=1:length(fp)]
     tp = Hecke.modular_lift(me, gcd_p)
     if d==1
       d = fmpz(p)
