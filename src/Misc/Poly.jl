@@ -1462,3 +1462,29 @@ function Base.divrem(f::AbstractAlgebra.PolyElem{T}, g::AbstractAlgebra.PolyElem
   end
   return q, f
 end
+
+
+@doc Markdown.doc"""
+    fmpz_poly_read!(a::fmpz_poly, b::String) -> fmpz_poly
+
+Use flint's native read function to obtain the polynomial in the file with name `b`.    
+"""
+function fmpz_poly_read!(a::fmpz_poly, b::String)
+  f = ccall((:fopen, :libc), Ptr{Nothing}, (Cstring, Cstring), b, "r")
+  ccall((:fmpz_poly_fread, libflint), Nothing, (Ptr{Nothing}, Ref{fmpz}), f, a)
+  ccall((:fclose), Nothing, (Ptr{Nothing}, ), f)
+  return a
+end
+
+@doc Markdown.doc"""
+    mahler_measure_bound(f::fmpz_poly) -> fmpz
+ 
+A upper bound on the Mahler measure of `f`.
+
+The Mahler measure is the product over the roots of absolute value at least `1`.
+"""
+function mahler_measure_bound(f::fmpz_poly)
+  return root(sum([coeff(f, i)^2 for i=0:degree(f)])-1, 2)+1
+end
+
+
