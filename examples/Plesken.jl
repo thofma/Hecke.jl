@@ -18,44 +18,6 @@
 # gen for ResidueRing(Poly) 
 
 
-struct FmpzBits
-  len::Int
-  A::fmpz
-  function FmpzBits(a::fmpz)
-    a<0 && throw("should be positive")
-    r = new(nbits(a)-1, a)
-    return r
-  end
-end
-function start(I::FmpzBits)
-  return I.len
-end
-
-function next(I::FmpzBits, st::Int)
-  r = ccall((:fmpz_tstbit, :libflint), Int, (Ptr{fmpz}, Int), &I.A, st)
-  return (r, st-1)
-end
-function done(I::FmpzBits, st::Int)
-  return st<0
-end
-## sample: iteration over the bits...
-function pow_new(a::ResElem, f::fmpz)
-  f==0 && return one(parent(a))
-  f==1 && return a
-  if f<0
-    f=-f
-    a = inv(a)
-  end
-  b = one(parent(a))
-  for X=FmpzBits(f)
-    b *= b
-    if X[1]==1
-      b*=a
-    end
-  end
-  return b
-end
-
 #################################################
 
 
