@@ -468,8 +468,8 @@ function set_special(G::T, data::Pair{Symbol, <:Any}...) where T <: Map{<:Any, <
   end
 end
 
-import Nemo: libflint, libantic  #to be able to reference libraries by full path
-                                 #to avoid calling the "wrong" copy
+import Nemo: libflint, libantic, libarb  #to be able to reference libraries by full path
+                                         #to avoid calling the "wrong" copy
 
 ################################################################################
 #

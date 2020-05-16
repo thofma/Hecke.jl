@@ -38,12 +38,12 @@
 ################################################################################
 
 function BigFloat(x::arb)
-  n = ccall((:arb_bits, :libarb), Int, (Ref{arb}, ), x)
+  n = ccall((:arb_bits, libarb), Int, (Ref{arb}, ), x)
   p = precision(BigFloat)
   setprecision(BigFloat, max(n+10,p))
   a = BigFloat()
   b = BigFloat()
-  ccall((:arb_get_interval_mpfr, :libarb), Nothing, (Ref{BigFloat}, Ref{BigFloat}, Ref{arb}), a, b, x)
+  ccall((:arb_get_interval_mpfr, libarb), Nothing, (Ref{BigFloat}, Ref{BigFloat}, Ref{arb}), a, b, x)
   c = (a+b)/2
   setprecision(BigFloat, p)
   return c
@@ -128,15 +128,15 @@ function _validate_size_of_zeros(roots::Ptr{acb_struct}, deg::Int, abs_tol::Int)
   end
 
   for i = 0 : deg-1
-    re = ccall((:acb_real_ptr, :libarb), Ptr{Nemo.arb_struct},
+    re = ccall((:acb_real_ptr, libarb), Ptr{Nemo.arb_struct},
           (Ptr{acb}, ), roots + i * sizeof(acb_struct))
-    im = ccall((:acb_imag_ptr, :libarb), Ptr{Nemo.arb_struct},
+    im = ccall((:acb_imag_ptr, libarb), Ptr{Nemo.arb_struct},
           (Ptr{acb}, ), roots + i * sizeof(acb_struct))
-    t = ccall((:arb_rad_ptr, :libarb), Ptr{Nemo.mag_struct}, (Ptr{arb}, ), re)
-    u = ccall((:arb_rad_ptr, :libarb), Ptr{Nemo.mag_struct}, (Ptr{arb}, ), im)
-    ok = ok && (ccall((:mag_cmp_2exp_si, :libarb), Cint,
+    t = ccall((:arb_rad_ptr, libarb), Ptr{Nemo.mag_struct}, (Ptr{arb}, ), re)
+    u = ccall((:arb_rad_ptr, libarb), Ptr{Nemo.mag_struct}, (Ptr{arb}, ), im)
+    ok = ok && (ccall((:mag_cmp_2exp_si, libarb), Cint,
         (Ptr{Nemo.mag_struct}, Int), t, -abs_tol) <= 0)
-    ok = ok && (ccall((:mag_cmp_2exp_si, :libarb), Cint,
+    ok = ok && (ccall((:mag_cmp_2exp_si, libarb), Cint,
         (Ptr{Nemo.mag_struct}, Int), u, -abs_tol) <= 0)
     if !ok
       break
@@ -196,11 +196,11 @@ function _roots!(roots::Ptr{acb_struct}, x::Union{fmpq_poly, fmpz_poly},
     y = acb_poly(x, wp) 
 
     if have_approx
-      isolated = ccall((:acb_poly_find_roots, :libarb), Int,
+      isolated = ccall((:acb_poly_find_roots, libarb), Int,
               (Ptr{acb_struct}, Ref{acb_poly}, Ptr{acb_struct}, Int, Int),
               roots, y, in_roots, step_max_iter, wp)
     else
-      isolated = ccall((:acb_poly_find_roots, :libarb), Int,
+      isolated = ccall((:acb_poly_find_roots, libarb), Int,
               (Ptr{acb_struct}, Ref{acb_poly}, Ptr{acb_struct}, Int, Int),
               roots, y, C_NULL, step_max_iter, wp)
     end
@@ -214,17 +214,17 @@ function _roots!(roots::Ptr{acb_struct}, x::Union{fmpq_poly, fmpz_poly},
     if isolated == deg
       have_approx = true
       ok = _validate_size_of_zeros(roots, deg, abs_tol)
-      real_ok = ccall((:acb_poly_validate_real_roots, :libarb),
+      real_ok = ccall((:acb_poly_validate_real_roots, libarb),
           Bool, (Ptr{acb_struct}, Ref{acb_poly}, Int), roots, y, wp)
       
       if !real_ok
           ok = false
       else
         for i = 0 : deg - 1
-            im = ccall((:acb_imag_ptr, :libarb), Ptr{Nemo.arb_struct},
+            im = ccall((:acb_imag_ptr, libarb), Ptr{Nemo.arb_struct},
                 (Ptr{acb}, ), roots + i * sizeof(acb_struct))
-            if ccall((:arb_contains_zero, :libarb), Bool, (Ptr{Nemo.arb_struct}, ), im)
-                ccall((:arb_zero, :libarb), Nothing, (Ptr{Nemo.arb_struct}, ), im)
+            if ccall((:arb_contains_zero, libarb), Bool, (Ptr{Nemo.arb_struct}, ), im)
+                ccall((:arb_zero, libarb), Nothing, (Ptr{Nemo.arb_struct}, ), im)
             end
         end
       end
@@ -240,96 +240,96 @@ function _roots!(roots::Ptr{acb_struct}, x::Union{fmpq_poly, fmpz_poly},
     end
   end
 
-  ccall((:_acb_vec_sort_pretty, :libarb), Nothing,
+  ccall((:_acb_vec_sort_pretty, libarb), Nothing,
         (Ptr{acb_struct}, Int), roots, deg)
 
   return wp
 end
 
 function radiuslttwopower(x::arb, e::Int)
-  t = ccall((:arb_rad_ptr, :libarb), Ptr{Nemo.mag_struct}, (Ref{arb}, ), x)
-  b = ccall((:mag_cmp_2exp_si, :libarb), Cint,
+  t = ccall((:arb_rad_ptr, libarb), Ptr{Nemo.mag_struct}, (Ref{arb}, ), x)
+  b = ccall((:mag_cmp_2exp_si, libarb), Cint,
           (Ptr{Nemo.mag_struct}, Int), t, e) <= 0
   return b
 end
 
 function radiuslttwopower(x::acb, e::Int)
-  re = ccall((:acb_real_ptr, :libarb), Ptr{Nemo.arb_struct},
+  re = ccall((:acb_real_ptr, libarb), Ptr{Nemo.arb_struct},
           (Ref{acb}, ), x)
-  im = ccall((:acb_imag_ptr, :libarb), Ptr{Nemo.arb_struct},
+  im = ccall((:acb_imag_ptr, libarb), Ptr{Nemo.arb_struct},
           (Ref{acb}, ), x)
-  t = ccall((:arb_rad_ptr, :libarb), Ptr{Nemo.mag_struct}, (Ptr{arb}, ), re)
-  u = ccall((:arb_rad_ptr, :libarb), Ptr{Nemo.mag_struct}, (Ptr{arb}, ), im)
-  ok = (ccall((:mag_cmp_2exp_si, :libarb), Cint,
+  t = ccall((:arb_rad_ptr, libarb), Ptr{Nemo.mag_struct}, (Ptr{arb}, ), re)
+  u = ccall((:arb_rad_ptr, libarb), Ptr{Nemo.mag_struct}, (Ptr{arb}, ), im)
+  ok = (ccall((:mag_cmp_2exp_si, libarb), Cint,
               (Ptr{Nemo.mag_struct}, Int), t, e) <= 0)
 
-  ok = ok && (ccall((:mag_cmp_2exp_si, :libarb), Cint,
+  ok = ok && (ccall((:mag_cmp_2exp_si, libarb), Cint,
               (Ptr{Nemo.mag_struct}, Int), u, e) <= 0)
   return ok
 end
 
 function round(x::arb, p::Int)
   z = ArbField(p, cached = false)()
-  ccall((:arb_set_round, :libarb), Nothing, (Ref{Nemo.arb}, Ref{Nemo.arb}, Int), z, x, p)
+  ccall((:arb_set_round, libarb), Nothing, (Ref{Nemo.arb}, Ref{Nemo.arb}, Int), z, x, p)
   return z
 end
 
 function round(x::acb, p::Int)
   z = AcbField(p, cached = false)()
-  ccall((:acb_set_round, :libarb), Nothing, (Ref{Nemo.acb}, Ref{Nemo.acb}, Int), z, x, p)
+  ccall((:acb_set_round, libarb), Nothing, (Ref{Nemo.acb}, Ref{Nemo.acb}, Int), z, x, p)
   return z
 end
 
 function arb_trim(x::arb)
   z = arb()
-  ccall((:arb_trim, :libarb), Nothing, (Ref{Nemo.arb}, Ref{Nemo.arb}), z, x)
+  ccall((:arb_trim, libarb), Nothing, (Ref{Nemo.arb}, Ref{Nemo.arb}), z, x)
   z.parent = ArbField(arb_bits(z), cached = false)
   return z
 end
 
 function round!(z::arb, x::arb, p::Int)
-  ccall((:arb_set_round, :libarb), Nothing, (Ref{Nemo.arb}, Ref{Nemo.arb}, Int), z, x, p)
+  ccall((:arb_set_round, libarb), Nothing, (Ref{Nemo.arb}, Ref{Nemo.arb}, Int), z, x, p)
   z.parent = ArbField(p, cached = false)
   return z
 end
 
 function round!(z::acb, x::acb, p::Int)
-  ccall((:acb_set_round, :libarb), Nothing, (Ref{Nemo.acb}, Ref{Nemo.acb}, Int), z, x, p)
+  ccall((:acb_set_round, libarb), Nothing, (Ref{Nemo.acb}, Ref{Nemo.acb}, Int), z, x, p)
   z.parent = AcbField(p, cached = false)
   return z
 end
 
 function bits(x::arb)
-  return ccall((:arb_bits, :libarb), Int, (Ref{Nemo.arb}, ), x)
+  return ccall((:arb_bits, libarb), Int, (Ref{Nemo.arb}, ), x)
 end
 
 function rel_error_bits(x::arb)
-  return ccall((:arb_rel_error_bits, :libarb), Int, (Ref{Nemo.arb}, ), x)
+  return ccall((:arb_rel_error_bits, libarb), Int, (Ref{Nemo.arb}, ), x)
 end
 
 function rel_accuracy(x::arb)
-  return ccall((:arb_rel_accuracy_bits, :libarb), Int, (Ref{Nemo.arb}, ), x)
+  return ccall((:arb_rel_accuracy_bits, libarb), Int, (Ref{Nemo.arb}, ), x)
 end
 
 function set!(z::arb, x::arb)
-  ccall((:arb_set, :libarb), Nothing, (Ref{Nemo.arb}, Ref{Nemo.arb}), z, x)
+  ccall((:arb_set, libarb), Nothing, (Ref{Nemo.arb}, Ref{Nemo.arb}), z, x)
   return z
 end
 
 function bits(x::acb)
-  return ccall((:acb_bits, :libarb), Int, (Ref{Nemo.acb}, ), x)
+  return ccall((:acb_bits, libarb), Int, (Ref{Nemo.acb}, ), x)
 end
 
 function rel_error_bits(x::acb)
-  return ccall((:acb_rel_error_bits, :libarb), Int, (Ref{Nemo.acb}, ), x)
+  return ccall((:acb_rel_error_bits, libarb), Int, (Ref{Nemo.acb}, ), x)
 end
 
 function rel_accuracy(x::acb)
-  return ccall((:acb_rel_accuracy_bits, :libarb), Int, (Ref{Nemo.acb}, ), x)
+  return ccall((:acb_rel_accuracy_bits, libarb), Int, (Ref{Nemo.acb}, ), x)
 end
 
 function set!(z::acb, x::acb)
-  ccall((:acb_set, :libarb), Nothing, (Ref{Nemo.acb}, Ref{Nemo.acb}), z, x)
+  ccall((:acb_set, libarb), Nothing, (Ref{Nemo.acb}, Ref{Nemo.acb}), z, x)
   return z
 end
 

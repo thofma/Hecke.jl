@@ -68,7 +68,7 @@ function __conjugates_arb(x::nf_elem, prec::Int = 32)
 
   for i in 1:r1
     o = RR()
-    ccall((:arb_poly_evaluate, :libarb), Nothing,
+    ccall((:arb_poly_evaluate, libarb), Nothing,
           (Ref{arb}, Ref{arb_poly}, Ref{arb}, Int),
            o, xpoly, c.real_roots[i], prec)
 
@@ -80,7 +80,7 @@ function __conjugates_arb(x::nf_elem, prec::Int = 32)
 
   for i in 1:r2
     tacb = CC()
-    ccall((:arb_poly_evaluate_acb, :libarb), Nothing,
+    ccall((:arb_poly_evaluate_acb, libarb), Nothing,
           (Ref{acb}, Ref{arb_poly}, Ref{acb}, Int),
            tacb, xpoly, c.complex_roots[i], prec)
 
@@ -118,7 +118,7 @@ function conjugates_arb(x::nf_elem, abs_tol::Int = 32)
 
     for i in 1:r1
       o = RR()
-      ccall((:arb_poly_evaluate, :libarb), Nothing,
+      ccall((:arb_poly_evaluate, libarb), Nothing,
             (Ref{arb}, Ref{arb_poly}, Ref{arb}, Int),
              o, xpoly, c.real_roots[i], abs_tol)
 
@@ -136,7 +136,7 @@ function conjugates_arb(x::nf_elem, abs_tol::Int = 32)
 
     for i in 1:r2
       tacb = CC()
-      ccall((:arb_poly_evaluate_acb, :libarb), Nothing,
+      ccall((:arb_poly_evaluate_acb, libarb), Nothing,
             (Ref{acb}, Ref{arb_poly}, Ref{acb}, Int),
              tacb, xpoly, c.complex_roots[i], abs_tol)
 
@@ -263,7 +263,7 @@ function conjugates_arb_log(x::nf_elem, abs_tol::Int)
     RR = ArbField(abs_tol, cached = false)
     for i in 1:r1
       o = RR()
-      ccall((:arb_poly_evaluate, :libarb), Nothing,
+      ccall((:arb_poly_evaluate, libarb), Nothing,
             (Ref{arb}, Ref{arb_poly}, Ref{arb}, Int),
             o, xpoly, c.real_roots[i], abs_tol)
       abs!(o, o)
@@ -286,7 +286,7 @@ function conjugates_arb_log(x::nf_elem, abs_tol::Int)
     tacb = CC()
     for i in 1:r2
       oo = RR()
-      ccall((:arb_poly_evaluate_acb, :libarb), Nothing,
+      ccall((:arb_poly_evaluate_acb, libarb), Nothing,
             (Ref{acb}, Ref{arb_poly}, Ref{acb}, Int),
             tacb, xpoly, c.complex_roots[i], abs_tol)
       abs!(oo, tacb)

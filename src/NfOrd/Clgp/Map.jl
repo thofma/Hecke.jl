@@ -560,7 +560,7 @@ function reduce_mod_units(a::Array{FacElem{nf_elem, AnticNumberField}, 1}, U)
     bd = maximum(sqrt(sum((B[i,j]::arb)^2 for j=1:ncols(B)))::arb for i=1:nrows(B))
     bd = bd/root(U.tentative_regulator, length(U.units))
     if isfinite(bd)
-      s = ccall((:arb_bits, :libarb), Int, (Ref{arb}, ), bd)
+      s = ccall((:arb_bits, libarb), Int, (Ref{arb}, ), bd)
       prec = max(s, prec)
       prec = 1<<nbits(prec)
     else

@@ -872,9 +872,9 @@ function round_scale!(b::fmpz_mat, a::arb_mat, l::Int)
   r = R()
   for i = 1:s[1]
     for j = 1:s[2]
-      v = ccall((:arb_mat_entry_ptr, :libarb), Ptr{arb},
+      v = ccall((:arb_mat_entry_ptr, libarb), Ptr{arb},
                     (Ref{arb_mat}, Int, Int), a, i - 1, j - 1)
-      ccall((:arb_mul_2exp_si, :libarb), Nothing, (Ref{arb}, Ptr{arb}, Int), r, v, l)
+      ccall((:arb_mul_2exp_si, libarb), Nothing, (Ref{arb}, Ptr{arb}, Int), r, v, l)
       b[i,j] = round(fmpz, r)
     end
   end

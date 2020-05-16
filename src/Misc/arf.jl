@@ -73,63 +73,63 @@ mutable struct arf
 
   function arf()
     z = new()
-    ccall((:arf_init, :libarb), Nothing, (Ref{arf}, ), z)
+    ccall((:arf_init, libarb), Nothing, (Ref{arf}, ), z)
     finalizer(z, _arf_clear_fn)
     return z
   end
   
   function arf(i::Int)
     z = new()
-    ccall((:arf_init, :libarb), Nothing, (Ref{arf}, ), z)
-    ccall((:arf_set_si, :libarb), Nothing, (Ref{arf}, Int), z, i)
+    ccall((:arf_init, libarb), Nothing, (Ref{arf}, ), z)
+    ccall((:arf_set_si, libarb), Nothing, (Ref{arf}, Int), z, i)
     finalizer(z, _arf_clear_fn)
     return z
   end
 
   function arf(i::UInt)
     z = new()
-    ccall((:arf_init, :libarb), Nothing, (Ref{arf}, ), z)
-    ccall((:arf_set_ui, :libarb), Nothing, (Ref{arf}, UInt), z, i)
+    ccall((:arf_init, libarb), Nothing, (Ref{arf}, ), z)
+    ccall((:arf_set_ui, libarb), Nothing, (Ref{arf}, UInt), z, i)
     finalizer(z, _arf_clear_fn)
     return z
   end
 
   function arf(i::fmpz)
     z = new()
-    ccall((:arf_init, :libarb), Nothing, (Ref{arf}, ), z)
-    ccall((:arf_set_fmpz, :libarb), Nothing, (Ref{arf}, Ref{fmpz}), z, i)
+    ccall((:arf_init, libarb), Nothing, (Ref{arf}, ), z)
+    ccall((:arf_set_fmpz, libarb), Nothing, (Ref{arf}, Ref{fmpz}), z, i)
     finalizer(z, _arf_clear_fn)
     return z
   end
 
   function arf(x::BigFloat)
     z = new()
-    ccall((:arf_init, :libarb), Nothing, (Ref{arf}, ), z)
-    ccall((:arf_set_mpfr, :libarb), Nothing, (Ref{arf}, Ref{BigFloat}), z, x)
+    ccall((:arf_init, libarb), Nothing, (Ref{arf}, ), z)
+    ccall((:arf_set_mpfr, libarb), Nothing, (Ref{arf}, Ref{BigFloat}), z, x)
     finalizer(z, _arf_clear_fn)
     return z
   end
 
   function arf(x::Cdouble)
     z = new()
-    ccall((:arf_init, :libarb), Nothing, (Ref{arf}, ), z)
-    ccall((:arf_set_d, :libarb), Nothing, (Ref{arf}, Cdouble), z, x)
+    ccall((:arf_init, libarb), Nothing, (Ref{arf}, ), z)
+    ccall((:arf_set_d, libarb), Nothing, (Ref{arf}, Cdouble), z, x)
     finalizer(z, _arf_clear_fn)
     return z
   end
 
   function arf(x::mag)
     z = new()
-    ccall((:arf_init, :libarb), Nothing, (Ref{arf}, ), z)
-    ccall((:arf_set_mag, :libarb), Nothing, (Ref{arf}, Ref{mag}), z, x)
+    ccall((:arf_init, libarb), Nothing, (Ref{arf}, ), z)
+    ccall((:arf_set_mag, libarb), Nothing, (Ref{arf}, Ref{mag}), z, x)
     finalizer(z, _arf_clear_fn)
     return z
   end
 
   function arf(x::arf, p::Int, r::Cint)
     z = new()
-    ccall((:arf_init, :libarb), Nothing, (Ref{arf}, ), z)
-    ccall((:arf_set_round, :libarb), Nothing,
+    ccall((:arf_init, libarb), Nothing, (Ref{arf}, ), z)
+    ccall((:arf_set_round, libarb), Nothing,
                 (Ref{arf}, Ref{arf}, Int, Cint), z, x, p, r)
     finalizer(z, _arf_clear_fn)
     return z
@@ -137,8 +137,8 @@ mutable struct arf
 
   function arf(x::Int, p::Int, r::Cint)
     z = new()
-    ccall((:arf_init, :libarb), Nothing, (Ref{arf}, ), z)
-    ccall((:arf_set_round_si, :libarb), Nothing,
+    ccall((:arf_init, libarb), Nothing, (Ref{arf}, ), z)
+    ccall((:arf_set_round_si, libarb), Nothing,
                   (Ref{arf}, Int, Int, Cint), z, x, p, r)
     finalizer(z, _arf_clear_fn)
     return z
@@ -146,8 +146,8 @@ mutable struct arf
 
  function arf(x::UInt, p::Int, r::Cint)
     z = new()
-    ccall((:arf_init, :libarb), Nothing, (Ref{arf}, ), z)
-    ccall((:arf_set_round_ui, :libarb), Nothing,
+    ccall((:arf_init, libarb), Nothing, (Ref{arf}, ), z)
+    ccall((:arf_set_round_ui, libarb), Nothing,
                   (Ref{arf}, UInt, Int, Cint), z, x, p, r)
     finalizer(z, _arf_clear_fn)
     return z
@@ -155,8 +155,8 @@ mutable struct arf
 
  function arf(x::fmpz, p::Int, r::Cint)
     z = new()
-    ccall((:arf_init, :libarb), Nothing, (Ref{arf}, ), z)
-    ccall((:arf_set_round_fmpz, :libarb), Nothing,
+    ccall((:arf_init, libarb), Nothing, (Ref{arf}, ), z)
+    ccall((:arf_set_round_fmpz, libarb), Nothing,
                   (Ref{arf}, Ref{fmpz}, Int, Cint), z, x, p, r)
     finalizer(z, _arf_clear_fn)
     return z
@@ -164,7 +164,7 @@ mutable struct arf
 end
 
 function _arf_clear_fn(x::arf)
-  ccall((:arf_clear, :libarb), Nothing, (Ref{arf}, ), x)
+  ccall((:arf_clear, libarb), Nothing, (Ref{arf}, ), x)
 end
 
 parent(x::arf) = x.parent
@@ -232,7 +232,7 @@ for (s,f) in (("zero", "arf_zero"), ("one", "arf_one"),
   @eval begin
     function($(Symbol(s)))(r::ArfField)
       z = r()
-      ccall(($f, :libarb), Nothing, (Ref{arf}, ), z)
+      ccall(($f, libarb), Nothing, (Ref{arf}, ), z)
       return z
     end
   end
@@ -246,7 +246,7 @@ end
 
 # this function is crap
 function show(io::IO, a::arf)
-  #cstr = ccall((:arf_get_str, :libarb), Ref{UInt8}, (Ref{arf}, ), a.data)
+  #cstr = ccall((:arf_get_str, libarb), Ref{UInt8}, (Ref{arf}, ), a.data)
   #print(io, bytestring(cstr))
   #ccall((:flint_free, libflint), Nothing, (Ref{UInt8},), cstr)
   return show(io, BigFloat(a))
@@ -273,7 +273,7 @@ for (s,f) in (("iszero", "arf_iszero"), ("isone", "arf_is_one"),
               ("isspecial", "arf_is_special"))
   @eval begin
     function($(Symbol(s)))(x::arf)
-      return Bool(ccall(($f, :libarb), Cint, (Ref{arf},), x.data))
+      return Bool(ccall(($f, libarb), Cint, (Ref{arf},), x.data))
     end
   end
 end
@@ -285,12 +285,12 @@ end
 ################################################################################
 
 function ==(x::arf, y::arf)
-  r = ccall((:arf_equal, :libarb), Cint, (Ref{arf}, Ref{arf}), x, y)
+  r = ccall((:arf_equal, libarb), Cint, (Ref{arf}, Ref{arf}), x, y)
   return Bool(r)
 end
 
 function compare(x::arf, y::arf)
-  r = ccall((:arf_cmp, :libarb), Cint, (Ref{arf}, Ref{arf}), x, y)
+  r = ccall((:arf_cmp, libarb), Cint, (Ref{arf}, Ref{arf}), x, y)
   return r
 end
 
@@ -306,13 +306,13 @@ end
 
 function max(x::arf, y::arf)
   z = parent(x)()
-  ccall((:arf_max, :libarb), Nothing, (Ref{arf}, Ref{arf}, Ref{arf}), z, x, y)
+  ccall((:arf_max, libarb), Nothing, (Ref{arf}, Ref{arf}, Ref{arf}), z, x, y)
   return z
 end
 
 function min(x::arf, y::arf)
   z = parent(x)()
-  ccall((:arf_min, :libarb), Nothing, (Ref{arf}, Ref{arf}, Ref{arf}), z, x, y)
+  ccall((:arf_min, libarb), Nothing, (Ref{arf}, Ref{arf}, Ref{arf}), z, x, y)
   return z
 end
 
@@ -324,7 +324,7 @@ end
 
 function -(x::arf)
   z = parent(x)()
-  ccall((:arf_neg, :libarb), Nothing, (Ref{arf}, Ref{arf}), z, x)
+  ccall((:arf_neg, libarb), Nothing, (Ref{arf}, Ref{arf}), z, x)
   return z
 end
 
@@ -337,7 +337,7 @@ end
 function +(x::arf, y::arf)
   check_parent(x,y)
   z = parent(x)()
-  ccall(("arf_add", :libarb), Nothing,
+  ccall(("arf_add", libarb), Nothing,
               (Ref{arf}, Ref{arf}, Ref{arf}, Int, Cint),
               z, x, y, parent(x).prec, parent(x).rndmode)
   return z
@@ -345,7 +345,7 @@ end
 
 function +(x::arf, y::UInt)
   z = parent(x)()
-  ccall(("arf_add_ui", :libarb), Nothing,
+  ccall(("arf_add_ui", libarb), Nothing,
               (Ref{arf}, Ref{arf}, UInt, Int, Cint),
               z, x, y, parent(x).prec, parent(x).rndmode)
   return z
@@ -355,7 +355,7 @@ end
 
 function +(x::arf, y::Int)
   z = parent(x)()
-  ccall(("arf_add_si", :libarb), Nothing,
+  ccall(("arf_add_si", libarb), Nothing,
               (Ref{arf}, Ref{arf}, Int, Int, Cint),
               z, x, y, parent(x).prec, parent(x).rndmode)
   return z
@@ -365,7 +365,7 @@ end
 
 function +(x::arf, y::fmpz)
   z = parent(x)()
-  ccall(("arf_add_fmpz", :libarb), Nothing,
+  ccall(("arf_add_fmpz", libarb), Nothing,
               (Ref{arf}, Ref{arf}, Ref{fmpz}, Int, Cint),
               z, x, y, parent(x).prec, parent(x).rndmode)
   return z
@@ -375,7 +375,7 @@ end
 
 function *(x::arf, y::arf)
   z = parent(x)()
-  ccall(("_arf_mul", :libarb), Nothing,
+  ccall(("_arf_mul", libarb), Nothing,
               (Ref{arf}, Ref{arf}, Ref{arf}, Int, Cint),
               z, x, y, parent(x).prec, parent(x).rndmode)
   return z
@@ -383,7 +383,7 @@ end
 
 function *(x::arf, y::UInt)
   z = parent(x)()
-  ccall(("arf_mul_ui", :libarb), Nothing,
+  ccall(("arf_mul_ui", libarb), Nothing,
               (Ref{arf}, Ref{arf}, UInt, Int, Cint),
               z, x, y, parent(x).prec, parent(x).rndmode)
   return z
@@ -393,7 +393,7 @@ end
 
 function *(x::arf, y::Int)
   z = parent(x)()
-  ccall(("arf_mul_si", :libarb), Nothing,
+  ccall(("arf_mul_si", libarb), Nothing,
               (Ref{arf}, Ref{arf}, Int, Int, Cint),
               z, x, y, parent(x).prec, parent(x).rndmode)
   return z
@@ -403,7 +403,7 @@ end
 
 function *(x::arf, y::fmpz)
   z = parent(x)()
-  ccall(("arf_mul_fmpz", :libarb), Nothing,
+  ccall(("arf_mul_fmpz", libarb), Nothing,
               (Ref{arf}, Ref{arf}, Ref{fmpz}, Int, Cint),
               z, x, y, parent(x).prec, parent(x).rndmode)
   return z
@@ -414,7 +414,7 @@ end
 function -(x::arf, y::arf)
   check_parent(x,y)
   z = parent(x)()
-  ccall(("arf_sub", :libarb), Nothing,
+  ccall(("arf_sub", libarb), Nothing,
                 (Ref{arf}, Ref{arf}, Ref{arf}, Int, Cint),
                 z, x, y, parent(x).prec, parent(x).rndmode)
   return z
@@ -422,7 +422,7 @@ end
 
 function -(x::arf, y::UInt)
   z = parent(x)()
-  ccall(("arf_sub_ui", :libarb), Nothing,
+  ccall(("arf_sub_ui", libarb), Nothing,
               (Ref{arf}, Ref{arf}, UInt, Int, Cint),
               z, x, y, parent(x).prec, parent(x).rndmode)
   return z
@@ -432,7 +432,7 @@ end
 
 function -(x::arf, y::Int)
   z = parent(x)()
-  ccall(("arf_sub_si", :libarb), Nothing,
+  ccall(("arf_sub_si", libarb), Nothing,
               (Ref{arf}, Ref{arf}, Int, Int, Cint),
               z, x, y, parent(x).prec, parent(x).rndmode)
   return z
@@ -442,7 +442,7 @@ end
 
 function -(x::arf, y::fmpz)
   z = parent(x)()
-  ccall(("arf_sub_fmpz", :libarb), Nothing,
+  ccall(("arf_sub_fmpz", libarb), Nothing,
               (Ref{arf}, Ref{arf}, Ref{fmpz}, Int, Cint),
               z, x, y, parent(x).prec, parent(x).rndmode)
   return z
@@ -453,7 +453,7 @@ end
 function /(x::arf, y::arf)
   check_parent(x,y)
   z = parent(x)()
-  ccall((:arf_div, :libarb), Nothing,
+  ccall((:arf_div, libarb), Nothing,
               (Ref{arf}, Ref{arf}, Ref{arf}, Int, Cint),
               z, x, y, parent(x).prec, parent(x).rndmode)
   return z
@@ -466,26 +466,26 @@ end
 ################################################################################
 
 function add!(x::arf, y::arf)
-  ccall(("arf_add", :libarb), Nothing,
+  ccall(("arf_add", libarb), Nothing,
               (Ref{arf}, Ref{arf}, Ref{arf}, Int, Cint),
               z, x, y, parent(x).prec, parent(x).rndmode)
 end
 
 
 function div!(z::arf, x::arf, y::arf)
-  ccall((:arf_div, :libarb), Nothing,
+  ccall((:arf_div, libarb), Nothing,
               (Ref{arf}, Ref{arf}, Ref{arf}, Int, Cint),
               z, x, y, parent(x).prec, parent(x).rndmode)
 end
 
 function sub!(x::arf, y::arf)
-  ccall((:arf_sub, :libarb), Nothing,
+  ccall((:arf_sub, libarb), Nothing,
               (Ref{arf}, Ref{arf}, Ref{arf}, Int, Cint),
               z, x, y, parent(x).prec, parent(x).rndmode)
 end
 
 function mul!(x::arf, y::arf)
-  ccall((:_arf_mul, :libarb), Nothing,
+  ccall((:_arf_mul, libarb), Nothing,
               (Ref{arf}, Ref{arf}, Ref{arf}, Int, Cint),
               z, x, y, parent(x).prec, parent(x).rndmode)
 end
@@ -497,19 +497,19 @@ end
 ################################################################################
 
 function sign(x::arf)
-  r = ccall((:arf_sgn, :libarb), Cint, (Ref{arf}, ), x)
+  r = ccall((:arf_sgn, libarb), Cint, (Ref{arf}, ), x)
   return r
 end
 
 function abs(x::arf)
   z = parent(x)()
-  ccall((:arf_abs, :libarb), Nothing, (Ref{arf}, Ref{arf}), z, x)
+  ccall((:arf_abs, libarb), Nothing, (Ref{arf}, Ref{arf}), z, x)
   return z
 end
 
 function Base.sqrt(x::arf)
   z = parent(x)()
-  ccall((:arf_sqrt, :libarb), Nothing,
+  ccall((:arf_sqrt, libarb), Nothing,
               (Ref{arf}, Ref{arf}, Int, Cint),
               z, x, parent(x).prec, parent(x).rndmode)
   return z
@@ -523,7 +523,7 @@ end
 ################################################################################
 
 function Cdouble(a::arf, rnd::Cint = 4)
-  z = ccall((:arf_get_d, :libarb), Cdouble, (Ref{arf}, Cint), a.data, rnd)
+  z = ccall((:arf_get_d, libarb), Cdouble, (Ref{arf}, Cint), a.data, rnd)
   return z
 end
 
@@ -531,7 +531,7 @@ function BigFloat(x::arf)
   old_prec = get_bigfloat_precision()
   set_bigfloat_precision(parent(x).prec)
   z = BigFloat(0)
-  r = ccall((:arf_get_mpfr, :libarb), Cint,
+  r = ccall((:arf_get_mpfr, libarb), Cint,
                 (Ref{BigFloat}, Ref{arf}, Cint), z, x, Cint(0))
   set_bigfloat_precision(old_prec)
   return z
