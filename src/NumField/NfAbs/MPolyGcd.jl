@@ -222,10 +222,6 @@ function Hecke.induce_crt(a::fmpz_mat, p::fmpz, b::fmpz_mat, q::fmpz, signed::Bo
   return c, pq
 end   
 
-function Hecke.characteristic(R::PolyRing)
-  return characteristic(base_ring(R))
-end
-
 function Hecke.modular_proj(me::Hecke.modular_env, f::Generic.MPoly{nf_elem})
   if !isdefined(me, :Kxy)
     me.Kxy = parent(f)
