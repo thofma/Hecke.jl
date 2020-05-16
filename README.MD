@@ -2,6 +2,7 @@
 
 **Builds**
 
+[![Build status](https://github.com/thofma/Hecke.jl/workflows/Run%20tests/badge.svg)
 [![Build Status](https://travis-ci.org/thofma/Hecke.jl.svg?branch=master)](https://travis-ci.org/thofma/Hecke.jl)
 [![Build status](https://ci.appveyor.com/api/projects/status/3qb0ce2h5melsjeb?svg=true)](https://ci.appveyor.com/project/thofma/hecke-jl)
 
