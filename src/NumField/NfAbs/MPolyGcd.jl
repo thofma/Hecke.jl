@@ -1,76 +1,31 @@
+add_verbose_scope(:MPolyGcd)
+
 module MPolyGcd
 
 using Hecke
 import Nemo, Nemo.nmod_mpoly, Nemo.NmodMPolyRing
 import AbstractAlgebra
-import Base.//, Base.==
 
-export Terms, gcd
+function Hecke.gcd(f::Hecke.Generic.MPoly{nf_elem}, g::Hecke.Generic.MPoly{nf_elem})
+  Hecke.check_parent(f, g)
+  @vprint :MPolyGcd 1 "multivariate gcd of f with $(length(f)) and g with $(length(g)) terms over $(base_ring(f))\n"
 
-#=
-mutable struct MPolyBuildCtx{T}
-  f::T
-  function MPolyBuildCtx(R::T) where {T <: AbstractAlgebra.MPolyRing}
-    r = new{elem_type(T)}()
-    r.f = R()
-    return r
+  k = base_ring(f)
+  ps = PrimesSet(Hecke.p_start, -1)
+  fl, c = Hecke.iscyclotomic_type(k)
+  if fl
+    @vprint :MPolyGcd 2 "field is cyclotomic with conductor $c\n"
+    ps = PrimesSet(Hecke.p_start, -1, c, 1)
   end
-end
-
-function show(io::IO, M::MPolyBuildCtx)
-  print(io, "constructing a polynomial in ", parent(M.f))
-end
-
-function finish(M::MPolyBuildCtx{<:AbstractAlgebra.MPolyElem})
-  M.f = sort_terms!(M.f)
-  M.f = combine_like_terms!(M.f)
-  return M.f
-end
-
-function push_term!(M::MPolyBuildCtx{<:AbstractAlgebra.MPolyElem}, c::RingElem, e::Vector{Int})
-  l = length(M.f)+1
-  set_exponent_vector!(M.f, l, e)
-  setcoeff!(M.f, l, c)
-end
-
-function push_term!(M::MPolyBuildCtx{nmod_mpoly}, c::UInt, e::Vector{Int})
-  ccall((:nmod_mpoly_push_term_ui_ui, :libflint), Nothing,
-               (Ref{nmod_mpoly}, UInt, Ptr{Int}, Ref{NmodMPolyRing}),
-               M.f, c, e, M.f.parent)
-end
-
-=#
-function Hecke.lead(f::AbstractAlgebra.MPolyElem)
-  iszero(f) && error("zero poly")
-  return coeff(f, 1)
-end
-
-function Hecke.coefficients(f::AbstractAlgebra.MPolyElem)
-  return Hecke.PolyCoeffs(f)
-end
-
-function Base.iterate(PC::Hecke.PolyCoeffs{<:AbstractAlgebra.MPolyElem}, st::Int = 0)
-  st += 1
-  if st > length(PC.f)
-    return nothing
-  else
-    return coeff(PC.f, st), st
+  fl, c = Hecke.isquadratic_type(k)
+  if fl && abs(c) < typemax(Int)
+    @vprint :MPolyGcd 2 "field is quadratic, using conductor $(4*c)\n"
+    ps = PrimesSet(Hecke.p_start, -1, Int(4*c), 1)
   end
+  return _gcd(f, g, ps)
 end
 
-Base.length(M::Hecke.PolyCoeffs{<:AbstractAlgebra.MPolyElem}) = length(M.f)
-
-function gcd_zippel(a::nmod_mpoly, b::nmod_mpoly)
-   z = parent(a)()
-   r = Bool(ccall((:nmod_mpoly_gcd_zippel, :libflint), Cint,
-         (Ref{nmod_mpoly}, Ref{nmod_mpoly}, Ref{nmod_mpoly}, Ref{NmodMPolyRing}),
-         z, a, b, a.parent))
-   r == false && error("Unable to compute gcd")
-   return z
-end
-    
-function Hecke.gcd(f::Hecke.Generic.MPoly{nf_elem}, g::Hecke.Generic.MPoly{nf_elem}, ps::PrimesSet{Int} = PrimesSet(Hecke.p_start, -1))
-#function Hecke.gcd(f::Hecke.Generic.MPoly{nf_elem}, g::Hecke.Generic.MPoly{nf_elem}, ps::PrimesSet{Int} = PrimesSet(Hecke.p_start, -1, 23, 1))
+function _gcd(f::Hecke.Generic.MPoly{nf_elem}, g::Hecke.Generic.MPoly{nf_elem}, ps::PrimesSet{Int})
 #  @show "gcd start"
   p = iterate(ps)[1]
   K = base_ring(f)
@@ -110,25 +65,26 @@ function Hecke.gcd(f::Hecke.Generic.MPoly{nf_elem}, g::Hecke.Generic.MPoly{nf_el
   fl = true
   while true
     p = iterate(ps, p)[1]
-    me = Hecke.modular_init(K, p, deg_limit = 1)
+    @vprint :MPolyGcd 2 "Main loop: using $p\n"
+    @vtime :MPolyGcd 3 me = Hecke.modular_init(K, p, deg_limit = 1)
     if isempty(me)
       continue
     end
     R = ResidueRing(FlintZZ, p)
     Rt, t = PolynomialRing(R, "t", cached = false)
-    fp = Hecke.modular_proj(me, f)
-    gp = Hecke.modular_proj(me, g)
+    @vtime :MPolyGcd 3 fp = Hecke.modular_proj(me, f)
+    @vtime :MPolyGcd 3 gp = Hecke.modular_proj(me, g)
     glp = Hecke.modular_proj(gl, me)
     gcd_p = nmod_mpoly[]
-    for i=1:length(fp)
-      _g = gcd_zippel(fp[i], gp[i])
+    @vtime :MPolyGcd 3 for i=1:length(fp)
+      _g = gcd(fp[i], gp[i])
       if length(_g) == 1 && iszero(exponent_vector(_g, 1))
         return inflate(one(parent(f)), shiftr, deflr)
       end
       push!(gcd_p, coeff(glp[i], 0)*_g)
     end
-    #gcd_p = [coeff(glp[i], 0)*gcd_zippel(fp[i], gp[i]) for i=1:length(fp)]
-    tp = Hecke.modular_lift(me, gcd_p)
+    #gcd_p = [coeff(glp[i], 0)*gcd(fp[i], gp[i]) for i=1:length(fp)]
+    @vtime :MPolyGcd 3 tp = Hecke.modular_lift(me, gcd_p)
     if d==1
       d = fmpz(p)
       gc = tp
@@ -266,10 +222,6 @@ function Hecke.induce_crt(a::fmpz_mat, p::fmpz, b::fmpz_mat, q::fmpz, signed::Bo
   return c, pq
 end   
 
-function Hecke.characteristic(R::PolyRing)
-  return characteristic(base_ring(R))
-end
-
 function Hecke.modular_proj(me::Hecke.modular_env, f::Generic.MPoly{nf_elem})
   if !isdefined(me, :Kxy)
     me.Kxy = parent(f)
@@ -297,7 +249,6 @@ end
 function Hecke.modular_lift(me::Hecke.modular_env, g::Array{nmod_mpoly, 1})
   bt = MPolyBuildCtx(me.Kxy)
   #TODO deal with different vectors properly (check induce_crt)
-  gt = [Terms(x) for x = g]
   @assert all(x->collect(exponent_vectors(g[1])) == collect(exponent_vectors(g[x])), 2:length(g))
   for i=1:length(g[1])
     for x=1:length(g)
@@ -501,6 +452,9 @@ function Hecke.toMagma(io::IOStream, s::Symbol, v::Any)
   print(io, ";\n")
 end
 
+#=
+import Base.//, Base.==
+
 struct Term{T}
   f::T
   i::Int
@@ -584,7 +538,7 @@ function lead_term(f::AbstractAlgebra.MPolyElem)
   return Term(f, 1)
 end
 
-
+=#
 #=TODO
   fit! for nmod_mpoly
   coeff(fq_nmod) -> UInt (should be nmod)

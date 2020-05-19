@@ -139,7 +139,7 @@ function main()
   if only_cm
     ffields = [ (x, discriminant(maximal_order(x))) for x in ll if Hecke.iscm_field(x)[1]]
   else
-    ffields = [ (x, discriminant(maximal_order(x)))]
+    ffields = [ (x, discriminant(maximal_order(x))) for x in ll ]
   end
 
   sort!(ffields, lt = (x, y) -> abs(x[2]) <= abs(y[2]))

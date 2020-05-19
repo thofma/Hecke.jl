@@ -1130,7 +1130,7 @@ function _dedekind_zeta_attwell_duval_positive(K::AnticNumberField, s, prec::Int
   wprec = 3 * prec
 
   error_arf = arf_struct(0, 0, 0, 0)
-  ccall((:arf_set_si_2exp_si, :libarb), Nothing,
+  ccall((:arf_set_si_2exp_si, libarb), Nothing,
         (Ref{arf_struct}, Int, Int), error_arf, Int(1), Int(-(prec + 1)))
 
   local valaddederror
@@ -1143,7 +1143,7 @@ function _dedekind_zeta_attwell_duval_positive(K::AnticNumberField, s, prec::Int
     wprec = 2 * wprec
 
     valaddederror = deepcopy(z)
-    ccall((:arb_add_error_arf, :libarb), Nothing,
+    ccall((:arb_add_error_arf, libarb), Nothing,
                 (Ref{arb}, Ref{arf_struct}), valaddederror, error_arf)
 
     if radiuslttwopower(valaddederror, -prec)

@@ -77,9 +77,9 @@ end
 @doc Markdown.doc"""
     crt_env(p::Array{T, 1}) -> crt_env{T}
 
-Given coprime moduli in some euclidean ring (FlintZZ, nmod_poly, 
-fmpz\_mod_poly), prepare data for fast application of the chinese
-remander theorem for those moduli.
+Given coprime moduli in some euclidean ring (`FlintZZ`, `nmod_poly`, 
+`fmpz_mod_poly`), prepare data for fast application of the chinese
+remainder theorem for those moduli.
 """
 function crt_env(p::Array{T, 1}) where T
   return crt_env{T}(p)

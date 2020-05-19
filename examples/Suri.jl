@@ -1,6 +1,7 @@
 module Suri
 using Hecke
-import Hecke:valuation
+import Hecke: valuation, divexact, parent_type, elem_type, mul!, addeq!
+import Base: +, -, *, ^
 
 #= follows Sebastian Posur's idea
   Start with a pseudo_matrix with ideals A_i and rows alpha_i
@@ -155,6 +156,147 @@ function bad_mat(R::Hecke.Ring, n::Int, U)
   end
   return z
 end
+
+function bad_mat_suri(R::Hecke.Ring, n::Int, U)
+  m = identity_matrix(R, n)
+  for i=1:n
+    for j=i+1:n
+      m[i,j] = rand(R, U)
+    end
+  end
+  return m
+end
+
+mutable struct RRS <: Hecke.Ring
+  p::Array{fmpz, 1}
+  P::Array{fmpz, 1}
+  Pi::Array{fmpz, 1}
+  r::fmpz
+  N::fmpz
+  ce
+
+  function RRS(p::Array{fmpz, 1})
+    s = new()
+    s.p = p
+    P = prod(p)
+    s.P = [divexact(P, x) for x = p]
+    s.Pi = [invmod(s.P[i], s.p[i]) for i=1:length(p)]
+    s.r = next_prime(2^50)
+    s.N = P
+    s.ce = Hecke.crt_env(p)
+    return s
+  end
+
+  function RRS(p::Array{<:Integer, 1})
+    return RRS(fmpz[x for x = p])
+  end
+end
+function Base.show(io::IO, R::RRS)
+  print(io::IO, "crt ring with moduli ", R.p)
+end
+
+mutable struct RRSelem <: Hecke.RingElem
+  x::Array{fmpz, 1}
+  r::fmpz
+  R::RRS
+  function RRSelem(X::RRS, a::fmpz)
+    s = new()
+    s.x = [mod(a, p) for p = X.p]
+    s.r = mod(a, X.r)
+    s.R = X
+    return s
+  end
+  function RRSelem(X::RRS, a::Integer)
+    return RRSelem(X, fmpz(a))
+  end
+  function RRSelem(X::RRS, a::Array{fmpz, 1}, k::fmpz)
+    r = new()
+    r.R = X
+    r.x = a
+    r.r = k
+    return r
+  end
+end
+
+function Base.show(io::IO, a::RRSelem)
+  print(io, "crt: ", a.x)
+end
+
+elem_type(::RRS) = RRSelem
+parent_type(::RRSelem) = RRS
+parent_type(::Type{RRSelem}) = RRS
+
+parent(a::RRSelem) = a.R
+
+-(a::RRSelem, b::RRSelem) = RRSelem(a.R, [mod(a.x[i]-b.x[i], a.R.p[i]) for i=1:length(a.x)], mod(a.r-b.r, a.R.r))
++(a::RRSelem, b::RRSelem) = RRSelem(a.R, [mod(a.x[i]+b.x[i], a.R.p[i]) for i=1:length(a.x)], mod(a.r+b.r, a.R.r))
+*(a::RRSelem, b::RRSelem) = RRSelem(a.R, [mod(a.x[i]*b.x[i], a.R.p[i]) for i=1:length(a.x)], mod(a.r*b.r, a.R.r))
+*(a::Integer, b::RRSelem) = RRSelem(b.R, [mod(a*b.x[i], b.R.p[i]) for i=1:length(b.x)], mod(a*b.r, b.R.r))
+divexact(a::RRSelem, b::RRSelem) = RRSelem(a.R, [mod(a.x[i]*invmod(b.x[i], a.R.p[i]), a.R.p[i]) for i=1:length(a.x)], mod(a.r*invmod(b.r, a.R.r), a.R.r))
+-(a::RRSelem) = RRSelem(a.R, [mod(-a.x[i], a.R.p[i]) for i=1:length(a.x)], -a.r)
+^(a::RRSelem, e::Integer) = RRSelem(a.R, [powmod(a.x[i], e, a.R.p[i]) for i=1:length(a.x)], powmod(a.r, e, a.R.r))
+(R::RRS)() = RRSelem(R, fmpz[0 for i=1:length(R.p)], fmpz(0))
+(R::RRS)(a::Integer) = RRSelem(R, a)
+(R::RRS)(a::RRSelem) = a
+
+function addeq!(a::RRSelem, b::RRSelem)
+  for i=1:length(a.x)
+    a.x[i] = mod(a.x[i] + b.x[i], a.R.p[i])
+    a.r    = mod(a.r    + b.r   , a.R.r)
+  end
+  return a
+end
+
+function mul!(a::RRSelem, b::RRSelem, c::RRSelem)
+  for i=1:length(a.x)
+    a.x[i] = mod(b.x[i] * c.x[i], a.R.p[i])
+    a.r    = mod(b.r    * c.r   , a.R.r)
+  end
+  return a
+end
+
+function check(a::RRSelem)
+  z = fmpz(a)
+  @assert mod(z, a.R.r) == a.r
+end
+
+#given x mod p_i and p_r, find x mod p
+function extend(R::RRS, a::RRSelem, p::fmpz)
+  k = sum(((a.x[i]*R.Pi[i]) % R.p[i]) * (R.P[i] % R.r) for i=1:length(R.p)) - a.r
+  k = (k*invmod(R.N, R.r)) % R.r
+  @assert k <= length(R.p)
+  return sum(((a.x[i]*R.Pi[i]) % R.p[i]) * (R.P[i] % p) for i=1:length(R.p)) - k*(R.N % p)%p
+end
+
+function mixed_radix(R::RRS, a::RRSelem, li::Int = typemax(Int))
+  A = fmpz[]
+  for i=1:min(length(a.x), li)
+    y = a.x[i]
+    for j=1:i-1
+      y = mod(((y-A[j])*invmod(R.p[j], R.p[i])), R.p[i])
+    end
+    push!(A, y)
+  end
+  return A
+  #so a = A[1] + A[2]*p[1] + A[3]*p[1]*p[2] ...s
+end
+
+function rss_elem_from_radix(R::RRS, a::Array{fmpz, 1})
+  x = fmpz[]
+  for i=1:length(R.p)
+    z = a[1]
+  end
+end
+
+function gen(R::RRS, i::Int)
+  p = fmpz[0 for i=1:length(R.p)]
+  p[i] = fmpz(1)
+  r = mod(R.P[i]*R.Pi[i], R.r)
+  return RRSelem(R, p, r)
+end
+
+Hecke.fmpz(a::RRSelem) = Hecke.crt(a.x, a.R.ce)
+
 
 # a random invertable matrix with coeffs in R
 #start with identity, do i rounds of random elementary row and column 
