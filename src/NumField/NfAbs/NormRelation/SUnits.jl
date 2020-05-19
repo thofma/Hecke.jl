@@ -335,13 +335,19 @@ end
 
 
 function _class_group(O::NfOrd)
+  c = Hecke._get_ClassGrpCtx_of_order(O, false)
+  if c !== nothing
+    c::Hecke.ClassGrpCtx{SMat{fmpz}}
+    @assert c.finished
+    return class_group(c, O)
+  end
   K = nf(O)
   G, mG = automorphism_group(K)
-  if has_useful_brauer_relation(G)
+  if degree(K) > 25 && has_useful_brauer_relation(G) 
     lll(O)
     fl, N = norm_relation(K, small_degree = false)
     @assert fl
-    return class_group_via_brauer(O, N, recursive = true)
+    return class_group_via_brauer(O, N, recursive = true, compact = false)
   end
   return class_group(O, use_aut = true)
 end
@@ -369,8 +375,8 @@ function get_sunits_from_subfield_data(OK, N; recursive::Bool = false, compact::
       end
       L = N.subfields[i][1]
       if N.isnormal[i] && degree(L) > 25
-        NL = norm_relation(L, small_degree = false)[2]
-        class_group_via_brauer(lll(maximal_order(L)), NL, compact = false)
+        @vprint :NormRelation 1 "Computing class group of $(L.pol)\n"
+        _class_group(lll(maximal_order(L)))
       end
     end
   end
@@ -385,6 +391,8 @@ function get_sunits_from_subfield_data(OK, N; recursive::Bool = false, compact::
   return c, UZK
 end 
 
+
+global deb_auts = []
 function class_group_via_brauer(O::NfOrd, N::NormRelation; recursive::Bool = false, do_lll::Bool = true, compact::Bool = true, stable = 3.5)
   K = N.K
   if do_lll
@@ -396,9 +404,13 @@ function class_group_via_brauer(O::NfOrd, N::NormRelation; recursive::Bool = fal
   c, UZK = get_sunits_from_subfield_data(OK, N, recursive = recursive, compact = compact)
   auts = automorphisms(K)
   c.aut_grp = Hecke.class_group_add_auto(c, auts)
+  push!(deb_auts, c.aut_grp)
+  for i = 1:length(c.aut_grp)
+    @assert isassigned(c.aut_grp, i)
+  end
   if index(N) != 1
     for (p, e) in factor(index(N))
-      @vprint :NormRelation 1 "Saturating at $p "
+      @vprint :NormRelation 1 "Saturating at $p \n"
       b = Hecke.saturate!(c, UZK, Int(p), stable)
       while b
         idx = Hecke._validate_class_unit_group(c, UZK)

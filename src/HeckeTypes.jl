@@ -1086,8 +1086,9 @@ mutable struct NfAbsOrdFracIdl{S, T}
   function NfAbsOrdFracIdl{S, T}(O::NfAbsOrd{S, T}, a::T) where {S, T}
     z = new{S, T}()
     z.order = O
-    z.num = ideal(O, O(denominator(a, O)*a))
-    z.den = denominator(a, O)
+    d = denominator(a, O)
+    z.num = ideal(O, O(d*a, false))
+    z.den = d
     #z.basis_matrix = hnf(FakeFmpqMat(representation_matrix(O(denominator(a, O)*a)), denominator(a, O)))
     return z
   end

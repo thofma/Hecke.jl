@@ -344,6 +344,7 @@ function saturate!(d::Hecke.ClassGrpCtx, U::Hecke.UnitGrpCtx, n::Int, stable::Fl
   @vtime :Saturate 1 c = simplify(d, U)
   orbit = isdefined(d, :aut_grp)
   success = false
+  restart = false
   while true
     if success
       @vprint :Saturate 1 "Simplifying the context\n"
@@ -380,6 +381,7 @@ function saturate!(d::Hecke.ClassGrpCtx, U::Hecke.UnitGrpCtx, n::Int, stable::Fl
         candidate_rel = divexact(fac_a, n)
         red_candidate = reduce(rels_added, candidate_rel)
         if iszero(red_candidate)
+          @vprint :Saturate 1 "Ignore this relation! \n"
           continue
         end
       end
@@ -397,14 +399,17 @@ function saturate!(d::Hecke.ClassGrpCtx, U::Hecke.UnitGrpCtx, n::Int, stable::Fl
           #find units can be randomised...
           #maybe that should also be addressed elsewhere
           @vprint :Saturate 1  "The new element is a unit\n"
-          Hecke._add_dependent_unit(U, x)
+          
           if isdefined(d, :aut_grp)
             auts_action = Hecke._get_autos_from_ctx(d)
-            for i = 1:length(auts_action)
-              new_u = auts_action[i][1](x)
+            for s = 1:length(auts_action)
+              new_u = auts_action[s][1](x)
               Hecke._add_dependent_unit(U, new_u)
             end
+            restart = true
             break
+          else
+            Hecke._add_dependent_unit(U, x)
           end
         else
           @vprint :Saturate 1  "The new element gives a relation\n"
@@ -412,10 +417,11 @@ function saturate!(d::Hecke.ClassGrpCtx, U::Hecke.UnitGrpCtx, n::Int, stable::Fl
           if orbit
             #We add the relation to the matrix and compute the snf
             auts_action = Hecke._get_autos_from_ctx(d)
-            for i = 1:length(auts_action)
-              push!(rels_added, Hecke.permute_rows(fac_a, auts_action[i][2]))
+            for s = 1:length(auts_action)
+              push!(rels_added, Hecke.permute_rows(fac_a, auts_action[s][2]))
             end
             rels_added = hnf(rels_added, truncate = true)
+            restart = true
           end
         end
       else
@@ -424,7 +430,10 @@ function saturate!(d::Hecke.ClassGrpCtx, U::Hecke.UnitGrpCtx, n::Int, stable::Fl
         break
       end
     end
-    if wasted 
+    if restart
+      restart = false
+      continue
+    elseif wasted 
       stable *= 2
     else
       @vprint :Saturate  1 "sat success at $(stable)\n"

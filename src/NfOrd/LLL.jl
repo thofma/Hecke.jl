@@ -34,7 +34,7 @@ function _lll_CM(A::NfOrdIdl, f::NfToNfMor)
   OK = order(A)
   @vprint :LLL 3 "Reduction\n"
   M = _minkowski_matrix_CM(OK, f)
-  @vtime :LLL 3 BM, T = lll_with_transform(basis_matrix(A, copy = false), lll_ctx(0.71, 0.51))
+  @vtime :LLL 3 BM, T = lll_with_transform(basis_matrix(A, copy = false), lll_ctx(0.3, 0.51))
   g = BM*M*transpose(BM)
   @hassert :LLL 1 isposdef(g)
   @vtime :LLL 3 l, t = lll_gram_with_transform(g)
@@ -94,7 +94,7 @@ function _lll(A::NfOrdIdl, v::fmpz_mat = zero_matrix(FlintZZ, 1, 1); prec::Int =
   n = degree(order(A))
   prec = max(prec, 4*n)
 
-  ctx1 = lll_ctx(0.71, 0.51)
+  ctx1 = lll_ctx(0.5, 0.51)
 
   l, t1 = lll_with_transform(basis_matrix(A, copy = false), ctx1)
 
@@ -233,7 +233,6 @@ function _lll_gram(M::NfOrd)
   K = nf(M)
   @assert istotally_real(K)
   g = trace_matrix(M)
-
   w = lll_gram_with_transform(g)[2]
   On = NfOrd(K, w*basis_matrix(M, copy = false))
   On.ismaximal = M.ismaximal
@@ -329,7 +328,7 @@ function _lll(M::NfOrd, prec::Int)
     end
     prec, M1 = lll_precomputation(M1, prec)
   end
-  M1, prec = _lll_with_parameters(M1, (0.75, 0.51), prec)
+  M1, prec = _lll_with_parameters(M1, (0.73, 0.51), prec)
   M1 = _lll_with_parameters(M1, (0.99, 0.51), prec)[1]
   M.lllO = M1
   return M1
@@ -835,8 +834,7 @@ function _lll_product_basis(I::NfOrdIdl, J::NfOrdIdl)
   mul!(iA, C, iA)
   divexact!(iA, iA, de)
   hnf_modular_eldiv!(iA, minimum(J))
-  ctx = lll_ctx(0.71, 0.51)
-  @vtime :LLL 3 T1 = lll(iA, ctx) 
+  @vtime :LLL 3 T1 = lll(lll(iA, lll_ctx(0.3, 0.51))) 
   return T1*A
 end
 
@@ -845,6 +843,6 @@ function lll_basis_product(I::NfOrdIdl, J::NfOrdIdl)
 
   basis_IJ = _lll_product_basis(I, J)
   IJ = NfOrdIdl(order(I), basis_IJ)
-  res =  lll_basis(IJ)
+  res = lll_basis(IJ)
   return res
 end

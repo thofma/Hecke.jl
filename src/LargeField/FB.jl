@@ -7,13 +7,15 @@ function induce(FB::Hecke.NfFactorBase, A::Map)
   O = order(FB.ideals[1])
   prm = Array{Tuple{Int, Int}, 1}()
 
+  G = SymmetricGroup(length(FB.ideals))
   if f == gen(K)
-    return SymmetricGroup(length(FB.ideals))()
+    return G()
   end
 
   for p in FB.fb_int.base
     FP = FB.fb[p]
     if length(FP.lp) < 3 || isindex_divisor(O, p) || !fits(Int, p)
+      #TODO: Put some more thought. At least, do not check ideals that have already been found!
       lp = NfOrdIdl[x[2] for x = FP.lp]
       for (i, P) in FP.lp
         Q = induce_image(A, P)
@@ -50,7 +52,6 @@ function induce(FB::Hecke.NfFactorBase, A::Map)
     end
   end
   sort!(prm, lt=(a,b) -> a[1] < b[1])
-  G = SymmetricGroup(length(prm))
   return G([x[2] for x = prm])
 end
 

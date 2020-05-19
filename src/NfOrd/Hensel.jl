@@ -438,7 +438,7 @@ function _hensel(f::Generic.Poly{nf_elem},
 
     pgg = Qt(gg) #we'll do the reductions by hand - possibly not optimal
 
-    ctx_lll = lll_ctx(0.60, 0.51)
+    ctx_lll = lll_ctx(0.3, 0.51)
     if caching && haskey(_cache_lll, pr[i])
       M, Mi, d = _cache_lll[pr[i]]::Tuple{fmpz_mat, fmpz_mat, fmpz}
     elseif i > 3
@@ -471,10 +471,11 @@ function _hensel(f::Generic.Poly{nf_elem},
       if isodd(pr[i])
         exp_mod += 1
       end
-      hnf_modular_eldiv!(M, fmpz(p)^exp_mod)
-      M = lll(M, ctx_lll)
+      @vtime :Saturate 1 hnf_modular_eldiv!(M, fmpz(p)^exp_mod)
+      @vtime :Saturate 1 M = lll(M, ctx_lll)
+      @vtime :Saturate 1 lll!(M)
       mul!(M, M, Mold)
-      @vtime :Saturate 1 M = lll(M)
+      @vtime :Saturate 1 lll!(M)
       Mi, d = pseudo_inv(M)
       if caching
         _cache_lll[pr[i]] = (M, Mi, d)

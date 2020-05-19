@@ -353,7 +353,7 @@ end
 
 function _get_support(a::FacElem{nf_elem, AnticNumberField}, I::NfOrdIdlSet)
   Zk = order(I)
-  A = Dict{NfOrdIdl, fmpz}()
+  A = Tuple{NfOrdIdl, fmpz}[]
   sizehint!(A, length(a.fac))
   i = 0
   for (e, v) = a.fac
@@ -362,10 +362,12 @@ function _get_support(a::FacElem{nf_elem, AnticNumberField}, I::NfOrdIdlSet)
     Id = ideal(Zk, e)
     N, D = integral_split(Id)
     if !isone(N)
-      add_to_key!(A, N, v)
+      push!(A, (N, v))
+      #add_to_key!(A, N, v)
     end
     if !isone(D)
-      add_to_key!(A, D, -v)
+      push!(A, (D, -v))
+      #add_to_key!(A, D, -v)
     end
     @vprint :CompactPresentation 3 "$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())"
   end
@@ -381,11 +383,40 @@ function factor_coprime(a::FacElem{nf_elem, AnticNumberField}, I::NfOrdIdlSet; r
   Zk = order(I)
   @assert nf(Zk) == base_ring(a)
   A = _get_support(a, I)
-  if length(A) == 0
-    A[ideal(Zk, 1)] = 1
-    return A
+  if isempty(A)
+    return Dict{NfOrdIdl, fmpz}(ideal(Zk, 1) => 1)
   end
-  return factor_coprime!(FacElem(A), refine = refine)
+  base = NfOrdIdl[y for (y, v) in A if !iszero(v)]
+  cp = coprime_base(base, refine = refine)
+  ev = Dict{NfOrdIdl, fmpz}()
+  if isempty(cp)
+    return Dict{NfOrdIdl, fmpz}(ideal(Zk, 1) => 1)
+  end
+  for p in cp
+    if isone(p)
+      continue
+    end
+    P = minimum(p)
+    @vprint :CompactPresentation 3 "Computing valuation at an ideal lying over $P"
+    assure_2_normal(p)
+    v = fmpz(0)
+    for (b, e) in A
+      if iszero(e)
+        continue
+      end
+      if divisible(norm(b, copy = false), P) 
+        v += valuation(b, p)*e
+      end
+    end
+    @vprint :CompactPresentation 3 "$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())"
+    if !iszero(v)
+      ev[p] = v
+    end
+  end
+  if isempty(ev)
+    ev[ideal(Zk, 1)] = 1
+  end
+  return ev
 end
 
 @doc Markdown.doc"""

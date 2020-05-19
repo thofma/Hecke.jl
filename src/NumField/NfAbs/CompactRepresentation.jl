@@ -224,6 +224,8 @@ function insert_prime_into_coprime(de::Dict{NfOrdIdl, fmpz}, p::NfOrdIdl, e::fmp
   return nothing
 end
 
+
+
 #TODO: use the log as a stopping condition as well
 @doc Markdown.doc"""
     evaluate_mod(a::FacElem{nf_elem, AnticNumberField}, B::NfOrdFracIdl) -> nf_elem
@@ -234,7 +236,7 @@ function evaluate_mod(a::FacElem{nf_elem, AnticNumberField}, B::NfOrdFracIdl)
   p = fmpz(next_prime(p_start))
   K = base_ring(a)
   ZK = order(B)
-  dB = denominator(B)*index(ZK)
+  dB = denominator(B)*denominator(basis_matrix(ZK, copy = false))
   
   @hassert :CompactPresentation 1 factored_norm(B) == abs(factored_norm(a))
   @hassert :CompactPresentation 2 B == ideal(order(B), a)
@@ -285,8 +287,8 @@ function Hecke.ispower(a::FacElem{nf_elem, AnticNumberField}, n::Int; with_roots
     return true, a
   end
   @assert n > 1
+  K = base_ring(a)
   if isempty(a.fac)
-    K = base_ring(a)
     return true, FacElem(one(K))
   end
   anew_fac = Dict{nf_elem, fmpz}()
@@ -307,16 +309,22 @@ function Hecke.ispower(a::FacElem{nf_elem, AnticNumberField}, n::Int; with_roots
     end
     return true, FacElem(rt)
   end
-  anew = FacElem(anew_fac)
-  c = conjugates_arb_log(a, 64)
-  c1 = conjugates_arb_log(anew, 64)
-  b = maximum(fmpz[upper_bound(abs(x), fmpz) for x in c])
-  b1 = maximum(fmpz[upper_bound(abs(x), fmpz) for x in c1])
-  if b <= b1
+  #anew = FacElem(anew_fac)
+  #c = conjugates_arb_log(a, 64)
+  #c1 = conjugates_arb_log(anew, 64)
+  #b = maximum(fmpz[upper_bound(abs(x), fmpz) for x in c])
+  #b1 = maximum(fmpz[upper_bound(abs(x), fmpz) for x in c1])
+  #if b <= 2*b1
     return _ispower(a, n, with_roots_unity = with_roots_unity, decom = decom, trager = trager)
-  end
+  #end
+  #=
   @vprint :Saturate :3 "Using the new element with the exponent bound\n"
-  fl, res = _ispower(anew, n, with_roots_unity = with_roots_unity, trager = trager)
+  if b <= 10*b1
+    fl, res = _ispower(anew, n, with_roots_unity = with_roots_unity);
+  else
+    fl, res1 = ispower(evaluate(anew), n, with_roots_unity = with_roots_unity, trager = trager)
+    res = FacElem(res1)
+  end
   if !fl
     return fl, res
   end
@@ -324,6 +332,7 @@ function Hecke.ispower(a::FacElem{nf_elem, AnticNumberField}, n::Int; with_roots
     res = FacElem(rt)*res
   end
   return true, res
+  =#
 end
 
 function _ispower(a::FacElem{nf_elem, AnticNumberField}, n::Int; with_roots_unity = false, decom = false, trager = false)

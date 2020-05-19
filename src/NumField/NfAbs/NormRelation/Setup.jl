@@ -215,7 +215,7 @@ function _norm_relation_setup_generic(K::AnticNumberField; small_degree::Bool = 
       nonredundant[i] = true
     end
   end
-
+  
   z = NormRelation{Int}()
   z.K = K
   z.isnormal = falses(n)

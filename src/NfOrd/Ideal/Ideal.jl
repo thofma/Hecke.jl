@@ -766,6 +766,7 @@ princ_gen_special(A::NfAbsOrdIdl) = A.princ_gen_special[A.princ_gen_special[1] +
 Returns whether $x$ and $y$ are equal.
 """
 function ==(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
+  @assert order(x) === order(y)
   if x === y
     return true
   end
@@ -792,6 +793,21 @@ function ==(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
   if isdefined(x, :basis_matrix) && isdefined(y, :basis_matrix)
     if ishnf(basis_matrix(x, copy = false), :lowerleft) && ishnf(basis_matrix(y, copy = false), :lowerleft)
       return basis_matrix(x, copy = false) == basis_matrix(y, copy = false)
+    end
+  end
+  if isprime_known(x) && isprime(x) && isprime_known(y) && isprime(y)
+    px = minimum(x, copy = false)
+    py = minimum(y, copy = false)
+    if px != py
+      return false
+    end
+    OK = order(x)
+    if !isindex_divisor(OK, px)
+      R = ResidueRing(FlintZZ, px, cached = false)
+      Rx = PolynomialRing(R, "x", cached = false)[1]
+      f1 = Rx(x.gen_two.elem_in_nf)
+      f2 = Rx(y.gen_two.elem_in_nf)
+      return !iscoprime(f1, f2)
     end
   end
   if isdefined(x, :basis_matrix) && has_2_elem(y)
@@ -841,9 +857,11 @@ function in(x::NfAbsOrdElem, y::NfAbsOrdIdl)
 end
 
 function containment_by_matrices(x::NfAbsOrdElem, y::NfAbsOrdIdl)
-  v = matrix(FlintZZ, 1, degree(parent(x)), coordinates(x, copy = false))
-  t = v*basis_mat_inv(y, copy = false)
-  return isone(t.den) 
+  R = ResidueRing(FlintZZ, basis_mat_inv(y, copy = false).den, cached = false)
+  M = map_entries(R, basis_mat_inv(y, copy = false).num)
+  v = matrix(R, 1, degree(parent(x)), coordinates(x, copy = false))
+  mul!(v, v, M)
+  return iszero(v)
 end
 
 function in(x::nf_elem, y::NfAbsOrdIdl)
@@ -853,7 +871,7 @@ end
 
 in(x::fmpz, y::NfAbsOrdIdl) = in(order(y)(x),y)
 
-in(x::Integer, y::NfAbsOrdIdl) = in(order(y)(x),y)
+in(x::Integer, y::NfAbsOrdIdl) = in(order(y)(x), y)
 
 ################################################################################
 #

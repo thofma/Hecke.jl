@@ -146,7 +146,7 @@ function class_group_add_relation(clg::ClassGrpCtx{SMat{fmpz}}, a::FacElem{nf_el
   return class_group_add_relation(clg, a, R)
 end
 
-function class_group_add_relation(clg::ClassGrpCtx{SMat{fmpz}}, a::FacElem{nf_elem, AnticNumberField}, R::SRow{fmpz}) 
+function class_group_add_relation(clg::ClassGrpCtx{SMat{fmpz}}, a::FacElem{nf_elem, AnticNumberField}, R::SRow{fmpz}; always::Bool = true) 
   
   if hash(a) in clg.RS 
     return false
@@ -156,12 +156,13 @@ function class_group_add_relation(clg::ClassGrpCtx{SMat{fmpz}}, a::FacElem{nf_el
 
   @vprint :ClassGroup 3 "adding $R\n"
 
-  if add_gen!(clg.M, R)
+  if add_gen!(clg.M, R, always)
     push!(clg.R_gen, a)
   else
     push!(clg.R_rel, a)
   end
   push!(clg.RS, hash(a))
+ 
 
   if isdefined(clg, :aut_grp)
     o = _get_autos_from_ctx(clg)
@@ -172,8 +173,8 @@ function class_group_add_relation(clg::ClassGrpCtx{SMat{fmpz}}, a::FacElem{nf_el
         if Rnew in clg.M.bas_gens || Rnew in clg.M.rel_gens
           break
         end
-        ba = b(a)
         if add_gen!(clg.M, Rnew, false)
+          ba = b(a)
           push!(clg.R_gen, ba)
           clg.rel_cnt += 1
           push!(clg.RS, hash(ba))
@@ -189,4 +190,3 @@ function class_group_add_relation(clg::ClassGrpCtx{SMat{fmpz}}, a::FacElem{nf_el
   clg.last = clg.bad_rel
   return true
 end
-
