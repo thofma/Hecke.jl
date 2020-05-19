@@ -15,6 +15,7 @@ order(u::UnitGrpCtx) = u.order
 function show(io::IO, U::UnitGrpCtx)
   print(io, "Unit group context of\n$(order(U))\n")
 end
+
 ################################################################################
 #
 #  Initialization 
@@ -26,7 +27,9 @@ function _unit_group_init(O::NfOrd)
   return u
 end
 
-function _add_dependent_unit(U::UnitGrpCtx{S}, y::S; rel_only = false) where {S <: Union{nf_elem, FacElem{nf_elem, AnticNumberField}}}
+function _add_dependent_unit!(U::UnitGrpCtx{S}, y::S, rel_only::Type{Val{T}} = Val{false}; post_reduction::Bool = true) where {S <: Union{nf_elem, FacElem{nf_elem, AnticNumberField}}, T}
+  @assert has_full_rank(U)
+
   K = nf(order(U))
   
   deg = degree(K)
@@ -69,15 +72,8 @@ function _add_dependent_unit(U::UnitGrpCtx{S}, y::S; rel_only = false) where {S 
 
   z = Array{fmpq}(undef, r)
 
-  rreg = arb()
 
-  if isdefined(U, :tentative_regulator)
-    rreg = U.tentative_regulator
-  else
-    @vprint :UnitGroup 1 "Computing regulator of independent units with 64 bits ... \n" 
-    rreg = regulator(U.units, 64)
-    @vprint :UnitGroup 1 "done \n" 
-  end
+  rreg = tentative_regulator(U)
 
   bound = _denominator_bound_in_relation(rreg, K)
 
@@ -138,7 +134,7 @@ function _add_dependent_unit(U::UnitGrpCtx{S}, y::S; rel_only = false) where {S 
     @vprint :UnitGroup 3 "For $p rel: $rel\n"
   end
 
-  if rel_only
+  if rel_only === Val{true}
     return rel
   end
 
@@ -165,7 +161,9 @@ function _add_dependent_unit(U::UnitGrpCtx{S}, y::S; rel_only = false) where {S 
   U.tentative_regulator = regulator(U.units, 64)
   U.rel_add_prec = p
   @vprint :UnitGroup 1 "reduction of the new unit group...index improved by $(abs(rel[r+1]))\n"
-  @vtime :UnitGroup 1 U.units = reduce(U.units, p)
+  if post_reduction
+    @vtime :UnitGroup 1 U.units = reduce(U.units, p)
+  end
   #test reduction:
   #  LLL -> prod |b_i| <= 2^? disc
   @hassert :UnitGroup 1 prod(sum(x*x for x = conjugates_arb_log(u, 64)) for u = U.units)/U.tentative_regulator^2 < fmpz(1)<< (2*length(U.units))
@@ -174,7 +172,7 @@ end
 
 function _conj_log_mat_cutoff(x::UnitGrpCtx, p::Int)
   #if haskey(x.conj_log_mat_cutoff,  p)
-  #  @vprint :UnitGroup 2 "Conj matrix for $p cached\n"
+  #  @vprint :UnitGroup 3 "Conj matrix for $p cached\n"
   #  return x.conj_log_mat_cutoff[p]
   #else
     @vprint :UnitGroup 2 "Conj matrix for $p not cached\n"
@@ -297,22 +295,33 @@ function _conj_log_mat_cutoff(x::Array{T, 1}, p::Int) where T
   return A
 end
 
-function _add_unit(u::UnitGrpCtx, x::FacElem{nf_elem, AnticNumberField})
-  if u.full_rank
-    _add_dependent_unit(u, x)
-    return false
+# The return value fl of add_unit indicates the following
+#
+# if has_full_rank(u) && fl
+#   -> unit group enlarged
+# if has_full_rank(u) && !fl
+#   -> unit group has full rank and x is already contained
+#
+# if !has_full_rank(u) && fl
+#   -> x is/was independent and rank of the unit group increased by one
+#
+# if !has_full_rank(u) && !fl
+#   -> element x is not independent, but I did not use it to increase the unit
+#      group
+function add_unit!(u::UnitGrpCtx, x::FacElem{nf_elem, AnticNumberField})
+  if has_full_rank(u)
+    fl = _add_dependent_unit!(u, x)
+    return fl
   end
   isindep, p = isindependent(vcat(u.units, [x]), u.indep_prec)
   u.indep_prec = max(p, u.indep_prec)
   if isindep
     push!(u.units, x)
+    u.full_rank = (length(u.units) == full_unit_rank(u))
     return true
   else
-    if u.full_rank
-      _add_dependent_unit(u, x)
-    end
+    return false
   end
-  return false
 end
 
 function tentative_regulator(U::UnitGrpCtx)
@@ -321,8 +330,36 @@ function tentative_regulator(U::UnitGrpCtx)
   else
     @vprint :UnitGroup 1 "Computing regulator of independent units with 64 bits ... \n" 
     rreg = regulator(U.units, 64)
+    U.tentative_regulator = rreg
     @vprint :UnitGroup 1 "done \n" 
   end
   return rreg
 end
 
+has_full_rank(u::UnitGrpCtx) = u.full_rank
+
+rank(u::UnitGrpCtx) = length(u.units)
+
+full_unit_rank(u::UnitGrpCtx) = unit_rank(u.order)
+
+function automorphisms(u::UnitGrpCtx)
+  if isdefined(u, :auts)
+    return u.auts::Vector{NfToNfMor}
+  else
+    auts = automorphisms(nf(order(u)))
+    u.auts = auts
+    u.cache = Dict{nf_elem, nf_elem}[ Dict{nf_elem, nf_elem}() for i in 1:length(u.auts) ]
+    return u.auts::Vector{NfToNfMor}
+  end
+end
+
+function apply_automorphism(u::UnitGrpCtx, i::Int, x::nf_elem)
+  c = u.cache[i]
+  v = get!(() -> automorphisms(u)[i](x), c, x)::nf_elem
+  return v
+end
+
+function apply_automorphism(u::UnitGrpCtx, i::Int, x::FacElem{nf_elem, AnticNumberField})
+  D = Dict{nf_elem, fmpz}(apply_automorphism(u, i, b) => e for (b, e) in x)
+  return FacElem(D)
+end

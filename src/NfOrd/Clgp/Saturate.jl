@@ -404,12 +404,12 @@ function saturate!(d::Hecke.ClassGrpCtx, U::Hecke.UnitGrpCtx, n::Int, stable::Fl
             auts_action = Hecke._get_autos_from_ctx(d)
             for s = 1:length(auts_action)
               new_u = auts_action[s][1](x)
-              Hecke._add_dependent_unit(U, new_u)
+              Hecke._add_dependent_unit!(U, new_u)
             end
             restart = true
             break
           else
-            Hecke._add_dependent_unit(U, x)
+            Hecke._add_dependent_unit!(U, x)
           end
         else
           @vprint :Saturate 1  "The new element gives a relation\n"

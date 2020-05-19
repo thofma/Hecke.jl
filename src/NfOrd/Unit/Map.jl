@@ -29,7 +29,7 @@ function unit_group_disc_log(x::FacElem{nf_elem, AnticNumberField} , U::UnitGrpC
   if length(U.units) == 0
     r = [-1]
   else
-    r = _add_dependent_unit(U, x, rel_only = true)
+    r = _add_dependent_unit!(U, x, Val{true})
   end
   @assert r[end] == -1
 

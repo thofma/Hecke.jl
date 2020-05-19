@@ -11,7 +11,17 @@ Returns the unit rank of $\mathcal O$, that is, the rank of the unit group
 $\mathcal O^\times$.
 """
 function unit_rank(O::NfOrd)
-  r1, r2 = signature(nf(O))
+  return unit_rank(nf(O))
+end
+
+@doc Markdown.doc"""
+    unit_rank(O::AnticNumberField) -> Int
+
+Returns the unit rank of $\mathcal O$, that is, the rank of the unit group
+$\mathcal O^\times$.
+"""
+function unit_rank(K::AnticNumberField)
+  r1, r2 = signature(K)
   return r1 + r2 - 1
 end
 

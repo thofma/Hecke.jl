@@ -49,7 +49,7 @@ function _add_sunits_from_norm_relation!(c, UZK, N)
     U, mU = unit_group_fac_elem(zk)
     for j=2:ngens(U) # I cannot add a torsion unit. He will hang forever.
       u = mU(U[j])
-      Hecke._add_unit(UZK, FacElem(Dict((N_mk(x, D, i), v) for (x,v) = u.fac)))
+      Hecke.add_unit!(UZK, FacElem(Dict((N_mk(x, D, i), v) for (x,v) = u.fac)))
     end
     UZK.units = Hecke.reduce(UZK.units, UZK.tors_prec)
   end
@@ -107,7 +107,7 @@ function _compute_sunit_and_unit_group!(c, U, N, saturate = true)
       for j in 1:length(induced)
         aut = autos[j]
         lifted_unit = FacElem(Dict((aut(embedding(N, i)(x)), v) for (x,v) = uelem.fac))
-        bb = Hecke._add_unit(U, lifted_unit)
+        bb = Hecke.add_unit!(U, lifted_unit)
         @show bb
         if !bb
           push!(skipped_units, lifted_unit)
@@ -221,7 +221,7 @@ function _add_sunits_from_brauer_relation!(c, UZK, N; invariant = false, compact
         u = Hecke.compact_presentation(u, compact)
       end
       @vtime :NormRelation 4 img_u = FacElem(Dict{nf_elem, fmpz}((_embed(N, i, x), v) for (x,v) = u.fac))
-      @vtime :NormRelation 4 Hecke._add_unit(UZK, img_u)
+      @vtime :NormRelation 4 Hecke.add_unit!(UZK, img_u)
     end
     @vprint :NormRelation 4 "Reducing the units\n"
     @vtime :NormRelation 4 UZK.units = Hecke.reduce(UZK.units, UZK.tors_prec)
