@@ -261,7 +261,11 @@ function _class_unit_group(O::NfOrd; bound::Int = -1, method::Int = 3, large::In
       idx = _validate_class_unit_group(c, U) 
       @assert idx == _validate_class_unit_group(c, U)
       stable = 3.5
-      if iszero(c.sat_done)
+      # No matter what, try a saturation at 2
+      # This is not a good idea when we use the automorphisms.
+      # In this case, the index may contain a large 2-power and saturation
+      # will take forever.
+      if iszero(c.sat_done) && !use_aut
         @vprint :ClassGroup 1 "Finite index, saturating at 2\n"
         while saturate!(c, U, 2, stable)
           @vtime_add_elapsed :UnitGroup 1 c :unit_time r = _unit_group_find_units(U, c)
@@ -269,7 +273,7 @@ function _class_unit_group(O::NfOrd; bound::Int = -1, method::Int = 3, large::In
         idx = _validate_class_unit_group(c, U) 
         c.sat_done = 2
       end
-      while idx < 20 && idx > 1
+      while (!use_aut && idx < 20 && idx > 1) || (idx < 10 && idx > 1)
         @vprint :ClassGroup 1 "Finishing by saturating up to $idx\n"
         fl = false
         p = 2
