@@ -26,6 +26,9 @@ end
 function factored_norm(A::FacElem{NfOrdFracIdl, NfOrdFracIdlSet})
   b = Dict{fmpq, fmpz}()
   for (p, k) = A.fac
+    if iszero(k)
+      continue
+    end
     n = norm(p)
     v = numerator(n)
     add_to_key!(b, fmpq(v), k)
@@ -41,6 +44,9 @@ function factored_norm(A::FacElem{NfOrdFracIdl, NfOrdFracIdlSet})
     #else
     #  b[v] = -k
     #end
+  end
+  if isempty(b)
+    b[fmpq(1)] = fmpz(1)
   end
   bb = FacElem(b)
   simplify!(bb)

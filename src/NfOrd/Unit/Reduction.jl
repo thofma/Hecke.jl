@@ -93,9 +93,12 @@ function reduce(u::Array{T, 1}, prec::Int = 32) where T
   end
 
   while true
-    A, prec = scaled_log_matrix(u, prec)
+    @vtime :UnitGroup 2 A, prec = scaled_log_matrix(u, prec)
 
-    L, U = lll_with_transform(A)
+    @vtime :UnitGroup 2 L, U = lll_with_transform(A)
+    if isone(U)
+      return u
+    end
     @vprint :UnitGroup 2 "reducing units by $U\n"
     pA = prod(row_norms(A))
     pL = prod(row_norms(L))
