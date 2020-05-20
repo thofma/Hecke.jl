@@ -29,8 +29,8 @@ function compact_presentation(a::FacElem{nf_elem, AnticNumberField}, nn::Int = 2
   be = FacElem(K(1))
 
   if !(decom isa Bool)
-    @hassert :CompactPresentation 1 length(de) == 0 && isone(abs(factored_norm(a))) ||
-                                    abs(factored_norm(a)) == factored_norm(FacElem(de))
+    @hassert :CompactPresentation 1 (length(de) == 0 && isone(abs(factored_norm(a)))) ||
+                                    (abs(factored_norm(a)) == factored_norm(FacElem(de)))
   end
 
   v = conjugates_arb_log_normalise(a, arb_prec)

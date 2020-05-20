@@ -418,7 +418,7 @@ function saturate!(d::Hecke.ClassGrpCtx, U::Hecke.UnitGrpCtx, n::Int, stable::Fl
             #We add the relation to the matrix and compute the snf
             auts_action = Hecke._get_autos_from_ctx(d)
             for s = 1:length(auts_action)
-              push!(rels_added, Hecke.permute_rows(fac_a, auts_action[s][2]))
+              push!(rels_added, Hecke.permute_row(fac_a, auts_action[s][2]))
             end
             rels_added = hnf(rels_added, truncate = true)
             restart = true

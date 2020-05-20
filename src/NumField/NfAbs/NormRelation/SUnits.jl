@@ -404,7 +404,7 @@ function class_group_via_brauer(O::NfOrd, N::NormRelation; recursive::Bool = fal
   c, UZK = get_sunits_from_subfield_data(OK, N, recursive = recursive, compact = compact)
   auts = automorphisms(K)
   c.aut_grp = Hecke.class_group_add_auto(c, auts)
-  push!(deb_auts, c.aut_grp)
+  push!(deb_auts, c)
   for i = 1:length(c.aut_grp)
     @assert isassigned(c.aut_grp, i)
   end

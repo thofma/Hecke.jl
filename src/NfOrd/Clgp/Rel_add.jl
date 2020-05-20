@@ -86,25 +86,26 @@ function class_group_add_relation(clg::ClassGrpCtx{T}, a::nf_elem, n::fmpq, nI::
       return false
     end
     @vprint :ClassGroup 3 "adding $res\n"
-    if add_gen!(clg.M, res)
+    new_gen = add_gen!(clg.M, res)
+    if new_gen
       push!(clg.R_gen, a)
     else
       push!(clg.R_rel, a)
     end
     push!(clg.RS, hash(a))
-    if orbit && isdefined(clg, :aut_grp)
+    if new_gen && orbit && isdefined(clg, :aut_grp)
       n = res
       o = _get_autos_from_ctx(clg)
       
       @v_do :ClassGroup 1 println(" adding orbit with $(length(o)) elements")
       for (b, m) in o
-        nn = permute_rows(n, m)
+        nn = permute_row(n, m)
         if nn != n
-          ba = b(a)
           if nn in clg.M.bas_gens || nn in clg.M.rel_gens
             break
           end
           if add_gen!(clg.M, nn, false)
+            ba = b(a)
             push!(clg.R_gen, ba)
             clg.rel_cnt += 1
             push!(clg.RS, hash(ba))
@@ -127,11 +128,7 @@ function class_group_add_relation(clg::ClassGrpCtx{T}, a::nf_elem, n::fmpq, nI::
   end
 end
 
-function permute_rows(n::SRow{fmpz}, p::Nemo.Generic.Perm{Int})
-  r = Tuple{Int, Int}[(p[i], v) for (i,v) = n]
-  sort!(r, lt = (a,b)->a[1]<b[1])
-  return SRow{fmpz}(r)
-end
+
 
 function class_group_add_relation(clg::ClassGrpCtx{SMat{fmpz}}, a::FacElem{nf_elem, AnticNumberField})
   R = SRow{fmpz}()
@@ -156,7 +153,8 @@ function class_group_add_relation(clg::ClassGrpCtx{SMat{fmpz}}, a::FacElem{nf_el
 
   @vprint :ClassGroup 3 "adding $R\n"
 
-  if add_gen!(clg.M, R, always)
+  new_gen = add_gen!(clg.M, R, always)
+  if new_gen
     push!(clg.R_gen, a)
   else
     push!(clg.R_rel, a)
@@ -164,11 +162,11 @@ function class_group_add_relation(clg::ClassGrpCtx{SMat{fmpz}}, a::FacElem{nf_el
   push!(clg.RS, hash(a))
  
 
-  if isdefined(clg, :aut_grp)
+  if isdefined(clg, :aut_grp) && new_gen
     o = _get_autos_from_ctx(clg)
     @v_do :ClassGroup 1 println(" adding orbit with $(length(o)) elements")
     for (b, m) in o
-      Rnew = permute_rows(R, m)
+      Rnew = permute_row(R, m)
       if Rnew != R
         if Rnew in clg.M.bas_gens || Rnew in clg.M.rel_gens
           break

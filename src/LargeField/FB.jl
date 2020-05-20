@@ -17,10 +17,21 @@ function induce(FB::Hecke.NfFactorBase, A::Map)
     if length(FP.lp) < 3 || isindex_divisor(O, p) || !fits(Int, p)
       #TODO: Put some more thought. At least, do not check ideals that have already been found!
       lp = NfOrdIdl[x[2] for x = FP.lp]
+      found = falses(length(lp))
       for (i, P) in FP.lp
         Q = induce_image(A, P)
-        id = findfirst(isequal(Q), lp)
-        @assert id !== nothing        
+        id = 0
+        for j = 1:length(lp)
+          if found[j]
+            continue
+          end
+          if lp[j] == Q
+            found[j] = true
+            id = j
+            break
+          end
+        end
+        @assert !iszero(id)  
         push!(prm, (i, FP.lp[id][1]))
       end
     else
