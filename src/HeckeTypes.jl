@@ -1150,6 +1150,8 @@ mutable struct UnitGrpCtx{T <: Union{nf_elem, FacElem{nf_elem}}}
 
   unit_map::Map
   finished::Bool
+  auts# automorphisms of the field
+  cache::Vector{Dict{nf_elem, nf_elem}}
 
   function UnitGrpCtx{T}(O::NfOrd) where {T}
     z = new{T}()

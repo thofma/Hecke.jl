@@ -8,16 +8,25 @@ export transform
 #
 ################################################################################
 
-function add_to_key!(D::Dict{S, T}, k::S, v) where S where T <: Union{fmpz, Integer}
-  add_to_key!(D, k, T(v))
+function add_to_key!(D::Dict{S, T}, k::S, v; remove_zero::Bool = true) where S where T <: Union{fmpz, Integer}
+  add_to_key!(D, k, T(v), remove_zero = remove_zero)
   return nothing
 end
 
-function add_to_key!(D::Dict{S, T}, k::S, v::T) where S where T <: Union{fmpz, Integer}
+function add_to_key!(D::Dict{S, T}, k::S, v::T; remove_zero::Bool = true) where S where T <: Union{fmpz, Integer}
   hash_k = Base.ht_keyindex2!(D, k)
   if hash_k > 0
     #The key is in the dictionary, we only need to add
-    @inbounds D.vals[hash_k] += v
+    w = D.vals[hash_k]
+    if remove_zero
+      if w == -v
+        Base._delete!(D, hash_k)
+      else
+        @inbounds D.vals[hash_k] = w + v 
+      end
+    else
+      @inbounds D.vals[hash_k] = w + v
+    end
   else
     pos = -hash_k
     @inbounds D.slots[pos] = 0x1
@@ -66,7 +75,7 @@ function FacElem(R, base::Vector{B}, exp::Vector{fmpz}) where {B}
     if iszero(exp[i])
       continue
     end
-    add_to_key!(z.fac, base[i], exp[i])
+    add_to_key!(z.fac, base[i], exp[i], remove_zero = true)
   end
 
   z.parent = FacElemMon(R)
@@ -269,7 +278,7 @@ function mul!(z::FacElem{B, S}, x::FacElem{B, S}, y::FacElem{B, S}) where {B, S}
   @assert check_parent(x, z) "Elements must have the same parent"
   z.fac = copy(x.fac)
   for (a, v) in y
-    add_to_key!(z.fac, a, v)
+    add_to_key!(z.fac, a, v, remove_zero = true)
   end
   return z
 end
@@ -286,10 +295,8 @@ function *(x::FacElem{B, S}, y::FacElem{B, S}) where {B, S}
 
   z = copy(x)
   for (a, v) in y
-    add_to_key!(z.fac, a, v)
+    add_to_key!(z.fac, a, v, remove_zero = true)
   end
-
-  filter!(p -> !iszero(p.second), z.fac)
 
   return z
 end
@@ -297,14 +304,14 @@ end
 function *(x::FacElem{B}, y::B) where B
   @assert base_ring(x) == parent(y)
   z = copy(x)
-  add_to_key!(z.fac, y, 1)
+  add_to_key!(z.fac, y, 1, remove_zero = true)
   return z
 end
 
 function *(y::B, x::FacElem{B}) where B
   @assert base_ring(x) == parent(y)
   z = copy(x)
-  add_to_key!(z.fac, y, 1)
+  add_to_key!(z.fac, y, 1, remove_zero = true)
   return z
 end
 
@@ -312,7 +319,7 @@ function div(x::FacElem{B}, y::FacElem{B}) where B
   @assert check_parent(x, y) "Elements must have the same parent"
   z = copy(x)
   for (a, v) in y
-    add_to_key!(z.fac, a, -v)
+    add_to_key!(z.fac, a, -v, remove_zero = true)
   end
   return z
 end

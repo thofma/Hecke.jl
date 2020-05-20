@@ -182,6 +182,9 @@ function _validate_class_unit_group(c::ClassGrpCtx, U::UnitGrpCtx)
 
   @assert isfinite(loghRtrue)
 
+  @vprint :ClassGroup 1 "tentative class group $h\n"
+  @vprint :ClassGroup 1 "tentative regulator $(regulator(U.units, 16))\n"
+
   while true
     loghRapprox = log(h* abs(tentative_regulator(U)))
 
@@ -246,19 +249,23 @@ function _class_unit_group(O::NfOrd; bound::Int = -1, method::Int = 3, large::In
     @v_do :UnitGroup 1 pushindent()
     if do_units
       if unit_method == 1
-        @vtime_add_elapsed :UnitGroup 1 c :unit_time r = _unit_group_find_units(U, c)
+        @vtime_add_elapsed :UnitGroup 1 c :unit_time r = _unit_group_find_units(U, c, add_orbit = use_aut)
       else
         @vtime_add_elapsed :UnitGroup 1 c :unit_hnf_time module_trafo_assure(c.M)
-        @vtime_add_elapsed :UnitGroup 1 c :unit_time r = _unit_group_find_units_with_transform(U, c)
+        @vtime_add_elapsed :UnitGroup 1 c :unit_time r = _unit_group_find_units_with_transform(U, c, add_orbit = use_aut)
       end
       @v_do :UnitGroup 1 popindent()
     end
+    # r == 1 means full rank
     if isone(r)  # use saturation!!!!
       idx = _validate_class_unit_group(c, U) 
       @assert idx == _validate_class_unit_group(c, U)
       stable = 3.5
-      #=
-      if iszero(c.sat_done)
+      # No matter what, try a saturation at 2
+      # This is not a good idea when we use the automorphisms.
+      # In this case, the index may contain a large 2-power and saturation
+      # will take forever.
+      if iszero(c.sat_done) && !use_aut
         @vprint :ClassGroup 1 "Finite index, saturating at 2\n"
         while saturate!(c, U, 2, stable)
           @vtime_add_elapsed :UnitGroup 1 c :unit_time r = _unit_group_find_units(U, c)
@@ -266,8 +273,7 @@ function _class_unit_group(O::NfOrd; bound::Int = -1, method::Int = 3, large::In
         idx = _validate_class_unit_group(c, U) 
         c.sat_done = 2
       end
-      =#
-      while idx < 20 && idx > 1
+      while (!use_aut && idx < 20 && idx > 1) || (idx < 10 && idx > 1)
         @vprint :ClassGroup 1 "Finishing by saturating up to $idx\n"
         fl = false
         p = 2

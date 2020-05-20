@@ -9,7 +9,7 @@ function factored_norm(A::FacElem{NfOrdIdl, NfOrdIdlSet})
     #  b[n] = k
     #end
   end
-  bb = FacElem(b)
+  bb = FacElem(FlintQQ, b)
   simplify!(bb)
   return bb
 end
@@ -45,10 +45,7 @@ function factored_norm(A::FacElem{NfOrdFracIdl, NfOrdFracIdlSet})
     #  b[v] = -k
     #end
   end
-  if isempty(b)
-    b[fmpq(1)] = fmpz(1)
-  end
-  bb = FacElem(b)
+  bb = FacElem(FlintQQ, b)
   simplify!(bb)
   return bb
 end

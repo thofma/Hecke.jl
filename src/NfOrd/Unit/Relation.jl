@@ -16,6 +16,7 @@ function _check_relation_mod_torsion(x::Array{FacElem{nf_elem, AnticNumberField}
 end
 
 function _find_rational_relation!(rel::Array{fmpz, 1}, v::arb_mat, bound::fmpz)
+  #push!(_debug, (deepcopy(rel), deepcopy(v), deepcopy(bound)))
   @vprint :UnitGroup 2 "Finding rational approximation in $v\n"
   r = length(rel) - 1
 
@@ -54,7 +55,8 @@ function _find_rational_relation!(rel::Array{fmpz, 1}, v::arb_mat, bound::fmpz)
       return false
     end
 
-    app =  _frac_bounded_2(v[1, i], bound)
+    app = simplest_inside(v[1, i], bound)
+
     if app[1]
       z[i] = app[2]
     else
@@ -67,6 +69,10 @@ function _find_rational_relation!(rel::Array{fmpz, 1}, v::arb_mat, bound::fmpz)
 
   for i in 2:length(z)
     dlcm = lcm(dlcm, denominator(z[i]))
+  end
+
+  if dlcm > bound
+    return false
   end
 
   for i in 1:r
@@ -94,6 +100,7 @@ end
 # Given r elements x_1,...,x_r, where r is the unit rank, and y an additional unit,
 # compute a basis z_1,...z_r such that <x_1,...x_r,y,T> = <z_1,...,z_r,T>,
 # where T are the torsion units
+
 function _find_relation(x::Array{S, 1}, y::T, p::Int = 64) where {S, T}
 
   K = _base_ring(x[1])
@@ -209,47 +216,56 @@ function _denominator_bound_in_relation(rreg::arb, K::AnticNumberField)
   return abs_upper_bound(arb_bound, fmpz)
 end
 
-function _frac_bounded_2(y::arb, bound::fmpz)
-  p = prec(parent(y))
-  x = _arb_get_fmpq(y)
+################################################################################
+#
+#  Simplest fraction in balls
+#
+################################################################################
 
-  n = 1
-  c = cfrac(x, n)[1]
-  q = fmpq(c)
+function _fmpq_simplest_between(l_num::fmpz, l_den::fmpz, r_num::fmpz, r_den::fmpz)
+  n = fmpz()
+  d = fmpz()
 
-  new_q = q
+  ccall((:_fmpq_simplest_between, libflint), Nothing, (Ref{fmpz}, Ref{fmpz}, Ref{fmpz}, Ref{fmpz}, Ref{fmpz}, Ref{fmpz}), n, d, l_num, l_den, r_num, r_den)
 
-  while nbits(numerator(new_q)) < div(p, 2) && nbits(denominator(new_q)) < div(p, 2) && denominator(new_q) < bound
-
-    if contains(y, new_q)
-      return true, new_q
-    end
-
-    n += 1
-    c = cfrac(x, n)[1]
-    new_q = fmpq(c)
-
-  end
-  return false, zero(FlintQQ)
+  return n//d
 end
 
-function _max_frac_bounded(x::fmpq, b::fmpz)
-  n = 2
-  c = cfrac(x, n)[1]
-  q = fmpq(c)
-
-  while abs(denominator(q)) < b && q != x
-    n = 2*n
-    c = cfrac(x, n)[1]
-    q = fmpq(c)
-  end
-
-  while abs(denominator(q)) > b
-    n = n - 1
-    c = cfrac(x, n)[1]
-    q = fmpq(c)
-  end
-
-  return n
+function simplest_between(l::fmpq, r::fmpq)
+  z = fmpq()
+  ccall((:fmpq_simplest_between, libflint), Nothing, (Ref{fmpq}, Ref{fmpq}, Ref{fmpq}), z, l, r)
+  return z
 end
 
+function simplest_inside(x::arb)
+  a = fmpz()
+  b = fmpz()
+  e = fmpz()
+
+  ccall((:arb_get_interval_fmpz_2exp, libarb), Nothing, (Ref{fmpz}, Ref{fmpz}, Ref{fmpz}, Ref{arb}), a, b, e, x)
+  e = -e
+  @assert fits(Int, e)
+  d = fmpz(2)^e
+  return _fmpq_simplest_between(a, d, b, d)
+end
+
+function simplest_inside(x::arb, B::fmpz)
+  q = simplest_inside(x)
+  if denominator(q) < B
+    return true, q
+  else
+    return false, q
+  end
+end
+
+#function 
+#
+#  simplest_inside(arb_t x):
+#  fmpz_t a, b, d, e
+#  fmpq_t r
+#  arb_get_interval_fmpz_2exp(a, b, e, x)
+#  e = -e
+#  do something special if e does not fit in a ulong
+#      d = 2^e
+#      _fmpq_simplest_between(numref(r), denref(r), a, d, b, d)
+#      return r
