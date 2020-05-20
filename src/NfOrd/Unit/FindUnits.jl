@@ -180,6 +180,7 @@ end
 
 
 function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx; add_orbit::Bool = true)
+  add_orbit = false
   @vprint :UnitGroup 1 "Processing ClassGrpCtx to find units ... (using orbits: $add_orbit)\n"
   @vprint :UnitGroup 1 "Relation module $(x.M)\n"
 
