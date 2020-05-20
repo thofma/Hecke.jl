@@ -616,21 +616,22 @@ function in(a::nf_elem, O::NfOrd)
     if isone(d)
       return true
     end
-    d1 = ppio(d, index(O))[1]
-    if d1 != d
+    exp_index = basis_matrix(O, copy = false).den
+    if !divisible(exp_index, d)
       return false
     end
     M = basis_mat_inv(O, copy = false)
-    d2 = ppio(M.den, d1)[1]
+    d2 = ppio(M.den, d)[1]
     t = O.tcontain
     elem_to_mat_row!(t.num, 1, t.den, a)
-    if fits(Int, d1*d2)
-      R = ResidueRing(FlintZZ, Int(d1*d2), cached = false)
+    if fits(Int, d*d2)
+      R = ResidueRing(FlintZZ, Int(d*d2), cached = false)
       return _check_containment(R, M.num, t.num)
     else
-      R1 = ResidueRing(FlintZZ, d1*d2, cached = false)
+      R1 = ResidueRing(FlintZZ, d*d2, cached = false)
       return _check_containment(R1, M.num, t.num)
     end
+    #=
     a1 = mod(a, d1*d2)
     M1 = mod(M.num, d1*d2)
     t = O.tcontain
@@ -638,6 +639,7 @@ function in(a::nf_elem, O::NfOrd)
     mul!(t.num, t.num, M1)
     mod!(t.num, d1*d2)
     return iszero(t.num)
+    =#
   end
   return _check_elem_in_order(a, O, Val{true})
 end
@@ -645,7 +647,8 @@ end
 function _check_containment(R, M, t)
   M1 = map_entries(R, M)
   t1 = map_entries(R, t)
-  return iszero(t1*M1)
+  mul!(t1, t1, M1)
+  return iszero(t1)
 end
 
 ################################################################################

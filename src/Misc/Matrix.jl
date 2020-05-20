@@ -946,6 +946,21 @@ function mod_sym(M::fmpz_mat, B::fmpz)
   return N
 end
 mod_sym(M::fmpz_mat, B::Integer) = mod_sym(M, fmpz(B))
+
+
+################################################################################
+#
+#  Special map entries
+#
+################################################################################
+
+function map_entries(R::NmodRing, M::fmpz_mat)
+  MR = zero_matrix(R, nrows(M), ncols(M))
+  ccall((:fmpz_mat_get_nmod_mat, libflint), Cvoid, (Ref{nmod_mat}, Ref{fmpz_mat}), MR, M)
+  return MR
+end
+
+
 ################################################################################
 #
 #  Concatenation of matrices

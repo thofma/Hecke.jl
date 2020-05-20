@@ -258,7 +258,7 @@ function residual_polynomial(F, L::Line, dev::Array{fmpz_poly, 1}, p::Union{Int,
   e = denominator(L.slope)
   for i=0:degree(L)
     if !iszero(dev[Int(s+e*i+1)])
-      el=Rx(divexact(dev[Int(s+e*i+1)], p^(Int(L.points[1][2]+numerator(L.slope*i*e)))))
+      el=Rx(divexact(dev[Int(s+e*i+1)], fmpz(p)^(Int(L.points[1][2]+numerator(L.slope*i*e)))))
       push!(cof, F(el))
     else
       push!(cof, F(0))

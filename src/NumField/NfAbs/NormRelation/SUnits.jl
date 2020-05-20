@@ -10,7 +10,7 @@ function _add_sunits_from_norm_relation!(c, UZK, N)
     @vprint :NormRelation 1 "Computing lll basis ... "
     zk = lll(zk)
     @vprint :NormRelation 1 "Computing class group of $k... "
-    class_group(zk, redo = !true, use_aut = true)
+    class_group(zk, use_aut = true)
     @vprint :NormRelation 1 "done"
     lpk = NfOrdIdl[ P[1] for p in cp for P = prime_decomposition(zk, p)]
     @vprint :NormRelation 1 "Now computing the S-unit group for lp of length $(length(lpk))"
@@ -41,7 +41,8 @@ function _add_sunits_from_norm_relation!(c, UZK, N)
       for l=1:ngens(Szk)
         u = mS(Szk[l])  #do compact rep here???
         valofnewelement = mul(mS.valuations[l], z)
-        Hecke.class_group_add_relation(c, FacElem(Dict((N(x, i, j), v) for (x,v) = u.fac)), valofnewelement)
+        el_to_add = FacElem(Dict{nf_elem, AnticNumberField}((N(x, i, j), v) for (x,v) = u.fac))
+        Hecke.class_group_add_relation(c, el_to_add, valofnewelement)#, always = false)
       end
     end
 
@@ -81,7 +82,8 @@ function _compute_sunit_and_unit_group!(c, U, N, saturate = true)
       for j in 1:length(induced)
         aut = autos[j]
         valofnewelement = mul(mS.valuations[l], induced[j])
-        Hecke.class_group_add_relation(c, FacElem(Dict((aut(embedding(N, i)(x)), v) for (x,v) = u.fac)), valofnewelement)
+        el_to_add = FacElem(Dict{nf_elem, AnticNumberField}((aut(embedding(N, i)(x)), v) for (x,v) = u.fac))
+        Hecke.class_group_add_relation(c, el_to_add, valofnewelement)#, always = false)
       end
     end
 
@@ -208,7 +210,7 @@ function _add_sunits_from_brauer_relation!(c, UZK, N; invariant = false, compact
       @hassert :NormRelation 1 begin zz = mk(evaluate(u)); true; end
       @hassert :NormRelation 1 sparse_row(FlintZZ, [ (i, valuation(zz, p)) for (i, p) in enumerate(c.FB.ideals) if valuation(zz, p) != 0]) == valofnewelement
       @vtime :NormRelation 4 img_u = FacElem(Dict{nf_elem, fmpz}((_embed(N, i, x), v) for (x,v) = u.fac))
-      @vtime :NormRelation 4 Hecke.class_group_add_relation(c, img_u, valofnewelement)
+      @vtime :NormRelation 4 Hecke.class_group_add_relation(c, img_u, valofnewelement)#, always = false)
     end
 
     @vprint :NormRelation 1 "Coercing the units into the big field ... \n"
@@ -334,12 +336,14 @@ function sunit_group_fac_elem_via_brauer(N::NormRelation, S, invariant::Bool = f
 end
 
 
-function _class_group(O::NfOrd)
-  c = Hecke._get_ClassGrpCtx_of_order(O, false)
-  if c !== nothing
-    c::Hecke.ClassGrpCtx{SMat{fmpz}}
-    @assert c.finished
-    return class_group(c, O)
+function _class_group(O::NfOrd; saturate::Bool = true, redo::Bool = false)
+  if !redo
+    c = Hecke._get_ClassGrpCtx_of_order(O, false)
+    if c !== nothing
+      c::Hecke.ClassGrpCtx{SMat{fmpz}}
+      @assert c.finished
+      return class_group(c, O)
+    end
   end
   K = nf(O)
   G, mG = automorphism_group(K)
@@ -347,7 +351,7 @@ function _class_group(O::NfOrd)
     lll(O)
     fl, N = norm_relation(K, small_degree = false)
     @assert fl
-    return class_group_via_brauer(O, N, recursive = true, compact = false)
+    return class_group_via_brauer(O, N, recursive = true, compact = false, saturate = saturate)
   end
   return class_group(O, use_aut = true)
 end
@@ -376,7 +380,7 @@ function get_sunits_from_subfield_data(OK, N; recursive::Bool = false, compact::
       L = N.subfields[i][1]
       if N.isnormal[i] && degree(L) > 25
         @vprint :NormRelation 1 "Computing class group of $(L.pol)\n"
-        _class_group(lll(maximal_order(L)))
+        _class_group(lll(maximal_order(L)), saturate = false)
       end
     end
   end
@@ -392,8 +396,7 @@ function get_sunits_from_subfield_data(OK, N; recursive::Bool = false, compact::
 end 
 
 
-global deb_auts = []
-function class_group_via_brauer(O::NfOrd, N::NormRelation; recursive::Bool = false, do_lll::Bool = true, compact::Bool = true, stable = 3.5)
+function class_group_via_brauer(O::NfOrd, N::NormRelation; saturate::Bool = true, recursive::Bool = false, do_lll::Bool = true, compact::Bool = true, stable = 3.5)
   K = N.K
   if do_lll
     OK = lll(maximal_order(nf(O)))
@@ -402,13 +405,10 @@ function class_group_via_brauer(O::NfOrd, N::NormRelation; recursive::Bool = fal
   end
   
   c, UZK = get_sunits_from_subfield_data(OK, N, recursive = recursive, compact = compact)
-  auts = automorphisms(K)
-  c.aut_grp = Hecke.class_group_add_auto(c, auts)
-  push!(deb_auts, c)
-  for i = 1:length(c.aut_grp)
-    @assert isassigned(c.aut_grp, i)
-  end
-  if index(N) != 1
+  #auts = automorphisms(K)
+  #c.aut_grp = Hecke.class_group_add_auto(c, auts)
+ 
+  if saturate
     for (p, e) in factor(index(N))
       @vprint :NormRelation 1 "Saturating at $p \n"
       b = Hecke.saturate!(c, UZK, Int(p), stable)
@@ -418,24 +418,28 @@ function class_group_via_brauer(O::NfOrd, N::NormRelation; recursive::Bool = fal
         b = Hecke.saturate!(c, UZK, Int(p), stable)
       end
     end
+    idx = Hecke._validate_class_unit_group(c, UZK)
+    if idx != 1
+      @vprint :NormRelation 1 "Index is $idx (should be 1)!\n"
+    end
+    @assert idx == 1
+  
+    @vprint :NormRelation 1 "\n"
+    c, _ = simplify(c)
+  
+    c.finished = true
+    UZK.finished = true
+    Hecke._set_ClassGrpCtx_of_order(OK, c)
+    Hecke._set_UnitGrpCtx_of_order(OK, UZK)
+    return class_group(c, O)
   end
-
-  idx = Hecke._validate_class_unit_group(c, UZK)
-
-  if idx != 1
-    @vprint :NormRelation 1 "Index is $idx (should be 1)!\n"
-  end
-  @assert idx == 1
-
-  @vprint :NormRelation 1 "\n"
-  c, _ = simplify(c)
-
-  c.finished = true
-  UZK.finished = true
 
   Hecke._set_ClassGrpCtx_of_order(OK, c)
   Hecke._set_UnitGrpCtx_of_order(OK, UZK)
-  return class_group(c, O)
+  c, UZK, d = Hecke._class_unit_group(OK)
+  @assert isone(d)
+
+  return Hecke.class_group(c, O)
 end
 
 function __sunit_group_fac_elem_quo_via_brauer(N::NormRelation, S, n::Int, invariant::Bool = false)

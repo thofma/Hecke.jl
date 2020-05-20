@@ -178,8 +178,8 @@ function generated_subgroup(op::Array) #pairs: permutations and Map
   return elt
 end
 
-function class_group_add_auto(ctx::ClassGrpCtx, auts::Vector{NfToNfMor})
 
+function class_group_add_auto(ctx::ClassGrpCtx, auts::Vector{NfToNfMor})
   K = domain(auts[1])
   p = 11
   R = GF(p, cached = false)
@@ -206,15 +206,15 @@ function class_group_add_auto(ctx::ClassGrpCtx, auts::Vector{NfToNfMor})
   perms = Generic.Perm{Int}[Gperm(), induce(ctx.FB, S[1])]
   elements[2] = (S[1], perms[2])
   gperm = perms[2]*perms[2]
-
-  while gperm != perms[1]
-    gpol = compose_mod(pols[2], pols[end], fmod)
+  gpol = compose_mod(pols[2], pols[end], fmod)
+  while gpol != pols[1]
     elements[ind_elem] = (Dpols[gpol], gperm)
     @hassert :ClassGroup 1 induce(ctx.FB, elements[ind_elem][1]) == elements[ind_elem][2]
     ind_elem += 1
     push!(pols, gpol)
     push!(perms, gperm)
     gperm = perms[2]*gperm
+    gpol = compose_mod(pols[2], pols[end], fmod)
   end
   if length(pols) == length(auts)
     return elements

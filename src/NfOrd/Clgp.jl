@@ -257,6 +257,7 @@ function _class_unit_group(O::NfOrd; bound::Int = -1, method::Int = 3, large::In
       idx = _validate_class_unit_group(c, U) 
       @assert idx == _validate_class_unit_group(c, U)
       stable = 3.5
+      #=
       if iszero(c.sat_done)
         @vprint :ClassGroup 1 "Finite index, saturating at 2\n"
         while saturate!(c, U, 2, stable)
@@ -265,6 +266,7 @@ function _class_unit_group(O::NfOrd; bound::Int = -1, method::Int = 3, large::In
         idx = _validate_class_unit_group(c, U) 
         c.sat_done = 2
       end
+      =#
       while idx < 20 && idx > 1
         @vprint :ClassGroup 1 "Finishing by saturating up to $idx\n"
         fl = false

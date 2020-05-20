@@ -1,4 +1,4 @@
-export sparse_row, dot, scale_row!, add_scaled_row
+export sparse_row, dot, scale_row!, add_scaled_row, permute_row
 
 ################################################################################
 #

@@ -694,10 +694,29 @@ end
 #
 ################################################################################
 
+function _evaluate_mod(f::fmpq_poly, a::nf_elem, d::fmpz)
+  #Base.show_backtrace(stdout, Base.stacktrace())
+  R = parent(a)
+  if iszero(f)
+    return zero(R)
+  end
+  l = length(f) - 1
+  s = R(coeff(f, l))
+  for i in l-1:-1:0
+    #s = s*a + R(coeff(f, i))
+    mul!(s, s, a)
+    # TODO (easy): Once fmpq_poly_add_fmpq is improved in flint, remove the R(..)
+    add!(s, s, R(coeff(f, i)))
+    s = mod(s, d)
+  end
+  return s
+end
+
 (f::NfToNfMor)(x::NfOrdIdl) = induce_image(f, x)
 
 function induce_image(f::NfToNfMor, x::NfOrdIdl)
-  if domain(f) != codomain(f)
+  K = domain(f)
+  if K != codomain(f)
     OK = maximal_order(codomain(f))
     @assert ismaximal(order(x))
     assure_2_normal(x)
@@ -719,10 +738,22 @@ function induce_image(f::NfToNfMor, x::NfOrdIdl)
   end
   I = ideal(OK)
   if isdefined(x, :gen_two)
-    I.gen_two = OK(f(K(x.gen_two)))
+    new_gen_two = f(K(x.gen_two))
+    if has_minimum(x)
+      new_gen_two = mod(new_gen_two, minimum(x, copy = false)^2)
+    end
+    if ismaximal_known(OK) && ismaximal(OK)
+      I.gen_two = OK(new_gen_two, false)
+    else
+      I.gen_two = OK(new_gen_two)
+    end
   end
   if isdefined(x, :princ_gen)
-    I.princ_gen = OK(f(K(x.princ_gen)))
+    if ismaximal_known(OK) && ismaximal(OK)
+      I.princ_gen = OK(f(K(x.princ_gen)), false)
+    else
+      I.princ_gen = OK(f(K(x.princ_gen)))
+    end
   end
   for i in [:gen_one, :is_prime, :gens_normal, :gens_weakly_normal, :is_principal, 
           :iszero, :minimum, :norm, :splitting_type]

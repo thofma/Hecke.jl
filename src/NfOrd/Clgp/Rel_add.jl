@@ -28,7 +28,7 @@ end
 
 #deal with integral and non-integral elements differently. Computing the order
 #denominator is expensive (and mostly unnecessary)
-function class_group_add_relation(clg::ClassGrpCtx{T}, a::nf_elem, n::fmpq, nI::fmpz; orbit::Bool = true, integral::Bool = true) where T
+function class_group_add_relation(clg::ClassGrpCtx{T}, a::nf_elem, n::fmpq, nI::fmpz; orbit::Bool = true, integral::Bool = true, always::Bool = true) where T
   if iszero(a)
     return false
   end
@@ -86,20 +86,30 @@ function class_group_add_relation(clg::ClassGrpCtx{T}, a::nf_elem, n::fmpq, nI::
       return false
     end
     @vprint :ClassGroup 3 "adding $res\n"
-    new_gen = add_gen!(clg.M, res)
-    if new_gen
-      push!(clg.R_gen, a)
+    new_gen = add_gen!(clg.M, res, always)
+    if always
+      if new_gen
+        push!(clg.R_gen, a)
+      else
+        push!(clg.R_rel, a)
+      end
+      clg.rel_cnt += 1
+      push!(clg.RS, hash(a))
     else
-      push!(clg.R_rel, a)
+      if new_gen
+        push!(clg.R_gen, a)
+        push!(clg.RS, hash(a))
+        clg.rel_cnt += 1
+      end
     end
-    push!(clg.RS, hash(a))
+    
     if new_gen && orbit && isdefined(clg, :aut_grp)
       n = res
       o = _get_autos_from_ctx(clg)
       
       @v_do :ClassGroup 1 println(" adding orbit with $(length(o)) elements")
       for (b, m) in o
-        nn = permute_row(n, m)
+        nn = Hecke.permute_row(n, m)
         if nn != n
           if nn in clg.M.bas_gens || nn in clg.M.rel_gens
             break
@@ -114,7 +124,7 @@ function class_group_add_relation(clg::ClassGrpCtx{T}, a::nf_elem, n::fmpq, nI::
       end
     end  
 
-    clg.rel_cnt += 1
+    
 #    @assert clg.rel_cnt < 2*ncols(clg.M)
     @v_do :ClassGroup 1 println(" -> OK, rate currently ",
            clg.bad_rel/clg.rel_cnt, " this ", clg.bad_rel - clg.last,
@@ -154,13 +164,21 @@ function class_group_add_relation(clg::ClassGrpCtx{SMat{fmpz}}, a::FacElem{nf_el
   @vprint :ClassGroup 3 "adding $R\n"
 
   new_gen = add_gen!(clg.M, R, always)
-  if new_gen
-    push!(clg.R_gen, a)
+  if always
+    if new_gen
+      push!(clg.R_gen, a)
+    else
+      push!(clg.R_rel, a)
+    end
+    push!(clg.RS, hash(a))
+    clg.rel_cnt += 1
   else
-    push!(clg.R_rel, a)
+    if new_gen
+      push!(clg.R_gen, a)
+      push!(clg.RS, hash(a))
+      clg.rel_cnt += 1
+    end
   end
-  push!(clg.RS, hash(a))
- 
 
   if isdefined(clg, :aut_grp) && new_gen
     o = _get_autos_from_ctx(clg)
@@ -181,10 +199,6 @@ function class_group_add_relation(clg::ClassGrpCtx{SMat{fmpz}}, a::FacElem{nf_el
     end
   end  
 
-  clg.rel_cnt += 1
-#    @assert clg.rel_cnt < 2*ncols(clg.M)
-  @v_do :ClassGroup 1 println(" -> OK, rate currently ",
-         clg.bad_rel/clg.rel_cnt, " this ", clg.bad_rel - clg.last)
   clg.last = clg.bad_rel
   return true
 end
