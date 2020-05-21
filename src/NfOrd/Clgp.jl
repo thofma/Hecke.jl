@@ -112,7 +112,7 @@ function class_group_ctx(O::NfOrd; bound::Int = -1, method::Int = 3, large::Int 
   c = class_group_init(O, bound, complete = false, use_aut = use_aut)::ClassGrpCtx{SMat{fmpz}}
   @assert order(c) === O
 
-  _set_ClassGrpCtx_of_order(O, c)
+  
 
   c.B2 = bound * large
 
@@ -209,7 +209,7 @@ function class_group_current_h(c::ClassGrpCtx)
   return c.h
 end
 
-function _class_unit_group(O::NfOrd; bound::Int = -1, method::Int = 3, large::Int = 1000, redo::Bool = false, unit_method::Int = 1, use_aut::Bool = false, GRH::Bool = true)
+function _class_unit_group(O::NfOrd; saturate_at_2::Bool = true, bound::Int = -1, method::Int = 3, large::Int = 1000, redo::Bool = false, unit_method::Int = 1, use_aut::Bool = false, GRH::Bool = true)
 
   @vprint :UnitGroup 1 "Computing tentative class and unit group ... \n"
 
@@ -265,7 +265,7 @@ function _class_unit_group(O::NfOrd; bound::Int = -1, method::Int = 3, large::In
       # This is not a good idea when we use the automorphisms.
       # In this case, the index may contain a large 2-power and saturation
       # will take forever.
-      if iszero(c.sat_done) && !use_aut
+      if iszero(c.sat_done) && !use_aut && saturate_at_2
         @vprint :ClassGroup 1 "Finite index, saturating at 2\n"
         while saturate!(c, U, 2, stable)
           @vtime_add_elapsed :UnitGroup 1 c :unit_time r = _unit_group_find_units(U, c)
@@ -310,6 +310,7 @@ function _class_unit_group(O::NfOrd; bound::Int = -1, method::Int = 3, large::In
   end
   @assert U.full_rank
   _set_UnitGrpCtx_of_order(O, U)
+  _set_ClassGrpCtx_of_order(O, c)
 
   c.finished = true
   U.finished = true

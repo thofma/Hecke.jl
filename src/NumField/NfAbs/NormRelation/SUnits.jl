@@ -10,7 +10,7 @@ function _add_sunits_from_norm_relation!(c, UZK, N)
     @vprint :NormRelation 1 "Computing lll basis ... "
     zk = lll(zk)
     @vprint :NormRelation 1 "Computing class group of $k... "
-    class_group(zk, use_aut = true)
+    class_group(zk)
     @vprint :NormRelation 1 "done"
     lpk = NfOrdIdl[ P[1] for p in cp for P = prime_decomposition(zk, p)]
     @vprint :NormRelation 1 "Now computing the S-unit group for lp of length $(length(lpk))"
@@ -436,7 +436,7 @@ function class_group_via_brauer(O::NfOrd, N::NormRelation; saturate::Bool = true
 
   Hecke._set_ClassGrpCtx_of_order(OK, c)
   Hecke._set_UnitGrpCtx_of_order(OK, UZK)
-  c, UZK, d = Hecke._class_unit_group(OK)
+  c, UZK, d = Hecke._class_unit_group(OK, saturate_at_2 = false)
   @assert isone(d)
 
   return Hecke.class_group(c, O)

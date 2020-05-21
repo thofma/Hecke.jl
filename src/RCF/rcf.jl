@@ -104,7 +104,13 @@ function NumberField(CF::ClassField{S, T}; redo::Bool = false, using_brauer = fa
     q[i] = G[i]
   end
   CF.cyc = res
-  CF.A = number_field([x.A.pol for x = CF.cyc], check = false, cached = false)[1]
+  if isempty(res)
+    @assert isone(degree(CF))
+    Ky = PolynomialRing(base_field(CF), "y", cached = false)[1]
+    CF.A = number_field([gen(Ky)-1], check = false, cached = false)[1]
+  else
+    CF.A = number_field([x.A.pol for x = CF.cyc], check = false, cached = false)[1]
+  end
   return CF.A
 end
 
