@@ -73,13 +73,14 @@ end
 #
 ###############################################################################
 @doc Markdown.doc"""
-    NumberField(CF::ClassField) -> Hecke.NfRelNS{Nemo.nf_elem}
-Given a (formal) abelian extension, compute the class field by
-finding defining polynomials
-for all prime power cyclic subfields.
-Note, by type this is always a non-simple extension.
+    NumberField(CF::ClassField) -> NfRelNS{nf_elem}
+
+Given a (formal) abelian extension, compute the class field by finding defining
+polynomials for all prime power cyclic subfields.
+
+Note, the return type is always a non-simple extension.
 """
-function NumberField(CF::ClassField{S, T}; redo::Bool = false, using_brauer = false) where {S, T}
+function NumberField(CF::ClassField{S, T}; redo::Bool = false, using_norm_relation = false) where {S, T}
   if isdefined(CF, :A) && !redo
     return CF.A
   end
@@ -95,7 +96,7 @@ function NumberField(CF::ClassField{S, T}; redo::Bool = false, using_brauer = fa
     for (p, e) = lo.fac
       q[i] = p^e*G[i]
       S1, mQ = quo(G, q, false)
-      if using_brauer && !divides(fmpz(ord), order(S1))[1]
+      if using_norm_relation && !divides(fmpz(ord), order(S1))[1]
         push!(res, ray_class_field_cyclic_pp_Brauer(CF, mQ))
       else
         push!(res, ray_class_field_cyclic_pp(CF, mQ))
