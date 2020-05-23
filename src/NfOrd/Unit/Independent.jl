@@ -57,6 +57,7 @@ function _isindependent(x::Array{T, 1}, p::Int = 32) where T
 
     q = 2
     for i in 1:length(x)
+      @vprint :UnitGroup 3 "Computing conjugates with precision $p of ($i) $(length(x[i].fac))...\n"
       conlog[i] = conjugates_arb_log(x[i], p)
       for j in 1:rr
         q = max(q, bits(conlog[i][j]))

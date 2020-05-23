@@ -401,7 +401,7 @@ function compute_fields(class_fields::Vector{Hecke.ClassField{Hecke.MapRayClassG
   @vprint :Fields 3 "Computing the fields directly\n"
   for i in it
     C = class_fields[i]
-    L = number_field(C, using_brauer = use_brauer)
+    L = number_field(C, using_norm_relation = use_brauer)
     autL = Hecke.absolute_automorphism_group(C, autos)
     if !isone(gcd(degree(K), expo)) 
       Cpperm = permutation_group(autL)
@@ -569,7 +569,7 @@ function computing_over_subfields(class_fields, subfields, idE, autos, right_grp
     use_brauer = false
   end
   for i in it
-    number_field(new_class_fields[i], using_brauer = use_brauer)
+    number_field(new_class_fields[i], using_norm_relation = use_brauer)
   end
   translate_fields_up(class_fields, new_class_fields, subs, it)
   #Now, finally, the automorphisms computation and the isomorphism check
