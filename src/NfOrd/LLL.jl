@@ -95,7 +95,6 @@ function _lll(A::NfOrdIdl, v::fmpz_mat = zero_matrix(FlintZZ, 1, 1); prec::Int =
   prec = max(prec, 4*n)
 
   ctx1 = lll_ctx(0.5, 0.51)
-
   l, t1 = lll_with_transform(basis_matrix(A, copy = false), ctx1)
 
   if iszero(v)
@@ -152,7 +151,7 @@ function _lll(A::NfOrdIdl, v::fmpz_mat = zero_matrix(FlintZZ, 1, 1); prec::Int =
   ## test if entries in l are small enough, if not: increase precision
   ## or signal that prec was too low
   @v_do :ClassGroup 2 printstyled("lll basis length profile\n", color=:green);
-  @v_do :ClassGroup 2 for i=1:nrows(l)
+  @v_do :ClassGroup 2 for i = 1:nrows(l)
     print(Float64(div(l[i,i], fmpz(2)^prec*den*den)*1.0), " : ")
   end
   @v_do :ClassGroup 2 println("")
@@ -227,7 +226,6 @@ function lll(M::NfOrd; prec::Int = 100)
 end
 
 
-
 #for totally real field, the T_2-Gram matrix is the trace matrix, hence exact.
 function _lll_gram(M::NfOrd)
   K = nf(M)
@@ -248,7 +246,51 @@ function _lll_gram(M::NfOrd)
   return On
 end
 
+function _minkowski_matrix_CM(M::NfOrd)
+  if isdefined(M,  :minkowski_gram_CMfields)
+    return M.minkowski_gram_CMfields
+  end
+  prec = 100 + 25*div(degree(M), 3) + Int(round(log(abs(discriminant(M)))))
+  g = zero_matrix(FlintZZ, degree(M), degree(M))
+  B = basis(M, nf(M))
+  imgs = Vector{Vector{arb}}(undef, length(B))
+  for i = 1:degree(M)
+    imgs[i] = minkowski_map(B[i], prec)
+  end
+  i = 1
+  t = arb()
+  while i <= degree(M)
+    j = i
+    while j <= degree(M)
+      el = imgs[i][1]*imgs[j][1]
+      for k = 2:degree(M)
+        mul!(t, imgs[i][k], imgs[j][k])
+        add!(el, el, t)
+      end
+      fl, r = unique_integer(el)
+      if fl
+        g[i, j] = r
+        g[j, i] = r
+        j += 1
+      else
+        @show "increasing"
+        prec *= 2
+        imgs[i] = minkowski_map(B[i], prec)
+        imgs[j] = minkowski_map(B[j], prec)
+      end
+    end
+    i += 1
+  end
+  M.minkowski_gram_CMfields = g
+  return g
+end
+
+
 function _minkowski_matrix_CM(M::NfOrd, f::NfToNfMor)
+  return _minkowski_matrix_CM(M)
+end
+
+#=
   if isdefined(M,  :minkowski_gram_CMfields)
     return M.minkowski_gram_CMfields
   end
@@ -269,6 +311,7 @@ function _minkowski_matrix_CM(M::NfOrd, f::NfToNfMor)
   M.minkowski_gram_CMfields = g
   return g
 end
+=#
 
 function _lll_CM(M::NfOrd, f::NfToNfMor)
   K = nf(M)

@@ -510,7 +510,7 @@ R)$. The entries of the matrix are real balls of type `arb` with radius less
 then `2^-abs_tol`.
 """
 function minkowski_matrix(O::NfOrd, abs_tol::Int = 64)
-  if isdefined(O, :minkowski_matrix) && O.minkowski_matrix[2] > abs_tol
+  if isdefined(O, :minkowski_matrix) && O.minkowski_matrix[2] >= abs_tol
     A = deepcopy(O.minkowski_matrix[1])
   else
     M = minkowski_matrix(O.basis_nf, abs_tol)

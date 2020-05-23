@@ -278,6 +278,32 @@ end
 #
 ################################################################################
 
+#this is (or should be) the HNF basis for P^??
+function _get_basis(pp::fmpz, n::Int, pgg::fmpz_mod_poly, Qt::FmpzModPolyRing)
+  M = zero_matrix(FlintZZ, n, n)
+  Q = base_ring(Qt)
+  #the lattice for reco:
+  #zero!(M)
+  for j = 1:degree(pgg)
+    M[j, j] = pp
+  end
+  coeffarr = Vector{elem_type(Q)}(undef, degree(pgg))
+  for j = 1:degree(pgg)-1
+    coeffarr[j] = zero(Q)
+  end
+  coeffarr[degree(pgg)] = one(Q)
+  pt = Qt(coeffarr)
+  for j=degree(pgg)+1:n
+    pt = shift_left(pt, 1)
+    rem!(pt, pt, pgg)
+    M[j,j] = 1
+    for k=0:degree(pt)
+      M[j, k+1] = -lift(coeff(pt, k))
+    end
+  end
+  return M
+end
+
 function _hensel(f::Generic.Poly{nf_elem},
                  fac_pol_mod_p::gfp_poly,
                  fp::fq_nmod_poly, k::Int;
@@ -292,10 +318,9 @@ function _hensel(f::Generic.Poly{nf_elem},
   # This function lifts the roots of f mod P to P^k and reconstructs them.
   
   # f is pure if and only if f = x^deg(f) + coeff(f, 0)
-
   @assert max_roots > 0
 
-  caching = degree(base_ring(f)) > 20
+  caching = degree(base_ring(f)) > 20 && false
 
   if caching
     # Setup the caching
@@ -404,8 +429,6 @@ function _hensel(f::Generic.Poly{nf_elem},
   pr = reverse(pr)
 
   ##lets start:
-  
-  
   f_coeff_ZX = Vector{fmpz_poly}(undef, length(f))
   if !ispure
     for j in 0:degree(f)
@@ -441,30 +464,47 @@ function _hensel(f::Generic.Poly{nf_elem},
     ctx_lll = lll_ctx(0.3, 0.51)
     if caching && haskey(_cache_lll, pr[i])
       M, Mi, d = _cache_lll[pr[i]]::Tuple{fmpz_mat, fmpz_mat, fmpz}
+    elseif i > 10
+      #This is getting bad. We try to apply the trick twice.
+      Mold = M
+      Miold = Mi
+      dold = d
+      pr_intermediate = pr[i-1] + div(pr[i] - pr[i-1], 2)
+      ppint = fmpz(p)^pr_intermediate
+      Qint = ResidueRing(FlintZZ, ppint, cached = false)
+      Qintt = PolynomialRing(Qint, "t", cached = false)[1]
+      pggQint = Qintt(gg)
+      Mint = _get_basis(ppint, n, pggQint, Qintt)
+      mul!(Mint, Mint, Miold)
+      divexact!(Mint, Mint, dold)
+      exp_mod = fmpz(p)^(pr_intermediate - pr[i-1])
+      @vtime :Saturate 1 hnf_modular_eldiv!(Mint, exp_mod)
+      @vtime :Saturate 1 lll!(Mint, ctx_lll)
+      @vtime :Saturate 1 lll!(Mint)
+      mul!(Mint, Mint, Mold)
+      @vtime :Saturate 1 lll!(Mint, lll_ctx(0.6, 0.51))
+      @vtime :Saturate 1 lll!(Mint)
+      Miold, dold = pseudo_inv(Mint)
+      Mold = Mint
+      M = _get_basis(pp, n, pgg, Qt)
+      mul!(M, M, Miold)
+      divexact!(M, M, dold)
+      exp_mod = divexact(pp, ppint)
+      @vtime :Saturate 1 hnf_modular_eldiv!(M, exp_mod)
+      @vtime :Saturate 1 lll!(M, ctx_lll)
+      @vtime :Saturate 1 lll!(M)
+      mul!(M, M, Mold)
+      @vtime :Saturate 1 lll!(M, lll_ctx(0.6, 0.51))
+      @vtime :Saturate 1 lll!(M)
+      Mi, d = pseudo_inv(M)
+      if caching
+        _cache_lll[pr[i]] = (M, Mi, d)
+      end
     elseif i > 3
       Mold = M
       Miold = Mi
       dold = d
-      M = zero_matrix(FlintZZ, n, n)
-      #the lattice for reco:
-      #zero!(M)
-      for j = 1:degree(pgg)
-        M[j, j] = pp
-      end
-      coeffarr = Vector{elem_type(Q)}(undef, degree(pgg))
-      for j = 1:degree(pgg)-1
-        coeffarr[j] = zero(Q)
-      end
-      coeffarr[degree(pgg)] = one(Q)
-      pt = Qt(coeffarr)
-      for j=degree(pgg)+1:n
-        pt = shift_left(pt, 1)
-        rem!(pt, pt, pgg)
-        M[j,j] = 1
-        for k=0:degree(pt)
-          M[j, k+1] = -lift(coeff(pt, k))
-        end
-      end
+      M = _get_basis(pp, n, pgg, Qt)
       mul!(M, M, Miold)
       divexact!(M, M, dold)
       exp_mod = div(pr[i], 2)
@@ -472,41 +512,18 @@ function _hensel(f::Generic.Poly{nf_elem},
         exp_mod += 1
       end
       @vtime :Saturate 1 hnf_modular_eldiv!(M, fmpz(p)^exp_mod)
-      @vtime :Saturate 1 M = lll(M, ctx_lll)
+      @vtime :Saturate 1 lll!(M, ctx_lll)
       @vtime :Saturate 1 lll!(M)
       mul!(M, M, Mold)
+      @vtime :Saturate 1 lll!(M, lll_ctx(0.6, 0.51))
       @vtime :Saturate 1 lll!(M)
       Mi, d = pseudo_inv(M)
       if caching
         _cache_lll[pr[i]] = (M, Mi, d)
       end
     else
-      M = zero_matrix(FlintZZ, n, n)
-      #the lattice for reco:
-      #zero!(M)
-      for j = 1:degree(pgg)
-        M[j, j] = pp
-      end
-      coeffarr = Vector{elem_type(Q)}(undef, degree(pgg))
-      for j = 1:degree(pgg)-1
-        coeffarr[j] = zero(Q)
-      end
-      coeffarr[degree(pgg)] = one(Q)
-      pt = Qt(coeffarr)
-      for j=degree(pgg)+1:n
-        pt = shift_left(pt, 1)
-        rem!(pt, pt, pgg)
-        M[j, j] = 1
-        for k=0:degree(pt)
-          el = -lift(coeff(pt, k))
-          if -el > div(pp, 2)
-            el += pp
-          end
-          M[j, k+1] = el
-        end
-      end
-      #this is (or should be) the HNF basis for P^??
-      @vtime :Saturate 1  M = lll(M)
+      M = _get_basis(pp, n, pgg, Qt)
+      @vtime :Saturate 1  lll!(M)
       Mi, d = pseudo_inv(M)
       if caching
         _cache_lll[pr[i]] = (M, Mi, d)

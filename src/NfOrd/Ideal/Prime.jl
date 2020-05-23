@@ -953,6 +953,7 @@ factor(A::NfOrdIdl) = factor_dict(A)
 
 function factor_dict(A::NfOrdIdl)
   ## this should be fixed
+  #TODO:Test first if the ideal is a power.
   lF = Dict{NfOrdIdl, Int}()
   O = order(A)
   if has_princ_gen_special(A)
@@ -993,6 +994,28 @@ function factor_dict(A::NfOrdIdl)
     end
   end
   return lF
+end
+
+function factor_easy(I::NfOrdIdl)
+  OK = order(I)
+  _assure_weakly_normal_presentation(I)
+  factors = _prefactorization(I)
+  ideals = Dict{NfOrdIdl, Int}()
+  for q in factors
+    pp, r = Hecke._factors_trial_division(q)
+    for p in pp
+      lp = prime_decomposition(OK, p)
+      for (P, vP) in lp
+        ideals[P] = valuation(I, P)
+      end
+    end
+    r = ispower(r)[2]
+    if !isone(r)
+      J = gcd(I, r)
+      ideals[J] = valuation(I, J)
+    end
+  end
+  return ideals
 end
 
 function _prefactorization(I::NfOrdIdl)

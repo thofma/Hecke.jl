@@ -484,7 +484,6 @@ function _order_for_polygon_overorder(K::S, elt::Array{T, 1}, dold::fmpq = fmpq(
       break
     end
 
-    
     B = basis_matrix(prods, FakeFmpqMat) 
     hnf_modular_eldiv!(B.num, B.den, :lowerleft)
     

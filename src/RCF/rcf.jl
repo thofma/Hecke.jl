@@ -637,7 +637,7 @@ function build_map(CF::ClassField_pp, K::KummerExt, c::CyclotomicExt)
        # it is not, in general it will never be.
        #example: Q[sqrt(10)], rcf of 16*Zk
   # now the map G -> R sG[i] -> sR[i] 
-  h = hom(sG, sR)
+  h = hom(sG, sR, check = false)
   @hassert :ClassField 1 !isone(gcd(fmpz(degree(CF)), minimum(m))) || issurjective(h)
   CF.h = h
   return h

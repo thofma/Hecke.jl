@@ -881,6 +881,17 @@ function round_scale!(b::fmpz_mat, a::arb_mat, l::Int)
   return b
 end
 
+function round!(b::fmpz_mat, a::arb_mat)
+  s = size(a)
+  for i = 1:s[1]
+    for j = 1:s[2]
+      b[i, j] = round(fmpz, a[i, j])
+    end
+  end
+  return b
+end
+
+
 function shift!(g::fmpz_mat, l::Int)
   for i=1:nrows(g)
     for j=1:ncols(g)

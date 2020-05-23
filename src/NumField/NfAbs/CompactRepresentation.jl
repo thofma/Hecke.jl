@@ -142,7 +142,6 @@ function compact_presentation(a::FacElem{nf_elem, AnticNumberField}, nn::Int = 2
     @assert abs(sum(vvv)) <= degree(K)
     @vtime :CompactPresentation 1 eA = (simplify(evaluate(A, coprime = true)))
     @vtime :CompactPresentation 1 id = inv(eA)
-    
     @vtime :CompactPresentation 1 b = short_elem(id, matrix(FlintZZ, 1, length(vvv), vvv), prec = short_prec) # the precision needs to be done properly...
    
     @assert abs(norm(b)//norm(id)) <= abs(discriminant(ZK)) # the trivial case
@@ -160,7 +159,7 @@ function compact_presentation(a::FacElem{nf_elem, AnticNumberField}, nn::Int = 2
     @assert norm(B1) <= abs(discriminant(ZK))
 
     @vprint :CompactPresentation 1 "Factoring ($(B1.gen_one), $(B1.gen_two)) of norm $(norm(B1))\n"
-    @vtime :CompactPresentation 1 lfB1 = factor(B1)
+    @vtime :CompactPresentation 1 lfB1 = factor_easy(B1)
     for (p, _v) = lfB1
       if haskey(de, p)
         de[p] += _v*n^k
