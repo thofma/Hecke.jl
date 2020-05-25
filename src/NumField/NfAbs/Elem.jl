@@ -449,7 +449,15 @@ function factor(f::PolyElem{nf_elem})
     f = div(f, g)
   end
 
-  
+  if degree(f) == 0
+    r = Fac{typeof(f)}()
+    if v > 0
+      r.fac = Dict{typeof(f), Int}(gen(parent(f)) => v)
+    end
+    r.unit = one(Kx) * lead(f_orig)
+    return r
+  end
+
   if degree(f) == 1
     r = Fac{typeof(f)}()
     r.fac = Dict{typeof(f), Int}(f*(1//lead(f)) => degree(f_orig))
@@ -507,6 +515,9 @@ function factor_trager(f::PolyElem{nf_elem})
   Kx = parent(f)
   K = base_ring(Kx)
 
+  @show f
+
+  @show degree(g)
   @vtime :PolyFactor Np = norm_mod(g, p)
   while isconstant(Np) || !issquarefree(map_coeffs(F, Np))
     k = k + 1
