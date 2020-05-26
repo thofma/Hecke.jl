@@ -1,6 +1,6 @@
 module Suri
 using Hecke
-import Hecke: valuation, divexact, parent_type, elem_type, mul!, addeq!
+import Hecke: valuation, divexact, parent_type, elem_type, mul!, addeq!, parent
 import Base: +, -, *, ^
 
 #= follows Sebastian Posur's idea
@@ -31,19 +31,69 @@ import Base: +, -, *, ^
   Thus it works...
 =#
 
+function mod_lll(a::NfAbsOrdElem, I::NfAbsOrdIdl)
+  l = lll(I)[2]
+  S = l*basis_matrix(I)
+  Si = pseudo_inv(S)
+  c = matrix(FlintZZ, 1, nrows(l), coordinates(a)) * Si[1]
+  d = matrix(FlintZZ, 1, nrows(l), [round(fmpz, x, Si[2]) for x = c])
+  return a - Hecke.parent(a)(collect(d*S))
+end
+
+function mod_lll(a::nf_elem, I::Hecke.NfAbsOrdFracIdl)
+  O = order(I)
+  d = lcm(denominator(a, O), denominator(I))
+  return divexact(Hecke.parent(a)(mod_lll(O(d*a), simplify(I*d).num)), d)
+end
+
+function _reduce(a::Hecke.PMat, T)
+  A = a.coeffs
+  M = a.matrix
+  for i=2:nrows(M)
+    for j=1:i-1
+      if iszero(M[j, i])
+        continue
+      end
+      I = A[i]*M[i,i]*inv(A[j])
+      c = mod_lll(M[j,i], I)
+      @assert (c - M[j,i]) in I
+      d = divexact(M[j, i] -c, M[i,i])
+      M[j, :] = M[j, :] - d*M[i, :]
+      T[j, :] = T[j, :] - d*T[i, :]
+      @assert M[j, i] == c
+    end
+  end
+end
+
 function extend(M::Hecke.PMat, b::Generic.MatSpaceElem{nf_elem}, gamma::Generic.MatSpaceElem{nf_elem})
 
+  @assert iszero(hcat(M.matrix', b)*gamma) 
   zk = base_ring(M)
   nc = ncols(gamma)
+  n = nrows(gamma) - 1
   @assert nc == ncols(b)
-  p = pseudo_matrix(gamma, vcat(map(inv, coefficient_ideals(M)), [1*zk for i=1:nc]))
+  p = pseudo_matrix(hcat(gamma, vcat(identity_matrix(zk, n), zero_matrix(zk, 1, n))), vcat(map(inv, coefficient_ideals(M)), [1*zk for i=1:nc]))
+#  @show p
+
   h, T = Hecke.pseudo_hnf_with_transform(p)
-  #for n x 1 matrices, the trasform, especially the inverse can more easily be computed
+#  @show T*p.matrix == h.matrix
+  _reduce(h, T)
+#  @show T*p.matrix == h.matrix
+  for i=1:nrows(h)
+    j, al = Hecke.reduce_ideal(h.coeffs[i])
+    T[i, :] *= inv(al)
+    h.coeffs[i] = j
+    h.matrix[i, :] *= inv(al)
+  end
+#  @show pseudo_hnf(h) == pseudo_hnf(p)
+#  @show T*p.matrix == h.matrix
+  #for n x 1 matrices, the transform, especially the inverse can more easily be computed
 #  @assert prod(coefficient_ideals(p)) ==  (det(T))*(prod(coefficient_ideals(h)))
 #  @assert all(T[j,i] in (coefficient_ideals(p)[i])*inv(coefficient_ideals(h)[j]) for i=1:nrows(M) for j=1:nrows(M))
   Ti = inv(T)
 #  @assert all(Ti[i,j] in inv(coefficient_ideals(p)[i])*(coefficient_ideals(h)[j]) for i=1:nrows(M) for j=1:nrows(M))
-  e = pseudo_matrix((Ti'*hcat(M.matrix', b)')[nc+1:nrows(M)+nc, :], map(inv, coefficient_ideals(h)[nc+1:nrows(M)+nc]))
+#there is a transpose problem somewhere...
+  e = pseudo_matrix((hcat(M.matrix', b)*Ti)[:, nc+1:nrows(M)+nc]', map(inv, coefficient_ideals(h)[nc+1:nrows(M)+nc]))
   return e
 end
 
@@ -52,7 +102,11 @@ function Hecke.denominator(P::Hecke.PMat, M::NfOrd)
   p = matrix(P)
   for i=1:nrows(P)
     I = coefficient_ideals(P)[i]
-    Hecke.assure_2_normal(I.num)
+    if isa(I, Hecke.NfAbsOrdFracIdl)
+      Hecke.assure_2_normal(I.num)
+    else
+      Hecke.assure_2_normal(I)
+    end
     for j=1:ncols(P)
       l = lcm(l, denominator(simplify(p[i,j]*I)))
     end
@@ -361,10 +415,13 @@ end
 Hecke.example("Suri.jl")
 Hecke.revise("Suri.jl")
 
+n = 6
+
 k, a = wildanger_field(3, 13)
-m = rand(MatrixSpace(k, 02, 02), 1:10);
+k, a = quadratic_field(-11)
+m = rand(MatrixSpace(k, n, n), 1:10);
 m = cat(m,m, dims=(1,2));
-b = rand(MatrixSpace(k, 04, 1), 1:10);
+b = rand(MatrixSpace(k, 2*n, 1), 1:10);
 S = kernel(hcat(m, b));
 
 m1 = Suri.extend(pseudo_matrix(m'), b, S[2]);
@@ -372,7 +429,7 @@ m1 = Suri.extend(pseudo_matrix(m'), b, S[2]);
 norm(det(m))
 norm(det(m1))
 
-b = rand(MatrixSpace(k, 04, 1), 1:10);
+b = rand(MatrixSpace(k, 2*n, 1), 1:10);
 S = kernel(hcat(m1.matrix', b));
 m2 = Suri.extend(m1, b, S[2]);
 
