@@ -2,10 +2,10 @@ name: Run tests
 
 on: [push, pull_request]
 
-strategy:
-      fail-fast: false
 
 jobs:
+  strategy:
+    fail-fast: false 
   test:
     runs-on: ${{ matrix.os }}
     strategy:
