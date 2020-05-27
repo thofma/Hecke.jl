@@ -105,9 +105,9 @@ order_type(::NfAbsNS) = NfAbsOrd{NfAbsNS, NfAbsNSElem}
 
 order_type(::Type{NfAbsNS}) = NfAbsOrd{NfAbsNS, NfAbsNSElem}
 
-needs_parentheses(::NfAbsNSElem) = true
+needs_parentheses(x::NfAbsNSElem) = needs_parentheses(data(x))
 
-isnegative(x::NfAbsNSElem) = Nemo.isnegative(data(x))
+displayed_with_minus_in_front(x::NfAbsNSElem) = displayed_with_minus_in_front(data(x))
 
 show_minus_one(::Type{NfAbsNSElem}) = true
 
