@@ -2,12 +2,15 @@ name: Run tests
 
 on: [push, pull_request]
 
+strategy:
+      fail-fast: false
+
 jobs:
   test:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        julia-version: ['1.0', '1.1', '1.2', '1.4', 'nightly']
+        julia-version: ['1.0', '1.1', '1.2', '1.3', '1.4', 'nightly']
         julia-arch: [x64]
         os: [ubuntu-latest, macOS-latest]
     
