@@ -109,7 +109,7 @@ function genus_representatives(L::QuadLat; max = inf, use_auto = true, use_mass 
 
   if use_mass
     @vprint :GenRep 1 "Computing mass exactly ...\n"
-    _mass = mass_exact(L)
+    _mass = mass(L)
     @vprint :GenRep 1 "... $(_mass)\n"
   else
     _mass = -one(FlintQQ)
