@@ -159,10 +159,10 @@ function Hecke.induce_crt(a::Hecke.Generic.MPoly{nf_elem}, p::fmpz, b::Hecke.Gen
   aa, sa = iterate(ta)
   bb, sb = iterate(tb)
   @assert length(a) == length(b)
-  @assert ==(aa, bb, true) # leading terms must agree or else...
+#  @assert ==(aa, bb, true) # leading terms must agree or else...
   while !(aa === nothing) && !(bb === nothing)
     if ==(aa.exps, bb.exps) #monomial equality
-      push_term!(c, Hecke.induce_inner_crt(coeff(aa, 1), coeff(bb, 1), pi, pq, pq2), exponent_vector(aa))
+      push_term!(c, Hecke.induce_inner_crt(coeff(aa, 1), coeff(bb, 1), pi, pq, pq2), exponent_vector(aa, 1))
       aa = iterate(ta, sa)
       bb = iterate(tb, sb)
       aa === nothing && break
@@ -354,19 +354,51 @@ mutable struct RecoCtx
   end
 end
 
+function small_coeffs(a::nf_elem, B::fmpz)
+  z = fmpz()
+  for i=0:degree(parent(a))-1
+    Nemo.num_coeff!(z, a, i)
+    if cmpabs(z, B) >0
+      return false
+    end
+  end
+  return true
+end
+
 function rational_reconstruct(a::Generic.MPoly{nf_elem}, R::RecoCtx, integral::Bool = false)
   b = MPolyBuildCtx(parent(a))
+  k = base_ring(a)
+  d = k(2)
+  if integral
+    B = fmpz(1)
+  else
+    B = abs(det(R.L))
+    B = fmpz(2)^div(nbits(B), 2*degree(k))
+  end
   for i=1:length(a)
-    fl, c = rational_reconstruct(coeff(a, i), R, integral)
-    if !fl
-      return fl, a
+    if integral
+      fl, c = rational_reconstruct(coeff(a, i), R, integral)
+      if !fl
+        return fl, a
+      end
+    else
+      #implicitly assumes elements have a common denominator
+      fl, c = rational_reconstruct(coeff(a, i)*d, R, true)
+      if !fl || !small_coeffs(c, B)
+        fl, c, dd = rational_reconstruct(coeff(a, i)*d, R, false, true)
+        !fl && return fl, a
+        (small_coeffs(c, B) && small_coeffs(d*dd, B)) || return false, a
+        d *= dd
+      end
+      c = c//d
     end
     push_term!(b, c, exponent_vector(a, i))
   end
   return true, finish(b)
 end
 
-function rational_reconstruct(a::nf_elem, R::RecoCtx, integral::Bool = false)
+#TODO: split needs to be a val-arg
+function rational_reconstruct(a::nf_elem, R::RecoCtx, integral::Bool = false, split::Bool = false)
   if integral
     if !isdefined(R, :LI)
       R.LI, R.d = pseudo_inv(R.L)
@@ -392,11 +424,16 @@ function rational_reconstruct(a::nf_elem, R::RecoCtx, integral::Bool = false)
   end
   n = degree(parent(a))
   Znn = MatrixSpace(FlintZZ, n, n)
-  L = [ Znn(1) representation_mat_q(a)[1] ; Znn(0) R.L]
+  L = [ Znn(1) representation_matrix_q(a)[1] ; Znn(0) R.L]
   lll!(L)
+  K = parent(a)
   d = Nemo.elem_from_mat_row(K, sub(L, 1:1, 1:n), 1, fmpz(1))
   n = Nemo.elem_from_mat_row(K, sub(L, 1:1, n+1:2*n), 1, fmpz(1))
-  return true, n//d
+  if split 
+    return true, n, d
+  else
+    return true, n//d
+  end
 end
 
 function Hecke.toMagma(io::IOStream, R::AbstractAlgebra.MPolyRing; base_name::String = "S", name::String = "R")
