@@ -65,6 +65,8 @@ include("./brauer.jl")
 
 Generic.degree(F::FieldsTower) = degree(F.field)
 Hecke.maximal_order(F::FieldsTower) = maximal_order(F.field)
+number_field(F::FieldsTower) = F.field
+
 
 
 function ramified_primes(F::FieldsTower)
@@ -487,7 +489,7 @@ function field_extensions(x::FieldsTower, bound::fmpz, IsoE1::GAP.GapObj, l::Arr
   list_cfields = _abelian_normal_extensions(x, l, bound, IsoE1, only_real, IsoG)
   if isempty(list_cfields)
     @vprint :Fields 1 "\e[1F$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())Number of new fields found: 0\n\n"
-    @vprint :FieldsNonFancy 1 "Number of new fields found: 0\n"
+    @vprint :FieldsNonFancy 1 "Number of new fields found: 0\n\n"
     return Vector{FieldsTower}()
   end
   list = from_class_fields_to_fields(list_cfields, x.generators_of_automorphisms, grp_to_be_checked, IsoG)
@@ -506,7 +508,7 @@ function field_extensions(x::FieldsTower, bound::fmpz, IsoE1::GAP.GapObj, l::Arr
 
   @vprint :Fields 1 "$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())"
   @vprint :Fields 1 "Number of new fields found: $(length(final_list))\n\n"
-  @vprint :FieldsNonFancy 1 "Number of new fields found: $(length(final_list))\n"
+  @vprint :FieldsNonFancy 1 "Number of new fields found: $(length(final_list))\n\n"
   return final_list
   
 end

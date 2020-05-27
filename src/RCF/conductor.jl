@@ -632,6 +632,7 @@ function norm_group(l_pols::Array{T, 1}, mR::Hecke.MapRayClassGrp, isabelian::Bo
   max_stable = 2*n
   stable = max_stable
   denom = lcm([denominator(coeff(x, i)) for x in l_pols for i = 0:degree(x)])
+  indexO = index(O)
   while true
     @vprint :ClassField 3 "Order of Q: $(order(Q))\n"
     if isabelian && order(Q) == B
@@ -644,6 +645,9 @@ function norm_group(l_pols::Array{T, 1}, mR::Hecke.MapRayClassGrp, isabelian::Bo
     @vprint :ClassField 3 "Using prime $(p)\n"
     if divisible(N1, p) || divisible(denom, p)
       continue
+    end
+    if divides(indexO, fmpz(p))[1]
+      continue  
     end
     L = prime_decomposition(O, p, 1)
     for i = 1:length(L)

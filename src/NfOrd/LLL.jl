@@ -273,7 +273,6 @@ function _minkowski_matrix_CM(M::NfOrd)
         g[j, i] = r
         j += 1
       else
-        @show "increasing"
         prec *= 2
         imgs[i] = minkowski_map(B[i], prec)
         imgs[j] = minkowski_map(B[j], prec)
@@ -752,6 +751,7 @@ function reduce_product(A::NfOrdIdl, B::NfOrdIdl)
   return C.num, b
 end
 
+
 function reduce_ideal(A::NfOrdFracIdl)
   B = inv(A)
   b = short_elem(B.num)
@@ -857,6 +857,59 @@ function power_reduce(A::NfOrdIdl, e::fmpz)
   return A, al
 end
 
+#=
+function new_power_reduce(A::NfOrdIdl, e::fmpz)
+  OK = order(A)
+  if norm(A) > abs(discriminant(O))
+    A1, a = reduce_ideal(A)
+    @hassert :PID_Test 1 a*A == A1
+    A = A1
+    al = FacElem(Dict(a => -e))
+  else
+    al = FacElem(Dict(K(1) => fmpz(1)))
+  end
+
+  if norm(A)^e <= abs(discriminant(O))
+    return A^e, a1
+  end
+  K = nf(OK)
+  #If this does not happen, then we need to reduce the power of the ideal.
+  #Instead of waiting that the ideal becomes large, we immediately call the LLL
+  #on A and try to compute it step by step. This makes sense if e is not too large...
+
+  n_steps = flog(e, 2)
+  invA = inv(A)
+  I = invA.num
+  BA = lll(I)[2]
+  mul!(BA, BA, basis_matrix(I, copy = false))
+  for i = 1:n_steps
+    I2 = I^2
+    C = basis_matrix(I2, copy = false)
+    @vtime :LLL 3 iA, de = pseudo_inv(BA)
+    mul!(iA, C, iA)
+    divexact!(iA, iA, de)
+    hnf_modular_eldiv!(iA, minimum(A))
+    @vtime :LLL 3 T1 = lll(lll(iA, lll_ctx(0.3, 0.51))) 
+    T1 = T1*BA
+    I2.basis_mat = T1
+    BA = lll(I2)[2]
+    mul!(BA, BA, basis_matrix(I, copy = false))
+    if norm(I2) > abs(discriminant(O))
+      el = elem_from_mat_row(OK, BA, 1)
+      elf = divexact(el.elem_in_nf, I.den^(2^i))
+      J = elf*A^(2^i)
+      simplify(J)
+      pow!(a1, 2^i)
+      add_to_key!(a1, elf, 1)
+      Ared, a2 = new_power_reduce(J, 2^())
+      return 
+    else
+      I = I2
+    end
+  end
+end
+=#
+
 ################################################################################
 #
 #  Short basis of product of ideals
@@ -877,8 +930,10 @@ function _lll_product_basis(I::NfOrdIdl, J::NfOrdIdl)
   mul!(iA, C, iA)
   divexact!(iA, iA, de)
   hnf_modular_eldiv!(iA, minimum(J))
-  @vtime :LLL 3 T1 = lll(lll(iA, lll_ctx(0.3, 0.51))) 
-  return T1*A
+  @vtime :LLL 3 lll!(iA, lll_ctx(0.3, 0.51))
+  @vtime :LLL 3 lll!(iA) 
+  mul!(iA, iA, A)
+  return iA
 end
 
 

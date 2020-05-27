@@ -311,9 +311,6 @@ end
 ################################################################################
 
 function assure_isomorphism(F::FieldsTower, G)
-  if isdefined(F, :isomorphism)
-    return nothing
-  end
   assure_automorphisms(F)
   K = F.field
   autsK = automorphisms(K, copy = false)

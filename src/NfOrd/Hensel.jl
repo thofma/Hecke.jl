@@ -304,6 +304,54 @@ function _get_basis(pp::fmpz, n::Int, pgg::fmpz_mod_poly, Qt::FmpzModPolyRing)
   return M
 end
 
+function _get_LLL_basis(Mold, Miold, dold, p, pr, i, gg)
+  n = nrows(Mold)
+  ctx = lll_ctx(0.5, 0.51)
+  @show pr[i-1], pr[i]
+  modu = fmpz(p)^25
+  for j = (pr[i-1]+25):25:pr[i]
+    pp = fmpz(p)^j
+    Q = ResidueRing(FlintZZ, pp, cached=false)
+    Qt, t = PolynomialRing(Q, "t", cached=false)
+    pgg = Qt(gg)
+    M = _get_basis(pp, n, pgg, Qt)
+    mul!(M, M, Miold)
+    divexact!(M, M, dold)
+    @vtime :Saturate 1 hnf_modular_eldiv!(M, modu)
+    @vtime :Saturate 1 lll!(M, ctx)
+    @vtime :Saturate 1 lll!(M)
+    mul!(M, M, Mold)
+    @vtime :Saturate 1 lll!(M, ctx)
+    @vtime :Saturate 1 lll!(M)
+    Mi, d = pseudo_inv(M)
+    Mold = M
+    Miold = Mi
+    dold = d
+  end
+  if !iszero(mod(pr[i]-pr[i-1], 25))
+    modu = fmpz(p)^mod(pr[i]-pr[i-1], 25)
+    pp = fmpz(p)^pr[i]
+    Q = ResidueRing(FlintZZ, pp, cached=false)
+    Qt, t = PolynomialRing(Q, "t", cached=false)
+    pgg = Qt(gg)
+    M = _get_basis(pp, n, pgg, Qt)
+    mul!(M, M, Miold)
+    divexact!(M, M, dold)
+    @vtime :Saturate 1 hnf_modular_eldiv!(M, modu)
+    @vtime :Saturate 1 lll!(M, ctx)
+    @vtime :Saturate 1 lll!(M)
+    mul!(M, M, Mold)
+    @vtime :Saturate 1 lll!(M, ctx)
+    @vtime :Saturate 1 lll!(M)
+    Mi, d = pseudo_inv(M)
+    Mold = M
+    Miold = Mi
+    dold = d
+  end
+  return Mold, Miold, dold
+end
+
+
 function _hensel(f::Generic.Poly{nf_elem},
                  fac_pol_mod_p::gfp_poly,
                  fp::fq_nmod_poly, k::Int;
@@ -316,12 +364,10 @@ function _hensel(f::Generic.Poly{nf_elem},
   # fp = f mod P, the reduction of f modulo P
   # k = lifting exponent
   # This function lifts the roots of f mod P to P^k and reconstructs them.
-  
   # f is pure if and only if f = x^deg(f) + coeff(f, 0)
   @assert max_roots > 0
 
-  caching = degree(base_ring(f)) > 20 && false
-
+  caching = degree(base_ring(f)) > 20
   if caching
     # Setup the caching
     _cache = _get_prime_data_lifting(base_ring(f))
@@ -529,6 +575,7 @@ function _hensel(f::Generic.Poly{nf_elem},
         _cache_lll[pr[i]] = (M, Mi, d)
       end
     end
+    
 
     if ispure
       ap = Qt((-coeff(f, 0)))

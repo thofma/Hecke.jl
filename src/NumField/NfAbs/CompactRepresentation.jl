@@ -163,10 +163,11 @@ function compact_presentation(a::FacElem{nf_elem, AnticNumberField}, nn::Int = 2
     for (p, _v) = lfB1
       if haskey(de, p)
         de[p] += _v*n^k
-        continue
+      elseif isprime_known(p) && isprime(p)
+        insert_prime_into_coprime!(de, p, _v*n^k)
+      else
+        de = insert_into_coprime(de, p, _v*n^k)
       end
-      @assert !isone(p)
-      insert_prime_into_coprime(de, p, _v*n^k)
     end
     v_b = conjugates_arb_log_normalise(b, arb_prec)
     @v_do :CompactPresentation 2 @show old_n = sum(x^2 for x = v)
@@ -197,7 +198,7 @@ function compact_presentation(a::FacElem{nf_elem, AnticNumberField}, nn::Int = 2
   return be
 end
 
-function insert_prime_into_coprime(de::Dict{NfOrdIdl, fmpz}, p::NfOrdIdl, e::fmpz)
+function insert_prime_into_coprime!(de::Dict{NfOrdIdl, fmpz}, p::NfOrdIdl, e::fmpz)
   @assert !isone(p)
   P = p.gen_one
   for (k, v) in de
@@ -225,6 +226,40 @@ function insert_prime_into_coprime(de::Dict{NfOrdIdl, fmpz}, p::NfOrdIdl, e::fmp
   de[p] = e
   return nothing
 end
+
+function insert_into_coprime(de::Dict{NfOrdIdl, fmpz}, p::NfOrdIdl, e::fmpz)
+  @assert !isone(p)
+  P = p.gen_one
+  cp = NfOrdIdl[]
+  for (k, v) in de
+    if !iscoprime(k.gen_one, P)
+      push!(cp, k)
+    end
+  end
+  if isempty(cp)
+    de[p] = e
+    return de
+  end
+  push!(cp, p)
+  cp = coprime_base(cp)
+  de1 = Dict{NfOrdIdl, fmpz}()
+  for (k, v) in de
+    if iscoprime(k.gen_one, P)
+      de1[k] = v
+    end
+  end
+  for pp in cp
+    vp = e*valuation(p, pp)
+    for (k, v) in de
+      vp += valuation(k, pp)*v
+    end
+    if !iszero(vp)
+      de1[pp] = vp
+    end
+  end
+  return de1
+end
+
 
 
 #TODO: use the log as a stopping condition as well
