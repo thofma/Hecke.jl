@@ -243,6 +243,9 @@ function simplest_inside(x::arb)
   e = fmpz()
 
   ccall((:arb_get_interval_fmpz_2exp, libarb), Nothing, (Ref{fmpz}, Ref{fmpz}, Ref{fmpz}, Ref{arb}), a, b, e, x)
+  if e >= 0
+    return a * fmpz(2)^e
+  end
   e = -e
   @assert fits(Int, e)
   d = fmpz(2)^e
