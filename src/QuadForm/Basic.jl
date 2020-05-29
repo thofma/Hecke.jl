@@ -1003,7 +1003,7 @@ end
 # Returns an element a != 0 such that a * canonical_basis of V has
 # positive Gram matrix
 function _isdefinite(V::AbsSpace)
-  K = base_ring(V)
+  K = fixed_field(V)
   R = maximal_order(K)
   if !istotally_real(K) || (ishermitian(V) && !istotally_complex(K))
     return zero(K)

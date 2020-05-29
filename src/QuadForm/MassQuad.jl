@@ -504,6 +504,7 @@ function local_mass(L::QuadLat)
   return lf
 end
 
+# The logic is not quite correct, because the precision is only ever increased in the quadratic case ...
 function _standard_mass(L::QuadLat, prec::Int = 10)
   m = rank(L)
   RR = ArbField(64)
@@ -630,10 +631,10 @@ end
 
 # L-function of a relative quadratic extension E at the negative integer s
 function _L_function(E, s, prec)
-  if s < 0
+  if s <= 0
     return _L_function_negative(E, s, prec)
   else
-    throw(NotImplemented())
+    return _L_function_positive(E, s, prec)
   end
 end
 
@@ -679,6 +680,10 @@ end
 
 function _L_function_positive(E, s, prec)
   K = base_field(E)
+  if s == 1
+    return _L_function_at_1(E, prec)
+  end
+  @show s
   Eabs, = absolute_field(E)
   @assert istotally_complex(Eabs)
   @assert s > 1
@@ -693,6 +698,51 @@ function _L_function_positive(E, s, prec)
     if radiuslttwopower(z, -prec)
       return z
     end
+  end
+end
+
+function _L_function_at_1(E, prec)
+  K = base_field(E)
+  Eabs, EabsToE = absolute_field(E)
+  @assert istotally_complex(Eabs)
+  Eabs, = simplify(Eabs)
+  d = divexact(discriminant(maximal_order(Eabs)),
+               discriminant(maximal_order(K)))
+
+  d = abs(d)
+
+  n = degree(K)
+  CLE, = class_group(maximal_order(Eabs))
+  hE = order(CLE)
+  CLK, = class_group(K)
+  hK = order(CLK)
+  UE, mUE = unit_group(maximal_order(Eabs))
+  UK, mUK = unit_group(maximal_order(K))
+
+  TE, mTE = torsion_unit_group(Eabs)
+
+  mu = order(TE)
+
+  gens_for_subgroup = elem_type(UE)[]
+  for i in 1:ngens(UK)
+    u = mUK(UK[i])
+    uu = E(elem_in_nf(u))
+    uuu = EabsToE\uu
+    push!(gens_for_subgroup, mUE\uuu)
+  end
+  push!(gens_for_subgroup, mUE\mTE(TE[1]))
+  S, mS = quo(UE, gens_for_subgroup)
+  @assert order(S) <= 2
+  Q = order(S)
+
+  wprec = 2 * prec
+  while true
+    RR = ArbField(wprec, cached = false)
+    val = hE//hK * (2 * const_pi(RR))^n // (Q * order(TE) * sqrt(RR(d)))
+    if radiuslttwopower(val, prec)
+      return val
+    end
+    wprec = 2 * wprec
   end
 end
 

@@ -1118,15 +1118,15 @@ end
 Returns the prime ideals dividing the scale and volume of $L$. If `even == true`
 also the prime ideals dividing $2$ are included.
 """
-function bad_primes(L::HermLat; even::Bool = false)
+function bad_primes(L::HermLat; discriminant::Bool = false)
   s = scale(L)
   f = factor(norm(scale(L)))
   ff = factor(norm(volume(L)))
   for (p, e) in ff
     f[p] = 0
   end
-  if even
-    for p in prime_decomposition(s, 2)
+  if discriminant
+    for (p, ) in factor(Hecke.discriminant(base_ring(L)))
       f[p] = 0
     end
   end
@@ -3880,7 +3880,7 @@ end
 #
 ################################################################################
 
-function maximal_sublattices(L::QuadLat, p; use_auto = false, callback = false, max = inf)
+function maximal_sublattices(L::AbsLat, p; use_auto = false, callback = false, max = inf)
   @req base_ring(L) == order(p) "asdsd"
   
   B = local_basis_matrix(L, p, type = :submodule)
@@ -3926,7 +3926,7 @@ end
 #
 ################################################################################
 
-function minimal_superlattices(L::QuadLat, p; use_auto = false, callback = false, max = inf)
+function minimal_superlattices(L::AbsLat, p; use_auto = false, callback = false, max = inf)
   @req base_ring(L) == order(p) "asdsd"
 
   B = local_basis_matrix(L, p, type = :submodule)

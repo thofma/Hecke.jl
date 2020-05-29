@@ -52,8 +52,7 @@ function genus_representatives(L::HermLat; max = inf, use_auto::Bool = true)
       # Should never happen!
       @assert all(X -> !isisometric(X, L), result)
       neig = iterated_neighbours(L, P0, max = max, use_auto = use_auto)
-      append!(result, neigh)
-      result = append!(result, iterated_neighbours(L, P0, max = max, use_auto = use_auto))# : AutoOrbits:= AutoOrbits, Max:= Max);
+      append!(result, neig)
       max = max - length(result)
     end
     for i in 1:length(result)
@@ -135,7 +134,7 @@ function _neighbours(L, P, result, max, callback = stdcallback, use_auto = true)
     pi = p_uniformizer(P)
     pih = h(pi)
     for w in LO
-      x = elem_type(L)[ sum(T[i, j] * (hext\w[i]) for i in 1:n) for j in 1:ncols(T)]
+      x = elem_type(K)[ sum(T[i, j] * (hext\w[i]) for i in 1:n) for j in 1:ncols(T)]
       LL = neighbour(L, T, pih * matrix(k, 1, length(w), w) * G, K(pi) .* x, hext, P, C, true)
       keep, cont = callback(result, LL)
       if keep
