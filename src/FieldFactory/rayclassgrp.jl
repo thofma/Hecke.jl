@@ -23,7 +23,7 @@ end
 
 function rayclassgrp_ctx(O::NfOrd, expo::Int)
 
-  C1, mC1 = class_group(O)
+  C1, mC1 = class_group(O, use_aut = true)
   valclass = ppio(exponent(C1), fmpz(expo))[1]
   C, mC = Hecke.n_part_class_group(mC1, expo)
   ctx = ctx_rayclassgrp()

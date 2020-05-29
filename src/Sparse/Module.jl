@@ -184,7 +184,7 @@ end
 function module_trafo_assure(M::ModuleCtx_fmpz)
 
   if !M.new && isdefined(M, :trafo)
-    return
+    return nothing
   end
   if isdefined(M, :trafo)
     st = M.done_up_to + 1
@@ -202,6 +202,6 @@ function module_trafo_assure(M::ModuleCtx_fmpz)
   @assert M.basis_idx > 0
   M.new = false
 
-  nothing
+  return nothing
 end
 

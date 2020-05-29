@@ -56,6 +56,7 @@ end
 function class_group_via_lll(c::ClassGrpCtx{T}, rat::Float64 = 0.2) where {T}
   O = order(c.FB.ideals[1])
 
+  rr1, rr2 = signature(O)
   rt = time_ns()
   I = class_group_small_lll_elements_relation_start(c, O)
   single_env(c, I, rat/10, -1)
@@ -78,7 +79,10 @@ function class_group_via_lll(c::ClassGrpCtx{T}, rat::Float64 = 0.2) where {T}
 #  @vprint :ClassGroup 1 "length(piv) = $(length(piv)) and h = $h\n"
 #  @vprint :ClassGroup 1 "$(piv)\n"
 
-  class_group_new_relations_via_lll(c, rat, extra = -1)
+  #while iszero(h) || length(c.M.rel_gens) < rr1 + rr2 - 1
+    class_group_new_relations_via_lll(c, rat, extra = -1)
+  #end
+
 
   return c
 end

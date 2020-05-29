@@ -148,7 +148,7 @@ function det_mc(A::SMat{fmpz})
 
   @hassert :HNF 1  A.r == A.c
   if isupper_triangular(A)
-    z = [ A[i, i] for i in 1:A.r]
+    z = fmpz[ A[i, i] for i in 1:A.r]
     return prod(z)
   end
 
@@ -189,7 +189,7 @@ Uses the dense (nmod_mat) determinant on $A$ for various primes $p$.
 function det(A::SMat{fmpz})
   @hassert :HNF 1  A.r == A.c
   if isupper_triangular(A)
-    return prod([A[i,i] for i=1:A.r]) end
+    return prod(fmpz[A[i,i] for i=1:A.r]) end
 
   b = div(nbits(hadamard_bound2(A)), 2)
   lp = fmpz[p_start]

@@ -88,5 +88,3 @@ function _isindependent(x::Array{T, 1}, p::Int = 32) where T
     p = 2*p
   end
 end
-
-

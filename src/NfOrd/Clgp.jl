@@ -164,6 +164,10 @@ function _validate_class_unit_group(c::ClassGrpCtx, U::UnitGrpCtx)
 
   w = U.torsion_units_order
 
+  if h == 1 && iszero(unit_rank(O))
+    return fmpz(1)
+  end
+
   r1, r2 = signature(O)
 
   if !isdefined(U, :residue)
@@ -183,7 +187,7 @@ function _validate_class_unit_group(c::ClassGrpCtx, U::UnitGrpCtx)
   @assert isfinite(loghRtrue)
 
   @vprint :ClassGroup 1 "tentative class group $h\n"
-  @vprint :ClassGroup 1 "tentative regulator $(regulator(U.units, 16))\n"
+  @vprint :ClassGroup 1 "tentative regulator $(tentative_regulator(U))\n"
 
   while true
     loghRapprox = log(h* abs(tentative_regulator(U)))
@@ -259,7 +263,7 @@ function _class_unit_group(O::NfOrd; saturate_at_2::Bool = true, bound::Int = -1
     # r == 1 means full rank
     if isone(r)  # use saturation!!!!
       idx = _validate_class_unit_group(c, U) 
-      @assert idx == _validate_class_unit_group(c, U)
+      @hassert :ClassGroup 1 idx == _validate_class_unit_group(c, U)
       stable = 3.5
       # No matter what, try a saturation at 2
       # This is not a good idea when we use the automorphisms.

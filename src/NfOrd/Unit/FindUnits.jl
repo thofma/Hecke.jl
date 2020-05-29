@@ -88,7 +88,7 @@ function _unit_group_find_units_with_transform(u::UnitGrpCtx, x::ClassGrpCtx)
     @vprint :UnitGroup 1 "Exponents are of bit size $(maximum([ nbits(o) for o in kelem]))\n"
 
     if add_orbit
-      for i in aut
+      for phi in aut
         time_indep += @elapsed _add_unit(u, phi(y))
       end
     else
@@ -179,6 +179,37 @@ function _unit_group_find_units_with_transform(u::UnitGrpCtx, x::ClassGrpCtx)
 end
 
 
+function find_candidates(x::ClassGrpCtx)
+  time_kernel = 0.0
+  add_units = Int[]
+  rel = SMat{fmpz}()
+  K = nf(x)
+  r1, r2 = signature(K)
+  nrel = min(20, r1+r2-1)
+  if nrel >= nrows(x.M.rel_gens)
+    add_units = Int[i for i = 1:nrows(x.M.rel_gens)]
+    rel = x.M.rel_gens
+  else
+    while length(add_units) < nrel
+      xj = rand(1:nrows(x.M.rel_gens))
+      if xj in add_units
+        continue
+      end
+      push!(add_units, xj)
+      push!(rel, x.M.rel_gens[xj])
+    end
+  end
+  time_kernel += @elapsed k, d = solve_dixon_sf(x.M.bas_gens, rel)
+  @vprint :UnitGroup 1 "Saturating the kernel\n"
+  @vtime_add_elapsed :UnitGroup 1 x :saturate_time s = saturate(hcat(k, (-d)*identity_matrix(SMat, FlintZZ, k.r)))
+  @vprint :UnitGroup 1 "Done\n"
+  s1 = matrix(s)
+  lll!(s1)
+  @vprint :UnitGroup 1 "Kernel time: $time_kernel\n"
+  @vtime_add :UnitGroup 1 x :unit_hnf_time time_kernel
+  return k, add_units, s1
+end
+
 function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx; add_orbit::Bool = true)
   add_orbit = false
   @vprint :UnitGroup 1 "Processing ClassGrpCtx to find units ... (using orbits: $add_orbit)\n"
@@ -204,9 +235,7 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx; add_orbit::Bool =
     return 0
   end
 
-  if add_orbit
-    aut = automorphisms(u)
-  end
+
 
   r1, r2 = signature(O)
 
@@ -218,7 +247,7 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx; add_orbit::Bool =
 
   time_indep = 0.0
   time_add_dep_unit = 0.0
-  time_kernel = 0.0
+  
   time_torsion = 0.0
 
 
@@ -228,52 +257,48 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx; add_orbit::Bool =
 
   @vprint :UnitGroup 1 "Enlarging unit group by adding kernel elements ...\n"
 
-  units_to_consider_again = FacElem{nf_elem, AnticNumberField}[]
-
   not_larger_bound = !add_orbit ? 5 : 3# * div(length(aut), 6)
 
   while not_larger < not_larger_bound
 
-    add_units = Int[]
-    rel = SMat{fmpz}()
-    for jj in 1:min(div(nrows(x.M.rel_gens), 10)+1, 20)
-      xj = rand(1:nrows(x.M.rel_gens))
-      if xj in add_units
-        continue
-      end
-      push!(add_units, xj)
-      push!(rel, x.M.rel_gens[xj])
-    end
-
-    time_kernel += @elapsed k, d = solve_dixon_sf(x.M.bas_gens, rel)
-    @vprint :UnitGroup 1 "Saturating the kernel\n"
-    @vtime_add_elapsed :UnitGroup 1 x :saturate_time s = saturate(hcat(k, (-d)*identity_matrix(SMat, FlintZZ, k.r)))
-    @vprint :UnitGroup 1 "Done\n"
-
+    k, add_units, s1 = find_candidates(x)
     ge = vcat(x.R_gen[1:k.c], x.R_rel[add_units])
-    for i=1:s.r
-      @vprint :UnitGroup 1 "Looking at the $(i)-th element in the saturation ...\n"
-      y = FacElem(ge[s[i].pos], s[i].values)
+    elements = Vector{FacElem{nf_elem, AnticNumberField}}(undef, nrows(s1))
+    for i = 1:nrows(s1)
+      elements[i] = FacElem(ge, [s1[i, j] for j = 1:ncols(s1)])
+    end
+    p = 32
+    #I order the elements by the maximum of the conjugate log.
+    m_conjs = Vector{fmpz}(undef, length(elements))
+    for i = 1:length(m_conjs)
+      m_conjs[i] = maximum(fmpz[abs_upper_bound(x, fmpz) for x in conjugates_arb_log(elements[i], p)])
+    end
+    p_elements = sortperm(m_conjs)
+    elements = elements[p_elements]
+
+    done = falses(length(elements))
+    for i=1:length(elements)
+      @vprint :UnitGroup 1 "Element $(i) / $(length(elements))\n"
+      y = elements[i]
       @hassert :UnitGroup 2 _isunit(y)
       @vprint :UnitGroup 1 "(It really is a unit.)\n"
-
       @hassert :UnitGroup 9000 denominator(minpoly(evaluate(y))) == 1
 
       if has_full_rank(u)
         @vprint :UnitGroup 2 "have full rank, can reduce unit first...\n"
-        y = reduce_mod_units([y], u)[1]
+        y = reduce_mod_units(FacElem{nf_elem, AnticNumberField}[y], u)[1]
       else
         @vprint :UnitGroup 2 "no full rank, cannot reduce unit first...\n"
       end
 
       @vprint :UnitGroup 1 "Exponents are of bit size $(isempty(y.fac) ? 0 : maximum([ nbits(o) for o in values(y.fac)]))\n"
-
       @vprint :UnitGroup 1 "Test if kernel element yields torsion unit ... \n"
       @v_do :UnitGroup 2 pushindent()
 
-      time_torsion += @elapsed is_tors, p = istorsion_unit(y, false, u.tors_prec)
+      time_torsion += @elapsed is_tors, p1 = istorsion_unit(y, false, u.tors_prec)
 
-      u.tors_prec = max(p, u.tors_prec)
+      u.tors_prec = max(p1, u.tors_prec)
+      p = max(p, u.tors_prec)
       if is_tors
         @v_do :UnitGroup 2 popindent()
         @vprint :UnitGroup 1 "Element is torsion unit\n"
@@ -281,6 +306,7 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx; add_orbit::Bool =
         if has_full_rank(u) && not_larger > not_larger_bound
           break
         end
+        done[i] = true
         continue
       end
 
@@ -289,82 +315,64 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx; add_orbit::Bool =
 
       @v_do :UnitGroup 2 pushindent()
 
-      m = false
-
-      if has_full_rank(u) && add_orbit
-        @vprint :UnitGroup 1 "Adding the whole orbit of a unit ...\n"
-        for j in 1:length(aut)
-          phiy = apply_automorphism(u, j, y)
-          rank_before = rank(u)
-          mm = add_unit!(u, phiy)
-          if rank_before < rank(u)
-            @vprint :UnitGroup 1 "Increased rank by 1 (now $(rank(u)))\n"
-          elseif mm
-            @vprint :UnitGroup 1 "improved reg, reg is $(tentative_regulator(u))\n"
-          end
-          if !has_full_rank(u) && !mm
-            push!(units_to_consider_again, phiy)
-          end
-          
-          if !mm
-            not_larger = not_larger + 1
-            if has_full_rank(u) && not_larger > not_larger_bound
-              break
-            end
-          else
-            not_larger = 0
-          end
+      m = add_unit!(u, y)
+      if m || has_full_rank(u)
+        done[i] = true
+        not_larger = 0 
+        if has_full_rank(u)
+          @vprint :UnitGroup 1 "improved reg, reg is $(tentative_regulator(u))\n"
+        else
+          @vprint :UnitGroup 1 "Increased rank by 1 (now $(rank(u)))\n"
         end
-        
-        if has_full_rank(u) && not_larger > not_larger_bound
+      else
+        not_larger = not_larger + 1
+        if not_larger > not_larger_bound
           break
         end
-
-      else
-        rank_before = rank(u)
-        mm = add_unit!(u, y)
-        if rank_before < rank(u)
-          @vprint :UnitGroup 1 "Increased rank by 1 (now $(rank(u)))\n"
-        elseif mm
-          @vprint :UnitGroup 1 "improved reg, reg is $(tentative_regulator(u))\n"
-        end
-        if !has_full_rank(u) && !mm
-          push!(units_to_consider_again, y)
-        end
-
-        if !mm
-          not_larger = not_larger + 1
-          if has_full_rank(u) && not_larger > 5
+      end
+    end
+    u.units = reduce(u.units, u.tors_prec)
+    if add_orbit && rank(u) > r-div(r, 4)
+      @vprint :UnitGroup 1 "Adding orbits\n"
+      # I close the units via Galois action
+      aut = automorphisms(u)
+      for i = 1:length(u.units)
+        threshold = 3
+        for j = 1:length(aut)
+          if aut[j] == id_hom(K)
+            continue
+          end
+          phiu = apply_automorphism(u, j, u.units[i])
+          if !add_unit!(u, phiu)
+            not_larger += 1
+            threshold -= 1
+          else
+            if has_full_rank(u)
+	            @vprint :UnitGroup 1 "New regulator: $(tentative_regulator(u))\n"
+            end
+	          not_larger = 0
+          end
+          if iszero(threshold)
             break
           end
-        else
-          not_larger = 0
+        end
+        if not_larger > not_larger_bound
+          break
         end
       end
-
-      @v_do :UnitGroup 2 popindent()
-
-      #if !m
-      #  not_larger = not_larger + 1
-      #  if has_full_rank(u) && not_larger > 5
-      #    break
-      #  end
-      #else
-      #  not_larger = 0
-      #end
     end
-  end
-
-  @vprint :UnitGroup 1 "Adding the neglected units ...\n"
-  if has_full_rank(u)
-    for y in units_to_consider_again
-      add_unit!(u, y)
+    if has_full_rank(u)
+      for i = 1:length(elements)
+        if !done[i]
+          add_unit!(u, elements[i])
+        end
+      end
     end
+    @v_do :UnitGroup 2 popindent()
   end
 
   #final reduction ...
   u.units = reduce(u.units, u.tors_prec)
-
   if has_full_rank(u)
     u.tentative_regulator = regulator(u.units, 64)
   end
@@ -379,9 +387,9 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx; add_orbit::Bool =
   @vprint :UnitGroup 1 "Independent unit time: $time_indep\n"
   @vprint :UnitGroup 1 "Adding dependent unit time: $time_add_dep_unit\n"
   @vprint :UnitGroup 1 "Torsion test time: $time_torsion\n"
-  @vprint :UnitGroup 1 "Kernel time: $time_kernel\n"
+  
 
-  @vtime_add :UnitGroup 1 x :unit_hnf_time time_kernel
+ 
   if has_full_rank(u)
     return 1
   else

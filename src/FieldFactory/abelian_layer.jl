@@ -487,7 +487,7 @@ end
 function _action(t::Hecke.GrpAbFinGenMap, act::Array{Hecke.GrpAbFinGenMap,1})
   
   T = codomain(t)
-  S, mS= snf(T)
+  S, mS = snf(T)
   new_act = Array{Hecke.GrpAbFinGenMap, 1}(undef, length(act))
   for i = 1:length(act)
     res = mS.map*act[i].map*mS.imap

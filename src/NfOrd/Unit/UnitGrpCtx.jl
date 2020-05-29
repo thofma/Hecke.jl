@@ -27,56 +27,26 @@ function _unit_group_init(O::NfOrd)
   return u
 end
 
-function _add_dependent_unit!(U::UnitGrpCtx{S}, y::S, rel_only::Type{Val{T}} = Val{false}; post_reduction::Bool = true) where {S <: Union{nf_elem, FacElem{nf_elem, AnticNumberField}}, T}
-  @assert has_full_rank(U)
-
-  K = nf(order(U))
-  
-  deg = degree(K)
-  r1, r2 = signature(K)
-  rr = r1 + r2
-  r = rr - 1 # unit rank
-
+function _search_rational_relation(U::UnitGrpCtx{S}, y::S, bound::fmpz) where S
   p = _rel_add_prec(U)
-
-  #p = 64
-
-  zz = Array{fmpz}(undef, r + 1)
-
-  @vprint :UnitGroup 1 "Adding dependent unit ... \n"
-
+  r = rank(U)
+ 
   @v_do :UnitGroup 1 pushindent()
   p, B = _conj_log_mat_cutoff_inv(U, p)
+
   @v_do :UnitGroup 1 popindent()
   @vprint :UnitGroup 2 "Precision is now $p\n"
 
   Ar = base_ring(B)
-
   b = zero_matrix(Ar, 1, r)
-
   conlog = conjugates_arb_log(y, p)
-
   for i in 1:r
     b[1, i] = conlog[i]
   end
 
-  # I should do this using lu decomposition and caching
-  # The inversion could go wrong,
-  # Then we again have to increase the precision
-
-  inv_succesful = true
-
   @vprint :UnitGroup 3 "For $p element b: $b\n"
   v = b*B
   @vprint :UnitGroup 3 "For $p the vector v: $v\n"
-
-  z = Array{fmpq}(undef, r)
-
-
-  rreg = tentative_regulator(U)
-
-  bound = _denominator_bound_in_relation(rreg, K)
-
   rel = Array{fmpz}(undef, r + 1)
   for i in 1:r+1
     rel[i] = zero(FlintZZ)
@@ -102,13 +72,26 @@ function _add_dependent_unit!(U::UnitGrpCtx{S}, y::S, rel_only::Type{Val{T}} = V
     end
 
     @vprint :UnitGroup 3 "For $p element b: $b\n"
-
     v = b*B
     @vprint :UnitGroup 3 "For $p the vector v: $v\n"
   end
+  return rel, p
+end
 
+
+function _add_dependent_unit!(U::UnitGrpCtx{S}, y::S, rel_only::Type{Val{T}} = Val{false}; post_reduction::Bool = true) where {S <: Union{nf_elem, FacElem{nf_elem, AnticNumberField}}, T}
+  @assert has_full_rank(U)
+
+  K = nf(order(U))
+  
+  deg = degree(K)
+  r = rank(U)
+ 
+  rreg = tentative_regulator(U)
+  bound = _denominator_bound_in_relation(rreg, K)
+  @vprint :UnitGroup 1 "Adding dependent unit ... \n"
+  rel, p = _search_rational_relation(U, y, bound)
   @vprint :UnitGroup 3 "For $p rel: $rel\n"
-
   @vprint :UnitGroup 2 "Second iteration to check relation ... \n"
 
   while !_check_relation_mod_torsion(U.units, y, rel, p)
