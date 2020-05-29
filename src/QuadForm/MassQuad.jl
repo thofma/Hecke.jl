@@ -55,11 +55,13 @@ _get_eps(::Any) = -1
 ################################################################################
 
 function _local_mass_factor_unimodular(L::QuadLat, p)
+  local s::Vector{Int}
+  local G::Vector{dense_matrix_type(nf(base_ring(L)))}
   d, s, w, a, _, G = data(_genus_symbol_kirschmer(L, p))
-  @assert s == [0] && isdyadic(p)
-  d = d[1]
-  b = w[1]
-  a = valuation(a[1], p)
+  @assert s == Int[0] && isdyadic(p)
+  d = d[1]::Int
+  b = w[1]::Int
+  a = valuation(a[1], p)::Int
   q = norm(p)
   e = ramification_index(p)
 
@@ -319,24 +321,24 @@ function local_mass_factor(L::QuadLat, p)
     if ramification_index(p) == 1
       return _local_mass_factor_cho(L, p)
     elseif ismaximal(L, p)[1]
-      s = uniformizer(p)^(-valuation(norm(L), p))
-      return _local_mass_factor_maximal(rescale(L, s), p)
+      ss = uniformizer(p)^(-valuation(norm(L), p))
+      return _local_mass_factor_maximal(rescale(L, ss), p)
     elseif ismodular(L, p)[1]
-      s = uniformizer(p)^(-valuation(scale(L), p))
-      return _local_mass_factor_unimodular(rescale(L, s), p)
+      ss = uniformizer(p)^(-valuation(scale(L), p))
+      return _local_mass_factor_unimodular(rescale(L, ss), p)
     else
       a = _isdefinite(rational_span(L))
       def = !iszero(a)
-      s = uniformizer(p)^(-valuation(norm(L), p))
+      ss = uniformizer(p)^(-valuation(norm(L), p))
       if def
         R = base_ring(L)
         rlp = real_places(K)
-        A, _exp, _log = infinite_primes_map(R, rlp, p)
-        sa = s * a
-        t = (1 + _exp(A([ sign(sa, rlp[j]) == 1 ? 0 : 1 for j in 1:length(rlp)])))
+        A::GrpAbFinGen, _exp, _log = infinite_primes_map(R, rlp, p)
+        sa = ss * a
+        t = (1 + _exp(A(Int[ sign(sa, rlp[j]) == 1 ? 0 : 1 for j in 1:length(rlp)]))::elem_type(R))
         @assert t - 1 in p
-        @assert all(i -> sign(t, rlp[i]) == sign(sa, rlp[i]), 1:length(rlp))
-        s = s * t
+        @assert all(Bool[i -> sign(t, rlp[i]) == sign(sa, rlp[i]), 1:length(rlp)])
+        ss = ss * t
       end
       L = rescale(L, s)
       chain = typeof(L)[L]
@@ -441,7 +443,7 @@ function _exact_standard_mass(L::QuadLat)
   if isodd(m)
     #standard_mass *= prod(dedekind_zeta_exact(K, -i) for i in 1:2:(m-2))
     if _exact_dedekind_zeta_cheap(K)
-      standard_mass *= prod(dedekind_zeta_exact(K, -i) for i in 1:2:(m-2))
+      standard_mass *= prod(fmpq[dedekind_zeta_exact(K, -i) for i in 1:2:(m-2)])
     else
       return false, fmpq(0)
     end
@@ -449,7 +451,7 @@ function _exact_standard_mass(L::QuadLat)
     #standard_mass *= prod(dedekind_zeta_exact(K, -i) for i in 1:2:(m-3))
 
     if _exact_dedekind_zeta_cheap(K)
-      standard_mass *= prod(dedekind_zeta_exact(K, -i) for i in 1:2:(m-3))
+      standard_mass *= prod(fmpq[dedekind_zeta_exact(K, -i) for i in 1:2:(m-3)])
     else
       return false, fmpq(0)
     end
@@ -468,7 +470,7 @@ function _exact_standard_mass(L::QuadLat)
       if _exact_L_function_cheap(E)
         standard_mass *= _exact_L_function(E, 1 - r)
       else
-        return false, fmpz(0)
+        return false, fmpq(0)
       end
     end
   end
@@ -488,21 +490,22 @@ end
 
 function _standard_mass(L::QuadLat, prec::Int = 10)
   m = rank(L)
+  RR = ArbField(64)
   if m == 0
-    return fmpq(1)
+    return RR(fmpq(1))
   elseif m == 1
-    return fmpq(1, 2)
+    return RR(fmpq(1, 2))
   end
 
   R = base_ring(L)
   K = nf(R)
   r = div(m, 2)
 
-  standard_mass = FlintQQ(2)^(-absolute_degree(K) * r)
+  __standard_mass = FlintQQ(2)^(-absolute_degree(K) * r)
   if isodd(m)
-    standard_mass *= prod(dedekind_zeta(K, -i, prec) for i in 1:2:(m-2))
+    standard_mass = __standard_mass * prod(dedekind_zeta(K, -i, prec) for i in 1:2:(m-2))
   else
-    standard_mass *= prod(dedekind_zeta(K, -i, prec) for i in 1:2:(m-3))
+    standard_mass = __standard_mass * prod(dedekind_zeta(K, -i, prec) for i in 1:2:(m-3))
 
     dis = discriminant(rational_span(L))
     if issquare(dis)[1]
@@ -1142,7 +1145,7 @@ function _bernoulli_kronecker(z, D)
   K = FlintQQ
   Rt, t = PowerSeriesRing(K, z + 3, "t", cached = false, model = :capped_absolute)
   denom = exp(N*t) - 1
-  num = sum(_kronecker_as_dirichlet(a, N) * t * exp(a * t) for a in 1:Int(N))
+  num = sum(elem_type(Rt)[_kronecker_as_dirichlet(a, N) * t * exp(a * t) for a in 1:Int(N)])
   F = divexact(num, denom)
   p = precision(F)
   @assert p >= z + 1

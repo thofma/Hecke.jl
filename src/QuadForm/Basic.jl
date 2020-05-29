@@ -1006,20 +1006,20 @@ function _isdefinite(V::AbsSpace)
   K = base_ring(V)
   R = maximal_order(K)
   if !istotally_real(K) || (ishermitian(V) && !istotally_complex(K))
-    return zero(R)
+    return zero(K)
   end
   D = diagonal(V)
   signs_to_consider = Tuple{InfPlc, Int}[]
   for v in real_places(K)
     S = Int[sign(d, v) for d in D]
     if length(unique(S)) != 1
-      return zero(R)
+      return zero(K)
     else
       push!(signs_to_consider, (v, S[1]))
     end
   end
   if length(signs_to_consider) == 1
-    return R(signs_to_consider[1][2])
+    return K(signs_to_consider[1][2])
   else
     return element_with_signs(K, signs_to_consider)
   end
@@ -1276,7 +1276,7 @@ function _element_with_signs(K, D)
       end
     end
   end
-  return mG(z)
+  return mG(z)::elem_type(K)
 end
 
 function element_with_signs(K, P::Vector{InfPlc}, S::Vector{Int})

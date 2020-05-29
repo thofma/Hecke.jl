@@ -1627,10 +1627,12 @@ function ismaximal_integral(L::QuadLat, p)
 
   r, V = left_kernel(Gmodp)
   @assert r > 0
+  local v
   if !isdyadic(p)
     T = map(y -> hext\y, V)
     H = inv(elem_in_nf(uniformizer(p))) * T * G * transpose(T)
-    ok, v = isisotropic_finite(idontknowwhatthematrixissupposedtobe)
+    throw(error("I don't know"))
+    #ok, v = isisotropic_finite(idontknowwhatthematrixissupposedtobe)
 #    ok, v:= IsIsotropicFinite(Matrix(Ncols(H), [x @ h : x in Eltseq(H)] ));
 #    assert ok;
 #    e:= Eltseq( v*V ) @@ h;
