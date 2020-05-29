@@ -351,9 +351,23 @@ function local_mass_factor(L::QuadLat, p)
 
       for i in 1:(length(chain) - 1)
         M, E = maximal_sublattices(chain[i + 1], p, use_auto = false)# should be use_auto = def)
-        f = f * sum(E[j] for j in 1:length(M) if islocally_isometric(chain[i], M[j], p))
+        _f = 0
+        for j in 1:length(M)
+          if islocally_isometric(chain[i], M[j], p)
+            _f += E[j]
+          end
+        end
+        f = f * _f
+        #f = f * sum(Int[E[j] for j in 1:length(M) if islocally_isometric(chain[i], M[j], p)])
         M, E = minimal_superlattices(chain[i], p, use_auto = false)# should be use_auto = def)
-        f = divexact(f, sum(E[j] for j in 1:length(M) if islocally_isometric(chain[i + 1], M[j], p)))
+        _f = 0
+        for j in 1:length(M)
+          if islocally_isometric(chain[i + 1], M[j], p)
+            _f += E[j]
+          end
+        end
+        f = divexact(f, _f)
+        #f = divexact(f, sum(Int[E[j] for j in 1:length(M) if islocally_isometric(chain[i + 1], M[j], p)]))
       end
       return f
     end
@@ -365,18 +379,20 @@ function local_mass_factor(L::QuadLat, p)
     return fmpq(1)
   end
 
+  local f::fmpq
+
   m = rank(L)
   q = norm(p)
   if isodd(m)
-    f = group_order("O+", m, q)
+    f = fmpq(group_order("O+", m, q))
   else
     d = discriminant(ambient_space(L))
     if isodd(valuation(d, p))
-      f = group_order("O+", m - 1, q)
+      f = fmpq(group_order("O+", m - 1, q))
     elseif islocal_square(d, p)
-      f = group_order("O+", m, q)
+      f = fmpq(group_order("O+", m, q))
     else
-      f = group_order("O-", m, q)
+      f = fmpq(group_order("O-", m, q))
     end
   end
 

@@ -1491,7 +1491,7 @@ function islocally_isometric(L::QuadLat, M::QuadLat, p::NfOrdIdl)
   if minimum(p) != 2
     SL = _genus_symbol_kirschmer(L, p)
     SM = _genus_symbol_kirschmer(M, p, uniformizer = uniformizer(SL))
-    return data(SL) == data(SM)
+    return (data(SL) == data(SM))::Bool
   end
 
   if !isrationally_equivalent(L, M, p)
