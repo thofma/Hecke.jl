@@ -340,7 +340,7 @@ function local_mass_factor(L::QuadLat, p)
         @assert all(Bool[i -> sign(t, rlp[i]) == sign(sa, rlp[i]), 1:length(rlp)])
         ss = ss * t
       end
-      L = rescale(L, s)
+      L = rescale(L, ss)
       chain = typeof(L)[L]
       ok, LL = ismaximal_integral(L, p)
       while !ok
