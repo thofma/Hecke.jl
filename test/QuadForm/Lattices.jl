@@ -17,7 +17,7 @@
   Qx, x = FlintQQ["x"];
   K, a = number_field(x^2 - 2, cached = true);
   Kt, t = K["t"];
-  L, b= number_field(t^2 + 11, "b", check = true)
+  L, b = number_field(t^2 + 11, "b", check = true)
   p = prime_decomposition(maximal_order(K), 2)[1][1]
   P = prime_decomposition(maximal_order(L), p)[1][1]
   H = Hecke.lattice(hermitian_space(K, 2 * identity_matrix(K, 3)), pseudo_matrix(identity_matrix(K, 3), [p, p, p]))

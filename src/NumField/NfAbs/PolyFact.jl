@@ -218,10 +218,11 @@ The decision is based on the number of local factors.
 """
 function factor_new(f::PolyElem{nf_elem})
   k = base_ring(f)
+  local zk::NfOrd
   if ismaximal_order_known(k)
     zk = maximal_order(k)
     if isdefined(zk, :lllO)
-      zk = zk.lllO
+      zk = zk.lllO::NfOrd
     end
   else
     zk = EquationOrder(k)
@@ -243,7 +244,7 @@ function factor_new(f::PolyElem{nf_elem})
     if length(P) == 0
       continue
     end
-    F, mF1 = ResidueFieldSmallDegree1(zk, P[1][1])
+    F, mF1 = ResidueFieldSmallDegree1(zk::NfOrd, P[1][1])
     mF = extend(mF1, k)
     fp = map_coeffs(mF, f, cached = false)
     if degree(fp) < degree(f) || iszero(trailing_coefficient(fp)) || iszero(trailing_coefficient(fp))

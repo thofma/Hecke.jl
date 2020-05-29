@@ -1,46 +1,46 @@
-function test_alg_morphism_char_0(A, B, AtoB, BtoA)
+function test_alg_morphism_char_0(A, B, AtoB)
   @test iszero(AtoB(zero(A)))
-  @test iszero(BtoA(zero(B)))
+  @test iszero(AtoB\(zero(B)))
   @test isone(AtoB(one(A)))
-  @test isone(BtoA(one(B)))
+  @test isone(AtoB\(one(B)))
 
   for i = 1:5
     c = rand(A, -10:10)
     d = rand(A, -10:10)
-    @test BtoA(AtoB(c)) == c
-    @test BtoA(AtoB(d)) == d
+    @test AtoB\(AtoB(c)) == c
+    @test AtoB\(AtoB(d)) == d
     @test AtoB(c + d) == AtoB(c) + AtoB(d)
     @test AtoB(c*d) == AtoB(c)*AtoB(d)
 
     e = rand(B, -10:10)
     f = rand(B, -10:10)
-    @test AtoB(BtoA(e)) == e
-    @test AtoB(BtoA(f)) == f
-    @test BtoA(e + f) == BtoA(e) + BtoA(f)
-    @test BtoA(e*f) == BtoA(e)*BtoA(f)
+    @test AtoB(AtoB\(e)) == e
+    @test AtoB(AtoB\(f)) == f
+    @test AtoB\(e + f) == (AtoB\(e)) + (AtoB\(f))
+    @test AtoB\(e*f) == (AtoB\(e)) * (AtoB\(f))
   end
 end
 
-function test_alg_morphism_char_p(A, B, AtoB, BtoA)
+function test_alg_morphism_char_p(A, B, AtoB)
   @test iszero(AtoB(zero(A)))
-  @test iszero(BtoA(zero(B)))
+  @test iszero(AtoB\(zero(B)))
   @test isone(AtoB(one(A)))
-  @test isone(BtoA(one(B)))
+  @test isone(AtoB\(one(B)))
 
   for i = 1:5
     c = rand(A)
     d = rand(A)
-    @test BtoA(AtoB(c)) == c
-    @test BtoA(AtoB(d)) == d
+    @test AtoB\(AtoB(c)) == c
+    @test AtoB\(AtoB(d)) == d
     @test AtoB(c + d) == AtoB(c) + AtoB(d)
     @test AtoB(c*d) == AtoB(c)*AtoB(d)
 
     e = rand(B)
     f = rand(B)
-    @test AtoB(BtoA(e)) == e
-    @test AtoB(BtoA(f)) == f
-    @test BtoA(e + f) == BtoA(e) + BtoA(f)
-    @test BtoA(e*f) == BtoA(e)*BtoA(f)
+    @test AtoB(AtoB\(e)) == e
+    @test AtoB(AtoB\(f)) == f
+    @test AtoB\(e + f) == AtoB\(e) + AtoB\(f)
+    @test AtoB\(e*f) == (AtoB\(e))*(AtoB\(f))
   end
 end
 
@@ -54,18 +54,18 @@ end
     K, a = number_field(f, "a")
 
     A = AlgAss(MatrixAlgebra(K, 2))
-    B, AtoB, BtoA = Hecke.restrict_scalars(A, FlintQQ)
+    B, BtoA = Hecke.restrict_scalars(A, FlintQQ)
     @test base_ring(B) == FlintQQ
     @test dim(B) == dim(A)*degree(K)
 
-    test_alg_morphism_char_0(A, B, AtoB, BtoA)
+    test_alg_morphism_char_0(B, A, BtoA)
 
     # Extend to K again
-    C, BtoC, CtoB = Hecke._as_algebra_over_center(B)
+    C, CtoB = Hecke._as_algebra_over_center(B)
     @test isisomorphic(K, base_ring(C))[1]
     @test dim(C) == dim(A)
 
-    test_alg_morphism_char_0(B, C, BtoC, CtoB)
+    test_alg_morphism_char_0(C, B, CtoB)
 
     # Restrict from number field to number field
     g = x^9 - 15x^6 - 87x^3 - 125
@@ -73,42 +73,42 @@ end
     KtoL = NfToNfMor(K, L, -2//45*b^7 + 7//9*b^4 + 109//45*b)
 
     A = AlgAss(MatrixAlgebra(L, 2))
-    B, AtoB, BtoA = Hecke.restrict_scalars(A, KtoL)
+    B, BtoA = Hecke.restrict_scalars(A, KtoL)
 
     @test base_ring(B) == K
     @test dim(B) == dim(A)*div(degree(L), degree(K))
 
-    test_alg_morphism_char_0(A, B, AtoB, BtoA)
+    test_alg_morphism_char_0(B, A, BtoA)
 
     # Restrict from F_q to F_p
     Fp = GF(7)
     Fq, a = FiniteField(7, 3, "a")
 
     A = AlgAss(MatrixAlgebra(Fq, 2))
-    B, AtoB, BtoA = Hecke.restrict_scalars(A, Fp)
+    B, BtoA = Hecke.restrict_scalars(A, Fp)
     @test base_ring(B) == Fp
     @test dim(B) == dim(A)*degree(K)
 
-    test_alg_morphism_char_p(A, B, AtoB, BtoA)
+    test_alg_morphism_char_p(B, A, BtoA)
 
     # Extend to Fq again
-    C, BtoC, CtoB = Hecke._as_algebra_over_center(B)
+    C, CtoB = Hecke._as_algebra_over_center(B)
     @test characteristic(base_ring(C)) == characteristic(Fq)
     @test degree(base_ring(C)) == degree(Fq)
     @test dim(C) == dim(A)
 
-    test_alg_morphism_char_p(B, C, BtoC, CtoB)
+    test_alg_morphism_char_p(C, B, CtoB)
 
     # Extend from F_p^m to F_p^n
     Fqx, x = Fq["x"]
     f = x^2 + 5x + 2
     A = AlgAss(f)
-    B, AtoB, BtoA = Hecke._as_algebra_over_center(A)
+    B, BtoA = Hecke._as_algebra_over_center(A)
     @test characteristic(base_ring(B)) == characteristic(Fq)
     @test degree(base_ring(B)) == degree(f)*degree(Fq)
     @test dim(B) == 1
 
-    test_alg_morphism_char_p(A, B, AtoB, BtoA)
+    test_alg_morphism_char_p(B, A, BtoA)
 
     Fp = GF(3)
     mt = Array{elem_type(Fp), 3}(undef, 2, 2, 2)
@@ -121,12 +121,12 @@ end
     mt[2, 2, 1] = Fp(1)
     mt[2, 2, 2] = Fp(1)
     A = AlgAss(Fp, mt)
-    B, AtoB, BtoA = Hecke._as_algebra_over_center(A)
+    B, BtoA = Hecke._as_algebra_over_center(A)
     @test characteristic(base_ring(B)) == characteristic(Fp)
     @test degree(base_ring(B)) == dim(A)
     @test dim(B) == 1
 
-    test_alg_morphism_char_p(A, B, AtoB, BtoA)
+    test_alg_morphism_char_p(B, A, BtoA)
 
   end
 
@@ -135,7 +135,7 @@ end
     A = domain(AtoB)
     B = codomain(AtoB)
 
-    test_alg_morphism_char_p(A, B, AtoB, inv(AtoB))
+    test_alg_morphism_char_p(A, B, AtoB)
 
     sum_of_diag = AtoB\B[1]
     for i = 2:n
@@ -223,4 +223,3 @@ end
   end
 
 end
-

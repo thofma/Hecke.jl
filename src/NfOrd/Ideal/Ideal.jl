@@ -216,6 +216,7 @@ end
 #  Parent object overloading and user friendly constructors
 #
 ################################################################################
+
 @doc Markdown.doc"""
     ideal(O::NfOrd, v::Vector{NfOrdElem}) -> NfOrdIdl
 
@@ -250,7 +251,7 @@ function ideal(O::NfOrd, v::Vector{NfOrdElem})
       return ideal(O, 1)
     end
   end
-  return ideal(O, sub(M, degree(O)+1:2*degree(O), 1:degree(O)))
+  return _ideal(O, sub(M, degree(O)+1:2*degree(O), 1:degree(O)))::ideal_type(O)
 end
 
 @doc Markdown.doc"""
@@ -273,10 +274,19 @@ function ideal(O::NfAbsOrd, x::fmpz_mat, check::Bool = false, x_in_hnf::Bool = f
   !x_in_hnf ? x = _hnf(x, :lowerleft) : nothing #sub-optimal, but == relies on the basis being thus
   #_trace_call(;print = true)
   I = NfAbsOrdIdl(O, x)
-  if check
-    J = ideal(O, basis(I))
-    @assert J == I
-  end
+  # The compiler stopped liking this recursion??
+  # if check
+  #   J = ideal(O, basis(I))
+  #   @assert J == I
+  # end
+
+  return I
+end
+
+function _ideal(O::NfAbsOrd, x::fmpz_mat, x_in_hnf::Bool = false)
+  !x_in_hnf ? x = _hnf(x, :lowerleft) : nothing #sub-optimal, but == relies on the basis being thus
+  #_trace_call(;print = true)
+  I = NfAbsOrdIdl(O, x)
 
   return I
 end
@@ -1912,7 +1922,6 @@ function pradical_frobenius(O::NfAbsOrd, p::Union{Integer, fmpz})
   I.minimum = p
   I.gens = gens
   return I
-
 end
 
 @doc Markdown.doc"""

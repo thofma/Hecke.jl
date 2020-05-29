@@ -418,9 +418,11 @@ function try_init_small(C::ZLatAutoCtx, auto::Bool = true, bound::fmpz = fmpz(-1
     v = cand[1]
     vectors_nbits = max(vectors_nbits, maximum(nbits, v) + 1)
     k = 1
+
     while iszero(v[k])
       k += 1
     end
+
     if v[k] < 0
       v .*= -1 
     end
@@ -433,14 +435,20 @@ function try_init_small(C::ZLatAutoCtx, auto::Bool = true, bound::fmpz = fmpz(-1
       return false, Csmall
     end
 
+    _v = Vector{Int}(undef, n)
+
+    for i in 1:n
+      _v[i] = v[i]
+    end
+
     w = Vector{Int}(undef, r)
     w[1] = cand[2]
     for k in 2:r
-      w[2] = _norm(v, Gsmall[k], tmp)
+      w[k] = _norm(_v, Gsmall[k], tmp)
     end
 
     lengths[i] = w
-    vectors[i] = v
+    vectors[i] = _v
   end
 
   V = VectorList(vectors, lengths, use_dict)

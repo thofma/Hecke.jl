@@ -147,7 +147,7 @@ function __enumerate_gram(G::fmpz_mat, c::Int)
   return res
 end
 
-function __enumerate_gram(G::fmpz_mat, c::Int, ::Type{T}) where {T}
+function __enumerate_gram(G::fmpz_mat, c::Union{Int, fmpz}, ::Type{T}) where {T}
   Q = _pseudo_cholesky(G, Matrix{T})
   v = __enumerate_cholesky(Q, c)
   return v
@@ -157,18 +157,19 @@ function __enumerate_cholesky(Q::fmpq_mat, c::Int)
   return __enumerate(Matrix(Q), c)
 end
 
-function __enumerate_cholesky(Q::Matrix{fmpq}, c::Int)
-  res = Tuple{Vector{Int}, Int}[]
+function __enumerate_cholesky(Q::Matrix{fmpq}, c::S) where {S <: Union{Int, fmpz}}
+  res = Tuple{Vector{S}, S}[]
   n = nrows(Q)
   i = n
   T = Vector{fmpq}(undef, n)
   U = Vector{fmpq}(undef, n)
+
   for i in 1:n
     T[i] = fmpq()
     U[i] = fmpq()
   end
-  x = Vector{Int}(undef, n)
-  L = Vector{Int}(undef, n)
+  x = Vector{S}(undef, n)
+  L = Vector{S}(undef, n)
 
   T[i] = c
   U[i] = 0
@@ -207,12 +208,11 @@ function __enumerate_cholesky(Q::Matrix{fmpq}, c::Int)
   
   @inbounds _new_upp, _new_low = _compute_bounds(T[i], Qd[i], U[i], t1, t2, t3, t4, t5)
 
-
   @inbounds x[i] = _new_low
   @inbounds L[i] = _new_upp
 
   @label main_loop
-  
+
   @inbounds x[i] = x[i] + 1
 
   @inbounds if x[i] > L[i]
@@ -238,15 +238,30 @@ function __enumerate_cholesky(Q::Matrix{fmpq}, c::Int)
     #len = c - T[1] + Q[1, 1]*(x[1] + U[1])^2
     t1 = compute_len!(t1, c, T, Q, x, U)
     t2 = numerator!(t2, t1)
-    len = ccall((:fmpz_get_si, libflint), Int, (Ref{fmpz}, ), t2)
-    if len <= c
+    _short_enough = false
+    if S === Int
+      _len = ccall((:fmpz_get_si, libflint), Int, (Ref{fmpz}, ), t2)
+      _short_enough = _len <= c
+      len = _len
+    else
+      _short_enough = t2 <= c
+      len = deepcopy(t2)
+    end
+
+    if _short_enough
       # t1 must be a UInt
       #z = fmpq()
       #ccall((:fmpq_set, libflint), Cvoid, (Ref{fmpq}, Ref{fmpq}), z, t1)
       # Todo
-      y = Vector{Int}(undef, n)
-      for i in 1:n
-        @inbounds y[i] = x[i]
+      y = Vector{S}(undef, n)
+      if S === fmpz
+        for i in 1:n
+          @inbounds y[i] = deepcopy(x[i])
+        end
+      else
+        for i in 1:n
+          @inbounds y[i] = x[i]
+        end
       end
       push!(res, (y, len))
     end
@@ -485,8 +500,19 @@ function _short_vectors_gram_nolll_integral(G, lb, ub, transform)
   n = nrows(G)
   max = _round_down(fmpz, ub)
   # G is integral, so q(x) <= ub is equivalent to q(x) <= floor(ub)
-  V = __enumerate_gram(G, Int(ub), fmpq)
-  W = Vector{Tuple{Vector{Int}, fmpz}}()
+
+  if ub isa fmpz && fits(Int, ub)
+    V = __enumerate_gram(G, Int(ub), fmpq)
+  else
+    V = __enumerate_gram(G, ub, fmpq)
+  end
+
+  if ub isa fmpz
+    W = Vector{Tuple{Vector{fmpz}, fmpz}}()
+  else
+    W = Vector{Tuple{Vector{Int}, fmpz}}()
+  end
+
   for (v, l) in V
     if l < lb
       continue
@@ -515,10 +541,14 @@ function _short_vectors_gram_nolll_integral(G, lb, ub, transform)
 end
 
 # No assumption on _G, algorithm applies LLL
-function _short_vectors_gram(_G, lb, ub)
+function _short_vectors_gram(_G, lb, ub; hard::Bool = false)
   d = denominator(_G)
   G = change_base_ring(FlintZZ, d * _G)
-  Glll, T = lll_gram_with_transform(G)
+  if hard
+    Glll, T = lll_gram_with_transform(G, lll_ctx(0.99999999999999, 0.500000000001, :gram))
+  else
+    Glll, T = lll_gram_with_transform(G, lll_ctx(0.9999, 0.5001, :gram))
+  end
   if isone(T)
     V = _short_vectors_gram_nolll_integral(Glll, d * lb, d * ub, nothing)
   else
@@ -532,8 +562,8 @@ function _short_vectors_gram(_G, lb, ub)
 end
 
 # No assumption on _G, algorithm applies LLL
-function _short_vectors_gram(_G, ub)
-  return _short_vectors_gram(_G, fmpz(0), ub)
+function _short_vectors_gram(_G, ub; hard::Bool = false)
+  return _short_vectors_gram(_G, fmpz(0), ub, hard = hard)
 end
 
 # No assumption on _G, algorithm applies LLL
@@ -549,11 +579,15 @@ function _shortest_vectors_gram(_G)
     V = _short_vectors_gram_nolll_integral(Glll, 0, max, T)
   end
   min = minimum(v[2] for v in V)
-  return min//d, Vector{Int}[ v[1] for v in V if v[2] == min]
+  return min//d, Vector{fmpz}[ v[1] for v in V if v[2] == min]
 end
 
-function _short_vectors_gram_integral(_G, ub)
-  Glll, T = lll_gram_with_transform(_G)
+function _short_vectors_gram_integral(_G, ub; hard = false)
+  if hard
+    Glll, T = lll_gram_with_transform(_G, lll_ctx(0.99999999999999, 0.500000000001, :gram))
+  else
+    Glll, T = lll_gram_with_transform(_G)
+  end
   if isone(T)
     V = _short_vectors_gram_nolll_integral(Glll, 0, ub, nothing)
   else
@@ -584,7 +618,12 @@ _transform(m::Vector{Int}, ::Nothing) = m
 
 function _transform(m::Vector{Int}, T)
   n = matrix(FlintZZ, 1, nrows(T), m) * T
-  return Int[n[1, i] for i in 1:nrows(T)]
+  return fmpz[n[1, i] for i in 1:nrows(T)]
+end
+
+function _transform(m::Vector{fmpz}, T)
+  n = matrix(FlintZZ, 1, nrows(T), m) * T
+  return fmpz[n[1, i] for i in 1:nrows(T)]
 end
 
 _round_up(::Type{fmpz}, x::fmpz) = x

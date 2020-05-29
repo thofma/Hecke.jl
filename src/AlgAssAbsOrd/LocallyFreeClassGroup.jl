@@ -55,7 +55,7 @@ function locally_free_class_group(O::AlgAssAbsOrd, cond::Symbol = :center, retur
   end
   for i = 1:length(Adec)
     B, BtoA = Adec[i]
-    C, BtoC, CtoB = _as_algebra_over_center(B)
+    C, CtoB = _as_algebra_over_center(B)
     K = base_ring(C)
     @assert K === fields_and_maps[i][1]
 
@@ -136,8 +136,8 @@ function _reduced_norms(a::AbsAlgAssElem, mR::MapRayClassGroupAlg)
 
   for i = 1:length(Adec)
     B, BtoA = Adec[i]
-    C, BtoC, CtoB = _as_algebra_over_center(B)
-    c = BtoC(BtoA\a)
+    C, CtoB = _as_algebra_over_center(B)
+    c = CtoB\(BtoA\a)
     G, GtoIdl = mR.groups_in_number_fields[i]
     K = number_field(order(codomain(GtoIdl)))
     OK = maximal_order(K)
@@ -255,7 +255,7 @@ function K1_semisimple(A::AlgAss{T}) where { T } #<: Union{ gfp_elem, Generic.Re
   minus_idems = map(x -> -one(A)*x, idems)
   for i = 1:length(Adec)
     B, BtoA = Adec[i]
-    C, BtoC, CtoB = _as_algebra_over_center(B)
+    C, CtoB = _as_algebra_over_center(B)
     F = base_ring(C)
     # Consider C as a matrix algebra over F. Then the matrices with a one somewhere
     # on the diagonal are given by primitive idempotents (see also _as_matrix_algebra).

@@ -302,7 +302,28 @@ Given a number field K which is normal over Q, return
 an element generating a normal basis of K over Q.
 """
 function normal_basis(K::Nemo.AnticNumberField)
-  
+  # First try basis elements of LLL basis
+  # or rather not
+  # n = degree(K)
+  # Aut = automorphisms(K)
+
+  # length(Aut) != n && error("The field is not normal over the rationals!")
+
+  # A = zero_matrix(FlintQQ, n, n)
+  # _B = basis(lll(maximal_order(K)))
+  # for i in 1:n
+  #   r = elem_in_nf(_B[i])
+  #   for i = 1:n
+  #     y = Aut[i](r)
+  #     for j = 1:n
+  #       A[i,j] = coeff(y, j - 1)
+  #     end
+  #   end
+  #   if rank(A) == n
+  #     return r
+  #   end
+  # end
+
   O = EquationOrder(K)
   Qx = parent(K.pol)
   d = discriminant(O)
@@ -321,6 +342,13 @@ function normal_basis(K::Nemo.AnticNumberField)
       break
     end
   end
+
+  return _normal_basis_generator(K, p)
+end
+
+function _normal_basis_generator(K, p)
+  Qx = parent(K.pol)
+
   #Now, I only need to lift an idempotent of O/pO
   R = GF(p, cached = false)
   Rx, x = PolynomialRing(R, "x", cached = false)
@@ -330,7 +358,6 @@ function normal_basis(K::Nemo.AnticNumberField)
   Zy, y = PolynomialRing(FlintZZ, "y", cached = false)
   g1 = lift(Zy, g)
   return K(g1)
-  
 end
 
 ################################################################################
@@ -816,9 +843,9 @@ end
 
 Nemo.iscyclo_type(::NumField) = false
 
-function force_coerce(a::NumField{T}, b::NumFieldElem; throw_error::Bool = true) where {T}
+function force_coerce(a::NumField{T}, b::NumFieldElem, throw_error::Type{Val{S}} = Val{true}) where {T, S}
   if Nemo.iscyclo_type(a) && Nemo.iscyclo_type(parent(b))
-    return force_coerce_cyclo(a, b, throw_error = throw_error)::elem_type(a)
+    return force_coerce_cyclo(a, b, throw_error)::elem_type(a)
   end
   if absolute_degree(parent(b)) <= absolute_degree(a)
     c = find_one_chain(parent(b), a)
@@ -831,8 +858,11 @@ function force_coerce(a::NumField{T}, b::NumFieldElem; throw_error::Bool = true)
       return x::elem_type(a)
     end
   end
-  throw_error && error("no coercion possible")
-  return false
+  if throw_error === Val{true}
+    throw(error("no coercion possible"))
+  else
+    return false
+  end
 end
 
 @noinline function force_coerce_throwing(a::NumField{T}, b::NumFieldElem) where {T}
@@ -846,8 +876,8 @@ end
       end
       return x::elem_type(a)
     else
-    throw(error("no coercion possible"))
-  end
+      throw(error("no coercion possible"))
+    end
   else
     throw(error("no coercion possible"))
   end
@@ -1074,13 +1104,16 @@ function common_super(a::NumFieldElem, b::NumFieldElem)
 end
 
 #tries to find a common parent for all "a" and then calls op on it.
-function force_op(op::T, a::NumFieldElem...; throw_error::Bool = true) where {T <: Function}
+function force_op(op::T, throw_error::Type{Val{S}}, a::NumFieldElem...) where {T <: Function, S}
   C = parent(a[1])
   for b = a
     C = common_super(parent(b), C)
     if C === nothing
-      throw_error && error("no common parent known")
-      return nothing
+      if throw_error === Val{true}
+        throw(error("no common parent known"))
+      else
+        return nothing
+      end
     end
   end
   return op(map(C, a)...)
@@ -1099,7 +1132,7 @@ function embedding(k::NumField, K::NumField)
   end
 end
 
-function force_coerce_cyclo(a::AnticNumberField, b::nf_elem; throw_error::Bool = true)
+function force_coerce_cyclo(a::AnticNumberField, b::nf_elem, throw_error::Type{Val{T}} = Val{true}) where {T}
   fa = get_special(a, :cyclo)
   sign = 1
   if isodd(fa)
@@ -1147,8 +1180,11 @@ function force_coerce_cyclo(a::AnticNumberField, b::nf_elem; throw_error::Bool =
     for i=0:length(f)
       c = coeff(f, i)
       if !isrational(c)
-        throw_error && error("no coercion possible")
-        return false
+        if throw_error === Val{true}
+          throw(error("no coercion possible"))
+        else
+          return false
+        end
       end
       setcoeff!(g, i, FlintQQ(c))
     end
@@ -1157,7 +1193,9 @@ function force_coerce_cyclo(a::AnticNumberField, b::nf_elem; throw_error::Bool =
       return ba
     end
   end #missing: (?) b could be in a subfield and thus still in a
-  throw_error && error("no coercion possible")
+  if throw_error === Val{true}
+    throw(error("no coercion possible"))
+  end
 end
 
 (::FlintRationalField)(a::nf_elem) = (isrational(a) && return coeff(a, 0)) || error("not a rational")

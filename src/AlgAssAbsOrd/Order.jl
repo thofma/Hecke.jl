@@ -418,17 +418,19 @@ function basis_matrix(A::Array{S, 1}, ::Type{FakeFmpqMat}) where {S <: AbsAlgAss
   return FakeFmpqMat(M, deno)
 end
 
-function basis_matrix(A::Vector{ <: AbsAlgAssElem{fmpq} })
+function basis_matrix(A::Vector{ <: AbsAlgAssElem{T} }) where T
   @assert length(A) > 0
   n = length(A)
   d = dim(parent(A[1]))
+  K = base_ring(parent(A[1]))
 
-  M = zero_matrix(FlintQQ, n, d)
+  M = zero_matrix(K, n, d)
 
   for i = 1:n
-    for j = 1:d
-      M[i, j] = deepcopy(coeffs(A[i], copy = false)[j])
-    end
+    elem_to_mat_row!(M, i, A[i])
+    #for j = 1:d
+    #  M[i, j] = deepcopy(coeffs(A[i], copy = false)[j])
+    #end
   end
   return M
 end

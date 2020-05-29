@@ -1123,7 +1123,7 @@ function islocally_free(O::AlgAssRelOrd, I::AlgAssRelOrdIdl, p::Union{ NfAbsOrdI
   a = O()
   for i = 1:length(decOJ)
     A, AtoOJ = decOJ[i]
-    B, AtoB, BtoA = _as_algebra_over_center(A)
+    B, BtoA = _as_algebra_over_center(A)
     _T = AlgMat{elem_type(base_ring(B)), dense_matrix_type(base_ring(B))}
     C, BtoC = _as_matrix_algebra(B)::Tuple{_T, AbsAlgAssMor{AlgAss{elem_type(base_ring(B))}, _T, dense_matrix_type(base_ring(B))}}
     e = toOpO\(toOJ\(AtoOJ(BtoA(BtoC\C[1]))))

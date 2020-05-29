@@ -91,7 +91,7 @@ Computes representatives for the isometry classes in the genus of $L$.
 At most `max` representatives are returned. The use of automorphims can be
 disabled by
 """
-function genus_representatives(L::QuadLat; max = inf, use_auto = true)
+function genus_representatives(L::QuadLat; max = inf, use_auto = true, use_mass = true)
   @req rank(L) >= 3 "Lattice must have rank >= 3"
   # Otherwise the isomorphism to the class group fails, cf. §102 in O'Meara.
   @req max >= 1 "Must find at least one representative"
@@ -107,12 +107,28 @@ function genus_representatives(L::QuadLat; max = inf, use_auto = true)
 
   spinor_genera = spinor_genera_in_genus(L, typeof(p)[p])
 
+  if use_mass
+    @vprint :GenRep 1 "Computing mass exactly ...\n"
+    _mass = mass(L)
+    @vprint :GenRep 1 "... $(_mass)\n"
+  else
+    _mass = -one(FlintQQ)
+  end
+
   @vprint :GenRep 1 "Found $(length(spinor_genera)) many spinor genera in genus\n"
 
   for LL in spinor_genera
     @hassert :GenRep 3 all(!isisometric(X, LL)[1] for X in res)
-    new_lat =  iterated_neighbours(LL, p, use_auto = use_auto, max = max - length(res))
+    new_lat =  iterated_neighbours(LL, p, use_auto = use_auto,
+                                          max = max - length(res),
+                                          mass = _mass//length(spinor_genera))
     append!(res, new_lat)
+  end
+
+  if max > length(res) && use_mass
+    if sum(fmpq[1//automorphism_group_order(LL) for LL in res]) != _mass
+      throw(error("Something very wrong"))
+    end
   end
 
   return res
@@ -254,7 +270,7 @@ function spinor_norm(L, p)
       # TODO: It is not a good idea to rely on implementation details of
       #       local_multiplicative_group_modulo_squares
       if length(unique([e % 2 for e in E])) == 1
-        return gens(V)[1:dim(V) - 1], V, g, true
+        return gens(V)[1:ngens(V) - 1], V, g, true
       else
         return gens(V), V, g, false 
       end
@@ -296,7 +312,7 @@ function spinor_norm(L, p)
       for i in 1:(length(bong) - 1)
         BG, mBG = G_function(bong[i + 1]//bong[i], V, g, p)
         for bg in gens(BG)
-          if mBG(bg)[dim(V)] != 0
+          if mBG(bg)[ngens(V)] != 0
             # the whole group
             return gens(V), V, g, false
           end
@@ -544,10 +560,10 @@ function G_function(a, V, g, p)
     return N_function(-a, g, p)
   elseif g\(K(-1//4)) == g\(a)
     @vprint :GenRep 2 "G_function case G\n"
-    return sub(V, gens(V)[1:gens(V) - 1])
+    return sub(V, gens(V)[1:ngens(V) - 1])
   elseif valuation(-4 * a, p) == 0 && islocal_square(-4 * a, p)
     @vprint :GenRep 2 "G_function case G\n"
-    return sub(V, gens(V)[1:gens(V) - 1])
+    return sub(V, gens(V)[1:ngens(V) - 1])
   elseif R > 4 * e
     @vprint :GenRep 2 "G_function case H\n"
     return sub(V, [g\(a)])
@@ -1045,17 +1061,33 @@ function neighbours(L::QuadLat, p; call = stdcallback, use_auto = true, max = in
   return result
 end
 
-function iterated_neighbours(L::QuadLat, p; use_auto = true, max = inf)
+function iterated_neighbours(L::QuadLat, p; use_auto = true, max = inf, mass = -one(FlintQQ))
   @req isdefinite(L) "Lattice must be definite"
   result = typeof(L)[ L ]
   i = 1
-  while (i <= length(result)) && (length(result) < max)
+
+  use_mass = mass > 0
+
+  local found::fmpq
+
+  if mass < 0
+    found = 1//automorphism_group_order(L)
+  else
+    found = zero(fmpq)
+  end
+
+  while (i <= length(result)) && (length(result) < max) && (!use_mass || found < mass)
     # keep if not isometric, continue until the whole graph has been exhausted.
     callback = function(res, M)
       keep = all(LL -> !isisometric(LL, M)[1], vcat(res, result))
       return keep, true;
     end
     N = neighbours(result[i], p, call = callback, use_auto = use_auto, max = max - length(result))
+    if use_mass && !isempty(N)
+      found = found + sum(fmpq[1//automorphism_group_order(LL) for LL in N])
+      perc = Printf.@sprintf("%2.0f", Float64(found//mass))
+      @vprint :GenRep 1 "#Lattices: $(length(result)), Mass: $mass Found: $found ($perc)\n"
+    end
     append!(result, N)
     i = i + 1
   end
@@ -1172,7 +1204,6 @@ function _norm_upscaled(G, p)
  # aL: the generators of the upscaled norms
  return uL, aL
 end 
-
 
 function _make_bong_dim_2(L, p)
   # cf. Beli, Lemma 3.3

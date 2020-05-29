@@ -666,19 +666,19 @@ function decompose(A::AlgGrp)
   G = group(A)
   res = __decompose(A) 
 
-  if !isdefined(res[1][1], :isomorphic_full_matrix_algebra)
-    if order(G) == 24 && find_small_group(G)[1] == (24, 12) &&
-        base_ring(A) isa FlintRationalField
-      @assert G.isfromdb
-      _compute_matrix_algebras_from_reps(A, res, _reps[1])
-    end
-    
-    if order(G) == 48 && find_small_group(G)[1] == (48, 48) &&
-        base_ring(A) isa FlintRationalField
-      @assert G.isfromdb
-      _compute_matrix_algebras_from_reps(A, res, _reps[2])
-    end
-  end
+  #if !isdefined(res[1][1], :isomorphic_full_matrix_algebra)
+  #  if order(G) == 24 && find_small_group(G)[1] == (24, 12) &&
+  #      base_ring(A) isa FlintRationalField
+  #    @assert G.isfromdb
+  #    _compute_matrix_algebras_from_reps(A, res, _reps[1])
+  #  end
+  #  
+  #  if order(G) == 48 && find_small_group(G)[1] == (48, 48) &&
+  #      base_ring(A) isa FlintRationalField
+  #    @assert G.isfromdb
+  #    _compute_matrix_algebras_from_reps(A, res, _reps[2])
+  #  end
+  #end
 
   return res
 end
@@ -690,6 +690,7 @@ function _compute_matrix_algebras_from_reps2(A, res)
   data = DefaultSmallGroupDB.db[smallid[1]][smallid[2]]
   Qx = Globals.Qx
   for j in data.galrep
+    #@show j, data.schur[j]
     if data.schur[j] != 1
       continue
     end
@@ -714,6 +715,8 @@ function _compute_matrix_algebras_from_reps2(A, res)
         break
       end
     end
+
+    #@show k0
 
     B, mB = res[k0]
     basisB = basis(B)
@@ -743,7 +746,7 @@ function _compute_matrix_algebras_from_reps2(A, res)
     # now comes the horror
     #
     #
-    @show back_matrix
+    #@show back_matrix
 
     #v = matrix(FlintQQ, 1, dim(B), coeffs(rand(B, -10:10)))
     #@show v
@@ -759,6 +762,7 @@ function _compute_matrix_algebras_from_reps2(A, res)
     #  return B(collect(v))
     #end
 
+    #println("Adding to $k0: $MB")
     f = AbsAlgAssMorGen(B, MB, forward_matrix, back_matrix)
     B.isomorphic_full_matrix_algebra = MB, f
   end
@@ -1010,4 +1014,13 @@ function isalmost_maximally_ramified(K::AnticNumberField, p::fmpz)
   return true
 end
 
-
+function hom(KG::AlgGrp, KH::AlgGrp, m::GrpGenToGrpGenMor)
+  @assert base_ring(KG) === base_ring(KH)
+  K = base_ring(KG)
+  M = zero_matrix(K, dim(KG), dim(KH))
+  for i in 1:dim(KG)
+    j = KH.group_to_base[m(KG.base_to_group[i])]
+    M[i, j] = one(K)
+  end
+  return hom(KG, KH, M)
+end

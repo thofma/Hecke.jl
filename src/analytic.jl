@@ -312,7 +312,13 @@ function class_group_expected(d::fmpz, deg::Int, B::Int, samples::Int = 100)
   @assert length(pg) == samples
   @assert length(xi) == samples
   @assert length(vo) == samples
-  return Int(ceil(1/sum([(pg[i+1]-pg[i])/(xi[i+1]-xi[i])*(vo[i+1]-vo[i]) for i=1:(samples-1)])))
+  c = ceil(1/sum([(pg[i+1]-pg[i])/(xi[i+1]-xi[i])*(vo[i+1]-vo[i]) for i=1:(samples-1)]))
+  if c > 2^60
+    @warn "Computation is unlikely to finish, the success probability is 1 in $c"
+    return 2^60
+  else
+    Int(c)
+  end
 end                           
 
 #= D is supposed to be the disccriminant

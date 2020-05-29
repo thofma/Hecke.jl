@@ -982,7 +982,7 @@ function _islocally_free_left(O::AlgAssAbsOrd, I::AlgAssAbsOrdIdl, p::Union{Int,
   a = O()
   for i = 1:length(decOJ)
     A, AtoOJ = decOJ[i]
-    B, AtoB, BtoA = _as_algebra_over_center(A)
+    B, BtoA = _as_algebra_over_center(A)
     C, BtoC = _as_matrix_algebra(B)
     e = toOpO\(toOJ\(AtoOJ(BtoA(BtoC\C[1]))))
     basiseIJ = Vector{elem_type(IJ)}()
