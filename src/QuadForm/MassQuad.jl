@@ -817,7 +817,7 @@ function _dedekind_zeta_attwell_duval_positive(K::AnticNumberField, s, prec::Int
     end
   end
 
-  ccall((:arf_clear, :libarb), Nothing, (Ref{arf_struct}, ), error_arf)
+  ccall((:arf_clear, libarb), Nothing, (Ref{arf_struct}, ), error_arf)
 
   return valaddederror
 end
