@@ -122,13 +122,12 @@ function main()
   for i = 1:length(class_fields)
     println("Computing class field $(i) /$(length(class_fields))")
     C = class_fields[i]
-    r, s = signature(C)
+    NC = number_field(C)
+    sfield = Hecke._from_relative_to_absQQ(NC, Hecke.automorphism_groupQQ(C))[1]
+    r, s = signature(sfield)
     if (!only_cm && !only_real) || (only_cm && r == 0) || (only_real && s == 0)
-      NC = number_field(C)
-      sfield = Hecke._from_relative_to_absQQ(NC, Hecke.automorphism_groupQQ(C))[1]
       if non_simple
-        nsfield = NC
-        push!(fields, (sfield, nsfield, discriminant(maximal_order(sfield))))
+        push!(fields, (sfield, NC, discriminant(maximal_order(sfield))))
       else
         push!(fields, (sfield, discriminant(maximal_order(sfield))))
       end
@@ -137,11 +136,14 @@ function main()
 
   ll = fields
 
-  sort!(ll, lt = (x, y) -> abs(x[3]) <= abs(y[3]))
+  # Discriminant always at the end
+  sort!(ll, lt = (x, y) -> abs(x[end]) <= abs(y[end]))
 
   @show length(ll)
 
   println("Writing to $file...")
+
+  ll = identity.(ll)
   _write_fields(ll, file)
 end
 

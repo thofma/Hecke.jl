@@ -21,7 +21,7 @@ function _write_fields(list::Array{Tuple{AnticNumberField, NfRelNS{nf_elem}, fmp
   for L in list
     Qx = parent(L[1].pol)
     unis = [ __to_univariate(Qx, L[2].pol[i]) for i in 1:length(L[2].pol)]
-    y = [[coeff(g, i) for i=0:degree(g)] for g in units]
+    y = [[coeff(g, i) for i=0:degree(g)] for g in unis]
     x=([coeff(L[1].pol, i) for i=0:degree(L[1].pol)], y, L[3])
     Base.write(f, "$x\n")
   end
