@@ -7,6 +7,27 @@ function _write_fields(list::Array{Tuple{AnticNumberField, fmpz},1}, filename::S
   close(f)
 end
 
+function __to_univariate(Qx, f)
+  z = zero(Qx)
+  x = gen(Qx)
+  for (c, m) in zip(coefficients(f), monomials(f))
+    z = z + FlintQQ(c) * x^total_degree(m)
+  end
+  return z
+end
+
+function _write_fields(list::Array{Tuple{AnticNumberField, NfRelNS{nf_elem}, fmpz},1}, filename::String)
+  f=open(filename, "a")
+  for L in list
+    Qx = parent(L[1].pol)
+    unis = [ __to_univariate(Qx, L[2].pol[i]) for i in 1:length(L[2].pol)]
+    y = [[coeff(g, i) for i=0:degree(g)] for g in units]
+    x=([coeff(L[1].pol, i) for i=0:degree(L[1].pol)], y, L[3])
+    Base.write(f, "$x\n")
+  end
+  close(f)
+end
+
 function _read_fields(filename::String)
   f=open(filename, "r")
   Qx,x=PolynomialRing(FlintQQ,"x")

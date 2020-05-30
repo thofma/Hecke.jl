@@ -1,12 +1,14 @@
-using Hecke
+using Hecke, DelimitedFiles
 
 boundcond = ARGS[1]
 gtype = ARGS[2]
 
-file = "conductors_" * boundcond * "_" * gtype;
+_gtype = replace(replace(replace(replace(replace(gtype, '[' => '_'), ']' => '_'), ' ' => '_'), ',' => '_'), "__" => "_")
 
-bound = fmpz(eval(parse(boundcond)))
-gtype = convert(Vector{Int}, eval(parse(gtype)))
+file = "conductors_" * boundcond * "_" * _gtype;
+
+bound = fmpz(Meta.eval(Meta.parse(boundcond)))
+gtype = convert(Vector{Int}, Meta.eval(Meta.parse(gtype)))
 
 sprint_formatted(fmt, args...) = @eval @sprintf($fmt, $(args...))
 
