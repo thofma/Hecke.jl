@@ -457,6 +457,10 @@ Returns true if $K$ is a normal extension of $\mathbb Q$, false otherwise.
 function isnormal(K::AnticNumberField)
   #Before computing the automorphisms, I split a few primes and check if the 
   #splitting behaviour is fine
+  c = get_special(K, :isnormal)
+  if c != nothing
+    return true
+  end
   E = EquationOrder(K)
   d = discriminant(E)
   p = 1000
@@ -478,7 +482,12 @@ function isnormal(K::AnticNumberField)
       end
     end
   end
-  return length(automorphisms(K, copy = false)) == degree(K)
+  if length(automorphisms(K, copy = false)) != degree(K)
+    return false
+  else
+    set_special(K, :isnormal => true)
+    return true
+  end
 end
 
 ################################################################################
@@ -493,6 +502,10 @@ Given a number field $K$, this function returns true and the complex conjugation
 if the field is CM, false and the identity otherwise.
 """  
 function iscm_field(K::AnticNumberField)
+  c = get_special(K, :cm_field)
+  if c != nothing
+    return true, c
+  end
   if isodd(degree(K)) || !istotally_complex(K)
     return false, id_hom(K)
   end 
@@ -505,6 +518,7 @@ function iscm_field(K::AnticNumberField)
       continue
     end
     if iscomplex_conjugation(x)
+      set_special(K, :cm_field => x)
       return true, x
     end
   end

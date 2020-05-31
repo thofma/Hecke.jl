@@ -337,12 +337,11 @@ function compute_candidates_for_saturate1(c::Hecke.ClassGrpCtx, p::Int, stable::
   return Hecke.lift_nonsymmetric(A)
 end
 
-function saturate!(d::Hecke.ClassGrpCtx, U::Hecke.UnitGrpCtx, n::Int, stable::Float64 = 3.5)
+function saturate!(d::Hecke.ClassGrpCtx, U::Hecke.UnitGrpCtx, n::Int, stable::Float64 = 3.5; use_orbit = false)
   @assert isprime(n)
   K = nf(d)
   @vprint :Saturate 1 "Simplifying the context\n"
   @vtime :Saturate 1 c = simplify(d, U)
-  orbit = isdefined(d, :aut_grp)
   success = false
   restart = false
   while true
@@ -400,7 +399,7 @@ function saturate!(d::Hecke.ClassGrpCtx, U::Hecke.UnitGrpCtx, n::Int, stable::Fl
           #maybe that should also be addressed elsewhere
           @vprint :Saturate 1  "The new element is a unit\n"
           
-          if isdefined(d, :aut_grp)
+          if use_orbit
             auts_action = Hecke._get_autos_from_ctx(d)
             for s = 1:length(auts_action)
               new_u = auts_action[s][1](x)
@@ -414,7 +413,7 @@ function saturate!(d::Hecke.ClassGrpCtx, U::Hecke.UnitGrpCtx, n::Int, stable::Fl
         else
           @vprint :Saturate 1  "The new element gives a relation\n"
           Hecke.class_group_add_relation(d, x, fac_a)
-          if orbit
+          if use_orbit
             #We add the relation to the matrix and compute the snf
             auts_action = Hecke._get_autos_from_ctx(d)
             for s = 1:length(auts_action)

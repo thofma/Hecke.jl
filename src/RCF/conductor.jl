@@ -153,6 +153,15 @@ function signature(C::ClassField)
     s = div(degree(K)*degree(C) - r, 2)
     return r, s
   end
+  if degree(K) == 1
+    OK = base_ring(C)
+    el = mR\(ideal(OK, 1-minimum(defining_modulus(mR)[1])))
+    if iszero(mS(el))
+      return degree(C), 0
+    else
+      return 0, div(degree(C), 2)
+    end
+  end
   D = mR.disc_log_inf_plc
   r = rK - length(D)
   for (P, el) in D
@@ -161,6 +170,14 @@ function signature(C::ClassField)
     end
   end
   r *= degree(C)
+  s = div(degree(K)*degree(C) - r, 2)
+  return r, s
+end
+
+function signature(C::ClassField{MapClassGrp, GrpAbFinGenMap})
+  K = base_field(C)
+  rK, sK = signature(K)
+  r = degree(C)*rK
   s = div(degree(K)*degree(C) - r, 2)
   return r, s
 end
