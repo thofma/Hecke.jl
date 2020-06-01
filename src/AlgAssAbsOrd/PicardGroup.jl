@@ -167,6 +167,7 @@ function _trivial_picard(O::AlgAssAbsOrd, R::GrpAbFinGen, mR)
   return R, RtoIdl
 
 end
+
 # See Bley, Endres "Picard Groups and Refined Discrete Logarithms".
 function _picard_group_non_maximal(O::AlgAssAbsOrd, prepare_ref_disc_log::Bool = false)
   A = algebra(O)
@@ -902,6 +903,9 @@ function _coprime_integral_ideal_class(a::AlgAssAbsOrdIdl, b::AlgAssAbsOrdIdl)
     c = x*a
     @assert denominator(c, O) == 1
     c.order = O
+    if !(isinvertible(c)[1])
+      continue
+    end
     isone(c + b) ? (check = false) : (check = true)
   end
   return c, x*d
