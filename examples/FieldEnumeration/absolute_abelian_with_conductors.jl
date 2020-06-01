@@ -122,10 +122,10 @@ function main()
   for i = 1:length(class_fields)
     println("Computing class field $(i) /$(length(class_fields))")
     C = class_fields[i]
-    NC = number_field(C)
-    sfield = Hecke._from_relative_to_absQQ(NC, Hecke.automorphism_groupQQ(C))[1]
-    r, s = signature(sfield)
+    r, s = signature(C)
     if (!only_cm && !only_real) || (only_cm && r == 0) || (only_real && s == 0)
+      NC = number_field(C)
+      sfield = Hecke._from_relative_to_absQQ(NC, Hecke.automorphism_groupQQ(C))[1]
       if non_simple
         push!(fields, (sfield, NC, discriminant(maximal_order(sfield))))
       else
