@@ -2123,14 +2123,19 @@ mutable struct qAdicRootCtx
   Q::Array{FlintQadicField, 1}
   H::Hecke.HenselCtx
   R::Array{qadic, 1}
-  function qAdicRootCtx(f::fmpz_poly, p::Int)
+  function qAdicRootCtx(f::fmpz_poly, p::Int; splitting_field::Bool = false)
     r = new()
     r.f = f
     r.p = p
     r.H = H = Hecke.factor_mod_pk_init(f, p)
     lf = Hecke.factor_mod_pk(Array, H, 1)
-    #TODO:XXX: Careful: QadicField ONLY works, currently, in Conway range
-    Q = [QadicField(p, x, 1) for x = Set(degree(y[1]) for y = lf)]
+    if splitting_field
+      d = lcm([degree(y[1]) for y = lf])
+      R = QadicField(p, d, 1)
+      Q = [R]
+    else
+      Q = [QadicField(p, x, 1) for x = Set(degree(y[1]) for y = lf)]
+    end
     @assert all(x->isone(x[2]), lf)
     r.Q = Q
     return r
