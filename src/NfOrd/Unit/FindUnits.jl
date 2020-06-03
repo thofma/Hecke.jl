@@ -329,6 +329,7 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx; add_orbit::Bool =
           break
         end
       end
+      @v_do :UnitGroup 2 popindent()
     end
     u.units = reduce(u.units, u.tors_prec)
     if add_orbit && rank(u) > r-div(r, 4)
@@ -367,7 +368,6 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx; add_orbit::Bool =
         end
       end
     end
-    @v_do :UnitGroup 2 popindent()
   end
 
   #final reduction ...
