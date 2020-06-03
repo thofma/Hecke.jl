@@ -313,6 +313,19 @@ function factor_mod_pk(H::HenselCtx, k::Int)
   return factor_to_dict(H.LF)
 end
 
+factor_mod_pk(H::HenselCtx) = factor_to_dict(H.LF)
+factor_mod_pk(::Type{Array}, H::HenselCtx) = factor_to_array(H.LF)
+length(H::HenselCtx) = H.LF._num
+
+function degrees(H::HenselCtx)
+  d = Int[]
+  a = H.LF
+  for i=1:a._num
+    push!(d, Int(ccall((:fmpz_poly_degree, libflint), Clong, (Ref{fmpz_poly_raw}, ), a.poly+(i-1)*sizeof(fmpz_poly_raw))))
+  end
+  return d
+end
+
 function factor_mod_pk(::Type{Array}, H::HenselCtx, k::Int)
   if H.r == 1
     return [(H.f, 1)]
