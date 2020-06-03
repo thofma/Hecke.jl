@@ -163,3 +163,19 @@ end
   #PM3 = PseudoMatrix(matrix(Q3, [1 0; 2 1]), [ Q3(1)*Z3, Q3(fmpq(1, 4))*Z3 ])
   #@test basis_pmatrix(OK3, copy = false) == PM3
 end
+
+@testset "Different/codifferent" begin
+  Qx, x = PolynomialRing(FlintQQ, "x", cached = false)
+  f = x^2 - 2
+  K, a = NumberField(f, "a")
+  Kt, t = K["t"]
+  g = t^2 + 1
+  E, b = NumberField(g, "b")
+  OE = maximal_order(E)
+  p = prime_decomposition(maximal_order(K), 2)[1][1]
+  Q = prime_decomposition(OE, p)[1][1]
+  @assert ramification_index(Q) == 2
+  D = @inferred different(OE)
+  @test valuation(D, Q) == 2
+end
+

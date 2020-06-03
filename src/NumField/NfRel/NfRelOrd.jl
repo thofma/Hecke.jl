@@ -399,7 +399,9 @@ function codifferent(O::NfRelOrd)
   T = trace_matrix(O, copy = false)
   R = base_ring(O)
   K = nf(R)
-  pm = pseudo_matrix(inv(change_base_ring(K, T)))
+  pb = pseudo_basis(O)
+  pm = pseudo_matrix(inv(change_base_ring(K, T)),
+                     fractional_ideal_type(base_ring(O))[inv(y) for (_, y) in pb])
   return fractional_ideal(O, pm)
 end
 
