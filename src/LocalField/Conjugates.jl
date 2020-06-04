@@ -150,7 +150,7 @@ function conjugates(a::nf_elem, C::qAdicConj, n::Int = 10; flat::Bool = false, a
   end
 end
 
-function expand(a::Array{qadic, 1}; all::Bool, flat::Bool, degs::Array{Int, 1}= [])
+function expand(a::Array{qadic, 1}; all::Bool, flat::Bool, degs::Array{Int, 1}= Int[])
   re = qadic[]
   if all
     for ix = 1:length(a)
