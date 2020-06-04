@@ -364,7 +364,7 @@ function echelon!(S::SMat{T}; complete::Bool = false) where T <: FieldElem
         add_scaled_row!(S, i, j, S[j].values[1]*Si)
         if length(S[j].values) == 0
           deleteat!(S.rows, j)
-#          S.r -= 1
+          S.r -= 1
         else
           j += 1
         end  
