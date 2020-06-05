@@ -427,7 +427,10 @@ function +(a::AlgAssAbsOrdIdl{S, T}, b::AlgAssAbsOrdIdl{S, T}) where {S, T}
   end
 
   d = dim(algebra(a))
-  M = vcat(basis_matrix(a, copy = false), basis_matrix(b, copy = false))
+  Ma = basis_matrix(a, copy = false)
+  Mb = basis_matrix(b, copy = false)
+  @hassert :AlgAssOrd 1 isupper_triangular(Ma)
+  M = vcat(Ma, Mb)
   M = sub(hnf(M, :lowerleft, triangular_top = true), (d + 1):2*d, 1:d)
   c = ideal(algebra(a), M, true)
   if isdefined(a, :order) && isdefined(b, :order) && order(a) === order(b)

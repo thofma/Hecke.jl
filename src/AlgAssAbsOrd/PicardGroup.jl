@@ -902,7 +902,7 @@ function _coprime_integral_ideal_class(a::AlgAssAbsOrdIdl, b::AlgAssAbsOrdIdl)
     c = x*a
     @assert denominator(c, O) == 1
     c.order = O
-    isone(c + b) ? (check = false) : (check = true)
+    check = !isone(c + b)
   end
   return c, x*d
 end

@@ -79,6 +79,40 @@ end
 
 ################################################################################
 #
+#  Creation of the context
+#
+################################################################################
+
+function field_context(K::AnticNumberField)
+  auts = small_generating_set(automorphisms(K))
+  autsK = automorphisms(K, copy = false)
+  permGC = _from_autos_to_perm(autsK)
+  G = _perm_to_gap_grp(permGC)
+  D2 = Vector{Tuple{GAP.GapObj, NfToNfMor}}(undef, length(autsK))
+  for i = 1:length(autsK)
+    p =  _perm_to_gap_perm(permGC[i])
+    D2[i] = (p, autsK[i])
+  end
+  @assert GAP.Globals.IsSolvable(G)
+  L = GAP.Globals.DerivedSeries(G)
+  embs = Vector{NfToNfMor}(undef, length(L)-1)
+  F = K
+  for i = length(L)-1:-1:2
+    H = L[i]
+    gensGAP = GAP.Globals.GeneratorsOfGroup(H)
+    ggs = NfToNfMor[ x[2] for x in D2 if GAP.Globals.IN(x[1], gensGAP)]
+    F, mF = fixed_field(K, ggs)
+    F, mS = simplify(F)
+    mF = mS * mF
+    embs[i] = mF
+  end
+  KQ = rationals_as_number_field()[1]
+  embs[1] = hom(KQ, F, one(K))
+  return FieldsTower(K, auts, embs)
+end
+
+################################################################################
+#
 #  Assure has automorphisms
 #
 ################################################################################
@@ -600,7 +634,6 @@ function fields(a::Int, b::Int, absolute_bound::fmpz; using_direct_product::Bool
       return fields_direct_product(g1, g2, red, redfirst, absolute_bound; only_real = only_real, simplify = simplify)
     end
   end
-
   L = GAP.Globals.DerivedSeries(G)
   G1 = GAP.Globals.FactorGroup(L[1], L[end-1])
   invariants = GAP.gap_to_julia(Vector{Int}, GAP.Globals.AbelianInvariants(L[end-1]))

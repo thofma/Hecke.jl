@@ -409,6 +409,30 @@ function _automorphisms(K::AnticNumberField)
   return auts
 end
 
+function _generator_automorphisms(K::AnticNumberField)
+  if degree(K) == 1
+    return NfToNfMor[]
+  end
+  if Nemo.iscyclo_type(K)
+    f = get_special(K, :cyclo)::Int
+    a = gen(K)
+    A, mA = unit_group(ResidueRing(FlintZZ, f, cached = false))
+    auts = NfToNfMor[ hom(K, K, a^lift(mA(g)), check = false) for g in gens(A)]
+    return auts
+  end
+  f = K.pol
+  Kt, t = PolynomialRing(K, "t", cached = false)
+  f1 = change_base_ring(K, f, parent = Kt)
+  divpol = Kt(nf_elem[-gen(K), K(1)])
+  f1 = divexact(f1, divpol)
+  lr = roots(f1, max_roots = div(degree(K), 2))
+  Aut1 = Vector{NfToNfMor}(undef, length(lr))
+  for i = 1:length(lr)
+    Aut1[i] = hom(K, K, lr[i], check = false)
+  end
+  return small_generating_set(Aut1)
+end
+
 @doc Markdown.doc"""
     automorphisms(K::AnticNumberField) -> Vector{NfToNfMor}
 
