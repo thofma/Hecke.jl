@@ -1073,7 +1073,6 @@ end
 #
 ################################################################################
 
-
 function simplify(K::NfRel; cached::Bool = true, prec::Int = 100)
   Kabs, mK = absolute_field(K, false)
   OK = maximal_order(K)
@@ -1110,4 +1109,37 @@ function simplify(K::NfRel; cached::Bool = true, prec::Int = 100)
   Ks = number_field(f, cached = cached, check = false)
   mKs = hom(Ks, K, pel)
   return Ks, mKs
+end
+
+################################################################################
+#
+#  Signature
+#
+################################################################################
+
+function signature(L::NfRel)
+  c = get_special(L, :signature)
+  if c isa Tuple{Int, Int}
+    return c::Tuple{Int, Int}
+  end
+  K = base_field(L)
+  rlp = real_places(K)
+  rL = 0
+  for P in rlp
+    rL += number_real_roots(defining_polynomial(L), P)
+  end
+  @assert mod(absolute_degree(L) - rL, 2) == 0
+  r, s = rL, div(absolute_degree(L) - rL, 2)
+  set_special(L, :signature => (r, s))
+  return r, s
+end
+
+function istotally_real(L::NfRel)
+  r, s = signature(L)
+  return s == 0
+end
+
+function istotally_complex(L::NfRel)
+  r, s = signature(L)
+  return r == 0
 end

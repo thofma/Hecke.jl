@@ -37,6 +37,7 @@ mutable struct NfRelOrd{T, S, U} <: Ring
   trace_mat::Generic.MatSpaceElem{T}
 
   inv_coeff_ideals::Vector{S}
+  index_div
 
   function NfRelOrd{T, S, U}(K::NumField{T}) where {T, S, U}
     z = new{T, S, U}()
@@ -44,6 +45,7 @@ mutable struct NfRelOrd{T, S, U} <: Ring
     z.parent = NfRelOrdSet{T}(K)
     z.isequation_order = false
     z.ismaximal = 0
+    z.index_div = Dict{ideal_type(order_type(base_field(K))), Vector{Tuple{ideal_type(z), Int}}}()
     return z
   end
 
@@ -53,6 +55,7 @@ mutable struct NfRelOrd{T, S, U} <: Ring
     z.parent = NfRelOrdSet{T}(K)
     z.basis_pmatrix = M
     z.basis_matrix = M.matrix
+    z.index_div = Dict{ideal_type(order_type(base_field(K))), Vector{Tuple{ideal_type(z), Int}}}()
     return z
   end
 
@@ -62,6 +65,7 @@ mutable struct NfRelOrd{T, S, U} <: Ring
     z.parent = NfRelOrdSet{T}(K)
     z.basis_matrix = M
     z.basis_pmatrix = pseudo_matrix(M)
+    z.index_div = Dict{ideal_type(order_type(base_field(K))), Vector{Tuple{ideal_type(z), Int}}}()
     return z
   end
 end

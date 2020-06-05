@@ -209,6 +209,18 @@ mutable struct HermLat{S, T, U, V, W} <: AbsLat{S}
   end
 end
 
+function absolute_pseudo_matrix(E::HermLat{S, T, U, V, W}) where {S, T, U, V, W}
+  c = get_special(E, :absolute_pseudo_matrix)
+  if c === nothing
+    _, f, _ = absolute_field(ambient_space(E))
+    pm = _translate_pseudo_hnf(pseudo_matrix(E), pseudo_inv(f))
+    set_special(E, :absolute_pseudo_matrix => pm)
+    return pm::PMat{elem_type(T), fractional_ideal_type(order_type(T))}
+  else
+    return c::PMat{elem_type(T), fractional_ideal_type(order_type(T))}
+  end
+end
+
 @doc Markdown.doc"""
     hermitian_lattice(K::NumField, B::PMat; gram_ambient_space = F) -> HermLat
 
@@ -1456,6 +1468,8 @@ function _islocally_isometric_kirschmer(L1::HermLat, L2::HermLat, p)
     @assert valuation(S1[i][5], p) == valuation(S2[i][5], p)
     x = S1[i][5]//S2[i][5]
     n = 2 * normic_defect(E, x, p)
+    @show n
+    @show (S1[i][4] + S1[i + 1][4]) - 2 * S1[i][2]
     if n < (S1[i][4] + S1[i + 1][4]) - 2 * S1[i][2]
       return false
     end
@@ -1711,6 +1725,8 @@ function _ismaximal_integral(L::HermLat, p)
   end
   @assert valuation(s, D[1][1]) == valuation(discriminant(R), p)
 
+  _,absolute_map,_ = absolute_field(ambient_space(L))
+
   M = local_basis_matrix(L, p, type = :submodule)
   G = gram_matrix(ambient_space(L), M)
   F, h = ResidueField(R, D[1][1])
@@ -1718,7 +1734,7 @@ function _ismaximal_integral(L::HermLat, p)
   sGmodp = map_entries(hext, s * G)
   Vnullity, V = kernel(sGmodp, side = :left)
   if Vnullity == 0
-    return true, L
+    return true, zero_matrix(E, 0, 0)
   end
 
   hprim = u -> elem_in_nf((h\u))
@@ -1726,19 +1742,19 @@ function _ismaximal_integral(L::HermLat, p)
   @vprint :GenRep 1 "Enumerating projective points over $F of length $(nrows(V))\n"
 
   for x in enumerate_lines(F, nrows(V))
-    v = map_entries(hprim, matrix(F, 1, nrows(V), x) * V)
+    v = map_entries(hprim, matrix(F, 1, nrows(V), x) * V)::dense_matrix_type(E)
     res = v * M
-    resvec = [res[1, i] for i in 1:ncols(res)]
+    resvec = elem_type(E)[res[1, i] for i in 1:ncols(res)]
     t = inner_product(ambient_space(L), resvec, resvec)
     valv = iszero(t) ? inf : valuation(t, D[1][1])
     if valv >= 2
       # I don't want to compute the generators
-      X = [ iszero(inner_product(ambient_space(L), resvec, g)) ? inf : valuation(inner_product(ambient_space(L), resvec, g), D[1][1]) for g in generators(L) ]
+      X = Union{Int, PosInf}[ iszero(inner_product(ambient_space(L), resvec, g)) ? inf : valuation(inner_product(ambient_space(L), resvec, g), D[1][1]) for g in generators(L) ]
       @assert minimum(X) >= 1 - e
       return false, v * M
     end
   end
-  return true, L
+  return true, zero_matrix(E, 0, 0)
 end
 
   #// Check if L is max. integral at p. If not, return either:
@@ -1751,16 +1767,20 @@ function _maximal_integral_lattice(L::HermLat, p, minimal = true)
     return true, L
   end
 
+  _,absolute_map,_ = absolute_field(ambient_space(L))
+
   B, G, S = jordan_decomposition(L, p)
   D = prime_decomposition(R, p)
   P = D[1][1]
   is_max = true
 
+  invP = inv(P)
+
   if length(D) == 2 # split
     @assert S[end] != 0
     if minimal
       max = 1
-      M = pseudo_matrix(matrix(nf(R), 1, ncols(B[1]), elem_type(nf(R))[B[length(S)][1, i] for i in 1:ncols(B[1])]), [inv(P)])
+      M = pseudo_matrix(matrix(nf(R), 1, ncols(B[1]), elem_type(nf(R))[B[length(S)][1, i] for i in 1:ncols(B[1])]), fractional_ideal_type(R)[invP])
     else
       max = S[end]
       coeff_ideals = fractional_ideal_type(R)[]
@@ -1771,19 +1791,19 @@ function _maximal_integral_lattice(L::HermLat, p, minimal = true)
         end
         _matrix = vcat(_matrix, B[i])
         for k in 1:nrows(B[i])
-          push!(coeff_ideals, inv(P)^(S[i]))
+          push!(coeff_ideals, invP^(S[i]))
         end
       end
       M = pseudo_matrix(_matrix, coeff_ideals)
     end
-    _new_pmat = _sum_modules(pseudo_matrix(L), M)
-    _new_pmat = _intersect_modules(_new_pmat, inv(P)^(max) * pseudo_matrix(L))
+    _new_pmat = _sum_modules_with_map(pseudo_matrix(L), M, absolute_map)
+    _new_pmat = _intersect_modules_wih_map(_new_pmat, invP^(max) * pseudo_matrix(L), absolute_map)
     return false, lattice(ambient_space(L), _new_pmat)
   elseif D[1][2] == 1 # The inert case
     if S[end] >= 2
       if minimal
         max = 1
-        M = pseudo_matrix(matrix(nf(R), 1, ncols(B[1]), elem_type(nf(R))[B[length(S)][1, i] for i in 1:ncols(B[1])]), inv(P)^(div(S[end], 2)))
+        M = pseudo_matrix(matrix(nf(R), 1, ncols(B[1]), elem_type(nf(R))[B[length(S)][1, i] for i in 1:ncols(B[1])]), invP^(div(S[end], 2)))
       else
         max = S[end]
         coeff_ideals = fractional_ideal_type(R)[]
@@ -1794,13 +1814,13 @@ function _maximal_integral_lattice(L::HermLat, p, minimal = true)
           end
           _matrix = vcat(_matrix, B[i])
           for k in 1:nrows(B[i])
-            push!(coeff_ideals, inv(P)^(div(S[i], 2)))
+            push!(coeff_ideals, invP^(div(S[i], 2)))
           end
         end
         M = pseudo_matrix(_matrix, coeff_ideals)
       end
-      _new_pmat = _sum_modules(pseudo_matrix(L), M)
-      _new_pmat = _intersect_modules(_new_pmat, inv(P)^(max) * pseudo_matrix(L))
+      _new_pmat = _sum_modules_with_map(pseudo_matrix(L), M, absolute_map)
+      _new_pmat = _intersect_modules_with_map(_new_pmat, invP^(max) * pseudo_matrix(L), absolute_map)
       L = lattice(ambient_space(L), _new_pmat)
       if minimal
         return false, L
@@ -1810,17 +1830,23 @@ function _maximal_integral_lattice(L::HermLat, p, minimal = true)
     end
     # new we look for zeros of ax^2 + by^2
     kk, h = ResidueField(R, D[1][1])
-    while sum(S[i] * nrows(B[i]) for i in 1:length(B)) > 1
-      k = findfirst(i -> S[i] == 1, 1:length(S))
-      @assert (k !== nothing) k && nrows(B[k]) >= 2
+    while sum(Int[S[i] * nrows(B[i]) for i in 1:length(B)]) > 1
+      k = 0
+      for i in 1:(length(S) + 1)
+        if S[i] == 1
+          k = i
+          break
+        end
+      end
+      @assert nrows(B[k]) >= 2
       r = h\rand(kk)
       # The following might throw ...
       while valuation(G[k][1, 1] + G[k][2, 2] * elem_in_nf(norm(r)), D[1][1]) < 2
         r = h\rand(kk)
       end
-      M = pseudo_matrix(matrix(nf(R), 1, ncols(B[k]), [B[k][1, j] + r * B[k][2, j] for j in 1:ncols(B[k])]), [inv(P)])
-      _new_pmat = _sum_modules(pseudo_matrix(L), M)
-      _new_pmat = _intersect_modules(_new_pmat, inv(P) * pseudo_matrix(L))
+      M = pseudo_matrix(matrix(nf(R), 1, ncols(B[k]), elem_type(nf(R))[B[k][1, j] + r * B[k][2, j] for j in 1:ncols(B[k])]), [invP])
+      _new_pmat = _sum_modules_with_map(pseudo_matrix(L), M, absolute_map)
+      _new_pmat = _intersect_modules_with_map(_new_pmat, invP * pseudo_matrix(L), absolute_map)
       L = lattice(ambient_space(L), _new_pmat)
       if minimal
         return false, L
@@ -1834,7 +1860,7 @@ function _maximal_integral_lattice(L::HermLat, p, minimal = true)
     if S[end] >= 2
       if minimal
         max = 1
-        M = pseudo_matrix(matrix(nf(R), 1, ncols(B[1]), elem_type(nf(R))[B[length(S)][1, i] for i in 1:ncols(B[1])]), [inv(P)^(div(S[end], 2))])
+        M = pseudo_matrix(matrix(nf(R), 1, ncols(B[1]), elem_type(nf(R))[B[length(S)][1, i] for i in 1:ncols(B[1])]), [invP^(div(S[end], 2))])
       else
         max = S[end]
         coeff_ideals = fractional_ideal_type(R)[]
@@ -1845,13 +1871,13 @@ function _maximal_integral_lattice(L::HermLat, p, minimal = true)
           end
           _matrix = vcat(_matrix, B[i])
           for k in 1:nrows(B[i])
-            push!(coeff_ideals, inv(P)^(div(S[i], 2)))
+            push!(coeff_ideals, invP^(div(S[i], 2)))
           end
         end
         M = pseudo_matrix(_matrix, coeff_ideals)
       end
-      _new_pmat = _sum_modules(pseudo_matrix(L), M)
-      _new_pmat = _intersect_modules(_new_pmat, inv(P)^(max) * pseudo_matrix(L))
+      _new_pmat = _sum_modules_with_map(pseudo_matrix(L), M, absolute_map)
+      _new_pmat = _intersect_modules_with_map(_new_pmat, invP^(max) * pseudo_matrix(L), absolute_map)
       L = lattice(ambient_space(L), _new_pmat)
       if minimal
         return false, L
@@ -1862,7 +1888,7 @@ function _maximal_integral_lattice(L::HermLat, p, minimal = true)
     ok, x = _ismaximal_integral(L, p)
     while !ok
       LL = L
-      L = lattice(ambient_space(L), _sum_modules(pseudo_matrix(L), pseudo_matrix(x, [inv(P)])))
+      L = lattice(ambient_space(L), _sum_modules_with_map(pseudo_matrix(L), pseudo_matrix(x, fractional_ideal_type(R)[invP]), absolute_map))
       v = v - 2
       @assert v == valuation(volume(L), P)
       @assert valuation(norm(L), p) >= 0
@@ -2256,7 +2282,126 @@ end
 #
 ################################################################################
 
-function _sum_modules(a::PMat, b::PMat)
+function _translate_pseudo_hnf(H::PMat, f)
+  OL = maximal_order(codomain(f))
+  return _translate_pseudo_hnf(H, f, OL)
+end
+
+function _translate_pseudo_hnf(H::PMat, f, target_order)
+  OE = target_order
+  E = nf(OE)
+  coeff_ideals = fractional_ideal_type(OE)[]
+  for i in 1:length(H.coeffs)
+    push!(coeff_ideals, fractional_ideal(OE, elem_type(E)[f(x) for x in _gens(H.coeffs[i])]))
+  end
+  m = zero_matrix(E, nrows(H), ncols(H))
+  MH = matrix(H)
+  for i in 1:nrows(H)
+    for j in 1:ncols(H)
+      m[i, j] = f(MH[i, j])
+    end
+  end
+  pm = pseudo_matrix(m, coeff_ideals)
+  return pm
+end
+
+function pseudo_hnf_via_absolute(H::PMat; full_rank::Bool = true, shape::Symbol = :lowerleft, nonzero::Bool = false)
+  O = base_ring(H)
+  E = nf(O)
+  Eabs, EabsToE, KtoE = absolute_field(E)
+  return pseudo_hnf_via_absolute(H, EabsToE, full_rank = full_rank,
+                                             shape = shape,
+                                             nonzero = nonzero)
+end
+
+function pseudo_hnf_via_absolute(H::PMat, EabsToE; full_rank::Bool = true, shape::Symbol = :lowerleft, nonzero::Bool = false)
+  O = base_ring(H)
+  E = nf(O)
+  pm = _translate_pseudo_hnf(H, pseudo_inv(EabsToE))
+  if full_rank
+    HH = pseudo_hnf_full_rank(pm, shape)
+  else
+    HH = pseudo_hnf(pm, shape)
+  end
+
+  if nonzero
+    r = 0
+    if shape === :lowerleft
+      for i in 1:nrows(HH)
+        if !iszero_row(matrix(HH), i)
+          r = i
+          break
+        end
+      end
+      HH = sub(HH, r:nrows(pm), 1:ncols(pm))
+    elseif shape === :upperright
+      for i in nrows(HH):-1:1
+        if !iszero_row(matrix(HH), i)
+          r = i
+          break
+        end
+      end
+      H = sub(HH, 1:r, 1:ncols(HH))
+    end
+  end
+
+  return _translate_pseudo_hnf(HH, EabsToE, O)
+end
+
+function _gens(I::NfRelOrdFracIdl)
+  res = elem_type(nf(order(I)))[]
+  for (a, c) in pseudo_basis(I, copy = false)
+    b = numerator(c)
+    d = denominator(c)
+    if isdefined(b, :princ_gen)
+      push!(res, elem_in_nf(b.princ_gen) * a//d)
+    elseif isdefined(b, :gen_one) && isdefined(b, :gen_two)
+      push!(res, b.gen_one//d * a)
+      push!(res, elem_in_nf(b.gen_two)//d * a)
+    else
+      for y in basis(b)
+        push!(res, elem_in_nf(y)//d * a)
+      end
+    end
+  end
+  return res
+end
+
+function _gens(c::NfAbsOrdFracIdl)
+  res = elem_type(nf(order(c)))[]
+  b = numerator(c)
+  d = denominator(c)
+  if isdefined(b, :princ_gen)
+    push!(res, elem_in_nf(b.princ_gen)//d)
+  elseif isdefined(b, :gen_one) && isdefined(b, :gen_two)
+    push!(res, nf(order(c))(b.gen_one//d))
+    push!(res, elem_in_nf(b.gen_two)//d)
+  else
+    for y in basis(b)
+      push!(res, elem_in_nf(y)//d)
+    end
+  end
+  return res
+end
+
+function _sum_modules_with_map(a::PMat{<: NfRelElem, <: NfRelOrdFracIdl}, b::PMat, f, full_rank = true)
+  H = vcat(a, b)
+  return pseudo_hnf_via_absolute(H, f, shape = :lowerleft, nonzero = true)
+end
+
+_sum_modules(L::QuadLat, a::PMat, b::PMat, full_rank = true) = _sum_modules(a, b, full_rank)
+
+function _sum_modules(L::HermLat, a::PMat, b::PMat, full_rank = true)
+  _,f,_ = absolute_field(ambient_space(L))
+  return _sum_modules_with_map(a, b, f, full_rank)
+end
+
+function _sum_modules(a::PMat{<: NfRelElem, <: NfRelOrdFracIdl}, b::PMat, full_rank = true)
+  H = vcat(a, b)
+  return pseudo_hnf_via_absolute(H, shape = :lowerleft, nonzero = true)
+end
+
+function _sum_modules(a::PMat, b::PMat, full_rank = true)
   H = vcat(a, b)
   H = pseudo_hnf(H, :lowerleft)
   r = 0
@@ -2268,6 +2413,19 @@ function _sum_modules(a::PMat, b::PMat)
   end
   @assert r != 0
   return sub(H, r:nrows(H), 1:ncols(H))
+end
+
+function _intersect_modules(a::PMat{<: NfRelElem, <: NfRelOrdFracIdl}, b::PMat, full_rank = true)
+  _, f, _ = absolute_field(E)
+  return _intersect_modules_with_map(a, b, f, full_rank)
+end
+
+function _intersect_modules_with_map(a::PMat{<: NfRelElem, <: NfRelOrdFracIdl}, b::PMat, f, full_rank = true)
+  OE = maximal_order(domain(f))
+  aE = _translate_pseudo_hnf(a, pseudo_inv(f), OE)
+  bE = _translate_pseudo_hnf(b, pseudo_inv(f), OE)
+  c = _intersect_modules(aE, bE, full_rank)
+  return _translate_pseudo_hnf(c, f, base_ring(a))
 end
 
 function _intersect_modules(a::PMat, b::PMat, full_rank = true)
@@ -2376,9 +2534,9 @@ function _local_basis_matrix_prime_below_submodule(a::PMat, p)
         end
       end
       x = approximate(Int[e for (_, e) in f], ideal_type(base_ring(a))[p for (p, _) in f])
-      @assert all(valuation(x, p) == e for (p, e) in f)
+      #@assert all(valuation(x, p) == e for (p, e) in f)
     end
-    @assert valuation(x, D[1][1]) == valuation(c, D[1][1])
+    #@assert valuation(x, D[1][1]) == valuation(c, D[1][1])
     #x = unis[1]^valuation(c, D[1][1])
     #for k in 2:length(D)
     #  x = x * unis[k]^valuation(c, D[k][1])
@@ -2387,7 +2545,7 @@ function _local_basis_matrix_prime_below_submodule(a::PMat, p)
       z[i, j] = x * matrix(a)[i, j]
     end
   end
-  if true
+  if false
     _z = pseudo_matrix(z, [one(nf(R)) * R for i in 1:nrows(z)])
     @assert _spans_subset_of_pseudohnf(_z, a, :lowerleft)
     @assert valuation(det(_z), D[1][1]) == valuation(det(a), D[1][1])
@@ -3902,9 +4060,9 @@ function maximal_sublattices(L::AbsLat, p; use_auto = false, callback = false, m
   E = Int[]
   for i in 1:length(Ls)
     m = map_entries(y -> hext\y, Ls[i])
-    LL = lattice(ambient_space(L), _sum_modules(pseudo_matrix(m * B), pML))
+    LL = lattice(ambient_space(L), _sum_modules(L, pseudo_matrix(m * B), pML))
     if !(callback isa Bool)
-      keep, cont = callback(result, LL)
+      keep, cont = callback(result, LL)::Tuple{Bool, Bool}
     end
     if keep
       push!(result, LL)
@@ -3951,7 +4109,7 @@ function minimal_superlattices(L::AbsLat, p; use_auto = false, callback = false,
   for v in Ls
     # don't need to make a copy
     m = matrix(K, 1, n, map(y -> hext\y, v))
-    LL = lattice(ambient_space(L), _sum_modules(ML, pseudo_matrix(m*B, [pinv])))
+    LL = lattice(ambient_space(L), _sum_modules(L, ML, pseudo_matrix(m*B, [pinv])))
     if !(callback isa Bool)
       keep, cont = callback(result, LL)
     end

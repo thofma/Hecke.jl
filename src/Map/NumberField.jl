@@ -449,6 +449,7 @@ end
 #  is normal
 #
 ################################################################################
+
 @doc Markdown.doc"""
     isnormal(K::AnticNumberField) -> Bool
 
@@ -458,8 +459,8 @@ function isnormal(K::AnticNumberField)
   #Before computing the automorphisms, I split a few primes and check if the 
   #splitting behaviour is fine
   c = get_special(K, :isnormal)
-  if c != nothing
-    return true
+  if c isa Bool
+    return c::Bool
   end
   E = EquationOrder(K)
   d = discriminant(E)
@@ -473,16 +474,19 @@ function isnormal(K::AnticNumberField)
     ind += 1
     dt = prime_decomposition_type(E, p)
     if !divisible(degree(K), length(dt))
+      set_special(K, :isnormal => false)
       return false
     end
     f = dt[1][1]
     for i = 2:length(dt)
       if f != dt[i][1]
+        set_special(K, :isnormal => false)
         return false
       end
     end
   end
   if length(automorphisms(K, copy = false)) != degree(K)
+    set_special(K, :isnormal => false)
     return false
   else
     set_special(K, :isnormal => true)
@@ -503,7 +507,7 @@ if the field is CM, false and the identity otherwise.
 """  
 function iscm_field(K::AnticNumberField)
   c = get_special(K, :cm_field)
-  if c != nothing
+  if c !== nothing
     return true, c
   end
   if isodd(degree(K)) || !istotally_complex(K)

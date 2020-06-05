@@ -990,6 +990,37 @@ function number_real_roots(f::fmpz_poly)
   return _number_changes(evminf)-_number_changes(evinf)
 end
 
+function sturm_sequence(f::PolyElem{<:FieldElem})
+  g = f
+  h = derivative(g)
+  #h = _divide_by_content(derivative(g))
+  seq = typeof(f)[g,h]
+  while true
+    #r = _divide_by_content(pseudorem(g,h))
+    r = rem(g, h)
+    if r != 0
+      push!(seq, -r)
+      g, h = h, -r
+    else 
+      break
+    end
+  end
+  return seq
+
+end
+
+function number_real_roots(f::PolyElem{nf_elem}, P::InfPlc; sturm_sequence = PolyElem{nf_elem}[])
+  if length(sturm_sequence) == 0
+    s = Hecke.sturm_sequence(f)
+  else
+    s = sturm_sequence
+  end
+
+  evinf = Int[sign(coeff(x, degree(x)), P) for x in s]
+  evminf = Int[((-1)^degree(s[i]))*evinf[i] for i in 1:length(s)]
+  return _number_changes(evminf) - _number_changes(evinf)
+end
+
 function number_positive_roots(f::PolyElem{nf_elem}, P::InfPlc)
   fsq = squarefree_factorization(f)
   p = 0

@@ -217,7 +217,7 @@ function _neighbours(L, P, result, max, callback = stdcallback, use_auto = true)
         S = elem_type(K)[ l * (hext\((s + v)[1]) + (hext\(s + v)[2])*alpha) for v in _kernel ]
       end
       for s in S
-        LL = neighbour(L, T, wG, elem_type(K)[x[o] + pi*s*T[ok, o] for o in 1:ncols(T)], hext, P, P, false)
+        LL = neighbour(L, T, wG, elem_type(K)[x[o] + K(elem_in_nf(pi))*s*T[ok, o] for o in 1:ncols(T)], hext, P, P, false)
         keep, cont = callback(result, LL)
         if keep
           push!(result, LL)

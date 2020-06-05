@@ -96,6 +96,17 @@ mutable struct HermSpace{S, T, U, W} <: AbsSpace{S}
   end
 end
 
+function absolute_field(V::HermSpace)
+  c = get_special(V, :absolute_field)
+  if c === nothing
+    Eabs, EabsToE, KtoE = absolute_field(base_ring(V))
+    set_special(V, :absolute_field => (Eabs, EabsToE, KtoE))
+    return Eabs, EabsToE, KtoE
+  else
+    return c::Tuple{AnticNumberField,Hecke.NfToNfRel,NfToNfMor}
+  end
+end
+
 @doc Markdown.doc"""
     hermitian_space(K::NumField, n::Int) -> HermSpace
 
@@ -1260,7 +1271,7 @@ end
 
 function _element_with_signs(K, D)
   OK = maximal_order(K)
-  G, mG = carlos_units(OK)
+  G, mG = infinite_primes_map(OK, real_places(K), 1*OK)
   r = real_places(K)
   z = id(G)
   for (v, s) in D
@@ -1276,7 +1287,9 @@ function _element_with_signs(K, D)
       end
     end
   end
-  return mG(z)::elem_type(K)
+  zz = elem_in_nf(mG(z))::elem_type(K)
+  @assert all(u -> sign(zz, u[1]) == u[2], D)
+  return zz
 end
 
 function element_with_signs(K, P::Vector{InfPlc}, S::Vector{Int})

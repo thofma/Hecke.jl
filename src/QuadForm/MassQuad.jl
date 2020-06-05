@@ -620,9 +620,7 @@ function _exact_L_function_cheap(E)
     return false
   end
 
-  Eabs, = absolute_field(E)
-
-  if !istotally_real(Eabs)
+  if !istotally_real(E)
     return false
   end
 
@@ -683,9 +681,9 @@ function _L_function_positive(E, s, prec)
   if s == 1
     return _L_function_at_1(E, prec)
   end
-  @show s
   Eabs, = absolute_field(E)
-  @assert istotally_complex(Eabs)
+  Eabs, = simplify(Eabs)
+  @assert istotally_complex(E)
   @assert s > 1
 
   R = ArbField(4 * prec, cached = false)
@@ -704,8 +702,8 @@ end
 function _L_function_at_1(E, prec)
   K = base_field(E)
   Eabs, EabsToE = absolute_field(E)
-  @assert istotally_complex(Eabs)
-  Eabs, = simplify(Eabs)
+  @assert istotally_complex(E)
+  Eabs, simp = simplify(Eabs)
   d = divexact(discriminant(maximal_order(Eabs)),
                discriminant(maximal_order(K)))
 
@@ -727,7 +725,7 @@ function _L_function_at_1(E, prec)
   for i in 1:ngens(UK)
     u = mUK(UK[i])
     uu = E(elem_in_nf(u))
-    uuu = EabsToE\uu
+    uuu = simp\(EabsToE\uu)
     push!(gens_for_subgroup, mUE\uuu)
   end
   push!(gens_for_subgroup, mUE\mTE(TE[1]))
@@ -951,7 +949,7 @@ function group_order(G::String, m::Int, q::fmpz)
     elseif G[1] == 'U' # U_m
       o = prod(fmpq[ 1 - fmpq(-q)^(-j) for j in 1:m ])
     else # Default Sp_m
-      o = prod(fmpq[ 1 - fmpq(q)^(-j) for j in 1:div(m, 2) ])
+      o = prod(fmpq[ 1 - fmpq(q)^(-j) for j in 2:2:m ])
     end
   else # orthogonal case
     if iseven(m)
