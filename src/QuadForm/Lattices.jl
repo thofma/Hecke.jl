@@ -1797,7 +1797,7 @@ function _maximal_integral_lattice(L::HermLat, p, minimal = true)
       M = pseudo_matrix(_matrix, coeff_ideals)
     end
     _new_pmat = _sum_modules_with_map(pseudo_matrix(L), M, absolute_map)
-    _new_pmat = _intersect_modules_wih_map(_new_pmat, invP^(max) * pseudo_matrix(L), absolute_map)
+    _new_pmat = _intersect_modules_with_map(_new_pmat, invP^(max) * pseudo_matrix(L), absolute_map)
     return false, lattice(ambient_space(L), _new_pmat)
   elseif D[1][2] == 1 # The inert case
     if S[end] >= 2
