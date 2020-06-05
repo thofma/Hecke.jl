@@ -78,7 +78,7 @@ end
 #
 ################################################################################
 
-zero(A::AbsAlgAss) = A()
+zero(A::AbsAlgAss) = A()::elem_type(A)
 
 function one(A::AbsAlgAss)
   if !has_one(A)

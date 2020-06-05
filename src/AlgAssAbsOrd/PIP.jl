@@ -24,10 +24,15 @@ function _isprincipal_maximal(a::AlgAssAbsOrdIdl, M, side = :right)
   @assert _test_ideal_sidedness(a, M, :right)
   @assert ismaximal(M)
 
+  dena = denominator(a, M)
+  aorig = a
+  a = dena * a
+
   A = algebra(M)
   res = decompose(A)
   abas = basis(a)
   Mbas = basis(M)
+  
   @assert all(b in M for b in abas)
   gens = elem_type(A)[]
   #@show A
@@ -35,19 +40,19 @@ function _isprincipal_maximal(a::AlgAssAbsOrdIdl, M, side = :right)
   for i in 1:length(res)
     B, mB = res[i]
     #@show isdefined(B, :isomorphic_full_matrix_algebra)
-    MinB = Order(B, [(mB\(mB(one(B)) * elem_in_algebra(b))) for b in Mbas])
+    MinB = Order(B, elem_type(B)[(mB\(mB(one(B)) * elem_in_algebra(b))) for b in Mbas])
     #@show ismaximal(MinC)
     #@show hnf(basis_matrix(MinC))
-    ainB = ideal_from_lattice_gens(B, [(mB\(mB(one(B))* b)) for b in abas])
+    ainB = ideal_from_lattice_gens(B, elem_type(B)[(mB\(mB(one(B))* b)) for b in abas])
     @assert all(b in MinB for b in basis(ainB))
     fl, gen = _is_principal_maximal_simple_component(ainB, MinB, side)
     #@show "not simple for component", B
     if !fl
-      return false, zero(M)
+      return false, zero(A)
     end
     push!(gens, mB(gen))
   end
-  return true, sum(gens)
+  return true, inv(base_ring(A)(dena)) * sum(gens)
 end
 
 function absolute_basis(M::AlgAssAbsOrd{<:AlgAss{fmpq}})
@@ -57,31 +62,32 @@ end
 function _is_principal_maximal_simple_component(a, M, side = :right)
   A = algebra(M)
   ZA, _ = _as_algebra_over_center(A)
-  #@show A
-  #@show ZA
+  @show A
+  @show ZA
   if base_ring(A) isa FlintRationalField && dim(A) == 4 && !issplit(A)
     return _is_principal_maximal_quaternion(a, M, side)
   elseif dim(ZA) == 4 && !isdefined(A, :isomorphic_full_matrix_algebra)
     #@show A
     return _is_principal_maximal_quaternion_generic(a, M, side)
   else
+    local B::AlgMat{nf_elem, Generic.MatSpaceElem{nf_elem}}
     @assert isdefined(A, :isomorphic_full_matrix_algebra)
     B, AtoB = A.isomorphic_full_matrix_algebra
-    OB = _get_order_from_gens(B, [AtoB(elem_in_algebra(b)) for b in absolute_basis(M)])
-    ainOB = ideal_from_lattice_gens(B, [(AtoB(b)) for b in absolute_basis(a)])
+    OB = _get_order_from_gens(B, elem_type(B)[AtoB(elem_in_algebra(b)) for b in absolute_basis(M)])
+    ainOB = ideal_from_lattice_gens(B, elem_type(B)[(AtoB(b)) for b in absolute_basis(a)])
     fl, gen = _is_principal_maximal_full_matrix_algebra(ainOB, OB, side)
-    return fl, AtoB\gen
+    return fl, (AtoB\gen)::elem_type(A)
   end
 end
 
 function _is_principal_maximal_quaternion_generic(a, M, side = :right)
   A = algebra(M)
-  B, AtoB, BtoA = _as_algebra_over_center(A)
-  OB = _get_order_from_gens(B, [AtoB(elem_in_algebra(b)) for b in absolute_basis(M)])
+  B, BtoA = _as_algebra_over_center(A)
+  OB = _get_order_from_gens(B, elem_type(B)[BtoA\(elem_in_algebra(b)) for b in absolute_basis(M)])
   f = standard_involution(B)
   K = base_ring(B)
   @assert right_order(a) == M
-  b = ideal_from_lattice_gens(B, OB, [AtoB(b) for b in absolute_basis(a)])
+  b = ideal_from_lattice_gens(B, OB, elem_type(B)[BtoA\(b) for b in absolute_basis(a)])
   nr = normred(b)
   nr = simplify(nr)
   #@show nr
@@ -98,7 +104,7 @@ function _is_principal_maximal_quaternion_generic(a, M, side = :right)
   #@show u
   #@show istotally_positive(u * c)
   
-  Babs = absolute_basis(b)
+  Babs = absolute_basis(b)::Vector{elem_type(B)}
   d = length(Babs)
   G = zero_matrix(FlintQQ, d, d)
   #@show reps
@@ -117,7 +123,7 @@ function _is_principal_maximal_quaternion_generic(a, M, side = :right)
 
     if min == degree(base_ring(B))
       for w in v
-        xi = sum(w[i] * Babs[i] for i in 1:length(Babs))
+        xi = sum(elem_type(B)[w[i] * Babs[i] for i in 1:length(Babs)])::elem_type(B)
         xii = BtoA(xi)
         @assert xii in a
         @assert xii * M == a
@@ -163,7 +169,6 @@ function _is_principal_maximal_quaternion(a, M, side = :right)
   @assert side == :right
   A = algebra(M)
   !(base_ring(A) isa FlintRationalField) && error("Only implemented for rational quaterion algebras")
-  B = basis(M)
   a.isright = 1
   a.order = right_order(a)
   nrr = FlintZZ(normred(a))
@@ -197,10 +202,10 @@ function _is_principal_maximal_full_matrix_algebra(a, M, side = :right)
   A = algebra(M)
   if degree(A) == 1
     # I don't have _as_field_with_isomorphism for algebras over K
-    AA, AtoAA, AAtoA = restrict_scalars(A, FlintQQ)
+    AA, AAtoA = restrict_scalars(A, FlintQQ)
     K, AAtoK = _as_field_with_isomorphism(AA)
     MK = maximal_order(K)
-    I = sum([AAtoK(AtoAA(b)) * MK for b in absolute_basis(a)])
+    I = sum(fractional_ideal_type(order_type(K))[AAtoK(AAtoA\(b)) * MK for b in absolute_basis(a)])
     fl, zK = isprincipal(I)
     gen = AAtoA(AAtoK\(elem_in_nf(zK)))
     if fl
@@ -209,18 +214,19 @@ function _is_principal_maximal_full_matrix_algebra(a, M, side = :right)
     return fl, AAtoA(AAtoK\(elem_in_nf(zK)))
   elseif degree(base_ring(A)) == 1
     B, BtoA = _as_full_matrix_algebra_over_Q(A)
-    MB = Order(B, [BtoA\elem_in_algebra(b) for b in absolute_basis(M)])
-    aB = ideal_from_lattice_gens(B, [BtoA\b for b in absolute_basis(a)])
-    fl, zK = _isprincipal_maximal_simple(aB, MB, side)
-    gen = BtoA(zK)
+    MB = Order(B, elem_type(B)[BtoA\elem_in_algebra(b) for b in absolute_basis(M)])
+    aB = ideal_from_lattice_gens(B, elem_type(B)[BtoA\b for b in absolute_basis(a)])
+    fl, zK = _isprincipal_maximal_simple(aB, MB, side)::Tuple{Bool, elem_type(B)}
+    gen = BtoA(zK)::elem_type(A)
     if fl
       @assert zK * MB == aB
-      @assert gen * M == a
+      @assert (gen * M)::typeof(a) == a
     end
-    return fl, BtoA(zK)
+    return fl, gen
   else
     N, S = nice_order(M)
-    aN = ideal_from_lattice_gens(algebra(M), [b * inv(S) for b in absolute_basis(a)])
+    AM = algebra(M)
+    aN = ideal_from_lattice_gens(algebra(M), elem_type(AM)[b * inv(S) for b in absolute_basis(a)])
     fl, _gen = _isprincipal_maximal_simple_nice(aN, N, side)
     gen = _gen * S
     if fl
@@ -302,7 +308,7 @@ function _isprincipal_maximal_simple_nice(I::AlgAssAbsOrdIdl, M, side = :right)
   den = denominator(I, M)
   a = I * den
   if !isfull_lattice(a)
-    return false, zero(M)
+    return false, zero(algebra(M))
   end
   #@show basis(a)
   #@show a
@@ -373,7 +379,7 @@ function _isprincipal_maximal_simple(a::AlgAssAbsOrdIdl, M, side = :right)
   #@show basis(S)
   fl, alpha = _isprincipal_maximal_simple_nice(ainS, S, side)
   if !fl
-    return false, zero(M)
+    return false, zero(algebra(M))
   else
     @assert (alpha * c) * M == a
     return true, alpha * c
@@ -385,6 +391,11 @@ function _isprincipal(a::AlgAssAbsOrdIdl, O, side = :right)
     return false, zero(algebra(O))
   end
 
+  if ismaximal(O)
+    return _isprincipal_maximal(a, O, side)
+  end
+
+
   # So O is the right order of a
 
   n = dim(algebra(O))
@@ -392,7 +403,7 @@ function _isprincipal(a::AlgAssAbsOrdIdl, O, side = :right)
   aa.order = O
   for (p, ) in factor(discriminant(O))
     println("Testing local freeness at ", p)
-    if !islocally_free(O, aa, p, side = :right)[1]
+    if !islocally_free(O, aa, p, side = :right)[1]::Bool
       return false, zero(algebra(O))
     end
   end
@@ -423,6 +434,7 @@ function _isprincipal(a::AlgAssAbsOrdIdl, O, side = :right)
 
   # I shoul improve this
   a, sca = _coprime_integral_ideal_class(a, F)
+  @show "Found coprime integral ideal class"
 
   @assert sca * aorig == a
 
@@ -442,27 +454,27 @@ function _isprincipal(a::AlgAssAbsOrdIdl, O, side = :right)
   OZ = maximal_order(Z)
   Q, mQ = quo(OZ, FinZ)
   Quni, mQuni = unit_group(Q)
-  U, mU = unit_group(OZ)
+  U::GrpAbFinGen, mU = unit_group(OZ)
   println("Solving principal ideal problem over maximal order...")
 
   #@show Q
   normbeta = OZ(normred_over_center(beta, ZtoA))
 
   #@show parent(normbeta) == domain(mQ)
-  t = mQuni\(mQ(normbeta))
+  ttt = mQuni\(mQ(normbeta))
   imgofK1 = GrpAbFinGenElem[ mQuni\(mQ(OZ(normred_over_center(elem_in_algebra(b), ZtoA)))) for b in k1]
   QbyK1, mQbyK1 = quo(Quni, imgofK1)
 
   SS, mSS = sub(Quni, imgofK1)
 
-  S, mS = sub(QbyK1, [ mQbyK1(mQuni\(mQ(mU(U[i])))) for i in 1:ngens(U)])
+  S, mS = sub(QbyK1, elem_type(QbyK1)[ mQbyK1(mQuni\(mQ(mU(U[i])::elem_type(OZ)))) for i in 1:ngens(U)])
 
-  fl, u = haspreimage(mS, mQbyK1(t))
+  fl, u = haspreimage(mS, mQbyK1(ttt))
 
   println("Solving norm requation over center")
-  U = _solve_norm_equation_over_center(OA, ZtoA(elem_in_algebra(mU(u))))
+  UU = _solve_norm_equation_over_center(OA, ZtoA(elem_in_algebra(mU(u)::elem_type(OZ))))
 
-  fll, uu = haspreimage(mSS,  mQuni\(mQ(OZ(normred_over_center(elem_in_algebra(U), ZtoA)))) - t)
+  fll, uu = haspreimage(mSS,  mQuni\(mQ(OZ(normred_over_center(elem_in_algebra(UU), ZtoA)))) - ttt)
   
   @assert fll
   
@@ -473,12 +485,12 @@ function _isprincipal(a::AlgAssAbsOrdIdl, O, side = :right)
     end
   end
 
-  #@show mQuni\(mQ(OZ(normred_over_center(elem_in_algebra(U), ZtoA)))) ==  mQuni\(mQ(OZ(normred_over_center(beta * elemA, ZtoA))))
+  ##@show mQuni\(mQ(OZ(normred_over_center(elem_in_algebra(UU), ZtoA)))) ==  mQuni\(mQ(OZ(normred_over_center(beta * elemA, ZtoA))))
 
   println("Lifting to norm one unit")
-  V = lift_norm_one_unit( U^(-1) * OA(elemA)  * OA(beta), F)
+  V = lift_norm_one_unit( UU^(-1) * OA(elemA)  * OA(beta), F)
 
-  gamma =  beta * inv(elem_in_algebra(U) * V)
+  gamma =  beta * inv(elem_in_algebra(UU) * V)
   @assert gamma * O == a
   @assert inv(sca) * gamma * O == aorig
 
@@ -505,13 +517,14 @@ end
 function _solve_norm_equation_over_center_simple(M, x)
   A = algebra(M)
   if degree(A) == 4 && !issplit(A)
-    return _solve_norm_equation_over_center_quaternion(M, x,)
+    return _solve_norm_equation_over_center_quaternion(M, x)
   else
+    local B::AlgMat{nf_elem, Generic.MatSpaceElem{nf_elem}}
     @assert isdefined(A, :isomorphic_full_matrix_algebra)
     B, AtoB = A.isomorphic_full_matrix_algebra
     Mbas = absolute_basis(M)
-    MinB = _get_order_from_gens(B, [ AtoB(elem_in_algebra(b)) for b in Mbas])
-    y = Hecke._solve_norm_equation_over_center_full_matrix_algebra(MinB, AtoB(x))
+    MinB = _get_order_from_gens(B, elem_type(B)[ AtoB(elem_in_algebra(b)) for b in Mbas])
+    y = Hecke._solve_norm_equation_over_center_full_matrix_algebra(MinB, AtoB(x)::elem_type(B))
     sol = M(AtoB\elem_in_algebra(y))
     ZA, ZAtoA = center(A)
     @assert ZAtoA(normred_over_center(elem_in_algebra(sol), ZAtoA)) == x
@@ -612,7 +625,7 @@ function lift_norm_one_unit(x, F)
   z = zero(A)
   for i in 1:length(res)
     Ai, AitoA = res[i]
-    MinAi = Order(Ai, [ AitoA\(AitoA(one(Ai)) * elem_in_algebra(b)) for b in Mbas])
+    MinAi = Order(Ai, elem_type(Ai)[ AitoA\(AitoA(one(Ai)) * elem_in_algebra(b)) for b in Mbas])
     xinAi = MinAi(preimage(AitoA, elem_in_algebra(x)))
     Fi = ideal_from_lattice_gens(Ai, MinAi, [ AitoA\b for b in basis(F) ], :twosided)
     y = _lift_norm_one_unit_simple(xinAi, Fi)
@@ -632,13 +645,14 @@ function _lift_norm_one_unit_simple(x, F)
   if degree(A) == 4 && !issplit(A)
     return _lift_norm_one_unit_quaternion(x, F)
   else
+    local B::AlgMat{nf_elem, Generic.MatSpaceElem{nf_elem}}
     @assert isdefined(A, :isomorphic_full_matrix_algebra)
     B, AtoB = A.isomorphic_full_matrix_algebra
     Mbas = basis(M)
-    MinB = _get_order_from_gens(B, [ AtoB(elem_in_algebra(b)) for b in Mbas])
-    FinB = ideal_from_lattice_gens(B, MinB, [ AtoB(b) for b in basis(F) ], :twosided)
-    y = _lift_norm_one_unit_full_matrix_algebra(MinB(AtoB(elem_in_algebra(x))), FinB)
-    return AtoB\y
+    MinB = _get_order_from_gens(B, elem_type(B)[ AtoB(elem_in_algebra(b)) for b in Mbas])
+    FinB = ideal_from_lattice_gens(B, MinB, elem_type(B)[ AtoB(b) for b in basis(F) ], :twosided)
+    y = _lift_norm_one_unit_full_matrix_algebra(MinB(AtoB(elem_in_algebra(x))::elem_type(B)), FinB)
+    return (AtoB\y)::elem_type(A)
   end
 end
 
@@ -688,10 +702,10 @@ function _lift_norm_one_unit_full_matrix_algebra(x, F)
     M = parent(x)
     A = algebra(M)
     B, BtoA = _as_full_matrix_algebra_over_Q(A)
-    MinB = _get_order_from_gens(B, [BtoA\elem_in_algebra(b) for b in absolute_basis(M)])
-    FinB = ideal_from_lattice_gens(B, MinB, [ BtoA\(b) for b in absolute_basis(F) ], :twosided)
-    y = _lift_norm_one_unit_full_rational_matrix_algebra(MinB(BtoA\(elem_in_algebra(x))), FinB)
-    return BtoA(y)
+    MinB = _get_order_from_gens(B, elem_type(B)[BtoA\elem_in_algebra(b) for b in absolute_basis(M)])
+    FinB = ideal_from_lattice_gens(B, MinB, elem_type(B)[ BtoA\(b) for b in absolute_basis(F) ], :twosided)
+    yy = _lift_norm_one_unit_full_rational_matrix_algebra(MinB(BtoA\(elem_in_algebra(x))), FinB)
+    return BtoA(yy)
   else
     M = parent(x)
     N, S = nice_order(M)
@@ -738,7 +752,7 @@ function _lift_norm_one_unit_full_rational_matrix_algebra(x, F)
   xwrtR = c * elem_in_algebra(x) * inv(c)
 
   # Now x is in M_n(Z) and I want to lift from M_n(Z/nn)
-
+  
   @assert mod(FlintZZ(det(matrix((xwrtR)))), nn) == 1
 
   li = _lift_unimodular_matrix(change_base_ring(FlintZZ, matrix(xwrtR)), nn, ResidueRing(FlintZZ, nn))
@@ -770,7 +784,13 @@ function _lift_unimodular_matrix(N, n, R)
 
   for l in 3:k
     r = nrows(M)
-    if r != count(i -> !iszero(M[i, 1]), 1:r)
+    _c = 0
+    for i in 1:r
+      if !iszero(M[i, 1])
+        _c += 1
+      end
+    end
+    if r != _c
       #@show "I am in case 1"
       i = 0
       x = one(R)
@@ -796,9 +816,9 @@ function _lift_unimodular_matrix(N, n, R)
       end
       #@show "case1", M
     else
-      v = push!([lift(M[i, 1]) for i in 3:r], n)
+      v = push!(fmpz[lift(M[i, 1]) for i in 3:r], n)
       d, z = _gcdx(v)
-      @assert d == sum(z[i] * v[i] for i in 1:length(v))
+      @assert d == sum(fmpz[z[i] * v[i] for i in 1:length(v)])
       if d == 1
         a = elem_type(R)[M[i, 1] for i in 1:r]
         a1 = a[1]
@@ -815,10 +835,10 @@ function _lift_unimodular_matrix(N, n, R)
         a = elem_type(R)[M[i, 1] for i in 1:r]
         a1 = lift(a[1])
         a2 = lift(a[2])
-        ai = [a[i] for i in 3:length(a)]
+        ai = eltype(a)[a[i] for i in 3:length(a)]
 
-        dI, z = _gcdx(push!([lift(a[i]) for i in 3:length(a)], n))
-        d, y = _gcdx(push!([lift(a[i]) for i in 1:length(a)], n))
+        dI, z = _gcdx(push!(fmpz[lift(a[i]) for i in 3:length(a)], n))
+        d, y = _gcdx(push!(fmpz[lift(a[i]) for i in 1:length(a)], n))
         # TODO: This will fail Tommy!
         RI = ResidueRing(FlintZZ, dI)
         MatL = matrix(RI, 2, 2, [a1, a2, -y[2], y[1]])
@@ -830,7 +850,7 @@ function _lift_unimodular_matrix(N, n, R)
         b2 = E[1, 2]
         @assert x1 * b1 + x2 * b2 == 1
 
-        x3n = vcat([x1, x2], [y[i] + (R(divexact(y[1] - x1, dI)) * M[1, 1] + R(divexact(y[2] - x2, dI)) * M[2, 1]) * z[i - 2] for i in 3:length(y)])
+        x3n = vcat(elem_type(R)[x1, x2], elem_type(R)[y[i] + (R(divexact(y[1] - x1, dI)) * M[1, 1] + R(divexact(y[2] - x2, dI)) * M[2, 1]) * z[i - 2] for i in 3:length(y)])
         I = identity_matrix(R, r)
         for j in 3:r
           I[1, j] = b1 * x3n[j]
@@ -966,8 +986,8 @@ end
 
 function lift_two_by_two_matrix(M)
   #@show M
-  left_elementary = []
-  right_elementary = []
+  left_elementary = typeof(M)[]
+  right_elementary = typeof(M)[]
   A = base_ring(M)
 
   #@show det(M)
@@ -1111,7 +1131,7 @@ function _multiply_with_idempotent(A, e)
 end
 
 function _my_direct_product(algebras)
-  d = sum(dim(A) for A in algebras)
+  d = sum(Int[dim(A) for A in algebras])
   K = base_ring(algebras[1])
   maps = dense_matrix_type(K)[]
   pre_maps = dense_matrix_type(K)[]
@@ -1136,7 +1156,7 @@ function _my_direct_product(algebras)
     push!(maps, BtoA)
     push!(pre_maps, AtoB)
   end
-  A = AlgAss(base_ring(algebras[1]), mt)
+  A = AlgAss(K, mt)
   A.decomposition = [ (algebras[i], hom(algebras[i], A, maps[i], pre_maps[i])) for i in 1:length(algebras) ]
   return A
 end

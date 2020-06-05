@@ -903,7 +903,7 @@ function _coprime_integral_ideal_class(a::AlgAssAbsOrdIdl, b::AlgAssAbsOrdIdl)
     c = x*a
     @assert denominator(c, O) == 1
     c.order = O
-    if !(isinvertible(c)[1])
+    if iszero(det(basis_matrix(c)))
       continue
     end
     isone(c + b) ? (check = false) : (check = true)

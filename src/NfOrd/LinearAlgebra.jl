@@ -1747,6 +1747,9 @@ function integral_and_coprime_to(a::NfOrdFracIdl, m::NfAbsOrdIdl)
   B = absolute_basis(b)
   while true
     z = rand(B, -1:1)
+    if iszero(z)
+      continue
+    end
     I = z * a
     I = simplify(I)
     @assert denominator(I) == 1

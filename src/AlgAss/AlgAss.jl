@@ -101,13 +101,13 @@ function find_one(A::AlgAss)
   Mc = hcat(M, c)
   rref!(Mc)
   if iszero(Mc[n, n])
-    return false, zeros(A, n)
+    return false, zeros(base_ring(A), n)
   end
   if n != 1 && !iszero(Mc[n + 1, n + 1])
-    return false, zeros(A, n)
+    return false, zeros(base_ring(A), n)
   end
   cc = solve_ut(sub(Mc, 1:n, 1:n), sub(Mc, 1:n, (n + 1):(n + 1)))
-  one = [ cc[i, 1] for i = 1:n ]
+  one = elem_type(base_ring(A))[ cc[i, 1] for i = 1:n ]
   return true, one
 end
 
@@ -1563,3 +1563,26 @@ end
 quaternion_algebra2(K::Field, a::Int, b::Int) = quaternion_algebra2(K, K(a), K(b))
 
 quaternion_algebra2(a::Int, b::Int) = quaternion_algebra2(FlintQQ, fmpq(a), fmpq(b))
+
+################################################################################
+#
+#  Opposite algebra
+#
+################################################################################
+
+function opposite_algebra(A::AlgAss)
+  K = base_ring(A)
+  B = basis(A)
+  d = dim(A)
+  z = Array{elem_type(K), 3}(undef, d, d, d)
+  for i in 1:d
+    for j in 1:d
+      z[i, j, :] = A.mult_table[j, i, :]
+    end
+  end
+  o = one(A).coeffs
+
+  B = AlgAss(K, z, o)
+  return B, hom(A, B, identity_matrix(K, d), identity_matrix(K, d))
+end
+

@@ -178,7 +178,7 @@ function *(a::AlgMatElem, b::T) where {T <: RingElem}
   if parent(b) == base_ring(A)
     b = coefficient_ring(A)(b)
   end
-  return A(matrix(a, copy = false)*b)
+  return A(matrix(a, copy = false)*b)::elem_type(A)
 end
 
 function *(b::T, a::AlgMatElem) where {T <: RingElem}
@@ -186,7 +186,7 @@ function *(b::T, a::AlgMatElem) where {T <: RingElem}
   if parent(b) == base_ring(A)
     b = coefficient_ring(A)(b)
   end
-  return A(b*matrix(a, copy = false))
+  return A(b*matrix(a, copy = false))::elem_type(A)
 end
 
 function *(a::AlgMatElem{S, T, U}, b::U) where { S, T, U }
