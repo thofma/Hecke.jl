@@ -258,8 +258,8 @@ function _class_unit_group(O::NfOrd; saturate_at_2::Bool = true, bound::Int = -1
         @vtime_add_elapsed :UnitGroup 1 c :unit_hnf_time module_trafo_assure(c.M)
         @vtime_add_elapsed :UnitGroup 1 c :unit_time r = _unit_group_find_units_with_transform(U, c, add_orbit = use_aut)
       end
-      @v_do :UnitGroup 1 popindent()
     end
+    @v_do :UnitGroup 1 popindent()
     # r == 1 means full rank
     if isone(r)  # use saturation!!!!
       idx = _validate_class_unit_group(c, U) 

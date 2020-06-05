@@ -340,7 +340,7 @@ function solve_dixon_sf(A::SMat{fmpz}, B::SMat{fmpz}, is_int::Bool = false)
   return sol_all, den_all
 end
 
-function echelon!(S::SMat{T}) where T <: FieldElem
+function echelon!(S::SMat{T}; complete::Bool = false) where T <: FieldElem
   i = 1
   while i <= nrows(S)
     m = ncols(S)+1
@@ -364,6 +364,7 @@ function echelon!(S::SMat{T}) where T <: FieldElem
         add_scaled_row!(S, i, j, S[j].values[1]*Si)
         if length(S[j].values) == 0
           deleteat!(S.rows, j)
+          S.r -= 1
         else
           j += 1
         end  
@@ -373,6 +374,21 @@ function echelon!(S::SMat{T}) where T <: FieldElem
     end
     i += 1  
   end  
+  if complete
+    for i = nrows(S):-1:2
+      p = S[i].pos[1]
+      c = S[i,p]
+      if !isone(c)
+        scale_row!(S, i, inv(c))
+      end
+      for j=i-1:-1:1
+        v = S[j, p]
+        if !iszero(v)
+          add_scaled_row!(S, i, j, -v)
+        end
+      end
+    end
+  end
 end
 
 function solve(a::SMat{T}, b::SRow{T}) where T <: FieldElem

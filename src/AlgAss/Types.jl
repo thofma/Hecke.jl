@@ -148,8 +148,8 @@ mutable struct AlgGrp{T, S, R} <: AbsAlgAss{T}
   maps_to_numberfields
   maximal_order
 
-  function AlgGrp(K::Ring, G::GrpAbFinGen)
-    A = AlgGrp(K, G, op = +)
+  function AlgGrp(K::Ring, G::GrpAbFinGen, cached::Bool = true)
+    A = AlgGrp(K, G, op = +, cached = cached)
     A.iscommutative = true
     return A
   end

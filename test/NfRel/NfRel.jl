@@ -49,4 +49,23 @@
     #d, LtoL3 = Hecke.isisomorphic(L, L3)
     #@test d == false
   end
+
+  @testset "signature" begin
+    Qx, x = FlintQQ["x"]
+    f = x^2 + 12x - 92
+    K, a = NumberField(f, "a")
+    Ky, y = K["y"]
+
+    g = y^5 - 5
+    L, b = NumberField(g, "b")
+    @test signature(L) == (2, 4)
+
+    Qx, x = FlintQQ["x"]
+    f = x^2 + 12x - 92
+    K, a = NumberField(f, "a")
+    Ky, y = K["y"]
+
+    L, b = NumberField(y^2 + y + 1, "b")
+    @test signature(L) == (0, 2)
+  end
 end

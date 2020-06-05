@@ -158,7 +158,7 @@ function Hecke.induce_crt(a::Hecke.Generic.MPoly{nf_elem}, p::fmpz, b::Hecke.Gen
   c = MPolyBuildCtx(parent(a))
   aa, sa = iterate(ta)
   bb, sb = iterate(tb)
-  @assert length(a) == length(b)
+#  @assert length(a) == length(b)
 #  @assert ==(aa, bb, true) # leading terms must agree or else...
   while !(aa === nothing) && !(bb === nothing)
     if ==(aa.exps, bb.exps) #monomial equality
@@ -169,31 +169,31 @@ function Hecke.induce_crt(a::Hecke.Generic.MPoly{nf_elem}, p::fmpz, b::Hecke.Gen
       aa, sa = aa
       bb === nothing && break
       bb, sb = bb
-    elseif monomial_isless(aa.exps, 1, bb.exps, 1, N, parent(aa), UInt(0)) #aa < bb
-      error("bad 1")
-      push_term!(c, Hecke.induce_inner_crt(z, coeff(bb, 1), pi, pq, pq2), exponent_vector(bb))
+    elseif Generic.monomial_isless(aa.exps, 1, bb.exps, 1, N, parent(aa), UInt(0)) #aa < bb
+#      error("bad 1")
+      push_term!(c, Hecke.induce_inner_crt(z, coeff(bb, 1), pi, pq, pq2), exponent_vector(bb, 1))
       bb, sb = iterate(tb, sb)
       bb === nothing && break
       bb, sb = bb
     else
-      error("bad 2")
-      push_term!(c, Hecke.induce_inner_crt(coeff(aa, 1), z, pi, pq, pq2), exponent_vector(aa))
+#      error("bad 2")
+      push_term!(c, Hecke.induce_inner_crt(coeff(aa, 1), z, pi, pq, pq2), exponent_vector(aa, 1))
       aa = iterate(ta, sa)
       aa === nothing && break
       aa, sa = aa
     end
   end
   while !(aa === nothing)
-      error("bad 3")
-    push_term!(c, Hecke.induce_inner_crt(coeff(aa, 1), z, pi, pq, pq2), exponent_vector(aa))
+#      error("bad 3")
+    push_term!(c, Hecke.induce_inner_crt(coeff(aa, 1), z, pi, pq, pq2), exponent_vector(aa, 1))
     aa = iterate(ta, sa)
     if !aa == nothing
       aa, sa = aa
     end
   end
   while !(bb === nothing)
-      error("bad 4")
-    push_term!(c, Hecke.induce_inner_crt(z, coeff(bb, 1), pi, pq, pq2), exponent_vector(bb))
+#      error("bad 4")
+    push_term!(c, Hecke.induce_inner_crt(z, coeff(bb, 1), pi, pq, pq2), exponent_vector(bb, 1))
     bb = iterate(tb, sb)
     if !(bb === nothing)
       bb, sb = bb
@@ -247,6 +247,31 @@ function Hecke.modular_proj(me::Hecke.modular_env, f::Generic.MPoly{nf_elem})
 end
 
 function Hecke.modular_lift(me::Hecke.modular_env, g::Array{nmod_mpoly, 1})
+
+  #TODO: no dict, but do s.th. similar to induce_crt
+  d = Dict{Array{Int, 1}, Array{Tuple{Int, Hecke.nmod}, 1}}()
+  for i=1:length(g)
+    for (c, e) = Base.Iterators.zip(Generic.MPolyCoeffs(g[i]), Generic.MPolyExponentVectors(g[i]))
+      if Base.haskey(d, e)
+        push!(d[e], (i, c))
+      else
+        d[e] = [(i, c)]
+      end
+    end
+  end
+  bt = MPolyBuildCtx(me.Kxy)
+
+  for e = keys(d)
+    for x=1:length(g)
+      me.res[x] = zero!(me.res[x])
+    end
+    for (i, c) = d[e]
+      me.res[i] = parent(me.res[i])(lift(c))
+    end
+    push_term!(bt, Hecke.modular_lift(me.res, me), e)
+  end
+  return finish(bt)
+
   bt = MPolyBuildCtx(me.Kxy)
   #TODO deal with different vectors properly (check induce_crt)
   @assert all(x->collect(exponent_vectors(g[1])) == collect(exponent_vectors(g[x])), 2:length(g))

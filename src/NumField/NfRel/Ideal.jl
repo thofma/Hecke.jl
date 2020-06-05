@@ -1024,12 +1024,20 @@ end
 #
 ################################################################################
 
-function prime_decomposition(O::NfRelOrd, p::Union{NfOrdIdl, NfRelOrdIdl}; compute_uniformizer::Bool = true)
+function prime_decomposition(O::NfRelOrd, p::Union{NfOrdIdl, NfRelOrdIdl}; compute_uniformizer::Bool = true, compute_anti_uniformizer::Bool = true)
   if isindex_divisor(O, p)
-    return prime_dec_index(O, p)
+    ls = prime_dec_index(O, p)
+  else
+    ls = prime_dec_nonindex(O, p, compute_uniformizer = compute_uniformizer)
   end
+  
+  #if compute_anti_uniformizer
+  #  for (P,_) in ls
+  #    anti_uniformizer(P)
+  #  end
+  #end
 
-  return prime_dec_nonindex(O, p, compute_uniformizer = compute_uniformizer)
+  return ls
 end
 
 function prime_dec_nonindex(O::NfRelOrd, p::Union{NfOrdIdl, NfRelOrdIdl}; compute_uniformizer::Bool = true)
@@ -1067,7 +1075,8 @@ function prime_dec_nonindex(O::NfRelOrd, p::Union{NfOrdIdl, NfRelOrdIdl}; comput
         if e != 1
           P.p_uniformizer = Oga
         else
-          if valuation(Oga, P) == 1
+          if !(Oga in P^2) # Otherwise we have a recursion. valuation(Oga, P) == 1
+            @assert Oga in P
             P.p_uniformizer = Oga
           else
             P.p_uniformizer = Oga + O(uniformizer(p))
@@ -1081,6 +1090,10 @@ function prime_dec_nonindex(O::NfRelOrd, p::Union{NfOrdIdl, NfRelOrdIdl}; comput
 end
 
 function prime_dec_index(O::NfRelOrd, p::Union{NfOrdIdl, NfRelOrdIdl})
+  if haskey(O.index_div, p)
+    return O.index_div[p]::Vector{Tuple{ideal_type(O), Int}}
+  end
+
   L = nf(O)
   K = base_field(L)
   pbasisO = pseudo_basis(O, copy = false)
@@ -1109,12 +1122,13 @@ function prime_dec_index(O::NfRelOrd, p::Union{NfOrdIdl, NfRelOrdIdl})
     N = sub(pseudo_hnf(N, :lowerleft), nrows(N) - degree(O) + 1:nrows(N), 1:degree(O))
     P = ideal(O, N, false, true)
     P.is_prime = 1
-    e = valuation(pO, P)
+    e = _valuation_for_prime_decomposition(pO, P)
     P.splitting_type = (e, f)
     P.minimum = deepcopy(p)
     push!(result, (P, e))
   end
 
+  O.index_div[p] = result
   return result
 end
 
@@ -1125,7 +1139,7 @@ function prime_ideals_over(O::NfRelOrd, p::Union{ Int, fmpz })
   primes = Vector{ideal_type(O)}()
   for q in pdec
     qdec = prime_decomposition(O, q)
-    append!(primes, [ qdec[i][1] for i = 1:length(qdec) ])
+    append!(primes, ideal_type(O)[ qdec[i][1] for i = 1:length(qdec) ])
   end
 
   return primes
@@ -1180,9 +1194,7 @@ end
 #
 ################################################################################
 
-function valuation_naive(A::NfRelOrdIdl{T, S}, B::NfRelOrdIdl{T, S}) where {T, S}
-  @assert order(A.basis_pmatrix.coeffs[1]) == order(B.basis_pmatrix.coeffs[1])
-  @assert !iszero(A) && !iszero(B)
+function _valuation_for_prime_decomposition(A::NfRelOrdIdl{T, S}, B::NfRelOrdIdl{T, S}) where {T, S}
   O = order(A)
   Afrac = fractional_ideal(O, basis_pmatrix(A), true)
   Bi = inv(B)
@@ -1196,18 +1208,104 @@ function valuation_naive(A::NfRelOrdIdl{T, S}, B::NfRelOrdIdl{T, S}) where {T, S
   return i
 end
 
+function _valuation_for_prime_decomposition(A::NfRelOrdElem, B::NfRelOrdIdl)
+  return _valuation_for_prime_decomposition(A * order(B), B)
+end
+
+function valuation_naive(A::NfRelOrdIdl{T, S}, B::NfRelOrdIdl{T, S}) where {T, S}
+  @assert order(A.basis_pmatrix.coeffs[1]) == order(B.basis_pmatrix.coeffs[1])
+  @assert !iszero(A) && !iszero(B)
+  p = minimum(B)
+  if valuation(minimum(A), p) == 0
+    return 0
+  end
+  # The strategy is as follows:
+  # Let pi be a anti-uniformizer of B
+  # We determine v with A_p * pi^v \subseteq O_p, where p is the minimum of B.
+  # This is the valuation
+  p = minimum(B)
+  pbA = pseudo_basis(A, copy = false)
+  adjusted_basis = elem_type(nf(order(A)))[]
+  puni = elem_in_nf(uniformizer(p))
+  panti = anti_uniformizer(p)
+  for (a, c) in pbA
+    v = valuation(c, p)
+    if v < 0
+      push!(adjusted_basis, puni^v * a)
+      #@assert valuation(uniformizer(p)^-v * c, p) == 0
+    elseif v > 0
+      push!(adjusted_basis, panti^-v * a)
+      #@assert valuation(anti_uniformizer(p)^v * c, p) == 0
+    else
+      push!(adjusted_basis, deepcopy(a))
+    end
+  end
+  pi = anti_uniformizer(B)
+  ii = -1
+  #@show adjusted_basis
+  found = false
+  O = order(A)
+  b_pmat = basis_pmatrix(O, copy = false)
+  vals = Int[valuation(b_pmat.coeffs[i], p) for i in 1:length(adjusted_basis)]
+  t = zero_matrix(base_field(nf(O)), 1, degree(O))
+  bmatinv = basis_mat_inv(O, copy = false)
+  while !found
+    ii += 1
+    for i in 1:length(adjusted_basis)
+      newa = mul!(adjusted_basis[i], adjusted_basis[i], pi)
+      elem_to_mat_row!(t, 1, newa)
+      t = mul!(t, t, bmatinv)
+      for i = 1:degree(O)
+        if iszero(t[1, i])
+          continue
+        end
+        if !(valuation(t[1, i], p) >= vals[i])
+          return ii
+        end
+      end
+    end
+  end
+  #else
+  #  O = order(A)
+  #  Afrac = fractional_ideal(O, basis_pmatrix(A), true)
+  #  Bi = inv(B)
+  #  i = 0
+  #  C = Afrac*Bi
+  #  @assert C != Afrac
+  #  while isintegral(C)
+  #    C = C*Bi
+  #    i += 1
+  #  end
+  #  return i
+  #end
+end
+
 valuation(A::NfRelOrdIdl{T, S}, B::NfRelOrdIdl{T, S}) where {T, S} = valuation_naive(A, B)
 
 function valuation_naive(a::NfRelOrdElem{T}, B::NfRelOrdIdl{T, S}) where {T, S}
   @assert !iszero(a)
   @assert order(parent(a).basis_pmatrix.coeffs[1]) == order(B.basis_pmatrix.coeffs[1])
-  @assert order((a * parent(a)).basis_pmatrix.coeffs[1]) == order(B.basis_pmatrix.coeffs[1])
-  return valuation(a*parent(a), B)
+  #@assert order((a * parent(a)).basis_pmatrix.coeffs[1]) == order(B.basis_pmatrix.coeffs[1])
+  pi = anti_uniformizer(B)
+  i = 0
+  b = elem_in_nf(a)
+  O = parent(a)
+  while true
+    b = b * pi
+    if !(b in O)
+      return i
+    end
+    i += 1
+  end
+  #return valuation(a * order(B), B)
 end
 
 valuation(a::NfRelOrdElem{T}, B::NfRelOrdIdl{T, S}) where {T, S} = valuation_naive(a, B)
 
-valuation(a::fmpz, B::NfRelOrdIdl) = valuation(order(B)(a), B)
+function valuation(a::Union{Integer, fmpz}, B::NfRelOrdIdl)
+  e = ramification_index(B)
+  return valuation(a, minimum(B)) * e
+end
 
 ################################################################################
 #
@@ -1433,15 +1531,15 @@ function uniformizer(P::NfRelOrdIdl)
   return z
 end
 
-function _is_p_uniformizer(z::NfRelOrdElem, P::T, primes::Vector{T}) where {T <: NfRelOrdIdl}
+function _is_p_uniformizer(z::NfRelOrdElem, P::T, P2::T, primes::Vector{T}) where {T <: NfRelOrdIdl}
   if iszero(z)
     return false
   end
-  if valuation(z, P) != 1
+  if !(z in P) || z in P^2# z valuation(z, P) != 1
     return false
   end
   for PP in primes
-    if valuation(z, PP) != 0
+    if z in PP #if valuation(z, PP) != 0
       return false
     end
   end
@@ -1469,9 +1567,10 @@ function p_uniformizer(P::NfRelOrdIdl{S, T, U}) where {S, T, U}
       push!(primes, PP)
     end
   end
+  P2 = P^2
   r = 500
   z = rand(P, r)
-  while !_is_p_uniformizer(z, P, primes)
+  while !_is_p_uniformizer(z, P, P2, primes)
     z = rand(P, r)
   end
   P.p_uniformizer = z

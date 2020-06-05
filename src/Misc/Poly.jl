@@ -313,6 +313,19 @@ function factor_mod_pk(H::HenselCtx, k::Int)
   return factor_to_dict(H.LF)
 end
 
+factor_mod_pk(H::HenselCtx) = factor_to_dict(H.LF)
+factor_mod_pk(::Type{Array}, H::HenselCtx) = factor_to_array(H.LF)
+length(H::HenselCtx) = H.LF._num
+
+function degrees(H::HenselCtx)
+  d = Int[]
+  a = H.LF
+  for i=1:a._num
+    push!(d, Int(ccall((:fmpz_poly_degree, libflint), Clong, (Ref{fmpz_poly_raw}, ), a.poly+(i-1)*sizeof(fmpz_poly_raw))))
+  end
+  return d
+end
+
 function factor_mod_pk(::Type{Array}, H::HenselCtx, k::Int)
   if H.r == 1
     return [(H.f, 1)]
@@ -975,6 +988,37 @@ function number_real_roots(f::fmpz_poly)
   evinf = Int[sign(coeff(x, degree(x))) for x in s]
   evminf = Int[((-1)^degree(x))*sign(coeff(x,degree(x))) for x in s]
   return _number_changes(evminf)-_number_changes(evinf)
+end
+
+function sturm_sequence(f::PolyElem{<:FieldElem})
+  g = f
+  h = derivative(g)
+  #h = _divide_by_content(derivative(g))
+  seq = typeof(f)[g,h]
+  while true
+    #r = _divide_by_content(pseudorem(g,h))
+    r = rem(g, h)
+    if r != 0
+      push!(seq, -r)
+      g, h = h, -r
+    else 
+      break
+    end
+  end
+  return seq
+
+end
+
+function number_real_roots(f::PolyElem{nf_elem}, P::InfPlc; sturm_sequence = PolyElem{nf_elem}[])
+  if length(sturm_sequence) == 0
+    s = Hecke.sturm_sequence(f)
+  else
+    s = sturm_sequence
+  end
+
+  evinf = Int[sign(coeff(x, degree(x)), P) for x in s]
+  evminf = Int[((-1)^degree(s[i]))*evinf[i] for i in 1:length(s)]
+  return _number_changes(evminf) - _number_changes(evinf)
 end
 
 function number_positive_roots(f::PolyElem{nf_elem}, P::InfPlc)

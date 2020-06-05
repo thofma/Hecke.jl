@@ -78,7 +78,6 @@ function _search_rational_relation(U::UnitGrpCtx{S}, y::S, bound::fmpz) where S
   return rel, p
 end
 
-
 function _add_dependent_unit!(U::UnitGrpCtx{S}, y::S, rel_only::Type{Val{T}} = Val{false}; post_reduction::Bool = true) where {S <: Union{nf_elem, FacElem{nf_elem, AnticNumberField}}, T}
   @assert has_full_rank(U)
 
@@ -126,16 +125,7 @@ function _add_dependent_unit!(U::UnitGrpCtx{S}, y::S, rel_only::Type{Val{T}} = V
     return false
   end
 
-  m = matrix(FlintZZ, reshape(rel, r + 1, 1))
-
-  h, u = hnf_with_transform(m)
-
-  @assert h[1,1] == 1
-
-  u = inv(u)
-
-  m = sub(u, 1:r+1, 2:r+1)
-  m = lll(m')'
+  m = _find_new_basis(rel)
 
   U.units =  _transform(vcat(U.units, y), m)
 
@@ -345,4 +335,47 @@ end
 function apply_automorphism(u::UnitGrpCtx, i::Int, x::FacElem{nf_elem, AnticNumberField})
   D = Dict{nf_elem, fmpz}(apply_automorphism(u, i, b) => e for (b, e) in x)
   return FacElem(D)
+end
+
+################################################################################
+#
+#  New basis for transformed units
+#
+################################################################################
+
+function _find_new_basis(rel)
+  r = length(rel)
+  m = matrix(FlintZZ, reshape(rel, r, 1))
+
+  h, u = hnf_with_transform(m)
+
+  @assert h[1,1] == 1
+
+  u = inv(u)
+
+  m = sub(u, 1:r, 2:r)
+  m = lll(m')'
+  return m
+end
+
+function _find_new_basis2(rel)
+  r = length(rel)
+  m = zero_matrix(FlintZZ, r, r)
+  #m = matrix(FlintZZ, reshape(rel, r + 1, 1))
+  for i in 1:r
+    m[i, 1] = rel[i]
+  end
+  for j in 2:r
+    m[j, j] = 1
+  end
+
+  h, u = hnf_with_transform(m)
+
+  @assert h[1,1] == 1
+
+  u = inv(u)
+
+  m = sub(u, 1:r, 2:r)
+  m = lll(m')'
+  return m
 end

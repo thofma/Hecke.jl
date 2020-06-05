@@ -148,20 +148,17 @@ function local_factor_generic(L::HermLat, p)
 
   chain = typeof(L)[L]
   ok, LL = ismaximal_integral(L, p)
-  while !ok
+  @time while !ok
     push!(chain, LL)
     ok, LL = ismaximal_integral(LL, p)
   end
-  @show length(chain)
   f = local_factor_maximal(L, p)
-  @show f
-  for i in 1:(length(chain) - 1)
+  @time for i in 1:(length(chain) - 1)
     M, E = maximal_sublattices(chain[i + 1], P, use_auto = false)# should be use_auto = def)
-    f = f * sum(E[j] for j in 1:length(M) if islocally_isometric(chain[i], M[j], p))
+    f = f * sum(Int[E[j] for j in 1:length(M) if islocally_isometric(chain[i], M[j], p)])
     M, E = minimal_superlattices(chain[i], P, use_auto = false)# should be use_auto = def)
-    f = divexact(f, sum(E[j] for j in 1:length(M) if islocally_isometric(chain[i + 1], M[j], p)))
+    f = divexact(f, sum(Int[E[j] for j in 1:length(M) if islocally_isometric(chain[i + 1], M[j], p)]))
   end
-  @show f
   return f
 end
 
@@ -174,9 +171,7 @@ function local_mass_factor(L::HermLat, p)
   ram = length(lp) == 1 && lp[1][2] == 2
   @show ram
   if ram && isdyadic(p)
-    @show "here"
     lf = local_factor_even(L, p)
-    @show lf
     # TODO: Use Cho's recipe if p unramified over Z.
     if iszero(lf)
       lf = local_factor_generic(L, p)
@@ -184,7 +179,6 @@ function local_mass_factor(L::HermLat, p)
     end
     return lf
   end
-  @show lf
   lp = prime_decomposition(S, p)
   split = length(lp) > 1 && !ram
   _, G, s = jordan_decomposition(L, p)
@@ -195,6 +189,7 @@ function local_mass_factor(L::HermLat, p)
   m = rank(L)
   local f::fmpq
   if ram
+    @show "Sp", 2 * div(m, 2), q
     f = fmpq(group_order("Sp", 2 * div(m ,2), q))
   else
     f = fmpq(group_order(split ? "GL" : "U", m, q))
@@ -299,7 +294,7 @@ function local_mass(L::HermLat)
   lf = fmpq(1)
 
   for p in bad_primes(L, discriminant = true)
-    @show minimum(p), local_mass_factor(L, p)
+    #@show minimum(p), local_mass_factor(L, p)
     lf *= local_mass_factor(L, p)
   end
 

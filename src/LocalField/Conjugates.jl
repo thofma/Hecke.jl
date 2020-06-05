@@ -50,6 +50,8 @@ function roots(f::fmpz_poly, Q::FlintQadicField; max_roots::Int = degree(f))
   return RT
 end
 
+is_splitting(C::qAdicRootCtx) = length(C.H) != length(C.Q)
+
 function roots(C::qAdicRootCtx, n::Int = 10)
   if isdefined(C, :R) && all(x -> x.N >= n, C.R)
     return [setprecision(x, n) for x = C.R]
@@ -59,7 +61,7 @@ function roots(C::qAdicRootCtx, n::Int = 10)
   for Q = C.Q
     Q.prec_max = n
     for x = lf
-      if degree(x[1]) == degree(Q)
+      if is_splitting(C) || degree(x[1]) == degree(Q)
         append!(rt, roots(x[1], Q, max_roots = 1))
       end
     end
@@ -87,9 +89,18 @@ mutable struct qAdicConj
   C::qAdicRootCtx
   cache::Dict{nf_elem, Any}
 
-  function qAdicConj(K::AnticNumberField, p::Int)
+  function qAdicConj(K::AnticNumberField, p::Int; splitting_field::Bool = false)
     isindex_divisor(maximal_order(K), p) && error("cannot deal with index divisors yet")
     isramified(maximal_order(K), p) && error("cannot deal with ramification yet")
+    if splitting_field
+      Zx = PolynomialRing(FlintZZ, cached = false)[1]
+      C = qAdicRootCtx(Zx(K.pol), p, splitting_field = true)
+      r = new()
+      r.C = C
+      r.K = K
+      r.cache = Dict{nf_elem, Any}()
+      return r
+    end
     D = _get_nf_conjugate_data_qAdic(K, false)
     if D !== nothing
       if haskey(D, p)
@@ -132,18 +143,33 @@ xomputed using automorphisms (the Frobenius).
 If `flat = true`, then instead of the conjugates, only the $p$-adic coefficients are returned.
 """
 function conjugates(a::nf_elem, C::qAdicConj, n::Int = 10; flat::Bool = false, all::Bool = true)
-  return expand(_conjugates(a, C, n, x -> x), flat = flat, all = all)
+  if is_splitting(C.C)
+    return expand(_conjugates(a, C, n, x -> x), flat = flat, all = all, degs = degrees(C.C.H))
+  else
+    return expand(_conjugates(a, C, n, x -> x), flat = flat, all = all)
+  end
 end
 
-function expand(a::Array{qadic, 1}; all::Bool, flat::Bool)
+function expand(a::Array{qadic, 1}; all::Bool, flat::Bool, degs::Array{Int, 1}= Int[])
   re = qadic[]
   if all
-    for x = a
+    for ix = 1:length(a)
+      x = a[ix]
       push!(re, x)
       y = x
-      for i=2:degree(parent(x))
-        y = frobenius(y)
-        push!(re, y)
+      d = degree(parent(x))
+      if ix <= length(degs)
+        for i=2:degs[ix]
+          for j=1:div(d, degs[ix])
+            y = frobenius(y)
+          end
+          push!(re, y)
+        end
+      else
+        for i=2:degree(parent(x))
+          y = frobenius(y)
+          push!(re, y)
+        end
       end
     end
   else
@@ -241,7 +267,12 @@ function conjugates_log(a::FacElem{nf_elem, AnticNumberField}, C::qAdicConj, n::
       end
     end
   end
-  return expand(res, all = all, flat = flat)
+
+  if is_splitting(C.C)
+    return expand(res, flat = flat, all = all, degs = degrees(C.C.H))
+  else
+    return expand(res, all = all, flat = flat)
+  end
 end
 
 

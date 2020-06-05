@@ -535,7 +535,9 @@ end
 
 function valuation_naive(a::NumFieldElem, P::NfRelOrdIdl)
   @assert !iszero(a)
-  return valuation(a*order(P), P)
+  #return valuation(a*order(P), P)
+  d = denominator(a, order(P))
+  return valuation(order(P)(d * a), P) - valuation(d, P)
 end
 
 valuation(a::NumFieldElem, P::NfRelOrdIdl) = valuation_naive(a, P)

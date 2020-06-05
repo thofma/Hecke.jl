@@ -392,10 +392,10 @@ function _coprime_integral_ideal_class(x::FacElem{NfOrdIdl, NfOrdIdlSet}, y::NfO
 end
 
 # this is slow
-function _coprime_norm_integral_ideal_class(x::NfOrdFracIdl, y::NfOrdIdl)
+function _coprime_norm_integral_ideal_class(x, y) #x::NfOrdFracIdl, y::NfOrdIdl)
   # x must be nonzero
   O = order(y)
-  if isone(x.den) && gcd(norm(numerator(x)), norm(y)) == 1
+  if isone(denominator(x)) && iscoprime(norm(numerator(x)), norm(y))
     return deepcopy(numerator(x)), nf(O)(1)
   end
   x_inv = inv(x)
@@ -492,9 +492,9 @@ function find_pseudo_hnf_modulus(P::PMat{T, S}) where {T, S}
     rowPerm = permGroup()
     rank = 0
     while rank != ncols(P)
-      lp = prime_decomposition(O, p)
+      lp = prime_ideals_over(O, p)
       for t in lp
-        F, mF = ResidueField(O, t[1])
+        F, mF = ResidueField(O, t)
         mFF = extend(mF, K)
         Pt = zero_matrix(codomain(mFF), nrows(P), ncols(P))
         nextIdeal = false
@@ -562,7 +562,7 @@ function _make_integral!(P::PMat{T, S}) where {T, S}
   return z
 end
 
-function pseudo_hnf_mod(P::PMat, m::NfOrdIdl, shape::Symbol = :upperright, strategy = :split)
+function pseudo_hnf_mod(P::PMat, m, shape::Symbol = :upperright, strategy = :split)
   O = order(m)
 
   t_comp_red = 0.0
@@ -655,7 +655,7 @@ end
 
 #this is Algorithm 4 of FH2014
 # we assume that span(P) \subseteq O^r
-function _matrix_for_reduced_span(P::PMat, m::NfOrdIdl)
+function _matrix_for_reduced_span(P::PMat, m::NfAbsOrdIdl)
   O = order(m)
   Om, OtoOm = quo(O, m)
   z = zero_matrix(Om, nrows(P), ncols(P))
@@ -677,6 +677,27 @@ function _matrix_for_reduced_span(P::PMat, m::NfOrdIdl)
   return z
 end
 
+function _matrix_for_reduced_span(P::PMat, m::NfRelOrdIdl)
+  O = order(m)
+  Om, OtoOm = quo(O, m)
+  z = zero_matrix(Om, nrows(P), ncols(P))
+  if isone(norm(m))
+    return z
+  end
+
+  for i in 1:nrows(z)
+    I, a = _coprime_norm_integral_ideal_class(P.coeffs[i], m)
+    n = absolute_norm(I)
+    Omn = OtoOm(O(n))
+    qq = inv(Omn)
+    for j in 1:ncols(z)
+      @assert euclid(Omn) == 1
+      q = OtoOm(O(n*divexact(P.matrix[i, j], a)))
+      z[i, j] = mul!(z[i, j], q, qq)
+    end
+  end
+  return z
+end
 (::NfOrdQuoRing)(a::NfOrdQuoRingElem) = a
 
 _check(a) = a.has_coord ? dot(a.coordinates, basis(parent(a))) == a : true

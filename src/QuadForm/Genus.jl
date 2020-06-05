@@ -585,7 +585,6 @@ end
 #
 ################################################################################
 
-# TODO: caching
 # TODO: better documentation
 
 @doc Markdown.doc"""
@@ -596,10 +595,23 @@ Returns the genus of $L$ at the prime ideal $\mathfrak p$.
 See [Kir16, Definition 8.3.1].
 """
 function genus(L::HermLat, q)
-  if order(q) !== base_ring(base_ring(L))
-    return _genus(L, minimum(q))
+  c = get_special(L, :local_genera)
+  if c === nothing
+    symbols = Dict{typeof(q), LocalGenusHerm{typeof(base_field(L)), typeof(q)}}()
+    set_special(L, :local_genera => symbols)
   else
-    return _genus(L, q)
+    symbols = c::Dict{typeof(q), LocalGenusHerm{typeof(base_field(L)), typeof(q)}}
+    if haskey(symbols, q)
+      return symbols[q]
+    end
+  end
+
+  if order(q) !== base_ring(base_ring(L))
+    g = _genus(L, minimum(q))
+  else
+    g = _genus(L, q)
+    symbols[q] = g
+    return g
   end
 end
 
@@ -756,7 +768,7 @@ function __genus_symbol(L::HermLat, p)
     for i in 1:length(B)
       normal = _get_norm_valuation_from_gram_matrix(G[i], P) == S[i]
       GG = diagonal_matrix(dense_matrix_type(E)[pi^(max(0, S[i] - S[j])) * G[j] for j in 1:length(B)])
-      v = _get_norm_valuation_from_gram_matrix(GG, P)
+      #v = _get_norm_valuation_from_gram_matrix(GG, P)
       #@assert v == valuation(R * norm(lattice(hermitian_space(E, GG), identity_matrix(E, nrows(GG)))), P)
       r = nrows(B[i]) # rank
       s = S[i] # P-valuation of scale(L_i)
@@ -1416,7 +1428,7 @@ function genus_generators(L::HermLat)
       push!(C0, sum(R * R(EabstoE(elem_in_nf(b))) for b in basis(p)))
     end
   end
-  Q0, q0 = quo(C, [ h\ideal(Rabs, [Rabs(EabstoE\b) for b in absolute_basis(i)]) for i in C0])
+  Q0, q0 = quo(C, elem_type(C)[ h\ideal(Rabs, [Rabs(EabstoE\b) for b in absolute_basis(i)]) for i in C0])
   q00 = pseudo_inv(q0) * h
   PP = ideal_type(R)[]
 

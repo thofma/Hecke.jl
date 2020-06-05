@@ -137,14 +137,13 @@ function _unit_group_find_units_with_transform(u::UnitGrpCtx, x::ClassGrpCtx)
     @vprint :UnitGroup 2 "Test if kernel element yields torsion unit ... \n"
     @v_do :UnitGroup 2 pushindent()
     time_torsion += @elapsed is_tors, p = istorsion_unit(y, false, u.tors_prec)
+    @v_do :UnitGroup 2 popindent()
     u.tors_prec = max(p, u.tors_prec)
     if is_tors
-      @v_do :UnitGroup 2 popindent()
       @vprint :UnitGroup 2 "Element is torsion unit\n"
       not_larger = not_larger + 1
       continue
     end
-    @v_do :UnitGroup 2 popindent()
 
     @v_do :UnitGroup 2 pushindent()
     if add_orbit
@@ -293,14 +292,14 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx; add_orbit::Bool =
 
       @vprint :UnitGroup 1 "Exponents are of bit size $(isempty(y.fac) ? 0 : maximum([ nbits(o) for o in values(y.fac)]))\n"
       @vprint :UnitGroup 1 "Test if kernel element yields torsion unit ... \n"
-      @v_do :UnitGroup 2 pushindent()
 
+      @v_do :UnitGroup 2 pushindent()
       time_torsion += @elapsed is_tors, p1 = istorsion_unit(y, false, u.tors_prec)
+      @v_do :UnitGroup 2 popindent()
 
       u.tors_prec = max(p1, u.tors_prec)
       p = max(p, u.tors_prec)
       if is_tors
-        @v_do :UnitGroup 2 popindent()
         @vprint :UnitGroup 1 "Element is torsion unit\n"
         not_larger += 1
         if has_full_rank(u) && not_larger > not_larger_bound
@@ -311,7 +310,6 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx; add_orbit::Bool =
       end
 
       @vprint :UnitGroup 1 "Element is non-torsion unit\n"
-      @v_do :UnitGroup 2 popindent()
 
       @v_do :UnitGroup 2 pushindent()
 
@@ -327,9 +325,11 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx; add_orbit::Bool =
       else
         not_larger = not_larger + 1
         if not_larger > not_larger_bound
+          @v_do :UnitGroup 2 popindent()
           break
         end
       end
+      @v_do :UnitGroup 2 popindent()
     end
     u.units = reduce(u.units, u.tors_prec)
     if add_orbit && rank(u) > r-div(r, 4)
@@ -368,7 +368,6 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx; add_orbit::Bool =
         end
       end
     end
-    @v_do :UnitGroup 2 popindent()
   end
 
   #final reduction ...
