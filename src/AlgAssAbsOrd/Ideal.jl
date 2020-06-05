@@ -429,7 +429,7 @@ function +(a::AlgAssAbsOrdIdl{S, T}, b::AlgAssAbsOrdIdl{S, T}) where {S, T}
   d = dim(algebra(a))
   Ma = basis_matrix(a, copy = false)
   Mb = basis_matrix(b, copy = false)
-  @hassert :AlgAssOrd 1 isupper_triangular(Ma)
+  @hassert :AlgAssOrd 1 isupper_triangular(numerator(Ma))
   M = vcat(Ma, Mb)
   M = sub(hnf(M, :lowerleft, triangular_top = true), (d + 1):2*d, 1:d)
   c = ideal(algebra(a), M, true)
