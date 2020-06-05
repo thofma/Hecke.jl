@@ -104,10 +104,16 @@ function main()
 
   _n = clog(dbound, fmpz(10))
   if fmpz(10)^_n == dbound
-    file = sprint_formatted("%0$(length(string(length(small_solvable_groups))))d", grp_no) * "-$n-$i-10^$(_n)."* "log"
+    file = sprint_formatted("%0$(length(string(length(small_solvable_groups))))d", grp_no) * "-$n-$i-10^$(_n)"
   else
-    file = sprint_formatted("%0$(length(string(length(small_solvable_groups))))d", grp_no) * "-$n-$i-$dbound."* "log"
+    file = sprint_formatted("%0$(length(string(length(small_solvable_groups))))d", grp_no) * "-$n-$i-$dbound"
   end
+
+  if maxabsubfields isa String
+    file = file * "_" * maxabsubfields
+  end
+
+  file = file * ".log"
 
   @show grp_order
   @show grp_id
