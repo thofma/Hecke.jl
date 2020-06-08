@@ -455,8 +455,8 @@ Returns matrices $C$ and $S$ such that $C = SMS^{-1}$ and $C$ is in rational can
 function rational_canonical_form(M::MatElem{T}) where T <: FieldElem
   @assert issquare_matrix(M)
   pols, basis_transf, gens = _rational_canonical_form_setup(M)
-  N = similar(M)
-  S = similar(M)
+  N = zero(M)
+  S = zero(M)
   ind = nrows(M)+1
   for i = 1:length(pols)
     C = companion_matrix(pols[i])
@@ -515,8 +515,8 @@ function jordan_normal_form(M::MatElem{T}) where T <: FieldElem
   @assert issquare_matrix(M)
   pols, basis_transf, gens = _rational_canonical_form_setup(M)
   factors, gens_polys_mults = refine_for_jordan(pols, gens, M)
-  J = similar(M)
-  S = similar(M)
+  J = zero(M)
+  S = zero(M)
   ind = 1
   for i = 1:length(factors)
     for j = 1:length(gens_polys_mults)
