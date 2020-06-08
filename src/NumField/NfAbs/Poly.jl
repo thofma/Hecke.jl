@@ -541,4 +541,3 @@ function cld_bound(f::fmpz_poly, k::Int)
   return b
 end
 cld_bound(f::fmpz_poly, k::Array{Int, 1}) = map(x->cld_bound(f, x), k)
-

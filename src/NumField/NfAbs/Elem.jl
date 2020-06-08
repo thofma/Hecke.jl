@@ -435,74 +435,37 @@ function factor(f::PolyElem{nf_elem})
     r.unit = Kx(lead(f))
     return r
   end
-
-  v = 0
-  while v < degree(f) && iszero(coeff(f, v))
-    v += 1
-  end
-  f = shift_right(f, v)
-
-  f_orig = deepcopy(f)
-  @vprint :PolyFactor 1 "Factoring $(nice(f))\n"
-  @vtime :PolyFactor 2 g = gcd(f, derivative(f))  
-  if degree(g) > 0
-    f = div(f, g)
-  end
-
-  if degree(f) == 0
-    r = Fac{typeof(f)}()
-    if v > 0
-      r.fac = Dict{typeof(f), Int}(gen(parent(f)) => v)
+  sqf = squarefree_factorization(f)
+  fac = Dict{typeof(f), Int}()
+  for (k, v) in sqf
+    if degree(k) == 1
+      fac[k] = v
+      continue
     end
-    r.unit = one(Kx) * lead(f_orig)
-    return r
-  end
-
-  if degree(f) == 1
-    r = Fac{typeof(f)}()
-    r.fac = Dict{typeof(f), Int}(f*(1//lead(f)) => degree(f_orig))
-    if v > 0
-      r.fac[gen(parent(f))] = v
+    @vprint :PolyFactor 1 "Factoring $(nice(k))\n"
+    lf = _factors(k)
+    for g in lf
+      fac[g] = v
     end
-    r.unit = one(Kx) * lead(f_orig)
-    return r
   end
+  r = Fac{typeof(f)}()
+  r.fac = fac
+  #The unit is just the leading coefficient of f
+  r.unit = lead(f)
+  return r
+end
+
+#assumes that f is a squarefree polynomial
+function _factor(f::PolyElem{nf_elem})
+
   f = f*(1//lead(f))
-  
+ 
   if degree(f) < degree(K)
     lf = factor_trager(f)::Vector{typeof(f)}
   else
     lf = factor_new(f)::Vector{typeof(f)}
   end
-
-  r = Fac{typeof(f)}()
-  r.fac = Dict{typeof(f), Int}( x => 1 for x = lf)
-  r.unit = Kx(1)
-
-  if f != f_orig
-    global p_start
-    p = p_start
-    @vtime :PolyFactor 2 while true
-      p = next_prime(p)
-      me = modular_init(K, p, max_split=1)
-      fp = modular_proj(f, me)[1]
-      if issquarefree(fp)
-        fp = deepcopy(modular_proj(f_orig, me)[1])
-        for k in keys(res)
-          gp = modular_proj(k, me)[1]
-          res[k] = valuation(fp, gp)
-        end
-        # adjust the unit of the factorization
-        r.unit = one(Kx) * lead(f_orig)//prod((lead(p) for (p, e) in r))
-        return r
-      end
-    end
-  end
-  if v > 0
-    r.fac[gen(parent(f))] = v
-  end
-  r.unit = one(Kx)* lead(f_orig)//prod((lead(p) for (p, e) in r))
-  return r
+  return lf
 end
 
 function factor_trager(f::PolyElem{nf_elem})
@@ -577,8 +540,8 @@ function isirreducible(f::PolyElem{nf_elem})
       end
     end
   end
-  fac = factor(f)
-  return length(fac.fac) == 1 && first(values(fac.fac)) == 1
+  fac = _factor(f)
+  return length(fac) == 1
 end
 
 function _ds(fa)
