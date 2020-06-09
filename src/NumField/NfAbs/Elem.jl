@@ -442,8 +442,13 @@ function factor(f::PolyElem{nf_elem})
       fac[k] = v
       continue
     end
-    @vprint :PolyFactor 1 "Factoring $(nice(k))\n"
-    lf = _factors(k)
+    el = k
+    if iszero(coeff(k, 0))
+      el = shift_right(el, 1)
+      fac[gen(Kx)] = v
+    end
+    @vprint :PolyFactor 1 "Factoring $(nice(el))\n"
+    lf = _factor(el)
     for g in lf
       fac[g] = v
     end
@@ -451,13 +456,14 @@ function factor(f::PolyElem{nf_elem})
   r = Fac{typeof(f)}()
   r.fac = fac
   #The unit is just the leading coefficient of f
-  r.unit = lead(f)
+  r.unit = Kx(lead(f))
   return r
 end
 
 #assumes that f is a squarefree polynomial
 function _factor(f::PolyElem{nf_elem})
 
+  K = base_ring(f)
   f = f*(1//lead(f))
  
   if degree(f) < degree(K)
@@ -478,18 +484,20 @@ function factor_trager(f::PolyElem{nf_elem})
   Kx = parent(f)
   K = base_ring(Kx)
 
-  @vtime :PolyFactor Np = norm_mod(g, p)
+  Zx = FlintZZ["x"][1]
+  @vtime :PolyFactor Np = norm_mod(g, p, Zx)
   while isconstant(Np) || !issquarefree(map_coeffs(F, Np))
     k = k + 1
     g = compose(f, gen(Kx) - k*gen(K))
-    @vtime :PolyFactor 2 Np = norm_mod(g, p)
+    @vtime :PolyFactor 2 Np = norm_mod(g, p, Zx)
   end
 
   @vprint :PolyFactor 2 "need to shift by $k, now the norm"
   if any(x -> denominator(x) > 1, coefficients(g))
-    @vtime :PolyFactor 2 N = norm(g)
+    @vtime :PolyFactor 2 N = Zx(norm(g))
   else
-    @vtime :PolyFactor 2 N = norm_mod(g)
+    @vtime :PolyFactor 2 N = norm_mod(g, Zx)
+    @hassert :PolyFactor 1 N == Zx(norm(g))
   end
 
   while isconstant(N) || !issquarefree(N)

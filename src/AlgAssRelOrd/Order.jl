@@ -442,16 +442,16 @@ end
 """
 function maximal_order(A::AbsAlgAss{T}) where { T <: NumFieldElem }
   if isdefined(A, :maximal_order)
-    return A.maximal_order
+    return A.maximal_order::order_type(A)
   end
 
   # So far ..._absolute is usually faster for linear, quadratic and cubic base fields,
   # but of course there are exceptions.
   # Feel free to adjust this if-condition.
   if base_field(base_ring(A)) == FlintQQ && degree(base_ring(A)) <= 3
-    O = maximal_order_via_absolute(A)
+    O = maximal_order_via_absolute(A)::order_type(A)
   else
-    O = maximal_order_via_relative(A)
+    O = maximal_order_via_relative(A)::order_type(A)
   end
   A.maximal_order = O
   return O
@@ -628,9 +628,9 @@ end
 Given a maximal order `O` in a full matrix algebra over a number field, return a
 nice maximal order `R` and element `a` such that `a O a^-1 = R`.
 """
-function nice_order(O::AlgAssRelOrd)
+function nice_order(O::AlgAssRelOrd{S, T, U}) where {S, T, U}
   if isdefined(O, :nice_order)
-    return O.nice_order
+    return O.nice_order::Tuple{typeof(O), elem_type(U)}
   else
     sO, A = _simple_maximal_order(O, true, Val{true})
     O.nice_order = sO, A

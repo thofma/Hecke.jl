@@ -938,9 +938,9 @@ end
 Given a maximal order `O` in a full matrix algebra over the rationals, return a
 nice maximal order `R` and element `a` such that `a O a^-1 = R`.
 """
-function nice_order(O::AlgAssAbsOrd)
+function nice_order(O::AlgAssAbsOrd{S, T}) where {S, T}
   if isdefined(O, :nice_order)
-    return O.nice_order
+    return O.nice_order::Tuple{typeof(O), T}
   else
     sO, A = _simple_maximal_order(O, Val{true})
     O.nice_order = sO, A

@@ -108,7 +108,15 @@ zero(O::AlgAssAbsOrd) = O(algebra(O)())
 
 > Returns $x$ as an element of the algebra containing it.
 """
-function elem_in_algebra(x::Union{ AlgAssAbsOrdElem, AlgAssRelOrdElem }; copy::Bool = true) where T
+function elem_in_algebra(x::AlgAssRelOrdElem{S, T, U}; copy::Bool = true) where {S, T, U}
+  if copy
+    return deepcopy(x.elem_in_algebra)::elem_type(U)
+  else
+    return x.elem_in_algebra::elem_type(U)
+  end
+end
+
+function elem_in_algebra(x::AlgAssAbsOrdElem{S, T}; copy::Bool = true) where {S, T}
   if copy
     return deepcopy(x.elem_in_algebra)
   else

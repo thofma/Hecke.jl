@@ -840,8 +840,6 @@ function power_reduce(A::NfOrdIdl, e::fmpz)
   else
     C2 = C^2
   end
-  
-  
 
   if isodd(e)
     if norm(A)*norm(C2) > abs(discriminant(O))
@@ -857,58 +855,123 @@ function power_reduce(A::NfOrdIdl, e::fmpz)
   return A, al
 end
 
-#=
+
 function new_power_reduce(A::NfOrdIdl, e::fmpz)
-  OK = order(A)
-  if norm(A) > abs(discriminant(O))
-    A1, a = reduce_ideal(A)
-    @hassert :PID_Test 1 a*A == A1
-    A = A1
-    al = FacElem(Dict(a => -e))
+  O = order(A)
+  if iszero(e)
+    return ideal(O, 1)
+  end
+  K = nf(O)
+  al = FacElem(Dict(K(1) => fmpz(1)))
+  if e < 0
+    A1 = inv(A)
+    A = A1.num
+    add_to_key!(al.fac, K(A1.den), e)
+    e = -e
+  end
+
+  if norm(A)^e <= abs(discriminant(O))
+    return A^e, al
+  end
+  Ainvtot = inv(A)
+  Ainv = Ainvtot.num
+  d = Ainvtot.den
+  res = _new_power_reduce(A, e, Ainv, d)
+  mul!(al, al, res[2])
+  return res[1], al
+end
+
+function _new_power_reduce(A::NfOrdIdl, e::fmpz, Ainv::NfOrdIdl, d::fmpz)
+  #Ainv//d is the inverse of A
+  #We want to reduce A^e
+  O = order(A)
+  K = nf(O)
+  bdisc = abs(discriminant(O))
+  if norm(A) > bdisc
+    a = divexact(basis(Ainv)[1].elem_in_nf, d)
+    A1 = a*A
+    simplify(A1)
+    A = A1.num
+    al = FacElem(Dict(a=>-e))
+    #I need to update Ainv!
+    Ainvtot = inv(A)
+    Ainv = Ainvtot.num
+    d = Ainvtot.den
+    newb = lll(Ainv)[2]
+    mul!(newb, newb, basis_matrix(Ainv, copy = false))
+    Ainv.basis_matrix = newb
   else
     al = FacElem(Dict(K(1) => fmpz(1)))
   end
 
-  if norm(A)^e <= abs(discriminant(O))
-    return A^e, a1
-  end
-  K = nf(OK)
-  #If this does not happen, then we need to reduce the power of the ideal.
-  #Instead of waiting that the ideal becomes large, we immediately call the LLL
-  #on A and try to compute it step by step. This makes sense if e is not too large...
 
-  n_steps = flog(e, 2)
-  invA = inv(A)
-  I = invA.num
-  BA = lll(I)[2]
-  mul!(BA, BA, basis_matrix(I, copy = false))
-  for i = 1:n_steps
-    I2 = I^2
-    C = basis_matrix(I2, copy = false)
-    @vtime :LLL 3 iA, de = pseudo_inv(BA)
-    mul!(iA, C, iA)
-    divexact!(iA, iA, de)
-    hnf_modular_eldiv!(iA, minimum(A))
-    @vtime :LLL 3 T1 = lll(lll(iA, lll_ctx(0.3, 0.51))) 
-    T1 = T1*BA
-    I2.basis_mat = T1
-    BA = lll(I2)[2]
-    mul!(BA, BA, basis_matrix(I, copy = false))
-    if norm(I2) > abs(discriminant(O))
-      el = elem_from_mat_row(OK, BA, 1)
-      elf = divexact(el.elem_in_nf, I.den^(2^i))
-      J = elf*A^(2^i)
-      simplify(J)
-      pow!(a1, 2^i)
-      add_to_key!(a1, elf, 1)
-      Ared, a2 = new_power_reduce(J, 2^())
-      return 
-    else
-      I = I2
-    end
+  if isone(e)
+    return A, al, Ainv, d
   end
+
+  # A^e = A^(e/2)^2 A or A^(e/2)^2
+  # al * A^old^(e/2) = A_new
+  C, cl, Cinv, dCinv = _new_power_reduce(A, div(e, 2), Ainv, d)
+  @hassert :PID_Test 1 C*evaluate(cl) == A^Int(div(e, 2))
+  mul!(al, al, cl^2)
+  if norm(C)^2 > bdisc
+    a = divexact(short_elem_product(Cinv, Cinv), dCinv^2)
+    C21 = a*(C^2)
+    simplify(C21)
+    C2 = C21.num
+    C2invtot = inv(C2)
+    C2inv = C2invtot.num
+    C2d = C2invtot.den
+    newb = lll(C2inv)[2]
+    mul!(newb, newb, basis_matrix(C2inv, copy = false))
+    C2inv.basis_matrix = newb
+    add_to_key!(al.fac, a, -1)
+  else
+    C2 = C^2
+    basis_IJ = _lll_product_basis(Cinv, Cinv)
+    IJ = NfOrdIdl(O, basis_IJ)
+    newb = lll(IJ)[2]
+    mul!(newb, newb, basis_matrix(IJ, copy = false))
+    IJ.basis_matrix = newb
+    C2inv = IJ
+    C2d = dCinv*dCinv
+  end
+  
+  if isodd(e)
+    if norm(A)*norm(C2) > bdisc
+      a = divexact(short_elem_product(C2inv, Ainv), C2d*d)
+      A1 = a*C2*A
+      simplify(A1)
+      A = A1.num
+      add_to_key!(al.fac, a, -1)
+      Ainvtot = inv(A)
+      d = Ainvtot.den
+      Ainv = Ainvtot.num
+      bnew = lll(Ainv)[2]
+      mul!(bnew, bnew, basis_matrix(Ainv, copy = false))
+      Ainv.basis_matrix = bnew
+    else
+      A = C2*A
+      basis_IJ = _lll_product_basis(C2inv, Ainv)
+      IJ = NfOrdIdl(O, basis_IJ)
+      newb = lll(IJ)[2]
+      mul!(newb, newb, basis_matrix(IJ, copy = false))
+      IJ.basis_matrix = newb
+      Ainv = IJ
+      d = d*C2d
+    end
+  else
+    A = C2
+    d = C2d
+    Ainv = C2inv
+  end
+  return A, al, Ainv, d
 end
-=#
+
+function short_elem_product(A::NfOrdIdl, B::NfOrdIdl)
+  return lll_basis_product(A, B)[1]
+end
+
 
 ################################################################################
 #
@@ -935,6 +998,7 @@ function _lll_product_basis(I::NfOrdIdl, J::NfOrdIdl)
   mul!(iA, iA, A)
   return iA
 end
+
 
 
 function lll_basis_product(I::NfOrdIdl, J::NfOrdIdl)

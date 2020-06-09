@@ -1066,7 +1066,7 @@ function squarefree_factorization(f::PolyElem)
   di = gcd(f, derivative(f))
   if isone(di)
     res[f] = 1
-    return res
+    return Fac(one(parent(f)), res)
   end
   ei = divexact(f, di)
   i = 1

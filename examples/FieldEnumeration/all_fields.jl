@@ -1,6 +1,6 @@
 using GAP, Hecke, Printf, ArgParse
 
-include(joinpath(Hecke.pkgdir,"examples/FieldEnumeration.jl"))
+include(joinpath(Hecke.pkgdir,"examples/FieldEnumeration/FieldEnumeration.jl"))
 
 ###############################################################################
 #
@@ -50,6 +50,8 @@ function parse_commandline()
     "--only-cm"
       help = "Only CM fields"
       action = :store_true
+    "--max-ab-subfields"
+      help = "File containing maximal abelian subextensions" 
   end
 
   return parse_args(s)
@@ -65,6 +67,7 @@ function main()
   local only_tame::Bool
   local grp_no::Int
   local only_cm::Bool
+  local maxabsubfields::Union{String, Nothing}
 
   for (arg, val) in parsed_args
     println("$arg => $val")
@@ -82,6 +85,8 @@ function main()
       grp_no = val
     elseif arg == "only-cm"
       only_cm = val
+    elseif arg == "max-ab-subfields"
+      maxabsubfields = val
     end
   end
 
@@ -99,10 +104,16 @@ function main()
 
   _n = clog(dbound, fmpz(10))
   if fmpz(10)^_n == dbound
-    file = sprint_formatted("%0$(length(string(length(small_solvable_groups))))d", grp_no) * "-$n-$i-10^$(_n)."* "log"
+    file = sprint_formatted("%0$(length(string(length(small_solvable_groups))))d", grp_no) * "-$n-$i-10^$(_n)"
   else
-    file = sprint_formatted("%0$(length(string(length(small_solvable_groups))))d", grp_no) * "-$n-$i-$dbound."* "log"
+    file = sprint_formatted("%0$(length(string(length(small_solvable_groups))))d", grp_no) * "-$n-$i-$dbound"
   end
+
+  if maxabsubfields isa String
+    file = file * "_" * maxabsubfields
+  end
+
+  file = file * ".log"
 
   @show grp_order
   @show grp_id
@@ -112,6 +123,9 @@ function main()
   @show only_tame
   @show only_cm
   @show file
+  if maxabsubfields isa String
+    @show maxabsubfields
+  end
 
   if isfile(file)
     throw(error("File $file does already exist"))
@@ -127,7 +141,12 @@ function main()
 
   set_verbose_level(:FieldsNonFancy, 1)
 
-  l = fields(n, i, dbound, only_real = only_real, simplify = false)
+  if maxabsubfields isa String
+    maxabsub = Hecke._read_from_file(maxabsubfields)
+    l = fields(n, i, maxabsub, dbound, only_real = only_real, simplify = false)
+  else
+    l = fields(n, i, dbound, only_real = only_real, simplify = false)
+  end
 
   # Determine the automorphism groups
   if only_cm

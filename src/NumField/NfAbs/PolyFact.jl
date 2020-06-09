@@ -1,4 +1,3 @@
-
 abstract type Hensel end
 
 mutable struct HenselCtxQadic <: Hensel
@@ -762,16 +761,31 @@ end
 # fixed "most" of it...
 #Update: f, K large enough, this wins. Need bounds...
 
-function norm_mod(f::PolyElem{nf_elem}, p::Int, Zx = Globals.Zx)
+function norm_mod(f::PolyElem{nf_elem}, p::Int, Zx::FmpzPolyRing = Globals.Zx)
   K = base_ring(f)
   k = GF(p)
   me = modular_init(K, p)
   t = modular_proj(f, me)
-  tt = lift(Zx, power_sums_to_polynomial(sum(map(x -> map(y -> k(coeff(trace(y), 0)), polynomial_to_power_sums(x, degree(f)*degree(K))), t))))
-  return tt
+  n = degree(f)*degree(K)
+  v = Vector{gfp_elem}(undef, n)
+  first = true
+  for i = 1:length(t)
+    t1 = polynomial_to_power_sums(t[i], n)
+    for j = 1:length(t1)
+      el = k(coeff(trace(t1[j]), 0))
+      if first
+        v[j] = el
+      else
+        v[j] += el
+      end
+    end
+    first = false
+  end
+  pol = power_sums_to_polynomial(v)
+  return lift(Zx, pol)
 end
 
-function norm_mod(f::PolyElem{nf_elem}, Zx=Globals.Zx)
+function norm_mod(f::PolyElem{nf_elem}, Zx::FmpzPolyRing = Globals.Zx)
   #assumes, implicitly, the coeffs of f are algebraic integers.
   # equivalently: the norm is integral...
   p = p_start

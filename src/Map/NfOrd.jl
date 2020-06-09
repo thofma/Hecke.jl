@@ -575,9 +575,9 @@ function extend(f::T, K::AnticNumberField) where T <: Union{NfOrdToFqNmodMor, Nf
     m = denominator(x, domain(f))
     l = valuation(m, P)
     if l == 0
-      return f(O(m*x))//f(O(m))
+      return f(O(m*x, false))//f(O(m))
     else
-      return f(O(pia^l * m * x))//f(O(pia^l * m))
+      return f(O(pia^l * m * x, false))//f(O(pia^l * m, false))
     end
   end
 

@@ -86,7 +86,7 @@ end
 
   K, a = NumberField(x - 1, "a") 
   Kt, t = K["t"]
-  f = t^5 -3 * t^4 - 104 * t^3 + 312 * t^2 + 400t -1200
+  f = t^5 -3 * t^4 - 104 * t^3 + 312 * t^2 + 400*t -1200
   @test length(factor(f)) == 5
   @test length(factor(f*t)) == 6
 
@@ -95,6 +95,11 @@ end
   Ky, y = K["y"] 
   f = y^16+(39)*y^14+(449)*y^12+(1794)*y^10+(2830)*y^8+(1794)*y^6+(449)*y^4+(39)*y^2+(1)
   @test length(factor(f)) == 2
+
+  K, a = number_field(x^2 + x + 1, cached = false);
+  Kt, t = K["t"]
+  g = t^4-t^3-t+(1)
+  @test length(factor(g)) == 3
 end
 
 @testset "Root computation" begin
