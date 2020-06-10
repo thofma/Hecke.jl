@@ -1592,7 +1592,7 @@ function anti_uniformizer(P::NfRelOrdIdl{T, S}) where {T, S}
 
   p = minimum(P, copy = false)
   # We need a pseudo basis of O, where the coefficient ideals have valuation
-  # 0 at p.
+  # 0 at p, so that we can work in the order(p)/p-vector space O/p*O.
   O = order(P)
   N = basis_matrix(O)
   NN = basis_mat_inv(O)
@@ -1625,8 +1625,13 @@ function anti_uniformizer(P::NfRelOrdIdl{T, S}) where {T, S}
   K = left_kernel_basis(Mp)
   @assert length(K) > 0
   x = nf(O)()
+  pbO = pseudo_basis(O, copy = false)
   for i = 1:degree(O)
-    x += immF(K[1][i])*pseudo_basis(O, copy = false)[i][1]*d[i]
+    # Construct a preimage of the i-th basis vector of O/p*O
+    c = coprime_to(pbO[i][2]*inv(d[i]), p)
+    b = immF(inv(mmF(c)))*c*pbO[i][1]*d[i]
+
+    x += immF(K[1][i])*b
   end
   P.anti_uniformizer = x*anti_uniformizer(p)
   return P.anti_uniformizer
