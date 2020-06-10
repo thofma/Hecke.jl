@@ -3,7 +3,7 @@ function inv(a::RelSeriesElem{<:Nemo.FieldElem})
   @assert valuation(a)==0
   # x -> x*(2-xa) is the lifting recursion
   x = parent(a)(inv(coeff(a, 0)))
-  set_prec!(x, 1)
+  x = set_prec!(x, 1)
   p = precision(a)
   la = [p]
   while la[end]>1
@@ -11,13 +11,13 @@ function inv(a::RelSeriesElem{<:Nemo.FieldElem})
   end
 
   two = parent(a)(base_ring(a)(2))
-  set_prec!(two, p)
+  two = set_prec!(two, p)
 
   n = length(la)-1
   y = parent(a)()
   while n>0
-    set_prec!(x, la[n])
-    set_prec!(y, la[n])
+    x = set_prec!(x, la[n])
+    y = set_prec!(y, la[n])
 #    y = mul!(y, a, x)
 #    y = two-y #sub! is missing...
 #    x = mul!(x, x, y)
@@ -47,8 +47,8 @@ function exp(a::RelSeriesElem{<:Nemo.FieldElem})
   n = length(la)-1
   # x -> x*(1-log(a)+a) is the recursion
   while n>0
-    set_prec!(x, la[n])
-    set_prec!(one, la[n])
+    x = set_prec!(x, la[n])
+    one = set_prec!(one, la[n])
     x = x*(one - log(x) + a) # TODO: can be optimized...
     n -=1 
   end
@@ -61,10 +61,10 @@ Return the derivative of the power series $f$.
 """
 function derivative(f::RelSeriesElem{T}) where T
   g = parent(f)()
-  set_prec!(g, precision(f)-1)
+  g = set_prec!(g, precision(f)-1)
   fit!(g, pol_length(f))
   v = valuation(f)
-  set_val!(g, 0)
+  g = set_val!(g, 0)
   if v==0
     for i=1:Nemo.pol_length(f)
       setcoeff!(g, i-1, (i+v)*Nemo.polcoeff(f, i))
@@ -73,7 +73,7 @@ function derivative(f::RelSeriesElem{T}) where T
     for i=0:Nemo.pol_length(f)
       setcoeff!(g, i, (i+v)*Nemo.polcoeff(f, i))
     end
-    set_val!(g, v-1)
+    g = set_val!(g, v-1)
   end
   Nemo.renormalize!(g)  
   return g
@@ -89,9 +89,9 @@ Return the integral of the power series $f$.
 function Nemo.integral(f::RelSeriesElem{T}) where T
   g = parent(f)()
   fit!(g, precision(f)+1)
-  set_prec!(g, precision(f)+1)
+  g = set_prec!(g, precision(f)+1)
   v = valuation(f)
-  Nemo.set_val!(g, v+1)
+  g = Nemo.set_val!(g, v+1)
   for i=0:Nemo.pol_length(f)
     setcoeff!(g, i, divexact(Nemo.polcoeff(f, i), i+v+1))
   end
