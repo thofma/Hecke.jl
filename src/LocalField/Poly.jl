@@ -332,11 +332,11 @@ function divexact(f::AbstractAlgebra.PolyElem{T}, g::AbstractAlgebra.PolyElem{T}
       q1 = d[lenf - leng + 1] = divexact(coeff(f, lenf - 1), coeff(g, leng - 1))
       f = f - shift_left(q1*g, lenf - leng)
       if length(f) == lenf # inexact case
-         set_length!(f, normalise(f, lenf - 1))
+         f = set_length!(f, normalise(f, lenf - 1))
       end
    end
    q = parent(f)(d)
-   set_length!(q, lenq)
+   q = set_length!(q, lenq)
    K = base_ring(f)
    Kt = parent(f)
    p = prime(K)

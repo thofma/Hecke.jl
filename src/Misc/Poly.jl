@@ -1345,7 +1345,7 @@ function divhigh(a::PolyElem{T}, b::PolyElem{T}, n0::Int) where {T}
     #set_length(, -1) fails
     return r
   end
-  Hecke.set_length!(r, Hecke.normalise(r, length(r) - 1))
+  r = Hecke.set_length!(r, Hecke.normalise(r, length(r) - 1))
   return r
 end
 
@@ -1471,7 +1471,7 @@ function mod(f::AbstractAlgebra.PolyElem{T}, g::AbstractAlgebra.PolyElem{T}) whe
         u = addeq!(u, c)
         f = setcoeff!(f, i + length(f) - length(g) - 1, u)
       end
-      set_length!(f, normalise(f, length(f) - 1))
+      f = set_length!(f, normalise(f, length(f) - 1))
     end
   end
   return f
@@ -1502,7 +1502,7 @@ function Base.divrem(f::AbstractAlgebra.PolyElem{T}, g::AbstractAlgebra.PolyElem
         u = addeq!(u, c)
         f = setcoeff!(f, i + length(f) - length(g) - 1, u)
      end
-     set_length!(f, normalise(f, length(f) - 1))
+     f = set_length!(f, normalise(f, length(f) - 1))
   end
   return q, f
 end

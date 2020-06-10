@@ -156,7 +156,7 @@ function _block(a::nf_elem, R::Array{fq_nmod, 1}, ap::fq_nmod_poly)
   nf_elem_to_gfp_poly!(_tmp, a, false) # ignore denominator
   set_length!(ap, length(_tmp))
   for i in 0:(length(_tmp) - 1)
-    setcoeff!(ap, i, base_ring(ap)(_get_coeff_raw(_tmp, i)))
+    ap = setcoeff!(ap, i, base_ring(ap)(_get_coeff_raw(_tmp, i)))
   end
 #  ap = Ft(Zx(a*denominator(a)))
   s = fq_nmod[evaluate(ap, x) for x = R]
