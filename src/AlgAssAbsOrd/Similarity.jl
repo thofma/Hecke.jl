@@ -296,3 +296,494 @@ function _issimilar_husert(A::fmpz_mat, B::fmpz_mat)
   fl, QC = _issimilar_husert_generic(QA, QB)
   return fl, change_base_ring(FlintZZ, QC)
 end
+
+################################################################################
+#
+#  General approach
+#
+################################################################################
+
+mutable struct CommutatorAlgebra
+  A# matrix
+  K# number fields of the minpoly
+  Jblocks # Jordanblocks
+  Eig# Eigenbases over K
+  EigAbs# absolute bases of Eigenspaces
+
+  CommutatorAlgebra() = new()
+end
+
+function _issimilar_new(A, B)
+  Z = _create_com_alg(A)
+  ns = Int[length(E) for E in Z.Eig] 
+  AA = _create_algebra_husert(Z.K, ns)
+  O = _basis_of_integral_commutator_algebra(A, A)
+  I = _basis_of_integral_commutator_algebra(A, B)
+  ordergens = elem_type(AA)[]
+  idealgens = elem_type(AA)[]
+  dec = decompose(AA)
+
+  CA, TA = rational_canonical_form(A)
+  CB, TB = rational_canonical_form(B)
+
+  if CA != CB
+    return false
+  end
+
+  @show Z.K
+  @show ns
+
+  for bb in O
+    b = _induce_action(bb, Z)
+    z = zero(AA)
+    @assert length(dec) == length(b)
+    for i in 1:length(dec)
+      B, mB = dec[i]
+      local C::AlgMat{nf_elem, Generic.MatSpaceElem{nf_elem}}
+      C, BtoC = B.isomorphic_full_matrix_algebra
+      @show b[i]
+      z = z + mB(preimage(BtoC, C(b[i]))::elem_type(B))
+    end
+    push!(ordergens, z)
+  end
+
+  for bb in I
+    b = _induce_action(inv(TA) * TB * bb, Z)
+    z = zero(AA)
+    @assert length(dec) == length(b)
+    for i in 1:length(dec)
+      B, mB = dec[i]
+      local C::AlgMat{nf_elem, Generic.MatSpaceElem{nf_elem}}
+      C, BtoC = B.isomorphic_full_matrix_algebra
+      z = z + mB(preimage(BtoC, C(b[i]))::elem_type(B))
+    end
+    push!(idealgens, z)
+  end
+
+  OO = Order(AA, ordergens)
+  OI = ideal_from_lattice_gens(AA, idealgens)
+  @assert OO == right_order(OI)
+  fl, y = _isprincipal(OI, OO, :right)
+  return fl, OI
+end
+
+
+function _create_com_alg(A)
+  f = factor(charpoly(A))
+  Ks = []
+  z = CommutatorAlgebra()
+  z.A = A
+  z.Jblocks = []
+  z.Eig = []
+  z.EigAbs = []
+  z.K = Ks
+  for (p, e) in f
+    K, a = NumberField(p, cached = false)
+    push!(Ks, K)
+    res = _extract_bases_of_jordan_blocks(A, K)
+    push!(z.Jblocks, res)
+    zz = []
+    zzz = []
+    for i in 1:length(res)
+      v = matrix(K, 1, length(res[i][end]), res[i][end])
+      push!(zz, v)
+      for j in 0:degree(K)
+        push!(zzz, a^j * v)
+      end
+    end
+    push!(z.Eig, zz)
+    push!(z.EigAbs, zzz)
+  end
+  return z
+end
+
+function _basis_of_commutator_algebra(A)
+  linind = transpose(LinearIndices(size(A)))
+  cartind = CartesianIndices(size(A))
+  n = nrows(A)
+  z = zero_matrix(base_ring(A), n^2, n^2)
+  for i in 1:n
+    for j in 1:n
+      for k in 1:n
+        z[linind[i, j], linind[i, k]] = z[linind[i, j], linind[i, k]] + A[k, j]
+        z[linind[i, j], linind[k, j]] = z[linind[i, j], linind[k, j]] - A[i, k]
+      end
+    end
+  end
+  r, K = right_kernel(z)
+  res = typeof(A)[]
+  for k in 1:ncols(K)
+    M = zero_matrix(base_ring(A), nrows(A), ncols(A))
+    for l in 1:n^2
+      i1, j1 = cartind[l].I
+      M[j1, i1] = K[l, k]
+    end
+    push!(res, M)
+  end
+  return res
+end
+
+function _basis_of_integral_commutator_algebra(A)
+  linind = transpose(LinearIndices(size(A)))
+  cartind = CartesianIndices(size(A))
+  n = nrows(A)
+  z = zero_matrix(FlintZZ, n^2, n^2)
+  for i in 1:n
+    for j in 1:n
+      for k in 1:n
+        z[linind[i, j], linind[i, k]] = FlintZZ(z[linind[i, j], linind[i, k]] + A[k, j])
+        z[linind[i, j], linind[k, j]] = FlintZZ(z[linind[i, j], linind[k, j]] - A[i, k])
+      end
+    end
+  end
+  r, K = right_kernel(z)
+  res = typeof(A)[]
+  for k in 1:ncols(K)
+    M = zero_matrix(base_ring(A), nrows(A), ncols(A))
+    for l in 1:n^2
+      i1, j1 = cartind[l].I
+      M[j1, i1] = K[l, k]
+    end
+    push!(res, M)
+  end
+  return res
+end
+
+function _basis_of_integral_commutator_algebra(A, B)
+  linind = transpose(LinearIndices(size(A)))
+  cartind = CartesianIndices(size(A))
+  n = nrows(A)
+  z = zero_matrix(FlintZZ, n^2, n^2)
+  for i in 1:n
+    for j in 1:n
+      for k in 1:n
+        z[linind[i, j], linind[i, k]] = FlintZZ(z[linind[i, j], linind[i, k]] + A[k, j])
+        z[linind[i, j], linind[k, j]] = FlintZZ(z[linind[i, j], linind[k, j]] - B[i, k])
+      end
+    end
+  end
+  r, K = right_kernel(z)
+  res = typeof(A)[]
+  for k in 1:ncols(K)
+    M = zero_matrix(base_ring(A), nrows(A), ncols(A))
+    for l in 1:n^2
+      i1, j1 = cartind[l].I
+      M[j1, i1] = K[l, k]
+    end
+    push!(res, M)
+  end
+  return res
+end
+
+function _induce_action(M, z::CommutatorAlgebra)
+  res = []
+  for i in 1:length(z.K)
+    K = z.K[i]
+    MEig = reduce(hcat, identity.(z.Eig[i]))
+    @show MEig, M
+    m = MEig * change_base_ring(K, M)
+    @show m
+    fl, x = can_solve(MEig, m, side = :left)
+    @assert fl
+    push!(res, x)
+  end
+  return identity.(res)
+end
+
+function _extract_bases_of_jordan_blocks(a, K, c = gen(K))
+  aK = change_base_ring(K, a)
+  J, B = jordan_normal_form(aK)
+  @show J
+  blocks = []
+  d = degree(K)
+  i = 1
+  while i <= nrows(a)
+    b, ro, i = _get_next_jordan_block(J, i)
+    if b != c
+      continue
+    end
+
+    if degree(b) == d
+      push!(blocks, (b, ro))
+    end
+  end
+  res = []
+  for b in blocks
+    if length(b[2]) == 0
+      continue
+    end
+    ro = b[2]
+    v = [[B[ro[r], j] for j in 1:ncols(B)] for r in 1:length(ro)]
+    @assert matrix(K, 1, ncols(B), v[end]) * aK == b[1] * matrix(K, 1, ncols(B), v[end])
+    push!(res, v)
+  end
+  
+  return res
+end
+
+function _get_next_jordan_block(A, i)
+  i0 = i
+  bad = false
+  while i < nrows(A)
+    if !iszero(A[i0:i, (i + 1):nrows(A)]) || !iszero(A[(i + 1):nrows(A), i0:i])
+      bad = true
+      i += 1
+    else
+      break
+    end
+  end
+
+  for j in i0:(i-1)
+    for k in i0:(j-1)
+      if !iszero(A[j, k])
+        return A[i0, i0], [], i + 1
+      end
+    end
+  end
+
+  for j in i0:i
+    if A[i0, i0] != A[j, j]
+      return A[i0, i0], [], i + 1
+    end
+  end
+
+  for j in i0:(i-1)
+    if !isone(A[j, j + 1])
+      return A[i0, i0], [], i + 1
+    end
+  end
+
+  for j in i0:(i-2)
+    for j in (i0+2):i
+      if !iszero(A[i, j])
+        return A[i0, i0], [], i + 1
+      end
+    end
+  end
+
+  i = i0
+  res = [i]
+  b = A[i, i]
+  while i < nrows(A) && A[i, i + 1] == 1
+    i += 1
+    push!(res, i)
+  end
+  return b, res, i + 1
+end
+
+################################################################################
+#
+#  Lifting again
+#
+################################################################################
+
+mutable struct Emat
+  R
+  n
+  i
+  j
+  a
+end
+
+function matrix(e::Emat)
+  z = identity_matrix(e.R, e.n)
+  z[e.i, e.j] = e.a
+  return z
+end
+
+inv(e::Emat) = Emat(e.R, e.n, e.i, e.j, -e.a)
+
+function elementary_matrix(R, n, i, j, a)
+  M = identity_matrix(R, n)
+  M[i, j] = a
+  return M
+end
+
+function _lift2(MM)
+  M = deepcopy(MM)
+  R = base_ring(M)
+  S = _base_ring(R)
+  @assert det(M) == 1
+  k = 1
+  n = nrows(M)
+  left = []
+  left2 = []
+  while k < ncols(M)
+    @assert det(M) == 1
+    # scan the first column for a unit
+    v = Int[euclid(M[i, k]) for i in k:n]
+    @show v
+    if isone(minimum(abs.(v)))
+      l = findfirst(isone, v) + (k - 1)
+      @show k, M
+      @show isunit(M[l, k])
+      @show M[l, k]
+      if l != k
+        @assert l isa Int
+        @show l
+        b = M[l, k]
+        @show b
+        @assert det(M) == 1
+        E1 = elementary_matrix(R, n, k, l, one(R))
+        E2 = elementary_matrix(R, n, l, k, -one(R))
+        E3 = elementary_matrix(R, n, k, l, one(R))
+        M = (E1 * E2 * E3) * M
+        @assert det(M) == 1
+        # push first E3
+        push!(left, elementary_matrix(S, n, k, l, one(S)))
+        @assert map_entries(R, left[end]) == E3
+        push!(left2, Emat(S, n, k, l, one(S)))
+        push!(left, elementary_matrix(S, n, l, k, -one(S)))
+        push!(left2, Emat(S, n, l, k, -one(S)))
+        @assert map_entries(R, left[end]) == E2
+        push!(left, elementary_matrix(S, n, k, l, one(S)))
+        push!(left2, Emat(S, n, k, l, one(S)))
+        @assert map_entries(R, left[end]) == E1
+      end
+      @assert det(M) == 1
+      @assert isunit(M[k, k])
+      for j in (k+1):n
+        if !iszero(M[j, n])
+          N = deepcopy(M)
+          q = divexact(M[j, k], M[k, k])
+          E = elementary_matrix(R, n, j, k, -q)
+          push!(left, elementary_matrix(S, n, j, k, lift(-q)))
+          push!(left2, Emat(S, n, j, k, lift(-q)))
+          @assert map_entries(R, left[end]) == E
+          for o in 1:n
+            M[j, o] = M[j, o] - q * M[k, o]
+          end
+          @assert E * N == M
+        end
+      end
+      k += 1
+      @show M
+    else # no unit there # I could do this in one go by putting a unit in the first position
+      _, l = findmin(abs.(v)) 
+      l = l + (k - 1)
+      @show l
+      @show euclid(M[l, k])
+      @show v
+      for j in k:n
+        if j == l
+          continue
+        end
+        fl, _ = divides(M[j, k], M[l, k])
+        if !fl
+          @show M[j, k], M[l, k]
+          N = deepcopy(M)
+          @show euclid(M[j, k])
+          q, r = divrem(M[j, k], M[l, k])
+          @show euclid(r)
+          E = elementary_matrix(R, n, j, l, -q)
+          for o in 1:n
+            M[j, o] = M[j, o] - q * M[l, o]
+          end
+          push!(left, elementary_matrix(S, n, j, l, lift(-q)))
+          push!(left2, Emat(S, n, j, l, lift(-q)))
+          @assert map_entries(R, left[end]) == E
+          @assert E * N == M
+          break
+        end
+      end
+    end
+    @assert det(M) == 1
+  end
+  println("M should now be lower triangular")
+  @show M
+  @assert det(M) == 1
+  # Now M is lower triangular with units on the diagonal
+  @show "here"
+  for i in n:-1:2
+    for j in (i - 1):-1:1
+      # set jth row to jth row - M[k, j]/M[k, k] * jth row
+      @show isunit(M[i, i])
+      @show M[i, i]
+      q = -divexact(M[j, i], M[i, i])
+      @assert (-q) * M[i, i] == M[j, i]
+      E = elementary_matrix(R, n, j, i, q)
+      push!(left, elementary_matrix(S, n, j, i, lift(q)))
+      push!(left2, Emat(S, n, j, i, lift(q)))
+      @assert map_entries(R, left[end]) == E
+      N = deepcopy(M)
+      M[j, i] = M[j, i] + q * M[i, i]
+      @assert E * N == M
+    end
+  end
+  @assert det(M) == 1
+  # Now sort the diagonal
+  # We use this neat trick of Rosenberg, p. 60
+  for i in 1:(n - 1)
+    a = inv(M[i, i])
+    ainv = M[i, i]
+    # we multiply with (1,...1,a,a^-1,1,...1)
+    E1 = elementary_matrix(R, n, i, i + 1, a)
+    E2 = elementary_matrix(R, n, i + 1, i, -ainv)
+    E3 = E1
+    #E4 = identity_matrix(R, n)
+    #E4[i, i] = 0
+    #E4[i, i + 1] = -1
+    #E4[i + 1, i + 1] = 0
+    #E4[i + 1, i] = 1
+    E5 = elementary_matrix(R, n, i, i + 1, -one(R))
+    E6 = elementary_matrix(R, n, i + 1, i, one(R))
+    E4 = E6
+
+    #E4S = identity_matrix(S, n)
+    #E4S[i, i] = 0
+    #E4S[i, i + 1] = -1
+    #E4S[i + 1, i + 1] = 0
+    #E4S[i + 1, i] = 1
+    E1S = elementary_matrix(S, n, i, i + 1, lift(a))
+    E1SS = Emat(S, n, i, i + 1, lift(a))
+    E2S = elementary_matrix(S, n, i + 1, i, lift(-ainv))
+    E2SS = Emat(S, n, i + 1, i, lift(-ainv))
+    E3S = E1S
+    E3SS = E1SS
+    E5S = elementary_matrix(S, n, i, i + 1, -one(S))
+    E5SS = Emat(S, n, i, i + 1, -one(S))
+    E6S = elementary_matrix(S, n, i + 1, i, one(S))
+    E6SS = Emat(S, n, i + 1, i, one(S))
+    E4S = E6S
+    E4SS = E6SS
+    push!(left, E6S)
+    push!(left, E5S)
+    push!(left, E4S)
+    push!(left, E3S)
+    push!(left, E2S)
+    push!(left, E1S)
+    push!(left2, E6SS)
+    push!(left2, E5SS)
+    push!(left2, E4SS)
+    push!(left2, E3SS)
+    push!(left2, E2SS)
+    push!(left2, E1SS)
+
+    M = (E1 * E2 * E3 * E4 * E5 * E6) * M
+    @assert det(M) == 1
+  end
+
+  @assert isone(M)
+
+  for i in 1:length(left)
+    @assert matrix(left2[i]) == left[i]
+  end
+
+  return prod(matrix.(inv.(left2)))
+
+  @assert map(R, prod(reverse(left))) * MM == 1
+
+  return M, left
+end
+
+euclid(n::nmod) = gcd(n.data, modulus(parent(n)))
+
+function divrem(n::nmod, m::nmod)
+  R = parent(n)
+  e = euclid(m)
+  q = rand(R)
+  while euclid(n - q * m) >= e
+    q = rand(R)
+  end
+  return q, n - q * m
+end
