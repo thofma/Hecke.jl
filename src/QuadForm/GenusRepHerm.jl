@@ -16,9 +16,11 @@
 Computes representatives for the isometry classes in the genus of $L$.
 
 At most `max` representatives are returned. The use of automorphims can be
-disabled by
+disabled by `use_auto = false`. The computation of the mass can be enable
+by `use_mass = true`.
 """
-function genus_representatives(L::HermLat; max = inf, use_auto::Bool = true)
+function genus_representatives(L::HermLat; max = inf, use_auto::Bool = true,
+                                                      use_mass::Bool = false)
   @req rank(L) >= 3 "Lattice must have rank >= 2"
   R = base_ring(L)
   definite = isdefinite(L)
@@ -44,6 +46,14 @@ function genus_representatives(L::HermLat; max = inf, use_auto::Bool = true)
   @assert length(LL) == prod(Int[g[2] for g in gens if !definite || g[1] != P0])
   @assert all(X -> genus(X) == genus(L), LL)
 
+  if use_mass
+    mass = Hecke.mass(L)
+  else
+    mass = zero(fmpq)
+  end
+
+  missing_mass = Ref(mass)
+
   local result::Vector{typeof(L)}
   
   if definite
@@ -51,13 +61,13 @@ function genus_representatives(L::HermLat; max = inf, use_auto::Bool = true)
     for L in LL
       # Should never happen!
       @assert all(X -> !isisometric(X, L), result)
-      neig = iterated_neighbours(L, P0, max = max, use_auto = use_auto)
+      neig = iterated_neighbours(L, P0, max = max, use_auto = use_auto, missing_mass = missing_mass)
       append!(result, neig)
       max = max - length(result)
     end
     for i in 1:length(result)
       for j in 1:i-1
-        @assert !(isisometric(result[i], result[j])[1])
+        @hassert :GenRep 1 !(isisometric(result[i], result[j])[1])
       end
     end
   else
@@ -264,8 +274,8 @@ function neighbour(L, B, xG, x, h, P, CC, split)
   push!(CI, fractional_ideal(order(P), P))
   M = vcat(M, matrix(K, 1, ncols(B), x))
   push!(CI, inv(C))
-  pm = pseudo_hnf(pseudo_matrix(M, CI))
-  _M = _sum_modules(pm, _module_scale_ideal((split ? P : P * C), pseudo_matrix(L)))
+  pm = pseudo_matrix(M, CI)
+  _M = _sum_modules(L, _module_scale_ideal((split ? P : P * C), pseudo_matrix(L)), pm)
   LL = lattice(ambient_space(L), _M)
 
   @assert islocally_isometric(L, LL, P)
@@ -290,7 +300,10 @@ function stdcallback(list, L)
   return keep, true;
 end
 
-function iterated_neighbours(L::HermLat, P; use_auto = false, max = inf, callback = false)# AutoOrbits, CallBack:= false, Max:= Infinity()) -> []
+function iterated_neighbours(L::HermLat, P; use_auto = false, max = inf,
+                                            callback = false,
+                                            missing_mass = Ref{fmpq}(zero(fmpq)))
+  # AutoOrbits, CallBack:= false, Max:= Infinity()) -> []
   #require Order(P) eq BaseRing(L): "Arguments are incompatible";
   #require IsPrime(P): "Second argument must be prime";
   #require not IsRamified(P) or Minimum(P) ne 2: "Second argument cannot be a ramified prime over 2";
@@ -305,12 +318,34 @@ function iterated_neighbours(L::HermLat, P; use_auto = false, max = inf, callbac
   end
 
   result = typeof(L)[ L ]
+
+  use_mass = !iszero(missing_mass[])
+
+  if use_mass
+    _mass = missing_mass[] - 1//automorphism_group_order(L)
+  end
+
   i = 1
+  oldlength = length(result)
   while length(result) < max && i <= length(result)
     # _Neighbours and the callback only add new lattices if not isometric to known ones and stop if Max is reached.
     # So we have nothing to at all.
     result = _neighbours(result[i], P, result, max, _callback)# : CallBack:= CallBack);
+    no_lattices = length(result) - oldlength
+    oldlength = length(result)
+    if use_mass && no_lattices > 0
+      _mass = _mass - sum(fmpq[1//automorphism_group_order(result[i]) for i in (length(result) - no_lattices + 1):length(result)]) 
+      if iszero(_mass)
+        break
+      end
+    end
+    if use_mass && _mass < 0
+      throw(error("This should not happen"))
+    end
     i = i + 1
+  end
+  if use_mass
+    missing_mass[] = _mass
   end
   return result
 end

@@ -1,15 +1,15 @@
-function _gauss(m, k, q)
-  z = _gauss0(m, q)
-  z = divexact(z, _gauss0(k, q))
-  z = divexact(z, _gauss0(m - k, q))
-  return z
-end
+################################################################################
+#
+#  Local factor for dyadic primes
+#
+################################################################################
 
-function _gauss0(m, q)
-  return fmpq(prod(fmpz[1 - q^i for i in 1:m]))
-end
+# Returns the local mass factor for dyadic primes
+# The local scales must be be 0 or 1
+# Otherwise the function returns 0
 
-function local_factor_even(L::HermLat, p)
+function _local_factor_dyadic(L::HermLat, p)
+  @assert isdyadic(p)
   S = base_ring(L)
   E = nf(S)
   K = base_field(nf(S))
@@ -50,7 +50,7 @@ function local_factor_even(L::HermLat, p)
   f2 = div(e, 2)
   d = (-1)^((m - 1) * k) * det(rational_span(L))
   # b <=> L \isom M \perp H0^* \perp H1^* where M is unimodular.
-  b = m1 == 0 || (m0 != 0 && G[1][1] != G[2][4])
+  b = (m1 == 0) || (m0 != 0 && G[1][4] != G[2][4])
   lf = fmpq(1, 2) * _gauss(k, k0, q^2)
   l = div((b ? G[1][4] : G[end][4]), 2)
 
@@ -98,8 +98,16 @@ function local_factor_even(L::HermLat, p)
   throw(error("Impossible"))
 end
 
-function local_factor_maximal(L::HermLat, p)
+################################################################################
+#
+#  Local mass factor for maximal lattices
+#
+################################################################################
+
+function _local_factor_maximal(L::HermLat, p)
   S = base_ring(L)
+  E = nf(S)
+  K = base_field(E)
   m = rank(L)
   lp = prime_decomposition(S, p)
   ram = length(lp) == 1 && lp[1][2] == 2
@@ -108,7 +116,7 @@ function local_factor_maximal(L::HermLat, p)
   end
   G = gram_matrix_of_basis(L)
   disc = _discriminant(G)
-  if !islocal_norm(S, disc, p)
+  if !islocal_norm(E, K(disc), p)
     q = norm(p)
     if ram
       return fmpq(q^m - 1, 2*q + 2)
@@ -119,7 +127,13 @@ function local_factor_maximal(L::HermLat, p)
   return fmpq(1)
 end
 
-function local_factor_generic(L::HermLat, p)
+################################################################################
+#
+#  Generic local mass factor
+#
+################################################################################
+
+function _local_factor_generic(L::HermLat, p)
   K = fixed_field(L)
   a = _isdefinite(rational_span(L))
   def = !iszero(a)
@@ -148,33 +162,55 @@ function local_factor_generic(L::HermLat, p)
 
   chain = typeof(L)[L]
   ok, LL = ismaximal_integral(L, p)
-  @time while !ok
+  while !ok
     push!(chain, LL)
     ok, LL = ismaximal_integral(LL, p)
   end
-  f = local_factor_maximal(L, p)
-  @time for i in 1:(length(chain) - 1)
-    M, E = maximal_sublattices(chain[i + 1], P, use_auto = false)# should be use_auto = def)
-    f = f * sum(Int[E[j] for j in 1:length(M) if islocally_isometric(chain[i], M[j], p)])
-    M, E = minimal_superlattices(chain[i], P, use_auto = false)# should be use_auto = def)
-    f = divexact(f, sum(Int[E[j] for j in 1:length(M) if islocally_isometric(chain[i + 1], M[j], p)]))
+  f = _local_factor_maximal(L, p)
+  for i in 1:(length(chain) - 1)
+    M, E = maximal_sublattices(chain[i + 1], P, use_auto = false)
+    lM = length(M)
+    # should be use_auto = def)
+    _f = 0
+    for j in 1:lM
+      if islocally_isometric(chain[i], M[j], p)
+        _f += E[j]
+      end
+    end
+
+    f = f * _f
+    M, E = minimal_superlattices(chain[i], P, use_auto = false)
+    # should be use_auto = def)
+    lM = length(M)
+    _f = 0
+    for j in 1:lM
+      if islocally_isometric(chain[i + 1], M[j], p)
+        _f += E[j]
+      end
+    end
+    f = divexact(f, _f)
   end
   return f
 end
 
-function local_mass_factor(L::HermLat, p)
+################################################################################
+#
+#  Local mass factor
+#
+################################################################################
+
+function local_factor(L::HermLat, p)
   S = base_ring(L)
   E = nf(S)
   K = base_field(E)
   q = norm(p)
   lp = prime_decomposition(S, p)
   ram = length(lp) == 1 && lp[1][2] == 2
-  @show ram
   if ram && isdyadic(p)
-    lf = local_factor_even(L, p)
+    lf = _local_factor_dyadic(L, p)
     # TODO: Use Cho's recipe if p unramified over Z.
     if iszero(lf)
-      lf = local_factor_generic(L, p)
+      lf = _local_factor_generic(L, p)
       return lf
     end
     return lf
@@ -189,23 +225,17 @@ function local_mass_factor(L::HermLat, p)
   m = rank(L)
   local f::fmpq
   if ram
-    @show "Sp", 2 * div(m, 2), q
     f = fmpq(group_order("Sp", 2 * div(m ,2), q))
   else
     f = fmpq(group_order(split ? "GL" : "U", m, q))
   end
 
-  @show f
-
   d = ram ? 1 : 2
   N = zero(fmpq)
-
-  @show length(s), ram
 
   for i in 1:length(s)
     mi = ncols(G[i])
     ri = sum(Int[ncols(G[j]) for j in (i + 1):length(s)])
-    @show i, mi, ri
     if ram
       N = N - div(s[i], 2) * mi^2
       if isodd(s[i])
@@ -221,18 +251,14 @@ function local_mass_factor(L::HermLat, p)
       f = divexact(f, group_order(split ? "GL" : "U", mi, q))
     end
     N = N - d * s[i] * mi * ri
-    @show i, N
     @assert mod(d * s[i] * mi * m, 2) == 0
     N = N + divexact(d * s[i] * mi * m, 2)
-    @show i, N
   end
 
   # Fix the difference coming from the discriminant
   if ram && iseven(m)
     N = N + div(m ,2)
   end
-
-  @show N, f
 
   return q^(Int(FlintZZ(N))) * f
 end
@@ -266,6 +292,12 @@ function _standard_mass(L::HermLat, prec::Int = 10)
   return _stdmass * relzeta
 end
 
+################################################################################
+#
+#  Mass of hermitian lattices
+#
+################################################################################
+
 function mass(L::HermLat)
   @req isdefinite(L) "Lattice must be definite"
   m = rank(L)
@@ -294,10 +326,26 @@ function local_mass(L::HermLat)
   lf = fmpq(1)
 
   for p in bad_primes(L, discriminant = true)
-    #@show minimum(p), local_mass_factor(L, p)
-    lf *= local_mass_factor(L, p)
+    lf *= local_factor(L, p)
   end
 
   return lf
 end
 
+
+################################################################################
+#
+#  Misc
+#
+################################################################################
+
+function _gauss(m, k, q)
+  z = _gauss0(m, q)
+  z = divexact(z, _gauss0(k, q))
+  z = divexact(z, _gauss0(m - k, q))
+  return z
+end
+
+function _gauss0(m, q)
+  return fmpq(prod(fmpz[1 - q^i for i in 1:m]))
+end

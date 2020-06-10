@@ -1637,6 +1637,53 @@ function anti_uniformizer(P::NfRelOrdIdl{T, S}) where {T, S}
   return P.anti_uniformizer
 end
 
+function absolute_anti_uniformizer(P)
+  OL = order(P)
+  L = nf(OL)
+  A = absolute_basis(OL)
+  d = absolute_degree(nf(OL))
+  OLmat = zero_matrix(FlintQQ, d, d)
+  Lbas = absolute_basis(L)
+  for i in 1:d
+    c = elem_in_nf(A[i], copy = false)
+    for j in 1:d
+      OLmat[i, j] = absolute_coeff(c, j - 1)
+    end
+  end
+
+  OLmatinv = inv(OLmat)
+
+  u = elem_in_nf(p_uniformizer(P))
+
+  @show isintegral(u)
+
+  umat = zero_matrix(FlintQQ, d, d)
+
+  for i in 1:d
+    c = u * Lbas[i]
+    for j in 1:d
+      umat[i, j] = absolute_coeff(c, j - 1)
+    end
+  end
+
+  N = OLmat * umat * OLmatinv
+  
+  p = absolute_minimum(P)
+
+  z = zero_matrix(GF(p, cached = false), d, d)
+
+  for i in 1:d
+    for j in 1:d
+      z[i, j] = FlintZZ(N[i, j])
+    end
+  end
+
+  K = left_kernel_basis(z)
+
+  k = K[1]
+  return inv(L(p)) * elem_in_nf(sum(elem_type(OL)[A[i] * lift(k[i]) for i in 1:d]))
+end
+
 ################################################################################
 #
 #  Random elements

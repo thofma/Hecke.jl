@@ -1468,8 +1468,6 @@ function _islocally_isometric_kirschmer(L1::HermLat, L2::HermLat, p)
     @assert valuation(S1[i][5], p) == valuation(S2[i][5], p)
     x = S1[i][5]//S2[i][5]
     n = 2 * normic_defect(E, x, p)
-    @show n
-    @show (S1[i][4] + S1[i + 1][4]) - 2 * S1[i][2]
     if n < (S1[i][4] + S1[i + 1][4]) - 2 * S1[i][2]
       return false
     end
@@ -2019,6 +2017,9 @@ function find_lattice(M::HermLat, L::HermLat, p)
   @assert isrationally_equivalent(M, L, p)
   @assert ismaximal_integral(M, p)[1]
   D = prime_decomposition(base_ring(L), p)
+
+  _,absolute_map,_ = absolute_field(ambient_space(M))
+
   #@show D
   #@show length(D)
   P = D[1][1]
@@ -2035,8 +2036,8 @@ function find_lattice(M::HermLat, L::HermLat, p)
     for i in 1:nrows(BMall)
       multiply_row!(BMall, pi^E[i], i)
     end
-    _new_pmat = _sum_modules(pseudo_matrix(BMall), fractional_ideal(order(P), P)^maximum(E) * pseudo_matrix(M))
-    _new_pmat = _intersect_modules(_new_pmat, P^minimum(E) * pseudo_matrix(M))
+    _new_pmat = _sum_modules(M, pseudo_matrix(BMall), fractional_ideal(order(P), P)^maximum(E) * pseudo_matrix(M))
+    _new_pmat = _intersect_modules_with_map(_new_pmat, fractional_ideal(order(P), P)^minimum(E) * pseudo_matrix(M), absolute_map)
     LL = lattice(ambient_space(M), _new_pmat)
   elseif length(D) == 1 && D[1][2] == 1 # inert case
     #@show "================= intert"
@@ -2080,8 +2081,8 @@ function find_lattice(M::HermLat, L::HermLat, p)
       else
         Y = reduce(vcat, Y)
       end
-      _new_pmat = _sum_modules(pseudo_matrix(Y), _module_scale_ideal(P, pseudo_matrix(M)))
-      _new_pmat = _intersect_modules(_new_pmat, pseudo_matrix(M))
+      _new_pmat = _sum_modules(M, pseudo_matrix(Y), _module_scale_ideal(P, pseudo_matrix(M)))
+      _new_pmat = _intersect_modules_with_map(_new_pmat, pseudo_matrix(M), absolute_map)
       LL = lattice(ambient_space(M), _new_pmat)
     else
       LL = M
@@ -2416,7 +2417,7 @@ function _sum_modules(a::PMat, b::PMat, full_rank = true)
 end
 
 function _intersect_modules(a::PMat{<: NfRelElem, <: NfRelOrdFracIdl}, b::PMat, full_rank = true)
-  _, f, _ = absolute_field(E)
+  _, f, _ = absolute_field(nf(base_ring(a)))
   return _intersect_modules_with_map(a, b, f, full_rank)
 end
 
@@ -2650,11 +2651,50 @@ function islocal_norm(K::NfRel{T}, a::T, P) where {T} # ideal of parent(a)
   return hilbert_symbol(a, bQ, P) == 1
 end
 
-# Return a local unit u (that is, valuation(u, P) = 0) with trace zero.
+# Return a local unit u (that is, valuation(u, P) = 0) with trace one.
 # P must be even and inert (P is lying over p)
+
+function _special_unit(P, p::fmpz)
+  R = order(P)
+  E = nf(R)
+  @assert degree(E) == 2
+  x = gen(E)
+  x = x - trace(x)//2
+  a = coeff(x^2, 0)
+  K = base_field(E)
+  pi = elem_in_nf(uniformizer(p))
+  v = valuation(a, p)
+  if v != 0
+    @assert iseven(v)
+    a = a//pi^v
+    x = x//pi^(div(v, 2))
+  end
+  k = GF(p, cached = false)
+  hex(x) = k(numerator(x)) * inv(k(denominator(x)))
+  hexinv(x) = FlintQQ(lift(x))
+  t = hexinv(sqrt(hex(a)))
+  a = a//t^2
+  x = x//t
+  w = valuation(a - 1, p)
+  e = valuation(order(p)(2), p)
+  while w < 2*e
+    @assert iseven(w)
+    s = sqrt(hex((a - 1)//pi^w))
+    t = 1 + (hexinv(s)) * pi^(div(w, 2))
+    a = a//t^2
+    x = x//t
+    w = valuation(a - 1, p)
+  end
+  @assert w == 2 * e
+  u = (1 + x)//2
+  @assert trace(u) == 1
+  @assert valuation(u, P) == 0
+  return u
+end
+
 function _special_unit(P, p)
   @assert ramification_index(P) == 1
-  @assert 2 in p
+  @assert isdyadic(p)
   R = order(P)
   E = nf(R)
   @assert degree(E) == 2
@@ -2691,7 +2731,7 @@ function _special_unit(P, p)
   return u
 end
 
-function sqrt(a::fq)
+function sqrt(a::Union{fq, gfp_fmpz_elem})
   Rt, t = PolynomialRing(parent(a), "t", cached = false)
   r = roots(t^2 - a)
   if length(r) > 0
@@ -2894,7 +2934,7 @@ function _find_quaternion_algebra(b, P, I)
   end
 
 
-  L, f = sunit_group(__P)
+  L, f = sunit_group(identity.(__P))
   M = zero_matrix(F, 0, length(__P) + length(I))
   elts = nf_elem[]
 
@@ -3032,7 +3072,7 @@ function _weak_approximation_quadratic(I::Vector{InfPlc}, val::Vector{Int})
     return K(val)
   else
     if val[1] == val[2]
-      return K(val)
+      return K(val[1])
     else
       x = gen(K)
       s1 = sign(x, I[1])
@@ -3921,6 +3961,45 @@ function to_hecke(io::IO, L::QuadLat; target = "L")
   println(io, target, " = quadratic_lattice(K, generators = gens, gram_ambient_space = D)")
 end
 
+function to_hecke(io::IO, L::HermLat; target = "L")
+  E = nf(base_ring(L))
+  K = base_field(E)
+  println(io, "Qx, x = PolynomialRing(FlintQQ, \"x\")")
+  f = defining_polynomial(K)
+  pol = replace(string(f), "//" => "/")
+  pol = replace(pol, string(var(parent(f))) => "x")
+  println(io, "f = ", pol)
+  println(io, "K, a = NumberField(f, \"a\", cached = false)")
+  println(io, "Kt, t = PolynomialRing(K, \"t\")")
+  f = defining_polynomial(E)
+  pol = replace(string(f), "//" => "/")
+  pol = replace(pol, string(var(parent(f))) => "t")
+  println(io, "g = ", pol, "")
+  println(io, "E, b = NumberField(g, \"b\", cached = false)")
+  F = gram_matrix(ambient_space(L))
+  Fst = "[" * split(string([F[i, j] for i in 1:nrows(F) for j in 1:ncols(F)]), '[')[2]
+  Fst = replace(Fst, string(var(K)) => "a")
+  Fst = replace(Fst, string(var(E)) => "b")
+  println(io, "D = matrix(E, ", nrows(F), ", ", ncols(F), ", ", Fst, ")")
+
+  gens = generators(L)
+  Gs = "Vector{$(elem_type(E))}["
+  for i in 1:length(gens)
+    g = gens[i]
+    gst = replace(string(g), string(var(K)) => "a")
+    gst = replace(string(g), string(var(E)) => "b")
+
+    Gs = Gs * "map(E, [" * split(gst, "[")[2] * ")"
+    if i < length(gens)
+      Gs = Gs * ", "
+    end
+  end
+  Gs = Gs * "]"
+  println(io, "gens = ", Gs)
+
+  println(io, target, " = hermitian_lattice(E, generators = gens, gram_ambient_space = D)")
+end
+
 function to_magma(io::IO, L::HermLat; target = "L")
   E = nf(base_ring(L))
   K = base_field(E)
@@ -4147,3 +4226,7 @@ function maximal_subspaces(k, n)
   end
   return L
 end
+
+elem_in_nf(x::fmpz) = FlintQQ(x)
+
+ideal_type(::FlintIntegerRing) = fmpz
