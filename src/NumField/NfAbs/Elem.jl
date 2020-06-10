@@ -521,7 +521,13 @@ function factor_trager(f::PolyElem{nf_elem})
 end
 
 function isirreducible(f::PolyElem{nf_elem})
+  if degree(f) == 1
+    return true
+  end
   if !issquarefree(f)
+    return false
+  end
+  if iszero(coeff(f, 0))
     return false
   end
 

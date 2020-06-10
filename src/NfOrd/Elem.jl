@@ -232,7 +232,7 @@ Returns the coefficient vector of $a$.
 """
 function coordinates(a::NfAbsOrdElem; copy::Bool = true)
   assure_has_coord(a)
-  @hassert :NfOrd 2 a == dot(a.coordinates, basis(parent(a)))
+  @hassert :NfOrd 2 a == dot(a.coordinates, basis(parent(a), copy = false))
   if copy
     return deepcopy(a.coordinates)
   else
