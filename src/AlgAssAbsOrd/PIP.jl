@@ -816,9 +816,9 @@ function _lift_unimodular_matrix(N, n, R)
       end
       #@show "case1", M
     else
-      v = push!(fmpz[lift(M[i, 1]) for i in 3:r], n)
+      v = push!(elem_type(OK)[lift(M[i, 1]) for i in 3:r], n)
       d, z = _gcdx(v)
-      @assert d == sum(fmpz[z[i] * v[i] for i in 1:length(v)])
+      @assert d == sum(elem_type(OK)[z[i] * v[i] for i in 1:length(v)])
       if d == 1
         a = elem_type(R)[M[i, 1] for i in 1:r]
         a1 = a[1]
@@ -837,10 +837,14 @@ function _lift_unimodular_matrix(N, n, R)
         a2 = lift(a[2])
         ai = eltype(a)[a[i] for i in 3:length(a)]
 
-        dI, z = _gcdx(push!(fmpz[lift(a[i]) for i in 3:length(a)], n))
-        d, y = _gcdx(push!(fmpz[lift(a[i]) for i in 1:length(a)], n))
+        dI, z = _gcdx(push!(elem_type(OK)[lift(a[i]) for i in 3:length(a)], n))
+        d, y = _gcdx(push!(elem_type(OK)[lift(a[i]) for i in 1:length(a)], n))
         # TODO: This will fail Tommy!
-        RI = ResidueRing(FlintZZ, dI)
+        if OK isa FlintIntegerRing
+          RI = ResidueRing(OK, dI)
+        else
+          RI = ResidueRing(OK, dI * OK)
+        end
         MatL = matrix(RI, 2, 2, [a1, a2, -y[2], y[1]])
         @assert det(MatL) == 1
         E = lift_two_by_two_matrix(MatL)
@@ -850,7 +854,7 @@ function _lift_unimodular_matrix(N, n, R)
         b2 = E[1, 2]
         @assert x1 * b1 + x2 * b2 == 1
 
-        x3n = vcat(elem_type(R)[x1, x2], elem_type(R)[y[i] + (R(divexact(y[1] - x1, dI)) * M[1, 1] + R(divexact(y[2] - x2, dI)) * M[2, 1]) * z[i - 2] for i in 3:length(y)])
+        x3n = vcat(elem_type(OK)[x1, x2], elem_type(OK)[y[i] + (OK(divexact(y[1] - x1, dI)) * M[1, 1] + R(divexact(y[2] - x2, dI)) * M[2, 1]) * z[i - 2] for i in 3:length(y)])
         I = identity_matrix(R, r)
         for j in 3:r
           I[1, j] = b1 * x3n[j]
@@ -1085,12 +1089,13 @@ end
 function _gcdx(a::NfOrdElem, b::NfOrdElem)
   OK = parent(a)
   d = degree(OK)
+  @show a * OK + b * OK
   fl, g = isprincipal(a * OK + b * OK)
   @assert fl
   Ma = representation_matrix(a)
   Mb = representation_matrix(b)
   M = vcat(Ma, Mb)
-  onee = matrix(FlintZZ, 1, d, coordinates(one(OK)))
+  onee = matrix(FlintZZ, 1, d, coordinates(g))
   fl, v = can_solve(M, onee, side = :left)
   @assert fl
   u = OK([v[1, i] for i in 1:d])
