@@ -623,12 +623,12 @@ function assure_has_traces(L::NfRelNS{T}) where T
     end
     exps = Int[0 for i = 1:n]
     exps[i] = total_degree(pol)-1
-    v[1] = coeff(pol, exps)
+    v[1] = -coeff(pol, exps)
     el = gL[i]
     for j = 2:length(v)
       el *= gL[i]
-      f = minpoly(el)
-      v[j] = -coeff(f, degree(f)-1)*div(degree(L), degree(f))
+      f_el = minpoly(el)
+      v[j] = -divexact(total_degree(pol), degree(f_el))*coeff(f_el, degree(f_el)-1)
     end
   end
   L.basis_traces = traces
@@ -655,7 +655,13 @@ function tr(a::NfRelNSElem)
     end
     res += temp
   end
+  @hassert :NfRel 1 res == tr_via_minpoly(a)
   return res
+end
+
+function tr_via_minpoly(a::NfRelNSElem)
+  f = minpoly(a)
+  return -coeff(f, degree(f)-1)*div(degree(parent(a)), degree(f))
 end
 
 function resultant(f::Generic.MPoly, g::Generic.MPoly, i::Int)

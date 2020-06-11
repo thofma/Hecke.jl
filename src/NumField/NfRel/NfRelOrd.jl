@@ -384,6 +384,16 @@ function discriminant(O::NfRelOrd{T, S}) where {T <: NumFieldElem{U} where U, S}
   return deepcopy(O.disc_rel)::ideal_type(order_type(base_field(nf(O))))
 end
 
+function absolute_discriminant(O::NfRelOrd{T, S}) where {T, S}
+  d = norm(discriminant(O))
+  d1 = absolute_discriminant(base_ring(O))
+  return d1^(degree(O))*d
+end
+
+function absolute_discriminant(O::NfAbsOrd)
+  return discriminant(O)
+end
+
 ################################################################################
 #
 #  Codifferent
