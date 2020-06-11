@@ -336,10 +336,20 @@ function Nemo.mul!(c::NfRelNSElem{T}, a::NfRelNSElem{T}, b::NfRelNSElem{T}) wher
   return c
 end
 
+function Nemo.mul!(c::NfRelNSElem{T}, a::NfRelNSElem{T}, b::Int) where {T}
+  return a*b
+end
+
 function Nemo.addeq!(b::NfRelNSElem{T}, a::NfRelNSElem{T}) where {T}
   addeq!(b.data, a.data)
   b = reduce!(b)
   return b
+end
+
+function Nemo.add!(c::NfRelNSElem{T}, a::NfRelNSElem{T}, b::NfRelNSElem{T}) where {T}
+  c.data = add!(c.data, a.data, b.data)
+  c = reduce!(c)
+  return c
 end
 
 function Base.hash(a::NfRelNSElem{nf_elem}, b::UInt)
@@ -352,7 +362,7 @@ end
 ###############################################################################
 
 function Nemo.degree(K::NfRelNS)
-  return prod([total_degree(x) for x=K.pol])
+  return prod(Int[total_degree(x) for x=K.pol])
 end
 
 function (R::Generic.PolyRing{nf_elem})(f::Generic.MPoly)
@@ -380,12 +390,28 @@ end
 
 #non-optimal...
 function basis(K::NfRelNS)
-  b = NfRelNSElem[]
-  g = gens(K)
-  for i=CartesianIndices(Tuple(1:total_degree(f) for f = K.pol))
-    push!(b, prod(g[j]^(i[j]-1) for j=1:length(i)))
+  pols = K.pol
+  gL = gens(K)
+  B = Vector{elem_type(K)}(undef, degree(K))
+  B[1] = one(K)
+  ind = total_degree(pols[1])
+  genjj = gL[1]
+  for i = 2:ind
+    B[i] = genjj*B[i-1]
   end
-  return b
+  for jj = 2:length(pols)
+    genjj = gL[jj]
+    el = deepcopy(genjj)
+    new_deg = total_degree(pols[jj])
+    for i = 2:new_deg
+      for j = 1:ind
+        B[(i-1)* ind + j] = B[j]* el 
+      end
+      mul!(el, el, genjj)
+    end
+    ind *= new_deg
+  end
+  return B
 end
 
 function basis_matrix(a::Vector{NfRelNSElem{T}}) where {T <: NumFieldElem}
@@ -580,9 +606,101 @@ function norm(a::NfRelNSElem)
   return (-1)^degree(parent(a)) * coeff(f, 0)^div(degree(parent(a)), degree(f))
 end
 
+
+function assure_has_traces(L::NfRelNS{T}) where T
+  if isdefined(L, :basis_traces)
+    return nothing
+  end
+  gL = gens(L)
+  n = length(gL)
+  traces = Vector{Vector{T}}(undef, n)
+  for i = 1:n
+    pol = L.pol[i]
+    v = Vector{T}(undef, total_degree(pol)-1)
+    traces[i] = v
+    if iszero(length(v))
+      continue
+    end
+    exps = Int[0 for i = 1:n]
+    exps[i] = total_degree(pol)-1
+    v[1] = coeff(pol, exps)
+    el = gL[i]
+    for j = 2:length(v)
+      el *= gL[i]
+      f = minpoly(el)
+      v[j] = -coeff(f, degree(f)-1)*div(degree(L), degree(f))
+    end
+  end
+  L.basis_traces = traces
+  return nothing
+end
+
 function tr(a::NfRelNSElem)
-  f = minpoly(a)
-  return -coeff(f, degree(f)-1)*div(degree(parent(a)), degree(f))
+  K = parent(a)
+  assure_has_traces(K)
+  traces = K.basis_traces
+  b = data(a)
+  pols = K.pol
+  n = length(pols)
+  res = zero(base_field(K))
+  for i = 1:length(b)
+    exps = b.exps[:, i]
+    temp = b.coeffs[i]
+    for j = length(pols):-1:1
+      if iszero(exps[j])
+        temp *= total_degree(pols[n-j+1])
+      else
+        temp *= K.basis_traces[n-j+1][exps[j]]
+      end
+    end
+    res += temp
+  end
+  return res
+end
+
+function resultant(f::Generic.MPoly, g::Generic.MPoly, i::Int)
+  Kt = parent(f)
+  gKt = gens(Kt)
+  n = nvars(Kt)
+  @assert i <= n
+  Ky, gKy = PolynomialRing(base_ring(Kt), n-1, cached = false)
+  Kyt, t = PolynomialRing(Ky, "t", cached = false)
+  vals = elem_type(Kyt)[]
+  for j = 1:n
+    if i == j
+      push!(vals, t)
+    elseif i < j
+      push!(vals, Kyt(gKy[j-1]))
+    else
+      push!(vals, Kyt(gKy[j]))
+    end
+  end
+  fnew = evaluate(f, vals)
+  gnew = evaluate(g, vals)
+  res = resultant(fnew, gnew)
+  new_vals = elem_type(Kt)[]
+  for j = 1:n-1
+    if j < i
+      push!(new_vals, gKt[j])
+    else
+      push!(new_vals, gKt[j+1])
+    end
+  end
+  return evaluate(res, new_vals)
+end
+
+function rand(L::NfRelNS, rg::UnitRange)
+  B = absolute_basis(L)
+  return rand(B, rg)
+end
+
+
+function mod(a::NfRelNSElem{T}, p::fmpz) where T
+  K = parent(a)
+  b = data(a)
+  Kx = parent(b)
+  bnew = map_coeffs(x -> mod(x, p), b, parent = Kx)
+  return K(bnew)
 end
 
 #TODO: also provide a sparse version
@@ -591,8 +709,10 @@ function representation_matrix(a::NfRelNSElem)
   b = basis(K)
   k = base_field(K)
   M = zero_matrix(k, degree(K), degree(K))
+  t = zero(K)
   for i=1:degree(K)
-    elem_to_mat_row!(M, i, a*b[i])
+    mul!(t, a, b[i])
+    elem_to_mat_row!(M, i, t)
   end
   return M
 end

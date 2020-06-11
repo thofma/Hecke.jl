@@ -337,7 +337,6 @@ function find_gens(mR::Map, S::PrimesSet, cp::fmpz=fmpz(1))
 end
 
 function find_gens_descent(mR::Map, A::ClassField_pp, cp::fmpz)
-
   ZK = order(domain(mR))
   C = cyclotomic_extension(nf(ZK), degree(A))
   R = codomain(mR) 
@@ -411,6 +410,7 @@ function find_gens_descent(mR::Map, A::ClassField_pp, cp::fmpz)
   
         f = R[1]
         for (P, e) = lP
+
           lpp = prime_decomposition(C.mp[2], P)
           if divexact(degree(lpp[1][1]), degree(P)) != U.snf[i]
             continue
@@ -729,8 +729,9 @@ end
 #This function computes a primitive element for the target extension with the
 #roots of unit over the base field and the action of the automorphisms on it.
 #The Kummer generator is always primitive! (Carlo and Claus)
-function _find_prim_elem(AutA::GrpAbFinGen, AutA_gen::Array{NfRelToNfRelMor{nf_elem,  nf_elem}, 1})
+function _find_prim_elem(CF::ClassField_pp, AutA)
   
+  AutA_gen = CF.AutG
   A = domain(AutA_gen[1])
   pe = gen(A)
   auto_v = Vector{Tuple{Hecke.GrpAbFinGenElem, NfRelElem{nf_elem}}}(undef, Int(order(AutA)))
@@ -741,6 +742,20 @@ function _find_prim_elem(AutA::GrpAbFinGen, AutA_gen::Array{NfRelToNfRelMor{nf_e
     i += 1
   end
   Auto = Dict{Hecke.GrpAbFinGenElem, NfRelElem{nf_elem}}(auto_v)
+  if degree(CF) != degree(A)
+    #In this case, gen(A) might not be primitive...
+    while length(Auto) != length(unique(values(Auto)))
+      pe += gen(base_field(A))
+      auto_v = Vector{Tuple{Hecke.GrpAbFinGenElem, NfRelElem{nf_elem}}}(undef, Int(order(AutA)))
+      i = 1
+      for j in AutA
+        im = grp_elem_to_map(AutA_gen, j, pe)
+        auto_v[i] = (j, im)
+        i += 1
+      end
+      Auto = Dict{Hecke.GrpAbFinGenElem, NfRelElem{nf_elem}}(auto_v)
+    end
+  end
   @vprint :ClassField 2 "have action on the primitive element!!!\n"  
   return pe, Auto
 end
@@ -925,6 +940,7 @@ function _rcf_descent(CF::ClassField_pp)
   
   @vprint :ClassField 2 "\nnow the fix group...\n"
   if iscyclic(AutA)  # the subgroup is trivial to find!
+    #Notice that this implies that the target field and the cyclotomic extension are disjoint.
     @vprint :ClassField 2 ".. trivial as automorphism group is cyclic\n"
     s, ms = sub(AutA, e, false)
     @vprint :ClassField 2 "computing orbit of primitive element\n"
@@ -932,7 +948,8 @@ function _rcf_descent(CF::ClassField_pp)
     os = NfRelElem{nf_elem}[grp_elem_to_map(AutA_gen, ms(j), pe) for j in s]
   else
     @vprint :ClassField 2 "Computing automorphisms of the extension and orbit of primitive element\n"
-    pe, Auto = _find_prim_elem(AutA, AutA_gen)
+    pe, Auto = _find_prim_elem(CF, AutA)
+    
     @vprint :ClassField 2 ".. interesting...\n"
     # want: hom: AutA = Gal(A/k) -> Gal(K/k) = domain(mq)
     #K is the target field.
@@ -943,13 +960,13 @@ function _rcf_descent(CF::ClassField_pp)
     local canFrob
     let CE = CE, ZK = ZK, n = n, pe = pe, Auto = Auto
       function canFrob(p::NfOrdIdl)
-
         lP = prime_decomposition(CE.mp[2], p)
         P = lP[1][1]
         F, mF = ResidueFieldSmall(ZK, P)
-        Ft = PolynomialRing(F, cached=false)[1]
+        Ft = PolynomialRing(F, cached = false)[1]
         mFp = extend_easy(mF, CE.Ka)
         ap = image(mFp, CF.a)
+        @vprint :ClassField 1 "projection successful\n"
         polcoeffs = Vector{elem_type(F)}(undef, n+1)
         polcoeffs[1] = -ap
         for i = 2:n
@@ -976,9 +993,9 @@ function _rcf_descent(CF::ClassField_pp)
           if kp == imF
             push!(res, ky)
             if length(res) >1
+              @vprint :ClassField 1 "res has length > 1\n"
               throw(BadPrime(p))
             end
-            #return ky
           end
         end
         return res[1]

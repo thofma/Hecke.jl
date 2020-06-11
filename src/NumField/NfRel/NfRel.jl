@@ -186,6 +186,23 @@ function reduce!(a::NfRelElem)
   a.data = mod(a.data, parent(a).pol)
   return a
 end
+
+################################################################################
+#
+#  mod(::NfRelElem, ::fmpz) as in the absolute case
+#
+################################################################################
+
+function mod(a::NfRelElem{T}, p::fmpz) where T
+  K = parent(a)
+  b = data(a)
+  coeffs = Vector{T}(undef, degree(K)+1)
+  for i = 0:degree(K)
+    coeffs[i+1] = mod(coeff(b, i), p)
+  end
+  Kx = parent(b)
+  return K(Kx(coeffs))
+end
  
 ################################################################################
 #

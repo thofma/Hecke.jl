@@ -775,9 +775,6 @@ function ispower_unram(I::NfRelOrdIdl{S, T, U})::Tuple{Int, NfRelOrdIdl{S, T, U}
   return e, JJ
 end
 
-
-
-
 ################################################################################
 #
 #  P-radical
@@ -805,36 +802,25 @@ function element_with_valuation(a::T, primes::Vector{T}) where {T <: Union{NfOrd
   return x
 end
 
-function _mod_coeffs(a::NfRelElem{nf_elem}, p::fmpz)
-  K = parent(a)
-  b = data(a)
-  coeffs = Vector{nf_elem}(undef, degree(K)+1)
-  for i = 0:degree(K)
-    coeffs[i+1] = mod(coeff(b, i), p)
-  end
-  Kx = parent(b)
-  return K(Kx(coeffs))
-end
-
 #computes a^e mod the integer p. Assumes that the base field of parent(a)
 # has a nice defining equation
-function _powermod(a::NfRelElem{nf_elem}, e::T, p::fmpz) where T <: Union{fmpz, Integer}
+function _powermod(a::NfRelElem, e::T, p::fmpz) where T <: Union{fmpz, Integer}
   @assert e >= 0
   K = parent(a)
   if iszero(e)
     return one(K)
   end
-  b = _mod_coeffs(a, p)
+  b = mod(a, p)
   if isone(e)
     return b
   end
   if iseven(e)
     c = _powermod(b, div(e, 2), p)
-    c = _mod_coeffs(c*c, p)
+    c = mod(c*c, p)
     return c
   else
     c = _powermod(b, e-1, p)
-    c = _mod_coeffs(c*b, p)
+    c = mod(c*b, p)
     return c
   end
 end

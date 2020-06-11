@@ -217,6 +217,7 @@ mutable struct NfRelNS{T} <: NonSimpleNumField{T}
   pol::Array{Nemo.Generic.MPoly{T}, 1}
   abs_pol::Array{Generic.Poly{T}, 1}
   S::Array{Symbol, 1}
+  basis_traces::Vector{Vector{T}}
   auxilliary_data::Array{Any, 1}
 
   function NfRelNS(abs_pol::Array{Generic.Poly{T}}, f::Array{Nemo.Generic.MPoly{T}, 1}, S::Array{Symbol, 1}; cached::Bool = false) where T

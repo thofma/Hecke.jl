@@ -360,16 +360,16 @@ function principal_generator(A::NfOrdIdl)
   O = order(A)
   if ismaximal(O)
     fl, e = isprincipal_fac_elem(A)
-  else
-    fl, e = isprincipal_non_maximal(A)
-  end
-  if !fl
-    error("Ideal is not principal")
-  end
-  if ismaximal(O)
+    if !fl
+      error("Ideal is not principal")
+    end
     return O(evaluate(e))
   else
-    return e
+    fl, e1 = isprincipal_non_maximal(A)
+    if !fl
+      error("Ideal is not principal")
+    end
+    return e1
   end
 end
 

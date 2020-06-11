@@ -14,7 +14,7 @@ Returns the Picard group of O and a map from the group in the set of
 """
 function picard_group(O::NfOrd)
   try
-    mP = _get_picard_group(O)
+    mP = _get_picard_group(O)::MapPicardGrp{GrpAbFinGen, NfOrdIdlSet}
     return domain(mP), mP
   catch e
     if !isa(e, AccessorNotSetError)
@@ -22,7 +22,7 @@ function picard_group(O::NfOrd)
     end
     OK = maximal_order(nf(O)) # We need it later anyway
     if O == OK
-      return class_group(OK)
+      return class_group_as_picard(OK)
     end
     P, mP = _picard_group(O)
     _set_picard_group(O, mP)
@@ -32,7 +32,7 @@ end
 
 function unit_group_non_maximal(O::NfOrd)
   try
-    mU = _get_unit_group_non_maximal(O)
+    mU = _get_unit_group_non_maximal(O)::MapUnitGrp{NfOrd}
     return domain(mU), mU
   catch e
     if !isa(e, AccessorNotSetError)
@@ -52,6 +52,15 @@ end
 #  Internals
 #
 ################################################################################
+
+function class_group_as_picard(OK::NfOrd)
+  C, mC = class_group(OK)
+  mp = MapPicardGrp{GrpAbFinGen, NfOrdIdlSet}()
+  mp.header = MapHeader(C, IdealSet(OK), mC.header.image, mC.header.preimage)
+  return C, mp
+end
+
+
 
 # Computes \bigoplus_p OK_p^\times/O_p^\times where the sum runs over all prime
 # ideals p containing the conductor of O and OK is the maximal order.
@@ -78,7 +87,7 @@ function OO_mod_F_mod_O_mod_F(O::NfAbsOrd)
   end
 
   groups = Vector{GrpAbFinGen}()
-  maps = Vector{GrpAbFinGenToAbsOrdQuoRingMultMap}()
+  maps = Vector{GrpAbFinGenToNfOrdQuoRingMultMap}()
   for p in keys(D)
     # Find m such that p^m*O_p \subseteq F*O_p
     m = 0
@@ -95,7 +104,7 @@ function OO_mod_F_mod_O_mod_F(O::NfAbsOrd)
 
     # Compute (OK_p/F*OK_p)^\times
     groups2 = Vector{GrpAbFinGen}(undef, length(prime_ideals_over_p))
-    maps2 = Vector{GrpAbFinGenToAbsOrdQuoRingMultMap}(undef, length(prime_ideals_over_p))
+    maps2 = Vector{GrpAbFinGenToNfOrdQuoRingMultMap}(undef, length(prime_ideals_over_p))
     for i = 1:length(prime_ideals_over_p)
       q, eq = prime_ideals_over_p[i]
       groups2[i], maps2[i] = _multgrp_mod_pv(q, eq, q^eq)
@@ -121,9 +130,11 @@ function OO_mod_F_mod_O_mod_F(O::NfAbsOrd)
     gens = map(x -> GtoQ\(OKtoQ(OK(x.elem))), gens)
     =#
 
-    gens = map(x -> GtoQ\(OKtoQ(OK(x.elem))), mGG.generators)
+    gens = Vector{GrpAbFinGenElem}(undef, length(mGG.generators))
+    for ind_for = 1:length(gens)
+      gens[ind_for] = GtoQ\(OKtoQ(OK(mGG.generators[ind_for].elem)))
+    end
     H, GtoH = quo(G, gens)
-    @assert GtoH.map == identity_matrix(FlintZZ, ngens(G))
     HtoQ = GrpAbFinGenToAbsOrdQuoRingMultMap(H, Q, GtoQ.generators, GtoQ.discrete_logarithm)
     push!(groups, H)
     push!(maps, HtoQ)
@@ -212,9 +223,9 @@ function _picard_group(O::NfOrd)
   Z = Vector{elem_type(G)}()
   for (I, g) in CltoOK.princ_gens
     II, _ = _coprime_integral_ideal_class(I, FOK)
-    J = evaluate(II)
-    @assert J.den == 1
-    J = numerator(J)
+    J1 = evaluate(II)
+    @assert J1.den == 1
+    J = numerator(J1)
     push!(gens_of_Cl, J)
     push!(generators, contract(J, O))
   end
@@ -268,47 +279,51 @@ function _picard_group(O::NfOrd)
   end
 
   # Build the map
-  function disc_exp_picard_group(x::GrpAbFinGenElem)
-    y = O(1)*O
-    for i = 1:length(x.coeff)
-      y *= gens_snf[i]^Int(x.coeff[1, i])
+  local disc_exp_picard_group
+  let O = O, gens_snf = gens_snf
+    function disc_exp_picard_group(x::GrpAbFinGenElem)
+      y = ideal(O, 1)
+      for i = 1:length(x.coeff)
+        y *= gens_snf[i]^Int(x.coeff[1, i])
+      end
+      return y
     end
-    return y
   end
 
-  function disc_log_picard_group(x::NfOrdIdl)
-    @assert order(x) == O
-    # x is only an element of the picard group if it is invertible.
-    if !isinvertible(x)[1]
-      error("Ideal is not invertible")
+  local disc_log_picard_group
+  let P = P, F = F, O = O, OK = OK, CltoOK = CltoOK, gens_of_Cl = gens_of_Cl, OKtoQ = OKtoQ, GtoQ = GtoQ, StoP = StoP
+    function disc_log_picard_group(x1::NfOrdIdl)
+      @assert order(x1) == O
+      # x is only an element of the picard group if it is invertible.
+      if !isinvertible(x1)[1]
+        error("Ideal is not invertible")
+      end
+      if !isone(x1 + F)
+        x1, _ = _coprime_integral_ideal_class(x1, F)
+      end
+      xOK = extend(x1, OK)
+      c = CltoOK\xOK
+      yOK = gens_of_Cl[1]^Int(c.coeff[1])
+      for i = 2:length(c.coeff)
+        yOK *= gens_of_Cl[i]^Int(c.coeff[i])
+      end
+      y = contract(yOK, O)
+      iy = inv(y) # y should be coprime to F
+      z = x1*iy
+      zOK = extend(z.num, OK)//z.den
+      simplify(zOK)
+      a1 = OKtoQ(principal_generator(zOK.num))
+      a2 = OKtoQ(OK(zOK.den))
+      b1, a = isdivisible(a1, a2)
+      @assert b1
+      @hassert :NfOrd 1 isdivisible(OKtoQ(OK(1)), a)[1]
+      h = GtoQ\a
+      p = P(hcat(c.coeff, h.coeff))
+      b, s = haspreimage(StoP, p)
+      @assert b
+      return s
     end
-    if !isone(x + F)
-      x, _ = _coprime_integral_ideal_class(x, F)
-    end
-    xOK = extend(x, OK)
-    c = CltoOK\xOK
-    yOK = gens_of_Cl[1]^Int(c.coeff[1])
-    for i = 2:length(c.coeff)
-      yOK *= gens_of_Cl[i]^Int(c.coeff[i])
-    end
-    y = contract(yOK, O)
-    iy = inv(y) # y should be coprime to F
-    z = x*iy
-    zOK = extend(z.num, OK)//z.den
-    simplify(zOK)
-    a1 = OKtoQ(principal_generator(zOK.num))
-    a2 = OKtoQ(OK(zOK.den))
-    b1, a = isdivisible(a1, a2)
-    @assert b1
-    b2, _ = isdivisible(OKtoQ(OK(1)), a)
-    @assert b2
-    h = GtoQ\a
-    p = P(hcat(c.coeff, h.coeff))
-    b, s = haspreimage(StoP, p)
-    @assert b
-    return s
   end
-
   Idl = IdealSet(O)
   StoIdl = MapPicardGrp{typeof(S), typeof(Idl)}()
   StoIdl.header = MapHeader(S, Idl, disc_exp_picard_group, disc_log_picard_group)

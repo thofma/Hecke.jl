@@ -125,7 +125,7 @@ function rand!(c::T, b::Vector{T}, r::UnitRange,
 end
 
 @doc Markdown.doc"""
-    rand(c::NumFieldElem, b::Vector{NumFieldElem}, r::UnitRange) -> NumFieldElem
+    rand!(c::NumFieldElem, b::Vector{NumFieldElem}, r::UnitRange) -> NumFieldElem
 
 Sets `c` to a random linear combination of elements in `b` with coefficients
 in `r`. The element `c` is returned.
@@ -137,8 +137,8 @@ function rand!(c::T, b::Vector{T}, r::UnitRange) where {T <: NumFieldElem}
   t = zero(parent(c))
 
   for i = 2:length(b)
-    mul!(t, b[i], rand(r))
-    add!(c, t, c)
+    t = mul!(t, b[i], rand(r))
+    c = add!(c, t, c)
   end
 
   return c

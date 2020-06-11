@@ -65,7 +65,7 @@ end
   f = x^3 - 2
   K, a = number_field(f, "a", cached = false)
   O = Order(K, [ K(1), 10*a, 100*a^2 ])
-  P, mP = picard_group(O)
+  P, mP = @inferred picard_group(O)
   @test issnf(P)
   @test P.snf == fmpz[ 24 ]
   @test test_disc_log_picard(P, mP, O)
@@ -112,7 +112,7 @@ end
   @test P.snf == fmpz[ 2, 2, 2, 2, 4 ]
   @test test_disc_log_picard(P, mP, O)
 
-  U, mU = Hecke.unit_group_non_maximal(O)
+  U, mU = @inferred Hecke.unit_group_non_maximal(O)
   @test issnf(U)
   @test U.snf == fmpz[ 2, 0, 0 ]
   @test contains(AF(455982050.1598537651), Hecke.regulator(map( x -> K(mU(x)), [ U[2], U[3] ]), 1))
@@ -121,7 +121,7 @@ end
   f = x^3+4064*x^2-1608*x-2816
   K, a = number_field(f, "a", cached = false)
   O = equation_order(K)
-  P, mP = picard_group(O)
+  P, mP = @inferred picard_group(O)
   @test issnf(P)
   @test P.snf == fmpz[ 3, 12 ]
   @test test_disc_log_picard(P, mP, O)

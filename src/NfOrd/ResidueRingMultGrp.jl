@@ -1289,7 +1289,7 @@ end
 # This function returns the direct product of the G_i, a map from the
 # product to O/(\prod_i I_i) and a map from O to this quotient.
 # It is assumed that the ideals I_i are coprime.
-function direct_product(groups::Vector{GrpAbFinGen}, maps::Vector{GrpAbFinGenToAbsOrdQuoRingMultMap})
+function direct_product(groups::Vector{GrpAbFinGen}, maps::Vector{T}) where T <: GrpAbFinGenToAbsOrdQuoRingMultMap
   @assert length(groups) == length(maps)
   @assert length(groups) != 0
 
@@ -1311,7 +1311,7 @@ end
 
 # This function returns the direct product of the G_i and a map from the
 # product to Q.
-function direct_product(groups::Vector{GrpAbFinGen}, maps::Vector{GrpAbFinGenToAbsOrdQuoRingMultMap}, Q::AbsOrdQuoRing)
+function direct_product(groups::Vector{GrpAbFinGen}, maps::Vector{T}, Q::AbsOrdQuoRing) where T <: GrpAbFinGenToAbsOrdQuoRingMultMap
   @assert length(groups) == length(maps)
   @assert length(groups) != 0
 
