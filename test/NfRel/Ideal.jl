@@ -204,5 +204,26 @@
 
     u6 = anti_uniformizer(P)
     @test valuation(u6, P) == -1
+
+    f = x^4 - x^3 - 4x^2 + 4x + 1
+    K, a = number_field(f, "a")
+    OK = maximal_order(K)
+    Ky, y = K["y"]
+    g = y^2 + (a^3 - a^2 - 4a + 5)
+    L, b = number_field(g, "b")
+    OL = maximal_order(L)
+    p = prime_decomposition(OK, 2)[1][1]
+    pdec = prime_decomposition(OL, p)
+    for i = 1:2
+      P = pdec[i][1]
+      u7 = anti_uniformizer(P)
+      for (Q, e) in factor(u7*OL)
+        if Q == P
+          @test e == -1
+        else
+          @test e >= 0
+        end
+      end
+    end
   end
 end

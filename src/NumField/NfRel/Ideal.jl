@@ -1578,7 +1578,7 @@ function anti_uniformizer(P::NfRelOrdIdl{T, S}) where {T, S}
 
   p = minimum(P, copy = false)
   # We need a pseudo basis of O, where the coefficient ideals have valuation
-  # 0 at p.
+  # 0 at p, so that we can work in the order(p)/p-vector space O/p*O.
   O = order(P)
   N = basis_matrix(O)
   NN = basis_mat_inv(O)
@@ -1611,11 +1611,63 @@ function anti_uniformizer(P::NfRelOrdIdl{T, S}) where {T, S}
   K = left_kernel_basis(Mp)
   @assert length(K) > 0
   x = nf(O)()
+  pbO = pseudo_basis(O, copy = false)
   for i = 1:degree(O)
-    x += immF(K[1][i])*pseudo_basis(O, copy = false)[i][1]*d[i]
+    # Construct a preimage of the i-th basis vector of O/p*O
+    c = coprime_to(pbO[i][2]*inv(d[i]), p)
+    b = immF(inv(mmF(c)))*c*pbO[i][1]*d[i]
+
+    x += immF(K[1][i])*b
   end
   P.anti_uniformizer = x*anti_uniformizer(p)
   return P.anti_uniformizer
+end
+
+function absolute_anti_uniformizer(P)
+  OL = order(P)
+  L = nf(OL)
+  A = absolute_basis(OL)
+  d = absolute_degree(nf(OL))
+  OLmat = zero_matrix(FlintQQ, d, d)
+  Lbas = absolute_basis(L)
+  for i in 1:d
+    c = elem_in_nf(A[i], copy = false)
+    for j in 1:d
+      OLmat[i, j] = absolute_coeff(c, j - 1)
+    end
+  end
+
+  OLmatinv = inv(OLmat)
+
+  u = elem_in_nf(p_uniformizer(P))
+
+  @show isintegral(u)
+
+  umat = zero_matrix(FlintQQ, d, d)
+
+  for i in 1:d
+    c = u * Lbas[i]
+    for j in 1:d
+      umat[i, j] = absolute_coeff(c, j - 1)
+    end
+  end
+
+  N = OLmat * umat * OLmatinv
+  
+  p = absolute_minimum(P)
+
+  z = zero_matrix(GF(p, cached = false), d, d)
+
+  for i in 1:d
+    for j in 1:d
+      z[i, j] = FlintZZ(N[i, j])
+    end
+  end
+
+  K = left_kernel_basis(z)
+
+  k = K[1]
+  return inv(L(p)) * elem_in_nf(sum(elem_type(OL)[A[i] * lift(k[i]) for i in 1:d]))
 end
 
 ################################################################################

@@ -6,7 +6,7 @@ export mass
 #
 ################################################################################
 
-function _local_mass_factor_maximal(L, p)
+function _local_factor_maximal(L, p)
   m = rank(L)
   r = div(m, 2)
   if m == 1
@@ -54,7 +54,7 @@ _get_eps(::Any) = -1
 #
 ################################################################################
 
-function _local_mass_factor_unimodular(L::QuadLat, p)
+function _local_factor_unimodular(L::QuadLat, p)
   local s::Vector{Int}
   local G::Vector{dense_matrix_type(nf(base_ring(L)))}
   d, s, w, a, _, G = data(_genus_symbol_kirschmer(L, p))
@@ -137,7 +137,7 @@ function _local_mass_factor_unimodular(L::QuadLat, p)
       lf = (w == 1 ? fmpq(q^(2 * r +2) - 1, 2) : fmpq(q + 1)) * fmpq(q^((r + 1) * (e - b - 1)))
     end
   end
-  return _local_mass_factor_maximal(rescale(L, 2), p) * lf
+  return _local_factor_maximal(rescale(L, 2), p) * lf
 end
 
 ################################################################################
@@ -146,7 +146,7 @@ end
 #
 ################################################################################
 
-function _local_mass_factor_cho(L, p)
+function _local_factor_cho(L, p)
   @assert isdyadic(p) && ramification_index(p) == 1
   m = rank(L)
   R = base_ring(L)
@@ -306,7 +306,7 @@ end
 ################################################################################
 
 # General local factor driver
-function local_mass_factor(L::QuadLat, p)
+function local_factor(L::QuadLat, p)
   # The local factor of L at the prime p in the Minkowski-Siegel mass formula
   @req order(p) == base_ring(L) "Ideal not an ideal of the base ring of the lattice"
 
@@ -319,13 +319,13 @@ function local_mass_factor(L::QuadLat, p)
 
   if isdyadic(p)
     if ramification_index(p) == 1
-      return _local_mass_factor_cho(L, p)
+      return _local_factor_cho(L, p)
     elseif ismaximal(L, p)[1]
       ss = uniformizer(p)^(-valuation(norm(L), p))
-      return _local_mass_factor_maximal(rescale(L, ss), p)
+      return _local_factor_maximal(rescale(L, ss), p)
     elseif ismodular(L, p)[1]
       ss = uniformizer(p)^(-valuation(scale(L), p))
-      return _local_mass_factor_unimodular(rescale(L, ss), p)
+      return _local_factor_unimodular(rescale(L, ss), p)
     else
       a = _isdefinite(rational_span(L))
       def = !iszero(a)
@@ -347,7 +347,7 @@ function local_mass_factor(L::QuadLat, p)
         push!(chain, LL)
         ok, LL = ismaximal_integral(LL, p)
       end
-      f = _local_mass_factor_maximal(L, p)
+      f = _local_factor_maximal(L, p)
 
       for i in 1:(length(chain) - 1)
         M, E = maximal_sublattices(chain[i + 1], p, use_auto = false)# should be use_auto = def)
@@ -417,6 +417,12 @@ function local_mass_factor(L::QuadLat, p)
   return q^Int(FlintZZ(N)) * f
 end
 
+################################################################################
+#
+#  Mass of a quadratic lattice
+#
+################################################################################
+
 function mass(L::QuadLat)
   fl, m = _exact_standard_mass(L)
 
@@ -482,7 +488,6 @@ function _exact_standard_mass(L::QuadLat)
     else
       Kt, t = PolynomialRing(K, "t", cached = false)
       E, = NumberField(t^2 - denominator(dis)^2 * dis, "b", cached = false)
-      Eabs, = absolute_field(E)
       if _exact_L_function_cheap(E)
         standard_mass *= _exact_L_function(E, 1 - r)
       else
@@ -498,7 +503,7 @@ function local_mass(L::QuadLat)
   lf = fmpq(1)
 
   for p in bad_primes(L, even = true)
-    lf *= local_mass_factor(L, p)
+    lf *= local_factor(L, p)
   end
 
   return lf
@@ -595,7 +600,7 @@ function _mass(L::QuadLat, standard_mass = 0, prec::Int = 10)
   lf = fmpq(1)
 
   for p in bad_primes(L, even = true)
-    lf *= local_mass_factor(L, p)
+    lf *= local_factor(L, p)
   end
 
   return mass, lf

@@ -596,18 +596,26 @@ See [Kir16, Definition 8.3.1].
 """
 function genus(L::HermLat, q)
   c = get_special(L, :local_genera)
+  S = ideal_type(base_ring(base_ring(L)))
   if c === nothing
-    symbols = Dict{typeof(q), LocalGenusHerm{typeof(base_field(L)), typeof(q)}}()
+    symbols = Dict{S, LocalGenusHerm{typeof(base_field(L)), S}}()
     set_special(L, :local_genera => symbols)
   else
-    symbols = c::Dict{typeof(q), LocalGenusHerm{typeof(base_field(L)), typeof(q)}}
-    if haskey(symbols, q)
-      return symbols[q]
+    symbols = c::Dict{S, LocalGenusHerm{typeof(base_field(L)), S}}
+    if order(q) !== base_ring(base_ring(L))
+      if haskey(symbols, minimum(q))
+        return symbols[minimum(q)]
+      end
+    else
+      if haskey(symbols, q)
+        return symbols[q]
+      end
     end
   end
 
   if order(q) !== base_ring(base_ring(L))
     g = _genus(L, minimum(q))
+    symbols[minimum(q)] = g
   else
     g = _genus(L, q)
     symbols[q] = g
@@ -1062,7 +1070,8 @@ function _hermitian_form_with_invariants(E, dim, P, N)
     if length(I) == 0
       push!(D, one(E))
     else
-      push!(D, E(_weak_approximation(infinite_pl, [N[p] >= i ? -1 : 1 for p in infinite_pl])))
+      el = E(_weak_approximation(infinite_pl, [N[p] >= i ? -1 : 1 for p in infinite_pl]))
+      push!(D, el)
     end
   end
   push!(D, a * prod(D))
