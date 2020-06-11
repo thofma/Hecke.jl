@@ -72,3 +72,21 @@
   @test degree(intersect(A, cyclotomic_field(ClassField, 10))) == 1 
 end
 
+@testset "Some abelian extensions" begin
+  Qx, x = PolynomialRing(FlintQQ, "x")
+  K, a = NumberField(x - 1, "a")
+  O = maximal_order(K)
+  r, mr = Hecke.ray_class_groupQQ(O, 7872, true, 16)
+  ls = subgroups(r, quotype = [16], fun = (x, y) -> quo(x, y, false)[2])
+  @test Hecke.has_quotient(r, [16])
+  class_fields = [];
+  for s in ls;
+    C = ray_class_field(mr, s)::Hecke.ClassField{Hecke.MapRayClassGrp, GrpAbFinGenMap}
+    CC = number_field(C)
+    if Hecke._is_conductor_minQQ(C, 16)
+      push!(class_fields, CC)
+    end
+  end
+  @test length(class_fields) == 14
+end
+
