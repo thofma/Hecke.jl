@@ -8,9 +8,6 @@ export genus, representative, rank, det, uniformizer, det_representative,
 #
 ################################################################################
 
-add_verbose_scope(:Lattice)
-add_assert_scope(:Lattice)
-
 # Need to make this type stable once we have settled on a design
 mutable struct LocalGenusHerm{S, T}
   E::S                                # Field
@@ -282,7 +279,7 @@ end
     uniformizer(G::LocalGenusHerm) -> NumFieldElem
 
 Given a local genus symbol of Hermitian lattices over $E/K$ at a prime $\mathfrak p$,
-return a generator for the largest invariant ideal of $E$.
+return a generator for the largest invariant ideal of $E$ containing $\mathfrak p$.
 """
 function uniformizer(G::LocalGenusHerm)
   E = base_field(G)
@@ -298,7 +295,7 @@ function uniformizer(G::LocalGenusHerm)
     @assert islocal_norm(E, coeff(uni , 0), prime(G))
     return coeff(uni, 0)
   else
-    return uniformizer(prime(G))
+    return K(uniformizer(prime(G)))
   end
 end
 

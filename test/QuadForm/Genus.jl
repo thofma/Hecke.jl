@@ -9,6 +9,10 @@
     @test rank(G[i]) == 4
     @test representative(G[i]) in G[i]
   end
+
+  GG = G[1]
+  u = @inferred uniformizer(GG)
+  @assert parent(u) == K
   
   p = prime_decomposition(maximal_order(K), 17)[1][1]
   G = local_genera_hermitian(L, p, 5, 5, 5)
