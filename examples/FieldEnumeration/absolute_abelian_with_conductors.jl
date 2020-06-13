@@ -134,6 +134,27 @@ function main()
     end
   end
 
+  #=
+  #The non simple absolute extension and the absolute value of its discriminant
+  fields = Vector{Tuple{NfAbsNS, fmpz}}()
+  for i = 1:length(class_fields)
+    println("Computing class field $(i) /$(length(class_fields))")
+    C = class_fields[i]
+    r, s = signature(C)
+    if (!only_cm && !only_real) || (only_cm && r == 0) || (only_real && s == 0)
+      L = number_field(C)
+      polys = Vector{fmpq_poly}(undef, length(L.pol))
+      for t = 1:length(L.pol)
+        fK = Hecke.isunivariate(L.pol[t])[2]
+        f = Qx(fmpq[coeff(coeff(fK, j), 0) for j = 0:degree(fK)])
+        polys[t] = f
+      end
+      NS, gNS = number_field(polys, check = false, cached = false) 
+      push!(fields, (NS, Hecke.discriminantQQ(O, C, Int(minimum(defining_modulus(C)[1])))))
+    end
+  end
+  =#
+
   ll = fields
 
   # Discriminant always at the end

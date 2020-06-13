@@ -618,7 +618,7 @@ function abelian_extensions(O::NfOrd, gtype::Array{Int,1}, absolute_discriminant
     ls=subgroups(r,quotype=gtype, fun= (x, y) -> quo(x, y, false)[2])
     for s in ls
       C=ray_class_field(mr, s)
-      if Hecke._is_conductor_minQQ(C,n) && Hecke.discriminant_conductorQQ(O,C,k,absolute_discriminant_bound,n)
+      if Hecke._is_conductor_minQQ(C,n) && Hecke.discriminant_conductorQQ(O,C,k,absolute_discriminant_bound)
         @vprint :AbExt 1 "New Field \n"
         L=number_field(C)
         if with_autos==Val{true}
@@ -1428,8 +1428,9 @@ end
 
 #same function but for ray class groups over QQ
 
-function discriminant_conductorQQ(O::NfOrd, C::ClassField, m::Int, bound::fmpz, n::Int)
+function discriminant_conductorQQ(O::NfOrd, C::ClassField, m::Int, bound::fmpz)
   
+  n = degree(C)
   discr=fmpz(1)
   mp = pseudo_inv(C.quotientmap) * C.rayclassgroupmap
   G=domain(mp)
@@ -1514,6 +1515,85 @@ function discriminant_conductorQQ(O::NfOrd, C::ClassField, m::Int, bound::fmpz, 
   end
   C.absolute_discriminant=abs_disc
   return true
+end
+
+function discriminantQQ(O::NfOrd, C::ClassField, m::Int)
+  
+  discr=fmpz(1)
+  n = degree(C)
+  mp = pseudo_inv(C.quotientmap) * C.rayclassgroupmap
+  G = domain(mp)
+  
+  cyc_prime= isprime(n)==true
+  
+  lp=factor(m).fac
+  abs_disc=Dict{fmpz,Int}()
+
+  R=ResidueRing(FlintZZ, m, cached=false)
+
+  for (p,v) in lp 
+    if v==1
+      ap=n
+      if cyc_prime
+        ap-=1
+      else
+        x=_unit_grp_residue_field_mod_n(Int(p),n)[1]
+        s=divexact(m,Int(p))
+        d,a,b=gcdx(s, Int(p))
+        l=Int((R(x)*a*s+b*Int(p)).data)
+        el=mp\ideal(O,l)
+        q,mq=quo(G, GrpAbFinGenElem[el], false)
+        ap-= order(q)
+      end
+      discr*=p^ap
+      abs_disc[p]=ap
+    else
+      ap=n*v
+      pow=Int(p)^Int(v)
+      el = R(1)
+      if cyc_prime
+        ap-=v
+      else
+        if isodd(p)
+          s=divexact(m,pow)
+          d,a,b=gcdx(pow,s)  
+          s1=R(1+p)^(p-1)
+          el=G[1]
+          if v==2
+            el=mp\ideal(O,Int((b*s*R(s1)+a*pow).data))
+            ap-=order(quo(G,GrpAbFinGenElem[el], false)[1])
+          else
+            for k=0:v-2      
+              el=mp\ideal(O,Int((b*s*R(s1)^(p^k)+a*pow).data))
+              ap-=order(quo(G, GrpAbFinGenElem[el], false)[1])
+              @hassert :AbExt 1 ap>0
+            end
+          end
+          if gcd(n,p-1)==1
+            ap-=order(quo(G, GrpAbFinGenElem[mp\(ideal(O,fmpz((b*s*R(s1)+a*pow).data)))], false)[1])
+          else
+            x=_unit_grp_residue_field_mod_n(Int(p),n)[1]
+            el1=mp\ideal(O,Int((R(x)*b*s+a*pow).data))
+            ap-=order(quo(G, GrpAbFinGenElem[mp\(ideal(O,Int((b*s*R(s1)+a*pow).data))), el1], false)[1])
+          end
+        else
+          s=divexact(m,2^v)
+          d,a,b=gcdx(2^v,s)  
+          el=0*G[1]
+          for k=v-3:-1:0
+            el=mp\ideal(O,Int((R(5)^(2^k)*b*s+a*2^v).data))
+            ap-=order(quo(G, GrpAbFinGenElem[el], false)[1])
+          end
+          el1=mp\ideal(O,Int((R(-1)*b*s+a*p^v).data))
+          ap-=2*order(quo(G, GrpAbFinGenElem[el, el1], false)[1])
+        end
+      end
+      discr*=p^ap
+      abs_disc[p]=ap
+    end
+  end
+  C.absolute_discriminant=abs_disc
+  return discr
 end
 
 ###############################################################################
