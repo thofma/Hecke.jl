@@ -31,13 +31,18 @@ end
 function _read_fields(filename::String)
   f=open(filename, "r")
   Qx,x=PolynomialRing(FlintQQ,"x")
-  pols=Tuple{fmpq_poly, fmpz}[]
+  pols = []
   for s in eachline(f)
     a=Main.eval(Meta.parse(s))
-    push!(pols,(Qx(a[1]), a[2]))
+    if length(a) == 3
+      push!(pols,(Qx(a[1]), [ Qx(b) for b in a[2]], a[3]))
+    else
+      @assert length(a) == 2
+      push!(pols,(Qx(a[1]), a[end]))
+    end
   end
   close(f)
-  return pols
+  return identity.(pols)
 end 
 
 global small_solvable_groups = 
