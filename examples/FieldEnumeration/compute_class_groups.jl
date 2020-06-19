@@ -95,12 +95,16 @@ function main()
     K, = number_field(f)
     OK = lll(maximal_order(K))
     @assert discriminant(OK) == fields[i][end]
+    println("Computing class group number $i/$(length(fields)) ($f)")
+    flush(stdout)
     c, _ = class_group(OK)
     h = order(c)
     res = [h]
     if minus || plus
       fl, tau = Hecke.iscm_field(K)
       k, = fixed_field(K, tau, simplify = true)
+      println("Computing class group number $i/$(length(fields)) ($(defining_polynomial(k)))")
+      flush(stdout)
       cc, = class_group(lll(maximal_order(k)))
       hplus = order(cc)
       @assert mod(h, hplus) == 0
