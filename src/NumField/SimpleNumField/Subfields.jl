@@ -342,7 +342,6 @@ function subfields_normal(K::SimpleNumField, classes::Bool = true)
   subs = subgroups(G, conjugacy_classes = true)
   res = Vector{Tuple{typeof(K), morphism_type(typeof(K))}}()
   for (i, (H, mH)) in enumerate(subs)
-    @show i, length(subs)
     auts = morphism_type(typeof(K))[ mG(mH(h)) for h in H ]
     push!(res, fixed_field(K, auts))
   end
