@@ -1,5 +1,7 @@
 using Hecke, ArgParse
 
+set_verbose_level(:ClassGroup, 1)
+
 include(joinpath(Hecke.pkgdir,"examples/FieldEnumeration/FieldEnumeration.jl"))
 
 function has_obviously_not_class_number_one(K::AnticNumberField)
