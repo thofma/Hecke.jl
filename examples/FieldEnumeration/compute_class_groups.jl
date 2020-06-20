@@ -102,6 +102,7 @@ function main()
     res = [h]
     if minus || plus
       fl, tau = Hecke.iscm_field(K)
+      println("Computing fixed field")
       k, = fixed_field(K, tau, simplify = true)
       println("Computing class group number $i/$(length(fields)) ($(defining_polynomial(k)))")
       flush(stdout)
