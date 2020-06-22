@@ -13,6 +13,9 @@ function has_obviously_not_class_number_one(K::AnticNumberField)
       continue
     end 
     fl, tau = Hecke.iscm_field(k)
+    if !fl
+      continue
+    end
     kplus,_ = fixed_field(k, tau)
     h = order(class_group(lll(maximal_order(k)))[1])
     hplus = order(class_group(lll(maximal_order(kplus)))[1])
