@@ -1,6 +1,29 @@
 using Hecke, ArgParse
 
+set_verbose_level(:ClassGroup, 1)
+
 include(joinpath(Hecke.pkgdir,"examples/FieldEnumeration/FieldEnumeration.jl"))
+
+function has_obviously_not_class_number_one(K::AnticNumberField)
+  lll(maximal_order(K))
+  subs = Hecke.subfields_normal(K)
+  cmfields = []
+  for (k,_) in subs
+    if degree(k) == degree(K)
+      continue
+    end 
+    fl, tau = Hecke.iscm_field(k)
+    kplus,_ = fixed_field(k, tau)
+    h = order(class_group(lll(maximal_order(k)))[1])
+    hplus = order(class_group(lll(maximal_order(kplus)))[1])
+    @assert mod(h, hplus) == 0
+    hminus = divexact(h, hplus)
+    if gcd(hminus, fmpz(4)) == 1 || hminus > 4 
+      return true
+    end 
+  end 
+  return false
+end
 
 function ArgParse.parse_item(::Type{fmpz}, x::AbstractString)
   if in('^', x)
@@ -92,15 +115,36 @@ function main()
 
   for i in 1:length(fields)
     f = fields[i][1]
-    K, = number_field(f)
+    K, = number_field(f, cached = false)
+
+    local res
+    
+    if minus || plus
+      println("Doing the cheap test $i/$(length(fields))")
+      flush(stdout)
+      fl = has_obviously_not_class_number_one(K)
+      if fl
+        println("Not relative class number one")
+        flush(stdout)
+        res = [fmpz(0), fmpz(0), fmpz(0)]
+        result[i] = (fields[i]..., res...)
+        continue
+      end
+    end
+
     OK = lll(maximal_order(K))
     @assert discriminant(OK) == fields[i][end]
+    println("Computing class group number $i/$(length(fields)) ($f)")
+    flush(stdout)
     c, _ = class_group(OK)
     h = order(c)
     res = [h]
     if minus || plus
       fl, tau = Hecke.iscm_field(K)
+      println("Computing fixed field")
       k, = fixed_field(K, tau, simplify = true)
+      println("Computing class group number $i/$(length(fields)) ($(defining_polynomial(k)))")
+      flush(stdout)
       cc, = class_group(lll(maximal_order(k)))
       hplus = order(cc)
       @assert mod(h, hplus) == 0
@@ -137,5 +181,3 @@ function main()
 end
 
 main()
-
-

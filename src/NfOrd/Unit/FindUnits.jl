@@ -184,19 +184,14 @@ function find_candidates(x::ClassGrpCtx)
   rel = SMat{fmpz}()
   K = nf(x)
   r1, r2 = signature(K)
-  nrel = min(20, r1+r2-1)
-  if nrel >= nrows(x.M.rel_gens)
-    add_units = Int[i for i = 1:nrows(x.M.rel_gens)]
-    rel = x.M.rel_gens
-  else
-    while length(add_units) < nrel
-      xj = rand(1:nrows(x.M.rel_gens))
-      if xj in add_units
-        continue
-      end
-      push!(add_units, xj)
-      push!(rel, x.M.rel_gens[xj])
+  nrel = min(10, r1+r2-1, nrows(x.M.rel_gens))
+  while length(add_units) < nrel
+    xj = rand(1:nrows(x.M.rel_gens))
+    if xj in add_units
+      continue
     end
+    push!(add_units, xj)
+    push!(rel, x.M.rel_gens[xj])
   end
   time_kernel += @elapsed k, d = solve_dixon_sf(x.M.bas_gens, rel)
   @vprint :UnitGroup 1 "Saturating the kernel\n"
@@ -256,7 +251,7 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx; add_orbit::Bool =
 
   @vprint :UnitGroup 1 "Enlarging unit group by adding kernel elements ...\n"
 
-  not_larger_bound = !add_orbit ? 5 : 3# * div(length(aut), 6)
+  not_larger_bound = min(20, nrows(x.M.rel_gens), r)
 
   while not_larger < not_larger_bound
 
@@ -274,6 +269,9 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx; add_orbit::Bool =
     end
     p_elements = sortperm(m_conjs)
     elements = elements[p_elements]
+    if has_full_rank(u)
+      elements = reduce_mod_units(elements, u)
+    end
 
     done = falses(length(elements))
     for i=1:length(elements)
@@ -314,7 +312,7 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx; add_orbit::Bool =
       @v_do :UnitGroup 2 pushindent()
 
       m = add_unit!(u, y)
-      if m || has_full_rank(u)
+      if m 
         done[i] = true
         not_larger = 0 
         if has_full_rank(u)
@@ -323,6 +321,9 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx; add_orbit::Bool =
           @vprint :UnitGroup 1 "Increased rank by 1 (now $(rank(u)))\n"
         end
       else
+        if has_full_rank(u)
+          done[i] = true
+        end
         not_larger = not_larger + 1
         if not_larger > not_larger_bound
           @v_do :UnitGroup 2 popindent()
@@ -362,25 +363,23 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx; add_orbit::Bool =
       end
     end
     if has_full_rank(u)
+      add_done = false
       for i = 1:length(elements)
         if !done[i]
-          add_unit!(u, elements[i])
+          add_done = add_unit!(u, elements[i]) || add_done  
         end
+      end
+      if add_done
+        u.units = reduce(u.units, u.tors_prec)
       end
     end
   end
-
-  #final reduction ...
-  u.units = reduce(u.units, u.tors_prec)
-  if has_full_rank(u)
-    u.tentative_regulator = regulator(u.units, 64)
-  end
-
   @vprint :UnitGroup 1 "Finished processing\n"
   if has_full_rank(u)
+    u.tentative_regulator = regulator(u.units, 64)
     @vprint :UnitGroup 1 "Regulator of current unit group is $(u.tentative_regulator)\n"
   else
-    @vprint :UnitGroup 1 "current rank is $(length(u.units)) need $r\n"
+    @vprint :UnitGroup 1 "current rank is $(length(u.units)), need $r\n"
   end  
   @vprint :UnitGroup 1 "-"^80 * "\n"
   @vprint :UnitGroup 1 "Independent unit time: $time_indep\n"
