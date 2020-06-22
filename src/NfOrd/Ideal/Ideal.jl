@@ -921,33 +921,33 @@ end
 
 function inv_maximal(A::NfAbsOrdIdl)
   O = order(A)
-  if isdefined(A, :princ_gen) && !has_2_elem_normal(A)
-    return ideal(O, inv(A.princ_gen.elem_in_nf))
+  if has_princ_gen_special(A)
+    return fractional_ideal(O, ideal(O, 1), princ_gen_special(A))
+  elseif isdefined(A, :princ_gen) && !has_2_elem_normal(A)
+    res =  ideal(O, inv(A.princ_gen.elem_in_nf))
   elseif has_2_elem(A) && has_weakly_normal(A)
     assure_2_normal(A)
     O = order(A)
     if iszero(A.gen_two)
-      return ideal(O, 1)//A.gen_one
+      return fractional_ideal(O, ideal(O, 1), A.gen_one)
     end
     m = A.gen_one
-    if isone(m)
-      return A//1
+    if has_minimum(A)
+      m = minimum(A, copy = false)
     end
-    if true
-      alpha = _invmod(m, A.gen_two)
-    else  
-      be = elem_in_nf(A.gen_two)
-      d = denominator(be)
-      f, e = ppio(d, m)
-      be *= e
-      be = mod(be*f, m^2*f)//f
-      alpha = inv(elem_in_nf(be))
-    end  
+    if isone(m)
+      return fractional_ideal(O, A)
+    end
+    alpha = _invmod(m, A.gen_two)
+    #=  
+    be = mod(A.gen_two.elem_in_nf, m^2)
+    alpha = inv(be)
+    =#  
     _, d = ppio(denominator(alpha, O), m)
     Ai = NfAbsOrdIdl(order(A))
     #Ai = parent(A)()
     dn = denominator(d*alpha, O)
-    @assert ppio(dn, m)[1] == dn
+    @hassert :NfOrd 1 ppio(dn, m)[1] == dn
     Ai.gen_one = dn
     Ai.gen_two = O(d*alpha*dn, false)
     temp = dn^degree(order(A))//norm(A)
@@ -962,7 +962,6 @@ function inv_maximal(A::NfAbsOrdIdl)
     assure_2_normal(A)
     return inv(A)
   end
-  error("Not implemented yet")
 end
 
 @doc Markdown.doc"""
@@ -1060,22 +1059,11 @@ function _minmod(a::fmpz, b::NfOrdElem)
   if !isdefining_polynomial_nice(nf(parent(b)))
     return gcd(denominator(inv(b.elem_in_nf), parent(b)), a)
   end
-  a2, ar = ppio(a, fmpz(2))
+  lf, ar = _factors_trial_division(a)
   min = fmpz(1)
-  if !isone(a2)
-    min *= _minmod_comp_pp(a2, b)
-  end
-  a3, ar = ppio(ar, fmpz(3))
-  if !isone(a3)
-    min *= _minmod_comp_pp(a3, b)
-  end
-  a5, ar = ppio(ar, fmpz(5))
-  if !isone(a5)
-    min *= _minmod_comp_pp(a5, b)
-  end
-  a7, ar = ppio(ar, fmpz(7))
-  if !isone(a7)
-    min *= _minmod_comp_pp(a7, b)
+  for p in lf
+    ap = p^valuation(a, p)
+    min *= _minmod_comp_pp(ap, b)
   end
   if isone(ar)
     return min
@@ -1297,21 +1285,27 @@ function simplify(A::NfAbsOrdIdl)
   if iszero(A)
     return A
   end
+  if isone(A)
+    A.gen_one = fmpz(1)
+    A.gen_two = order(A)(1)
+    A.minimum = fmpz(1)
+    A.norm = fmpz(1)
+    A.gens_normal = fmpz(2)
+    @hassert :NfOrd 1 isconsistent(A)
+    return A
+  end
   @hassert :NfOrd 1 isconsistent(A)
   if has_2_elem(A) && has_weakly_normal(A)
     #if maximum(element_to_sequence(A.gen_two)) > A.gen_one^2
     #  A.gen_two = element_reduce_mod(A.gen_two, A.parent.order, A.gen_one^2)
     #end
-    if isone(A)
-      A.gen_two = order(A)(1)
-      A.minimum = fmpz(1)
-      A.norm = fmpz(1)
-      A.gens_normal = fmpz(2)
-      @hassert :NfOrd 1 isconsistent(A)
-      return A
-    end
     if !has_minimum(A)
-      A.minimum = _minmod(A.gen_one, A.gen_two)
+      if isdefined(A, :norm)
+        d = gcd(A.norm, A.gen_one)
+        A.minimum = _minmod(d, A.gen_two)
+      else
+        A.minimum = _minmod(A.gen_one, A.gen_two)
+      end
       @hassert :Rres 1 A.minimum == gcd(A.gen_one, denominator(inv(A.gen_two.elem_in_nf), order(A)))
     end
     A.gen_one = A.minimum
@@ -1327,16 +1321,9 @@ function simplify(A::NfAbsOrdIdl)
       end  
       A.norm = n
     end
-    if isdefining_polynomial_nice(nf(order(A)))
-      be = A.gen_two.elem_in_nf
-      d = denominator(be)
-      f, e = ppio(d, A.gen_one)
-      be *= e
-      be = mod(be*f, f*A.gen_one^2)//f
-      A.gen_two = order(A)(be)
-    else
-      A.gen_two = mod(A.gen_two, A.gen_one^2)
-    end
+    be = mod(A.gen_two.elem_in_nf, A.gen_one^2)
+    A.gen_two = order(A)(be)
+
 
     if isdefined(A, :gens_normal)
       A.gens_normal = A.gen_one
