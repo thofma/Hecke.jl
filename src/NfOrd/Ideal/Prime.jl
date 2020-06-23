@@ -373,11 +373,11 @@ $\mathfrak p$ with $l \leq \deg(\mathfrak p)$ will be returned.
 Note that in this case it may happen that $p\mathcal O$ is not the product of the
 $\mathfrak p_i^{e_i}$.
 """
-function prime_decomposition(O::NfAbsOrd{S, T}, p::Union{Integer, fmpz}, degree_limit::Int = degree(O), lower_limit::Int = 0; cached::Bool = true) where {S, T}
+function prime_decomposition(O::NfAbsOrd{NfAbsNS, NfAbsNSElem}, p::Union{Integer, fmpz}, degree_limit::Int = degree(O), lower_limit::Int = 0; cached::Bool = true)
   if typeof(p) == fmpz && fits(Int, p)
     return prime_decomposition(O, Int(p), degree_limit, lower_limit)
   end
-  if isone(gcd(p, discriminant(O)))
+  if !divides(discriminant(O), p)[1]
     return prime_dec_nonindex(O, p, degree_limit, lower_limit)
   else
     return prime_dec_gen(O, p, degree_limit, lower_limit)
@@ -424,9 +424,9 @@ function prime_decomposition(O::NfOrd, p::Union{Integer, fmpz}, degree_limit::In
   return prime_dec_gen(O, p, degree_limit, lower_limit)
 end
 
-function prime_dec_gen(O, p, degree_limit = degree(O), lower_limit = 0)
+function prime_dec_gen(O::NfAbsOrd, p::Union{fmpz, Int}, degree_limit::Int = degree(O), lower_limit::Int = 0)
   Ip = pradical(O, p)
-  lp = Hecke._decomposition(O, ideal(O, p), Ip, ideal(O, one(O)), fmpz(p))
+  lp = Hecke._decomposition(O, ideal(O, p), Ip, ideal(O, 1), fmpz(p))
   z = Tuple{ideal_type(O), Int}[]
   for (Q, e) in lp
     if degree(Q) <= degree_limit && degree(Q) >= lower_limit

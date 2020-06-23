@@ -696,7 +696,7 @@ function _rcf_find_kummer(CF::ClassField_pp{S, T}) where {S, T}
   H = domain(ms)
   @hassert :ClassField 1 iscyclic(H)
   o = Int(order(H))
-  c = 1
+  c = fmpz(1)
   if o < fmpz(e1)
     c = div(fmpz(e1), o)
   end

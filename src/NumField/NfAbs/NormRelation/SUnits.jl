@@ -189,8 +189,13 @@ function _add_sunits_from_brauer_relation!(c, UZK, N; invariant = false, compact
     zk = maximal_order(k)
     zk = lll(zk)
     @vprint :NormRelation 1 "Computing class group ... \n"
-    class_group(zk, redo = false, use_aut = true)
-    lpk = NfOrdIdl[ P[1] for p in cp for P = prime_decomposition(zk, p)]
+    class_group(zk, use_aut = true)
+    lpk = NfOrdIdl[]
+    for p in cp
+      for P in prime_decomposition(zk, p)
+        push!(lpk, P[1])
+      end
+    end
 	  #lpk = unique!(NfOrdIdl[ intersect_prime(mk, P) for P in c.FB.ideals])
     @assert length(lpk) > 0
     @vprint :NormRelation 1 "Computing sunit group for set of size $(length(lpk)) ... \n"
@@ -537,20 +542,22 @@ function __sunit_group_fac_elem_quo_via_brauer(N::NormRelation, S, n::Int, invar
     tomodn = FacElem(elem_in_nf(mT(mQ\Q[1])))
     res_group = abelian_group(append!(fmpz[m], [fmpz(n) for i in 1:(length(sunitsmodunits) + length(unitsmodtorsion))]))
 
-    exp = function(a::GrpAbFinGenElem)
-      @assert parent(a) == res_group
-      zz = FacElem(convert(Vector{Hecke.nf_elem_or_fac_elem}, unitsmodtorsion), fmpz[a[1 + i] for i in 1:length(unitsmodtorsion)])
-      z = mul!(zz, zz, tomodn^a[1])
-      zzz = FacElem(convert(Vector{Hecke.nf_elem_or_fac_elem}, sunitsmodunits), fmpz[a[1 + length(unitsmodtorsion) + i] for i in 1:length(sunitsmodunits)])
-      mul!(z, z, zzz)
+    local exp
+    let res_group = res_group, unitsmodtorsion = unitsmodtorsion, tomodn = tomodn
+      function exp(a::GrpAbFinGenElem)
+        @assert parent(a) == res_group
+        zz = FacElem(convert(Vector{Hecke.nf_elem_or_fac_elem}, unitsmodtorsion), fmpz[a[1 + i] for i in 1:length(unitsmodtorsion)])
+        z = mul!(zz, zz, tomodn^a[1])
+        zzz = FacElem(convert(Vector{Hecke.nf_elem_or_fac_elem}, sunitsmodunits), fmpz[a[1 + length(unitsmodtorsion) + i] for i in 1:length(sunitsmodunits)])
+        mul!(z, z, zzz)
       
-      for (k, v) in z.fac
-        if iszero(v)
-          delete!(z.fac, k)
+        for (k, v) in z.fac
+          if iszero(v)
+            delete!(z.fac, k)
+          end
         end
+        return z
       end
-
-      return z
     end
 
     disclog = function(a)

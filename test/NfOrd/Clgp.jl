@@ -8,7 +8,7 @@ using Random
     @testset "class numbers" begin
 
       @testset "quadratic fields" begin
-        classnumbersofquadraticfields = [(-50,1),(-49,1),(-48,1),(-47,5),(-46,4)
+        classnumbersofquadraticfields = Tuple{Int, Int}[(-50,1),(-49,1),(-48,1),(-47,5),(-46,4)
           ,(-45,2),(-44,1),(-43,1),(-42,4),(-41,8),(-40,2),(-39,4),(-38,6)
           ,(-37,2),(-36,1),(-35,2),(-34,4),(-33,4),(-32,1),(-31,3),(-30,4)
           ,(-29,6),(-28,1),(-27,1),(-26,6),(-25,1),(-24,2),(-23,3),(-22,2)
@@ -43,11 +43,11 @@ using Random
         f = x^3 - 3*x - 1
         @show K, a = NumberField(f, "a")
         O = maximal_order(K)
-        Cl, mCl = Hecke.class_group(O, redo = true)
-        U, mU = Hecke.unit_group(O)
+        Cl, mCl = @inferred Hecke.class_group(O, redo = true)
+        U, mU = @inferred Hecke.unit_group(O)
         @test order(Cl) == 1
 
-        Cl, mCl = Hecke.class_group(O, redo = true, do_lll = true)
+        Cl, mCl = Hecke.class_group(O, redo = true, do_lll = false)
         U, mU = Hecke.unit_group(O)
         @test order(Cl) == 1
        
@@ -94,10 +94,10 @@ using Random
 
   @testset "_class_unit_group" begin
     Qx, x = PolynomialRing(FlintQQ, "x")
-    AF = ArbField(20)
+    AF = ArbField(20, cached = false)
 
     @testset "K = Q" begin
-      @show K, a = NumberField(x, "a")
+      @show K, a = NumberField(x, "a", cached = false)
       O = maximal_order(K)
       
       Cl, mCl = Hecke.class_group(O, redo = true)

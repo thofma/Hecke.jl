@@ -128,6 +128,7 @@ function _abelian_extensionsQQ(gtype::Array{Int,1}, absolute_discriminant_bound:
     end
     ls = subgroups(r, quotype = gtype, fun = (x, y) -> quo(x, y, false)[2])
     for s in ls
+      s::GrpAbFinGenMap
       C = ray_class_field(mr, s)::ClassField{MapRayClassGrp, GrpAbFinGenMap}
       if Hecke._is_conductor_minQQ(C, n) && Hecke.discriminant_conductorQQ(O, C, k, absolute_discriminant_bound)
         push!(class_fields, C)

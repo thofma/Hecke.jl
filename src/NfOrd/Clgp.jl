@@ -225,7 +225,7 @@ function _class_unit_group(O::NfOrd; saturate_at_2::Bool = true, bound::Int = -1
     U = _get_UnitGrpCtx_of_order(O)::UnitGrpCtx{FacElem{nf_elem, AnticNumberField}}
     @assert U.finished
     @vprint :UnitGroup 1 "... done (retrieved).\n"
-    if c.GRH == true && GRH == false
+    if c.GRH && !GRH 
       if !GRH
         class_group_proof(c, fmpz(2), factor_base_bound_minkowski(O))
         for (p, _) in factor(c.h)
@@ -253,18 +253,22 @@ function _class_unit_group(O::NfOrd; saturate_at_2::Bool = true, bound::Int = -1
   while true
     @v_do :UnitGroup 1 pushindent()
     if do_units
-      if unit_method == 1
+      #if unit_method == 1
         @vtime_add_elapsed :UnitGroup 1 c :unit_time r = _unit_group_find_units(U, c, add_orbit = use_aut, expected_reg = reg_expected)
+      #=
       else
         @vtime_add_elapsed :UnitGroup 1 c :unit_hnf_time module_trafo_assure(c.M)
         @vtime_add_elapsed :UnitGroup 1 c :unit_time r = _unit_group_find_units_with_transform(U, c, add_orbit = use_aut)
       end
+      =#
     end
     @v_do :UnitGroup 1 popindent()
     # r == 1 means full rank
     if isone(r)  # use saturation!!!!
       idx, reg_expected = _validate_class_unit_group(c, U) 
-      @hassert :ClassGroup 1 idx == _validate_class_unit_group(c, U)[1]
+      if isone(idx)
+        break
+      end
       stable = 3.5
       # No matter what, try a saturation at 2
       # This is not a good idea when we use the automorphisms.
@@ -286,10 +290,8 @@ function _class_unit_group(O::NfOrd; saturate_at_2::Bool = true, bound::Int = -1
           fl = saturate!(c, U, p, stable)
           p = next_prime(p)
         end
-        #fl = any(p->saturate!(c, U, p, stable), PrimesSet(1, 2*Int(idx)))
         @assert fl  # so I can switch assertions off...
         c.sat_done = 2*Int(idx)
-        #@vtime_add_elapsed :UnitGroup 1 c :unit_time r = _unit_group_find_units(U, c)
         n_idx, reg_expected = _validate_class_unit_group(c, U) 
         @vprint :ClassGroup 1 "index estimate down to $n_idx from $idx\n"
         @assert idx != n_idx

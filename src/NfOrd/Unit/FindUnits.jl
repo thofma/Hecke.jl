@@ -17,7 +17,7 @@ end
 # find r independent units, where r is the unit rank.
 # In the second round, try to enlarge the unit group with some random kernel
 # elements.
-function _unit_group_find_units_with_transform(u::UnitGrpCtx, x::ClassGrpCtx)
+function _unit_group_find_units_with_transform(u::UnitGrpCtx, x::ClassGrpCtx; add_orbit::Bool = false)
   @assert false
 
   @vprint :UnitGroup 1 "Processing ClassGrpCtx to find units ... \n"
@@ -272,9 +272,12 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx; add_orbit::Bool =
     ge = vcat(x.R_gen[1:k.c], x.R_rel[add_units])
     elements = Vector{FacElem{nf_elem, AnticNumberField}}(undef, nrows(s1))
     for i = 1:nrows(s1)
-      elements[i] = FacElem(ge, [s1[i, j] for j = 1:ncols(s1)])
+      elements[i] = FacElem(ge, fmpz[s1[i, j] for j = 1:ncols(s1)])
     end
     p = 32
+    if has_full_rank(u)
+      elements = reduce_mod_units(elements, u)
+    end
     #I order the elements by the maximum of the conjugate log.
     m_conjs = Vector{fmpz}(undef, length(elements))
     for i = 1:length(m_conjs)
@@ -282,10 +285,6 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx; add_orbit::Bool =
     end
     p_elements = sortperm(m_conjs)
     elements = elements[p_elements]
-    if has_full_rank(u)
-      elements = reduce_mod_units(elements, u)
-    end
-
     done = falses(length(elements))
     for i=1:length(elements)
       @vprint :UnitGroup 1 "Element $(i) / $(length(elements))\n"
@@ -335,6 +334,7 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx; add_orbit::Bool =
             first = false
           end
           if expected_reg > divexact(abs(tentative_regulator(u)), 2)
+            done = trues(length(elements))
             not_larger = not_larger_bound + 1
             break
           end

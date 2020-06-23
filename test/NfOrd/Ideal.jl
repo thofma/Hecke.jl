@@ -195,6 +195,10 @@
     L = NumberField(x^30-x^29+x^28-x^27+x^26+743*x^25-1363*x^24-3597*x^23-22009*x^22+458737*x^21+2608403*x^20+6374653*x^19-1890565*x^18-112632611*x^17-467834081*x^16-1365580319*x^15-1188283908*x^14+3831279180*x^13+28661663584*x^12+89106335984*x^11+226912479680*x^10+443487548480*x^9+719797891328*x^8+946994403328*x^7+1015828094976*x^6+878645952512*x^5+555353440256*x^4+124983967744*x^3+67515711488*x^2-5234491392*x+400505700352)[1]
     OL = maximal_order(L)
     @test length(prime_decomposition(OL, 2)) == 30
+    Lns, gLns = number_field([x^2-5, x^2-13])
+    OLns = maximal_order(Lns)
+    lP = prime_decomposition(OLns, 5)
+    @test length(lP) == 1
   end
 
   @testset "Frobenius automorphism" begin
