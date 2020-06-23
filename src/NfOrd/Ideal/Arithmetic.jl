@@ -241,7 +241,13 @@ function prod_via_2_elem_normal(a::NfOrdIdl, b::NfOrdIdl)
   @hassert :NfOrd 1 has_2_elem_normal(b)
   O = order(a)
   a1 = a.gen_one
+  if has_minimum(a)
+    a1 = minimum(a, copy = false)
+  end
   b1 = b.gen_one
+  if has_minimum(b)
+    b1 = minimum(b, copy = false)
+  end
   m = lcm(a1, b1)
   e, f = ppio(m, a1)
   if f == 1
@@ -300,7 +306,18 @@ function prod_via_2_elem_weakly(a::NfOrdIdl, b::NfOrdIdl)
   bas = basis(O)
   n = degree(O)
 
-  norm_c = norm(a) * norm(b)        # we ARE in the maximal order case
+  norm_c = norm(a, copy = false) * norm(b, copy = false)        # we ARE in the maximal order case
+  first_gen_new = fmpz(1)
+  if has_minimum(a)
+    first_gen_new *= minimum(a, copy = false)
+  else
+    first_gen_new *= gcd(a.gen_one, norm(a, copy = false))
+  end
+  if has_minimum(b)
+    first_gen_new *= minimum(b, copy = false)
+  else
+    first_gen_new *= gcd(b.gen_one, norm(b, copy = false))
+  end
   norm_int_c = norm_c
   mod_c = fmpz(1)
 
@@ -363,7 +380,7 @@ function prod_via_2_elem_weakly(a::NfOrdIdl, b::NfOrdIdl)
 
   @vprint :NfOrd 1 "prod_via_2_elem: used $cnt tries\n"
 
-  c = ideal(O, norm_int_c, gen)
+  c = ideal(O, first_gen_new, gen)
 
   c.norm = norm_c
 
@@ -394,6 +411,12 @@ function mul_maximal(x::NfOrdIdl, y::NfOrdIdl)
     return y
   elseif isone(y)
     return x
+  end
+  if has_princ_gen_special(x)
+    return princ_gen_special(x)*y
+  end
+  if has_princ_gen_special(y)
+    return princ_gen_special(y)*x
   end
   if has_2_elem_normal(x) && has_2_elem_normal(y)
     return prod_via_2_elem_normal(x, y)
@@ -480,7 +503,7 @@ function pow_2_elem(A::NfAbsOrdIdl, e::Int)
     gen = (A.princ_gen)^e
     I = ideal(OK, gen)
     if isdefined(A, :norm)
-      I.norm = norm(A, copy = false)^e
+      I.norm = norm(A)^e
     end
     if isprime_known(A) && isprime(A)
       eA = A.splitting_type[1]
@@ -496,7 +519,7 @@ function pow_2_elem(A::NfAbsOrdIdl, e::Int)
     I = ideal(OK, gen1, gen2)
     I.minimum = deepcopy(minim)
     if isdefined(A, :norm)
-      I.norm = norm(A, copy = false)^e
+      I.norm = norm(A)^e
     end
     if has_2_elem_normal(A)
       I.gens_normal = A.gens_normal
@@ -509,7 +532,7 @@ function pow_2_elem(A::NfAbsOrdIdl, e::Int)
     gen2 = A.gen_two^e
     I = ideal(OK, gen1, gen2)
     if isdefined(A, :norm)
-      I.norm = norm(A, copy = false)^e
+      I.norm = norm(A)^e
     end
     if isdefined(A, :minimum) && isone(gcd(minimum(A, copy = false), discriminant(OK)))
       I.minimum = A.minimum^e
@@ -632,7 +655,8 @@ function mul_maximal(x::NfOrdIdl, y::fmpz)
     end
   end
 
-  return x*ideal(order(x), y)
+  @hassert :NfOrd 1 has_basis_matrix(x)
+  return ideal(order(x), basis_matrix(x, copy = false)*y)
 end
 
 *(x::fmpz, y::NfOrdIdl) = y * x
