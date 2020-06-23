@@ -116,20 +116,18 @@ function class_group_new_relations_via_lll(c::ClassGrpCtx{T}, rat::Float64 = 0.2
   else
     @vprint :ClassGroup 1 "want $(stop-start) primes for random. Try distinct rational primes...\n"
 #    @show start, stop
-    JJ = [c.FB.ideals[stop]]
+    JJ = NfOrdIdl[c.FB.ideals[stop]]
     start += length(c.FB.ideals) - stop
     stop  += length(c.FB.ideals) - stop
     i = stop
+    minimums = fmpz[minimum(x, copy = false) for x = JJ]
     while i>1 && length(JJ) < stop - start
       i -= 1
-      if degree(c.FB.ideals[i]) > 1
+      if degree(c.FB.ideals[i]) > 1 || minimum(c.FB.ideals[i], copy = false) in minimums
         continue
       end
-      if minimum(c.FB.ideals[i]) in [minimum(x) for x = JJ]
-        continue
-      else
-        push!(JJ, c.FB.ideals[i])
-      end
+      push!(JJ, c.FB.ideals[i])
+      push!(minimums, minimum(c.FB.ideals[i], copy = false))
     end
     while length(JJ) < stop - start
       AA = rand(c.FB.ideals)
@@ -157,7 +155,7 @@ function class_group_new_relations_via_lll(c::ClassGrpCtx{T}, rat::Float64 = 0.2
       for p = sort(collect(piv), rev = sort_rev)
         @vprint :ClassGroup 1 "$(set_cursor_col())$(clear_to_eol())#ideals tested: $n_idl, pivot ideal: $p, exp: $rand_exp, #rand base: $(length(rand_env.base))"
         @vtime :ClassGroup 3 J = random_get(rand_env, reduce = false)
-  #      @show nbits(norm(J)), rand_env.exp, rand_exp
+        #@show nbits(norm(J)), rand_env.exp, rand_exp
         @vtime :ClassGroup 3 J *= c.FB.ideals[p]^rand_exp
         @vtime :ClassGroup 3 I = class_group_small_lll_elements_relation_start(c, J)
         n_idl += 1
@@ -169,8 +167,8 @@ function class_group_new_relations_via_lll(c::ClassGrpCtx{T}, rat::Float64 = 0.2
             break
           end
         end
-        if h > 0 && c.rel_cnt - st > 2
-          return
+        if h > 0 && c.rel_cnt - st > 1
+          return nothing
         else
           if h == 0 && c.rel_cnt - st > length(piv) + 2
             break
@@ -205,7 +203,9 @@ function class_group_new_relations_via_lll(c::ClassGrpCtx{T}, rat::Float64 = 0.2
       end
     end
     piv = piv_new
-    if h == 1 return end
+    if h == 1 
+      return nothing
+    end
   end
 end
 

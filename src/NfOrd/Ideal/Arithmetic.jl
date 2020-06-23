@@ -86,7 +86,7 @@ function +(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
     return ideal(order(x), g)
   end
   d = degree(OK)
-  if isdefining_polynomial_nice(nf(OK)) && issimple(nf(OK)) && contains_equation_order(OK) && isprime(g) && !isindex_divisor(OK, g) && has_2_elem(x) && has_2_elem(y)
+  if issimple(nf(OK)) && isdefining_polynomial_nice(nf(OK)) && contains_equation_order(OK) && isprime(g) && !isindex_divisor(OK, g) && has_2_elem(x) && has_2_elem(y)
     #I can use polynomial arithmetic
     if fits(Int, g)
       R1 = ResidueRing(FlintZZ, Int(g), cached = false)

@@ -1217,6 +1217,10 @@ function _invmod(a::fmpz, b::NfOrdElem)
   return bi
 end
 
+function _normmod(a::fmpz, b::NfAbsOrdElem)
+  return gcd(norm(b), a)
+end
+
 function _normmod(a::fmpz, b::NfOrdElem)
   if isone(a) 
     return a

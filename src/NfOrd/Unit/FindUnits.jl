@@ -178,17 +178,27 @@ function _unit_group_find_units_with_transform(u::UnitGrpCtx, x::ClassGrpCtx)
 end
 
 
-function find_candidates(x::ClassGrpCtx)
+function find_candidates(x::ClassGrpCtx, u::UnitGrpCtx)
   time_kernel = 0.0
   add_units = Int[]
   rel = SMat{fmpz}()
   K = nf(x)
   r1, r2 = signature(K)
   nrel = min(10, r1+r2-1, nrows(x.M.rel_gens))
+  if !isdefined(u, :relations_used)
+    u.relations_used = Vector{Int}()
+  end
   while length(add_units) < nrel
     xj = rand(1:nrows(x.M.rel_gens))
-    if xj in add_units
-      continue
+    if length(u.relations_used) != nrows(x.M.rel_gens)
+      if xj in add_units || xj in u.relations_used
+        continue
+      end
+      push!(u.relations_used, xj)
+    else
+      if xj in add_units 
+        continue
+      end
     end
     push!(add_units, xj)
     push!(rel, x.M.rel_gens[xj])
@@ -204,7 +214,7 @@ function find_candidates(x::ClassGrpCtx)
   return k, add_units, s1
 end
 
-function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx; add_orbit::Bool = true)
+function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx; add_orbit::Bool = true, expected_reg::arb = ArbField(32, cached = false)(-1))
   add_orbit = false
   @vprint :UnitGroup 1 "Processing ClassGrpCtx to find units ... (using orbits: $add_orbit)\n"
   @vprint :UnitGroup 1 "Relation module $(x.M)\n"
@@ -253,9 +263,12 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx; add_orbit::Bool =
 
   not_larger_bound = min(20, nrows(x.M.rel_gens), r)
 
+  first = true
+  if has_full_rank(u)
+    first = false
+  end
   while not_larger < not_larger_bound
-
-    k, add_units, s1 = find_candidates(x)
+    k, add_units, s1 = find_candidates(x, u)
     ge = vcat(x.R_gen[1:k.c], x.R_rel[add_units])
     elements = Vector{FacElem{nf_elem, AnticNumberField}}(undef, nrows(s1))
     for i = 1:nrows(s1)
@@ -315,8 +328,16 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx; add_orbit::Bool =
       if m 
         done[i] = true
         not_larger = 0 
-        if has_full_rank(u)
+        if has_full_rank(u) 
           @vprint :UnitGroup 1 "improved reg, reg is $(tentative_regulator(u))\n"
+          if first
+            idx, expected_reg = _validate_class_unit_group(x, u)
+            first = false
+          end
+          if expected_reg > divexact(abs(tentative_regulator(u)), 2)
+            not_larger = not_larger_bound + 1
+            break
+          end
         else
           @vprint :UnitGroup 1 "Increased rank by 1 (now $(rank(u)))\n"
         end
@@ -330,6 +351,7 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx; add_orbit::Bool =
           break
         end
       end
+
       @v_do :UnitGroup 2 popindent()
     end
     u.units = reduce(u.units, u.tors_prec)
@@ -358,6 +380,9 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx; add_orbit::Bool =
           end
         end
         if not_larger > not_larger_bound
+          break
+        end
+        if nrows(x.M.rel_gens) == not_larger_bound
           break
         end
       end

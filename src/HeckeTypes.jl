@@ -1152,6 +1152,7 @@ mutable struct UnitGrpCtx{T <: Union{nf_elem, FacElem{nf_elem}}}
   finished::Bool
   auts# automorphisms of the field
   cache::Vector{Dict{nf_elem, nf_elem}}
+  relations_used::Vector{Int}
 
   function UnitGrpCtx{T}(O::NfOrd) where {T}
     z = new{T}()
@@ -1167,6 +1168,7 @@ mutable struct UnitGrpCtx{T <: Union{nf_elem, FacElem{nf_elem}}}
     z.tors_prec = 16
     z.indep_prec = 16
     z.finished = false
+    relations_used = Vector{Int}()
     return z
   end
 end

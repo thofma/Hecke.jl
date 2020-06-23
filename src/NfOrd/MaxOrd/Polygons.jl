@@ -592,6 +592,7 @@ function _decomposition(O::NfAbsOrd, I::NfAbsOrdIdl, Ip::NfAbsOrdIdl, T::NfAbsOr
   end
   k = (1-1/BigInt(p))^degree(O) < 0.1
 
+
   if !k
     #The probability of finding a random generator is high
     for j in 1:length(ideals)
@@ -605,7 +606,7 @@ function _decomposition(O::NfAbsOrd, I::NfAbsOrdIdl, Ip::NfAbsOrdIdl, T::NfAbsOr
       modulo = norm(P)*p
       x = zero(parent(u))
 
-      if isdefining_polynomial_nice(nf(O))
+      if issimple(nf(O)) && isdefining_polynomial_nice(nf(O))
         if !isnorm_divisible_pp(u.elem_in_nf, modulo)
           x = u
         elseif !isnorm_divisible_pp(u.elem_in_nf+p, modulo)
@@ -619,6 +620,7 @@ function _decomposition(O::NfAbsOrd, I::NfAbsOrdIdl, Ip::NfAbsOrdIdl, T::NfAbsOr
             sub!(u, u, p)
           end
         end
+        x = u
       end
 
       @hassert :NfOrd 1 !iszero(x)
@@ -670,7 +672,7 @@ function _decomposition(O::NfAbsOrd, I::NfAbsOrdIdl, Ip::NfAbsOrdIdl, T::NfAbsOr
       #u = u1*(u2+v2) + u2*v1
       #v = v1*v2
       @hassert :NfOrd 1 isone(u + v)
-      if isdefining_polynomial_nice(nf(O))
+      if issimple(nf(O)) && isdefining_polynomial_nice(nf(O))
         u = O(mod(u.elem_in_nf, p))
       end
       
@@ -818,7 +820,7 @@ function find_random_second_gen(A::NfAbsOrdIdl{S, T}) where {S, T}
     mul!(m, m, basis_matrix(A, copy = false))
     mul!(m, m, basis_matrix(O, copy = false).num)
     gen = elem_from_mat_row(K, m, 1, dBmat)
-    if isdefining_polynomial_nice(K)
+    if issimple(K) && isdefining_polynomial_nice(K)
       gen = mod(gen, Amin2)
     end
     if iszero(gen)

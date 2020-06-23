@@ -147,7 +147,7 @@ function _validate_class_unit_group(c::ClassGrpCtx, U::UnitGrpCtx)
   h = class_group_current_h(c)
   if degree(O) == 1
     if h == 1 && U.tentative_regulator == 1
-      return fmpz(1)
+      return fmpz(1), U.tentative_regulator
     else
       error("Something odd for K = Q")
     end
@@ -165,7 +165,7 @@ function _validate_class_unit_group(c::ClassGrpCtx, U::UnitGrpCtx)
   w = U.torsion_units_order
 
   if h == 1 && iszero(unit_rank(O))
-    return fmpz(1)
+    return fmpz(1), U.tentative_regulator
   end
 
   r1, r2 = signature(O)
@@ -195,12 +195,12 @@ function _validate_class_unit_group(c::ClassGrpCtx, U::UnitGrpCtx)
     @assert isfinite(loghRapprox)
 
     if contains(loghRtrue, loghRapprox)
-      return fmpz(1)
+      return fmpz(1), abs(tentative_regulator(U))
     elseif !overlaps(loghRtrue, loghRapprox)
       e = exp(loghRapprox - loghRtrue)
       e_fmpz = abs_upper_bound(e, fmpz)
       @vprint :ClassGroup 1 "validate called, index bound is $e_fmpz\n"
-      return e_fmpz
+      return e_fmpz, divexact(abs(tentative_regulator(U)), e_fmpz)
     end
 
     error("Not yet implemented")
@@ -249,11 +249,12 @@ function _class_unit_group(O::NfOrd; saturate_at_2::Bool = true, bound::Int = -1
   r = 0
 
   do_units = true
+  reg_expected = ArbField(32, cached = false)(-1)
   while true
     @v_do :UnitGroup 1 pushindent()
     if do_units
       if unit_method == 1
-        @vtime_add_elapsed :UnitGroup 1 c :unit_time r = _unit_group_find_units(U, c, add_orbit = use_aut)
+        @vtime_add_elapsed :UnitGroup 1 c :unit_time r = _unit_group_find_units(U, c, add_orbit = use_aut, expected_reg = reg_expected)
       else
         @vtime_add_elapsed :UnitGroup 1 c :unit_hnf_time module_trafo_assure(c.M)
         @vtime_add_elapsed :UnitGroup 1 c :unit_time r = _unit_group_find_units_with_transform(U, c, add_orbit = use_aut)
@@ -262,8 +263,8 @@ function _class_unit_group(O::NfOrd; saturate_at_2::Bool = true, bound::Int = -1
     @v_do :UnitGroup 1 popindent()
     # r == 1 means full rank
     if isone(r)  # use saturation!!!!
-      idx = _validate_class_unit_group(c, U) 
-      @hassert :ClassGroup 1 idx == _validate_class_unit_group(c, U)
+      idx, reg_expected = _validate_class_unit_group(c, U) 
+      @hassert :ClassGroup 1 idx == _validate_class_unit_group(c, U)[1]
       stable = 3.5
       # No matter what, try a saturation at 2
       # This is not a good idea when we use the automorphisms.
@@ -272,9 +273,9 @@ function _class_unit_group(O::NfOrd; saturate_at_2::Bool = true, bound::Int = -1
       if iszero(c.sat_done) && !use_aut && saturate_at_2
         @vprint :ClassGroup 1 "Finite index, saturating at 2\n"
         while saturate!(c, U, 2, stable)
-          @vtime_add_elapsed :UnitGroup 1 c :unit_time r = _unit_group_find_units(U, c)
+          @vprint :ClassGroup 1 "Finite index, saturating at 2\n"
         end
-        idx = _validate_class_unit_group(c, U) 
+        idx, reg_expected = _validate_class_unit_group(c, U)
         c.sat_done = 2
       end
       while (!use_aut && idx < 20 && idx > 1) || (idx < 10 && idx > 1)
@@ -288,8 +289,8 @@ function _class_unit_group(O::NfOrd; saturate_at_2::Bool = true, bound::Int = -1
         #fl = any(p->saturate!(c, U, p, stable), PrimesSet(1, 2*Int(idx)))
         @assert fl  # so I can switch assertions off...
         c.sat_done = 2*Int(idx)
-        @vtime_add_elapsed :UnitGroup 1 c :unit_time r = _unit_group_find_units(U, c)
-        n_idx = _validate_class_unit_group(c, U) 
+        #@vtime_add_elapsed :UnitGroup 1 c :unit_time r = _unit_group_find_units(U, c)
+        n_idx, reg_expected = _validate_class_unit_group(c, U) 
         @vprint :ClassGroup 1 "index estimate down to $n_idx from $idx\n"
         @assert idx != n_idx
         idx = n_idx
@@ -330,7 +331,7 @@ function _class_unit_group(O::NfOrd; saturate_at_2::Bool = true, bound::Int = -1
     c.GRH = false
   end
 
-  return c, U, _validate_class_unit_group(c, U)
+  return c, U, _validate_class_unit_group(c, U)[1]
 end
 
 function unit_group_ctx(c::ClassGrpCtx; redo::Bool = false)

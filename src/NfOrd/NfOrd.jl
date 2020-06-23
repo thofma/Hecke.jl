@@ -433,7 +433,7 @@ end
 Returns whether $d$ is a divisor of the index of $\mathcal O$. It is assumed
 that $\mathcal O$ contains the equation order of the ambient number field.
 """
-function isindex_divisor(O::NfOrd, d::Union{fmpz, Integer})
+function isindex_divisor(O::NfAbsOrd, d::Union{fmpz, Integer})
   i = index(O, copy = false)
   return iszero(i % d)
 end

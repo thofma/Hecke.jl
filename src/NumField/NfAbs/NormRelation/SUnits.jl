@@ -413,12 +413,12 @@ function class_group_via_brauer(O::NfOrd, N::NormRelation; saturate::Bool = true
       @vprint :NormRelation 1 "Saturating at $p \n"
       b = Hecke.saturate!(c, UZK, Int(p), stable)
       while b
-        idx = Hecke._validate_class_unit_group(c, UZK)
+        idx = Hecke._validate_class_unit_group(c, UZK)[1]
         @vprint :NormRelation 1 "Index bound from analysis $idx\n"
         b = Hecke.saturate!(c, UZK, Int(p), stable)
       end
     end
-    idx = Hecke._validate_class_unit_group(c, UZK)
+    idx = Hecke._validate_class_unit_group(c, UZK)[1]
     if idx != 1
       @vprint :NormRelation 1 "Index is $idx (should be 1)!\n"
     end

@@ -39,9 +39,10 @@ function class_group_init(FB::NfFactorBase, T::DataType = SMat{fmpz}; add_rels::
     class_group_add_relation(clg, nf(O)(a), fmpq(abs(a)^n), fmpz(1), orbit = false)
     b = nf(O)(I.gen_two)
     bn = norm_div(b, fmpz(1), 600)
-    if nbits(numerator(bn)) < 550
+    if nbits(numerator(bn)) < 550 
       class_group_add_relation(clg, b, abs(bn), fmpz(1), orbit = false)
     end
+
   end
   
   l = zero_matrix(FlintZZ, n, 1+clg.c.r2)
