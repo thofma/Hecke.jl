@@ -377,7 +377,7 @@ function prime_decomposition(O::NfAbsOrd{NfAbsNS, NfAbsNSElem}, p::Union{Integer
   if typeof(p) == fmpz && fits(Int, p)
     return prime_decomposition(O, Int(p), degree_limit, lower_limit)
   end
-  if !divides(discriminant(O), p)[1]
+  if !divisible(discriminant(O), p)
     return prime_dec_nonindex(O, p, degree_limit, lower_limit)
   else
     return prime_dec_gen(O, p, degree_limit, lower_limit)

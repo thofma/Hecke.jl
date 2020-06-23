@@ -353,7 +353,7 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    order(x::NfAbsOrdIdl) -> NfOrd
+    order(x::NfAbsOrdIdl) -> NfAbsOrd
 
 Returns the order, of which $x$ is an ideal.
 """
@@ -382,19 +382,19 @@ Returns the order of $I$.
 
 @doc Markdown.doc"""
     *(O::NfOrd, x::NfOrdElem) -> NfAbsOrdIdl
-    *(x::NfOrdElem, O::NfOrd) -> NfAbsOrdIdl
+    *(x::NfAbsOrdElem, O::NfAbsOrd) -> NfAbsOrdIdl
 
 Returns the principal ideal $(x)$ of $\mathcal O$.
 """
-function *(O::NfOrd, x::NfOrdElem)
+function *(O::NfAbsOrd, x::NfAbsOrdElem)
   parent(x) !== O && error("Order of element does not coincide with order")
   return ideal(O, x)
 end
 
-*(x::NfOrdElem, O::NfOrd) = O*x
-*(x::Int, O::NfOrd) = ideal(O, x)
-*(x::BigInt, O::NfOrd) = ideal(O, fmpz(x))
-*(x::fmpz, O::NfOrd) = ideal(O, x)
+*(x::NfAbsOrdElem, O::NfAbsOrd) = O*x
+*(x::Int, O::NfAbsOrd) = ideal(O, x)
+*(x::BigInt, O::NfAbsOrd) = ideal(O, fmpz(x))
+*(x::fmpz, O::NfAbsOrd) = ideal(O, x)
 
 ###########################################################################################
 #
