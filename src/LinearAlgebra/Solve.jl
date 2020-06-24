@@ -166,8 +166,14 @@ function algebraic_split(a::nf_elem)
   d = denominator(a)
   M, dd = representation_matrix_q(a)
   @assert d == dd
-  M = [M identity_matrix(FlintZZ, n); -d*identity_matrix(FlintZZ, n) zero_matrix(FlintZZ, n, n)]
-  L = lll(M)[1, n+1:2*n]
+  #need to scale to make sure the kernel is found. Maybe better to
+  #actually find the kernel and then look for small elements
+  #a = be/ga <=> M_a * ga - I * be = 0 (this is the kernel)
+  #furthermore, I want be and ga to be "small" - the LLL
+  M = [M*dd identity_matrix(FlintZZ, n); -d^2*identity_matrix(FlintZZ, n) zero_matrix(FlintZZ, n, n)]
+  L = lll(M)
+  @assert iszero(L[1, 1:n])
+  L = L[1, n+1:2*n]
   ga = parent(a)(collect(L))
   be = a*ga
   @assert denominator(be) == 1
