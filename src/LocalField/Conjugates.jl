@@ -160,9 +160,7 @@ function expand(a::Array{qadic, 1}; all::Bool, flat::Bool, degs::Array{Int, 1}= 
       d = degree(parent(x))
       if ix <= length(degs)
         for i=2:degs[ix]
-          for j=1:div(d, degs[ix])
-            y = frobenius(y)
-          end
+          y = frobenius(y)
           push!(re, y)
         end
       else
