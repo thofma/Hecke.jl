@@ -411,13 +411,7 @@ if VERSION >= v"1.4"
     global VERSION_NUMBER = "building"
   end
 else
-  ver = Pkg.installed()
-  if haskey(ver, "Hecke")
-    ver = ver["Hecke"]
-  else
-    ver = 0
-  end
-    
+  Pkg.API.__installed(PKGMODE_MANIFEST)["Hecke"] 
   dir = dirname(@__DIR__)
   if occursin("/dev/", dir)
     global VERSION_NUMBER = VersionNumber("$(ver)-dev")
