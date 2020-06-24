@@ -33,6 +33,7 @@ end
 function remove(z::T, p::T) where T <: Integer
   z == 0 && return (0, z)
   v = 0
+  @assert p > 1
   while mod(z, p) == 0
     z = div(z, p)
     v += 1
@@ -50,6 +51,7 @@ end
 function valuation(z::T, p::T) where T <: Integer
   z == 0 && return 0
   v = 0
+  @assert p > 1
   while mod(z, p) == 0
     z = div(z, p)
     v += 1
@@ -1328,7 +1330,7 @@ struct Limbs
   a::fmpz
   len::Int
   b::Ptr{UInt}
-  function Limbs(a::fmpz)
+  function Limbs(a::fmpz; MSW::Bool = true)
     if Nemo._fmpz_is_small(a)
       return new(a, 0, convert(Ptr{UInt}, 0))
     end
@@ -1336,7 +1338,11 @@ struct Limbs
     len = unsafe_load(z, 2)
     d = convert(Ptr{Ptr{UInt}}, unsigned(a.d) << 2) + 2*sizeof(Cint)
     p = unsafe_load(d)
-    return new(a, len, p)
+    if !MSW
+      new(a, -len, p)
+    else
+      new(a, len, p)
+    end
   end
 end
 
@@ -1345,18 +1351,24 @@ function show(io::IO, L::Limbs)
 end
 
 @inline function getindex(L::Limbs, i::Int)
-  @boundscheck @assert i <= L.len
   if L.len == 0
     return UInt(abs(L.a.d)) #error???
   end
+  @boundscheck @assert i <= abs(L.len)
   return unsafe_load(L.b, i)
 end
 
 function iterate(L::Limbs)
+  L.len < 0 && return L[1], 1
+
   return L[L.len], L.len
 end
 
 function iterate(L::Limbs, i::Int)
+  if L.len < 0
+    i > -L.len && return nothing
+    return L[i+1], i+1
+  end
   i == 0 && return nothing
   return L[i-1], i-1
 end
