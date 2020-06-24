@@ -716,9 +716,9 @@ If the ideals are not coprime, an error is raised.
 """
 function idempotents(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
   check_parent(x, y)
-  #!(order(x) === order(y)) && error("Parent mismatch")
   O = order(x)
   d = degree(O)
+
 
   if has_2_elem(x) && has_2_elem(y)
     g, ux, vx = gcdx(x.gen_one, y.gen_one)
@@ -730,8 +730,8 @@ function idempotents(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
     end
   end
 
-  mx = minimum(x)
-  my = minimum(y)
+  mx = minimum(x, copy = false)
+  my = minimum(y, copy = false)
 
   g, ux, vy = gcdx(mx, my)
   if isone(g)
@@ -740,7 +740,15 @@ function idempotents(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
     @hassert :NfOrd 2 (1 - z) in y
     return z, 1 - z
   end
+  return _idempotents_via_matrices(x, y)
+end
 
+function _idempotents_via_matrices(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
+
+  O = order(x)
+  d = degree(O)
+  mx = minimum(x, copy = false)
+  my = minimum(y, copy = false)
   # form the matrix
   #
   # ( 1 |  1  | 0 )
