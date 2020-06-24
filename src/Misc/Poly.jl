@@ -763,7 +763,7 @@ function power_sums_to_polynomial(P::Array{T, 1}) where T <: FieldElem
 end
 
 function power_sums_to_polynomial(P::Array{T, 1}) where T
-  E = T[1]
+  E = T[one(parent(P[1]))]
   R = parent(P[1])
   last_non_zero = 0
   for k=1:length(P)
