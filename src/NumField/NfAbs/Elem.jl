@@ -484,7 +484,7 @@ function factor_trager(f::PolyElem{nf_elem})
   Kx = parent(f)
   K = base_ring(Kx)
 
-  Zx = FlintZZ["x"][1]
+  Zx = Hecke.Globals.Zx
   @vtime :PolyFactor Np = norm_mod(g, p, Zx)
   while isconstant(Np) || !issquarefree(map_coeffs(F, Np))
     k = k + 1
@@ -494,7 +494,7 @@ function factor_trager(f::PolyElem{nf_elem})
 
   @vprint :PolyFactor 2 "need to shift by $k, now the norm"
   if any(x -> denominator(x) > 1, coefficients(g))
-    @vtime :PolyFactor 2 N = Zx(norm(g))
+    @vtime :PolyFactor 2 N = Hecke.Globals.Qx(norm(g))
   else
     @vtime :PolyFactor 2 N = norm_mod(g, Zx)
     @hassert :PolyFactor 1 N == Zx(norm(g))
