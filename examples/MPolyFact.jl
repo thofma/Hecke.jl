@@ -208,9 +208,10 @@ function Hecke.roots(f::fmpq_mpoly, p::Int, k::Int)
       break
     end
   end
-  F = QadicField(p, d, k)
+  @show F = QadicField(p, d, k)
+#  F, _ = ResidueField(F)
 
-  r = roots(g, F)
+  @time r = roots(g, F)
 
   Ft, t = F["t"]
 
@@ -219,7 +220,7 @@ function Hecke.roots(f::fmpq_mpoly, p::Int, k::Int)
     o = Ft(inv(evaluate(derivative(g), s)))
     S = Ft(s)
     ti = t
-    for i = 1:4
+    for i = 1:5
       ti *= ti
       _g = evaluate(ff, [t, S]) % ti
       S = (S - _g*o) % ti
@@ -244,22 +245,31 @@ function combination(R::Array, n::Int, d::Int)
   F = base_ring(Ft)
   k = degree(F)
 
-  p = prime(F)
-  ll = precision(F)
+  if true
+    p = prime(F)
+    ll = precision(F)
+  else
+    p = characteristic(F)
+    ll = 1
+  end
 
   m = identity_matrix(FlintZZ, length(R)) 
   i = 1
   j = 0
   while true
     @assert n> d*i
-    n = matrix([[lift(coeff(coeff(div(x^i % tn, td^i), j), lk)) for lk = 0:k-1] for x = R])'
-    nn = m[1:length(R), 1:length(R)]*n
-    m = [m nn; zero_matrix(FlintZZ, ncols(nn), length(R)) p^ll*identity_matrix(FlintZZ, ncols(nn))]
-    r, m = lll_with_removal(m, fmpz(length(R))^2)
+    nn = matrix([[lift(coeff(coeff(div(x^i % tn, td^i), j), lk)) for lk = 0:k-1] for x = R])'
+    nn = m[:, 1:length(R)]*nn
+    m = [m nn; zero_matrix(FlintZZ, ncols(nn), ncols(m)) p^ll*identity_matrix(FlintZZ, ncols(nn))]
+    @time r, m = lll_with_removal(m, fmpz(length(R))^2)
     m = m[1:r, :]
-    @show r
     if all(i->sum(m[i,j]^2 for j = 1:length(R)) <= length(R)^2, 1:r)
-      return m[:, 1:length(R)]
+      if all(ll -> sum([div(R[l]^(i+1) % tn, td^(i+1)) for l=1:length(R) if m[ll, l] != 0]) == 0, 1:r)
+        return m[:, 1:length(R)]
+      else
+        i += 1
+        j = 0
+      end
     end
     j += 1
     if j > n-d*i
@@ -295,6 +305,7 @@ function field(R::Array, m::fmpz_mat, d::Int)
   i = 1
   j = 0
   K, mK = ResidueField(F)
+  local s
   while true
     s = Set([mK(coeff(x[i], j)) for x = el])
     if length(s) == length(el)
@@ -307,12 +318,13 @@ function field(R::Array, m::fmpz_mat, d::Int)
     end
   end
 
+  @show prime(F), precision(F), i, j
   pk = prime(F)^precision(F)
-  p = [coeff(sum(coeff(x[i], j)^l for x = el), 0) for l=1:d_f-1]
+  p = [coeff(sum(coeff(x[i], j)^l for x = el), 0) for l=1:length(el)]
   p = map(lift, p)
   p = map(x->rational_reconstruction(x, pk), p)
   @assert all(x->x[1], p)
-  p = [x[2]//x[3] for x = p]
+  @show p = [x[2]//x[3] for x = p]
 
   k, a = number_field(Hecke.power_sums_to_polynomial(p))
 
@@ -341,8 +353,11 @@ end
 function absolute_factorisation(f::fmpq_mpoly)
   p = next_prime(2^30)
   d = degree(f, 1)
-  r = roots(f, p, d+2) #compute up to 16 in x
-  z = combination(r, 16, d+2)
+  r = roots(f, p, 2) #compute up to 16 in x
+  @show z = combination(r, 16, d+2)
+  if nrows(z) == 1
+    return f
+  end
   return field(r, z, d)
 end
   
