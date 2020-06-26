@@ -186,13 +186,17 @@ Uses \code{psi_lower} and \code{psi_upper} to find intervalls for
 $\psi(2^i, B)$ to be in for $0\le i\le \log_2(N)$.
 Where $\psi(N, B) = \#\{1\le i\le N | \text{$i$ is $B$-smooth}\}$  
 """
-function show_psi(N::Integer, B::Int)
+function show_psi(N::Integer, B::Union{Int, NfFactorBase})
   gl = psi_lower(N, B)[1]
   gu = psi_upper(N, B)[1]
   l = 0
   u = 0
   for i=1:length(gl)
-    print("psi(2^$(i-1), $B)")
+    if isa(B, Int)
+      print("psi(2^$(i-1), $B)")
+    else
+      print("psi(2^$(i-1), B)")
+    end
     l = gl[i]
     u = gu[i]
     if l==u
