@@ -96,10 +96,16 @@ end
   f = y^16+(39)*y^14+(449)*y^12+(1794)*y^10+(2830)*y^8+(1794)*y^6+(449)*y^4+(39)*y^2+(1)
   @test length(factor(f)) == 2
 
+  # Dan's example #76
   K, a = number_field(x^2 + x + 1, cached = false);
   Kt, t = K["t"]
   g = t^4-t^3-t+(1)
   @test length(factor(g)) == 3
+
+  K, a = number_field(x^3 - 2, "a")
+  Kx, x = PolynomialRing(K, "x")
+  fa = factor(x^4+(1//2*a^2 + 1*a + 2)*x^3+(a^2 + 2*a + 2)*x^2+(1//2*a^2 + 1*a + 2)*x+1)
+  @test length(fa) == 3
 end
 
 @testset "Root computation" begin
