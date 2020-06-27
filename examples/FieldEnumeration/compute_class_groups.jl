@@ -21,7 +21,8 @@ function has_obviously_not_class_number_one(K::AnticNumberField)
     hplus = order(class_group(lll(maximal_order(kplus)))[1])
     @assert mod(h, hplus) == 0
     hminus = divexact(h, hplus)
-    if gcd(hminus, fmpz(4)) == 1 || hminus > 4 
+    if hminus > 4 && (hminus > 1 && gcd(hminus, fmpz(4)) == 1)
+      @show hminus
       return true
     end 
   end 
