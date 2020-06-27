@@ -17,7 +17,7 @@ function has_obviously_not_class_number_one(K::AnticNumberField)
       continue
     end
     kplus,_ = fixed_field(k, tau)
-    h = order(class_group(lll(maximal_order(k)))[1])
+    h = order(class_group(lll(maximal_order(k)), use_aut = true)[1])
     hplus = order(class_group(lll(maximal_order(kplus)))[1])
     @assert mod(h, hplus) == 0
     hminus = divexact(h, hplus)
@@ -119,6 +119,7 @@ function main()
   for i in 1:length(fields)
     f = fields[i][1]
     K, = number_field(f, cached = false)
+    println("Looking at $i/$(length(fields)) ($f)")
 
     local res
     
@@ -135,11 +136,12 @@ function main()
       end
     end
 
+    flush(stdout)
     OK = lll(maximal_order(K))
     @assert discriminant(OK) == fields[i][end]
     println("Computing class group number $i/$(length(fields)) ($f)")
     flush(stdout)
-    c, _ = class_group(OK)
+    c, _ = class_group(OK, use_aut = true)
     h = order(c)
     res = [h]
     if minus || plus
