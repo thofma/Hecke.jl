@@ -742,6 +742,24 @@ function build()
   system("Build.jl")
 end
 
+function percent_P()
+  s = Base.active_repl.mistate
+  REPL = Base.REPL_MODULE_REF.x
+
+  #from Rafael:
+  function print_history(hist)
+    println()
+    for i = hist.start_idx+1:lastindex(hist.history)
+      if hist.modes[i] == :julia
+        println('[', i-hist.start_idx, "] ", hist.history[i])
+      end
+    end
+  end
+  print_history(REPL.LineEdit.mode(s).hist)
+end
+
+export percent_P
+
 #same (copied) as in stdlib/v1.0/InteractiveUtils/src/InteractiveUtils.jl
 #difference: names(m, all = true) to also see non-exported variables, aka
 # caches...
