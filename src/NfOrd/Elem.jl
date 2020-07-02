@@ -712,9 +712,12 @@ denominator(a::NfAbsNSElem) = denominator(a.data)
 
 function mod(a::NfAbsNSElem, p::fmpz)
   b = copy(a)
-  @assert denominator(b) == 1
   for i=1:length(b.data)
-    setcoeff!(b.data, i, mod(numerator(coeff(b.data, i)), p))
+    el = coeff(b.data, i)
+    dnew, cp = ppio(denominator(el), p)
+    el *= cp
+    n = mod(numerator(el), dnew * p)
+    setcoeff!(b.data, i, fmpq(n, dnew))
   end
   return b
 end

@@ -1,4 +1,4 @@
-export ray_class_group, narrow_class_group
+export ray_class_group, narrow_class_group, MapRayClassGrp
 
 add_verbose_scope(:RayFacElem)
 add_assert_scope(:RayFacElem)

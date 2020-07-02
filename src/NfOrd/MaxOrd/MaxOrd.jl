@@ -327,44 +327,51 @@ function _TameOverorderBL(O::NfOrd, lp::Array{fmpz,1})
     OO.ismaximal = 1
   end
   return OO, Q
-
 end
 
-function _qradical(O::NfOrd, q::fmpz)
-
+function _radical_by_poly(O::NfOrd, q::fmpz)
   d = degree(O)
   K = nf(O)
   R = ResidueRing(FlintZZ, q, cached=false)
-  #First, we compute the q-radical as the kernel of the trace matrix mod q.
-  #By theory, this is free if q is prime; if I get a non free module, I have found a factor of q.
-  @vprint :NfOrd 1 "\nradical computation\n "
-  if isdefining_polynomial_nice(K) && isone(gcd(index(O), q))
-    Rx = PolynomialRing(R, "x", cached = false)[1]
-    f = Rx(K.pol)
-    f1 = derivative(f)
-    fd, p1 = _gcd_with_failure(f, f1)
-    if !isone(fd)
-      return fd, ideal(O, q)
-    end
-    if isone(p1)
-      return fmpz(1), ideal(O, q)
-    end
-    Zx = PolynomialRing(FlintZZ, "x")[1]
-    gen2 = O(K(lift(Zx, p1)))
-    M1 = representation_matrix_mod(gen2, q)
-    hnf_modular_eldiv!(M1, q, :lowerleft)
-    for i = 1:d
-      if !isone(M1[i, i])
-        if M1[i, i] != q && !isone(gcd(M1[i, i], q))
-          return M1[i, i], ideal(O, q)
-        end
+  Rx = PolynomialRing(R, "x", cached = false)[1]
+  f = Rx(K.pol)
+  f1 = derivative(f)
+  fd, p1 = _gcd_with_failure(f, f1)
+  if !isone(fd)
+    return fd, ideal(O, q)
+  end
+  if isone(p1)
+    return fmpz(1), ideal(O, q)
+  end
+  #p1 generates the same ideal as the derivative of f
+  #to approximate its radical, we divide by the gcd with its derivative.
+  fd, p2 = _gcd_with_failure(p1, derivative(p1))
+  if !isone(fd)
+    return fd, ideal(O, q)
+  end
+  Zx = PolynomialRing(FlintZZ, "x")[1]
+  qq, rr = divrem(p1, p2)
+  @assert iszero(rr)
+  gen2 = O(K(lift(Zx, qq)))
+  M1 = representation_matrix_mod(gen2, q)
+  hnf_modular_eldiv!(M1, q, :lowerleft)
+  for i = 1:d
+    if !isone(M1[i, i])
+      if M1[i, i] != q && !isone(gcd(M1[i, i], q))
+        return M1[i, i], ideal(O, q)
       end
     end
-    I1 = ideal(O, q, gen2)
-    I1.basis_matrix = M1
-    I1.gens = NfOrdElem[O(q), gen2]
-    return fmpz(1), I1
   end
+  I1 = ideal(O, q, gen2)
+  I1.basis_matrix = M1
+  I1.gens = NfOrdElem[O(q), gen2]
+  return fmpz(1), I1
+end
+
+function _radical_by_trace(O::NfOrd, q::fmpz)
+  d = degree(O)
+  K = nf(O)
+  R = ResidueRing(FlintZZ, q, cached=false)
   k, B = kernel(trace_matrix(O), R)
   M2 = zero_matrix(FlintZZ, d, d)
   for i = 1:k
@@ -390,7 +397,16 @@ function _qradical(O::NfOrd, q::fmpz)
   I.minimum = q
   I.gens = gens
   return fmpz(1), I
+end
 
+function _qradical(O::NfOrd, q::fmpz)
+  K = nf(O)
+  @vprint :NfOrd 1 "\nradical computation\n "
+  if isdefining_polynomial_nice(K) && isone(gcd(index(O), q))
+    return _radical_by_poly(O, q)
+  else
+    return _radical_by_trace(O, q)
+  end
 end
 
 function _cycleBL(O::NfOrd, q::fmpz)

@@ -304,8 +304,7 @@ function PseudoMatrix(m::MatElem{S}) where S <: NumFieldElem
   L = base_ring(m)
   OL = maximal_order(L)
   K = base_field(L)
-  OK = maximal_order(K)
-  return PseudoMatrix(m, [ fractional_ideal(OL, identity_matrix(K, degree(L))) for i = 1:nrows(m) ])
+  return PseudoMatrix(m, fractional_ideal_type(OL)[ fractional_ideal(OL, ideal(OL, 1)) for i = 1:nrows(m) ])
 end
 
 function PseudoMatrix(m::MatElem{S}, c::Array{T, 1}) where {S <: NumFieldElem, T <: NfRelOrdIdl}

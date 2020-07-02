@@ -1148,72 +1148,89 @@ function _from_relative_to_absQQ(L::NfRelNS{T}, auts::Array{NfRelNSToNfRelNSMor{
 
   @vprint :AbExt 2 "Computing maximal orders of subfields\n"
   Qx, x = PolynomialRing(FlintQQ, "x")
-  polys = Vector{fmpq_poly}(undef, length(L.pol))
+  fields = Vector{AnticNumberField}(undef, length(L.pol))
+  auts_abs = Vector{NfToNfMor}(undef, length(fields))
   for i = 1:length(L.pol)
     fK = isunivariate(L.pol[i])[2]
     f = Qx(fmpq[coeff(coeff(fK, j), 0) for j = 0:degree(fK)])
-    polys[i] = f
+    K = number_field(f, cached = false, check = false)[1]
+    #Since the field is abelian, setting the automorphisms helps the simplify
+    fautK = isunivariate(auts[i].emb[i].data)[2]
+    img = K(fmpq[coeff(coeff(fautK, j), 0) for j = 0:degree(K)-1])
+    genautK = hom(K, K, img)
+    Hecke._set_automorphisms_nf(K, closure(NfToNfMor[genautK], degree(K)))
+    Ks, mKs = simplify(K)
+    fields[i] = Ks
+    _compute_preimg(mKs)
+    auts_abs[i] = hom(Ks, Ks, mKs\(genautK(mKs.prim_img)))
   end
-  NS, gNS = number_field(polys, check = false, cached = false)
-  gpols = gens(parent(gNS[1]))
-  B, lp = maximal_order_of_components(NS)
-  K, mK = simple_extension(NS, check = false)
-  BKK = Array{nf_elem, 1}(undef, degree(K))
-  ind = degree(polys[1])
-  for i = 1:ind
-    BKK[i] = mK\(B[1][i])
+  NS, embeddings = number_field(fields, check = false, cached = false)
+  S, mS = simple_extension(NS, check = false)
+  B = Vector{Vector{nf_elem}}(undef, length(fields))
+  discs = Vector{fmpz}(undef, length(fields))
+  discOS = fmpz(1)
+  for i = 1:length(fields)
+    B[i] = Vector{nf_elem}(undef, degree(fields[i]))
+    OK = maximal_order(fields[i])
+    BOK = basis(OK, fields[i])
+    for j = 1:degree(fields[i])
+      B[i][j] = mS\(embeddings[i](BOK[j]))
+    end
+    discs[i] = discriminant(OK)
+    discOS *= discs[i]^(divexact(degree(S), degree(OK)))
   end
-  for jj = 2:length(polys)
-    new_deg = degree(polys[jj])
-    for i = 2:new_deg
-      el = mK\(B[jj][i])
-      for j = 1:ind
-        BKK[(i-1)* ind + j] = BKK[j] * el
+  prod_basis = product_basis(B)
+  OS = NfOrd(S, basis_matrix(prod_basis, FakeFmpqMat))
+  OS.disc = discOS
+  to_test = fmpz[]
+  for i = 1:length(discs)
+    for j = i+1:length(discs)
+      g = gcd(discs[i], discs[j])
+      if !isone(g)
+        push!(to_test, g)
       end
     end
-    ind *= new_deg
   end
-  O1 = NfAbsOrd(BKK)
+  if isempty(to_test)
+    lp = to_test
+  else
+    lp = coprime_base(to_test)
+  end
+  Ofinal = OS
   for p in lp
     if isprime(p)
-      O1 = pmaximal_overorder(O1, p)
+      Ofinal += pmaximal_overorder(OS, p)
     else
       fac = factor(p)
       for (k, v) in fac
-        O1 = pmaximal_overorder(O1, k)
+        Ofinal += pmaximal_overorder(OS, k)
       end
     end
   end
-  #@vtime :AbExt 2 O1 = pmaximal_overorder_at(O1, lp)
-  O1.ismaximal = 1
-  _set_maximal_order(K, O1)
+  Ofinal.ismaximal = 1
+  _set_maximal_order(S, Ofinal)
   #Now, we translate the automorphisms.
-  imgs = Vector{NfAbsNSElem}(undef, length(auts))
-  for i = 1:length(auts)
-    fK = isunivariate(auts[i].emb[i].data)[2]
-    f = Qx(fmpq[coeff(coeff(fK, j), 0) for j = 0:degree(fK)])
-    imgs[i] = NS(evaluate(f, gpols[i]))
-  end
   autsNS = Vector{NfAbsNSToNfAbsNS}(undef, length(auts))
+  gNS = gens(NS)
   for t = 1:length(auts)
-    imgs = Vector{NfAbsNSElem}(undef, length(polys))
-    for s = 1:length(polys)
-      fK = isunivariate(auts[t].emb[s].data)[2]
-      f = Qx(fmpq[coeff(coeff(fK, j), 0) for j = 0:degree(fK)])
-      imgs[s] = NS(evaluate(f, gpols[s]))
+    imgs = Vector{NfAbsNSElem}(undef, length(fields))
+    for i = 1:length(imgs)
+      if i == t
+        imgs[i] = embeddings[i](auts_abs[i].prim_img)
+      else
+        imgs[i] = gNS[i]
+      end
     end
-    autsNS[t] = NfAbsNSToNfAbsNS(NS, NS, imgs)
+    autsNS[t] = hom(NS, NS, imgs)
   end
   #Now, to the simple field
   auts_abs = Vector{NfToNfMor}(undef, length(autsNS))
-  gK = mK(gen(K))
+  gK = mS(gen(S))
   for i = 1:length(auts_abs)
-    auts_abs[i] = hom(K, K, mK\(autsNS[i](gK)), check = false)
+    auts_abs[i] = hom(S, S, mS\(autsNS[i](gK)))
   end
-  
-  
   @vprint :AbExt 2 "Done. Now simplify and translate information\n"
-  @vtime :AbExt 2 Ks, mKs = simplify(K, cached = false)
+  @vtime :AbExt 2 Ks, mKs = simplify(S, cached = false, save_LLL_basis = true)
   #Now, we have to construct the maximal order of this field.
   #I am computing the preimages of mKs by hand, by inverting the matrix.
   #Now, the automorphisms.

@@ -1,5 +1,3 @@
-
-
 function MaximalOrder(K::NfAbsNS; discriminant::fmpz = fmpz(-1), ramified_primes::Vector{fmpz} = fmpz[])
   try
     c = _get_maximal_order(K)::NfAbsOrd{NfAbsNS, NfAbsNSElem}
@@ -23,11 +21,11 @@ end
 #
 ###############################################################################
 
-function new_maximal_order(O::NfAbsOrd{S, T}; index_divisors::Vector{fmpz} = fmpz[], disc::fmpz = fmpz(-1), ramified_primes::Vector{fmpz} = fmpz[]) where {S, T}
-  return maximal_order_round_four(O, index_divisors= index_divisors, disc = disc, ramified_primes = ramified_primes)
+function new_maximal_order(O::NfAbsOrd{NfAbsNS, NfAbsNSElem}; index_divisors::Vector{fmpz} = fmpz[], disc::fmpz = fmpz(-1), ramified_primes::Vector{fmpz} = fmpz[]) where {S, T}
+  return maximal_order_round_four(O, index_divisors = index_divisors, disc = disc, ramified_primes = ramified_primes)
 end
 
-function maximal_order_round_four(O::NfAbsOrd; index_divisors::Vector{fmpz} = fmpz[], disc::fmpz = fmpz(-1), ramified_primes::Vector{fmpz} = fmpz[])
+function maximal_order_round_four(O::NfAbsOrd{NfAbsNS, NfAbsNSElem}; index_divisors::Vector{fmpz} = fmpz[], disc::fmpz = fmpz(-1), ramified_primes::Vector{fmpz} = fmpz[])
   OO = O
   M = trace_matrix(O)
   l = divisors(M, discriminant(O))
@@ -60,9 +58,10 @@ function maximal_order_round_four(O::NfAbsOrd; index_divisors::Vector{fmpz} = fm
 end
 
 function maximal_order_from_components(L::NfAbsNS; disc::fmpz = fmpz(-1), ramified_primes::Vector{fmpz} = fmpz[])
-  BKs, lp = maximal_order_of_components(L)
+  BKs, lp, disc_order = _maximal_order_of_components(L)
   B = product_basis(BKs)
   OO = Order(L, B, check = false, cached = false, isbasis = true)
+  OO.disc = disc_order
   if disc != -1 && discriminant(OO) == disc
     return OO
   end
@@ -82,16 +81,15 @@ function maximal_order_from_components(L::NfAbsNS; disc::fmpz = fmpz(-1), ramifi
   end
   OO.ismaximal = 1
   return OO
-
 end
 
 
-function product_basis(l::Vector{Vector{T}}) where T <: Union{NfAbsOrdElem, nf_elem, NfAbsNSElem}
+function product_basis(l::Vector{Vector{T}}) where T <: Union{NfAbsOrdElem, NfRelOrdElem, NumFieldElem}
   nelems = 1
   for i = 1:length(l)
     nelems *= length(l[i])
   end
-  B = Vector{T}(undef, nelems)
+  B = typeof(l[1])(undef, nelems)
   ind = length(l[1])
   for i = 1:ind
     B[i] = l[1][i]
@@ -108,8 +106,8 @@ function product_basis(l::Vector{Vector{T}}) where T <: Union{NfAbsOrdElem, nf_e
   return B
 end
 
-function product_basis(l1::Vector{T}, l2::Vector{T}) where T <: Union{NfAbsOrdElem, nf_elem, NfAbsNSElem}
-  B = Vector{T}(undef, length(l1)*length(l2))
+function product_basis(l1::Vector{T}, l2::Vector{T}) where T <: Union{NfAbsOrdElem, NfRelOrdElem, NumFieldElem}
+  B = Vector{typeof(l1[1])}(undef, length(l1)*length(l2))
   for i = 1:length(l1)
     B[i] = l1[i]
   end
@@ -121,35 +119,30 @@ function product_basis(l1::Vector{T}, l2::Vector{T}) where T <: Union{NfAbsOrdEl
   return B
 end
 
-function maximal_order_of_components(L::NfAbsNS) where {S, T}
+function _maximal_order_of_components(L::NfAbsNS) where {S, T}
   Qx, x = PolynomialRing(FlintQQ, "x")
-  fields = Vector{AnticNumberField}(undef, length(L.pol))
+  fields = Vector{Tuple{AnticNumberField, NfAbsToNfAbsNS}}(undef, length(L.pol))
   for i = 1:length(L.pol)
-    f = Qx(L.pol[i])
-    K = NumberField(f, cached = false)[1];
-    OK = maximal_order(K)
-    fields[i] = K
+    fields[i] = component(L, i)
   end
-  mvpolring = parent(L.pol[1])
-  gpols = gens(mvpolring)
   #Now, bring the maximal order of every component in L
   B = Vector{Vector{NfAbsNSElem}}(undef, length(fields))
+  d = fmpz(1)
   for i = 1:length(fields)
-    OK = maximal_order(fields[i])
-    BOK = OK.basis_nf
+    OK = maximal_order(fields[i][1])
+    d *= discriminant(OK)^(divexact(degree(L), degree(OK)))
+    BOK = basis(OK, fields[i][1])
     BK = Vector{NfAbsNSElem}(undef, degree(OK))
     for j = 1:length(BK)
-      polel = Qx(BOK[j])
-      polm = evaluate(polel, gpols[i])
-      BK[j] = L(polm)
+      BK[j] = fields[i][2](BOK[j])
     end
     B[i] = BK
   end
   lp = fmpz[]
   for i = 1:length(fields)
     for j = i+1:length(fields)
-      push!(lp, gcd(discriminant(maximal_order(fields[i])), discriminant(maximal_order(fields[j]))))
+      push!(lp, gcd(discriminant(maximal_order(fields[i][1])), discriminant(maximal_order(fields[j][1]))))
     end
   end
-  return B, lp
+  return B, lp, d
 end  

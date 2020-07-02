@@ -297,12 +297,12 @@ end
 
 Creates the ideal $(x, y)$ of $\mathcal O$.
 """
-function ideal(O::NfAbsOrd, x::fmpz, y::NfOrdElem)
+function ideal(O::NfAbsOrd, x::fmpz, y::NfAbsOrdElem)
   @assert parent(y) === O
   return NfAbsOrdIdl(deepcopy(x), deepcopy(y))
 end
 
-function ideal(O::NfAbsOrd, x::Integer, y::NfOrdElem)
+function ideal(O::NfAbsOrd, x::Integer, y::NfAbsOrdElem)
   @assert parent(y) === O
   return NfAbsOrdIdl(fmpz(x), deepcopy(y))
 end
@@ -859,7 +859,7 @@ Returns whether $x$ is contained in $y$.
 function in(x::NfAbsOrdElem, y::NfAbsOrdIdl)
   OK = order(y)
   parent(x) !== order(y) && error("Order of element and ideal must be equal")
-  if isdefining_polynomial_nice(nf(OK)) && ismaximal_known_and_maximal(OK) && y.is_prime == 1 && has_2_elem(y) && has_2_elem_normal(y)
+  if ismaximal_known_and_maximal(OK) && y.is_prime == 1 && has_2_elem(y) && has_2_elem_normal(y)
     ant = anti_uniformizer(y)
     return (elem_in_nf(x) * ant) in OK
   end
@@ -954,7 +954,7 @@ function inv_maximal(A::NfAbsOrdIdl)
     @hassert :NfOrd 1 denominator(temp) == 1
     Ai.norm = numerator(temp)
     Ai.gens_normal = A.gens_normal
-    AAi = NfOrdFracIdl(Ai, dn)
+    AAi = fractional_ideal(O, Ai, dn)
     return AAi
   else
     # I don't know if this is a good idea
@@ -1173,6 +1173,10 @@ function _minmod_comp(a::fmpz, b::NfOrdElem)
   # so u/r is the inverse and r is the den in the field
   # we want gcd(r, a). so we use rres
   #at this point, min(<a, b*d>) SHOULD be 
+end
+
+function _invmod(a::fmpz, b::NfAbsOrdElem)
+  return inv(b.elem_in_nf)
 end
 
 function _invmod(a::fmpz, b::NfOrdElem)

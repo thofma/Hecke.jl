@@ -24,6 +24,7 @@ mutable struct NfToNfMor <: Map{AnticNumberField, AnticNumberField, HeckeMap, Nf
     z.prim_img = y
 
     function _image(x::nf_elem)
+      @assert parent(x) == K
       g = parent(K.pol)(x)
       return evaluate(g, y)
     end
@@ -52,6 +53,7 @@ mutable struct NfToNfMor <: Map{AnticNumberField, AnticNumberField, HeckeMap, Nf
     z.prim_preimg = K(parent(K.pol)([ s[i, 1] for i = 1:degree(K) ]))
 
     function _preimage(x::nf_elem)
+      @assert parent(x) == L
       g = parent(L.pol)(x)
       return evaluate(g, z.prim_preimg)
     end
@@ -66,11 +68,13 @@ mutable struct NfToNfMor <: Map{AnticNumberField, AnticNumberField, HeckeMap, Nf
     z.prim_preimg = y_inv
 
     function _image(x::nf_elem)
+      @assert parent(x) == K
       g = parent(K.pol)(x)
       return evaluate(g, y)
     end
 
     function _preimage(x::nf_elem)
+      @assert parent(x) == L
       g = parent(L.pol)(x)
       return evaluate(g, y_inv)
     end

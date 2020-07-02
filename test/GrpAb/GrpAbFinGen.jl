@@ -317,4 +317,39 @@
     end
   end
 
+  @testset "Diagonalize" begin
+
+    local isdiagonal_subgroup
+    function isdiagonal_subgroup(mHH::GrpAbFinGenMap)
+      ord = fmpz(1)
+      HH = domain(mHH)
+      GG = codomain(mHH)
+      for i = 1:ngens(GG)
+        ss, mss = sub(GG, GrpAbFinGenElem[GG[i]])
+        int, mint = intersect(mss, mHH)
+        ord *= order(int)
+      end
+      return order(HH) == ord
+    end
+    invariants = Vector{Int}(undef, 3)
+    for i = 1:3
+      k = rand(1:5)
+      invariants[i] = 2^k
+    end
+    G = abelian_group(invariants)
+    subs = subgroups(G)
+    for s in subs
+      H, mH = s
+      fl, new_gens = Hecke.isdiagonalisable(mH)
+      if !fl
+        continue
+      end
+      mS = inv(sub(G, new_gens)[2])
+      @test isdiagonal(rels(codomain(mS)))
+      @test isdiagonal_subgroup(mH*mS)
+    end
+
+
+  end
+
 end

@@ -1251,7 +1251,7 @@ end
 
 function _sub_integer_snf(G::GrpAbFinGen, n::fmpz, add_to_lattice::Bool = true, L::GrpAbLattice = GroupLattice)
   ind = 1
-  while gcd(n, G.snf[ind]) == G.snf[ind] && ind <= ngens(G)
+  while ind <= ngens(G) && gcd(n, G.snf[ind]) == G.snf[ind] 
     ind += 1
   end
   if ind == ngens(G) && gcd(n, G.snf[ind]) == G.snf[ind]
@@ -1996,7 +1996,6 @@ end
 #  Find complement
 #
 ################################################################################
-
 #TODO: a better algorithm?
 @doc Markdown.doc"""
     has_complement(f::GrpAbFinGenMap) -> Bool, GrpAbFinGenMap
@@ -2005,7 +2004,7 @@ Given a map representing a subgroup of a group $G$, returns either true and
 an injection of a complement in $G$, or false.
 """
 function has_complement(m::GrpAbFinGenMap)
-  
+  push!(deb, m)
   G = codomain(m)
   if !isfinite(G)
     error("Not yet implemented")
@@ -2058,3 +2057,55 @@ end
 ################################################################################
 
 id(G::GrpAbFinGen) = G(zeros(fmpz, ngens(G)))
+
+################################################################################
+#
+#  Diagonalize a subgroup
+#
+################################################################################
+
+
+#Given a subgroup H of a group G, I want to find generators $g_1, dots, g_s$ of 
+#G such that H = \sum H \cap <g_i> and the relation matrix of $G$ is diagonal. 
+function isdiagonalisable(mH::GrpAbFinGenMap)
+
+  H = domain(mH)
+  G = codomain(mH)
+  SH, mSH = snf(H)
+  SG, mSG = snf(G)
+  if ngens(SH) == 0
+    gg =  GrpAbFinGenElem[mSG(SG[i]) for i = 1:ngens(SG)]
+    @assert all(x -> parent(x) == G, gg)
+    return true, gg
+  end
+  mH1 = mSH * mH * inv(mSG)
+  H1 = domain(mH1)
+  G1 = codomain(mH1)
+  el = mH1(H1[ngens(H1)])
+  pk = gcd(fmpz[el[i] for i = 1:ngens(G1)])
+  pk = gcd(pk, exponent(G1))
+  e = G1[0]
+  for i = 1:ngens(G1)
+    e += divexact(el[i], pk)*G1[i]
+  end
+  sel, msel = sub(G1, GrpAbFinGenElem[e])
+  fl, mk = has_complement(msel)
+  if !fl
+    return false, gens(G)
+  end
+  sH, msH = sub(G1, GrpAbFinGenElem[mH1(H1[i]) for i = 1:ngens(H1)-1])
+  int, mint = intersect(mk, msH)
+  if order(int) != order(sH)
+    return false, gens(G)
+  end
+  mp = sub(domain(mk), GrpAbFinGenElem[haspreimage(mk, mint(x))[2] for x in gens(int)])[2]
+  fl, new_gens = isdiagonalisable(mp)
+  if !fl
+    return false, gens(G)
+  end
+  comp = mk*mSG
+  gg = map(comp, new_gens)
+  push!(gg, mSG(e))
+  @assert all(x -> parent(x) == G, gg)
+  return true, gg
+end

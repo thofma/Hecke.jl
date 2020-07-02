@@ -897,7 +897,7 @@ mutable struct NfAbsOrdIdl{S, T}
                            # 2: third entry generates the ideal
   splitting_type::Tuple{Int, Int}
                            #ordered as ramification index, inertia degree
-  anti_uniformizer::nf_elem
+  anti_uniformizer::T
 
   valuation::Function      # a function returning "the" valuation -
                            # mind that the ideal is not prime

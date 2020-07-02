@@ -368,10 +368,15 @@ function _autos_to_check(G::GAP.GapObj, K::GAP.GapObj, E::GAP.GapObj, mG::GAP.Ga
 end
 
 function cocycles_computation(L::GAP.GapObj, level::Int)
+  return cocycles_computation(L[1], L[level+1], L[level])
+end
 
-  proj = GAP.Globals.NaturalHomomorphismByNormalSubgroup(L[1], L[level+1])
+
+function cocycles_computation(GG, HH, KK)
+
+  proj = GAP.Globals.NaturalHomomorphismByNormalSubgroup(GG, HH)
   target_grp = GAP.Globals.ImagesSource(proj)
-  mH1 = GAP.Globals.NaturalHomomorphismByNormalSubgroup(target_grp, GAP.Globals.Image(proj, L[level]))
+  mH1 = GAP.Globals.NaturalHomomorphismByNormalSubgroup(target_grp, GAP.Globals.Image(proj, KK))
   H1 = GAP.Globals.ImagesSource(mH1)
   K = GAP.Globals.Kernel(mH1)
     

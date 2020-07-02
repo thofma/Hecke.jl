@@ -357,7 +357,6 @@ function assure_has_discriminant(O::NfRelOrd{nf_elem, NfOrdFracIdl, NfRelNSElem{
   return nothing
 end
 
-
 function assure_has_discriminant(O::NfRelOrd{T, S, U}) where {T, S, U}
   if isdefined(O, :disc_rel)
     return nothing
@@ -693,7 +692,7 @@ end
 
 # Algorithm IV.6. in "Berechnung relativer Ganzheitsbasen mit dem
 # Round-2-Algorithmus" by C. Friedrichs.
-function dedekind_test(O::NfRelOrd{U1, V, Z}, p::Union{NfOrdIdl, NfRelOrdIdl}, compute_order::Type{Val{S}} = Val{true}) where {S, U1, V, Z <: NfRelElem}
+function dedekind_test(O::NfRelOrd{U1, V, Z}, p::Union{NfAbsOrdIdl, NfRelOrdIdl}, compute_order::Type{Val{S}} = Val{true}) where {S, U1, V, Z <: NfRelElem}
   !isequation_order(O) && error("Order must be an equation order")
 
   L = nf(O)
@@ -739,9 +738,9 @@ function dedekind_test(O::NfRelOrd{U1, V, Z}, p::Union{NfOrdIdl, NfRelOrdIdl}, c
   end
 end
 
-dedekind_ispmaximal(O::NfRelOrd, p::Union{NfOrdIdl, NfRelOrdIdl}) = dedekind_test(O, p, Val{false})
+dedekind_ispmaximal(O::NfRelOrd, p::Union{NfAbsOrdIdl, NfRelOrdIdl}) = dedekind_test(O, p, Val{false})
 
-dedekind_poverorder(O::NfRelOrd, p::Union{NfOrdIdl, NfRelOrdIdl}) = dedekind_test(O, p)[2]
+dedekind_poverorder(O::NfRelOrd, p::Union{NfAbsOrdIdl, NfRelOrdIdl}) = dedekind_test(O, p)[2]
 
 ################################################################################
 #
@@ -755,7 +754,7 @@ dedekind_poverorder(O::NfRelOrd, p::Union{NfOrdIdl, NfRelOrdIdl}) = dedekind_tes
 This function tries to find an order that is locally larger than $\mathcal O$
 at the prime $p$.
 """
-function poverorder(O::NfRelOrd, p::Union{NfOrdIdl, NfRelOrdIdl})
+function poverorder(O::NfRelOrd, p::Union{NfAbsOrdIdl, NfRelOrdIdl})
   if isequation_order(O) && issimple(O)
     return dedekind_poverorder(O, p)
   else
@@ -774,7 +773,7 @@ end
 
 This function finds a $p$-maximal order $R$ containing $\mathcal O$.
 """
-function pmaximal_overorder(O::NfRelOrd, p::Union{NfOrdIdl, NfRelOrdIdl})
+function pmaximal_overorder(O::NfRelOrd, p::Union{NfAbsOrdIdl, NfRelOrdIdl})
   d = discriminant(O)
   if valuation(d, p) < 2
     return O
@@ -804,6 +803,68 @@ function MaximalOrder(O::NfRelOrd)
   end
   OO.ismaximal = 1
   return OO
+end
+
+function MaximalOrder(O::NfRelOrd{S, T, U}) where {S, T, U <: NonSimpleNumFieldElem}
+  L = nf(O)
+  K = base_field(L)
+  Obase_K = maximal_order(K)
+  fields = Vector{Tuple{NfRel{S}, NfRelToNfRelNSMor{S}}}(undef, length(L.pol))
+  for i = 1:length(L.pol)
+    fields[i] = component(L, i)
+  end
+  #Now, bring the maximal order of every component in L
+  discs = Vector{ideal_type(Obase_K)}(undef, ngens(L))
+  B = Vector{Vector{Tuple{elem_type(L), fractional_ideal_type(Obase_K)}}}(undef, length(fields))
+  for i = 1:length(fields)
+    OK = maximal_order(fields[i][1])
+    discs[i] = discriminant(OK)
+    BOK = pseudo_basis(OK, copy = false)
+    BK = Vector{Tuple{elem_type(L), fractional_ideal_type(Obase_K)}}(undef, degree(OK))
+    for j = 1:length(BK)
+      BK[j] = (fields[i][2](BOK[j][1]), BOK[j][2])
+    end
+    B[i] = BK
+  end
+  Bp = product_pseudobasis(B)
+  MOstart = PseudoMatrix(basis_matrix(U[x[1] for x in Bp]), fractional_ideal_type(Obase_K)[x[2] for x in Bp])
+  Ostart = Order(L, MOstart)
+  lp = ideal_type(Obase_K)[]
+  for i = 1:length(fields)
+    for j = i+1:length(fields)
+      push!(lp, gcd(discs[i], discs[j]))
+    end
+  end
+  cp = coprime_base(lp)
+  for I in cp
+    lP = factor(I)
+    for P in keys(lP)
+      Ostart = pmaximal_overorder(Ostart, P)
+    end
+  end
+  return Ostart
+end
+
+function product_pseudobasis(l::Vector{Vector{Tuple{T, S}}}) where {S, T <: Union{NfAbsOrdElem, NfRelOrdElem, NumFieldElem}}
+  nelems = 1
+  for i = 1:length(l)
+    nelems *= length(l[i])
+  end
+  B = typeof(l[1])(undef, nelems)
+  ind = length(l[1])
+  for i = 1:ind
+    B[i] = l[1][i]
+  end
+  for jj = 2:length(l)
+    new_deg = length(l[jj])
+    for i = 2:new_deg
+      for j = 1:ind
+        B[(i-1)* ind + j] = (B[j][1] * l[jj][i][1], B[j][2] * l[jj][i][2])
+      end
+    end
+    ind *= new_deg
+  end
+  return B
 end
 
 ################################################################################
@@ -1128,7 +1189,7 @@ function dedekind_test_composite(O::NfRelOrd{U1, V, Z}, P::Union{NfRelOrdIdl, Nf
   return one(K), OO
 end
 
-function prefactorization_discriminant(K::NfRel, d::Union{NfRelOrdIdl, NfOrdIdl})
+function prefactorization_discriminant(K::NfRel, d::Union{NfRelOrdIdl, NfAbsOrdIdl})
   OK = order(d)
   @assert nf(OK) == base_field(K)
   f = K.pol

@@ -230,7 +230,8 @@ function _abelian_normal_extensions(F::FieldsTower, gtype::Array{Int, 1}, absbou
   j = -1
   first_group = true
   autos = F.generators_of_automorphisms
-  class_fields_with_act = Tuple{Hecke.ClassField{Hecke.MapRayClassGrp, GrpAbFinGenMap}, Vector{GrpAbFinGenMap}}[]
+  class_fields_with_act = Tuple{ClassField{MapRayClassGrp, GrpAbFinGenMap}, Vector{GrpAbFinGenMap}}[]
+  fun_sub = (x, y) -> quo(x, y, false)[2]
   for k in l_conductors
     j += 1
     @vprint :Fields 1 "\e[1FConductors to test: $(length(l_conductors)-j) \n"
@@ -249,12 +250,13 @@ function _abelian_normal_extensions(F::FieldsTower, gtype::Array{Int, 1}, absbou
     end
     mr.clgrpmap.small_gens = rcg_ctx.class_group_map.small_gens
     @vtime :Fields 3 act = Hecke.induce_action(mr, autos)
-    @vtime :Fields 3 ls = stable_subgroups(r, act, op = (x, y) -> quo(x, y, false)[2], quotype = gtype)
+    @vtime :Fields 3 ls = stable_subgroups(r, act, op = fun_sub, quotype = gtype)
     Dcond = Dict{Int, Array{GrpAbFinGenElem, 1}}()
     Ddisc = Dict{Tuple{Int, Int}, Array{GrpAbFinGenElem, 1}}()
     for s in ls
+      s::GrpAbFinGenMap
       @hassert :Fields 1 order(codomain(s)) == n
-      C = ray_class_field(mr, s)
+      C = ray_class_field(mr, s)::ClassField{MapRayClassGrp, GrpAbFinGenMap}
       fl = check_extension(C, bound, Dcond, Ddisc)
       if fl
         res_act = _action(s, act)
@@ -270,29 +272,10 @@ function _abelian_normal_extensions(F::FieldsTower, gtype::Array{Int, 1}, absbou
     return Vector{Hecke.ClassField{Hecke.MapRayClassGrp, GrpAbFinGenMap}}[]
   end
   @vprint :Fields 1 "\e[1F$(Hecke.clear_to_eol())Sieving $(length(class_fields_with_act)) abelian extensions"
-  candidates = trues(length(class_fields_with_act))
-  for i = 1:length(F.subfields)
-    if codomain(F.subfields[i]) != K
-      continue
-    end
-    indices =  Int[j for j = 1:length(candidates) if candidates[j]]
-    if isempty(indices)
-      break
-    end
-    admissibles = check_abelian_extensions(class_fields_with_act[indices], autos, F.subfields[i])
-    ind = 0
-    for j = 1:length(candidates)
-      if !candidates[j] 
-	      ind += 1
-	      continue
-      end
-      if !admissibles[j-ind]
-	      candidates[j] = false
-      end
-    end
-  end
+  candidates = check_abelian_extensions(class_fields_with_act, F, IdG)
   @vprint :Fields 1 "$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())\n"
-  res_cfields = ClassField{Hecke.MapRayClassGrp, GrpAbFinGenMap}[class_fields_with_act[i][1] for i = 1:length(class_fields_with_act) if candidates[i]]
+  t_candidates = findall(candidates)
+  res_cfields = ClassField{MapRayClassGrp, GrpAbFinGenMap}[class_fields_with_act[t_candidates[i]][1] for i = 1:length(t_candidates)]
   return res_cfields
 end
 
@@ -303,7 +286,7 @@ end
 #
 ################################################################################
 
-function from_class_fields_to_fields(class_fields::Vector{Hecke.ClassField{Hecke.MapRayClassGrp, GrpAbFinGenMap}}, autos::Vector{NfToNfMor}, grp_to_be_checked::Dict{Int, GAP.GapObj}, target_group::GAP.GapObj)
+function from_class_fields_to_fields(class_fields::Vector{ClassField{MapRayClassGrp, GrpAbFinGenMap}}, autos::Vector{NfToNfMor}, grp_to_be_checked::Dict{Int, GAP.GapObj}, target_group::GAP.GapObj)
   
   if isempty(class_fields)
     @vprint :Fields 1 "\e[1F$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())"
@@ -444,7 +427,7 @@ function _ext_and_autos(resul::Vector{Hecke.ClassField{S, T}}, autos::Vector{NfT
         for ind = w:(w+length(Cp.A.pol)-1)
           imgsphi[ind] = evaluate(Hecke.isunivariate(phi.emb[ind-w+1].data)[2], imgsphi[ind])
         end
-        push!(autL, Hecke.NfRelNSToNfRelNSMor(L, L, imgsphi))
+        push!(autL, hom(L, L, imgsphi))
       else
         ind_aut = 1
         while autos[ind_aut] != phi.coeff_aut
@@ -457,7 +440,7 @@ function _ext_and_autos(resul::Vector{Hecke.ClassField{S, T}}, autos::Vector{NfT
     end
   end
   for i = 1:length(imgs_auts_base_field)
-    push!(autL, Hecke.NfRelNSToNfRelNSMor(L, L, autos[i], imgs_auts_base_field[i]))
+    push!(autL, hom(L, L, autos[i], imgs_auts_base_field[i]))
   end
   return L, autL
 
@@ -583,12 +566,12 @@ function computing_over_subfields(class_fields, subfields, idE, autos, right_grp
       indsubf += 1
       mL = subs[indsubf]
     end
-    maprel = Hecke.NfRelNSToNfRelNSMor(C1.A, C.A, mL, gens(C.A))
+    maprel = hom(C1.A, C.A, mL, gens(C.A))
     autsrelC1 = Hecke.rel_auto(C1)
     autsrelC = Vector{Hecke.NfRelNSToNfRelNSMor{nf_elem}}(undef, length(autsrelC1))
     for s = 1:length(autsrelC1)
       el = autsrelC1[s]
-      autsrelC[s] = Hecke.NfRelNSToNfRelNSMor(C.A, C.A, [maprel(x) for x in el.emb])
+      autsrelC[s] = hom(C.A, C.A, [maprel(x) for x in el.emb])
       @hassert :Fields 1 isconsistent(autsrelC[s])
     end
     rel_extend = Hecke.new_extend_aut(C, autos)

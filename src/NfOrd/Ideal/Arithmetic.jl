@@ -171,7 +171,7 @@ function *(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
   @hassert :NfOrd 1 isconsistent(x)
   @hassert :NfOrd 1 isconsistent(y)
   OK = order(x)
-  if ismaximal_known_and_maximal(OK) && issimple(nf(OK))
+  if ismaximal_known_and_maximal(OK)
     z = mul_maximal(x, y)
   else
     z = mul_gen(x, y)
@@ -235,7 +235,7 @@ function mul_gen(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
 end
 
 # using the 2-normal representation
-function prod_via_2_elem_normal(a::NfOrdIdl, b::NfOrdIdl)
+function prod_via_2_elem_normal(a::NfAbsOrdIdl, b::NfAbsOrdIdl)
   check_parent(a, b)
   @hassert :NfOrd 1 has_2_elem_normal(a)
   @hassert :NfOrd 1 has_2_elem_normal(b)
@@ -296,7 +296,7 @@ function prod_via_2_elem_normal(a::NfOrdIdl, b::NfOrdIdl)
 end
 
 # using the 2-weak-normal representation
-function prod_via_2_elem_weakly(a::NfOrdIdl, b::NfOrdIdl)
+function prod_via_2_elem_weakly(a::NfAbsOrdIdl, b::NfAbsOrdIdl)
   check_parent(a, b)
   @hassert :NfOrd 1 has_2_elem(a)
   @hassert :NfOrd 1 has_2_elem(b)
@@ -400,7 +400,7 @@ end
 
 Returns the ideal x*y.
 """
-function mul_maximal(x::NfOrdIdl, y::NfOrdIdl)
+function mul_maximal(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
   check_parent(x, y)
   if iszero(x) || iszero(y)
     z = ideal(order(x), 0)
@@ -442,12 +442,12 @@ end
   gcd(A::NfOrdIdl, B::NfOrdIdl) -> NfOrdIdl
 The gcd or sum (A+B).
 """
-function gcd(A::NfOrdIdl, B::NfOrdIdl)
+function gcd(A::NfAbsOrdIdl, B::NfAbsOrdIdl)
   check_parent(A, B)
   return A+B
 end
 
-function gcd_into!(A::NfOrdIdl, B::NfOrdIdl, C::NfOrdIdl)
+function gcd_into!(A::NfAbsOrdIdl, B::NfAbsOrdIdl, C::NfAbsOrdIdl)
   return C+B
 end
 
@@ -456,7 +456,7 @@ end
   gcd(A::NfOrdIdl, p::fmpz) -> NfOrdIdl
 The gcd or sum (A + pO).
 """
-function gcd(A::NfOrdIdl, p::fmpz)
+function gcd(A::NfAbsOrdIdl, p::fmpz)
   if isdefined(A, :minimum)
     if gcd(A.minimum, p) == 1
       return ideal(order(A), fmpz(1))
@@ -835,7 +835,7 @@ end
 #
 ################################################################################
 
-divexact(A::NfOrdIdl, b::Integer) = divexact(A, fmpz(b))
+divexact(A::NfAbsOrdIdl, b::Integer) = divexact(A, fmpz(b))
 
 #TODO: write a divexact! to change the ideal?
 #  difficult due to Julia's inability to unset entries...
@@ -846,7 +846,7 @@ divexact(A::NfOrdIdl, b::Integer) = divexact(A, fmpz(b))
 
 Returns $A/y$ assuming that $A/y$ is again an integral ideal.
 """
-function divexact(A::NfOrdIdl, b::fmpz)
+function divexact(A::NfAbsOrdIdl, b::fmpz)
   zk = order(A)
   b = abs(b)
   if has_2_elem(A)

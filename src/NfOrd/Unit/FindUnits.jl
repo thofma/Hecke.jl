@@ -385,6 +385,7 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx; add_orbit::Bool =
           break
         end
         if nrows(x.M.rel_gens) == not_larger_bound
+          finished = true
           break
         end
       end

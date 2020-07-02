@@ -80,3 +80,23 @@ function _check_consistency(K::NonSimpleNumField)
   end
   return true
 end
+
+################################################################################
+#
+#  Component
+#
+################################################################################
+@doc Markdown.doc"""
+    component(L::NonSimpleNumField, i::Int) -> SimpleNumField, Map
+
+Given a non-simple extension $L/K$, this function returns the simple number field 
+corresponding to the $i$-th component of $L$ togheter with its embedding.
+"""
+function component(K::NonSimpleNumField, i::Int)
+  fl, g = isunivariate(K.pol[i])
+  gK = gens(K)
+  @assert fl
+  Ki, a = number_field(g, cached = false, check = false)
+  mp = hom(Ki, K, gK[i])
+  return Ki, mp
+end

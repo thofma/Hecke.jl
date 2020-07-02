@@ -58,7 +58,7 @@ function haspreimage(M::GrpAbFinGenMap, a::GrpAbFinGenElem)
   if fl
     return true, GrpAbFinGenElem(domain(M), view(p, 1:1, 1:ngens(domain(M))))
   else
-    return false, domain(M)[1]
+    return false, id(domain(M))
   end
 end
 

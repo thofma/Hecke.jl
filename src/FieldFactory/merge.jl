@@ -152,12 +152,36 @@ function _to_composite(x::FieldsTower, y::FieldsTower, abs_disc::fmpz)
   end
   
   #Last thing: I have to add the maps of the subfields!
-  emb1 = NfToNfMor(x.field, K, mK\(mx.prim_img))
-  emb2 = NfToNfMor(y.field, K, mK\(my.prim_img))
-  l1 = append!(NfToNfMor[emb1, emb2], x.subfields)
-  embs = append!(l1, y.subfields)
+  #I want to merge the information for the last embedding.
+  i = 1
+  while codomain(x.subfields[i]) != x.field
+    i += 1
+  end
+  emb_subx = x.subfields[i]
+  i = 1
+  while codomain(y.subfields[i]) != y.field
+    i += 1
+  end
+  emb_suby = y.subfields[i]
+  lsub, m1, m2 = number_field(domain(emb_subx), domain(emb_suby), cached = false, check = false)
+  Seemb, mSeemb = simple_extension(lsub, check = false)
+  ev = [mK\(mx(emb_subx.prim_img)), mK\(my(emb_suby.prim_img))]
+  embs = NfToNfMor[hom(Seemb, K, evaluate(mSeemb(gen(Seemb)).data, ev))]
+  for j = 1:length(x.subfields)
+    if codomain(x.subfields[j]) != domain(emb_subx)
+      push!(embs, x.subfields[j])
+    else
+      push!(embs, hom(domain(x.subfields[j]), Seemb, mSeemb\(m1(x.subfields[j].prim_img))))
+    end
+  end
+  for j = 1:length(y.subfields)
+    if codomain(y.subfields[j]) != domain(emb_suby)
+      push!(embs, y.subfields[j])
+    else
+      push!(embs, hom(domain(y.subfields[j]), Seemb, mSeemb\(m2(y.subfields[j].prim_img))))
+    end
+  end
   return true, FieldsTower(K, autK, embs)
-  
 end
 
 function simplify!(x::FieldsTower)
