@@ -2004,7 +2004,6 @@ Given a map representing a subgroup of a group $G$, returns either true and
 an injection of a complement in $G$, or false.
 """
 function has_complement(m::GrpAbFinGenMap)
-  push!(deb, m)
   G = codomain(m)
   if !isfinite(G)
     error("Not yet implemented")
