@@ -22,6 +22,19 @@ function special_prime_ideal(p::fmpz, a::nf_elem)
   return lift(Zx, g)
 end
 
+function push_normStat!(clg::ClassGrpCtx, n::fmpz, b::Bool)
+  nb = nbits(abs(n))
+  if !haskey(clg.normStat, nb)
+    clg.normStat[nb] = (0,0)
+  end
+  t = clg.normStat[nb]
+  if b 
+    clg.normStat[nb] = (t[1], t[2] + 1)
+  else
+    clg.normStat[nb] = (t[1] + 1, t[2])
+  end
+end
+
 function class_group_add_relation(clg::ClassGrpCtx{T}, a::nf_elem; orbit::Bool = true, integral::Bool = false) where T
   return class_group_add_relation(clg, a, norm(a), fmpz(1), orbit = orbit, integral = integral)
 end
@@ -36,21 +49,19 @@ function class_group_add_relation(clg::ClassGrpCtx{T}, a::nf_elem, n::fmpq, nI::
     return false
   end
 
-  nb = div(nbits(numerator(n)), 2)
-  if haskey(clg.normStat, nb)
-    clg.normStat[nb] += 1
-  else
-    clg.normStat[nb] = 1
-  end
-  
   O = order(clg.FB.ideals[1]) 
   easy = isdefining_polynomial_nice(parent(a))
   @vprint :ClassGroup 3 "trying relation of length $(Float64(length(a))) and norm $(Float64(n*nI)), effective $(Float64(n))\n"
   if integral #element is known to be integral
     fl, r = issmooth!(clg.FB.fb_int, numerator(n*nI))
+    push_normStat!(clg, numerator(n), fl)
   else  
     fl, r = issmooth!(clg.FB.fb_int, numerator(n*nI)*denominator(a, O))
+    push_normStat!(clg, numerator(n)*denominator(a), fl)
   end  
+  @assert issmooth!(clg.FB.fb_int, nI)[1]
+
+
   if !fl
     @vprint :ClassGroup 3 "not int-smooth\n"
 #    println("not int-smooth");
