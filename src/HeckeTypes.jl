@@ -1559,7 +1559,7 @@ mutable struct ClassGrpCtx{T}  # T should be a matrix type: either fmpz_mat or S
   largePrime_success::Int
   largePrime_no_success::Int
 
-  normStat::Dict{Int, Int}
+  normStat::Dict{Int, Tuple}
   expect::Int
 
   randomClsEnv::RandIdlCtx
@@ -2125,6 +2125,7 @@ mutable struct qAdicRootCtx
   Q::Array{FlintQadicField, 1}
   H::Hecke.HenselCtx
   R::Array{qadic, 1}
+  is_splitting::Bool
   function qAdicRootCtx(f::fmpz_poly, p::Int; splitting_field::Bool = false)
     r = new()
     r.f = f
@@ -2135,8 +2136,10 @@ mutable struct qAdicRootCtx
       d = lcm([degree(y[1]) for y = lf])
       R = QadicField(p, d, 1)
       Q = [R]
+      r.is_splitting = true
     else
       Q = [QadicField(p, x, 1) for x = Set(degree(y[1]) for y = lf)]
+      r.is_splitting = false
     end
     @assert all(x->isone(x[2]), lf)
     r.Q = Q
