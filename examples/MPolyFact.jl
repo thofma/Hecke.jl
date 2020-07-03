@@ -309,6 +309,14 @@ end
  - lift the factor in the q-adic field
  - find the number field
 
+ TODO:
+  bounds on the precisions (poly prec)
+  non-monic: use "any_order", the generizlised equation order to produce
+    integral power sums
+  find good evaluation points
+  more variables
+  more rings
+
 example:
 
 Qxy, (y, x) = PolynomialRing(QQ, ["y", "x"])
