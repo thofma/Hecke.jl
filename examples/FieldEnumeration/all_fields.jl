@@ -135,6 +135,8 @@ function main()
     @show maxabsubfields
   end
 
+  flush(stdout)
+
   if isfile(file)
     throw(error("File $file does already exist"))
   end
@@ -147,6 +149,8 @@ function main()
   println("Discriminant bound: $dbound")
   println("========================================")
 
+  flush(stdout)
+
   set_verbose_level(:FieldsNonFancy, 1)
 
   if maxabsubfields isa String
@@ -156,18 +160,26 @@ function main()
     l = fields(n, i, dbound, only_real = only_real, simplify = simplify)
   end
 
+  flush(stdout)
+
   # Determine the automorphism groups
   if only_cm
     Hecke.assure_automorphisms.(l)
   end
 
+  flush(stdout)
+
   ll = map(v -> v.field, l)
+
+  flush(stdout)
 
   if only_cm
     ffields = [ (x, discriminant(maximal_order(x))) for x in ll if Hecke.iscm_field(x)[1]]
   else
     ffields = [ (x, discriminant(maximal_order(x))) for x in ll ]
   end
+
+  flush(stdout)
 
   sort!(ffields, lt = (x, y) -> abs(x[2]) <= abs(y[2]))
 
