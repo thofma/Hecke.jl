@@ -1,4 +1,4 @@
-module MpolyFact
+module MPolyFact
 
 using Hecke
 import Hecke: Nemo
@@ -77,6 +77,100 @@ Hecke.inv(phi :: Nemo.FinFieldMorphism) = preimage_map(phi)
    as power series
  compute the coeffs. of f (as elements in Q[x]) as power series
 =#
+mutable struct RootCtx
+  f::fmpq_mpoly
+  R::Array{<:SeriesElem, 1}
+  o::Array{<:SeriesElem, 1} #1/f'(r)
+  RP::Array{Array{<:SeriesElem , 1}, 1}
+  t::Int
+
+  function RootCtx(f::fmpq_mpoly, r::Array{<:RingElem, 1}, t::Int = 0)
+    @assert nvars(parent(f)) == 2
+
+    s = parent(r[1])
+
+    S = PowerSeriesRing(s, 16, "s")[1]
+    l = new()
+    l.f = f
+    l.R = [S(x) for x = r]
+    for i=1:length(r)
+      set_prec!(l.R[i], 1)
+    end
+    g = map_coeffs(parent(r[1]), f)
+    tt = gen(S) - t
+    set_prec!(tt, 1)
+    l.o = [inv(evaluate(derivative(g, 1), [x, tt])) for x = l.R]
+    l.t = t
+
+    l.RP = [[one(S) for x = r], l.R]
+    return l
+  end
+end
+
+function root(R::RootCtx, i::Int, j::Int)
+  if length(R.RP) > j 
+    return R.RP[j+1][i]
+  end
+  while length(R.RP) <= j+1
+    push!(R.RP, R.RP[2] .* R.RP[end])
+  end
+
+  return R.RP[j+1][i]
+end
+
+function set_prec(a::SeriesElem, i::Int)
+  b = deepcopy(a)
+  set_prec!(b, i)
+  return b
+end
+
+function newton_lift!(R::RootCtx)
+
+  S = parent(R.R[1])
+  t = gen(S) - R.t
+
+  for i = 1:length(R.R)
+    a = R.R[i]
+    o = R.o[i]
+    set_prec!(a, 2*precision(a))
+    set_prec!(o, precision(a))
+  end
+  set_prec!(t, precision(R.R[1]))
+  #delete powers...
+
+  for i=1:length(R.R)
+    a = R.R[i]
+    o = R.o[i]
+    ev_f = zero(S)
+    ev_fs = zero(S)
+
+    @show precision(R.R[1])
+    if precision(R.R[1]) > 2
+      for j=1:length(R.f)
+        e = exponent_vector(R.f, j)
+        c = coeff(R.f, j)
+        if e[1] > 0
+          ev_fs += S(c)*e[1]*root(R, i, e[1] - 1) * t^e[2]
+        end
+      end
+
+      @assert evaluate(derivative(R.f, 1), [R.R[i], t]) == ev_fs
+      o = R.o[i] = o*(2-o*ev_fs)
+    end
+
+    for j=1:length(R.f)
+      e = exponent_vector(R.f, j)
+      c = coeff(R.f, j)
+      _r = root(R, i, e[1])
+      @assert root(R, i, 1)^e[1] == _r
+      ev_f += S(c)*t^e[2] * root(R, i, e[1])
+    end
+    R.R[i] = a - ev_f*o
+    @assert evaluate(R.f, [a, t]) == ev_f
+  end
+  R.RP = [[one(S) for x = R.R], R.R]
+end
+
 
 function Hecke.roots(f::fmpq_mpoly; p::Int=2^25, pr::Int = 5)
   @assert nvars(parent(f)) == 2
@@ -163,6 +257,17 @@ function combination(R::Array, d::Int)
   m = identity_matrix(FlintZZ, length(R)) 
   i = 1
   j = 0
+  #the paper
+  # https://www.math.univ-toulouse.fr/~cheze/facto_abs.m
+  #seems to say that a combination works iff the sum of the
+  # deg 2 terms vanish (for almost all choices of specialisations)
+  #this would be even easier
+  #also: it would make the lifting above trivial (precision 2)
+  #
+  # instead of LLL use direct rref over GF(q)
+  # for non-monics, the generalised equation order might be better than
+  # trying to scale
+  #
   while true
     @assert n> d*i
     @show nn = matrix([[fmpz(coeff(coeff(shift_right(x^i, d*i), j), lk)) for lk = 0:k-1] for x = R])'
