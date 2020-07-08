@@ -50,6 +50,7 @@ function Nemo.canonical_unit(a::SeriesElem)
   return shift_left(a, -v)
 end
 
+#TODO: this is for rings, not for fields, maybe different types?
 function Base.gcd(a::T, b::T) where {T <: SeriesElem}
   iszero(a) && iszero(b) && return a
   iszero(a) && return gen(parent(a))^valuation(b)
@@ -118,6 +119,8 @@ function root(R::RootCtx, i::Int, j::Int)
   return R.RP[j+1][i]
 end
 
+#TODO: in Nemo, rename to setprecision
+#      fix/report series add for different length
 function set_prec(a::SeriesElem, i::Int)
   b = deepcopy(a)
   set_prec!(b, i)
@@ -136,7 +139,6 @@ function newton_lift!(R::RootCtx)
     set_prec!(o, precision(a))
   end
   set_prec!(t, precision(R.R[1]))
-  #delete powers...
 
   for i=1:length(R.R)
     a = R.R[i]
@@ -168,6 +170,7 @@ function newton_lift!(R::RootCtx)
     R.R[i] = a - ev_f*o
     @assert evaluate(R.f, [a, t]) == ev_f
   end
+  #delete powers... as the elem has changed
   R.RP = [[one(S) for x = R.R], R.R]
 end
 
@@ -197,6 +200,7 @@ function Hecke.roots(f::fmpq_mpoly; p::Int=2^25, pr::Int = 5)
   #use action of Frobenius to lift less roots!!!
 
   #all roots with the same minpoly can be combined...
+  #use RootCtx of above
 
   Ft, t = PowerSeriesRing(F, 2^pr, "t")
 
@@ -263,6 +267,14 @@ function combination(R::Array, d::Int)
   # deg 2 terms vanish (for almost all choices of specialisations)
   #this would be even easier
   #also: it would make the lifting above trivial (precision 2)
+  #deal: if monic in x of degree n and deg_y(coeff of x^(n-1)) = r,
+  # then for the 1st power sum we get r as a degree bound. In the paper
+  # r == 1... 
+  # reasoning: sum of second highest terms of factor == second hghest
+  # of poly => bound
+  # similar would be for other power sums - if I'd compute them.
+  #
+  #for non-monic: think about interaction with any_order
   #
   # instead of LLL use direct rref over GF(q)
   # for non-monics, the generalised equation order might be better than
