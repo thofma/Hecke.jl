@@ -151,7 +151,7 @@ function main()
 
   flush(stdout)
 
-  set_verbose_level(:FieldsNonFancy, 1)
+  set_verbose_level(:FieldsNonFancy, 3)
 
   if maxabsubfields isa String
     maxabsub = Hecke._read_from_file(maxabsubfields)
