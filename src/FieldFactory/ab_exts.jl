@@ -1159,7 +1159,7 @@ function _from_relative_to_absQQ(L::NfRelNS{T}, auts::Array{NfRelNSToNfRelNSMor{
     img = K(fmpq[coeff(coeff(fautK, j), 0) for j = 0:degree(K)-1])
     genautK = hom(K, K, img)
     Hecke._set_automorphisms_nf(K, closure(NfToNfMor[genautK], degree(K)))
-    Ks, mKs = simplify(K)
+    Ks, mKs = simplify(K, cached = false)
     fields[i] = Ks
     _compute_preimg(mKs)
     auts_abs[i] = hom(Ks, Ks, mKs\(genautK(mKs.prim_img)))
