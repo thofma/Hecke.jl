@@ -586,23 +586,23 @@ function sieve_by_norm_group(list1::Vector{FieldsTower}, list2::Vector{FieldsTow
   O = maximal_order(K)
   r, mr = Hecke.ray_class_groupQQ(O, modulo, true, expo)
   Kt = PolynomialRing(K, "t", cached = false)[1]
-  norm_groups = Vector{GrpAbFinGen}(undef, length(v))
+  norm_groups = Vector{GrpAbFinGenMap}(undef, length(v))
   for i = 1:length(v)
     lfieldsK = maximal_abelian_subextension(list1[v[i][1]])
     lfieldsL = maximal_abelian_subextension(list2[v[i][2]])
     h = change_base_ring(K, lfieldsK[1].pol, parent = Kt)
-    S = norm_group(h, mr)[1]
+    S, mS = norm_group(h, mr, cached = false)
     for i = 2:length(lfieldsK)
       h = change_base_ring(K, lfieldsK[i].pol, parent = Kt)
-      s = norm_group(h, mr)[1]
-      S = intersect(s, S)
+      s, ms = norm_group(h, mr, cached = false)
+      S, mS = intersect(ms, mS, false)
     end
     for i = 1:length(lfieldsL)
       h = change_base_ring(K, lfieldsL[i].pol, parent = Kt)
-      s = norm_group(h, mr)[1]
-      S = intersect(s, S)
+      s, ms = norm_group(h, mr, cached = false)
+      S, mS = intersect(ms, mS, false)
     end
-    norm_groups[i] = S
+    norm_groups[i] = mS
   end
   #Now that I have the norm groups, I need to compare them.
   done = falses(length(v))
@@ -612,14 +612,15 @@ function sieve_by_norm_group(list1::Vector{FieldsTower}, list2::Vector{FieldsTow
       continue
     end
     done[i] = true
-    S = norm_groups[i]
+    mS = norm_groups[i]
     new_v = Vector{Tuple{Int, Int}}()
     push!(new_v, v[i])
     for j = i+1:length(v)
       if done[j]
         continue
       end
-      if iseq(S, norm_groups[j])
+      if order(intersect(mS, norm_groups[j], false)[1]) == order(domain(mS))
+      #if iseq(S, norm_groups[j])
         done[j] = true
         push!(new_v, v[j])
       end

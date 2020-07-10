@@ -327,7 +327,7 @@ end
 Returns whether $h$ is injective.
 """
 function isinjective(A::GrpAbFinGenMap)
-  K = kernel(A)[1]
+  K = kernel(A, false)[1]
   return isfinite(K) && isone(order(K))
 end
 

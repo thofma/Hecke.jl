@@ -707,23 +707,23 @@ function translate_extensions(mL::NfToNfMor, class_fields, new_class_fields, ctx
       prms[i] = C.quotientmap(mR\lP[i])
     end
     RMtoR = hom(gS, prms)
-    k, mk = kernel(RMtoR)
-    @hassert :Fields 1 isisomorphic(cokernel(mk)[1], codomain(C.quotientmap))
+    k, mk = kernel(RMtoR, false)
+    @hassert :Fields 1 isisomorphic(cokernel(mk, false)[1], codomain(C.quotientmap))
     mp = mk*proj
-    ck, mck = cokernel(mp)
+    ck, mck = cokernel(mp, false)
     #If everything could work, then ck should be the direct product of the abelian extension I am searching for and 
     #the maximal abelian subextension of K/L
-    G1 = snf(cokernel(mngL)[1])[1]
+    G1 = snf(cokernel(mngL, false)[1])[1]
     G2 = snf(codomain(C.quotientmap))[1]
     if !has_quotient(ck, map(Int, vcat(G1.snf, G2.snf)))
       push!(to_be_done, indclf)
       continue
     end
     @vprint :Fields 1 "$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())Doing field $(indclf) / $(length(class_fields))"
-    s, ms = image(mngL*mck)
+    s, ms = image(mngL*mck, false)
     fl, ms1 = has_complement(ms)
     @assert fl
-    mq1 = cokernel(ms1)[2]
+    mq1 = cokernel(ms1, false)[2]
     mqq = mck * mq1 
     @hassert :Fields 1 domain(mqq) == r
     C1 = ray_class_field(mr, mqq)

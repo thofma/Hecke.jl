@@ -1446,7 +1446,9 @@ end
 Given two injective maps of abelian groups witht the same codomain $G$,
 return the intersection of the images as a subgroup of $G$.
 """
-function Base.intersect(mG::GrpAbFinGenMap, mH::GrpAbFinGenMap)
+function Base.intersect(mG::GrpAbFinGenMap, mH::GrpAbFinGenMap,
+                                            add_to_lattice::Bool = true,
+                                            L::GrpAbLattice = GroupLattice)
   G = domain(mG)
   GH = codomain(mG)
   @assert GH == codomain(mH)
@@ -1457,7 +1459,7 @@ function Base.intersect(mG::GrpAbFinGenMap, mH::GrpAbFinGenMap)
   while i > 0 && iszero(sub(h, i:i, 1:ngens(GH)))
     i -= 1
   end
-  return sub(GH, [mG(G(sub(h, j:j, ngens(GH)+1:ncols(h)))) for j=i+1:nrows(h)])
+  return sub(GH, [mG(G(sub(h, j:j, ngens(GH)+1:ncols(h)))) for j=i+1:nrows(h)], add_to_lattice, L)
 end
 
 
@@ -1929,12 +1931,12 @@ end
 
 function isfixed_point_free(act::Vector{GrpAbFinGenMap})
   G = domain(act[1])
-  intersection_of_kernels = G
+  intersection_of_kernels = id_hom(G)
   minus_id = hom(G, G, GrpAbFinGenElem[-x for x in gens(G)])
   for i = 1:length(act)
-    k, mk = fixed_subgroup(act[i])
-    intersection_of_kernels = intersect(intersection_of_kernels, k)
-    if order(intersection_of_kernels) == 1
+    k, mk = fixed_subgroup(act[i], false)
+    kk, intersection_of_kernels = intersect(intersection_of_kernels, mk, false)
+    if order(kk) == 1
       return true
     end
   end
