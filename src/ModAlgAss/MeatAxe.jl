@@ -28,21 +28,23 @@ function cleanvect(M::T, v::T) where {T}
   if iszero(v)
     return w  
   end
+  nr = nrows(M)
+  nc = ncols(M)
   for i=1:nrows(M)
-    if iszero_row(M,i)
-      continue
+    ind = 1
+    while ind <= nc && iszero(M[i,ind])
+      ind += 1
     end
-    ind=1
-    while iszero(M[i,ind])
-      ind+=1
+    if ind > nc
+      continue
     end
     if iszero(w[1,ind])
       continue
     end
-    mult=divexact(w[1,ind], M[i,ind])
-    w[1,ind] = parent(M[1,1])(0)
-    for k=ind+1:ncols(M)
-      w[1,k]-= mult*M[i,k]
+    mult = divexact(w[1, ind], M[i, ind])
+    w[1, ind] = base_ring(M)(0)
+    for k = ind+1:ncols(M)
+      w[1, k]-= mult*M[i, k]
     end      
   end
   return w
@@ -90,16 +92,19 @@ the function returns a matrix representing the closure of the subspace under the
 subspace of K^n invariant under the endomorphisms. 
 """
 function closure(C::T, G::Array{T,1}) where {T}
-  rref!(C)
+  r = rref!(C)
   i=1
+  nc = ncols(C)
+  ra = zero_matrix(base_ring(C), 1, nc)
   while i <= nrows(C)
     w=view(C, i:i, 1:ncols(C))
     for j=1:length(G)
-      res = cleanvect(C, w*G[j])
+      mul!(ra, w, G[j])
+      res = cleanvect(C, ra)
       if !iszero(res)
-        C = vcat(C,res)  
-        if nrows(C)==ncols(C)
-          i=ncols(C)+1
+        C = vcat(C, res)  
+        if nrows(C) == nc
+          i = ncols(C)+1
           break
         end
       end 
