@@ -590,11 +590,13 @@ end
 
 
 function _submodules_with_struct_main(M::ZpnGModule, typesub::Array{Int,1})
+  @show typesub
   @assert issnf(M.V)
   p = M.p
   R = base_ring(M)
   #First iteration out of the loop.
   list = _submodules_with_struct(M, typesub)
+  @vprint :StabSub 1 "Subgroups at first step: $(length(list)) \n"
   #Some data needed in the loop
   w = Vector{fmpz}(undef, ngens(M.V))
   for i = 1:length(w)
@@ -610,6 +612,7 @@ function _submodules_with_struct_main(M::ZpnGModule, typesub::Array{Int,1})
     for x in list  
       L, _ = quo(M, x)
       newlist = _submodules_with_struct(L, new_typesub)
+      @vprint :StabSub 1 "Candidates to be added at this step: $(length(newlist)) \n"
       for s = 1:length(newlist)
         newlist[s] = vcat(newlist[s], x)
       end
@@ -620,12 +623,20 @@ function _submodules_with_struct_main(M::ZpnGModule, typesub::Array{Int,1})
           push!(list1, newlist[s])
         end
       end
+      @vprint :StabSub 1 "New till this point at this step: $(length(list1)) \n"
     end
     new_typesub = new_typesub1 
     #Now, a different sieving. I could have the same subgroup multiple times!
+    #False. Since I am constructing the group cleverly, if two subgroups coincide, 
+    #they must already coincide at the previous level!
+    #So I don't need to sieve.
+    #=
     if !isempty(list1)
+      @vprint :StabSub 1 "Before removing duplicates: $(length(list1))\n"
       @vtime :StabSub 1 list1 = _no_redundancy(list1, w)
+      @vprint :StabSub 1 "After removing duplicates: $(length(list1))\n"
     end
+    =#
     list = list1
   end
   return list
@@ -802,8 +813,9 @@ end
 #
 ###############################################################################
 
+global deb = []
 function submodules_with_quo_struct(M::ZpnGModule, typequo::Array{Int,1})
-  
+  push!(deb, (M, typequo))
   R = base_ring(M)
   p = M.p 
   S, mS = snf(M)
@@ -828,7 +840,7 @@ function submodules_with_quo_struct(M::ZpnGModule, typequo::Array{Int,1})
   candidates = submodules_with_struct(M_dual, typequo)
 
   #  Dualize the modules
-  v = fmpz[divexact(S.V.snf[end],S.V.snf[j]) for j=1:ngens(S.V) ]
+  v = fmpz[divexact(S.V.snf[end], S.V.snf[j]) for j=1:ngens(S.V) ]
   list = (_dualize(x, S.V, v) for x in candidates) 
    
   #  Write the submodules in terms of the given generators
