@@ -36,9 +36,9 @@ function Base.show(io::IO, ::MIME"text/plain", G::LocalGenusHerm)
   compact = get(io, :compact, false)
   if !compact
     if isdyadic(G) && isramified(G)
-      print(io, "Local genus symbol (rank, scale, det, norm) at ")
+      print(io, "Local genus symbol (scale, rank, det, norm) at ")
     else
-      print(io, "Local genus symbol (rank, scale, det) at ")
+      print(io, "Local genus symbol (scale, rank, det) at ")
     end
     print(IOContext(io, :compact => true), prime(G), ":")
     print(io, "\n")
@@ -1147,7 +1147,7 @@ end
 
 Return all local genera of Hermitian lattices over $E$ at $\mathfrak p$ with
 rank `rank`, scale valuation bounded by `max_scale` and determinant valuation
-bounded by `det_val`.
+equal to `det_val`.
 """
 function local_genera_hermitian(E, p, rank::Int, det_val::Int, max_scale::Int, is_ramified = isramified(maximal_order(E), p))
   #@show E, p, rank, det_val, max_scale, is_ramified
@@ -1287,12 +1287,11 @@ function local_genera_hermitian(E, p, rank::Int, det_val::Int, max_scale::Int, i
 end
 
 @doc Markdown.doc"""
-    genera_hermitian(E::NumField, p::NfOrdIdl, rank::Int,
-                    det_val::Int, max_scale::Int) -> Vector{LocalGenusHerm}
+    genera_hermitian(E::NumField, rank::Int, determinant::Int, max_scale = nothing) -> Vector{GenusHerm}
 
-Return all local genera of Hermitian lattices over $E$ at $\mathfrak p$ with
+Return all genera of Hermitian lattices over $E$ at $\mathfrak p$ with
 rank `rank`, scale valuation bounded by `max_scale` and determinant valuation
-bounded by `det_val`.
+equal to `det_val`.
 """
 function genera_hermitian(E, rank, signatures, determinant; max_scale = nothing)
   K = base_field(E)
@@ -1593,98 +1592,6 @@ end
 
 function representatives(G::GenusHerm)
   return genus_representatives(representative(G))
-end
-
-################################################################################
-#
-#  First attempt, which mirrors Markus' Magma code
-#
-#  This is only used for debugging purposes
-#
-################################################################################
-
-mutable struct LocalGenusSymbol{S}
-  P
-  data
-  x
-  iseven::Bool
-  E
-  isramified
-  non_norm
-end
-
-prime(G::LocalGenusSymbol) = G.P
-
-uniformizer(G::LocalGenusSymbol{QuadLat}) = G.x
-
-data(G::LocalGenusSymbol) = G.data
-
-base_field(G::LocalGenusSymbol) = G.E
-
-function Base.show(io::IO, G::LocalGenusSymbol)
-  print(io, "Local genus symbol (scale, rank, det) at\n")
-  print(IOContext(io, :compact => true), G.P)
-  compact = get(io, :compact, false)
-  if !compact
-    print(io, "\nwith base field\n")
-    print(io, base_field(G))
-  end
-  println(io, "\nWith data ", data(G))
-  !G.iseven ? println(io, "and unifomizer\n", G.x) : nothing
-end
-
-# TODO: I have to redo this
-
-function _genus_symbol_kirschmer(L::QuadLat, p::NfOrdIdl; uniformizer = zero(order(p)))
-  O = order(p)
-  nf(O) != base_field(L) && throw(error("Prime ideal must be an ideal of the base field of the lattice"))
-  # If you pull from cache, you might have to adjust the symbol according
-  # to the uniformizer flag
-
-  J, G, E = jordan_decomposition(L, p)
-  if !iszero(uniformizer)
-    unif = uniformizer
-    if valuation(unif, p) != 1
-      throw(error("Wrong uniformizer"))
-    end
-  else
-    unif = elem_in_nf(Hecke.uniformizer(p))
-  end
-
-  if minimum(p) != 2
-    _, _h = ResidueField(O, p)
-    h = extend(_h, nf(O))
-    Gs = [ h(prod(diagonal(G[i]))//unif^(E[i] * nrows(J[i]))) for i in 1:length(J)]
-    @assert !(0 in Gs)
-    x  = [ (nrows(J[i]), E[i], issquare(Gs[i])[1] ? 1 : -1) for i in 1:length(J)]
-    return LocalGenusSymbol{QuadLat}(p, x, unif, false, base_field(L), nothing, nothing)
-  else
-    t = length(G)
-    sL = [ minimum(iszero(g[i, j]) ? inf : valuation(g[i, j], p) for j in 1:ncols(g) for i in 1:j) for g in G]
-    @assert sL == E
-    e = ramification_index(p)
-    aL = []
-    uL = []
-    wL = []
-    for i in 1:t
-      GG = diagonal_matrix([ j < i ? unif^(2*(sL[i] - sL[j])) * G[j] : G[j] for j in 1:t])
-      D = diagonal(GG)
-      m, pos = findmin([valuation(d, p) for d in D])
-      if e + sL[i] <= m
-        push!(aL, unif^(e + sL[i]))
-      else
-        push!(aL, D[pos])
-      end
-      push!(uL, valuation(aL[i], p))
-      push!(wL, min(e + sL[i], minimum(uL[i] + quadratic_defect(d//aL[i], p) for d in D)))
-    end
-    fL = []
-    for k in 1:(t - 1)
-      exp = uL[k] + uL[k + 1]
-      push!(fL, (isodd(exp) ? exp : min(quadratic_defect(aL[k] * aL[k + 1], p), uL[k] + wL[k + 1], uL[k + 1] + wL[k], e + div(exp, 2) + sL[k])) - 2*sL[k])
-    end
-    return LocalGenusSymbol{QuadLat}(p, ([nrows(G[k]) for k in 1:t], sL, wL, aL, fL, G), unif, true, base_field(L), nothing, nothing)
-  end
 end
 
 # This is the "Magma" Genus symbol

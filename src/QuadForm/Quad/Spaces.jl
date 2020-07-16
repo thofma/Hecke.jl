@@ -136,6 +136,52 @@ function witt_invariant(L::QuadSpace, p::NfOrdIdl)
   return h * hilbert_symbol(K(-1), c, p)
 end
 
+# di = determinant
+# wi = witt invariant
+# ni = rank
+# Lam p. 117
+function _witt_of_orthgonal_sum(d1, w1, n1, d2, w2, n2, p)
+  _n1 = mod(n1, 4)
+  if _n1 == 0 || _n1 == 1
+    disc1 = d1
+  else
+    disc1 = -d1
+  end
+
+  _n2 = mod(n2, 4)
+  if _n2 == 0 || _n2 == 1
+    disc2 = d2
+  else
+    disc2 = -d2
+  end
+
+  if n1 % 2 == n2 % 2
+    w3 = w1 * w2 * hilbert_symbol(disc1, disc2, p)
+  elseif n1 % 2 == 1
+    w3 = w1 * w2 * hilbert_symbol(-disc1, disc2, p)
+  else
+    @assert n2 % 2 == 1
+    w3 = w1 * w2 * hilbert_symbol(disc1, -disc2, p)
+  end
+  return d1 * d2, w3, n1 + n2
+end
+
+# n = rank, d = det
+function _witt_hasse(s, n, d, p)
+  nmod8 = mod(n, 8)
+  K = parent(d)
+  if nmod8 == 3 || nmod8 == 4
+    c = -d
+  elseif nmod8 == 5 || nmod8 == 6
+    c = K(-1)
+  elseif nmod8 == 7 || nmod8 == 0
+    c = d
+  else
+    c = K(1)
+  end
+  return s * hilbert_symbol(K(-1), c, p)
+end
+
 function witt_invariant(L::QuadSpace, p::InfPlc)
   if iscomplex(p)
     return 1
@@ -600,4 +646,34 @@ function isisotropic(V::QuadSpace, p)
   end
 end
 
+################################################################################
+#
+#  Embeddings
+#
+################################################################################
 
+# This is O'Meara, 63:21
+#
+# n, a, ha = dimension, determinant (class) and Hasse symbol of first space
+# Similar for m, a, hb 
+# p is the prime idela
+function _can_locally_embed(n::Int, da, ha::Int, m::Int, db, hb::Int, p)
+  de = m - n
+  if de == 0
+    return islocal_square(da * db, p) && ha == hb
+  elseif de == 1
+    return ha * hilbert_symbol(da * db, da, p) == hb
+  elseif de == 2 && islocal_square(-da * db, p)
+    # Test if U \perp H \cong V
+    # U has Hasse invariant 1
+    return islocal_square(-da * db, p) && da * hilbert_symbol(da, -1, p) == db
+  else
+    return true
+  end
+end
+
+function can_locally_embed(U::QuadSpace, V::QuadSpace, p)
+  n, da, ha = rank(U), det(U), hasse_invariant(U, p)
+  m, db, hb = rank(V), det(V), hasse_invariant(V, p)
+  return _can_locally_embed(n, da, ha, m, db, hb, p)
+end

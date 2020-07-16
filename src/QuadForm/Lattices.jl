@@ -1416,7 +1416,7 @@ $\mathfrak{p}$ are locally isometric.
 """
 islocally_isometric(::AbsLat, ::AbsLat, ::NfOrdIdl)
 
-function islocally_isometric(L::QuadLat, M::QuadLat, p::NfOrdIdl)
+function islocally_isometric_kirschmer(L::QuadLat, M::QuadLat, p::NfOrdIdl)
   R = base_ring(L)
   base_ring(L) != base_ring(M) && throw(error("Lattices must have the same base ring"))
   order(p) != R && throw(error("Ideal must be in the base ring of the lattices"))
@@ -1436,6 +1436,8 @@ function islocally_isometric(L::QuadLat, M::QuadLat, p::NfOrdIdl)
   if !isrationally_equivalent(L, M, p)
     return false
   end
+
+  @show "here"
 
   dimL1, sL1, wL1, aL1, fL1, G1 = data(_genus_symbol_kirschmer(L, p))
   dimL2, sL2, wL2, aL2, fL2, G2 = data(_genus_symbol_kirschmer(M, p))
@@ -1462,8 +1464,6 @@ function islocally_isometric(L::QuadLat, M::QuadLat, p::NfOrdIdl)
   d1 = [ diagonal_matrix([G1[i] for i in 1:t]) for t in 1:length(G1)]
   d2 = [ diagonal_matrix([G2[i] for i in 1:t]) for t in 1:length(G2)]
 
-  # This cannot work, what is going on here
-  
   for i in 1:length(fL1)
     detquot = det(d1[i])//det(d2[i])
     if valuation(detquot, p) != 0
@@ -3020,14 +3020,14 @@ end
 # This is not optimized.
 function _integer_lists(sum::Int, len::Int)
   if sum == 0
-    return [fill(0, len)]
+    return Vector{Int}[fill(0, len)]
   end
   if len == 1
-    return [Int[sum]]
+    return Vector{Int}[Int[sum]]
   end
   res = Vector{Vector{Int}}()
   for i in 0:sum
-    rec = _integer_lists(sum - i, len - 1)
+    rec = _integer_lists(sum - i, len - 1)::Vector{Vector{Int}}
     if isempty(rec)
       push!(res, append!(Int[i], fill(0, len - 1)))
     else
