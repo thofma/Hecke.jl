@@ -1437,8 +1437,6 @@ function islocally_isometric_kirschmer(L::QuadLat, M::QuadLat, p::NfOrdIdl)
     return false
   end
 
-  @show "here"
-
   dimL1, sL1, wL1, aL1, fL1, G1 = data(_genus_symbol_kirschmer(L, p))
   dimL2, sL2, wL2, aL2, fL2, G2 = data(_genus_symbol_kirschmer(M, p))
 
