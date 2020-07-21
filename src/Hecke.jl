@@ -51,7 +51,7 @@ import Base: show, minimum, rand, prod, copy, rand, ceil, round, size, in,
              setindex!, transpose, getindex, //, div, floor, max, BigFloat,
              precision, first, StepRange, show, one, zero, inv, iseven, isodd,
              convert, angle, abs2, isless, exponent, isfinite, zeros, rem, min,
-             numerator, denominator, exp, maximum, intersect, reduce, sqrt
+             numerator, denominator, exp, maximum, intersect, reduce, sqrt, haskey, merge
 
 # To make all exported Nemo functions visible to someone using "using Hecke"
 # we have to export everything again
@@ -631,6 +631,7 @@ include("AlgAssRelOrd.jl")
 include("LocalField.jl")
 include("QuadForm.jl")
 include("FieldFactory.jl")
+include("../examples/NFDB.jl")
 
 ################################################################################
 #
