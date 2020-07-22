@@ -863,3 +863,36 @@ names64 = [ "C64", "C8^2", "C8:C8", "C2^3:C8", "(C2*C4):C8", "D4:C8", "Q8:C8",
            "C2*C8:C2^2", "C2*SD16:C2", "SD16:C2^2", "C8.C2^3", "C4.C2^4",
            "D8.C2^2", "C2^4*C4", "C2^3*D4", "C2^3*Q8", "C2^2*D4:C2",
            "C2*Q8:C2^2", "C2*C4.C2^3", "D4.C2^3", "C2^6" ]
+
+function has_obviously_relative_class_number_not_one(K::AnticNumberField, isnormal::Bool = true, maxdeg::Int = degree(K))
+  if isnormal
+    subs = subfields_normal(K)
+  else
+    subs = subfields(K)
+  end
+
+  sort!(subs, by = x -> degree(x[1]))
+
+  for (L, mL) in subs
+    if degree(L) > min(degree(K) - 1, maxdeg)
+      continue
+    end
+    if !istotally_complex(L)
+      continue
+    end
+
+    fl, tau = iscm_field(L)
+    @assert fl
+
+    l = fixed_field(L, tau)[1]
+
+    h = order(class_group(lll(maximal_order(L)))[1])
+    hp = order(class_group(lll(maximal_order(l)))[1])
+    @assert mod(h, hp) == 0
+    hm = divexact(h, hp)
+    if hm == 3 || hm > 4
+      return true, L
+    end
+  end
+  return false, K
+end
