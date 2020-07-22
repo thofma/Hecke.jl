@@ -288,10 +288,13 @@ function _quadratic_form_invariants(M::fmpq_mat; minimal = true)
 end
 
 function _quadratic_form_invariants(M; minimal = true)
+  return _quadratic_form_invariants(M, maximal_order(base_ring(M)), minimal = minimal)
+end
+
+function _quadratic_form_invariants(M, O; minimal = true)
   G, _ = _gram_schmidt(M, identity)
   D = diagonal(G)
   K = base_ring(M)
-  O = maximal_order(K)
   sup = Dict{ideal_type(O), Bool}()
   for i in 1:length(D)
     f = factor(D[i] * O)
@@ -467,7 +470,7 @@ function _quadratic_form_with_invariants(dim::Int, det::nf_elem, finite::Vector,
   inf_plcs = real_places(K)
   @assert length(inf_plcs) == length(negative)
   # All real places must be present
-  @assert all(c in 0:dim for (_, c) in negative)
+  @assert all(Bool[0 <= c <= dim for (_, c) in negative])
   # Impossible negative entry at plc
   @assert all(sign(det, p) == (-1)^(negative[p]) for p in inf_plcs)
   # Information at the real place plc does not match the sign of the determinant
@@ -477,11 +480,13 @@ function _quadratic_form_with_invariants(dim::Int, det::nf_elem, finite::Vector,
     return matrix(K, 1, 1, nf_elem[det])
   end
 
+  local OK::order_type(K)
+
   if !isempty(finite)
-    OK = maximal_order(K)
-  else
-    OK = oder(finite[1])
+    OK = order(finite[1])
     @assert ismaximal(OK)
+  else
+    OK = maximal_order(K)
   end
 
   finite = unique(finite)
@@ -491,16 +496,16 @@ function _quadratic_form_with_invariants(dim::Int, det::nf_elem, finite::Vector,
   if dim == 2
     ok = all(!islocal_square(-det, p) for p in finite)
     if !ok
-      q = [p for p in finite if islocal_square(-det, p)][1]
+      q = eltype(finite)[p for p in finite if islocal_square(-det, p)][1]
       throw(error("A binary form with determinant $det must have Hasse invariant +1 at the prime $q"))
     end
   end
 
   @assert iseven(length([ p for (p, n) in negative if n % 4 >= 2]) + length(finite))
-#    "The number of places (finite or infinite) with Hasse invariant -1 must be even";
-#
-#  // OK, a space with these invariants must exist.
-#  // For final testing, we store the invariants.
+ #   "The number of places (finite or infinite) with Hasse invariant -1 must be even";
+
+ # // OK, a space with these invariants must exist.
+ # // For final testing, we store the invariants.
 
   dim0 = dim
   det0 = det
@@ -512,13 +517,17 @@ function _quadratic_form_with_invariants(dim::Int, det::nf_elem, finite::Vector,
   k = max(0, dim - max(3, maximum(values(negative))))
   D = elem_type(K)[one(K) for i in 1:k]
   dim = dim - k
+  local D2::Vector{nf_elem}
+  local D::Vector{nf_elem}
 
   if dim >= 4
 #    // Pad with minus ones
     k = min(dim - 3, minimum(values(negative)))
     D2 = elem_type(K)[-one(K) for i in 1:k]
     dim = dim - k
-    negative = Dict{InfPlc, Int}(p => (n - k) for (p, n) in negative)
+    for (p, n) in negative
+      negative[p] = n - k
+    end
 #    // Pad with other entries
     while dim >= 4
       V = InfPlc[]
@@ -533,10 +542,12 @@ function _quadratic_form_with_invariants(dim::Int, det::nf_elem, finite::Vector,
         end
       end
 
-      x = _weak_approximation(V, _signs)
+      x = _weak_approximation(V, _signs)::nf_elem
       s = signs(x)
-      @assert all(i -> sign(x, V[i]) == _signs[i], 1:length(V))
-      k = minimum(vcat(Int[dim - 3], [s[p] == 1 ? (dim - c) : c for (p, c) in negative]))
+      #@assert all(Bool[sign(x, V[i]) == _signs[i] for i in 1:length(V)])
+      let negative = negative, dim = dim
+        k = minimum(vcat(Int[dim - 3], Int[s[p] == 1 ? (dim - c) : c for (p, c) in negative]))
+      end
       D2 = append!(D2, elem_type(K)[x for i in 1:k])
       dim = dim - k
       for (p, n) in negative
@@ -546,21 +557,28 @@ function _quadratic_form_with_invariants(dim::Int, det::nf_elem, finite::Vector,
       end
     end
 
+    local _d::nf_elem
+    local _f::Dict{NfAbsOrdIdl{AnticNumberField,nf_elem},Int64}
     _d, _f = _quadratic_form_invariants(diagonal_matrix(D2))
 
-    PP = append!(support(K(2)), finite)
+    PP = append!(support(K(2), OK), finite)
     PP = unique!(PP)
-    finite = ideal_type(OK)[ p for p in PP if hilbert_symbol(_d, -det, p) * (haskey(_f, p) ? -1 : 1) * (p in finite ? -1 : 1) == -1]
-    @show finite
+    local _finite::Vector{ideal_type(OK)}
+    let finite = finite
+      _finite = ideal_type(OK)[ p for p in PP if hilbert_symbol(_d, -det, p) * (haskey(_f, p) ? -1 : 1) * (p in finite ? -1 : 1) == -1]
+    end
+    finite = _finite
+
     D = append!(D, D2)
-    det = det * _d
-    # TODO: reduce det modulo squares
+
+    det::nf_elem = det * _d
+#    # TODO: reduce det modulo squares
   end
 
 #  // The ternary case
   if dim == 3
-    PP = append!(support(K(2)), finite)
-    append!(PP, support(det))
+    PP = append!(support(K(2), OK), finite)
+    append!(PP, support(det, OK))
     PP = unique!(PP)
     PP = ideal_type(OK)[p for p in PP if hilbert_symbol(K(-1), -det, p) != (p in finite ? -1 : 1)]
 #    // The primes at which the form is anisotropic
@@ -592,8 +610,8 @@ function _quadratic_form_with_invariants(dim::Int, det::nf_elem, finite::Vector,
       negative[p] = negative[p] - 1
     end
     PP = support(K(2))
-    append!(PP, support(det))
-    append!(PP, support(a))
+    append!(PP, support(det, OK))
+    append!(PP, support(a, OK))
     append!(PP, finite)
     PP = unique!(PP)
     finite = ideal_type(OK)[p for p in PP if hilbert_symbol(a, -det, p) * (p in finite ? -1 : 1) == -1]
@@ -604,12 +622,12 @@ function _quadratic_form_with_invariants(dim::Int, det::nf_elem, finite::Vector,
 
 
 #  // The binary case
-  a = _find_quaternion_algebra(-det, finite, [p for (p, n) in negative if n == 2])
+  a = _find_quaternion_algebra(-det::nf_elem, finite::Vector{NfOrdIdl}, InfPlc[p for (p, n) in negative if n == 2])
   push!(D, a)
   push!(D, det * a)
   M = diagonal_matrix(D)
 
-  d, f, n = _quadratic_form_invariants(M)
+  d, f, n = _quadratic_form_invariants(M, OK)
   @assert dim0 == length(D)
   @assert issquare(d * det0)[1]
   @assert issetequal(collect(keys(f)), finite0)

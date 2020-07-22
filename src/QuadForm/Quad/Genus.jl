@@ -268,6 +268,7 @@ function genus(J::JorDec)
       push!(detclass, islocal_square(J.dets[i]//pi^(J.ranks[i] * J.scales[i]), p) ? 1 : -1)
     end
     z = genus(QuadLat, p, pi, J.ranks, J.scales, detclass)
+    z.dets = J.dets
     z.jordec = J
     return z
   end
@@ -291,7 +292,7 @@ function genus(J::JorDec)
     end
 
     # Now determine w(L^(s_i)) using this norm generator
-    # We first the diagonal of a gram matrix of L^(s_i)
+    # We first determine the diagonal of a gram matrix of L^(s_i)
     D = elem_type(K)[]
     for j in 1:r
       # TODO: We could determine just the diagonal, that would be easier.
@@ -369,14 +370,17 @@ function _quadratic_unimodular_lattice_dyadic(p, r, w, d, alpha, wi)
     if mmod4 == 0 || mmod4 == 1
       gamma = _find_special_class(d, p) - 1
       @assert islocal_square(d//(1 + gamma), p)
+      @assert valuation(d, p) == valuation(1 + gamma, p)
     else
       gamma = _find_special_class(-d, p) - 1
       @assert islocal_square(-d//(1 + gamma), p)
+      @assert valuation(-d, p) == valuation(1 + gamma, p)
     end
     @assert quadratic_defect(1 + gamma, p) == (iszero(gamma) ? inf : valuation(gamma, p))
     if iseven(valuation(alpha, p) + w)
       @assert w == e
       mats = dense_matrix_type(K)[]
+      @assert iszero(gamma) || valuation(gamma, p) >= w + valuation(alpha, p)
       push!(mats, _Amatrix(K, alpha, -gamma * inv(alpha)))
       @assert valuation(det(mats[end]), p) == 0
       for i in 1:(r - 1)
@@ -522,14 +526,48 @@ function det(G::LocalGenusQuad)
     return G.det
   end
 
-  d = prod(G.dets)
-  G.det = d
+  #if isdyadic(G)
+    d = prod(G.dets)
+    G.det = d
+  #else
+  #  pi = uniformizer(G)
+  #  d = prod(nf_elem[pi^(G.ranks[i] * G.scales[i]) * G.detclasses[i] for i in 1:length(G)])
+  #  G.det = d
+  #  #@show d
+  #  #@show valuation(d, prime(G))
+  #  #@show det(gram_matrix_of_basis(representative(G)))
+  #  @assert islocal_square(d * det(gram_matrix_of_basis(representative(G))), prime(G))
+  #end
   return d
 end
 
+function det(G::LocalGenusQuad, i::Int)
+  #if isdyadic(G)
+    return G.dets[i]
+  #else
+  #  pi = uniformizer(G)
+  #  return pi^(G.ranks[i] * G.scales[i]) * G.detclasses[i]
+  #end
+end
+
 function hasse_invariant(G::LocalGenusQuad)
-  w = witt_invariant(G)
-  return _witt_hasse(w, rank(G), det(G), prime(G))
+  if isdyadic(G)
+    w = witt_invariant(G)
+    return _witt_hasse(w, rank(G), det(G), prime(G))
+  else
+    p = prime(G)
+    l = length(G)
+    pi = uniformizer(G)
+    h = hilbert_symbol((-1)^divexact(G.ranks[1] * (G.ranks[1] - 1), 2) * det(G, 1)^(G.ranks[1] - 1), pi^G.scales[1], p)
+    d = det(G, 1)
+    for i in 2:l
+      h = h * hilbert_symbol(d, det(G, i), p)
+      h = h * hilbert_symbol((-1)^divexact(G.ranks[i] * (G.ranks[i] - 1), 2) * det(G, i)^(G.ranks[i] - 1), pi^G.scales[i], p)
+      d = d * det(G, i)
+    end
+    @assert hasse_invariant(representative(G), p) == h
+    return h
+  end
 end 
 
 
@@ -874,7 +912,7 @@ function _genus_symbol(L::QuadLat, p)
     _weight = Vector{Int}()
     _normgen = Vector{elem_type(K)}()
     _f = Int[]
-    dets = elem_type(K)[]
+    dets = elem_type(K)[det(G[i]) for i in 1:t]
     witt = Int[]
     uL = Int[]
     #Gs = [ h(prod(diagonal(G[i]))//unif^(E[i] * nrows(J[i]))) for i in 1:length(J)]
@@ -1140,7 +1178,7 @@ function local_jordan_decompositions(E, p; rank::Int, det_val::Int, max_scale = 
       # I need to compute all possiblities to distribute class1/class2
       # among the blocks.
       t = zero(UInt)
-      for i in 0:(l - 1)
+      for i in 1:2^l
         v = Vector{elem_type(E)}(undef, l)
         for j in 1:l
           if Bool((t >> (j - 1)) & 1)
@@ -1206,7 +1244,8 @@ function local_jordan_decompositions(E, p; rank::Int, det_val::Int, max_scale = 
 
     for srnw in scales_rks_norms_weights
       l = length(srnw)
-      reps = Vector{nf_elem}[ _representatives_for_equivalence(p, s[3], s[4]) for s in srnw ]
+      #reps = Vector{nf_elem}[ _representatives_for_equivalence(p, s[3], s[4]) for s in srnw ]
+      reps = Vector{nf_elem}[ pi^srnw[i][3] .* reps_squares for i in 1:l ]
       for rep in Iterators.product(reps...)
         push!(scales_rks_norms_weights_normgens, Tuple{Int, Int, Int, Int, nf_elem}[ (srnw[i][1], srnw[i][2], srnw[i][3], srnw[i][4], rep[i]) for i in 1:l])
       end
@@ -1217,6 +1256,28 @@ function local_jordan_decompositions(E, p; rank::Int, det_val::Int, max_scale = 
       l = length(srwn)
       reps = Vector{nf_elem}[ reps_squares for i in 1:l]
       for rep in Iterators.product(reps...)
+        good = true
+        for i in 1:l
+          d = rep[i]
+          mmod4 = mod(srwn[i][2], 4)
+          if mmod4 == 0 || mmod4 == 1
+            gamma = _find_special_class(d, p) - 1
+            @assert islocal_square(d//(1 + gamma), p)
+            @assert valuation(d, p) == valuation(1 + gamma, p)
+          else
+            gamma = _find_special_class(-d, p) - 1
+            @assert islocal_square(-d//(1 + gamma), p)
+            @assert valuation(-d, p) == valuation(1 + gamma, p)
+          end
+          @assert quadratic_defect(1 + gamma, p) == (iszero(gamma) ? inf : valuation(gamma, p))
+          if !(iszero(gamma) || valuation(gamma, p) >= srwn[i][4] + valuation(srwn[i][5], p))
+            good = false
+            break
+          end
+        end
+        if !good
+          continue
+        end
         push!(scales_rks_norms_weights_normgens_dets, Tuple{Int, Int, Int, Int, nf_elem, nf_elem}[ (srwn[i][1], srwn[i][2], srwn[i][3], srwn[i][4], srwn[i][5], rep[i]) for i in 1:l])
       end
     end
@@ -1274,7 +1335,8 @@ mutable struct GenusQuad{S, T, U}
   primes::Vector{T}
   LGS::Vector{LocalGenusQuad{S, T, U}}
   rank::Int
-  signatures
+  signatures::Dict{InfPlc, Int}
+  d::U
 
   function GenusQuad{S, T, U}(K) where {S, T, U}
     z = new{typeof(K), ideal_type(order_type(K)), elem_type(K)}()
@@ -1296,19 +1358,22 @@ end
 
 genus_quad_type(K) = GenusQuad{typeof(K), ideal_type(order_type(K)), elem_type(K)}
 
-function GenusQuad(K, LGS, signatures)
+function GenusQuad(K, d, LGS, signatures)
   z = genus_quad_type(K)(K)
   z.LGS = LGS
   z.signatures = signatures
+  z.d = d
+  z.rank = rank(LGS[1])
+  z.K = K
   return z
 end
 
 function genera_quadratic(K; rank::Int, signatures, det)
   OK = maximal_order(K)
 
-  _max_scale = det
+  _max_scale = 2 * det
 
-  primes = support(det)
+  primes = support(2 * det)
 
   local_symbols = Vector{local_quadratic_genus_type(K)}[]
 
@@ -1323,17 +1388,20 @@ function genera_quadratic(K; rank::Int, signatures, det)
   res = genus_quad_type(K)[]
   it = Iterators.product(local_symbols...)
   for gs in it
-    c = collect(gs)
-    b = _check_global_quadratic_genus(c, signatures)
-    if b
-      push!(res, GenusQuad(K, c, signatures))
+    c = collect(gs)::Vector{local_quadratic_genus_type(K)}
+    de = _possible_determinants(K, c, signatures)::Vector{nf_elem}
+    for d in de
+      b = _check_global_quadratic_genus(c, d, signatures)
+      if b
+        push!(res, GenusQuad(K, d, c, signatures))
+      end
     end
   end
 
   return res
 end
 
-function _check_global_quadratic_genus(c, signatures)
+function _check_global_quadratic_genus(c, d, signatures)
   # c = vector or tuple of local quadratic genera
   # signatures = dict{pl => n}
   P = [ i for i in 1:length(c) if hasse_invariant(c[i]) == -1]
@@ -1343,8 +1411,8 @@ function _check_global_quadratic_genus(c, signatures)
 
   if rank(c[1]) == 2
     for i in P
-      @show islocal_square(-det(c[i]), prime(c[i]))
-      if islocal_square(-det(c[i]), prime(c[i]))
+      #@show islocal_square(-d, prime(c[i]))
+      if islocal_square(-d, prime(c[i]))
         return false
       end
     end
@@ -1352,4 +1420,102 @@ function _check_global_quadratic_genus(c, signatures)
 
   s = length([ s for (s, n) in signatures if (n % 4) in [2, 3]])
   return iseven(length(P) + s)
+end
+
+function _possible_determinants(K, local_symbols, signatures)
+  C, mC = class_group(K)
+  if length(local_symbols) == 0
+    OK = maximal_order(K)
+  else
+    OK = order(prime(local_symbols[1]))
+  end
+  I = 1 * OK
+  for g in local_symbols
+    I = I * prime(g)^valuation(det(g), prime(g))
+  end
+  classofI = mC\(I)
+  U, mU = unit_group_fac_elem(OK)
+  classes = elem_type(C)[]
+  for c in C
+    if iszero(classofI + 2 * c)
+      push!(classes, c)
+    end
+  end
+  s = ideal_type(OK)[]
+  current_classes = elem_type(C)[]
+  primes = PrimeIdealsSet(OK, 2, -1)
+
+  if id(C) in classes
+    push!(s, 1 * OK)
+    push!(current_classes, id(C))
+  end
+
+  for P in primes
+    if length(classes) == length(current_classes)
+      break
+    end
+
+    c = mC\(P)
+    if c in current_classes
+      continue
+    end
+
+    if c in classes
+      push!(current_classes, c)
+      push!(s, P)
+    end
+  end
+  rlp = real_places(K)
+  local R::GrpAbFinGen
+  R, _exp, _log = infinite_primes_map(OK, rlp, 1 * OK)
+  tar = R(Int[isodd(signatures[sigma]) ? 1 : 0 for sigma in rlp])
+  gensU = gens(U)
+  S, mS = sub(R, elem_type(R)[_log(mU(u)) for u in gensU], false)
+  # I need totally positive units / OK^*2
+  Q, mQ = quo(U, 2, false)
+  f = hom(Q, R, elem_type(R)[_log(mU(mQ\u)) for u in gens(Q)])
+  Ker, mKer = kernel(f)
+  transver = elem_type(K)[ evaluate(mU(mQ\(mKer(k)))) for k in Ker]
+
+  dets = elem_type(K)[]
+
+  for P in s
+    J = I * P^2
+    fl, u = isprincipal(J)
+    @assert fl
+    # I need to change u such that sign(u, sigma) = (-1)^signatures[sigma]
+    v = _log(elem_in_nf(u)) + tar
+    fl, y = haspreimage(mS, v)
+    if fl
+      z = elem_in_nf(u) * prod(elem_type(K)[ evaluate(mU(gensU[i]))^y.coeff[i] for i in 1:length(gensU)])
+      @assert z * OK == J
+      @assert all(sigma -> sign(z, sigma) == (-1)^signatures[sigma], rlp)
+      for t in transver
+        possible_det = z * t
+        good = true
+        for g in local_symbols
+          # I need to test if the determinant is locally correct
+          if !islocal_square(possible_det * det(g), prime(g))
+            good = false
+            break
+          end
+        end
+        if good
+          push!(dets, possible_det)
+        end
+      end
+    end
+  end
+  return dets
+end
+
+function space(G::GenusQuad)
+  c = G.LGS
+  K = G.K
+  P = ideal_type(order_type(K))[ prime(c[i]) for i in 1:length(c) if hasse_invariant(c[i]) == -1]
+  d = G.d
+  signa = G.signatures
+  rk = G.rank
+  #return _quadratic_form_with_invariants(rk, d, P, signa)::dense_matrix_type(K)
+  return quadratic_space(G.K, _quadratic_form_with_invariants(rk, d, P, signa))
 end
