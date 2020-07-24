@@ -137,6 +137,7 @@ end
 function NFDB(L::Vector{NFDBRecord{1}})
   z = NFDB{1}()
   z.fields = L
+  update_properties!(z)
   return z
 end
 
@@ -185,7 +186,8 @@ const properties_comp = Dict(:id => (Int, x -> UInt(hash(x))),
                                                         end),
                               :isnormal => (Bool, x -> isnormal(x)),
                               :automorphism_group => (Tuple{Int, Int}, x -> find_small_group(automorphism_group(x)[1])[1]),
-                              :regulator => (arb, x -> regulator(maximal_order(x))))
+                              :regulator => (arb, x -> regulator(maximal_order(x))),
+                              :lmfdb_label => (String, x -> ""))
 
 
 Base.getindex(D::NFDBRecord, s) = getindex(D.data, s)
@@ -201,6 +203,22 @@ function field(D::NFDBRecord)
     D.K = K
     return D.K
   end
+end
+
+function setindex!(D::NFDBRecord, s, k::Symbol)
+  if !(k in record_info_v1.name_tuples)
+    throw(error("asdsD"))
+  end
+  if haskey(D.data, k)
+    throw(error("Data for $k already exists"))
+  end
+
+  if !(s isa properties_comp[k][1])
+    throw(error("$s has the wrong type (expected $(properties_comp[k][1]))"))
+  end
+
+  D.data[k] = s
+  return D
 end
 
 function compute!(D::NFDBRecord, s::Symbol)
@@ -246,7 +264,8 @@ const record_info_v1 = NFDBRecordInfo([:id,
                                        :relative_class_number,
                                        :istamely_ramified,
                                        :isnormal,
-                                       :automorphism_group])
+                                       :automorphism_group,
+                                       :lmfdb_label])
 
 
 @assert length(record_info_v1.name_tuples) <= 56
