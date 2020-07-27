@@ -921,3 +921,17 @@ function stabilizer(G::GrpGen, action, x::T) where T
   end
   return S
 end
+
+################################################################################
+#
+#  Intersect
+#
+################################################################################
+
+function intersect(mH::GrpGenToGrpGenMor, mK::GrpGenToGrpGenMor)
+  @assert domain(mH) == domain(mK)
+  H = domain(mH)
+  K = domain(mK)
+  I = intersect([mK(k) for k in K], [mH(h) for h in H])
+  return subgroup(codomain(mH), I)
+end
