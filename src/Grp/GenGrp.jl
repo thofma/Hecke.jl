@@ -185,6 +185,8 @@ elem_type(::GrpGen) = GrpGenElem
 
 Base.hash(G::GrpGenElem, h::UInt) = Base.hash(G.i, h)
 
+Base.hash(G::GrpGen, h::UInt) = UInt(0)
+
 function Base.deepcopy_internal(g::GrpGenElem, dict::IdDict)
   return GrpGenElem(g.group, g.i)
 end
@@ -227,7 +229,7 @@ function ==(g::GrpGenElem, h::GrpGenElem)
 end
 
 function ==(g::GrpGenToGrpGenMor, h::GrpGenToGrpGenMor)
-  return g.domain == h.domain && g.codomain == h.codomain && g.img == h.img
+  return g.domain === h.domain && g.codomain === h.codomain && g.img == h.img
 end
 
 ################################################################################
@@ -734,7 +736,8 @@ function derived_series(G::GrpGen, n::Int64 = 2 * order(G))
 end
 
 function ==(G::GrpGen, H::GrpGen)
-  return G.mult_table == H.mult_table
+  return G === H
+  #return G.mult_table == H.mult_table
 end
 
 elements(G::GrpGen) = collect(G)
@@ -929,7 +932,7 @@ end
 ################################################################################
 
 function intersect(mH::GrpGenToGrpGenMor, mK::GrpGenToGrpGenMor)
-  @assert domain(mH) == domain(mK)
+  @assert codomain(mH) == codomain(mK)
   H = domain(mH)
   K = domain(mK)
   I = intersect([mK(k) for k in K], [mH(h) for h in H])

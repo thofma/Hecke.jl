@@ -112,6 +112,32 @@ function non_simple_extension(K::SimpleNumField)
   @assert base_field(K) isa FlintRationalField
   @assert isnormal(K)
   G, mG = automorphism_group(K)
+  _subs = _subgroups_for_non_simple_extension(G)
+  subf = Dict()
+  for (subgrps, indice) in _subs
+    for H in subgrps
+      if !haskey(subf, H)
+        subf[H] = defining_polynomial(fixed_field(K, [mG(H[2](h)) for h in H[1]])[1])
+      end
+    end
+  end
+
+  Qx = Globals.Qx
+
+  l = Inf
+
+  res = nothing
+
+  for (subgrps, indice) in _subs
+    v = [ subf[H] for H in subgrps ]
+    if length(string(v)) < l
+      res = v
+    end
+    L, = number_field(v)
+    @assert isisomorphic(simple_extension(L)[1], K)[1]
+  end
+
+  return res
 end
 
 function _subgroups_for_non_simple_extension(G, maxorder = div(order(G), 2), maxnum = 5)
@@ -126,7 +152,7 @@ function _subgroups_for_non_simple_extension(G, maxorder = div(order(G), 2), max
         continue
       end
 
-      newmin = sum(f)
+      newmin = sum(map(x -> divexact(n, x), f))
 
       possible_comb = [ [h for h in sub if order(h[1]) == f[i]] for i in 1:length(f) ]
 
