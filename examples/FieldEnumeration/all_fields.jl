@@ -55,6 +55,10 @@ function parse_commandline()
     "--simplify"
       help = "Simplify the field"
       action = :store_true
+    "--out"
+      help = "Output file"
+      arg_type = String
+      default = ""
   end
 
   return parse_args(s)
@@ -72,6 +76,7 @@ function main()
   local only_cm::Bool
   local maxabsubfields::Union{String, Nothing}
   local simplify::Bool
+  local out::String
 
   for (arg, val) in parsed_args
     println("$arg => $val")
@@ -93,6 +98,8 @@ function main()
       maxabsubfields = val
     elseif arg == "simplify"
       simplify = val
+    elseif arg == "out"
+      out = val
     end
   end
 
@@ -109,17 +116,20 @@ function main()
   end
 
   _n = clog(dbound, fmpz(10))
-  if fmpz(10)^_n == dbound
-    file = sprint_formatted("%0$(length(string(length(small_solvable_groups))))d", grp_no) * "-$n-$i-10^$(_n)"
+  if out == ""
+    if fmpz(10)^_n == dbound
+      file = sprint_formatted("%0$(length(string(length(small_solvable_groups))))d", grp_no) * "-$n-$i-10^$(_n)"
+    else
+      file = sprint_formatted("%0$(length(string(length(small_solvable_groups))))d", grp_no) * "-$n-$i-$dbound"
+    end
+    
+    if maxabsubfields isa String
+      file = file * "_" * maxabsubfields
+    end
+    file = file * ".log"
   else
-    file = sprint_formatted("%0$(length(string(length(small_solvable_groups))))d", grp_no) * "-$n-$i-$dbound"
+    file = out
   end
-
-  if maxabsubfields isa String
-    file = file * "_" * maxabsubfields
-  end
-
-  file = file * ".log"
 
   @show grp_order
   @show grp_id
