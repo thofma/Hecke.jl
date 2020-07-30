@@ -815,9 +815,8 @@ end
 
 
 #scales the i-th column of a by 2^d[1,i]
-function mult_by_2pow_diag!(a::Array{BigFloat, 2}, d::fmpz_mat)
+function mult_by_2pow_diag!(a::Array{BigFloat, 2}, d::fmpz_mat, R = _RealRings[Threads.threadid()])
   s = size(a)
-  R = RealRing()::_RealRing
   tmp_mpz::BigInt = R.z1
   for i = 1:s[1]
     for j = 1:s[2]
@@ -834,9 +833,8 @@ function round_scale(a::Array{BigFloat, 2}, l::Int)
   return round_scale!(b, a, l)
 end
  
-function round_scale!(b::fmpz_mat, a::Array{BigFloat, 2}, l::Int)
+function round_scale!(b::fmpz_mat, a::Array{BigFloat, 2}, l::Int, R = _RealRings[Threads.threadid()])
   s = size(a)
-  R = RealRing()::_RealRing
 
   local tmp_mpz::BigInt, tmp_fmpz::fmpz
   tmp_mpz = R.z1

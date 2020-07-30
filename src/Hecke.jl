@@ -254,6 +254,12 @@ function __init__()
   @require Polymake="d720cf60-89b5-51f5-aff5-213f193123e7" begin
     include("AlgAssRelOrd/NEQ_polymake.jl")
   end
+
+  resize!(_RealRings, Threads.nthreads())
+  for i in 1:Threads.nthreads()
+     _RealRings[i] = _RealRing()
+  end
+
 end
 
 module Globals
@@ -632,6 +638,8 @@ include("LocalField.jl")
 include("QuadForm.jl")
 include("FieldFactory.jl")
 include("../examples/NFDB.jl")
+
+const _RealRings = _RealRing[_RealRing()]
 
 ################################################################################
 #
