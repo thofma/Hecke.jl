@@ -1030,7 +1030,8 @@ function embed(f::Map{<:NumField, <:NumField})
   cn = find_one_chain(d, c)
   if cn !== nothing
     if issimple(d)
-      if c(gen(d)) != f(gen(d))
+      cgend = force_coerce(c, gen(d))
+      if cgend != f(gen(d))
         error("different embedding already installed")
         return
       end
