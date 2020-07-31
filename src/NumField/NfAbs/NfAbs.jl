@@ -186,6 +186,47 @@ end
 
 ################################################################################
 #
+#  Class number
+#
+################################################################################
+
+@doc Markdown.doc"""
+    class_number(K::AnticNumberField) -> fmpz
+
+Returns the class number of $K$.
+"""
+function class_number(K::AnticNumberField)
+  return order(class_group(maximal_order(K))[1])
+end
+
+################################################################################
+#
+#  Relative class number
+#
+################################################################################
+
+@doc Markdown.doc"""
+    relative_class_number(K::AnticNumberField) -> fmpz
+
+Returns the relative class number of $K$. The field must be a CM-field.
+"""
+function relative_class_number(K::AnticNumberField)
+  if degree(K) == 2
+    @req istotally_complex(K) "Field must be a CM-field"
+    return class_number(K)
+  end
+
+  fl, c = iscm_field(K)
+  @req fl "Field must be a CM-field"
+  h = class_number(K)
+  L, _ = fixed_field(K, c)
+  hp = class_number(L)
+  @assert mod(h, hp) == 0
+  return divexact(h, hp)
+end
+
+################################################################################
+#
 #  Basis
 #
 ################################################################################
