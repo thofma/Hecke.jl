@@ -1,4 +1,16 @@
 @testset "Lattices" begin
+  Qx, x = PolynomialRing(FlintQQ, "x", cached = false)
+  f = x^2-2
+  K, a = number_field(f)
+  D = matrix(K, 3, 3, [1//64, 0, 0, 0, 1//64, 0, 0, 0, 1//64])
+  gens = [[32, 0, 0], [944*a+704, 0, 0], [16, 16, 0], [72*a+96, 72*a+96, 0], [4*a, 4*a+8, 8], [20*a+32, 52*a+72, 32*a+40]]
+  L = quadratic_lattice(K, generators = gens, gram_ambient_space = D)
+  D = matrix(K, 3, 3, [1//64, 0, 0, 0, 1//64, 0, 0, 0, 1//64])
+  gens = [[32, 0, 0], [720*a+448, 0, 0], [16, 16, 0], [152*a+208, 152*a+208, 0], [4*a+24, 4*a, 8], [116*a+152, 20*a+32, 32*a+40]]
+  M = quadratic_lattice(K, generators = gens, gram_ambient_space = D)
+  p = prime_decomposition(base_ring(L), 2)[1][1]
+  @test islocally_isometric(L, M, p)
+
   # Smoke test for genus symbol
   Qx, x = PolynomialRing(FlintQQ, "x")
   K, a = NumberField(x^2 - 2, "a")

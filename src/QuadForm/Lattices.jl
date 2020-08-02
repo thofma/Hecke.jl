@@ -1416,7 +1416,7 @@ $\mathfrak{p}$ are locally isometric.
 """
 islocally_isometric(::AbsLat, ::AbsLat, ::NfOrdIdl)
 
-function islocally_isometric(L::QuadLat, M::QuadLat, p::NfOrdIdl)
+function islocally_isometric_kirschmer(L::QuadLat, M::QuadLat, p::NfOrdIdl)
   R = base_ring(L)
   base_ring(L) != base_ring(M) && throw(error("Lattices must have the same base ring"))
   order(p) != R && throw(error("Ideal must be in the base ring of the lattices"))
@@ -1462,8 +1462,6 @@ function islocally_isometric(L::QuadLat, M::QuadLat, p::NfOrdIdl)
   d1 = [ diagonal_matrix([G1[i] for i in 1:t]) for t in 1:length(G1)]
   d2 = [ diagonal_matrix([G2[i] for i in 1:t]) for t in 1:length(G2)]
 
-  # This cannot work, what is going on here
-  
   for i in 1:length(fL1)
     detquot = det(d1[i])//det(d2[i])
     if valuation(detquot, p) != 0
@@ -2817,7 +2815,12 @@ function _find_quaternion_algebra(b, P, I)
   @assert all(p -> isnegative(evaluate(b, p)), I)
 
   K = parent(b)
-  R = maximal_order(K)
+  if length(P) > 0
+    R = order(P[1])
+  else
+    R = maximal_order(K)
+  end
+
   n = length(P)
   m = length(I)
 
@@ -2827,7 +2830,7 @@ function _find_quaternion_algebra(b, P, I)
   #for p in P
   #  _P[p] = true
   #end
-  for p in keys(factor(_J))
+  for p in support(_J)
     if !(p in __P)
       push!(__P, p)
     end
@@ -2967,6 +2970,7 @@ end
 function _weak_approximation_generic(I::Vector{InfPlc}, val::Vector{Int})
   K = number_field(first(I))
   OK = maximal_order(K)
+  local A::GrpAbFinGen
   A, exp, log = infinite_primes_map(OK, I, 1 * OK)
   uni = infinite_places_uniformizers(K)
   target_signs = zeros(Int, ngens(A))
@@ -2978,7 +2982,7 @@ function _weak_approximation_generic(I::Vector{InfPlc}, val::Vector{Int})
   end
 
   for P in I
-    v = log(uni[P])
+    v = log(uni[P])::GrpAbFinGenElem
     for i in 1:ngens(A)
       if v.coeff[i] == 1
         target_signs[i] = val[i] == -1 ? 1 : 0
@@ -2986,7 +2990,7 @@ function _weak_approximation_generic(I::Vector{InfPlc}, val::Vector{Int})
       end
     end
   end
-  c = K(exp(A(target_signs)))
+  c = K(exp(A(target_signs))::elem_type(OK))
   for i in 1:length(I)
     @assert sign(c, I[i]) == val[i]
   end
@@ -3020,14 +3024,14 @@ end
 # This is not optimized.
 function _integer_lists(sum::Int, len::Int)
   if sum == 0
-    return [fill(0, len)]
+    return Vector{Int}[fill(0, len)]
   end
   if len == 1
-    return [Int[sum]]
+    return Vector{Int}[Int[sum]]
   end
   res = Vector{Vector{Int}}()
   for i in 0:sum
-    rec = _integer_lists(sum - i, len - 1)
+    rec = _integer_lists(sum - i, len - 1)::Vector{Vector{Int}}
     if isempty(rec)
       push!(res, append!(Int[i], fill(0, len - 1)))
     else
@@ -3061,6 +3065,11 @@ end
 
 function support(a::NumFieldElem)
   return support(a * maximal_order(parent(a)))
+end
+
+function support(a::NumFieldElem, R::NfAbsOrd)
+  @assert nf(R) == parent(a)
+  return support(a * R)
 end
 
 p_uniformizer(P::NfOrdIdl) = uniformizer(P)

@@ -413,7 +413,7 @@ function class_group_via_brauer(O::NfOrd, N::NormRelation; saturate::Bool = true
   #auts = automorphisms(K)
   #c.aut_grp = Hecke.class_group_add_auto(c, auts)
  
-  if saturate
+  if saturate || isone(index(N))
     for (p, e) in factor(index(N))
       @vprint :NormRelation 1 "Saturating at $p \n"
       b = Hecke.saturate!(c, UZK, Int(p), stable)
@@ -424,6 +424,7 @@ function class_group_via_brauer(O::NfOrd, N::NormRelation; saturate::Bool = true
       end
     end
     idx = Hecke._validate_class_unit_group(c, UZK)[1]
+    @vprint :NormRelation 1 "Index is $idx (should be 1)!\n"
     if idx != 1
       @vprint :NormRelation 1 "Index is $idx (should be 1)!\n"
     end
@@ -437,14 +438,15 @@ function class_group_via_brauer(O::NfOrd, N::NormRelation; saturate::Bool = true
     Hecke._set_ClassGrpCtx_of_order(OK, c)
     Hecke._set_UnitGrpCtx_of_order(OK, UZK)
     return class_group(c, O)
+  else
+    # We finish off the computation by a relation search in OK
+    Hecke._set_ClassGrpCtx_of_order(OK, c)
+    Hecke._set_UnitGrpCtx_of_order(OK, UZK)
+    c, UZK, d = Hecke._class_unit_group(OK, saturate_at_2 = false)
+    @assert isone(d)
+
+    return Hecke.class_group(c, O)
   end
-
-  Hecke._set_ClassGrpCtx_of_order(OK, c)
-  Hecke._set_UnitGrpCtx_of_order(OK, UZK)
-  c, UZK, d = Hecke._class_unit_group(OK, saturate_at_2 = false)
-  @assert isone(d)
-
-  return Hecke.class_group(c, O)
 end
 
 function __sunit_group_fac_elem_quo_via_brauer(N::NormRelation, S, n::Int, invariant::Bool = false)

@@ -86,6 +86,7 @@ end
 #  Component
 #
 ################################################################################
+
 @doc Markdown.doc"""
     component(L::NonSimpleNumField, i::Int) -> SimpleNumField, Map
 
@@ -99,4 +100,105 @@ function component(K::NonSimpleNumField, i::Int)
   Ki, a = number_field(g, cached = false, check = false)
   mp = hom(Ki, K, gK[i])
   return Ki, mp
+end
+
+################################################################################
+#
+#  Non-simplify
+#
+################################################################################
+
+function non_simple_extension(K::SimpleNumField)
+  @assert base_field(K) isa FlintRationalField
+  @assert isnormal(K)
+  G, mG = automorphism_group(K)
+  _subs = _subgroups_for_non_simple_extension(G)
+  subf = Dict()
+  for (subgrps, indice) in _subs
+    for H in subgrps
+      if !haskey(subf, H)
+        subf[H] = defining_polynomial(fixed_field(K, [mG(H[2](h)) for h in H[1]])[1])
+      end
+    end
+  end
+
+  Qx = Globals.Qx
+
+  l = Inf
+
+  res = nothing
+
+  for (subgrps, indice) in _subs
+    v = [ subf[H] for H in subgrps ]
+    if length(string(v)) < l
+      res = v
+    end
+    L, = number_field(v)
+    @assert isisomorphic(simple_extension(L)[1], K)[1]
+  end
+
+  return res
+end
+
+function _subgroups_for_non_simple_extension(G, maxorder = div(order(G), 2), maxnum = 5)
+  sub = subgroups(G)
+  n = order(G)
+  res = []
+  curmin = 0
+  for i in 2:maxnum
+    facs = _factorizations(n, i)
+    for f in facs
+      if curmin < sum(f) && !isempty(res)
+        continue
+      end
+
+      newmin = sum(map(x -> divexact(n, x), f))
+
+      possible_comb = [ [h for h in sub if order(h[1]) == f[i]] for i in 1:length(f) ]
+
+      for it in Iterators.product(possible_comb...)
+        maps = map(x -> x[2], collect(it))
+        k = foldl((x, y) -> intersect(x, y)[2], maps)
+        if order(domain(k)) != 1
+          continue
+        end
+
+        if isempty(res)
+          push!(res, (collect(it), collect(order.(first.(it)))))
+          curmin = newmin
+        else
+          if newmin < curmin
+            empty!(res)
+            push!(res, (collect(it), collect(order.(first.(it)))))
+            curmin = newmin
+          elseif newmin == curmin
+            push!(res, (collect(it), collect(order.(first.(it)))))
+          end
+        end
+      end
+    end
+  end
+  maxlength = maximum(x -> length(x[2]), res)
+  res = [x for x in res if length(x[2]) == maxlength]
+  return res
+end
+
+function _factorizations(n, parts)
+  if parts == 1
+    return Vector{Int}[Int[n]]
+  end
+
+  res = Vector{Vector{Int}}()
+  for k in 2:isqrt(n)
+    if mod(n, k) == 0
+      nk = divexact(n, k)
+      _f = _factorizations(nk, parts - 1)::Vector{Vector{Int}}
+      for i in 1:length(_f)
+        push!(_f[i], k)
+      end
+      append!(res, _f)
+    end
+  end
+  res = map(sort!, res)
+  return unique!(res)
 end

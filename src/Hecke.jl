@@ -51,7 +51,7 @@ import Base: show, minimum, rand, prod, copy, rand, ceil, round, size, in,
              setindex!, transpose, getindex, //, div, floor, max, BigFloat,
              precision, first, StepRange, show, one, zero, inv, iseven, isodd,
              convert, angle, abs2, isless, exponent, isfinite, zeros, rem, min,
-             numerator, denominator, exp, maximum, intersect, reduce, sqrt
+             numerator, denominator, exp, maximum, intersect, reduce, sqrt, haskey, merge
 
 # To make all exported Nemo functions visible to someone using "using Hecke"
 # we have to export everything again
@@ -254,6 +254,12 @@ function __init__()
   @require Polymake="d720cf60-89b5-51f5-aff5-213f193123e7" begin
     include("AlgAssRelOrd/NEQ_polymake.jl")
   end
+
+  resize!(_RealRings, Threads.nthreads())
+  for i in 1:Threads.nthreads()
+     _RealRings[i] = _RealRing()
+  end
+
 end
 
 module Globals
@@ -631,6 +637,9 @@ include("AlgAssRelOrd.jl")
 include("LocalField.jl")
 include("QuadForm.jl")
 include("FieldFactory.jl")
+include("../examples/NFDB.jl")
+
+const _RealRings = _RealRing[_RealRing()]
 
 ################################################################################
 #

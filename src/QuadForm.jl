@@ -7,8 +7,11 @@ include("QuadForm/Herm/Types.jl")
 include("QuadForm/Basic.jl")
 include("QuadForm/Lattices.jl")
 
+include("QuadForm/Misc.jl")
+
 # Quadratic
 include("QuadForm/Quad/Spaces.jl")
+include("QuadForm/Quad/Genus.jl")
 include("QuadForm/Quad/GenusRep.jl")
 
 # Hermitian

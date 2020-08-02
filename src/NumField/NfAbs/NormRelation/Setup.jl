@@ -706,7 +706,9 @@ function _has_norm_relation_abstract(G::GrpGen, H::Vector{Tuple{GrpGen, GrpGenTo
 
     @assert b
 
-    v = _reduce_modulo(v, K)
+    if iszero(target_den)
+      v = _reduce_modulo(v, K)
+    end
 
     subgroups_needed = Int[ i for i in 1:length(H) if !iszero(v[1, i])]
 
