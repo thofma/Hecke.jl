@@ -52,6 +52,9 @@ function parse_commandline()
       action = :store_true
     "--max-ab-subfields"
       help = "File containing maximal abelian subextensions" 
+    "--simplify"
+      help = "Simplify the field"
+      action = :store_true
   end
 
   return parse_args(s)
@@ -68,6 +71,7 @@ function main()
   local grp_no::Int
   local only_cm::Bool
   local maxabsubfields::Union{String, Nothing}
+  local simplify::Bool
 
   for (arg, val) in parsed_args
     println("$arg => $val")
@@ -87,6 +91,8 @@ function main()
       only_cm = val
     elseif arg == "max-ab-subfields"
       maxabsubfields = val
+    elseif arg == "simplify"
+      simplify = val
     end
   end
 
@@ -123,9 +129,13 @@ function main()
   @show only_tame
   @show only_cm
   @show file
+  @show simplify
+
   if maxabsubfields isa String
     @show maxabsubfields
   end
+
+  flush(stdout)
 
   if isfile(file)
     throw(error("File $file does already exist"))
@@ -139,27 +149,37 @@ function main()
   println("Discriminant bound: $dbound")
   println("========================================")
 
-  set_verbose_level(:FieldsNonFancy, 1)
+  flush(stdout)
+
+  set_verbose_level(:FieldsNonFancy, 3)
 
   if maxabsubfields isa String
     maxabsub = Hecke._read_from_file(maxabsubfields)
-    l = fields(n, i, maxabsub, dbound, only_real = only_real, simplify = false)
+    l = fields(n, i, maxabsub, dbound, only_real = only_real, simplify = simplify)
   else
-    l = fields(n, i, dbound, only_real = only_real, simplify = false)
+    l = fields(n, i, dbound, only_real = only_real, simplify = simplify)
   end
+
+  flush(stdout)
 
   # Determine the automorphism groups
   if only_cm
     Hecke.assure_automorphisms.(l)
   end
 
+  flush(stdout)
+
   ll = map(v -> v.field, l)
+
+  flush(stdout)
 
   if only_cm
     ffields = [ (x, discriminant(maximal_order(x))) for x in ll if Hecke.iscm_field(x)[1]]
   else
     ffields = [ (x, discriminant(maximal_order(x))) for x in ll ]
   end
+
+  flush(stdout)
 
   sort!(ffields, lt = (x, y) -> abs(x[2]) <= abs(y[2]))
 

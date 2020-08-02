@@ -377,7 +377,7 @@ function prime_decomposition(O::NfAbsOrd{NfAbsNS, NfAbsNSElem}, p::Union{Integer
   if typeof(p) == fmpz && fits(Int, p)
     return prime_decomposition(O, Int(p), degree_limit, lower_limit)
   end
-  if !divisible(discriminant(O), p)
+  if !divisible(numerator(discriminant(nf(O))), p)
     return prime_dec_nonindex(O, p, degree_limit, lower_limit)
   else
     return prime_dec_gen(O, p, degree_limit, lower_limit)
@@ -580,7 +580,7 @@ end
 
 # Belabas p. 40
 # Facts on normal presentation, Algorithmic Algebraic Number theory, Pohst-Zassenhaus 
-function anti_uniformizer(P::NfOrdIdl)
+function anti_uniformizer(P::NfAbsOrdIdl)
   if isdefined(P, :anti_uniformizer)
     return P.anti_uniformizer
   end
@@ -953,12 +953,12 @@ the prime ideal divisors:
 If `lp = factor_dict(A)`, then `keys(lp)` are the prime ideal divisors of A
 and `lp[P]` is the `P`-adic valuation of `A` for all `P` in `keys(lp)`.
 """
-factor(A::NfOrdIdl) = factor_dict(A)
+factor(A::NfAbsOrdIdl) = factor_dict(A)
 
-function factor_dict(A::NfOrdIdl)
+function factor_dict(A::NfAbsOrdIdl)
   ## this should be fixed
   #TODO:Test first if the ideal is a power.
-  lF = Dict{NfOrdIdl, Int}()
+  lF = Dict{typeof(A), Int}()
   O = order(A)
   if has_princ_gen_special(A)
     g = A.princ_gen_special[2] + A.princ_gen_special[3]
@@ -1038,11 +1038,15 @@ function _prefactorization(I::NfOrdIdl)
   return prefactorization(f, n, f1)
 end
 
-function prefactorization(I::NfOrdIdl)
+function _prefactorization(I::NfAbsOrdIdl)
+  return coprime_base(fmpz[I.gen_one, norm(I), minimum(I)])
+end
+
+function prefactorization(I::NfAbsOrdIdl)
   OK = order(I)
   _assure_weakly_normal_presentation(I)
   factors = _prefactorization(I)
-  ideals = NfOrdIdl[]
+  ideals = typeof(I)[]
   for q in factors
     pp, r = Hecke._factors_trial_division(q)
     for p in pp
@@ -1384,6 +1388,10 @@ function assure_valuation_function(p::NfOrdIdl)
 end
 
 
+function valuation(a::NfAbsNSElem, p::NfAbsOrdIdl, n::fmpq = fmpq(0))
+  return valuation_naive(a, p)
+end
+
 @doc Markdown.doc"""
     valuation(a::nf_elem, p::NfOrdIdl) -> fmpz
     valuation(a::NfOrdElem, p::NfOrdIdl) -> fmpz
@@ -1442,7 +1450,7 @@ valuation(a::NfOrdElem, p::NfOrdIdl) = valuation(a.elem_in_nf, p)
 Computes the $\mathfrak p$-adic valuation of $a$, that is, the largest $i$
 such that $a$ is contained in $\mathfrak p^i$.
 """
-function valuation(a::fmpz, p::NfOrdIdl)
+function valuation(a::fmpz, p::NfAbsOrdIdl)
   if p.splitting_type[1] == 0
     return valuation_naive(order(p)(a), p)
   end
@@ -1454,10 +1462,10 @@ end
 Computes the $\mathfrak p$-adic valuation of $a$, that is, the largest $i$
 such that $a$ is contained in $\mathfrak p^i$.
 """
-valuation(a::Integer, p::NfOrdIdl) = valuation(fmpz(a), p)
+valuation(a::Integer, p::NfAbsOrdIdl) = valuation(fmpz(a), p)
 
 #TODO: some more intelligence here...
-function valuation_naive(A::NfOrdIdl, B::NfOrdIdl)
+function valuation_naive(A::NfAbsOrdIdl, B::NfAbsOrdIdl)
   @assert !isone(B)
   Bi = inv(B)
   i = 0
@@ -1472,7 +1480,7 @@ end
 #TODO: some more intelligence here...
 #      in non-maximal orders, interesting ideals cannot be inverted
 #      maybe this needs to be checked...
-function valuation_naive(x::NfOrdElem, B::NfOrdIdl)
+function valuation_naive(x::NfAbsOrdElem, B::NfAbsOrdIdl)
   @assert !isone(B)
   i = 0
   C = B
@@ -1483,7 +1491,7 @@ function valuation_naive(x::NfOrdElem, B::NfOrdIdl)
   return i
 end
 
-function valuation_naive(x::nf_elem, B::NfOrdIdl)
+function valuation_naive(x::T, B::NfAbsOrdIdl) where T <: Union{nf_elem, NfAbsNSElem} 
   @assert !isone(B)
   i = 0
   C = B
@@ -1498,7 +1506,7 @@ end
 Computes the $\mathfrak p$-adic valuation of $A$, that is, the largest $i$
 such that $A$ is contained in $\mathfrak p^i$.
 """
-function valuation(A::NfOrdIdl, p::NfOrdIdl)
+function valuation(A::NfAbsOrdIdl, p::NfAbsOrdIdl)
   if has_minimum(A) && has_minimum(p) && !divisible(minimum(A, copy = false), minimum(p, copy = false))
     return 0
   end

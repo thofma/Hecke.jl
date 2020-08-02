@@ -62,6 +62,8 @@ include("./abelian_layer.jl")
 include("./read_write.jl")
 include("./conductors.jl")
 include("./brauer.jl")
+include("./chain.jl")
+include("./maximal_abelian_subextension.jl")
 
 Generic.degree(F::FieldsTower) = degree(F.field)
 Hecke.maximal_order(F::FieldsTower) = maximal_order(F.field)
@@ -463,7 +465,11 @@ function check_group_extension(TargetGroup::GAP.GapObj, autos::Array{NfToNfMor, 
       return !isone(mod(res_act[1].map[1, 1], GS.snf[1]))
     end
     H = _split_extension(autos, res_act)
-    return GAP.Globals.IdGroup(H) == TargetGroup
+    if GAP.Globals.IdGroup(H) == TargetGroup
+      return true
+    else
+      return false
+    end
   end
   
   if uncom == 1
@@ -482,7 +488,11 @@ function check_group_extension(TargetGroup::GAP.GapObj, autos::Array{NfToNfMor, 
     new_res_act[i] = hom(S1, S1, Mat)
   end
   H = _split_extension(autos, new_res_act)
-  return GAP.Globals.IdGroup(H) == TargetGroup
+  if GAP.Globals.IdGroup(H) == TargetGroup
+    return true
+  else
+    return false
+  end
   
 end
 
@@ -609,13 +619,13 @@ function fields_direct_product(g1, g2, red, redfirst, absolute_bound; only_real 
     return FieldsTower[]
   end
   if g1 == g2
-    return _merge(l2, l2, absolute_bound, red, redfirst, simplify)
+    return _merge(l2, l2, absolute_bound, red, redfirst, g1, g2, simplify)
   end
   l1 = fields(g1[1], g1[2], b1, only_real = only_real)
   if isempty(l1)
     return FieldsTower[]
   end
-  return _merge(l1, l2, absolute_bound, red, redfirst, simplify)
+  return _merge(l1, l2, absolute_bound, red, redfirst, g1, g2, simplify)
 end
 
 

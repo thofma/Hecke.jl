@@ -744,7 +744,7 @@ function norm_group(mL::NfToNfMor, mR::Union{MapRayClassGrp, MapClassGrp}, expec
   O = order(codomain(mR))
   @assert nf(O) == K
   if iscoprime(exponent(R), divexact(degree(L), degree(K)))
-    return sub(R, gens(R), !false)
+    return sub(R, gens(R), false)
   end
   
   N = minimum(defining_modulus(mR)[1])
@@ -849,9 +849,8 @@ function norm_group(KK::KummerExt, mp::NfToNfMor, mR::Union{MapRayClassGrp, MapC
       break
     end
   end
-  return sub(R, els)
+  return sub(R, els, false)
 end
-
 
 
 @doc Markdown.doc"""
@@ -1234,10 +1233,10 @@ function lcm(A::AbstractArray{<:NfAbsOrdIdl})
 end
 
 @doc Markdown.doc"""
-    isunivariate(f::Generic.MPoly{nf_elem}) -> Bool, PolyElem{nf_elem}
+    isunivariate(f::Generic.MPoly{T}) where T <: NumFieldElem -> Bool, PolyElem{T}
 Tests if $f$ involves only one variable. If so, return a corresponding univariate polynomial.
 """
-function isunivariate(f::Generic.MPoly{nf_elem})
+function isunivariate(f::Generic.MPoly{T}) where T <: NumFieldElem
   kx, x = PolynomialRing(base_ring(f), "x", cached = false)
   if ngens(parent(f)) == 1
     f1 = kx()

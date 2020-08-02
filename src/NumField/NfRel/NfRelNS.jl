@@ -731,7 +731,7 @@ mutable struct NfRelToNfRelNSMor{T} <: Map{NfRel{T}, NfRelNS{T}, HeckeMap, NfRel
   emb::Array{NfRelElem{T}, 1}
   coeff_aut::NfToNfMor
 
-  function NfRelToNfRelNSMor(K::NfRel{T}, L::NfRelNS{T}, a::NfRelNSElem{T}, emb::Array{NfRelElem{T}, 1}) where {T}
+  function NfRelToNfRelNSMor{T}(K::NfRel{T}, L::NfRelNS{T}, a::NfRelNSElem{T}, emb::Array{NfRelElem{T}, 1}) where {T}
     function image(x::NfRelElem{T})
       # x is an element of K
       f = data(x)
@@ -751,7 +751,7 @@ mutable struct NfRelToNfRelNSMor{T} <: Map{NfRel{T}, NfRelNS{T}, HeckeMap, NfRel
     return z
   end  
 
-  function NfRelToNfRelNSMor(K::NfRel{T}, L::NfRelNS{T}, a::NfRelNSElem{T}) where {T}
+  function NfRelToNfRelNSMor{T}(K::NfRel{T}, L::NfRelNS{T}, a::NfRelNSElem{T}) where T
     function image(x::NfRelElem{T})
       # x is an element of K
       f = data(x)
@@ -766,7 +766,7 @@ mutable struct NfRelToNfRelNSMor{T} <: Map{NfRel{T}, NfRelNS{T}, HeckeMap, NfRel
     return z
   end  
 
-  function NfRelToNfRelNSMor(K::NfRel{T}, L::NfRelNS{T}, aut::Map, a::NfRelNSElem{T}) where {T}
+  function NfRelToNfRelNSMor{T}(K::NfRel{T}, L::NfRelNS{T}, aut::Map, a::NfRelNSElem{T}) where {T}
     aut = NfToNfMor(domain(aut), codomain(aut), aut(gen(domain(aut))))
     function image(x::NfRelElem{T})
       # x is an element of K
@@ -785,8 +785,16 @@ mutable struct NfRelToNfRelNSMor{T} <: Map{NfRel{T}, NfRelNS{T}, HeckeMap, NfRel
     z.header = MapHeader(K, L, image)
     return z
   end  
+end
 
+morphism_type(K::NfRel{T}, L::NfRelNS{T}) where T = NfRelToNfRelNSMor{T}
 
+function hom(K::NfRel{T}, L::NfRelNS{T}, a::NfRelNSElem{T}) where {T}
+  return NfRelToNfRelNSMor{T}(K, L, a)
+end
+
+function hom(K::NfRel{T}, L::NfRelNS{T}, a::NfRelNSElem{T}, emb::Array{NfRelElem{T}, 1}) where {T}
+  return NfRelToNfRelNSMor{T}(K, L, a, emb)
 end
 
 mutable struct NfRelNSToNfRelNSMor{T} <: Map{NfRelNS{T}, NfRelNS{T}, HeckeMap, NfRelNSToNfRelNSMor}
@@ -794,7 +802,7 @@ mutable struct NfRelNSToNfRelNSMor{T} <: Map{NfRelNS{T}, NfRelNS{T}, HeckeMap, N
   emb::Array{NfRelNSElem{T}, 1}
   coeff_aut::NfToNfMor
 
-  function NfRelNSToNfRelNSMor(K::NfRelNS{T}, L::NfRelNS{T}, emb::Array{NfRelNSElem{T}, 1}) where {T}
+  function NfRelNSToNfRelNSMor{T}(K::NfRelNS{T}, L::NfRelNS{T}, emb::Array{NfRelNSElem{T}, 1}) where {T}
     function image(x::NfRelNSElem{T})
       # x is an element of K
       # First evaluate the coefficients of f at a to get a polynomial over L
@@ -803,13 +811,12 @@ mutable struct NfRelNSToNfRelNSMor{T} <: Map{NfRelNS{T}, NfRelNS{T}, HeckeMap, N
     end
 
     z = new{T}()
-    z.coeff_aut = id_hom(base_field(K))
     z.emb = emb
     z.header = MapHeader(K, L, image)
     return z
   end  
 
-  function NfRelNSToNfRelNSMor(K::NfRelNS{T}, L::NfRelNS{T}, aut::NfToNfMor, emb::Array{NfRelNSElem{T}, 1}) where {T}
+  function NfRelNSToNfRelNSMor{T}(K::NfRelNS{T}, L::NfRelNS{T}, aut::NfToNfMor, emb::Array{NfRelNSElem{T}, 1}) where {T}
     function image(x::NfRelNSElem{T})
       # x is an element of K
       # First evaluate the coefficients of f at a to get a polynomial over L
@@ -837,18 +844,25 @@ end
 id_hom(K::NfRelNS) = NfRelNSToNfRelNSMor(K, K, gens(K))
 
 
-function hom(K::NfRelNSToNfRelNSMor{T}, L::NfRelNSToNfRelNSMor{T}, emb::Array{NfRelNSElem{T}, 1}; check = true) where {T}
+function hom(K::NfRelNS{T}, L::NfRelNS{T}, emb::Array{NfRelNSElem{T}, 1}; check = true) where {T}
+  f = NfRelNSToNfRelNSMor{T}(K, L, emb)
   if check && T == nf_elem
     @assert isconsistent(f)
   end
-  return NfRelNSToNfRelNSMor(K, L, emb)
+  return f
 end
 
-function hom(K::NfRelNSToNfRelNSMor{nf_elem}, L::NfRelNSToNfRelNSMor{nf_elem}, coeff_aut::NfToNfMor, emb::Array{NfRelNSElem{nf_elem}, 1}; check = true)
+function hom(K::NfRelNS{nf_elem}, L::NfRelNS{nf_elem}, emb::Array{NfRelNSElem{nf_elem}, 1}; check = true)
+  @assert base_field(K) == base_field(L)
+  return hom(K, L, id_hom(base_field(K)), emb, check = check)
+end
+
+function hom(K::NfRelNS{nf_elem}, L::NfRelNS{nf_elem}, coeff_aut::NfToNfMor, emb::Array{NfRelNSElem{nf_elem}, 1}; check = true)
+  f = NfRelNSToNfRelNSMor{nf_elem}(K, L, coeff_aut, emb)
   if check 
     @assert isconsistent(f)
   end
-  return NfRelNSToNfRelNSMor(K, L, coeff_aut, emb)
+  return f
 end
 
 function Base.hash(f::NfRelNSToNfRelNSMor{T}, u::UInt64) where T
@@ -860,7 +874,7 @@ function Base.hash(f::NfRelNSToNfRelNSMor{T}, u::UInt64) where T
   return a
 end
 
-function isconsistent(f::NfRelToNfRelMor{nf_elem})
+function isconsistent(f::NfRelToNfRelMor{T}) where T
   K = domain(f)
   p = K.pol
   p1 = map_coeffs(f.coeff_aut, p, cached = false)
@@ -870,7 +884,7 @@ function isconsistent(f::NfRelToNfRelMor{nf_elem})
   return true
 end
 
-function isconsistent(f::NfRelNSToNfRelNSMor{nf_elem})  
+function isconsistent(f::NfRelNSToNfRelNSMor{T}) where T  
   K = domain(f)
   for i = 1:length(K.pol)
     p = map_coeffs(f.coeff_aut, K.pol[i])
@@ -885,7 +899,14 @@ function Base.:(*)(f::NfRelNSToNfRelNSMor{T}, g::NfRelNSToNfRelNSMor{T}) where {
   codomain(f) == domain(g) || throw("Maps not compatible")
 
   a = gens(domain(g))
-  return NfRelNSToNfRelNSMor(domain(g), codomain(f), f.coeff_aut * g.coeff_aut, [ g(f(x)) for x in a])
+  return hom(domain(g), codomain(f),  NfRelNSElem{T}[ g(f(x)) for x in a])
+end
+
+function Base.:(*)(f::NfRelNSToNfRelNSMor{nf_elem}, g::NfRelNSToNfRelNSMor{nf_elem})
+  codomain(f) == domain(g) || throw("Maps not compatible")
+
+  a = gens(domain(g))
+  return hom(domain(g), codomain(f), f.coeff_aut * g.coeff_aut, NfRelNSElem{nf_elem}[ g(f(x)) for x in a])
 end
 
 function Base.:(==)(f::NfRelNSToNfRelNSMor{T}, g::NfRelNSToNfRelNSMor{T}) where {T}
@@ -950,7 +971,7 @@ function simple_extension(K::NfRelNS{T}) where {T}
   if n == 1
     fl, p = isunivariate(K.pol[1])
     Ks, gKs = number_field(p, cached = false, check = false)
-    return Ks, NfRelToNfRelNSMor(Ks, K, g[1], [gKs])
+    return Ks, hom(Ks, K, g[1], [gKs])
   end
   if lcm([total_degree(K.pol[i]) for i = 1:length(K.pol)]) == degree(K)
     #The sum of the primitive elements is the right element
@@ -994,7 +1015,7 @@ function simple_extension(K::NfRelNS{T}) where {T}
     end
   end
 
-  return Ka, NfRelToNfRelNSMor(Ka, K, pe, emb)
+  return Ka, hom(Ka, K, pe, emb)
 end
 
 @doc Markdown.doc"""
@@ -1276,4 +1297,20 @@ function change_base_ring(p::MPolyElem{T}, g, new_polynomial_ring) where {T <: R
     end
   end
   return finish(M)::elem_type(new_polynomial_ring)
+end
+
+
+################################################################################
+#
+#  Component
+#
+################################################################################
+
+function component(K::NfRelNS, i::Int)
+  fl, g = isunivariate(K.pol[i])
+  gK = gens(K)
+  @assert fl
+  Ki, a = number_field(g, cached = false, check = false)
+  mp = hom(Ki, K, gK[i])
+  return Ki, mp
 end

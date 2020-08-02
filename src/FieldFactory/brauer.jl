@@ -29,17 +29,25 @@ function check_obstruction(list::Vector{FieldsTower}, L::GAP.GapObj,
   end
   fac = factor(common_degree)
   for (p, v) in fac
-    cocycles_p = [_to_prime_power_kernel(x, Int(p)) for x in cocycles] 
-    if length(fac) > 1
-      if iszero(cocycles_p[1])
-        continue
+    cocycles_p_start = cocycle_ctx[_to_prime_power_kernel(x, Int(p)) for x in cocycles] 
+    indices_non_split = Int[]
+    for i = 1:length(cocycles_p_start)
+      if !iszero(cocycles_p_start[i])
+        push!(indices_non_split, i) 
       end
     end
+    if isempty(indices_non_split)
+      continue
+    end
+    cocycles_p = cocycles_p_start[indices_non_split]
     if length(invariants) == 1 || iscoprime(invariants[end-1], p)
       for i = 1:length(list)
         @vprint :Fields 1 "$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())Fields to test: $(length(list)-i+1)"
         if !all(obstructions[i])
-          obstructions[i] = check_obstruction(list[i], cocycles_p, Int(p), obstructions[i]) 
+          obstructions_i = check_obstruction(list[i], cocycles_p, Int(p), obstructions[i]) 
+          for j = 1:length(obstructions_i)
+            obstructions[i][indices_non_split[j]] = obstructions_i[j]
+          end
         end
       end
       @vprint :Fields 1 "$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())"
@@ -368,10 +376,15 @@ function _autos_to_check(G::GAP.GapObj, K::GAP.GapObj, E::GAP.GapObj, mG::GAP.Ga
 end
 
 function cocycles_computation(L::GAP.GapObj, level::Int)
+  return cocycles_computation(L[1], L[level+1], L[level])
+end
 
-  proj = GAP.Globals.NaturalHomomorphismByNormalSubgroup(L[1], L[level+1])
+
+function cocycles_computation(GG, HH, KK)
+
+  proj = GAP.Globals.NaturalHomomorphismByNormalSubgroup(GG, HH)
   target_grp = GAP.Globals.ImagesSource(proj)
-  mH1 = GAP.Globals.NaturalHomomorphismByNormalSubgroup(target_grp, GAP.Globals.Image(proj, L[level]))
+  mH1 = GAP.Globals.NaturalHomomorphismByNormalSubgroup(target_grp, GAP.Globals.Image(proj, KK))
   H1 = GAP.Globals.ImagesSource(mH1)
   K = GAP.Globals.Kernel(mH1)
     
@@ -637,15 +650,15 @@ function _obstruction_prime(x::FieldsTower, cocycles::Vector{cocycle_ctx}, p)
   D1 = Dict{gfp_poly, GAP.GapObj}()
   for g in Gp
     pol = Rx(g.prim_img)
-    mp = autsK[restr[dautsK1[aut1]]]
-    el = D[g]
+    indg = restr[dautsK1[pol]]
+    el = D[autsK[indg]]
     D1[pol] = el
   end
-  obstruction = falses(length(cocycle))
+  obstruction = falses(length(cocycles))
   for i = 1:length(obstruction)
     #I create the cocycle
     local cocycle
-    let restr = restr, dautsK1 = dautsK1, ElemGAP = ElemGAP, p = p
+    let D1 = D1, cocycles = cocycles, p = p
       function cocycle(aut1::gfp_poly, aut2::gfp_poly)
         s1 = D1[aut1]
         s2 = D1[aut2]
@@ -658,15 +671,12 @@ function _obstruction_prime(x::FieldsTower, cocycles::Vector{cocycle_ctx}, p)
       end
     end
     
-    if !cpa_issplit(x, Gp, cocycle, p, 1, Rx)
+    if !issplit_cpa(x, Gp, cocycle, p, 1, Rx)
       obstruction[i] = true
     end
   end
   return obstruction
 end
-
-
-
 
 
 
@@ -996,10 +1006,10 @@ function is_split_at_infinity(K::AnticNumberField, G::Vector{NfToNfMor}, Coc::Fu
 end
 
 function issplit_at_p(F::FieldsTower, G::Vector{NfToNfMor}, Coc::Function, p::Int, n::Int, Rx::GFPPolyRing)
-  K = F.field
+  K = domain(G[1])
   O = maximal_order(K)
   lp = prime_decomposition(O, p, cached = true)
-  if degree(O) == length(G) || F.isabelian
+  if degree(O) == length(G)
     if !iscoprime(length(G), p)
       q = ispower(n)[2]
       Gq = pSylow(G, q)

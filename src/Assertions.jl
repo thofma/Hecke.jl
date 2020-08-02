@@ -95,6 +95,7 @@ macro vprint(args...)
       if get_verbose_level($(args[1])) >= 1
         print(_global_indent())
         print($(esc((args[2]))))
+        flush(stdout)
       end
     end
   elseif length(args) == 3
@@ -102,6 +103,7 @@ macro vprint(args...)
       if get_verbose_level($(args[1])) >= $(args[2])
         print(_global_indent())
         print($(esc((args[3]))))
+        flush(stdout)
       end
     end
   end

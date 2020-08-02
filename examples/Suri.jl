@@ -319,7 +319,7 @@ function extend(R::RRS, a::RRSelem, p::fmpz)
   k = sum(((a.x[i]*R.Pi[i]) % R.p[i]) * (R.P[i] % R.r) for i=1:length(R.p)) - a.r
   k = (k*invmod(R.N, R.r)) % R.r
   @assert k <= length(R.p)
-  return sum(((a.x[i]*R.Pi[i]) % R.p[i]) * (R.P[i] % p) for i=1:length(R.p)) - k*(R.N % p)%p
+  return (sum(((a.x[i]*R.Pi[i]) % R.p[i]) * (R.P[i] % p) for i=1:length(R.p)) - k*(R.N % p)%p)%p
 end
 
 function mixed_radix(R::RRS, a::RRSelem, li::Int = typemax(Int))

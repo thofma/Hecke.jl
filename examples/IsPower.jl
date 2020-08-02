@@ -3,6 +3,16 @@ module IsPower
 using Hecke, InteractiveUtils
 import Nemo
 
+function Hecke.roots_upper_bound(f::fmpz_poly)
+  a = coeff(f, degree(f))
+  return max(fmpz(1), maximum([ceil(fmpz, abs(coeff(f, i)//a)) for i=0:degree(f)]))
+end
+
+function Hecke.roots_upper_bound(f::fmpq_poly)
+  a = coeff(f, degree(f))
+  return max(fmpq(1), maximum([abs(coeff(f, i)//a) for i=0:degree(f)]))
+end
+
 function ispower_mod_p(a::nf_elem, i::Int)
 
   p = 2^10
@@ -13,11 +23,19 @@ function ispower_mod_p(a::nf_elem, i::Int)
   local opt
   while true
     p = next_prime(p)
+    if gcd(p-1, i) > 1
+      continue
+    end
     lp = factor(f, GF(p))
     if any(x->x>1, values(lp.fac))
       continue
     end
-    if any(x->degree(x) > 60, keys(lp.fac))
+    if any(x->degree(x) > 100, keys(lp.fac))
+      @show p, "deg", maximum(degree, keys(lp.fac))
+      continue
+    end
+    if length(keys(lp.fac)) > 30
+      @show p, "len", length(keys(lp.fac))
       continue
     end
     if first
@@ -41,55 +59,44 @@ function ispower_mod_p(a::nf_elem, i::Int)
   p = opt[1]
 
 
-  r_pr = 20
-  local con_r
-  while true
-    con_r = map(abs, conjugates(a, r_pr))
-    map(contains_zero, con_r)
-    if any(x->contains_zero(x), con_r)
-      r_pr += 20
-    else
-      con_r = [root(x, i) for x = con_r]
-      break
+  local power_sum
+  if false
+    r_pr = 20
+    local con_r
+    while true
+      con_r = map(abs, conjugates(a, r_pr))
+      map(contains_zero, con_r)
+      if any(x->contains_zero(x), con_r)
+        r_pr += 20
+      else
+        con_r = [root(x, i) for x = con_r]
+        break
+      end
     end
-  end
-  function power_sum(l::Int)
-    return Hecke.upper_bound(sum(x^l for x = con_r), fmpz)
+    power_sum = l-> Hecke.upper_bound(sum(x^l for x = con_r), fmpz)
+  else
+    B = ceil(fmpz, roots_upper_bound(parent(a).pol))
+    c = fmpz(0)
+    for j=a.elem_length-1:-1:0
+      c = B*c+ceil(fmpz, abs(coeff(a, j)))
+    end
+    c = root(c, i)
+    power_sum = l-> degree(parent(a))*c^l
   end
 
   @show bd = map(power_sum, 1:15)
-  pr = clog(bd[end], p) + 45
+  pr = clog(bd[end], p) + 145
   println("using a precision of ", pr)
   con_p = conjugates(a, C, pr,all = false, flat = false)
-  #= this might work
-    identify primes where the minpoly is the same (in those completions
-    the conjugates would be the same, hence the roots are the same)
-    work with just one rep there
-  =#
+  @assert all(x->degree(minpoly(ResidueField(parent(x))[2](x))) == degree(parent(x)), con_p)
 
-  di = Dict{gfp_poly, Array{Int, 1}}()
-  st = Int[]
-  fpx = PolynomialRing(GF(p), cached = false)[1]
-  for i=1:length(con_p)
-    fq, mfq = ResidueField(parent(con_p[i]))
-    mu = minpoly(fpx, mfq(con_p[i]))
-    if haskey(di, mu)
-      push!(di[mu], i)
-      error("element not primitive, case not supported (yet)")
-    else
-      if degree(mu) < degree(fq)
-        error("element not primitive, case not supported (yet)")
-      end
-      di[mu] = [i]
-      push!(st, i)
-    end
-  end
-  @show di, st
+  con_pr = [roots(x, i) for x = con_p] #select primes to minimize this
 
-  con_p = con_p[st]
-  @show st, collect(values(di))
-
-  con_pr = [roots(x, i) for x = con_p]
+  @show "#roots per local factor"
+  @show map(length, con_pr)
+  #TODO: if there is only one root/local => lll not neccessary,
+  #      go directly to CRT
+  con_pr_j = [[one(parent(x)) for x = y] for y = con_pr]
   no_fac = sum(map(length, con_pr))
   j = 0
   trafo = identity_matrix(FlintZZ, no_fac)
@@ -99,7 +106,11 @@ function ispower_mod_p(a::nf_elem, i::Int)
     if j >= length(bd)
       bd = vcat(bd, map(power_sum, length(bd)+1:length(bd)+5))
     end
-    data = matrix([reduce(vcat, [map(x -> lift(trace(x^j)), y) for y = con_pr])])
+
+    con_pr_j = [ con_pr[i] .* con_pr_j[i] for i=1:length(con_pr)]
+    @assert con_pr_j[1][1] == con_pr[1][1]^j
+
+    data = matrix([reduce(vcat, [map(x -> lift(trace(x)), y) for y = con_pr_j])])
     data = sub(trafo, 1:no_rt, 1:no_fac)*data
     k = clog(bd[j], p)
     @assert k < pr
@@ -133,20 +144,20 @@ function ispower_mod_p(a::nf_elem, i::Int)
     println("partition: ", values(d))
     if all(x->length(x) >= length(con_pr), values(d))
       # we have a candidate!
-      mp = Dict{Int, Int}()
-      j = 1
-      h = 1
-      for z = con_pr
-        for k = j:j+length(z)-1
-          mp[k] = h
-        end
-        h += 1
-        j += length(z)
-      end
-      println(mp)
+      @show "success"
       m = Base.minimum(map(length, values(d)))
       pa = d[findfirst(x->length(x) == m, d)]
       co = reduce(vcat, con_pr)
+      mp = Dict{Int, Int}()
+      i = 1
+      s = 1
+      for c = con_pr
+        for x = c
+          mp[s] = i
+          s += 1
+        end
+        i += 1
+      end
       @show mp, pa
       mC = completions(C)
       @show [mp[x] for x = pa]
@@ -154,21 +165,13 @@ function ispower_mod_p(a::nf_elem, i::Int)
       va = zeros(K, length(mo))
       for x = pa
         y = Hecke.mod_sym(preimage(mC[mp[x]], co[x]), fmpz(p)^pr)
-        h = st[mp[x]]
-        j = findfirst(j-> h in j, di)
-        @show x, mp[x], h, di[j]
-        for k in di[j]
-          #@assert iszero(va[k])
-          va[k] = y
-        end
+        va[mp[x]] = y
       end
 #      va = [Hecke.mod_sym(preimage(mC[mp[x]], co[x]), fmpz(p)^pr) for x = pa]
       @assert length(mo) == length(va)
       pk = fmpz(C.C.H.p)^Int(C.C.H.prev)
       res = crt(map(Hecke.Globals.Zx, va), mo, C.C.H, pk)
       return res(gen(K)), pk
-      return res
-      return va, mo, C
     end
     if j > 40 error("") end
   end

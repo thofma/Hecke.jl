@@ -51,6 +51,43 @@ function cleanvect(M::T, v::T) where {T}
 
 end
 
+function cleanvect!(M::T, v::T) where T
+  if v == M
+    zero!(v)
+    return v
+  end
+  @assert nrows(v) == 1
+  w = v
+  if iszero(v)
+    return w  
+  end
+  R = base_ring(M)
+  for i=1:nrows(M)
+    if iszero_row(M,i)
+      continue
+    end
+    ind=1
+    Miind = M[i, ind]
+    while iszero(Miind)
+      ind+=1
+      Miind = M[i, ind]
+    end
+    w1ind = w[1, ind]
+    if iszero(w1ind)
+      continue
+    end
+    mult=divexact(w1ind, Miind)
+    w[1, ind] = R(0)
+    for k=ind+1:ncols(M)
+      c = M[i, k]
+      if !iszero(c)
+        w[1,k] -= mult * c
+      end
+    end      
+  end
+  return v
+end
+
 function reduce_mod_rref(M::T, v::T) where T
   @assert nrows(v)==1
   v1 = deepcopy(v)
@@ -92,15 +129,32 @@ the function returns a matrix representing the closure of the subspace under the
 subspace of K^n invariant under the endomorphisms. 
 """
 function closure(C::T, G::Array{T,1}) where {T}
-  r = rref!(C)
+  if nrows(C) != 1
+    rref!(C)
+  else
+    # Do the rref by hand
+    for k in 1:ncols(C)
+      c = C[1, k]
+      if !iszero(c)
+        if isone(c)
+          break
+        end
+        C[1, k] = one(base_ring(C))
+        cinv = inv(c)
+        for j in (k + 1):ncols(C)
+          C[1, j] = cinv * C[1, j]
+        end
+        break
+      end
+    end
+  end
   i=1
   nc = ncols(C)
-  ra = zero_matrix(base_ring(C), 1, nc)
   while i <= nrows(C)
     w=view(C, i:i, 1:ncols(C))
     for j=1:length(G)
-      mul!(ra, w, G[j])
-      res = cleanvect(C, ra)
+      res = cleanvect!(C, w*G[j]) # cleanvect(C, w*G[j]) but we
+                                  # can do it inplace since w*G[j] is fresh
       if !iszero(res)
         C = vcat(C, res)  
         if nrows(C) == nc
@@ -111,7 +165,28 @@ function closure(C::T, G::Array{T,1}) where {T}
     end  
     i+=1
   end
-  r = rref!(C)
+
+  if nrows(C) == 1
+    r = 0
+    for k in 1:ncols(C)
+      c = C[1, k]
+      if !iszero(c)
+        r = 1
+        if isone(c)
+          break
+        end
+        C[1, k] = one(base_ring(C))
+        cinv = inv(c)
+        for j in (k + 1):ncols(C)
+          C[1, j] = cinv * C[1, j]
+        end
+        break
+      end
+    end
+  else
+    r = rref!(C)
+  end
+
   if r != nrows(C)
     C = sub(C, 1:r, 1:ncols(C))
   end

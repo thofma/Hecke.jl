@@ -152,12 +152,36 @@ function _to_composite(x::FieldsTower, y::FieldsTower, abs_disc::fmpz)
   end
   
   #Last thing: I have to add the maps of the subfields!
-  emb1 = NfToNfMor(x.field, K, mK\(mx.prim_img))
-  emb2 = NfToNfMor(y.field, K, mK\(my.prim_img))
-  l1 = append!(NfToNfMor[emb1, emb2], x.subfields)
-  embs = append!(l1, y.subfields)
+  #I want to merge the information for the last embedding.
+  i = 1
+  while codomain(x.subfields[i]) != x.field
+    i += 1
+  end
+  emb_subx = x.subfields[i]
+  i = 1
+  while codomain(y.subfields[i]) != y.field
+    i += 1
+  end
+  emb_suby = y.subfields[i]
+  lsub, m1, m2 = number_field(domain(emb_subx), domain(emb_suby), cached = false, check = false)
+  Seemb, mSeemb = simple_extension(lsub, check = false)
+  ev = [mK\(mx(emb_subx.prim_img)), mK\(my(emb_suby.prim_img))]
+  embs = NfToNfMor[hom(Seemb, K, evaluate(mSeemb(gen(Seemb)).data, ev))]
+  for j = 1:length(x.subfields)
+    if codomain(x.subfields[j]) != domain(emb_subx)
+      push!(embs, x.subfields[j])
+    else
+      push!(embs, hom(domain(x.subfields[j]), Seemb, mSeemb\(m1(x.subfields[j].prim_img))))
+    end
+  end
+  for j = 1:length(y.subfields)
+    if codomain(y.subfields[j]) != domain(emb_suby)
+      push!(embs, y.subfields[j])
+    else
+      push!(embs, hom(domain(y.subfields[j]), Seemb, mSeemb\(m2(y.subfields[j].prim_img))))
+    end
+  end
   return true, FieldsTower(K, autK, embs)
-  
 end
 
 function simplify!(x::FieldsTower)
@@ -375,7 +399,7 @@ function check_norm_group_and_disc(lfieldsK::Array{AnticNumberField, 1}, lfields
     return false
   else
     C = ray_class_field(mr, mQ)
-    return Hecke.discriminant_conductorQQ(O, C, modulo, bound, Int(order(Q)))
+    return Hecke.discriminant_conductorQQ(O, C, modulo, bound)
   end
 
 end
@@ -562,23 +586,23 @@ function sieve_by_norm_group(list1::Vector{FieldsTower}, list2::Vector{FieldsTow
   O = maximal_order(K)
   r, mr = Hecke.ray_class_groupQQ(O, modulo, true, expo)
   Kt = PolynomialRing(K, "t", cached = false)[1]
-  norm_groups = Vector{GrpAbFinGen}(undef, length(v))
+  norm_groups = Vector{GrpAbFinGenMap}(undef, length(v))
   for i = 1:length(v)
     lfieldsK = maximal_abelian_subextension(list1[v[i][1]])
     lfieldsL = maximal_abelian_subextension(list2[v[i][2]])
     h = change_base_ring(K, lfieldsK[1].pol, parent = Kt)
-    S = norm_group(h, mr)[1]
+    S, mS = norm_group(h, mr, cached = false)
     for i = 2:length(lfieldsK)
       h = change_base_ring(K, lfieldsK[i].pol, parent = Kt)
-      s = norm_group(h, mr)[1]
-      S = intersect(s, S)
+      s, ms = norm_group(h, mr, cached = false)
+      S, mS = intersect(ms, mS, false)
     end
     for i = 1:length(lfieldsL)
       h = change_base_ring(K, lfieldsL[i].pol, parent = Kt)
-      s = norm_group(h, mr)[1]
-      S = intersect(s, S)
+      s, ms = norm_group(h, mr, cached = false)
+      S, mS = intersect(ms, mS, false)
     end
-    norm_groups[i] = S
+    norm_groups[i] = mS
   end
   #Now that I have the norm groups, I need to compare them.
   done = falses(length(v))
@@ -588,14 +612,15 @@ function sieve_by_norm_group(list1::Vector{FieldsTower}, list2::Vector{FieldsTow
       continue
     end
     done[i] = true
-    S = norm_groups[i]
+    mS = norm_groups[i]
     new_v = Vector{Tuple{Int, Int}}()
     push!(new_v, v[i])
     for j = i+1:length(v)
       if done[j]
         continue
       end
-      if iseq(S, norm_groups[j])
+      if order(intersect(mS, norm_groups[j], false)[1]) == order(domain(mS))
+      #if iseq(S, norm_groups[j])
         done[j] = true
         push!(new_v, v[j])
       end
@@ -612,10 +637,11 @@ function refine_clusters(list1, list2, clusters, red, redfirst, redsecond)
     if length(v1) < red
       continue
     end
-    if length(v1) == red
+    #if length(v1) == red
       push!(new_clusters, v1)
-      continue
-    end
+    #  continue
+    #end
+    #=
     mK = maximal_abelian_subextension(list1[v1[1][1]])
     mL = maximal_abelian_subextension(list2[v1[1][2]])
     ram_primes = Int[]
@@ -632,14 +658,19 @@ function refine_clusters(list1, list2, clusters, red, redfirst, redsecond)
         push!(new_clusters, vnew)
       end
     end
+    =#
   end
   return new_clusters
 end
 
 
-function _merge(list1::Vector{FieldsTower}, list2::Vector{FieldsTower}, absolute_bound::fmpz, red::Int, redsecond::Int, simpl::Bool = false)
+function _merge(list1::Vector{FieldsTower}, list2::Vector{FieldsTower}, absolute_bound::fmpz, red::Int, redsecond::Int, g1::Tuple{Int, Int}, g2::Tuple{Int, Int}, simpl::Bool = false)
 
-  if red == 1
+  G1 = GAP.Globals.SmallGroup(g1[1], g1[2])
+  G2 = GAP.Globals.SmallGroup(g2[1], g2[2])
+  mas1 = GAP.Globals.AbelianInvariants(G1)
+  mas2 = GAP.Globals.AbelianInvariants(G2)
+  if gcd(mas1[length(mas1)], mas2[length(mas2)]) == 1
     #All the fields are automatically linearly disjoint
     @vprint :Fields 1 "All the fields are linearly disjoint, easy case \n"
     @vprint :FieldsNonFancy 1 "All the fields are linearly disjoint, easy case \n"

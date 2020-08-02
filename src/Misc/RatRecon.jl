@@ -292,7 +292,7 @@ function berlekamp_massey_naive(L::Array{T, 1}) where T
      Ry, Y = PolynomialRing(R_s, "Y", cached=false)
      g = Ry(L)
      if iszero(g)
-       return g
+       return true, g
      end
      f = Y^lg
      N = R_s(inv(lead(g))); g1 = g*N
@@ -307,7 +307,7 @@ function berlekamp_massey_naive(L::Array{T, 1}) where T
        v = (v0-q*v1)*N
        v0 = v1; v1 = v; f = g1; g1= r*N
      end
-     return divexact(v1, lead(v1))
+     return true, divexact(v1, lead(v1))
 end
 
 ###############################################################################
@@ -320,7 +320,7 @@ function berlekamp_massey_mod(L::Array{fmpq, 1})
   Rc, Y = PolynomialRing(Rf, "Y", cached=false)
   f = Rc(L)
   if iszero(f)
-    return f
+    return true, f
   end
   p = next_prime(fmpz(p_start))
   kp = 10  

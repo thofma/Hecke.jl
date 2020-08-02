@@ -15,6 +15,3 @@ PackageCompiler.create_sysimage([:Hecke], sysimage_path="/tmp/Hecke.$(Libdl.dlex
 
 println("(re)start julia as")
 println("\tjulia -J /tmp/Hecke.$(Libdl.dlext)")
-
-
-

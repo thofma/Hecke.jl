@@ -283,7 +283,7 @@ function ideal(O::NfRelOrd{T, S, U}, x::NfRelOrdElem{T, U}) where {T, S, U}
   return NfRelOrdIdl{T, S, U}(O, PM)
 end
 
-function ideal(O::NfRelOrd, x::Union{ Int, fmpz, NfOrdElem })
+function ideal(O::NfRelOrd, x::Union{ Int, fmpz, NfOrdElem})
   return ideal(O, O(x))
 end
 
@@ -1357,7 +1357,7 @@ function assure_has_minimum(A::NfRelOrdIdl)
   return nothing
 end
 
-function absolute_minimum(I::NfOrdIdl)
+function absolute_minimum(I::NfAbsOrdIdl)
   return minimum(I)
 end
 

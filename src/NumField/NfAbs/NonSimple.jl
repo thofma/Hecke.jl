@@ -497,6 +497,22 @@ end
 
 ################################################################################
 #
+#  Discriminant
+#
+################################################################################
+
+function discriminant(K::NfAbsNS)
+  Qx = FlintQQ["x"][1]
+  d = fmpq(1)
+  for i = 1:length(K.pol)
+    d *= discriminant(Qx(K.pol[i]))^(div(degree(K), total_degree(K.pol[i])))
+  end
+  return d
+end
+
+
+################################################################################
+#
 #  Minimal polynomial
 #
 ################################################################################
@@ -693,7 +709,7 @@ function isunivariate(f::fmpq_mpoly)
           var = j
           deg = exps[j]
         elseif var != j
-          return false, fmpq_poly(), 0
+          return false, fmpq_poly()
         elseif deg < exps[j]
           deg = exps[j]
         end
@@ -706,11 +722,11 @@ function isunivariate(f::fmpq_mpoly)
   if iszero(deg)
     if iszero(f)
       coeffs[1] = 0
-      return true, Qx(coeffs), 1
+      return true, Qx(coeffs)
     end
     #f is a constant
     coeffs[1] = coeff(f, 1)
-    return true, Qx(coeffs), 1
+    return true, Qx(coeffs)
   end
   for i = 1:length(f)
     exps = exponent_vector(f, i)
@@ -721,7 +737,7 @@ function isunivariate(f::fmpq_mpoly)
       coeffs[i] = fmpq(0)
     end
   end
-  return true, Qx(coeffs), var
+  return true, Qx(coeffs)
 
 end
 
@@ -729,9 +745,17 @@ end
 function msubst(f::fmpq_mpoly, v::Array{T, 1}) where {T}
   n = length(v)
   @assert n == nvars(parent(f))
-  fl, p, var = isunivariate(f)
-  if fl
-    return evaluate(p, v[var])
+  variables = vars(f)
+  if length(variables) == 1
+    fl, p = isunivariate(f)
+    @assert fl
+    #I need the variable. Awful
+    vect_exp = exponent_vector(variables[1], 1)
+    i = 1
+    while iszero(vect_exp[i])
+      i += 1
+    end
+    return evaluate(p, v[i])
   end
   powers = Dict{Int, Dict{Int, T}}()
   for i = 1:n
@@ -834,11 +858,14 @@ mutable struct NfAbsNSToNfAbsNS <: Map{NfAbsNS, NfAbsNS, HeckeMap, NfAbsNSToNfAb
   end  
 end
 
-# TODO: The following is opposite to our new convention
+function hom(K::NfAbsNS, L::NfAbsNS, emb::Array{NfAbsNSElem, 1})
+  return NfAbsNSToNfAbsNS(K, L, emb)
+end 
+
 function Base.:(*)(f::NfAbsNSToNfAbsNS, g::NfAbsNSToNfAbsNS)
   domain(f) == codomain(g) || throw("Maps not compatible")
   a = gens(domain(g))
-  return NfAbsNSToNfAbsNS(domain(g), codomain(f), [ f(g(x)) for x in a])
+  return NfAbsNSToNfAbsNS(domain(g), codomain(f), NfAbsNSElem[ g(f(x)) for x in a])
 end
 
 function Base.:(==)(f::NfAbsNSToNfAbsNS, g::NfAbsNSToNfAbsNS)
@@ -900,9 +927,9 @@ function simple_extension(K::NfAbsNS; check = true)
   z = one(K)
   elem_to_mat_row!(M, 1, z)
   elem_to_mat_row!(M, 2, pe)
-  mul!(z, z, pe)
+  z = mul!(z, z, pe)
   for i=3:degree(K)
-    mul!(z, z, pe)
+    z = mul!(z, z, pe)
     elem_to_mat_row!(M, i, z)
   end
   N = zero_matrix(k, n, degree(K))
@@ -925,14 +952,28 @@ function simple_extension(K::NfAbsNS; check = true)
 end
 
 function NumberField(K1::AnticNumberField, K2::AnticNumberField; cached::Bool = false, check::Bool = false)
-  
   K , l = number_field([K1.pol, K2.pol], "_\$", check = check, cached = cached)
   mp1 = NfAbsToNfAbsNS(K1, K, l[1])
   mp2 = NfAbsToNfAbsNS(K2, K, l[2])
   embed(mp1)
   embed(mp2)
   return K, mp1, mp2
+end
 
+function NumberField(fields::Vector{AnticNumberField}; cached::Bool = true, check::Bool = true)
+  pols = Vector{fmpq_poly}(undef, length(fields))
+  for i = 1:length(fields)
+    pols[i] = fields[i].pol
+  end
+  K, gK = number_field(pols, "\$", check = check, cached = cached)
+  mps = Vector{NfAbsToNfAbsNS}(undef, length(fields))
+  for i = 1:length(fields)
+    mps[i] = hom(fields[i], K, gK[i])
+    if cached
+      embed(mps[i])
+    end
+  end
+  return K, mps
 end
 
 ################################################################################
@@ -1115,10 +1156,6 @@ end
 
 function isnorm_divisible(a::NfAbsNSElem, n::fmpz)
   return iszero(mod(norm(a), n))
-end
-
-function valuation(a::NfAbsNSElem, p::NfAbsOrdIdl)
-  return valuation(order(p)(a), p)
 end
 
 function valuation(a::NfAbsOrdElem, p::NfAbsOrdIdl)

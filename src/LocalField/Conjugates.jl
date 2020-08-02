@@ -50,7 +50,7 @@ function roots(f::fmpz_poly, Q::FlintQadicField; max_roots::Int = degree(f))
   return RT
 end
 
-is_splitting(C::qAdicRootCtx) = length(C.H) != length(C.Q)
+is_splitting(C::qAdicRootCtx) = C.is_splitting
 
 function roots(C::qAdicRootCtx, n::Int = 10)
   if isdefined(C, :R) && all(x -> x.N >= n, C.R)
@@ -160,9 +160,7 @@ function expand(a::Array{qadic, 1}; all::Bool, flat::Bool, degs::Array{Int, 1}= 
       d = degree(parent(x))
       if ix <= length(degs)
         for i=2:degs[ix]
-          for j=1:div(d, degs[ix])
-            y = frobenius(y)
-          end
+          y = frobenius(y)
           push!(re, y)
         end
       else
@@ -485,7 +483,7 @@ function completion(K::AnticNumberField, P::NfOrdIdl)
   g = conjugates(P.gen_two.elem_in_nf, C)
 #  @show map(x->valuation(x), g)
   i = findfirst(x->valuation(x) > 0, g)
-  return completion(K, p, i)
+  return completion(K, p, i[1])
 end
 
 completion(K::AnticNumberField, p::Integer, i::Int) = completion(K, fmpz(p), i)

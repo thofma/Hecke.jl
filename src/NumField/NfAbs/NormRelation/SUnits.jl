@@ -533,7 +533,7 @@ function __sunit_group_fac_elem_quo_via_brauer(N::NormRelation, S, n::Int, invar
 
   unitsmodtorsion = UZK.units # These are generators for the units (mod n)
   T, mT = torsion_unit_group(O)
-  Q, mQ = quo(T, n)
+  Q, mQ = quo(T, n, false)
   @assert issnf(Q)
   @assert ngens(Q) == 1
   m = order(Q)

@@ -58,7 +58,7 @@ function haspreimage(M::GrpAbFinGenMap, a::GrpAbFinGenElem)
   if fl
     return true, GrpAbFinGenElem(domain(M), view(p, 1:1, 1:ngens(domain(M))))
   else
-    return false, domain(M)[1]
+    return false, id(domain(M))
   end
 end
 
@@ -327,7 +327,7 @@ end
 Returns whether $h$ is injective.
 """
 function isinjective(A::GrpAbFinGenMap)
-  K = kernel(A)[1]
+  K = kernel(A, false)[1]
   return isfinite(K) && isone(order(K))
 end
 

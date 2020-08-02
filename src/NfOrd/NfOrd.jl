@@ -605,12 +605,19 @@ function _check_elem_in_order(a::T, O::NfAbsOrd{S, T},
   end
 end
 
+
+function in(a::NfAbsNSElem, O::NfAbsOrd)
+  @assert parent(a) == nf(O)
+  return _check_elem_in_order(a, O, Val{true})
+end
+
 @doc Markdown.doc"""
     in(a::nf_elem, O::NfOrd) -> Bool
 
 Checks whether $a$ lies in $\mathcal O$.
 """
 function in(a::nf_elem, O::NfOrd)
+  @assert parent(a) == nf(O)
   if isdefining_polynomial_nice(nf(O)) && contains_equation_order(O) 
     d = denominator(a)
     if isone(d)

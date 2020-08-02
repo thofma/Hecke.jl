@@ -170,18 +170,6 @@ end
 #
 ################################################################################
 
-function hom(K::NfRel, L::NfRel, a::NfRelElem; check::Bool = false)
-   if base_field(K) != base_field(L)
-     error("The base fields do not coincide!")
-   end
-   if check
-     if !iszero(evaluate(K.pol, a))
-       error("Data does not define a homomorphism")
-     end
-   end
-   return NfRelToNfRelMor(K, L, a)
-end
-
 
 mutable struct NfRelToNfRelMor{T, S} <: Map{NfRel{T}, NfRel{S}, HeckeMap, NfRelToNfRelMor}
   header::MapHeader{NfRel{T}, NfRel{S}}
@@ -208,6 +196,8 @@ mutable struct NfRelToNfRelMor{T, S} <: Map{NfRel{T}, NfRel{S}, HeckeMap, NfRelT
     return z
   end
 end
+
+
 
 
   #so far, only for single relative.
@@ -249,6 +239,30 @@ function NfRelToNfRelMor(K::NfRel{nf_elem}, L::NfRel{nf_elem}, a::NfRelElem{nf_e
 #  z.coeff_aut = _identity(base_ring(K))
   z.header = MapHeader(K, L, image)
   return z
+end
+
+function hom(K::NfRel, L::NfRel, a::NfRelElem; check::Bool = false)
+  if base_field(K) != base_field(L)
+    error("The base fields do not coincide!")
+  end
+  if check
+    if !iszero(evaluate(K.pol, a))
+      error("Data does not define a homomorphism")
+    end
+  end
+  return NfRelToNfRelMor(K, L, a)
+end
+
+function hom(K::NfRel{nf_elem}, L::NfRel{nf_elem}, tau::NfToNfMor, a::NfRelElem{nf_elem}; check::Bool = false)
+  if base_field(K) != base_field(L)
+    error("The base fields do not coincide!")
+  end
+  if check
+    if !iszero(evaluate(map_coeffs(tau, K.pol), a))
+      error("Data does not define a homomorphism")
+    end
+  end
+  return NfRelToNfRelMor(K, L, tau, a)
 end
 
 id_hom(K::NfRel) = NfRelToNfRelMor(K, K, gen(K))

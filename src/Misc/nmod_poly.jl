@@ -19,11 +19,11 @@ function resultant_ideal(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} w
   Rt = parent(f)
   R = base_ring(Rt)
   m = fmpz(modulus(R))
-  easy = isprime_power(m)
   
-  if easy
-    return resultant_ideal_pp(f,g)
-  end
+  #easy = isprime_power(m)
+  #if easy
+  #  return resultant_ideal_pp(f,g)
+  #end
   
   #Some initial checks
   res = R(1)
@@ -468,10 +468,10 @@ function rres_sircana(f1::PolyElem{T}, g1::PolyElem{T}) where T <: ResElem{S} wh
   Rt = parent(f1)
   R = base_ring(Rt)
   m = fmpz(modulus(R))
-  easy = isprime_power(m)
-  if easy
-    return rres_sircana_pp(f1, g1)
-  end
+  #easy = isprime_power(m)
+  #if easy
+  #  return rres_sircana_pp(f1, g1)
+  #end
   f = deepcopy(f1)
   g = deepcopy(g1)
 
@@ -528,15 +528,15 @@ function rres_sircana(f1::PolyElem{T}, g1::PolyElem{T}) where T <: ResElem{S} wh
       if !isone(s)
         m = divexact(m, s)
       end
-      if easy
-        cp = S[m]
-      else
+      #if easy
+      #  cp = S[m]
+      #else
         cp = S[gcd(lift(coeff(g, i)), m) for i=0:degree(g)]
         push!(cp, m)
         cp = S[x for x = cp if !iszero(x)]
         cp = coprime_base(cp)
         cp = S[x for x = cp if !isunit(x)] #error: [1, 1, 3, 27] -> [1,3]
-      end
+      # end
       resp = fmpz[]
       pg = fmpz[]
       for p = cp
@@ -637,10 +637,10 @@ function _rresx_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} wh
   R = base_ring(Rt)
   Zx = PolynomialRing(FlintZZ, "x", cached = false)[1]
   m = fmpz(modulus(R))
-  easy = isprime_power(m)
-  if easy
-    return _rresx_sircana_pp(f, g)
-  end
+  #easy = isprime_power(m)
+  #if easy
+  #  return _rresx_sircana_pp(f, g)
+  #end
 
   u, v = Rt(0), Rt(1)
   U, V = Rt(1), Rt(0)

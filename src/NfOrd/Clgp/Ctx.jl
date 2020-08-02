@@ -81,6 +81,8 @@ function class_group_init(O::NfOrd, B::Int; min_size::Int = 20, add_rels::Bool =
                           complete::Bool = true, degree_limit::Int = 0, T::DataType = SMat{fmpz})
   @vprint :ClassGroup 2 "Computing factor base ...\n"
 
+  @assert B > 0
+
   FB = NfFactorBase()
   while true
     FB = NfFactorBase(O, B, complete = complete, degree_limit = degree_limit)

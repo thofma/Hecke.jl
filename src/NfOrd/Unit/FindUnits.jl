@@ -185,9 +185,6 @@ function find_candidates(x::ClassGrpCtx, u::UnitGrpCtx)
   K = nf(x)
   r1, r2 = signature(K)
   nrel = min(10, r1+r2-1, nrows(x.M.rel_gens))
-  if !isdefined(u, :relations_used)
-    u.relations_used = Vector{Int}()
-  end
   while length(add_units) < nrel
     xj = rand(1:nrows(x.M.rel_gens))
     if length(u.relations_used) != nrows(x.M.rel_gens)
@@ -267,7 +264,11 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx; add_orbit::Bool =
   if has_full_rank(u)
     first = false
   end
-  while not_larger < not_larger_bound
+  if !isdefined(u, :relations_used)
+    u.relations_used = Vector{Int}()
+  end
+  finished = false
+  while not_larger < not_larger_bound 
     k, add_units, s1 = find_candidates(x, u)
     ge = vcat(x.R_gen[1:k.c], x.R_rel[add_units])
     elements = Vector{FacElem{nf_elem, AnticNumberField}}(undef, nrows(s1))
@@ -336,6 +337,7 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx; add_orbit::Bool =
           if expected_reg > divexact(abs(tentative_regulator(u)), 2)
             done = trues(length(elements))
             not_larger = not_larger_bound + 1
+            finished = true
             break
           end
         else
@@ -383,20 +385,44 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx; add_orbit::Bool =
           break
         end
         if nrows(x.M.rel_gens) == not_larger_bound
+          finished = true
           break
         end
       end
     end
+    
     if has_full_rank(u)
       add_done = false
       for i = 1:length(elements)
         if !done[i]
+          time_torsion += @elapsed is_tors, p1 = istorsion_unit(elements[i], false, u.tors_prec)
+          @v_do :UnitGroup 2 popindent()
+
+          u.tors_prec = max(p1, u.tors_prec)
+          p = max(p, u.tors_prec)
+          if is_tors
+            @vprint :UnitGroup 1 "Element is torsion unit\n"
+            done[i] = true
+            continue
+          end
           add_done = add_unit!(u, elements[i]) || add_done  
+          if expected_reg > divexact(abs(tentative_regulator(u)), 2)
+            done = trues(length(elements))
+            not_larger = not_larger_bound + 1
+            finished = true
+            break
+          end
         end
       end
       if add_done
         u.units = reduce(u.units, u.tors_prec)
       end
+    end
+    if finished
+      break
+    end
+    if not_larger > not_larger_bound && length(u.relations_used) != nrows(x.M.rel_gens)
+      not_larger = 0
     end
   end
   @vprint :UnitGroup 1 "Finished processing\n"
