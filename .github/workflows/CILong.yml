@@ -1,0 +1,38 @@
+name: Run long tests
+
+on: [push]
+
+
+jobs:
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        julia-version: ['1.5']
+        julia-arch: [x64]
+        os: [ubuntu-latest]
+    
+    steps:
+      - uses: actions/checkout@v1.0.0
+      - name: "Set up Julia"
+        uses: julia-actions/setup-julia@v1
+        with:
+          version: ${{ matrix.julia-version }}
+          arch: ${{ matrix.julia-arch }}
+      - name: Cache artifacts
+        uses: actions/cache@v1
+        env:
+          cache-name: cache-artifacts
+        with:
+          path: ~/.julia/artifacts 
+          key: ${{ runner.os }}-test-${{ env.cache-name }}-${{ hashFiles('**/Project.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-test-${{ env.cache-name }}-
+            ${{ runner.os }}-test-
+            ${{ runner.os }}-
+      - name: "Build package"
+        uses: julia-actions/julia-buildpkg@master
+      - run: julia --color=yes --project -e using Pkg; Pkg.add(PackageSpec(name="GAP", version="0.3.5"))
+      - name: "Run long tests"
+        uses: julia-actions/julia-runtest@master
