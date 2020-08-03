@@ -668,9 +668,9 @@ function _merge(list1::Vector{FieldsTower}, list2::Vector{FieldsTower}, absolute
 
   G1 = GAP.Globals.SmallGroup(g1[1], g1[2])
   G2 = GAP.Globals.SmallGroup(g2[1], g2[2])
-  mas1 = GAP.Globals.AbelianInvariants(G1)
-  mas2 = GAP.Globals.AbelianInvariants(G2)
-  if gcd(mas1[length(mas1)], mas2[length(mas2)]) == 1
+  mas1 = GAP.gap_to_julia(GAP.Globals.AbelianInvariants(G1))
+  mas2 = GAP.gap_to_julia(Vector{Int}, GAP.Globals.AbelianInvariants(G2))
+  if gcd(prod(mas1), prod(mas2)) == 1
     #All the fields are automatically linearly disjoint
     @vprint :Fields 1 "All the fields are linearly disjoint, easy case \n"
     @vprint :FieldsNonFancy 1 "All the fields are linearly disjoint, easy case \n"
