@@ -265,8 +265,14 @@ function _maximal_abelian_subfield(A::Hecke.ClassField, mp::Hecke.NfToNfMor, ctx
       rel_plc = false
     end
     modulo = minimumd(fm0, expo * expected_order)
-    #@vtime :MaxAbExt 1 
-    r, mr = Hecke.ray_class_groupQQ(zk, modulo, rel_plc, ctx.n)
+    wrp, trp = ppio(modulo, ctx.n)
+    ftrp = factor(trp)
+    for (pf, vpf) in ftrp
+      if !iscoprime(pf-1, ctx.n)
+        wrp *= pf
+      end
+    end
+    r, mr = Hecke.ray_class_groupQQ(zk, Int(wrp), rel_plc, ctx.n)
   end
   @vtime :MaxAbExt 1 lP, gS = Hecke.find_gens(mR, coprime_to = minimum(defining_modulus(mR1)[1]))  
   listn = NfOrdIdl[norm(mp, x) for x in lP]

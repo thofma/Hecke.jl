@@ -505,22 +505,22 @@ function ray_class_group_quo(O::NfOrd, y::Dict{NfOrdIdl, Int}, inf_plc::Array{In
   y1=Dict{NfOrdIdl,Int}()
   y2=Dict{NfOrdIdl,Int}()
   n = ctx.n
-  for (q,e) in y
+  for (q, e) in y
     if gcd(norm(q)-1, n) != 1
-      y1[q] = Int(1)
+      y1[q] = 1
       if gcd(norm(q), n) != 1 && e >= 2
-        y2[q] = Int(e)
+        y2[q] = e
       end
     elseif gcd(norm(q), n) != 1 && e >= 2
-      y2[q] = Int(e)
+      y2[q] = e
     end
   end
-  I=ideal(O,1)
-  for (q,vq) in y1
-    I*=q
+  I = ideal(O,1)
+  for (q, vq) in y1
+    I *= q
   end
-  for (q,vq) in y2
-    I*=q^vq
+  for (q, vq) in y2
+    I *= q^vq
   end
   return ray_class_group_quo(I, y1, y2, inf_plc, ctx, GRH = GRH, check = check)
 
