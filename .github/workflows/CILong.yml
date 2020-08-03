@@ -33,6 +33,6 @@ jobs:
             ${{ runner.os }}-
       - name: "Build package"
         uses: julia-actions/julia-buildpkg@master
-      - run: julia --color=yes --project -e using Pkg; Pkg.add(PackageSpec(name="GAP", version="0.3.5"))
+      - run: julia --color=yes --project -e 'using Pkg; Pkg.add(PackageSpec(name="GAP", version="0.3.5"))'
       - name: "Run long tests"
         uses: julia-actions/julia-runtest@master
