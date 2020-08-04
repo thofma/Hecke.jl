@@ -180,6 +180,7 @@ end
 
 
 function class_group_add_auto(ctx::ClassGrpCtx, auts::Vector{NfToNfMor})
+  #I am assuming that auts contains all the automorphisms of K
   K = domain(auts[1])
   p = 11
   R = GF(p, cached = false)
@@ -201,6 +202,9 @@ function class_group_add_auto(ctx::ClassGrpCtx, auts::Vector{NfToNfMor})
 
   elements = Vector{Tuple{NfToNfMor, Generic.Perm{Int}}}(undef, length(auts))
   elements[1] = (id_hom(K), Gperm())
+  if length(auts) == 1
+    return elements
+  end
   ind_elem = 3
   pols = gfp_poly[x, Rx(S[1].prim_img)]
   perms = Generic.Perm{Int}[Gperm(), induce(ctx.FB, S[1])]
