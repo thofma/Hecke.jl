@@ -29,6 +29,9 @@ function _conductors_using_cocycles(F::FieldsTower, st::Vector{Int}, l_cond::Vec
   lp = ramified_primes(F)
   auts = automorphisms(F.field, copy = false)
   cocycles = F.admissible_cocycles
+  if length(cocycles) > 100
+    return l_cond
+  end
   G = GAP.Globals.ImagesSource(cocycles[1].projection)
   E = GAP.Globals.Source(cocycles[1].projection)
   D = F.isomorphism
