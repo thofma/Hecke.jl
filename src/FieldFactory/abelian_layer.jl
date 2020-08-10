@@ -536,7 +536,7 @@ function computing_over_subfields(class_fields, subfields, idE, autos, right_grp
   new_class_fields, subs, to_be_done = translate_class_field_down(subfields, class_fields, it, ab_invariants)
   for x in to_be_done
     C = class_fields[x]
-    L = number_field(C)
+    L = number_field(C, using_norm_relation = true)
     auts = absolute_automorphism_group(C, autos)
     Cpperm = permutation_group(auts)
     if GAP.Globals.IdGroup(Cpperm) == idE
