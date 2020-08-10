@@ -28,7 +28,7 @@ function _unit_group_init(O::NfOrd)
 end
 
 function _search_rational_relation(U::UnitGrpCtx{S}, y::S, bound::fmpz) where S
-  p = _rel_add_prec(U)
+  p = _rel_add_precision(U)
   r = rank(U)
  
   @v_do :UnitGroup 1 pushindent()
@@ -218,7 +218,7 @@ function _isindependent(u::UnitGrpCtx{T}, y::FacElem{T}) where T
   end
 end
 
-function _rel_add_prec(U)
+function _rel_add_precision(U)
   return U.rel_add_prec
 end
 
