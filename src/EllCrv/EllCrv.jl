@@ -343,7 +343,7 @@ function show(io::IO, E::EllCrv)
     if !iszero(c)
       push!(sum.args, AbstractAlgebra.expressify(c, context = io))
     end
-    print(io, AbstractAlgebra.expr_to_string(sum))
+    print(io, AbstractAlgebra.expr_to_string(AbstractAlgebra.canonicalize(sum)))
   else
     sum = Expr(:call, :+)
     push!(sum.args, Expr(:call, :^, :y, 2))
@@ -363,7 +363,7 @@ function show(io::IO, E::EllCrv)
         push!(sum.args, Expr(:call, :*, AbstractAlgebra.expressify(c, context = io), :y))
       end
     end
-    print(io, AbstractAlgebra.expr_to_string(sum))
+    print(io, AbstractAlgebra.expr_to_string(AbstractAlgebra.canonicalize(sum)))
 
     print(io, " = ")
     sum = Expr(:call, :+)
@@ -392,7 +392,7 @@ function show(io::IO, E::EllCrv)
       push!(sum.args, AbstractAlgebra.expressify(c, context = io))
     end
 
-    print(io, AbstractAlgebra.expr_to_string(sum))
+    print(io, AbstractAlgebra.expr_to_string(AbstractAlgebra.canonicalize(sum)))
   end
 end
 
