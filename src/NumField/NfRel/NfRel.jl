@@ -216,58 +216,12 @@ function Base.show(io::IO, a::NfRel)
   print(io, " with defining polynomial ", a.pol)
 end
 
-function _show(io::IO, x::PolyElem, S::String)
-   len = length(x)
-   if len == 0
-      print(io, base_ring(x)(0))
-   else
-      for i = 1:len - 1
-         c = coeff(x, len - i)
-         bracket = needs_parentheses(c)
-         if !iszero(c)
-            if i != 1 && !isnegative(c)
-               print(io, "+")
-            end
-            if !isone(c) && (c != -1 || show_minus_one(typeof(c)))
-               if bracket
-                  print(io, "(")
-               end
-               show(io, c)
-               if bracket
-                  print(io, ")")
-               end
-               print(io, "*")
-            end
-            if c == -1 && !show_minus_one(typeof(c))
-               print(io, "-")
-            end
-            print(io, string(S))
-            if len - i != 1
-               print(io, "^")
-               print(io, len - i)
-            end
-         end
-      end
-      c = coeff(x, 0)
-      bracket = needs_parentheses(c)
-      if !iszero(c)
-         if len != 1 && !isnegative(c)
-            print(io, "+")
-         end
-         if bracket
-            print(io, "(")
-         end
-         show(io, c)
-         if bracket
-            print(io, ")")
-         end
-      end
-   end
+function AbstractAlgebra.expressify(a::NfRelElem; context = nothing)
+  return AbstractAlgebra.expressify(data(a), var(a.parent), context = context)
 end
 
 function Base.show(io::IO, a::NfRelElem)
-  f = data(a)
-  _show(io, f, string(parent(a).S))
+  print(io, AbstractAlgebra.obj_to_string(a, context = io))
 end
 
 ################################################################################

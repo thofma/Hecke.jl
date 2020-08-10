@@ -882,7 +882,7 @@ function _dedekind_zeta_attwell_duval_negative(K::AnticNumberField, s, target_pr
   end
   sp = 1 - s
   z = _dedekind_zeta_attwell_duval_positive(K, sp, target_prec + 1)
-  zprec = prec(parent(z))
+  zprec = precision(parent(z))
   wprec = zprec * 2
   RR = ArbField(wprec)
   dK = abs(discriminant(maximal_order(K)))
@@ -1375,7 +1375,7 @@ function _compute_g_function_coefficients_even(i, n, r1, r2, CC::AcbField)
   q = div(i, 2)
   res = Vector{acb}(undef, n + 1)
   res[1] = zero(CC)
-  RR = ArbField(prec(CC))
+  RR = ArbField(precision(CC))
   for k in 1:n
     z = (-1)^k * (k == 1 ? CC(const_euler(RR)) : zeta(CC(k))) * (CC(r1)//CC(2)^k + CC(r2))
     z = z + CC(r1)//CC(2)^k * _Hqk(q, k) + r2 * _Hqk(2 * q, k)
@@ -1416,7 +1416,7 @@ function _compute_g_function_coefficients_odd(i, n, r1, r2, CC::AcbField)
   q = div(i - 1, 2)
   res = Vector{acb}(undef, n + 1)
   res[1] = zero(CC)
-  RR = ArbField(prec(CC))
+  RR = ArbField(precision(CC))
   for k in 1:n
     z = (-1)^k * (k == 1 ? CC(const_euler(RR)) : zeta(CC(k))) * (r1 * (1 - CC(2)^-k) + r2)
     z = z + CC(r1 + r2) * _Hqk(i, k) - CC(r2)//CC(2)^k * _Hqk(q, k) - (k > 1 ? CC(0) : CC(r1) * CC(log(RR(2))))

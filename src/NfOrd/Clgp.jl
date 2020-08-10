@@ -176,7 +176,7 @@ function _validate_class_unit_group(c::ClassGrpCtx, U::UnitGrpCtx)
   end
   residue = U.residue
 
-  pre = prec(parent(residue))
+  pre = precision(parent(residue))
 
   Ar = ArbField(pre, cached = false)
 
