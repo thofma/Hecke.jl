@@ -759,7 +759,7 @@ end
 
 function image(mF::NfToFqNmodMor_easy, a::FacElem{nf_elem, AnticNumberField}, D::Vector, cached::Bool, quo::Int = 0)
   # cached == true also implies that all the denominators are coprime
-  error("asds")
+  quo != 0 && degree(mF.Fq) != 1 && error("asds")
   Fq = mF.Fq
   q = one(Fq)
   t = mF.t
