@@ -56,7 +56,7 @@ end
 #
 ################################################################################
 
-prec(x::acb_root_ctx) = x.prec
+precision(x::acb_root_ctx) = x.prec
 
 poly(x::acb_root_ctx) = x.poly
 
@@ -67,7 +67,7 @@ poly(x::acb_root_ctx) = x.poly
 ################################################################################
 
 function show(io::IO, x::acb_root_ctx)
-  print(io, "acb_root_ctx of $(poly(x)) with precision $(prec(x))")
+  print(io, "acb_root_ctx of $(poly(x)) with precision $(precision(x))")
 end
 
 ################################################################################
@@ -78,9 +78,9 @@ end
 
 # This will refine the roots to given target_prec
 # If none is given, double the precision
-function refine(x::acb_root_ctx, target_prec::Int = 2*prec(x))
+function refine(x::acb_root_ctx, target_prec::Int = 2*precision(x))
 
-  if target_prec < prec(x)
+  if target_prec < precision(x)
     return nothing
   end
 

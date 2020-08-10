@@ -174,11 +174,12 @@ function Base.show(io::IO, a::NfRelNS)
   print(io, " with defining polynomials ", a.pol)
 end
 
-#TODO: this is a terrible show func.
+function AbstractAlgebra.expressify(a::NfRelNSElem; context = nothing)
+  return AbstractAlgebra.expressify(data(a), a.parent.S; context = context)
+end
+
 function Base.show(io::IO, a::NfRelNSElem)
-  f = data(a)
-  AbstractAlgebra.Generic._show(io, f, [string(s) for s = a.parent.S])
-  return nothing
+  print(io, AbstractAlgebra.obj_to_string(a, context = io))
 end
 
 ################################################################################
