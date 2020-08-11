@@ -525,7 +525,7 @@ function _s_unit_for_kummer(C::CyclotomicExt, f::fmpz)
   K = absolute_field(C)
   @vprint :ClassField 2 "Maximal order of cyclotomic extension\n"
   ZK = maximal_order(K)
-  @vprint :ClassField 2 "Class group of cyclotomic extension\n"
+  @vprint :ClassField 2 "Class group of cyclotomic extension: $K\n"
   c, mc = class_group(ZK)
   allow_cache!(mc)
   @vprint :ClassField 2 "... $c\n"
