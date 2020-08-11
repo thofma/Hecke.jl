@@ -326,73 +326,62 @@ end
 ################################################################################
 
 function show(io::IO, E::EllCrv)
-  print(io, "Elliptic curve with equation\n")
   if E.short
-    print(io, "y^2 = ")
-    sum = Expr(:call, :+)
-    push!(sum.args, Expr(:call, :^, :x, 3))
-    c = E.coeff[1]
-    if !iszero(c)
-      if isone(c)
-        push!(sum.args, Expr(:call, :*, :x))
+    print(io, "Elliptic curve with equation y^2 = x^3")
+    if !iszero(E.coeff[1])
+      if needs_parentheses(E.coeff[1])
+        print(io, " + ($(E.coeff[1]))*x")
       else
-        push!(sum.args, Expr(:call, :*, AbstractAlgebra.expressify(c, context = io), :x))
+        print(io, " + $(E.coeff[1])*x")
       end
     end
-    c = E.coeff[2]
-    if !iszero(c)
-      push!(sum.args, AbstractAlgebra.expressify(c, context = io))
+    if !iszero(E.coeff[2])
+      if needs_parentheses(E.coeff[2])
+        print(io, " + ($(E.coeff[2]))")
+      else
+        print(io, " + $(E.coeff[2])")
+      end
     end
-    print(io, AbstractAlgebra.expr_to_string(AbstractAlgebra.canonicalize(sum)))
+    print(io, "\n")
   else
-    sum = Expr(:call, :+)
-    push!(sum.args, Expr(:call, :^, :y, 2))
-    c = E.coeff[1]
-    if !iszero(c)
-      if isone(c)
-        push!(sum.args, Expr(:call, :*, :x, :y))
+    print(io, "Elliptic curve with equation y^2")
+    if !iszero(E.coeff[1])
+      if needs_parentheses(E.coeff[1])
+        print(io, " + ($(E.coeff[1]))*xy")
       else
-        push!(sum.args, Expr(:call, :*, AbstractAlgebra.expressify(c, context = io), :x, :y))
+        print(io, " + $(E.coeff[1])*xy")
       end
     end
-    c = E.coeff[3]
-    if !iszero(c)
-      if isone(c)
-        push!(sum.args, Expr(:call, :*, :y))
+    if !iszero(E.coeff[3])
+      if needs_parentheses(E.coeff[3])
+        print(io, " + ($(E.coeff[3]))*y")
       else
-        push!(sum.args, Expr(:call, :*, AbstractAlgebra.expressify(c, context = io), :y))
+        print(io, " + $(E.coeff[3])*y")
+    end
+    end
+    print(io, " = x^3")
+    if !iszero(E.coeff[2])
+      if needs_parentheses(E.coeff[2])
+        print(io, " + ($(E.coeff[2]))*x^2")
+      else
+        print(io, " + $(E.coeff[2])*x^2")
       end
     end
-    print(io, AbstractAlgebra.expr_to_string(AbstractAlgebra.canonicalize(sum)))
-
-    print(io, " = ")
-    sum = Expr(:call, :+)
-    push!(sum.args, Expr(:call, :^, :x, 3))
-
-    c = E.coeff[2]
-    if !iszero(c)
-      if isone(c)
-        push!(sum.args, Expr(:call, :*, Expr(:call, :^, :x, 2)))
+    if !iszero(E.coeff[4])
+      if needs_parentheses(E.coeff[4])
+        print(io, " + ($(E.coeff[4]))*x")
       else
-        push!(sum.args, Expr(:call, :*, AbstractAlgebra.expressify(c, context = io), Expr(:call, :^, :x, 2)))
+        print(io, " + $(E.coeff[4])*x")
       end
     end
-
-    c = E.coeff[4]
-    if !iszero(c)
-      if isone(c)
-        push!(sum.args, Expr(:call, :*, :x))
+    if !iszero(E.coeff[5])
+      if needs_parentheses(E.coeff[5])
+        print(io, " + ($(E.coeff[5]))")
       else
-        push!(sum.args, Expr(:call, :*, AbstractAlgebra.expressify(c, context = io), :x))
+        print(io, " + $(E.coeff[5])")
       end
     end
-
-    c = E.coeff[5]
-    if !iszero(c)
-      push!(sum.args, AbstractAlgebra.expressify(c, context = io))
-    end
-
-    print(io, AbstractAlgebra.expr_to_string(AbstractAlgebra.canonicalize(sum)))
+    print(io, "\n")
   end
 end
 

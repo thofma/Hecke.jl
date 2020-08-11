@@ -79,7 +79,7 @@ end
 function fun_factor(g::Generic.Poly{padic})
   K = base_ring(g)
   Kt = parent(g)
-  v = precision(g)
+  v = prec(g)
   pv = prime(K)^v
   R = ResidueRing(FlintZZ, pv, cached = false)
   Rt = PolynomialRing(R, "t", cached = false)[1]
@@ -91,7 +91,7 @@ end
 function fun_factor(f::Generic.Poly{qadic})
   K = base_ring(f)
   Kt = parent(f)
-  v = precision(f)
+  v = prec(f)
   @assert isone(_content(f))
   if iszero(valuation(lead(f)))
     return one(Kt), g
@@ -128,7 +128,7 @@ end
 #
 ################################################################################
 
-function Nemo.precision(g::Generic.Poly{T}) where T <: Union{padic, qadic}
+function Nemo.prec(g::Generic.Poly{T}) where T <: Union{padic, qadic}
   N = coeff(g, 0).N
   for i = 1:degree(g)
     N = min(N, coeff(g, i).N)
@@ -188,7 +188,7 @@ function invmod(u::Generic.Poly{padic}, f::Generic.Poly{padic})
   end
   K = base_ring(f)
   Kt = parent(f)
-  v = min(precision(f), precision(u))
+  v = min(prec(f), prec(u))
   pv = prime(K)^v
   R = ResidueRing(FlintZZ, pv, cached = false)
   Rt = PolynomialRing(R, "t", cached = false)[1]
@@ -209,7 +209,7 @@ function invmod(f::Generic.Poly{qadic}, M::Generic.Poly{qadic})
   end
   K = base_ring(f)
   Kt = parent(f)
-  v = min(precision(f), precision(M))
+  v = min(prec(f), prec(M))
   g = parent(f)(inv(trailing_coefficient(f)))
   c = f*g
   c = rem!(c, c, M)
@@ -341,7 +341,7 @@ function divexact(f::AbstractAlgebra.PolyElem{T}, g::AbstractAlgebra.PolyElem{T}
    Kt = parent(f)
    p = prime(K)
    while !iszero(q*g1 - f1)
-     q = Kt(T[coeff(q, i) + O(K, p^(precision(q)-1)) for i = 0:degree(q)])
+     q = Kt(T[coeff(q, i) + O(K, p^(prec(q)-1)) for i = 0:degree(q)])
    end
    return q
 end
@@ -358,7 +358,7 @@ function rres(f::Generic.Poly{padic}, g::Generic.Poly{padic})
   Kt = parent(f)
   K = base_ring(Kt)
   p = prime(K)
-  v = min(precision(f), precision(g))
+  v = min(prec(f), prec(g))
   R = ResidueRing(FlintZZ, p^v, cached = false)
   cf = Vector{elem_type(R)}(undef, degree(f)+1)
   for i = 1:length(cf)
@@ -464,7 +464,7 @@ function characteristic_polynomial(f::Generic.Poly{T}, g::Generic.Poly{T}) where
       error("Not yet implemented")
     end
     d1 = clog(fmpz(degree(f)+1), p)
-    L = QadicField(p, d1, min(precision(f), precision(g)))
+    L = QadicField(p, d1, min(prec(f), prec(g)))
     Lt = PolynomialRing(L, "t")[1]
     fL = change_base_ring(f, L, Lt)
     gL = change_base_ring(g, L, Lt)
@@ -530,7 +530,7 @@ function Hensel_factorization(f::Generic.Poly{T}) where T <: Union{padic, qadic}
   lfp = factor(fp).fac
   if length(lfp) == 1
     #The Hensel factorization is trivial...
-    phi = setprecision(lift(first(keys(lfp)), Kt), precision(f))
+    phi = setprecision(lift(first(keys(lfp)), Kt), prec(f))
     D[phi] = f
     return D
   end
@@ -539,11 +539,11 @@ function Hensel_factorization(f::Generic.Poly{T}) where T <: Union{padic, qadic}
   ks = Vector{Generic.Poly{T}}(undef, length(vlfp))
   for (k1, v) in lfp
     vlfp[ind] = k1^v
-    ks[ind] = setprecision(lift(k1, Kt), precision(f))
+    ks[ind] = setprecision(lift(k1, Kt), prec(f))
     ind += 1
   end
   H = HenselCtxdr{T}(f, vlfp)
-  lift(H, precision(f))
+  lift(H, prec(f))
   for i = 1:H.n
     D[ks[i]] = H.lf[i]
   end

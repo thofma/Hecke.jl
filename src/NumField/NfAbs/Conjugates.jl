@@ -357,7 +357,7 @@ function _minkowski_map_and_apply(a, abs_tol, G, work_tol::Int = abs_tol)
     throw(error("asdsd"))
   end
 
-  #R = ArbField(precision(parent(c[1])), false)
+  #R = ArbField(prec(parent(c[1])), false)
   R = ArbField(2 * work_tol, cached = false)
   sqrt2 = sqrt(R(2))
 

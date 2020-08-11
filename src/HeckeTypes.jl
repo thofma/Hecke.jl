@@ -414,7 +414,7 @@ mutable struct EnumCtxArb
     z = new()
     z.G = G
     z.x = zero_matrix(FlintZZ, 1, nrows(G))
-    z.p = precision(base_ring(G))
+    z.p = prec(base_ring(G))
     return z
   end
 end
