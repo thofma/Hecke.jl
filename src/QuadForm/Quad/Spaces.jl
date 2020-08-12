@@ -1,5 +1,14 @@
 ################################################################################
 #
+#  Type from field
+#
+################################################################################
+
+quadratic_space_type(K::S) where {S <: Field} =
+    QuadSpace{S, dense_matrix_type(elem_type(S))}
+
+################################################################################
+#
 #  Constructors
 #
 ################################################################################
@@ -510,6 +519,8 @@ function _quadratic_form_with_invariants(dim::Int, det::nf_elem, finite::Vector,
   dim0 = dim
   det0 = det
   finite0 = copy(finite)
+  finite = copy(finite)
+  negative = copy(negative)
   negative0 = copy(negative)
 
   # det = _reduce_modulo_squares(det)
@@ -600,7 +611,7 @@ function _quadratic_form_with_invariants(dim::Int, det::nf_elem, finite::Vector,
       b = _weak_approximation_coprime(idx, S, prod(PP))
       @assert iscoprime(b * OK, prod(PP))
     else
-      b = _weak_approximation_coprime(idx, S)
+      b = _weak_approximation_coprime(idx, S, 1 * OK)
     end
     a = a * b
 

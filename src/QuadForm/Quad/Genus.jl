@@ -207,6 +207,8 @@ function gram_matrix(J::JorDec, i::Int)
     winew = _witt_hasse(hanew, r, _d, p)
     # this is the new witt invariant
     z = _quadratic_unimodular_lattice_dyadic(p, r, _w, _d, _a, winew)
+    @assert begin L = quadratic_lattice(nf(order(p)), gram_ambient_space = z); witt_invariant(L, p) == winew end
+
     @assert valuation(det(z), p) == 0
     zz = pi^s * z
     if wi < 2
@@ -342,9 +344,10 @@ function _quadratic_unimodular_lattice_dyadic(p, r, w, d, alpha, wi)
   
   D = kummer_generator_of_local_unramified_quadratic_extension(p)
   rho = divexact(1 - D, 4)
+  @assert valuation(rho, p) == 0
+  @assert quadratic_defect(D, p) == valuation(4, p) 
 
   if isodd(m)
-    @assert valuation(rho, p) == 0
     r = div(m - 1, 2)
     @assert (w == e) || (w < e && isodd(w))
     mats = dense_matrix_type(K)[]
@@ -469,6 +472,10 @@ mutable struct LocalGenusQuad{S, T, U}
     z.hass_inv = 0
     return z
   end
+end
+
+function in(L::QuadLat, G::LocalGenusQuad)
+  return genus(L, prime(G)) == G
 end
 
 function local_quadratic_genus_type(K)
@@ -1203,7 +1210,17 @@ function local_jordan_decompositions(E, p; rank::Int, det_val::Int, max_scale = 
     scales_rks_norms = Vector{Tuple{Int, Int, Int}}[]
     for scalerank in scales_rks
       l = length(scalerank)
-      norms = [ s[2] == 1 ? (0:0) : (0:e) for s in scalerank ]
+      norms = Vector{Vector{Int}}(undef, l)
+      for i in 1:l
+        s = scalerank[i]
+        if s[2] == 1
+          norms[i] = Int[0]
+        elseif isodd(s[2])
+          norms[i] = Int[0]
+        else
+          norms[i] = collect(0:e)
+        end
+      end
       for n in Iterators.product(norms...)
         push!(scales_rks_norms, Tuple{Int, Int, Int}[ (scalerank[i][1],scalerank[i][2], n[i]) for i in 1:l])
       end
@@ -1214,12 +1231,18 @@ function local_jordan_decompositions(E, p; rank::Int, det_val::Int, max_scale = 
       # I need to adjust this
       weights = Vector{Vector{Int}}(undef, length(scaleranknorm))
       for (i, s) in enumerate(scaleranknorm)
-        if isodd(s[2]) # odd rank, w = e or w < e is odd
-          r = Int[ j for j in s[3]:e if isodd(j) ]
-          if (length(r) == 0 || r[end] != e)
-            push!(r, e)
+        if s[2] == 1
+          weights[i] = Int[e]
+        elseif isodd(s[2]) # odd rank, w = e or w < e is odd
+          # weight and norm are equal
+          weights[i] = Int[ i for i in 0:e if isodd(i)] # I do the sieving because of the Witt invariant later
+          if !isodd(e)
+            push!(weights[i], e)
           end
-          weights[i] = r
+          #r = Int[ j for j in s[3]:e if isodd(j) ]
+          #if (length(r) == 0 || r[end] != e)
+          #  push!(r, e)
+          #end
         else # even rank
           if isodd(s[3]) # odd norm
             r = Int[ j for j in s[3]:e if iseven(j) ]
@@ -1245,13 +1268,26 @@ function local_jordan_decompositions(E, p; rank::Int, det_val::Int, max_scale = 
     for srnw in scales_rks_norms_weights
       l = length(srnw)
       #reps = Vector{nf_elem}[ _representatives_for_equivalence(p, s[3], s[4]) for s in srnw ]
-      reps = Vector{nf_elem}[ pi^srnw[i][3] .* reps_squares for i in 1:l ]
+      reps = Vector{Vector{nf_elem}}(undef, l)
+      for i in 1:l
+        s = srnw[i]
+        if isodd(s[2])
+          reps[i] = nf_elem[one(E)]
+        else
+          reps[i] = pi^s[3] .* reps_squares
+        end
+      end
       for rep in Iterators.product(reps...)
         push!(scales_rks_norms_weights_normgens, Tuple{Int, Int, Int, Int, nf_elem}[ (srnw[i][1], srnw[i][2], srnw[i][3], srnw[i][4], rep[i]) for i in 1:l])
       end
     end
     scales_rks_norms_weights_normgens_dets = Vector{Tuple{Int, Int, Int, Int, nf_elem, nf_elem}}[]
 
+    _find_special_class_dict = Dict{nf_elem, nf_elem}()
+
+    __find_special_class(x) = get!(_find_special_class_dict, x, _find_special_class(x, p))
+
+    # TODO: I could do this much better by precomputing
     for srwn in scales_rks_norms_weights_normgens
       l = length(srwn)
       reps = Vector{nf_elem}[ reps_squares for i in 1:l]
@@ -1262,14 +1298,14 @@ function local_jordan_decompositions(E, p; rank::Int, det_val::Int, max_scale = 
           mmod4 = mod(srwn[i][2], 4)
           if mmod4 == 0 || mmod4 == 1
             gamma = _find_special_class(d, p) - 1
-            @assert islocal_square(d//(1 + gamma), p)
-            @assert valuation(d, p) == valuation(1 + gamma, p)
+            #@assert islocal_square(d//(1 + gamma), p)
+            #@assert valuation(d, p) == valuation(1 + gamma, p)
           else
             gamma = _find_special_class(-d, p) - 1
-            @assert islocal_square(-d//(1 + gamma), p)
-            @assert valuation(-d, p) == valuation(1 + gamma, p)
+            #@assert islocal_square(-d//(1 + gamma), p)
+            #@assert valuation(-d, p) == valuation(1 + gamma, p)
           end
-          @assert quadratic_defect(1 + gamma, p) == (iszero(gamma) ? inf : valuation(gamma, p))
+          #@assert quadratic_defect(1 + gamma, p) == (iszero(gamma) ? inf : valuation(gamma, p))
           if !(iszero(gamma) || valuation(gamma, p) >= srwn[i][4] + valuation(srwn[i][5], p))
             good = false
             break
@@ -1278,6 +1314,8 @@ function local_jordan_decompositions(E, p; rank::Int, det_val::Int, max_scale = 
         if !good
           continue
         end
+        #push!(scales_rks_norms_weights_normgens_dets, Tuple{Int, Int, Int, Int, nf_elem, nf_elem}[ (srwn[i][1], srwn[i][2], srwn[i][3], srwn[i][4], srwn[i][5], rep[i]) for i in 1:l if srwn[i][2] > 1 || srwn[i][4] == srwn[i][5]])
+
         push!(scales_rks_norms_weights_normgens_dets, Tuple{Int, Int, Int, Int, nf_elem, nf_elem}[ (srwn[i][1], srwn[i][2], srwn[i][3], srwn[i][4], srwn[i][5], rep[i]) for i in 1:l])
       end
     end
@@ -1290,6 +1328,12 @@ function local_jordan_decompositions(E, p; rank::Int, det_val::Int, max_scale = 
       for i in 1:l
         if srwnd[i][2] == 1
           reps[i] = Int[1]
+        elseif isodd(srwnd[i][2])
+          if srwnd[i][4] == e # odd rank, and w = e, then Witt invariant must be 1
+            reps[i] = Int[1]
+          else
+            reps[i] = Int[-1, 1]
+          end
         elseif(srwnd[i][2] == 2 && isodd(srwnd[i][3] + srwnd[i][4]))
           # A(\alpha, -\gamma \alpha^-1)
           reps[i] = Int[hilbert_symbol(srwnd[i][5], srwnd[i][5] * srwnd[i][6], p)]
@@ -1337,23 +1381,13 @@ mutable struct GenusQuad{S, T, U}
   rank::Int
   signatures::Dict{InfPlc, Int}
   d::U
+  space
 
   function GenusQuad{S, T, U}(K) where {S, T, U}
     z = new{typeof(K), ideal_type(order_type(K)), elem_type(K)}()
     z.rank = -1
     return z
   end
-
-  #function GenusHerm(E, r, LGS::Vector, signatures)
-  #  primes = Vector(undef, length(LGS))
-
-  #  for i in 1:length(LGS)
-  #    primes[i] = prime(LGS[i])
-  #    @assert r == rank(LGS[i])
-  #  end
-  #  z = new(E, primes, LGS, r, signatures)
-  #  return z
-  #end
 end
 
 genus_quad_type(K) = GenusQuad{typeof(K), ideal_type(order_type(K)), elem_type(K)}
@@ -1364,9 +1398,54 @@ function GenusQuad(K, d, LGS, signatures)
   z.signatures = signatures
   z.d = d
   z.rank = rank(LGS[1])
+  z.primes = [prime(g) for g in LGS]
   z.K = K
   return z
 end
+
+function genus(L::QuadLat)
+  bad = bad_primes(L, even = true)
+  S = real_places(base_field(L))
+  D = diagonal(rational_span(L))
+  signatures = Dict{InfPlc, Int}(s => count(d -> isnegative(d, s), D) for s in S)
+  return GenusQuad(base_field(L), prod(D), [genus(L, p) for p in bad], signatures)
+end
+
+function Base.:(==)(G1::GenusQuad, G2::GenusQuad)
+  if G1.K != G2.K
+    return false
+  end
+
+  if length(G1.primes) != length(G2.primes)
+    return false
+  end
+
+  if G1.signatures != G2.signatures
+    return false
+  end
+
+  for g1 in G1.LGS
+    p1 = prime(g1)
+    found = false
+    for g2 in G2.LGS
+      p2 = prime(g2)
+      if p1 == p2
+        found = true
+        if g1 != g2
+          return false
+        end
+        break
+      end
+    end
+    if !found
+      return false
+    end
+  end
+
+  return true
+end
+
+primes(G::GenusQuad) = G.primes
 
 function genera_quadratic(K; rank::Int, signatures, det)
   OK = maximal_order(K)
@@ -1423,6 +1502,7 @@ function _check_global_quadratic_genus(c, d, signatures)
 end
 
 function _possible_determinants(K, local_symbols, signatures)
+  # This is probably independent of the local symbol?
   C, mC = class_group(K)
   if length(local_symbols) == 0
     OK = maximal_order(K)
@@ -1509,13 +1589,77 @@ function _possible_determinants(K, local_symbols, signatures)
   return dets
 end
 
-function space(G::GenusQuad)
+function quadratic_space(G::GenusQuad)
+  if isdefined(G, :space)
+    return G.space::quadratic_space_type(G.K)
+  end
+
   c = G.LGS
   K = G.K
   P = ideal_type(order_type(K))[ prime(c[i]) for i in 1:length(c) if hasse_invariant(c[i]) == -1]
   d = G.d
   signa = G.signatures
   rk = G.rank
-  #return _quadratic_form_with_invariants(rk, d, P, signa)::dense_matrix_type(K)
-  return quadratic_space(G.K, _quadratic_form_with_invariants(rk, d, P, signa))
+  G.space = quadratic_space(G.K, _quadratic_form_with_invariants(rk, d, P, signa))
+  return G.space::quadratic_space_type(G.K)
+end
+
+################################################################################
+#
+#  Representative
+#
+################################################################################
+
+function representative(G::GenusQuad)
+  K = G.K
+  OK = order(primes(G)[1])
+  # Let's follow the Lorch paper. This is also how we do it in the Hermitian case.
+  V = quadratic_space(G)
+  M = maximal_integral_lattice(V)
+  for g in G.LGS
+    p = prime(g)
+    @vprint :Lattice 1 "Finding representative for $g at $(prime(g))...\n"
+    L = representative(g)
+    M = find_lattice(M, L, p)
+    @assert islocally_isometric(M, L, p)
+  end
+  return M
+end
+
+function find_lattice(M::QuadLat, L::QuadLat, p)
+  k, h = ResidueField(order(p), p)
+  m = rank(M)
+  chain = typeof(L)[ L ]
+  ok, LL = ismaximal_integral(L, p)
+  E = nf(order(p))
+  while !ok
+    push!(chain, LL)
+    ok, LL = ismaximal_integral(LL, p)
+  end
+  pop!(chain)
+  LL = M
+  reverse!(chain)
+  for X in chain 
+    BM = local_basis_matrix(LL, p, type = :submodule)
+    pM = _module_scale_ideal(pseudo_matrix(LL), fractional_ideal(order(p), p))
+    while true
+      v = [ rand(k) for i in 1:m ]
+      while all(i -> iszero(v[i]), 1:m)
+        v = [ rand(k) for i in 1:m ]
+      end
+      _, KM = kernel(matrix(k, length(v), 1, v), side = :left)
+      KM = map_entries(x -> E(h\x), KM)
+      _new_pmat = _sum_modules(pseudo_matrix(KM * BM), pM)
+      LL = lattice(ambient_space(M), _new_pmat)
+      if islocally_isometric(X, LL, p)
+        break
+      end
+    end
+  end
+  @assert islocally_isometric(L, LL, p)
+  return LL
+end
+
+function representatives(G::GenusQuad)
+  return genus_representatives(representative(G))
 end
