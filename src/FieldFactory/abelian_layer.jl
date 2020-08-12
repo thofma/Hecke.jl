@@ -172,13 +172,14 @@ function _construct_grp(IdH::GAP.GapObj, uncom::Int)
   L = GAP.Globals.DerivedSeries(G)
   mH1 = GAP.Globals.NaturalHomomorphismByNormalSubgroup(G, L[end-1])
   K = GAP.Globals.Kernel(mH1)
-  gens = GAP.gap_to_julia(GAP.Globals.MinimalGeneratingSet(K))
+  gens = GAP.Globals.MinimalGeneratingSet(K)
+  new_gens = []
   for i = 1:length(gens)
     o = GAP.Globals.Order(gens[i])
     ex = ppio(o, uncom)[1]
-    gens[i] = gens[i]^ex 
+    push!(new_gens, gens[i]^ex) 
   end
-  S = GAP.Globals.Subgroup(G, GAP.julia_to_gap(gens))
+  S = GAP.Globals.Subgroup(G, GAP.julia_to_gap(new_gens))
   Q = GAP.Globals.FactorGroup(G, S)
   IdCheck = GAP.Globals.IdGroup(Q)
   return IdCheck
