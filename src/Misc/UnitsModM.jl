@@ -506,7 +506,7 @@ function _unit_pk_mod_n(p::Int, v::Int, n::Int)
             end
             return mod(c*inv, ord1)
           else
-            return mod(inv*disc_log_bs_gs(z, y, aux1), ord1)
+            return mod(inv*disc_log_bs_gs(z, y, fmpz(aux1)), ord1)
           end
         end
       end

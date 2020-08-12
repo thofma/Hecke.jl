@@ -212,10 +212,10 @@ function _abelian_normal_extensions(F::FieldsTower, gtype::Array{Int, 1}, absbou
     return Vector{Hecke.ClassField{Hecke.MapRayClassGrp, GrpAbFinGenMap}}[]
   end
   @vprint :Fields 2 "\n"
-  @vprint :Fields 1 "Computing class group of $K"
+  @vprint :Fields 1 "Computing class group of $(K.pol)"
   @vprint :Fields 2 "\n"
   @vtime :Fields 2 Cl, mCl = class_group(O, use_aut = true)
-  @vprint :Fields 1 "$(Hecke.clear_to_eol())"
+  @vprint :Fields 1 "$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())"
   if mod(n, 2) == 0 && !only_real
     inf_plc = real_places(K)
   end

@@ -460,7 +460,7 @@ function check_group_extension(TargetGroup::GAP.GapObj, autos::Array{NfToNfMor, 
   if com == 1  
     # I only need to check the split extension, since the second cohomology group is
     # trivial, regardless of the action
-    if length(res_act) == 1 && ngens(GS) == 1 && iscoprime(d, order(GS))
+    if length(res_act) == 1 && isprime(order(GS)) == 1 && isprime(degree(K)) && iscoprime(d, order(GS))
       #Just need to check if the action is non trivial
       return !isone(mod(res_act[1].map[1, 1], GS.snf[1]))
     end

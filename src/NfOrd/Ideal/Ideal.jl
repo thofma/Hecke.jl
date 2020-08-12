@@ -625,6 +625,15 @@ function assure_has_minimum(A::NfAbsOrdIdl)
   if has_minimum(A)
     return nothing
   end
+  
+  if degree(order(A)) == 1
+    if has_2_elem(A)
+      A.minimum = gcd(A.gen_one, numerator(coeff(A.gen_two.elem_in_nf, 0)))
+    else
+      A.minimum = deepcopy(A.basis_matrix[1, 1])
+    end
+    return nothing
+  end
 
   if has_princ_gen(A)
     b = A.princ_gen.elem_in_nf
@@ -1059,7 +1068,7 @@ function _minmod(a::fmpz, b::NfOrdElem)
   if !isdefining_polynomial_nice(nf(parent(b)))
     return gcd(denominator(inv(b.elem_in_nf), parent(b)), a)
   end
-  lf, ar = _factors_trial_division(a)
+  lf, ar = _factors_trial_division(a, 10^2)
   min = fmpz(1)
   for p in lf
     ap = p^valuation(a, p)
@@ -2193,6 +2202,10 @@ function iscoprime(I::NfAbsOrdIdl, J::NfAbsOrdIdl)
     return isone(I+J)
   end
 end 
+
+function iscoprime(I::NfAbsOrdIdl, a::fmpz)
+  return iscoprime(I, ideal(order(I), a))
+end
 
 one(I::NfAbsOrdIdlSet) = ideal(order(I), 1)
 

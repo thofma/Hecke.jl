@@ -19,7 +19,7 @@ function check_obstruction(list::Vector{FieldsTower}, L::GAP.GapObj,
   for F in list
     assure_isomorphism(F, G)
   end
-  if isone(common_degree) || length(cocycles) > 100
+  if isone(common_degree) || length(cocycles) > 200
     for i = 1:length(list)
       list[i].admissible_cocycles = cocycles
     end

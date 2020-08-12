@@ -241,7 +241,7 @@ function _maximal_abelian_subfield(A::Hecke.ClassField, mp::Hecke.NfToNfMor, ctx
     end
   end
   if iszero(ind)
-    @vtime :MaxAbExt 3 R, mR = Hecke.ray_class_group_quo(ZK, fM0, defining_modulus(mR1)[2], ctx, check = false)
+    @vtime :MaxAbExt 1 R, mR = Hecke.ray_class_group_quo(ZK, fM0, defining_modulus(mR1)[2], ctx, check = false)
     if isdefined(ctx, :computed)
       push!(ctx.computed, (fM0, isempty(defining_modulus(mR1)[2]), mR))
     else
@@ -257,8 +257,7 @@ function _maximal_abelian_subfield(A::Hecke.ClassField, mp::Hecke.NfToNfMor, ctx
     else
       inf_plc = real_places(k)
     end
-    #@vtime :MaxAbExt 1 
-    r, mr = Hecke.ray_class_group(zk, fm0, inf_plc, n_quo = ctx.n)
+    @vtime :MaxAbExt 1  r, mr = Hecke.ray_class_group(zk, fm0, inf_plc, n_quo = ctx.n)
   else
     rel_plc = true
     if istotally_real(K) && isempty(defining_modulus(mR1)[2])
@@ -272,7 +271,7 @@ function _maximal_abelian_subfield(A::Hecke.ClassField, mp::Hecke.NfToNfMor, ctx
         wrp *= pf
       end
     end
-    r, mr = Hecke.ray_class_groupQQ(zk, Int(wrp), rel_plc, ctx.n)
+    @vtime :MaxAbExt 1  r, mr = Hecke.ray_class_groupQQ(zk, Int(wrp), rel_plc, ctx.n)
   end
   @vtime :MaxAbExt 1 lP, gS = Hecke.find_gens(mR, coprime_to = minimum(defining_modulus(mR1)[1]))  
   listn = NfOrdIdl[norm(mp, x) for x in lP]
