@@ -501,12 +501,13 @@ function max_ab_norm_sub_containing(G::GAP.GapObj)
   if !GAP.Globals.IsEmpty(sc)
     return G1, H, GAP.gap_to_julia(Vector{Int}, GAP.Globals.AbelianInvariants(sc[1]))
   end
-  lS = GAP.gap_to_julia(GAP.Globals.ConjugacyClassesSubgroups(G1))
+  lS = GAP.Globals.ConjugacyClassesSubgroups(G1)
   #TODO: Subgroups in the quotient by H and not in the full group
   candidate = H
   sizecandidate = GAP.Globals.Size(H)
   ab_invariants = GAP.gap_to_julia(Vector{Int}, GAP.Globals.AbelianInvariants(H))
-  for S in lS
+  for i = 1:length(lS)
+    S = lS[i]
     s = GAP.Globals.Representative(S)
     if !GAP.Globals.IsSubset(s, H)
       continue
