@@ -56,11 +56,21 @@ function _read_from_file(f::IOStream)
       auts[i] = NfToNfMor(K, K, img)
     end
     embs = Vector{NfToNfMor}(undef, length(a[3]))
-    Kcodomain = number_field(Qx(a[3][1][1]), cached = false, check = false)[1]
+    def_pol = Qx(a[3][1][1])
+    if def_pol == K.pol
+      Kcodomain = K
+    else
+      Kcodomain = number_field(def_pol, cached = false, check = false)[1]
+    end
     embs[1] = NfToNfMor(QQ, Kcodomain, Kcodomain(Qx(a[3][1][2])))
     for i = 2:(length(a[3]))
       Kdomain = Kcodomain
-      Kcodomain = number_field(Qx(a[3][i][1]), cached = false, check = false)[1]
+      def_pol = Qx(a[3][i][1])
+      if def_pol == K.pol
+        Kcodomain = K
+      else
+        Kcodomain = number_field(def_pol, cached = false, check = false)[1]
+      end
       embs[i] = NfToNfMor(Kdomain, Kcodomain, Kcodomain(Qx(a[3][i][2])))
     end
     list[k] = FieldsTower(K, auts, embs)
