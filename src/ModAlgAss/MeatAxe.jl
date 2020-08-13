@@ -995,17 +995,15 @@ function submodules(M::ModAlgAss{S, T, V}) where {S, T, V}
   
 end
 
-
 @doc Markdown.doc"""
     submodules(M::ModAlgAss, index::Int)
 
 Given a $G$-module $M$, it returns all the submodules of M of index q^index, where q is the order of the field
-
 """
 function submodules(M::ModAlgAss{S, T, V}, index::Int; comp_factors = Tuple{ModAlgAss{S, T, V}, Int}[]) where {S, T, V}
-  K=M.base_ring
+  K = base_ring(M)
   if index == M.dimension
-    return T[zero_matrix(K,1,M.dimension)]
+    return T[zero_matrix(K, 1, M.dimension)]
   end
   list = T[]
   if index >= div(M.dimension, 2)
@@ -1029,7 +1027,7 @@ function submodules(M::ModAlgAss{S, T, V}, index::Int; comp_factors = Tuple{ModA
         N, pivotindex = _actquo(x, M.action)
         #  Recover the composition factors of the quotient
         Sub = _actsub(x, M.action)
-        lf1 = Tuple{typeof(M), Int}[(y[1], y[2]) for y in lf]
+        lf1 = Tuple{typeof(M), Int}[]
         for j = 1:length(lf)
           if isisomorphic(lf[j][1], Sub)
             if !isone(lf[j][2])
