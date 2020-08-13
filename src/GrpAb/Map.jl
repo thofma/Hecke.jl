@@ -123,7 +123,7 @@ function hom(A::Array{GrpAbFinGenElem, 1}, B::Array{GrpAbFinGenElem, 1}; check::
   M = vcat([hcat(A[i].coeff, B[i].coeff) for i = 1:length(A)])
   RA = rels(GA)
   M = vcat(M, hcat(RA, zero_matrix(FlintZZ, nrows(RA), ncols(B[1].coeff))))
-  if isdefined(GB, :exponent)
+  if isdefined(GB, :exponent) && nrows(M) >= ncols(M)
     H = hnf_modular_eldiv(M, exponent(GB))
   else
     H = hnf(M)
