@@ -180,6 +180,7 @@ row of $A$ equal to $b$.
 """
 function setindex!(A::SMat{T}, b::SRow{T}, i::Int) where T
   (i < 1 || i > nrows(A)) && error("Index must be between 1 and $(nrows(A))")
+  A.nnz = A.nnz - length(A.rows[i].pos) + length(b.pos)
   A.rows[i] = b
   return A
 end
@@ -429,7 +430,7 @@ end
 
 # (dense Array{T, 1}) * SMat{T} as (dense Array{T, 1}) 
 @doc Markdown.doc"""
-    mul(A::SMat, b::AbstractVector{T}) -> Vector{T}
+    mul(A::SMat{T}, b::AbstractVector{T}) -> Vector{T}
 
 Return the product $A \cdot b$ as a dense vector.
 """
@@ -457,7 +458,7 @@ end
 
 # - SMat{T} * Array{T, 2} as Array{T, 2}
 @doc Markdown.doc"""
-    mul(A::SMat, b::AbstractArray{T, 2}) -> Array{T, 2}
+    mul(A::SMat{T}, b::AbstractArray{T, 2}) -> Array{T, 2}
 
 Return the product $A \cdot b$ as a dense array.
 """
@@ -485,7 +486,7 @@ end
 # - SMat{T} * MatElem{T} as MatElem{T}
 
 @doc Markdown.doc"""
-    mul(A::SMat, b::MatElem) -> MatElem
+    mul(A::SMat{T}, b::MatElem{T}) -> MatElem
 
 Return the product $A \cdot b$ as a dense matrix.
 """
@@ -859,7 +860,7 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    vcat(A::SMat, B::SMat) -> SMat
+    vcat!(A::SMat, B::SMat) -> SMat
 
 Vertically joins $A$ and $B$ inplace, that is, the rows of $B$ are
 appended to $A$.
@@ -1056,6 +1057,22 @@ function minimum(A::SMat)
   end
   return m
 end
+
+function maximum(::typeof(nbits), A::SMat{fmpz})
+  if length(A.rows) == 0
+    return zero(FlintZZ)
+  end
+  m = nbits(A.rows[1].values[1])
+  for i in A.rows
+    for j in i.values
+      if m < nbits(j)
+        m = nbits(j)
+      end
+    end
+  end
+  return m
+end
+
 
 ################################################################################
 #
