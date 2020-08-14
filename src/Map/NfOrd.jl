@@ -793,11 +793,21 @@ function image(mF::NfToFqNmodMor_easy, a::FacElem{nf_elem, AnticNumberField}, D:
       end
     end
 
-    if (quo != 0 && vv != 0) || !iszero(v)
-      if !cached && iszero(fmpz_mod_ui(denominator(k), char))
-        throw(BadPrime(characteristic(Fq)))
-      end
 
+    # We always reduce, so do the test first
+    if !cached && iszero(fmpz_mod_ui(denominator(k), char))
+      throw(BadPrime(characteristic(Fq)))
+    end
+
+    if !((quo != 0 && vv != 0) || !iszero(v))
+      if !cached
+        nf_elem_to_gfp_poly!(t, k)
+        D[i] = zero(parent(t))
+        set!(D[i], t)
+      end
+    end
+
+    if (quo != 0 && vv != 0) || !iszero(v)
       if cached
         s = zero(Fq)
         ccall((:fq_nmod_set, libflint), Nothing,
@@ -945,11 +955,19 @@ function image(mF::NfToGFMor_easy, a::FacElem{nf_elem, AnticNumberField}, D::Vec
       vv = vv % quo # vv will always be positive
     end
     @assert vv < Fq.n  #please complain if this is triggered
-    if !iszero(vv)
-      if !cached && (fmpz_mod_ui(denominator(k), Fq.n) == 0)
-        throw(BadPrime(characteristic(Fq)))
-      end
 
+    # We always have to reduce, so check first
+    if !cached && (fmpz_mod_ui(denominator(k), Fq.n) == 0)
+      throw(BadPrime(characteristic(Fq)))
+    end
+
+    if iszero(vv) && !cached
+      D[i] = zero(parent(t))
+      nf_elem_to_gfp_poly!(t, k)
+      set!(D[i], t)
+    end
+
+    if !iszero(vv)
       if cached
         s = evaluate_raw(D[i], evaluateat)
       else
