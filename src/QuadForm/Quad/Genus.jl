@@ -306,10 +306,16 @@ function genus(J::JorDec)
     end
 
     # Lemma 3.3.9
+    
+    #@show new_normgen
+    #@show new_norm
+    #@show D
 
     # Now the scale of L^(s_i) is si
     weight = minimum(Union{PosInf, Int}[new_norm + quadratic_defect(divexact(d, new_normgen), p) for d in D])
+    #@show weight
     weight = min(weight, e + sca[i])
+    #@show weight
     new_weights[i] = weight
     new_normgens[i] = new_normgen
   end
@@ -390,7 +396,9 @@ function _quadratic_unimodular_lattice_dyadic(p, r, w, d, alpha, wi)
         push!(mats, _Amatrix(K, 0, 0))
       end
       return diagonal_matrix(mats)
-    elseif r == 1 && isodd(valuation(alpha, p) + w)
+    elseif r == 1
+      @assert isodd(valuation(alpha, p) + w)
+      @assert w == e || (e > w && w == valuation(gamma, p) - valuation(alpha, p))
       return _Amatrix(K, alpha, -gamma * inv(alpha))
     elseif r >= 2 && isodd(valuation(alpha, p) + w)
       mats = dense_matrix_type(K)[]
@@ -1125,6 +1133,30 @@ function _representatives_for_equivalence(p, n, m)
   return finer_reps
 end
 
+function _representatives_for_equivalence_and_witt(p, n, m, c)
+  @assert n <= m
+  u = elem_in_nf(uniformizer(p))^n
+  G, mG = local_multiplicative_group_modulo_squares(p)
+  k = ngens(G)
+  reps = typeof(u)[ u * mG(g) for g in G if iszero(g[k])]
+  finer_reps = Tuple{typeof(u), Int}[(reps[1], hilbert_symbol(reps[1], reps[1] * c, p))]
+  for j in 2:length(reps)
+    uu = reps[j]
+    new = true
+    hi = hilbert_symbol(uu, uu * c, p)
+    for k in 1:length(finer_reps)
+      if _is_equivalent_quadratic(uu, finer_reps[k][1], p, m) && finer_reps[k][2] == hi
+        new = false
+        break
+      end
+    end
+    if new
+      push!(finer_reps, (uu, hi))
+    end
+  end
+  return first.(finer_reps)::Vector{typeof(u)}
+end
+
 function _is_equivalent_quadratic(a, b, p, n)
   ap = valuation(a, p)
   if ap != valuation(b, p)
@@ -1136,6 +1168,126 @@ function _is_equivalent_quadratic(a, b, p, n)
   end
 
   return false
+end
+
+# uni-unimodular, that is, determinant/discriminant equal to 1
+function _unimodular_jordan_block(p, m)
+  E = nf(order(p))
+  e = ramification_index(p)
+  @assert isdyadic(p)
+  # weight, normgen, det, witt
+  res = Vector{Tuple{Int, nf_elem, nf_elem, Int}}()
+  
+  G, mG = local_multiplicative_group_modulo_squares(p)
+  pi = elem_in_nf(uniformizer(p))
+  k = ngens(G)
+  reps_squares = typeof(pi)[ mG(g) for g in G if iszero(g[k])]
+
+  if isodd(m)
+    r = div(m - 1, 2)
+    # Norm is always 0
+    if m == 1
+      weights = Int[e]
+    else
+      weights = Int[ i for i in 0:e if isodd(i)] # I do the sieving because of the Witt invariant later
+      if !isodd(e)
+        push!(weights, e)
+      end
+    end
+
+    # The only norm generator is d
+
+    D = kummer_generator_of_local_unramified_quadratic_extension(p)
+    invD = inv(D)
+
+    for w in weights
+      for d in reps_squares
+        push!(res, (w, (-1)^r * d, d, 1))
+        if w != e
+          # If w != e, then also -1 is possible
+          push!(res, (w, invD * (-1)^r * d, d, -1))
+        end
+      end
+    end
+  else
+    r = div(m, 2)
+
+    norms = collect(0:e)
+
+    _find_special_class_dict = Dict{nf_elem, nf_elem}()
+
+    __find_special_class = (x, p) -> get!(_find_special_class_dict, x, _find_special_class(x, p))
+
+    mmod4 = mod(m, 4)
+
+    for n in norms
+      normgens = pi^n .* reps_squares
+
+      if isodd(n) # odd norm
+        _r = Int[ j for j in n:e if iseven(j) ]
+        if isodd(e) && (length(_r) == 0 || _r[end] != e)
+          push!(_r, e)
+        end
+      else # iseven(s[3])
+        _r = Int[ j for j in n:e if isodd(j) ]
+        if iseven(e) && (length(_r) == 0 || _r[end] != e)
+          push!(_r, e)
+        end
+      end
+      weights = _r
+
+      a = gen(E)
+
+      for w in weights
+        for d in reps_squares
+          if mmod4 == 0 || mmod4 == 1
+            gamma = __find_special_class(d, p) - 1
+            #@assert islocal_square(d//(1 + gamma), p)
+            #@assert valuation(d, p) == valuation(1 + gamma, p)
+            dis = d
+          else
+            gamma = __find_special_class(-d, p) - 1
+            #@assert islocal_square(-d//(1 + gamma), p)
+            #@assert valuation(-d, p) == valuation(1 + gamma, p)
+            dis = -d
+          end
+          #@assert quadratic_defect(1 + gamma, p) == (iszero(gamma) ? inf : valuation(gamma, p))
+          if !(iszero(gamma) || valuation(gamma, p) >= w + n)
+            continue
+          end
+          
+          if iseven(n + w)
+            @assert w == e
+          end
+
+          # This is a good candidate for the determinant
+          # It is not sufficient to look for 
+          _normgens = _representatives_for_equivalence_and_witt(p, n, w, -dis)
+          for ng in _normgens
+            
+            if r == 1 && isodd(w + n)
+              if !(w == e || (e > w && !iszero(gamma) && w == valuation(gamma, p) - valuation(ng, p)))
+                continue
+              end
+            end
+
+            if (m == 2 && isodd(n + w))
+              # A(\alpha, -\gamma \alpha^-1)
+              wi = hilbert_symbol(ng, ng * -dis, p)
+              push!(res, (w, ng, d, wi))
+            elseif iseven(n + w)
+              wi = hilbert_symbol(ng, ng * -dis, p)
+              push!(res, (w, ng, d, wi))
+            else
+              push!(res, (w, ng, d, 1))
+              push!(res, (w, ng, d, -1))
+            end
+          end
+        end
+      end
+    end
+  end
+  return res
 end
 
 @doc Markdown.doc"""
@@ -1207,154 +1359,46 @@ function local_jordan_decompositions(E, p; rank::Int, det_val::Int, max_scale = 
     @assert all(valuation(u, p) == 0 for u in reps_squares)
 
     e = ramification_index(p)
-    scales_rks_norms = Vector{Tuple{Int, Int, Int}}[]
-    for scalerank in scales_rks
-      l = length(scalerank)
-      norms = Vector{Vector{Int}}(undef, l)
-      for i in 1:l
-        s = scalerank[i]
-        if s[2] == 1
-          norms[i] = Int[0]
-        elseif isodd(s[2])
-          norms[i] = Int[0]
-        else
-          norms[i] = collect(0:e)
-        end
-      end
-      for n in Iterators.product(norms...)
-        push!(scales_rks_norms, Tuple{Int, Int, Int}[ (scalerank[i][1],scalerank[i][2], n[i]) for i in 1:l])
-      end
-    end
-    scales_rks_norms_weights = Vector{Tuple{Int, Int, Int, Int}}[]
-    for scaleranknorm in scales_rks_norms
-      l = length(scaleranknorm)
-      # I need to adjust this
-      weights = Vector{Vector{Int}}(undef, length(scaleranknorm))
-      for (i, s) in enumerate(scaleranknorm)
-        if s[2] == 1
-          weights[i] = Int[e]
-        elseif isodd(s[2]) # odd rank, w = e or w < e is odd
-          # weight and norm are equal
-          weights[i] = Int[ i for i in 0:e if isodd(i)] # I do the sieving because of the Witt invariant later
-          if !isodd(e)
-            push!(weights[i], e)
-          end
-          #r = Int[ j for j in s[3]:e if isodd(j) ]
-          #if (length(r) == 0 || r[end] != e)
-          #  push!(r, e)
-          #end
-        else # even rank
-          if isodd(s[3]) # odd norm
-            r = Int[ j for j in s[3]:e if iseven(j) ]
-            if isodd(e) && (length(r) == 0 || r[end] != e)
-              push!(r, e)
-            end
-          else # iseven(s[3])
-            r = Int[ j for j in s[3]:e if isodd(j) ]
-            if iseven(e) && (length(r) == 0 || r[end] != e)
-              push!(r, e)
-            end
-          end
-          weights[i] = r
-        end
-      end
-      for w in Iterators.product(weights...)
-        push!(scales_rks_norms_weights, Tuple{Int, Int, Int, Int}[ (scaleranknorm[i][1],scaleranknorm[i][2], scaleranknorm[i][3], w[i]) for i in 1:l])
-      end
+
+    # collect the possible ranks
+
+    possible_ranks = unique!(reduce(vcat, Vector{Int}[[r[2] for r in s] for s in scales_rks]))
+
+    decs_per_rank = Dict{Int, Vector{Tuple{Int, nf_elem, nf_elem, Int}}}()
+
+    for m in possible_ranks
+      decs_per_rank[m] = _unimodular_jordan_block(p, m)
     end
 
-    scales_rks_norms_weights_normgens = Vector{Tuple{Int, Int, Int, Int, nf_elem}}[]
+    for sr in scales_rks
+      it = Iterators.product([decs_per_rank[r] for (s, r) in sr]...)
+      for local_blocks in it
+        # local blocks in form weight, normgen, det, witt
+        # JorDec(p, sc::Vector{Int},
+        #           rks::Vector{Int},
+        #           normgens::Vector{nf_elem},
+        #           weights::Vector{Int},
+        #           dets::Vector{nf_elem},
+        #           witts::Vector{Int}) 
 
-    for srnw in scales_rks_norms_weights
-      l = length(srnw)
-      #reps = Vector{nf_elem}[ _representatives_for_equivalence(p, s[3], s[4]) for s in srnw ]
-      reps = Vector{Vector{nf_elem}}(undef, l)
-      for i in 1:l
-        s = srnw[i]
-        if isodd(s[2])
-          reps[i] = nf_elem[one(E)]
-        else
-          reps[i] = pi^s[3] .* reps_squares
-        end
+        l = length(sr)
+        J = JorDec(p, Int[s[1] for s in sr],
+                      Int[s[2] for s in sr],
+                      nf_elem[pi^sr[i][1] * local_blocks[i][2] for i in 1:l],
+                      Int[sr[i][1] + local_blocks[i][1] for i in 1:l],
+                      nf_elem[pi^(sr[i][1] * sr[i][2]) * local_blocks[i][3] for i in 1:l],
+                      Int[isodd(sr[i][2]) ? local_blocks[i][4] : local_blocks[i][4] * hilbert_symbol(pi^sr[i][1], (-1)^divexact(sr[i][2]*(sr[i][2] - 1), 2) * pi^(sr[i][1] * sr[i][2]) * local_blocks[i][3], p) for i in 1:l])
+        push!(res, J)
       end
-      for rep in Iterators.product(reps...)
-        push!(scales_rks_norms_weights_normgens, Tuple{Int, Int, Int, Int, nf_elem}[ (srnw[i][1], srnw[i][2], srnw[i][3], srnw[i][4], rep[i]) for i in 1:l])
-      end
-    end
-    scales_rks_norms_weights_normgens_dets = Vector{Tuple{Int, Int, Int, Int, nf_elem, nf_elem}}[]
-
-    _find_special_class_dict = Dict{nf_elem, nf_elem}()
-
-    __find_special_class(x) = get!(_find_special_class_dict, x, _find_special_class(x, p))
-
-    # TODO: I could do this much better by precomputing
-    for srwn in scales_rks_norms_weights_normgens
-      l = length(srwn)
-      reps = Vector{nf_elem}[ reps_squares for i in 1:l]
-      for rep in Iterators.product(reps...)
-        good = true
-        for i in 1:l
-          d = rep[i]
-          mmod4 = mod(srwn[i][2], 4)
-          if mmod4 == 0 || mmod4 == 1
-            gamma = _find_special_class(d, p) - 1
-            #@assert islocal_square(d//(1 + gamma), p)
-            #@assert valuation(d, p) == valuation(1 + gamma, p)
-          else
-            gamma = _find_special_class(-d, p) - 1
-            #@assert islocal_square(-d//(1 + gamma), p)
-            #@assert valuation(-d, p) == valuation(1 + gamma, p)
-          end
-          #@assert quadratic_defect(1 + gamma, p) == (iszero(gamma) ? inf : valuation(gamma, p))
-          if !(iszero(gamma) || valuation(gamma, p) >= srwn[i][4] + valuation(srwn[i][5], p))
-            good = false
-            break
-          end
-        end
-        if !good
-          continue
-        end
-        #push!(scales_rks_norms_weights_normgens_dets, Tuple{Int, Int, Int, Int, nf_elem, nf_elem}[ (srwn[i][1], srwn[i][2], srwn[i][3], srwn[i][4], srwn[i][5], rep[i]) for i in 1:l if srwn[i][2] > 1 || srwn[i][4] == srwn[i][5]])
-
-        push!(scales_rks_norms_weights_normgens_dets, Tuple{Int, Int, Int, Int, nf_elem, nf_elem}[ (srwn[i][1], srwn[i][2], srwn[i][3], srwn[i][4], srwn[i][5], rep[i]) for i in 1:l])
-      end
-    end
-    scales_rks_norms_weights_normgens_dets_witts = Vector{Tuple{Int, Int, Int, Int, nf_elem, nf_elem, Int}}[]
-
-    for srwnd in scales_rks_norms_weights_normgens_dets
-      l = length(srwnd)
-      # If r is even and norm + weight is even, then I don't have to specify witt (so let us put a 2 there)
-      reps = Vector{Vector{Int}}(undef, l)
-      for i in 1:l
-        if srwnd[i][2] == 1
-          reps[i] = Int[1]
-        elseif isodd(srwnd[i][2])
-          if srwnd[i][4] == e # odd rank, and w = e, then Witt invariant must be 1
-            reps[i] = Int[1]
-          else
-            reps[i] = Int[-1, 1]
-          end
-        elseif(srwnd[i][2] == 2 && isodd(srwnd[i][3] + srwnd[i][4]))
-          # A(\alpha, -\gamma \alpha^-1)
-          reps[i] = Int[hilbert_symbol(srwnd[i][5], srwnd[i][5] * srwnd[i][6], p)]
-        elseif iseven(srwnd[i][2]) && iseven(srwnd[i][3] + srwnd[i][4])
-          reps[i] = Int[hilbert_symbol(srwnd[i][5], srwnd[i][5] * srwnd[i][6], p)]
-        else
-          reps[i] = Int[-1,1]
-        end
-      end
-      for rep in Iterators.product(reps...)
-        push!(scales_rks_norms_weights_normgens_dets_witts, Tuple{Int, Int, Int, Int, nf_elem, nf_elem, Int}[ (srwnd[i][1], srwnd[i][2], srwnd[i][3], srwnd[i][4], srwnd[i][5], srwnd[i][6], rep[i]) for i in 1:l])
-      end
-    end
-
-    for srwndw in scales_rks_norms_weights_normgens_dets_witts
-      push!(res, JorDec(p, Int[s[1] for s in srwndw], Int[s[2] for s in srwndw], nf_elem[pi^s[1] * s[5] for s in srwndw], Int[s[1] + s[4] for s in srwndw], nf_elem[pi^(s[1] * s[2]) * s[6] for s in srwndw], Int[isodd(s[2]) ? s[7] : s[7] * hilbert_symbol(pi^s[1], (-1)^divexact(s[2]*(s[2] - 1), 2) * pi^(s[1] * s[2]) * s[6], p) for s in srwndw]))
     end
     return res
+    #for srwndw in scales_rks_norms_weights_normgens_dets_witts
+    #  push!(res, JorDec(p, Int[s[1] for s in srwndw], Int[s[2] for s in srwndw], nf_elem[pi^s[1] * s[5] for s in srwndw], Int[s[1] + s[4] for s in srwndw], nf_elem[pi^(s[1] * s[2]) * s[6] for s in srwndw], Int[isodd(s[2]) ? s[7] : s[7] * hilbert_symbol(pi^s[1], (-1)^divexact(s[2]*(s[2] - 1), 2) * pi^(s[1] * s[2]) * s[6], p) for s in srwndw]))
+    #end
+    #return res
   end
-  return scales_rks_norms_weights
 end
+
 
 function local_genera_quadratic(K, p; rank::Int, det_val::Int, max_scale = nothing)
   J = local_jordan_decompositions(K, p, rank = rank, det_val = det_val, max_scale = max_scale)

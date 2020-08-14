@@ -276,8 +276,6 @@ isequivalent(L::AbsSpace, M::AbsSpace, p)
 #
 ################################################################################
 
-# TODO: Add this functionality for Hermitian spaces
-
 # Returns 0 if V is not definite
 # Returns an element a != 0 such that a * canonical_basis of V has
 # positive Gram matrix
