@@ -522,7 +522,6 @@ function hnf_extend!(A::SMat{fmpz}, b::SMat{fmpz}, trafo::Type{Val{N}} = Val{fal
         println("Now at $nc rows of $(nrows(b)), HNF so far $(nrows(A)) rows")
         println("Current density: $(density(A))")
         println("and size of largest entry: $(nbits(maximum(abs, A))) bits $(sum(nbits, A))")
-        println("#fmpz: $(Nemo.no_fmpz), ", unsafe_load(cglobal((:mpz_free_alloc, Nemo.libflint), Cint)), ", ", unsafe_load(cglobal((:mpz_free_num, Nemo.libflint), Cint)))
       end
     end
     nc += 1
