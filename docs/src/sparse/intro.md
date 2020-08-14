@@ -78,7 +78,7 @@ For example, `SMat{fmpz}` is the type for sparse matrices over the integers.
 In constrast to sparse rows, sparse matrices have a fixed number of rows and columns,
 that is, they represent elements of the matrices space $\mathrm{Mat}_{n\times m}(R)$.
 Internally, sparse matrices are implemented as an array of sparse rows. 
-As a consequence, Unlike their dense counterparts, sparse matrices have a mutable number of rows and it is very performant to add additional rows.
+As a consequence, unlike their dense counterparts, sparse matrices have a mutable number of rows and it is very performant to add additional rows.
 
 ### Construction
 ```@docs
@@ -95,7 +95,73 @@ sparse_matrix(::Ring, ::Array{T, 2}) where {T}
 The normal way however, is to add rows:
 
 ```@docs
-push!(::SMat, ::SRow)
+push!(::SMat{T}, ::SRow{T}) where {T}
 ```
 
+Sparse matrices can also be concatenated to form larger ones:
+```@docs
+vcat!(::SMat{T}, ::SMat{T})
+vcat(::SMat{T}, ::SMat{T})
+hcat!(::SMat{T}, ::SMat{T})
+hcat(::SMat{T}, ::SMat{T})
+```
+(Normal julia ``cat`` is also supported)
+
+There are special constructors:
+```@docs
+identity_matrix(::Type{SMat}, ::Ring, ::Int)
+zero_matrix(::Type{SMat}, ::Ring, ::Int)
+zero_matrix(::Type{SMat}, ::Ring, ::Int, ::Int)
+```
+Slices:
+```@docs
+sub(::SMat, ::UnitRange, ::UnitRange)
+```
+
+Transpose:
+```@docs
+transpose(A::SMat)
+```
+
+### Elementary Properties
+```@docs
+sparsity(::SMat)
+density(::SMat)
+nnz(::SMat)
+nrows(::SMat)
+ncols(::SMat)
+isone(::SMat)
+iszero(::SMat)
+```
+### Manipulation/ Access
+```@docs
+getindex(::SMat{T}, ::Int, ::Int) where {T}
+getindex(::SMat{T}, ::Int) where {T}
+setindex!(::SMat{T}, ::SRow{T}, ::Int) where {T}
+```
+
+Changing of the ring:
+```@docs
+map_entries(f, ::SMat)
+change_base_ring(::Ring, ::SMat)
+```
+
+### Arithmetic
+Various products:
+```@docs
+Hecke.mul(::SMat{T}, ::AbstractVector{T}) where {T}
+Hecke.mul(::SMat{T}, ::AbstractArray{T, 2})  where {T}
+Hecke.mul(::SMat{T}, ::MatElem{T}) where {T}
+Hecke.mul(::SRow{T}, ::SMat{T}) where {T}
+*(::T, ::SMat{T}) where {T <: RingElem}
+*(::Integer, ::SMat{T}) where {T}
+*(::fmpz, ::SMat{T}) where {T}
+```
+
+Other:
+```@docs
++(::SMat{T}, ::SMat{T}) where {T}
+-(::SMat{T}, ::SMat{T}) where {T}
+==(::SMat{T}, ::SMat{T}) where {T}
+```
 
