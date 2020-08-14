@@ -373,6 +373,7 @@ function reduce_right(A::SMat{fmpz}, b::SRow{fmpz},
                       start::Int = 1, trafo::Type{Val{N}} = Val{false}) where N
   with_transform = (trafo == Val{true})
   with_transform ? trafos = [] : nothing
+  new = true
   if length(b.pos) == 0
     with_transform ? (return b, trafos) : return b
   end
@@ -400,7 +401,13 @@ function reduce_right(A::SMat{fmpz}, b::SRow{fmpz},
         @hassert :HNF 1  r >= 0
       end
       if q != 0
-        b = Hecke.add_scaled_row(A[p], b, -q)
+        if new
+          b = Hecke.add_scaled_row(A[p], b, -q)
+          new = false
+        else
+          Hecke.add_scaled_row!(A[p], b, -q)
+        end
+
         with_transform ? push!(trafos, sparse_trafo_add_scaled(p, nrows(A) + 1, -q)) : nothing
         if r == 0
           j -= 1
@@ -478,7 +485,8 @@ function hnf_extend!(A::SMat{fmpz}, b::SMat{fmpz}, trafo::Type{Val{N}} = Val{fal
       if nc % 10 == 0
         println("Now at $nc rows of $(nrows(b)), HNF so far $(nrows(A)) rows")
         println("Current density: $(density(A))")
-        println("and size of largest entry: $(nbits(maximum(abs, A))) bits")
+        println("and size of largest entry: $(nbits(maximum(abs, A))) bits $(sum(nbits, A))")
+        println("#fmpz: $(Nemo.no_fmpz), ", unsafe_load(cglobal((:mpz_free_alloc, Nemo.libflint), Cint)), ", ", unsafe_load(cglobal((:mpz_free_num, Nemo.libflint), Cint)))
       end
     end
     nc += 1
@@ -496,6 +504,9 @@ function hnf_extend!(A::SMat{fmpz}, b::SMat{fmpz}, trafo::Type{Val{N}} = Val{fal
   with_transform ? (return A, trafos) : (return A)
 end
 
+function nbits(s::SRow{fmpz})
+  return sum(nbits, s.values)
+end
 
 @doc Markdown.doc"""
     hnf_kannan_bachem(A::SMat{fmpz}) -> SMat{fmpz}
@@ -586,8 +597,8 @@ end
 
 Inplace transform of $A$ into upper right Hermite normal form.
 """
-function hnf!(A::SMat{fmpz})
-  B = hnf(A)
+function hnf!(A::SMat{fmpz}; truncate::Bool = false)
+  B = hnf(A, truncate = truncate)
   A.rows = B.rows
   A.nnz = B.nnz
   A.r = B.r

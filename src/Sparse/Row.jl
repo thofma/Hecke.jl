@@ -624,6 +624,104 @@ function add_scaled_row(Ai::SRow{T}, Aj::SRow{T}, c::T) where T
   end
   return sr
 end
+function add_scaled_row!(Ai::SRow{T}, Aj::SRow{T}, c::T) where T
+  b = add_scaled_row(Ai, Aj, c)
+  Aj.pos = b.pos
+  Aj.values = b.values
+end
+
+function add_scaled_row(Ai::SRow{fmpz}, Aj::SRow{fmpz}, c::fmpz)
+  sr = SRow{fmpz}()
+  pi = 1
+  pj = 1
+  @assert c != 0
+  n = fmpz()
+  nb = 0
+  while pi <= length(Ai.pos) && pj <= length(Aj.pos)
+    if Ai.pos[pi] < Aj.pos[pj]
+      push!(sr.pos, Ai.pos[pi])
+      push!(sr.values, c*Ai.values[pi])
+      pi += 1
+    elseif Ai.pos[pi] > Aj.pos[pj]
+      push!(sr.pos, Aj.pos[pj])
+      push!(sr.values, Aj.values[pj])
+      pj += 1
+    else
+      n = mul!(n, c, Ai.values[pi])
+      n = add!(n, n, Aj.values[pj])
+
+#      n = c*Ai.values[pi] + Aj.values[pj]
+      if n != 0
+        nb = max(nb, nbits(n))
+        push!(sr.pos, Ai.pos[pi])
+        push!(sr.values, n)
+        n = fmpz()
+      end
+      pi += 1
+      pj += 1
+    end
+  end
+  while pi <= length(Ai.pos)
+    push!(sr.pos, Ai.pos[pi])
+    push!(sr.values, c*Ai.values[pi])
+    pi += 1
+  end
+  while pj <= length(Aj.pos)
+    push!(sr.pos, Aj.pos[pj])
+    push!(sr.values, Aj.values[pj])
+    pj += 1
+  end
+#  @show nb
+  return sr
+end
+
+function add_scaled_row!(Ai::SRow{fmpz}, Aj::SRow{fmpz}, c::fmpz)
+  sr = SRow{fmpz}()
+  pi = 1
+  pj = 1
+  @assert c != 0
+  n = fmpz()
+  nb = 0
+  while pi <= length(Ai.pos) && pj <= length(Aj.pos)
+    if Ai.pos[pi] < Aj.pos[pj]
+      push!(sr.pos, Ai.pos[pi])
+      push!(sr.values, c*Ai.values[pi])
+      pi += 1
+    elseif Ai.pos[pi] > Aj.pos[pj]
+      push!(sr.pos, Aj.pos[pj])
+      push!(sr.values, Aj.values[pj])
+      pj += 1
+    else
+      n = mul!(n, c, Ai.values[pi])
+      nn = add!(Aj.values[pj], n, Aj.values[pj])
+
+#      n = c*Ai.values[pi] + Aj.values[pj]
+      if nn != 0
+        nb = max(nb, nbits(n))
+        push!(sr.pos, Ai.pos[pi])
+        push!(sr.values, nn)
+      end
+      pi += 1
+      pj += 1
+    end
+  end
+  while pi <= length(Ai.pos)
+    push!(sr.pos, Ai.pos[pi])
+    push!(sr.values, c*Ai.values[pi])
+    pi += 1
+  end
+  while pj <= length(Aj.pos)
+    push!(sr.pos, Aj.pos[pj])
+    push!(sr.values, Aj.values[pj])
+    pj += 1
+  end
+#  @show nb
+  Aj.pos = sr.pos
+  Aj.values = sr.values
+  return sr
+end
+
+
 
 ################################################################################
 #
