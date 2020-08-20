@@ -875,40 +875,47 @@ function _submodules_direct_sum(gens::Vector{T}, N::ModAlgAss{S, T, V}) where {S
 end
 
 
+function _minimal_submodules(M::ModAlgAss{S, T, V}, dim::Int=M.dimension+1, lf = Tuple{ModAlgAss{S, T, V}, Int}[]) where {S, T, V}
+  K = base_ring(M)
+  n = dimension(M)
+  if isone(M.isirreducible)
+    if dim >= n
+      return Tuple{T, ModAlgAss{S, T, V}}[(identity_matrix(K, n), M)]
+    else
+      return Tuple{T, ModAlgAss{S, T, V}}[]
+    end
+  end
+  if isempty(lf)
+    lf = composition_factors(M)
+  end
+  if meataxe(M)[1]
+    if dim >= n
+      return Tuple{T, ModAlgAss{S, T, V}}[(identity_matrix(K, n), M)]
+    else
+      return Tuple{T, ModAlgAss{S, T, V}}[]
+    end
+  end
+  if dim != n+1
+    lf = Tuple{ModAlgAss{S, T, V}, Int}[x for x in lf if x[1].dimension == dim]
+  end
+  list = Tuple{T, ModAlgAss{S, T, V}}[]
+  for x in lf
+    irr_subs = irreducible_submodules(M, x[1])
+    for y in irr_subs
+      push!(list, (y, x[1]))
+    end
+  end
+  return list
+end
+
+
 @doc Markdown.doc"""
     minimal_submodules(M::ModAlgAss)
 
 Given a Fq[G]-module M, it returns all the minimal submodules of M
 """
 function minimal_submodules(M::ModAlgAss{S, T, V}, dim::Int=M.dimension+1, lf = Tuple{ModAlgAss{S, T, V}, Int}[]) where {S, T, V}
-  K = base_ring(M)
-  n = dimension(M)
-  if isone(M.isirreducible)
-    if dim >= n
-      return T[identity_matrix(K, n)]
-    else
-      return T[]
-    end
-  end
-
-  list = T[]
-  if isempty(lf)
-    lf = composition_factors(M)
-  end
-  if meataxe(M)[1]
-    if dim >= n
-      return T[identity_matrix(K, n)]
-    else
-      return T[]
-    end
-  end
-  if dim != n+1
-    lf = Tuple{ModAlgAss{S, T, V}, Int}[x for x in lf if x[1].dimension == dim]
-  end
-  for x in lf
-    append!(list, irreducible_submodules(M, x[1])) 
-  end
-  return list
+  return T[x[1] for x in _minimal_submodules(M, dim, lf)]
 end
 
 
@@ -1006,10 +1013,11 @@ function submodules(M::ModAlgAss{S, T, V}, index::Int; comp_factors = Tuple{ModA
     return T[zero_matrix(K, 1, M.dimension)]
   end
   list = T[]
+  list_hash = UInt64[]
   if index >= div(M.dimension, 2)
-    if index == M.dimension -1
+    if index == M.dimension-1
       if isempty(comp_factors)
-        lf = composition_factors(M, dimension=1)
+        lf = composition_factors(M, dimension = 1)
       else
         lf = comp_factors
       end
@@ -1021,18 +1029,20 @@ function submodules(M::ModAlgAss{S, T, V}, index::Int; comp_factors = Tuple{ModA
     else 
       lf=comp_factors
     end
-    for i=1: M.dimension-index-1
-      minlist = minimal_submodules(M, i, lf)
-      for x in minlist
+    for i=1:M.dimension-index-1
+      minlist = _minimal_submodules(M, i, lf)
+      for X in minlist
+        x, Sub = X
         N, pivotindex = _actquo(x, M.action)
         #  Recover the composition factors of the quotient
-        Sub = _actsub(x, M.action)
-        lf1 = Tuple{typeof(M), Int}[]
+        lf1 = Tuple{ModAlgAss{S, T, V}, Int}[]
+        found = false
         for j = 1:length(lf)
-          if isisomorphic(lf[j][1], Sub)
+          if !found && isisomorphic(lf[j][1], Sub)
             if !isone(lf[j][2])
               push!(lf1, (lf[j][1], lf[j][2]-1))
             end
+            found = true
           else
             push!(lf1, lf[j])
           end
@@ -1040,44 +1050,40 @@ function submodules(M::ModAlgAss{S, T, V}, index::Int; comp_factors = Tuple{ModA
         #
         #  Recursively ask for submodules and write their bases in terms of the given set of generators
         #
-        ls=submodules(N, index, comp_factors = lf1)
+        ls = submodules(N, index, comp_factors = lf1)
+        length_list = length(list)
         for a in ls
-          s=zero_matrix(K,nrows(a)+nrows(x), M.dimension)
-          for t=1:nrows(a)
-            pos=0
-            for j=1:M.dimension
+          s = zero_matrix(K,nrows(a)+nrows(x), M.dimension)
+          for t = 1:nrows(a)
+            pos = 0
+            for j = 1:M.dimension
               if j in pivotindex
-               pos+=1
+               pos += 1
              else
-               s[t,j]=a[t,j-pos]
+               s[t,j] = a[t,j-pos]
               end
             end
           end
-          for t=nrows(a)+1:nrows(s)
-            for j=1:ncols(s)
-              s[t,j]=x[t-nrows(a),j]
+          for t = nrows(a)+1:nrows(s)
+            for j = 1:ncols(s)
+              s[t,j] = x[t-nrows(a),j]
             end
           end
-          push!(list,s)
+          rref!(s)
+          k = hash(s)
+          found = false
+          for j = 1:length_list
+            if k == list_hash[j] && list[j] == s
+              found = true
+              break
+            end
+          end
+          if !found
+            push!(list, s)
+            push!(list_hash, k)
+          end
         end
       end
-    end
-   
-    #  Eliminating repeatitions
-    for x in list
-      rref!(x)
-    end
-    i=1
-    while i<=length(list)
-      k=i+1
-      while k<=length(list)
-        if list[i]==list[k]
-          deleteat!(list, k)
-        else 
-          k+=1
-        end
-      end
-      i+=1
     end
     append!(list, minimal_submodules(M, M.dimension-index, lf))
   else 

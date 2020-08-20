@@ -16,20 +16,44 @@ function check_obstruction(list::Vector{FieldsTower}, L::GAP.GapObj,
   cocycles = cocycles_computation(L, i)
   @vprint :BrauerObst 1 "Computing isomorphisms\n"
   G = GAP.Globals.ImagesSource(cocycles[1].projection)
-  for F in list
-    assure_isomorphism(F, G)
-  end
-  if isone(common_degree) || length(cocycles) > 200
+  if isone(common_degree)
+    for F in list
+      assure_isomorphism(F, G)
+    end
+    lproj = projections(cocycles[1].projection)
     for i = 1:length(list)
-      list[i].admissible_cocycles = cocycles
+      list[i].projections_for_conductors = lproj
     end
     return list
   end
+  if length(cocycles) > 200
+    #Try to do something about it.
+    #The good thing would be to reduce to a subextension. Is this possible?
+    #Of course!
+    fl, Lnew = find_subgroup(L, i)
+    if fl
+      new_invariants = GAP.gap_to_julia(Vector{Int}, GAP.Globals.AbelianInvariants(GAP.Globals.FactorGroup(Lnew[2], Lnew[3])))
+      new_invariants = map(Int, snf(abelian_group(new_invariants))[1].snf)
+      list = check_obstruction(list, Lnew, 2, new_invariants)
+    end
+    for F in list
+      assure_isomorphism(F, G)
+    end
+    lproj = projections(cocycles[1].projection)
+    for i = 1:length(list)
+      list[i].projections_for_conductors = lproj
+    end
+    
+    return list
+  end
+  for F in list
+    assure_isomorphism(F, G)
+  end
+  fac = factor(common_degree)
   obstructions = Vector{Vector{Bool}}(undef, length(list))
   for i = 1:length(obstructions)
     obstructions[i] = falses(length(cocycles))
   end
-  fac = factor(common_degree)
   for (p, v) in fac
     @vprint :BrauerObst 1 "Checking obstructions at $p \n"
     cocycles_p_start = cocycle_ctx[_to_prime_power_kernel(x, Int(p)) for x in cocycles] 
@@ -99,6 +123,51 @@ function check_obstruction(F::FieldsTower, cocycles::Vector{cocycle_ctx},
     end
   end
   return obstruction_at
+end
+
+################################################################################
+#
+#  Reduction when there are too many cocycles
+#
+################################################################################
+
+
+function find_subgroup(L::GAP.GapObj, level::Int)
+  GG = L[1]
+  HH = L[level+1]
+  KK = L[level]
+  proj = GAP.Globals.NaturalHomomorphismByNormalSubgroup(GG, HH)
+  target_grp = GAP.Globals.ImagesSource(proj)
+  Ke = GAP.Globals.Image(proj, KK)
+  lS = GAP.Globals.CharacteristicSubgroups(target_grp)
+  candidate = L[1]
+  found = false
+  for i = 1:length(lS)
+    if !GAP.Globals.IsSubgroup(Ke, lS[i])
+      continue
+    end
+    if GAP.Globals.Size(lS[i]) == GAP.Globals.Size(Ke) || GAP.Globals.Size(lS[i]) == 1
+      continue
+    end
+    if !found
+      found = true
+      candidate = lS[i]
+    elseif GAP.Globals.Size(lS[i]) < GAP.Globals.Size(candidate)
+      candidate = lS[i]
+    end
+  end
+  if !found
+    return found, GAP.julia_to_gap([candidate])
+  end
+  #I need to change the series...
+  L1 = GAP.GapObj[]
+  proj1 = GAP.Globals.NaturalHomomorphismByNormalSubgroup(target_grp, candidate)
+  push!(L1, GAP.Globals.ImagesSource(proj1))
+  proj_comp = proj*proj1
+  for i = level:length(L)
+    push!(L1, GAP.Globals.Image(proj_comp, L[i]))
+  end
+  return found, GAP.julia_to_gap(L1)
 end
 
 ################################################################################
@@ -379,6 +448,33 @@ function _autos_to_check(G::GAP.GapObj, K::GAP.GapObj, E::GAP.GapObj, mG::GAP.Ga
   res = Vector{Tuple{GAP.GapObj, GAP.GapObj}}(undef, length(Tperm))
   for i = 1:length(Tperm)
     res[i] = (GAP.Globals.PreImagesRepresentative(isoAutG, GAP.Globals.Image(ProjAutG, Tperm[i])), GAP.Globals.PreImagesRepresentative(isoAutK, GAP.Globals.Image(ProjAutK,  Tperm[i])))
+  end
+  return res
+end
+
+
+function projections(mG::GAP.GapObj)
+  G = GAP.Globals.ImagesSource(mG)
+  E = GAP.Globals.Source(mG)
+  AutG = GAP.Globals.AutomorphismGroup(G)
+  AutE = GAP.Globals.AutomorphismGroup(E)
+  @vprint :BrauerObst 1 "Automorphism Groups computed\n"
+  isoAutG = GAP.Globals.IsomorphismPermGroup(AutG)
+  permAutG = GAP.Globals.ImagesSource(isoAutG)
+  #I want to construct the map between the automorphism groups. The kernel is characteristic!
+  gens = GAP.Globals.GeneratorsOfGroup(AutE)
+  gens_img = Array{GAP.GapObj, 1}(undef, length(gens))
+  for s = 1:length(gens)
+    gens_img[s] = GAP.Globals.Image(isoAutG, GAP.Globals.InducedAutomorphism(mG, gens[s]))
+  end
+  S = GAP.Globals.Subgroup(permAutG, GAP.julia_to_gap(gens_img))
+  @vprint :BrauerObst 1 "Map constructed. Enumerating cosets...\n"
+  Transv = GAP.Globals.RightTransversal(permAutG, S)
+  Tperm = GAP.Globals.List(Transv)
+  #Now, I have to recover the automorphisms in AutG and AutK
+  res = Vector{GAP.GapObj}(undef, length(Tperm))
+  for i = 1:length(Tperm)
+    res[i] = mG*GAP.Globals.PreImagesRepresentative(isoAutG, Tperm[i])
   end
   return res
 end

@@ -28,12 +28,13 @@ end
 function _conductors_using_cocycles(F::FieldsTower, st::Vector{Int}, l_cond::Vector, E)
   lp = ramified_primes(F)
   auts = automorphisms(F.field, copy = false)
-  cocycles = F.admissible_cocycles
-  if length(cocycles) > 100
-    return l_cond
+  if isdefined(F, :projections_for_conductors)
+    projections = F.projections_for_conductors
+  else
+    projections = [x.projection for x in F.admissible_cocycles]
   end
-  G = GAP.Globals.ImagesSource(cocycles[1].projection)
-  E = GAP.Globals.Source(cocycles[1].projection)
+  G = GAP.Globals.ImagesSource(projections[1])
+  E = GAP.Globals.Source(projections[1])
   D = F.isomorphism
   n = prod(st)
   O = maximal_order(F)
@@ -45,8 +46,7 @@ function _conductors_using_cocycles(F::FieldsTower, st::Vector{Int}, l_cond::Vec
     sub = GAP.Globals.Subgroup(G, GAP.julia_to_gap(els))
     ord = GAP.Globals.Size(sub)
     sizes_preimages = Int[]
-    for c in cocycles
-      proj = c.projection
+    for proj in projections
       subgs = Vector{Vector{GAP.GapObj}}(undef, n)
       for i = 1:n
         subgs[i] = Vector{GAP.GapObj}(undef, length(els))

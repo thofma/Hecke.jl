@@ -40,6 +40,7 @@ mutable struct FieldsTower
   #They are here to improve the conductor computation
   isomorphism::Dict{NfToNfMor, GAP.GapObj}
   admissible_cocycles::Vector{cocycle_ctx}
+  projections_for_conductors::Vector{GAP.GapObj}
   
   function FieldsTower(K::AnticNumberField, auts::Vector{NfToNfMor}, subfields::Vector{NfToNfMor})
     z = new()

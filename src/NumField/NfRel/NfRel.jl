@@ -1044,7 +1044,7 @@ end
 #
 ################################################################################
 
-function simplify(K::NfRel; cached::Bool = true, prec::Int = 100)
+function simplify(K::NfRel{nf_elem}; cached::Bool = true, prec::Int = 100)
   Kabs, mK = absolute_field(K, false)
   OK = maximal_order(K)
   new_basis = Vector{nf_elem}(undef, degree(Kabs))
@@ -1068,16 +1068,15 @@ function simplify(K::NfRel; cached::Bool = true, prec::Int = 100)
     end
   end
   O = NfOrd(new_basis)
-  O.disc = OLabs.disc
   if prec == 100
     OLLL = lll(O)
   else
     OLLL = lll(O, prec = prec)
   end
   el = _simplify(OLLL)
-  pel = mL(el)
+  pel = mK(el)
   f = minpoly(pel)
-  Ks = number_field(f, cached = cached, check = false)
+  Ks = number_field(f, cached = cached, check = false)[1]
   mKs = hom(Ks, K, pel)
   return Ks, mKs
 end

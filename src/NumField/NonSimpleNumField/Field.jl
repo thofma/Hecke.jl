@@ -1,3 +1,5 @@
+export component, non_simple_extension
+
 ################################################################################
 #
 #  Constructor

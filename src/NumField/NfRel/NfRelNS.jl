@@ -798,6 +798,10 @@ function hom(K::NfRel{T}, L::NfRelNS{T}, a::NfRelNSElem{T}, emb::Array{NfRelElem
   return NfRelToNfRelNSMor{T}(K, L, a, emb)
 end
 
+function hom(K::NfRel{nf_elem}, L::NfRelNS{nf_elem}, aut_base::NfToNfMor, a::NfRelNSElem{nf_elem}) 
+  return NfRelToNfRelNSMor{nf_elem}(K, L, aut_base, a)
+end
+
 mutable struct NfRelNSToNfRelNSMor{T} <: Map{NfRelNS{T}, NfRelNS{T}, HeckeMap, NfRelNSToNfRelNSMor}
   header::MapHeader{NfRelNS{T}, NfRelNS{T}}
   emb::Array{NfRelNSElem{T}, 1}
@@ -899,15 +903,22 @@ end
 function Base.:(*)(f::NfRelNSToNfRelNSMor{T}, g::NfRelNSToNfRelNSMor{T}) where {T}
   codomain(f) == domain(g) || throw("Maps not compatible")
 
-  a = gens(domain(g))
-  return hom(domain(g), codomain(f),  NfRelNSElem{T}[ g(f(x)) for x in a])
+  a = gens(domain(f))
+  return hom(domain(f), codomain(g),  NfRelNSElem{T}[ g(f(x)) for x in a])
 end
 
 function Base.:(*)(f::NfRelNSToNfRelNSMor{nf_elem}, g::NfRelNSToNfRelNSMor{nf_elem})
   codomain(f) == domain(g) || throw("Maps not compatible")
 
-  a = gens(domain(g))
-  return hom(domain(g), codomain(f), f.coeff_aut * g.coeff_aut, NfRelNSElem{nf_elem}[ g(f(x)) for x in a])
+  a = gens(domain(f))
+  return hom(domain(f), codomain(g), f.coeff_aut * g.coeff_aut, NfRelNSElem{nf_elem}[ g(f(x)) for x in a])
+end
+
+function Base.:(*)(f::NfRelToNfRelMor{nf_elem}, g::NfRelToNfRelNSMor{nf_elem})
+  codomain(f) == domain(g) || throw("Maps not compatible")
+
+  a = gen(domain(f))
+  return hom(domain(f), codomain(g), f.coeff_aut * g.coeff_aut, g(f(a)))
 end
 
 function Base.:(==)(f::NfRelNSToNfRelNSMor{T}, g::NfRelNSToNfRelNSMor{T}) where {T}
@@ -1298,20 +1309,4 @@ function change_base_ring(p::MPolyElem{T}, g, new_polynomial_ring) where {T <: R
     end
   end
   return finish(M)::elem_type(new_polynomial_ring)
-end
-
-
-################################################################################
-#
-#  Component
-#
-################################################################################
-
-function component(K::NfRelNS, i::Int)
-  fl, g = isunivariate(K.pol[i])
-  gK = gens(K)
-  @assert fl
-  Ki, a = number_field(g, cached = false, check = false)
-  mp = hom(Ki, K, gK[i])
-  return Ki, mp
 end

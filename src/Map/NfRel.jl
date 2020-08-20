@@ -254,7 +254,7 @@ function hom(K::NfRel, L::NfRel, a::NfRelElem; check::Bool = false)
 end
 
 function hom(K::NfRel{nf_elem}, L::NfRel{nf_elem}, tau::NfToNfMor, a::NfRelElem{nf_elem}; check::Bool = false)
-  if base_field(K) != base_field(L)
+  if base_field(K) != domain(tau) && base_field(L) != codomain(tau)
     error("The base fields do not coincide!")
   end
   if check

@@ -930,6 +930,14 @@ end
 function maximal_abelian_subfield(A::ClassField, ::FlintRationalField)
   return maximal_abelian_subfield(A, Hecke.rationals_as_number_field()[1])
 end
+
+function factored_modulus(A::ClassField{MapRayClassGrp, T}) where T
+  return A.rayclassgroupmap.fact_mod
+end
+
+function factored_modulus(A::ClassField{MapClassGrp, T}) where T
+  return Dict{NfOrdIdl, Int}()
+end
   
 function maximal_abelian_subfield(A::ClassField, mp::NfToNfMor)
   k = domain(mp)
@@ -946,7 +954,8 @@ function maximal_abelian_subfield(A::ClassField, mp::NfToNfMor)
   mC = pseudo_inv(A.quotientmap)*mR1
   #First, I construct a suitable modulus for A/k
   f_m0 = Dict{NfOrdIdl, Int}()
-  for (P, e) in mR1.fact_mod
+  fact_mod = factored_modulus(A)
+  for (P, e) in fact_mod
     p = intersect_prime(mp, P)
     if haskey(f_m0, p)
       if !iscoprime(minimum(P, copy = false), deg*expo)

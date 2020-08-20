@@ -32,4 +32,23 @@
     @test f == gen(parent(f))^3 - 2
 
   end
+
+  @testset "NumField/Component" begin
+    Qx, x = PolynomialRing(FlintQQ, "x")
+    QasNumberField, _ = NumberField(x - 1)
+    Kt, t = PolynomialRing(QasNumberField, "t")
+    K3, a3 = NumberField(t^3 - 2)
+    K4, (a4, ) = NumberField([t^3 - 2])
+    K41, mK4 = component(K4, 1)
+    @test isisomorphic(K41, K3)[1]
+    @test mK4(gen(K41)) == a4
+
+
+    K1, a1 = NumberField(x^3 - 2)
+    K2, (a2, ) = NumberField([x^3 - 2])
+    K21, mK2 = component(K2, 1)
+    @test isisomorphic(K21, K1)[1]
+    @test mK2(gen(K21)) == a2
+  end  
+
 end  
