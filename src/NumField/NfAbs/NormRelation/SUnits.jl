@@ -325,6 +325,9 @@ function norm_relation(K::AnticNumberField, coprime::Int = 0; small_degree = tru
       rethrow(e)
     end
     if coprime == 0
+      if !has_useful_brauer_relation(automorphism_group(K)[1])
+        return false, NormRelation{Int}()
+      end
       M = _norm_relation_setup_generic(K, pure = true, small_degree = true)
       _set_nf_norm_relation(K, NormRelation{Int}[M])
       return true, M::NormRelation{Int}

@@ -1438,11 +1438,10 @@ function lorenz_eta_level(k::AnticNumberField)
   # where eta_r = (zeta_(2^r) + 1/zeta_(2^r))
   r = 2
   x = PolynomialRing(FlintZZ, cached = false)[2]
-  while true
-    @show f = cos_minpoly(2^r, x)
-    if hasroot(f, k)[1]
-      return r-1
-    end
-    @show r += 1
+  f = cos_minpoly(2^r, x)
+  while hasroot(f, k)[1]
+    r += 1
+    f = cos_minpoly(2^r, x)
   end
+  return r - 1
 end
