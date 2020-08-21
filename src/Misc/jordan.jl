@@ -794,8 +794,8 @@ end
 function _intersect(A::Hecke.MatElem{T}, B::Hecke.MatElem{T}) where T <: Hecke.FieldElem
   n = Hecke.nrows(A)
   M = Hecke.vcat(A, B)
-  N = Hecke.kernel(M, side=:left)[2]
-  return N[:, 1:n]*A
+  a, N = Hecke.kernel(M, side=:left)
+  return N[1:a, 1:n]*A
 end
 
 

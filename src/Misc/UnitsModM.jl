@@ -667,3 +667,38 @@ end
 
 unit_group(A::Nemo.FmpzModRing) = UnitGroup(A)
 unit_group(A::Nemo.NmodRing) = UnitGroup(A)
+
+
+## Make Nmod iteratible
+
+Base.iterate(R::NmodRing) = (zero(R), zero(UInt))
+
+function Base.iterate(R::NmodRing, st::UInt)
+  if st == R.n - 1
+    return nothing
+  end
+
+  return R(st + 1), st + 1
+end
+
+Base.eltype(::Type{NmodRing}) = nmod
+
+Base.IteratorSize(::Type{NmodRing}) = Base.HasLength()
+
+Base.length(R::NmodRing) = R.n
+
+Base.iterate(R::GaloisField) = (zero(R), zero(UInt))
+
+function Base.iterate(R::GaloisField, st::UInt)
+  if st == R.n - 1
+    return nothing
+  end
+
+  return R(st + 1), st + 1
+end
+
+Base.eltype(::Type{GaloisField}) = gfp_elem
+
+Base.IteratorSize(::Type{GaloisField}) = Base.HasLength()
+
+Base.length(R::GaloisField) = R.n

@@ -1,3 +1,5 @@
+export dimension
+
 mutable struct ModAlgAss{S, T, V}
   base_ring::S
   action::Vector{T}
