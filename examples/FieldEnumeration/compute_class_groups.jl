@@ -146,16 +146,15 @@ function main()
 
   # I change fields inplace
 
-  res = Dict{Int, Hecke.NFDBRecord{1}}()
+  res = Dict{Any, Hecke.NFDBRecord{1}}()
 
-  @threads for i in 1:1#length(fields)
-    f = fields[i][1]
+  @threads for _f in fields
+    f = _f[1]
     K, = number_field(f, cached = false)
-    println("Looking at $i/$(length(fields)) ($f)")
-    flush(stdout)
+    println(threadid(), ": Looking at", f)
     OK = lll(maximal_order(K))
-    @assert discriminant(OK) == fields[i][end]
-    println("Investigating field $i/$(length(fields)) ($f)")
+    #@assert discriminant(OK) == fields[i][end]
+    println(threadid(), ": Looking at disc", discriminant(OK))
 
     hK = fmpz(0)
     hrelative = fmpz(0)
@@ -189,7 +188,7 @@ function main()
         hrelative = divexact(hK, hk)
       end
 
-      r[:relative_class_number] = hK
+      r[:relative_class_number] = hrelative
     end
 
     if _class_number
@@ -208,12 +207,12 @@ function main()
       r[:discriminant] = discriminant(OK)
     end
 
-    res[i] = r
+    res[f] = r
   end
 
-  nfdb = Hecke.NFDB([res[i] for i in 1:length(res)])
+  nfdb = Hecke.NFDB(collect(values(res)))
 
-  Hecke.add_meta!(nfdb, :title => "Database of $fieldsfile (only relative class number one $_only_relative_one")
+  Hecke.add_meta!(nfdb, :title => "Database of $fieldsfile (only relative class number one $_only_relative_one)")
 
   f = open(outfile, "a")
 
