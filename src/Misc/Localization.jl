@@ -7,7 +7,7 @@ export Localization, LocElem, Loc
 #
 ###############################################################################
 
-import AbstractAlgebra: base_ring, parent, check_parent, isunit, inv, +, -, *,
+import AbstractAlgebra: base_ring, parent, check_parent, isunit, +, -, *,
       divexact, zero, Base.promote_rule, elem_type, parent_type, Base.one,
       Base.iszero, Base.isone, Base.==, Base.gcd, Base.deepcopy_internal,
       needs_parentheses, Base.show, displayed_with_minus_in_front, show_minus_one,
@@ -286,7 +286,7 @@ end
      divrem(a::LocElem{T}, b::LocElem{T}, checked::Bool = true)  where {T <: RingElem}
 In case the ring is euclidean, return a euclidean division.     
 """
-function divrem(a::LocElem{T}, b::LocElem{T}, checked::Bool = true)  where {T <: RingElem}
+function Base.divrem(a::LocElem{T}, b::LocElem{T}, checked::Bool = true)  where {T <: RingElem}
   check_parent(a, b)
   L = parent(a)
   if L.comp

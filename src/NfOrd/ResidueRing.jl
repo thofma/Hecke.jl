@@ -586,7 +586,7 @@ end
 #
 ################################################################################
 
-function divrem(x::NfOrdQuoRingElem, y::NfOrdQuoRingElem)
+function Base.divrem(x::NfOrdQuoRingElem, y::NfOrdQuoRingElem)
 
   b, q = isdivisible(x, y)
   if b

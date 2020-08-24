@@ -778,7 +778,7 @@ end
 
 euclid(n::nmod) = gcd(n.data, modulus(parent(n)))
 
-function divrem(n::nmod, m::nmod)
+function Base.divrem(n::nmod, m::nmod)
   R = parent(n)
   e = euclid(m)
   q = rand(R)

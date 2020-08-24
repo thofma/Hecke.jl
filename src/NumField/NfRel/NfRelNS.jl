@@ -46,7 +46,7 @@ mS\gens(K)[2]
 =#
 
 #to make the MPoly module happy, divrem needs it...
-function Nemo.div(a::nf_elem, b::nf_elem)
+function Base.div(a::nf_elem, b::nf_elem)
   return a//b
 end
 
@@ -269,7 +269,7 @@ function Base.:(//)(a::NfRelNSElem{T}, b::NfRelNSElem{T}) where {T}
   return div(a, b)
 end
 
-function Nemo.div(a::NfRelNSElem{T}, b::NfRelNSElem{T}) where {T}
+function Base.div(a::NfRelNSElem{T}, b::NfRelNSElem{T}) where {T}
   parent(a) == parent(b) || force_op(div, a, b)::NfRelNSElem{T}
   return a*inv(b)
 end

@@ -48,8 +48,8 @@ module Hecke
 
 import Base: show, minimum, rand, prod, copy, rand, ceil, round, size, in,
              powermod, ^, getindex, ==, <, >, +, *, /, \, -, !=, getindex,
-             setindex!, transpose, getindex, //, div, floor, max, BigFloat,
-             precision, first, StepRange, show, one, zero, inv, iseven, isodd,
+             setindex!, transpose, getindex, //, floor, max, BigFloat,
+             precision, first, StepRange, show, inv, div, divrem, one, zero, iseven, isodd,
              convert, angle, abs2, isless, exponent, isfinite, zeros, rem, min,
              numerator, denominator, exp, maximum, intersect, reduce, sqrt, haskey, merge
 
