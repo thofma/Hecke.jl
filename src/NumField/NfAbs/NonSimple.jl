@@ -308,7 +308,7 @@ function Base.:(//)(a::NfAbsNSElem, b::NfAbsNSElem)
   return div(a, b)
 end
 
-function Nemo.div(a::NfAbsNSElem, b::NfAbsNSElem)
+function Base.div(a::NfAbsNSElem, b::NfAbsNSElem)
   parent(a) == parent(b) || force_op(div, a, b)::NfAbsNSElem
   return a * inv(b)
 end

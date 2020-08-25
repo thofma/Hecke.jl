@@ -1274,6 +1274,7 @@ function issplit_at_P(O::NfOrd, G::Vector{NfToNfMor}, Coc::Function, P::NfOrdIdl
     return true
   end 
   p = Int(minimum(P))
+  @assert mod(degree(P), f) == 0
   f1 = divexact(degree(P), f)
   q = p^f1 #Cardinality of the residue field
 

@@ -60,7 +60,7 @@ function divexact(a::QadicRingElem, b::QadicRingElem)
   return QadicRingElem(a.x//b.x, a.P)
 end
 
-function divrem(a::QadicRingElem, b::QadicRingElem)
+function Base.divrem(a::QadicRingElem, b::QadicRingElem)
   if valuation(a.x) < valuation(b.x)
     return setprecision(a.P(0), precision(a)), a 
   end
