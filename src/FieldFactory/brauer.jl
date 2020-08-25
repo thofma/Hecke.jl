@@ -1267,8 +1267,8 @@ function issplit_at_P(O::NfOrd, G::Vector{NfToNfMor}, Coc::Function, P::NfOrdIdl
   if e == 1
     return true
   end
-  f = divexact(length(Gp), e)
-  @assert divisible(norm(P)-1, e)
+  fl, f = divides(length(Gp), e)
+  @assert fl
   c = divexact(norm(P)-1, e)
   if f == 1 && iszero(mod(c, n))
     return true

@@ -38,18 +38,52 @@
     end
   end
 
+  println("Abelian Fields")
+  @time begin
+    @testset "Abelian fields" begin
+      l = fields(6, 2, fmpz(10)^6, simplify = false)
+      @test length(l) ==  10
+  
+      l1 = fields(9, 2, fmpz(10)^13)
+      @test length(l1) == 4
+    end
+  end
+
+
   println("Direct product decomposition")
   @time begin
     @testset "Direct product decomposition" begin
-      l_direct_product = fields(12, 4, fmpz(10)^13)
+      l_direct_product = fields(12, 4, fmpz(10)^13, simplify = false)
       @test length(l_direct_product) == 25
   
-      l_without = fields(12, 4, fmpz(10)^13, using_direct_product = false)
+      l_without = fields(12, 4, fmpz(10)^13, using_direct_product = false, simplify = false)
       @test length(l_without) == 25
 
       d1 = length(fields(24, 13, fmpz(10)^24, simplify = false)) 
       d2 = length(fields(24, 13, fmpz(10)^24, using_direct_product = false, simplify = false))
       @test d1 == d2
+
+      l_direct_product = fields(18, 3, fmpz(10)^18, simplify = false)
+      l_without = fields(18, 3, fmpz(10)^18, using_direct_product = false, simplify = false)
+      @test length(l_direct_product) == length(l_without)
+      for x in l_direct_product
+        @test GAP.gap_to_julia(Vector{Int}, Hecke.IdGroup(closure(x.generators_of_automorphisms))) == [18, 3]
+      end
+      for x in l_without
+        @test GAP.gap_to_julia(Vector{Int}, Hecke.IdGroup(closure(x.generators_of_automorphisms))) == [18, 3]
+      end
+    end
+  end
+
+  println("Split extension")
+  @time begin
+    @testset "Split extension" begin
+      x = PolynomialRing(FlintZZ, "x", cached = false)[2]
+      K =  number_field(x^2+1)[1]
+      l = Hecke.FieldsTower[Hecke.field_context(K)]
+      l1 = fields(42, 5, l, fmpz(10)^90, simplify = false)
+      @test length(l1) == 1
+      @test GAP.gap_to_julia(Vector{Int}, Hecke.IdGroup(closure(l1[1].generators_of_automorphisms))) == [42, 5]
     end
   end
 
@@ -60,17 +94,17 @@
       G = GAP.Globals.SmallGroup(8, 4)
       L = GAP.Globals.DerivedSeries(G)
       l = fields(4, 2, fmpz(10)^6)
-      forQ8_old = Hecke.check_obstruction(l, L, 2, [2])
-      @test length(forQ8_old) == 53
-      forQ8 = Hecke.FieldsTower[Hecke.FieldsTower(x.field, x.generators_of_automorphisms, x.subfields) for x in forQ8_old]
+      forQ8 = Hecke.check_obstruction(l, L, 2, [2])
+      @test length(forQ8) == 53
+      
   
-      lQ8 = fields(8, 4, fmpz(10)^12)
+      lQ8 = fields(8, 4, fmpz(10)^12, simplify = false)
       @test length(lQ8) == 2
   
-      lQ8_2 = fields(8, 4, forQ8, fmpz(10)^12)
+      lQ8_2 = fields(8, 4, forQ8, fmpz(10)^12, simplify = false)
       @test length(lQ8_2) == 2
   
-      lQ8real = fields(8, 4, fmpz(10)^12, only_real = true)
+      lQ8real = fields(8, 4, forQ8, fmpz(10)^12, simplify = false, only_real = true)
       @test length(lQ8real) == 1
     end
   end

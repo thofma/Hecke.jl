@@ -363,11 +363,19 @@ function compose(f::GrpAbFinGenMap, g::GrpAbFinGenMap)
   @assert domain(g) == codomain(f)
   C = codomain(g)
   if isdefined(C, :exponent)
-    R = ResidueRing(FlintZZ, C.exponent, cached = false)
-    fR = map_entries(R, f.map)
-    gR = map_entries(R, g.map)
-    MR = fR*gR
-    M = map_entries(lift, MR)
+    if fits(Int, C.exponent)
+      RR = ResidueRing(FlintZZ, Int(C.exponent), cached = false)
+      fRR = map_entries(RR, f.map)
+      gRR = map_entries(RR, g.map)
+      MRR = fRR*gRR
+      M = lift(MRR)
+    else
+      R = ResidueRing(FlintZZ, C.exponent, cached = false)
+      fR = map_entries(R, f.map)
+      gR = map_entries(R, g.map)
+      MR = fR*gR
+      M = map_entries(lift, MR)
+    end
   else
     M = f.map*g.map
   end
@@ -387,7 +395,7 @@ function reduce_mod_snf!(M::fmpz_mat, vect::Vector{fmpz})
       break
     end
     for i = 1:nrows(M)
-      M[i, j] = mod!(M[i, j], M[i, j], vect[j])
+      M[i, j] = mod(M[i, j], vect[j])
     end
   end
   return nothing
