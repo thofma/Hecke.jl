@@ -638,6 +638,7 @@ include("LocalField.jl")
 include("QuadForm.jl")
 include("FieldFactory.jl")
 include("../examples/NFDB.jl")
+include("../examples/IsPower.jl")
 
 const _RealRings = _RealRing[_RealRing()]
 

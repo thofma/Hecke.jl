@@ -20,12 +20,26 @@ function ispower_mod_p(a::nf_elem, i::Int)
   f = K.pol
   first = true
   cnt = 0
-  local opt
+  local opt, d
+  if Hecke.ismaximal_order_known(K)
+    den = denominator(a, maximal_order(K))
+    den = root(den, i)
+    a *= den^i
+  else
+    den = denominator(a)
+    e, _ = ppio(den, numerator(discriminant(K)))
+    e = root(e, i)
+    a *= e^i
+  end
+  dd = denominator(a)
+  den *= dd
+  a *= dd^i #now the root, should it exist, is integral
+
   while true
     p = next_prime(p)
-    if gcd(p-1, i) > 1
-      continue
-    end
+#    if gcd(p-1, i) > 1
+#      continue
+#    end
     lp = factor(f, GF(p))
     if any(x->x>1, values(lp.fac))
       continue
@@ -84,13 +98,23 @@ function ispower_mod_p(a::nf_elem, i::Int)
     power_sum = l-> degree(parent(a))*c^l
   end
 
-  @show bd = map(power_sum, 1:15)
+  bd = map(power_sum, 1:15)
+  @show map(nbits, bd)
   pr = clog(bd[end], p) + 145
   println("using a precision of ", pr)
   con_p = conjugates(a, C, pr,all = false, flat = false)
   @assert all(x->degree(minpoly(ResidueField(parent(x))[2](x))) == degree(parent(x)), con_p)
 
   con_pr = [roots(x, i) for x = con_p] #select primes to minimize this
+  #use roots of unity to limit combinatorics:
+  if iseven(i)
+    q = Array{qadic, 1}()
+    for qq = con_pr[1]
+      (-qq in q) && continue
+      push!(q, qq)
+    end
+    con_pr[1] = q
+  end
 
   @show "#roots per local factor"
   @show map(length, con_pr)
@@ -113,9 +137,12 @@ function ispower_mod_p(a::nf_elem, i::Int)
     data = matrix([reduce(vcat, [map(x -> lift(trace(x)), y) for y = con_pr_j])])
     data = sub(trafo, 1:no_rt, 1:no_fac)*data
     k = clog(bd[j], p)
+    @show pr, k
     @assert k < pr
     pk = fmpz(p)^(pr-k)
+    pk = fmpz(p)^min(pr-k, clog(fmpz(2)^(2*no_fac), p)+4)
     map_entries!(x->rem(div(x, fmpz(p)^(k)), pk), data, data)
+    @show nbits(pk), maximum(nbits, data)
     if iszero(data)
       println("nothing new...")
       continue
@@ -130,6 +157,7 @@ function ispower_mod_p(a::nf_elem, i::Int)
          rear  (a+b) < bd => (a+b)/c < bd/c
          round((a+b)/c) - round(a/c) - round(b/c)
     =# 
+    @show maximum(nbits, trafo), size(trafo)
     no_rt, trafo = lll_with_removal(trafo, fmpz(p)^2*fmpz(2*no_fac)) #THINK
     trafo = sub(trafo, 1:no_rt, 1:ncols(trafo))
     d = Dict{fmpz_mat, Array{Int, 1}}()
@@ -171,7 +199,7 @@ function ispower_mod_p(a::nf_elem, i::Int)
       @assert length(mo) == length(va)
       pk = fmpz(C.C.H.p)^Int(C.C.H.prev)
       res = crt(map(Hecke.Globals.Zx, va), mo, C.C.H, pk)
-      return res(gen(K)), pk
+      return res(gen(K))//den, pk
     end
     if j > 40 error("") end
   end
