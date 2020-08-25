@@ -59,7 +59,31 @@ function reduce(A::SMat{fmpz}, g::SRow{fmpz})
   @hassert :HNF 1  isupper_triangular(A)
   #assumes A is upper triangular, reduces g modulo A
   #until the 1st (pivot) change in A
+
+  can_reduce_size = true
+  if nrows(A) != ncols(A)
+    can_reduce_size = false
+  else
+    for i in 1:length(A.rows)
+      if length(A.rows[i].pos) == 0 || A.rows[i].pos[1] != i
+        can_reduce_size = false
+        break
+      end
+    end
+  end
+
+  reducer = one(fmpz)
+
+  if can_reduce_size
+    for i in 1:nrows(A)
+      reducer = mul!(reducer, reducer, A.rows[i].values[1])
+    end
+    reducer = abs(reducer)
+    @hassert :HNF 2 reducer == det(A)
+  end
+
   new_g = false
+
   while length(g)>0
     s = g.pos[1]
     j = 1
@@ -91,6 +115,18 @@ function reduce(A::SMat{fmpz}, g::SRow{fmpz})
       new_g = true
       @hassert :HNF 2  A[j].values[1] == x
       @hassert :HNF 2  length(g)==0 || g.pos[1] > A[j].pos[1]
+    end
+
+    if can_reduce_size && new_g
+      l = 1
+      while l <= length(g.pos)
+        g.values[l] = mod(g.values[l], reducer)
+        if iszero(g.values[l])
+          deleteat!(g.pos, l)
+          deleteat!(g.values, l)
+        end
+        l += 1
+      end
     end
   end
 

@@ -106,13 +106,20 @@ function main()
   sprint_formatted(fmt, args...) = @eval @sprintf($fmt, $(args...))
 
   if grp_id != -1
-    @assert grp_order != -1
     n = grp_order
     i = grp_id
-    grp_no = findfirst(isequal((n, i)), small_solvable_groups)
-  else
-    @assert grp_no != -1
-    n, i = small_solvable_groups[grp_no]
+  end
+
+  if out == ""
+    if grp_id != -1
+      @assert grp_order != -1
+      n = grp_order
+      i = grp_id
+      grp_no = findfirst(isequal((n, i)), small_solvable_groups)
+    else
+      @assert grp_no != -1
+      n, i = small_solvable_groups[grp_no]
+    end
   end
 
   _n = clog(dbound, fmpz(10))
@@ -152,7 +159,7 @@ function main()
   end
 
   println("========================================")
-  println("Group: $grp_no: $n $i")
+  println("Group: $n $i")
   println("========================================")
 
   println("========================================")

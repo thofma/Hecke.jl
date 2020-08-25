@@ -135,6 +135,13 @@ function _factor!(FB::Hecke.NfFactorBase, A::Hecke.NfOrdIdl,
   O = order(A)
 
   n = norm(A)
+
+  # If the ideal is the trivial ideal, return true, and the zero row
+  # Otherwise factor will choke
+  if isone(n)
+    return true, SRow{T}()
+  end
+
   d = factor(FB.fb_int, n) # as above: fails - even if error is false - 
   # if the norm is not smooth
   

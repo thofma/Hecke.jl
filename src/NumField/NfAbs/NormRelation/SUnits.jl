@@ -179,6 +179,7 @@ function _add_sunits_from_brauer_relation!(c, UZK, N; invariant = false, compact
   # I am assuming that c.FB.ideals is invariant under the action of the Galois group
   cp = sort!(collect(Set(minimum(x) for x = c.FB.ideals)))
   K = N.K
+  add_unit_later = FacElem{nf_elem, AnticNumberField}[]
   for i = 1:length(N)
     if isdefined(N, :nonredundant) && !(i in N.nonredundant)
       continue
@@ -228,11 +229,24 @@ function _add_sunits_from_brauer_relation!(c, UZK, N; invariant = false, compact
         u = Hecke.compact_presentation(u, compact)
       end
       @vtime :NormRelation 4 img_u = FacElem(Dict{nf_elem, fmpz}((_embed(N, i, x), v) for (x,v) = u.fac))
-      @vtime :NormRelation 4 Hecke.add_unit!(UZK, img_u)
+      has_full_rk = Hecke.has_full_rank(UZK) 
+      @vtime :NormRelation 4 ff = Hecke.add_unit!(UZK, img_u)
+      if !has_full_rk && !ff
+        push!(add_unit_later, img_u)
+      end
     end
     @vprint :NormRelation 4 "Reducing the units\n"
     @vtime :NormRelation 4 UZK.units = Hecke.reduce(UZK.units, UZK.tors_prec)
   end
+
+  if length(add_unit_later) > 0
+    for uu in add_unit_later
+      Hecke.add_unit!(UZK, uu)
+    end
+    UZK.units = Hecke.reduce(UZK.units, UZK.tors_prec)
+  end
+
+
   return nothing
 end
 
@@ -311,6 +325,9 @@ function norm_relation(K::AnticNumberField, coprime::Int = 0; small_degree = tru
       rethrow(e)
     end
     if coprime == 0
+      if !has_useful_brauer_relation(automorphism_group(K)[1])
+        return false, NormRelation{Int}()
+      end
       M = _norm_relation_setup_generic(K, pure = true, small_degree = true)
       _set_nf_norm_relation(K, NormRelation{Int}[M])
       return true, M::NormRelation{Int}

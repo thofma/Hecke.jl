@@ -1534,7 +1534,56 @@ function guess_max_det(L::QuadLat, p)
   return v
 end
 
+function isisotropic_finite(M)
+  n = ncols(M)
+  k = base_ring(M)
+  @assert k isa Field && characteristic(k) != 2
+  if n == 0
+    ;
+  elseif n == 1
+    if iszero(M[1, 1])
+      return true, elem_type(k)[one(k)]
+    end
+  else
+    if n <= 3
+      G, T = _gram_schmidt(M, identity, false) # might be non-degenerate
+    else
+      G, T = _gram_schmidt(sub(M, 1:3, 1:3), identity, false) # might be non-degenerate
+      B = zero_matrix(k, 3, n)
+      B[1, 1] = 1
+      B[2, 2] = 1
+      B[3, 3] = 1
+      T = T * B
+    end
+    for i in 1:ncols(G)
+      if iszero(G[i, i])
+        return true, elem_type(k)[T[i, j] for j in 1:ncols(T)]
+      end
+    end
+
+    if n == 2
+      ok, s = issquare(-divexact(G[1, 1], G[2, 2]))
+      if ok
+        return true, elem_type(k)[T[1, i] + s*T[2, i] for i in 1:ncols(T)]
+      end
+    else
+      while true
+        x = rand(k)
+        y = rand(k)
+        ok, z = issquare( -x^2 * G[1, 1] - y^2 * divexact(G[2, 2], G[3, 3]))
+        if (ok && (!iszero(x) || !iszero(y)))
+          return true,  elem_type(k)[x*T[1, i] + y*T[2, i] + z * T[3, i] for i in 1:ncols(T)]
+        end
+      end
+    end
+  end
+  return false, elem_type(k)[]
+end
+
+global _debug = []
+
 function ismaximal_integral(L::QuadLat, p)
+  push!(_debug, (L, p))
   @req order(p) == base_ring(L) "blabla do not match"
   #if iszero(L)
   #  return true, L
@@ -1568,14 +1617,14 @@ function ismaximal_integral(L::QuadLat, p)
   if !isdyadic(p)
     T = map(y -> hext\y, V)
     H = inv(elem_in_nf(uniformizer(p))) * T * G * transpose(T)
-    throw(error("I don't know"))
-    #ok, v = isisotropic_finite(idontknowwhatthematrixissupposedtobe)
-#    ok, v:= IsIsotropicFinite(Matrix(Ncols(H), [x @ h : x in Eltseq(H)] ));
-#    assert ok;
-#    e:= Eltseq( v*V ) @@ h;
-#    v:= Vector(FF, e);
-#    valv:= Valuation( ((v*G) * Matrix(FF,1,e))[1], p );
-#    assert valv ge 2;
+    Hmod = map_entries(hext, H)
+    ok, __v = isisotropic_finite(Hmod)
+    @assert ok
+    _v = matrix(k, 1, length(__v), __v)
+    e = map_entries(x -> hext\x, _v * V)
+    v = e
+    valv = valuation( (e * G * e')[1, 1], p)
+    @assert valv >= 2
   else
     val2 = valuation(R(2), p)
     PP = enumerate_lines(k, nrows(V))
@@ -1584,10 +1633,16 @@ function ismaximal_integral(L::QuadLat, p)
       xV = matrix(k, 1, length(x), x) * V
       e = elem_type(K)[ hext\(xV[1, i]) for i in 1:ncols(xV) ] 
       v = matrix(K, 1, length(e), e)
-      valv = valuation((v * G * transpose(v))[1, 1], p)
-      @assert valv >= 1
-      if valv >= val2 + 2
+      _z = (v * G * transpose(v))[1, 1]
+      # Test if valv >= val2 + 2
+      if iszero(_z)
         break
+      else
+        valv = valuation(_z, p)
+        @assert valv >= 1
+        if valv >= val2 + 2
+          break
+        end
       end
     end
   end
@@ -1617,6 +1672,18 @@ function ismaximal_integral(L::QuadLat)
   return true, L
 end
 
+function maximal_integral_lattice(L::QuadLat, p)
+  @req base_ring(L) == order(p) "Second argument must be an ideal of the base ring of L"
+  @req valuation(norm(L), p) >= 0 "The normal of the lattice must be locally integral"
+
+  ok, LL = ismaximal_integral(L, p)
+  while !ok
+    L = LL
+    ok, LL = ismaximal_integral(L, p)
+  end
+  return L
+end
+
 #{Checks if L_p is Norm(L_p)-maximal}
 function ismaximal(L::QuadLat, p)
   @req order(p) == base_ring(L) "Asdsads"
@@ -1631,6 +1698,30 @@ function ismaximal(L::QuadLat, p)
   else
     return false, rescale(LL, inv(elem_in_nf(x)))
   end
+end
+
+function maximal_integral_lattice(V::QuadSpace)
+  K = base_ring(V)
+  L = lattice(V, identity_matrix(K, rank(V)))
+  n = norm(L)
+  R = order(n)
+  if !isone(norm(n))
+    fa = factor(n)
+    d = prod(typeof(n)[fractional_ideal(R, p)^(fld(e, 2)) for (p, e) in fa]) # fld = fdiv = floored division
+    L = lattice(V, _module_scale_ideal(inv(d), pseudo_matrix(L)))
+    n = norm(L)
+    @assert isintegral(n)
+  end
+  
+  return maximal_integral_lattice(L)
+end
+
+function maximal_integral_lattice(L::QuadLat)
+  @req isintegral(norm(L)) "Lattice must be integral"
+  for p in bad_primes(L, even = true)
+    L = maximal_integral_lattice(L, p)
+  end
+  return L
 end
 
 # Hermitian case
@@ -2886,7 +2977,7 @@ function _find_quaternion_algebra(b, P, I)
     Cl, mCl = class_group(R)
     A = abelian_group(fill(0, length(__P)))
     hh = hom(A, Cl, [mCl\(p) for p in __P])
-    S, mS = image(hh)
+    S, mS = image(hh, false)
     Q, mQ = quo(Cl, [mS(S[i]) for i in 1:ngens(S)])
 
     p = 2

@@ -150,14 +150,15 @@ function spinor_genera_in_genus(L, mod_out)
   R = base_ring(L)
   F = nf(R)
 
-  local spinornorm::elem_type(F)
+  spinornorm = zero(F)
 
   # The smaller the element, the better
-  dia = map(x -> abs(norm(x)), diagonal(Gr))
-  b, kk = findmin(dia)
-  if !iszero(b)
-    spinornorm = Gr[kk, kk]
-  else
+  for d in diagonal(Gr)
+    if iszero(spinornorm) || (abs(norm(d)) < abs(norm(spinornorm)))
+      spinornorm = d
+    end
+  end
+  if iszero(spinornorm)
     i = 1
     while iszero(Gr[1, i])
       i += 1
@@ -1101,14 +1102,14 @@ function _scales_and_norms(G, p, uni)
   aL = elem_type(K)[]
   uL = Int[]
   wL = Int[]
-  sL = Int[ minimum(valuation(x, p) for x in g) for g in G ]
+  sL = Int[ minimum(Union{Int, PosInf}[iszero(x) ? inf : valuation(x, p) for x in g]) for g in G ]
   for i in 1:length(G)
     # similar, but not equal to, the code for obtaining a genus symbol
     # (for the genus symbol, we consider a scaling L^(s(L_i)) in O'Meara's notation)
 
     GG = G[i]
     D = diagonal(GG)
-    if e + sL[i] <= minimum(valuation(d, p) for d in D)
+    if e + sL[i] <= minimum(Union{PosInf, Int}[iszero(d) ? inf : valuation(d, p) for d in D])
       push!(aL, elem_in_nf(uni^(e + sL[i])))
     else
       _, b = findmin([valuation(x, p) for x in D])
@@ -1178,7 +1179,7 @@ function _norm_upscaled(G, p)
   # which can e.g. be calculated by JordanDecomposition(), but need not
   # be a Jordan decomposition.
   t = length(G)
-  sL = [ minimum(valuation(g[i, j], p) for j in 1:ncols(g) for i in 1:j) for g in G]
+  sL = Int[ minimum(Union{Int, PosInf}[iszero(g[i, j]) ? inf : valuation(g[i, j], p) for j in 1:ncols(g) for i in 1:j]) for g in G]
   e = ramification_index(p)
   uni = elem_in_nf(uniformizer(p))
   aL = []

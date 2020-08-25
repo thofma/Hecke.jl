@@ -912,8 +912,8 @@ end
 #  need ecm to find small factors
 # then recurse...
 
-function _factors_trial_division(n::fmpz)
-  res, u = factor_trial_range(n)
+function _factors_trial_division(n::fmpz, np::Int = 10^5)
+  res, u = factor_trial_range(n, 0, np)
   factors = fmpz[]
   for (p, v) in res
     push!(factors, p)

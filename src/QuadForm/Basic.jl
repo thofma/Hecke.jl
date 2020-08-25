@@ -200,7 +200,7 @@ diagonal(V::AbsSpace)
 ################################################################################
 
 # Clean this up
-function _gram_schmidt(M::MatElem, a)
+function _gram_schmidt(M::MatElem, a, nondeg = true)
   F = deepcopy(M)
   K = base_ring(F)
   n = nrows(F)
@@ -234,14 +234,13 @@ function _gram_schmidt(M::MatElem, a)
             end
           end
           if ok == 0
-            error("Matrix is not of full rank")
+            if nondeg
+              error("Matrix is not of full rank")
+            end
+          else
+            j = ok
+            T[i, j] = 1 // (2 * F[j, i])
           end
-          #ok = findfirst(j -> !iszero(F[i, j]), (i + 1):n)
-          #if ok === nothing
-          #  error("Matrix is not of full rank")
-          #end
-          j = ok
-          T[i, j] = 1 // (2 * F[j, i])
         end
         S = T * S
         F = T * F * transpose(_map(T, a))
@@ -276,8 +275,6 @@ isequivalent(L::AbsSpace, M::AbsSpace, p)
 #  Definitness
 #
 ################################################################################
-
-# TODO: Add this functionality for Hermitian spaces
 
 # Returns 0 if V is not definite
 # Returns an element a != 0 such that a * canonical_basis of V has

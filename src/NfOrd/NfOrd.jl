@@ -526,7 +526,7 @@ function minkowski_matrix(B::Vector{nf_elem}, abs_tol::Int = 64)
   for i in 1:length(B)
     T[i] = minkowski_map(B[i], abs_tol)
   end
-  p = maximum(Int[ prec(parent(T[i][j])) for i in 1:length(B), j in 1:degree(K) ])
+  p = maximum(Int[ precision(parent(T[i][j])) for i in 1:length(B), j in 1:degree(K) ])
   M = zero_matrix(ArbField(p, cached = false), length(B), degree(K))
   for i in 1:length(B)
     for j in 1:degree(K)

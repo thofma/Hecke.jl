@@ -43,7 +43,6 @@ function direct_product_decomposition(G::GAP.GapObj, ab::Tuple{Int, Int})
   for i = 1:length(grp_id_list)
     grp_id_list[i] = (GAP.gap_to_julia(Tuple{Int, Int}, GAP.Globals.IdGroup(decompositions[i][1])), GAP.gap_to_julia(Tuple{Int, Int}, GAP.Globals.IdGroup(decompositions[i][2])))  
   end
-
   res1 = grp_id_list[1][1]
   res2 = grp_id_list[1][2]
   if length(grp_id_list) == 1
@@ -58,10 +57,8 @@ function direct_product_decomposition(G::GAP.GapObj, ab::Tuple{Int, Int})
       red = 1
       res1 = l1
       res2 = l2
-    else
-      if l1 == res1 && l2 == res2
-        red += 1 
-      end
+    elseif l1 == res1 && l2 == res2
+      red += 1 
     end
   end
   #Finally, I count the numer of times a single subgroup appears in the lists.
@@ -668,9 +665,9 @@ function _merge(list1::Vector{FieldsTower}, list2::Vector{FieldsTower}, absolute
 
   G1 = GAP.Globals.SmallGroup(g1[1], g1[2])
   G2 = GAP.Globals.SmallGroup(g2[1], g2[2])
-  mas1 = GAP.Globals.AbelianInvariants(G1)
-  mas2 = GAP.Globals.AbelianInvariants(G2)
-  if gcd(mas1[length(mas1)], mas2[length(mas2)]) == 1
+  mas1 = GAP.gap_to_julia(Vector{Int}, GAP.Globals.AbelianInvariants(G1))
+  mas2 = GAP.gap_to_julia(Vector{Int}, GAP.Globals.AbelianInvariants(G2))
+  if gcd(prod(mas1), prod(mas2)) == 1
     #All the fields are automatically linearly disjoint
     @vprint :Fields 1 "All the fields are linearly disjoint, easy case \n"
     @vprint :FieldsNonFancy 1 "All the fields are linearly disjoint, easy case \n"
@@ -701,18 +698,16 @@ function _merge(list1::Vector{FieldsTower}, list2::Vector{FieldsTower}, absolute
   #Now, I sieve by discriminant
   clusters1 = Vector{Vector{Tuple{Int, Int}}}()
   for v in clusters
-    append!(clusters1, sieve_by_discriminant(list1, list2, v))
+    vnew =  sieve_by_discriminant(list1, list2, v)
+    for x in vnew
+      if !isempty(x)
+        push!(clusters1, x)
+      end
+    end
   end
   @vprint :Fields 1 "Candidates: $(sum(length(x) for x in clusters1))\n"
-  
-  @vprint :Fields 1 "Sieving by maximal abelian subextension\n"
-  new_clusters = refine_clusters(list1, list2, clusters1, red, redfirst, redsecond)
-  if isempty(new_clusters)
-    return res
-  end
-  @vprint :Fields 1 "Candidates: $(sum(length(x) for x in new_clusters))\n"
   @vprint :Fields 1 "Sieving by prime_splitting\n"
-  fields_to_be_computed = _sieve_by_prime_splitting(list1, list2, new_clusters, red, redfirst, redsecond)
+  fields_to_be_computed = _sieve_by_prime_splitting(list1, list2, clusters1, red, redfirst, redsecond)
 
   @vprint :Fields 1 "Computing maximal order of $(length(fields_to_be_computed)) fields\n"
   for i = 1:length(fields_to_be_computed)

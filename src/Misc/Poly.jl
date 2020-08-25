@@ -747,7 +747,7 @@ function power_sums_to_polynomial(P::Array{T, 1}) where T <: FieldElem
     end
     n = length(la)-1
     while n > 0
-      set_prec!(r, la[n])
+      set_precision!(r, la[n])
       rr = derivative(r)*inv(r)
       md = -(rr+s)
       m = S([R(1)], 1, la[n], 0)+integral(md)

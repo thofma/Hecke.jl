@@ -83,7 +83,7 @@ function check_index(M::ModuleCtx_fmpz)
     d = abs(det_mc(M.bas_gens))
     C = M.max_indep
     C.c = M.bas_gens.c
-    for ii = M.bas_gens
+    for ii in M.bas_gens
       h = reduce(C, ii, 2*d) #to avoid problems with diag being 1...1 d
       @hassert :HNF 2  !iszero(h)
       i = 1

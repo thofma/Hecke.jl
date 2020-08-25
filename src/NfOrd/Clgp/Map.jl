@@ -679,7 +679,7 @@ function sunit_mod_units_group_fac_elem(I::Array{NfOrdIdl, 1})
 
   @vprint :ClassGroup 1 "finding relations ...\n"
   @vtime :ClassGroup 1 for (i, A) = enumerate(I)
-    @vprint :ClassGroup 2 "doin' $A\n"
+    @vprint :ClassGroup 2 "doin' $(i)/$(length(I)):\n$A\n"
     @vtime :ClassGroup 2 x, r = class_group_ideal_relation(A, c)
 # TODO: write == for Idl and FracIdl    
 #    @assert prod([c.FB.ideals[p]^Int(v) for (p,v) = r]) == x*A

@@ -123,8 +123,21 @@
   println("Some examples")
   @time begin
     @testset "Some examples" begin
-      @test length(fields(6, 1, fmpz(10)^8, simplify = false)) == 107
-      @test length(fields(24, 8, fmpz(10)^30, simplify = false)) == 15
+      l1 = fields(6, 1, fmpz(10)^8, simplify = false)
+      @test length(l1) == 107
+      for x in l1
+        @test GAP.gap_to_julia(Vector{Int}, Hecke.IdGroup(closure(x.generators_of_automorphisms))) == [6, 1]
+      end
+      l2 = fields(24, 8, fmpz(10)^30, simplify = false)
+      @test length(l2) == 15
+      for x in l2
+        @test GAP.gap_to_julia(Vector{Int}, Hecke.IdGroup(closure(x.generators_of_automorphisms))) == [24, 8]
+      end
+      l3 = fields(30, 3, fmpz(10)^40, simplify = false)
+      @test length(l3) == 5
+      for x in l3
+        @test GAP.gap_to_julia(Vector{Int}, Hecke.IdGroup(closure(x.generators_of_automorphisms))) == [30, 3]
+      end
     end
   end
 

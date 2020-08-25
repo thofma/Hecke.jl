@@ -708,24 +708,37 @@ function image(mF::NfToFqNmodMor_easy, a::FacElem{nf_elem, AnticNumberField}, qu
   q = one(Fq)
   t = mF.t
   s = mF.s
-  oFq = order(Fq)
-  pminusone = oFq -1
+  oFq = order(Fq) # fmpz
+  small_mod = UInt(0)
   char_Fq = characteristic(Fq)
+
+  if quo != 0
+    small_mod = UInt(quo)
+  end
+
   for (k, v) = a.fac
-    vv = v
+    # I want to map k^v to F. I can reduce mod q (reduction modulo q - 1 is
+    # done by the power function itself.
+    
+    inver = false
+
+    if v < 0
+      v = -v
+      inver = true
+    end
+
+    local vv::UInt
+
     if quo != 0
-      if v > 0 && v < pminusone
-        vv = UInt(v)
+      if v > small_mod
+        vv = fmpz_mod_ui(v, small_mod)
       else
-        vv = fmpz_mod_ui(v, pminusone)
-      end
-      vv = v % quo 
-      if vv < 0
-        vv += quo
+        vv = UInt(v)
       end
     end
-    @assert vv < oFq  #please complain if this is triggered
-    if !iszero(vv)
+
+    if (quo != 0 && vv != 0) || !iszero(v)
+      # We have something to do
       if iszero(denominator(k) % char_Fq)
         throw(BadPrime(characteristic(Fq)))
       end
@@ -733,11 +746,14 @@ function image(mF::NfToFqNmodMor_easy, a::FacElem{nf_elem, AnticNumberField}, qu
       if iszero(s)
         throw(BadPrime(1))
       end
-      if vv < 0
+      if inver
         ccall((:fq_nmod_inv, libflint), Nothing, (Ref{fq_nmod}, Ref{fq_nmod}, Ref{FqNmodFiniteField}), s, s, Fq)
-        vv = -vv
       end
-      ccall((:fq_nmod_pow_ui, libflint), Nothing, (Ref{fq_nmod}, Ref{fq_nmod}, Int, Ref{FqNmodFiniteField}), s, s, vv, Fq)
+      if quo != 0
+        ccall((:fq_nmod_pow_ui, libflint), Nothing, (Ref{fq_nmod}, Ref{fq_nmod}, Int, Ref{FqNmodFiniteField}), s, s, vv, Fq)
+      else
+        ccall((:fq_nmod_pow, libflint), Nothing, (Ref{fq_nmod}, Ref{fq_nmod}, Ref{fmpz}, Ref{FqNmodFiniteField}), s, s, v, Fq)
+      end
       mul!(q, q, s)
     end
   end
@@ -745,30 +761,53 @@ function image(mF::NfToFqNmodMor_easy, a::FacElem{nf_elem, AnticNumberField}, qu
 end
 
 function image(mF::NfToFqNmodMor_easy, a::FacElem{nf_elem, AnticNumberField}, D::Vector, cached::Bool, quo::Int = 0)
-  # cached == true also implies that all the denominators are coprime
   Fq = mF.Fq
   q = one(Fq)
   t = mF.t
   s = mF.s
   i = 0
   char = UInt(Fq.n)
-  pminusone = char - 1
+  small_mod = UInt(0)
+
+  if quo != 0
+    small_mod = UInt(quo)
+  end
+
   for (k, v) in a.fac
     i += 1
-    if v > 0 && v < pminusone
-      vv = UInt(v)
-    else
-      vv = fmpz_mod_ui(v, pminusone)
-    end
-    if quo != 0
-      vv = vv % quo # vv will always be positive
-    end
-    @assert vv < Fq.n  #please complain if this is triggered
-    if !iszero(vv)
-      if !cached && iszero(fmpz_mod_ui(denominator(k), char))
-        throw(BadPrime(characteristic(Fq)))
-      end
+    
+    inver = false
 
+    if v < 0
+      v = -v
+      inver = true
+    end
+
+    local vv::UInt
+
+    if quo != 0
+      if v > small_mod
+        vv = fmpz_mod_ui(v, small_mod)
+      else
+        vv = UInt(v)
+      end
+    end
+
+
+    # We always reduce, so do the test first
+    if !cached && iszero(fmpz_mod_ui(denominator(k), char))
+      throw(BadPrime(characteristic(Fq)))
+    end
+
+    if !((quo != 0 && vv != 0) || !iszero(v))
+      if !cached
+        nf_elem_to_gfp_poly!(t, k)
+        D[i] = zero(parent(t))
+        set!(D[i], t)
+      end
+    end
+
+    if (quo != 0 && vv != 0) || !iszero(v)
       if cached
         s = zero(Fq)
         ccall((:fq_nmod_set, libflint), Nothing,
@@ -801,12 +840,23 @@ function image(mF::NfToFqNmodMor_easy, a::FacElem{nf_elem, AnticNumberField}, D:
       if iszero(s)
         throw(BadPrime(1))
       end
-      if vv < 0
-        s = inv(s)
-        vv = -vv
+      
+      if inver
+        ccall((:fq_nmod_inv, libflint), Nothing, (Ref{fq_nmod}, Ref{fq_nmod}, Ref{FqNmodFiniteField}), s, s, Fq)
       end
-      s = s^Int(vv)
-      q = mul!(q, q, s)
+      if quo != 0
+        ccall((:fq_nmod_pow_ui, libflint), Nothing, (Ref{fq_nmod}, Ref{fq_nmod}, Int, Ref{FqNmodFiniteField}), s, s, vv, Fq)
+      else
+        ccall((:fq_nmod_pow, libflint), Nothing, (Ref{fq_nmod}, Ref{fq_nmod}, Ref{fmpz}, Ref{FqNmodFiniteField}), s, s, v, Fq)
+      end
+      mul!(q, q, s)
+
+      #if vv < 0
+      #  s = inv(s)
+      #  vv = -vv
+      #end
+      #s = s^Int(vv)
+      #q = mul!(q, q, s)
     end
   end
   return q
@@ -905,11 +955,19 @@ function image(mF::NfToGFMor_easy, a::FacElem{nf_elem, AnticNumberField}, D::Vec
       vv = vv % quo # vv will always be positive
     end
     @assert vv < Fq.n  #please complain if this is triggered
-    if !iszero(vv)
-      if !cached && (fmpz_mod_ui(denominator(k), Fq.n) == 0)
-        throw(BadPrime(characteristic(Fq)))
-      end
 
+    # We always have to reduce, so check first
+    if !cached && (fmpz_mod_ui(denominator(k), Fq.n) == 0)
+      throw(BadPrime(characteristic(Fq)))
+    end
+
+    if iszero(vv) && !cached
+      D[i] = zero(parent(t))
+      nf_elem_to_gfp_poly!(t, k)
+      set!(D[i], t)
+    end
+
+    if !iszero(vv)
       if cached
         s = evaluate_raw(D[i], evaluateat)
       else

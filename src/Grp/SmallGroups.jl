@@ -54,8 +54,8 @@ const DefaultSmallGroupDB = small_group_database()
 
 isfrom_db(G::GrpGen) = G.isfromdb
 
-function small_group(i, j)
-  data = DefaultSmallGroupDB.db[i][j]
+function small_group(i, j; DB = DefaultSmallGroupDB)
+  data = DB.db[i][j]
   #i < 1 || i > 63 && error("Group order ($i) must be between 1 and $small_groups_limit")
   #j < 1 || j > number_of_small_groups(i) && error("Index ($j) must be between 1 and $(number_of_small_groups(i))")
   P = SymmetricGroup(i)

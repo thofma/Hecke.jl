@@ -99,10 +99,10 @@ end
 
 # TODO: Cache the orders of the generators of the small_groups.
 #       Do not recompute it here.
-function find_small_group(G::GrpGen)
+function find_small_group(G::GrpGen; DB = DefaultSmallGroupDB)
   l = order(G)
 
-  D = DefaultSmallGroupDB.db
+  D = DB.db
 
   elements_by_orders = Dict{Int, Array{GrpGenElem, 1}}()
 
@@ -170,7 +170,7 @@ function find_small_group(G::GrpGen)
       if is_hom
         if length(closure(collect(poss), *, idG)) == order(G)
           # Found it!
-          H = small_group(order(G), j)
+          H = small_group(order(G), j, DB = DB)
           return (order(G), j), H, _spin_up_morphism(gens(H), collect(poss))
         end
       end

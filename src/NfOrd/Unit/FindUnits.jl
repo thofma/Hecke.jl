@@ -178,14 +178,32 @@ function _unit_group_find_units_with_transform(u::UnitGrpCtx, x::ClassGrpCtx; ad
 end
 
 
-function find_candidates(x::ClassGrpCtx, u::UnitGrpCtx)
+function find_candidates(x::ClassGrpCtx, u::UnitGrpCtx, add::Int = 0)
   time_kernel = 0.0
   add_units = Int[]
   rel = SMat{fmpz}()
   K = nf(x)
   r1, r2 = signature(K)
-  nrel = min(10, r1+r2-1, nrows(x.M.rel_gens))
+  nrel = max(10, r1+r2-1)
+  if nrel > nrows(x.M.rel_gens)
+    nrel = nrows(x.M.rel_gens)
+  end
   while length(add_units) < nrel
+    xj = rand(1:nrows(x.M.rel_gens))
+    if length(u.relations_used) != nrows(x.M.rel_gens)
+      if xj in add_units || xj in u.relations_used
+        continue
+      end
+      push!(u.relations_used, xj)
+    else
+      if xj in add_units 
+        continue
+      end
+    end
+    push!(add_units, xj)
+    push!(rel, x.M.rel_gens[xj])
+  end
+  for i = 1:add
     xj = rand(1:nrows(x.M.rel_gens))
     if length(u.relations_used) != nrows(x.M.rel_gens)
       if xj in add_units || xj in u.relations_used
@@ -261,15 +279,22 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx; add_orbit::Bool =
   not_larger_bound = min(20, nrows(x.M.rel_gens), r)
 
   first = true
+  add = 0
   if has_full_rank(u)
     first = false
+    add += 2
   end
   if !isdefined(u, :relations_used)
     u.relations_used = Vector{Int}()
   end
   finished = false
+
+  
   while not_larger < not_larger_bound 
-    k, add_units, s1 = find_candidates(x, u)
+    k, add_units, s1 = find_candidates(x, u, add)
+    if length(u.relations_used) == nrows(x.M.rel_gens)
+      add += 1
+    end
     ge = vcat(x.R_gen[1:k.c], x.R_rel[add_units])
     elements = Vector{FacElem{nf_elem, AnticNumberField}}(undef, nrows(s1))
     for i = 1:nrows(s1)
@@ -356,7 +381,6 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx; add_orbit::Bool =
 
       @v_do :UnitGroup 2 popindent()
     end
-    u.units = reduce(u.units, u.tors_prec)
     if add_orbit && rank(u) > r-div(r, 4)
       @vprint :UnitGroup 1 "Adding orbits\n"
       # I close the units via Galois action
@@ -414,9 +438,7 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx; add_orbit::Bool =
           end
         end
       end
-      if add_done
-        u.units = reduce(u.units, u.tors_prec)
-      end
+      u.units = reduce(u.units, u.tors_prec)
     end
     if finished
       break

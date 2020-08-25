@@ -13,6 +13,8 @@ mutable struct MapRayClassGrp <: Map{GrpAbFinGen, FacElemMon{Hecke.NfOrdIdlSet},
   header::Hecke.MapHeader{GrpAbFinGen, FacElemMon{Hecke.NfOrdIdlSet}}
   defining_modulus::Tuple{NfOrdIdl, Array{InfPlc, 1}}
   fact_mod::Dict{NfOrdIdl, Int} #The factorization of the finite part of the defining modulus
+
+  gens::Tuple{Vector{NfOrdIdl}, Vector{GrpAbFinGenElem}}
   
   #Dictionaries to cache preimages. Used in the action on the ray class group
   prime_ideal_preimage_cache::Dict{NfOrdIdl, GrpAbFinGenElem} 
@@ -1033,9 +1035,30 @@ function find_gens(mR::MapRayClassGrp; coprime_to::fmpz = fmpz(-1))
     mm = lcm(mm, coprime_to)
   end
   mm = lcm(mm, discriminant(EquationOrder(nf(O))))  
+  if isdefined(mR, :gens)
+    if coprime_to == -1
+      return mR.gens[1], mR.gens[2]
+    else
+      found = false
+      sR = GrpAbFinGenElem[]
+      lp = NfOrdIdl[]
+      for i = 1:length(mR.gens[1])
+        if iscoprime(mR.gens[1][i], coprime_to)
+          push!(lp, mR.gens[1][i])
+          push!(sR, mR.gens[2][i])
+        else
+          found = true
+        end
+      end
+      if !found
+        return lp, sR
+      end
+    end
+  else
+    sR = GrpAbFinGenElem[]
+    lp = NfOrdIdl[]
+  end
 
-  sR = GrpAbFinGenElem[]
-  lp = NfOrdIdl[]
   q, mq = quo(R, sR, false)
   s, ms = snf(q)
   
@@ -1066,7 +1089,10 @@ function find_gens(mR::MapRayClassGrp; coprime_to::fmpz = fmpz(-1))
           q, mq = quo(R, sR, false)
           s, ms = snf(q)
           if order(s) == 1 
-            return lp,sR
+            if !isdefined(mR, :gens)
+              mR.gens = (lp, sR)
+            end
+            return lp, sR
           end
         end
       end
@@ -1099,6 +1125,9 @@ function find_gens(mR::MapRayClassGrp; coprime_to::fmpz = fmpz(-1))
           q, mq = quo(R, sR, false)
           s, ms = snf(q)
           if order(s)==1
+            if !isdefined(mR, :gens)
+              mR.gens = (lp, sR)
+            end
             return lp, sR
           end
         end
@@ -1155,6 +1184,9 @@ function find_gens(mR::MapRayClassGrp; coprime_to::fmpz = fmpz(-1))
   for i = 1:length(primes_class_group)
     push!(lp, primes_class_group[i])
     push!(sR, mR\primes_class_group[i])
+  end
+  if !isdefined(mR, :gens)
+    mR.gens = (lp, sR)
   end
   return lp, sR
 end

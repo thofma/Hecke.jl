@@ -102,6 +102,7 @@ function hom(A::Array{GrpAbFinGenElem, 1}, B::Array{GrpAbFinGenElem, 1}; check::
   GB = parent(B[1])
   @assert length(B) == length(A)
   @assert length(A) > 0
+  #=
   if (check)
     m = vcat(fmpz_mat[x.coeff for x in A])
     m = vcat(m, rels(parent(A[1])))
@@ -114,13 +115,18 @@ function hom(A::Array{GrpAbFinGenElem, 1}, B::Array{GrpAbFinGenElem, 1}; check::
       error("Data does not define a homomorphism")
     end
   end
+  =#
+  if ngens(GB) == 0
+    return hom(GA, GB, matrix(FlintZZ, ngens(GA), 0, fmpz[]), check = check)
+  end
 
   M = vcat([hcat(A[i].coeff, B[i].coeff) for i = 1:length(A)])
   RA = rels(GA)
   M = vcat(M, hcat(RA, zero_matrix(FlintZZ, nrows(RA), ncols(B[1].coeff))))
-  H = hnf(M)
-  if ngens(GB) == 0
-    return hom(GA, GB, matrix(FlintZZ, ngens(GA), 0, fmpz[]), check = check)
+  if isdefined(GB, :exponent) && nrows(M) >= ncols(M)
+    H = hnf_modular_eldiv(M, exponent(GB))
+  else
+    H = hnf(M)
   end
   H = sub(H, 1:ngens(GA), ngens(GA)+1:ngens(GA)+ngens(GB))
   h = hom(GA, GB, H, check = check)

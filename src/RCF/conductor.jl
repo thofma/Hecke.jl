@@ -930,6 +930,14 @@ end
 function maximal_abelian_subfield(A::ClassField, ::FlintRationalField)
   return maximal_abelian_subfield(A, Hecke.rationals_as_number_field()[1])
 end
+
+function factored_modulus(A::ClassField{MapRayClassGrp, T}) where T
+  return A.rayclassgroupmap.fact_mod
+end
+
+function factored_modulus(A::ClassField{MapClassGrp, T}) where T
+  return Dict{NfOrdIdl, Int}()
+end
   
 function maximal_abelian_subfield(A::ClassField, mp::NfToNfMor)
   k = domain(mp)
@@ -946,7 +954,8 @@ function maximal_abelian_subfield(A::ClassField, mp::NfToNfMor)
   mC = pseudo_inv(A.quotientmap)*mR1
   #First, I construct a suitable modulus for A/k
   f_m0 = Dict{NfOrdIdl, Int}()
-  for (P, e) in mR1.fact_mod
+  fact_mod = factored_modulus(A)
+  for (P, e) in fact_mod
     p = intersect_prime(mp, P)
     if haskey(f_m0, p)
       if !iscoprime(minimum(P, copy = false), deg*expo)
@@ -1340,77 +1349,6 @@ function norm(m::T, a::FacElem{nf_elem, AnticNumberField}) where T <: Map{AnticN
 end
 
 
-@doc Markdown.doc"""
-    norm(m::T, I::NfOrdIdl) where T <: Map{AnticNumberField, AnticNumberField} -> NfOrdIdl
-Given an embedding $m:k\to K$ of number fields and an integral ideal in $K$, find the norm
-$N_{K/k}(I)$.
-"""
-function norm(m::T, I::NfOrdIdl) where T <: Map{AnticNumberField, AnticNumberField}
-  K = codomain(m)
-  @assert K == nf(order(I))
-  k = domain(m)
-  zk = maximal_order(k)
-  if I.is_principal == 1
-    if isdefined(I, :princ_gen)
-      return ideal(zk, zk(norm(m, (I.princ_gen).elem_in_nf)))
-    elseif isdefined(J,:princ_gen_special)
-      el = J.princ_gen_special[2] + J.princ_gen_special[3]
-      return ideal(zk, zk(norm(m, el)))
-    end
-  end
-  assure_2_normal(I)
-  J = ideal(zk, I.gen_one^div(degree(K), degree(k)), zk(norm(m, I.gen_two.elem_in_nf)))
-  J.gens_normal = I.gens_normal
-  return J
-end
-
-function norm(m::T, I::NfOrdFracIdl) where T <: Map{AnticNumberField, AnticNumberField}
-  return norm(m, numerator(I))//denominator(I)^div(degree(codomain(m)), degree(domain(m)))
-end
-
-#TODO: intersect_nonindex uses a worse algo in a more special case. Combine.
-#  for prime ideals, the gcd's can be done in F_p/ F_q hence might be faster
-@doc Markdown.doc"""
-    minimum(m::T, I::NfOrdIdl) where T <: Map{AnticNumberField, AnticNumberField} -> NfOrdIdl
-Given an embedding $m:k\to K$ of number fields and an integral ideal in $K$, find the 
-intersect $I \cap \Z_k$.
-"""
-function minimum(m::T, I::NfOrdIdl) where T <: Map{AnticNumberField, AnticNumberField}
-  K = codomain(m)
-  @assert K == nf(order(I))
-  k = domain(m)
-  zk = maximal_order(k)
-  assure_2_normal(I) # basically implies order(I) is maximal
-  if !isone(gcd(minimum(I), index(order(I))))
-    bk = map(m, basis(maximal_order(k), k))
-    bK = map(K, basis(I))
-    d = lcm(lcm(map(denominator, bk)), lcm(map(denominator, bK)))
-    F = FreeModule(FlintZZ, degree(K))
-    sk = sub(F, [F(matrix(FlintZZ, 1, degree(K), coeffs(d*x))) for x = bk])
-    sK = sub(F, [F(matrix(FlintZZ, 1, degree(K), coeffs(d*x))) for x = bK])
-    m = intersect(sk[1], sK[1])
-    return ideal(zk, [zk(collect(x.v)) for x = map(m[2], gens(m[1]))])
-  end
-
-  @assert K == nf(order(I))
-  k = domain(m)
-  kt, t = PolynomialRing(k, cached = false)
-  Qt = parent(K.pol)
-  h = gcd(gen(k) - evaluate(Qt(m(gen(k))), t), evaluate(K.pol, t))
-  g, ai, _ = gcdx(evaluate(Qt(I.gen_two.elem_in_nf), t) % h, h)
-  @assert g == 1
-  #so ai * a = 1 in K/k
-  c = content_ideal(ai, zk)
-  n,d = integral_split(c)
-  J = ideal(zk, I.gen_one) + d
-  J.gens_normal = I.gens_normal
-  return J
-end
-
-function minimum(m::T, I::NfOrdFracIdl) where T <: Map{AnticNumberField, AnticNumberField}
-  return minimum(m, numerator(I))//denominator(I)
-end
-
 #TODO: change order!!! this only works for maximal orders
 function Base.intersect(I::NfAbsOrdIdl, R::NfAbsOrd)
   @assert ismaximal(R)
@@ -1500,11 +1438,10 @@ function lorenz_eta_level(k::AnticNumberField)
   # where eta_r = (zeta_(2^r) + 1/zeta_(2^r))
   r = 2
   x = PolynomialRing(FlintZZ, cached = false)[2]
-  while true
-    @show f = cos_minpoly(2^r, x)
-    if hasroot(f, k)[1]
-      return r-1
-    end
-    @show r += 1
+  f = cos_minpoly(2^r, x)
+  while hasroot(f, k)[1]
+    r += 1
+    f = cos_minpoly(2^r, x)
   end
+  return r - 1
 end

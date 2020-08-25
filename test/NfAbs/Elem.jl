@@ -102,6 +102,11 @@ end
   g = t^4-t^3-t+(1)
   @test length(factor(g)) == 3
 
+  f = x^4 + 24*x^2+28
+  K, a = number_field(f, "a", cached = false);
+  g = x^8-1
+  @test length(factor(g, K)) == 4
+
   K, a = number_field(x^3 - 2, "a")
   Kx, x = PolynomialRing(K, "x")
   fa = factor(x^4+(1//2*a^2 + 1*a + 2)*x^3+(a^2 + 2*a + 2)*x^2+(1//2*a^2 + 1*a + 2)*x+1)

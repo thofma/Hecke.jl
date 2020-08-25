@@ -172,13 +172,14 @@ function _construct_grp(IdH::GAP.GapObj, uncom::Int)
   L = GAP.Globals.DerivedSeries(G)
   mH1 = GAP.Globals.NaturalHomomorphismByNormalSubgroup(G, L[end-1])
   K = GAP.Globals.Kernel(mH1)
-  gens = GAP.gap_to_julia(GAP.Globals.MinimalGeneratingSet(K))
+  gens = GAP.Globals.MinimalGeneratingSet(K)
+  new_gens = []
   for i = 1:length(gens)
     o = GAP.Globals.Order(gens[i])
     ex = ppio(o, uncom)[1]
-    gens[i] = gens[i]^ex 
+    push!(new_gens, gens[i]^ex) 
   end
-  S = GAP.Globals.Subgroup(G, GAP.julia_to_gap(gens))
+  S = GAP.Globals.Subgroup(G, GAP.julia_to_gap(new_gens))
   Q = GAP.Globals.FactorGroup(G, S)
   IdCheck = GAP.Globals.IdGroup(Q)
   return IdCheck
@@ -212,10 +213,10 @@ function _abelian_normal_extensions(F::FieldsTower, gtype::Array{Int, 1}, absbou
     return Vector{Hecke.ClassField{Hecke.MapRayClassGrp, GrpAbFinGenMap}}[]
   end
   @vprint :Fields 2 "\n"
-  @vprint :Fields 1 "Computing class group"
+  @vprint :Fields 1 "Computing class group of $(K.pol)"
   @vprint :Fields 2 "\n"
   @vtime :Fields 2 Cl, mCl = class_group(O, use_aut = true)
-  @vprint :Fields 1 "$(Hecke.clear_to_eol())"
+  @vprint :Fields 1 "$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())"
   if mod(n, 2) == 0 && !only_real
     inf_plc = real_places(K)
   end
@@ -500,12 +501,13 @@ function max_ab_norm_sub_containing(G::GAP.GapObj)
   if !GAP.Globals.IsEmpty(sc)
     return G1, H, GAP.gap_to_julia(Vector{Int}, GAP.Globals.AbelianInvariants(sc[1]))
   end
-  lS = GAP.gap_to_julia(GAP.Globals.ConjugacyClassesSubgroups(G1))
+  lS = GAP.Globals.ConjugacyClassesSubgroups(G1)
   #TODO: Subgroups in the quotient by H and not in the full group
   candidate = H
   sizecandidate = GAP.Globals.Size(H)
   ab_invariants = GAP.gap_to_julia(Vector{Int}, GAP.Globals.AbelianInvariants(H))
-  for S in lS
+  for i = 1:length(lS)
+    S = lS[i]
     s = GAP.Globals.Representative(S)
     if !GAP.Globals.IsSubset(s, H)
       continue
@@ -536,7 +538,7 @@ function computing_over_subfields(class_fields, subfields, idE, autos, right_grp
   new_class_fields, subs, to_be_done = translate_class_field_down(subfields, class_fields, it, ab_invariants)
   for x in to_be_done
     C = class_fields[x]
-    L = number_field(C)
+    L = number_field(C, using_norm_relation = true)
     auts = absolute_automorphism_group(C, autos)
     Cpperm = permutation_group(auts)
     if GAP.Globals.IdGroup(Cpperm) == idE
