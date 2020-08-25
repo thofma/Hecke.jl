@@ -238,7 +238,8 @@ function _abelian_normal_extensions(F::FieldsTower, gtype::Array{Int, 1}, absbou
     @vprint :Fields 1 "\e[1FConductors to test: $(length(l_conductors)-j) \n"
     @vprint :Fields 3 "\n\n"
     @vtime :Fields 3 r, mr = Hecke.ray_class_group_quo(O, k[1], k[2], inf_plc, rcg_ctx)
-    if !Hecke.has_quotient(r, gtype)
+    S, mS = snf(r)
+    if !Hecke.has_quotient(S, gtype)
       continue
     end
     if first_group
@@ -251,16 +252,19 @@ function _abelian_normal_extensions(F::FieldsTower, gtype::Array{Int, 1}, absbou
     end
     mr.clgrpmap.small_gens = rcg_ctx.class_group_map.small_gens
     @vtime :Fields 3 act = Hecke.induce_action(mr, autos)
-    @vtime :Fields 3 ls = stable_subgroups(r, act, op = fun_sub, quotype = gtype)
+    act_S = induce_action_on_subgroup(mS, act)
+    imS = inv(mS)
+    @vtime :Fields 3 ls = stable_subgroups(S, act_S, op = fun_sub, quotype = gtype)
     Dcond = Dict{Int, Array{GrpAbFinGenElem, 1}}()
     Ddisc = Dict{Tuple{Int, Int}, Array{GrpAbFinGenElem, 1}}()
     for s in ls
       s::GrpAbFinGenMap
       @hassert :Fields 1 order(codomain(s)) == n
-      C = ray_class_field(mr, s)::ClassField{MapRayClassGrp, GrpAbFinGenMap}
+      codomain(s).exponent = expo
+      @vtime :Fields 4 C = ray_class_field(mr, imS*s)::ClassField{MapRayClassGrp, GrpAbFinGenMap}
       fl = check_extension(C, bound, Dcond, Ddisc)
       if fl
-        res_act = _action(s, act)
+        res_act = _action(s, act_S)
         @vtime :Fields 3 fl1 = check_group_extension(IdCheck, autos, res_act)
         if fl1
           push!(class_fields_with_act, (C, res_act))

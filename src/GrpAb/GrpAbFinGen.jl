@@ -340,10 +340,30 @@ function snf(G::GrpAbFinGen)
     G.snf_map = GrpAbFinGenMap(G) # identity
     return G, G.snf_map::GrpAbFinGenMap
   end
-
-  S, _, T = snf_with_transform(G.rels, false, true)
-
-  return _reduce_snf(G, S, T, inv(T))
+  if isdefined(G, :exponent)
+    if isdefined(G, :hnf)
+      S, T = snf_for_groups(G.hnf, G.exponent)
+    else
+      S, T = snf_for_groups(G.rels, G.exponent)
+    end
+  else
+    S, _, T = snf_with_transform(G.rels, false, true)
+  end
+  
+  m = min(nrows(S), ncols(S))
+  if m > 0
+    e = S[m, m]
+    if e > 1 && fits(Int, e) && isprime(e)
+      F = GF(Int(e), cached = false)
+      TF = map_entries(F, T)
+      iT = lift(inv(TF))
+    else
+      iT = inv(T)
+    end
+  else
+    iT = inv(T)
+  end
+  return _reduce_snf(G, S, T, iT)
 end
 
 # For S in SNF with G.rels = U*S*T and Ti = inv(T) this removes

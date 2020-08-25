@@ -202,7 +202,7 @@ end
 
 function inv(f::GrpAbFinGenMap)
   if isdefined(f, :imap)
-    return hom(codomain(f), domain(f), f.imap, f.map)
+    return hom(codomain(f), domain(f), f.imap, f.map, check = false)
   end
   if !isinjective(f)
     error("The map is not invertible")
@@ -361,9 +361,16 @@ end
 
 function compose(f::GrpAbFinGenMap, g::GrpAbFinGenMap)
   @assert domain(g) == codomain(f)
-  
-  M = f.map*g.map
   C = codomain(g)
+  if isdefined(C, :exponent)
+    R = ResidueRing(FlintZZ, C.exponent, cached = false)
+    fR = map_entries(R, f.map)
+    gR = map_entries(R, g.map)
+    MR = fR*gR
+    M = map_entries(lift, MR)
+  else
+    M = f.map*g.map
+  end
   if issnf(C)
     reduce_mod_snf!(M, C.snf)
   else
@@ -380,7 +387,7 @@ function reduce_mod_snf!(M::fmpz_mat, vect::Vector{fmpz})
       break
     end
     for i = 1:nrows(M)
-      M[i, j] = mod(M[i, j], vect[j])
+      M[i, j] = mod!(M[i, j], M[i, j], vect[j])
     end
   end
   return nothing

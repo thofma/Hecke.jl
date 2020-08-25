@@ -436,6 +436,7 @@ function ray_class_group_quo(m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Dict{NfOrd
   mp.disc_log_inf_plc = disc_log_inf
   mp.gens_mult_grp_disc_log = Dgens
   mp.clgrpmap = mC
+  X.exponent = fmpz(n_quo)
   return X, mp
   
 end

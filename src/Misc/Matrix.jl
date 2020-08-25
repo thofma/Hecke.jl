@@ -1157,14 +1157,13 @@ function snf_with_transform(A::fmpz_mat, l::Bool = true, r::Bool = true)
   # TODO: if only one trafo is required, start with the HNF that does not
   #       compute the trafo
   #       Rationale: most of the work is on the 1st HNF..
-  #
   S = deepcopy(A)
   while !isdiagonal(S)
     if l
       S, T = hnf_with_transform(S)
       L = T*L
     else
-      S = hnf(S)
+      S = hnf!(S)
     end
 
     if isdiagonal(S)
@@ -1174,7 +1173,7 @@ function snf_with_transform(A::fmpz_mat, l::Bool = true, r::Bool = true)
       S, T = hnf_with_transform(S')
       R = T*R
     else
-      S = hnf(S')
+      S = hnf!(S')
     end
     S = S'
   end
@@ -1233,6 +1232,56 @@ function snf_with_transform(A::fmpz_mat, l::Bool = true, r::Bool = true)
   end
 end
 
+
+function snf_for_groups(A::fmpz_mat, mod::fmpz)
+  R = identity_matrix(FlintZZ, ncols(A))
+  S = deepcopy(A)
+  if !isdiagonal(S)
+    while true
+      if nrows(S) >= ncols(S)
+        hnf_modular_eldiv!(S, mod)
+      else
+        S = hnf!(S)
+      end
+      if islower_triangular(S)
+        break
+      end
+      S, T = hnf_with_transform(S')
+      R = mul!(R, T, R)
+      S = S'
+      if isupper_triangular(S)
+        break
+      end
+    end
+  end
+  #this is probably not really optimal...
+  for i=1:min(nrows(S), ncols(S))
+    if S[i,i] == 1
+      continue
+    end
+    for j=i+1:min(nrows(S), ncols(S))
+      if S[j,j] == 0
+        continue
+      end
+      if S[i,i] != 0 && S[j,j] % S[i,i] == 0
+        continue
+      end
+      g, e,f = gcdx(S[i,i], S[j,j])
+      a = divexact(S[i,i], g)
+      S[i,i] = g
+      b = divexact(S[j,j], g)
+      S[j,j] *= a
+      # V = [e -b ; f a];
+      # so col i and j of R will be transformed. We do it naively
+      # careful: at this point, R is still transposed
+      for k=1:nrows(R)
+        R[i, k], R[j, k] = e*R[i,k]+f*R[j,k], -b*R[i,k]+a*R[j,k]
+      end
+    end
+  end
+  return S, R'
+end
+
 ################################################################################
 #
 #  IsUpper\Lower triangular 
@@ -1241,9 +1290,8 @@ end
 
 function isupper_triangular(M::MatElem)
   n = nrows(M)
-  @assert n == ncols(M)
   for i = 2:n
-    for j = 1:i-1
+    for j = 1:max(i-1, ncols(M))
       if !iszero(M[i, j])
         return false
       end
@@ -1253,10 +1301,8 @@ function isupper_triangular(M::MatElem)
 end
 
 function islower_triangular(M::MatElem)
-  n = nrows(M)
-  @assert n == ncols(M)
-  for i = 1:n
-    for j = i+1:n
+  for i = 1:nrows(M)
+    for j = i+1:ncols(M)
       if !iszero(M[i, j])
         return false
       end

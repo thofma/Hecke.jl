@@ -1037,10 +1037,11 @@ function _mult_grp_mod_n(Q::NfOrdQuoRing, y1::Dict{NfOrdIdl, Int}, y2::Dict{NfOr
       if haskey(y1, q)
         e = Int(exponent(G2))
         com, uncom = ppio(n, e)
-        while !isone(mod(e, uncom))
-          e *= e
+        e1 = e
+        while !isone(mod(e1, uncom))
+          e1 *= e
         end
-        tame_part[q].generators[1] = powermod(tame_part[q].generators[1], e, minimum(idQ))
+        tame_part[q].generators[1] = powermod(tame_part[q].generators[1], e1, minimum(idQ))
       end
       
       i += ngens(G2)

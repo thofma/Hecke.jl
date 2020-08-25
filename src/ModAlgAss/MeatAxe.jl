@@ -898,9 +898,7 @@ function _submodules_direct_sum_dim_1(gens::Vector{T}, N::ModAlgAss{S, T, V}) wh
       for s = 1:length(I)
         m += all_combinations[i+s][I[s]]
       end
-      if _isclosed_dim1(m, N.action)
-        push!(res, m)
-      end
+      push!(res, m)
     end
   end
   non_zero_el = all_combinations[length(gens)][1]
