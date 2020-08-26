@@ -100,10 +100,10 @@ push!(::SMat{T}, ::SRow{T}) where {T}
 
 Sparse matrices can also be concatenated to form larger ones:
 ```@docs
-vcat!(::SMat{T}, ::SMat{T})
-vcat(::SMat{T}, ::SMat{T})
-hcat!(::SMat{T}, ::SMat{T})
-hcat(::SMat{T}, ::SMat{T})
+vcat!(::SMat{T}, ::SMat{T}) where {T}
+vcat(::SMat{T}, ::SMat{T}) where {T}
+hcat!(::SMat{T}, ::SMat{T}) where {T}
+hcat(::SMat{T}, ::SMat{T}) where {T}
 ```
 (Normal julia ``cat`` is also supported)
 

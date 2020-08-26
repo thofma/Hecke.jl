@@ -216,42 +216,6 @@ function _denominator_bound_in_relation(rreg::arb, K::AnticNumberField)
   return abs_upper_bound(arb_bound, fmpz)
 end
 
-################################################################################
-#
-#  Simplest fraction in balls
-#
-################################################################################
-
-function _fmpq_simplest_between(l_num::fmpz, l_den::fmpz, r_num::fmpz, r_den::fmpz)
-  n = fmpz()
-  d = fmpz()
-
-  ccall((:_fmpq_simplest_between, libflint), Nothing, (Ref{fmpz}, Ref{fmpz}, Ref{fmpz}, Ref{fmpz}, Ref{fmpz}, Ref{fmpz}), n, d, l_num, l_den, r_num, r_den)
-
-  return n//d
-end
-
-function simplest_between(l::fmpq, r::fmpq)
-  z = fmpq()
-  ccall((:fmpq_simplest_between, libflint), Nothing, (Ref{fmpq}, Ref{fmpq}, Ref{fmpq}), z, l, r)
-  return z
-end
-
-function simplest_inside(x::arb)
-  a = fmpz()
-  b = fmpz()
-  e = fmpz()
-
-  ccall((:arb_get_interval_fmpz_2exp, libarb), Nothing, (Ref{fmpz}, Ref{fmpz}, Ref{fmpz}, Ref{arb}), a, b, e, x)
-  if e >= 0
-    return a * fmpz(2)^e
-  end
-  e = -e
-  @assert fits(Int, e)
-  d = fmpz(2)^e
-  return _fmpq_simplest_between(a, d, b, d)
-end
-
 function simplest_inside(x::arb, B::fmpz)
   q = simplest_inside(x)
   if denominator(q) < B
@@ -261,14 +225,3 @@ function simplest_inside(x::arb, B::fmpz)
   end
 end
 
-#function 
-#
-#  simplest_inside(arb_t x):
-#  fmpz_t a, b, d, e
-#  fmpq_t r
-#  arb_get_interval_fmpz_2exp(a, b, e, x)
-#  e = -e
-#  do something special if e does not fit in a ulong
-#      d = 2^e
-#      _fmpq_simplest_between(numref(r), denref(r), a, d, b, d)
-#      return r
