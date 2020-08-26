@@ -651,7 +651,7 @@ function add_scaled_row(Ai::SRow{fmpz}, Aj::SRow{fmpz}, c::fmpz)
       n = add!(n, n, Aj.values[pj])
 
 #      n = c*Ai.values[pi] + Aj.values[pj]
-      if n != 0
+      if !iszero(n)
         nb = max(nb, nbits(n))
         push!(sr.pos, Ai.pos[pi])
         push!(sr.values, n)
@@ -693,13 +693,14 @@ function add_scaled_row!(Ai::SRow{fmpz}, Aj::SRow{fmpz}, c::fmpz)
       pj += 1
     else
       n = mul!(n, c, Ai.values[pi])
-      nn = add!(Aj.values[pj], n, Aj.values[pj])
+      n = add!(n, n, Aj.values[pj])
 
 #      n = c*Ai.values[pi] + Aj.values[pj]
-      if nn != 0
+      if !iszero(n) 
         nb = max(nb, nbits(n))
         push!(sr.pos, Ai.pos[pi])
-        push!(sr.values, nn)
+        push!(sr.values, n)
+        n = fmpz()
       end
       pi += 1
       pj += 1
