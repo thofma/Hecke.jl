@@ -79,6 +79,8 @@ function check_index(M::ModuleCtx_fmpz)
 
   if isdefined(M, :basis)
     C = copy(M.basis)
+    @assert isupper_triangular(C)
+    @assert M.basis_idx != 0
   else
     d = abs(det_mc(M.bas_gens))
     C = M.max_indep
@@ -97,10 +99,14 @@ function check_index(M::ModuleCtx_fmpz)
       C.c = max(C.c, h.pos[end])
     end
     M.max_indep = copy(C)
+    @assert isupper_triangular(C)
+    M.basis_idx = prod([C[i,i] for i=1:nrows(C)])
   end
 
+  d = 2*M.basis_idx
+
   for i=length(M.rel_reps_p)+1:length(M.rel_gens)
-    reduce(C, M.rel_gens[i])
+    reduce(C, M.rel_gens[i], d)
     push!(M.rel_reps_p, solve_ut(M.Mp.basis, change_base_ring(M.Mp.R, M.rel_gens[i])))
   end
 
