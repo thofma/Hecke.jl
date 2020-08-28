@@ -70,9 +70,13 @@ function elem_gen(A::GrpAbFinGen, a::fmpz_mat)
 end
 
 function elem_snf(A::GrpAbFinGen, a::fmpz_mat)
-  for i = 1:ngens(A)
-    if !iszero(A.snf[i])
-      a[1, i] = mod(a[1, i], A.snf[i])
+  GC.@preserve a begin
+    for i = 1:ngens(A)
+      if !iszero(A.snf[i])
+        t = ccall((:fmpz_mat_entry, libflint), Ptr{fmpz}, (Ref{fmpz_mat}, Int, Int), a, 0, i - 1)
+        ccall((:fmpz_mod, libflint), Nothing, (Ptr{fmpz}, Ptr{fmpz}, Ref{fmpz}), t, t, A.snf[i])
+        #a[1, i] = mod(a[1, i], A.snf[i])
+      end
     end
   end
   z = GrpAbFinGenElem()

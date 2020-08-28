@@ -100,6 +100,22 @@ function abelian_group(M::Array{T, 2}; name :: String = "") where T <: Integer
   return G
 end
 
+function _issnf(N::Vector{T}) where T <: Union{Integer, fmpz}
+  for i = 1:length(N)-1
+    if isone(N[i])
+      return false
+    end
+    if iszero(N[i])
+      if !iszero(N[i+1])
+        return false
+      end
+    elseif !iszero(mod(N[i+1], N[i]))
+      return false
+    end
+  end
+  return true
+end
+
 @doc Markdown.doc"""
     abelian_group(M::Vector{Union{fmpz, Integer}}) -> GrpAbFinGen
     abelian_group(M::Union{fmpz, Integer}...) -> GrpAbFinGen
@@ -107,14 +123,14 @@ end
 Creates the direct product of the cyclic groups $\mathbf{Z}/m_i$,
 where $m_i$ is the $i$th entry of `M`.
 """
-function abelian_group(M::Array{T, 1}; name :: String = "") where T <: Union{Integer, fmpz}
-  N = zero_matrix(FlintZZ, length(M), length(M))
-  for i = 1:length(M)
-    N[i,i] = M[i]
-  end
-  if issnf(N)
+function abelian_group(M::Vector{T}; name :: String = "") where T <: Union{Integer, fmpz}
+  if _issnf(M)
     G = GrpAbFinGen(M)
   else
+    N = zero_matrix(FlintZZ, length(M), length(M))
+    for i = 1:length(M)
+      N[i,i] = M[i]
+    end
     G = GrpAbFinGen(N)
   end
   if !isempty(M)
@@ -311,7 +327,7 @@ function assure_has_hnf(A::GrpAbFinGen)
   if isdefined(A, :hnf) 
     return nothing
   end
-  if isdefined(A, :exponent)
+  if isdefined(A, :exponent) && nrows(A.rels) >= ncols(A.rels)
     A.hnf = hnf_modular_eldiv(A.rels, A.exponent)
   else
     A.hnf = hnf(A.rels)
@@ -351,12 +367,16 @@ function snf(G::GrpAbFinGen)
   end
   
   m = min(nrows(S), ncols(S))
-  if m > 0
+  if m > 0 && nrows(S) >= ncols(S)
     e = S[m, m]
-    if e > 1 && fits(Int, e) && isprime(e)
-      F = GF(Int(e), cached = false)
-      TF = map_entries(F, T)
-      iT = lift(inv(TF))
+    if e > 1
+      if fits(Int, e) && isprime(e)
+        F = GF(Int(e), cached = false)
+        TF = map_entries(F, T)
+        iT = lift(inv(TF))
+      else
+        iT = invmod(T, e)
+      end
     else
       iT = inv(T)
     end
@@ -376,35 +396,11 @@ function _reduce_snf(G::GrpAbFinGen, S::fmpz_mat, T::fmpz_mat, Ti::fmpz_mat)
     push!(d, 0)
   end
 
-  #s = Array{fmpz, 1}()
-  s = fmpz[ d[i] for i in 1:length(d) if d[i] !=  1]
-  #for i = 1:length(d)
-  #  if d[i] != 1
-  #    push!(s, d[i])
-  #  end
-  #end
-  TT = zero_matrix(FlintZZ, nrows(T), length(s))
-  j = 1
-  for i = 1:length(d)
-    if d[i] != 1
-      for k=1:nrows(T)
-        TT[k, j] = T[k, i]
-      end
-      j += 1
-    end
-  end
-
-  TTi = zero_matrix(FlintZZ, length(s), nrows(T))
-
-  j = 1
-  for i = 1:length(d)
-    if d[i] != 1
-      for k=1:nrows(T)
-        TTi[j, k] = Ti[i, k]
-      end
-      j += 1
-    end
-  end
+  pos = Int[i for i = 1:length(d) if !isone(d[i])]
+  r = Int[i for i = 1:nrows(T)]
+  s = fmpz[ d[i] for i in pos]
+  TT = sub(T, r, pos)
+  TTi = sub(Ti, pos, r)
 
   H = GrpAbFinGen(s)
   if !isempty(s) && !iszero(s[end])

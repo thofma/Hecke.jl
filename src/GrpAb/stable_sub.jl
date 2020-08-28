@@ -23,7 +23,7 @@ end
 #
 
 function lift(M::fq_nmod_mat, R::Nemo.NmodRing)
-  @hassert :StabSub isprime_power(modulus(R))
+  @hassert :StabSub 1 isprime_power(modulus(R))
   N=zero_matrix(R,nrows(M),ncols(M))
   for i=1:nrows(M)
     for j=1:ncols(M)
@@ -34,7 +34,7 @@ function lift(M::fq_nmod_mat, R::Nemo.NmodRing)
 end
 
 function lift(M::gfp_mat, R::Nemo.NmodRing)
-  @hassert :StabSub isprime_power(modulus(R))
+  @hassert :StabSub 1 isprime_power(modulus(R))
   N=zero_matrix(R, nrows(M), ncols(M))
   for i=1:nrows(M)
     for j=1:ncols(M)
@@ -941,12 +941,12 @@ function _stable_subgroup_snf(R::GrpAbFinGen, act::Array{GrpAbFinGenMap, 1}; quo
       act_mat1 = Array{nmod_mat, 1}(undef, length(act))
       for z=1:length(act)
         imgs = GrpAbFinGenElem[]
-	for w = 1:ngens(S)
-	  el = act[z](comp(S[w]))
-	  fl, el1 = haspreimage(mG, el)
-	  @assert fl
+	      for w = 1:ngens(S)
+	        el = act[z](comp(S[w]))
+	        fl, el1 = haspreimage(mG, el)
+	        @assert fl
           push!(imgs, mS\(el1))
-	end
+	      end
         act_mat1[z] = map_entries(RR, hom(S, S, imgs).map)
       end
 
@@ -992,9 +992,9 @@ function _lift_and_construct(A::Zmodn_mat, mp::GrpAbFinGenMap)
   G = domain(mp)
   newsub = GrpAbFinGenElem[]
   for i=1:nrows(A)
-    y=view(A, i:i, 1:ncols(A))
-    if !iszero(y)
-      el = G(lift(y))
+    if !iszero_row(A, i)
+      y = view(A, i:i, 1:ncols(A))
+      el = GrpAbFinGenElem(G, lift(y))
       push!(newsub, mp(el))
     end       
   end
