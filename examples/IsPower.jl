@@ -13,6 +13,37 @@ function Hecke.roots_upper_bound(f::fmpq_poly)
   return max(fmpq(1), maximum([abs(coeff(f, i)//a) for i=0:degree(f)]))
 end
 
+function Base.lcm(a::T) where {T <: PolyElem}
+  return a
+end
+function Base.lcm(a::T, b::T, c::T...) where {T <: PolyElem}
+  g = lcm(a, b)
+  for x = c
+    g = lcm(g, x)
+  end
+  return g
+end
+
+function Base.lcm(a::AbstractArray{T}) where {T <: PolyElem}
+  return lcm(a...)
+end
+
+function Base.gcd(a::T) where {T <: PolyElem}
+  return a
+end
+function Base.gcd(a::T, b::T, c::T...) where {T <: PolyElem}
+  g = gcd(a, b)
+  for x = c
+    g = gcd(g, x)
+  end
+  return g
+end
+
+function Base.gcd(a::AbstractArray{T}) where {T <: PolyElem}
+  return gcd(a...)
+end
+
+
 function ispower_mod_p(a::nf_elem, i::Int)
 
   p = 2^10
@@ -34,6 +65,8 @@ function ispower_mod_p(a::nf_elem, i::Int)
   dd = denominator(a)
   den *= dd
   a *= dd^i #now the root, should it exist, is integral
+  # ... but not all of them!!!!
+  #x^4 + 2*x^3 - 3*x^2 - 4*x + 13 has 3rd rt of 1, but 2 are non-int.
 
   while true
     p = next_prime(p)
@@ -45,11 +78,11 @@ function ispower_mod_p(a::nf_elem, i::Int)
       continue
     end
     if any(x->degree(x) > 100, keys(lp.fac))
-      @show p, "deg", maximum(degree, keys(lp.fac))
+#      @show p, "deg", maximum(degree, keys(lp.fac))
       continue
     end
     if length(keys(lp.fac)) > 30
-      @show p, "len", length(keys(lp.fac))
+#      @show p, "len", length(keys(lp.fac))
       continue
     end
     if first
@@ -67,14 +100,34 @@ function ispower_mod_p(a::nf_elem, i::Int)
       break
     end
   end
-  println("using ", opt[1], " with ", opt[2], " local factors")
+
+  @vprint :PolyFactor 1 "new n-th root code\n"
+  @vprint :PolyFactor 1 "using $(opt[1]) with $(opt[2]) local factors\n"
 
   C = Hecke.qAdicConj(K, opt[1])
   p = opt[1]
 
+  con_p = conjugates(a, C, 5,all = false, flat = false)
+  corr = one(K)
+  ft = PolynomialRing(GF(p), cached = false)[1]
+  if degree(lcm([minpoly(ft, ResidueField(parent(x))[2](x)) for x = con_p])) < degree(K)
+    pf = gen(K)
+    while true
+      b = a*pf^i
+      con_p = conjugates(b, C, 5,all = false, flat = false)
+      if degree(lcm([minpoly(ft, ResidueField(parent(x))[2](x)) for x = con_p])) == degree(K)
+        corr = pf
+        a = b
+        break
+      end
+      pf += 1
+    end
+  end
+
+  @vprint :PolyFactor 2 "using  corr=$corr to make primitive\n"
 
   local power_sum
-  if false
+  if degree(K) < 40
     r_pr = 20
     local con_r
     while true
@@ -99,15 +152,27 @@ function ispower_mod_p(a::nf_elem, i::Int)
   end
 
   bd = map(power_sum, 1:15)
-  @show map(nbits, bd)
+  @vprint :PolyFactor 2 "size of bounds for power sums: $(map(nbits, bd))\n"
   pr = clog(bd[end], p) + 145
-  println("using a precision of ", pr)
-  con_p = conjugates(a, C, pr,all = false, flat = false)
-  @assert all(x->degree(minpoly(ResidueField(parent(x))[2](x))) == degree(parent(x)), con_p)
+  @vprint :PolyFactor "using a precision of $pr\n"
 
-  con_pr = [roots(x, i) for x = con_p] #select primes to minimize this
+  con_p = conjugates(a, C, pr,all = false, flat = false)
+
+  local con_pr
+  try 
+    con_pr = [roots(x, i) for x = con_p] #select primes to minimize this
+  catch e
+    if typeof(e) == ErrorException
+      if e.msg == "elem not an $i-th power"
+        return false, a
+      end
+    end
+    rethrow(e)
+  end
+
   #use roots of unity to limit combinatorics:
-  if iseven(i)
+  #THINK: this interferes with the partitioning check
+  if false && iseven(i)
     q = Array{qadic, 1}()
     for qq = con_pr[1]
       (-qq in q) && continue
@@ -116,8 +181,7 @@ function ispower_mod_p(a::nf_elem, i::Int)
     con_pr[1] = q
   end
 
-  @show "#roots per local factor"
-  @show map(length, con_pr)
+  @vprint :PolyFactor "#roots per local factor: $(map(length, con_pr))\n"
   #TODO: if there is only one root/local => lll not neccessary,
   #      go directly to CRT
   con_pr_j = [[one(parent(x)) for x = y] for y = con_pr]
@@ -132,19 +196,18 @@ function ispower_mod_p(a::nf_elem, i::Int)
     end
 
     con_pr_j = [ con_pr[i] .* con_pr_j[i] for i=1:length(con_pr)]
-    @assert con_pr_j[1][1] == con_pr[1][1]^j
+    @hassert :PolyFactor 1 con_pr_j[1][1] == con_pr[1][1]^j
 
     data = matrix([reduce(vcat, [map(x -> lift(trace(x)), y) for y = con_pr_j])])
     data = sub(trafo, 1:no_rt, 1:no_fac)*data
     k = clog(bd[j], p)
-    @show pr, k
     @assert k < pr
     pk = fmpz(p)^(pr-k)
     pk = fmpz(p)^min(pr-k, clog(fmpz(2)^(2*no_fac), p)+4)
     map_entries!(x->rem(div(x, fmpz(p)^(k)), pk), data, data)
-    @show nbits(pk), maximum(nbits, data)
+#    @show nbits(pk), maximum(nbits, data)
     if iszero(data)
-      println("nothing new...")
+#      println("nothing new...")
       continue
     end
     trafo = hcat(trafo, data)
@@ -157,7 +220,7 @@ function ispower_mod_p(a::nf_elem, i::Int)
          rear  (a+b) < bd => (a+b)/c < bd/c
          round((a+b)/c) - round(a/c) - round(b/c)
     =# 
-    @show maximum(nbits, trafo), size(trafo)
+#    @show maximum(nbits, trafo), size(trafo)
     no_rt, trafo = lll_with_removal(trafo, fmpz(p)^2*fmpz(2*no_fac)) #THINK
     trafo = sub(trafo, 1:no_rt, 1:ncols(trafo))
     d = Dict{fmpz_mat, Array{Int, 1}}()
@@ -169,10 +232,12 @@ function ispower_mod_p(a::nf_elem, i::Int)
         d[k] = [l]
       end
     end
-    println("partition: ", values(d))
+    @vprint :PolyFactor 2 "current partition: $(values(d))\n"
     if all(x->length(x) >= length(con_pr), values(d))
       # we have a candidate!
-      @show "success"
+      #this length test does not work if we trip some roots
+      # (iseven) due to symmetry
+      @vprint :PolyFactor 1 "success, assembling root...\n"
       m = Base.minimum(map(length, values(d)))
       pa = d[findfirst(x->length(x) == m, d)]
       co = reduce(vcat, con_pr)
@@ -186,9 +251,9 @@ function ispower_mod_p(a::nf_elem, i::Int)
         end
         i += 1
       end
-      @show mp, pa
+#      @show mp, pa
       mC = completions(C)
-      @show [mp[x] for x = pa]
+#      @show [mp[x] for x = pa]
       mo = factors(C)
       va = zeros(K, length(mo))
       for x = pa
@@ -197,11 +262,22 @@ function ispower_mod_p(a::nf_elem, i::Int)
       end
 #      va = [Hecke.mod_sym(preimage(mC[mp[x]], co[x]), fmpz(p)^pr) for x = pa]
       @assert length(mo) == length(va)
-      pk = fmpz(C.C.H.p)^Int(C.C.H.prev)
+      pk = fmpz(C.C.H.p)^min(Int(C.C.H.prev), pr)
+#      @show C.C.H.prev, pr
+      if isone(pk) 
+        @assert length(va) == 1 #K.pol is irred. mod p
+        pk = fmpz(C.C.H.p)^(pr-2)
+      end
       res = crt(map(Hecke.Globals.Zx, va), mo, C.C.H, pk)
-      return res(gen(K))//den, pk
+      alg_den = derivative(K.pol)(gen(K))
+      b = res(gen(K))*alg_den
+      mod_sym!(b, pk)
+      b = b//alg_den
+      return true, b*inv(corr)//den
     end
-    if j > 40 error("") end
+    if j > 40 
+      global last_gt_40 = (deepcopy(last_is_pow[1]), last_is_pow[2])
+      error("j>40 error") end
   end
 end  
 
@@ -227,7 +303,7 @@ end
 function Base.lastindex(M::MatElem, i::Int)
   i == 1 && return nrows(M)
   i == 2 && return ncols(M)
-  error("illegal dimensino")
+  error("illegal dimension")
 end
 
 function Hecke.ispower(a::qadic, i::Int)
@@ -342,13 +418,6 @@ function Base.getindex(H::Hecke.HenselCtx, s::Symbol, i::Int)
   end
 end
 
-function Hecke.mod_sym!(f::fmpz_poly, n::fmpz)
-  for i=degree(f):-1:0
-    setcoeff!(f, i, Hecke.mod_sym(coeff(f, i), n))
-  end
-  return f
-end
-
 function Hecke.crt(v::Array{fmpz_poly, 1}, m::Array{fmpz_poly, 1}, H::Hecke.HenselCtx, pk::fmpz = fmpz(H.p)^Int(H.prev))
   if length(v) == 1
     return v[1]
@@ -357,7 +426,7 @@ function Hecke.crt(v::Array{fmpz_poly, 1}, m::Array{fmpz_poly, 1}, H::Hecke.Hens
   r = H.r
   res = fmpz_poly[]
   for i = 1:2*r-2
-    @show mu = H[:l, i]
+    mu = H[:l, i]
     if mu < 0
       push!(res, divrem(v[-mu], H[:v, -mu])[2])
       mod_sym!(res[end], pk)

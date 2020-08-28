@@ -321,6 +321,7 @@ function evaluate_mod(a::FacElem{nf_elem, AnticNumberField}, B::NfOrdFracIdl)
   end
 end
 
+last_r = []
 
 function Hecke.ispower(a::FacElem{nf_elem, AnticNumberField}, n::Int; with_roots_unity = false, decom = false, trager = false)
   if n == 1
@@ -399,7 +400,6 @@ function _ispower(a::FacElem{nf_elem, AnticNumberField}, n::Int; with_roots_unit
     d[one(K)] = fmpz(1)
   end
   df = FacElem(d) 
-  @show "hallo"
   @hassert :CompactPresentation 2 evaluate(df^n*b *inv(a))== 1
   
   den = denominator(b, ZK)
@@ -407,8 +407,10 @@ function _ispower(a::FacElem{nf_elem, AnticNumberField}, n::Int; with_roots_unit
   if fl
     den = den1
   end
-  @time x, _ = IsPower.ispower_mod_p(b*den^n, n)
-#  fl, x = ispower((den^n)*b, n, with_roots_unity = with_roots_unity, isintegral = true, trager = trager)
+  fl, x = IsPower.ispower_mod_p(b*den^n, n)
+  fl = fl && (x^n == b*(den^n))
+#  gl, x = ispower((den^n)*b, n, with_roots_unity = with_roots_unity, isintegral = true, trager = trager)
+#  @assert fl == gl
   if fl
     @hassert :CompactPresentation 2 x^n == b*(den^n)
     add_to_key!(df.fac, K(den), -1)
