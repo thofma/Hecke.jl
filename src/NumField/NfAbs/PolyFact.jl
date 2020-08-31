@@ -625,7 +625,8 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 20)
       i = findfirst(x->x == n, have) #new data will be in block i of C
       @vprint :PolyFactor 2 "trying to use coeff $n which is $i\n"
       if b[i] > precision(codomain(mC))
-        @show "not enough precision for CLD ", i,b, precision(codomain(mC))
+        @vprint :PolyFactor 2 "not enough precision for CLD $i, $b, $(precision(codomain(mC))), skipping\n"
+
 #        error()
         continue
       end
