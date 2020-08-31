@@ -193,9 +193,26 @@ function ispower_mod_p(a::nf_elem, i::Int)
     j += 1
     if j >= length(bd)
       bd = vcat(bd, map(power_sum, length(bd)+1:length(bd)+5))
+      #TODO: double precision and re-fine roots.
+      pr = clog(bd[end], p) + 145
+      @vprint :PolyFactor "increase precision to $pr\n"
+      con_p = conjugates(a, C, pr,all = false, flat = false)
+      _con_pr = reduce(vcat, [roots(x, i) for x = con_p])
+      for i = con_pr
+        for j = 1:length(i)
+          for k = _con_pr
+            if valuation(k-i[j]) > 10
+              i[j] = k
+            end
+          end
+        end
+      end
+      @assert precision(con_pr[1][1]) >= pr
+      con_pr_j = [ [x^j for x = y] for y = con_pr]
+    else
+      con_pr_j = [ con_pr[i] .* con_pr_j[i] for i=1:length(con_pr)]
     end
 
-    con_pr_j = [ con_pr[i] .* con_pr_j[i] for i=1:length(con_pr)]
     @hassert :PolyFactor 1 con_pr_j[1][1] == con_pr[1][1]^j
 
     data = matrix([reduce(vcat, [map(x -> lift(trace(x)), y) for y = con_pr_j])])
@@ -371,6 +388,8 @@ function Hecke.roots(a::qadic, i::Int)
   z = preimage(mk, zeta)
 
   p = precision(a)
+  #TODO: do double iteration - or the division free version
+  #TODO: inplace operations
   while p > 0
     b = b - (b^i-a)//(i*b^(i-1))
     if !isone(zeta)
