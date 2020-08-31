@@ -246,4 +246,17 @@ end
     c, mc = class_group(OK, use_aut = true)
     @test order(c) == 1
   end
+
+  @testset "A class group which was hanging" begin
+    K, a = number_field(x^4 - 4*x^3 - 1039*x^2 + 2086*x + 241020)
+    OK = lll(maximal_order(K))
+    c, mc = class_group(OK, redo = true)
+    c, mc = class_group(OK, redo = true)
+    c, mc = class_group(OK, redo = true)
+    c, mc = class_group(OK, redo = true)
+    c, mc = class_group(OK, redo = true)
+    c, mc = class_group(OK, redo = true)
+    c, mc = class_group(OK, redo = true)
+    c, mc = class_group(OK, redo = true)
+  end
 end
