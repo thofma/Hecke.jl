@@ -706,3 +706,255 @@ function can_locally_embed(U::QuadSpace, V::QuadSpace, p)
   m, db, hb = rank(V), det(V), hasse_invariant(V, p)
   return _can_locally_embed(n, da, ha, m, db, hb, p)
 end
+
+################################################################################
+#
+#  Isometry computation
+#
+################################################################################
+
+function _solve_conic(a::Integer, b::Integer, c::Integer)
+  _solve_conic(fmpq(a), fmpq(b), fmpq(c))
+end
+
+function _solve_conic(a, b, c, u, v)
+
+  K = parent(a) 
+	@assert !iszero(a)
+	@assert !iszero(b)
+	@assert !iszero(c)
+
+	fl, z = ispower(-b//a, 2)
+	if fl
+    x, y, z = z, K(1), K(0)
+    @goto finish
+  end
+
+	fl, z = ispower(-c//a, 2)
+	if fl
+    x, y, z = z, K(0), K(1)
+    @goto finish
+  end
+
+  Kx, x = PolynomialRing(K, "x", cached = false)
+  d = -b//a
+  den = denominator(d)
+  L, y = number_field(x^2 - d * den^2)
+  fl, _n = isnorm(L, -c//a)
+  if L isa AnticNumberField
+    n = evaluate(_n)
+  else
+    n = _n
+  end
+  if fl
+    x, y, z = coeff(n, 0), coeff(n, 1) * den, K(1)
+    @goto finish
+  end
+
+  return false, a, a, a, u, u, u
+
+  @label finish
+
+  @assert x^2 * a + y^2 * b + z^2 * c == 0
+
+  # Cremona, Conic paper
+  # x = Q1(U, V) = ax0U^2 + 2by0UV − bx0V^2
+  # y = Q2(U, V) = −ay0U^2 + 2ax0UV + by0V^2
+  # z = Q3(U, V) = az0U^2 + bz0V^2
+
+  q1 = a * x * u^2 + 2 * b * y * u * v - b * x * v^2
+  q2 = -a * y * u^2 + 2*a*x*u*v + b*y*v^2
+  q3 = a*z*u^2 + b*z*v^2
+
+  @assert a * q1^2 + b * q2^2 + c * q3^2 == 0
+
+  return true, x, y, z, q1, q2, q3
+end
+
+function _isisometric_with_isometry(a1, a2, b1, b2)
+  # I assume that they are isometric ...
+  #
+  # I want to find an isometry from (a1, a2) to (b1, b2)
+  # Let us call the matrix (a b; c d)
+  # Then a^2 a_1 + b^2 a_2 = z1^2 * b1 and
+  #
+  
+  K = parent(a1)
+  Kuv, (u, v) = PolynomialRing(K, ["u", "v"], cached = false)
+  
+  fl, _aa, _bb, _z1, a, b, z1 = _solve_conic(a1, a2, -b1, u, v)
+  @show _aa, _bb, _z1
+  @assert fl
+  
+  # a^2 a_1 + b^2 a_2 = z2^2 b2 and
+  fl, _cc, _dd, _z2, c, d, z2 = _solve_conic(a1, a2, -b2, u, v)
+  @show _cc, _dd, _z2
+  @assert fl
+
+  @show _aa * _cc * a1 + _bb * _dd * a2
+
+  @show a
+  @show b
+  @show c
+  @show d
+  
+  # a * c * a1 + b * d * a2 = 0
+  
+  @show z1, z2
+
+  s =  a * c * a1 + b * d * a2
+  if s == 0
+    return _aa, _bb, _cc, _dd, _z1, _z2
+  end
+  _a, _b, _c = coeff(s, u^4), coeff(s, u^2 * v^2), coeff(s, v^4)
+  @show _a, _b, _c
+  @show s
+  if 4 * _a * _c == _b^2
+    @assert 4*_c*s == (_b * u^2 + 2 * _c * v^2)^2
+    # u^2//v^2 = -b/c
+    fl, z = ispower(-(2 * _c)//_b, 2)
+    # (u/v)^2 == -2c/b
+    @assert fl
+    v = one(K)
+    u = z
+    @assert b * u^2 + 2 * c * v^2 == 0
+    @assert s(u, v) == 0
+  end
+
+
+  # This should be a parabola?
+end
+
+function _solve_conic_affine(A, B, a, t)
+  # Solve Au^2 + B*w^2 = a
+  # Gives one solutation and a parametrization
+
+  # a = u^2 + B/A v^2 = (u - sqrt(B/A)v)(u + sqrt(B/A)) = N(u + v sqrt(B/A))
+
+  K = parent(A)
+
+  Kz, z = PolynomialRing(K, "z", cached = false)
+  D = -B//A
+  de = denominator(D)
+  L, _ = number_field(z^2 - de^2 * D)
+  fl, _n = isnorm(L, a//de)
+
+  @assert fl
+
+  if L isa AnticNumberField
+    n = evaluate(_n)
+  else
+    n = _n
+  end
+
+  @assert norm(n) == a//de
+
+  u1, w1 = coeff(n, 0), de * coeff(n, 1)
+
+  @assert u1^2 * A + w1^2 * B == a
+  u = (-A * u1 + B * t^2 * u1 - 2 * B * t * w1)//(A + B * t^2)
+  w = (-2 * A * t * u1   + A * w1 - B * t^2 * w1)//(A + B * t^2)
+
+  @assert u^2 * A + w^2 * B == a
+
+  return true, u1, w1, u, w
+end
+
+# Return true, T such that T * [A 0; 0 B] T^t = [a 0; 0 b] or false, 0 if no such T exists.
+function _isisometric_with_isometry_dan(A, B, a, b)
+  K = parent(A)
+  
+  Kkt, (k, t) = PolynomialRing(K, ["k", "t"], cached = false)
+
+  fl, u1, w1, u, w = _solve_conic_affine(A, B, a, t)
+  if !fl
+    return false, zero_matrix(K, 0, 0)
+  end
+
+  fl, s3, v3, s, v = _solve_conic_affine(B, A, b, k)
+  if !fl
+    return false, zero_matrix(K, 0, 0)
+  end
+
+  lin = ((2 * (-2 * A^2 * B * s3 * t * u1 + A^3 * u1 * v3 - A^2 * B * t^2 * u1 * v3 + A^2 * B * s3 * w1 - A * B^2 * s3 * t^2 * w1 + 2 * A^2 * B * t * v3 * w1))) * k - (-2 * A^2 * B * s3 * u1 +  2 * A * B^2 * s3 * t^2 * u1 - 4 * A^2 * B * t * u1 * v3 - 4 * A * B^2 * s3 * t * w1 + 2 * A^2 * B * v3 * w1 - 2 * A * B^2 * t^2 * v3 * w1)
+  sq = 4 * A * B * (A + B * t^2)^2 * (B * s3^2 + A * v3^2) * (A * u1^2 + B * w1^2)
+
+  junk = 4 * (-2 * A^2 * B * s3 * t * u1 + A^3 * u1 * v3 - A^2 * B * t^2 * u1 * v3 + A^2 * B * s3 * w1 -  A * B^2 * s3 * t^2 * w1 + 2 * A^2 * B * t * v3 * w1) * (B + A * k^2) * (A + B * t^2)
+
+  t0 = K(1)
+  @assert !iszero(A + B * t0^2)
+
+  middle = A * u * v + B * s * w
+
+  @assert lin^2 - sq == junk * middle
+
+  _sq = sq(0, t0)
+
+  fl, rt = ispower(_sq, 2)
+
+  if !fl
+    return false, zero_matrix(K, 0, 0)
+  end
+
+  k0 = (rt + (-2 * A^2 * B * s3 * u1 +  2 * A * B^2 * s3 * t^2 * u1 - 4 * A^2 * B * t * u1 * v3 - 4 * A * B^2 * s3 * t * w1 + 2 * A^2 * B * v3 * w1 - 2 * A * B^2 * t^2 * v3 * w1))//((2 * (-2 * A^2 * B * s3 * t * u1 + A^3 * u1 * v3 - A^2 * B * t^2 * u1 * v3 + A^2 * B * s3 * w1 - A * B^2 * s3 * t^2 * w1 + 2 * A^2 * B * t * v3 * w1)))
+
+  kk = numerator(k0)(0, t0)//denominator(k0)(0, t0)
+
+  @assert !iszero(junk(kk, t0))
+  @assert !iszero(B + A * kk^2)
+
+  uu = numerator(u)(kk, t0)//denominator(u)(kk, t0)
+  ww = numerator(w)(kk, t0)//denominator(w)(kk, t0)
+  ss = numerator(s)(kk, t0)//denominator(s)(kk, t0)
+  vv = numerator(v)(kk, t0)//denominator(v)(kk, t0)
+
+  T = matrix(K, 2, 2, [uu, ww, vv, ss])
+  D1 = diagonal_matrix([A, B])
+  D2 = diagonal_matrix([a, b])
+  @assert T * D1 * transpose(T) == D2
+
+  return true, T
+end
+
+@doc Markdown.doc"""
+    isisometric_with_isometry(V::QuadSpace, W::QuadSpace)
+
+Returns wether $V$ and $W$ are isometric together with an isometry in case it
+exists. The isometry is given as an invertible matrix $T$ such that
+$T G_W T^t = G_V$, where $G_V$, $G_W$ are the Gram matrices.
+"""
+function isequivalent_with_isometry(V::QuadSpace, W::QuadSpace)
+  if !isequivalent(V, W)
+    return false, zero_matrix(base_ring(V), 0, 0)
+  end
+
+  @req max(rank(V), rank(W)) <= 2 "Rank must be <= 2"
+
+  K = base_ring(V)
+
+  GV = gram_matrix(V)
+  GW = gram_matrix(W)
+
+  DV, MV = _gram_schmidt(gram_matrix(V), involution(V))
+  DW, MW = _gram_schmidt(gram_matrix(W), involution(W))
+
+  A, B = DV[1, 1], DV[2, 2]
+  a, b = DW[1, 1], DW[2, 2]
+
+  @assert MV * GV * transpose(MV) == diagonal_matrix([A, B])
+  @assert MW * GW * transpose(MW) == diagonal_matrix([a, b])
+
+  fl, T = _isisometric_with_isometry_dan(A, B, a, b)
+  @assert fl
+
+  @assert T * DV * transpose(T) == DW
+
+  # T * DV * T^t == DW
+  # T * MV * GV * (T * MV)^t == MW * GW * MW^t
+  # GV = MV^-1 * T^-1 * MW * GW * (MV^-1 * T^-1 * MW)^t
+
+  T = inv(MV) * inv(T) * MW
+  @assert T * GW * transpose(T) == GV
+  return true,  T
+end
+

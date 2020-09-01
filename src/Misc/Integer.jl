@@ -467,6 +467,9 @@ end
 Tests if $a$ is an $n$-th power. Return `true` and the root if successful.
 """    
 function ispower(a::fmpz, n::Int)
+  if a < 0 && iseven(n)
+    return false, a
+  end
   b = root(a, n)
   return b^n==a, b
 end
