@@ -389,18 +389,6 @@ function compose(f::GrpAbFinGenMap, g::GrpAbFinGenMap)
 
 end
 
-function reduce_mod_snf!(M::fmpz_mat, vect::Vector{fmpz})
-  for j = 1:ncols(M)
-    if iszero(vect[j])
-      break
-    end
-    for i = 1:nrows(M)
-      M[i, j] = mod(M[i, j], vect[j])
-    end
-  end
-  return nothing
-end
-
 ###############################################################################
 mutable struct MapParent
   dom

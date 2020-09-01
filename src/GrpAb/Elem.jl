@@ -69,16 +69,23 @@ function elem_gen(A::GrpAbFinGen, a::fmpz_mat)
   return z
 end
 
-function elem_snf(A::GrpAbFinGen, a::fmpz_mat)
+function reduce_mod_snf!(a::fmpz_mat, v::Vector{fmpz})
   GC.@preserve a begin
-    for i = 1:ngens(A)
-      if !iszero(A.snf[i])
-        t = ccall((:fmpz_mat_entry, libflint), Ptr{fmpz}, (Ref{fmpz_mat}, Int, Int), a, 0, i - 1)
-        ccall((:fmpz_mod, libflint), Nothing, (Ptr{fmpz}, Ptr{fmpz}, Ref{fmpz}), t, t, A.snf[i])
+    for i = 1:length(v)
+      d = v[i]
+      if !iszero(d)
+        for j = 1:nrows(a)
+          t = ccall((:fmpz_mat_entry, libflint), Ptr{fmpz}, (Ref{fmpz_mat}, Int, Int), a, j - 1, i - 1)
+          ccall((:fmpz_mod, libflint), Nothing, (Ptr{fmpz}, Ptr{fmpz}, Ref{fmpz}), t, t, d)
+        end
         #a[1, i] = mod(a[1, i], A.snf[i])
       end
     end
   end
+end
+
+function elem_snf(A::GrpAbFinGen, a::fmpz_mat)
+  reduce_mod_snf!(a, A.snf)
   z = GrpAbFinGenElem()
   z.parent = A
   z.coeff = a
