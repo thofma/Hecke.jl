@@ -18,7 +18,6 @@ function is_discriminant_square(IdG::GAP.GapObj)
   return true
 end
 
-
 ###############################################################################
 #
 #  Conductors
@@ -28,11 +27,7 @@ end
 function _conductors_using_cocycles(F::FieldsTower, st::Vector{Int}, l_cond::Vector, E)
   lp = ramified_primes(F)
   auts = automorphisms(F.field, copy = false)
-  if isdefined(F, :projections_for_conductors)
-    projections = F.projections_for_conductors
-  else
-    projections = [x.projection for x in F.admissible_cocycles]
-  end
+  projections = F.projections_for_conductors
   G = GAP.Globals.ImagesSource(projections[1])
   E = GAP.Globals.Source(projections[1])
   D = F.isomorphism
