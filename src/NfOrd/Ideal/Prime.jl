@@ -1084,9 +1084,9 @@ function val_func_generic(p::NfOrdIdl)
       nn = fmpz(0)
       v = 0
       p_mod = fmpz(0)
-      d = denominator(x)
+      d = denominator(x, O)
       if !iszero(no)
-        nn = numerator(no*d^degree(O))
+        nn = numerator(no*(d^degree(O)))
         p_mod = P^(div(valuation(nn, norm(p)), ramification_index(p))+1)
 	      x = mod(x, p_mod)
       end

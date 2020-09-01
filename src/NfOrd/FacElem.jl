@@ -359,6 +359,11 @@ function _get_support(a::FacElem{nf_elem, AnticNumberField}, I::NfOrdIdlSet)
   for (e, v) = a.fac
     i += 1
     @vprint :CompactPresentation 3 "Element $i / $(length(a.fac))"
+    if isinteger(e)
+      Id = ideal(Zk, FlintZZ(e))
+      push!(A, (Id, v))
+      continue
+    end
     Id = ideal(Zk, e)
     N, D = integral_split(Id)
     if !isone(N)
