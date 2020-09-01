@@ -313,10 +313,19 @@ mutable struct CommutatorAlgebra
   CommutatorAlgebra() = new()
 end
 
+function _issimilar_new(A::fmpz_mat, B::fmpz_mat)
+  AQ = change_base_ring(FlintQQ, A)
+  BQ = change_base_ring(FlintQQ, B)
+  return _issimilar_new(AQ, BQ)
+end
+
+global _debug = []
+
 function _issimilar_new(A, B)
   Z = _create_com_alg(A)
   ns = Int[length(E) for E in Z.Eig] 
   AA = _create_algebra_husert(Z.K, ns)
+  push!(_debug, (Z, AA))
   O = _basis_of_integral_commutator_algebra(A, A)
   I = _basis_of_integral_commutator_algebra(A, B)
   ordergens = elem_type(AA)[]
@@ -333,6 +342,8 @@ function _issimilar_new(A, B)
   @show Z.K
   @show ns
 
+  @show O
+
   for bb in O
     b = _induce_action(bb, Z)
     z = zero(AA)
@@ -344,6 +355,7 @@ function _issimilar_new(A, B)
       @show b[i]
       z = z + mB(preimage(BtoC, C(b[i]))::elem_type(B))
     end
+    @show z
     push!(ordergens, z)
   end
 
@@ -359,6 +371,8 @@ function _issimilar_new(A, B)
     end
     push!(idealgens, z)
   end
+
+  @show dim(AA)
 
   OO = Order(AA, ordergens)
   OI = ideal_from_lattice_gens(AA, idealgens)
@@ -387,7 +401,7 @@ function _create_com_alg(A)
     for i in 1:length(res)
       v = matrix(K, 1, length(res[i][end]), res[i][end])
       push!(zz, v)
-      for j in 0:degree(K)
+      for j in 0:(degree(K) - 1)
         push!(zzz, a^j * v)
       end
     end
@@ -470,6 +484,7 @@ function _basis_of_integral_commutator_algebra(A, B)
       i1, j1 = cartind[l].I
       M[j1, i1] = K[l, k]
     end
+    @assert M * A == B * M
     push!(res, M)
   end
   return res
@@ -479,7 +494,8 @@ function _induce_action(M, z::CommutatorAlgebra)
   res = []
   for i in 1:length(z.K)
     K = z.K[i]
-    MEig = reduce(hcat, identity.(z.Eig[i]))
+    @show z.Eig[i]
+    MEig = reduce(vcat, identity.(z.Eig[i]))
     @show MEig, M
     m = MEig * change_base_ring(K, M)
     @show m
@@ -499,6 +515,7 @@ function _extract_bases_of_jordan_blocks(a, K, c = gen(K))
   i = 1
   while i <= nrows(a)
     b, ro, i = _get_next_jordan_block(J, i)
+    @show b, ro, i
     if b != c
       continue
     end
@@ -507,6 +524,7 @@ function _extract_bases_of_jordan_blocks(a, K, c = gen(K))
       push!(blocks, (b, ro))
     end
   end
+  @show blocks
   res = []
   for b in blocks
     if length(b[2]) == 0
@@ -522,6 +540,7 @@ function _extract_bases_of_jordan_blocks(a, K, c = gen(K))
 end
 
 function _get_next_jordan_block(A, i)
+  @show A, i
   i0 = i
   bad = false
   while i < nrows(A)
@@ -533,6 +552,8 @@ function _get_next_jordan_block(A, i)
     end
   end
 
+  @show i
+
   for j in i0:(i-1)
     for k in i0:(j-1)
       if !iszero(A[j, k])
@@ -541,11 +562,15 @@ function _get_next_jordan_block(A, i)
     end
   end
 
+  @show i
+
   for j in i0:i
     if A[i0, i0] != A[j, j]
       return A[i0, i0], [], i + 1
     end
   end
+
+  @show "here2"
 
   for j in i0:(i-1)
     if !isone(A[j, j + 1])
@@ -553,13 +578,17 @@ function _get_next_jordan_block(A, i)
     end
   end
 
-  for j in i0:(i-2)
-    for j in (i0+2):i
+  @show "here"
+  for j in i0:i
+    for j in (i0+1):(i-1)
+      @show i, j, A[i, j]
       if !iszero(A[i, j])
         return A[i0, i0], [], i + 1
       end
     end
   end
+
+  @show i
 
   i = i0
   res = [i]
@@ -568,7 +597,25 @@ function _get_next_jordan_block(A, i)
     i += 1
     push!(res, i)
   end
+  @show res
   return b, res, i + 1
+end
+
+function _get_next_jordan_block2(A)
+  # first collect the pivot entries
+  pivots = Int[]
+  for j in 1:nrows(A)
+    k = 1
+    while iszero(A[j, k])
+      k += 1
+    end
+    push!(pivots, k)
+  end
+
+  k = 1
+
+
+  @show pivots
 end
 
 ################################################################################
@@ -787,3 +834,91 @@ function Base.divrem(n::nmod, m::nmod)
   end
   return q, n - q * m
 end
+
+################################################################################
+#
+#  Generate interesting examples
+#
+################################################################################
+
+function _jordan_block(R, n::Int, a)
+  z = identity_matrix(R, n)
+  for i in 1:(n - 1)
+    z[i + 1, i] = a
+  end
+  return z
+end
+
+function _random_elementary_operations!(a; type = :rows)
+  tr = type == :columns
+  @assert issquare(a)
+  n = nrows(a)
+  d = det(a)
+  if n == 1
+    return a
+  end
+  i = rand(1:n)
+  j = rand(1:n)
+  while j == i
+    j = rand(1:n)
+  end
+
+  r = rand(base_ring(a), 1:10)
+  for k in 1:n
+    if tr
+      a[k, i] = a[k, i] + r * a[k, j]
+    else
+      a[i, k] = a[i, k] + r * a[j, k]
+    end
+  end
+  @assert d == det(a)
+  return a
+end
+
+function _random_sln(R, n; num_op = 10)
+  a = identity_matrix(R, n)
+  for i in 1:num_op
+    _random_elementary_operations!(a; type = rand() < 0.5 ? :rows : :columns)
+  end
+  return a
+end
+
+function _random_matrix(R, block_shape, eigval_range = -10:10)
+  matrices = dense_matrix_type(R)[]
+  for r in block_shape
+    push!(matrices, _jordan_block(R, r, rand(eigval_range)))
+  end
+  return diagonal_matrix(matrices)
+end
+
+function _similarity_test_setup(R, n)
+  block_shape = Int[]
+  nn = n
+  while !iszero(nn)
+    r = rand(1:nn)
+    push!(block_shape, r)
+    nn = nn - r
+  end
+  b = block_shape
+  A = _random_matrix(R, block_shape)
+  z = _random_sln(R, n)
+  @assert isone(det(z))
+  zinv = inv(z)
+  B = z * A * zinv
+  return A, B
+end
+
+################################################################################
+#
+#  Redoing the Jordan decomposition thing
+#
+################################################################################
+
+function _get_morphism(A::fmpq_mat)
+  Qx = Hecke.Globals.Qx
+  x = gen(Qx)
+  Ax = x - change_base_ring(Qx, A)
+  S, _, T = snf_with_transform(Ax)
+  return T, diagonal(S)
+end
+

@@ -499,3 +499,4 @@ function _is_principal_maximal_quaternion_generic_proper(a, M, side = :right)
   return false, zero(A)
 end
 
+

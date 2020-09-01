@@ -187,7 +187,8 @@ const properties_comp = Dict(:id => (Int, x -> UInt(hash(x))),
                               :isnormal => (Bool, x -> isnormal(x)),
                               :automorphism_group => (Tuple{Int, Int}, x -> find_small_group(automorphism_group(x)[1])[1]),
                               :regulator => (arb, x -> regulator(maximal_order(x))),
-                              :lmfdb_label => (String, x -> ""))
+                              :lmfdb_label => (String, x -> ""),
+                              :isabelian => (Bool, x -> isabelian(automorphism_group(x)[1])))
 
 
 Base.getindex(D::NFDBRecord, s) = getindex(D.data, s)
@@ -265,7 +266,8 @@ const record_info_v1 = NFDBRecordInfo([:id,
                                        :istamely_ramified,
                                        :isnormal,
                                        :automorphism_group,
-                                       :lmfdb_label])
+                                       :lmfdb_label,
+                                       :isabelian])
 
 
 @assert length(record_info_v1.name_tuples) <= 56

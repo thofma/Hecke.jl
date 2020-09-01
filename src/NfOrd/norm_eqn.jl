@@ -37,7 +37,7 @@ function isnorm(K::AnticNumberField, a::Integer)
   return isnorm(K, fmpz(a))
 end
 function isnorm(K::AnticNumberField, a::fmpq)
-  fl, s = isnorm(K, num(a)*denominator(a)^(degree(K)-1))
+  fl, s = isnorm(K, numerator(a)*denominator(a)^(degree(K)-1))
   return fl, s * FacElem(Dict(K(denominator(a)) => fmpz(-1)))
 end
 function isnorm(K::AnticNumberField, a::Rational)
@@ -62,7 +62,7 @@ function isnorm(K::AnticNumberField, a::fmpz; extra::Array{fmpz, 1}=fmpz[])
   
   g = Set(elem_type(C)[])
   for p = S
-    P = prime_ideals_over(L, Int[p])
+    P = prime_ideals_over(L, typeof(p)[p])
     P1 = norm_1_generators(P)
     for x = P1
       push!(g, sum([e*preimage(mC, k) for (k, e) = x.fac]))
@@ -110,7 +110,7 @@ function isnorm(K::AnticNumberField, a::fmpz; extra::Array{fmpz, 1}=fmpz[])
 #    println("groups are the same")
   end
 
-  SP = prime_ideals_over(L, [Int(x) for x = S])
+  SP = prime_ideals_over(L, [x for x = S])
 
   U, mU = sunit_group_fac_elem(SP)
   u, mu = sunit_group_fac_elem(collect(S))
@@ -129,7 +129,7 @@ function isnorm(K::AnticNumberField, a::fmpz; extra::Array{fmpz, 1}=fmpz[])
   if fl
     return true, mU(p)
   else
-    return false, FacElem(Dict(K(1) => fmpz(1)))
+    return false, FacElem(one(K))
   end
 end
 

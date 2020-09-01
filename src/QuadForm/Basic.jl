@@ -636,3 +636,5 @@ function _weak_approximation_coprime(IP, S, M)
   @assert all(i -> sign(t, IP[i]) == S[i], 1:length(IP))
   return t
 end
+
+
