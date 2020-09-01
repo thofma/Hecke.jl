@@ -169,9 +169,8 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx; add_orbit::Bool =
       if is_tors
         @vprint :UnitGroup 1 "Element is torsion unit\n"
         not_larger += 1
-        if has_full_rank(u) && not_larger > not_larger_bound
-          break
-        end
+        # We do break out of the for loop if not_larger > not_larger_bound,
+        # because otherwise we do not check all kernel elements
         done[i] = true
         continue
       end
@@ -213,10 +212,8 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx; add_orbit::Bool =
           done[i] = true
         end
         not_larger = not_larger + 1
-        if not_larger > not_larger_bound
-          @v_do :UnitGroup 2 popindent()
-          break
-        end
+        # We do break out of the for loop if not_larger > not_larger_bound,
+        # because otherwise we do not check all kernel elements
       end
 
       @v_do :UnitGroup 2 popindent()
