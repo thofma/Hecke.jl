@@ -26,7 +26,7 @@ function check_obstruction(list::Vector{FieldsTower}, L::GAP.GapObj,
     end
     return list
   end
-  if length(cocycles) > 200
+  if length(cocycles) > 1500
     #Try to do something about it.
     #The good thing would be to reduce to a subextension. Is this possible?
     #Of course!
@@ -42,8 +42,8 @@ function check_obstruction(list::Vector{FieldsTower}, L::GAP.GapObj,
     lproj = projections(cocycles[1].projection)
     for i = 1:length(list)
       list[i].projections_for_conductors = lproj
+      list[i].admissible_cocycles = cocycles
     end
-    
     return list
   end
   for F in list
@@ -87,7 +87,10 @@ function check_obstruction(list::Vector{FieldsTower}, L::GAP.GapObj,
       for i = 1:length(list)
         @vprint :Fields 1 "$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())Fields to test: $(length(list)-i+1)"
         if !all(obstructions[i])
-          obstructions[i] = check_obstruction_non_cyclic(list[i], all_cocycles, Int(p), obstructions[i]) 
+          obstructions_i = check_obstruction_non_cyclic(list[i], all_cocycles, Int(p), obstructions[i]) 
+          for j = 1:length(obstructions_i)
+            obstructions[i][indices_non_split[j]] = obstructions_i[j]
+          end
         end
       end
       @vprint :Fields 1 "$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())"
@@ -101,6 +104,7 @@ function check_obstruction(list::Vector{FieldsTower}, L::GAP.GapObj,
       continue
     end
     list[i].admissible_cocycles = cocycles[indices]
+    list[i].projections_for_conductors = [x.projection for x in list[i].admissible_cocycles]
     push!(new_list, list[i])
   end
   return new_list
