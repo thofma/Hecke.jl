@@ -473,7 +473,7 @@ function n_part_class_group(mC::Hecke.MapClassGrp, n::Integer)
     local disclog1
     let G = G
       function disclog1(I::NfOrdIdl)
-        return G(Int[])
+        return G[0]
       end
     end
     
@@ -512,7 +512,7 @@ function n_part_class_group(mC::Hecke.MapClassGrp, n::Integer)
       for i=ind:ngens(C)
         y[1,i-ind+1]=x.coeff[1,i]
       end 
-      return G(y)
+      return GrpAbFinGenElem(G, y)
     end
   end
   
@@ -804,7 +804,7 @@ function ray_class_group(m::NfOrdIdl, inf_plc::Vector{InfPlc} = Vector{InfPlc}()
           coeffs[1, ii-1+s+ngens(C)] = b[1, s]
         end
       end 
-      return X(coeffs)
+      return GrpAbFinGenElem(X, coeffs)
     end 
   end
   
@@ -907,16 +907,16 @@ function ray_class_group(m::NfOrdIdl, inf_plc::Vector{InfPlc} = Vector{InfPlc}()
       for i = 1:length(to_be_c)
         dis[1, ind-1+i+ngens(C)] = to_be_c[1, i]
       end
-      mprim.disc_log = X(dis)
+      mprim.disc_log = GrpAbFinGenElem(X, dis)
     end
     ind += ngens(domain(mG))
   end
   
   disc_log_inf = Dict{InfPlc, GrpAbFinGenElem}()
   for i = 1:length(p)
-    eldi = zeros(FlintZZ, ngens(X))
-    eldi[ngens(X) - length(p) + i] = 1
-    disc_log_inf[p[i]] = X(eldi)
+    eldi = zero_matrix(FlintZZ, 1,  ngens(X))
+    eldi[1, ngens(X) - length(p) + i] = 1
+    disc_log_inf[p[i]] = GrpAbFinGenElem(X, eldi)
   end
   
   mp = MapRayClassGrp()
