@@ -87,6 +87,7 @@ include("Clgp/Rel_LLL.jl")
 include("Clgp/Main_LLL.jl")
 include("Clgp/Rel_Schmettow.jl")
 include("Clgp/Saturate.jl")
+include("Clgp/Sunits.jl")
 using .RelSaturate
 
 ################################################################################
@@ -392,7 +393,7 @@ group of principal ideals.
 """
 function class_group(O::NfOrd; bound::Int = -1, method::Int = 3,
                      redo::Bool = false, unit_method::Int = 1,
-                     large::Int = 1000, use_aut::Bool = false, GRH::Bool = true, do_lll::Bool = true)
+                     large::Int = 1000, use_aut::Bool = isautomorphisms_known(nf(O)), GRH::Bool = true, do_lll::Bool = true)
   if do_lll
     OK = maximal_order(nf(O))
     @assert OK.ismaximal == 1
