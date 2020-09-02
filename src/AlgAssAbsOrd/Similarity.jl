@@ -862,9 +862,9 @@ end
 ################################################################################
 
 function _jordan_block(R, n::Int, a)
-  z = identity_matrix(R, n)
+  z = a * identity_matrix(R, n)
   for i in 1:(n - 1)
-    z[i + 1, i] = a
+    z[i + 1, i] = 1
   end
   return z
 end
@@ -942,3 +942,123 @@ function _get_morphism(A::fmpq_mat)
   return T, diagonal(S)
 end
 
+mutable struct CommutatorAlgebra2
+  A
+  T
+  Tinv
+  el
+  invariant_factors
+  invariant_factors_squarefree
+
+  function CommutatorAlgebra2(A)
+    z = new()
+    z.A = A
+    return z
+  end
+end
+
+matrix(C::CommutatorAlgebra2) = C.A
+
+dim(C::CommutatorAlgebra2) = nrows(matrix(C))
+
+function _compute_decomposition!(C::CommutatorAlgebra2)
+  A = matrix(C)
+  Qx = Hecke.Globals.Qx
+  x = gen(Qx)
+  Ax = x - change_base_ring(Qx, A)
+  S, _ , T = snf_with_transform(Ax)
+  n = nrows(A)
+  el = diagonal(S)
+  Tinv = inv(T)
+  C.el = el
+  C.T = T
+  C.Tinv = Tinv
+
+  # Consistency check
+  for i in 1:10
+    _w = [rand(Qx, 1:5, 1:5) % C.el[i] for i in 1:n]
+    v = Hecke._first_map_backward(_w, C)
+    @assert Hecke._first_map_forward(v, C) == _w
+
+    v = matrix(Hecke.Globals.QQ, 1, n, [rand(-10:10) for i in 1:n])
+    w = Hecke._first_map_forward(v, C)
+    @assert Hecke._first_map_backward(w, C) == v
+  end
+
+  invariant_factors = Vector{Vector{fmpq_poly}}()
+
+  invariant_factors_squarefree = Vector{Vector{fmpq_poly}}()
+
+  for i in 1:length(C.el)
+    fac = factor(C.el[i])
+    inv_fac = Vector{fmpq_poly}()
+    sqf = Vector{fmpq_poly}()
+    for (p, e) in fac
+      push!(sqf, inv(leading_coefficient(p)) * p)
+      push!(inv_fac, (inv(leading_coefficient(p)) * p)^e)
+    end
+    push!(invariant_factors, inv_fac)
+    push!(invariant_factors_squarefree, sqf)
+  end
+
+  C.invariant_factors = invariant_factors
+
+  C.invariant_factors_squarefree = invariant_factors_squarefree
+
+  for i in 1:10
+    _w = [rand(Qx, 1:5, 1:5) % C.el[i] for i in 1:n]
+    v = Hecke._second_map_forward(_w, C)
+    @assert Hecke._second_map_backward(v, C) == _w
+
+    #v = matrix(Hecke.Globals.QQ, 1, n, [rand(-10:10) for i in 1:n])
+    #w = Hecke._first_map_forward(v, C)
+    #@assert Hecke._first_map_backward(w, C) == v
+  end
+
+
+end
+
+function _first_map_forward(w::fmpq_mat, C::CommutatorAlgebra2)
+  v = change_base_ring(Hecke.Globals.Qx, w) * C.T
+  return elem_type(base_ring(v))[v[1, i] % C.el[i] for i in 1:dim(C)]
+end
+
+function _first_map_backward(v::Vector{fmpq_poly}, C::CommutatorAlgebra2)
+  A = matrix(C)
+  n = dim(C)
+  _w = matrix(Hecke.Globals.Qx, 1, n, v)
+  w = _w * C.Tinv
+  z = zero_matrix(Hecke.Globals.QQ, 1, n)
+  for i in 1:n
+    B = w[i](A)
+    for j in 1:n
+      z[1, j] += B[i, j]
+    end
+  end
+  return z
+end
+
+function _second_map_forward(v::Vector{fmpq_poly}, C::CommutatorAlgebra2)
+  z = Vector{Vector{fmpq_poly}}()
+  for i in 1:length(v)
+    if length(C.invariant_factors[i]) == 0
+      push!(z, fmpq_poly[])
+    else
+      push!(z, fmpq_poly[v[i] % C.invariant_factors[i][j] for j in 1:length(C.invariant_factors[i])])
+    end
+  end
+  return z
+end
+
+function _second_map_backward(v::Vector{Vector{fmpq_poly}}, C::CommutatorAlgebra2)
+  n = dim(C)
+  w = Vector{fmpq_poly}()
+  for i in 1:n
+    if length(C.invariant_factors[i]) == 0
+      push!(w, zero(Hecke.Globals.Qx))
+    else
+      push!(w, crt(v[i], C.invariant_factors[i]))
+    end
+  end
+  return w
+end
