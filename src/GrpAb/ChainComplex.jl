@@ -74,6 +74,9 @@ length(C::ChainComplex) = length(C.maps)
 Base.map(C::ChainComplex, i::Int) = C.maps[i]
 obj(C::ChainComplex, i::Int) = (i==0 ? domain(C.maps[1]) : codomain(C.maps[i]))
 
+obj_type(C::ChainComplex{T}) where {T} = T
+map_type(C::ChainComplex) = eltype(C.maps)
+
 function show(io::IO, C::ChainComplex)
   @show_name(io, C)
   @show_special(io, C)
@@ -214,12 +217,12 @@ end
 Given a complex $A_i: G_i \to G_{i+1}$ and a module $G$,
 compute the derived complex $\hom(G_i, G)$.
 """
-function hom(C::ChainComplex{GrpAbFinGen}, G::GrpAbFinGen)
-  A = GrpAbFinGenMap[]
+function hom(C::ChainComplex{T}, G::T) where {T}
+  A = map_type(C)[]
   H = [hom(domain(C.maps[1]), G)]
   H = vcat(H, [hom(codomain(f), G) for f = C.maps])
 
-  R = GrpAbFinGenMap[]
+  R = map_type(C)[]
   for i=1:length(C)
     A = H[i+1][1] # hom(C_i+1, G)
     B = H[i][1]   # hom(C_i  , G)
@@ -229,7 +232,7 @@ function hom(C::ChainComplex{GrpAbFinGen}, G::GrpAbFinGen)
     E = domain(C.maps[i])
     #  H[2][i+1]: A -> Hom(D, G)
     #  H[2][i]  : B -> hom(E, G)
-    g = GrpAbFinGenElem[]
+    g = elem_type(obj_type(C))[]
     for h = gens(A)
       phi = H[i+1][2](h) # D -> G
       psi = C.maps[i] * phi
@@ -245,12 +248,13 @@ end
 Given a complex $A_i: G_i \to G_{i+1}$ and a module $G$,
 compute the derived complex $\hom(G, G_i)$.
 """
-function hom(G::GrpAbFinGen, C::ChainComplex)
-  A = GrpAbFinGenMap[]
+function hom(G::T, C::ChainComplex{T}) where {T}
+
+  A = map_type(C)[]
   H = [hom(G, domain(C.maps[1]))]
   H = vcat(H, [hom(G, codomain(f)) for f = C.maps])
 
-  R = GrpAbFinGenMap[]
+  R = map_type(C)[]
   for i=1:length(C)
     A = H[i+1][1] # hom(G, C_i+1)
     B = H[i][1]   # hom(G, C_i)
@@ -260,7 +264,7 @@ function hom(G::GrpAbFinGen, C::ChainComplex)
     E = domain(C.maps[i])
     #  H[2][i+1]: A -> Hom(G, D)
     #  H[2][i]  : B -> hom(G, E)
-    g = GrpAbFinGenElem[]
+    g = elem_type(obj_type(C))[]
     for h = gens(B)
       phi = H[i][2](h) # G -> E
       psi = phi * C.maps[i] 
@@ -276,10 +280,10 @@ end
 Given a complex $A_i: G_i \to G_{i+1}$, 
 compute the homology, ie. the modules $H_i = \Kern A_{i+1}/\Im A_i$
 """
-function homology(C::ChainComplex{GrpAbFinGen})
-  H = GrpAbFinGen[]
+function homology(C::ChainComplex)
+  H = obj_type(C)[]
   for i=1:length(C)-1
-    push!(H, snf(quo(kernel(C.maps[i+1])[1], image(C.maps[i])[1])[1])[1])
+    push!(H, quo(kernel(C.maps[i+1])[1], image(C.maps[i])[1])[1])
   end
   return H
 end
@@ -298,14 +302,15 @@ function snake_lemma(C::ChainComplex{T}, D::ChainComplex{T}, A::Array{<:Map{T, T
   cb, mcb = cokernel(A[2])
   cc, mcc = cokernel(A[3])
 
-  res = GrpAbFinGenMap[]
-  push!(res, GrpAbFinGenMap(mka * map(C, 1) * inv(mkb)))
-  push!(res, GrpAbFinGenMap(mkb * map(C, 2) * inv(mkc)))
+  MT = map_type(C)
+  res = MT(C)[]
+  push!(res, MT(mka * map(C, 1) * inv(mkb)))
+  push!(res, MT(mkb * map(C, 2) * inv(mkc)))
   #now the snake
-  push!(res, GrpAbFinGenMap(mkc * inv(map(C, 2)) * A[2] * inv(map(D, 2)) * mca))
+  push!(res, MT(mkc * inv(map(C, 2)) * A[2] * inv(map(D, 2)) * mca))
   #and the boring rest
-  push!(res, GrpAbFinGenMap(inv(mca) * map(D, 2) * mcb))
-  push!(res, GrpAbFinGenMap(inv(mcb) * map(D, 3) * mcc))
+  push!(res, MT(inv(mca) * map(D, 2) * mcb))
+  push!(res, MT(inv(mcb) * map(D, 3) * mcc))
   return chain_complex(res...)
 end
 
@@ -315,12 +320,12 @@ end
 Given a complex $A_i: G_i \to G_{i+1}$ and a module $G$,
 compute the derived complex $G_i \otimes G$.
 """
-function tensor_product(C::ChainComplex, G::GrpAbFinGen)
-  A = GrpAbFinGenMap[]
+function tensor_product(C::ChainComplex{T}, G::T) where {T}
+  A = map_type(C)[]
   H = [tensor_product(domain(C.maps[1]), G, task  = :none)]
   H = vcat(H, [tensor_product(codomain(f), G, task = :none) for f = C.maps])
 
-  R = GrpAbFinGenMap[]
+  R = map_type(C)[]
   I = identity_map(G)
   for i = 1:length(C)
     push!(R, hom(H[i], H[i+1], [C.maps[i], I]))
