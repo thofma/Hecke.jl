@@ -10,13 +10,13 @@ function isnorm_fac_elem(K::NfRel{nf_elem}, a::nf_elem)
   c = _get_ClassGrpCtx_of_order(ZKa)
   FB = c.FB.ideals
   i = length(FB)
-  q, mq = quo(C, [preimage(mC, I) for I = S])
+  q, mq = quo(C, [preimage(mC, I) for I = S], false)
   while length(q) > 1
     while FB[i] in S || iszero(mq(preimage(mC, FB[i])))
       i -= 1
     end
     push!(S, FB[i])
-    q, mmq = quo(q, [mq(preimage(mC, FB[i]))])
+    q, mmq = quo(q, [mq(preimage(mC, FB[i]))], false)
     mq = mq*mmq
   end
   
@@ -40,7 +40,7 @@ function isnorm_fac_elem(K::NfRel{nf_elem}, a::nf_elem)
   aa = preimage(mu, FacElem(a))
   fl, so = haspreimage(No, aa)
   fl || return fl, FacElem(Dict(K(1)=>1))
-  return true, FacElem(Dict([image(mKa, k) => v for (k,v) = mU(so)]))
+  return true, FacElem(K, Dict([image(mKa, k) => v for (k,v) = mU(so)]))
 end
 
 function isnorm(K::NfRel{nf_elem}, a::nf_elem)

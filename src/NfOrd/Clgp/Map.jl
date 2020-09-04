@@ -33,7 +33,7 @@ function power_class(A::NfOrdIdl, e::fmpz)
     B *= A
   end
   if norm(B) > root(abs(discriminant(order(A))), 2)
-    B = reduce_ideal(B)
+    B, = reduce_ideal(B)
   end
   return B
 end
@@ -56,7 +56,7 @@ function power_product_class(A::Array{NfOrdIdl, 1}, e::Array{fmpz, 1})
     if e[i] != 0
       B *= power_class(A[i], e[i])
       if norm(B) > root(abs(discriminant(order(B))), 2)
-        B = reduce_ideal(B)
+        B, = reduce_ideal(B)
       end
     end
     i += 1

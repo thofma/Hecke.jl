@@ -837,7 +837,7 @@ function _solve_conic_affine(A, B, a, t)
   D = -B//A
   de = denominator(D)
   L, _ = number_field(z^2 - de^2 * D)
-  fl, _n = isnorm(L, a//de)
+  fl, _n = isnorm(L, a//(A) * de^2)
 
   @assert fl
 
@@ -847,9 +847,9 @@ function _solve_conic_affine(A, B, a, t)
     n = _n
   end
 
-  @assert norm(n) == a//de
+  @assert norm(n) == a//(A) * de^2
 
-  u1, w1 = coeff(n, 0), de * coeff(n, 1)
+  u1, w1 = coeff(n, 0)//de, coeff(n, 1)
 
   @assert u1^2 * A + w1^2 * B == a
   u = (-A * u1 + B * t^2 * u1 - 2 * B * t * w1)//(A + B * t^2)
