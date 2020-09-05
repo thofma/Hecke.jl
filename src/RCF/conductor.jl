@@ -1338,16 +1338,15 @@ function norm(m::T, a::FacElem{nf_elem, AnticNumberField}) where T <: Map{AnticN
   h = gcd(gen(k) - evaluate(Qt(m(gen(k))), t), evaluate(K.pol, t))
   d = Dict{nf_elem, fmpz}()
   for (e,v) = a.fac
-    n = resultant(h, mod(evaluate(Qt(e), t), h))
+    n = resultant(h, mod(change_base_ring(k, Qt(e), parent = kt), h))
     if haskey(d, n)
       d[n] += v
     else
       d[n] = v
     end
   end
-  return FacElem(d)
+  return FacElem(k, d)
 end
-
 
 #TODO: change order!!! this only works for maximal orders
 function Base.intersect(I::NfAbsOrdIdl, R::NfAbsOrd)
@@ -1359,6 +1358,7 @@ function Base.intersect(I::NfAbsOrdIdl, R::NfAbsOrd)
   @assert fl
   return minimum(m, I)
 end
+
 Base.intersect(R::NfAbsOrd, I::NfAbsOrdIdl) = intersect(I, R)
 
 function Base.intersect(I::NfOrdFracIdl, R::NfAbsOrd)
