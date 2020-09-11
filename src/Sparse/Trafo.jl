@@ -66,7 +66,6 @@ function sparse_trafo_id(::Type{T}) where {T}
 end
 
 function sparse_trafo_move_row(::Type{T}, i::Int, j::Int) where {T}
-  @assert i <= j
   z = SparseTrafoElem{T, dense_matrix_type(T)}()
   z.type = 6
   z.i = i
@@ -104,6 +103,42 @@ function max_index(T::Array{SparseTrafoElem{S, SS}, 1}) where {S, SS}
     i = max(i, t.j)
   end
   return i
+end
+
+################################################################################
+#
+#  Materialize
+#
+################################################################################
+
+function matrix(R::Ring, T::SparseTrafoElem, n::Int)
+  M = identity_matrix(R, n)
+  t = T.type
+  if t == 1
+    i = T.i
+    M[i, i] = T.c
+  elseif t == 2
+    i = T.i
+    j = T.j
+    M[i, i] = zero(R)
+    M[j, j] = zero(R)
+    M[i, j] = one(R)
+    M[j, i] = one(R)
+  elseif t == 3
+    i = T.i
+    j = T.j
+    M[i, j] = T.a
+  elseif t == 4
+    i = T.i
+    j = T.j
+    M[i, i] = T.a
+    M[i, j] = T.b
+    M[j, j] = T.d
+    M[j, i] = T.c
+    return M
+  elseif t == 6
+    error("Not Implemented")
+  end
 end
 
 ################################################################################
@@ -360,19 +395,28 @@ end
 #
 ################################################################################
 
-function inv(t::TrafoSwap)
-  return T
+function inv(t::SparseTrafoElem{T}) where {T}
+  i = t.type
+  if i == 1
+    fl, d = divides(one(parent(t.a)), t.a)
+    @assert fl
+    return sparse_trafo_scale(t.i, d)
+  elseif i == 2
+    return t
+  elseif i == 3
+    return sparse_trafo_add_scaled(t.i, t.j, -t.a)
+  elseif i == 4
+    e = t.a * t.d - t.b * t.c
+    fl, e = divides(one(parent(e)), e)
+    return sparse_trafo_para_add_scaled(t.i, t.j, e * t.d, e * -t.b, e * -t.c, e * t.a)
+  elseif i == 5
+    return sparse_trafo_partial_dense(t.i, t.rows, t.cols, inv(t.U))
+  elseif i == 6
+    return sparse_trafo_move_row(T, t.j, t.i)
+  elseif i == 7
+    return t
+  end
 end
-
-function inv(t::TrafoAddScaled)
-  return TrafoAddScaled(t.i, t.j, -t.s)
-end
-
-function inv(t::TrafoPartialDense)
-  return TrafoPartialDense(t.i, t.rows, t.cols, inv(t.U))
-end
-
-# TrafoParaAddScaled is missing
 
 ################################################################################
 #
@@ -421,6 +465,7 @@ function apply_left!(A::SMat{T}, t::SparseTrafoElem{T, S}) where {T, S}
     R = base_ring(A)
     k = t.i
     h = sub(A, t.rows, t.cols)
+    A.nnz -= sum(length(A[i].pos) for i in t.rows)
     deleteat!(A.rows, t.rows)
     A.r -= length(t.rows)
     @assert length(A.rows) == A.r
@@ -436,12 +481,19 @@ function apply_left!(A::SMat{T}, t::SparseTrafoElem{T, S}) where {T, S}
       push!(A, r)
     end
   elseif i == 6
-    @assert t.i <= t.j
     x = A.rows
-    for j in t.i:t.j-1
-      r = x[j]
-      x[j] = x[j + 1]
-      x[j + 1] = r
+    if t.i <= t.j
+      for j in t.i:t.j-1
+        r = x[j]
+        x[j] = x[j + 1]
+        x[j + 1] = r
+      end
+    else
+      for j in t.i:-1:t.j+1
+        r = x[j]
+        x[j] = x[j - 1]
+        x[j - 1] = r
+      end
     end
     #deleteat!(A.rows, t.i)
     #push!(A.rows, sparse_row(base_ring(A)))
@@ -480,10 +532,18 @@ function apply_right!(x::Vector{T}, t::SparseTrafoElem{T, S}) where {T, S}
       x[i] = sm[1, j]
     end
   elseif i == 6
-    for j in t.j:-1:t.i+1
-      r = x[j]
-      x[j] = x[j - 1]
-      x[j - 1] = r
+    if t.j > t.i
+      for j in t.j:-1:t.i+1
+        r = x[j]
+        x[j] = x[j - 1]
+        x[j - 1] = r
+      end
+    else
+      for j in t.j:t.i-1
+        r = x[j]
+        x[j] = x[j + 1]
+        x[j + 1] = r
+      end
     end
   end
   return x
