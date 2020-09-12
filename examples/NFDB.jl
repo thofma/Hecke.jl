@@ -188,7 +188,12 @@ const properties_comp = Dict(:id => (Int, x -> UInt(hash(x))),
                               :automorphism_group => (Tuple{Int, Int}, x -> find_small_group(automorphism_group(x)[1])[1]),
                               :regulator => (arb, x -> regulator(maximal_order(x))),
                               :lmfdb_label => (String, x -> ""),
-                              :isabelian => (Bool, x -> isabelian(automorphism_group(x)[1])))
+                              :isabelian => (Bool, x -> isabelian(automorphism_group(x)[1])),
+                              :non_simple => (Vector{fmpq_poly}, x -> non_simple_extension(x)))
+
+for (k, v) in properties_comp
+  @eval ($k)(D::NFDBRecord) = D[Symbol($k)]::($(v[1]))
+end
 
 
 Base.getindex(D::NFDBRecord, s) = getindex(D.data, s)
@@ -267,7 +272,8 @@ const record_info_v1 = NFDBRecordInfo([:id,
                                        :isnormal,
                                        :automorphism_group,
                                        :lmfdb_label,
-                                       :isabelian])
+                                       :isabelian,
+                                       :non_simple])
 
 
 @assert length(record_info_v1.name_tuples) <= 56
@@ -354,7 +360,11 @@ _parse_as(x) = x
 
 _parse_as(::Type{fmpq_poly}) = Vector{fmpq}
 
+_parse_as(::Type{Vector{fmpq_poly}}) = Vector{Vector{fmpq}}
+
 create(::Type{fmpq_poly}, v::Vector{fmpq}) = Hecke.Globals.Qx(v)
+
+create(::Type{Vector{fmpq_poly}}, v::Vector{Vector{fmpq}}) = [ Hecke.Globals.Qx(w) for w in v]
 
 create(T, v) = v
 
@@ -757,7 +767,67 @@ function Base.read(file::String, ::Type{NFDB})
   return DB
 end
 
-function _latexify(f::Fac{fmpz}, withnumber = true, approx = true)
+function _latexify(f::fmpq_poly, dollar = true)
+  if dollar
+    return "\$" * AbstractAlgebra.obj_to_latex_string(f) * "\$"
+  else
+    return AbstractAlgebra.obj_to_latex_string(f)
+  end
+end
+
+function _latexify(fs::Vector{fmpq_poly})
+  s = IOBuffer()
+  print(s, "\$")
+  for i in 1:length(fs)
+    print(s, _latexify(fs[i], false))
+    if i < length(fs)
+      print(s, ", ")
+    end
+  end
+  print(s, "\$")
+  return String(take!(s))
+end
+
+_latexify(a::fmpz) = AbstractAlgebra.obj_to_latex_string(a)
+
+_latexify(a::Int) = AbstractAlgebra.obj_to_latex_string(a)
+
+_latexify(a::Tuple{Int, Int}) = string(a)
+
+function latex_table(d::NFDBRecord; entries = [:deg, :automorphism_group, :poly, :non_simple, :class_number, :discriminant], mpage_for_poly = true)
+  io = IOBuffer()
+  for i in 1:length(entries)
+    if entries[i] == :discriminant
+      print(io, _latexify(factor(d[entries[i]]), withnumber = false, approx = false))
+    elseif entries[i] == :poly
+      if mpage_for_poly
+        print(io, "\\begin{minipage}{4cm}\\begin{center}\n\$\n\\begin{aligned}\n")
+        print(io, _latexify(d[entries[i]], false))
+        print(io, "\n\\end{aligned}\n\$\n\\end{center}\\end{minipage}\n")
+      else
+        print(io, _latexify(d[entries[i]]))
+      end
+    else
+      print(io, _latexify(d[entries[i]]))
+    end
+    if i < length(entries)
+      print(io, " & ")
+    end
+  end
+  print(io, "\\\\")
+  return String(take!(io))
+end
+
+function latex_table(D::NFDB; entries = [:deg, :automorphism_group, :poly, :non_simple, :class_number, :discriminant])
+  io = IOBuffer()
+  for d in D
+    print(io, latex_table(d, entries = entries))
+    print(io, "\n")
+  end
+  return String(take!(io))
+end
+
+function _latexify(f::Fac{fmpz}; withnumber = true, approx = true)
   l = Tuple{fmpz, Int}[(p, e) for (p, e) in f]
   sort!(l, by = x -> x[1])
   if length(l) == 0
@@ -782,7 +852,7 @@ function _latexify(f::Fac{fmpz}, withnumber = true, approx = true)
     s = s * "$(l[end][1])^{$(l[end][2])}"
   end
   if approx
-    s = s * "\\approx " * "10^{$(Int(ceil(log(10, m * 1.0))))}"
+    s = s * "\\approx " * (m < 0 ? "-" : "") * "10^{$(Int(ceil(log(10, abs(m) * 1.0))))}"
   end
   s = s * "\$"
   return s
@@ -916,4 +986,17 @@ function has_obviously_relative_class_number_not_one(K::AnticNumberField, isnorm
     end
   end
   return false, K
+end
+
+################################################################################
+#
+#  Iterator interface
+#
+################################################################################
+
+function Base.iterate(D::NFDB, i = 1)
+  if i > length(D)
+    return nothing
+  end
+  return D[i], i + 1
 end

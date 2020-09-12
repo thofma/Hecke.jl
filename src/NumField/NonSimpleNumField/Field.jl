@@ -115,6 +115,9 @@ function non_simple_extension(K::SimpleNumField)
   @assert isnormal(K)
   G, mG = automorphism_group(K)
   _subs = _subgroups_for_non_simple_extension(G)
+  if length(_subs) == 0
+    return [defining_polynomial(K)]
+  end
   subf = Dict()
   for (subgrps, indice) in _subs
     for H in subgrps
@@ -180,7 +183,10 @@ function _subgroups_for_non_simple_extension(G, maxorder = div(order(G), 2), max
       end
     end
   end
-  maxlength = maximum(x -> length(x[2]), res)
+  if length(res) == 0
+    return res
+  end
+  maxlength = maximum(Int[length(x[2]) for x in res])
   res = [x for x in res if length(x[2]) == maxlength]
   return res
 end
