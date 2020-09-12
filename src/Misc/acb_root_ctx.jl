@@ -247,24 +247,27 @@ function _roots!(roots::Ptr{acb_struct}, x::Union{fmpq_poly, fmpz_poly},
 end
 
 function radiuslttwopower(x::arb, e::Int)
-  t = ccall((:arb_rad_ptr, libarb), Ptr{Nemo.mag_struct}, (Ref{arb}, ), x)
-  b = ccall((:mag_cmp_2exp_si, libarb), Cint,
-          (Ptr{Nemo.mag_struct}, Int), t, e) <= 0
+  GC.@preserve x begin
+    t = ccall((:arb_rad_ptr, libarb), Ptr{Nemo.mag_struct}, (Ref{arb}, ), x)
+    b = ccall((:mag_cmp_2exp_si, libarb), Cint,
+            (Ptr{Nemo.mag_struct}, Int), t, e) <= 0
+  end
   return b
 end
 
 function radiuslttwopower(x::acb, e::Int)
-  re = ccall((:acb_real_ptr, libarb), Ptr{Nemo.arb_struct},
-          (Ref{acb}, ), x)
-  im = ccall((:acb_imag_ptr, libarb), Ptr{Nemo.arb_struct},
-          (Ref{acb}, ), x)
-  t = ccall((:arb_rad_ptr, libarb), Ptr{Nemo.mag_struct}, (Ptr{arb}, ), re)
-  u = ccall((:arb_rad_ptr, libarb), Ptr{Nemo.mag_struct}, (Ptr{arb}, ), im)
-  ok = (ccall((:mag_cmp_2exp_si, libarb), Cint,
-              (Ptr{Nemo.mag_struct}, Int), t, e) <= 0)
-
-  ok = ok && (ccall((:mag_cmp_2exp_si, libarb), Cint,
-              (Ptr{Nemo.mag_struct}, Int), u, e) <= 0)
+  GC.@preserve x begin
+    re = ccall((:acb_real_ptr, libarb), Ptr{Nemo.arb_struct},
+            (Ref{acb}, ), x)
+    im = ccall((:acb_imag_ptr, libarb), Ptr{Nemo.arb_struct},
+            (Ref{acb}, ), x)
+    t = ccall((:arb_rad_ptr, libarb), Ptr{Nemo.mag_struct}, (Ptr{arb}, ), re)
+    u = ccall((:arb_rad_ptr, libarb), Ptr{Nemo.mag_struct}, (Ptr{arb}, ), im)
+    ok = (ccall((:mag_cmp_2exp_si, libarb), Cint,
+                (Ptr{Nemo.mag_struct}, Int), t, e) <= 0)
+    ok = ok && (ccall((:mag_cmp_2exp_si, libarb), Cint,
+                (Ptr{Nemo.mag_struct}, Int), u, e) <= 0)
+  end
   return ok
 end
 
