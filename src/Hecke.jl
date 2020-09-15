@@ -880,7 +880,11 @@ protect = [:(Hecke.ASSERT_LOOKUP), :(Hecke.VERBOSE_LOOKUP),
            :(Hecke._euler_phi_inverse_maximum),
            :(Hecke.odlyzko_bound_grh),
            :(Hecke.nC), :(Hecke.B1), #part of ECM
-           :(Hecke.VERBOSE_PRINT_INDENT)]
+           :(Hecke.VERBOSE_PRINT_INDENT),
+           :(Hecke._RealRings),
+           :(Hecke.protect)] # We need to protect protect itself :)
+                             # Otherwise it might emptied and then everything
+                             # is emptied.
 
 function clear_cache(sym::Array{Any, 1})
   for f in sym;

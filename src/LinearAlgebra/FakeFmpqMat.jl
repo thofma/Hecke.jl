@@ -253,7 +253,7 @@ function hnf(x::FakeFmpqMat, shape = :lowerleft; triangular_top::Bool = false)
       end
     end
     for i in 1:ncols(x)
-      z = lcm(z, x.num[i, i])
+      z = mul!(z, z, x.num[i, i])
     end
     h = _hnf_modular_eldiv(x.num, z, shape)
   else

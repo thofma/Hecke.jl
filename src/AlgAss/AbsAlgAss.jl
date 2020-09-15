@@ -449,6 +449,7 @@ function as_number_fields(A::AbsAlgAss{T}) where {T}
   end
 
   result = _as_number_fields(A)
+  @assert all(domain(AtoK) === A for (_, AtoK) in result)
   A.maps_to_numberfields = result
   return result
 end
@@ -509,11 +510,12 @@ function _as_number_fields(A::AbsAlgAss{T}) where {T}
       push!(fields, K)
     end
 
-    if length(Adec) == 1
-      res = Tuple{_ext_type(T), _abs_alg_ass_to_nf_abs_mor_type(A)}[(K, BtoK)]
-      A.maps_to_numberfields = res
-      return res
-    end
+    # TODO: We can do a short cut, but the map must be BtoK \circ inv(BtoA)
+    #if length(Adec) == 1
+    #  res = Tuple{_ext_type(T), _abs_alg_ass_to_nf_abs_mor_type(A)}[(K, BtoK)]
+    #  A.maps_to_numberfields = res
+    #  return res
+    #end
 
     # Construct the map from K to A
     N = zero_matrix(KK, degree(K), d)

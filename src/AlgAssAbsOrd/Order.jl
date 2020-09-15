@@ -137,12 +137,16 @@ end
 function _order(A::S, gens::Vector{T}; cached::Bool = true, check::Bool = true) where {S <: AbsAlgAss, T <: AbsAlgAssElem}
   B_A = basis(A)
 
+  @show one(A)
+  @show dim(A)
+
   if one(A) in gens
     cur = gens
   else
     cur = append!([one(A)], gens)
   end
   Bmat = basis_matrix(cur, FakeFmpqMat)
+  @show gens
   while true
     k = length(cur)
     prods = Vector{elem_type(A)}(undef, k^2)
@@ -155,11 +159,13 @@ function _order(A::S, gens::Vector{T}; cached::Bool = true, check::Bool = true) 
     Ml = hnf(basis_matrix(prods, FakeFmpqMat))
     r = findfirst(i -> !iszero_row(Ml.num, i), 1:k^2)
     nBmat = sub(Ml, r:nrows(Ml), 1:ncols(Ml))
+    @show nBmat
     if nrows(nBmat) == nrows(Bmat) && Bmat == nBmat
       break
     end
     Bmat = nBmat
   end
+  @show nrows(Bmat)
   if nrows(Bmat) != dim(A)
     error("Elements do not generate an order")
   end

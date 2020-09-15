@@ -319,15 +319,13 @@ function _issimilar_new(A::fmpz_mat, B::fmpz_mat)
   return _issimilar_new(AQ, BQ)
 end
 
-global _debug = []
-
 function _issimilar_new(A, B)
-  Z = _create_com_alg(A)
-  ns = Int[length(E) for E in Z.Eig] 
-  AA = _create_algebra_husert(Z.K, ns)
-  push!(_debug, (Z, AA))
-  O = _basis_of_integral_commutator_algebra(A, A)
-  I = _basis_of_integral_commutator_algebra(A, B)
+  Z = Hecke.CommutatorAlgebra2(A)
+  _compute_decomposition!(Z)
+  Ks, ns = _decomposition_type(Z)
+  AA = _create_algebra_husert(Ks, ns)
+  O = _basis_of_integral_commutator_algebra_saturate(A, A)
+  I = _basis_of_integral_commutator_algebra_saturate(A, B)
   ordergens = elem_type(AA)[]
   idealgens = elem_type(AA)[]
   dec = decompose(AA)
@@ -336,49 +334,112 @@ function _issimilar_new(A, B)
   CB, TB = rational_canonical_form(B)
 
   if CA != CB
-    return false, zero_matrix(base_ring(A), 0, 0)
+    return false, zero_matrix(FlintQQ, 0, 0)
   end
 
-  @show Z.K
+  _C = inv(TB) * TA
+
+  @show _C
+  @show denominator(_C)
+
+  @assert _C * A == B * _C
+
+  invC = inv(_C)
+
+  @show Ks
   @show ns
 
-  @show O
+  @show length(O)
+
+  @show _A = matrix_algebra(FlintQQ, map(x -> change_base_ring(FlintQQ, x), O))
+  println(A)
 
   for bb in O
-    b = _induce_action(bb, Z)
+    @show bb
+    b = _induce_action(Z, bb)
+    @show b
     z = zero(AA)
     @assert length(dec) == length(b)
     for i in 1:length(dec)
-      B, mB = dec[i]
+      BB, mB = dec[i]::Tuple{AlgAss{fmpq},Hecke.AbsAlgAssMor{AlgAss{fmpq},AlgAss{fmpq},fmpq_mat}}
       local C::AlgMat{nf_elem, Generic.MatSpaceElem{nf_elem}}
-      C, BtoC = B.isomorphic_full_matrix_algebra
-      @show b[i]
-      z = z + mB(preimage(BtoC, C(b[i]))::elem_type(B))
+      C, BtoC = BB.isomorphic_full_matrix_algebra
+      z = z + mB(preimage(BtoC, C(b[i]))::elem_type(BB))
     end
-    @show z
     push!(ordergens, z)
   end
 
+  println(sprint(show, "text/plain", basis_matrix(ordergens)))
+
   for bb in I
-    b = _induce_action(inv(TA) * TB * bb, Z)
+    b = _induce_action(Z, invC * bb)
     z = zero(AA)
     @assert length(dec) == length(b)
     for i in 1:length(dec)
-      B, mB = dec[i]
+      BB, mB = dec[i]::Tuple{AlgAss{fmpq},Hecke.AbsAlgAssMor{AlgAss{fmpq},AlgAss{fmpq},fmpq_mat}}
       local C::AlgMat{nf_elem, Generic.MatSpaceElem{nf_elem}}
-      C, BtoC = B.isomorphic_full_matrix_algebra
-      z = z + mB(preimage(BtoC, C(b[i]))::elem_type(B))
+      C, BtoC = BB.isomorphic_full_matrix_algebra
+      z = z + mB(preimage(BtoC, C(b[i]))::elem_type(BB))
     end
     push!(idealgens, z)
   end
 
   @show dim(AA)
 
+  @show ordergens
+
   OO = Order(AA, ordergens)
   OI = ideal_from_lattice_gens(AA, idealgens)
   @assert OO == right_order(OI)
-  fl, y = _isprincipal(OI, OO, :right)
-  return fl, OI
+  fl, y = _isprincipal(OI, OO, :right)::Tuple{Bool, AlgAssElem{fmpq,AlgAss{fmpq}}}
+  @assert y * OO == OI
+
+  @show y in OI
+ 
+  if !fl
+    return false, zero_matrix(FlintQQ, 0, 0)
+  end
+
+  # I have to transport this back to an element of M_n(Q)
+
+  z = Generic.MatSpaceElem{nf_elem}[]
+  for i in 1:length(dec)
+    BB, mB = dec[i]::Tuple{AlgAss{fmpq},Hecke.AbsAlgAssMor{AlgAss{fmpq},AlgAss{fmpq},fmpq_mat}}
+    local C::AlgMat{nf_elem, Generic.MatSpaceElem{nf_elem}}
+    C, BtoC = BB.isomorphic_full_matrix_algebra
+    push!(z, matrix(BtoC(mB\y)))
+  end
+
+  # I know invC * I maps surjectively onto OI
+  # Let's let the generator y
+
+  d = denominator(OI, OO)
+
+  Y = zero_matrix(FlintZZ, length(idealgens), dim(AA))
+  for i in 1:length(idealgens)
+    cc = coordinates(OO(d * idealgens[i]))
+    @assert length(cc) == dim(AA)
+    for j in 1:length(cc)
+      Y[i, j] = cc[j]
+    end
+  end
+
+  YY = matrix(FlintZZ, 1, dim(AA), coordinates(OO(d * y)))
+
+  fl, vv = can_solve(Y, YY, side = :left)
+  @assert fl
+  yy = zero_matrix(FlintQQ, nrows(A), nrows(A))
+  for i in 1:length(vv)
+    yy = yy + vv[1, i] * (invC * I[i])
+  end
+
+  T = _C * yy
+
+  @assert abs(denominator(T)) == 1
+  @assert T * A == B * T
+  @assert abs(det(T)) == 1
+
+  return fl, T, TB, TA, yy
 end
 
 
@@ -460,6 +521,35 @@ function _basis_of_commutator_algebra(As::Vector)
     for (l, v) in enumerate(cartind)
       M[v[2], v[1]] = K[l, k]
     end
+    push!(res, M)
+  end
+  return res
+end
+
+function _basis_of_integral_commutator_algebra_saturate(A, B)
+  linind = transpose(LinearIndices(size(A)))
+  cartind = CartesianIndices(size(A))
+  n = nrows(A)
+  z = zero_matrix(FlintQQ, n^2, n^2)
+  for i in 1:n
+    for j in 1:n
+      for k in 1:n
+        z[linind[i, j], linind[i, k]] = FlintZZ(z[linind[i, j], linind[i, k]] + A[k, j])
+        z[linind[i, j], linind[k, j]] = FlintZZ(z[linind[i, j], linind[k, j]] - B[i, k])
+      end
+    end
+  end
+  r, K = right_kernel(z)
+  KK = change_base_ring(FlintZZ, denominator(K) * K)
+  KK = transpose(saturate(transpose(KK)))
+  res = typeof(A)[]
+  for k in 1:ncols(K)
+    M = zero_matrix(base_ring(A), nrows(A), ncols(A))
+    for l in 1:n^2
+      i1, j1 = cartind[l].I
+      M[j1, i1] = KK[l, k]
+    end
+    @assert M * A == B * M
     push!(res, M)
   end
   return res
@@ -869,6 +959,21 @@ function _jordan_block(R, n::Int, a)
   return z
 end
 
+function _rand_block(R, n::Int, l::Int)
+  Rx, x = PolynomialRing(R, "x", cached = false)
+  f = rand(Rx, n:n, -10:10)
+  if !iszero(f)
+    setcoeff!(f, degree(f), one(R))
+  end
+  while !isirreducible(f) || degree(f) != n
+    f = rand(Rx, n:n, -10:10)
+    if !iszero(f)
+      setcoeff!(f, degree(f), one(R))
+    end
+  end
+  return companion_matrix(f^l)
+end
+
 function _random_elementary_operations!(a; type = :rows)
   tr = type == :columns
   @assert issquare(a)
@@ -903,23 +1008,36 @@ function _random_sln(R, n; num_op = 10)
   return a
 end
 
-function _random_matrix(R, block_shape, eigval_range = -10:10)
+function _random_matrix(R, block_shape)
   matrices = dense_matrix_type(R)[]
-  for r in block_shape
-    push!(matrices, _jordan_block(R, r, rand(eigval_range)))
+  for (r, l, ll) in block_shape
+    B = _rand_block(R, r, l)
+    for j in 1:ll
+      push!(matrices, B)
+    end
   end
   return diagonal_matrix(matrices)
 end
 
-function _similarity_test_setup(R, n)
-  block_shape = Int[]
+function _similarity_test_setup(R, n; max_block = 4)
+  block_shape = Tuple{Int, Int, Int}[]
   nn = n
   while !iszero(nn)
-    r = rand(1:nn)
-    push!(block_shape, r)
-    nn = nn - r
+    @show nn
+    r = min(rand(1:nn), max_block)
+    @show r
+    l = max(Int(floor(nn/r)), 1)
+    nbl = rand(1:l)
+    @show nbl
+    nnn = nn - r * nbl
+    ll = max(Int(floor(nnn/(r * nbl))), 1)
+    nbll = rand(1:ll)
+    @show nbll
+    push!(block_shape, (r, nbl, nbll))
+    nn = nn - r * nbl *  nbll
   end
   b = block_shape
+  @show block_shape
   A = _random_matrix(R, block_shape)
   z = _random_sln(R, n)
   @assert isone(det(z))
@@ -943,12 +1061,13 @@ function _get_morphism(A::fmpq_mat)
 end
 
 mutable struct CommutatorAlgebra2
-  A
-  T
-  Tinv
-  el
-  invariant_factors
-  invariant_factors_squarefree
+  A::fmpq_mat
+  T::Generic.MatSpaceElem{fmpq_poly}
+  Tinv::Generic.MatSpaceElem{fmpq_poly}
+  el::Vector{fmpq_poly}
+  invariant_factors::Vector{Vector{fmpq_poly}}
+  invariant_factors_squarefree::Vector{Vector{fmpq_poly}}
+  irreducible_factors::Vector{Tuple{fmpq_poly, AnticNumberField, Vector{Tuple{Int, Int}}}}
 
   function CommutatorAlgebra2(A)
     z = new()
@@ -989,13 +1108,28 @@ function _compute_decomposition!(C::CommutatorAlgebra2)
 
   invariant_factors_squarefree = Vector{Vector{fmpq_poly}}()
 
+  irreducible_factors = Tuple{fmpq_poly, AnticNumberField, Vector{Tuple{Int, Int}}}[]
+
   for i in 1:length(C.el)
     fac = factor(C.el[i])
+    @show fac
     inv_fac = Vector{fmpq_poly}()
     sqf = Vector{fmpq_poly}()
+    j = 1
     for (p, e) in fac
       push!(sqf, inv(leading_coefficient(p)) * p)
+      g = sqf[end]
+
+      k = findfirst(x -> isequal(x[1], g), irreducible_factors)
+      if k isa Int
+        push!(irreducible_factors[k][3], (i, j))
+      else
+        K,  = NumberField(g, cached = false)
+        push!(irreducible_factors, (g, K, Tuple{Int, Int}[(i, j)]))
+      end
+
       push!(inv_fac, (inv(leading_coefficient(p)) * p)^e)
+      j += 1
     end
     push!(invariant_factors, inv_fac)
     push!(invariant_factors_squarefree, sqf)
@@ -1005,17 +1139,25 @@ function _compute_decomposition!(C::CommutatorAlgebra2)
 
   C.invariant_factors_squarefree = invariant_factors_squarefree
 
+  C.irreducible_factors = irreducible_factors
+
   for i in 1:10
     _w = [rand(Qx, 1:5, 1:5) % C.el[i] for i in 1:n]
     v = Hecke._second_map_forward(_w, C)
     @assert Hecke._second_map_backward(v, C) == _w
-
-    #v = matrix(Hecke.Globals.QQ, 1, n, [rand(-10:10) for i in 1:n])
-    #w = Hecke._first_map_forward(v, C)
-    #@assert Hecke._first_map_backward(w, C) == v
   end
 
+  for i in 1:10
+    _w = [[rand(Qx, 1:5, 1:5) % C.invariant_factors_squarefree[i][j] for j in 1:length(C.invariant_factors[i])] for i in 1:dim(C)]
+    _v = Hecke._third_map_forward(_w, C)
+    @assert Hecke._third_map_backward(_v, C) == _w
+  end
 
+  for i in 1:10
+    _w = [[rand(Qx, 1:5, 1:5) % C.invariant_factors_squarefree[i][j] for j in 1:length(C.invariant_factors[i])] for i in 1:dim(C)]
+    _v = Hecke._fourth_map_forward(_w, C)
+    @assert Hecke._fourth_map_backward(_v, C) == _w
+  end
 end
 
 function _first_map_forward(w::fmpq_mat, C::CommutatorAlgebra2)
@@ -1062,3 +1204,101 @@ function _second_map_backward(v::Vector{Vector{fmpq_poly}}, C::CommutatorAlgebra
   end
   return w
 end
+
+function _third_map_forward(v::Vector{Vector{fmpq_poly}}, C::CommutatorAlgebra2)
+  w = Vector{Vector{fmpq_poly}}(undef, length(v))
+  for i in 1:length(v)
+    w[i] = fmpq_poly[]
+  end
+
+  for i in 1:length(v)
+    w[i] = Vector{fmpq_poly}(undef, length(v[i]))
+    @assert length(v[i]) == length(C.invariant_factors_squarefree[i])
+    for j in 1:length(v[i])
+      w[i][j] = v[i][j] % C.invariant_factors_squarefree[i][j]
+    end
+  end
+
+  return w
+end
+
+function _third_map_backward(v::Vector{Vector{fmpq_poly}}, C::CommutatorAlgebra2)
+  return deepcopy(v)
+end
+
+function _fourth_map_forward(v::Vector{Vector{fmpq_poly}}, C::CommutatorAlgebra2)
+  z = Vector{Vector{nf_elem}}(undef, length(C.irreducible_factors))
+  for l in 1:length(C.irreducible_factors)
+    K = C.irreducible_factors[l][2]
+    zz = nf_elem[]
+    for (i, j) in C.irreducible_factors[l][3]
+      push!(zz, K(v[i][j]))
+    end
+    z[l] = zz
+  end
+  return z
+end
+
+function _fourth_map_backward(v::Vector{Vector{nf_elem}}, C::CommutatorAlgebra2)
+  z = Vector{Vector{fmpq_poly}}(undef, dim(C))
+  for i in 1:dim(C)
+    z[i] = Vector{fmpq_poly}(undef, length(C.invariant_factors_squarefree[i]))
+  end
+
+  for l in 1:length(C.irreducible_factors)
+    K = C.irreducible_factors[l][2]
+    k = 1
+    for (i, j) in C.irreducible_factors[l][3]
+      z[i][j] = Hecke.Globals.Qx(v[l][k])
+      k += 1
+    end
+  end
+  return z
+end
+
+function _std_basis_vector(C::CommutatorAlgebra2, i::Int, j::Int)
+  z = Vector{Vector{nf_elem}}()
+  @assert 1 <= i <= length(C.irreducible_factors)
+  @assert 1 <= j <= length(C.irreducible_factors[i][3])
+  for k in 1:length(C.irreducible_factors)
+    push!(z, zeros(C.irreducible_factors[k][2], length(C.irreducible_factors[k][3])))
+  end
+  z[i][j] = one(C.irreducible_factors[i][2])
+  return z
+end
+
+function _from_number_fields(v::Vector{Vector{nf_elem}}, C::CommutatorAlgebra2)
+  return _first_map_backward(_second_map_backward(_third_map_backward(_fourth_map_backward(v, C), C), C), C)
+end
+
+function _to_number_fields(v::fmpq_mat, C::CommutatorAlgebra2)
+  return _fourth_map_forward(_third_map_forward(_second_map_forward(_first_map_forward(v, C), C), C), C)
+end
+
+function _decomposition_type(C::CommutatorAlgebra2)
+  l = length(C.irreducible_factors)
+  return AnticNumberField[C.irreducible_factors[i][2] for i in 1:l],
+         Int[length(C.irreducible_factors[i][3]) for i in 1:l]
+end
+
+function _induce_action(C::CommutatorAlgebra2, M)
+  res = dense_matrix_type(nf_elem)[]
+  for i in 1:length(C.irreducible_factors)
+    n = length(C.irreducible_factors[i][3])
+    z = zero_matrix(C.irreducible_factors[i][2], n, n)
+    for j in 1:length(C.irreducible_factors[i][3])
+      s = _std_basis_vector(C, i, j)
+      v = _from_number_fields(s, C)
+      w = v * M
+      ww = _to_number_fields(w, C)
+      for k in 1:n
+        z[j, k] = ww[i][k]
+      end
+    end
+    push!(res, z)
+  end
+  return res
+end
+
+# Element which is failing:
+# A = matrix(FlintQQ, 10, 10, [0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, -49, 0, -42, 14, -9, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, -1, -2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1])

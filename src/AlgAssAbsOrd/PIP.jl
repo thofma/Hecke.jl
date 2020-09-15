@@ -64,19 +64,20 @@ function _is_principal_maximal_simple_component(a, M, side = :right)
   ZA, _ = _as_algebra_over_center(A)
   @show A
   @show ZA
-  if base_ring(A) isa FlintRationalField && dim(A) == 4 && !issplit(A)
-    return _is_principal_maximal_quaternion(a, M, side)
-  elseif dim(ZA) == 4 && !isdefined(A, :isomorphic_full_matrix_algebra)
-    #@show A
-    return _is_principal_maximal_quaternion_generic(a, M, side)
-  else
+  if isdefined(A, :isomorphic_full_matrix_algebra)
     local B::AlgMat{nf_elem, Generic.MatSpaceElem{nf_elem}}
-    @assert isdefined(A, :isomorphic_full_matrix_algebra)
     B, AtoB = A.isomorphic_full_matrix_algebra
     OB = _get_order_from_gens(B, elem_type(B)[AtoB(elem_in_algebra(b)) for b in absolute_basis(M)])
     ainOB = ideal_from_lattice_gens(B, elem_type(B)[(AtoB(b)) for b in absolute_basis(a)])
     fl, gen = _is_principal_maximal_full_matrix_algebra(ainOB, OB, side)
     return fl, (AtoB\gen)::elem_type(A)
+  elseif base_ring(A) isa FlintRationalField && dim(A) == 4 && !issplit(A)
+    return _is_principal_maximal_quaternion(a, M, side)
+  elseif dim(ZA) == 4 && !isdefined(A, :isomorphic_full_matrix_algebra)
+    #@show A
+    return _is_principal_maximal_quaternion_generic(a, M, side)
+  else
+    error("Not implemented yet")
   end
 end
 
@@ -428,7 +429,15 @@ function _isprincipal(a::AlgAssAbsOrdIdl, O, side = :right)
       push!(basis_F, t)
     end
   end
+
+  for b in basis_F
+    @assert b in O
+  end
+
   F = ideal_from_lattice_gens(A, O, basis_F, :twosided)
+
+  @show F == A(1) * O
+  @show F == A(1) * OA
 
   aorig = a
 
@@ -450,6 +459,7 @@ function _isprincipal(a::AlgAssAbsOrdIdl, O, side = :right)
   @assert beta * OA == aOA
 
   println("Computing K1...")
+  @show F, FinZ
   k1 = K1_order_mod_conductor(O, OA, F, FinZ)
   OZ = maximal_order(Z)
   Q, mQ = quo(OZ, FinZ)
@@ -623,11 +633,13 @@ function lift_norm_one_unit(x, F)
   res = decompose(A)
   Mbas = basis(M)
   z = zero(A)
+  @show F
   for i in 1:length(res)
     Ai, AitoA = res[i]
     MinAi = Order(Ai, elem_type(Ai)[ AitoA\(AitoA(one(Ai)) * elem_in_algebra(b)) for b in Mbas])
     xinAi = MinAi(preimage(AitoA, elem_in_algebra(x)))
     Fi = ideal_from_lattice_gens(Ai, MinAi, [ AitoA\b for b in basis(F) ], :twosided)
+    @show Fi
     y = _lift_norm_one_unit_simple(xinAi, Fi)
     z += AitoA(y)
   end
@@ -642,6 +654,11 @@ end
 function _lift_norm_one_unit_simple(x, F)
   M = parent(x)
   A = algebra(M)
+  # It may happen that the order is maximal in a simple component, that is,
+  # F == M
+  if F == one(A) * M
+    return one(A)
+  end
   if degree(A) == 4 && !issplit(A)
     return _lift_norm_one_unit_quaternion(x, F)
   else
@@ -695,6 +712,7 @@ function _lift_norm_one_unit_quaternion(x, F)
 end
 
 function _lift_norm_one_unit_full_matrix_algebra(x, F)
+  @show F
   A = algebra(parent(x))
   if degree(A) == 1
     return elem_in_algebra(one(parent(x)))
@@ -722,6 +740,7 @@ function _lift_norm_one_unit_full_matrix_algebra_nice(x, F)
   ZA, ZAtoA = center(A)
   FinZA = _as_ideal_of_smaller_algebra(ZAtoA, F)
   # the center is a number field
+  @show FinZA
   el, id = pseudo_basis(FinZA)[1]
   fl, el2 = isprincipal(id)
   @assert fl 
@@ -729,6 +748,9 @@ function _lift_norm_one_unit_full_matrix_algebra_nice(x, F)
   OK = base_ring(M)
   @assert basis_pmatrix(M).matrix == identity_matrix(base_ring(A), dim(A))
   R, mR = quo(OK, OK(n) * OK)
+  @show mR(FacElem(det(matrix(elem_in_algebra(x)))))
+  @show n
+  @show det(matrix(elem_in_algebra(x)))
   @assert isone(mR(FacElem(det(matrix(elem_in_algebra(x))))))
   li = _lift_unimodular_matrix(change_base_ring(OK, matrix(elem_in_algebra(x))), OK(n), R)
   return A(change_base_ring(base_ring(A), li))
