@@ -417,7 +417,7 @@ function disolve_recursive(I::disolveinfo{E}, t::E, degs::Vector{Int},
             if iszero(newdeltas[i])
                 continue
             end
-            if l + length(I.prod_betas_coeffs[1 + lev][i]) - 1 > degs[lev]
+            if false && l + length(I.prod_betas_coeffs[1 + lev][i]) - 1 > degs[lev]
                 return false, deltas
             end
             taylor_set_coeff!(delta_coeffs[i], l, newdeltas[i], I.zero)
