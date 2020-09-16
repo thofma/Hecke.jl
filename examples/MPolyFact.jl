@@ -584,9 +584,9 @@ function absolute_bivariate_factorisation(f::fmpq_mpoly)
   s =-1 
   while true
     s += 1
-    @vprint :AbsFact 2 "substitution to $s\n"
+    @vprint :AbsFact 1 "substitution to $s\n"
     z = evaluate(f, [t, Qt(s)])
-    if issquarefree(z)
+    if degree(z) == d && issquarefree(z)
       break
     end
   end
@@ -607,7 +607,8 @@ function absolute_bivariate_factorisation(f::fmpq_mpoly)
     a = divexact(a, ll^(degree(a, 1)-1))
     a = divexact(a, content(a, 1))
   end
-  return evaluate(a, [X, Y-s]), divexact(map_coeffs(base_ring(a), f, parent =parent(a)), a)
+  a = evaluate(a, [X, Y-s])
+  return a, divexact(map_coeffs(base_ring(a), f, parent =parent(a)), a)
 end
   
 end
