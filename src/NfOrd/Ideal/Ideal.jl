@@ -587,7 +587,12 @@ function assure_has_basis_mat_inv(A::NfAbsOrdIdl)
   if isdefined(A, :basis_mat_inv)
     return nothing
   else
-    A.basis_mat_inv = FakeFmpqMat(pseudo_inv(basis_matrix(A, copy = false)))
+    if degree(order(A)) == 1
+      # This will be fixed in flint 2.7
+      A.basis_mat_inv = FakeFmpqMat(identity_matrix(FlintZZ, 1), basis_matrix(A, copy = false)[1, 1])
+    else
+      A.basis_mat_inv = FakeFmpqMat(pseudo_inv(basis_matrix(A, copy = false)))
+    end
     return nothing
   end
 end

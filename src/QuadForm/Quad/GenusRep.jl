@@ -1672,7 +1672,7 @@ function _genus_representatives_binary_quadratic(_L::QuadLat; max = inf, use_aut
   # representatives of the kernel elements.
 
   OF = maximal_order(F)
-  repr_in_OF = ideal_type(OF)[ sum(OF(FabstoF(elem_in_nf(b))) * OF for b in basis(repr[i])) for i in 1:length(repr)]
+  repr_in_OF = ideal_type(OF)[ reduce(+, (OF(FabstoF(elem_in_nf(b))) * OF for b in basis(repr[i])), init = OF(0) * OF) for i in 1:length(repr)]
 
   c = conductor(O, OFabs) * OFabs
   _xps = Vector{elem_type(F)}[]

@@ -395,7 +395,7 @@ end
 #
 ################################################################################
 
-function inv(t::SparseTrafoElem{T}) where {T}
+function inv(t::SparseTrafoElem{T, TT}) where {T, TT}
   i = t.type
   if i == 1
     fl, d = divides(one(parent(t.a)), t.a)
