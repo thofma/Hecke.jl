@@ -492,6 +492,26 @@ function issquare(x::fmpq)
   return x > 0 && issquare(numerator(x)) && issquare(denominator(x))
 end
 
+function issquare_with_root(x::fmpq)
+  if x < 0
+    return false, x
+  else
+    fl, n = issquare_with_root(numerator(x))
+    !fl && return false, x
+    fl, d = issquare_with_root(denominator(x))
+    !fl && return false, x
+    return true, fmpq(n, d)
+  end
+end
+
+function issquare_with_root(x::fmpz)
+  if !issquare(x)
+    return false, x
+  else
+    return true, sqrt(x)
+  end
+end
+
 ################################################################################
 #
 #  Chinese remaindering modulo UInts to fmpz

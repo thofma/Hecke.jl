@@ -655,6 +655,28 @@ end
 
 isisotropic(V::QuadSpace, p::InfPlc) = _isisotropic(V, p)
 
+function _isisotropic(D::Array, p)
+  n = length(D)
+  if n == 0
+    return false
+  end
+  K = parent(D[1])
+  d = reduce(*, D, init = one(K))
+  if d == 0
+    return true
+  elseif n <= 1
+    return false
+  elseif n == 2
+    return islocal_square(-d, p)
+  elseif n == 3
+    return _hasse_invariant(D, p) == hilbert_symbol(K(-1), K(-1), p)
+  elseif n == 4
+    return !islocal_square(d, p) || (_hasse_invariant(D, p) == hilbert_symbol(K(-1), K(-1), p))
+  else
+    return true
+  end
+end
+
 function isisotropic(V::QuadSpace, p)
   @assert base_ring(V) == nf(order(p))
   d = det(V)
@@ -825,9 +847,43 @@ function _isisometric_with_isometry(a1, a2, b1, b2)
   # This should be a parabola?
 end
 
+function _solve_conic_affine(A, B, a)
+  # Solve Au^2 + B*w^2 = a
+  # Gives one solutation
+
+  # a = u^2 + B/A v^2 = (u - sqrt(B/A)v)(u + sqrt(B/A)) = N(u + v sqrt(B/A))
+
+  K = parent(A)
+
+  Kz, z = PolynomialRing(K, "z", cached = false)
+  D = -B//A
+  de = denominator(D)
+  L, _ = number_field(z^2 - de^2 * D)
+  fl, _n = isnorm(L, a//(A) * de^2)
+
+  if !fl
+    return false, zero(K), zero(K)
+  end
+
+  if L isa AnticNumberField
+    n = evaluate(_n)
+  else
+    n = _n
+  end
+
+  @assert norm(n) == a//(A) * de^2
+
+  u1, w1 = coeff(n, 0)//de, coeff(n, 1)
+
+  @assert u1^2 * A + w1^2 * B == a
+
+  return true, u1, w1
+end
+
 function _solve_conic_affine(A, B, a, t)
   # Solve Au^2 + B*w^2 = a
   # Gives one solutation and a parametrization
+  # This assumes that a solution exists!
 
   # a = u^2 + B/A v^2 = (u - sqrt(B/A)v)(u + sqrt(B/A)) = N(u + v sqrt(B/A))
 
@@ -958,3 +1014,368 @@ function isequivalent_with_isometry(V::QuadSpace, W::QuadSpace)
   return true,  T
 end
 
+################################################################################
+#
+#  Isotropic vector
+#
+################################################################################
+
+_to_gf2(x) = x == 1 ? 0 : 1
+#ToGF2:= func< a,b,p | HilbertSymbol(a,b,p) eq 1 select 0 else 1 >;
+#SignGF2:= func< x, p | Evaluate(x, p) lt 0 select 1 else 0 >;
+#MyFact:= func< R, d | Type(R) eq RngInt select FactorizationOfQuotient(Rationals() ! d) else Factorization(R*d) >;
+
+# F must be symmetric
+function _isisotropic_with_vector(F::MatrixElem)
+  K = base_ring(F)
+  _D, T = _gram_schmidt(F, identity, false)
+  D = diagonal(_D)
+  i = findfirst(==(zero(K)), D)
+  if i isa Int
+    return true, elem_type(K)[T[i, j] for j in 1:ncols(T)]
+  end
+
+  if length(D) <= 1
+    return false, elem_type(K)[]
+  end
+
+  for i in 1:length(D)
+    for j in (i + 1):length(D)
+      if D[i] == -D[j]
+        return true, elem_type(K)[T[i, k] + T[j, k] for k in 1:ncols(T)]
+      end
+    end
+  end
+
+  fl, y = issquare_with_root(-D[1]//D[2])
+  if fl
+    return true, elem_type(K)[T[1, k] + y * T[2, k] for k in 1:ncols(T)]
+  elseif length(D) == 2
+    return false, elem_type(K)[]
+  end
+
+  if length(D) == 3
+    fl, a, b = _solve_conic_affine(D[1], D[2])
+    if fl
+      return true, elem_type(K)[a, b, one(K)]
+    else
+      return false, elem_type(K)[]
+    end
+  elseif length(D) == 4
+    fl, v = _isisotropic_with_vector(diagonal_matrix(D[3], D[4]))
+    if fl
+      return true, elem_type(K)[v[1] * T[3, k] + v[2] * T[4, k] for k in 1:ncols(T)]
+    end
+
+    for v in real_places(K)
+      if !_isisotropic(D, v)
+        return false
+      end
+    end
+
+    R = maximal_order(K)
+    P = ideal_type(R)[]
+    for d in append!(elem_type(K)[K(2)], D)
+      for (p, _) in factor(d * R)
+        if p in P
+          continue
+        end
+        if !_isisotropic(D, p)
+          return false, elem_type(K)[]
+        else
+          push!(P, p)
+        end
+      end
+    end
+
+    # At this point we know that the space is isotropic.
+    # But we need to determine the vector.
+
+    # Find x != 0 such that <D[1], D[2]> and <-D[3], -D[4]> both represent x.
+
+    rlp = real_places(K)
+    
+    
+    _target = append!(Int[_to_gf2(hilbert_symbol(D[1], D[2], p)) for p in P], Int[_to_gf2(hilbert_symbol(-D[3], -D[4], p)) for p in P])
+
+    @show _target
+
+    I = eltype(rlp)[]
+
+    for p in rlp
+      s = sign(D[1], p)
+      if s == sign(D[2], p)
+        push!(I, p)
+        push!(_target, _to_gf2(s))
+      else
+        s = sign(-D[3], p)
+        if s == sign(-D[4], p)
+          push!(I, p)
+          push!(_target, _to_gf2(s))
+        end
+      end
+    end
+
+    V = abelian_group(Int[2 for i in 1:length(_target)])
+    target = V(_target)
+    # Find x such that target equals the vector
+    # [ _to_gf2_(hilbert_symbol(-D[1] * D[2], x, p)) for p in ] vcat
+    # [ _to_gf2(hilbert_symbol(-D[3]*D[4], x, p)) for p in P ] vcat
+    # [ _to_gf2(sign(x, p) for p in I ]
+    if iszero(target)
+      x = one(K)
+    else
+      found = false
+      S, mS = sub(V, elem_type(V)[], false)
+      basis = elem_type(V)[]
+      signs = Vector{Int}[]
+      L, mL = sunit_group_fac_elem(P)
+      Q, mQ = quo(L, 2, false)
+      for q in gens(Q)
+        x = evaluate(mL(mQ\q))
+        _v = append!(Int[_to_gf2(hilbert_symbol(-D[1] * D[2], x, p)) for p in P], Int[_to_gf2(hilbert_symbol(-D[3] * D[4], x, p)) for p in P])
+        _v = append!(v, Int[_to_gf2(sign(x, p)) for p in I])
+        s = V(_v)
+        fl, _ = haspreimage(mS, s) 
+        if !fl
+          push!(signs, s)
+          push!(basis, x)
+          S, mS = sub(V, signs, false)
+          if haspreimage(mS, target)[1]
+            found = true
+            break
+          end
+        end
+      end
+
+      # Still not found
+
+      Cl, mCl = class_group(R)
+      A = abelian_group(fill(0, length(P)))
+      hh = hom(A, Cl, [mCl\(p) for p in P])
+      S, mS = image(hh, false)
+      Q, mQ = quo(Cl, [mS(S[i]) for i in 1:ngens(S)])
+
+      p  = 2
+      while !found
+        p = next_prime(p)
+        lp = prime_decomposition(R, p)
+        for q in lp
+          if q in P
+            continue
+          end
+          o = order(mQ(mCl\(q)))
+          c = -(hh\(o * (mCl\(q))))
+          fl, x = isprincipal(q * prod(P[i]^Int(c.coeff[i]) for i in 1:length(P)))
+          _v = append!(Int[_to_gf2(hilbert_symbol(-D[1] * D[2], x, p)) for p in P], Int[_to_gf2(hilbert_symbol(-D[3] * D[4], x, p)) for p in P])
+          _v = append!(v, Int[_to_gf2(sign(x, p)) for p in I])
+          s = V(_v)
+          if haspreimage(mS, s + target)[1]
+            push!(basis, x)
+            push!(signs, s)
+            found = true
+            break
+          end
+        end
+      end
+      
+      @show "here"
+
+    end
+  end
+end
+
+#	  if target in S then found:= true; break; end if;
+#	end if;
+#      end for;
+#      p:= 2;
+#      while not found do
+#        p:= NextPrime(p);
+#        Dec:= rat select [ p ] else [ d[1] : d in Decomposition(R, p) ];
+#	for p in Dec do
+#	  if p in P then continue; end if;
+#          x:= K ! h(p);
+#          s:= V ! ([ ToGF2(-D[1] * D[2], x, p) : p in P ] cat [ ToGF2(-D[3]*D[4], x, p) : p in P ] cat [ SignGF2(x, p): p in I ]);
+#          if s+target in S then
+#	    Append(~Basis, x); Append(~Signs, s);
+#            found:= true; break;
+#	  end if;
+#	end for;
+#      end while;
+#      exp:= Solution(Matrix(Signs), target);
+#      x:= PowerProduct(Basis, ChangeUniverse(Eltseq(exp), Integers()));
+#    end if;
+#
+#    ok, v:= IsIsotropic( DiagonalMatrix([ D[1], D[2], -x ]) : IsotropicVector); assert ok;
+#    ok, w:= IsIsotropic( DiagonalMatrix([ D[3], D[4],  x ]) : IsotropicVector); assert ok;
+#    v:= v/v[3];
+#    w:= w/w[3];
+#    v:= Vector([v[1], v[2], w[1], w[2]]) * T;
+#    assert InnerProduct(v*F, v) eq 0;
+#    return true, v;
+#  else 
+#    // Dim ge 5, here the real places are the only obstacles.
+#    ok:= forall{ v : v in RealPlaces(K) | IsLocallyIsotropic(D, v) };
+#    if not ok or not IsotropicVector then return ok, _; end if;
+#
+#    // We need D[3..5] to yield both signs at every real place
+#    I:= RealPlaces(K);
+#    if exists(t){ <i,j> : j in [i+1..#D], i in [1..#D] | forall{ p: p in I | Sign(Evaluate(D[i], p)) ne Sign(Evaluate(D[j], p)) } } then
+#      v:= T[ 3 ]; w:= T[ 4 ];
+#      T[3]:= T[t[1]]; T[4]:= T[t[2]];
+#      T[t[1]]:= v; T[t[2]]:= w;
+#      ok, D:= IsDiagonal(T * F * Transpose(T) ); assert ok;
+#    else
+#      Fix:= [];
+#      Signs:= [];
+#      for i in [1..#I] do
+#        s:= Sign(Evaluate(D[3], I[i]));
+#        if s ne Sign(Evaluate(D[5], I[i])) then continue; end if;
+#        if s eq Sign(Evaluate(D[4], I[i])) then
+#          a:= 1/MyRealWeakApproximation(I[i], I[Fix]);
+#          ok:= exists(j){j: j in [1..#D] | Sign(Evaluate(D[j], I[i])) ne s}; assert ok;
+#          r:= 0;
+#          repeat
+#            r +:= 1;
+#            t := D[4] + a^(2*r)*D[j];
+#          until Sign(Evaluate(t, I[i])) ne s and forall{k: k in Fix | Sign(Evaluate(t, I[k])) eq Signs[k] };
+#          b:= -a^r * D[j] / D[4];
+#          v:= T[4];
+#          T[4] +:= a^r*T[j];
+#          T[j] +:= b*v;
+#        end if;
+#        Append(~Fix, i);
+#        Append(~Signs, -s);
+#        ok, D:= IsDiagonal(T * F * Transpose(T)); assert ok;
+#      end for;
+#    end if;
+#
+#    ok, v:= IsIsotropic(DiagonalMatrix(D[3..5]) : IsotropicVector);
+#    if ok then return true, v[1]*T[3] + v[2]*T[4] + v[3]*T[5]; end if;
+#
+#    R:= Integers(K);
+#    P:= [];
+#    X:= [];
+#    M:= [];
+#    for p in Setseq({ p[1] : p in MyFact(R, d), d in D cat [2] }) do
+#      if IsLocallyIsotropic(D[3..5], p) then continue; end if;
+#
+#      if IsLocallyIsotropic([ D[3], D[4], D[5], D[1] ], p) then
+#        x:= 1; y:= 0;
+#      elif IsLocallyIsotropic([ D[3], D[4], D[5], D[2] ], p) then
+#        x:= 0; y:= 1;
+#      else
+#        // now D[1] and D[2] represent necessarily the same class
+#        // leaving this class is enough
+#        V1:= Valuation(D[1], p);
+#        V2:= Valuation(D[2], p);
+#        V:= Max(V1, V2);
+#        pi:= Type(p) eq RngIntElt select p else PrimitiveElement(p);
+#        k,h:= ResidueClassField(p);
+#        y:= pi^((V - V2) div 2);
+#        cnt:= 1;
+#        repeat
+#          cnt +:= 1;
+#          assert cnt le 1000;
+#          x:= (Random(k) @@ h) * pi^((V - V1) div 2);
+#        until IsLocallyIsotropic([ D[3], D[4], D[5], x^2*D[1] + y^2*D[2] ], p);
+#      end if;
+#      Append(~X, <R ! x, R ! y>);
+#      Append(~P, p);
+#      V:= Valuation( x^2*D[1] + y^2*D[2], p) + 1;
+#      if Minimum(p) eq 2 then
+#        V +:= Type(p) eq RngIntElt select 2 else 2*RamificationIndex(p);
+#      end if;
+#      Append(~M, p^V);
+#    end for;
+#    assert #P ne 0;
+#
+#    x:= CRT( [ x[1]: x in X ], M ); 
+#    y:= CRT( [ x[2]: x in X ], M );
+#    t:= x^2*D[1] + y^2*D[2];
+#    ok, w:= IsIsotropic( DiagonalMatrix([ D[3], D[4], D[5], t ]) : IsotropicVector); assert ok;
+#    w:= w/w[4];
+#    v:= Vector([x, y, w[1], w[2], w[3]]) * T;
+#    v:= Denominator(v) * v;
+#    assert InnerProduct(v*F, v) eq 0;
+#    return true, v;
+#  end if;
+#end intrinsic;
+#
+#intrinsic QuadraticFormDecomposition(F::AlgMatElt) -> ModTupFld, ModTupFld, ModTupFld
+#{Decompose F into an anisotropic kernel, an hyperbolic space and its radical}
+#  require IsSymmetric(F) : "The form must be symmetric";
+#  R:= BaseRing(F);
+#  if ISA(Type(R), RngOrd) or Type(R) eq RngInt then
+#    F:= Matrix(NumberField(R), F);
+#    R:= BaseRing(F);
+#  end if;
+#  require Type(R) eq FldRat or ISA(Type(R), FldAlg): "Only implemented for forms over number fields";
+#
+#  V:= VectorSpace(R, Ncols(F), F);
+#  R:= Radical(V);
+#  W:= R;
+#
+#  H:= [ V | ];
+#  repeat
+#    C:= OrthogonalComplement(V, W);
+#    F:= GramMatrix(C);
+#    iso, v:= IsIsotropic(F : IsotropicVector);
+#    if iso then
+#      ok:= exists(b){ b: b in Basis(C) | InnerProduct(v,b) ne 0 };
+#      b:= b / InnerProduct(v,b);
+#      H:= H cat [ V | v, b ];
+#      W:= sub< V | W, v, b >;
+#    end if;
+#  until not iso;
+#
+#  return C, sub< V | H >, R;
+#end intrinsic;
+#
+#intrinsic MaximalIsotropicSubspace(F::AlgMatElt) -> ModTupFld
+#{Returns a maximal totally isotropic subspace of F}
+#  _, H, R:= QuadraticFormDecomposition(F);
+#  return sub< H | [ H.i : i in [1..Dimension(H) by 2] ] > + R;
+#end intrinsic;
+#
+#function QFIsoField(F, G, Iso)
+#  if Ncols(F) ne Ncols(G) then return false, _; end if;
+#  d1, f1, i1:= QuadraticFormInvariants(F);
+#  d2, f2, i2:= QuadraticFormInvariants(G);
+#  if i1 ne i2 or f1 ne f2 or not IsSquare(d1*d2) then return false, _; end if;
+#  if not Iso then return true, _; end if;
+#  A1, H1, R1:= QuadraticFormDecomposition(F);
+#  A2, H2, R2:= QuadraticFormDecomposition(G);
+#  assert Dimension(H1) eq Dimension(H2) and Dimension(R1) eq Dimension(R2);
+#  V:= Generic(A1);
+#  W:= Generic(A2);
+#  X:= [V | ]; Y:= [W | ];
+#  while Dimension(A1) gt 0 do
+#    ok, v:= IsIsotropic( DiagonalJoin(GramMatrix(A1), -GramMatrix(A2)) : IsotropicVector);
+#    assert ok;
+#    e:= Eltseq(v);
+#    n:= #e div 2;
+#    x:= V ! (Vector(e[  1..  n]) * BasisMatrix(A1));
+#    y:= W ! (Vector(e[n+1..2*n]) * BasisMatrix(A2));
+#    Append(~X, x);
+#    Append(~Y, y);
+#    A1:= OrthogonalComplement(A1, sub< A1 | x >);
+#    A2:= OrthogonalComplement(A2, sub< A2 | y >);
+#//    A1:= OrthogonalComplement(V, sub< V | X >);
+#//    A2:= OrthogonalComplement(W, sub< W | Y >);
+#  end while;
+#  M:= Matrix( Y cat [H2.i: i in [1..Ngens(H2)] ] cat Basis(R2) )^-1 * Matrix( X cat [ H1.i: i in [1..Ngens(H1)] ] cat Basis(R1) );
+#  assert M * F * Transpose(M) eq G;
+#  return true, M;
+#end function;
+#
+#intrinsic AreEquivalentQuadraticForms(F::AlgMatElt[FldRat], G::AlgMatElt[FldRat] : Isometry:= false) -> BoolElt, AlgMatElt
+#{"} //"
+#  return QFIsoField(F, G, Isometry);
+#end intrinsic;
+#
+#intrinsic AreEquivalentQuadraticForms(F::AlgMatElt[FldAlg], G::AlgMatElt[FldAlg] : Isometry:= false) -> boolElt, AlgMatElt
+#{"} //"
+#  require BaseRing(F) eq BaseRing(G) : "The base rings are not the same";
+#  return QFIsoField(F, G, Isometry);
+#end intrinsic;
