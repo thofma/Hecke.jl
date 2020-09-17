@@ -222,6 +222,7 @@ function roots(f::fmpq_mpoly; p::Int=2^25, pr::Int = 2)
   #f needs to be irreducible over Q and g square-free
   g = evaluate(ff, [gen(Zx), Zx(0)])
   @assert degree(g) == degree(f, 1)
+  
   local d
   while true
     p = next_prime(p)
@@ -339,6 +340,18 @@ function Hecke.content(f::MPolyElem, i::Int)
   return reduce(gcd, df)
 end
 
+function Hecke.coefficients(f::MPolyElem, i::Int)
+  d = degree(f, i)
+  cf = [MPolyBuildCtx(parent(f)) for j=0:d]
+  for (c, e) = zip(coeffs(f), exponent_vectors(f))
+    a = e[i]
+    e[i] = 0
+    push_term!(cf[a+1], c, e)
+  end
+  return map(finish, cf)
+end
+
+
 
 function combination(RC::RootCtx)
   #R is a list of roots, ie. power series over F_q (finite field)
@@ -355,6 +368,7 @@ function combination(RC::RootCtx)
   k = degree(F)
 
   p = characteristic(F)
+  Fp = GF(p)
 
   #the paper
   # https://www.math.univ-toulouse.fr/~cheze/facto_abs.m
@@ -383,7 +397,7 @@ function combination(RC::RootCtx)
   # trying to scale
   #
   j = 0
-  nn = matrix(F, 0, length(R), [])
+  nn = matrix(Fp, 0, length(R), [])
   d = degree(f, 2)+degree(f, 1)
   lc = leading_coefficient(f, 1)
   d += degree(lc, 2)
@@ -392,31 +406,57 @@ function combination(RC::RootCtx)
   @assert precision(ld) >= n
   R = R .* ld
 
+  pow = 1
+  bad = 0
+  last_rank = length(R)
   while true
     j += 1
-    if d+j >= n
-      @vprint :AbsFact 1 "need more precicsion: $n\n"
+    while pow*d+j >= n
+      @vprint :AbsFact 1 "need more precicsion: $n ($d, $pow, $j)\n"
       more_precision(RC)
       R = RC.all_R
       n = precision(R[1])
-      if n > 500 #too small - but a safety valve
+      if false && n > 570 #too small - but a safety valve
         error("too much n")
       end
       set_precision!(ld, n)
       R = R .* ld
       @assert precision(R[1]) >= n
     end
-    mn = matrix([[F(coeff(coeff(x, d+j), lk)) for lk = 0:k-1] for x = R])
-    if iszero(mn)
+    
+    mn = matrix([[Fp(coeff(coeff(x^pow, pow*d+j), lk)) for lk = 0:k-1] for x = R])
+    
+    if false && iszero(mn)
       @vprint :AbsFact 2 "found zero column, disgarding\n"
+      bad += 1
+      if bad > max(2, div(length(R), 2))
+        pow += 1
+        @vprint :AbsFact 1 "increasing power to $pow\n"
+        j = 0
+        bad = 0
+      end
       continue
+    else
+      @vprint :AbsFact 2 "found non zero column\n"
     end
-    nn = vcat(nn, mn)
 
-    global last_nn = nn
+    nn = vcat(nn, mn)
 
     ke = kernel(nn)
     @vprint :AbsFact 1 "current kernel dimension: $(ke[1])\n"
+    if last_rank == ke[1]
+      bad += 1
+      if bad > max(2, div(length(R), 2))
+        pow += 1
+        @vprint :AbsFact 1 "increasing power to $pow\n"
+        j = 0
+        bad = 0
+        continue
+      end
+    else
+      bad = 0
+      last_rank = ke[1]
+    end
     if ke[1] == 0 || mod(length(R), ke[1]) != 0
       continue
     end
@@ -458,6 +498,7 @@ function field(RC::RootCtx, m::MatElem)
   #TODO invest work in one factor only - need only powers of the roots involved there
   #     the other factor is then just a division away
   @vtime :AbsFact 2 el = [[sum(R[i]^j for i=1:ncols(m) if m[lj, i] != 0) for j=1:d_f] for lj=1:nrows(m)]
+
   #now find the degree where the coeffs actually live:
   k = 1
   for x = el
@@ -497,6 +538,7 @@ function field(RC::RootCtx, m::MatElem)
   end
 
   @vprint :AbsFact 2 "$j-th coeff is primitive\n"
+  @vprint :AbsFact 1 "hopefully $(length(el)) degree field\n"
 
   QqXY, _ = PolynomialRing(Qq, 2)
 
