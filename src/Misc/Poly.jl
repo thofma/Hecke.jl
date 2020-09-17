@@ -777,6 +777,10 @@ function power_sums_to_polynomial(P::Array{T, 1}) where T
   for i=1:div(d, 2)
     E[i], E[d-i+1] = (-1)^(d-i)*E[d-i+1], (-1)^(i-1)*E[i]
   end
+  if isodd(d)
+    E[div(d+1, 2)] *= (-1)^div(d, 2)
+  end
+  
   return PolynomialRing(R, cached = false)[1](E)
 end
 
