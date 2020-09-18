@@ -164,6 +164,9 @@ end
 
 function newton_lift!(R::RootCtx)
 
+  #TODO: given that f might be sparse, do NOT compute all powers 
+  #      of the roots, only those needed - and this in an "optimized"
+  #      way
   S = parent(R.R[1])
   T = base_ring(S)
 #  set_precision!(S, 2*precision(S))
@@ -200,8 +203,6 @@ function newton_lift!(R::RootCtx)
     for j=1:length(R.f)
       e = exponent_vector(R.f, j)
       c = coeff(R.f, j)
-      _r = root(R, i, e[1])
-      ev_f, S(T(c)), t, e[2], t^e[2], root(R, i, e[1])
       ev_f += S(T(c))*t^e[2] * root(R, i, e[1])
     end
     R.R[i] = a - ev_f*o
@@ -223,7 +224,9 @@ function roots(f::fmpq_mpoly; p::Int=2^25, pr::Int = 2)
   g = evaluate(ff, [gen(Zx), Zx(0)])
   @assert degree(g) == degree(f, 1)
   
-  local d
+  d = degree(g)
+  best_p = p
+  pc = 0
   while true
     p = next_prime(p)
     gp = factor(g, GF(p))
@@ -231,9 +234,18 @@ function roots(f::fmpq_mpoly; p::Int=2^25, pr::Int = 2)
       @vprint :AbsFact 1 "not squarefree mod $p\n"
       continue
     end
-    d = lcm([degree(x) for x = keys(gp.fac)])
-    if d < degree(g)/2
-      @vprint :AbsFact 1 "using $p of degree $d\n"
+    e = lcm([degree(x) for x = keys(gp.fac)])
+    if e < d
+      d = e
+      best_p = p
+      pc = 0
+    else
+      pc += 1
+    end
+    
+    if e == 1 || pc > div(degree(g), 2)
+      @vprint :AbsFact 1 "using $best_p of degree $d\n"
+      p = best_p
       break
     end
   end
@@ -262,8 +274,10 @@ function roots(f::fmpq_mpoly; p::Int=2^25, pr::Int = 2)
   @vprint :AbsFact 1 "now Frobenius action...\n"
 
   S = typeof(R.R[1])[]
+  all_o = []
   for i=1:length(rr)
     push!(S, R.R[i])
+    o = [length(S)]
     T = S[end]
     for i=1:rr[i][2]-1
       T = deepcopy(T)
@@ -271,14 +285,17 @@ function roots(f::fmpq_mpoly; p::Int=2^25, pr::Int = 2)
         setcoeff!(T, j, frobenius(coeff(T, j)))
       end
       push!(S, T)
+      push!(o, length(S))
     end
+    push!(all_o, o)
   end
+  @vprint :AbsFact 2 "orbits: $all_o\n"
   R.all_R = S
   return R
 end
 
 function more_precision(R::RootCtx)
-  newton_lift!(R)
+  @vtime :AbsFact 2 newton_lift!(R)
   S = typeof(R.R[1])[]
   for r = R.R
     push!(S, r)
@@ -492,12 +509,19 @@ function field(RC::RootCtx, m::MatElem)
   t = gen(Ft)
   d = precision(R[1])
 
+  tf = divexact(total_degree(P), nrows(m))
 
   #TODO given that all powers are used, build them up properly
   #TODO use Frobenius (again) to save on multiplications
   #TODO invest work in one factor only - need only powers of the roots involved there
   #     the other factor is then just a division away
-  @vtime :AbsFact 2 el = [[sum(R[i]^j for i=1:ncols(m) if m[lj, i] != 0) for j=1:d_f] for lj=1:nrows(m)]
+  #     if complete orbits are combined, use the trace (pointwise) rather than powers
+  @vprint :AbsFact 2 "combining: $([findall(x->!iszero(x), collect(m[i, :])) for i=1:nrows(m)])\n"
+  RP = [[set_precision(x, tf+2) for x = R]]
+  @vtime :AbsFact 2 for j=2:d_f
+    push!(RP, RP[1] .* RP[end])
+  end
+  @vtime :AbsFact 2 el = [[sum(RP[j][i] for i=1:ncols(m) if m[lj, i] != 0) for j=1:d_f] for lj=1:nrows(m)]
 
   #now find the degree where the coeffs actually live:
   k = 1
