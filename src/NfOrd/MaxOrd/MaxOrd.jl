@@ -691,7 +691,7 @@ function ring_of_multipliers(a::NfAbsOrdIdl)
     hnf_modular_eldiv!(id_gen, minimum(a, copy = false), :lowerleft)
     mod!(M, minimum(a, copy = false)*bmatinv.den)
     mul!(M, M, bmatinv.num)
-    M = transpose(M)
+    transpose!(M, M)
     _copy_matrix_into_matrix(m, n*(ind-1)+1, 1, M)
     if view(id_gen, n+1:2*n, 1:n) == basis_matrix(a, copy = false)
       m = view(m, 1:n*ind, 1:n)
@@ -709,7 +709,7 @@ function ring_of_multipliers(a::NfAbsOrdIdl)
     return O
   end
   # mhnf is upper right HNF
-  mhnf = transpose(mhnf)
+  transpose!(mhnf, mhnf)
   b = FakeFmpqMat(pseudo_inv(mhnf))
   mul!(b, b, basis_matrix(O, copy = false))
   @hassert :NfOrd 1 defines_order(nf(O), b)[1]
