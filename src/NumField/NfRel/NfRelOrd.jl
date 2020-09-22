@@ -1258,7 +1258,7 @@ function maximal_order(O::NfRelOrd{S, T, U}) where {S, T, U <: NfRelElem}
       @vprint :NfRelOrd 1 "Dedekind test for ideal lying over $(pm)\n"
       @vtime :NfRelOrd 1 fail, E1 = Hecke.dedekind_test_composite(E, p)
       if !isone(fail)
-        J = ideal(OL, fail.elem)
+        J = ideal(OL, OL(fail))
         cp = coprime_base(typeof(p)[J, p])
         append!(facts, cp)
         continue
