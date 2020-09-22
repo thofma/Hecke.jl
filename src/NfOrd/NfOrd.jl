@@ -638,15 +638,6 @@ function in(a::nf_elem, O::NfOrd)
       R1 = ResidueRing(FlintZZ, d*d2, cached = false)
       return _check_containment(R1, M.num, t.num)
     end
-    #=
-    a1 = mod(a, d1*d2)
-    M1 = mod(M.num, d1*d2)
-    t = O.tcontain
-    elem_to_mat_row!(t.num, 1, t.den, a1)
-    mul!(t.num, t.num, M1)
-    mod!(t.num, d1*d2)
-    return iszero(t.num)
-    =#
   end
   return _check_elem_in_order(a, O, Val{true})
 end
