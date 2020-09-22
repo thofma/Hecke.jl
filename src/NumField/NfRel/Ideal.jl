@@ -723,10 +723,10 @@ function ispower(I::NfRelOrdIdl)
   end
 
   g = e
-  J = one(I)
+  J = ideal(OL, 1)
   lp = factor(b)
-  for p = keys(lp.fac)
-    lP = prime_decomposition(order(I), Int(p))
+  for p = keys(lp)
+    lP = prime_decomposition(order(I), p)
     for i=1:length(lP)
       P = lP[i][1]
       v = valuation(I, P)
