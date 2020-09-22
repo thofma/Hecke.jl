@@ -97,6 +97,20 @@ function sparse_row(R::Ring, pos::Vector{Int}, val::Vector{T}; sort::Bool = true
   end
 end
 
+
+function sparse_row(M::fmpz_mat)
+  pos = Int[]
+  vals = fmpz[]
+  for i = 1:ncols(M)
+    if iszero_entry(M, 1, i)
+      continue
+    end
+    push!(pos, i)
+    push!(vals, M[1, i])
+  end
+  return SRow{fmpz}(pos, vals)
+end
+
 ################################################################################
 #
 #  Hashing
@@ -572,7 +586,7 @@ end
 ################################################################################
 
 function permute_row(n::SRow{fmpz}, p::Nemo.Generic.Perm{Int})
-  r = Tuple{Int, Int}[(p[i], v) for (i,v) = n]
+  r = Tuple{Int, fmpz}[(p[i], v) for (i,v) = n]
   sort!(r, lt = (a,b)->a[1]<b[1])
   return SRow{fmpz}(r)
 end

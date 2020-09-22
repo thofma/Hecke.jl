@@ -603,4 +603,3 @@ function hnf!(A::SMat{fmpz}; truncate::Bool = false)
   A.r = B.r
   A.c = B.c
 end
-
