@@ -8,26 +8,7 @@ export overorders, isbass, isgorenstein, poverorders
 
 #H must be in lower left hnf form
 function iszero_mod_hnf!(a::fmpz_mat, H::fmpz_mat)
-  j = ncols(H)
-  for i = min(nrows(H), ncols(H)):-1:1
-    if iszero(a[i])
-      continue
-    end
-    while j >= 1 && iszero(H[i, j])
-      j -= 1 
-    end
-    if iszero(j) 
-      return iszero(a)
-    end
-    q, r = divrem(a[1, j], H[i, j])
-    if r != 0
-      return false
-    end
-    a[1, j] = r
-    for k=1:(j-1)
-      a[1, k] = a[1, k] - q * H[i, k]
-    end
-  end
+  reduce_mod_hnf_ll!(a, H)
   return iszero(a)
 end
 
