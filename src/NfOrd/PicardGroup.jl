@@ -231,8 +231,9 @@ function _picard_group(O::NfOrd)
   end
 
   for i = 1:length(generators)
-    I = generators[i]^Int(Cl.snf[i])
-    IOK = extend(I, OK)
+    I = generators[i]
+    #The powering should happen in the maximal order.
+    IOK = extend(I, OK)^Int(Cl.snf[i])
     a = principal_generator(IOK)
     push!(Z, GtoQ\(OKtoQ(a)))
   end
@@ -318,7 +319,7 @@ function _picard_group(O::NfOrd)
       @assert b1
       @hassert :NfOrd 1 isdivisible(OKtoQ(OK(1)), a)[1]
       h = GtoQ\a
-      p = P(hcat(c.coeff, h.coeff))
+      p = GrpAbFinGenElem(P, hcat(c.coeff, h.coeff))
       b, s = haspreimage(StoP, p)
       @assert b
       return s
