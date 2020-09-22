@@ -617,7 +617,7 @@ function _submodules_with_struct_main(M::ZpnGModule, typesub::Array{Int,1})
       for s = 1:length(newlist)
         ord = fmpz(1)
 	      for t = 1:nrows(newlist[s])
-          ord *= order(M.V(lift(view(newlist[s], t:t, 1:ncols(newlist[s])))))
+          ord *= order(GrpAbFinGenElem(M.V, lift(view(newlist[s], t:t, 1:ncols(newlist[s])))))
 	      end
         if ord >= order_test
           t1, mt1 = submodule_to_subgroup(M, newlist[s])
