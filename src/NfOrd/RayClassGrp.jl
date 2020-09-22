@@ -882,7 +882,7 @@ function ray_class_group(m::NfOrdIdl, inf_plc::Vector{InfPlc} = Vector{InfPlc}()
   local expo
   let C = C, O = O, groups_and_maps = groups_and_maps, exp_class = exp_class, eH = eH, H = H, K = K, Dgens = Dgens, X = X, p = p
     function expo(a::GrpAbFinGenElem)
-      b = C(sub(a.coeff, 1:1, 1:ngens(C)))
+      b = GrpAbFinGenElem(C, sub(a.coeff, 1:1, 1:ngens(C)))
       res = exp_class(b)
       for i = 1:nG
         if !iszero(a.coeff[1, ngens(C)+i])
