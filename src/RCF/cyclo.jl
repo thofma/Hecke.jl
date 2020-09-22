@@ -24,11 +24,30 @@ function Base.show(io::IO, c::CyclotomicExt)
   print(io, "Cyclotomic extension by zeta_$(c.n) of degree $(degree(c.Ka))")
 end
 
+absolute_field(C::CyclotomicExt) = C.Ka
+base_field(C::CyclotomicExt) = C.k
+
 ################################################################################
 #
 #  Interface and creation
 #
 ################################################################################
+
+function simplify!(C::CyclotomicExt)
+  if degree(C.Kr) == 1
+    return nothing
+  end
+  Ka = absolute_field(C)
+  if isautomorphisms_known(Ka)
+    automorphisms(C)
+  end
+  Ka, mKas = simplify(Ka, save_LLL_basis = true, cached = false)
+  abs2rel = mKas*C.mp[1]
+  small2abs = C.mp[2]*inv(mKas)
+  C.Ka = Ka
+  C.mp = (abs2rel, small2abs)
+  return nothing
+end
 
 @doc Markdown.doc"""
     cyclotomic_extension(k::AnticNumberField, n::Int) -> CyclotomicExt
@@ -36,7 +55,7 @@ Computes $k(\zeta_n)$, in particular, a structure containing $k(\zeta_n)$
 both as an absolute extension, as a relative extension (of $k$) and the maps
 between them.
 """
-function cyclotomic_extension(k::AnticNumberField, n::Int; cached::Bool = true, compute_maximal_order::Bool = true, compute_LLL_basis::Bool = true)
+function cyclotomic_extension(k::AnticNumberField, n::Int; cached::Bool = true, compute_maximal_order::Bool = true, compute_LLL_basis::Bool = true, simplified = true)
   Ac = CyclotomicExt[]
   if cached
     try 
@@ -81,7 +100,11 @@ function cyclotomic_extension(k::AnticNumberField, n::Int; cached::Bool = true, 
   end
   
   if compute_LLL_basis && iscoprime(discriminant(maximal_order(k)), n)
-    return _cyclotomic_extension_non_simple(k, n, cached = cached)
+    c = _cyclotomic_extension_non_simple(k, n, cached = cached)
+    if simplified
+      simplify!(c)
+    end
+    return c
   end
   
   
@@ -132,10 +155,10 @@ function cyclotomic_extension(k::AnticNumberField, n::Int; cached::Bool = true, 
           ZKa = pmaximal_overorder(ZKa, p)
         end
         ZKa.ismaximal = 1
+        Hecke._set_maximal_order_of_nf(Ka, ZKa)
         if compute_LLL_basis
           lll(ZKa)
         end
-        Hecke._set_maximal_order_of_nf(Ka, ZKa)
         c.Kr = Kr
         c.Ka = Ka
         c.mp = (abs2rel, small2abs)
@@ -153,6 +176,9 @@ function cyclotomic_extension(k::AnticNumberField, n::Int; cached::Bool = true, 
     if cached
       push!(Ac, c)
       Hecke._set_cyclotomic_ext_nf(k, Ac)
+    end
+    if simplified
+      simplify!(c)
     end
     return c
   end
@@ -232,6 +258,9 @@ function cyclotomic_extension(k::AnticNumberField, n::Int; cached::Bool = true, 
   if cached
     push!(Ac, c)
     Hecke._set_cyclotomic_ext_nf(k, Ac)
+  end
+  if simplified
+    simplify!(c)
   end
   return c
   
@@ -381,8 +410,7 @@ function _cyclotomic_extension_non_simple(k::AnticNumberField, n::Int; cached::B
 end
 
 
-absolute_field(C::CyclotomicExt) = C.Ka
-base_field(C::CyclotomicExt) = C.k
+
 
 ################################################################################
 #
