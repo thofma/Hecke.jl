@@ -152,7 +152,7 @@ function _reduced_norms(a::AbsAlgAssElem, mR::MapRayClassGroupAlg)
     r = hcat(r, g.coeff)
   end
   G = codomain(mR.into_product_of_groups)
-  return mR.into_product_of_groups\G(r)
+  return mR.into_product_of_groups\(GrpAbFinGenElem(G, r))
 end
 
 ################################################################################
@@ -476,7 +476,7 @@ function image(m::DiscLogLocallyFreeClassGroup, I::AlgAssAbsOrdIdl)
 
     # Put the components together and map it to C
     G = codomain(mR.into_product_of_groups)
-    r = mR.into_product_of_groups\G(hcat([ e.coeff for e in elts_in_R ]))
+    r = mR.into_product_of_groups\(GrpAbFinGenElem(G, hcat([ e.coeff for e in elts_in_R ])))
     c += RtoC(r)
   end
   return c

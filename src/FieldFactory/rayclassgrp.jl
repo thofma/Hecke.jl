@@ -72,7 +72,7 @@ function empty_ray_class(m::NfOrdIdl)
   local disclog
   let X = X
     function disclog(J::Union{NfOrdIdl, FacElem{NfOrdIdl}})
-      return X(Int[])
+      return id(X)
     end
   end
   
@@ -306,7 +306,7 @@ function ray_class_group_quo(m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Dict{NfOrd
           coeffs[1, ii-1+s+ngens(C)] = b[1, s]
         end
       end 
-      return X(coeffs)
+      return GrpAbFinGenElem(X, coeffs)
     end 
   end
   
@@ -413,7 +413,7 @@ function ray_class_group_quo(m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Dict{NfOrd
       for i = 1:length(to_be_c)
         dis[1, ind-1+i+ngens(C)] = to_be_c[1, i]
       end
-      new_mprim.disc_log = X(dis)
+      new_mprim.disc_log = GrpAbFinGenElem(X, dis)
       mG.tame[prim] = new_mprim
     end
     ind += ngens(domain(mG))
@@ -421,9 +421,9 @@ function ray_class_group_quo(m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Dict{NfOrd
   
   disc_log_inf = Dict{InfPlc, GrpAbFinGenElem}()
   for i = 1:length(p)
-    eldi = zeros(FlintZZ, ngens(X))
-    eldi[ngens(X) - length(inf_plc) + i] = 1
-    disc_log_inf[p[i]] = X(eldi)
+    eldi = zero_matrix(FlintZZ, 1, ngens(X))
+    eldi[1, ngens(X) - length(inf_plc) + i] = 1
+    disc_log_inf[p[i]] = GrpAbFinGenElem(X, eldi)
   end
   
   mp = MapRayClassGrp()
@@ -466,7 +466,7 @@ function log_infinite_primes(O::NfOrd, p::Array{InfPlc,1})
           ar[1, i] = 1
         end
       end
-      return S(ar)
+      return GrpAbFinGenElem(S, ar)
     end
   end 
   return S, log
