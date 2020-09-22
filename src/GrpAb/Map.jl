@@ -276,11 +276,11 @@ image of $h$.
 function image(h::GrpAbFinGenMap, add_to_lattice::Bool = true)
   G = domain(h)
   H = codomain(h)
-  hn = hnf(vcat(h.map, rels(H)))
+  hn = hnf!(vcat(h.map, rels(H)))
   im = GrpAbFinGenElem[]
   for i = 1:nrows(hn)
     if !iszero_row(hn, i)
-      push!(im, H(sub(hn, i:i, 1:ngens(H))))
+      push!(im, GrpAbFinGenElem(H, sub(hn, i:i, 1:ngens(H))))
     else
       break
     end

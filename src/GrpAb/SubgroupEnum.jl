@@ -110,7 +110,7 @@ function index_to_group(s::IndexPSubgroups, i::UInt)
     k += 1
   end
   c[s.st + j-1, s.st + j-1] = s.p
-  gen = [s.mp\(codomain(s.mp)(sub(c, l:l, 1:ncols(c)))) for l=1:nrows(c)]
+  gen = [s.mp\(GrpAbFinGenElem(codomain(s.mp), sub(c, l:l, 1:ncols(c)))) for l=1:nrows(c)]
   return s.mthd(domain(s.mp), gen)
 end
 

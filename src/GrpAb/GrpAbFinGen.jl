@@ -1147,14 +1147,28 @@ function Base.intersect(mG::GrpAbFinGenMap, mH::GrpAbFinGenMap,
   G = domain(mG)
   GH = codomain(mG)
   @assert GH == codomain(mH)
-  M1 = hcat(mG.map, identity_matrix(FlintZZ, nrows(mG.map)))
-  M = vcat(vcat(M1, hcat(mH.map, zero_matrix(FlintZZ, nrows(mH.map), nrows(mG.map)))), hcat(rels(GH), zero_matrix(FlintZZ, nrels(GH), nrows(mG.map))))
-  h = hnf(M)
+  M = zero_matrix(FlintZZ, nrows(mG.map)+ nrows(mH.map) + nrels(GH), ncols(mG.map)+ nrows(mG.map))
+  _copy_matrix_into_matrix(M, 1, 1, mG.map)
+  for i = 1:nrows(mG.map)
+    M[i, i+ncols(mG.map)] = 1
+  end
+  _copy_matrix_into_matrix(M, nrows(mG.map)+1, 1, mH.map)
+  if isdefined(GH, :hnf)
+    _copy_matrix_into_matrix(M, nrows(mG.map)+ nrows(mH.map)+1, 1, GH.hnf)
+  else
+    _copy_matrix_into_matrix(M, nrows(mG.map)+ nrows(mH.map)+1, 1, rels(GH))
+  end
+  #=
+  M2 = hcat(mG.map, identity_matrix(FlintZZ, nrows(mG.map)))
+  M3 = vcat(vcat(M2, hcat(mH.map, zero_matrix(FlintZZ, nrows(mH.map), nrows(mG.map)))), hcat(rels(GH), zero_matrix(FlintZZ, nrels(GH), nrows(mG.map))))
+  @assert M3 == M
+  =#
+  h = hnf!(M)
   i = nrows(h)
   while i > 0 && iszero(sub(h, i:i, 1:ngens(GH)))
     i -= 1
   end
-  return sub(GH, [mG(G(sub(h, j:j, ngens(GH)+1:ncols(h)))) for j=i+1:nrows(h)], add_to_lattice, L)
+  return sub(GH, [mG(GrpAbFinGenElem(G, view(h, j:j, ngens(GH)+1:ncols(h)))) for j=i+1:nrows(h)], add_to_lattice, L)
 end
 
 
@@ -1213,7 +1227,7 @@ function issubgroup(G::GrpAbFinGen, H::GrpAbFinGen, L::GrpAbLattice = GroupLatti
   hH = hom(H, GH, mH)
   n = matrix(FlintZZ, 0, ngens(H), fmpz[])
   for j=1:nrows(mG)
-    fl, x = haspreimage(hH, GH(mG[j, :]))
+    fl, x = haspreimage(hH, GrpAbFinGenElem(GH, mG[j, :]))
     if !fl
       return false, hH
     end
@@ -1738,7 +1752,7 @@ function has_complement(m::GrpAbFinGenMap)
         coeffs[1, j] = lift(r)
       end
     end
-    el_sub = s(coeffs)
+    el_sub = GrpAbFinGenElem(s, coeffs)
     push!(gens_complement, igSH - m1(el_sub))
   end
   res, mres = sub(G, gens_complement, false)
