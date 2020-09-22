@@ -25,30 +25,7 @@ end
 function cleanvect(M::T, v::T) where {T}
   @assert nrows(v)==1
   w = deepcopy(v)
-  if iszero(v)
-    return w  
-  end
-  nr = nrows(M)
-  nc = ncols(M)
-  for i=1:nrows(M)
-    ind = 1
-    while ind <= nc && iszero(M[i,ind])
-      ind += 1
-    end
-    if ind > nc
-      continue
-    end
-    if iszero(w[1,ind])
-      continue
-    end
-    mult = divexact(w[1, ind], M[i, ind])
-    w[1, ind] = base_ring(M)(0)
-    for k = ind+1:ncols(M)
-      w[1, k]-= mult*M[i, k]
-    end      
-  end
-  return w
-
+  return cleanvect!(M, w)
 end
 
 function cleanvect!(M::T, v::T) where T
@@ -56,29 +33,26 @@ function cleanvect!(M::T, v::T) where T
     zero!(v)
     return v
   end
-  @assert nrows(v) == 1
   w = v
   if iszero(v)
     return w  
   end
   R = base_ring(M)
-  for i=1:nrows(M)
-    if iszero_row(M,i)
-      continue
+  for i = 1:nrows(M)
+    ind = 1
+    while ind <= ncols(M) && iszero(M[i, ind])
+      ind += 1
     end
-    ind=1
-    Miind = M[i, ind]
-    while iszero(Miind)
-      ind+=1
-      Miind = M[i, ind]
+    if ind > ncols(M)
+      continue
     end
     w1ind = w[1, ind]
     if iszero(w1ind)
       continue
     end
-    mult=divexact(w1ind, Miind)
+    mult = divexact(w1ind, M[i, ind])
     w[1, ind] = R(0)
-    for k=ind+1:ncols(M)
+    for k = ind+1:ncols(M)
       c = M[i, k]
       if !iszero(c)
         w[1,k] -= mult * c
