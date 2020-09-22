@@ -189,6 +189,16 @@ function hom(K::AnticNumberField, L::NfRel{nf_elem}, a::NfRelElem{nf_elem}, b::n
 
 end
 
+function *(f::NfToNfMor, g::NfToNfRel)
+  @assert codomain(f) == domain(g)
+  K = codomain(g)
+  img_gen = g(f.prim_img)
+  i_f = inv(f)
+  img1 = i_f(g\(K(gen(base_field(K)))))
+  img2 = i_f(g\(gen(K)))
+  return NfToNfRel(domain(f), K, img1, img2, img_gen)
+end
+
 ################################################################################
 #
 #  Generic groups to set of homomorphisms

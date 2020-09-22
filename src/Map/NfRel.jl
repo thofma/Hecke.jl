@@ -333,6 +333,15 @@ function *(x::NfRelToNfRelMor{T}, y::NfRelToNfRelMor{T}) where T
   end
 end
 
+function *(f::NfRelToNf, g::NfToNfMor)
+  @assert codomain(f) == domain(g)
+  K = domain(f)
+  img_base_field = g(f(gen(base_field(K))))
+  img_K = g(f(gen(K)))
+  inv_img = f\(inv(g).prim_img)
+  return NfRelToNf(K, codomain(g), img_base_field, img_K, inv_img)
+end
+
 function show(io::IO, h::NfRelToNfRelMor)
   if domain(h) == codomain(h)
     println(io, "Automorphism of ", domain(h))
