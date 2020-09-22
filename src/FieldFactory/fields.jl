@@ -319,11 +319,51 @@ end
 #
 ################################################################################
 
-function _from_relative_to_abs_with_embedding(L::Hecke.NfRelNS{T}, autL::Array{Hecke.NfRelNSToNfRelNSMor{T}, 1}, use_simplify::Bool = true) where T
 
+function _simplify_components(L::Hecke.NfRelNS{nf_elem}, autL::Vector{Hecke.NfRelNSToNfRelNSMor{nf_elem}})
+  if ngens(L) == 1
+    return L, autL
+  end
+  to_simplify = Int[]
+  for i = 1:length(L.pol)
+    if total_degree(L.pol[i]) > 2
+      push!(to_simplify, i)
+    end
+  end
+  if isempty(to_simplify)
+    return L, autL
+  end
+  pols = Vector{Generic.Poly{nf_elem}}(undef, ngens(L))
+  maps = Vector{NfRelNSElem{nf_elem}}(undef, ngens(L))
+  for i = 1:length(pols)
+    if !(i in to_simplify)
+      pols[i] = L.pol[i]
+      maps[i] = L[i]
+      continue
+    end
+    Li, mLi = component(L, i)
+    Linew, mLinew = simplify(Li)
+    pols[i] = Linew.pol
+    maps[i] = mLi(mLinew.prim_img)
+  end
+  Lnew, gLnew = number_field(pols, cached = false, check = false)
+  iso = hom(Lnew, L, maps)
+  inv_iso = inv(iso) 
+  autsLnew = Vector{Hecke.NfRelNSToNfRelNSMor{nf_elem}}(undef, length(autL))
+  for i = 1:length(autL)
+    autsLnew[i] = iso*autL[i]*inv_iso
+  end
+  return Lnew, autsLnew
+end
+
+function _from_relative_to_abs_with_embedding(L1::Hecke.NfRelNS{nf_elem}, autL1::Array{Hecke.NfRelNSToNfRelNSMor{nf_elem}, 1}, use_simplify::Bool = true)
+  if use_simplify 
+    @vtime :Fields 3 L, autL = _simplify_components(L1, autL1)
+  else
+    L, autL = L1, autL1
+  end
   S, mS = simple_extension(L)
   K, mK, MK = absolute_field(S, false)
-  
   #First, we compute the maximal order of the absolute field.
   #We start from the maximal orders of the relative extension and of the base field.
   #FALSE: Since the computation of the relative maximal order is slow, I prefer to bring to the absolute field the elements
