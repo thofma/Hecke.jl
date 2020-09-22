@@ -19,7 +19,7 @@ function add_to_key!(D::Dict{S, T}, k::S, v::T; remove_zero::Bool = true) where 
     #The key is in the dictionary, we only need to add
     w = D.vals[hash_k]
     if remove_zero
-      if w == -v
+      if w != v && iszero(cmpabs(w, v))
         Base._delete!(D, hash_k)
       else
         @inbounds D.vals[hash_k] = w + v 
@@ -41,6 +41,17 @@ function add_to_key!(D::Dict{S, T}, k::S, v::T; remove_zero::Bool = true) where 
   return nothing
 end
 
+function cmpabs(a::Int, b::Int)
+  a = abs(a)
+  b = abs(b)
+  if a > b
+    return 1
+  elseif a == b
+    return 0
+  else
+    return -1
+  end
+end
 ################################################################################
 #
 #  Multiplicative representation
