@@ -1056,6 +1056,7 @@ function val_func_index(p::NfOrdIdl)
       c = content(x_mat)
       vc = valuation(c, P)
       while vc > 0  # should divide and test in place
+        #Carlo : How? Not clear how to improve this code.
 	      divexact!(x_mat, x_mat, c)
         mul!(x_mat, x_mat, M)
         v += 1 + (vc-1)*p.splitting_type[1]
@@ -1304,7 +1305,7 @@ function valuation(a::fmpz, p::NfAbsOrdIdl)
   if p.splitting_type[1] == 0
     return valuation_naive(order(p)(a), p)
   end
-  P = minimum(p)
+  P = minimum(p, copy = false)
   return valuation(a, P)* p.splitting_type[1]
 end
 @doc Markdown.doc"""
@@ -1636,11 +1637,12 @@ end
 prime_ideals_over(O::NfOrd, p::Integer) = prime_ideals_over(O, fmpz(p))
 
 function prime_ideals_over(O::NfOrd, p::fmpz)
-  M = maximal_order(O)
-  lp = prime_decomposition(M, p)
-  if M == O
+  if ismaximal_known_and_maximal(O)
+    lp = prime_decomposition(O, p)
     return NfOrdIdl[x[1] for x in lp]
   end
+  M = maximal_order(O)
+  lp = prime_decomposition(M, p)
   p_critical_primes = Vector{ideal_type(O)}()
   for (P, e) in lp
     c = contract(P, O)
