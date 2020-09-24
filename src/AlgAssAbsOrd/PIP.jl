@@ -62,13 +62,15 @@ end
 function _is_principal_maximal_simple_component(a, M, side = :right)
   A = algebra(M)
   ZA, _ = _as_algebra_over_center(A)
-  @show A
-  @show ZA
   if isdefined(A, :isomorphic_full_matrix_algebra)
     local B::AlgMat{nf_elem, Generic.MatSpaceElem{nf_elem}}
     B, AtoB = A.isomorphic_full_matrix_algebra
+    #@show B
     OB = _get_order_from_gens(B, elem_type(B)[AtoB(elem_in_algebra(b)) for b in absolute_basis(M)])
+    #@show OB
     ainOB = ideal_from_lattice_gens(B, elem_type(B)[(AtoB(b)) for b in absolute_basis(a)])
+    #@show ainOB
+    #@show ismaximal(OB)
     fl, gen = _is_principal_maximal_full_matrix_algebra(ainOB, OB, side)
     return fl, (AtoB\gen)::elem_type(A)
   elseif base_ring(A) isa FlintRationalField && dim(A) == 4 && !issplit(A)
@@ -226,6 +228,7 @@ function _is_principal_maximal_full_matrix_algebra(a, M, side = :right)
     return fl, gen
   else
     N, S = nice_order(M)
+    #@show pseudo_basis(N)
     AM = algebra(M)
     aN = ideal_from_lattice_gens(algebra(M), elem_type(AM)[b * inv(S) for b in absolute_basis(a)])
     fl, _gen = _isprincipal_maximal_simple_nice(aN, N, side)
@@ -242,6 +245,8 @@ function _isprincipal_maximal_simple_nice(I::AlgAssRelOrdIdl, M, side = :right)
   @assert _test_ideal_sidedness(I, M, :right)
   @assert M.isnice
   a = Hecke.nice_order_ideal(M)
+  #@show M
+  #@show a
   #den = denominator(I, M)
   #a = I * den
   if !isfull_lattice(I)
@@ -269,7 +274,10 @@ function _isprincipal_maximal_simple_nice(I::AlgAssRelOrdIdl, M, side = :right)
   pmh = sub(pseudo_hnf(pm, :upperright), 1:d, 1:d)
   #@show pmh
   st = steinitz_form(pmh)
+  #@show st
   J = st.coeffs[end] * inv(a)
+  #@show J
+  #@show basis(J)
   fl, _alpha = isprincipal(J)
   if !fl
     return false, zero(algebra(M))
@@ -388,11 +396,13 @@ function _isprincipal_maximal_simple(a::AlgAssAbsOrdIdl, M, side = :right)
 end
 
 function _isprincipal(a::AlgAssAbsOrdIdl, O, side = :right)
+  #@show "HEREREHRE3"
   if hnf(basis_matrix(O)) != hnf(basis_matrix(right_order(a)))
     return false, zero(algebra(O))
   end
 
   if ismaximal(O)
+    #@show "ORDER IS MAXIMAL"
     return _isprincipal_maximal(a, O, side)
   end
 
@@ -408,6 +418,8 @@ function _isprincipal(a::AlgAssAbsOrdIdl, O, side = :right)
       return false, zero(algebra(O))
     end
   end
+
+  #@show "HEREREHRE4"
 
   # So a is locally free over O
 
@@ -436,14 +448,14 @@ function _isprincipal(a::AlgAssAbsOrdIdl, O, side = :right)
 
   F = ideal_from_lattice_gens(A, O, basis_F, :twosided)
 
-  @show F == A(1) * O
-  @show F == A(1) * OA
+  #@show F == A(1) * O
+  #@show F == A(1) * OA
 
   aorig = a
 
   # I shoul improve this
   a, sca = _coprime_integral_ideal_class(a, F)
-  @show "Found coprime integral ideal class"
+  #@show "Found coprime integral ideal class"
 
   @assert sca * aorig == a
 
@@ -459,7 +471,7 @@ function _isprincipal(a::AlgAssAbsOrdIdl, O, side = :right)
   @assert beta * OA == aOA
 
   println("Computing K1...")
-  @show F, FinZ
+  #@show F, FinZ
   k1 = K1_order_mod_conductor(O, OA, F, FinZ)
   OZ = maximal_order(Z)
   Q, mQ = quo(OZ, FinZ)
@@ -526,9 +538,7 @@ end
 
 function _solve_norm_equation_over_center_simple(M, x)
   A = algebra(M)
-  if degree(A) == 4 && !issplit(A)
-    return _solve_norm_equation_over_center_quaternion(M, x)
-  else
+  if isdefined(A, :isomorphic_full_matrix_algebra)
     local B::AlgMat{nf_elem, Generic.MatSpaceElem{nf_elem}}
     @assert isdefined(A, :isomorphic_full_matrix_algebra)
     B, AtoB = A.isomorphic_full_matrix_algebra
@@ -539,6 +549,8 @@ function _solve_norm_equation_over_center_simple(M, x)
     ZA, ZAtoA = center(A)
     @assert ZAtoA(normred_over_center(elem_in_algebra(sol), ZAtoA)) == x
     return sol
+  elseif degree(A) == 4 && !issplit(A)
+    return _solve_norm_equation_over_center_quaternion(M, x)
   end
 end
 
@@ -633,13 +645,13 @@ function lift_norm_one_unit(x, F)
   res = decompose(A)
   Mbas = basis(M)
   z = zero(A)
-  @show F
+  #@show F
   for i in 1:length(res)
     Ai, AitoA = res[i]
     MinAi = Order(Ai, elem_type(Ai)[ AitoA\(AitoA(one(Ai)) * elem_in_algebra(b)) for b in Mbas])
     xinAi = MinAi(preimage(AitoA, elem_in_algebra(x)))
     Fi = ideal_from_lattice_gens(Ai, MinAi, [ AitoA\b for b in basis(F) ], :twosided)
-    @show Fi
+    #@show Fi
     y = _lift_norm_one_unit_simple(xinAi, Fi)
     z += AitoA(y)
   end
@@ -659,9 +671,7 @@ function _lift_norm_one_unit_simple(x, F)
   if F == one(A) * M
     return one(A)
   end
-  if degree(A) == 4 && !issplit(A)
-    return _lift_norm_one_unit_quaternion(x, F)
-  else
+  if isdefined(A, :isomorphic_full_matrix_algebra)
     local B::AlgMat{nf_elem, Generic.MatSpaceElem{nf_elem}}
     @assert isdefined(A, :isomorphic_full_matrix_algebra)
     B, AtoB = A.isomorphic_full_matrix_algebra
@@ -670,6 +680,10 @@ function _lift_norm_one_unit_simple(x, F)
     FinB = ideal_from_lattice_gens(B, MinB, elem_type(B)[ AtoB(b) for b in basis(F) ], :twosided)
     y = _lift_norm_one_unit_full_matrix_algebra(MinB(AtoB(elem_in_algebra(x))::elem_type(B)), FinB)
     return (AtoB\y)::elem_type(A)
+  elseif degree(A) == 4 && !issplit(A)
+    return _lift_norm_one_unit_quaternion(x, F)
+  else
+    error("Not implemented yet")
   end
 end
 
@@ -712,7 +726,7 @@ function _lift_norm_one_unit_quaternion(x, F)
 end
 
 function _lift_norm_one_unit_full_matrix_algebra(x, F)
-  @show F
+  #@show F
   A = algebra(parent(x))
   if degree(A) == 1
     return elem_in_algebra(one(parent(x)))
@@ -740,20 +754,60 @@ function _lift_norm_one_unit_full_matrix_algebra_nice(x, F)
   ZA, ZAtoA = center(A)
   FinZA = _as_ideal_of_smaller_algebra(ZAtoA, F)
   # the center is a number field
-  @show FinZA
+  #@show FinZA
   el, id = pseudo_basis(FinZA)[1]
   fl, el2 = isprincipal(id)
-  @assert fl 
-  n = el.coeffs[1] * el2
-  OK = base_ring(M)
-  @assert basis_pmatrix(M).matrix == identity_matrix(base_ring(A), dim(A))
-  R, mR = quo(OK, OK(n) * OK)
-  @show mR(FacElem(det(matrix(elem_in_algebra(x)))))
-  @show n
-  @show det(matrix(elem_in_algebra(x)))
-  @assert isone(mR(FacElem(det(matrix(elem_in_algebra(x))))))
-  li = _lift_unimodular_matrix(change_base_ring(OK, matrix(elem_in_algebra(x))), OK(n), R)
-  return A(change_base_ring(base_ring(A), li))
+  if fl
+    @assert fl 
+    n = el.coeffs[1] * el2
+    OK = base_ring(M)
+    @assert basis_pmatrix(M).matrix == identity_matrix(base_ring(A), dim(A))
+    R, mR = quo(OK, OK(n) * OK)
+    #@show mR(FacElem(det(matrix(elem_in_algebra(x)))))
+    #@show n
+    #@show det(matrix(elem_in_algebra(x)))
+    @assert isone(mR(FacElem(det(matrix(elem_in_algebra(x))))))
+    li = _lift_unimodular_matrix(change_base_ring(OK, matrix(elem_in_algebra(x))), OK(n), R)
+    #@show map_entries(R, li) == map_entries(R, change_base_ring(OK, matrix(elem_in_algebra(x))))
+    @assert (M(A(change_base_ring(base_ring(A), li))) - x) in id * M
+    return A(change_base_ring(base_ring(A), li))
+  else
+    a = nice_order_ideal(M)
+    @assert isone(denominator(id))
+    anu = numerator(a)
+    idnu = numerator(id)
+    b, zetainv = _coprime_integral_ideal_class(a, idnu)
+    # zetainv * a == b
+    @assert b + idnu == 1*order(b)
+    zeta = inv(zetainv)
+    n = degree(A)
+    Phi1 = identity_matrix(base_ring(A), n)
+    Phi1[n, n] = zetainv
+    _belem, y = idempotents(b, idnu)
+    belem = elem_in_nf(_belem)
+    Phi2 = identity_matrix(base_ring(A), n)
+    Phi2[n, n] = belem * zeta
+    xtrans = matrix(Phi1 * elem_in_algebra(x) * Phi2)
+    @assert all(x -> isintegral(x), xtrans)
+    OK = base_ring(M)
+    K = nf(OK)
+    R, mR = quo(OK, idnu)
+    @assert isone(det(map_entries(mR, change_base_ring(OK, xtrans))))
+    el_matrices = _write_as_product_of_elementary_matrices(change_base_ring(OK, xtrans), R)
+    lifted_el_matrices = elem_type(M)[]
+    for E in el_matrices
+      _E = _lift_and_adjust(E, zeta, belem)
+      @assert A(_E) in M
+      push!(lifted_el_matrices, M(A(_E)))
+    end
+
+    li = reduce(*, lifted_el_matrices)
+    @assert isone(det(matrix(elem_in_algebra(li))))
+
+    #@show (li - x) in id * M
+    
+    error("asds")
+  end
 end
 
 function _lift_norm_one_unit_full_rational_matrix_algebra(x, F)
@@ -787,6 +841,170 @@ end
 #  Lifting unimodular matrix
 #
 ################################################################################
+
+function _lift_and_adjust(E, zeta, b)
+  #@show E
+  K = parent(zeta)
+  n = nrows(E)
+  res = identity_matrix(K, nrows(E))
+  for i in 1:n
+    for j in 1:n
+      if i != j && !iszero(E[i, j])
+        if j == n
+          res[i, j] = lift(E[i, j]) * inv(zeta)
+        elseif i == n
+          res[i, j] = zeta * b * lift(E[i, j])
+        else
+          res[i, j] = lift(E[i, j])
+        end
+        return res
+      end
+    end
+  end
+  return res
+end
+
+function _write_as_product_of_elementary_matrices(N, R)
+  OK = base_ring(N)
+  Nred = change_base_ring(R, N)
+  k = nrows(N)
+
+  if !isone(det(Nred))
+    throw(ArgumentError("Matrix must have determinant one"))
+  end
+
+  trafos = typeof(Nred)[]
+
+  for i in 1:k
+    Nred, tra = _normalize_column(Nred, i)
+    append!(trafos, tra)
+  end
+
+  #println(sprint(show, "text/plain", Nred))
+
+  Nred2 = change_base_ring(R, N)
+  for T in trafos
+    Nred2 = T * Nred2
+  end
+  @assert Nred2 == Nred
+
+  Nredtr = transpose(Nred)
+
+  trafos_tr = typeof(Nred)[]
+
+  for i in 1:k
+    Nredtr, tra = _normalize_column(Nredtr, i)
+    append!(trafos_tr, tra)
+  end
+
+  #println(sprint(show, "text/plain", Nredtr))
+
+  Nred2 = change_base_ring(R, N)
+  for T in trafos
+    Nred2 = T * Nred2
+  end
+
+  for T in trafos_tr
+    Nred2 = Nred2 * transpose(T)
+  end
+
+  # I need to normalize a diagonal matrix
+  @assert isone(Nred2)
+
+  res = typeof(Nred)[]
+
+  for T in trafos
+    push!(res, _inv_elementary_matrix(T))
+  end
+
+  for T in reverse(trafos_tr)
+    push!(res, transpose(_inv_elementary_matrix(T)))
+  end
+
+  @assert reduce(*, res) == change_base_ring(R, N)
+  return res
+end
+
+function _inv_elementary_matrix(M)
+  n = nrows(M)
+  N = identity_matrix(base_ring(M), n)
+  for i in 1:n
+    for j in 1:n
+      if i != j && !iszero(M[i, j])
+        N[i, j] = -M[i, j]
+      end
+    end
+  end
+  @assert isone(N * M)
+  return N
+end
+
+
+function _normalize_column(N, i)
+  n = nrows(N)
+  R = base_ring(N)
+  trafos = typeof(N)[]
+  if isunit(N[i, i])
+    ainv = inv(N[i, i])
+    for j in n:-1:(i + 1)
+      E = elementary_matrix(R, n, j, i, -ainv * N[j, i]) 
+      #@show N
+      N = mul!(N, E, N)
+      #@show N
+      push!(trafos, E)
+    end
+    return N, trafos
+  else
+    for j in (i + 1):n
+      if isunit(N[j, i])
+        E1 = elementary_matrix(R, n, i, j, one(R))
+        N = mul!(N, E1, N)
+        push!(trafos, E1)
+        E2 = elementary_matrix(R, n, j, i, -one(R))
+        N = mul!(N, E2, N)
+        push!(trafos, E2)
+        E3 = elementary_matrix(R, n, i, j, one(R))
+        N = mul!(N, E3, N)
+        push!(trafos, E3)
+        @assert isunit(N[i, i])
+        N, trafos2 = _normalize_column(N, i)
+        append!(trafos, trafos2)
+        return N, trafos
+      end
+    end
+    # This is the complicated case
+    while true
+      euc_min = euclid(N[i, i])
+      i0 = i
+      local e
+      for j in (i + 1):n
+        e = euclid(N[j, i])
+        if (euc_min == -1 && e != - 1) || (e < euc_min)
+          i0 = j
+          euc_min = e
+        end
+      end
+      if euc_min == 1
+        # We found a unit
+        break
+      end
+      ai0 = N[i0, i]
+      for j in i:n
+        aj = N[j, i]
+        if !divides(aj, ai0)[1]
+          q, r = divrem(aj, ai0)
+          E = elementary_matrix(R, n, j, i0, -q)
+          N = mul!(N, E, N)
+          push!(trafos, E)
+        end
+      end
+    end
+    N, trafos2 = _normalize_column(N, i)
+    append!(trafos, trafos2)
+    return N, trafos
+  end
+  error("Something went wrong")
+end
 
 function _lift_unimodular_matrix(N, n, R)
   OK = base_ring(N)
@@ -1002,11 +1220,15 @@ function size_up(T::MatElem, n::Int)
   return S
 end
 
+_lift(x::AbsOrdQuoRingElem) = lift(x)
+
+_lift(x::RelOrdQuoRingElem) = lift(x)
+
 function lift_triangular_matrix(E)
   #@show E
   z = map_entries(_lift, E)
   #@show matrix(base_ring(E), z)
-  @assert matrix(base_ring(E), z) == E
+  @assert map_entries(base_ring(E),  z) == E
   return z
 end
 
@@ -1035,17 +1257,17 @@ function lift_two_by_two_matrix(M)
     push!(left_elementary, E1)
   else
     E = identity_matrix(A, 2)
-    x = zero(A)
+    x = rand(A)
     while !isunit(M[1, 1] + x * M[2, 1])
-      x += 1
+      x = rand(A)
     end
-    E[1,2] = M[1,1] + x*M[2,1]
+    E[1,2] = x
     B = E*M
+    @assert B[1, 1] == M[1, 1] + x * M[2, 1]
     @assert det(B) == 1
     push!(left_elementary, E)
 	end
 
-  #@show B
   #@show left_elementary
 	
   a1 = inv(B[1,1])
@@ -1111,7 +1333,7 @@ end
 function _gcdx(a::NfOrdElem, b::NfOrdElem)
   OK = parent(a)
   d = degree(OK)
-  @show a * OK + b * OK
+  #@show a * OK + b * OK
   fl, g = isprincipal(a * OK + b * OK)
   @assert fl
   Ma = representation_matrix(a)
@@ -1379,7 +1601,7 @@ function _orbit_stabilizer(G, idity, a)
   Y = typeof(idity)[]
   m = 1
   while m <= length(OT)
-    @show m, length(OT)
+    #@show m, length(OT)
     b = OT[m][2]
     for g in G
       c = _operate(g, b)

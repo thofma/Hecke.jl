@@ -1800,7 +1800,7 @@ function integral_and_coprime_to(a::NfOrdFracIdl, m::NfAbsOrdIdl)
   b = inv(a)
   B = absolute_basis(b)
   while true
-    z = rand(B, -1:1)
+    z = rand(B, -10:10)
     if iszero(z)
       continue
     end

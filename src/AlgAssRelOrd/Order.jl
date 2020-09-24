@@ -589,8 +589,13 @@ function _simple_maximal_order(O::AlgAssRelOrd, make_free::Bool = true, with_tra
 
   a = PM.coeffs[end]
   a = simplify(a)
+  fl = false
+
   if make_free
     fl, beta = isprincipal(a)
+  end
+
+  if fl
     mul_row!(PM.matrix, nrows(PM.matrix), beta)
     a = K(1) * base_ring(PM)
   else
@@ -628,12 +633,14 @@ end
 Given a maximal order $O$ in a full matrix algebra over a number field, return a
 nice maximal order $R$ and element $a$ such that $a O a^-1 = R$.
 """
-function nice_order(O::AlgAssRelOrd{S, T, U}) where {S, T, U}
-  if isdefined(O, :nice_order)
+function nice_order(O::AlgAssRelOrd{S, T, U}; cached::Bool = true) where {S, T, U}
+  if cached && isdefined(O, :nice_order)
     return O.nice_order::Tuple{typeof(O), elem_type(U)}
   else
     sO, A = _simple_maximal_order(O, true, Val{true})
-    O.nice_order = sO, A
+    if cached
+      O.nice_order = sO, A
+    end
     return sO, A
   end
 end
