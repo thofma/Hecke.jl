@@ -550,8 +550,11 @@ end
 #
 ################################################################################
 
-function rand(A::AbsAlgAss{T}) where T
-  c = T[rand(base_ring(A)) for i = 1:dim(A)]
+Random.gentype(::Type{T}) where {T<:AbsAlgAss} = elem_type(T)
+
+function rand(rng::AbstractRNG, Asp::Random.SamplerTrivial{<:AbsAlgAss{T}}) where T
+  A = Asp[]
+  c = rand(rng, base_ring(A), dim(A))
   return A(c)
 end
 

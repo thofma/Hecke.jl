@@ -161,4 +161,21 @@
 
   end
 
+  @testset "rand" begin
+    Fp = GF(3)
+    G = small_group(8, 4)
+    FpG = group_algebra(Fp, G)
+    A = AlgAss(FpG)[1]
+    @assert A isa Hecke.AbsAlgAss
+
+    E = elem_type(A)
+    @test rand(A) isa E
+    @test rand(rng, A) isa E
+    @test rand(A, 2, 3) isa Matrix{E}
+
+    Random.seed!(rng, rand_seed)
+    a = rand(rng, A)
+    Random.seed!(rng, rand_seed)
+    @test a == rand(rng, A)
+  end
 end
