@@ -566,11 +566,15 @@ end
 #
 ################################################################################
 
-function rand(a::AbsAlgAssIdl)
+# TODO: implement for ::Type{AbsAlgAssIdl}
+Random.gentype(a::AbsAlgAssIdl) = elem_type(algebra(a))
+
+function rand(rng::AbstractRNG, a_sp::Random.SamplerTrivial{<:AbsAlgAssIdl})
+  a = a_sp[]
   A = algebra(a)
   x = A()
   for b in basis(a, copy = false)
-    x += rand(base_ring(A))*b
+    x += rand(rng, base_ring(A))*b
   end
   return x
 end
