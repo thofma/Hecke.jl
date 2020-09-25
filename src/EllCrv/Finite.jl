@@ -42,13 +42,16 @@ export hasse_interval, order, order_via_bsgs, order_via_legendre,
 #
 ################################################################################
 
+Random.gentype(::Type{EllCrv{T}}) where {T} = EllCrvPt{T}
+
 # only works for short form
 @doc Markdown.doc"""
     rand(E::EllCrv) -> EllCrvPt
 Returns a random point on the elliptic curve $E$ defined over a finite field.
 It is assumed that $E$ is given in short form.
 """
-function rand(E::EllCrv)
+function rand(rng::AbstractRNG, Esp::Random.SamplerTrivial{<:EllCrv})
+  E = Esp[]
   R = base_field(E)
 
   if E.short == false
@@ -58,7 +61,7 @@ function rand(E::EllCrv)
   while true
   # choose random x-coordinate and check if it is a square in F_q
   # if not, choose new x-coordinate
-    x = rand(R)
+    x = rand(rng, R)
     square = x^3 + E.coeff[1]*x + E.coeff[2]
 
     a = issquare(square)
