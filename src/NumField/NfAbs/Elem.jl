@@ -435,7 +435,7 @@ function factor(f::PolyElem{nf_elem})
     r.unit = Kx(lead(f))
     return r
   end
-  sqf = squarefree_factorization(f)
+  sqf = factor_squarefree(f)
   fac = Dict{typeof(f), Int}()
   for (k, v) in sqf
     if degree(k) == 1

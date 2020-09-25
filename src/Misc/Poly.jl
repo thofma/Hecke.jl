@@ -1026,7 +1026,7 @@ function number_real_roots(f::PolyElem{nf_elem}, P::InfPlc; sturm_sequence = Pol
 end
 
 function number_positive_roots(f::PolyElem{nf_elem}, P::InfPlc)
-  fsq = squarefree_factorization(f)
+  fsq = factor_squarefree(f)
   p = 0
   for (g, e) in fsq
     p = p + _number_positive_roots_sqf(g, P) * e
@@ -1062,7 +1062,7 @@ end
 ################################################################################
 
 # This is Musser's algorithm
-function squarefree_factorization(f::PolyElem)
+function factor_squarefree(f::PolyElem)
   @assert iszero(characteristic(base_ring(f)))
   c = lead(f)
   f = divexact(f, c)

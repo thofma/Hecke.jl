@@ -719,7 +719,7 @@ function _reduced_charpoly_simple(a::AbsAlgAssElem, R::PolyRing)
 
   M = representation_matrix(a)
   f = charpoly(R, M)
-  sf_fac = squarefree_factorization(f)
+  sf_fac = factor_squarefree(f)
 
   d = dimension_of_center(A)
   n = divexact(dim(A), d)
