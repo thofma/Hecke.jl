@@ -7,3 +7,20 @@
   @test c^8 == b
 end
 
+@testset "rand" begin
+  Qx,  x = PolynomialRing(FlintQQ, "x");
+  K,  a = NumberField(x,"a");
+  O = maximal_order(K)
+  m0 = O(9)*O
+  Q = NfOrdQuoRing(O, m0)
+
+  for f in (rand(Q), rand(rng, Q))
+    @test f isa elem_type(Q)
+  end
+  @test rand(Q, 2) isa Vector{elem_type(Q)}
+
+  Random.seed!(rng, rand_seed)
+  x = rand(rng, Q)
+  Random.seed!(rng, rand_seed)
+  @test x == rand(rng, Q)
+end

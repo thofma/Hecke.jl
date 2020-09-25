@@ -302,11 +302,11 @@ function rand(rng::AbstractRNG, a::StepRange{fmpz, fmpz})
     s = fmpz(0)
     for i=1:nl
       s = s << (8*sizeof(Base.GMP.Limb))
-      s += rand(Base.GMP.Limb)
+      s += rand(rng, Base.GMP.Limb)
     end
     if high >0
       s = s << high
-      s += rand(0:Base.GMP.Limb(mask))
+      s += rand(rng, 0:Base.GMP.Limb(mask))
     end
     if s <= m break; end
   end
