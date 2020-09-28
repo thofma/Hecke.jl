@@ -51,10 +51,12 @@ function minimum(m::T, I::NfOrdIdl) where T <: Map{AnticNumberField, AnticNumber
     bK = map(K, basis(I))
     d = lcm(lcm(map(denominator, bk)), lcm(map(denominator, bK)))
     F = FreeModule(FlintZZ, degree(K))
-    sk = sub(F, [F(matrix(FlintZZ, 1, degree(K), coeffs(d*x))) for x = bk])
-    sK = sub(F, [F(matrix(FlintZZ, 1, degree(K), coeffs(d*x))) for x = bK])
-    m = intersect(sk[1], sK[1])
-    return ideal(zk, [zk(collect(x.v)) for x = map(m[2], gens(m[1]))])
+
+    hsk = ModuleHomomorphism(FreeModule(FlintZZ, degree(k)), F, [F(matrix(FlintZZ, 1, degree(K), coeffs(d*x))) for x = bk])
+    hsK = ModuleHomomorphism(F, F, [F(matrix(FlintZZ, 1, degree(K), coeffs(d*x))) for x = bK])
+    sk = image(hsk)
+    m = intersect(sk[1], image(hsK)[1])
+    return ideal(zk, [zk(collect(x.v)) for x = map(x->preimage(hsk, sk[2](m[2](x))), gens(m[1]))])
   end
 
   @assert K == nf(order(I))
