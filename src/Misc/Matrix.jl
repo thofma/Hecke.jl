@@ -1429,10 +1429,9 @@ function isupper_triangular(M::MatElem)
 end
 
 function isupper_triangular(M::fmpz_mat)
-  n = nrows(M)
   GC.@preserve M begin
-    for i = 2:n
-      for j = 1:max(i-1, ncols(M))
+    for i = 2:nrows(M)
+      for j = 1:min(i-1, ncols(M))
         t = ccall((:fmpz_mat_entry, libflint), Ptr{fmpz}, (Ref{fmpz_mat}, Int, Int), M, i - 1, j - 1)
         fl = ccall((:fmpz_is_zero, libflint), Bool, (Ref{fmpz},), t)
         if !fl
