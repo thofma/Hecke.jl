@@ -164,7 +164,7 @@ function class_group_add_relation(clg::ClassGrpCtx{SMat{fmpz}}, a::FacElem{nf_el
   return class_group_add_relation(clg, a, R)
 end
 
-function class_group_add_relation(clg::ClassGrpCtx{SMat{fmpz}}, a::FacElem{nf_elem, AnticNumberField}, R::SRow{fmpz}; always::Bool = true) 
+function class_group_add_relation(clg::ClassGrpCtx{SMat{fmpz}}, a::FacElem{nf_elem, AnticNumberField}, R::SRow{fmpz}; always::Bool = true, add_orbit = true) 
   
   if hash(a) in clg.RS 
     return false
@@ -191,7 +191,7 @@ function class_group_add_relation(clg::ClassGrpCtx{SMat{fmpz}}, a::FacElem{nf_el
     end
   end
 
-  if isdefined(clg, :aut_grp) && new_gen
+  if add_orbit && isdefined(clg, :aut_grp) && new_gen
     o = _get_autos_from_ctx(clg)
     @v_do :ClassGroup 1 println(" adding orbit with $(length(o)) elements")
     for (b, m) in o

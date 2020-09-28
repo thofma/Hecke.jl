@@ -123,8 +123,12 @@ function class_group_ideal_relation(I::NfOrdIdl, c::ClassGrpCtx)
   end
   # ok, we have to work
   
+  I_start = I
+  @vprint :ClassGroup 1 "Ideal $I \n"
+  @vprint :ClassGroup 1 "Reducing ideal via LLL \n"
   _I, b = reduce_ideal(I) # do the obvious reduction to an ideal of bounded norm
   @hassert :PID_Test 1 b*I == _I
+  @vprint :ClassGroup 1 "New ideal: $_I\n"
   I = _I
   n = norm(I)
   if issmooth(c.FB.fb_int, n)
@@ -135,6 +139,7 @@ function class_group_ideal_relation(I::NfOrdIdl, c::ClassGrpCtx)
   end
   #really annoying, but at least we have a small(ish) ideal now
   #println("have to work")
+
   E = class_group_small_lll_elements_relation_start(c, I)
   iI = inv(I)
   if isdefined(c, :randomClsEnv)
@@ -147,11 +152,13 @@ function class_group_ideal_relation(I::NfOrdIdl, c::ClassGrpCtx)
   last_j = I
   cnt = 0
   while true
-
+    @vprint :ClassGroup 1 "Attempt $cnt \n"
     if E.cnt > max(2*c.expect, 0)
 #      println("more random")
       use_rand = true
+      @vprint :ClassGroup 1 "New random \n"
       last_j = random_get(J, reduce = false)
+      @vprint :ClassGroup 1 "Using $last_j \n"
       E = class_group_small_lll_elements_relation_start(c, I*last_j) 
       iI = inv(E.A)
     end
@@ -163,7 +170,9 @@ function class_group_ideal_relation(I::NfOrdIdl, c::ClassGrpCtx)
     if na === nothing #basically means elt is too large,
                       # exhausted randomness, so redo it.
       use_rand = true
+      @vprint :ClassGroup 1 "New random \n"
       last_j = random_get(J, reduce = false)
+      @vprint :ClassGroup 1 "Using $last_j \n"
       E = class_group_small_lll_elements_relation_start(c, I*last_j) 
       iI = inv(E.A)
       continue
@@ -187,13 +196,17 @@ function class_group_ideal_relation(I::NfOrdIdl, c::ClassGrpCtx)
         scale_row!(r, fmpz(-1))
       end
 #      println("used $cnt attempts")
+      res1 = b//a
       if use_rand
         fl, s = _factor!(c.FB, last_j)
         @assert fl
-        return b//a, r-s
+        res2 =  r-s
+        
       else
-        return b//a, r
+        res2 = r
       end
+      @hassert :ClassGroup 1 simplify(prod([fractional_ideal(c.FB.ideals[p])^Int(v) for (p,v) = res2])) == simplify(res1*I_start)
+      return res1, res2
     end
   end
 end
@@ -391,6 +404,7 @@ function isprincipal_fac_elem(A::NfOrdIdl)
     end
   end
   O = order(A)
+  @assert ismaximal_known_and_maximal(O)
   if A.is_principal == 2
     return false, FacElem(one(nf(O)))
   end
