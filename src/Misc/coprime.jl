@@ -352,6 +352,7 @@ function augment_steel(S::Array{E, 1}, a::E, start::Int = 1) where E
 end
 
 function coprime_base_steel(S::Array{E, 1}) where E
+  @assert !isempty(S)
   T = Array{E}(undef, 1)
   T[1] = S[1]
   for i=2:length(S)
