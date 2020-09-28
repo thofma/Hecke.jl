@@ -477,8 +477,8 @@ function assure_has_basis_matrix(A::NfAbsOrdIdl)
   if isdefined(A, :basis_matrix)
     return nothing
   end
-  
-  n = degree(order(A))
+  OK = order(A)
+  n = degree(OK)
 
   if iszero(A)
     A.basis_matrix = zero_matrix(FlintZZ, n, n)
@@ -490,14 +490,14 @@ function assure_has_basis_matrix(A::NfAbsOrdIdl)
     return nothing
   end
 
-  if !issimple(nf(order(A))) || !isdefining_polynomial_nice(nf(order(A)))
+  if !issimple(nf(OK)) || !isdefining_polynomial_nice(nf(OK))
     c = hnf_modular_eldiv!(representation_matrix(A.gen_two), A.gen_one, :lowerleft)
     A.basis_matrix = c
     return nothing
   end
 
-  if !issimple(nf(order(A))) && isdefined(A, :is_prime) && A.is_prime == 1 &&
-         A.norm == A.minimum && !isindex_divisor(order(A), A.minimum)
+  if !issimple(nf(OK)) && isdefined(A, :is_prime) && A.is_prime == 1 &&
+         A.norm == A.minimum && !isindex_divisor(OK, A.minimum)
     # A is a prime ideal of degree 1
     A.basis_matrix = basis_mat_prime_deg_1(A)
     return nothing
@@ -515,9 +515,10 @@ function assure_has_basis_matrix(A::NfAbsOrdIdl)
     m = minimum(A, copy = false)
   end
   be = elem_in_nf(A.gen_two)
-  be = mod(be, m)
-
-  rm = representation_matrix_mod(order(A)(be), m)
+  if contains_equation_order(OK)
+    be = mod(be, m)
+  end
+  rm = representation_matrix_mod(OK(be, false), m)
   hnf_modular_eldiv!(rm, m, :lowerleft)
   A.basis_matrix = rm
   return nothing
@@ -635,6 +636,11 @@ function assure_has_minimum(A::NfAbsOrdIdl)
     return nothing
   end
 
+  if isdefined(A, :basis_matrix) && isone(basis(order(A), copy = false)[1])
+    A.minimum = basis_matrix(A, copy = false)[1, 1]
+    return nothing
+  end
+
   if has_princ_gen(A)
     b = A.princ_gen.elem_in_nf
     if iszero(b)
@@ -704,6 +710,11 @@ end
 
 function assure_has_norm(A::NfAbsOrdIdl)
   if has_norm(A)
+    return nothing
+  end
+
+  if isdefined(A, :basis_matrix)
+    A.norm = abs(det(basis_matrix(A, copy = false)))
     return nothing
   end
 
@@ -821,11 +832,11 @@ function ==(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
       return false
     end
     OK = order(x)
-    if !isindex_divisor(OK, px)
+    if contains_equation_order(OK) && !isindex_divisor(OK, px) && has_2_elem(x) && has_2_elem(y)
       R = ResidueRing(FlintZZ, px, cached = false)
       Rx = PolynomialRing(R, "x", cached = false)[1]
-      f1 = Rx(x.gen_two.elem_in_nf)
-      f2 = Rx(y.gen_two.elem_in_nf)
+      f1 = Rx(elem_in_nf(x.gen_two))
+      f2 = Rx(elem_in_nf(y.gen_two))
       return !iscoprime(f1, f2)
     end
   end
@@ -948,13 +959,8 @@ function inv_maximal(A::NfAbsOrdIdl)
       return fractional_ideal(O, A)
     end
     alpha = _invmod(m, A.gen_two)
-    #=  
-    be = mod(A.gen_two.elem_in_nf, m^2)
-    alpha = inv(be)
-    =#  
     _, d = ppio(denominator(alpha, O), m)
     Ai = NfAbsOrdIdl(order(A))
-    #Ai = parent(A)()
     dn = denominator(d*alpha, O)
     @hassert :NfOrd 1 ppio(dn, m)[1] == dn
     Ai.gen_one = dn
@@ -1197,25 +1203,52 @@ function _invmod(a::fmpz, b::NfOrdElem)
   if !isdefining_polynomial_nice(nf(parent(b)))
     return inv(k(b))
   end
+  return __invmod(a, b)
+end
+
+
+
+function __invmod(a::fmpz, b::NfOrdElem)
+  Zk = parent(b)
+  k = nf(Zk)
   d = denominator(b.elem_in_nf)
   d, _ = ppio(d, a)
   e, _ = ppio(basis_matrix(Zk, copy = false).den, a) 
-  S = ResidueRing(FlintZZ, a^2*d*e, cached=false)
-  St = PolynomialRing(S, cached=false)[1]
-  B = St(d*b.elem_in_nf)
-  F = St(k.pol)
-  
-  m, u, v = rresx(B, F)  # u*B + v*F = m mod modulus(S)
-  if iszero(m)
-    m = a^2*d*e
-    c = S(1)
+  mod_r = a^2*d*e
+  if fits(Int, mod_r)
+    S1 = ResidueRing(FlintZZ, Int(mod_r), cached=false)
+    S1t = PolynomialRing(S1, cached=false)[1]
+    B1 = S1t(d*b.elem_in_nf)
+    F1 = S1t(k.pol)
+    m1, u1, v1 = rresx(B1, F1)  # u*B + v*F = m mod modulus(S)
+    if iszero(m1)
+      m1 = mod_r
+      c1 = S1(1)
+    else
+      c1 = inv(canonical_unit(m1))
+      m1 = lift(m1*c1)
+    end
+    U1 = lift(PolynomialRing(FlintZZ, "x", cached = false)[1], u1*c1)
+    bi1 = k(U1)//m1*d # at this point, bi*d*b = m mod a*d*idx
+    return bi1
   else
-    c = inv(canonical_unit(m))
-    m = lift(m*c)
+    S = ResidueRing(FlintZZ, mod_r, cached=false)
+    St = PolynomialRing(S, cached=false)[1]
+    B = St(d*b.elem_in_nf)
+    F = St(k.pol)
+  
+    m, u, v = rresx(B, F)  # u*B + v*F = m mod modulus(S)
+    if iszero(m)
+      m = mod_r
+      c = S(1)
+    else
+      c = inv(canonical_unit(m))
+      m = lift(m*c)
+    end
+    U = lift(PolynomialRing(FlintZZ, "x", cached = false)[1], u*c)
+    bi = k(U)//m*d # at this point, bi*d*b = m mod a*d*idx
+    return bi
   end
-  U = lift(PolynomialRing(FlintZZ, "x", cached = false)[1], u*c)
-  bi = k(U)//m*d # at this point, bi*d*b = m mod a*d*idx
-  return bi
 end
 
 function _normmod(a::fmpz, b::NfAbsOrdElem)
