@@ -8,7 +8,7 @@ function isnorm_fac_elem(K::NfRel{nf_elem}, a::nf_elem)
   S = collect(keys(factor(mkK(a)*ZKa)))
 
   c = _get_ClassGrpCtx_of_order(ZKa)
-  FB = c.FB.ideals
+  FB = c.FB.ideals::Vector{ideal_type(order_type(Ka))}
   i = length(FB)
   q, mq = quo(C, elem_type(C)[preimage(mC, I) for I = S], false)
   while length(q) > 1
@@ -23,7 +23,9 @@ function isnorm_fac_elem(K::NfRel{nf_elem}, a::nf_elem)
   s = Set(ideal_type(order_type(AnticNumberField))[minimum(mkK, I) for I = S])
   #make S relative Galois closed:
   PS = IdealSet(ZKa)
-  S = vcat(ideal_type(ZKa)[collect(keys(factor(PS(mkK, p)))) for p = s]...)
+  S = reduce(vcat, Vector{ideal_type(ZKa)}[collect(keys(factor(PS(mkK, p)))) for p = s], init = Vector{ideal_type(ZKa)}())
+
+  local U::GrpAbFinGen
 
   if length(S) == 0
     U, mU = unit_group_fac_elem(ZKa)
@@ -33,16 +35,18 @@ function isnorm_fac_elem(K::NfRel{nf_elem}, a::nf_elem)
 
   class_group(parent(a))
 
+  local u::GrpAbFinGen
+
   if length(s) == 0
     u, mu = unit_group_fac_elem(maximal_order(parent(a)))
   else
     u, mu = sunit_group_fac_elem(collect(s))
   end
   No = hom(U, u, elem_type(u)[preimage(mu, norm(mkK, mU(g))) for g = gens(U)])
-  aa = preimage(mu, FacElem(a))
+  aa = preimage(mu, FacElem(a))::GrpAbFinGenElem
   fl, so = haspreimage(No, aa)
-  fl || return fl, FacElem(Dict(K(1)=>1))
-  return true, FacElem(K, Dict([image(mKa, k) => v for (k,v) = mU(so)]))
+  fl || return fl, FacElem(one(K))
+  return true, FacElem(K, Dict{elem_type(K), fmpz}([image(mKa, k) => v for (k,v) = (mU(so)::FacElem{elem_type(Ka), typeof(Ka)})]))
 end
 
 function isnorm(K::NfRel{nf_elem}, a::nf_elem)
