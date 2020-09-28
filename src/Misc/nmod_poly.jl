@@ -66,7 +66,7 @@ function resultant_ideal(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} w
       return res
     end
   
-    c, g = primsplit(g)
+    c, g = primsplit!(g)
     if !isone(c)
       res = mul!(res, res, R(c)^degree(f))
     end
@@ -569,7 +569,7 @@ function rres_sircana(f1::PolyElem{T}, g1::PolyElem{T}) where T <: ResElem{S} wh
       return res
     end
 
-    f = rem(f, g)
+    f = rem!(f, f, g)
   end
 end
 
@@ -1191,30 +1191,22 @@ function primsplit!(f::PolyElem{T}) where T <: ResElem{S} where S <: Union{fmpz,
   
   @assert !iszero(f)
   d = degree(f)
-  if d == 0
+  if iszero(d)
     if iszero(f)
       return base_ring(parent(f))(1), f
     end
     c = canonical_unit(coeff(f, 0))
-    c1 =inv(c)*coeff(f, 0)
+    c1 = inv(c)*coeff(f, 0)
     setcoeff!(f, 0, 1)
     return c1, f
   end
+  fl, g = isprimitive(f)
+  if fl
+    return g, f
+  end
 
-  g = coeff(f, 0)
-  setcoeff!(f, 0, 1)
-  for i = 1:d
-    h, _, _, u, v = xxgcd(g, coeff(f, i))
-    setcoeff!(f, i, v)
-    if  g != h
-      for j=0:i-1
-        setcoeff!(f, j, u*coeff(f, j))
-      end
-    end
-    g = h
-    if isone(g)
-      return g, f
-    end
+  for i = 0:d
+    setcoeff!(f, i, divexact(coeff(f, i), g))
   end
   return g, f
 end
@@ -1403,4 +1395,38 @@ end
 
 function _free_tree(tree, len)
   ccall((:_nmod_poly_tree_free, libflint), Nothing, (Ptr{Ptr{UInt}}, Int), tree, len)
+end
+
+
+function isprimitive(f::nmod_poly)
+  R = base_ring(f)
+  n = R(gcd(modulus(R), lift(coeff(f, 0))))
+  if isone(n)
+    return true, n
+  end
+  for i = 1:degree(f)
+    n = gcd(n, coeff(f, i))
+    if isone(n)
+      return true, R(n) 
+    end
+  end
+  return isone(n), R(n)
+end
+
+function isprimitive(f::fmpz_mod_poly)
+  Rx = parent(f)
+  R = base_ring(Rx)
+  z = fmpz()
+  g = fmpz()
+  GC.@preserve f begin
+    for i = 0:degree(f)
+      ccall((:fmpz_mod_poly_get_coeff_fmpz, libflint), Nothing, (Ref{fmpz}, Ref{fmpz_mod_poly}, Int), z, f, i)
+      gcd!(g, g, z)
+      if isone(g)
+        return true, R(g)
+      end
+    end
+  end
+  gcd!(g, g, modulus(R))
+  return isone(g), R(g)
 end
