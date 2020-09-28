@@ -120,6 +120,15 @@ function saturate(A::fmpz_mat)
   return S
 end
 
+
+function transpose!(A::fmpz_mat, B::fmpz_mat)
+  GC.@preserve A B begin
+    ccall((:fmpz_mat_transpose, libflint), Nothing,
+      (Ref{fmpz_mat}, Ref{fmpz_mat}), A, B)
+  end
+  return nothing
+end
+
 ################################################################################
 #
 #  Zero matrix constructors
@@ -182,6 +191,24 @@ function iszero_row(M::fmpz_mat, i::Int)
   end
   return true
 end
+
+function iszero_entry(M::fmpz_mat, i::Int, j::Int)
+  GC.@preserve M begin
+    m = ccall((:fmpz_mat_entry, libflint), Ptr{fmpz}, (Ref{fmpz_mat}, Int, Int), M, i - 1, j - 1)
+    fl = ccall((:fmpz_is_zero, libflint), Bool, (Ptr{fmpz},), m)
+    return fl
+  end
+end
+
+function ispositive_entry(M::fmpz_mat, i::Int, j::Int)
+  GC.@preserve M begin
+    m = ccall((:fmpz_mat_entry, libflint), Ptr{fmpz}, (Ref{fmpz_mat}, Int, Int), M, i - 1, j - 1)
+    fl = ccall((:fmpz_sgn, libflint), Int, (Ptr{fmpz},), m)
+    return isone(fl)
+  end
+end
+
+
 
 function iszero_row(M::nmod_mat, i::Int)
   zero = UInt(0)
@@ -314,14 +341,21 @@ function ishnf(x::fmpz_mat, shape::Symbol)
       end
 
       j = ncols(x)
-      while iszero(x[i, j])
+      while j >= 0 && iszero_entry(x, i, j) 
         j = j - 1
       end
-      x[i, j] < 0 && return false
+      if j == -1
+        break
+      end
+      if !ispositive_entry(x, i, j)
+        return false
+      end
+      piv = x[i, j]
       j >= j_old && return false
       for k in i+1:r
-        x[k, j] < 0 && return false
-        x[k, j] >= x[i, j] && return false
+        if !ispositive_entry(x, k, j) || compare_index(x, k, j, piv) > 0
+          return false
+        end
       end
       j_old = j
       i = i - 1
@@ -403,7 +437,7 @@ end
 
 # H must be in upper right HNF form
 function reduce_mod_hnf_ur!(a::fmpz_mat, H::fmpz_mat)
-  @GC.preserve a H begin
+  GC.@preserve a H begin
     for c = 1:nrows(a)
       j = 1
       for i=1:min(nrows(H), ncols(H))
@@ -435,21 +469,30 @@ function reduce_mod_hnf_ur!(a::fmpz_mat, H::fmpz_mat)
 end
 
 function reduce_mod_hnf_ll!(a::fmpz_mat, H::fmpz_mat)
-  for c = 1:nrows(a)
-    j = ncols(H)
-    for i = nrows(H):-1:1
-      while j > 0 && iszero(H[i, j])
-        j -= 1
-      end
-      if iszero(j)
-        break
-      end
-      q = fdiv(a[c, j], H[i, j])
-      if iszero(q)
-        continue
-      end
-      for k = 1:j
-        a[c, k] = a[c, k] - q * H[i, k]
+  GC.@preserve a H begin
+    for c = 1:nrows(a)
+      j = ncols(H)
+      for i = nrows(H):-1:1
+        while j > 0 && iszero(H[i, j])
+          j -= 1
+        end
+        if iszero(j)
+          break
+        end
+        n = ccall((:fmpz_mat_entry, libflint), Ptr{fmpz}, (Ref{fmpz_mat}, Int, Int), a, c - 1, j - 1)
+        m = ccall((:fmpz_mat_entry, libflint), Ptr{fmpz}, (Ref{fmpz_mat}, Int, Int), H, i - 1, j - 1)
+        q = fmpz()
+        ccall((:fmpz_fdiv_q, libflint), Nothing, (Ref{fmpz}, Ref{fmpz}, Ref{fmpz}), q, n, m)
+        #q = fdiv(a[c, j], H[i, j])
+        fl = ccall((:fmpz_is_zero, libflint), Bool, (Ref{fmpz},), q)
+        if fl
+          continue
+        end
+        for k = 1:j
+          t = ccall((:fmpz_mat_entry, libflint), Ptr{fmpz}, (Ref{fmpz_mat}, Int, Int), a, c - 1, k - 1)
+          l = ccall((:fmpz_mat_entry, libflint), Ptr{fmpz}, (Ref{fmpz_mat}, Int, Int), H, i - 1, k - 1)
+          ccall((:fmpz_submul, libflint), Nothing, (Ref{fmpz}, Ref{fmpz}, Ref{fmpz}), t, q, l)
+        end
       end
     end
   end
@@ -472,6 +515,21 @@ function lift(a::Generic.Mat{Generic.Res{fmpz}})
   for i in 1:nrows(a)
     for j in 1:ncols(a)
       z[i, j] = lift(a[i, j])
+    end
+  end
+  return z
+end
+
+function lift(a::fmpz_mod_mat)
+  z = zero_matrix(FlintZZ, nrows(a), ncols(a))
+  GC.@preserve a z begin
+    for i in 1:nrows(a)
+      for j in 1:ncols(a)
+        m = ccall((:fmpz_mat_entry, libflint), Ptr{fmpz}, (Ref{fmpz_mat}, Int, Int), z, i - 1, j - 1)
+        n = ccall((:fmpz_mod_mat_entry, libflint), Ptr{fmpz}, (Ref{fmpz_mod_mat}, Int, Int), a, i - 1 , j - 1)
+        ccall((:fmpz_set, libflint), Nothing, (Ptr{fmpz}, Ptr{fmpz}), m, n)
+        #z[i, j] = lift(a[i, j])
+      end
     end
   end
   return z
@@ -1471,7 +1529,7 @@ diagonal(A::MatrixElem{T}) where {T} = T[A[i, i] for i in 1:nrows(A)]
 
 function prod_diagonal(A::fmpz_mat)
   a = one(fmpz)
-  GC.@preserve a begin
+  GC.@preserve a A begin
     for i=1:nrows(A)
       b = ccall((:fmpz_mat_entry, libflint), Ptr{fmpz}, (Ref{fmpz_mat}, Int, Int), A, i - 1, i - 1)
       ccall((:fmpz_mul, libflint), Nothing, (Ref{fmpz}, Ref{fmpz}, Ptr{fmpz}), a, a, b)
@@ -2222,6 +2280,21 @@ function invmod(M::fmpz_mat, d::fmpz)
     ccall((:fmpz_mod_mat_howell_form, libflint), Nothing, (Ref{fmpz_mod_mat}, ), S)
     iM = S[1:nrows(M), nrows(M)+1:ncols(S)]
     #@assert iM*MR == identity_matrix(R, nrows(M))
-    return map_entries(lift, iM)
+    return lift(iM)
   end
+end
+
+
+function map_entries(R::Nemo.FmpzModRing, M::fmpz_mat)
+  N = zero_matrix(R, nrows(M), ncols(M))
+  GC.@preserve M N begin
+    for i = 1:nrows(M)
+      for j = 1:ncols(M)
+        m = ccall((:fmpz_mat_entry, libflint), Ptr{fmpz}, (Ref{fmpz_mat}, Int, Int), M, i - 1, j - 1)
+        n = ccall((:fmpz_mod_mat_entry, libflint), Ptr{fmpz}, (Ref{fmpz_mod_mat}, Int, Int), N, i - 1 , j - 1)
+        ccall((:fmpz_mod, libflint), Nothing, (Ptr{fmpz}, Ptr{fmpz}, Ref{fmpz}), n, m, R.n)
+      end
+    end
+  end
+  return N
 end
