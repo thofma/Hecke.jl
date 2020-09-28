@@ -155,6 +155,7 @@ function class_group_new_relations_via_lll(c::ClassGrpCtx{T}, rat::Float64 = 0.2
       sort_rev = rank(c.M) < length(c.FB.ideals) *0.9
       for p = sort(collect(piv), rev = sort_rev)
         @vprint :ClassGroup 1 "$(set_cursor_col())$(clear_to_eol())#ideals tested: $n_idl, pivot ideal: $p, exp: $rand_exp, #rand base: $(length(rand_env.base))"
+        @vprint :ClassGroup 2 "\n" #otherwise the printing above is horrible
         @vtime :ClassGroup 3 J = random_get(rand_env, reduce = false)
         #@show nbits(norm(J)), rand_env.exp, rand_exp
         @vtime :ClassGroup 3 J *= c.FB.ideals[p]^rand_exp
