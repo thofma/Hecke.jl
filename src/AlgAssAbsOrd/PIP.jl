@@ -757,7 +757,7 @@ function _lift_norm_one_unit_full_matrix_algebra_nice(x, F)
   #@show FinZA
   el, id = pseudo_basis(FinZA)[1]
   fl, el2 = isprincipal(id)
-  if fl
+  if false fl
     @assert fl 
     n = el.coeffs[1] * el2
     OK = base_ring(M)
@@ -804,9 +804,11 @@ function _lift_norm_one_unit_full_matrix_algebra_nice(x, F)
     li = reduce(*, lifted_el_matrices)
     @assert isone(det(matrix(elem_in_algebra(li))))
 
+    @assert li - x in id * M
+
     #@show (li - x) in id * M
     
-    error("asds")
+    return elem_in_algebra(li)
   end
 end
 
@@ -899,17 +901,19 @@ function _write_as_product_of_elementary_matrices(N, R)
 
   #println(sprint(show, "text/plain", Nredtr))
 
-  Nred2 = change_base_ring(R, N)
-  for T in trafos
-    Nred2 = T * Nred2
-  end
+  #Nred2 = change_base_ring(R, N)
+  #for T in trafos
+  #  Nred2 = T * Nred2
+  #end
 
-  for T in trafos_tr
-    Nred2 = Nred2 * transpose(T)
-  end
+  #for T in trafos_tr
+  #  Nred2 = Nred2 * transpose(T)
+  #end
 
   # I need to normalize a diagonal matrix
-  @assert isone(Nred2)
+  Nredtr, trafos3 = _normalize_diagonal(Nredtr)
+  append!(trafos_tr, trafos3)
+  @assert isone(Nredtr)
 
   res = typeof(Nred)[]
 
@@ -923,6 +927,31 @@ function _write_as_product_of_elementary_matrices(N, R)
 
   @assert reduce(*, res) == change_base_ring(R, N)
   return res
+end
+
+function _normalize_diagonal(N)
+  n = nrows(N)
+  trafos = typeof(N)[]
+  R = base_ring(N)
+  for i in n:-1:2
+    a = N[i, i]
+    inva = inv(a)
+    E1 = elementary_matrix(R, n, i - 1, i, -one(R))
+    E2 = elementary_matrix(R, n, i, i - 1,  one(R))
+    E3 = elementary_matrix(R, n, i - 1, i, -one(R))
+    E4 = elementary_matrix(R, n, i - 1, i, a)
+    E5 = elementary_matrix(R, n, i, i - 1,  -inva)
+    E6 = elementary_matrix(R, n, i - 1, i, a)
+    N = E6 * E5 * E4 * E3 * E2 * E1 * N
+    push!(trafos, E1)
+    push!(trafos, E2)
+    push!(trafos, E3)
+    push!(trafos, E4)
+    push!(trafos, E5)
+    push!(trafos, E6)
+  end
+  @assert isone(N)
+  return N, trafos
 end
 
 function _inv_elementary_matrix(M)
@@ -993,6 +1022,7 @@ function _normalize_column(N, i)
         aj = N[j, i]
         if !divides(aj, ai0)[1]
           q, r = divrem(aj, ai0)
+          @assert euclid(r) < euclid(ai0)
           E = elementary_matrix(R, n, j, i0, -q)
           N = mul!(N, E, N)
           push!(trafos, E)
@@ -1388,6 +1418,7 @@ function _my_direct_product(algebras)
   offset = 0
   for l in 1:length(algebras)
     B = algebras[l]
+    Bmult = multiplication_table(B, copy = false)
     dd = dim(B)
     mtB = multiplication_table(B)
     BtoA = zero_matrix(K, dim(B), d)
@@ -1397,7 +1428,7 @@ function _my_direct_product(algebras)
       AtoB[offset + i, i] = one(K)
       for j = 1:dd
         for k = 1:dd
-          mt[i + offset, j + offset, k + offset] = multiplication_table(B)[i, j, k]
+          mt[i + offset, j + offset, k + offset] = Bmult[i, j, k]
         end
       end
     end

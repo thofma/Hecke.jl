@@ -326,6 +326,7 @@ function _issimilar_new(A, B)
   @show defining_polynomial.(Ks)
   @show ns
   AA = _create_algebra_husert(Ks, ns)
+  @show dim(AA)
   O = _basis_of_integral_commutator_algebra_saturate(A, A)
   #@show O
   I = _basis_of_integral_commutator_algebra_saturate(A, B)
@@ -469,7 +470,7 @@ function _issimilar_new(A, B)
   @assert T * A == B * T
   @assert abs(det(T)) == 1
 
-  return fl, T, TB, TA, yy
+  return fl, T
 end
 
 
@@ -1030,6 +1031,36 @@ function _random_elementary_operations!(a; type = :rows)
   return a
 end
 
+function _rand_poly_deg(R, n)
+  Rx, x = PolynomialRing(R, "x", cached = false)
+  f = rand(Rx, n:n, -100:100)
+  if !iszero(f)
+    setcoeff!(f, degree(f), one(R))
+  end
+  while !isirreducible(f) || degree(f) != n
+    f = rand(Rx, n:n, -100:100)
+    if !iszero(f)
+      setcoeff!(f, degree(f), one(R))
+    end
+  end
+  return f
+end
+
+function _random_matrix_special(R, n, deg)
+  z = dense_matrix_type(R)[]
+  f = _rand_poly_deg(R, deg)
+  for i in 1:4
+    l = rand(1:2)
+    for j in 1:l
+      push!(z, companion_matrix(f^i))
+    end
+    if sum(nrows.(z)) > n
+      break
+    end
+  end
+  return diagonal_matrix(z)
+end
+
 function _random_sln(R, n; num_op = 10)
   a = identity_matrix(R, n)
   for i in 1:num_op
@@ -1046,18 +1077,31 @@ function _random_matrix(R, block_shape)
       push!(matrices, B)
     end
   end
+  if length(matrices) == 0
+    return zero_matrix(R, 0, 0)
+  end
   return diagonal_matrix(matrices)
 end
 
-function _similarity_test_setup(R, n; max_block = 4)
+function _similarity_test_setup(R, n; max_block = 4, same = false)
   block_shape = Tuple{Int, Int, Int}[]
   nn = n
-  while !iszero(nn)
+  
+  if same
+    AA = _random_matrix_special(R, div(n, 3), rand(1:max_block))
+    nn = n - nrows(AA)
+  end
+
+  while nn > 0
     #@show nn
     r = min(rand(1:nn), max_block)
     #@show r
     l = max(Int(floor(nn/r)), 1)
-    nbl = rand(1:l)
+    if same
+      nbl = rand(1:l)
+    else
+      nbl = l
+    end
     #@show nbl
     nnn = nn - r * nbl
     ll = max(Int(floor(nnn/(r * nbl))), 1)
@@ -1069,7 +1113,11 @@ function _similarity_test_setup(R, n; max_block = 4)
   b = block_shape
   #@show block_shape
   A = _random_matrix(R, block_shape)
-  z = _random_sln(R, n)
+  if same
+    A = diagonal_matrix([A, AA])
+  end
+
+  z = _random_sln(R, nrows(A))
   @assert isone(det(z))
   zinv = inv(z)
   B = z * A * zinv
