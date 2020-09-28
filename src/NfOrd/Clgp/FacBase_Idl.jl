@@ -102,10 +102,10 @@ function _factor!(FB::NfFactorBase, a::nf_elem,
     vp = valuation!(n, p)
 #    s::Array{Tuple{Int, Int}, 1}, vp::Int = FB.fb[p].doit(a, vp)
     s::Array{Tuple{Int, Int}, 1}, vp::Int = fb_doit(a, vp, FB.fb[p], fmpq(p)^vp)
-    if vp != 0
+    if !iszero(vp)
       ret = false
       if error
-        @assert vp == 0
+        @assert iszero(vp)
       end
     end
     r = vcat(r, s)
@@ -116,6 +116,9 @@ function _factor!(FB::NfFactorBase, a::nf_elem,
       FB.mx = length(rw)
     end
     sort!(r, lt=function(a,b) return a[1] < b[1]; end)
+    if ret
+      @hassert :ClassGroup 9000  ideal(O, a) == prod([FB.ideals[i]^j for (i, j) in r])
+    end
     @hassert :ClassGroup 1 length(r) > 0
     return ret, SRow{T}(r)
   else 
@@ -173,9 +176,11 @@ function _factor!(FB::Hecke.NfFactorBase, A::Hecke.NfOrdIdl,
     if length(rw) > FB.mx
       FB.mx = length(rw)
     end
-    sort!(r, lt=function(a,b) return a[1] < b[1]; end)
+    sort!(r, lt = (a,b) -> a[1] < b[1])
+    res = SRow{T}(r)
+    @hassert :ClassGroup 9000 A == prod([FB.ideals[i]^j for (i, j) in r])
     @hassert :ClassGroup 1 length(r) > 0
-    return true, SRow{T}(r)
+    return true, res
   else 
     # factor failed or I have a unit.
     # sparse rel mat must not have zero-rows.
