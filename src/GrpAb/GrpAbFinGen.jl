@@ -65,7 +65,15 @@ Creates the abelian group with relation matrix `M`. That is, the group will
 have `ncols(M)` generators and each row of `M` describes one relation.
 """
 function abelian_group(M::fmpz_mat; name::String = "")
-  G = GrpAbFinGen(M)
+  if issnf(M) && nrows(M) > 0  && ncols(M) > 0 && !isone(M[1, 1]) 
+    N = fmpz[M[i, i] for i = 1:min(nrows(M), ncols(M))]
+    if ncols(M) > nrows(M)
+      N = vcat(N, fmpz[0 for i = 1:ncols(M)-nrows(M)])
+    end
+    G = GrpAbFinGen(N)
+  else
+    G = GrpAbFinGen(M)
+  end
   if name != ""
     set_name!(G, name)
   end
