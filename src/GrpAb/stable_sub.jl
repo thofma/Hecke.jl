@@ -635,6 +635,9 @@ function _submodules_with_struct_main(M::ZpnGModule, typesub::Array{Int,1})
 end
 
 function _special_is_isomorphic(G::GrpAbFinGen, Gtest::GrpAbFinGen)
+  if issnf(G)
+    return G.snf == Gtest.snf
+  end
   mat = hnf_modular_eldiv(G.rels, exponent(Gtest))
   mm = snf(mat)
   inv = fmpz[mm[i, i] for i = 1:ncols(mm) if !isone(mm[i, i])]
