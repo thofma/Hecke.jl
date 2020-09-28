@@ -45,6 +45,60 @@ end
 #
 ################################################################################
 
+#x has a princ gen special
+function sum_princ_gen_special(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
+  OK = order(x)
+  genx = x.princ_gen_special[2]+x.princ_gen_special[3]
+  if has_2_elem(y)
+    if has_minimum(y)
+      gen1 = gcd(genx, minimum(y, copy = false))
+      if gen1 == minimum(y, copy = false)
+        return y
+      end
+    else
+      gen1 = gcd(genx, y.gen_one)
+      if gen1 == y.gen_one
+        return y
+      end
+    end
+    res = ideal(OK, gen1, y.gen_two)
+    fl = false
+    if has_minimum(y)
+      fl = gen1 == ppio(minimum(y, copy = false), genx)[1]
+    else
+      fl = gen1 == ppio(y.gen_one, genx)[1]
+    end
+    if fl
+      if has_norm(y)
+        res.norm = ppio(norm(y), genx)[1]
+      end
+      if has_minimum(y)
+        res.minimum = ppio(minimum(y), genx)[1]
+      end
+    end
+  else
+    M1 = _hnf_modular_eldiv(basis_matrix(y, copy = false), genx, :lowerleft)
+    res = ideal(OK, M1, false, true)
+  end 
+  @hassert :NfOrd 1 res == sum_via_basis_matrix(x, y)
+  return res
+end
+
+function sum_via_basis_matrix(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
+  OK = order(x)
+  d = degree(OK)
+  g = gcd(minimum(x, copy = false), minimum(y, copy = false))
+  H = vcat(basis_matrix(x, copy = false), basis_matrix(y, copy = false))
+  hnf_modular_eldiv!(H, g, :lowerleft)
+  H = view(H, (d + 1):2*d, 1:d)
+  res = ideal(OK, H, false, true)
+  if isone(basis(OK, copy = false)[1])
+    res.minimum = H[1, 1]
+  end
+  res.norm = prod_diagonal(H)
+  return res
+end
+
 @doc Markdown.doc"""
     +(x::NfOrdIdl, y::NfOrdIdl)
 
@@ -60,26 +114,10 @@ function +(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
     return ideal(OK, 1)
   end
   if has_princ_gen_special(x) 
-    if has_2_elem(y)
-      genx = x.princ_gen_special[2]+x.princ_gen_special[3]
-      gen1 = gcd(genx, y.gen_one)
-      res_1 = ideal(OK, gen1, y.gen_two)
-			return res_1
-    else
-      M1 = _hnf_modular_eldiv(basis_matrix(y, copy = false), x.princ_gen_special[2]+x.princ_gen_special[3], :lowerleft)
-      return ideal(OK, M1, false, true)
-    end 
+    return sum_princ_gen_special(x, y)
   end
   if has_princ_gen_special(y) 
-    if has_2_elem(x)
-      geny = y.princ_gen_special[2]+y.princ_gen_special[3]
-      gen2 = gcd(geny, x.gen_one)
-      res_2 = ideal(order(x), gen2, x.gen_two)
-			return res_2
-    else
-      M1 = _hnf_modular_eldiv(basis_matrix(x, copy = false), y.princ_gen_special[2]+y.princ_gen_special[3], :lowerleft)
-      return ideal(OK, M1, false, true)
-    end  
+    return sum_princ_gen_special(y, x)
   end
   g = gcd(minimum(x, copy = false), minimum(y, copy = false))
   if isone(g)
@@ -110,15 +148,7 @@ function +(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
     gen_2 = OK(nf(OK)(ggZ))
     return ideal(OK, g, gen_2)
   end
-  H = vcat(basis_matrix(x, copy = false), basis_matrix(y, copy = false))
-  hnf_modular_eldiv!(H, g, :lowerleft)
-  H = view(H, (d + 1):2*d, 1:d)
-  res = ideal(OK, H, false, true)
-  if isone(basis(OK, copy = false)[1])
-    res.minimum = H[1, 1]
-  end
-  res.norm = prod_diagonal(H)
-  return res
+  return sum_via_basis_matrix(x, y)
 end
 
 ################################################################################
