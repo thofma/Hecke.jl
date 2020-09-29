@@ -75,11 +75,11 @@ function unit_group_fac_elem(c::ClassGrpCtx; redo::Bool = false)
     U = domain(mU)
     return U, mU
   end
-  return unit_group_fac_elem(c, u)
+  return unit_group_fac_elem(u)
 end
 
-function unit_group_fac_elem(c::ClassGrpCtx, u::UnitGrpCtx)
-  O = order(c.FB.ideals[1])
+function unit_group_fac_elem(u::UnitGrpCtx)
+  O = order(u)
 
   zo = u.torsion_units_order
   if zo == -1
