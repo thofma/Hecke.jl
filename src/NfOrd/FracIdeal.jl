@@ -121,6 +121,10 @@ function fractional_ideal(O::NfAbsOrd, x::NfAbsOrdIdl, y::fmpz)
   return z
 end
 
+fractional_ideal(x::NfAbsOrdIdl, y::fmpz) = fractional_ideal(order(x), x, y)
+
+fractional_ideal(x::NfAbsOrdIdl) = fractional_ideal(order(x), x, fmpz(1))
+
 fractional_ideal(O::NfAbsOrd, x::NfAbsOrdIdl, y::Integer) = fractional_ideal(O, x, fmpz(y))
 
 @doc Markdown.doc"""
@@ -631,7 +635,8 @@ function +(A::NfAbsOrdIdl, B::NfAbsOrdFracIdl)
   if iszero(B)
     return fractional_ideal(order(A), A)
   end
-  n = A*denominator(B)+numerator(B)
+  n1 = A*denominator(B)
+  n = n1 + numerator(B)
   return n//denominator(B)
 end
 
@@ -653,8 +658,8 @@ function +(A::NfAbsOrdFracIdl, B::Hecke.NfAbsOrdFracIdl)
 end
 
 function *(x::T, y::NfAbsOrd{S, T}) where {S, T}
-  b, z = _check_elem_in_order(denominator(x, y)*x, y)
-  return NfAbsOrdFracIdl(ideal(y, y(z)), denominator(x, y))
+  d = denominator(x, y)
+  return NfAbsOrdFracIdl(ideal(y, y(d*x)), d)
 end
 
 ################################################################################
@@ -703,10 +708,12 @@ function integral_split(A::NfAbsOrdFracIdl)
     return A.num, ideal(order(A), 1)
   end
   I1 = A + ideal(order(A), fmpz(1))
-  d = simplify(inv(I1))
+  I2 = inv(I1)
+  d = simplify(I2)
   @assert isone(d.den)
   n = simplify(A*d)
   @assert isone(n.den)
+  @hassert :NfOrd 1 A == (numerator(n)//numerator(d))
   return numerator(n), numerator(d)
 end
 
