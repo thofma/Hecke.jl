@@ -21,7 +21,7 @@ by `use_mass = true`.
 """
 function genus_representatives(L::HermLat; max = inf, use_auto::Bool = true,
                                                       use_mass::Bool = false)
-  @req rank(L) >= 3 "Lattice must have rank >= 2"
+  @req rank(L) >= 2 "Lattice must have rank >= 2"
   R = base_ring(L)
   definite = isdefinite(L)
   gens, fl, P0 = genus_generators(L)

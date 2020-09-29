@@ -107,8 +107,8 @@ function conjugates_arb(x::nf_elem, abs_tol::Int = 32)
     prec_too_low = false
     c = conjugate_data_arb_roots(K, abs_tol)
 
-    if abs_tol > 2^18
-      error("Something wrong in conjugates_arb_log")
+    if abs_tol < 0
+      error("Precision overflow in conjugates_arb_log")
     end
 
     CC = AcbField(abs_tol, cached = false)

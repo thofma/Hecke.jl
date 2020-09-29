@@ -13,6 +13,7 @@ include("Misc/CRT.jl")  # for crt_env and modular_env
 include("Misc/Poly.jl")
 include("Misc/nmod_poly.jl")
 include("Misc/MPoly.jl")
+include("Misc/MPolyFactor.jl")
 include("Misc/Residue.jl")
 include("Misc/ResidueRingPoly.jl")
 include("Misc/FiniteField.jl")

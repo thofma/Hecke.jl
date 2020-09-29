@@ -121,3 +121,16 @@ end
   @test length(r) == 3
   @test all(iszero, (f(b) for b in r))
 end
+
+@testset "Norm of factored element" begin
+  Qx, x = QQ["x"]
+  f = x^3 - 2
+  K, a = number_field(f, "a")
+  Kt, t = K["t"]
+  L, b = number_field(x^6 - 6*x^4 - 4*x^3 + 12*x^2 - 24*x - 4)
+  h = hom(K, L, -12//155*b^5 - 9//310*b^4 + 16//31*b^3 + 78//155*b^2 - 76//155*b + 182//155)
+  z = -3*b^5 - 4*b^3 + 3*b^2 + 6*b + 2
+  @test norm(h, z) == 1620*a^2 - 3342*a + 1120
+  @test evaluate(norm(h, FacElem(z))) == evaluate(FacElem(K, Dict(1620*a^2 - 3342*a + 1120 => 1)))
+  @test evaluate(norm(h, FacElem(L))) == evaluate(FacElem(K))
+end

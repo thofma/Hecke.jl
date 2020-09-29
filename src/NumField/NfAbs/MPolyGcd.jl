@@ -125,7 +125,6 @@ function _gcd(f::Hecke.Generic.MPoly{nf_elem}, g::Hecke.Generic.MPoly{nf_elem}, 
             @assert isone(lead(gd))
             return inflate(gd, shiftr, deflr)
           else
-            @show "divides failed"
             stable = max_stable
           end
         end

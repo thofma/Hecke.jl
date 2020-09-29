@@ -34,7 +34,7 @@ end
 #  for prime ideals, the gcd's can be done in F_p/ F_q hence might be faster
 @doc Markdown.doc"""
     minimum(m::T, I::NfOrdIdl) where T <: Map{AnticNumberField, AnticNumberField} -> NfOrdIdl
-Given an embedding $m:k\to K$ of number fields and an integral ideal in $K$, find the 
+Given an embedding $m:k\to K$ of number fields and an integral ideal in $K$, find the
 intersect $I \cap \Z_k$.
 """
 function minimum(m::T, I::NfOrdIdl) where T <: Map{AnticNumberField, AnticNumberField}
@@ -46,16 +46,34 @@ function minimum(m::T, I::NfOrdIdl) where T <: Map{AnticNumberField, AnticNumber
     return ideal(zk, minimum(I))
   end
   assure_2_normal(I) # basically implies order(I) is maximal
+
   if !isone(gcd(minimum(I), index(order(I))))
     bk = map(m, basis(maximal_order(k), k))
     bK = map(K, basis(I))
     d = lcm(lcm(map(denominator, bk)), lcm(map(denominator, bK)))
     F = FreeModule(FlintZZ, degree(K))
-    sk = sub(F, [F(matrix(FlintZZ, 1, degree(K), coeffs(d*x))) for x = bk])
-    sK = sub(F, [F(matrix(FlintZZ, 1, degree(K), coeffs(d*x))) for x = bK])
-    m = intersect(sk[1], sK[1])
-    return ideal(zk, [zk(collect(x.v)) for x = map(m[2], gens(m[1]))])
+
+    hsk = ModuleHomomorphism(FreeModule(FlintZZ, degree(k)), F, elem_type(F)[F(matrix(FlintZZ, 1, degree(K), coeffs(d*x))) for x = bk])
+    hsK = ModuleHomomorphism(F, F, elem_type(F)[F(matrix(FlintZZ, 1, degree(K), coeffs(d*x))) for x = bK])
+    sk = image(hsk)
+    imhsK = image(hsK)
+    mm = intersect(sk[1], imhsK[1])
+    return ideal(zk, elem_type(zk)[zk(collect(x.v)) for x = map(x->preimage(hsk, sk[2](mm[2](x))), gens(mm[1]))])
   end
+
+  # Here is a version with abelian groups
+  #if !isone(gcd(minimum(I), index(order(I))))
+  #  bk = map(m, basis(maximal_order(k), k))
+  #  bK = map(K, basis(I))
+  #  d = lcm(lcm(map(denominator, bk)), lcm(map(denominator, bK)))
+  #  F = abelian_group([0 for i in 1:degree(K)])
+  #  hsk = hom(abelian_group[0 for i in 1:degree(k)], F, elem_type(F)[F(matrix(FlintZZ, 1, degree(K), coeffs(d*x))) for x = bk])
+  #  hsK = hom(F, F, elem_type(F)[F(matrix(FlintZZ, 1, degree(K), coeffs(d*x))) for x = bK])
+  #  sk = image(hsk)
+  #  imhsK = image(hsK)
+  #  mm = intersect(sk[1], imhsK[1], false)
+  #  return ideal(zk, elem_type(zk)[zk(collect(x.coeff)) for x = map(x->preimage(hsk, sk[2](mm[2](x))), gens(mm[1]))])
+  #end
 
   @assert K == nf(order(I))
   k = domain(m)
@@ -66,8 +84,8 @@ function minimum(m::T, I::NfOrdIdl) where T <: Map{AnticNumberField, AnticNumber
   @assert g == 1
   #so ai * a = 1 in K/k
   c = content_ideal(ai, zk)
-  n,d = integral_split(c)
-  J = ideal(zk, I.gen_one) + d
+  n,dd = integral_split(c)
+  J = ideal(zk, I.gen_one) + dd
   J.gens_normal = I.gens_normal
   return J
 end
@@ -85,12 +103,11 @@ end
 
 @doc Markdown.doc"""
     intersect_prime(f::Map, P::NfOrdIdl, O_k::NfOrd) -> NfOrdIdl
-Given a prime ideal $P$ in $K$ and the inclusion map $f:k \to K$ 
+Given a prime ideal $P$ in $K$ and the inclusion map $f:k \to K$
 of number fields, find the unique prime $p$ in $k$ below.
 $p$ will be in the order $O_k$ which defaults to "the" maximal order of $k$.
 """
 function intersect_prime(f::Map, P::NfOrdIdl, Ok::NfOrd = maximal_order(domain(f)))
-  
   @assert isprime(P)
   p = minimum(P)
   if isone(degree(Ok))
@@ -167,7 +184,7 @@ function prime_decomposition(f::Map, p::NfOrdIdl, ZK::NfOrd = maximal_order(codo
   el = f(p.gen_two.elem_in_nf)
   for (P,_) in lp
     v = valuation(el, P)
-    # p has a two-normal presentation, so to test the ramification 
+    # p has a two-normal presentation, so to test the ramification
     # I only need to test the second element.
     if v > 0
       push!(res, (P, v))
@@ -203,7 +220,7 @@ function prime_decomposition_nonindex(f::Map, p::NfOrdIdl, ZK = maximal_order(co
 end
 
 function prime_decomposition_type(f::Map, p::NfOrdIdl, ZK = maximal_order(codomain(f)))
-  
+
   if !isindex_divisor(ZK, minimum(p)) && !isramified(ZK, minimum(p))
     return prime_decomposition_type_nonindex(f, p, ZK)
   end
@@ -229,7 +246,7 @@ function prime_decomposition_type_nonindex(f::Map, p::NfOrdIdl, ZK = maximal_ord
   for (d, e) in Gp
     for i = 1:e
       res[ind] = (d, 1)
-      ind += 1 
+      ind += 1
     end
   end
   return res

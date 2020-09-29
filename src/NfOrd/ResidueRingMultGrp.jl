@@ -28,7 +28,7 @@ function multiplicative_group(Q::NfOrdQuoRing)
     end
     Q.multiplicative_group = GtoQ
   end
-  mQ = Q.multiplicative_group
+  mQ = Q.multiplicative_group::GrpAbFinGenToNfOrdQuoRingMultMap
   return domain(mQ), mQ
 end
 
@@ -77,7 +77,7 @@ function _multgrp(Q::NfOrdQuoRing, save_tame_wild::Bool = false; method = nothin
 
   prime_powers = Vector{NfOrdIdl}()
   groups = Vector{GrpAbFinGen}()
-  maps = Vector{GrpAbFinGenToAbsOrdQuoRingMultMap}()
+  maps = Vector{GrpAbFinGenToNfOrdQuoRingMultMap}()
   tame_ind = Tuple{NfOrdIdl, Int}[]
   ind = 1
   for (p, vp) in fac
@@ -1152,7 +1152,7 @@ function _multgrp_non_maximal(Q::NfOrdQuoRing)
   # Compute the groups (O_P/AO_P)^\times
   Pm = [ prime_ideals[i]^m[i] for i in 1:length(prime_ideals)]
   groups = Vector{GrpAbFinGen}(undef, length(prime_ideals))
-  maps = Vector{GrpAbFinGenToAbsOrdQuoRingMultMap}(undef, length(prime_ideals))
+  maps = Vector{GrpAbFinGenToNfOrdQuoRingMultMap}(undef, length(prime_ideals))
   for i= 1:length(prime_ideals)
     H, HtoQQ = _multgrp_Op_aOp(Q, prime_ideals[i], m[i], Pm[i])
     groups[i] = H

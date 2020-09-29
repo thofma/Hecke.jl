@@ -527,7 +527,7 @@ function _standard_mass(L::QuadLat, prec::Int = 10)
   if isodd(m)
     standard_mass = __standard_mass * prod(dedekind_zeta(K, -i, prec) for i in 1:2:(m-2))
   else
-    standard_mass = __standard_mass * prod(dedekind_zeta(K, -i, prec) for i in 1:2:(m-3))
+    standard_mass = __standard_mass * reduce(*, (dedekind_zeta(K, -i, prec) for i in 1:2:(m-3)), init = one(fmpq))
 
     dis = discriminant(rational_span(L))
     if issquare(dis)[1]

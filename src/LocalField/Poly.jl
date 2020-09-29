@@ -674,7 +674,7 @@ function slope_factorization(f::Generic.Poly{T}) where T <: Union{padic, qadic}
       fact[reverse(ff)] = eff
     end
   end
-  sqf = squarefree_factorization(f)
+  sqf = factor_squarefree(f)
   for (g, v) in sqf
     hg = Hensel_factorization(g)
     for (phi, fphi) in hg

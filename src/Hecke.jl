@@ -337,16 +337,52 @@ function conjugate_data_arb_roots(K::AnticNumberField, p::Int)
   #if p > 2^18
   #  Base.show_backtr(STDOUT, backtr())
   #end
-  rootc = conjugate_data_arb(K)
-  q = rootc.prec
-  while q < p
-    refine(rootc)
+  if Nemo.iscyclo_type(K)
+    # Use that e^(i phi) = cos(phi) + i sin(phi)
+    # Call sincospi to determine these values
+    f = get_special(K, :cyclo)::Int
+    pstart = max(p, 2) # Sometimes this gets called with -1
+    local _rall::Vector{Tuple{arb, arb}}
+    rreal = arb[]
+    rcomplex = Vector{acb}(undef, div(degree(K), 2))
+    while true
+      R = ArbField(pstart, cached = false)
+      # We need to pair them 
+      _rall = Tuple{arb, arb}[ sincospi(fmpq(2*k, f), R) for k in 1:f if gcd(f, k) == 1]
+      if all(x -> radiuslttwopower(x[1], -p) && radiuslttwopower(x[2], -p), _rall)
+        CC = AcbField(pstart, cached = false)
+        rall = acb[ CC(l[2], l[1]) for l in _rall]
+        j = 1
+        good = true
+        for i in 1:degree(K)
+          if ispositive(_rall[i][1])
+            rcomplex[j] = rall[i]
+            j += 1
+          else
+            if !isnegative(_rall[i][1])
+              # The precision was not large enough to determine the sign of the imaginary part
+              good = false
+            end
+          end
+        end
+        good && break
+      end
+      pstart = Int(ceil(1.3 * pstart))
+    end
+
+  else
+    rootc = conjugate_data_arb(K)
     q = rootc.prec
+    while q < p
+      refine(rootc)
+      q = rootc.prec
+    end
+    @assert p <= q
+    rall = deepcopy(rootc.roots)
+    rreal = deepcopy(rootc.real_roots)
+    rcomplex = deepcopy(rootc.complex_roots)
   end
-  @assert p <= q
-  rall = deepcopy(rootc.roots)
-  rreal = deepcopy(rootc.real_roots)
-  rcomplex = deepcopy(rootc.complex_roots)
+
   for z in rall
     expand!(z, -p)
   end
