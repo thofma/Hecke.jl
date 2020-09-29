@@ -735,22 +735,30 @@ function coprime_base(A::Array{NfOrdIdl, 1}; refine::Bool = false)
     for i = 2:length(A)
       append!(pf, prefactorization(A[i]))
     end
-    a1 = coprime_base(fmpz[x.gen_one for x in pf])
+    a1 = fmpz[x.gen_one for x in pf if !isone(x.gen_one)]
+    if !isempty(a1)
+      a1 = coprime_base(a1)
+    end
     for I in pf
-      if !(I.gen_one in a1)
+      if !(I.gen_one in a1) && !isone(minimum(I, copy = false))
         push!(a1, minimum(I))
         push!(a1, norm(I))
       end
     end
-    a1 = coprime_base(a1)
   else
     pf = A
-    a1 = Set{fmpz}(vcat(fmpz[minimum(x) for x in pf], fmpz[norm(x) for x in pf]) )
+    a2 = Set{fmpz}()
+    for x in pf
+      if !isone(minimum(x, copy = false))
+        push!(a2, minimum(x), norm(x))
+      end
+    end
+    a1 = collect(a2)
   end
   if isempty(a1)
     return NfOrdIdl[]
   end
-  a = coprime_base(collect(a1))
+  a = coprime_base(a1)
   C = Array{NfOrdIdl, 1}()
   for p = a
     if isone(p)
