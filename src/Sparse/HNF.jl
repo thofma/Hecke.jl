@@ -603,3 +603,39 @@ function hnf!(A::SMat{fmpz}; truncate::Bool = false)
   A.r = B.r
   A.c = B.c
 end
+
+
+
+function reduce_right!(A::SMat{fmpz}, b::SRow{fmpz})
+  if length(b.pos) == 0
+    return b
+  end
+  j = 1
+  p = find_row_starting_with(A, b.pos[j])
+  if p > nrows(A)
+    return b
+  end
+  while j <= length(b.pos)
+    while p < nrows(A) && A[p].pos[1] < b.pos[j]
+      p += 1
+    end
+    if A[p].pos[1] == b.pos[j]
+      q, r = divrem(b.values[j], A[p].values[1])
+      if r < 0
+        q -= 1
+        r += A[p].values[1]
+        @hassert :HNF 1 r >= 0
+      end
+      if q != 0
+        Hecke.add_scaled_row!(A[p], b, -q)
+        if r == 0
+          j -= 1
+        else
+          @hassert :HNF 1 b.values[j] == r
+        end
+      end
+    end
+    j += 1
+  end
+  return b
+end
