@@ -337,17 +337,34 @@ function compute_candidates_for_saturate1(c::Hecke.ClassGrpCtx, p::Int, stable::
   return Hecke.lift_nonsymmetric(A)
 end
 
-function saturate!(d::Hecke.ClassGrpCtx, U::Hecke.UnitGrpCtx, n::Int, stable::Float64 = 3.5; use_orbit = false)
+function _get_element(e, R, R_mat, zeta, i)
+  K = parent(zeta)
+  a = FacElem(K(1))
+  fac_a = SRow(FlintZZ)
+  for j = 1:length(R)
+    if !iszero(e[j, i])
+      mul!(a, a, R[j]^e[j, i])
+      fac_a += e[j, i] * R_mat[j]
+    end
+  end
+  if nrows(e) > length(R) && !iszero(e[nrows(e), i])
+    @assert length(R) + 1 == nrows(e)
+    Hecke.add_to_key!(a.fac, zeta, e[nrows(e), i])
+  end
+  return a, fac_a
+end
+
+function saturate!(d::Hecke.ClassGrpCtx, U::Hecke.UnitGrpCtx, n::Int, stable::Float64 = 3.5; use_orbit::Bool = false, easy_root::Bool = false)
   @assert isprime(n)
   K = nf(d)
   @vprint :Saturate 1 "Simplifying the context\n"
-  @vtime :Saturate 1 c = simplify(d, U)
+  @vtime :Saturate 1 c = simplify(d, U, n)
   success = false
   restart = false
   while true
     if success
       @vprint :Saturate 1 "Simplifying the context\n"
-      @vtime :Saturate 1 c = simplify(d, U)
+      @vtime :Saturate 1 c = simplify(d, U, n, use_LLL = easy_root)
     end
     @vprint :Saturate 1 "Computing candidates for the saturation\n"
     @vtime :Saturate 1 e = compute_candidates_for_saturate(c, n, stable)
@@ -363,19 +380,7 @@ function saturate!(d::Hecke.ClassGrpCtx, U::Hecke.UnitGrpCtx, n::Int, stable::Fl
     R_mat = relations_matrix(c)
     wasted = false
     for i = ncols(e):-1:1
-      a = FacElem(K(1))
-      fac_a = SRow(FlintZZ)
-      for j = 1:length(R)
-        if !iszero(e[j, i])
-          mul!(a, a, R[j]^e[j, i])
-          fac_a += e[j, i] * R_mat[j]
-        end
-      end
-      if nrows(e) > length(R) && !iszero(e[nrows(e), i])
-        @assert length(R) + 1 == nrows(e)
-        Hecke.add_to_key!(a.fac, zeta, e[nrows(e), i])
-      end
-
+      a, fac_a = _get_element(e, R, R_mat, zeta, i)
       if !iszero(fac_a) && nrows(rels_added) > 0
         candidate_rel = divexact(fac_a, n)
         red_candidate = reduce(rels_added, candidate_rel)
@@ -387,7 +392,7 @@ function saturate!(d::Hecke.ClassGrpCtx, U::Hecke.UnitGrpCtx, n::Int, stable::Fl
       
       decom = Dict{NfOrdIdl, fmpz}((c.FB.ideals[k], v) for (k, v) = fac_a)
       @vprint :Saturate 1 "Testing if element is an n-th power\n"
-      @vtime :Saturate 1 fl, x = ispower(a, n, decom = decom)
+      @vtime :Saturate 1 fl, x = ispower(a, n, decom = decom, easy = easy_root)
       if fl
         @vprint :Saturate 1  "The element is an n-th power\n"
         success = true
@@ -441,15 +446,21 @@ function saturate!(d::Hecke.ClassGrpCtx, U::Hecke.UnitGrpCtx, n::Int, stable::Fl
   end
 end
 
-function simplify(c::Hecke.ClassGrpCtx, U::Hecke.UnitGrpCtx)
-  d = Hecke.class_group_init(c.FB, SMat{fmpz}, add_rels = false)
+function simplify(c::Hecke.ClassGrpCtx, U::Hecke.UnitGrpCtx, cp::Int = 0; use_LLL::Bool = false)
 
+  d = Hecke.class_group_init(c.FB, SMat{fmpz}, add_rels = false)
   Hecke.module_trafo_assure(c.M)
   trafos = c.M.trafo
- 
   R = relations(c)
+  R_mat = relations_matrix(c)
+
+  new_rels = Vector{FacElem{nf_elem, AnticNumberField}}()
+  vals_new_rels = Vector{SRow{fmpz}}()
+  @vprint :Saturate 1 "Computing rels...\n"
   for i=1:length(c.FB.ideals)
-    c.M.basis.rows[i].values[1] == 1 && continue
+    if cp != 0 && isone(c.M.basis.rows[i].values[1]) 
+      continue
+    end
     @assert all(x -> x > 0, c.M.basis.rows[i].values)
     x = zeros(fmpz, length(R))
     x[i] = 1
@@ -458,10 +469,33 @@ function simplify(c::Hecke.ClassGrpCtx, U::Hecke.UnitGrpCtx)
     end
     y = R[1]^x[1]
     for j = 2:length(R)
-      mul!(y, y, R[j]^x[j])
+      if !iszero(x[j])
+        mul!(y, y, R[j]^x[j])
+      end
     end
-    fl = Hecke.class_group_add_relation(d, y, deepcopy(c.M.basis.rows[i]))
-    @assert fl
+    push!(new_rels, y)
+    push!(vals_new_rels, deepcopy(c.M.basis.rows[i]))
+  end
+  if use_LLL && !isempty(new_rels)
+    M = sparse_matrix(FlintZZ)
+    for x in vals_new_rels
+      push!(M, x)
+    end
+    M1 = matrix(M)
+    M2, T = lll_with_transform(M1)
+    transpose!(T, T)
+    new_rels = transform(new_rels, T)
+    for i = 1:length(vals_new_rels)
+      vals_new_rels[i] = sparse_row(view(M2, i:i, 1:ncols(M2)))
+    end
+  end
+  @vprint :Saturate 1 "Reducing rels...\n"
+  if !isempty(new_rels)
+    @vtime :Saturate 1 new_rels = Hecke.reduce_mod_units(new_rels, U)
+    for i = 1:length(new_rels)
+      fl = Hecke.class_group_add_relation(d, new_rels[i], vals_new_rels[i])
+      @assert fl
+    end
   end
   for i=1:length(U.units)  
     Hecke.class_group_add_relation(d, U.units[i], SRow(FlintZZ))
@@ -470,171 +504,3 @@ function simplify(c::Hecke.ClassGrpCtx, U::Hecke.UnitGrpCtx)
 end
 
 end
-
-
-#=
-OLD CODE:
-
-
-function saturate_exp(c::Hecke.ClassGrpCtx, p::Int, stable = 1.5)
-  return saturate_exp_normal(c, p, stable)
-  ZK = order(c.FB.ideals[1])
-  T, mT = torsion_unit_group(ZK)
-  sT = Int(order(T))
-
-  R = vcat(c.R_gen, c.R_rel)
-  K = nf(ZK)
-  zeta = mT(T[1])
-  if gcd(sT, p) != 1 && !(hash(zeta) in c.RS) # && order is promising...
-    push!(R, K(zeta))
-#  else
-#    println("NOT doint zeta")
-  end
-  T = GF(p, cached = false)
-  A = identity_matrix(T, length(R))
-  cA = ncols(A)
-  i = 1
-
-  S = Hecke.PrimesSet(Hecke.p_start, -1, Int(p), 1)
-
-
-  for q in S
-    @vprint :Saturate 3 "Finding primes for saturation: $i/$(stable*ncols(A))\n"
-    if isdefining_polynomial_nice(K) && isindex_divisor(ZK, q)
-      continue
-    end
-    if discriminant(ZK) % q == 0
-      continue
-    end
-    #if gcd(div(q-1, Int(pp)), pp) > 1 # not possible if cond(k) is involved
-    #  continue
-    #end
-    @vtime :Saturate 3 lq = prime_decomposition(ZK, q, 1)
-    if length(lq) == 0
-      continue
-    end
-
-    for Q in lq
-      try
-        @vtime :Saturate 3 z = mod_p(R, Q[1], Int(p), T)
-        z = z*A
-        rrz, z = nullspace(z)
-        if iszero(rrz)
-          return zero_matrix(FlintZZ, 0, length(R))
-        end
-        A = A*sub(z, 1:nrows(z), 1:rrz)
-        # TODO: Remove or understand the following condition
-        if false && cA == ncols(A)
-          break #the other ideals are going to give the same info
-                #for multi-quad as the field is normal
-        end        
-      catch e
-        if !isa(e, Hecke.BadPrime)
-          rethrow(e)
-        end
-      end
-    end
-    if cA == ncols(A) 
-      i += 1
-    else
-      i = 0
-      cA = ncols(A)
-    end
-    if i > stable*ncols(A)
-      break
-    end
-  end
-  return lift_nonsymmetric(A)
-end
-
-
-fe(a::FacElem{nf_elem, AnticNumberField}) = a
-fe(a::nf_elem) = FacElem(a)
-
-function elems_from_sat(c::Hecke.ClassGrpCtx, z)
-  res = []#Tuple{FacElem{nf_elem, AnticNumberField}, }[]
-  for i=1:ncols(z)
-    a = fe(c.R_gen[1])^FlintZZ(z[1, i])
-    b = FlintZZ(z[1, i]) * c.M.bas_gens[1]
-    for j=2:length(c.R_gen)
-      a *= fe(c.R_gen[j])^FlintZZ(z[j, i])
-      b += FlintZZ(z[j, i]) * c.M.bas_gens[j]
-    end
-    for j=1:length(c.R_rel)
-      a *= fe(c.R_rel[j])^FlintZZ(z[j + length(c.R_gen), i])
-      b += FlintZZ(z[j + length(c.R_gen), i]) * c.M.rel_gens[j]
-    end
-    push!(res, (a, b))
-  end
-  return res
-end
-
-function dlog(dl::Dict, x, p::Int) 
-  if iszero(x)
-    throw(Hecke.BadPrime(1))
-  end
-  if haskey(dl, x)
-    return dl[x]
-  end
-#  println("difficult for ", parent(x))
-  i = 2
-  y = x*x
-  while !haskey(dl, y)
-    y *= x
-    i += 1
-    @assert i <= p
-  end
-  #OK: we know x^i = g^dl[y] (we don't know g)
-  v = dl[y]
-  g = gcd(p, i)
-  r = div(p, g)
-  @assert v % g == 0
-  e = invmod(div(i, g), r)*div(v, g) % r
-  if e == 0
-    e = r
-  end
-  dl[x] = e
-  y = x*x
-  f = (e*2) % p
-  while !isone(y)
-    if haskey(dl, y)
-      @assert dl[y] == f
-    end
-    dl[y] = f
-    y *= x
-    f = (f+e) % p
-  end
-  g = [ a for (a,b) = dl if b == 1]
-  @assert length(g) == 1
-  @assert g[1]^dl[x] == x
-  return dl[x]
-end
-
-
-function mod_p(R, Q::NfOrdIdl, p::Int, T::Hecke.GaloisField)
-  Zk = order(Q)
-  F, mF = Hecke.ResidueFieldSmallDegree1(Zk, Q)
-  mF1 = Hecke.extend_easy(mF, number_field(Zk))
-  oF = Int(size(F)-1)
-  @assert iszero(oF % p)
-  pp, e = Hecke.ppio(oF, p)
-  dl = Dict{elem_type(F), Int}()
-  dl[F(1)] = 0
-  lp = factor(p)
-  while true
-    x = rand(F)
-    if iszero(x)
-      continue
-    end
-    x = x^e
-    if any(i-> x^div(pp, Int(i)) == 1, keys(lp.fac))
-      continue
-    else
-      dlog(dl, x, pp)
-      @assert length(dl) == pp
-      break
-    end
-  end
-  return matrix(T, 1, length(R), Int[dlog(dl, image(mF1, x, pp)^e, pp) % p for x = R])
-end
-=#

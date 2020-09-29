@@ -29,13 +29,13 @@ function _add_sunits_from_norm_relation!(c, UZK, N)
     end
 
 
-    #D = Dict{nf_elem, nf_elem}()
+
     cc = Vector{Tuple{Int, fmpz}}[]
     for j in 1:length(N.coefficients_gen[i])
       @vprint :NormRelation 1 "Inducing the action ... "
       z = induce_action(N, i, j, lpk, c.FB, cc)
 
-      @vprint :NormRelation "Feeding in the S-units of the small field ... "
+      @vprint :NormRelation 1 "Feeding in the S-units of the small field ... "
 
 
       for l=1:ngens(Szk)
@@ -86,21 +86,6 @@ function _compute_sunit_and_unit_group!(c, U, N, saturate = true)
         Hecke.class_group_add_relation(c, el_to_add, valofnewelement)#, always = false)
       end
     end
-
-
-    #for j in 1:length(N.coefficients_gen[i])
-    #  println("Inducing the action ... ")
-    #  @time z = induce_action(N, i, j, lpk, c.FB, cc)
-
-    #  print("Feeding in the S-units of the small field ... ")
-
-    #  for l=1:ngens(Szk)
-    #    u = mS(Szk[l])  #do compact rep here???
-    #    valofnewelement = mul(mS.valuations[l], z)
-    #    Hecke.class_group_add_relation(c, FacElem(Dict((N(x, i, j), v) for (x,v) = u.fac)), valofnewelement)
-    #  end
-    #end
-
     println("done")
 
     u, mu = unit_group_fac_elem(zk)
@@ -117,19 +102,6 @@ function _compute_sunit_and_unit_group!(c, U, N, saturate = true)
       end
       U.units = Hecke.reduce(U.units, U.tors_prec)
     end
-
-    #for j in 1:length(N.coefficients_gen[i])
-    #  for n=2:ngens(u) # I cannot add a torsion unit. He will hang forever.
-    #    uelem = mu(u[n])
-    #    lifted_unit = FacElem(Dict((N(x, i, j), v) for (x,v) = uelem.fac))
-    #    bb = Hecke._add_unit(U, lifted_unit)
-    #    @show bb
-    #    if !bb
-    #      push!(skipped_units, lifted_unit)
-    #    end
-    #  end
-    #  U.units = Hecke.reduce(U.units, U.tors_prec)
-    #end
   end
 
 
@@ -173,13 +145,39 @@ function _embed(N::NormRelation, i::Int, a::nf_elem)
   end
 end
 
+function _get_sunits(N, i, lp)
+  k = subfield(N, i)[1]
+  if N.isnormal[i] && degree(k) > 10
+    Gk, mGk = automorphism_group(k)
+    if has_useful_brauer_relation(Gk)
+      Szk, mS = _sunit_group_fac_elem_via_brauer(k, lp, true, index(N))
+    else
+      Szk, mS = Hecke.sunit_group_fac_elem(lp)
+    end
+  else
+    Szk, mS = Hecke.sunit_group_fac_elem(lp)
+  end
+  return Szk, mS
+end
+
 # pure
 
-function _add_sunits_from_brauer_relation!(c, UZK, N; invariant = false, compact::Int = 0)
+global deb_rr = []
+function _add_sunits_from_brauer_relation!(c, UZK, N; invariant::Bool = false, compact::Int = 0)
   # I am assuming that c.FB.ideals is invariant under the action of the Galois group
   cp = sort!(collect(Set(minimum(x) for x = c.FB.ideals)))
   K = N.K
   add_unit_later = FacElem{nf_elem, AnticNumberField}[]
+  @vprint :NormRelation 1 "Adding trivial relations\n"
+  for I in c.FB.ideals
+    a = I.gen_one
+    Hecke.class_group_add_relation(c, K(a), fmpq(abs(a)^degree(K)), fmpz(1), orbit = false)
+    b = I.gen_two.elem_in_nf
+    bn = Hecke.norm_div(b, fmpz(1), 600)
+    if nbits(numerator(bn)) < 550
+      Hecke.class_group_add_relation(c, b, abs(bn), fmpz(1), orbit = false)
+    end
+  end
   for i = 1:length(N)
     if isdefined(N, :nonredundant) && !(i in N.nonredundant)
       continue
@@ -189,50 +187,71 @@ function _add_sunits_from_brauer_relation!(c, UZK, N; invariant = false, compact
     @vprint :NormRelation 1 "Computing lll basis of maximal order ...\n"
     zk = maximal_order(k)
     zk = lll(zk)
-    @vprint :NormRelation 1 "Computing class group ... \n"
-    class_group(zk, use_aut = true)
     lpk = NfOrdIdl[]
     for p in cp
-      for P in prime_decomposition(zk, p)
-        push!(lpk, P[1])
-      end
+      append!(lpk, prime_ideals_over(zk, p))
     end
-	  #lpk = unique!(NfOrdIdl[ intersect_prime(mk, P) for P in c.FB.ideals])
     @assert length(lpk) > 0
     @vprint :NormRelation 1 "Computing sunit group for set of size $(length(lpk)) ... \n"
-    Szk, mS = Hecke.sunit_mod_units_group_fac_elem(lpk)
-
+    Szk, mS = _get_sunits(N, i, lpk)
     @vprint :NormRelation 1 "Coercing the sunits into the big field ...\n"
     z = induce_action_just_from_subfield(N, i, lpk, c.FB, invariant)
 
+    found_torsion = false
     for l=1:ngens(Szk)
       @vprint :NormRelation 3 "Sunits $l / $(ngens(Szk))\n"
       u = mS(Szk[l])  #do compact rep here???
-      if compact != 0
-        @vprint :NormRelation 3 "  Compact presentation ...\n"
-        u = Hecke.compact_presentation(u, compact)
-      end
-      valofnewelement = mul(mS.valuations[l], z)
-      @hassert :NormRelation 1 begin zz = mk(evaluate(u)); true; end
-      @hassert :NormRelation 1 sparse_row(FlintZZ, [ (i, valuation(zz, p)) for (i, p) in enumerate(c.FB.ideals) if valuation(zz, p) != 0]) == valofnewelement
-      @vtime :NormRelation 4 img_u = FacElem(Dict{nf_elem, fmpz}((_embed(N, i, x), v) for (x,v) = u.fac))
-      @vtime :NormRelation 4 Hecke.class_group_add_relation(c, img_u, valofnewelement)#, always = false)
-    end
-
-    @vprint :NormRelation 1 "Coercing the units into the big field ... \n"
-    U, mU = unit_group_fac_elem(zk)
-    for j=2:ngens(U) # I cannot add a torsion unit. He will hang forever.
-      @vprint :NormRelation 3 "Unit $j / $(ngens(U))\n"
-      u = mU(U[j])
-      if compact != 0
-        @vprint :NormRelation 3 "  Compact presentation ...\n"
-        u = Hecke.compact_presentation(u, compact)
-      end
-      @vtime :NormRelation 4 img_u = FacElem(Dict{nf_elem, fmpz}((_embed(N, i, x), v) for (x,v) = u.fac))
-      has_full_rk = Hecke.has_full_rank(UZK) 
-      @vtime :NormRelation 4 ff = Hecke.add_unit!(UZK, img_u)
-      if !has_full_rk && !ff
-        push!(add_unit_later, img_u)
+      if iszero(mS.valuations[l])
+        if UZK.finished
+          continue
+        end
+        if compact != 0
+          @vprint :NormRelation 3 "  Compact presentation ...\n"
+          @vtime :NormRelation 4 u = Hecke.compact_presentation(u, compact, decom = Dict{NfOrdIdl, Int}())
+        end
+        @vtime :NormRelation 4 img_u = FacElem(Dict{nf_elem, fmpz}((_embed(N, i, x), v) for (x,v) = u.fac))
+        if !found_torsion
+          fl = Hecke.istorsion_unit(img_u, false, 16)[1]
+          if fl
+            found_torsion = true
+            continue
+          end
+        end
+        has_full_rk = Hecke.has_full_rank(UZK) 
+        @vtime :NormRelation 4 ff = Hecke.add_unit!(UZK, img_u)
+        if !has_full_rk && !ff
+          push!(add_unit_later, img_u)
+        end
+      else
+        valofnewelement = mul(mS.valuations[l], z)
+        if isdefined(c.M, :basis)
+          push!(deb_rr, (deepcopy(c.M.basis), deepcopy(valofnewelement)))
+          rr = Hecke.reduce_right!(c.M.basis, deepcopy(valofnewelement))
+          MM = matrix(c.M.basis)
+          vv = zero_matrix(FlintZZ, 1, ncols(MM))
+          for (jj, vvv) in valofnewelement
+            vv[1, jj] = vvv
+          end
+          Hecke.reduce_mod_hnf_ur!(vv, MM)
+          @assert iszero(rr) == iszero(vv)
+          if iszero(rr)
+            continue
+          end
+        end
+        if compact != 0
+          sup = Dict{NfOrdIdl, Int}((lpk[w], t) for (w, t) in mS.valuations[l])
+          @vprint :NormRelation 3 "  Compact presentation ...\n"
+          @vtime :NormRelation 4 u = Hecke.compact_presentation(u, compact, decom = sup)
+        end
+        @vtime :NormRelation 4 img_u = FacElem(Dict{nf_elem, fmpz}((_embed(N, i, x), v) for (x, v) = u.fac if !iszero(v)))
+        @hassert :NormRelation 1 sparse_row(FlintZZ, [ (j, valuation(img_u, p)) for (j, p) in enumerate(c.FB.ideals) if valuation(img_u, p) != 0]) == valofnewelement
+        @vtime :NormRelation 4 Hecke.class_group_add_relation(c, img_u, valofnewelement)
+        if rank(c.M) == length(c.FB.ideals)
+          h, piv = Hecke.class_group_get_pivot_info(c)
+          if isone(h)
+            break
+          end
+        end
       end
     end
     @vprint :NormRelation 4 "Reducing the units\n"
@@ -245,8 +264,6 @@ function _add_sunits_from_brauer_relation!(c, UZK, N; invariant = false, compact
     end
     UZK.units = Hecke.reduce(UZK.units, UZK.tors_prec)
   end
-
-
   return nothing
 end
 
@@ -296,49 +313,46 @@ function induce_action_just_from_subfield(N::NormRelation, i, s, FB, invariant =
   return z
 end
 
-function norm_relation(K::AnticNumberField, coprime::Int = 0; small_degree = true)
-  if !small_degree
-    @assert coprime == 0
-    N = _norm_relation_setup_generic(K, pure = true, small_degree = false)
-    return true, N
-  end
+function norm_relation(K::AnticNumberField, coprime::Int = 0; small_degree = true, cached = true)
   local N
-  try
-    N = _get_nf_norm_relation(K)::Vector{NormRelation{Int}}
-    if coprime == 0
-      return true, N[1]::NormRelation{Int}
-    else
-      for i in 1:length(N)
-        if coprime == N[i].isoptimal
-          return true, N[i]::NormRelation{Int}
+  if cached
+    try
+      N = _get_nf_norm_relation(K)::Vector{NormRelation{Int}}
+      if coprime == 0
+        return true, N[1]::NormRelation{Int}
+      else
+        for i in 1:length(N)
+          if coprime == N[i].isoptimal
+            return true, N[i]::NormRelation{Int}
+          end
         end
-      end
-      fl, M = has_coprime_norm_relation(K, fmpz(coprime))
-      if fl
-        push!(N, M)
-        return true, M
-      end
-      return false, NormRelation{Int}()
-    end
-  catch e
-    if !isa(e, AccessorNotSetError)
-      rethrow(e)
-    end
-    if coprime == 0
-      if !has_useful_brauer_relation(automorphism_group(K)[1])
+        fl, M = has_coprime_norm_relation(K, fmpz(coprime))
+        if fl
+          push!(N, M)
+          return true, M
+        end
         return false, NormRelation{Int}()
       end
-      M = _norm_relation_setup_generic(K, pure = true, small_degree = true)
-      _set_nf_norm_relation(K, NormRelation{Int}[M])
-      return true, M::NormRelation{Int}
-    else
-      fl, M = has_coprime_norm_relation(K, fmpz(coprime))
-      if fl
-        _set_nf_norm_relation(K, NormRelation{Int}[M])
-        return true, M::NormRelation{Int}
+    catch e
+      if !isa(e, AccessorNotSetError)
+        rethrow(e)
       end
+    end
+  end
+  if coprime == 0
+    if !has_useful_brauer_relation(automorphism_group(K)[1])
       return false, NormRelation{Int}()
     end
+    M = _norm_relation_setup_generic(K, pure = true, small_degree = small_degree)
+    _set_nf_norm_relation(K, NormRelation{Int}[M])
+    return true, M::NormRelation{Int}
+  else
+    fl, M = has_coprime_norm_relation(K, fmpz(coprime))
+    if fl
+      _set_nf_norm_relation(K, NormRelation{Int}[M])
+      return true, M::NormRelation{Int}
+    end
+    return false, NormRelation{Int}()
   end
 end
 
@@ -346,143 +360,68 @@ function _sunit_group_fac_elem_quo_via_brauer(K::AnticNumberField, S, n::Int, in
   @vprint :NormRelation 1 "Setting up the norm relation context ... \n"
   fl, N = norm_relation(K, n)
   if !fl
-    fl, N = norm_relation(K, 0)
+    fl, N = norm_relation(K, 0, small_degree = false)
   end
   @assert fl
   @vprint :NormRelation 1 "Using norm relation $N\n"
-  return __sunit_group_fac_elem_quo_via_brauer(N, S, n, invariant)
+  compact = 0
+  g = gcd(index(N), n)
+  compact = 0
+  if !isone(g)
+    compact = ispower(g)[2]
+  end
+  return __sunit_group_fac_elem_quo_via_brauer(N, S, n, invariant, compact)
 end
+
+function _sunit_group_fac_elem_via_brauer(K::AnticNumberField, S::Vector{NfOrdIdl}, invariant::Bool = false, compact::Int = 0)
+  @vprint :NormRelation 1 "Setting up the norm relation context ... \n"
+  fl, N = norm_relation(K, 0, small_degree = false)
+  @assert fl
+  @vprint :NormRelation 1 "Using norm relation $N\n"
+  return __sunit_group_fac_elem_quo_via_brauer(N, S, 0, invariant, compact)
+end
+
 
 function sunit_group_fac_elem_via_brauer(N::NormRelation, S, invariant::Bool = false)
   return _sunit_group_fac_elem_quo_via_brauer(N, S, 0, invariant)
 end
 
-
-function _class_group(O::NfOrd; saturate::Bool = true, redo::Bool = false)
-  if !redo
-    c = Hecke._get_ClassGrpCtx_of_order(O, false)
-    if c !== nothing
-      c::Hecke.ClassGrpCtx{SMat{fmpz}}
-      @assert c.finished
-      return class_group(c, O)
-    end
-  end
-  K = nf(O)
-  G, mG = automorphism_group(K)
-  if degree(K) > 25 && has_useful_brauer_relation(G) 
-    lll(O)
-    fl, N = norm_relation(K, small_degree = false)
-    @assert fl
-    return class_group_via_brauer(O, N, recursive = true, compact = false, saturate = saturate)
-  end
-  return class_group(O, use_aut = true)
-end
-
-
-function get_sunits_from_subfield_data(OK, N; recursive::Bool = false, compact::Bool = true)
-  K = nf(OK)
-  fbbound = Hecke.factor_base_bound_grh(OK)
-  S = prime_ideals_up_to(OK, fbbound)
-  @vprint :NormRelation 1 "Factor base bound: $fbbound\n"
-  c, UZK = _setup_for_norm_relation_fun(K, S)
-
-  docompact = false
-  onlyp = 0
-
-  if Hecke.isprime_power(index(N)) && compact
-    docompact = true
-    _, onlyp = ispower(index(N))
-  end
-
-  if recursive
-    for i = 1:length(N.subfields)
-      if !(i in N.nonredundant)
-        continue
-      end
-      L = N.subfields[i][1]
-      if N.isnormal[i] && degree(L) > 25
-        @vprint :NormRelation 1 "Computing class group of $(L.pol)\n"
-        _class_group(lll(maximal_order(L)), saturate = false)
-      end
-    end
-  end
-
-  @vprint :NormRelation 1 "Doing something in the subfields\n"
-  if !docompact
-    _add_sunits_from_brauer_relation!(c, UZK, N)
+function _setup_for_norm_relation_fun(K, S = prime_ideals_up_to(maximal_order(K), Hecke.factor_base_bound_grh(maximal_order(K))))
+  ZK = order(S[1])
+  FB = NfFactorBase(ZK, S)
+  c = Hecke.class_group_init(FB)
+  U1 = Hecke._get_UnitGrpCtx_of_order(ZK, false)
+  if U1 == nothing
+    UZK = Hecke.UnitGrpCtx{FacElem{nf_elem, AnticNumberField}}(ZK)
+    Hecke._set_UnitGrpCtx_of_order(ZK, UZK)
   else
-    @vprint :NormRelation 1 "Using the compact presentation\n"
-    _add_sunits_from_brauer_relation!(c, UZK, N, compact = onlyp)
+    UZK = U1
   end
   return c, UZK
-end 
-
-
-function class_group_via_brauer(O::NfOrd, N::NormRelation; saturate::Bool = true, recursive::Bool = false, do_lll::Bool = true, compact::Bool = true, stable = 3.5)
-  K = N.K
-  if do_lll
-    OK = lll(maximal_order(nf(O)))
-  else
-    OK = O
-  end
-  
-  c, UZK = get_sunits_from_subfield_data(OK, N, recursive = recursive, compact = compact)
-  #auts = automorphisms(K)
-  #c.aut_grp = Hecke.class_group_add_auto(c, auts)
- 
-  if saturate || isone(index(N))
-    for (p, e) in factor(index(N))
-      @vprint :NormRelation 1 "Saturating at $p \n"
-      b = Hecke.saturate!(c, UZK, Int(p), stable)
-      while b
-        idx = Hecke._validate_class_unit_group(c, UZK)[1]
-        @vprint :NormRelation 1 "Index bound from analysis $idx\n"
-        b = Hecke.saturate!(c, UZK, Int(p), stable)
-      end
-    end
-    idx = Hecke._validate_class_unit_group(c, UZK)[1]
-    @vprint :NormRelation 1 "Index is $idx (should be 1)!\n"
-    if idx != 1
-      @vprint :NormRelation 1 "Index is $idx (should be 1)!\n"
-    end
-    @assert idx == 1
-  
-    @vprint :NormRelation 1 "\n"
-    c, _ = simplify(c)
-  
-    c.finished = true
-    UZK.finished = true
-    Hecke._set_ClassGrpCtx_of_order(OK, c)
-    Hecke._set_UnitGrpCtx_of_order(OK, UZK)
-    return class_group(c, O)
-  else
-    # We finish off the computation by a relation search in OK
-    Hecke._set_ClassGrpCtx_of_order(OK, c)
-    Hecke._set_UnitGrpCtx_of_order(OK, UZK)
-    c, UZK, d = Hecke._class_unit_group(OK, saturate_at_2 = false)
-    @assert isone(d)
-
-    return Hecke.class_group(c, O)
-  end
 end
 
-function __sunit_group_fac_elem_quo_via_brauer(N::NormRelation, S, n::Int, invariant::Bool = false)
+function _find_perm(v::Vector{NfOrdIdl}, w::Vector{NfOrdIdl})
+  p = Dict{Int, Int}()
+  for i = 1:length(v)
+    pi = findfirst(isequal(v[i]), w)
+    @assert pi != nothing
+    p[pi] = i
+  end
+  return p
+end
+
+
+function __sunit_group_fac_elem_quo_via_brauer(N::NormRelation, S::Vector{NfOrdIdl}, n::Int, invariant::Bool = false, compact::Int = 0)
   O = order(S[1])
-
   K = N.K
-
-
   if invariant
-    c, UZK = Hecke._setup_for_norm_relation_fun(K, S)
-    _add_sunits_from_brauer_relation!(c, UZK, N, invariant = true)
+    c, UZK = _setup_for_norm_relation_fun(K, S)
+    _add_sunits_from_brauer_relation!(c, UZK, N, invariant = true, compact = compact)
   else
     cp = sort!(collect(Set(minimum(x) for x = S)))
     Sclosed = NfOrdIdl[]
     for p in cp
-      lp = prime_decomposition(O, p)
-      for (P, _) in lp
-        push!(Sclosed, P)
-      end
+      append!(Sclosed, prime_ideals_over(O, p))
     end
     if length(Sclosed) == length(S)
       invariant = true
@@ -490,31 +429,42 @@ function __sunit_group_fac_elem_quo_via_brauer(N::NormRelation, S, n::Int, invar
     end
     @vprint :NormRelation 1 "I am not Galois invariant. Working with S of size $(length(Sclosed))\n"
     c, UZK = _setup_for_norm_relation_fun(K, Sclosed)
-    _add_sunits_from_brauer_relation!(c, UZK, N, invariant = true)
+    _add_sunits_from_brauer_relation!(c, UZK, N, invariant = true, compact = compact)
   end
 
   if gcd(index(N), n) != 1
     # I need to saturate
-    @vprint :NormRelation 1 "Saturating at "
     for (p, e) in factor(index(N))
-      @vprint :NormRelation 1 "$p "
-      b = Hecke.saturate!(c, UZK, Int(p))
+      @vprint :NormRelation 1 "Saturating at $p \n"
+      b = Hecke.saturate!(c, UZK, Int(p), 3.5, easy_root = true)
       while b
-        b = Hecke.saturate!(c, UZK, Int(p))
+        b = Hecke.saturate!(c, UZK, Int(p), 3.5, easy_root = true)
       end
     end
+    UZK.finished = true
   end
-  @vprint :NormRelation 1 "\n"
+
+  if index(N) == 1
+    UZK.finished = true
+  end
+
 
   # This makes c.R.gen be a basis of the S-units (modulo torsion)
-  c, _ = simplify(c)
-
+  c = Hecke.RelSaturate.simplify(c, UZK, use_LLL = true)
+  perm_ideals = _find_perm(S, c.FB.ideals)
   if invariant
-    sunitsmodunits = c.R_gen # These are generators for the S-units (mod units, mod n)
+    sunitsmodunits = FacElem{nf_elem, AnticNumberField}[x for x in c.R_gen] # These are generators for the S-units (mod units, mod n)
+    valuations_sunitsmodunits = Vector{SRow{fmpz}}(undef, length(S))
+    for i = 1:length(sunitsmodunits)
+      r = Tuple{Int, fmpz}[(perm_ideals[j], v) for (j, v) in c.M.bas_gens[i]]
+      sort!(r, lt = (a,b) -> a[1] < b[1])
+      valuations_sunitsmodunits[i] = SRow{fmpz}(r)
+    end
   else
     # I need to extract the S-units from the Sclosed-units
     # Now I need to find the correct indices in the c.FB.ideals
-    sunitsmodunits = typeof(c.R_gen)()
+    sunitsmodunits = FacElem{nf_elem, AnticNumberField}[]
+    valuations_sunitsmodunits = SRow{fmpz}[]
     ind = Int[]
     for P in S
       for i in 1:length(c.FB.ideals)
@@ -547,6 +497,10 @@ function __sunit_group_fac_elem_quo_via_brauer(N::NormRelation, S, n::Int, invar
         continue
       end
       push!(sunitsmodunits, FacElem(c.R_gen, fmpz[K[i, j] for j in 1:ncols(K)]))
+      v_c = sum(K[i, j]*c.M.bas_gens[j] for j = 1:ncols(K))
+      r = Tuple{Int, fmpz}[(perm_ideals[j], v) for (j, v) in v_c]
+      sort!(r, lt = (a,b) -> a[1] < b[1])
+      push!(valuations_sunitsmodunits, SRow{fmpz}(r))
     end
   end
 
@@ -556,66 +510,71 @@ function __sunit_group_fac_elem_quo_via_brauer(N::NormRelation, S, n::Int, invar
   @assert issnf(Q)
   @assert ngens(Q) == 1
   m = order(Q)
-
   if !isone(m)
-    tomodn = FacElem(elem_in_nf(mT(mQ\Q[1])))
+    units = Vector{FacElem{nf_elem, AnticNumberField}}(undef, length(unitsmodtorsion)+1)
+    units[1] = FacElem(elem_in_nf(mT(mQ\Q[1])))
+    for i = 2:length(units)
+      units[i] = unitsmodtorsion[i-1]
+    end
     res_group = abelian_group(append!(fmpz[m], [fmpz(n) for i in 1:(length(sunitsmodunits) + length(unitsmodtorsion))]))
-
-    local exp
-    let res_group = res_group, unitsmodtorsion = unitsmodtorsion, tomodn = tomodn
-      function exp(a::GrpAbFinGenElem)
-        @assert parent(a) == res_group
-        zz = FacElem(convert(Vector{Hecke.nf_elem_or_fac_elem}, unitsmodtorsion), fmpz[a[1 + i] for i in 1:length(unitsmodtorsion)])
-        z = mul!(zz, zz, tomodn^a[1])
-        zzz = FacElem(convert(Vector{Hecke.nf_elem_or_fac_elem}, sunitsmodunits), fmpz[a[1 + length(unitsmodtorsion) + i] for i in 1:length(sunitsmodunits)])
-        mul!(z, z, zzz)
-      
-        for (k, v) in z.fac
-          if iszero(v)
-            delete!(z.fac, k)
-          end
-        end
-        return z
-      end
-    end
-
-    disclog = function(a)
-      throw(NotImplemented())
-    end
-  else # torsion part is one
+  else
+    units = unitsmodtorsion
     res_group = abelian_group([fmpz(n) for i in 1:(length(sunitsmodunits) + length(unitsmodtorsion))])
-
-    exp = function(a::GrpAbFinGenElem)
+  end
+  local exp
+  let res_group = res_group, units = units
+    function exp(a::GrpAbFinGenElem)
       @assert parent(a) == res_group
-      z = FacElem(convert(Vector{nf_elem_or_fac_elem}, unitsmodtorsion), fmpz[a[i] for i in 1:length(unitsmodtorsion)])
-      # This is madness
-      zz = FacElem(convert(Vector{nf_elem_or_fac_elem}, sunitsmodunits), fmpz[a[length(unitsmodtorsion) + i] for i in 1:length(sunitsmodunits)])
-      z = mul!(z, z, zz)
-
+      z = prod(units[i]^a[i] for i = 1:length(units))
+      if !isempty(sunitsmodunits) 
+        zz = prod(sunitsmodunits[i]^a[length(units) + i] for i in 1:length(sunitsmodunits))
+        mul!(z, z, zz)
+      end
+    
       for (k, v) in z.fac
         if iszero(v)
           delete!(z.fac, k)
         end
       end
-
       return z
-    end
-
-    disclog = function(a)
-      throw(NotImplemented())
     end
   end
 
+
+  disclog = function(a)
+    throw(NotImplemented())
+  end
+  
   r = Hecke.MapSUnitGrpFacElem()
+  r.valuations = Vector{SRow{fmpz}}(undef, ngens(res_group))
+  for i = 1:length(units)
+    r.valuations[i] = SRow{fmpz}()
+  end
+  for i = 1:length(sunitsmodunits)
+    r.valuations[i+length(units)] = valuations_sunitsmodunits[i]
+  end
   r.idl = S
   r.isquotientmap = n
 
   r.header = Hecke.MapHeader(res_group, FacElemMon(nf(O)), exp, disclog)
-  @hassert :NormRelation 9000 begin
-    _S, _mS = sunit_group_fac_elem(S)
+  @hassert :NormRelation 9001 begin
+    _S, _mS = Hecke.sunit_group_fac_elem(S)
+    @show _S
+    @show res_group
     _Q, _mQ = quo(_S, n)
     V = quo(_Q, [_mQ(_mS\(r(res_group[i]))) for i in 1:ngens(res_group)])
     order(_Q) == order(res_group) && order(V[1]) == 1
+  end
+  @hassert :NormRelation 9000 begin
+    fl = true
+    for i = 1:ngens(res_group)
+      el = r(res_group[i])
+      if sparse_row(FlintZZ, [ (j, valuation(el, S[j])) for j = 1:length(S) if valuation(el, S[j]) != 0]) != r.valuations[i]
+        fl = false
+        break
+      end
+    end
+    fl
   end
   return res_group, r
 end

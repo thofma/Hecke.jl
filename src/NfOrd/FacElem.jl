@@ -357,11 +357,19 @@ function _get_support(a::FacElem{nf_elem, AnticNumberField}, I::NfOrdIdlSet)
   sizehint!(A, length(a.fac))
   i = 0
   for (e, v) = a.fac
+    if iszero(v)
+      continue
+    end
     i += 1
     @vprint :CompactPresentation 3 "Element $i / $(length(a.fac))"
     if isinteger(e)
-      Id = ideal(Zk, FlintZZ(e))
-      push!(A, (Id, v))
+      Id1 = ideal(Zk, FlintZZ(e))
+      push!(A, (Id1, v))
+      continue
+    end
+    if e in Zk
+      N = ideal(Zk, Zk(e, false))
+      push!(A, (N, v))
       continue
     end
     Id = ideal(Zk, e)

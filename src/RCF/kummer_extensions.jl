@@ -319,7 +319,7 @@ function find_gens(K::KummerExt, S::PrimesSet, cp::fmpz=fmpz(1))
     if cp % p == 0 || indZK % p == 0
       continue
     end
-    @vprint :ClassField 2 "doin` $p\n"
+    @vprint :ClassField 2 "Computing Frobenius over $p\n"
     lP = prime_decomposition(ZK, p)
     LP = NfOrdIdl[P for (P, e) in lP if degree(P) < threshold]
     if isempty(LP)
@@ -367,10 +367,10 @@ function find_gens(K::KummerExt, S::PrimesSet, cp::fmpz=fmpz(1))
       q, mq = quo(R, sR[1:ind-1], false)
       s, ms = snf(q)
     end
-    @vprint :ClassField 3 "$(order(s))\n"
     if order(s) == 1   
       break
     end
+    @vprint :ClassField 3 "Index: $(exponent(s))^($(valuation(order(s), exponent(s))))\n"
   end
   K.frob_gens = (lp, sR)
   return lp, sR
@@ -523,13 +523,26 @@ function reduce_mod_powers(a::nf_elem, n::Int)
 end
 
 function reduce_mod_powers(a::FacElem{nf_elem, AnticNumberField}, n::Int, decom::Dict{NfOrdIdl, fmpz})
-  b = compact_presentation(a, n, decom = decom)
+  a1 = RelSaturate._mod_exponents(a, n)
+  c = conjugates_arb_log(a, 64)
+  c1 = conjugates_arb_log(a1, 64)
+  bn = maximum(fmpz[upper_bound(abs(x), fmpz) for x in c])
+  bn1 = maximum(fmpz[upper_bound(abs(x), fmpz) for x in c1])
+  if bn1 < root(bn, 2)
+    b = compact_presentation(a1, n)
+  else
+    b = compact_presentation(a, n, decom = decom)
+  end
   if any(!iszero(v % n) for (k, v) = b.fac)
     b1 = prod(nf_elem[k^(v % n) for (k, v) = b.fac if !iszero(v % n)])
   else
     b1 = one(base_ring(a))
   end
   d = denominator(b1, maximal_order(parent(b1)))
+  k, d1 = ispower(d)
+  if k > 1
+    d = d1^(div(k, n) + 1)
+  end
   b1 *= d^n  #non-optimal, but integral...
   return FacElem(b1)  
 end

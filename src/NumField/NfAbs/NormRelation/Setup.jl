@@ -536,14 +536,6 @@ function induce_action(N::NormRelation, i, s::Vector, S::Vector)
   return z
 end
 
-function _setup_for_norm_relation_fun(K, S = prime_ideals_up_to(maximal_order(K), Hecke.factor_base_bound_grh(maximal_order(K))))
-  ZK = order(S[1])
-  FB = NfFactorBase(ZK, S)
-  c = Hecke.class_group_init(FB)
-  UZK = Hecke.UnitGrpCtx{FacElem{nf_elem, AnticNumberField}}(ZK)
-  return c, UZK
-end
-
 one(T::FacElemMon{AnticNumberField}) = T()
 
 function Hecke.simplify(c::Hecke.ClassGrpCtx)
