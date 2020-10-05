@@ -340,6 +340,12 @@ function Hecke.ispower(a::FacElem{nf_elem, AnticNumberField}, n::Int; with_roots
       continue
     end
     q, r = divrem(v, n)
+    if easy
+      if r <= 0
+        q -= 1
+        r += n
+      end
+    end
     if !iszero(q)
       rt[k] = q
     end

@@ -162,7 +162,6 @@ end
 
 # pure
 
-global deb_rr = []
 function _add_sunits_from_brauer_relation!(c, UZK, N; invariant::Bool = false, compact::Int = 0)
   # I am assuming that c.FB.ideals is invariant under the action of the Galois group
   cp = sort!(collect(Set(minimum(x) for x = c.FB.ideals)))
@@ -197,8 +196,9 @@ function _add_sunits_from_brauer_relation!(c, UZK, N; invariant::Bool = false, c
     @vprint :NormRelation 1 "Coercing the sunits into the big field ...\n"
     z = induce_action_just_from_subfield(N, i, lpk, c.FB, invariant)
 
-    found_torsion = false
-    for l=1:ngens(Szk)
+    #found_torsion = false
+    #CAREFUL! I AM ASSUMING THAT THE FIRST ELEMENT IS A TORSION UNIT!
+    for l=2:ngens(Szk)
       @vprint :NormRelation 3 "Sunits $l / $(ngens(Szk))\n"
       u = mS(Szk[l])  #do compact rep here???
       if iszero(mS.valuations[l])
@@ -210,6 +210,7 @@ function _add_sunits_from_brauer_relation!(c, UZK, N; invariant::Bool = false, c
           @vtime :NormRelation 4 u = Hecke.compact_presentation(u, compact, decom = Dict{NfOrdIdl, Int}())
         end
         @vtime :NormRelation 4 img_u = FacElem(Dict{nf_elem, fmpz}((_embed(N, i, x), v) for (x,v) = u.fac))
+        #=
         if !found_torsion
           fl = Hecke.istorsion_unit(img_u, false, 16)[1]
           if fl
@@ -217,6 +218,7 @@ function _add_sunits_from_brauer_relation!(c, UZK, N; invariant::Bool = false, c
             continue
           end
         end
+        =#
         has_full_rk = Hecke.has_full_rank(UZK) 
         @vtime :NormRelation 4 ff = Hecke.add_unit!(UZK, img_u)
         if !has_full_rk && !ff
@@ -224,6 +226,7 @@ function _add_sunits_from_brauer_relation!(c, UZK, N; invariant::Bool = false, c
         end
       else
         valofnewelement = mul(mS.valuations[l], z)
+        #=
         if isdefined(c.M, :basis)
           push!(deb_rr, (deepcopy(c.M.basis), deepcopy(valofnewelement)))
           rr = Hecke.reduce_right!(c.M.basis, deepcopy(valofnewelement))
@@ -238,6 +241,7 @@ function _add_sunits_from_brauer_relation!(c, UZK, N; invariant::Bool = false, c
             continue
           end
         end
+        =#
         if compact != 0
           sup = Dict{NfOrdIdl, Int}((lpk[w], t) for (w, t) in mS.valuations[l])
           @vprint :NormRelation 3 "  Compact presentation ...\n"
@@ -246,12 +250,11 @@ function _add_sunits_from_brauer_relation!(c, UZK, N; invariant::Bool = false, c
         @vtime :NormRelation 4 img_u = FacElem(Dict{nf_elem, fmpz}((_embed(N, i, x), v) for (x, v) = u.fac if !iszero(v)))
         @hassert :NormRelation 1 sparse_row(FlintZZ, [ (j, valuation(img_u, p)) for (j, p) in enumerate(c.FB.ideals) if valuation(img_u, p) != 0]) == valofnewelement
         @vtime :NormRelation 4 Hecke.class_group_add_relation(c, img_u, valofnewelement)
+        #=
         if rank(c.M) == length(c.FB.ideals)
           h, piv = Hecke.class_group_get_pivot_info(c)
-          if isone(h)
-            break
-          end
         end
+        =#
       end
     end
     @vprint :NormRelation 4 "Reducing the units\n"
@@ -410,7 +413,6 @@ function _find_perm(v::Vector{NfOrdIdl}, w::Vector{NfOrdIdl})
   return p
 end
 
-
 function __sunit_group_fac_elem_quo_via_brauer(N::NormRelation, S::Vector{NfOrdIdl}, n::Int, invariant::Bool = false, compact::Int = 0)
   O = order(S[1])
   K = N.K
@@ -436,9 +438,9 @@ function __sunit_group_fac_elem_quo_via_brauer(N::NormRelation, S::Vector{NfOrdI
     # I need to saturate
     for (p, e) in factor(index(N))
       @vprint :NormRelation 1 "Saturating at $p \n"
-      b = Hecke.saturate!(c, UZK, Int(p), 3.5, easy_root = true)
+      b = Hecke.saturate!(c, UZK, Int(p), 3.5, easy_root = true, use_LLL = true)
       while b
-        b = Hecke.saturate!(c, UZK, Int(p), 3.5, easy_root = true)
+        b = Hecke.saturate!(c, UZK, Int(p), 3.5, easy_root = true, use_LLL = true)
       end
     end
     UZK.finished = true
@@ -447,7 +449,6 @@ function __sunit_group_fac_elem_quo_via_brauer(N::NormRelation, S::Vector{NfOrdI
   if index(N) == 1
     UZK.finished = true
   end
-
 
   # This makes c.R.gen be a basis of the S-units (modulo torsion)
   c = Hecke.RelSaturate.simplify(c, UZK, use_LLL = true)
