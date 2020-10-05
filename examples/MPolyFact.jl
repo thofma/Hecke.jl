@@ -679,6 +679,157 @@ end
   
 end
 
+module MPolyLift
+using Hecke
+
+mutable struct LiftPairCtx
+  f::MPolyElem{qadic}
+  g::MPolyElem{qadic}
+  h::MPolyElem{qadic}
+  a::MPolyElem{qadic}
+  b::MPolyElem{qadic}
+  pr_p ::Int
+  pr_y ::Int
+
+  function LiftPairCtx(g::MPolyElem{qadic}, h::MPolyElem{qadic})
+    return LiftPairCtx(g*h, g, h)
+  end
+  function LiftPairCtx(f::MPolyElem{qadic}, g::MPolyElem{qadic}, h::MPolyElem{qadic})
+    r = new()
+    r.f = f
+    R = base_ring(g)
+    Rx = parent(g)
+    k, mk = ResidueField(R)
+
+    gp = map_coeffs(mk, g)
+    hp = map_coeffs(mk, h, parent = parent(gp))
+
+    kx, x = PolynomialRing(k, cached = false)
+    _, ap, bp = gcdx(evaluate(gp, [x, 0*x]), evaluate(hp, [x, 0*x]))
+    r.a = setprecision(map_coeffs(x->preimage(mk, x), ap)(gen(Rx, 1)), 1)
+    r.b = setprecision(map_coeffs(x->preimage(mk, x), bp)(gen(Rx, 1)), 1)
+
+    r.g = divrem(setprecision(g, 1), [gen(Rx, 2)])[2]
+    r.h = divrem(setprecision(h, 1), [gen(Rx, 2)])[2]
+
+    r.pr_p = r.pr_y = 1
+
+    return r
+  end
+end
+
+function lift_y(r::LiftPairCtx)
+  y = gen(parent(r.f), 2)
+  yk = y^r.pr_y
+  fgh = divexact(r.f - r.g*r.h, yk)
+  G = divrem(fgh*r.b, [r.g])[2]*yk+r.g
+  H = divrem(fgh*r.a, [r.h])[2]*yk+r.h
+  ogh = divexact(1-r.a*G - r.b*H, yk)
+  B = divrem(ogh*r.b, [r.g])[2]*yk+r.b
+  A = divrem(ogh*r.a, [r.h])[2]*yk+r.a
+  yk *= yk
+  r.g = divrem(G, yk)[2]
+  r.h = divrem(H, yk)[2]
+  r.a = divrem(A, yk)[2]
+  r.b = divrem(B, yk)[2]
+  r.pr_y *= 2
+end
+
+function lift_p(r::LiftPairCtx)
+  p = Hecke.uniformizer(base_ring(r.f))
+  pk = p^r.pr_p
+  r.pr_p *= 2
+  y = gen(parent(r.f), 2)
+  yk = y^r.pr_y
+  r.g = setprecision(r.g, r.pr_p)
+  r.h = setprecision(r.h, r.pr_p)
+  r.a = setprecision(r.a, r.pr_p)
+  r.b = setprecision(r.b, r.pr_p)
+
+  fgh = divexact(r.f - r.g*r.h, pk)
+  G = divrem(divrem(divrem(fgh*r.b, [yk])[2], r.g)[2]*pk+r.g, [yk])[2]
+  H = divrem(divrem(divrem(fgh*r.a, [yk])[2], r.h)[2]*pk+r.h, [yk])[2]
+  ogh = divexact(divrem(1-r.a*G - r.b*H, [yk])[2], pk)
+  B = divrem(divrem(ogh*r.b, [yk])[2], r.g)[2]*pk+r.b
+  A = divrem(divrem(ogh*r.a, [yk])[2], r.h)[2]*pk+r.a
+  r.g = G
+  r.h = H
+  r.a = A
+  r.b = B
+end
+
+mutable struct LiftCtx
+  f::MPolyElem{qadic}
+  C::Array{LiftPairCtx, 1}
+  pr_p::Int
+  pr_y::Int
+  function LiftCtx(f::MPolyElem{qadic}, g::Array{<:MPolyElem{qadic}, 1})
+    C = Array{LiftPairCtx, 1}()
+    for i=1:div(length(g), 2)
+      push!(C, LiftPairCtx(g[2*i-1], g[2*i]))
+    end
+    i = 1
+    if isodd(length(g))
+      push!(C, LiftPairCtx(g[end], C[1].f))
+      i += 1
+    end
+    while 2*i <= length(C)
+      push!(C, LiftPairCtx(C[2*i-1].f, C[2*i].f))
+      i += 1
+    end
+
+    r = new()
+    r.f = f
+    @show C[end].f
+    @show f
+    @assert degree(C[end].f, 1) == degree(f, 1)
+    C[end].f = f
+    r.C = C
+    r.pr_p = r.pr_y = 1
+    return r
+  end
+end
+
+function lift_y(R::LiftCtx)
+  C = R.C
+  i = length(C)
+  j = i-1
+
+  while i >= 1
+    lift_y(C[i])
+    if j>= 2
+      C[j].f = C[i].h
+      C[j-1].f = C[i].g
+    elseif j >= 1
+      C[j].f = C[i].h
+    end
+    j -= 2
+    i -= 1
+  end
+  R.pr_y *= 2
+end
+
+function lift_p(R::LiftCtx)
+  C = R.C
+  i = length(C)
+  j = i-1
+
+  while i >= 1
+    lift_p(C[i])
+    if j>= 2
+      C[j].f = C[i].h
+      C[j-1].f = C[i].g
+    elseif j >= 1
+      C[j].f = C[i].h
+    end
+    j -= 2
+    i -= 1
+  end
+  R.pr_p *= 2
+end
+
+end
+
 #= revised strategy until I actually understand s.th. better
  - assumming f is monic in y, irreducible over Q and f(0) is squarefree
  - find a prime s.th. f(0, y) is square-free with a small degree splitting field
@@ -714,3 +865,5 @@ include("/home/fieker/Downloads/n60s3.m");
 
   -125685*x+151959*x^8+917230*x^6+8717398*y^5*x^5+5108544*x^8*y^4-1564434*x^5+7744756*x^5*y^6+306683*x^3*y^6+413268*x^4*y^6+9081976*x^6*y^6+1317780*x^6*y^5+76745*x^4*y^5-15797040*x^7*y^5+99348*x^3*y^5+4106178*x^6*y^4+2010995*x^4*y^4-11264228*x^7*y^4-12465712*x^5*y^4+40908*x^2*y^4+404227*x^3*y^4-9204694*x^7*y^3-49266*x^2*y^3-3500343*x^4*y^3+1512264*x^3*y^3+6405504*x^8*y^3+9879662*x^6*y^3-3821606*x^5*y^3-592704*x^9*y^3-8503779*x^5*y^2-783216*x^9*y^2+10608275*x^6*y^2+574917*x^2*y^2-10143*x*y^2+5943180*x^4*y^2-3295022*x^3*y^2+3452692*x^8*y^2-6432756*x^7*y^2-344988*x^9*y+67473*x*y+2548458*x^4*y-2646351*x^7*y+1059606*x^8*y-3698541*x^5*y-491400*x^2*y+430155*x^3*y+4011984*x^6*y+1530912*x^4+617526
 =#
+
+
