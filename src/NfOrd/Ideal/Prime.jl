@@ -224,9 +224,13 @@ Note that in this case it may happen that $p\mathcal O$ is not the product of th
 $\mathfrak p_i^{e_i}$.
 """
 function prime_decomposition(O::NfAbsOrd{NfAbsNS, NfAbsNSElem}, p::Union{Integer, fmpz}, degree_limit::Int = degree(O), lower_limit::Int = 0; cached::Bool = true)
-  if typeof(p) == fmpz && fits(Int, p)
-    return prime_decomposition(O, Int(p), degree_limit, lower_limit)
+  if typeof(p) != Int && fits(Int, p)
+    return prime_decomposition(O, Int(p), degree_limit, lower_limit, cached = cached)
   end
+  if typeof(p) != fmpz && typeof(p) != Int
+    return prime_decomposition(O, fmpz(p), degree_limit, lower_limit, cached = cached)
+  end
+
   if !divisible(numerator(discriminant(nf(O))), p)
     return prime_dec_nonindex(O, p, degree_limit, lower_limit)
   else
@@ -234,10 +238,20 @@ function prime_decomposition(O::NfAbsOrd{NfAbsNS, NfAbsNSElem}, p::Union{Integer
   end
 end
 
+Nemo.fits(::Type{Int}, a::Int) = true
+function Nemo.fits(::Type{Int}, a::Integer)
+  #TODO: possibly not optimal?
+  return a % Int == a
+end
+
 function prime_decomposition(O::NfOrd, p::Union{Integer, fmpz}, degree_limit::Int = degree(O), lower_limit::Int = 0; cached::Bool = false)
-  if typeof(p) == fmpz && fits(Int, p)
+  if typeof(p) != Int && fits(Int, p)
     return prime_decomposition(O, Int(p), degree_limit, lower_limit, cached = cached)
   end
+  if typeof(p) != fmpz && typeof(p) != Int
+    return prime_decomposition(O, fmpz(p), degree_limit, lower_limit, cached = cached)
+  end
+
   if isdefining_polynomial_nice(nf(O))
     if cached || isindex_divisor(O, p)
       if haskey(O.index_div, fmpz(p))
