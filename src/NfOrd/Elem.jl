@@ -781,24 +781,85 @@ function representation_matrix(a::NfAbsOrdElem{S, T}, K::S) where {S, T}
 end
 
 @doc Markdown.doc"""
-***
     representation_matrix_mod(a::NfAbsOrdElem, d::fmpz) -> fmpz_mat
 
 Returns the representation matrix of the element $a$ with entries reduced mod d.
 """
 function representation_matrix_mod(a::NfAbsOrdElem, d::fmpz)
   O = parent(a)
-  assure_has_basis_matrix(O)
-  assure_has_basis_mat_inv(O)
-  A = representation_matrix(a, nf(O))
-  d2 = O.basis_matrix.den * O.basis_mat_inv.den*A.den
+  A, den = representation_matrix_q(elem_in_nf(a))
+  BM = basis_matrix(O, copy = false)
+  BMinv = basis_mat_inv(O, copy = false)
+  d2 = BM.den * BMinv.den * den
   d2c, d2nc = ppio(d2, d)
   d1 = d * d2c
-  A1 = A.num 
-  mod!(A.num, d1)
-  M1 = mod(O.basis_matrix.num, d1)
+  if fits(Int, d1)
+    R = ResidueRing(FlintZZ, Int(d1), cached = false)
+    AR = map_entries(R, A)
+    BMR = map_entries(R, BM.num)
+    BMinvR = map_entries(R, BMinv.num)
+    mul!(AR, BMR, AR)
+    mul!(AR, AR, BMinvR)
+    inver = invmod(d2nc, d1)
+    mul!(AR, AR, R(inver))
+    dv = R(d2c)
+    for i = 1:nrows(AR)
+      for j = 1:ncols(AR)
+        if !iszero(AR[i, j])
+          AR[i, j] = divexact(AR[i, j], dv)
+        end
+      end
+    end
+    res = lift!(A, AR)
+    mod!(res, d)
+    return res
+  else
+    RR = ResidueRing(FlintZZ, d1, cached = false)
+    ARR = map_entries(RR, A)
+    BMRR = map_entries(RR, BM.num)
+    
+    mul!(ARR, BMRR, ARR) 
+    #=  
+    c = gcd(lift(content(ARR)), d1)
+    if !isone(c)
+      d3 = divexact(d1, c)
+      RR = ResidueRing(FlintZZ, d3, cached = false)
+      for i = 1:nrows(ARR)
+        for j = 1:ncols(ARR)
+          if !iszero(ARR[i, j])
+            ARR[i, j] = divexact(ARR[i, j], c)
+          end
+        end
+      end
+      ARR = map_entries(RR, lift(ARR))
+      BMinvRR = map_entries(RR, BMinv.num)
+      dv = RR(divexact(d2c, gcd(d2c, c)))
+    else
+    =#
+      dv = RR(d2c)
+      BMinvRR = map_entries(RR, BMinv.num)
+    #end
+    mul!(ARR, ARR, BMinvRR)
+    inver = invmod(d2nc, d1)
+    #mul!(ARR, ARR, RR(inver))
+    ARR *= inver
+    for i = 1:nrows(ARR)
+      for j = 1:ncols(ARR)
+        if !iszero(ARR[i, j])
+          ARR[i, j] = divexact(ARR[i, j], dv)
+        end
+      end
+    end
+    res1 = lift(ARR)
+    mod!(res1, d)
+    return res1
+  end
+  #=
+  A1 = A 
+  mod!(A1, d1)
+  M1 = mod(BM.num, d1)
   mul!(A1, M1, A1)
-  M2 = mod(O.basis_mat_inv.num, d1)
+  M2 = mod(BMinv.num, d1)
   mul!(A1, A1, M2)
   mod!(A1, d1)
   divexact!(A1, A1, d2c)
@@ -806,6 +867,7 @@ function representation_matrix_mod(a::NfAbsOrdElem, d::fmpz)
   mul!(A1, A1, inver)
   mod!(A1, d)
   return A1
+  =#
 end
 
 ################################################################################

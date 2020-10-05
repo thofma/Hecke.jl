@@ -38,7 +38,6 @@ function MaximalOrder(O::NfAbsOrd{S, T}; index_divisors::Vector{fmpz} = fmpz[], 
     return M
   end
   M = new_maximal_order(O, index_divisors = index_divisors, disc = discriminant, ramified_primes = ramified_primes)
-  @assert isdefined(M, :disc)
   M.ismaximal = 1
   if M === O
     O.ismaximal = 1
@@ -658,7 +657,6 @@ end
 #  Ring of multipliers
 #
 ################################################################################
-
 @doc Markdown.doc"""
     ring_of_multipliers(I::NfAbsOrdIdl) -> NfAbsOrd
 Computes the order $(I : I)$, which is the set of all $x \in K$
@@ -677,7 +675,7 @@ function ring_of_multipliers(a::NfAbsOrdIdl)
   id_gen = zero_matrix(FlintZZ, 2*n, n)
   m = zero_matrix(FlintZZ, n*length(B), n)
   ind = 1
-  modu = minimum(a)*bmatinv.den
+  modu = minimum(a, copy = false)*bmatinv.den
   for i = 1:length(B)
     if i != 1
       c = matrix(FlintZZ, 1, n, coordinates(B[i]))
