@@ -28,7 +28,7 @@ ncols(x::FakeFmpqMat) = ncols(x.num)
 
 function simplify_content!(x::FakeFmpqMat)
   c = content(x.num)
-  c = gcd(c, x.den)
+  gcd!(c, c, x.den)
   if !isone(c) 
     divexact!(x.num, x.num, c)
     divexact!(x.den, x.den, c)

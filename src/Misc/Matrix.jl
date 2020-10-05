@@ -84,6 +84,12 @@ function add!(c::MatElem, a::MatElem, b::MatElem)
   return c
 end
 
+function mul!(a::nmod_mat, b::nmod_mat, c::nmod)
+  ccall((:nmod_mat_scalar_mul, libflint), Nothing,
+          (Ref{nmod_mat}, Ref{nmod_mat}, UInt), a, b, c.data)
+  return a
+end
+
 ################################################################################
 #
 #  Saturation

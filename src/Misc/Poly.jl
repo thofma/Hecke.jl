@@ -551,6 +551,15 @@ end
 #
 ################################################################################
 
+function resultant_divisor(f::fmpz_poly, g::fmpz_poly, d::fmpz, nbits::Int)
+  r = fmpz()
+  ccall((:fmpz_poly_resultant_modular_div, libflint), Nothing,
+                (Ref{fmpz}, Ref{fmpz_poly}, Ref{fmpz_poly}, Ref{fmpz}, Int), r, f, g, d, nbits)
+  return r
+end
+
+
+
 @doc Markdown.doc"""
     rres(f::fmpz_poly, g::fmpz_poly) -> fmpz
 The reduced resultant of $f$ and $g$,
