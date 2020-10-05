@@ -354,17 +354,17 @@ function _get_element(e, R, R_mat, zeta, i)
   return a, fac_a
 end
 
-function saturate!(d::Hecke.ClassGrpCtx, U::Hecke.UnitGrpCtx, n::Int, stable::Float64 = 3.5; use_orbit::Bool = false, easy_root::Bool = false)
+function saturate!(d::Hecke.ClassGrpCtx, U::Hecke.UnitGrpCtx, n::Int, stable::Float64 = 3.5; use_orbit::Bool = false, easy_root::Bool = false, use_LLL::Bool = false)
   @assert isprime(n)
   K = nf(d)
   @vprint :Saturate 1 "Simplifying the context\n"
-  @vtime :Saturate 1 c = simplify(d, U, n)
+  @vtime :Saturate 1 c = simplify(d, U, n, use_LLL = use_LLL)
   success = false
   restart = false
   while true
     if success
       @vprint :Saturate 1 "Simplifying the context\n"
-      @vtime :Saturate 1 c = simplify(d, U, n, use_LLL = easy_root)
+      @vtime :Saturate 1 c = simplify(d, U, n, use_LLL = use_LLL)
     end
     @vprint :Saturate 1 "Computing candidates for the saturation\n"
     @vtime :Saturate 1 e = compute_candidates_for_saturate(c, n, stable)

@@ -88,6 +88,7 @@ include("Clgp/Main_LLL.jl")
 include("Clgp/Rel_Schmettow.jl")
 include("Clgp/Saturate.jl")
 include("Clgp/Sunits.jl")
+include("Clgp/cm_field.jl")
 using .RelSaturate
 
 ################################################################################
