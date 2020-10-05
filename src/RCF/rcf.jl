@@ -1008,29 +1008,23 @@ function _rcf_descent(CF::ClassField_pp)
   @assert Int(order(q)) == degree(CF)
   
   #now, hopefully either norm or trace will be primitive for the target
-  #norm, trace relative to s, the subgroup
-
-  AT, T = PolynomialRing(A, "T", cached = false)
   local charpoly
   inc_map = CE.mp[1]
-  let inc_map = inc_map, mq = mq, AutA_gen = AutA_gen, q = q, T = T, e = e
-    function coerce_down(a::NfRelElem{nf_elem})
-      @assert a.data.length <= 1
-      b = coeff(a, 0)
-      c = image(inc_map, b)
-      @assert c.data.length <= 1
-      return coeff(c, 0)
-    end
-  
+  let inc_map = inc_map, AutA = AutA, e = e
+
     function charpoly(a::NfRelElem{nf_elem})
-      @vtime :ClassField 2 o = [x[2] for x in find_orbit(genssq, sq, a)]
-      @vtime :ClassField 2 f = prod1([T-x for x=o])
-      @assert degree(f) == length(o)
-      @assert length(o) == e
-      @vtime :ClassField 2 g = nf_elem[coerce_down(coeff(f, i)) for i=0:e]
-      return PolynomialRing(parent(g[1]), cached = false)[1](g)
-    end
+      @vtime :ClassField 2 pows = Hecke.powers(a, e)
+      tr_in_K = Vector{nf_elem}(undef, e)
+      tr_err = divexact(order(AutA), e)
+      for i = 2:length(pows)
+        tr_in_K[i-1] = divexact(tr(inc_map(tr(pows[i]))), tr_err)
+      end
+      res = power_sums_to_polynomial(tr_in_K)
+      return res
+    end 
   end
+
+  
   
   @vprint :ClassField 2 "trying relative trace\n"
   @assert length(os) > 0
@@ -1041,7 +1035,7 @@ function _rcf_descent(CF::ClassField_pp)
   CF.pe = t
   #now the minpoly of t - via Galois as this is easiest to implement...
   @vprint :ClassField 2 "char poly...\n"
-  f2 = charpoly(t)
+  @vtime :ClassField 2 f2 = charpoly(t)
   @vprint :ClassField 2 "... done\n"
   
   if !issquarefree(f2)

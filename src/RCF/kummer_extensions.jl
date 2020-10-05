@@ -129,6 +129,18 @@ end
 #
 ###############################################################################
 
+function assure_gens_mod_nth_powers(K::KummerExt)
+  if isdefined(K, :gen_mod_nth_power)
+    return nothing
+  end
+  gens = Vector{FacElem{nf_elem, AnticNumberField}}(undef, length(K.gen))
+  for i = 1:length(gens)
+    gens[i] = RelSaturate._mod_exponents(K.gen[i], K.n)
+  end
+  K.gen_mod_nth_power = gens
+  return nothing
+end
+
 @doc Markdown.doc"""
     canonical_frobenius(p::NfOrdIdl, K::KummerExt) -> GrpAbFinGenElem
 Computes the element of the automorphism group of $K$ corresponding to the
@@ -150,7 +162,7 @@ function canonical_frobenius(p::NfOrdIdl, K::KummerExt)
   if !fits(Int, minimum(p, copy = false))
     return canonical_frobenius_fmpz(p, K)
   end
-
+  assure_gens_mod_nth_powers(K)
   if degree(p) != 1
     F, mF = ResidueFieldSmall(Zk, p)
     mF1 = NfToFqNmodMor_easy(mF, number_field(Zk))
@@ -177,11 +189,7 @@ function _compute_frob(K, mF, p)
   for j = 1:length(K.gen)
     ord_genj = Int(order(K.AutG[j]))
     ex = div(norm(p)-1, ord_genj)
-    if isdefined(K, :gen_mod_nth_power)
-      mu = image(mF, K.gen_mod_nth_power[j])^ex
-    else
-      mu = image(mF, K.gen[j], K.n)^ex  # can throw bad prime!
-    end
+    mu = image(mF, K.gen_mod_nth_power[j])^ex
     i = 0
     z_pj = z_p^divexact(K.n, ord_genj)
     while !isone(mu)
@@ -384,6 +392,8 @@ function _canonical_frobenius_with_cache(p::NfOrdIdl, K::KummerExt, cached::Bool
   end
   Zk = order(p)
 
+  assure_gens_mod_nth_powers(K)
+
   if degree(p) != 1
     F, mF = ResidueFieldSmall(Zk, p)
     mF1 = NfToFqNmodMor_easy(mF, number_field(Zk))
@@ -409,7 +419,7 @@ function _compute_frob(K, mF, p, cached, D)
   for j = 1:length(K.gen)
     ord_genj = Int(order(K.AutG[j]))
     ex = div(norm(p)-1, ord_genj)
-    mu = image(mF, K.gen[j], D[j], cached, K.n)^ex  # can throw bad prime!
+    mu = image(mF, K.gen_mod_nth_power[j], D[j], cached, K.n)^ex  # can throw bad prime!
     i = 0
     z_pj = z_p^divexact(K.n, ord_genj)
     while !isone(mu)
