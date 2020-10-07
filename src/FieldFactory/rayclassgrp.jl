@@ -246,6 +246,7 @@ function ray_class_group_quo(m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Dict{NfOrd
   end  
   
   X = abelian_group(R)
+  X.exponent = n_quo
   if isone(order(X))
     mp = MapRayClassGrp()
     mp.header = MapHeader(X, FacElemMon(parent(m)))

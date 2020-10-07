@@ -29,3 +29,12 @@ end
 
 end
 
+
+@testset "Automorphisms" begin
+  Qx, x = FlintQQ["x"]
+  f = x^32 - 217*x^28 + 42321*x^24 - 999502*x^20 + 18913054*x^16 - 80959662*x^12 + 277668081*x^8 - 115322697*x^4 + 43046721
+  K, a = number_field(f, cached = false, check = false)
+  auts = Hecke._automorphisms(K, isabelian = true)
+  auts1 = Hecke._automorphisms(K)
+  @test Set(auts) == Set(auts1)
+end

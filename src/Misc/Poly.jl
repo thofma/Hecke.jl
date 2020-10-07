@@ -187,6 +187,79 @@ end
 
 ################################################################################
 #
+#  Modular composition
+#
+################################################################################
+
+function compose_mod(x::fmpz_mod_poly, y::fmpz_mod_poly, z::fmpz_mod_poly)
+  check_parent(x,y)
+  check_parent(x,z)
+  r = parent(x)()
+  ccall((:fmpz_mod_poly_compose_mod, libflint), Nothing,
+          (Ref{fmpz_mod_poly}, Ref{fmpz_mod_poly}, Ref{fmpz_mod_poly}, Ref{fmpz_mod_poly}), r, x, y, z)
+  return r
+end
+
+function compose_mod_precomp(x::fmpz_mod_poly, A::fmpz_mat, z::fmpz_mod_poly, zinv::fmpz_mod_poly)
+  r = parent(x)()
+  ccall((:fmpz_mod_poly_compose_mod_brent_kung_precomp_preinv, libflint), Nothing,
+    (Ref{fmpz_mod_poly}, Ref{fmpz_mod_poly}, Ref{fmpz_mat}, Ref{fmpz_mod_poly}, Ref{fmpz_mod_poly}), r, x, A, z, zinv)
+  return r
+end
+
+function _inv_compose_mod(z::fmpz_mod_poly)
+  r = reverse(z)
+  ccall((:fmpz_mod_poly_inv_series_newton, libflint), Nothing,
+      (Ref{fmpz_mod_poly}, Ref{fmpz_mod_poly}, Int), r, r, length(r))
+  return r
+end
+
+function precomp_compose_mod(y::fmpz_mod_poly, z::fmpz_mod_poly)
+  zinv = _inv_compose_mod(z)
+  nr = Int(root(degree(z), 2)) + 1
+  A = zero_matrix(FlintZZ, nr, degree(z))
+  ccall((:fmpz_mod_poly_precompute_matrix, libflint), Nothing,
+          (Ref{fmpz_mat}, Ref{fmpz_mod_poly}, Ref{fmpz_mod_poly}, Ref{fmpz_mod_poly}), A, y, z, zinv)
+  return A, zinv
+end
+
+function my_compose_mod(x::fmpz_mod_poly, y::fmpz_mod_poly, z::fmpz_mod_poly)
+  if degree(x) < degree(z)
+    return compose_mod(x, y, z)
+  end
+  x1 = shift_right(x, degree(z))
+  r1 = mulmod(my_compose_mod(x1, y, z), powmod(y, degree(z), z), z)
+  x2 = truncate(x, degree(z))
+  return r1 + compose_mod(x2, y, z)
+end
+
+function my_compose_mod_precomp(x::fmpz_mod_poly, A::fmpz_mat, z::fmpz_mod_poly, zinv::fmpz_mod_poly)
+  
+  if degree(x) < degree(z)
+    res1 = compose_mod_precomp(x, A, z, zinv)
+    return res1
+  end
+ 
+  #First, I compute x^degree(z) mod z
+  #The rows of A contain the powers up to sqrt(degree(z))...
+  Rx = parent(x)
+  ind = nrows(A)
+  q, r = divrem(degree(z), ind-1)
+  yind = Rx(Nemo.fmpz_mod[base_ring(Rx)(A[ind, j]) for j = 1:ncols(A)])
+  yind = powmod(yind, q, z)
+  if !iszero(r)
+    ydiff = Rx(Nemo.fmpz_mod[base_ring(Rx)(A[r+1, j]) for j = 1:ncols(A)])
+    yind = mulmod(yind, ydiff, z)
+  end
+  x1 = shift_right(x, degree(z))
+  res = mulmod(compose_mod_precomp(x1, A, z, zinv), yind, z) 
+  x2 = truncate(x, degree(z))
+  add!(res, res, compose_mod_precomp(x2, A, z, zinv))
+  return res
+end
+
+################################################################################
+#
 #  Random polynomial
 #
 ################################################################################
@@ -550,15 +623,6 @@ end
 #  Reduced resultant
 #
 ################################################################################
-
-function resultant_divisor(f::fmpz_poly, g::fmpz_poly, d::fmpz, nbits::Int)
-  r = fmpz()
-  ccall((:fmpz_poly_resultant_modular_div, libflint), Nothing,
-                (Ref{fmpz}, Ref{fmpz_poly}, Ref{fmpz_poly}, Ref{fmpz}, Int), r, f, g, d, nbits)
-  return r
-end
-
-
 
 @doc Markdown.doc"""
     rres(f::fmpz_poly, g::fmpz_poly) -> fmpz

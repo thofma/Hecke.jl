@@ -336,12 +336,12 @@ function _simplify_components(L::Hecke.NfRelNS{nf_elem}, autL::Vector{Hecke.NfRe
   pols = Vector{Generic.Poly{nf_elem}}(undef, ngens(L))
   maps = Vector{NfRelNSElem{nf_elem}}(undef, ngens(L))
   for i = 1:length(pols)
+    Li, mLi = component(L, i)
     if !(i in to_simplify)
-      pols[i] = L.pol[i]
+      pols[i] = Li.pol
       maps[i] = L[i]
       continue
     end
-    Li, mLi = component(L, i)
     Linew, mLinew = simplify(Li)
     pols[i] = Linew.pol
     maps[i] = mLi(mLinew.prim_img)

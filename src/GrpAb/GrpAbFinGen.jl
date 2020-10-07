@@ -494,9 +494,6 @@ order_gen(A::GrpAbFinGen) = order(snf(A)[1])
 Returns the exponent of $A$. It is assumed that $A$ is finite.
 """
 function exponent(A::GrpAbFinGen)
-  if isdefined(A, :exponent)
-    return A.exponent
-  end
   if issnf(A) 
     res = exponent_snf(A) 
     if !iszero(res)
@@ -880,7 +877,9 @@ function sub(G::GrpAbFinGen, s::Array{GrpAbFinGenElem, 1},
   end
   r = view(h, fstWithoutOldGens:nrows(h), ngens(p) + 1:ncols(h))
   S = abelian_group(r)
-
+  if isdefined(G, :exponent)
+    S.exponent = G.exponent
+  end
   mS = hom(S, p, view(m, (nrels(p) + 1):nrows(h), 1:ngens(p)), check = false)
 
   if add_to_lattice
@@ -945,7 +944,9 @@ function sub(G::GrpAbFinGen, M::fmpz_mat,
   r = view(h, fstWithoutOldGens:nrows(h), ngens(G) + 1:ncols(h))
   S = abelian_group(r)
   mS = hom(S, G, view(m, (nrels(G) + 1):nrows(h), 1:ngens(G)), check = false)
-
+  if isdefined(G, :exponent)
+    S.exponent = G.exponent
+  end
   if add_to_lattice
     append!(L, mS)
   end
@@ -980,6 +981,9 @@ function _sub_integer_snf(G::GrpAbFinGen, n::fmpz, add_to_lattice::Bool = true, 
   for i = 1:ngens(Gnew)
     mat_map[i, ind+i-1] = n
   end
+  if isdefined(G, :exponent)
+    Gnew.exponent = G.exponent
+  end 
   mp = hom(Gnew, G, mat_map)
   if add_to_lattice
     append!(L, mp)
@@ -1063,6 +1067,9 @@ function quo(G::GrpAbFinGen, s::Array{GrpAbFinGenElem, 1},
   end
 
   Q = abelian_group(m)
+  if isdefined(G, :exponent)
+    Q.exponent = G.exponent
+  end
   I = identity_matrix(FlintZZ, ngens(p))
   m = hom(p, Q, I, I, check = false)
   if add_to_lattice
@@ -1081,6 +1088,9 @@ function quo(G::GrpAbFinGen, M::fmpz_mat,
              add_to_lattice::Bool = true, L::GrpAbLattice = GroupLattice)
   m = vcat(rels(G), M)
   Q = abelian_group(m)
+  if isdefined(G, :exponent)
+    Q.exponent = G.exponent
+  end
   I = identity_matrix(FlintZZ, ngens(G))
   m = hom(G, Q, I, I, check = false)
   if add_to_lattice
@@ -1115,6 +1125,11 @@ function quo_snf(G::GrpAbFinGen, n::Union{fmpz, Integer},
   r = [gcd(x, n) for x = G.snf]
   I = identity_matrix(FlintZZ, ngens(G))
   Q = abelian_group(r)
+  if isdefined(G, :exponent)
+    Q.exponent = gcd(G.exponent, n)
+  else
+    Q.exponent = n
+  end
   m = hom(G, Q, I, I, check = false)
   if add_to_lattice
     append!(L, m)

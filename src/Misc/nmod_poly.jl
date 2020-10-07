@@ -371,7 +371,13 @@ end
 
 function Nemo.invmod(f::fmpz_mod_poly, M::fmpz_mod_poly) 
   if !isunit(f)
-    error("impossible inverse")
+    r = parent(f)()
+    i = ccall((:fmpz_mod_poly_invmod, libflint), Int, (Ref{fmpz_mod_poly}, Ref{fmpz_mod_poly}, Ref{fmpz_mod_poly}), r, f, M)
+    if iszero(i)
+      error("not yet implemented")
+    else
+      return r
+    end
   end
   if !isunit(lead(M))
     error("not yet implemented")

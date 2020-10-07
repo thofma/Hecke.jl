@@ -560,7 +560,11 @@ function isabelian(K::NfRelNS)
 end
 
 function isabelian(K::AnticNumberField)
-  d = discriminant(K.pol)
+  c = get_special(K, :isabelian)
+  if c !== nothing
+    return c
+  end
+  d = discriminant(K)
   den = denominator(d)
   if !isone(den)
     d *= den^degree(K)
@@ -574,7 +578,13 @@ function isabelian(K::AnticNumberField)
   r, mr = ray_class_group(ideal(ZKQ, d1), real_places(KQ), n_quo = degree(K))
   s, ms = norm_group(map_coeffs(KQ, K.pol), mr, cached = false)
   deg = divexact(order(r), order(s))
-  return deg == degree(K)
+  if deg == degree(K)
+    set_special(K, :isabelian => true)
+    return true
+  else
+    set_special(K, :isabelian => false)
+    return false
+  end
 end
 
 ################################################################################

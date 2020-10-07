@@ -750,6 +750,9 @@ function ray_class_group(m::NfOrdIdl, inf_plc::Vector{InfPlc} = Vector{InfPlc}()
   end  
   
   X = abelian_group(R)
+  if n_quo != -1
+    X.exponent = n_quo
+  end
   
   local disclog
   let X = X, mC = mC, C = C, exp_class = exp_class, powers = powers, groups_and_maps = groups_and_maps, quo_rings = quo_rings, lH = lH, diffC = diffC, n_quo = n_quo, m = m, expon = expon
@@ -941,7 +944,8 @@ end
 function ray_class_groupQQ(O::NfOrd, modulus::Int, inf_plc::Bool, n_quo::Int)
 
   R=ResidueRing(FlintZZ, modulus, cached=false)
-  U,mU=unit_group_mod(R, n_quo)
+  U, mU = unit_group_mod(R, n_quo)
+  U.exponent = n_quo
   if inf_plc 
     function disc_log1(I::NfOrdIdl)
       @assert gcd(minimum(I),modulus)==1
