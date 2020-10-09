@@ -1772,14 +1772,35 @@ end
 
 ################################################################################
 #
-#  Binary Quadratic Fields
+#  Binary Quadratic Forms
 #
 ################################################################################
 
-mutable struct QuadBin
-  a::fmpz
-  b::fmpz
-  c::fmpz
+mutable struct QuadBin{T}
+  base_ring         #::parent_type(T)
+  a::T
+  b::T
+  c::T
+  disc::T           # discriminant
+  nonproper_cycle   # Vector{QuadBin{T}}
+
+  function QuadBin(a::T, b::T, c::T) where {T}
+    z = new{T}()
+    z.a = a
+    z.b = b
+    z.c = c
+    return z
+  end
+end
+
+function QuadBin(a::Integer, b::Integer, c::Integer)
+  return QuadBin(FlintZZ, a, b, c)
+end
+
+function QuadBin(R, a, b, c)
+  z = QuadBin(R(a), R(b), R(c))
+  z.base_ring = R
+  return z
 end
 
 ################################################################################

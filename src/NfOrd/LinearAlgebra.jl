@@ -439,7 +439,6 @@ function pseudo_hnf(P::PMat{nf_elem, NfOrdFracIdl}, shape::Symbol = :upperright,
     # starts an infinite loop.
     Q = try pseudo_hnf_full_rank(P, shape)
     catch e
-      rethrow(e)
       pseudo_hnf_kb(P, shape)
     end
     return Q

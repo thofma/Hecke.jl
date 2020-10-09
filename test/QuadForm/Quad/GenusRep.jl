@@ -40,7 +40,7 @@
     M[2, 2] = 560 + i
     V = quadratic_space(K, M)
     L = lattice(V, identity_matrix(K, 2))
-    g = length(Hecke._genus_representatives_binary_quadratic(L))
+    g = length(Hecke._genus_representatives_binary_quadratic_definite(L))
     push!(w, g)
   end
   @test w == Int[37, 16, 19, 11, 6, 3, 52, 7, 13, 21]

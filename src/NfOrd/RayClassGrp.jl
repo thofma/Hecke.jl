@@ -111,8 +111,7 @@ function __assure_princ_gen(c::Hecke.ClassGrpCtx{SMat{fmpz}}, nquo::Int)
   return res
 end
 
-
-function _assure_princ_gen(mC::MapClassGrp)
+function _assure_princ_gen(mC::MapClassGrp)  
   if isdefined(mC, :princ_gens)
     return nothing
   end
@@ -162,9 +161,6 @@ function isconsistent(mC, res)
   for i = 1:length(res)
     I = evaluate(res[i][1]).num
     if mC\I != C[i]
-      @show mC\I
-      @show C[i]
-      @show "wrong representative"
       return false
     end
     e = evaluate(res[i][2])

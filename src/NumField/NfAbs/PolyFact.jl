@@ -786,6 +786,8 @@ function norm_mod(f::PolyElem{nf_elem}, p::Int, Zx::FmpzPolyRing = Globals.Zx)
   return lift(Zx, pol)
 end
 
+global _debug = []
+
 function norm_mod(f::PolyElem{nf_elem}, Zx::FmpzPolyRing = Globals.Zx)
   #assumes, implicitly, the coeffs of f are algebraic integers.
   # equivalently: the norm is integral...
@@ -815,6 +817,7 @@ function norm_mod(f::PolyElem{nf_elem}, Zx::FmpzPolyRing = Globals.Zx)
       stable = 0
     end
     if nbits(d) > 20000
+      push!(_debug, f)
       error("too bad")
     end
   end

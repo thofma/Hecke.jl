@@ -57,10 +57,6 @@ end
 
 function Base.show(io::IO, J::JorDec)
   p = J.p
-  #if !get(io, :compact, false)
-  #  print(IOContext(io, :compact => true), "Abstract Jordan decomposition at ", p)
-  #end
-  #print(io, "\n")
   if !isdyadic(p)
     for i in 1:length(J)
       print(io, "(", J.scales[i], ", ", J.ranks[i], ", ", J.dets[i], ")")

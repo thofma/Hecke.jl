@@ -24,4 +24,6 @@
   @time include("NfOrd/LinearAlgebra.jl")
   println("PicardGroup.jl")
   @time include("NfOrd/PicardGroup.jl")
+  println("NarrowPicardGroup.jl")
+  @time include("NfOrd/NarrowPicardGroup.jl")
 end

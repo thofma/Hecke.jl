@@ -481,6 +481,7 @@ end
 #
 ################################################################################
 
+# TODO: Add a simplify option
 #@doc Markdown.doc"""
 #    absolute_field(K::NfRel{nf_elem}, cached::Bool = false) -> AnticNumberField, Map, Map
 #Given an extension $K/k/Q$, find an isomorphic extension of $Q$.

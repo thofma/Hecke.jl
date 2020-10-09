@@ -4119,6 +4119,14 @@ function evaluate(a::fmpz, ::PosInf, p::Int = 64)
   return ArbField(p, cached = false)(a)
 end
 
+function support(d::fmpz)
+  res = fmpz[]
+  for (p, _) in factor(d)
+    push!(res, p)
+  end
+  return res
+end
+
 function support(a::fmpq)
   d = denominator(a)
   n = numerator(a)

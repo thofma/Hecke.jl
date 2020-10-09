@@ -99,6 +99,8 @@ function sum_via_basis_matrix(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
   return res
 end
 
+global _debug = []
+
 @doc Markdown.doc"""
     +(x::NfOrdIdl, y::NfOrdIdl)
 
@@ -107,6 +109,14 @@ Returns $x + y$.
 function +(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
   check_parent(x, y)
   OK = order(x)
+
+  if iszero(x)
+    return y
+  end
+  if iszero(y)
+    return x
+  end
+
   if isdefined(x, :gen_one) && isdefined(y, :gen_one) && isone(gcd(x.gen_one, y.gen_one))
     return ideal(OK, 1)
   end
@@ -148,7 +158,8 @@ function +(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
     gen_2 = OK(nf(OK)(ggZ))
     return ideal(OK, g, gen_2)
   end
-  return sum_via_basis_matrix(x, y)
+  z = sum_via_basis_matrix(x, y)
+  return z
 end
 
 ################################################################################
@@ -877,6 +888,9 @@ divexact(A::NfAbsOrdIdl, b::Integer) = divexact(A, fmpz(b))
 Returns $A/y$ assuming that $A/y$ is again an integral ideal.
 """
 function divexact(A::NfAbsOrdIdl, b::fmpz)
+  if iszero(A)
+    return A
+  end
   zk = order(A)
   b = abs(b)
   if has_2_elem(A)

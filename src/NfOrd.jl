@@ -55,5 +55,5 @@ include("NfOrd/TorsionUnits.jl")
 include("NfOrd/StrongEchelonForm.jl")
 include("NfOrd/LinearAlgebra.jl")
 include("NfOrd/Overorders.jl")
-
 include("NfOrd/PicardGroup.jl")
+include("NfOrd/NarrowPicardGroup.jl")

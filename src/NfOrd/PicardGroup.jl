@@ -60,8 +60,6 @@ function class_group_as_picard(OK::NfOrd)
   return C, mp
 end
 
-
-
 # Computes \bigoplus_p OK_p^\times/O_p^\times where the sum runs over all prime
 # ideals p containing the conductor of O and OK is the maximal order.
 # This group is isomorphic to (OK/F)^\times/(O/F)^\times.
