@@ -397,7 +397,8 @@ function isprincipal_non_maximal(I::Union{ NfAbsOrdIdl, AlgAssAbsOrdIdl })
   if !b
     return false, O()
   end
-  Q, toQ = quo(U, kernel(h)[1], false)
+  _K, _mK = kernel(h, false)
+  Q, toQ = quo(U, _mK, false)
   u = toQ\(toQ(u)) # Reduce the coefficient size (hopefully)
   y = O(x*inv(_elem_in_algebra(mU(u), copy = false))*inv(z))
   return true, y
