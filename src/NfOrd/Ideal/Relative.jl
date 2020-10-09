@@ -239,8 +239,13 @@ function prime_decomposition_type_nonindex(f::Map, p::NfOrdIdl, ZK = maximal_ord
   G = K.pol
   Qx = parent(G)
 
-  Fp = PolynomialRing(GF(Int(minimum(p)), cached = false), cached = false)[1]
-  Gp = factor_shape(gcd(Fp(f(K(p.gen_two))), Fp(G)))
+  if fits(Int, minimum(p, copy = false))
+    Fp = PolynomialRing(GF(Int(minimum(p)), cached = false), cached = false)[1]
+    Gp = factor_shape(gcd(Fp(f(K(p.gen_two))), Fp(G)))
+  else
+    Fpp = PolynomialRing(GF(minimum(p), cached = false), cached = false)[1]
+    Gp = factor_shape(gcd(Fpp(f(K(p.gen_two))), Fpp(G)))   
+  end
   res = Vector{Tuple{Int, Int}}(undef, sum(values(Gp)))
   ind = 1
   for (d, e) in Gp

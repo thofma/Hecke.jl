@@ -564,19 +564,23 @@ function isabelian(K::AnticNumberField)
   if c !== nothing
     return c
   end
-  d = discriminant(K)
-  den = denominator(d)
-  if !isone(den)
-    d *= den^degree(K)
+  if !isnormal_easy(K)
+    return false
   end
-  d1 = numerator(d)
   if ismaximal_order_known(K)
     d1 = discriminant(maximal_order(K))
+  else
+    d = discriminant(K)
+    den = denominator(d)
+    if !isone(den)
+      d *= den^degree(K)
+    end
+    d1 = numerator(d)
   end
   KQ = rationals_as_number_field()[1]
   ZKQ = maximal_order(KQ)
   r, mr = ray_class_group(ideal(ZKQ, d1), real_places(KQ), n_quo = degree(K))
-  s, ms = norm_group(map_coeffs(KQ, K.pol), mr, cached = false)
+  s, ms = norm_group(map_coeffs(KQ, K.pol), mr, false, cached = false)
   deg = divexact(order(r), order(s))
   if deg == degree(K)
     set_special(K, :isabelian => true)
@@ -640,8 +644,6 @@ function norm_group(l_pols::Array{T, 1}, mR::Hecke.MapRayClassGrp, isabelian::Bo
   #The degree might be large and so difficult to compute.
   #Thus I will check for every prime if the projection has discriminant 0
 
-  
-
   n = lcm(Int[degree(x) for x = l_pols])
   if of_closure  
     #we cannot work in the quotient, it "could" be lcm(factorial(degree(x)) for x = f)
@@ -656,7 +658,7 @@ function norm_group(l_pols::Array{T, 1}, mR::Hecke.MapRayClassGrp, isabelian::Bo
   
   # Adding small primes until it stabilizes
   B = prod(Int[degree(x) for x in l_pols])  
-  max_stable = 2*n
+  max_stable = 20*n
   stable = max_stable
   denom = lcm([denominator(coeff(x, i)) for x in l_pols for i = 0:degree(x)])
   indexO = index(O)
@@ -703,8 +705,8 @@ function norm_group(l_pols::Array{T, 1}, mR::Hecke.MapRayClassGrp, isabelian::Bo
           fl = false
           break
         end
-        D = factor_shape(g)
-        push!(all_deg, Int[x[1] for x = D])
+        D = factor_distinct_deg(g)
+        push!(all_deg, Int[x[1] for x in D])
       end
       if !fl
         continue
@@ -717,15 +719,14 @@ function norm_group(l_pols::Array{T, 1}, mR::Hecke.MapRayClassGrp, isabelian::Bo
       else
         all_f = Set(lcm([x for x = all_f]))
       end
-      for E = all_f
-        candidate = E*candidate
-        if !iszero(mQ(candidate))
-          push!(listprimes, candidate)
-          Q, mQ = quo(R, listprimes, false)
-          stable = max_stable
-        else
-          stable -= 1
-        end
+      E = gcd(collect(all_f))
+      candidate = E*candidate
+      if !iszero(mQ(candidate))
+        push!(listprimes, candidate)
+        Q, mQ = quo(R, listprimes, false)
+        stable = max_stable
+      else
+        stable -= 1
       end  
     end
   end
@@ -768,13 +769,16 @@ function norm_group(mL::NfToNfMor, mR::Union{MapRayClassGrp, MapClassGrp}, expec
   n = divexact(degree(L), degree(K))
   max_stable = 20*n
   stable = max_stable
-  p = next_prime(N)
+  p = 101
   Q, mQ = quo(R, els, false)
   while true
     if order(Q) == expected_index || (order(Q) <= n && stable <= 0)
       break
     end
     p = next_prime(p)
+    if !iscoprime(N, p)
+      continue
+    end
     lP = prime_decomposition(O, p)
     for (P, e) in lP
       lQ = prime_decomposition_type(mL, P)

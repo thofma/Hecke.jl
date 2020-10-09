@@ -250,7 +250,7 @@ function _minkowski_matrix_CM(M::NfOrd)
   if isdefined(M,  :minkowski_gram_CMfields)
     return M.minkowski_gram_CMfields
   end
-  prec = 100 + 25*div(degree(M), 3) + Int(round(log(abs(discriminant(M)))))
+  prec = 64
   g = zero_matrix(FlintZZ, degree(M), degree(M))
   B = basis(M, nf(M))
   imgs = Vector{Vector{arb}}(undef, length(B))
@@ -274,8 +274,9 @@ function _minkowski_matrix_CM(M::NfOrd)
         j += 1
       else
         prec *= 2
-        imgs[i] = minkowski_map(B[i], prec)
-        imgs[j] = minkowski_map(B[j], prec)
+        for k = i:n
+          imgs[k] = minkowski_map(B[k], prec)
+        end
       end
     end
     i += 1

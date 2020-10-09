@@ -33,6 +33,7 @@
 ################################################################################
 
 include("Ideal/Ideal.jl")
+include("Ideal/Valuation.jl")
 include("Ideal/TwoElement.jl")
 include("Ideal/Arithmetic.jl")
 include("Ideal/Prime.jl")

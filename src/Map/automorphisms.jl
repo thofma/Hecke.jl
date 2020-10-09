@@ -7,96 +7,122 @@ add_verbose_scope(:Automorphisms)
 ################################################################################
 
 function _automorphisms(K::AnticNumberField; isabelian::Bool = false)
-    if degree(K) == 1
-      return NfToNfMor[hom(K, K, one(K))]
-    end
-    if Nemo.iscyclo_type(K)
-      f = get_special(K, :cyclo)::Int
-      a = gen(K)
-      A, mA = unit_group(ResidueRing(FlintZZ, f, cached = false))
-      auts = NfToNfMor[ hom(K, K, a^lift(mA(g)), check = false) for g in A]
-      return auts
-    end
-    c = get_special(K, :isabelian)
-    if c !== nothing && c
-      return _automorphisms_abelian(K)
-    end
-    if isabelian
-      return _automorphisms_abelian(K)
-    end
-    f = K.pol
-    Kt, t = PolynomialRing(K, "t", cached = false)
-    f1 = change_base_ring(K, f, parent = Kt)
-    divpol = Kt(nf_elem[-gen(K), K(1)])
-    f1 = divexact(f1, divpol)
-    lr = roots(f1, max_roots = div(degree(K), 2))
-    Aut1 = Vector{NfToNfMor}(undef, length(lr)+1)
-    for i = 1:length(lr)
-      Aut1[i] = hom(K, K, lr[i], check = false)
-    end
-    Aut1[end] = id_hom(K)
-    auts = closure(Aut1, degree(K))
+  if degree(K) == 1
+    return NfToNfMor[hom(K, K, one(K))]
+  end
+  if Nemo.iscyclo_type(K)
+    f = get_special(K, :cyclo)::Int
+    a = gen(K)
+    A, mA = unit_group(ResidueRing(FlintZZ, f, cached = false))
+    auts = NfToNfMor[ hom(K, K, a^lift(mA(g)), check = false) for g in A]
     return auts
   end
-  
-  function _generator_automorphisms(K::AnticNumberField)
-    if degree(K) == 1
-      return NfToNfMor[]
-    end
-    if Nemo.iscyclo_type(K)
-      f = get_special(K, :cyclo)::Int
-      a = gen(K)
-      A, mA = unit_group(ResidueRing(FlintZZ, f, cached = false))
-      auts = NfToNfMor[ hom(K, K, a^lift(mA(g)), check = false) for g in gens(A)]
-      return auts
-    end
-    f = K.pol
-    Kt, t = PolynomialRing(K, "t", cached = false)
-    f1 = change_base_ring(K, f, parent = Kt)
-    divpol = Kt(nf_elem[-gen(K), K(1)])
-    f1 = divexact(f1, divpol)
-    lr = roots(f1, max_roots = div(degree(K), 2))
-    Aut1 = Vector{NfToNfMor}(undef, length(lr))
-    for i = 1:length(lr)
-      Aut1[i] = hom(K, K, lr[i], check = false)
-    end
-    return small_generating_set(Aut1)
+  c = get_special(K, :isabelian)
+  if c !== nothing && c
+    return _automorphisms_abelian(K)
   end
-  
-  @doc Markdown.doc"""
-      automorphisms(K::AnticNumberField) -> Vector{NfToNfMor}
-  
-  Returns the set of automorphisms of K
-  """  
-  function automorphisms(K::AnticNumberField; copy::Bool = true, isabelian::Bool = false)
-    if isautomorphisms_known(K)
-      Aut = _get_automorphisms_nf(K)::Vector{NfToNfMor}
-      if copy
-        v = Vector{NfToNfMor}(undef, length(Aut))
-        for i = 1:length(v)
-          v[i] = Aut[i]
-        end
-        return v
-      else
-        return Aut::Vector{NfToNfMor}
-      end
+  if isabelian
+    return _automorphisms_abelian(K)
+  end
+  f = K.pol
+  ord_aut = _order_bound(K)
+  if ord_aut == 1
+    return NfToNfMor[id_hom(K)]
+  end
+  Kt, t = PolynomialRing(K, "t", cached = false)
+  f1 = change_base_ring(K, f, parent = Kt)
+  divpol = Kt(nf_elem[-gen(K), K(1)])
+  f1 = divexact(f1, divpol)
+  lr = roots(f1, max_roots = div(ord_aut, 2))
+  Aut1 = Vector{NfToNfMor}(undef, length(lr)+1)
+  for i = 1:length(lr)
+    Aut1[i] = hom(K, K, lr[i], check = false)
+  end
+  Aut1[end] = id_hom(K)
+  auts = closure(Aut1, degree(K))
+  return auts
+end
+
+
+function _order_bound(K::AnticNumberField)
+  p = 101
+  i = 0
+  ord = degree(K)
+  while i < 15 && !isone(ord)
+    p = next_prime(p)
+    F = GF(p, cached = false)
+    Fx, x = PolynomialRing(F, cached = false)
+    fF = Fx(K.pol)
+    if degree(fF) != degree(K) || iszero(discriminant(fF))
+      continue
     end
-    auts = _automorphisms(K, isabelian = isabelian)
-    _set_automorphisms_nf(K, auts)
+    i += 1
+    fF1 = gcd(powmod(x, p, fF)-x, fF) 
+    if !isone(fF1)
+      ord = gcd(ord, degree(fF1))
+    end
+  end
+  return ord
+end
+  
+function _generator_automorphisms(K::AnticNumberField)
+  if degree(K) == 1
+    return NfToNfMor[]
+  end
+  if Nemo.iscyclo_type(K)
+    f = get_special(K, :cyclo)::Int
+    a = gen(K)
+    A, mA = unit_group(ResidueRing(FlintZZ, f, cached = false))
+    auts = NfToNfMor[ hom(K, K, a^lift(mA(g)), check = false) for g in gens(A)]
+    return auts
+  end
+  f = K.pol
+  Kt, t = PolynomialRing(K, "t", cached = false)
+  f1 = change_base_ring(K, f, parent = Kt)
+  divpol = Kt(nf_elem[-gen(K), K(1)])
+  f1 = divexact(f1, divpol)
+  lr = roots(f1, max_roots = div(degree(K), 2))
+  Aut1 = Vector{NfToNfMor}(undef, length(lr))
+  for i = 1:length(lr)
+    Aut1[i] = hom(K, K, lr[i], check = false)
+  end
+  return small_generating_set(Aut1)
+end
+  
+@doc Markdown.doc"""
+    automorphisms(K::AnticNumberField) -> Vector{NfToNfMor}
+
+Returns the set of automorphisms of K
+"""  
+function automorphisms(K::AnticNumberField; copy::Bool = true, isabelian::Bool = false)
+  if isautomorphisms_known(K)
+    Aut = _get_automorphisms_nf(K)::Vector{NfToNfMor}
     if copy
-      v = Vector{NfToNfMor}(undef, length(auts))
+      v = Vector{NfToNfMor}(undef, length(Aut))
       for i = 1:length(v)
-        v[i] = auts[i]
+        v[i] = Aut[i]
       end
       return v
     else
-      return auts
+      return Aut::Vector{NfToNfMor}
     end
   end
-  
-  function isautomorphisms_known(K::AnticNumberField)
-    return _get_automorphisms_nf(K, false) != nothing
+  auts = _automorphisms(K, isabelian = isabelian)
+  _set_automorphisms_nf(K, auts)
+  if copy
+    v = Vector{NfToNfMor}(undef, length(auts))
+    for i = 1:length(v)
+      v[i] = auts[i]
+    end
+    return v
+  else
+    return auts
   end
+end
+  
+function isautomorphisms_known(K::AnticNumberField)
+  return _get_automorphisms_nf(K, false) != nothing
+end
 
 
 ################################################################################
@@ -104,6 +130,7 @@ function _automorphisms(K::AnticNumberField; isabelian::Bool = false)
 #  Automorphism Group
 #
 ################################################################################
+
 @doc Markdown.doc"""
     automorphism_group(K::AnticNumberField) -> GenGrp, GrpGenToNfMorSet
 
@@ -298,8 +325,8 @@ function _automorphisms_abelian(K::AnticNumberField)
     if degree(fF) != degree(K) || iszero(discriminant(fF))
       continue 
     end
-    @vprint :Automorphisms "Trying $p \n"
-    isnew, h = _frobenius_at(K, p)
+    @vprint :Automorphisms 1 "Trying $p \n"
+    @vtime :Automorphisms 1 isnew, h = _frobenius_at(K, p, auts)
     if !isnew
       @vprint :Automorphisms "Not new! \n"
       continue
@@ -312,18 +339,17 @@ function _automorphisms_abelian(K::AnticNumberField)
 end
 
 
-function _frobenius_at(K::AnticNumberField, p::Int, auts::Vector{NfToNfMor} = NfToNfMor[])
+function _frobenius_at(K::AnticNumberField, p::Int, auts::Vector{NfToNfMor} = NfToNfMor[]; bound::Int = 100)
 
   Zx = FlintZZ["x"][1]
   F = ResidueRing(FlintZZ, p, cached = false)
   Fx, gFx = PolynomialRing(F, "x", cached = false)
   fF = map_coeffs(F, Zx(K.pol), parent = Fx)
   b = powmod(gFx, p, fF)
-  if b in nmod_poly[map_coeffs(F, x, parent = Fx) for x in auts]
+  if b in nmod_poly[Fx(x.prim_img) for x in auts]
     return false, id_hom(K)
   end
-  fshape = factor_shape(fF)
-  if first(keys(fshape)) == 1
+  if fF == gcd(powmod(gFx, p, fF)-gFx, fF)
     return false, id_hom(K)
   end
   test = 2^10
@@ -348,19 +374,21 @@ function _frobenius_at(K::AnticNumberField, p::Int, auts::Vector{NfToNfMor} = Nf
   r = K(parent(K.pol)(b_0))
   mul!(r, r, dF)
   mod_sym!(r, modu)
-  while r != r_old && !check_root(K, test, r)
+  i = 0
+  while i < bound && r != r_old && !check_root(K, test, r) 
+    i += 1
     modu = modu^2
     R = ResidueRing(FlintZZ, modu, cached = false)
     Rx = PolynomialRing(R, "x", cached = false)[1]
     fR = map_coeffs(R, Zx(K.pol), parent = Rx)
     Rb_0 = Rx(b_0)
     Rw_0 = Rx(w_0)
-    @vtime :Automorphisms 1 A, fRinv = precomp_compose_mod(Rb_0, fR)
-    @vtime :Automorphisms 1 wi = compose_mod_precomp(derivative(fR), A, fR, fRinv)
+    @vtime :Automorphisms 4 A, fRinv = precomp_compose_mod(Rb_0, fR)
+    @vtime :Automorphisms 4 wi = compose_mod_precomp(derivative(fR), A, fR, fRinv)
     wi = wi * Rw_0
     wi = 2 - wi
     wi = mulmod(wi, Rw_0, fR)
-    @vtime :Automorphisms 1 bi = my_compose_mod_precomp(fR, A, fR, fRinv)
+    @vtime :Automorphisms 4 bi = my_compose_mod_precomp(fR, A, fR, fRinv)
     bi = mulmod(bi, wi, fR)
     bi = Rb_0 - bi
     b_0 = lift(Zx, bi)
@@ -369,7 +397,44 @@ function _frobenius_at(K::AnticNumberField, p::Int, auts::Vector{NfToNfMor} = Nf
     r = mul!(r, r, dF)
     r = mod_sym!(r, modu)
   end
-  return true, hom(K, K, divexact(r, dF))
+  if i == bound
+    if check_root(K, test, r)
+      return true, hom(K, K, divexact(r, dF), check = false)
+    else
+      return false, id_hom(K)
+    end
+  end
+  return true, hom(K, K, divexact(r, dF), check = false)
+end
+
+
+function _coefficients_bound(K::AnticNumberField)
+  r1, r2 = signature(K)
+  bound_root = Vector{arb}(undef, r1 + r2)
+  a = gen(K)
+  dfa = K(derivative(K.pol))
+  dfa_conjs = conjugates_arb(dfa, 32)
+  RR = ArbField(64, cached = false)
+  RRt, t = PolynomialRing(RR, "t", cached = false)
+  ub_f = roots_upper_bound(RRt(K.pol))
+  for i in 1:r1+r2
+    bound_root[i] = ub_f * abs(dfa_conjs[i])
+  end
+  E = EquationOrder(K)
+  c1, c2 = norm_change_const(E)
+
+  #First, t2 norm 
+  R = parent(bound_root[1])
+  bd = zero(R)
+  for i in 1:r1
+    bd += bound_root[i]^2
+  end
+
+  for i=1:r2
+    bd += 2*bound_root[i+r1]^2
+  end
+  boundt2 = max(bd, one(R))
+  return upper_bound(sqrt(R(c2)*boundt2), fmpz)
 end
 
 function check_root(K::AnticNumberField, p::Int, el::nf_elem)
@@ -392,9 +457,45 @@ function check_root(K::AnticNumberField, p::Int, el::nf_elem)
     end
   end
   if !isroot
-    @vprint :Automorphisms 1 "Not yet a root!\n"
+    @vprint :Automorphisms 4 "Not yet a root!\n"
   end
   return isroot
 end
 
 
+function _automorphisms_center(K::AnticNumberField)
+  auts = NfToNfMor[id_hom(K)]
+  p = 2
+  dp = denominator(K.pol)
+  coeffs_bound = 2*_coefficients_bound(K)
+  cnt = 0
+  while length(auts) != degree(K) && cnt < 40
+    p = next_prime(p)
+    if divisible(dp, p)
+      continue
+    end
+    F = GF(p, cached = false)
+    Fx = PolynomialRing(F, cached = false)[1]
+    fF = Fx(K.pol)
+    if degree(fF) != degree(K) || iszero(discriminant(fF))
+      continue 
+    end
+    cnt += 1
+    lf = factor_distinct_deg(fF)
+    if length(lf) != 1
+      continue
+    end
+    it_bound = clog(fmpz(clog(coeffs_bound, p)), 2)
+    @vprint :Automorphisms "Trying $p \n"
+    isnew, h = _frobenius_at(K, p, auts, bound = it_bound)
+    if !isnew
+      @vprint :Automorphisms "Not new! \n"
+      continue
+    end
+    cnt = 0
+    @vprint :Automorphisms "New! Computing closure \n"
+    push!(auts, h)
+    auts = closure(auts)
+  end
+  return auts
+end

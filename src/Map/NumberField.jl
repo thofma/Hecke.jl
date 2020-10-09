@@ -329,13 +329,16 @@ function evaluate(f::fmpq_poly, a::nf_elem)
   if iszero(f)
     return zero(R)
   end
+  if a == gen(R)
+    return R(f)
+  end
   l = length(f) - 1
   s = R(coeff(f, l))
   for i in l-1:-1:0
     #s = s*a + R(coeff(f, i))
     mul!(s, s, a)
     # TODO (easy): Once fmpq_poly_add_fmpq is improved in flint, remove the R(..)
-    add!(s, s, R(coeff(f, i)))
+    add!(s, s, coeff(f, i))
   end
   return s
 end
@@ -409,13 +412,29 @@ function isnormal(K::AnticNumberField)
   if c isa Bool
     return c::Bool
   end
-  E = EquationOrder(K)
-  d = discriminant(E)
+  fl = isnormal_easy(K)
+  if !fl
+    return false
+  end
+  if length(automorphisms(K, copy = false)) != degree(K)
+    set_special(K, :isnormal => false)
+    return false
+  else
+    set_special(K, :isnormal => true)
+    return true
+  end
+end
+
+function isnormal_easy(K::AnticNumberField)
+  E = any_order(K)
   p = 1000
   ind = 0
   while ind < 15
     p = next_prime(p)
-    if divisible(d, p)
+    F = GF(p, cached = false)
+    Fx = PolynomialRing(F, cached = false)[1]
+    fF = Fx(K.pol)
+    if degree(fF) != degree(K) || iszero(discriminant(fF))
       continue
     end
     ind += 1
@@ -432,13 +451,7 @@ function isnormal(K::AnticNumberField)
       end
     end
   end
-  if length(automorphisms(K, copy = false)) != degree(K)
-    set_special(K, :isnormal => false)
-    return false
-  else
-    set_special(K, :isnormal => true)
-    return true
-  end
+  return true
 end
 
 ################################################################################
@@ -460,10 +473,19 @@ function iscm_field(K::AnticNumberField)
   if isodd(degree(K)) || !istotally_complex(K)
     return false, id_hom(K)
   end 
-  auts = automorphisms(K, copy = false)
-  if length(auts) == 1
+  if isautomorphisms_known(K)
+    auts = automorphisms(K, copy = false)
+    return _find_complex_conj(auts)
+  end
+  if !iscm_field_easy(K)
     return false, id_hom(K)
   end
+  auts = _automorphisms_center(K)
+  return _find_complex_conj(auts)
+end
+
+function _find_complex_conj(auts::Vector{NfToNfMor})
+  K = domain(auts[1])
   for x in auts
     if !isinvolution(x)
       continue
@@ -474,6 +496,48 @@ function iscm_field(K::AnticNumberField)
     end
   end
   return false, id_hom(K)
+end
+
+function iscm_field_easy(K::AnticNumberField)
+  E = any_order(K)
+  if ismaximal_order_known(K)
+    E = maximal_order(K)
+  end
+  n = degree(E)
+  g = zero_matrix(FlintZZ, n, n)
+  B = basis(E, nf(E))
+  prec = 32
+  imgs = Vector{Vector{arb}}(undef, n)
+  for i = 1:n
+    imgs[i] = minkowski_map(B[i], prec)
+  end
+  i = 1
+  t = arb()
+  while i <= n
+    j = i
+    while j <= n
+      el = imgs[i][1]*imgs[j][1]
+      for k = 2:n
+        mul!(t, imgs[i][k], imgs[j][k])
+        add!(el, el, t)
+      end
+      if radius(el) > 1//16
+        prec *= 2
+        for k = i:n
+          imgs[k] = minkowski_map(B[k], prec)
+        end
+        continue
+      end
+      fl, r = unique_integer(el)
+      if !fl
+        return false
+      end
+      j += 1 
+    end
+    i += 1
+  end
+  return true
+
 end
 
 ################################################################################

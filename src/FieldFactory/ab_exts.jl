@@ -1199,11 +1199,11 @@ function _from_relative_to_absQQ(L::NfRelNS{T}, auts::Array{NfRelNSToNfRelNSMor{
   Ofinal = OS
   for p in lp
     if isprime(p)
-      Ofinal += pmaximal_overorder(OS, p)
+      Ofinal = sum_as_Z_modules(Ofinal, pmaximal_overorder(OS, p))
     else
       fac = factor(p)
       for (k, v) in fac
-        Ofinal += pmaximal_overorder(OS, k)
+        Ofinal = sum_as_Z_modules(Ofinal, pmaximal_overorder(OS, k))
       end
     end
   end

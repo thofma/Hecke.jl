@@ -205,7 +205,7 @@ function class_group_ideal_relation(I::NfOrdIdl, c::ClassGrpCtx)
       else
         res2 = r
       end
-      @hassert :ClassGroup 1 simplify(prod([fractional_ideal(c.FB.ideals[p])^Int(v) for (p,v) = res2])) == simplify(res1*I_start)
+      @hassert :ClassGroup 1 iszero(res2) || simplify(prod([fractional_ideal(c.FB.ideals[p])^Int(v) for (p,v) = res2])) == simplify(res1*I_start)
       return res1, res2
     end
   end
