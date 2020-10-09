@@ -536,7 +536,7 @@ function test_module(x, new::Bool = true)
      try
        include(test_file)
      catch e
-       if isa(e, LoadError)
+       if false #isa(e, LoadError)
          println("You need to do \"using Test\"")
        else
          rethrow(e)

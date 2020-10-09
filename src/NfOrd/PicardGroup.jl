@@ -134,7 +134,7 @@ function OO_mod_F_mod_O_mod_F(O::NfAbsOrd)
     for ind_for = 1:length(gens)
       gens[ind_for] = GtoQ\(OKtoQ(OK(mGG.generators[ind_for].elem)))
     end
-    H, GtoH = quo(G, gens)
+    H, GtoH = quo(G, gens, false)
     HtoQ = GrpAbFinGenToAbsOrdQuoRingMultMap(H, Q, GtoQ.generators, GtoQ.discrete_logarithm)
     push!(groups, H)
     push!(maps, HtoQ)
@@ -397,7 +397,7 @@ function isprincipal_non_maximal(I::Union{ NfAbsOrdIdl, AlgAssAbsOrdIdl })
   if !b
     return false, O()
   end
-  Q, toQ = quo(U, kernel(h)[1])
+  Q, toQ = quo(U, kernel(h)[1], false)
   u = toQ\(toQ(u)) # Reduce the coefficient size (hopefully)
   y = O(x*inv(_elem_in_algebra(mU(u), copy = false))*inv(z))
   return true, y

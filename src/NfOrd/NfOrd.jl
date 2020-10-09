@@ -809,7 +809,7 @@ whether $B$ defines an order. If `isbasis` is set, then elements are assumed to 
 a $\Z$-basis.
 """
 function Order(::S, a::Array{T, 1}; check::Bool = true, isbasis::Bool = false,
-               cached::Bool = true) where {S <: Union{AnticNumberField, NfAbsNS}, T <: Union{nf_elem, NfAbsNSElem}}
+               cached::Bool = false) where {S <: Union{AnticNumberField, NfAbsNS}, T <: Union{nf_elem, NfAbsNSElem}}
   K = parent(a[1])
   if isbasis
     if check
