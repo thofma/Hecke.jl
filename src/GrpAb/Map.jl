@@ -58,7 +58,7 @@ function haspreimage(M::GrpAbFinGenMap, a::GrpAbFinGenElem)
   if fl
     return true, GrpAbFinGenElem(domain(M), view(p, 1:1, 1:ngens(domain(M))))
   else
-    return false, domain(M)[1]
+    return false, id(domain(M))
   end
 end
 
@@ -102,6 +102,7 @@ function hom(A::Array{GrpAbFinGenElem, 1}, B::Array{GrpAbFinGenElem, 1}; check::
   GB = parent(B[1])
   @assert length(B) == length(A)
   @assert length(A) > 0
+  #=
   if (check)
     m = vcat(fmpz_mat[x.coeff for x in A])
     m = vcat(m, rels(parent(A[1])))
@@ -114,13 +115,18 @@ function hom(A::Array{GrpAbFinGenElem, 1}, B::Array{GrpAbFinGenElem, 1}; check::
       error("Data does not define a homomorphism")
     end
   end
-
+  =#
+  if ngens(GB) == 0
+    return hom(GA, GB, matrix(FlintZZ, ngens(GA), 0, fmpz[]), check = check)
+  end
+       
   M = vcat([hcat(A[i].coeff, B[i].coeff) for i = 1:length(A)])
   RA = rels(GA)
   M = vcat(M, hcat(RA, zero_matrix(FlintZZ, nrows(RA), ncols(B[1].coeff))))
-  H = hnf(M)
-  if ngens(GB) == 0
-    return hom(GA, GB, matrix(FlintZZ, ngens(GA), 0, fmpz[]), check = check)
+  if isdefined(GB, :exponent) && nrows(M) >= ncols(M)
+    H = hnf_modular_eldiv(M, exponent(GB))
+  else
+    H = hnf(M)
   end
   H = sub(H, 1:ngens(GA), ngens(GA)+1:ngens(GA)+ngens(GB))
   h = hom(GA, GB, H, check = check)
@@ -196,7 +202,7 @@ end
 
 function inv(f::GrpAbFinGenMap)
   if isdefined(f, :imap)
-    return hom(codomain(f), domain(f), f.imap, f.map)
+    return hom(codomain(f), domain(f), f.imap, f.map, check = false)
   end
   if !isinjective(f)
     error("The map is not invertible")
@@ -274,7 +280,7 @@ function image(h::GrpAbFinGenMap, add_to_lattice::Bool = true)
   im = GrpAbFinGenElem[]
   for i = 1:nrows(hn)
     if !iszero_row(hn, i)
-      push!(im, H(sub(hn, i:i, 1:ngens(H))))
+      push!(im, GrpAbFinGenElem(H, sub(hn, i:i, 1:ngens(H))))
     else
       break
     end
@@ -327,7 +333,7 @@ end
 Returns whether $h$ is injective.
 """
 function isinjective(A::GrpAbFinGenMap)
-  K = kernel(A)[1]
+  K = kernel(A, false)[1]
   return isfinite(K) && isone(order(K))
 end
 
@@ -355,9 +361,24 @@ end
 
 function compose(f::GrpAbFinGenMap, g::GrpAbFinGenMap)
   @assert domain(g) == codomain(f)
-
-  M = f.map*g.map
   C = codomain(g)
+  if isdefined(C, :exponent)
+    if fits(Int, C.exponent)
+      RR = ResidueRing(FlintZZ, Int(C.exponent), cached = false)
+      fRR = map_entries(RR, f.map)
+      gRR = map_entries(RR, g.map)
+      MRR = fRR*gRR
+      M = lift(MRR)
+    else
+      R = ResidueRing(FlintZZ, C.exponent, cached = false)
+      fR = map_entries(R, f.map)
+      gR = map_entries(R, g.map)
+      MR = fR*gR
+      M = map_entries(lift, MR)
+    end
+  else
+    M = f.map*g.map
+  end
   if issnf(C)
     reduce_mod_snf!(M, C.snf)
   else
@@ -366,18 +387,6 @@ function compose(f::GrpAbFinGenMap, g::GrpAbFinGenMap)
   end
   return hom(domain(f), codomain(g), M, check = false)
 
-end
-
-function reduce_mod_snf!(M::fmpz_mat, vect::Vector{fmpz})
-  for j = 1:ncols(M)
-    if iszero(vect[j])
-      break
-    end
-    for i = 1:nrows(M)
-      M[i, j] = mod(M[i, j], vect[j])
-    end
-  end
-  return nothing
 end
 
 ###############################################################################
