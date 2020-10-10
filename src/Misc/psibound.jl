@@ -20,7 +20,7 @@ function bernstein(h::Int, it::Any, Q = FlintQQ, cl = ceil, a::Int = 776)
   res = iterate(it)
   p, st = res
 
-  #st = start(it) 
+  #st = start(it)
   #p, st = next(it, st)
   g = R(0)
   tp = R(0)
@@ -34,7 +34,7 @@ function bernstein(h::Int, it::Any, Q = FlintQQ, cl = ceil, a::Int = 776)
       A = coeff(g, i)
       A += divexact(nu, Q(i))
       setcoeff!(g, i, lift(A))
-      i += pp 
+      i += pp
     end
   end
 
@@ -52,7 +52,7 @@ function bernstein(h::Int, it::Any, Q = FlintQQ, cl = ceil, a::Int = 776)
         p, st = res
       end
       lpp = Int(cl(Float64(log(p))/log(2)*a))
-      
+
       if iterate(it, st) === nothing
         done = true
       else
@@ -67,7 +67,7 @@ function bernstein(h::Int, it::Any, Q = FlintQQ, cl = ceil, a::Int = 776)
     if done && pp == lpp
       np += 1
     end
-    
+
     do_single!(g, pp, np)
 
     if done
@@ -137,12 +137,12 @@ function _psi_lower(N::fmpz, pr, a::Int=776, cl = ceil)
 end
 
 @doc Markdown.doc"""
-    psi_lower(N::Integer, B::Int) -> Array{Int, 1}, fmpz_abs_series
-    psi_lower(N::fmpz, B::Int) -> Array{Int, 1}, fmpz_abs_series
+    psi_lower(N::Integer, B::Int, a::Int = 776) -> Array{Int, 1}, fmpz_abs_series
+    psi_lower(N::fmpz, B::Int, a::Int = 776) -> Array{Int, 1}, fmpz_abs_series
 
 Uses Bernstein's ideas: https://cr.yp.to/papers/psi.pdf
 to compute lower bounds on the psi function counting smooth numbers.
-An array L is returned s.th $\psi(2^{i-1}, B) \ge L_i$ for
+An array $L$ is returned s.th. $\psi(2^{i-1}, B) \ge L_i$ for
 $1\le i\le \rceil \log_2(B)\lceil$.
 The second return value is Bernstein's power series.
 >
@@ -158,12 +158,12 @@ function psi_lower(N::Integer, B::Int, a::Int = 776)
 end
 
 @doc Markdown.doc"""
-    psi_upper(N::Integer, B::Int) -> Array{Int, 1}, fmpz_abs_series
-    psi_upper(N::fmpz, B::Int) -> Array{Int, 1}, fmpz_abs_series
+    psi_upper(N::Integer, B::Int a::Int=771) -> Array{Int, 1}, fmpz_abs_series
+    psi_upper(N::fmpz, B::Int a::Int=771) -> Array{Int, 1}, fmpz_abs_series
 
 Uses Bernstein's ideas: https://cr.yp.to/papers/psi.pdf
 to compute upper bounds on the psi function counting smooth numbers.
-An array U is returned s.th $\psi(2^{i-1}, B) \ge U_i$ for
+An array $U$ is returned s.th. $\psi(2^{i-1}, B) \ge U_i$ for
 $1\le i\le \rceil \log_2(B)\lceil$.
 The second return value is Bernstein's power series.
 >
@@ -182,9 +182,9 @@ end
     show_psi(N::Integer, B::Int)
     show_psi(N::fmpz, B::Int)
 
-Uses \code{psi_lower} and \code{psi_upper} to find intervalls for
+Uses \code{psi_lower} and \code{psi_upper} to find intervals for
 $\psi(2^i, B)$ to be in for $0\le i\le \log_2(N)$.
-Where $\psi(N, B) = \#\{1\le i\le N | \text{$i$ is $B$-smooth}\}$  
+Where $\psi(N, B) = \#\{1\le i\le N | \text{$i$ is $B$-smooth}\}$
 """
 function show_psi(N::Integer, B::Union{Int, NfFactorBase})
   gl = psi_lower(N, B)[1]
@@ -205,7 +205,7 @@ function show_psi(N::Integer, B::Union{Int, NfFactorBase})
       println(" in [$l, $u]")
     end
   end
-end  
+end
 
 function show_psi(N::fmpz, B::Int)
   show_psi(BigInt(N), B)

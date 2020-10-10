@@ -105,9 +105,9 @@ order_type(::NfAbsNS) = NfAbsOrd{NfAbsNS, NfAbsNSElem}
 
 order_type(::Type{NfAbsNS}) = NfAbsOrd{NfAbsNS, NfAbsNSElem}
 
-needs_parentheses(x::NfAbsNSElem) = needs_parentheses(data(x))
+needs_parentheses(::NfAbsNSElem) = true
 
-displayed_with_minus_in_front(x::NfAbsNSElem) = displayed_with_minus_in_front(data(x))
+isnegative(x::NfAbsNSElem) = Nemo.isnegative(data(x))
 
 show_minus_one(::Type{NfAbsNSElem}) = true
 
@@ -127,7 +127,7 @@ Nemo.one(K::NfAbsNS) = K(Nemo.one(parent(K.pol[1])))
 
 Nemo.one(a::NfAbsNSElem) = one(a.parent)
 
-function Nemo.zero!(a::NfAbsNSElem) 
+function Nemo.zero!(a::NfAbsNSElem)
   a.data = zero(a.data)
   return a
 end
@@ -269,7 +269,7 @@ function Base.show(io::IO, a::NfAbsNSElem)
 
      ccall((:flint_free, libflint), Nothing, (Ptr{UInt8},), cstr)
   end
- 
+
 #  show(io, f)
 end
 
@@ -290,17 +290,14 @@ end
 ################################################################################
 
 function Base.:(+)(a::NfAbsNSElem, b::NfAbsNSElem)
-  parent(a) == parent(b) || force_op(+, a, b)::NfAbsNSElem
   return parent(a)(data(a) + data(b))
 end
 
 function Base.:(-)(a::NfAbsNSElem, b::NfAbsNSElem)
-  parent(a) == parent(b) || force_op(-, a, b)::NfAbsNSElem
   return parent(a)(data(a) - data(b))
 end
 
 function Base.:(*)(a::NfAbsNSElem, b::NfAbsNSElem)
-  parent(a) == parent(b) || force_op(*, a, b)::NfAbsNSElem
   return parent(a)(data(a) * data(b))
 end
 
@@ -308,8 +305,7 @@ function Base.:(//)(a::NfAbsNSElem, b::NfAbsNSElem)
   return div(a, b)
 end
 
-function Base.div(a::NfAbsNSElem, b::NfAbsNSElem)
-  parent(a) == parent(b) || force_op(div, a, b)::NfAbsNSElem
+function Nemo.div(a::NfAbsNSElem, b::NfAbsNSElem)
   return a * inv(b)
 end
 
@@ -360,7 +356,6 @@ end
 function Base.:(==)(a::NfAbsNSElem, b::NfAbsNSElem)
   reduce!(a)
   reduce!(b)
-  parent(a) == parent(b) || force_op(==, a, b)::Bool
   return data(a) == data(b)
 end
 
@@ -497,22 +492,6 @@ end
 
 ################################################################################
 #
-#  Discriminant
-#
-################################################################################
-
-function discriminant(K::NfAbsNS)
-  Qx = FlintQQ["x"][1]
-  d = fmpq(1)
-  for i = 1:length(K.pol)
-    d *= discriminant(Qx(K.pol[i]))^(div(degree(K), total_degree(K.pol[i])))
-  end
-  return d
-end
-
-
-################################################################################
-#
 #  Minimal polynomial
 #
 ################################################################################
@@ -574,7 +553,7 @@ function minpoly_sparse(a::NfAbsNSElem)
         end
         return f
       end
-    end  
+    end
     push!(sz.values, FlintQQ(1))
     push!(sz.pos, n+i+1)
     push!(M, sz)
@@ -709,7 +688,7 @@ function isunivariate(f::fmpq_mpoly)
           var = j
           deg = exps[j]
         elseif var != j
-          return false, fmpq_poly()
+          return false, fmpq_poly(), 0
         elseif deg < exps[j]
           deg = exps[j]
         end
@@ -720,13 +699,9 @@ function isunivariate(f::fmpq_mpoly)
   Qx = PolynomialRing(FlintQQ, "x")[1]
   coeffs = Vector{fmpq}(undef, deg+1)
   if iszero(deg)
-    if iszero(f)
-      coeffs[1] = 0
-      return true, Qx(coeffs)
-    end
     #f is a constant
     coeffs[1] = coeff(f, 1)
-    return true, Qx(coeffs)
+    return true, Qx(coeffs), 1
   end
   for i = 1:length(f)
     exps = exponent_vector(f, i)
@@ -737,7 +712,7 @@ function isunivariate(f::fmpq_mpoly)
       coeffs[i] = fmpq(0)
     end
   end
-  return true, Qx(coeffs)
+  return true, Qx(coeffs), var
 
 end
 
@@ -745,17 +720,9 @@ end
 function msubst(f::fmpq_mpoly, v::Array{T, 1}) where {T}
   n = length(v)
   @assert n == nvars(parent(f))
-  variables = vars(f)
-  if length(variables) == 1
-    fl, p = isunivariate(f)
-    @assert fl
-    #I need the variable. Awful
-    vect_exp = exponent_vector(variables[1], 1)
-    i = 1
-    while iszero(vect_exp[i])
-      i += 1
-    end
-    return evaluate(p, v[i])
+  fl, p, var = isunivariate(f)
+  if fl
+    return evaluate(p, v[var])
   end
   powers = Dict{Int, Dict{Int, T}}()
   for i = 1:n
@@ -821,7 +788,7 @@ mutable struct NfAbsToNfAbsNS <: Map{AnticNumberField, NfAbsNS, HeckeMap, NfAbsT
     z.emb = emb
     z.header = MapHeader(K, L, image, preimage)
     return z
-  end  
+  end
 
   function NfAbsToNfAbsNS(K::AnticNumberField, L::NfAbsNS, a::NfAbsNSElem)
     function image(x::nf_elem)
@@ -834,7 +801,7 @@ mutable struct NfAbsToNfAbsNS <: Map{AnticNumberField, NfAbsNS, HeckeMap, NfAbsT
     z.prim_img = a
     z.header = MapHeader(K, L, image)
     return z
-  end  
+  end
 end
 
 hom(K::AnticNumberField, L::NfAbsNS, a::NfAbsNSElem) = NfAbsToNfAbsNS(K, L, a)
@@ -855,17 +822,14 @@ mutable struct NfAbsNSToNfAbsNS <: Map{NfAbsNS, NfAbsNS, HeckeMap, NfAbsNSToNfAb
     z.emb = emb
     z.header = MapHeader(K, L, image)
     return z
-  end  
+  end
 end
 
-function hom(K::NfAbsNS, L::NfAbsNS, emb::Array{NfAbsNSElem, 1})
-  return NfAbsNSToNfAbsNS(K, L, emb)
-end 
-
+# TODO: The following is opposite to our new convention
 function Base.:(*)(f::NfAbsNSToNfAbsNS, g::NfAbsNSToNfAbsNS)
   domain(f) == codomain(g) || throw("Maps not compatible")
   a = gens(domain(g))
-  return NfAbsNSToNfAbsNS(domain(g), codomain(f), NfAbsNSElem[ g(f(x)) for x in a])
+  return NfAbsNSToNfAbsNS(domain(g), codomain(f), [ f(g(x)) for x in a])
 end
 
 function Base.:(==)(f::NfAbsNSToNfAbsNS, g::NfAbsNSToNfAbsNS)
@@ -927,9 +891,9 @@ function simple_extension(K::NfAbsNS; check = true)
   z = one(K)
   elem_to_mat_row!(M, 1, z)
   elem_to_mat_row!(M, 2, pe)
-  z = mul!(z, z, pe)
+  mul!(z, z, pe)
   for i=3:degree(K)
-    z = mul!(z, z, pe)
+    mul!(z, z, pe)
     elem_to_mat_row!(M, i, z)
   end
   N = zero_matrix(k, n, degree(K))
@@ -945,35 +909,16 @@ function simple_extension(K::NfAbsNS; check = true)
       emb[i] += b[j] * s[j, i]
     end
   end
-  h = NfAbsToNfAbsNS(Ka, K, pe, emb)
-  embed(h)
-  embed(MapFromFunc(x->preimage(h, x), K, Ka))
-  return Ka, h
+  return Ka, NfAbsToNfAbsNS(Ka, K, pe, emb)
 end
 
 function NumberField(K1::AnticNumberField, K2::AnticNumberField; cached::Bool = false, check::Bool = false)
+
   K , l = number_field([K1.pol, K2.pol], "_\$", check = check, cached = cached)
   mp1 = NfAbsToNfAbsNS(K1, K, l[1])
   mp2 = NfAbsToNfAbsNS(K2, K, l[2])
-  embed(mp1)
-  embed(mp2)
   return K, mp1, mp2
-end
 
-function NumberField(fields::Vector{AnticNumberField}; cached::Bool = true, check::Bool = true)
-  pols = Vector{fmpq_poly}(undef, length(fields))
-  for i = 1:length(fields)
-    pols[i] = fields[i].pol
-  end
-  K, gK = number_field(pols, "\$", check = check, cached = cached)
-  mps = Vector{NfAbsToNfAbsNS}(undef, length(fields))
-  for i = 1:length(fields)
-    mps[i] = hom(fields[i], K, gK[i])
-    if cached
-      embed(mps[i])
-    end
-  end
-  return K, mps
 end
 
 ################################################################################
@@ -985,9 +930,9 @@ end
 @doc Markdown.doc"""
     number_field(f::Array{fmpq_poly, 1}, s::String="_\$") -> NfAbsNS
 Let $f = (f_1, \ldots, f_n)$ be univariate rational polynomials, then
-we construct 
- $$K = Q[t_1, \ldots, t_n]/\langle f_1(t_1), \ldots, f_n(t_n)\rangle$$
-The ideal bust be maximal, however, this is not tested.
+we construct
+ $$K = Q[t_1, \ldots, t_n]/\langle f_1(t_1), \ldots, f_n(t_n)\rangle .$$
+The ideal must be maximal, however, this is not tested.
 """
 function NumberField(f::Array{fmpq_poly, 1}, s::String="_\$"; cached::Bool = false, check::Bool = true)
   n = length(f)
@@ -1064,8 +1009,6 @@ end
 
 (K::NfAbsNS)() = zero(K)
 
-(K::NfAbsNS)(a::NumFieldElem) = force_coerce(K, a)
-
 function (K::NfAbsNS)(a::NfAbsNSElem)
   if parent(a) === K
     return deepcopy(a)
@@ -1097,7 +1040,7 @@ end
 
 #= Idea
   if k = Q[x,y]/<f, g>
-    then 
+    then
       tr(x^i) = power_sums(f)
       tr(y^i) = power_sums(g)
       tr(x^i y^j) = tr(x^i) tr(y^j):
@@ -1127,7 +1070,7 @@ function tr(a::NfAbsNSElem)
   return t
 end
 
-#TODO: 
+#TODO:
 #  test f mod p first
 #  if all polys are monic, the test if traces have non-trivial gcd
 function minpoly_via_trace(a::NfAbsNSElem)
@@ -1156,6 +1099,10 @@ end
 
 function isnorm_divisible(a::NfAbsNSElem, n::fmpz)
   return iszero(mod(norm(a), n))
+end
+
+function valuation(a::NfAbsNSElem, p::NfAbsOrdIdl)
+  return valuation(order(p)(a), p)
 end
 
 function valuation(a::NfAbsOrdElem, p::NfAbsOrdIdl)
@@ -1198,9 +1145,9 @@ function primitive_element(K::NfAbsNS)
 end
 
 @doc Markdown.doc"""
-  factor(f::PolyElem{NfAbsNSElem}) -> Fac{Generic.Poly{NfAbsNSElem}}
+    factor(f::PolyElem{NfAbsNSElem}) -> Fac{Generic.Poly{NfAbsNSElem}}
 
-The factorisation of f (using Trager's method).
+The factorisation of $f$ (using Trager's method).
 """
 function factor(f::PolyElem{NfAbsNSElem})
   Kx = parent(f)
@@ -1217,12 +1164,12 @@ function factor(f::PolyElem{NfAbsNSElem})
 
   f_orig = deepcopy(f)
   @vprint :PolyFactor 1 "Factoring $f\n"
-  @vtime :PolyFactor 2 g = gcd(f, derivative(f))  
+  @vtime :PolyFactor 2 g = gcd(f, derivative(f))
   if degree(g) > 0
     f = div(f, g)
   end
 
-  
+
   if degree(f) == 1
     multip = div(degree(f_orig), degree(f))
     r = Fac{typeof(f)}()
@@ -1247,7 +1194,7 @@ function factor(f::PolyElem{NfAbsNSElem})
     @vtime :PolyFactor 2 N = norm(g)
   end
   @vtime :PolyFactor 2 fac = factor(N)
-  
+
   res = Dict{PolyElem{NfAbsNSElem}, Int64}()
 
   for i in keys(fac.fac)

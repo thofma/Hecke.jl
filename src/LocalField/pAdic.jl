@@ -1,8 +1,8 @@
 @doc Markdown.doc"""
-  lift(a::padic) -> fmpz
+    lift(a::padic) -> fmpz
 
-  Returns the positive canonical representative in Z. a needs
-  to be integral.
+Returns the positive canonical representative in $\mathbb{Z}$. $a$ needs
+to be integral.
 """
 function lift(a::padic)
   b = fmpz()

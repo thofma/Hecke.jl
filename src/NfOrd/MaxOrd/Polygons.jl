@@ -9,14 +9,14 @@ export NewtonPolygon, Line, Polygon
 mutable struct Line
   points :: Tuple{Tuple{Int, Int}, Tuple{Int, Int}}
   slope :: fmpq
-  
+
   function Line(points::Tuple{Tuple{Int, Int}, Tuple{Int, Int}})
     line = new()
     line.points = points
     line.slope = slope(points[1],points[2])
     return line
   end
-  
+
   function Line(a::Tuple{Int, Int}, b::Tuple{Int, Int})
     return Line((a,b))
   end
@@ -24,7 +24,7 @@ end
 
 mutable struct Polygon
   lines :: Array{Line,1}
-  
+
   function Polygon(lines::Array{Line,1}; sorted = false)
     polygon = new()
     if sorted
@@ -43,19 +43,19 @@ mutable struct Polygon
       end
       polygon.lines = lines
     end
-     
+
     return polygon
   end
-end 
+end
 
 
-mutable struct NewtonPolygon{T} 
+mutable struct NewtonPolygon{T}
   P::Polygon
   f::T
   phi::T
   p::fmpz
   development::Vector{T}
-end 
+end
 
 lines(N::NewtonPolygon) = N.P.lines
 
@@ -103,7 +103,7 @@ function sortpoints(x::Array{Tuple{Int, Int},1})
     end
     if iMin != j
       x[j],x[iMin] = x[iMin],x[j]
-    end 
+    end
   end
   return x
 end
@@ -119,12 +119,12 @@ function lower_convex_hull(points::Array{Tuple{Int, Int},1})
   elseif length(points) == 2
     return Polygon([Line((points[1], points[2]))])
   end
-  
+
   i = 1
   while points[i][2] !=0
     i += 1
   end
-  
+
   pointsconvexhull = Tuple{Int, Int}[points[i]]
   while pointsconvexhull[end][1] != 0
     best_slope = slope(pointsconvexhull[end], points[1])
@@ -137,10 +137,10 @@ function lower_convex_hull(points::Array{Tuple{Int, Int},1})
         best_slope = candidate
       end
       i += 1
-    end 
+    end
     push!(pointsconvexhull, new_point)
   end
-  
+
   n=length(pointsconvexhull)
   l = Vector{Line}(undef, n-1)
   for i=0:n-2
@@ -180,7 +180,7 @@ end
 @doc Markdown.doc"""
     newton_polygon(f::PolyElem{T}, phi::PolyElem{T}) where T <: Union{padic, qadic}
 Computes the $\phi$-polygon of $f$, i.e. the lower convex hull of the points $(i, v(a_i))$
-where $a_i$ are the coefficient of the $\phi$-development of $f$.
+where $a_i$ are the coefficients of the $\phi$-development of $f$.
 """
 function newton_polygon(f::T, phi::T) where T <: Generic.Poly{S} where S <: Union{qadic, padic}
   dev = phi_development(f, phi)
@@ -189,16 +189,16 @@ function newton_polygon(f::T, phi::T) where T <: Generic.Poly{S} where S <: Unio
     if !iszero(dev[i+1])
       push!(a, (i, _valuation(dev[i+1])))
     end
-  end 
+  end
   P = lower_convex_hull(a)
   p = prime(base_ring(f))
   return NewtonPolygon(P, f, phi, p, dev)
 end
- 
+
 @doc Markdown.doc"""
-    newton_polygon(f::fmpz_poly, phi::fmpz_poly, p::fmpz) 
+    newton_polygon(f::fmpz_poly, phi::fmpz_poly, p::fmpz)
 Computes the $\phi$-polygon of $f$, i.e. the lower convex hull of the points $(i, v_p(a_i))$
-where $a_i$ are the coefficient of the $\phi$-development of $f$.
+where $a_i$ are the coefficients of the $\phi$-development of $f$.
 """
 function newton_polygon(f::T, phi::T, p::fmpz) where T
   dev = phi_development(f, phi)
@@ -207,7 +207,7 @@ function newton_polygon(f::T, phi::T, p::fmpz) where T
     if !iszero(dev[i+1])
       push!(a, (i, valuation(dev[i+1], p)))
     end
-  end 
+  end
   P = lower_convex_hull(a)
   return NewtonPolygon(P, f, phi, p, dev)
 end
@@ -218,7 +218,7 @@ function _newton_polygon(dev, p)
     if !iszero(dev[i+1])
       push!(a, (i, valuation(dev[i+1], p)))
     end
-  end 
+  end
   return lower_convex_hull(a)
 end
 
@@ -246,7 +246,7 @@ function residual_polynomial(N::NewtonPolygon{fmpz_poly}, L::Line)
   F = GF(N.p, cached = false)
   Ft = PolynomialRing(F, "t", cached = false)[1]
   FF = FiniteField(Ft(N.phi), "a", cached = false)[1]
-  return residual_polynomial(FF, L, N.development, N.p) 
+  return residual_polynomial(FF, L, N.development, N.p)
 end
 
 function residual_polynomial(F, L::Line, dev::Array{fmpz_poly, 1}, p::Union{Int, fmpz})
@@ -258,11 +258,11 @@ function residual_polynomial(F, L::Line, dev::Array{fmpz_poly, 1}, p::Union{Int,
   e = denominator(L.slope)
   for i=0:degree(L)
     if !iszero(dev[Int(s+e*i+1)])
-      el=Rx(divexact(dev[Int(s+e*i+1)], fmpz(p)^(Int(L.points[1][2]+numerator(L.slope*i*e)))))
+      el=Rx(divexact(dev[Int(s+e*i+1)], p^(Int(L.points[1][2]+numerator(L.slope*i*e)))))
       push!(cof, F(el))
     else
       push!(cof, F(0))
-    end 
+    end
   end
   Fx, x = PolynomialRing(F,"x", cached=false)
   return Fx(cof)
@@ -383,7 +383,7 @@ function gens_overorder_polygons(O::NfOrd, p::fmpz)
   B = FakeFmpqMat(view(B.num, nrows(B)-degree(K)+1:nrows(B), 1:degree(K)), B.den)
   if !regular
     elt = Vector{nf_elem}(undef, nrows(B))
-    for i in 1:nrows(B) 
+    for i in 1:nrows(B)
       elt[i] = elem_from_mat_row(K, B.num, i, B.den)
     end
     O1 = _order_for_polygon_overorder(K, elt, inv(fmpq(p^vdisc)))
@@ -394,7 +394,7 @@ function gens_overorder_polygons(O::NfOrd, p::fmpz)
     push!(O1.primesofmaximality, p)
   end
   return O1
-  
+
 end
 
 
@@ -408,8 +408,8 @@ function polygons_overorder(O::NfOrd, p::fmpz)
 
   Zyf = Zy(f)
 
-  fmodp = Kx(Zyf) 
- 
+  fmodp = Kx(Zyf)
+
   fac = factor_squarefree(fmodp)
 
   g = prod(x for x in keys(fac.fac))
@@ -426,7 +426,7 @@ function polygons_overorder(O::NfOrd, p::fmpz)
     @assert r == 0
     setcoeff!(g1,i,q)
   end
-  
+
   g1modp = Kx(g1)
   U = gcd(gcd(g,h), g1modp)
   if isone(U)
@@ -462,7 +462,7 @@ function _order_for_polygon_overorder(K::S, elt::Array{T, 1}, dold::fmpq = fmpq(
   n = degree(K)
   closed = false
   Oattempt = NfOrd(elt)
-  
+
   # Since 1 is in elt, prods will contain all elements
   first = true
   while !closed
@@ -475,7 +475,7 @@ function _order_for_polygon_overorder(K::S, elt::Array{T, 1}, dold::fmpq = fmpq(
           continue
         end
         el = elt[i]*elt[j]
-        if denominator(el) != 1 && !(el in Oattempt) 
+        if denominator(el) != 1 && !(el in Oattempt)
           push!(prods, el)
         end
       end
@@ -484,9 +484,10 @@ function _order_for_polygon_overorder(K::S, elt::Array{T, 1}, dold::fmpq = fmpq(
       break
     end
 
-    B = basis_matrix(prods, FakeFmpqMat) 
+
+    B = basis_matrix(prods, FakeFmpqMat)
     hnf_modular_eldiv!(B.num, B.den, :lowerleft)
-    
+
     dd = B.num[nrows(B) - degree(K) + 1, 1]
     for i in 2:degree(K)
       dd = mul!(dd, dd, B.num[nrows(B) - degree(K) + i, i])
@@ -523,10 +524,10 @@ end
 ###############################################################################
 
 function _from_algs_to_ideals(A::AlgAss{T}, OtoA::Map, AtoO::Map, Ip1, p::Union{fmpz, Int}) where {T}
-  
+
   O = order(Ip1)
   n = degree(O)
-  @vprint :NfOrd 1 "Splitting the algebra\n" 
+  @vprint :NfOrd 1 "Splitting the algebra\n"
   AA = _dec_com_finite(A)
   @vprint :NfOrd 1 "Done \n"
   ideals = Array{Tuple{typeof(Ip1), Int}, 1}(undef, length(AA))
@@ -542,7 +543,7 @@ function _from_algs_to_ideals(A::AlgAss{T}, OtoA::Map, AtoO::Map, Ip1, p::Union{
   for i = 1:length(AA)
     B = AA[i][1]
     BtoA = AA[i][2]
-    #we need the kernel of the projection map from A to B. 
+    #we need the kernel of the projection map from A to B.
     #This is given by the basis of all the other components.
     f = dim(B)
     N1 = vcat(N, zero_matrix(FlintZZ, dim(A) - f, n))
@@ -578,7 +579,7 @@ function _decomposition(O::NfAbsOrd, I::NfAbsOrdIdl, Ip::NfAbsOrdIdl, T::NfAbsOr
   #Ip is the p-radical
   Ip1 = Ip + I
   A, OtoA = AlgAss(O, Ip1, p)
-  
+
   if dim(A) == 1
     Ip1.norm = fmpz(p)
     Ip1.minimum = fmpz(p)
@@ -592,11 +593,9 @@ function _decomposition(O::NfAbsOrd, I::NfAbsOrdIdl, Ip::NfAbsOrdIdl, T::NfAbsOr
   end
   k = (1-1/BigInt(p))^degree(O) < 0.1
 
-
   if !k
     #The probability of finding a random generator is high
     for j in 1:length(ideals)
-      
       P = ideals[j][1]
       f = P.splitting_type[2]
       #@vprint :NfOrd 1 "Chances for finding second generator: ~$((1-1/BigInt(p)))\n"
@@ -606,28 +605,17 @@ function _decomposition(O::NfAbsOrd, I::NfAbsOrdIdl, Ip::NfAbsOrdIdl, T::NfAbsOr
       modulo = norm(P)*p
       x = zero(parent(u))
 
-      if issimple(nf(O)) && isdefining_polynomial_nice(nf(O))
-        if !isnorm_divisible_pp(u.elem_in_nf, modulo)
-          x = u
-        elseif !isnorm_divisible_pp(u.elem_in_nf+p, modulo)
-          x = u + p
-        end
-      else
-        if iszero(mod(norm(u), modulo))
-          if !iszero(mod(norm(u+p), modulo))
-            add!(u, u, p)
-          elseif !iszero(mod(norm(u-p), modulo))
-            sub!(u, u, p)
-          end
-        end
+      if !isnorm_divisible_pp(u.elem_in_nf, modulo)
         x = u
+      elseif !isnorm_divisible_pp(u.elem_in_nf+p, modulo)
+        x = u + p
       end
 
       @hassert :NfOrd 1 !iszero(x)
       @hassert :NfOrd 2 O*O(p) + O*x == P
       P.gen_two = x
       P.gens_normal = fmpz(p)
-      if !iszero(mod(discriminant(O), p)) || valuation(norm(I), p) == length(ideals) 
+      if !iszero(mod(discriminant(O), p)) || valuation(norm(I), p) == length(ideals)
         e = 1
       elseif length(ideals) == 1
         e = Int(divexact(valuation(norm(I), p), f))
@@ -650,8 +638,8 @@ function _decomposition(O::NfAbsOrd, I::NfAbsOrdIdl, Ip::NfAbsOrdIdl, T::NfAbsOr
     for j in 1:length(ideals)
       P = ideals[j][1]
       f = P.splitting_type[2]
-    
-      #@vprint :NfOrd 1 "Searching for 2-element presentation \n"    
+
+      #@vprint :NfOrd 1 "Searching for 2-element presentation \n"
       # The following does not work if there is only one prime ideal
       # This is roughly Algorithm 6.4 of Belabas' "Topics in computational algebraic
       # number theory".
@@ -672,16 +660,15 @@ function _decomposition(O::NfAbsOrd, I::NfAbsOrdIdl, Ip::NfAbsOrdIdl, T::NfAbsOr
       #u = u1*(u2+v2) + u2*v1
       #v = v1*v2
       @hassert :NfOrd 1 isone(u + v)
-      if issimple(nf(O)) && isdefining_polynomial_nice(nf(O))
-        u = O(mod(u.elem_in_nf, p))
-      end
-      
+      u = O(mod(u.elem_in_nf, p))
+
       @hassert :NfOrd 1 containment_by_matrices(u, P)
       modulo = norm(P)*p
+      #if iszero(_normmod(modulo, u))#isnorm_divisible_pp(u.elem_in_nf, modulo)
       if iszero(mod(norm(u), modulo))
         if !iszero(mod(norm(u+p), modulo))
           add!(u, u, p)
-        elseif !iszero(mod(norm(u-p), modulo))
+        elseif !iszero(mod(norm(u-p), modulo))#!isnorm_divisible_pp(u.elem_in_nf-p, modulo)
           sub!(u, u, p)
         else
           Ba = basis(P, copy = false)
@@ -699,7 +686,7 @@ function _decomposition(O::NfAbsOrd, I::NfAbsOrdIdl, Ip::NfAbsOrdIdl, T::NfAbsOr
       P.gen_two = u
       P.gens_normal = fmpz(p)
       P.gens_weakly_normal = 1
-      if !iszero(mod(discriminant(O), p)) || valuation(norm(I), p) == length(ideals) 
+      if !iszero(mod(discriminant(O), p)) || valuation(norm(I), p) == length(ideals)
         e = 1
       else
         anti_uni = anti_uniformizer(P)
@@ -744,7 +731,7 @@ function _decomposition(O::NfAbsOrd, I::NfAbsOrdIdl, Ip::NfAbsOrdIdl, T::NfAbsOr
     P.gen_two = x
     P.gens_normal = fmpz(p)
     P.gens_weakly_normal = 1
-    if !iszero(mod(discriminant(O), p)) 
+    if !iszero(mod(discriminant(O), p))
       e = 1
     else
       e = Int(divexact(valuation(norm(I), p), f))
@@ -756,7 +743,7 @@ function _decomposition(O::NfAbsOrd, I::NfAbsOrdIdl, Ip::NfAbsOrdIdl, T::NfAbsOr
     P = ideals[1][1]
     f = P.splitting_type[2]
     #There is only one prime ideal and the probability of finding a random generator is low.
-    #I need one element of valuation 1.
+    #I need one element of valuation 1. Then, using the idempotents, I can get a generator easily.
     P2 = P*P
     x = find_elem_of_valuation_1(P, P2)
     @hassert :NfOrd 1 !iszero(x)
@@ -765,7 +752,7 @@ function _decomposition(O::NfAbsOrd, I::NfAbsOrdIdl, Ip::NfAbsOrdIdl, T::NfAbsOr
     P.gen_two = x
     P.gens_normal = p
     P.gens_weakly_normal = 1
-    if !iszero(mod(discriminant(O), p)) 
+    if !iszero(mod(discriminant(O), p))
       e = 1
     else
       e = Int(divexact(valuation(norm(I), p), f))
@@ -775,8 +762,8 @@ function _decomposition(O::NfAbsOrd, I::NfAbsOrdIdl, Ip::NfAbsOrdIdl, T::NfAbsOr
     ideals[1] = (P, e)
   end
   return ideals
-end
 
+end
 
 function find_random_second_gen(A::NfAbsOrdIdl{S, T}) where {S, T}
   O = order(A)
@@ -784,12 +771,6 @@ function find_random_second_gen(A::NfAbsOrdIdl{S, T}) where {S, T}
   Amin2 = minimum(A, copy = false)^2
   Amind = gcd(minimum(A)^degree(O), minimum(A, copy = false)*norm(A))
 
-  if norm(O(minimum(A))) == norm(A)
-    A.gen_one = minimum(A)
-    A.gen_two = O(minimum(A))
-    A.gens_weakly_normal = true
-    return nothing
-  end
   B = Array{fmpz}(undef, degree(O))
 
   gen = O()
@@ -820,13 +801,12 @@ function find_random_second_gen(A::NfAbsOrdIdl{S, T}) where {S, T}
     mul!(m, m, basis_matrix(A, copy = false))
     mul!(m, m, basis_matrix(O, copy = false).num)
     gen = elem_from_mat_row(K, m, 1, dBmat)
-    if issimple(K) && isdefining_polynomial_nice(K)
-      gen = mod(gen, Amin2)
-    end
+    gen = mod(gen, Amin2)
     if iszero(gen)
       continue
     end
-    if norm(A, copy = false) == _normmod(Amind, O(gen, false))
+
+    if norm(A) == _normmod(Amind, O(gen, false))
       A.gen_one = minimum(A)
       A.gen_two = O(gen, false)
       A.gens_weakly_normal = true
@@ -882,7 +862,7 @@ function decomposition_type_polygon(O::NfOrd, p::Union{fmpz, Int})
       else
         break
       end
-    end  
+    end
     if length(N.lines) != length(pols)
       I1 = ideal(O, fmpz(p), O(K(parent(K.pol)(lift(Zx, g^m)))))
       I1.minimum = fmpz(p)
@@ -893,15 +873,15 @@ function decomposition_type_polygon(O::NfOrd, p::Union{fmpz, Int})
       else
         I2.minimum = fmpz(p)
       end
-      
-      push!(l, (I1, I2)) 
+
+      push!(l, (I1, I2))
     else
       for i=1:length(pols)
         fact = factor(pols[i])
         s = denominator(slope(N.lines[i]))
         for psi in keys(fact.fac)
           push!(res, (degree(phi)*degree(psi), s))
-        end      
+        end
       end
     end
   end
@@ -915,7 +895,7 @@ function decomposition_type_polygon(O::NfOrd, p::Union{fmpz, Int})
     end
   end
   return res
-  
+
 end
 
 ###############################################################################

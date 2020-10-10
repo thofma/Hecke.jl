@@ -68,7 +68,7 @@ function istorsion_unit(x::FacElem{T}, checkisunit::Bool = false, p::Int = 16) w
   B = log(A(1) + A(1)//A(6) * log(A(d))//A(d^2))
   p = Int(upper_bound(-log(B)/log(A(2)), fmpz)) + 2
 
-  cx = conjugates_arb_log(x, p) #this guarantees the result with an abs. error 
+  cx = conjugates_arb_log(x, p) #this guarantees the result with an abs. error
                                 # of 2^-p
   @v_do :UnitGroup 2 popindent()
   @vprint :UnitGroup 2 "Conjugates log are $cx\n"
@@ -101,7 +101,7 @@ end
 
 function factored_norm(x::FacElem{nf_elem, AnticNumberField})
   b = fmpq[]
-  c = fmpz[] 
+  c = fmpz[]
   for (a, e) in x.fac
     if iszero(e)
       continue
@@ -121,7 +121,7 @@ function factored_norm(x::FacElem{nf_elem, AnticNumberField})
   if length(b) == 0
     push!(b, fmpq(1))
     push!(c, 0)
-  end 
+  end
   f = FacElem(b, c)
   simplify!(f)
   return f
@@ -187,7 +187,7 @@ function conjugates_arb_log(x::FacElem{nf_elem, AnticNumberField}, abs_tol::Int)
   r1, r2 = signature(K)
   d = r1 + r2
   res = Array{arb}(undef, d)
-  
+
   if isempty(x.fac) || all(x -> iszero(x), values(x.fac))
     x.fac[one(K)] = fmpz(1)
   end
@@ -260,12 +260,40 @@ function valuation(a::FacElem{nf_elem, AnticNumberField}, P::NfOrdIdl)
   return val
 end
 
+@doc Markdown.doc"""
+    valuation(A::FacElem{NfOrdFracIdl, NfOrdFracIdlSet}, p::NfOrdIdl)
+    valuation(A::FacElem{NfOrdIdl, NfOrdIdlSet}, p::NfOrdIdl)
+The valuation of $A$ at $P$.
+"""
+function valuation(A::FacElem{NfOrdIdl, NfOrdIdlSet}, p::NfOrdIdl)
+  return sum(valuation(I, p)*v for (I, v) = A.fac)
+end
+
+function valuation(A::FacElem{NfOrdFracIdl, NfOrdFracIdlSet}, p::NfOrdIdl)
+  return sum(valuation(I, p)*v for (I, v) = A.fac)
+end
+
+@doc Markdown.doc"""
+     ideal(O::NfOrd, a::FacElem{nf_elem, AnticNumberField)
+The factored fractional ideal $a*O$.
+"""
+function ideal(O::NfOrd, a::FacElem{nf_elem, AnticNumberField})
+  de = Dict{NfOrdFracIdl, fmpz}()
+  for (e, k) = a.fac
+    if !iszero(k)
+      I = ideal(O, e)
+      add_to_key!(de, I, k)
+    end
+  end
+  return FacElem(FractionalIdealSet(O), de)
+end
+
 #the normalise bit ensures that the "log" vector lies in the same vector space
 #well, the same hyper-plane, as the units
 @doc Markdown.doc"""
     conjugates_arb_log_normalise(x::nf_elem, p::Int = 10)
     conjugates_arb_log_normalise(x::FacElem{nf_elem, AnticNumberField}, p::Int = 10)
-The "normalised" logarithms, ie. the array $c_i\log |x^{(i)}| - 1/n\log|N(x)|$,
+The "normalised" logarithms, i.e. the array $c_i\log |x^{(i)}| - 1/n\log|N(x)|$,
 so the (weighted) sum adds up to zero.
 """
 function conjugates_arb_log_normalise(x::nf_elem, p::Int = 10)
@@ -282,7 +310,7 @@ function conjugates_arb_log_normalise(x::nf_elem, p::Int = 10)
   end
   return c
 end
- 
+
 #the normalise bit ensures that the "log" vector lies in the same vector space
 #well, the same hyper-plane, as the units
 function conjugates_arb_log_normalise(x::FacElem{nf_elem, AnticNumberField}, p::Int = 10)
@@ -299,7 +327,7 @@ function conjugates_arb_log_normalise(x::FacElem{nf_elem, AnticNumberField}, p::
   end
   return c
 end
- 
+
 function _conj_arb_log_matrix_normalise_cutoff(u::Array{T, 1}, prec::Int = 32)::arb_mat where T
   z = conjugates_arb_log_normalise(u[1], prec)
   A = zero_matrix(parent(z[1]), length(u), length(z)-1)
@@ -314,144 +342,4 @@ function _conj_arb_log_matrix_normalise_cutoff(u::Array{T, 1}, prec::Int = 32)::
     end
   end
   return A
-end
-
-#used (hopefully) only inside the class group
-function FacElem(A::Array{nf_elem_or_fac_elem, 1}, v::Array{fmpz, 1})
-  local B::FacElem{nf_elem, AnticNumberField}
-  if typeof(A[1]) == nf_elem
-    B = FacElem(A[1]::nf_elem)
-  else
-    B = A[1]::FacElem{nf_elem, AnticNumberField}
-  end
-  B = B^v[1]
-  for i=2:length(A)
-    if iszero(v[i])
-      continue
-    end
-    if typeof(A[i]) == nf_elem
-      local t::nf_elem = A[i]::nf_elem
-      add_to_key!(B.fac, t, v[i])
-    else
-      local s::FacElem{nf_elem, AnticNumberField} = A[i]::FacElem{nf_elem, AnticNumberField}
-      for (k, v1) in s
-        if iszero(v1)
-          continue
-        end
-        add_to_key!(B.fac, k, v1*v[i])
-      end
-    end
-  end
-  return B::FacElem{nf_elem, AnticNumberField}
-end
-
-################################################################################
-#
-#  Coprime factorization of the support of a factored element
-#
-################################################################################
-
-function _get_support(a::FacElem{nf_elem, AnticNumberField}, I::NfOrdIdlSet)
-  Zk = order(I)
-  A = Tuple{NfOrdIdl, fmpz}[]
-  sizehint!(A, length(a.fac))
-  i = 0
-  for (e, v) = a.fac
-    if iszero(v)
-      continue
-    end
-    i += 1
-    @vprint :CompactPresentation 3 "Element $i / $(length(a.fac))"
-    if isinteger(e)
-      Id1 = ideal(Zk, FlintZZ(e))
-      push!(A, (Id1, v))
-      continue
-    end
-    if e in Zk
-      N = ideal(Zk, Zk(e, false))
-      push!(A, (N, v))
-      continue
-    end
-    Id = ideal(Zk, e)
-    N, D = integral_split(Id)
-    if !isone(N)
-      push!(A, (N, v))
-      #add_to_key!(A, N, v)
-    end
-    if !isone(D)
-      push!(A, (D, -v))
-      #add_to_key!(A, D, -v)
-    end
-    @vprint :CompactPresentation 3 "$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())"
-  end
-  @vprint :CompactPresentation 3 "\n"
-  return A
-end
-@doc Markdown.doc"""
-    factor_coprime(a::FacElem{nf_elem, AnticNumberField}, I::NfOrdIdlSet) -> Dict{NfOrdIdl, fmpz}
-Factors the rincipal ideal generated by $a$ into coprimes by computing a coprime
-basis from the principal ideals in the factorisation of $a$.
-"""
-function factor_coprime(a::FacElem{nf_elem, AnticNumberField}, I::NfOrdIdlSet; refine::Bool = false)
-  Zk = order(I)
-  @assert nf(Zk) == base_ring(a)
-  A = _get_support(a, I)
-  if isempty(A)
-    return Dict{NfOrdIdl, fmpz}(ideal(Zk, 1) => 1)
-  end
-  base = NfOrdIdl[y for (y, v) in A if !iszero(v)]
-  cp = coprime_base(base, refine = refine)
-  ev = Dict{NfOrdIdl, fmpz}()
-  if isempty(cp)
-    return Dict{NfOrdIdl, fmpz}(ideal(Zk, 1) => 1)
-  end
-  for p in cp
-    if isone(p)
-      continue
-    end
-    P = minimum(p)
-    @vprint :CompactPresentation 3 "Computing valuation at an ideal lying over $P"
-    assure_2_normal(p)
-    v = fmpz(0)
-    for (b, e) in A
-      if iszero(e)
-        continue
-      end
-      if divisible(norm(b, copy = false), P) 
-        v += valuation(b, p)*e
-      end
-    end
-    @vprint :CompactPresentation 3 "$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())"
-    if !iszero(v)
-      ev[p] = v
-    end
-  end
-  if isempty(ev)
-    ev[ideal(Zk, 1)] = 1
-  end
-  return ev
-end
-
-@doc Markdown.doc"""
-  factor(a::nf_elem, I::NfOrdIdlSet) -> Dict{NfOrdIdl, fmpz}
-Factors the principal ideal generated by $a$.
-"""
-function factor(a::nf_elem, I::NfOrdIdlSet)
-  return factor(ideal(order(I),  a))
-end
-
-@doc Markdown.doc"""
-  factor(a::FacElem{nf_elem, AnticNumberField}, I::NfOrdIdlSet) -> Dict{NfOrdIdl, fmpz}
-Factors the principal ideal generated by $a$ by refinind a coprime factorisation.
-"""
-function factor(a::FacElem{nf_elem, AnticNumberField}, I::NfOrdIdlSet)
-  cp = factor_coprime(a, I, refine = true)
-  f = Dict{NfOrdIdl, fmpz}()
-  for (I, v) = cp
-    lp = factor(I)
-    for (p, e) = lp
-      f[p] = e*v
-    end
-  end
-  return f
 end

@@ -51,9 +51,9 @@ function quadratic_defect(a::fmpq, p::fmpz)
 
   a = a // p^v
 
-  if isodd(p) 
+  if isodd(p)
     return jacobi_symbol( mod(a, p), p) == 1 ? inf : v
-  end 
+  end
 
   a = mod(a, 8)
 
@@ -64,7 +64,7 @@ function quadratic_defect(a::fmpq, p::fmpz)
 end
 
 @doc Markdown.doc"""
-  quadratic_defect(a::fmpz, p::fmpz) -> Union{Int, PosInf}
+    quadratic_defect(a::fmpz, p::fmpz) -> Union{Int, PosInf}
 
 Returns the valuation of the quadratic defect of $a$ at $p$.
 """
@@ -129,7 +129,7 @@ function quadratic_defect(a::nf_elem, p::NfOrdIdl)
 end
 
 @doc Markdown.doc"""
-    quadratic_defect(a::nf_elem, p::NfOrdIdl) -> Int
+    quadratic_defect(a::NfOrdElem, p::NfOrdIdl) -> Int
 
 Returns the valuation of the quadratic defect of $a$ at $p$.
 """
@@ -158,8 +158,8 @@ function hilbert_symbol(a::nf_elem, b::nf_elem, p::NfOrdIdl)
   v = valuation(a,p)
   w = valuation(b,p)
 
-  if isodd(v) 
-    if iseven(w) a,b,v,w = b,a,w,v 
+  if isodd(v)
+    if iseven(w) a,b,v,w = b,a,w,v
     else
       a = -a*b
       v = v+w
@@ -226,14 +226,14 @@ end
 Returns the local Hilbert symbol $(a,b)_p$.
 """
 function hilbert_symbol(a::fmpz, b::fmpz, p::fmpz)
-  if p <= 0 
+  if p <= 0
     return (a < 0 && b < 0) ? -1 : 1
   end
   v = valuation(a,p)
   w = valuation(b,p)
 
   if isodd(v)
-    if iseven(w) 
+    if iseven(w)
       a,b,v,w = b,a,w,v
     else
       a,v = -a*b,v+w
@@ -272,7 +272,7 @@ end
 
 @doc Markdown.doc"""
     hilbert_symbol(a::Union{fmpq,fmpz,Int,Rational{Int}}, b::Union{fmpq,fmpz,Int,Rational{Int}}, p::Union{fmpz,Int}) -> {-1, +1}
-returns the local Hilbert symbol (a,b)_p
+Returns the local Hilbert symbol $(a,b)_p$.
 """
 function hilbert_symbol(a::fmpq, b::fmpq, p::fmpz)
   a = FlintQQ(a)

@@ -1,3 +1,4 @@
+
 abstract type Hensel end
 
 mutable struct HenselCtxQadic <: Hensel
@@ -47,7 +48,7 @@ function lift(C::HenselCtxQadic, mx::Int = minimum(precision, coefficients(C.f))
   N = valuation(p)
 #  @show map(precision, coefficients(C.f)), N, precision(parent(p))
   #have: N need mx
-  ch = [mx] 
+  ch = [mx]
   while ch[end] > N
     push!(ch, div(ch[end]+1, 2))
   end
@@ -100,7 +101,7 @@ function precision(C::HenselCtxQadic)
   return valuation(C.p)
 end
 
-# interface to use Bill's Z/p^k lifting code. same algo as above, but 
+# interface to use Bill's Z/p^k lifting code. same algo as above, but
 # tighter implementation
 mutable struct HenselCtxPadic <: Hensel
   X::HenselCtx
@@ -119,7 +120,7 @@ mutable struct HenselCtxPadic <: Hensel
   end
 end
 
-function lift(C::HenselCtxPadic, mx::Int) 
+function lift(C::HenselCtxPadic, mx::Int)
   for i=0:degree(C.f)
     setcoeff!(C.X.f, i, lift(coeff(C.f, i)))
   end
@@ -165,7 +166,7 @@ end
 @doc Markdown.doc"""
     round(::fmpz, a::fmpz, b::fmpz, bi::fmpz) -> fmpz
 
-Computes `round(a//b)` using the pre-inverse of `2b`    
+Computes `round(a//b)` using the pre-inverse of `2b`.    
 """
 function Base.round(::Type{fmpz}, a::fmpz, b::fmpz, bi::fmpz_preinvn_struct)
   s = sign(a)
@@ -188,7 +189,7 @@ function Base.round(::Type{fmpz}, a::fmpz, b::fmpz)
 #  @assert r == round(fmpz, a//b)
   return r
 end
-  
+
 #TODO: think about computing pM[1][1,:]//pM[2] as a "float" approximation
 #      to save on multiplications
 function reco(a::fmpz, M, pM::Tuple{fmpz_mat, fmpz, fmpz_preinvn_struct}, O)
@@ -217,16 +218,7 @@ The decision is based on the number of local factors.
 """
 function factor_new(f::PolyElem{nf_elem})
   k = base_ring(f)
-  local zk::NfOrd
-  if ismaximal_order_known(k)
-    zk = maximal_order(k)
-    if isdefined(zk, :lllO)
-      zk = zk.lllO::NfOrd
-    end
-  else
-    zk = EquationOrder(k)
-  end
-  zk = lll(zk) # always a good option!
+  zk = maximal_order(k)
   p = degree(f)
   f *= lcm(map(denominator, coefficients(f)))
   np = 0
@@ -234,68 +226,53 @@ function factor_new(f::PolyElem{nf_elem})
   br = 0
   s = Set{Int}()
   while true
-    @vprint :PolyFactor 3 "Trying with $p\n "
     p = next_prime(p)
-    if isindex_divisor(zk, p) || iszero(discriminant(zk) % p) 
+    if isindex_divisor(zk, p) || iszero(discriminant(zk) % p)
       continue
     end
     P = prime_decomposition(zk, p, 1)
     if length(P) == 0
       continue
     end
-    F, mF1 = ResidueFieldSmallDegree1(zk::NfOrd, P[1][1])
-    mF = extend(mF1, k)
+    F, mF = ResidueField(zk, P[1][1])
+    mF = extend(mF, k)
     fp = map_coeffs(mF, f, cached = false)
     if degree(fp) < degree(f) || iszero(trailing_coefficient(fp)) || iszero(trailing_coefficient(fp))
       continue
     end
-    if !issquarefree(fp)
+    lf = factor(fp)
+    if any(i -> i>1, values(lf.fac))
       continue
     end
-    lf = factor_shape(fp)
-    ns = degree_set(lf)
+    ns = _ds(lf)
     if length(s) == 0
       s = ns
     else
       s = Base.intersect(s, ns)
     end
-    @vprint :PolyFactor :3 "$s\n"
 
     if length(s) == 1
-      return typeof(f)[f]
+      return [f]
     end
 
-    if br == 0 || br > sum(values(lf))
-      br = sum(values(lf))
+    if br == 0 || br > length(lf.fac)
+      br = length(lf.fac)
       bp = P[1][1]
     end
     np += 1
     if np > 2 && br > 10
       break
     end
-    if np > min(100, 2*degree(f))
+    if np > 2*degree(f)
       break
     end
   end
   @vprint :PolyFactor 1 "possible degrees: $s\n"
-  if br < -5
+  if br < 5
     return zassenhaus(f, bp, degset = s)
   else
     return van_hoeij(f, bp)
   end
-end
-
-function degree_set(fa::Dict{Int, Int})
-  T = Vector{Int}(undef, sum(values(fa)))
-  ind = 0
-  for (k, v) in fa
-    for j = 1:v
-      T[j+ind] = k
-    end
-    ind += v
-  end
-  M = MSet(T)
-  return Set(sum(s) for s = subsets(M) if length(s) > 0)
 end
 
 @doc Markdown.doc"""
@@ -303,7 +280,7 @@ end
 
 Zassenhaus' factoring algorithm over an absolute simple field. Given a prime ideal $P$ which
 has to be an unramified non-index divisor, a factorisation of $f$ in the $P$-adic completion
-is computed. In the last step, all combinations of the local factors are tried to find the 
+is computed. In the last step, all combinations of the local factors are tried to find the
 correct factorisation.
 $f$ needs to be square-free and square-free modulo $P$ as well.
 """
@@ -352,13 +329,13 @@ function zassenhaus(f::PolyElem{nf_elem}, P::NfOrdIdl; degset::Set{Int} = Set{In
   #      combination has to respect he prime splitting in the extension
   #      the norm(poly) is the prod of the local norm(poly)s
   #TODO: add/use degree sets and search restrictions. Users might want restricted degrees
-  #TODO: add a call to jump from van Hoeij to Zassenhaus once a partitioning 
+  #TODO: add a call to jump from van Hoeij to Zassenhaus once a partitioning
   #      is there.
   used = empty(S)
   res = typeof(f)[]
   for d = 1:length(S)
     for s = subsets(S, d)
-      if length(Base.intersect(used, s)) > 0 
+      if length(Base.intersect(used, s)) > 0
 #        println("re-using data")
         continue
       end
@@ -448,11 +425,9 @@ end
 #the LLL_basis of the ideal
 function grow_prec!(vH::vanHoeijCtx, pr::Int)
   lift(vH.H, pr)
- 
-  @vtime :PolyFactor 2 X1 = vH.P^pr
-  @vtime :PolyFactor 2 X2 = basis_matrix(X1)
-  @vtime :PolyFactor 2 vH.Ml = lll(X2)
-  @vtime :PolyFactor 2 pMr = pseudo_inv(vH.Ml)
+
+  vH.Ml = lll(basis_matrix(vH.P^pr))
+  pMr = pseudo_inv(vH.Ml)
   F = FakeFmpqMat(pMr)
   #M * basis_matrix(zk) is the basis wrt to the field
   #(M*B)^-1 = B^-1 * M^-1, so I need basis_mat_inv(zk) * pM
@@ -466,30 +441,22 @@ end
     van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 20) -> Array{PolyElem{nf_elem}, 1}
 
 A van Hoeij-like factorisation over an absolute simple number field, using the factorisation in the
-$P$-adic completion where $P$ has to be an unramified non-index divisor and the square-free $f$ has 
+$P$-adic completion where $P$ has to be an unramified non-index divisor and the square-free $f$ has
 to be square-free mod $P$ as well.
 
 Approach is taken from Hart, Novacin, van Hoeij in ISSAC.
 """
 function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 20)
   @vprint :PolyFactor 1 "Using (relative) van Hoeij\n"
-  @assert all(x->denominator(x) == 1, coefficients(f))
 
   K = base_ring(parent(f))
   C, mC = completion(K, P)
-
-  zk = order(P)
-  if ismaximal_known_and_maximal(zk)
-    den = K(1)
-  else
-    den = derivative(K.pol)(gen(K))
-  end
 
   _, mK = ResidueField(order(P), P)
   mK = extend(mK, K)
   r = length(factor(map_coeffs(mK, f, cached = false)))
   N = degree(f)
-  @vprint :PolyFactor 1  "Having $r local factors for degree $N \n"
+  @vprint :PolyFactor 1  "Having $r local factors for degree ", N
 
   setprecision!(C, 5)
 
@@ -508,13 +475,13 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 20)
   up_to = min(up_to, N)
   from = min(from, N)
   from = max(up_to, from)
-  b = cld_bound(f, vcat(0:up_to-1, from:N-1)) .* upper_bound(sqrt(t2(den*lead(f))), fmpz)
+  b = cld_bound(f, vcat(0:up_to-1, from:N-1)) .* upper_bound(sqrt(t2(lead(f))), fmpz)
 
   # from Fieker/Friedrichs, still wrong here
   # needs to be larger than anticipated...
   c1, c2 = norm_change_const(order(P))
-  b = Int[ceil(Int, degree(K)/2/degree(P)*(log2(c1*c2) + 2*nbits(x)+ 2*prec_scale)) for x = b]
-  @vprint :PolyFactor 2 "using CLD precision bounds $b \n"
+  b = [ceil(Int, degree(K)/2/degree(P)*(log2(c1*c2) + 2*nbits(x)+ 2*prec_scale)) for x = b]
+  @vprint :PolyFactor 2 "using CLD precsion bounds ", b
 
   used = []
   really_used = []
@@ -537,7 +504,7 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 20)
     end
     @vtime :PolyFactor 1 grow_prec!(vH, i)
 
-   
+
     av_bits = sum(nbits, vH.Ml)/degree(K)^2
     @vprint :PolyFactor 1 "obtaining CLDs...\n"
 
@@ -553,13 +520,13 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 20)
 
     if degree(P) == 1
       mD = MapFromFunc(x->coeff(mC(x),0), y->K(lift(y)), K, base_ring(vH.H.f))
-      @vtime :PolyFactor 1 C = cld_data(vH.H, up_to, from, mD, vH.pM[1], den*lead(f)) 
+      @vtime :PolyFactor 1 C = cld_data(vH.H, up_to, from, mD, vH.pM[1], lead(f))
     else
-      @vtime :PolyFactor 1 C = cld_data(vH.H, up_to, from, mC, vH.pM[1], den*lead(f)) 
+      @vtime :PolyFactor 1 C = cld_data(vH.H, up_to, from, mC, vH.pM[1], lead(f))
     end
 
     # In the end, p-adic precision needs to be large enough to
-    # cover some CLDs. If you want the factors, it also has to 
+    # cover some CLDs. If you want the factors, it also has to
     # cover those. The norm change constants also come in ...
     # and the degree of P...
 
@@ -605,7 +572,7 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 20)
     # until done (whatever that means)
     # if unlucky: re-do Hensel and start over again, hopefull retaining some info
     # can happen if the CLD coeffs are too large for the current Hensel level
-    
+
     while length(have) > length(used)
       local m
       m_empty = true
@@ -621,12 +588,11 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 20)
       n = have[m[2]]
       @assert !(n in used)
       push!(used, n)
-      
+
       i = findfirst(x->x == n, have) #new data will be in block i of C
       @vprint :PolyFactor 2 "trying to use coeff $n which is $i\n"
       if b[i] > precision(codomain(mC))
-        @vprint :PolyFactor 2 "not enough precision for CLD $i, $b, $(precision(codomain(mC))), skipping\n"
-
+        @show "not enough precision for CLD ", i,b, precision(codomain(mC))
 #        error()
         continue
       end
@@ -634,9 +600,9 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 20)
 
       B = sub(C, 1:r, (i-1)*degree(K)+1:i*degree(K))
 #      @show i, maximum(nbits, B)
-      
+
       T = sub(M, 1:nrows(M), 1:r)
-      B = T*B   # T contains the prec_scale 
+      B = T*B   # T contains the prec_scale
       mod_sym!(B, vH.pM[2]*fmpz(2)^prec_scale)
 
 #      @show maximum(nbits, B), nbits(vH.pM[2]), b[i]
@@ -679,8 +645,8 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 20)
 #        display(d)
         for v = values(d)
           #trivial test:
-          if isone(den) && ismonic(f) #don't know what to do for non-monics
-            a = prod(map(constant_coefficient, factor(vH.H)[v])) 
+          if ismonic(f) #don't know what to do for non-monics
+            a = prod(map(constant_coefficient, factor(vH.H)[v]))
             if degree(P) == 1
               A = K(reco(order(P)(lift(a)), vH.Ml, vH.pMr))
             else
@@ -694,13 +660,13 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 20)
               continue
             end
           end
-          @vtime :PolyFactor 2 g = prod(factor(vH.H)[v]) 
+          @vtime :PolyFactor 2 g = prod(factor(vH.H)[v])
           if degree(P) == 1
-            @vtime :PolyFactor 2 G = parent(f)([K(reco(lift(coeff(mC(den*lead(f)), 0)*coeff(g, l)), vH.Ml, vH.pMr, order(P))) for l=0:degree(g)])
+            @vtime :PolyFactor 2 G = parent(f)([K(reco(lift(coeff(mC(lead(f)), 0)*coeff(g, l)), vH.Ml, vH.pMr, order(P))) for l=0:degree(g)])
           else
-            @vtime :PolyFactor 2 G = parent(f)([K(reco(order(P)(preimage(mC, mC(den*lead(f))*coeff(g, l))), vH.Ml, vH.pMr)) for l=0:degree(g)])
+            @vtime :PolyFactor 2 G = parent(f)([K(reco(order(P)(preimage(mC, mC(lead(f))*coeff(g, l))), vH.Ml, vH.pMr)) for l=0:degree(g)])
           end
-          G *= 1//(den*lead(f))
+          G *= 1//lead(f)
 
           if !iszero(rem(f, G))
             push!(fail, v)
@@ -725,7 +691,7 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 20)
 
     up_to = up_to_start = min(2*up_to_start, N)
     up_to = min(N, up_to)
-    from = N-up_to 
+    from = N-up_to
     from = min(from, N)
     from = max(up_to, from)
 
@@ -739,7 +705,7 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 20)
     end
     used = deepcopy(really_used)
 
-    b = cld_bound(f, vcat(0:up_to-1, from:N-1)) .* upper_bound(sqrt(t2(den*lead(f))), fmpz)
+    b = cld_bound(f, vcat(0:up_to-1, from:N-1)) .* upper_bound(sqrt(t2(lead(f))), fmpz)
 
     # from Fieker/Friedrichs, still wrong here
     # needs to be larger than anticipated...
@@ -760,45 +726,19 @@ end
 #even better (modular resultant)
 # power series over finite fields are sub-par...or at least this usage
 # fixed "most" of it...
-#Update: f, K large enough, this wins. Need bounds...
-
-function norm_mod(f::PolyElem{nf_elem}, p::Int, Zx::FmpzPolyRing = Globals.Zx)
-  K = base_ring(f)
-  k = GF(p)
-  me = modular_init(K, p)
-  t = modular_proj(f, me)
-  n = degree(f)*degree(K)
-  v = Vector{gfp_elem}(undef, n)
-  first = true
-  for i = 1:length(t)
-    t1 = polynomial_to_power_sums(t[i], n)
-    for j = 1:length(t1)
-      el = k(coeff(trace(t1[j]), 0))
-      if first
-        v[j] = el
-      else
-        v[j] += el
-      end
-    end
-    first = false
-  end
-  pol = power_sums_to_polynomial(v)
-  return lift(Zx, pol)
-end
-
-function norm_mod(f::PolyElem{nf_elem}, Zx::FmpzPolyRing = Globals.Zx)
-  #assumes, implicitly, the coeffs of f are algebraic integers.
-  # equivalently: the norm is integral...
+function norm_mod(f::PolyElem{nf_elem}, Zx)
   p = p_start
   K = base_ring(f)
 
   g = Zx(0)
   d = fmpz(1)
 
-  stable = 0
   while true
     p = next_prime(p)
-    tt = norm_mod(f, p, Zx)
+    k = GF(p)
+    me = modular_init(K, p)
+    t = modular_proj(f, me)
+    tt = lift(Zx, power_sums_to_polynomial(sum(map(x -> map(y -> k(coeff(trace(y), 0)), polynomial_to_power_sums(x, degree(f)*degree(K))), t))))
     prev = g
     if isone(d)
       g = tt
@@ -807,14 +747,9 @@ function norm_mod(f::PolyElem{nf_elem}, Zx::FmpzPolyRing = Globals.Zx)
       g, d = induce_crt(g, d, tt, fmpz(p), true)
     end
     if prev == g
-      stable += 1
-      if stable > 4
-        return g
-      end
-    else
-      stable = 0
+      return g
     end
-    if nbits(d) > 20000
+    if nbits(d) > 2000
       error("too bad")
     end
   end
@@ -829,4 +764,4 @@ end
     then b = g and f = div(a-bh, x^n)
     establishing the link between rat-recon and Berlekamp Massey
 
-=#    
+=#

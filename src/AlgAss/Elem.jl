@@ -885,7 +885,7 @@ end
 @doc Markdown.doc"""
     tr(x::AbsAlgAssElem{T}) where T -> T
 
-> Returns the trace of $a$.
+> Returns the trace of $x$.
 """
 function tr(x::AbsAlgAssElem{T}) where T
   A=parent(x)
@@ -904,7 +904,7 @@ end
 @doc Markdown.doc"""
     trred(x::AbsAlgAssElem{T}) where T -> T
 
-> Returns the reduced trace of $a$.
+> Returns the reduced trace of $x$.
 """
 function trred(a::AbsAlgAssElem)
   A = parent(a)
@@ -933,7 +933,7 @@ end
 @doc Markdown.doc"""
     norm(x::AbsAlgAssElem{T}) where T -> T
 
-> Returns the norm of $a$.
+> Returns the norm of $x$.
 """
 function norm(a::AbsAlgAssElem{fmpq})
   return abs(det(representation_matrix(a)))
@@ -946,7 +946,7 @@ end
 @doc Markdown.doc"""
     normred(x::AbsAlgAssElem{T}) where T -> T
 
-> Returns the reduced norm of $a$.
+> Returns the reduced norm of $x$.
 """
 function normred(a::AbsAlgAssElem)
   f = reduced_charpoly(a)

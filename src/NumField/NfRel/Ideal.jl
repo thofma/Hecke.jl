@@ -196,8 +196,8 @@ end
 @doc Markdown.doc"""
     ideal(O::NfRelOrd, M::PMat, check::Bool = true, M_in_hnf::Bool = false) -> NfRelOrdIdl
 
-Creates the ideal of $\mathcal O$ with basis pseudo-matrix $M$. If check is set,
-then it is checked whether $M$ defines an ideal. If M_in_hnf is set, then it is
+Creates the ideal of $\mathcal O$ with basis pseudo-matrix $M$. If `check` is set,
+then it is checked whether $M$ defines an ideal. If `M_in_hnf` is set, then it is
 assumed that $M$ is already in lower left pseudo HNF.
 """
 function ideal(O::NfRelOrd{T, S, U}, M::PMat{T, S}, check::Bool = true, M_in_hnf::Bool = false) where {T, S, U}
@@ -211,7 +211,7 @@ end
 @doc Markdown.doc"""
     ideal(O::NfRelOrd, M::Generic.Mat, check::Bool = true) -> NfRelOrdIdl
 
-Creates the ideal of $\mathcal O$ with basis matrix $M$. If check is set,
+Creates the ideal of $\mathcal O$ with basis matrix $M$. If `check` is set,
 then it is checked whether $M$ defines an ideal.
 """
 function ideal(O::NfRelOrd{T, S}, M::Generic.Mat{T}, check::Bool = true) where {T, S}
@@ -222,7 +222,7 @@ end
 @doc Markdown.doc"""
     ideal(O::NfRelOrd{T, S}, x::NfRelElem{T}, y::NfRelElem{T}, a::S, b::S, check::Bool = true) -> NfRelOrdIdl{T, S}
 
-Creates the ideal $x\cdot a + y\cdot b$ of $\mathcal O$. If check is set,
+Creates the ideal $x\cdot a + y\cdot b$ of $\mathcal O$. If `check` is set,
 then it is checked whether these elements define an ideal.
 """
 function ideal(O::NfRelOrd{T, S, U}, x::U, y::U, a::S, b::S, check::Bool = true) where {T, S, U}
@@ -294,7 +294,7 @@ end
 @doc Markdown.doc"""
     ideal(O::NfRelOrd{T, S}, a::S, check::Bool = true) -> NfRelOrdIdl{T, S}
 
-Creates the ideal $a \cdot \mathcal O$ of $\mathcal O$. If check is set,
+Creates the ideal $a \cdot \mathcal O$ of $\mathcal O$. If `check` is set,
 then it is checked whether $a$ defines an (integral) ideal.
 """
 function ideal(O::NfRelOrd{T, S, U}, a::S, check::Bool = true) where {T, S, U}

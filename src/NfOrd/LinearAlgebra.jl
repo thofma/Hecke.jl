@@ -24,7 +24,7 @@ function _max_max(M::Generic.Mat{NfOrdElem})
   end
   return d
 end
-  
+
 #function det(M::Generic.Mat{NfOrdElem})
 #  O = base_ring(M)::NfOrd
 #  B = _det_bound(M)
@@ -35,7 +35,7 @@ end
 #  t = 0.0
 #  while P < 2*B
 #    # reject some bad primes
-#    if true  
+#    if true
 #      #println("$p");
 #      Omodp, pi_p = quo(O, ideal(O, p))
 #      Mmodp = MatrixSpace(Omodp, nrows(M), ncols(M))(M)
@@ -70,13 +70,13 @@ end
 
 @doc Markdown.doc"""
     det(M::Generic.Mat{NfOrdElem}) -> NfOrdElem
-Uses a modular algorithm to compute the determinant.    
-"""   
+Uses a modular algorithm to compute the determinant.
+"""
 function det(M::Generic.Mat{NfOrdElem})
   O = base_ring(M)::NfOrd
   K = nf(O)
   B = _det_bound(M)
-  p = next_prime(p_start) #global  
+  p = next_prime(p_start) #global
   P = fmpz(1)
   i = 1
   res = O()
@@ -88,7 +88,7 @@ function det(M::Generic.Mat{NfOrdElem})
 
   while P < 2*B
     # reject some bad primes
-    if isindex_divisor(O, p) 
+    if isindex_divisor(O, p)
       continue
     end
 
@@ -101,7 +101,7 @@ function det(M::Generic.Mat{NfOrdElem})
     detmodp = nmod_poly(UInt(p))
 
     t_reducing += @elapsed Mp = modular_proj(M, me)
-    
+
     t_det += @elapsed detmodQ = [det(x) for x = Mp]
 
       # now the CRT step
@@ -138,7 +138,7 @@ function det(M::Generic.Mat{NfOrdElem})
   tut = fmpq_poly(tmp_fmpz_poly)
   tut.parent = parent(nf(O).pol)
   res = mod_sym(O(nf(O)(tut)), P)
-  
+
   #println("Modular determinant time: $t_det");
   #println("Time for reducing: $t_reducing");
   #println("Time for splitting: $t_splitting");
@@ -159,7 +159,7 @@ function crt!(z::nmod_poly, r1::nmod_poly, r2::Union{nmod_poly, fq_nmod}, m1::nm
   mul!(t, t, r1)
   add!(z, z, t)
   mul!(s, m1, m2)
-  rem!(z, z, s)  
+  rem!(z, z, s)
 end
 
 function set!(z::nmod_poly, x::nmod_poly)
@@ -182,7 +182,7 @@ end
 
 @doc Markdown.doc"""
     mod_sym(a::NfOrdElem, m)
-Reduces the coefficients of $a$ modulo $m$, using the symmetric residue system.    
+Reduces the coefficients of $a$ modulo $m$, using the symmetric residue system.
 """
 function mod_sym(x::NfOrdElem, m)
   z = coordinates(x)
@@ -265,9 +265,9 @@ end
 @doc Markdown.doc"""
     PseudoMatrix(m::Generic.Mat{nf_elem}, c::Array{NfOrdIdl, 1}) -> PMat{nf_elem, NfOrdFracIdl}
 
-Returns the (row) pseudo matrix representing the Z\_k-module 
+Returns the (row) pseudo matrix representing the $Z_k$-module
  $$\sum c_i m_i$$
- where $c_i$ are the ideals in $c$ and $m_i$ the rows of $M$. 
+ where $c_i$ are the ideals in $c$ and $m_i$ the rows of $M$.
 """
 function PseudoMatrix(m::AbstractAlgebra.MatElem{nf_elem}, c::Array{NfOrdIdl, 1})
   @assert nrows(m) == length(c)
@@ -277,9 +277,9 @@ end
 
 @doc Markdown.doc"""
     PseudoMatrix(m::Generic.Mat{NfOrdElem}, c::Array{NfOrdIdl, 1}) -> PMat{nf_elem, NfOrdFracIdl}
-Returns the (row) pseudo matrix representing the $Z_k$-module 
+Returns the (row) pseudo matrix representing the $Z_k$-module
  $$\sum c_i m_i$$
- where $c_i$ are the ideals in $c$ and $m_i$ the rows of $M$. 
+ where $c_i$ are the ideals in $c$ and $m_i$ the rows of $M$.
 """
 function PseudoMatrix(m::Generic.Mat{NfOrdElem}, c::Array{NfOrdIdl, 1})
   @assert nrows(m) == length(c)
@@ -290,9 +290,9 @@ end
 
 @doc Markdown.doc"""
     PseudoMatrix(m::Generic.Mat{NfOrdElem}, c::Array{NfOrdIdl, 1}) -> PMat{nf_elem, NfOrdFracIdl}
-Returns the free (row) pseudo matrix representing the $Z_k$-module 
+Returns the free (row) pseudo matrix representing the $Z_k$-module
  $$\sum Z_k m_i$$
- where $m_i$ the rows of $M$. 
+ where $m_i$ are the rows of $M$.
 """
 function PseudoMatrix(m::Generic.Mat{nf_elem})
    K = base_ring(m)

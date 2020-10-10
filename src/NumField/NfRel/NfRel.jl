@@ -34,7 +34,7 @@
 
 export absolute_field
 
-add_assert_scope(:NfRel)
+
 ################################################################################
 #
 #  Copy
@@ -108,9 +108,9 @@ end
 #
 ################################################################################
 
-order_type(K::NfRel{T}) where {T} = NfRelOrd{T, fractional_ideal_type(order_type(base_field(K))), NfRelElem{T}}
+order_type(K::NfRel{T}) where {T} = NfRelOrd{T, fractional_ideal_type(order_type(base_field(K)))}
 
-order_type(::Type{NfRel{T}}) where {T} = NfRelOrd{T, fractional_ideal_type(order_type(parent_type(T))), NfRelElem{T}}
+order_type(::Type{NfRel{T}}) where {T} = NfRelOrd{T, fractional_ideal_type(order_type(parent_type(T)))}
 
 ################################################################################
 #
@@ -146,26 +146,16 @@ end
 #  Constructors
 #
 ################################################################################
-#TODO: I don't understand those
+
 (K::NfRel)(x::NfRelElem) = K(base_field(K)(x))
 
 (K::NfRel)(x::nf_elem) = K(base_field(K)(x))
 
 (K::NfRel{T})(x::NfRelElem{T}) where {T} = K(x.data)
 
-function (K::NfRel{NfRelElem{T}})(x::NfRelElem{T}) where {T}
-  if parent(x) == base_field(K)
-    return K(parent(K.pol)(x))
-  end
-  return force_coerce_throwing(K, x)
-end
+(K::NfRel{NfRelElem{T}})(x::NfRelElem{T}) where {T} = K(parent(K.pol)(x))
 
-function (K::NfRel{nf_elem})(x::nf_elem)
-  if parent(x) == base_field(K)
-    return K(parent(K.pol)(x))
-  end
-  return force_coerce_throwing(K, x)
-end
+(K::NfRel{nf_elem})(x::nf_elem) = K(parent(K.pol)(x))
 
 
 ################################################################################
@@ -189,23 +179,6 @@ end
 
 ################################################################################
 #
-#  mod(::NfRelElem, ::fmpz) as in the absolute case
-#
-################################################################################
-
-function mod(a::NfRelElem{T}, p::fmpz) where T
-  K = parent(a)
-  b = data(a)
-  coeffs = Vector{T}(undef, degree(K)+1)
-  for i = 0:degree(K)
-    coeffs[i+1] = mod(coeff(b, i), p)
-  end
-  Kx = parent(b)
-  return K(Kx(coeffs))
-end
- 
-################################################################################
-#
 #  String I/O
 #
 ################################################################################
@@ -216,12 +189,58 @@ function Base.show(io::IO, a::NfRel)
   print(io, " with defining polynomial ", a.pol)
 end
 
-function AbstractAlgebra.expressify(a::NfRelElem; context = nothing)
-  return AbstractAlgebra.expressify(data(a), var(a.parent), context = context)
+function _show(io::IO, x::PolyElem, S::String)
+   len = length(x)
+   if len == 0
+      print(io, base_ring(x)(0))
+   else
+      for i = 1:len - 1
+         c = coeff(x, len - i)
+         bracket = needs_parentheses(c)
+         if !iszero(c)
+            if i != 1 && !isnegative(c)
+               print(io, "+")
+            end
+            if !isone(c) && (c != -1 || show_minus_one(typeof(c)))
+               if bracket
+                  print(io, "(")
+               end
+               show(io, c)
+               if bracket
+                  print(io, ")")
+               end
+               print(io, "*")
+            end
+            if c == -1 && !show_minus_one(typeof(c))
+               print(io, "-")
+            end
+            print(io, string(S))
+            if len - i != 1
+               print(io, "^")
+               print(io, len - i)
+            end
+         end
+      end
+      c = coeff(x, 0)
+      bracket = needs_parentheses(c)
+      if !iszero(c)
+         if len != 1 && !isnegative(c)
+            print(io, "+")
+         end
+         if bracket
+            print(io, "(")
+         end
+         show(io, c)
+         if bracket
+            print(io, ")")
+         end
+      end
+   end
 end
 
 function Base.show(io::IO, a::NfRelElem)
-  print(io, AbstractAlgebra.obj_to_string(a, context = io))
+  f = data(a)
+  _show(io, f, string(parent(a).S))
 end
 
 ################################################################################
@@ -241,7 +260,7 @@ end
 function NumberField(f::PolyElem{<: NumFieldElem}; cached::Bool = false, check::Bool = true)
   return NumberField(f, "_\$", cached = cached, check = check)
 end
- 
+
 function (K::NfRel{T})(a::Generic.Poly{T}) where T
   z = NfRelElem{T}(mod(a, K.pol))
   z.parent = K
@@ -284,23 +303,19 @@ end
 ################################################################################
 
 function Base.:(+)(a::NfRelElem{T}, b::NfRelElem{T}) where {T}
-  parent(a) == parent(b) || force_op(+, a, b)::NfRelElem{T}
   return parent(a)(data(a) + data(b))
 end
 
 function Base.:(-)(a::NfRelElem{T}, b::NfRelElem{T}) where {T}
-  parent(a) == parent(b) || force_op(-, a, b)::NfRelElem{T}
   return parent(a)(data(a) - data(b))
 end
 
 function Base.:(*)(a::NfRelElem{T}, b::NfRelElem{T}) where {T}
-  parent(a) == parent(b) || force_op(*, a, b)::NfRelElem{T}
   return parent(a)(data(a) * data(b))
 end
 
 function divexact(a::NfRelElem{T}, b::NfRelElem{T}) where {T}
   b == 0 && error("Element not invertible")
-  parent(a) == parent(b) || force_op(divexact, a, b)::NfRelElem{T}
   return a*inv(b)
 end
 
@@ -345,9 +360,6 @@ function Base.:(^)(a::NfRelElem, n::Int)
 end
 
 function Base.:(^)(a::NfRelElem, b::fmpz)
-  if fits(Int, b)
-    return a^Int(b)
-  end
   if b < 0
     return inv(a)^(-b)
   elseif b == 0
@@ -357,8 +369,7 @@ function Base.:(^)(a::NfRelElem, b::fmpz)
   elseif mod(b, 2) == 0
     c = a^(div(b, 2))
     return c*c
-  else
-    #mod(b, 2) == 1
+  elseif mod(b, 2) == 1
     return a^(b - 1)*a
   end
 end
@@ -372,7 +383,6 @@ end
 function Base.:(==)(a::NfRelElem{T}, b::NfRelElem{T}) where T
   reduce!(a)
   reduce!(b)
-  parent(a) == parent(b) || force_op(==, a, b)::Bool
   return data(a) == data(b)
 end
 
@@ -435,7 +445,7 @@ for F in [fmpz, fmpq, Int]
     function Base.:(-)(a::$F, b::NfRelElem{T}) where {T <: NumFieldElem}
       return parent(b)(a - data(b))
     end
-    
+
     function divexact(a::NfRelElem{T}, b::$F) where {T <: NumFieldElem}
       return parent(a)(divexact(data(a), b))
     end
@@ -487,12 +497,8 @@ end
 #"""
 function absolute_field(K::NfRel{nf_elem}, cached::Bool = false)
   Ka, a, b, c = _absolute_field(K, cached)
-  h1 = NfToNfRel(Ka, K, a, b, c)
-  h2 = hom(base_field(K), Ka, a, check = false)
-  embed(h1)
-  embed(MapFromFunc(x->preimage(h1, x), K, Ka))
-  embed(h2)
-  return Ka, h1, h2
+  #return Ka, NfRelToNf(K, Ka, a, b, c), hom(base_ring(K), Ka, a, check = false)
+  return Ka, NfToNfRel(Ka, K, a, b, c), hom(base_field(K), Ka, a, check = false)
 end
 
 #@doc Markdown.doc"""
@@ -502,12 +508,7 @@ end
 #"""
 function absolute_field(K::NfRel{NfRelElem{T}}, cached::Bool = false) where T
   Ka, a, b, c = _absolute_field(K)
-  h1 = NfRelToNfRelRel(Ka, K, a, b, c)
-  h2 = hom(base_field(K), Ka, a, check = false)
-  embed(h1)
-  embed(MapFromFunc(x->preimage(h1, x), K, Ka))
-  embed(h2)
-  return Ka, h1, h2
+  return Ka, NfRelToNfRelRel(Ka, K, a, b, c), hom(base_field(K), Ka, a, check = false)
 end
 
 
@@ -530,7 +531,7 @@ function _absolute_field(K::NfRel, cached::Bool = false)
     end
 
     l += 1
- 
+
     g = compose(f, gen(kx) - l*gen(k))
     N = norm(g)
   end
@@ -551,7 +552,7 @@ function _absolute_field(K::NfRel, cached::Bool = false)
     add!(gg, gg, auxp)
     #gg = gg*gKa + auxp
   end
-  
+
   q = gcd(gg, change_base_ring(Ka, k.pol, parent = KaT))
   @assert degree(q) == 1
   al = -trailing_coefficient(q)//lead(q)
@@ -562,7 +563,7 @@ function _absolute_field(K::NfRel, cached::Bool = false)
   #be -> gen(K) in Ka
   #ga -> gen(Ka) in K
   return Ka, al, be, ga
-end 
+end
 
 function check_parent(a, b)
   return a==b
@@ -584,38 +585,8 @@ function simplified_absolute_field(L::NfRel{nf_elem}, cached::Bool = false)
   cc = KatoL(KtoKa(gen(K)))
   ktoK = hom(base_field(L), K, aa, check = false)
   KtoL = NfToNfRel(K, L, aa, bb, cc)
-  embed(KtoL)
-  embed(MapFromFunc(x->preimage(KtoL, x), L, K))
-  embed(ktoK)
   return K, KtoL, ktoK
 end
-
-################################################################################
-#
-#  Coercion and in function
-#
-################################################################################
-
-
-function (K::AnticNumberField)(a::NfRelElem{nf_elem})
-  K != base_field(parent(a)) && return force_coerce_throwing(K, a)
-  for i in 2:degree(parent(a))
-    @assert iszero(coeff(a, i - 1))
-  end
-  return coeff(a, 0)
-end
-
-function in(a::NfRelElem{nf_elem}, K::AnticNumberField)
-  L = parent(a)
-  @assert base_field(L) == K
-  for i in 2:degree(parent(a))
-    if !iszero(coeff(a, i - 1))
-      return false
-    end
-  end
-  return true
-end
-
 
 ################################################################################
 #
@@ -682,54 +653,9 @@ function norm(a::NfRelElem, new::Bool = true)
   return det(M)
 end
 
-################################################################################
-#
-#  Trace
-#
-################################################################################
-
-function assure_trace_basis(K::NfRel)
-  if isdefined(K, :trace_basis)
-    return nothing
-  end
-  F = base_field(K)
-  trace_basis = Vector{elem_type(F)}(undef, degree(K))
-  trace_basis[1] = F(degree(K)) 
-  a = gen(K)
-  for i = 2:degree(K)
-    #We can do better, probably...
-    M = representation_matrix(a)
-    trace_basis[i] = tr(M)
-    a *= gen(K)
-  end
-  K.trace_basis = trace_basis
-  return nothing
-end
-
 function tr(a::NfRelElem)
-  K = parent(a)
-  assure_trace_basis(K)
-  t = coeff(a, 0)*K.trace_basis[1]
-  for i = 2:degree(K)
-    c = coeff(a, i-1)
-    if !iszero(c)
-      t += c*K.trace_basis[i]
-    end
-  end
-  return t
-end
-
-function tr(a::NfRelElem{nf_elem})
-  K = parent(a)
-  assure_trace_basis(K)
-  t = coeff(a, 0)*K.trace_basis[1]
-  for i = 2:degree(K)
-    c = coeff(a, i-1)
-    if !iszero(c)
-      add!(t, t, c*K.trace_basis[i])
-    end
-  end
-  return t
+  M = representation_matrix(a)
+  return tr(M)
 end
 
 ################################################################################
@@ -768,12 +694,12 @@ end
     minpoly(a::NfRelElem) -> PolyElem
 
 Given an element $a$ in an extension $L/K$, this function returns the minimal
-polynomial of $a$ of $K$.
+polynomial of $a$ over $K$.
 """
-function minpoly(a::NfRelElem{S}) where {S}
+function minpoly(a::NfRelElem)
   M = representation_matrix(a)
   R = PolynomialRing(base_field(parent(a)), cached = false)[1]
-  return minpoly(R, M, false)::Generic.Poly{S}
+  return minpoly(R, M, false)
 end
 
 function charpoly(a::NfRelElem, k::Union{NfRel, AnticNumberField, FlintRationalField})
@@ -793,7 +719,7 @@ function minpoly(a::NfRelElem, k::Union{NfRel, AnticNumberField, FlintRationalFi
   end
 
   f = minpoly(a)
-  while base_ring(f) != k && !(base_ring(f) isa FlintRationalField && k isa FlintRationalField)
+  while base_ring(f) != k
     f = norm(f)
     g = gcd(f, derivative(f))
     if !isone(g)
@@ -806,8 +732,6 @@ end
 function absolute_minpoly(a::NfRelElem)
   return minpoly(a, FlintQQ)
 end
-
-norm(a::fmpq_poly) = a
 
 #
 
@@ -945,11 +869,6 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
-    kummer_generator(K::NfRel{nf_elem}) -> nf_elem
-Given an extension $K/k$ which is a cyclic Kummer extension of degree n, returns an element $a\in k$ 
-such that $K = k(\sqrt[n]{a})$. Throws an error if the extension is not a cyclic Kummer extension.
-"""
 function kummer_generator(K::NfRel{nf_elem})
   n = degree(K)
   k = base_field(K)
@@ -968,148 +887,19 @@ function kummer_generator(K::NfRel{nf_elem})
   if length(gens) > 1
     error("Not a Kummer extension!")
   end
-  gen_aut = gens[1]
+  gen = gens[1]
   a = zero(K)
-  stable = 10
-  inter = 1
-  first = true
   while iszero(a)
-    stable -= 1
-    if iszero(stable)
-      inter += 1
-      stable = 10
-    end
-    if first
-      first = false
-      b = gen(K)
-    else
-      b = rand(K, -inter:inter)
-    end
+    b = rand(K, -5:5)
     a = b
     new_b = b
     for i = 1:n-1
-      new_b = gen_aut(new_b)
+      new_b = gen(new_b)
       a += roots[i+1]*new_b
     end
-
   end
   res = k(a^n)
   #We even reduce the support....
   res1 = reduce_mod_powers(res, n)
   return res1
-end
-
-################################################################################
-#
-#  Relative extension
-#
-################################################################################
-
-#TODO: Put some more thought in it.
-@doc Markdown.doc"""
-    relative_extension(K::AnticNumberField, k::AnticNumberField) -> NfRel{nf_elem}
-Given two field $K\supset k$, it returns $K$ as a relative 
-extension of $k$ and an isomorphism between it and $K$..
-"""
-function relative_extension(m::NfToNfMor)
-  k = domain(m)
-  K = codomain(m)
-  lf = factor(K.pol, k)
-  rel_deg = divexact(degree(K), degree(k))
-  pols = [f for (f, v) in lf if degree(f) == rel_deg]
-  p = pols[1]
-  if length(pols) > 1
-    i = 2
-    while !iszero(map_coeffs(m, p)(gen(K)))
-      p = pols[i]
-      i += 1
-    end
-  end
-  L, b = number_field(p, cached = false, check = false)
-  mp = hom(K, L, b, m.prim_img, gen(K))
-  return L, mp
-end
-
-function relative_extension(K::AnticNumberField, k::AnticNumberField)
-  fl, mp = issubfield(k, K)
-  if !fl
-    error("Not a subfield!")
-  end
-  return relative_extension(mp)
-end
-
-################################################################################
-#
-#  Simplify
-#
-################################################################################
-
-function simplify(K::NfRel{nf_elem}; cached::Bool = true, prec::Int = 100)
-  Kabs, mK = absolute_field(K, false)
-  OK = maximal_order(K)
-  new_basis = Vector{nf_elem}(undef, degree(Kabs))
-  B = pseudo_basis(OK)
-  ideals = Dict{NfOrdIdl, Vector{nf_elem}}()
-  for i = 1:length(B)
-    I = B[i][2].num
-    if !haskey(ideals, I)
-      bas = lll_basis(I)
-      ideals[I] = nf_elem[mK\(K(x)) for x in bas]
-    end
-  end
-  ind = 1
-  for i = 1:degree(OK)
-    I = B[i][2]
-    bI = ideals[I.num]
-    el = mK\(B[i][1])
-    for j = 1:length(bI)
-      new_basis[ind] = divexact(el*bI[j], I.den)
-      ind += 1
-    end
-  end
-  O = NfOrd(new_basis)
-  if prec == 100
-    OLLL = lll(O)
-  else
-    OLLL = lll(O, prec = prec)
-  end
-  el = _simplify(OLLL)
-  pel = mK(el)
-  f = minpoly(pel)
-  Ks = number_field(f, cached = cached, check = false)[1]
-  mKs = hom(Ks, K, pel)
-  return Ks, mKs
-end
-
-################################################################################
-#
-#  Signature
-#
-################################################################################
-
-function signature(L::NfRel)
-  c = get_special(L, :signature)
-  if c isa Tuple{Int, Int}
-    return c::Tuple{Int, Int}
-  end
-  K = base_field(L)
-  rlp = real_places(K)
-  rL = 0
-  for P in rlp
-    rL += number_real_roots(defining_polynomial(L), P)
-  end
-  @assert mod(absolute_degree(L) - rL, 2) == 0
-  r, s = rL, div(absolute_degree(L) - rL, 2)
-  set_special(L, :signature => (r, s))
-  return r, s
-end
-
-function istotally_real(L::NfRel)
-  r, s = signature(L)
-  return s == 0
-end
-
-function istotally_complex(L::NfRel)
-  r, s = signature(L)
-  return r == 0
 end

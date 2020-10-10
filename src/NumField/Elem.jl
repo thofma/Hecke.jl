@@ -56,7 +56,7 @@ isintegral(a::fmpq) = isone(denominator(a))
 @doc Markdown.doc"""
     isintegral(a::NumFieldElem) -> Bool
 
-Returns whether `a` is integral, that is, whether the minimal polynomial of $a$
+Returns whether $a$ is integral, that is, whether the minimal polynomial of $a$
 has integral coefficients.
 """
 function isintegral(a::NumFieldElem)
@@ -153,10 +153,10 @@ end
 @doc Markdown.doc"""
     basis_matrix(v::Vector{NumFieldElem}) -> Mat
 
-Given a vector `v` of `n` elements of a number field `K` of degree `d`, this
-function returns an `n x d` matrix with entries in the base field of $K$,
- where row `i` contains the > coefficients of `v[i]` with respect of the
-canonical basis of `K`.
+Given a vector $v$ of $n$ elements of a number field $K$ of degree $d$, this
+function returns an $n x d$ matrix with entries in the base field of $K$,
+ where row $i$ contains the > coefficients of $v[i]$ with respect of the
+canonical basis of $K$.
 """
 basis_matrix(v::Vector{<: NumFieldElem})
 
@@ -301,16 +301,16 @@ end
 @doc Markdown.doc"""
     tr(a::NumFieldElem) -> NumFieldElem
 
-Returns the trace of an element $a$ of a number field extension `L/K`. This
-will be an element of `K`.
+Returns the trace of an element $a$ of a number field extension $L/K$. This
+will be an element of $K$.
 """
 tr(::NumFieldElem)
 
 @doc Markdown.doc"""
     norm(a::NumFieldElem) -> NumFieldElem
 
-Returns the norm of an element $a$ of a number field extension `L/K`. This
-will be an element of `K`.
+Returns the norm of an element $a$ of a number field extension $L/K$. This
+will be an element of $K$.
 """
 norm(::NumFieldElem)
 
@@ -335,8 +335,8 @@ end
 @doc Markdown.doc"""
     tr(a::NumFieldElem, k::NumField) -> NumFieldElem
 
-Returns the trace of an element $a$ of a number field `L` with respect to
-a subfield $k$ of $L$. This will be an element of `k`.
+Returns the trace of an element $a$ of a number field $L$ with respect to
+a subfield $k$ of $L$. This will be an element of $k$.
 """
 function tr(a::NumFieldElem, k::NumField)
   _elem_tr_to(a, k)
@@ -347,8 +347,8 @@ tr(a::NumFieldElem, ::FlintRationalField) = _elem_tr_to(a, FlintQQ)
 @doc Markdown.doc"""
     norm(a::NumFieldElem, k::NumField) -> NumFieldElem
 
-Returns the norm of an element $a$ of a number field `L` with respect to
-a subfield $k$ of $L$. This will be an element of `k`.
+Returns the norm of an element $a$ of a number field $L$ with respect to
+a subfield $k$ of $L$. This will be an element of $k$.
 """
 function norm(a::NumFieldElem, k::NumField)
   _elem_norm_to(a, k)
@@ -437,7 +437,7 @@ end
 
 @doc Markdown.doc"""
     representation_matrix(a::NumFieldElem) -> MatElem
- 
+
 Returns the representation matrix of $a$, that is, the matrix representing
 multiplication with $a$ with respect to the canonical basis of the parent of $a$.
 """

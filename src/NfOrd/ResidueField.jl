@@ -10,7 +10,7 @@ export ResidueField
 # over the prime field Z/pZ.
 # This functions returns - a in O, such that pi(a) is a primitive element
 #                        - f in Z[X], such that f is the minimal polynomial of
-#                          pi(a) 
+#                          pi(a)
 #                        - a vector of fmpz_mat B, such that
 #                          pi(basis(O)[i]) = sum_j B[i][1, j] * pi(a)^j
 function compute_residue_field_data(m)
@@ -81,14 +81,14 @@ function _residue_field_nonindex_divisor_helper(f::fmpq_poly, g::fmpq_poly, p, d
   fmodp = Rx(f)
 
   h = gcd(gmodp,fmodp)
-	
-	if degree_one === Val{true}
+
+	if degree_one == Val{true}
     return R, h
 	else
-    if isa(p, Int)
+  	if typeof(p) == Int
     	F3 = FqNmodFiniteField(h, :$, false)
       return F3, h
-    elseif isa(p, fmpz)
+  	elseif typeof(p) == fmpz
     	F4 = FqFiniteField(h, :$, false)
       return F4, h
   	end
@@ -104,13 +104,13 @@ function _residue_field_nonindex_divisor(O, P, small::Type{Val{T}} = Val{false},
   f = nf(O).pol
   g = parent(f)(elem_in_nf(gtwo))
 
-  if small === Val{true}
+  if small == Val{true}
     @assert fits(Int, minimum(P, copy = false))
     F, h = _residue_field_nonindex_divisor_helper(f, g, Int(minimum(P)), degree_one)
     mF = Mor(O, F, h)
     mF.P = P
     return F, mF
-  elseif small === Val{false}
+  elseif small == Val{false}
     F, h = _residue_field_nonindex_divisor_helper(f, g, minimum(P), degree_one)
     mF = Mor(O, F, h)
     mF.P = P
@@ -125,17 +125,17 @@ end
 ################################################################################
 
 function _residue_field_generic(O, P, small::Type{Val{T}} = Val{false}, degree_one::Type{Val{S}} = Val{false}) where {S, T}
-  if small == Val{true} 
+  if small == Val{true}
     @assert fits(Int, minimum(P, copy = false))
-    if degree_one === Val{true}
+    if degree_one == Val{true}
 			f1 = NfOrdToGFMor(O, P)
       return codomain(f1), f1
 		else
     	f = NfOrdToFqNmodMor(O, P)
     	return codomain(f), f
     end
-  elseif small === Val{false}
-    if degree_one === Val{true}
+  elseif small == Val{false}
+    if degree_one == Val{true}
     	f3 = NfOrdToGFFmpzMor(O, P)
       return codomain(f3), f3
 		else
@@ -152,8 +152,8 @@ end
 ################################################################################
 @doc Markdown.doc"""
     ResidueField(O::NfOrd, P::NfOrdIdl, check::Bool = true) -> Field, Map
-Returns the residue field of the prime ideal $P$ together with th
-projection map. If ```check``` is true, the ideal is checked for 
+Returns the residue field of the prime ideal $P$ together with the
+projection map. If ```check``` is true, the ideal is checked for
 being prime.
 """
 function ResidueField(O::NfOrd, P::NfOrdIdl, check::Bool = true)
@@ -192,7 +192,7 @@ function ResidueFieldDegree1(O::NfOrd, P::NfOrdIdl)
     return _residue_field_nonindex_divisor(O, P, Val{false}, Val{true})
   else
     return _residue_field_generic(O, P, Val{false}, Val{true})
-  end	
+  end
 end
 
 

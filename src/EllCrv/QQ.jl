@@ -160,7 +160,7 @@ end
 @doc Markdown.doc"""
     torsion_points_division_poly(E::EllCrv{fmpq}) -> Array{EllCrvPt}
 
-Computes the rational torsion points of an rational elliptic $E$ curve using
+Computes the rational torsion points of a rational elliptic curve $E$ using
 division polynomials.
 """
 function torsion_points_division_poly(F::EllCrv{fmpq})
@@ -342,7 +342,7 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-integral_model(E::EllCrv{fmpq}) -> (F::EllCrv{fmpz}, function, function)
+    integral_model(E::EllCrv{fmpq}) -> (F::EllCrv{fmpz}, function, function)
 
 Given an elliptic curve $E$ over $\mathbf Q$ in short form, returns an
 isomorphic curve $F$ with model over $\mathbf Z$. The second and third
@@ -524,7 +524,7 @@ end
     tates_algorithm_local(E::EllCrv{fmpz}, p::Int) -> EllipticCurve{fmpq}, String, fmpz, fmpz
 
 Returns a tuple $(\tilde E, K, f, c)$, where $\tilde E$ is a minimal model
-for $E$ at the prime $p$, $K$ is the Kodaira symbol, $f$ is the conduator
+for $E$ at the prime $p$, $K$ is the Kodaira symbol, $f$ is the conductor
 valuation at $p$ and $c$ is the local Tamagawa number at $p$.
 """
 function tates_algorithm_local(E::EllCrv{fmpq}, p)
@@ -887,7 +887,7 @@ function minimal_model(E::EllCrv{fmpq})
 end
 
 @doc Markdown.doc"""
-    minimal_model(E::EllCrv{fmpq}) -> EllCrv{fmpq}
+    minimal_model(E::EllCrv{fmpq}, p::Int) -> EllCrv{fmpq}
 
 Returns a model of $E$, which is minimal at $p$. It is assumed that $p$
 is prime.
@@ -899,6 +899,7 @@ end
 
 @doc Markdown.doc"""
     tidy_model(E::EllCrv{fmpz}) -> EllCrv{fmpz}
+
 Given an elliptic curve with minimal model, this functions returns an
 isomorphic curve with reduced minimal model, that is, $a_1, a_3 \in \{0, 1\}$
 and $a_2 \in \{-1,0,1\}$.
@@ -945,7 +946,8 @@ end
 # this needs to be rewritten
 @doc Markdown.doc"""
     get_b_integral(E::EllCrv{fmpz}) -> Nemo.fmpz
-Computes the invariants b2, b4, b6, b8 of an elliptic curve E with integer coefficients.
+
+Computes the invariants $b2$, $b4$, $b6$, $b8$ of an elliptic curve $E$ with integer coefficients.
 """
 function get_b_integral(E)
   a1 = numerator(E.coeff[1])
@@ -964,7 +966,8 @@ end
 
 @doc Markdown.doc"""
     get_b_c_integral(E::EllCrv{fmpz}) -> Nemo.fmpz
-Computes the invariants b2, b4, b6, b8, c4, c6 of an elliptic curve E with integer coefficients.
+    
+Computes the invariants $b2$, $b4$, $b6$, $b8$, $c4$, $c6$ of an elliptic curve $E$ with integer coefficients.
 """
 function get_b_c_integral(E)
     a1 = numerator(E.coeff[1])
@@ -983,4 +986,3 @@ function get_b_c_integral(E)
 
     return b2,b4,b6,b8,c4,c6
 end
-

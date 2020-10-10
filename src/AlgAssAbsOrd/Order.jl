@@ -507,7 +507,7 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    trred_matrix(O::AlgssAbsOrd) -> fmpz_mat
+    trred_matrix(O::AlgAssAbsOrd) -> fmpz_mat
 
 > Returns the reduced trace matrix $M$ of $O$, i. e. `M[i, j] = trred(b[i]*b[j])`,
 > where $b$ is a basis of $O$.
@@ -538,7 +538,7 @@ function trred_matrix(O::AlgAssAbsOrd)
 end
 
 @doc Markdown.doc"""
-    discriminant(O::AlgssAbsOrd) -> fmpz
+    discriminant(O::AlgAssAbsOrd) -> fmpz
 
 > Returns the discriminant of $O$.
 """
@@ -585,7 +585,7 @@ function trace_signature(O::AlgAssAbsOrd)
   npos = 0
   for (t,e) in fac
     @vtime :AlgAssOrd a = number_positive_roots(Zx(t))
-    npos += a*e 
+    npos += a*e
   end
   return (npos, degree(f) - npos)
 end

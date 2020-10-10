@@ -15,7 +15,7 @@ mutable struct NfToNfMor <: Map{AnticNumberField, AnticNumberField, HeckeMap, Nf
 
   function NfToNfMor()
     z = new()
-    z.header = MapHeader{AnticNumberField, AnticNumberField}()
+    z.header = MapHeader()
     return r
   end
 
@@ -24,7 +24,6 @@ mutable struct NfToNfMor <: Map{AnticNumberField, AnticNumberField, HeckeMap, Nf
     z.prim_img = y
 
     function _image(x::nf_elem)
-      @assert parent(x) == K
       g = parent(K.pol)(x)
       return evaluate(g, y)
     end
@@ -53,7 +52,6 @@ mutable struct NfToNfMor <: Map{AnticNumberField, AnticNumberField, HeckeMap, Nf
     z.prim_preimg = K(parent(K.pol)([ s[i, 1] for i = 1:degree(K) ]))
 
     function _preimage(x::nf_elem)
-      @assert parent(x) == L
       g = parent(L.pol)(x)
       return evaluate(g, z.prim_preimg)
     end
@@ -68,13 +66,11 @@ mutable struct NfToNfMor <: Map{AnticNumberField, AnticNumberField, HeckeMap, Nf
     z.prim_preimg = y_inv
 
     function _image(x::nf_elem)
-      @assert parent(x) == K
       g = parent(K.pol)(x)
       return evaluate(g, y)
     end
 
     function _preimage(x::nf_elem)
-      @assert parent(x) == L
       g = parent(L.pol)(x)
       return evaluate(g, y_inv)
     end
@@ -119,7 +115,7 @@ end
 #
 ################################################################################
 
-id_hom(K::AnticNumberField) = hom(K, K, gen(K), gen(K), check = false)
+id_hom(K::AnticNumberField) = hom(K, K, gen(K), check = false)
 
 morphism_type(::Type{AnticNumberField}) = NfToNfMor
 
@@ -180,23 +176,13 @@ end
 
 function hom(K::AnticNumberField, L::NfRel{nf_elem}, a::NfRelElem{nf_elem}, b::nf_elem, c::nf_elem; check::Bool = true)
 	if check
-    mp = hom(base_field(L), K, b)
-    p = map_coeffs(mp, L.pol, cached = false)
+		mp = hom(base_field(L), K, b)
+		p = map_coeffs(mp, L.pol)
 		@assert iszero(p(c)) "Data does not define a homomorphism"
 		@assert iszero(K.pol(a)) "Data does not define a homomorphism"
 	end
 	return NfToNfRel(K, L, b, c, a)
 
-end
-
-function *(f::NfToNfMor, g::NfToNfRel)
-  @assert codomain(f) == domain(g)
-  K = codomain(g)
-  img_gen = g(f.prim_img)
-  i_f = inv(f)
-  img1 = i_f(g\(K(gen(base_field(K)))))
-  img2 = i_f(g\(gen(K)))
-  return NfToNfRel(domain(f), K, img1, img2, img_gen)
 end
 
 ################################################################################
@@ -206,31 +192,22 @@ end
 ################################################################################
 
 mutable struct GrpGenToNfMorSet{T} <: Map{GrpGen, NfMorSet{T}, HeckeMap, GrpGenToNfMorSet{T}}
-  G::GrpGen
-  aut::Vector{NfToNfMor}
   header::MapHeader{GrpGen, NfMorSet{T}}
 
-  function GrpGenToNfMorSet(aut::Vector{NfToNfMor}, G::GrpGen, S::NfMorSet{T}) where {T}
+  function GrpGenToNfMorSet(G::GrpGen, S::NfMorSet{T}) where {T}
     z = new{T}()
     z.header = MapHeader(G, S)
-    z.aut = aut
-    z.G = G
     return z
   end
 end
 
 function GrpGenToNfMorSet(G::GrpGen, K::AnticNumberField)
-  return GrpGenToNfMorSet(automorphisms(K), G, NfMorSet(K))
-end
-
-function GrpGenToNfMorSet(G::GrpGen, aut::Vector{NfToNfMor}, K::AnticNumberField)
-  return GrpGenToNfMorSet(aut, G, NfMorSet(K))
+  return GrpGenToNfMorSet(G, NfMorSet(K))
 end
 
 function image(f::GrpGenToNfMorSet, g::GrpGenElem)
-  @assert parent(g) == f.G
   K = codomain(f).field
-  return f.aut[g[]]
+  return automorphisms(K)[g[]]
 end
 
 function (f::GrpGenToNfMorSet)(g::GrpGenElem)
@@ -252,8 +229,8 @@ end
 @doc Markdown.doc"""
     inv(f::NfToNfMor)
 
-Assuming that $f$ is an isomorphisms, it returns the inverse of f
-"""  
+Assuming that $f$ is an isomorphism, it returns the inverse of $f$.
+"""
 function inv(f::NfToNfMor)
   if degree(domain(f)) != degree(codomain(f))
     error("The map is not invertible")
@@ -263,27 +240,6 @@ function inv(f::NfToNfMor)
   end
   img = _compute_preimg(f)
   return hom(codomain(f), domain(f), img, check = false)
-end
-
-
-function haspreimage(m::NfToNfMor, a::nf_elem)
-  @assert parent(a) == codomain(m)
-  K = domain(m)
-  L = codomain(m)
-  M = zero_matrix(FlintQQ, degree(L), degree(K))
-  b = basis(K)
-  for i = 1:degree(K)
-    c = m(b[i])
-    for j = 1:degree(L)
-      M[j, i] = coeff(c, j - 1)
-    end
-  end
-  t = transpose(basis_matrix(nf_elem[a]))
-  fl, s = can_solve(M, t)
-  if !fl
-    return false, zero(K)
-  end
-  return true,  K(parent(K.pol)([ s[i, 1] for i = 1:degree(K) ]))
 end
 
 function _compute_preimg(m::NfToNfMor)
@@ -329,16 +285,13 @@ function evaluate(f::fmpq_poly, a::nf_elem)
   if iszero(f)
     return zero(R)
   end
-  if a == gen(R)
-    return R(f)
-  end
   l = length(f) - 1
   s = R(coeff(f, l))
   for i in l-1:-1:0
     #s = s*a + R(coeff(f, i))
     mul!(s, s, a)
     # TODO (easy): Once fmpq_poly_add_fmpq is improved in flint, remove the R(..)
-    add!(s, s, coeff(f, i))
+    add!(s, s, R(coeff(f, i)))
   end
   return s
 end
@@ -346,12 +299,7 @@ end
 function *(f::NfToNfMor, g::NfToNfMor)
   codomain(f) == domain(g) || throw("Maps not compatible")
   y = g(f.prim_img)
-  if isdefined(f, :prim_preimg) && isdefined(g, :prim_preimg)
-    z = f\(g.prim_preimg)
-    return hom(domain(f), codomain(g), y, z, check = false)
-  else
-    return hom(domain(f), codomain(g), y, check = false)
-  end
+  return hom(domain(f), codomain(g), y, check = false)
 end
 
 function ^(f::NfToNfMor, b::Int)
@@ -396,62 +344,98 @@ end
 
 ################################################################################
 #
-#  is normal
+#  Automorphisms
 #
 ################################################################################
 
+function _automorphisms(K::AnticNumberField)
+  if degree(K) == 1
+    return NfToNfMor[hom(K, K, one(K))]
+  end
+  if Nemo.iscyclo_type(K)
+    f = get_special(K, :cyclo)::Int
+    a = gen(K)
+    A, mA = unit_group(ResidueRing(FlintZZ, f, cached = false))
+    auts = NfToNfMor[ hom(K, K, a^lift(mA(g)), check = false) for g in A]
+    return auts
+  end
+  f = K.pol
+  Kt, t = PolynomialRing(K, "t", cached = false)
+  f1 = change_base_ring(K, f, parent = Kt)
+  divpol = Kt(nf_elem[-gen(K), K(1)])
+  f1 = divexact(f1, divpol)
+  lr = roots(f1, max_roots = div(degree(K), 2))
+  Aut1 = Vector{NfToNfMor}(undef, length(lr)+1)
+  for i = 1:length(lr)
+    Aut1[i] = hom(K, K, lr[i], check = false)
+  end
+  Aut1[end] = id_hom(K)
+  auts = closure(Aut1, degree(K))
+  return auts
+end
+
+@doc Markdown.doc"""
+    automorphisms(K::AnticNumberField) -> Vector{NfToNfMor}
+
+Returns the set of automorphisms of $K$.
+"""
+function automorphisms(K::AnticNumberField; copy::Bool = true)
+  if isautomorphisms_known(K)
+    Aut = _get_automorphisms_nf(K)::Vector{NfToNfMor}
+    if copy
+      return Base.copy(Aut)::Vector{NfToNfMor}
+    else
+      return Aut::Vector{NfToNfMor}
+    end
+  end
+  auts = _automorphisms(K)
+  _set_automorphisms_nf(K, auts)
+  if copy
+    return Base.copy(auts)
+  else
+    return auts
+  end
+end
+
+function isautomorphisms_known(K::AnticNumberField)
+  return _get_automorphisms_nf(K, false) != nothing
+end
+
+################################################################################
+#
+#  is normal
+#
+################################################################################
 @doc Markdown.doc"""
     isnormal(K::AnticNumberField) -> Bool
 
 Returns true if $K$ is a normal extension of $\mathbb Q$, false otherwise.
-"""  
+"""
 function isnormal(K::AnticNumberField)
-  #Before computing the automorphisms, I split a few primes and check if the 
+  #Before computing the automorphisms, I split a few primes and check if the
   #splitting behaviour is fine
-  c = get_special(K, :isnormal)
-  if c isa Bool
-    return c::Bool
-  end
-  fl = isnormal_easy(K)
-  if !fl
-    return false
-  end
-  if length(automorphisms(K, copy = false)) != degree(K)
-    set_special(K, :isnormal => false)
-    return false
-  else
-    set_special(K, :isnormal => true)
-    return true
-  end
-end
-
-function isnormal_easy(K::AnticNumberField)
-  E = any_order(K)
+  E = EquationOrder(K)
+  d = discriminant(E)
   p = 1000
   ind = 0
   while ind < 15
     p = next_prime(p)
-    F = GF(p, cached = false)
-    Fx = PolynomialRing(F, cached = false)[1]
-    fF = Fx(K.pol)
-    if degree(fF) != degree(K) || iszero(discriminant(fF))
+    if divisible(d, p)
       continue
     end
     ind += 1
     dt = prime_decomposition_type(E, p)
     if !divisible(degree(K), length(dt))
-      set_special(K, :isnormal => false)
       return false
     end
     f = dt[1][1]
     for i = 2:length(dt)
       if f != dt[i][1]
-        set_special(K, :isnormal => false)
         return false
       end
     end
   end
-  return true
+  return length(automorphisms(K, copy = false)) == degree(K)
 end
 
 ################################################################################
@@ -464,80 +448,201 @@ end
 
 Given a number field $K$, this function returns true and the complex conjugation
 if the field is CM, false and the identity otherwise.
-"""  
+"""
 function iscm_field(K::AnticNumberField)
-  c = get_special(K, :cm_field)
-  if c !== nothing
-    return true, c
-  end
   if isodd(degree(K)) || !istotally_complex(K)
     return false, id_hom(K)
-  end 
-  if isautomorphisms_known(K)
-    auts = automorphisms(K, copy = false)
-    return _find_complex_conj(auts)
   end
-  if !iscm_field_easy(K)
+  auts = automorphisms(K, copy = false)
+  if length(auts) == 1
     return false, id_hom(K)
   end
-  auts = _automorphisms_center(K)
-  return _find_complex_conj(auts)
-end
-
-function _find_complex_conj(auts::Vector{NfToNfMor})
-  K = domain(auts[1])
   for x in auts
     if !isinvolution(x)
       continue
     end
     if iscomplex_conjugation(x)
-      set_special(K, :cm_field => x)
       return true, x
     end
   end
   return false, id_hom(K)
 end
 
-function iscm_field_easy(K::AnticNumberField)
-  E = any_order(K)
-  if ismaximal_order_known(K)
-    E = maximal_order(K)
-  end
-  n = degree(E)
-  g = zero_matrix(FlintZZ, n, n)
-  B = basis(E, nf(E))
-  prec = 32
-  imgs = Vector{Vector{arb}}(undef, n)
-  for i = 1:n
-    imgs[i] = minkowski_map(B[i], prec)
-  end
-  i = 1
-  t = arb()
-  while i <= n
-    j = i
-    while j <= n
-      el = imgs[i][1]*imgs[j][1]
-      for k = 2:n
-        mul!(t, imgs[i][k], imgs[j][k])
-        add!(el, el, t)
-      end
-      if radius(el) > 1//16
-        prec *= 2
-        for k = i:n
-          imgs[k] = minkowski_map(B[k], prec)
-        end
-        continue
-      end
-      fl, r = unique_integer(el)
-      if !fl
-        return false
-      end
-      j += 1 
-    end
-    i += 1
-  end
-  return true
+################################################################################
+#
+#  Automorphism Group
+#
+################################################################################
+@doc Markdown.doc"""
+    automorphism_group(K::AnticNumberField) -> GenGrp, GrpGenToNfMorSet
 
+Given a number field $K$, this function returns a group $G$ and a map from $G$ to the automorphisms of $K$.
+"""
+function automorphism_group(K::AnticNumberField)
+  if Nemo.iscyclo_type(K)
+    return _automorphism_group_cyclo(K)
+  else
+    return _automorphism_group_generic(K)
+  end
+end
+
+function _automorphism_group_cyclo(K)
+  f = get_special(K, :cyclo)
+  a = gen(K)
+  A, mA = unit_group(ResidueRing(FlintZZ, f))
+  G, AtoG, GtoA = generic_group(collect(A), +)
+  aut = NfToNfMor[ hom(K, K, a^lift(mA(GtoA[g])), check = false) for g in G]
+  _set_automorphisms_nf(K, aut)
+  return G, GrpGenToNfMorSet(G, K)
+end
+
+function _automorphism_group_generic(K)
+  aut = automorphisms(K)
+  n = degree(K)
+  #First, find a good prime
+  p = 11
+  d = numerator(discriminant(K.pol))
+  while mod(d, p) == 0
+    p = next_prime(p)
+  end
+  R = GF(p, cached = false)
+  Rx, x = PolynomialRing(R, "x", cached = false)
+  fmod = Rx(K.pol)
+  pols = gfp_poly[Rx(g.prim_img) for g in aut]
+  Dcreation = Vector{Tuple{gfp_poly, Int}}(undef, length(pols))
+  for i = 1:length(pols)
+    Dcreation[i] = (pols[i], i)
+  end
+  D = Dict{gfp_poly, Int}(Dcreation)
+  @assert length(D) == n
+  mult_table = Array{Int, 2}(undef, n, n)
+  for s = 1:n
+    for i = 1:length(aut)
+      mult_table[s, i] = D[Hecke.compose_mod(pols[s], pols[i], fmod)]
+    end
+  end
+  G = GrpGen(mult_table)
+  return G, GrpGenToNfMorSet(G, K)
+end
+
+###############################################################################
+#
+#  NfToNfMor closure
+#
+###############################################################################
+
+function closure(S::Vector{NfToNfMor}, final_order::Int = -1)
+
+  K = domain(S[1])
+  d = numerator(discriminant(K.pol))
+  p = 11
+  while mod(d, p) == 0
+    p = next_prime(p)
+  end
+  R = GF(p, cached = false)
+  Rx, x = PolynomialRing(R, "x", cached = false)
+  fmod = Rx(K.pol)
+
+  t = length(S)
+  order = 1
+  elements = NfToNfMor[id_hom(K)]
+  pols = gfp_poly[x]
+  gpol = Rx(S[1].prim_img)
+  if gpol != x
+    push!(pols, gpol)
+    push!(elements, S[1])
+    order += 1
+
+    gpol = compose_mod(gpol, pols[2], fmod)
+
+    while gpol != x
+      order = order +1
+      push!(elements, S[1]*elements[end])
+      push!(pols, gpol)
+      gpol = compose_mod(gpol, pols[2], fmod)
+    end
+  end
+
+  if order == final_order
+    return elements
+  end
+
+  for i in 2:t
+    if !(S[i] in elements)
+      pi = Rx(S[i].prim_img)
+      previous_order = order
+      order = order + 1
+      push!(elements, S[i])
+      push!(pols, Rx(S[i].prim_img))
+      for j in 2:previous_order
+        order = order + 1
+        push!(pols, compose_mod(pols[j], pi, fmod))
+        push!(elements, elements[j]*S[i])
+      end
+      if order == final_order
+        return elements
+      end
+      rep_pos = previous_order + 1
+      while rep_pos <= order
+        for k in 1:i
+          s = S[k]
+          po = Rx(s.prim_img)
+          att = compose_mod(pols[rep_pos], po, fmod)
+          if !(att in pols)
+            elt = elements[rep_pos]*s
+            order = order + 1
+            push!(elements, elt)
+            push!(pols, att)
+            for j in 2:previous_order
+              order = order + 1
+              push!(pols, compose_mod(pols[j], att, fmod))
+              push!(elements, elements[j] *elt)
+            end
+            if order == final_order
+              return elements
+            end
+          end
+        end
+        rep_pos = rep_pos + previous_order
+      end
+    end
+  end
+  return elements
+end
+
+function generic_group(G::Vector{NfToNfMor}, ::typeof(*))
+  K = domain(G[1])
+  n = length(G)
+  #First, find a good prime
+  p = 11
+  d = numerator(discriminant(K.pol))
+  while mod(d, p) == 0
+    p = next_prime(p)
+  end
+  R = GF(p, cached = false)
+  Rx, x = PolynomialRing(R, "x", cached = false)
+  fmod = Rx(K.pol)
+  pols = gfp_poly[Rx(g.prim_img) for g in G]
+  Dcreation = Vector{Tuple{gfp_poly, Int}}(undef, length(pols))
+  for i = 1:length(pols)
+    Dcreation[i] = (pols[i], i)
+  end
+  D = Dict{gfp_poly, Int}(Dcreation)
+  @assert length(D) == degree(K)
+  permutations = Array{Array{Int, 1},1}(undef, n)
+
+  m_table = Array{Int, 2}(undef, n, n)
+
+  for s = 1:n
+    for i = 1:n
+      m_table[s, i] =  D[Hecke.compose_mod(pols[s], pols[i], fmod)]
+    end
+  end
+
+  Gen = GrpGen(m_table)
+  GentoG = Dict{GrpGenElem, eltype(G)}(Gen[i] => G[i] for i in 1:length(G))
+  GtoGen = Dict{eltype(G), GrpGenElem}(G[i] => Gen[i] for i in 1:length(G))
+  return Gen, GtoGen, GentoG
 end
 
 ################################################################################
@@ -546,29 +651,10 @@ end
 #
 ################################################################################
 
-function _evaluate_mod(f::fmpq_poly, a::nf_elem, d::fmpz)
-  #Base.show_backtrace(stdout, Base.stacktrace())
-  R = parent(a)
-  if iszero(f)
-    return zero(R)
-  end
-  l = length(f) - 1
-  s = R(coeff(f, l))
-  for i in l-1:-1:0
-    #s = s*a + R(coeff(f, i))
-    mul!(s, s, a)
-    # TODO (easy): Once fmpq_poly_add_fmpq is improved in flint, remove the R(..)
-    add!(s, s, R(coeff(f, i)))
-    s = mod(s, d)
-  end
-  return s
-end
-
 (f::NfToNfMor)(x::NfOrdIdl) = induce_image(f, x)
 
 function induce_image(f::NfToNfMor, x::NfOrdIdl)
-  K = domain(f)
-  if K != codomain(f)
+  if domain(f) != codomain(f)
     OK = maximal_order(codomain(f))
     @assert ismaximal(order(x))
     assure_2_normal(x)
@@ -583,39 +669,19 @@ function induce_image(f::NfToNfMor, x::NfOrdIdl)
 
   OK = order(x)
   K = nf(OK)
-  if has_2_elem(x) && ismaximal_known(OK) && ismaximal(OK) 
-    int_in_ideal = x.gen_one
-    if has_minimum(x)
-      int_in_ideal = minimum(x, copy = false)
-    elseif has_norm(x)
-      int_in_ideal = norm(x, copy = false)
-    end
-    if iscoprime(index(OK), int_in_ideal) && fits(Int, int_in_ideal^2)
+  if has_2_elem(x) && ismaximal_known(OK) && ismaximal(OK) && iscoprime(index(OK), minimum(x, copy = false)) && fits(Int, minimum(x, copy = false)^2)
     #The conjugate of the prime will still be a prime over the minimum
     #I just need to apply the automorphism modularly
-      return induce_image_easy(f, x)
-    end
+    return induce_image_easy(f, x)
   end
   I = ideal(OK)
   if isdefined(x, :gen_two)
-    new_gen_two = f(K(x.gen_two))
-    if has_minimum(x)
-      new_gen_two = mod(new_gen_two, minimum(x, copy = false)^2)
-    end
-    if ismaximal_known(OK) && ismaximal(OK)
-      I.gen_two = OK(new_gen_two, false)
-    else
-      I.gen_two = OK(new_gen_two)
-    end
+    I.gen_two = OK(f(K(x.gen_two)))
   end
   if isdefined(x, :princ_gen)
-    if ismaximal_known(OK) && ismaximal(OK)
-      I.princ_gen = OK(f(K(x.princ_gen)), false)
-    else
-      I.princ_gen = OK(f(K(x.princ_gen)))
-    end
+    I.princ_gen = OK(f(K(x.princ_gen)))
   end
-  for i in [:gen_one, :is_prime, :gens_normal, :gens_weakly_normal, :is_principal, 
+  for i in [:gen_one, :is_prime, :gens_normal, :gens_weakly_normal, :is_principal,
           :iszero, :minimum, :norm, :splitting_type]
     if isdefined(x, i)
       setfield!(I, i, getfield(x, i))
@@ -655,7 +721,7 @@ function induce_image_easy(f::NfToNfMor, P::NfOrdIdl)
   if isdefined(P, :princ_gen)
     res.princ_gen = OK(f(K(P.princ_gen)))
   end
-  for i in [:is_prime, :gens_normal, :gens_weakly_normal, :is_principal, 
+  for i in [:is_prime, :gens_normal, :gens_weakly_normal, :is_principal,
           :minimum, :norm, :splitting_type]
     if isdefined(P, i)
       setfield!(res, i, getfield(P, i))
@@ -717,8 +783,8 @@ end
 @doc Markdown.doc"""
     isinvolution(f::NfToNfMor) -> Bool
 
-Returns true if $f$ is an involution, i.e. if f^2 is the identity, false otherwise.
-"""  
+Returns true if $f$ is an involution, i.e. if $f^2$ is the identity, false otherwise.
+"""
 function isinvolution(f::NfToNfMor)
   K = domain(f)
   @assert K == codomain(f)
@@ -745,7 +811,7 @@ end
     _order(f::NfToNfMor) -> Int
 
 If $f$ is an automorphism of a field $K$, it returns the order of $f$ in the automorphism group of $K$.
-"""  
+"""
 function _order(f::NfToNfMor)
   K = domain(f)
   @assert K == codomain(f)
@@ -778,11 +844,11 @@ function small_generating_set(G::Vector{NfToNfMor})
   if length(G) == 1
     return G
   end
-	
+
   firsttry = 10
   secondtry = 20
   thirdtry = 30
-	
+
 	K = domain(G[1])
 	p = 2
   R = GF(p, cached = false)
@@ -791,12 +857,12 @@ function small_generating_set(G::Vector{NfToNfMor})
 		p = next_prime(p)
 	  R = GF(p, cached = false)
 		Rx = PolynomialRing(R, "x", cached = false)[1]
-	end 
+	end
 
 	given_gens = gfp_poly[Rx(x.prim_img) for x in G]
 	orderG = length(closure(given_gens, (x, y) -> Hecke.compose_mod(x, y, Rx(K.pol)), gen(Rx)))
   # First try one element
-  
+
   for i in 1:firsttry
     trygen = _non_trivial_randelem(G, id_hom(K))
     if length(closure(gfp_poly[Rx(trygen.prim_img)], (x, y) -> Hecke.compose_mod(x, y, Rx(K.pol)), gen(Rx))) == orderG
@@ -848,35 +914,7 @@ function _order(G::Vector{NfToNfMor})
 		p = next_prime(p)
 	  R = GF(p, cached = false)
 		Rx = PolynomialRing(R, "x", cached = false)[1]
-	end 
+	end
 	given_gens = gfp_poly[Rx(x.prim_img) for x in G]
 	return length(closure(given_gens, (x, y) -> Hecke.compose_mod(x, y, Rx(K.pol)), gen(Rx)))
-end
-
-################################################################################
-#
-#  Frobenius automorphism
-#
-################################################################################
-
-function frobenius_automorphism(P::NfOrdIdl)
-  @assert isprime(P)
-  OK = order(P)
-  K = nf(OK)
-  @assert ismaximal_known_and_maximal(OK)
-  @assert ramification_index(P) == 1
-  @assert isnormal(K)
-  K = nf(OK)
-  auts = decomposition_group(P)
-  F, mF = ResidueField(OK, P)
-  p = minimum(P, copy = false)
-  genF = elem_in_nf(mF\gen(F))
-  powgen = gen(F)^p
-  for i = 1:length(auts)
-    img = auts[i](genF)
-    if mF(OK(img, false)) == powgen
-      return auts[i]
-    end
-  end
-  error("Something went wrong")
 end

@@ -58,7 +58,7 @@ function haspreimage(M::GrpAbFinGenMap, a::GrpAbFinGenElem)
   if fl
     return true, GrpAbFinGenElem(domain(M), view(p, 1:1, 1:ngens(domain(M))))
   else
-    return false, id(domain(M))
+    return false, domain(M)[1]
   end
 end
 
@@ -95,14 +95,13 @@ id_hom(G::GrpAbFinGen) = hom(G, G, identity_matrix(FlintZZ, ngens(G)), identity_
 
 @doc Markdown.doc"""
     hom(A::Array{GrpAbFinGenElem, 1}, B::Array{GrpAbFinGenElem, 1}) -> Map
-Creates the homomorphism $A[i] \mapsto B[i]$
+Creates the homomorphism $A[i] \mapsto B[i]$.
 """
 function hom(A::Array{GrpAbFinGenElem, 1}, B::Array{GrpAbFinGenElem, 1}; check::Bool = true)
   GA = parent(A[1])
   GB = parent(B[1])
   @assert length(B) == length(A)
   @assert length(A) > 0
-  #=
   if (check)
     m = vcat(fmpz_mat[x.coeff for x in A])
     m = vcat(m, rels(parent(A[1])))
@@ -115,18 +114,13 @@ function hom(A::Array{GrpAbFinGenElem, 1}, B::Array{GrpAbFinGenElem, 1}; check::
       error("Data does not define a homomorphism")
     end
   end
-  =#
-  if ngens(GB) == 0
-    return hom(GA, GB, matrix(FlintZZ, ngens(GA), 0, fmpz[]), check = check)
-  end
 
   M = vcat([hcat(A[i].coeff, B[i].coeff) for i = 1:length(A)])
   RA = rels(GA)
   M = vcat(M, hcat(RA, zero_matrix(FlintZZ, nrows(RA), ncols(B[1].coeff))))
-  if isdefined(GB, :exponent) && nrows(M) >= ncols(M)
-    H = hnf_modular_eldiv(M, exponent(GB))
-  else
-    H = hnf(M)
+  H = hnf(M)
+  if ngens(GB) == 0
+    return hom(GA, GB, matrix(FlintZZ, ngens(GA), 0, fmpz[]), check = check)
   end
   H = sub(H, 1:ngens(GA), ngens(GA)+1:ngens(GA)+ngens(GB))
   h = hom(GA, GB, H, check = check)
@@ -136,7 +130,7 @@ end
 @doc Markdown.doc"""
     hom(G::GrpAbFinGen, B::Array{GrpAbFinGenElem, 1}) -> Map
 
-Creates the homomorphism which maps `G[i]` to `B[i]`.
+Creates the homomorphism which maps $G[i]$ to $B[i]$.
 """
 function hom(G::GrpAbFinGen, B::Array{GrpAbFinGenElem, 1}; check::Bool = true)
   GB = parent(B[1])
@@ -172,7 +166,7 @@ function check_mat(A::GrpAbFinGen, B::GrpAbFinGen, M::fmpz_mat)
 end
 
 function hom(A::GrpAbFinGen, B::GrpAbFinGen, M::fmpz_mat; check::Bool = true)
-  if check 
+  if check
     check_mat(A, B, M) || error("Matrix does not define a morphism of abelian groups")
   end
 
@@ -202,7 +196,7 @@ end
 
 function inv(f::GrpAbFinGenMap)
   if isdefined(f, :imap)
-    return hom(codomain(f), domain(f), f.imap, f.map, check = false)
+    return hom(codomain(f), domain(f), f.imap, f.map)
   end
   if !isinjective(f)
     error("The map is not invertible")
@@ -230,7 +224,7 @@ end
 @doc Markdown.doc"""
     kernel(h::GrpAbFinGenMap) -> GrpAbFinGen, Map
 
-Let $G$ be the domain of $h$. This functions returns an abelian group $A$ and an
+Let $G$ be the domain of $h$. This function returns an abelian group $A$ and an
 injective morphism $f \colon A \to G$, such that the image of $f$ is the kernel
 of $h$.
 """
@@ -276,11 +270,11 @@ image of $h$.
 function image(h::GrpAbFinGenMap, add_to_lattice::Bool = true)
   G = domain(h)
   H = codomain(h)
-  hn = hnf!(vcat(h.map, rels(H)))
+  hn = hnf(vcat(h.map, rels(H)))
   im = GrpAbFinGenElem[]
   for i = 1:nrows(hn)
     if !iszero_row(hn, i)
-      push!(im, GrpAbFinGenElem(H, sub(hn, i:i, 1:ngens(H))))
+      push!(im, H(sub(hn, i:i, 1:ngens(H))))
     else
       break
     end
@@ -291,8 +285,8 @@ end
 @doc Markdown.doc"""
     cokernel(h::GrpAbFinGenMap) -> GrpAbFinGen, Map
 
-Let $G$ be the codomain of $h$. This functions returns an abelian group $A$ and
-a morphism $f \colon G \to A$, such that $A$ is the quotient of $G$ with 
+Let $G$ be the codomain of $h$. This function returns an abelian group $A$ and
+a morphism $f \colon G \to A$, such that $A$ is the quotient of $G$ with
 respect to the image of $h$.
 """
 function cokernel(h::GrpAbFinGenMap, add_to_lattice::Bool = true)
@@ -311,7 +305,7 @@ end
 
 Returns whether $h$ is surjective.
 """
-function issurjective(A::GrpAbFinGenMap)  
+function issurjective(A::GrpAbFinGenMap)
   if isfinite(codomain(A))
     H, mH = image(A)
     return (order(codomain(A)) == order(H))::Bool
@@ -333,7 +327,7 @@ end
 Returns whether $h$ is injective.
 """
 function isinjective(A::GrpAbFinGenMap)
-  K = kernel(A, false)[1]
+  K = kernel(A)[1]
   return isfinite(K) && isone(order(K))
 end
 
@@ -361,24 +355,9 @@ end
 
 function compose(f::GrpAbFinGenMap, g::GrpAbFinGenMap)
   @assert domain(g) == codomain(f)
+
+  M = f.map*g.map
   C = codomain(g)
-  if isdefined(C, :exponent)
-    if fits(Int, C.exponent)
-      RR = ResidueRing(FlintZZ, Int(C.exponent), cached = false)
-      fRR = map_entries(RR, f.map)
-      gRR = map_entries(RR, g.map)
-      MRR = fRR*gRR
-      M = lift(MRR)
-    else
-      R = ResidueRing(FlintZZ, C.exponent, cached = false)
-      fR = map_entries(R, f.map)
-      gR = map_entries(R, g.map)
-      MR = fR*gR
-      M = map_entries(lift, MR)
-    end
-  else
-    M = f.map*g.map
-  end
   if issnf(C)
     reduce_mod_snf!(M, C.snf)
   else
@@ -389,6 +368,18 @@ function compose(f::GrpAbFinGenMap, g::GrpAbFinGenMap)
 
 end
 
+function reduce_mod_snf!(M::fmpz_mat, vect::Vector{fmpz})
+  for j = 1:ncols(M)
+    if iszero(vect[j])
+      break
+    end
+    for i = 1:nrows(M)
+      M[i, j] = mod(M[i, j], vect[j])
+    end
+  end
+  return nothing
+end
+
 ###############################################################################
 mutable struct MapParent
   dom
@@ -396,7 +387,7 @@ mutable struct MapParent
   typ::String
 end
 
-elem_type(::Type{MapParent}) = Map 
+elem_type(::Type{MapParent}) = Map
 
 function show(io::IO, MP::MapParent)
   print(io, "Set of all $(MP.typ) from $(MP.dom) to $(MP.codom)")
@@ -404,7 +395,7 @@ end
 
 function cyclic_hom(a::fmpz, b::fmpz)
   #hom from Z/a -> Z/b
-  if iszero(a) 
+  if iszero(a)
     return (b, fmpz(1))
   end
   if iszero(b)
@@ -522,7 +513,7 @@ end
 #TODO: technically, dual Z could be Q/Z ...
 @doc Markdown.doc"""
     dual(G::GrpAbFinGen) -> GrpAbFinGen, Map
-Computes the dual group, ie. $hom(G, Q/Z)$ as an
+Computes the dual group, i.e. $hom(G, Q/Z)$ as an
 abstract group. The map can be used to obtain actual homomorphisms.
 """
 function dual(G::GrpAbFinGen)
@@ -546,4 +537,3 @@ function dual(G::GrpAbFinGen, u::QmodZElem)
   end
   return R, MapFromFunc(mu, nu, R, MapParent(R, parent(u), "homomorphisms"))
 end
-

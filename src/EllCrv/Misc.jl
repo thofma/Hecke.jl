@@ -57,7 +57,7 @@ Computes the numbers whose square divides a given number $n$. It is assumed
 that $n$ is not zero.
 """
 function squaredivisors(n)
-  n == 0 && error("The number must be nonzero")  
+  n == 0 && error("The number must be nonzero")
   return Divisors(n, units = true, power = 2)
 end
 
@@ -76,14 +76,14 @@ function zeros(f::fmpz_poly)
 
   fac = factor(f)
   zeros = Nemo.fmpz[]
-    
+
     # check if there are monic linear factors <-> zeros
   for i in fac
     if degree(i[1]) == 1 && lead(i[1]) == 1
       push!(zeros, -coeff(i[1],0))
     end
   end
-    
+
   return zeros
 end
 
@@ -94,16 +94,16 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-  issquare(x::ResElem{fmpz}) -> (Bool, ResElem)
+    issquare(x::ResElem{fmpz}) -> (Bool, ResElem)
 
-Checks if an element x of a ResidueRing of $Z$ is a square, say of y
-returns (true, y) in that case and (false, 0) otherwise 
+Checks if an element $x$ of a ResidueRing of $Z$ is a square, say of y
+returns (true, y) in that case and (false, 0) otherwise
 """
 function issquare(x::ResElem{fmpz})
     R = parent(x)
     p = modulus(R)
     xnew = x.data
-    
+
     j = jacobi_symbol(xnew, p)
     if j == 0
         return true, zero(R)
@@ -119,7 +119,7 @@ function issquare(x::Union{nmod, gfp_elem})
     R = parent(x)
     p = modulus(R)
     xnew = x.data
-    
+
     j = jacobi_symbol(fmpz(xnew), fmpz(p))
     if j == 0
         return true, zero(R)
@@ -136,19 +136,19 @@ end
     issquare(x::FinFieldElem) -> (Bool, FinFieldElem)
 
 Checks if an element $x$ of $\mathbf F_q$ is a square, say of $y$.
-Returns `(true, y)` in that case and `(false, 0)` otherwise 
+Returns `(true, y)` in that case and `(false, 0)` otherwise
 """
 function issquare(x::FinFieldElem)
     R = parent(x)
     S, t = PolynomialRing(R, "t", cached = false)
-    
+
     # check if x is a square by considering the polynomial f = t^2 - x
     # x is a square in F_q iff f has a root in F_q
     f = t^2 - x
     fac = factor(f)
 
     p = first(keys(fac.fac))
-    
+
     if fac[p] == 2 # f has a double zero
         root = -coeff(p, 0)
         return true, R(root)
@@ -163,14 +163,14 @@ end
 @doc Markdown.doc"""
   quadroots(a::fmpz, b::fmpz, c::fmpz, p::fmpz) -> Bool
 
-Returns true if the quadratic congruence if the quadratic polynomial
+Returns true if the quadratic congruence of the quadratic polynomial
 $ax^2 + bx + c = 0$ has a root modulo $p$.
 """
 function quadroots(a, b, c, p)
   F_p = GF(p, cached = false)
   R, x = PolynomialRing(F_p, "x", cached = false)
   f = F_p(a)*x^2 + F_p(b)*x + F_p(c)
-    
+
   if degree(f) == -1
     return true
   elseif degree(f) == 0
@@ -181,7 +181,7 @@ function quadroots(a, b, c, p)
 
   fac = factor(f)
   p = first(keys(fac.fac))
-    
+
   if fac[p] == 2 # f has a double zero
     return true
   elseif length(fac) == 2 # f splits into two different linear factors
@@ -201,9 +201,9 @@ function nrootscubic(b, c, d, p)
   F_p = GF(p, cached = false)
   R, x = PolynomialRing(F_p, "x")
   f = x^3 + F_p(b)*x^2 + F_p(c)*x + F_p(d)
-  
+
   fac = factor(f)
-  
+
   if length(fac) == 1
     if fac[first(keys(fac.fac))] == 3
       return FlintZZ(3)
@@ -214,12 +214,12 @@ function nrootscubic(b, c, d, p)
     if fac[first(keys(fac))]== 1 && fac[first(keys(fac))] == 1
       # one linear and one irreducible quadratic factor
       return FlintZZ(1)
-    else 
+    else
       return FlintZZ(3) #one double and one single root
     end
-  else 
+  else
     return FlintZZ(3)
-  end  
+  end
 end
 
 function smod(a::T, b::S) where {T, S}
@@ -232,16 +232,18 @@ end
 
 
 @doc Markdown.doc"""
-		order(R::ResRing{fmpz}) -> Nemo.fmpz
+	order(R::ResRing{fmpz}) -> Nemo.fmpz
+
 Returns the order of a finite field of a residue ring of $\mathbf Z$.
-""" 
+"""
 function order(R::ResRing{fmpz})
   return abs(modulus(R))
 end
 
 @doc Markdown.doc"""
-characteristic(R::ResRing{fmpz}) -> Nemo.fmpz
-Returns the characteristic of R
+    characteristic(R::ResRing{fmpz}) -> Nemo.fmpz
+    
+Returns the characteristic of $R$
 """
 function characteristic(R::ResRing{fmpz})
   return abs(modulus(R))

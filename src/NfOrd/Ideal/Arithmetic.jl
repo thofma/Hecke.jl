@@ -45,60 +45,6 @@ end
 #
 ################################################################################
 
-#x has a princ gen special
-function sum_princ_gen_special(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
-  OK = order(x)
-  genx = x.princ_gen_special[2]+x.princ_gen_special[3]
-  if has_2_elem(y)
-    if has_minimum(y)
-      gen1 = gcd(genx, minimum(y, copy = false))
-      if gen1 == minimum(y, copy = false)
-        return y
-      end
-    else
-      gen1 = gcd(genx, y.gen_one)
-      if gen1 == y.gen_one
-        return y
-      end
-    end
-    res = ideal(OK, gen1, y.gen_two)
-    fl = false
-    if has_minimum(y)
-      fl = gen1 == ppio(minimum(y, copy = false), genx)[1]
-    else
-      fl = gen1 == ppio(y.gen_one, genx)[1]
-    end
-    if fl
-      if has_norm(y)
-        res.norm = ppio(norm(y), genx)[1]
-      end
-      if has_minimum(y)
-        res.minimum = ppio(minimum(y), genx)[1]
-      end
-    end
-  else
-    M1 = _hnf_modular_eldiv(basis_matrix(y, copy = false), genx, :lowerleft)
-    res = ideal(OK, M1, false, true)
-  end 
-  @hassert :NfOrd 1 res == sum_via_basis_matrix(x, y)
-  return res
-end
-
-function sum_via_basis_matrix(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
-  OK = order(x)
-  d = degree(OK)
-  g = gcd(minimum(x, copy = false), minimum(y, copy = false))
-  H = vcat(basis_matrix(x, copy = false), basis_matrix(y, copy = false))
-  hnf_modular_eldiv!(H, g, :lowerleft)
-  H = view(H, (d + 1):2*d, 1:d)
-  res = ideal(OK, H, false, true)
-  if isone(basis(OK, copy = false)[1])
-    res.minimum = H[1, 1]
-  end
-  res.norm = prod_diagonal(H)
-  return res
-end
-
 @doc Markdown.doc"""
     +(x::NfOrdIdl, y::NfOrdIdl)
 
@@ -113,18 +59,34 @@ function +(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
   if isdefined(x, :norm) && isdefined(y, :norm) && isone(gcd(x.norm, y.norm))
     return ideal(OK, 1)
   end
-  if has_princ_gen_special(x) 
-    return sum_princ_gen_special(x, y)
+  if has_princ_gen_special(x)
+    if has_2_elem(y)
+      genx = x.princ_gen_special[2]+x.princ_gen_special[3]
+      gen1 = gcd(genx, y.gen_one)
+      res_1 = ideal(OK, gen1, y.gen_two)
+			return res_1
+    else
+      M1 = _hnf_modular_eldiv(basis_matrix(y, copy = false), x.princ_gen_special[2]+x.princ_gen_special[3], :lowerleft)
+      return ideal(OK, M1, false, true)
+    end
   end
-  if has_princ_gen_special(y) 
-    return sum_princ_gen_special(y, x)
+  if has_princ_gen_special(y)
+    if has_2_elem(x)
+      geny = y.princ_gen_special[2]+y.princ_gen_special[3]
+      gen2 = gcd(geny, x.gen_one)
+      res_2 = ideal(order(x), gen2, x.gen_two)
+			return res_2
+    else
+      M1 = _hnf_modular_eldiv(basis_matrix(x, copy = false), y.princ_gen_special[2]+y.princ_gen_special[3], :lowerleft)
+      return ideal(OK, M1, false, true)
+    end
   end
   g = gcd(minimum(x, copy = false), minimum(y, copy = false))
   if isone(g)
     return ideal(order(x), g)
   end
   d = degree(OK)
-  if issimple(nf(OK)) && isdefining_polynomial_nice(nf(OK)) && contains_equation_order(OK) && isprime(g) && !isindex_divisor(OK, g) && has_2_elem(x) && has_2_elem(y)
+  if isdefining_polynomial_nice(nf(OK)) && issimple(nf(OK)) && contains_equation_order(OK) && isprime(g) && !isindex_divisor(OK, g) && has_2_elem(x) && has_2_elem(y)
     #I can use polynomial arithmetic
     if fits(Int, g)
       R1 = ResidueRing(FlintZZ, Int(g), cached = false)
@@ -148,7 +110,15 @@ function +(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
     gen_2 = OK(nf(OK)(ggZ))
     return ideal(OK, g, gen_2)
   end
-  return sum_via_basis_matrix(x, y)
+  H = vcat(basis_matrix(x, copy = false), basis_matrix(y, copy = false))
+  hnf_modular_eldiv!(H, g, :lowerleft)
+  H = view(H, (d + 1):2*d, 1:d)
+  res = ideal(OK, H, false, true)
+  if isone(basis(OK, copy = false)[1])
+    res.minimum = H[1, 1]
+  end
+  res.norm = prod_diagonal(H)
+  return res
 end
 
 ################################################################################
@@ -201,7 +171,7 @@ function *(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
   @hassert :NfOrd 1 isconsistent(x)
   @hassert :NfOrd 1 isconsistent(y)
   OK = order(x)
-  if ismaximal_known_and_maximal(OK)
+  if ismaximal_known_and_maximal(OK) && issimple(nf(OK))
     z = mul_maximal(x, y)
   else
     z = mul_gen(x, y)
@@ -221,7 +191,7 @@ function mul_gen(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
   d = degree(O)
   l = minimum(x, copy = false)*minimum(y, copy = false)
   if has_2_elem(x) && has_basis_matrix(y)
-    M1 = representation_matrix_mod(x.gen_two, l)
+    M1 = representation_matrix(x.gen_two)
     Mf = vcat(minimum(x, copy = false)*basis_matrix(y, copy = false), basis_matrix(y, copy = false)*M1)
     hnf_modular_eldiv!(Mf, l, :lowerleft)
     J = ideal(O, view(Mf, (d+1):2*d, 1:d), false, true)
@@ -231,7 +201,7 @@ function mul_gen(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
     return J
   end
   if has_2_elem(y) && has_basis_matrix(x)
-    M1 = representation_matrix_mod(y.gen_two, l)
+    M1 = representation_matrix(y.gen_two)
     Mf = vcat(minimum(y, copy = false)*basis_matrix(x, copy = false), basis_matrix(x, copy = false)*M1)
     hnf_modular_eldiv!(Mf, l, :lowerleft)
     J = ideal(O, view(Mf, (d+1):2*d, 1:d), false, true)
@@ -245,7 +215,7 @@ function mul_gen(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
   X = basis(x, copy = false)
   Y = basis_matrix(y, copy = false)
   for i in 1:d
-    M1 = representation_matrix_mod(X[i], l)
+    M1 = representation_matrix(X[i])
     _copy_matrix_into_matrix(z1, 1, 1, M1)
     hnf_modular_eldiv!(z1, minimum(x, copy = false), :lowerleft)
     mul!(M1, Y, M1)
@@ -265,19 +235,13 @@ function mul_gen(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
 end
 
 # using the 2-normal representation
-function prod_via_2_elem_normal(a::NfAbsOrdIdl, b::NfAbsOrdIdl)
+function prod_via_2_elem_normal(a::NfOrdIdl, b::NfOrdIdl)
   check_parent(a, b)
   @hassert :NfOrd 1 has_2_elem_normal(a)
   @hassert :NfOrd 1 has_2_elem_normal(b)
   O = order(a)
   a1 = a.gen_one
-  if has_minimum(a)
-    a1 = minimum(a, copy = false)
-  end
   b1 = b.gen_one
-  if has_minimum(b)
-    b1 = minimum(b, copy = false)
-  end
   m = lcm(a1, b1)
   e, f = ppio(m, a1)
   if f == 1
@@ -306,6 +270,17 @@ function prod_via_2_elem_normal(a::NfAbsOrdIdl, b::NfAbsOrdIdl)
   end
   C = ideal(O, a1*b1, a2*b2)
   C.norm = norm(a) * norm(b)
+#
+#CF: too expensive, need norm_mod to compute the norm only modulo...
+#
+#  if C.norm != gcd(C.gen_one^degree(O), FlintZZ(norm(C.gen_two)))
+#    println("a:", a)
+#    println("b:", b)
+#    println("C:", C)
+#    @hassert :NfOrd 1 gcd(a1^degree(O), norm(a2)) == norm(a)
+#    @hassert :NfOrd 1 gcd(b1^degree(O), norm(b2)) == norm(b)
+##    assert(false)
+#  end
 
   if has_minimum(a) && has_minimum(b)
     ma = minimum(a, copy = false)
@@ -326,7 +301,7 @@ function prod_via_2_elem_normal(a::NfAbsOrdIdl, b::NfAbsOrdIdl)
 end
 
 # using the 2-weak-normal representation
-function prod_via_2_elem_weakly(a::NfAbsOrdIdl, b::NfAbsOrdIdl)
+function prod_via_2_elem_weakly(a::NfOrdIdl, b::NfOrdIdl)
   check_parent(a, b)
   @hassert :NfOrd 1 has_2_elem(a)
   @hassert :NfOrd 1 has_2_elem(b)
@@ -336,18 +311,7 @@ function prod_via_2_elem_weakly(a::NfAbsOrdIdl, b::NfAbsOrdIdl)
   bas = basis(O)
   n = degree(O)
 
-  norm_c = norm(a, copy = false) * norm(b, copy = false)        # we ARE in the maximal order case
-  first_gen_new = fmpz(1)
-  if has_minimum(a)
-    first_gen_new *= minimum(a, copy = false)
-  else
-    first_gen_new *= gcd(a.gen_one, norm(a, copy = false))
-  end
-  if has_minimum(b)
-    first_gen_new *= minimum(b, copy = false)
-  else
-    first_gen_new *= gcd(b.gen_one, norm(b, copy = false))
-  end
+  norm_c = norm(a) * norm(b)        # we ARE in the maximal order case
   norm_int_c = norm_c
   mod_c = fmpz(1)
 
@@ -410,7 +374,7 @@ function prod_via_2_elem_weakly(a::NfAbsOrdIdl, b::NfAbsOrdIdl)
 
   @vprint :NfOrd 1 "prod_via_2_elem: used $cnt tries\n"
 
-  c = ideal(O, first_gen_new, gen)
+  c = ideal(O, norm_int_c, gen)
 
   c.norm = norm_c
 
@@ -430,7 +394,7 @@ end
 
 Returns the ideal x*y.
 """
-function mul_maximal(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
+function mul_maximal(x::NfOrdIdl, y::NfOrdIdl)
   check_parent(x, y)
   if iszero(x) || iszero(y)
     z = ideal(order(x), 0)
@@ -441,12 +405,6 @@ function mul_maximal(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
     return y
   elseif isone(y)
     return x
-  end
-  if has_princ_gen_special(x)
-    return princ_gen_special(x)*y
-  end
-  if has_princ_gen_special(y)
-    return princ_gen_special(y)*x
   end
   if has_2_elem_normal(x) && has_2_elem_normal(y)
     return prod_via_2_elem_normal(x, y)
@@ -469,24 +427,24 @@ end
 #for ideals in the maximal order, the gcd is well defined...
 
 @doc Markdown.doc"""
-  gcd(A::NfOrdIdl, B::NfOrdIdl) -> NfOrdIdl
+    gcd(A::NfOrdIdl, B::NfOrdIdl) -> NfOrdIdl
 The gcd or sum (A+B).
 """
-function gcd(A::NfAbsOrdIdl, B::NfAbsOrdIdl)
+function gcd(A::NfOrdIdl, B::NfOrdIdl)
   check_parent(A, B)
   return A+B
 end
 
-function gcd_into!(A::NfAbsOrdIdl, B::NfAbsOrdIdl, C::NfAbsOrdIdl)
+function gcd_into!(A::NfOrdIdl, B::NfOrdIdl, C::NfOrdIdl)
   return C+B
 end
 
 #TODO: write a ppio version that allows for p-powers as well
 @doc Markdown.doc"""
-  gcd(A::NfOrdIdl, p::fmpz) -> NfOrdIdl
+    gcd(A::NfOrdIdl, p::fmpz) -> NfOrdIdl
 The gcd or sum (A + pO).
 """
-function gcd(A::NfAbsOrdIdl, p::fmpz)
+function gcd(A::NfOrdIdl, p::fmpz)
   if isdefined(A, :minimum)
     if gcd(A.minimum, p) == 1
       return ideal(order(A), fmpz(1))
@@ -533,7 +491,7 @@ function pow_2_elem(A::NfAbsOrdIdl, e::Int)
     gen = (A.princ_gen)^e
     I = ideal(OK, gen)
     if isdefined(A, :norm)
-      I.norm = norm(A)^e
+      I.norm = norm(A, copy = false)^e
     end
     if isprime_known(A) && isprime(A)
       eA = A.splitting_type[1]
@@ -549,12 +507,12 @@ function pow_2_elem(A::NfAbsOrdIdl, e::Int)
     I = ideal(OK, gen1, gen2)
     I.minimum = deepcopy(minim)
     if isdefined(A, :norm)
-      I.norm = norm(A)^e
+      I.norm = norm(A, copy = false)^e
     end
     if has_2_elem_normal(A)
       I.gens_normal = A.gens_normal
     end
-    I.gens_weakly_normal = has_weakly_normal(A) 
+    I.gens_weakly_normal = has_weakly_normal(A)
     I.is_prime = 2
     return I
   else
@@ -562,7 +520,7 @@ function pow_2_elem(A::NfAbsOrdIdl, e::Int)
     gen2 = A.gen_two^e
     I = ideal(OK, gen1, gen2)
     if isdefined(A, :norm)
-      I.norm = norm(A)^e
+      I.norm = norm(A, copy = false)^e
     end
     if isdefined(A, :minimum) && isone(gcd(minimum(A, copy = false), discriminant(OK)))
       I.minimum = A.minimum^e
@@ -570,7 +528,7 @@ function pow_2_elem(A::NfAbsOrdIdl, e::Int)
     if has_2_elem_normal(A)
       I.gens_normal = A.gens_normal
     end
-    I.gens_weakly_normal = has_weakly_normal(A)    
+    I.gens_weakly_normal = has_weakly_normal(A)
     I.is_prime = 2
     return I
   end
@@ -609,7 +567,7 @@ function prod_by_int_2_elem_normal(A::NfOrdIdl, a::fmpz)
   if has_princ_gen_special(A)
     B.princ_gen_special = (2, 0, (A.princ_gen_special[2] + A.princ_gen_special[3])*a)
   end
-  
+
   if has_princ_gen(A)
     B.is_principal = 1
     B.princ_gen = a*A.princ_gen
@@ -636,7 +594,7 @@ function prod_by_int_2_elem(A::NfOrdIdl, a::fmpz)
     B.is_principal = 1
     B.princ_gen = A.princ_gen*a
   end
-  
+
   if has_princ_gen_special(A)
     B.princ_gen_special = (2, 0, (A.princ_gen_special[2]+A.princ_gen_special[3])*a)
   end
@@ -685,8 +643,7 @@ function mul_maximal(x::NfOrdIdl, y::fmpz)
     end
   end
 
-  @hassert :NfOrd 1 has_basis_matrix(x)
-  return ideal(order(x), basis_matrix(x, copy = false)*y)
+  return x*ideal(order(x), y)
 end
 
 *(x::fmpz, y::NfOrdIdl) = y * x
@@ -746,39 +703,21 @@ If the ideals are not coprime, an error is raised.
 """
 function idempotents(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
   check_parent(x, y)
+  #!(order(x) === order(y)) && error("Parent mismatch")
   O = order(x)
   d = degree(O)
 
+  mx = minimum(x)
+  my = minimum(y)
 
-  if has_2_elem(x) && has_2_elem(y)
-    g, ux, vx = gcdx(x.gen_one, y.gen_one)
-    if isone(g)
-      z = O(ux*x.gen_one)
-      @hassert :NfOrd 2 z in x
-      @hassert :NfOrd 2 (1 - z) in y
-      return z, 1 - z
-    end
-  end
-
-  mx = minimum(x, copy = false)
-  my = minimum(y, copy = false)
-
-  g, ux, vy = gcdx(mx, my)
+  g, u, v = gcdx(mx, my)
   if isone(g)
-    z = O(ux*mx)
+    z = O(u*mx)
     @hassert :NfOrd 2 z in x
     @hassert :NfOrd 2 (1 - z) in y
     return z, 1 - z
   end
-  return _idempotents_via_matrices(x, y)
-end
 
-function _idempotents_via_matrices(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
-
-  O = order(x)
-  d = degree(O)
-  mx = minimum(x, copy = false)
-  my = minimum(y, copy = false)
   # form the matrix
   #
   # ( 1 |  1  | 0 )
@@ -801,7 +740,7 @@ function _idempotents_via_matrices(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
   for i in 1:d
     V[1 + i, d + 1 + i] = 1
   end
-  
+
   H = hnf_modular_eldiv!(V, lcm(mx, my)) # upper right
 
   for i in 2:(1 + d)
@@ -835,8 +774,8 @@ end
 
 @doc Markdown.doc"""
     crt(r1::NfOrdElem, i1::NfOrdIdl, r2::NfOrdElem, i2::NfOrdIdl) -> NfOrdElem
-Find $x$ s.th $x \equiv r1 \bmod i1$ and $x \equiv r2 \bmod i2$
-using (((idempotents)))
+Find $x$ s.th. $x \equiv r1 \bmod i1$ and $x \equiv r2 \bmod i2$
+using `idempotents`.
 """
 function crt(r1::S, i1::T, r2::S, i2::T) where { S <: Union{NfOrdElem, NfRelOrdElem, AlgAssAbsOrdElem}, T <: Union{NfOrdIdl, NfRelOrdIdl, AlgAssAbsOrdIdl} }
   u, v = idempotents(i1, i2)
@@ -865,7 +804,7 @@ end
 #
 ################################################################################
 
-divexact(A::NfAbsOrdIdl, b::Integer) = divexact(A, fmpz(b))
+divexact(A::NfOrdIdl, b::Integer) = divexact(A, fmpz(b))
 
 #TODO: write a divexact! to change the ideal?
 #  difficult due to Julia's inability to unset entries...
@@ -876,7 +815,7 @@ divexact(A::NfAbsOrdIdl, b::Integer) = divexact(A, fmpz(b))
 
 Returns $A/y$ assuming that $A/y$ is again an integral ideal.
 """
-function divexact(A::NfAbsOrdIdl, b::fmpz)
+function divexact(A::NfOrdIdl, b::fmpz)
   zk = order(A)
   b = abs(b)
   if has_2_elem(A)

@@ -459,7 +459,7 @@ end
 @doc Markdown.doc"""
     principal_generator(a::AlgAssAbsOrdIdl) -> AlgAssAbsOrdElem
 
-> Given an principal ideal $a$ in an order $O$ in a commutative algebra over
+> Given a principal ideal $a$ in an order $O$ in a commutative algebra over
 > $\mathbb Q$, this function returns a principal generator of $a$.
 """
 function principal_generator(a::AlgAssAbsOrdIdl)
@@ -578,7 +578,7 @@ function ray_class_group(m::AlgAssAbsOrdIdl, inf_plc::Vector{Vector{InfPlc}} = V
       return y
     end
   end
-  
+
   local disc_log
   let fields_and_maps = fields_and_maps, C = C, StoC = StoC
     function disc_log(x::AlgAssAbsOrdIdl)
@@ -595,7 +595,7 @@ function ray_class_group(m::AlgAssAbsOrdIdl, inf_plc::Vector{Vector{InfPlc}} = V
       end
       return StoC\C(c)
     end
- 
+
 
     function disc_log(x::FacElem)
       ideals = Vector{FacElem{NfOrdIdl, NfOrdIdlSet}}()

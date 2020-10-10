@@ -45,24 +45,24 @@
 Computes the local height of $P$ at the prime $p$.
 """
 function local_height_finite(P, p)
-    
+
   # point at infinity has height 0
   if !isfinite(P)
       return Float64(0)
   end
-  
+
   E = P.parent
   x = P.coordx
   y = P.coordy
-  
+
   a1 = numerator(E.coeff[1])
   a2 = numerator(E.coeff[2])
   a3 = numerator(E.coeff[3])
   a4 = numerator(E.coeff[4])
   a6 = numerator(E.coeff[5])
-  
-  b2, b4, b6, b8, c4, c6 = get_b_c_integral(E)   
-  
+
+  b2, b4, b6, b8, c4, c6 = get_b_c_integral(E)
+
   delta = disc(E)
 
   A = 3*x^2 + 2*a2*x + a4 - a1*y
@@ -91,7 +91,7 @@ function local_height_finite(P, p)
   else
         L = -valuation(C, p)//4
   end
-  
+
   return Float64(numerator(L))/Float64(denominator(L)) * log(Float64(p))
 end
 
@@ -106,23 +106,23 @@ The parameter $d$ controls the number of decimal places.
 function local_height_infinite(P, d = 20)
   E = P.parent
   x = P.coordx
-   
+
   a1 = numerator(E.coeff[1])
   a2 = numerator(E.coeff[2])
   a3 = numerator(E.coeff[3])
   a4 = numerator(E.coeff[4])
   a6 = numerator(E.coeff[5])
-    
-  b2, b4, b6, b8 = get_b_integral(E)   
-    
+
+  b2, b4, b6, b8 = get_b_integral(E)
+
   H = max(4, abs(b2), 2*abs(b4), 2*abs(b6), abs(b8))
   b2prime = b2 - fmpz(12)
   b4prime = b4 - b2 + fmpz(6)
   b6prime = b6 - 2*b4 + b2 - 4
   b8prime = b8 - 3*b6 + 3*b4 - b2 + 3
-    
+
   N = ceil( (5/3)*Float64(d) + (1/2) + (3/4)*log(7 + (4/3)*log(Float64(H))) )
-    
+
   if abs(Float64(numerator(x))/Float64(denominator(x))) < 0.5
     t = 1/((Float64(numerator(x))/Float64(denominator(x))) + 1)
     beta = 0
@@ -130,13 +130,13 @@ function local_height_infinite(P, d = 20)
     t = 1/((Float64(numerator(x))/Float64(denominator(x))))
     beta = 1
   end
-    
+
   mu = -log(abs(t))
   f = 1
-    
+
   for n in 0:N
     f = f/4
-        
+
     if beta == 1
       w = Float64(b6)*t^4 + 2*Float64(b4)*t^3 + Float64(b2)*t^2 + 4*t
       z = 1 - Float64(b4)*t^2 - 2*Float64(b6)*t^3 - Float64(b8)*t^4
@@ -146,7 +146,7 @@ function local_height_infinite(P, d = 20)
       z = 1 - Float64(b4prime)*t^2 - 2*Float64(b6prime)*t^3 - Float64(b8prime)*t^4
       zw = z - w
     end
-                
+
     if abs(w) <= 2*abs(z)
       mu = mu + f*log(abs(z))
       t = w/z
@@ -156,8 +156,8 @@ function local_height_infinite(P, d = 20)
       beta = 1 - beta
     end
   end
-    
-  return mu              
+
+  return mu
 end
 
 ################################################################################
@@ -170,30 +170,30 @@ end
 @doc Markdown.doc"""
     canonical_height(P::EllCrvPt) -> Float64
 
-Computes the canonical height of a point $P$. 
+Computes the canonical height of a point $P$.
 """
 function canonical_height(P)
-    
+
   if P.isinfinite == true
       return Float64(0)
   end
-  
+
   E = P.parent
   x = P.coordx
   delta = disc(E)
   d = denominator(x)
-  
+
   h = local_height_infinite(P) + log(Float64(d))
-  
+
   fac = factor(numerator(delta))
   p_list = [i[1] for i in fac]
-  
+
   for p in p_list
     if mod(d, p) != 0
       h = h + local_height_finite(P, p)
-    end 
+    end
   end
-  
+
   return h
 end
 
@@ -215,18 +215,18 @@ function isindependent(P)
   epsilon = 10.0^(-8)
   r = length(P)
   M = Matrix{Float64}(r,r)
-    
+
   for i in 1:r
     for j in 1:r
       M[i,j] = canonical_height(P[i] + P[j]) - canonical_height(P[i]) - canonical_height(P[j])
     end
   end
-    
-  determinante = det(M) 
-    
-  if abs(determinante) < epsilon 
+
+  determinante = det(M)
+
+  if abs(determinante) < epsilon
     return false
-  else 
+  else
     return true
   end
 end
@@ -239,7 +239,7 @@ end
 
 @doc Markdown.doc"""
     agm(x::Float64, y::Float64, e::Int) -> Float64
-  Returns the arithmetic-geometric mean of x and y.
+  Returns the arithmetic-geometric mean of $x$ and $y$.
 """
 function agm(x::Float64, y::Float64, e::Int = 5)
     0 < y && 0 < y && 0 < e || throw(DomainError())
@@ -262,7 +262,7 @@ end
 # see Cohen
 @doc Markdown.doc"""
     real_period(E::EllCrv{fmpz}) -> Float64
-  Returns the real period of an elliptic curve E with integer coefficients.
+  Returns the real period of an elliptic curve $E$ with integer coefficients.
 """
 function real_period(E)
   a1 = numerator(E.coeff[1])
@@ -270,18 +270,18 @@ function real_period(E)
   a3 = numerator(E.coeff[3])
   a4 = numerator(E.coeff[4])
   a6 = numerator(E.coeff[5])
-  
+
   b2, b4, b6, b8 = get_b_integral(E)
-  
+
   delta = disc(E)
   f(x) = x^3 + (Float64(b2)/4)*x^2 + (Float64(b4)/2)*x + (Float64(b6)/4)
   root = fzeros(f)
 
-  if delta < 0 # only one real root 
+  if delta < 0 # only one real root
     e1 = root[1]
     a = 3*e1 + (Float64(b2)/4)
     b = sqrt(3*e1^2 + (Float64(b2)/2)*e1 + (Float64(b4)/2))
-    lambda = 2*pi / agm(2*sqrt(b), sqrt(2*b + a)) 
+    lambda = 2*pi / agm(2*sqrt(b), sqrt(2*b + a))
   else
     root = sort(root)
     e1 = root[1]
@@ -290,7 +290,7 @@ function real_period(E)
     w1 = pi / agm(sqrt(e3-e1), sqrt(e3-e2))
     lambda = 2*w1
   end
-  
+
   return lambda
 end
 
@@ -302,12 +302,12 @@ end
 
 @doc Markdown.doc"""
     height(x::fmpq) -> Float64
-Computes the height of a rational number x.
+Computes the height of a rational number $x$.
 """
-function log_height(x::fmpq) 
+function log_height(x::fmpq)
   a = Float64(numerator(x))
-  b = Float64(denominator(x)) 
-  return log(max(abs(a),abs(b))) 
+  b = Float64(denominator(x))
+  return log(max(abs(a),abs(b)))
 end
 
 # every rational point is given by P = (a/c^2, b/c^3), gcd(a,c) = gcd(b,c) = 1. then h(P) = max(|a|, c^2)
@@ -320,7 +320,7 @@ function naive_height(P)
   x = P.coordx
   a = Float64(numerator(x))
   c2 = Float64(denominator(x))
-  
+
   h = log(max(abs(a), abs(c2)))
   return h
 end
@@ -328,7 +328,7 @@ end
 # p.75 Cremona
 @doc Markdown.doc"""
     points_with_bounded_naive_height(E:EllCrv, B::Int) -> Array{EllCrvPt}
-Computes all rational points on a curve E with integer coefficients which have naive height <= B.
+Computes all rational points on a curve $E$ with integer coefficients which have naive height <= $B$.
 """
 function points_with_bounded_naive_height(E, B)
   a1 = numerator(E.coeff[1])
@@ -336,16 +336,16 @@ function points_with_bounded_naive_height(E, B)
   a3 = numerator(E.coeff[3])
   a4 = numerator(E.coeff[4])
   a6 = numerator(E.coeff[5])
-  
+
   # 2-torsion
   f(x) = x^3 + Float64(a2)*x^2 + Float64(a4)*x + Float64(a6)
   torsiontwo = sort(fzeros(f))
   x0 = torsiontwo[1]
-  
+
   R, z = PolynomialRing(FlintZZ, "z")
-  
+
   points = []
-  
+
   # iterate over possible values for c and a
   k = Int(floor(exp(Float64(B)/2)))
   for c in 1:k
@@ -354,7 +354,7 @@ function points_with_bounded_naive_height(E, B)
       # look for possible values for b; they are the zeros of g
         g = z^2 + (a1*c*a + a3*c^3)*z - (a^3 + a2*c^2*a^2 + a4*c^4*a + a6*c^6)
         zeros = zeros(g)
-              
+
         if length(zeros) != 0
           for b in zeros
             P = E([FlintQQ(a,c^2), FlintQQ(b, c^3)])
@@ -364,40 +364,40 @@ function points_with_bounded_naive_height(E, B)
       end
     end
   end
- 
+
   return points
 end
 
 @doc Markdown.doc"""
 torsion_points_via_height(E::EllCrv{fmpz}) ->  Array{EllCrvPt}
-Returns the rational torsion points of a curve E with integer coefficients. 
+Returns the rational torsion points of a curve $E$ with integer coefficients.
 """
 function torsion_points_via_height(E::EllCrv{fmpq})
-  
+
   if E.short == true
     E = EllipticCurve([0, 0, 0, E.coeff[1], E.coeff[2]])
   end
-  
+
   jay = j(E)
   hj = log_height(jay) # height of the j-invariant
   jfloat = Float64(numerator(jay))/Float64(denominator(jay))
-  
+
   delta = numerator(disc(E))
   b2, b4, b6, b8 = get_b_integral(E)
   twostar = 2
   if b2 == 0
     twostar = 1
   end
-  
+
   # mu(E)
   mu = (1/6)*( log(abs(Float64(delta))) + log(max(1, abs(jfloat))) ) + log(max(1, abs(Float64(b2)/12))) + log(twostar)
-  
+
   B = (1/12)*hj + mu + 1.922
-  
+
   # all torsion points have naive height <= B, see Cremona, p. 77
   torsion_candidates = points_with_bounded_naive_height(E, B)
   torsion_points = [infinity(E)]
-  
+
   # check which points of the candidates are torsion points (order of a torsion point is <= 12)
   for P in torsion_candidates
     istorsion = false
@@ -408,31 +408,31 @@ function torsion_points_via_height(E::EllCrv{fmpq})
       end
       k = k + 1
     end
-      
+
     if istorsion == true
       push!(torsion_points, P)
     end
   end
-  
+
   return torsion_points
 end
 
 @doc Markdown.doc"""
 independent_points_up_to(E::EllCrv{fmpq}, B::Int) -> Array{EllCrvPt}
-Returns a maximal set of independent points with naive height <= B
+Returns a maximal set of independent points with naive height <= $B$
 """
 function independent_points_up_to(E::EllCrv{fmpq},B::Union{Integer, fmpz})
-  
+
   if E.short == true
       E = EllipticCurve([0, 0, 0, E.coeff[1], E.coeff[2]])
   end
-  
+
   points = points_with_bounded_naive_height(E,B)
   counter = 1
-  M_ind = Matrix{Float64}(0,0) 
+  M_ind = Matrix{Float64}(0,0)
   M_cand = Matrix{Float64}(1,1)
   points_ind = []
-  
+
   for p in points
     istorsion = false
     i = 7
@@ -442,24 +442,24 @@ function independent_points_up_to(E::EllCrv{fmpq},B::Union{Integer, fmpz})
       end
       i = i + 1
     end
-      
+
     if istorsion == true
       continue
     end
-      
+
     push!(points_ind, p)
     for i = 1:length(points_ind)
       M_cand[i, counter] = canonical_height(points_ind[i] + points_ind[counter]) - canonical_height(points_ind[i]) - canonical_height(points_ind[counter])
       M_cand[counter, i] = M_cand[i, counter]
     end
-              
+
     if abs(det(M_cand)) < 10.0^(-8)
       pop!(points_ind)
     else
       counter = counter + 1
-      M_ind = M_cand 
+      M_ind = M_cand
       M_cand = Matrix{Float64}(size(M_cand)[1] + 1, size(M_cand)[1] + 1)
-          
+
       for i = 1:size(M_cand)[1] - 1
         for j = 1:size(M_cand)[1] - 1
           M_cand[i, j] = M_ind[i, j]
@@ -467,8 +467,8 @@ function independent_points_up_to(E::EllCrv{fmpq},B::Union{Integer, fmpz})
       end
     end
   end
-  
-  return points_ind                
+
+  return points_ind
 end
 
 ################################################################################
@@ -488,54 +488,53 @@ function mod_red(E, B)
     minmodel = EllipticCurve(laska_kraus_connell(E)) # global minimal model for E
     P = primes(B) # primes smaller than B
     N = Nemo.fmpz[]
-    
+
     for i in 1:length(P)
         p = P[i]
         R = GF(p, cached = false)
-        Ep = EllipticCurve([R(numerator(minmodel.coeff[1])), R(numerator(minmodel.coeff[2])), R(numerator(minmodel.coeff[3])), R(numerator(minmodel.coeff[4])), R(numerator(minmodel.coeff[5]))],  false) # reduction of E mod p 
-        
+        Ep = EllipticCurve([R(numerator(minmodel.coeff[1])), R(numerator(minmodel.coeff[2])), R(numerator(minmodel.coeff[3])), R(numerator(minmodel.coeff[4])), R(numerator(minmodel.coeff[5]))],  false) # reduction of E mod p
+
         if  disc(Ep) != 0 # can only determine group order if curve is non-singular
             ord = order_best(Ep)
             push!(N, ord)
-        else 
+        else
             P[i] = 0
         end
     end
-    
+
     P = deleteat!(P, findin(P, 0)) # delete all zeros from P
-    
-    return P, N  
+
+    return P, N
 end
 
 @doc Markdown.doc"""
 check_weak_bsd(E::EllCrv, B::Int) -> (a::Float64, b::Float64)
-checks weak bsd-conjecture for elliptic curve E given in long form over ZZ, positive integer B
+checks weak bsd-conjecture for elliptic curve $E$ given in long form over ZZ, positive integer $B$
 returns linear regression values for log(log(B)) and sum of log(N_p/p) for p <= B
 """
 function check_weak_bsd(E, B)
-    
+
     (P, N) = mod_red(E, B)
     a = length(P)
     logprod = Float64[]
     loglogB = Float64[]
-    
+
     # initial value
     push!(logprod, log(Int(N[1]) / P[1]) ) # N is nemo.fmpz, P is Int64
     push!(loglogB, log(log( P[1] + 1 )) )
-    
+
     for i in 2:(a - 1)
         push!(logprod, log(Int(N[i]) / P[i]) + logprod[i-1] )
         push!(loglogB, log(log( float(P[i] + 1 ))) )
     end
-    
+
     # last value
     push!(logprod, log(Int(N[a]) / P[a]) + logprod[a-1] )
     push!(loglogB, log(log(B)) )
-  
+
     a, b = linreg(loglogB, logprod)
     plot(loglogB, logprod, "o")
     plot(loglogB, [a + b*i for i in loglogB])
-        
-    return a, b 
-end
 
+    return a, b
+end

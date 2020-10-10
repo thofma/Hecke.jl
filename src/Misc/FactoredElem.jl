@@ -8,25 +8,16 @@ export transform
 #
 ################################################################################
 
-function add_to_key!(D::Dict{S, T}, k::S, v; remove_zero::Bool = true) where S where T <: Union{fmpz, Integer}
-  add_to_key!(D, k, T(v), remove_zero = remove_zero)
+function add_to_key!(D::Dict{S, T}, k::S, v) where S where T <: Union{fmpz, Integer}
+  add_to_key!(D, k, T(v))
   return nothing
 end
 
-function add_to_key!(D::Dict{S, T}, k::S, v::T; remove_zero::Bool = true) where S where T <: Union{fmpz, Integer}
+function add_to_key!(D::Dict{S, T}, k::S, v::T) where S where T <: Union{fmpz, Integer}
   hash_k = Base.ht_keyindex2!(D, k)
   if hash_k > 0
     #The key is in the dictionary, we only need to add
-    w = D.vals[hash_k]
-    if remove_zero
-      if w != v && iszero(cmpabs(w, v))
-        Base._delete!(D, hash_k)
-      else
-        @inbounds D.vals[hash_k] = w + v 
-      end
-    else
-      @inbounds D.vals[hash_k] = w + v
-    end
+    @inbounds D.vals[hash_k] += v
   else
     pos = -hash_k
     @inbounds D.slots[pos] = 0x1
@@ -41,17 +32,6 @@ function add_to_key!(D::Dict{S, T}, k::S, v::T; remove_zero::Bool = true) where 
   return nothing
 end
 
-function cmpabs(a::Int, b::Int)
-  a = abs(a)
-  b = abs(b)
-  if a > b
-    return 1
-  elseif a == b
-    return 0
-  else
-    return -1
-  end
-end
 ################################################################################
 #
 #  Multiplicative representation
@@ -86,7 +66,7 @@ function FacElem(R, base::Vector{B}, exp::Vector{fmpz}) where {B}
     if iszero(exp[i])
       continue
     end
-    add_to_key!(z.fac, base[i], exp[i], remove_zero = true)
+    add_to_key!(z.fac, base[i], exp[i])
   end
 
   z.parent = FacElemMon(R)
@@ -146,7 +126,7 @@ end
 function FacElem(R, d::Dict{B, T}) where {B, T <: Integer}
 
   z = FacElem{B, typeof(R)}()
-  z.fac = Dict{B, fmpz}((k,fmpz(v)) for (k,v) = d) 
+  z.fac = Dict{B, fmpz}((k,fmpz(v)) for (k,v) = d)
 
   z.parent = FacElemMon(R)
   return z
@@ -239,19 +219,16 @@ end
 
 function pow!(z::FacElem, x::FacElem, y::T) where T <: Union{fmpz, Integer}
   z.fac = copy(x.fac)
-  for i = z.fac.idxfloor:length(z.fac.vals)
-    if isassigned(z.fac.vals, i)
-      z.fac.vals[i] = z.fac.vals[i]*y
-    end
+  for (a, v) in x
+    # this should be inplace ... not sure anymore: using copy, inplace is bad
+    z.fac[a] = y*v
   end
-  return nothing
 end
 
-function pow!(z::FacElem, y::T) where T <: Union{fmpz, Integer}
-  for i = z.fac.idxfloor:length(z.fac.vals)
-    if isassigned(z.fac.vals, i)
-      z.fac.vals[i] = z.fac.vals[i]*y
-    end
+function pow!(x::FacElem, y::T) where T <: Union{fmpz, Integer}
+  for (a, v) in x
+    # this should be inplace ... not sure anymore: using copy, inplace is bad
+    x.fac[a] = y*v
   end
 end
 
@@ -267,10 +244,9 @@ for T in [:Integer, fmpz]
         return copy(x)
       else
         z.fac = copy(x.fac)
-        for i = z.fac.idxfloor:length(z.fac.vals)
-          if isassigned(z.fac.vals, i)
-            z.fac.vals[i] = z.fac.vals[i]*y
-          end
+        for (a, v) in x
+          # this should be inplac
+          z.fac[a] = y*v
         end
         return z
       end
@@ -289,7 +265,7 @@ function mul!(z::FacElem{B, S}, x::FacElem{B, S}, y::FacElem{B, S}) where {B, S}
   @assert check_parent(x, z) "Elements must have the same parent"
   z.fac = copy(x.fac)
   for (a, v) in y
-    add_to_key!(z.fac, a, v, remove_zero = true)
+    add_to_key!(z.fac, a, v)
   end
   return z
 end
@@ -306,23 +282,22 @@ function *(x::FacElem{B, S}, y::FacElem{B, S}) where {B, S}
 
   z = copy(x)
   for (a, v) in y
-    add_to_key!(z.fac, a, v, remove_zero = true)
+    add_to_key!(z.fac, a, v)
   end
-
   return z
 end
 
 function *(x::FacElem{B}, y::B) where B
   @assert base_ring(x) == parent(y)
   z = copy(x)
-  add_to_key!(z.fac, y, 1, remove_zero = true)
+  add_to_key!(z.fac, y, 1)
   return z
 end
 
 function *(y::B, x::FacElem{B}) where B
   @assert base_ring(x) == parent(y)
   z = copy(x)
-  add_to_key!(z.fac, y, 1, remove_zero = true)
+  add_to_key!(z.fac, y, 1)
   return z
 end
 
@@ -330,7 +305,7 @@ function div(x::FacElem{B}, y::FacElem{B}) where B
   @assert check_parent(x, y) "Elements must have the same parent"
   z = copy(x)
   for (a, v) in y
-    add_to_key!(z.fac, a, -v, remove_zero = true)
+    add_to_key!(z.fac, a, -v)
   end
   return z
 end
@@ -353,15 +328,11 @@ function _transform(x::Array{FacElem{T, S}, 1}, y::fmpz_mat) where {T, S}
   for i in 1:ncols(y)
     z[i] = x[1]^y[1,i]
     for j in 2:nrows(y)
-      if iszero(y[j, i])
+      if y[j, i] == 0
         continue
       end
-      if isone(y[j, i])
-        mul!(z[i], z[i], x[j])
-      else
-        pow!(t, x[j], y[j, i])
-        mul!(z[i], z[i], t)
-      end
+      pow!(t, x[j], y[j, i])
+      mul!(z[i], z[i], t)
     end
   end
   return z
@@ -481,7 +452,7 @@ function _ev(d::Dict{fq_nmod, fmpz}, z::fq_nmod)
       continue
     end
     if abs(v) < 10
-      if v >0 
+      if v >0
         kv = Fq()
         ccall((:fq_nmod_pow, libflint), Nothing, (Ref{fq_nmod}, Ref{fq_nmod}, Ref{fmpz}, Ref{FqNmodFiniteField}), kv, k, v, Fq)
         mul!(z, z, kv)
@@ -537,12 +508,23 @@ function _ev(d::Dict{T, fmpz}, oe::T) where T
   return _ev(b, oe)^2*z
 end
 
+function one(A::NfOrdFracIdlSet)
+  return ideal(order(A), 1)//1
+end
+
+function copy(A::NfOrdFracIdl)
+  return deepcopy(A)
+end
+
+function ^(A::NfOrdFracIdl, d::fmpz)
+  return A^Int(d)
+end
 
 @doc Markdown.doc"""
-  evaluate{T}(x::FacElem{T}) -> T
+    evaluate{T}(x::FacElem{T}) -> T
 
 Expands or evaluates the factored element, i.e. actually computes the
-value. 
+value.
 Does "square-and-multiply" on the exponent vectors.
 """
 function evaluate(x::FacElem{T}) where T
@@ -550,7 +532,252 @@ function evaluate(x::FacElem{T}) where T
 end
 
 @doc Markdown.doc"""
-  evaluate_naive{T}(x::FacElem{T}) -> T
+    evaluate(x::FacElem{fmpq}) -> fmpq
+    evaluate(x::FacElem{fmpz}) -> fmpz
+
+Expands or evaluates the factored element, i.e. actually computes the
+the element.
+Works by first obtaining a simplified version of the power product
+into coprime base elements.
+"""
+function evaluate(x::FacElem{fmpq})
+  return evaluate_naive(simplify(x))
+end
+
+function evaluate(x::FacElem{fmpz})
+  return evaluate_naive(simplify(x))
+end
+@doc Markdown.doc"""
+    simplify(x::FacElem{fmpq}) -> FacElem{fmpq}
+    simplify(x::FacElem{fmpz}) -> FacElem{fmpz}
+
+Simplifies the factored element, i.e. arranges for the base to be coprime.
+"""
+function simplify(x::FacElem{fmpq})
+  y = deepcopy(x)
+  simplify!(y)
+  return y
+end
+
+function simplify(x::FacElem{fmpz})
+  y = deepcopy(x)
+  simplify!(y)
+  return y
+end
+
+function simplify!(x::FacElem{fmpq})
+  if length(x.fac) <= 1
+    return nothing
+  end
+  cp = vcat([denominator(y) for (y, v) in x if !iszero(v)], [numerator(y) for (y, v) in x if !iszero(v)])
+  ev = Dict{fmpq, fmpz}()
+  if isempty(cp)
+    ev[fmpq(1)] = 0
+    x.fac = ev
+    return nothing
+  end
+  cp = coprime_base(cp)
+  for p = cp
+    if p == 1 || p == -1
+      continue
+    end
+    v = fmpz(0)
+    for (b, vb) in x
+      if !iszero(vb)
+        v += valuation(b, abs(p))*vb
+      end
+    end
+    if v != 0
+      ev[fmpq(abs(p))] = v
+    end
+  end
+  f = b -> b < 0 && isodd(x.fac[b]) ? -1 : 1
+  s = prod((f(v) for v in base(x)))
+  if s == -1
+    ev[fmpq(-1)] = 1
+  else
+    if length(ev) == 0
+      ev[fmpq(1)] = 0
+    end
+  end
+  x.fac = ev
+  return nothing
+end
+
+function simplify!(x::FacElem{fmpz})
+  if length(x.fac) == 0
+    x.fac[fmpz(1)] = 0
+    return
+  end
+  if length(x.fac) <= 1
+    k,v = first(x.fac)
+    if isone(k)
+      x.fac[k] = 0
+    elseif k == -1
+      if isodd(v)
+        x.fac[k] = 1
+      else
+        delete!(x.fac, k)
+        x.fac[fmpz(1)] = 0
+      end
+    end
+    return
+  end
+  cp = coprime_base(collect(base(x)))
+  ev = Dict{fmpz, fmpz}()
+  for p = cp
+    if p == 1 || p == -1
+      continue
+    end
+    v = fmpz(0)
+    for (b, vb) in x
+      v += valuation(b, abs(p))*vb
+    end
+    if v < 0
+      throw(DomainError(v, "Negative valuation in simplify!"))
+    end
+    if v != 0
+      ev[abs(p)] = v
+    end
+  end
+  f = b -> b < 0 && isodd(x.fac[b]) ? -1 : 1
+  s = prod(f(v) for v in base(x))
+  if s == -1
+    ev[-1] = 1
+  else
+    if length(ev) == 0
+      ev[fmpz(1)] = 0
+    end
+  end
+  x.fac = ev
+  nothing
+end
+
+@doc Markdown.doc"""
+    isone(x::FacElem{fmpq}) -> Bool
+    isone(x::FacElem{fmpz}) -> Bool
+Tests if $x$ represents $1$ without an evaluation.
+"""
+function isone(x::FacElem{fmpq})
+  y = simplify(x)
+  return all(iszero, values(y.fac)) || all(isone, keys(y.fac))
+end
+
+function isone(x::FacElem{fmpz})
+  y = simplify(x)
+  return all(iszero, values(y.fac)) || all(isone, keys(y.fac))
+end
+
+
+#TODO: expand the coprime stuff to automatically also get the exponents
+@doc Markdown.doc"""
+    simplify(x::FacElem{NfOrdIdl, NfOrdIdlSet}) -> FacElem
+    simplify(x::FacElem{NfOrdFracIdl, NfOrdFracIdlSet}) -> FacElem
+
+Uses ```coprime_base``` to obtain a simplified version of $x$, i.e.
+in the simplified version all base ideals will be pariwise coprime
+but not necessarily prime!
+"""
+function simplify(x::FacElem{NfOrdIdl, NfOrdIdlSet})
+  z = deepcopy(x)
+  simplify!(z)
+  return z
+end
+
+
+function factor_over_coprime_base(x::FacElem{NfOrdIdl, NfOrdIdlSet}, coprime_base::Vector{NfOrdIdl})
+  ev = Dict{NfOrdIdl, fmpz}()
+  if isempty(coprime_base)
+    return ev
+  end
+  OK = order(coprime_base[1])
+  for p in coprime_base
+    if isone(p)
+      continue
+    end
+    P = minimum(p)
+    @vprint :CompactPresentation 3 "Computing valuation at an ideal lying over $P"
+    assure_2_normal(p)
+    v = fmpz(0)
+    for (b, e) in x
+      if iszero(e)
+        continue
+      end
+      if divisible(norm(b, copy = false), P)
+        v += valuation(b, p)*e
+      end
+    end
+    @vprint :CompactPresentation 3 "$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())"
+    if !iszero(v)
+      ev[p] = v
+    end
+  end
+  return ev
+end
+
+function simplify!(x::FacElem{NfOrdIdl, NfOrdIdlSet})
+  if length(x.fac) <= 1
+    return nothing
+  elseif all(x -> iszero(x), values(x.fac))
+    x.fac = Dict{NfOrdIdl, fmpz}()
+    return nothing
+  end
+  base_x = NfOrdIdl[y for (y, v) in x if !iszero(v)]
+  cp = coprime_base(base_x)
+  ev = factor_over_coprime_base(x, cp)
+  x.fac = ev
+  return nothing
+end
+
+function simplify(x::FacElem{NfOrdFracIdl, NfOrdFracIdlSet})
+  z = deepcopy(x)
+  simplify!(z)
+  return z
+end
+
+function simplify!(x::FacElem{NfOrdFracIdl, NfOrdFracIdlSet})
+  de = factor_coprime(x)
+  if length(de)==0
+    de = Dict(ideal(order(base_ring(parent(x))), 1) => fmpz(1))
+  end
+  x.fac = Dict((i//1, k) for (i,k) = de)
+end
+
+@doc Markdown.doc"""
+    factor_coprime(x::FacElem{NfOrdIdl, NfOrdIdlSet}) -> Dict{NfOrdIdl, Int}
+Computes a partial factorisation of $x$, i.e. writes $x$ as a product
+of pairwise coprime integral ideals.
+"""
+function factor_coprime(x::FacElem{NfOrdIdl, NfOrdIdlSet})
+  z = deepcopy(x)
+  simplify!(z)
+  return Dict{NfOrdIdl, Int}(p=>Int(v) for (p,v) = z.fac)
+end
+
+function factor_coprime!(x::FacElem{NfOrdIdl, NfOrdIdlSet})
+  simplify!(x)
+  return Dict{NfOrdIdl, Int}(p => Int(v) for (p,v) = x.fac)
+end
+
+@doc Markdown.doc"""
+    factor_coprime(x::FacElem{fmpz}) -> Fac{fmpz}
+Computes a partial factorisation of $x$, i.e. writes $x$ as a product
+of pairwise coprime integers.
+"""
+function factor_coprime(x::FacElem{fmpz})
+  x = deepcopy(x)
+  simplify!(x)
+  d = Dict(abs(p) => Int(v) for (p,v) = x.fac)
+  if haskey(d, fmpz(-1))
+    delete!(d, fmpz(-1))
+    return Fac(fmpz(-1), d)
+  else
+    return Fac(fmpz(1), d)
+  end
+end
+
+@doc Markdown.doc"""
+    evaluate_naive{T}(x::FacElem{T}) -> T
 
 Expands or evaluates the factored element, i.e. actually computes the
 value. Uses the obvious naive algorithm. Faster for input in finite rings.
@@ -567,10 +794,54 @@ function evaluate_naive(x::FacElem{T}) where T
   return z
 end
 
+function ^(a::fmpz, k::fmpz)
+  if a == 0
+    if k == 0
+      return fmpz(1)
+    end
+    return fmpz(0)
+  end
+
+  if a == 1
+    return fmpz(1)
+  end
+  if a == -1
+    if isodd(k)
+      return fmpz(-1)
+    else
+      return fmpz(1)
+    end
+  end
+  return a^Int(k)
+end
+
+function ^(a::fmpq, k::fmpz)
+  if a == 0
+    if k == 0
+      return fmpq(1)
+    end
+    return fmpq(0)
+  end
+
+  if a == 1
+    return fmpq(1)
+  end
+  if a == -1
+    if isodd(k)
+      return fmpq(-1)
+    else
+      return fmpq(1)
+    end
+  end
+  return a^Int(k)
+end
+
+
+
 #################################################################################
 @doc Markdown.doc"""
     max_exp(a::FacElem)
-Finds the largest exponent in the factored element $a$
+Finds the largest exponent in the factored element $a$.
 """
 function max_exp(a::FacElem)
   return maximum(values(a.fac))
@@ -578,7 +849,7 @@ end
 
 @doc Markdown.doc"""
     min_exp(a::FacElem)
-Finds the smallest exponent in the factored element $a$
+Finds the smallest exponent in the factored element $a$.
 """
 function min_exp(a::FacElem)
   return minimum(values(a.fac))
@@ -586,7 +857,7 @@ end
 
 @doc Markdown.doc"""
     maxabs_exp(a::FacElem)
-Finds the largest exponent by absolute value the factored element $a$
+Finds the largest exponent by absolute value in the factored element $a$.
 """
 function maxabs_exp(a::FacElem)
   return maximum(abs, values(a.fac))
@@ -601,6 +872,35 @@ function Base.hash(a::FacElem, u::UInt)
     a.hash = h
   end
   return a.hash
+end
+
+#used (hopefully) only inside the class group
+function FacElem(A::Array{nf_elem_or_fac_elem, 1}, v::Array{fmpz, 1})
+  local B::FacElem{nf_elem, AnticNumberField}
+  if typeof(A[1]) == nf_elem
+    B = FacElem(A[1]::nf_elem)
+  else
+    B = A[1]::FacElem{nf_elem, AnticNumberField}
+  end
+  B = B^v[1]
+  for i=2:length(A)
+    if iszero(v[i])
+      continue
+    end
+    if typeof(A[i]) == nf_elem
+      local t::nf_elem = A[i]::nf_elem
+      add_to_key!(B.fac, t, v[i])
+    else
+      local s::FacElem{nf_elem, AnticNumberField} = A[i]::FacElem{nf_elem, AnticNumberField}
+      for (k, v1) in s
+        if iszero(v1)
+          continue
+        end
+        add_to_key!(B.fac, k, v1*v[i])
+      end
+    end
+  end
+  return B::FacElem{nf_elem, AnticNumberField}
 end
 
 #################################################################################
@@ -633,7 +933,7 @@ end
 #  return order(A.base_ring)
 #end
 
-function order(A::FacElemMon) 
+function order(A::FacElemMon)
   return order(A.base_ring)
 end
 

@@ -4,6 +4,144 @@ export ambient_space, rank, gram_matrix, inner_product, involution,
 
 ################################################################################
 #
+#  Types and constructors
+#
+################################################################################
+
+abstract type AbsSpace{S} end
+
+abstract type AbsLat{S} end
+
+mutable struct QuadSpace{S, T} <: AbsSpace{S}
+  K::S
+  gram::T
+  @declare_other
+
+  function QuadSpace(K::S, G::T) where {S, T}
+    # I also need to check if the gram matrix is Hermitian
+    if dense_matrix_type(elem_type(S)) === T
+      z = new{S, T}(K, G)
+    else
+      try
+        Gc = change_base_ring(K, G)
+        if typeof(Gc) !== dense_matrix_type(elem_type(S))
+          throw(error("Cannot convert entries of the matrix to the number field"))
+        end
+        z = new{S, dense_matrix_type(elem_type(S))}(K, Gc)
+        return z
+      catch e
+        rethrow(e)
+        throw(error("Cannot convert entries of the matrix to the number field"))
+      end
+    end
+  end
+end
+
+@doc Markdown.doc"""
+    quadratic_space(K::NumField, n::Int) -> QuadSpace
+
+Create the quadratic space over `K` with dimension `n` and Gram matrix
+equal to the identity matrix.
+"""
+function quadratic_space(K::Field, n::Int)
+  G = identity_matrix(K, n)
+  return QuadSpace(K, G)
+end
+
+@doc Markdown.doc"""
+    quadratic_space(K::NumField, G::MatElem) -> QuadSpace
+
+Create the quadratic space over `K` with Gram matrix `G`.
+The matrix `G` must be square and symmetric.
+"""
+function quadratic_space(K::Field, G::MatElem)
+  return QuadSpace(K, G)
+end
+
+mutable struct HermSpace{S, T, U, W} <: AbsSpace{S}
+  E::S
+  K::T
+  gram::U
+  involution::W
+  @declare_other
+
+  function HermSpace(E::S, gram::U) where {S, U}
+    # I also need to check if the gram matrix is Hermitian
+    if dense_matrix_type(elem_type(S)) === U
+      gramc = gram
+    else
+      try
+        gramc = change_base_ring(E, gram)
+        if typeof(gramc) !== dense_matrix_type(elem_type(S))
+          throw(error("Cannot convert entries of the matrix to the number field"))
+        end
+      catch e
+        throw(error("Cannot convert entries of the matrix to the number field"))
+      end
+    end
+
+    @assert degree(E) == 2
+    A = automorphisms(E)
+    a = gen(E)
+    if A[1](a) == a
+      involution = A[2]
+    else
+      involution = A[1]
+    end
+
+    K = base_field(E)
+
+    z = new{S, typeof(K), dense_matrix_type(elem_type(S)), typeof(involution)}(E, K, gramc, involution)
+    return z
+  end
+end
+
+@doc Markdown.doc"""
+    hermitian_space(K::NumField, n::Int) -> HermSpace
+
+Create the Hermitian space over `K` with dimension `n` and Gram matrix equal to
+the identity matrix. The number field `K` must be a quadratic extension, that
+is, `degree(K) == 2` must hold.
+"""
+function hermitian_space(K::NumField, n::Int)
+  G = identity_matrix(K, n)
+  return HermSpace(K, G)
+end
+
+@doc Markdown.doc"""
+    hermitian_space(K::NumField, G::MatElem) -> HermSpace
+
+Create the Hermitian space over `K` with Gram matrix `G`. The matrix `G` must
+be square and Hermitian with respect to the non-trivial automorphism of `K`. The
+number field `K` must be a quadratic extension, that is, `degree(K) == 2` must
+hold.
+"""
+function hermitian_space(K::NumField, G::MatElem)
+  return HermSpace(K, G)
+end
+
+################################################################################
+#
+#  String I/O
+#
+################################################################################
+
+function Base.show(io::IO, V::QuadSpace)
+  print(io, "Quadratic space over\n")
+  println(io, base_ring(V))
+  println(io, "with Gram matrix")
+  print(io, gram_matrix(V))
+end
+
+function Base.show(io::IO, V::HermSpace)
+  print(io, "Hermitian space over\n")
+  println(io, base_ring(V))
+  println(io, "with Gram matrix")
+  print(io, gram_matrix(V))
+end
+
+################################################################################
+#
 #  Basic invariants
 #
 ################################################################################
@@ -15,12 +153,20 @@ Returns whether $V$ is quadratic.
 """
 isquadratic(V::AbsSpace)
 
+isquadratic(V::QuadSpace) = true
+
+isquadratic(V::HermSpace) = false
+
 @doc Markdown.doc"""
     ishermitian(V::AbsSpace) -> Bool
 
 Returns whether $V$ is hermitian.
 """
 ishermitian(V::AbsSpace)
+
+ishermitian(V::QuadSpace) = true
+
+ishermitian(V::HermSpace) = false
 
 @doc Markdown.doc"""
     rank(V::AbsSpace) -> Int
@@ -44,6 +190,9 @@ Return the Gram matrix of `V`.
 gram_matrix(V::AbsSpace) = V.gram
 
 # Once we have quaternion spaces the following makes more sense
+_base_algebra(V::QuadSpace) = V.K
+
+_base_algebra(V::HermSpace) = V.E
 
 @doc Markdown.doc"""
     base_ring(V::AbsSpace) -> NumField
@@ -52,12 +201,20 @@ Return the base field of `V`.
 """
 base_ring(V::AbsSpace) = _base_algebra(V)
 
+involution(V::QuadSpace) = identity
+
+involution(V::HermSpace) = V.involution
+
 @doc Markdown.doc"""
     fixed_field(V::AbsSpace) -> NumField
 
 Return the fixed field of `V`.
 """
 fixed_field(::AbsSpace)
+
+fixed_field(V::QuadSpace) = base_ring(V)
+
+fixed_field(V::HermSpace) = V.K
 
 @doc Markdown.doc"""
     involution(V::AbsSpace) -> NumField
@@ -85,22 +242,31 @@ end
 #
 ################################################################################
 
-function det(V::AbsSpace)
+function det(V::QuadSpace)
+  return det(gram_matrix(V))
+end
+
+function det(V::HermSpace)
   d = det(gram_matrix(V))
-  return fixed_field(V)(d)
+  @assert all(iszero(coeff(d, i)) for i in 1:degree(base_ring(V)) - 1)
+  return coeff(d, 0)
 end
 
 @doc Markdown.doc"""
     det(V::AbsSpace) -> FieldElem
 
-Returns the determinant of the space `V` as an element of the fixed field.
+Returns the determinant of the space `V`.
+
+In case `V` is Hermitian, the result is an element of the fixed field.
 """
 det(::AbsSpace)
 
 @doc Markdown.doc"""
     discriminant(V::AbsSpace) -> FieldElem
 
-Returns the discriminant of the space `V` as an element of the fixed field.
+Returns the discriminant of the space `V`.
+
+In case `V` is Hermitian, the result is an element of the "smaller field".
 """
 function discriminant(V::AbsSpace)
   d = det(V)
@@ -114,8 +280,7 @@ end
 
 function _discriminant(G)
   d = det(G)
-  n = nrows(G)
-  if mod(n, 4) == 0 || mod(n, 4) == 1
+  if n == 0 || n == 1
     return d
   else
     return -d
@@ -160,6 +325,20 @@ function gram_matrix(V::AbsSpace{T}, S::Vector{Vector{U}}) where {T, U}
   return gram_matrix(V, m)
 end
 
+function _inner_product(V, v, w)
+  mv = matrix(base_ring(V), 1, nrows(V), v)
+  mw = matrix(base_ring(V), ncols(V), 1, w)
+  return (mv * V * mw)[1, 1]
+end
+
+function _inner_product(G, v, w, involution)
+  return _inner_product(G, v, [involution(x) for x in w])
+end
+
+inner_product(V::QuadSpace, v::Vector, w::Vector) = _inner_product(gram_matrix(V), v, w)
+
+inner_product(V::HermSpace, v::Vector, w::Vector) = _inner_product(gram_matrix(V), v, w, involution(V))
+
 @doc Markdown.doc"""
     inner_product(V::AbsSpace, v::Vector, w::Vector) -> FieldElem
 
@@ -172,6 +351,16 @@ inner_product(V::AbsSpace, v::Vector, w::Vector)
 #  Diagonalization
 #
 ################################################################################
+
+function diagonal(V::QuadSpace)
+  D, _ = _gram_schmidt(gram_matrix(V), involution(V))
+  return diagonal(D)
+end
+
+function diagonal(V::HermSpace)
+  D, _ = _gram_schmidt(gram_matrix(V), involution(V))
+  return [ coeff(d, 0) for d in diagonal(D) ]
+end
 
 @doc Markdown.doc"""
     orthogonal_basis(V::AbsSpace) -> MatElem
@@ -200,7 +389,7 @@ diagonal(V::AbsSpace)
 ################################################################################
 
 # Clean this up
-function _gram_schmidt(M::MatElem, a, nondeg = true)
+function _gram_schmidt(M::MatElem, a)
   F = deepcopy(M)
   K = base_ring(F)
   n = nrows(F)
@@ -234,13 +423,14 @@ function _gram_schmidt(M::MatElem, a, nondeg = true)
             end
           end
           if ok == 0
-            if nondeg
-              error("Matrix is not of full rank")
-            end
-          else
-            j = ok
-            T[i, j] = 1 // (2 * F[j, i])
+            error("Matrix is not of full rank")
           end
+          #ok = findfirst(j -> !iszero(F[i, j]), (i + 1):n)
+          #if ok === nothing
+          #  error("Matrix is not of full rank")
+          #end
+          j = ok
+          T[i, j] = 1 // (2 * F[j, i])
         end
         S = T * S
         F = T * F * transpose(_map(T, a))
@@ -259,9 +449,168 @@ end
 
 ################################################################################
 #
+#  Hasse and Witt invariant
+#
+################################################################################
+
+# Auxiliary function which works with a diagonal
+function _hasse_invariant(D::Vector, p)
+  h = 1
+  n = length(D)
+  for i in 1:n
+    for j in (i + 1):n
+      h = h * hilbert_symbol(D[i], D[j], p)
+    end
+  end
+  return h
+end
+
+@doc Markdown.doc"""
+    hasse_invariant(V::QuadSpace, p::Union{InfPlc, NfOrdIdl}) -> Int
+
+Returns the Hasse invariant of the quadratic space `V` at `p`. This is equal
+to the product of local Hilbert symbols $(a_i, a_j)_p$, $i < j$, where $V$ is
+isometric to $\langle a_1,\dotsc,a_n\rangle$.
+"""
+function hasse_invariant(V::QuadSpace, p)
+  return _hasse_invariant(diagonal(V), p)
+end
+
+function hasse_invariant(L::HermSpace, p)
+  throw(error("The space must be quadratic"))
+end
+
+# This can be refactored to operate on the diagonal of a gram schmidt basis and
+# the gram matrix.
+# (Probably only on the diagonal of a gram schmidt basis)
+function witt_invariant(L::QuadSpace, p::NfOrdIdl)
+  h = hasse_invariant(L, p)
+  F = gram_matrix(L)
+  dett = det(F)
+  K = base_ring(L)
+  ncolsFmod8 = mod(ncols(F), 8)
+  if ncolsFmod8 == 3 || ncolsFmod8 == 4
+    c = -dett
+  elseif ncolsFmod8 == 5 || ncolsFmod8 == 6
+    c = K(-1)
+  elseif ncolsFmod8 == 7 || ncolsFmod8 == 0
+    c = dett
+  else
+    c = K(1)
+  end
+  return h * hilbert_symbol(K(-1), c, p)
+end
+
+function witt_invariant(L::QuadSpace, p::InfPlc)
+  if iscomplex(p)
+    return 1
+  end
+
+  h = hasse_invariant(L, p)
+  F = gram_matrix(L)
+  dett = det(F)
+  K = base_ring(L)
+  ncolsFmod8 = mod(ncols(F), 8)
+  if ncolsFmod8 == 3 || ncolsFmod8 == 4
+    c = -dett
+  elseif ncolsFmod8 == 5 || ncolsFmod8 == 6
+    c = K(-1)
+  elseif ncolsFmod8 == 7 || ncolsFmod8 == 0
+    c = dett
+  else
+    c = K(1)
+  end
+  @assert !iszero(c)
+  if isnegative(c, p)
+    return -h
+  else
+    return h
+  end
+end
+
+@doc Markdown.doc"""
+    witt_invariant(V::QuadSpace, p::Union{InfPlc, NfOrdIdl}) -> Int
+
+Returns the Witt invariant of the quadratic space `V` at `p`.
+
+See [Definition 3.2.1, Kir16].
+"""
+witt_invariant(V::QuadSpace, p)
+
+function witt_invariant(L::HermSpace, p)
+  throw(error("The space must be quadratic"))
+end
+
+################################################################################
+#
 #  Local equivalence
 #
 ################################################################################
+
+function isequivalent(L::QuadSpace, M::QuadSpace, p::NfOrdIdl)
+  GL = gram_matrix(L)
+  GM = gram_matrix(M)
+  if GL == GM
+    return true
+  end
+
+  return rank(GL) == rank(GM) && islocal_square(det(GL) * det(GM), p) && hasse_invariant(L, p) == hasse_invariant(M, p)
+end
+
+function isequivalent(L::QuadSpace, M::QuadSpace, p::InfPlc)
+  if rank(L) != rank(M)
+    return false
+  end
+
+  if iscomplex(p)
+    return true
+  end
+
+  DL = diagonal(L)
+  DM = diagonal(M)
+  return count(x -> isnegative(x, p), DL) == count(x -> isnegative(x, p), DM)
+end
+
+# hermitian case
+
+function isequivalent(L::HermSpace{AnticNumberField}, M::HermSpace{AnticNumberField}, p::fmpz)
+  return _isequivalent(L, M, p)
+end
+
+function isequivalent(L::HermSpace, M::HermSpace, p::NfOrdIdl)
+  return _isequivalent(L, M, p)
+end
+
+function _isequivalent(L::HermSpace, M::HermSpace, p)
+  base_ring(L) != base_ring(M) && error("Both spaces must have the same base field")
+  A = gram_matrix(L)
+  B = gram_matrix(M)
+  if A == B
+    return true
+  end
+
+  if rank(L) != rank(M)
+    return false
+  end
+
+  return islocal_norm(base_ring(L), det(L) * det(M), p)[1]
+end
+
+function isequivalent(L::HermSpace, M::HermSpace, P::InfPlc)
+  if L == M
+    return true
+  end
+
+  if iscomplex(P)
+    return true
+  end
+
+  DL = diagonal(L)
+  DM = diagonal(M)
+  iL = count(d -> isnegative(d, P), DL)
+  iM = count(d -> isnegative(d, P), DM)
+  return iL == iM
+end
 
 @doc Markdown.doc"""
     isequivalent(L::AbsSpace, M::AbsSpace, p::Union{InfPlc, NfOrdIdl}) -> Bool
@@ -272,31 +621,109 @@ isequivalent(L::AbsSpace, M::AbsSpace, p)
 
 ################################################################################
 #
+#  Quadratic form with given invariants
+#
+################################################################################
+
+function _quadratic_form_invariants(M; minimal = true)
+  G, _ = _gram_schmidt(M, identity)
+  D = diagonal(G)
+  K = base_ring(M)
+  O = maximal_order(K)
+  sup = Dict{ideal_type(O), Bool}()
+  for i in 1:length(D)
+    f = factor(D[i] * O)
+    for (P, e) in f
+      if isodd(e)
+        sup[P] = true
+      end
+    end
+  end
+  for (P, e) in prime_decomposition(O, 2)
+    sup[P] = true
+  end
+  F = Dict{ideal_type(O), Int}()
+  for P in keys(sup)
+    e = _hasse_invariant(D, P)
+    if e == -1 || !minimal
+      F[P] = e
+    end
+  end
+  I = [ (P, count(x -> isnegative(x, P), D)) for P in real_places(K) ];
+  return prod(D), F, I
+end
+
+@doc Markdown.doc"""
+    invariants(M::QuadSpace)
+          -> FieldElem, Dict{NfOrdIdl, Int}, Vector{Tuple{InfPlc, Int}}
+
+Returns a triple `(d, H, I)` of invariants of `M`, which determine the
+equivalence class completely. The element `d` is the determinant of a Gram
+matrix, `H` contains the non-trivial Hasse invariants and `I` contains for
+each real place the negative index of inertia.
+
+Note that `d` is determined only modulo squares.
+"""
+invariants(V::QuadSpace) = _quadratic_form_invariants(gram_matrix(V))
+
+@doc Markdown.doc"""
+    isequivalent(M::QuadSpace, L::QuadSpace) -> Bool
+
+Tests if `M` and `L` are equivalent.
+"""
+function isequivalent(M::QuadSpace, L::QuadSpace)
+  if gram_matrix(M) == gram_matrix(L)
+    return true
+  end
+  d1, H1, I1 = invariants(M)
+  d2, H2, I2 = invariants(L)
+  return I1 == I2 && H1 == H2 && issquare(d1 * d2)[1]
+end
+
+function isequivalent(M::HermSpace, L::HermSpace)
+  if gram_matrix(M) == gram_matrix(L)
+    return true
+  end
+
+  if rank(M) != rank(L)
+    return false
+  end
+
+  E = base_ring(M)
+  # I could replace this with a islocal_norm at the ramified primes + primes
+  # dividing right hand side
+  return isnorm(E, det(M) * det(L))[1]
+end
+
+################################################################################
+#
 #  Definitness
 #
 ################################################################################
+
+# TODO: Add this functionality for Hermitian spaces
 
 # Returns 0 if V is not definite
 # Returns an element a != 0 such that a * canonical_basis of V has
 # positive Gram matrix
 function _isdefinite(V::AbsSpace)
-  K = fixed_field(V)
+  K = base_ring(V)
   R = maximal_order(K)
   if !istotally_real(K) || (ishermitian(V) && !istotally_complex(K))
-    return zero(K)
+    return zero(R)
   end
   D = diagonal(V)
   signs_to_consider = Tuple{InfPlc, Int}[]
   for v in real_places(K)
     S = Int[sign(d, v) for d in D]
     if length(unique(S)) != 1
-      return zero(K)
+      return zero(R)
     else
       push!(signs_to_consider, (v, S[1]))
     end
   end
   if length(signs_to_consider) == 1
-    return K(signs_to_consider[1][2])
+    return R(signs_to_consider[1][2])
   else
     return element_with_signs(K, signs_to_consider)
   end
@@ -351,12 +778,50 @@ end
 #
 ################################################################################
 
-isisotropic(V::AbsSpace, p::InfPlc) = _isisotropic(V, p)
+function isisotropic(V::QuadSpace, p)
+  @assert base_ring(V) == nf(order(p))
+  d = det(V)
+  n = rank(V)
+  K = base_ring(V)
+  if d == 0
+    return true
+  elseif n <= 1
+    return false
+  elseif n == 2
+    return islocal_square(-d, p)
+  elseif n == 3
+    return hasse_invariant(L, p) == hilbert_symbol(K(-1), K(-1), p)
+  elseif n == 4
+    return !islocal_square(d, p) || (hasse_invariant(L, p) == hilbert_symbol(K(-1), K(-1), p))
+  else
+    return true
+  end
+end
 
-function _isisotropic(V::AbsSpace, p::InfPlc)
+function isisotropic(V::HermSpace, q)
+  if nf(order(q)) == base_ring(V)
+    p = minimum(q)
+  else
+    p = q
+  end
+  @assert fixed_field(V) == nf(order(p))
+  r = rank(V)
+  if r >= 3
+    return true
+  elseif r == 0
+    return false
+  end
+  d = det(V)
+  if r == 1
+    return d == 0
+  end
+  return islocal_norm(base_ring(V), -d, p)
+end
+
+function isisotropic(V::AbsSpace, p::InfPlc)
   n = rank(V)
   d = det(V)
-  E = base_ring(V)
+  E = base_ring(L)
   if d == 0
     return true
   elseif n <= 1
@@ -365,8 +830,35 @@ function _isisotropic(V::AbsSpace, p::InfPlc)
     return true
   else
     D = diagonal(V)
-    return length(unique!(Int[sign(d, p) for d in D])) == 2
+    return length(unique!([sign(evaluate(d, p)) for d in p])) == 2
   end
+end
+
+function _islocally_hyperbolic_hermitian_detclass(rk, d, E, K, p)
+  if isodd(rk)
+    return false
+  end
+  if d == 1
+    if iseven(div(rk, 2))
+      return true
+    else
+      return islocal_norm(E, K(-1), p)
+    end
+  else
+    if iseven(div(rk, 2))
+      return false
+    else
+      return !islocal_norm(E, K(-1), p)
+    end
+  end
+end
+
+function islocally_hyperbolic(V::HermSpace, p)
+  rk = rank(V)
+  if isodd(rk)
+    return false
+  end
+  return islocal_norm(base_ring(V), det(V) * (-1)^(div(rk, 2)), p)
 end
 
 ################################################################################
@@ -468,7 +960,7 @@ end
 
 function _element_with_signs(K, D)
   OK = maximal_order(K)
-  G, mG = infinite_primes_map(OK, real_places(K), 1*OK)
+  G, mG = carlos_units(OK)
   r = real_places(K)
   z = id(G)
   for (v, s) in D
@@ -484,9 +976,7 @@ function _element_with_signs(K, D)
       end
     end
   end
-  zz = elem_in_nf(mG(z))::elem_type(K)
-  @assert all(u -> sign(zz, u[1]) == u[2], D)
-  return zz
+  return mG(z)
 end
 
 function element_with_signs(K, P::Vector{InfPlc}, S::Vector{Int})
@@ -553,7 +1043,7 @@ function restrict_scalars(V::AbsSpace, K::Field = FlintQQ, alpha = one(base_ring
       r = r + 1
     end
   end
-  
+
   VabstoV = function(v)
     @assert length(v) == d * n
     z = Vector{elem_type(E)}(undef, n)
@@ -613,6 +1103,14 @@ end
 
 #
 
+function (K::AnticNumberField)(a::NfRelElem{nf_elem})
+  K != base_field(parent(a)) && error("Cannot coerce")
+  for i in 2:degree(parent(a))
+    @assert coeff(a, i - 1) == 0
+  end
+  return coeff(a, 0)
+end
+
 istotally_real(::FlintRationalField) = true
 
 istotally_positive(x::fmpq) = x > 0
@@ -627,14 +1125,3 @@ function denominator(M::fmpq_mat)
   end
   return d
 end
-
-function _weak_approximation_coprime(IP, S, M)
-  R = order(M)
-  A, _exp, _log = infinite_primes_map(R, IP, M)
-
-  t = (1 + _exp(A([ S[j] == 1 ? 0 : -1 for j in 1:length(IP)])))
-  @assert all(i -> sign(t, IP[i]) == S[i], 1:length(IP))
-  return t
-end
-
-

@@ -87,8 +87,6 @@ include("Clgp/Rel_LLL.jl")
 include("Clgp/Main_LLL.jl")
 include("Clgp/Rel_Schmettow.jl")
 include("Clgp/Saturate.jl")
-include("Clgp/Sunits.jl")
-include("Clgp/cm_field.jl")
 using .RelSaturate
 
 ################################################################################
@@ -114,7 +112,7 @@ function class_group_ctx(O::NfOrd; bound::Int = -1, method::Int = 3, large::Int 
   c = class_group_init(O, bound, complete = false, use_aut = use_aut)::ClassGrpCtx{SMat{fmpz}}
   @assert order(c) === O
 
-  
+  _set_ClassGrpCtx_of_order(O, c)
 
   c.B2 = bound * large
 
@@ -149,7 +147,7 @@ function _validate_class_unit_group(c::ClassGrpCtx, U::UnitGrpCtx)
   h = class_group_current_h(c)
   if degree(O) == 1
     if h == 1 && U.tentative_regulator == 1
-      return fmpz(1), U.tentative_regulator
+      return fmpz(1)
     else
       error("Something odd for K = Q")
     end
@@ -157,18 +155,15 @@ function _validate_class_unit_group(c::ClassGrpCtx, U::UnitGrpCtx)
 
   if !isdefined(U, :torsion_units)
     @vprint :UnitGroup 1 "Computing torsion structure ... \n"
+    #U.torsion_units = torsion_units(O)
     g, ord = torsion_units_gen_order(O)
     U.torsion_units_order = ord
     U.torsion_units_gen = g
-  end  
+  end
 
   @vprint :UnitGroup 1 "Torsion structure done!\n"
 
   w = U.torsion_units_order
-
-  if h == 1 && iszero(unit_rank(O))
-    return fmpz(1), U.tentative_regulator
-  end
 
   r1, r2 = signature(O)
 
@@ -178,7 +173,7 @@ function _validate_class_unit_group(c::ClassGrpCtx, U::UnitGrpCtx)
   end
   residue = U.residue
 
-  pre = precision(parent(residue))
+  pre = prec(parent(residue))
 
   Ar = ArbField(pre, cached = false)
 
@@ -188,21 +183,18 @@ function _validate_class_unit_group(c::ClassGrpCtx, U::UnitGrpCtx)
 
   @assert isfinite(loghRtrue)
 
-  @vprint :ClassGroup 1 "tentative class group $h\n"
-  @vprint :ClassGroup 1 "tentative regulator $(tentative_regulator(U))\n"
-
   while true
-    loghRapprox = log(h* abs(tentative_regulator(U)))
+    loghRapprox = log(h* abs(U.tentative_regulator))
 
     @assert isfinite(loghRapprox)
 
     if contains(loghRtrue, loghRapprox)
-      return fmpz(1), abs(tentative_regulator(U))
+      return fmpz(1)
     elseif !overlaps(loghRtrue, loghRapprox)
       e = exp(loghRapprox - loghRtrue)
       e_fmpz = abs_upper_bound(e, fmpz)
       @vprint :ClassGroup 1 "validate called, index bound is $e_fmpz\n"
-      return e_fmpz, divexact(abs(tentative_regulator(U)), e_fmpz)
+      return e_fmpz
     end
 
     error("Not yet implemented")
@@ -215,7 +207,7 @@ function class_group_current_h(c::ClassGrpCtx)
   return c.h
 end
 
-function _class_unit_group(O::NfOrd; saturate_at_2::Bool = true, bound::Int = -1, method::Int = 3, large::Int = 1000, redo::Bool = false, unit_method::Int = 1, use_aut::Bool = false, GRH::Bool = true)
+function _class_unit_group(O::NfOrd; bound::Int = -1, method::Int = 3, large::Int = 1000, redo::Bool = false, unit_method::Int = 1, use_aut::Bool = false, GRH::Bool = true)
 
   @vprint :UnitGroup 1 "Computing tentative class and unit group ... \n"
 
@@ -224,10 +216,10 @@ function _class_unit_group(O::NfOrd; saturate_at_2::Bool = true, bound::Int = -1
   @v_do :UnitGroup 1 popindent()
 
   if c.finished
-    U = _get_UnitGrpCtx_of_order(O)::UnitGrpCtx{FacElem{nf_elem, AnticNumberField}}
+    U = _get_UnitGrpCtx_of_order(O)
     @assert U.finished
     @vprint :UnitGroup 1 "... done (retrieved).\n"
-    if c.GRH && !GRH 
+    if c.GRH == true && GRH == false
       if !GRH
         class_group_proof(c, fmpz(2), factor_base_bound_minkowski(O))
         for (p, _) in factor(c.h)
@@ -251,40 +243,30 @@ function _class_unit_group(O::NfOrd; saturate_at_2::Bool = true, bound::Int = -1
   r = 0
 
   do_units = true
-  reg_expected = ArbField(32, cached = false)(-1)
   while true
     @v_do :UnitGroup 1 pushindent()
     if do_units
-      #if unit_method == 1
-        @vtime_add_elapsed :UnitGroup 1 c :unit_time r = _unit_group_find_units(U, c, add_orbit = use_aut, expected_reg = reg_expected)
-      #=
+      if unit_method == 1
+        @vtime_add_elapsed :UnitGroup 1 c :unit_time r = _unit_group_find_units(U, c)
       else
         @vtime_add_elapsed :UnitGroup 1 c :unit_hnf_time module_trafo_assure(c.M)
-        @vtime_add_elapsed :UnitGroup 1 c :unit_time r = _unit_group_find_units_with_transform(U, c, add_orbit = use_aut)
+        @vtime_add_elapsed :UnitGroup 1 c :unit_time r = _unit_group_find_units_with_transform(U, c)
       end
-      =#
+      @v_do :UnitGroup 1 popindent()
     end
-    @v_do :UnitGroup 1 popindent()
-    # r == 1 means full rank
     if isone(r)  # use saturation!!!!
-      idx, reg_expected = _validate_class_unit_group(c, U) 
-      if isone(idx)
-        break
-      end
+      idx = _validate_class_unit_group(c, U)
+      @assert idx == _validate_class_unit_group(c, U)
       stable = 3.5
-      # No matter what, try a saturation at 2
-      # This is not a good idea when we use the automorphisms.
-      # In this case, the index may contain a large 2-power and saturation
-      # will take forever.
-      if iszero(c.sat_done) && !use_aut && saturate_at_2
+      if iszero(c.sat_done)
         @vprint :ClassGroup 1 "Finite index, saturating at 2\n"
         while saturate!(c, U, 2, stable)
-          @vprint :ClassGroup 1 "Finite index, saturating at 2\n"
+          @vtime_add_elapsed :UnitGroup 1 c :unit_time r = _unit_group_find_units(U, c)
         end
-        idx, reg_expected = _validate_class_unit_group(c, U)
+        idx = _validate_class_unit_group(c, U)
         c.sat_done = 2
       end
-      while (!use_aut && idx < 20 && idx > 1) || (idx < 10 && idx > 1)
+      while idx < 20 && idx > 1
         @vprint :ClassGroup 1 "Finishing by saturating up to $idx\n"
         fl = false
         p = 2
@@ -292,13 +274,15 @@ function _class_unit_group(O::NfOrd; saturate_at_2::Bool = true, bound::Int = -1
           fl = saturate!(c, U, p, stable)
           p = next_prime(p)
         end
+        #fl = any(p->saturate!(c, U, p, stable), PrimesSet(1, 2*Int(idx)))
         @assert fl  # so I can switch assertions off...
         c.sat_done = 2*Int(idx)
-        n_idx, reg_expected = _validate_class_unit_group(c, U) 
+        @vtime_add_elapsed :UnitGroup 1 c :unit_time r = _unit_group_find_units(U, c)
+        n_idx = _validate_class_unit_group(c, U)
         @vprint :ClassGroup 1 "index estimate down to $n_idx from $idx\n"
         @assert idx != n_idx
         idx = n_idx
-      end  
+      end
       if idx == 1
         break
       end
@@ -319,7 +303,6 @@ function _class_unit_group(O::NfOrd; saturate_at_2::Bool = true, bound::Int = -1
   end
   @assert U.full_rank
   _set_UnitGrpCtx_of_order(O, U)
-  _set_ClassGrpCtx_of_order(O, c)
 
   c.finished = true
   U.finished = true
@@ -335,7 +318,7 @@ function _class_unit_group(O::NfOrd; saturate_at_2::Bool = true, bound::Int = -1
     c.GRH = false
   end
 
-  return c, U, _validate_class_unit_group(c, U)[1]
+  return c, U, _validate_class_unit_group(c, U)
 end
 
 function unit_group_ctx(c::ClassGrpCtx; redo::Bool = false)
@@ -374,7 +357,7 @@ end
 function unit_group(c::ClassGrpCtx, U::UnitGrpCtx)
   O = order(c.FB.ideals[1])
   K = nf(O)
-  U, mU = unit_group_fac_elem(U)
+  U, mU = unit_group_fac_elem(c, U)
 
   r = MapUnitGrp{typeof(O)}()
   r.header = Hecke.MapHeader(U, O,
@@ -387,27 +370,23 @@ end
     class_group(O::NfOrd; bound = -1, method = 3, redo = false, large = 1000) -> GrpAbFinGen, Map
 
 Returns a group $A$ and a map $f$ from $A$ to the set of ideals of $O$.
-The inverse of the map is the projection onto the group of ideals modulo the 
+The inverse of the map is the projection onto the group of ideals modulo the
 group of principal ideals.
 \texttt{redo} allows to trigger a re-computation, thus avoiding the cache.
 \texttt{bound}, when given, is the bound for the factor base.
 """
 function class_group(O::NfOrd; bound::Int = -1, method::Int = 3,
                      redo::Bool = false, unit_method::Int = 1,
-                     large::Int = 1000, use_aut::Bool = isautomorphisms_known(nf(O)), GRH::Bool = true, do_lll::Bool = true)
+                     large::Int = 1000, use_aut::Bool = false, GRH::Bool = true, do_lll::Bool = true)
   if do_lll
-    OK = maximal_order(nf(O))
-    @assert OK.ismaximal == 1
-    L = lll(OK)   
-    @assert L.ismaximal == 1         
+    L = lll(maximal_order(nf(O)))
   else
     L = O
   end
-    
   c, U, b = _class_unit_group(L, bound = bound, method = method, redo = redo, unit_method = unit_method, large = large, use_aut = use_aut, GRH = GRH)
 
   @assert b == 1
-  return class_group(c, O)::Tuple{GrpAbFinGen, MapClassGrp}
+  return class_group(c, O)
 end
 
 
@@ -423,9 +402,9 @@ function unit_group(O::NfOrd; method::Int = 3, unit_method::Int = 1, use_aut::Bo
   if ismaximal(O)
     c, U, b = _class_unit_group(O, method = method, unit_method = unit_method, use_aut = use_aut, GRH = GRH)
     @assert b==1
-    return unit_group(c, U)::Tuple{GrpAbFinGen, MapUnitGrp{NfAbsOrd{AnticNumberField,nf_elem}}}
+    return unit_group(c, U)
   else
-    return unit_group_non_maximal(O)::Tuple{GrpAbFinGen, MapUnitGrp{NfAbsOrd{AnticNumberField,nf_elem}}}
+    return unit_group_non_maximal(O)
   end
 end
 
@@ -439,22 +418,18 @@ obtained via `[ f(U[1+i]) for i in 1:unit_rank(O) ]`.
 All elements will be returned in factored form.
 """
 function unit_group_fac_elem(O::NfOrd; method::Int = 3, unit_method::Int = 1, use_aut::Bool = false, GRH::Bool = true, redo::Bool = false)
-  U = _get_UnitGrpCtx_of_order(O, false)
-  if U != nothing && U.finished
-    return unit_group_fac_elem(U)
-  end
   c = _get_ClassGrpCtx_of_order(O, false)
   if c == nothing
     O = lll(maximal_order(nf(O)))
   end
   c, U, b = _class_unit_group(O, method = method, unit_method = unit_method, use_aut = use_aut, GRH = GRH, redo = redo)
   @assert b==1
-  return unit_group_fac_elem(U)
+  return unit_group_fac_elem(c, U)
 end
 
 @doc Markdown.doc"""
     regulator(O::NfOrd)
-Computes the regulator of $O$, ie. the discriminant of the unit lattice.    
+Computes the regulator of $O$, i.e. the discriminant of the unit lattice.
 """
 function regulator(O::NfOrd; method::Int = 3, unit_method::Int = 1, use_aut::Bool = false, GRH::Bool = true)
   c = _get_ClassGrpCtx_of_order(O, false)
@@ -462,15 +437,15 @@ function regulator(O::NfOrd; method::Int = 3, unit_method::Int = 1, use_aut::Boo
     O = lll(maximal_order(nf(O)))
   end
   c, U, b = _class_unit_group(O, method = method, unit_method = unit_method, use_aut = use_aut, GRH = GRH)
-  @assert b == 1
-  unit_group_fac_elem(U)
+  @assert b==1
+  unit_group_fac_elem(c, U)
   return U.tentative_regulator
 end
 
 @doc Markdown.doc"""
     regulator(K::AnticNumberField)
-Computes the regulator of $K$, ie. the discriminant of the unit lattice 
-for the maximal order of $K$
+Computes the regulator of $K$, i.e. the discriminant of the unit lattice
+for the maximal order of $K$.
 """
 function regulator(K::AnticNumberField)
   return regulator(maximal_order(K))

@@ -164,7 +164,7 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-  swap_rows!(A::SMat{T}, i::Int, j::Int)
+    swap_rows!(A::SMat{T}, i::Int, j::Int)
 
 Swap the $i$-th and $j$-th row of $A$ inplace.
 """
@@ -250,7 +250,7 @@ end
 ################################################################################
 # rows j -> row i*c + row j
 @doc Markdown.doc"""
-    add_scaled_row(A::SMat{T}, i::Int, j::Int, c::T)
+    add_scaled_row!(A::SMat{T}, i::Int, j::Int, c::T)
 
 Add $c$ times the $i$-th row to the $j$-th row of $A$ inplace, that is,
 $A_j \rightarrow A_j + c \cdot A_i$, where $(A_i)_i$ denote the rows of $A$.
@@ -305,7 +305,7 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    transform_row(A::SMat{T}, i::Int, j::Int, a::T, b::T, c::T, d::T)
+    transform_row!(A::SMat{T}, i::Int, j::Int, a::T, b::T, c::T, d::T)
 
 Applies the transformation $(A_i, A_j) \rightarrow (aA_i + bA_j, cA_i + dA_j)$
 to $A$, where $(A_i)_i$ are the rows of $A$.
@@ -385,7 +385,7 @@ function transform_row(Ai::SRow{T}, Aj::SRow{T}, a::T, b::T, c::T, d::T) where T
     end
     pj += 1
   end
-  
+
   return sr, tr
 end
 
@@ -573,5 +573,3 @@ end
 #    end
 #  end
 #end
-
-

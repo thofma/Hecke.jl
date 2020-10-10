@@ -24,7 +24,7 @@ end
 
 @doc Markdown.doc"""
     diagonal(A::SMat) -> fmpz[]
-The diagonal elements of A in an array.
+The diagonal elements of $A$ in an array.
 """
 function diagonal(A::SMat)
   return [A[i,i] for i=1:min(nrows(A), ncols(A))]
@@ -56,7 +56,7 @@ end
 
 The Smith normal form (snf) of $A$.
 """
-function snf(A::SMat{fmpz}) 
+function snf(A::SMat{fmpz})
   A = diagonal_form(A)
   e = elementary_divisors(A)
   for i=1:length(e)
@@ -71,8 +71,8 @@ end
 @doc Markdown.doc"""
     elementary_divisors(A::SMat{fmpz}) -> Array{fmpz, 1}
 
-The elementary divisors of $A$, ie. the diagonal elements of the Smith normal
-form of $A$. 
+The elementary divisors of $A$, i.e. the diagonal elements of the Smith normal
+form of $A$.
 """
 function elementary_divisors(A::SMat{fmpz})
   A = diagonal_form(A)
@@ -94,4 +94,3 @@ function elementary_divisors(A::SMat{fmpz})
   end
   return e
 end
-

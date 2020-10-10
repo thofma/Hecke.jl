@@ -143,7 +143,7 @@ end
 @doc Markdown.doc"""
     elem_order_bsgs(P::EllCrvPt) -> fmpz
 
-Calculates the order of a point P on an elliptic curve given over a finite
+Calculates the order of a point $P$ on an elliptic curve given over a finite
 field using BSGS.
 """
 function elem_order_bsgs(P::EllCrvPt)
@@ -365,7 +365,7 @@ end
 @doc Markdown.doc"""
     order_via_schoof(E::EllCrv) -> fmpz
 
-Given an elliptic curve $E$ elliptic curve given a finite field $\mathbf F$,
+Given an elliptic curve $E$ over a finite field $\mathbf F$,
 this function computes the order of $E(\mathbf F)$ using Schoof's algorithm
 The characteristic must not be $2$ or $3$.
 """
@@ -698,4 +698,3 @@ function order(E::EllCrv)
   end
   return order_via_schoof(E) # bsgs may only return candidate list
 end
-

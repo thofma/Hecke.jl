@@ -34,7 +34,7 @@ function rho_coeff(x::T, prec::Int = 55; all::Bool = false) where T<: Number
   a = analytic_func{T}()
   k = ceil(x)
   all_a = Array{analytic_func{T}, 1}()
-    
+
   a.coeff = vcat([ 1-log(T(2))] ,
                 [1/(i*T(2)^i) for i=1:prec])
   a.valid=(1,2)
@@ -81,7 +81,7 @@ function dickman_rho(x::Number, prec::Int=55)
   if x <= 2
     return 1-log(x)
   end
-  
+
   k = ceil(x)
   return analytic_eval(rho_coeff(x, prec), k-x)
 end
@@ -110,7 +110,7 @@ function dickman_rho(b::Number, e::UnitRange{Int}, prec::Int = 55)
     f = findall(x->x.valid[2] == k, rc)
     @assert length(f)==1
     val[1] = analytic_eval(rc[f[1]], k-x)
-  end                                  
+  end
   vi = 2
   for l in (e.start+1):e.stop
     x += b
@@ -125,7 +125,7 @@ function dickman_rho(b::Number, e::UnitRange{Int}, prec::Int = 55)
       val[vi] = analytic_eval(rc[f[1]], k-x)
     end
     vi += 1
-  end  
+  end
   return val
 end
 
@@ -153,7 +153,7 @@ function bach_J(u::T, v::T, w::T, prec) where T <: Number
     return k-w+w/t
   end
 
-  if xi(v) <= 1 
+  if xi(v) <= 1
     local A = w/v+k-w
     local B = w/u+k-w
     local C = k-w
@@ -176,7 +176,7 @@ end
     exponential_integral(x::AbstractFloat) -> AbstractFloat
     ei(x::AbstractFloat) -> AbstractFloat
 
-Compute the exponential integral function
+Compute the exponential integral function.
 """
 function exponential_integral(x::BigFloat)
   z = BigFloat()
@@ -195,7 +195,7 @@ end
     li(x::AbstractFloat) AbstractFloat
 
 Compute the logarithmic integral function. Used as an approximation
-for the number of primes up to x
+for the number of primes up to $x$.
 """
 function logarithmic_integral(x::AbstractFloat)
   return exponential_integral(log(x))
@@ -215,29 +215,29 @@ The formula (for n=365) is in the solutions.
 @doc Markdown.doc"""
     rels_from_partial(n::Int, k::Int) -> Int
 
-Estimates the number of collision in k samples among n possibilities. Used 
-to estimate the number of full relations to be expected from k partial
-relations involving n (large) primes
+Estimates the number of collisions in $k$ samples among $n$ possibilities. Used
+to estimate the number of full relations to be expected from $k$ partial
+relations involving $n$ (large) primes.
 """
-function rels_from_partial(n::Int, k::Int) 
+function rels_from_partial(n::Int, k::Int)
   N = fmpz(n)
   return Int(round(N*(1-(N-1)^k//N^k-k*(N-1)^(k-1)//N^k)))
 end
 
 
 #=
-Let p_i,j = 1 if the i-th and j-th person have the same birthday and 0 
+Let p_i,j = 1 if the i-th and j-th person have the same birthday and 0
 otherwise.
 We need
   W = E(sum p_i,j)
 the expectation of the sum, how many birthdays are common.
-Then 
+Then
   lambda = k(k-1)/(2n)
   the expectation is lambda as this should be Poisson distributed
   P(W=x) = exp(-l)l^x/x!
-=#  
+=#
 
-#= computes (hopefully) the 
+#= computes (hopefully) the
   vol(prod x_i <= b meet [0,1]^n)
 an easy excercise in induction...
   vol = b(sum_0^{n-1} (-1)^k/k! log(b)^k)
@@ -245,10 +245,10 @@ an easy excercise in induction...
 =#
 function vol(n::Int, b::T) where T<:Number
   lb = log(b)
-  s = [T(1)]
-  t = T(1)
+  s = [typeof(b)(1)]
+  t = typeof(b)(1)
   for k = 1:n-1
-    t  = -t/T(k) * lb
+    t  = -t/k * lb
     push!(s, t)
   end
   return b*sum(s)
@@ -304,7 +304,7 @@ function class_group_expected(d::fmpz, deg::Int, B::Int, samples::Int = 100)
 
   d = max(d, fmpz(100))
   d1 = BigFloat(d)
-  
+
   pg = psi_guess(d1^(1/samples), B, 1:samples)
   x = log(d1)/samples
   xi = [ exp(i*x) for i=1:samples]
@@ -312,14 +312,8 @@ function class_group_expected(d::fmpz, deg::Int, B::Int, samples::Int = 100)
   @assert length(pg) == samples
   @assert length(xi) == samples
   @assert length(vo) == samples
-  c = ceil(1/sum([(pg[i+1]-pg[i])/(xi[i+1]-xi[i])*(vo[i+1]-vo[i]) for i=1:(samples-1)]))
-  if c > 2^60
-    @warn "Computation is unlikely to finish, the success probability is 1 in $c"
-    return 2^60
-  else
-    Int(c)
-  end
-end                           
+  return Int(ceil(1/sum([(pg[i+1]-pg[i])/(xi[i+1]-xi[i])*(vo[i+1]-vo[i]) for i=1:(samples-1)])))
+end
 
 #= D is supposed to be the disccriminant
    n the dimension
@@ -376,8 +370,8 @@ function expected_yield(D::fmpz, n::Int, B1::Integer, B2::Integer=0, steps::Int=
   for i=1:steps
     v_l = vol(n, exp(i*l-lD))
     b = i*l/lB1
-    if b<1 
-      b = typeof(b)(1) 
+    if b<1
+      b = typeof(b)(1)
     end
     if b > 15
       println(" argument to dickmann too largee to make sense")
@@ -388,13 +382,13 @@ function expected_yield(D::fmpz, n::Int, B1::Integer, B2::Integer=0, steps::Int=
       r = dickman_rho(b)
     else
       b2 = i*l/lB2
-      if b2<1 
-        b2 = typeof(b)(1) 
+      if b2<1
+        b2 = typeof(b)(1)
       end
 #      println("Calling bach with", Float64(b), " and ", Float64(b2))
       r = bach_rho(b, b2)
     end
-               
+
     push!(s, (v_l-v_l1)*r)
     v_l1 = v_l
   end

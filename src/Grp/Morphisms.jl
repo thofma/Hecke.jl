@@ -41,7 +41,7 @@ end
 
 @doc Markdown.doc"""
     *(f::GrpGenToGrpGenMor, g::GrpGenToGrpGenMor) -> h::GrpGenToGrpGenMor
-Returns the composition (f * g) = g(f)$.
+Returns the composition $(f * g) = g(f)$.
 """
 function *(f::GrpGenToGrpGenMor, g::GrpGenToGrpGenMor)
   return GrpGenToGrpGenMor(f.domain, g.codomain, [g(f(x)) for x in collect(f.domain)])

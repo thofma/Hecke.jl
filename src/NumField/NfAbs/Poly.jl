@@ -9,7 +9,7 @@
 
 Given polynomials $a$ defined modulo $p$ and $b$ modulo $q$, apply the CRT
 to all coefficients recursively.
-Implicitly assumes that $a$ and $b$ have integral coefficients (ie. no
+Implicitly assumes that $a$ and $b$ have integral coefficients (i.e. no
 denominators).
 """
 function induce_crt(a::Generic.Poly{nf_elem}, p::fmpz, b::Generic.Poly{nf_elem}, q::fmpz, signed::Bool = false)
@@ -29,7 +29,7 @@ function induce_crt(a::Generic.Poly{nf_elem}, p::fmpz, b::Generic.Poly{nf_elem},
 end
 
 @doc Markdown.doc"""
-  induce_rational_reconstruction(a::Generic.Poly{nf_elem}, M::fmpz) -> bool, Generic.Poly{nf_elem}
+    induce_rational_reconstruction(a::Generic.Poly{nf_elem}, M::fmpz) -> bool, Generic.Poly{nf_elem}
 
 Apply rational reconstruction to the coefficients of $a$. Implicitly assumes
 the coefficients to be integral (no checks done)
@@ -55,7 +55,7 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-  gcd(a::Generic.Poly{nf_elem}, b::Generic.Poly{nf_elem}) -> Generic.Poly{nf_elem}
+    gcd(a::Generic.Poly{nf_elem}, b::Generic.Poly{nf_elem}) -> Generic.Poly{nf_elem}
 
 Computes the greatest common divisor of $f$ and $g$ using a modular algorithm.
 """
@@ -156,7 +156,7 @@ function _preproc_pol(a::Generic.Poly{nf_elem}, b::Generic.Poly{nf_elem})
   return a2, b2, fsa
 end
 
-function gcd_euclid(a::AbstractAlgebra.PolyElem{nf_elem}, b::AbstractAlgebra.PolyElem{nf_elem}) 
+function gcd_euclid(a::AbstractAlgebra.PolyElem{nf_elem}, b::AbstractAlgebra.PolyElem{nf_elem})
    check_parent(a, b)
    if length(a) > length(b)
       (a, b) = (b, a)
@@ -182,24 +182,14 @@ function gcd_modular_kronnecker(a::Generic.Poly{nf_elem}, b::Generic.Poly{nf_ele
   #now gcd(a, b)*fsa should be in the equation order...
   global p_start
   p = p_start
-  
+
   g = zero(Kt)
   d = fmpz(1)
   last_g = zero(Kt)
   while true
     p = next_prime(p)
-    F = GF(p, cached = false)
-    Fx = PolynomialRing(F, "x", cached = false)[1]
-    Fp = Fx(K.pol)
-    if !issquarefree(Fp)
-      continue
-    end
-    fs = factor_shape(Fp)
-    if any(x -> x > 4, keys(fs))
-      continue
-    end
     local me, fp, gp, fsap
-    try 
+    try
       me = modular_init(K, p)
       fp = deepcopy(Hecke.modular_proj(a, me))  # bad!!!
       gp = Hecke.modular_proj(b, me)
@@ -336,7 +326,7 @@ function gcdx_mod_res(a::Generic.Poly{nf_elem}, b::Generic.Poly{nf_elem})
   fsa = change_base_ring(K, derivative(K.pol), parent = Kt)*d
   #now gcd(a, b)*fsa should be in the equation order...
   global p_start
-  p = p_start  
+  p = p_start
   g = zero(parent(a))
   d = fmpz(1)
   r = zero(K)
@@ -442,7 +432,7 @@ function nf_poly_to_xy(f::PolyElem{Nemo.nf_elem}, Qxy::PolyRing, Qx::PolyRing)
   K = base_ring(f)
   Qy = parent(K.pol)
   y = gen(Qx)
-  
+
   res = zero(Qxy)
   for i=degree(f):-1:0
     res *= y

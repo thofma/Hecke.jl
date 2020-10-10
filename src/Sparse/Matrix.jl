@@ -173,14 +173,13 @@ function getindex(A::SMat{T}, i::Int) where T
 end
 
 @doc Markdown.doc"""
-    setindex!(A::SMat, b::SRow, i::Int) 
+    setindex!(A::SMat, b::SRow, i::Int)
 
 Given a sparse matrix $A$, a sparse row $b$ and an index $i$, set the $i$-th
 row of $A$ equal to $b$.
 """
 function setindex!(A::SMat{T}, b::SRow{T}, i::Int) where T
   (i < 1 || i > nrows(A)) && error("Index must be between 1 and $(nrows(A))")
-  A.nnz = A.nnz - length(A.rows[i].pos) + length(b.pos)
   A.rows[i] = b
   return A
 end
@@ -209,7 +208,7 @@ end
 @doc Markdown.doc"""
     sparse_matrix(A::MatElem; keepzrows::Bool = true)
 
-Constructs thesparse matrix corresponding to the dense matrix $A$. If
+Constructs the sparse matrix corresponding to the dense matrix $A$. If
 `keepzrows` is false, then the constructor will drop any zero row of $A$.
 """
 function sparse_matrix(A::MatElem; keepzrows::Bool = true)
@@ -245,7 +244,7 @@ end
 @doc Markdown.doc"""
     sparse_matrix(A::Array{T, 2}) -> SMat{T}
 
-Constructs the sparse matrix corresponding to A.
+Constructs the sparse matrix corresponding to $A$.
 """
 function sparse_matrix(A::Array{T, 2}) where {T <: RingElement}
   length(A) == 0 && error("Cannot create sparse matrix from empty array")
@@ -417,7 +416,7 @@ Base.eltype(A::SMat{T}) where {T} = SRow{T}
 #
 ################################################################################
 
-# SMat{T} * Vector{T} as (dense Array{T, 1}) 
+# SMat{T} * Vector{T} as (dense Array{T, 1})
 # inplace
 function mul!(c::Array{T, 1}, A::SMat{T}, b::AbstractArray{T, 1}) where T
   R = base_ring(A)
@@ -428,9 +427,9 @@ function mul!(c::Array{T, 1}, A::SMat{T}, b::AbstractArray{T, 1}) where T
   return c
 end
 
-# (dense Array{T, 1}) * SMat{T} as (dense Array{T, 1}) 
+# (dense Array{T, 1}) * SMat{T} as (dense Array{T, 1})
 @doc Markdown.doc"""
-    mul(A::SMat{T}, b::AbstractVector{T}) -> Vector{T}
+    mul(A::SMat, b::AbstractVector{T}) -> Vector{T}
 
 Return the product $A \cdot b$ as a dense vector.
 """
@@ -458,7 +457,7 @@ end
 
 # - SMat{T} * Array{T, 2} as Array{T, 2}
 @doc Markdown.doc"""
-    mul(A::SMat{T}, b::AbstractArray{T, 2}) -> Array{T, 2}
+    mul(A::SMat, b::AbstractArray{T, 2}) -> Array{T, 2}
 
 Return the product $A \cdot b$ as a dense array.
 """
@@ -486,7 +485,7 @@ end
 # - SMat{T} * MatElem{T} as MatElem{T}
 
 @doc Markdown.doc"""
-    mul(A::SMat{T}, b::MatElem{T}) -> MatElem
+    mul(A::SMat, b::MatElem) -> MatElem
 
 Return the product $A \cdot b$ as a dense matrix.
 """
@@ -588,7 +587,7 @@ Return the difference $A - B$.
 function -(A::SMat{T}, B::SMat{T}) where T
   nrows(A) != nrows(B) && error("Matrices must have same number of rows")
   ncols(A) != ncols(B) && error("Matrices must have same number of columns")
-  C = sparse_matrix(base_ring(A)) 
+  C = sparse_matrix(base_ring(A))
   m = min(nrows(A), nrows(B))
   for i=1:m
     push!(C, A[i]-B[i])
@@ -694,8 +693,6 @@ function sub(A::SMat{T}, r::UnitRange, c::UnitRange) where T
   return B
 end
 
-#TODO: map to getindex with ranges and slices
-
 ################################################################################
 #
 #  Valence
@@ -703,17 +700,17 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-  valence_mc{T}(A::SMat{T}; extra_prime = 2, trans = Array{SMatSLP_add_row{T}, 1}()) -> T
+    valence_mc{T}(A::SMat{T}; extra_prime = 2, trans = Array{SMatSLP_add_row{T}, 1}()) -> T
 
-Uses a Monte-Carlo alorithm to compute the valence of A. The valence is the
-valence of the minimal polynomial f of A'*A, thus the last non-zero
-coefficient, typically f(0).
+Uses a Monte-Carlo algorithm to compute the valence of $A$. The valence is the
+valence of the minimal polynomial $f$ of $A'*A$, thus the last non-zero
+coefficient, typically $f(0)$.
 
 The valence is computed modulo various primes until the computation stabilises
-for extra_prime many.
+for `extra_prime` many.
 
-trans, if given, is  a SLP (straight-line-program) in GL(n, Z). Then the
-valence of trans * A  is computed instead.
+`trans`, if given, is  a SLP (straight-line-program) in GL(n, Z). Then the
+valence of `trans` * $A$  is computed instead.
 """
 function valence_mc(A::SMat{T}; extra_prime = 2, trans = Array{SMatSLP_add_row{T}, 1}()) where T
   # we work in At * A (or A * At) where we choose the smaller of the 2
@@ -850,7 +847,7 @@ function valence_mc(A::SMat{T}, p::Int) where T
     end
     df = degree(f)
     return f
-  end  
+  end
 end
 
 ################################################################################
@@ -860,7 +857,7 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    vcat!(A::SMat, B::SMat) -> SMat
+    vcat!(A::SMat B::SMat) -> SMat
 
 Vertically joins $A$ and $B$ inplace, that is, the rows of $B$ are
 appended to $A$.
@@ -936,10 +933,7 @@ end
 #  Append sparse row to sparse matrix
 #
 ################################################################################
-@doc Markdown.doc"""
-    push!(A::SMat{T}, B::SRow{T}) where T 
-Appends the sparse row ```B``` to ```A```.
-"""
+
 function push!(A::SMat{T}, B::SRow{T}) where T
   push!(A.rows, B)
   A.r += 1
@@ -959,7 +953,7 @@ end
 @doc Markdown.doc"""
     fmpz_mat{T <: Integer}(A::SMat{T})
 
-The same matix $A$, but as an fmpz_mat.
+The same matrix $A$, but as an `fmpz_mat`.
 Requires a conversion from the base ring of $A$ to $\mathbf ZZ$.
 """
 function fmpz_mat(A::SMat{T}) where T <: Integer
@@ -976,7 +970,7 @@ end
 @doc Markdown.doc"""
     fmpz_mat(A::SMat{fmpz})
 
-The same matix $A$, but as an fmpz_mat.
+The same matrix $A$, but as an `fmpz_mat`.
 """
 function fmpz_mat(A::SMat{fmpz})
   B = zero_matrix(FlintZZ, A.r, A.c)
@@ -1058,22 +1052,6 @@ function minimum(A::SMat)
   return m
 end
 
-function maximum(::typeof(nbits), A::SMat{fmpz})
-  if length(A.rows) == 0
-    return zero(FlintZZ)
-  end
-  m = nbits(A.rows[1].values[1])
-  for i in A.rows
-    for j in i.values
-      if m < nbits(j)
-        m = nbits(j)
-      end
-    end
-  end
-  return m
-end
-
-
 ################################################################################
 #
 #  Test upper triangular shape
@@ -1082,7 +1060,7 @@ end
 
 @doc Markdown.doc"""
     isupper_triangular(A::SMat)
- 
+
 Returns true if and only if $A$ is upper (right) triangular.
 """
 function isupper_triangular(A::SMat)
@@ -1134,7 +1112,7 @@ end
 @doc Markdown.doc"""
     identity_matrix(::Type{SMat}, R::Ring, n::Int)
 
-Return a sparse $n$ times $n$ identity matrix over $R$.   
+Return a sparse $n$ times $n$ identity matrix over $R$.
 """
 function identity_matrix(::Type{SMat}, R::Ring, n::Int)
   A = sparse_matrix(R)
@@ -1152,7 +1130,7 @@ end
 @doc Markdown.doc"""
     zero_matrix(::Type{SMat}, R::Ring, n::Int)
 
-Return a sparse $n$ times $n$ zero matrix over $R$.   
+Return a sparse $n$ times $n$ zero matrix over $R$.
 """
 function zero_matrix(::Type{SMat}, R::Ring, n::Int)
   S = sparse_matrix(R)
@@ -1164,7 +1142,7 @@ end
 @doc Markdown.doc"""
     zero_matrix(::Type{SMat}, R::Ring, n::Int, m::Int)
 
-Return a sparse $n$ times $m$ zero matrix over $R$.   
+Return a sparse $n$ times $m$ zero matrix over $R$.
 """
 function zero_matrix(::Type{SMat}, R::Ring, n::Int, m::Int)
   S = sparse_matrix(R)
@@ -1256,7 +1234,7 @@ function isone(A::SMat)
 end
 
 @doc Markdown.doc"""
-    isone(A::SMat)
+    iszero(A::SMat)
 
 Tests if $A$ is a zero matrix.
 """
@@ -1276,9 +1254,9 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-  toNemo(io::IOStream, A::SMat; name = "A")
+    toNemo(io::IOStream, A::SMat; name = "A")
 
-  Prints the SMat as a julia-program into the file corresponding to io.
+  Prints the SMat as a julia-program into the file corresponding to `io`.
   The file can be included to get the matrix.
   `name` controls the variable name of the matrix.
 """
@@ -1295,9 +1273,9 @@ function toNemo(io::IOStream, A::SMat; name = "A")
 end
 
 @doc Markdown.doc"""
-  toNemo(io::String, A::SMat; name = "A")
+    toNemo(io::String, A::SMat; name = "A")
 
-  Prints the SMat as a julia-program into the file named io.
+  Prints the SMat as a julia-program into the file named `io`.
   The file can be included to get the matrix.
   `name` controls the variable name of the matrix.
 """
@@ -1340,7 +1318,7 @@ end
 The same matrix, but as a two-dimensional julia array.
 """
 function Array(A::SMat{T}) where T
-  R = zero_matrix(base_ring(A), A.r, A.c) 
+  R = zero_matrix(base_ring(A), A.r, A.c)
   for i=1:nrows(A)
     for j=1:length(A.rows[i].pos)
       R[i, A.rows[i].pos[j]] = A.rows[i].values[j]
@@ -1349,7 +1327,7 @@ function Array(A::SMat{T}) where T
   return R
 end
 
-#TODO: write a kronnecker-row-product, this is THE 
+#TODO: write a kronnecker-row-product, this is THE
 # Kronecker product corresponding to the matrix of a tensor
 # product of homs represented as column vectors
 #in Oscar, we should be doing row vectors...

@@ -36,7 +36,7 @@ end
 @doc Markdown.doc"""
     multiplication_table(A::AlgGrp; copy::Bool = true) -> Array{RingElem, 2}
 
-> Given an group algebra $A$ this function returns the multiplication table of
+> Given a group algebra $A$ this function returns the multiplication table of
 > $A$: If the function returns $M$ and the basis of $A$ is $g_1,\dots, g_n$ then
 > it holds $g_i \cdot g_j = g_{M[i, j]}$.
 """
@@ -140,7 +140,7 @@ end
 ################################################################################
 
 # TODO: This is broken. I have to copy everything carefully by hand.
-#function Base.deepcopy_internal(A::AlgGrp, dict::IdDict) 
+#function Base.deepcopy_internal(A::AlgGrp, dict::IdDict)
 #  B = AlgGrp(base_ring(A), group(A))
 #  for x in fieldnames(typeof(A))
 #    if x != :base_ring && x != :group && isdefined(A, x)
