@@ -19,11 +19,11 @@ function resultant_ideal(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} w
   Rt = parent(f)
   R = base_ring(Rt)
   m = fmpz(modulus(R))
-  easy = isprime_power(m)
-
-  if easy
-    return resultant_ideal_pp(f,g)
-  end
+ 
+  #easy = isprime_power(m)
+  #if easy
+  #  return resultant_ideal_pp(f,g)
+  #end
 
   #Some initial checks
   res = R(1)
@@ -66,7 +66,7 @@ function resultant_ideal(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} w
       return res
     end
 
-    c, g = primsplit(g)
+    c, g = primsplit!(g)
     if !isone(c)
       res = mul!(res, res, R(c)^degree(f))
     end
@@ -371,7 +371,13 @@ end
 
 function Nemo.invmod(f::fmpz_mod_poly, M::fmpz_mod_poly)
   if !isunit(f)
-    error("impossible inverse")
+    r = parent(f)()
+    i = ccall((:fmpz_mod_poly_invmod, libflint), Int, (Ref{fmpz_mod_poly}, Ref{fmpz_mod_poly}, Ref{fmpz_mod_poly}), r, f, M)
+    if iszero(i)
+      error("not yet implemented")
+    else
+      return r
+    end
   end
   if !isunit(lead(M))
     error("not yet implemented")
@@ -468,10 +474,10 @@ function rres_sircana(f1::PolyElem{T}, g1::PolyElem{T}) where T <: ResElem{S} wh
   Rt = parent(f1)
   R = base_ring(Rt)
   m = fmpz(modulus(R))
-  easy = isprime_power(m)
-  if easy
-    return rres_sircana_pp(f1, g1)
-  end
+  #easy = isprime_power(m)
+  #if easy
+  #  return rres_sircana_pp(f1, g1)
+  #end
   f = deepcopy(f1)
   g = deepcopy(g1)
 
@@ -528,15 +534,15 @@ function rres_sircana(f1::PolyElem{T}, g1::PolyElem{T}) where T <: ResElem{S} wh
       if !isone(s)
         m = divexact(m, s)
       end
-      if easy
-        cp = S[m]
-      else
+      #if easy
+      #  cp = S[m]
+      #else
         cp = S[gcd(lift(coeff(g, i)), m) for i=0:degree(g)]
         push!(cp, m)
         cp = S[x for x = cp if !iszero(x)]
         cp = coprime_base(cp)
         cp = S[x for x = cp if !isunit(x)] #error: [1, 1, 3, 27] -> [1,3]
-      end
+      # end
       resp = fmpz[]
       pg = fmpz[]
       for p = cp
@@ -569,7 +575,7 @@ function rres_sircana(f1::PolyElem{T}, g1::PolyElem{T}) where T <: ResElem{S} wh
       return res
     end
 
-    f = rem(f, g)
+    f = rem!(f, f, g)
   end
 end
 
@@ -637,10 +643,10 @@ function _rresx_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} wh
   R = base_ring(Rt)
   Zx = PolynomialRing(FlintZZ, "x", cached = false)[1]
   m = fmpz(modulus(R))
-  easy = isprime_power(m)
-  if easy
-    return _rresx_sircana_pp(f, g)
-  end
+  #easy = isprime_power(m)
+  #if easy
+  #  return _rresx_sircana_pp(f, g)
+  #end
 
   u, v = Rt(0), Rt(1)
   U, V = Rt(1), Rt(0)
@@ -810,7 +816,8 @@ function _rresx_sircana_pp(f1::PolyElem{T}, g1::PolyElem{T}) where T <: ResElem{
       rr, uu, vv = _rresx_sircana_pp(f, g2)
       res = rr*c
       u_ = uu*c
-      v_ = inv(g1)*vv
+      v_ = inv(g1)
+      mul!(v_, v_, vv)
       return res, (u_*U + v_*u), (u_*V + v_*v)
     end
 
@@ -1190,30 +1197,22 @@ function primsplit!(f::PolyElem{T}) where T <: ResElem{S} where S <: Union{fmpz,
 
   @assert !iszero(f)
   d = degree(f)
-  if d == 0
+  if iszero(d)
     if iszero(f)
       return base_ring(parent(f))(1), f
     end
     c = canonical_unit(coeff(f, 0))
-    c1 =inv(c)*coeff(f, 0)
+    c1 = inv(c)*coeff(f, 0)
     setcoeff!(f, 0, 1)
     return c1, f
   end
+  fl, g = isprimitive(f)
+  if fl
+    return g, f
+  end
 
-  g = coeff(f, 0)
-  setcoeff!(f, 0, 1)
-  for i = 1:d
-    h, _, _, u, v = xxgcd(g, coeff(f, i))
-    setcoeff!(f, i, v)
-    if  g != h
-      for j=0:i-1
-        setcoeff!(f, j, u*coeff(f, j))
-      end
-    end
-    g = h
-    if isone(g)
-      return g, f
-    end
+  for i = 0:d
+    setcoeff!(f, i, divexact(coeff(f, i), g))
   end
   return g, f
 end
@@ -1328,4 +1327,112 @@ function carmichael_lambda(f::T) where {T <: Union{gfp_poly, fq_nmod_poly, gfp_f
   l = reduce(lcm, [(q^degree(p)-1)*pp^ceil(Int, log(k)/log(pp)) for (p,k) = lf.fac], init = fmpz(1))
   #l = reduce(lcm, [(q^degree(p)-1)*largest_elementary_divisor(unit_group_1_part(p, k)[2]) for (p,k) = lf.fac], init = fmpz(1))
   return l
+end
+
+
+@doc Markdown.doc"""
+    compose_mod(x::nmod_poly, y::nmod_poly, z::nmod_poly) -> nmod_poly
+    
+  Compute $x(y)$ mod $z$.
+"""
+function compose_mod(x::nmod_poly, y::nmod_poly, z::nmod_poly)
+  check_parent(x,y)
+  check_parent(x,z)
+  r = parent(x)()
+  ccall((:nmod_poly_compose_mod, libflint), Nothing,
+          (Ref{nmod_poly}, Ref{nmod_poly}, Ref{nmod_poly}, Ref{nmod_poly}), r, x, y, z)
+  return r
+end
+
+function compose_mod(x::gfp_poly, y::gfp_poly, z::gfp_poly)
+  check_parent(x,y)
+  check_parent(x,z)
+  r = parent(x)()
+  ccall((:nmod_poly_compose_mod, libflint), Nothing,
+          (Ref{gfp_poly}, Ref{gfp_poly}, Ref{gfp_poly}, Ref{gfp_poly}), r, x, y, z)
+  return r
+end
+
+
+@doc Markdown.doc"""
+    taylor_shift(x::nmod_poly, c::UInt) -> nmod_poly
+  
+  Compute $x(t-c)$.
+"""
+function taylor_shift(x::nmod_poly, c::UInt)
+  r = parent(x)()
+  ccall((:nmod_poly_taylor_shift, libflint), Nothing,
+          (Ref{nmod_poly}, Ref{nmod_poly}, UInt), r, x, c)
+  return r
+end
+
+function evaluate(f::gfp_poly, v::Vector{gfp_elem})
+  F = base_ring(f)
+  v1 = UInt[x.data for x in v]
+  res = UInt[UInt(1) for x in v]
+  ccall((:nmod_poly_evaluate_nmod_vec, libflint), Nothing,
+          (Ptr{UInt}, Ref{gfp_poly}, Ptr{UInt}, UInt),
+          res, f, v1, UInt(length(v)))
+  return gfp_elem[gfp_elem(x, F) for x in res]
+end
+
+function _evaluation_tree(v::Vector{gfp_elem}, dummy::gfp_poly)
+  n = length(v)
+#  mod = UInt(size(parent(v[1])))
+  v1 = UInt[x.data for x in v]
+  mod = nmod_struct(dummy.mod_n, dummy.mod_ninv, dummy.mod_norm)
+  tree = ccall((:_nmod_poly_tree_alloc, libflint), Ptr{Nothing},
+          (Int, ), length(v))
+  ccall((:_nmod_poly_tree_build, libflint), Nothing,
+    (Ptr{Nothing}, Ptr{UInt}, Int, Ref{nmod_struct}), tree, v1, n, mod)
+  return tree
+end
+
+function _evaluate_with_tree(tree, f::gfp_poly, n::Int)
+  F = base_ring(f)
+  ys = UInt[UInt(1) for i = 1:n]
+  mod = nmod_struct(f.mod_n, f.mod_ninv, f.mod_norm)
+#  co = UInt[0, 1]
+  @show mod
+  ccall((:_nmod_poly_evaluate_nmod_vec_fast_precomp, libflint), Nothing,
+    (Ref{UInt}, Ptr{Nothing}, Int, Ptr{Nothing}, Int, Ref{nmod_struct}), ys, f.coeffs, f.length, tree, n, mod)
+  return gfp_elem[F(x) for x in ys]
+end
+
+function _free_tree(tree, len)
+  ccall((:_nmod_poly_tree_free, libflint), Nothing, (Ptr{Ptr{UInt}}, Int), tree, len)
+end
+
+
+function isprimitive(f::nmod_poly)
+  R = base_ring(f)
+  n = R(gcd(modulus(R), lift(coeff(f, 0))))
+  if isone(n)
+    return true, n
+  end
+  for i = 1:degree(f)
+    n = gcd(n, coeff(f, i))
+    if isone(n)
+      return true, R(n) 
+    end
+  end
+  return isone(n), R(n)
+end
+
+function isprimitive(f::fmpz_mod_poly)
+  Rx = parent(f)
+  R = base_ring(Rx)
+  z = fmpz()
+  g = fmpz()
+  GC.@preserve f begin
+    for i = 0:degree(f)
+      ccall((:fmpz_mod_poly_get_coeff_fmpz, libflint), Nothing, (Ref{fmpz}, Ref{fmpz_mod_poly}, Int), z, f, i)
+      gcd!(g, g, z)
+      if isone(g)
+        return true, R(g)
+      end
+    end
+  end
+  gcd!(g, g, modulus(R))
+  return isone(g), R(g)
 end
