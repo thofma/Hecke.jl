@@ -5,7 +5,6 @@ function order(x::Generic.Res{fmpz}, fp::Dict{fmpz, Int64})
   error("missing")
 end
 
-
 @doc Markdown.doc"""
     isprimitive_root(x::Generic.Res{fmpz}, M::fmpz, fM::Dict{fmpz, Int64}) -> Bool
 
@@ -93,7 +92,7 @@ function gen_mod_pk(p::fmpz, mod::fmpz=fmpz(0))
 end
 
 mutable struct MapUnitGroupModM{T} <: Map{GrpAbFinGen, T, HeckeMap, MapUnitGroupModM}
-  header::Hecke.MapHeader
+ header::Hecke.MapHeader{GrpAbFinGen, T}
 
   function MapUnitGroupModM{T}(G::GrpAbFinGen, R::T, dexp::Function, dlog::Function) where {T}
     r = new{T}()
@@ -108,9 +107,9 @@ end
 
 The unit group of $R = Z/nZ$ together with the appropriate map.
 """
-function UnitGroup(R::Generic.ResRing{fmpz}, mod::fmpz=fmpz(0))
+function UnitGroup(R::Nemo.FmpzModRing, mod::fmpz=fmpz(0))
 
-  m = R.modulus
+  m = modulus(R)
   fm = factor(m).fac
 
   r = Array{fmpz}(undef, 0)
@@ -168,9 +167,9 @@ function UnitGroup(R::Generic.ResRing{fmpz}, mod::fmpz=fmpz(0))
 
   G = abelian_group(r)
   function dexp(x::GrpAbFinGenElem)
-    return prod(Res{fmpz}[R(g[i])^x[i] for i=1:ngens(G)])
+   return prod(Nemo.fmpz_mod[R(g[i])^x[i] for i=1:ngens(G)])
   end
-  function dlog(x::Generic.Res{fmpz})
+  function dlog(x::Nemo.fmpz_mod)
     return G(fmpz[disc_log_mod(g[i], lift(x), mi[i]) for i=1:ngens(G)])
   end
   return G, MapUnitGroupModM{typeof(R)}(G, R, dexp, dlog)
@@ -369,36 +368,35 @@ Uses Baby-Step-Giant-Step, requires $a$ to be invertible.
 function disc_log_bs_gs(a::T, b::T, o::fmpz) where {T <: RingElem}
   b==1 && return fmpz(0)
   b==a && return fmpz(1)
-  if o < 100
+  @assert parent(a) === parent(b)
+  if o < 100 
     ai = inv(a)
     for g=1:Int(o)
       b *= ai
       b==1 && return fmpz(g)
     end
     throw("disc_log failed")
-  else
-    r = root(o, 2)
-    r = Int(r)
-    baby = Array{typeof(a), 1}(undef, r)
-    baby[1] = parent(a)(1)
-    baby[2] = a
-    for i=3:r
-      baby[i] = baby[i-1]*a
-      baby[i] == b && return fmpz(i-1)
-    end
-    giant = baby[end]*a
-    @assert giant == a^r
-    b == giant && return fmpz(r)
-    giant = inv(giant)
-    g = fmpz(0)
-    for i=1:r
-      b *= giant
-      g += r
-      f = findfirst(x -> x == b, baby)
-      f !== nothing && return fmpz(g+f-1)
-    end
-    throw("disc_log failed")
   end
+  r = Int(root(o, 2))
+  baby = Array{typeof(a), 1}(undef, r)
+  baby[1] = parent(a)(1)
+  baby[2] = a
+  for i=3:r
+    baby[i] = baby[i-1]*a
+    baby[i] == b && return fmpz(i-1)
+  end
+  giant = baby[end]*a
+  @assert giant == a^r
+  b == giant && return fmpz(r)
+  giant = inv(giant)
+  g = fmpz(0)
+  for i=1:r+1
+    b *= giant
+    g += r
+    f = findfirst(x -> x == b, baby)
+    f !== nothing && return fmpz(g+f-1)
+  end
+  throw("disc_log failed")
 end
 
 @doc Markdown.doc"""
@@ -508,7 +506,7 @@ function _unit_pk_mod_n(p::Int, v::Int, n::Int)
             end
             return mod(c*inv, ord1)
           else
-            return mod(inv*disc_log_bs_gs(z, y, aux1), ord1)
+            return mod(inv*disc_log_bs_gs(z, y, fmpz(aux1)), ord1)
           end
         end
       end
@@ -661,11 +659,46 @@ function _unit_grp_residue_field_mod_n(p::Int, n::Int)
       else
         return mod(inv*disc_log_bs_gs(w, y, npart), k)
       end
-    end
-  end
+     end    
+  end 
   return Int(g.data), k, disc_log
-
+  
 end
 
-unit_group(A::Generic.ResRing{fmpz}) = UnitGroup(A)
+unit_group(A::Nemo.FmpzModRing) = UnitGroup(A)
 unit_group(A::Nemo.NmodRing) = UnitGroup(A)
+
+
+## Make Nmod iteratible
+
+Base.iterate(R::NmodRing) = (zero(R), zero(UInt))
+
+function Base.iterate(R::NmodRing, st::UInt)
+  if st == R.n - 1
+    return nothing
+  end
+
+  return R(st + 1), st + 1
+end
+
+Base.eltype(::Type{NmodRing}) = nmod
+
+Base.IteratorSize(::Type{NmodRing}) = Base.HasLength()
+
+Base.length(R::NmodRing) = R.n
+
+Base.iterate(R::GaloisField) = (zero(R), zero(UInt))
+
+function Base.iterate(R::GaloisField, st::UInt)
+  if st == R.n - 1
+    return nothing
+  end
+ 
+  return R(st + 1), st + 1
+end
+
+Base.eltype(::Type{GaloisField}) = gfp_elem
+
+Base.IteratorSize(::Type{GaloisField}) = Base.HasLength()
+
+Base.length(R::GaloisField) = R.n
