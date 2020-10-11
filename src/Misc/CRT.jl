@@ -211,18 +211,18 @@ function crt_inv_tree!(res::Array{T,1}, a::T, c::crt_env{T}) where T
 
   i = length(c.pr)-1
   if i == 0
-    rem!(res[1], a, c.pr[1])
+    res[1] = rem!(res[1], a, c.pr[1])
     return res
   end
   r = i
   w = r + c.n - 1
 
   @inbounds zero!(res[r % c.n + 1])
-  @inbounds add!(res[r % c.n + 1], res[r % c.n + 1], a)
+  @inbounds res[r % c.n + 1] = add!(res[r % c.n + 1], res[r % c.n + 1], a)
 
   while i>1
-    @inbounds rem!(res[w % c.n + 1], res[r % c.n + 1], c.pr[i])
-    @inbounds rem!(res[(w+c.n - 1) % c.n + 1], res[r % c.n + 1], c.pr[i - 1])
+    @inbounds res[w % c.n + 1] = rem!(res[w % c.n + 1], res[r % c.n + 1], c.pr[i])
+    @inbounds res[(w+c.n - 1) % c.n + 1] = rem!(res[(w+c.n - 1) % c.n + 1], res[r % c.n + 1], c.pr[i - 1])
     w += 2*(c.n-1)
     i -= 2
     r += 1*(c.n-1)
