@@ -108,6 +108,10 @@ function div(f::PolyElem, g::PolyElem)
   return q
 end
 
+function div(f::PolyElem{T}, g::T) where T
+  return div(f, parent(f)(g))
+end
+
 function rem(f::PolyElem, g::PolyElem)
   return mod(f, g)
 end
@@ -179,6 +183,79 @@ function resultant(f::fmpz_poly, g::fmpz_poly, d::fmpz, nb::Int)
      (Ref{fmpz}, Ref{fmpz_poly}, Ref{fmpz_poly}, Ref{fmpz}, Int),
      z, f, g, d, nb)
   return z
+end
+
+################################################################################
+#
+#  Modular composition
+#
+################################################################################
+
+function compose_mod(x::fmpz_mod_poly, y::fmpz_mod_poly, z::fmpz_mod_poly)
+  check_parent(x,y)
+  check_parent(x,z)
+  r = parent(x)()
+  ccall((:fmpz_mod_poly_compose_mod, libflint), Nothing,
+          (Ref{fmpz_mod_poly}, Ref{fmpz_mod_poly}, Ref{fmpz_mod_poly}, Ref{fmpz_mod_poly}), r, x, y, z)
+  return r
+end
+
+function compose_mod_precomp(x::fmpz_mod_poly, A::fmpz_mat, z::fmpz_mod_poly, zinv::fmpz_mod_poly)
+  r = parent(x)()
+  ccall((:fmpz_mod_poly_compose_mod_brent_kung_precomp_preinv, libflint), Nothing,
+    (Ref{fmpz_mod_poly}, Ref{fmpz_mod_poly}, Ref{fmpz_mat}, Ref{fmpz_mod_poly}, Ref{fmpz_mod_poly}), r, x, A, z, zinv)
+  return r
+end
+
+function _inv_compose_mod(z::fmpz_mod_poly)
+  r = reverse(z)
+  ccall((:fmpz_mod_poly_inv_series_newton, libflint), Nothing,
+      (Ref{fmpz_mod_poly}, Ref{fmpz_mod_poly}, Int), r, r, length(r))
+  return r
+end
+
+function precomp_compose_mod(y::fmpz_mod_poly, z::fmpz_mod_poly)
+  zinv = _inv_compose_mod(z)
+  nr = Int(root(degree(z), 2)) + 1
+  A = zero_matrix(FlintZZ, nr, degree(z))
+  ccall((:fmpz_mod_poly_precompute_matrix, libflint), Nothing,
+          (Ref{fmpz_mat}, Ref{fmpz_mod_poly}, Ref{fmpz_mod_poly}, Ref{fmpz_mod_poly}), A, y, z, zinv)
+  return A, zinv
+end
+
+function my_compose_mod(x::fmpz_mod_poly, y::fmpz_mod_poly, z::fmpz_mod_poly)
+  if degree(x) < degree(z)
+    return compose_mod(x, y, z)
+  end
+  x1 = shift_right(x, degree(z))
+  r1 = mulmod(my_compose_mod(x1, y, z), powmod(y, degree(z), z), z)
+  x2 = truncate(x, degree(z))
+  return r1 + compose_mod(x2, y, z)
+end
+
+function my_compose_mod_precomp(x::fmpz_mod_poly, A::fmpz_mat, z::fmpz_mod_poly, zinv::fmpz_mod_poly)
+  
+  if degree(x) < degree(z)
+    res1 = compose_mod_precomp(x, A, z, zinv)
+    return res1
+  end
+ 
+  #First, I compute x^degree(z) mod z
+  #The rows of A contain the powers up to sqrt(degree(z))...
+  Rx = parent(x)
+  ind = nrows(A)
+  q, r = divrem(degree(z), ind-1)
+  yind = Rx(Nemo.fmpz_mod[base_ring(Rx)(A[ind, j]) for j = 1:ncols(A)])
+  yind = powmod(yind, q, z)
+  if !iszero(r)
+    ydiff = Rx(Nemo.fmpz_mod[base_ring(Rx)(A[r+1, j]) for j = 1:ncols(A)])
+    yind = mulmod(yind, ydiff, z)
+  end
+  x1 = shift_right(x, degree(z))
+  res = mulmod(compose_mod_precomp(x1, A, z, zinv), yind, z) 
+  x2 = truncate(x, degree(z))
+  add!(res, res, compose_mod_precomp(x2, A, z, zinv))
+  return res
 end
 
 ################################################################################
@@ -307,6 +384,19 @@ function factor_mod_pk(H::HenselCtx, k::Int)
     continue_lift(H, k)
   end
   return factor_to_dict(H.LF)
+end
+
+factor_mod_pk(H::HenselCtx) = factor_to_dict(H.LF)
+factor_mod_pk(::Type{Array}, H::HenselCtx) = factor_to_array(H.LF)
+length(H::HenselCtx) = H.LF._num
+
+function degrees(H::HenselCtx)
+  d = Int[]
+  a = H.LF
+  for i=1:a._num
+    push!(d, Int(ccall((:fmpz_poly_degree, libflint), Clong, (Ref{fmpz_poly_raw}, ), a.poly+(i-1)*sizeof(fmpz_poly_raw))))
+  end
+  return d
 end
 
 function factor_mod_pk(::Type{Array}, H::HenselCtx, k::Int)
@@ -730,7 +820,7 @@ function power_sums_to_polynomial(P::Array{T, 1}) where T <: FieldElem
     end
     n = length(la)-1
     while n > 0
-      set_prec!(r, la[n])
+      set_precision!(r, la[n])
       rr = derivative(r)*inv(r)
       md = -(rr+s)
       m = S([R(1)], 1, la[n], 0)+integral(md)
@@ -746,7 +836,7 @@ function power_sums_to_polynomial(P::Array{T, 1}) where T <: FieldElem
 end
 
 function power_sums_to_polynomial(P::Array{T, 1}) where T
-  E = T[1]
+  E = T[one(parent(P[1]))]
   R = parent(P[1])
   last_non_zero = 0
   for k=1:length(P)
@@ -760,6 +850,10 @@ function power_sums_to_polynomial(P::Array{T, 1}) where T
   for i=1:div(d, 2)
     E[i], E[d-i+1] = (-1)^(d-i)*E[d-i+1], (-1)^(i-1)*E[i]
   end
+  if isodd(d)
+    E[div(d+1, 2)] *= (-1)^div(d, 2)
+  end
+  
   return PolynomialRing(R, cached = false)[1](E)
 end
 
@@ -973,8 +1067,39 @@ function number_real_roots(f::fmpz_poly)
   return _number_changes(evminf)-_number_changes(evinf)
 end
 
+function sturm_sequence(f::PolyElem{<:FieldElem})
+  g = f
+  h = derivative(g)
+  #h = _divide_by_content(derivative(g))
+  seq = typeof(f)[g,h]
+  while true
+    #r = _divide_by_content(pseudorem(g,h))
+    r = rem(g, h)
+    if r != 0
+      push!(seq, -r)
+      g, h = h, -r
+    else 
+      break
+    end
+  end
+  return seq
+
+end
+
+function number_real_roots(f::PolyElem{nf_elem}, P::InfPlc; sturm_sequence = PolyElem{nf_elem}[])
+  if length(sturm_sequence) == 0
+    s = Hecke.sturm_sequence(f)
+  else
+    s = sturm_sequence
+  end
+
+  evinf = Int[sign(coeff(x, degree(x)), P) for x in s]
+  evminf = Int[((-1)^degree(s[i]))*evinf[i] for i in 1:length(s)]
+  return _number_changes(evminf) - _number_changes(evinf)
+end
+
 function number_positive_roots(f::PolyElem{nf_elem}, P::InfPlc)
-  fsq = squarefree_factorization(f)
+  fsq = factor_squarefree(f)
   p = 0
   for (g, e) in fsq
     p = p + _number_positive_roots_sqf(g, P) * e
@@ -1010,7 +1135,7 @@ end
 ################################################################################
 
 # This is Musser's algorithm
-function squarefree_factorization(f::PolyElem)
+function factor_squarefree(f::PolyElem)
   @assert iszero(characteristic(base_ring(f)))
   c = lead(f)
   f = divexact(f, c)
@@ -1018,7 +1143,7 @@ function squarefree_factorization(f::PolyElem)
   di = gcd(f, derivative(f))
   if isone(di)
     res[f] = 1
-    return res
+    return Fac(one(parent(f)), res)
   end
   ei = divexact(f, di)
   i = 1
@@ -1054,6 +1179,24 @@ function factor_equal_deg(x::gfp_poly, d::Int)
   return res
 end
 
+function factor_equal_deg(x::gfp_fmpz_poly, d::Int)
+  if degree(x) == d
+    return gfp_fmpz_poly[x]
+  end
+  fac = Nemo.gfp_fmpz_poly_factor(x.mod_n)
+  ccall((:fmpz_mod_poly_factor_equal_deg, libflint), UInt,
+          (Ref{Nemo.gfp_fmpz_poly_factor}, Ref{gfp_fmpz_poly}, Int),
+          fac, x, d)
+  res = Vector{gfp_fmpz_poly}(undef, fac.num)
+  for i in 1:fac.num
+    f = parent(x)()
+    ccall((:fmpz_mod_poly_factor_get_nmod_poly, libflint), Nothing,
+            (Ref{gfp_fmpz_poly}, Ref{Nemo.gfp_fmpz_poly_factor}, Int), f, fac, i-1)
+    res[i] = f
+  end
+  return res
+end
+                     
 ################################################################################
 #
 #  Squarefree factorization for fmpq_poly
@@ -1357,4 +1500,144 @@ end
 
 function polynomial(R::Ring, A::Array{T, 1}) where {T <: Rational}
   return polynomial(map(R, A))
+end
+
+                                                                                           
+################################################################################
+#
+#  Prefactorization discriminant relative case
+#
+################################################################################
+
+
+function gcd_with_failure(a::Generic.Poly{T}, b::Generic.Poly{T}) where T
+  if length(a) > length(b)
+    (a, b) = (b, a)
+  end
+  if !isinvertible(lead(a))[1]
+    return lead(a), a
+  end
+  if !isinvertible(lead(b))[1]
+    return lead(b), a
+  end
+  while !iszero(a)
+    (a, b) = (mod(b, a), a)
+    if !iszero(a) && !isinvertible(lead(a))[1]
+      return lead(a), a
+    end
+  end
+  d = lead(b)
+  return one(parent(d)), divexact(b, d)
+end
+
+function mod(f::AbstractAlgebra.PolyElem{T}, g::AbstractAlgebra.PolyElem{T}) where {T <: RingElem}
+  check_parent(f, g)
+  if length(g) == 0
+    throw(DivideError())
+  end
+  if length(f) >= length(g)
+    f = deepcopy(f)
+    b = lead(g)
+    g = inv(b)*g
+    c = base_ring(f)()
+    while length(f) >= length(g)
+      l = -lead(f)
+      for i = 1:length(g) - 1
+        c = mul!(c, coeff(g, i - 1), l)
+        u = coeff(f, i + length(f) - length(g) - 1)
+        u = addeq!(u, c)
+        f = setcoeff!(f, i + length(f) - length(g) - 1, u)
+      end
+      set_length!(f, normalise(f, length(f) - 1))
+    end
+  end
+  return f
+end
+
+function Base.divrem(f::AbstractAlgebra.PolyElem{T}, g::AbstractAlgebra.PolyElem{T}) where {T <: RingElem}
+  check_parent(f, g)
+  if length(g) == 0
+     throw(DivideError())
+  end
+  if length(f) < length(g)
+     return zero(parent(f)), f
+  end
+  f = deepcopy(f)
+  binv = inv(lead(g))
+  g = divexact(g, lead(g))
+  qlen = length(f) - length(g) + 1
+  q = parent(f)()
+  fit!(q, qlen)
+  c = base_ring(f)()
+  while length(f) >= length(g)
+     q1 = lead(f)
+     l = -q1
+     q = setcoeff!(q, length(f) - length(g), q1*binv)
+     for i = 1:length(g) - 1
+        c = mul!(c, coeff(g, i - 1), l)
+        u = coeff(f, i + length(f) - length(g) - 1)
+        u = addeq!(u, c)
+        f = setcoeff!(f, i + length(f) - length(g) - 1, u)
+     end
+     set_length!(f, normalise(f, length(f) - 1))
+  end
+  return q, f
+end
+
+
+@doc Markdown.doc"""
+    fmpz_poly_read!(a::fmpz_poly, b::String) -> fmpz_poly
+Use flint's native read function to obtain the polynomial in the file with name `b`.    
+"""
+function fmpz_poly_read!(a::fmpz_poly, b::String)
+  f = ccall((:fopen, :libc), Ptr{Nothing}, (Cstring, Cstring), b, "r")
+  ccall((:fmpz_poly_fread, libflint), Nothing, (Ptr{Nothing}, Ref{fmpz}), f, a)
+  ccall((:fclose), Nothing, (Ptr{Nothing}, ), f)
+  return a
+end
+
+@doc Markdown.doc"""
+    mahler_measure_bound(f::fmpz_poly) -> fmpz
+ 
+A upper bound on the Mahler measure of `f`.
+The Mahler measure is the product over the roots of absolute value at least `1`.
+"""
+function mahler_measure_bound(f::fmpz_poly)
+  return root(sum([coeff(f, i)^2 for i=0:degree(f)])-1, 2)+1
+end
+
+function prod1(a::Vector{T}; inplace::Bool = false) where T <: PolyElem
+  if length(a) == 1
+    return deepcopy(a[1])
+  end
+  if length(a) == 2
+    if inplace
+      r = mul!(a[1], a[1], a[2])
+      return r
+    else
+      return a[1]*a[2]
+    end
+  end
+  nl = div(length(a), 2)
+  if isodd(length(a))
+    nl += 1
+  end
+  anew = Vector{T}(undef, nl)
+  for i = 1:length(anew)-1
+    if inplace
+      anew[i] = mul!(a[2*i-1], a[2*i-1], a[2*i])
+    else
+      anew[i] = a[2*i-1]*a[2*i]
+    end
+  end
+  if isodd(length(a))
+    anew[end] = a[end]
+  else
+    if inplace
+      anew[end] = mul!(a[end-1], a[end-1], a[end])
+    else
+      anew[end] = a[end]*a[end-1]
+    end
+  end 
+  return prod1(anew, inplace = true)
 end
