@@ -472,6 +472,15 @@ function infinite_places_uniformizers(K::AnticNumberField)
       auxr *= 2
       lc = conjugates(auxr, pr)
     end
+    for j = 1:length(p)
+      if j == i
+        continue
+      end
+      while !ispositive(reim(lc[j])[1] - 1)
+        auxr *= 2
+        lc = conjugates(auxr, pr)
+      end
+    end
     r[i] = auxr
   end
   D = Dict{InfPlc, nf_elem}()
@@ -508,7 +517,7 @@ function infinite_primes_map(O::NfOrd, p::Vector{InfPlc}, lying_in::NfOrdIdl)
 
   D = infinite_places_uniformizers(K)
 
-  S = abelian_group([2 for i = 1:length(p)])
+  S = abelian_group(Int[2 for i = 1:length(p)])
 
   local exp
   let S = S, D = D, p = p, O = O, lying_in = lying_in, K = K
@@ -529,7 +538,7 @@ function infinite_primes_map(O::NfOrd, p::Vector{InfPlc}, lying_in::NfOrdIdl)
   local log
   let S = S, D = D, p = p
     function log(B::T) where T <: Union{nf_elem, FacElem{nf_elem, AnticNumberField}}
-      emb = Hecke.signs(B, p)
+      emb = signs(B, p)
       res = zeros(Int, length(p))
       for i=1:length(p)
         if emb[p[i]] == -1
