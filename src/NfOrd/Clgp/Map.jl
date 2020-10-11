@@ -4,118 +4,6 @@
 
 export isprincipal
 
-################################################################################
-#
-#  Finding small representatives in the class of a factored ideal
-#
-################################################################################
-
-@doc Markdown.doc"""
-    reduce_ideal2(A::FacElem{NfOrdIdl}) -> NfOrdIdl, FacElem{nf_elem}
-Computes $B$ and $\alpha$ in factored form, such that $\alpha B = A$.
-"""
-function reduce_ideal2(I::FacElem{NfOrdIdl, NfOrdIdlSet})
-  @assert !isempty(I.fac)
-  O = order(first(keys(I.fac)))
-  K = nf(O)
-  fst = true
-  a = FacElem(Dict(K(1) => fmpz(1)))
-  A = ideal(O, 1)
-  for (k, v) = I.fac
-    @assert order(k) === O
-    if iszero(v)
-      continue
-    end
-    if fst
-      A, a = power_reduce2(k, v)
-      @hassert :PID_Test 1 (v>0 ? k^Int(v) : inv(k)^Int(-v)) == A*evaluate(a)
-      fst = false
-    else
-      B, b = power_reduce2(k, v)
-      @hassert :PID_Test (v>0 ? k^Int(v) : inv(k)^Int(-v)) == B*evaluate(b)
-      A = A*B
-      mul!(a, a, b)
-      #a = a*b
-      if norm(A) > abs(discriminant(O))
-        A, c = reduce_ideal2(A)
-        add_to_key!(a.fac, K(c), fmpz(-1))
-        #a = a*FacElem(Dict(K(c) => fmpz(-1)))
-      end
-    end
-  end
-  @hassert :PID_Test 1 A*evaluate(a) == evaluate(I)
-  return A, a
-end
-
-################################################################################
-#
-#  Finding small representatives in the class of an ideal power
-#
-################################################################################
-
-# The bound should be sqrt(disc) (something from LLL)
-@doc Markdown.doc"""
-    power_reduce2(A::NfOrdIdl, e::fmpz) -> NfOrdIdl, FacElem{nf_elem}
-Computes $B$ and $\alpha$ in factored form, such that $\alpha B = A^e$
-$B$ has small norm.
-"""
-function power_reduce2(A::NfOrdIdl, e::fmpz)
-  A_orig = deepcopy(A)
-  e_orig = e
-
-  O = order(A)
-  K= nf(O)
-  if norm(A) > abs(discriminant(O))
-    A, a = reduce_ideal2(A)
-    @hassert :PID_Test 1 a*A_orig == A
-    # A_old * inv(a) = A_new
-    #so a^e A_old^e = A_new^e
-    al = FacElem(Dict(a=>-e))
-  else
-    al = FacElem(Dict(K(1) => fmpz(1)))
-  end
-
-  #we have A_orig^e = (A*a)^e = A^e*a^e = A^e*al and A is now small
-
-  if e < 0
-    B = inv(A)
-    A = numerator(B)
-    #al *= FacElem(Dict(K(denominator(B)) => fmpz(e)))
-    add_to_key!(al.fac, K(denominator(B)), fmpz(e))
-    e = -e
-  end
-  # A^e = A^(e/2)^2 A or A^(e/2)^2
-  # al * A^old^(e/2) = A_new
-  if e>1
-    C, cl = power_reduce2(A, div(e, 2))
-    @hassert :PID_Test 1 C*evaluate(cl) == A^Int(div(e, 2))
-
-    C2 = C^2
-    mul!(al, al, cl^2)
-    #al = al*cl^2
-    if norm(C2) > abs(discriminant(O))
-      C2, a = reduce_ideal2(C2)
-      add_to_key!(al.fac, inv(a), 1)
-      #mul!(al, al, inv(a))# al *= inv(a)
-    end
-
-    if isodd(e)
-      A = C2*A
-      if norm(A) > abs(discriminant(O))
-        A, a = reduce_ideal2(A)
-        add_to_key!(al.fac, inv(a), 1)
-        #mul!(al, al, inv(a)) #al *= inv(a)
-      end
-    else
-      A = C2
-    end
-    return A, al
-  else
-    @assert e==1
-    return A, al
-  end
-end
-
 # TODO: Agree on a name for power_class vs power_reduce2
 @doc Markdown.doc"""
     power_class(A::NfOrdIdl, e::fmpz) -> NfOrdIdl
@@ -145,7 +33,7 @@ function power_class(A::NfOrdIdl, e::fmpz)
     B *= A
   end
   if norm(B) > root(abs(discriminant(order(A))), 2)
-    B = reduce_ideal(B)
+    B, = reduce_ideal(B)
   end
   return B
 end
@@ -168,7 +56,7 @@ function power_product_class(A::Array{NfOrdIdl, 1}, e::Array{fmpz, 1})
     if e[i] != 0
       B *= power_class(A[i], e[i])
       if norm(B) > root(abs(discriminant(order(B))), 2)
-        B = reduce_ideal(B)
+        B, = reduce_ideal(B)
       end
     end
     i += 1
@@ -194,7 +82,7 @@ function class_group_disc_log(r::SRow{fmpz}, c::ClassGrpCtx)
     s, T, C, Ti = c.dl_data
   end
   if c.h==1
-    return C(fmpz[1])
+    return C[0]
   end
 #  println("start with $r")
   while length(r.pos)>0 && r.pos[1] < s
@@ -210,7 +98,7 @@ function class_group_disc_log(r::SRow{fmpz}, c::ClassGrpCtx)
   for (p,v) = r
     rr[1, p-s+1] = v
   end
-  d = C(sub(rr*T, 1:1, nrows(T)-length(C.snf)+1:nrows(T)))
+  d = GrpAbFinGenElem(C, view(rr*T, 1:1, nrows(T)-length(C.snf)+1:nrows(T)))
 #  println(d)
   return d
 end
@@ -235,8 +123,12 @@ function class_group_ideal_relation(I::NfOrdIdl, c::ClassGrpCtx)
   end
   # ok, we have to work
 
-  _I, b = reduce_ideal2(I) # do the obvious reduction to an ideal of bounded norm
+  I_start = I
+  @vprint :ClassGroup 1 "Ideal $I \n"
+  @vprint :ClassGroup 1 "Reducing ideal via LLL \n"
+  _I, b = reduce_ideal(I) # do the obvious reduction to an ideal of bounded norm
   @hassert :PID_Test 1 b*I == _I
+  @vprint :ClassGroup 1 "New ideal: $_I\n"
   I = _I
   n = norm(I)
   if issmooth(c.FB.fb_int, n)
@@ -247,6 +139,7 @@ function class_group_ideal_relation(I::NfOrdIdl, c::ClassGrpCtx)
   end
   #really annoying, but at least we have a small(ish) ideal now
   #println("have to work")
+    
   E = class_group_small_lll_elements_relation_start(c, I)
   iI = inv(I)
   if isdefined(c, :randomClsEnv)
@@ -259,12 +152,14 @@ function class_group_ideal_relation(I::NfOrdIdl, c::ClassGrpCtx)
   last_j = I
   cnt = 0
   while true
-
+    @vprint :ClassGroup 1 "Attempt $cnt \n"
     if E.cnt > max(2*c.expect, 0)
 #      println("more random")
       use_rand = true
+      @vprint :ClassGroup 1 "New random \n"
       last_j = random_get(J, reduce = false)
-      E = class_group_small_lll_elements_relation_start(c, I*last_j)
+      @vprint :ClassGroup 1 "Using $last_j \n"
+      E = class_group_small_lll_elements_relation_start(c, I*last_j) 
       iI = inv(E.A)
     end
 
@@ -275,8 +170,10 @@ function class_group_ideal_relation(I::NfOrdIdl, c::ClassGrpCtx)
     if na === nothing #basically means elt is too large,
                       # exhausted randomness, so redo it.
       use_rand = true
+      @vprint :ClassGroup 1 "New random \n"
       last_j = random_get(J, reduce = false)
-      E = class_group_small_lll_elements_relation_start(c, I*last_j)
+      @vprint :ClassGroup 1 "Using $last_j \n"
+      E = class_group_small_lll_elements_relation_start(c, I*last_j) 
       iI = inv(E.A)
       continue
     end
@@ -299,13 +196,17 @@ function class_group_ideal_relation(I::NfOrdIdl, c::ClassGrpCtx)
         scale_row!(r, fmpz(-1))
       end
 #      println("used $cnt attempts")
+      res1 = b//a
       if use_rand
         fl, s = _factor!(c.FB, last_j)
         @assert fl
-        return b//a, r-s
+        res2 =  r-s
+        
       else
-        return b//a, r
+        res2 = r
       end
+      @hassert :ClassGroup 1 iszero(res2) || simplify(prod([fractional_ideal(c.FB.ideals[p])^Int(v) for (p,v) = res2])) == simplify(res1*I_start)
+      return res1, res2
     end
   end
 end
@@ -363,7 +264,7 @@ function class_group(c::ClassGrpCtx, O::NfOrd = order(c); redo::Bool = false)
   r = MapClassGrp()
 
   local disclog
-  let c = c
+  let c = c, C = C
     function disclog(x::NfOrdIdl)
       if x.is_principal == 1
         return id(C)
@@ -414,7 +315,7 @@ function class_group_grp(c::ClassGrpCtx; redo::Bool = false)
 
   p = findall(x->S[x,x]>1, 1:ncols(S))
 
-  C = abelian_group([S[x, x] for x in p])
+  C = abelian_group(fmpz[S[x, x] for x in p])
   c.dl_data = (s, T, C)
   return C
 end
@@ -427,7 +328,7 @@ Tests if $I$ is principal and returns $(\mathtt{true}, \alpha)$ if $A =
 The generator will be in factored form.
 """
 function isprincipal_fac_elem(I::FacElem{NfOrdIdl, NfOrdIdlSet})
-  J, a = reduce_ideal2(I)
+  J, a = reduce_ideal(I)
   @hassert :PID_Test 1 evaluate(a)*J == evaluate(I)
   fl, x = isprincipal_fac_elem(J)
   @hassert :PID_Test 1 ideal(order(J), evaluate(x)) == J
@@ -453,7 +354,10 @@ end
 For a principal ideal $I$ in factored form, find a generator in factored form.
 """
 function principal_generator_fac_elem(I::FacElem{NfOrdIdl, NfOrdIdlSet})
-  J, a= reduce_ideal2(I)
+  if isempty(I.fac)
+    return FacElem(one(nf(order(base_ring(I)))))
+  end
+  J, a= reduce_ideal(I)
   #@hassert :PID_Test 1 evaluate(a)*J == evaluate(I)
   x = Hecke.principal_generator_fac_elem(J)
   #@hassert :PID_Test 1 ideal(order(J), evaluate(x)) == J
@@ -469,16 +373,16 @@ function principal_generator(A::NfOrdIdl)
   O = order(A)
   if ismaximal(O)
     fl, e = isprincipal_fac_elem(A)
-  else
-    fl, e = isprincipal_non_maximal(A)
-  end
   if !fl
-    error("Ideal is not principal")
-  end
-  if ismaximal(O)
+      error("Ideal is not principal")
+    end
     return O(evaluate(e))
   else
-    return e
+    fl, e1 = isprincipal_non_maximal(A)
+    if !fl
+      error("Ideal is not principal")
+    end
+    return e1
   end
 end
 
@@ -500,6 +404,7 @@ function isprincipal_fac_elem(A::NfOrdIdl)
     end
   end
   O = order(A)
+  @assert ismaximal_known_and_maximal(O)
   if A.is_principal == 2
     return false, FacElem(one(nf(O)))
   end
@@ -672,7 +577,7 @@ function reduce_mod_units(a::Array{FacElem{nf_elem, AnticNumberField}, 1}, U)
     bd = maximum(sqrt(sum((B[i,j]::arb)^2 for j=1:ncols(B)))::arb for i=1:nrows(B))
     bd = bd/root(U.tentative_regulator, length(U.units))
     if isfinite(bd)
-      s = ccall((:arb_bits, :libarb), Int, (Ref{arb}, ), bd)
+      s = ccall((:arb_bits, libarb), Int, (Ref{arb}, ), bd)
       prec = max(s, prec)
       prec = 1<<nbits(prec)
     else
@@ -727,279 +632,6 @@ function reduce_mod_units(a::Array{FacElem{nf_elem, AnticNumberField}, 1}, U)
   end
 end
 
-
-mutable struct MapSUnitModUnitGrpFacElem{T} <: Map{T, FacElemMon{AnticNumberField}, HeckeMap, MapSUnitModUnitGrpFacElem}
-  header::MapHeader
-  idl::Array{NfOrdIdl, 1}
-  valuations::Vector{SRow{fmpz}}
-
-  function MapSUnitModUnitGrpFacElem{T}() where {T}
-    return new{T}()
-  end
-end
-
-function show(io::IO, mC::MapSUnitModUnitGrpFacElem)
-  @show_name(io, mC)
-  io = IOContext(io, :compact => true)
-  println(io, "SUnits (in factored form) mod Units map of ")
-  show(io, codomain(mC))
-  println(io, "for $(mC.idl)")
-end
-
-#Plan:
-# find x_i s.th. I[i]*x[i] is FB-smooth
-#  find T sth. T R = (I[i]*x[i])^d
-#  saturate T|-d??
-
-@doc Markdown.doc"""
-    sunit_mod_units_group_fac_elem(I::Array{NfOrdIdl, 1}) -> GrpAb, Map
-For an array $I$ of (coprime prime) ideals, find the $S$-unit group defined
-by $I$, i.e. the group of non-zero field elements which are only divisible
-by ideals in $I$ modulo the units of the field.
-The map will return elements in factored form.
-"""
-function sunit_mod_units_group_fac_elem(I::Array{NfOrdIdl, 1})
-  #deal with trivial case somehow!!!
-  @assert length(I) > 0
-  O = order(I[1])
-  I_in = I
-
-  @vprint :ClassGroup 1 "calling sunit_mod_units_group_fac_elem with $(length(I)) ideals\n"
-
-  c = _get_ClassGrpCtx_of_order(O, false)
-  if c == nothing
-    L = lll(maximal_order(nf(O)))
-    class_group(L)
-    c = _get_ClassGrpCtx_of_order(L)
-    I = map(IdealSet(L), I)
-  end
-  module_trafo_assure(c.M)
-  H = c.M.basis
-  T = c.M.trafo
-
-  U = Array{FacElem{nf_elem, Nemo.AnticNumberField}, 1}()
-
-  X = Array{nf_elem, 1}()
-
-  rr = sparse_matrix(FlintZZ)
-
-  # To track the valuation of the S-units
-  vals_of_rels = SRow{fmpz}[]
-
-  @vprint :ClassGroup 1 "finding relations ...\n"
-  @vtime :ClassGroup 1 for (i, A) = enumerate(I)
-    @vprint :ClassGroup 2 "doin' $A\n"
-    @vtime :ClassGroup 2 x, r = class_group_ideal_relation(A, c)
-# TODO: write == for Idl and FracIdl
-#    @assert prod([c.FB.ideals[p]^Int(v) for (p,v) = r]) == x*A
-    push!(X, x)
-    push!(rr, r)
-    v = SRow(FlintZZ)
-    # We only track the valuation of the prime ideals in S.
-    # Even though S might intersect the class group factor base
-    # non-trivially, this should still be correct.
-    push!(vals_of_rels, sparse_row(FlintZZ, [(i, fmpz(-1))], sort = false))
-  end
-
-  @vprint :ClassGroup 1 "... done\n"
-
-  @vprint :ClassGroup 1 "solving...\n"
-  @vtime :ClassGroup 1 R, d = solve_ut(H, rr)
-  Rd = hcat(d*identity_matrix(SMat, FlintZZ, nrows(R)), fmpz(-1)*R)
-  @vprint :ClassGroup 1 ".. done, now saturating ...\n"
-  @vtime :ClassGroup 1 S = hnf(saturate(Rd))
-  @vprint :ClassGroup 1 " done\n"
-  S1 = sub(S, 1:nrows(S), 1:nrows(S))
-  S2 = sub(S, 1:nrows(S), (nrows(S) + 1):ncols(S))
-  @assert nrows(S1) == nrows(S2) && nrows(S1) == nrows(S)
-
-  g = vcat(c.R_gen, c.R_rel)
-
-  valuations = SRow{fmpz}[]
-
-  for s = 1:S.r
-    rs = zeros(fmpz, c.M.bas_gens.r + c.M.rel_gens.r)
-    for (p, v) = S2[s]
-      rs[p] = v
-    end
-
-    for i in length(T):-1:1
-      apply_right!(rs, T[i])
-    end
-
-    _val_vec = sparse_row(FlintZZ)
-
-    e = FacElem(g, rs)
-    for (p, v) = S1[s]
-      _val_vec = _val_vec + v * vals_of_rels[p]
-      if haskey(e.fac, X[p])
-        e.fac[X[p]] += v
-      else
-        e.fac[X[p]] = v
-      end
-    end
-
-    _val_vec = -_val_vec
-    inv!(e)
-
-    push!(valuations, _val_vec)
-    push!(U, e)  # I don't understand the inv
-  end
-  @vprint :ClassGroup 1 "reducing mod units\n"
-  @vtime :ClassGroup 1 U = reduce_mod_units(U, _get_UnitGrpCtx_of_order(order(c)))
-  @vprint :ClassGroup 1 "Done!\n"
-
-  #for j in 1:length(I)
-  #  @assert (O(evaluate(U[j]))*O) == prod(I[i]^Int(valuations[j][i]) for i in 1:length(I))
-  #end
-
-  C = abelian_group(fmpz[0 for i=U])
-  r = MapSUnitModUnitGrpFacElem{typeof(C)}()
-  r.idl = I_in
-
-  function exp(a::GrpAbFinGenElem)
-    b = U[1]^a.coeff[1, 1]
-    for i = 2:length(U)
-      if iszero(a.coeff[1, i])
-        continue
-      end
-      mul!(b, b, U[i]^a.coeff[1, i])
-    end
-    return b
-  end
-
-  function log(a::FacElem{nf_elem, AnticNumberField})
-    b = SRow{fmpz}()
-    for i=1:length(I)
-      v = valuation(a, I[i])
-      if v != 0
-        push!(b.pos, i)
-        push!(b.values, v)
-      end
-    end
-    s, d = solve_ut(S1, b)
-    @assert d == 1  # this would indicate element is not in group...
-    c = zeros(fmpz, length(I))
-    for (p,v) = s
-      c[p] = v
-    end
-    return C(c)
-  end
-
-  function log(a::nf_elem)
-    return log(FacElem([a], fmpz[1]))
-  end
-
-  r.header = MapHeader(C, FacElemMon(nf(O)), exp, log)
-  r.valuations = valuations
-
-  return C, r
-end
-
-mutable struct MapSUnitGrpFacElem{T} <: Map{T, FacElemMon{AnticNumberField}, HeckeMap, MapSUnitGrpFacElem}
-  header::MapHeader
-  idl::Array{NfOrdIdl, 1}
-  isquotientmap::Int
-
-  function MapSUnitGrpFacElem{T}() where {T}
-    z = new{T}()
-    z.isquotientmap = -1
-    return z
-  end
-end
-
-function show(io::IO, mC::MapSUnitGrpFacElem)
-  @show_name(io, mC)
-  print(io, "SUnits (in factored form) map of ")
-  show(IOContext(io, :compact => true), codomain(mC))
-  println(io, " for S of length ", length(mC.idl))
-  if mC.isquotientmap != -1
-    println(io, " This is the quotient modulo $(mC.isquotientmap)")
-  end
-end
-
-@doc Markdown.doc"""
-    sunit_group_fac_elem(I::Array{NfOrdIdl, 1}) -> GrpAb, Map
-For an array $I$ of (coprime prime) ideals, find the $S$-unit group defined
-by $I$, i.e. the group of non-zero field elements which are only divisible
-by ideals in $I$.
-The map will return elements in factored form.
-"""
-function sunit_group_fac_elem(I::Array{NfOrdIdl, 1})
-  O = order(I[1])
-  S, mS = sunit_mod_units_group_fac_elem(I)
-  U, mU = unit_group_fac_elem(O)
-
-  G = abelian_group(vcat(U.snf, S.snf))
-
-  r = MapSUnitGrpFacElem{typeof(G)}()
-  r.idl = I
-
-  function exp(a::GrpAbFinGenElem)
-    return image(mU, U(sub(a.coeff, 1:1, 1:length(U.snf))))*
-           image(mS, S(sub(a.coeff, 1:1, length(U.snf)+1:length(G.snf))))
-
-  end
-
-  function log(a::FacElem{nf_elem, AnticNumberField})
-    a1 = preimage(mS, a)
-    a2 = a*inv(image(mS, a1))
-#    @assert isunit(O(evaluate(a2)))
-    a3 = preimage(mU, a2)
-    return G(vcat([a3.coeff[1,i] for i=1:ncols(a3.coeff)], [a1.coeff[1,i] for i=1:ncols(a1.coeff)]))
-  end
-
-  function log(a::nf_elem)
-    return log(FacElem([a], fmpz[1]))
-  end
-
-  r.header = MapHeader(G, FacElemMon(nf(O)), exp, log)
-
-  return G, r
-end
-
-mutable struct MapSUnitGrp{T} <: Map{T, AnticNumberField, HeckeMap, MapSUnitGrp}
-  header::MapHeader
-  idl::Array{NfOrdIdl, 1}
-
-  function MapSUnitGrp{T}() where {T}
-    return new{T}()
-  end
-end
-
-function show(io::IO, mC::MapSUnitGrp)
-  @show_name(io, mC)
-  print(io, "SUnits  map of ")
-  show(IOContext(io, :compact => true), codomain(mC))
-  println(io, " for $(mC.idl)")
-end
-
-@doc Markdown.doc"""
-    sunit_group(I::Array{NfOrdIdl, 1}) -> GrpAb, Map
-For an array $I$ of (coprime prime) ideals, find the $S$-unit group defined
-by $I$, i.e. the group of non-zero field elements which are only divisible
-by ideals in $I$.
-"""
-function sunit_group(I::Array{NfOrdIdl, 1})
-  O = order(I[1])
-  G, mG = sunit_group_fac_elem(I)
-
-  r = MapSUnitGrp{typeof(G)}()
-  r.idl = I
-
-  function exp(a::GrpAbFinGenElem)
-    return evaluate(image(mG, a))
-  end
-
-  function log(a::nf_elem)
-    return preimage(mG, FacElem([a], fmpz[1]))
-  end
-
-  r.header = MapHeader(G, nf(O), exp, log)
-
-  return G, r
-end
-
 ################################################################################
 #
 #  Representative of ideal classes coprime to the modulus
@@ -1024,7 +656,7 @@ function find_coprime_representatives(mC::MapClassGrp, m::NfOrdIdl, lp::Dict{NfO
     ppp *= (1 - 1/Float64(norm(p)))
   end
 
-  prob = ppp > 0.1
+  prob = ppp > 0.1 && degree(K) < 10
   for i = 1:ngens(C)
     @assert length(mC.princ_gens[i][1].fac) == 1
     a = first(keys(mC.princ_gens[i][1].fac))
