@@ -33,6 +33,7 @@ end
 function remove(z::T, p::T) where T <: Integer
   z == 0 && return (0, z)
   v = 0
+  @assert p > 1
   while mod(z, p) == 0
     z = div(z, p)
     v += 1
@@ -50,6 +51,7 @@ end
 function valuation(z::T, p::T) where T <: Integer
   z == 0 && return 0
   v = 0
+  @assert p > 1
   while mod(z, p) == 0
     z = div(z, p)
     v += 1
@@ -114,6 +116,48 @@ function (a::FlintIntegerRing)(b::fmpq)
   return deepcopy(numerator(b))
 end
 
+function ^(a::fmpz, k::fmpz)
+  if a == 0
+    if k == 0
+      return fmpz(1)
+    end
+    return fmpz(0)
+  end
+ 
+  if a == 1
+    return fmpz(1)
+  end
+  if a == -1
+    if isodd(k)
+      return fmpz(-1)
+    else
+      return fmpz(1)
+    end
+  end
+  return a^Int(k)
+end
+
+function ^(a::fmpq, k::fmpz)
+  if a == 0
+    if k == 0
+      return fmpq(1)
+    end
+    return fmpq(0)
+  end
+ 
+  if a == 1
+    return fmpq(1)
+  end
+  if a == -1
+    if isodd(k)
+      return fmpq(-1)
+    else
+      return fmpq(1)
+    end
+  end
+  return a^Int(k)
+end
+
 function //(a::fmpq, b::fmpz)
   return a//fmpq(b)
 end
@@ -149,27 +193,6 @@ end
 
 log(a::fmpz) = log(BigInt(a))
 log(a::fmpq) = log(numerator(a)) - log(denominator(a))
-
-function round(::Type{fmpz}, a::fmpq)
-  s = sign(numerator(a))
-  n = abs(numerator(a))
-  d = denominator(a)
-  if isone(d)
-    return numerator(a)
-  end
-  q = div(n, d)
-  r = mod(n, d)
-  if r >= div(d, 2)
-    return s*(q+1)
-  else
-    return s*q
-  end
-end
-
-function round(a::fmpq)
-  return round(fmpz, a)
-end
-
 
 function one(::Type{Nemo.fmpz})
   return fmpz(1)
@@ -444,12 +467,16 @@ end
 Tests if $a$ is an $n$-th power. Return `true` and the root if successful.
 """
 function ispower(a::fmpz, n::Int)
+   if a < 0 && iseven(n)
+    return false, a
+  end
   b = root(a, n)
   return b^n==a, b
 end
 
 function ispower(a::Integer, n::Int)
-  return ispower(fmpz(a), n)
+  fl, b = ispower(fmpz(a), n)
+  return fl, typeof(a)(b)
 end
 
 function ispower(a::fmpq, n::Int)
@@ -593,12 +620,12 @@ end
 #
 ################################################################################
 
-mutable struct MapSUnitGrpZFacElem{T} <: Map{T, FacElemMon{FlintRationalField}, HeckeMap, MapSUnitGrpZFacElem}
-  header::MapHeader
+mutable struct MapSUnitGrpZFacElem <: Map{GrpAbFinGen, FacElemMon{FlintRationalField}, HeckeMap, MapSUnitGrpZFacElem}
+  header::MapHeader{GrpAbFinGen, FacElemMon{FlintRationalField}}
   idl::Array{fmpz, 1}
 
-  function MapSUnitGrpZFacElem{T}() where {T}
-    return new{T}()
+  function MapSUnitGrpZFacElem()
+    return new()
   end
 end
 
@@ -606,12 +633,12 @@ function show(io::IO, mC::MapSUnitGrpZFacElem)
   println(io, "SUnits (in factored form) map of $(codomain(mC)) for $(mC.idl)")
 end
 
-mutable struct MapSUnitGrpZ{T} <: Map{T, FlintRationalField, HeckeMap, MapSUnitGrpZ}
-  header::MapHeader
+mutable struct MapSUnitGrpZ <: Map{GrpAbFinGen, FlintRationalField, HeckeMap, MapSUnitGrpZ}
+  header::MapHeader{GrpAbFinGen, FlintRationalField}
   idl::Array{fmpz, 1}
 
-  function MapSUnitGrpZ{T}() where {T}
-    return new{T}()
+  function MapSUnitGrpZ()
+    return new()
   end
 end
 
@@ -636,7 +663,7 @@ function sunit_group_fac_elem(S::Array{fmpz, 1})
   G = abelian_group(vcat([fmpz(2)], fmpz[0 for i=S]))
   S = vcat(fmpz[-1], S)
 
-  mp = MapSUnitGrpZFacElem{typeof(G)}()
+ mp = MapSUnitGrpZFacElem()
   mp.idl = S
 
   Sq = fmpq[x for x=S]
@@ -687,7 +714,7 @@ end
 function sunit_group(S::Array{fmpz, 1})
   u, mu = sunit_group_fac_elem(S)
 
-  mp = MapSUnitGrpZ{typeof(u)}()
+  mp = MapSUnitGrpZ()
   mp.idl = S
 
   function dexp(a::GrpAbFinGenElem)
@@ -887,6 +914,18 @@ end
 # otherwise
 #  need ecm to find small factors
 # then recurse...
+
+function _factors_trial_division(n::fmpz, np::Int = 10^5)
+  res, u = factor_trial_range(n, 0, np)
+  factors = fmpz[]
+  for (p, v) in res
+    push!(factors, p)
+    n = divexact(n, p^v)
+  end
+  return factors, n
+
+end
+
 
 function ceil(::Type{fmpz}, a::BigFloat)
   return fmpz(ceil(BigInt, a))
@@ -1294,7 +1333,7 @@ struct Limbs
   a::fmpz
   len::Int
   b::Ptr{UInt}
-  function Limbs(a::fmpz)
+  function Limbs(a::fmpz; MSW::Bool = true)
     if Nemo._fmpz_is_small(a)
       return new(a, 0, convert(Ptr{UInt}, 0))
     end
@@ -1302,7 +1341,11 @@ struct Limbs
     len = unsafe_load(z, 2)
     d = convert(Ptr{Ptr{UInt}}, unsigned(a.d) << 2) + 2*sizeof(Cint)
     p = unsafe_load(d)
-    return new(a, len, p)
+    if !MSW
+      new(a, -len, p)
+    else
+      new(a, len, p)
+    end
   end
 end
 
@@ -1311,18 +1354,24 @@ function show(io::IO, L::Limbs)
 end
 
 @inline function getindex(L::Limbs, i::Int)
-  @boundscheck @assert i <= L.len
   if L.len == 0
     return UInt(abs(L.a.d)) #error???
   end
+  @boundscheck @assert i <= abs(L.len)
   return unsafe_load(L.b, i)
 end
 
 function iterate(L::Limbs)
+  L.len < 0 && return L[1], 1
+
   return L[L.len], L.len
 end
 
 function iterate(L::Limbs, i::Int)
+  if L.len < 0
+    i > -L.len && return nothing
+    return L[i+1], i+1
+  end
   i == 0 && return nothing
   return L[i-1], i-1
 end
@@ -1520,4 +1569,98 @@ function issquarefree(n::Union{Int,fmpz})
     return false
   end
   return isone(maximum(values(factor(n).fac)))
+end
+
+################################################################################
+#
+#  Rounding and friends
+#
+################################################################################
+
+Base.floor(::Type{fmpz}, x::fmpq) = fdiv(numerator(x), denominator(x))
+
+Base.ceil(::Type{fmpz}, x::fmpq) = cdiv(numerator(x), denominator(x))
+
+Base.round(x::fmpq, ::RoundingMode{:Up}) = ceil(x)
+
+Base.round(::Type{fmpz}, x::fmpq, ::RoundingMode{:Up}) = ceil(fmpz, x)
+
+Base.round(x::fmpq, ::RoundingMode{:Down}) = floor(x)
+
+Base.round(::Type{fmpz}, x::fmpq, ::RoundingMode{:Down}) = floor(fmpz, x)
+
+function Base.round(x::fmpq, ::RoundingMode{:Nearest})
+  d = denominator(x)
+  n = numerator(x)
+  if d == 2
+    if mod(n, 4) == 1
+      if n > 0
+        return div(n, d)
+      else
+        return div(n, d) - 1
+      end
+    else
+      if n > 0
+        return div(n, d) + 1
+      else
+        return div(n, d)
+      end
+    end
+  end
+
+  return floor(x + 1//2)
+end
+
+Base.round(x::fmpq, ::RoundingMode{:NearestTiesAway}) = sign(x) * floor(abs(x) + 1//2)
+
+Base.round(::Type{fmpz}, x::fmpq, ::RoundingMode{:NearestTiesAway}) = sign(x) == 1 ? floor(fmpz, abs(x) + 1//2) : -floor(fmpz, abs(x) + 1//2)
+
+function Base.round(::Type{fmpz}, a::fmpq)
+  return round(fmpz, a, RoundNearestTiesAway)
+end
+
+function Base.round(a::fmpq)
+  return round(fmpz, a)
+end
+
+################################################################################
+#
+#  Squarefree part
+#
+################################################################################
+
+@doc Markdown.doc"""
+    squarefree_part(a::fmpz) -> fmpz
+
+Returns the squarefee part $b$ of $a$, which is the smallest (absolute value)
+integer $b$ such that $a/b$ is positive and squarefree.
+"""
+function squarefree_part(a::fmpz)
+  f = factor(a)
+  s = sign(a)
+  for (p, e) in f
+    if isodd(e)
+      s = s * p
+    end
+  end
+  return s
+end
+
+################################################################################
+#
+#  Factorization of a rational
+#
+################################################################################
+
+@doc Markdown.doc"""
+    factor(a::fmpq, ::FlintIntegerRing) -> Fac{fmpz}
+Factor the rational number $a$ into prime numbers.
+"""
+function factor(a::fmpq, ::FlintIntegerRing)
+  fn = factor(numerator(a))
+  fd = factor(denominator(a))
+  for (p, e) = fd
+    fn.fac[p] = -e
+  end
+  return fn
 end
