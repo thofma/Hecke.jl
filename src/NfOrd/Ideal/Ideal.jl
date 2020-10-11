@@ -216,6 +216,7 @@ end
 #  Parent object overloading and user friendly constructors
 #
 ################################################################################
+
 @doc Markdown.doc"""
     ideal(O::NfOrd, v::Vector{NfOrdElem}) -> NfOrdIdl
 
@@ -250,7 +251,7 @@ function ideal(O::NfOrd, v::Vector{NfOrdElem})
       return ideal(O, 1)
     end
   end
-  return ideal(O, sub(M, degree(O)+1:2*degree(O), 1:degree(O)))
+  return _ideal(O, sub(M, degree(O)+1:2*degree(O), 1:degree(O)))::ideal_type(O)
 end
 
 @doc Markdown.doc"""
@@ -273,10 +274,19 @@ function ideal(O::NfAbsOrd, x::fmpz_mat, check::Bool = false, x_in_hnf::Bool = f
   !x_in_hnf ? x = _hnf(x, :lowerleft) : nothing #sub-optimal, but == relies on the basis being thus
   #_trace_call(;print = true)
   I = NfAbsOrdIdl(O, x)
-  if check
-    J = ideal(O, basis(I))
-    @assert J == I
-  end
+  # The compiler stopped liking this recursion??
+  # if check
+  #   J = ideal(O, basis(I))
+  #   @assert J == I
+  # end
+
+  return I
+end
+
+function _ideal(O::NfAbsOrd, x::fmpz_mat, x_in_hnf::Bool = false)
+  !x_in_hnf ? x = _hnf(x, :lowerleft) : nothing #sub-optimal, but == relies on the basis being thus
+  #_trace_call(;print = true)
+  I = NfAbsOrdIdl(O, x)
 
   return I
 end
@@ -287,12 +297,12 @@ end
 
 Creates the ideal $(x, y)$ of $\mathcal O$.
 """
-function ideal(O::NfAbsOrd, x::fmpz, y::NfOrdElem)
+function ideal(O::NfAbsOrd, x::fmpz, y::NfAbsOrdElem)
   @assert parent(y) === O
   return NfAbsOrdIdl(deepcopy(x), deepcopy(y))
 end
 
-function ideal(O::NfAbsOrd, x::Integer, y::NfOrdElem)
+function ideal(O::NfAbsOrd, x::Integer, y::NfAbsOrdElem)
   @assert parent(y) === O
   return NfAbsOrdIdl(fmpz(x), deepcopy(y))
 end
@@ -343,7 +353,7 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    order(x::NfAbsOrdIdl) -> NfOrd
+    order(x::NfAbsOrdIdl) -> NfAbsOrd
 
 Returns the order, of which $x$ is an ideal.
 """
@@ -372,19 +382,19 @@ Returns the order of $I$.
 
 @doc Markdown.doc"""
     *(O::NfOrd, x::NfOrdElem) -> NfAbsOrdIdl
-    *(x::NfOrdElem, O::NfOrd) -> NfAbsOrdIdl
+    *(x::NfAbsOrdElem, O::NfAbsOrd) -> NfAbsOrdIdl
 
 Returns the principal ideal $(x)$ of $\mathcal O$.
 """
-function *(O::NfOrd, x::NfOrdElem)
+function *(O::NfAbsOrd, x::NfAbsOrdElem)
   parent(x) !== O && error("Order of element does not coincide with order")
   return ideal(O, x)
 end
 
-*(x::NfOrdElem, O::NfOrd) = O*x
-*(x::Int, O::NfOrd) = ideal(O, x)
-*(x::BigInt, O::NfOrd) = ideal(O, fmpz(x))
-*(x::fmpz, O::NfOrd) = ideal(O, x)
+*(x::NfAbsOrdElem, O::NfAbsOrd) = O*x
+*(x::Int, O::NfAbsOrd) = ideal(O, x)
+*(x::BigInt, O::NfAbsOrd) = ideal(O, fmpz(x))
+*(x::fmpz, O::NfAbsOrd) = ideal(O, x)
 
 ###########################################################################################
 #
@@ -467,8 +477,8 @@ function assure_has_basis_matrix(A::NfAbsOrdIdl)
   if isdefined(A, :basis_matrix)
     return nothing
   end
-
-  n = degree(order(A))
+  OK = order(A)
+  n = degree(OK)
 
   if iszero(A)
     A.basis_matrix = zero_matrix(FlintZZ, n, n)
@@ -480,14 +490,14 @@ function assure_has_basis_matrix(A::NfAbsOrdIdl)
     return nothing
   end
 
-  if !issimple(nf(order(A))) || !isdefining_polynomial_nice(nf(order(A)))
+  if !issimple(nf(OK)) || !isdefining_polynomial_nice(nf(OK))
     c = hnf_modular_eldiv!(representation_matrix(A.gen_two), A.gen_one, :lowerleft)
     A.basis_matrix = c
     return nothing
   end
 
-  if !issimple(nf(order(A))) && isdefined(A, :is_prime) && A.is_prime == 1 &&
-         A.norm == A.minimum && !isindex_divisor(order(A), A.minimum)
+  if !issimple(nf(OK)) && isdefined(A, :is_prime) && A.is_prime == 1 &&
+         A.norm == A.minimum && !isindex_divisor(OK, A.minimum)
     # A is a prime ideal of degree 1
     A.basis_matrix = basis_mat_prime_deg_1(A)
     return nothing
@@ -501,11 +511,16 @@ function assure_has_basis_matrix(A::NfAbsOrdIdl)
   @hassert :NfOrd 1 has_2_elem(A)
 
   m = abs(A.gen_one)
+  if has_minimum(A)
+    m = minimum(A, copy = false)
+  end
   be = elem_in_nf(A.gen_two)
-  be = mod(be, m)
-
-  c = hnf_modular_eldiv!(representation_matrix_mod(order(A)(be), m), m, :lowerleft)
-  A.basis_matrix = c
+  if contains_equation_order(OK)
+    be = mod(be, m)
+  end
+  rm = representation_matrix_mod(OK(be, false), m)
+  hnf_modular_eldiv!(rm, m, :lowerleft)
+  A.basis_matrix = rm
   return nothing
 end
 
@@ -573,7 +588,12 @@ function assure_has_basis_mat_inv(A::NfAbsOrdIdl)
   if isdefined(A, :basis_mat_inv)
     return nothing
   else
-    A.basis_mat_inv = FakeFmpqMat(pseudo_inv(basis_matrix(A, copy = false)))
+    if degree(order(A)) == 1
+      # This will be fixed in flint 2.7
+      A.basis_mat_inv = FakeFmpqMat(identity_matrix(FlintZZ, 1), basis_matrix(A, copy = false)[1, 1])
+    else
+      A.basis_mat_inv = FakeFmpqMat(pseudo_inv(basis_matrix(A, copy = false)))
+    end
     return nothing
   end
 end
@@ -609,6 +629,20 @@ end
 
 function assure_has_minimum(A::NfAbsOrdIdl)
   if has_minimum(A)
+    return nothing
+  end
+        
+  if degree(order(A)) == 1
+    if has_2_elem(A)
+      A.minimum = gcd(A.gen_one, numerator(coeff(A.gen_two.elem_in_nf, 0)))
+    else
+      A.minimum = deepcopy(A.basis_matrix[1, 1])
+    end
+    return nothing
+  end
+
+  if isdefined(A, :basis_matrix) && isone(basis(order(A), copy = false)[1])
+    A.minimum = basis_matrix(A, copy = false)[1, 1]
     return nothing
   end
 
@@ -681,6 +715,11 @@ end
 
 function assure_has_norm(A::NfAbsOrdIdl)
   if has_norm(A)
+    return nothing
+  end
+
+  if isdefined(A, :basis_matrix)
+    A.norm = abs(det(basis_matrix(A, copy = false)))
     return nothing
   end
 
@@ -762,6 +801,7 @@ princ_gen_special(A::NfAbsOrdIdl) = A.princ_gen_special[A.princ_gen_special[1] +
 Returns whether $x$ and $y$ are equal.
 """
 function ==(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
+  @assert order(x) === order(y)
   if x === y
     return true
   end
@@ -788,6 +828,21 @@ function ==(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
   if isdefined(x, :basis_matrix) && isdefined(y, :basis_matrix)
     if ishnf(basis_matrix(x, copy = false), :lowerleft) && ishnf(basis_matrix(y, copy = false), :lowerleft)
       return basis_matrix(x, copy = false) == basis_matrix(y, copy = false)
+    end
+  end
+  if isprime_known(x) && isprime(x) && isprime_known(y) && isprime(y)
+    px = minimum(x, copy = false)
+    py = minimum(y, copy = false)
+    if px != py
+      return false
+    end
+    OK = order(x)
+    if contains_equation_order(OK) && !isindex_divisor(OK, px) && has_2_elem(x) && has_2_elem(y)
+      R = ResidueRing(FlintZZ, px, cached = false)
+      Rx = PolynomialRing(R, "x", cached = false)[1]
+      f1 = Rx(elem_in_nf(x.gen_two))
+      f2 = Rx(elem_in_nf(y.gen_two))
+      return !iscoprime(f1, f2)
     end
   end
   if isdefined(x, :basis_matrix) && has_2_elem(y)
@@ -837,9 +892,11 @@ function in(x::NfAbsOrdElem, y::NfAbsOrdIdl)
 end
 
 function containment_by_matrices(x::NfAbsOrdElem, y::NfAbsOrdIdl)
-  v = matrix(FlintZZ, 1, degree(parent(x)), coordinates(x, copy = false))
-  t = v*basis_mat_inv(y, copy = false)
-  return isone(t.den)
+  R = ResidueRing(FlintZZ, basis_mat_inv(y, copy = false).den, cached = false)
+  M = map_entries(R, basis_mat_inv(y, copy = false).num)
+  v = matrix(R, 1, degree(parent(x)), coordinates(x, copy = false))
+  mul!(v, v, M)
+  return iszero(v)
 end
 
 function in(x::nf_elem, y::NfAbsOrdIdl)
@@ -849,7 +906,7 @@ end
 
 in(x::fmpz, y::NfAbsOrdIdl) = in(order(y)(x),y)
 
-in(x::Integer, y::NfAbsOrdIdl) = in(order(y)(x),y)
+in(x::Integer, y::NfAbsOrdIdl) = in(order(y)(x), y)
 
 ################################################################################
 #
@@ -867,9 +924,17 @@ function inv(A::NfAbsOrdIdl)
   @assert !iszero(A)
   if ismaximal_known_and_maximal(order(A))
     return inv_maximal(A)
-  else
-    return inv_generic(A)
   end
+  if has_2_elem(A)
+    m = A.gen_one
+    if has_minimum(A)
+      m = minimum(A)
+    end
+    if iscoprime(m, discriminant(order(A)))
+      return inv_maximal(A)
+    end
+  end
+  return inv_generic(A)
 end
 
 # If I is not coprime to the conductor of O in the maximal order, then this might
@@ -881,40 +946,35 @@ end
 
 function inv_maximal(A::NfAbsOrdIdl)
   O = order(A)
-  if isdefined(A, :princ_gen) && !has_2_elem_normal(A)
-    return ideal(O, inv(A.princ_gen.elem_in_nf))
+  if has_princ_gen_special(A)
+    return fractional_ideal(O, ideal(O, 1), princ_gen_special(A))
+  elseif isdefined(A, :princ_gen) && !has_2_elem_normal(A)
+    res =  ideal(O, inv(A.princ_gen.elem_in_nf))
   elseif has_2_elem(A) && has_weakly_normal(A)
     assure_2_normal(A)
     O = order(A)
     if iszero(A.gen_two)
-      return ideal(O, 1)//A.gen_one
+      return fractional_ideal(O, ideal(O, 1), A.gen_one)
     end
     m = A.gen_one
+    if has_minimum(A)
+      m = minimum(A, copy = false)
+    end
     if isone(m)
-      return A//1
+      return fractional_ideal(O, A)
     end
-    if true
-      alpha = _invmod(m, A.gen_two)
-    else
-      be = elem_in_nf(A.gen_two)
-      d = denominator(be)
-      f, e = ppio(d, m)
-      be *= e
-      be = mod(be*f, m^2*f)//f
-      alpha = inv(elem_in_nf(be))
-    end
+    alpha = _invmod(m, A.gen_two)
     _, d = ppio(denominator(alpha, O), m)
     Ai = NfAbsOrdIdl(order(A))
-    #Ai = parent(A)()
     dn = denominator(d*alpha, O)
-    @assert ppio(dn, m)[1] == dn
+    @hassert :NfOrd 1 ppio(dn, m)[1] == dn
     Ai.gen_one = dn
     Ai.gen_two = O(d*alpha*dn, false)
     temp = dn^degree(order(A))//norm(A)
     @hassert :NfOrd 1 denominator(temp) == 1
     Ai.norm = numerator(temp)
     Ai.gens_normal = A.gens_normal
-    AAi = NfOrdFracIdl(Ai, dn)
+    AAi = fractional_ideal(O, Ai, dn)
     return AAi
   else
     # I don't know if this is a good idea
@@ -922,7 +982,6 @@ function inv_maximal(A::NfAbsOrdIdl)
     assure_2_normal(A)
     return inv(A)
   end
-  error("Not implemented yet")
 end
 
 @doc Markdown.doc"""
@@ -1020,22 +1079,11 @@ function _minmod(a::fmpz, b::NfOrdElem)
   if !isdefining_polynomial_nice(nf(parent(b)))
     return gcd(denominator(inv(b.elem_in_nf), parent(b)), a)
   end
-  a2, ar = ppio(a, fmpz(2))
+  lf, ar = _factors_trial_division(a, 10^2)
   min = fmpz(1)
-  if !isone(a2)
-    min *= _minmod_comp_pp(a2, b)
-  end
-  a3, ar = ppio(ar, fmpz(3))
-  if !isone(a3)
-    min *= _minmod_comp_pp(a3, b)
-  end
-  a5, ar = ppio(ar, fmpz(5))
-  if !isone(a5)
-    min *= _minmod_comp_pp(a5, b)
-  end
-  a7, ar = ppio(ar, fmpz(7))
-  if !isone(a7)
-    min *= _minmod_comp_pp(a7, b)
+  for p in lf
+    ap = p^valuation(a, p)
+    min *= _minmod_comp_pp(ap, b)
   end
   if isone(ar)
     return min
@@ -1144,7 +1192,11 @@ function _minmod_comp(a::fmpz, b::NfOrdElem)
   # ub + vf = r
   # so u/r is the inverse and r is the den in the field
   # we want gcd(r, a). so we use rres
-  #at this point, min(<a, b*d>) SHOULD be
+  #at this point, min(<a, b*d>) SHOULD be 
+end
+
+function _invmod(a::fmpz, b::NfAbsOrdElem)
+  return inv(b.elem_in_nf)
 end
 
 function _invmod(a::fmpz, b::NfOrdElem)
@@ -1156,25 +1208,56 @@ function _invmod(a::fmpz, b::NfOrdElem)
   if !isdefining_polynomial_nice(nf(parent(b)))
     return inv(k(b))
   end
+  return __invmod(a, b)
+end
+
+
+
+function __invmod(a::fmpz, b::NfOrdElem)
+  Zk = parent(b)
+  k = nf(Zk)
   d = denominator(b.elem_in_nf)
   d, _ = ppio(d, a)
-  e, _ = ppio(basis_matrix(Zk, copy = false).den, a)
-  S = ResidueRing(FlintZZ, a^2*d*e, cached=false)
-  St = PolynomialRing(S, cached=false)[1]
-  B = St(d*b.elem_in_nf)
-  F = St(k.pol)
-
-  m, u, v = rresx(B, F)  # u*B + v*F = m mod modulus(S)
-  if iszero(m)
-    m = a^2*d*e
-    c = S(1)
+   e, _ = ppio(basis_matrix(Zk, copy = false).den, a) 
+  mod_r = a^2*d*e
+  if fits(Int, mod_r)
+    S1 = ResidueRing(FlintZZ, Int(mod_r), cached=false)
+    S1t = PolynomialRing(S1, cached=false)[1]
+    B1 = S1t(d*b.elem_in_nf)
+    F1 = S1t(k.pol)
+    m1, u1, v1 = rresx(B1, F1)  # u*B + v*F = m mod modulus(S)
+    if iszero(m1)
+      m1 = mod_r
+      c1 = S1(1)
+    else
+      c1 = inv(canonical_unit(m1))
+      m1 = lift(m1*c1)
+    end
+    U1 = lift(PolynomialRing(FlintZZ, "x", cached = false)[1], u1*c1)
+    bi1 = k(U1)//m1*d # at this point, bi*d*b = m mod a*d*idx
+    return bi1
   else
-    c = inv(canonical_unit(m))
-    m = lift(m*c)
+    S = ResidueRing(FlintZZ, mod_r, cached=false)
+    St = PolynomialRing(S, cached=false)[1]
+    B = St(d*b.elem_in_nf)
+    F = St(k.pol)
+  
+    m, u, v = rresx(B, F)  # u*B + v*F = m mod modulus(S)
+    if iszero(m)
+      m = mod_r
+      c = S(1)
+    else
+      c = inv(canonical_unit(m))
+      m = lift(m*c)
+    end
+    U = lift(PolynomialRing(FlintZZ, "x", cached = false)[1], u*c)
+    bi = k(U)//m*d # at this point, bi*d*b = m mod a*d*idx
+    return bi
   end
-  U = lift(PolynomialRing(FlintZZ, "x", cached = false)[1], u*c)
-  bi = k(U)//m*d # at this point, bi*d*b = m mod a*d*idx
-  return bi
+  end
+
+function _normmod(a::fmpz, b::NfAbsOrdElem)
+  return gcd(norm(b), a)
 end
 
 function _normmod(a::fmpz, b::NfOrdElem)
@@ -1183,7 +1266,7 @@ function _normmod(a::fmpz, b::NfOrdElem)
   end
 
   if !isdefining_polynomial_nice(nf(parent(b)))
-    return norm(b)
+    return gcd(norm(b), a)
   end
 
   mods = fmpz[]
@@ -1257,21 +1340,27 @@ function simplify(A::NfAbsOrdIdl)
   if iszero(A)
     return A
   end
+  if isone(A)
+    A.gen_one = fmpz(1)
+    A.gen_two = order(A)(1)
+    A.minimum = fmpz(1)
+    A.norm = fmpz(1)
+    A.gens_normal = fmpz(2)
+    @hassert :NfOrd 1 isconsistent(A)
+    return A
+  end
   @hassert :NfOrd 1 isconsistent(A)
   if has_2_elem(A) && has_weakly_normal(A)
     #if maximum(element_to_sequence(A.gen_two)) > A.gen_one^2
     #  A.gen_two = element_reduce_mod(A.gen_two, A.parent.order, A.gen_one^2)
     #end
-    if isone(A)
-      A.gen_two = order(A)(1)
-      A.minimum = fmpz(1)
-      A.norm = fmpz(1)
-      A.gens_normal = fmpz(2)
-      @hassert :NfOrd 1 isconsistent(A)
-      return A
-    end
     if !has_minimum(A)
-      A.minimum = _minmod(A.gen_one, A.gen_two)
+      if isdefined(A, :norm)
+        d = gcd(A.norm, A.gen_one)
+        A.minimum = _minmod(d, A.gen_two)
+      else
+        A.minimum = _minmod(A.gen_one, A.gen_two)
+      end
       @hassert :Rres 1 A.minimum == gcd(A.gen_one, denominator(inv(A.gen_two.elem_in_nf), order(A)))
     end
     A.gen_one = A.minimum
@@ -1287,16 +1376,9 @@ function simplify(A::NfAbsOrdIdl)
       end
       A.norm = n
     end
-    if isdefining_polynomial_nice(nf(order(A)))
-      be = A.gen_two.elem_in_nf
-      d = denominator(be)
-      f, e = ppio(d, A.gen_one)
-      be *= e
-      be = mod(be*f, f*A.gen_one^2)//f
-      A.gen_two = order(A)(be)
-    else
-      A.gen_two = mod(A.gen_two, A.gen_one^2)
-    end
+    be = mod(A.gen_two.elem_in_nf, A.gen_one^2)
+    A.gen_two = order(A)(be)
+
 
     if isdefined(A, :gens_normal)
       A.gens_normal = A.gen_one
@@ -1660,11 +1742,10 @@ end
 
 function mod(x::Union{NfOrdElem, AlgAssAbsOrdElem}, Q::AbsOrdQuoRing)
   O = parent(x)
-  a = coordinates(x) # this is already a copy
 
   y = ideal(Q)
-
   if isdefined(y, :princ_gen_special) && y.princ_gen_special[1] != 0
+    a = coordinates(x) # this is already a copy
     for i in 1:length(a)
       a[i] = mod(a[i], y.princ_gen_special[1 + y.princ_gen_special[1]])
     end
@@ -1676,11 +1757,10 @@ end
 
 function mod!(x::Union{NfOrdElem, AlgAssAbsOrdElem}, Q::AbsOrdQuoRing)
   O = parent(x)
-  a = coordinates(x, copy = false) # this is already a copy
-
   y = ideal(Q)
 
   if isdefined(y, :princ_gen_special) && y.princ_gen_special[1] != 0
+    a = coordinates(x, copy = false) # this is already a copy
     for i in 1:length(a)
       a[i] = mod(a[i], y.princ_gen_special[1 + y.princ_gen_special[1]])
     end
@@ -1884,7 +1964,6 @@ function pradical_frobenius(O::NfAbsOrd, p::Union{Integer, fmpz})
   I.minimum = p
   I.gens = gens
   return I
-
 end
 
 @doc Markdown.doc"""
@@ -2160,6 +2239,10 @@ function iscoprime(I::NfAbsOrdIdl, J::NfAbsOrdIdl)
   else
     return isone(I+J)
   end
+end 
+
+function iscoprime(I::NfAbsOrdIdl, a::fmpz)
+  return iscoprime(I, ideal(order(I), a))
 end
 
 one(I::NfAbsOrdIdlSet) = ideal(order(I), 1)
