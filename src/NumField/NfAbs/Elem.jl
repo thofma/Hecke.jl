@@ -232,6 +232,11 @@ an integer.
 """
 function isnorm_divisible(a::nf_elem, n::fmpz)
   K = parent(a)
+  if !iscoprime(denominator(K.pol), n)
+    na = norm(a)
+    @assert isone(denominator(na))
+    return divides(numerator(na), n)[1]
+  end
   s, t = ppio(denominator(a), n)
   if !isone(s)
     m = n*s^degree(K)
@@ -253,6 +258,11 @@ end
 #In this version, n is supposed to be a prime power
 function isnorm_divisible_pp(a::nf_elem, n::fmpz)
   K = parent(a)
+  if !iscoprime(denominator(K.pol), n)
+    na = norm(a)
+    @assert isone(denominator(na))
+    return divides(numerator(na), n)[1]
+  end
   s, t = ppio(denominator(a), n)
   if !isone(s)
     m = n*s^degree(K)
@@ -425,30 +435,35 @@ function factor(f::PolyElem{nf_elem})
     r.unit = Kx(lead(f))
     return r
   end
-
-  v = 0
-  while v < degree(f) && iszero(coeff(f, v))
-    v += 1
-  end
-  f = shift_right(f, v)
-
-  f_orig = deepcopy(f)
-  @vprint :PolyFactor 1 "Factoring $(nice(f))\n"
-  @vtime :PolyFactor 2 g = gcd(f, derivative(f))
-  if degree(g) > 0
-    f = div(f, g)
-  end
-
-
-  if degree(f) == 1
-    r = Fac{typeof(f)}()
-    r.fac = Dict{typeof(f), Int}(f*(1//lead(f)) => degree(f_orig))
-    if v > 0
-      r.fac[gen(parent(f))] = v
+  sqf = factor_squarefree(f)
+  fac = Dict{typeof(f), Int}()
+  for (k, v) in sqf
+    if degree(k) == 1
+      fac[k] = v
+      continue
     end
-    r.unit = one(Kx) * lead(f_orig)
-    return r
+    el = k
+    if iszero(coeff(k, 0))
+      el = shift_right(el, 1)
+      fac[gen(Kx)] = v
+    end
+    @vprint :PolyFactor 1 "Factoring $(nice(el))\n"
+    lf = _factor(el)
+    for g in lf
+      fac[g] = v
+    end
   end
+  r = Fac{typeof(f)}()
+  r.fac = fac
+  #The unit is just the leading coefficient of f
+  r.unit = Kx(lead(f))
+  return r
+end
+
+  #assumes that f is a squarefree polynomial
+function _factor(f::PolyElem{nf_elem})
+
+  K = base_ring(f)
   f = f*(1//lead(f))
 
   if degree(f) < degree(K)
@@ -456,50 +471,40 @@ function factor(f::PolyElem{nf_elem})
   else
     lf = factor_new(f)::Vector{typeof(f)}
   end
-
-  r = Fac{typeof(f)}()
-  r.fac = res = Dict( x=> 1 for x = lf)
-  r.unit = Kx(1)
-
-  if f != f_orig
-    global p_start
-    p = p_start
-    @vtime :PolyFactor 2 while true
-      p = next_prime(p)
-      me = modular_init(K, p, max_split=1)
-      fp = modular_proj(f, me)[1]
-      if issquarefree(fp)
-        fp = deepcopy(modular_proj(f_orig, me)[1])
-        for k in keys(res)
-          gp = modular_proj(k, me)[1]
-          res[k] = valuation(fp, gp)
-        end
-        # adjust the unit of the factorization
-        r.unit = one(Kx) * lead(f_orig)//prod((lead(p) for (p, e) in r))
-        return r
-      end
-    end
-  end
-  if v > 0
-    r.fac[gen(parent(f))] = v
-  end
-  r.unit = one(Kx)* lead(f_orig)//prod((lead(p) for (p, e) in r))
-  return r
+return lf
 end
 
 function factor_trager(f::PolyElem{nf_elem})
   k = 0
   g = f
   @vprint :PolyFactor 1 "Using Trager's method\n"
-  @vtime :PolyFactor 2 N = norm(g)
+  p = p_start
+  F = GF(p)
 
   Kx = parent(f)
   K = base_ring(Kx)
 
-  while isconstant(N) || !issquarefree(N)
+  Zx = Hecke.Globals.Zx
+  @vtime :PolyFactor Np = norm_mod(g, p, Zx)
+  while isconstant(Np) || !issquarefree(map_coeffs(F, Np))
     k = k + 1
     g = compose(f, gen(Kx) - k*gen(K))
-    @vtime :PolyFactor 2 N = norm(g)
+    @vtime :PolyFactor 2 Np = norm_mod(g, p, Zx)
+  end
+
+  @vprint :PolyFactor 2 "need to shift by $k, now the norm"
+  if any(x -> denominator(x) > 1, coefficients(g))
+    @vtime :PolyFactor 2 N = Hecke.Globals.Qx(norm(g))
+  else
+    @vtime :PolyFactor 2 N = norm_mod(g, Zx)
+    @hassert :PolyFactor 1 N == Zx(norm(g))
+  end
+  
+  while isconstant(N) || !issquarefree(N)
+    error("should not happen")
+    k = k + 1
+    g = compose(f, gen(Kx) - k*gen(K))
+    @vtime :PolyFactor 2 N = norm_mod(g)
   end
   @vtime :PolyFactor 2 fac = factor(N)
 
@@ -516,7 +521,13 @@ function factor_trager(f::PolyElem{nf_elem})
 end
 
 function isirreducible(f::PolyElem{nf_elem})
+  if degree(f) == 1
+    return true
+  end
   if !issquarefree(f)
+    return false
+  end
+  if iszero(coeff(f, 0))
     return false
   end
 
@@ -543,8 +554,8 @@ function isirreducible(f::PolyElem{nf_elem})
       end
     end
   end
-  fac = factor(f)
-  return length(fac.fac) == 1 && first(values(fac.fac)) == 1
+  fac = _factor(f)
+  return length(fac) == 1
 end
 
 function _ds(fa)
@@ -732,13 +743,18 @@ function ispower(a::nf_elem, n::Int; with_roots_unity::Bool = false, isintegral:
     return ispower_trager(a, n)
   end
 
+  K = parent(a)
   if isintegral
     d = fmpz(1)
   else
-    d = denominator(a)
+    if ismaximal_order_known(K)
+      OK = maximal_order(K)
+      d = denominator(a, OK)
+    else
+      d = denominator(a)
+    end
   end
-
-  Ky, y = PolynomialRing(parent(a), "y", cached = false)
+  Ky, y = PolynomialRing(K, "y", cached = false)
 
   if n == 2 || with_roots_unity
     rt = roots(y^n - a*d^n, max_roots = 1, ispure = true, isnormal = true)
@@ -757,12 +773,14 @@ function ispower_trager(a::nf_elem, n::Int)
   # This is done using Trager factorization, but we can do some short cuts
   # The norm will be the minpoly_a(x^n), which will always be squarefree.
   K = parent(a)
-  f = minpoly(a)
+  @vprint :PolyFactor 1 "Computing the minpoly\n"
+  @vtime :PolyFactor 1 f = minpoly(a)
   b = K(1)
-  c = a*b^n
+  c = a*b
   if degree(f) < degree(K)
     i = 0
     while true
+      @vprint :PolyFactor 1 "Need to shift it\n"
       b = (gen(K)+i)
       c = a*b^n
       f = minpoly(c)
@@ -775,10 +793,12 @@ function ispower_trager(a::nf_elem, n::Int)
   Qx = parent(f)
   x = gen(Qx)
   N = inflate(f, n)
-  fac = factor(N)
+  @vprint :PolyFactor 1 "Factoring the minpoly\n"
+  @vtime :PolyFactor 1 fac = factor(N)
   Kt, t = PolynomialRing(K, "a", cached = false)
   for (p, _) in fac
     if degree(p) == degree(f)
+      @vprint :PolyFactor 1 "Computing final gcd\n"
       t = gcd(change_base_ring(K, p, parent = Kt), t^n - c)
       @assert degree(t) == 1
       return true, -divexact(coeff(t, 0), coeff(t, 1))//b
@@ -939,7 +959,13 @@ function mod_sym!(a::nf_elem, b::fmpz)
 end
 
 function mod(b::nf_elem, p::fmpz)
-  return coprime_denominator(b, p)
+  K = parent(b)
+  if isdefining_polynomial_nice(parent(b))
+    return coprime_denominator(b, p)
+  else
+    m = lcm([p, denominator(K.pol), numerator(coeff(K.pol, degree(K.pol)))])
+    return coprime_denominator(b, m)
+  end
 end
 
 mod(x::nf_elem, y::Integer) = mod(x, fmpz(y))
