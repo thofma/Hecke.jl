@@ -186,6 +186,47 @@ end
 
 ################################################################################
 #
+#  Class number
+#
+################################################################################
+
+@doc Markdown.doc"""
+    class_number(K::AnticNumberField) -> fmpz
+
+Returns the class number of $K$.
+"""
+function class_number(K::AnticNumberField)
+  return order(class_group(maximal_order(K))[1])
+end
+
+################################################################################
+#
+#  Relative class number
+#
+################################################################################
+
+@doc Markdown.doc"""
+    relative_class_number(K::AnticNumberField) -> fmpz
+
+Returns the relative class number of $K$. The field must be a CM-field.
+"""
+function relative_class_number(K::AnticNumberField)
+  if degree(K) == 2
+    @req istotally_complex(K) "Field must be a CM-field"
+    return class_number(K)
+  end
+
+  fl, c = iscm_field(K)
+  @req fl "Field must be a CM-field"
+  h = class_number(K)
+  L, _ = fixed_field(K, c)
+  hp = class_number(L)
+  @assert mod(h, hp) == 0
+  return divexact(h, hp)
+end
+
+################################################################################
+#
 #  Basis
 #
 ################################################################################
@@ -302,6 +343,27 @@ Given a number field $K$ which is normal over $Q$, return
 an element generating a normal basis of $K$ over $Q$.
 """
 function normal_basis(K::Nemo.AnticNumberField)
+  # First try basis elements of LLL basis
+  # or rather not
+  # n = degree(K)
+  # Aut = automorphisms(K)
+
+  # length(Aut) != n && error("The field is not normal over the rationals!")
+
+  # A = zero_matrix(FlintQQ, n, n)
+  # _B = basis(lll(maximal_order(K)))
+  # for i in 1:n
+  #   r = elem_in_nf(_B[i])
+  #   for i = 1:n
+  #     y = Aut[i](r)
+  #     for j = 1:n
+  #       A[i,j] = coeff(y, j - 1)
+  #     end
+  #   end
+  #   if rank(A) == n
+  #     return r
+  #   end
+  # end
 
   O = EquationOrder(K)
   Qx = parent(K.pol)
@@ -321,6 +383,13 @@ function normal_basis(K::Nemo.AnticNumberField)
       break
     end
   end
+  
+  return _normal_basis_generator(K, p)
+end
+
+function _normal_basis_generator(K, p)
+  Qx = parent(K.pol)
+
   #Now, I only need to lift an idempotent of O/pO
   R = GF(p, cached = false)
   Rx, x = PolynomialRing(R, "x", cached = false)
@@ -330,7 +399,6 @@ function normal_basis(K::Nemo.AnticNumberField)
   Zy, y = PolynomialRing(FlintZZ, "y", cached = false)
   g1 = lift(Zy, g)
   return K(g1)
-
 end
 
 ################################################################################
@@ -369,17 +437,18 @@ function _issubfield_first_checks(K::AnticNumberField, L::AnticNumberField)
     end
     # We could factorize the discriminant of f, but we only test small primes.
     p = 3
-    df = discriminant(f)
-    dg = discriminant(g)
     while p < 10000
-      if p > df || p > dg
-        break
-      end
-      if mod(valuation(df, p), 2) == 0
+      F = GF(p, cached = false)
+      Fx = PolynomialRing(F, "x", cached = false)[1]
+      fp = Fx(f)
+      gp = Fx(g)
+      if !issquarefree(fp) && !issquarefree(gp)
         p = next_prime(p)
-        continue
+	continue
       end
-      if mod(dg, p^t) != 0
+      fs = factor_shape(fp)
+      gs = factor_shape(gp)
+      if !divisible(lcm(collect(keys(gs))), lcm(collect(keys(fs))))
         return false
       end
       p = next_prime(p)
@@ -498,7 +567,10 @@ function compositum(K::AnticNumberField, L::AnticNumberField)
   end
   KK = NumberField(first(lf.fac)[1])[1]
   Ka, m1, m2 = absolute_field(KK)
-  return Ka, hom(K, Ka, preimage(m1, gen(KK))), m2
+  m3 = hom(K, Ka, preimage(m1, gen(KK)))
+  embed(m2)
+  embed(m3)
+  return Ka, m3, m2
 end
 
 ################################################################################
@@ -765,18 +837,8 @@ function normal_closure(K::AnticNumberField)
   return s, hom(K, s, r, check = false)
 end
 
-function show_name(io::IO, K::AnticNumberField)
-  if get(io, :compact, false)
-    n = Nemo.get_special(K, :name)
-    print(io, n)
-  else
-    print(io, "Number field over Rational Field")
-    print(io, " with defining polynomial ", K.pol)
-  end
-end
-
 function set_name!(K::AnticNumberField, s::String)
-  Nemo.set_special(K, :name => s, :show => show_name)
+  Nemo.set_special(K, :name => s)
 end
 
 function set_name!(K::AnticNumberField)
@@ -813,3 +875,371 @@ function islinearly_disjoint(K1::AnticNumberField, K2::AnticNumberField)
   f = change_base_ring(K2, K1.pol)
   return isirreducible(f)
 end
+                                        
+################################################################################
+#
+#  more general coercion, field lattice
+#
+################################################################################
+
+Nemo.iscyclo_type(::NumField) = false
+
+function force_coerce(a::NumField{T}, b::NumFieldElem, throw_error::Type{Val{S}} = Val{true}) where {T, S}
+  if Nemo.iscyclo_type(a) && Nemo.iscyclo_type(parent(b))
+    return force_coerce_cyclo(a, b, throw_error)::elem_type(a)
+  end
+  if absolute_degree(parent(b)) <= absolute_degree(a)
+    c = find_one_chain(parent(b), a)
+    if c !== nothing
+      x = b
+      for f = c
+        @assert parent(x) == domain(f)
+        x = f(x)
+      end
+      return x::elem_type(a)
+    end
+  end
+  if throw_error === Val{true}
+    throw(error("no coercion possible"))
+  else
+    return false
+  end
+end
+
+@noinline function force_coerce_throwing(a::NumField{T}, b::NumFieldElem) where {T}
+  if absolute_degree(parent(b)) <= absolute_degree(a)
+    c = find_one_chain(parent(b), a)
+    if c !== nothing
+      x = b
+      for f = c
+        @assert parent(x) == domain(f)
+        x = f(x)
+      end
+      return x::elem_type(a)
+    else
+      throw(error("no coercion possible"))
+    end
+  else
+    throw(error("no coercion possible"))
+  end
+end
+
+#(large) fields have a list of embeddings from subfields stored (special -> subs)
+#this traverses the lattice downwards collecting all chains of embeddings
+function collect_all_chains(a::NumField, filter::Function = x->true)
+  s = get_special(a, :subs)
+  if s === nothing
+    return s
+  end
+  all_chain = Dict{UInt, Array{Any}}(objectid(domain(f)) => [f] for f = s if filter(f))
+  if isa(base_field(a), NumField)
+    all_chain[objectid(base_field(a))] = [MapFromFunc(x->a(x), base_field(a), a)]
+  end
+  new_k = Any[domain(f) for f = s]
+  while length(new_k) > 0
+    k = pop!(new_k)
+    s = get_special(k, :subs)
+    s === nothing && continue
+    for f in s
+      if filter(domain(f))
+        o = objectid(domain(f))
+        if haskey(all_chain, o)
+          continue
+        end
+        @assert !haskey(all_chain, o)
+        all_chain[o] = vcat([f], all_chain[objectid(codomain(f))])
+        @assert !(o in new_k)
+        push!(new_k, domain(f))
+        if isa(base_field(domain(f)), NumField)
+          b = base_field(domain(f))
+          ob = objectid(b)
+          if !haskey(all_chain, ob)
+            g = MapFromFunc(x->domain(f)(x), b, domain(f))
+            all_chain[ob] = vcat([g], all_chain[objectid(domain(f))])
+            push!(new_k, b)
+          end
+        end
+      end
+    end
+  end
+  return all_chain
+end
+
+#tries to find one chain (array of embeddings) from a -> .. -> t
+function find_one_chain(t::NumField, a::NumField)
+  s = get_special(a, :subs)
+  if s === nothing
+    return s
+  end
+  ot = objectid(t)
+  all_chain = Dict{UInt, Array{Any}}(objectid(domain(f)) => [f] for f = s)
+  if isa(base_field(a), NumField)
+    all_chain[objectid(base_field(a))] = [MapFromFunc(x->a(x), base_field(a), a)]
+  end
+  new_k = Any[domain(f) for f = s]
+  if haskey(all_chain, ot)
+    return all_chain[ot]
+  end
+  new_k = Any[domain(f) for f = s]
+  while length(new_k) > 0
+    k = pop!(new_k)
+    s = get_special(k, :subs)
+    s === nothing && continue
+    for f in s
+      o = objectid(domain(f))
+      if o == ot
+        return vcat([f], all_chain[objectid(codomain(f))])
+      end
+      if o in keys(all_chain)
+        continue
+      end
+      @assert !haskey(all_chain, o)
+      all_chain[o] = vcat([f], all_chain[objectid(codomain(f))])
+      @assert !(o in new_k)
+      push!(new_k, domain(f))
+      if isa(base_field(domain(f)), NumField)
+        b = base_field(domain(f))
+        ob = objectid(b)
+        if !haskey(all_chain, ob)
+          g = MapFromFunc(x->domain(f)(x), b, domain(f))
+          all_chain[ob] = vcat([g], all_chain[objectid(domain(f))])
+          push!(new_k, b)
+        end
+        if ob == ot
+          return all_chain[ob]
+        end
+      end
+    end
+  end
+  return nothing
+end
+
+@doc Markdown.doc"""
+    embed(f::Map{<:NumField, <:NumField})
+                                                    
+Registers `f` as a canonical embedding from the domain into the co-domain.
+Once this embedding is registered, it cannot be changed.
+"""
+function embed(f::Map{<:NumField, <:NumField})
+  d = domain(f)
+  c = codomain(f)
+  if c == d
+    return
+  end
+  @assert absolute_degree(d) <= absolute_degree(c)
+  cn = find_one_chain(d, c)
+  if cn !== nothing
+    if issimple(d)
+      cgend = force_coerce(c, gen(d))
+      if cgend != f(gen(d))
+        error("different embedding already installed")
+        return
+      end
+    else
+      if any(x->c(x) != f(x), gens(d))
+        error("different embedding already installed")
+      end
+    end
+  end
+  s = get_special(c, :subs)
+  if s === nothing
+    s = Any[f]
+  else
+    push!(s, f)
+  end
+  set_special(c, :subs => s)
+  s = get_special(c, :sub_of)
+
+  if s === nothing
+    s = Any[WeakRef(c)]
+  else
+    push!(s, WeakRef(c))
+  end
+
+  set_special(d, :sub_of => s)
+end
+
+@doc Markdown.doc"""
+    hasembedding(F::NumField, G::NumField) -> Bool
+                                                    
+Checks if an embedding from $F$ into $G$ is already known.
+"""
+function hasembedding(F::NumField, G::NumField)
+  if F == G
+    return true
+  end
+  if absolute_degree(G) % absolute_degree(F) != 0
+    return false
+  end
+  cn = find_one_chain(d, c)
+  return cn !== nothing
+end
+
+#in (small) fields, super fields are stored via WeakRef's
+# special -> :sub_of
+#this find all superfields registered
+function find_all_super(A::NumField, filter::Function = x->true)
+  s = get_special(A, :sub_of)
+  s === nothing && return Set([A])
+
+  ls = length(s)
+  filter!(x->x.value !== nothing, s)
+  if length(s) < ls #pruning old superfields
+    set_special(A, :sub_of)
+  end
+
+  #the gc could(?) run anytime, so even after the pruning above
+  #things could get deleted
+
+  all_s = Set([x.value for x = s if x.value !== nothing && filter(x.value)])
+  new_s = copy(all_s)
+  while length(new_s) > 0
+    B = pop!(new_s)
+    s = get_special(B, :sub_of)
+    s === nothing && continue
+    ls = length(s)
+    filter!(x->x.value !== nothing, s)
+    if length(s) < ls
+      set_special(B, :sub_of)
+    end
+    for x = s
+      v = x.value
+      if v !== nothing && filter(v)
+        push!(new_s, v)
+        push!(all_s, v)
+      end
+    end
+  end
+  return all_s
+end
+
+#finds a common super field for A and B, using the weak-refs 
+# in special -> :sub_of
+function common_super(A::NumField, B::NumField)
+  A === B && return A
+  if Nemo.iscyclo_type(A) && Nemo.iscyclo_type(B)
+    return cyclotomic_field(lcm(get_special(A, :cyclotomic_field), get_special(B, :cyclotomic_field)))[1]
+  end
+
+  c = intersect(find_all_super(A), find_all_super(B))
+  first = true
+  m = nothing
+  for C = c
+    if first
+      m = C
+      first = false
+    else
+      if absolute_degree(C) < absolute_degree(m)
+        m = C
+      end
+    end
+  end
+  return m
+end
+
+function common_super(a::NumFieldElem, b::NumFieldElem)
+  C = common_super(parent(a), parent(b))
+  if C === nothing
+    return C, C
+  end
+  return C(a), C(b)
+end
+
+#tries to find a common parent for all "a" and then calls op on it.
+function force_op(op::T, throw_error::Type{Val{S}}, a::NumFieldElem...) where {T <: Function, S}
+  C = parent(a[1])
+  for b = a
+    C = common_super(parent(b), C)
+    if C === nothing
+      if throw_error === Val{true}
+        throw(error("no common parent known"))
+      else
+        return nothing
+      end
+    end
+  end
+  return op(map(C, a)...)
+end
+
+@doc Markdown.doc"""
+    embedding(k::NumField, K::NumField) -> Map
+                                                                    
+Assuming $k$ is known to be a subfield of $K$, return the embedding map.    
+"""
+function embedding(k::NumField, K::NumField)
+  if issimple(k)
+    return hom(k, K, K(gen(k)))
+  else
+    return hom(k, K, map(K, gens(k)))
+  end
+end
+
+function force_coerce_cyclo(a::AnticNumberField, b::nf_elem, throw_error::Type{Val{T}} = Val{true}) where {T}
+  fa = get_special(a, :cyclo)
+  sign = 1
+  if isodd(fa)
+    fa *= 2
+    sign *= -1
+  end
+  fb = get_special(parent(b), :cyclo)
+  if isodd(fb)
+    fb *= 2
+    sign *= -1
+  end
+  if fa % fb == 0 #coerce up, includes fa == fb
+    q = divexact(fa, fb)
+    sign = sign^q
+    s = 1
+    c = parent(a.pol)()
+    for i=0:b.elem_length
+      setcoeff!(c, i*q, s*coeff(b, i))
+      s *= sign
+    end
+    return a(c)
+  elseif fb % fa == 0 #coerce down
+    cb = [i for i=1:fb if gcd(i, fb) == 1] # the "conjugates" in the large field
+    ca = [[i for i = cb if i % fa == j] for j=1:fa if gcd(j, fa) == 1] #broken into blocks 
+    k = parent(b)
+    ky = PolynomialRing(k, cached = false)[1]
+    za = gen(a)
+    zb = gen(k)
+    fb = parent(k.pol)(b)
+    #in general one could test first if the evaluation is constant on a block
+    #equivalently, if the element is Galois invariant under the fix group of a.
+    #the result of the interpolation is supposed to be over Q, so we could
+    #do this modulo deg-1-primes as well
+    #using a fast(er) interpolation would be nice as well
+    #but, this is avoiding matrices, so teh complexity is better
+    #
+    #Idea
+    # b is a poly in Qx, evaluating at gen(a)... will produce the conjugates
+    # b in a is also a poly, of smaller degree producing the same conjugates
+    # so I compute the conjugates from the large field and interpolate them to get
+    # the small degree poly
+    f = interpolate(ky, [(k(za))^(ca[i][1] % fa) for i=1:length(ca)],
+                        [fb(zb^ca[i][1]) for i=1:length(ca)])
+    g = parent(fb)()
+    for i=0:length(f)
+      c = coeff(f, i)
+      if !isrational(c)
+        if throw_error === Val{true}
+          throw(error("no coercion possible"))
+        else
+          return false
+        end
+      end
+      setcoeff!(g, i, FlintQQ(c))
+    end
+    ba = a(g)
+    if k(ba) == b # not sure if this can fail
+      return ba
+    end
+  end #missing: (?) b could be in a subfield and thus still in a
+  if throw_error === Val{true}
+    throw(error("no coercion possible"))
+  end
+end
+
+(::FlintRationalField)(a::nf_elem) = (isrational(a) && return coeff(a, 0)) || error("not a rational")
+(::FlintIntegerRing)(a::nf_elem) = (isinteger(a) && return numerator(coeff(a, 0))) || error("not an integer")
+
