@@ -32,7 +32,9 @@
 #
 ################################################################################
 
-export PrimeIdealsSet, prime_ideals_over, ramification_index, prime_ideals_up_to
+export PrimeIdealsSet, prime_ideals_over, ramification_index,
+       prime_ideals_up_to, decomposition_group, inertia_subgroup,
+       ramification_group, isramified, istamely_ramified, isweakly_ramified
 
 @doc Markdown.doc"""
     isramified(O::NfOrd, p::Int) -> Bool
@@ -43,6 +45,49 @@ It is assumed that $p$ is prime.
 function isramified(O::NfAbsOrd, p::Union{Int, fmpz})
   @assert ismaximal_known_and_maximal(O)
   return mod(discriminant(O), p) == 0
+end
+
+@doc Markdown.doc"""
+    istamely_ramified(O::NfOrd, p::Union{Int, fmpz}) -> Bool
+
+Returns whether the integer $p$ is tamely ramified in $\mathcal O$.
+It is assumed that $p$ is prime.
+"""
+function istamely_ramified(K::AnticNumberField, p::Union{Int, fmpz})
+  lp = prime_decomposition(maximal_order(K), p)
+  for (_, q) in lp
+    if gcd(q, p) != 1
+      return false
+    end
+  end
+  return true
+end
+
+@doc Markdown.doc"""
+    istamely_ramified(K::AnticNumberField) -> Bool
+
+Returns whether the number field $K$ is tamely ramified.
+"""
+function istamely_ramified(K::AnticNumberField)
+  p = fmpz(2)
+  while p <= degree(K)
+    if !istamely_ramified(K, p)
+      return false
+    end
+    p = next_prime(p)
+  end
+  return true
+end
+
+@doc Markdown.doc"""
+    isweakly_ramified(K::AnticNumberField, P::NfOrdIdl) -> Bool
+
+Given a prime ideal $P$ of a number field $K$, return whether $P$
+is weakly ramified, that is, whether the second ramification group
+is trivial.
+"""
+function isweakly_ramified(K::AnticNumberField, P::NfOrdIdl)
+  return length(ramification_group(P, 2)) == 1
 end
 
 @doc Markdown.doc"""
@@ -70,156 +115,6 @@ end
 #  Prime decomposition
 #
 ################################################################################
-
-@doc Markdown.doc"""
-    intersect_prime(f::Map, P::NfOrdIdl, O_k::NfOrd) -> NfOrdIdl
-Given a prime ideal $P$ in $K$ and the inclusion map $f:k \to K$
-of number fields, find the unique prime $p$ in $k$ below.
-$p$ will be in the order $O_k$ which defaults to "the" maximal order of $k$.
-"""
-function intersect_prime(f::Map, P::NfOrdIdl, Ok::NfOrd = maximal_order(domain(f)))
-
-  @assert isprime(P)
-  p = minimum(P)
-  if isone(degree(Ok))
-    res = ideal(Ok, p)
-    res.is_prime = 1
-    res.splitting_type = (1, 1)
-    return res
-  end
-  k = domain(f)
-  K = codomain(f)
-  OK = maximal_order(K)
-  if !isindex_divisor(Ok, p) && !isindex_divisor(OK, p)
-    return intersect_nonindex(f, P, Ok)
-  end
-  d = degree(P)
-  lp = prime_decomposition(Ok, p, d, 1)
-  for (Q, v) in lp
-    el = Q.gen_two
-    if f(K(el)) in P
-      return Q
-    end
-  end
-  error("Restriction not found!")
-
-end
-
-function intersect_nonindex(f::Map, P::NfOrdIdl, Zk = maximal_order(domain(f)))
-  @assert isprime(P)
-  #let g be minpoly of k, G minpoly of K and h in Qt the primitive
-  #element of k in K (image of gen(k))
-  #then
-  #  g(h) = 0 mod G
-  k = domain(f)
-  K = codomain(f)
-  G = K.pol
-  Qx = parent(G)
-  g = change_base_ring(base_ring(Qx), k.pol, parent = Qx)
-  h = Qx(f(gen(k)))
-
-  Fp, xp = PolynomialRing(GF(Int(minimum(P)), cached=false), cached=false)
-  gp = factor(Fp(g))
-  hp = Fp(h)
-  Gp = gcd(Fp(K(P.gen_two)), Fp(G))
-  for (s, e) in gp
-    if iszero(s(hp) % Gp)
-      p = ideal_from_poly(Zk, Int(minimum(P)), s, e)
-      return p
-    end
-  end
-end
-
-
-@doc Markdown.doc"""
-    prime_decomposition(f::Map, p::NfOrdIdl, Z_K::NfOrd) -> Array{Tuple{NfOrdIdl, Int}, 1}
-Given a map $f: k\to K$ of number fields defined over $\mathbb Q$ and
-a prime ideal in the maximal order of $k$, find all prime ideals in
-the maximal order of $K$ above.
-The ideals will belong to $Z_K$ which defaults to "the" maximal order of $K$.
-"""
-function prime_decomposition(f::Map, p::NfOrdIdl, ZK::NfOrd = maximal_order(codomain(f)))
-  @assert p.is_prime == 1
-  k = domain(f)
-  K = codomain(f)
-  if !divisible(index(ZK), minimum(p))
-    return prime_decomposition_nonindex(f, p, ZK)
-  end
-  # TODO: Implement for nonindex divisors seriously,
-  # splitting the algebra.
-  lp = prime_decomposition(ZK, minimum(p))
-  res = Tuple{NfOrdIdl, Int}[]
-  el = f(p.gen_two.elem_in_nf)
-  for (P,_) in lp
-    v = valuation(el, P)
-    # p has a two-normal presentation, so to test the ramification
-    # I only need to test the second element.
-    if v > 0
-      push!(res, (P, v))
-    end
-  end
-  return res
-
-end
-
-function prime_decomposition_nonindex(f::Map, p::NfOrdIdl, ZK = maximal_order(codomain(f)))
-
-  k = domain(f)
-  K = codomain(f)
-  G = K.pol
-  Qx = parent(G)
-  res = Tuple{NfOrdIdl, Int}[]
-  if fits(Int, minimum(p))
-    Fp = PolynomialRing(GF(Int(minimum(p)), cached = false), cached = false)[1]
-    Gp = factor(ppio(Fp(G), Fp(f(p.gen_two.elem_in_nf)))[1])
-    for (ke, e) in Gp
-      P = ideal_from_poly(ZK, Int(minimum(p)), ke, e)
-      push!(res, (P, divexact(e, ramification_index(p))))
-    end
-  else
-    Fp1 = PolynomialRing(GF(minimum(p), cached = false), cached = false)[1]
-    Gp1 = factor(ppio(Fp1(G), Fp1(Qx(f(K(p.gen_two)))))[1])
-    for (ke, e) in Gp1
-      P = ideal_from_poly(ZK, minimum(p), ke, e)
-      push!(res, (P, divexact(e, ramification_index(p))))
-    end
-  end
-  return res
-end
-
-function prime_decomposition_type(f::Map, p::NfOrdIdl, ZK = maximal_order(codomain(f)))
-
-  if !isindex_divisor(ZK, minimum(p)) && !isramified(ZK, minimum(p))
-    return prime_decomposition_type_nonindex(f, p, ZK)
-  end
-  lp = prime_decomposition(f, p, ZK)
-  res = Vector{Tuple{Int, Int}}(undef, length(lp))
-  for i = 1:length(lp)
-    res[i] = (divexact(degree(lp[i][1]), degree(p)), lp[i][2])
-  end
-  return res
-
-end
-
-function prime_decomposition_type_nonindex(f::Map, p::NfOrdIdl, ZK = maximal_order(codomain(f)))
-  k = domain(f)
-  K = codomain(f)
-  G = K.pol
-  Qx = parent(G)
-
-  Fp = PolynomialRing(GF(Int(minimum(p)), cached = false), cached = false)[1]
-  Gp = factor_shape(gcd(Fp(f(K(p.gen_two))), Fp(G)))
-  res = Vector{Tuple{Int, Int}}(undef, sum(values(Gp)))
-  ind = 1
-  for (d, e) in Gp
-    for i = 1:e
-      res[ind] = (d, 1)
-      ind += 1
-    end
-  end
-  return res
-end
-
 
 @doc Markdown.doc"""
     lift(K::AnticNumberField, f::nmod_poly) -> nf_elem
@@ -328,17 +223,35 @@ $\mathfrak p$ with $l \leq \deg(\mathfrak p)$ will be returned.
 Note that in this case it may happen that $p\mathcal O$ is not the product of the
 $\mathfrak p_i^{e_i}$.
 """
-function prime_decomposition(O::NfAbsOrd{S, T}, p::Union{Integer, fmpz}, degree_limit::Int = 0, lower_limit::Int = 0; cached::Bool = true) where {S, T}
-  if typeof(p) == fmpz && fits(Int, p)
-    return prime_decomposition(O, Int(p), degree_limit, lower_limit)
+function prime_decomposition(O::NfAbsOrd{NfAbsNS, NfAbsNSElem}, p::Union{Integer, fmpz}, degree_limit::Int = degree(O), lower_limit::Int = 0; cached::Bool = true)
+  if typeof(p) != Int && fits(Int, p)
+    return prime_decomposition(O, Int(p), degree_limit, lower_limit, cached = cached)
   end
-  return prime_dec_nonindex(O, p, degree_limit, lower_limit)
+  if typeof(p) != fmpz && typeof(p) != Int
+    return prime_decomposition(O, fmpz(p), degree_limit, lower_limit, cached = cached)
+  end
+
+  if !divisible(numerator(discriminant(nf(O))), p)
+    return prime_dec_nonindex(O, p, degree_limit, lower_limit)
+  else
+    return prime_dec_gen(O, p, degree_limit, lower_limit)
+  end
+end
+
+Nemo.fits(::Type{Int}, a::Int) = true
+function Nemo.fits(::Type{Int}, a::Integer)
+  #TODO: possibly not optimal?
+  return a % Int == a
 end
 
 function prime_decomposition(O::NfOrd, p::Union{Integer, fmpz}, degree_limit::Int = degree(O), lower_limit::Int = 0; cached::Bool = false)
-  if typeof(p) == fmpz && fits(Int, p)
-    return prime_decomposition(O, Int(p), degree_limit, lower_limit)
+  if typeof(p) != Int && fits(Int, p)
+    return prime_decomposition(O, Int(p), degree_limit, lower_limit, cached = cached)
   end
+  if typeof(p) != fmpz && typeof(p) != Int
+    return prime_decomposition(O, fmpz(p), degree_limit, lower_limit, cached = cached)
+  end
+
   if isdefining_polynomial_nice(nf(O))
     if cached || isindex_divisor(O, p)
       if haskey(O.index_div, fmpz(p))
@@ -352,8 +265,8 @@ function prime_decomposition(O::NfOrd, p::Union{Integer, fmpz}, degree_limit::In
         return z
       end
     end
-    @assert O.ismaximal == 1 || p in O.primesofmaximality
     if isindex_divisor(O, p)
+      @assert O.ismaximal == 1 || p in O.primesofmaximality
       lp = prime_decomposition_polygons(O, p, degree_limit, lower_limit)
       if degree_limit == degree(O) && lower_limit == 0
         O.index_div[fmpz(p)] = lp
@@ -362,6 +275,7 @@ function prime_decomposition(O::NfOrd, p::Union{Integer, fmpz}, degree_limit::In
         return lp
       end
     else
+      @assert O.ismaximal == 1 || p in O.primesofmaximality || !divisible(discriminant(O), p)
       lp = prime_dec_nonindex(O, p, degree_limit, lower_limit)
       if cached && degree_limit == degree(O) && lower_limit == 0
         O.index_div[fmpz(p)] = lp
@@ -374,9 +288,9 @@ function prime_decomposition(O::NfOrd, p::Union{Integer, fmpz}, degree_limit::In
   return prime_dec_gen(O, p, degree_limit, lower_limit)
 end
 
-function prime_dec_gen(O, p, degree_limit = degree(O), lower_limit = 0)
+function prime_dec_gen(O::NfAbsOrd, p::Union{fmpz, Int}, degree_limit::Int = degree(O), lower_limit::Int = 0)
   Ip = pradical(O, p)
-  lp = Hecke._decomposition(O, Ip, Ip, ideal(O, one(O)), fmpz(p))
+  lp = Hecke._decomposition(O, ideal(O, p), Ip, ideal(O, 1), fmpz(p))
   z = Tuple{ideal_type(O), Int}[]
   for (Q, e) in lp
     if degree(Q) <= degree_limit && degree(Q) >= lower_limit
@@ -530,7 +444,7 @@ end
 
 # Belabas p. 40
 # Facts on normal presentation, Algorithmic Algebraic Number theory, Pohst-Zassenhaus
-function anti_uniformizer(P::NfOrdIdl)
+function anti_uniformizer(P::NfAbsOrdIdl)
   if isdefined(P, :anti_uniformizer)
     return P.anti_uniformizer
   end
@@ -549,15 +463,32 @@ function anti_uniformizer(P::NfOrdIdl)
   return P.anti_uniformizer
 end
 
+function _factor_distinct_deg(x::gfp_poly)
+  degs = Vector{Int}(undef, degree(x))
+  degss = [ pointer(degs) ]
+  fac = Nemo.gfp_poly_factor(x.mod_n)
+  ccall((:nmod_poly_factor_distinct_deg, libflint), UInt,
+          (Ref{Nemo.gfp_poly_factor}, Ref{gfp_poly}, Ptr{Ptr{Int}}),
+          fac, x, degss)
+  res = Dict{Int, Int}()
+  f = parent(x)()
+  for i in 1:fac.num
+    ccall((:nmod_poly_factor_get_nmod_poly, libflint), Nothing,
+            (Ref{gfp_poly}, Ref{Nemo.gfp_poly_factor}, Int), f, fac, i-1)
+    res[degs[i]] = divexact(degree(f), degs[i])
+  end
+  return res
+end
+
 function _prime_decomposition_type(fmodp)
-  fac = factor_shape(fmodp)
-  g = sum([ x for x in values(fac)])
-  res = Array{Tuple{Int, Int}}(undef, g)
-  k = 1
-  for (fi, ei) in fac
-    for j in 1:ei
-      res[k] = (fi, 1)
-      k = k + 1
+  discdeg = _factor_distinct_deg(fmodp)
+  nfacts = sum(x for x in values(discdeg))
+  res = Array{Tuple{Int, Int}}(undef, nfacts)
+  s = 1
+  for (k, v) in discdeg
+    for j in 1:v
+      res[s] = (k, 1)
+      s = s + 1
     end
   end
   return res
@@ -715,7 +646,6 @@ end
 ################################################################################
 
 #TODO: do sth. useful here!!!
-
 @doc Markdown.doc"""
     divides(A::NfOrdIdl, B::NfOrdIdl)
 
@@ -787,6 +717,20 @@ function coprime_base(A::Array{NfOrdIdl, 1}, p::fmpz)
   return coprime_base_steel(Ap)
 end
 
+				
+function _get_integer_in_ideal(I::NfOrdIdl)
+  if has_minimum(I)
+    return minimum(I)
+  end
+  if has_2_elem(I)
+    return I.gen_one
+  end
+  if has_norm(I)
+    return norm(I)
+  end
+  return minimum(I)
+end
+				
 @doc Markdown.doc"""
     coprime_base(A::Array{NfOrdIdl, 1}) -> Array{NfOrdIdl, 1}
     coprime_base(A::Array{NfOrdElem, 1}) -> Array{NfOrdIdl, 1}
@@ -794,36 +738,52 @@ A coprime base for the (principal) ideals in $A$, i.e. the returned array
 generated multiplicatively the same ideals as the input and are pairwise
 coprime.
 """
-function coprime_base(A::Array{NfOrdIdl, 1})
-  a1 = Set{fmpz}()
-  for I in A
-    if has_2_elem(I)
-      lf = _prefactorization(I)
-      for p in lf
-        push!(a1, p)
-      end
-      push!(a1, minimum(I))
-    else
-      push!(a1, minimum(I))
-    end
+function coprime_base(A::Array{NfOrdIdl, 1}; refine::Bool = false)
+  if isempty(A)
+    return NfOrdIdl[]
   end
   OK = order(A[1])
+  if refine
+    pf = prefactorization(A[1])
+    for i = 2:length(A)
+      append!(pf, prefactorization(A[i]))
+    end
+    a1 = fmpz[x.gen_one for x in pf if !isone(x.gen_one)]
+    if !isempty(a1)
+      a1 = coprime_base(a1)
+    end
+    for I in pf
+      if !(I.gen_one in a1) && !isone(minimum(I, copy = false))
+        push!(a1, minimum(I))
+        push!(a1, norm(I))
+      end
+    end
+  else
+    pf = A
+    a2 = Set{fmpz}()
+    for x in pf
+      if !isone(minimum(x, copy = false))
+        push!(a2, minimum(x), norm(x))
+      end
+    end
+    a1 = collect(a2)
+  end
   if isempty(a1)
     return NfOrdIdl[]
   end
-  a = coprime_base(collect(a1))
+  a = coprime_base(a1)
   C = Array{NfOrdIdl, 1}()
   for p = a
-    @vprint :CompactPresentation :3 "Doing $p, isprime: $(isprime(p)), is index divisor: $(isindex_divisor(OK, p))\n"
-    if p == 1
+    if isone(p)
       continue
     end
+    @vprint :CompactPresentation :3 "Doing $p, isprime: $(isprime(p)), is index divisor: $(isindex_divisor(OK, p))\n"
     if isprime(p)
       lp = prime_decomposition(OK, p)
       for (P, v) in lp
         found = false
-        for i = 1:length(A)
-          if divisible(norm(A[i], copy = false), p) && divides(A[i], P)
+        for i = 1:length(pf)
+          if divisible(_get_integer_in_ideal(pf[i]), p) && divisible(norm(pf[i], copy = false), p) && divides(pf[i], P)
             found = true
             break
           end
@@ -833,7 +793,7 @@ function coprime_base(A::Array{NfOrdIdl, 1})
         end
       end
     else
-      cp = coprime_base(A, p)
+      cp = coprime_base(pf, p)
       append!(C, cp)
     end
   end
@@ -842,7 +802,7 @@ end
 
 function coprime_base(A::Array{NfOrdElem, 1})
   O = parent(A[1])
-  return coprime_base([ideal(O, x) for x = A])
+  return coprime_base(NfOrdIdl[ideal(O, x) for x = A])
 end
 
 function integral_split(A::NfOrdIdl)
@@ -864,11 +824,12 @@ the prime ideal divisors:
 If `lp = factor_dict(A)`, then `keys(lp)` are the prime ideal divisors of $A$
 and `lp[P]` is the $P$-adic valuation of $A$ for all $P$ in `keys(lp)`.
 """
-factor(A::NfOrdIdl) = factor_dict(A)
+factor(A::NfAbsOrdIdl) = factor_dict(A)
 
-function factor_dict(A::NfOrdIdl)
+function factor_dict(A::NfAbsOrdIdl)
   ## this should be fixed
-  lF = Dict{NfOrdIdl, Int}()
+  #TODO:Test first if the ideal is a power.
+  lF = Dict{typeof(A), Int}()
   O = order(A)
   if has_princ_gen_special(A)
     g = A.princ_gen_special[2] + A.princ_gen_special[3]
@@ -910,6 +871,28 @@ function factor_dict(A::NfOrdIdl)
   return lF
 end
 
+function factor_easy(I::NfOrdIdl)
+  OK = order(I)
+  _assure_weakly_normal_presentation(I)
+  factors = _prefactorization(I)
+  ideals = Dict{NfOrdIdl, Int}()
+  for q in factors
+    pp, r = Hecke._factors_trial_division(q)
+    for p in pp
+      lp = prime_decomposition(OK, p)
+      for (P, vP) in lp
+        ideals[P] = valuation(I, P)
+      end
+    end
+    r = ispower(r)[2]
+    if !isone(r)
+      J = gcd(I, r)
+      ideals[J] = valuation(I, J)
+    end
+  end
+  return ideals
+end
+
 function _prefactorization(I::NfOrdIdl)
   @assert has_2_elem(I)
   n = I.gen_one
@@ -924,6 +907,28 @@ function _prefactorization(I::NfOrdIdl)
   f = Zx(K.pol)
   f1 = Zx(denominator(el)*el)
   return prefactorization(f, n, f1)
+end
+
+function _prefactorization(I::NfAbsOrdIdl)
+  return coprime_base(fmpz[I.gen_one, norm(I), minimum(I)])
+end
+
+function prefactorization(I::NfAbsOrdIdl)
+  OK = order(I)
+  _assure_weakly_normal_presentation(I)
+  factors = _prefactorization(I)
+  ideals = typeof(I)[]
+  for q in factors
+    pp, r = Hecke._factors_trial_division(q)
+    for p in pp
+      push!(ideals, gcd(I, p))
+    end
+    r = ispower(r)[2]
+    if !isone(r)
+      push!(ideals, gcd(I, r))
+    end
+  end
+  return ideals
 end
 
 ################################################################################
@@ -1000,375 +1005,6 @@ function isprime(A::NfAbsOrdIdl)
 
 end
 
-################################################################################
-#
-#  Valuation
-#
-################################################################################
-
-
-function valuation(a::UInt, b::UInt)
-  return ccall((:n_remove, libflint), Int, (Ref{UInt}, UInt), a, b)
-end
-
-# CF:
-# The idea is that valuations are mostly small, eg. in the class group
-# algorithm. So this version computes the completion and the embedding into it
-# at small precision and can thus compute (small) valuation at the effective
-# cost of an mod(nmod_poly, nmod_poly) operation.
-# Isn't it nice?
-function val_func_no_index_small(p::NfOrdIdl)
-  P = p.gen_one
-  @assert P <= typemax(UInt)
-  K = nf(order(p))
-  Rx = PolynomialRing(GF(UInt(P), cached=false), cached=false)[1]
-  Zx = PolynomialRing(FlintZZ, cached = false)[1]
-  g = Rx(p.gen_two.elem_in_nf)
-  f = Rx(K.pol)
-  g = gcd!(g, g, f)
-  g = lift(Zx, g)
-  k = flog(fmpz(typemax(UInt)), P)
-  g = hensel_lift(Zx(K.pol), g, P, k)
-  Sx = PolynomialRing(ResidueRing(FlintZZ, UInt(P)^k, cached=false), cached=false)[1]
-  g = Sx(g)
-  h = Sx()
-  uP = UInt(P)
-  local vfunc
-  let h = h, g = g, P = P, uP = uP
-    function vfunc(x::nf_elem, no::fmpq = fmpq(0))
-      d = denominator(x)
-      nf_elem_to_nmod_poly!(h, x, false) # ignores the denominator
-      h = rem!(h, h, g)
-      c = Nemo.coeff_raw(h, 0)
-      v = c==0 ? typemax(Int) : valuation(c, uP)
-      for i=1:degree(h)
-        c = Nemo.coeff_raw(h, i)
-        v = min(v, c==0 ? typemax(Int) : valuation(c, uP))
-      end
-      return v-valuation(d, P)::Int
-    end
-  end
-  return vfunc
-end
-
-function val_func_index(p::NfOrdIdl)
-  # We are in the index divisor case. In larger examples, a lot of
-  # time is spent computing denominators of order elements.
-  # By using the representation matrix to multiply, we can stay in the order
-  # and still be fast (faster even than in field).
-  pi = inv(p)
-  M = representation_matrix(pi.num.gen_two)
-  O = order(p)
-  P = p.gen_one
-  local val
-  let P = P, O = O, M = M, p = p
-    function val(x::nf_elem, no::fmpq = fmpq(0))
-      v = 0
-      d, x_mat = integral_split(x, O)
-      Nemo.mul!(x_mat, x_mat, M)
-      c = content(x_mat)
-      vc = valuation(c, P)
-      while vc > 0  # should divide and test in place
-	      divexact!(x_mat, x_mat, c)
-        mul!(x_mat, x_mat, M)
-        v += 1 + (vc-1)*p.splitting_type[1]
-        c = content(x_mat)
-        vc = valuation(c, P)
-      end
-      return v-Int(valuation(d, P))*p.splitting_type[1]
-    end
-  end
-  return val
-end
-
-# CF:
-# Classical algorithm of Cohen, but take a valuation element with smaller (?)
-# coefficients. Core idea is that the valuation element is, originally, den*gen_two(p)^-1
-# where gen_two(p) is "small". Actually, we don't care about gen_two, we
-# need gen_two^-1 to be small, hence this version.
-function val_func_generic(p::NfOrdIdl)
-  P = p.gen_one
-  K = nf(order(p))
-  O = order(p)
-  e = anti_uniformizer(p)
-  local val
-  let e = e, P = P, p = p, O = O
-    function val(x::nf_elem, no::fmpq = fmpq(0))
-      nn = fmpz(0)
-      v = 0
-      p_mod = fmpz(0)
-      d = denominator(x)
-      if !iszero(no)
-        nn = numerator(no*d^degree(O))
-        p_mod = P^(div(valuation(nn, norm(p)), ramification_index(p))+1)
-	      x = mod(x, p_mod)
-      end
-      x *= d
-      x = x*e
-      while x in O
-        v += 1
-        if !iszero(no)
-          nn = divexact(nn, norm(p))
-          if !divisible(nn, norm(p))
-            break
-          end
-          x = mod(x, p_mod)
-        end
-        mul!(x, x, e)
-      end
-      return v-valuation(d, P)*p.splitting_type[1]
-    end
-  end
-  return val
-end
-
-function valuation_with_anti_uni(a::nf_elem, anti_uni::nf_elem, I::NfOrdIdl)
-  O = order(I)
-  b = a*anti_uni
-  if !(b in O)
-    return 0
-  end
-  v = 1
-  mul!(b, b, anti_uni)
-  while b in O
-    v += 1
-    mul!(b, b, anti_uni)
-  end
-  return v
-end
-
-function _isindex_divisor(O::NfOrd, P::NfOrdIdl)
-  @assert isprime_known(P) && isprime(P)
-  if !isone(denominator(P.gen_two.elem_in_nf))
-    return true
-  end
-  R = GF(Int(minimum(P)), cached = false)
-  Rt, t = PolynomialRing(R, "x", cached = false)
-  f = Rt(nf(P).pol)
-  g = Rt(P.gen_two.elem_in_nf)
-  d = gcd(f, g)
-  if !divides(f, d^2)[1] && isirreducible(d)
-    return false
-  else
-    return true
-  end
-end
-
-#Function that chooses the valuation depending on the properties of the ideal
-function assure_valuation_function(p::NfOrdIdl)
-  if isdefined(p, :valuation)
-    return nothing
-  end
-  O = order(p)
-  K = nf(O)
-  # for generic ideals
-  if p.splitting_type[2] == 0
-    assure_2_normal(p)
-    anti_uni = anti_uniformizer(p)
-    local val2
-    let O = O, p = p, anti_uni = anti_uni, K = K
-      function val2(s::nf_elem, no::fmpq = fmpq(0))
-        d = denominator(s, O)
-        x = d*s
-        if gcd(d, minimum(p, copy = false)) == 1
-          return valuation_with_anti_uni(x, anti_uni, p)::Int
-        else
-          return valuation_with_anti_uni(x, anti_uni, p)::Int - valuation_with_anti_uni(K(d), anti_uni, p)::Int
-        end
-      end
-    end
-    p.valuation = val2
-    return nothing
-  end
-  P = minimum(p)
-  if p.splitting_type[1]*p.splitting_type[2] == degree(O)
-    local val3
-    let P = P, p = p
-      function val3(s::nf_elem, no::fmpq = fmpq(0))
-        return divexact(valuation(iszero(no) ? norm(s) : no, P)[1], p.splitting_type[2])::Int
-      end
-    end
-    p.valuation = val3
-  elseif mod(index(O), P) != 0 && ramification_index(p) == 1
-    if fits(UInt, P^2)
-      f1 = val_func_no_index_small(p)
-      f2 = val_func_generic(p)
-      local val1
-      let f1 = f1, f2 = f2
-        function val1(x::nf_elem, no::fmpq = fmpq(0))
-          v = f1(x, no)
-          if v > 100  # can happen ONLY if the precision in the .._small function
-                      # was too small.
-            return f2(x, no)::Int
-          else
-            return v::Int
-          end
-        end
-      end
-      p.valuation = val1
-    else
-      p.valuation = val_func_generic(p)
-    end
-  elseif ramification_index(p) == 1 && fits(UInt, P^2) && !_isindex_divisor(O, p)
-    f3 = val_func_no_index_small(p)
-    f4 = val_func_index(p)
-    local val4
-      let f3 = f3, f4 = f4
-        function val4(x::nf_elem, no::fmpq = fmpq(0))
-          v = f3(x, no)
-          if v > 100  # can happen ONLY if the precision in the .._small function
-                      # was too small.
-            return f4(x, no)::Int
-          else
-            return v::Int
-          end
-        end
-      end
-      p.valuation = val4
-  elseif degree(O) > 80
-    p.valuation = val_func_generic(p)
-  else
-    p.valuation = val_func_index(p)
-  end
-  return nothing
-end
-
-
-@doc Markdown.doc"""
-    valuation(a::nf_elem, p::NfOrdIdl) -> fmpz
-    valuation(a::NfOrdElem, p::NfOrdIdl) -> fmpz
-    valuation(a::fmpz, p::NfOrdIdl) -> fmpz
-
-Computes the $\mathfrak p$-adic valuation of $a$, that is, the largest $i$
-such that $a$ is contained in $\mathfrak p^i$.
-"""
-function valuation(a::nf_elem, p::NfOrdIdl, no::fmpq = fmpq(0))
-  if parent(a) !== nf(order(p))
-    throw(error("Incompatible parents"))
-  end
-  if !isdefining_polynomial_nice(parent(a)) || order(p).ismaximal != 1
-    return valuation_naive(a, p)::Int
-  end
-  @hassert :NfOrd 0 !iszero(a)
-  assure_valuation_function(p)
-  if p.is_prime != 1
-    return Int(p.valuation(a, no))::Int
-  end
-  #First, check the content of a as a polynomial.
-  #We remove the numerator of the content, as the
-  #valuation for integers is much easier.
-  O = order(p)
-  K = nf(O)
-  Zx = PolynomialRing(FlintZZ, "x")[1]
-  pol_a = Zx(denominator(a)*a)
-  c = content(pol_a)
-  valnum = Int(valuation(c, p))
-  b = divexact(a, c)
-
-  nno = no
-  if !iszero(nno)
-    nno = divexact(nno, c^degree(K))
-  end
-  res = Int(p.valuation(b, nno))::Int
-  res += valnum
-  return res
-end
-
-@doc Markdown.doc"""
-    valuation(a::nf_elem, p::NfOrdIdl) -> fmpz
-    valuation(a::NfOrdElem, p::NfOrdIdl) -> fmpz
-    valuation(a::fmpz, p::NfOrdIdl) -> fmpz
-
-Computes the $\mathfrak p$-adic valuation of $a$, that is, the largest $i$
-such that $a$ is contained in $\mathfrak p^i$.
-"""
-valuation(a::NfOrdElem, p::NfOrdIdl) = valuation(a.elem_in_nf, p)
-
-@doc Markdown.doc"""
-    valuation(a::nf_elem, p::NfOrdIdl) -> fmpz
-    valuation(a::NfOrdElem, p::NfOrdIdl) -> fmpz
-    valuation(a::fmpz, p::NfOrdIdl) -> fmpz
-
-Computes the $\mathfrak p$-adic valuation of $a$, that is, the largest $i$
-such that $a$ is contained in $\mathfrak p^i$.
-"""
-function valuation(a::fmpz, p::NfOrdIdl)
-  if p.splitting_type[1] == 0
-    return valuation_naive(order(p)(a), p)
-  end
-  P = minimum(p)
-  return valuation(a, P)* p.splitting_type[1]
-end
-@doc Markdown.doc"""
-    valuation(a::Integer, p::NfOrdIdl) -> fmpz
-Computes the $\mathfrak p$-adic valuation of $a$, that is, the largest $i$
-such that $a$ is contained in $\mathfrak p^i$.
-"""
-valuation(a::Integer, p::NfOrdIdl) = valuation(fmpz(a), p)
-
-#TODO: some more intelligence here...
-function valuation_naive(A::NfOrdIdl, B::NfOrdIdl)
-  @assert !isone(B)
-  Bi = inv(B)
-  i = 0
-  C = simplify(A* Bi)
-  while denominator(C) == 1
-    C = simplify(Bi*C)
-    i += 1
-  end
-  return i
-end
-
-#TODO: some more intelligence here...
-#      in non-maximal orders, interesting ideals cannot be inverted
-#      maybe this needs to be checked...
-function valuation_naive(x::NfOrdElem, B::NfOrdIdl)
-  @assert !isone(B)
-  i = 0
-  C = B
-  while x in C
-    i += 1
-    C *= B
-  end
-  return i
-end
-
-function valuation_naive(x::nf_elem, B::NfOrdIdl)
-  @assert !isone(B)
-  i = 0
-  C = B
-  O = order(B)
-  d = denominator(x, O)
-  return valuation_naive(O(x*d), B) - valuation_naive(O(d), B)
-end
-
-@doc Markdown.doc"""
-    valuation(A::NfOrdIdl, p::NfOrdIdl) -> fmpz
-
-Computes the $\mathfrak p$-adic valuation of $A$, that is, the largest $i$
-such that $A$ is contained in $\mathfrak p^i$.
-"""
-function valuation(A::NfOrdIdl, p::NfOrdIdl)
-  if has_minimum(A) && has_minimum(p) && !divisible(minimum(A, copy = false), minimum(p, copy = false))
-    return 0
-  end
-  if has_princ_gen_special(A)
-    gen = princ_gen_special(A)
-    return valuation(gen, p)
-  end
-  if A.is_principal == 1 && isdefined(A, :princ_gen)
-    return valuation(A.princ_gen.elem_in_nf, p, fmpq(norm(A)))
-  end
-  _assure_weakly_normal_presentation(A)
-  if !isdefined(p, :splitting_type) || p.splitting_type[1] == 0 #ie. if p is non-prime...
-    return valuation_naive(A, p)
-  end
-  if iszero(A.gen_two)
-    return valuation(A.gen_one, p)
-  end
-  v1 = valuation(A.gen_one, p)
-  return min(v1, valuation(A.gen_two.elem_in_nf, p, fmpq(norm(A))))
-end
 
 ################################################################################
 #
@@ -1628,11 +1264,12 @@ end
 prime_ideals_over(O::NfOrd, p::Integer) = prime_ideals_over(O, fmpz(p))
 
 function prime_ideals_over(O::NfOrd, p::fmpz)
-  M = maximal_order(O)
-  lp = prime_decomposition(M, p)
-  if M == O
+  if ismaximal_known_and_maximal(O)
+    lp = prime_decomposition(O, p)
     return NfOrdIdl[x[1] for x in lp]
   end
+  M = maximal_order(O)
+  lp = prime_decomposition(M, p)
   p_critical_primes = Vector{ideal_type(O)}()
   for (P, e) in lp
     c = contract(P, O)
@@ -1973,6 +1610,7 @@ end
 #  Decomposition Group of a prime ideal
 #
 ################################################################################
+											
 @doc Markdown.doc"""
     decomposition_group(P::NfOrdIdl; G::Vector{NfToNfMor}) -> Vector{NfToNfMor}
 
@@ -1980,7 +1618,9 @@ Given a prime ideal $P$ in a normal number field $G$, it returns a vector of the
 such that $\sigma_i(P) = P$ for all $i = 1,\dots, s$.
 If a subgroup $G$ of automorphisms is given, the output is the intersection of the decomposition group with that subgroup.
 """
-function decomposition_group(P::NfOrdIdl; G::Array{NfToNfMor, 1} = NfToNfMor[], orderG::Int = degree(P)*ramification_index(P))
+											
+function decomposition_group(P::NfOrdIdl; G::Array{NfToNfMor, 1} = NfToNfMor[],
+                             orderG::Int = degree(P)*ramification_index(P))
   @assert isprime(P)
   OK = order(P)
   K = nf(OK)
@@ -2044,13 +1684,29 @@ function decomposition_group_easy(G, P)
   pols = nmod_poly[Rt(x.prim_img) for x in G]
   indices = Int[]
   second_gen = Rt(P.gen_two.elem_in_nf)
+  if iszero(second_gen)
+    return G
+  end
   for i = 1:length(G)
     p1 = compose_mod(second_gen, pols[i], fmod)
-    if iszero(mod(p1, second_gen))
+    if iszero(p1) || iszero(mod(p1, second_gen))
       push!(indices, i)
     end
   end
   return G[indices]
+end
+
+@doc Markdown.doc"""
+    decomposition_group(K::AnticNumberField, P::NfOrdIdl, m::Map)
+                                                  -> Grp, GrpToGrp
+											
+Given a prime ideal $P$ of a number field $K$ and a map `m` return from
+`automorphism_group(K)`, return the decompositon group of $P$ as a subgroup of 
+the domain of `m`.
+"""
+function decomposition_group(K::AnticNumberField, P::NfOrdIdl, mG::Map)
+  iner = decomposition_group(P)
+  return subgroup(domain(mG), [mG\a for a in iner])
 end
 
 ################################################################################
@@ -2058,6 +1714,7 @@ end
 #  Inertia subgroup of a prime ideal
 #
 ################################################################################
+											
 @doc Markdown.doc"""
    inertia_subgroup(P::NfOrdIdl; G::Vector{NfToNfMor}) -> Vector{NfToNfMor}
 
@@ -2065,7 +1722,8 @@ Given a prime ideal $P$ in a normal number field, it returns a vector of the aut
 such that $\sigma_i(P) = P$ for all $i = 1,\dots, s$ and induce the identity on the residue field.
 If a subgroup $G$ of automorphisms is given, the output is the intersection of the inertia group with $G$.
 """
-function inertia_subgroup(P::NfOrdIdl; G::Array{NfToNfMor, 1} = NfToNfMor[])
+											
+function inertia_subgroup(P::NfOrdIdl; G::Vector{NfToNfMor} = NfToNfMor[])
   @assert isprime(P)
   O = order(P)
   K = nf(O)
@@ -2143,4 +1801,51 @@ function inertia_subgroup_easy(F, mF, G::Vector{NfToNfMor})
     end
   end
   return G[indices]
+end
+
+@doc Markdown.doc"""
+    inertia_subgroup(K::AnticNumberField, P::NfOrdIdl, m::Map) -> Grp, GrpToGrp
+											
+Given a prime ideal $P$ of a number field $K$ and a map `m` return from
+`automorphism_group(K)`, return the intertia subgroup of $P$ as a subgroup of
+the domain of `m`.
+"""
+function inertia_subgroup(K::AnticNumberField, P::NfOrdIdl, mG::Map)
+  iner = inertia_subgroup(P)
+  return subgroup(domain(mG), [mG\a for a in iner])
+end
+
+################################################################################
+#
+#  Ramification groups
+#
+################################################################################
+
+function ramification_group(P::NfOrdIdl, i::Int)
+  if i == 0
+    return inertia_subgroup(P)
+  end
+  A = inertia_subgroup(P)
+  pi = uniformizer(P)
+  res = NfToNfMor[]
+  a = elem_in_nf(pi)
+  for f in A
+    b = f(a)
+    if b == a || valuation(b - a, P) >= i + 1
+      push!(res, f)
+    end
+  end
+  return res
+end
+
+@doc Markdown.doc"""
+    ramification_group(K::AnticNumberField, P::NfOrdIdl, m::Map) -> Grp, GrpToGrp
+											
+Given a prime ideal $P$ of a number field $K$ and a map `m` return from
+`automorphism_group(K)`, return the ramification group of $P$ as a subgroup of 
+the domain of `m`.
+"""
+function ramification_group(K::AnticNumberField, P::NfOrdIdl, i::Int, mG::Map)
+  iner = ramification_group(P, i)
+  return subgroup(domain(mG), [mG\a for a in iner])
 end
