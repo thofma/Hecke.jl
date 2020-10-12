@@ -258,7 +258,7 @@ function residual_polynomial(F, L::Line, dev::Array{fmpz_poly, 1}, p::Union{Int,
   e = denominator(L.slope)
   for i=0:degree(L)
     if !iszero(dev[Int(s+e*i+1)])
-      el=Rx(divexact(dev[Int(s+e*i+1)], p^(Int(L.points[1][2]+numerator(L.slope*i*e)))))
+      el=Rx(divexact(dev[Int(s+e*i+1)], fmpz(p)^(Int(L.points[1][2]+numerator(L.slope*i*e)))))
       push!(cof, F(el))
     else
       push!(cof, F(0))
@@ -484,8 +484,7 @@ function _order_for_polygon_overorder(K::S, elt::Array{T, 1}, dold::fmpq = fmpq(
       break
     end
 
-
-    B = basis_matrix(prods, FakeFmpqMat)
+    B = basis_matrix(prods, FakeFmpqMat) 
     hnf_modular_eldiv!(B.num, B.den, :lowerleft)
 
     dd = B.num[nrows(B) - degree(K) + 1, 1]
@@ -593,9 +592,11 @@ function _decomposition(O::NfAbsOrd, I::NfAbsOrdIdl, Ip::NfAbsOrdIdl, T::NfAbsOr
   end
   k = (1-1/BigInt(p))^degree(O) < 0.1
 
+        
   if !k
     #The probability of finding a random generator is high
     for j in 1:length(ideals)
+            
       P = ideals[j][1]
       f = P.splitting_type[2]
       #@vprint :NfOrd 1 "Chances for finding second generator: ~$((1-1/BigInt(p)))\n"
@@ -605,10 +606,21 @@ function _decomposition(O::NfAbsOrd, I::NfAbsOrdIdl, Ip::NfAbsOrdIdl, T::NfAbsOr
       modulo = norm(P)*p
       x = zero(parent(u))
 
-      if !isnorm_divisible_pp(u.elem_in_nf, modulo)
+     if issimple(nf(O)) && isdefining_polynomial_nice(nf(O))
+        if !isnorm_divisible_pp(u.elem_in_nf, modulo)
+          x = u
+        elseif !isnorm_divisible_pp(u.elem_in_nf+p, modulo)
+          x = u + p
+        end
+      else
+        if iszero(mod(norm(u), modulo))
+          if !iszero(mod(norm(u+p), modulo))
+            add!(u, u, p)
+          elseif !iszero(mod(norm(u-p), modulo))
+            sub!(u, u, p)
+          end
+        end
         x = u
-      elseif !isnorm_divisible_pp(u.elem_in_nf+p, modulo)
-        x = u + p
       end
 
       @hassert :NfOrd 1 !iszero(x)
@@ -660,15 +672,16 @@ function _decomposition(O::NfAbsOrd, I::NfAbsOrdIdl, Ip::NfAbsOrdIdl, T::NfAbsOr
       #u = u1*(u2+v2) + u2*v1
       #v = v1*v2
       @hassert :NfOrd 1 isone(u + v)
-      u = O(mod(u.elem_in_nf, p))
-
+      if issimple(nf(O)) && isdefining_polynomial_nice(nf(O))
+        u = O(mod(u.elem_in_nf, p))
+      end
+      
       @hassert :NfOrd 1 containment_by_matrices(u, P)
       modulo = norm(P)*p
-      #if iszero(_normmod(modulo, u))#isnorm_divisible_pp(u.elem_in_nf, modulo)
       if iszero(mod(norm(u), modulo))
         if !iszero(mod(norm(u+p), modulo))
           add!(u, u, p)
-        elseif !iszero(mod(norm(u-p), modulo))#!isnorm_divisible_pp(u.elem_in_nf-p, modulo)
+        elseif !iszero(mod(norm(u-p), modulo))
           sub!(u, u, p)
         else
           Ba = basis(P, copy = false)
@@ -743,7 +756,7 @@ function _decomposition(O::NfAbsOrd, I::NfAbsOrdIdl, Ip::NfAbsOrdIdl, T::NfAbsOr
     P = ideals[1][1]
     f = P.splitting_type[2]
     #There is only one prime ideal and the probability of finding a random generator is low.
-    #I need one element of valuation 1. Then, using the idempotents, I can get a generator easily.
+    #I need one element of valuation 1.
     P2 = P*P
     x = find_elem_of_valuation_1(P, P2)
     @hassert :NfOrd 1 !iszero(x)
@@ -762,8 +775,8 @@ function _decomposition(O::NfAbsOrd, I::NfAbsOrdIdl, Ip::NfAbsOrdIdl, T::NfAbsOr
     ideals[1] = (P, e)
   end
   return ideals
-
 end
+
 
 function find_random_second_gen(A::NfAbsOrdIdl{S, T}) where {S, T}
   O = order(A)
@@ -771,6 +784,12 @@ function find_random_second_gen(A::NfAbsOrdIdl{S, T}) where {S, T}
   Amin2 = minimum(A, copy = false)^2
   Amind = gcd(minimum(A)^degree(O), minimum(A, copy = false)*norm(A))
 
+  if norm(O(minimum(A))) == norm(A)
+    A.gen_one = minimum(A)
+    A.gen_two = O(minimum(A))
+    A.gens_weakly_normal = true
+    return nothing
+  end
   B = Array{fmpz}(undef, degree(O))
 
   gen = O()
@@ -801,12 +820,13 @@ function find_random_second_gen(A::NfAbsOrdIdl{S, T}) where {S, T}
     mul!(m, m, basis_matrix(A, copy = false))
     mul!(m, m, basis_matrix(O, copy = false).num)
     gen = elem_from_mat_row(K, m, 1, dBmat)
-    gen = mod(gen, Amin2)
+    if issimple(K) && isdefining_polynomial_nice(K)
+      gen = mod(gen, Amin2)
+    end
     if iszero(gen)
       continue
     end
-
-    if norm(A) == _normmod(Amind, O(gen, false))
+    if norm(A, copy = false) == _normmod(Amind, O(gen, false))
       A.gen_one = minimum(A)
       A.gen_two = O(gen, false)
       A.gens_weakly_normal = true
