@@ -1,4 +1,4 @@
-export ray_class_group, narrow_class_group
+export ray_class_group, narrow_class_group, MapRayClassGrp
 
 add_verbose_scope(:RayFacElem)
 add_assert_scope(:RayFacElem)
@@ -14,6 +14,8 @@ mutable struct MapRayClassGrp <: Map{GrpAbFinGen, FacElemMon{Hecke.NfOrdIdlSet},
   defining_modulus::Tuple{NfOrdIdl, Array{InfPlc, 1}}
   fact_mod::Dict{NfOrdIdl, Int} #The factorization of the finite part of the defining modulus
 
+  gens::Tuple{Vector{NfOrdIdl}, Vector{GrpAbFinGenElem}}
+  
   #Dictionaries to cache preimages. Used in the action on the ray class group
   prime_ideal_preimage_cache::Dict{NfOrdIdl, GrpAbFinGenElem}
   prime_ideal_cache::Array{NfOrdIdl, 1}
@@ -100,7 +102,7 @@ function __assure_princ_gen(c::Hecke.ClassGrpCtx{SMat{fmpz}}, nquo::Int)
       end
     end
     I = FacElem(DI)
-    J, a = reduce_ideal2(I)
+    J, a = reduce_ideal(I)
     inv!(a)
     pow!(a, ex)
     mul!(e, e, a)
@@ -180,14 +182,46 @@ end
 #
 ################################################################################
 
-function class_as_ray_class(C::GrpAbFinGen, mC::MapClassGrp, exp_class::Function,  m::NfOrdIdl)
+function class_as_ray_class(C::GrpAbFinGen, mC::MapClassGrp, exp_class::Function,  m::NfOrdIdl, expo::Int)
 
-  local disclog
+
   O = order(m)
   X = abelian_group(rels(C))
 
+  if expo != -1
+    Q, mQ = quo(C, expo, false)
+    local disclog1
+    let Q = Q, mC = mC, mQ = mQ
+      function disclog1(J::NfOrdIdl)
+        return mQ(mC\(J))
+      end
+  
+      function disclog1(J::FacElem{NfOrdIdl, NfOrdIdlSet})
+        a = X[0]
+        for (f, k) in J.fac
+          a += k*disclog(f)
+        end
+        return a
+      end
+    end
 
-  let X = X, mC = mC
+    local expo_map
+    let mQ = mQ, exp_class = exp_class
+      function expo_map(el::GrpAbFinGenElem)
+        return exp_class(mQ\el)
+      end
+    end
+
+    mp1 = Hecke.MapRayClassGrp()
+    mp1.header = Hecke.MapHeader(Q, FacElemMon(parent(m)), expo_map, disclog1)
+    mp1.fact_mod = Dict{NfOrdIdl, Int}()
+    mp1.defining_modulus = (m, InfPlc[])
+    mp1.clgrpmap = mC
+    return Q, mp1
+  end
+  
+  local disclog
+  let X = X, mC = mC 
     function disclog(J::NfOrdIdl)
       return X((mC\J).coeff)
     end
@@ -439,7 +473,7 @@ function n_part_class_group(mC::Hecke.MapClassGrp, n::Integer)
     local disclog1
     let G = G
       function disclog1(I::NfOrdIdl)
-        return G(Int[])
+        return G[0]
       end
     end
 
@@ -478,7 +512,7 @@ function n_part_class_group(mC::Hecke.MapClassGrp, n::Integer)
       for i=ind:ngens(C)
         y[1,i-ind+1]=x.coeff[1,i]
       end
-      return G(y)
+      return GrpAbFinGenElem(G, y)
     end
   end
 
@@ -556,13 +590,13 @@ end
 # We compute the group using the sequence U -> (O/m)^* _> Cl^m -> Cl -> 1
 #
 @doc Markdown.doc"""
-    ray_class_group(m::NfOrdIdl, inf_plc::Array{InfPlc, 1}; n_quo::Int) -> GrpAbFinGen, MapRayClassGrp
-
+    ray_class_group(m::NfOrdIdl, inf_plc::Array{InfPlc, 1}; n_quo::Int, lp::Dict{NfOrdIdl, Int}) -> GrpAbFinGen, MapRayClassGrp
+    
 Given an ideal $m$ and a set of infinite places of $K$,
- this function returns the corresponding ray class group as an abstract group $\mathcal {Cl}_m$ and a map going
- from the group into the group of ideals of $K$ that are coprime to $m$.
+this function returns the corresponding ray class group as an abstract group $\mathcal {Cl}_m$ and a map going
+from the group into the group of ideals of $K$ that are coprime to $m$.
+If `n_quo` is set, it will return the group modulo `n_quo`. The factorization of $m$ can be given with the keyword argument `lp`.
 """
-
 function ray_class_group(m::NfOrdIdl, inf_plc::Vector{InfPlc} = Vector{InfPlc}(); GRH::Bool = true, n_quo::Int = -1, lp::Dict{NfOrdIdl, Int} = factor(m))
 
   O = order(m)
@@ -583,7 +617,7 @@ function ray_class_group(m::NfOrdIdl, inf_plc::Vector{InfPlc} = Vector{InfPlc}()
         return FacElem(Dict(mC(a) => 1))
       end
     end
-    return class_as_ray_class(C, mC, exp_c, m)
+    return class_as_ray_class(C, mC, exp_c, m, n_quo)
   end
   _assure_princ_gen(mC)
 
@@ -713,10 +747,13 @@ function ray_class_group(m::NfOrdIdl, inf_plc::Vector{InfPlc} = Vector{InfPlc}()
         R[j, ngens(C)+ind-1+s] = -a[1, s]
       end
     end
-  end
-
+  end  
+  
   X = abelian_group(R)
-
+  if n_quo != -1
+    X.exponent = n_quo
+  end
+  
   local disclog
   let X = X, mC = mC, C = C, exp_class = exp_class, powers = powers, groups_and_maps = groups_and_maps, quo_rings = quo_rings, lH = lH, diffC = diffC, n_quo = n_quo, m = m, expon = expon
     invd = invmod(fmpz(diffC), expon)
@@ -770,7 +807,7 @@ function ray_class_group(m::NfOrdIdl, inf_plc::Vector{InfPlc} = Vector{InfPlc}()
           coeffs[1, ii-1+s+ngens(C)] = b[1, s]
         end
       end
-      return X(coeffs)
+      return GrpAbFinGenElem(X, coeffs)
     end
   end
 
@@ -848,7 +885,7 @@ function ray_class_group(m::NfOrdIdl, inf_plc::Vector{InfPlc} = Vector{InfPlc}()
   local expo
   let C = C, O = O, groups_and_maps = groups_and_maps, exp_class = exp_class, eH = eH, H = H, K = K, Dgens = Dgens, X = X, p = p
     function expo(a::GrpAbFinGenElem)
-      b = C(sub(a.coeff, 1:1, 1:ngens(C)))
+      b = GrpAbFinGenElem(C, sub(a.coeff, 1:1, 1:ngens(C)))
       res = exp_class(b)
       for i = 1:nG
         if !iszero(a.coeff[1, ngens(C)+i])
@@ -873,16 +910,16 @@ function ray_class_group(m::NfOrdIdl, inf_plc::Vector{InfPlc} = Vector{InfPlc}()
       for i = 1:length(to_be_c)
         dis[1, ind-1+i+ngens(C)] = to_be_c[1, i]
       end
-      mprim.disc_log = X(dis)
+      mprim.disc_log = GrpAbFinGenElem(X, dis)
     end
     ind += ngens(domain(mG))
   end
 
   disc_log_inf = Dict{InfPlc, GrpAbFinGenElem}()
   for i = 1:length(p)
-    eldi = zeros(FlintZZ, ngens(X))
-    eldi[ngens(X) - length(p) + i] = 1
-    disc_log_inf[p[i]] = X(eldi)
+    eldi = zero_matrix(FlintZZ, 1,  ngens(X))
+    eldi[1, ngens(X) - length(p) + i] = 1
+    disc_log_inf[p[i]] = GrpAbFinGenElem(X, eldi)
   end
 
   mp = MapRayClassGrp()
@@ -907,8 +944,9 @@ end
 function ray_class_groupQQ(O::NfOrd, modulus::Int, inf_plc::Bool, n_quo::Int)
 
   R=ResidueRing(FlintZZ, modulus, cached=false)
-  U,mU=unit_group_mod(R, n_quo)
-  if inf_plc
+  U, mU = unit_group_mod(R, n_quo)
+  U.exponent = n_quo
+  if inf_plc 
     function disc_log1(I::NfOrdIdl)
       @assert gcd(minimum(I),modulus)==1
       i = Int(mod(I.minimum, modulus))
@@ -946,7 +984,7 @@ function ray_class_groupQQ(O::NfOrd, modulus::Int, inf_plc::Bool, n_quo::Int)
 
   else
 
-    Q,mQ=quo(U, GrpAbFinGenElem[mU\(R(-1))])
+    Q, mQ = quo(U, GrpAbFinGenElem[mU\(R(-1))], false)
 
     function disc_log(I::NfOrdIdl)
       i=Int(mod(minimum(I), modulus))
@@ -1000,10 +1038,31 @@ function find_gens(mR::MapRayClassGrp; coprime_to::fmpz = fmpz(-1))
   if coprime_to != -1
     mm = lcm(mm, coprime_to)
   end
-  mm = lcm(mm, discriminant(EquationOrder(nf(O))))
+  mm = lcm(mm, discriminant(EquationOrder(nf(O))))  
+  if isdefined(mR, :gens)
+    if coprime_to == -1
+      return mR.gens[1], mR.gens[2]
+    else
+      found = false
+      sR = GrpAbFinGenElem[]
+      lp = NfOrdIdl[]
+      for i = 1:length(mR.gens[1])
+        if iscoprime(mR.gens[1][i], coprime_to)
+          push!(lp, mR.gens[1][i])
+          push!(sR, mR.gens[2][i])
+        else
+          found = true
+        end
+      end
+      if !found
+        return lp, sR
+      end
+    end
+  else
+    sR = GrpAbFinGenElem[]
+    lp = NfOrdIdl[]
+  end
 
-  sR = GrpAbFinGenElem[]
-  lp = NfOrdIdl[]
   q, mq = quo(R, sR, false)
   s, ms = snf(q)
 
@@ -1033,8 +1092,11 @@ function find_gens(mR::MapRayClassGrp; coprime_to::fmpz = fmpz(-1))
           push!(lp, ideal(O, gens_m[i][1]))
           q, mq = quo(R, sR, false)
           s, ms = snf(q)
-          if order(s) == 1
-            return lp,sR
+          if order(s) == 1 
+            if !isdefined(mR, :gens)
+              mR.gens = (lp, sR)
+            end
+            return lp, sR
           end
         end
       end
@@ -1067,6 +1129,9 @@ function find_gens(mR::MapRayClassGrp; coprime_to::fmpz = fmpz(-1))
           q, mq = quo(R, sR, false)
           s, ms = snf(q)
           if order(s)==1
+	    if !isdefined(mR, :gens)
+              mR.gens = (lp, sR)
+            end
             return lp, sR
           end
         end
@@ -1089,7 +1154,7 @@ function find_gens(mR::MapRayClassGrp; coprime_to::fmpz = fmpz(-1))
       push!(disc_log_primes_class_grp, mC\x)
     end
   end
-  Q1, mQ1 = quo(C, disc_log_primes_class_grp)
+  Q1, mQ1 = quo(C, disc_log_primes_class_grp, false)
   S1, mS1 = snf(Q1)
   p1 = fmpz(2)
   while order(S1) != 1
@@ -1123,6 +1188,9 @@ function find_gens(mR::MapRayClassGrp; coprime_to::fmpz = fmpz(-1))
   for i = 1:length(primes_class_group)
     push!(lp, primes_class_group[i])
     push!(sR, mR\primes_class_group[i])
+  end
+  if !isdefined(mR, :gens)
+    mR.gens = (lp, sR)
   end
   return lp, sR
 end
@@ -1217,7 +1285,6 @@ function find_gens_for_action(mR::MapRayClassGrp)
     end
   end
   #Now, gens of class group. Those are cached in the class group map
-
   mC = mR.clgrpmap
   for P in mC.small_gens
     push!(lp, P)
@@ -1257,9 +1324,9 @@ function has_principal_generator_1_mod_m(I::Union{NfOrdIdl, FacElem{NfOrdIdl, Nf
   U, mU = unit_group_fac_elem(O, GRH = GRH)
 
   lp = factor(m)
-  powers = [(x, x^v) for (x, v) in lp]
-  quo_rings = [quo(O, q) for (x, q) in powers]
-  groups_and_maps = [multiplicative_group(Q[1]) for Q in quo_rings]
+  powers = Tuple{NfOrdIdl, NfOrdIdl}[(x, x^v) for (x, v) in lp]
+  quo_rings = Tuple{NfOrdQuoRing, NfOrdQuoMap}[quo(O, q) for (x, q) in powers]
+  groups_and_maps = Tuple{GrpAbFinGen, Hecke.GrpAbFinGenToAbsOrdQuoRingMultMap{NfAbsOrd{AnticNumberField,nf_elem},NfAbsOrdIdl{AnticNumberField,nf_elem},NfAbsOrdElem{AnticNumberField,nf_elem}}}[multiplicative_group(Q[1]) for Q in quo_rings]
   invariants = Vector{fmpz}()
   for x in groups_and_maps
     append!(invariants, x[1].snf)
@@ -1292,7 +1359,7 @@ function has_principal_generator_1_mod_m(I::Union{NfOrdIdl, FacElem{NfOrdIdl, Nf
     ii += ngens(groups_and_maps[i][1])
   end
   if !isempty(inf_plc)
-    H, eH, lH = Hecke._infinite_primes(O, inf_plc, m)
+    H, eH, lH = infinite_primes_map(O, inf_plc, m)
     for t = 1:length(tobeeval)
       el = lH(tobeeval[i])
       for s = 1:ngens(H)
