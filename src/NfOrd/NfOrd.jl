@@ -183,6 +183,7 @@ function Base.getindex(O::NfAbsOrd, i::Int)
   if iszero(i)
     return zero(O)
   end
+  assure_has_basis(O)
   @assert i <= degree(O) && i > 0 "Index must be a positive integer smaller than the dimension"
   return O.basis_ord[i]
 end
@@ -406,14 +407,16 @@ Assuming that the order $\mathcal O$ contains the equation order
 $\mathbf Z[\alpha]$ of the ambient number field, this function returns the
 index $[ \mathcal O : \mathbf Z]$.
 """
-function index(O::NfAbsOrd)
-  if isdefined(O, :index)
-    return deepcopy(O.index)
-  else
+function index(O::NfAbsOrd; copy::Bool = true)
+  if !isdefined(O, :index)
     i = gen_index(O)
     !isone(denominator(i)) && error("Order does not contain the equation order")
     O.index = abs(numerator(i))
+    end
+  if copy 
     return deepcopy(O.index)
+    else
+    return O.index
   end
 end
 
@@ -430,9 +433,9 @@ end
 Returns whether $d$ is a divisor of the index of $\mathcal O$. It is assumed
 that $\mathcal O$ contains the equation order of the ambient number field.
 """
-function isindex_divisor(O::NfOrd, d::Union{fmpz, Integer})
-  i = index(O)
-  return i % d == 0
+function isindex_divisor(O::NfAbsOrd, d::Union{fmpz, Integer})
+  i = index(O, copy = false)
+  return iszero(i % d)
 end
 
 ################################################################################
@@ -507,25 +510,30 @@ R)$. The entries of the matrix are real balls of type `arb` with radius less
 then `2^-abs_tol`.
 """
 function minkowski_matrix(O::NfOrd, abs_tol::Int = 64)
-  if isdefined(O, :minkowski_matrix) && O.minkowski_matrix[2] > abs_tol
+  if isdefined(O, :minkowski_matrix) && O.minkowski_matrix[2] >= abs_tol
     A = deepcopy(O.minkowski_matrix[1])
   else
-    T = Vector{Vector{arb}}(undef, degree(O))
-    B = O.basis_nf
-    for i in 1:degree(O)
-      T[i] = minkowski_map(B[i], abs_tol)
-    end
-    p = maximum(Int[ prec(parent(T[i][j])) for i in 1:degree(O), j in 1:degree(O) ])
-    M = zero_matrix(ArbField(p, cached = false), degree(O), degree(O))
-    for i in 1:degree(O)
-      for j in 1:degree(O)
-        M[i, j] = T[i][j]
-      end
-    end
+    M = minkowski_matrix(O.basis_nf, abs_tol)
     O.minkowski_matrix = (M, abs_tol)
     A = deepcopy(M)
   end
   return A
+end
+
+function minkowski_matrix(B::Vector{nf_elem}, abs_tol::Int = 64)
+  K = parent(B[1])
+  T = Vector{Vector{arb}}(undef, length(B))
+  for i in 1:length(B)
+    T[i] = minkowski_map(B[i], abs_tol)
+  end
+  p = maximum(Int[ precision(parent(T[i][j])) for i in 1:length(B), j in 1:degree(K) ])
+  M = zero_matrix(ArbField(p, cached = false), length(B), degree(K))
+  for i in 1:length(B)
+    for j in 1:degree(K)
+      M[i, j] = T[i][j]
+    end
+  end
+  return M
 end
 
 @doc Markdown.doc"""
@@ -552,6 +560,17 @@ function minkowski_gram_mat_scaled(O::NfOrd, prec::Int = 64)
   for i=1:degree(O)
     fmpz_mat_entry_add_ui!(A, i, i, UInt(nrows(A)))
   end
+  return A
+end
+
+function minkowski_gram_mat_scaled(B::Vector{nf_elem}, prec::Int = 64)
+  K = parent(B[1])
+  c = minkowski_matrix(B, prec)
+  d = zero_matrix(FlintZZ, length(B), degree(K))
+  A = zero_matrix(FlintZZ, length(B), length(B))
+  round_scale!(d, c, prec)
+  ccall((:fmpz_mat_gram, libflint), Nothing, (Ref{fmpz_mat}, Ref{fmpz_mat}), A, d)
+  shift!(A, -prec)
   return A
 end
 
@@ -586,47 +605,48 @@ function _check_elem_in_order(a::T, O::NfAbsOrd{S, T},
   end
 end
 
+
+function in(a::NfAbsNSElem, O::NfAbsOrd)
+  @assert parent(a) == nf(O)
+  return _check_elem_in_order(a, O, Val{true})
+end
+
 @doc Markdown.doc"""
     in(a::nf_elem, O::NfOrd) -> Bool
 
 Checks whether $a$ lies in $\mathcal O$.
 """
 function in(a::nf_elem, O::NfOrd)
-  if isdefining_polynomial_nice(nf(O)) && contains_equation_order(O)
+  @assert parent(a) == nf(O)
+  if isdefining_polynomial_nice(nf(O)) && contains_equation_order(O) 
     d = denominator(a)
     if isone(d)
       return true
     end
-    d1 = ppio(d, index(O))[1]
-    if d1 != d
+    exp_index = basis_matrix(O, copy = false).den
+    if !divisible(exp_index, d)
       return false
     end
     M = basis_mat_inv(O, copy = false)
-    d2 = ppio(M.den, d1)[1]
+    d2 = ppio(M.den, d)[1]
     t = O.tcontain
     elem_to_mat_row!(t.num, 1, t.den, a)
-    if fits(Int, d1*d2)
-      R = ResidueRing(FlintZZ, Int(d1*d2), cached = false)
+    if fits(Int, d*d2)
+      R = ResidueRing(FlintZZ, Int(d*d2), cached = false)
       return _check_containment(R, M.num, t.num)
     else
-      R1 = ResidueRing(FlintZZ, d1*d2, cached = false)
+      R1 = ResidueRing(FlintZZ, d*d2, cached = false)
       return _check_containment(R1, M.num, t.num)
     end
-    a1 = mod(a, d1*d2)
-    M1 = mod(M.num, d1*d2)
-    t = O.tcontain
-    elem_to_mat_row!(t.num, 1, t.den, a1)
-    mul!(t.num, t.num, M1)
-    mod!(t.num, d1*d2)
-    return iszero(t.num)
   end
   return _check_elem_in_order(a, O, Val{true})
 end
 
 function _check_containment(R, M, t)
-  M1 = change_base_ring(R, M)
-  t1 = change_base_ring(R, t)
-  return iszero(t1*M1)
+  M1 = map_entries(R, M)
+  t1 = map_entries(R, t)
+  mul!(t1, t1, M1)
+  return iszero(t1)
 end
 
 ################################################################################
@@ -660,6 +680,7 @@ function denominator(a::nf_elem, O::NfOrd)
       return d2
     end
     a1 = d2*a
+    a1 = mod(a1, d1)
     M = basis_mat_inv(O, copy = false)
     d3 = ppio(M.den, d1)[1]
     M1 = mod(M.num, d1*d3)
@@ -788,7 +809,7 @@ whether $B$ defines an order. If `isbasis` is set, then elements are assumed to 
 a $\Z$-basis.
 """
 function Order(::S, a::Array{T, 1}; check::Bool = true, isbasis::Bool = false,
-               cached::Bool = true) where {S <: Union{AnticNumberField, NfAbsNS}, T <: Union{nf_elem, NfAbsNSElem}}
+               cached::Bool = false) where {S <: Union{AnticNumberField, NfAbsNS}, T <: Union{nf_elem, NfAbsNSElem}}
   K = parent(a[1])
   if isbasis
     if check
@@ -1016,7 +1037,7 @@ The equation order of the number field.
 equation_order(M::NfAbsOrd) = equation_order(nf(M))
 
 
-function _order(K::S, elt::Array{T, 1}; cached::Bool = true, check::Bool = true) where {S, T}
+function _order(K::S, elt::Array{T, 1}; cached::Bool = true, check::Bool = true) where {S <: Union{AnticNumberField, NfAbsNS}, T}
   n = degree(K)
 
   bas = elem_type(K)[one(K)]
@@ -1105,6 +1126,14 @@ function ==(R::NfAbsOrd, S::NfAbsOrd)
   assure_has_basis_matrix(R)
   assure_has_basis_matrix(S)
   return hnf(R.basis_matrix) == hnf(S.basis_matrix)
+end
+
+@doc Markdown.doc"""
+    iscontained(R::NfAbsOrd, S::NfAbsOrd) -> Bool
+Checks if $R$ is contained in $S$.
+"""
+function iscontained(R::NfAbsOrd, S::NfAbsOrd)
+  return (basis_matrix(R, copy = false)*basis_mat_inv(S, copy = false)).den == 1
 end
 
 function ==(R::NfAbsOrdSet, S::NfAbsOrdSet)
@@ -1260,7 +1289,10 @@ function defines_order(K::S, x::FakeFmpqMat) where {S}
       l[j] = d[i]*d[j]
     end
     Ml = basis_matrix(l, FakeFmpqMat)
-    if !isone((Ml * xinv).den)
+    dd = Ml.den*xinv.den
+    R = ResidueRing(FlintZZ, dd, cached = false)
+    #if !isone((Ml * xinv).den)
+    if !iszero(map_entries(R, Ml.num)*map_entries(R, xinv.num))
       return false, x, Vector{elem_type(K)}()
     end
   end
