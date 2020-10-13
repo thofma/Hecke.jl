@@ -245,10 +245,10 @@ an easy excercise in induction...
 =#
 function vol(n::Int, b::T) where T<:Number
   lb = log(b)
-  s = [typeof(b)(1)]
-  t = typeof(b)(1)
+  s = [T(1)]
+  t = T(1)
   for k = 1:n-1
-    t  = -t/k * lb
+    t  = -t/T(k) * lb
     push!(s, t)
   end
   return b*sum(s)
@@ -312,8 +312,14 @@ function class_group_expected(d::fmpz, deg::Int, B::Int, samples::Int = 100)
   @assert length(pg) == samples
   @assert length(xi) == samples
   @assert length(vo) == samples
-  return Int(ceil(1/sum([(pg[i+1]-pg[i])/(xi[i+1]-xi[i])*(vo[i+1]-vo[i]) for i=1:(samples-1)])))
-end
+  c = ceil(1/sum([(pg[i+1]-pg[i])/(xi[i+1]-xi[i])*(vo[i+1]-vo[i]) for i=1:(samples-1)]))
+  if c > 2^60
+    @warn "Computation is unlikely to finish, the success probability is 1 in $c"
+    return 2^60
+  else
+    Int(c)
+  end
+end    
 
 #= D is supposed to be the disccriminant
    n the dimension
