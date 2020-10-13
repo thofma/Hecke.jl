@@ -148,7 +148,7 @@ function det_mc(A::SMat{fmpz})
 
   @hassert :HNF 1  A.r == A.c
   if isupper_triangular(A)
-    z = [ A[i, i] for i in 1:A.r]
+    z = fmpz[ A[i, i] for i in 1:A.r]
     return prod(z)
   end
 
@@ -189,7 +189,7 @@ Uses the dense (nmod_mat) determinant on $A$ for various primes $p$.
 function det(A::SMat{fmpz})
   @hassert :HNF 1  A.r == A.c
   if isupper_triangular(A)
-    return prod([A[i,i] for i=1:A.r]) end
+    return prod(fmpz[A[i,i] for i=1:A.r]) end
 
   b = div(nbits(hadamard_bound2(A)), 2)
   lp = fmpz[p_start]
@@ -340,7 +340,7 @@ function solve_dixon_sf(A::SMat{fmpz}, B::SMat{fmpz}, is_int::Bool = false)
   return sol_all, den_all
 end
 
-function echelon!(S::SMat{T}) where T <: FieldElem
+function echelon!(S::SMat{T}; complete::Bool = false) where T <: FieldElem
   i = 1
   while i <= nrows(S)
     m = ncols(S)+1
@@ -364,6 +364,7 @@ function echelon!(S::SMat{T}) where T <: FieldElem
         add_scaled_row!(S, i, j, S[j].values[1]*Si)
         if length(S[j].values) == 0
           deleteat!(S.rows, j)
+          S.r -= 1
         else
           j += 1
         end
@@ -371,7 +372,22 @@ function echelon!(S::SMat{T}) where T <: FieldElem
         j += 1
       end
     end
-    i += 1
+    i += 1  
+  end  
+  if complete
+    for i = nrows(S):-1:2
+      p = S[i].pos[1]
+      c = S[i,p]
+      if !isone(c)
+        scale_row!(S, i, inv(c))
+      end
+      for j=i-1:-1:1
+        v = S[j, p]
+        if !iszero(v)
+          add_scaled_row!(S, i, j, -v)
+        end
+      end
+    end
   end
 end
 
