@@ -49,7 +49,29 @@
     K21, mK2 = component(K2, 1)
     @test isisomorphic(K21, K1)[1]
     @test mK2(gen(K21)) == a2
-  end  
+  end
+
+  @testset "rand" begin
+    Qx, x = PolynomialRing(FlintQQ, "x")
+    K, a = NumberField(x^3 - 2)
+    v = [a^0, a^2]
+    @assert elem_type(K) == nf_elem
+    for args = ((v, 1:3), (v, 1:3, 2))
+      m = make(K, args...)
+      for x in (rand(args...), rand(rng, args...),
+                rand(m), rand(rng, m))
+        @test x isa nf_elem
+      end
+      @test rand(m, 3) isa Vector{nf_elem}
+      c = zero(K)
+      @test c === rand!(c, m)
+      @test c === rand!(rng, c, m)
+      @test c === rand!(c, args...)
+      @test c === rand!(rng, c, args...)
+      @test reproducible(m)
+      @test reproducible(args...)
+    end
+  end
 
   @testset "NumField/Coordinates" begin
     Qx, x = PolynomialRing(FlintQQ, "x")
@@ -121,4 +143,4 @@
       @test el == dot(vabs, BNabs)
     end
   end
-end  
+end
