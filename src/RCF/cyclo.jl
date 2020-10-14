@@ -11,7 +11,7 @@ mutable struct CyclotomicExt
   Kr::Hecke.NfRel{nf_elem}
   Ka::AnticNumberField
   mp::Tuple{NfToNfRel, NfToNfMor}
-  
+
   kummer_exts::Dict{Set{fmpz}, Tuple{Vector{NfOrdIdl}, KummerExt}}
                       #I save the kummer extensions used in the class field construction
                       #The keys are the factors of the minimum of the conductor
@@ -58,7 +58,7 @@ between them.
 function cyclotomic_extension(k::AnticNumberField, n::Int; cached::Bool = true, compute_maximal_order::Bool = true, compute_LLL_basis::Bool = true, simplified = true)
   Ac = CyclotomicExt[]
   if cached
-    try 
+    try
       Ac = Hecke._get_cyclotomic_ext_nf(k)::Vector{CyclotomicExt}
       for i = Ac
         if i.n == n
@@ -71,13 +71,13 @@ function cyclotomic_extension(k::AnticNumberField, n::Int; cached::Bool = true, 
       end
     end
   end
-  
+
   kt, t = PolynomialRing(k, "t", cached = false)
   c = CyclotomicExt()
   c.kummer_exts = Dict{Set{fmpz}, Tuple{Vector{NfOrdIdl}, KummerExt}}()
   c.k = k
   c.n = n
-  
+
   if n <= 2
     #Easy, just return the field
     Kr = number_field(t+1, cached = false, check = false)[1]
@@ -98,7 +98,7 @@ function cyclotomic_extension(k::AnticNumberField, n::Int; cached::Bool = true, 
     end
     return c
   end
-  
+
   if compute_LLL_basis && iscoprime(discriminant(maximal_order(k)), n)
     c = _cyclotomic_extension_non_simple(k, n, cached = cached)
     if simplified
@@ -106,15 +106,15 @@ function cyclotomic_extension(k::AnticNumberField, n::Int; cached::Bool = true, 
     end
     return c
   end
-  
-  
+
+
   ZX, X = PolynomialRing(FlintZZ, cached = false)
   f = cyclotomic(n, X)
   fk = change_base_ring(k, f, parent = kt)
   if n < 5
     #For n = 3, 4 the cyclotomic polynomial has degree 2,
     #so we can just ask for the roots.
-    if !isone(gcd(degree(fk), degree(k))) && !istotally_real(k)  
+    if !isone(gcd(degree(fk), degree(k))) && !istotally_real(k)
       rt = _roots_hensel(fk, max_roots = 1, isnormal = true)
     else
       rt = nf_elem[]
@@ -182,7 +182,7 @@ function cyclotomic_extension(k::AnticNumberField, n::Int; cached::Bool = true, 
     end
     return c
   end
-   
+
   if gcd(degree(fk), degree(k)) != 1
     lf = factor(fk)
     fk = first(keys(lf.fac))
@@ -191,9 +191,9 @@ function cyclotomic_extension(k::AnticNumberField, n::Int; cached::Bool = true, 
   Kr, Kr_gen = number_field(fk, "z_$n", cached = false, check = false)
   if degree(fk) != 1
     Ka, abs2rel, small2abs = Hecke.absolute_field(Kr, false)
-    
+
     if compute_maximal_order
-      # An equation order defined from a factor of a 
+      # An equation order defined from a factor of a
       # cyclotomic polynomial is always maximal by Dedekind
       # hence the product basis should be maximal at all primes except
       # for all p dividing the gcd()
@@ -263,7 +263,7 @@ function cyclotomic_extension(k::AnticNumberField, n::Int; cached::Bool = true, 
     simplify!(c)
   end
   return c
-  
+
 end
 
 function _isprobably_primitive(x::NfAbsOrdElem)
@@ -286,15 +286,15 @@ function _isprobably_primitive(x::NfAbsOrdElem)
 end
 
 function _cyclotomic_extension_non_simple(k::AnticNumberField, n::Int; cached::Bool = true)
-  
+
   L, zeta = cyclotomic_field(n, cached = false)
   automorphisms(L)
   OL = maximal_order(L)
   lOL = lll(OL)
-  
+
   OK = maximal_order(k)
   lOK = lll(OK)
-  
+
   S, mK, mL = number_field(k, L)
   BK = map(mK, basis(lOK, k))
   BL = map(mL, basis(lOL, L))
@@ -303,7 +303,7 @@ function _cyclotomic_extension_non_simple(k::AnticNumberField, n::Int; cached::B
   OS.ismaximal = 1
   OS.disc = discriminant(OL)^(degree(k))*discriminant(OK)^(degree(L))
   Hecke._set_maximal_order(S, OS)
-  
+
   Zx = PolynomialRing(FlintZZ, "x")[1]
   prim_elems = elem_type(OS)[x for x in basis(OS) if _isprobably_primitive(x)]
   if !isempty(prim_elems)
@@ -357,7 +357,7 @@ function _cyclotomic_extension_non_simple(k::AnticNumberField, n::Int; cached::B
     end
   end
   abs2ns = hom(Ka, S, elem_in_nf(a), emb)
-  
+
   BKa = Vector{nf_elem}(undef, degree(Ka))
   for i = 1:length(BKa)
     BKa[i] = abs2ns\(BOS[i])
@@ -392,8 +392,8 @@ function _cyclotomic_extension_non_simple(k::AnticNumberField, n::Int; cached::B
   C.Ka = Ka
   C.Kr = Kr
   C.mp = (abs2rel, small2abs)
-  if cached 
-    try 
+  if cached
+    try
       Ac = Hecke._get_cyclotomic_ext_nf(k)::Vector{CyclotomicExt}
       push!(Ac, C)
       Hecke._set_cyclotomic_ext_nf(k, Ac)
@@ -406,7 +406,7 @@ function _cyclotomic_extension_non_simple(k::AnticNumberField, n::Int; cached::B
     end
   end
   return C
-  
+
 end
 
 
@@ -419,8 +419,8 @@ end
 ################################################################################
 @doc Markdown.doc"""
     automorphisms(C::CyclotomicExt; gens::Vector{NfToNfMor}) -> Vector{NfToNfMor}
-Computes the automorphisms of the absolute field defined by the cyclotomic extension, i.e. of absolute_field(C).
-It assumes that the base field is normal. gens must be a set of generators for the automorphism group of the base field of C
+Computes the automorphisms of the absolute field defined by the cyclotomic extension, i.e. of `absolute_field(C).
+It assumes that the base field is normal. `gens` must be a set of generators for the automorphism group of the base field of $C$.
 """
 function automorphisms(C::CyclotomicExt; gens::Vector{NfToNfMor} = small_generating_set(automorphisms(base_field(C))), copy::Bool = true)
 
@@ -434,7 +434,7 @@ function automorphisms(C::CyclotomicExt; gens::Vector{NfToNfMor} = small_generat
     ng = Hecke.extend_to_cyclotomic(C, g)
     na = hom(C.Ka, C.Ka, C.mp[1]\(ng(genK)), check = false)
     push!(gnew, na)
-  end 
+  end
   #Now add the automorphisms of the relative extension
   R = ResidueRing(FlintZZ, C.n, cached = false)
   U, mU = unit_group(R)

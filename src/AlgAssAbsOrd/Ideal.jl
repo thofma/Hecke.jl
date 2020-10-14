@@ -3,7 +3,7 @@ export isinvertible, contract
 @doc Markdown.doc"""
     order(a::AlgAssAbsOrdIdl) -> AlgAssAbsOrd
 
-> Returns the order of which $a$ is a (possibly fractional) left or right ideal,
+> Returns the order of which $a$ is a (possibly fractional) left or right ideal
 > if such an order is known.
 """
 function order(a::AlgAssAbsOrdIdl)
@@ -53,7 +53,7 @@ end
     ideal(A::AbsAlgAss, M::FakeFmpqMat, M_in_hnf::Bool = false) -> AlgAssAbsOrdIdl
 
 > Returns the ideal in $A$ with basis matrix $M$.
-> If `M_in_hnf == true` it is assumed that $M$ is already in lower left HNF.
+> If `M_in_hnf == true`, it is assumed that $M$ is already in lower left HNF.
 """
 function ideal(A::AbsAlgAss{fmpq}, M::FakeFmpqMat, M_in_hnf::Bool = false)
   !M_in_hnf ? M = hnf(M, :lowerleft) : nothing
@@ -68,7 +68,7 @@ end
 > Returns the ideal of $O$ in $A$ with basis matrix $M$ (in the basis of $A$).
 > If the ideal is known to be a right/left/twosided ideal of $O$, `side` may be
 > set to `:right`/`:left`/`:twosided` respectively.
-> If `M_in_hnf == true` it is assumed that $M$ is already in lower left HNF.
+> If `M_in_hnf == true`, it is assumed that $M$ is already in lower left HNF.
 """
 function ideal(A::AbsAlgAss{fmpq}, O::AlgAssAbsOrd, M::FakeFmpqMat, side::Symbol = :nothing, M_in_hnf::Bool = false)
   a = ideal(A, M, M_in_hnf)
@@ -127,7 +127,7 @@ ideal(O::AlgAssAbsOrd{S, T}, x::AlgAssAbsOrdElem{S, T}) where { S, T } = ideal(O
     ideal(O::AlgAssAbsOrd, x::AbsAlgAssElem, side::Symbol) -> AlgAssAbsOrdIdl
     ideal(O::AlgAssAbsOrd, x::AlgAssAbsOrdElem, side::Symbol) -> AlgAssAbsOrdIdl
 
-> Returns the ideal $O \cdot x$, if `side == :left`, and $x \cdot O$, if
+> Returns the ideal $O \cdot x$ if `side == :left`, and $x \cdot O$ if
 > `side == :right`.
 """
 function ideal(O::AlgAssAbsOrd{S, T}, x::T, side::Symbol) where { S, T }
@@ -1177,7 +1177,7 @@ end
     prime_ideals_over(O::AlgAssAbsOrd, p::Union{ Int, fmpz })
       -> Vector{AlgAssAbsOrdIdl}
 
-> Returns all prime ideal of $O$ lying over the prime number $p$.
+> Returns all prime ideals of $O$ lying over the prime number $p$.
 """
 function prime_ideals_over(O::AlgAssAbsOrd, p::Union{ Int, fmpz })
   @vtime :AlgAssOrd 1 max_id = collect(_maximal_ideals(O, p*O, Int(p)))

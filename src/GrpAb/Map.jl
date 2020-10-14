@@ -95,7 +95,7 @@ id_hom(G::GrpAbFinGen) = hom(G, G, identity_matrix(FlintZZ, ngens(G)), identity_
 
 @doc Markdown.doc"""
     hom(A::Array{GrpAbFinGenElem, 1}, B::Array{GrpAbFinGenElem, 1}) -> Map
-Creates the homomorphism $A[i] \mapsto B[i]$
+Creates the homomorphism $A[i] \mapsto B[i]$.
 """
 function hom(A::Array{GrpAbFinGenElem, 1}, B::Array{GrpAbFinGenElem, 1}; check::Bool = true)
   GA = parent(A[1])
@@ -119,7 +119,7 @@ function hom(A::Array{GrpAbFinGenElem, 1}, B::Array{GrpAbFinGenElem, 1}; check::
   if ngens(GB) == 0
     return hom(GA, GB, matrix(FlintZZ, ngens(GA), 0, fmpz[]), check = check)
   end
-
+       
   M = vcat([hcat(A[i].coeff, B[i].coeff) for i = 1:length(A)])
   RA = rels(GA)
   M = vcat(M, hcat(RA, zero_matrix(FlintZZ, nrows(RA), ncols(B[1].coeff))))
@@ -136,7 +136,7 @@ end
 @doc Markdown.doc"""
     hom(G::GrpAbFinGen, B::Array{GrpAbFinGenElem, 1}) -> Map
 
-Creates the homomorphism which maps `G[i]` to `B[i]`.
+Creates the homomorphism which maps $G[i]$ to $B[i]$.
 """
 function hom(G::GrpAbFinGen, B::Array{GrpAbFinGenElem, 1}; check::Bool = true)
   GB = parent(B[1])
@@ -172,7 +172,7 @@ function check_mat(A::GrpAbFinGen, B::GrpAbFinGen, M::fmpz_mat)
 end
 
 function hom(A::GrpAbFinGen, B::GrpAbFinGen, M::fmpz_mat; check::Bool = true)
-  if check 
+  if check
     check_mat(A, B, M) || error("Matrix does not define a morphism of abelian groups")
   end
 
@@ -230,7 +230,7 @@ end
 @doc Markdown.doc"""
     kernel(h::GrpAbFinGenMap) -> GrpAbFinGen, Map
 
-Let $G$ be the domain of $h$. This functions returns an abelian group $A$ and an
+Let $G$ be the domain of $h$. This function returns an abelian group $A$ and an
 injective morphism $f \colon A \to G$, such that the image of $f$ is the kernel
 of $h$.
 """
@@ -276,7 +276,7 @@ image of $h$.
 function image(h::GrpAbFinGenMap, add_to_lattice::Bool = true)
   G = domain(h)
   H = codomain(h)
-  hn = hnf!(vcat(h.map, rels(H)))
+  hn = hnf(vcat(h.map, rels(H)))
   im = GrpAbFinGenElem[]
   for i = 1:nrows(hn)
     if !iszero_row(hn, i)
@@ -291,8 +291,8 @@ end
 @doc Markdown.doc"""
     cokernel(h::GrpAbFinGenMap) -> GrpAbFinGen, Map
 
-Let $G$ be the codomain of $h$. This functions returns an abelian group $A$ and
-a morphism $f \colon G \to A$, such that $A$ is the quotient of $G$ with 
+Let $G$ be the codomain of $h$. This function returns an abelian group $A$ and
+a morphism $f \colon G \to A$, such that $A$ is the quotient of $G$ with
 respect to the image of $h$.
 """
 function cokernel(h::GrpAbFinGenMap, add_to_lattice::Bool = true)
@@ -311,7 +311,7 @@ end
 
 Returns whether $h$ is surjective.
 """
-function issurjective(A::GrpAbFinGenMap)  
+function issurjective(A::GrpAbFinGenMap)
   if isfinite(codomain(A))
     H, mH = image(A)
     return (order(codomain(A)) == order(H))::Bool
@@ -396,7 +396,7 @@ mutable struct MapParent
   typ::String
 end
 
-elem_type(::Type{MapParent}) = Map 
+elem_type(::Type{MapParent}) = Map
 
 function show(io::IO, MP::MapParent)
   print(io, "Set of all $(MP.typ) from $(MP.dom) to $(MP.codom)")
@@ -404,7 +404,7 @@ end
 
 function cyclic_hom(a::fmpz, b::fmpz)
   #hom from Z/a -> Z/b
-  if iszero(a) 
+  if iszero(a)
     return (b, fmpz(1))
   end
   if iszero(b)
@@ -522,7 +522,7 @@ end
 #TODO: technically, dual Z could be Q/Z ...
 @doc Markdown.doc"""
     dual(G::GrpAbFinGen) -> GrpAbFinGen, Map
-Computes the dual group, ie. $hom(G, Q/Z)$ as an
+Computes the dual group, i.e. $hom(G, Q/Z)$ as an
 abstract group. The map can be used to obtain actual homomorphisms.
 """
 function dual(G::GrpAbFinGen)
@@ -546,4 +546,3 @@ function dual(G::GrpAbFinGen, u::QmodZElem)
   end
   return R, MapFromFunc(mu, nu, R, MapParent(R, parent(u), "homomorphisms"))
 end
-

@@ -429,7 +429,7 @@ end
 @doc Markdown.doc"""
     ison_curve(E::EllCrv{T}, coords::Array{T, 1}) -> Bool
 
-Returns true if `coords` defines a point  on E and false otherwise. The array
+Returns true if `coords` defines a point on $E$ and false otherwise. The array
 `coords` must have length 2.
 """
 function ison_curve(E::EllCrv{T}, coords::Array{T, 1}) where T
@@ -826,4 +826,3 @@ function psi_poly_field(E::EllCrv, n::Int, x, y)
         return psi_poly_field(E,m+2,x,y)*psi_poly_field(E,m,x,y)^3 - psi_poly_field(E,m-1,x,y)*psi_poly_field(E,m+1,x,y)^3
     end
 end
-

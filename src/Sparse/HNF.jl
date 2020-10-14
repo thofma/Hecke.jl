@@ -7,8 +7,8 @@
 @doc Markdown.doc"""
     reduce(A::SMat{T}, g::SRow{T}) -> SRow{T}
 
-Given an upper trianguar matrix $A$ over a field and a sparse row $g$, this
-function reduces reduces $g$ modulo $A$.
+Given an upper triangular matrix $A$ over a field and a sparse row $g$, this
+function reduces $g$ modulo $A$.
 """
 function reduce(A::SMat{T}, g::SRow{T}) where {T <: FieldElement}
   return _reduce_field(A, g)
@@ -30,7 +30,7 @@ function _reduce_field(A::SMat{T}, g::SRow{T}) where {T}
     j = 1
     while j<= nrows(A) && A.rows[j].pos[1] < s
       j += 1
-    end  
+    end
     if j > nrows(A) || A.rows[j].pos[1] > s
       break
     end
@@ -50,10 +50,10 @@ function _reduce_field(A::SMat{T}, g::SRow{T}) where {T}
 end
 
 @doc Markdown.doc"""
-    reduce(A::SMat{T}, g::SRow{T}) -> SRow{T}
+    reduce(A::SMat{fmpz}, g::SRow{fmpz}) -> SRow{fmpz}
 
-Given an upper trianguar matrix $A$ over a field and a sparse row $g$, this
-function reduces reduces $g$ modulo $A$.
+Given an upper triangular matrix $A$ over a field and a sparse row $g$, this
+function reduces $g$ modulo $A$.
 """
 function reduce(A::SMat{fmpz}, g::SRow{fmpz})
   @hassert :HNF 1  isupper_triangular(A)
@@ -65,7 +65,7 @@ function reduce(A::SMat{fmpz}, g::SRow{fmpz})
     j = 1
     while j<= nrows(A) && A.rows[j].pos[1] < s
       j += 1
-    end  
+    end
     if j > nrows(A) || A.rows[j].pos[1] > s
       if g.values[1] < 0
         if !new_g
@@ -108,8 +108,8 @@ end
 @doc Markdown.doc"""
     reduce(A::SMat{fmpz}, g::SRow{fmpz}, m::fmpz) -> SRow{fmpz}
 
-Given an upper trianguar matrix $A$ over the integers, a sparse row $g$ and an
-integer $m$, this function reduces reduces $g$ modulo $A$ and returns $g$
+Given an upper triangular matrix $A$ over the integers, a sparse row $g$ and an
+integer $m$, this function reduces $g$ modulo $A$ and returns $g$
 modulo $m$ with respect to the symmetric residue system.
 """
 function reduce(A::SMat{fmpz}, g::SRow{fmpz}, m::fmpz)
@@ -122,9 +122,9 @@ function reduce(A::SMat{fmpz}, g::SRow{fmpz}, m::fmpz)
     j = 1
     while j<= nrows(A) && A.rows[j].pos[1] < s
       j += 1
-    end  
+    end
     if j > nrows(A) || A.rows[j].pos[1] > s
-      if mod_sym(g.values[1], m) < 0 
+      if mod_sym(g.values[1], m) < 0
         for i=1:length(g.values)
           g.values[i] *= -1
         end
@@ -198,9 +198,9 @@ end
 
 @doc Markdown.doc"""
     find_row_starting_with(A::SMat, p::Int) -> Int
- 
+
 Tries to find the index $i$ such that $A_{i,p} \neq 0$ and $A_{i, p-j} = 0$
-for all $j > 1$. It is assumed that $A$ is be upper triangular.
+for all $j > 1$. It is assumed that $A$ is upper triangular.
 If such an index does not exist, find the smallest index larger.
 """
 function find_row_starting_with(A::SMat, p::Int)
@@ -212,9 +212,9 @@ function find_row_starting_with(A::SMat, p::Int)
     if A[mid].pos[1] == p
       return mid
     elseif A[mid].pos[1] < p
-      start = mid 
+      start = mid
     else
-      stop = mid 
+      stop = mid
     end
   end
   return stop
@@ -254,7 +254,7 @@ end
     reduce_full(A::SMat{fmpz}, g::SRow{fmpz},
                           trafo = Val{false}) -> SRow{fmpz}, Vector{Int}
 
-Reduces $g$ modulo $A$ and assumes that $A$ is be upper triangular.  
+Reduces $g$ modulo $A$ and assumes that $A$ is upper triangular.
 
 The second return value is the array of pivot elements of $A$ that changed.
 
@@ -270,7 +270,7 @@ function reduce_full(A::SMat{fmpz}, g::SRow{fmpz}, trafo::Type{Val{T}} = Val{fal
 
   if with_transform
     trafos = SparseTrafoElem{fmpz, fmpz_mat}[]
-  end 
+  end
 
   new_g = false
 
@@ -280,7 +280,7 @@ function reduce_full(A::SMat{fmpz}, g::SRow{fmpz}, trafo::Type{Val{T}} = Val{fal
     j = 1
     while j<= nrows(A) && A.rows[j].pos[1] < s
       j += 1
-    end  
+    end
     if j > nrows(A) || A.rows[j].pos[1] > s
       if g.values[1] < 0
         # Multiply row g by -1
@@ -424,7 +424,7 @@ end
 @doc Markdown.doc"""
     hnf_extend!(A::SMat{fmpz}, b::SMat{fmpz}, offset::Int = 0) -> SMat{fmpz}
 
-Given a matrix $A$ in HNF, extend this to get the HNF of the concatination
+Given a matrix $A$ in HNF, extend this to get the HNF of the concatenation
 with $b$.
 """
 function hnf_extend!(A::SMat{fmpz}, b::SMat{fmpz}, trafo::Type{Val{N}} = Val{false}; truncate::Bool = false, offset::Int = 0) where N
@@ -440,7 +440,7 @@ function hnf_extend!(A::SMat{fmpz}, b::SMat{fmpz}, trafo::Type{Val{N}} = Val{fal
 
   nc = 0
   for i=b
-    if with_transform 
+    if with_transform
       q, w, new_trafos = reduce_full(A, i, trafo)
       append!(trafos, new_trafos)
     else
@@ -524,7 +524,7 @@ function hnf_kannan_bachem(A::SMat{fmpz}, trafo::Type{Val{N}} = Val{false}; trun
   B.c = A.c
   nc = 0
   for i=A
-    if with_transform 
+    if with_transform
       q, w, new_trafos = reduce_full(B, i, trafo)
       append!(trafos, new_trafos)
     else

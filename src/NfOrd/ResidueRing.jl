@@ -157,7 +157,7 @@ end
 ################################################################################
 #
 #  Quotient function
-#  
+#
 # (and standard helpers)
 #
 ################################################################################
@@ -401,14 +401,14 @@ function isdivisible2(x::AbsOrdQuoRingElem, y::AbsOrdQuoRingElem)
   O = base_ring(R)
   d = degree(O)
 
-  
+
   A = representation_matrix_mod(y.elem, minimum(R.ideal))
   B = parent(x).basis_matrix
   V = hcat(A', B')
 
   a = coordinates(x.elem, copy = false)
   rhs = matrix(FlintZZ, d, 1, a)
-  
+
   fl, sol = cansolve(V, rhs)
   if !fl
     return fl, zero(R)
@@ -471,7 +471,7 @@ function isdivisible(x::AbsOrdQuoRingElem, y::AbsOrdQuoRingElem)
       return false, zero(parent(x))
     end
   end
-  
+
   z = R(-base_ring(R)(fmpz[ V[1, i] for i in (d + 2):(2*d + 1)])) # V[1, i] is always a copy
 
   ccall((:fmpz_mat_zero, libflint), Nothing, (Ref{fmpz_mat}, ), V)
@@ -506,7 +506,7 @@ function _divexact_strong(x::NfOrdQuoRingElem, y::NfOrdQuoRingElem)
     q = q0 + rand(parent(x))*i
 
     k = 0
-    while euclid(q) != target 
+    while euclid(q) != target
       k += 1
       q = q0 + rand(parent(x))*i
       #println("current valuation $(euclid(q))")
@@ -596,7 +596,7 @@ function Base.divrem(x::NfOrdQuoRingElem, y::NfOrdQuoRingElem)
   e = euclid(y)
 
   cnt = 0
-  while true 
+  while true
     cnt += 1
     q = rand(parent(x))
     r = x - q*y
@@ -785,7 +785,7 @@ end
 @doc Markdown.doc"""
     group_structure(Q::NfOrdQuoRing) -> GrpAbFinGen
 
-Returns an abelian group with the structure of (Q,+).
+Returns an abelian group with the structure of $(Q,+)$.
 """
 function group_structure(Q::NfOrdQuoRing)
   i = ideal(Q)

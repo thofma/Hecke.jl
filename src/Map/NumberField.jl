@@ -180,8 +180,8 @@ end
 
 function hom(K::AnticNumberField, L::NfRel{nf_elem}, a::NfRelElem{nf_elem}, b::nf_elem, c::nf_elem; check::Bool = true)
 	if check
-    mp = hom(base_field(L), K, b)
-    p = map_coeffs(mp, L.pol, cached = false)
+          mp = hom(base_field(L), K, b)
+          p = map_coeffs(mp, L.pol, cached = false)
 		@assert iszero(p(c)) "Data does not define a homomorphism"
 		@assert iszero(K.pol(a)) "Data does not define a homomorphism"
 	end
@@ -252,8 +252,8 @@ end
 @doc Markdown.doc"""
     inv(f::NfToNfMor)
 
-Assuming that $f$ is an isomorphisms, it returns the inverse of f
-"""  
+Assuming that $f$ is an isomorphism, it returns the inverse of $f$.
+"""
 function inv(f::NfToNfMor)
   if degree(domain(f)) != degree(codomain(f))
     error("The map is not invertible")
@@ -401,7 +401,7 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    isnormal(K::AnticNumberField) -> Bool
+     isnormal(K::AnticNumberField) -> Bool
 
 Returns true if $K$ is a normal extension of $\mathbb Q$, false otherwise.
 """  
@@ -464,7 +464,7 @@ end
 
 Given a number field $K$, this function returns true and the complex conjugation
 if the field is CM, false and the identity otherwise.
-"""  
+"""
 function iscm_field(K::AnticNumberField)
   c = get_special(K, :cm_field)
   if c !== nothing
@@ -583,7 +583,7 @@ function induce_image(f::NfToNfMor, x::NfOrdIdl)
 
   OK = order(x)
   K = nf(OK)
-  if has_2_elem(x) && ismaximal_known(OK) && ismaximal(OK) 
+ if has_2_elem(x) && ismaximal_known(OK) && ismaximal(OK) 
     int_in_ideal = x.gen_one
     if has_minimum(x)
       int_in_ideal = minimum(x, copy = false)
@@ -609,13 +609,13 @@ function induce_image(f::NfToNfMor, x::NfOrdIdl)
     end
   end
   if isdefined(x, :princ_gen)
-    if ismaximal_known(OK) && ismaximal(OK)
+     if ismaximal_known(OK) && ismaximal(OK)
       I.princ_gen = OK(f(K(x.princ_gen)), false)
     else
       I.princ_gen = OK(f(K(x.princ_gen)))
     end
   end
-  for i in [:gen_one, :is_prime, :gens_normal, :gens_weakly_normal, :is_principal, 
+  for i in [:gen_one, :is_prime, :gens_normal, :gens_weakly_normal, :is_principal,
           :iszero, :minimum, :norm, :splitting_type]
     if isdefined(x, i)
       setfield!(I, i, getfield(x, i))
@@ -655,7 +655,7 @@ function induce_image_easy(f::NfToNfMor, P::NfOrdIdl)
   if isdefined(P, :princ_gen)
     res.princ_gen = OK(f(K(P.princ_gen)))
   end
-  for i in [:is_prime, :gens_normal, :gens_weakly_normal, :is_principal, 
+  for i in [:is_prime, :gens_normal, :gens_weakly_normal, :is_principal,
           :minimum, :norm, :splitting_type]
     if isdefined(P, i)
       setfield!(res, i, getfield(P, i))
@@ -717,8 +717,8 @@ end
 @doc Markdown.doc"""
     isinvolution(f::NfToNfMor) -> Bool
 
-Returns true if $f$ is an involution, i.e. if f^2 is the identity, false otherwise.
-"""  
+Returns true if $f$ is an involution, i.e. if $f^2$ is the identity, false otherwise.
+"""
 function isinvolution(f::NfToNfMor)
   K = domain(f)
   @assert K == codomain(f)
@@ -745,7 +745,7 @@ end
     _order(f::NfToNfMor) -> Int
 
 If $f$ is an automorphism of a field $K$, it returns the order of $f$ in the automorphism group of $K$.
-"""  
+"""
 function _order(f::NfToNfMor)
   K = domain(f)
   @assert K == codomain(f)
@@ -778,11 +778,11 @@ function small_generating_set(G::Vector{NfToNfMor})
   if length(G) == 1
     return G
   end
-	
+
   firsttry = 10
   secondtry = 20
   thirdtry = 30
-	
+
 	K = domain(G[1])
 	p = 2
   R = GF(p, cached = false)
@@ -791,12 +791,12 @@ function small_generating_set(G::Vector{NfToNfMor})
 		p = next_prime(p)
 	  R = GF(p, cached = false)
 		Rx = PolynomialRing(R, "x", cached = false)[1]
-	end 
+	end
 
 	given_gens = gfp_poly[Rx(x.prim_img) for x in G]
 	orderG = length(closure(given_gens, (x, y) -> Hecke.compose_mod(x, y, Rx(K.pol)), gen(Rx)))
   # First try one element
-  
+
   for i in 1:firsttry
     trygen = _non_trivial_randelem(G, id_hom(K))
     if length(closure(gfp_poly[Rx(trygen.prim_img)], (x, y) -> Hecke.compose_mod(x, y, Rx(K.pol)), gen(Rx))) == orderG
@@ -848,7 +848,7 @@ function _order(G::Vector{NfToNfMor})
 		p = next_prime(p)
 	  R = GF(p, cached = false)
 		Rx = PolynomialRing(R, "x", cached = false)[1]
-	end 
+	end
 	given_gens = gfp_poly[Rx(x.prim_img) for x in G]
 	return length(closure(given_gens, (x, y) -> Hecke.compose_mod(x, y, Rx(K.pol)), gen(Rx)))
 end

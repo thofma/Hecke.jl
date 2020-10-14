@@ -8,11 +8,11 @@ function rand!(a::nf_elem, U::AbstractArray)
     _num_setcoeff!(a, i-1, rand(U))
   end
   return a
-end    
+end
 
 @doc Markdown.doc"""
     rand(K::AnticNumberField, U::AbstractArray) -> nf_elem
-Find an element in $K$ where the coefficients are selceted at random in $U$.
+Find an element in $K$ where the coefficients are selected at random in $U$.
 """
 function rand(K::AnticNumberField, U::AbstractArray)
   a = K()
@@ -22,7 +22,7 @@ end
 @doc Markdown.doc"""
     rand!(A::Generic.Mat{nf_elem}, U::AbstractArray) -> Generic.Mat{nf_elem}
 Inplace, replace each element in $A$ by an element where the coefficients are
-sected at random in $U$.
+selected at random in $U$.
 Returns $A$.
 """
 function rand!(A::Generic.Mat{nf_elem}, U::AbstractArray)
@@ -32,7 +32,7 @@ function rand!(A::Generic.Mat{nf_elem}, U::AbstractArray)
     end
   end
   return A
-end    
+end
 
 @doc Markdown.doc"""
     rand(A::Generic.MatSpace{nf_elem}, U::AbstractArray) -> Generic.Mat{nf_elem}
@@ -70,7 +70,7 @@ function mod!(A::Generic.Mat{nf_elem}, m::fmpz)
 end
 
 @doc Markdown.doc"""
-    mod_sym!!(A::Generic.Mat{nf_elem}, m::fmpz)
+    mod_sym!(A::Generic.Mat{nf_elem}, m::fmpz)
 Inplace: reduce all entries of $A$ modulo $m$, into the symmetric residue system.
 """
 function mod_sym!(A::Generic.Mat{nf_elem}, m::fmpz)
@@ -123,7 +123,7 @@ function rational_reconstruction(A::Generic.Mat{nf_elem}, M::fmpz)
   for i=1:nrows(A)
     for j=1:ncols(A)
       fl, B[i,j] = rational_reconstruction(A[i,j], M)
-      if !fl 
+      if !fl
         return false, B
       end
     end
@@ -159,7 +159,7 @@ end
 @doc Markdown.doc"""
     algebraic_split(a::nf_elem) -> nf_elem, nf_elem
 
-Writes the input as a quotient of two "small" algebraic integers.    
+Writes the input as a quotient of two "small" algebraic integers.
 """
 function algebraic_split(a::nf_elem)
   n = degree(parent(a))
@@ -189,7 +189,7 @@ function denominator_ideal(M::Array{nf_elem, 1}, den::nf_elem)
   if isone(g)
     return d
   end
-  
+
   for m = M
     i = simplify(ideal(zk, minimum(g)^2, zk(m)))
     j = simplify(i*inv(g))
@@ -207,8 +207,8 @@ function denominator_ideal(M::Array{nf_elem, 1}, den::nf_elem)
 end
 
 @doc Markdown.doc"""
-    divexact!(A::Generic.Mat{nf_elem}, p::fmpz) 
-Inplace: divide each entry by $p$.
+    divexact!(A::Generic.Mat{nf_elem}, p::fmpz)
+Inplace: divide each entry of $A$ by $p$.
 """
 function divexact!(A::Generic.Mat{nf_elem}, p::fmpz)
   for i=1:nrows(A)
@@ -229,7 +229,7 @@ end
 function solve_dixon(A::Generic.Mat{nf_elem}, B::Generic.Mat{nf_elem})
   p = next_prime(p_start)
   K = base_ring(A)
-  
+
   me = modular_init(K, p)
   ap = modular_proj(A, me)
   ap = [inv(x) for x= ap]
@@ -249,7 +249,7 @@ function solve_dixon(A::Generic.Mat{nf_elem}, B::Generic.Mat{nf_elem})
 #    t = A*sol-B
 #    mod!(t, pp)
 #    @assert iszero(t)
-    if fl 
+    if fl
       if last_SOL == SOL && A*SOL == B
         #println("used $nd $p-adic digits")
         return SOL
@@ -264,5 +264,3 @@ function solve_dixon(A::Generic.Mat{nf_elem}, B::Generic.Mat{nf_elem})
 #    end
   end
 end
-
-

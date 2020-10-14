@@ -119,7 +119,7 @@ end
 @doc Markdown.doc"""
     lift(K::AnticNumberField, f::nmod_poly) -> nf_elem
 Given a polynomial $f$ over a finite field, lift it to an element of the
-number field $K$. The lift if given by the element represented by the
+number field $K$. The lift is given by the element represented by the
 canonical lift of $f$ to a polynomial over the integers.
 """
 function lift(K::AnticNumberField, f::T) where {T <: Zmodn_poly}
@@ -218,7 +218,7 @@ the $\mathfrak p_i^{e_i}$ and $\mathfrak p_i \neq \mathfrak p_j$ for $i \neq j$.
 >
 If `degree_limit` is a nonzero integer $k > 0$, then only those prime ideals
 $\mathfrak p$ with $\deg(\mathfrak p) \leq k$ will be returned.
-Similarly if `\lower_limit` is a nonzero integer $l > 0$, then only those prime ideals
+Similarly if `lower_limit` is a nonzero integer $l > 0$, then only those prime ideals
 $\mathfrak p$ with $l \leq \deg(\mathfrak p)$ will be returned.
 Note that in this case it may happen that $p\mathcal O$ is not the product of the
 $\mathfrak p_i^{e_i}$.
@@ -307,7 +307,7 @@ function _fac_and_lift(f::fmpz_poly, p, degree_limit, lower_limit)
   Zx = parent(f)
   Zmodpx, x = PolynomialRing(GF(p, cached = false), "y", cached = false)
   fmodp = Zmodpx(f)
-  if isone(degree_limit) 
+  if isone(degree_limit)
     fmodp = ppio(fmodp, powmod(x, p, fmodp)-x)[1]
   end
   fac = factor(fmodp)
@@ -387,7 +387,7 @@ function prime_dec_nonindex(O::NfOrd, p::Union{Integer, fmpz}, degree_limit::Int
     # otherwise we need to take p+b
     # I SHOULD CHECK THAT THIS WORKS
 
-    if ei == 1 && isnorm_divisible_pp(b, p*I.norm) 
+    if ei == 1 && isnorm_divisible_pp(b, p*I.norm)
       I.gen_two = I.gen_two + O(p)
     end
 
@@ -416,7 +416,7 @@ function uniformizer(P::NfOrdIdl)
       r = Int(div(p, 2))
     end
     z = rand(P, r)
-    while true     
+    while true
       if !iszero(z) && valuation(z, P) == 1
         break
       end
@@ -443,7 +443,7 @@ function _lift(T::Array{Nemo.gfp_elem, 1})
 end
 
 # Belabas p. 40
-# Facts on normal presentation, Algorithmic Algebraic Number theory, Pohst-Zassenhaus 
+# Facts on normal presentation, Algorithmic Algebraic Number theory, Pohst-Zassenhaus
 function anti_uniformizer(P::NfAbsOrdIdl)
   if isdefined(P, :anti_uniformizer)
     return P.anti_uniformizer
@@ -497,7 +497,7 @@ end
 @doc Markdown.doc"""
     prime_decomposition_type(O::NfOrd, p::Integer) -> Vector{Tuple{Int, Int}}
 
-Returns an array of tuples whose length is the number of primes lying over $p$ and the $i$-th tuples
+Returns an array of tuples whose length is the number of primes lying over $p$ and the $i$-th tuple
 gives the splitting type of the corresponding prime, ordered as inertia degree and ramification index.
 """
 function prime_decomposition_type(O::NfOrd, p::Integer)
@@ -516,7 +516,7 @@ function prime_decomposition_type(O::NfOrd, p::Integer)
     @assert O.ismaximal == 1 || p in O.primesofmaximality
     return decomposition_type_polygon(O, p)
   end
-  
+
 end
 
 @doc Markdown.doc"""
@@ -648,8 +648,8 @@ end
 #TODO: do sth. useful here!!!
 @doc Markdown.doc"""
     divides(A::NfOrdIdl, B::NfOrdIdl)
-    
-Checks if B divides A.
+
+Checks if $B$ divides $A$.
 """
 function divides(A::NfOrdIdl, B::NfOrdIdl)
   @assert order(A) === order(B)
@@ -668,7 +668,7 @@ function divides(A::NfOrdIdl, B::NfOrdIdl)
       else
         res = iszero(mod(f1, f2))
       end
-    else  
+    else
       R1 = ResidueRing(FlintZZ, Int(minimum(B)), cached = false)
       R1x = PolynomialRing(R1, "t", cached = false)[1]
       f11 = R1x(Qx(A.gen_two.elem_in_nf))
@@ -702,7 +702,7 @@ function coprime_base(A::Array{NfOrdIdl, 1}, p::fmpz)
     a = remove(p, 2)[2]
     if !isone(a)
       Bp = coprime_base(A, a)
-      return vcat(Ap, Bp)  
+      return vcat(Ap, Bp)
     else
       return Ap
     end
@@ -717,7 +717,7 @@ function coprime_base(A::Array{NfOrdIdl, 1}, p::fmpz)
   return coprime_base_steel(Ap)
 end
 
-
+				
 function _get_integer_in_ideal(I::NfOrdIdl)
   if has_minimum(I)
     return minimum(I)
@@ -730,11 +730,11 @@ function _get_integer_in_ideal(I::NfOrdIdl)
   end
   return minimum(I)
 end
-
+				
 @doc Markdown.doc"""
     coprime_base(A::Array{NfOrdIdl, 1}) -> Array{NfOrdIdl, 1}
     coprime_base(A::Array{NfOrdElem, 1}) -> Array{NfOrdIdl, 1}
-A coprime base for the (principal) ideals in $A$, ie. the returned array
+A coprime base for the (principal) ideals in $A$, i.e. the returned array
 generated multiplicatively the same ideals as the input and are pairwise
 coprime.
 """
@@ -821,8 +821,8 @@ end
 
 Computes the prime ideal factorization $A$ as a dictionary, the keys being
 the prime ideal divisors:
-If `lp = factor_dict(A)`, then `keys(lp)` are the prime ideal divisors of A
-and `lp[P]` is the `P`-adic valuation of `A` for all `P` in `keys(lp)`.
+If `lp = factor_dict(A)`, then `keys(lp)` are the prime ideal divisors of $A$
+and `lp[P]` is the $P$-adic valuation of $A$ for all $P$ in `keys(lp)`.
 """
 factor(A::NfAbsOrdIdl) = factor_dict(A)
 
@@ -971,7 +971,7 @@ function isprime(A::NfAbsOrdIdl)
     return true
   end
   OK = order(A)
-  
+
   #maximal order case
   if OK.ismaximal == 1 || !iszero(mod(discriminant(OK), p)) || p in OK.primesofmaximality
     lp = prime_decomposition(OK, p)
@@ -988,7 +988,7 @@ function isprime(A::NfAbsOrdIdl)
     A.is_prime = 2
     return false
   end
-  
+
   #non-maximal order
   lp = prime_ideals_over(order(A), p)
   for P in lp
@@ -1046,10 +1046,10 @@ end
                                    indexdivisors = true,
                                    ramified = true,
                                    degreebound = degree(O),
-                                   coprimeto = false)  
+                                   coprimeto = false)
 
 Returns an iterable object $S$ representing the prime ideals $\mathfrak p$
-of $\mathcal O$ with $f \leq \min(\mathfrak p) \leq t$. 
+of $\mathcal O$ with $f \leq \min(\mathfrak p) \leq t$.
 
 The optional arguments can be used to exclude index divisors, ramified prime
 ideals and to include only prime ideals with degree less or equal than
@@ -1059,7 +1059,7 @@ If $t=-1$, then the upper bound is infinite.
 
 If `coprimeto` is supplied, it must be either an integer, an element of $\mathcal O$,
 or a non-zero ideal of $\mathcal O$.
-"""  
+"""
 function PrimeIdealsSet(O::NfOrd, from::T, to::S;
                        proof::Bool = false,
                        indexdivisors::Bool = true,
@@ -1299,7 +1299,7 @@ function prime_ideals_over(O::NfOrd, P::NfOrdIdl)
       c1.is_prime = 1
       if !(c1 in p_critical_primes)
         push!(p_critical_primes, c1)
-      end 
+      end
     end
   end
   return p_critical_primes
@@ -1369,7 +1369,7 @@ function prime_dec_nonindex(O::NfAbsOrd{NfAbsNS,NfAbsNSElem}, p::Union{Integer, 
       I'd need 1 for the 1st factor, and 2 for the subsequent deg 2 factors.
       Why, I am not quite sure
       So I do all roots (which are too many) and sieve later.
-    =#  
+    =#
     for x = Base.Iterators.product(fac...)
       k = lcm([degree(t[1]) for t = x])
       Fq = FiniteField(p, k, "y", cached = false)[1]
@@ -1387,7 +1387,7 @@ function prime_dec_nonindex(O::NfAbsOrd{NfAbsNS,NfAbsNSElem}, p::Union{Integer, 
         else
           # I want only g roots! but I have f roots from an irreducible
           # poly of degree f
-          #fundamentaly, I'd like to factor the poly over the field 
+          #fundamentaly, I'd like to factor the poly over the field
           # so far (of degree d)
           # and choose one root for each factor.
           a = [r[1]]
@@ -1417,7 +1417,7 @@ function prime_dec_nonindex(O::NfAbsOrd{NfAbsNS,NfAbsNSElem}, p::Union{Integer, 
   mu = [lift(Zx, re[i])(RE[i]) for i=1:length(re)]
   fac = [(lift(Zx, re[x]), 1, mu[x]) for x = 1:length(re) if lower_limit <= degree(re[x]) <= degree_limit]
 
- 
+
   pe = sum([gens(K)[i] * all_c[i] for i=1:length(all_c)])
 
   result = Array{Tuple{ideal_type(O),Int}}(undef, length(fac))
@@ -1425,7 +1425,7 @@ function prime_dec_nonindex(O::NfAbsOrd{NfAbsNS,NfAbsNSElem}, p::Union{Integer, 
   for k in 1:length(fac)
     fi = fac[k][1]
     ei = fac[k][2]
-  
+
     b = fi(pe)
     ideal = NfAbsOrdIdl(O)
     ideal.gen_one = p
@@ -1610,15 +1610,15 @@ end
 #  Decomposition Group of a prime ideal
 #
 ################################################################################
-
+											
 @doc Markdown.doc"""
-    decomposition_group(P::NfOrdIdl) -> Vector{NfToNfMor}
+    decomposition_group(P::NfOrdIdl; G::Vector{NfToNfMor}) -> Vector{NfToNfMor}
 
-Given a prime ideal $P$ in a normal number field G, it returns a vector of the
-automorphisms $\sigma_1, \dotsc, \sigma_s$ such that $\sigma_i(P) = P$ for all
-$i = 1,\dots, s$. If a subgroup $G$ of automorphisms is given, the output is
-the intersection of the decomposition group with that subgroup.
-"""  
+Given a prime ideal $P$ in a normal number field $G$, it returns a vector of the automorphisms $\sigma_1, \dots, \sigma_s$
+such that $\sigma_i(P) = P$ for all $i = 1,\dots, s$.
+If a subgroup $G$ of automorphisms is given, the output is the intersection of the decomposition group with that subgroup.
+"""
+											
 function decomposition_group(P::NfOrdIdl; G::Array{NfToNfMor, 1} = NfToNfMor[],
                              orderG::Int = degree(P)*ramification_index(P))
   @assert isprime(P)
@@ -1672,7 +1672,7 @@ function decomposition_group(P::NfOrdIdl; G::Array{NfToNfMor, 1} = NfToNfMor[],
   else
     res = decomposition_group_easy(G, P)
     return res
-  end 
+  end
 end
 
 function decomposition_group_easy(G, P)
@@ -1699,7 +1699,7 @@ end
 @doc Markdown.doc"""
     decomposition_group(K::AnticNumberField, P::NfOrdIdl, m::Map)
                                                   -> Grp, GrpToGrp
-
+											
 Given a prime ideal $P$ of a number field $K$ and a map `m` return from
 `automorphism_group(K)`, return the decompositon group of $P$ as a subgroup of 
 the domain of `m`.
@@ -1714,17 +1714,15 @@ end
 #  Inertia subgroup of a prime ideal
 #
 ################################################################################
-
+											
 @doc Markdown.doc"""
-    inertia_subgroup(P::NfOrdIdl; G::Vector{NfToNfMor}) -> Vector{NfToNfMor}
+   inertia_subgroup(P::NfOrdIdl; G::Vector{NfToNfMor}) -> Vector{NfToNfMor}
 
-Given a prime ideal $P$ of a normal number field $K$, return the automorphisms
-$\sigma$ of $K$ such that $\sigma(P) = P$ and $\sigma$ induces the identity on
-the residue field of $P$.
-
-If a subgroup $G$ of automorphisms is supplied, the output is the intersection of
-the inertia group with $G$.
-"""  
+Given a prime ideal $P$ in a normal number field, it returns a vector of the automorphisms $\sigma_1, \dots, \sigma_s$
+such that $\sigma_i(P) = P$ for all $i = 1,\dots, s$ and induce the identity on the residue field.
+If a subgroup $G$ of automorphisms is given, the output is the intersection of the inertia group with $G$.
+"""
+											
 function inertia_subgroup(P::NfOrdIdl; G::Vector{NfToNfMor} = NfToNfMor[])
   @assert isprime(P)
   O = order(P)
@@ -1732,7 +1730,7 @@ function inertia_subgroup(P::NfOrdIdl; G::Vector{NfToNfMor} = NfToNfMor[])
   orderG = ramification_index(P)
   if isone(orderG)
     return NfToNfMor[id_hom(K)]
-  end 
+  end
   F, mF = ResidueField(O, P)
   if isempty(G)
     G = decomposition_group(P)
@@ -1778,7 +1776,7 @@ function inertia_subgroup(P::NfOrdIdl; G::Vector{NfToNfMor} = NfToNfMor[])
       end
     end
   end
-  return inertia_grp 
+  return inertia_grp
 end
 
 function inertia_subgroup_easy(F, mF, G::Vector{NfToNfMor})
@@ -1807,7 +1805,7 @@ end
 
 @doc Markdown.doc"""
     inertia_subgroup(K::AnticNumberField, P::NfOrdIdl, m::Map) -> Grp, GrpToGrp
-
+											
 Given a prime ideal $P$ of a number field $K$ and a map `m` return from
 `automorphism_group(K)`, return the intertia subgroup of $P$ as a subgroup of
 the domain of `m`.
@@ -1842,7 +1840,7 @@ end
 
 @doc Markdown.doc"""
     ramification_group(K::AnticNumberField, P::NfOrdIdl, m::Map) -> Grp, GrpToGrp
-
+											
 Given a prime ideal $P$ of a number field $K$ and a map `m` return from
 `automorphism_group(K)`, return the ramification group of $P$ as a subgroup of 
 the domain of `m`.

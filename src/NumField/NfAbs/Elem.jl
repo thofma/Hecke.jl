@@ -94,7 +94,7 @@ end
 @doc Markdown.doc"""
     minpoly(a::nf_elem) -> fmpq_poly
 
-The minimal polynomial of a.
+The minimal polynomial of $a$.
 """
 function minpoly(Qx::FmpqPolyRing, a::nf_elem)
   f = minpoly(Qx, representation_matrix(a))
@@ -252,7 +252,7 @@ function isnorm_divisible(a::nf_elem, n::fmpz)
   R = ResidueRing(FlintZZ, m, cached = false)
   Rx = PolynomialRing(R, "x", cached = false)[1]
   el = resultant_ideal(Rx(numerator(a)), Rx(K.pol))
-  return iszero(el) 
+  return iszero(el)
 end
 
 #In this version, n is supposed to be a prime power
@@ -278,7 +278,7 @@ function isnorm_divisible_pp(a::nf_elem, n::fmpz)
   R = ResidueRing(FlintZZ, m, cached = false)
   Rx = PolynomialRing(R, "x", cached = false)[1]
   el = resultant_ideal_pp(Rx(numerator(a)), Rx(K.pol))
-  return iszero(el) 
+  return iszero(el)
 end
 
 ################################################################################
@@ -369,7 +369,7 @@ function norm(f::PolyElem{nf_elem})
   f, i = deflate(f)
   if degree(f) == 1 && ismonic(f)
     N = charpoly(-constant_coefficient(f))
-  elseif degree(f) > 10 # TODO: find a good cross-over, 
+  elseif degree(f) > 10 # TODO: find a good cross-over,
                          # do this using CRT modular?
     P = polynomial_to_power_sums(f, degree(f)*degree(K))
     PQ = fmpq[tr(x) for x in P]
@@ -392,10 +392,10 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-  factor(f::fmpz_poly, K::NumberField) -> Fac{Generic.Poly{nf_elem}}
-  factor(f::fmpq_poly, K::NumberField) -> Fac{Generic.Poly{nf_elem}}
+    factor(f::fmpz_poly, K::NumberField) -> Fac{Generic.Poly{nf_elem}}
+    factor(f::fmpq_poly, K::NumberField) -> Fac{Generic.Poly{nf_elem}}
 
-The factorisation of f over K.
+The factorisation of $f$ over $K$.
 """
 function factor(f::fmpq_poly, K::AnticNumberField)
   f1 = change_base_ring(K, f)
@@ -419,9 +419,9 @@ function nice(f::PolyElem{nf_elem})
 end
 
 @doc Markdown.doc"""
-  factor(f::PolyElem{nf_elem}) -> Fac{Generic.Poly{nf_elem}}
+    factor(f::PolyElem{nf_elem}) -> Fac{Generic.Poly{nf_elem}}
 
-The factorisation of f.
+The factorisation of $f$.
 """
 function factor(f::PolyElem{nf_elem})
   Kx = parent(f)
@@ -460,18 +460,18 @@ function factor(f::PolyElem{nf_elem})
   return r
 end
 
-#assumes that f is a squarefree polynomial
+  #assumes that f is a squarefree polynomial
 function _factor(f::PolyElem{nf_elem})
 
   K = base_ring(f)
   f = f*(1//lead(f))
- 
+
   if degree(f) < degree(K)
     lf = factor_trager(f)::Vector{typeof(f)}
   else
     lf = factor_new(f)::Vector{typeof(f)}
   end
-  return lf
+return lf
 end
 
 function factor_trager(f::PolyElem{nf_elem})
@@ -499,7 +499,7 @@ function factor_trager(f::PolyElem{nf_elem})
     @vtime :PolyFactor 2 N = norm_mod(g, Zx)
     @hassert :PolyFactor 1 N == Zx(norm(g))
   end
-
+  
   while isconstant(N) || !issquarefree(N)
     error("should not happen")
     k = k + 1
@@ -507,7 +507,7 @@ function factor_trager(f::PolyElem{nf_elem})
     @vtime :PolyFactor 2 N = norm_mod(g)
   end
   @vtime :PolyFactor 2 fac = factor(N)
-  
+
   res = typeof(f)[]
 
   for i in keys(fac.fac)
@@ -587,7 +587,7 @@ end
 
 function _degset(f::PolyElem{nf_elem}, p::Int, normal::Bool = false)
   K = base_ring(f)
- 
+
   me = modular_init(K, p, deg_limit = 1)
   #to be competitive, we need to have Fp, not Fq of degree 1
   if isempty(me)
@@ -599,9 +599,9 @@ function _degset(f::PolyElem{nf_elem}, p::Int, normal::Bool = false)
   if !issquarefree(fp[1])
     throw(BadPrime(p))
   end
-  
+
   s = _ds(factor(Rt(fp[1])))
-  if normal 
+  if normal
     return s
   end
   for i=2:length(fp)
@@ -625,7 +625,7 @@ end
 @doc Markdown.doc"""
     roots(f::fmpz_poly, K::AnticNumberField) -> Array{nf_elem, 1}
 
-Computes all roots in $K$ of a polynomial $f$. It is assumed that $f$ is is non-zero,
+Computes all roots in $K$ of a polynomial $f$. It is assumed that $f$ is non-zero,
 squarefree and monic.
 """
 function roots(f::fmpz_poly, K::AnticNumberField; kw...)
@@ -636,7 +636,7 @@ end
 @doc Markdown.doc"""
     roots(f::fmpq_poly, K::AnticNumberField) -> Array{nf_elem, 1}
 
-Computes all roots in $K$ of a polynomial $f$. It is assumed that $f$ is is non-zero,
+Computes all roots in $K$ of a polynomial $f$. It is assumed that $f$ is non-zero,
 squarefree and monic.
 """
 function roots(f::fmpq_poly, K::AnticNumberField; kw...)
@@ -653,10 +653,10 @@ end
                                     ispure = false,
                                     isnormal = false)       -> Array{nf_elem, 1}
 
-Computes the roots of a polynomial $f$. It is assumed that $f$ is is non-zero,
+Computes the roots of a polynomial $f$. It is assumed that $f$ is non-zero,
 squarefree and monic.
 
-- `max_roots` controls the maximal number of roots the functions returns.
+- `max_roots` controls the maximal number of roots the function returns.
 - `ispure` indicates whether $f$ is of the form $x^d + c$, where $d$ is the
   degree and $c$ the constant coefficient of $f$.
 - `isnormal` indicates that the field contains no or all the roots of $f$.
@@ -688,7 +688,7 @@ end
 
 @doc Markdown.doc"""
     hasroot(f::PolyElem{nf_elem}) -> Bool, nf_elem
-Tests if $f$ has a root and return it.    
+Tests if $f$ has a root and return it.
 """
 function hasroot(f::PolyElem{nf_elem})
   rt = roots(f, max_roots = 1)
@@ -865,7 +865,7 @@ function root(a::NfOrdElem, n::Int)
     O = parent(a)
     if denominator(rt, O) == 1
       return O(rt)
-    end  
+    end
   end
 
   error("$a has no $n-th root")
@@ -1076,7 +1076,7 @@ function conjugate_quad(a::nf_elem)
     ccall((:fmpz_neg, libflint), Cvoid, (Ptr{fmpz}, Ptr{fmpz}), reinterpret(Ptr{Int}, pointer_from_objref(b))+1*s, a_ptr + s)
     ccall((:fmpz_set, libflint), Cvoid, (Ptr{fmpz}, Ptr{fmpz}), reinterpret(Ptr{Int}, pointer_from_objref(b))+3*s, a_ptr+3*s)
   end
-  #TODO: 
+  #TODO:
   # - write in c?
   # - use Ref and Ref(, i) instead of pointers
   # - deal with non-monic fields

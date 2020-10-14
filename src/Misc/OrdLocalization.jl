@@ -322,7 +322,7 @@ function divrem(a::OrdLocElem, b::OrdLocElem, checked::Bool = true)
 
   C = ppio(L.OK(B)*L.OK, L.prime)[1]*L.prime
   Q, mQ = quo(L.OK, C)
-  R = L(preimage(mQ, divrem(mQ(L.OK(A)), mQ(L.OK(B)))[2]))  
+  R = L(preimage(mQ, divrem(mQ(L.OK(A)), mQ(L.OK(B)))[2]))
 
   r = divexact(R, L(da*db))
   q = divexact(a-r, b)
@@ -532,12 +532,12 @@ end
 
 @doc Markdown.doc"""
     Localization(OK::NfAbsOrd{AnticNumberField,T}, S::NfAbsOrdIdl{AnticNumberField,T}; cached=true, comp = false) where {T <: nf_elem}
-> Returns the localization of the order $OK$ at the ideal $S$. 
+> Returns the localization of the order $OK$ at the ideal $S$.
 > If `cached == true` (the default) then the resulting
 > localization parent object is cached and returned for any subsequent calls
 > to the constructor with the same order $OK$ and ideal $S$.
-> `comp == false` means primes dividing $S$ are invertable,
-> `comp == true` means all primes not dividing $S$ become units. 
+> `comp == false` means primes dividing $S$ are invertible,
+> `comp == true` means all primes not dividing $S$ become units.
 """
 function Localization(OK::NfAbsOrd{AnticNumberField,T}, S::NfAbsOrdIdl{AnticNumberField,T}; cached=true, comp::Bool = false) where {T <: nf_elem}
    return OrdLoc{T}(OK, S, cached, comp)

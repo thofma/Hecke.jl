@@ -1,5 +1,5 @@
 export *, +, absolute_basis, absolute_basis_matrix, ambient_space, bad_primes,
-       basis_matrix, can_scale_totally_positive, 
+       basis_matrix, can_scale_totally_positive,
        coefficient_ideal, degree, diagonal, discriminant, dual, fixed_field,
        generators, gram_matrix_of_basis, hasse_invariant,
        hermitian_lattice, intersect, involution, isdefinite, isintegral,
@@ -55,7 +55,7 @@ end
     quadratic_lattice(K::NumField, B::MatElem; gram_ambient_space = F) -> QuadLat
 
 Given a number field $K$ and a matrix $B$, returns the quadratic lattice
-spanned by the rows $B$ inside the quadratic space over $K$ with gram matrix
+spanned by the rows of $B$ inside the quadratic space over $K$ with gram matrix
 $F$.
 
 If $F$ is not supplied, the gram matrix of the ambient space will be the
@@ -190,7 +190,7 @@ end
     hermitian_lattice(K::NumField, B::MatElem; gram_ambient_space = F) -> HermLat
 
 Given a number field $K$ and a matrix $B$, returns the hermitian lattice
-spanned by the rows $B$ inside the hermitian space over $K$ with gram matrix
+spanned by the rows of $B$ inside the hermitian space over $K$ with gram matrix
 $F$.
 
 If $F$ is not supplied, the gram matrix of the ambient space will be the
@@ -266,7 +266,7 @@ function lattice(V::HermSpace, B::PMat)
 end
 
 @doc Markdown.doc"""
-    lattice(V::QuadSpace, B::MatElem) -> HermLat
+    lattice(V::HermSpace, B::MatElem) -> HermLat
 
 Given a Hermitian space $V$ and a matrix $B$, returns the Hermitian lattice
 spanned by the rows of $B$ inside $V$.
@@ -631,7 +631,7 @@ end
     isrationally_equivalent(L::AbsLat, M::AbsLat, p::Union{InfPlc, NfOrdIdl})
                                                                          -> Bool
 
-Returns whether the rational spans $L$ and $M$ are equivalent over the
+Returns whether the rational spans of $L$ and $M$ are equivalent over the
 completion at $\mathfrak p$.
 """
 isrationally_equivalent(::AbsLat, ::AbsLat, ::NfAbsOrdIdl)
@@ -645,10 +645,10 @@ function isrationally_equivalent(L::AbsLat, M::AbsLat, p::InfPlc)
 end
 
 @doc Markdown.doc"""
-    isrationally_equivalent(L::AbsLat, M::AbsLat, p::Union{InfPlc, NfOrdIdl})
-                                                                         -> Bool
+    isrationally_equivalent(L::AbsLat, M::AbsLat)
+                                            -> Bool
 
-Returns whether the rational spans $L$ and $M$ are equivalent.
+Returns whether the rational spans of $L$ and $M$ are equivalent.
 """
 function isrationally_equivalent(L::AbsLat, M::AbsLat)
   return isequivalent(rational_span(L), rational_span(M))
@@ -684,7 +684,7 @@ isdefinite(L::AbsLat) = isdefinite(rational_span(L))
 @doc Markdown.doc"""
     can_scale_totally_positive(L::AbsLat) -> Bool, NumFieldElem
 
-Returns whether there is totally positive rescaled lattice of $L$. If so, the
+Returns whether there is a totally positive rescaled lattice of $L$. If so, the
 second return value is an element $a$ such that $L^a$ is totally positive.
 """
 function can_scale_totally_positive(L::AbsLat)
@@ -914,7 +914,7 @@ end
     rescale(L::AbsLat, a::NumFieldElem) -> AbsLat
 
 Returns the rescaled lattice $L^a$. Note that this has a different ambient
-space then $L$.
+space than $L$.
 """
 rescale(::AbsLat, ::NumFieldElem)
 
@@ -1098,7 +1098,7 @@ end
 @doc Markdown.doc"""
     local_basis_matrix(L::AbsLat, p::NfOrdIdl; type = :any) -> MatElem
 
-Given a prime ideal $\mathfrak p$ and a lattice $L$, this functions returns
+Given a prime ideal $\mathfrak p$ and a lattice $L$, this function returns
 a basis matrix of lattice $M$ such that $M_{\mathfrak{p}} = L_{\mathfrak{p}}$.
 
 - If `type == :submodule`, the lattice $L$ will be a sublattice of $M$.
@@ -1147,7 +1147,7 @@ end
     jordan_decomposition(L::AbsLat, p::NfOrdIdl)
                                 -> Vector{MatElem}, Vector{MatElem}, Vector{Int}
 
-Returns a Jordan decomposition of the completition of $L$ at $\mathfrak p$.
+Returns a Jordan decomposition of the completion of $L$ at $\mathfrak p$.
 
 The return value consists of three lists $(M_i)_i$, $(G_i)_i$ and $(s_i)_i$ of
 the same length $r$. The completions of the row spans of the matrices $M_i$
@@ -1322,8 +1322,8 @@ function jordan_decomposition(L::HermLat, p)
       X2 = SF * transpose(_map(view(S, (k + 1):(k + 1), 1:ncols(S)), aut))
       for l in k+2:n
         den = norm(X2[k, 1]) - X1[k, 1] * X2[k + 1, 1]
-        t1 = (X2[l, 1] * X1[k + 1, 1] - X1[l, 1] * X2[k + 1, 1])//den 
-        t2 = (X1[l, 1] * X2[k, 1] - X2[l, 1] * X1[k, 1])//den 
+        t1 = (X2[l, 1] * X1[k + 1, 1] - X1[l, 1] * X2[k + 1, 1])//den
+        t2 = (X1[l, 1] * X2[k, 1] - X2[l, 1] * X1[k, 1])//den
 
         for o in 1:ncols(S)
           S[l, o] = S[l, o] - (t1 * S[k, o] + t2 * S[k + 1, o])
@@ -1937,7 +1937,7 @@ function ismaximal_integral(L::HermLat, p)
 end
 
 #{Checks whether L is maximal integral. If not, a minimal integral over-lattice is returned}
-function ismaximal_integral(L::HermLat) 
+function ismaximal_integral(L::HermLat)
   !isintegral(norm(L)) && throw(error("The lattice is not integral"))
   S = base_ring(L)
   f = factor(discriminant(S))
@@ -1946,7 +1946,7 @@ function ismaximal_integral(L::HermLat)
     f[p] = 0
   end
   bad = collect(keys(f))
-  for p in bad 
+  for p in bad
     ok, LL = _maximal_integral_lattice(L, p, true)
     if !ok
       return false, LL
@@ -2107,7 +2107,7 @@ function find_lattice(M::HermLat, L::HermLat, p)
     Y = reduce(vcat, B)
 #    // Now Y generates the Gerstein reduction of L_p locally.
 #    // So we simply rescale the generators in Y appropriately and assemble
-#    // the global solution. 
+#    // the global solution.
     pi = elem_in_nf(p_uniformizer(p))
     i = 1
     j = r0 + 1
@@ -2146,7 +2146,7 @@ function find_lattice(M::HermLat, L::HermLat, p)
       elseif length(c1) == 1
         c1 = genus(HermLat, E, p, Tuple{Int, Int, Int}[(1, rank(c1, 1), det(c1, 1))])
       end
-      c = genus(HermLat, E, p, 
+      c = genus(HermLat, E, p,
             vcat(Tuple{Int, Int, Int}[(scale(c0, i), rank(c0, i), det(c0, i)) for i in 1:length(c0)],
                  Tuple{Int, Int, Int}[(scale(c1, i), rank(c1, i), det(c1, i)) for i in 1:length(c1)],
                  Tuple{Int, Int, Int}[(scale(c, i) - 2, rank(c, i), det(c, i)) for i in 1:length(c) if scale(c, i) >= 4]))
@@ -2187,7 +2187,7 @@ function find_lattice(M::HermLat, L::HermLat, p)
         r = rank(c, r)
         i = findfirst(j -> j == 1, S)
         @assert i !== nothing
-        Y1 = [ B[i][j,:] for j in 1:r] 
+        Y1 = [ B[i][j,:] for j in 1:r]
       else
         Y1 = []
       end
@@ -2264,7 +2264,7 @@ function find_lattice(M::HermLat, L::HermLat, p)
     pop!(chain)
     LL = M
     reverse!(chain)
-    for X in chain 
+    for X in chain
       BM = local_basis_matrix(LL, P, type = :submodule)
       pM = fractional_ideal(order(P), P) * pseudo_matrix(LL)
       while true
@@ -2877,7 +2877,7 @@ function _decomposition_number(E::NfRel{nf_elem}, p::InfPlc)
   end
 end
 
-function _sign(x::arb) 
+function _sign(x::arb)
   if ispositive(x)
     return 1
   elseif isnegative(x)
@@ -2887,7 +2887,7 @@ function _sign(x::arb)
   end
 end
 
-function _sign(x::acb) 
+function _sign(x::acb)
   if isreal(x)
     return _sign(real(x))
   else
@@ -2895,8 +2895,8 @@ function _sign(x::acb)
   end
 end
 
-# Given an element b in a number field K and sets of finite and infinite 
-# places P and I of K, return an element a in K such that 
+# Given an element b in a number field K and sets of finite and infinite
+# places P and I of K, return an element a in K such that
 # { v: (a,b)_v = -1 } = P \cup I
 # Note that the function computes the unit and class groups of K!
 # TODO: use factored elements
@@ -2967,7 +2967,7 @@ function _find_quaternion_algebra(b, P, I)
     M = vcat(M, v)
     push!(elts, f(L[i])) # cache
     fl, w = can_solve(M, target, side = :left)
-    if fl 
+    if fl
       found = true
       break
     end
@@ -3310,8 +3310,8 @@ end
 ################################################################################
 
 mutable struct ZLat <: AbsLat{FlintRationalField}
-  space::QuadSpace{FlintRationalField, fmpq_mat}  
-  rational_span::QuadSpace{FlintRationalField, fmpq_mat}  
+  space::QuadSpace{FlintRationalField, fmpq_mat}
+  rational_span::QuadSpace{FlintRationalField, fmpq_mat}
   basis_matrix::fmpq_mat
   gram_matrix::fmpq_mat
   aut_grp_gen::fmpq_mat
@@ -3417,7 +3417,7 @@ function assert_has_automorphisms(L::ZLat; redo::Bool = false, try_small::Bool =
   bm = basis_matrix(L)
 
   # Make the Gram matrix small
-  
+
   C = ZLatAutoCtx(res)
   if try_small
     fl, Csmall = try_init_small(C)
@@ -3441,12 +3441,12 @@ function assert_has_automorphisms(L::ZLat; redo::Bool = false, try_small::Bool =
   for i in 1:length(gens)
     gens[i] = Tinv * gens[i] * T
   end
-  
+
   # Now gens are with respect to the absolute basis of L
   @assert all( gens[i] * res_orig[j] * transpose(gens[i]) == res_orig[j] for i in 1:length(gens), j in 1:length(res))
 
   # Now translate to get the automorphisms with respect to basis_matrix(L)
-  
+
   L.automorphism_group_generators = gens
   L.automorphism_group_order = order
 
@@ -3512,7 +3512,7 @@ end
         -> (Bool, MatElem)
 
 Tests if $L$ and $M$ are isometric. If this is the case, the second return value
-is an isometriy $T$ from $L$ to $M$.
+is an isometry $T$ from $L$ to $M$.
 
 By default, that isometry is represented with respect to the bases of the
 ambient spaces, that is, $T V_M T^t = V_L$ where $V_L$ and $V_M$ are the gram
@@ -3540,7 +3540,7 @@ function isisometric(L::ZLat, M::ZLat; ambient_representation::Bool = true,
   if dL//cL != dM//cM
     return false, zero_matrix(FlintQQ, 0, 0)
   end
- 
+
   # Now compute LLL reduces gram matrices
 
   GLlll, TL = lll_gram_with_transform(GLint)
@@ -3549,7 +3549,7 @@ function isisometric(L::ZLat, M::ZLat; ambient_representation::Bool = true,
   @assert TM * change_base_ring(FlintZZ, GM) * TM' * dM == GMlll * cM
 
   # Setup for Plesken--Souvignier
-  
+
   G1 = fmpz_mat[GLlll]
   G2 = fmpz_mat[GMlll]
 
@@ -3668,7 +3668,7 @@ function assert_has_automorphisms(L::AbsLat; check::Bool = true,
   for i in 1:length(gens)
     gens[i] = Tinv * gens[i] * T
   end
-  
+
   # Now gens are with respect to the absolute basis of L
   if check
     all(gens[i] * ZgramLorig[j] * transpose(gens[i]) == ZgramLorig[j] for i in 1:length(gens), j in 1:length(ZgramL))
@@ -3920,7 +3920,7 @@ function _root_lattice_A(n::Int)
   z = zero_matrix(FlintQQ, n, n)
   for i in 1:n
     z[i, i] = 2
-    if i > 1 
+    if i > 1
       z[i, i - 1] = -1
     end
     if i < n

@@ -180,7 +180,7 @@ function Array(a::fmpz_mat; S::Type{T} = fmpz) where T
   for i = 1:nrows(a)
     for j = 1:ncols(a)
       A[i,j] = T(a[i,j])
-    end 
+    end
   end
   return A
 end
@@ -238,7 +238,7 @@ end
 
 function iszero_row(M::Array{T, 2}, i::Int) where T <: Integer
   for j = 1:Base.size(M, 2)
-    if M[i,j] != 0 
+    if M[i,j] != 0
       return false
     end
   end
@@ -247,7 +247,7 @@ end
 
 function iszero_row(M::Array{fmpz, 2}, i::Int)
   for j = 1:Base.size(M, 2)
-    if M[i,j] != 0 
+    if M[i,j] != 0
       return false
     end
   end
@@ -269,9 +269,9 @@ function divexact!(a::fmpz_mat, b::fmpz_mat, d::fmpz)
 end
 
 function mul!(a::fmpz_mat, b::fmpz_mat, c::fmpz)
-  ccall((:fmpz_mat_scalar_mul_fmpz, libflint), Nothing, 
+  ccall((:fmpz_mat_scalar_mul_fmpz, libflint), Nothing,
                   (Ref{fmpz_mat}, Ref{fmpz_mat}, Ref{fmpz}), a, b, c)
-end                  
+end
 
 function _hnf(x::fmpz_mat, shape::Symbol = :upperright)
   if shape == :lowerleft
@@ -381,13 +381,13 @@ end
 ################################################################################
 
 function islll_reduced(x::fmpz_mat, ctx::lll_ctx = lll_ctx(0.99, 0.51))
-  b = ccall((:fmpz_lll_is_reduced_d, libflint), Cint, 
+  b = ccall((:fmpz_lll_is_reduced_d, libflint), Cint,
             (Ref{fmpz_mat}, Ref{lll_ctx}), x, ctx)
   return Bool(b)
 end
 
 ################################################################################
-# 
+#
 ################################################################################
 
 function maximum(f::typeof(abs), a::fmpz_mat)
@@ -405,7 +405,7 @@ function maximum(f::typeof(abs), a::fmpz_mat)
   return r
 end
 
-function maximum(a::fmpz_mat)  
+function maximum(a::fmpz_mat)
   m = ccall((:fmpz_mat_entry, libflint), Ptr{fmpz}, (Ref{fmpz_mat}, Int, Int), a, 0,0)
   for i=1:nrows(a)
     for j=1:ncols(a)
@@ -420,7 +420,7 @@ function maximum(a::fmpz_mat)
   return r
 end
 
-function minimum(a::fmpz_mat) 
+function minimum(a::fmpz_mat)
   m = ccall((:fmpz_mat_entry, libflint), Ptr{fmpz}, (Ref{fmpz_mat}, Int, Int), a, 0,0)
   for i=1:nrows(a)
     for j=1:ncols(a)
@@ -601,7 +601,7 @@ end
 @doc Markdown.doc"""
     right_kernel_basis(a::MatElem{T}) -> Vector{Vector{T}} where {T <: AbstractAlgebra.FieldElem}
 
-It returns a basis for the right kernel of the matrix defined over a field
+It returns a basis for the right kernel of the matrix defined over a field.
 """
 function right_kernel_basis(a::MatElem{T}) where T <: AbstractAlgebra.FieldElem
   R = base_ring(a)
@@ -620,7 +620,7 @@ end
 @doc Markdown.doc"""
     left_kernel_basis(a::MatElem{T}) -> Vector{Vector{T}}
 
-It returns a basis for the left kernel of the matrix
+It returns a basis for the left kernel of the matrix.
 """
 left_kernel_basis(a::MatElem{T}) where T <: AbstractAlgebra.FieldElem = right_kernel_basis(transpose(a))
 
@@ -629,7 +629,7 @@ left_kernel_basis(a::MatElem{T}) where T <: AbstractAlgebra.FieldElem = right_ke
 @doc Markdown.doc"""
     kernel(a::MatElem{T}; side::Symbol = :right) -> Int, MatElem{T}
 
-It returns a tuple $(n, M)$, where n is the rank of the kernel and $M$ is a basis for it. If side is $:right$ or not
+It returns a tuple $(n, M)$, where $n$ is the rank of the kernel and $M$ is a basis for it. If side is $:right$ or not
 specified, the right kernel is computed. If side is $:left$, the left kernel is computed.
 """
 function kernel(A::MatElem; side::Symbol = :right)
@@ -645,10 +645,10 @@ end
 @doc Markdown.doc"""
     right_kernel(a::gfp_mat) ->  Int, gfp_mat
 
-It returns a tuple (n, M) where M is a matrix whose columns generate 
-the kernel and n is the dimension of the kernel.
+It returns a tuple $(n, M)$ where $M$ is a matrix whose columns generate
+the kernel of $a$ and $n$ is the dimension of the kernel.
 """
-function right_kernel(x::gfp_mat) 
+function right_kernel(x::gfp_mat)
   z = zero_matrix(base_ring(x), ncols(x), max(nrows(x),ncols(x)))
   n = ccall((:nmod_mat_nullspace, libflint), Int, (Ref{gfp_mat}, Ref{gfp_mat}), z, x)
   return n, z
@@ -662,8 +662,8 @@ end
 @doc Markdown.doc"""
     left_kernel(a::fmpz_mat) -> Int, fmpz_mat
 
-It returns a tuple (n, M) where M is a matrix whose rows generate 
-the kernel of M and n is the rank of the kernel.
+It returns a tuple $(n, M)$ where $M$ is a matrix whose rows generate
+the kernel of $a$ and $n$ is the rank of the kernel.
 """
 function left_kernel(x::fmpz_mat)
   H, U = hnf_with_transform(x)
@@ -682,7 +682,7 @@ end
 
 right_kernel(M::MatElem) = nullspace(M)
 
-function left_kernel(M::MatElem) 
+function left_kernel(M::MatElem)
   rk, M1 = nullspace(transpose(M))
   return rk, transpose(M1)
 end
@@ -690,8 +690,8 @@ end
 @doc Markdown.doc"""
     right_kernel(a::fmpz_mat) -> Int, fmpz_mat
 
-It returns a tuple (n, M) where M is a matrix whose rows generate 
-the kernel of M and n is the rank of the kernel.
+It returns a tuple $(n, M)$ where $M$ is a matrix whose rows generate
+the kernel of $a$ and $n$ is the rank of the kernel.
 """
 function right_kernel(x::fmpz_mat)
   n, M = left_kernel(transpose(x))
@@ -701,8 +701,8 @@ end
 @doc Markdown.doc"""
     right_kernel(a::nmod_mat) -> Int, nmod_mat
 
-It returns a tuple (n, M) where M is a matrix whose rows generate 
-the kernel of M and n is the rank of the kernel.
+It returns a tuple $(n, M)$ where $M$ is a matrix whose rows generate
+the kernel of $a$ and $n$ is the rank of the kernel.
 """
 function right_kernel(M::nmod_mat)
   R = base_ring(M)
@@ -803,7 +803,7 @@ end
 @doc Markdown.doc"""
     kernel(a::MatrixElem{T}, R::Ring; side::Symbol = :right) -> n, MatElem{elem_type(R)}
 
-It returns a tuple $(n, M)$, where n is the rank of the kernel over $R$ and $M$ is a basis for it. If side is $:right$ or not
+It returns a tuple $(n, M)$, where $n$ is the rank of the kernel over $R$ and $M$ is a basis for it. If side is $:right$ or not
 specified, the right kernel is computed. If side is $:left$, the left kernel is computed.
 """
 function kernel(M::MatrixElem, R::Ring; side::Symbol = :right)
@@ -820,7 +820,7 @@ end
 @doc Markdown.doc"""
     diagonal_matrix(x::Vector{T}) where T <: RingElem -> MatElem{T}
 
-Returns a diagonal matrix whose diagonal entries are the element of $x$.
+Returns a diagonal matrix whose diagonal entries are the elements of $x$.
 """
 function diagonal_matrix(x::Vector{T}) where T <: RingElem
   M = zero_matrix(parent(x[1]), length(x), length(x))
@@ -879,7 +879,7 @@ end
 @doc Markdown.doc"""
     isposdef(a::fmpz_mat) -> Bool
 
-Tests if $a$ positive definite by testing if all principal minors
+Tests if $a$ is positive definite by testing if all principal minors
 have positive determinant.
 """
 function isposdef(a::fmpz_mat)
@@ -916,7 +916,7 @@ function round_scale(a::Array{BigFloat, 2}, l::Int)
   b = zero_matrix(FlintZZ, s[1], s[2])
   return round_scale!(b, a, l)
 end
- 
+
 function round_scale!(b::fmpz_mat, a::Array{BigFloat, 2}, l::Int, R = _RealRings[Threads.threadid()])
   s = size(a)
 
@@ -926,7 +926,7 @@ function round_scale!(b::fmpz_mat, a::Array{BigFloat, 2}, l::Int, R = _RealRings
   tmp_mpfr = deepcopy(a[1,1])  #cannot use the R.?? tmp variable as it may/will
                                #have the wrong precision
 
-  rd = __get_rounding_mode()                             
+  rd = __get_rounding_mode()
   for i = 1:s[1]
     for j = 1:s[2]
       e = a[i,j].exp
@@ -936,7 +936,7 @@ function round_scale!(b::fmpz_mat, a::Array{BigFloat, 2}, l::Int, R = _RealRings
       f = ccall((:mpfr_get_z_2exp, :libmpfr), Clong, (Ref{BigInt}, Ref{BigFloat}),
         tmp_mpz, tmp_mpfr)
       ccall((:fmpz_set_mpz, libflint), Nothing, (Ref{fmpz}, Ref{BigInt}), tmp_fmpz, tmp_mpz)
-      if f > 0  
+      if f > 0
         ccall((:fmpz_mul_2exp, libflint), Nothing, (Ref{fmpz}, Ref{fmpz}, UInt), tmp_fmpz, tmp_fmpz, f)
       else
         ccall((:fmpz_tdiv_q_2exp, libflint), Nothing, (Ref{fmpz}, Ref{fmpz}, UInt), tmp_fmpz, tmp_fmpz, -f);
@@ -995,8 +995,8 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    mod!(M::fmpz_mat, p::fmpz) 
-Reduces every entry modulo $p$ in-place, ie. applies the mod function to every entry.
+    mod!(M::fmpz_mat, p::fmpz)
+Reduces every entry modulo $p$ in-place, i.e. applies the mod function to every entry.
 Positive residue system.
 """
 function mod!(M::fmpz_mat, p::fmpz)
@@ -1013,7 +1013,7 @@ end
 
 @doc Markdown.doc"""
     mod(M::fmpz_mat, p::fmpz) -> fmpz_mat
-Reduces every entry modulo $p$, ie. applies the mod function to every entry.
+Reduces every entry modulo $p$, i.e. applies the mod function to every entry.
 """
 function mod(M::fmpz_mat, p::fmpz)
   N = deepcopy(M)
@@ -1022,7 +1022,7 @@ function mod(M::fmpz_mat, p::fmpz)
 end
 
 @doc Markdown.doc"""
-    mod_sym!(M::fmpz_mat, p::fmpz) 
+    mod_sym!(M::fmpz_mat, p::fmpz)
 Reduces every entry modulo $p$ in-place, into the symmetric residue system.
 """
 function mod_sym!(M::fmpz_mat, B::fmpz)
@@ -1032,7 +1032,7 @@ end
 mod_sym!(M::fmpz_mat, B::Integer) = mod_sym!(M, fmpz(B))
 
 @doc Markdown.doc"""
-    mod(M::fmpz_mat, p::fmpz) -> fmpz_mat
+    mod_sym(M::fmpz_mat, p::fmpz) -> fmpz_mat
 Reduces every entry modulo $p$ into the symmetric residue system.
 """
 function mod_sym(M::fmpz_mat, B::fmpz)
@@ -1065,7 +1065,7 @@ end
 @doc Markdown.doc"""
     vcat(A::Array{Generic.Mat, 1}) -> Generic.Mat
     vcat(A::Array{fmpz_mat}, 1}) -> fmpz_mat
-Forms a big matrix my vertically concatenating the matrices in $A$.
+Forms a big matrix by vertically concatenating the matrices in $A$.
 All component matrices need to have the same number of columns.
 """
 function vcat(A::Array{T, 1})  where {S <: RingElem, T <: MatElem{S}}
@@ -1177,10 +1177,10 @@ function Base.hcat(A::MatElem...)
 end
 
 
-function Base.cat(A::MatElem...;dims) 
+function Base.cat(A::MatElem...;dims)
   @assert dims == (1,2) || isa(dims, Int)
 
-  if isa(dims, Int) 
+  if isa(dims, Int)
     if dims == 1
       return hcat(A...)
     elseif dims == 2
@@ -1228,8 +1228,8 @@ then U*[ a 0; 0 b] * V = [g 0 ; 0 l]
 @doc Markdown.doc"""
     snf_with_transform(A::fmpz_mat, l::Bool = true, r::Bool = true) -> fmpz_mat, fmpz_mat, fmpz_mat
 
-Given some integer matrix A, compute the Smith normal form (elementary
-divisor normal form) of A. If l and/ or r are true, then the corresponding
+Given some integer matrix $A$, compute the Smith normal form (elementary
+divisor normal form) of $A$. If `l` and/ or `r` are true, then the corresponding
 left and/ or right transformation matrices are computed as well.
 """
 function snf_with_transform(A::fmpz_mat, l::Bool = true, r::Bool = true)
@@ -1418,7 +1418,7 @@ end
 
 ################################################################################
 #
-#  IsUpper\Lower triangular 
+#  IsUpper\Lower triangular
 #
 ################################################################################
 
@@ -1485,7 +1485,7 @@ end
 @doc Markdown.doc"""
     isdiagonal(A::Mat)
 
-Tests if A is diagonal.
+Tests if $A$ is diagonal.
 """
 function isdiagonal(A::MatElem)
   for i = 1:ncols(A)
@@ -1522,7 +1522,7 @@ end
 @doc Markdown.doc"""
     diagonal(A::Mat{T}) -> Vector{T}
 
-Returns the diagonal of `A` is an array.
+Returns the diagonal of `A` as an array.
 """
 diagonal(A::MatrixElem{T}) where {T} = T[A[i, i] for i in 1:nrows(A)]
 
@@ -1597,8 +1597,8 @@ end
     solve_lt(A::MatElem{T}, b::MatElem{T}) -> MatElem{T})
 
 Given a lower triangular $m \times m$ matrix $A$ and a matrix $b$ of size
-$m \times k$, this function computes $x$ such that $Ax = b$. Might fail if
-that the pivots of $A$ are not invertible.
+$m \times k$, this function computes $x$ such that $Ax = b$. Might fail if the
+pivots of $A$ are not invertible.
 """
 function solve_lt(A::MatElem{T}, b::MatElem{T}) where T
   m = nrows(A)
@@ -1686,7 +1686,7 @@ function setindex!(A::MatElem{T}, n::Int, s::T) where T <: RingElem
   A[1 + ((n-1) % nrows(A)), 1 + div((n-1), nrows(A))] = s
 end
 
-function Base.iterate(A::MatElem, state::Int = 0) 
+function Base.iterate(A::MatElem, state::Int = 0)
   s = size(A)
   if state < s[1]*s[2]
     state += 1
@@ -1701,7 +1701,7 @@ Base.eltype(M::MatElem) = elem_type(base_ring(M))
 
 if Nemo.version() <= v"0.15.1"
   function setindex!(A::MatElem{T}, b::MatElem{T}, ::Colon, i::Int) where T
-    @assert ncols(b) == 1 && nrows(b) == nrows(A) 
+    @assert ncols(b) == 1 && nrows(b) == nrows(A)
     for j=1:nrows(A)
       A[j,i] = b[j]
     end
@@ -1717,7 +1717,7 @@ if Nemo.version() <= v"0.15.1"
   end
 end
 
-function setindex!(A::MatElem, b::Array{<: Any, 1}, ::Colon, i::Int) 
+function setindex!(A::MatElem, b::Array{<: Any, 1}, ::Colon, i::Int)
   @assert length(b) == nrows(A)
   for j=1:nrows(A)
     A[j,i] = b[j]
@@ -1733,7 +1733,7 @@ function setindex!(A::MatElem, b::Array{ <: Any, 1}, i::Int, ::Colon)
   b
 end
 
-function setindex!(A::MatElem, b, ::Colon, i::Int) 
+function setindex!(A::MatElem, b, ::Colon, i::Int)
   for j=1:nrows(A)
     A[j,i] = b
   end
@@ -1750,7 +1750,7 @@ end
 @doc Markdown.doc"""
     reduce_mod!(A::MatElem{T}, B::MatElem{T}) where T <: FieldElem
 
-For a reduced row echelon matrix $B$, reduce $A$ modulo $B$, ie. all the pivot
+For a reduced row echelon matrix $B$, reduce $A$ modulo $B$, i.e. all the pivot
 columns will be zero afterwards.
 """
 function reduce_mod!(A::MatElem{T}, B::MatElem{T}) where T <: FieldElem
@@ -1779,7 +1779,7 @@ end
 @doc Markdown.doc"""
     reduce_mod(A::MatElem{T}, B::MatElem{T}) where T <: FieldElem -> MatElem
 
-For a reduced row echelon matrix $B$, reduce $A$ modulo $B$, ie. all the pivot
+For a reduced row echelon matrix $B$, reduce $A$ modulo $B$, i.e. all the pivot
 columns will be zero afterwards.
 """
 function reduce_mod(A::MatElem{T}, B::MatElem{T}) where T <: FieldElem
@@ -1791,7 +1791,7 @@ end
 @doc Markdown.doc"""
     find_pivot(A::MatElem{<:RingElem}) -> Array{Int, 1}
 
-Find the pivot-columns of the reduced row echelon matrix $A$
+Find the pivot-columns of the reduced row echelon matrix $A$.
 """
 function find_pivot(A::MatElem{<:RingElem})
   @assert isrref(A)
@@ -1859,7 +1859,7 @@ end
 @doc Markdown.doc"""
     can_solve_with_kernel(A::MatElem{T}, B::MatElem{T}; side = :right) where T <: FieldElem -> Bool, MatElem, MatElem
 
-Tries to solve $Ax = B$ for $x$ if `side = :right` or $Ax = B$ if `side = :left`.
+Tries to solve $Ax = B$ for $x$ if `side = :right` or $xA = B$ if `side = :left`.
 It returns the solution and the right respectively left kernel of $A$.
 """
 function can_solve_with_kernel(A::MatElem{T}, B::MatElem{T}; side = :right) where T <: FieldElem
@@ -1912,8 +1912,8 @@ end
 
 @doc Markdown.doc"""
     can_solve(A::MatElem{T}, B::MatElem{T}, side = :right) where T <: RingElem -> Bool, MatElem
-    
-Tries to solve $Ax = B$ for $x$ if `side = :right` or $Ax = B$ if `side = :left`
+
+Tries to solve $Ax = B$ for $x$ if `side = :right` or $xA = B$ if `side = :left`
 over a euclidean ring.
 """
 function can_solve(A::MatElem{T}, B::MatElem{T};
@@ -2054,7 +2054,7 @@ function elementary_divisors(A::fmpz_mat)
 end
 
 @doc Markdown.doc"""
-    maximal_elementary_divisors(A::fmpz_mat) -> fmpz
+    maximal_elementary_divisor(A::fmpz_mat) -> fmpz
 
 The largest elementary divisor of $A$, that is, the last diagonal entry of the
 Smith normal form of $A$.
@@ -2066,8 +2066,8 @@ end
 @doc Markdown.doc"""
     divisors(A::fmpz_mat, d::fmpz) -> fmpz
 
-Returns the diagonal entries of a diagonal form of A. We assume that all the elementary
-divisors are divisors of d.
+Returns the diagonal entries of a diagonal form of $A$. We assume that all the elementary
+divisors are divisors of $d$.
 """
 function divisors(M::fmpz_mat, d::fmpz)
   sp = fmpz[2, 3, 5, 7, 11, 13, 17, 19, 23]
@@ -2084,7 +2084,7 @@ function divisors(M::fmpz_mat, d::fmpz)
     M1 = M1'
     hnf_modular_eldiv!(M1, d)
   end
-  
+
   for j = 1:nrows(M1)
     if !isone(M1[j,j])
       push!(l, M1[j, j])
@@ -2191,7 +2191,7 @@ function _left_kernel_of_howell_form_aurel(A::nmod_mat)
     an = annihilator(A[j, piv])
     K[j, j] = an
     if j < n
-      fk = K[1:j, 1:j] * A[1:j, (piv + 1):(piv + 1)] 
+      fk = K[1:j, 1:j] * A[1:j, (piv + 1):(piv + 1)]
       pivnext = piv
       while iszero(A[j + 1, pivnext])
         pivnext += 1

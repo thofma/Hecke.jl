@@ -160,7 +160,7 @@ function _validate_class_unit_group(c::ClassGrpCtx, U::UnitGrpCtx)
     g, ord = torsion_units_gen_order(O)
     U.torsion_units_order = ord
     U.torsion_units_gen = g
-  end  
+  end
 
   @vprint :UnitGroup 1 "Torsion structure done!\n"
 
@@ -227,7 +227,7 @@ function _class_unit_group(O::NfOrd; saturate_at_2::Bool = true, bound::Int = -1
     U = _get_UnitGrpCtx_of_order(O)::UnitGrpCtx{FacElem{nf_elem, AnticNumberField}}
     @assert U.finished
     @vprint :UnitGroup 1 "... done (retrieved).\n"
-    if c.GRH && !GRH 
+    if c.GRH && !GRH
       if !GRH
         class_group_proof(c, fmpz(2), factor_base_bound_minkowski(O))
         for (p, _) in factor(c.h)
@@ -306,7 +306,7 @@ function _class_unit_group(O::NfOrd; saturate_at_2::Bool = true, bound::Int = -1
         @vprint :ClassGroup 1 "index estimate down to $n_idx from $idx\n"
         @assert idx != n_idx
         idx = n_idx
-      end  
+      end
       if idx == 1
         break
       end
@@ -396,7 +396,7 @@ end
     class_group(O::NfOrd; bound = -1, method = 3, redo = false, large = 1000) -> GrpAbFinGen, Map
 
 Returns a group $A$ and a map $f$ from $A$ to the set of ideals of $O$.
-The inverse of the map is the projection onto the group of ideals modulo the 
+The inverse of the map is the projection onto the group of ideals modulo the
 group of principal ideals.
 \texttt{redo} allows to trigger a re-computation, thus avoiding the cache.
 \texttt{bound}, when given, is the bound for the factor base.
@@ -406,14 +406,13 @@ function class_group(O::NfOrd; bound::Int = -1, method::Int = 3,
                      large::Int = 1000, use_aut::Bool = isautomorphisms_known(nf(O)), GRH::Bool = true, do_lll::Bool = true,
                      saturate_at_2::Bool = true)
   if do_lll
-    OK = maximal_order(nf(O))
+   OK = maximal_order(nf(O))
     @assert OK.ismaximal == 1
     L = lll(OK)   
-    @assert L.ismaximal == 1         
+    @assert L.ismaximal == 1 
   else
     L = O
   end
-    
   c, U, b = _class_unit_group(L, bound = bound, method = method, redo = redo, unit_method = unit_method, large = large, use_aut = use_aut, GRH = GRH, saturate_at_2 = saturate_at_2)
 
   @assert b == 1
@@ -464,7 +463,7 @@ end
 
 @doc Markdown.doc"""
     regulator(O::NfOrd)
-Computes the regulator of $O$, ie. the discriminant of the unit lattice.    
+Computes the regulator of $O$, i.e. the discriminant of the unit lattice.
 """
 function regulator(O::NfOrd; method::Int = 3, unit_method::Int = 1, use_aut::Bool = false, GRH::Bool = true)
   c = _get_ClassGrpCtx_of_order(O, false)
@@ -479,8 +478,8 @@ end
 
 @doc Markdown.doc"""
     regulator(K::AnticNumberField)
-Computes the regulator of $K$, ie. the discriminant of the unit lattice 
-for the maximal order of $K$
+Computes the regulator of $K$, i.e. the discriminant of the unit lattice
+for the maximal order of $K$.
 """
 function regulator(K::AnticNumberField)
   return regulator(maximal_order(K))

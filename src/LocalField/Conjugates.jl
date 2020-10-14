@@ -35,7 +35,7 @@ end
 
 @doc Markdown.doc"""
     roots(f::fmpz_poly, Q::FlintQadicField; max_roots::Int = degree(f)) -> Array{qadic, 1}
-The roots of $f$ in $Q$, $f$ has to be square-free (at least the roots have to be simple roots).    
+The roots of $f$ in $Q$, $f$ has to be square-free (at least the roots have to be simple roots).
 """
 function roots(f::fmpz_poly, Q::FlintQadicField; max_roots::Int = degree(f))
   k, mk = ResidueField(Q)
@@ -81,7 +81,7 @@ end
 @doc Markdown.doc"""
     qAdicConj(K::AnticNumberField, p::Int)
 
-Creates a data structure to compute the conjugates in a unramified splitting field
+Creates a data structure to compute the conjugates in an unramified splitting field
 over $Q_p$.
 """
 mutable struct qAdicConj
@@ -133,13 +133,13 @@ end
 @doc Markdown.doc"""
     conjugates(a::nf_elem, C::qAdicConj, n::Int = 10; flat::Bool = false, all:Bool = true) -> []
 
-Returns an array of the q-adic conjugates of $a$: Let $p Z_K = \prod P_i$ for the maximal order
+Returns an array of the $q$-adic conjugates of $a$: Let $p Z_K = \prod P_i$ for the maximal order
 $Z_K$ of the parent of $a$. Then $K \otimes Q_p = \prod K_{P_i}$. For each of the $P_i$
 a $q$-adic (unramifed) extension $K_{P_i}$ of $Q_p$ is computed, sth. $a$ has $\deg P_i = \deg K_{P_i}$
 many cojugates in $K_{P_i}$.
 If `all = true` and `flat = false`, the default, then all $n$ conjugates are returned.
-If `all = false`, then for each $P_i$ only one conjugate is returned, the others could be 
-xomputed using automorphisms (the Frobenius).
+If `all = false`, then for each $P_i$ only one conjugate is returned, the others could be
+computed using automorphisms (the Frobenius).
 If `flat = true`, then instead of the conjugates, only the $p$-adic coefficients are returned.
 """
 function conjugates(a::nf_elem, C::qAdicConj, n::Int = 10; flat::Bool = false, all::Bool = true)
@@ -214,13 +214,13 @@ end
     conjugates_log(a::nf_elem, C::qAdicConj, n::Int = 10; flat::Bool = false, all:Bool = true) -> []
     conjugates_log(a::FacElem{nf_elem, AnticNumberField}, C::qAdicConj, n::Int = 10; flat::Bool = false, all:Bool = true) -> []
 
-Returns an array of the logarithms of the q-adic conjugates of $a$: Let $p Z_K = \prod P_i$ for the maximal order
+Returns an array of the logarithms of the $q$-adic conjugates of $a$: Let $p Z_K = \prod P_i$ for the maximal order
 $Z_K$ of the parent of $a$. Then $K \otimes Q_p = \prod K_{P_i}$. For each of the $P_i$
 a $q$-adic (unramifed) extension $K_{P_i}$ of $Q_p$ is computed, sth. $a$ has $\deg P_i = \deg K_{P_i}$
 many cojugates in $K_{P_i}$.
-If `all = true` and `flat = false` then all $n$ logarithms of conjugates are returned.
-If `all = false`, then for each $P_i$ only one logarithm of a conjugate if returned, the others could be 
-xomputed using automorphisms (the Frobenius).
+If `all = true` and `flat = false`, then all $n$ logarithms of conjugates are returned.
+If `all = false`, then for each $P_i$ only one logarithm of a conjugate is returned, the others could be
+computed using automorphisms (the Frobenius).
 If `flat = true`, then instead of the conjugates, only the $p$-adic coefficients are returned.
 """
 function conjugates_log(a::nf_elem, C::qAdicConj, n::Int = 10; all::Bool = false, flat::Bool = true)
@@ -238,7 +238,7 @@ function conjugates_log(a::FacElem{nf_elem, AnticNumberField}, C::qAdicConj, n::
   first = true
   local res::Array{qadic, 1}
   for (k, v) = a.fac
-    try 
+    try
       y = conjugates_log(k, C, n, flat = false, all = false)
       if first
         res = v .* y
@@ -311,7 +311,7 @@ end
 Returns the determinant of $m^t m$ where the columns of $m$ are the `conjugates_log` of the units
 in either the array, or the fundamental units for $K$ (the maximal order of $K$) or $R$.
 If `flat = false`, then all prime ideals over $p$ need to have the same degree.
-In either case, Leopold's conjectue states that the regulator is zero iff the units are dependent.
+In either case, Leopold's conjecture states that the regulator is zero iff the units are dependent.
 """
 function regulator(u::Array{T, 1}, C::qAdicConj, n::Int = 10; flat::Bool = true) where {T<: Union{nf_elem, FacElem{nf_elem, AnticNumberField}}}
   c = map(x -> conjugates_log(x, C, n, all = !flat, flat = flat), u)
@@ -374,9 +374,9 @@ function eval_f_fs(f::PolyElem, x::RingElem)
   p[0] = one(x)
   p[1] = x
   p[d[1]] = x^d[1]
-    
+
   for i = 2:length(d)
-    if haskey(p, d[i]) 
+    if haskey(p, d[i])
       continue
     end
     q, r = divrem(d[i], d[i-1])
@@ -454,7 +454,7 @@ function lift_root(f::fmpz_poly, a::nf_elem, o::nf_elem, p::fmpz, n::Int)
         mod_sym!(pa[end], p)
       end
       fa  = sum(coeff(f, i-1) * pa[i] for i=1:length(pa))
-      fsa = sum(coeff(f, i) * i * pa[i] for i=1:length(pa)-1)  
+      fsa = sum(coeff(f, i) * i * pa[i] for i=1:length(pa)-1)
     else
       _fa, _fsa = eval_f_fs(f, nf_elem_mod(a, p))
       fa = _fa.a
@@ -471,9 +471,9 @@ end
 
 @doc Markdown.doc"""
     completion(K::AnticNumberField, P::NfOrdIdl) -> FlintQadicField, Map{AnticNumberField -> FlintQadicField}
-The completino of $K$ wrt to the topology induced by the valuation at $P$. $P$ needs
+The completion of $K$ wrt to the topology induced by the valuation at $P$. $P$ needs
 to be unramifed.
-The map giving teh embedding of $K$ inot the completino, admits a pointwise pre-image to obtain a lift.
+The map giving the embedding of $K$ into the completion, admits a pointwise pre-image to obtain a lift.
 Note, that the map is not well defined by this data: $K$ will have $\deg P$ many embeddings.
 """
 function completion(K::AnticNumberField, P::NfOrdIdl)
@@ -502,7 +502,7 @@ function completion(K::AnticNumberField, p::fmpz, i::Int)
   return completion(K, ca)
 end
 
-function completion(K::AnticNumberField, ca::qadic)  
+function completion(K::AnticNumberField, ca::qadic)
   p = prime(parent(ca))
   C = qAdicConj(K, Int(p))
   r = roots(C.C, precision(ca))
@@ -587,4 +587,3 @@ function completion(K::AnticNumberField, ca::qadic)
   end
   return parent(ca), MapFromFunc(inj, lif, K, parent(ca))
 end
-

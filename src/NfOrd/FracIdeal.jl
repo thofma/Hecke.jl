@@ -74,7 +74,7 @@ end
 @doc Markdown.doc"""
     fractional_ideal(O::NfAbsOrd, A::FakeFmpqMat, A_in_hnf::Bool = false) -> NfAbsOrdFracIdl
 
-Creates the fractional ideal of $\mathcal O$ with basis matrix $A$. If A_in_hnf
+Creates the fractional ideal of $\mathcal O$ with basis matrix $A$. If `A_in_hnf`
 is set, then it is assumed that the numerator of $A$ is already in lower left
 HNF.
 """
@@ -88,7 +88,7 @@ end
     fractional_ideal(O::NfAbsOrd, A::fmpz_mat, b::fmpz, A_in_hnf::Bool = false) -> NfAbsOrdFracIdl
 
 Creates the fractional ideal of $\mathcal O$ with basis matrix $A/b$. If
-A_in_hnf is set, then it is assumed that $A$ is already in lower left HNF.
+`A_in_hnf` is set, then it is assumed that $A$ is already in lower left HNF.
 """
 function fractional_ideal(O::NfAbsOrd, x::fmpz_mat, y::fmpz=fmpz(1), x_in_hnf::Bool = false)
   !x_in_hnf ? x = _hnf(x, :lowerleft) : nothing
@@ -391,7 +391,7 @@ end
 @doc Markdown.doc"""
     norm(I::NfAbsOrdFracIdl) -> fmpq
 
-Returns the norm of $I$
+Returns the norm of $I$.
 """
 function norm(A::NfAbsOrdFracIdl)
   if isdefined(A, :norm)
@@ -501,7 +501,7 @@ function ==(A::NfAbsOrdFracIdl, B::NfAbsOrdFracIdl)
 
     return basis_matrix(A, copy = false) == basis_matrix(B, copy = false)
   end
-  
+
   if isdefined(A, :num) && isdefined(B, :num)
     if A.den == B.den && A.num == B.num
       return true

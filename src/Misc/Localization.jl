@@ -81,7 +81,7 @@ and S = {x | gcd(x, s) = 1} (for s = p, S = Z \setminus p)
 This is euclidean under N(a/b) = gcd(a, s^infty)
 
 a_1*s_1/b_1 : a_2*s_2/b_2
-  
+
   divrem(a_1 * s_1 * b_2, s_2) = q, r  => r < s_2
   a_1 s_1 b_2 = q s_2 + r
 
@@ -284,7 +284,7 @@ end
 
 @doc Markdown.doc"""
      divrem(a::LocElem{T}, b::LocElem{T}, checked::Bool = true)  where {T <: RingElem}
-In case the ring is euclidean, return a euclidean division.     
+In case the ring is euclidean, return a euclidean division.
 """
 function Base.divrem(a::LocElem{T}, b::LocElem{T}, checked::Bool = true)  where {T <: RingElem}
   check_parent(a, b)
@@ -446,7 +446,7 @@ end
 
 @doc Markdown.doc"""
     valuation(a::LocElem{T}, p::T) where {T <: RingElement}
-Returns the valuation `n` of $a$ at $p$, i.e. the integer `n` s.th $a$ = $p$^`n` * x, where x has valuation 0 at $p$
+Returns the valuation `n` of $a$ at $p$, i.e. the integer `n` s.th $a$ = $p$^`n` * x, where x has valuation 0 at $p$.
 """
 valuation(a::LocElem{T}, p::T) where {T <: RingElement} = valuation(data(a), p)
 

@@ -1,4 +1,4 @@
-export UnitGroup, solvemod, gen_mod_pk, 
+export UnitGroup, solvemod, gen_mod_pk,
        disc_log_bs_gs, disc_log_ph, disc_log_mod
 
 function order(x::Generic.Res{fmpz}, fp::Dict{fmpz, Int64})
@@ -6,10 +6,10 @@ function order(x::Generic.Res{fmpz}, fp::Dict{fmpz, Int64})
 end
 
 @doc Markdown.doc"""
-    isprimitive_root(x::Generic.Res{fmpz}, M::fmpz, fM::Dict{fmpz, Int64}) Bool
+    isprimitive_root(x::Generic.Res{fmpz}, M::fmpz, fM::Dict{fmpz, Int64}) -> Bool
 
-Given x in Z/MZ, the factorisation of M (in fM), decide if x is primitive.
-Intrinsically, only makes sense if the units of Z/MZ are cyclic.
+Given $x$ in $Z/MZ$, the factorisation of $M$ (in `fM`), decide if $x$ is primitive.
+Intrinsically, only makes sense if the units of $Z/MZ$ are cyclic.
 """
 function isprimitive_root(x::Generic.Res{fmpz}, M::fmpz, fM::Fac{fmpz})
   for (p, l) in fM
@@ -32,33 +32,33 @@ if Nemo.version() > v"0.15.1"
 end
 
 #=
-  for p = 2 this is trivial, as <-1, 5> are generators independently of 
+  for p = 2 this is trivial, as <-1, 5> are generators independently of
   everything.
   Assume p>2 is odd.
   Then (Z/p^k)^* = <g> with some unknown g, independently of k
   We want
   <g>/<g^m> = <A> for A = g^a, independently of k, depending on m
   (to avoid having to factor p-1, assuming that m is small)
-  
+
   Let G_k = <g+ p^kZ>/<g^m + p^k Z> and ord_k(A) the order of A in G_k
 
-  Then ord_k(A) = |G_k|/gcd(|G_k|, a), 
+  Then ord_k(A) = |G_k|/gcd(|G_k|, a),
           |G_k| = gcd(phi(p^k), m) = gcd((p-1)p^(k-1), m)
-  
+
   ord_k    (A) = |G_k|      iff gcd(|G_k|    , a) = 1
   ord_(k+1)(A) = |G_(k+1)|  iff gcd(|G_(k+1)|, a) = 1
-  Since either |G_k| = |G_(k+1)| or 
+  Since either |G_k| = |G_(k+1)| or
               p|G_k| = |G_(k+1)|
   we get (from the constant gcd) that wither a is coprime to p, hence
   the gcd will be stable for all subsequent k's as well, or
   |G_k| is stable (other gcd) hence will be stable. In either case,
   gcd(|G_(k+l)|, a) = 1 for all l, thus a is a generator
 =#
-  
+
 @doc Markdown.doc"""
     gen_mod_pk(p::fmpz, mod::fmpz=0) fmpz
 
-Find an integer x s.th. x is a primtive root for all powers of the (odd) prime p. If mod is non zero, it finds a generator for Z/p^kZ modulo mod powers only.
+Find an integer $x$ s.th. $x$ is a primtive root for all powers of the (odd) prime $p$. If `mod` is non zero, it finds a generator for $Z/p^kZ$ modulo `mod` powers only.
 """
 function gen_mod_pk(p::fmpz, mod::fmpz=fmpz(0))
   @assert isodd(p)
@@ -92,7 +92,7 @@ function gen_mod_pk(p::fmpz, mod::fmpz=fmpz(0))
 end
 
 mutable struct MapUnitGroupModM{T} <: Map{GrpAbFinGen, T, HeckeMap, MapUnitGroupModM}
-  header::Hecke.MapHeader{GrpAbFinGen, T}
+ header::Hecke.MapHeader{GrpAbFinGen, T}
 
   function MapUnitGroupModM{T}(G::GrpAbFinGen, R::T, dexp::Function, dlog::Function) where {T}
     r = new{T}()
@@ -105,13 +105,13 @@ end
 @doc Markdown.doc"""
     UnitGroup(R::Generic.ResRing{fmpz}) -> GrpAbFinGen, Map
 
-The unit group of R = Z/nZ together with the apropriate map.
+The unit group of $R = Z/nZ$ together with the appropriate map.
 """
 function UnitGroup(R::Nemo.FmpzModRing, mod::fmpz=fmpz(0))
 
   m = modulus(R)
   fm = factor(m).fac
-  
+
   r = Array{fmpz}(undef, 0)
   g = Array{fmpz}(undef, 0)
   mi = Array{fmpz}(undef, 0)
@@ -124,7 +124,7 @@ function UnitGroup(R::Nemo.FmpzModRing, mod::fmpz=fmpz(0))
     if p==2  && iseven(mod)
       if k==1
         continue
-      elseif k==2 
+      elseif k==2
         push!(r, 2)
         push!(mi, pk)
         gg = fmpz(-1)
@@ -150,7 +150,7 @@ function UnitGroup(R::Nemo.FmpzModRing, mod::fmpz=fmpz(0))
     else
       mpk = divexact(m, pk)
       s = gcd((p-1)*p^(fm[p]-1), mod)
-      if s==1 
+      if s==1
         continue
       end
       push!(r, s)
@@ -167,7 +167,7 @@ function UnitGroup(R::Nemo.FmpzModRing, mod::fmpz=fmpz(0))
 
   G = abelian_group(r)
   function dexp(x::GrpAbFinGenElem)
-    return prod(Nemo.fmpz_mod[R(g[i])^x[i] for i=1:ngens(G)])
+   return prod(Nemo.fmpz_mod[R(g[i])^x[i] for i=1:ngens(G)])
   end
   function dlog(x::Nemo.fmpz_mod)
     return G(fmpz[disc_log_mod(g[i], lift(x), mi[i]) for i=1:ngens(G)])
@@ -179,7 +179,7 @@ function UnitGroup(R::Nemo.NmodRing, mod::fmpz=fmpz(0))
 
   m = Int(R.n)
   fm = factor(fmpz(m)).fac
-  
+
   r = Array{fmpz}(undef, 0)
   g = Array{fmpz}(undef, 0)
   mi = Array{fmpz}(undef, 0)
@@ -192,7 +192,7 @@ function UnitGroup(R::Nemo.NmodRing, mod::fmpz=fmpz(0))
     if p==2  && iseven(mod)
       if k==1
         continue
-      elseif k==2 
+      elseif k==2
         push!(r, 2)
         push!(mi, pk)
         gg = fmpz(-1)
@@ -218,7 +218,7 @@ function UnitGroup(R::Nemo.NmodRing, mod::fmpz=fmpz(0))
     else
       mpk = divexact(m, pk)
       s = gcd((p-1)*p^(fm[p]-1), mod)
-      if s==1 
+      if s==1
         continue
       end
       push!(r, s)
@@ -246,7 +246,7 @@ end
 @doc Markdown.doc"""
     solvemod(a::fmpz, b::fmpz, M::fmpz)
 
-Finds x s.th. ax == b mod M.
+Finds $x$ s.th. $ax == b mod M$.
 """
 function solvemod(a::fmpz, b::fmpz, M::fmpz)
   #solve ax = b (mod M)
@@ -264,8 +264,8 @@ end
 @doc Markdown.doc"""
     disc_log_mod(a::fmpz, b::fmpz, M::fmpz)
 
-Computes g s.th. a^g == b mod M. M has to be a power of an odd prime
-and a a generator for the multiplicative group mod M
+Computes $g$ s.th. $a^g == b mod M$. $M$ has to be a power of an odd prime
+and $a$ a generator for the multiplicative group mod $M$.
 """
 function disc_log_mod(a::fmpz, b::fmpz, M::fmpz)
   fM = factor(M).fac
@@ -286,7 +286,7 @@ function disc_log_mod(a::fmpz, b::fmpz, M::fmpz)
       if (b-5) % 8 == 0
         g += 1
         b = b* invmod(a, M) % M
-      end 
+      end
       @assert (b-1) % 8 == 0
       @assert (a^2-1) % 8 == 0
       F = FlintPadicField(p, fM[p])
@@ -299,13 +299,13 @@ function disc_log_mod(a::fmpz, b::fmpz, M::fmpz)
 
   ## we could do the odd priems case using the same p-adic
   #  log approach...
-     
+
   @assert isodd(p)
 
   Fp = GF(p, cached=false)
   g = disc_log_bs_gs(Fp(a), Fp(b), p-1)
 #  println("1st level ", g)
-  
+
   #so b*a^-r = 1 mod p, a^(p-1) = 1 mod p
   # in fact, a^(p-1) should be a multiplicative generator for
   # (1+pZ) mod p^k for all k
@@ -321,7 +321,7 @@ function disc_log_mod(a::fmpz, b::fmpz, M::fmpz)
     A^y = 1+p^lyx_l + p^(2l)..., thus
     yx_l = b_l mod p^l
   =#
- 
+
   A = powmod(a, p-1, M)
   B = b*powmod(a, -g, M) %M
   @assert B%p == 1
@@ -362,11 +362,11 @@ end
 @doc Markdown.doc"""
     disc_log_bs_gs{T}(a::T, b::T, o::fmpz)
 
-Tries to find g s.th. a^g == b under the assumption that g <= o.
-Uses Baby-Step-Giant-Step, requires a to be invertable.
+Tries to find $g$ s.th. $a^g == b$ under the assumption that $g \leq o$.
+Uses Baby-Step-Giant-Step, requires $a$ to be invertible.
 """
 function disc_log_bs_gs(a::T, b::T, o::fmpz) where {T <: RingElem}
-  b==1 && return fmpz(0)  
+  b==1 && return fmpz(0)
   b==a && return fmpz(1)
   @assert parent(a) === parent(b)
   if o < 100 
@@ -402,9 +402,9 @@ end
 @doc Markdown.doc"""
     disc_log_ph(a::T, b::T, o::fmpz, r::Int)
 
-Tries to find g s.th. a^g == b under the assumption that ord(a) | o^r
-Uses Pohlig-Hellmann and Baby-Step-Giant-Step for the size(o) steps.
-Requires a to be invertable.
+Tries to find $g$ s.th. $a^g == b$ under the assumption that $ord(a) | o^r$
+Uses Pohlig-Hellmann and Baby-Step-Giant-Step for the size($o$) steps.
+Requires $a$ to be invertible.
 """
 function disc_log_ph(a::T, b::T, o::fmpz, r::Int) where {T <: RingElem}
   #searches for g sth. a^g = b
@@ -459,9 +459,9 @@ function unit_group_mod(R::Nemo.NmodRing, n::Int)
       return G(res)
     end
   end
-  
-  local expon 
-  let G = G, R = R  
+
+  local expon
+  let G = G, R = R
     function expon(a::GrpAbFinGenElem)
       res = one(R)
       for i=1:ngens(G)
@@ -472,7 +472,7 @@ function unit_group_mod(R::Nemo.NmodRing, n::Int)
       return res
     end
   end
-  
+
   return G, MapUnitGroupModM{typeof(R)}(G, R, expon, disclog)
 
 end
@@ -511,7 +511,7 @@ function _unit_pk_mod_n(p::Int, v::Int, n::Int)
         end
       end
       if iszero(g)
-        local disclog2 
+        local disclog2
         let disc_log = disc_log
           function disc_log2(x::Int)
             return Int[disc_log(x)]
@@ -529,7 +529,7 @@ function _unit_pk_mod_n(p::Int, v::Int, n::Int)
         end
       end
       return [g, Int(gen.data)], Int[ord, ord1], disc_log1
-    else 
+    else
       local disc_log3
       let disclog = disclog
         function disc_log3(x::Int)
@@ -546,7 +546,7 @@ function _unit_pk_mod_n(p::Int, v::Int, n::Int)
         return Int[]
       end
       return Int[], Int[], disclog4
-    end 
+    end
     if v==2
       R = ResidueRing(FlintZZ, 4, cached=false)
       local disclog5
@@ -561,7 +561,7 @@ function _unit_pk_mod_n(p::Int, v::Int, n::Int)
         end
       end
       return Int[-1], Int[2], disclog5
-    else 
+    else
       R = ResidueRing(FlintZZ, 2^v, cached=false)
       ord = gcd(2^(v-2), n)
       gens = Int[-1,5]
@@ -596,7 +596,7 @@ function _unit_pk_mod_n(p::Int, v::Int, n::Int)
           else
             return Int[1, disc_log_bs_gs(z, y, ord)]
           end
-        else 
+        else
           error("Not coprime")
         end
       end
@@ -606,10 +606,10 @@ function _unit_pk_mod_n(p::Int, v::Int, n::Int)
   end
 
 
-end  
+end
 
 function _unit_grp_residue_field_mod_n(p::Int, n::Int)
-  
+
   npart = ppio(p-1, n)[1]
   if isone(npart)
     function disclog1(x::Int)
@@ -621,7 +621,7 @@ function _unit_grp_residue_field_mod_n(p::Int, n::Int)
   s = factor(npart)
   lp1 = Int[div(npart, Int(q)) for (q, v) in s]
   s1 = div(p-1, npart)
-    
+
   g = one(R)
   found = true
   while found
@@ -636,12 +636,12 @@ function _unit_grp_residue_field_mod_n(p::Int, n::Int)
     end
     found = !found
   end
-    
+
   k = gcd(npart, n)
   inv = invmod(s1, npart)
   quot = divexact(npart, k)
   w = g^quot
-  
+
   local disc_log
   let R = R, s1 = s1, quot = quot, w = w, inv = inv, k = k, npart = npart
     function disc_log(x::Int)
@@ -659,7 +659,7 @@ function _unit_grp_residue_field_mod_n(p::Int, n::Int)
       else
         return mod(inv*disc_log_bs_gs(w, y, npart), k)
       end
-    end    
+     end    
   end 
   return Int(g.data), k, disc_log
   
@@ -693,7 +693,7 @@ function Base.iterate(R::GaloisField, st::UInt)
   if st == R.n - 1
     return nothing
   end
-
+ 
   return R(st + 1), st + 1
 end
 

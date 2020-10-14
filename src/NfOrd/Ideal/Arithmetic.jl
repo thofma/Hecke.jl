@@ -469,7 +469,7 @@ end
 #for ideals in the maximal order, the gcd is well defined...
 
 @doc Markdown.doc"""
-  gcd(A::NfOrdIdl, B::NfOrdIdl) -> NfOrdIdl
+    gcd(A::NfOrdIdl, B::NfOrdIdl) -> NfOrdIdl
 The gcd or sum (A+B).
 """
 function gcd(A::NfAbsOrdIdl, B::NfAbsOrdIdl)
@@ -483,7 +483,7 @@ end
 
 #TODO: write a ppio version that allows for p-powers as well
 @doc Markdown.doc"""
-  gcd(A::NfOrdIdl, p::fmpz) -> NfOrdIdl
+    gcd(A::NfOrdIdl, p::fmpz) -> NfOrdIdl
 The gcd or sum (A + pO).
 """
 function gcd(A::NfAbsOrdIdl, p::fmpz)
@@ -554,7 +554,7 @@ function pow_2_elem(A::NfAbsOrdIdl, e::Int)
     if has_2_elem_normal(A)
       I.gens_normal = A.gens_normal
     end
-    I.gens_weakly_normal = has_weakly_normal(A) 
+    I.gens_weakly_normal = has_weakly_normal(A)
     I.is_prime = 2
     return I
   else
@@ -570,7 +570,7 @@ function pow_2_elem(A::NfAbsOrdIdl, e::Int)
     if has_2_elem_normal(A)
       I.gens_normal = A.gens_normal
     end
-    I.gens_weakly_normal = has_weakly_normal(A)    
+    I.gens_weakly_normal = has_weakly_normal(A)
     I.is_prime = 2
     return I
   end
@@ -609,7 +609,7 @@ function prod_by_int_2_elem_normal(A::NfOrdIdl, a::fmpz)
   if has_princ_gen_special(A)
     B.princ_gen_special = (2, 0, (A.princ_gen_special[2] + A.princ_gen_special[3])*a)
   end
-  
+
   if has_princ_gen(A)
     B.is_principal = 1
     B.princ_gen = a*A.princ_gen
@@ -636,7 +636,7 @@ function prod_by_int_2_elem(A::NfOrdIdl, a::fmpz)
     B.is_principal = 1
     B.princ_gen = A.princ_gen*a
   end
-  
+
   if has_princ_gen_special(A)
     B.princ_gen_special = (2, 0, (A.princ_gen_special[2]+A.princ_gen_special[3])*a)
   end
@@ -750,7 +750,7 @@ function idempotents(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
   d = degree(O)
 
 
-  if has_2_elem(x) && has_2_elem(y)
+ if has_2_elem(x) && has_2_elem(y)
     g, ux, vx = gcdx(x.gen_one, y.gen_one)
     if isone(g)
       z = O(ux*x.gen_one)
@@ -801,7 +801,7 @@ function _idempotents_via_matrices(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
   for i in 1:d
     V[1 + i, d + 1 + i] = 1
   end
-  
+
   H = hnf_modular_eldiv!(V, lcm(mx, my)) # upper right
 
   for i in 2:(1 + d)
@@ -835,8 +835,8 @@ end
 
 @doc Markdown.doc"""
     crt(r1::NfOrdElem, i1::NfOrdIdl, r2::NfOrdElem, i2::NfOrdIdl) -> NfOrdElem
-Find $x$ s.th $x \equiv r1 \bmod i1$ and $x \equiv r2 \bmod i2$
-using (((idempotents)))
+Find $x$ s.th. $x \equiv r1 \bmod i1$ and $x \equiv r2 \bmod i2$
+using `idempotents`.
 """
 function crt(r1::S, i1::T, r2::S, i2::T) where { S <: Union{NfOrdElem, NfRelOrdElem, AlgAssAbsOrdElem}, T <: Union{NfOrdIdl, NfRelOrdIdl, AlgAssAbsOrdIdl} }
   u, v = idempotents(i1, i2)

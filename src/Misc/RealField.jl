@@ -1,4 +1,4 @@
-#TODO: 
+#TODO:
 # check_parent
 # hash
 # elem_type  & friends
@@ -63,7 +63,7 @@ end
 
 @doc Markdown.doc"""
     evaluate(a::nf_elem, P::InfPlc, p::Int = 20)
-The evaluation of $a$ at the place $P$, ie a real or complex value.
+The evaluation of $a$ at the place $P$, i.e. a real or complex value.
 $p$ specifies the precision to be returned.
 """
 function evaluate(a::nf_elem, P::InfPlc, p::Int = 10)
@@ -115,5 +115,3 @@ inv(a::RealFieldElem) = RealFieldElem(a.parent, inv(a.data))
 (K::RealField)(a::fmpz) = RealFieldElem(K, K.parent(a))
 (K::RealField)(a::fmpq) = RealFieldElem(K, K.parent(a))
 (K::RealField)(a::RealFieldElem) = RealFieldElem(K, a.data)
-
-

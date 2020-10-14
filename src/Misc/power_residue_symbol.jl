@@ -1,6 +1,13 @@
 #Computes the d-th power residue symbol (a/b)_d in F_q
 #with d|q-1
 
+@doc Markdown.doc"""
+    power_residue(a::PolyElem{T}, b::PolyElem{T}, d::fmpz, q::fmpz) where T<: RingElem
+
+Computes the $d$-th power residue symbol $\left(\frac{a}{b}\right)_d$ in $\mathbb{F}_q$.
+$d$ has to divide $q-1$.
+"""
+
 function power_residue(a::PolyElem{T}, b::PolyElem{T}, d::fmpz, q::fmpz) where T<: RingElem
     if mod(q-1,d)!=0
         return error("Must have d|q-1")

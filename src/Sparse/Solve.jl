@@ -13,7 +13,7 @@ function can_solve_ut(A::SMat{T}, g::SRow{T}) where T <: Union{FieldElem, nmod}
     j = 1
     while j<= nrows(A) && A.rows[j].pos[1] < s
       j += 1
-    end  
+    end
     if j > nrows(A) || A.rows[j].pos[1] > s
       break
     end
@@ -51,8 +51,8 @@ end
 @doc Markdown.doc"""
     rational_reconstruction(A::SRow{fmpz}, M::fmpz) -> Bool, SRow{fmpz}, fmpz
 
-Apply rational reconstruction to the entries of $A$. Returns true iff 
-successful. In this case, the numerator is returned as a matrix and the 
+Apply rational reconstruction to the entries of $A$. Returns true iff
+successful. In this case, the numerator is returned as a matrix and the
 common denominator in the third value.
 """
 function rational_reconstruction(A::SRow{fmpz}, M::fmpz)
@@ -84,7 +84,7 @@ function rational_reconstruction(A::SRow{fmpz}, M::fmpz)
   end
   return true, B, de
 end
-   
+
 function solve_ut(A::SMat{fmpz}, b::SRow{fmpz})
   @hassert :HNF 1  isupper_triangular(A)
   #still assuming A to be upper-triag
@@ -138,10 +138,10 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    det_mc(A::SMat{fmpz}
+    det_mc(A::SMat{fmpz})
 
 Computes the determinant of $A$ using a LasVegas style algorithm,
-ie. the result is not proven to be correct.
+i.e. the result is not proven to be correct.
 Uses the dense (nmod_mat) determinant on $A$ for various primes $p$.
 """
 function det_mc(A::SMat{fmpz})
@@ -154,7 +154,7 @@ function det_mc(A::SMat{fmpz})
 
   b = sparse_matrix(matrix(FlintZZ, 1, A.c, rand(1:10, A.c)))
   _, qq = solve_dixon_sf(A, b)
-  
+
   q = p_start # global prime
   first = true
   dd = fmpz(1)
@@ -227,13 +227,13 @@ end
     solve_dixon_sf(A::SMat{fmpz}, b::SRow{fmpz}, is_int::Bool = false) -> SRow{fmpz}, fmpz
     solve_dixon_sf(A::SMat{fmpz}, B::SMat{fmpz}, is_int::Bool = false) -> SMat{fmpz}, fmpz
 
-For an sparse square matrix $A$ or full rank and a sparse matrix (row), find
+For a sparse square matrix $A$ of full rank and a sparse matrix (row), find
 a sparse matrix (row) $x$ and an integer $d$ s.th.
 $$x A = bd$$
 holds.
 The algorithm is a Dixon-based linear p-adic lifting method.
 If \code{is_int} is given, then $d$ is assumed to be $1$. In this case
-rational reconstriction is avoided.
+rational reconstruction is avoided.
 """
 function solve_dixon_sf(A::SMat{fmpz}, b::SRow{fmpz}, is_int::Bool = false)
   B = sparse_matrix(FlintZZ)
@@ -296,7 +296,7 @@ function solve_dixon_sf(A::SMat{fmpz}, B::SMat{fmpz}, is_int::Bool = false)
 
       pp *= fmpz(p)
 
-  #    @hassert :HNF 1  iszero(SRow(b_orig - Hecke.mul(sol, A), pp)) 
+  #    @hassert :HNF 1  iszero(SRow(b_orig - Hecke.mul(sol, A), pp))
 
       if is_int
         fl = true
@@ -306,7 +306,7 @@ function solve_dixon_sf(A::SMat{fmpz}, B::SMat{fmpz}, is_int::Bool = false)
       else
         fl, nu, de = rational_reconstruction(sol, pp)
       end
-      if fl 
+      if fl
   #      @hassert :HNF 1  SRow(de*sol, pp) == SRow(nu, pp)
   #      @hassert :HNF 1  SRow(mul(nu, A), pp) == SRow(de*b_orig, pp)
         if last == (nu, de)
@@ -333,7 +333,7 @@ function solve_dixon_sf(A::SMat{fmpz}, B::SMat{fmpz}, is_int::Bool = false)
       for i=1:length(b.values)
   #      @hassert :HNF 1  b.values[i] % p == 0
         b.values[i] = div(b.values[i], p)
-      end  
+      end
       bp = change_base_ring(R, b)
     end
   end
@@ -349,8 +349,8 @@ function echelon!(S::SMat{T}; complete::Bool = false) where T <: FieldElem
       if m > S[j].pos[1]
         m = S[j].pos[1]
         mp = j
-      end  
-    end  
+      end
+    end
     if mp == 0
       return
     end
@@ -367,7 +367,7 @@ function echelon!(S::SMat{T}; complete::Bool = false) where T <: FieldElem
           S.r -= 1
         else
           j += 1
-        end  
+        end
       else
         j += 1
       end
@@ -405,7 +405,7 @@ function can_solve(a::SMat{T}, b::SRow{T}) where T <: FieldElem
     return fl, mul(sol, sub(c, 1:nrows(c), a.c+1:c.c))
   else
     return fl, sol
-  end  
+  end
 end
 
 #TODO: can_solve using Dixon for Q, NF

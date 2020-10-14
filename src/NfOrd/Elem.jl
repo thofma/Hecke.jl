@@ -300,7 +300,7 @@ Returns whether $x$ and $y$ are equal.
     charpoly(a::NfAbsOrdElem) -> fmpz_poly
 
     charpoly(a::NfAbsOrdElem, FlintZZ) -> fmpz_poly
-The characteristic polynomial of $a$.    
+The characteristic polynomial of $a$.
 """
 function charpoly(a::NfAbsOrdElem, Zx::FmpzPolyRing = FmpzPolyRing(FlintZZ, :x, false))
   return Zx(charpoly(elem_in_nf(a)))
@@ -308,7 +308,7 @@ end
 
 @doc Markdown.doc"""
     minpoly(a::NfAbsOrdElem) -> fmpz_poly
-The minimal polynomial of $a$.    
+The minimal polynomial of $a$.
 """
 function minpoly(a::NfAbsOrdElem, Zx::FmpzPolyRing = FmpzPolyRing(FlintZZ, :x, false))
   return Zx(minpoly(elem_in_nf(a)))
@@ -614,8 +614,8 @@ end
 Returns an element $a^i$ modulo $m$.
 """
 function powermod(a::NfAbsOrdElem, i::fmpz, p::fmpz)
-  
-  #if contains_equation_order(parent(a))#This doesn't work! 
+
+  #if contains_equation_order(parent(a))#This doesn't work!
   if issimple(nf(parent(a))) && isdefining_polynomial_nice(nf(parent(a)))
     return powermod_fast(a, i, p)
   else
@@ -783,7 +783,7 @@ end
 @doc Markdown.doc"""
     representation_matrix_mod(a::NfAbsOrdElem, d::fmpz) -> fmpz_mat
 
-Returns the representation matrix of the element $a$ with entries reduced mod d.
+Returns the representation matrix of the element $a$ with entries reduced mod $d$.
 """
 function representation_matrix_mod(a::NfAbsOrdElem, d::fmpz)
   O = parent(a)
@@ -1094,7 +1094,7 @@ end
 @doc Markdown.doc"""
     conjugates_arb(x::NfAbsOrdElem, abs_tol::Int) -> Array{acb, 1}
 
-Compute the the conjugates of `x` as elements of type `acb`.
+Compute the conjugates of `x` as elements of type `acb`.
 Recall that we order the complex conjugates
 $\sigma_{r+1}(x),...,\sigma_{r+2s}(x)$ such that
 $\sigma_{i}(x) = \overline{\sigma_{i + s}(x)}$ for $r + 2 \leq i \leq r + s$.

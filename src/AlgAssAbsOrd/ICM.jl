@@ -13,7 +13,7 @@ export ideal_class_monoid, islocally_isomorphic, isconjugate
     ideal_class_monoid(R::AlgAssAbsOrd)
       -> Vector{FacElem{AlgAssAbsOrdIdl, AlgAssAbsOrdIdlSet}}
 
-> Given an order $R$ in a number field or a finite product of number fields this
+> Given an order $R$ in a number field or a finite product of number fields, this
 > function returns representatives of the isomorphism classes of fractional
 > ideals in $R$.
 """

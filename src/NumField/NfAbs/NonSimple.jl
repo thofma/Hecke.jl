@@ -127,7 +127,7 @@ Nemo.one(K::NfAbsNS) = K(Nemo.one(parent(K.pol[1])))
 
 Nemo.one(a::NfAbsNSElem) = one(a.parent)
 
-function Nemo.zero!(a::NfAbsNSElem) 
+function Nemo.zero!(a::NfAbsNSElem)
   a.data = zero(a.data)
   return a
 end
@@ -269,7 +269,7 @@ function Base.show(io::IO, a::NfAbsNSElem)
 
      ccall((:flint_free, libflint), Nothing, (Ptr{UInt8},), cstr)
   end
- 
+
 #  show(io, f)
 end
 
@@ -574,7 +574,7 @@ function minpoly_sparse(a::NfAbsNSElem)
         end
         return f
       end
-    end  
+    end
     push!(sz.values, FlintQQ(1))
     push!(sz.pos, n+i+1)
     push!(M, sz)
@@ -821,7 +821,7 @@ mutable struct NfAbsToNfAbsNS <: Map{AnticNumberField, NfAbsNS, HeckeMap, NfAbsT
     z.emb = emb
     z.header = MapHeader(K, L, image, preimage)
     return z
-  end  
+  end
 
   function NfAbsToNfAbsNS(K::AnticNumberField, L::NfAbsNS, a::NfAbsNSElem)
     function image(x::nf_elem)
@@ -834,7 +834,7 @@ mutable struct NfAbsToNfAbsNS <: Map{AnticNumberField, NfAbsNS, HeckeMap, NfAbsT
     z.prim_img = a
     z.header = MapHeader(K, L, image)
     return z
-  end  
+  end
 end
 
 hom(K::AnticNumberField, L::NfAbsNS, a::NfAbsNSElem) = NfAbsToNfAbsNS(K, L, a)
@@ -855,7 +855,7 @@ mutable struct NfAbsNSToNfAbsNS <: Map{NfAbsNS, NfAbsNS, HeckeMap, NfAbsNSToNfAb
     z.emb = emb
     z.header = MapHeader(K, L, image)
     return z
-  end  
+  end
 end
 
 function hom(K::NfAbsNS, L::NfAbsNS, emb::Array{NfAbsNSElem, 1})
@@ -927,7 +927,7 @@ function simple_extension(K::NfAbsNS; check = true)
   z = one(K)
   elem_to_mat_row!(M, 1, z)
   elem_to_mat_row!(M, 2, pe)
-  z = mul!(z, z, pe)
+ z = mul!(z, z, pe)
   for i=3:degree(K)
     z = mul!(z, z, pe)
     elem_to_mat_row!(M, i, z)
@@ -985,9 +985,9 @@ end
 @doc Markdown.doc"""
     number_field(f::Array{fmpq_poly, 1}, s::String="_\$") -> NfAbsNS
 Let $f = (f_1, \ldots, f_n)$ be univariate rational polynomials, then
-we construct 
- $$K = Q[t_1, \ldots, t_n]/\langle f_1(t_1), \ldots, f_n(t_n)\rangle$$
-The ideal bust be maximal, however, this is not tested.
+we construct
+ $$K = Q[t_1, \ldots, t_n]/\langle f_1(t_1), \ldots, f_n(t_n)\rangle .$$
+The ideal must be maximal, however, this is not tested.
 """
 function NumberField(f::Array{fmpq_poly, 1}, s::String="_\$"; cached::Bool = false, check::Bool = true)
   n = length(f)
@@ -1097,7 +1097,7 @@ end
 
 #= Idea
   if k = Q[x,y]/<f, g>
-    then 
+    then
       tr(x^i) = power_sums(f)
       tr(y^i) = power_sums(g)
       tr(x^i y^j) = tr(x^i) tr(y^j):
@@ -1127,7 +1127,7 @@ function tr(a::NfAbsNSElem)
   return t
 end
 
-#TODO: 
+#TODO:
 #  test f mod p first
 #  if all polys are monic, the test if traces have non-trivial gcd
 function minpoly_via_trace(a::NfAbsNSElem)
@@ -1198,9 +1198,9 @@ function primitive_element(K::NfAbsNS)
 end
 
 @doc Markdown.doc"""
-  factor(f::PolyElem{NfAbsNSElem}) -> Fac{Generic.Poly{NfAbsNSElem}}
+    factor(f::PolyElem{NfAbsNSElem}) -> Fac{Generic.Poly{NfAbsNSElem}}
 
-The factorisation of f (using Trager's method).
+The factorisation of $f$ (using Trager's method).
 """
 function factor(f::PolyElem{NfAbsNSElem})
   Kx = parent(f)
@@ -1217,12 +1217,12 @@ function factor(f::PolyElem{NfAbsNSElem})
 
   f_orig = deepcopy(f)
   @vprint :PolyFactor 1 "Factoring $f\n"
-  @vtime :PolyFactor 2 g = gcd(f, derivative(f))  
+  @vtime :PolyFactor 2 g = gcd(f, derivative(f))
   if degree(g) > 0
     f = div(f, g)
   end
 
-  
+
   if degree(f) == 1
     multip = div(degree(f_orig), degree(f))
     r = Fac{typeof(f)}()
@@ -1247,7 +1247,7 @@ function factor(f::PolyElem{NfAbsNSElem})
     @vtime :PolyFactor 2 N = norm(g)
   end
   @vtime :PolyFactor 2 fac = factor(N)
-  
+
   res = Dict{PolyElem{NfAbsNSElem}, Int64}()
 
   for i in keys(fac.fac)

@@ -16,7 +16,7 @@ order(a::NfRelOrdFracIdl) = a.order
 @doc Markdown.doc"""
     nf(a::NfRelOrdFracIdl) -> NumField
 
-Returns the number field, of which $a$ is an fractional ideal.
+Returns the number field, of which $a$ is a fractional ideal.
 """
 nf(a::NfRelOrdFracIdl) = nf(order(a))
 
@@ -142,7 +142,7 @@ end
     fractional_ideal(O::NfRelOrd, M::PMat, M_in_hnf::Bool = false) -> NfRelOrdFracIdl
 
 Creates the fractional ideal of $\mathcal O$ with basis pseudo-matrix $M$. If
-M_in_hnf is set, then it is assumed that $M$ is already in lower left pseudo
+`M_in_hnf` is set, then it is assumed that $M$ is already in lower left pseudo
 HNF.
 """
 function fractional_ideal(O::NfRelOrd{T, S, U}, M::PMat{T, S}, M_in_hnf::Bool = false) where {T, S, U}
@@ -272,7 +272,7 @@ end
 @doc Markdown.doc"""
     norm(a::NfRelOrdFracIdl{T, S}) -> S
 
-Returns the norm of $a$
+Returns the norm of $a$.
 """
 function norm(a::NfRelOrdFracIdl{S, U, V}, copy::Type{Val{T}} = Val{true}) where {S, T, U, V}
   assure_has_norm(a)

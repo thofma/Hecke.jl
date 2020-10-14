@@ -36,7 +36,7 @@ function Base.show(io::IO, ::MIME"text/plain", G::LocalGenusHerm)
   compact = get(io, :compact, false)
   if !compact
     if isdyadic(G) && isramified(G)
-      print(io, "Local genus symbol (scale, rank, det, norm) at ")
+       print(io, "Local genus symbol (scale, rank, det, norm) at ")
     else
       print(io, "Local genus symbol (scale, rank, det) at ")
     end
@@ -121,7 +121,7 @@ end
     ranks(G::LocalGenusHerm)
 
 Given a genus symbol for Hermitian lattices over $E/K$, return the ranks of the
-Jordan block of $G$.
+Jordan blocks of $G$.
 """
 ranks(G::LocalGenusHerm) = map(i -> rank(G, i), 1:length(G))::Vector{Int}
 
@@ -130,7 +130,7 @@ ranks(G::LocalGenusHerm) = map(i -> rank(G, i), 1:length(G))::Vector{Int}
 
 Given a genus symbol for Hermitian lattices over $E/K$, return the determinant of the
 $i$th Jordan block of $G$. This will be `1` or `-1` depending on whether the
-determinant is local norm or not.
+determinant is a local norm or not.
 """
 det(G::LocalGenusHerm, i::Int) = G.data[i][3]
 
@@ -139,7 +139,7 @@ det(G::LocalGenusHerm, i::Int) = G.data[i][3]
 
 Given a genus symbol for Hermitian lattices over $E/K$, return the discriminant
 of the $i$th Jordan block of $G$. This will be `1` or `-1` depending on whether
-the discriminant is local norm or not.
+the discriminant is a local norm or not.
 """
 function disc(G::LocalGenusHerm, i::Int)
   d = det(G)
@@ -192,7 +192,7 @@ end
 
 Given a genus symbol for Hermitian lattices over $E/K$, return the determinants
 of the Jordan blocks of $G$. These will be `1` or `-1` depending on whether the
-determinant is local norm or not.
+determinant is a local norm or not.
 """
 dets(G::LocalGenusHerm) = map(i -> det(G, i), 1:length(G))::Vector{Int}
 
@@ -200,7 +200,7 @@ dets(G::LocalGenusHerm) = map(i -> det(G, i), 1:length(G))::Vector{Int}
     norm(G::LocalGenusHerm, i::Int) -> Int
 
 Given a dyadic genus symbol for Hermitian lattices over $E/K$ at a prime
-$\mathfrak p$, return the $\mathfrak p$-valuation of the norm of the $i$ Jordan
+$\mathfrak p$, return the $\mathfrak p$-valuation of the norm of the $i$th Jordan
 block of $G$.
 """
 norm(G::LocalGenusHerm, i::Int) = begin @assert isdyadic(G); G.norm_val[i] end # this only works if it is dyadic
@@ -214,7 +214,7 @@ blocks of $G$.
 """
 
 @doc Markdown.doc"""
-    isramified(G::LocalGenus) -> Bool
+    isramified(G::LocalGenusHerm) -> Bool
 
 Given a genus symbol for Hermitian lattices at a prime $\mathfrak p$, return
 whether $\mathfrak p$ is ramified.
@@ -222,7 +222,7 @@ whether $\mathfrak p$ is ramified.
 isramified(G::LocalGenusHerm) = G.isramified
 
 @doc Markdown.doc"""
-    isdyadic(G::LocalGenus) -> Bool
+    isdyadic(G::LocalGenusHerm) -> Bool
 
 Given a genus symbol for Hermitian lattices at a prime $\mathfrak p$, return
 whether $\mathfrak p$ is dyadic.
@@ -246,7 +246,7 @@ Given a local genus symbol of Hermitian lattices over $E/K$, return $E$.
 base_field(G::LocalGenusHerm) = G.E
 
 @doc Markdown.doc"""
-    prime(G::LocalGenus) -> NfOrdIdl
+    prime(G::LocalGenusHerm) -> NfOrdIdl
 
 Given a local genus symbol of Hermitian lattices at a prime $\mathfrak p$,
 return $\mathfrak p$.
@@ -372,14 +372,14 @@ function gram_matrix(G::LocalGenusHerm, l::Int)
   p = elem_in_nf(p_uniformizer(prime(G)))
   A = automorphisms(E)
   _a = gen(E)
-  conj = A[1](_a) == _a ? A[2] : A[1] 
+  conj = A[1](_a) == _a ? A[2] : A[1]
 
   if !isramified(G)
     return diagonal_matrix([E(p)^i for j in 1:m])
   end
 
   # ramified
-  
+
   lQ = prime_decomposition(maximal_order(E), prime(G))
   @assert length(lQ) == 1 && lQ[1][2] == 2
   Q = lQ[1][1]
@@ -400,7 +400,7 @@ function gram_matrix(G::LocalGenusHerm, l::Int)
         if d == -1
           return diagonal_matrix([(fl ? _non_norm_rep(G) : one(E)) * E(p)^div(i, 2)])
         else
-          return diagonal_matrix([(!fl ? _non_norm_rep(G) : one(E)) * E(p)^div(i, 2)]) 
+          return diagonal_matrix([(!fl ? _non_norm_rep(G) : one(E)) * E(p)^div(i, 2)])
         end
       end
       return diagonal_matrix(push!([E(p)^div(i, 2) for j in 1:(m - 1)], u * E(p)^(div(i, 2) * (m - 1))))
@@ -410,7 +410,7 @@ function gram_matrix(G::LocalGenusHerm, l::Int)
   end
 
   # dyadic
-  
+
   k = norm(G, l)
 
   # I should cache this e
@@ -490,7 +490,7 @@ end
 Construct the local genus symbol of hermitian lattices over $E$ at the prime ideal
 $\mathfrak p$ with the invariants specified by `data`.
 
-If the prime ideal is good, the vector `data` contain for each block of the
+If the prime ideal is good, the vector `data` contains for each block of the
 Jordan decomposition a pair `(s, r, d)`, where `s` is the scale, `r` the
 rank. The value `d` must be in `[-1, 1]` and indicates whether the determinant
 of the block is a local norm or not.
@@ -539,7 +539,7 @@ function genus(::Type{HermLat}, E::S, p::T, data::Vector{Tuple{Int, Int, Int, In
     z.data = Tuple{Int, Int, Int}[Base.front(v) for v in data]
     z.norm_val = Int[v[end] for v in data]
     z.ni = _get_ni_from_genus(z)
-    
+
     for i in 1:length(z.data)
       # If the rank is odd, then n(L) * O_E = s(L), so n = 2 * s,
       # since n is the valuation in K and the extension is ramified.
@@ -623,7 +623,7 @@ end
 function _genus(L::HermLat, p)
   sym = _genus_symbol(L, p)
   G = genus(HermLat, nf(base_ring(L)), p, sym)
-  # Just for debugging 
+  # Just for debugging
   @hassert :Lattice 1 begin
     if isdyadic(G) && isramified(G)
       GG = _genus_symbol_kirschmer(L, p)
@@ -754,7 +754,7 @@ function _genus_symbol(L::HermLat, q)
   else
     return __genus_symbol(L, q)
   end
-end
+  end
 
 function __genus_symbol(L::HermLat, p)
   @assert order(p) == base_ring(base_ring(L))
@@ -772,7 +772,7 @@ function __genus_symbol(L::HermLat, p)
     sym = Tuple{Int, Int, Int, Int}[]
     for i in 1:length(B)
       normal = _get_norm_valuation_from_gram_matrix(G[i], P) == S[i]
-      GG = diagonal_matrix(dense_matrix_type(E)[pi^(max(0, S[i] - S[j])) * G[j] for j in 1:length(B)])
+     GG = diagonal_matrix(dense_matrix_type(E)[pi^(max(0, S[i] - S[j])) * G[j] for j in 1:length(B)])
       #v = _get_norm_valuation_from_gram_matrix(GG, P)
       #@assert v == valuation(R * norm(lattice(hermitian_space(E, GG), identity_matrix(E, nrows(GG)))), P)
       r = nrows(B[i]) # rank
@@ -885,9 +885,9 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    in(L::HermLat, G::LocalGenusHerm) -> Bool
+    in(L::HermLat, G::GenusHerm) -> Bool
 
-Test if the lattice $L$ is contained in the local genus $G$.
+Test if the lattice $L$ is contained in the genus $G$.
 """
 Base.in(L::HermLat, G::GenusHerm) = genus(L) == G
 
@@ -1178,7 +1178,7 @@ function local_genera_hermitian(E, p, rank::Int, det_val::Int, max_scale::Int, i
         push!(scales_rks, pgensymbol)
     end
   end
-  
+
   if !is_ramified
     # I add the 0 to make the compiler happy
     symbols = Vector{LocalGenusHerm{typeof(E), typeof(p)}}(undef, length(scales_rks))
@@ -1187,7 +1187,7 @@ function local_genera_hermitian(E, p, rank::Int, det_val::Int, max_scale::Int, i
       z = Tuple{Int, Int, Int, Int}[]
       for b in g
         # We have to be careful.
-        # If p is inert, then the norm is not surjective. 
+        # If p is inert, then the norm is not surjective.
         if !is_inert || iseven(b[1] * b[2])
           push!(z, (b[1], b[2], 1, 0))
         else
@@ -1233,7 +1233,7 @@ function local_genera_hermitian(E, p, rank::Int, det_val::Int, max_scale::Int, i
   lp = prime_decomposition(maximal_order(E), p)
   @assert length(lp) == 1 && lp[1][2] == 2
   P = lp[1][1]
-  
+
   e = valuation(different(maximal_order(E)), P)
   # only for debugging
   scales_rks = reverse(scales_rks)
@@ -1250,7 +1250,7 @@ function local_genera_hermitian(E, p, rank::Int, det_val::Int, max_scale::Int, i
         dn = Vector{Int}[]
         i = b[1]
         # (i + e) // 2 => k >= i/2
-        k = ceil(Int, i//2) 
+        k = ceil(Int, i//2)
         while 2 * k < i + e
           push!(dn, Int[1, k])
           push!(dn, Int[-1, k])
@@ -1412,7 +1412,7 @@ function genus_generators(L::HermLat)
   E = nf(R)
   D = different(R)
   b, P0, bad = smallest_neighbour_prime(L)
-
+  
   local bad_prod::ideal_type(base_ring(R))
 
   if isempty(bad)

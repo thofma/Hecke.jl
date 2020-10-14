@@ -146,7 +146,7 @@ end
 function FacElem(R, d::Dict{B, T}) where {B, T <: Integer}
 
   z = FacElem{B, typeof(R)}()
-  z.fac = Dict{B, fmpz}((k,fmpz(v)) for (k,v) = d) 
+  z.fac = Dict{B, fmpz}((k,fmpz(v)) for (k,v) = d)
 
   z.parent = FacElemMon(R)
   return z
@@ -308,7 +308,7 @@ function *(x::FacElem{B, S}, y::FacElem{B, S}) where {B, S}
   for (a, v) in y
     add_to_key!(z.fac, a, v, remove_zero = true)
   end
-
+  
   return z
 end
 
@@ -353,7 +353,7 @@ function _transform(x::Array{FacElem{T, S}, 1}, y::fmpz_mat) where {T, S}
   for i in 1:ncols(y)
     z[i] = x[1]^y[1,i]
     for j in 2:nrows(y)
-      if iszero(y[j, i])
+       if iszero(y[j, i])
         continue
       end
       if isone(y[j, i])
@@ -481,7 +481,7 @@ function _ev(d::Dict{fq_nmod, fmpz}, z::fq_nmod)
       continue
     end
     if abs(v) < 10
-      if v >0 
+      if v >0
         kv = Fq()
         ccall((:fq_nmod_pow, libflint), Nothing, (Ref{fq_nmod}, Ref{fq_nmod}, Ref{fmpz}, Ref{FqNmodFiniteField}), kv, k, v, Fq)
         mul!(z, z, kv)
@@ -539,10 +539,10 @@ end
 
 
 @doc Markdown.doc"""
-  evaluate{T}(x::FacElem{T}) -> T
+    evaluate{T}(x::FacElem{T}) -> T
 
 Expands or evaluates the factored element, i.e. actually computes the
-value. 
+value.
 Does "square-and-multiply" on the exponent vectors.
 """
 function evaluate(x::FacElem{T}) where T
@@ -550,7 +550,7 @@ function evaluate(x::FacElem{T}) where T
 end
 
 @doc Markdown.doc"""
-  evaluate_naive{T}(x::FacElem{T}) -> T
+    evaluate_naive{T}(x::FacElem{T}) -> T
 
 Expands or evaluates the factored element, i.e. actually computes the
 value. Uses the obvious naive algorithm. Faster for input in finite rings.
@@ -570,7 +570,7 @@ end
 #################################################################################
 @doc Markdown.doc"""
     max_exp(a::FacElem)
-Finds the largest exponent in the factored element $a$
+Finds the largest exponent in the factored element $a$.
 """
 function max_exp(a::FacElem)
   return maximum(values(a.fac))
@@ -578,7 +578,7 @@ end
 
 @doc Markdown.doc"""
     min_exp(a::FacElem)
-Finds the smallest exponent in the factored element $a$
+Finds the smallest exponent in the factored element $a$.
 """
 function min_exp(a::FacElem)
   return minimum(values(a.fac))
@@ -586,7 +586,7 @@ end
 
 @doc Markdown.doc"""
     maxabs_exp(a::FacElem)
-Finds the largest exponent by absolute value the factored element $a$
+Finds the largest exponent by absolute value in the factored element $a$.
 """
 function maxabs_exp(a::FacElem)
   return maximum(abs, values(a.fac))
@@ -633,7 +633,7 @@ end
 #  return order(A.base_ring)
 #end
 
-function order(A::FacElemMon) 
+function order(A::FacElemMon)
   return order(A.base_ring)
 end
 

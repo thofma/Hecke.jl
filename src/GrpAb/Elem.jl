@@ -133,10 +133,10 @@ function show(io::IO, a::GrpAbFinGenElem)
     print(io, a.coeff)
   else
     s = get_special(parent(a), :name)
-    s === nothing 
+    s === nothing
     if s === nothing
       print(io, "Element of\n")
-      print(io, parent(a)) 
+      print(io, parent(a))
       print(io, "\nwith components ", a.coeff)
     else
       print(io, "Element of ", s, " with components ", a.coeff)
@@ -410,7 +410,7 @@ end
     rand(G::GrpAbFinGen, B::fmpz) -> GrpAbFinGenElem
 
 For a (potentially infinite) abelian group $G$, return an element
-chosen uniformly at random with coefficients bounded by B.
+chosen uniformly at random with coefficients bounded by $B$.
 """
 rand(G::GrpAbFinGen, B::fmpz) = issnf(G) ? rand_snf(G, B) : rand_gen(G, B)
 
@@ -418,7 +418,7 @@ rand(G::GrpAbFinGen, B::fmpz) = issnf(G) ? rand_snf(G, B) : rand_gen(G, B)
     rand(G::GrpAbFinGen, B::Integer) -> GrpAbFinGenElem
 
 For a (potentially infinite) abelian group $G$, return an element
-chosen uniformly at random with coefficients bounded by B.
+chosen uniformly at random with coefficients bounded by $B$.
 """
 rand(G::GrpAbFinGen, B::Integer) = issnf(G) ? rand_snf(G, B) : rand_gen(G, B)
 

@@ -39,14 +39,14 @@ function remove(z::T, p::T) where T <: Integer
     v += 1
   end
   return (v, z)
-end 
+end
 
 function remove(z::Rational{T}, p::T) where T <: Integer
   z == 0 && return(0, z)
   v, d = remove(denominator(z), p)
   w, n = remove(numerator(z), p)
   return w-v, n//d
-end 
+end
 
 function valuation(z::T, p::T) where T <: Integer
   z == 0 && return 0
@@ -57,14 +57,14 @@ function valuation(z::T, p::T) where T <: Integer
     v += 1
   end
   return v
-end 
+end
 
 function valuation(z::Rational{T}, p::T) where T <: Integer
   z == 0 && error("Not yet implemented")
   v = valuation(denominator(z), p)
   w = valuation(numerator(z), p)
   return w-v
-end 
+end
 
 function remove!(a::fmpz, b::fmpz)
   v = ccall((:fmpz_remove, libflint), Clong, (Ref{fmpz}, Ref{fmpz}, Ref{fmpz}), a, a, b)
@@ -203,10 +203,10 @@ function divisible(x::Integer, y::Integer)
 end
 
 @doc Markdown.doc"""
-  modord(a::fmpz, m::fmpz) -> Int
-  modord(a::Integer, m::Integer)
+    modord(a::fmpz, m::fmpz) -> Int
+    modord(a::Integer, m::Integer)
 
-  The multiplicative order of a modulo m (not a good algorithm).
+  The multiplicative order of a modulo $m$ (not a good algorithm).
 """
 function modord(a::fmpz, m::fmpz)
   gcd(a,m)!=1 && throw("1st agrument not a unit")
@@ -296,7 +296,7 @@ function rand(rng::AbstractRNG, a::StepRange{fmpz, fmpz})
   nl, high = divrem(nd, 8*sizeof(Base.GMP.Limb))
   if high>0
     mask = m>>(nl*8*sizeof(Base.GMP.Limb))
-  end  
+  end
   s = fmpz(0)
   while true
     s = fmpz(0)
@@ -304,7 +304,7 @@ function rand(rng::AbstractRNG, a::StepRange{fmpz, fmpz})
       s = s << (8*sizeof(Base.GMP.Limb))
       s += rand(Base.GMP.Limb)
     end
-    if high >0 
+    if high >0
       s = s << high
       s += rand(0:Base.GMP.Limb(mask))
     end
@@ -359,19 +359,19 @@ end
 
 function divexact!(z::fmpz, x::fmpz, y::fmpz)
   iszero(y) && throw(DivideError())
-  ccall((:fmpz_divexact, libflint), Nothing, 
+  ccall((:fmpz_divexact, libflint), Nothing,
         (Ref{fmpz}, Ref{fmpz}, Ref{fmpz}), z, x, y)
   return z
 end
 
 function lcm!(z::fmpz, x::fmpz, y::fmpz)
-   ccall((:fmpz_lcm, libflint), Nothing, 
+   ccall((:fmpz_lcm, libflint), Nothing,
          (Ref{fmpz}, Ref{fmpz}, Ref{fmpz}), z, x, y)
    return z
 end
 
 function gcd!(z::fmpz, x::fmpz, y::fmpz)
-   ccall((:fmpz_gcd, libflint), Nothing, 
+   ccall((:fmpz_gcd, libflint), Nothing,
          (Ref{fmpz}, Ref{fmpz}, Ref{fmpz}), z, x, y)
    return z
 end
@@ -465,9 +465,9 @@ end
     ispower(a::fmpq, n::Int) -> Bool, fmpq
     ispower(a::Integer, n::Int) -> Bool, Integer
 Tests if $a$ is an $n$-th power. Return `true` and the root if successful.
-"""    
+"""
 function ispower(a::fmpz, n::Int)
-  if a < 0 && iseven(n)
+   if a < 0 && iseven(n)
     return false, a
   end
   b = root(a, n)
@@ -481,7 +481,7 @@ end
 
 function ispower(a::fmpq, n::Int)
   fl, nu = ispower(numerator(a), n)
-  if !fl 
+  if !fl
     return fl, a
   end
   fl, de = ispower(denominator(a), n)
@@ -571,11 +571,11 @@ function nbits(a::BigInt)
 end
 
 @doc Markdown.doc"""
-  nbits(a::Int) -> Int
-  nbits(a::UInt) -> Int
-  nbits(a::BigInt) -> Int
+    nbits(a::Int) -> Int
+    nbits(a::UInt) -> Int
+    nbits(a::BigInt) -> Int
 
-  Returns the number of bits necessary to represent a
+  Returns the number of bits necessary to represent $a$.
 """
 function nbits(a::Int)
   a==0 && return 0
@@ -608,7 +608,7 @@ end
 @doc Markdown.doc"""
     isinteger(a::fmpq) -> Bool
 
-Returns true iff the denominator of $a$ is one.
+Returns `true` iff the denominator of $a$ is one.
 """
 function isinteger(a::fmpq)
   return isone(denominator(a))
@@ -663,7 +663,7 @@ function sunit_group_fac_elem(S::Array{fmpz, 1})
   G = abelian_group(vcat([fmpz(2)], fmpz[0 for i=S]))
   S = vcat(fmpz[-1], S)
 
-  mp = MapSUnitGrpZFacElem()
+ mp = MapSUnitGrpZFacElem()
   mp.idl = S
 
   Sq = fmpq[x for x=S]
@@ -729,7 +729,7 @@ end
 @doc Markdown.doc"""
     isprime_power(n::fmpz) -> Bool
     isprime_power(n::Integer) -> Bool
-Tests is $n$ is the exact power of a prime number.
+Tests if $n$ is the exact power of a prime number.
 """
 function isprime_power(n::fmpz)
   e, p = ispower(n)
@@ -752,7 +752,7 @@ mutable struct flint_rand_ctx_t
   function flint_rand_ctx_t()
     return new()
   end
-end  
+end
 
 function show(io::IO, A::flint_rand_ctx_t)
   println(io, "Flint random state")
@@ -762,23 +762,23 @@ function flint_rand_state()
   A = flint_rand_ctx_t()
   A.a = ccall((:flint_rand_alloc, libflint), Ptr{Nothing}, (Int, ), 1)
   ccall((:flint_randinit, libflint), Nothing, (Ptr{Nothing}, ), A.a)
-  
+
   function clean_rand_state(A::flint_rand_ctx_t)
     ccall((:flint_randclear, libflint), Nothing, (Ptr{Nothing}, ), A.a)
     ccall((:flint_rand_free, libflint), Nothing, (Ptr{Nothing}, ), A.a)
     nothing
-  end  
+  end
   finalizer(clean_rand_state, A)
   return A
-end  
+end
 
-global flint_rand_ctx 
+global flint_rand_ctx
 
 function ecm(a::fmpz, B1::UInt, B2::UInt, ncrv::UInt, rnd = flint_rand_ctx)
   f = fmpz()
   r = ccall((:fmpz_factor_ecm, libflint), Int32, (Ref{fmpz}, UInt, UInt, UInt, Ptr{Nothing}, Ref{fmpz}), f, ncrv, B1, B2, rnd.a, a)
   return r, f
-end  
+end
 
 function ecm(a::fmpz, B1::Int, B2::Int, ncrv::Int, rnd = flint_rand_ctx)
   return ecm(a, UInt(B1), UInt(B2), UInt(ncrv), rnd)
@@ -858,7 +858,7 @@ end
 
 function factor_insert!(r::Dict{fmpz, Int}, N::fmpz, scale::Int = 1)
   #assumes N to be positive
-  #        no small divisors 
+  #        no small divisors
   #        no big_primes
   if isone(N)
     return r
@@ -902,7 +902,7 @@ function factor_insert!(r::Dict{fmpz, Int}, N::fmpz, scale::Int = 1)
   factor_insert!(r, f, scale*k)
   return r
 end
-  
+
 #TODO: problem(s)
 # Nemo.factor = mpqs is hopeless if > n digits, but asymptotically and practically
 # faster than ecm.
@@ -962,18 +962,18 @@ export euler_phi_inv, Divisors, carmichael_lambda
     Divisors{T}
 
 An iterator for the divisors of a given object.
-Create using 
-    Divisors(A, power::Int = 1)
-where A is either a FacElem or a direct element. Power can be used
-to restrict to objects B s.th. B^power still divides A, e.g. 
-    Divisors(12, powers = 2)
+Create using
+    `Divisors(A, power::Int = 1)`
+where $A$ is either a FacElem or a direct element. Power can be used
+to restrict to objects $B$ s.th. $B$^power still divides $A$, e.g.
+    `Divisors(12, powers = 2)`
 will produce square divisors.
 
-For rings where this makes sense, ie. where the unit group is finite,
-```units = true``` can be passed in to also take into accound
+For rings where this makes sense, i.e. where the unit group is finite,
+```units = true``` can be passed in to also take into account
 the units.
 """
-mutable struct Divisors{T} 
+mutable struct Divisors{T}
   n::T
   lf::MSet{T}
   s#::Iterator
@@ -985,7 +985,7 @@ mutable struct Divisors{T}
     r.lf = MSet{T}()
     for (p, k) = factor(a).fac
       k = div(k, power)
-      if k > 0 
+      if k > 0
         push!(r.lf, p, k)
       end
     end
@@ -1006,7 +1006,7 @@ mutable struct Divisors{T}
     r.lf = MSet{NfOrdIdl}()
     for (p, k) = factor(a)
       k = div(k, power)
-      if k > 0 
+      if k > 0
         push!(r.lf, p, k)
       end
     end
@@ -1020,7 +1020,7 @@ mutable struct Divisors{T}
     r.lf = MSet{NfOrdIdl}()
     for (p, k) = factor(a)
       k = div(k, power)
-      if k > 0 
+      if k > 0
         push!(r.lf, p, k)
       end
     end
@@ -1029,13 +1029,13 @@ mutable struct Divisors{T}
     return r
   end
 
-  function Divisors(a::FacElem{fmpz, FlintIntegerRing}; units::Bool = false, power::Int = 1) 
+  function Divisors(a::FacElem{fmpz, FlintIntegerRing}; units::Bool = false, power::Int = 1)
     r = new{fmpz}()
     r.n = evaluate(a)
     r.lf = MSet{fmpz}()
     for (p, k) = factor(a).fac
       k = div(k, power)
-      if k > 0 
+      if k > 0
         push!(r.lf, p, k)
       end
     end
@@ -1054,8 +1054,8 @@ mutable struct Divisors{T}
     return Divisors(FacElem(a), units = units, power = power)
   end
 end
-Base.IteratorSize(::Divisors) = Base.HasLength() 
-Base.length(D::Divisors) = length(D.s)                                                    
+Base.IteratorSize(::Divisors) = Base.HasLength()
+Base.length(D::Divisors) = length(D.s)
 
 function Base.iterate(D::Divisors)
   x = iterate(D.s)
@@ -1084,7 +1084,7 @@ end
 @doc Markdown.doc"""
     unit_group(::FlintIntegerRing) -> GrpAbFinGen, Map
 
-The unit group of Z, ie. C_2 and the map translating between the group and Z.    
+The unit group of $\mathbb{Z}$, i.e. $C_2$ and the map translating between the group and $\mathbb{Z}$.
 """
 function unit_group(::FlintIntegerRing)
   G = abelian_group([2])
@@ -1100,7 +1100,7 @@ end
 @doc Markdown.doc"""
     unit_group(::Integers{T}) -> GrpAbFinGen, Map
 
-The unit group of , ie. C_2 and the map translating between the group and Z.    
+The unit group of , i.e. $C_2$ and the map translating between the group and $\mathbb{Z}$.
 """
 function unit_group(R::AbstractAlgebra.Integers{T}) where {T}
   G = abelian_group([2])
@@ -1122,7 +1122,7 @@ end
 @doc Markdown.doc"""
     euler_phi_inv_fac_elem(n::fmpz)
 The inverse of the Euler totient functions: find all $x$ s.th. $phi(x) = n$
-holde. The elements are returned in factored form.
+holds. The elements are returned in factored form.
 """
 function euler_phi_inv_fac_elem(n::fmpz)
   lp = fmpz[]
@@ -1211,7 +1211,7 @@ function carmichael_lambda(x::fmpz)
   end
   if v < 2
     return c
-  else 
+  else
     return fmpz(2)^(v-2)*c
   end
 end
@@ -1272,7 +1272,7 @@ end
 
    [maximum([maximum(vcat([fmpz(-1)], euler_phi_inv(x))) for x = Divisors(fmpz(n))]) for n = 1:250]
 
-=# 
+=#
 
 radical(a::fmpz) = prod(keys(factor(a).fac))
 function radical(a::T) where {T <: Integer}
@@ -1428,7 +1428,7 @@ length(B::BitsFmpz) = nbits(B.L.a)
 bits(a::fmpz) = BitsFmpz(a)
 #= wrong order, thus disabled
 
-function getindex(B::BitsFmpz, i::Int) 
+function getindex(B::BitsFmpz, i::Int)
   return ccall((:fmpz_tstbit, libflint), Int, (Ref{fmpz}, Int), B.L.a, i) != 0
 end
 =#
@@ -1442,7 +1442,7 @@ function ^(a::T, n::fmpz) where {T}
   r = one(parent(a))
   for b = bits(n)
     r = mul!(r, r, r)
-    if b 
+    if b
       r = mul!(r, r, a)
     end
   end
@@ -1483,7 +1483,7 @@ end
 
 @doc Markdown.doc"""
     primes_up_to(n::Int) -> Vector{Int}
-Returns a vector containing all the prime numbers up to $n$
+Returns a vector containing all the prime numbers up to $n$.
 """
 function primes_up_to(n::Int)
   list = trues(n)
@@ -1518,7 +1518,7 @@ end
 
 @doc Markdown.doc"""
     squarefree_up_to(n::Int) -> Vector{Int}
-Returns a vector containing all the squarefree numbers up to $n$
+Returns a vector containing all the squarefree numbers up to $n$.
 """
 function squarefree_up_to(n::Int; coprime_to::Array{fmpz,1}=fmpz[])
   list = trues(n)

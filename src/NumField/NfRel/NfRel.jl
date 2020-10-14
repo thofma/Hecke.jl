@@ -241,7 +241,7 @@ end
 function NumberField(f::PolyElem{<: NumFieldElem}; cached::Bool = false, check::Bool = true)
   return NumberField(f, "_\$", cached = cached, check = check)
 end
- 
+
 function (K::NfRel{T})(a::Generic.Poly{T}) where T
   z = NfRelElem{T}(mod(a, K.pol))
   z.parent = K
@@ -435,7 +435,7 @@ for F in [fmpz, fmpq, Int]
     function Base.:(-)(a::$F, b::NfRelElem{T}) where {T <: NumFieldElem}
       return parent(b)(a - data(b))
     end
-    
+
     function divexact(a::NfRelElem{T}, b::$F) where {T <: NumFieldElem}
       return parent(a)(divexact(data(a), b))
     end
@@ -530,7 +530,7 @@ function _absolute_field(K::NfRel, cached::Bool = false)
     end
 
     l += 1
- 
+
     g = compose(f, gen(kx) - l*gen(k))
     N = norm(g)
   end
@@ -551,7 +551,7 @@ function _absolute_field(K::NfRel, cached::Bool = false)
     add!(gg, gg, auxp)
     #gg = gg*gKa + auxp
   end
-  
+
   q = gcd(gg, change_base_ring(Ka, k.pol, parent = KaT))
   @assert degree(q) == 1
   al = -trailing_coefficient(q)//lead(q)
@@ -562,7 +562,7 @@ function _absolute_field(K::NfRel, cached::Bool = false)
   #be -> gen(K) in Ka
   #ga -> gen(Ka) in K
   return Ka, al, be, ga
-end 
+end
 
 function check_parent(a, b)
   return a==b
@@ -768,7 +768,7 @@ end
     minpoly(a::NfRelElem) -> PolyElem
 
 Given an element $a$ in an extension $L/K$, this function returns the minimal
-polynomial of $a$ of $K$.
+polynomial of $a$ over $K$.
 """
 function minpoly(a::NfRelElem{S}) where {S}
   M = representation_matrix(a)
@@ -947,7 +947,7 @@ end
 
 @doc Markdown.doc"""
     kummer_generator(K::NfRel{nf_elem}) -> nf_elem
-Given an extension $K/k$ which is a cyclic Kummer extension of degree n, returns an element $a\in k$ 
+Given an extension $K/k$ which is a cyclic Kummer extension of degree $n$, returns an element $a\in k$ 
 such that $K = k(\sqrt[n]{a})$. Throws an error if the extension is not a cyclic Kummer extension.
 """
 function kummer_generator(K::NfRel{nf_elem})
@@ -991,7 +991,7 @@ function kummer_generator(K::NfRel{nf_elem})
       new_b = gen_aut(new_b)
       a += roots[i+1]*new_b
     end
-
+    
   end
   res = k(a^n)
   #We even reduce the support....
@@ -1008,8 +1008,8 @@ end
 #TODO: Put some more thought in it.
 @doc Markdown.doc"""
     relative_extension(K::AnticNumberField, k::AnticNumberField) -> NfRel{nf_elem}
-Given two field $K\supset k$, it returns $K$ as a relative 
-extension of $k$ and an isomorphism between it and $K$..
+Given two fields $K\supset k$, it returns $K$ as a relative 
+extension of $k$ and an isomorphism between it and $K$.
 """
 function relative_extension(m::NfToNfMor)
   k = domain(m)

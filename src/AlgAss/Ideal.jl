@@ -136,7 +136,7 @@ end
     isright_ideal(a::AlgAssAbsOrdIdl) -> Bool
     isright_ideal(a::AlgAssRelOrdIdl) -> Bool
 
-> Returns `true` if $a$ is an right ideal and `false` otherwise.
+> Returns `true` if $a$ is a right ideal and `false` otherwise.
 """
 function isright_ideal(a::Union{ AbsAlgAssIdl, AlgAssAbsOrdIdl, AlgAssRelOrdIdl })
   if a.isright == 1
@@ -159,7 +159,7 @@ end
     isleft_ideal(a::AlgAssAbsOrdIdl) -> Bool
     isleft_ideal(a::AlgAssRelOrdIdl) -> Bool
 
-> Returns `true` if $a$ is an left ideal and `false` otherwise.
+> Returns `true` if $a$ is a left ideal and `false` otherwise.
 """
 function isleft_ideal(a::Union{ AbsAlgAssIdl, AlgAssAbsOrdIdl, AlgAssRelOrdIdl })
   if a.isleft == 1
@@ -332,7 +332,7 @@ end
 @doc Markdown.doc"""
     ideal(A::AbsAlgAss, x::AbsAlgAssElem, action::Symbol) -> AbsAlgAssIdl
 
-> Returns the ideal $x \cdot A$, if `action == :left`, and $A \cdot x$, if
+> Returns the ideal $x \cdot A$ if `action == :left`, and $A \cdot x$ if
 > `action == :right`.
 """
 function ideal(A::AbsAlgAss, x::AbsAlgAssElem, action::Symbol)
@@ -364,7 +364,7 @@ end
 > Returns the ideal of $A$ with basis matrix $M$.
 > If the ideal is known to be a right/left/twosided ideal of $A$, `side` may be
 > set to `:right`/`:left`/`:twosided` respectively.
-> If `M_in_rref == true` it is assumed that $M$ is already in row reduced echelon
+> If `M_in_rref == true`, it is assumed that $M$ is already in row reduced echelon
 > form.
 """
 function ideal(A::AbsAlgAss, M::MatElem, side::Symbol = :nothing, M_in_rref::Bool = false)

@@ -40,7 +40,7 @@ function Base.show(io::IO, P::InfPlc)
 
   print(io, "place of \n$(P.K)\n")
   print(io, "corresponding to the root $(P.r)")
-end 
+end
 
 ################################################################################
 #
@@ -51,7 +51,7 @@ end
 @doc Markdown.doc"""
     isreal(P::InfPlc) -> Bool
 
-Returns whether the embedding into $\mathbf{C}$ defined by P is real or not.
+Returns whether the embedding into $\mathbf{C}$ defined by $P$ is real or not.
 """
 function Base.isreal(P::InfPlc)
   return P.isreal
@@ -60,7 +60,7 @@ end
 @doc Markdown.doc"""
     iscomplex(P::InfPlc) -> Bool
 
-Returns whether the embedding into $\mathbf{C}$ defined by P is complex or not.
+Returns whether the embedding into $\mathbf{C}$ defined by $P$ is complex or not.
 """
 function iscomplex(P::InfPlc)
   return !isreal(P)
@@ -291,8 +291,8 @@ end
 @doc Markdown.doc"""
     uniformizer(P::InfPlc) -> nf_elem
 
-Returns an element of the field which is positive at $P$ and negative at all the other real places. 
-Works only if P is a real place.
+Returns an element of the field which is positive at $P$ and negative at all the other real places.
+Works only if $P$ is a real place.
 """
 function uniformizer(P::InfPlc)
   if iscomplex(P)
@@ -305,13 +305,13 @@ end
 @doc Markdown.doc"""
     infinite_places_uniformizers(K::AnticNumberField)
 
-Returns a dictionary having as keys the real places of $K$ and the values 
+Returns a dictionary having as keys the real places of $K$ and the values
 are uniformizers for the corresponding real place.
-A uniformizer of a real place P is an element of the field which is negative
-at $P$ and positive at all the other real places. 
+A uniformizer of a real place $P$ is an element of the field which is negative
+at $P$ and positive at all the other real places.
 """
 function infinite_places_uniformizers(K::AnticNumberField)
-  try 
+  try
     c = _get_places_uniformizers(K)::Dict{InfPlc, nf_elem}
     return c
   catch e
@@ -319,12 +319,12 @@ function infinite_places_uniformizers(K::AnticNumberField)
       rethrow(e)
     end
   end
-  
+
   r, s = signature(K)
   if iszero(r)
     return Dict{InfPlc, nf_elem}()
   end
-  
+
   p = real_places(K) #Important: I assume these are ordered as the roots of the defining polynomial!
   S = abelian_group(Int[2 for i = 1:length(p)])
 
@@ -377,7 +377,7 @@ function infinite_places_uniformizers(K::AnticNumberField)
       end
     end
     cnt += 1
-    if cnt > 1000 
+    if cnt > 1000
       b *= 2
       cnt = 0
     end
@@ -449,7 +449,7 @@ function infinite_places_uniformizers(K::AnticNumberField)
         end
       else
         cnt += 1
-        if cnt > 1000 
+        if cnt > 1000
           b *= 2
           cnt = 0
         end
@@ -495,28 +495,28 @@ end
 
 function infinite_primes_map(O::NfOrd, p::Vector{InfPlc}, lying_in::NfOrdIdl)
   K = nf(O)
-  
+
   if isempty(p)
     S = abelian_group(Int[])
     local exp1
     let S = S, lying_in = lying_in, O = O
       function exp1(A::GrpAbFinGenElem)
         return O(minimum(lying_in))
-      end 
+      end
     end
 
     local log1
     let S = S
       function log1(B::T) where T <: Union{nf_elem, FacElem{nf_elem, AnticNumberField}}
         return id(S)
-      end 
+      end
     end
     return S, exp1, log1
   end
-  
-  
+
+
   D = infinite_places_uniformizers(K)
-  
+
   S = abelian_group(Int[2 for i = 1:length(p)])
 
   local exp
@@ -525,14 +525,14 @@ function infinite_primes_map(O::NfOrd, p::Vector{InfPlc}, lying_in::NfOrdIdl)
       s = one(K)
       if iszero(A)
         return minimum(lying_in)*O(s)
-      end  
+      end
       for i = 1:length(p)
         if isone(A[i])
           mul!(s, s, D[p[i]])
-        end 
+        end
       end
       return minimum(lying_in)*O(s)
-    end 
+    end
   end
 
   local log
@@ -546,10 +546,8 @@ function infinite_primes_map(O::NfOrd, p::Vector{InfPlc}, lying_in::NfOrdIdl)
         end
       end
       return S(res)
-    end 
+    end
   end
-   
+
   return S, exp, log
 end
-
-

@@ -61,7 +61,7 @@ end
     abs_upper_bound(x::arb, ::Type{fmpz}) -> fmpz
 
 Returns a positive integer $b$ of type `fmpz` such that $\lvert x \rvert \leq
-b$. It is not guarenteed that $b$ is as tight as possible.
+b$. It is not guaranteed that $b$ is as tight as possible.
 """
 function abs_upper_bound(x::arb, ::Type{fmpz})
   tarf = arf_struct(0, 0, 0, 0)
@@ -85,7 +85,7 @@ end
     abs_upper_bound(x::arb, ::Type{Float64}) -> Float64
 
 Returns a positive double $b$ such that $\lvert x \rvert \leq b$. It is not
-guarenteed that $b$ is as tight as possible.
+guaranteed that $b$ is as tight as possible.
 """
 function abs_upper_bound(x::arb, ::Type{Float64})
   tarf = arf_struct(0, 0, 0, 0)
@@ -108,7 +108,7 @@ end
     upper_bound(x::arb, ::Type{fmpz}) -> fmpz
 
 Returns an integer $b$ of type `fmpz` such that $x \leq
-b$. It is not guarenteed that $b$ is as tight as possible.
+b$. It is not guaranteed that $b$ is as tight as possible.
 """
 function upper_bound(x::arb, ::Type{fmpz})
   tarf = arf_struct(0, 0, 0, 0)
@@ -132,7 +132,7 @@ end
     lower_bound(x::arb, ::Type{fmpz}) -> fmpz
 
 Returns an integer $b$ of type `fmpz` such that $x \geq
-b$. It is not guarenteed that $b$ is as tight as possible.
+b$. It is not guaranteed that $b$ is as tight as possible.
 """
 function lower_bound(x::arb, ::Type{fmpz})
   tarf = arf_struct(0, 0, 0, 0)
@@ -151,5 +151,3 @@ function lower_bound(x::arb, ::Type{fmpz})
 
   return bound
 end
-
-

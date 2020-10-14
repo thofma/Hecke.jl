@@ -2,7 +2,7 @@ export spectrum, eigenspace, jordan_normal_form, rational_canonical_form, compan
 
 @doc Markdown.doc"""
     spectrum(M::MatElem{T}) where T <: FieldElem -> Dict{T, Int}
-Returns the spectrum of a matrix, i.e. the set of eigenvalues of M with multiplicities.
+Returns the spectrum of a matrix, i.e. the set of eigenvalues of $M$ with multiplicities.
 """
 function spectrum(M::MatElem{T}) where T <: FieldElem
   @assert issquare_matrix(M)
@@ -22,8 +22,8 @@ function spectrum(M::MatElem{T}) where T <: FieldElem
 end
 
 @doc Markdown.doc"""
-    spectrum(M::MatElem{T}) where T <: FieldElem -> Dict{T, Int}
-Returns the spectrum of a matrix over the field L, i.e. the set of eigenvalues of M with multiplicities.
+    spectrum(M::MatElem{T}, L) where T <: FieldElem -> Dict{T, Int}
+Returns the spectrum of a matrix over the field $L$, i.e. the set of eigenvalues of $M$ with multiplicities.
 """
 function spectrum(M::MatElem{T}, L) where T <: FieldElem
   @assert issquare_matrix(M)
@@ -41,7 +41,7 @@ eigvals(M::MatElem{T}, L) where T <: FieldElem = spectrum(M, L)
 
 @doc Markdown.doc"""
     eigenspace(M::MatElem{T}, lambda::T) where T <: FieldElem -> Vector{MatElem{T}}
-Returns a basis of the eigenspace of $M$ with respect to the eigenvalues $lambda$
+Returns a basis of the eigenspace of $M$ with respect to the eigenvalues $\lambda$.
 """
 function eigenspace(M::MatElem{T}, lambda::T) where T <: FieldElem
   @assert issquare_matrix(M)
@@ -70,7 +70,7 @@ function closure_with_pol(v::MatElem{T}, M::MatElem{T}) where T <: FieldElem
   w = v*M
   res = Hecke.cleanvect(E, w)
   while !iszero(res)
-    v = vcat(v, w)  
+    v = vcat(v, w)
     E = vcat(E, res)
     rref!(E)
     i += 1
@@ -98,7 +98,7 @@ function decompose_primary(M::MatElem{T}) where T <: FieldElem
       i += 1
       ei[1, i] = 1
       res = Hecke.cleanvect(S, ei)
-    end 
+    end
     C, coeffs = closure_with_pol(ei, M)
     S = vcat(S, C)
     rref!(S)
@@ -194,7 +194,7 @@ end
 function _copy_matrix_into_matrix(A::MatElem, i::Int, j::Int, B::MatElem)
   for k in 0:nrows(B) - 1
     for l in 0:ncols(B) - 1
-      setindex!(A, B[k+1, l+1], i+k, j+l) 
+      setindex!(A, B[k+1, l+1], i+k, j+l)
     end
   end
   return nothing
@@ -206,12 +206,12 @@ end
 Returns the companion matrix of $p = \sum_{i=0}^n a_ix^i$, i.e. the matrix
 
 
-    0 1  0  $\dots$  0 
+    0 1  0  $\dots$  0
     0  0  1  $\dots$  0
     $\vdots$  $\vdots$  $\ddots$  $\vdots$  $\vdots$
-    0  0  $\vdots$  0  1 
-    $-a_0$  $-a_1$  $-a_2$  $\dots$  $a_{n-1}$ 
-  
+    0  0  $\vdots$  0  1
+    $-a_0$  $-a_1$  $-a_2$  $\dots$  $-a_{n-1}$
+
 """
 function companion_matrix(p::PolyElem)
   K = base_ring(p)
@@ -221,7 +221,7 @@ function companion_matrix(p::PolyElem)
     setindex!(M, one(K), i, i+1)
   end
   for i = 1:degree(p)
-    setindex!(M, -coeff(p1, i-1), degree(p), i) 
+    setindex!(M, -coeff(p1, i-1), degree(p), i)
   end
   return M
 end
@@ -234,7 +234,7 @@ function jordan_block(p::PolyElem, e::Int)
     _copy_matrix_into_matrix(M, 1+degree(p)*(i-1), 1+degree(p)*(i-1), C)
   end
   for i = 1:e-1
-    M[i*degree(p), i*degree(p)+1] = K(1) 
+    M[i*degree(p), i*degree(p)+1] = K(1)
   end
   return M
 end
@@ -308,7 +308,7 @@ function maximal_vector(M::MatElem{T}, Kt, max_deg::Int = -1) where T <: FieldEl
       v = v + v1
     else
       v = v*Hecke._subst(divexact(mp, f1), M) + v1*Hecke._subst(divexact(mp2, f2), M)
-    end 
+    end
     C, coeffs_vect = closure_with_pol(v, M)
     coeffs = T[-coeffs_vect[1, i] for i = 1:length(coeffs_vect)]
     push!(coeffs, K(1))
@@ -348,7 +348,7 @@ end
 
 @doc Markdown.doc"""
     complete_to_basis(C::MatElem{T}) where T <: FieldElem -> MatElem{T}
-Returns a matrix representing a basis of K^n whose first elements are given by the column of C
+Returns a matrix representing a basis of $K^n$ whose first elements are given by the columns of $C$.
 """
 function complete_to_basis(C::MatElem{T}) where T <: FieldElem
   CEF = rref(C)[2]
@@ -417,7 +417,7 @@ end
 @doc Markdown.doc"""
     _rational_canonical_form_setup(M)
 Returns minpolys, the basis transformation and the vectors generating the blocks of the
-rational canonical form of M.
+rational canonical form of $M$.
 """
 function _rational_canonical_form_setup(M::MatElem{T}) where T <: FieldElem
   K = base_ring(M)
@@ -502,7 +502,7 @@ function refine_for_jordan(pols::Vector, gens::Vector, M::MatElem)
       end
       vj = gens[i]*Hecke._subst(divexact(pols[i], factors[j]^lef[j]), M)
       push!(gens_polys_mults, (vj, factors[j], lef[j]))
-    end 
+    end
   end
   return factors, gens_polys_mults
 end
@@ -638,7 +638,7 @@ function split_primary(L::Dict, M::MatElem{T}) where T <: FieldElem
         d1, K = kernel(M1, side = :left)
         rref!(K)
         push!(kernels, K)
-      end 
+      end
       #Now, I start taking vectors from the kernels till I generate the entire space
       subgen = zero_matrix(base_ring(M), 0, ncols(K))
       for i = length(kernels)-1:-1:1
@@ -652,7 +652,7 @@ function split_primary(L::Dict, M::MatElem{T}) where T <: FieldElem
             j += 1
             ej = sub(kernels[i+1], j:j, 1:ncols(K))
             res = Hecke.cleanvect(to_reduce, ej)
-          end 
+          end
           if iszero(res)
             break
           end
@@ -723,7 +723,7 @@ function rational_canonical_form1(M::MatElem{T}) where T <: FieldElem
   for i = 1:max_length
     mp = one(Kt)
     w = zero_matrix(K, 1, ncols(M))
-    for (q, v) in L 
+    for (q, v) in L
       if length(v) < i
         continue
       end
@@ -772,11 +772,11 @@ function commute_pairwise(L::Array{S, 1}) where S <: Hecke.MatElem{T} where T <:
 end
 
 function issimultaneous_diagonalizable(L::Vector{S}) where S <: Hecke.MatElem{T} where T <:Hecke.FieldElem
-  
+
   if !commute_pairwise(L)
     return false
   end
-  
+
   for i = 1:length(L)
     f = minpoly(L[i])
     if !issquarefree(f)
@@ -801,13 +801,13 @@ end
 
 function simultaneous_diagonalization(L...; check::Bool = true)
   return simultaneous_diagonalization(collect(L), check = check)
-end 
+end
 
 @doc Markdown.doc"""
     simultaneous_diagonalization(L::Array{S, 1}; check::Bool=false)
 Returns a tuple whose first entry is the transformation matrix and whose
 second entry is an array of matrices containing the diagonal forms of
-the elements of $L$. If "check" is set to true, the algorithm checks whether
+the elements of $L$. If "check" is set to `true`, the algorithm checks whether
 the matrices in $L$ are simultaneous diagonalizable before computing the transformation matrix. Default value is "true".
 """
 function simultaneous_diagonalization(L::Vector{S}; check::Bool = true) where S <: MatElem{T} where T <: FieldElem
@@ -849,7 +849,7 @@ end
     simultaneous_diagonalization(L::Array{MatElem, 1}, K::Field; check::Bool=false)
 Returns a tuple whose first entry is the transformation matrix and whose
 second entry is an array of matrices containing the diagonal forms of
-the elements of $L$ computed over the field $K$. If "check" is set to true, the algorithm checks whether
+the elements of $L$ computed over the field $K$. If "check" is set to `true`, the algorithm checks whether
 the matrices in $L$ are simultaneous diagonalizable before computing the transformation matrix. Default value is "true".
 """
 function simultaneous_diagonalization(L::Vector{S}, K::W; check::Bool = true) where S <: MatElem{T} where T <: FieldElem where W<:Field
