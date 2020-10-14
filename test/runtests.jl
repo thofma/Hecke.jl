@@ -13,6 +13,7 @@ k, a = quadratic_field(5)
 push!(Base.LOAD_PATH, "@v#.#")
 
 using Random
+using RandomExtensions
 
 const rng = MersenneTwister()
 const rand_seed = rand(UInt128)
