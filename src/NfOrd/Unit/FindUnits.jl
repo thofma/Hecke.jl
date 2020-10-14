@@ -61,7 +61,7 @@ function find_candidates(x::ClassGrpCtx, u::UnitGrpCtx, add::Int = 0)
   return k, add_units, s1
 end
 
-function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx; add_orbit::Bool = true, expected_reg::arb = ArbField(32, cached = false)(-1))
+function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx; add_orbit::Bool = true, expected_reg::arb = ArbField(32, cached = false)(-1), add::Int = 0)
   add_orbit = false
   @vprint :UnitGroup 1 "Processing ClassGrpCtx to find units ... (using orbits: $add_orbit)\n"
   @vprint :UnitGroup 1 "Relation module $(x.M)\n"
@@ -77,13 +77,13 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx; add_orbit::Bool =
     u.regulator = Ar(1)
     u.regulator_precision = u.indep_prec
     u.full_rank = true
-    return 1
+    return 1, 0
   end
 
   # I am not allowed to do this before the other block
   if nrows(x.M.rel_gens) == 0
     @vprint :UnitGroup 1 "No additional relations. Going back ...\n"
-    return 0
+    return 0, 0
   end
 
   time_indep = 0.0
@@ -93,10 +93,16 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx; add_orbit::Bool =
 
   @vprint :UnitGroup 1 "Enlarging unit group by adding kernel elements ...\n"
 
+  starting_full_rank = has_full_rank(u)
+  if starting_full_rank
+    starting_idx = _validate_class_unit_group(x, u)[1]
+  else
+    starting_idx = 0
+  end
+
   not_larger_bound = min(20, nrows(x.M.rel_gens), r)
 
   first = true
-  add = 0
   if has_full_rank(u)
     first = false
     add += 2 #+ div(nrows(x.M.rel_gens), r)
@@ -119,13 +125,12 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx; add_orbit::Bool =
       end
     end
   end
-
-  
+  new_add = 0
   while not_larger < not_larger_bound 
+    add += new_add
+    new_add = 2
     k, add_units, s1 = find_candidates(x, u, add)
-    if length(u.relations_used) == nrows(x.M.rel_gens)
-      add += 1
-    end
+
     ge = vcat(x.R_gen[1:k.c], x.R_rel[add_units])
     elements = Vector{FacElem{nf_elem, AnticNumberField}}(undef, nrows(s1))
     for i = 1:nrows(s1)
@@ -181,6 +186,7 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx; add_orbit::Bool =
 
       m = add_unit!(u, y)
       if m 
+        new_add = 0
         done[i] = true
         not_larger = 0 
         if has_full_rank(u) 
@@ -265,9 +271,49 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx; add_orbit::Bool =
   
 
  
-  if has_full_rank(u)
-    return 1
+  if starting_full_rank
+    return 1, div(starting_idx, _validate_class_unit_group(x, u)[1])
+  elseif has_full_rank(u)
+    return 1, 0
   else
-    return 0
+    return 0, 0
   end
+end
+
+
+function compute_galois_closure!(U::UnitGrpCtx, c::ClassGrpCtx)
+  @vprint :UnitGroup 1 "Computing Galois closure \n"
+  aut = automorphisms(U)
+  gens_aut = small_generating_set(aut)
+  indices_aut = Int[]
+  for s = 1:length(gens_aut)
+    for j = 1:length(aut)
+      if aut[j] == gens_aut[s]
+        push!(indices_aut, j)
+        break
+      end
+    end
+  end
+  found_new = true
+  while found_new
+    found_new = false
+    for i = 1:length(indices_aut)
+      for j = 1:length(U.units)
+        @vprint :UnitGroup 1 "Applying auto \n"
+        uphi = apply_automorphism(U, indices_aut[i], U.units[j])
+        @vprint :UnitGroup 1 "Adding unit \n"
+        fl = add_unit!(U, uphi)
+        if fl
+          @vprint :UnitGroup 1 "Found new unit! \n"
+          found_new = true
+          idx = _validate_class_unit_group(c, U)[1]
+          if isone(idx)
+            return nothing
+          end
+        end
+      end
+    end
+  end
+  return nothing
+
 end

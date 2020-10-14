@@ -252,18 +252,21 @@ function _class_unit_group(O::NfOrd; saturate_at_2::Bool = true, bound::Int = -1
 
   do_units = true
   reg_expected = ArbField(32, cached = false)(-1)
+  add = 0
+  closed = false
+  improved = 0
   while true
     @v_do :UnitGroup 1 pushindent()
-    if do_units
-      #if unit_method == 1
-        @vtime_add_elapsed :UnitGroup 1 c :unit_time r = _unit_group_find_units(U, c, add_orbit = use_aut, expected_reg = reg_expected)
-      #=
-      else
-        @vtime_add_elapsed :UnitGroup 1 c :unit_hnf_time module_trafo_assure(c.M)
-        @vtime_add_elapsed :UnitGroup 1 c :unit_time r = _unit_group_find_units_with_transform(U, c, add_orbit = use_aut)
-      end
-      =#
+    has_already_full_rank = has_full_rank(U)
+    reg = ArbField(32, cached = false)(-1)
+    if has_already_full_rank
+      reg = tentative_regulator(U)
     end
+    if do_units
+      @vtime_add_elapsed :UnitGroup 1 c :unit_time r, improved = _unit_group_find_units(U, c, add_orbit = use_aut, expected_reg = reg_expected, add = add)
+      add += 1
+    end
+
     @v_do :UnitGroup 1 popindent()
     # r == 1 means full rank
     if isone(r)  # use saturation!!!!
@@ -271,18 +274,23 @@ function _class_unit_group(O::NfOrd; saturate_at_2::Bool = true, bound::Int = -1
       if isone(idx)
         break
       end
+
       stable = 3.5
       # No matter what, try a saturation at 2
       # This is not a good idea when we use the automorphisms.
       # In this case, the index may contain a large 2-power and saturation
       # will take forever.
-      if iszero(c.sat_done) && !use_aut && saturate_at_2
+      if isone(improved) && iszero(c.sat_done)
         @vprint :ClassGroup 1 "Finite index, saturating at 2\n"
         while saturate!(c, U, 2, stable)
           @vprint :ClassGroup 1 "Finite index, saturating at 2\n"
         end
         idx, reg_expected = _validate_class_unit_group(c, U)
         c.sat_done = 2
+      end
+      if isone(improved) && use_aut
+        #Compute Galois closure of the units
+        compute_galois_closure!(U, c)
       end
       while (!use_aut && idx < 20 && idx > 1) || (idx < 10 && idx > 1)
         @vprint :ClassGroup 1 "Finishing by saturating up to $idx\n"
@@ -314,6 +322,7 @@ function _class_unit_group(O::NfOrd; saturate_at_2::Bool = true, bound::Int = -1
     if h_old == class_group_current_h(c)
       do_units = true
     else
+      add += 2
       do_units = false
     end
   end
@@ -394,7 +403,8 @@ group of principal ideals.
 """
 function class_group(O::NfOrd; bound::Int = -1, method::Int = 3,
                      redo::Bool = false, unit_method::Int = 1,
-                     large::Int = 1000, use_aut::Bool = isautomorphisms_known(nf(O)), GRH::Bool = true, do_lll::Bool = true)
+                     large::Int = 1000, use_aut::Bool = isautomorphisms_known(nf(O)), GRH::Bool = true, do_lll::Bool = true,
+                     saturate_at_2::Bool = true)
   if do_lll
    OK = maximal_order(nf(O))
     @assert OK.ismaximal == 1
@@ -403,8 +413,7 @@ function class_group(O::NfOrd; bound::Int = -1, method::Int = 3,
   else
     L = O
   end
-       
-  c, U, b = _class_unit_group(L, bound = bound, method = method, redo = redo, unit_method = unit_method, large = large, use_aut = use_aut, GRH = GRH)
+  c, U, b = _class_unit_group(L, bound = bound, method = method, redo = redo, unit_method = unit_method, large = large, use_aut = use_aut, GRH = GRH, saturate_at_2 = saturate_at_2)
 
   @assert b == 1
   return class_group(c, O)::Tuple{GrpAbFinGen, MapClassGrp}

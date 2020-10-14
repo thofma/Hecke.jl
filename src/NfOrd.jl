@@ -30,6 +30,7 @@
 add_verbose_scope(:NfOrd)
 add_assert_scope(:NfOrd)
 
+include("NfOrd/Clgp/Types.jl")
 include("NfOrd/NfOrd.jl")
 include("NfOrd/LLL.jl")
 include("NfOrd/MaxOrd/MaxOrd.jl")

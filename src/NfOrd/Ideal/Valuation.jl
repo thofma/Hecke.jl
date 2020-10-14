@@ -21,10 +21,10 @@ function val_func_no_index_small(p::NfOrdIdl)
   K = nf(order(p))
   Rx = PolynomialRing(GF(UInt(P), cached=false), cached=false)[1]
   Zx = PolynomialRing(FlintZZ, cached = false)[1]
-  g = Rx(p.gen_two.elem_in_nf)
+  gR = Rx(p.gen_two.elem_in_nf)
   f = Rx(K.pol)
-  g = gcd!(g, g, f)
-  g = lift(Zx, g)
+  gR = gcd!(gR, gR, f)
+  g = lift(Zx, gR)
   k = flog(fmpz(typemax(UInt)), P)
   g = hensel_lift(Zx(K.pol), g, P, k)
   Sx = PolynomialRing(ResidueRing(FlintZZ, UInt(P)^k, cached=false), cached=false)[1]
@@ -48,6 +48,45 @@ function val_func_no_index_small(p::NfOrdIdl)
   end
   return vfunc
 end
+
+function val_func_no_index(p::NfOrdIdl)
+  P = p.gen_one
+  K = nf(order(p))
+  Rx, g = PolynomialRing(GF(P, cached=false), cached=false)
+  Zx = PolynomialRing(FlintZZ, cached = false)[1]
+  nf_elem_to_gfp_fmpz_poly!(g, p.gen_two.elem_in_nf, false)
+  f = Rx(K.pol)
+  g = gcd(g, f)
+  g = lift(Zx, g)
+  g = hensel_lift(Zx(K.pol), g, P, 10)
+  Sx = PolynomialRing(ResidueRing(FlintZZ, P^5, cached=false), cached=false)[1]
+  g = Sx(g)
+  h = Sx()
+  c = fmpz()
+  local vfunc
+  let h = h, g = g, P = P
+    function vfunc(x::nf_elem, no::fmpq = fmpq(0))
+      d = denominator(x)
+      nf_elem_to_fmpz_mod_poly!(h, x, false) # ignores the denominator
+      h = rem!(h, h, g)
+      _coeff_as_fmpz!(c, h, 0)
+      v = iszero(c) ? 100 : valuation(c, P)
+      for i=1:degree(h)
+        _coeff_as_fmpz!(c, h, i)
+        v = min(v, iszero(c) ? 100 : valuation(c, P))
+      end
+      return v-valuation(d, P)::Int
+    end
+  end
+  return vfunc
+end
+
+function _coeff_as_fmpz!(c::fmpz, f::fmpz_mod_poly, i::Int)
+  ccall((:fmpz_mod_poly_get_coeff_fmpz, libflint), Nothing,
+        (Ref{fmpz}, Ref{fmpz_mod_poly}, Int), c, f, i)
+  return nothing
+end
+
 
 function val_func_index(p::NfOrdIdl)
   # We are in the index divisor case. In larger examples, a lot of
@@ -251,7 +290,20 @@ function assure_valuation_function(p::NfOrdIdl)
       end
       p.valuation = val1
     else
-      #TODO: Do it properly! Hensel for large moduli needed
+      f8 = val_func_no_index(p)
+      f9 = val_func_generic(p)
+      local val1
+      let f8 = f8, f9 = f9
+        function val_large_non_index(x::nf_elem, no::fmpq = fmpq(0))
+          v = f8(x, no)
+          if v > 10  # can happen ONLY if the precision in the .._small function
+                      # was too small.
+            return f9(x, no)::Int
+          else
+            return v::Int
+          end
+        end
+      end
       p.valuation = val_func_generic(p)
     end
   elseif ramification_index(p) == 1 && fits(UInt, P^2) && !_isindex_divisor(O, p)
@@ -290,14 +342,18 @@ function assure_valuation_function(p::NfOrdIdl)
   elseif degree(O) > 80
     f6 = val_func_generic(p)
     f7 = val_func_generic_small(p)
-    function val_gen(x::nf_elem, no::fmpq = fmpq(0))
-      vv = f7(x, no)
-      if vv == 100
-        return f6(x, no)
-      else
-        return vv
+    local val_gen
+    let f7 = f7, f6 = f6
+      function val_gen(x::nf_elem, no::fmpq = fmpq(0))
+        vv = f7(x, no)
+        if vv == 100
+          return f6(x, no)
+        else
+          return vv
+        end
       end
     end
+    p.valuation = val_gen
   else
     p.valuation = val_func_index(p)
   end

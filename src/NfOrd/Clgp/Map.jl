@@ -211,7 +211,6 @@ function class_group_ideal_relation(I::NfOrdIdl, c::ClassGrpCtx)
   end
 end
 
-
 function class_group_disc_log(I::NfOrdIdl, c::ClassGrpCtx)
   q, w = class_group_ideal_relation(I, c)
 #  J = simplify(q*I)
@@ -221,19 +220,6 @@ function class_group_disc_log(I::NfOrdIdl, c::ClassGrpCtx)
 #  end
 #  @assert J == H
   return class_group_disc_log(w, c)
-end
-
-mutable struct MapClassGrp <: Map{GrpAbFinGen, NfOrdIdlSet, HeckeMap, MapClassGrp}
-  header::MapHeader{GrpAbFinGen, NfOrdIdlSet}
-
-  quo::Int
-  princ_gens::Array{Tuple{FacElem{NfOrdIdl,NfOrdIdlSet}, FacElem{nf_elem, AnticNumberField}},1}
-  small_gens::Vector{NfOrdIdl}
-  function MapClassGrp()
-    mp = new()
-    mp.quo = -1
-    return mp
-  end
 end
 
 function change_base_ring(mC::MapClassGrp, O::NfOrd)

@@ -1,13 +1,3 @@
-mutable struct MapSUnitModUnitGrpFacElem <: Map{GrpAbFinGen, FacElemMon{AnticNumberField}, HeckeMap, MapSUnitModUnitGrpFacElem}
-  header::MapHeader{GrpAbFinGen, FacElemMon{AnticNumberField}}
-  idl::Array{NfOrdIdl, 1}
-  valuations::Vector{SRow{fmpz}}
-
-  function MapSUnitModUnitGrpFacElem()
-    return new()
-  end
-end
-
 function show(io::IO, mC::MapSUnitModUnitGrpFacElem)
   @show_name(io, mC)
   io = IOContext(io, :compact => true)
@@ -173,19 +163,6 @@ function sunit_mod_units_group_fac_elem(I::Array{NfOrdIdl, 1})
   return C, r
 end
 
-mutable struct MapSUnitGrpFacElem <: Map{GrpAbFinGen, FacElemMon{AnticNumberField}, HeckeMap, MapSUnitGrpFacElem}
-  header::MapHeader{GrpAbFinGen, FacElemMon{AnticNumberField}}
-  idl::Array{NfOrdIdl, 1}
-  valuations::Vector{SRow{fmpz}}
-  isquotientmap::Int
-
-  function MapSUnitGrpFacElem()
-    z = new()
-    z.isquotientmap = -1
-    return z
-  end
-end
-
 function show(io::IO, mC::MapSUnitGrpFacElem)
   @show_name(io, mC)
   print(io, "SUnits (in factored form) map of ")
@@ -248,14 +225,6 @@ function sunit_group_fac_elem(I::Array{NfOrdIdl, 1})
   return G, r
 end
 
-mutable struct MapSUnitGrp <: Map{GrpAbFinGen, AnticNumberField, HeckeMap, MapSUnitGrp}
-  header::MapHeader{GrpAbFinGen, AnticNumberField}
-  idl::Array{NfOrdIdl, 1}
-
-  function MapSUnitGrp()
-    return new()
-  end
-end
 
 function show(io::IO, mC::MapSUnitGrp)
   @show_name(io, mC)

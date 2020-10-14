@@ -1,13 +1,4 @@
-mutable struct MapUnitGrp{T} <: Map{GrpAbFinGen, T, HeckeMap, MapUnitGrp}
-  header::Hecke.MapHeader{GrpAbFinGen, T}
 
-  # Only for non-maximal orders:
-  OO_mod_F_mod_O_mod_F::GrpAbFinGenToAbsOrdQuoRingMultMap # a map from (OO/F*OO)^\times/(O/F)^\times to OO where OO is a maximal order and F the conductor
-
-  function MapUnitGrp{T}() where {T}
-    return new{T}()
-  end
-end
 
 function show(io::IO, mC::MapUnitGrp)
   println(io, "UnitGroup map of $(codomain(mC))")

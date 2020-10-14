@@ -1,11 +1,11 @@
 function _add_relations_from_subfield(mL::NfToNfMor; use_aut = true, redo = false, bound::Int = -1)
   L = codomain(mL)
   K = domain(mL)
-  O = lll(maximal_order(L))
-  c = create_ctx(O, use_aut = use_aut, redo = redo, bound = bound)
-  U = UnitGrpCtx{FacElem{nf_elem, AnticNumberField}}(O)
-  _set_UnitGrpCtx_of_order(O, U)
-  _set_ClassGrpCtx_of_order(O, c)
+  OK = lll(maximal_order(L))
+  c = create_ctx(OK, use_aut = use_aut, redo = redo, bound = bound)
+  U = UnitGrpCtx{FacElem{nf_elem, AnticNumberField}}(OK)
+  _set_UnitGrpCtx_of_order(OK, U)
+  _set_ClassGrpCtx_of_order(OK, c)
 
   lp = Set{NfOrdIdl}()
   for p in c.FB.ideals
@@ -34,7 +34,7 @@ function _add_relations_from_subfield(mL::NfToNfMor; use_aut = true, redo = fals
     end
   end
   c.finished = false
-  d = root(abs(discriminant(O)), 2)
+  d = root(abs(discriminant(OK)), 2)
   @show c.expect = class_group_expected(c, 100)
   class_group_via_lll(c)
   return nothing
@@ -90,7 +90,7 @@ function val_from_subfield(FB, mk, s)
   return z
 end
 
-function class_group_cm(OK::NfOrd; redo = false, use_aut = true, bound::Int = Int(ceil(log(abs(discriminant(O)))^2*0.3)))
+function class_group_cm(OK::NfOrd; redo = false, use_aut = true, bound::Int = Int(ceil((log(abs(discriminant(OK)))^2)*0.3)))
   K = nf(OK)
   O = lll(OK)
   fl, conj = iscm_field(nf(O))
@@ -100,20 +100,20 @@ function class_group_cm(OK::NfOrd; redo = false, use_aut = true, bound::Int = In
   return class_group(c, OK)
 end
 
-function create_ctx(O::NfOrd; bound::Int = -1, method::Int = 3, large::Int = 1000, redo::Bool = false, use_aut::Bool = false)
+function create_ctx(OK::NfOrd; bound::Int = -1, method::Int = 3, large::Int = 1000, redo::Bool = false, use_aut::Bool = false)
   if !redo
-    c = _get_ClassGrpCtx_of_order(O, false)
+    c = _get_ClassGrpCtx_of_order(OK, false)
     if c !== nothing
       return c::ClassGrpCtx{SMat{fmpz}}
     end
   end
       
   if bound == -1
-    bound = Int(ceil(log(abs(discriminant(O)))^2*0.3))
+    bound = Int(ceil(log(abs(discriminant(OK)))^2*0.3))
     (bound == 0) && (bound = 1)
   end
       
-  c = class_group_init(O, bound, complete = false, use_aut = use_aut)::ClassGrpCtx{SMat{fmpz}}
-  @assert order(c) === O
+  c = class_group_init(OK, bound, complete = false, use_aut = use_aut)::ClassGrpCtx{SMat{fmpz}}
+  @assert order(c) === OK
   return c  
 end
