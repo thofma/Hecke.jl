@@ -65,7 +65,7 @@ Creates the abelian group with relation matrix `M`. That is, the group will
 have `ncols(M)` generators and each row of `M` describes one relation.
 """
 function abelian_group(M::fmpz_mat; name::String = "")
-  if issnf(M) && nrows(M) > 0  && ncols(M) > 0 && !isone(M[1, 1]) 
+   if issnf(M) && nrows(M) > 0  && ncols(M) > 0 && !isone(M[1, 1]) 
     N = fmpz[M[i, i] for i = 1:min(nrows(M), ncols(M))]
     if ncols(M) > nrows(M)
       N = vcat(N, fmpz[0 for i = 1:ncols(M)-nrows(M)])
@@ -135,7 +135,7 @@ function abelian_group(M::Vector{T}; name :: String = "") where T <: Union{Integ
   if _issnf(M)
     G = GrpAbFinGen(M)
   else
-    N = zero_matrix(FlintZZ, length(M), length(M))
+	N = zero_matrix(FlintZZ, length(M), length(M))
     for i = 1:length(M)
       N[i,i] = M[i]
     end
@@ -332,7 +332,7 @@ end
 ################################################################################
 
 function assure_has_hnf(A::GrpAbFinGen)
-  if isdefined(A, :hnf) 
+  if isdefined(A, :hnf)
     return nothing
   end
   if isdefined(A, :exponent) && nrows(A.rels) >= ncols(A.rels)
@@ -451,7 +451,7 @@ isinfinite(A::GrpAbFinGen) = !isfinite(A)
 ################################################################################
 
 @doc Markdown.doc"""
-    rank(A::GrpAbFinGenGen) -> Int
+    rank(A::GrpAbFinGen) -> Int
 
 Returns the rank of $A$, that is, the dimension of the
 $\mathbf{Q}$-vectorspace $A \otimes_{\mathbf Z} \mathbf Q$.
@@ -495,7 +495,7 @@ Returns the exponent of $A$. It is assumed that $A$ is finite.
 """
 function exponent(A::GrpAbFinGen)
   if issnf(A) 
-    res = exponent_snf(A) 
+    res = exponent_snf(A)
     if !iszero(res)
       A.exponent = res
     end
@@ -557,8 +557,8 @@ end
 
 Returns the direct product $D$ of the abelian groups $G_i$. `task` can be
 ":sum", ":prod", ":both" or ":none" and determines which canonical maps
-are computed as well: ":sum" for the injections, ":prod" for the 
-   projections.
+are computed as well: ":sum" for the injections, ":prod" for the
+projections.
 """
 function direct_product(G::GrpAbFinGen...
              ; add_to_lattice::Bool = false, L::GrpAbLattice = GroupLattice, task::Symbol = :sum)
@@ -576,7 +576,7 @@ function direct_product(G::GrpAbFinGen...
       append!(L, m)
       push!(inj, m)
     end
-    if task in [:prod, :both] 
+    if task in [:prod, :both]
       m = hom(Dp, g, vcat(GrpAbFinGenElem[g[0] for i = 1:j], gens(g), GrpAbFinGenElem[g[0] for i=j+ngens(g)+1:ngens(Dp)]))
       append!(L, m)
       push!(pro, m)
@@ -599,7 +599,7 @@ export ⊕
 
 @doc Markdown.doc"""
     canonical_injection(G::GrpAbFinGen, i::Int) -> Map
-Given a group $G$ that was created as a direct product, return the 
+Given a group $G$ that was created as a direct product, return the
 injection from the $i$th component.
 """
 function canonical_injection(G::GrpAbFinGen, i::Int)
@@ -612,7 +612,7 @@ end
 
 @doc Markdown.doc"""
     canonical_projection(G::GrpAbFinGen, i::Int) -> Map
-Given a group $G$ that was created as a direct product, return the 
+Given a group $G$ that was created as a direct product, return the
 projection onto the $i$th component.
 """
 function canonical_projection(G::GrpAbFinGen, i::Int)
@@ -660,10 +660,10 @@ function hom(G::GrpAbFinGen, H::GrpAbFinGen, A::Array{ <: Map{GrpAbFinGen, GrpAb
   end
   @assert all(i -> domain(A[i[1], i[2]]) == dG[i[1]] && codomain(A[i[1], i[2]]) == dH[i[2]], Base.Iterators.ProductIterator((1:r, 1:c)))
   h = hom(G, H, vcat([hcat([matrix(A[i,j]) for j=1:c]) for i=1:r]))
-  return h    
+  return h
 end
 
-function _flat(G::GrpAbFinGen) 
+function _flat(G::GrpAbFinGen)
   s = get_special(G, :direct_product)
   if s === nothing
     return [G]
@@ -671,7 +671,7 @@ function _flat(G::GrpAbFinGen)
   return vcat([_flat(x) for x = s]...)
 end
 
-function _tensor_flat(G::GrpAbFinGen) 
+function _tensor_flat(G::GrpAbFinGen)
   s = get_special(G, :tensor_product)
   if s === nothing
     return [G]
@@ -683,9 +683,9 @@ end
 @doc Markdown.doc"""
     flat(G::GrpAbFinGen) -> GrpAbFinGen, Map
 Given a group $G$ that is created using (iterated) direct products, or
-(iterated) tensor product, 
+(iterated) tensor product,
 return a group that is a flat product: $(A \oplus B) \oplus C$
-is returned as $A \oplus B \oplus C$, (resp. $\otimes$) 
+is returned as $A \oplus B \oplus C$, (resp. $\otimes$)
 together with the  isomorphism.
 """
 function flat(G::GrpAbFinGen)
@@ -708,7 +708,7 @@ end
 function tensor_product2(G::GrpAbFinGen, H::GrpAbFinGen)
   RG = rels(G)
   RH = rels(H)
-  R = vcat(kronecker_product(RG', identity_matrix(FlintZZ, ngens(H)))', 
+  R = vcat(kronecker_product(RG', identity_matrix(FlintZZ, ngens(H)))',
            kronecker_product(identity_matrix(FlintZZ, ngens(G)), RH')')
   G = abelian_group(R)
 end
@@ -730,7 +730,7 @@ parent(t::Tuple) = TupleParent(t)
 
 @doc Markdown.doc"""
     tensor_product(G::GrpAbFinGen...; task::Symbol = :map) -> GrpAbFinGen, Map
-Given groups $G_i$ compute the tensor product $G_1\otimes \cdots \otimes G_n$.
+Given groups $G_i$, compute the tensor product $G_1\otimes \cdots \otimes G_n$.
 If `task` is set to ":map", a map $\phi$ is returned that
 maps tuples in $G_1 \times \cdots \times G_n$ to pure tensors
 $g_1 \otimes \cdots \otimes g_n$. The map admits a preimage as well.
@@ -927,8 +927,8 @@ function sub(G::GrpAbFinGen, M::fmpz_mat,
       end
     end
   end
-  
-  if isdefined(G, :exponent) && !iszero(G.exponent) 
+
+  if isdefined(G, :exponent) && !iszero(G.exponent)
     h = hnf_modular_eldiv(m, G.exponent)
   else
     h = hnf(m)
@@ -1030,7 +1030,7 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-  quo(G::GrpAbFinGen, s::Array{GrpAbFinGenElem, 1}) -> GrpAbFinGen, Map
+    quo(G::GrpAbFinGen, s::Array{GrpAbFinGenElem, 1}) -> GrpAbFinGen, Map
 
 Create the quotient $H$ of $G$ by the subgroup generated by the elements in
 $s$, together with the projection $p : G \to H$.
@@ -1079,10 +1079,10 @@ function quo(G::GrpAbFinGen, s::Array{GrpAbFinGenElem, 1},
 end
 
 @doc Markdown.doc"""
-  quo(G::GrpAbFinGen, M::fmpz_mat) -> GrpAbFinGen, Map
+    quo(G::GrpAbFinGen, M::fmpz_mat) -> GrpAbFinGen, Map
 
 Create the quotient $H$ of $G$ by the subgroup generated by the elements
-corresponding to the rows of $M$. together with the projection $p : G \to H$.
+corresponding to the rows of $M$, together with the projection $p : G \to H$.
 """
 function quo(G::GrpAbFinGen, M::fmpz_mat,
              add_to_lattice::Bool = true, L::GrpAbLattice = GroupLattice)
@@ -1090,7 +1090,7 @@ function quo(G::GrpAbFinGen, M::fmpz_mat,
   Q = abelian_group(m)
   if isdefined(G, :exponent)
     Q.exponent = G.exponent
-  end
+  end				
   I = identity_matrix(FlintZZ, ngens(G))
   m = hom(G, Q, I, I, check = false)
   if add_to_lattice
@@ -1129,7 +1129,7 @@ function quo_snf(G::GrpAbFinGen, n::Union{fmpz, Integer},
     Q.exponent = gcd(G.exponent, n)
   else
     Q.exponent = n
-  end
+  end				
   m = hom(G, Q, I, I, check = false)
   if add_to_lattice
     append!(L, m)
@@ -1161,7 +1161,7 @@ end
 @doc Markdown.doc"""
     intersect(mG::GrpAbFinGenMap, mH::GrpAbFinGenMap) -> GrpAbFinGen, Map
 
-Given two injective maps of abelian groups witht the same codomain $G$,
+Given two injective maps of abelian groups with the same codomain $G$,
 return the intersection of the images as a subgroup of $G$.
 """
 function Base.intersect(mG::GrpAbFinGenMap, mH::GrpAbFinGenMap,
@@ -1191,7 +1191,7 @@ function Base.intersect(mG::GrpAbFinGenMap, mH::GrpAbFinGenMap,
   while i > 0 && iszero(sub(h, i:i, 1:ngens(GH)))
     i -= 1
   end
-  return sub(GH, [mG(GrpAbFinGenElem(G, view(h, j:j, ngens(GH)+1:ncols(h)))) for j=i+1:nrows(h)], add_to_lattice, L)
+   return sub(GH, [mG(GrpAbFinGenElem(G, view(h, j:j, ngens(GH)+1:ncols(h)))) for j=i+1:nrows(h)], add_to_lattice, L)
 end
 
 
@@ -1628,13 +1628,13 @@ function +(f::GrpAbFinGenMap, g::GrpAbFinGenMap)
   @assert domain(f) == domain(g)
   @assert codomain(f) == codomain(g)
   return hom(domain(f), codomain(g), GrpAbFinGenElem[f(x)+g(x) for x in gens(domain(f))])
-end 
+end
 
 function -(f::GrpAbFinGenMap, g::GrpAbFinGenMap)
   @assert domain(f) == domain(g)
   @assert codomain(f) == codomain(g)
   return hom(domain(f), codomain(g), GrpAbFinGenElem[f(x)-g(x) for x in gens(domain(f))])
-end 
+end
 
 
 ################################################################################
@@ -1663,10 +1663,10 @@ end
 
 function isfixed_point_free(act::Vector{GrpAbFinGenMap})
   G = domain(act[1])
-  intersection_of_kernels = id_hom(G)
+   intersection_of_kernels = id_hom(G)
   minus_id = hom(G, G, GrpAbFinGenElem[-x for x in gens(G)])
   for i = 1:length(act)
-    k, mk = fixed_subgroup(act[i], false)
+   k, mk = fixed_subgroup(act[i], false)
     kk, intersection_of_kernels = intersect(intersection_of_kernels, mk, false)
     if order(kk) == 1
       return true
@@ -1706,7 +1706,7 @@ end
     has_quotient(G::GrpAbFinGen, invariant::Vector{Int}) -> Bool
 
 Given an abelian group $G$, returns true if it has a quotient with given elementary
-divisors and false otherwise. 
+divisors and false otherwise.
 """
 function has_quotient(G::GrpAbFinGen, invariants::Array{Int,1})
   H = abelian_group(invariants)
@@ -1744,7 +1744,7 @@ function has_complement(m::GrpAbFinGenMap)
   end
   H, mH = cokernel(m, false)
   SH, mSH = snf(H)
-  mH = mH*inv(mSH)	
+  mH = mH*inv(mSH)
   s, ms = snf(domain(m))
   m1 = ms*m
   gens_complement = GrpAbFinGenElem[]

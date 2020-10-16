@@ -80,7 +80,7 @@ end
 function Base.show(io::IO, CF::ClassField)
   @show_name(io, CF)
   @show_special(io, CF)
-  print(IOContext(io, :compact => true), "Class field defined mod ", 
+  print(IOContext(io, :compact => true), "Class field defined mod ",
                    defining_modulus(CF), " of structure ",
                    codomain(CF.quotientmap))
 end
@@ -93,16 +93,16 @@ end
 
 @doc Markdown.doc"""
     defining_modulus(CF::ClassField)
-The modulus, ie. an ideal the the set of real places, used to create the
+The modulus, i.e. an ideal of the set of real places, used to create the
 class field.
 """
 function defining_modulus(CF::ClassField)
   return _modulus(CF.rayclassgroupmap)
-end 
+end
 
 function defining_modulus(CF::ClassField_pp)
   return _modulus(CF.rayclassgroupmap)
-end 
+end
 
 function _modulus(mq::MapRayClassGrp)
   return mq.defining_modulus::Tuple{NfOrdIdl, Vector{InfPlc}}
@@ -150,7 +150,7 @@ end
 
 @doc Markdown.doc"""
     degree(A::ClassField)
-The degree of $A$ over its base field, ie. the size of the defining ideal group.
+The degree of $A$ over its base field, i.e. the size of the defining ideal group.
 """
 function degree(A::ClassField)
   if A.degree == -1
@@ -218,7 +218,7 @@ The compositum of $a$ and $b$ as a (formal) class field.
 
 @doc Markdown.doc"""
     intersect(a::ClassField, b::ClassField) -> ClassField
-The intersect of $a$ and $b$ as a class field.
+The intersection of $a$ and $b$ as a class field.
 """
 function Base.intersect(a::ClassField, b::ClassField)
   @assert base_ring(a) == base_ring(b)
@@ -242,7 +242,7 @@ end
 
 @doc Markdown.doc"""
     issubfield(a::ClassField, b::ClassField) -> Bool
-Determines of $a$ is a subfield of $b$.
+Determines if $a$ is a subfield of $b$.
 """
 function issubfield(a::ClassField, b::ClassField)
   @assert base_ring(a) == base_ring(b)
@@ -309,7 +309,7 @@ end
 @doc Markdown.doc"""
     maximal_p_subfield(C::ClassField, p::Int)
 Returns the class field corresponding to the maximal subextension of
-prime power degree
+prime power degree.
 """
 function maximal_p_subfield(C::ClassField, p::Int)
   mg = C.quotientmap

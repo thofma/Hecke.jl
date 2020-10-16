@@ -7,7 +7,7 @@ export isprincipal
 # TODO: Agree on a name for power_class vs power_reduce2
 @doc Markdown.doc"""
     power_class(A::NfOrdIdl, e::fmpz) -> NfOrdIdl
-Computes a (small) ideal in the same class as $A^e$
+Computes a (small) ideal in the same class as $A^e$.
 """
 function power_class(A::NfOrdIdl, e::fmpz)
   if e == 0
@@ -117,12 +117,12 @@ function class_group_ideal_relation(I::NfOrdIdl, c::ClassGrpCtx)
   n = norm(I)
   if issmooth(c.FB.fb_int, n)
     fl, r = _factor!(c.FB, I, false)
-    if fl 
+    if fl
       return K(1), r
     end
   end
   # ok, we have to work
-  
+
   I_start = I
   @vprint :ClassGroup 1 "Ideal $I \n"
   @vprint :ClassGroup 1 "Reducing ideal via LLL \n"
@@ -133,13 +133,13 @@ function class_group_ideal_relation(I::NfOrdIdl, c::ClassGrpCtx)
   n = norm(I)
   if issmooth(c.FB.fb_int, n)
     fl, r = _factor!(c.FB, I, false)
-    if fl 
+    if fl
       return b, r
     end
   end
   #really annoying, but at least we have a small(ish) ideal now
   #println("have to work")
-
+    
   E = class_group_small_lll_elements_relation_start(c, I)
   iI = inv(I)
   if isdefined(c, :randomClsEnv)
@@ -190,7 +190,7 @@ function class_group_ideal_relation(I::NfOrdIdl, c::ClassGrpCtx)
         r = SRow(FlintZZ)
       else
         fl, r = _factor!(c.FB, Ia.num, false)
-        if !fl 
+        if !fl
           continue
         end
         scale_row!(r, fmpz(-1))
@@ -245,11 +245,11 @@ function class_group(c::ClassGrpCtx, O::NfOrd = order(c); redo::Bool = false)
       end
       return C, mC
     end
-  end  
+  end
   C = class_group_grp(c, redo = redo)
   r = MapClassGrp()
-  
-  local disclog 
+
+  local disclog
   let c = c, C = C
     function disclog(x::NfOrdIdl)
       if x.is_principal == 1
@@ -258,7 +258,7 @@ function class_group(c::ClassGrpCtx, O::NfOrd = order(c); redo::Bool = false)
       return class_group_disc_log(x, c)
     end
   end
-  
+
   local expo
   let c = c
     function expo(x::GrpAbFinGenElem)
@@ -309,8 +309,8 @@ end
 #TODO: if an ideal is principal, store it on the ideal!!!
 @doc Markdown.doc"""
     isprincipal_fac_elem(I::FacElem{NfOrdIdl, NfOrdIdlSet}) -> Bool, FacElem{nf_elem, NumberField}
-Tests if $A$ is principal and returns $(\mathtt{true}, \alpha)$ if $A =
-\langle \alpha\rangle$ of $(\mathtt{false}, 1)$ otherwise.  
+Tests if $I$ is principal and returns $(\mathtt{true}, \alpha)$ if $A =
+\langle \alpha\rangle$ or $(\mathtt{false}, 1)$ otherwise.
 The generator will be in factored form.
 """
 function isprincipal_fac_elem(I::FacElem{NfOrdIdl, NfOrdIdlSet})
@@ -337,7 +337,7 @@ end
 
 @doc Markdown.doc"""
     principal_generator_fac_elem(I::FacElem) -> FacElem{nf_elem, NumberField}
-For a principal ideal $A$ in factored form, find a generator in factored form.
+For a principal ideal $I$ in factored form, find a generator in factored form.
 """
 function principal_generator_fac_elem(I::FacElem{NfOrdIdl, NfOrdIdlSet})
   if isempty(I.fac)
@@ -359,7 +359,7 @@ function principal_generator(A::NfOrdIdl)
   O = order(A)
   if ismaximal(O)
     fl, e = isprincipal_fac_elem(A)
-    if !fl
+  if !fl
       error("Ideal is not principal")
     end
     return O(evaluate(e))
@@ -375,7 +375,7 @@ end
 @doc Markdown.doc"""
     isprincipal_fac_elem(A::NfOrdIdl) -> Bool, FacElem{nf_elem, NumberField}
 Tests if $A$ is principal and returns $(\mathtt{true}, \alpha)$ if $A =
-\langle \alpha\rangle$ of $(\mathtt{false}, 1)$ otherwise.  
+\langle \alpha\rangle$ or $(\mathtt{false}, 1)$ otherwise.
 The generator will be in factored form.
 """
 function isprincipal_fac_elem(A::NfOrdIdl)
@@ -400,7 +400,7 @@ function isprincipal_fac_elem(A::NfOrdIdl)
     class_group(L)
     c = _get_ClassGrpCtx_of_order(L)::Hecke.ClassGrpCtx{SMat{fmpz}}
     A = IdealSet(L)(A)
-  else 
+  else
     L = O
   end
 
@@ -418,8 +418,8 @@ function isprincipal_fac_elem(A::NfOrdIdl)
     A.is_principal = 2
     return false, FacElem([nf(O)(1)], fmpz[1])
   end
-  
-  
+
+
   rrows = (c.M.bas_gens.r + c.M.rel_gens.r)::Int
   rs = zeros(fmpz, rrows)
 
@@ -432,7 +432,7 @@ function isprincipal_fac_elem(A::NfOrdIdl)
   end
   base = vcat(c.R_gen, c.R_rel)::Vector{Union{nf_elem, FacElem{nf_elem, AnticNumberField}}}
   e = FacElem(base, rs)::FacElem{nf_elem, AnticNumberField}
-  add_to_key!(e.fac, x, -1)  
+  add_to_key!(e.fac, x, -1)
 
   #reduce e modulo units.
   e = reduce_mod_units(FacElem{nf_elem, AnticNumberField}[e], _get_UnitGrpCtx_of_order(L))[1]
@@ -446,7 +446,7 @@ end
     isprincipal(A::NfOrdIdl) -> Bool, NfOrdElem
     isprincipal(A::NfOrdFracIdl) -> Bool, NfOrdElem
 Tests if $A$ is principal and returns $(\mathtt{true}, \alpha)$ if $A =
-\langle \alpha\rangle$ of $(\mathtt{false}, 1)$ otherwise.  
+\langle \alpha\rangle$ or $(\mathtt{false}, 1)$ otherwise.
 """
 function isprincipal(A::NfOrdIdl)
   if A.is_principal == 1 && isdefined(A, :princ_gen)
@@ -482,7 +482,7 @@ function isprincipal(A::NfOrdFracIdl)
   end
   return fl, b//denominator(A, copy = false)
 end
- 
+
 # does not work, cannot work. Problem
 #  x = 1/2 \pm 10^-n
 # then x+1/2 = 1 \pm 10^-n and ceil can be 1 or 2
@@ -535,10 +535,10 @@ function round_approx(::Type{fmpz_mat}, C::Nemo.arb_mat)
   end
   return v
 end
-  
+
 #a is an array of FacElem's
 #the elements are reduced modulo the units in U
-function reduce_mod_units(a::Array{FacElem{nf_elem, AnticNumberField}, 1}, U) 
+function reduce_mod_units(a::Array{FacElem{nf_elem, AnticNumberField}, 1}, U)
   #for T of type FacElem, U cannot be found from the order as the order
   #is not known
   #TODO:
@@ -584,7 +584,7 @@ function reduce_mod_units(a::Array{FacElem{nf_elem, AnticNumberField}, 1}, U)
       if !isa(e, InexactError)
         rethrow(e)
       end
-      try 
+      try
         V = round_approx(fmpz_mat, C)
         exact = false
       catch e
@@ -628,20 +628,20 @@ end
     find_coprime_representatives(mC::MapClassGrp, m::NfOrdIdl, lp::Dict{NfOrdIdl, Int} = factor(m)) -> MapClassGrp
 
 Returns a class group map such that the representatives for every classes are coprime to $m$.
-$lp$ is the factorization of $m$. 
+$lp$ is the factorization of $m$.
 """
 function find_coprime_representatives(mC::MapClassGrp, m::NfOrdIdl, lp::Dict{NfOrdIdl, Int} = factor(m))
   C = domain(mC)
   O = order(m)
   K = nf(O)
-  
+
   L = Array{NfOrdIdl,1}(undef, ngens(C))
   el = Array{nf_elem,1}(undef, ngens(C))
   ppp = 1.0
   for (p, v) in lp
     ppp *= (1 - 1/Float64(norm(p)))
   end
-  
+
   prob = ppp > 0.1 && degree(K) < 10
   for i = 1:ngens(C)
     @assert length(mC.princ_gens[i][1].fac) == 1
@@ -657,10 +657,10 @@ function find_coprime_representatives(mC::MapClassGrp, m::NfOrdIdl, lp::Dict{NfO
     @hassert :RayFacElem 1 iscoprime(L[i], m)
     @hassert :RayFacElem 1 a*el[i] == L[i]
   end
-  
+
   local exp
   let L = L, C = C
-    function exp(a::GrpAbFinGenElem)  
+    function exp(a::GrpAbFinGenElem)
       e = Dict{NfOrdIdl,fmpz}()
       for i = 1:ngens(C)
         if !iszero(a[i])
@@ -673,10 +673,10 @@ function find_coprime_representatives(mC::MapClassGrp, m::NfOrdIdl, lp::Dict{NfO
       return FacElem(e)
     end
   end
-  
+
   return exp, el
 
-end 
+end
 
 function coprime_deterministic(a::NfOrdIdl, m::NfOrdIdl, lp::Dict{NfOrdIdl, Int})
   g, ng = ppio(a.gen_one, m.gen_one)
@@ -706,7 +706,7 @@ function coprime_deterministic(a::NfOrdIdl, m::NfOrdIdl, lp::Dict{NfOrdIdl, Int}
       push!(primes, (minimum(p), ant_val^vp))
     end
   end
-  
+
   OK = order(a)
   r = m.gen_one
   moduli = Vector{fmpz}(undef, length(primes)+1)

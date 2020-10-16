@@ -553,7 +553,7 @@ function restrict_scalars(V::AbsSpace, K::Field = FlintQQ, alpha = one(base_ring
       r = r + 1
     end
   end
-  
+
   VabstoV = function(v)
     @assert length(v) == d * n
     z = Vector{elem_type(E)}(undef, n)
@@ -618,5 +618,4 @@ function _weak_approximation_coprime(IP, S, M)
   @assert all(i -> sign(t, IP[i]) == S[i], 1:length(IP))
   return t
 end
-
 

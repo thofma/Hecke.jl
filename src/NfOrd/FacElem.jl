@@ -68,7 +68,7 @@ function istorsion_unit(x::FacElem{T}, checkisunit::Bool = false, p::Int = 16) w
   B = log(A(1) + A(1)//A(6) * log(A(d))//A(d^2))
   p = Int(upper_bound(-log(B)/log(A(2)), fmpz)) + 2
 
-  cx = conjugates_arb_log(x, p) #this guarantees the result with an abs. error 
+  cx = conjugates_arb_log(x, p) #this guarantees the result with an abs. error
                                 # of 2^-p
   @v_do :UnitGroup 2 popindent()
   @vprint :UnitGroup 2 "Conjugates log are $cx\n"
@@ -101,7 +101,7 @@ end
 
 function factored_norm(x::FacElem{nf_elem, AnticNumberField})
   b = fmpq[]
-  c = fmpz[] 
+  c = fmpz[]
   for (a, e) in x.fac
     if iszero(e)
       continue
@@ -121,7 +121,7 @@ function factored_norm(x::FacElem{nf_elem, AnticNumberField})
   if length(b) == 0
     push!(b, fmpq(1))
     push!(c, 0)
-  end 
+  end
   f = FacElem(b, c)
   simplify!(f)
   return f
@@ -187,7 +187,7 @@ function conjugates_arb_log(x::FacElem{nf_elem, AnticNumberField}, abs_tol::Int)
   r1, r2 = signature(K)
   d = r1 + r2
   res = Array{arb}(undef, d)
-  
+
   if isempty(x.fac) || all(x -> iszero(x), values(x.fac))
     x.fac[one(K)] = fmpz(1)
   end
@@ -265,7 +265,7 @@ end
 @doc Markdown.doc"""
     conjugates_arb_log_normalise(x::nf_elem, p::Int = 10)
     conjugates_arb_log_normalise(x::FacElem{nf_elem, AnticNumberField}, p::Int = 10)
-The "normalised" logarithms, ie. the array $c_i\log |x^{(i)}| - 1/n\log|N(x)|$,
+The "normalised" logarithms, i.e. the array $c_i\log |x^{(i)}| - 1/n\log|N(x)|$,
 so the (weighted) sum adds up to zero.
 """
 function conjugates_arb_log_normalise(x::nf_elem, p::Int = 10)
@@ -282,7 +282,7 @@ function conjugates_arb_log_normalise(x::nf_elem, p::Int = 10)
   end
   return c
 end
- 
+
 #the normalise bit ensures that the "log" vector lies in the same vector space
 #well, the same hyper-plane, as the units
 function conjugates_arb_log_normalise(x::FacElem{nf_elem, AnticNumberField}, p::Int = 10)
@@ -299,7 +299,7 @@ function conjugates_arb_log_normalise(x::FacElem{nf_elem, AnticNumberField}, p::
   end
   return c
 end
- 
+
 function _conj_arb_log_matrix_normalise_cutoff(u::Array{T, 1}, prec::Int = 32)::arb_mat where T
   z = conjugates_arb_log_normalise(u[1], prec)
   A = zero_matrix(parent(z[1]), length(u), length(z)-1)

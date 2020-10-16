@@ -45,7 +45,7 @@ end
      can_solve(f::QuadBin, n::Int64)
 For a binary quadratic form $f$ with negative discriminant and an integer $n$,
 returns tuple (`true`, (`x`,`y`)) if $f$(`x`,`y`) = $n$ for integers `x`,`y`.
-If no such integers exist return (`false`,(0,0))
+If no such integers exist, return (`false`,(0,0))
 """
 function can_solve(f::QuadBin, n::Int64)
     if discriminant(f) >= 0
@@ -116,7 +116,7 @@ end
 @doc Markdown.doc"""
      conductor(D)
 Returns the conductor of the discriminant $D$ i.e. the largest
-positive integer `c` such that $\frac{D}{c^2}$ is a discriminant.
+positive integer $c$ such that $\frac{D}{c^2}$ is a discriminant.
 """
 function conductor(D)
   !isdiscriminant(D) && error("$D is no discriminant")

@@ -12,8 +12,8 @@ export rational_reconstruction, farey_lift, berlekamp_massey
 @doc Markdown.doc"""
     rational_reconstruction(a::PolyElem{S}, b::PolyElem{S}, n::Int, m::Int)
 
- Returns true and x, y s.th. ay = x mod b and degree(x) <= n, degree(y) <= m
-   or false (and garbage) if this is not possible.
+ Returns `true` and $x, y$ s.th. $ay = x mod b$ and $degree(x) <= n$, $degree(y) <= m$
+   or `false` (and garbage) if this is not possible.
 """
 function rational_reconstruction(a::PolyElem{S}, b::PolyElem{S}, n::Int, m::Int) where S
   R = a.parent
@@ -32,7 +32,7 @@ function rational_reconstruction(a::PolyElem{S}, b::PolyElem{S}, n::Int, m::Int)
     T[2,2] = -q
     M = T*M
   end
-  if degree(M[2,2]) <= m 
+  if degree(M[2,2]) <= m
     return true, M[2,1], M[2,2]
   end
 
@@ -40,10 +40,10 @@ function rational_reconstruction(a::PolyElem{S}, b::PolyElem{S}, n::Int, m::Int)
 end
 
 @doc Markdown.doc"""
-  rational_reconstruction{S}(a::PolyElem{S}, b::PolyElem{S})
+    rational_reconstruction{S}(a::PolyElem{S}, b::PolyElem{S})
 
- Returns true and x/y s.th. ay = x mod b and degree(x), degree(y) <= degree(b)/2
-   or false (and garbage) if this is not possible. Shortcut to the more general function.
+ Returns `true` and $x/y$ s.th. $ay = x mod b$ and $degree(x), degree(y) <= degree(b)/2$
+   or `false` (and garbage) if this is not possible. Shortcut to the more general function.
 """
 function rational_reconstruction(a::PolyElem{T}, b::PolyElem{T}) where T
   return rational_reconstruction_subres(a, b)
@@ -61,8 +61,8 @@ end
     rational_reconstruction(a::fmpz, b::fmpz)
     rational_reconstruction(a::Integer, b::Integer)
 
-Tries to solve ay=x mod b for x,y < sqrt(M/2). If possible, returns
-  (true, x, y) or (false, garbage) if not possible.
+Tries to solve $ay=x mod b$ for $x,y < sqrt(M/2)$. If possible, returns
+  (`true`, $x$, $y$) or (`false`, garbage) if not possible.
 """
 function rational_reconstruction(a::fmpz, b::fmpz)
   res = fmpq()
@@ -93,7 +93,7 @@ end
 @doc Markdown.doc"""
     rational_reconstruction(a::nf_elem, b::fmpz)
 
-Applies the rational_reconstruction function to each coefficient.
+Applies the `rational_reconstruction` function to each coefficient.
 """
 function rational_reconstruction(a::nf_elem, b::fmpz)
   K= parent(a)
@@ -119,7 +119,7 @@ farey_lift = rational_reconstruction
 
 # in at least 2 examples produces the same result as Magma
 # can do experiments to see if dedicated Berlekamp Massey would be
-# faster as well as experiments if Berlekamp Massey yields faster 
+# faster as well as experiments if Berlekamp Massey yields faster
 # rational_reconstruction as well.
 # Idea of using the same agorithm due to E. Thome
 #
@@ -144,7 +144,7 @@ end
 
 function rational_reconstruction_subres(g::PolyElem{T}, f::PolyElem{T}, bnd::Int = -1) where T
     # the denominator is normalized
-    R_2 = g.parent 
+    R_2 = g.parent
     r_1 = R_2(1); t_1 = R_2(0)
     r_m = r_1;t_m = r_1
     q1 = t_1; q_m = r_1
@@ -157,13 +157,13 @@ function rational_reconstruction_subres(g::PolyElem{T}, f::PolyElem{T}, bnd::Int
         return true, g, r_1
     end
 
-    N1 = R_2(inv(lead(g))); r2 = g*N1 
+    N1 = R_2(inv(lead(g))); r2 = g*N1
     r1 = f* R_2(inv(lead(f))); t1 = t_1;
     t2 = N1; i = 0
     l_rt = []
     deg_f = degree(f)
     while r2!=0
-        i += 1 
+        i += 1
         q1,r = divrem(r1,r2); r3=r2
         if r==0
            N1 = R_2(1)
@@ -189,7 +189,7 @@ function rational_reconstruction_subres(g::PolyElem{T}, f::PolyElem{T}, bnd::Int
          if gcd(l_rt[1], l_rt[2])!=1
               return false, l_rt[1], l_rt[2]
          else
-              return  true, l_rt[1], l_rt[2] 
+              return  true, l_rt[1], l_rt[2]
          end
     else
         if gcd(r_m, t_m) == 1
@@ -206,8 +206,8 @@ end
 function rational_reconstruction_mod(g::fmpq_poly, f::fmpq_poly)
   p = next_prime(fmpz(p_start))
   n, p = _inner_modp_results(g, f, p)  # mainly used to find the correct
-                                       # bound n and a starting p 
-  kp = 10  
+                                       # bound n and a starting p
+  kp = 10
   L =[]
   pp = FlintZZ(1)
   j = 0
@@ -245,7 +245,7 @@ function _modp_results(g::fmpq_poly,f::fmpq_poly, p::fmpz, M::Int, n::Int)
      gp = Rp(g)
      fp = Rp(f)
      fl, nu_p, de_p = rational_reconstruction_subres(gp, fp, n)
-     if fl 
+     if fl
         ut = Rp(inv(lead(de_p)))
         push!(l1, ut*nu_p)
         push!(l2, ut*de_p)
@@ -266,7 +266,7 @@ function _inner_modp_results(g::fmpq_poly,f::fmpq_poly, p::fmpz)
          fp = Rp(f)
          fl, nu_p, de_p = rational_reconstruction_subres(gp, fp)
          if fl
-             return degree(nu_p), p 
+             return degree(nu_p), p
          end
      end
      p = next_prime(p)
@@ -323,7 +323,7 @@ function berlekamp_massey_mod(L::Array{fmpq, 1})
     return true, f
   end
   p = next_prime(fmpz(p_start))
-  kp = 10  
+  kp = 10
   pp = FlintZZ(1)
   j = 0
   local N
@@ -387,7 +387,7 @@ end
 ################################################################################
 
 function listprimes(f::Array{fmpq_poly, 1}, p::fmpz, M::Int)
-   # static 
+   # static
    i=0; L = fmpz[]
    while true
     i += 1
@@ -413,5 +413,3 @@ function induce_crt(L::Array{nmod_poly, 1}, c::crt_env{fmpz})
   end
   return res
 end
-
-

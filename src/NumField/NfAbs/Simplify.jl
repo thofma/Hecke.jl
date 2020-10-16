@@ -13,11 +13,11 @@ If `canonical` is set to `true`, then a canonical defining polynomial is found,
 where canonical is using the definition of PARI's `polredabs`, which is described in
 http://beta.lmfdb.org/knowledge/show/nf.polredabs.
 
-Both version require a LLL reduced basis for the maximal order.
+Both versions require a LLL reduced basis for the maximal order.
 """
 function simplify(K::AnticNumberField; canonical::Bool = false, cached::Bool = true, save_LLL_basis::Bool = true)
   Qx, x = PolynomialRing(FlintQQ, "x")
-  
+
   if degree(K) == 1
     L = number_field(x - 1, cached = cached, check = false)[1]
     return L, hom(L, K, gen(K), check = false)
@@ -92,7 +92,7 @@ function _simplify(O::NfOrd)
   Qx, x = PolynomialRing(FlintQQ)
   Zx = PolynomialRing(FlintZZ, "x", cached = false)[1]
   f = Zx(K.pol*denominator(K.pol))
-  
+
   a = O(gen(K)*denominator(K.pol), false)
   p, d = _find_prime(f)
 
@@ -112,20 +112,20 @@ function _simplify(O::NfOrd)
   ap = zero(Ft)
   fit!(ap, degree(K)+1)
   rt = roots(f, F)
-  
+
   n = degree(K)
   indices = Int[]
   for i = 1:length(Bnew)
     if isone(denominator(Bnew[i].elem_in_nf))
       continue
-    end 
+    end
     b = _block(Bnew[i].elem_in_nf, rt, ap)
     if length(b) == n
       push!(indices, i)
     end
   end
   #Now, we select the one of smallest T2 norm
-  I = t2(a)    
+  I = t2(a)
   for i = 1:length(indices)
     t2n = t2(Bnew[indices[i]].elem_in_nf)
     if t2n < I
@@ -227,7 +227,7 @@ function _find_prime(f::fmpz_poly)
 end
 
 function polredabs(K::AnticNumberField)
-  #intended to implement 
+  #intended to implement
   # http://beta.lmfdb.org/knowledge/show/nf.polredabs
   #as in pari
   #TODO: figure out the separation of T2-norms....
@@ -238,13 +238,13 @@ function polredabs(K::AnticNumberField)
   Zx = FlintZZ["x"][1]
   f = Zx(K.pol)
   p, d = _find_prime(f)
-  
+
   F = FlintFiniteField(p, d, "w", cached = false)[1]
   Ft = PolynomialRing(F, "t", cached = false)[1]
   ap = zero(Ft)
   fit!(ap, degree(K)+1)
   rt = roots(f, F)
-  
+
   n = degree(K)
 
   b = _block(B[1].elem_in_nf, rt, ap)
@@ -320,7 +320,7 @@ function polredabs(K::AnticNumberField)
           end
           la = lq
   #        @show Float64(la/E.t_den^2)
-        end  
+        end
       end
     end
     scale *= 2
@@ -371,7 +371,7 @@ function minQ(A::Tuple{nf_elem, fmpq_poly})
     return (A[1], f)
   end
 end
-  
+
 function int_cmp(a, b)
   if a==b
     return 0
@@ -390,7 +390,7 @@ function il(F, G)
   f = F[2]
   g = G[2]
   i = degree(f)
-  while i>0 && int_cmp(coeff(f, i), coeff(g, i))==0 
+  while i>0 && int_cmp(coeff(f, i), coeff(g, i))==0
     i -= 1
   end
   return int_cmp(coeff(f, i), coeff(g, i))<0

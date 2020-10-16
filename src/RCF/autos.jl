@@ -5,13 +5,13 @@
 ################################################################################
 @doc Markdown.doc"""
     absolute_automorphism_group(C::ClassField)
-  
- Computes a generating set for the automorphisms of the 
-   number field corresponding to C. It assumes that the base field is normal.
-   if "check" is true, the function checks if the extension is normal.
+
+ Computes a generating set for the automorphisms of the
+   number field corresponding to $C$. It assumes that the base field is normal.
+   If "check" is true, the function checks if the extension is normal.
 """
 function absolute_automorphism_group(C::ClassField, check::Bool = false)
- 
+
   L = number_field(C)
   K = base_field(C)
   autK = automorphisms(K)
@@ -53,7 +53,7 @@ end
 ###############################################################################
 
 function rel_auto_easy(A::ClassField_pp)
-  
+
   # sqrt[n](a) -> zeta sqrt[n](a) on A.A
   #on A.K, the Kummer: sqrt[n](a) = gen(A.K) -> zeta gen(A.K)
   #we have the embedding A.A -> A.K : gen(A.A) -> A.pe
@@ -76,12 +76,12 @@ function rel_auto_easy(A::ClassField_pp)
     setcoeff!(im, i-1, c)
   end
   return hom(A.A, A.A, im, check = false)
-  
+
 end
 
 function rel_auto_intersect(A::ClassField_pp)
-  
-  # In the computation of the class field, I saved the 
+
+  # In the computation of the class field, I saved the
   # automorphisms of A.K over k.
   # Now, I have to search for the one that generates the Galois
   # group of the target field over k
@@ -111,7 +111,7 @@ function rel_auto_intersect(A::ClassField_pp)
       if !iszero(gener[i])
         for s = 1:Int(gener[i])
           elem = A.AutG[i](elem)
-        end 
+        end
       end
     end
     N = SRow(elem)
@@ -124,11 +124,11 @@ function rel_auto_intersect(A::ClassField_pp)
     return hom(A.A, A.A, im, check = false)
   end
   error("I can't find the automorphism!")
- 
+
 end
 
 function rel_auto(A::ClassField_pp)
-  
+
   @assert isdefined(A, :A)
   if degree(A) == degree(A.K)
     #If the cyclotomic extension and the target field are linearly disjoint, it is easy.
@@ -159,13 +159,13 @@ end
 
 @doc Markdown.doc"""
     extend_to_cyclotomic(C::CyclotomicExt, tau::NfToNfMor) -> NfRelToNfRelMor
-    
+
 Given a cyclotomic extension $C$ of a number field $K$ and an automorphism $\tau$ of $K$,
-  computes an extension of tau to $C$.
+  computes an extension of $\tau$ to $C$.
 
 """
 function extend_to_cyclotomic(C::CyclotomicExt, tau::NfToNfMor)		
-  K = domain(tau)		
+  K = domain(tau)	
   @assert K == base_field(C.Kr)
   gKr = gen(C.Kr)
   if euler_phi(C.n) == degree(C.Kr)
@@ -232,7 +232,7 @@ function new_extend_aut(A::ClassField, autos::Array{T, 1}) where T <: Map
     @hassert :NfOrd 1 isconsistent(res[i])
   end
   return res
-  
+
 end
 
 ################################################################################
@@ -242,8 +242,8 @@ end
 ################################################################################
 
 #Find a prime ideal P such that the Frobenius generates the Galois group of the extension.
-function find_frob(A::ClassField_pp, K::KummerExt, emb::NfToNfMor) 
-  
+function find_frob(A::ClassField_pp, K::KummerExt, emb::NfToNfMor)
+
   m = defining_modulus(A)[1]
   d = A.o
   K1 = kummer_extension(d, [A.a])
@@ -280,8 +280,8 @@ function find_frob(A::ClassField_pp, K::KummerExt, emb::NfToNfMor)
   error("Something strange is happening")
 end
 
-function find_frob(A::ClassField_pp) 
-  
+function find_frob(A::ClassField_pp)
+
   m = defining_modulus(A)[1]
   d = A.o
   K1 = kummer_extension(d, [A.a])
@@ -401,7 +401,7 @@ function extend_aut2(A::ClassField, autos::Array{NfToNfMor, 1})
       @assert fl
       images_KK[i] = (coord, rt)
     end
-  
+
     #Now, I can define the automorphism on AA
     images_K = Array{NfRelNSElem{nf_elem}, 1}(undef, length(images_KK))
     for i = 1:length(images_K)
@@ -414,11 +414,11 @@ function extend_aut2(A::ClassField, autos::Array{NfToNfMor, 1})
     autos_extended[w] = images_K
   end
   return autos_extended
-  
+
 end
 
 function extend_aut_pp(A::ClassField, autos::Array{NfToNfMor, 1}, p::fmpz)
-  
+
   Cp = [x1 for x1 in A.cyc if degree(x1) % Int(p) == 0]
   d = maximum(degree(x) for x in Cp)
   if d == 2
@@ -454,7 +454,7 @@ function extend_aut_pp(A::ClassField, autos::Array{NfToNfMor, 1}, p::fmpz)
   #Now, I can compute the corresponding Kummer extension over the big cyclotomic field.
   m = minimum(defining_modulus(A)[1])
 
-  
+
   if !isone(gcd(d, m)) && d != minimum(degree(x) for x in Cp)
     #Difficult case. Think about it...
     @warn "May loop forever, careful"
@@ -463,8 +463,8 @@ function extend_aut_pp(A::ClassField, autos::Array{NfToNfMor, 1}, p::fmpz)
   #the extension and the cyclotomic extensions are linearly disjoint!
   exps = Array{Int, 1}(undef, length(Cp))
   gens = Array{FacElem{nf_elem, AnticNumberField}, 1}(undef, length(Cp))
-  for i = 1:length(Cp) 
-    if degree(Cp[i]) == d 
+  for i = 1:length(Cp)
+    if degree(Cp[i]) == d
       gens[i] = Cp[i].a
       exps[i] = Cp[i].o
     else
@@ -484,7 +484,7 @@ function extend_aut_pp(A::ClassField, autos::Array{NfToNfMor, 1}, p::fmpz)
   for i = 1:length(Cp)
     incs[i] = NfRelToNfRelNSMor{nf_elem}(Cp[i].K, K, abs_emb[i], gK[i])
   end
-  
+
   # I want extend the automorphisms to KK
   # First, I find a set of primes such that their Frobenius generates the Galois group of KK
   act_on_gens = Array{Array{FacElem{nf_elem, AnticNumberField}, 1}, 1}(undef, length(KK.gen))
@@ -500,7 +500,7 @@ function extend_aut_pp(A::ClassField, autos::Array{NfToNfMor, 1}, p::fmpz)
     act_on_gens[i] = act_on_gen_i
   end
   frob_gens = find_gens(KK, act_on_gens, minimum(defining_modulus(A)[1]))
-  
+
   autos_extended = Array{NfRelNSToNfRelNSMor, 1}(undef, length(autos))
   #I will compute a possible image cyclic component by cyclic component
   for w = 1:length(autos)
@@ -510,7 +510,7 @@ function extend_aut_pp(A::ClassField, autos::Array{NfToNfMor, 1}, p::fmpz)
       @assert fl
       images_KK[i] = (coord_img_emb, rt_img_emb)
     end
-  
+
     #Now, I can define the automorphism on K
     images_K = Array{NfRelNSElem{nf_elem}, 1}(undef, length(images_KK))
     for i = 1:length(images_K)
@@ -525,7 +525,7 @@ function extend_aut_pp(A::ClassField, autos::Array{NfToNfMor, 1}, p::fmpz)
   end
   res = restriction(K, Cp, autos_extended, incs)
   return res
-  
+
 end
 
 ###############################################################################
@@ -537,7 +537,7 @@ end
 #This function restricts the automorphisms in autos to the number field generated by the class fields in Cp
 # incs are the inclusions of the class fields in K
 function restriction(K::NfRelNS{nf_elem}, Cp::Vector{ClassField_pp{S, T}}, autos::Vector{NfRelNSToNfRelNSMor}, incs::Vector{NfRelToNfRelNSMor{nf_elem}}) where {S, T}
-  
+ 
   C = cyclotomic_extension(base_field(Cp[1]), maximum(degree(x) for x in Cp))
   #First, I compute the images in K of the generators of the class fields
   # and their images under the automorphisms
@@ -551,7 +551,7 @@ function restriction(K::NfRelNS{nf_elem}, Cp::Vector{ClassField_pp{S, T}}, autos
     end
     all_pe[j] = (pe, tau_pe)
   end
-  #AA is the target field 
+  #AA is the target field
   AA, gAA = number_field([c.A.pol for c = Cp], cached = false, check = false)
   #And now, linear algebra to compute the restriction
   #I need the product basis fo all the primitive elements of Cp
@@ -565,13 +565,13 @@ function restriction(K::NfRelNS{nf_elem}, Cp::Vector{ClassField_pp{S, T}}, autos
     el = all_pe[jj][1]
     for i = 2:degree(Cp[jj])
       for j = 1:ind
-        B[(i-1)* ind + j] = B[j]* el 
+        B[(i-1)* ind + j] = B[j]* el
       end
       el *= all_pe[jj][1]
     end
     ind *= degree(Cp[jj])
   end
-  
+
   #Now, I construct the corresponding sparse matrix
   M = sparse_matrix(base_field(K))
   for i = 1:length(B)
@@ -690,7 +690,7 @@ function extend_hom(C::ClassField_pp, D::Array{ClassField_pp, 1}, tau)
     z = gen(Dy.Kr)
     while gcd(i, om) != 1 || !iszero(tau_g(z))
       i *= 1
-      z *= gen(Dy.Kr) 
+      z *= gen(Dy.Kr)
     end
     z_i = i
 
@@ -771,7 +771,7 @@ function extend_hom(C::ClassField_pp, D::Array{ClassField_pp, 1}, tau)
     fl, rt = ispower(mu, divexact(C.o, Int(t_corr_b)))
     @assert fl
     all_b = (evaluate(rt), lf)
-    
+
     Ka = Dy.Ka
     KaT, X = PolynomialRing(Ka, "T", cached = false)
     KK, gKK = number_field([X^Int(divexact(D[j].o, t_corr[j])) - root(evaluate(all_emb[j][1]), Int(t_corr[j])) for j=1:length(D)], check = false)
@@ -796,7 +796,7 @@ function extend_hom(C::ClassField_pp, D::Array{ClassField_pp, 1}, tau)
     while length(B) < degree(D[1])
       push!(B, B[end]*all_pe[1])
     end
-  
+
 
     for jj=2:length(D)
       d *= degree(D[jj])
@@ -900,4 +900,3 @@ function _expand(M::SMat{nf_elem}, mp::Map)
   end
   return N
 end
-

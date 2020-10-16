@@ -3,7 +3,7 @@ export left_order, right_order, normred, locally_free_basis, islocally_free
 @doc Markdown.doc"""
     order(a::AlgAssRelOrdIdl) -> AlgAssRelOrd
 
-> Returns the order of which $a$ is a (possibly fractional) left or right ideal,
+> Returns the order of which $a$ is a (possibly fractional) left or right ideal
 > if such an order is known.
 """
 function order(a::AlgAssRelOrdIdl)
@@ -37,7 +37,7 @@ isfull_lattice(a::AlgAssRelOrdIdl) = !iszero(basis_matrix(a, copy = false)[1, 1]
     ideal(A::AbsAlgAss, M::PMat, M_in_hnf::Bool = false) -> AlgAssRelOrdIdl
 
 > Returns the ideal in $A$ with basis pseudo-matrix $M$.
-> If `M_in_hnf == true` it is assumed that $M$ is already in lower left pseudo HNF.
+> If `M_in_hnf == true`, it is assumed that $M$ is already in lower left pseudo HNF.
 """
 function ideal(A::AbsAlgAss{S}, M::PMat{S, T}, M_in_hnf::Bool = false) where { S <: NumFieldElem, T }
   !M_in_hnf ? M = pseudo_hnf(M, :lowerleft) : nothing
@@ -53,7 +53,7 @@ end
 > $A$).
 > If the ideal is known to be a right/left/twosided ideal of $O$, `side` may be
 > set to `:right`/`:left`/`:twosided` respectively.
-> If `M_in_hnf == true` it is assumed that $M$ is already in lower left pseudo HNF.
+> If `M_in_hnf == true`, it is assumed that $M$ is already in lower left pseudo HNF.
 """
 function ideal(A::AbsAlgAss{S}, O::AlgAssRelOrd{S, T, U}, M::PMat{S, T}, side::Symbol = :nothing, M_in_hnf::Bool = false) where { S <: NumFieldElem, T, U }
   a = ideal(A, M, M_in_hnf)
@@ -122,7 +122,7 @@ ideal(O::AlgAssRelOrd{S, T, U}, x::AlgAssRelOrdElem{S, T, U}) where { S, T, U } 
     ideal(O::AlgAssRelOrd, x::AbsAlgAssElem, side::Symbol) -> AlgAssRelOrdIdl
     ideal(O::AlgAssRelOrd, x::AlgAssRelOrdElem, side::Symbol) -> AlgAssRelOrdIdl
 
-> Returns the ideal $O \cdot x$, if `side == :left`, and $x \cdot O$, if
+> Returns the ideal $O \cdot x$ if `side == :left`, and $x \cdot O$ if
 > `side == :right`.
 """
 function ideal(O::AlgAssRelOrd{S, T, U}, x::AbsAlgAssElem{S}, side::Symbol) where {S, T, U}
@@ -1223,7 +1223,7 @@ end
     prime_ideals_over(O::AlgAssRelOrd, p::Union{ NfAbsOrdIdl, NfRelOrdIdl })
       -> Vector{AlgAssRelOrdIdl}
 
-> Returns all prime ideal of $O$ lying over $p$ where $p$ is a prime ideal
+> Returns all prime ideals of $O$ lying over $p$ where $p$ is a prime ideal
 > of `base_ring(O)`.
 """
 function prime_ideals_over(O::AlgAssRelOrd, p::Union{ NfAbsOrdIdl, NfRelOrdIdl })

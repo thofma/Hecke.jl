@@ -262,7 +262,7 @@ end
 
 > Returns an element $c \in O$ such that $a = c \cdot b$ where $O$ is the order
 > containing $a$.
-> If `check` is `false` it is not checked whether $c$ is an element of $O$.
+> If `check` is `false`, it is not checked whether $c$ is an element of $O$.
 """
 divexact_right(a::T, b::T, check::Bool = true) where { T <: Union{ AlgAssAbsOrdElem, AlgAssRelOrdElem } } = divexact(a, b, :right, check)
 
@@ -273,7 +273,7 @@ divexact_right(a::T, b::T, check::Bool = true) where { T <: Union{ AlgAssAbsOrdE
 
 > Returns an element $c \in O$ such that $a = b \cdot c$ where $O$ is the order
 > containing $a$.
-> If `check` is `false` it is not checked whether $c$ is an element of $O$.
+> If `check` is `false`, it is not checked whether $c$ is an element of $O$.
 """
 divexact_left(a::T, b::T, check::Bool = true) where { T <: Union{ AlgAssAbsOrdElem, AlgAssRelOrdElem } } = divexact(a, b, :left, check)
 
@@ -415,7 +415,7 @@ function representation_matrix_mod(x::AlgAssAbsOrdElem, d::fmpz, action::Symbol 
   d2 = M.den * M1.den*A.den
   d2c, d2nc = ppio(d2, d)
   d1 = d * d2c
-  A1 = A.num 
+  A1 = A.num
   mod!(A.num, d1)
   S1 = mod(M.num, d1)
   mul!(A1, S1, A1)

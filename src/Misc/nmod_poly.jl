@@ -8,7 +8,7 @@ export rres, rresx
 ################################################################################
 @doc Markdown.doc"""
     resultant_ideal(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where S <: Union{fmpz, Integer} -> T
-A generator for the ideal of the resultant of $f$ anf $g$ using a quadratic-time algorithm.
+A generator for the ideal of the resultant of $f$ and $g$ using a quadratic-time algorithm.
 One of the two polynomials must be monic.
 """
 function resultant_ideal(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where S <: Union{fmpz, Integer}
@@ -19,12 +19,12 @@ function resultant_ideal(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} w
   Rt = parent(f)
   R = base_ring(Rt)
   m = fmpz(modulus(R))
-  
+ 
   #easy = isprime_power(m)
   #if easy
   #  return resultant_ideal_pp(f,g)
   #end
-  
+
   #Some initial checks
   res = R(1)
   if degree(f) < 1 && degree(g) < 1
@@ -33,7 +33,7 @@ function resultant_ideal(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} w
     end
     return res
   end
-  
+
   if degree(f) < 1
     res = mul!(res, res, lead(f)^degree(g))
     return res
@@ -48,24 +48,24 @@ function resultant_ideal(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} w
   if !isone(c)
     res = mul!(res, res, R(c)^degree(f))
   end
-  
+
   if degree(f) < degree(g)
     f, g = g, f
   end
-  
+
   if iszero(res)
     return res
   end
 
-  
+
   #Now, I can safely assume that the degree of f is always greater than the degree of g
   while true
-    
+
     if degree(g) < 1
       res = mul!(res, res, lead(g)^degree(f))
       return res
     end
-  
+
     c, g = primsplit!(g)
     if !isone(c)
       res = mul!(res, res, R(c)^degree(f))
@@ -143,7 +143,7 @@ function resultant_ideal_pp(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S
   R = base_ring(Rt)
   #pn = fmpz(modulus(R))
   pn = modulus(R)
-    
+
   #Some initial checks
   if degree(f) < 1 && degree(g) < 1
     if iszero(f) || iszero(g)
@@ -154,7 +154,7 @@ function resultant_ideal_pp(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S
   end
 
   res = R(1)
-  
+
   if degree(f) < 1
     res = mul!(res, res, lead(f)^degree(g))
     return res
@@ -174,15 +174,15 @@ function resultant_ideal_pp(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S
   if !isone(c)
     res = mul!(res, res, c^degree(f))
   end
-  
+
   if degree(f) < degree(g)
     f, g = g, f
   end
-  
+
   if iszero(res)
     return res
   end
-  
+
   while true
     #want f % g which works iff lead(g) | lead(f)
 
@@ -228,8 +228,8 @@ end
 @doc Markdown.doc"""
     xxgcd(a::ResElem{fmpz}, b::ResElem{fmpz}) -> g, e, f, u, v
     xxgcd(a::ResElem{Integer}, b::ResElem{Integer}) -> g, e, f, u, v
-Coputes $g = \gcd(a, b)$, the Bezout coefficients, $e$, $f$ s.th.
-$g = ea+fb$ and $u$, $v$ s.th. $ev-fu = 1$, $gu = a$ and $gv = b$
+Computes $g = \gcd(a, b)$, the Bezout coefficients, $e$, $f$ s.th.
+$g = ea+fb$ and $u$, $v$ s.th. $ev-fu = 1$, $gu = a$ and $gv = b$.
 """
 function xxgcd(a::ResElem{S}, b::ResElem{S}) where S <: Union{fmpz, Integer}
   g, e, f = gcdx(a, b)
@@ -306,8 +306,8 @@ end
 @doc Markdown.doc"""
     annihilator(a::ResElem{fmpz}) -> r
     annihilator(a::ResElem{Integer}) -> r
-The annihilator of $a$, ie. a generator for the annihilator ideal
-$\{x | xa = 0\} = \langle r\rangle$
+The annihilator of $a$, i.e. a generator for the annihilator ideal
+$\{x | xa = 0\} = \langle r\rangle$.
 """
 function annihilator(a::ResElem{T}) where T <: Union{Integer, fmpz}
   R = parent(a)
@@ -317,7 +317,7 @@ end
 
 @doc Markdown.doc"""
     isunit(f::Union{fmpz_mod_poly,nmod_poly}) -> Bool
-Tests if $f$ is a unit in the polynomial ring, ie. if 
+Tests if $f$ is a unit in the polynomial ring, i.e. if
 $f = u + n$ where $u$ is a unit in the coeff. ring
 and $n$ is nilpotent.
 """
@@ -350,7 +350,7 @@ function iszerodivisor(f::T) where T <: Union{fmpz_mod_poly,nmod_poly}
   return isnilpotent(c)
 end
 
-function Nemo.inv(f::T) where T <: Union{fmpz_mod_poly,nmod_poly} 
+function Nemo.inv(f::T) where T <: Union{fmpz_mod_poly,nmod_poly}
   if !isunit(f)
     error("impossible inverse")
   end
@@ -369,7 +369,7 @@ function Nemo.inv(f::T) where T <: Union{fmpz_mod_poly,nmod_poly}
   return g
 end
 
-function Nemo.invmod(f::fmpz_mod_poly, M::fmpz_mod_poly) 
+function Nemo.invmod(f::fmpz_mod_poly, M::fmpz_mod_poly)
   if !isunit(f)
     r = parent(f)()
     i = ccall((:fmpz_mod_poly_invmod, libflint), Int, (Ref{fmpz_mod_poly}, Ref{fmpz_mod_poly}, Ref{fmpz_mod_poly}), r, f, M)
@@ -409,7 +409,7 @@ function rres_sircana_pp(f1::PolyElem{T}, g1::PolyElem{T}) where T <: ResElem{S}
   e, p = ispower(m)
   f = deepcopy(f1)
   g = deepcopy(g1)
-  
+
   res = R(1)
   while true
     #First, some trivial check.
@@ -426,7 +426,7 @@ function rres_sircana_pp(f1::PolyElem{T}, g1::PolyElem{T}) where T <: ResElem{S}
       f, g = g, f
     end
     if degree(g) < 1
-      
+
       if divisible(lift(coeff(f, degree(f))), p)
         #need the constant coeff * the annihilator of the others...
         a = coeff(f, 1)
@@ -448,13 +448,13 @@ function rres_sircana_pp(f1::PolyElem{T}, g1::PolyElem{T}) where T <: ResElem{S}
         return res
       end
     end
-    
+
     c, g = primsplit!(g)
     res = mul!(res, res, c)
     if iszero(res)
       return res
     end
-    
+
     if divisible(lift(coeff(g, degree(g))), p)
       #one of the coefficient will now be invertible (at least after the splitting)
       g = fun_factor(g)[2]
@@ -482,7 +482,7 @@ function rres_sircana(f1::PolyElem{T}, g1::PolyElem{T}) where T <: ResElem{S} wh
   g = deepcopy(g1)
 
   Zx = PolynomialRing(FlintZZ, cached = false)[1]
-  
+
   res = R(1)
   while true
     #First, some trivial check.
@@ -521,13 +521,13 @@ function rres_sircana(f1::PolyElem{T}, g1::PolyElem{T}) where T <: ResElem{S} wh
         return res
       end
     end
-    
+
     c, g = primsplit!(g)
     res *= R(c)
     if iszero(res)
       return res
     end
-    
+
     if !isunit(lead(g))
       #one of the coefficient will now be invertible (at least after the splitting)
       s = gcd(m, lift(res))
@@ -662,7 +662,7 @@ function _rresx_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} wh
         u = Rt(0)
         v = Rt(0)
       else
-        res, uu, vv = gcdx(lead(f), lead(g)) 
+        res, uu, vv = gcdx(lead(f), lead(g))
         #res = uu*f + vv*g = uu*(U f_in + V g_in) + vv*(u f_in + v g_in)
         #    = uu*U + vv*u  uu*V + vv*v
         u, v = (uu*U + vv*u), (uu*V + vv*v)
@@ -697,7 +697,7 @@ function _rresx_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} wh
         return constant_coefficient(g), u, v
       end
     end
-   
+
 
     if !isunit(lead(g))
       c, g = primsplit(g)
@@ -744,7 +744,6 @@ function _rresx_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} wh
       # f = U*f_in + V*g_in
       # g = u*f_in + v*g_in
       # r = u_ * f + v_ * g 
-
       return res, (u_*U + v_*u), (u_*V + v_*v)
     end
     q, f = divrem(f, g)
@@ -776,7 +775,7 @@ function _rresx_sircana_pp(f1::PolyElem{T}, g1::PolyElem{T}) where T <: ResElem{
         u = Rt(0)
         v = Rt(0)
       else
-        res, uu, vv = gcdx(lead(f), lead(g)) 
+        res, uu, vv = gcdx(lead(f), lead(g))
         #res = uu*f + vv*g = uu*(U f_in + V g_in) + vv*(u f_in + v g_in)
         #    = uu*U + vv*u  uu*V + vv*v
         u, v = (uu*U + vv*u), (uu*V + vv*v)
@@ -841,9 +840,9 @@ function my_divrem(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where S
   q, r = divrem(f, g2)
   q, r = divrem(r*u, g2)
   return g1*r, g2
-end  
+end
 
-#key idea (Carlo): if g = ab and a is a unit mod p, then it is actually a unit 
+#key idea (Carlo): if g = ab and a is a unit mod p, then it is actually a unit
 # in Z/p^kZ, hence the ideal (f, g) = (f, b) where b is now monic.
 #Thus rres(f,g ) = rres(f, b).... and the division can continue
 @doc Markdown.doc"""
@@ -864,7 +863,7 @@ end
 
 @doc Markdown.doc"""
     gcd_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where S <: Union{fmpz, Integer} -> T
-The 'gcd' of $f$ anf $g$ using a quadratic-time algorithm.
+The 'gcd' of $f$ and $g$ using a quadratic-time algorithm.
 """
 function gcd_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where S <: Union{fmpz, Integer}
   Nemo.check_parent(f, g)
@@ -901,7 +900,7 @@ end
 
 @doc Markdown.doc"""
     resultant_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where S <: Union{fmpz, Integer} -> T
-The resultant of $f$ anf $g$ using a quadratic-time algorithm.
+The resultant of $f$ and $g$ using a quadratic-time algorithm.
 """
 function resultant_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where S <: Union{fmpz, Integer}
   Nemo.check_parent(f, g)
@@ -1018,18 +1017,18 @@ function resultant_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S}
 
     if !isunit(lead(gR1))
       g1, g2 = fun_factor(gR1)
-    
+
       #careful: lead(g) = 0 mod lg is possible, so the degree drops!
       #from Wiki:
       # phi: R -> S
       # phi(res(f, g)) = res(phi(f), phi(g)) if the degrees are the same
-      #                = 0                   if both degrees drop (zero column in 
+      #                = 0                   if both degrees drop (zero column in
       #                                         sylvester matrix)
       #                = (-1)^(delta(f)*deg(g))*
       #                  phi(l(g))^delta(f)  if only degree(f) drops
       #                = phi(l(f))^delta(g)  if only degree(g) drops
       #
-      # we use res(f, gh) = res(f, g)res(f, h) which seems to be true in general                  
+      # we use res(f, gh) = res(f, g)res(f, h) which seems to be true in general
       #next: res(fR1, gR1) = res(phi(f), g1)
       #g1 is = 1 mod p
       #however, reverse(fR1) can have a smaller degree then fR1 (eg. x^2 -> 1)
@@ -1037,7 +1036,7 @@ function resultant_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S}
       # there is a (-1)^deg(f)*deg(g) from Wiki for the reverse on top.
 
       res1 *= resultant_sircana(reverse(fR1), reverse(g1))
-      v = valuation(fR1, gen(parent(fR1))) 
+      v = valuation(fR1, gen(parent(fR1)))
            #should be delta(f) = degree(rev(f)) - degree(f)
       res1 *= constant_coefficient(g1)^v*R1(-1)^(v*degree(g1))
       res1 *= R1(-1)^(degree(g1)*degree(fR1))
@@ -1059,7 +1058,7 @@ end
 #  Fun Factor
 #
 ################################################################################
-# factors f as unit * monic 
+# factors f as unit * monic
 # requires some coefficient of f to be a unit
 
 function fun_factor(f::T) where T <: Union{fmpz_mod_poly, nmod_poly}
@@ -1089,7 +1088,7 @@ function fun_factor(f::T) where T <: Union{fmpz_mod_poly, nmod_poly}
     setcoeff!(g0, i, coeff(f, i) * invc)
   end
   setcoeff!(g0, ind, one(R))
-  
+
   Zy, y = PolynomialRing(FlintZZ, "y", cached = false)
   f2 = lift(Zy, f)
   mod = fmpz(gcd(smod, fmpz(modulus(Rx)))) #We have the equality modulo mod
@@ -1120,7 +1119,7 @@ function fun_factor(f::T) where T <: Union{fmpz_mod_poly, nmod_poly}
     t = R1x(lift(Zy, t))
     f1 = R1x(f2)
     i += 1
-    
+
     u, g, s, t = _hensel(f1, u, g, s, t)
 
     @hassert :NfOrd 1 f1 == u*g
@@ -1136,7 +1135,7 @@ function fun_factor(f::T) where T <: Union{fmpz_mod_poly, nmod_poly}
       error("too long")
     end
   end
-  
+
   u0 = Rx(lift(Zy, u))
   g0 = Rx(lift(Zy, g))
   @hassert :NfOrd 1 g0*u0 == f
@@ -1153,7 +1152,7 @@ function _hensel(f::PolyElem{T}, g::PolyElem{T}, h::PolyElem{T}, s::PolyElem{T},
   aux1 = Rx()
   mul!(aux1, g, h)
   sub!(aux1, f, aux1)
-  #aux1 = f-g*h 
+  #aux1 = f-g*h
   aux2 = Rx()
   mul!(aux2, s, aux1)
   q, r = divrem(aux2, h)
@@ -1195,10 +1194,10 @@ end
 @doc Markdown.doc"""
     primsplit!(f::PolyElem{ResElem{fmpz}}) -> c, f
     primsplit!(f::PolyElem{ResElem{Integer}}) -> c, f
-Computes the contents $c$ and the primitive part of $f$ destructively.   
+Computes the contents $c$ and the primitive part of $f$ destructively.
 """
 function primsplit!(f::PolyElem{T}) where T <: ResElem{S} where S <: Union{fmpz, Integer}
-  
+
   @assert !iszero(f)
   d = degree(f)
   if iszero(d)
@@ -1336,8 +1335,8 @@ end
 
 @doc Markdown.doc"""
     compose_mod(x::nmod_poly, y::nmod_poly, z::nmod_poly) -> nmod_poly
-
-  Compute x(y) mod z
+    
+  Compute $x(y)$ mod $z$.
 """
 function compose_mod(x::nmod_poly, y::nmod_poly, z::nmod_poly)
   check_parent(x,y)
@@ -1360,8 +1359,8 @@ end
 
 @doc Markdown.doc"""
     taylor_shift(x::nmod_poly, c::UInt) -> nmod_poly
-
-  Compute x(t-c)
+  
+  Compute $x(t-c)$.
 """
 function taylor_shift(x::nmod_poly, c::UInt)
   r = parent(x)()

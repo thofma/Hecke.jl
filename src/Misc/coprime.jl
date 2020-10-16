@@ -2,13 +2,13 @@ import Nemo.isone, Nemo.divexact, Base.copy
 export divexact!, gcd_into!, coprime_base, coprime_base_insert
 
 function divexact!(a::fmpz, b::fmpz)
-  ccall((:fmpz_divexact, libflint), Nothing, 
+  ccall((:fmpz_divexact, libflint), Nothing,
           (Ref{fmpz}, Ref{fmpz}, Ref{fmpz}), a, a, b)
   return a
 end
 
 function gcd_into!(a::fmpz, b::fmpz, c::fmpz)
-  ccall((:fmpz_gcd, libflint), Nothing, 
+  ccall((:fmpz_gcd, libflint), Nothing,
           (Ref{fmpz}, Ref{fmpz}, Ref{fmpz}), a, b, c)
   return a
 end
@@ -26,7 +26,7 @@ function mul_into!(a::fmpz, b::fmpz, c::fmpz)
   return a
 end
 
-function copy(a::fmpz) 
+function copy(a::fmpz)
   return deepcopy(a)
 end
 
@@ -95,7 +95,7 @@ function prod_end(A::ProdEnv)
   return b
 end
 
-function my_prod(a::AbstractArray{T, 1}) where T 
+function my_prod(a::AbstractArray{T, 1}) where T
   if length(a) <100
     return prod(a)
   end
@@ -157,7 +157,7 @@ function augment_bach(S::Array{E, 1}, m::E) where E
   if i <= length(S)
     T = vcat(T, view(S, i:length(S)))
   end
-  if !isunit(m) 
+  if !isunit(m)
     push!(T, m)
   end
   return T
@@ -177,10 +177,10 @@ function coprime_base_bach(a::Array{E, 1}) where E #T need to support GCDs
   end
   return T
 end
-   
+
 # Bernstein: coprime bases
 #
-#Note: Bernstein needs bigints, either Integer or fmpz 
+#Note: Bernstein needs bigints, either Integer or fmpz
 #      well, polys are also OK, small integers are not.
 
 # could/ should be optimsed using divexact! and gcd_into!
@@ -280,7 +280,7 @@ function augment_bernstein(P::Array{E, 1}, b::E) where E
     push!(T, r)
   end
   S = split_bernstein(a, F.ptree)
-  for X in S 
+  for X in S
     T = vcat(T, pair_bach(X[1], X[2]))
   end
   return T
@@ -316,11 +316,11 @@ function augment_steel(S::Array{E, 1}, a::E, start::Int = 1) where E
   if isunit(a)
     return S
   end
-  
+
   g = a
   new = true
 
-  while i<=length(S) && !isone(a) 
+  while i<=length(S) && !isone(a)
     if new
       g = gcd(S[i], a)
       new = false
@@ -361,7 +361,7 @@ function coprime_base_steel(S::Array{E, 1}) where E
   return T
 end
 
-##implemented 
+##implemented
 # Bernstein: asymptotically fastest, linear in the total input size
 #   pointless for small ints as it requires intermediate numbers to be
 #   huge
@@ -369,15 +369,15 @@ end
 #   can operate on Int types as no intermediate is larger than the input
 # Steel: a misnomer: similar to Magma, basically implements a memory
 #   optimised version of Bach
-#   faster than Magma on 
+#   faster than Magma on
 # > I := [Random(1, 10000) * Random(1, 10000) : x in [1..10000]];
 # > time c := CoprimeBasis(I);
 # julia> I = [fmpz(rand(1:10000))*rand(1:10000) for i in 1:10000];
-# 
+#
 # experimentally, unless the input is enormous, Steel wins
 # on smallish input Bach is better than Bernstein, on larger this
 # changes
-# 
+#
 # needs
 # isone, gcd_into!, divexact!, copy
 # (some more for Bernstein: FactorBase, gcd, divexact)
@@ -385,15 +385,13 @@ end
 @doc Markdown.doc"""
     coprime_base{E}(S::Array{E, 1}) -> Array{E, 1}
 
-Returns a coprime base for S, ie. the resulting array contains pairwise coprime objects that multiplicatively generate the same set as the input array.
+Returns a coprime base for $S$, i.e. the resulting array contains pairwise coprime objects that multiplicatively generate the same set as the input array.
 """
 coprime_base(x) = coprime_base_steel(x)
 
 @doc Markdown.doc"""
     coprime_base_insert{E}(S::Array{E, 1}, a::E) -> Array{E, 1}
 
-Given a coprime array S, insert a new element, ie. find a coprime base for push(S, a)
+Given a coprime array $S$, insert a new element, i.e. find a coprime base for `push(S, a)`.
 """
 coprime_base_insert(S, a) = augment_steel(S, a)
-
-

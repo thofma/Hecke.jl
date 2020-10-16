@@ -20,7 +20,7 @@ end
 @doc Markdown.doc"""
     istotally_complex(K::AnticNumberField) -> Bool
 
-Returns true if and only if $K$ is totally real, that is, if all roots of the
+Returns true if and only if $K$ is totally complex, that is, if all roots of the
 defining polynomial are not real.
 """
 function istotally_complex(K::AnticNumberField)
@@ -36,7 +36,7 @@ end
 @doc Markdown.doc"""
     conjugates(x::nf_elem, abs_tol::Int) -> Vector{acb}
 
-Compute the the conjugates of `x` as elements of type `acb`.
+Compute the conjugates of `x` as elements of type `acb`.
 Recall that we order the complex conjugates
 $\sigma_{r+1}(x),...,\sigma_{r+2s}(x)$ such that
 $\sigma_{i}(x) = \overline{sigma_{i + s}(x)}$ for $r + 1 \leq i \leq r + s$.
@@ -164,7 +164,7 @@ end
 @doc Markdown.doc"""
     conjugates_arb_real(x::nf_elem, abs_tol::Int) -> Vector{arb}
 
-Compute the the real conjugates of `x` as elements of type `arb`.
+Compute the real conjugates of `x` as elements of type `arb`.
 >
 Every entry `y` of the array returned satisfies
 `radius(y) < 2^-abs_tol`.
@@ -192,7 +192,7 @@ end
 @doc Markdown.doc"""
     conjugates_complex(x::nf_elem, abs_tol::Int) -> Vector{acb}
 
-Compute the the complex conjugates of `x` as elements of type `acb`.
+Compute the complex conjugates of `x` as elements of type `acb`.
 Recall that we order the complex conjugates
 $\sigma_{r+1}(x),...,\sigma_{r+2s}(x)$ such that
 $\sigma_{i}(x) = \overline{sigma_{i + s}(x)}$ for $r + 1 \leq i \leq r + s$.
@@ -232,7 +232,7 @@ end
 Returns the elements
 $(\log(\lvert \sigma_1(x) \rvert),\dotsc,\log(\lvert\sigma_r(x) \rvert),
 \dotsc,2\log(\lvert \sigma_{r+1}(x) \rvert),\dotsc,
-2\log(\lvert \sigma_{r+s}(x)\rvert))$ as elements of type `arb` radius
+2\log(\lvert \sigma_{r+s}(x)\rvert))$ as elements of type `arb` with radius
 less then `2^-abs_tol`.
 """
 function conjugates_log(x::nf_elem, abs_tol::Int = 32, T = arb)
@@ -344,7 +344,7 @@ function _minkowski_map_and_apply(a, abs_tol, G, work_tol::Int = abs_tol)
   A = Array{arb}(undef, degree(K))
   c = conjugates_arb(a, work_tol)::Vector{acb}
   r, s = signature(K)
-  
+
   for i = 1:r
     @assert isreal(c[i])
     A[i] = real(c[i])
@@ -409,7 +409,7 @@ end
 
 #@doc Markdown.doc"""
 ##    _signs(a::nf_elem) -> Array{Int, 1}
-#> For a non-zero elements $a$ return the signs of all real embeddings.
+#> For a non-zero element $a$ return the signs of all real embeddings.
 #"""
 function _signs(a::nf_elem)
   if iszero(a)
@@ -443,7 +443,7 @@ end
 
 #@doc Markdown.doc"""
 ##    signs(a::FacElem{nf_elem, AnticNumberField}) -> Array{Int, 1}
-#> For a non-zero elements $a$ in factored form,
+#> For a non-zero element $a$ in factored form,
 #> return the signs of all real embeddings.
 #"""
 function _signs(a::FacElem{nf_elem, AnticNumberField})
@@ -467,7 +467,7 @@ end
     complex_conjugation(K::AnticNumberField)
 
 Given a totally complex normal number field, this function returns an
-automorphism which is the restrition of complex conjugation at one embedding.
+automorphism which is the restriction of complex conjugation at one embedding.
 """
 function complex_conjugation(K::AnticNumberField; auts::Vector{NfToNfMor} = NfToNfMor[])
   if !isempty(auts)
@@ -482,7 +482,7 @@ function complex_conjugation(K::AnticNumberField; auts::Vector{NfToNfMor} = NfTo
   d = length(A)
   !istotally_complex(K) && error("Number field must be totally complex")
   #First, quick and dirty. If only one automorphism works, then we return it
-  p = 32 
+  p = 32
   while true
     c = conjugates(a, p)
     for i = 1:d
@@ -520,7 +520,7 @@ end
 function _find_complex_conjugation(K::AnticNumberField, A::Vector{NfToNfMor})
   a = gen(K)
   #First, quick and dirty. If only one automorphism works, then we return it
-  p = 32 
+  p = 32
   while true
     c = conjugates(a, p)
     overlap = false
@@ -562,10 +562,10 @@ function iscomplex_conjugation(f::NfToNfMor)
   K = domain(f)
   @assert K == codomain(f)
   !istotally_complex(K) && error("Number field must be totally complex")
-  p = 32 
+  p = 32
   d = degree(K)
   a = gen(K)
-  img_a = f.prim_img 
+  img_a = f.prim_img
   while true
     c = conjugates(a, p)
     cc = conj.(conjugates(img_a, p))

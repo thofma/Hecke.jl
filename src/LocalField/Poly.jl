@@ -6,7 +6,7 @@ add_assert_scope(:padic_poly)
 
 Computes a lift of the element from the residue ring.
 """
-function lift(a::T, K::PadicField) where T <: Union{Nemo.nmod, Generic.Res{fmpz}, gfp_elem} 
+function lift(a::T, K::PadicField) where T <: Union{Nemo.nmod, Generic.Res{fmpz}, gfp_elem}
   n = modulus(parent(a))
   p = prime(K)
   v, fl = remove(n, p)
@@ -124,7 +124,7 @@ end
 
 ################################################################################
 #
-#  Gcd 
+#  Gcd
 #
 ################################################################################
 
@@ -158,7 +158,7 @@ function Base.gcd(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{padic
         v, f1 = fun_factor(f)
         return reverse(gcd(reverse(u), reverse(v)))*gcd(f1, g1)
       end
-    end 
+    end
     f = mod(f, g)
     if degree(f) < 1
       if iszero(f)
@@ -238,7 +238,7 @@ function gcdx(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{padic, qa
   Kx = parent(f)
   if length(g) <= 1
     if iszero(g)
-      return f, one(Kx), zero(Kx) 
+      return f, one(Kx), zero(Kx)
     else
       s = Kx(inv(coeff(g, 0)))
       @hassert one(Kx) == s*g
@@ -304,10 +304,10 @@ function gcdx(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{padic, qa
   end
   U1 = u1*s1
   V1 = s1*ff*v1+t1*u1*uf+t1*v1*ug
-  
+
   DD = d*d1
   UU = U*U1*f + U1*V*gg+U*V1*ug
-  VV = V*V1 
+  VV = V*V1
   @hassert :padic_poly 1  DD == UU*f + VV*g
   return DD, UU, VV
 end
@@ -441,7 +441,7 @@ degree(::FlintPadicField) = 1
 @doc Markdown.doc"""
     characteristic_polynomial(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{padic, qadic} -> Generic.Poly{T}
 
-Computes Res_x(f(x), t- g(x)).
+Computes $\mathrm{Res}_x(f(x), t- g(x))$.
 """
 function characteristic_polynomial(f::Generic.Poly{padic}, g::Generic.Poly{padic})
   Kt = parent(f)
@@ -481,7 +481,7 @@ function characteristic_polynomial(f::Generic.Poly{T}, g::Generic.Poly{T}) where
   end
   int_ideals = Vector{typeof(f)}(undef, length(ev_points))
   for i = 1:length(int_ideals)
-    int_ideals[i] = Kt(T[-ev_points[i], K(1)]) 
+    int_ideals[i] = Kt(T[-ev_points[i], K(1)])
   end
   crtctx = crt_env(int_ideals)
   resu = crt(res, crtctx)
@@ -551,14 +551,14 @@ function Hensel_factorization(f::Generic.Poly{T}) where T <: Union{padic, qadic}
 end
 
 
-mutable struct HenselCtxdr{S} 
+mutable struct HenselCtxdr{S}
   f::PolyElem{S}
   lf::Array{PolyElem{S}, 1}
   la::Array{PolyElem{S}, 1}
   p::S
   n::Int
-  
-  function HenselCtxdr{qadic}(f::Generic.Poly{qadic}, lfp::Vector{Generic.Poly{qadic}}, la::Vector{Generic.Poly{qadic}}, p::qadic, n::Int) 
+
+  function HenselCtxdr{qadic}(f::Generic.Poly{qadic}, lfp::Vector{Generic.Poly{qadic}}, la::Vector{Generic.Poly{qadic}}, p::qadic, n::Int)
     return new(f, lfp, la, p, n)
   end
 
@@ -602,7 +602,7 @@ function lift(C::HenselCtxdr, mx::Int)
   N = valuation(p)
 #  @show map(precision, coefficients(C.f)), N, precision(parent(p))
   #have: N need mx
-  ch = Int[mx] 
+  ch = Int[mx]
   while ch[end] > N
     push!(ch, div(ch[end]+1, 2))
   end
@@ -657,7 +657,7 @@ end
     slope_factorization(f::Generic.Poly{T}) where T <: Union{padic, qadic} -> Dict{Generic.Poly{T}, Int}
 
 Computes a factorization of $f$ such that every factor has a one-sided generalized Newton polygon.
-The output is a dictionary whose keys are the factors of $f$ and the corresponding value is the multiplicity. 
+The output is a dictionary whose keys are the factors of $f$ and the corresponding value is the multiplicity.
 """
 function slope_factorization(f::Generic.Poly{T}) where T <: Union{padic, qadic}
 

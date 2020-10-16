@@ -47,7 +47,7 @@ function lift(C::HenselCtxQadic, mx::Int = minimum(precision, coefficients(C.f))
   N = valuation(p)
 #  @show map(precision, coefficients(C.f)), N, precision(parent(p))
   #have: N need mx
-  ch = [mx] 
+  ch = [mx]
   while ch[end] > N
     push!(ch, div(ch[end]+1, 2))
   end
@@ -100,7 +100,7 @@ function precision(C::HenselCtxQadic)
   return valuation(C.p)
 end
 
-# interface to use Bill's Z/p^k lifting code. same algo as above, but 
+# interface to use Bill's Z/p^k lifting code. same algo as above, but
 # tighter implementation
 mutable struct HenselCtxPadic <: Hensel
   X::HenselCtx
@@ -119,7 +119,7 @@ mutable struct HenselCtxPadic <: Hensel
   end
 end
 
-function lift(C::HenselCtxPadic, mx::Int) 
+function lift(C::HenselCtxPadic, mx::Int)
   for i=0:degree(C.f)
     setcoeff!(C.X.f, i, lift(coeff(C.f, i)))
   end
@@ -165,7 +165,7 @@ end
 @doc Markdown.doc"""
     round(::fmpz, a::fmpz, b::fmpz, bi::fmpz) -> fmpz
 
-Computes `round(a//b)` using the pre-inverse of `2b`    
+Computes `round(a//b)` using the pre-inverse of `2b`.    
 """
 function Base.round(::Type{fmpz}, a::fmpz, b::fmpz, bi::fmpz_preinvn_struct)
   s = sign(a)
@@ -188,7 +188,7 @@ function Base.round(::Type{fmpz}, a::fmpz, b::fmpz)
 #  @assert r == round(fmpz, a//b)
   return r
 end
-  
+
 #TODO: think about computing pM[1][1,:]//pM[2] as a "float" approximation
 #      to save on multiplications
 function reco(a::fmpz, M, pM::Tuple{fmpz_mat, fmpz, fmpz_preinvn_struct}, O)
@@ -236,7 +236,7 @@ function factor_new(f::PolyElem{nf_elem})
   while true
     @vprint :PolyFactor 3 "Trying with $p\n "
     p = next_prime(p)
-    if isindex_divisor(zk, p) || iszero(discriminant(zk) % p) 
+    if isindex_divisor(zk, p) || iszero(discriminant(zk) % p)
       continue
     end
     P = prime_decomposition(zk, p, 1)
@@ -303,7 +303,7 @@ end
 
 Zassenhaus' factoring algorithm over an absolute simple field. Given a prime ideal $P$ which
 has to be an unramified non-index divisor, a factorisation of $f$ in the $P$-adic completion
-is computed. In the last step, all combinations of the local factors are tried to find the 
+is computed. In the last step, all combinations of the local factors are tried to find the
 correct factorisation.
 $f$ needs to be square-free and square-free modulo $P$ as well.
 """
@@ -352,13 +352,13 @@ function zassenhaus(f::PolyElem{nf_elem}, P::NfOrdIdl; degset::Set{Int} = Set{In
   #      combination has to respect he prime splitting in the extension
   #      the norm(poly) is the prod of the local norm(poly)s
   #TODO: add/use degree sets and search restrictions. Users might want restricted degrees
-  #TODO: add a call to jump from van Hoeij to Zassenhaus once a partitioning 
+  #TODO: add a call to jump from van Hoeij to Zassenhaus once a partitioning
   #      is there.
   used = empty(S)
   res = typeof(f)[]
   for d = 1:length(S)
     for s = subsets(S, d)
-      if length(Base.intersect(used, s)) > 0 
+      if length(Base.intersect(used, s)) > 0
 #        println("re-using data")
         continue
       end
@@ -448,7 +448,7 @@ end
 #the LLL_basis of the ideal
 function grow_prec!(vH::vanHoeijCtx, pr::Int)
   lift(vH.H, pr)
- 
+
   @vtime :PolyFactor 2 X1 = vH.P^pr
   @vtime :PolyFactor 2 X2 = basis_matrix(X1)
   @vtime :PolyFactor 2 vH.Ml = lll(X2)
@@ -466,7 +466,7 @@ end
     van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 20) -> Array{PolyElem{nf_elem}, 1}
 
 A van Hoeij-like factorisation over an absolute simple number field, using the factorisation in the
-$P$-adic completion where $P$ has to be an unramified non-index divisor and the square-free $f$ has 
+$P$-adic completion where $P$ has to be an unramified non-index divisor and the square-free $f$ has
 to be square-free mod $P$ as well.
 
 Approach is taken from Hart, Novacin, van Hoeij in ISSAC.
@@ -537,7 +537,7 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 20)
     end
     @vtime :PolyFactor 1 grow_prec!(vH, i)
 
-   
+
     av_bits = sum(nbits, vH.Ml)/degree(K)^2
     @vprint :PolyFactor 1 "obtaining CLDs...\n"
 
@@ -559,7 +559,7 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 20)
     end
 
     # In the end, p-adic precision needs to be large enough to
-    # cover some CLDs. If you want the factors, it also has to 
+    # cover some CLDs. If you want the factors, it also has to
     # cover those. The norm change constants also come in ...
     # and the degree of P...
 
@@ -605,7 +605,7 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 20)
     # until done (whatever that means)
     # if unlucky: re-do Hensel and start over again, hopefull retaining some info
     # can happen if the CLD coeffs are too large for the current Hensel level
-    
+
     while length(have) > length(used)
       local m
       m_empty = true
@@ -621,7 +621,7 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 20)
       n = have[m[2]]
       @assert !(n in used)
       push!(used, n)
-      
+
       i = findfirst(x->x == n, have) #new data will be in block i of C
       @vprint :PolyFactor 2 "trying to use coeff $n which is $i\n"
       if b[i] > precision(codomain(mC))
@@ -634,9 +634,9 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 20)
 
       B = sub(C, 1:r, (i-1)*degree(K)+1:i*degree(K))
 #      @show i, maximum(nbits, B)
-      
+
       T = sub(M, 1:nrows(M), 1:r)
-      B = T*B   # T contains the prec_scale 
+      B = T*B   # T contains the prec_scale
       mod_sym!(B, vH.pM[2]*fmpz(2)^prec_scale)
 
 #      @show maximum(nbits, B), nbits(vH.pM[2]), b[i]
@@ -694,7 +694,7 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 20)
               continue
             end
           end
-          @vtime :PolyFactor 2 g = prod(factor(vH.H)[v]) 
+          @vtime :PolyFactor 2 g = prod(factor(vH.H)[v])
           if degree(P) == 1
             @vtime :PolyFactor 2 G = parent(f)([K(reco(lift(coeff(mC(den*lead(f)), 0)*coeff(g, l)), vH.Ml, vH.pMr, order(P))) for l=0:degree(g)])
           else
@@ -725,7 +725,7 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 20)
 
     up_to = up_to_start = min(2*up_to_start, N)
     up_to = min(N, up_to)
-    from = N-up_to 
+    from = N-up_to
     from = min(from, N)
     from = max(up_to, from)
 
@@ -829,4 +829,4 @@ end
     then b = g and f = div(a-bh, x^n)
     establishing the link between rat-recon and Berlekamp Massey
 
-=#    
+=#

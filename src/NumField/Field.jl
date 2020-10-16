@@ -52,7 +52,7 @@ elem_type(::NumField)
 ################################################################################
 
 @doc Markdown.doc"""
-    degree(L::NumField) -> Int 
+    degree(L::NumField) -> Int
 
 Given a number field $L/K$, this function returns the degree of $L$ over $K$.
 """
@@ -67,7 +67,7 @@ dim(K::NumField) = degree(K)
 ################################################################################
 
 @doc Markdown.doc"""
-    absolute_degree(L::NumField) -> Int 
+    absolute_degree(L::NumField) -> Int
 
 Given a number field $L/K$, this function returns the degree of $L$ over
 $\mathbf Q$.
@@ -113,7 +113,7 @@ Testing that $f$ is irreducible can be disabled by setting the keyword argument
 `check` to `false`.
 """
 NumberField(f::PolyElem{<:NumFieldElem}, s::String;
-            cached::Bool = false, check::Bool = false) 
+            cached::Bool = false, check::Bool = false)
 
 ################################################################################
 #
@@ -139,7 +139,7 @@ $M/\mathbf{Q}$ together with a $\mathbf{Q}$-linear isomorphism $M \to K$.
 absolute_field(::NumField)
 
 ################################################################################
-# 
+#
 #  Normal basis
 #
 ################################################################################
@@ -245,7 +245,7 @@ export set_var!, set_vars!
     set_var!(L::SimpleNumField, s::Symbol)
 
 Sets the name used when printing the primitive element of $L$.
-This can only be set on fields constructed using `cached = false`
+This can only be set on fields constructed using `cached = false`.
 """
 function set_var!(L::SimpleNumField{T}, s::String) where {T}
   iscached(L) && error("cannot set the name in a cached field")
@@ -287,7 +287,7 @@ end
     set_vars!(L::NonSimpleNumField{T}, a::Array{Symbol, 1})
 
 Set the printing names for the generators to the string specified in
-the array. The length has to be exactly `ngens(L)`
+the array. The length has to be exactly `ngens(L)`.
 """
 function set_vars!(L::NonSimpleNumField{T}, a::Array{String, 1}) where {T}
   length(a) == ngens(L) || error("need to have as many strings as generators")
@@ -320,6 +320,7 @@ function isquadratic_type(L::AnticNumberField)
   end
   return false, fmpz(1)
 end
+<<<<<<< HEAD
 
 ################################################################################
 #
@@ -352,3 +353,5 @@ end
 function absolute_basis(K::NumField{fmpq})
   return basis(K)
 end
+=======
+>>>>>>> 4fd5bdee6a4553779c173919db96bcc25d68ff06

@@ -25,7 +25,7 @@ end
 #
 ###############################################################################
 @doc Markdown.doc"""
-    maximal_order(O::NfAbsOrd; index_divisors::Vector{fmpz}, discriminant::fmpz, ramified_primes::Vector{fmpz}) -> NfAbsOrd
+    MaximalOrder(O::NfAbsOrd; index_divisors::Vector{fmpz}, discriminant::fmpz, ramified_primes::Vector{fmpz}) -> NfAbsOrd
 
 Returns the maximal order of the number field that contains $O$. Additional information can be supplied if they are already known, as the ramified primes,
 the discriminant of the maximal order or a set of integers dividing the index of $O$ in the maximal order.
@@ -50,7 +50,7 @@ function MaximalOrder(O::NfAbsOrd{S, T}; index_divisors::Vector{fmpz} = fmpz[], 
 end
 
 @doc Markdown.doc"""
-    maximal_order(K::Union{AnticNumberField, NfAbsNS}; discriminant::fmpz, ramified_primes::Vector{fmpz}) -> NfAbsOrd
+    MaximalOrder(K::Union{AnticNumberField, NfAbsNS}; discriminant::fmpz, ramified_primes::Vector{fmpz}) -> NfAbsOrd
 
 Returns the maximal order of $K$. Additional information can be supplied if they are already known, as the ramified primes
 or the discriminant of the maximal order.
@@ -58,7 +58,7 @@ or the discriminant of the maximal order.
 # Example
 
 ```julia-repl
-julia> Qx, xx = FlintQQ["x"];
+julia> Qx, x = FlintQQ["x"];
 julia> K, a = NumberField(x^3 + 2, "a");
 julia> O = MaximalOrder(K);
 ```
@@ -103,7 +103,7 @@ end
 #
 ################################################################################
 @doc Markdown.doc"""
-    pmaximal_overorder_at(O::NfOrd, primes::Array{fmpz, 1}) - > NfOrd
+    pmaximal_overorder_at(O::NfOrd, primes::Array{fmpz, 1}) -> NfOrd
 
 Given a set of prime numbers, this function returns an overorder of $O$ which
 is maximal at those primes.
@@ -291,7 +291,7 @@ function _TameOverorderBL(O::NfOrd, lp::Array{fmpz,1})
     if iscoprime(q, discriminant(OO))
       continue
     end
-    _, q = ispower(q) 
+    _, q = ispower(q)
     if isprime(q)
       OO1 = pmaximal_overorder(O, q)
       if valuation(discriminant(OO1), q) < valuation(discriminant(OO), q)
@@ -409,7 +409,7 @@ function _qradical(O::NfOrd, q::fmpz)
 end
 
 function _cycleBL(O::NfOrd, q::fmpz)
-  
+
   q1, I = _qradical(O, q)
   if !isone(q1)
     return O, q1
@@ -734,7 +734,7 @@ end
 
 @doc Markdown.doc"""
     factor_shape_refined(f::gfp_poly)
-Given a polynomial f over a finite field, it returns an array having one
+Given a polynomial $f$ over a finite field, it returns an array having one
 entry for every irreducible factor giving its degree and its multiplicity.
 """
 function factor_shape_refined(x::gfp_poly) where {T <: RingElem}

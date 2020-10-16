@@ -208,7 +208,7 @@ end
 ################################################################################
 @doc Markdown.doc"""
      getindex(G::GrpGen, i::Int)
-Returns the $i$ th element of $G$.
+Returns the $i$-th element of $G$.
 """
 function getindex(G::GrpGen, i::Int)
   return GrpGenElem(G, i)
@@ -400,7 +400,7 @@ end
 
 @doc Markdown.doc"""
      _isnormal(H::Vector{GrpGenElem}) -> Bool
-Check if $H$ is invariant under conjugaction by the generators of the group.
+Check if $H$ is invariant under conjugation by the generators of the group.
 """
 function _isnormal(H::Vector{GrpGenElem})
   S = gens(parent(H[1]))
@@ -418,7 +418,7 @@ end
 @doc Markdown.doc"""
      _isnormal(H::Vector{GrpGenElem}, gen::GrpGenElem) -> Bool
 Check if the cyclic group $H$ with generator $gen$ is invariant under
-conjugaction by the generators of the group.
+conjugation by the generators of the group.
 """
 function _isnormal(H::Vector{GrpGenElem}, gen::GrpGenElem)
   S = gens(parent(H[1]))
@@ -466,7 +466,7 @@ end
 @doc Markdown.doc"""
      _subgroups_all(G::GrpGen; normal::Bool = false)
 Iteratively built up subgroups from cyclic groups.
-Any subgroup is of the form <C_1,...C_k>, where k are cyclic subgroups.
+Any subgroup is of the form <C_1,...,C_k>, where k are cyclic subgroups.
 """
 function _subgroups_all(G::GrpGen; normal::Bool = false)
   res = Vector{GrpGenElem}[]
@@ -647,7 +647,7 @@ end
 
 @doc Markdown.doc"""
      quotient(G::GrpGen, H::GrpGen, HtoG::GrpGenToGrpGenMor)
-Returns the quotient group 'Q' = $G$/$H$ with canonical map $G$ -> $Q$.
+Returns the quotient group $Q$ = $G$/$H$ with canonical map $G$ -> $Q$.
 """
 function quotient(G::GrpGen, H::GrpGen, HtoG::GrpGenToGrpGenMor)
   elems = elements(HtoG)
