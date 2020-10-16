@@ -115,7 +115,10 @@ Nemo.one(K::NfRelNS) = K(Nemo.one(parent(K.pol[1])))
 
 Nemo.one(a::NfRelNSElem) = one(a.parent)
 
-(K::NfRelNS{T})(a::NfRelNSElem) where {T} = a
+function zero!(a::NfRelNSElem)
+  zero!(a.data)
+  return a
+end
 
 ################################################################################
 #
@@ -132,6 +135,7 @@ Nemo.promote_rule(::Type{NfRelNSElem{T}}, ::Type{fmpq}) where {T <: Nemo.RingEle
 Nemo.promote_rule(::Type{NfRelNSElem{T}}, ::Type{T}) where {T} = NfRelNSElem{T}
 
 Nemo.promote_rule(::Type{NfRelNSElem{T}}, ::Type{NfRelNSElem{T}}) where T <: Nemo.RingElement = NfRelNSElem{T}
+
 
 function Nemo.promote_rule(::Type{NfRelNSElem{T}}, ::Type{U}) where {T <: Nemo.RingElement, U <: Nemo.RingElement}
   Nemo.promote_rule(T, U) == T ? NfRelNSElem{T} : Union{}
@@ -199,6 +203,12 @@ function NumberField(f::Array{Generic.Poly{T}, 1}, s::String="_\$"; cached::Bool
     end
   end
   return K, gens(K)
+end
+
+function number_field(::Type{NfAbsNS}, L::NfRelNS{nf_elem})
+  @assert degree(base_field(L)) == 1
+  pols = fmpq_poly[isunivariate(map_coeffs(FlintQQ, x))[2] for x in L.pol]
+  return number_field(pols, check = false)
 end
 
 Nemo.gens(K::NfRelNS) = [K(x) for x = gens(parent(K.pol[1]))]
@@ -428,15 +438,10 @@ end
 function elem_to_mat_row!(M::Generic.Mat{T}, i::Int, a::NfRelNSElem{T}) where T
   a.parent
   K = parent(a)
-  #C = CartesianIndices(Tuple(0:total_degree(f)-1 for f = K.pol))
-  #L = LinearIndices(C)
-  #CC = [UInt[c[i] for i=length(K.pol):-1:1] for c = C]
   for j=1:ncols(M)
     M[i, j] = zero(base_field(K))
   end
-  for j=1:length(a.data)
-    #p = findfirst(isequal(a.data.exps[:, j]), CC)
-    #@assert p !== nothing
+  for j = 1:length(a.data)
     M[i, monomial_to_index(j, a)] = a.data.coeffs[j]
   end
 end
@@ -760,7 +765,7 @@ function simple_extension(K::NfRelNS{T}) where {T}
   elem_to_mat_row!(M, 1, z)
   elem_to_mat_row!(M, 2, pe)
   mul!(z, z, pe)
-  for i=3:degree(K)
+  for i = 3:degree(K)
     mul!(z, z, pe)
     elem_to_mat_row!(M, i, z)
   end

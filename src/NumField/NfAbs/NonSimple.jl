@@ -837,6 +837,37 @@ mutable struct NfAbsToNfAbsNS <: Map{AnticNumberField, NfAbsNS, HeckeMap, NfAbsT
   end  
 end
 
+function _compute_preimage(f::NfAbsToNfAbsNS)
+  K = domain(f)
+  L = codomain(f)
+  M = zero_matrix(FlintQQ, degree(K), degree(K))
+  el = one(L)
+  a = f.prim_img
+  elem_to_mat_row!(M, 1, el)
+  for i = 2:degree(K)
+    el = mul!(el, el, a)
+    elem_to_mat_row!(M, i, el)
+  end
+  N = zero_matrix(FlintQQ, ngens(L), degree(K))
+  gL = gens(L)
+  for i = 1:length(gL)
+    elem_to_mat_row!(N, i, gL[i])
+  end
+  fl, x = can_solve(M, N, side = :left)
+  @assert fl
+  x1, den = _fmpq_mat_to_fmpz_mat_den(x)
+  embs = nf_elem[elem_from_mat_row(K, x1, i, den) for i = 1:nrows(x)]
+  f.emb = embs
+  local preimg
+  let embs = embs
+    function preimg(x::NfAbsNSElem)
+      return evaluate(data(x), embs)
+    end
+  end
+  f.header.preimage = preimg
+  return nothing
+end
+
 hom(K::AnticNumberField, L::NfAbsNS, a::NfAbsNSElem) = NfAbsToNfAbsNS(K, L, a)
 
 hom(K::AnticNumberField, L::NfAbsNS, a::NfAbsNSElem, b::Vector{nf_elem}) = NfAbsToNfAbsNS(K, L, a, b)
@@ -858,14 +889,18 @@ mutable struct NfAbsNSToNfAbsNS <: Map{NfAbsNS, NfAbsNS, HeckeMap, NfAbsNSToNfAb
   end  
 end
 
-function hom(K::NfAbsNS, L::NfAbsNS, emb::Array{NfAbsNSElem, 1})
+function id_hom(K::NfAbsNS)
+  return NfAbsNSToNfAbsNS(K, K, gens(K))
+end
+
+function hom(K::NfAbsNS, L::NfAbsNS, emb::Array{NfAbsNSElem, 1}; check::Bool = false)
   return NfAbsNSToNfAbsNS(K, L, emb)
 end 
 
 function Base.:(*)(f::NfAbsNSToNfAbsNS, g::NfAbsNSToNfAbsNS)
-  domain(f) == codomain(g) || throw("Maps not compatible")
-  a = gens(domain(g))
-  return NfAbsNSToNfAbsNS(domain(g), codomain(f), NfAbsNSElem[ g(f(x)) for x in a])
+  codomain(f) == domain(g) || throw("Maps not compatible")
+  a = gens(domain(f))
+  return NfAbsNSToNfAbsNS(domain(f), codomain(g), NfAbsNSElem[ g(f(x)) for x in a])
 end
 
 function Base.:(==)(f::NfAbsNSToNfAbsNS, g::NfAbsNSToNfAbsNS)

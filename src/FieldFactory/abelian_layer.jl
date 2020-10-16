@@ -78,7 +78,7 @@ function abelian_extensionsQQ(gtype::Array{Int, 1}, bound::fmpz, only_real::Bool
   for i = 1:length(l1)
     @vprint :Fields 1 "\e[1FComputing maximal order $(i) /$(length(l1)) \n"
     x = l1[i]
-    K, auts = Hecke._from_relative_to_absQQ(x[1], x[2])
+    K, auts = _relative_to_absoluteQQ(x[1], x[2])
     if length(gtype) == 1
       #If the group is cyclic, I prefer to have a generator!
       new_auts = Vector{NfToNfMor}(undef, 1)

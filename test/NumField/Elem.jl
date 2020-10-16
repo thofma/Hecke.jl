@@ -51,4 +51,74 @@
     @test mK2(gen(K21)) == a2
   end  
 
+  @testset "NumField/Coordinates" begin
+    Qx, x = PolynomialRing(FlintQQ, "x")
+    K, a = number_field(x^2+1, cached = false)
+    BK = basis(K)
+    for i = 1:5
+      el = rand(K, -5:5)
+      v = coordinates(el)
+      @test el == dot(v, BK)
+    end
+    Kns, gKns = number_field([x^2+1, x^2+2], check = false)
+    BKns = basis(Kns)
+    for i = 1:5
+      el = rand(Kns, -5:5)
+      v = coordinates(el)
+      @test el == dot(v, BKns)
+    end
+    Kt, t = PolynomialRing(K, "t", cached = false)
+    L, gL = number_field(t^2+3, cached = false)
+    BL = basis(L)
+    BLabs = absolute_basis(L)
+    for i = 1:5
+      el = rand(L, -5:5)
+      v = coordinates(el)
+      vabs = absolute_coordinates(el)
+      @test el == dot(v, BL)
+      @test el == dot(vabs, BLabs)
+    end
+    Lns, gLns = number_field([t^2+3, t^2+5], check = false, cached = false)
+    BLns = basis(Lns)
+    BLnsabs = absolute_basis(Lns)
+    for i = 1:5
+      el = rand(Lns, -5:5)
+      v = coordinates(el)
+      vabs = absolute_coordinates(el)
+      @test el == dot(v, BLns)
+      @test el == dot(vabs, BLnsabs)
+    end
+    Knsy, y = PolynomialRing(Kns, "y", cached = false)
+    F, gF = number_field(y^2+7, cached = false)
+    BF = basis(F)
+    BFabs = absolute_basis(F)
+    for i = 1:5
+      el = rand(F, -5:5)
+      v = coordinates(el)
+      vabs = absolute_coordinates(el)
+      @test el == dot(v, BF)
+      @test el == dot(vabs, BFabs)
+    end
+    Fns, gFns = number_field([y^2+7, y^2+11], cached = false)
+    BFns = basis(Fns)
+    BFnsabs = absolute_basis(Fns)
+    for i = 1:5
+      el = rand(Fns, -5:5)
+      v = coordinates(el)
+      vabs = absolute_coordinates(el)
+      @test el == dot(v, BFns)
+      @test el == dot(vabs, BFnsabs)
+    end
+    Fnsz, z = PolynomialRing(Fns, "z", cached = false)
+    N, gN = number_field([z^2+17, z^2+19], check = false, cached = false)
+    BN = basis(N)
+    BNabs = absolute_basis(N)
+    for i = 1:5
+      el = rand(N, -5:5)
+      v = coordinates(el)
+      vabs = absolute_coordinates(el)
+      @test el == dot(v, BN)
+      @test el == dot(vabs, BNabs)
+    end
+  end
 end  

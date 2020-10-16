@@ -1,3 +1,5 @@
+export coordinates, absolute_coordinates, absolute_norm, absolute_tr
+
 ################################################################################
 #
 #
@@ -7,8 +9,6 @@
 isunit(a::NumFieldElem) = !iszero(a)
 
 canonical_unit(a::NumFieldElem) = a
-
-absolute_degree(A::AnticNumberField) = degree(A)
 
 ################################################################################
 #
@@ -314,7 +314,8 @@ will be an element of `K`.
 """
 norm(::NumFieldElem)
 
-function _elem_tr_to(a, k::T) where {T}
+
+function _elem_tr_to(a::NumFieldElem{T}, k::S) where {S, T}
   if parent(a) isa T
     @assert parent(a) == k
     return a
@@ -374,13 +375,13 @@ absolute_tr(x::fmpq) = x
 
 Given a number field element $a$, returns the absolute norm of $a$.
 """
-function absolute_norm(a::NfRelElem)
+function absolute_norm(a::T) where T <: Union{NfRelElem, NfRelNSElem}
   return norm(a, FlintQQ)
 end
 
-absolute_norm(a::nf_elem) = norm(a)
+absolute_norm(a::T) where T <: Union{nf_elem, NfAbsNSElem} = norm(a)
 
-absolute_norm(a::fmpq) = x
+absolute_norm(a::fmpq) = a
 
 ################################################################################
 #
@@ -464,3 +465,101 @@ Given a non-simple number field $L = K[x_1,\dotsc,x_n]/(f_1,\dotsc,f_n)$ over
 $K$, this functions returns the list $\bar x_1,\dotsc,\bar x_n$.
 """
 gens(::NonSimpleNumField)
+
+################################################################################
+#
+#  Coordinates
+#
+################################################################################
+@doc Markdown.doc"""
+    coordinates(x::NumFieldElem{T}) -> Vector{T}
+
+Given an element $x$ in a number field $K$, this function returns the coordinates of $x$
+with respect to the basis of $K$ (the output of the 'basis' function).
+"""
+coordinates(::NumFieldElem)
+
+function coordinates(a::nf_elem)
+  K = parent(a)
+  v = Vector{fmpq}(undef, degree(K))
+  for i = 1:length(v)
+    v[i] = coeff(a, i-1)
+  end
+  return v
+end
+
+function coordinates(a::NfAbsNSElem)
+  adata = data(a)
+  K = parent(a)
+  v = Vector{fmpq}(undef, degree(K))
+  for i = 1:length(v)
+    v[i] = fmpq(0)
+  end
+  for j in 1:length(adata)
+    exps = exponent_vector(adata, j)
+    k = monomial_to_index(K, exps)
+    v[k] = coeff(adata, j)
+  end
+  return v
+end
+
+function coordinates(a::NfRelElem{T}) where T
+  K = parent(a)
+  k = base_field(K)
+  v = Vector{T}(undef, degree(K))
+  for i = 1:length(v)
+    v[i] = coeff(data(a), i-1)
+  end
+  return v
+end
+
+function coordinates(a::NfRelNSElem{T}) where T
+  K = parent(a)
+  k = base_field(K)
+  v = Vector{T}(undef, degree(K))
+  for j = 1:length(v)
+    v[j] = zero(k)
+  end
+  for j = 1:length(a.data)
+    v[monomial_to_index(j, a)] = a.data.coeffs[j]
+  end
+  return v
+end
+
+################################################################################
+#
+#  Absolute coordinates
+#
+################################################################################
+
+@doc Markdown.doc"""
+    coordinates(x::NumFieldElem{T}) -> Vector{T}
+
+Given an element $x$ in a number field $K$, this function returns the coordinates of $x$
+with respect to the basis of $K$ over the rationals (the output of the 'absolute_basis' function).
+"""
+absolute_coordinates(::NumFieldElem)
+
+function absolute_coordinates(a::nf_elem)
+  return coordinates(a)
+end
+
+function absolute_coordinates(a::NfAbsNSElem)
+  return coordinates(a)
+end
+
+function absolute_coordinates(a::T) where T <: Union{NfRelElem, NfRelNSElem}
+  K = parent(a)
+  v = Vector{fmpq}(undef, absolute_degree(K))
+  va = coordinates(a)
+  ind = 1
+  for i = 1:length(va)
+    vi = absolute_coordinates(va[i])
+    for j = 1:length(vi)
+      v[ind] = vi[j]
+      ind += 1
+    end
+  end
+  return v
+end
+

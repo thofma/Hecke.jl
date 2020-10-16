@@ -241,6 +241,13 @@ end
 function NumberField(f::PolyElem{<: NumFieldElem}; cached::Bool = false, check::Bool = true)
   return NumberField(f, "_\$", cached = cached, check = check)
 end
+
+#Conversion to absolute non simple
+function number_field(::Type{AnticNumberField}, L::NfRel{nf_elem})
+  @assert degree(base_field(L)) == 1
+  pol = isunivariate(map_coeffs(FlintQQ, L.pol))[2]
+  return number_field(pol, check = false)
+end
  
 function (K::NfRel{T})(a::Generic.Poly{T}) where T
   z = NfRelElem{T}(mod(a, K.pol))
@@ -485,7 +492,10 @@ end
 #    absolute_field(K::NfRel{nf_elem}, cached::Bool = false) -> AnticNumberField, Map, Map
 #Given an extension $K/k/Q$, find an isomorphic extension of $Q$.
 #"""
-function absolute_field(K::NfRel{nf_elem}, cached::Bool = false)
+function absolute_field(K::NfRel{nf_elem}; cached::Bool = false, simplify::Bool = false)
+  if simplify
+    return simplified_absolute_field(K, cached = cached)
+  end
   Ka, a, b, c = _absolute_field(K, cached)
   h1 = NfToNfRel(Ka, K, a, b, c)
   h2 = hom(base_field(K), Ka, a, check = false)
@@ -564,30 +574,46 @@ function _absolute_field(K::NfRel, cached::Bool = false)
   return Ka, al, be, ga
 end 
 
+function simplified_absolute_field(K::NfRel{nf_elem}; cached::Bool = false)
+  Kabs, mKabs, mk = absolute_field(K, false)
+  OK = maximal_order(K)
+  new_basis = Vector{nf_elem}(undef, degree(Kabs))
+  B = pseudo_basis(OK)
+  ideals = Dict{NfOrdIdl, Vector{nf_elem}}()
+  for i = 1:length(B)
+    I = B[i][2].num
+    if !haskey(ideals, I)
+      bas = lll_basis(I)
+      ideals[I] = nf_elem[mKabs\(K(x)) for x in bas]
+    end
+  end
+  ind = 1
+  for i = 1:degree(K)
+    I = B[i][2]
+    bI = ideals[I.num]
+    el = mKabs\(B[i][1])
+    for j = 1:length(bI)
+      new_basis[ind] = divexact(el*bI[j], I.den)
+      ind += 1
+    end
+  end
+  O = NfOrd(new_basis)
+  O.disc = absolute_discriminant(OK)
+  O.ismaximal = 1
+  OLLL = lll(O)
+  _set_maximal_order_of_nf(Kabs, OLLL)
+  Ks, mKs = simplify(Kabs)
+  mKsi = inv(mKs)
+  return Ks, mKs*mKabs, mk*mKsi
+end
+
+
 function check_parent(a, b)
   return a==b
 end
 
 function hash(a::Hecke.NfRelElem{nf_elem}, b::UInt)
   return hash(a.data, b)
-end
-
-# Calls simplify on the output of absolute_field
-function simplified_absolute_field(L::NfRel{nf_elem}, cached::Bool = false)
-  Ka, a, b, c = _absolute_field(L, cached)
-  KatoL = NfToNfRel(Ka, L, a, b, c)
-  OKa = maximal_order_via_relative(Ka, KatoL)
-  K, KtoKa = simplify(Ka)
-  KatoK = inv(KtoKa)
-  aa = KatoK(a)
-  bb = KatoK(b)
-  cc = KatoL(KtoKa(gen(K)))
-  ktoK = hom(base_field(L), K, aa, check = false)
-  KtoL = NfToNfRel(K, L, aa, bb, cc)
-  embed(KtoL)
-  embed(MapFromFunc(x->preimage(KtoL, x), L, K))
-  embed(ktoK)
-  return K, KtoL, ktoK
 end
 
 ################################################################################
@@ -1068,6 +1094,8 @@ function simplify(K::NfRel{nf_elem}; cached::Bool = true, prec::Int = 100)
     end
   end
   O = NfOrd(new_basis)
+  O.ismaximal = 1
+  O.disc = absolute_discriminant(OK)
   if prec == 100
     OLLL = lll(O)
   else

@@ -1,3 +1,5 @@
+export absolute_degree, absolute_discriminant
+
 ################################################################################
 #
 #  Base field
@@ -71,12 +73,11 @@ Given a number field $L/K$, this function returns the degree of $L$ over
 $\mathbf Q$.
 """
 function absolute_degree(A::NumField)
-  b = base_field(A)
-  if isa(b, NumField)
-    return absolute_degree(base_field(A)) * degree(A)
-  else
-    return degree(A)
-  end
+  return absolute_degree(base_field(A)) * degree(A)
+end
+
+function absolute_degree(K::NumField{fmpq})
+  return degree(K)
 end
 
 ################################################################################
@@ -320,8 +321,34 @@ function isquadratic_type(L::AnticNumberField)
   return false, fmpz(1)
 end
 
+################################################################################
+#
+#  Absolute basis
+#
+################################################################################
+@doc Markdown.doc"""
+    absolute_basis(K::NumField) -> Vector{NumFieldElem}
 
+Returns an array of elements that form a basis of $K$ (as a vector space) 
+over the rationals. 
+"""
+absolute_basis(::NumField)
 
+function absolute_basis(K::NumField)
+  k = base_field(K)
+  kabs = absolute_basis(k)
+  B = basis(K)
+  res = Vector{elem_type(K)}(undef, absolute_degree(K))
+  ind = 1
+  for b in basis(K)
+    for bb in kabs
+      res[ind] = bb * b
+      ind += 1
+    end
+  end
+  return res
+end
 
-
-
+function absolute_basis(K::NumField{fmpq})
+  return basis(K)
+end

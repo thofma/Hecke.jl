@@ -484,6 +484,11 @@ function iscm_field(K::AnticNumberField)
   return _find_complex_conj(auts)
 end
 
+function iscm_field_known(K::AnticNumberField)
+  c = get_special(K, :cm_field)
+  return c !== nothing
+end
+
 function _find_complex_conj(auts::Vector{NfToNfMor})
   K = domain(auts[1])
   for x in auts

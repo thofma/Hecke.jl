@@ -58,9 +58,10 @@ function strong_echelon_form(A::Generic.Mat{NfOrdQuoRingElem}, shape::Symbol = :
 end
 
 function triangularize!(A::Generic.Mat{NfOrdQuoRingElem})
+  Q = base_ring(A)
   n = nrows(A)
   m = ncols(A)
-  d = one(base_ring(A))
+  d = one(Q)
 
   t_isdiv = 0.0
   t_xxgcd = 0.0
@@ -84,30 +85,35 @@ function triangularize!(A::Generic.Mat{NfOrdQuoRingElem})
       t_isdiv += @elapsed b, q = isdivisible(A[i, col], A[row, col])
 
       if b
-        for k in col:m
-          t_arith += @elapsed A[i, k] = A[i, k] - q*A[row, k]
+        A[i, col] = zero(Q)
+        tmp = Q()
+        for k in col+1:m
+          mul!(tmp, q, A[row, k])
+          sub!(A[i, k], A[i, k], tmp)
+          #A[i, k] = A[i, k] - q*A[row, k]
         end
-        @hassert :NfOrdQuoRing 1 A[i, col] == zero(base_ring(A))
       else
         t_xxgcd += @elapsed g,s,t,u,v = xxgcd(A[row, col], A[i, col])
         @hassert :NfOrdQuoRing 1 isone(s*v - t*u)
 
+        aux = Q()
+        aux1 = Q()
         for k in col:m
-          t_arith += @elapsed t1 = s*A[row, k] + t*A[i, k]
-          t_arith += @elapsed t2 = u*A[row, k] + v*A[i, k]
+          mul!(aux, t, A[i, k])
+          mul!(aux1, s, A[row, k])
+          t1 = aux + aux1
+          #t1 = s*A[row, k] + t*A[i, k]
+          mul!(aux, v, A[i, k])
+          mul!(aux1, u, A[row, k])
+          add!(A[i, k], aux, aux1)
+          #t2 = u*A[row, k] + v*A[i, k]
           A[row, k] = t1
-          A[i, k] = t2
         end
       end
     end
     row = row + 1;
     col = col + 1;
   end
-  #println("  === Time triangularization")
-  #println("    isdivisbible: $t_isdiv")
-  #println("    xxgcd       : $t_xxgcd")
-  #println("    arith       : $t_arith")
-  #println("    total time  : $(toc())")
   return d
 end
 
@@ -127,10 +133,12 @@ end
 
 # Naive version of inplace strong echelon form
 # It is assumed that A has more rows then columns.
+
 function strong_echelon_form_naive!(A::Generic.Mat{NfOrdQuoRingElem})
   #A = deepcopy(B)
   n = nrows(A)
   m = ncols(A)
+  Q = base_ring(A)
 
   @assert n >= m
 
@@ -138,11 +146,14 @@ function strong_echelon_form_naive!(A::Generic.Mat{NfOrdQuoRingElem})
   triangularize!(A)
   #println("done")
 
-  T = zero_matrix(base_ring(A), 1, ncols(A))
+  T = zero_matrix(Q, 1, ncols(A))
 
   # We do not normalize!
+  aux = Q()
+  aux1 = Q()
+  aux2 = Q()
   for j in 1:m
-    if !iszero(A[j,j]) != 0
+    if !iszero(A[j, j])
       # This is the reduction
       for i in 1:j-1
         if iszero(A[i, j])
@@ -150,7 +161,9 @@ function strong_echelon_form_naive!(A::Generic.Mat{NfOrdQuoRingElem})
         else
           q, r = divrem(A[i, j], A[j, j])
           for l in i:m
-            A[i, l] = A[i, l] - q*A[j, l]
+            mul!(aux, q, A[j, l])
+            sub!(A[i, l], A[i, l], aux)
+            #A[i, l] = A[i, l] - q*A[j, l]
           end
         end
       end
@@ -158,11 +171,12 @@ function strong_echelon_form_naive!(A::Generic.Mat{NfOrdQuoRingElem})
       a = annihilator(A[j, j])
 
       for k in 1:m
-        T[1, k] = a*A[j, k]
+        mul!(T[1, k], a, A[j, k])
+        #T[1, k] = a*A[j, k]
       end
     else
       for k in 1:m
-        T[1, k] = A[j, k]
+        T[1, k] = deepcopy(A[j, k])
       end
     end
 
@@ -180,17 +194,26 @@ function strong_echelon_form_naive!(A::Generic.Mat{NfOrdQuoRingElem})
         b, q = isdivisible(T[1, i], A[i, i])
         if b
           for k in i:m
-            T[1, k] = T[1, k] - q*A[i, k]
+            mul!(aux, q, A[i, k])
+            sub!(T[1, k], T[1, k], aux)
+            #T[1, k] = T[1, k] - q*A[i, k]
           end
           @hassert :NfOrdQuoRing 1 T[1, i] == zero(base_ring(A))
         else
           g,s,t,u,v = xxgcd(A[i, i], T[1, i])
 
           for k in i:m
-            t1 = s*A[i, k] + t*T[1, k]
-            t2 = u*A[i, k] + v*T[1, k]
-            A[i, k] = t1
-            T[1, k] = t2
+            mul!(aux, t, T[1, k])
+            mul!(aux1, s, A[i, k])
+            add!(aux2, aux, aux1)
+            mul!(aux, v, T[1, k])
+            mul!(aux1, u, A[i, k])
+            A[i, k] = aux2
+            add!(T[1, k], aux, aux1)
+            #t1 = s*A[i, k] + t*T[1, k]
+            #t2 = u*A[i, k] + v*T[1, k]
+            #A[i, k] = t1
+            #T[1, k] = t2
           end
         end
       end
@@ -255,9 +278,11 @@ function det(M::Generic.Mat{NfOrdQuoRingElem})
     z = z * N[i, i]
   end
   return z*d
+  #=
   q, r = divrem(z, d)
   @hassert :NfOrdQuoRing 1 iszero(r)
   return divexact(z, d)
+  =#
 end
 
 ################################################################################
@@ -267,7 +292,7 @@ end
 ################################################################################
 
 function z_split(I::NfOrdIdl)
-  b = basis_matrix(I)
+  b = basis_matrix(I, copy = false)
   O = order(I)
   n = degree(O)
   c = coprime_base([b[i, i] for i in 1:n])
@@ -300,7 +325,7 @@ function z_split(I::NfOrdIdl)
 end
 
 function can_map_into_integer_quotient(Q::NfOrdQuoRing)
-  B = basis_matrix(ideal(Q))
+  B = basis_matrix(ideal(Q), copy = false)
   for i in 2:ncols(B)
     if !isone(B[i, i])
       return false
@@ -310,7 +335,7 @@ function can_map_into_integer_quotient(Q::NfOrdQuoRing)
 end
 
 function map_into_integer_quotient(Q::NfOrdQuoRing)
-  B = basis_matrix(ideal(Q))
+  B = basis_matrix(ideal(Q), copy = false)
   m = B[1, 1]
   R = ResidueRing(FlintZZ, m, cached = false)
   f = (x -> R(x.elem.coordinates[1]))
@@ -360,8 +385,6 @@ function _strong_echelon_form_split(M::MatElem{NfOrdQuoRingElem}, ideals)
 
   n = nrows(M)
   m = ncols(M)
-
-  M_cur = zero_matrix(Q, n, m)
   
   if length(ideals) == 1
     return _strong_echelon_form_nonsplit(M)
@@ -378,6 +401,7 @@ function _strong_echelon_form_split(M::MatElem{NfOrdQuoRingElem}, ideals)
   end
   echelon_modI = _strong_echelon_form_nonsplit(MmodI)
 
+  M_cur = zero_matrix(Q, n, m)
   for i in 1:n
     for j in 1:m
       M_cur[i, j] = Q(lift(R, echelon_modI[i, j]))

@@ -595,24 +595,6 @@ function absolute_coeff(z::NumFieldElem, i)
   return absolute_coeff(coeff(z, rowindex), colindex)
 end
 
-function absolute_basis(K::NumField)
-  k = base_field(K)
-  kabs = absolute_basis(k)
-  res = elem_type(K)[]
-  for b in basis(K)
-    for bb in kabs
-      push!(res, bb * b)
-    end
-  end
-  return res
-end
-
-function absolute_basis(K::NumField{fmpq})
-  return basis(K)
-end
-
-#
-
 istotally_real(::FlintRationalField) = true
 
 istotally_positive(x::fmpq) = x > 0

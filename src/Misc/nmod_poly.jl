@@ -592,7 +592,7 @@ end
 function rresx_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where S <: Union{fmpz, Integer}
   Nemo.check_parent(f, g)
   @assert typeof(f) == typeof(g)
-  @assert isunit(lead(f)) || isunit(lead(g)) #can be weakened to invertable lead
+  @assert isunit(lead(f)) || isunit(lead(g))
   res, u, v = _rresx_sircana(f, g)
   if !iszero(res)
     cu = canonical_unit(res)
@@ -604,11 +604,15 @@ function rresx_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} whe
   if isunit(lead(g))
     q, r = divrem(u, g)
     @hassert :NfOrd 1 res == r*f + (v+q*f)*g
-    return res, r, v+q*f
+    mul!(q, q, f)
+    add!(v, v, q)
+    return res, r, v
   else
     q, r = divrem(v, f)
     @hassert :NfOrd 1 res == (u+q*g)*f + r*g
-    return res, u+q*g, r
+    mul!(q, q, g)
+    add!(u, u, q)
+    return res, u, r
   end
 end
 
@@ -740,9 +744,9 @@ function _rresx_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} wh
       # f = U*f_in + V*g_in
       # g = u*f_in + v*g_in
       # r = u_ * f + v_ * g 
+
       return res, (u_*U + v_*u), (u_*V + v_*v)
     end
-
     q, f = divrem(f, g)
     #f -> f-qg, so U*f_in + V * g_in -> ...
     U = U - q*u

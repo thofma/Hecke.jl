@@ -250,7 +250,8 @@ function hom(K::NfRel, L::NfRel, a::NfRelElem; check::Bool = false)
       error("Data does not define a homomorphism")
     end
   end
-  return NfRelToNfRelMor(K, L, a)
+
+  return NfRelToNfRelMor(K, L, id_hom(base_field(K)), a)
 end
 
 function hom(K::NfRel{nf_elem}, L::NfRel{nf_elem}, tau::NfToNfMor, a::NfRelElem{nf_elem}; check::Bool = false)

@@ -220,7 +220,7 @@ function _get_coeff_raw(x::fq_nmod, i::Int)
 end
 
 function _get_coeff_raw(x::fq, i::Int)
-  t = FlintZZ
+  t = fmpz()
   ccall((:fmpz_poly_get_coeff_fmpz, libflint), Nothing, (Ref{fmpz}, Ref{fq}, Int), t, x, i)
   return t
 end
@@ -233,17 +233,14 @@ function (f::NfOrdQuoMap)(I::NfOrdIdl)
   B = Q.ideal + I
   nB = norm(B)
   b = basis(B, copy = false)
-
   z = O()
-
   nQ = norm(Q.ideal)
-  OnQ = ideal(O, nQ)
   range1nQ2 = fmpz(1):nQ^2
 
   while true
     z = rand!(z, b, range1nQ2)
-    #z = sum(rand(range1nQ2) * b[i] for i in 1:degree(O))
-    if norm(ideal(O, z) + OnQ) == nB
+    if _normmod(nQ, z) == nB
+    #if norm(ideal(O, z) + OnQ) == nB
       break
     end
   end

@@ -188,5 +188,3 @@ Given two number fields $K$ and $L$ with the same base field $k$, this function
 returns whether $K$ and $L$ are linear disjoint over $k$.
 """
 islinear_disjoint(K::SimpleNumField, L::SimpleNumField)
-
-

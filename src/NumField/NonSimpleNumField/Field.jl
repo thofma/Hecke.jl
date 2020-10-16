@@ -93,7 +93,7 @@ end
     component(L::NonSimpleNumField, i::Int) -> SimpleNumField, Map
 
 Given a non-simple extension $L/K$, this function returns the simple number field 
-corresponding to the $i$-th component of $L$ togheter with its embedding.
+corresponding to the $i$-th component of $L$ together with its embedding.
 """
 function component(K::NonSimpleNumField, i::Int)
   fl, g = isunivariate(K.pol[i])
@@ -209,4 +209,113 @@ function _factorizations(n, parts)
   end
   res = map(sort!, res)
   return unique!(res)
+end
+
+################################################################################
+#
+#  Simplified simple extension
+#
+################################################################################
+
+
+function _simplified_composite(L::NonSimpleNumField; isabelian::Bool = false)
+  S, mS = simple_extension(L)
+  K, mK = simplify(S)
+  return K, mK*mS
+end
+
+function _simplified_composite(L::NfRelNS{nf_elem})
+  S, mS = simple_extension(L)
+  OL = maximal_order(L)
+  B = pseudo_basis(OL)
+  B1 = Tuple{NfRelElem{nf_elem}, NfOrdFracIdl}[(mS\x, y) for (x, y) in B]
+  OS = Order(S, B1)
+  OS.disc = OL.disc
+  OS.ismaximal = 1
+  Hecke._set_maximal_order_of_nf(S, OS)
+  K, mK = simplify(S)
+  return K, mK*mS
+end
+
+
+
+function _simplified_composite(L::NfAbsNS; isabelian::Bool = false)
+  S, mS = simple_extension(L)
+  if isabelian && !istotally_real(S)
+    OS = maximal_order(S)
+    OS1 = _lll_CM(OS)
+    OS.lllO = OS1
+  end
+  K, mK = simplify(S)
+  return K, mK*mS
+end
+
+
+function simplify_components(L::NonSimpleNumField, cp::Vector{Int}; isabelian::Bool = false)
+  F, mF = _subfield_of_components(L, cp)
+  K, mK = _simplified_composite(F, isabelian = isabelian)
+  pols = [K.pol]
+  imgs = [mF(mK(gen(K)))]
+  for i = 1:ngens(L)
+    if i in cp
+      continue
+    end
+    push!(pols, isunivariate(L.pol[i])[2])
+    push!(imgs, L[i])
+  end
+  Lnew, gnew = number_field(pols, check = false)
+  mp = hom(Lnew, L, imgs, check = false)
+  return Lnew, mp
+end
+
+function _subfield_of_components(L::NonSimpleNumField, cp::Vector{Int})
+  gL = gens(L)
+  pols = [isunivariate(L.pol[i])[2] for i in cp]
+  F, gF = number_field(pols, check = false)
+  mF = hom(F, L, [gL[i] for i in cp])
+  return F, mF
+end
+
+
+@doc Markdown.doc"""
+    simplified_simple_extension(L::NonSimpleNumField) -> SimpleNumField, Map
+
+Given a non-simple extension $L/K$, this function returns an isomorphic simple number field 
+with a "small" defining equation together with the isomorphism.
+"""
+function simplified_simple_extension(L::NonSimpleNumField; isabelian::Bool = false)
+  L1 = L
+  mp = id_hom(L)
+  for i = 1:ngens(L1)
+    @vprint :Simplify 1 "Simplifying component $i \n"
+    L1, mp1 = simplify_components(L1, [i], isabelian = isabelian)
+    mp = mp1*mp
+  end
+  while ngens(L1) > 1
+    maxdegs = [0, 0]
+    ind = [0, 0]
+    for i = 1:ngens(L1)
+      td = total_degree(L1.pol[i])
+      if td > maxdegs[1]
+        if td > maxdegs[2]
+          maxdegs[1] = maxdegs[2]
+          ind[1] = ind[2]
+          maxdegs[2] = td
+          ind[2] = i
+        else
+          maxdegs[1] = td
+          ind[1] = i
+        end
+      end
+    end
+    @vprint :Simplify 1 "Simplifying components $ind \n"
+    if ngens(L1) == 2
+      @vprint :Simplify 1 "$L1 \n"
+    end
+    @vtime :Simplify 1 L1, mp1 = simplify_components(L1, ind, isabelian = isabelian)
+    mp = mp1*mp
+  end
+  L2, mL2 = component(L1, 1)
+  mp2 = mL2*mp
+  return L2, mp2
 end

@@ -561,8 +561,10 @@ function _make_integral!(P::PMat{T, S}) where {T, S}
   return z
 end
 
+
 function pseudo_hnf_mod(P::PMat, m, shape::Symbol = :upperright, strategy = :split)
   O = order(m)
+  simplify(m)
 
   t_comp_red = 0.0
   t_mod_comp = 0.0
@@ -576,11 +578,11 @@ function pseudo_hnf_mod(P::PMat, m, shape::Symbol = :upperright, strategy = :spl
   res_mat = zero_matrix(nf(O), nrows(P), ncols(P))
   for i in 1:nrows(P)
     for j in 1:ncols(P)
-      res_mat[i, j] = elem_in_nf(zz[i, j].elem)
+      res_mat[i, j] = zz[i, j].elem.elem_in_nf
     end
   end
 
-  res = PMat{nf_elem, NfOrdFracIdl}(res_mat, [ deepcopy(x)::NfOrdFracIdl for x in P.coeffs])
+  res = PMat{nf_elem, NfOrdFracIdl}(res_mat, P.coeffs)
 
   shift = 0
   if shape == :lowerleft
@@ -590,11 +592,11 @@ function pseudo_hnf_mod(P::PMat, m, shape::Symbol = :upperright, strategy = :spl
   for i in 1:ncols(P)
     if iszero(zz[i + shift, i].elem)
       res.matrix[i + shift, i] = one(nf(O))
-      res.coeffs[i + shift] = NfOrdFracIdl(deepcopy(m), fmpz(1))
+      res.coeffs[i + shift] = NfOrdFracIdl(m, fmpz(1))
     else
       o = ideal(O, zz[i + shift, i].elem)
       t_sum += @elapsed g = o + m
-      if isone(norm(g))
+      if isone(g)
         oo = o
         mm = m
       else

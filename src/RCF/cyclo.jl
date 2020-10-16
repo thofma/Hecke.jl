@@ -135,7 +135,7 @@ function cyclotomic_extension(k::AnticNumberField, n::Int; cached::Bool = true, 
       c.mp = (abs2rel, small2abs)
     else
       Kr, Kr_gen = number_field(fk, "z_$n", cached = false, check = false)
-      Ka, abs2rel, small2abs = Hecke.absolute_field(Kr, false)
+      Ka, abs2rel, small2abs = Hecke.absolute_field(Kr, cached = false)
       if compute_maximal_order
         Zk = maximal_order(k)
         b_k = basis(Zk, k)
@@ -190,7 +190,7 @@ function cyclotomic_extension(k::AnticNumberField, n::Int; cached::Bool = true, 
 
   Kr, Kr_gen = number_field(fk, "z_$n", cached = false, check = false)
   if degree(fk) != 1
-    Ka, abs2rel, small2abs = Hecke.absolute_field(Kr, false)
+    Ka, abs2rel, small2abs = Hecke.absolute_field(Kr, cached = false)
     
     if compute_maximal_order
       # An equation order defined from a factor of a 

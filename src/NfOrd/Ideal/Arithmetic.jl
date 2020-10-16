@@ -99,6 +99,25 @@ function sum_via_basis_matrix(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
   return res
 end
 
+#x is a principal ideal
+function sum_princ_gen(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
+  OK = order(x)
+  d = degree(OK)
+  g = gcd(minimum(y, copy = false), minimum(x, copy = false))
+  M = basis_matrix(y, copy = false)
+  N = representation_matrix_mod(x.princ_gen, g)
+  L = vcat(M, N)
+  hnf_modular_eldiv!(L, g, :lowerleft)
+  H = view(L, (d + 1):2*d, 1:d)
+  res = ideal(OK, H, false, true)
+  if isone(basis(OK, copy = false)[1])
+    res.minimum = H[1, 1]
+  end
+  res.norm = prod_diagonal(H)
+  @hassert :NfOrd 1 res == sum_via_basis_matrix(x, y)
+  return res
+end
+
 @doc Markdown.doc"""
     +(x::NfOrdIdl, y::NfOrdIdl)
 
@@ -147,6 +166,12 @@ function +(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
     end
     gen_2 = OK(nf(OK)(ggZ))
     return ideal(OK, g, gen_2)
+  end
+  if has_princ_gen(x) && !has_basis_matrix(x)
+    return sum_princ_gen(x, y)
+  end
+  if has_princ_gen(y) && !has_basis_matrix(y)
+    return sum_princ_gen(y, x)
   end
   return sum_via_basis_matrix(x, y)
 end
@@ -926,7 +951,7 @@ function divexact(A::NfOrdIdl, B::NfOrdIdl)
   t_2_elem_weak = 0.0
   t_2_elem = 0.0
 
-  if norm(A) == norm(B)
+  if norm(A, copy = false) == norm(B, copy = false)
     return ideal(order(A), one(FlintZZ), order(A)(1))
   else
     t_prod += @elapsed I = A*inv(B)

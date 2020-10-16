@@ -287,10 +287,17 @@ function _class_unit_group(O::NfOrd; saturate_at_2::Bool = true, bound::Int = -1
         end
         idx, reg_expected = _validate_class_unit_group(c, U)
         c.sat_done = 2
+        if isone(idx)
+          break
+        end
       end
       if isone(improved) && use_aut
         #Compute Galois closure of the units
         compute_galois_closure!(U, c)
+        idx, reg_expected = _validate_class_unit_group(c, U)
+        if isone(idx)
+          break
+        end
       end
       while (!use_aut && idx < 20 && idx > 1) || (idx < 10 && idx > 1)
         @vprint :ClassGroup 1 "Finishing by saturating up to $idx\n"

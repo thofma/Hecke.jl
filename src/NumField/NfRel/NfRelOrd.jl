@@ -606,14 +606,25 @@ function maximal_order_via_relative(K::AnticNumberField, m::NfToNfRel)
     if !isa(e, AccessorNotSetError)
       rethrow(e)
     end
-    L = codomain(m)
-    OL = maximal_order(L)
-    B = absolute_basis(OL)
-    OK = Order(K, [ m\b for b in B ], check = false, isbasis = true)
-    OK.ismaximal = 1
-    _set_maximal_order(K, OK)
-    return OK
   end
+  L = codomain(m)
+  OL = maximal_order(L)
+  B = absolute_basis(OL, L)
+  OK = Order(K, [ m\b for b in B ], check = false, isbasis = true)
+  OK.ismaximal = 1
+  _set_maximal_order(K, OK)
+  return OK
+end
+
+function absolute_basis(O::NfRelOrd{T, S, U}, K::NumField{T}) where {T, S, U}
+  pb = pseudo_basis(O, copy = false)
+  res = Vector{elem_type(K)}()
+  for i = 1:degree(O)
+    for b in absolute_basis(pb[i][2])
+      push!(res, b*pb[i][1])
+    end
+  end
+  return res
 end
 
 ################################################################################

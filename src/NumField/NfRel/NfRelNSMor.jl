@@ -25,6 +25,7 @@ mutable struct NfRelToNfRelNSMor{T} <: Map{NfRel{T}, NfRelNS{T}, HeckeMap, NfRel
 
     z = new{T}()
     z.prim_img = a
+    z.coeff_aut = id_hom(base_field(K))
     z.emb = emb
     z.header = MapHeader(K, L, image, preimage)
     return z
@@ -64,6 +65,20 @@ mutable struct NfRelToNfRelNSMor{T} <: Map{NfRel{T}, NfRelNS{T}, HeckeMap, NfRel
     z.header = MapHeader(K, L, image)
     return z
   end  
+end
+
+mutable struct NfToNfRelNSMor <: Map{AnticNumberField, NfRelNS{nf_elem}, HeckeMap, NfToNfRelNSMor}
+  header::MapHeader{AnticNumberField, NfRelNS{nf_elem}}
+  img_gen::NfRelNSElem{nf_elem}
+  preimg_base_field::nf_elem
+  preimgs::Vector{nf_elem}
+  
+  function NfToNfRelNSMor(K::AnticNumberField, L::NfRelNS{nf_elem}, img_gen::NfRelNSElem{nf_elem})
+    z = new()
+    z.header = MapHeader(K, L)
+    z.img_gen = img_gen
+    return z
+  end
 end
 
 mutable struct NfRelNSToNfRelNSMor{T} <: Map{NfRelNS{T}, NfRelNS{T}, HeckeMap, NfRelNSToNfRelNSMor}
@@ -207,7 +222,7 @@ function isconsistent(f::NfRelNSToNfRelNSMor{T}) where T
   K = domain(f)
   for i = 1:length(K.pol)
     p = map_coeffs(f.coeff_aut, K.pol[i])
-    if !iszero(msubst(p, f.emb))
+    if !iszero(evaluate(p, f.emb))
       error("wrong!")
     end
   end
@@ -231,7 +246,7 @@ function Base.:(*)(f::NfRelNSToNfRelNSMor{nf_elem}, g::NfRelNSToNfRelNSMor{nf_el
   codomain(f) == domain(g) || throw("Maps not compatible")
 
   a = gens(domain(f))
-  return hom(domain(f), codomain(g), f.coeff_aut * g.coeff_aut, NfRelNSElem{nf_elem}[ g(f(x)) for x in a])
+  return hom(domain(f), codomain(g), f.coeff_aut * g.coeff_aut, NfRelNSElem{nf_elem}[ g(f(x)) for x in a], check = false)
 end
 
 function Base.:(*)(f::NfRelToNfRelMor{nf_elem}, g::NfRelToNfRelNSMor{nf_elem})

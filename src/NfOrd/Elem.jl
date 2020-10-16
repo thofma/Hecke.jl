@@ -593,14 +593,14 @@ element. The coefficient vector of the result will have entries $x$ with
 $0 \leq x \leq m$.
 """
 function mod(a::NfAbsOrdElem, m::Union{fmpz, Int})
-  assure_has_coord(a)
   d = degree(parent(a))
-  ar = Vector{fmpz}(undef, d)
+  ar = coordinates(a)
   for i in 1:d
     ar[i] = mod(a.coordinates[i], m)
   end
   return NfAbsOrdElem(parent(a), ar) # avoid making a copy of ar
 end
+
 
 ################################################################################
 #

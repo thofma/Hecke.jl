@@ -30,10 +30,10 @@ function _lll_quad(A::NfOrdIdl)
   return FakeFmpqMat(l, fmpz(1)), t::fmpz_mat
 end
 
-function _lll_CM(A::NfOrdIdl, f::NfToNfMor)
+function _lll_CM(A::NfOrdIdl)
   OK = order(A)
   @vprint :LLL 3 "Reduction\n"
-  M = _minkowski_matrix_CM(OK, f)
+  M = _minkowski_matrix_CM(OK)
   @vtime :LLL 3 BM, T = lll_with_transform(basis_matrix(A, copy = false), lll_ctx(0.3, 0.51))
   g = BM*M*transpose(BM)
   @hassert :LLL 1 isposdef(g)
@@ -60,10 +60,10 @@ function lll(A::NfOrdIdl, v::fmpz_mat = zero_matrix(FlintZZ, 1, 1); prec::Int = 
        #in this case the gram-matrix of the minkowski lattice is related to the
       #trace-matrix which is exact.
       return _lll_quad(A)
-    elseif isautomorphisms_known(K)
-      fl, f_conj = iscm_field(K)
-      if fl
-        return _lll_CM(A, f_conj)
+    end
+    if iscm_field_known(K) || isautomorphisms_known(K)
+      if iscm_field(K)[1]
+        return _lll_CM(A)
       end
     end
   end
@@ -212,11 +212,11 @@ function lll(M::NfOrd; prec::Int = 100)
     M.lllO = On
     return On::NfOrd
   end
-  
-  if isautomorphisms_known(K)
+
+  if iscm_field_known(K) || isautomorphisms_known(K)
     fl, f_conj = iscm_field(K)
     if fl
-      On = _lll_CM(M, f_conj)
+      On = _lll_CM(M)
       M.lllO = On
       return On
     end
@@ -286,36 +286,9 @@ function _minkowski_matrix_CM(M::NfOrd)
 end
 
 
-function _minkowski_matrix_CM(M::NfOrd, f::NfToNfMor)
-  return _minkowski_matrix_CM(M)
-end
-
-#=
-  if isdefined(M,  :minkowski_gram_CMfields)
-    return M.minkowski_gram_CMfields
-  end
+function _lll_CM(M::NfOrd)
   K = nf(M)
-  b = basis(M, K)
-  n = degree(M)
-  @vprint :LLL 1 "Computing the gram matrix\n"
-  g = zero_matrix(FlintZZ, n, n)
-  conjs = nf_elem[f(x) for x in b]
-  for i = 1:n
-    g[i, i] = numerator(trace(b[i] * conjs[i]))
-    for j = i+1:n
-      el = numerator(trace(b[i] * conjs[j]))
-      g[i, j] = el
-      g[j, i] = el
-    end
-  end
-  M.minkowski_gram_CMfields = g
-  return g
-end
-=#
-
-function _lll_CM(M::NfOrd, f::NfToNfMor)
-  K = nf(M)
-  g = _minkowski_matrix_CM(M, f)
+  g = _minkowski_matrix_CM(M)
   @vprint :LLL 1 "Now LLL\n"
   @hassert :LLL 1 isposdef(g)
   w = lll_gram_with_transform(g)[2]
