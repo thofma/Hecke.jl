@@ -2003,6 +2003,7 @@ mutable struct NfAbsNS <: NonSimpleNumField{fmpq}
   degrees::Vector{Int}
   O#::NfAbsOrd{NfAbsNS, NfAbsNSElem}
   equation_order
+  signature::Tuple{Int, Int}
   traces::Array{Array{fmpq, 1}, 1}
   @declare_other
 
@@ -2010,6 +2011,7 @@ mutable struct NfAbsNS <: NonSimpleNumField{fmpq}
     r = new()
     r.pol = f
     r.S = S
+    r.signature = (-1, -1)
     return r
   end
 end

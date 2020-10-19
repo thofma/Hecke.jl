@@ -731,12 +731,12 @@ end
 
 @inline ngens(K::NfRelNS) = length(K.pol)
 
-function simple_extension(K::NfRelNS{T}) where {T}
+function simple_extension(K::NfRelNS{T}; cached = true) where {T}
   n = ngens(K)
   g = gens(K)
   if n == 1
     fl, p = isunivariate(K.pol[1])
-    Ks, gKs = number_field(p, cached = false, check = false)
+    Ks, gKs = number_field(p, cached = cached, check = false)
     return Ks, hom(Ks, K, g[1], [gKs])
   end
   if lcm([total_degree(K.pol[i]) for i = 1:length(K.pol)]) == degree(K)
@@ -758,7 +758,7 @@ function simple_extension(K::NfRelNS{T}) where {T}
       end
     end
   end
-  Ka, a = number_field(f, check = false)
+  Ka, a = number_field(f, cached = cached,  check = false)
   k = base_field(K)
   M = zero_matrix(k, degree(K), degree(K))
   z = one(K)

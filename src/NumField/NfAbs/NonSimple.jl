@@ -868,9 +868,9 @@ function _compute_preimage(f::NfAbsToNfAbsNS)
   return nothing
 end
 
-hom(K::AnticNumberField, L::NfAbsNS, a::NfAbsNSElem) = NfAbsToNfAbsNS(K, L, a)
+hom(K::AnticNumberField, L::NfAbsNS, a::NfAbsNSElem; check::Bool = false) = NfAbsToNfAbsNS(K, L, a)
 
-hom(K::AnticNumberField, L::NfAbsNS, a::NfAbsNSElem, b::Vector{nf_elem}) = NfAbsToNfAbsNS(K, L, a, b)
+hom(K::AnticNumberField, L::NfAbsNS, a::NfAbsNSElem, b::Vector{nf_elem}; check::Bool = false) = NfAbsToNfAbsNS(K, L, a, b)
 
 mutable struct NfAbsNSToNfAbsNS <: Map{NfAbsNS, NfAbsNS, HeckeMap, NfAbsNSToNfAbsNS}
   header::MapHeader{NfAbsNS, NfAbsNS}
@@ -925,7 +925,7 @@ end
 #
 ################################################################################
 
-function simple_extension(K::NfAbsNS; check = true)
+function simple_extension(K::NfAbsNS; cached = true, check = true)
   n = ngens(K)
   g = gens(K)
   if n == 1

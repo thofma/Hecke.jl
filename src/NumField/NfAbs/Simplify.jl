@@ -87,18 +87,14 @@ function simplify(K::AnticNumberField; canonical::Bool = false, cached::Bool = t
   return L, m
 end
 
-function _simplify(O::NfOrd)
+function _simplify(O::NfAbsOrd)
   K = nf(O)
-  Qx, x = PolynomialRing(FlintQQ)
-  Zx = PolynomialRing(FlintZZ, "x", cached = false)[1]
-  f = Zx(K.pol*denominator(K.pol))
+  
 
-  a = O(gen(K)*denominator(K.pol), false)
-  p, d = _find_prime(f)
-
-  B = basis(O, copy = false)
+  
+  B = basis(O, K, copy = false)
   nrep = min(3, degree(K))
-  Bnew = NfOrdElem[]
+  Bnew = elem_type(K)[]
   for i = 1:length(B)
     push!(Bnew, B[i])
     for j = 1:nrep
@@ -106,7 +102,62 @@ function _simplify(O::NfOrd)
       push!(Bnew, B[i]-B[j])
     end
   end
-  #First, we search for elements that are primitive using block systems
+  #First, we search for elements that are primitive using block systems in the simple case.
+  B1 = _sieve_primitive_elements(Bnew)
+  
+  #Now, we select the one of smallest T2 norm
+  a = primitive_element(K)
+  I = t2(a)
+  for i = 1:length(B1)
+    t2n = t2(B1[i])
+    if t2n < I
+      a = B1[i]
+      I = t2n
+    end
+  end
+  return a
+end
+
+function primitive_element(K::AnticNumberField)
+  return gen(K)
+end
+
+function _sieve_primitive_elements(B::Vector{NfAbsNSElem})
+  K = parent(B[1])
+  B1 = Vector{NfAbsNSElem}()
+  for i = 1:length(B)
+    if length(vars(data(B[i]))) != ngens(K)
+      continue
+    end
+    c = conjugates_arb(B[i], 32)
+    nconjs = 1
+    for i = 2:length(c)
+      found = false
+      for j = i+1:length(c)
+        if overlaps(c[i], c[j])
+          found = true
+          break
+        end
+      end
+      if !found
+        nconjs += 1
+      end
+    end
+    if nconjs == degree(K)
+      push!(B1, B[i])
+    end
+  end
+  return B1
+end
+
+function _sieve_primitive_elements(B::Vector{nf_elem})
+  K = parent(B[1])
+  Zx = PolynomialRing(FlintZZ, "x", cached = false)[1]
+  f = Zx(K.pol*denominator(K.pol))
+  a = gen(K)*denominator(K.pol)
+
+  p, d = _find_prime(f)
+
   F = FlintFiniteField(p, d, "w", cached = false)[1]
   Ft = PolynomialRing(F, "t", cached = false)[1]
   ap = zero(Ft)
@@ -115,25 +166,17 @@ function _simplify(O::NfOrd)
 
   n = degree(K)
   indices = Int[]
-  for i = 1:length(Bnew)
-    if isone(denominator(Bnew[i].elem_in_nf))
+  for i = 1:length(B)
+    if isone(denominator(B[i]))
       continue
     end
-    b = _block(Bnew[i].elem_in_nf, rt, ap)
+    b = _block(B[i], rt, ap)
     if length(b) == n
       push!(indices, i)
     end
   end
-  #Now, we select the one of smallest T2 norm
-  I = t2(a)
-  for i = 1:length(indices)
-    t2n = t2(Bnew[indices[i]].elem_in_nf)
-    if t2n < I
-      a = Bnew[indices[i]]
-      I = t2n
-    end
-  end
-  return a.elem_in_nf
+  return B[indices]
+
 end
 
 

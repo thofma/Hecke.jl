@@ -48,7 +48,7 @@ function _from_relative_to_abs_with_embedding(L1::Hecke.NfRelNS{nf_elem}, autL1:
   else
     L, autL = L1, autL1
   end
-  S, mS = simple_extension(L)
+  S, mS = simple_extension(L, cached = false)
   K, mK, MK = absolute_field(S, cached = false)
   #First, we compute the maximal order of the absolute field.
   #We start from the maximal orders of the relative extension and of the base field.
@@ -148,7 +148,7 @@ end
 
 function _relative_to_absoluteQQ(L::NfRelNS{nf_elem}, auts::Vector{NfRelNSToNfRelNSMor{nf_elem}})
   K, gK = number_field(NfAbsNS, L)
-  Ks, mKs = simplified_simple_extension(K, isabelian = true)
+  Ks, mKs = simplified_simple_extension1(K, isabelian = true)
   #Now, I have to translate the automorphisms.
   #First, to automorphisms of K.
   autsK = Vector{NfAbsNSToNfAbsNS}(undef, length(auts))

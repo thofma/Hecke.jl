@@ -190,13 +190,8 @@ function cyclotomic_extension(k::AnticNumberField, n::Int; cached::Bool = true, 
 
   Kr, Kr_gen = number_field(fk, "z_$n", cached = false, check = false)
   if degree(fk) != 1
-<<<<<<< HEAD
     Ka, abs2rel, small2abs = Hecke.absolute_field(Kr, cached = false)
     
-=======
-    Ka, abs2rel, small2abs = Hecke.absolute_field(Kr, false)
-
->>>>>>> 4fd5bdee6a4553779c173919db96bcc25d68ff06
     if compute_maximal_order
       # An equation order defined from a factor of a
       # cyclotomic polynomial is always maximal by Dedekind

@@ -919,6 +919,17 @@ function roots(f::gfp_poly, K::FqNmodFiniteField)
   return roots(ff)
 end
 
+function roots(f::gfp_fmpz_poly, K::FqFiniteField)
+  @assert characteristic(K) == characteristic(base_ring(f))
+  Kx = PolynomialRing(K, cached = false)[1]
+  coeffsff = Vector{fq}(undef, degree(f)+1)
+  for i=0:degree(f)
+    coeffsff[i] = K(lift(coeff(f, i)))
+  end
+  ff = Kx(coeffsff)
+  return roots(ff)
+end
+
 function ispower(a::fq_nmod, m::Int)
   s = size(parent(a))
   if gcd(s-1, m) == 1

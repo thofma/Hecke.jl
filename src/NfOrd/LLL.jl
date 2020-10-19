@@ -194,7 +194,7 @@ end
     lll(M::NfOrd) -> NfOrd
 The same order, but with the basis now being LLL reduced wrt. the Minkowski metric.
 """
-function lll(M::NfOrd; prec::Int = 100)
+function lll(M::NfAbsOrd; prec::Int = 100)
   
   if isdefined(M, :lllO)
     return M.lllO::NfOrd
@@ -227,12 +227,12 @@ end
 
 
 #for totally real field, the T_2-Gram matrix is the trace matrix, hence exact.
-function _lll_gram(M::NfOrd)
+function _lll_gram(M::NfAbsOrd)
   K = nf(M)
   @assert istotally_real(K)
   g = trace_matrix(M)
   w = lll_gram_with_transform(g)[2]
-  On = NfOrd(K, w*basis_matrix(M, copy = false))
+  On = NfAbsOrd(K, w*basis_matrix(M, copy = false))
   On.ismaximal = M.ismaximal
   if isdefined(M, :index)
     On.index = M.index
@@ -246,7 +246,7 @@ function _lll_gram(M::NfOrd)
   return On
 end
 
-function _minkowski_matrix_CM(M::NfOrd)
+function _minkowski_matrix_CM(M::NfAbsOrd)
   if isdefined(M,  :minkowski_gram_CMfields)
     return M.minkowski_gram_CMfields
   end
@@ -286,13 +286,13 @@ function _minkowski_matrix_CM(M::NfOrd)
 end
 
 
-function _lll_CM(M::NfOrd)
+function _lll_CM(M::NfAbsOrd)
   K = nf(M)
   g = _minkowski_matrix_CM(M)
   @vprint :LLL 1 "Now LLL\n"
   @hassert :LLL 1 isposdef(g)
   w = lll_gram_with_transform(g)[2]
-  On = NfOrd(K, w*basis_matrix(M, copy = false))
+  On = NfAbsOrd(K, w*basis_matrix(M, copy = false))
   On.ismaximal = M.ismaximal
   if isdefined(M, :index)
     On.index = M.index
@@ -307,7 +307,7 @@ function _lll_CM(M::NfOrd)
 end
 
 
-function _lll_quad(M::NfOrd)
+function _lll_quad(M::NfAbsOrd)
   K = nf(M)
   b = basis(M)
   a1 = 2*numerator(norm(b[1]))
@@ -316,7 +316,7 @@ function _lll_quad(M::NfOrd)
   g = matrix(FlintZZ, 2, 2, fmpz[a1, a12, a12, a2])
   @hassert :ClassGroup 1 isposdef(g)
   w = lll_gram_with_transform(g)[2]
-  On = NfOrd(K, w*basis_matrix(M, copy = false))
+  On = NfAbsOrd(K, w*basis_matrix(M, copy = false))
   On.ismaximal = M.ismaximal
   if isdefined(M, :index)
     On.index = M.index
@@ -330,7 +330,7 @@ function _lll_quad(M::NfOrd)
   return On
 end
 
-function _lll(M::NfOrd, prec::Int)
+function _lll(M::NfAbsOrd, prec::Int)
 
   K = nf(M)
   n = degree(K)
@@ -350,13 +350,13 @@ function _lll(M::NfOrd, prec::Int)
   return M1
 end
 
-function _ordering_by_T2(M::NfOrd, prec::Int = 32)
+function _ordering_by_T2(M::NfAbsOrd, prec::Int = 32)
   
   K = nf(M)
   B = basis(M, K)
   ints = fmpz[lower_bound(t2(x, prec), fmpz) for x in B]
   p = sortperm(ints)
-  On = NfOrd(B[p])
+  On = NfAbsOrd(B[p])
   On.ismaximal = M.ismaximal
   if isdefined(M, :index)
     On.index = M.index
@@ -429,7 +429,7 @@ function _has_trivial_intersection(v::Vector{Vector{Int}}, V::Vector{Vector{Int}
   return true
 end
 
-function lll_precomputation(M::NfOrd, prec::Int, nblocks::Int = 4)
+function lll_precomputation(M::NfAbsOrd, prec::Int, nblocks::Int = 4)
   n = degree(M)
   K = nf(M)
   dimension_blocks = div(n, nblocks)
@@ -452,7 +452,7 @@ function lll_precomputation(M::NfOrd, prec::Int, nblocks::Int = 4)
     end
     if block == length(to_do)+1
       blocks_selection = Vector{Int}[]
-      On = NfOrd(K, g*basis_matrix(M, copy = false))
+      On = NfAbsOrd(K, g*basis_matrix(M, copy = false))
       On.ismaximal = M.ismaximal
       if isdefined(M, :index)
       On.index = M.index
@@ -481,7 +481,7 @@ end
 
 
 
-function _lll_sublattice(M::NfOrd, u::Vector{Int}; prec = 100)
+function _lll_sublattice(M::NfAbsOrd, u::Vector{Int}; prec = 100)
   K = nf(M)
   n = degree(M)
   l = length(u)
@@ -534,7 +534,7 @@ function _lll_sublattice(M::NfOrd, u::Vector{Int}; prec = 100)
 end
 
 
-function _lll_with_parameters(M::NfOrd, parameters::Tuple{Float64, Float64}, prec; steps::Int = -1)
+function _lll_with_parameters(M::NfAbsOrd, parameters::Tuple{Float64, Float64}, prec; steps::Int = -1)
 
   K = nf(M)
   n = degree(M)
@@ -591,7 +591,7 @@ function _lll_with_parameters(M::NfOrd, parameters::Tuple{Float64, Float64}, pre
         break
       end
     end
-    On = NfOrd(K, g*basis_matrix(M, copy = false))
+    On = NfAbsOrd(K, g*basis_matrix(M, copy = false))
     On.ismaximal = M.ismaximal
     if isdefined(M, :index)
       On.index = M.index
@@ -618,7 +618,7 @@ function _lll_with_parameters(M::NfOrd, parameters::Tuple{Float64, Float64}, pre
     end
     @vprint :LLL 3 "Still in the loop\n"
   end
-  On = NfOrd(K, g*basis_matrix(M, copy = false))
+  On = NfAbsOrd(K, g*basis_matrix(M, copy = false))
   On.ismaximal = M.ismaximal
   if isdefined(M, :index)
     On.index = M.index
@@ -640,10 +640,10 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    lll_basis(M::NfOrd) -> Array{nf_elem, 1}
+    lll_basis(M::NfAbsOrd) -> Array{nf_elem, 1}
 A basis for $M$ that is reduced using the LLL algorithm for the Minkowski metric.
 """
-function lll_basis(M::NfOrd)
+function lll_basis(M::NfAbsOrd)
   M1 = lll(M)
   return basis(M1, nf(M1))
 end

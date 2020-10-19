@@ -315,7 +315,7 @@ will be an element of $K$.
 norm(::NumFieldElem)
 
 
-function _elem_tr_to(a::NumFieldElem{T}, k::S) where {S, T}
+function _elem_tr_to(a, k::T) where {T}
   if parent(a) isa T
     @assert parent(a) == k
     return a

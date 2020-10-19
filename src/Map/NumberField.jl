@@ -465,7 +465,7 @@ end
 Given a number field $K$, this function returns true and the complex conjugation
 if the field is CM, false and the identity otherwise.
 """
-function iscm_field(K::AnticNumberField)
+function iscm_field(K::NumField)
   c = get_special(K, :cm_field)
   if c !== nothing
     return true, c
@@ -484,7 +484,11 @@ function iscm_field(K::AnticNumberField)
   return _find_complex_conj(auts)
 end
 
-function iscm_field_known(K::AnticNumberField)
+function _automorphisms_center(K::NumField)
+  return automorphisms(K)
+end
+
+function iscm_field_known(K::NumField)
   c = get_special(K, :cm_field)
   return c !== nothing
 end

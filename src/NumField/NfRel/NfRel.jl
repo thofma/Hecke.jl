@@ -242,7 +242,6 @@ function NumberField(f::PolyElem{<: NumFieldElem}; cached::Bool = false, check::
   return NumberField(f, "_\$", cached = cached, check = check)
 end
 
-<<<<<<< HEAD
 #Conversion to absolute non simple
 function number_field(::Type{AnticNumberField}, L::NfRel{nf_elem})
   @assert degree(base_field(L)) == 1
@@ -250,8 +249,6 @@ function number_field(::Type{AnticNumberField}, L::NfRel{nf_elem})
   return number_field(pol, check = false)
 end
  
-=======
->>>>>>> 4fd5bdee6a4553779c173919db96bcc25d68ff06
 function (K::NfRel{T})(a::Generic.Poly{T}) where T
   z = NfRelElem{T}(mod(a, K.pol))
   z.parent = K
@@ -1067,50 +1064,7 @@ function relative_extension(K::AnticNumberField, k::AnticNumberField)
   return relative_extension(mp)
 end
 
-################################################################################
-#
-#  Simplify
-#
-################################################################################
 
-function simplify(K::NfRel{nf_elem}; cached::Bool = true, prec::Int = 100)
-  Kabs, mK = absolute_field(K, false)
-  OK = maximal_order(K)
-  new_basis = Vector{nf_elem}(undef, degree(Kabs))
-  B = pseudo_basis(OK)
-  ideals = Dict{NfOrdIdl, Vector{nf_elem}}()
-  for i = 1:length(B)
-    I = B[i][2].num
-    if !haskey(ideals, I)
-      bas = lll_basis(I)
-      ideals[I] = nf_elem[mK\(K(x)) for x in bas]
-    end
-  end
-  ind = 1
-  for i = 1:degree(OK)
-    I = B[i][2]
-    bI = ideals[I.num]
-    el = mK\(B[i][1])
-    for j = 1:length(bI)
-      new_basis[ind] = divexact(el*bI[j], I.den)
-      ind += 1
-    end
-  end
-  O = NfOrd(new_basis)
-  O.ismaximal = 1
-  O.disc = absolute_discriminant(OK)
-  if prec == 100
-    OLLL = lll(O)
-  else
-    OLLL = lll(O, prec = prec)
-  end
-  el = _simplify(OLLL)
-  pel = mK(el)
-  f = minpoly(pel)
-  Ks = number_field(f, cached = cached, check = false)[1]
-  mKs = hom(Ks, K, pel)
-  return Ks, mKs
-end
 
 ################################################################################
 #

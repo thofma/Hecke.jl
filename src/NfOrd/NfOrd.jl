@@ -243,7 +243,16 @@ Returns the $\mathbf Z$-basis of $\mathcal O$.
 Returns the $\mathbf Z$-basis elements of $\mathcal O$ as elements of the
 ambient number field.
 """
-function basis(O::NfAbsOrd, K::AnticNumberField; copy::Bool = true)
+function basis(O::NfOrd, K::AnticNumberField; copy::Bool = true)
+  nf(O) != K && error()
+  if copy
+    return deepcopy(O.basis_nf)
+  else
+    return O.basis_nf
+  end
+end
+
+function basis(O::NfAbsOrd{NfAbsNS, NfAbsNSElem}, K::NfAbsNS; copy::Bool = true)
   nf(O) != K && error()
   if copy
     return deepcopy(O.basis_nf)

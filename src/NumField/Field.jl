@@ -320,7 +320,6 @@ function isquadratic_type(L::AnticNumberField)
   end
   return false, fmpz(1)
 end
-<<<<<<< HEAD
 
 ################################################################################
 #
@@ -353,5 +352,3 @@ end
 function absolute_basis(K::NumField{fmpq})
   return basis(K)
 end
-=======
->>>>>>> 4fd5bdee6a4553779c173919db96bcc25d68ff06

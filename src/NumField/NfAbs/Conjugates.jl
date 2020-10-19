@@ -8,13 +8,13 @@ export istotally_real, istotally_complex, conjugates, conjugates_real,
 ################################################################################
 
 @doc Markdown.doc"""
-    istotally_real(K::AnticNumberField) -> Bool
+    istotally_real(K::NumberField) -> Bool
 
 Returns true if and only if $K$ is totally real, that is, if all roots of the
 defining polynomial are real.
 """
-function istotally_real(K::AnticNumberField)
-  return signature(K)[2] == 0
+function istotally_real(K::NumField)
+  return iszero(signature(K)[2])
 end
 
 @doc Markdown.doc"""
@@ -23,8 +23,8 @@ end
 Returns true if and only if $K$ is totally complex, that is, if all roots of the
 defining polynomial are not real.
 """
-function istotally_complex(K::AnticNumberField)
-  return signature(K)[1] == 0
+function istotally_complex(K::NumField)
+  return iszero(signature(K)[1])
 end
 
 ################################################################################
@@ -331,7 +331,7 @@ Returns the image of $a$ under the Minkowski embedding.
 Every entry of the array returned is of type `arb` with radius less then
 `2^(-abs_tol)`.
 """
-function minkowski_map(a::nf_elem, abs_tol::Int = 32)
+function minkowski_map(a::T, abs_tol::Int = 32) where T <: NumFieldElem
   z = _minkowski_map_and_apply(a, abs_tol, identity)
   return z
 end
@@ -388,7 +388,7 @@ end
 #
 ################################################################################
 
-function t2(x::nf_elem, abs_tol::Int = 32, T = arb)
+function t2(x::S, abs_tol::Int = 32, T = arb) where S <: NumFieldElem
   if T === arb
     g = function(w, abs_tol)
       z = mapreduce(y -> y^2, +, w)

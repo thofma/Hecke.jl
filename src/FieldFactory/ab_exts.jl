@@ -1143,7 +1143,7 @@ end
 function _from_relative_to_abs(L::NfRelNS{T}, auts::Array{NfRelNSToNfRelNSMor{T}, 1}) where T
 
   S, mS = simple_extension(L)
-  K, mK, mK2 = absolute_field(S, false)
+  K, mK, mK2 = absolute_field(S, cached = false)
   #First, we compute the maximal order of the absolute field.
   #Since the computation of the relative maximal order is slow, I bring to the absolute field the elements
   # generating the equation order.

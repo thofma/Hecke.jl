@@ -224,8 +224,19 @@ function _simplified_composite(L::NonSimpleNumField; isabelian::Bool = false)
   return K, mK*mS
 end
 
+function _simplified_composite(L::NfAbsNS; isabelian::Bool = false)
+  S, mS = simple_extension(L, cached = false)
+  if isabelian && !istotally_real(S)
+    OS = maximal_order(S)
+    OS1 = _lll_CM(OS)
+    OS.lllO = OS1
+  end
+  K, mK = simplify(S, cached = false)
+  return K, mK*mS
+end
+
 function _simplified_composite(L::NfRelNS{nf_elem})
-  S, mS = simple_extension(L)
+  S, mS = simple_extension(L, cached = false)
   OL = maximal_order(L)
   B = pseudo_basis(OL)
   B1 = Tuple{NfRelElem{nf_elem}, NfOrdFracIdl}[(mS\x, y) for (x, y) in B]
@@ -233,20 +244,7 @@ function _simplified_composite(L::NfRelNS{nf_elem})
   OS.disc = OL.disc
   OS.ismaximal = 1
   Hecke._set_maximal_order_of_nf(S, OS)
-  K, mK = simplify(S)
-  return K, mK*mS
-end
-
-
-
-function _simplified_composite(L::NfAbsNS; isabelian::Bool = false)
-  S, mS = simple_extension(L)
-  if isabelian && !istotally_real(S)
-    OS = maximal_order(S)
-    OS1 = _lll_CM(OS)
-    OS.lllO = OS1
-  end
-  K, mK = simplify(S)
+  K, mK = simplify(S, cached = false)
   return K, mK*mS
 end
 
@@ -318,4 +316,19 @@ function simplified_simple_extension(L::NonSimpleNumField; isabelian::Bool = fal
   L2, mL2 = component(L1, 1)
   mp2 = mL2*mp
   return L2, mp2
+end
+
+function simplified_simple_extension1(K::NfAbsNS; cached::Bool = true, isabelian::Bool = false)
+  OK = maximal_order(K)
+  if isabelian
+    OS = _lll_CM(OK)
+    OK.lllO = OS
+  else
+    OS = lll(OK)
+  end
+  el = _simplify(OS)
+  f = minpoly(el)
+  L, mL = number_field(f, cached = cached, check = false)
+  mp = hom(L, K, el, check = false)
+  return L, mp
 end
