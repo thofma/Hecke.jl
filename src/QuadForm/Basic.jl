@@ -353,6 +353,40 @@ end
 
 isisotropic(V::AbsSpace, p::InfPlc) = _isisotropic(V, p)
 
+function _isisotropic(D::Vector{fmpq}, p::PosInf)
+  n = length(D)
+  if n <= 1
+    return false
+  end
+  E = parent(D[1])
+  d = reduce(*, D, init = one(E))
+  if d == 0
+    return true
+  elseif n <= 1
+    return false
+  else
+    return length(unique!(fmpq[sign(d) for d in D])) == 2
+  end
+end
+
+function _isisotropic(D::Vector, p::InfPlc)
+  n = length(D)
+  if n <= 1
+    return false
+  end
+  E = parent(D[1])
+  d = reduce(*, D, init = one(E))
+  if d == 0
+    return true
+  elseif n <= 1
+    return false
+  elseif iscomplex(p)
+    return true
+  else
+    return length(unique!(Int[sign(d, p) for d in D])) == 2
+  end
+end
+
 function _isisotropic(V::AbsSpace, p::InfPlc)
   n = rank(V)
   d = det(V)

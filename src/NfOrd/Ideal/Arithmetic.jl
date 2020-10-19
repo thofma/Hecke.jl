@@ -126,6 +126,14 @@ Returns $x + y$.
 function +(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
   check_parent(x, y)
   OK = order(x)
+
+  if iszero(x)
+    return y
+  end
+  if iszero(y)
+    return x
+  end
+
   if isdefined(x, :gen_one) && isdefined(y, :gen_one) && isone(gcd(x.gen_one, y.gen_one))
     return ideal(OK, 1)
   end
@@ -902,6 +910,9 @@ divexact(A::NfAbsOrdIdl, b::Integer) = divexact(A, fmpz(b))
 Returns $A/y$ assuming that $A/y$ is again an integral ideal.
 """
 function divexact(A::NfAbsOrdIdl, b::fmpz)
+  if iszero(A)
+    return A
+  end
   zk = order(A)
   b = abs(b)
   if has_2_elem(A)

@@ -532,16 +532,10 @@ function test_module(x, new::Bool = true)
      @info("spawning ", `$julia_exe -e \"$cmd\"`)
      run(`$julia_exe -e $cmd`)
    else
+     assertions(true)
      @info("Running tests for $x in same session")
-     try
-       include(test_file)
-     catch e
-       if false #isa(e, LoadError)
-         println("You need to do \"using Test\"")
-       else
-         rethrow(e)
-       end
-     end
+     include(test_file)
+     assertions(false)
    end
 end
 

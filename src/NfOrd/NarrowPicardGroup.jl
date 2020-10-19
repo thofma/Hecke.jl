@@ -1,0 +1,149 @@
+#mutable struct MapNarrowPicardGrp{S, T} <: Map{S, T, HeckeMap, MapNarrowPicardGrp}
+#  header::MapHeader{S, T}
+#
+#  picard_group # picard group map of order
+#  right_transform::fmpz_mat
+#  betas # Vector of factorized algebra elements
+#  gammas # the same type as betas
+#
+#  function MapNarrowPicardGrp{S, T}() where {S, T}
+#    return new{S, T}()
+#  end
+#end
+#
+#function show(io::IO, mP::MapNarrowPicardGrp)
+#  @show_name(io, mP)
+#  println(io, "Narrow Picard group map of ")
+#  show(IOContext(io, :compact => true), codomain(mP))
+#end
+
+################################################################################
+#
+#  High level functions
+#
+################################################################################
+
+@doc Markdown.doc"""
+      picard_group(O::NfOrd) -> GrpAbFinGen, MapClassGrp
+
+Returns the Picard group of O and a map from the group in the set of
+(invertible) ideals of O.
+"""
+function narrow_picard_group(O::NfOrd)
+  U, mU = unit_group(O)
+
+  # determine the totally positive units
+
+  Q, Q_to_elem, elem_to_Q = _principal_ideals_modulo_totally_positive_principal_ideals(O, mU)
+
+  C, mC = picard_group(O)
+
+  @assert issnf(C)
+
+  new_ngens = ngens(Q) + ngens(C)
+
+  R = zero_matrix(FlintZZ, new_ngens, new_ngens)
+  for i in 1:ngens(Q)
+    R[i, i] = 2
+  end
+
+  idealgens = ideal_type(O)[]
+
+  Crels = rels(C)
+
+  for i in 1:ngens(C)
+    I0 = mC(C[i])
+    I = I0^(order(C[i]))
+    push!(idealgens, I0)
+    # I is principal 
+    fl, a = isprincipal(I)
+    @assert fl
+    q = elem_to_Q(elem_in_nf(a))
+    R[ngens(Q) + i,:] = hcat(-q.coeff, Crels[i, :])
+  end
+
+
+  B = abelian_group(R)
+  BS, BStoB = snf(B)
+  BtoBS = inv(BStoB)
+
+  disclog = function(J)
+    d = denominator(J)
+    JJ = numerator(J)
+    c = mC\(JJ)
+    for i in 1:ngens(C)
+      JJ = JJ * idealgens[i]^(-c.coeff[i] + order(C[i]))
+    end
+    fl, b = isprincipal(JJ)
+    @assert fl
+    @assert b * O == JJ
+    q = elem_to_Q(elem_in_nf(b)//d)
+    return BtoBS(B(hcat(-q.coeff, c.coeff)))
+  end
+
+  _exp = function(el)
+    @assert parent(el) == BS
+    _el = BStoB(el)
+    _elQ = Q([_el.coeff[1, i] for i in 1:ngens(Q)])
+    u = Q_to_elem(_elQ)
+    J = u * O
+    _elC = C([_el.coeff[1, ngens(Q) + i] for i in 1:ngens(C)])
+    J = J * mC(_elC)
+    return J
+  end
+
+   # A test
+   
+   _Q, = units_modulo_totally_positive_units(O)
+   r, s = signature(nf(O))
+   @assert order(BS) == divexact(order(C) * 2^r, order(_Q))
+
+  return BS, disclog, _exp
+end
+
+function _principal_ideals_modulo_totally_positive_principal_ideals(O, mU)
+  S, mS, h, rlp = units_modulo_totally_positive_units(O, mU)
+  OK = maximal_order(O)
+  R, f, g = infinite_primes_map(OK, rlp, 1 * OK)
+  # First take the quotient of R by the totally positive units
+  RR, mRR = quo(R, elem_type(R)[R(Int[1 for i in 1:ngens(R)])], false)
+  SinRR_gen = elem_type(RR)[]
+  for i in 1:ngens(S)
+    push!(SinRR_gen, mRR(g(elem_in_nf(mU(mS\(S[i]))))))
+  end
+
+  Q, mQ = quo(RR, SinRR_gen, false)
+  QQ, QQtoQ = snf(Q)
+  gg = x -> QQtoQ\(mQ(mRR(g(x))))
+  ff = y -> elem_in_nf(f(mRR\(mQ\(QQtoQ(y)))))
+  return QQ, ff, gg
+end
+
+function units_modulo_totally_positive_units(O::NfOrd)
+  U, mU = unit_group(O)
+  return units_modulo_totally_positive_units(O, mU)
+end
+
+function units_modulo_totally_positive_units(O::NfOrd, mU)
+  OK = maximal_order(O) # Will be computed anyway
+  U = domain(mU)
+  K = nf(O)
+  r, = signature(K)
+  rlp = real_places(K)
+
+  A = abelian_group([2 for i in 1:r])
+  imag = elem_type(A)[]
+  for i in 1:ngens(U)
+    v = A(Int[ sign(elem_in_nf(mU(U[i])), s) == -1 ? 1 : 0 for s in rlp])
+    push!(imag, v)
+  end
+
+  h = hom(U, A, imag)
+
+  K, mK = kernel(h, false)
+
+  Q, mQ = quo(U, mK, false)
+  S, StoQ = snf(Q)
+  return S, mQ * inv(StoQ), h, rlp
+end
+

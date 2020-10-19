@@ -100,8 +100,12 @@ function genus_representatives(L::QuadLat; max = inf, use_auto = true, use_mass 
   end
 
   if rank(L) == 2
-    @req isdefinite(L) "Binary quadratic lattices must be definite"
-    return _genus_representatives_binary_quadratic(L, max = max, use_auto = true, use_mass = true)
+    if isdefinite(L)
+      return _genus_representatives_binary_quadratic_definite(L, max = max, use_auto = true, use_mass = true)
+    else
+      @req degree(base_ring(L)) == 1 "Binary indefinite quadratic lattices must be only over the rationals"
+      return _genus_representatives_binary_quadratic_indefinite(L)
+    end
   end
 
   if !isdefinite(L)
@@ -1525,7 +1529,7 @@ end
 #
 ################################################################################
 
-function _genus_representatives_binary_quadratic(_L::QuadLat; max = inf, use_auto = true, use_mass = true)
+function _genus_representatives_binary_quadratic_definite(_L::QuadLat; max = inf, use_auto = true, use_mass = true)
   # The strategy is to pass to the discriminant field F (which is a CM field)
   # and use that KL \cong (F, Tr/2)
   # Then in (F, Tr/2) we use Kirschmer, Pfeuffer and Körrner.
@@ -1827,9 +1831,9 @@ function _translate_ideal(I, Iabs, FtoFabs, sigma, sigmaabs)
 end
 
 function _intersect_lattice_down(xps, _ps, Lambda)
-  F = nf(Lambda)
+  F = _algebra(Lambda)
   d = degree(Lambda)
-  K = base_field(F)
+  K = _base_ring(F)
   ps = copy(_ps)
   Lambdapb = pseudo_basis(Lambda)
   OK = base_ring(Lambda)
@@ -1860,12 +1864,20 @@ function _intersect_lattice_down(xps, _ps, Lambda)
 
   # I want to make sure that M_p \subseteq M^(p)?
 
+  #for (v, a) in zip(current_global_basis, Lambdaid)
+  #  @show v
+  #  @show typeof(v * Lambda)
+  #  @show typeof(a)
+  #  @show a * (v * Lambda)
+  #end
+
   J = reduce(+, (a * (v * Lambda) for (v, a) in zip(current_global_basis, Lambdaid)), init = F(0) * Lambda)
 
   local pi::elem_type(K)
 
   for i in 1:length(ps)
-    m, _ = _padic_index(J, fractional_ideal(Lambda, local_bases[i]), ps[i])
+    _J = reduce(+, (b * Lambda for b in local_bases[i]), init = F(0) * Lambda)
+    m, _ = _padic_index(J, _J, ps[i])
     #@show m
     pi = elem_in_nf(uniformizer(ps[i]))
     for q in support(pi)
@@ -1928,9 +1940,9 @@ function _intersect_lattice_down(xps, _ps, Lambda)
     @assert all([valuation(e, ps[i]) >= 0 for e in (mats[i] - T)])
   end
 
-  JJ = fractional_ideal(Lambda, new_bas)
+  JJ = reduce(+, (b * Lambda for b in new_bas), init = F(0) * Lambda) ##fractional_ideal(Lambda, new_bas)
  
-  L1 = fractional_ideal(Lambda, current_global_basis)
+  L1 = reduce(+, (b * Lambda for b in current_global_basis), init = F(0) * Lambda) #fractional_ideal(Lambda, current_global_basis)
   L = L1 + JJ
   for i in 1:length(xps)
     @assert _padic_index(xps[i] * Lambda, L, ps[i]) == (0, 0)
@@ -1950,6 +1962,24 @@ function _intersect_lattice_down(xps, _ps, Lambda)
   end
 
   return L
+end
+
+function absolute_norm(A::Hecke.AlgAssRelOrdIdl)
+  return absolute_norm(norm(A))
+end
+
+function absolute_norm(A::Hecke.AlgAssAbsOrdIdl)
+  return norm(A)
+end
+
+function absolute_norm(A::NfAbsOrdFracIdl)
+  return norm(A)
+end
+
+function *(a::NfAbsOrdFracIdl{AnticNumberField,nf_elem}, b::AlgAssRelOrdIdl{nf_elem,Hecke.NfAbsOrdFracIdl{AnticNumberField,nf_elem},AlgAss{nf_elem}})
+  pm = basis_pmatrix(b)
+  pmnew = pseudo_matrix(matrix(pm), map(z -> a * z, coefficient_ideals(pm)))
+  return ideal(algebra(order(b)), pmnew)
 end
 
 function _padic_index(N, M, p)
@@ -2129,6 +2159,261 @@ function _binary_genus_representatives_via_ternary(L::AbsLat)
         end
       end
     end
+  end
+  return res
+end
+
+################################################################################
+#
+#  Indefinite binary case
+#
+################################################################################
+
+function _genus_representatives_binary_quadratic_indefinite(_L, max = max, use_auto = true, use_mass = true)
+  @assert !isdefinite(_L)
+  @assert rank(_L) == 2
+
+  V = rational_span(_L)
+  # 0. Scale to have 1 in Q(V)
+
+  D = diagonal(V)
+  _, i = findmin(abs.(norm.(D)))
+  d = D[i]
+
+  # so G -> G/d
+ 
+  L = lattice(quadratic_space(base_ring(V), 1//d * gram_matrix(ambient_space(_L))), pseudo_matrix(_L))
+
+  V = rational_span(L)
+ 
+  # 1. Find the isometry with (K + K, Tr/2)
+  @vprint :GenRep 1 "Determining isometry with CM field ... \n"
+  K = base_ring(V)
+
+  mult_tb = Array{elem_type(K), 3}(undef, 2, 2, 2)
+  for i in 1:2
+    for j in 1:2
+      if i != j
+        mult_tb[i, j, :] = elem_type(K)[zero(K), zero(K)]
+      else
+        z = elem_type(K)[zero(K), zero(K)]
+        z[i] = one(K)
+        mult_tb[i, j, :] = z
+      end
+    end
+  end
+
+  A = AlgAss(K, mult_tb)
+  B = basis(A)
+  sigma(a) = A([a.coeffs[2], a.coeffs[1]])
+  inv2 = inv(A(2))
+  phi(x, y) = (x * sigma(y) + y * sigma(x)) * inv2
+  G = matrix(K, 2, 2, [phi(B[1], B[1]), phi(B[1], B[2]), phi(B[2], B[1]), phi(B[2], B[2])])
+  W = quadratic_space(K, G)
+  fl, T = isisometric_with_isometry(V, W)
+  @assert fl
+
+  Tinv = inv(T)
+
+  # 2. Transport L to lattice of A.
+ 
+  pb = pseudo_basis(L)
+  # KL has basis a[1] for a in pb
+  # So we only need to map the Z-basis of the coefficient ideals
+  image_of_first = (T[1, 1] * B[1] + T[1, 2] * B[2])
+  image_of_second = (T[2, 1] * B[1] + T[2, 2] * B[2])
+
+  basisofLinA = elem_type(A)[]
+
+  B = absolute_basis(pb[1][2])
+  for b in B
+    push!(basisofLinA, b * image_of_first)
+  end
+
+  B = absolute_basis(pb[2][2])
+  for b in B
+    push!(basisofLinA, b * image_of_second)
+  end
+
+  LinA = ideal_from_lattice_gens(A, basisofLinA)
+
+  Lambda = right_order(LinA)
+
+  OK = maximal_order(K)
+  C, mC = class_group(OK)
+  cur_class = elem_type(C)[]
+  ideal_repr = ideal_type(OK)[]
+  p_and_xps = Vector{Tuple{ideal_type(OK), elem_type(A)}}[]
+  # We try to find prime ideal representatives
+  push!(cur_class, id(C))
+  push!(ideal_repr, 1 * OK)
+  push!(p_and_xps, Tuple{ideal_type(OK), elem_type(A)}[])
+  for p in PrimeIdealsSet(OK, 1, -1)
+    if length(cur_class) == order(C)
+      break
+    end
+    c = mC\p
+    if !(c in cur_class)
+      push!(cur_class, c)
+      push!(ideal_repr, p)
+      pi = elem_in_nf(uniformizer(p))
+      push!(p_and_xps, [(p, A([pi, inv(pi)]))])
+    end
+  end
+
+  # I have p_and_xps
+  _intersect_lattice_down([ p[2] for p in p_and_xps[1]], [ p[1] for p in p_and_xps[1]] , Lambda)
+
+  return Lambda, LinA
+end
+
+################################################################################
+#
+#  Indefinite binary quadratic
+#
+################################################################################
+
+function _genus_representatives_binary_quadratic_indefinite(L::QuadLat)
+  @req degree(base_ring(L)) == 1 "Number field must be of degree 1"
+  @req rank(L) == 2 "Lattice must be of rank 2"
+  K = nf(base_ring(L))
+  f, e = _lattice_to_binary_quadratic_form(L) # e is the scaling factor
+  d = discriminant(f)
+  @assert d > 0
+  cls = _equivalence_classes_binary_quadratic_indefinite(d, proper = false, primitive = false)
+  res = typeof(f)[f]
+  K, = rationals_as_number_field()
+  G = genus(_binary_quadratic_form_to_lattice(f, K, e))
+  lat = typeof(L)[]
+  
+  for g in cls
+    LL = _binary_quadratic_form_to_lattice(g, K, e)
+    GG = genus(LL)
+    if GG == G
+      push!(lat, LL)
+    end
+  end
+  return lat
+end
+
+function _lattice_to_binary_quadratic_form(L::QuadLat)
+  M = absolute_basis_matrix(L) # This corresponds to a basis of L
+  @assert nrows(M) == 2 && ncols(M) == 2
+  G = gram_matrix(ambient_space(L), M)
+  GG = change_base_ring(FlintQQ, G)
+  d = denominator(GG)
+  f = binary_quadratic_form(FlintZZ(d * GG[1, 1]), FlintZZ(2 * d * GG[1, 2]), FlintZZ(d * GG[2, 2]))
+  return f, d
+end
+
+function _equivalence_classes_binary_quadratic_indefinite(d::fmpz; proper::Bool = false, primitive::Bool = true)
+  if primitive
+    return _equivalence_classes_binary_quadratic_indefinite_primitive(d, proper = proper)
+  else
+    res = QuadBin{fmpz}[]
+    for n in Divisors(d, units = false, power = 2) # n^2 | d
+      cls = _equivalence_classes_binary_quadratic_indefinite_primitive(divexact(d, n^2), proper = proper)
+      for f in cls
+        push!(res, n*f)
+      end
+    end
+    return res
+  end
+end
+
+function _equivalence_classes_binary_quadratic_indefinite_primitive(d::fmpz; proper::Bool = false)
+  @assert d > 0
+  Qx = Hecke.Globals.Qx
+  x = gen(Qx)
+  f = x^2 - d * x + (d^2 - d)//4
+  @assert isone(denominator(f))
+  K, a = number_field(f, "a", cached = false) # a is (d + \sqrt(d))//2
+  O = equation_order(K)
+  C, _dlog, _exp = narrow_picard_group(O)
+  res = QuadBin{fmpz}[]
+  # C gives me all proper classes of definit forms
+  # So if proper = true, we don't have to do anything
+  # and if proper = false, we have to sieve using isequivalent
+  for c in C
+    I = _exp(c)
+    J = numerator(I)
+    f = _ideal_to_form(J, d)
+    if proper || all(h -> !isequivalent(h, f, proper = false), res)
+      push!(res, reduction(f))
+    end
+  end
+  return res
+end
+
+# This is from Kani
+function _ideal_to_form(I::NfAbsOrdIdl, delta)
+  # first make primitive
+  M = _hnf(basis_matrix(I), :lowerleft)
+  g = reduce(gcd, [M[1, 1], M[1, 2], M[2, 2]])
+  M = divexact(M, g)
+  B = M[2, 1]
+  C = M[2, 2]
+  a = M[1, 1]
+  @assert isone(C)
+  b = -(2 * B + delta)
+  c = -divexact(divexact(delta - b^2, 4), a)
+  @assert -4 * a * c == delta - b^2
+  f = binary_quadratic_form(a, b, c)
+  @assert discriminant(f) == delta
+  return f
+end
+
+function _form_to_ideal(f::QuadBin{fmpz}, O, a)
+  # a must be d + sqrt(d)//2 and O = ZZ[a]
+  deltasqrt = O(2 * a - discriminant(f))
+  # deltasqrt^2 == delta
+  @assert deltasqrt^2 == discriminant(f)
+  _a = f[1]
+  _b = f[2]
+  _c = f[3]
+  return ideal(O, [O(_a), divexact(O(-_b + deltasqrt), 2)])
+end
+
+function _genus_representatives_binary_quadratic_indefinite(f::QuadBin{fmpz})
+  d = discriminant(f)
+  @assert d > 0
+  cls = _equivalence_classes_binary_quadratic_indefinite(d, proper = false)
+  res = typeof(f)[]
+  K, = rationals_as_number_field()
+  L = _binary_quadratic_form_to_lattice(f, K)
+  G = genus(L)
+  for g in cls
+    GG = genus(_binary_quadratic_form_to_lattice(f, K))
+    if G == GG
+      push!(res, g)
+    end
+  end
+  return res
+end
+
+function _binary_quadratic_form_to_lattice(f::QuadBin{fmpz}, K, e::fmpz = fmpz(1))
+  a = f[1]
+  b = f[2]
+  c = f[3]
+  G = matrix(K, 2, 2, [a//(e), b//(2*e), b//(2*e), c//e])
+  L = lattice(quadratic_space(K, G), identity_matrix(K, 2))
+end
+
+function _equivalence_classes_binary_quadratic_form_degenerate(d::fmpz)
+  @assert issquare(d)
+end
+
+function _get_equivalence_class(S, f)
+  if isempty(S)
+    return S
+  end
+
+  res = eltype(S)[]
+  for s in S
+    if any(y -> f(y, s), res)
+      continue
+    end
+    push!(res, s)
   end
   return res
 end

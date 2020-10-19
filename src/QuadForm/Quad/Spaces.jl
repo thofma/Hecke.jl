@@ -324,7 +324,7 @@ function _quadratic_form_invariants(M, O; minimal = true)
     end
   end
   I = [ (P, count(x -> isnegative(x, P), D)) for P in real_places(K) ];
-  return prod(D), F, I
+  return reduce(*, D, init = one(K)), F, I
 end
 
 @doc Markdown.doc"""
@@ -655,6 +655,28 @@ end
 
 isisotropic(V::QuadSpace, p::InfPlc) = _isisotropic(V, p)
 
+function _isisotropic(D::Array, p)
+  n = length(D)
+  if n == 0
+    return false
+  end
+  K = parent(D[1])
+  d = reduce(*, D, init = one(K))
+  if d == 0
+    return true
+  elseif n <= 1
+    return false
+  elseif n == 2
+    return islocal_square(-d, p)
+  elseif n == 3
+    return _hasse_invariant(D, p) == hilbert_symbol(K(-1), -d, p)
+  elseif n == 4
+    return !islocal_square(d, p) || (_hasse_invariant(D, p) == hilbert_symbol(K(-1), K(-1), p))
+  else
+    return true
+  end
+end
+
 function isisotropic(V::QuadSpace, p)
   @assert base_ring(V) == nf(order(p))
   d = det(V)
@@ -740,6 +762,7 @@ function _solve_conic(a, b, c, u, v)
   d = -b//a
   den = denominator(d)
   L, y = number_field(x^2 - d * den^2)
+  _Ls, _LstoL = simplify(L)
   fl, _n = isnorm(L, -c//a)
   if L isa AnticNumberField
     n = evaluate(_n)
@@ -825,9 +848,43 @@ function _isisometric_with_isometry(a1, a2, b1, b2)
   # This should be a parabola?
 end
 
+function _solve_conic_affine(A, B, a)
+  # Solve Au^2 + B*w^2 = a
+  # Gives one solutation
+
+  # a = u^2 + B/A v^2 = (u - sqrt(B/A)v)(u + sqrt(B/A)) = N(u + v sqrt(B/A))
+
+  K = parent(A)
+
+  Kz, z = PolynomialRing(K, "z", cached = false)
+  D = -B//A
+  de = denominator(D)
+  L, _ = number_field(z^2 - de^2 * D)
+  fl, _n = isnorm(L, a//(A) * de^2)
+
+  if !fl
+    return false, zero(K), zero(K)
+  end
+
+  if L isa AnticNumberField
+    n = evaluate(_n)
+  else
+    n = _n
+  end
+
+  @assert norm(n) == a//(A) * de^2
+
+  u1, w1 = coeff(n, 0)//de, coeff(n, 1)
+
+  @assert u1^2 * A + w1^2 * B == a
+
+  return true, u1, w1
+end
+
 function _solve_conic_affine(A, B, a, t)
   # Solve Au^2 + B*w^2 = a
   # Gives one solutation and a parametrization
+  # This assumes that a solution exists!
 
   # a = u^2 + B/A v^2 = (u - sqrt(B/A)v)(u + sqrt(B/A)) = N(u + v sqrt(B/A))
 
@@ -958,3 +1015,505 @@ function isequivalent_with_isometry(V::QuadSpace, W::QuadSpace)
   return true,  T
 end
 
+################################################################################
+#
+#  Isotropic vector
+#
+################################################################################
+
+_to_gf2(x) = x == 1 ? 0 : 1
+#ToGF2:= func< a,b,p | HilbertSymbol(a,b,p) eq 1 select 0 else 1 >;
+#SignGF2:= func< x, p | Evaluate(x, p) lt 0 select 1 else 0 >;
+#MyFact:= func< R, d | Type(R) eq RngInt select FactorizationOfQuotient(Rationals() ! d) else Factorization(R*d) >;
+
+# F must be symmetric
+
+function _isisotropic_with_vector(F::MatrixElem)
+  K = base_ring(F)
+  _D, T = _gram_schmidt(F, identity, false)
+  D = diagonal(_D)
+  i = findfirst(==(zero(K)), D)
+  if i isa Int
+    return true, elem_type(K)[T[i, j] for j in 1:ncols(T)]
+  end
+
+  if length(D) <= 1
+    return false, elem_type(K)[]
+  end
+
+  for i in 1:length(D)
+    for j in (i + 1):length(D)
+      if D[i] == -D[j]
+        return true, elem_type(K)[T[i, k] + T[j, k] for k in 1:ncols(T)]
+      end
+    end
+  end
+
+  fl, y = issquare_with_root(-D[1]//D[2])
+  if fl
+    return true, elem_type(K)[T[1, k] + y * T[2, k] for k in 1:ncols(T)]
+  elseif length(D) == 2
+    return false, elem_type(K)[]
+  end
+
+  if length(D) == 3
+    fl, a, b = _solve_conic_affine(D[1], D[2], -D[3])
+    if fl
+      v = elem_type(K)[a, b, one(K)]
+      vma = matrix(K, 1, length(v), v) * T
+      @assert vma * F * transpose(vma) == 0
+      return true, elem_type(K)[vma[1, i] for i in 1:ncols(vma)]
+    else
+      return false, elem_type(K)[]
+    end
+  elseif length(D) == 4
+    fl, v = _isisotropic_with_vector(diagonal_matrix(D[3], D[4]))
+    if fl
+      return true, elem_type(K)[v[1] * T[3, k] + v[2] * T[4, k] for k in 1:ncols(T)]
+    end
+
+    for v in real_places(K)
+      if !_isisotropic(D, v)
+        return false, elem_type(K)[]
+      end
+    end
+
+    R = maximal_order(K)
+    P = ideal_type(R)[]
+    for d in append!(elem_type(K)[K(2)], D)
+      for (p, _) in factor(d * R)
+        if p in P
+          continue
+        end
+        if !_isisotropic(D, p)
+          return false, elem_type(K)[]
+        else
+          push!(P, p)
+        end
+      end
+    end
+
+    # At this point we know that the space is isotropic.
+    # But we need to determine the vector.
+
+    # Find x != 0 such that <D[1], D[2]> and <-D[3], -D[4]> both represent x.
+
+    rlp = real_places(K)
+    
+    
+    _target = append!(Int[_to_gf2(hilbert_symbol(D[1], D[2], p)) for p in P], Int[_to_gf2(hilbert_symbol(-D[3], -D[4], p)) for p in P])
+
+    I = eltype(rlp)[]
+
+    for p in rlp
+      s = sign(D[1], p)
+      if s == sign(D[2], p)
+        push!(I, p)
+        push!(_target, _to_gf2(s))
+      else
+        s = sign(-D[3], p)
+        if s == sign(-D[4], p)
+          push!(I, p)
+          push!(_target, _to_gf2(s))
+        end
+      end
+    end
+
+    V = abelian_group(Int[2 for i in 1:length(_target)])
+    target = V(_target)
+    # Find x such that target equals the vector
+    # [ _to_gf2_(hilbert_symbol(-D[1] * D[2], x, p)) for p in ] vcat
+    # [ _to_gf2(hilbert_symbol(-D[3]*D[4], x, p)) for p in P ] vcat
+    # [ _to_gf2(sign(x, p) for p in I ]
+    if iszero(target)
+      x = one(K)
+    else
+      found = false
+      S, mS = sub(V, elem_type(V)[], false)
+      basis = elem_type(K)[]
+      signs = elem_type(V)[]
+      L, mL = sunit_group_fac_elem(P)
+      Q, mQ = quo(L, 2, false)
+      for q in gens(Q)
+        x = evaluate(mL(mQ\q))
+        _v = append!(Int[_to_gf2(hilbert_symbol(-D[1] * D[2], x, p)) for p in P], Int[_to_gf2(hilbert_symbol(-D[3] * D[4], x, p)) for p in P])
+        _v = append!(_v, Int[_to_gf2(sign(x, p)) for p in I])
+        s = V(_v)
+        fl, _ = haspreimage(mS, s) 
+        if !fl
+          push!(signs, s)
+          push!(basis, x)
+          S, mS = sub(V, signs, false)
+          if haspreimage(mS, target)[1]
+            found = true
+            break
+          end
+        end
+      end
+
+      # Still not found
+
+      Cl, mCl = class_group(R)
+      A = abelian_group(fill(0, length(P)))
+      hh = hom(A, Cl, [mCl\(p) for p in P])
+      SS, mSS = image(hh, false)
+      Q, mQ = quo(Cl, [mSS(SS[i]) for i in 1:ngens(SS)])
+
+      p  = 2
+      while !found
+        p = next_prime(p)
+        lp = prime_decomposition(R, p)
+        for (q, _) in lp
+          if q in P
+            continue
+          end
+          o = order(mQ(mCl\(q)))
+          c = -(hh\(o * (mCl\(q))))
+          fl, _x = isprincipal(q * prod(P[i]^Int(c.coeff[i]) for i in 1:length(P)))
+          x = elem_in_nf(_x)
+          _v = append!(Int[_to_gf2(hilbert_symbol(-D[1] * D[2], x, p)) for p in P], Int[_to_gf2(hilbert_symbol(-D[3] * D[4], x, p)) for p in P])
+          _v = append!(_v, Int[_to_gf2(sign(x, p)) for p in I])
+          s = V(_v)
+          if haspreimage(mS, s + target)[1]
+            push!(basis, x)
+            push!(signs, s)
+            found = true
+            break
+          end
+        end
+      end
+
+      FF = GF(2, cached = false)
+      fl, expo = can_solve(matrix(FF, length(signs), length(_target), [ s.coeff[1, i] for s in signs, i in 1:length(_target)]), matrix(FF, 1, length(_target), _target), side = :left)
+      @assert fl
+
+      x = evaluate(FacElem(basis, map(fmpz, [lift(expo[1, i]) for i in 1:length(basis)])))
+    end
+    ok, v = _isisotropic_with_vector(diagonal_matrix([D[1], D[2], -x]))
+    @assert ok
+    ok, w = _isisotropic_with_vector(diagonal_matrix([D[3], D[4],  x]))
+    @assert ok
+    v = inv(v[3]) .* v
+    w = inv(w[3]) .* w
+    v = matrix(K, 1, 4, [v[1], v[2], w[1], w[2]]) * T
+    @assert v * F * v' == 0
+    return true, elem_type(K)[v[1, i] for i in 1:4]
+  else
+    # Dimension >= 5, we need to only take care of the real places
+    ok = all(v -> _isisotropic(D, v), real_places(K))
+    if !ok
+      return false, elem_type(K)[]
+    end
+
+    # We need D[3..5] to yield both signs at every real place
+    rlp = real_places(K)
+    found = false
+    for i in 1:length(D), j in (i + 1):length(D)
+      if all(p -> sign(D[i], p) != sign(D[j], p), rlp)
+        TT = identity_matrix(K, nrows(F))
+        found = true
+        if i != 3
+          swap_cols!(TT, 3, i)
+        end
+        if j != 4
+          swap_cols!(TT, 4, j)
+        end
+        T = TT * T
+        _D = (T * F * transpose(T))
+        @assert isdiagonal(_D)
+        D = diagonal(_D)
+        break
+      end
+    end
+    if !found
+      fix = Int[]
+      signs = Int[]
+      for i in 1:length(rlp)
+        s = sign(D[4], rlp[i])
+        if s != sign(D[5], rlp[i])
+          continue
+        end
+        if s == sign(D[4], rlp[i])
+          _a = _real_weak_approximation(rlp[i], rlp[fix])
+          a = inv(_a)
+          j = findfirst(Bool[sign(D[j], rlp[i]) != s for j in 1:length(D)])::Int
+          r = 0
+          while true
+            r += 1
+            t = D[4] + a^(2*r)*D[j]
+            if sign(t, rlp[i]) != s && all(sign(t, rlp[fix[k]]) == signs[k] for k in 1:length(fix))
+              break
+            end
+          end
+          b = -a^r * D[j]//D[4]
+          v = [T[4, k] for k in 1:ncols(T)]
+          for k in 1:ncols(T)
+            T[4, k] = T[4, k] + a^r * T[j, k]
+          end
+          for k in 1:ncols(T)
+            T[j, k] = T[j, k] + b * v[k]
+          end
+        end
+        push!(fix, i)
+        push!(signs, -s)
+        _D = T * F * transpose(T)
+        @assert isdiagonal(_D)
+        D = diagonal(_D)
+      end
+    end
+
+    ok, v = _isisotropic_with_vector(diagonal_matrix(D[3:5]))
+    if ok
+      res = Vector{elem_type(K)}(undef, ncols(T))
+      for k in 1:ncols(T)
+        res[k] = v[1] * T[3, k] + v[2] * T[4, k] + v[3] * T[5, k]
+      end
+      return true, res
+    end
+
+    R = maximal_order(K)
+    P = ideal_type(R)[]
+    X = Tuple{elem_type(K), elem_type(K)}[]
+    M = ideal_type(R)[]
+    for p in Set([ p for d in append!(nf_elem[K(2)], D) for p in support(d, R)])
+      if _isisotropic(D[3:5], p)
+        continue
+      end
+      
+      if _isisotropic([D[3], D[4], D[5], D[1]], p)
+        x = one(K)
+        y = zero(K)
+      elseif _isisotropic([D[3], D[4], D[5], D[2]], p)
+        x = zero(K)
+        y = one(K)
+      else
+        # now D[1] and D[2] represent necessarily the same class
+        # leaving this class is enough
+        V1 = valuation(D[1], p)
+        V2 = valuation(D[2], p)
+        V = max(V1, V2)
+        pi = elem_in_nf(uniformizer(p))
+        k, h = ResidueField(order(p), p)
+        hext = extend(h, K)
+        y = pi^(div(V - V2, 2))
+        yy = pi^(div(V - V1, 2))
+        cnt = 1
+        while true
+          cnt += 1
+          @assert cnt <= 1000
+          x = (hext\rand(k)) * yy
+          if _isisotropic(elem_type(K)[D[3], D[4], D[5], x^2 * D[1] + y^2 * D[2]], p)
+            break
+          end
+        end
+      end
+      push!(X, (x, y))
+      push!(P, p)
+      V = valuation(x^2 * D[1] + y^2 * D[2], p) + 1
+      if isdyadic(p)
+        V = V + 2 * ramification_index(p)
+      end
+      @show p, V
+      push!(M, p^V)
+    end
+    @assert length(P) != 0
+
+    xx = elem_in_nf(crt([R(x[1]) for x in X], M))
+    yy = elem_in_nf(crt([R(x[2]) for x in X], M))
+    t = xx^2 * D[1] + yy^2 * D[2]
+    ok, w = _isisotropic_with_vector(diagonal_matrix(elem_type(K)[D[3], D[4], D[5], t]))
+    @assert ok
+    @assert w[1]^2 * D[3] + w[2]^2 * D[4] + w[3]^2 * D[5] + w[4]^2 * t == 0
+    w = inv(w[4]) .* w
+    v = matrix(K, 1, ncols(T), append!(elem_type(K)[xx, yy, w[1], w[2], w[3]], [zero(K) for i in 1:(nrows(T) - 5)])) * T
+    v = lcm(fmpz[denominator(v[1, i]) for i in 1:ncols(v)]) * v
+    @assert v * F * transpose(v) == 0
+    return true, elem_type(K)[v[1, i] for i in 1:ncols(v)]
+  end
+end
+
+function _quadratic_form_decomposition(F::MatrixElem)
+  # Decompose F into an anisotropic kernel, an hyperbolic space and its radical
+  @req issymmetric(F) "Matrix must be symmetric"
+  K = base_ring(F)
+  r, Rad = left_kernel(F)
+  @assert nrows(Rad) == r
+  RadComp = _find_direct_sum(Rad)
+  newF = RadComp * F * RadComp'
+  H = similar(F, 0, ncols(F))
+  CurBas = RadComp
+
+  while true
+    fl, HH = _find_hyperbolic_subspace(newF)
+    if fl
+      @assert iszero(sub(HH, 1:1, 1:ncols(HH)) * newF  * sub(HH, 1:1, 1:ncols(HH))')
+      H = vcat(H, HH * CurBas)
+      CurBas = _orthogonal_complement(newF, HH) * CurBas
+      newF = CurBas * F * CurBas'
+    else
+      break
+    end
+  end
+
+  @assert iseven(nrows(H))
+  if nrows(H) > 0
+    D = diagonal_matrix([matrix(K, 2, 2, [1, 0, 0, -1]) for i in 1:div(nrows(H), 2)])
+    @assert isequivalent(quadratic_space(K, H * F * H'), quadratic_space(K, D))
+  end
+
+  @assert iszero(Rad * F * Rad')
+
+  #H * F * H', CurBas * F * CurBas', Rad * F * Rad'
+  return CurBas, H, Rad
+end
+
+function _find_hyperbolic_subspace(F)
+  K = base_ring(F)
+  iso, v = _isisotropic_with_vector(F)
+  if !iso
+    return false, F
+  end
+  vv = matrix(K, 1, length(v), v)
+
+  # Find basis vector which has non-trivial product with v
+  o = F * vv'
+  i = findfirst(j -> !iszero(o[j, 1]), 1:nrows(o))
+  @assert i isa Int
+  H = vcat(vv, zero_matrix(base_ring(F), 1, ncols(F)))
+  H[2, i] = inv(o[i, 1])
+  GG = H * F * H'
+
+  if !iszero(GG[2, 2])
+    al = -GG[2, 2]//2 
+    for i in 1:ncols(H)
+      H[2, i] = al * H[1, i] + H[2, i]
+    end
+    GG = H * F * H'
+  end
+
+  @assert iszero(GG[1, 1])
+  @assert iszero(GG[2, 2])
+  @assert isone(GG[1, 2])
+  @assert isone(GG[2, 1])
+
+  return true, H
+end
+
+function _find_direct_sum(B::MatrixElem)
+  # I am very lazy
+  C = B
+  r = nrows(B)
+  K = base_ring(B)
+  piv = Int[]
+  for i in 1:ncols(B)
+    z = zero_matrix(K, 1, ncols(B))
+    z[1, i] = one(K)
+    CC = vcat(C, z)
+    _r = rank(CC)
+    if _r == r
+      continue
+    else
+      r = _r
+      push!(piv, i)
+      C = CC
+    end
+  end
+  l = length(piv)
+  @assert nrows(B) + l == ncols(B)
+  Z = zero_matrix(K, l, ncols(B))
+  for i in 1:length(piv)
+    Z[i, piv[i]] = one(K)
+  end
+  return Z
+end
+
+function _orthogonal_complement(F::MatrixElem, B::MatrixElem)
+  r, R = left_kernel(F * transpose(B))
+  @assert nrows(R) == r
+  if !iszero(det(F))
+    @assert nrows(R) + nrows(B) == nrows(F)
+  end
+  return R
+end
+
+function _maximal_isotropic_subspace(F::MatElem)
+  _, H, R = _quadratic_form_decomposition(F)
+  return vcat(sub(H, collect(1:2:nrows(H)), collect(1:ncols(H))), R)
+end
+
+function _isisometric_with_isometry(F, G)
+  K = base_ring(F)
+
+  if nrows(F) != nrows(G)
+    return false, F
+  end
+
+  A1, H1, R1 = _quadratic_form_decomposition(F)
+  A2, H2, R2 = _quadratic_form_decomposition(G)
+
+  if nrows(H1) != nrows(H2) || nrows(R1) != nrows(R2)
+    return false, F
+  end
+
+  _d1, _H1, _I1 = _quadratic_form_invariants(A1 * F * A1')
+  _d2, _H2, _I2 = _quadratic_form_invariants(A2 * G * A2')
+
+  if !(_I1 == _I2 && _H1 == _H2 && issquare(_d1 * _d2)[1])
+    return false, F
+  end
+
+  @assert nrows(H1) == nrows(H2) && nrows(R1) == nrows(R2)
+
+  X = zero_matrix(K, 0, ncols(F))
+  Y = zero_matrix(K, 0, ncols(F))
+
+  while nrows(A1) > 0
+    GA1 = A1 * F * A1'
+    GA2 = A2 * G * A2'
+    ok, v = _isisotropic_with_vector(diagonal_matrix(GA1, -GA2))
+    @assert ok
+    n = div(length(v), 2)
+    _x = matrix(K, 1, n, v[1:n])
+    _y = matrix(K, 1, n, v[(n+1):2*n])
+    @assert _x * GA1 * _x' == _y * GA2 *  _y'
+    x = matrix(K, 1, n, v[1:n]) * A1
+    y = matrix(K, 1, n, v[(n+1):2*n]) * A2
+    @assert x * F * x' == y * G * y'
+    X = vcat(X, x)
+    Y = vcat(Y, y)
+    @assert X * F * X' == Y * G * Y'
+    _A1 = _orthogonal_complement(GA1, matrix(K, 1, n, v[1:n]))
+    A1 = _A1 * A1
+    _A2 = _orthogonal_complement(GA2, matrix(K, 1, n, v[(n + 1):2*n]))
+    A2 = _A2 * A2
+  end
+
+  @assert X * F * X' == Y * G * Y'
+  @assert H1 * F * H1' == H2  *  G * H2'
+
+  M = inv(vcat(X, H1, R1)) * vcat(Y, H2, R2) 
+
+  @assert M * G * M' == F
+
+  return true, M
+end
+
+function isisometric_with_isometry(V::QuadSpace, W::QuadSpace)
+  GV = gram_matrix(V)
+  GW = gram_matrix(W)
+  return _isisometric_with_isometry(GV, GW)
+end
+
+function _real_weak_approximation(s, I)
+  K = NumberField(s)
+  a = gen(K)
+  while true
+    x = simplest_inside(real(evaluate(a, s, 10)))
+    a = 2 * (a - x)
+    if all(t -> t == s || abs(evaluate(a, t)) >= 2, I)
+      break
+    end
+  end
+  @assert abs(evaluate(a, s)) < 1//2
+  return a
+end

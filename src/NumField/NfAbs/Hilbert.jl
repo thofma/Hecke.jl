@@ -220,6 +220,10 @@ function hilbert_symbol(a::Union{fmpz, Integer}, b::Union{fmpz,Integer}, p::Unio
   return hilbert_symbol(fmpz(a), fmpz(b), fmpz(p))
 end
 
+function hilbert_symbol(a::Union{fmpz, Integer}, b::Union{fmpz,Integer}, p::PosInf)
+  return hilbert_symbol(a, b, 0)
+end
+
 @doc Markdown.doc"""
     hilbert_symbol(a::fmpz, b::fmpz, p::fmpz) -> Int
 

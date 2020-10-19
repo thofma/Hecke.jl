@@ -90,16 +90,22 @@ end
 #
 ################################################################################
 
-promote_rule(::Type{NfRelElem{T}}, ::Type{fmpz}) where {T <: RingElement} = NfRelElem{T}
+AbstractAlgebra.promote_rule(::Type{NfRelElem{T}}, ::Type{fmpz}) where {T <: NumFieldElem} = NfRelElem{T}
 
-promote_rule(::Type{NfRelElem{T}}, ::Type{fmpq}) where {T <: RingElement} = NfRelElem{T}
+AbstractAlgebra.promote_rule(::Type{NfRelElem{T}}, ::Type{fmpq}) where {T <: NumFieldElem} = NfRelElem{T}
 
-promote_rule(::Type{NfRelElem{T}}, ::Type{T}) where {T} = NfRelElem{T}
+AbstractAlgebra.promote_rule(::Type{NfRelElem{T}}, ::Type{T}) where {T} = NfRelElem{T}
 
-promote_rule(::Type{NfRelElem{T}}, ::Type{NfRelElem{T}}) where T <: RingElement = NfRelElem{T}
+AbstractAlgebra.promote_rule(::Type{T}, ::Type{NfRelElem{T}}) where {T} = NfRelElem{T}
 
-function promote_rule(::Type{NfRelElem{T}}, ::Type{U}) where {T <: RingElement, U <: RingElement}
-  promote_rule(T, U) == T ? NfRelElem{T} : Union{}
+AbstractAlgebra.promote_rule(::Type{NfRelElem{T}}, ::Type{NfRelElem{T}}) where T <: NumFieldElem = NfRelElem{T}
+
+function AbstractAlgebra.promote_rule(::Type{NfRelElem{T}}, ::Type{U}) where {T <: NumFieldElem, U <: NumFieldElem}
+  AbstractAlgebra.promote_rule(T, U) == T ? NfRelElem{T} : Union{}
+end
+
+function AbstractAlgebra.promote_rule(::Type{U}, ::Type{NfRelElem{T}}) where {T <: NumFieldElem, U <: NumFieldElem}
+  AbstractAlgebra.promote_rule(T, U) == T ? NfRelElem{T} : Union{}
 end
 
 ################################################################################
@@ -488,6 +494,7 @@ end
 #
 ################################################################################
 
+# TODO: Add a simplify option
 #@doc Markdown.doc"""
 #    absolute_field(K::NfRel{nf_elem}, cached::Bool = false) -> AnticNumberField, Map, Map
 #Given an extension $K/k/Q$, find an isomorphic extension of $Q$.

@@ -1,9 +1,13 @@
 
 function isnorm_fac_elem(K::NfRel{nf_elem}, a::nf_elem)
   Ka, mKa, mkK = absolute_field(K)
+  Kas, KasToKa = simplify(Ka)
+  Ka = Kas
+  #mKa = KasToKa * mKa
+  mkK = mkK * inv(KasToKa)
 
   ZKa = lll(maximal_order(Ka))
-  C, mC = class_group(ZKa)
+  C, mC = class_group(ZKa, use_aut = true)
 
   S = collect(keys(factor(mkK(a)*ZKa)))
 
@@ -46,7 +50,7 @@ function isnorm_fac_elem(K::NfRel{nf_elem}, a::nf_elem)
   aa = preimage(mu, FacElem(a))::GrpAbFinGenElem
   fl, so = haspreimage(No, aa)
   fl || return fl, FacElem(one(K))
-  return true, FacElem(K, Dict{elem_type(K), fmpz}([image(mKa, k) => v for (k,v) = (mU(so)::FacElem{elem_type(Ka), typeof(Ka)})]))
+  return true, FacElem(K, Dict{elem_type(K), fmpz}([image(KasToKa * mKa, k) => v for (k,v) = (mU(so)::FacElem{elem_type(Ka), typeof(Ka)})]))
 end
 
 function isnorm(K::NfRel{nf_elem}, a::nf_elem)
