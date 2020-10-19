@@ -1086,7 +1086,7 @@ function sturm_sequence(f::PolyElem{<:FieldElem})
 
 end
 
-function number_real_roots(f::PolyElem{nf_elem}, P::InfPlc; sturm_sequence = PolyElem{nf_elem}[])
+function number_real_roots(f::PolyElem{<:NumFieldElem}, P; sturm_sequence = PolyElem{nf_elem}[])
   if length(sturm_sequence) == 0
     s = Hecke.sturm_sequence(f)
   else
