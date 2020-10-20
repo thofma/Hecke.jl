@@ -1,3 +1,3 @@
 @testset "NumField/NfRel" begin
-  include("NumField/NfRel/Conjugates.jl")
+  include("NfRel/Conjugates.jl")
 end
