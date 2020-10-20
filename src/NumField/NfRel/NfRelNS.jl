@@ -104,6 +104,11 @@ function Nemo.iszero(a::NfRelNSElem)
   return iszero(data(a))
 end
 
+function zero!(a::NfRelNSElem)
+  zero!(a.data)
+  return a
+end
+
 function Nemo.isone(a::NfRelNSElem)
   reduce!(a)
   return isone(data(a))
