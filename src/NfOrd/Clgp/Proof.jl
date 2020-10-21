@@ -7,7 +7,18 @@ add_verbose_scope(:ClassGroupProof)
 
 PROGRESS_BAR_PERCENTAGE_GRANULARITY = Ref(0.1)
 
-function showprogress(io::IO, p::Pkg.GitTools.MiniProgressBar, info)
+Base.@kwdef mutable struct MiniProgressBar
+    max::Float64 = 1.0
+    header::String = ""
+    color::Symbol = :white
+    width::Int = 40
+    current::Float64 = 0.0
+    prev::Float64 = 0.0
+    has_shown::Bool = false
+    time_shown::Float64 = 0.0
+end
+
+function showprogress(io::IO, p::MiniProgressBar, info)
   perc = p.current / p.max * 100
   prev_perc = p.prev / p.max * 100
   # Bail early if we are not updating the progress bar,
@@ -36,9 +47,10 @@ function showprogress(io::IO, p::Pkg.GitTools.MiniProgressBar, info)
   print(io, info)
   print(io, "\r")
 end
+  
 
 function class_group_proof(clg::ClassGrpCtx, lb::fmpz, ub::fmpz; extra :: fmpz=fmpz(0), prec::Int = 100, do_it=1:ub)
-  PB = Pkg.GitTools.MiniProgressBar(header = "Class group proof")
+  PB = MiniProgressBar(header = "Class group proof")
 
   #for all prime ideals P with lb <= norm <= ub, find a relation
   #tying that prime to the factor base
