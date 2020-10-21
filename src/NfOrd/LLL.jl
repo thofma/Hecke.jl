@@ -259,6 +259,7 @@ function _minkowski_matrix_CM(M::NfOrd)
   end
   i = 1
   t = arb()
+  n = degree(M)
   while i <= degree(M)
     j = i
     while j <= degree(M)
