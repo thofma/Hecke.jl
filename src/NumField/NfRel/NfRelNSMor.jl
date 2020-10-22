@@ -583,3 +583,78 @@ function change_base_ring(p::MPolyElem{T}, g, new_polynomial_ring) where {T <: R
   end
   return finish(M)::elem_type(new_polynomial_ring)
 end
+
+
+function Base.:(*)(f::NfAbsToNfAbsNS, g::NfAbsNSToNfAbsNS)
+  @assert codomain(f) == domain(g)
+  return hom(domain(f), codomain(g), g(f.prim_img))
+end
+
+
+function Base.:(*)(f::Hecke.NfRelToNfRelNSMor, g::Hecke.NfRelNSToNfRelNSMor)
+  return hom(domain(f), codomain(g), g(f(gen(domain(f)))))
+end
+
+
+function Base.:(*)(f::Hecke.NfToNfRel, g::Hecke.NfRelToNfRelNSMor)
+  @assert codomain(f) === domain(g)
+  return hom(domain(f), codomain(g), g(f(gen(domain(f)))))
+end
+
+function hom(K::AnticNumberField, L::NfRelNS{nf_elem}, img_gen::NfRelNSElem{nf_elem})
+  return Hecke.NfToNfRelNSMor(K, L, img_gen)
+end
+
+function image(f::Hecke.NfToNfRelNSMor, a::nf_elem)
+  K = parent(a)
+  Qx = parent(K.pol)
+  return evaluate(Qx(a), f.img_gen)
+end
+
+function preimage(phi::Hecke.NfToNfRelNSMor, a::NfRelNSElem{nf_elem})
+  @assert isdefined(phi, :preimg_base_field) && isdefined(phi, :preimgs)
+  f = data(a)
+  K = codomain(phi)
+  k = base_field(K)
+  R = parent(k.pol)
+  g = map_coeffs(x -> evaluate(R(x), phi.preimg_base_field), f)
+  return evaluate(g, phi.preimgs)
+end
+
+
+function _compute_preimage(f::NfToNfRelNSMor)
+  K = domain(f)
+  L = codomain(f)
+  el = one(L)
+  M = zero_matrix(FlintQQ, degree(K), degree(K))
+  M[1, 1] = 1
+  a = f.img_gen
+  for i = 2:degree(K)
+    el *= a
+    v = absolute_coordinates(el)
+    for j = 1:degree(K)
+      M[i, j] = v[j]
+    end
+  end
+  N = zero_matrix(FlintQQ, ngens(L)+1, degree(K))
+  gk = L(gen(base_field(L)))
+  v = absolute_coordinates(gk)
+  for j = 1:degree(K)
+    N[1, j] = v[j]
+  end
+  gL = gens(L)
+  for i = 1:length(gL)
+    v = absolute_coordinates(gL[i])
+    for j = 1:degree(K)
+      N[i+1, j] = v[j]
+    end
+  end
+  fl, x = can_solve(M, N, side = :left)
+  x1, den = _fmpq_mat_to_fmpz_mat_den(x)
+  f.preimg_base_field = Nemo.elem_from_mat_row(K, x1, 1, den)
+  f.preimgs = Vector{nf_elem}(undef, length(gL))
+  for i = 1:length(gL)
+    f.preimgs[i] = Nemo.elem_from_mat_row(K, x1, i+1, den)
+  end
+  return nothing
+end
