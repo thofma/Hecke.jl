@@ -2041,7 +2041,10 @@ mutable struct NfAbsNSElem <: NonSimpleNumFieldElem{fmpq}
   data::fmpq_mpoly
   parent::NfAbsNS
 
-  NfAbsNSElem(g::fmpq_mpoly) = new(g)
+  function NfAbsNSElem(K::NfAbsNS, g::fmpq_mpoly)
+    return new(g, K)
+  end
+    
 end
 
 ################################################################################

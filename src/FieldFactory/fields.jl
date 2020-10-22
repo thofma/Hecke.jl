@@ -408,7 +408,7 @@ end
 #
 ###############################################################################
 
-function field_extensions(list::Vector{FieldsTower}, bound::fmpz, IsoE1::GAP.GapObj, l::Array{Int, 1}, only_real::Bool, simplify::Bool)
+function field_extensions(list::Vector{FieldsTower}, bound::fmpz, IsoE1::GAP.GapObj, l::Array{Int, 1}, only_real::Bool)
 
   grp_to_be_checked = Dict{Int, GAP.GapObj}()
   d = degree(list[1])
@@ -427,13 +427,13 @@ function field_extensions(list::Vector{FieldsTower}, bound::fmpz, IsoE1::GAP.Gap
   for (j, x) in enumerate(list)   
     @vprint :Fields 1 "Field $(j)/$(length(list)): $(x.field.pol)"
     @vprint :FieldsNonFancy 1 "Field $(j)/$(length(list)): $(x.field.pol)\n"
-    append!(final_list, field_extensions(x, bound, IsoCheck, l, only_real, grp_to_be_checked, IsoE1, simplify))
+    append!(final_list, field_extensions(x, bound, IsoCheck, l, only_real, grp_to_be_checked, IsoE1))
   end 
   return final_list
 
 end
 
-function field_extensions(x::FieldsTower, bound::fmpz, IsoE1::GAP.GapObj, l::Array{Int, 1}, only_real::Bool, grp_to_be_checked::Dict{Int, GAP.GapObj}, IsoG::GAP.GapObj, simplify::Bool)
+function field_extensions(x::FieldsTower, bound::fmpz, IsoE1::GAP.GapObj, l::Array{Int, 1}, only_real::Bool, grp_to_be_checked::Dict{Int, GAP.GapObj}, IsoG::GAP.GapObj)
   
   list_cfields = _abelian_normal_extensions(x, l, bound, IsoE1, only_real, IsoG)
   if isempty(list_cfields)
@@ -446,7 +446,7 @@ function field_extensions(x::FieldsTower, bound::fmpz, IsoE1::GAP.GapObj, l::Arr
   @vprint :FieldsNonFancy 1 "Computing maximal orders\n"
   final_list = Vector{FieldsTower}(undef, length(list))
   for j = 1:length(list)
-    fld, autos, embed = _from_relative_to_abs_with_embedding(list[j][1], list[j][2], simplify)
+    fld, autos, embed = _from_relative_to_abs_with_embedding(list[j][1], list[j][2])
     previous_fields = Array{NfToNfMor, 1}(undef, length(x.subfields)+1)
     for s = 1:length(x.subfields)
       previous_fields[s] = x.subfields[s]
@@ -468,7 +468,7 @@ end
 #
 ###############################################################################
 
-function fields(a::Int, b::Int, list::Vector{FieldsTower}, absolute_bound::fmpz; only_real::Bool = false, simplify::Bool = true)
+function fields(a::Int, b::Int, list::Vector{FieldsTower}, absolute_bound::fmpz; only_real::Bool = false)
   G = GAP.Globals.SmallGroup(a, b)
   L = GAP.Globals.DerivedSeries(G)
   lvl = _real_level(L)
@@ -502,7 +502,7 @@ function fields(a::Int, b::Int, list::Vector{FieldsTower}, absolute_bound::fmpz;
     if isempty(list)
       return FieldsTower[]
     end
-    list = field_extensions(list, bound, IsoE1, invariants, onlyreal, simplify)
+    list = field_extensions(list, bound, IsoE1, invariants, onlyreal)
     @vprint :Fields 1 "Step $i completed\n"
     @vprint :FieldsNonFancy 1 "Step $i completed\n"
     if isempty(list)
@@ -515,7 +515,7 @@ function fields(a::Int, b::Int, list::Vector{FieldsTower}, absolute_bound::fmpz;
   return list
 end
 
-function fields_direct_product(g1, g2, red, redfirst, absolute_bound; only_real = false, simplify = true)
+function fields_direct_product(g1, g2, red, redfirst, absolute_bound; only_real = false)
   b1 = root(absolute_bound, g2[1])
   b2 = root(absolute_bound, g1[1])
   @vprint :Fields 1 "The group is the product of $(g1) and $(g2)\n"
@@ -524,17 +524,17 @@ function fields_direct_product(g1, g2, red, redfirst, absolute_bound; only_real 
     return FieldsTower[]
   end
   if g1 == g2
-    return _merge(l2, l2, absolute_bound, red, redfirst, g1, g2, simplify)
+    return _merge(l2, l2, absolute_bound, red, redfirst, g1, g2)
   end
   l1 = fields(g1[1], g1[2], b1, only_real = only_real)
   if isempty(l1)
     return FieldsTower[]
   end
-  return _merge(l1, l2, absolute_bound, red, redfirst, g1, g2, simplify)
+  return _merge(l1, l2, absolute_bound, red, redfirst, g1, g2)
 end
 
 
-function fields(a::Int, b::Int, absolute_bound::fmpz; using_direct_product::Bool = true, only_real::Bool = false, simplify::Bool = true)
+function fields(a::Int, b::Int, absolute_bound::fmpz; using_direct_product::Bool = true, only_real::Bool = false)
   if a == 1
     @assert b == 1
     K = rationals_as_number_field()[1]
@@ -546,7 +546,7 @@ function fields(a::Int, b::Int, absolute_bound::fmpz; using_direct_product::Bool
     g1, g2, red, redfirst = direct_product_decomposition(G, (a, b))
     if g2 != (1, 1)   
       @vprint :Fields 1 "computing extensions with Galois group ($a, $b) and bound ~10^$(clog(absolute_bound, 10))\n" 
-      return fields_direct_product(g1, g2, red, redfirst, absolute_bound; only_real = only_real, simplify = simplify)
+      return fields_direct_product(g1, g2, red, redfirst, absolute_bound; only_real = only_real)
     end
   end
   L = GAP.Globals.DerivedSeries(G)
@@ -583,5 +583,5 @@ function fields(a::Int, b::Int, absolute_bound::fmpz; using_direct_product::Bool
     return FieldsTower[]
   end
   Id = GAP.Globals.IdGroup(G)
-  return field_extensions(list, absolute_bound, Id, invariants, only_real, simplify)
+  return field_extensions(list, absolute_bound, Id, invariants, only_real)
 end

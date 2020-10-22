@@ -207,8 +207,9 @@ end
 
 function number_field(::Type{NfAbsNS}, L::NfRelNS{nf_elem})
   @assert degree(base_field(L)) == 1
-  pols = fmpq_poly[isunivariate(map_coeffs(FlintQQ, x))[2] for x in L.pol]
-  return number_field(pols, check = false)
+  Qx = PolynomialRing(FlintQQ, "x", cached = false)[1]
+  pols = fmpq_poly[map_coeffs(FlintQQ, isunivariate(x)[2], parent = Qx) for x in L.pol]
+  return number_field(pols, cached = false, check = false)
 end
 
 Nemo.gens(K::NfRelNS) = [K(x) for x = gens(parent(K.pol[1]))]

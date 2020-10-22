@@ -86,49 +86,15 @@ end
 ###############################################################################
 
 function _to_composite(x::FieldsTower, y::FieldsTower, abs_disc::fmpz)
-
   Kns, mx, my = NumberField(x.field, y.field, cached = false, check = false)
-  K, mK = simple_extension(Kns, check = false)
-
-  #First, compute the maximal order
-  O1 = maximal_order(x.field)
-  B1 = basis(O1, copy = false)
-  O2 = maximal_order(y.field)
-  B2 = basis(O2, copy = false)
-  imagesx = Array{nf_elem, 1}(undef, length(B1))
-  imagesy = Array{nf_elem, 1}(undef, length(B2))
-  for i = 1:degree(x.field)
-    imagesx[i] = mK\(mx(B1[i].elem_in_nf))
-  end
-  for i = 1:degree(y.field)
-    imagesy[i] = mK\(my(B2[i].elem_in_nf))
-  end
-  prod_bas = Hecke.product_basis(imagesx, imagesy)
-  fac = factor(gcd(discriminant(O1), discriminant(O2)))
-  lp = collect(keys(fac.fac))
-  MatOrd = basis_matrix(prod_bas, FakeFmpqMat)
-  discr = fmpz(1)
-  if istotally_real(x.field) && istotally_real(y.field)
-    discr = abs(discriminant(O1)^degree(O2) * discriminant(O2)^degree(O1))
-  else
-    discr = (-1)^divexact(degree(K), 2) * abs(discriminant(O1)^degree(O2) * discriminant(O2)^degree(O1))
-  end 
-  inde = root(divexact(numerator(discriminant(K)), discr), 2)
-  MatOrdNum = MatOrd.num
-  Hecke.hnf_modular_eldiv!(MatOrdNum, MatOrd.den, :lowerleft)
-  OK = NfOrd(K, FakeFmpqMat(MatOrdNum, MatOrd.den))
-  #Careful: we need to compute also the sign of the discriminant!
-  OK.disc = discr
-  OK.index = inde  
-  OK.gen_index = fmpq(OK.index)
-  if !isempty(lp)
-    OK = Hecke.pmaximal_overorder_at(OK, lp)
-  end
-  OK.ismaximal = 1
-  Hecke._set_maximal_order_of_nf(K, OK)
-  if abs(discriminant(OK)) > abs_disc
+  OKns = maximal_order(Kns)
+  if abs(discriminant(OKns)) > abs_disc
     return false, x
   end
+  K, mK = simplified_simple_extension1(Kns, cached = false)
+  OK = maximal_order(K)
+
+  _compute_preimage(mK)
 
   # Now, I have to translate the automorphisms.
   # Easy thing: first, I write the automorphisms of the non simple extension
@@ -162,7 +128,7 @@ function _to_composite(x::FieldsTower, y::FieldsTower, abs_disc::fmpz)
   emb_suby = y.subfields[i]
   lsub, m1, m2 = number_field(domain(emb_subx), domain(emb_suby), cached = false, check = false)
   Seemb, mSeemb = simple_extension(lsub, check = false)
-  ev = [mK\(mx(emb_subx.prim_img)), mK\(my(emb_suby.prim_img))]
+  ev = nf_elem[mK\(mx(emb_subx.prim_img)), mK\(my(emb_suby.prim_img))]
   embs = NfToNfMor[hom(Seemb, K, evaluate(mSeemb(gen(Seemb)).data, ev))]
   for j = 1:length(x.subfields)
     if codomain(x.subfields[j]) != domain(emb_subx)
@@ -181,25 +147,8 @@ function _to_composite(x::FieldsTower, y::FieldsTower, abs_disc::fmpz)
   return true, FieldsTower(K, autK, embs)
 end
 
-function simplify!(x::FieldsTower)
-  K = x.field
-  OK = maximal_order(K)
-  Ks, mKs = simplify(K, cached = false)
-  mKi = inv(mKs)
-  #I need to translate the autos
-  gens_autos = NfToNfMor[hom(Ks, Ks, mKi(el(mKs.prim_img)), check = true) for el in x.generators_of_automorphisms]
-  for i = 1:length(x.subfields)
-    if codomain(x.subfields[i]) == K
-      x.subfields[i] = x.subfields[i]*mKi
-    end
-  end
-  x.field = Ks
-  x.generators_of_automorphisms = gens_autos
-  return nothing
-end
-
 #merge function when all the fields are automatically linearly disjoint
-function _easy_merge(list1, list2, absolute_bound::fmpz, simpl::Bool = false)
+function _easy_merge(list1, list2, absolute_bound::fmpz)
 
   res = FieldsTower[]
   @vprint :Fields 1 "Number of candidates = $(length(list1)*length(list2)) \n"
@@ -211,9 +160,6 @@ function _easy_merge(list1, list2, absolute_bound::fmpz, simpl::Bool = false)
       check_bound_disc(x, y, absolute_bound) || continue
       fl, composite = _to_composite(x, y, absolute_bound)
       if fl
-        if simpl
-          simplify!(composite)
-        end
         push!(res, composite)
       end
     end
@@ -661,7 +607,7 @@ function refine_clusters(list1, list2, clusters, red, redfirst, redsecond)
 end
 
 
-function _merge(list1::Vector{FieldsTower}, list2::Vector{FieldsTower}, absolute_bound::fmpz, red::Int, redsecond::Int, g1::Tuple{Int, Int}, g2::Tuple{Int, Int}, simpl::Bool = false)
+function _merge(list1::Vector{FieldsTower}, list2::Vector{FieldsTower}, absolute_bound::fmpz, red::Int, redsecond::Int, g1::Tuple{Int, Int}, g2::Tuple{Int, Int})
 
   G1 = GAP.Globals.SmallGroup(g1[1], g1[2])
   G2 = GAP.Globals.SmallGroup(g2[1], g2[2])
@@ -671,7 +617,7 @@ function _merge(list1::Vector{FieldsTower}, list2::Vector{FieldsTower}, absolute
     #All the fields are automatically linearly disjoint
     @vprint :Fields 1 "All the fields are linearly disjoint, easy case \n"
     @vprint :FieldsNonFancy 1 "All the fields are linearly disjoint, easy case \n"
-    return _easy_merge(list1, list2, absolute_bound, simpl)
+    return _easy_merge(list1, list2, absolute_bound)
   end
 
   redfirst = divexact(red, redsecond)
@@ -715,9 +661,6 @@ function _merge(list1::Vector{FieldsTower}, list2::Vector{FieldsTower}, absolute
     pair = fields_to_be_computed[i]
     fl, candidate = _to_composite(list1[pair[1]], list2[pair[2]], absolute_bound)
     if fl
-      if simpl
-        simplify!(candidate)
-      end
       push!(res, candidate)
     end
     @vprint :Fields 1 "$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())"

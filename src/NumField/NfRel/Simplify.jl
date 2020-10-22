@@ -38,6 +38,7 @@ function simplify(K::NfRel{nf_elem}; cached::Bool = true, prec::Int = 100)
   el = _simplify(OLLL, mK)
   pel = mK(el)
   f = minpoly(pel)
+  @assert degree(f) == degree(K)
   Ks = number_field(f, cached = cached, check = false)[1]
   mKs = hom(Ks, K, pel)
   return Ks, mKs
@@ -46,7 +47,6 @@ end
 #Finds a small elements given by small combinations of the basis of O 
 #that generates the extension given by mK
 function _simplify(O::NfOrd, mK::NfToNfRel)
-
   L = nf(O)
   #First, we choose the candidates
   B = basis(O, L)
@@ -79,15 +79,12 @@ function _simplify(O::NfOrd, mK::NfToNfRel)
   emb = find_embedding(FP, F)
   rt = roots(map_coeffs(emb, map_coeffs(mFP1, Lrel.pol)))
 ``
-  Fp = GF(p, cached =  false)
-  x = PolynomialRing(Fp, "x", cached = false)[2]
   indices = Int[]
   for i = 1:length(Bnew)
     if isone(denominator(Bnew[i]))
       continue
     end
-    b = _block(Bnew[i], rt, x)
-    if length(b) == n
+    if _is_primitive_via_block(mK(Bnew[i]), rt, mFP1, emb)
       push!(indices, i)
     end
   end
@@ -111,14 +108,36 @@ function find_embedding(F::FqFiniteField, K::FqFiniteField)
 end
 
 
-function _block(a::nf_elem, rt::Vector{fq}, tmp::gfp_fmpz_poly)
-  nf_elem_to_gfp_fmpz_poly!(tmp, a, false) # ignore denominator
-  evs = fq[evaluate(tmp, x) for x in rt]
+function _is_primitive_via_block(a::NfRelElem{nf_elem}, rt::Vector{fq}, mF, emb)
+  n = degree(parent(a))
+  pol = data(a)
+  polF = map_coeffs(emb, map_coeffs(mF, pol))
+  nconjs = 1
+  conjs = Set{fq}([evaluate(polF, rt[1])])
+  for i = 2:length(rt)
+    ev = evaluate(polF, rt[i])
+    if ev in conjs
+      return false
+    end
+    push!(conjs, ev)
+    nconjs += 1
+    if nconjs > div(n, 2)
+      return true
+    end
+  end
+  error("Something went wrong")
+end
+
+
+function _block(a::NfRelElem{nf_elem}, rt::Vector{fq}, mF, emb)
+  pol = data(a)
+  polF = map_coeffs(emb, map_coeffs(mF, pol))
+  evs = fq[evaluate(polF, x) for x in rt]
   b = Vector{Int}[]
   a = BitSet()
   i = 0
   n = length(rt)
-  while i < n
+  while i < length(evs)
     i += 1
     if i in a
       continue

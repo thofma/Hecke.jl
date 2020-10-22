@@ -167,6 +167,20 @@ function isdefining_polynomial_nice(K::AnticNumberField)
   return Bool(K.flag & UInt(1))
 end
 
+function isdefining_polynomial_nice(K::NfAbsNS)
+  pols = K.pol
+  for i = 1:length(pols)
+    d = denominator(pols[i])
+    if !isone(d)
+      return false
+    end
+    if !isone(lead(pols[i]))
+      return false
+    end
+  end
+  return true
+end
+
 ################################################################################
 #
 #  Class group

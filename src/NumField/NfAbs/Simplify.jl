@@ -90,8 +90,6 @@ end
 function _simplify(O::NfAbsOrd)
   K = nf(O)
   
-
-  
   B = basis(O, K, copy = false)
   nrep = min(3, degree(K))
   Bnew = elem_type(K)[]
@@ -104,7 +102,7 @@ function _simplify(O::NfAbsOrd)
   end
   #First, we search for elements that are primitive using block systems in the simple case.
   B1 = _sieve_primitive_elements(Bnew)
-  
+    
   #Now, we select the one of smallest T2 norm
   a = primitive_element(K)
   I = t2(a)
@@ -124,31 +122,93 @@ end
 
 function _sieve_primitive_elements(B::Vector{NfAbsNSElem})
   K = parent(B[1])
-  B1 = Vector{NfAbsNSElem}()
+  Zx = PolynomialRing(FlintZZ, "x", cached = false)[1]
+  pols = [Zx(Hecke.isunivariate(x)[2]) for x in K.pol]
+  p, d = _find_prime(pols)
+  F = FlintFiniteField(p, d, "w", cached = false)[1]
+  Fp = GF(p, cached = false)
+  Fpt = PolynomialRing(Fp, ngens(K))[1]
+  Ft = PolynomialRing(F, "t", cached = false)[1]
+  rt = Vector{Vector{fq_nmod}}(undef, ngens(K))
+  for i = 1:length(pols)
+    rt[i] = roots(pols[i], F)
+  end
+  rt_all = Vector{Vector{fq_nmod}}(undef, degree(K))
+  ind = 1
+  for i in CartesianIndices(Tuple(1:degrees(K)[i] for i in 1:ngens(K)))
+    rt_all[ind] = fq_nmod[rt[j][i[j]] for j = 1:length(rt)]
+    ind += 1
+  end
+  indices = Int[]
   for i = 1:length(B)
     if length(vars(data(B[i]))) != ngens(K)
       continue
     end
-    c = conjugates_arb(B[i], 32)
-    nconjs = 1
-    for i = 2:length(c)
-      found = false
-      for j = i+1:length(c)
-        if overlaps(c[i], c[j])
-          found = true
-          break
-        end
-      end
-      if !found
-        nconjs += 1
-      end
+    if isone(denominator(B[i]))
+      continue
     end
-    if nconjs == degree(K)
-      push!(B1, B[i])
+    if _is_primitive_via_block(B[i], rt_all, Fpt)
+      push!(indices, i)
+    end 
+  end
+  return B[indices]
+end
+
+function _is_primitive_via_block(el::NfAbsNSElem, rt::Vector{Vector{fq_nmod}}, Rt::MPolyRing)
+  K = parent(el)
+  fR = map_coeffs(base_ring(Rt), data(el), parent = Rt)
+  s = Set{fq_nmod}()
+  for x in rt
+    val = evaluate(fR, x)
+    if val in s
+      return false
+    end
+    push!(s, val)
+    if length(s) > div(degree(K), 2)
+      return true
     end
   end
-  return B1
+  error("Something went wrong")
 end
+
+function _block(el::NfAbsNSElem, rt::Vector{Vector{fq_nmod}}, R::GaloisField)
+  fR = map_coeffs(R, data(el))
+  s = fq_nmod[evaluate(fR, x) for x in rt]
+  b = Vector{Int}[]
+  a = BitSet()
+  i = 0
+  n = length(rt)
+  while i < n
+    i += 1
+    if i in a
+      continue
+    end
+    z = s[i]
+    push!(b, findall(x->s[x] == z, 1:n))
+    for j in b[end]
+      push!(a, j)
+    end
+  end
+  return b
+end
+
+function AbstractAlgebra.map_coeffs(F::GaloisField, f::fmpq_mpoly; parent = PolynomialRing(F, nvars(parent(f)), cached = false)[1])
+  dF = denominator(f)
+  d = F(dF)
+  if iszero(d)
+    error("Denominator divisible by p!")
+  end
+  m = inv(d)
+  ctx = MPolyBuildCtx(parent)
+  for x in zip(coeffs(f), exponent_vectors(f))
+    el = numerator(x[1]*dF)
+    push_term!(ctx, F(el)*m, x[2])
+  end
+  return finish(ctx)
+end
+
+
+
 
 function _sieve_primitive_elements(B::Vector{nf_elem})
   K = parent(B[1])
@@ -156,7 +216,7 @@ function _sieve_primitive_elements(B::Vector{nf_elem})
   f = Zx(K.pol*denominator(K.pol))
   a = gen(K)*denominator(K.pol)
 
-  p, d = _find_prime(f)
+  p, d = _find_prime(fmpz_poly[f])
 
   F = FlintFiniteField(p, d, "w", cached = false)[1]
   Ft = PolynomialRing(F, "t", cached = false)[1]
@@ -240,27 +300,42 @@ function _meet(b1::Vector{Vector{Int}}, b2::Vector{Vector{Int}})
   return b
 end
 
-function _find_prime(f::fmpz_poly)
+function _find_prime(v::Vector{fmpz_poly})
   p = 2^10
-  n_attempts = min(degree(f), 10)
+  total_deg = prod(degree(x) for x in v)
+  n_attempts = min(total_deg, 10)
   candidates = Vector{Tuple{Int, Int}}(undef, n_attempts)
   i = 1
+  polsR = Vector{gfp_poly}(undef, length(v))
   while i < n_attempts+1
     p = next_prime(p)
     R = GF(p, cached=false)
     Rt = PolynomialRing(R, "t", cached = false)[1]
-    fR = change_base_ring(R, f, parent = Rt)
-    if degree(fR) != degree(f) || !issquarefree(fR)
+    found_bad = false
+    for j = 1:length(v)
+      fR = map_coeffs(R, v[j], parent = Rt)
+      if degree(fR) != degree(v[j]) || !issquarefree(fR)
+        found_bad = true
+        break
+      end
+      polsR[j] = fR
+    end
+    if found_bad
       continue
     end
-    FS = factor_shape(fR)
-    d = lcm(Int[x for (x, v) in FS])
-    if d < degree(fR)^2
+    d = 1
+    for j = 1:length(polsR)
+      fR = polsR[j]
+      FS = factor_shape(fR)
+      d1 = lcm(Int[x for (x, v) in FS])
+      d = lcm(d1, d)
+    end
+    if d < total_deg^2
       candidates[i] = (p, d)
       i += 1
     end
   end
-  res =  candidates[1]
+  res = candidates[1]
   for j = 2:n_attempts
     if candidates[j][2] < res[2]
       res = candidates[j]
@@ -280,7 +355,7 @@ function polredabs(K::AnticNumberField)
   B = basis(ZK, copy = false)
   Zx = FlintZZ["x"][1]
   f = Zx(K.pol)
-  p, d = _find_prime(f)
+  p, d = _find_prime(fmpz_poly[f])
 
   F = FlintFiniteField(p, d, "w", cached = false)[1]
   Ft = PolynomialRing(F, "t", cached = false)[1]

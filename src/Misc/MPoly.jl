@@ -86,4 +86,10 @@ end
 
 Base.length(M::Hecke.PolyCoeffs{<:AbstractAlgebra.MPolyElem}) = length(M.f)
 
+function mul!(res::fmpq_mpoly, a::fmpq_mpoly, c::fmpz)
+  ccall((:fmpq_mpoly_scalar_mul_fmpz, libflint), Nothing,
+    (Ref{fmpq_mpoly}, Ref{fmpq_mpoly}, Ref{fmpz}, Ref{FmpqMPolyRing}), res, a, c, parent(a))
+  return nothing
+end
+
 

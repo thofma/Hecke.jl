@@ -42,12 +42,8 @@ function _simplify_components(L::Hecke.NfRelNS{nf_elem}, autL::Vector{Hecke.NfRe
 end
 
 
-function _from_relative_to_abs_with_embedding(L1::Hecke.NfRelNS{nf_elem}, autL1::Array{Hecke.NfRelNSToNfRelNSMor{nf_elem}, 1}, use_simplify::Bool = true)
-  if use_simplify 
-    @vtime :Fields 3 L, autL = _simplify_components(L1, autL1)
-  else
-    L, autL = L1, autL1
-  end
+function _from_relative_to_abs_with_embedding(L1::Hecke.NfRelNS{nf_elem}, autL1::Array{Hecke.NfRelNSToNfRelNSMor{nf_elem}, 1})
+  @vtime :Fields 3 L, autL = _simplify_components(L1, autL1)
   S, mS = simple_extension(L, cached = false)
   K, mK, MK = absolute_field(S, cached = false)
   #First, we compute the maximal order of the absolute field.
@@ -105,13 +101,8 @@ function _from_relative_to_abs_with_embedding(L1::Hecke.NfRelNS{nf_elem}, autL1:
   @vtime :Fields 3 O1 = MaximalOrder(Ostart)
   O1.ismaximal = 1
   Hecke._set_maximal_order_of_nf(K, O1)
-  if use_simplify
-    #simplify takes care of translating the order.
-    @vtime :Fields 3 Ks, mKs = Hecke.simplify(K, cached = false)
-  else
-    Ks = K
-    mKs = id_hom(K)
-  end
+  #simplify takes care of translating the order.
+  @vtime :Fields 3 Ks, mKs = Hecke.simplify(K, cached = false)
   #I want also the embedding of the old field into the new one. 
   #It is enough to find the image of the primitive element.
   k = base_field(S)
@@ -148,7 +139,7 @@ end
 
 function _relative_to_absoluteQQ(L::NfRelNS{nf_elem}, auts::Vector{NfRelNSToNfRelNSMor{nf_elem}})
   K, gK = number_field(NfAbsNS, L)
-  Ks, mKs = simplified_simple_extension1(K, isabelian = true)
+  Ks, mKs = simplified_simple_extension1(K, isabelian = true, cached = false)
   #Now, I have to translate the automorphisms.
   #First, to automorphisms of K.
   autsK = Vector{NfAbsNSToNfAbsNS}(undef, length(auts))

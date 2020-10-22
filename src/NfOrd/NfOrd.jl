@@ -518,7 +518,7 @@ $d$, then the result is a matrix in $\operatorname{Mat}_{d\times d}(\mathbf
 R)$. The entries of the matrix are real balls of type `arb` with radius less
 then `2^-abs_tol`.
 """
-function minkowski_matrix(O::NfOrd, abs_tol::Int = 64)
+function minkowski_matrix(O::NfAbsOrd, abs_tol::Int = 64)
   if isdefined(O, :minkowski_matrix) && O.minkowski_matrix[2] >= abs_tol
     A = deepcopy(O.minkowski_matrix[1])
   else
@@ -529,7 +529,9 @@ function minkowski_matrix(O::NfOrd, abs_tol::Int = 64)
   return A
 end
 
-function minkowski_matrix(B::Vector{nf_elem}, abs_tol::Int = 64)
+
+
+function minkowski_matrix(B::Vector{S}, abs_tol::Int = 64) where S <: NumFieldElem
   K = parent(B[1])
   T = Vector{Vector{arb}}(undef, length(B))
   for i in 1:length(B)
@@ -551,7 +553,7 @@ end
 Let $c$ be the Minkowski matrix as computed by `minkowski_matrix` with precision $p$.
 This function computes $d = round(c 2^p)$ and returns $round(d d^t/2^p)$.
 """
-function minkowski_gram_mat_scaled(O::NfOrd, prec::Int = 64)
+function minkowski_gram_mat_scaled(O::NfAbsOrd, prec::Int = 64)
   if isdefined(O, :minkowski_gram_mat_scaled) && O.minkowski_gram_mat_scaled[2] >= prec
     A = deepcopy(O.minkowski_gram_mat_scaled[1])
     shift!(A, prec - O.minkowski_gram_mat_scaled[2])

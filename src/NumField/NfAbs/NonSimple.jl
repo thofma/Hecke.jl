@@ -79,8 +79,7 @@ end
 function Base.deepcopy_internal(a::NfAbsNSElem, dict::IdDict)
   # TODO: Fix this once deepcopy is fixed for fmpq_mpoly
   # z = NfAbsNSElem(Base.deepcopy_internal(data(a), dict))
-  z = NfAbsNSElem(Base.deepcopy(data(a)))
-  z.parent = parent(a)
+  z = NfAbsNSElem(parent(a), Base.deepcopy(data(a)))
   return z
 end
 
@@ -151,7 +150,7 @@ end
 
 function rand(K::NfAbsNS, r::UnitRange)
   # TODO: This is super slow
-  b = basis(K)
+  b = basis(K, copy = false)
   z = K()
   for i in 1:degree(K)
     z += rand(r) * b[i]
@@ -207,17 +206,26 @@ issimple(a::NfAbsNS) = false
 
 issimple(::Type{NfAbsNS}) = false
 
-function basis(K::NfAbsNS)
+function basis(K::NfAbsNS; copy::Bool = true)
   if isdefined(K, :basis)
-    return copy(K.basis)::Vector{NfAbsNSElem}
-  else
-    g = gens(K)
-    b = NfAbsNSElem[]
-    for i in CartesianIndices(Tuple(1:degrees(K)[i] for i in 1:ngens(K)))
-      push!(b, prod(g[j]^(i[j] - 1) for j=1:length(i)))
+    if copy
+      return deepcopy(K.basis)::Vector{NfAbsNSElem}
+    else
+      return K.basis::Vector{NfAbsNSElem}
     end
-    K.basis = b
-    return copy(b)::Vector{NfAbsNSElem}
+  end
+  g = gens(parent(K.pol[1]))
+  b = Vector{NfAbsNSElem}(undef, degree(K))
+  ind = 1
+  for i in CartesianIndices(Tuple(1:degrees(K)[i] for i in 1:ngens(K)))
+    b[ind] = K(prod(g[j]^(i[j] - 1) for j=1:length(i)), false)
+    ind += 1
+  end
+  K.basis = b
+  if copy
+    return deepcopy(b)::Vector{NfAbsNSElem}
+  else
+    return b::Vector{NfAbsNSElem}
   end
 end
 
@@ -243,6 +251,14 @@ function reduce!(a::NfAbsNSElem)
   q, a.data = divrem(a.data, parent(a).pol)
   return a
 end
+
+################################################################################
+#
+#  Denominator
+#
+################################################################################
+
+denominator(a::NfAbsNSElem) = denominator(a.data)
 
 ################################################################################
 #
@@ -280,7 +296,7 @@ end
 ################################################################################
 
 function Base.:(-)(a::NfAbsNSElem)
-  return parent(a)(-data(a))
+  return NfAbsNSElem(parent(a), -data(a))
 end
 
 ################################################################################
@@ -291,12 +307,12 @@ end
 
 function Base.:(+)(a::NfAbsNSElem, b::NfAbsNSElem)
   parent(a) == parent(b) || force_op(+, a, b)::NfAbsNSElem
-  return parent(a)(data(a) + data(b))
+  return NfAbsNSElem(parent(a), data(a) + data(b))
 end
 
 function Base.:(-)(a::NfAbsNSElem, b::NfAbsNSElem)
   parent(a) == parent(b) || force_op(-, a, b)::NfAbsNSElem
-  return parent(a)(data(a) - data(b))
+  return NfAbsNSElem(parent(a), data(a) - data(b))
 end
 
 function Base.:(*)(a::NfAbsNSElem, b::NfAbsNSElem)
@@ -358,8 +374,6 @@ end
 ################################################################################
 
 function Base.:(==)(a::NfAbsNSElem, b::NfAbsNSElem)
-  reduce!(a)
-  reduce!(b)
   parent(a) == parent(b) || force_op(==, a, b)::Bool
   return data(a) == data(b)
 end
@@ -378,19 +392,16 @@ end
 
 function Nemo.add!(c::NfAbsNSElem, a::NfAbsNSElem, b::NfAbsNSElem)
   add!(c.data, a.data, b.data)
-  c = reduce!(c)
   return c
 end
 
 function Nemo.add!(c::NfAbsNSElem, a::NfAbsNSElem, b::fmpz)
   add!(c.data, a.data, parent(c.data)(b))
-  c = reduce!(c)
   return c
 end
 
 function Nemo.add!(c::NfAbsNSElem, a::NfAbsNSElem, b::Integer)
   add!(c.data, a.data, parent(c.data)(b))
-  c = reduce!(c)
   return c
 end
 
@@ -402,14 +413,12 @@ end
 
 
 function Nemo.mul!(c::NfAbsNSElem, a::NfAbsNSElem, b::fmpz)
-  mul!(c.data, a.data, parent(c.data)(b))
-  c = reduce!(c)
+  mul!(c.data, a.data, b)
   return c
 end
 
 function Nemo.mul!(c::NfAbsNSElem, a::NfAbsNSElem, b::Integer)
   mul!(c.data, a.data, parent(c.data)(b))
-  c = reduce!(c)
   return c
 end
 
@@ -464,7 +473,7 @@ end
 
 function elem_from_mat_row(K::NfAbsNS, M::fmpq_mat, i::Int)
   a = K()
-  b = basis(K)
+  b = basis(K, copy = false)
   for c = 1:ncols(M)
     a += M[i, c]*b[c]
   end
@@ -472,12 +481,16 @@ function elem_from_mat_row(K::NfAbsNS, M::fmpq_mat, i::Int)
 end
 
 function elem_from_mat_row(K::NfAbsNS, M::fmpz_mat, i::Int, d::fmpz)
-  a = K()
-  b = basis(K)
+  b = basis(K, copy = false)
+  Qxy = parent(b[1].data)
+  a = Qxy()
+  tmp = Qxy()
   for c = 1:ncols(M)
-    a += M[i, c]*b[c]
+    mul!(tmp, b[c].data, M[i, c])
+    add!(a, a, tmp)
+    #a += M[i, c]*b[c]
   end
-  return divexact(a, d)
+  return divexact(K(a), d)
 end
 
 function SRow(a::NfAbsNSElem)
@@ -679,7 +692,7 @@ end
 
 function representation_matrix(a::NfAbsNSElem)
   K = parent(a)
-  b = basis(K)
+  b = basis(K, copy = false)
   M = zero_matrix(FlintQQ, degree(K), degree(K))
   for i=1:degree(K)
     elem_to_mat_row!(M, i, a*b[i])
@@ -690,6 +703,31 @@ end
 function representation_matrix_q(a::NfAbsNSElem)
   M = representation_matrix(a)
   return _fmpq_mat_to_fmpz_mat_den(M)
+end
+
+################################################################################
+#
+#  mod function
+#
+################################################################################
+
+
+
+function mod(a::NfAbsNSElem, p::fmpz)
+  b = copy(a)
+  mod!(b, p)
+  return b
+end
+
+function mod!(b::NfAbsNSElem, p::fmpz)
+  for i=1:length(b.data)
+    el = coeff(b.data, i)
+    dnew, cp = ppio(denominator(el), p)
+    el *= cp
+    n = mod(numerator(el), dnew * p)
+    setcoeff!(b.data, i, fmpq(n, dnew))
+  end
+  return b
 end
 
 ################################################################################
@@ -796,131 +834,6 @@ end
 
 ################################################################################
 #
-#  Morphisms
-#
-################################################################################
-
-mutable struct NfAbsToNfAbsNS <: Map{AnticNumberField, NfAbsNS, HeckeMap, NfAbsToNfAbsNS}
-  header::MapHeader{AnticNumberField, NfAbsNS}
-  prim_img::NfAbsNSElem
-  emb::Array{nf_elem, 1}
-
-  function NfAbsToNfAbsNS(K::AnticNumberField, L::NfAbsNS, a::NfAbsNSElem, emb::Array{nf_elem, 1})
-    function image(x::nf_elem)
-      # x is an element of K
-      f = x.parent.pol.parent(x)
-      return f(a)
-    end
-
-    function preimage(x::NfAbsNSElem)
-      return msubst(data(x), emb)
-    end
-
-    z = new()
-    z.prim_img = a
-    z.emb = emb
-    z.header = MapHeader(K, L, image, preimage)
-    return z
-  end
-
-  function NfAbsToNfAbsNS(K::AnticNumberField, L::NfAbsNS, a::NfAbsNSElem)
-    function image(x::nf_elem)
-      # x is an element of K
-      f = x.parent.pol.parent(x)
-      return f(a)
-    end
-
-    z = new()
-    z.prim_img = a
-    z.header = MapHeader(K, L, image)
-    return z
-  end
-end
-
-function _compute_preimage(f::NfAbsToNfAbsNS)
-  K = domain(f)
-  L = codomain(f)
-  M = zero_matrix(FlintQQ, degree(K), degree(K))
-  el = one(L)
-  a = f.prim_img
-  elem_to_mat_row!(M, 1, el)
-  for i = 2:degree(K)
-    el = mul!(el, el, a)
-    elem_to_mat_row!(M, i, el)
-  end
-  N = zero_matrix(FlintQQ, ngens(L), degree(K))
-  gL = gens(L)
-  for i = 1:length(gL)
-    elem_to_mat_row!(N, i, gL[i])
-  end
-  fl, x = can_solve(M, N, side = :left)
-  @assert fl
-  x1, den = _fmpq_mat_to_fmpz_mat_den(x)
-  embs = nf_elem[elem_from_mat_row(K, x1, i, den) for i = 1:nrows(x)]
-  f.emb = embs
-  local preimg
-  let embs = embs
-    function preimg(x::NfAbsNSElem)
-      return evaluate(data(x), embs)
-    end
-  end
-  f.header.preimage = preimg
-  return nothing
-end
-
-hom(K::AnticNumberField, L::NfAbsNS, a::NfAbsNSElem; check::Bool = false) = NfAbsToNfAbsNS(K, L, a)
-
-hom(K::AnticNumberField, L::NfAbsNS, a::NfAbsNSElem, b::Vector{nf_elem}; check::Bool = false) = NfAbsToNfAbsNS(K, L, a, b)
-
-mutable struct NfAbsNSToNfAbsNS <: Map{NfAbsNS, NfAbsNS, HeckeMap, NfAbsNSToNfAbsNS}
-  header::MapHeader{NfAbsNS, NfAbsNS}
-  emb::Array{NfAbsNSElem, 1}
-
-  function NfAbsNSToNfAbsNS(K::NfAbsNS, L::NfAbsNS, emb::Array{NfAbsNSElem, 1})
-    function image(x::NfAbsNSElem)
-      # x is an element of K
-      return msubst(data(x), emb)
-    end
-
-    z = new()
-    z.emb = emb
-    z.header = MapHeader(K, L, image)
-    return z
-  end
-end
-
-function id_hom(K::NfAbsNS)
-  return NfAbsNSToNfAbsNS(K, K, gens(K))
-end
-
-function hom(K::NfAbsNS, L::NfAbsNS, emb::Array{NfAbsNSElem, 1}; check::Bool = false)
-  return NfAbsNSToNfAbsNS(K, L, emb)
-end 
-
-function Base.:(*)(f::NfAbsNSToNfAbsNS, g::NfAbsNSToNfAbsNS)
-  codomain(f) == domain(g) || throw("Maps not compatible")
-  a = gens(domain(f))
-  return NfAbsNSToNfAbsNS(domain(f), codomain(g), NfAbsNSElem[ g(f(x)) for x in a])
-end
-
-function Base.:(==)(f::NfAbsNSToNfAbsNS, g::NfAbsNSToNfAbsNS)
-  if domain(f) != domain(g) || codomain(f) != codomain(g)
-    return false
-  end
-
-  L = domain(f)
-
-  for a in gens(L)
-    if f(a) != g(a)
-      return false
-    end
-  end
-
-  return true
-end
-
-################################################################################
-#
 #  Simple extensions
 #
 ################################################################################
@@ -930,13 +843,8 @@ function simple_extension(K::NfAbsNS; cached = true, check = true)
   g = gens(K)
   if n == 1
     #The extension is already simple
-    Qx, x = PolynomialRing(FlintQQ, "x", cached = false)
-    coef = Array{fmpq, 1}(undef, degree(K)+1)
-    for i = 1:length(coef)
-      coef[i] = __get_term(K.pol[1], UInt[i-1])
-    end
-    Ka, a = NumberField(Qx(coef), "a", cached = false, check = check)
-    #now, the map
+    f = isunivariate(K.pol[1])[2]
+    Ka, a = NumberField(f, "a", cached = false, check = check)
     mp = NfAbsToNfAbsNS(Ka, K, g[1], [a])
     return Ka, mp
   end
@@ -961,11 +869,13 @@ function simple_extension(K::NfAbsNS; cached = true, check = true)
   M = zero_matrix(k, degree(K), degree(K))
   z = one(K)
   elem_to_mat_row!(M, 1, z)
-  elem_to_mat_row!(M, 2, pe)
- z = mul!(z, z, pe)
-  for i=3:degree(K)
+  if degree(K) > 1
+    elem_to_mat_row!(M, 2, pe)
     z = mul!(z, z, pe)
-    elem_to_mat_row!(M, i, z)
+    for i=3:degree(K)
+      z = mul!(z, z, pe)
+      elem_to_mat_row!(M, i, z)
+    end
   end
   N = zero_matrix(k, n, degree(K))
   for i = 1:n
@@ -973,7 +883,7 @@ function simple_extension(K::NfAbsNS; cached = true, check = true)
   end
   s = solve(M', N')
   b = basis(Ka)
-  emb = Vector{typeof(b[1])}(undef, n)
+  emb = Vector{nf_elem}(undef, n)
   for i = 1:n
     emb[i] = zero(Ka)
     for j = 1:degree(Ka)
@@ -1070,7 +980,20 @@ function NumberField(f::Array{fmpz_poly, 1}, S::Array{Symbol, 1}; cached::Bool =
   return NumberField(fmpq_poly[Qx(x) for x = f], S, cached = cached, check = check)
 end
 
-gens(K::NfAbsNS) = [K(x) for x = gens(parent(K.pol[1]))]
+function gens(K::NfAbsNS) 
+  l = Vector{NfAbsNSElem}(undef, ngens(K))
+  degs = degrees(K)
+  gQxy = gens(parent(K.pol[1]))
+  for i = 1:length(gQxy)
+    if isone(degs[i])
+      l[i] = K(gQxy[i])
+    else
+      l[i] = NfAbsNSElem(K, gQxy[i])
+    end
+  end
+  return l
+end
+
 
 function vars(E::NfAbsNS)
   return E.S
@@ -1082,10 +1005,11 @@ function Base.names(E::NfAbsNS)
   return map(string, vars(E))
 end
 
-function (K::NfAbsNS)(a::fmpq_mpoly)
-  q, w = divrem(a, K.pol)
-  z = NfAbsNSElem(w)
-  z.parent = K
+function (K::NfAbsNS)(a::fmpq_mpoly, red::Bool = true)
+  if red
+    q, a = divrem(a, K.pol)
+  end
+  z = NfAbsNSElem(K, a)
   return z
 end
 
@@ -1144,6 +1068,9 @@ end
 
 function tr(a::NfAbsNSElem)
   k = parent(a)
+  if iszero(a)
+    return fmpq()
+  end
   trace_assure(k)
   t = fmpq()
   for trm = terms(a.data)

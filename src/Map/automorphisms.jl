@@ -6,6 +6,23 @@ add_verbose_scope(:Automorphisms)
 #
 ################################################################################
 
+
+function _automorphisms(K::NfAbsNS; isabelian::Bool = false)
+  pols = fmpq_poly[isunivariate(x)[2] for x in K.pol]
+  rt = Vector{Vector{NfAbsNSElem}}(undef, length(pols))
+  for i = 1:length(pols)
+    rt[i] = roots(pols[i], K)
+  end
+  auts = Vector{NfAbsNSToNfAbsNS}(undef, prod(length(x) for x in rt))
+  ind = 1
+  for i in CartesianIndices(Tuple(1:length(x) for x in rt))
+    auts[ind] = hom(K, K, [rt[i[j]] for j = 1:length(pols)])
+    ind += 1
+  end
+  return auts
+end
+
+
 function _automorphisms(K::AnticNumberField; isabelian::Bool = false)
   if degree(K) == 1
     return NfToNfMor[hom(K, K, one(K))]
@@ -17,11 +34,11 @@ function _automorphisms(K::AnticNumberField; isabelian::Bool = false)
     auts = NfToNfMor[ hom(K, K, a^lift(mA(g)), check = false) for g in A]
     return auts
   end
-  c = get_special(K, :isabelian)
-  if c !== nothing && c
+  if isabelian
     return _automorphisms_abelian(K)
   end
-  if isabelian
+  c = get_special(K, :isabelian)
+  if c !== nothing && c
     return _automorphisms_abelian(K)
   end
   f = K.pol
@@ -88,29 +105,34 @@ function _generator_automorphisms(K::AnticNumberField)
   end
   return small_generating_set(Aut1)
 end
+
+automorphism_type(::AnticNumberField) = NfToNfMor
+automorphism_type(::NfAbsNS) = NfAbsNSToNfAbsNS
   
+
 @doc Markdown.doc"""
     automorphisms(K::AnticNumberField) -> Vector{NfToNfMor}
 
 Returns the set of automorphisms of K
 """  
-function automorphisms(K::AnticNumberField; copy::Bool = true, isabelian::Bool = false)
+function automorphisms(K::NumField{fmpq}; copy::Bool = true, isabelian::Bool = false)
+  T = automorphism_type(K)
   if isautomorphisms_known(K)
-    Aut = _get_automorphisms_nf(K)::Vector{NfToNfMor}
+    Aut = get_automorphisms(K)
     if copy
-      v = Vector{NfToNfMor}(undef, length(Aut))
+      v = Vector{T}(undef, length(Aut))
       for i = 1:length(v)
         v[i] = Aut[i]
       end
       return v
     else
-      return Aut::Vector{NfToNfMor}
+      return Aut::Vector{T}
     end
   end
   auts = _automorphisms(K, isabelian = isabelian)
-  _set_automorphisms_nf(K, auts)
+  set_automorphisms(K, auts)
   if copy
-    v = Vector{NfToNfMor}(undef, length(auts))
+    v = Vector{T}(undef, length(auts))
     for i = 1:length(v)
       v[i] = auts[i]
     end
@@ -122,6 +144,28 @@ end
   
 function isautomorphisms_known(K::AnticNumberField)
   return _get_automorphisms_nf(K, false) != nothing
+end
+
+function isautomorphisms_known(K::NfAbsNS)
+  return get_special(K, :automorphisms) !== nothing
+end
+
+function get_automorphisms(K::AnticNumberField)
+  return _get_automorphisms_nf(K)::Vector{NfToNfMor}
+end
+
+function get_automorphisms(K::NfAbsNS)
+  return get_special(K, :automorphisms)::Vector{NfAbsNSToNfAbsNS}
+end
+
+function set_automorphisms(K::AnticNumberField, auts::Vector{NfToNfMor})
+  _set_automorphisms_nf(K, auts)
+  return nothing
+end
+
+function set_automorphisms(K::NfAbsNS, auts::Vector{NfAbsNSToNfAbsNS})
+  set_special(K, :automorphisms => auts)
+  return nothing
 end
 
 

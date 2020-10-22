@@ -564,15 +564,6 @@ end
 ################################################################################
 
 function _poverorder(O::NfAbsOrd, p::fmpz)
-  @vtime :NfOrd 3 I = pradical(O, p)
-  if isdefined(I, :princ_gen) && I.princ_gen == p
-    return O
-  end
-  @vtime :NfOrd 3 R = ring_of_multipliers(I)
-  return R
-end
-
-function _poverorder(O::NfOrd, p::fmpz)
   @vtime :NfOrd 3 I = pradical1(O, p)
   if isdefined(I, :princ_gen) && I.princ_gen == p
     return O
@@ -1016,7 +1007,7 @@ function pradical_trace1(O::NfOrd, p::Union{Integer, fmpz})
 end
 
 
-function pradical1(O::NfOrd, p::Union{Integer, fmpz})
+function pradical1(O::NfAbsOrd, p::Union{Integer, fmpz})
   if p isa fmpz && fits(Int, p)
     return pradical1(O, Int(p))
   end
@@ -1031,7 +1022,7 @@ function pradical1(O::NfOrd, p::Union{Integer, fmpz})
     return pradical_trace1(O, p)
   else
     res1 = new_pradical_frobenius1(O, p)
-    @hassert :NfOrd 1 res1 == pradical_frobenius1(O, p)
+    @hassert :NfOrd 1 !issimple(nf(O)) || res1 == pradical_frobenius1(O, p)
     return res1
   end
 end

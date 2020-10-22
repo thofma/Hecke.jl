@@ -616,7 +616,7 @@ Returns an element $a^i$ modulo $m$.
 function powermod(a::NfAbsOrdElem, i::fmpz, p::fmpz)
 
   #if contains_equation_order(parent(a))#This doesn't work!
-  if issimple(nf(parent(a))) && isdefining_polynomial_nice(nf(parent(a)))
+  if isdefining_polynomial_nice(nf(parent(a)))
     return powermod_fast(a, i, p)
   else
     return powermod_gen(a, i, p)
@@ -677,6 +677,48 @@ function powermod_fast(a::NfAbsOrdElem, i::fmpz, p::fmpz)
   return mod(parent(a)(b)*e, p)
 end
 
+function powermod_fast(a::NfAbsOrdElem{NfAbsNS, NfAbsNSElem}, i::fmpz, p::fmpz)
+  if i == 0
+    return one(parent(a))
+  end
+  if i == 1
+    bb = mod(a, p)
+    return bb
+  end
+
+  b = a.elem_in_nf
+  d = denominator(b)
+  f, e = ppio(d, p) # f = p^k, and e is a unit mod p
+  b *= e
+  e = invmod(e, p)
+  e = powmod(e, i, p)
+
+  y = one(parent(b))
+  while i > 1
+    if iszero(b)
+      return zero(parent(a))
+    end
+    if iseven(i)
+      mul!(b, b, b)
+      mod!(b, p)
+      #b = mod(b*b, p)
+    else
+      mul!(y, b, y)
+      mod!(y, p)
+      #y = mod(b*y, p)
+      mul!(b, b, b)
+      mod!(b, p)
+      #b = mod(b*b, p)
+    end
+    i = div(i, 2)
+  end
+  mul!(b, b, y)
+  mod!(b, p)
+  #b = mod(b*y, p)
+
+  return mod(parent(a)(b*e), p)
+end
+
 @doc Markdown.doc"""
     powermod(a::NfAbsOrdElem, i::fmpz, m::Union{fmpz, Int}) -> NfAbsOrdElem
 
@@ -708,19 +750,6 @@ function powermod(a::NfOrdElem, i::fmpz, I::NfOrdIdl)
   return mod(b, I)
 end
 
-denominator(a::NfAbsNSElem) = denominator(a.data)
-
-function mod(a::NfAbsNSElem, p::fmpz)
-  b = copy(a)
-  for i=1:length(b.data)
-    el = coeff(b.data, i)
-    dnew, cp = ppio(denominator(el), p)
-    el *= cp
-    n = mod(numerator(el), dnew * p)
-    setcoeff!(b.data, i, fmpq(n, dnew))
-  end
-  return b
-end
 
 @doc Markdown.doc"""
     powermod(a::NfAbsOrdElem, i::Integer, m::Integer) -> NfAbsOrdElem

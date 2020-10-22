@@ -135,32 +135,17 @@ function _subfield_primitive_element_from_basis(K::AnticNumberField, as::Vector{
 
   @vprint :Subfields 1 "Sieving for primitive elements\n"
   # First check basis elements
-  Zx = PolynomialRing(FlintZZ, "x", cached = false)[1]
-  f = Zx(K.pol*denominator(K.pol))
-  p, d = _find_prime(f)
-  #First, we search for elements that are primitive using block systems
-  F = FlintFiniteField(p, d, "w", cached = false)[1]
-  Ft = PolynomialRing(F, "t", cached = false)[1]
-  ap = zero(Ft)
-  fit!(ap, degree(K)+1)
-  rt = roots(f, F)
-  indices = Int[]
-  for i = 1:length(as)
-    b = _block(as[i], rt, ap)
-    if length(b) == dsubfield
-      push!(indices, i)
-    end
-  end
+  prim_elements = _sieve_primitive_elements(as)
 
-  @vprint :Subfields 1 "Found $(length(indices)) primitive elements in the basis\n"
+  @vprint :Subfields 1 "Found $(length(prim_elements)) primitive elements in the basis\n"
   #Now, we select the one of smallest T2 norm
-  if !isempty(indices)
-    a = as[indices[1]]
+  if !isempty(prim_elements)
+    a = prim_elements[1]
     I = t2(a)
     for i = 2:length(indices)
-      t2n = t2(as[indices[i]])
+      t2n = t2(prim_elements[i])
       if t2n < I
-        a = as[indices[i]]
+        a = prim_elements[i]
         I = t2n
       end
     end
@@ -168,6 +153,15 @@ function _subfield_primitive_element_from_basis(K::AnticNumberField, as::Vector{
     return a
   end
 
+  Zx = PolynomialRing(FlintZZ, "x", cached = false)[1]
+  f = Zx(K.pol*denominator(K.pol))
+  p, d = _find_prime(fmpz_poly[f])
+  #First, we search for elements that are primitive using block systems
+  F = FlintFiniteField(p, d, "w", cached = false)[1]
+  Ft = PolynomialRing(F, "t", cached = false)[1]
+  ap = zero(Ft)
+  fit!(ap, degree(K)+1)
+  rt = roots(f, F)
   @vprint :Subfields 1 "Trying combinations of elements in the basis\n"
   # Notation: cs the coefficients in a linear combination of the as, ca the dot
   # product of these vectors.
@@ -193,7 +187,7 @@ function _subfield_primitive_element_from_basis(K::AnticNumberField, as::Vector{
       end
       k += 1
       if k == 5
-	@vprint :Subfields 1 "Primitive element found\n"
+	      @vprint :Subfields 1 "Primitive element found\n"
         return a
       end
     end
@@ -203,15 +197,6 @@ function _subfield_primitive_element_from_basis(K::AnticNumberField, as::Vector{
     for n = 1:dsubfield
       cs[n] = rand(FlintZZ, -bb:bb)
     end
-    #=
-    cs[1] += 1
-    i = 2
-    while i <= dsubfield && cs[i-1] > cs[i]+1
-      cs[i-1] = zero(ZZ)
-      cs[i] += 1
-      i += 1
-    end
-    =#
   end
 end
 

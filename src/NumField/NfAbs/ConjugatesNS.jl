@@ -1,28 +1,50 @@
-function conjugate_data_arb_roots(K::NfAbsNS, p::Int)
-
+function conjugates_data_roots(K::NfAbsNS)
+  cache = get_special(K, :conjugates_data_roots)
+  if cache !== nothing
+    return cache
+  end
   pols = fmpq_poly[isunivariate(x)[2] for x in K.pol]
   ctxs = acb_root_ctx[acb_root_ctx(x) for x in pols]
+  set_special(K, :conjugates_data_roots => ctxs)
+  return ctxs
+end
+
+function conjugate_data_arb_roots(K::NfAbsNS, p::Int; copy = true)
+
+  cache = get_special(K, :conjugates_data)
+  if cache !== nothing
+    if haskey(cache, p)
+      return cache[p]
+    end
+  end
+  ctxs = conjugates_data_roots(K)
   acb_roots_vec = Vector{acb_roots}(undef, length(ctxs))
   for i = 1:length(ctxs)
     c = ctxs[i]
     while c.prec < p
       refine(c)
     end
-    all_roots = deepcopy(c.roots)
     real_roots = deepcopy(c.real_roots)
     complex_roots = deepcopy(c.complex_roots)
-    for z in all_roots
-      expand!(z, -p)
-    end
     for z in real_roots
       expand!(z, -p)
     end
     for z in complex_roots
       expand!(z, -p)
     end
+    CC = parent(c.roots[1])
+    all_roots = Vector{acb}(undef, length(c.roots))
+    for i = 1:length(real_roots)
+      all_roots[i] = CC(real_roots[i])
+    end
+    for i = 1:length(complex_roots)
+      all_roots[i+length(real_roots)] = complex_roots[i]
+      all_roots[i+length(real_roots)+length(complex_roots)] = conj(complex_roots[i])
+    end
     acb_roots_vec[i] = acb_roots(p, all_roots, real_roots, complex_roots)
   end
   ind_real, ind_complex = enumerate_conj_prim(acb_roots_vec)
+  set_special(K, :conjugates_data => Dict(p => (acb_roots_vec, ind_real, ind_complex)))
   return acb_roots_vec, ind_real, ind_complex
 
 end
@@ -106,25 +128,58 @@ function conjugates_arb(a::NfAbsNSElem, p::Int, work_tol::Int = p)
   conjs, ind_real, ind_complex = conjugate_data_arb_roots(K, work_tol)
   res = Vector{acb}(undef, degree(K))
   pol_a = data(a)
-  r = length(ind_real)
-  s = div(degree(K) - r, 2)
+  r, s = signature(K)
   for i = 1:r
-    res[i] = evaluate(pol_a, acb[conjs[j].roots[ind_real[i][j]] for j = 1:ngens(K)])
+    res[i] = _evaluate(pol_a, acb[conjs[j].roots[ind_real[i][j]] for j = 1:ngens(K)])
     if !isfinite(res[i]) || !radiuslttwopower(res[i], -p)
-      return conjugates_arb(a, p, 2*p)
+      return conjugates_arb(a, p, 2*work_tol)
     end
   end
   ind = r+1
   for i = 1:length(ind_complex)
     ev = acb[conjs[j].roots[ind_complex[i][j]] for j = 1:ngens(K)]
-    res[ind] = evaluate(pol_a, ev)
+    res[ind] = _evaluate(pol_a, ev)
     if !isfinite(res[ind]) || !radiuslttwopower(res[ind], -p)
-      return conjugates_arb(a, p, 2*p)
+      return conjugates_arb(a, p, 2*work_tol)
     end
     res[ind+s] = conj(res[ind])
     ind += 1
   end
   return res
+end
+
+function _evaluate(f::fmpq_mpoly, vals::Vector{acb})
+  S = parent(vals[1])
+  powers = [Dict{Int, acb}() for i in 1:length(vals)]
+  r = acb[zero(S)]
+  i = UInt(1)
+  cvzip = zip(coeffs(f), exponent_vectors(f))
+  for (c, v) in cvzip
+    t = one(S)
+    for j = 1:length(vals)
+      exp = v[j]
+      if iszero(exp)
+        continue
+      end
+      if !haskey(powers[j], exp)
+        powers[j][exp] = vals[j]^exp
+      end
+      mul!(t, t, powers[j][exp])
+      #t = t*powers[j][exp]
+    end 
+    push!(r, c*t)
+    j = i = i + 1
+    while iseven(j) && length(r) > 1
+      top = pop!(r)
+      r[end] = addeq!(r[end], top)
+      j >>>= 1
+    end
+  end
+  while length(r) > 1
+    top = pop!(r)
+    r[end] = addeq!(r[end], top)
+  end
+  return r[1]
 end
 
 

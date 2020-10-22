@@ -191,26 +191,26 @@ end
 ###############################################################################
 
 @doc Markdown.doc"""
-    lll(M::NfOrd) -> NfOrd
+    lll(M::NfAbsOrd) -> NfAbsOrd
 The same order, but with the basis now being LLL reduced wrt. the Minkowski metric.
 """
 function lll(M::NfAbsOrd; prec::Int = 100)
   
   if isdefined(M, :lllO)
-    return M.lllO::NfOrd
+    return M.lllO::typeof(M)
   end
   K = nf(M)
 
   if istotally_real(K)
     On =  _lll_gram(M)
     M.lllO = On
-    return On::NfOrd
+    return On::typeof(M)
   end
   
   if degree(K) == 2
     On = _lll_quad(M)
     M.lllO = On
-    return On::NfOrd
+    return On::typeof(M)
   end
 
   if iscm_field_known(K) || isautomorphisms_known(K)
@@ -218,7 +218,7 @@ function lll(M::NfAbsOrd; prec::Int = 100)
     if fl
       On = _lll_CM(M)
       M.lllO = On
-      return On
+      return On::typeof(M)
     end
   end
   
@@ -250,20 +250,21 @@ function _minkowski_matrix_CM(M::NfAbsOrd)
   if isdefined(M,  :minkowski_gram_CMfields)
     return M.minkowski_gram_CMfields
   end
+  n = degree(M)
   prec = 64
-  g = zero_matrix(FlintZZ, degree(M), degree(M))
+  g = zero_matrix(FlintZZ, n, n)
   B = basis(M, nf(M))
-  imgs = Vector{Vector{arb}}(undef, length(B))
-  for i = 1:degree(M)
+  imgs = Vector{Vector{arb}}(undef, n)
+  for i = 1:n
     imgs[i] = minkowski_map(B[i], prec)
   end
   i = 1
   t = arb()
-  while i <= degree(M)
+  while i <= n
     j = i
-    while j <= degree(M)
+    while j <= n
       el = imgs[i][1]*imgs[j][1]
-      for k = 2:degree(M)
+      for k = 2:n
         mul!(t, imgs[i][k], imgs[j][k])
         add!(el, el, t)
       end
@@ -521,7 +522,7 @@ function _lll_sublattice(M::NfAbsOrd, u::Vector{Int}; prec = 100)
   end
   @vprint :LLL 3 "Computing the profile of the new basis \n"
   new_basis = g*basis_matrix(bas, FakeFmpqMat)
-  els = nf_elem[elem_from_mat_row(K, new_basis.num, i, new_basis.den) for i = 1:nrows(new_basis)]
+  els = elem_type(K)[elem_from_mat_row(K, new_basis.num, i, new_basis.den) for i = 1:nrows(new_basis)]
   new_profile = nbits(prod(Hecke.upper_bound(t2(x), fmpz) for x in els))
   if new_profile <= profile_sub
     @vprint :LLL 3 "Output a better basis!\n"

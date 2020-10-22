@@ -32,6 +32,19 @@ function dot(a::Array{<: NumFieldElem, 1}, b::Array{fmpz, 1})
   return d
 end
 
+function dot(a::Vector{NfAbsNSElem}, b::Vector{fmpz})
+  Qxy = parent(a[1].data)
+  d = zero(Qxy)
+  t = zero(Qxy)
+  for i = 1:length(a)
+    if !iszero(b[i])
+      mul!(t, a[i].data, b[i])
+      add!(d, d, t)
+    end
+  end
+  return parent(a[1])(d)
+end
+
 ################################################################################
 #
 #  Parent
