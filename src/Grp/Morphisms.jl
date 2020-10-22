@@ -99,7 +99,7 @@ end
 
 # TODO: Cache the orders of the generators of the small_groups.
 #       Do not recompute it here.
-function find_small_group(G::GrpGen; DB = DefaultSmallGroupDB)
+function find_small_group(G::GrpGen; DB = DefaultSmallGroupDB())
   l = order(G)
 
   D = DB.db
@@ -204,7 +204,7 @@ end
 function _automorphisms(G::GrpGen)
   @assert isfrom_db(G)
   i, j = G.small_group_id
-  Gdata = DefaultSmallGroupDB.db[i][j]
+  Gdata = DefaultSmallGroupDB().db[i][j]
 
   l = order(G)
 
@@ -329,7 +329,7 @@ end
 function _morphisms(G::GrpGen, H::GrpGen)
   @assert isfrom_db(G)
   i, j = G.small_group_id
-  Gdata = DefaultSmallGroupDB.db[i][j]
+  Gdata = DefaultSmallGroupDB().db[i][j]
 
   l = order(H)
 
