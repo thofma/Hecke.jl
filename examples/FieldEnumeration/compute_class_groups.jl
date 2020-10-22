@@ -65,7 +65,7 @@ function _fancy_class_number(OK)
   if !fl || degree(K) < 20
     hK = order(class_group(OK, use_aut = true)[1])
   else
-    hK = order(Hecke.NormRel.class_group_via_brauer(OK, N, recursive = false, compact = false)[1])
+    hK = order(Hecke.NormRel.class_group_via_brauer(OK, N, compact = false)[1])
   end
   return hK
 end
