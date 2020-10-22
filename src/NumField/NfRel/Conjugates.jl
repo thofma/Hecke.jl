@@ -32,6 +32,8 @@ mutable struct InfPlcNfRel{S, T}
   absolute_index::Int
 end
 
+absolute_index(P::InfPlcNfRel) = P.absolute_index
+
 number_field(P::InfPlcNfRel) = P.field
 
 place_type(::Type{AnticNumberField}) = InfPlc
@@ -44,9 +46,9 @@ place_type(K::NfRel{T}) where {T} = place_type(NfRel{T})
 
 isreal(P::InfPlcNfRel) = P.isreal
 
-sign(x::NfRelElem, P::InfPlcNfRel) = _signs(x)[P.absolute_index]
+sign(x::NumFieldElem, P) = _signs(x)[P.absolute_index]
 
-function _signs(a::NfRelElem)
+function _signs(a)
   if iszero(a)
     error("element must not be zero")
   end
@@ -99,6 +101,11 @@ end
 
 function infinite_places(L::NfRel{T}) where {T}
   S = place_type(parent_type(T))
+  _res = get_special(L, :infinite_places)
+  if _res !== nothing
+    return _res::Vector{InfPlcNfRel{S}}
+  end
+
   K = base_field(L)
   data = _conjugates_data(L, 32)
   plcs = InfPlcNfRel{S}[]
@@ -123,6 +130,7 @@ function infinite_places(L::NfRel{T}) where {T}
       end
     end
   end
+  set_special(L, :infinite_places => plcs)
   return plcs
 end
 
@@ -210,6 +218,7 @@ function _conjugates_data(L::NfRel{T}, prec::Int) where {T}
     D = Dict{Int, Vector{Tuple{S, Vector{acb}, Vector{arb}, Vector{acb}}}}()
     z = _get_conjugate_data(L, prec)
     D[prec] = z
+    set_special(L, :conjugate_data_arb => D)
     return z
   else
     if haskey(D, prec)
@@ -293,4 +302,8 @@ function conjugates(a::NfRelElem, prec::Int = 64)
   end
 
   return conju
+end
+
+function infinite_places(L::NfRel{nf_elem}, p)
+  return [P for P in infinite_places(L) if P.base_field_place == p]
 end
