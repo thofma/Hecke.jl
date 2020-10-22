@@ -10,6 +10,7 @@
   m = rand(L, -1:1)
 
   Labs, LabstoL = absolute_field(L)
+  Hecke._compute_preimage(LabstoL)
 
   c = conjugates(m, 64)
   cc = conjugates(LabstoL\m, 64)
