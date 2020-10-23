@@ -1,7 +1,6 @@
 [SmallGroupDB]
-git-tree-sha1 = "ab1fb0bbd5fce82d379dedc3934d87c82a29a60e"
-lazy = true
+git-tree-sha1 = "bf19d5b57b278ccdb817bc193685011a2e5c6d59"
 
     [[SmallGroupDB.download]]
-    sha256 = "a11625bdd2351880e0ed8cc1c03f785c686935870634bb341d7828ce008047d3"
-    url = "https://github.com/thofma/Hecke.jl/releases/download/v0.8.5/SmallGroupDB-0.1.tar.gz"
+    sha256 = "a0f62d3573e3d04f678ee515c15f7ca84e6af5175d48f9cfc00897d364b19243"
+    url = "https://github.com/thofma/Hecke.jl/releases/download/v0.8.5/SmallGroupDB-0.2.tar.gz"
