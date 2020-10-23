@@ -31,7 +31,7 @@ function infinite_places(K::NfAbsNS)
   j = 1
 
   for v in c[2]
-    push!(res, InfPlcNfAbsNS(K, v, j, true, acb[c[1][i][v[i]] for i in 1:l]))
+    push!(res, InfPlcNfAbsNS(K, v, j, true, acb[c[1][i].roots[v[i]] for i in 1:l]))
     j += 1
   end
 
