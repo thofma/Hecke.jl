@@ -8,11 +8,9 @@
 
   c = conjugates(b, 64)
   cc = conjugates(KabstoK\b, 64)
+
   for _c in c
-    @test count(_cc -> overlaps(_cc, _c), cc) == 1
-  end
-  for _cc in cc
-    @test count(_c -> overlaps(_cc, _c), c) == 1
+    @test count(_cc -> overlaps(_cc, _c), cc) == count(_cc -> overlaps(_cc, _c), c)
   end
 
   Kt, t = K["t"]
