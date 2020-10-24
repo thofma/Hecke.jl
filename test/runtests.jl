@@ -12,6 +12,11 @@ k, a = quadratic_field(5)
 
 push!(Base.LOAD_PATH, "@v#.#")
 
+using Random
+
+const rng = MersenneTwister()
+const rand_seed = rand(UInt128)
+
 try
   using GAP
   @time include("FieldFactory.jl")
@@ -41,5 +46,3 @@ end
 @time include("Sparse.jl")
 @time include("QuadForm.jl")
 @time include("LocalField.jl")
-
-

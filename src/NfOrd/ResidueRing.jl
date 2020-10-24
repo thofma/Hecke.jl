@@ -616,13 +616,16 @@ end
 #
 ################################################################################
 
-function rand(Q::NfOrdQuoRing)
+Random.gentype(::Type{NfOrdQuoRing}) = elem_type(NfOrdQuoRing)
+
+function rand(rng::AbstractRNG, Qsp::Random.SamplerTrivial{NfOrdQuoRing})
+  Q = Qsp[]
   A = basis_matrix(Q)
   B = basis(base_ring(Q))
-  z = rand(fmpz(1):A[1,1]) * B[1]
+  z = rand(rng, fmpz(1):A[1,1]) * B[1]
 
   for i in 2:nrows(A)
-    z = z + rand(fmpz(1):A[i, i]) * B[i]
+    z = z + rand(rng, fmpz(1):A[i, i]) * B[i]
   end
 
   return Q(z)
