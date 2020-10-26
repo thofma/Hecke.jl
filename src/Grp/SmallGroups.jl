@@ -4,6 +4,10 @@
 #
 ################################################################################
 
+if VERSION >= v"1.3"
+  using Pkg.Artifacts
+end
+
 #export number_of_small_groups, small_groups_limit
 export small_group
 #CF: as of now, nothing works here and the exports cause errors in Oscar
@@ -11,50 +15,144 @@ export small_group
 mutable struct SmallGroupDB
   path::String
   max_order::Int
-  db::Vector{Vector{NamedTuple{(:name, :gens, :rels, :nontrivrels, :orderdis,
-                                :ordersubdis, :isabelian, :iscyclic,
-                                :issolvable, :isnilpotent, :autorder, :aut_gens,
-                                :nchars, :dims, :schur, :galrep, :fields, :mod),
-                               Tuple{String,Array{Perm{Int64},1},
-                                     Vector{Vector{Int64}},
-                                     Vector{Vector{Int64}},
-                                     Vector{Tuple{Int64,Int64}},
-                                     Vector{Tuple{Int64,Int64}},
-                                     Bool,Bool,Bool,Bool,BigInt,
-                                     Vector{Vector{Vector{Int64}}},Int64,
-                                     Vector{Int64},Vector{Int64}, Vector{Int},
-                                     Vector{Vector{Rational{BigInt}}},
-                                     Vector{Vector{Vector{Vector{Rational{BigInt}}}}}}}}}
+  db::Vector{Vector{NamedTuple{(:id, :name, :gens, :rels, :nontrivrels,
+                                :orderdis, :ordersubdis, :isabelian, :iscyclic,
+                                :issolvable, :isnilpotent, :autorder,
+                                :aut_gens, :nchars, :dims, :schur, :galrep,
+                                :fields, :mod),
+                              Tuple{Tuple{Int, Int}, String, Vector{Perm{Int}},
+                                    Vector{Vector{Int}}, Vector{Vector{Int}},
+                                    Vector{Tuple{Int,Int}},
+                                    Vector{Tuple{Int,Int}},
+                                    Bool, Bool, Bool, Bool, fmpz,
+                                    Vector{Vector{Vector{Int}}}, Int,
+                                    Vector{Int},Vector{Int}, Vector{Int},
+                                    Vector{Vector{fmpq}},
+                                    Vector{Vector{Vector{Vector{fmpq}}}}}}}}
 
-  function SmallGroupDB(path::String)
-    db = Hecke.eval(Meta.parse(Base.read(path, String)))
-    max_order = length(db)
-    return new(path, max_order, db)
-  end
 end
 
-# TODO: Write a parser for the data
+function SmallGroupDB(path::String)
+  db = Vector{NamedTuple{(:id, :name, :gens, :rels, :nontrivrels, :orderdis,
+                          :ordersubdis, :isabelian, :iscyclic, :issolvable,
+                          :isnilpotent, :autorder, :aut_gens, :nchars, :dims,
+                          :schur, :galrep, :fields, :mod),
+                         Tuple{Tuple{Int, Int}, String, Vector{Perm{Int}},
+                               Vector{Vector{Int}}, Vector{Vector{Int}},
+                               Vector{Tuple{Int,Int}},
+                               Vector{Tuple{Int,Int}}, Bool, Bool, Bool,
+                               Bool, fmpz, Vector{Vector{Vector{Int}}}, Int,
+                               Vector{Int},Vector{Int}, Vector{Int},
+                               Vector{Vector{fmpq}},
+                               Vector{Vector{Vector{Vector{fmpq}}}}}}}[]
+  z = eltype(eltype(db))[]
+  open(path) do io
+    while !eof(io)
+    e = _parse_row(io)
+    if isempty(z) || e.id[1] == z[1].id[1]
+      push!(z, e)
+    else
+      push!(db, z)
+      z = eltype(eltype(db))[]
+      push!(z, e)
+    end
+  end
+  push!(db, z)
+  end
+  max_order = length(db)
+  return SmallGroupDB(path, max_order, db)
+end
+
+function SmallGroupDBLegacy(path::String)
+
+  f = function(z)
+    if z isa BigInt
+      return fmpz(z)
+    elseif z isa Rational{BigInt}
+      return fmpq()
+    elseif z isa Vector{Vector{Rational{BigInt}}}
+      return Vector{fmpq}[ fmpq.(v) for v in z]
+    elseif z isa Vector{Vector{Vector{Vector{Rational{BigInt}}}}}
+      zz = Vector{Vector{Vector{Vector{fmpq}}}}(undef, length(z))
+      for i in 1:length(z)
+        zz[i] = Vector{Vector{Vector{fmpq}}}(undef, length(z[i]))
+        for j in 1:length(z[i])
+          zz[i][j] = Vector{Vector{fmpq}}(undef, length(z[i][j]))
+          for k in 1:length(z[i][j])
+            zz[i][j][k] = fmpq.(z[i][j][k])
+          end
+        end
+      end
+      return zz
+    else
+      return z
+    end
+  end
+
+  dbnew = Vector{NamedTuple{(:id, :name, :gens, :rels, :nontrivrels, :orderdis,
+                          :ordersubdis, :isabelian, :iscyclic, :issolvable,
+                          :isnilpotent, :autorder, :aut_gens, :nchars, :dims,
+                          :schur, :galrep, :fields, :mod),
+                         Tuple{Tuple{Int, Int}, String, Vector{Perm{Int}},
+                               Vector{Vector{Int}}, Vector{Vector{Int}},
+                               Vector{Tuple{Int,Int}},
+                               Vector{Tuple{Int,Int}}, Bool, Bool, Bool,
+                               Bool, fmpz, Vector{Vector{Vector{Int}}}, Int,
+                               Vector{Int},Vector{Int}, Vector{Int},
+                               Vector{Vector{fmpq}},
+                               Vector{Vector{Vector{Vector{fmpq}}}}}}}[]
+
+  db = Hecke.eval(Meta.parse(Base.read(path, String)))
+  for i in 1:length(db)
+    push!(dbnew, eltype(dbnew)(undef, length(db[i]))) 
+    for j in 1:length(db[i])
+      v = db[i][j]
+      vv = map(f, v)
+      dbnew[i][j] = (id = (i, j), vv...)
+    end
+  end
+
+  max_order = length(dbnew)
+  return SmallGroupDB(path, max_order, dbnew)
+end
 
 function show(io::IO, L::SmallGroupDB)
   print(io, "Database of small groups (order limit = ", L.max_order, ")")
 end
 
-const default_small_group_db = [joinpath(pkgdir, "data/small_groups_extended"), joinpath(pkgdir, "data/small_groups_default")]
+const legacy_default_small_group_db = [joinpath(pkgdir, "data/small_groups_extended"), joinpath(pkgdir, "data/small_groups_default")]
 
-function small_group_database()
-  for pa in default_small_group_db
-    if isfile(pa)
-      return SmallGroupDB(pa)
+@static if VERSION < v"1.3"
+  function small_group_database()
+    for pa in legacy_default_small_group_db
+      if isfile(pa)
+        return SmallGroupDBLegacy(pa)
+      end
     end
   end
-  throw(error("No database for small groups found"))
+else
+  function small_group_database()
+    st = artifact"SmallGroupDB"
+    return SmallGroupDB(joinpath(st, "SmallGroupDB", "data"))
+  end
 end
 
-const DefaultSmallGroupDB = small_group_database()
+const _DefaultSmallGroupDB = Ref{Any}(nothing)
+
+function DefaultSmallGroupDB()
+  _DB = _DefaultSmallGroupDB[]
+  if _DefaultSmallGroupDB[] === nothing
+    DB = small_group_database()
+    _DefaultSmallGroupDB[] = DB
+    return DB::SmallGroupDB
+  else
+    return _DB::SmallGroupDB
+  end
+end
 
 isfrom_db(G::GrpGen) = G.isfromdb
 
-function small_group(i, j; DB = DefaultSmallGroupDB)
+function small_group(i, j; DB = DefaultSmallGroupDB())
   data = DB.db[i][j]
   #i < 1 || i > 63 && error("Group order ($i) must be between 1 and $small_groups_limit")
   #j < 1 || j > number_of_small_groups(i) && error("Index ($j) must be between 1 and $(number_of_small_groups(i))")
@@ -81,4 +179,74 @@ function small_group(i, j; DB = DefaultSmallGroupDB)
   G.isfromdb = true
   G.small_group_id = (i, j)
   return G
+end
+
+################################################################################
+#
+#  Better parsing
+#
+################################################################################
+
+function _parse_row(io::IO)
+  b = Base.read(io, UInt8)
+  # id
+  b, id = _parse(Tuple{Int, Int}, io, b)
+  @assert b == UInt(',')
+  b = Base.read(io, UInt8)
+  b, name = _parse(String, io, b)
+  @assert b == UInt(',')
+  b = Base.read(io, UInt8)
+  b, gens = _parse(Vector{Perm{Int}}, io, b)
+  @assert b == UInt(',')
+  b = Base.read(io, UInt8)
+  b, rels = _parse(Vector{Vector{Int}}, io, b)
+  @assert b == UInt(',')
+  b = Base.read(io, UInt8)
+  b, nontrivrels = _parse(Vector{Vector{Int}}, io, b)
+  @assert b == UInt(',')
+  b = Base.read(io, UInt8)
+  b, orderdis = _parse(Vector{Tuple{Int, Int}}, io, b)
+  @assert b == UInt(',')
+  b = Base.read(io, UInt8)
+  b, ordersubdis = _parse(Vector{Tuple{Int, Int}}, io, b)
+  @assert b == UInt(',')
+  b = Base.read(io, UInt8)
+  b, isabelian = _parse(Bool, io, b)
+  @assert b == UInt(',')
+  b = Base.read(io, UInt8)
+  b, iscyclic = _parse(Bool, io, b)
+  @assert b == UInt(',')
+  b = Base.read(io, UInt8)
+  b, issolvable = _parse(Bool, io, b)
+  @assert b == UInt(',')
+  b = Base.read(io, UInt8)
+  b, isnilpotent = _parse(Bool, io, b)
+  @assert b == UInt(',')
+  b = Base.read(io, UInt8)
+  b, autorder = _parse(fmpz, io, b)
+  @assert b == UInt(',')
+  b = Base.read(io, UInt8)
+  b, aut_gens = _parse(Vector{Vector{Vector{Int}}}, io, b)
+  @assert b == UInt(',')
+  b = Base.read(io, UInt8)
+  b, nchars = _parse(Int, io, b)
+  @assert b == UInt(',')
+  b = Base.read(io, UInt8)
+  b, dims = _parse(Vector{Int}, io, b)
+  @assert b == UInt(',')
+  b = Base.read(io, UInt8)
+  b, schur = _parse(Vector{Int}, io, b)
+  @assert b == UInt(',')
+  b = Base.read(io, UInt8)
+  b, galrep = _parse(Vector{Int}, io, b)
+  @assert b == UInt(',')
+  b = Base.read(io, UInt8)
+  b, fields = _parse(Vector{Vector{fmpq}}, io, b)
+  @assert b == UInt(',')
+  b = Base.read(io, UInt8)
+  b, mod = _parse(Vector{Vector{Vector{Vector{fmpq}}}}, io, b)
+  return (id = id, name = name, gens = gens, rels = rels, nontrivrels = nontrivrels, orderdis = orderdis,
+          ordersubdis = ordersubdis, isabelian = isabelian, iscyclic = iscyclic, issolvable = issolvable,
+          isnilpotent = isnilpotent, autorder = autorder, aut_gens = aut_gens, nchars = nchars, dims = dims,
+          schur = schur, galrep = galrep, fields = fields, mod = mod)
 end

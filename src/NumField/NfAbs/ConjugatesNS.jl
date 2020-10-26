@@ -1,3 +1,55 @@
+mutable struct InfPlcNfAbsNS
+  field::NfAbsNS
+  index::Vector{Int}
+  absolute_index::Int
+  isreal::Bool
+  roots::Vector{acb}
+end
+
+absolute_index(P::InfPlcNfAbsNS) = P.absolute_index
+
+number_field(P::InfPlcNfAbsNS) = P.field
+
+place_type(::Type{NfAbsNS}) = InfPlcNfAbsNS
+
+place_type(::NfAbsNS) = InfPlcNfAbsNS
+
+isreal(P::InfPlcNfAbsNS) = P.isreal
+
+function real_places(K::NfAbsNS)
+  r, s = signature(K)
+  return infinite_places(K)[1:r]
+end
+
+function infinite_places(K::NfAbsNS)
+  c = conjugate_data_arb_roots(K, 32, copy = false)
+
+  res = InfPlcNfAbsNS[]
+
+  l = ngens(K)
+
+  j = 1
+
+  for v in c[2]
+    push!(res, InfPlcNfAbsNS(K, v, j, true, acb[c[1][i].roots[v[i]] for i in 1:l]))
+    j += 1
+  end
+
+  for v in c[3]
+    push!(res, InfPlcNfAbsNS(K, v, j, false, acb[c[1][i].roots[v[i]] for i in 1:l]))
+    j += 1
+  end
+
+  return res
+end
+
+function Base.show(io::IO, P::InfPlcNfAbsNS)
+  print(io, "Infinite place of\n")
+  print(IOContext(io, :compact => true), P.field)
+  print(io, "Corresponding to roots\n")
+  print(io, P.roots)
+end
+
 function conjugates_data_roots(K::NfAbsNS)
   cache = get_special(K, :conjugates_data_roots)
   if cache !== nothing
@@ -50,9 +102,9 @@ function conjugate_data_arb_roots(K::NfAbsNS, p::Int; copy = true)
 end
 
 function enumerate_conj_prim(v::Vector{acb_roots})
-  indices = Tuple[]
+  indices = Vector{Int}[]
   for i in CartesianIndices(Tuple(1:length(v[i].roots) for i in 1:length(v)))
-    push!(indices, i)
+    push!(indices, collect(Tuple(i)))
   end
   #I have the indices, now I need to order them.
   complex_indices = Int[]
@@ -102,7 +154,7 @@ function enumerate_conj_prim(v::Vector{acb_roots})
   return res_real, res_complex
 end
 
-function _is_complex_conj(v::Tuple, w::Tuple, pos::Vector, roots::Vector)
+function _is_complex_conj(v::Vector, w::Vector, pos::Vector, roots::Vector)
   i = 1
   for x in v
     if i in pos
@@ -182,6 +234,9 @@ function _evaluate(f::fmpq_mpoly, vals::Vector{acb})
   return r[1]
 end
 
+function evaluate(a::NfAbsNSElem, P::InfPlcNfAbsNS, prec::Int)
+  return conjugates(a, prec)[absolute_index(P)]
+end
 
 function signature(K::NfAbsNS)
   if K.signature[1] != -1

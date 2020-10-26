@@ -491,6 +491,25 @@ function _parse(::Type{Int}, io, start = Base.read(io, UInt8))
   return b, res
 end
 
+function _parse(::Type{String}, io, start = Base.read(io, UInt8))
+  b = start
+  res = IOBuffer()
+  @assert b == UInt8('"')
+  b = Base.read(io, UInt8)
+  while b != UInt8('"')
+    Base.write(res, b)
+    b = Base.read(io, UInt8)
+  end
+
+  if eof(io)
+    b = UInt8(255)
+  else
+    b = Base.read(io, UInt8)
+  end
+
+  return b, String(take!(res))
+end
+
 function _parse(::Type{Vector{T}}, io, start = Base.read(io, UInt8)) where {T}
   res = T[]
   w = UInt8(' ')
@@ -625,6 +644,44 @@ function _parse(::Type{Tuple{Int, Int}}, io, start = Base.read(io, UInt8))
     b = Base.read(io, UInt8)
   end
   return b, (x1, x2)
+end
+
+function perm_from_string(s)
+  c, p = AbstractAlgebra.Generic.parse_cycles(s)
+  if length(c) == 0
+    n = 1
+  else
+    n = maximum(c)
+  end
+  cdec = AbstractAlgebra.Generic.cycledec(c, p, n)
+  return SymmetricGroup(cdec.cptrs[end]-1)(cdec)
+end
+
+function _parse(::Type{Perm{Int}}, io, start = Base.read(io, UInt8))
+  b = start
+  @assert b == UInt8('p')
+  b = Base.read(io, UInt8)
+  @assert b == UInt8('e')
+  b = Base.read(io, UInt8)
+  @assert b == UInt8('r')
+  b = Base.read(io, UInt8)
+  @assert b == UInt8('m')
+  b = Base.read(io, UInt8)
+  @assert b == UInt8('"')
+  b = Base.read(io, UInt8)
+  res = IOBuffer()
+  while b != UInt8('"')
+    Base.write(res, b)
+    b = Base.read(io, UInt8)
+  end
+
+  if eof(io)
+    b = UInt8(255)
+  else
+    b = Base.read(io, UInt8)
+  end
+
+  return b, perm_from_string(String(take!(res)))
 end
 
 function _parse(::Type{arb}, io, start = Base.read(io, UInt8))
@@ -827,7 +884,7 @@ function latex_table(D::NFDB; entries = [:deg, :automorphism_group, :poly, :non_
   return String(take!(io))
 end
 
-function _latexify(f::Fac{fmpz}; withnumber = true, approx = true)
+function _latexify(f::Fac{fmpz}; withnumber = true, approx = true, cdot = false)
   l = Tuple{fmpz, Int}[(p, e) for (p, e) in f]
   sort!(l, by = x -> x[1])
   if length(l) == 0
@@ -843,7 +900,11 @@ function _latexify(f::Fac{fmpz}; withnumber = true, approx = true)
     if l[i][2] == 1
       s = s * "$(l[i][1])\\cdot "
     else
-      s = s * "$(l[i][1])^{$(l[i][2])} \\cdot "
+      if cdot
+        s = s * "$(l[i][1])^{$(l[i][2])} \\cdot "
+      else
+        s = s * "$(l[i][1])^{$(l[i][2])} "
+      end
     end
   end
   if l[end][2] == 1
@@ -952,7 +1013,7 @@ names64 = [ "C64", "C8^2", "C8:C8", "C2^3:C8", "(C2*C4):C8", "D4:C8", "Q8:C8",
            "C2^2:Q8:C2", "C2^2.C2^4", "C2^3*C8", "C2^2*OD16", "C2*OD16:C2",
            "(C2*OD16):C2", "C2^2*D8", "C2^2*SD16", "C2^2*Q16", "C2*D8:C2",
            "C2*C8:C2^2", "C2*SD16:C2", "SD16:C2^2", "C8.C2^3", "C4.C2^4",
-           "D8.C2^2", "C2^4*C4", "C2^3*D4", "C2^3*Q8", "C2^2*D4:C2",
+           "D10.C2^2", "C2^4*C4", "C2^3*D4", "C2^3*Q8", "C2^2*D4:C2",
            "C2*Q8:C2^2", "C2*C4.C2^3", "D4.C2^3", "C2^6" ]
 
 function has_obviously_relative_class_number_not_one(K::AnticNumberField, isnormal::Bool = true, maxdeg::Int = degree(K))
@@ -968,12 +1029,10 @@ function has_obviously_relative_class_number_not_one(K::AnticNumberField, isnorm
     if degree(L) > min(degree(K) - 1, maxdeg)
       continue
     end
-    if !istotally_complex(L)
+    fl, tau = iscm_field(L)
+    if !fl
       continue
     end
-
-    fl, tau = iscm_field(L)
-    @assert fl
 
     l = fixed_field(L, tau)[1]
 

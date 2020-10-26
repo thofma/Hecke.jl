@@ -65,4 +65,18 @@
     end
   end
 
+  @testset "rand" begin
+    A = matrix_algebra(GF(7), 2)
+    I = A[2]*A
+
+    E = elem_type(A)
+    @test rand(I) isa E
+    @test rand(rng, I) isa E
+    @test rand(rng, I, 2, 3) isa Matrix{E}
+
+    Random.seed!(rng, rand_seed)
+    a = rand(rng, I)
+    Random.seed!(rng, rand_seed)
+    @test a == rand(rng, I)
+  end
 end

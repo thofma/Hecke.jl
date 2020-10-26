@@ -382,6 +382,7 @@ end
 ###############################################
 Base.log2(a::fmpz) = log2(BigInt(a)) # stupid: there has to be faster way
 
+global last_lf = Ref{Any}()
 #given the local factorisation in H, find the cld, the Coefficients of the Logarithmic
 #Derivative: a factor g of f is mapped to g'*f/g
 #Only the coefficients 0:up_to and from:degree(f)-1 are computed
@@ -395,7 +396,7 @@ function cld_data(H::Hensel, up_to::Int, from::Int, mC, Mi, sc::nf_elem)
 #  @assert up_to <= from
 
   M = zero_matrix(FlintZZ, length(lf), (1+up_to + N - from) * degree(k))
-  global last_lf = (lf, H.f, up_to)
+  last_lf[] = (lf, H.f, up_to)
 
   lf = [divexact_low(mullow(derivative(x), H.f, up_to+1), x, up_to+1) for x = lf]
 #  lf = [divexact(derivative(x)*H.f, x) for x = lf]
@@ -461,6 +462,7 @@ function grow_prec!(vH::vanHoeijCtx, pr::Int)
   vH.pM = (F.num, F.den)
 end
 
+global last_f = Ref{Any}()
 
 @doc Markdown.doc"""
     van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 20) -> Array{PolyElem{nf_elem}, 1}
@@ -734,7 +736,7 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 20)
       @show have, really_used, used
       @show f
       @show base_ring(f)
-      global last_f = (f, P, vH)
+      last_f[] = (f, P, vH)
       error("too bad")
     end
     used = deepcopy(really_used)

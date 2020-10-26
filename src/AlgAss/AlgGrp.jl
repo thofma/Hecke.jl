@@ -687,7 +687,7 @@ function _compute_matrix_algebras_from_reps2(A, res)
   G = group(A)
   smallid, H, HtoG = find_small_group(G)
   idempotents = elem_type(A)[r[2](one(r[1])) for r in res]
-  data = DefaultSmallGroupDB.db[smallid[1]][smallid[2]]
+  data = DefaultSmallGroupDB().db[smallid[1]][smallid[2]]
   Qx = Globals.Qx
   for j in data.galrep
     #@show j, data.schur[j]

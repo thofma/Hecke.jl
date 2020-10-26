@@ -44,7 +44,7 @@ $\sigma_{i}(x) = \overline{sigma_{i + s}(x)}$ for $r + 1 \leq i \leq r + s$.
 Every entry `y` of the vector returned satisfies
 `radius(real(y)) < 2^-abs_tol` and `radius(imag(y)) < 2^-abs_tol` respectively.
 """
-function conjugates(x::nf_elem, abs_tol::Int = 32, T = arb)
+function conjugates(x::NumFieldElem, abs_tol::Int = 32, T = arb)
   if T === arb
     return conjugates_arb(x, abs_tol)
   else

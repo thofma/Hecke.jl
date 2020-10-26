@@ -265,7 +265,7 @@ function conjugates_arb(a::NfRelElem, prec::Int = 64)
 
     for i in 1:length(data)
       P, rts, real_rts, compl_rts = data[i]
-      a_as_poly = parent(g)(a)
+      a_as_poly = a.data
       poly_evaluated = CCy(acb[evaluate(coeff(a_as_poly, i), P, wprec) for i in 0:degree(a_as_poly)])
       if isreal(P)
         _conjs = evaluate(poly_evaluated, rts[1:length(real_rts)])
