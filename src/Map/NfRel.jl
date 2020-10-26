@@ -365,9 +365,9 @@ mutable struct NfRelToFqMor{T} <: Map{NfRel{T}, FqFiniteField, HeckeMap, NfRelTo
   end
 end
 
-function _automorphisms(L::NfRel)
+function _automorphisms(L::NfRel{T}) where T
   if degree(L) == 1
-    return NfRelToNfRelMor[hom(K, K, one(K))]
+    return NfRelToNfRelMor{T, T}[hom(K, K, one(K))]
   end
   f = L.pol
   Lt, t = PolynomialRing(L, "t", cached = false)
@@ -375,7 +375,7 @@ function _automorphisms(L::NfRel)
   divpol = Lt([ -gen(L), L(1) ])
   f1 = divexact(f1, divpol)
   lr = roots(f1)
-  auts = Vector{NfRelToNfRelMor}(undef, length(lr) + 1)
+  auts = Vector{NfRelToNfRelMor{T, T}}(undef, length(lr) + 1)
   for i = 1:length(lr)
     auts[i] = hom(L, L, lr[i], check = false)
   end
