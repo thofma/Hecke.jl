@@ -537,10 +537,10 @@ function minkowski_matrix(B::Vector{S}, abs_tol::Int = 64) where S <: NumFieldEl
   for i in 1:length(B)
     T[i] = minkowski_map(B[i], abs_tol)
   end
-  p = maximum(Int[ precision(parent(T[i][j])) for i in 1:length(B), j in 1:degree(K) ])
-  M = zero_matrix(ArbField(p, cached = false), length(B), degree(K))
+  p = maximum(Int[ precision(parent(T[i][j])) for i in 1:length(B), j in 1:absolute_degree(K) ])
+  M = zero_matrix(ArbField(p, cached = false), length(B), absolute_degree(K))
   for i in 1:length(B)
-    for j in 1:degree(K)
+    for j in 1:absolute_degree(K)
       M[i, j] = T[i][j]
     end
   end
@@ -574,10 +574,10 @@ function minkowski_gram_mat_scaled(O::NfAbsOrd, prec::Int = 64)
   return A
 end
 
-function minkowski_gram_mat_scaled(B::Vector{nf_elem}, prec::Int = 64)
+function minkowski_gram_mat_scaled(B::Vector{T}, prec::Int = 64) where T <: NumFieldElem
   K = parent(B[1])
   c = minkowski_matrix(B, prec)
-  d = zero_matrix(FlintZZ, length(B), degree(K))
+  d = zero_matrix(FlintZZ, length(B), absolute_degree(K))
   A = zero_matrix(FlintZZ, length(B), length(B))
   round_scale!(d, c, prec)
   ccall((:fmpz_mat_gram, libflint), Nothing, (Ref{fmpz_mat}, Ref{fmpz_mat}), A, d)

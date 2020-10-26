@@ -395,7 +395,7 @@ function _coprime_norm_integral_ideal_class(x, y) #x::NfOrdFracIdl, y::NfOrdIdl)
   # x must be nonzero
   O = order(y)
   if isone(denominator(x)) && iscoprime(norm(numerator(x)), norm(y))
-    return deepcopy(numerator(x)), nf(O)(1)
+    return numerator(x), nf(O)(1)
   end
   x_inv = inv(x)
   check = true
@@ -579,7 +579,7 @@ function pseudo_hnf_mod(P::PMat, m, shape::Symbol = :upperright, strategy = :spl
     end
   end
 
-  res = PMat{nf_elem, NfOrdFracIdl}(res_mat, [ deepcopy(x)::NfOrdFracIdl for x in P.coeffs])
+  res = PMat{nf_elem, NfOrdFracIdl}(res_mat, P.coeffs)
 
   shift = 0
   if shape == :lowerleft
@@ -589,11 +589,11 @@ function pseudo_hnf_mod(P::PMat, m, shape::Symbol = :upperright, strategy = :spl
   for i in 1:ncols(P)
     if iszero(zz[i + shift, i].elem)
       res.matrix[i + shift, i] = one(nf(O))
-      res.coeffs[i + shift] = NfOrdFracIdl(deepcopy(m), fmpz(1))
+      res.coeffs[i + shift] = NfOrdFracIdl(m, fmpz(1))
     else
       o = ideal(O, zz[i + shift, i].elem)
       t_sum += @elapsed g = o + m
-      if isone(norm(g))
+      if isone(g)
         oo = o
         mm = m
       else

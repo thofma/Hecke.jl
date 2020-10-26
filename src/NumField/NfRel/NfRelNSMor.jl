@@ -612,7 +612,9 @@ function image(f::Hecke.NfToNfRelNSMor, a::nf_elem)
 end
 
 function preimage(phi::Hecke.NfToNfRelNSMor, a::NfRelNSElem{nf_elem})
-  @assert isdefined(phi, :preimg_base_field) && isdefined(phi, :preimgs)
+  if !isdefined(phi, :preimg_base_field) || !isdefined(phi, :preimgs)
+    _compute_preimage(phi)
+  end
   f = data(a)
   K = codomain(phi)
   k = base_field(K)
@@ -657,4 +659,31 @@ function _compute_preimage(f::NfToNfRelNSMor)
     f.preimgs[i] = Nemo.elem_from_mat_row(K, x1, i+1, den)
   end
   return nothing
+end
+
+
+function degrees(L::NfRelNS)
+  return Int[total_degree(x) for x in L.pol]
+end
+
+function automorphisms(L::NfRelNS{T}) where T
+  c = get_special(L, :automorphisms)
+  if c !== nothing
+    return c
+  end
+  auts = _automorphisms(L)
+  Hecke.set_special(L, :automorphisms => auts)
+  return auts
+end
+
+function _automorphisms(L::NfRelNS{T}) where T
+  roots = Vector{elem_type(L)}[roots(isunivariate(x)[2], L) for x in L.pol]
+  auts = Vector{NfRelNSToNfRelNSMor{T}}(undef, prod(length(x) for x in roots))
+  ind = 1
+  for i in CartesianIndices(Tuple(1:length(roots[i]) for i in 1:length(roots)))
+    embs = NfRelNSElem{T}[roots[j][i[j]] for j = 1:length(roots)]
+    auts[ind] = hom(L, L, embs)
+    ind += 1
+  end
+  return auts
 end

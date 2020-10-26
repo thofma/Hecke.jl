@@ -375,11 +375,13 @@ norm(a::NumFieldElem, ::FlintRationalField) = _elem_norm_to(a, FlintQQ)
 
 Given a number field element $a$, returns the absolute trace of $a$.
 """
-function absolute_tr(a::NfRelElem)
-  return tr(a, FlintQQ)
+function absolute_tr(a::T) where T <: NumFieldElem
+  return absolute_tr(tr(a))
 end
 
 absolute_tr(a::nf_elem) = tr(a)
+
+absolute_tr(a::NfAbsNSElem) = tr(a)
 
 absolute_tr(x::fmpq) = x
 

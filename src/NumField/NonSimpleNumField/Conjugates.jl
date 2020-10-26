@@ -73,8 +73,9 @@ function infinite_places(L::NfRelNS{T}) where {T}
   return res
 end
 
-function conjugates(a::NfRelNSElem{T}, prec::Int = 32) where {T}
+function conjugates_arb(a::NfRelNSElem{T}, prec::Int = 32) where {T}
   # This is very slow.
+
   f = data(a)
   wprec = prec
   L = parent(a)
@@ -88,13 +89,15 @@ function conjugates(a::NfRelNSElem{T}, prec::Int = 32) where {T}
 
   r_cnt = 1
   s_cnt = 1
+
+  IP = infinite_places(parent(a))
   
   while !found
     found = true
     r_cnt = 1
     s_cnt = 1
 
-    for p in infinite_places(parent(a))
+    for p in IP
       for i in 1:ngens(L)
         pt[i] = evaluate(comp_gens[i], p.components[i], wprec)
       end

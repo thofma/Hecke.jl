@@ -78,7 +78,7 @@ function _simplify(O::NfOrd, mK::NfToNfRel)
   F = FlintFiniteField(p, abs_deg, "w", cached = false)[1]
   emb = find_embedding(FP, F)
   rt = roots(map_coeffs(emb, map_coeffs(mFP1, Lrel.pol)))
-``
+
   indices = Int[]
   for i = 1:length(Bnew)
     if isone(denominator(Bnew[i]))

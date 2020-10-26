@@ -367,21 +367,19 @@ end
 
 function _automorphisms(L::NfRel)
   if degree(L) == 1
-    auts = NfRelToNfRelMor[hom(K, K, one(K))]
-  else
-    f = L.pol
-    Lt, t = PolynomialRing(L, "t", cached = false)
-    f1 = change_base_ring(L, f, parent = Lt)
-    divpol = Lt([ -gen(L), L(1) ])
-    f1 = divexact(f1, divpol)
-    lr = roots(f1)
-    Aut1 = Vector{NfRelToNfRelMor}(undef, length(lr) + 1)
-    for i = 1:length(lr)
-      Aut1[i] = hom(L, L, lr[i], check = false)
-    end
-    Aut1[end] = id_hom(L)
-    auts = closure(Aut1, *, id_hom(L)) # One could probably do this modular as in the absolute case
+    return NfRelToNfRelMor[hom(K, K, one(K))]
   end
+  f = L.pol
+  Lt, t = PolynomialRing(L, "t", cached = false)
+  f1 = change_base_ring(L, f, parent = Lt)
+  divpol = Lt([ -gen(L), L(1) ])
+  f1 = divexact(f1, divpol)
+  lr = roots(f1)
+  auts = Vector{NfRelToNfRelMor}(undef, length(lr) + 1)
+  for i = 1:length(lr)
+    auts[i] = hom(L, L, lr[i], check = false)
+  end
+  auts[end] = id_hom(L)
   return auts
 end
 

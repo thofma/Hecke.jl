@@ -267,7 +267,7 @@ end
 ################################################################################
 
 function z_split(I::NfOrdIdl)
-  b = basis_matrix(I)
+  b = basis_matrix(I, copy = false)
   O = order(I)
   n = degree(O)
   c = coprime_base([b[i, i] for i in 1:n])
@@ -300,7 +300,7 @@ function z_split(I::NfOrdIdl)
 end
 
 function can_map_into_integer_quotient(Q::NfOrdQuoRing)
-  B = basis_matrix(ideal(Q))
+  B = basis_matrix(ideal(Q), copy = false)
   for i in 2:ncols(B)
     if !isone(B[i, i])
       return false
@@ -310,7 +310,7 @@ function can_map_into_integer_quotient(Q::NfOrdQuoRing)
 end
 
 function map_into_integer_quotient(Q::NfOrdQuoRing)
-  B = basis_matrix(ideal(Q))
+  B = basis_matrix(ideal(Q), copy = false)
   m = B[1, 1]
   R = ResidueRing(FlintZZ, m, cached = false)
   f = (x -> R(x.elem.coordinates[1]))

@@ -93,9 +93,9 @@ function _root(P::InfPlcNfRel)
 end
 
 function evaluate(a::NfRelElem, P::InfPlcNfRel, prec::Int = 32)
-  r = conjugates(a, prec)
+  r = conjugates_arb(a, prec)
   L = parent(a)
-  return conjugates(a, prec)[P.absolute_index]
+  return r[P.absolute_index]
 end
 
 
@@ -243,7 +243,7 @@ function _get_conjugate_data(L::NfRel{T}, prec::Int) where {T}
   return data
 end
 
-function conjugates(a::NfRelElem, prec::Int = 64)
+function conjugates_arb(a::NfRelElem, prec::Int = 64)
   z = acb[]
   L = parent(a)
   g = defining_polynomial(L)

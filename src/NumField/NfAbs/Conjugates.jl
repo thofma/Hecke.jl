@@ -341,7 +341,7 @@ end
 # where the first return value indicates if the result is good enough
 function _minkowski_map_and_apply(a, abs_tol, G, work_tol::Int = abs_tol)
   K = parent(a)
-  A = Array{arb}(undef, degree(K))
+  A = Array{arb}(undef, absolute_degree(K))
   c = conjugates_arb(a, work_tol)::Vector{acb}
   r, s = signature(K)
 

@@ -41,8 +41,15 @@ function _simplify_components(L::Hecke.NfRelNS{nf_elem}, autL::Vector{Hecke.NfRe
   return Lnew, autsLnew
 end
 
-
 function _from_relative_to_abs_with_embedding(L1::Hecke.NfRelNS{nf_elem}, autL1::Array{Hecke.NfRelNSToNfRelNSMor{nf_elem}, 1})
+  #push!(deb, (deepcopy(L1)))
+  res = _from_relative_to_abs_with_embedding1(L1, autL1)
+  #@time _relative_to_absolute(L1, autL1)
+  return res
+end
+
+function _from_relative_to_abs_with_embedding1(L1::Hecke.NfRelNS{nf_elem}, autL1::Array{Hecke.NfRelNSToNfRelNSMor{nf_elem}, 1})
+
   @vtime :Fields 3 L, autL = _simplify_components(L1, autL1)
   S, mS = simple_extension(L, cached = false)
   K, mK, MK = absolute_field(S, cached = false)
@@ -157,16 +164,14 @@ function _relative_to_absoluteQQ(L::NfRelNS{nf_elem}, auts::Vector{NfRelNSToNfRe
 end
 
 function _relative_to_absolute(L::NfRelNS{nf_elem}, auts::Vector{NfRelNSToNfRelNSMor{nf_elem}})
-  Ls, mLs = simplified_simple_extension(L)
-  Ks, mKs, mks = simplified_absolute_field(Ls)
-  KstoL = mKs*mLs
-  _compute_preimage(KstoL)
+  Ks, mKs = simplified_absolute_field(L)
+  _compute_preimage(mKs)
   #Now, I have to translate the automorphisms.
   #First, to automorphisms of K.
   autsKs = Vector{NfToNfMor}(undef, length(auts))
-  imggen = KstoL(gen(Ks))
+  imggen = mKs(gen(Ks))
   for i = 1:length(auts)
-    autsKs[i] = hom(Ks, Ks, KstoL\(auts[i](imggen)))
+    autsKs[i] = hom(Ks, Ks, mKs\(auts[i](imggen)))
   end
   return Ks, autsKs
 end

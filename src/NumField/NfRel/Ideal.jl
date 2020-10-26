@@ -999,9 +999,15 @@ end
 #
 ################################################################################
 
-function isindex_divisor(O::NfRelOrd, p::Union{NfOrdIdl, NfRelOrdIdl})
+function isindex_divisor(O::NfRelOrd{S, T, U}, p::Union{NfOrdIdl, NfRelOrdIdl}) where {S, T, U <: NfRelElem}
   f = nf(O).pol
   return valuation(discriminant(f), p) != valuation(discriminant(O), p)
+end
+
+function isindex_divisor(O::NfRelOrd{S, T, U}, p::Union{NfOrdIdl, NfRelOrdIdl}) where {S, T, U <: NfRelNSElem}
+  I = discriminant(O)
+  J = discriminant(EquationOrder(nf(O)))
+  return valuation(I, p) != valuation(J, p)
 end
 
 ################################################################################
@@ -1011,7 +1017,7 @@ end
 ################################################################################
 
 function prime_decomposition(O::NfRelOrd, p::Union{NfOrdIdl, NfRelOrdIdl}; compute_uniformizer::Bool = true, compute_anti_uniformizer::Bool = true)
-  if isindex_divisor(O, p)
+  if !issimple(nf(O)) || isindex_divisor(O, p)
     ls = prime_dec_index(O, p)
   else
     ls = prime_dec_nonindex(O, p, compute_uniformizer = compute_uniformizer)

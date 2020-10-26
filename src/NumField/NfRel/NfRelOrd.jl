@@ -901,6 +901,8 @@ function +(a::NfRelOrd{T, S, U}, b::NfRelOrd{T, S, U}) where {T, S, U}
 end
 
 function sum_as_OK_modules(a::NfRelOrd{T, S, U}, b::NfRelOrd{T, S, U}) where {T, S, U}
+  return a+b
+  #=
   aB = basis_pmatrix(a, copy = false)
   if !islower_triangular(aB.matrix)
     aB = pseudo_hnf(aB, :lowerleft, true)
@@ -913,6 +915,7 @@ function sum_as_OK_modules(a::NfRelOrd{T, S, U}, b::NfRelOrd{T, S, U}) where {T,
   d = degree(a)
   PM = sub(pseudo_hnf_full_rank_with_modulus(vcat(aB, bB), numerator(J), :lowerleft), d + 1:2*d, 1:d)
   return NfRelOrd{T, S, U}(nf(a), PM)
+  =#
 end
 
 ################################################################################

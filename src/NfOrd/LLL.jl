@@ -250,10 +250,20 @@ function _minkowski_matrix_CM(M::NfAbsOrd)
   if isdefined(M,  :minkowski_gram_CMfields)
     return M.minkowski_gram_CMfields
   end
-  n = degree(M)
-  prec = 64
-  g = zero_matrix(FlintZZ, n, n)
   B = basis(M, nf(M))
+  g = _exact_minkowski_matrix(B)
+  M.minkowski_gram_CMfields = g
+  return g
+end
+
+function _exact_minkowski_matrix(B::Vector{T}) where T <: NumFieldElem
+  K = parent(B[1])
+  if istotally_real(K)
+    return trace_matrix(B)
+  end
+  n = length(B)
+  g = zero_matrix(FlintZZ, n, n)
+  prec = 16
   imgs = Vector{Vector{arb}}(undef, n)
   for i = 1:n
     imgs[i] = minkowski_map(B[i], prec)
@@ -282,7 +292,27 @@ function _minkowski_matrix_CM(M::NfAbsOrd)
     end
     i += 1
   end
-  M.minkowski_gram_CMfields = g
+  return g
+end
+
+function trace_matrix(b::Vector{T}) where T <: NumFieldElem
+  K = parent(b[1])
+  n = absolute_degree(K)
+  g = zero_matrix(FlintZZ, n, n)
+  aux = K()
+  for i = 1:n
+    mul!(aux, b[i], b[i])
+    t = absolute_tr(aux)
+    @assert isinteger(t)
+    g[i, i] = numerator(t)
+    for j in (i + 1):n
+      mul!(aux, b[i], b[j])
+      t = absolute_tr(aux)
+      @assert isinteger(t)
+      g[i, j] = numerator(t)
+      g[j, i] = numerator(t)
+    end
+  end
   return g
 end
 
@@ -655,7 +685,7 @@ A basis for $I$ that is reduced using the LLL algorithm for the Minkowski metric
 """
 function lll_basis(A::NfOrdIdl, v::fmpz_mat = zero_matrix(FlintZZ, 1, 1); prec::Int = 100)
   L, T = lll(A, v, prec=prec)
-  S = FakeFmpqMat(T)*basis_matrix(A)*basis_matrix(order(A))
+  S = FakeFmpqMat(T)*basis_matrix(A, copy = false)*basis_matrix(order(A), copy = false)
   K = nf(order(A))
   nS = numerator(S)
   dS = denominator(S)
