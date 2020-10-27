@@ -70,6 +70,9 @@ import SparseArrays: nnz
 import Serialization: serialize, deserialize
 
 import Random: rand!
+using Random: Sampler, SamplerTrivial, GLOBAL_RNG
+
+using RandomExtensions: RandomExtensions, make, Make2, Make3, Make4
 
 import Nemo
 

@@ -49,4 +49,22 @@
   end
   =#
 
+  @testset "rand" begin
+    Qx, x = FlintQQ["x"]
+    A = AlgAss(x^2 - fmpq(1, 5))
+    O = any_order(A)
+    I = 2*O
+    T = elem_type(A)
+
+    @test rand(rng, I, 3) isa T
+    @test rand(I, 3) isa T
+    m = make(I, 3)
+    @test Random.gentype(m) == T
+    @test rand(m, 3) isa Vector{T}
+
+    Random.seed!(rng)
+    x = rand(rng, I, 3)
+    Random.seed!(rng, rng.seed)
+    @test x == rand(rng, I, 3)
+  end
 end
