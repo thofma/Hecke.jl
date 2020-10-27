@@ -4,6 +4,11 @@ mutable struct InfPlcNonSimple{S, T, U}
   base_field_place::U
   absolute_index::Int
   isreal::Bool
+  data::Dict{Int, Vector{acb}}
+
+  function InfPlcNonSimple{S, T, U}(field::S, components::Vector{T}, base_field_place::U, absolute_index::Int, isreal::Bool) where {S, T, U}
+    z = new{S, T, U}(field, components, base_field_place, absolute_index, isreal, Dict{Int, Vector{acb}}())
+  end
 end
 
 function place_type(L::NfRelNS{T}) where {T}
@@ -81,11 +86,13 @@ function conjugates_arb(a::NfRelNSElem{T}, prec::Int = 32) where {T}
   L = parent(a)
   res = Vector{acb}(undef, absolute_degree(L))
   comp_gens = [gen(component(L, j)[1]) for j in 1:ngens(L)]
-  pt = Vector{acb}(undef, ngens(L))
   found = false
 
-  r, s = signature(L)
+  have_tmp_variable = false
 
+  local _pt::Vector{acb}
+
+  r, s = signature(L)
 
   r_cnt = 1
   s_cnt = 1
@@ -98,8 +105,18 @@ function conjugates_arb(a::NfRelNSElem{T}, prec::Int = 32) where {T}
     s_cnt = 1
 
     for p in IP
-      for i in 1:ngens(L)
-        pt[i] = evaluate(comp_gens[i], p.components[i], wprec)
+      if haskey(p.data, wprec)
+        pt = p.data[wprec]
+      else
+        if !have_tmp_variable
+          _pt = Vector{acb}(undef, ngens(L))
+          have_tmp_variable = true
+        end
+        for i in 1:ngens(L)
+          _pt[i] = evaluate(comp_gens[i], p.components[i], wprec)
+        end
+        p.data[wprec] = deepcopy(_pt)
+        pt = _pt
       end
       prec1 = maximum(x -> precision(parent(x)), pt)
       prec2 = maximum(x -> precision(parent(evaluate(x, p.base_field_place, wprec))), coeffs(f))
