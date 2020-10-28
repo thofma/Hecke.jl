@@ -288,7 +288,7 @@ Base.hash(x::NfAbsOrdElem, h::UInt) = Base.hash(x.elem_in_nf, h)
 
 Returns whether $x$ and $y$ are equal.
 """
- ==(x::NfAbsOrdElem, y::NfAbsOrdElem) = parent(x) === parent(y) &&
+==(x::NfAbsOrdElem, y::NfAbsOrdElem) = parent(x) === parent(y) &&
                                             x.elem_in_nf == y.elem_in_nf
 
 ################################################################################
@@ -846,9 +846,9 @@ function representation_matrix_mod(a::NfAbsOrdElem, d::fmpz)
     RR = ResidueRing(FlintZZ, d1, cached = false)
     ARR = map_entries(RR, A)
     BMRR = map_entries(RR, BM.num)
-    
-    mul!(ARR, BMRR, ARR) 
-    #=  
+
+    mul!(ARR, BMRR, ARR)
+    #=
     c = gcd(lift(content(ARR)), d1)
     if !isone(c)
       d3 = divexact(d1, c)
@@ -884,7 +884,7 @@ function representation_matrix_mod(a::NfAbsOrdElem, d::fmpz)
     return res1
   end
   #=
-  A1 = A 
+  A1 = A
   mod!(A1, d1)
   M1 = mod(BM.num, d1)
   mul!(A1, M1, A1)

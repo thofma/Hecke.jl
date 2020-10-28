@@ -847,7 +847,7 @@ const NfOrdIdlSet = NfAbsOrdIdlSet{AnticNumberField, nf_elem}
 const NfAbsOrdIdlSetID = Dict{NfAbsOrd, NfAbsOrdIdlSet}()
 
 @doc Markdown.doc"""
-  NfOrdIdl(O::NfOrd, a::fmpz_mat) -> NfOrdIdl
+    NfOrdIdl(O::NfOrd, a::fmpz_mat) -> NfOrdIdl
 
     Creates the ideal of $O$ with basis matrix $a$.
     No sanity checks. No data is copied, $a$ should not be used anymore.

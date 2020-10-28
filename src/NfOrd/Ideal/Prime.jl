@@ -1716,7 +1716,7 @@ end
 ################################################################################
 											
 @doc Markdown.doc"""
-   inertia_subgroup(P::NfOrdIdl; G::Vector{NfToNfMor}) -> Vector{NfToNfMor}
+    inertia_subgroup(P::NfOrdIdl; G::Vector{NfToNfMor}) -> Vector{NfToNfMor}
 
 Given a prime ideal $P$ in a normal number field, it returns a vector of the automorphisms $\sigma_1, \dots, \sigma_s$
 such that $\sigma_i(P) = P$ for all $i = 1,\dots, s$ and induce the identity on the residue field.
