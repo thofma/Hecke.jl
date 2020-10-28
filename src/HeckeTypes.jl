@@ -1700,7 +1700,7 @@ mutable struct AbsOrdQuoRingElem{S, T, U} <: RingElem
 
   function AbsOrdQuoRingElem{S, T, U}(Q::AbsOrdQuoRing{S, T}, x::U) where {S, T, U}
     z = new{S, T, U}()
-    z.elem = mod(x, Q)
+    z.elem = x
     z.parent = Q
     return z
   end

@@ -922,7 +922,7 @@ function any_order(K::AnticNumberField)
         M[i, j] = numerator(coeff(g, d - (i - j)))
       end
     end
-    @hassert :NfOrd 1 defines_order(K, FakeFmpqMat(M))
+    @hassert :NfOrd 1 defines_order(K, FakeFmpqMat(M))[1]
     z = NfAbsOrd{AnticNumberField, nf_elem}(K, FakeFmpqMat(M))
     z.isequation_order = false
     return z

@@ -575,7 +575,7 @@ function pseudo_hnf_mod(P::PMat, m, shape::Symbol = :upperright, strategy = :spl
   res_mat = zero_matrix(nf(O), nrows(P), ncols(P))
   for i in 1:nrows(P)
     for j in 1:ncols(P)
-      res_mat[i, j] = elem_in_nf(zz[i, j].elem)
+      res_mat[i, j] = lift(zz[i, j]).elem_in_nf
     end
   end
 
@@ -587,11 +587,11 @@ function pseudo_hnf_mod(P::PMat, m, shape::Symbol = :upperright, strategy = :spl
   end
 
   for i in 1:ncols(P)
-    if iszero(zz[i + shift, i].elem)
+    if iszero(zz[i + shift, i])
       res.matrix[i + shift, i] = one(nf(O))
       res.coeffs[i + shift] = NfOrdFracIdl(m, fmpz(1))
     else
-      o = ideal(O, zz[i + shift, i].elem)
+      o = ideal(O, lift(zz[i + shift, i]))
       t_sum += @elapsed g = o + m
       if isone(g)
         oo = o

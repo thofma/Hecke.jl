@@ -23,7 +23,7 @@
      Qx,  x = PolynomialRing(FlintQQ, "x");
 
     @testset "K = Q" begin
-       K,  a = NumberField(x,"a");
+      K,  a = NumberField(x,"a");
       O = maximal_order(K)
 
       @testset "m0 = <$n>" for n in 1:50
@@ -39,7 +39,7 @@
         end
         H = Hecke.multgrp_of_cyclic_grp(n)
         @test Hecke.isisomorphic(G, H)
-        @test M(G(G.snf)) == Q(O(1))
+        @test M(G(G.snf)) == Q(1)
         for g in gens
           for exp in -5:10
             el = g^exp

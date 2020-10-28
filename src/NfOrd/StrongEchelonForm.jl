@@ -313,7 +313,13 @@ function map_into_integer_quotient(Q::NfOrdQuoRing)
   B = basis_matrix(ideal(Q), copy = false)
   m = B[1, 1]
   R = ResidueRing(FlintZZ, m, cached = false)
-  f = (x -> R(x.elem.coordinates[1]))
+  local f
+  let R = R, Q = Q
+    function f(x::NfOrdQuoRingElem)
+      mod!(x.elem, Q)
+      return R(coordinates(x.elem, copy = false)[1])
+    end
+  end
   g = (y -> Q(y.data)::NfOrdQuoRingElem)
   return R, f, g
 end

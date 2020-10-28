@@ -81,7 +81,7 @@ parent_type(::Type{AbsOrdQuoRingElem{S, T, U}}) where {S, T, U} = AbsOrdQuoRing{
 #
 ################################################################################
 
-hash(x::AbsOrdQuoRingElem, h::UInt) = hash(x.elem, h)
+hash(x::AbsOrdQuoRingElem, h::UInt) = hash(mod(x.elem, parent(x)), h)
 
 ################################################################################
 #
@@ -125,22 +125,45 @@ end
 
 ################################################################################
 #
+#  Easy reduction of elements
+#
+################################################################################
+
+#TODO: Inplace versions of mod
+function _easy_mod(x::NfOrdQuoRingElem)
+  Q = parent(x)
+  I = Q.ideal
+  O = parent(x.elem)
+  if isdefining_polynomial_nice(nf(O)) && contains_equation_order(O)
+    x.elem = O(mod(x.elem.elem_in_nf, minimum(I, copy = false)), false)
+  else
+    x.elem = mod(x.elem, I)
+  end
+  return x
+end
+
+function _easy_mod(x::AbsOrdQuoRingElem)
+  x.elem = mod(x.elem, parent(x).ideal)
+  return x
+end
+
+################################################################################
+#
 #  Parent object overloading
 #
 ################################################################################
 
 function (Q::AbsOrdQuoRing{S, T})(x::U) where {S, T, U}
   parent(x) !== base_ring(Q) && error("Cannot coerce element into the quotient ring")
-  return AbsOrdQuoRingElem{S, T, U}(Q, x)
+  res = AbsOrdQuoRingElem{S, T, U}(Q, x)
+  return _easy_mod(res)
 end
 
 function (Q::AbsOrdQuoRing{S, T})(x::Integer) where {S, T}
   I = Q.ideal
   y = base_ring(Q)(mod(x, minimum(I, copy = false)))
   U = elem_type(base_ring(Q))
-  res = AbsOrdQuoRingElem{S, T, U}()
-  res.parent = Q
-  res.elem = y 
+  res = AbsOrdQuoRingElem{S, T, U}(Q, y)
   return res
 end
 
@@ -148,9 +171,7 @@ function (Q::AbsOrdQuoRing{S, T})(x::fmpz) where {S, T}
   I = Q.ideal
   y = base_ring(Q)(mod(x, minimum(I, copy = false)))
   U = elem_type(base_ring(Q))
-  res = AbsOrdQuoRingElem{S, T, U}()
-  res.parent = Q
-  res.elem = y 
+  res = AbsOrdQuoRingElem{S, T, U}(Q, y)
   return res
 end
 
@@ -204,6 +225,7 @@ Given an element of the quotient ring $\mathcal O/I$, return a lift in
 $\mathcal O$.
 """
 function lift(a::NfOrdQuoRingElem)
+  mod!(a.elem, parent(a))
   return a.elem
 end
 
@@ -226,56 +248,52 @@ end
 #
 ################################################################################
 
-function +(x::AbsOrdQuoRingElem, y::AbsOrdQuoRingElem)
+function +(x::AbsOrdQuoRingElem{S, T, U}, y::AbsOrdQuoRingElem{S, T, U}) where {S, T, U}
   check_parent(x, y)
-  return parent(x)(x.elem + y.elem)
+  Q = parent(x)
+  return Q(x.elem + y.elem)
 end
 
-function -(x::AbsOrdQuoRingElem, y::AbsOrdQuoRingElem)
+function -(x::AbsOrdQuoRingElem{S, T, U}, y::AbsOrdQuoRingElem{S, T, U}) where {S, T, U}
   check_parent(x, y)
-  return parent(x)(x.elem - y.elem)
+  Q = parent(x)
+  return Q(x.elem - y.elem)
 end
 
-function -(x::AbsOrdQuoRingElem)
-  return parent(x)(-x.elem)
+function -(x::AbsOrdQuoRingElem{S, T, U}) where {S, T, U}
+  Q = parent(x)
+  return AbsOrdQuoRingElem{S, T, U}(Q, -x.elem)
 end
 
 function *(x::AbsOrdQuoRingElem, y::AbsOrdQuoRingElem)
   check_parent(x, y)
-  return parent(x)(x.elem * y.elem)
+  Q = parent(x)
+  return Q(x.elem * y.elem)
 end
 
 function mul!(z::AbsOrdQuoRingElem, x::AbsOrdQuoRingElem, y::AbsOrdQuoRingElem)
   z.elem = mul!(z.elem, x.elem, y.elem)
-  z.elem = mod!(z.elem, parent(z))
-  return z
+  return _easy_mod(z)
 end
 
 function add!(z::AbsOrdQuoRingElem, x::AbsOrdQuoRingElem, y::AbsOrdQuoRingElem)
   z.elem = add!(z.elem, x.elem, y.elem)
-  z.elem = mod!(z.elem, parent(z))
-  return z
+  return _easy_mod(z)
 end
 
 addeq!(x::AbsOrdQuoRingElem, y::AbsOrdQuoRingElem) = add!(x, x, y)
 
 function sub!(z::AbsOrdQuoRingElem, x::AbsOrdQuoRingElem, y::AbsOrdQuoRingElem)
   z.elem = sub!(z.elem, x.elem, y.elem)
-  z.elem = mod!(z.elem, parent(z))
-  return z
+  return _easy_mod(z)
 end
 
-function *(x::Integer, y::AbsOrdQuoRingElem)
-  return parent(y)(x * y.elem)
+function *(x::T, y::AbsOrdQuoRingElem) where T <: Union{Integer, fmpz}
+  Q = parent(y)
+  return Q(x*y.elem)
 end
 
-*(x::AbsOrdQuoRingElem, y::Integer) = y*x
-
-function *(x::fmpz, y::AbsOrdQuoRingElem)
-  return parent(y)(x * y.elem)
-end
-
-*(x::AbsOrdQuoRingElem, y::fmpz) = y*x
+*(x::AbsOrdQuoRingElem, y::T) where T <: Union{Integer, fmpz} = y*x
 
 function ^(a::AbsOrdQuoRingElem, f::fmpz)
   if fits(Int, f)
@@ -348,9 +366,15 @@ end
 #
 ################################################################################
 
-iszero(x::AbsOrdQuoRingElem) = iszero(x.elem)
+function iszero(x::AbsOrdQuoRingElem)
+  mod!(x.elem, parent(x))
+  return iszero(x.elem)
+end
 
-isone(x::AbsOrdQuoRingElem) = isone(x.elem)
+function isone(x::AbsOrdQuoRingElem)
+  mod!(x.elem, parent(x))
+  return isone(x.elem)
+end
 
 function one(Q::AbsOrdQuoRing)
   return Q(one(Q.base_ring))
@@ -374,7 +398,11 @@ function ==(x::AbsOrdQuoRing, y::AbsOrdQuoRing)
   return base_ring(x) === base_ring(y) && ideal(x) == ideal(y)
 end
 
-==(x::AbsOrdQuoRingElem, y::AbsOrdQuoRingElem) = x.elem == y.elem
+function ==(x::AbsOrdQuoRingElem, y::AbsOrdQuoRingElem) 
+  mod!(x.elem, parent(x))
+  mod!(y.elem, parent(x))
+  return x.elem == y.elem
+end
 
 ################################################################################
 #
@@ -700,9 +728,9 @@ function xxgcd(x::NfOrdQuoRingElem, y::NfOrdQuoRingElem)
   d = degree(O)
 
   if iszero(x)
-    return deepcopy(y), Q(O(0)), Q(O(1)), Q(O(-1)), Q(O(0))
+    return deepcopy(y), Q(0), Q(1), Q(-1), Q(0)
   elseif iszero(y)
-    return deepcopy(x), Q(O(1)), Q(O(0)), Q(O(0)), Q(O(1))
+    return deepcopy(x), Q(1), Q(0), Q(0), Q(1)
   end
 
   g = gcd(x, y)

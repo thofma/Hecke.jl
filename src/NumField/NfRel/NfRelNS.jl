@@ -928,11 +928,12 @@ function _sieve_primitive_elements(B::Vector{NfRelNSElem{nf_elem}})
   for i = 1:length(B)
     push!(Bnew, B[i])
     for j = 1:nrep
-      push!(Bnew, B[i]+B[j])
-      push!(Bnew, B[i]-B[j])
+      if i != j
+        push!(Bnew, B[i]+B[j])
+        push!(Bnew, B[i]-B[j])
+      end
     end
   end
-
   #Now, we test for primitiveness.
   K = base_field(Lrel)
   OK = maximal_order(K)
@@ -1027,7 +1028,7 @@ function simplified_absolute_field(L::NfRelNS; cached = false)
   B1 = _sieve_primitive_elements(B)
   a = B1[1]
   I = t2(a)
-  for i = 2:length(B1)
+  for i = 2:min(50, length(B1))
     J = t2(B1[i])
     if J < I
       a = B1[i]

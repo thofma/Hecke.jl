@@ -42,9 +42,8 @@ function _simplify_components(L::Hecke.NfRelNS{nf_elem}, autL::Vector{Hecke.NfRe
 end
 
 function _from_relative_to_abs_with_embedding(L1::Hecke.NfRelNS{nf_elem}, autL1::Array{Hecke.NfRelNSToNfRelNSMor{nf_elem}, 1})
-  #push!(deb, (deepcopy(L1)))
-  res = _from_relative_to_abs_with_embedding1(L1, autL1)
-  #@time _relative_to_absolute(L1, autL1)
+  #@time res = _from_relative_to_abs_with_embedding1(L1, autL1)
+  res = _relative_to_absolute(L1, autL1)
   return res
 end
 
@@ -173,5 +172,9 @@ function _relative_to_absolute(L::NfRelNS{nf_elem}, auts::Vector{NfRelNSToNfRelN
   for i = 1:length(auts)
     autsKs[i] = hom(Ks, Ks, mKs\(auts[i](imggen)))
   end
-  return Ks, autsKs
+  #finally, the embedding of the base field of L into Ks
+  k = base_field(L)
+  img = mKs\(L(gen(k)))
+  embed = hom(k, Ks, img, check = false)
+  return Ks, autsKs, embed
 end

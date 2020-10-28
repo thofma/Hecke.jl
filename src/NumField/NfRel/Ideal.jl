@@ -919,8 +919,7 @@ function pradical(O::NfRelOrd, P::Union{NfOrdIdl, NfRelOrdIdl})
   end
   PM1 = PseudoMatrix(M1)
   PM2 = PseudoMatrix(identity_matrix(K, d), [ pb[i][2]*P for i = 1:d ])
-  m = det(PM2)
-  PM = sub(pseudo_hnf_full_rank_with_modulus(vcat(PM1, PM2), numerator(m, copy = false), :lowerleft), (d + 1):2*d, 1:d)
+  PM = sub(pseudo_hnf(vcat(PM1, PM2), :lowerleft), (d + 1):2*d, 1:d)
 
   return ideal(O, PM, false, true)
 end

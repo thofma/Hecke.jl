@@ -16,7 +16,7 @@ end
 
 function lattice(v::Vector{T}, disc::fmpz; isexact::Bool = false) where T <: NumFieldElem
   @assert !isempty(v)
-  L = NfLattice{T}(v, disc)
+  L = NfLattice{T}(v, abs(disc))
   L.is_minkowski_exact = isexact
   return L
 end
