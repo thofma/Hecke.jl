@@ -113,4 +113,20 @@
     O = maximal_order(M)
     @test isone(abs(discriminant(O)))
   end
+
+  @testset "rand" begin
+    Qx, x = FlintQQ["x"]
+    A = AlgAss(x^2 - fmpq(1, 5))
+    O = any_order(A)
+
+    for n = (3, fmpz(3), big(3), 1:3, big(1):3)
+      @test rand(rng, O, n) isa elem_type(O)
+      @test rand(O, n) isa elem_type(O)
+      m = make(O, n)
+      @test Random.gentype(m) == elem_type(O)
+      @test rand(make(O, n), 3) isa Vector{elem_type(O)}
+
+      @test reproducible(m)
+    end
+  end
 end
