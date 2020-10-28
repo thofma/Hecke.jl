@@ -650,6 +650,7 @@ end
 ################################################################################
 @doc Markdown.doc"""
     ring_of_multipliers(I::NfAbsOrdIdl) -> NfAbsOrd
+
 Computes the order $(I : I)$, which is the set of all $x \in K$
 with $xI \subseteq I$.
 """
@@ -725,6 +726,7 @@ end
 
 @doc Markdown.doc"""
     factor_shape_refined(f::gfp_poly)
+
 Given a polynomial $f$ over a finite field, it returns an array having one
 entry for every irreducible factor giving its degree and its multiplicity.
 """

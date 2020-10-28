@@ -71,6 +71,7 @@ end
 
 @doc Markdown.doc"""
     FacElem{B}(R, base::Array{B, 1}, exp::Array{fmpz, 1}) -> FacElem{B}
+
 Returns the element $\prod b_i^{e_i}$, un-expanded.
 """
 function FacElem(R, base::Vector{B}, exp::Vector{fmpz}) where {B}
@@ -95,6 +96,7 @@ end
 
 @doc Markdown.doc"""
     FacElem{B}(base::Array{B, 1}, exp::Array{fmpz, 1}) -> FacElem{B}
+
 Returns the element $\prod b_i^{e_i}$, un-expanded.
 """
 function FacElem(base::Array{B, 1}, exp::Array{fmpz, 1}) where B
@@ -109,6 +111,7 @@ end
 @doc Markdown.doc"""
     FacElem{B}(R, d::Dict{B, fmpz}) -> FacElem{B}
     FacElem{B}(R, d::Dict{B, Integer}) -> FacElem{B}
+
 Returns the element $\prod b^{d[p]}$, un-expanded.
 """
 function FacElem(R, d::Dict{B, fmpz}) where B
@@ -125,6 +128,7 @@ end
 @doc Markdown.doc"""
     FacElem{B}(d::Dict{B, fmpz}) -> FacElem{B}
     FacElem{B}(d::Dict{B, Integer}) -> FacElem{B}
+
 Returns the element $\prod b^{d[p]}$, un-expanded.
 """
 function FacElem(d::Dict{B, fmpz}) where B
@@ -570,6 +574,7 @@ end
 #################################################################################
 @doc Markdown.doc"""
     max_exp(a::FacElem)
+
 Finds the largest exponent in the factored element $a$.
 """
 function max_exp(a::FacElem)
@@ -578,6 +583,7 @@ end
 
 @doc Markdown.doc"""
     min_exp(a::FacElem)
+
 Finds the smallest exponent in the factored element $a$.
 """
 function min_exp(a::FacElem)
@@ -586,6 +592,7 @@ end
 
 @doc Markdown.doc"""
     maxabs_exp(a::FacElem)
+
 Finds the largest exponent by absolute value in the factored element $a$.
 """
 function maxabs_exp(a::FacElem)

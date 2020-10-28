@@ -1,5 +1,6 @@
 @doc Markdown.doc"""
     norm(m::T, I::NfOrdIdl) where T <: Map{AnticNumberField, AnticNumberField} -> NfOrdIdl
+
 Given an embedding $m:k\to K$ of number fields and an integral ideal in $K$, find the norm
 $N_{K/k}(I)$.
 """
@@ -34,6 +35,7 @@ end
 #  for prime ideals, the gcd's can be done in F_p/ F_q hence might be faster
 @doc Markdown.doc"""
     minimum(m::T, I::NfOrdIdl) where T <: Map{AnticNumberField, AnticNumberField} -> NfOrdIdl
+
 Given an embedding $m:k\to K$ of number fields and an integral ideal in $K$, find the
 intersect $I \cap \Z_k$.
 """
@@ -103,6 +105,7 @@ end
 
 @doc Markdown.doc"""
     intersect_prime(f::Map, P::NfOrdIdl, O_k::NfOrd) -> NfOrdIdl
+
 Given a prime ideal $P$ in $K$ and the inclusion map $f:k \to K$
 of number fields, find the unique prime $p$ in $k$ below.
 $p$ will be in the order $O_k$ which defaults to "the" maximal order of $k$.
@@ -162,6 +165,7 @@ end
 
 @doc Markdown.doc"""
     prime_decomposition_nonindex(f::Map, p::NfOrdIdl, Z_K::NfOrd) -> Array{Tuple{NfOrdIdl, Int}, 1}
+
 Given a map $f: k\to K$ of number fields defined over $\mathbb Q$ and
 a prime ideal in the maximal order of $k$, find all prime ideals in
 the maximal order of $K$ above.

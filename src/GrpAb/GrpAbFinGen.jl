@@ -599,6 +599,7 @@ export ⊕
 
 @doc Markdown.doc"""
     canonical_injection(G::GrpAbFinGen, i::Int) -> Map
+
 Given a group $G$ that was created as a direct product, return the
 injection from the $i$th component.
 """
@@ -612,6 +613,7 @@ end
 
 @doc Markdown.doc"""
     canonical_projection(G::GrpAbFinGen, i::Int) -> Map
+
 Given a group $G$ that was created as a direct product, return the
 projection onto the $i$th component.
 """
@@ -639,6 +641,7 @@ end
 
 @doc Markdown.doc"""
     hom(G::GrpAbFinGen, H::GrpAbFinGen, A::Array{ <: Map{GrpAbFinGen, GrpAbFinGen}, 2}) -> Map
+
 Given groups $G$ and $H$ that are created as direct products as well
 as a matrix $A$ containing maps $A[i,j] : G_i \to H_j$, return
 the induced homomorphism.
@@ -682,6 +685,7 @@ end
 
 @doc Markdown.doc"""
     flat(G::GrpAbFinGen) -> GrpAbFinGen, Map
+
 Given a group $G$ that is created using (iterated) direct products, or
 (iterated) tensor product,
 return a group that is a flat product: $(A \oplus B) \oplus C$
@@ -730,6 +734,7 @@ parent(t::Tuple) = TupleParent(t)
 
 @doc Markdown.doc"""
     tensor_product(G::GrpAbFinGen...; task::Symbol = :map) -> GrpAbFinGen, Map
+
 Given groups $G_i$, compute the tensor product $G_1\otimes \cdots \otimes G_n$.
 If `task` is set to ":map", a map $\phi$ is returned that
 maps tuples in $G_1 \times \cdots \times G_n$ to pure tensors
@@ -780,6 +785,7 @@ export ⊗
 
 @doc Markdown.doc"""
     hom(G::GrpAbFinGen, H::GrpAbFinGen, A::Array{ <: Map{GrpAbFinGen, GrpAbFinGen}, 1}) -> Map
+
 Given groups $G = G_1 \otimes \cdots \otimes G_n$ and
 $H = H_1 \otimes \cdot \otimes H_n$ as well as maps
 $\phi_i: G_i\to H_i$, compute the tensor product of the maps.

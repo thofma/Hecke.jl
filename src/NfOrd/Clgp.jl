@@ -474,6 +474,7 @@ end
 
 @doc Markdown.doc"""
     regulator(O::NfOrd)
+
 Computes the regulator of $O$, i.e. the discriminant of the unit lattice.
 """
 function regulator(O::NfOrd; method::Int = 3, unit_method::Int = 1, use_aut::Bool = false, GRH::Bool = true)
@@ -489,6 +490,7 @@ end
 
 @doc Markdown.doc"""
     regulator(K::AnticNumberField)
+
 Computes the regulator of $K$, i.e. the discriminant of the unit lattice
 for the maximal order of $K$.
 """

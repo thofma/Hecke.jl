@@ -188,6 +188,7 @@ end
 
 @doc Markdown.doc"""
     isdiscriminant(D)
+
 Returns `true` if $D$ is the discriminant of an integral binary quadratic form,
 otherwise returns `false`.
 """
@@ -204,6 +205,7 @@ end
 
 @doc Markdown.doc"""
     isfundamental_discriminant(D)
+
 Returns `true` if $D$ is a fundamental discriminant otherwise returns `false`.
 """
 function isfundamental_discriminant(D::Union{Integer, fmpz})

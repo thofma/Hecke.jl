@@ -6,6 +6,7 @@
 
 @doc Markdown.doc"""
     diagonal_form(A::SMat{fmpz}) -> SMat{fmpz}
+
 A matrix $D$ that is diagonal and obtained via unimodular row and column operations.
 Like a snf without the divisibility condition.
 """
@@ -24,6 +25,7 @@ end
 
 @doc Markdown.doc"""
     diagonal(A::SMat) -> fmpz[]
+
 The diagonal elements of $A$ in an array.
 """
 function diagonal(A::SMat)
@@ -32,6 +34,7 @@ end
 
 @doc Markdown.doc"""
     isdiagonal(A::SMat) -> Bool
+
 True iff only the i-th entry in the i-th row is non-zero.
 """
 function isdiagonal(A::SMat)

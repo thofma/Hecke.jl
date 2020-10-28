@@ -15,6 +15,7 @@ end
 
 @doc Markdown.doc"""
     norm_equation(K::AnticNumerField, a) -> nf_elem
+
 For $a$ an integer or rational, try to find $T \in K$ s.th. 
 $N(T) = a$. Raises an error if unsuccessful.
 """

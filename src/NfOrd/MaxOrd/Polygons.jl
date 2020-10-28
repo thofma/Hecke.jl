@@ -158,6 +158,7 @@ end
 
 @doc Markdown.doc"""
     phi_development(f::PolyElem, phi::PolyElem) -> Vector{PolyElem}
+
 Computes an array of polynomials $[a_0, \ldots, a_s]$ such that $\sum a_i \phi^i = f$.
 """
 function phi_development(f::T, phi::T) where T <: PolyElem
@@ -179,6 +180,7 @@ end
 
 @doc Markdown.doc"""
     newton_polygon(f::PolyElem{T}, phi::PolyElem{T}) where T <: Union{padic, qadic}
+
 Computes the $\phi$-polygon of $f$, i.e. the lower convex hull of the points $(i, v(a_i))$
 where $a_i$ are the coefficients of the $\phi$-development of $f$.
 """
@@ -197,6 +199,7 @@ end
 
 @doc Markdown.doc"""
     newton_polygon(f::fmpz_poly, phi::fmpz_poly, p::fmpz)
+
 Computes the $\phi$-polygon of $f$, i.e. the lower convex hull of the points $(i, v_p(a_i))$
 where $a_i$ are the coefficients of the $\phi$-development of $f$.
 """
@@ -240,6 +243,7 @@ end
 
 @doc Markdown.doc"""
     residual_polynomial(N::NewtonPolygon{fmpz_poly}, L::Line)
+
 Computes the residual polynomial of the side $L$ of the Newton Polygon $N$.
 """
 function residual_polynomial(N::NewtonPolygon{fmpz_poly}, L::Line)

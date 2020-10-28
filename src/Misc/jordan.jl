@@ -2,6 +2,7 @@ export spectrum, eigenspace, jordan_normal_form, rational_canonical_form, compan
 
 @doc Markdown.doc"""
     spectrum(M::MatElem{T}) where T <: FieldElem -> Dict{T, Int}
+
 Returns the spectrum of a matrix, i.e. the set of eigenvalues of $M$ with multiplicities.
 """
 function spectrum(M::MatElem{T}) where T <: FieldElem
@@ -23,6 +24,7 @@ end
 
 @doc Markdown.doc"""
     spectrum(M::MatElem{T}, L) where T <: FieldElem -> Dict{T, Int}
+
 Returns the spectrum of a matrix over the field $L$, i.e. the set of eigenvalues of $M$ with multiplicities.
 """
 function spectrum(M::MatElem{T}, L) where T <: FieldElem
@@ -41,6 +43,7 @@ eigvals(M::MatElem{T}, L) where T <: FieldElem = spectrum(M, L)
 
 @doc Markdown.doc"""
     eigenspace(M::MatElem{T}, lambda::T) where T <: FieldElem -> Vector{MatElem{T}}
+
 Returns a basis of the eigenspace of $M$ with respect to the eigenvalues $\lambda$.
 """
 function eigenspace(M::MatElem{T}, lambda::T) where T <: FieldElem
@@ -203,6 +206,7 @@ end
 
 @doc Markdown.doc"""
     companion_matrix(p::PolyElem) -> MatElem
+
 Returns the companion matrix of $p = \sum_{i=0}^n a_ix^i$, i.e. the matrix
 
 
@@ -241,6 +245,7 @@ end
 
 @doc Markdown.doc"""
     issimilar(M::MatElem{T}, N::MatElem{T}) where T <: FieldElem -> Bool
+
 Returns true if the matrices are similar (conjugated) and false otherwise.
 """
 function issimilar(M::MatElem{T}, N::MatElem{T}) where T <: FieldElem
@@ -251,6 +256,7 @@ end
 
 @doc Markdown.doc"""
     conjugating_matrix(M::MatElem{T}, N::MatElem{T}) where T <: FieldElem -> MatElem{T}
+
 Returns a matrix $S$ such that $S\times N \times S^{-1} = M$.
 """
 function conjugating_matrix(M::MatElem{T}, N::MatElem{T}) where T <: FieldElem
@@ -348,6 +354,7 @@ end
 
 @doc Markdown.doc"""
     complete_to_basis(C::MatElem{T}) where T <: FieldElem -> MatElem{T}
+
 Returns a matrix representing a basis of $K^n$ whose first elements are given by the columns of $C$.
 """
 function complete_to_basis(C::MatElem{T}) where T <: FieldElem
@@ -416,6 +423,7 @@ end
 
 @doc Markdown.doc"""
     _rational_canonical_form_setup(M)
+
 Returns minpolys, the basis transformation and the vectors generating the blocks of the
 rational canonical form of $M$.
 """
@@ -450,6 +458,7 @@ end
 
 @doc Markdown.doc"""
     rational_canonical_form(M::MatElem{T}) where T <: FieldElem -> MatElem{T}, MatElem{T}
+
 Returns matrices $C$ and $S$ such that $C = SMS^{-1}$ and $C$ is in rational canonical form.
 """
 function rational_canonical_form(M::MatElem{T}) where T <: FieldElem
@@ -509,6 +518,7 @@ end
 
 @doc Markdown.doc"""
     jordan_normal_form(M::MatElem{T}) where T <: FieldElem -> MatElem{T}, MatElem{T}
+
 Returns matrices $J$ and $S$ such that $J = SMS^{-1}$ and $J$ is in Jordan normal form.
 """
 function jordan_normal_form(M::MatElem{T}) where T <: FieldElem
@@ -548,6 +558,7 @@ end
 
 @doc Markdown.doc"""
     jordan_decomposition(M::MatElem{T}) where T <:FieldElem -> MatElem{T}, MatElem{T}
+
 Returns matrices $S$ and $N$ such that $N$ is nilpotent, $S$ is semisimple and $M = S+N$.
 """
 function jordan_decomposition(M::MatElem{T}) where T <: FieldElem
@@ -594,6 +605,7 @@ end
 
 @doc Markdown.doc"""
     multiplicative_jordan_decomposition(M::MatElem{T}) where T <:FieldElem -> MatElem{T}, MatElem{T}
+
 Returns matrices $S$ and $U$ such that $U$ is unipotent, $S$ is semisimple and $M = SU$.
 """
 function multiplicative_jordan_decomposition(M::MatElem{T}) where T <:FieldElem
@@ -805,6 +817,7 @@ end
 
 @doc Markdown.doc"""
     simultaneous_diagonalization(L::Array{S, 1}; check::Bool=false)
+
 Returns a tuple whose first entry is the transformation matrix and whose
 second entry is an array of matrices containing the diagonal forms of
 the elements of $L$. If "check" is set to `true`, the algorithm checks whether
@@ -847,6 +860,7 @@ end
 
 @doc Markdown.doc"""
     simultaneous_diagonalization(L::Array{MatElem, 1}, K::Field; check::Bool=false)
+
 Returns a tuple whose first entry is the transformation matrix and whose
 second entry is an array of matrices containing the diagonal forms of
 the elements of $L$ computed over the field $K$. If "check" is set to `true`, the algorithm checks whether

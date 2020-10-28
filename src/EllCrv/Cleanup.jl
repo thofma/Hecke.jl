@@ -302,6 +302,7 @@ end
 
 @doc Markdown.doc"""
     height(x::fmpq) -> Float64
+
 Computes the height of a rational number $x$.
 """
 function log_height(x::fmpq)
@@ -314,6 +315,7 @@ end
 # but is it always in this form?
 @doc Markdown.doc"""
     naive_height(P::EllCrvPt{fmpq}) -> Float64
+
 Computes the naive height of a point $P$.
 """
 function naive_height(P)
@@ -328,6 +330,7 @@ end
 # p.75 Cremona
 @doc Markdown.doc"""
     points_with_bounded_naive_height(E:EllCrv, B::Int) -> Array{EllCrvPt}
+
 Computes all rational points on a curve $E$ with integer coefficients which have naive height <= $B$.
 """
 function points_with_bounded_naive_height(E, B)

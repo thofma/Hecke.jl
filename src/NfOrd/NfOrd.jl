@@ -112,6 +112,7 @@ field $K$.
 
 @doc Markdown.doc"""
     ismaximal(R::NfAbsOrd) -> Bool
+
 Tests if the order $R$ is maximal. This might trigger the
 computation of the maximal order.
 """
@@ -372,6 +373,7 @@ end
 #TODO: compute differently in equation orders, this is the rres...
 @doc Markdown.doc"""
     reduced_discriminant(O::NfOrd) -> fmpz
+
 Returns the reduced discriminant, that is, the largest elementary divisor of
 the trace matrix of $\mathcal O$.
 """
@@ -1043,6 +1045,7 @@ equation_order(f::fmpq_poly; cached::Bool = true, check::Bool = true) = Equation
 
 @doc Markdown.doc"""
     equation_order(M::NfOrd) -> NfOrd
+
 The equation order of the number field.
 """
 equation_order(M::NfAbsOrd) = equation_order(nf(M))
@@ -1141,6 +1144,7 @@ end
 
 @doc Markdown.doc"""
     iscontained(R::NfAbsOrd, S::NfAbsOrd) -> Bool
+
 Checks if $R$ is contained in $S$.
 """
 function iscontained(R::NfAbsOrd, S::NfAbsOrd)
@@ -1386,6 +1390,7 @@ end
 
 @doc Markdown.doc"""
     codifferent(R::NfOrd) -> NfOrdIdl
+
 The codiffernt ideal of $R$, i.e. the trace-dual of $R$.
 """
 function codifferent(R::NfOrd)
@@ -1406,6 +1411,7 @@ trace_dual(R::NfAbsOrd) = codifferent(R)
 #       a modular HNF algorithm.
 @doc Markdown.doc"""
     conductor(R::NfOrd, S::NfOrd) -> NfAbsOrdIdl
+
 The conductor $\{x \in R | xS\subseteq R\}$
 for orders $R\subseteq S$.
 """
@@ -1436,6 +1442,7 @@ end
 
 @doc Markdown.doc"""
     conductor(R::NfOrd) -> NfAbsOrdIdl
+
 The conductor of $R$ in the maximal order.
 """
 conductor(R::NfOrd) = conductor(R, maximal_order(R))

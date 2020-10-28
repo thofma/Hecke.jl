@@ -550,6 +550,7 @@ end
 
 @doc Markdown.doc"""
     subgroup(G::GrpGen, H::Vector{GrpGenElem})
+
 Assume that $H$ is a subgroup of $G$, compute a generic group and an embedding.
 """
 function subgroup(G::GrpGen, H::Vector{GrpGenElem})
@@ -566,6 +567,7 @@ end
 
 @doc Markdown.doc"""
     isabelian(G::GrpGen) -> Bool
+
 Returns whether $G$ is abelian.
 """
 function isabelian(G::GrpGen)
@@ -578,6 +580,7 @@ end
 
 @doc Markdown.doc"""
     iscyclic(G::GrpGen) -> Bool
+
 Returns whether $G$ is cyclic.
 """
 function iscyclic(G::GrpGen)

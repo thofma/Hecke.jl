@@ -935,6 +935,7 @@ end
 
 @doc Markdown.doc"""
     number_field(f::Array{fmpq_poly, 1}, s::String="_\$") -> NfAbsNS
+
 Let $f = (f_1, \ldots, f_n)$ be univariate rational polynomials, then
 we construct
  $$K = Q[t_1, \ldots, t_n]/\langle f_1(t_1), \ldots, f_n(t_n)\rangle .$$

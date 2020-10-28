@@ -402,6 +402,7 @@ end
 
 @doc Markdown.doc"""
     induce_crt(a::fmpz_poly, p::fmpz, b::fmpz_poly, q::fmpz, signed::Bool = false) -> fmpz_poly
+
 Given integral polynomials $a$ and $b$ as well as coprime integer moduli
 $p$ and $q$, find $f = a \bmod p$ and $f=b \bmod q$.
 If `signed` is set, the symmetric representative is used, the positive one
@@ -425,6 +426,7 @@ end
 
 @doc Markdown.doc"""
     induce_crt(L::Array{PolyElem, 1}, c::crt_env{fmpz}) -> fmpz_poly
+
 Given fmpz\_poly polynomials $L[i]$ and a `crt\_env`, apply the
 `crt` function to each coefficient resulting in a polynomial $f = L[i] \bmod p[i]$.
 """
@@ -486,6 +488,7 @@ end
 
 @doc Markdown.doc"""
     induce_crt(L::Array{MatElem, 1}, c::crt_env{fmpz}) -> fmpz_mat
+
 Given matrices $L[i]$ and a `crt\_env`, apply the
 `crt` function to each coefficient resulting in a matrix $M = L[i] \bmod p[i]$.
 """

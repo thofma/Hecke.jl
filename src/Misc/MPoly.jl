@@ -96,6 +96,7 @@ end
 
 @doc Markdown.doc"""
     isunivariate(f::Generic.MPoly{T}) where T <: NumFieldElem -> Bool, PolyElem{T}
+
 Tests if $f$ involves only one variable. If so, return a corresponding univariate polynomial.
 """
 function isunivariate(f::Generic.MPoly{T}) where T 

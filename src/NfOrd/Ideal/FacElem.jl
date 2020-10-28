@@ -59,6 +59,7 @@ end
 @doc Markdown.doc"""
     valuation(A::FacElem{NfOrdFracIdl, NfOrdFracIdlSet}, p::NfOrdIdl)
     valuation(A::FacElem{NfOrdIdl, NfOrdIdlSet}, p::NfOrdIdl)
+
 The valuation of $A$ at $P$.
 """
 function valuation(A::FacElem{NfOrdIdl, NfOrdIdlSet}, p::NfOrdIdl)
@@ -177,6 +178,7 @@ end
 
 @doc Markdown.doc"""
     factor_coprime(Q::FacElem{NfOrdFracIdl, NfOrdFracIdlSet}) -> Dict{NfOrdIdl, Int}
+
 A coprime factorisation of $Q$: each ideal in $Q$ is split using \code{integral_split} and then
 a coprime basis is computed.
 This does {\bf not} use any factorisation.
@@ -279,6 +281,7 @@ end
 
 @doc Markdown.doc"""
     factor_coprime(x::FacElem{NfOrdIdl, NfOrdIdlSet}) -> Dict{NfOrdIdl, Int}
+
 Computed a partial factorisation of $x$, ie. writes $x$ as a product
 of pariwise coprime integral ideals.
 """

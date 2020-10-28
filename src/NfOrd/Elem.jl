@@ -298,8 +298,8 @@ Returns whether $x$ and $y$ are equal.
 ################################################################################
 @doc Markdown.doc"""
     charpoly(a::NfAbsOrdElem) -> fmpz_poly
-
     charpoly(a::NfAbsOrdElem, FlintZZ) -> fmpz_poly
+
 The characteristic polynomial of $a$.
 """
 function charpoly(a::NfAbsOrdElem, Zx::FmpzPolyRing = FmpzPolyRing(FlintZZ, :x, false))
@@ -308,6 +308,7 @@ end
 
 @doc Markdown.doc"""
     minpoly(a::NfAbsOrdElem) -> fmpz_poly
+
 The minimal polynomial of $a$.
 """
 function minpoly(a::NfAbsOrdElem, Zx::FmpzPolyRing = FmpzPolyRing(FlintZZ, :x, false))

@@ -986,7 +986,8 @@ rand(rng::AbstractRNG, L::NfRel, B::UnitRange{Int}) = rand(rng, make(L, B))
 
 @doc Markdown.doc"""
     kummer_generator(K::NfRel{nf_elem}) -> nf_elem
-Given an extension $K/k$ which is a cyclic Kummer extension of degree $n$, returns an element $a\in k$
+
+Given an extension $K/k$ which is a cyclic Kummer extension of degree $n$, returns an element $a\in k$ 
 such that $K = k(\sqrt[n]{a})$. Throws an error if the extension is not a cyclic Kummer extension.
 """
 function kummer_generator(K::NfRel{nf_elem})
@@ -1047,7 +1048,8 @@ end
 #TODO: Put some more thought in it.
 @doc Markdown.doc"""
     relative_extension(K::AnticNumberField, k::AnticNumberField) -> NfRel{nf_elem}
-Given two fields $K\supset k$, it returns $K$ as a relative
+
+Given two fields $K\supset k$, it returns $K$ as a relative 
 extension of $k$ and an isomorphism between it and $K$.
 """
 function relative_extension(m::NfToNfMor)
