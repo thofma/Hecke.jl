@@ -205,7 +205,7 @@ function compositum(a::ClassField, b::ClassField)
 end
 
 @doc Markdown.doc"""
-  *(A::ClassField, B::ClassField) -> ClassField
+    *(A::ClassField, B::ClassField) -> ClassField
 The compositum of $a$ and $b$ as a (formal) class field.
 """
 *(a::ClassField, b::ClassField) = compositum(a, b)
