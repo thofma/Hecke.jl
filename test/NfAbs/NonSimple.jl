@@ -1,5 +1,5 @@
 @testset "NfAbsNS" begin
-  
+
   Qx, x = FlintQQ["x"]
   K, (a, b) = @inferred number_field([x^2 - 2, x^3 - 3])
 
@@ -54,7 +54,7 @@
       end
       zinv = @inferred inv(z)
       @test isone(@inferred z * zinv)
-     
+
       for T in [Int, BigInt, fmpq, fmpz]
         u = rand(-10:10)
         while iszero(u)
@@ -74,7 +74,7 @@
       @test z == sum(M[1, j] * basis(K)[j] for j in 1:6)
       M = matrix(FlintQQ, 1, 6, [rand(-10:10) for j in 1:6])
       zz = Hecke.elem_from_mat_row(K, M, 1)
-      @test zz == sum(M[1, j] * basis(K)[j] for j in 1:6) 
+      @test zz == sum(M[1, j] * basis(K)[j] for j in 1:6)
 
       f = @inferred minpoly(z)
       @test length(factor(f)) == 1 && first(factor(f))[2] == 1
@@ -122,11 +122,11 @@
 
       @test @inferred m(z + zz) == m(z) + m(zz)
       @test @inferred m(z * zz) == m(z) * m(zz)
-      @test @inferred m(-z) == -m(z) 
+      @test @inferred m(-z) == -m(z)
       @test @inferred m(inv(z)) == inv(m(z))
       @test m\m(z) == z
     end
-    
+
     for i in 1:100
       z = rand(K, -10:10)
       zz = rand(K, -10:10)
@@ -147,5 +147,15 @@
     O = EquationOrder(K2)
     Omax = @inferred MaximalOrder(O)
     @test discriminant(Omax) == FlintZZ(30233088)
+  end
+
+  @testset "rand" begin
+    m = make(K, 1:3)
+    for x in (rand(K, 1:3), rand(rng, K, 1:3), rand(m), rand(rng, m))
+      @test x isa NfAbsNSElem
+    end
+    @test rand(m, 3) isa Vector{NfAbsNSElem}
+    @test reproducible(m)
+    @test reproducible(K, 1:3)
   end
 end
