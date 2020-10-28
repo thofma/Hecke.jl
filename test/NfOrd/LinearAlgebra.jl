@@ -138,5 +138,23 @@
       @test Hecke._in_span(map(K, [5, 6, 7, 8]), A)[1] == false
     end
   end
-end
 
+  @testset "rand" begin
+    R, x = PolynomialRing(FlintQQ, "x")
+    K, a = NumberField(x, "a")
+    O = maximal_order(K)
+    I = Hecke.NfOrdFracIdl(ideal(O, O(2)), fmpz(2))
+    @assert I isa Hecke.NfOrdFracIdl
+    J = numerator(I)
+    @assert J isa Hecke.NfOrdIdl
+
+    for (T, E) in (I => nf_elem, J => Hecke.NfOrdElem)
+      m = make(T, 3)
+      @test all(x -> x isa E,
+                (rand(T, 3), rand(rng, T, 3), rand(m), rand(rng, m)))
+      @test rand(m, 3) isa Vector{E}
+      @test reproducible(T, 3)
+      @test reproducible(m)
+    end
+  end
+end
