@@ -179,3 +179,20 @@ end
   @test valuation(D, Q) == 2
 end
 
+@testset "rand" begin
+  Qx, x = FlintQQ["x"]
+  f = x^2 + 36*x + 16
+  K, a = NumberField(f, "a")
+  Ky, y = K["y"]
+  g = y^3 - 51*y^2 + 30*y - 28
+  L, b = number_field(g, "b")
+  Orel = maximal_order(L)
+
+  m = make(Orel, 3)
+  for x in (rand(Orel, 3), rand(rng, Orel, 3), rand(m), rand(rng, m))
+    @test x isa elem_type(Orel)
+  end
+  @test rand(m, 3) isa Vector{elem_type(Orel)}
+  @test reproducible(Orel, 3)
+  @test reproducible(m)
+end
