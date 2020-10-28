@@ -93,6 +93,7 @@ end
 
 @doc Markdown.doc"""
     defining_modulus(CF::ClassField)
+
 The modulus, i.e. an ideal of the set of real places, used to create the
 class field.
 """
@@ -120,6 +121,7 @@ end
 
 @doc Markdown.doc"""
     base_ring(A::ClassField)
+
 The maximal order of the field that $A$ is defined over.
 """
 function base_ring(A::ClassField)
@@ -128,6 +130,7 @@ end
 
 @doc Markdown.doc"""
     base_field(A::ClassField)
+
 The number field that $A$ is defined over.
 """
 function base_field(A::ClassField)
@@ -150,6 +153,7 @@ end
 
 @doc Markdown.doc"""
     degree(A::ClassField)
+
 The degree of $A$ over its base field, i.e. the size of the defining ideal group.
 """
 function degree(A::ClassField)
@@ -174,6 +178,7 @@ end
 
 @doc Markdown.doc"""
     exponent(A::ClassField)
+
 The exponent of $A$ over its base field, i.e. the exponent of the Galois
 group of the extension.
 """
@@ -188,6 +193,7 @@ end
 
 @doc Markdown.doc"""
     compositum(a::ClassField, b::ClassField) -> ClassField
+
 > The compositum of $a$ and $b$ as a (formal) class field.
 """
 function compositum(a::ClassField, b::ClassField)
@@ -206,6 +212,7 @@ end
 
 @doc Markdown.doc"""
     *(A::ClassField, B::ClassField) -> ClassField
+
 The compositum of $a$ and $b$ as a (formal) class field.
 """
 *(a::ClassField, b::ClassField) = compositum(a, b)
@@ -218,6 +225,7 @@ The compositum of $a$ and $b$ as a (formal) class field.
 
 @doc Markdown.doc"""
     intersect(a::ClassField, b::ClassField) -> ClassField
+
 The intersection of $a$ and $b$ as a class field.
 """
 function Base.intersect(a::ClassField, b::ClassField)
@@ -242,6 +250,7 @@ end
 
 @doc Markdown.doc"""
     issubfield(a::ClassField, b::ClassField) -> Bool
+
 Determines if $a$ is a subfield of $b$.
 """
 function issubfield(a::ClassField, b::ClassField)
@@ -264,6 +273,7 @@ end
 
 @doc Markdown.doc"""
     ==(a::ClassField, b::ClassField)
+
 Tests if $a$ and $b$ are equal.
 """
 function ==(a::ClassField, b::ClassField)
@@ -292,6 +302,7 @@ end
 
 @doc Markdown.doc"""
     iscyclic(C::ClassField)
+
 Tests if the (relative) automorphism group of $C$ is cyclic (by checking
 the defining ideal group).
 """
@@ -308,6 +319,7 @@ end
 
 @doc Markdown.doc"""
     maximal_p_subfield(C::ClassField, p::Int)
+
 Returns the class field corresponding to the maximal subextension of
 prime power degree.
 """
@@ -323,6 +335,7 @@ end
 
 @doc Markdown.doc"""
     islocal_norm(r::ClassField, a::NfAbsOrdElem, p::NfAbsOrdIdl) -> Bool
+
 Tests if $a$ is a local norm at $p$ in the extension implictly given by $r$.
 Currently the conductor cannot have infinite places.
 """
@@ -352,6 +365,7 @@ end
 
 @doc Markdown.doc"""
     islocal_norm(r::ClassField, a::NfAbsOrdElem) -> Bool
+
 Tests if $a$ is a local norm at all finite places in the extension implictly given by $r$.
 """
 function islocal_norm(r::ClassField, a::NfAbsOrdElem)
@@ -366,6 +380,7 @@ end
 
 @doc Markdown.doc"""
     prime_decomposition_type(C::ClassField, p::NfAbsOrdIdl) -> (Int, Int, Int)
+
 For a prime $p$ in the base ring of $r$, determine the splitting type of $p$ 
 in $r$. ie. the tuple $(e, f, g)$ giving the ramification degree, the inertia
 and the number of primes above $p$.
@@ -403,6 +418,7 @@ end
 @doc Markdown.doc"""
     ray_class_field(m::MapClassGrp) -> ClassField
     ray_class_field(m::MapRayClassGrp) -> ClassField
+
 Creates the (formal) abelian extension defined by the map $m: A \to I$
 where $I$ is the set of ideals coprime to the modulus defining $m$ and $A$ 
 is a quotient of the ray class group (or class group). The map $m$
@@ -414,6 +430,7 @@ end
 
 @doc Markdown.doc"""
     ray_class_field(m::Union{MapClassGrp, MapRayClassGrp}, quomap::GrpAbFinGenMap) -> ClassField
+
 For $m$ a map computed by either {ray_class_group} or {class_group} and
 $q$ a canonical projection (quotient map) as returned by {quo} for q 
 quotient of the domain of $m$ and a subgroup of $m$, create the
@@ -433,6 +450,7 @@ end
 
 @doc Markdown.doc"""
     hilbert_class_field(k::AnticNumberField) -> ClassField
+
 The Hilbert class field of $k$ as a formal (ray-) class field.
 """
 function hilbert_class_field(k::AnticNumberField)
@@ -441,6 +459,7 @@ end
 
 @doc Markdown.doc"""
     ray_class_field(I::NfAbsOrdIdl; n_quo = 0) -> ClassField
+
 The ray class field modulo $I$. If `n_quo` is given, then the largest
 subfield of exponent $n$ is computed.
 """
@@ -450,6 +469,7 @@ end
 
 @doc Markdown.doc"""
     ray_class_field(I::NfAbsOrdIdl, inf::Array{InfPlc, 1}; n_quo = 0) -> ClassField
+
 The ray class field modulo $I$ and the infinite places given. If `n_quo` is given, then the largest
 subfield of exponent $n$ is computed.
 """

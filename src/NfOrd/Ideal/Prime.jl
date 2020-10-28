@@ -92,6 +92,7 @@ end
 
 @doc Markdown.doc"""
     degree(P::NfOrdIdl) -> Int
+
 The inertia degree of the prime-ideal $P$.
 """
 function degree(A::NfAbsOrdIdl)
@@ -103,6 +104,7 @@ inertia_degree(A::NfAbsOrdIdl) = degree(A)
 
 @doc Markdown.doc"""
     ramification_index(P::NfOrdIdl) -> Int
+
 The ramification index of the prime-ideal $P$.
 """
 function ramification_index(A::NfAbsOrdIdl)
@@ -118,6 +120,7 @@ end
 
 @doc Markdown.doc"""
     lift(K::AnticNumberField, f::nmod_poly) -> nf_elem
+
 Given a polynomial $f$ over a finite field, lift it to an element of the
 number field $K$. The lift is given by the element represented by the
 canonical lift of $f$ to a polynomial over the integers.
@@ -734,6 +737,7 @@ end
 @doc Markdown.doc"""
     coprime_base(A::Array{NfOrdIdl, 1}) -> Array{NfOrdIdl, 1}
     coprime_base(A::Array{NfOrdElem, 1}) -> Array{NfOrdIdl, 1}
+
 A coprime base for the (principal) ideals in $A$, i.e. the returned array
 generated multiplicatively the same ideals as the input and are pairwise
 coprime.

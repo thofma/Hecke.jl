@@ -357,6 +357,7 @@ end
 
 @doc Markdown.doc"""
     gcd(a::OrdLocElem{T}, b::OrdLocElem{T}) where {T <: nf_elem}
+
 > Returns gcd of $a$ and $b$ in canonical representation.
 """
 function gcd(a::OrdLocElem{T}, b::OrdLocElem{T}) where {T <: nf_elem}
@@ -382,6 +383,7 @@ end
 
 @doc Markdown.doc"""
     gcdx(a::OrdLocElem{T}, b::OrdLocElem{T}) where {T <: nf_elem}
+
 > Returns tuple `(g,u,v)` s.th. `g` = gcd($a$,$b$) and `g` = `u` * $a$ + `v` * $b$.
 """
 function gcdx(a::OrdLocElem{T}, b::OrdLocElem{T}) where {T <: nf_elem}
@@ -491,6 +493,7 @@ end
 
 @doc Markdown.doc"""
     valuation(a::OrdLocElem{T}, prime::NfAbsOrdIdl{AnticNumberField,T}) where {T <: nf_elem}
+
 > Returns the valuation `n` of $a$ at $P$.
 """
 valuation(a::OrdLocElem{T}, prime::NfAbsOrdIdl{AnticNumberField,T}) where {T <: nf_elem} = valuation(data(a), prime)
@@ -503,6 +506,7 @@ valuation(a::OrdLocElem{T}, prime::NfAbsOrdIdl{AnticNumberField,T}) where {T <: 
 
 @doc Markdown.doc"""
     canonical_unit(a::OrdLocElem{T}) where {T <: nf_elem}
+
 > Returns unit `b`::OrdLocElem{T} s.th. ($a$ * inv(`b`)) is hopefully nicer.
 """
 function canonical_unit(a::OrdLocElem{T}) where {T <: nf_elem}
@@ -532,6 +536,7 @@ end
 
 @doc Markdown.doc"""
     Localization(OK::NfAbsOrd{AnticNumberField,T}, S::NfAbsOrdIdl{AnticNumberField,T}; cached=true, comp = false) where {T <: nf_elem}
+
 > Returns the localization of the order $OK$ at the ideal $S$.
 > If `cached == true` (the default) then the resulting
 > localization parent object is cached and returned for any subsequent calls

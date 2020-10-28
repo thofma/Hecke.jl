@@ -1088,6 +1088,7 @@ end
 
 @doc Markdown.doc"""
     ring_class_group(O::NfAbsOrd)
+
 The ring class group (Picard group) of $O$.
 """
 ring_class_group(O::NfAbsOrd) = picard_group(O)
@@ -1095,6 +1096,7 @@ ring_class_group(O::NfAbsOrd) = picard_group(O)
 
 @doc Markdown.doc"""
     ring_class_field(O::NfAbsOrd) -> ClassField
+
 The ring class field of $O$, i.e. the maximal abelian extension ramified
 only at primes dividing the conductor with the automorphism group
 isomorphic to the Picard group.

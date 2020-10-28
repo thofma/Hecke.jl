@@ -51,6 +51,7 @@ end
 
 @doc Markdown.doc"""
     cyclotomic_extension(k::AnticNumberField, n::Int) -> CyclotomicExt
+
 Computes $k(\zeta_n)$, in particular, a structure containing $k(\zeta_n)$
 both as an absolute extension, as a relative extension (of $k$) and the maps
 between them.
@@ -419,6 +420,7 @@ end
 ################################################################################
 @doc Markdown.doc"""
     automorphisms(C::CyclotomicExt; gens::Vector{NfToNfMor}) -> Vector{NfToNfMor}
+
 Computes the automorphisms of the absolute field defined by the cyclotomic extension, i.e. of `absolute_field(C).
 It assumes that the base field is normal. `gens` must be a set of generators for the automorphism group of the base field of $C$.
 """

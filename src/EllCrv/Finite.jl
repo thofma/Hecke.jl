@@ -47,6 +47,7 @@ Random.gentype(::Type{EllCrv{T}}) where {T} = EllCrvPt{T}
 # only works for short form
 @doc Markdown.doc"""
     rand(E::EllCrv) -> EllCrvPt
+
 Returns a random point on the elliptic curve $E$ defined over a finite field.
 It is assumed that $E$ is given in short form.
 """

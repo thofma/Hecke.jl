@@ -503,6 +503,7 @@ end
 
 @doc Markdown.doc"""
     gcd(A::NfOrdIdl, B::NfOrdIdl) -> NfOrdIdl
+
 The gcd or sum (A+B).
 """
 function gcd(A::NfAbsOrdIdl, B::NfAbsOrdIdl)
@@ -517,6 +518,7 @@ end
 #TODO: write a ppio version that allows for p-powers as well
 @doc Markdown.doc"""
     gcd(A::NfOrdIdl, p::fmpz) -> NfOrdIdl
+
 The gcd or sum (A + pO).
 """
 function gcd(A::NfAbsOrdIdl, p::fmpz)
@@ -868,6 +870,7 @@ end
 
 @doc Markdown.doc"""
     crt(r1::NfOrdElem, i1::NfOrdIdl, r2::NfOrdElem, i2::NfOrdIdl) -> NfOrdElem
+
 Find $x$ s.th. $x \equiv r1 \bmod i1$ and $x \equiv r2 \bmod i2$
 using `idempotents`.
 """

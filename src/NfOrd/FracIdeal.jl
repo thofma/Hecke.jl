@@ -218,6 +218,7 @@ order(a::NfAbsOrdFracIdlSet) = a.order
 
 @doc Markdown.doc"""
     order(a::NfAbsOrdFracIdl) -> NfAbsOrd
+
 The order that was used to define the ideal $a$.
 """
 order(a::NfAbsOrdFracIdl) = a.order
@@ -701,6 +702,7 @@ end
 
 @doc Markdown.doc"""
     integral_split(A::NfAbsOrdFracIdl) -> NfAbsOrdIdl, NfAbsOrdIdl
+
 Computes the unique coprime integral ideals $N$ and $D$ s.th. $A = ND^{-1}$
 """
 function integral_split(A::NfAbsOrdFracIdl)
@@ -719,6 +721,7 @@ end
 
 @doc Markdown.doc"""
     factor(I::NfAbsOrdFracIdl) -> Dict{NfAbsOrdIdl, Int}
+
 The factorisation of $I$.
 """
 function factor(I::NfAbsOrdFracIdl)
@@ -744,6 +747,7 @@ end
 
 @doc Markdown.doc"""
     valuation(A::NfAbsOrdFracIdl, p::NfAbsOrdIdl)
+
 The valuation of $A$ at $p$.
 """
 function valuation(A::NfAbsOrdFracIdl, p::NfAbsOrdIdl)

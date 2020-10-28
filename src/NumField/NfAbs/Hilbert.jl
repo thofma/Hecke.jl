@@ -276,6 +276,7 @@ end
 
 @doc Markdown.doc"""
     hilbert_symbol(a::Union{fmpq,fmpz,Int,Rational{Int}}, b::Union{fmpq,fmpz,Int,Rational{Int}}, p::Union{fmpz,Int}) -> {-1, +1}
+
 Returns the local Hilbert symbol $(a,b)_p$.
 """
 function hilbert_symbol(a::fmpq, b::fmpq, p::fmpz)

@@ -502,6 +502,7 @@ end
 # p. 46 Washington, p. 72 Cohen
 @doc Markdown.doc"""
     j(E::EllCrv{T}) -> T
+
 Computes the j-invariant of $E$.
 """
 function j_invariant(E::EllCrv{T}) where T
@@ -546,6 +547,7 @@ end
 # washington p. 14, cohen p. 270
 @doc Markdown.doc"""
     +(P::EllCrvPt, Q::EllCrvPt) -> EllCrvPt
+
 Adds two points on an elliptic curve.
 does not work in characteristic 2
 """

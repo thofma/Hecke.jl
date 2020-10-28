@@ -7,6 +7,7 @@ export isprincipal
 # TODO: Agree on a name for power_class vs power_reduce2
 @doc Markdown.doc"""
     power_class(A::NfOrdIdl, e::fmpz) -> NfOrdIdl
+
 Computes a (small) ideal in the same class as $A^e$.
 """
 function power_class(A::NfOrdIdl, e::fmpz)
@@ -40,6 +41,7 @@ end
 
 @doc Markdown.doc"""
     power_product_class(A::Array{NfOrdIdl, 1}, e::Array{fmpz, 1}) -> NfOrdIdl
+
 Computes a (small) ideal in the same class as $\prod A_i^{e_i}$.
 """
 function power_product_class(A::Array{NfOrdIdl, 1}, e::Array{fmpz, 1})
@@ -105,6 +107,7 @@ end
 
 @doc Markdown.doc"""
     class_group_ideal_relation(I::NfOrdIdl, c::ClassGrpCtx) -> nf_elem, SRow{fmpz}
+
 Finds a number field element $\alpha$ such that $\alpha I$ factors over
 the factor base in $c$.
 """
@@ -309,6 +312,7 @@ end
 #TODO: if an ideal is principal, store it on the ideal!!!
 @doc Markdown.doc"""
     isprincipal_fac_elem(I::FacElem{NfOrdIdl, NfOrdIdlSet}) -> Bool, FacElem{nf_elem, NumberField}
+
 Tests if $I$ is principal and returns $(\mathtt{true}, \alpha)$ if $A =
 \langle \alpha\rangle$ or $(\mathtt{false}, 1)$ otherwise.
 The generator will be in factored form.
@@ -324,6 +328,7 @@ end
 
 @doc Markdown.doc"""
     principal_generator_fac_elem(A::NfOrdIdl) -> FacElem{nf_elem, NumberField}
+
 For a principal ideal $A$, find a generator in factored form.
 """
 function principal_generator_fac_elem(A::NfOrdIdl)
@@ -337,6 +342,7 @@ end
 
 @doc Markdown.doc"""
     principal_generator_fac_elem(I::FacElem) -> FacElem{nf_elem, NumberField}
+
 For a principal ideal $I$ in factored form, find a generator in factored form.
 """
 function principal_generator_fac_elem(I::FacElem{NfOrdIdl, NfOrdIdlSet})
@@ -353,6 +359,7 @@ end
 
 @doc Markdown.doc"""
     principal_generator(A::NfOrdIdl) -> NfOrdElem
+
 For a principal ideal $A$, find a generator.
 """
 function principal_generator(A::NfOrdIdl)
@@ -376,6 +383,7 @@ global _debug = []
 
 @doc Markdown.doc"""
     isprincipal_fac_elem(A::NfOrdIdl) -> Bool, FacElem{nf_elem, NumberField}
+
 Tests if $A$ is principal and returns $(\mathtt{true}, \alpha)$ if $A =
 \langle \alpha\rangle$ or $(\mathtt{false}, 1)$ otherwise.
 The generator will be in factored form.
@@ -449,6 +457,7 @@ end
 @doc Markdown.doc"""
     isprincipal(A::NfOrdIdl) -> Bool, NfOrdElem
     isprincipal(A::NfOrdFracIdl) -> Bool, NfOrdElem
+
 Tests if $A$ is principal and returns $(\mathtt{true}, \alpha)$ if $A =
 \langle \alpha\rangle$ or $(\mathtt{false}, 1)$ otherwise.
 """

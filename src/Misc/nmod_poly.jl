@@ -8,6 +8,7 @@ export rres, rresx
 ################################################################################
 @doc Markdown.doc"""
     resultant_ideal(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where S <: Union{fmpz, Integer} -> T
+
 A generator for the ideal of the resultant of $f$ and $g$ using a quadratic-time algorithm.
 One of the two polynomials must be monic.
 """
@@ -228,6 +229,7 @@ end
 @doc Markdown.doc"""
     xxgcd(a::ResElem{fmpz}, b::ResElem{fmpz}) -> g, e, f, u, v
     xxgcd(a::ResElem{Integer}, b::ResElem{Integer}) -> g, e, f, u, v
+
 Computes $g = \gcd(a, b)$, the Bezout coefficients, $e$, $f$ s.th.
 $g = ea+fb$ and $u$, $v$ s.th. $ev-fu = 1$, $gu = a$ and $gv = b$.
 """
@@ -306,6 +308,7 @@ end
 @doc Markdown.doc"""
     annihilator(a::ResElem{fmpz}) -> r
     annihilator(a::ResElem{Integer}) -> r
+
 The annihilator of $a$, i.e. a generator for the annihilator ideal
 $\{x | xa = 0\} = \langle r\rangle$.
 """
@@ -317,6 +320,7 @@ end
 
 @doc Markdown.doc"""
     isunit(f::Union{fmpz_mod_poly,nmod_poly}) -> Bool
+
 Tests if $f$ is a unit in the polynomial ring, i.e. if
 $f = u + n$ where $u$ is a unit in the coeff. ring
 and $n$ is nilpotent.
@@ -336,6 +340,7 @@ end
 @doc Markdown.doc"""
     isnilpotent(a::ResElem{fmpz}) -> Bool
     isnilpotent(a::ResElem{Integer}) -> Bool
+
 Tests if $a$ is nilpotent.
 """
 function isnilpotent(a::ResElem{T}) where T <: Union{Integer, fmpz}
@@ -581,6 +586,7 @@ end
 
 @doc Markdown.doc"""
     rresx(f::PolyElem{ResElem{fmpz}}, g::PolyElem{ResElem{fmpz}}) -> r, u, v
+
 The reduced resultant $r$ and polynomials $u$ and $v$ s.th.
 $r = uf+vg$ and $\langle r\rangle = \langle f, g\rangle\cap \mathbb Z$.
 """
@@ -847,6 +853,7 @@ end
 #Thus rres(f,g ) = rres(f, b).... and the division can continue
 @doc Markdown.doc"""
     rres(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where S <: Union{fmpz, Integer} -> T
+
 The reduced resultant of $f$ and $g$ using a quadratic-time algorithm.
 That is a generator for the $(f, g) \cap Z$
 """
@@ -863,6 +870,7 @@ end
 
 @doc Markdown.doc"""
     gcd_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where S <: Union{fmpz, Integer} -> T
+
 The 'gcd' of $f$ and $g$ using a quadratic-time algorithm.
 """
 function gcd_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where S <: Union{fmpz, Integer}
@@ -900,6 +908,7 @@ end
 
 @doc Markdown.doc"""
     resultant_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where S <: Union{fmpz, Integer} -> T
+
 The resultant of $f$ and $g$ using a quadratic-time algorithm.
 """
 function resultant_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where S <: Union{fmpz, Integer}
@@ -1194,6 +1203,7 @@ end
 @doc Markdown.doc"""
     primsplit!(f::PolyElem{ResElem{fmpz}}) -> c, f
     primsplit!(f::PolyElem{ResElem{Integer}}) -> c, f
+
 Computes the contents $c$ and the primitive part of $f$ destructively.
 """
 function primsplit!(f::PolyElem{T}) where T <: ResElem{S} where S <: Union{fmpz, Integer}
@@ -1223,6 +1233,7 @@ end
 @doc Markdown.doc"""
     primsplit(f::PolyElem{ResElem{fmpz}}}) -> c, f
     primsplit(f::PolyElem{ResElem{Integer}}}) -> c, f
+
 Computes the contents $c$ and the primitive part of $f$.
 """
 function primsplit(f::PolyElem{T}) where T <: ResElem{S} where S <: Union{fmpz, Integer}

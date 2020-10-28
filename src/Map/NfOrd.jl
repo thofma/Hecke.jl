@@ -595,6 +595,7 @@ end
 =#
 @doc Markdown.doc"""
     extend_easy(f::Hecke.NfOrdToFqNmodMor, K::AnticNumberField) -> NfToFqNmodMor
+
 For a residue field map from a prime ideal, extend the domain of the map
 to the entire field.
 Requires the prime ideal to be coprime to the index, unramified and

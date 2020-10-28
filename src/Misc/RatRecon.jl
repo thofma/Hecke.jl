@@ -77,6 +77,7 @@ end
 
 @doc Markdown.doc"""
     rational_reconstruction(a::fmpz, b::fmpz, N::fmpz, D::fmpz) -> Bool, fmpz, fmpz
+
 Given $a$ modulo $b$ and $N>0$, $D>0$ such that $2ND<b$, find $|x|\le N$, $0<y\le D$
 satisfying $x/y \equiv a \bmod b$ or $a \equiv ya \bmod b$.
 """

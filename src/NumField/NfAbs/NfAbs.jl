@@ -843,6 +843,7 @@ end
 
 @doc Markdown.doc"""
     normal_closure(K::AnticNumberField) -> AnticNumberField, NfToNfMor
+
 The normal closure of $K$ together with the embedding map.
 """
 function normal_closure(K::AnticNumberField)
