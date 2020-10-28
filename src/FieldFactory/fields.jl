@@ -166,7 +166,7 @@ function Base.push!(G::AbstractAlgebra.Generic.geobucket{T}, p::T) where {T <: A
    end
 end
 
-function permutation_group(G::Vector{Hecke.NfRelNSToNfRelNSMor{nf_elem}})
+function permutation_group(G::Vector{Hecke.NfRelNSToNfRelNSMor_nf_elem})
   permutations = permutation_group1(G)
   return _perm_to_gap_grp(permutations)
 end
@@ -188,7 +188,7 @@ function permutations(G::Array{Hecke.NfToNfMor, 1})
     fmod = Rx(K.pol)
   end
   pols = gfp_poly[x]
-  gpol = Rx(G[1].prim_img)
+  gpol = Rx(image_primitive_element(G[1]))
   if gpol != x
     push!(pols, gpol)
     gpol = compose_mod(gpol, pols[2], fmod)
@@ -200,7 +200,7 @@ function permutations(G::Array{Hecke.NfToNfMor, 1})
   order = length(pols)
 
   for i in 2:n
-    pi = Rx(G[i].prim_img)
+    pi = Rx(image_primitive_element(G[i]))
     if !(pi in pols)
       previous_order = order
       order = order + 1
@@ -215,7 +215,7 @@ function permutations(G::Array{Hecke.NfToNfMor, 1})
       rep_pos = previous_order + 1
       while rep_pos <= order
         for k in 1:i
-          po = Rx(G[k].prim_img)
+          po = Rx(image_primitive_element(G[k]))
           att = compose_mod(pols[rep_pos], po, fmod)
           if !(att in pols)
             order = order + 1
@@ -248,7 +248,7 @@ function permutations(G::Array{Hecke.NfToNfMor, 1})
   for i = 1:n
     perms[i] = Vector{Int}(undef, dK)
   end
-  gen_pols = gfp_poly[Rx(s.prim_img) for s in G]
+  gen_pols = gfp_poly[Rx(image_primitive_element(s)) for s in G]
   D = Dict{gfp_poly, Int}(Dcreation)
   for s = 1:n
     for i = 1:length(pols)
@@ -280,7 +280,7 @@ function _from_autos_to_perm(G::Array{Hecke.NfToNfMor,1})
   end
   pols = Vector{Tuple{gfp_poly, Int}}(undef, n)
   for i = 1:n
-    pols[i] = (Rx(G[i].prim_img), i)
+    pols[i] = (Rx(image_primitive_element(G[i])), i)
   end
   D = Dict{gfp_poly, Int}(pols)
   permutations = Array{Array{Int, 1},1}(undef, n)

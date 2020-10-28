@@ -100,18 +100,18 @@ function _to_composite(x::FieldsTower, y::FieldsTower, abs_disc::fmpz)
   # Easy thing: first, I write the automorphisms of the non simple extension
   # Then translating them is straightforward.
   autK = Array{NfToNfMor, 1}(undef, length(x.generators_of_automorphisms)+ length(y.generators_of_automorphisms))
-  el = mK.prim_img
+  el = image_primitive_element(mK)
   for i = 1:length(x.generators_of_automorphisms)
-    ima = mx(x.generators_of_automorphisms[i].prim_img)
-    autns = Hecke.NfAbsNSToNfAbsNS(Kns, Kns, NfAbsNSElem[ima, gens(Kns)[2]])
+    ima = mx(image_primitive_element(x.generators_of_automorphisms[i]))
+    autns = hom(Kns, Kns, NfAbsNSElem[ima, gens(Kns)[2]], check = false)
     ima = mK\(autns(el))
-    autK[i] = NfToNfMor(K, K, ima)
+    autK[i] = hom(K, K, ima, check = false)
   end
   for j = 1:length(y.generators_of_automorphisms)
-    ima = my(y.generators_of_automorphisms[j].prim_img)
-    autns = Hecke.NfAbsNSToNfAbsNS(Kns, Kns, NfAbsNSElem[gens(Kns)[1], ima])
+    ima = my(image_primitive_element(y.generators_of_automorphisms[j]))
+    autns = hom(Kns, Kns, NfAbsNSElem[gens(Kns)[1], ima], check = false)
     ima = mK\(autns(el))
-    autK[j+length(x.generators_of_automorphisms)] = NfToNfMor(K, K, ima)
+    autK[j+length(x.generators_of_automorphisms)] = hom(K, K, ima, check = false)
   end
   
   #Last thing: I have to add the maps of the subfields!
@@ -128,20 +128,20 @@ function _to_composite(x::FieldsTower, y::FieldsTower, abs_disc::fmpz)
   emb_suby = y.subfields[i]
   lsub, m1, m2 = number_field(domain(emb_subx), domain(emb_suby), cached = false, check = false)
   Seemb, mSeemb = simple_extension(lsub, check = false)
-  ev = nf_elem[mK\(mx(emb_subx.prim_img)), mK\(my(emb_suby.prim_img))]
+  ev = nf_elem[mK\(mx(image_primitive_element(emb_subx))), mK\(my(image_primitive_element(emb_suby)))]
   embs = NfToNfMor[hom(Seemb, K, evaluate(mSeemb(gen(Seemb)).data, ev))]
   for j = 1:length(x.subfields)
     if codomain(x.subfields[j]) != domain(emb_subx)
       push!(embs, x.subfields[j])
     else
-      push!(embs, hom(domain(x.subfields[j]), Seemb, mSeemb\(m1(x.subfields[j].prim_img))))
+      push!(embs, hom(domain(x.subfields[j]), Seemb, mSeemb\(m1(image_primitive_element(x.subfields[j])))))
     end
   end
   for j = 1:length(y.subfields)
     if codomain(y.subfields[j]) != domain(emb_suby)
       push!(embs, y.subfields[j])
     else
-      push!(embs, hom(domain(y.subfields[j]), Seemb, mSeemb\(m2(y.subfields[j].prim_img))))
+      push!(embs, hom(domain(y.subfields[j]), Seemb, mSeemb\(m2(image_primitive_element(y.subfields[j])))))
     end
   end
   return true, FieldsTower(K, autK, embs)

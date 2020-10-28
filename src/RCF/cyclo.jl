@@ -88,7 +88,7 @@ function cyclotomic_extension(k::AnticNumberField, n::Int; cached::Bool = true, 
         lll(Ok)
       end
     end
-    abs2rel = NfToNfRel(k, Kr, gen(k), k(-1), Kr(gen(k)))
+    abs2rel = hom(k, Kr, Kr(gen(k)), inverse = (gen(k), k(-1)))
     small2abs = id_hom(k)
     c.Kr = Kr
     c.Ka = k
@@ -123,7 +123,7 @@ function cyclotomic_extension(k::AnticNumberField, n::Int; cached::Bool = true, 
     if length(rt) == 1
       #The polynomial splits completely!
       Kr, gKr = number_field(t - rt[1], cached = false, check = false)
-      abs2rel = NfToNfRel(k, Kr, gen(k), rt[1], Kr(gen(k)))
+      abs2rel = hom(k, Kr, Kr(gen(k)), inverse = (gen(k), rt[1]))
       small2abs = id_hom(k)
       if compute_maximal_order
         Ok = maximal_order(k)
@@ -243,7 +243,7 @@ function cyclotomic_extension(k::AnticNumberField, n::Int; cached::Bool = true, 
     end
   else
     Ka = k
-    abs2rel = NfToNfRel(Ka, Kr, gen(Ka), -coeff(fk, 0), Kr(gen(Ka)))
+    abs2rel = hom(Ka, Kr, Kr(gen(Ka)), inverse = (gen(Ka), -coeff(fk, 0)))
     small2abs = id_hom(k)
     if compute_maximal_order
       Ok = maximal_order(k)
@@ -357,7 +357,7 @@ function _cyclotomic_extension_non_simple(k::AnticNumberField, n::Int; cached::B
       emb[i] += b[j] * s[j, i]
     end
   end
-  abs2ns = hom(Ka, S, elem_in_nf(a), emb)
+  abs2ns = hom(Ka, S, elem_in_nf(a), inverse = emb)
 
   BKa = Vector{nf_elem}(undef, degree(Ka))
   for i = 1:length(BKa)
@@ -374,7 +374,7 @@ function _cyclotomic_extension_non_simple(k::AnticNumberField, n::Int; cached::B
   img_gen_Ka = evaluate(elem_in_nf(a).data, NfRelElem{nf_elem}[Kr(gen(k)), gKr])
 
   small2abs = hom(k, Ka, img_gen_k)
-  abs2rel = hom(Ka, Kr, img_gen_Ka, img_gen_k, img_gen_Kr)
+  abs2rel = hom(Ka, Kr, img_gen_Ka, inverse = (img_gen_k, img_gen_Kr))
 
   if istorsion_unit_group_known(k) || istotally_real(k)
     ok, gTk = _torsion_units_gen(k)
@@ -434,7 +434,7 @@ function automorphisms(C::CyclotomicExt; gens::Vector{NfToNfMor} = small_generat
   #First extend the old generators
   for g in gens
     ng = Hecke.extend_to_cyclotomic(C, g)
-    na = hom(C.Ka, C.Ka, C.mp[1]\(ng(genK)), check = false)
+    na = hom(C.Ka, C.Ka, C.mp[1]\(ng(genK)), check = true)
     push!(gnew, na)
   end
   #Now add the automorphisms of the relative extension
@@ -443,16 +443,16 @@ function automorphisms(C::CyclotomicExt; gens::Vector{NfToNfMor} = small_generat
   if iscyclic(U)
     k = degree(C.Kr)
     expo = divexact(euler_phi(fmpz(C.n)), k)
-    l = hom(C.Kr, C.Kr, gen(C.Kr)^Int(lift(mU(U[1])^expo)), check = false)
-    l1 = hom(C.Ka, C.Ka, C.mp[1]\(l(C.mp[1](gen(C.Ka)))), check = false)
+    l = hom(C.Kr, C.Kr, gen(C.Kr)^Int(lift(mU(U[1])^expo)), check = true)
+    l1 = hom(C.Ka, C.Ka, C.mp[1]\(l(C.mp[1](gen(C.Ka)))), check = true)
     push!(gnew, l1)
   else
     f = C.Kr.pol
     s, ms = sub(U, [x for x in U if iszero(f(gen(C.Kr)^Int(lift(mU(x)))))], false)
     S, mS = snf(s)
     for t = 1:ngens(S)
-      l = hom(C.Kr, C.Kr, gen(C.Kr)^Int(lift(mU(ms(mS(S[t]))))), check = false)
-      push!(gnew, hom(C.Ka, C.Ka, C.mp[1]\(l(genK)), check = false))
+      l = hom(C.Kr, C.Kr, gen(C.Kr)^Int(lift(mU(ms(mS(S[t]))))), check = true)
+      push!(gnew, hom(C.Ka, C.Ka, C.mp[1]\(l(genK)), check = true))
     end
   end
   auts = closure(gnew, degree(C.Ka))

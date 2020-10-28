@@ -927,7 +927,7 @@ end
 function find_elem(G::Array{T,1}, el::T) where T
   i=1
   while true
-    if el.prim_img==G[i].prim_img
+    if image_primitive_element(el) == image_primitive_element(G[i])
       return i
     end
     i+=1

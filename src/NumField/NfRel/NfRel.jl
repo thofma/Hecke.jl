@@ -53,11 +53,6 @@ end
 #
 ################################################################################
 
-elem_type(::Type{NfRel{T}}) where {T} = NfRelElem{T}
-
-elem_type(::NfRel{T}) where {T} = NfRelElem{T}
-
-parent_type(::Type{NfRelElem{T}}) where {T} = NfRel{T}
 
 needs_parentheses(::NfRelElem) = true
 
@@ -494,7 +489,6 @@ end
 #
 ################################################################################
 
-# TODO: Add a simplify option
 #@doc Markdown.doc"""
 #    absolute_field(K::NfRel{nf_elem}, cached::Bool = false) -> AnticNumberField, Map, Map
 #Given an extension $K/k/Q$, find an isomorphic extension of $Q$.
@@ -504,7 +498,7 @@ function absolute_field(K::NfRel{nf_elem}; cached::Bool = false, simplify::Bool 
     return simplified_absolute_field(K, cached = cached)
   end
   Ka, a, b, c = _absolute_field(K, cached)
-  h1 = NfToNfRel(Ka, K, a, b, c)
+  h1 = hom(Ka, K, c, inverse = (a, b))
   h2 = hom(base_field(K), Ka, a, check = false)
   embed(h1)
   embed(MapFromFunc(x->preimage(h1, x), K, Ka))
@@ -519,7 +513,7 @@ end
 #"""
 function absolute_field(K::NfRel{NfRelElem{T}}, cached::Bool = false) where T
   Ka, a, b, c = _absolute_field(K)
-  h1 = NfRelToNfRelRel(Ka, K, a, b, c)
+  h1 = hom(Ka, K, c, inverse = (a, b))
   h2 = hom(base_field(K), Ka, a, check = false)
   embed(h1)
   embed(MapFromFunc(x->preimage(h1, x), K, Ka))
@@ -1067,7 +1061,7 @@ function relative_extension(m::NfToNfMor)
     end
   end
   L, b = number_field(p, cached = false, check = false)
-  mp = hom(K, L, b, m.prim_img, gen(K))
+  mp = hom(K, L, b, inverse = (image_primitive_element(m), gen(K)))
   return L, mp
 end
 

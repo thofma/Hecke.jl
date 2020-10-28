@@ -409,7 +409,7 @@ end
 #
 ################################################################################
 
-function image(f::NfRelToNfRelMor{T, T}, I::NfRelOrdIdl{T, S}) where {T, S}
+function image(f::NumFieldMor, I::NfRelOrdIdl{T, S}) where {T, S}
   #f has to be an automorphism!!!!
   O = order(I)
   @assert ismaximal(O) # Otherwise the order might change
@@ -465,7 +465,7 @@ function image(f::NfRelToNfRelMor{T, T}, I::NfRelOrdIdl{T, S}) where {T, S}
   return J
 end
 
-function image(f::NfRelToNfRelMor{T, T}, I::NfRelOrdFracIdl{T, S}) where {T, S}
+function image(f::NumFieldMor, I::NfRelOrdFracIdl{T, S}) where {T, S}
   #S has to be an automorphism!!!!
   O = order(I)
   @assert ismaximal(O) # Otherwise the order might change

@@ -38,7 +38,7 @@
     @test parent(KtoK2(a)) == K2
 
     h = f - 1
-     K3, a3 = NumberField(h, "a3")
+    K3, a3 = NumberField(h, "a3")
     d, KtoK3 = Hecke.isisomorphic(K, K3)
     @test d == false
   end
