@@ -1751,8 +1751,12 @@ end
 #
 ################################################################################
 
-function rand(a::AlgAssAbsOrdIdl, B::Int)
-  r = rand(-B:B, dim(algebra(a)))
+RandomExtensions.maketype(P::AlgAssAbsOrdIdl, ::Int) = elem_type(algebra(P))
+
+function rand(rng::AbstractRNG,
+              sp::SamplerTrivial{<:Make2{<:RingElem,<:AlgAssAbsOrdIdl,Int}})
+  a, B = sp[][1:end]
+  r = rand(rng, -B:B, dim(algebra(a)))
   b = basis(a, copy = false)
   z = algebra(a)()
   t = algebra(a)()
@@ -1762,6 +1766,9 @@ function rand(a::AlgAssAbsOrdIdl, B::Int)
   end
   return z
 end
+
+rand(a::AlgAssAbsOrdIdl, B::Int) = rand(Random.GLOBAL_RNG, a, B)
+rand(rng::AbstractRNG, a::AlgAssAbsOrdIdl, B::Int) = rand(rng, make(a, B))
 
 ################################################################################
 #
