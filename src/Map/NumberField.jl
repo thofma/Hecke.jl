@@ -8,102 +8,102 @@ function show(io::IO, S::NfMorSet{T}) where {T}
   print(io, "Set of automorphisms of ", S.field)
 end
 
-mutable struct NfToNfMor <: Map{AnticNumberField, AnticNumberField, HeckeMap, NfToNfMor}
-  header::MapHeader{AnticNumberField, AnticNumberField}
-  prim_img::nf_elem
-  prim_preimg::nf_elem
+#mutable struct NfToNfMor <: Map{AnticNumberField, AnticNumberField, HeckeMap, NfToNfMor}
+#  header::MapHeader{AnticNumberField, AnticNumberField}
+#  prim_img::nf_elem
+#  prim_preimg::nf_elem
+#
+#  function NfToNfMor()
+#    z = new()
+#    z.header = MapHeader{AnticNumberField, AnticNumberField}()
+#    return r
+#  end
+#
+#  function NfToNfMor(K::AnticNumberField, L::AnticNumberField, y::nf_elem, isomorphism::Bool = false)
+#    z = new()
+#    z.prim_img = y
+#
+#    function _image(x::nf_elem)
+#      @assert parent(x) == K
+#      g = parent(K.pol)(x)
+#      return evaluate(g, y)
+#    end
+#
+#    if !isomorphism
+#      z.header = MapHeader(K, L, _image)
+#      return z
+#    end
+#
+#    M = zero_matrix(FlintQQ, degree(L), degree(L))
+#    b = basis(K)
+#    for i = 1:degree(L)
+#      c = _image(b[i])
+#      for j = 1:degree(L)
+#        M[j, i] = coeff(c, j - 1)
+#      end
+#    end
+#    t = zero_matrix(FlintQQ, degree(L), 1)
+#    if degree(L) == 1
+#      t[1, 1] = coeff(gen(L), 0)
+#    else
+#      t[2, 1] = fmpq(1) # coefficient vector of gen(L)
+#    end
+#
+#    s = solve(M, t)
+#    z.prim_preimg = K(parent(K.pol)([ s[i, 1] for i = 1:degree(K) ]))
+#
+#    function _preimage(x::nf_elem)
+#      @assert parent(x) == L
+#      g = parent(L.pol)(x)
+#      return evaluate(g, z.prim_preimg)
+#    end
+#
+#    z.header = MapHeader(K, L, _image, _preimage)
+#    return z
+#  end
+#
+#  function NfToNfMor(K::AnticNumberField, L::AnticNumberField, y::nf_elem, y_inv::nf_elem)
+#    z = new()
+#    z.prim_img = y
+#    z.prim_preimg = y_inv
+#
+#    function _image(x::nf_elem)
+#      @assert parent(x) == K
+#      g = parent(K.pol)(x)
+#      return evaluate(g, y)
+#    end
+#
+#    function _preimage(x::nf_elem)
+#      @assert parent(x) == L
+#      g = parent(L.pol)(x)
+#      return evaluate(g, y_inv)
+#    end
+#
+#    z.header = MapHeader(K, L, _image, _preimage)
+#    return z
+#  end
+#end
 
-  function NfToNfMor()
-    z = new()
-    z.header = MapHeader{AnticNumberField, AnticNumberField}()
-    return r
-  end
-
-  function NfToNfMor(K::AnticNumberField, L::AnticNumberField, y::nf_elem, isomorphism::Bool = false)
-    z = new()
-    z.prim_img = y
-
-    function _image(x::nf_elem)
-      @assert parent(x) == K
-      g = parent(K.pol)(x)
-      return evaluate(g, y)
-    end
-
-    if !isomorphism
-      z.header = MapHeader(K, L, _image)
-      return z
-    end
-
-    M = zero_matrix(FlintQQ, degree(L), degree(L))
-    b = basis(K)
-    for i = 1:degree(L)
-      c = _image(b[i])
-      for j = 1:degree(L)
-        M[j, i] = coeff(c, j - 1)
-      end
-    end
-    t = zero_matrix(FlintQQ, degree(L), 1)
-    if degree(L) == 1
-      t[1, 1] = coeff(gen(L), 0)
-    else
-      t[2, 1] = fmpq(1) # coefficient vector of gen(L)
-    end
-
-    s = solve(M, t)
-    z.prim_preimg = K(parent(K.pol)([ s[i, 1] for i = 1:degree(K) ]))
-
-    function _preimage(x::nf_elem)
-      @assert parent(x) == L
-      g = parent(L.pol)(x)
-      return evaluate(g, z.prim_preimg)
-    end
-
-    z.header = MapHeader(K, L, _image, _preimage)
-    return z
-  end
-
-  function NfToNfMor(K::AnticNumberField, L::AnticNumberField, y::nf_elem, y_inv::nf_elem)
-    z = new()
-    z.prim_img = y
-    z.prim_preimg = y_inv
-
-    function _image(x::nf_elem)
-      @assert parent(x) == K
-      g = parent(K.pol)(x)
-      return evaluate(g, y)
-    end
-
-    function _preimage(x::nf_elem)
-      @assert parent(x) == L
-      g = parent(L.pol)(x)
-      return evaluate(g, y_inv)
-    end
-
-    z.header = MapHeader(K, L, _image, _preimage)
-    return z
-  end
-end
-
-function hom(K::AnticNumberField, L::AnticNumberField, a::nf_elem; check::Bool = true, compute_inverse::Bool = false)
- if check
-   if !iszero(evaluate(K.pol, a))
-     error("The data does not define a homomorphism")
-   end
- end
- return NfToNfMor(K, L, a, compute_inverse)
-end
-
-function hom(K::AnticNumberField, L::AnticNumberField, a::nf_elem, a_inv::nf_elem; check::Bool = true)
- if check
-   if !iszero(evaluate(K.pol, a))
-     error("The data does not define a homomorphism")
-   end
-   if !iszero(evaluate(L.pol, a_inv))
-     error("The data does not define a homomorphism")
-   end
- end
- return NfToNfMor(K, L, a, a_inv)
-end
+#function hom(K::AnticNumberField, L::AnticNumberField, a::nf_elem; check::Bool = true, compute_inverse::Bool = false)
+# if check
+#   if !iszero(evaluate(K.pol, a))
+#     error("The data does not define a homomorphism")
+#   end
+# end
+# return NfToNfMor(K, L, a, compute_inverse)
+#end
+#
+#function hom(K::AnticNumberField, L::AnticNumberField, a::nf_elem, a_inv::nf_elem; check::Bool = true)
+# if check
+#   if !iszero(evaluate(K.pol, a))
+#     error("The data does not define a homomorphism")
+#   end
+#   if !iszero(evaluate(L.pol, a_inv))
+#     error("The data does not define a homomorphism")
+#   end
+# end
+# return NfToNfMor(K, L, a, a_inv)
+#end
 
 parent(f::NfToNfMor) = NfMorSet(domain(f))
 
@@ -119,7 +119,7 @@ end
 #
 ################################################################################
 
-id_hom(K::AnticNumberField) = hom(K, K, gen(K), gen(K), check = false)
+#id_hom(K::AnticNumberField) = hom(K, K, gen(K), gen(K), check = false)
 
 morphism_type(::Type{AnticNumberField}) = NfToNfMor
 
@@ -135,68 +135,68 @@ isbijective(m::NfToNfMor) = issurjective(m)
 #
 ################################################################################
 
-mutable struct NfToNfRel <: Map{AnticNumberField, NfRel{nf_elem}, HeckeMap, NfToNfRel}
-  header::MapHeader{AnticNumberField, NfRel{nf_elem}}
-
-  function NfToNfRel(L::AnticNumberField, K::NfRel{nf_elem}, a::nf_elem, b::nf_elem, c::NfRelElem{nf_elem})
-    # let K/k, k absolute number field
-    # k -> L, gen(k) -> a
-    # K -> L, gen(K) -> b
-    # L -> K, gen(L) -> c
-
-    k = K.base_ring
-    Ly, y = PolynomialRing(L, cached = false)
-    R = parent(k.pol)
-    S = parent(L.pol)
-
-    function image(x::nf_elem)
-      # x is an element of L
-      f = S(x)
-      res = evaluate(f, c)
-      return res
-    end
-
-    function preimage(x::NfRelElem{nf_elem})
-      # x is an element of K
-      f = data(x)
-      # First evaluate the coefficients of f at a to get a polynomial over L
-      # Then evaluate at b
-      r = Vector{nf_elem}(undef, degree(f) + 1)
-      for  i = 0:degree(f)
-        r[i+1] = evaluate(R(coeff(f, i)), a)
-      end
-      return evaluate(Ly(r), b)
-    end
-
-    z = new()
-    z.header = MapHeader(L, K, image, preimage)
-    return z
-  end
-end
+#mutable struct NfToNfRel <: Map{AnticNumberField, NfRel{nf_elem}, HeckeMap, NfToNfRel}
+#  header::MapHeader{AnticNumberField, NfRel{nf_elem}}
+#
+#  function NfToNfRel(L::AnticNumberField, K::NfRel{nf_elem}, a::nf_elem, b::nf_elem, c::NfRelElem{nf_elem})
+#    # let K/k, k absolute number field
+#    # k -> L, gen(k) -> a
+#    # K -> L, gen(K) -> b
+#    # L -> K, gen(L) -> c
+#
+#    k = K.base_ring
+#    Ly, y = PolynomialRing(L, cached = false)
+#    R = parent(k.pol)
+#    S = parent(L.pol)
+#
+#    function image(x::nf_elem)
+#      # x is an element of L
+#      f = S(x)
+#      res = evaluate(f, c)
+#      return res
+#    end
+#
+#    function preimage(x::NfRelElem{nf_elem})
+#      # x is an element of K
+#      f = data(x)
+#      # First evaluate the coefficients of f at a to get a polynomial over L
+#      # Then evaluate at b
+#      r = Vector{nf_elem}(undef, degree(f) + 1)
+#      for  i = 0:degree(f)
+#        r[i+1] = evaluate(R(coeff(f, i)), a)
+#      end
+#      return evaluate(Ly(r), b)
+#    end
+#
+#    z = new()
+#    z.header = MapHeader(L, K, image, preimage)
+#    return z
+#  end
+#end
 
 function show(io::IO, h::NfToNfRel)
   println(io, "Morphism between ", domain(h), "\nand ", codomain(h))
 end
 
-function hom(K::AnticNumberField, L::NfRel{nf_elem}, a::NfRelElem{nf_elem}, b::nf_elem, c::nf_elem; check::Bool = true)
-	if check
-          mp = hom(base_field(L), K, b)
-          p = map_coeffs(mp, L.pol, cached = false)
-		@assert iszero(p(c)) "Data does not define a homomorphism"
-		@assert iszero(K.pol(a)) "Data does not define a homomorphism"
-	end
-	return NfToNfRel(K, L, b, c, a)
-
-end
+#function hom(K::AnticNumberField, L::NfRel{nf_elem}, a::NfRelElem{nf_elem}, b::nf_elem, c::nf_elem; check::Bool = true)
+#	if check
+#          mp = hom(base_field(L), K, b)
+#          p = map_coeffs(mp, L.pol, cached = false)
+#		@assert iszero(p(c)) "Data does not define a homomorphism"
+#		@assert iszero(K.pol(a)) "Data does not define a homomorphism"
+#	end
+#	return NfToNfRel(K, L, b, c, a)
+#
+#end
 
 function *(f::NfToNfMor, g::NfToNfRel)
   @assert codomain(f) == domain(g)
   K = codomain(g)
-  img_gen = g(f.prim_img)
+  img_gen = g(image_primitive_element(f))
   i_f = inv(f)
   img1 = i_f(g\(K(gen(base_field(K)))))
   img2 = i_f(g\(gen(K)))
-  return NfToNfRel(domain(f), K, img1, img2, img_gen)
+  return hom(domain(f), K, img_gen, inverse = (img1, img2))
 end
 
 ################################################################################
@@ -301,16 +301,18 @@ function _compute_preimg(m::NfToNfMor)
   t = zero_matrix(FlintQQ, degree(L), 1)
   t[2, 1] = fmpq(1) # coefficient vector of gen(L)
   s = solve(M, t)
-  m.prim_preimg = K(parent(K.pol)([ s[i, 1] for i = 1:degree(K) ]))
-  local prmg
-  let L = L, m = m
-    function prmg(x::nf_elem)
-      g = parent(L.pol)(x)
-      return evaluate(g, m.prim_preimg)
-    end
-  end
-  m.header.preimage = prmg
-  return m.prim_preimg
+  prim_preimg = K(parent(K.pol)([ s[i, 1] for i = 1:degree(K) ]))
+  m.preimage_data = map_data(L, K, prim_preimg)
+  #local prmg
+  #let L = L, m = m
+  #  function prmg(x::nf_elem)
+  #    g = parent(L.pol)(x)
+  #    return evaluate(g, m.prim_preimg)
+  #  end
+  #end
+  #m.header.preimage = prmg
+  #return m.prim_preimg
+  return prim_preimg
 end
 
 function Base.:(==)(f::NfToNfMor, g::NfToNfMor)
@@ -318,7 +320,7 @@ function Base.:(==)(f::NfToNfMor, g::NfToNfMor)
     return false
   end
 
-  return f.prim_img == g.prim_img
+  return image_primitive_element(f) == image_primitive_element(g)
 end
 
 #_D = Dict()
@@ -329,7 +331,7 @@ function evaluate(f::fmpq_poly, a::nf_elem)
   if iszero(f)
     return zero(R)
   end
-  if a == gen(R)
+  if a == gen(R) && parent(f) == parent(parent(a).pol)
     return R(f)
   end
   l = length(f) - 1
@@ -345,10 +347,10 @@ end
 
 function *(f::NfToNfMor, g::NfToNfMor)
   codomain(f) == domain(g) || throw("Maps not compatible")
-  y = g(f.prim_img)
-  if isdefined(f, :prim_preimg) && isdefined(g, :prim_preimg)
-    z = f\(g.prim_preimg)
-    return hom(domain(f), codomain(g), y, z, check = false)
+  y = g(image_primitive_element(f))
+  if isdefined(f, :preimage_data) && isdefined(g, :preimage_data)
+    z = f\(preimage_primitive_element(g))
+    return hom(domain(f), codomain(g), y, inverse = z, check = false)
   else
     return hom(domain(f), codomain(g), y, check = false)
   end
@@ -383,7 +385,7 @@ end
 
 Base.copy(f::NfToNfMor) = f
 
-Base.hash(f::NfToNfMor, h::UInt) = Base.hash(f.prim_img, h)
+Base.hash(f::NfToNfMor, h::UInt) = Base.hash(image_primitive_element(f), h)
 
 function show(io::IO, h::NfToNfMor)
   if domain(h) == codomain(h)
@@ -391,7 +393,7 @@ function show(io::IO, h::NfToNfMor)
   else
     println(io, "Injection of ", domain(h), " into ", codomain(h))
   end
-  println(io, "defined by ", gen(domain(h)), " -> ", h.prim_img)
+  println(io, "defined by ", gen(domain(h)), " -> ", image_primitive_element(h))
 end
 
 ################################################################################
@@ -656,7 +658,7 @@ function induce_image_easy(f::NfToNfMor, P::NfOrdIdl)
   R = ResidueRing(FlintZZ, Int(minimum(P, copy = false))^2, cached = false)
   Rx = PolynomialRing(R, "t", cached = false)[1]
   fmod = Rx(K.pol)
-  prim_img = Rx(f.prim_img)
+  prim_img = Rx(image_primitive_element(f))
   gen_two = Rx(P.gen_two.elem_in_nf)
   img = compose_mod(gen_two, prim_img, fmod)
   new_gen = OK(lift(K, img), false)
@@ -731,7 +733,7 @@ Returns true if $f$ is an involution, i.e. if $f^2$ is the identity, false other
 function isinvolution(f::NfToNfMor)
   K = domain(f)
   @assert K == codomain(f)
-  if f.prim_img == gen(K)
+  if image_primitive_element(f) == gen(K)
     return false
   end
   p = 2
@@ -745,7 +747,7 @@ function isinvolution(f::NfToNfMor)
     fmod = Rt(K.pol)
   end
   i = 2
-  ap = Rt(f.prim_img)
+  ap = Rt(image_primitive_element(f))
   fp = compose_mod(ap, ap, fmod)
   return fp == gen(Rt)
 end
@@ -758,7 +760,7 @@ If $f$ is an automorphism of a field $K$, it returns the order of $f$ in the aut
 function _order(f::NfToNfMor)
   K = domain(f)
   @assert K == codomain(f)
-  if f.prim_img == gen(K)
+  if image_primitive_element(f) == gen(K)
     return 1
   end
   p = 2
@@ -772,7 +774,7 @@ function _order(f::NfToNfMor)
     fmod = Rt(K.pol)
   end
   i = 2
-  ap = Rt(f.prim_img)
+  ap = Rt(image_primitive_element(f))
   fp = compose_mod(ap, ap, fmod)
   while fp != gen(Rt)
     i += 1
@@ -802,20 +804,20 @@ function small_generating_set(G::Vector{NfToNfMor})
 		Rx = PolynomialRing(R, "x", cached = false)[1]
 	end
 
-	given_gens = gfp_poly[Rx(x.prim_img) for x in G]
+  given_gens = gfp_poly[Rx(image_primitive_element(x)) for x in G]
 	orderG = length(closure(given_gens, (x, y) -> Hecke.compose_mod(x, y, Rx(K.pol)), gen(Rx)))
   # First try one element
 
   for i in 1:firsttry
     trygen = _non_trivial_randelem(G, id_hom(K))
-    if length(closure(gfp_poly[Rx(trygen.prim_img)], (x, y) -> Hecke.compose_mod(x, y, Rx(K.pol)), gen(Rx))) == orderG
+    if length(closure(gfp_poly[Rx(image_primitive_element(trygen))], (x, y) -> Hecke.compose_mod(x, y, Rx(K.pol)), gen(Rx))) == orderG
       return NfToNfMor[trygen]
     end
   end
 
   for i in 1:secondtry
     gens = NfToNfMor[_non_trivial_randelem(G, id_hom(K)) for i in 1:2]
-		gens_mod = gfp_poly[Rx(x.prim_img) for x in gens]
+    gens_mod = gfp_poly[Rx(image_primitive_element(x)) for x in gens]
     if length(closure(gens_mod, (x, y) -> Hecke.compose_mod(x, y, Rx(K.pol)), gen(Rx))) == orderG
       return unique(gens)
     end
@@ -823,7 +825,7 @@ function small_generating_set(G::Vector{NfToNfMor})
 
   for i in 1:thirdtry
     gens = NfToNfMor[_non_trivial_randelem(G, id_hom(K)) for i in 1:3]
-		gens_mod = gfp_poly[Rx(x.prim_img) for x in gens]
+    gens_mod = gfp_poly[Rx(image_primitive_element(x)) for x in gens]
     if length(closure(gens_mod, (x, y) -> Hecke.compose_mod(x, y, Rx(K.pol)), gen(Rx))) == orderG
       return unique(gens)
     end
@@ -841,7 +843,7 @@ function small_generating_set(G::Vector{NfToNfMor})
     end
     j = j + 1
     gens = NfToNfMor[_non_trivial_randelem(G, id_hom(K)) for i in 1:b]
-		gens_mod = gfp_poly[Rx(x.prim_img) for x in gens]
+    gens_mod = gfp_poly[Rx(image_primitive_element(x)) for x in gens]
     if length(closure(gens_mod, (x, y) -> Hecke.compose_mod(x, y, Rx(K.pol)), gen(Rx))) == orderG
       return unique(gens)
     end
@@ -858,7 +860,7 @@ function _order(G::Vector{NfToNfMor})
 	  R = GF(p, cached = false)
 		Rx = PolynomialRing(R, "x", cached = false)[1]
 	end
-	given_gens = gfp_poly[Rx(x.prim_img) for x in G]
+  given_gens = gfp_poly[Rx(image_primitive_element(x)) for x in G]
 	return length(closure(given_gens, (x, y) -> Hecke.compose_mod(x, y, Rx(K.pol)), gen(Rx)))
 end
 

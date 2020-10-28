@@ -877,7 +877,7 @@ function maximal_abelian_subfield(::Type{ClassField}, K::AnticNumberField)
   Zx, x = PolynomialRing(FlintZZ, cached = false)
   QQ = rationals_as_number_field()[1]
   R, mR = ray_class_group(discriminant(maximal_order(K))*maximal_order(QQ), infinite_places(QQ), n_quo = degree(K))
-  f = NfToNfMor(QQ, K, K(1))
+  f = hom(QQ, K, K(1), check = false)
   N, mN = norm_group(f, mR)
   return ray_class_field(mR, quo(R, N)[2])
 end

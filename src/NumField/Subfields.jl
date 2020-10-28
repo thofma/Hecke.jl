@@ -274,7 +274,7 @@ field $L$ and an embedding of $L$ into $K$.
 By default, the function tries to find a small defining polynomial of $L$. This
 can be disabled by setting `simplify = false`.
 """
-function fixed_field(K::SimpleNumField, sigma::T; simplify::Bool = true) where {T <: Union{NfToNfMor, NfRelToNfRelMor}}
+function fixed_field(K::SimpleNumField, sigma::T; simplify::Bool = true) where {T <: NumFieldMor}
   return fixed_field(K, T[sigma], simplify = simplify)
 end
 
@@ -363,7 +363,7 @@ function fixed_field(K::AnticNumberField, A::Vector{NfToNfMor}; simplify::Bool =
 end
 
 
-function fixed_field(K::NfRel, A::Vector{T}; simplify::Bool = true) where {T <: NfRelToNfRelMor}
+function fixed_field(K::NfRel, A::Vector{T}; simplify::Bool = true) where {T <: NumFieldMor}
   autos = A
 
     # Everything is fixed by nothing :)
@@ -428,7 +428,7 @@ function fixed_field1(K::AnticNumberField, auts::Vector{NfToNfMor})
 		if orderG != length(auts)
 		  gens = closure(auts, orderG)
     end
-		conjs = nf_elem[x.prim_img for x in gens]
+    conjs = nf_elem[image_primitive_element(x) for x in gens]
 		prim_el = sum(conjs)
 		def_pol = minpoly(prim_el)
     if degree(def_pol) != degree_subfield
@@ -456,7 +456,7 @@ function fixed_field1(K::AnticNumberField, auts::Vector{NfToNfMor})
   MOKinv = basis_mat_inv(OK, copy = false)
   for i = 1:length(auts_new)
 		v[1] = one(K)
-    v[2] = auts_new[i].prim_img
+    v[2] = image_primitive_element(auts_new[i])
     for j = 3:degree(K)
       v[j] = v[j-1]*v[2]
 		end
@@ -496,14 +496,14 @@ function fixed_field(K::AnticNumberField, auts::Vector{NfToNfMor}, ::Type{NfRel{
   end
   all_auts = closure(auts, div(degree(K), degree(F)))
   Kx, x = PolynomialRing(K, "x", cached = false)
-  p = prod(x-y.prim_img for y in all_auts)
+  p = prod(x-image_primitive_element(y) for y in all_auts)
   def_eq = map_coeffs(x -> haspreimage(mF, x)[2], p)
   L, gL = number_field(def_eq, cached = false, check = false)
-  iso = hom(K, L, gL, mF.prim_img, gen(K))
+  iso = hom(K, L, gL, image_primitive_element(mF), gen(K))
   #I also set the automorphisms...
   autsL = Vector{NfRelToNfRelMor{nf_elem, nf_elem}}(undef, length(all_auts))
   for i = 1:length(autsL)
-    autsL[i] = hom(L, L, iso(all_auts[i].prim_img))
+    autsL[i] = hom(L, L, iso(image_primitive_element(all_auts[i])))
   end
   Hecke._set_automorphisms_nf_rel(L, autsL)
   return L, iso

@@ -1643,7 +1643,7 @@ function decomposition_group(P::NfOrdIdl; G::Array{NfToNfMor, 1} = NfToNfMor[],
     end
     D = Dict{nmod_poly, Int}()
     for i = 1:length(G)
-      D[Rx(G[i].prim_img)] = i
+      D[Rx(image_primitive_element(G[i]))] = i
     end
     dec_group = NfToNfMor[]
     local ppp
@@ -1660,7 +1660,7 @@ function decomposition_group(P::NfOrdIdl; G::Array{NfToNfMor, 1} = NfToNfMor[],
       if y in P
         push!(dec_group, g)
         #I take the closure of dec_group modularly
-        elems = nmod_poly[Rx(el.prim_img) for el in dec_group]
+        elems = nmod_poly[Rx(image_primitive_element(el)) for el in dec_group]
         new_elems = closure(elems, ppp, gen(Rx))
         dec_group = NfToNfMor[G[D[x]] for x in new_elems]
       end
@@ -1681,7 +1681,7 @@ function decomposition_group_easy(G, P)
   R = ResidueRing(FlintZZ, Int(minimum(P, copy = false)), cached = false)
   Rt, t = PolynomialRing(R, "t", cached = false)
   fmod = Rt(K.pol)
-  pols = nmod_poly[Rt(x.prim_img) for x in G]
+  pols = nmod_poly[Rt(image_primitive_element(x)) for x in G]
   indices = Int[]
   second_gen = Rt(P.gen_two.elem_in_nf)
   if iszero(second_gen)
@@ -1753,7 +1753,7 @@ function inertia_subgroup(P::NfOrdIdl; G::Vector{NfToNfMor} = NfToNfMor[])
   end
   D = Dict{nmod_poly, Int}()
   for i = 1:length(G)
-    D[Rx(G[i].prim_img)] = i
+    D[Rx(image_primitive_element(G[i]))] = i
   end
   local ppp
   let fmod = fmod
@@ -1768,7 +1768,7 @@ function inertia_subgroup(P::NfOrdIdl; G::Vector{NfToNfMor} = NfToNfMor[])
     y = mF(O(g(igF), false))
     if y == gF
       push!(inertia_grp, g)
-      elems = nmod_poly[Rx(el.prim_img) for el in inertia_grp]
+      elems = nmod_poly[Rx(image_primitive_element(el)) for el in inertia_grp]
       new_elems = closure(elems, ppp, gen(Rx))
       inertia_grp = NfToNfMor[G[D[x]] for x in new_elems]
       if length(inertia_grp) == orderG
@@ -1793,7 +1793,7 @@ function inertia_subgroup_easy(F, mF, G::Vector{NfToNfMor})
   indices = Int[]
   for i = 1:length(G)
     g = G[i]
-    img = Rt(g.prim_img)
+    img = Rt(image_primitive_element(g))
     res = compose_mod(igFq, img, fmod)
     resK = OK(lift(K, res), false)
     if mF(resK) == gF

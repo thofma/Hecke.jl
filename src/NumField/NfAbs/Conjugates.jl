@@ -489,7 +489,7 @@ function complex_conjugation(K::AnticNumberField; auts::Vector{NfToNfMor} = NfTo
       if !isinvolution(A[i])
         continue
       end
-      cc = conj.(conjugates(A[i].prim_img, p))
+      cc = conj.(conjugates(image_primitive_element(A[i]), p))
       for k = 1:d
         if overlaps(c[k], cc[k])
           found = true
@@ -528,7 +528,7 @@ function _find_complex_conjugation(K::AnticNumberField, A::Vector{NfToNfMor})
       if !isinvolution(A[i])
         continue
       end
-      cc = conj.(conjugates(A[i].prim_img, p))
+      cc = conj.(conjugates(image_primitive_element(A[i]), p))
       for k = 1:degree(K)
         if overlaps(c[k], cc[k])
           overlap = true
@@ -565,7 +565,7 @@ function iscomplex_conjugation(f::NfToNfMor)
   p = 32
   d = degree(K)
   a = gen(K)
-  img_a = f.prim_img
+  img_a = image_primitive_element(f)
   while true
     c = conjugates(a, p)
     cc = conj.(conjugates(img_a, p))

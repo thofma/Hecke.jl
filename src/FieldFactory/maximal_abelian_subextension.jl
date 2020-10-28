@@ -61,9 +61,9 @@ function check_abelian_extensions(class_fields::Vector{Tuple{ClassField{MapRayCl
   R = GF(p, cached = false)
   Rx, x = PolynomialRing(R, "x", cached = false)
   fmod = Rx(K.pol)
-  mp_pol = Rx(emb_sub.prim_img)
+  mp_pol = Rx(image_primitive_element(emb_sub))
   for i = 1:length(autos)
-    pol = Rx(autos[i].prim_img)
+    pol = Rx(image_primitive_element(autos[i]))
     if mp_pol ==  Hecke.compose_mod(mp_pol, pol, fmod)
       push!(act_indices, i)
       #I compute the order of the automorphisms. I need the exponent of the relative extension!

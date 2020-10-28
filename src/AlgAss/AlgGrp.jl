@@ -380,7 +380,7 @@ function _find_isomorphism(K::Union{ AnticNumberField, NfRel{nf_elem} }, A::AlgG
   n = length(aut)
   identity = 0
   for i = 1:n
-    b = aut[i].prim_img
+    b = image_primitive_element(aut[i])
     aut_dict[b] = i
     if b == gen(K)
       identity = i
@@ -395,7 +395,7 @@ function _find_isomorphism(K::Union{ AnticNumberField, NfRel{nf_elem} }, A::AlgG
       elseif j == identity
         k = i
       else
-        b = aut[i](aut[j].prim_img)
+        b = aut[i](image_primitive_element(aut[j]))
         k = aut_dict[b]
       end
       op_array[i, j] = k

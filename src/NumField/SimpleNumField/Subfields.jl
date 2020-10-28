@@ -313,7 +313,7 @@ function subfields(K::SimpleNumField; degree::Int = -1)
   gg = _generating_subfields(princ_subfields)
   sf_asmat_ar = _all_subfields(K, gg, degree)
   #compute embedding
-  Res = Vector{Tuple{typeof(K), morphism_type(typeof(K))}}()
+  Res = Vector{Tuple{typeof(K), morphism_type(K)}}()
   #get minimal polynomial of primitive elem k(pe) = M, over k
   for sf_mat in sf_asmat_ar
     #interpret column vectors as field elems

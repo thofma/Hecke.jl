@@ -602,9 +602,9 @@ function abelian_extensions(O::NfOrd, gtype::Array{Int,1}, absolute_discriminant
   l_conductors=conductorsQQ(O, gtype, absolute_discriminant_bound, tame)
   @vprint :AbExt 1 "Number of conductors: $(length(l_conductors)) \n"
   if with_autos==Val{true}
-    fields = Tuple{NfRelNS, Array{NfRelNSToNfRelNSMor,1}}[]
+    fields = Tuple{NfRelNS, Array{NfRelNSToNfRelNSMor_nf_elem,1}}[]
   else
-    fields = NfRelNS[]
+    fields = NfRelNS{nf_elem}[]
   end
 
   #Now, the big loop
@@ -647,9 +647,9 @@ function abelian_normal_extensions(O::NfOrd, gtype::Array{Int,1}, absolute_discr
   inf_plc=InfPlc[]
   
   if with_autos == Val{true}
-    fields=Tuple{NfRelNS,Vector{NfRelNSToNfRelNSMor{nf_elem}}}[]
+    fields=Tuple{NfRelNS{nf_elem},Vector{NfRelNSToNfRelNSMor_nf_elem}}[]
   else
-    fields=NfRelNS[]
+    fields=NfRelNS{nf_elem}[]
   end
   
   bound = div(absolute_discriminant_bound, abs(discriminant(O))^n)
@@ -999,8 +999,8 @@ function _C22_with_max_ord(l)
     end
     O.ismaximal = 1
     Hecke._set_maximal_order_of_nf(S, O) 
-    coord1 = __get_term(mS.prim_img.data, UInt[1, 0])
-    coord2 = __get_term(mS.prim_img.data, UInt[0, 1])
+    coord1 = __get_term(image_primitive_element(mS).data, UInt[1, 0])
+    coord2 = __get_term(image_primitive_element(mS).data, UInt[0, 1])
     auts = Vector{NfToNfMor}(undef, 2)
     if iszero(coeff(p1, 1))
       auts[1] = hom(S, S, (-coord1)*B[2]+coord2*B[3], check = false)
@@ -1140,7 +1140,7 @@ end
 
 
 
-function _from_relative_to_abs(L::NfRelNS{T}, auts::Array{NfRelNSToNfRelNSMor{T}, 1}) where T
+function _from_relative_to_abs(L::NfRelNS{T}, auts::Vector{<: NumFieldMor{NfRelNS{T}, NfRelNS{T}}}) where T
 
   S, mS = simple_extension(L)
   K, mK, mK2 = absolute_field(S, cached = false)

@@ -27,7 +27,7 @@ mutable struct ClassField_pp{S, T}
   o::Int # the degree of K - note, in general this is a divisor of the degree of A
   defect::Int # div(degree(A), degree(K)) = div(degree(A), o)
   pe::NfRelElem{nf_elem} #The image of the generator of A in K
-  AutG::Vector{NfRelToNfRelMor{nf_elem, nf_elem}}
+  AutG::Vector{NfRelToNfRelMor_nf_elem_nf_elem}
   AutR::fmpz_mat
   bigK::KummerExt
   h::GrpAbFinGenMap #The Artin Map provided by the function build_map
@@ -65,7 +65,7 @@ mutable struct ClassField{S, T}
   absolute_discriminant::Dict{fmpz,Int}
   cyc::Array{ClassField_pp{S, T}, 1}
   A::NfRelNS{nf_elem}
-  AbsAutGrpA::Vector{NfRelNSToNfRelNSMor{nf_elem}} #The generators for the absolute automorphism
+  AbsAutGrpA::Vector{NfRelNSToNfRelNSMor_nf_elem} #The generators for the absolute automorphism
                                                      #group of A
   degree::Int # The degree of the relative extension we are searching for.
               # In other words, the order of the codomain of quotientmap

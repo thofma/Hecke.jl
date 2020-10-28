@@ -1903,6 +1903,13 @@ mutable struct NfRelElem{T} <: NumFieldElem{T}
   NfRelElem{T}(g::Generic.Poly{T}) where {T} = new{T}(g)
 end
 
+elem_type(::Type{NfRel{T}}) where {T} = NfRelElem{T}
+
+elem_type(::NfRel{T}) where {T} = NfRelElem{T}
+
+parent_type(::Type{NfRelElem{T}}) where {T} = NfRel{T}
+
+
 ################################################################################
 #
 #  G-Modules

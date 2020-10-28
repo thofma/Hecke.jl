@@ -17,7 +17,7 @@
       K, a = NumberField(x^2-b, check = false, cached = false)
       O = maximal_order(K);
       cocval = Array{nf_elem, 2}(undef, 2, 2)
-      G = NfToNfMor[Hecke.NfToNfMor(K,K,a),Hecke.NfToNfMor(K,K,-a)]
+      G = NfToNfMor[hom(K,K,a),hom(K,K,-a)]
       cocval[1,1] = K(1)
       cocval[1,2] = K(1)
       cocval[2,1] = K(1)
@@ -51,10 +51,10 @@
     K, a = NumberField(x^4-4*x^2+1)
     O = maximal_order(K)
     Autos = Array{NfToNfMor, 1}(undef, 4)
-    Autos[1] = NfToNfMor(K, K, a)
-    Autos[2] = NfToNfMor(K, K, -a)
-    Autos[3] = NfToNfMor(K, K, a^3 - 4*a)
-    Autos[4] = NfToNfMor(K, K, -a^3 + 4*a)
+    Autos[1] = hom(K, K, a)
+    Autos[2] = hom(K, K, -a)
+    Autos[3] = hom(K, K, a^3 - 4*a)
+    Autos[4] = hom(K, K, -a^3 + 4*a)
     MatCoc = [0 0 0 0; 0 1 0 1; 0 1 1 0; 0 0 1 1]
     Coc = Array{nf_elem, 2}(undef, 4, 4)
     for i = 1:4
