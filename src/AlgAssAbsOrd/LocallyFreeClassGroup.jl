@@ -13,8 +13,8 @@ export locally_free_class_group, locally_free_class_group_with_disc_log
 @doc Markdown.doc"""
     locally_free_class_group(O::AlgAssAbsOrd) -> GrpAbFinGen
 
-> Given an order $O$ in a semisimple algebra over $\mathbb Q$, this function
-> returns the locally free class group of $O$.
+Given an order $O$ in a semisimple algebra over $\mathbb Q$, this function
+returns the locally free class group of $O$.
 """
 function locally_free_class_group(O::AlgAssAbsOrd, cond::Symbol = :center, return_disc_log_data::Type{Val{T}} = Val{false}) where T
   A = algebra(O)
@@ -104,11 +104,11 @@ end
     locally_free_class_group_with_disc_log(O::AlgAssAbsOrd; check::Bool = true)
       -> GrpAbFinGen, DiscLogLocallyFreeClassGroup
 
-> Given a group ring $O$, this function returns the locally free class group of
-> $O$ and map from the set of ideals of $O$ to this group.
-> As the function only works for group rings, it is tested whether
-> `A = algebra(O)` is of type `AlgGrp` and whether `O == Order(A, basis(A))`.
-> These tests can be disabled by setting `check = false`.
+Given a group ring $O$, this function returns the locally free class group of
+$O$ and map from the set of ideals of $O$ to this group.
+As the function only works for group rings, it is tested whether
+`A = algebra(O)` is of type `AlgGrp` and whether `O == Order(A, basis(A))`.
+These tests can be disabled by setting `check = false`.
 """
 function locally_free_class_group_with_disc_log(O::AlgAssAbsOrd; check::Bool = true)
   if check
@@ -231,7 +231,7 @@ end
     K1(A::AlgAss{T}) where { T <: Union{gfp_elem, Generic.ResF{fmpz}, fq, fq_nmod } }
       -> Vector{AbsAlgAssElem}
 
-> Given an algebra over a finite field, this function returns generators for $K_1(A)$.
+Given an algebra over a finite field, this function returns generators for $K_1(A)$.
 """
 function K1(A::AlgAss{T}) where { T } #<: Union{gfp_elem, Generic.ResF{fmpz}, fq, fq_nmod } }
   # We use the exact sequence 1 + J -> K_1(A) -> K_1(B/J) -> 1

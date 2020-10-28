@@ -7,7 +7,7 @@ parent_type(::AlgAssAbsOrdElem{S, T}) where {S, T} = AlgAssAbsOrd{S, T}
 @doc Markdown.doc"""
     parent(x::AlgAssAbsOrdElem) -> AlgAssAbsOrd
 
-> Returns the order containing $x$.
+Returns the order containing $x$.
 """
 @inline parent(x::AlgAssAbsOrdElem) = x.parent
 
@@ -106,7 +106,7 @@ zero(O::AlgAssAbsOrd) = O(algebra(O)())
     elem_in_algebra(x::AlgAssAbsOrdElem; copy::Bool = true) -> AbsAlgAssElem
     elem_in_algebra(x::AlgAssRelOrdElem; copy::Bool = true) -> AbsAlgAssElem
 
-> Returns $x$ as an element of the algebra containing it.
+Returns $x$ as an element of the algebra containing it.
 """
 function elem_in_algebra(x::AlgAssRelOrdElem{S, T, U}; copy::Bool = true) where {S, T, U}
   if copy
@@ -154,7 +154,7 @@ end
     coordinates(x::AlgAssAbsOrdElem; copy::Bool = true) -> Vector{fmpz}
     coordinates(x::AlgAssRelOrdElem; copy::Bool = true) -> Vector{NumFieldElem}
 
-> Returns the coordinates of $x$ in the basis of `parent(x)`.
+Returns the coordinates of $x$ in the basis of `parent(x)`.
 """
 function coordinates(x::Union{ AlgAssAbsOrdElem, AlgAssRelOrdElem }; copy::Bool = true)
   assure_has_coord(x)
@@ -175,7 +175,7 @@ end
     -(x::AlgAssAbsOrdElem) -> AlgAssAbsOrdElem
     -(x::AlgAssRelOrdElem) -> AlgAssRelOrdElem
 
-> Returns $-x$.
+Returns $-x$.
 """
 function -(x::Union{ AlgAssAbsOrdElem, AlgAssRelOrdElem })
   return parent(x)(-elem_in_algebra(x, copy = false))
@@ -191,7 +191,7 @@ end
     *(x::AlgAssAbsOrdElem, y::AlgAssAbsOrdElem) -> AlgAssAbsOrdElem
     *(x::AlgAssRelOrdElem, y::AlgAssRelOrdElem) -> AlgAssRelOrdElem
 
-> Return $x \cdot y$.
+Return $x \cdot y$.
 """
 function *(x::T, y::T) where { T <: Union{ AlgAssAbsOrdElem, AlgAssRelOrdElem } }
   !check_parent(x, y) && error("Wrong parents")
@@ -202,7 +202,7 @@ end
     +(x::AlgAssAbsOrdElem, y::AlgAssAbsOrdElem) -> AlgAssAbsOrdElem
     +(x::AlgAssRelOrdElem, y::AlgAssRelOrdElem) -> AlgAssRelOrdElem
 
-> Return $x + y$.
+Return $x + y$.
 """
 function +(x::T, y::T) where { T <: Union{ AlgAssAbsOrdElem, AlgAssRelOrdElem } }
   !check_parent(x, y) && error("Wrong parents")
@@ -218,7 +218,7 @@ end
     -(x::AlgAssAbsOrdElem, y::AlgAssAbsOrdElem) -> AlgAssAbsOrdElem
     -(x::AlgAssRelOrdElem, y::AlgAssRelOrdElem) -> AlgAssRelOrdElem
 
-> Return $x - y$.
+Return $x - y$.
 """
 function -(x::T, y::T) where { T <: Union{ AlgAssAbsOrdElem, AlgAssRelOrdElem } }
   !check_parent(x, y) && error("Wrong parents")
@@ -260,9 +260,9 @@ end
     divexact_right(a::AlgAssRelOrdElem, b::AlgAssRelOrdElem, check::Bool = true)
       -> AlgAssRelOrdElem
 
-> Returns an element $c \in O$ such that $a = c \cdot b$ where $O$ is the order
-> containing $a$.
-> If `check` is `false`, it is not checked whether $c$ is an element of $O$.
+Returns an element $c \in O$ such that $a = c \cdot b$ where $O$ is the order
+containing $a$.
+If `check` is `false`, it is not checked whether $c$ is an element of $O$.
 """
 divexact_right(a::T, b::T, check::Bool = true) where { T <: Union{ AlgAssAbsOrdElem, AlgAssRelOrdElem } } = divexact(a, b, :right, check)
 
@@ -271,9 +271,9 @@ divexact_right(a::T, b::T, check::Bool = true) where { T <: Union{ AlgAssAbsOrdE
     divexact_left(a::AlgAssRelOrdElem, b::AlgAssRelOrdElem, check::Bool = true)
       -> AlgAssRelOrdElem
 
-> Returns an element $c \in O$ such that $a = b \cdot c$ where $O$ is the order
-> containing $a$.
-> If `check` is `false`, it is not checked whether $c$ is an element of $O$.
+Returns an element $c \in O$ such that $a = b \cdot c$ where $O$ is the order
+containing $a$.
+If `check` is `false`, it is not checked whether $c$ is an element of $O$.
 """
 divexact_left(a::T, b::T, check::Bool = true) where { T <: Union{ AlgAssAbsOrdElem, AlgAssRelOrdElem } } = divexact(a, b, :left, check)
 
@@ -304,7 +304,7 @@ end
     ^(x::AlgAssAbsOrdElem, y::Union{ Int, fmpz }) -> AlgAssAbsOrdElem
     ^(x::AlgAssRelOrdElem, y::Union{ Int, fmpz }) -> AlgAssRelOrdElem
 
-> Returns $x^y$.
+Returns $x^y$.
 """
 function ^(x::Union{ AlgAssAbsOrdElem, AlgAssRelOrdElem }, y::fmpz)
   z = parent(x)()
@@ -328,7 +328,7 @@ end
     ==(a::AlgAssAbsOrdElem, b::AlgAssAbsOrdElem) -> Bool
     ==(a::AlgAssRelOrdElem, b::AlgAssRelOrdElem) -> Bool
 
-> Returns `true` if $a$ and $b$ are equal and `false` otherwise.
+Returns `true` if $a$ and $b$ are equal and `false` otherwise.
 """
 function ==(a::T, b::T) where { T <: Union{ AlgAssAbsOrdElem, AlgAssRelOrdElem } }
   if parent(a) !== parent(b)
@@ -387,10 +387,10 @@ end
 @doc Markdown.doc"""
     representation_matrix(x::AlgAssAbsOrdElem, action::Symbol = :left) -> fmpz_mat
 
-> Returns a matrix representing multiplication with $x$ with respect to the basis
-> of `order(x)`.
-> The multiplication is from the left if `action == :left` and from the right if
-> `action == :right`.
+Returns a matrix representing multiplication with $x$ with respect to the basis
+of `order(x)`.
+The multiplication is from the left if `action == :left` and from the right if
+`action == :right`.
 """
 function representation_matrix(x::AlgAssAbsOrdElem, action::Symbol = :left)
 
@@ -438,7 +438,7 @@ end
 @doc Markdown.doc"""
     tr(x::AlgAssAbsOrdElem) -> fmpz
 
-> Returns the trace of $x$.
+Returns the trace of $x$.
 """
 function tr(x::AlgAssAbsOrdElem)
   return FlintZZ(tr(x.elem_in_algebra))
@@ -447,7 +447,7 @@ end
 @doc Markdown.doc"""
     trred(x::AlgAssAbsOrdElem) -> fmpz
 
-> Returns the reduced trace of $x$.
+Returns the reduced trace of $x$.
 """
 function trred(x::AlgAssAbsOrdElem)
   return FlintZZ(trred(x.elem_in_algebra))
@@ -463,7 +463,7 @@ end
     powermod(a::AlgAssAbsOrdElem, i::Union{ fmpz, Int }, m::AlgAssAbsOrdIdl)
       -> AlgAssAbsOrdElem
 
-> Returns an element $b$ of `order(a)` such that $a^i \equiv b \mod m$.
+Returns an element $b$ of `order(a)` such that $a^i \equiv b \mod m$.
 """
 function powermod(a::AlgAssAbsOrdElem, i::Union{fmpz, Int}, m::AlgAssAbsOrdIdl)
   if i < 0

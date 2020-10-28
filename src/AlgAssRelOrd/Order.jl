@@ -11,7 +11,7 @@ ideal_type(::Type{AlgAssRelOrd{S, T, U}}) where {S, T, U} = AlgAssRelOrdIdl{S, T
 @doc Markdown.doc"""
     algebra(O::AlgAssRelOrd) -> AbsAlgAss
 
-> Returns the algebra which contains $O$.
+Returns the algebra which contains $O$.
 """
 algebra(O::AlgAssRelOrd) = O.algebra
 
@@ -20,14 +20,14 @@ _algebra(O::AlgAssRelOrd) = algebra(O)
 @doc Markdown.doc"""
     base_ring(O::AlgAssRelOrd) -> Union{ NfAbsOrd, NfRelOrd }
 
-> Returns an order $R$ in the base ring of `algebra(O)`, such that $O$ is an $R$-order.
+Returns an order $R$ in the base ring of `algebra(O)`, such that $O$ is an $R$-order.
 """
 base_ring(O::AlgAssRelOrd) = order(basis_pmatrix(O, copy = false).coeffs[1])
 
 @doc Markdown.doc"""
     iscommutative(O::AlgAssRelOrd) -> Bool
 
-> Returns `true` if $O$ is a commutative ring and `false` otherwise.
+Returns `true` if $O$ is a commutative ring and `false` otherwise.
 """
 iscommutative(O::AlgAssRelOrd) = iscommutative(algebra(O))
 
@@ -41,7 +41,7 @@ iscommutative(O::AlgAssRelOrd) = iscommutative(algebra(O))
     Order(A::AbsAlgAss{<: NumFieldElem}, M::Generic.Mat{<: NumFieldElem})
       -> AlgAssRelOrd
 
-> Returns the order of $A$ with basis matrix $M$.
+Returns the order of $A$ with basis matrix $M$.
 """
 function Order(A::AbsAlgAss{S}, M::Generic.Mat{S}) where S <: NumFieldElem
   return AlgAssRelOrd{S, fractional_ideal_type(order_type(base_ring(A))), typeof(A)}(A, deepcopy(M))
@@ -51,7 +51,7 @@ end
     Order(A::AbsAlgAss{<: NumFieldElem}, M::PMat{<: NumFieldElem, T})
       -> AlgAssRelOrd
 
-> Returns the order of $A$ with basis pseudo-matrix $M$.
+Returns the order of $A$ with basis pseudo-matrix $M$.
 """
 function Order(A::AbsAlgAss{S}, M::PMat{S, T}) where { S <: NumFieldElem, T }
   return AlgAssRelOrd{S, T, typeof(A)}(A, deepcopy(M))
@@ -61,7 +61,7 @@ end
     Order(A::AbsAlgAss{<: NumFieldElem}, B::Vector{<: AbsAlgAssElem{ <: NumFieldElem}})
       -> AlgAssRelOrd
 
-> Returns the order of $A$ with basis $B$.
+Returns the order of $A$ with basis $B$.
 """
 function Order(A::AbsAlgAss{S}, B::Vector{ <: AbsAlgAssElem{S} }) where { S <: NumFieldElem }
   @assert length(B) == dim(A)
@@ -148,9 +148,9 @@ end
 @doc Markdown.doc"""
     pseudo_basis(O::AlgAssRelOrd; copy::Bool = true)
 
-> Returns the pseudo basis of $O$, i. e. a vector $v$ of pairs $(e_i, a_i)$ such
-> that $O = \bigoplus_i a_i e_i$, where $e_i$ is an element of `algebra(O)`
-> and $a_i$ a fractional ideal of `base_ring(O)`.
+Returns the pseudo basis of $O$, i. e. a vector $v$ of pairs $(e_i, a_i)$ such
+that $O = \bigoplus_i a_i e_i$, where $e_i$ is an element of `algebra(O)`
+and $a_i$ a fractional ideal of `base_ring(O)`.
 """
 function pseudo_basis(O::AlgAssRelOrd{S, T, U}; copy::Bool = true) where {S, T, U}
   assure_has_pseudo_basis(O)
@@ -164,7 +164,7 @@ end
 @doc Markdown.doc"""
     basis_pmatrix(O::AlgAssRelOrd; copy::Bool = true) -> PMat
 
-> Returns the basis pseudo-matrix of $O$.
+Returns the basis pseudo-matrix of $O$.
 """
 function basis_pmatrix(O::AlgAssRelOrd; copy::Bool = true)
   assure_has_basis_pmatrix(O)
@@ -205,8 +205,8 @@ end
 @doc Markdown.doc"""
     basis_matrix(O::AlgAssRelOrd; copy::Bool = true) -> MatElem
 
-> Returns the basis matrix of $O$, that is the basis pseudo-matrix of $O$ without
-> the coefficient ideals.
+Returns the basis matrix of $O$, that is the basis pseudo-matrix of $O$ without
+the coefficient ideals.
 """
 function basis_matrix(O::AlgAssRelOrd; copy::Bool = true)
   assure_has_basis_matrix(O)
@@ -220,7 +220,7 @@ end
 @doc Markdown.doc"""
     basis_mat_inv(O::AlgAssRelOrd; copy::Bool = true) -> MatElem
 
-> Returns the inverse of the basis matrix of $O$.
+Returns the inverse of the basis matrix of $O$.
 """
 function basis_mat_inv(O::AlgAssRelOrd; copy::Bool = true)
   assure_has_basis_mat_inv(O)
@@ -240,7 +240,7 @@ end
 @doc Markdown.doc"""
     degree(O::AlgAssRelOrd) -> Int
 
-> Returns the dimension of the algebra containing $O$.
+Returns the dimension of the algebra containing $O$.
 """
 function degree(O::AlgAssRelOrd)
   return dim(algebra(O))
@@ -281,7 +281,7 @@ end
 @doc Markdown.doc"""
     in(a::AbsAlgAssElem, O::AlgAssRelOrd) -> Bool
 
-> Returns `true` if the algebra element $a$ is in $O$ and `false` otherwise.
+Returns `true` if the algebra element $a$ is in $O$ and `false` otherwise.
 """
 function in(a::AbsAlgAssElem{S}, O::AlgAssRelOrd{S, T, U}) where {S, T, U}
   return _check_elem_in_order(a, O, Val{true})
@@ -296,7 +296,7 @@ end
 @doc Markdown.doc"""
     denominator(a::AbsAlgAssElem, O::AlgAssRelOrd) -> fmpz
 
-> Returns $d\in \mathbb Z$ such that $d \cdot a \in O$.
+Returns $d\in \mathbb Z$ such that $d \cdot a \in O$.
 """
 function denominator(a::AbsAlgAssElem, O::AlgAssRelOrd)
   t = zero_matrix(base_ring(algebra(O)), 1, degree(O))
@@ -321,7 +321,7 @@ end
 @doc Markdown.doc"""
     rand(O::AlgAssRelOrd, B::Int) -> AlgAssRelOrdElem
 
-> Returns a random element of $O$ whose coefficient size is controlled by $B$.
+Returns a random element of $O$ whose coefficient size is controlled by $B$.
 """
 function rand(O::AlgAssRelOrd, B::Int)
   pb = pseudo_basis(O, copy = false)
@@ -368,7 +368,7 @@ end
 @doc Markdown.doc"""
     ==(R::AlgAssRelOrd, S::AlgAssRelOrd) -> Bool
 
-> Returns `true` if $R$ and $S$ are equal and `false` otherwise.
+Returns `true` if $R$ and $S$ are equal and `false` otherwise.
 """
 function ==(R::AlgAssRelOrd, S::AlgAssRelOrd)
   algebra(R) != algebra(S) && return false
@@ -384,8 +384,8 @@ end
 @doc Markdown.doc"""
     trred_matrix(O::AlgssRelOrd) -> MatElem
 
-> Returns the reduced trace matrix $M$ of $O$, i. e. `M[i, j] = trred(b[i]*b[j])`,
-> where $b$ is a basis of $O$.
+Returns the reduced trace matrix $M$ of $O$, i. e. `M[i, j] = trred(b[i]*b[j])`,
+where $b$ is a basis of $O$.
 """
 function trred_matrix(O::AlgAssRelOrd)
   if isdefined(O, :trred_matrix)
@@ -411,7 +411,7 @@ end
 @doc Markdown.doc"""
     discriminant(O::AlgssRelOrd)
 
-> Returns the discriminant of $O$.
+Returns the discriminant of $O$.
 """
 function discriminant(O::AlgAssRelOrd{S, T, U}) where {S, T, U}
   if isdefined(O, :disc)
@@ -438,7 +438,7 @@ end
 @doc Markdown.doc"""
     maximal_order(A::AbsAlgAss{ <: NumFieldElem }) -> AlgAssRelOrd
 
-> Returns a maximal $R$-order of $A$ where $R$ is the maximal order of `base_ring(A)`.
+Returns a maximal $R$-order of $A$ where $R$ is the maximal order of `base_ring(A)`.
 """
 function maximal_order(A::AbsAlgAss{T}) where { T <: NumFieldElem }
   if isdefined(A, :maximal_order)
@@ -479,7 +479,7 @@ end
 @doc Markdown.doc"""
     maximal_order(O::AlgAssRelOrd) -> AlgAssRelOrd
 
-> Returns a maximal order of `algera(O)` containing $O$.
+Returns a maximal order of `algera(O)` containing $O$.
 """
 function maximal_order(O::AlgAssRelOrd{S, T, U}) where {S, T, U}
   A = algebra(O)
@@ -513,7 +513,7 @@ end
 @doc Markdown.doc"""
     any_order(A::AbsAlgAss{ <: NumFieldElem }) -> AlgAssRelOrd
 
-> Returns any $R$-order of $A$ where $R$ is the maximal order of `base_ring(A)`.
+Returns any $R$-order of $A$ where $R$ is the maximal order of `base_ring(A)`.
 """
 function any_order(A::AbsAlgAss{T}) where { T <: NumFieldElem }
   K = base_ring(A)
@@ -524,7 +524,7 @@ end
     any_order(A::AbsAlgAss{ <: NumFieldElem}, R::Union{ NfAbsOrd, NfRelOrd })
       -> AlgAssRelOrd
 
-> Returns any $R$-order of $A$.
+Returns any $R$-order of $A$.
 """
 function any_order(A::AbsAlgAss{T}, R::Union{ NfAbsOrd, NfRelOrd }) where { T <: NumFieldElem }
   K = base_ring(A)
@@ -646,7 +646,7 @@ end
 @doc Markdown.doc"""
     ismaximal(O::AlgAssRelOrd) -> Bool
 
-> Returns `true` if $O$ is a maximal order and `false` otherwise.
+Returns `true` if $O$ is a maximal order and `false` otherwise.
 """
 function ismaximal(O::AlgAssRelOrd)
   if O.ismaximal == 1
@@ -698,8 +698,8 @@ ismaximal_known(O::AlgAssRelOrd) = O.ismaximal != 0
     phereditary_overorder(O::AlgAssRelOrd, p::Union{ NfAbsOrdIdl, NfRelOrdIdl })
       -> AlgAssRelOrd
 
-> Returns an order $O'$ containing $O$ such that the localization $O'_p$ is
-> hereditary where $p$ is a prime ideal of `base_ring(O)`.
+Returns an order $O'$ containing $O$ such that the localization $O'_p$ is
+hereditary where $p$ is a prime ideal of `base_ring(O)`.
 """
 function phereditary_overorder(O::AlgAssRelOrd, p::Union{ NfAbsOrdIdl, NfRelOrdIdl }; return_pradical::Type{Val{T}} = Val{false}) where T
   d = discriminant(O)
@@ -747,9 +747,9 @@ end
     pmaximal_overorder(O::AlgAssRelOrd, p::Union{ NfAbsOrdIdl, NfRelOrdIdl })
       -> AlgAssRelOrd
 
-> Returns an order $O'$ containing $O$ such that the index $(O'':O')$ of any maximal
-> order $O''$ containing $O$ is not divisible by $p$ where $p$ is a prime ideal
-> of `base_ring(O)`.
+Returns an order $O'$ containing $O$ such that the index $(O'':O')$ of any maximal
+order $O''$ containing $O$ is not divisible by $p$ where $p$ is a prime ideal
+of `base_ring(O)`.
 """
 function pmaximal_overorder(O::AlgAssRelOrd, p::Union{ NfAbsOrdIdl, NfRelOrdIdl })
   O, prad = phereditary_overorder(O, p, return_pradical = Val{true})

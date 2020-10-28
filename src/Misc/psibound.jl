@@ -145,7 +145,7 @@ to compute lower bounds on the psi function counting smooth numbers.
 An array $L$ is returned s.th. $\psi(2^{i-1}, B) \ge L_i$ for
 $1\le i\le \rceil \log_2(B)\lceil$.
 The second return value is Bernstein's power series.
->
+
 The optional other parameter $a$ controls the precision of the result,
 it defaults to 776.
 """
@@ -166,7 +166,7 @@ to compute upper bounds on the psi function counting smooth numbers.
 An array $U$ is returned s.th. $\psi(2^{i-1}, B) \ge U_i$ for
 $1\le i\le \rceil \log_2(B)\lceil$.
 The second return value is Bernstein's power series.
->
+
 The optional other parameter $a$ controls the precision of the result,
 it defaults to 771.
 """
