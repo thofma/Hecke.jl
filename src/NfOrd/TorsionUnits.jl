@@ -65,7 +65,7 @@ end
 Given a torsion unit $x$ together with a multiple $n$ of its order, compute
 the order of $x$, that is, the smallest $k \in \mathbb Z_{\geq 1}$ such
 that $x^k = 1$.
->
+
 It is not checked whether $x$ is a torsion unit.
 """
 function torsion_unit_order(x::NfOrdElem, n::Int)

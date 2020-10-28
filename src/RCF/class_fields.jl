@@ -194,7 +194,7 @@ end
 @doc Markdown.doc"""
     compositum(a::ClassField, b::ClassField) -> ClassField
 
-> The compositum of $a$ and $b$ as a (formal) class field.
+The compositum of $a$ and $b$ as a (formal) class field.
 """
 function compositum(a::ClassField, b::ClassField)
   @assert base_ring(a) == base_ring(b)

@@ -96,7 +96,7 @@ end
 @doc Markdown.doc"""
     isintegral(a::AbsAlgAssElem) -> Bool
 
-> Returns `true` if $a$ is integral and `false` otherwise.
+Returns `true` if $a$ is integral and `false` otherwise.
 """
 function isintegral(a::AbsAlgAssElem)
   f = minpoly(a)
@@ -117,7 +117,7 @@ end
 @doc Markdown.doc"""
     -(a::AbsAlgAssElem) -> AbsAlgAssElem
 
-> Returns $-a$.
+Returns $-a$.
 """
 function -(a::AbsAlgAssElem{T}) where {T}
   v = T[ -coeffs(a, copy = false)[i] for i = 1:dim(parent(a)) ]
@@ -133,7 +133,7 @@ end
 @doc Markdown.doc"""
     +(a::AbsAlgAssElem, b::AbsAlgAssElem) -> AbsAlgAssElem
 
-> Return $a + b$.
+Return $a + b$.
 """
 function +(a::AbsAlgAssElem{T}, b::AbsAlgAssElem{T}) where {T}
   parent(a) != parent(b) && error("Parents don't match.")
@@ -147,7 +147,7 @@ end
 @doc Markdown.doc"""
     -(a::AbsAlgAssElem, b::AbsAlgAssElem) -> AbsAlgAssElem
 
-> Return $a - b$.
+Return $a - b$.
 """
 function -(a::AbsAlgAssElem{T}, b::AbsAlgAssElem{T}) where {T}
   parent(a) != parent(b) && error("Parents don't match.")
@@ -161,7 +161,7 @@ end
 @doc Markdown.doc"""
     *(a::AlgAssElem, b::AlgAssElem) -> AlgAssElem
 
-> Return $a \cdot b$.
+Return $a \cdot b$.
 """
 function *(a::AlgAssElem{T}, b::AlgAssElem{T}) where {T}
   parent(a) != parent(b) && error("Parents don't match.")
@@ -190,7 +190,7 @@ end
 @doc Markdown.doc"""
     *(a::AlgGrpElem, b::AlgGrpElem) -> AlgGrpElem
 
-> Return $a \cdot b$.
+Return $a \cdot b$.
 """
 function *(a::AlgGrpElem{T, S}, b::AlgGrpElem{T, S}) where {T, S}
   parent(a) != parent(b) && error("Parents don't match.")
@@ -366,9 +366,9 @@ end
     isdivisible(a::AbsAlgAssElem, b::AbsAlgAssElem, action::Symbol)
       -> Bool, AbsAlgAssElem
 
-> Returns `true` and an element $c$ such that $a = c \cdot b$ (if
-> `action == :right`) respectively $a = b \cdot c$ (if `action == :left`) if
-> such an element exists and `false` and $0$ otherwise.
+Returns `true` and an element $c$ such that $a = c \cdot b$ (if
+`action == :right`) respectively $a = b \cdot c$ (if `action == :left`) if
+such an element exists and `false` and $0$ otherwise.
 """
 function isdivisible(a::AbsAlgAssElem, b::AbsAlgAssElem, action::Symbol)
   parent(a) != parent(b) && error("Parents don't match.")
@@ -401,14 +401,14 @@ end
 @doc Markdown.doc"""
     divexact_right(a::AbsAlgAssElem, b::AbsAlgAssElem) -> AbsAlgAssElem
 
-> Returns an element $c$ such that $a = c \cdot b$.
+Returns an element $c$ such that $a = c \cdot b$.
 """
 divexact_right(a::AbsAlgAssElem, b::AbsAlgAssElem) = divexact(a, b, :right)
 
 @doc Markdown.doc"""
     divexact_left(a::AbsAlgAssElem, b::AbsAlgAssElem) -> AbsAlgAssElem
 
-> Returns an element $c$ such that $a = b \cdot c$.
+Returns an element $c$ such that $a = b \cdot c$.
 """
 divexact_left(a::AbsAlgAssElem, b::AbsAlgAssElem) = divexact(a, b, :left)
 
@@ -473,14 +473,14 @@ end
 @doc Markdown.doc"""
     isinvertible(a::AbsAlgAssElem) -> Bool, AbsAlgAssElem
 
-> Returns `true` and $a^{-1}$ if $a$ is a unit and `false` and $0$ otherwise.
+Returns `true` and $a^{-1}$ if $a$ is a unit and `false` and $0$ otherwise.
 """
 isinvertible(a::AbsAlgAssElem) = isdivisible(one(parent(a)), a, :right)
 
 @doc Markdown.doc"""
     inv(a::AbsAlgAssElem) -> AbsAlgAssElem
 
-> Assuming $a$ is a unit this function returns $a^{-1}$.
+Assuming $a$ is a unit this function returns $a^{-1}$.
 """
 function inv(a::AbsAlgAssElem)
   t, b = isinvertible(a)
@@ -499,7 +499,7 @@ end
 @doc Markdown.doc"""
     ^(a::AbsAlgAssElem, b::Union{ fmpz, Int }) -> AbsAlgAssElem
 
-> Returns $a^b$.
+Returns $a^b$.
 """
 function ^(a::AbsAlgAssElem, b::Int)
   if b == 0
@@ -676,7 +676,7 @@ end
 @doc Markdown.doc"""
     ==(a::AbsAlgAssElem, b::AbsAlgAssElem) -> Bool
 
-> Returns `true` if $a$ and $b$ are equal and `false` otherwise.
+Returns `true` if $a$ and $b$ are equal and `false` otherwise.
 """
 function ==(a::AbsAlgAssElem{T}, b::AbsAlgAssElem{T}) where {T}
   parent(a) != parent(b) && return false
@@ -692,8 +692,8 @@ end
 @doc Markdown.doc"""
     minpoly(a::AbsAlgAssElem) -> PolyElem
 
-> Returns the minimal polynomial of $a$ as a polynomial over
-> `base_ring(algebra(a))`.
+Returns the minimal polynomial of $a$ as a polynomial over
+`base_ring(algebra(a))`.
 """
 function Generic.minpoly(a::AbsAlgAssElem)
   M = representation_matrix(a)
@@ -704,8 +704,8 @@ end
 @doc Markdown.doc"""
     charpoly(a::AbsAlgAssElem) -> PolyElem
 
-> Returns the characteristic polynomial of $a$ as a polynomial over
-> `base_ring(algebra(a))`.
+Returns the characteristic polynomial of $a$ as a polynomial over
+`base_ring(algebra(a))`.
 """
 function charpoly(a::AbsAlgAssElem)
   M = representation_matrix(a)
@@ -738,8 +738,8 @@ end
 @doc Markdown.doc"""
     reduced_charpoly(a::AbsAlgAssElem) -> PolyElem
 
-> Returns the reduced characteristic polynomial of $a$ as a polynomial over
-> `base_ring(algebra(a))`.
+Returns the reduced characteristic polynomial of $a$ as a polynomial over
+`base_ring(algebra(a))`.
 """
 function reduced_charpoly(a::AbsAlgAssElem)
   A = parent(a)
@@ -797,10 +797,10 @@ end
 @doc Markdown.doc"""
     representation_matrix(a::AbsAlgAssElem, action::Symbol = :left) -> MatElem
 
-> Returns a matrix over `base_ring(algebra(a))` representing multiplication with
-> $a$ with respect to the basis of `algebra(a)`.
-> The multiplication is from the left if `action == :left` and from the right if
-> `action == :right`.
+Returns a matrix over `base_ring(algebra(a))` representing multiplication with
+$a$ with respect to the basis of `algebra(a)`.
+The multiplication is from the left if `action == :left` and from the right if
+`action == :right`.
 """
 function representation_matrix(a::AlgGrpElem, action::Symbol=:left)
   A = parent(a)
@@ -885,7 +885,7 @@ end
 @doc Markdown.doc"""
     tr(x::AbsAlgAssElem{T}) where T -> T
 
-> Returns the trace of $x$.
+Returns the trace of $x$.
 """
 function tr(x::AbsAlgAssElem{T}) where T
   A=parent(x)
@@ -904,7 +904,7 @@ end
 @doc Markdown.doc"""
     trred(x::AbsAlgAssElem{T}) where T -> T
 
-> Returns the reduced trace of $x$.
+Returns the reduced trace of $x$.
 """
 function trred(a::AbsAlgAssElem)
   A = parent(a)
@@ -933,7 +933,7 @@ end
 @doc Markdown.doc"""
     norm(x::AbsAlgAssElem{T}) where T -> T
 
-> Returns the norm of $x$.
+Returns the norm of $x$.
 """
 function norm(a::AbsAlgAssElem{fmpq})
   return abs(det(representation_matrix(a)))
@@ -946,7 +946,7 @@ end
 @doc Markdown.doc"""
     normred(x::AbsAlgAssElem{T}) where T -> T
 
-> Returns the reduced norm of $x$.
+Returns the reduced norm of $x$.
 """
 function normred(a::AbsAlgAssElem)
   f = reduced_charpoly(a)
@@ -1001,8 +1001,8 @@ end
 @doc Markdown.doc"""
     trred_matrix(A::Vector{ <: AlgAssElem}) -> MatElem
 
-> Returns a matrix $M$ such that $M_{ij} = \mathrm{tr}(A_i \cdot A_j)$ where
-> $\mathrm{tr}$ is the reduced trace.
+Returns a matrix $M$ such that $M_{ij} = \mathrm{tr}(A_i \cdot A_j)$ where
+$\mathrm{tr}$ is the reduced trace.
 """
 function trred_matrix(A::Vector{<: AlgAssElem})
   n = length(A)
@@ -1026,7 +1026,7 @@ end
 @doc Markdown.doc"""
     coeffs(a::AbsAlgAbsElem; copy::Bool = true) -> Vector{RingElem}
 
-> Returns the coefficients of $a$ in the basis of `algebra(a)`.
+Returns the coefficients of $a$ in the basis of `algebra(a)`.
 """
 function coeffs(a::AbsAlgAssElem; copy::Bool = true)
   if copy

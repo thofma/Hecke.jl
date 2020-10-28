@@ -192,8 +192,8 @@ poverorders(O, p::Int) = poverorders(O, fmpz(p))
 @doc Markdown.doc"""
     poverorders(O, p) -> Vector{Ord}
 
-> Returns all `p`-overorders of `O`, that is all overorders `M`, such that the
-> index of `O` in `M` is a `p`-power.
+Returns all `p`-overorders of `O`, that is all overorders `M`, such that the
+index of `O` in `M` is a `p`-power.
 """
 function poverorders(O, p::fmpz)
   if iscommutative(O)
@@ -205,8 +205,8 @@ end
 @doc Markdown.doc"""
     overorders(O::NfOrd, type = :all) -> Vector{Ord}
 
-> Returns all overorders of `O`. If `type` is `:bass` or `:gorenstein`, then
-> only Bass and Gorenstein orders respectively are returned.
+Returns all overorders of `O`. If `type` is `:bass` or `:gorenstein`, then
+only Bass and Gorenstein orders respectively are returned.
 """
 function overorders(O; type = :all)
   if type == :all

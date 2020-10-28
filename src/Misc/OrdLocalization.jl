@@ -233,9 +233,9 @@ end
 
 @doc Markdown.doc"""
      inv(a::OrdLocElem{T}, checked::Bool = true)  where {T <: nf_elem}
-> Returns the inverse element of $a$ if $a$ is a unit.
-> If 'checked = false' the invertibility of $a$ is not checked and the corresponding inverse element
-> of the numberfield is returned.
+Returns the inverse element of $a$ if $a$ is a unit.
+If 'checked = false' the invertibility of $a$ is not checked and the corresponding inverse element
+of the numberfield is returned.
 """
 function inv(a::OrdLocElem{T}, checked::Bool = true)  where {T <: nf_elem}
    b = inv(data(a))
@@ -251,9 +251,9 @@ end
 
 @doc Markdown.doc"""
      divides(a::OrdLocElem{T}, b::OrdLocElem{T}, checked::Bool = true) where {T <: nf_elem}
-> Returns tuple (`true`,`c`) if $b$ divides $a$ where `c`*$b$ = $a$.
-> If 'checked = false' the corresponding element of the numberfield is returned and it is not
-> checked whether it is an element of the given localization.
+Returns tuple (`true`,`c`) if $b$ divides $a$ where `c`*$b$ = $a$.
+If 'checked = false' the corresponding element of the numberfield is returned and it is not
+checked whether it is an element of the given localization.
 """
 function divides(a::OrdLocElem{T}, b::OrdLocElem{T}, checked::Bool = true) where {T <: nf_elem}
    check_parent(a,b)
@@ -278,9 +278,9 @@ end
 
 @doc Markdown.doc"""
      divexact(a::OrdLocElem{T}, b::OrdLocElem{T}, checked::Bool = true)  where {T <: nf_elem}
-> Returns element 'c' of given localization s.th. `c`*$b$ = $a$ if such element exists.
-> If 'checked = false' the corresponding element of the numberfield is returned and it is not
-> checked whether it is an element of the given localization.
+Returns element 'c' of given localization s.th. `c`*$b$ = $a$ if such element exists.
+If 'checked = false' the corresponding element of the numberfield is returned and it is not
+checked whether it is an element of the given localization.
 """
 function divexact(a::OrdLocElem{T}, b::OrdLocElem{T}, checked::Bool = true)  where {T <: nf_elem}
    d = divides(a, b, checked)
@@ -358,7 +358,7 @@ end
 @doc Markdown.doc"""
     gcd(a::OrdLocElem{T}, b::OrdLocElem{T}) where {T <: nf_elem}
 
-> Returns gcd of $a$ and $b$ in canonical representation.
+Returns gcd of $a$ and $b$ in canonical representation.
 """
 function gcd(a::OrdLocElem{T}, b::OrdLocElem{T}) where {T <: nf_elem}
   L = parent(a)
@@ -384,7 +384,7 @@ end
 @doc Markdown.doc"""
     gcdx(a::OrdLocElem{T}, b::OrdLocElem{T}) where {T <: nf_elem}
 
-> Returns tuple `(g,u,v)` s.th. `g` = gcd($a$,$b$) and `g` = `u` * $a$ + `v` * $b$.
+Returns tuple `(g,u,v)` s.th. `g` = gcd($a$,$b$) and `g` = `u` * $a$ + `v` * $b$.
 """
 function gcdx(a::OrdLocElem{T}, b::OrdLocElem{T}) where {T <: nf_elem}
   L = parent(a)
@@ -494,7 +494,7 @@ end
 @doc Markdown.doc"""
     valuation(a::OrdLocElem{T}, prime::NfAbsOrdIdl{AnticNumberField,T}) where {T <: nf_elem}
 
-> Returns the valuation `n` of $a$ at $P$.
+Returns the valuation `n` of $a$ at $P$.
 """
 valuation(a::OrdLocElem{T}, prime::NfAbsOrdIdl{AnticNumberField,T}) where {T <: nf_elem} = valuation(data(a), prime)
 
@@ -507,7 +507,7 @@ valuation(a::OrdLocElem{T}, prime::NfAbsOrdIdl{AnticNumberField,T}) where {T <: 
 @doc Markdown.doc"""
     canonical_unit(a::OrdLocElem{T}) where {T <: nf_elem}
 
-> Returns unit `b`::OrdLocElem{T} s.th. ($a$ * inv(`b`)) is hopefully nicer.
+Returns unit `b`::OrdLocElem{T} s.th. ($a$ * inv(`b`)) is hopefully nicer.
 """
 function canonical_unit(a::OrdLocElem{T}) where {T <: nf_elem}
    iszero(a) && return parent(a)(1)
@@ -537,12 +537,12 @@ end
 @doc Markdown.doc"""
     Localization(OK::NfAbsOrd{AnticNumberField,T}, S::NfAbsOrdIdl{AnticNumberField,T}; cached=true, comp = false) where {T <: nf_elem}
 
-> Returns the localization of the order $OK$ at the ideal $S$.
-> If `cached == true` (the default) then the resulting
-> localization parent object is cached and returned for any subsequent calls
-> to the constructor with the same order $OK$ and ideal $S$.
-> `comp == false` means primes dividing $S$ are invertible,
-> `comp == true` means all primes not dividing $S$ become units.
+Returns the localization of the order $OK$ at the ideal $S$.
+If `cached == true` (the default) then the resulting
+localization parent object is cached and returned for any subsequent calls
+to the constructor with the same order $OK$ and ideal $S$.
+`comp == false` means primes dividing $S$ are invertible,
+`comp == true` means all primes not dividing $S$ become units.
 """
 function Localization(OK::NfAbsOrd{AnticNumberField,T}, S::NfAbsOrdIdl{AnticNumberField,T}; cached=true, comp::Bool = false) where {T <: nf_elem}
    return OrdLoc{T}(OK, S, cached, comp)

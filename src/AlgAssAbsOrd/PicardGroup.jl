@@ -56,10 +56,10 @@ end
     picard_group(O::AlgAssAbsOrd, prepare_ref_disc_log::Bool = false)
       -> GrpAbFinGen, MapPicardGroup
 
-> Given an order $O$ in a commutative algebra over $\mathbb Q$, this function
-> returns the picard group of $O$.
-> If `prepare_ref_disc_log` is `true`, then (possibly expensive) preparations
-> for the computation of refined discrete logarithms in non maximal orders are done.
+Given an order $O$ in a commutative algebra over $\mathbb Q$, this function
+returns the picard group of $O$.
+If `prepare_ref_disc_log` is `true`, then (possibly expensive) preparations
+for the computation of refined discrete logarithms in non maximal orders are done.
 """
 function picard_group(O::AlgAssAbsOrd, prepare_ref_disc_log::Bool = false)
   @assert iscommutative(O)
@@ -459,8 +459,8 @@ end
 @doc Markdown.doc"""
     principal_generator(a::AlgAssAbsOrdIdl) -> AlgAssAbsOrdElem
 
-> Given a principal ideal $a$ in an order $O$ in a commutative algebra over
-> $\mathbb Q$, this function returns a principal generator of $a$.
+Given a principal ideal $a$ in an order $O$ in a commutative algebra over
+$\mathbb Q$, this function returns a principal generator of $a$.
 """
 function principal_generator(a::AlgAssAbsOrdIdl)
   a, g = isprincipal(a)
@@ -796,9 +796,9 @@ end
 @doc Markdown.doc"""
     kernel_group(O::AlgAssAbsOrd) -> GrpAbFinGen, MapPicardGroup
 
-> Given an order $O$ in a commutative algebra over $\mathbb Q$, this function
-> returns the group $D$ in the exact sequence $0 \to D \to Pic(O) \to Pic(O')$
-> where $O'$ is a maximal order containing $O$.
+Given an order $O$ in a commutative algebra over $\mathbb Q$, this function
+returns the group $D$ in the exact sequence $0 \to D \to Pic(O) \to Pic(O')$
+where $O'$ is a maximal order containing $O$.
 """
 function kernel_group(O::AlgAssAbsOrd)
   A = algebra(O)

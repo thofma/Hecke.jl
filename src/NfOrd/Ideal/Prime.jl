@@ -218,7 +218,7 @@ end
 
 Returns an array of tuples $(\mathfrak p_i,e_i)$ such that $p \mathcal O$ is the product of
 the $\mathfrak p_i^{e_i}$ and $\mathfrak p_i \neq \mathfrak p_j$ for $i \neq j$.
->
+
 If `degree_limit` is a nonzero integer $k > 0$, then only those prime ideals
 $\mathfrak p$ with $\deg(\mathfrak p) \leq k$ will be returned.
 Similarly if `lower_limit` is a nonzero integer $l > 0$, then only those prime ideals
@@ -528,7 +528,7 @@ end
                        degree_limit::Int = 0, index_divisors::Bool = true) -> Array{NfOrdIdl, 1}
 
 Computes the prime ideals $\mathcal O$ with norm up to $B$.
->
+
 If `degree_limit` is a nonzero integer $k$, then prime ideals $\mathfrak p$
 with $\deg(\mathfrak p) > k$ will be discarded.
 If 'index_divisors' is set to false, only primes not dividing the index of the order will be computed.
@@ -570,7 +570,7 @@ end
                        degree_limit::Int = 0) -> Array{NfOrdIdl, 1}
 
 Computes the prime ideals $\mathcal O$ over prime numbers in $lp$.
->
+
 If `degree_limit` is a nonzero integer $k$, then prime ideals $\mathfrak p$
 with $\deg(\mathfrak p) > k$ will be discarded.
 """
@@ -599,10 +599,10 @@ end
                        bad::fmpz)
 
 Computes the prime ideals $\mathcal O$ with norm up to $B$.
->
+
 If `degree_limit` is a nonzero integer $k$, then prime ideals $\mathfrak p$
 with $\deg(\mathfrak p) > k$ will be discarded.
->
+
 The function $F$ must be a function on prime numbers not dividing `bad` such that
 $F(p) = \deg(\mathfrak p)$ for all prime ideals $\mathfrak p$ lying above $p$.
 """
