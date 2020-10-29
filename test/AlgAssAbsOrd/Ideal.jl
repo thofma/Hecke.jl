@@ -62,9 +62,6 @@
     @test Random.gentype(m) == T
     @test rand(m, 3) isa Vector{T}
 
-    Random.seed!(rng)
-    x = rand(rng, I, 3)
-    Random.seed!(rng, rng.seed)
-    @test x == rand(rng, I, 3)
+    @test reproducible(I, 3)
   end
 end

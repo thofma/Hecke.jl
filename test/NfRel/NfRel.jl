@@ -26,7 +26,7 @@
     Lrel, mLrel = Hecke.relative_extension(Labs, K)
     @test isisomorphic(L, Lrel)[1]
 
-  end 
+  end
 
   @testset "isisomorphic" begin
     Qx, x = FlintQQ["x"]
@@ -67,5 +67,22 @@
 
     L, b = NumberField(y^2 + y + 1, "b")
     @test signature(L) == (0, 2)
+  end
+
+  @testset "rand" begin
+    Qx, x = FlintQQ["x"]
+    f = x^2 + 12x - 92
+    K, a = NumberField(f, "a")
+    Ky, y = K["y"]
+
+    L, b = NumberField(y^2 + y + 1, "b")
+
+    m = make(L, 1:3)
+    for x in (rand(L, 1:3), rand(rng, L, 1:3), rand(m), rand(rng, m))
+      @test x isa Hecke.NfRelElem{nf_elem}
+    end
+    @test rand(m, 3) isa Vector{Hecke.NfRelElem{nf_elem}}
+    @test reproducible(m)
+    @test reproducible(L, 1:3)
   end
 end

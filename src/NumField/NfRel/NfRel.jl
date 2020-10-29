@@ -209,7 +209,7 @@ function mod(a::NfRelElem{T}, p::fmpz) where T
   Kx = parent(b)
   return K(Kx(coeffs))
 end
- 
+
 ################################################################################
 #
 #  String I/O
@@ -254,7 +254,7 @@ function number_field(::Type{AnticNumberField}, L::NfRel{nf_elem})
   pol = isunivariate(map_coeffs(FlintQQ, L.pol))[2]
   return number_field(pol, check = false)
 end
- 
+
 function (K::NfRel{T})(a::Generic.Poly{T}) where T
   z = NfRelElem{T}(mod(a, K.pol))
   z.parent = K
@@ -727,7 +727,7 @@ function assure_trace_basis(K::NfRel)
   end
   F = base_field(K)
   trace_basis = Vector{elem_type(F)}(undef, degree(K))
-  trace_basis[1] = F(degree(K)) 
+  trace_basis[1] = F(degree(K))
   a = gen(K)
   for i = 2:degree(K)
     #We can do better, probably...
@@ -961,16 +961,22 @@ end
 #
 ################################################################################
 
-function rand(L::NfRel, B::UnitRange{Int})
+RandomExtensions.maketype(L::NfRel, B) = elem_type(L)
+
+function rand(rng::AbstractRNG, sp::SamplerTrivial{<:Make2{<:NfRelElem,<:NfRel,<:UnitRange}})
+  L, B = sp[][1:end]
   k = base_field(L)
   pb = basis(L)
   z = zero(L)
   for i = 1:length(pb)
-    t = rand(k, B)
+    t = rand(rng, k, B)
     z += t*pb[i]
   end
   return z
 end
+
+rand(L::NfRel, B::UnitRange{Int}) = rand(GLOBAL_RNG, L, B)
+rand(rng::AbstractRNG, L::NfRel, B::UnitRange{Int}) = rand(rng, make(L, B))
 
 ################################################################################
 #
@@ -980,7 +986,7 @@ end
 
 @doc Markdown.doc"""
     kummer_generator(K::NfRel{nf_elem}) -> nf_elem
-Given an extension $K/k$ which is a cyclic Kummer extension of degree $n$, returns an element $a\in k$ 
+Given an extension $K/k$ which is a cyclic Kummer extension of degree $n$, returns an element $a\in k$
 such that $K = k(\sqrt[n]{a})$. Throws an error if the extension is not a cyclic Kummer extension.
 """
 function kummer_generator(K::NfRel{nf_elem})
@@ -1024,7 +1030,7 @@ function kummer_generator(K::NfRel{nf_elem})
       new_b = gen_aut(new_b)
       a += roots[i+1]*new_b
     end
-    
+
   end
   res = k(a^n)
   #We even reduce the support....
@@ -1041,7 +1047,7 @@ end
 #TODO: Put some more thought in it.
 @doc Markdown.doc"""
     relative_extension(K::AnticNumberField, k::AnticNumberField) -> NfRel{nf_elem}
-Given two fields $K\supset k$, it returns $K$ as a relative 
+Given two fields $K\supset k$, it returns $K$ as a relative
 extension of $k$ and an isomorphism between it and $K$.
 """
 function relative_extension(m::NfToNfMor)

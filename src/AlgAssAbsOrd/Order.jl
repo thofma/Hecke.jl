@@ -371,27 +371,36 @@ end
 #
 ################################################################################
 
+RandomExtensions.maketype(O::AlgAssAbsOrd, R::UnitRange) = elem_type(O)
+
+function rand(rng::AbstractRNG,
+              sp::SamplerTrivial{<:Make2{<:RingElem,<:AlgAssAbsOrd,<:UnitRange}})
+  O, R = sp[][1:2]
+  O(map(fmpz, rand(rng, R, degree(O))))
+end
+
+RandomExtensions.make(O::AlgAssAbsOrd, n::Union{Integer, fmpz}) =
+  make(O, Integer(-n):Integer(n))
+
 @doc Markdown.doc"""
     rand(O::AlgAssAbsOrd, R::UnitRange) -> AlgAssAbsOrdElem
 
 > Returns a random element of $O$ whose coefficients lie in $R$.
 """
-function rand(O::AlgAssAbsOrd, R::UnitRange{T}) where T <: Integer
-  return O(map(fmpz, rand(R, degree(O))))
-end
+rand(O::AlgAssAbsOrd, R::UnitRange) = rand(Random.GLOBAL_RNG, O, R)
 
 @doc Markdown.doc"""
-    rand(O::AlgAssAbsOrd, n::Uniot{Integer, fmpz}) -> AlgAssAbsOrdElem
+    rand(O::AlgAssAbsOrd, n::Union{Integer, fmpz}) -> AlgAssAbsOrdElem
 
 > Returns a random element of $O$ whose coefficients are bounded by $n$.
 """
-function rand(O::AlgAssAbsOrd, n::Integer)
-  return rand(O, -n:n)
-end
+rand(O::AlgAssAbsOrd, n::fmpz) = rand(Random.GLOBAL_RNG, O, n)
+rand(O::AlgAssAbsOrd, n::Integer) = rand(Random.GLOBAL_RNG, O, n)
+# these two methods can't be merged with a Union, because of ambiguities
 
-function rand(O::AlgAssAbsOrd, n::fmpz)
-  return rand(O, -BigInt(n):BigInt(n))
-end
+rand(rng::AbstractRNG, O::AlgAssAbsOrd, n::Union{fmpz,UnitRange}) = rand(rng, make(O, n))
+rand(rng::AbstractRNG, O::AlgAssAbsOrd, n::Integer) = rand(rng, make(O, n))
+
 
 ################################################################################
 #

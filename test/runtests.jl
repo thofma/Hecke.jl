@@ -18,6 +18,14 @@ using RandomExtensions
 const rng = MersenneTwister()
 const rand_seed = rand(UInt128)
 
+# tests if rand(rng, args...) gives reproducible results
+function reproducible(args...)
+  Random.seed!(rng)
+  x = rand(rng, args...)
+  Random.seed!(rng, rng.seed)
+  x == rand(rng, args...)
+end
+
 try
   using GAP
   @time include("FieldFactory.jl")

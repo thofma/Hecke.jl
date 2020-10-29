@@ -148,15 +148,21 @@ end
 #
 ################################################################################
 
-function rand(K::NfAbsNS, r::UnitRange)
+RandomExtensions.maketype(K::NfAbsNS, r) = elem_type(K)
+
+function rand(rng::AbstractRNG, sp::SamplerTrivial{<:Make2{NfAbsNSElem,NfAbsNS,<:UnitRange}})
+  K, r = sp[][1:end]
   # TODO: This is super slow
   b = basis(K, copy = false)
-  z = K()
+  z::Random.gentype(sp) = K() # type-assert to help inference on Julia 1.0 and 1.1
   for i in 1:degree(K)
-    z += rand(r) * b[i]
+    z += rand(rng, r) * b[i]
   end
   return z
 end
+
+rand(K::NfAbsNS, r::UnitRange) = rand(GLOBAL_RNG, K, r)
+rand(rng::AbstractRNG, K::NfAbsNS, r::UnitRange) = rand(rng, make(K, r))
 
 ################################################################################
 #
@@ -980,7 +986,7 @@ function NumberField(f::Array{fmpz_poly, 1}, S::Array{Symbol, 1}; cached::Bool =
   return NumberField(fmpq_poly[Qx(x) for x = f], S, cached = cached, check = check)
 end
 
-function gens(K::NfAbsNS) 
+function gens(K::NfAbsNS)
   l = Vector{NfAbsNSElem}(undef, ngens(K))
   degs = degrees(K)
   gQxy = gens(parent(K.pol[1]))
