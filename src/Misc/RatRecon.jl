@@ -382,19 +382,20 @@ end
 function _modpResults(f, p::fmpz, M::Int)
 
    Rc = f.parent
-   l1 = fmpz_mod_poly[]; l3 = fmpz[]
+   l1 = gfp_poly[]; l3 = fmpz[]
    Np = listprimes([f], p, M)
    Zx, Y = PolynomialRing(FlintZZ, "Y", cached=false)
    for j in 1:length(Np)
-     RNp = ResidueRing(FlintZZ, Np[j], cached=false)
+     RNp = GF(Int(Np[j]), cached=false)
      Rp, t = PolynomialRing(RNp, "t", cached=false)
      fp = Rp(f)
-     L1 = Nemo.fmpz_mod[]
+     L1 = Nemo.gfp_elem[]
      for i in 0:degree(fp)
         push!(L1, coeff(fp, i))
      end
      ff = berlekamp_massey_naive(L1)
-     push!(l1, ff)
+     @assert ff[1]
+     push!(l1, ff[2])
      push!(l3, Np[j])
    end
    c = crt_env(l3)
