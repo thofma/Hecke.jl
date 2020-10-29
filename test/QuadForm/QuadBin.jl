@@ -210,4 +210,18 @@
     @test g == binary_quadratic_form(-3, 4, 5)
     @test g == Hecke._buchmann_vollmer_action(f, T)
   end
+
+  @testset "Reducible forms" begin
+    f = binary_quadratic_form(1, 13, 0)
+    g = binary_quadratic_form(52142, 972209, 4531809)
+    fl, T = Hecke._isequivalent_reducible(f, g)
+    @test fl
+    @test Hecke._action(f, T) == g
+    f = binary_quadratic_form(2, 13, 0)
+    g = binary_quadratic_form(7, 13, 0)
+    @test !isequivalent(f, g)
+    @test isequivalent(f, g, proper = false)
+    @test isequivalent(2 * f, 2 * f)
+    @test !isequivalent(2 * f, 3 * f)
+  end
 end

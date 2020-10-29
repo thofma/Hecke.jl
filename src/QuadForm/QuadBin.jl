@@ -108,6 +108,15 @@ function Base.:(*)(c::T, f::QuadBin{T}) where {T}
   return binary_quadratic_form(c * f[1], c * f[2], c * f[3])
 end
 
+function Base.:(*)(c::Union{Integer, fmpz}, f::QuadBin)
+  return binary_quadratic_form(c * f[1], c * f[2], c * f[3])
+end
+
+function divexact(f::QuadBin{T}, c::T) where {T}
+  return binary_quadratic_form(divexact(f[1], c), divexact(f[2], c),
+                                                  divexact(f[3], c))
+end
+
 ###############################################################################
 #
 #  Evaluation
@@ -416,6 +425,10 @@ function isequivalent(f::QuadBin{fmpz}, g::QuadBin{fmpz}; proper::Bool = true)
     return false
   end
 
+  if issquare(d)
+    return _isequivalent_reducible(f, g, proper = proper)[1]
+  end
+
   if isindefinite(f)
     fred = reduction(f)
     gred = reduction(g)
@@ -479,6 +492,43 @@ function isequivalent(f::QuadBin{fmpz}, g::QuadBin{fmpz}; proper::Bool = true)
   end
 end
 
+function _isequivalent_reducible(f::QuadBin{fmpz}, g::QuadBin{fmpz}; proper = true)
+  if discriminant(f) != discriminant(g)
+    return false
+  end
+
+  c = content(f) 
+  if content(g) != c
+    return false
+  end
+
+  fpr = divexact(f, c)
+  gpr = divexact(g, c)
+
+  fred, Tf = _reduction(fpr)
+  gred, Tg = _reduction(gpr)
+
+  fl = fred == gred
+
+  if proper || fl
+    T = Tf * inv(Tg)
+    if fl
+      @assert Hecke._action(f, T) == g
+    end
+    return fl, T
+  end
+
+  if fred[1] == invmod(gred[1], gred[2])
+    gg = binary_quadratic_form(gred[1], -gred[2], zero(fmpz))
+    _, Tgg = reduction_with_transformation(gg)
+    T = Tf * inv(Tg * matrix(FlintZZ, 2, 2, [1, 0, 0, -1]) * Tgg)
+    @assert Hecke._action(f, T) == g
+    return true, T
+  end
+
+  return false, Tf
+end
+
 ################################################################################
 #
 #  Reduction and cycles
@@ -506,6 +556,10 @@ function reduction_with_transformation(f::QuadBin{fmpz})
 end
 
 function _reduction(f::QuadBin{fmpz})
+  if isreducible(f)
+    return _reduction_reducible(f)
+  end
+
   if isreduced(f)
     return f, identity_matrix(FlintZZ, 2)
   end
@@ -570,6 +624,61 @@ function _reduction_indefinite(f)
   return f, U
 end
 
+function _reduction_reducible(f::QuadBin)
+  d = discriminant(f)
+  N = sqrt(d)
+  @assert N^2 == d
+  @assert isprimitive(f)
+  if iszero(f[1])
+    x = -f[3]
+    y = f[2]
+  else
+    x = N - f[2]
+    y = 2 * f[1]
+  end
+  @assert iszero(f(x, y))
+  gg = gcd(x, y)
+  x = divexact(x, gg)
+  y = divexact(y, gg)
+  _,w, _z = gcdx(x, y)
+  z = -_z
+  @assert x * w - y * z == 1
+  T = matrix(FlintZZ, 2, 2, [x, z, y, w])
+  g = Hecke._action(f, T)
+  # Now g = [0, +/- N, g[2]]
+  @assert iszero(g[1])
+  @assert abs(g[2]) == N
+  TT = matrix(FlintZZ, 2, 2, [0, -1, 1, 0])
+  g = Hecke._action(g, TT)
+  T = T * TT
+  # Now g = [g[1], N, 0]
+  @assert abs(g[2]) == N
+  if g[2] < 0
+    aa = invmod(g[1], N)
+    t = divexact(a * aa' - 1)
+    # a * aa - N * t == 1
+    @assert a * aa - N * t == 1
+    TT = matrix(FlintZZ, 2, 2, [aa, -N, -t, a])
+    g = Hecke._action(g, TT)
+    T = T * TT
+  end
+  @assert g[2] == N
+  _t, r = divrem(g[1], N)
+  if r < 0
+    r += N
+    _t -= 1
+  end
+  @assert r >= 0
+  @assert r < N
+  @assert g[1] - _t * N == r
+  TT = matrix(FlintZZ, 2, 2, [1, 0, -_t, 1])
+  g = Hecke._action(g, TT)
+  T = T * TT
+  @assert 1 <= g[1] < N && g[2] == N && iszero(g[3])
+  @assert det(T) == 1
+  @assert g == Hecke._action(f, T)
+  return g, T
+end
 
 function _buchmann_vollmer_action(f::QuadBin, M)
   a = f[1]

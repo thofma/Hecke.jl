@@ -2457,21 +2457,39 @@ function _binary_quadratic_form_to_lattice(f::QuadBin{fmpz}, K, e::fmpz = fmpz(1
   L = lattice(quadratic_space(K, G), identity_matrix(K, 2))
 end
 
-function _equivalence_classes_binary_quadratic_form_degenerate(d::fmpz)
-  @assert issquare(d)
+function _equivalence_classes_binary_quadratic_form_reducible(d::fmpz; proper::Bool = false, primitive::Bool = true)
+  if primitive
+    return _equivalence_classes_binary_quadratic_form_reducible_primitive(d, proper = proper)
+  else
+    res = QuadBin{fmpz}[]
+    for n in Divisors(d, units = false, power = 2) # n^2 | d
+      cls = _equivalence_classes_binary_quadratic_form_reducible_primitive(divexact(d, n^2), proper = proper)
+      for f in cls
+        push!(res, n*f)
+      end
+    end
+    return res
+  end
+
 end
 
-function _get_equivalence_class(S, f)
-  if isempty(S)
-    return S
-  end
-
-  res = eltype(S)[]
-  for s in S
-    if any(y -> f(y, s), res)
+function _equivalence_classes_binary_quadratic_form_reducible_primitive(N::fmpz; proper::Bool = false)
+  d = sqrt(N)
+  @assert d^2 == N
+  res = fmpz[]
+  for i in 1:(d-1)
+    if !isone(gcd(i, d))
       continue
     end
-    push!(res, s)
+    if proper
+      push!(res, i)
+    else
+      j = invmod(i, d)
+      if j in res
+        continue
+      end
+      push!(res, i)
+    end
   end
-  return res
+  return QuadBin{fmpz}[binary_quadratic_form(i, d, zero(fmpz)) for i in res]
 end
