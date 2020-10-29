@@ -7,4 +7,5 @@
   include("QuadForm/MassQuad.jl")
   include("QuadForm/MassHerm.jl")
   include("QuadForm/Quad.jl")
+  include("QuadForm/QuadBin.jl")
 end

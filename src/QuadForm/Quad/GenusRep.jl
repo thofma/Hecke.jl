@@ -2363,6 +2363,64 @@ function _ideal_to_form(I::NfAbsOrdIdl, delta)
   return f
 end
 
+function automorphism_group_generators(g::QuadBin{fmpz})
+  d = discriminant(g)
+  @assert d > 0
+  Qx = Hecke.Globals.Qx
+  x = gen(Qx)
+  f = x^2 - d * x + (d^2 - d)//4
+  @assert isone(denominator(f))
+  K, a = number_field(f, "a", cached = false) # a is (d + \sqrt(d))//2
+  O = equation_order(K)
+  deltasqrt = O(2 * a - discriminant(f))
+  @assert deltasqrt^2 == d
+
+  U, mU = unit_group(O)
+  A = abelian_group([2])
+  h = hom(U, A, [norm(mU(U[1])) == -1 ? A([1]) : A([0]), norm(mU(U[2])) == -1 ? A([1]) : A([0])])
+  k, mk = kernel(h, false)
+  @assert ngens(k) == 2
+  norm_one_gens = elem_type(O)[mU((mk(k[1]))), mU((mk(k[2])))]
+  # We need to write the elements in the basis 1//2, deltasqrt//2
+  # O has basis 1, (d + sqrt(d)//2)
+  gens = dense_matrix_type(FlintZZ)[]
+  for i in 1:2
+    a, b = coordinates(norm_one_gens[i])
+    _x, _y = (2*a + b * d, b)
+    @assert norm_one_gens[i] == divexact(_x + _y * deltasqrt, 2)
+    @assert iseven(_x + g.b * _y)
+    @assert iseven(_x + d * _y)
+    T = zero_matrix(FlintZZ, 2, 2)
+    T[1, 1] = divexact(_x + _y * g.b, 2)
+    T[1, 2] = g.c * _y
+    T[2, 1] = -g.a * _y
+    T[2, 2] = divexact(_x - _y * g.b, 2)
+    push!(gens, T)
+  end
+  # Now test if g is ambiguous or not
+  gg = binary_quadratic_form(g.a, -g.b, g.c)
+  fl = isequivalent(g, gg, proper = true)
+  if fl
+    fll, q = haspreimage(h, A([1]))
+    elem = mU(q)
+    a, b = coordinates(elem)
+    _x, _y = (2*a + b * d, b)
+    @assert elem == divexact(_x + _y * deltasqrt, 2)
+    @assert iseven(_x + g.b * _y)
+    @assert iseven(_x + d * _y)
+    T = zero_matrix(FlintZZ, 2, 2)
+    T[1, 1] = divexact(_x + _y * g.b, 2)
+    T[1, 2] = g.c * _y
+    T[2, 1] = -g.a * _y
+    T[2, 2] = divexact(_x - _y * g.b, 2)
+    TT = matrix(FlintZZ, 2, 2, [0, -1, 1, 0])
+    @assert det(TT * T) == -1
+    push!(gens, TT * T)
+  end
+  @assert all(T -> _action(g, T) == g, gens)
+  return gens
+end
+
 function _form_to_ideal(f::QuadBin{fmpz}, O, a)
   # a must be d + sqrt(d)//2 and O = ZZ[a]
   deltasqrt = O(2 * a - discriminant(f))

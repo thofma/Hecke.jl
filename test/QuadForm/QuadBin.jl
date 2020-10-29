@@ -95,6 +95,7 @@
   @test isreduced(binary_quadratic_form(1, -1, 1)) == false
   @test isreduced(binary_quadratic_form(1, 1, 1)) == true
   @test isreduced(binary_quadratic_form(-1, 2, 2)) == true
+  # indefinite
   @test isreduced(binary_quadratic_form(1, 9, 4)) == false
   @test isreduced(binary_quadratic_form(1, 5, -1)) == true
   #@test reduce(binary_quadratic_form(195751, 37615, 1807)) == binary_quadratic_form(1, 1, 1)
@@ -119,6 +120,9 @@
     binary_quadratic_form(5, 4, -3), binary_quadratic_form(3, 8, -1)]
 
     @test cycle(binary_quadratic_form(1,8,-3)) == A2
+
+    A3 = [binary_quadratic_form(14, 17, -2), binary_quadratic_form(2, 19, -5), binary_quadratic_form(5, 11, -14)]
+    @test cycle(binary_quadratic_form(14, 17, -2)) == A3
   end
 
   @testset "CanSolve" begin
@@ -180,5 +184,30 @@
     g = binary_quadratic_form(10, -120, 357)
     @test !isequivalent(f, g)
     @test !isequivalent(f, g, proper = false)
+  end
+
+  @testset "Automormorphism group" begin
+    g = binary_quadratic_form(3, 1, -3)
+    gens = automorphism_group_generators(g)
+    @test all(T -> Hecke._action(g, T) == g, gens)
+    @assert all(T -> abs(det(T)) == 1, gens)
+    @assert any(T -> det(T) == -1, gens) # g is ambiguous
+  end
+
+  @testset "Misc" begin
+    f = binary_quadratic_form(1, 8, -3)
+    g, T = Hecke._tau(f)
+    @test g == binary_quadratic_form(-1, 8, 3)
+    @test g == Hecke._buchmann_vollmer_action(f, T)
+
+    f = binary_quadratic_form(1, 8, -3)
+    g, T = Hecke._rhotau(f)
+    @test g == binary_quadratic_form(3, 4, -5)
+    @test g == Hecke._buchmann_vollmer_action(f, T)
+
+    f = binary_quadratic_form(1, 8, -3)
+    g, T = Hecke._rho(f)
+    @test g == binary_quadratic_form(-3, 4, 5)
+    @test g == Hecke._buchmann_vollmer_action(f, T)
   end
 end
