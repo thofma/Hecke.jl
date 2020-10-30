@@ -125,14 +125,15 @@ farey_lift = rational_reconstruction
 # Idea of using the same agorithm due to E. Thome
 #
 
-function berlekamp_massey_recon(a::Array{T, 1}) where T
-  Rx,x = PolynomialRing(parent(a[1]), cached=false)
+function berlekamp_massey_recon(a::Array{T, 1}; ErrorTolerant::Bool = false, parent = PolynomialRing(parent(a[1]), "x", cached = false)[1]) where T
+  Rx = parent
   f = Rx(a)
+  x = gen(Rx)
   xn= x^length(a)
 
-  fl, n, d = rational_reconstruction(f, xn)
+  fl, n, d = rational_reconstruction(f, xn, ErrorTolerant = ErrorTolerant)
   if fl
-    return true, d*(inv(trailing_coefficient(d)))
+    return true, d*(inv(lead(d)))
   else
     return false, Rx(0)
   end
@@ -302,21 +303,25 @@ end
 
 ###############################################################################
 
-function berlekamp_massey(L::Array{T, 1}) where T
-  return berlekamp_massey_naive(L)
+function berlekamp_massey(L::Array{T, 1}; parent = PolynomialRing(parent(L[1]), "x", cached = false)[1]) where T
+  return berlekamp_massey_naive(L, parent = parent)
 end
-function berlekamp_massey(L::Array{fmpq, 1})
-  return berlekamp_massey_mod(L)
+function berlekamp_massey(L::Array{fmpq, 1}; ErrorTolerant::Bool = false, parent = Globals.Qx)
+  if ErrorTolerant
+    return berlekamp_massey_recon(L, ErrorTolerant = true, parent = parent)
+  end
+  return berlekamp_massey_mod(L, parent = parent)
 end
 
 ################################################################################
 #                         Berlekamp Massey Algorithm                           #
 ################################################################################
-function berlekamp_massey_naive(L::Array{T, 1}) where T
-     R_s = parent(L[1])
+function berlekamp_massey_naive(L::Array{T, 1}; parent = PolynomialRing(parent(L[1]), "x", cached = false)[1]) where T
+     R_s = Nemo.parent(L[1])
      lg = length(L)
      L = [R_s(L[lg-i]) for i in 0:lg-1]
-     Ry, Y = PolynomialRing(R_s, "Y", cached=false)
+     Ry = parent
+     Y = gen(Ry)
      g = Ry(L)
      if iszero(g)
        return true, g
@@ -341,10 +346,11 @@ end
 #                 modular Berlekamp algorithm                                 #
 ###############################################################################
 
-function berlekamp_massey_mod(L::Array{fmpq, 1})
-  Rf = parent(L[1])
+function berlekamp_massey_mod(L::Array{fmpq, 1}; parent = Globals.Qx)
+  Rf = Nemo.parent(L[1])
 #  L = [Rf(L[i]) for i in 1:length(L)]
-  Rc, Y = PolynomialRing(Rf, "Y", cached=false)
+  Rc = parent
+  Y = gen(Rc)
   f = Rc(L)
   if iszero(f)
     return true, f
