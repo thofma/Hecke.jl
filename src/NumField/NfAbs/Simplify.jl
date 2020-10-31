@@ -33,7 +33,7 @@ function simplify(K::AnticNumberField; canonical::Bool = false, cached::Bool = t
   OK = maximal_order(K)
   if isdefined(OK, :lllO)
     @vprint :Simplify 1 "LLL basis was already there\n"
-    ZK = OK.lllO
+    ZK = OK.lllO::typeof(OK)
   else
     b = _simplify(OK)
     if b != gen(K)
