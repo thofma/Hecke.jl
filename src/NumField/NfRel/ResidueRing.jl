@@ -61,6 +61,11 @@ end
 #
 ################################################################################
 
+function (Q::RelOrdQuoRing{T1, T2, T3})(x::RelOrdQuoRingElem{T1, T2, T3, S}) where { T1, T2, T3, S }
+  parent(x) !== Q && error("Cannot coerce element into quotient ring")
+  return x
+end
+
 function (Q::RelOrdQuoRing{T1, T2, T3})(x::S) where { T1, T2, T3, S }
   parent(x) !== base_ring(Q) && error("Cannot coerce element into the quotient ring")
   return RelOrdQuoRingElem(Q, x)
