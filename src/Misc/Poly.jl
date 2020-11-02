@@ -162,8 +162,8 @@ Apply `rational_reconstruction` to each coefficient of $a$, resulting
 in either a fail (return (false, s.th.)) or (true, g) for some rational
 polynomial $g$ s.th. $g \equiv a \bmod M$.
 """
-function induce_rational_reconstruction(a::fmpz_poly, M::fmpz)
-  b = PolynomialRing(FlintQQ, parent(a).S, cached = false)[1]()
+function induce_rational_reconstruction(a::fmpz_poly, M::fmpz; parent=PolynomialRing(FlintQQ, parent(a).S, cached = false)[1]) 
+  b = parent()
   for i=0:degree(a)
     fl, x,y = rational_reconstruction(coeff(a, i), M)
     if fl
@@ -1663,3 +1663,14 @@ function prod1(a::Vector{T}; inplace::Bool = false) where T <: PolyElem
   end 
   return prod1(anew, inplace = true)
 end
+
+function derivative(f::Generic.Frac{T}) where {T <: PolyElem}
+  n = numerator(f)
+  d = denominator(f)
+  return (derivative(n)*d - n*derivative(d))//d^2
+end
+
+function evaluate(f::Generic.Frac{T}, v::U) where {T <: PolyElem, U <: Integer}
+  return evaluate(numerator(f), fmpz(v))//evaluate(denominator(f), fmpz(v))
+end
+
