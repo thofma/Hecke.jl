@@ -228,6 +228,11 @@ function valuation(f::fmpz_poly, p::Union{fmpz, Int})
   return minimum(l)
 end
 
+function valuation(f::Generic.Poly{nf_elem}, p::NfOrdIdl)
+  l = Int[Int(valuation(coeff(f, i), p)) for i = 0:degree(f) if !iszero(coeff(f, i))]
+  return minimum(l)
+end
+
 function _valuation(f::Generic.Poly{T}) where T <: Union{qadic, padic}
   return minimum([valuation(coeff(f, i)) for i = 0:degree(f)])
 end
@@ -269,11 +274,11 @@ function residual_polynomial(F, L::Line, dev::Array{fmpz_poly, 1}, p::Union{Int,
 
 end
 
-function phi_development_with_quos(f::fmpz_poly, phi::fmpz_poly)
-  dev=Array{fmpz_poly, 1}()
-  quos=Array{fmpz_poly, 1}()
-  g=f
-  while degree(g)>=degree(phi)
+function phi_development_with_quos(f::T, phi::T) where T <: PolyElem
+  dev = Vector{T}()
+  quos = Vector{T}()
+  g = f
+  while degree(g) >= degree(phi)
     g, r = divrem(g, phi)
     push!(dev, r)
     push!(quos, g)
@@ -339,12 +344,7 @@ function gens_overorder_polygons(O::NfOrd, p::fmpz)
   Rx, y = PolynomialRing(R, "y", cached = false)
   f1 = Rx(K.pol)
   sqf = factor_squarefree(f1)
-  l = Vector{nf_elem}(undef, degree(K))
-  l[1] = one(K)
-  l[2] = gen(K)
-  for i = 3:length(l)
-    l[i] = K(gen(Qx)^(i-1))
-  end
+  l = powers(gen(K), degree(K)-1)
   regular = true
   vdisc = 0
   for (gg, m) in sqf

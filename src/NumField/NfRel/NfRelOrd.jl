@@ -767,10 +767,26 @@ at the prime $p$.
 """
 function poverorder(O::NfRelOrd, p::Union{NfAbsOrdIdl, NfRelOrdIdl})
   if isequation_order(O) && issimple(O)
+    @vprint :NfRelOrd 3 "Applying Dedekind criterion\n"
     return dedekind_poverorder(O, p)
   else
-    return ring_of_multipliers(pradical(O, p))
+    @vprint :NfRelOrd 3 "Computing pradical\n"
+    @vtime :NfRelOrd 4 Ip = pradical(O, p)
+    @vprint :NfRelOrd 3 "Computing ring of multipliers\n"
+    @vtime :NfRelOrd 4 Op = ring_of_multipliers(Ip)
+    return Op
   end
+end
+
+function poverorder(O::NfRelOrd{S, T, NfRelElem{nf_elem}}, p::NfOrdIdl) where {S, T}
+  if isequation_order(O)
+    return overorder_polygons(O, p)
+  end
+  @vprint :NfRelOrd 3 "Computing pradical\n"
+  @vtime :NfRelOrd 4 Ip = pradical(O, p)
+  @vprint :NfRelOrd 3 "Computing ring of multipliers\n"
+  @vtime :NfRelOrd 4 Op = ring_of_multipliers(Ip)
+  return Op
 end
 
 ################################################################################
@@ -902,20 +918,6 @@ end
 
 function sum_as_OK_modules(a::NfRelOrd{T, S, U}, b::NfRelOrd{T, S, U}) where {T, S, U}
   return a+b
-  #=
-  aB = basis_pmatrix(a, copy = false)
-  if !islower_triangular(aB.matrix)
-    aB = pseudo_hnf(aB, :lowerleft, true)
-  end
-  bB = basis_pmatrix(b, copy = false)
-  if !islower_triangular(bB.matrix)
-    bB = pseudo_hnf(bB, :lowerleft, true)
-  end
-  J = aB.coeffs[end]*bB.coeffs[end]
-  d = degree(a)
-  PM = sub(pseudo_hnf_full_rank_with_modulus(vcat(aB, bB), numerator(J), :lowerleft), d + 1:2*d, 1:d)
-  return NfRelOrd{T, S, U}(nf(a), PM)
-  =#
 end
 
 ################################################################################
@@ -1296,4 +1298,44 @@ function maximal_order(O::NfRelOrd{S, T, U}) where {S, T, U <: NfRelElem}
   return OO
 end
 
+function overorder_polygons(O::NfRelOrd{S, T, NfRelElem{nf_elem}}, p::NfOrdIdl) where {S, T}
+  K = nf(O)
+  f = K.pol
+  k = base_field(K)
+  kt = parent(f)
+  Ok = maximal_order(k)
+  F, mF = ResidueField(Ok, p)
+  mF1 = extend(mF, k)
+  f1 = map_coeffs(mF1, f)
+  sqf = factor_squarefree(f1)
+  l = powers(gen(K), degree(K)-1)
+  regular = true
+  vdisc = 0
+  for (gg, m) in sqf
+    isone(m) && continue
+    fac = factor(gg)
+    for (g, m1) in fac
+      phi = map_coeffs(pseudo_inv(mF1), g, parent = kt)
+      dev, quos = phi_development_with_quos(f, phi)
+      N = _newton_polygon(dev, p)
+      for i = 1:m
+        v = _floor_newton_polygon(N, i)
+        if v > 0
+          vdisc += v*degree(phi)
+          pow_anti = anti_uniformizer(p)^v 
+          for j = 1:degree(phi)
+            q1 = shift_left(quos[i], j-1)
+            push!(l, mod(K(q1)*pow_anti, minimum(p, copy = false)))
+          end
+        end
+      end
+    end
+  end
+  B = basis_matrix(l)
+  M = pseudo_matrix(B)
+  M = sub(pseudo_hnf(M, :lowerleft), length(l)-degree(K)+1:length(l), 1:degree(K))
+  O1 = typeof(O)(K, M)
+  O1.disc_abs = divexact(O.disc_abs, p^(2*vdisc))
+  return O1
+end
 

@@ -348,6 +348,12 @@ Returns the one element of the parent of $a$.
 """
 one(a::NfAbsOrdElem) = one(parent(a))
 
+function zero!(a::NfAbsOrdElem)
+  zero!(a.elem_in_nf)
+  a.has_coord = false
+  return a
+end
+
 ################################################################################
 #
 #  isone/iszero

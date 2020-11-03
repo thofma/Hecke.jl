@@ -1,6 +1,9 @@
 export pseudo_matrix, pseudo_hnf, PseudoMatrix, pseudo_hnf_with_transform, coefficient_ideals, matrix
 import Base.vcat, Base.hcat
 
+add_verbose_scope(:PseudoHnf)
+add_assert_scope(:PseudoHnf)
+
 function _det_bound(M::Generic.Mat{NfOrdElem})
   n = nrows(M)
   O = base_ring(M)
@@ -361,8 +364,6 @@ end
 # this is slow
 function _coprime_integral_ideal_class(x::Union{NfOrdFracIdl, NfOrdIdl}, y::NfOrdIdl)
   O = order(y)
-  #c = conjugates_init(nf(O).pol)
-  #num_x_inv = inv(numerator(x))
   x_inv = inv(x)
   check = true
   z = ideal(O, O(1))
@@ -390,12 +391,16 @@ function _coprime_integral_ideal_class(x::FacElem{NfOrdIdl, NfOrdIdlSet}, y::NfO
   return FacElem(D), FacElem(D2)
 end
 
+function absolute_norm(x::NfAbsOrdIdl)
+  return norm(x)
+end
+
 # this is slow
 function _coprime_norm_integral_ideal_class(x, y) #x::NfOrdFracIdl, y::NfOrdIdl)
   # x must be nonzero
   O = order(y)
-  if isone(denominator(x)) && iscoprime(norm(numerator(x)), norm(y))
-    return numerator(x), nf(O)(1)
+  if iscoprime(norm(numerator(x, copy = false), copy = false), norm(y, copy = false))
+    return numerator(x, copy = false), nf(O)(denominator(x))
   end
   x_inv = inv(x)
   check = true
@@ -405,28 +410,26 @@ function _coprime_norm_integral_ideal_class(x, y) #x::NfOrdFracIdl, y::NfOrdIdl)
   while check
     i += 1
     a = rand(x_inv, 10)
-    if a == 0
+    if iszero(a)
       continue
     end
     b = x*a
-    z = divexact(numerator(b), denominator(b))
-    gcd(norm(z), norm(y)) == 1 ? (check = false) : (check = true)
+    simplify(b)
+    @assert isone(denominator(b, copy = false))
+    z = numerator(b, copy = false)
+    check = !(gcd(norm(z, copy = false), norm(y, copy = false)) == 1)
   end
   return z, a
 end
 
 function rand(I::NfOrdIdl, B::Int)
   r = rand(-B:B, degree(order(I)))
-  b = basis(I)
-  z = r[1]*b[1]
-  for i in 2:degree(order(I))
-    z = z + r[i]*b[i]
-  end
-  return z
+  b = basis(I, copy = false)
+  return dot(r, b)
 end
 
 function rand(I::NfOrdFracIdl, B::Int)
-  z = rand(numerator(I), B)
+  z = rand(numerator(I, copy = false), B)
   return divexact(elem_in_nf(z), denominator(I))
 end
 
@@ -570,7 +573,9 @@ function pseudo_hnf_mod(P::PMat, m, shape::Symbol = :upperright, strategy = :spl
   t_idem = 0.0
 
   t_comp_red += @elapsed z = _matrix_for_reduced_span(P, m)
+  @vprint :PseudoHnf 1 "Computation of reduction: $t_comp_red\n"
   t_mod_comp += @elapsed zz = strong_echelon_form(z, shape, strategy)
+  @vprint :PseudoHnf 1 "Modular computation: $t_mod_comp\n"
 
   res_mat = zero_matrix(nf(O), nrows(P), ncols(P))
   for i in 1:nrows(P)
@@ -642,8 +647,6 @@ function pseudo_hnf_mod(P::PMat, m, shape::Symbol = :upperright, strategy = :spl
     end
   end
 
-  #println("computation of reduction : $t_comp_red")
-  #println("modular computation      : $t_mod_comp")
   #println("computation of ideal sum : $t_sum")
   #println("computation of ideal div : $t_div")
   #println("computation of idems     : $t_idem")
@@ -662,12 +665,11 @@ function _matrix_for_reduced_span(P::PMat, m::NfAbsOrdIdl)
   end
 
   for i in 1:nrows(z)
-    I, a = _coprime_norm_integral_ideal_class(P.coeffs[i], m)
+    @vprint :PseudoHnf 4 "New row\n"
+    @vtime :PseudoHnf 4 I, a = _coprime_norm_integral_ideal_class(P.coeffs[i], m)
     n = norm(I, copy = false)
-    Omn = OtoOm(O(n))
-    qq = inv(Omn)
+    qq = Om(invmod(n, minimum(m, copy = false)))
     for j in 1:ncols(z)
-      @assert euclid(Omn) == 1
       q = OtoOm(O(n*divexact(P.matrix[i, j], a)))
       z[i, j] = mul!(z[i, j], q, qq)
     end
@@ -679,7 +681,7 @@ function _matrix_for_reduced_span(P::PMat, m::NfRelOrdIdl)
   O = order(m)
   Om, OtoOm = quo(O, m)
   z = zero_matrix(Om, nrows(P), ncols(P))
-  if isone(norm(m))
+  if isone(m)
     return z
   end
 

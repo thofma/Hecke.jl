@@ -41,6 +41,7 @@ function _simplify_components(L::Hecke.NfRelNS{nf_elem}, autL::Vector{Hecke.NfRe
   return Lnew, autsLnew
 end
 
+
 function _from_relative_to_abs_with_embedding(L1::Hecke.NfRelNS{nf_elem}, autL1::Array{Hecke.NfRelNSToNfRelNSMor{nf_elem}, 1})
   #@time res = _from_relative_to_abs_with_embedding1(L1, autL1)
   res = _relative_to_absolute(L1, autL1)

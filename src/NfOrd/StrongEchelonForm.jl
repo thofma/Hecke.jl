@@ -27,12 +27,12 @@ function _strong_echelon_form(A::Generic.Mat{NfOrdQuoRingElem}, strategy)
   end
 
   if strategy == :split
-    q, w = z_split(ideal(base_ring(A)))
+    q, w = z_split1(ideal(base_ring(A)))
     R = order(ideal(base_ring(A)))
-    ideals = q
-    if length(w) != 0
-      push!(ideals, prod(w))
-    end
+    ideals = vcat(q, w)
+    #if length(w) != 0
+    #  push!(ideals, prod(w))
+    #end
     C = _strong_echelon_form_split(B, ideals)
     return C
   elseif strategy == :no_split
@@ -184,8 +184,7 @@ function strong_echelon_form_naive!(A::Generic.Mat{NfOrdQuoRingElem})
           end
           @hassert :NfOrdQuoRing 1 T[1, i] == zero(base_ring(A))
         else
-          g,s,t,u,v = xxgcd(A[i, i], T[1, i])
-
+          g, s, t, u, v = xxgcd(A[i, i], T[1, i])
           for k in i:m
             t1 = s*A[i, k] + t*T[1, k]
             t2 = u*A[i, k] + v*T[1, k]
@@ -265,6 +264,26 @@ end
 #  Z Split
 #
 ################################################################################
+
+function z_split1(I::NfOrdIdl)
+  lf = factor_easy(I)
+  if isempty(lf)
+    return NfOrdIdl[I], NfOrdIdl[]
+  end
+  A = NfOrdIdl[]
+  B = NfOrdIdl[]
+  for (I, v) in lf
+    a = I^v
+    if norm(a) != minimum(a)
+      push!(B, a)
+    else
+      push!(A, a)
+    end
+  end
+  return A, B
+end
+
+
 
 function z_split(I::NfOrdIdl)
   b = basis_matrix(I, copy = false)
@@ -359,10 +378,11 @@ if Nemo.version() > v"0.15.1"
 end
 
 
-function _strong_echelon_form_split(M::MatElem{NfOrdQuoRingElem}, ideals)
+function _strong_echelon_form_split(M::MatElem{NfOrdQuoRingElem}, ideals1)
   Q = base_ring(M)
   R = base_ring(Q)
   modulus = ideal(Q)
+  ideals = sort(ideals1, by = x -> minimum(x, copy = false))
 
   n = nrows(M)
   m = ncols(M)
@@ -382,27 +402,26 @@ function _strong_echelon_form_split(M::MatElem{NfOrdQuoRingElem}, ideals)
       MmodI[i, j] = RmodI(lift(R, M[i, j]))
     end
   end
-  echelon_modI = _strong_echelon_form_nonsplit(MmodI)
+  _strong_echelon_form_nonsplit!(MmodI)
 
-  for i in 1:n
+  for i in 1:min(n, m)
     for j in 1:m
-      M_cur[i, j] = Q(lift(R, echelon_modI[i, j]))
+      M_cur[i, j] = Q(lift(R, MmodI[i, j]))
     end
   end
 
   _assure_weakly_normal_presentation(I)
   gI = gcd(Q(I.gen_one), Q(I.gen_two))
 
-  @assert ideal(R, lift(R, gI)) + modulus == I
-#    assert R*R!gi + Modulus(Rd) eq i;
+  @hassert :PseudoHnf 1 ideal(R, lift(R, gI)) + modulus == I
 
   r = M_cur
   l = gI
 
+  m_cur = zero_matrix(Q, n, m)
+
   for i in 2:length(ideals)
     I = ideals[i]
-
-    m_cur = zero_matrix(Q, n, m)
 
     RmodI, mRmodI = quo(R, I)
     MmodI = zero_matrix(RmodI, n, m)
@@ -415,7 +434,7 @@ function _strong_echelon_form_split(M::MatElem{NfOrdQuoRingElem}, ideals)
 
     echelon_modI = _strong_echelon_form_nonsplit(MmodI)
 
-    for i in 1:n
+    for i in 1:min(n, m)
       for j in 1:m
         m_cur[i, j] = Q(lift(R, echelon_modI[i, j]))
       end
@@ -425,27 +444,72 @@ function _strong_echelon_form_split(M::MatElem{NfOrdQuoRingElem}, ideals)
     _assure_weakly_normal_presentation(I)
     gI = gcd(Q(I.gen_one), Q(I.gen_two))
 
-    @assert ideal(R, lift(R, gI)) + modulus == I
+    @hassert :PseudoHnf 1 ideal(R, lift(R, gI)) + modulus == I
 
     g, a, b, e, f = xxgcd(l, gI)
-    gg = g
+    #gg = g
     ginv = inv(g)
-    g = g * ginv
-    a = a * ginv
-    b = b * ginv
-    e = e * gg
-    f = f * gg
-    @assert g == a * l + b * gI
-    @assert 0 == e * l + f * gI
-    @assert 1 == a * f - b * e
-    #@show inv(g)
-    a = a * l
-    b = b * gI
-    #@assert isone(g)
-    r = r * b + m_cur * a
-    l = l * gI
+    #mul!(e, e, gg)
+    #mul!(f, f, gg)
+    #mul!(g, g, ginv)
+    mul!(a, a, ginv)
+    mul!(b, b, ginv)
+    #g = g * ginv
+    #a = a * ginv
+    #b = b * ginv
+    #e = e * gg
+    #f = f * gg
+    #@hassert :PseudoHnf 1 g == a * l + b * gI
+    #@hassert :PseudoHnf 1 0 == e * l + f * gI
+    #@hassert :PseudoHnf 1 1 == a * f - b * e
+    mul!(a, a, l)
+    mul!(b, b, gI)
+    #a = a * l
+    #b = b * gI
+    mul_special!(r, b)
+    mul_special!(m_cur, a)
+    add_special!(r, m_cur)
+    #r = r * b + m_cur * a
+    mul!(l, l, gI)
+    #l = l * gI
   end
   return r
+end
+
+function mul!(a::MatElem{NfOrdQuoRingElem}, b::MatElem{NfOrdQuoRingElem}, c::NfOrdQuoRingElem)
+  for i = 1:nrows(b)
+    for j = 1:ncols(b)
+      mul!(a[i, j], b[i, j], c) 
+    end
+  end
+  return a
+end
+
+function mul_special!(a::MatElem{NfOrdQuoRingElem}, b::NfOrdQuoRingElem)
+  for i = 1:min(nrows(a), ncols(a))
+    for j = i:ncols(a)
+      mul!(a[i, j], a[i, j], b) 
+    end
+  end
+  return a
+end
+
+function add_special!(a::MatElem{NfOrdQuoRingElem}, b::MatElem{NfOrdQuoRingElem})
+  for i = 1:min(nrows(b), ncols(b))
+    for j = i:ncols(b)
+      add!(a[i, j], a[i, j], b[i, j]) 
+    end
+  end
+  return a
+end
+
+function add!(a::MatElem{NfOrdQuoRingElem}, b::MatElem{NfOrdQuoRingElem}, c::MatElem{NfOrdQuoRingElem})
+  for i = 1:nrows(b)
+    for j = 1:ncols(b)
+      add!(a[i, j], b[i, j], c[i, j]) 
+    end
+  end
+  return a
 end
 
 
@@ -469,6 +533,67 @@ end
 #      l *:= gi;
 #      L *:= i;
 
+function _strong_echelon_form_nonsplit!(M)
+  Q = base_ring(M)
+
+  n = nrows(M)
+  m = ncols(M)
+
+  if can_map_into_integer_quotient(Q)
+    RmodIZ, f, g = map_into_integer_quotient(Q)
+    if can_make_small(RmodIZ)
+      RmodIZsmall, ff, gg = make_small(RmodIZ)
+      M_temp = zero_matrix(RmodIZsmall, n, m)
+      for i in 1:n
+        for j in 1:m
+          M_temp[i, j] = ff(f(M[i, j]))
+        end
+      end
+      strong_echelon_form!(M_temp)
+      for i in 1:min(n, m)
+        for j = 1:i-1
+          zero!(M[i, j])
+        end
+        for j in i:m
+          M[i, j] = g(gg(M_temp[i, j]))
+        end
+      end
+      for i = min(n, m)+1:n
+        for j = 1:m
+          zero!(M[i, j])
+        end
+      end
+    else
+      forflint = zero_matrix(FlintZZ, n, m)
+      for i in 1:n
+        for j in 1:m
+          forflint[i, j] = f(M[i, j]).data
+        end
+      end
+      ccall((:fmpz_mat_strong_echelon_form_mod, libflint), Nothing, (Ref{fmpz_mat}, Ref{fmpz}), forflint, modulus(RmodIZ))
+      for i in 1:min(n, m)
+        for j = 1:i-1
+          zero!(M[i, j]) 
+        end
+        for j in i:m
+          M[i, j] = Q(forflint[i, j])
+        end
+      end
+      for i = min(n, m)+1:n
+        for j = 1:m
+          zero!(M[i, j])
+        end
+      end
+    end
+    return M
+  else
+    strong_echelon_form_naive!(M)
+    return M
+  end
+
+end
+
+
 function _strong_echelon_form_nonsplit(M)
   Q = base_ring(M)
   I = ideal(Q)
@@ -488,7 +613,7 @@ function _strong_echelon_form_nonsplit(M)
         end
       end
       strong_echelon_form!(M_temp)
-      for i in 1:n
+      for i in 1:min(n, m)
         for j in 1:m
           M_cur[i, j] = g(gg(M_temp[i, j]))
         end
@@ -501,12 +626,11 @@ function _strong_echelon_form_nonsplit(M)
         end
       end
       ccall((:fmpz_mat_strong_echelon_form_mod, libflint), Nothing, (Ref{fmpz_mat}, Ref{fmpz}), forflint, modulus(RmodIZ))
-      for i in 1:n
+      for i in 1:min(n, m)
         for j in 1:m
           M_cur[i, j] = Q(forflint[i, j])
         end
       end
-      #error("dasds")
     end
     return M_cur
   else

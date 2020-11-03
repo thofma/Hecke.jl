@@ -231,20 +231,24 @@ function (f::NfOrdQuoMap)(I::NfOrdIdl)
   O = domain(f)
   Q = codomain(f)
   B = Q.ideal + I
-  nB = norm(B)
+  nB = norm(B, copy = false)
+  if isone(nB)
+    return one(Q)
+  end
+  _assure_weakly_normal_presentation(B)
+  nQ = norm(Q.ideal, copy = false)
+  if _normmod(nQ, B.gen_two) == nB
+    return Q(B.gen_two)
+  end
   b = basis(B, copy = false)
-  z = O()
-  nQ = norm(Q.ideal)
   range1nQ2 = fmpz(1):nQ^2
-
+  z = O()
   while true
     z = rand!(z, b, range1nQ2)
     if _normmod(nQ, z) == nB
-    #if norm(ideal(O, z) + OnQ) == nB
       break
     end
   end
-
   return Q(z)
 end
 
