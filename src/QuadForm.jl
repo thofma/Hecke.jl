@@ -3,6 +3,10 @@ include("QuadForm/Types.jl")
 include("QuadForm/Quad/Types.jl")
 include("QuadForm/Herm/Types.jl")
 
+# Binary quadratic forms
+
+include("QuadForm/QuadBin.jl")
+
 # Basic
 include("QuadForm/Basic.jl")
 include("QuadForm/Lattices.jl")

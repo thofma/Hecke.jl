@@ -192,6 +192,7 @@ end
 
 @doc Markdown.doc"""
     lll(M::NfAbsOrd) -> NfAbsOrd
+
 The same order, but with the basis now being LLL reduced wrt. the Minkowski metric.
 """
 function lll(M::NfAbsOrd; prec::Int = 100)
@@ -672,6 +673,7 @@ end
 
 @doc Markdown.doc"""
     lll_basis(M::NfAbsOrd) -> Array{nf_elem, 1}
+
 A basis for $M$ that is reduced using the LLL algorithm for the Minkowski metric.
 """
 function lll_basis(M::NfAbsOrd)
@@ -681,6 +683,7 @@ end
 
 @doc Markdown.doc"""
     lll_basis(I::NfOrdIdl) -> Array{nf_elem, 1}
+
 A basis for $I$ that is reduced using the LLL algorithm for the Minkowski metric.
 """
 function lll_basis(A::NfOrdIdl, v::fmpz_mat = zero_matrix(FlintZZ, 1, 1); prec::Int = 100)
@@ -769,6 +772,7 @@ end
 
 @doc Markdown.doc"""
     reduce_ideal(A::FacElem{NfOrdIdl}) -> NfOrdIdl, FacElem{nf_elem}
+
 Computes $B$ and $\alpha$ in factored form, such that $\alpha B = A$.
 """
 function reduce_ideal(I::FacElem{NfOrdIdl, NfOrdIdlSet})
@@ -807,6 +811,7 @@ end
 # The bound should be sqrt(disc) (something from LLL)
 @doc Markdown.doc"""
     power_reduce(A::NfOrdIdl, e::fmpz) -> NfOrdIdl, FacElem{nf_elem}
+
 Computes $B$ and $\alpha$ in factored form, such that $\alpha B = A^e$
 $B$ has small norm.
 """

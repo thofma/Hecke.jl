@@ -260,6 +260,7 @@ end
 
 @doc Markdown.doc"""
     induce_image(m::NfToNfMor, P::InfPlc) -> InfPlc
+
 Find a place in the image of $P$ under $m$. If $m$ is an automorphism,
 this is unique.
 """

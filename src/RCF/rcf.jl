@@ -760,7 +760,7 @@ function _aut_A_over_k(C::CyclotomicExt, CF::ClassField_pp)
 
   @vprint :ClassField 2 "building automorphism group over ground field...\n"
   ng = ngens(g)+1
-  AutA_gen = Array{Hecke.NfRelToNfRelMor{nf_elem,  nf_elem}, 1}(undef, ng)
+  AutA_gen = Array{Hecke.NfRelToNfRelMor_nf_elem_nf_elem, 1}(undef, ng)
   AutA_rel = zero_matrix(FlintZZ, ng, ng)
   zeta = C.mp[1]\(gen(Kr))
   n = degree(A)
@@ -813,7 +813,7 @@ function auts_in_snf!(CF::ClassField_pp)
   G = abelian_group(CF.AutR)
   S, mS = snf(G)
   auts = CF.AutG
-  gens = Vector{NfRelToNfRelMor{nf_elem,  nf_elem}}(undef, ngens(S))
+  gens = Vector{NfRelToNfRelMor_nf_elem_nf_elem}(undef, ngens(S))
   for i = 1:ngens(S)
     el = mS(S[i])
     aut = id_hom(domain(CF.AutG[1]))
@@ -863,7 +863,7 @@ function _extend_auto(K::Hecke.NfRel{nf_elem}, h::Hecke.NfToNfMor, r::Int = -1)
     if !fl
       throw(ExtendAutoError())
     end
-    return NfRelToNfRelMor(K, K, h, evaluate(b)*gen(K)^r)
+    return hom(K, K, h, evaluate(b)*gen(K)^r)
   else
     add_to_key!(dict, a, degree(K)-r)
     aa = FacElem(dict)
@@ -871,7 +871,7 @@ function _extend_auto(K::Hecke.NfRel{nf_elem}, h::Hecke.NfToNfMor, r::Int = -1)
     if !fl
       throw(ExtendAutoError())
     end
-    return NfRelToNfRelMor(K, K, h, evaluate(b)*gen(K)^(r-degree(K)))
+    return hom(K, K, h, evaluate(b)*gen(K)^(r-degree(K)))
   end
 end
 
@@ -917,7 +917,7 @@ function _rcf_descent(CF::ClassField_pp)
     s, ms = sub(AutA, e, false)
     ss, mss = snf(s)
     ms = mss*ms
-    gss = NfRelToNfRelMor{nf_elem, nf_elem}[AutA_gen[1]^e]
+    gss = NfRelToNfRelMor_nf_elem_nf_elem[AutA_gen[1]^e]
     @vprint :ClassField 2 "computing orbit of primitive element\n"
     pe = gen(A)
     os = NfRelElem{nf_elem}[x[2] for x in find_orbit(gss, ss, pe)]
@@ -1002,7 +1002,7 @@ function _rcf_descent(CF::ClassField_pp)
       gsq *= AutA_gen[i]^Int(el_in_q[i])
     end
   end
-  genssq = NfRelToNfRelMor{nf_elem, nf_elem}[gsq]
+  genssq = NfRelToNfRelMor_nf_elem_nf_elem[gsq]
   
   
   @assert Int(order(q)) == degree(CF)
@@ -1088,6 +1088,7 @@ end
 
 @doc Markdown.doc"""
     ring_class_group(O::NfAbsOrd)
+
 The ring class group (Picard group) of $O$.
 """
 ring_class_group(O::NfAbsOrd) = picard_group(O)
@@ -1095,6 +1096,7 @@ ring_class_group(O::NfAbsOrd) = picard_group(O)
 
 @doc Markdown.doc"""
     ring_class_field(O::NfAbsOrd) -> ClassField
+
 The ring class field of $O$, i.e. the maximal abelian extension ramified
 only at primes dividing the conductor with the automorphism group
 isomorphic to the Picard group.

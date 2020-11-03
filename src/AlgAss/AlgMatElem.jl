@@ -3,7 +3,7 @@ parent_type(::Type{AlgMatElem{T, S, Mat}}) where {T, S, Mat} = S
 @doc Markdown.doc"""
     matrix(a::AlgMatElem; copy::Bool = true) -> MatElem
 
-> Returns the matrix which defines $a$.
+Returns the matrix which defines $a$.
 """
 function matrix(a::AlgMatElem; copy::Bool = true)
   if copy
@@ -36,7 +36,7 @@ end
 @doc Markdown.doc"""
     coeffs(a::AlgMatElem; copy::Bool = true) -> Vector{RingElem}
 
-> Returns the coefficients of $a$ in the basis of `algebra(a)`.
+Returns the coefficients of $a$ in the basis of `algebra(a)`.
 """
 function coeffs(a::AlgMatElem; copy::Bool = true)
   assure_has_coeffs(a)
@@ -66,7 +66,7 @@ end
 @doc Markdown.doc"""
     -(a::AlgMatElem) -> AlgMatElem
 
-> Returns $-a$.
+Returns $-a$.
 """
 function -(a::AlgMatElem)
   b = parent(a)(-matrix(a, copy = false))
@@ -86,7 +86,7 @@ end
 @doc Markdown.doc"""
     +(a::AlgMatElem, b::AlgMatElem) -> AlgMatElem
 
-> Return $a + b$.
+Return $a + b$.
 """
 function +(a::AlgMatElem{T, S, V}, b::AlgMatElem{T, S, V}) where {T, S, V}
   parent(a) != parent(b) && error("Parents don't match.")
@@ -101,7 +101,7 @@ end
 @doc Markdown.doc"""
     -(a::AlgMatElem, b::AlgMatElem) -> AlgMatElem
 
-> Return $a - b$.
+Return $a - b$.
 """
 function -(a::AlgMatElem{T, S, V}, b::AlgMatElem{T, S, V}) where {T, S, V}
   parent(a) != parent(b) && error("Parents don't match.")
@@ -116,7 +116,7 @@ end
 @doc Markdown.doc"""
     *(a::AlgMatElem, b::AlgMatElem) -> AlgMatElem
 
-> Return $a \cdot b$.
+Return $a \cdot b$.
 """
 function *(a::AlgMatElem{T, S, V}, b::AlgMatElem{T, S, V}) where {T, S, V}
   parent(a) != parent(b) && error("Parents don't match.")
@@ -208,7 +208,7 @@ end
 @doc Markdown.doc"""
     inv(a::AlgMatElem) -> AlgMatElem
 
-> Returns $a^{-1}$.
+Returns $a^{-1}$.
 """
 function inv(a::AlgMatElem)
   return parent(a)(inv(matrix(a, copy = false)))
@@ -223,7 +223,7 @@ end
 @doc Markdown.doc"""
     ^(a::AlgMatElem, b::Int) -> AlgMatElem
 
-> Returns $a^b$.
+Returns $a^b$.
 """
 function ^(a::AlgMatElem, b::Int)
   return parent(a)(matrix(a, copy = false)^b)
@@ -280,7 +280,7 @@ end
 @doc Markdown.doc"""
     ==(a::AlgMatElem, b::AlgMatElem) -> Bool
 
-> Returns `true` if $a$ and $b$ are equal and `false` otherwise.
+Returns `true` if $a$ and $b$ are equal and `false` otherwise.
 """
 function ==(a::AlgMatElem{T, S, V}, b::AlgMatElem{T, S, V}) where {T, S, V}
   parent(a) != parent(b) && return false

@@ -593,7 +593,7 @@ function maximal_order_via_simple(L::NfRelNS)
   return non_simple_order(Os, m)
 end
 
-function maximal_order_via_simple(m::NfRelToNfRelNSMor)
+function maximal_order_via_simple(m::NumFieldMor{<:NfRel, <:NfRelNS})
   Os = maximal_order(domain(m))
   return non_simple_order(Os, m)
 end
@@ -836,7 +836,7 @@ function MaximalOrder(O::NfRelOrd{S, T, U}) where {S, T, U <: NonSimpleNumFieldE
   L = nf(O)
   K = base_field(L)
   Obase_K = maximal_order(K)
-  fields = Vector{Tuple{NfRel{S}, NfRelToNfRelNSMor{S}}}(undef, length(L.pol))
+  fields = Vector{Tuple{NfRel{S}, morphism_type(NfRel{S}, NfRelNS{S})}}(undef, length(L.pol))
   for i = 1:length(L.pol)
     fields[i] = component(L, i)
   end
@@ -948,7 +948,7 @@ end
 #
 ################################################################################
 
-function non_simple_order(O::NfRelOrd, m::NfRelToNfRelNSMor)
+function non_simple_order(O::NfRelOrd, m::NumFieldMor{<:NfRel, <:NfRelNS})
   L = domain(m)
   L_ns = codomain(m)
   @assert nf(O) == L

@@ -10,8 +10,8 @@
     restrict_scalars(A::AlgAss{fq}, Fp::Generic.ResField{fmpz})
       -> AlgAss, Map
 
-> Given an algebra $A$ over a field $L$ and the prime field $K$ of $L$, this
-> function returns the restriction $B$ of $A$ to $K$ and the morphism $B \to A$.
+Given an algebra $A$ over a field $L$ and the prime field $K$ of $L$, this
+function returns the restriction $B$ of $A$ to $K$ and the morphism $B \to A$.
 """
 # Top level functions to avoid "type mix-ups" (like AlgAss{fq_nmod} with FlintQQ)
 function restrict_scalars(A::AbsAlgAss{nf_elem}, Q::FlintRationalField)
@@ -37,9 +37,9 @@ end
     restrict_scalars(A::AlgAss{nf_elem}, KtoL::NfToNfMor)
       -> AlgAss, Map
 
-> Given an algebra $A$ over a number field $L$ and an inclusion map `KtoL` from
-> a number field $K$ to $L$, this function returns the restriction $B$ of $A$
-> to $K$ and the morphism $B \to A$.
+Given an algebra $A$ over a number field $L$ and an inclusion map `KtoL` from
+a number field $K$ to $L$, this function returns the restriction $B$ of $A$
+to $K$ and the morphism $B \to A$.
 """
 function restrict_scalars(A::AbsAlgAss{nf_elem}, KtoL::NfToNfMor)
   return _restrict_scalars(A, KtoL)

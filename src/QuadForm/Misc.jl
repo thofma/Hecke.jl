@@ -75,7 +75,7 @@ function image(f::NfToNfRel, I::NfAbsOrdIdl)
   return image(f, I, OK)
 end
 
-function image(f::NfRelToNfRelMor{nf_elem, nf_elem}, I::NfRelOrdIdl)
+function image(f::NfRelToNfRelMor_nf_elem_nf_elem, I::NfRelOrdIdl)
   OK = order(I)
   return reduce(+, (OK(f(elem_in_nf(b))) * OK for b in absolute_basis(I)), init = 0 * OK)
 end

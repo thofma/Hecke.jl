@@ -13,9 +13,9 @@ export ideal_class_monoid, islocally_isomorphic, isconjugate
     ideal_class_monoid(R::AlgAssAbsOrd)
       -> Vector{FacElem{AlgAssAbsOrdIdl, AlgAssAbsOrdIdlSet}}
 
-> Given an order $R$ in a number field or a finite product of number fields, this
-> function returns representatives of the isomorphism classes of fractional
-> ideals in $R$.
+Given an order $R$ in a number field or a finite product of number fields, this
+function returns representatives of the isomorphism classes of fractional
+ideals in $R$.
 """
 function ideal_class_monoid(R::T) where { T <: Union{ NfAbsOrd, AlgAssAbsOrd } }
   @assert iscommutative(R)
@@ -33,9 +33,9 @@ end
     islocally_isomorphic(I::NfFracOrdIdl, J::NfFracOrdIdl) -> Bool
     islocally_isomorphic(I::AlgAssAbsOrdIdl, J::AlgAssAbsOrdIdl) -> Bool
 
-> Given two (fractional) ideals $I$ and $J$ of an order $R$ of an $Q$-étale
-> algebra, this function returns `true` if $I_p$ and $J_p$ are isomorphic for
-> all primes $p$ of $R$ and `false` otherwise.
+Given two (fractional) ideals $I$ and $J$ of an order $R$ of an $Q$-étale
+algebra, this function returns `true` if $I_p$ and $J_p$ are isomorphic for
+all primes $p$ of $R$ and `false` otherwise.
 """
 function islocally_isomorphic(I::T, J::T) where { T <: Union{ NfAbsOrdIdl, NfOrdFracIdl, AlgAssAbsOrdIdl } }
   IJ = colon(I, J)
@@ -49,9 +49,9 @@ end
     isisomorphic(I::NfFracOrdIdl, J::NfFracOrdIdl) -> Bool, nf_elem
     isisomorphic(I::AlgAssAbsOrdIdl, J::AlgAssAbsOrdIdl) -> Bool, AbsAlgAssElem
 
-> Given two (fractional) ideals $I$ and $J$ of an order $R$ of an $Q$-étale
-> algebra $A$, this function returns `true` and an element $a \in A$ such that
-> $I = aJ$ if such an element exists and `false` and $0$ otherwise.
+Given two (fractional) ideals $I$ and $J$ of an order $R$ of an $Q$-étale
+algebra $A$, this function returns `true` and an element $a \in A$ such that
+$I = aJ$ if such an element exists and `false` and $0$ otherwise.
 """
 function isisomorphic(I::T, J::T) where { T <: Union{ NfAbsOrdIdl, NfOrdFracIdl, AlgAssAbsOrdIdl } }
   A = _algebra(order(I))
@@ -276,9 +276,9 @@ end
 @doc Markdown.doc"""
     isconjugate(M::fmpz_mat, N::fmpz_mat) -> Bool, fmpz_mat
 
-> Returns `true` and a matrix $U$ with $M = U\cdot N\cdot U^{-1}$ if such a
-> matrix exists and `false` and $0$ otherwise.
-> The characteristic polynomial of $M$ is required to be square-free.
+Returns `true` and a matrix $U$ with $M = U\cdot N\cdot U^{-1}$ if such a
+matrix exists and `false` and $0$ otherwise.
+The characteristic polynomial of $M$ is required to be square-free.
 """
 function isconjugate(M::fmpz_mat, N::fmpz_mat)
   Zx, x = FlintZZ["x"]

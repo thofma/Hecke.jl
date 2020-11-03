@@ -53,21 +53,21 @@
   println("Direct product decomposition")
   @time begin
     @testset "Direct product decomposition" begin
-      l_direct_product = fields(12, 4, fmpz(10)^13)
+      @time l_direct_product = fields(12, 4, fmpz(10)^13)
       @test length(l_direct_product) == 25
   
-      l_without = fields(12, 4, fmpz(10)^13, using_direct_product = false)
+      @time l_without = fields(12, 4, fmpz(10)^13, using_direct_product = false)
       @test length(l_without) == 25
 
       d1 = length(fields(24, 13, fmpz(10)^24)) 
       d2 = length(fields(24, 13, fmpz(10)^24, using_direct_product = false))
       @test d1 == d2
 
-      l_direct_product = fields(18, 3, fmpz(10)^18)
-      l_without = fields(18, 3, fmpz(10)^18, using_direct_product = false)
+      @time l_direct_product = fields(18, 3, fmpz(10)^18)
+      @time l_without = fields(18, 3, fmpz(10)^18, using_direct_product = false)
       @test length(l_direct_product) == length(l_without)
       for x in l_direct_product
-        @test GAP.gap_to_julia(Vector{Int}, Hecke.IdGroup(closure(x.generators_of_automorphisms))) == [18, 3]
+        @test GAP.gap_to_julia(Vector{Int}, Hecke.IdGroup(closure(x.generators_of_automorphisms))) == [19, 3]
       end
       for x in l_without
         @test GAP.gap_to_julia(Vector{Int}, Hecke.IdGroup(closure(x.generators_of_automorphisms))) == [18, 3]

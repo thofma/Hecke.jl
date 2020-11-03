@@ -51,7 +51,7 @@ function abelian_extensionsQQ(gtype::Array{Int, 1}, bound::fmpz, only_real::Bool
       E.disc = discriminant(E)
       Hecke._set_maximal_order(x[1], E)
       auts = Vector{NfToNfMor}(undef, 2)
-      auts[1] = NfToNfMor(x[1], x[1], gen(x[1]))
+      auts[1] = hom(x[1], x[1], gen(x[1]), check = false)
       auts[2] = x[2][1]
       Hecke._set_automorphisms_nf(x[1], auts)
       res[i] = FieldsTower(x[1], x[2], x[3])
@@ -86,9 +86,9 @@ function abelian_extensionsQQ(gtype::Array{Int, 1}, bound::fmpz, only_real::Bool
       for j = 2:length(auts)
         new_auts[1] *= auts[j]
       end
-      list1[i] = FieldsTower(K, new_auts, [Hecke.NfToNfMor(base_field(x[1]), K, K(1))])
+      list1[i] = FieldsTower(K, new_auts, [hom(base_field(x[1]), K, K(1), check = false)])
     else
-      list1[i] = FieldsTower(K, auts, [Hecke.NfToNfMor(base_field(x[1]), K, K(1))])
+      list1[i] = FieldsTower(K, auts, [hom(base_field(x[1]), K, K(1), check = false)])
     end
     list1[i].isabelian = true
   end
@@ -135,7 +135,7 @@ function _abelian_extensionsQQ(gtype::Array{Int,1}, absolute_discriminant_bound:
       end
     end
   end
-  fields = Vector{Tuple{Hecke.NfRelNS{nf_elem}, Array{Hecke.NfRelNSToNfRelNSMor{nf_elem},1}}}(undef, length(class_fields))
+  fields = Vector{Tuple{Hecke.NfRelNS{nf_elem}, Vector{Hecke.NfRelNSToNfRelNSMor_nf_elem}}}(undef, length(class_fields))
   for i = 1:length(class_fields)
     @vprint :Fields 1 "\e[1FComputing class field $(i) /$(length(class_fields)) \n"
     C = class_fields[i]
@@ -295,7 +295,7 @@ function from_class_fields_to_fields(class_fields::Vector{ClassField{MapRayClass
   
   if isempty(class_fields)
     @vprint :Fields 1 "\e[1F$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())"
-    return Tuple{Hecke.NfRelNS{nf_elem}, Vector{Hecke.NfRelNSToNfRelNSMor{nf_elem}}}[] 
+    return Tuple{Hecke.NfRelNS{nf_elem}, Vector{Hecke.NfRelNSToNfRelNSMor_nf_elem}}[] 
   end
   K = base_ring(class_fields[1])
   divisors_of_n = collect(keys(grp_to_be_checked))
@@ -339,10 +339,10 @@ function from_class_fields_to_fields(class_fields::Vector{ClassField{MapRayClass
   end
   it = findall(right_grp)
   if isempty(it)
-    return Vector{Tuple{NfRelNS{nf_elem}, Vector{Hecke.NfRelNSToNfRelNSMor{nf_elem}}}}()
+    return Vector{Tuple{NfRelNS{nf_elem}, Vector{Hecke.NfRelNSToNfRelNSMor_nf_elem}}}()
   end
   if length(divisors_of_n) == 1 || iscoprime(degree(class_fields[it[1]]), degree(K))
-    fields = Vector{Tuple{NfRelNS{nf_elem}, Vector{Hecke.NfRelNSToNfRelNSMor{nf_elem}}}}(undef, length(it))
+    fields = Vector{Tuple{NfRelNS{nf_elem}, Vector{Hecke.NfRelNSToNfRelNSMor_nf_elem}}}(undef, length(it))
     ind = 1
     for i in it
       res = Vector{typeof(class_fields[1])}(undef, length(divisors_of_n))
@@ -354,7 +354,7 @@ function from_class_fields_to_fields(class_fields::Vector{ClassField{MapRayClass
     end
   else
     #I need to check the isomorphism class of the Galois group
-    fields = Vector{Tuple{NfRelNS{nf_elem}, Vector{Hecke.NfRelNSToNfRelNSMor{nf_elem}}}}()
+    fields = Vector{Tuple{NfRelNS{nf_elem}, Vector{Hecke.NfRelNSToNfRelNSMor_nf_elem}}}()
     for i in it
       res = Vector{typeof(class_fields[1])}(undef, length(divisors_of_n))
       for j = 1:length(divisors_of_n)
@@ -381,7 +381,7 @@ function compute_fields(class_fields::Vector{Hecke.ClassField{Hecke.MapRayClassG
     use_brauer = false
   end
 
-  fields = Tuple{Hecke.NfRelNS{nf_elem}, Vector{Hecke.NfRelNSToNfRelNSMor{nf_elem}}}[]
+  fields = Tuple{Hecke.NfRelNS{nf_elem}, Vector{Hecke.NfRelNSToNfRelNSMor_nf_elem}}[]
   expo = Int(exponent(codomain(class_fields[it[1]].quotientmap)))
   
   if !use_brauer
@@ -412,7 +412,7 @@ function _ext_and_autos(resul::Vector{Hecke.ClassField{S, T}}, autos::Vector{NfT
     append!(pols, [Hecke.isunivariate(resul[i].A.pol[w])[2] for w = 1:length(resul[i].A.pol)])
   end
   L, gL = number_field(pols, cached = false, check = false)
-  autL = Vector{Hecke.NfRelNSToNfRelNSMor{nf_elem}}()
+  autL = Vector{Hecke.NfRelNSToNfRelNSMor_nf_elem}()
   imgs_auts_base_field = Vector{Vector{Hecke.NfRelNSElem{nf_elem}}}(undef, length(autos))
   for i = 1:length(autos)
     imgs_auts_base_field[i] = gens(L)
@@ -427,19 +427,20 @@ function _ext_and_autos(resul::Vector{Hecke.ClassField{S, T}}, autos::Vector{NfT
     end 
     auts = Cp.AbsAutGrpA
     for phi in auts
-      if phi.coeff_aut.prim_img == gen(K)
+      if (isdefined(phi.image_data.base_field_map_data, :prim_image) ? phi.image_data.base_field_map_data.prim_image : codomain(phi)(gen(base_field(codomain(phi))))) == codomain(phi)(gen(K))
         imgsphi = gens(L)
         for ind = w:(w+length(Cp.A.pol)-1)
-          imgsphi[ind] = evaluate(Hecke.isunivariate(phi.emb[ind-w+1].data)[2], imgsphi[ind])
+          imgsphi[ind] = evaluate(Hecke.isunivariate(image_generators(phi)[ind-w+1].data)[2], imgsphi[ind])
         end
         push!(autL, hom(L, L, imgsphi))
       else
         ind_aut = 1
-        while autos[ind_aut] != phi.coeff_aut
+        #while autos[ind_aut] != phi.coeff_aut
+        while !_isequal(base_field(domain(phi)), codomain(phi), __convert_map_data(autos[ind_aut].image_data, codomain(phi)), phi.image_data.base_field_map_data)
           ind_aut += 1
         end
         for ind = w:(w+length(Cp.A.pol)-1)
-          imgs_auts_base_field[ind_aut][ind] = Hecke.msubst(phi.emb[ind-w+1].data, gL[w:(w+length(Cp.A.pol)-1)])
+          imgs_auts_base_field[ind_aut][ind] = Hecke.msubst(image_generators(phi)[ind-w+1].data, gL[w:(w+length(Cp.A.pol)-1)])
         end
       end
     end
@@ -552,7 +553,7 @@ function computing_over_subfields(class_fields, subfields, idE, autos, right_grp
   end
   it = findall(right_grp)
   if isempty(it)
-    return Vector{Tuple{Hecke.NfRelNS{nf_elem}, Vector{Hecke.NfRelNSToNfRelNSMor{nf_elem}}}}()
+    return Vector{Tuple{Hecke.NfRelNS{nf_elem}, Vector{Hecke.NfRelNSToNfRelNSMor_nf_elem}}}()
   end
   use_brauer = true
   if !is_normal_subfield || !iszero(mod(order(torsion_unit_group(base_ring(new_class_fields[it[1]]))[1]), exponent(new_class_fields[it[1]])))
@@ -574,11 +575,11 @@ function computing_over_subfields(class_fields, subfields, idE, autos, right_grp
     end
     maprel = hom(C1.A, C.A, mL, gens(C.A))
     autsrelC1 = Hecke.rel_auto(C1)
-    autsrelC = Vector{Hecke.NfRelNSToNfRelNSMor{nf_elem}}(undef, length(autsrelC1))
+    autsrelC = Vector{Hecke.NfRelNSToNfRelNSMor_nf_elem}(undef, length(autsrelC1))
     for s = 1:length(autsrelC1)
       el = autsrelC1[s]
-      autsrelC[s] = hom(C.A, C.A, [maprel(x) for x in el.emb])
-      @hassert :Fields 1 isconsistent(autsrelC[s])
+      autsrelC[s] = hom(C.A, C.A, [maprel(x) for x in image_generators(el)])
+      #@hassert :Fields 1 isconsistent(autsrelC[s])
     end
     rel_extend = Hecke.new_extend_aut(C, autos)
     autsA = vcat(rel_extend, autsrelC)
@@ -591,7 +592,7 @@ function computing_over_subfields(class_fields, subfields, idE, autos, right_grp
     end
   end
   it = findall(right_grp)
-  fields = Vector{Tuple{Hecke.NfRelNS{nf_elem}, Vector{Hecke.NfRelNSToNfRelNSMor{nf_elem}}}}(undef, length(it))
+  fields = Vector{Tuple{Hecke.NfRelNS{nf_elem}, Vector{Hecke.NfRelNSToNfRelNSMor_nf_elem}}}(undef, length(it))
   ind = 1
   for i in it
     C = class_fields[i]
@@ -826,8 +827,8 @@ function translate_fields_up(class_fields, new_class_fields, subfields, it)
             mul!(img, img, gen(CEK.Kr))
           end
         end
-        mrel = Hecke.NfRelToNfRelMor(CEL.Kr, CEK.Kr, mL, img) 
-        @hassert :Fields 1 isconsistent(mrel)
+        mrel = hom(CEL.Kr, CEK.Kr, mL, img) 
+        #@hassert :Fields 1 isconsistent(mrel)
         g = mrel(CEL.mp[1](gen(CEL.Ka)))
         mp = hom(CEL.Ka, CEK.Ka, CEK.mp[1]\(g), check = false)
         D[d] = mp
@@ -858,8 +859,8 @@ function translate_fields_up(class_fields, new_class_fields, subfields, it)
       fdef = map_coeffs(mL, Ccyc.A.pol, parent = Ky, cached = false)
       Cpp.A = number_field(fdef, cached = false, check = false)[1]
       #Now, the primitive element of the target extension seen in Cpp.K
-      mrel2 = Hecke.NfRelToNfRelMor(Ccyc.K, Cpp.K, D[d], gen(Cpp.K))
-      @hassert :Fields 1 isconsistent(mrel2)
+      mrel2 = hom(Ccyc.K, Cpp.K, D[d], gen(Cpp.K))
+      #@hassert :Fields 1 isconsistent(mrel2)
       @hassert :Fields 1 parent(Ccyc.pe) == domain(mrel2)
       Cpp.pe = mrel2(Ccyc.pe) 
       CEKK = cyclotomic_extension(K, d)

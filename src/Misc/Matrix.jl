@@ -996,6 +996,7 @@ end
 
 @doc Markdown.doc"""
     mod!(M::fmpz_mat, p::fmpz)
+
 Reduces every entry modulo $p$ in-place, i.e. applies the mod function to every entry.
 Positive residue system.
 """
@@ -1013,6 +1014,7 @@ end
 
 @doc Markdown.doc"""
     mod(M::fmpz_mat, p::fmpz) -> fmpz_mat
+
 Reduces every entry modulo $p$, i.e. applies the mod function to every entry.
 """
 function mod(M::fmpz_mat, p::fmpz)
@@ -1023,6 +1025,7 @@ end
 
 @doc Markdown.doc"""
     mod_sym!(M::fmpz_mat, p::fmpz)
+
 Reduces every entry modulo $p$ in-place, into the symmetric residue system.
 """
 function mod_sym!(M::fmpz_mat, B::fmpz)
@@ -1033,6 +1036,7 @@ mod_sym!(M::fmpz_mat, B::Integer) = mod_sym!(M, fmpz(B))
 
 @doc Markdown.doc"""
     mod_sym(M::fmpz_mat, p::fmpz) -> fmpz_mat
+
 Reduces every entry modulo $p$ into the symmetric residue system.
 """
 function mod_sym(M::fmpz_mat, B::fmpz)
@@ -1065,6 +1069,7 @@ end
 @doc Markdown.doc"""
     vcat(A::Array{Generic.Mat, 1}) -> Generic.Mat
     vcat(A::Array{fmpz_mat}, 1}) -> fmpz_mat
+
 Forms a big matrix by vertically concatenating the matrices in $A$.
 All component matrices need to have the same number of columns.
 """

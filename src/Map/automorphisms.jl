@@ -223,7 +223,7 @@ function _automorphism_group_generic(K)
   R = GF(p, cached = false)
   Rx, x = PolynomialRing(R, "x", cached = false)
   fmod = Rx(K.pol)
-  pols = gfp_poly[Rx(g.prim_img) for g in aut]
+  pols = gfp_poly[Rx(image_primitive_element(g)) for g in aut]
   Dcreation = Vector{Tuple{gfp_poly, Int}}(undef, length(pols))
   for i = 1:length(pols)
     Dcreation[i] = (pols[i], i)
@@ -261,7 +261,7 @@ function closure(S::Vector{NfToNfMor}, final_order::Int = -1)
   order = 1
   elements = NfToNfMor[id_hom(K)]
   pols = gfp_poly[x]
-  gpol = Rx(S[1].prim_img)
+  gpol = Rx(image_primitive_element(S[1]))
   if gpol != x
     push!(pols, gpol)
     push!(elements, S[1])
@@ -283,11 +283,11 @@ function closure(S::Vector{NfToNfMor}, final_order::Int = -1)
 
   for i in 2:t
     if !(S[i] in elements)
-      pi = Rx(S[i].prim_img)
+      pi = Rx(image_primitive_element(S[i]))
       previous_order = order
       order = order + 1
       push!(elements, S[i])
-      push!(pols, Rx(S[i].prim_img))
+      push!(pols, Rx(image_primitive_element(S[i])))
       for j in 2:previous_order
         order = order + 1
         push!(pols, compose_mod(pols[j], pi, fmod))
@@ -300,7 +300,7 @@ function closure(S::Vector{NfToNfMor}, final_order::Int = -1)
       while rep_pos <= order
         for k in 1:i
           s = S[k]
-          po = Rx(s.prim_img)
+          po = Rx(image_primitive_element(s))
           att = compose_mod(pols[rep_pos], po, fmod)
           if !(att in pols)
             elt = elements[rep_pos]*s
@@ -336,7 +336,7 @@ function generic_group(G::Vector{NfToNfMor}, ::typeof(*), full::Bool = true)
   R = GF(p, cached = false)
   Rx, x = PolynomialRing(R, "x", cached = false)
   fmod = Rx(K.pol)
-  pols = gfp_poly[Rx(g.prim_img) for g in G]
+  pols = gfp_poly[Rx(image_primitive_element(g)) for g in G]
   Dcreation = Vector{Tuple{gfp_poly, Int}}(undef, length(pols))
   for i = 1:length(pols)
     Dcreation[i] = (pols[i], i)
@@ -463,7 +463,7 @@ function _frobenius_at(K::AnticNumberField, p::Int, auts::Vector{NfToNfMor} = Nf
   Fx, gFx = PolynomialRing(F, "x", cached = false)
   fF = map_coeffs(F, Zx(K.pol), parent = Fx)
   b = powmod(gFx, p, fF)
-  if b in nmod_poly[Fx(x.prim_img) for x in auts]
+  if b in nmod_poly[Fx(image_primitive_element(x)) for x in auts]
     return false, id_hom(K)
   end
   fl, rt = lift_root(K, b, bound)

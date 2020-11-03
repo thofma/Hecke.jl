@@ -504,7 +504,7 @@ end
 
 Returns `true` and an injection from $K$ to $L$ if $K$ is a subfield of $L$.
 Otherwise the function returns "false" and a morphism mapping everything to 0.
->
+
 This function assumes that $K$ is normal.
 """
 function issubfield_normal(K::AnticNumberField, L::AnticNumberField)
@@ -648,7 +648,7 @@ Writes the elements of `A` to the file `file`. The first line are the coefficien
 the defining polynomial of the ambient number field. The following lines
 contain the coefficients of the elements of `A` with respect to the power
 basis of the ambient number field.
->
+
 Unless otherwise specified by the parameter `flag`, the content of `file` will be
 overwritten.
 """
@@ -843,6 +843,7 @@ end
 
 @doc Markdown.doc"""
     normal_closure(K::AnticNumberField) -> AnticNumberField, NfToNfMor
+
 The normal closure of $K$ together with the embedding map.
 """
 function normal_closure(K::AnticNumberField)

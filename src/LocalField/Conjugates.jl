@@ -35,6 +35,7 @@ end
 
 @doc Markdown.doc"""
     roots(f::fmpz_poly, Q::FlintQadicField; max_roots::Int = degree(f)) -> Array{qadic, 1}
+
 The roots of $f$ in $Q$, $f$ has to be square-free (at least the roots have to be simple roots).
 """
 function roots(f::fmpz_poly, Q::FlintQadicField; max_roots::Int = degree(f))
@@ -471,6 +472,7 @@ end
 
 @doc Markdown.doc"""
     completion(K::AnticNumberField, P::NfOrdIdl) -> FlintQadicField, Map{AnticNumberField -> FlintQadicField}
+
 The completion of $K$ wrt to the topology induced by the valuation at $P$. $P$ needs
 to be unramifed.
 The map giving the embedding of $K$ into the completion, admits a pointwise pre-image to obtain a lift.

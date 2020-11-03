@@ -70,7 +70,7 @@ end
     # Restrict from number field to number field
     g = x^9 - 15x^6 - 87x^3 - 125
     L, b = number_field(g, "b")
-    KtoL = NfToNfMor(K, L, -2//45*b^7 + 7//9*b^4 + 109//45*b)
+    KtoL = hom(K, L, -2//45*b^7 + 7//9*b^4 + 109//45*b)
 
     A = AlgAss(MatrixAlgebra(L, 2))
     B, BtoA = Hecke.restrict_scalars(A, KtoL)

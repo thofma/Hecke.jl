@@ -95,6 +95,7 @@ id_hom(G::GrpAbFinGen) = hom(G, G, identity_matrix(FlintZZ, ngens(G)), identity_
 
 @doc Markdown.doc"""
     hom(A::Array{GrpAbFinGenElem, 1}, B::Array{GrpAbFinGenElem, 1}) -> Map
+
 Creates the homomorphism $A[i] \mapsto B[i]$.
 """
 function hom(A::Array{GrpAbFinGenElem, 1}, B::Array{GrpAbFinGenElem, 1}; check::Bool = true)
@@ -417,6 +418,7 @@ end
 
 @doc Markdown.doc"""
     hom(G::GrpAbFinGen, H::GrpAbFinGen; task::Symbol = :map) -> GrpAbFinGen, Map
+
 Computes the group of all homomorpisms from $G$ to $H$ as an abstract group.
 If `task` is ":map", then a map $\phi$ is computed that can be used
 to obtain actual homomorphisms. This map also allows preimages.
@@ -522,6 +524,7 @@ end
 #TODO: technically, dual Z could be Q/Z ...
 @doc Markdown.doc"""
     dual(G::GrpAbFinGen) -> GrpAbFinGen, Map
+
 Computes the dual group, i.e. $hom(G, Q/Z)$ as an
 abstract group. The map can be used to obtain actual homomorphisms.
 """

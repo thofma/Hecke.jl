@@ -68,7 +68,7 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-  zeros(f::fmpz_poly) -> Array{fmpz, 1}
+    zeros(f::fmpz_poly) -> Array{fmpz, 1}
 
 Computes the integer zeros of a given polynomial $f$.
 """
@@ -161,7 +161,7 @@ function issquare(x::FinFieldElem)
 end
 
 @doc Markdown.doc"""
-  quadroots(a::fmpz, b::fmpz, c::fmpz, p::fmpz) -> Bool
+    quadroots(a::fmpz, b::fmpz, c::fmpz, p::fmpz) -> Bool
 
 Returns true if the quadratic congruence of the quadratic polynomial
 $ax^2 + bx + c = 0$ has a root modulo $p$.

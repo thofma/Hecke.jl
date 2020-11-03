@@ -32,9 +32,9 @@ order_type(::Type{AlgAss{T}}) where { T <: NumFieldElem } = AlgAssRelOrd{T, frac
 @doc Markdown.doc"""
     multiplication_table(A::AlgAss; copy::Bool = true) -> Array{RingElem, 3}
 
-> Given an algebra $A$ this function returns the multiplication table of $A$:
-> If the function returns $M$ and the basis of $A$ is $e_1,\dots, e_n$ then
-> it holds $e_i \cdot e_j = \sum_k M[i, j, k] \cdot e_k$.
+Given an algebra $A$ this function returns the multiplication table of $A$:
+If the function returns $M$ and the basis of $A$ is $e_1,\dots, e_n$ then
+it holds $e_i \cdot e_j = \sum_k M[i, j, k] \cdot e_k$.
 """
 function multiplication_table(A::AlgAss; copy::Bool = true)
   @assert !iszero(A)
@@ -56,7 +56,7 @@ iscommutative_known(A::AlgAss) = (A.iscommutative != 0)
 @doc Markdown.doc"""
     iscommutative(A::AlgAss) -> Bool
 
-> Returns `true` if $A$ is a commutative ring and `false` otherwise.
+Returns `true` if $A$ is a commutative ring and `false` otherwise.
 """
 function iscommutative(A::AlgAss)
   if iscommutative_known(A)
@@ -215,10 +215,10 @@ end
     quo(O::AlgAssAbsOrd, I::AlgAssAbsOrdIdl, p::Union{ Int, fmpz })
       -> AlgAss, AbsOrdToAlgAssMor
 
-> Given an ideal $I$ such that $p \cdot O \subseteq I \subseteq O$ this function
-> constructs $O/I$ as an algebra over $\mathbb F_p$ together with the projection
-> map $O \to O/I$.
-> It is assumed that $p$ is prime.
+Given an ideal $I$ such that $p \cdot O \subseteq I \subseteq O$ this function
+constructs $O/I$ as an algebra over $\mathbb F_p$ together with the projection
+map $O \to O/I$.
+It is assumed that $p$ is prime.
 """
 quo(O::Union{NfAbsOrd, AlgAssAbsOrd}, I::Union{NfAbsOrdIdl, AlgAssAbsOrdIdl}, p::Union{Integer, fmpz}) = AlgAss(O, I, p)
 
@@ -330,10 +330,10 @@ end
     quo(I::AlgAssAbsOrdIdl, J::AlgAssAbsOrdIdl, p::Union{ Int, fmpz })
       -> AlgAss, AbsOrdToAlgAssMor
 
-> Given an ideal $J$ such that $p \cdot I \subseteq J \subseteq I$ this function
-> constructs $I/J$ as an algebra over $\mathbb F_p$ together with the projection
-> map $I \to I/J$.
-> It is assumed that $p$ is prime.
+Given an ideal $J$ such that $p \cdot I \subseteq J \subseteq I$ this function
+constructs $I/J$ as an algebra over $\mathbb F_p$ together with the projection
+map $I \to I/J$.
+It is assumed that $p$ is prime.
 """
 quo(I::Union{ NfAbsOrdIdl, AlgAssAbsOrdIdl }, J::Union{ NfAbsOrdIdl, AlgAssAbsOrdIdl }, p::Union{ Integer, fmpz }) = AlgAss(I, J, p)
 
@@ -457,10 +457,10 @@ p = prime_decomposition(OK, 2)[1][1]
     quo(O::AlgAssRelOrd, I::AlgAssRelOrdIdl, p::Union{ NfAbsOrdIdl, NfRelOrdIdl })
       -> AlgAss, RelOrdToAlgAssMor
 
-> Given an ideal $I$ such that $p \cdot O \subseteq I \subseteq O$ this function
-> constructs $O/I$ as an algebra over the finite field $R/p$, where $R$ is the
-> order of $p$, together with the projection map $O \to O/I$.
-> It is assumed that `R == base_ring(O)` and that $p$ is prime.
+Given an ideal $I$ such that $p \cdot O \subseteq I \subseteq O$ this function
+constructs $O/I$ as an algebra over the finite field $R/p$, where $R$ is the
+order of $p$, together with the projection map $O \to O/I$.
+It is assumed that `R == base_ring(O)` and that $p$ is prime.
 """
 quo(O::Union{ NfRelOrd{T, S}, AlgAssRelOrd{T, S} }, I::Union{ NfRelOrdIdl{T, S}, AlgAssRelOrdIdl{T, S} }, p::Union{NfOrdIdl, NfRelOrdIdl}) where {T, S} = AlgAss(O, I, p)
 
@@ -607,12 +607,12 @@ end
     quo(I::AlgAssRelOrdIdl, J::AlgAssRelOrdIdl, p::Union{ NfAbsOrdIdl, NfRelOrdIdl })
       -> AlgAss, RelOrdToAlgAssMor
 
-> Given an ideal $J$ such that $p \cdot I \subseteq J \subseteq I$ this function
-> constructs $I/J$ as an algebra over the finite field $R/p$, where $R$ is the
-> order of $p$, together with the projection map $I \to I/J$.
-> It is assumed that `order(I) === order(J)` and in particular both should be
-> defined. Further, it should hold `R == base_ring(order(I))` and $p$ should be
-> prime.
+Given an ideal $J$ such that $p \cdot I \subseteq J \subseteq I$ this function
+constructs $I/J$ as an algebra over the finite field $R/p$, where $R$ is the
+order of $p$, together with the projection map $I \to I/J$.
+It is assumed that `order(I) === order(J)` and in particular both should be
+defined. Further, it should hold `R == base_ring(order(I))` and $p$ should be
+prime.
 """
 quo(I::Union{ NfRelOrdIdl{T, S}, AlgAssRelOrdIdl{T, S} }, J::Union{ NfRelOrdIdl{T, S}, AlgAssRelOrdIdl{T, S} }, p::Union{NfOrdIdl, NfRelOrdIdl}) where {T, S} = AlgAss(I, J, p)
 
@@ -882,10 +882,10 @@ end
                 action::Symbol = :left)
        -> AlgAss, AbsAlgAssMor
 
-> Given an algebra $A$ and an element $e$, this function constructs the algebra
-> $e \cdot A$ (if `action == :left`) respectively $A \cdot e$ (if `action == :right`)
-> and a map from this algebra to $A$.
-> If `idempotent` is `true`, it is assumed that $e$ is idempotent in $A$.
+Given an algebra $A$ and an element $e$, this function constructs the algebra
+$e \cdot A$ (if `action == :left`) respectively $A \cdot e$ (if `action == :right`)
+and a map from this algebra to $A$.
+If `idempotent` is `true`, it is assumed that $e$ is idempotent in $A$.
 """
 function subalgebra(A::AlgAss{T}, e::AlgAssElem{T, AlgAss{T}}, idempotent::Bool = false, action::Symbol = :left) where {T}
   @assert parent(e) == A
@@ -951,8 +951,8 @@ end
 @doc Markdown.doc"""
     subalgebra(A::AlgAss, basis::Vector{AlgAssElem}) -> AlgAss, AbsAlgAssMor
 
-> Returns the subalgebra of $A$ generated by the elements in `basis` and a map
-> from this algebra to $A$.
+Returns the subalgebra of $A$ generated by the elements in `basis` and a map
+from this algebra to $A$.
 """
 function subalgebra(A::AlgAss{T}, basis::Vector{AlgAssElem{T, AlgAss{T}}}) where T
   M = zero_matrix(base_ring(A), dim(A), dim(A))
@@ -983,9 +983,9 @@ end
 @doc Markdown.doc"""
     trace_matrix(A::AlgAss) -> MatElem
 
-> Returns a matrix $M$ over the base ring of $A$ such that
-> $M_{i, j} = \mathrm{tr}(b_i \cdot b_j)$, where $b_1, \dots, b_n$ is the
-> basis of $A$.
+Returns a matrix $M$ over the base ring of $A$ such that
+$M_{i, j} = \mathrm{tr}(b_i \cdot b_j)$, where $b_1, \dots, b_n$ is the
+basis of $A$.
 """
 function trace_matrix(A::AlgAss)
   _assure_trace_basis(A)
@@ -1026,7 +1026,7 @@ end
 @doc Markdown.doc"""
     center(A::AlgAss) -> AlgAss, AbsAlgAssMor
 
-> Returns the center $C$ of $A$ and the inclusion $C \to A$.
+Returns the center $C$ of $A$ and the inclusion $C \to A$.
 """
 function center(A::AlgAss{T}) where {T}
   if iscommutative(A)
@@ -1350,8 +1350,8 @@ end
 @doc Markdown.doc"""
     issplit(A::AlgAss{fmpq}) -> Bool
 
-> Given a $\mathbb Q$-algebra $A$, this function returns `true` if $A$ splits
-> over $\mathbb Q$ and `false` otherwise.
+Given a $\mathbb Q$-algebra $A$, this function returns `true` if $A$ splits
+over $\mathbb Q$ and `false` otherwise.
 """
 function issplit(A::AlgAss{fmpq})
   O = Order(A, basis(A))
@@ -1437,9 +1437,9 @@ end
     direct_product(algebras::Vector{AlgAss}; task::Symbol = :sum)
       -> AlgAss, Vector{AbsAlgAssMor}, Vector{AbsAlgAssMor}
 
-> Returns the algebra $A = A_1 \times \cdots \times A_k$. `task` can be
-> ":sum", ":prod", ":both" or ":none" and determines which canonical maps
-> are computed as well: ":sum" for the injections, ":prod" for the projections.
+Returns the algebra $A = A_1 \times \cdots \times A_k$. `task` can be
+":sum", ":prod", ":both" or ":none" and determines which canonical maps
+are computed as well: ":sum" for the injections, ":prod" for the projections.
 """
 function direct_product(algebras::Vector{ <: AlgAss{T} }; task::Symbol = :sum) where T
   return direct_product(algebras..., task = task)
@@ -1507,8 +1507,8 @@ end
     direct_product(fields::Vector{AnticNumberFields})
       -> AlgAss{fmpq}, Vector{AbsAlgAssToNfAbsMor}
 
-> Returns the algebra $A = K_1 \times \cdots \times K_k$ and the projection
-> maps $A ->> K_i$.
+Returns the algebra $A = K_1 \times \cdots \times K_k$ and the projection
+maps $A ->> K_i$.
 """
 function direct_product(fields::Vector{AnticNumberField})
   return direct_product(fields...)

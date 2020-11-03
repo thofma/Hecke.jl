@@ -685,7 +685,7 @@ function _obstruction_prime_no_extend(x::FieldsTower, cocycles, p::Int)
   end
   D1 = Dict{gfp_poly, GAP.GapObj}()
   for g in GC
-    pol = Rx(g.prim_img)
+    pol = Rx(image_primitive_element(g))
     el = D[g]
     D1[pol] = el
   end 
@@ -695,7 +695,7 @@ function _obstruction_prime_no_extend(x::FieldsTower, cocycles, p::Int)
       #I need to assert that I took the right pSylow.
       Gp1 = NfToNfMor[]
       for g in GC
-        el = D1[Rx(g.prim_img)]
+        el = D1[Rx(image_primitive_element(g))]
         if GAP.Globals.IN(el, GAP.Globals.Image(cocycles[i].inclusion_of_pSylow))
           push!(Gp1, g)
         end
@@ -751,14 +751,14 @@ function _obstruction_prime(x::FieldsTower, cocycles::Vector{cocycle_ctx}, p)
   fmod = Rx(K.pol)
   dautsK1 = Dict{gfp_poly, Int}()
   for w = 1:length(autsK1)
-    dautsK1[Rx(autsK1[w].prim_img)] = w
+    dautsK1[Rx(image_primitive_element(autsK1[w]))] = w
   end 
   #Restrict to the p-Sylow
   #Unfortunately, I need to compute the group structure.
   Gp = pSylow(autsK1, p)
   D1 = Dict{gfp_poly, GAP.GapObj}()
   for g in Gp
-    pol = Rx(g.prim_img)
+    pol = Rx(image_primitive_element(g))
     indg = restr[dautsK1[pol]]
     el = D[autsK[indg]]
     D1[pol] = el
@@ -809,7 +809,7 @@ function action_on_roots(G::Vector{NfToNfMor}, zeta::nf_elem, pv::Int)
     Rx, x = PolynomialRing(R, "x", cached = false)
     fmod = Rx(K.pol)
   end
-  polsG = gfp_poly[Rx(g.prim_img) for g in G]
+  polsG = gfp_poly[Rx(image_primitive_element(g)) for g in G]
   zetaP = Rx(zeta)
   units = Vector{gfp_poly}(undef, pv-1)
   units[1] = zetaP
@@ -843,21 +843,21 @@ function restriction(autsK1::Vector{NfToNfMor}, autsK::Vector{NfToNfMor}, mp::Nf
     ff1 = Rx(K.pol)
     fmod = Rx(K1.pol)
   end
-  mp_pol = Rx(mp.prim_img)
+  mp_pol = Rx(image_primitive_element(mp))
   imgs = Vector{gfp_poly}(undef, length(autsK))
   for i = 1:length(imgs)
-    imgs[i] = Hecke.compose_mod(Rx(autsK[i].prim_img), mp_pol, fmod)
+    imgs[i] = Hecke.compose_mod(Rx(image_primitive_element(autsK[i])), mp_pol, fmod)
   end
   res = Vector{Int}(undef, length(autsK1))
   for i = 1:length(res)
-    img = Hecke.compose_mod(mp_pol, Rx(autsK1[i].prim_img), fmod)
+    img = Hecke.compose_mod(mp_pol, Rx(image_primitive_element(autsK1[i])), fmod)
     for j = 1:length(autsK)
       if img == imgs[j]
         res[i] = j
         break
       end
     end
-    #@assert mp(autsK[res[i]].prim_img) == autsK1[i](mp.prim_img)
+    #@assert mp(image_primitive_element(autsK[res[i]])) == autsK1[i](image_primitive_element(mp))
   end
   return res
 end
@@ -926,14 +926,14 @@ function _obstruction_pp(F::FieldsTower, cocycles::Vector{cocycle_ctx}, pv::Int)
   end
   dautsK1 = Dict{gfp_poly, Int}()
   for w = 1:length(autsK1)
-    dautsK1[Rx(autsK1[w].prim_img)] = w
+    dautsK1[Rx(image_primitive_element(autsK1[w]))] = w
   end 
   #Restrict to the p-Sylow
   #Unfortunately, I need to compute the group structure.
   Gp = pSylow(autsK1, p)
   D1 = Dict{gfp_poly, GAP.GapObj}()
   for g in autsK1
-    pol = Rx(g.prim_img)
+    pol = Rx(image_primitive_element(g))
     mp = autsK[restr[dautsK1[pol]]]
     el = D[mp]
     D1[pol] = el
@@ -946,7 +946,7 @@ function _obstruction_pp(F::FieldsTower, cocycles::Vector{cocycle_ctx}, pv::Int)
     if isdefined(cocycles[i], :inclusion_of_pSylow)
       Gp1 = NfToNfMor[]
       for g in autsK1
-        el = D1[Rx(g.prim_img)]
+        el = D1[Rx(image_primitive_element(g))]
         if GAP.Globals.IN(el, GAP.Globals.Image(cocycles[i].inclusion_of_pSylow))
           push!(Gp1, g)
         end
@@ -973,11 +973,11 @@ function _obstruction_pp(F::FieldsTower, cocycles::Vector{cocycle_ctx}, pv::Int)
     projection = cocycles[i].projection
     inc_gen = GAP.Globals.Image(inclusion, cocycles[i].gen_kernel)
     for w = 1:length(Gp)
-      if Gp[w].prim_img == gen(K1)
+      if image_primitive_element(Gp[w]) == gen(K1)
         push!(Stab, Gp[w])
         continue
       end
-      ss1 = D1[Rx(Gp[w].prim_img)]
+      ss1 = D1[Rx(image_primitive_element(Gp[w]))]
       if isdefined(cocycles[i], :inclusion_of_pSylow)
         ss1 = GAP.Globals.PreImagesRepresentative(cocycles[i].inclusion_of_pSylow, ss1)
       end
@@ -1016,7 +1016,7 @@ function _obstruction_pp_no_extend(F::FieldsTower, cocycles::Vector{cocycle_ctx}
   end
   dautsK = Dict{gfp_poly, Int}()
   for w = 1:length(autsK)
-    dautsK[Rx(autsK[w].prim_img)] = w
+    dautsK[Rx(image_primitive_element(autsK[w]))] = w
   end 
   H = GAP.Globals.ImagesSource(cocycles[1].projection)
   iso = GAP.Globals.IsomorphismGroups(Gperm, H)
@@ -1045,11 +1045,11 @@ function _obstruction_pp_no_extend(F::FieldsTower, cocycles::Vector{cocycle_ctx}
     projection = cocycles[i].projection
     inc_gen = GAP.Globals.Image(inclusion, cocycles[i].gen_kernel)
     for w = 1:length(Gp)
-      if Gp[w].prim_img == gen(K)
+      if image_primitive_element(Gp[w]) == gen(K)
         push!(Stab, Gp[w])
         continue
       end
-      s1 = dautsK[Rx(Gp[w].prim_img)]
+      s1 = dautsK[Rx(image_primitive_element(Gp[w]))]
       img_el = GAP.Globals.PreImagesRepresentative(projection, ElemGAP[s1])
       el1 = img_el*inc_gen
       el2 = inc_gen*img_el
@@ -1111,7 +1111,7 @@ function is_split_at_infinity(K::AnticNumberField, G::Vector{NfToNfMor}, Coc::Fu
     return true
   end
   @assert aut in G
-  return !isone(Coc(Rx(aut.prim_img), Rx(aut.prim_img)))
+  return !isone(Coc(Rx(image_primitive_element(aut)), Rx(image_primitive_element(aut))))
 end
 
 function issplit_at_p(F::FieldsTower, G::Vector{NfToNfMor}, Coc::Function, p::Int, n::Int, Rx::GFPPolyRing)
@@ -1164,7 +1164,7 @@ function _find_theta(G::Vector{NfToNfMor}, F::FqNmodFiniteField, mF::Hecke.NfOrd
     #res = O(lift(K, img), false)
     #I make sure that the element is a generator of the inertia subgroup
     if mF(res) == gF 
-      theta_q = Rt(theta.prim_img)
+      theta_q = Rt(image_primitive_element(theta))
       pp = theta_q
       for i = 2:t
         pp = compose_mod(theta_q, pp, fmod)
@@ -1198,7 +1198,7 @@ function _find_frob(G::Vector{NfToNfMor}, F::FqNmodFiniteField, mF::Hecke.NfOrdT
   gF = gen(F)
   igF = K(mF\gF)
   rhs = gF^q
-  theta_q = Rt(theta.prim_img)
+  theta_q = Rt(image_primitive_element(theta))
   for i = 1:length(G)
     frob = G[i]
     if frob == theta
@@ -1207,7 +1207,7 @@ function _find_frob(G::Vector{NfToNfMor}, F::FqNmodFiniteField, mF::Hecke.NfOrdT
     if mF(O(frob(igF), false)) != rhs
       continue
     end
-    frob_q = Rt(frob.prim_img)
+    frob_q = Rt(image_primitive_element(frob))
     #Now, I check the relation
     #gc = frob * theta 
     gc = compose_mod(frob_q, theta_q, fmod)
@@ -1285,7 +1285,7 @@ function issplit_at_P(O::NfOrd, G::Vector{NfToNfMor}, Coc::Function, P::NfOrdIdl
   F, mF = Hecke.ResidueFieldSmall(O, P)
   theta1 = _find_theta(InGrp, F, mF, e)
 
-  theta = Rx(theta1.prim_img)
+  theta = Rx(image_primitive_element(theta1))
   fmod = Rx(nf(O).pol)
   #I have found my generators. Now, we find the elements to test if it splits.
   if !iszero(mod(c, n))
@@ -1305,7 +1305,7 @@ function issplit_at_P(O::NfOrd, G::Vector{NfToNfMor}, Coc::Function, P::NfOrdIdl
     return true
   end
   frob1 = _find_frob(Gp, F, mF, e, f, q, theta1)
-  frob = Rx(frob1.prim_img)
+  frob = Rx(image_primitive_element(frob1))
 
   if iszero(mod(q-1, e*n))
     lambda = mod(Coc(frob, theta)- Coc(theta, frob), n)

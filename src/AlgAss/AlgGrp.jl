@@ -22,7 +22,7 @@ order_type(::Type{AlgGrp{T, S, R}}) where { T <: NumFieldElem, S, R } = AlgAssRe
 @doc Markdown.doc"""
     group(A::AlgGrp) -> Group
 
-> Returns the group defining $A$.
+Returns the group defining $A$.
 """
 group(A::AlgGrp) = A.group
 
@@ -36,9 +36,9 @@ end
 @doc Markdown.doc"""
     multiplication_table(A::AlgGrp; copy::Bool = true) -> Array{RingElem, 2}
 
-> Given a group algebra $A$ this function returns the multiplication table of
-> $A$: If the function returns $M$ and the basis of $A$ is $g_1,\dots, g_n$ then
-> it holds $g_i \cdot g_j = g_{M[i, j]}$.
+Given a group algebra $A$ this function returns the multiplication table of
+$A$: If the function returns $M$ and the basis of $A$ is $g_1,\dots, g_n$ then
+it holds $g_i \cdot g_j = g_{M[i, j]}$.
 """
 function multiplication_table(A::AlgGrp; copy::Bool = true)
   if copy
@@ -57,8 +57,8 @@ end
 @doc Markdown.doc"""
     group_algebra(K::Ring, G; op = *) -> AlgGrp
 
-> Returns the group ring $K[G]$.
-> $G$ may be any set and `op` a group operation on $G$.
+Returns the group ring $K[G]$.
+$G$ may be any set and `op` a group operation on $G$.
 """
 group_algebra(K::Ring, G; op = *) = AlgGrp(K, G, op = op)
 
@@ -84,7 +84,7 @@ end
     (K::Ring)[G::Group] -> AlgGrp
     (K::Ring)[G::GrpAbFinGen] -> AlgGrp
 
-> Returns the group ring $K[G]$.
+Returns the group ring $K[G]$.
 """
 getindex(K::Ring, G::Group) = group_algebra(K, G)
 getindex(K::Ring, G::GrpAbFinGen) = group_algebra(K, G)
@@ -100,7 +100,7 @@ iscommutative_known(A::AlgGrp) = (A.iscommutative != 0)
 @doc Markdown.doc"""
     iscommutative(A::AlgGrp) -> Bool
 
-> Returns `true` if $A$ is a commutative ring and `false` otherwise.
+Returns `true` if $A$ is a commutative ring and `false` otherwise.
 """
 function iscommutative(A::AlgGrp)
   if iscommutative_known(A)
@@ -180,7 +180,7 @@ end
 @doc Markdown.doc"""
     center(A::AlgGrp) -> AlgAss, AbsAlgAssMor
 
-> Returns the center $C$ of $A$ and the inclusion $C \to A$.
+Returns the center $C$ of $A$ and the inclusion $C \to A$.
 """
 function center(A::AlgGrp{T}) where {T}
   if isdefined(A, :center)
@@ -300,14 +300,14 @@ end
     gens(A::AlgGrp, return_full_basis::Type{Val{T}} = Val{false})
       -> Vector{AlgGrpElem}
 
-> Returns a subset of `basis(A)`, which generates $A$ as an algebra over
-> `base_ring(A)`.
-> If `return_full_basis` is set to `Val{true}`, the function also returns a
-> `Vector{AbsAlgAssElem}` containing a full basis consisting of monomials in
-> the generators and a `Vector{Vector{Tuple{Int, Int}}}` containing the
-> information on how these monomials are built. E. g.: If the function returns
-> `g`, `full_basis` and `v`, then we have
-> `full_basis[i] = prod( g[j]^k for (j, k) in v[i] )`.
+Returns a subset of `basis(A)`, which generates $A$ as an algebra over
+`base_ring(A)`.
+If `return_full_basis` is set to `Val{true}`, the function also returns a
+`Vector{AbsAlgAssElem}` containing a full basis consisting of monomials in
+the generators and a `Vector{Vector{Tuple{Int, Int}}}` containing the
+information on how these monomials are built. E. g.: If the function returns
+`g`, `full_basis` and `v`, then we have
+`full_basis[i] = prod( g[j]^k for (j, k) in v[i] )`.
 """
 function gens(A::AlgGrp, return_full_basis::Type{Val{T}} = Val{false}) where T
   G = group(A)
@@ -380,7 +380,7 @@ function _find_isomorphism(K::Union{ AnticNumberField, NfRel{nf_elem} }, A::AlgG
   n = length(aut)
   identity = 0
   for i = 1:n
-    b = aut[i].prim_img
+    b = image_primitive_element(aut[i])
     aut_dict[b] = i
     if b == gen(K)
       identity = i
@@ -395,7 +395,7 @@ function _find_isomorphism(K::Union{ AnticNumberField, NfRel{nf_elem} }, A::AlgG
       elseif j == identity
         k = i
       else
-        b = aut[i](aut[j].prim_img)
+        b = aut[i](image_primitive_element(aut[j]))
         k = aut_dict[b]
       end
       op_array[i, j] = k

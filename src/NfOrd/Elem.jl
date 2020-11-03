@@ -288,7 +288,7 @@ Base.hash(x::NfAbsOrdElem, h::UInt) = Base.hash(x.elem_in_nf, h)
 
 Returns whether $x$ and $y$ are equal.
 """
- ==(x::NfAbsOrdElem, y::NfAbsOrdElem) = parent(x) === parent(y) &&
+==(x::NfAbsOrdElem, y::NfAbsOrdElem) = parent(x) === parent(y) &&
                                             x.elem_in_nf == y.elem_in_nf
 
 ################################################################################
@@ -298,8 +298,8 @@ Returns whether $x$ and $y$ are equal.
 ################################################################################
 @doc Markdown.doc"""
     charpoly(a::NfAbsOrdElem) -> fmpz_poly
-
     charpoly(a::NfAbsOrdElem, FlintZZ) -> fmpz_poly
+
 The characteristic polynomial of $a$.
 """
 function charpoly(a::NfAbsOrdElem, Zx::FmpzPolyRing = FmpzPolyRing(FlintZZ, :x, false))
@@ -308,6 +308,7 @@ end
 
 @doc Markdown.doc"""
     minpoly(a::NfAbsOrdElem) -> fmpz_poly
+
 The minimal polynomial of $a$.
 """
 function minpoly(a::NfAbsOrdElem, Zx::FmpzPolyRing = FmpzPolyRing(FlintZZ, :x, false))
@@ -852,9 +853,9 @@ function representation_matrix_mod(a::NfAbsOrdElem, d::fmpz)
     RR = ResidueRing(FlintZZ, d1, cached = false)
     ARR = map_entries(RR, A)
     BMRR = map_entries(RR, BM.num)
-    
-    mul!(ARR, BMRR, ARR) 
-    #=  
+
+    mul!(ARR, BMRR, ARR)
+    #=
     c = gcd(lift(content(ARR)), d1)
     if !isone(c)
       d3 = divexact(d1, c)
@@ -890,7 +891,7 @@ function representation_matrix_mod(a::NfAbsOrdElem, d::fmpz)
     return res1
   end
   #=
-  A1 = A 
+  A1 = A
   mod!(A1, d1)
   M1 = mod(BM.num, d1)
   mul!(A1, M1, A1)
@@ -1133,7 +1134,7 @@ Compute the conjugates of `x` as elements of type `acb`.
 Recall that we order the complex conjugates
 $\sigma_{r+1}(x),...,\sigma_{r+2s}(x)$ such that
 $\sigma_{i}(x) = \overline{\sigma_{i + s}(x)}$ for $r + 2 \leq i \leq r + s$.
->
+
 Every entry `y` of the array returned satisfies `radius(real(y)) < 2^-abs_tol`,
 `radius(imag(y)) < 2^-abs_tol` respectively.
 """

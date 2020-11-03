@@ -33,7 +33,7 @@ function simplify(K::AnticNumberField; canonical::Bool = false, cached::Bool = t
   OK = maximal_order(K)
   if isdefined(OK, :lllO)
     @vprint :Simplify 1 "LLL basis was already there\n"
-    ZK = OK.lllO
+    ZK = OK.lllO::typeof(OK)
   else
     b = _simplify(OK)
     if b != gen(K)
@@ -53,6 +53,7 @@ function simplify(K::AnticNumberField; canonical::Bool = false, cached::Bool = t
       Hecke._set_maximal_order(L1, OL1)
       @vprint :Simplify 3 "Trying to simplify $(L1.pol)\n"
       L2, mL2 = simplify(L1, cached = cached, save_LLL_basis = save_LLL_basis)
+      h = mL2 * mp
       return L2, mL2*mp
     end
     prec = 100 + 25*div(n, 3) + Int(round(log(abs(discriminant(OK)))))

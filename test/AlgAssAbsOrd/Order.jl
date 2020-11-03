@@ -17,7 +17,7 @@
       K, a = NumberField(x^2-b, check = false, cached = false)
       O = maximal_order(K);
       cocval = Array{nf_elem, 2}(undef, 2, 2)
-      G = NfToNfMor[Hecke.NfToNfMor(K,K,a),Hecke.NfToNfMor(K,K,-a)]
+      G = NfToNfMor[hom(K,K,a),hom(K,K,-a)]
       cocval[1,1] = K(1)
       cocval[1,2] = K(1)
       cocval[2,1] = K(1)
@@ -51,10 +51,10 @@
     K, a = NumberField(x^4-4*x^2+1)
     O = maximal_order(K)
     Autos = Array{NfToNfMor, 1}(undef, 4)
-    Autos[1] = NfToNfMor(K, K, a)
-    Autos[2] = NfToNfMor(K, K, -a)
-    Autos[3] = NfToNfMor(K, K, a^3 - 4*a)
-    Autos[4] = NfToNfMor(K, K, -a^3 + 4*a)
+    Autos[1] = hom(K, K, a)
+    Autos[2] = hom(K, K, -a)
+    Autos[3] = hom(K, K, a^3 - 4*a)
+    Autos[4] = hom(K, K, -a^3 + 4*a)
     MatCoc = [0 0 0 0; 0 1 0 1; 0 1 1 0; 0 0 1 1]
     Coc = Array{nf_elem, 2}(undef, 4, 4)
     for i = 1:4
@@ -112,5 +112,21 @@
     M = matrix_algebra(FlintQQ, 3)
     O = maximal_order(M)
     @test isone(abs(discriminant(O)))
+  end
+
+  @testset "rand" begin
+    Qx, x = FlintQQ["x"]
+    A = AlgAss(x^2 - fmpq(1, 5))
+    O = any_order(A)
+
+    for n = (3, fmpz(3), big(3), 1:3, big(1):3)
+      @test rand(rng, O, n) isa elem_type(O)
+      @test rand(O, n) isa elem_type(O)
+      m = make(O, n)
+      @test Random.gentype(m) == elem_type(O)
+      @test rand(make(O, n), 3) isa Vector{elem_type(O)}
+
+      @test reproducible(m)
+    end
   end
 end

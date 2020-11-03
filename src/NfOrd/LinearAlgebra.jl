@@ -73,6 +73,7 @@ end
 
 @doc Markdown.doc"""
     det(M::Generic.Mat{NfOrdElem}) -> NfOrdElem
+
 Uses a modular algorithm to compute the determinant.
 """
 function det(M::Generic.Mat{NfOrdElem})
@@ -185,6 +186,7 @@ end
 
 @doc Markdown.doc"""
     mod_sym(a::NfOrdElem, m)
+
 Reduces the coefficients of $a$ modulo $m$, using the symmetric residue system.
 """
 function mod_sym(x::NfOrdElem, m)
@@ -280,6 +282,7 @@ end
 
 @doc Markdown.doc"""
     PseudoMatrix(m::Generic.Mat{NfOrdElem}, c::Array{NfOrdIdl, 1}) -> PMat{nf_elem, NfOrdFracIdl}
+
 Returns the (row) pseudo matrix representing the $Z_k$-module
  $$\sum c_i m_i$$
  where $c_i$ are the ideals in $c$ and $m_i$ the rows of $M$.
@@ -293,6 +296,7 @@ end
 
 @doc Markdown.doc"""
     PseudoMatrix(m::Generic.Mat{NfOrdElem}, c::Array{NfOrdIdl, 1}) -> PMat{nf_elem, NfOrdFracIdl}
+
 Returns the free (row) pseudo matrix representing the $Z_k$-module
  $$\sum Z_k m_i$$
  where $m_i$ are the rows of $M$.
@@ -422,16 +426,34 @@ function _coprime_norm_integral_ideal_class(x, y) #x::NfOrdFracIdl, y::NfOrdIdl)
   return z, a
 end
 
-function rand(I::NfOrdIdl, B::Int)
-  r = rand(-B:B, degree(order(I)))
-  b = basis(I, copy = false)
-  return dot(r, b)
+RandomExtensions.maketype(I::NfOrdIdl, ::Int) = NfOrdElem
+
+function rand(rng::AbstractRNG, sp::SamplerTrivial{<:Make2{NfOrdElem,NfOrdIdl,Int}})
+  I, B = sp[][1:end]
+  r = rand(rng, -B:B, degree(order(I)))
+  b = basis(I)
+  z::Random.gentype(sp) = r[1]*b[1] # type assert to help inference in Julia 1.0
+  for i in 2:degree(order(I))
+    z = z + r[i]*b[i]
+  end
+  return z
 end
 
-function rand(I::NfOrdFracIdl, B::Int)
-  z = rand(numerator(I, copy = false), B)
-  return divexact(elem_in_nf(z), denominator(I))
+rand(I::NfOrdIdl, B::Int) = rand(GLOBAL_RNG, I, B)
+rand(rng::AbstractRNG, I::NfOrdIdl, B::Int) = rand(rng, make(I, B))
+
+
+RandomExtensions.maketype(I::NfOrdFracIdl, ::Int) = nf_elem
+
+function rand(rng::AbstractRNG, sp::SamplerTrivial{<:Make2{nf_elem,NfOrdFracIdl,Int}})
+  I, B = sp[][1:2]
+  z = rand(rng, make(numerator(I), B))
+  return divexact(elem_in_nf(z), denominator(I))::nf_elem
+  # type assert to help inference in Julia 1.0
 end
+
+rand(I::NfOrdFracIdl, B::Int) = rand(GLOBAL_RNG, I, B)
+rand(rng::AbstractRNG, I::NfOrdFracIdl, B::Int) = rand(rng, make(I, B))
 
 function pseudo_hnf(P::PMat{nf_elem, NfOrdFracIdl}, shape::Symbol = :upperright, full_rank::Bool = false)
   if full_rank
@@ -1843,7 +1865,7 @@ function steinitz_form!(M::PMat{T, S}, U::Generic.Mat{T}, with_transform::Bool =
   O = order(M.coeffs[1])
   for r = start_row:nrows(M) - 1
     a = M.coeffs[r]
-    
+
     if isone(a)
       continue
     end

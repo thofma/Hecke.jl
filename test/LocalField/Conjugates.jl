@@ -17,16 +17,29 @@
 
    @testset "Completion" begin
    
-     L1, mL1 = completion(k, 37, 1)
-     L2, mL2 = completion(k, 37, 3)
+     if VERSION < v"1.6.0-DEV.1332"
+       L1, mL1 = completion(k, 37, 1)
+       L2, mL2 = completion(k, 37, 3)
 
-     @test degree(parent(mL1(a))) == 2
-     @test degree(parent(mL2(a))) == 1
+       @test degree(parent(mL1(a))) == 2
+       @test degree(parent(mL2(a))) == 1
 
-     lp = prime_decomposition(maximal_order(k), 37)
+       lp = prime_decomposition(maximal_order(k), 37)
 
-     @test valuation(a - preimage(mL1, mL1(a)), lp[1][1]) >= 10
-     @test valuation(a - preimage(mL2, mL2(a)), lp[2][1]) >= 10
+       @test valuation(a - preimage(mL1, mL1(a)), lp[1][1]) >= 10
+       @test valuation(a - preimage(mL2, mL2(a)), lp[2][1]) >= 10
+     else
+       L1, mL1 = completion(k, 37, 2)
+       L2, mL2 = completion(k, 37, 3)
+
+       @test degree(parent(mL1(a))) == 2
+       @test degree(parent(mL2(a))) == 1
+
+       lp = prime_decomposition(maximal_order(k), 37)
+
+       @test valuation(a - preimage(mL1, mL1(a)), lp[2][1]) >= 10
+       @test valuation(a - preimage(mL2, mL2(a)), lp[1][1]) >= 10
+     end
    end
 end
    

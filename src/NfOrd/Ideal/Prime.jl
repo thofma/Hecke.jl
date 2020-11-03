@@ -92,6 +92,7 @@ end
 
 @doc Markdown.doc"""
     degree(P::NfOrdIdl) -> Int
+
 The inertia degree of the prime-ideal $P$.
 """
 function degree(A::NfAbsOrdIdl)
@@ -103,6 +104,7 @@ inertia_degree(A::NfAbsOrdIdl) = degree(A)
 
 @doc Markdown.doc"""
     ramification_index(P::NfOrdIdl) -> Int
+
 The ramification index of the prime-ideal $P$.
 """
 function ramification_index(A::NfAbsOrdIdl)
@@ -118,6 +120,7 @@ end
 
 @doc Markdown.doc"""
     lift(K::AnticNumberField, f::nmod_poly) -> nf_elem
+
 Given a polynomial $f$ over a finite field, lift it to an element of the
 number field $K$. The lift is given by the element represented by the
 canonical lift of $f$ to a polynomial over the integers.
@@ -215,7 +218,7 @@ end
 
 Returns an array of tuples $(\mathfrak p_i,e_i)$ such that $p \mathcal O$ is the product of
 the $\mathfrak p_i^{e_i}$ and $\mathfrak p_i \neq \mathfrak p_j$ for $i \neq j$.
->
+
 If `degree_limit` is a nonzero integer $k > 0$, then only those prime ideals
 $\mathfrak p$ with $\deg(\mathfrak p) \leq k$ will be returned.
 Similarly if `lower_limit` is a nonzero integer $l > 0$, then only those prime ideals
@@ -525,7 +528,7 @@ end
                        degree_limit::Int = 0, index_divisors::Bool = true) -> Array{NfOrdIdl, 1}
 
 Computes the prime ideals $\mathcal O$ with norm up to $B$.
->
+
 If `degree_limit` is a nonzero integer $k$, then prime ideals $\mathfrak p$
 with $\deg(\mathfrak p) > k$ will be discarded.
 If 'index_divisors' is set to false, only primes not dividing the index of the order will be computed.
@@ -567,7 +570,7 @@ end
                        degree_limit::Int = 0) -> Array{NfOrdIdl, 1}
 
 Computes the prime ideals $\mathcal O$ over prime numbers in $lp$.
->
+
 If `degree_limit` is a nonzero integer $k$, then prime ideals $\mathfrak p$
 with $\deg(\mathfrak p) > k$ will be discarded.
 """
@@ -596,10 +599,10 @@ end
                        bad::fmpz)
 
 Computes the prime ideals $\mathcal O$ with norm up to $B$.
->
+
 If `degree_limit` is a nonzero integer $k$, then prime ideals $\mathfrak p$
 with $\deg(\mathfrak p) > k$ will be discarded.
->
+
 The function $F$ must be a function on prime numbers not dividing `bad` such that
 $F(p) = \deg(\mathfrak p)$ for all prime ideals $\mathfrak p$ lying above $p$.
 """
@@ -734,6 +737,7 @@ end
 @doc Markdown.doc"""
     coprime_base(A::Array{NfOrdIdl, 1}) -> Array{NfOrdIdl, 1}
     coprime_base(A::Array{NfOrdElem, 1}) -> Array{NfOrdIdl, 1}
+
 A coprime base for the (principal) ideals in $A$, i.e. the returned array
 generated multiplicatively the same ideals as the input and are pairwise
 coprime.
@@ -1643,7 +1647,7 @@ function decomposition_group(P::NfOrdIdl; G::Array{NfToNfMor, 1} = NfToNfMor[],
     end
     D = Dict{nmod_poly, Int}()
     for i = 1:length(G)
-      D[Rx(G[i].prim_img)] = i
+      D[Rx(image_primitive_element(G[i]))] = i
     end
     dec_group = NfToNfMor[]
     local ppp
@@ -1660,7 +1664,7 @@ function decomposition_group(P::NfOrdIdl; G::Array{NfToNfMor, 1} = NfToNfMor[],
       if y in P
         push!(dec_group, g)
         #I take the closure of dec_group modularly
-        elems = nmod_poly[Rx(el.prim_img) for el in dec_group]
+        elems = nmod_poly[Rx(image_primitive_element(el)) for el in dec_group]
         new_elems = closure(elems, ppp, gen(Rx))
         dec_group = NfToNfMor[G[D[x]] for x in new_elems]
       end
@@ -1681,7 +1685,7 @@ function decomposition_group_easy(G, P)
   R = ResidueRing(FlintZZ, Int(minimum(P, copy = false)), cached = false)
   Rt, t = PolynomialRing(R, "t", cached = false)
   fmod = Rt(K.pol)
-  pols = nmod_poly[Rt(x.prim_img) for x in G]
+  pols = nmod_poly[Rt(image_primitive_element(x)) for x in G]
   indices = Int[]
   second_gen = Rt(P.gen_two.elem_in_nf)
   if iszero(second_gen)
@@ -1716,7 +1720,7 @@ end
 ################################################################################
 											
 @doc Markdown.doc"""
-   inertia_subgroup(P::NfOrdIdl; G::Vector{NfToNfMor}) -> Vector{NfToNfMor}
+    inertia_subgroup(P::NfOrdIdl; G::Vector{NfToNfMor}) -> Vector{NfToNfMor}
 
 Given a prime ideal $P$ in a normal number field, it returns a vector of the automorphisms $\sigma_1, \dots, \sigma_s$
 such that $\sigma_i(P) = P$ for all $i = 1,\dots, s$ and induce the identity on the residue field.
@@ -1753,7 +1757,7 @@ function inertia_subgroup(P::NfOrdIdl; G::Vector{NfToNfMor} = NfToNfMor[])
   end
   D = Dict{nmod_poly, Int}()
   for i = 1:length(G)
-    D[Rx(G[i].prim_img)] = i
+    D[Rx(image_primitive_element(G[i]))] = i
   end
   local ppp
   let fmod = fmod
@@ -1768,7 +1772,7 @@ function inertia_subgroup(P::NfOrdIdl; G::Vector{NfToNfMor} = NfToNfMor[])
     y = mF(O(g(igF), false))
     if y == gF
       push!(inertia_grp, g)
-      elems = nmod_poly[Rx(el.prim_img) for el in inertia_grp]
+      elems = nmod_poly[Rx(image_primitive_element(el)) for el in inertia_grp]
       new_elems = closure(elems, ppp, gen(Rx))
       inertia_grp = NfToNfMor[G[D[x]] for x in new_elems]
       if length(inertia_grp) == orderG
@@ -1793,7 +1797,7 @@ function inertia_subgroup_easy(F, mF, G::Vector{NfToNfMor})
   indices = Int[]
   for i = 1:length(G)
     g = G[i]
-    img = Rt(g.prim_img)
+    img = Rt(image_primitive_element(g))
     res = compose_mod(igFq, img, fmod)
     resK = OK(lift(K, res), false)
     if mF(resK) == gF

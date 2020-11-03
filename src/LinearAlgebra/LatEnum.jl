@@ -516,6 +516,7 @@ end
 
 @doc Markdown.doc"""
     hermite_constant(n::Int, R=ArbField(100))
+
 The $n$-th Hermite constant (for lattices) to the power $n$.
 Exact value if $1 \le n \le 8$ and Blichfeld's upper bound
 otherwise.

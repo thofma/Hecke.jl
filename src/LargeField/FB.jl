@@ -196,7 +196,7 @@ function class_group_add_auto(ctx::ClassGrpCtx, auts::Vector{NfToNfMor})
 
   Dpols = Dict{gfp_poly, NfToNfMor}()
   for i = 1:length(auts)
-    Dpols[Rx(auts[i].prim_img)] = auts[i]
+    Dpols[Rx(image_primitive_element(auts[i]))] = auts[i]
   end
   Gperm = SymmetricGroup(length(ctx.FB.ideals))
 
@@ -206,7 +206,7 @@ function class_group_add_auto(ctx::ClassGrpCtx, auts::Vector{NfToNfMor})
     return elements
   end
   ind_elem = 3
-  pols = gfp_poly[x, Rx(S[1].prim_img)]
+  pols = gfp_poly[x, Rx(image_primitive_element(S[1]))]
   perms = Generic.Perm{Int}[Gperm(), induce(ctx.FB, S[1])]
   elements[2] = (S[1], perms[2])
   gperm = perms[2]*perms[2]
@@ -225,7 +225,7 @@ function class_group_add_auto(ctx::ClassGrpCtx, auts::Vector{NfToNfMor})
   end
 
   for i in 2:length(S)
-    pi = Rx(S[i].prim_img)
+    pi = Rx(image_primitive_element(S[i]))
     if !(pi in pols)
       permi = induce(ctx.FB, S[i])
       previous_order = length(pols)
@@ -247,7 +247,7 @@ function class_group_add_auto(ctx::ClassGrpCtx, auts::Vector{NfToNfMor})
       while rep_pos <= length(pols)
         for k in 1:i
           s = S[k]
-          po = Rx(s.prim_img)
+          po = Rx(image_primitive_element(s))
           permo = elements[1][2]
           for l = 1:length(elements)
             if s == elements[l][1]

@@ -405,6 +405,7 @@ end
 @doc Markdown.doc"""
     ispower(a::fmpz) -> Int, fmpz
     ispower(a::Integer) -> Int, Integer
+
 Returns $e$, $r$ such that $a = r^e$ with $e$ maximal. Note: $1 = 1^0$.
 """
 function ispower(a::fmpz)
@@ -442,6 +443,7 @@ end
 @doc Markdown.doc"""
     ispower(a::fmpq) -> Int, fmpq
     ispower(a::Rational) -> Int, Rational
+
 Writes $a = r^e$ with $e$ maximal. Note: $1 = 1^0$.
 """
 function ispower(a::fmpq)
@@ -464,6 +466,7 @@ end
     ispower(a::fmpz, n::Int) -> Bool, fmpz
     ispower(a::fmpq, n::Int) -> Bool, fmpq
     ispower(a::Integer, n::Int) -> Bool, Integer
+
 Tests if $a$ is an $n$-th power. Return `true` and the root if successful.
 """
 function ispower(a::fmpz, n::Int)
@@ -669,6 +672,7 @@ end
 @doc Markdown.doc"""
     sunit_group_fac_elem(S::Array{fmpz, 1}) -> GrpAbFinGen, Map
     sunit_group_fac_elem(S::Array{Integer, 1}) -> GrpAbFinGen, Map
+
 The $S$-unit group of $Z$ supported at $S$: the group of
 rational numbers divisible only by primes in $S$.
 The second return value is the map mapping group elements to rationals
@@ -722,6 +726,7 @@ end
 @doc Markdown.doc"""
     sunit_group(S::Array{fmpz, 1}) -> GrpAbFinGen, Map
     sunit_group(S::Array{Integer, 1}) -> GrpAbFinGen, Map
+
 The $S$-unit group of $Z$ supported at $S$: the group of
 rational numbers divisible only by primes in $S$.
 The second return value is the map mapping group elements to rationals
@@ -749,6 +754,7 @@ end
 @doc Markdown.doc"""
     isprime_power(n::fmpz) -> Bool
     isprime_power(n::Integer) -> Bool
+
 Tests if $n$ is the exact power of a prime number.
 """
 function isprime_power(n::fmpz)
@@ -1141,6 +1147,7 @@ end
 #Contini, Croot, Shparlinski: Complexity of inverting the Euler function
 @doc Markdown.doc"""
     euler_phi_inv_fac_elem(n::fmpz)
+
 The inverse of the Euler totient functions: find all $x$ s.th. $phi(x) = n$
 holds. The elements are returned in factored form.
 """
@@ -1247,6 +1254,7 @@ end
 
 @doc Markdown.doc"""
     euler_phi_inv(n::Integer) -> Array{fmpz, 1}
+
 The inverse of the Euler totient functions: find all $x$ s.th. $phi(x) = n$
 holds.
 """
@@ -1256,6 +1264,7 @@ end
 
 @doc Markdown.doc"""
     euler_phi_inv(n::fmpz) -> Array{fmpz, 1}
+
 The inverse of the Euler totient functions: find all $x$ s.th. $phi(x) = n$
 holds.
 """
@@ -1503,6 +1512,7 @@ end
 
 @doc Markdown.doc"""
     primes_up_to(n::Int) -> Vector{Int}
+
 Returns a vector containing all the prime numbers up to $n$.
 """
 function primes_up_to(n::Int)
@@ -1538,6 +1548,7 @@ end
 
 @doc Markdown.doc"""
     squarefree_up_to(n::Int) -> Vector{Int}
+
 Returns a vector containing all the squarefree numbers up to $n$.
 """
 function squarefree_up_to(n::Int; coprime_to::Array{fmpz,1}=fmpz[])
@@ -1575,6 +1586,7 @@ end
 #TODO (Hard): Implement this properly.
 @doc Markdown.doc"""
     issquarefree(n::Union{Int, fmpz}) -> Bool
+
 Returns true if $n$ is squarefree, false otherwise.
 """
 function issquarefree(n::Union{Int,fmpz})
@@ -1674,6 +1686,7 @@ end
 
 @doc Markdown.doc"""
     factor(a::fmpq, ::FlintIntegerRing) -> Fac{fmpz}
+
 Factor the rational number $a$ into prime numbers.
 """
 function factor(a::fmpq, ::FlintIntegerRing)

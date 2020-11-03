@@ -10,6 +10,5 @@
   include("Misc/Localization.jl")
   include("Misc/OrdLocalization.jl")
   include("Misc/jordan_test.jl")
-  include("Misc/BinQuad.jl")
   include("Misc/MPolyFactor.jl")
 end

@@ -67,6 +67,7 @@ end
 
 @doc Markdown.doc"""
     dickman_rho(x::Number, prec::Int=55) Number
+
 Evaluates the Dickman-$\rho$ function at $x$.
 """
 function dickman_rho(x::Number, prec::Int=55)
@@ -88,6 +89,7 @@ end
 
 @doc Markdown.doc"""
     dickman_rho(x::Number, e::UnitRange{Int}, prec::Int=55) Number[]
+
 Evaluates the Dickman-$\rho$ function at $i*x$ for all $i\in e$.
 """
 function dickman_rho(b::Number, e::UnitRange{Int}, prec::Int = 55)
@@ -256,6 +258,7 @@ end
 
 @doc Markdown.doc"""
     psi_guess(x::Number, B::Int) Number
+
 Uses the dickman_rho function to estimate $\psi(x, B)$ the number
 of $B$-smooth integers bounded by $x$.
 """
@@ -265,6 +268,7 @@ end
 
 @doc Markdown.doc"""
     psi_guess(x::Number, e::UnitRange, B::Int) Number
+
 Uses the dickman_rho function to estimate $\psi(x^i, B)$ the number
 of $B$-smooth integers bounded by $x^i$ for $i \in e$.
 """

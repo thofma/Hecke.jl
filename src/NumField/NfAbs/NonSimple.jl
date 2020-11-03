@@ -94,12 +94,6 @@ end
 #
 ################################################################################
 
-elem_type(::Type{NfAbsNS}) = NfAbsNSElem
-
-elem_type(::NfAbsNS) = NfAbsNSElem
-
-parent_type(::Type{NfAbsNSElem}) = NfAbsNS
-
 order_type(::NfAbsNS) = NfAbsOrd{NfAbsNS, NfAbsNSElem}
 
 order_type(::Type{NfAbsNS}) = NfAbsOrd{NfAbsNS, NfAbsNSElem}
@@ -148,15 +142,21 @@ end
 #
 ################################################################################
 
-function rand(K::NfAbsNS, r::UnitRange)
+RandomExtensions.maketype(K::NfAbsNS, r) = elem_type(K)
+
+function rand(rng::AbstractRNG, sp::SamplerTrivial{<:Make2{NfAbsNSElem,NfAbsNS,<:UnitRange}})
+  K, r = sp[][1:end]
   # TODO: This is super slow
   b = basis(K, copy = false)
-  z = K()
+  z::Random.gentype(sp) = K() # type-assert to help inference on Julia 1.0 and 1.1
   for i in 1:degree(K)
-    z += rand(r) * b[i]
+    z += rand(rng, r) * b[i]
   end
   return z
 end
+
+rand(K::NfAbsNS, r::UnitRange) = rand(GLOBAL_RNG, K, r)
+rand(rng::AbstractRNG, K::NfAbsNS, r::UnitRange) = rand(rng, make(K, r))
 
 ################################################################################
 #
@@ -784,6 +784,9 @@ function msubst(f::fmpq_mpoly, v::Array{T, 1}) where {T}
   n = length(v)
   @assert n == nvars(parent(f))
   variables = vars(f)
+  if length(f) == 0
+    return zero(fmpq) * one(parent(v[1]))
+  end
   if length(variables) == 1
     fl, p = isunivariate(f)
     @assert fl
@@ -890,7 +893,7 @@ function simple_extension(K::NfAbsNS; cached = true, check = true)
       emb[i] += b[j] * s[j, i]
     end
   end
-  h = NfAbsToNfAbsNS(Ka, K, pe, emb)
+  h = hom(Ka, K, pe, inverse = emb)
   embed(h)
   embed(MapFromFunc(x->preimage(h, x), K, Ka))
   return Ka, h
@@ -898,8 +901,8 @@ end
 
 function NumberField(K1::AnticNumberField, K2::AnticNumberField; cached::Bool = false, check::Bool = false)
   K , l = number_field([K1.pol, K2.pol], "_\$", check = check, cached = cached)
-  mp1 = NfAbsToNfAbsNS(K1, K, l[1])
-  mp2 = NfAbsToNfAbsNS(K2, K, l[2])
+  mp1 = hom(K1, K, l[1], check = false)
+  mp2 = hom(K2, K, l[2], check = false)
   embed(mp1)
   embed(mp2)
   return K, mp1, mp2
@@ -929,6 +932,7 @@ end
 
 @doc Markdown.doc"""
     number_field(f::Array{fmpq_poly, 1}, s::String="_\$") -> NfAbsNS
+
 Let $f = (f_1, \ldots, f_n)$ be univariate rational polynomials, then
 we construct
  $$K = Q[t_1, \ldots, t_n]/\langle f_1(t_1), \ldots, f_n(t_n)\rangle .$$
@@ -980,7 +984,7 @@ function NumberField(f::Array{fmpz_poly, 1}, S::Array{Symbol, 1}; cached::Bool =
   return NumberField(fmpq_poly[Qx(x) for x = f], S, cached = cached, check = check)
 end
 
-function gens(K::NfAbsNS) 
+function gens(K::NfAbsNS)
   l = Vector{NfAbsNSElem}(undef, ngens(K))
   degs = degrees(K)
   gQxy = gens(parent(K.pol[1]))

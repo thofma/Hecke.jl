@@ -83,12 +83,6 @@ end
 #
 ################################################################################
 
-Nemo.elem_type(::Type{NfRelNS{T}}) where {T} = NfRelNSElem{T}
-
-Nemo.elem_type(::NfRelNS{T}) where {T} = NfRelNSElem{T}
-
-Nemo.parent_type(::Type{NfRelNSElem{T}}) where {T} = NfRelNS{T}
-
 order_type(K::NfRelNS{T}) where {T} = NfRelOrd{T, fractional_ideal_type(order_type(base_field(K)))}
 
 order_type(::Type{NfRelNS{T}}) where {T} = NfRelOrd{T, fractional_ideal_type(order_type(parent_type(T)))}
@@ -735,7 +729,7 @@ function simple_extension(K::NfRelNS{T}; cached = true) where {T}
   if n == 1
     fl, p = isunivariate(K.pol[1])
     Ks, gKs = number_field(p, cached = cached, check = false)
-    return Ks, hom(Ks, K, g[1], [gKs])
+    return Ks, hom(Ks, K, g[1], inverse = [gKs])
   end
   if lcm([total_degree(K.pol[i]) for i = 1:length(K.pol)]) == degree(K)
     #The sum of the primitive elements is the right element
@@ -779,7 +773,7 @@ function simple_extension(K::NfRelNS{T}; cached = true) where {T}
     end
   end
 
-  return Ka, hom(Ka, K, pe, emb)
+  return Ka, hom(Ka, K, pe, inverse = emb)
 end
 
 @doc Markdown.doc"""

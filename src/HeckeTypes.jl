@@ -847,7 +847,7 @@ const NfOrdIdlSet = NfAbsOrdIdlSet{AnticNumberField, nf_elem}
 const NfAbsOrdIdlSetID = Dict{NfAbsOrd, NfAbsOrdIdlSet}()
 
 @doc Markdown.doc"""
-  NfOrdIdl(O::NfOrd, a::fmpz_mat) -> NfOrdIdl
+    NfOrdIdl(O::NfOrd, a::fmpz_mat) -> NfOrdIdl
 
     Creates the ideal of $O$ with basis matrix $a$.
     No sanity checks. No data is copied, $a$ should not be used anymore.
@@ -1902,6 +1902,13 @@ mutable struct NfRelElem{T} <: NumFieldElem{T}
 
   NfRelElem{T}(g::Generic.Poly{T}) where {T} = new{T}(g)
 end
+
+elem_type(::Type{NfRel{T}}) where {T} = NfRelElem{T}
+
+elem_type(::NfRel{T}) where {T} = NfRelElem{T}
+
+parent_type(::Type{NfRelElem{T}}) where {T} = NfRel{T}
+
 
 ################################################################################
 #

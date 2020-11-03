@@ -152,6 +152,7 @@ end
 ################################################################################
 @doc Markdown.doc"""
     ResidueField(O::NfOrd, P::NfOrdIdl, check::Bool = true) -> Field, Map
+
 Returns the residue field of the prime ideal $P$ together with the
 projection map. If ```check``` is true, the ideal is checked for
 being prime.

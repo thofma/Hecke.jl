@@ -39,9 +39,9 @@ function unit_group_non_maximal(O::NfOrd)
       rethrow(e)
     end
     if ismaximal(O)
-      return unit_group(O)
+      return _unit_group_maximal(O)
     end
-    U, mU = _unit_group_non_maximal(O)
+    U, mU = _unit_group_non_maximal(O)::Tuple{GrpAbFinGen, MapUnitGrp{NfOrd}}
     _set_unit_group_non_maximal(O, mU)
     return U, mU
   end

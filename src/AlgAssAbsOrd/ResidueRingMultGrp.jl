@@ -9,7 +9,7 @@
       -> GrpAbFinGen, GrpAbFinGenToAbsOrdMap
     unit_group(Q::AlgAssAbsOrdQuoRing) -> GrpAbFinGen, GrpAbFinGenToAbsOrdMap
 
-> Returns the group $Q^\times$ and the injection $Q^\times -> Q$.
+Returns the group $Q^\times$ and the injection $Q^\times -> Q$.
 """
 function multiplicative_group(Q::AlgAssAbsOrdQuoRing{S, T}) where {S, T}
   if !isdefined(Q, :multiplicative_group)

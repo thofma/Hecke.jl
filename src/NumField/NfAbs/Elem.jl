@@ -179,9 +179,9 @@ end
 @doc Markdown.doc"""
     norm_div(a::nf_elem, d::fmpz, nb::Int) -> fmpq
 
-> Computes `divexact(norm(a), d)` provided the result has at most `nb` bits.
->
-> Typically, `a` is an element of some ideal with norm `d`.
+Computes `divexact(norm(a), d)` provided the result has at most `nb` bits.
+
+Typically, `a` is an element of some ideal with norm `d`.
 """
 function norm_div(a::nf_elem, d::fmpz, nb::Int)
    z = fmpq()
@@ -227,6 +227,7 @@ end
 # TODO: Use fits(Int, n) and then split into fmpz_mod/nmod case
 @doc Markdown.doc"""
     isnorm_divisible(a::nf_elem, n::fmpz) -> Bool
+
 Checks if the norm of $a$ is divisible by $n$, assuming that the norm of $a$ is
 an integer.
 """
@@ -289,6 +290,7 @@ end
 
 @doc Markdown.doc"""
     numerator(a::nf_elem) -> nf_elem
+
 For an element $a\in K = Q[t]/f$ write $a$ as $b/d$ with
 $b\in Z[t]$, $\deg(a) = \deg(b)$ and $d>0$ minimal in $Z$.
 This function returns $b$.
@@ -688,6 +690,7 @@ end
 
 @doc Markdown.doc"""
     hasroot(f::PolyElem{nf_elem}) -> Bool, nf_elem
+
 Tests if $f$ has a root and return it.
 """
 function hasroot(f::PolyElem{nf_elem})
@@ -726,7 +729,7 @@ end
 
 Determines whether $a$ has an $n$-th root. If this is the case,
 the root is returned.
->
+
 If the field $K$ is known to contain the $n$-th roots of unity,
 one can set `with_roots_unity` to `true`.
 """
@@ -818,6 +821,7 @@ end
 
 @doc Markdown.doc"""
     issquare(a::nf_elem) -> Bool, nf_elem
+
 Tests if $a$ is a square and return the root if possible.
 """
 issquare(a::nf_elem) = ispower(a, 2)
@@ -826,6 +830,7 @@ issquare_with_root(a::NumFieldElem) = issquare(a)
 
 @doc Markdown.doc"""
     sqrt(a::nf_elem) -> nf_elem
+
 The square-root of $a$ or an error if this is not possible.
  """
 sqrt(a::nf_elem) = root(a, 2)
@@ -846,6 +851,7 @@ end
 
 @doc Markdown.doc"""
     roots(a::nf_elem, n::Int) -> Array{nf_elem, 1}
+
 Compute all $n$-th roots of $a$, possibly none.
 """
 function roots(a::nf_elem, n::Int)

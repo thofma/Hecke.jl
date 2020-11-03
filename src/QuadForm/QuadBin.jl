@@ -108,6 +108,15 @@ function Base.:(*)(c::T, f::QuadBin{T}) where {T}
   return binary_quadratic_form(c * f[1], c * f[2], c * f[3])
 end
 
+function Base.:(*)(c::Union{Integer, fmpz}, f::QuadBin)
+  return binary_quadratic_form(c * f[1], c * f[2], c * f[3])
+end
+
+function divexact(f::QuadBin{T}, c::T) where {T}
+  return binary_quadratic_form(divexact(f[1], c), divexact(f[2], c),
+                                                  divexact(f[3], c))
+end
+
 ###############################################################################
 #
 #  Evaluation
@@ -156,6 +165,11 @@ end
 #
 ###############################################################################
 
+@doc Markdown.doc"""
+    discriminant(f::QuadBin) -> RingElem
+
+Return the discriminant of `f = [a, b, c]`, that is, `b^2 - 4ac`.
+"""
 function discriminant(f::QuadBin)
   if isdefined(f, :disc)
     return f.disc
@@ -174,6 +188,7 @@ end
 
 @doc Markdown.doc"""
     isdiscriminant(D)
+
 Returns `true` if $D$ is the discriminant of an integral binary quadratic form,
 otherwise returns `false`.
 """
@@ -190,6 +205,7 @@ end
 
 @doc Markdown.doc"""
     isfundamental_discriminant(D)
+
 Returns `true` if $D$ is a fundamental discriminant otherwise returns `false`.
 """
 function isfundamental_discriminant(D::Union{Integer, fmpz})
@@ -267,67 +283,9 @@ ispositive_definite(f::QuadBin) = (discriminant(f) < 0 && f[1] > 0)
 
 Base.iszero(f::QuadBin) = (f[1] == 0 && f[2] == 0 && f[3] == 0)
 
-isprimitive(f::QuadBin) = (content(f) == 1)
+isprimitive(f::QuadBin) = (isone(content(f)))
 
 isreducible(f::QuadBin) = issquare(discriminant(f))
-
-###############################################################################
-#
-#   Reduction
-#
-###############################################################################
-
-# This is according to the Buchmann--Vollmer exposition, which is not quite
-# standard. More precisely the operation by GL(2, Z) involves the determinant.
-#
-#@doc Markdown.doc"""
-#     reduce(f::QuadBin)
-#Returns for the positive (or negative) definite binary quadratic form $f$ an equivalent
-#reduced form.
-#"""
-#function Base.reduce(f::QuadBin)
-#    if isindefinite(f)
-#        @error("Not implemented for $f indefinite")
-#    end
-#    if isnegative_definite(f)
-#        return reduce(-conjugate(f))
-#    end
-#    if ispositive_definite(f)
-#        return _reduce(f)[1]
-#    end
-#end
-#
-#function _rho(f::QuadBin, T::fmpz_mat)
-#    s = _round_erec(f[2]//(2*f[3]))
-#    res_f = binary_quadratic_form(f[3], -f[2] + 2*s*f[3], f[3]*s^2 - f[2]*s + f[1])
-#    return(res_f, matrix(FlintZZ, 2, 2, [T[2], T[1] + s*T[2], T[4], T[3] + s*T[4]]))
-#end
-#
-#function _normalize(f::QuadBin)
-#    s = _round_erec((f[1]-f[2])//(2*f[1]), dir = "down")
-#    res_f = binary_quadratic_form(f[1], f[2] + 2*s*f[1], f[1]*s^2 + f[2]*s + f[3])
-#    return(res_f, matrix(FlintZZ, 2, 2, [1, s, 0, 1]))
-#end
-#
-#function _reduce(f::QuadBin)
-#    (g, T) = _normalize(f)
-#    while !_isreduced(g)
-#        (g, T) = _rho(g, T)
-#    end
-#    return (g, T)
-#end
-#
-#function _isreduced(f::QuadBin)
-#    bol1 = f[1] <= f[3]
-#    bol2 = true
-#    if f[1] == f[3]
-#        bol2 = 0 <= f[2]
-#    end
-#    #reduced is checked, could be omitted
-#    bol3 = -f[1] < f[2] && f[2] <= f[1]
-#
-#    return bol1 && bol2 && bol3
-#end
 
 ###############################################################################
 #
@@ -335,32 +293,6 @@ isreducible(f::QuadBin) = issquare(discriminant(f))
 #
 ###############################################################################
 
-#COR7.3.17: f1,f2  same discriminant
-# function Hecke.compose(f1::QuadBin, f2::QuadBin)
-#     d = discriminant(f1)
-#     Bm = numerator((b(f1) + b(f2))//2)
-#     m = gcd(gcd(a(f1), a(f2)), Bm)
-#     A = numerator((a(f1)*a(f2))//m^2)
-#     #better?
-#     j=1
-#     k=1
-#     l=1
-#     while true
-#         j = rand(-50:50)
-#         k = rand(-50:50)
-#         l = rand(-50:50)
-#         if j*a(f2) + k*a(f1) + l*Bm == m
-#             break
-#         end
-#     end
-#     s = numerator(j*a(f2)*b(f1) + k*a(f1)*b(f2) + numerator((l*(b(f1)*b(f2)+d))//2)//m)
-#     B = mod(s,2*A)
-#     C = numerator((B^2-d)//(4*A))
-#     return(QuadBin(A, B, C))
-# end
-
-###COMPOSITION###(Dirichlet)
-#using Dirichlet composition, compare warwick Def 2.10
 
 @doc Markdown.doc"""
     compose(f1::QuadBin, f2::QuadBin)
@@ -484,26 +416,19 @@ end
 #
 ################################################################################
 
-#    def is_equivalent(self, other, proper=True):
-#        """
-#        Return if ``self`` is equivalent to ``other``.
-#
-#        INPUT:
-#
-#        - ``proper`` -- bool (default: ``True``); if ``True`` use proper
-#          equivalence
-#        - ``other`` -- a binary quadratic form
-#
-#        EXAMPLES::
-#
-#        """
-#        if type(other) != type(self):
-#            raise TypeError("%s is not a BinaryQF" % other)
+@doc Markdown.doc"""
+    isequivalent(f::QuadBin{fmpz}, g::QuadBin{fmpz}; proper::Bool = false)
 
+Return whether `f` and `g` are (properly) equivalent.
+"""
 function isequivalent(f::QuadBin{fmpz}, g::QuadBin{fmpz}; proper::Bool = true)
   d = discriminant(f)
   if d != discriminant(g)
     return false
+  end
+
+  if issquare(d)
+    return _isequivalent_reducible(f, g, proper = proper)[1]
   end
 
   if isindefinite(f)
@@ -512,10 +437,10 @@ function isequivalent(f::QuadBin{fmpz}, g::QuadBin{fmpz}; proper::Bool = true)
     if issquare(d)
       # Make sure we terminate in a form with c = 0
       while !iszero(fred[3])
-        fred = _rho(fred)
+        fred, = _rho(fred)
       end
       while !iszero(gred[3])
-        gred = _rho(gred)
+        gred, = _rho(gred)
       end
       b = fred[2]
       a = fred[1]
@@ -569,124 +494,74 @@ function isequivalent(f::QuadBin{fmpz}, g::QuadBin{fmpz}; proper::Bool = true)
   end
 end
 
+function _isequivalent_reducible(f::QuadBin{fmpz}, g::QuadBin{fmpz}; proper = true)
+  if discriminant(f) != discriminant(g)
+    return false
+  end
+
+  c = content(f) 
+  if content(g) != c
+    return false
+  end
+
+  fpr = divexact(f, c)
+  gpr = divexact(g, c)
+
+  fred, Tf = _reduction(fpr)
+  gred, Tg = _reduction(gpr)
+
+  fl = fred == gred
+
+  if proper || fl
+    T = Tf * inv(Tg)
+    if fl
+      @assert Hecke._action(f, T) == g
+    end
+    return fl, T
+  end
+
+  if fred[1] == invmod(gred[1], gred[2])
+    gg = binary_quadratic_form(gred[1], -gred[2], zero(fmpz))
+    _, Tgg = reduction_with_transformation(gg)
+    T = Tf * inv(Tg * matrix(FlintZZ, 2, 2, [1, 0, 0, -1]) * Tgg)
+    @assert Hecke._action(f, T) == g
+    return true, T
+  end
+
+  return false, Tf
+end
+
 ################################################################################
 #
-#  Reduced form
+#  Reduction and cycles
 #
 ################################################################################
 
-#    def reduction(self, transformation=False, algorithm="default"):
-#        """
-#        Return a reduced form equivalent to ``self``.
-#
-#        INPUT:
-#
-#        - ``self`` -- binary quadratic form of non-square discriminant
-#
-#        - ``transformation`` -- boolean (default: False): if ``True``, return
-#          both the reduced form and a matrix transforming ``self`` into the
-#          reduced form.  Currently only implemented for indefinite forms.
-#
-#        - ``algorithm`` -- String. The algorithm to use: Valid options are:
-#
-#          * ``'default'`` -- Let Sage pick an algorithm (default).
-#          * ``'pari'`` -- use PARI
-#          * ``'sage'`` -- use Sage
-#
-#        .. SEEALSO::
-#
-#            :meth:`is_reduced`
-#
-#        EXAMPLES::
-#
-#            sage: a = BinaryQF([33,11,5])
-#            sage: a.is_reduced()
-#            False
-#            sage: b = a.reduction(); b
-#            5*x^2 - x*y + 27*y^2
-#            sage: b.is_reduced()
-#            True
-#
-#            sage: a = BinaryQF([15,0,15])
-#            sage: a.is_reduced()
-#            True
-#            sage: b = a.reduction(); b
-#            15*x^2 + 15*y^2
-#            sage: b.is_reduced()
-#            True
-#
-#        Examples of reducing indefinite forms::
-#
-#            sage: f = BinaryQF(1, 0, -3)
-#            sage: f.is_reduced()
-#            False
-#            sage: g = f.reduction(); g
-#            x^2 + 2*x*y - 2*y^2
-#            sage: g.is_reduced()
-#            True
-#
-#            sage: q = BinaryQF(1, 0, -1)
-#            sage: q.reduction()
-#            x^2 + 2*x*y
-#
-#            sage: BinaryQF(1, 9, 4).reduction(transformation=True)
-#            (
-#                                 [ 0 -1]
-#            4*x^2 + 7*x*y - y^2, [ 1  2]
-#            )
-#            sage: BinaryQF(3, 7, -2).reduction(transformation=True)
-#            (
-#                                   [1 0]
-#            3*x^2 + 7*x*y - 2*y^2, [0 1]
-#            )
-#            sage: BinaryQF(-6, 6, -1).reduction(transformation=True)
-#            (
-#                                  [ 0 -1]
-#            -x^2 + 2*x*y + 2*y^2, [ 1 -4]
-#            )
-#        """
-#        if self.is_reduced():
-#            if transformation:
-#                return self, Matrix(FlintZZ, 2, 2, [1, 0, 0, 1])
-#            else:
-#                return self
-#
-#        if algorithm == "default":
-#            if self.is_reducible() or (self.discriminant() > 0 and transformation):
-#                algorithm = 'sage'
-#            elif not transformation:
-#                algorithm = 'pari'
-#            else:
-#                raise NotImplementedError('reduction of definite binary '
-#                        'quadratic forms with transformation=True is not '
-#                        'implemented')
-#        if algorithm == 'sage':
-#            if self.discriminant() <= 0:
-#                raise NotImplementedError('reduction of definite binary '
-#                    'quadratic forms is not implemented in Sage')
-#            return self._reduce_indef(transformation)
-#        elif algorithm == 'pari':
-#            if transformation:
-#                raise NotImplementedError('transformation=True is not '
-#                                        'supported using PARI')
-#            elif self.is_reducible():
-#                raise NotImplementedError('reducible forms are not '
-#                                          'supported using PARI')
-#            return BinaryQF(self.__pari__().qfbred())
-#        else:
-#            raise ValueError('unknown implementation for binary quadratic form '
-#                             'reduction: %s' % algorithm)
+@doc Markdown.doc"""
+    reduction(f::QuadBin{fmpz}) -> QuadBin{fmpz}
 
+Return a reduced binary quadratic form equivalent to `f`.
+"""
 function reduction(f::QuadBin{fmpz})
   g, _ = _reduction(f)
   return g
 end
 
+@doc Markdown.doc"""
+    reduction_with_transformation(f::QuadBin{fmpz}) -> QuadBin{fmpz}, Mat{fmpz}
+
+Return a reduced binary quadratic form `g` equivalent to `f` and a matrix `T`
+such that `f.T = g`.
+"""
 function reduction_with_transformation(f::QuadBin{fmpz})
   return _reduction(f)
 end
 
 function _reduction(f::QuadBin{fmpz})
+  if isreducible(f)
+    return _reduction_reducible(f)
+  end
+
   if isreduced(f)
     return f, identity_matrix(FlintZZ, 2)
   end
@@ -751,8 +626,77 @@ function _reduction_indefinite(f)
   return f, U
 end
 
+function _reduction_reducible(f::QuadBin)
+  d = discriminant(f)
+  N = sqrt(d)
+  @assert N^2 == d
+  @assert isprimitive(f)
+  if iszero(f[1])
+    x = -f[3]
+    y = f[2]
+  else
+    x = N - f[2]
+    y = 2 * f[1]
+  end
+  @assert iszero(f(x, y))
+  gg = gcd(x, y)
+  x = divexact(x, gg)
+  y = divexact(y, gg)
+  _,w, _z = gcdx(x, y)
+  z = -_z
+  @assert x * w - y * z == 1
+  T = matrix(FlintZZ, 2, 2, [x, z, y, w])
+  g = Hecke._action(f, T)
+  # Now g = [0, +/- N, g[2]]
+  @assert iszero(g[1])
+  @assert abs(g[2]) == N
+  TT = matrix(FlintZZ, 2, 2, [0, -1, 1, 0])
+  g = Hecke._action(g, TT)
+  T = T * TT
+  # Now g = [g[1], N, 0]
+  @assert abs(g[2]) == N
+  if g[2] < 0
+    aa = invmod(g[1], N)
+    t = divexact(a * aa' - 1)
+    # a * aa - N * t == 1
+    @assert a * aa - N * t == 1
+    TT = matrix(FlintZZ, 2, 2, [aa, -N, -t, a])
+    g = Hecke._action(g, TT)
+    T = T * TT
+  end
+  @assert g[2] == N
+  _t, r = divrem(g[1], N)
+  if r < 0
+    r += N
+    _t -= 1
+  end
+  @assert r >= 0
+  @assert r < N
+  @assert g[1] - _t * N == r
+  TT = matrix(FlintZZ, 2, 2, [1, 0, -_t, 1])
+  g = Hecke._action(g, TT)
+  T = T * TT
+  @assert 1 <= g[1] < N && g[2] == N && iszero(g[3])
+  @assert det(T) == 1
+  @assert g == Hecke._action(f, T)
+  return g, T
+end
 
 function _buchmann_vollmer_action(f::QuadBin, M)
+  a = f[1]
+  b = f[2]
+  c = f[3]
+  s = M[1, 1]
+  t = M[1, 2]
+  u = M[2, 1]
+  v = M[2, 2]
+  a1 = f(s, u)
+  b1 = 2*(a*s*t + c*u*v) + b*(s*v + t*u)
+  c1 = f(t, v)
+  return det(M) * binary_quadratic_form(a1, b1, c1)
+end
+
+function _action(f::QuadBin, M)
   a = f[1]
   b = f[2]
   c = f[3]
@@ -766,55 +710,22 @@ function _buchmann_vollmer_action(f::QuadBin, M)
   return binary_quadratic_form(a1, b1, c1)
 end
 
-#def is_reduced(self):
-#        r"""
-#        Return if ``self`` is reduced.
-#
-#        Let `f = a x^2 + b xy + c y^2` be a binary quadratic form of
-#        discriminant `D`.
-#
-#        - If `f` is positive definite (`D < 0` and `a > 0`), then `f`
-#          is reduced if and only if `|b|\leq a \leq c`, and `b\geq 0`
-#          if either `a = b` or `a = c`.
-#
-#        - If `f` is negative definite (`D < 0` and `a < 0`), then `f`
-#          is reduced if and only if the positive definite form with
-#          coefficients `(-a, b, -c)` is reduced.
-#
-#        - If `f` is indefinite (`D > 0`), then `f` is reduced if and
-#          only if `|\sqrt{D} - 2|a|| < b < \sqrt{D}`
-#          or `a = 0` and `-b < 2c \leq b`
-#          or `c = 0` and `-b < 2a \leq b`
-#
-#        EXAMPLES::
-#
-#            sage: Q = BinaryQF([1,2,3])
-#            sage: Q.is_reduced()
-#            False
-#
-#            sage: Q = BinaryQF([2,1,3])
-#            sage: Q.is_reduced()
-#            True
-#
-#            sage: Q = BinaryQF([1,-1,1])
-#            sage: Q.is_reduced()
-#            False
-#
-#            sage: Q = BinaryQF([1,1,1])
-#            sage: Q.is_reduced()
-#            True
-#
-#        Examples using indefinite forms::
-#
-#            sage: f = BinaryQF(-1, 2, 2)
-#            sage: f.is_reduced()
-#            True
-#            sage: BinaryQF(1, 9, 4).is_reduced()
-#            False
-#            sage: BinaryQF(1, 5, -1).is_reduced()
-#            True
-#
-#        """
+@doc Markdown.doc"""
+    isreduced(f::QuadBin{fmpz}) -> Bool
+
+Return whether `f` is reduced in the following sense. Let `f = [a, b, c]`
+be of discriminant `D`.
+
+If `f` is positive definite (`D < 0` and `a > 0`), then `f` is reduced if and
+only if `|b| <= a <= c`, and `b >= 0` if `a = b` or `a = c`.
+
+If `f` is negative definite (`D < 0` and `a < 0`), then `f` is reduced if and
+only if `[-a, b, -c]` is reduced.
+
+If `f` is indefinite (`D > 0), then `f` is reduced if and only if
+`|sqrt{D} - 2|a|| < b < \sqrt{D}|` or `a = 0` and `-b < 2c <= b` or `c = 0` and
+`-b < 2a <= b`.
+"""
 function isreduced(f::QuadBin{fmpz})
   D = discriminant(f)
   a = f[1]
@@ -846,55 +757,15 @@ function isreduced(f::QuadBin{fmpz})
   end
 end
 
-#def cycle(self, proper=False):
-#        """
-#        Return the cycle of reduced forms to which ``self`` belongs.
-#
-#        This is Algorithm 6.1 of [BUVO2007]_.
-#
-#        INPUT:
-#
-#        - ``self`` -- reduced, indefinite form of non-square discriminant
-#
-#        - ``proper`` -- boolean (default: ``False``); if ``True``, return the
-#          proper cycle (not implemented)
-#
-#        This is used to test for equivalence between indefinite forms.
-#        The cycle of a form `f` consists of all reduced, equivalent forms `g`
-#        such that the `a`-coefficients of `f` and `g` have the same
-#        sign.  The proper cycle consists of all equivalent forms, and
-#        is either the same as, or twice the size of, the cycle.  In
-#        the latter case, the cycle has odd length.
-#
-#        EXAMPLES::
-#
-#            sage: Q = BinaryQF(14,17,-2)
-#            sage: Q.cycle()
-#            [14*x^2 + 17*x*y - 2*y^2,
-#             2*x^2 + 19*x*y - 5*y^2,
-#             5*x^2 + 11*x*y - 14*y^2]
-#
-#            sage: Q = BinaryQF(1,8,-3)
-#            sage: Q.cycle()
-#            [x^2 + 8*x*y - 3*y^2,
-#            3*x^2 + 4*x*y - 5*y^2,
-#            5*x^2 + 6*x*y - 2*y^2,
-#            2*x^2 + 6*x*y - 5*y^2,
-#            5*x^2 + 4*x*y - 3*y^2,
-#            3*x^2 + 8*x*y - y^2]
-#
-#            sage: Q=BinaryQF(1,7,-6)
-#            sage: Q.cycle()
-#            [x^2 + 7*x*y - 6*y^2,
-#            6*x^2 + 5*x*y - 2*y^2,
-#            2*x^2 + 7*x*y - 3*y^2,
-#            3*x^2 + 5*x*y - 4*y^2,
-#            4*x^2 + 3*x*y - 4*y^2,
-#            4*x^2 + 5*x*y - 3*y^2,
-#            3*x^2 + 7*x*y - 2*y^2,
-#            2*x^2 + 5*x*y - 6*y^2,
-#            6*x^2 + 7*x*y - y^2]
-#        """
+@doc Markdown.doc"""
+    cycle(f::QuadBin{fmpz}; proper::Bool = false) -> Vector{QuadBin{fmpz}}
+
+Return the cycle of `f` as defined by Buchmann--Vollmer (Algorithm 6.1). The
+cycle consists of all reduced, equivalent forms `g`, such that first coefficient of
+`f` and `g` have the same sign. The proper cycle consists of all equivalent forms,
+and has either the same or twice the size of the cycle. In the latter case, the
+cycle has odd length.
+"""
 function cycle(f::QuadBin{fmpz}; proper::Bool = false)
   @req isindefinite(f) "Quadratic form must be indefinite"
   @req isreduced(f) "Quadratic form must be reduced"
@@ -912,7 +783,7 @@ function cycle(f::QuadBin{fmpz}; proper::Bool = false)
     end
 
     for i in 1:div(length(C), 2)
-      C[2*i] = _tau(C[2*i])
+      C[2*i], = _tau(C[2*i]) # tau returns also the operator
     end
     return C
   end
@@ -925,27 +796,17 @@ function _nonproper_cycle(f::QuadBin{fmpz})
     return f.nonproper_cycle::Vector{QuadBin{fmpz}}
   end
   C = typeof(f)[f]
-  Q1 = _rhotau(f)
+  Q1, T = _rhotau(f)
   while !(f == Q1)
     push!(C, Q1)
-    Q1 = _rhotau(Q1)
+    Q1, = _rhotau(Q1)
   end
   f.nonproper_cycle = C
   return C
 end
 
-
-## Buchmann/Vollmer cycle algorithm
-#    def _RhoTau(self):
-#        """
-#        Apply Rho and Tau operators to this form, returning a new form `Q`.
-#
-#        EXAMPLES::
-#
-#            sage: f = BinaryQF(1, 8, -3)
-#            sage: f._RhoTau()
-#            3*x^2 + 4*x*y - 5*y^2
-#        """
+# Transform f into rho(tau(f)), as defined in equation (6.12) of
+# Buchmann--Vollmer 2007.
 function _rhotau(f::QuadBin{fmpz})
   RR = ArbField(64, cached = false)
   d = sqrt(RR(discriminant(f)))
@@ -953,7 +814,6 @@ function _rhotau(f::QuadBin{fmpz})
   b = f[2]
   c = f[3]
   cabs = abs(c)
-  # Now compute rho(f) as defined on p. 122, equation (6.12) in [BV2007]
   if cabs >= d
     s = sign(c) * round(fmpz, fmpq(cabs + b, 2 * cabs), RoundDown) # floor(cabs + b/2 * abs)
   else
@@ -963,32 +823,13 @@ function _rhotau(f::QuadBin{fmpz})
     @assert fl # might fail with precision too low
     s = sign(c) * o
   end
-  f = binary_quadratic_form(-c, -b + 2*s*c, -(a - b*s + c*s*s))
-  return f
+  g = binary_quadratic_form(-c, -b + 2*s*c, -(a - b*s + c*s*s))
+  T = matrix(FlintZZ, 2, 2, [0, 1, 1, -s])
+  @assert _buchmann_vollmer_action(f, T) == g
+  return (g, T)
 end
 
-#        """
-#        Apply the Rho operator to this form, returning a new form `Q`.
-#
-#        EXAMPLES::
-#
-#            sage: f = BinaryQF(1, 8, -3)
-#            sage: f._Rho()
-#            -3*x^2 + 4*x*y + 5*y^2
-#        """
-#        d = self.discriminant().sqrt(prec=53)
-#        a = self._a
-#        b = self._b
-#        c = self._c
-#        cabs = c.abs()
-#        sign = c.sign()
-#        if cabs >= d:
-#            s = sign * ((cabs+b) / (2*cabs)).floor()
-#        else:
-#            s = sign * ((d+b) / (2*cabs)).floor()
-#        Q = BinaryQF(c, -b + 2*s*c, a - b*s + c*s*s)
-#        return Q
-#
+# Apply the rho operator as defined by Buchmann--Vollmer
 function _rho(f::QuadBin{fmpz})
   RR = ArbField(64, cached = false)
   d = sqrt(RR(discriminant(f)))
@@ -1006,28 +847,17 @@ function _rho(f::QuadBin{fmpz})
     @assert fl # might fail with precision too low
     s = sign(c) * o
   end
-  f = binary_quadratic_form(c, -b + 2*s*c, a - b*s + c*s*s)
-  return f
+  T = matrix(FlintZZ, 2, 2, [0, -1, 1, s])
+  g = binary_quadratic_form(c, -b + 2*s*c, a - b*s + c*s*s)
+  @assert _buchmann_vollmer_action(f, T) == g
+  return g, T
 end
 
+# Apply the tau operator of Buchmann--Vollmer, which turns
+# [a, b, c] into [-a, b, -c]
 function _tau(f::QuadBin{fmpz})
-  return binary_quadratic_form(-f[1], f[2], -f[3])
+  T = matrix(FlintZZ, 2, 2, [1, 0, 0, -1])
+  g = binary_quadratic_form(-f[1], f[2], -f[3])
+  @assert _buchmann_vollmer_action(f, T) == g
+  return g, T
 end
-
-
-#    def _Tau(self):
-#        """
-#        Apply the Tau operator to this form, returning a new form `Q`.
-#
-#        EXAMPLES::
-#
-#            sage: f = BinaryQF(1, 8, -3)
-#            sage: f._Tau()
-#            -x^2 + 8*x*y + 3*y^2
-#        """
-#        a = self._a
-#        b = self._b
-#        c = self._c
-#        Q = BinaryQF(-a, b, -c)
-#        return Q
-#

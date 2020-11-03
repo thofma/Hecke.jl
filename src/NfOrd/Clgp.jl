@@ -426,6 +426,12 @@ function class_group(O::NfOrd; bound::Int = -1, method::Int = 3,
   return class_group(c, O)::Tuple{GrpAbFinGen, MapClassGrp}
 end
 
+function _unit_group_maximal(O::NfOrd; method::Int = 3, unit_method::Int = 1, use_aut::Bool = false, GRH::Bool = true)
+  c, U, b = _class_unit_group(O, method = method, unit_method = unit_method, use_aut = use_aut, GRH = GRH)
+  @assert b==1
+  return unit_group(c, U)::Tuple{GrpAbFinGen, MapUnitGrp{NfAbsOrd{AnticNumberField,nf_elem}}}
+end
+
 
 @doc Markdown.doc"""
     unit_group(O::NfOrd) -> GrpAbFinGen, Map
@@ -437,9 +443,7 @@ obtained via `[ f(U[1+i]) for i in 1:unit_rank(O) ]`.
 """
 function unit_group(O::NfOrd; method::Int = 3, unit_method::Int = 1, use_aut::Bool = false, GRH::Bool = true)
   if ismaximal(O)
-    c, U, b = _class_unit_group(O, method = method, unit_method = unit_method, use_aut = use_aut, GRH = GRH)
-    @assert b==1
-    return unit_group(c, U)::Tuple{GrpAbFinGen, MapUnitGrp{NfAbsOrd{AnticNumberField,nf_elem}}}
+    return _unit_group_maximal(O, method = method, unit_method = unit_method, use_aut = use_aut, GRH = GRH)
   else
     return unit_group_non_maximal(O)::Tuple{GrpAbFinGen, MapUnitGrp{NfAbsOrd{AnticNumberField,nf_elem}}}
   end
@@ -470,6 +474,7 @@ end
 
 @doc Markdown.doc"""
     regulator(O::NfOrd)
+
 Computes the regulator of $O$, i.e. the discriminant of the unit lattice.
 """
 function regulator(O::NfOrd; method::Int = 3, unit_method::Int = 1, use_aut::Bool = false, GRH::Bool = true)
@@ -485,6 +490,7 @@ end
 
 @doc Markdown.doc"""
     regulator(K::AnticNumberField)
+
 Computes the regulator of $K$, i.e. the discriminant of the unit lattice
 for the maximal order of $K$.
 """

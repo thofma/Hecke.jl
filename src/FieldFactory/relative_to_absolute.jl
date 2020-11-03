@@ -5,7 +5,7 @@
 ################################################################################
 
 
-function _simplify_components(L::Hecke.NfRelNS{nf_elem}, autL::Vector{Hecke.NfRelNSToNfRelNSMor{nf_elem}})
+function _simplify_components(L::Hecke.NfRelNS{nf_elem}, autL::Vector{Hecke.NfRelNSToNfRelNSMor_nf_elem})
   if ngens(L) == 1
     return L, autL
   end
@@ -34,22 +34,20 @@ function _simplify_components(L::Hecke.NfRelNS{nf_elem}, autL::Vector{Hecke.NfRe
   Lnew, gLnew = number_field(pols, cached = false, check = false)
   iso = hom(Lnew, L, maps)
   inv_iso = inv(iso) 
-  autsLnew = Vector{Hecke.NfRelNSToNfRelNSMor{nf_elem}}(undef, length(autL))
+  autsLnew = Vector{Hecke.NfRelNSToNfRelNSMor_nf_elem}(undef, length(autL))
   for i = 1:length(autL)
-    autsLnew[i] = iso*autL[i]*inv_iso
+    autsLnew[i] = (iso*autL[i])*inv_iso
   end
   return Lnew, autsLnew
 end
 
-
-function _from_relative_to_abs_with_embedding(L1::Hecke.NfRelNS{nf_elem}, autL1::Array{Hecke.NfRelNSToNfRelNSMor{nf_elem}, 1})
+function _from_relative_to_abs_with_embedding(L1::Hecke.NfRelNS{nf_elem}, autL1::Array{Hecke.NfRelNSToNfRelNSMor_nf_elem, 1})
   #@time res = _from_relative_to_abs_with_embedding1(L1, autL1)
   res = _relative_to_absolute(L1, autL1)
   return res
 end
 
-function _from_relative_to_abs_with_embedding1(L1::Hecke.NfRelNS{nf_elem}, autL1::Array{Hecke.NfRelNSToNfRelNSMor{nf_elem}, 1})
-
+function _from_relative_to_abs_with_embedding1(L1::Hecke.NfRelNS{nf_elem}, autL1::Array{Hecke.NfRelNSToNfRelNSMor_nf_elem, 1})
   @vtime :Fields 3 L, autL = _simplify_components(L1, autL1)
   S, mS = simple_extension(L, cached = false)
   K, mK, MK = absolute_field(S, cached = false)
@@ -120,7 +118,7 @@ function _from_relative_to_abs_with_embedding1(L1::Hecke.NfRelNS{nf_elem}, autL1
   #Now, the automorphisms.
   # I need both generators and the whole group. 
   autos = Array{NfToNfMor, 1}(undef, length(autL))
-  el = mS(mK(mKs.prim_img))
+  el = mS(mK(image_primitive_element(mKs)))
   el1 = mS(mK(gen(K)))
   for i=1:length(autL)
     #@assert iszero(K.pol(mK(mS\(autL[i](el1)))))
@@ -139,7 +137,7 @@ end
 #
 ###############################################################################
 
-function _relative_to_absoluteQQ(L::NfRelNS{nf_elem}, auts::Vector{NfRelNSToNfRelNSMor{nf_elem}})
+function _relative_to_absoluteQQ(L::NfRelNS{nf_elem}, auts::Vector{NfRelNSToNfRelNSMor_nf_elem})
   K, gK = number_field(NfAbsNS, L)
   Ks, mKs = simplified_simple_extension1(K, isabelian = true, cached = false)
   #Now, I have to translate the automorphisms.
@@ -148,7 +146,7 @@ function _relative_to_absoluteQQ(L::NfRelNS{nf_elem}, auts::Vector{NfRelNSToNfRe
   Qxy = parent(K.pol[1])
   for i = 1:length(auts)
     embs = Vector{NfAbsNSElem}(undef, ngens(K))
-    imgs = auts[i].emb
+    imgs = image_generators(auts[i])
     for j = 1:length(imgs)
       embs[j] = K(map_coeffs(FlintQQ, imgs[j].data, parent = Qxy))
     end
@@ -158,12 +156,12 @@ function _relative_to_absoluteQQ(L::NfRelNS{nf_elem}, auts::Vector{NfRelNSToNfRe
   _compute_preimage(mKs)
   autsKs = Vector{NfToNfMor}(undef, length(autsK))
   for i = 1:length(autsK)
-    autsKs[i] = hom(Ks, Ks, mKs\((mKs*autsK[i]).prim_img), check = false)
+    autsKs[i] = hom(Ks, Ks, mKs\(image_primitive_element(mKs*autsK[i])), check = false)
   end
   return Ks, autsKs
 end
 
-function _relative_to_absolute(L::NfRelNS{nf_elem}, auts::Vector{NfRelNSToNfRelNSMor{nf_elem}})
+function _relative_to_absolute(L::NfRelNS{nf_elem}, auts::Vector{NfRelNSToNfRelNSMor_nf_elem})
   Ks, mKs = simplified_absolute_field(L)
   _compute_preimage(mKs)
   #Now, I have to translate the automorphisms.
