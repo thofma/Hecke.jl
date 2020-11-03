@@ -155,6 +155,7 @@ mutable struct AbsOrdQuoMap{S, T, U} <: Map{S, AbsOrdQuoRing{S, T}, HeckeMap, Ab
     end
 
     function _preimage(x::AbsOrdQuoRingElem{S, T, U})
+      x.elem = mod(x.elem, parent(x))
       return x.elem
     end
 

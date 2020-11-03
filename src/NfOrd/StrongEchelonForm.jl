@@ -62,6 +62,7 @@ function triangularize!(A::Generic.Mat{NfOrdQuoRingElem})
   m = ncols(A)
   d = one(base_ring(A))
 
+
   t_isdiv = 0.0
   t_xxgcd = 0.0
   t_arith = 0.0
@@ -71,7 +72,7 @@ function triangularize!(A::Generic.Mat{NfOrdQuoRingElem})
   while row <= nrows(A) && col <= ncols(A)
     #println("doing row $row")
     t = _pivot(A, row, col)
-    if t == 0
+    if iszero(t)
       col = col + 1
       continue
     end
@@ -134,7 +135,7 @@ function strong_echelon_form_naive!(A::Generic.Mat{NfOrdQuoRingElem})
 
   @assert n >= m
 
-  #print("triangularizing ... ")
+  @vprint :PseudoHnf 1 "Triangularizing ... \n"
   triangularize!(A)
   #println("done")
 
@@ -142,16 +143,15 @@ function strong_echelon_form_naive!(A::Generic.Mat{NfOrdQuoRingElem})
 
   # We do not normalize!
   for j in 1:m
-    if !iszero(A[j,j]) != 0
+    if !iszero(A[j, j])
       # This is the reduction
       for i in 1:j-1
         if iszero(A[i, j])
           continue
-        else
-          q, r = divrem(A[i, j], A[j, j])
-          for l in i:m
-            A[i, l] = A[i, l] - q*A[j, l]
-          end
+        end
+        q, r = divrem(A[i, j], A[j, j])
+        for l in i:m
+          A[i, l] = A[i, l] - q*A[j, l]
         end
       end
 
@@ -403,10 +403,9 @@ function _strong_echelon_form_split(M::MatElem{NfOrdQuoRingElem}, ideals1)
     end
   end
   _strong_echelon_form_nonsplit!(MmodI)
-
   for i in 1:min(n, m)
-    for j in 1:m
-      M_cur[i, j] = Q(lift(R, MmodI[i, j]))
+    for j in i:m
+      M_cur[i, j] = Q(lift(MmodI[i, j]))
     end
   end
 
@@ -428,14 +427,14 @@ function _strong_echelon_form_split(M::MatElem{NfOrdQuoRingElem}, ideals1)
 
     for i in 1:n
       for j in 1:m
-        MmodI[i, j] = RmodI(lift(R, M[i, j]))
+        MmodI[i, j] = RmodI(lift(M[i, j]))
       end
     end
 
     echelon_modI = _strong_echelon_form_nonsplit(MmodI)
 
     for i in 1:min(n, m)
-      for j in 1:m
+      for j in i:m
         m_cur[i, j] = Q(lift(R, echelon_modI[i, j]))
       end
     end

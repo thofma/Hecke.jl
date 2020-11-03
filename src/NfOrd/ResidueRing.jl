@@ -160,18 +160,12 @@ function (Q::AbsOrdQuoRing{S, T})(x::U) where {S, T, U}
 end
 
 function (Q::AbsOrdQuoRing{S, T})(x::Integer) where {S, T}
-  I = Q.ideal
-  y = base_ring(Q)(mod(x, minimum(I, copy = false)))
-  U = elem_type(base_ring(Q))
-  res = AbsOrdQuoRingElem{S, T, U}(Q, y)
+  res = elem_type(Q)(Q, base_ring(Q)(x))
   return res
 end
 
 function (Q::AbsOrdQuoRing{S, T})(x::fmpz) where {S, T}
-  I = Q.ideal
-  y = base_ring(Q)(mod(x, minimum(I, copy = false)))
-  U = elem_type(base_ring(Q))
-  res = AbsOrdQuoRingElem{S, T, U}(Q, y)
+  res = elem_type(Q)(Q, base_ring(Q)(x))
   return res
 end
 
@@ -387,11 +381,11 @@ function isone(x::AbsOrdQuoRingElem)
 end
 
 function one(Q::AbsOrdQuoRing)
-  return Q(one(Q.base_ring))
+  return elem_type(Q)(Q, base_ring(Q)(1))
 end
 
 function zero(Q::AbsOrdQuoRing)
-  return Q(zero(Q.base_ring))
+  return elem_type(Q)(Q, base_ring(Q)(0))
 end
 
 function zero!(x::AbsOrdQuoRingElem)

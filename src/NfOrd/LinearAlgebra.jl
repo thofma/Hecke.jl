@@ -411,7 +411,7 @@ function _coprime_norm_integral_ideal_class(x, y) #x::NfOrdFracIdl, y::NfOrdIdl)
   z = ideal(O, O(1))
   a = nf(O)()
   i = 0
-  while check
+  while check && i < 20
     i += 1
     a = rand(x_inv, 10)
     if iszero(a)
@@ -423,7 +423,16 @@ function _coprime_norm_integral_ideal_class(x, y) #x::NfOrdFracIdl, y::NfOrdIdl)
     z = numerator(b, copy = false)
     check = !(gcd(norm(z, copy = false), norm(y, copy = false)) == 1)
   end
-  return z, a
+  if !check
+    return z, a
+  end
+  a = nf(O)(denominator(x, copy = false))
+  lp = factor(ideal(O, minimum(numerator(x, copy = false) + y)))
+  J, b = coprime_deterministic(numerator(x, copy = false), y, lp)
+  res2 = b*a
+  @hassert :PseudoHnf 1 res2*x == J
+  @hassert :PseudoHnf 1 iscoprime(norm(J, copy = false), norm(y, copy = false))
+  return J, res2
 end
 
 RandomExtensions.maketype(I::NfOrdIdl, ::Int) = NfOrdElem
