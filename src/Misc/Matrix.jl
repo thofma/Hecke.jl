@@ -1942,7 +1942,7 @@ end
 
 function _can_solve(a::M, b::M, side = :left) where M <: MatElem{S} where S <: RingElem
   H, T = hnf_with_transform(transpose(a))
-  b = deepcopy(b)::S
+  b = deepcopy(b)
   z = zero_matrix(base_ring(a), ncols(b), ncols(a))
   l = min(nrows(a), ncols(a))
   for i = 1:ncols(b)
