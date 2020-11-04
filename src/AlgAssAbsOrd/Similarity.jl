@@ -824,15 +824,34 @@ function _lift2(MM)
 end
 
 euclid(n::nmod) = gcd(n.data, modulus(parent(n)))
+euclid(n::Nemo.fmpz_mod) = gcd(n.data, modulus(parent(n)))
 
-function Base.divrem(n::nmod, m::nmod)
+function Base.divrem(n::T, m::T) where T <: Union{nmod,Nemo.fmpz_mod}
+  @assert !iszero(m)
   R = parent(n)
   e = euclid(m)
-  q = rand(R)
-  while euclid(n - q * m) >= e
-    q = rand(R)
+
+  cp = coprime_base(fmpz[n.data, m.data, modulus(R)])::Array{fmpz, 1}
+
+  q = Array{Tuple{fmpz, fmpz}, 1}()
+  for i=1:length(cp)
+    v = valuation(modulus(R), cp[i])::Int
+    if v != 0
+      pk = cp[i]^v
+      nv = valuation(n.data % pk, cp[i])::Int
+      mv = valuation(m.data % pk, cp[i])::Int
+      if nv < mv
+        push!(q, (pk, 0))
+      else
+        push!(q, (pk, divexact(n.data % pk, cp[i]^nv)))
+      end
+    end
   end
-  return q, n - q * m
+  qq =  R(crt([x[2] for x = q], [x[1] for x = q])::fmpz)::T
+  rr = n-qq*m
+  @assert n == qq*m+rr
+  @assert rr == 0 || euclid(rr) < e
+  return (qq,rr)::Tuple{T, T}
 end
 
 ################################################################################
