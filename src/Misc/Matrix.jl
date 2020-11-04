@@ -1921,7 +1921,7 @@ end
 Tries to solve $Ax = B$ for $x$ if `side = :right` or $xA = B$ if `side = :left`
 over a euclidean ring.
 """
-function can_solve(A::M, b::M, side = :right) where M <: MatElem{T} where T <: RingElem
+function can_solve(A::M, b::M; side = :right) where M <: MatElem{T} where T <: RingElem
   @assert base_ring(A) == base_ring(B)
 
   if side === :right
