@@ -35,3 +35,6 @@ jobs:
         uses: julia-actions/julia-buildpkg@master
       - name: "Run tests"
         uses: julia-actions/julia-runtest@master
+    
+    # don't run ci twice on own PRs
+    if: ${{ !(github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository) }}
