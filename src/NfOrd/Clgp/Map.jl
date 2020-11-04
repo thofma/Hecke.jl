@@ -692,11 +692,11 @@ function find_coprime_representatives(mC::MapClassGrp, m::NfOrdIdl, lp::Dict{NfO
 end
 
 function coprime_deterministic(a::NfOrdIdl, m::NfOrdIdl, lp::Dict{NfOrdIdl, Int})
-  g, ng = ppio(a.gen_one, m.gen_one)
+  g, ng = ppio(minimum(a, copy = false), minimum(m, copy = false))
   @assert !isone(g)
   primes = Tuple{fmpz, nf_elem}[]
   for (p, v) in lp
-    if !divisible(g, minimum(p))
+    if !divisible(g, minimum(p, copy = false))
       continue
     end
     vp = valuation(a, p)
@@ -707,24 +707,24 @@ function coprime_deterministic(a::NfOrdIdl, m::NfOrdIdl, lp::Dict{NfOrdIdl, Int}
     found = false
     ind = 1
     for i = 1:length(primes)
-      if primes[i][1] == minimum(p)
+      if primes[i][1] == minimum(p, copy = false)
         found = true
         ind = i
         break
       end
     end
     if found
-      primes[ind] = (minimum(p), primes[ind][2]*ant_val^vp)
+      primes[ind] = (minimum(p, copy = false), primes[ind][2]*ant_val^vp)
     else
-      push!(primes, (minimum(p), ant_val^vp))
+      push!(primes, (minimum(p, copy = false), ant_val^vp))
     end
   end
 
   OK = order(a)
-  r = m.gen_one
+  r = minimum(m, copy = false)
   moduli = Vector{fmpz}(undef, length(primes)+1)
   for i = 1:length(primes)
-    moduli[i] = ppio(a.gen_one, primes[i][1])[1]
+    moduli[i] = ppio(minimum(a, copy = false), primes[i][1])[1]
     r = ppio(r, moduli[i])[2]
   end
   mo = moduli[1]
@@ -739,7 +739,7 @@ function coprime_deterministic(a::NfOrdIdl, m::NfOrdIdl, lp::Dict{NfOrdIdl, Int}
     end
     mo = mo*moduli[i]
   end
-  res = mod(res, minimum(m))
+  res = mod(res, minimum(m, copy = false))
   I = res*a
   I = simplify(I)
   return I.num, res*I.den
