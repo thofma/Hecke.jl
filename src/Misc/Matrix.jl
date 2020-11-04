@@ -1921,8 +1921,7 @@ end
 Tries to solve $Ax = B$ for $x$ if `side = :right` or $xA = B$ if `side = :left`
 over a euclidean ring.
 """
-function can_solve(A::MatElem{T}, B::MatElem{T};
-                                  side = :right) where T <: RingElem
+function can_solve(A::M, b::M, side = :right) where M <: MatElem{T} where T <: RingElem
   @assert base_ring(A) == base_ring(B)
 
   if side === :right
@@ -1941,9 +1940,9 @@ function can_solve(A::MatElem{T}, B::MatElem{T};
   end
 end
 
-function _can_solve(a::MatElem{S}, b::MatElem{S}, side = :left) where S <: RingElem
+function _can_solve(a::M, b::M, side = :left) where M <: MatElem{S} where S <: RingElem
   H, T = hnf_with_transform(transpose(a))
-  b = deepcopy(b)
+  b = deepcopy(b)::S
   z = zero_matrix(base_ring(a), ncols(b), ncols(a))
   l = min(nrows(a), ncols(a))
   for i = 1:ncols(b)
@@ -1977,68 +1976,69 @@ end
 Tries to solve $Ax = B$ for $x$ if `side = :right` or $xA = B$ if `side = :left`.
 It returns the solution and the right respectively left kernel of $A$.
 """
-function can_solve_with_kernel(A::MatElem{T}, B::MatElem{T}; side = :right) where T <: RingElem
+function can_solve_with_kernel(A::M, B::M; side = :right) where M <: MatElem{T} where T <: RingElem
   @assert base_ring(A) == base_ring(B)
   if side === :right
     @assert nrows(A) == nrows(B)
-    return _can_solve_with_kernel(A, B)
+    return _can_solve_with_kernel(A, B)::Tuple{Bool, M, M}
   elseif side === :left
-    b, C, K = _can_solve_with_kernel(transpose(A), transpose(B))
+    b, C, K = _can_solve_with_kernel(transpose(A), transpose(B))::Tuple{Bool, M, M}
     @assert ncols(A) == ncols(B)
     if b
-      return b, transpose(C), transpose(K)
+      return (b, transpose(C), transpose(K))::Tuple{Bool, M, M}
     else
-      return b, C, K
+      return (b, C, K)::Tuple{Bool, M, M}
     end
   else
     error("Unsupported argument :$side for side: Must be :left or :right")
   end
 end
 
-function _can_solve_with_kernel(a::MatElem{S}, b::MatElem{S}) where S <: RingElem
-  H, T = hnf_with_transform(transpose(a))
-  z = zero_matrix(base_ring(a), ncols(b), ncols(a))
+function _can_solve_with_kernel(a::M, b::M) where M <: MatElem{S} where S <: RingElem
+  H, T = hnf_with_transform(transpose(a))::Tuple{M, M}
+  z = zero_matrix(base_ring(a), ncols(b), ncols(a))::M
   l = min(nrows(a), ncols(a))
-  b = deepcopy(b)
+  b = deepcopy(b)::M
   for i=1:ncols(b)
     for j=1:l
       k = 1
-      while k <= ncols(H) && iszero(H[j, k])
+      while k <= ncols(H) && iszero(H[j, k]::S)::Bool
         k += 1
       end
       if k > ncols(H)
         continue
       end
-      q, r = divrem(b[k, i], H[j, k])
+      q, r = divrem(b[k, i], H[j, k])::Tuple{S, S}
       if !iszero(r)
-        return false, b, b
+        return (false, b, b)::Tuple{Bool, M, M}
       end
       for h=k:ncols(H)
-        b[h, i] -= q*H[j, h]
+        b[h, i] = (b[h, i]::S - (q*(H[j, h]::S))::S)::S
       end
       z[i, j] = q
     end
   end
+
   if !iszero(b)
-    return false, b, b
+    return (false, b, b)::Tuple{Bool, M, M}
   end
 
   for i = nrows(H):-1:1
     for j = 1:ncols(H)
       if !iszero(H[i,j])
-        N = zero_matrix(base_ring(a), ncols(a), nrows(H) - i)
+        N = zero_matrix(base_ring(a), ncols(a), nrows(H) - i)::M
         for k = 1:nrows(N)
           for l = 1:ncols(N)
             N[k,l] = T[nrows(T) - l + 1, k]
           end
         end
-        return true, transpose(z*T), N
+        return (true, transpose(z*T), N)::Tuple{Bool, M, M}
       end
     end
   end
-  N =  similar(a, ncols(a), 0)
+  N =  similar(a, ncols(a), 0)::M
 
-  return true, transpose(z*T), N
+  return (true, transpose(z*T), N)::Tuple{Bool, M, M}
 end
 
 ################################################################################
