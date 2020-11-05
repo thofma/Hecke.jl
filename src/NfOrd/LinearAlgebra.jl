@@ -1,6 +1,9 @@
 export pseudo_matrix, pseudo_hnf, PseudoMatrix, pseudo_hnf_with_transform, coefficient_ideals, matrix
 import Base.vcat, Base.hcat
 
+add_verbose_scope(:PseudoHnf)
+add_assert_scope(:PseudoHnf)
+
 function _det_bound(M::Generic.Mat{NfOrdElem})
   n = nrows(M)
   O = base_ring(M)
@@ -365,8 +368,6 @@ end
 # this is slow
 function _coprime_integral_ideal_class(x::Union{NfOrdFracIdl, NfOrdIdl}, y::NfOrdIdl)
   O = order(y)
-  #c = conjugates_init(nf(O).pol)
-  #num_x_inv = inv(numerator(x))
   x_inv = inv(x)
   check = true
   z = ideal(O, O(1))
@@ -394,29 +395,44 @@ function _coprime_integral_ideal_class(x::FacElem{NfOrdIdl, NfOrdIdlSet}, y::NfO
   return FacElem(D), FacElem(D2)
 end
 
+function absolute_norm(x::NfAbsOrdIdl)
+  return norm(x)
+end
+
 # this is slow
 function _coprime_norm_integral_ideal_class(x, y) #x::NfOrdFracIdl, y::NfOrdIdl)
   # x must be nonzero
   O = order(y)
-  if isone(denominator(x)) && iscoprime(norm(numerator(x)), norm(y))
-    return numerator(x), nf(O)(1)
+  if iscoprime(norm(numerator(x, copy = false), copy = false), norm(y, copy = false))
+    return numerator(x, copy = false), nf(O)(denominator(x))
   end
   x_inv = inv(x)
   check = true
   z = ideal(O, O(1))
   a = nf(O)()
   i = 0
-  while check
-    i += 1
+  while check && i < 20
     a = rand(x_inv, 10)
-    if a == 0
+    if iszero(a)
       continue
     end
+    i += 1
     b = x*a
-    z = divexact(numerator(b), denominator(b))
-    gcd(norm(z), norm(y)) == 1 ? (check = false) : (check = true)
+    simplify(b)
+    @assert isone(denominator(b, copy = false))
+    z = numerator(b, copy = false)
+    check = !(gcd(norm(z, copy = false), norm(y, copy = false)) == 1)
   end
-  return z, a
+  if !check
+    return z, a
+  end
+  a = nf(O)(denominator(x, copy = false))
+  lp = factor(ideal(O, gcd(minimum(numerator(x, copy = false), copy = false), minimum(y, copy = false))))
+  J, b = coprime_deterministic(numerator(x, copy = false), y, lp)
+  res2 = b*a
+  @hassert :PseudoHnf 1 res2*x == J
+  @hassert :PseudoHnf 1 iscoprime(norm(J, copy = false), norm(y, copy = false))
+  return J, res2
 end
 
 RandomExtensions.maketype(I::NfOrdIdl, ::Int) = NfOrdElem
@@ -502,42 +518,51 @@ function find_pseudo_hnf_modulus(P::PMat{T, S}) where {T, S}
   O = order(P.coeffs[1])
   if nrows(P) == ncols(P)
     m = det(P)
-  else
-    p = next_prime(2^61)
-    permGroup = SymmetricGroup(nrows(P))
-    rowPerm = permGroup()
-    rank = 0
-    while rank != ncols(P)
-      lp = prime_ideals_over(O, p)
-      for t in lp
-        F, mF = ResidueField(O, t)
-        mFF = extend(mF, K)
-        Pt = zero_matrix(codomain(mFF), nrows(P), ncols(P))
-        nextIdeal = false
-        for i = 1:nrows(P)
-          for j = 1:ncols(P)
-            try Pt[i, j] = mFF(P.matrix[i, j])
-            catch
-              nextIdeal = true
-              break
-            end
-          end
-          if nextIdeal
+    simplify(m)
+    return numerator(m)
+  end
+  p = next_prime(2^61)
+  permGroup = SymmetricGroup(nrows(P))
+  rowPerms = elem_type(permGroup)[]
+  cnt = 0
+  while length(rowPerms) < 2 && cnt < nrows(P)
+    cnt += 1
+    lp = prime_ideals_over(O, p)
+    for t in lp
+      F, mF = ResidueField(O, t)
+      mFF = extend(mF, K)
+      Pt = zero_matrix(F, nrows(P), ncols(P))
+      nextIdeal = false
+      for i = 1:nrows(P)
+        for j = 1:ncols(P)
+          try Pt[i, j] = mFF(P.matrix[i, j])
+          catch
+            nextIdeal = true
             break
           end
         end
         if nextIdeal
-          continue
+          break
         end
-        rowPerm = permGroup()
-        rank = lu!(rowPerm, Pt)
       end
-      p = next_prime(p)
+      if nextIdeal
+        continue
+      end
+      rowPerm = permGroup()
+      rank = lu!(rowPerm, Pt)
+      if rank == ncols(P) && !(rowPerm in rowPerms)
+        push!(rowPerms, rowPerm)
+      end
     end
+    p = next_prime(p)
+  end
+  dets = Vector{NfOrdIdl}()
+  for s = 1:length(rowPerms)
+    rowPerm = rowPerms[s]
     Minor = zero_matrix(K, ncols(P), ncols(P))
-    C = Array{S, 1}(undef, rank)
+    C = Array{S, 1}(undef, ncols(P))
     for i = 1:nrows(P)
-      if rowPerm[i] > rank
+      if rowPerm[i] > ncols(P)
         continue
       end
       for j = 1:ncols(P)
@@ -546,10 +571,11 @@ function find_pseudo_hnf_modulus(P::PMat{T, S}) where {T, S}
       C[rowPerm[i]] = P.coeffs[i]
     end
     PMinor = PseudoMatrix(Minor, C)
-    m = det(PMinor)
+    m1 = det(PMinor)
+    simplify(m1)
+    push!(dets, numerator(m1))
   end
-  simplify(m)
-  return numerator(m)
+  return sum(dets)
 end
 
 #TODO: das kann man besser machen
@@ -588,7 +614,9 @@ function pseudo_hnf_mod(P::PMat, m, shape::Symbol = :upperright, strategy = :spl
   t_idem = 0.0
 
   t_comp_red += @elapsed z = _matrix_for_reduced_span(P, m)
+  @vprint :PseudoHnf 1 "Computation of reduction: $t_comp_red\n"
   t_mod_comp += @elapsed zz = strong_echelon_form(z, shape, strategy)
+  @vprint :PseudoHnf 1 "Modular computation: $t_mod_comp\n"
 
   res_mat = zero_matrix(nf(O), nrows(P), ncols(P))
   for i in 1:nrows(P)
@@ -660,8 +688,6 @@ function pseudo_hnf_mod(P::PMat, m, shape::Symbol = :upperright, strategy = :spl
     end
   end
 
-  #println("computation of reduction : $t_comp_red")
-  #println("modular computation      : $t_mod_comp")
   #println("computation of ideal sum : $t_sum")
   #println("computation of ideal div : $t_div")
   #println("computation of idems     : $t_idem")
@@ -675,17 +701,16 @@ function _matrix_for_reduced_span(P::PMat, m::NfAbsOrdIdl)
   O = order(m)
   Om, OtoOm = quo(O, m)
   z = zero_matrix(Om, nrows(P), ncols(P))
-  if isone(norm(m))
+  if isone(m)
     return z
   end
 
   for i in 1:nrows(z)
-    I, a = _coprime_norm_integral_ideal_class(P.coeffs[i], m)
+    @vprint :PseudoHnf 4 "New row\n"
+    @vtime :PseudoHnf 4 I, a = _coprime_norm_integral_ideal_class(P.coeffs[i], m)
     n = norm(I, copy = false)
-    Omn = OtoOm(O(n))
-    qq = inv(Omn)
+    qq = Om(invmod(n, minimum(m, copy = false)))
     for j in 1:ncols(z)
-      @assert euclid(Omn) == 1
       q = OtoOm(O(n*divexact(P.matrix[i, j], a)))
       z[i, j] = mul!(z[i, j], q, qq)
     end
@@ -697,7 +722,7 @@ function _matrix_for_reduced_span(P::PMat, m::NfRelOrdIdl)
   O = order(m)
   Om, OtoOm = quo(O, m)
   z = zero_matrix(Om, nrows(P), ncols(P))
-  if isone(norm(m))
+  if isone(m)
     return z
   end
 

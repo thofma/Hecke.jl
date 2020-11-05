@@ -94,12 +94,10 @@ Nemo.isnegative(x::NfRelNSElem) = Nemo.isnegative(data(x))
 Nemo.show_minus_one(::Type{NfRelNSElem{T}}) where {T} = true
 
 function Nemo.iszero(a::NfRelNSElem)
-  reduce!(a)
   return iszero(data(a))
 end
 
 function Nemo.isone(a::NfRelNSElem)
-  reduce!(a)
   return isone(data(a))
 end
 
@@ -245,8 +243,11 @@ Nemo.gen(K::NfRelNS) = K(Nemo.gen(parent(K.pol[1])))
 #
 ################################################################################
 
-function Base.:(-)(a::NfRelNSElem)
-  return parent(a)(-data(a))
+function Base.:(-)(a::NfRelNSElem{T}) where T
+  z = NfRelNSElem{T}(-data(a))
+  z.parent = parent(a)
+  return z
+  #return parent(a)(-data(a))
 end
 
 ################################################################################
@@ -257,12 +258,16 @@ end
 
 function Base.:(+)(a::NfRelNSElem{T}, b::NfRelNSElem{T}) where {T}
   parent(a) == parent(b) || force_op(+, a, b)::NfRelNSElem{T}
-  return parent(a)(data(a) + data(b))
+  z = NfRelNSElem{T}(data(a) + data(b))
+  z.parent = parent(a)
+  return z
 end
 
 function Base.:(-)(a::NfRelNSElem{T}, b::NfRelNSElem{T}) where {T}
   parent(a) == parent(b) || force_op(-, a, b)::NfRelNSElem{T}
-  return parent(a)(data(a) - data(b))
+  z = NfRelNSElem{T}(data(a) - data(b))
+  z.parent = parent(a)
+  return z
 end
 
 function Base.:(*)(a::NfRelNSElem{T}, b::NfRelNSElem{T}) where {T}
@@ -311,7 +316,8 @@ function Base.:(^)(a::NfRelNSElem{T}, b::fmpz) where T
     return deepcopy(a)
   elseif mod(b, 2) == 0
     c = a^(div(b, 2))
-    return c*c
+    mul!(c, c, c)
+    return c
   else 
     return a^(b - 1)*a
   end
@@ -324,8 +330,6 @@ end
 ################################################################################
 
 function Base.:(==)(a::NfRelNSElem{T}, b::NfRelNSElem{T}) where T
-  reduce!(a)
-  reduce!(b)
   parent(a) == parent(b) || force_op(==, a, b)::Bool
   return data(a) == data(b)
 end
@@ -348,18 +352,15 @@ end
 
 function Nemo.addeq!(b::NfRelNSElem{T}, a::NfRelNSElem{T}) where {T}
   addeq!(b.data, a.data)
-  b = reduce!(b)
   return b
 end
 
 function Nemo.add!(c::NfRelNSElem{T}, a::NfRelNSElem{T}, b::NfRelNSElem{T}) where {T}
   c.data = add!(c.data, a.data, b.data)
-  c = reduce!(c)
   return c
 end
 
 function Base.hash(a::NfRelNSElem{nf_elem}, b::UInt)
-  reduce!(a)
   return hash(a.data, b)
 end
 
@@ -431,7 +432,6 @@ function basis_matrix(a::Vector{NfRelNSElem{T}}) where {T <: NumFieldElem}
 end
 
 function elem_to_mat_row!(M::Generic.Mat{T}, i::Int, a::NfRelNSElem{T}) where T
-  a.parent
   K = parent(a)
   for j=1:ncols(M)
     M[i, j] = zero(base_field(K))
@@ -439,6 +439,7 @@ function elem_to_mat_row!(M::Generic.Mat{T}, i::Int, a::NfRelNSElem{T}) where T
   for j = 1:length(a.data)
     M[i, monomial_to_index(j, a)] = a.data.coeffs[j]
   end
+  return nothing
 end
 
 function elem_from_mat_row(K::NfRelNS{T}, M::Generic.Mat{T}, i::Int) where T
@@ -446,12 +447,8 @@ function elem_from_mat_row(K::NfRelNS{T}, M::Generic.Mat{T}, i::Int) where T
   t = K()
   b = basis(K)
   for c = 1:ncols(M)
-    a.parent = K
-    b[c].parent = K
     a = a + M[i, c]*b[c]
-    b[c].parent
   end
-  a.parent
   return a
 end
 
@@ -656,7 +653,7 @@ function tr(a::NfRelNSElem)
     end
     res += temp
   end
-  @hassert :NfRel 1 res == tr_via_minpoly(a)
+  @hassert :NfRel 9001 res == tr_via_minpoly(a)
   return res
 end
 
@@ -799,7 +796,7 @@ absolute_field(K::NfRelNS{nf_elem}) = simple_extension(K, FlintQQ)
 function basis(K::NfRel)
   a = gen(K)
   z = one(K)
-  b = [z, a]
+  b = elem_type(K)[z, a]
   while length(b) < degree(K)
     push!(b, b[end]*a)
   end

@@ -919,9 +919,86 @@ function pradical(O::NfRelOrd, P::Union{NfOrdIdl, NfRelOrdIdl})
   end
   PM1 = PseudoMatrix(M1)
   PM2 = PseudoMatrix(identity_matrix(K, d), [ pb[i][2]*P for i = 1:d ])
-  PM = sub(pseudo_hnf(vcat(PM1, PM2), :lowerleft), (d + 1):2*d, 1:d)
+  PM = sub(pseudo_hnf(vcat(PM1, PM2), :lowerleft, true), (d + 1):2*d, 1:d)
 
   return ideal(O, PM, false, true)
+end
+
+
+function pradical(O::NfRelOrd{S, T, NfRelElem{nf_elem}}, P::NfOrdIdl) where {S, T}
+  d = degree(O)
+  L = nf(O)
+  K = base_field(L)
+  OK = maximal_order(K)
+  pb = pseudo_basis(O, copy = false)
+
+  @vprint :NfRelOrd 4 "Computing a pseudo basis of O with integral ideals \n"
+  basis_mat_int = zero_matrix(K, d, d)
+  pbint = Vector{Tuple{elem_type(L), typeof(P)}}()
+  for i = 1:d
+    t = divexact(pb[i][1], denominator(pb[i][2]))
+    push!(pbint, (t, numerator(pb[i][2])))
+    elem_to_mat_row!(basis_mat_int, i, t)
+  end
+  Oint = typeof(O)(L, PseudoMatrix(basis_mat_int, [ fractional_ideal(OK, pbint[i][2], fmpz(1)) for i = 1:d ]))
+
+  pOK = ideal(OK, OK(minimum(P)))
+  prime_ideals = factor(pOK)
+
+  elts_with_val = Vector{elem_type(OK)}(undef, d)
+  for i = 1:d
+    elts_with_val[i] = element_with_valuation(pbint[i][2], [ p for (p, e) in prime_ideals ])
+  end
+  F, mF = ResidueField(OK, P)
+  mmF = extend(mF, K)
+  A = zero_matrix(F, d, d)
+
+  # If the prime number in P is too small one can't use the trace.
+  p = minimum(P)
+  if p <= d
+    @vprint :NfRelOrd 4 "Frobenius method \n"
+    q = order(F)
+    k = clog(fmpz(degree(Oint)), q)
+    for i = 1:d
+      if isdefining_polynomial_nice(K)
+        t = Oint(_powermod(L(K(elts_with_val[i]))*pbint[i][1], q^k, p))
+      else
+        t = Oint((L(K(elts_with_val[i]))*pbint[i][1])^(q^k))
+      end
+      ar = coordinates(t, copy = false)
+      for j = 1:d
+        A[j, i] = mmF(divexact(ar[j], K(elts_with_val[j])))
+      end
+    end
+  else
+    @vprint :NfRelOrd 4 "Trace method \n"
+    for i = 1:d
+      for j = i:d
+        t = L(K(elts_with_val[i]))*pbint[i][1]*L(K(elts_with_val[j]))*pbint[j][1]
+        A[i, j] = mF(OK(tr(t)))
+        A[j, i] = A[i, j]
+      end
+    end
+  end
+  @vprint :NfRelOrd 4 "Computing nullspace \n"
+  B = nullspace(A)[2]
+  @vprint :NfRelOrd 4 "Lifting nullspace \n"
+  M1 = zero_matrix(K, d, d)
+  imF = pseudo_inv(mF)
+  # Write a basis of the kernel of A in the rows of M1.
+  for j = 1:nrows(B)
+    t = K(denominator(pb[j][2], copy = false))
+    for i = 1:ncols(B)
+      M1[i, j] = divexact(K(imF(B[j, i])*elts_with_val[j]), t)
+    end
+  end
+  @vprint :NfRelOrd 4 "Final hnf \n"
+  PM1 = PseudoMatrix(M1)
+  PM2 = PseudoMatrix(identity_matrix(K, d), [ pb[i][2]*P for i = 1:d ])
+  PM = sub(pseudo_hnf_full_rank(vcat(PM1, PM2), :lowerleft), (d + 1):2*d, 1:d)
+
+  return ideal(O, PM, false, true)
+
 end
 
 ################################################################################

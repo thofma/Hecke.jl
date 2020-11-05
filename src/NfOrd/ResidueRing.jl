@@ -160,18 +160,12 @@ function (Q::AbsOrdQuoRing{S, T})(x::U) where {S, T, U}
 end
 
 function (Q::AbsOrdQuoRing{S, T})(x::Integer) where {S, T}
-  I = Q.ideal
-  y = base_ring(Q)(mod(x, minimum(I, copy = false)))
-  U = elem_type(base_ring(Q))
-  res = AbsOrdQuoRingElem{S, T, U}(Q, y)
+  res = elem_type(Q)(Q, base_ring(Q)(x))
   return res
 end
 
 function (Q::AbsOrdQuoRing{S, T})(x::fmpz) where {S, T}
-  I = Q.ideal
-  y = base_ring(Q)(mod(x, minimum(I, copy = false)))
-  U = elem_type(base_ring(Q))
-  res = AbsOrdQuoRingElem{S, T, U}(Q, y)
+  res = elem_type(Q)(Q, base_ring(Q)(x))
   return res
 end
 
@@ -371,25 +365,32 @@ end
 ################################################################################
 
 function iszero(x::AbsOrdQuoRingElem)
+  if iszero(x.elem)
+    return true
+  end
   mod!(x.elem, parent(x))
   return iszero(x.elem)
 end
 
 function isone(x::AbsOrdQuoRingElem)
+  if isone(x.elem)
+    return true
+  end
   mod!(x.elem, parent(x))
   return isone(x.elem)
 end
 
 function one(Q::AbsOrdQuoRing)
-  return Q(one(Q.base_ring))
+  return elem_type(Q)(Q, base_ring(Q)(1))
 end
 
 function zero(Q::AbsOrdQuoRing)
-  return Q(zero(Q.base_ring))
+  return elem_type(Q)(Q, base_ring(Q)(0))
 end
 
-function zero!(Q::AbsOrdQuoRingElem)
-  return zero(parent(Q))
+function zero!(x::AbsOrdQuoRingElem)
+  zero!(x.elem)
+  return x
 end
 
 ################################################################################
@@ -619,7 +620,6 @@ end
 ################################################################################
 
 function Base.divrem(x::NfOrdQuoRingElem, y::NfOrdQuoRingElem)
-
   b, q = isdivisible(x, y)
   if b
     return q, zero(parent(x))
@@ -706,10 +706,12 @@ function gcd(x::NfOrdQuoRingElem, y::NfOrdQuoRingElem)
     else
       return y
     end
-  else
-    if iszero(y)
-      return x
-    end
+  elseif iszero(y)
+    return x
+  end
+
+  if isone(x) || isone(y)
+    return one(Q)
   end
 
   I = ideal(O, x.elem) + ideal(O, y.elem)
@@ -773,7 +775,7 @@ function xxgcd(x::NfOrdQuoRingElem, y::NfOrdQuoRingElem)
 
   #U = V
 
-  hnf_modular_eldiv!(V, minimum(Q.ideal))
+  hnf_modular_eldiv!(V, minimum(Q.ideal, copy = false))
 
   u = Q(-O([ V[1,i] for i in (d + 2):(2*d + 1)]))
   v = Q(-O([ V[1,i] for i in (2*d + 2):(3*d + 1)]))

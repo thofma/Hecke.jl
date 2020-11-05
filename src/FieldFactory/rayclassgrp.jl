@@ -483,8 +483,12 @@ function ray_class_group_quo(O::NfOrd, m::Int, wprimes::Dict{NfOrdIdl,Int}, inf_
   for q in keys(lp.fac)
     lq = prime_decomposition(O, q) 
     for (P, e) in lq
-      I *= P
-      d1[P] = 1
+      if !haskey(wprimes, P)
+        I *= P
+        d1[P] = 1
+      else
+        d1[P] = 1
+      end
     end   
     minI = q*minI
   end
