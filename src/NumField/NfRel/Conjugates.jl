@@ -118,14 +118,14 @@ function infinite_places(L::NfRel{T}) where {T}
         push!(plcs, InfPlcNfRel{S, typeof(L)}(L, P, true, i, rts[i], r_cnt))
         r_cnt += 1
       end
-      r = length(r_rts)
+      rr = length(r_rts)
       for i in 1:length(c_rts)
-        push!(plcs, InfPlcNfRel{S, typeof(L)}(L, P, false, r + i, rts[r + i], s + c_cnt))
+        push!(plcs, InfPlcNfRel{S, typeof(L)}(L, P, false, rr + i, rts[r + i], r + c_cnt))
         c_cnt +=1 
       end
     else
       for i in 1:length(rts)
-        push!(plcs, InfPlcNfRel{S, typeof(L)}(L, P, false, i, rts[i], s + c_cnt))
+        push!(plcs, InfPlcNfRel{S, typeof(L)}(L, P, false, i, rts[i], r + c_cnt))
         c_cnt += 1
       end
     end
@@ -221,6 +221,7 @@ function _conjugates_data(L::NfRel{T}, prec::Int) where {T}
     set_special(L, :conjugate_data_arb => D)
     return z
   else
+    D = c
     if haskey(D, prec)
       return D[prec]::Vector{Tuple{S, Vector{acb}, Vector{arb}, Vector{acb}}}
     else
