@@ -412,11 +412,11 @@ function _coprime_norm_integral_ideal_class(x, y) #x::NfOrdFracIdl, y::NfOrdIdl)
   a = nf(O)()
   i = 0
   while check && i < 20
-    i += 1
     a = rand(x_inv, 10)
     if iszero(a)
       continue
     end
+    i += 1
     b = x*a
     simplify(b)
     @assert isone(denominator(b, copy = false))
@@ -427,7 +427,7 @@ function _coprime_norm_integral_ideal_class(x, y) #x::NfOrdFracIdl, y::NfOrdIdl)
     return z, a
   end
   a = nf(O)(denominator(x, copy = false))
-  lp = factor(ideal(O, minimum(numerator(x, copy = false) + y)))
+  lp = factor(ideal(O, gcd(minimum(numerator(x, copy = false), copy = false), minimum(y, copy = false))))
   J, b = coprime_deterministic(numerator(x, copy = false), y, lp)
   res2 = b*a
   @hassert :PseudoHnf 1 res2*x == J
@@ -518,42 +518,51 @@ function find_pseudo_hnf_modulus(P::PMat{T, S}) where {T, S}
   O = order(P.coeffs[1])
   if nrows(P) == ncols(P)
     m = det(P)
-  else
-    p = next_prime(2^61)
-    permGroup = SymmetricGroup(nrows(P))
-    rowPerm = permGroup()
-    rank = 0
-    while rank != ncols(P)
-      lp = prime_ideals_over(O, p)
-      for t in lp
-        F, mF = ResidueField(O, t)
-        mFF = extend(mF, K)
-        Pt = zero_matrix(codomain(mFF), nrows(P), ncols(P))
-        nextIdeal = false
-        for i = 1:nrows(P)
-          for j = 1:ncols(P)
-            try Pt[i, j] = mFF(P.matrix[i, j])
-            catch
-              nextIdeal = true
-              break
-            end
-          end
-          if nextIdeal
+    simplify(m)
+    return numerator(m)
+  end
+  p = next_prime(2^61)
+  permGroup = SymmetricGroup(nrows(P))
+  rowPerms = elem_type(permGroup)[]
+  cnt = 0
+  while length(rowPerms) < 2 && cnt < nrows(P)
+    cnt += 1
+    lp = prime_ideals_over(O, p)
+    for t in lp
+      F, mF = ResidueField(O, t)
+      mFF = extend(mF, K)
+      Pt = zero_matrix(F, nrows(P), ncols(P))
+      nextIdeal = false
+      for i = 1:nrows(P)
+        for j = 1:ncols(P)
+          try Pt[i, j] = mFF(P.matrix[i, j])
+          catch
+            nextIdeal = true
             break
           end
         end
         if nextIdeal
-          continue
+          break
         end
-        rowPerm = permGroup()
-        rank = lu!(rowPerm, Pt)
       end
-      p = next_prime(p)
+      if nextIdeal
+        continue
+      end
+      rowPerm = permGroup()
+      rank = lu!(rowPerm, Pt)
+      if rank == ncols(P) && !(rowPerm in rowPerms)
+        push!(rowPerms, rowPerm)
+      end
     end
+    p = next_prime(p)
+  end
+  dets = Vector{NfOrdIdl}()
+  for s = 1:length(rowPerms)
+    rowPerm = rowPerms[s]
     Minor = zero_matrix(K, ncols(P), ncols(P))
-    C = Array{S, 1}(undef, rank)
+    C = Array{S, 1}(undef, ncols(P))
     for i = 1:nrows(P)
-      if rowPerm[i] > rank
+      if rowPerm[i] > ncols(P)
         continue
       end
       for j = 1:ncols(P)
@@ -562,10 +571,11 @@ function find_pseudo_hnf_modulus(P::PMat{T, S}) where {T, S}
       C[rowPerm[i]] = P.coeffs[i]
     end
     PMinor = PseudoMatrix(Minor, C)
-    m = det(PMinor)
+    m1 = det(PMinor)
+    simplify(m1)
+    push!(dets, numerator(m1))
   end
-  simplify(m)
-  return numerator(m)
+  return sum(dets)
 end
 
 #TODO: das kann man besser machen
@@ -691,7 +701,7 @@ function _matrix_for_reduced_span(P::PMat, m::NfAbsOrdIdl)
   O = order(m)
   Om, OtoOm = quo(O, m)
   z = zero_matrix(Om, nrows(P), ncols(P))
-  if isone(norm(m))
+  if isone(m)
     return z
   end
 
