@@ -37,4 +37,22 @@ end
   auts = Hecke._automorphisms(K, isabelian = true)
   auts1 = Hecke._automorphisms(K)
   @test Set(auts) == Set(auts1)
+
+  f = x^4 + 4*x^2 + 2
+  K, a = number_field(f, cached = false, check = false)
+  G, mG = automorphism_group(K)
+  @test order(G) == 4
+  fl, tau = Hecke.iscm_field(K)
+  @test fl
+end
+
+@testset "CM" begin
+  Qx, x = FlintQQ["x"]
+  f = x^20 + 6*x^19 + 33*x^18 + 109*x^17 + 332*x^16 + 706*x^15 + 1299*x^14 + 1910*x^13 + 3303*x^12 + 7116*x^11 + 14445*x^10 + 24009*x^9 + 30102*x^8 + 37094*x^7 + 54187*x^6 + 82991*x^5 + 119418*x^4 + 148247*x^3 + 185442*x^2 + 184250*x + 112225
+x^20 + 6*x^19 + 33*x^18 + 109*x^17 + 332*x^16 + 706*x^15 + 1299*x^14 + 1910*x^13 + 3303*x^12 + 7116*x^11 + 14445*x^10 + 24009*x^9 + 30102*x^8 + 37094*x^7 + 54187*x^6 + 82991*x^5 + 119418*x^4 + 148247*x^3 + 185442*x^2 + 184250*x + 112225
+  K, a = NumberField(f, "a", cached = false)
+  G, mG = automorphism_group(K)
+  @test order(center(G)[1]) == 2
+  fl, tau = Hecke.iscm_field(K)
+  @test fl
 end
