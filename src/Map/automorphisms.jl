@@ -46,10 +46,12 @@ function _automorphisms(K::AnticNumberField; isabelian::Bool = false)
   if ord_aut == 1
     return NfToNfMor[id_hom(K)]
   end
+  #=
   e, q = ispower(ord_aut)
   if e == 2 && isprime(q)
     return _automorphisms_center(K)
   end
+  =#
   Kt, t = PolynomialRing(K, "t", cached = false)
   f1 = change_base_ring(K, f, parent = Kt)
   divpol = Kt(nf_elem[-gen(K), K(1)])
@@ -420,6 +422,7 @@ function lift_root(K::AnticNumberField, b::nmod_poly, bound::Int)
   bi = sub!(bi, Rb_0, bi)
   b_0 = lift(Zx, bi)
   r = K(parent(K.pol)(b_0))
+  r_old = r + 1
   mul!(r, r, dF)
   mod_sym!(r, modu)
   i = 0
@@ -536,7 +539,10 @@ function _automorphisms_center(K::AnticNumberField)
   dp = denominator(K.pol)
   coeffs_bound = 2*_coefficients_bound(K)
   cnt = 0
-  while length(auts) != degree(K) && cnt < 40
+  ord = _order_bound(K)
+  threshold = max(60, ord^2)
+  while length(auts) < ord && cnt < threshold
+    cnt += 1
     p = next_prime(p)
     if divisible(dp, p)
       continue
@@ -547,7 +553,6 @@ function _automorphisms_center(K::AnticNumberField)
     if degree(fF) != degree(K) || iszero(discriminant(fF))
       continue 
     end
-    cnt += 1
     lf = factor_distinct_deg(fF)
     if length(lf) != 1
       continue
