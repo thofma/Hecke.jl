@@ -31,6 +31,7 @@ mutable struct QuadSpace{S, T} <: AbsSpace{S}
         if typeof(Gc) !== dense_matrix_type(elem_type(S))
           throw(error("Cannot convert entries of the matrix to the number field"))
         end
+        @assert base_ring(Gc) === K
         z = new{S, dense_matrix_type(elem_type(S))}(K, Gc)
         return z
       catch e

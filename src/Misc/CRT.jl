@@ -358,6 +358,9 @@ Find $r$ such that $r \equiv r_i \pmod m_i$ for all $i$.
 """
 function crt(r::Array{T, 1}, m::Array{T, 1}) where T
   length(r) == length(m) || error("Arrays need to be of same size")
+  if length(r) == 1
+    return r[1] % m[1]
+  end
   if length(r) < 15
     return crt_iterative(r, m)
   else

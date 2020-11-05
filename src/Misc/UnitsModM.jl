@@ -365,6 +365,9 @@ end
 Tries to find $g$ s.th. $a^g == b$ under the assumption that $g \leq o$.
 Uses Baby-Step-Giant-Step, requires $a$ to be invertible.
 """
+function disc_log_bs_gs(a::T, b::T, o::Integer) where {T <: RingElem}
+  return disc_log_bs_gs(a, b, fmpz(o))
+end
 function disc_log_bs_gs(a::T, b::T, o::fmpz) where {T <: RingElem}
   b==1 && return fmpz(0)
   b==a && return fmpz(1)
@@ -378,14 +381,17 @@ function disc_log_bs_gs(a::T, b::T, o::fmpz) where {T <: RingElem}
     throw("disc_log failed")
   end
   r = Int(root(o, 2))
-  baby = Array{typeof(a), 1}(undef, r)
-  baby[1] = parent(a)(1)
-  baby[2] = a
+#  baby = Array{typeof(a), 1}(undef, r)
+  baby = Dict{typeof(a), Int}()
+  baby[parent(a)(1)] = (1)
+  baby[a] = 2
+  ba = a
   for i=3:r
-    baby[i] = baby[i-1]*a
-    baby[i] == b && return fmpz(i-1)
+    ba *= a
+    baby[ba] = i
+    ba == b && return fmpz(i-1)
   end
-  giant = baby[end]*a
+  giant = ba*a
   @assert giant == a^r
   b == giant && return fmpz(r)
   giant = inv(giant)
@@ -393,8 +399,9 @@ function disc_log_bs_gs(a::T, b::T, o::fmpz) where {T <: RingElem}
   for i=1:r+1
     b *= giant
     g += r
-    f = findfirst(x -> x == b, baby)
-    f !== nothing && return fmpz(g+f-1)
+    if haskey(baby, b)
+      return fmpz(baby[b]+g-1)
+    end
   end
   throw("disc_log failed")
 end

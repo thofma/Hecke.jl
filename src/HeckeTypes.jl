@@ -1345,26 +1345,39 @@ end
 #
 ################################################################################
 
-mutable struct FactorBaseSingleP
+mutable struct FactorBaseSingleP{T}
   P::fmpz
-  pt::FactorBase{nmod_poly}
+  pt::FactorBase{T}
   lp::Array{Tuple{Int,NfOrdIdl}, 1}
-  lf::Array{nmod_poly, 1}
+  lf::Array{T, 1}
   doit::Function
 
-  function FactorBaseSingleP(p::fmpz, lp::Array{Tuple{Int, NfOrdIdl}, 1})
-    FB = new()
+  function FactorBaseSingleP(p::Integer, lp::Array{Tuple{Int, NfOrdIdl}, 1}) where {S}
+    Fpx = PolynomialRing(ResidueRing(FlintZZ, UInt(p), cached=false), "x", cached=false)[1]
+    O = order(lp[1][2])
+    K = O.nf
+    return FactorBaseSingleP(Fpx(Globals.Zx(K.pol)), lp)
+  end
+
+  function FactorBaseSingleP(p::fmpz, lp::Array{Tuple{Int, NfOrdIdl}, 1}) where {S}
+    Fpx = PolynomialRing(ResidueRing(FlintZZ, p, cached=false), "x", cached=false)[1]
+    O = order(lp[1][2])
+    K = O.nf
+    return FactorBaseSingleP(Fpx(Globals.Zx(K.pol)), lp)
+  end
+
+  function FactorBaseSingleP(fp::S, lp::Array{Tuple{Int, NfOrdIdl}, 1}) where {S}
+    FB = new{S}()
     FB.lp = lp
+    p = characteristic(base_ring(fp))
     FB.P = p
     O = order(lp[1][2])
     K = O.nf
 
     if isone(lead(K.pol)) && isone(denominator(K.pol)) && (length(lp) >= 3 && !isindex_divisor(O, p)) # ie. index divisor or so
-      Zx = PolynomialRing(FlintZZ, "x")[1]
-      Fpx = PolynomialRing(ResidueRing(FlintZZ, UInt(p), cached=false), "x", cached=false)[1]
       Qx = parent(K.pol)
-      fp = Fpx(Zx(K.pol))
-      lf = [ gcd(fp, Fpx(Zx(Qx(K(P[2].gen_two)))))::nmod_poly for P = lp]
+      Fpx = parent(fp)
+      lf = [ gcd(fp, Fpx(Globals.Zx(Qx(K(P[2].gen_two)))))::S for P = lp]
       FB.lf = lf
       FB.pt = FactorBase(Set(lf), check = false)
     end
