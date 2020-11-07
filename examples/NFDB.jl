@@ -884,7 +884,7 @@ function latex_table(D::NFDB; entries = [:deg, :automorphism_group, :poly, :non_
   return String(take!(io))
 end
 
-function _latexify(f::Fac{fmpz}; withnumber = true, approx = true, cdot = false)
+function _latexify(f::Fac{fmpz}; withnumber = true, approx = true, cdot = false, sign = true)
   l = Tuple{fmpz, Int}[(p, e) for (p, e) in f]
   sort!(l, by = x -> x[1])
   if length(l) == 0
@@ -895,6 +895,9 @@ function _latexify(f::Fac{fmpz}; withnumber = true, approx = true, cdot = false)
     s = "\$ $m = "
   else
     s = "\$"
+  end
+  if sign && m < 0
+    s = s * "-"
   end
   for i in 1:(length(l) - 1)
     if l[i][2] == 1
