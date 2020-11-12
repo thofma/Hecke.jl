@@ -554,6 +554,16 @@ function EquationOrder(L::NumField)
   return O
 end
 
+function EquationOrder(L::NfRel{nf_elem})
+  M = identity_matrix(base_field(L), degree(L))
+  PM = PseudoMatrix(M)
+  O = Order(L, PM)
+  O.basis_mat_inv = M
+  O.isequation_order = true
+  O.index = ideal(maximal_order(base_field(L)), 1)
+  return O
+end
+
 equation_order(L::NumField) = EquationOrder(L)
 
 @doc Markdown.doc"""
@@ -909,12 +919,51 @@ containing both $R$ and $S$.
 function +(a::NfRelOrd{T, S, U}, b::NfRelOrd{T, S, U}) where {T, S, U}
   # checks
   @assert nf(a) == nf(b)
+  d = degree(a)
   aB = basis_pmatrix(a, copy = false)
   bB = basis_pmatrix(b, copy = false)
-  d = degree(a)
-  PM = sub(pseudo_hnf(vcat(aB, bB), :lowerleft, true), d + 1:2*d, 1:d)
+  M = vcat(aB, bB)
+  PM = sub(pseudo_hnf(M, :lowerleft, true), d + 1:2*d, 1:d)
   return NfRelOrd{T, S, U}(nf(a), PM)
 end
+
+function +(a::NfRelOrd{T, S, U}, b::NfRelOrd{T, S, U}) where {T, S, U <: Union{NfRelElem{nf_elem}, NfRelNSElem{nf_elem}}}
+  # checks
+  @assert nf(a) == nf(b)
+  K = base_field(nf(a))
+  d = degree(a)
+  aB = basis_pmatrix(a)
+  bB = basis_pmatrix(b)
+  M = vcat(aB, bB)
+  z = _make_integral!(M)
+  d1 = numerator(det(sub(M, 1:d, 1:d)))
+  d2 = numerator(det(sub(M, d+1:2*d, 1:d)))
+  m = d1 + d2
+  M = sub(pseudo_hnf_mod(M, m, :lowerleft), d + 1:2*d, 1:d)
+  for i in 1:nrows(M)
+    M.coeffs[i] = M.coeffs[i]*inv(K(z))
+    simplify(M.coeffs[i])
+  end
+  return NfRelOrd{T, S, U}(nf(a), M)
+end
+
+function sum_as_OK_modules(a::NfRelOrd{T, S, U}, b::NfRelOrd{T, S, U}) where {T, S, U <: NfRelElem{nf_elem}}
+  if !isdefined(a, :index) || !isdefined(b, :index)
+    return a+b
+  end
+  K = base_field(nf(a))
+  d = degree(a)
+  aB = basis_pmatrix(a)
+  bB = basis_pmatrix(b)
+  M = vcat(aB, bB)
+  new_index = a.index * b.index
+  M = sub(pseudo_hnf_full_rank_with_modulus(M, new_index, :lowerleft), d+1:2*d, 1:d)
+  res = NfRelOrd{T, S, U}(nf(a), M)
+  res.index = new_index
+  res.disc_abs = simplify(gcd(discriminant(a), discriminant(b)))
+  return res
+end
+
 
 function sum_as_OK_modules(a::NfRelOrd{T, S, U}, b::NfRelOrd{T, S, U}) where {T, S, U}
   return a+b
@@ -1201,6 +1250,7 @@ function dedekind_test_composite(O::NfRelOrd{U1, V, Z}, P::Union{NfRelOrdIdl, Nf
   PN = vcat(BM, PM)
   PN = sub(pseudo_hnf_full_rank_with_modulus(PN, P, :lowerleft), degree(O) + 1:2*degree(O), 1:degree(O))
   OO = typeof(O)(L, PN)
+  OO.index = P
   OO.isequation_order = false
   return one(K), OO
 end
@@ -1299,6 +1349,7 @@ function maximal_order(O::NfRelOrd{S, T, U}) where {S, T, U <: NfRelElem}
 end
 
 function overorder_polygons(O::NfRelOrd{S, T, NfRelElem{nf_elem}}, p::NfOrdIdl) where {S, T}
+  @assert isequation_order(O)
   K = nf(O)
   f = K.pol
   k = base_field(K)
@@ -1309,6 +1360,7 @@ function overorder_polygons(O::NfRelOrd{S, T, NfRelElem{nf_elem}}, p::NfOrdIdl) 
   f1 = map_coeffs(mF1, f)
   sqf = factor_squarefree(f1)
   l = powers(gen(K), degree(K)-1)
+  maxv = 0
   regular = true
   vdisc = 0
   for (gg, m) in sqf
@@ -1320,6 +1372,7 @@ function overorder_polygons(O::NfRelOrd{S, T, NfRelElem{nf_elem}}, p::NfOrdIdl) 
       N = _newton_polygon(dev, p)
       for i = 1:m
         v = _floor_newton_polygon(N, i)
+        maxv = max(v, maxv)
         if v > 0
           vdisc += v*degree(phi)
           pow_anti = anti_uniformizer(p)^v 
@@ -1333,9 +1386,11 @@ function overorder_polygons(O::NfRelOrd{S, T, NfRelElem{nf_elem}}, p::NfOrdIdl) 
   end
   B = basis_matrix(l)
   M = pseudo_matrix(B)
-  M = sub(pseudo_hnf(M, :lowerleft), length(l)-degree(K)+1:length(l), 1:degree(K))
+  index = p^maxv
+  M = sub(pseudo_hnf_full_rank_with_modulus(M, index, :lowerleft), length(l)-degree(K)+1:length(l), 1:degree(K))
   O1 = typeof(O)(K, M)
-  O1.disc_abs = divexact(O.disc_abs, p^(2*vdisc))
+  O1.index = index
+  O1.disc_abs = divexact(O.disc_abs, p^(2*vdisc)) 
   return O1
 end
 

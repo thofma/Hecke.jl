@@ -841,13 +841,16 @@ end
 #
 ################################################################################
 
-function simple_extension(K::NfAbsNS; cached = true, check = true)
+function simple_extension(K::NfAbsNS; cached::Bool = true, check = true, simplified::Bool = false)
+  if simplified
+    return simplified_simple_extension1(K, cached = cached)
+  end
   n = ngens(K)
   g = gens(K)
   if n == 1
     #The extension is already simple
     f = isunivariate(K.pol[1])[2]
-    Ka, a = NumberField(f, "a", cached = false, check = check)
+    Ka, a = NumberField(f, "a", cached = cached, check = check)
     mp = NfAbsToNfAbsNS(Ka, K, g[1], [a])
     return Ka, mp
   end
@@ -867,7 +870,7 @@ function simple_extension(K::NfAbsNS; cached = true, check = true)
     push!(ind, j)
     pe += j * g[i]
   end
-  Ka, a = number_field(f, check = check, cached = false)
+  Ka, a = number_field(f, check = check, cached = cached)
   k = base_ring(K)
   M = zero_matrix(k, degree(K), degree(K))
   z = one(K)

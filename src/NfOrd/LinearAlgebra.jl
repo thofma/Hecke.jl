@@ -498,17 +498,21 @@ function pseudo_hnf_full_rank(P::PMat, shape::Symbol = :upperright)
   return PPhnf
 end
 
-function pseudo_hnf_full_rank_with_modulus(P::PMat, m::NfOrdIdl, shape::Symbol = :upperright)
-  PP = deepcopy(P)
-  K = parent(PP.matrix[1, 1])
-  integralizer = _make_integral!(PP)
+function pseudo_hnf_full_rank_with_modulus!(P::PMat, m::NfOrdIdl, shape::Symbol = :upperright)
+  K = parent(P.matrix[1, 1])
+  integralizer = _make_integral!(P)
   m = integralizer*m
-  PPhnf = pseudo_hnf_mod(PP, m, shape)
-  for i in 1:nrows(PP)
+  PPhnf = pseudo_hnf_mod(P, m, shape)
+  for i in 1:nrows(PPhnf)
     PPhnf.coeffs[i] = PPhnf.coeffs[i]*inv(K(integralizer))
     simplify(PPhnf.coeffs[i])
   end
   return PPhnf
+end
+
+function pseudo_hnf_full_rank_with_modulus(P::PMat, m::NfOrdIdl, shape::Symbol = :upperright)
+  PP = deepcopy(P)
+  return pseudo_hnf_full_rank_with_modulus!(PP, m, shape)
 end
 
 pseudo_hnf_full_rank_with_modulus(P::PMat, m::NfRelOrdIdl, shape::Symbol = :upperright) = pseudo_hnf_kb(P, shape)
@@ -525,7 +529,8 @@ function find_pseudo_hnf_modulus(P::PMat{T, S}) where {T, S}
   permGroup = SymmetricGroup(nrows(P))
   rowPerms = elem_type(permGroup)[]
   cnt = 0
-  while length(rowPerms) < 2 && cnt < nrows(P)
+  to_remove = Int[]
+  while length(rowPerms) < 2 && cnt < min(5, ncols(P))
     cnt += 1
     lp = prime_ideals_over(O, p)
     for t in lp
@@ -534,6 +539,9 @@ function find_pseudo_hnf_modulus(P::PMat{T, S}) where {T, S}
       Pt = zero_matrix(F, nrows(P), ncols(P))
       nextIdeal = false
       for i = 1:nrows(P)
+        if i in to_remove
+          continue
+        end
         for j = 1:ncols(P)
           try Pt[i, j] = mFF(P.matrix[i, j])
           catch
@@ -551,6 +559,11 @@ function find_pseudo_hnf_modulus(P::PMat{T, S}) where {T, S}
       rowPerm = permGroup()
       rank = lu!(rowPerm, Pt)
       if rank == ncols(P) && !(rowPerm in rowPerms)
+        j = 1
+        while rowPerm[j] > ncols(P)
+          j += 1
+        end
+        push!(to_remove, j)
         push!(rowPerms, rowPerm)
       end
     end
@@ -1586,19 +1599,19 @@ function hcat(P::PMat, Q::PMat)
    @assert base_ring(P.matrix) == base_ring(Q.matrix)
    @assert P.coeffs == Q.coeffs
    m = hcat(P.matrix, Q.matrix)
-   return PseudoMatrix(m, deepcopy(P.coeffs))
+   return PseudoMatrix(m, P.coeffs)
 end
 
 function hcat(A::Vector{ <: PMat })
   @assert all( P -> P.coeffs == A[1].coeffs, A)
   m = hcat([ P.matrix for P in A ])
-  return PseudoMatrix(m, deepcopy(A[1].coeffs))
+  return PseudoMatrix(m, A[1].coeffs)
 end
 
 function hcat(A::PMat...)
   @assert all( P -> P.coeffs == A[1].coeffs, A)
   m = hcat([ P.matrix for P in A ])
-  return PseudoMatrix(m, deepcopy(A[1].coeffs))
+  return PseudoMatrix(m, A[1].coeffs)
 end
 
 function +(M::ModDed, N::ModDed)

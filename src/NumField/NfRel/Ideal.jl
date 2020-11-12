@@ -278,7 +278,7 @@ function ideal(O::NfRelOrd{T, S, U}, x::NfRelOrdElem{T, U}) where {T, S, U}
     elem_to_mat_row!(M, i, pb[i][1]*nf(O)(x))
   end
   M = M*basis_mat_inv(O, copy = false)
-  PM = PseudoMatrix(M, S[ deepcopy(pb[i][2]) for i = 1:d ])
+  PM = PseudoMatrix(M, S[ pb[i][2] for i = 1:d ])
   PM = pseudo_hnf(PM, :lowerleft)
   return NfRelOrdIdl{T, S, U}(O, PM)
 end
@@ -524,10 +524,10 @@ Returns $a + b$.
 function +(a::NfRelOrdIdl{T, S}, b::NfRelOrdIdl{T, S}) where {T, S}
   check_parent(a, b)
   d = degree(order(a))
-  H = vcat(basis_pmatrix(a), basis_pmatrix(b))
+  H = vcat(basis_pmatrix(a, copy = false), basis_pmatrix(b, copy = false))
   if T === nf_elem
     m = norm(a) + norm(b)
-    H = sub(pseudo_hnf_full_rank_with_modulus(H, m, :lowerleft), (d + 1):2*d, 1:d)
+    H = sub(pseudo_hnf_full_rank_with_modulus!(H, m, :lowerleft), (d + 1):2*d, 1:d)
   else
     H = sub(pseudo_hnf(H, :lowerleft), (d + 1):2*d, 1:d)
   end
@@ -573,7 +573,7 @@ function *(a::NfRelOrdIdl{T, S}, b::NfRelOrdIdl{T, S}) where {T, S}
   PM.matrix = PM.matrix*basis_mat_inv(order(a), copy = false)
   if T == nf_elem
     m = norm(a)*norm(b)
-    H = sub(pseudo_hnf_full_rank_with_modulus(PM, m, :lowerleft), (d*(d - 1) + 1):d^2, 1:d)
+    H = sub(pseudo_hnf_full_rank_with_modulus!(PM, m, :lowerleft), (d*(d - 1) + 1):d^2, 1:d)
   else
     H = sub(pseudo_hnf(PM, :lowerleft), (d*(d - 1) + 1):d^2, 1:d)
   end
@@ -633,7 +633,7 @@ function intersect(a::NfRelOrdIdl{T, S}, b::NfRelOrdIdl{T, S}) where {T, S}
   M = vcat(M1, M2)
   if T === nf_elem
     m = intersect(norm(a), norm(b))
-    H = sub(pseudo_hnf_full_rank_with_modulus(M, m, :lowerleft), 1:d, 1:d)
+    H = sub(pseudo_hnf_full_rank_with_modulus!(M, m, :lowerleft), 1:d, 1:d)
   else
     H = sub(pseudo_hnf(M, :lowerleft), 1:d, 1:d)
   end
@@ -781,8 +781,8 @@ end
 #
 ################################################################################
 
-# Returns an element x with v_p(x) = v_p(a) for all p in primes.
-function element_with_valuation(a::T, primes::Vector{T}) where {T <: Union{NfOrdIdl, NfRelOrdIdl}}
+# Returns an element x of a with v_p(x) = v_p(a) for all p in primes.
+function element_with_valuation(a::T, primes::Vector{T}) where {T <: Union{NfAbsOrdIdl, NfRelOrdIdl}}
   products = Vector{T}()
   for p in primes
     push!(products, a*p)
@@ -802,9 +802,12 @@ function element_with_valuation(a::T, primes::Vector{T}) where {T <: Union{NfOrd
   return x
 end
 
+
+
+
 #computes a^e mod the integer p. Assumes that the base field of parent(a)
 # has a nice defining equation
-function _powermod(a::NfRelElem, e::T, p::fmpz) where T <: Union{fmpz, Integer}
+function _powermod(a::S, e::T, p::fmpz) where {S <: Union{NfRelElem, NfRelNSElem}, T <: Union{fmpz, Integer}}
   @assert e >= 0
   K = parent(a)
   if iszero(e)
@@ -816,11 +819,13 @@ function _powermod(a::NfRelElem, e::T, p::fmpz) where T <: Union{fmpz, Integer}
   end
   if iseven(e)
     c = _powermod(b, div(e, 2), p)
-    c = mod(c*c, p)
+    mul!(c, c, c)
+    c = mod(c, p)
     return c
   else
     c = _powermod(b, e-1, p)
-    c = mod(c*b, p)
+    mul!(c, c, b)
+    c = mod(c, p)
     return c
   end
 end
@@ -850,7 +855,7 @@ function pradical(O::NfRelOrd, P::Union{NfOrdIdl, NfRelOrdIdl})
   for i = 1:d
     t = divexact(pb[i][1], denominator(pb[i][2]))
     if is_absolute
-      push!(pbint, (t, deepcopy(numerator(pb[i][2]))))
+      push!(pbint, (t, numerator(pb[i][2], copy = false)))
     else
       push!(pbint, (t, numerator(pb[i][2])))
     end
@@ -862,11 +867,7 @@ function pradical(O::NfRelOrd, P::Union{NfOrdIdl, NfRelOrdIdl})
     Oint = typeof(O)(L, PseudoMatrix(basis_mat_int, [ fractional_ideal(OK, basis_pmatrix(pbint[i][2], copy = false)) for i = 1:d ]))
   end
 
-  if is_absolute
-    pOK = ideal(OK, OK(minimum(P)))
-  else
-    pOK = minimum(P, copy = false)*OK
-  end
+  pOK = minimum(P, copy = false)*OK
   prime_ideals = factor(pOK)
 
   elts_with_val = Vector{elem_type(OK)}(undef, d)
@@ -887,12 +888,8 @@ function pradical(O::NfRelOrd, P::Union{NfOrdIdl, NfRelOrdIdl})
     q = order(F)
     k = clog(fmpz(degree(Oint)), q)
     for i = 1:d
-      if is_absolute && isdefining_polynomial_nice(K) && issimple(L)
-        t = Oint(_powermod(L(K(elts_with_val[i]))*pbint[i][1], q^k, p))
-      else
-        t = Oint((L(K(elts_with_val[i]))*pbint[i][1])^(q^k))
-      end
-      ar = coordinates(t)
+      t = Oint((L(K(elts_with_val[i]))*pbint[i][1])^(q^k))
+      ar = coordinates(t, copy = false)
       for j = 1:d
         A[j, i] = mmF(divexact(ar[j], K(elts_with_val[j])))
       end
@@ -924,17 +921,15 @@ function pradical(O::NfRelOrd, P::Union{NfOrdIdl, NfRelOrdIdl})
   return ideal(O, PM, false, true)
 end
 
-
-function pradical(O::NfRelOrd{S, T, NfRelElem{nf_elem}}, P::NfOrdIdl) where {S, T}
+function pradical(O::NfRelOrd{S, T, U}, P::NfOrdIdl) where {S, T, U <: Union{NfRelNSElem{nf_elem}, NfRelElem{nf_elem}}}
   d = degree(O)
   L = nf(O)
   K = base_field(L)
   OK = maximal_order(K)
   pb = pseudo_basis(O, copy = false)
-
   @vprint :NfRelOrd 4 "Computing a pseudo basis of O with integral ideals \n"
   basis_mat_int = zero_matrix(K, d, d)
-  pbint = Vector{Tuple{elem_type(L), typeof(P)}}()
+  pbint = Vector{Tuple{elem_type(L), NfOrdIdl}}()
   for i = 1:d
     t = divexact(pb[i][1], denominator(pb[i][2]))
     push!(pbint, (t, numerator(pb[i][2])))
@@ -944,10 +939,11 @@ function pradical(O::NfRelOrd{S, T, NfRelElem{nf_elem}}, P::NfOrdIdl) where {S, 
 
   pOK = ideal(OK, OK(minimum(P)))
   prime_ideals = factor(pOK)
+  kprimes = collect(keys(prime_ideals))
 
-  elts_with_val = Vector{elem_type(OK)}(undef, d)
+  elts_with_val = Vector{nf_elem}(undef, d)
   for i = 1:d
-    elts_with_val[i] = element_with_valuation(pbint[i][2], [ p for (p, e) in prime_ideals ])
+    elts_with_val[i] = element_with_valuation(pbint[i][2], kprimes).elem_in_nf
   end
   F, mF = ResidueField(OK, P)
   mmF = extend(mF, K)
@@ -961,20 +957,20 @@ function pradical(O::NfRelOrd{S, T, NfRelElem{nf_elem}}, P::NfOrdIdl) where {S, 
     k = clog(fmpz(degree(Oint)), q)
     for i = 1:d
       if isdefining_polynomial_nice(K)
-        t = Oint(_powermod(L(K(elts_with_val[i]))*pbint[i][1], q^k, p))
+        t = Oint(_powermod(elts_with_val[i]*pbint[i][1], q^k, p))
       else
-        t = Oint((L(K(elts_with_val[i]))*pbint[i][1])^(q^k))
+        t = Oint((elts_with_val[i]*pbint[i][1])^(q^k))
       end
       ar = coordinates(t, copy = false)
       for j = 1:d
-        A[j, i] = mmF(divexact(ar[j], K(elts_with_val[j])))
+        A[j, i] = mmF(divexact(ar[j], elts_with_val[j]))
       end
     end
   else
     @vprint :NfRelOrd 4 "Trace method \n"
     for i = 1:d
       for j = i:d
-        t = L(K(elts_with_val[i]))*pbint[i][1]*L(K(elts_with_val[j]))*pbint[j][1]
+        t = elts_with_val[i]*pbint[i][1]*elts_with_val[j]*pbint[j][1]
         A[i, j] = mF(OK(tr(t)))
         A[j, i] = A[i, j]
       end
@@ -983,20 +979,30 @@ function pradical(O::NfRelOrd{S, T, NfRelElem{nf_elem}}, P::NfOrdIdl) where {S, 
   @vprint :NfRelOrd 4 "Computing nullspace \n"
   B = nullspace(A)[2]
   @vprint :NfRelOrd 4 "Lifting nullspace \n"
-  M1 = zero_matrix(K, d, d)
+  M1 = zero_matrix(K, nrows(B), d)
   imF = pseudo_inv(mF)
   # Write a basis of the kernel of A in the rows of M1.
   for j = 1:nrows(B)
-    t = K(denominator(pb[j][2], copy = false))
+    t = denominator(pb[j][2], copy = false)
     for i = 1:ncols(B)
-      M1[i, j] = divexact(K(imF(B[j, i])*elts_with_val[j]), t)
+      if !iszero(B[j, i])
+        elM1 = imF(B[j, i]).elem_in_nf
+        mul!(elM1, elM1, elts_with_val[j])
+        divexact!(elM1, elM1, t)
+        M1[i, j] = mod(elM1, p)
+      end
     end
   end
   @vprint :NfRelOrd 4 "Final hnf \n"
   PM1 = PseudoMatrix(M1)
   PM2 = PseudoMatrix(identity_matrix(K, d), [ pb[i][2]*P for i = 1:d ])
-  PM = sub(pseudo_hnf_full_rank(vcat(PM1, PM2), :lowerleft), (d + 1):2*d, 1:d)
-
+  PM = vcat(PM2, PM1)
+  if isdefined(O, :index)
+    PM = sub(pseudo_hnf_full_rank_with_modulus!(PM, O.index*P, :lowerleft), (d + 1):2*d, 1:d)
+  else
+    PM = sub(pseudo_hnf_full_rank(PM, :lowerleft), (d + 1):2*d, 1:d)
+  end
+  
   return ideal(O, PM, false, true)
 
 end
@@ -1016,7 +1022,7 @@ Computes the order $(a : a)$, which is the set of all $x \in K$
 with $xa \subseteq a$, where $K$ is the ambient number field
 of $a$.
 """
-function ring_of_multipliers(a::NfRelOrdIdl{T1, T2}) where {T1, T2}
+function ring_of_multipliers(a::NfRelOrdIdl{T1, T2, T3}) where {T1, T2, T3}
   O = order(a)
   K = base_field(nf(O))
   d = degree(O)
@@ -1038,12 +1044,87 @@ function ring_of_multipliers(a::NfRelOrdIdl{T1, T2}) where {T1, T2}
     end
   end
   PM = PseudoMatrix(transpose(M), C)
-  PM = sub(pseudo_hnf(PM, :upperright, true), 1:d, 1:d)
+  if T1 == nf_elem && isdefined(O, :index)
+    PM = sub(pseudo_hnf_full_rank_with_modulus!(PM, O.index*minimum(a, copy = false), :upperright), 1:d, 1:d)
+  else
+    PM = sub(pseudo_hnf(PM, :upperright, true), 1:d, 1:d)
+  end
+  
   N = inv(transpose(PM.matrix))
   PN = PseudoMatrix(N, [ simplify(inv(I)) for I in PM.coeffs ])
   res = typeof(O)(nf(O), PN)
+  if T1 == nf_elem && isdefined(O, :index)
+    res.index = O.index*minimum(a, copy = false)
+  end
   return res
 end
+
+function small_generating_set(I::NfOrdIdl)
+  OK = order(I)
+  if isone(I)
+    return NfOrdElem[one(OK)]
+  end
+  if has_2_elem(I)
+    return NfOrdElem[OK(I.gen_one), OK(I.gen_two)]
+  end
+  if ismaximal_known_and_maximal(OK)
+    _assure_weakly_normal_presentation(I)
+    return NfOrdElem[OK(I.gen_one), OK(I.gen_two)]
+  end
+  id_gen = zero_matrix(FlintZZ, 2*n, n)
+  m = minimum(I, copy = false)
+  B = basis(I, copy = false)
+  gens = NfOrdElem[]
+  for i = 1:length(B)
+    if i != 1
+      c = matrix(FlintZZ, 1, n, coordinates(B[i]))
+      reduce_mod_hnf_ll!(c, id_gen)
+      if iszero(c)
+        continue
+      end
+    end
+    M = representation_matrix_mod(B[i], modu)
+    _copy_matrix_into_matrix(id_gen, 1, 1, M)
+    hnf_modular_eldiv!(id_gen, m, :lowerleft)
+    push!(gens, B[i])
+    if view(id_gen, n+1:2*n, 1:n) == basis_matrix(a, copy = false)
+      break
+    end
+  end
+  return gens
+end
+
+function small_generating_set(I::NfRelOrdIdl)
+  OK = order(I)
+  K = nf(OK)
+  B = pseudo_basis(I, copy = false)
+  starting_gens = elem_type(OK)[]
+  for i = 1:length(B)
+    gensI = small_generating_set(numerator(B[i][2], copy = false))
+    for x in gensI
+      push!(starting_gens, OK(divexact(elem_in_nf(x, copy = false)*B[i][1], denominator(B[i][2], copy = false))))
+    end
+  end
+  #Now, I have a set of generators as a OK-module.
+  #Let's discard the non relevant elements
+  indices = Int[]
+  Id = ideal(OK, 0)
+  id_gen = pseudo_matrix(zero_matrix(base_field(K), 0, degree(OK)))
+  for i = 1:length(starting_gens)
+    if i != 1
+      if starting_gens[i] in Id
+        continue
+      end
+    end
+    Id = Id + ideal(OK, starting_gens[i])
+    push!(indices, i)
+    if Id == I
+      break
+    end
+  end
+  return starting_gens[indices]
+end
+
 
 ################################################################################
 #

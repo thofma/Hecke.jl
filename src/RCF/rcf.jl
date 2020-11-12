@@ -1013,11 +1013,12 @@ function _rcf_descent(CF::ClassField_pp)
   let inc_map = inc_map, AutA = AutA, e = e
 
     function charpoly(a::NfRelElem{nf_elem})
-      @vtime :ClassField 2 pows = Hecke.powers(a, e)
       tr_in_K = Vector{nf_elem}(undef, e)
       tr_err = divexact(order(AutA), e)
-      for i = 2:length(pows)
-        tr_in_K[i-1] = divexact(tr(inc_map(tr(pows[i]))), tr_err)
+      el = one(parent(a))
+      @vtime :ClassField 2 for i = 2:e+1
+        mul!(el, el, a)
+        tr_in_K[i-1] = divexact(tr(inc_map(tr(el))), tr_err)
       end
       res = power_sums_to_polynomial(tr_in_K)
       return res
