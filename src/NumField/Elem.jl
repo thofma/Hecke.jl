@@ -88,69 +88,128 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
-    rand(b::Vector{NumFieldElem}, r::UnitRange) -> NumFieldElem
+## rand(::Vector{NumFieldElem}, ::UnitRange)
 
-A random linear combination of elements in `b` with coefficients in `r`.
+@doc Markdown.doc"""
+    rand([rng::AbstractRNG], b::Vector{NumFieldElem}, r::UnitRange) -> NumFieldElem
+    rand([rng::AbstractRNG], make(F::NumField, b::Vector{NumFieldElem}, r::UnitRange)) -> NumFieldElem
+
+A random linear combination of elements in `b`, with parent `F` and coefficients in `r`.
 """
-function rand(b::Vector{<: NumFieldElem}, r::UnitRange)
+rand(b::Vector{<: NumFieldElem}, r::UnitRange) = rand(Random.GLOBAL_RNG, b, r)
+
+function rand(rng::AbstractRNG, b::Vector{<: NumFieldElem}, r::UnitRange)
   length(b) == 0 && error("Array must not be empty")
-  s = zero(parent(b[1]))
-  rand!(s, b, r)
-  return s
+  return rand(rng, make(parent(b[1]), b, r))
 end
 
+function rand(rng::AbstractRNG,
+              sp::SamplerTrivial{<:Make3{<:NumFieldElem{T},<:NumField{T},
+                                         <:Vector{<:NumFieldElem{T}},<:UnitRange}}) where {T}
+  return rand!(rng, zero(sp[][1]), sp)
+end
+
+
+## rand(::Vector{<: NumFieldElem}, ::UnitRange, ::Int)
+
 @doc Markdown.doc"""
-    rand(b::Vector{NumFieldElem}, r::UnitRange, terms::Int) -> NumFieldElem
+    rand([rng::AbstractRNG], b::Vector{NumFieldElem}, r::UnitRange, terms::Int) -> NumFieldElem
+    rand([rng::AbstractRNG],
+         make(F::NumField, b::Vector{NumFieldElem}, r::UnitRange, terms::Int)) -> NumFieldElem
 
 A random linear combination (with repetitions) of `terms` elements of `b`
-with coefficients in `r`.
+with parent `F` and coefficients in `r`.
 """
 function rand(b::Vector{<: NumFieldElem}, r::UnitRange, terms::Int)
-  length(b) == 0 && error("Array must not be empty")
-  s = zero(parent(b[1]))
-  rand!(s, b, r, terms)
-  return s
+  return rand(Random.GLOBAL_RNG, b, r, terms)
 end
 
+function rand(rng::AbstractRNG, b::Vector{<: NumFieldElem}, r::UnitRange, terms::Int)
+  length(b) == 0 && error("Array must not be empty")
+  return rand(rng, make(parent(b[1]), b, r, terms))
+end
+
+function rand(rng::AbstractRNG,
+              sp::SamplerTrivial{<:Make4{<:NumFieldElem{T},<:NumField{T},
+                                         <:Vector{<:NumFieldElem{T}},<:UnitRange,Int}}) where {T}
+  return rand!(rng, zero(sp[][1]), sp)
+end
+
+
+## rand!(::NumFieldElem, ::Vector{NumFieldElem}, ::UnitRange, terms::Int)
+
 @doc Markdown.doc"""
-    rand!(c::NumFieldElem, b::Vector{NumFieldElem},
+    rand!([rng::AbstractRNG], c::NumFieldElem, b::Vector{NumFieldElem},
           r::UnitRange, terms::Int) -> NumFieldElem
+    rand!([rng::AbstractRNG], c::NumFieldElem,
+          make(F::NumField, b::Vector{NumFieldElem}, r::UnitRange, terms::Int)) -> NumFieldElem
 
 Sets `c` to a random linear combination (with repetitions) of \code{terms}
 elements of `b` with coefficients in `r`. The element `c` is returned.
+In the second form, `F` must be the parent of `c`.
 """
-function rand!(c::T, b::Vector{T}, r::UnitRange,
-               terms::Int) where {T <: NumFieldElem}
+function rand!(c::T, b::Vector{T}, r::UnitRange, terms::Int) where {T <: NumFieldElem}
+  rand!(Random.GLOBAL_RNG, c, b, r, terms)
+end
+
+function rand!(rng::AbstractRNG, c::T, b::Vector{T}, r::UnitRange, terms::Int) where {T <: NumFieldElem}
+  return rand!(rng, c, make(parent(c), b, r, terms))
+end
+
+function rand!(rng::AbstractRNG, c::NumFieldElem{T},
+               sp::SamplerTrivial{<:Make4{<:NumFieldElem{T},<:NumField{T},
+                                          <:Vector{<:NumFieldElem{T}},<:UnitRange,Int}}) where {T}
+  F, b, r, terms = sp[][1:end]
+
   length(b) == 0 && error("Array must not be empty")
-  (terms <= 0 || terms > length(b)) && error("Number of terms should be at least 1 and cannot exceed the length of the array")
+  0 < terms <= length(b) || error("Number of terms should be at least 1 and cannot exceed the length of the array")
+  F == parent(c) || error("incompatible parent and element")
 
-  t = zero(parent(c))
+  t = zero(F)
 
-  terms = min(terms, length(b))
-  mul!(c, rand(b), rand(r))
+  mul!(c, rand(rng, b), rand(rng, r))
   for i = 2:terms
-    mul!(t, rand(b), rand(r))
+    mul!(t, rand(rng, b), rand(rng, r))
     add!(c, t, c)
   end
 
   return c
 end
 
+
+## rand!(::NumFieldElem, ::Vector{NumFieldElem}, ::UnitRange)
+
 @doc Markdown.doc"""
     rand!(c::NumFieldElem, b::Vector{NumFieldElem}, r::UnitRange) -> NumFieldElem
+    rand!(c::NumFieldElem, make(F::NumField, b::Vector{NumFieldElem}, r::UnitRange)) -> NumFieldElem
 
 Sets `c` to a random linear combination of elements in `b` with coefficients
 in `r`. The element `c` is returned.
+In the second form, `F` must be the parent of `c`.
 """
 function rand!(c::T, b::Vector{T}, r::UnitRange) where {T <: NumFieldElem}
-  length(b) == 0 && error("Array must not be empty")
+  return rand!(GLOBAL_RNG, c, b, r)
+end
 
-  mul!(c, b[1], rand(r))
-  t = zero(parent(c))
+function rand!(rng::AbstractRNG, c::T, b::Vector{T}, r::UnitRange) where {T <: NumFieldElem}
+  return rand!(rng, c, make(parent(c), b, r))
+end
+
+RandomExtensions.maketype(F::NumField{T}, ::Vector{<:NumFieldElem{T}}, ::UnitRange, ::Int...) where {T} = elem_type(F)
+
+function rand!(rng::AbstractRNG, c::NumFieldElem{T},
+               sp::SamplerTrivial{<:Make3{<:NumFieldElem{T},<:NumField{T},
+                                          <:Vector{<:NumFieldElem{T}},<:UnitRange}}) where {T}
+  F, b, r = sp[][1:end]
+
+  length(b) == 0 && error("Array must not be empty")
+  F == parent(c) || error("incompatible parent and element")
+
+  mul!(c, b[1], rand(rng, r))
+  t = zero(F)
 
   for i = 2:length(b)
-    t = mul!(t, b[i], rand(r))
+    t = mul!(t, b[i], rand(rng, r))
     c = add!(c, t, c)
   end
 
@@ -577,4 +636,3 @@ function absolute_coordinates(a::T) where T <: Union{NfRelElem, NfRelNSElem}
   end
   return v
 end
-

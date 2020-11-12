@@ -265,7 +265,7 @@ end
 function show(io::IO, O::NfRelOrd)
   compact = get(io, :compact, false)
   if compact
-    if ismaximal_known_and_maximal(O) 
+    if ismaximal_known_and_maximal(O)
       print(io, "Relative maximal order with pseudo-basis ")
     else
       print(io, "Relative order with pseudo-basis ")
@@ -682,7 +682,7 @@ function trace_matrix(O::NfRelOrd; copy::Bool = true)
       g[j, i] = t
     end
   end
-  O.trace_mat = g    
+  O.trace_mat = g
   if copy
     return deepcopy(O.trace_mat)
   else
@@ -1044,15 +1044,21 @@ end
 #
 ################################################################################
 
-function rand(O::NfRelOrd, B::Int)
+RandomExtensions.maketype(O::NfRelOrd, ::Int) = elem_type(O)
+
+function rand(rng::AbstractRNG, sp::SamplerTrivial{<:Make2{<:NfRelOrdElem,<:NfRelOrd,Int}})
+  O, B = sp[][1:2]
   pb = pseudo_basis(O, copy = false)
   z = nf(O)()
   for i = 1:degree(O)
-    t = rand(pb[i][2], B)
+    t = rand(rng, pb[i][2], B)
     z += t*pb[i][1]
   end
   return O(z)
 end
+
+rand(O::NfRelOrd, B::Int) = rand(GLOBAL_RNG, O, B)
+rand(rng::AbstractRNG, O::NfRelOrd, B::Int) = rand(rng, make(O, B))
 
 ################################################################################
 #
@@ -1165,7 +1171,7 @@ function add_to_order(O::NfRelOrd, elt::Vector{T}; check::Bool = false) where T
       df = n-1
     end
     f = one(K)
-    
+
     for i=1:df
       f *= e
       if f in O
@@ -1375,7 +1381,7 @@ function overorder_polygons(O::NfRelOrd{S, T, NfRelElem{nf_elem}}, p::NfOrdIdl) 
         maxv = max(v, maxv)
         if v > 0
           vdisc += v*degree(phi)
-          pow_anti = anti_uniformizer(p)^v 
+          pow_anti = anti_uniformizer(p)^v
           for j = 1:degree(phi)
             q1 = shift_left(quos[i], j-1)
             push!(l, mod(K(q1)*pow_anti, minimum(p, copy = false)))
@@ -1393,4 +1399,3 @@ function overorder_polygons(O::NfRelOrd{S, T, NfRelElem{nf_elem}}, p::NfOrdIdl) 
   O1.disc_abs = divexact(O.disc_abs, p^(2*vdisc)) 
   return O1
 end
-

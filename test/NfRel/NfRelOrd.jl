@@ -12,10 +12,10 @@ end
 @testset "Relative maximal orders of simple extensions" begin
   Qx, x = FlintQQ["x"]
   f = x^2 + 36*x + 16
-  K, a = NumberField(f, "a")
+  K, a = NumberField(f, "a", cached = false)
   Ky, y = K["y"]
   g = y^3 - 51*y^2 + 30*y - 28
-  L, b = number_field(g, "b")
+  L, b = number_field(g, "b", cached = false)
   Orel = maximal_order(L)
   Oabs = Hecke.maximal_order_via_absolute(L)
   Brel = Hecke.basis_pmatrix(Orel, copy = false)
@@ -28,14 +28,14 @@ end
     while !isirreducible(f)
       f = monic_randpoly(Qx, 2, 3, 10)
     end
-    K, a = NumberField(f, "a")
+    K, a = NumberField(f, "a", cached = false)
 
     Ky, y = K["y"]
     g = monic_randpoly(Ky, 2, 2, 10)
     while !isirreducible(g)
       g = monic_randpoly(Ky, 2, 2, 10)
     end
-    L, b = number_field(g, "b")
+    L, b = number_field(g, "b", cached = false)
 
     Orel = maximal_order(L)
     Oabs = Hecke.maximal_order_via_absolute(L)
@@ -52,7 +52,7 @@ end
     while !isirreducible(f)
       f = monic_randpoly(Ky, 5, 5, 10)
     end
-    L, b = number_field(f, "b")
+    L, b = number_field(f, "b", cached = false)
 
     Orel = maximal_order(L)
     Oabs = Hecke.maximal_order_via_absolute(L)
@@ -71,7 +71,7 @@ end
   OK = maximal_order(K)
   Ky, y = K["y"]
 
-  L, b = number_field([y^3 - 51*y^2 + 30*y - 28, y^4 + 1], "b")
+  L, b = number_field([y^3 - 51*y^2 + 30*y - 28, y^4 + 1], "b", cached = false)
   Ons = maximal_order(L)
   Bns = Hecke.basis_pmatrix(Ons, copy = false)
 
@@ -85,11 +85,11 @@ end
   @test Hecke._spans_subset_of_pseudohnf(Bns, Bs, :lowerleft)
   @test Hecke._spans_subset_of_pseudohnf(Bs, Bns, :lowerleft)
 
-  K, a = NumberField(x^2 - 2*x + 38, "a")
+  K, a = NumberField(x^2 - 2*x + 38, "a", cached = false)
   OK = maximal_order(K)
   Ky, y = K["y"]
 
-  L, b = number_field([y^2 + 87*y + 74, y^2 + 91*y - 73, y^2 - 30*y - 51], "b")
+  L, b = number_field([y^2 + 87*y + 74, y^2 + 91*y - 73, y^2 - 30*y - 51], "b", cached = false)
   Ons = maximal_order(L)
   Bns = Hecke.basis_pmatrix(Ons, copy = false)
 
@@ -122,7 +122,7 @@ end
       gg = monic_randpoly(Ky, 3, 3, 10) # Must be coprime to 2
     end
     push!(g, gg)
-    L, b = number_field(g, "b")
+    L, b = number_field(g, "b", cached = false)
 
     Ons = maximal_order(L)
     Os = Hecke.maximal_order_via_simple(L)
@@ -136,20 +136,20 @@ end
 @testset "Field towers" begin
    Qx, x = FlintQQ["x"]
 
-  Q1, q1 = number_field(x, "q1")
+  Q1, q1 = number_field(x, "q1", cached = false)
   Z1 = maximal_order(Q1)
   Qx1, x1 = Q1["x1"]
   f1 = x1^2 + 28x1 + 36
-   K1, a1 = number_field(f1, "a1")
+   K1, a1 = number_field(f1, "a1", cached = false)
   OK1 = maximal_order(K1)
   PM1 = PseudoMatrix(matrix(Q1, [1 0; 2 1]), [ Q1(1)*Z1, Q1(fmpq(1, 4))*Z1 ])
   @test basis_pmatrix(OK1, copy = false) == PM1
 
-  Q2, q2 = number_field(x1, "q2")
+  Q2, q2 = number_field(x1, "q2", cached = false)
   Z2 = maximal_order(Q2)
   Qx2, x2 = Q2["x2"]
   f2 = x2^2 + 28x2 + 36
-   K2, a2 = number_field(f2, "a2")
+   K2, a2 = number_field(f2, "a2", cached = false)
   OK2 = maximal_order(K2)
   PM2 = PseudoMatrix(matrix(Q2, [1 0; 2 1]), [ Q2(1)*Z2, Q2(fmpq(1, 4))*Z2 ])
   @test basis_pmatrix(OK2, copy = false) == PM2
@@ -167,10 +167,10 @@ end
 @testset "Different/codifferent" begin
   Qx, x = PolynomialRing(FlintQQ, "x", cached = false)
   f = x^2 - 2
-  K, a = NumberField(f, "a")
+  K, a = NumberField(f, "a", cached = false)
   Kt, t = K["t"]
   g = t^2 + 1
-  E, b = NumberField(g, "b")
+  E, b = NumberField(g, "b", cached = false)
   OE = maximal_order(E)
   p = prime_decomposition(maximal_order(K), 2)[1][1]
   Q = prime_decomposition(OE, p)[1][1]
@@ -179,3 +179,20 @@ end
   @test valuation(D, Q) == 2
 end
 
+@testset "rand" begin
+  Qx, x = FlintQQ["x"]
+  f = x^2 + 36*x + 16
+  K, a = NumberField(f, "a")
+  Ky, y = K["y"]
+  g = y^3 - 51*y^2 + 30*y - 28
+  L, b = number_field(g, "b")
+  Orel = maximal_order(L)
+
+  m = make(Orel, 3)
+  for x in (rand(Orel, 3), rand(rng, Orel, 3), rand(m), rand(rng, m))
+    @test x isa elem_type(Orel)
+  end
+  @test rand(m, 3) isa Vector{elem_type(Orel)}
+  @test reproducible(Orel, 3)
+  @test reproducible(m)
+end
