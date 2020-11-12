@@ -963,7 +963,8 @@ function _sieve_primitive_elements(B::Vector{NfRelNSElem{nf_elem}})
   nconjs_needed = div(n, 2)+1
   for (r, v) in rt
     rtv = Vector{Vector{fq}}()
-    for i in CartesianIndices(Tuple(1:length(v[i]) for i in 1:length(v)))
+    it = cartesian_product_iterator([1:length(v[i]) for i in 1:length(v)])
+    for i in it
       push!(rtv, [v[j][i[j]] for j = 1:length(v)])
       ind += 1
       if ind > nconjs_needed

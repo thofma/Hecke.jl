@@ -214,11 +214,15 @@ function basis(K::NfAbsNS; copy::Bool = true)
       return K.basis::Vector{NfAbsNSElem}
     end
   end
-  g = gens(parent(K.pol[1]))
+  Rx = parent(K.pol[1])
   b = Vector{NfAbsNSElem}(undef, degree(K))
   ind = 1
-  for i in CartesianIndices(Tuple(1:degrees(K)[i] for i in 1:ngens(K)))
-    b[ind] = K(prod(g[j]^(i[j] - 1) for j=1:length(i)), false)
+  d = degrees(K)
+  it = cartesian_product_iterator([1:d[i] for i = 1:length(d)])
+  for i in it
+    el = Rx()
+    set_coeff!(el, i, fmpq(1))
+    b[ind] = K(el, false)
     ind += 1
   end
   K.basis = b
@@ -234,8 +238,9 @@ end
 function monomial_to_index(K::NfAbsNS, b::Vector{T}) where {T}
   n = ngens(K)
   idx = b[n]
+  d = degrees(K)
   for j in n-1:-1:1
-    idx *= degrees(K)[j]
+    idx *= d[j]
     idx += b[j]
   end
   return Int(idx + 1)
