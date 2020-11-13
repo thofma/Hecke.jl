@@ -38,10 +38,13 @@
 # The application of a morphism is delegated the MapData* types. They implement
 # an image function, e.g., with signature
 #
-#     image(MapDataFromAnticNumberField{NfRel{nf_elem}}, x::nf_elem),
+#     image(MapDataFromAnticNumberField{NfRel{nf_elem}}, L, x::nf_elem),
 #
-# which gets called when f : K -> L is a map from AnticNumberField to NfRel{nf_elem}.
-# (More precisely, f(a) = image(f.image_data, a))
+# which gets called when f : K -> L is a map from AnticNumberField to
+# NfRel{nf_elem}. (More precisely, f(a) = image(f.image_data, codomain(f), a))
+#
+# Note that we do not store L inside explicitely inside MapData* and this
+# becomes a problem if f.isid is true. Thus we need to pass L to the function.
 #
 # Difference to the old system
 # ----------------------------
@@ -197,11 +200,11 @@ parent_type(::Type{NfAbsNSElem}) = NfAbsNS
 
 function image(f::NumFieldMor, x)
   @assert domain(f) === parent(x)
-  return image(f.image_data, x)
+  return image(f.image_data, codomain(f), x)
 end
 
 function preimage(f::NumFieldMor, x)
-  return image(f.preimage_data, x)
+  return image(f.preimage_data, domain(f), x)
 end
 
 
@@ -243,19 +246,14 @@ function _isequal(K, L, u::MapDataFromAnticNumberField{T},
 
   z = gen(K)
 
-  return image(u, z) == image(v, z)
+  return image(u, L, z) == image(v, L, z)
 end
 
 # Image function
-function image(f::MapDataFromAnticNumberField, y::nf_elem)
-  f.isid && return y
+function image(f::MapDataFromAnticNumberField, L, y::nf_elem)
+  f.isid && return L(y)
   z = parent(defining_polynomial(parent(y)))(y)
   return evaluate(z, f.prim_image)
-end
-
-# Syntactic sugar for image function
-function (f::MapDataFromAnticNumberField)(y::nf_elem)
-  return image(f, y)
 end
 
 # Functions to create and validate the data
@@ -320,27 +318,21 @@ function _isequal(K, L, u::MapDataFromNfRel{T, S}, v::MapDataFromNfRel{T, S}) wh
     return true
   end
 
-  return image(u, gen(K)) == imgage(v, gen(L)) &&
+  return image(u, L, gen(K)) == imgage(v, L, gen(K)) &&
          _isequal(base_field(K), L, u.base_field_map_data, v.base_field_map_data)
 end
 
 # Image function
-function image(f::MapDataFromNfRel, y)
-  f.isid && return y
+function image(f::MapDataFromNfRel, L, y)
+  f.isid && return L(y)
   if parent(f.prim_image) === parent(y) # so from L -> L
     # So we don't have to create the parent
-    z = map_coeffs(t -> image(f.base_field_map_data, t), y.data, parent = parent(y.data))
+    z = map_coeffs(t -> image(f.base_field_map_data, L, t), y.data, parent = parent(y.data))
   else
-    L = parent(f.prim_image)
     Ly, = PolynomialRing(L, "y", cached = false)
-    z = map_coeffs(t -> image(f.base_field_map_data, t), y.data, parent = Ly)
+    z = map_coeffs(t -> image(f.base_field_map_data, L, t), y.data, parent = Ly)
   end
   return evaluate(z, f.prim_image)
-end
-
-# Syntactic sugar for image function
-function (f::MapDataFromNfRel)(y)
-  return image(f, y)
 end
 
 # Functions to validate and create the data.
@@ -370,7 +362,7 @@ function map_data(K::NfRel, L, x...; check = true)
   end
 
   if check
-    y = evaluate(map_coeffs(z, defining_polynomial(K), cached = false), yy)
+    y = evaluate(map_coeffs(w -> image(z, L, w), defining_polynomial(K), cached = false), yy)
     !iszero(y) && error("")
   end
 
@@ -415,14 +407,9 @@ function _isequal(K, L, u::MapDataFromNfAbsNS{T}, v::MapDataFromNfAbsNS{T}) wher
   return v.images == u.images 
 end
 
-
-function image(f::MapDataFromNfAbsNS, y)
-  f.isid && return y
+function image(f::MapDataFromNfAbsNS, L, y)
+  f.isid && return L(y)
   return msubst(y.data, f.images)
-end
-
-function (f::MapDataFromNfAbsNS)(y)
-  return image(f, y)
 end
 
 map_data_type(K::NfAbsNS, L) = MapDataFromNfAbsNS{Vector{elem_type(L)}}
@@ -482,17 +469,13 @@ function _isequal(K, L, u::MapDataFromNfRelNS{T, S}, v::MapDataFromNfRelNS{T, S}
     return true
   end
 
-  return all(g -> image(u, g) == image(v, g), gens(K)) && _isequal(base_field(K), base_field(L), u.base_field_map_data, v.base_field_map_data)
+  return all(g -> image(u, L, g) == image(v, L, g), gens(K)) && _isequal(base_field(K), base_field(L), u.base_field_map_data, v.base_field_map_data)
 end
 
-
-function image(f::MapDataFromNfRelNS, y)
-  z = map_coeffs(f.base_field_map_data, y.data, cached = false)
+function image(f::MapDataFromNfRelNS, L, y)
+  f.isid && return L(y)
+  z = map_coeffs(w -> image(f.base_field_map_data, L, w), y.data, cached = false)
   return evaluate(z, f.images)
-end
-
-function (f::MapDataFromNfRelNS)(y)
-  return image(f, y)
 end
 
 function map_data_type(T::Type{<: NfRelNS}, L::Type{<:Any})
@@ -530,7 +513,7 @@ function map_data(K::NfRelNS, L, x...; check = true)
 
   if check
     for i in 1:ngens(K)
-      w = evaluate(map_coeffs(z, K.pol[i], cached = false), yy)
+      w = evaluate(map_coeffs(w -> image(z, L, w), K.pol[i], cached = false), yy)
       !iszero(w) && error("Data does not define a morphism")
     end
   end
