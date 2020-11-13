@@ -861,7 +861,7 @@ function _compute_inverse_data(f#= image data =#, K, LL, L::NfAbsNS)
   M = zero_matrix(FlintQQ, d, d)
   b = absolute_basis(K)
   for i = 1:d
-    c = image(f, b[i])
+    c = image(f, LL, b[i])
     cc = coordinates(c)
     for j = 1:length(cc)
       M[j, i] = cc[j]
@@ -896,7 +896,7 @@ function _compute_inverse_data(f#= image data =#, K, LL, L::NfRel)
   d = absolute_degree(K)
   M = zero_matrix(FlintQQ, d, d)
   for i in 1:d
-    c = image(f, b[i])
+    c = image(f, LL, b[i])
     cc = absolute_coordinates(c)
     for j in 1:length(cc)
       M[j, i] = cc[j]
@@ -930,7 +930,7 @@ function _compute_inverse_data(f#= image data =#, K, LL, L::NfRelNS)
   d = absolute_degree(K)
   M = zero_matrix(FlintQQ, d, d)
   for i in 1:d
-    c = image(f, b[i])
+    c = image(f, LL, b[i])
     cc = absolute_coordinates(c)
     for j in 1:length(cc)
       M[j, i] = cc[j]
