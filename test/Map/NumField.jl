@@ -14,6 +14,15 @@
   @test_throws ErrorException hom(K, K, a, inverse = a + 1)
   @test_throws ErrorException hom(K, K, a + 1, inverse = a)
 
+  f = @inferred hom(K, K, -a)
+  g = @inferred inv(f)
+
+  for i in 1:10
+    z = rand(K, -2:2)
+    @test f(g(z)) == z
+    @test g(f(z)) == z
+  end
+
   K, a = NumberField(x^4 - x^2 + 1, "a")
   k, b = NumberField(x^2 + 1, "b")
   f = @inferred hom(k, K, a^3)
@@ -36,6 +45,19 @@
   @test f(a) == -b
   @test f\b == -a
 
+  f = @inferred hom(K, L, -b)
+  g = @inferred inv(f)
+
+  for i in 1:10
+    z = rand(domain(f), -2:2)
+    @test g(f(z)) == z
+  end
+
+  for i in 1:10
+    z = rand(domain(g), -2:2)
+    @test f(g(z)) == z
+  end
+
   f = @inferred hom(K, L, -b, inverse = (h, -a))
   @test f(a) == -b
   @test f\b == -a
@@ -55,6 +77,18 @@
   @test_throws ErrorException hom(L, M, one(M), one(M))
   @test_throws ErrorException hom(L, M, 1//2*z^3 - 9//2*z, -1//2*z^3 + 11//2*z, inverse = L(a))
   @test_throws ErrorException hom(L, M, one(M), -1//2*z^3 + 11//2*z, inverse = b + L(a))
+
+  f = @inferred hom(L, M, 1//2*z^3 - 9//2*z, -1//2*z^3 + 11//2*z)
+  g = inv(f)
+  for i in 1:10
+    w = rand(domain(f), -2:2)
+    @test g(f(w)) == w
+  end
+
+  for i in 1:10
+    w = rand(domain(g), -2:2)
+    @test f(g(w)) == w
+  end
 
   h = hom(K, M, 1//2*z^3 - 9//2*z)
   f = @inferred hom(L, M, h, -1//2*z^3 + 11//2*z, inverse = b + L(a))
@@ -126,7 +160,4 @@
   Ly, y = L["y"]
   K, c = NumberField(y^2 + y + b - 5, "c")
   f = hom(Ka, K, c, inverse = (-_b^2 - _b + 5, _b))
-
-
-
 end

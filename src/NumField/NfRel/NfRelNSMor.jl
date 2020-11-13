@@ -306,7 +306,7 @@ function _compute_preimg(f::NfRelNSToNfRelNSMor_nf_elem)
   N = SRow(K(gen(k)))
   S = solve(M, N)
   img_gen_k = sum(l*B[j] for (j, l) in S)
-  f.preimage_data = map_data(K, L, map_data(base_field(K), L, img_gen_k), imgs)
+  f.inverse_data = map_data(K, L, map_data(base_field(K), L, img_gen_k), imgs)
 
   #f.inv_coeff_aut = inv_base_field
   #f.inv_emb = imgs
@@ -325,8 +325,8 @@ end
 function inv(f::NfRelNSToNfRelNSMor_nf_elem)
   _compute_preimg(f)
   g = NumFieldMor(codomain(f), domain(f))
-  g.image_data = f.preimage_data
-  g.preimage_data = f.image_data
+  g.image_data = f.inverse_data
+  g.inverse_data = f.image_data
   # Check
   a = domain(f)(gen(base_field(domain(f))))
   @assert g(f(a)) == a 
@@ -634,44 +634,6 @@ end
 #end
 #
 #
-function _compute_preimage(f::NumFieldMor{AnticNumberField, <:NfRelNS})
-  K = domain(f)
-  L = codomain(f)
-  el = one(L)
-  M = zero_matrix(FlintQQ, degree(K), degree(K))
-  M[1, 1] = 1
-  a = image_primitive_element(f)
-  for i = 2:degree(K)
-    el *= a
-    v = absolute_coordinates(el)
-    for j = 1:degree(K)
-      M[i, j] = v[j]
-    end
-  end
-  N = zero_matrix(FlintQQ, ngens(L)+1, degree(K))
-  gk = L(gen(base_field(L)))
-  v = absolute_coordinates(gk)
-  for j = 1:degree(K)
-    N[1, j] = v[j]
-  end
-  gL = gens(L)
-  for i = 1:length(gL)
-    v = absolute_coordinates(gL[i])
-    for j = 1:degree(K)
-      N[i+1, j] = v[j]
-    end
-  end
-  fl, x = can_solve(M, N, side = :left)
-  x1, den = _fmpq_mat_to_fmpz_mat_den(x)
-  preimg_base_field = Nemo.elem_from_mat_row(K, x1, 1, den)
-  preimgs = Vector{nf_elem}(undef, length(gL))
-  for i = 1:length(gL)
-    preimgs[i] = Nemo.elem_from_mat_row(K, x1, i+1, den)
-  end
-  f.preimage_data = map_data(L, K, preimg_base_field, preimgs)
-  return nothing
-end
-
 function degrees(L::NfRelNS)
   return Int[total_degree(x) for x in L.pol]
 end

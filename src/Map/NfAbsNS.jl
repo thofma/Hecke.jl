@@ -41,30 +41,6 @@
 #  end
 #end
 
-function _compute_preimage(f::NfAbsToNfAbsNS)
-  K = domain(f)
-  L = codomain(f)
-  M = zero_matrix(FlintQQ, degree(K), degree(K))
-  el = one(L)
-  a = image_primitive_element(f)
-  elem_to_mat_row!(M, 1, el)
-  for i = 2:degree(K)
-    el = mul!(el, el, a)
-    elem_to_mat_row!(M, i, el)
-  end
-  N = zero_matrix(FlintQQ, ngens(L), degree(K))
-  gL = gens(L)
-  for i = 1:length(gL)
-    elem_to_mat_row!(N, i, gL[i])
-  end
-  fl, x = can_solve(M, N, side = :left)
-  @assert fl
-  x1, den = _fmpq_mat_to_fmpz_mat_den(x)
-  embs = nf_elem[elem_from_mat_row(K, x1, i, den) for i = 1:nrows(x)]
-  f.preimage_data = map_data(L, K, embs)
-  return nothing
-end
-
 #hom(K::AnticNumberField, L::NfAbsNS, a::NfAbsNSElem; check::Bool = false) = NfAbsToNfAbsNS(K, L, a)
 #
 #hom(K::AnticNumberField, L::NfAbsNS, a::NfAbsNSElem, b::Vector{nf_elem}; check::Bool = false) = NfAbsToNfAbsNS(K, L, a, b)
