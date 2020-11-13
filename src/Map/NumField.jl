@@ -827,7 +827,7 @@ function _compute_inverse_data(f#= image data =#, K, LL, L::AnticNumberField)
   M = zero_matrix(FlintQQ, d, d)
   b = absolute_basis(K)
   for i = 1:d
-    c = image(f, b[i])
+    c = image(f, LL, b[i])
     cc = absolute_coordinates(c)
     for j = 1:length(cc)
       M[j, i] = cc[j]
