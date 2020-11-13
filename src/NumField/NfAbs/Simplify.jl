@@ -42,7 +42,7 @@ function simplify(K::AnticNumberField; canonical::Bool = false, cached::Bool = t
       L1 = NumberField(f1, cached = cached, check = false)[1]
       #Before calling again the simplify on L1, we need to define the maximal order of L1
       mp = hom(L1, K, b, check = false)
-      _compute_preimg(mp)
+      _assure_has_inverse_data(mp)
       B = basis(OK, K)
       BOL1 = Vector{nf_elem}(undef, degree(L1))
       for i = 1:degree(L1)
@@ -69,7 +69,7 @@ function simplify(K::AnticNumberField; canonical::Bool = false, cached::Bool = t
   L = NumberField(f, cached = cached, check = false)[1]
   m = hom(L, K, a, check = false)
   if save_LLL_basis
-    _compute_preimg(m)
+    _assure_has_inverse_data(m)
     B = basis(ZK, K)
     BOL = Vector{nf_elem}(undef, degree(L))
     for i = 1:degree(L)

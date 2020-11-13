@@ -268,13 +268,15 @@ function induce_image(m::NfToNfMor, P::InfPlc)
   k = number_field(P)
   @assert k == domain(m)
   Qx = parent(k.pol)
-  if isdefined(m, :prim_preimg)
-    h = Qx(m.prim_preimg)
-  else
-    # I need to invert the map.
-    inv_img = _compute_preimg(m)
-    h = Qx(inv_img)
-  end
+  h = Qx(preimage(m, gen(codomain(m))))
+  #if isdefined(m, :inverse_data)
+  #  h = Qx(m.prim_preimg)
+  #else
+  #  # I need to invert the map.
+  #  image_primitive_element(inverse(m))
+  #  inv_img = _compute_preimg(m)
+  #  h = Qx(inv_img)
+  #end
   im = h(P.r)
   lp = infinite_places(codomain(m))
   return lp[findfirst(x -> overlaps(lp[x].r, im), 1:length(lp))]

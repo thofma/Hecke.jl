@@ -8,103 +8,6 @@ function show(io::IO, S::NfMorSet{T}) where {T}
   print(io, "Set of automorphisms of ", S.field)
 end
 
-#mutable struct NfToNfMor <: Map{AnticNumberField, AnticNumberField, HeckeMap, NfToNfMor}
-#  header::MapHeader{AnticNumberField, AnticNumberField}
-#  prim_img::nf_elem
-#  prim_preimg::nf_elem
-#
-#  function NfToNfMor()
-#    z = new()
-#    z.header = MapHeader{AnticNumberField, AnticNumberField}()
-#    return r
-#  end
-#
-#  function NfToNfMor(K::AnticNumberField, L::AnticNumberField, y::nf_elem, isomorphism::Bool = false)
-#    z = new()
-#    z.prim_img = y
-#
-#    function _image(x::nf_elem)
-#      @assert parent(x) == K
-#      g = parent(K.pol)(x)
-#      return evaluate(g, y)
-#    end
-#
-#    if !isomorphism
-#      z.header = MapHeader(K, L, _image)
-#      return z
-#    end
-#
-#    M = zero_matrix(FlintQQ, degree(L), degree(L))
-#    b = basis(K)
-#    for i = 1:degree(L)
-#      c = _image(b[i])
-#      for j = 1:degree(L)
-#        M[j, i] = coeff(c, j - 1)
-#      end
-#    end
-#    t = zero_matrix(FlintQQ, degree(L), 1)
-#    if degree(L) == 1
-#      t[1, 1] = coeff(gen(L), 0)
-#    else
-#      t[2, 1] = fmpq(1) # coefficient vector of gen(L)
-#    end
-#
-#    s = solve(M, t)
-#    z.prim_preimg = K(parent(K.pol)([ s[i, 1] for i = 1:degree(K) ]))
-#
-#    function _preimage(x::nf_elem)
-#      @assert parent(x) == L
-#      g = parent(L.pol)(x)
-#      return evaluate(g, z.prim_preimg)
-#    end
-#
-#    z.header = MapHeader(K, L, _image, _preimage)
-#    return z
-#  end
-#
-#  function NfToNfMor(K::AnticNumberField, L::AnticNumberField, y::nf_elem, y_inv::nf_elem)
-#    z = new()
-#    z.prim_img = y
-#    z.prim_preimg = y_inv
-#
-#    function _image(x::nf_elem)
-#      @assert parent(x) == K
-#      g = parent(K.pol)(x)
-#      return evaluate(g, y)
-#    end
-#
-#    function _preimage(x::nf_elem)
-#      @assert parent(x) == L
-#      g = parent(L.pol)(x)
-#      return evaluate(g, y_inv)
-#    end
-#
-#    z.header = MapHeader(K, L, _image, _preimage)
-#    return z
-#  end
-#end
-
-#function hom(K::AnticNumberField, L::AnticNumberField, a::nf_elem; check::Bool = true, compute_inverse::Bool = false)
-# if check
-#   if !iszero(evaluate(K.pol, a))
-#     error("The data does not define a homomorphism")
-#   end
-# end
-# return NfToNfMor(K, L, a, compute_inverse)
-#end
-#
-#function hom(K::AnticNumberField, L::AnticNumberField, a::nf_elem, a_inv::nf_elem; check::Bool = true)
-# if check
-#   if !iszero(evaluate(K.pol, a))
-#     error("The data does not define a homomorphism")
-#   end
-#   if !iszero(evaluate(L.pol, a_inv))
-#     error("The data does not define a homomorphism")
-#   end
-# end
-# return NfToNfMor(K, L, a, a_inv)
-#end
-
 parent(f::NfToNfMor) = NfMorSet(domain(f))
 
 function image(f::NfToNfMor, a::FacElem{nf_elem, AnticNumberField})
@@ -112,92 +15,17 @@ function image(f::NfToNfMor, a::FacElem{nf_elem, AnticNumberField})
   return FacElem(D)
 end
 
-
 ################################################################################
 #
 #  Some basic properties of NfToNfMor
 #
 ################################################################################
 
-#id_hom(K::AnticNumberField) = hom(K, K, gen(K), gen(K), check = false)
+isinjective(m::NumFieldMor) = true
 
-morphism_type(::Type{AnticNumberField}) = NfToNfMor
+issurjective(m::NumFieldMor) = absolute_degree(domain(m) == absolute_degree(codomain(m)))
 
-isinjective(m::NfToNfMor) = true
-
-issurjective(m::NfToNfMor) = (degree(domain(m)) == degree(codomain(m)))
-
-isbijective(m::NfToNfMor) = issurjective(m)
-
-################################################################################
-#
-#  NfToNfRelMor
-#
-################################################################################
-
-#mutable struct NfToNfRel <: Map{AnticNumberField, NfRel{nf_elem}, HeckeMap, NfToNfRel}
-#  header::MapHeader{AnticNumberField, NfRel{nf_elem}}
-#
-#  function NfToNfRel(L::AnticNumberField, K::NfRel{nf_elem}, a::nf_elem, b::nf_elem, c::NfRelElem{nf_elem})
-#    # let K/k, k absolute number field
-#    # k -> L, gen(k) -> a
-#    # K -> L, gen(K) -> b
-#    # L -> K, gen(L) -> c
-#
-#    k = K.base_ring
-#    Ly, y = PolynomialRing(L, cached = false)
-#    R = parent(k.pol)
-#    S = parent(L.pol)
-#
-#    function image(x::nf_elem)
-#      # x is an element of L
-#      f = S(x)
-#      res = evaluate(f, c)
-#      return res
-#    end
-#
-#    function preimage(x::NfRelElem{nf_elem})
-#      # x is an element of K
-#      f = data(x)
-#      # First evaluate the coefficients of f at a to get a polynomial over L
-#      # Then evaluate at b
-#      r = Vector{nf_elem}(undef, degree(f) + 1)
-#      for  i = 0:degree(f)
-#        r[i+1] = evaluate(R(coeff(f, i)), a)
-#      end
-#      return evaluate(Ly(r), b)
-#    end
-#
-#    z = new()
-#    z.header = MapHeader(L, K, image, preimage)
-#    return z
-#  end
-#end
-
-function show(io::IO, h::NfToNfRel)
-  println(io, "Morphism between ", domain(h), "\nand ", codomain(h))
-end
-
-#function hom(K::AnticNumberField, L::NfRel{nf_elem}, a::NfRelElem{nf_elem}, b::nf_elem, c::nf_elem; check::Bool = true)
-#	if check
-#          mp = hom(base_field(L), K, b)
-#          p = map_coeffs(mp, L.pol, cached = false)
-#		@assert iszero(p(c)) "Data does not define a homomorphism"
-#		@assert iszero(K.pol(a)) "Data does not define a homomorphism"
-#	end
-#	return NfToNfRel(K, L, b, c, a)
-#
-#end
-
-function *(f::NfToNfMor, g::NfToNfRel)
-  @assert codomain(f) == domain(g)
-  K = codomain(g)
-  img_gen = g(image_primitive_element(f))
-  i_f = inv(f)
-  img1 = i_f(g\(K(gen(base_field(K)))))
-  img2 = i_f(g\(gen(K)))
-  return hom(domain(f), K, img_gen, inverse = (img1, img2))
-end
+isbijective(m::NumFieldMor) = issurjective(m)
 
 ################################################################################
 #
@@ -249,53 +77,6 @@ function preimage(f::GrpGenToNfMorSet, a::NfToNfMor)
 end
 
 
-@doc Markdown.doc"""
-    inv(f::NfToNfMor)
-
-Assuming that $f$ is an isomorphism, it returns the inverse of $f$.
-"""
-function inv(f::NfToNfMor)
-  if degree(domain(f)) != degree(codomain(f))
-    error("The map is not invertible")
-  end
-  if isdefined(f, :prim_preimg)
-    return hom(codomain(f), domain(f), f.prim_preimg, check = false)
-  end
-  img = _compute_preimg(f)
-  return hom(codomain(f), domain(f), img, check = false)
-end
-
-
-function haspreimage(m::NfToNfMor, a::nf_elem)
-  @assert parent(a) == codomain(m)
-  K = domain(m)
-  L = codomain(m)
-  M = zero_matrix(FlintQQ, degree(L), degree(K))
-  b = basis(K)
-  for i = 1:degree(K)
-    c = m(b[i])
-    for j = 1:degree(L)
-      M[j, i] = coeff(c, j - 1)
-    end
-  end
-  t = transpose(basis_matrix(nf_elem[a]))
-  fl, s = can_solve(M, t)
-  if !fl
-    return false, zero(K)
-  end
-  return true,  K(parent(K.pol)([ s[i, 1] for i = 1:degree(K) ]))
-end
-
-function Base.:(==)(f::NfToNfMor, g::NfToNfMor)
-  if (domain(f) != domain(g)) || (codomain(f) != codomain(g))
-    return false
-  end
-
-  return image_primitive_element(f) == image_primitive_element(g)
-end
-
-#_D = Dict()
-
 function evaluate(f::fmpq_poly, a::nf_elem)
   #Base.show_backtrace(stdout, Base.stacktrace())
   R = parent(a)
@@ -316,56 +97,7 @@ function evaluate(f::fmpq_poly, a::nf_elem)
   return s
 end
 
-function *(f::NfToNfMor, g::NfToNfMor)
-  codomain(f) == domain(g) || throw("Maps not compatible")
-  y = g(image_primitive_element(f))
-  if isdefined(f, :inverse_data) && isdefined(g, :inverse_data)
-    z = f\(preimage_primitive_element(g))
-    return hom(domain(f), codomain(g), y, inverse = z, check = false)
-  else
-    return hom(domain(f), codomain(g), y, check = false)
-  end
-end
-
-function ^(f::NfToNfMor, b::Int)
-  K = domain(f)
-  @assert K == codomain(f)
-  d = degree(K)
-  b = mod(b, d)
-  if b == 0
-    return NfToNfMor(K, K, gen(K))
-  elseif b == 1
-    return f
-  else
-    bit = ~((~UInt(0)) >> 1)
-    while (UInt(bit) & b) == 0
-      bit >>= 1
-    end
-    z = f
-    bit >>= 1
-    while bit != 0
-      z = z * z
-      if (UInt(bit) & b) != 0
-        z = z * f
-      end
-      bit >>= 1
-    end
-    return z
-  end
-end
-
 Base.copy(f::NfToNfMor) = f
-
-Base.hash(f::NfToNfMor, h::UInt) = Base.hash(image_primitive_element(f), h)
-
-function show(io::IO, h::NfToNfMor)
-  if domain(h) == codomain(h)
-    println(io, "Automorphism of ", domain(h))
-  else
-    println(io, "Injection of ", domain(h), " into ", codomain(h))
-  end
-  println(io, "defined by ", gen(domain(h)), " -> ", image_primitive_element(h))
-end
 
 ################################################################################
 #

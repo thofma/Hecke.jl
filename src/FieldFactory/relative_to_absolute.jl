@@ -153,7 +153,7 @@ function _relative_to_absoluteQQ(L::NfRelNS{nf_elem}, auts::Vector{NfRelNSToNfRe
     autsK[i] = hom(K, K, embs, check = false)
   end
   #Final step: translate the automorphisms to Ks
-  _compute_preimage(mKs)
+  Hecke._assure_has_inverse_data(mKs)
   autsKs = Vector{NfToNfMor}(undef, length(autsK))
   for i = 1:length(autsK)
     autsKs[i] = hom(Ks, Ks, mKs\(image_primitive_element(mKs*autsK[i])), check = false)
@@ -163,7 +163,7 @@ end
 
 function _relative_to_absolute(L::NfRelNS{nf_elem}, auts::Vector{NfRelNSToNfRelNSMor_nf_elem})
   Ks, mKs = simplified_absolute_field(L)
-  _compute_preimage(mKs)
+  Hecke._assure_has_inverse_data(mKs)
   #Now, I have to translate the automorphisms.
   #First, to automorphisms of K.
   autsKs = Vector{NfToNfMor}(undef, length(auts))

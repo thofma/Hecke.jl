@@ -5,6 +5,15 @@
 
   f = @inferred hom(K, K, -a)
   @test f(a) == -a
+  @test f\(-a) == a
+
+  for i in 1:10
+    z = rand(K, -2:2)
+    @test z == f\(f(z))
+    fl, w = @inferred haspreimage(f, z)
+    @test fl
+    @test f(w) == z
+  end
 
   @test_throws ErrorException hom(K, K, a + 1)
 
@@ -29,6 +38,19 @@
   @test_throws ErrorException hom(k, K, a)
   @test f(b) == a^3
 
+  h = @inferred id_hom(K)
+  l = @inferred f * h
+  @test domain(l) === k
+  @test codomain(l) === K
+
+  fl, z = @inferred haspreimage(f, a)
+  @test !fl
+
+  for i in 1:10
+    z = rand(k, -2:2)
+    @test h(f(z)) == l(z)
+  end
+
   # AnticNumberField -> NfRel{nf_elem}
   
   QQQ, q = NumberField(x - 1, "q")
@@ -40,6 +62,9 @@
   f = @inferred hom(K, L, -b)
   @test f(a) == -b
   @test_throws ErrorException hom(K, L, b + 1)
+  @test f\(-b) == a
+  fl, z = @inferred haspreimage(f, -b)
+  @test fl
 
   f = @inferred hom(K, L, -b, inverse = (one(K), -a))
   @test f(a) == -b
@@ -50,6 +75,8 @@
 
   for i in 1:10
     z = rand(domain(f), -2:2)
+    w = @inferred f\(f(z))
+    @test w == z
     @test g(f(z)) == z
   end
 
@@ -62,6 +89,18 @@
   @test f(a) == -b
   @test f\b == -a
   @test_throws ErrorException hom(K, L, -b, inverse = (one(K), a + 1))
+
+  h = hom(QQQ, K, one(K))
+
+  fl, _ = @inferred haspreimage(h, gen(K))
+  @test !fl
+
+  l = @inferred h * f
+
+  for i in 1:10
+    z = rand(QQQ, -2:2)
+    @test l(z) == f(h(z))
+  end
 
   # NfRel{nf_elem} -> AnticNumberField
 

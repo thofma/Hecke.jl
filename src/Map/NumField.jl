@@ -103,24 +103,29 @@
 #
 ################################################################################
 
-mutable struct NumFieldMor{S, T, U, V} <: Map{S, T, HeckeMap, NumFieldMor}
+mutable struct NumFieldMor{S, T, U, V, W} <: Map{S, T, HeckeMap, NumFieldMor}
   header::MapHeader{S, T}
   image_data::U
   inverse_data::V
+  absolute_basis::Vector{W}
+  absolute_basis_matrix_image::fmpq_mat
+  rref::Tuple{fmpq_mat, fmpq_mat}
+  pivots_of_rref::Vector{Int}
 
   function NumFieldMor{S, T, U, V}() where {S, T, U, V}
-    z = new{S, T, U, V}()
+    z = new{S, T, U, V, elem_type(S)}()
     return z
   end
 
   function NumFieldMor(K::NumField, L::NumField)
-    z = new{typeof(K), typeof(L), map_data_type(K, L), map_data_type(L, K)}()
+    z = new{typeof(K), typeof(L), map_data_type(K, L), map_data_type(L, K), elem_type(K)}()
     z.header = MapHeader(K, L)
     return z
   end
   
   function NumFieldMor{S, T, U, V}(h::MapHeader{S, T}, i::U, p::V) where {S, T, U, V}
-    return new{S, T, U, V}(h, i, p)
+    z = new{S, T, U, V, elem_type(S)}(h, i, p)
+    return z
   end
 end
 
@@ -156,7 +161,7 @@ function hom(K::S, L::T, x...; inverse = nothing,
   z.image_data = image_data
 
   if compute_inverse
-    _compute_preimage(z)
+    _assure_has_inverse_data(z)
   end
 
   return z
@@ -336,7 +341,11 @@ end
 
 # Functions to validate and create the data.
 
-map_data(K::NfRel, L, ::Bool) = MapDataFromNfRel{elem_type(L), map_data_type(base_field(K), L)}(true)
+function map_data(K::NfRel, L, ::Bool)
+  z = MapDataFromNfRel{elem_type(L), map_data_type(base_field(K), L)}(true)
+  z.base_field_map_data = map_data(base_field(K), L, true)
+  return z
+end
 
 function map_data(K::NfRel, L, x...; check = true)
   z = map_data(base_field(K), L, Base.front(x)...; check = check)
@@ -483,7 +492,11 @@ end
 
 map_data_type(K::NfRelNS, L) = MapDataFromNfRelNS{Vector{elem_type(L)}, map_data_type(base_field(K), L)}
 
-map_data(::NfRelNS, L, ::Bool) = MapDataFromNfRelNS{Vector{elem_type(L)}, map_data_type(base_ring(K), L)}(true)
+function map_data(::NfRelNS, L, ::Bool)
+  z = MapDataFromNfRelNS{Vector{elem_type(L)}, map_data_type(base_ring(K), L)}(true)
+  z.base_field_map_data = map_data(base_field(K), L, true)
+  return z
+end
 
 function map_data(K::NfRelNS, L, x...; check = true)
   z = map_data(base_field(K), L, Base.front(x)...; check = check)
@@ -584,7 +597,7 @@ morphism_type(K::Type{T}) where T <: NumField = morphism_type(T, T)
 
 morphism_type(K::S, L::T) where {S <: NumField, T <: NumField} = morphism_type(S, T)
 
-morphism_type(::Type{S}, ::Type{T}) where {S <: NumField, T <: NumField} = NumFieldMor{S, T, map_data_type(S, T), map_data_type(T, S)}
+morphism_type(::Type{S}, ::Type{T}) where {S <: NumField, T <: NumField} = NumFieldMor{S, T, map_data_type(S, T), map_data_type(T, S), elem_type(S)}
 
 ################################################################################
 #
@@ -646,171 +659,84 @@ end
 
 ################################################################################
 #
-#  Hashing needs to be done
+#  Preimage computation
 #
-################################################################################
+# ##############################################################################
 
-Base.hash(f::NumFieldMor, h::UInt) = zero(UInt)
-
-################################################################################
-#
-#  Compositions
-#
-################################################################################
-
-# TODO: Fix this
-function Base.:(*)(f::NumFieldMor{AnticNumberField, T, U, V}, g::NumFieldMor{T, T, W, X}) where {T, U, V, W, X}
-  return hom(domain(f), codomain(g), g(image_primitive_element(f)))
-end
-
-function Base.:(*)(f::NumFieldMor{NfRel{nf_elem}, NfRel{nf_elem}, U, V}, g::NumFieldMor{NfRel{nf_elem}, NfRel{nf_elem}, U, V}) where {U, V}
-  K = domain(f)
-  return hom(domain(f), codomain(g), g(f(K(gen(base_field(K))))), g(image_primitive_element(f)))
-end
-
-function Base.:(*)(f::NumFieldMor{NfRel{T}, NfRelNS{T}}, g::NumFieldMor{NfRelNS{T}, NfRelNS{T}}) where {T}
-  @assert base_field(f) === base_field(g)
-  return hom(domain(f), codomain(g), g(image_primitive_element(f)))
-end
-
-################################################################################
-#
-#  Computing preimage data
-#
-################################################################################
-
-function _compute_preimage(f::NfToNfMor)
+function _assert_has_preimage_data(f::NumFieldMor)
+  if isdefined(f, :absolute_basis_matrix_image)
+    return nothing
+  end
   K = domain(f)
   L = codomain(f)
-  M = zero_matrix(FlintQQ, degree(L), degree(L))
-  b = basis(K)
-  for i = 1:degree(L)
+  b = absolute_basis(K)
+  d = absolute_degree(K)
+  n = absolute_degree(L)
+  M = zero_matrix(FlintQQ, n, d)
+  for i in 1:d
     c = f(b[i])
-    for j = 1:degree(L)
-      M[j, i] = coeff(c, j - 1)
+    cc = absolute_coordinates(c)
+    for j in 1:length(cc)
+      M[j, i] = cc[j]
     end
   end
-  t = zero_matrix(FlintQQ, degree(L), 1)
-  if degree(L) == 1
-    t[1, 1] = coeff(gen(L), 0)
+
+  r, R, U =  _rref_with_trans(M)
+  pivots = _get_pivots_ut(R)
+
+  f.absolute_basis_matrix_image = M
+  f.absolute_basis = b
+  f.pivots_of_rref = pivots
+  f.rref = R, U
+
+  return nothing
+end
+
+function haspreimage(f::NumFieldMor, g::NumFieldElem)
+  if isdefined(f, :inverse_data)
+    return true, image(f.inverse_data, domain(f), g)
+  end
+  @assert parent(g) === codomain(f)
+  d = absolute_degree(parent(g))
+  cc = absolute_coordinates(g)
+  K = domain(f)
+  _assert_has_preimage_data(f)
+  fl, s = can_solve_given_rref(f.rref[1], f.rref[2], f.pivots_of_rref, cc)
+  if !fl
+    return false, zero(K)
   else
-    t[2, 1] = fmpq(1) # coefficient vector of gen(L)
+    b = f.absolute_basis
+    # This is suboptimal
+    prim_preimg = reduce(+, (s[i, 1] * b[i] for i in 1:d), init = zero(K))::elem_type(K)
+    return true, prim_preimg
   end
-
-  s = solve(M, t)
-  preim = K(parent(K.pol)([ s[i, 1] for i = 1:degree(K) ]))
-  f.inverse_data = map_data(L, K, preim)
-  return nothing
 end
 
-function _compute_preimg(m::NfToNfMor)
-  # build the matrix for the basis change
-  K = domain(m)
-  L = codomain(m)
-  M = zero_matrix(FlintQQ, degree(L), degree(L))
-  b = basis(K)
-  for i = 1:degree(L)
-    c = m(b[i])
-    for j = 1:degree(L)
-      M[j, i] = coeff(c, j - 1)
-    end
-  end
-  t = zero_matrix(FlintQQ, degree(L), 1)
-  t[2, 1] = fmpq(1) # coefficient vector of gen(L)
-  s = solve(M, t)
-  prim_preimg = K(parent(K.pol)([ s[i, 1] for i = 1:degree(K) ]))
-  m.inverse_data = map_data(L, K, prim_preimg)
-  #local prmg
-  #let L = L, m = m
-  #  function prmg(x::nf_elem)
-  #    g = parent(L.pol)(x)
-  #    return evaluate(g, m.prim_preimg)
-  #  end
-  #end
-  #m.header.preimage = prmg
-  #return m.prim_preimg
-  return prim_preimg
-end
-
-
-function _compute_preimage(f::NfAbsToNfAbsNS)
-  K = domain(f)
-  L = codomain(f)
-  M = zero_matrix(FlintQQ, degree(K), degree(K))
-  el = one(L)
-  a = image_primitive_element(f)
-  elem_to_mat_row!(M, 1, el)
-  for i = 2:degree(K)
-    el = mul!(el, el, a)
-    elem_to_mat_row!(M, i, el)
-  end
-  N = zero_matrix(FlintQQ, ngens(L), degree(K))
-  gL = gens(L)
-  for i = 1:length(gL)
-    elem_to_mat_row!(N, i, gL[i])
-  end
-  fl, x = can_solve(M, N, side = :left)
+function preimage(f::NumFieldMor, g::NumFieldElem)
+  fl, y = haspreimage(f, g)
   @assert fl
-  x1, den = _fmpq_mat_to_fmpz_mat_den(x)
-  embs = nf_elem[elem_from_mat_row(K, x1, i, den) for i = 1:nrows(x)]
-  f.inverse_data = map_data(L, K, embs)
-  return nothing
+  return y
 end
-
-function _compute_preimage(f::NumFieldMor{AnticNumberField, <:NfRelNS})
-  K = domain(f)
-  L = codomain(f)
-  el = one(L)
-  M = zero_matrix(FlintQQ, degree(K), degree(K))
-  M[1, 1] = 1
-  a = image_primitive_element(f)
-  for i = 2:degree(K)
-    el *= a
-    v = absolute_coordinates(el)
-    for j = 1:degree(K)
-      M[i, j] = v[j]
-    end
-  end
-  N = zero_matrix(FlintQQ, ngens(L)+1, degree(K))
-  gk = L(gen(base_field(L)))
-  v = absolute_coordinates(gk)
-  for j = 1:degree(K)
-    N[1, j] = v[j]
-  end
-  gL = gens(L)
-  for i = 1:length(gL)
-    v = absolute_coordinates(gL[i])
-    for j = 1:degree(K)
-      N[i+1, j] = v[j]
-    end
-  end
-  fl, x = can_solve(M, N, side = :left)
-  x1, den = _fmpq_mat_to_fmpz_mat_den(x)
-  preimg_base_field = Nemo.elem_from_mat_row(K, x1, 1, den)
-  preimgs = Vector{nf_elem}(undef, length(gL))
-  for i = 1:length(gL)
-    preimgs[i] = Nemo.elem_from_mat_row(K, x1, i+1, den)
-  end
-  f.inverse_data = map_data(L, K, preimg_base_field, preimgs)
-  return nothing
-end
-
 ################################################################################
 #
 #  Computation of the inverse (data)
 #
 ################################################################################
 
-function inv(f::NumFieldMor{S, T}) where {S, T}
+function _assure_has_inverse_data(f::NumFieldMor)
   if isdefined(f, :inverse_data)
-    pr = f.inverse_data
+    return nothing
   else
-    pr = _compute_inverse_data(f.image_data, domain(f), codomain(f))
+    pr = _compute_inverse_data(f, domain(f), codomain(f))
     f.inverse_data = pr
+    return nothing
   end
+end
 
+function inv(f::NumFieldMor{S, T}) where {S, T}
+  _assure_has_inverse_data(f)
+  pr = f.inverse_data
   hd = MapHeader(codomain(f), domain(f))
-
   g = NumFieldMor{T, S, map_data_type(T, S), map_data_type(S, T)}(hd, pr, f.image_data)
 
   return g
@@ -822,31 +748,9 @@ function _compute_inverse_data(f#= image data =#, K, L::AnticNumberField)
 end
 
 function _compute_inverse_data(f#= image data =#, K, LL, L::AnticNumberField)
-  d = absolute_degree(K)
-  @assert d == absolute_degree(K)
-  M = zero_matrix(FlintQQ, d, d)
-  b = absolute_basis(K)
-  for i = 1:d
-    c = image(f, LL, b[i])
-    cc = absolute_coordinates(c)
-    for j = 1:length(cc)
-      M[j, i] = cc[j]
-    end
-  end
-  return _compute_inverse_data(f, K, LL, L, M, b)
-end
-
-function _compute_inverse_data(f#= image data =#, K, LL, L::AnticNumberField, M, b)
-  d = absolute_degree(K)
-  t = zero_matrix(FlintQQ, d, 1)
   g = LL(gen(L))
-  cc = absolute_coordinates(g)
-  for j in 1:length(cc)
-    t[j, 1] = cc[j]
-  end
-  s = solve(M, t)
-  prim_preimg = reduce(+, (s[i, 1] * b[i] for i in 1:d), init = zero(K))
-  inverse_data = map_data(L, K, prim_preimg)
+  fl, prim_preimg = haspreimage(f, LL(g))
+  @assert fl
   return MapDataFromAnticNumberField{typeof(prim_preimg)}(prim_preimg)
 end
 
@@ -856,31 +760,10 @@ function _compute_inverse_data(f#= image data =#, K, L::NfAbsNS)
 end
 
 function _compute_inverse_data(f#= image data =#, K, LL, L::NfAbsNS)
-  d = absolute_degree(K)
-  @assert d == absolute_degree(K)
-  M = zero_matrix(FlintQQ, d, d)
-  b = absolute_basis(K)
-  for i = 1:d
-    c = image(f, LL, b[i])
-    cc = coordinates(c)
-    for j = 1:length(cc)
-      M[j, i] = cc[j]
-    end
-  end
-  return _compute_inverse_data(f, K, LL, L, M, b)
-end
-
-function _compute_inverse_data(f#= image data =#, K, LL, L::NfAbsNS, M, b)
-  t = zero_matrix(FlintQQ, d, 1)
-  d = absolute_degree(K)
-  preimg_gens = elem_type(L)[]
+  preimg_gens = elem_type(K)[]
   for g in gens(L)
-    cc = coordinates(LL(g))
-    for j in 1:length(cc)
-      t[j, 1] = cc[j]
-    end
-    s = solve(M, t)
-    preimg = reduce(+, (s[i, 1] * b[i] for i in 1:d), init = zero(K))
+    fl, preimg = haspreimage(f, LL(g))
+    @assert fl
     push!(preimg_gens, preimg)
   end
   return MapDataFromNfAbsNS{typeof(preimg_gens)}(preimg_gens)
@@ -892,30 +775,9 @@ function _compute_inverse_data(f#= image data =#, K, L::NfRel)
 end
 
 function _compute_inverse_data(f#= image data =#, K, LL, L::NfRel)
-  b = absolute_basis(K)
-  d = absolute_degree(K)
-  M = zero_matrix(FlintQQ, d, d)
-  for i in 1:d
-    c = image(f, LL, b[i])
-    cc = absolute_coordinates(c)
-    for j in 1:length(cc)
-      M[j, i] = cc[j]
-    end
-  end
-  return _compute_inverse_data(f, K, LL, L, M, b)
-end
-
-function _compute_inverse_data(f#= image data =#, K, LL, L::NfRel, M, b)
-  d = absolute_degree(K)
-  t = zero_matrix(FlintQQ, d, 1)
   g = gen(L)
-  cc = absolute_coordinates(LL(g))
-  for j in 1:length(cc)
-    t[j, 1] = cc[j]
-  end
-  s = solve(M, t)
-  preimg = reduce(+, (s[i, 1] * b[i] for i in 1:d), init = zero(K))
-  inverse_data_base_field = _compute_inverse_data(f, K, LL, base_field(L), M, b)
+  fl, preimg = haspreimage(f, LL(g))
+  inverse_data_base_field = _compute_inverse_data(f, K, LL, base_field(L))
   return MapDataFromNfRel{typeof(preimg), typeof(inverse_data_base_field)}(preimg, inverse_data_base_field)
 end
 
@@ -925,35 +787,14 @@ function _compute_inverse_data(f#= image data =#, K, L::NfRelNS)
   return _compute_inverse_data(f, K, L, L)
 end
 
-function _compute_inverse_data(f#= image data =#, K, LL, L::NfRelNS)
-  b = absolute_basis(K)
-  d = absolute_degree(K)
-  M = zero_matrix(FlintQQ, d, d)
-  for i in 1:d
-    c = image(f, LL, b[i])
-    cc = absolute_coordinates(c)
-    for j in 1:length(cc)
-      M[j, i] = cc[j]
-    end
-  end
-  return _compute_inverse_data(f, K, LL, L, M, b)
-end
-
-function _compute_inverse_data(f, K, LL, L::NfRelNS, M, b)
-  d = absolute_degree(K)
-  t = zero_matrix(FlintQQ, d, 1)
+function _compute_inverse_data(f, K, LL, L::NfRelNS)
   preimg_gens = elem_type(K)[]
   for g in gens(L)
-    cc = absolute_coordinates(LL(g))
-    for j in 1:length(cc)
-      t[j, 1] = cc[j]
-    end
-    s = solve(M, t)
-    preimg = reduce(+, (s[i, 1] * b[i] for i in 1:d), init = zero(K))
+    fl, preimg = haspreimage(f, LL(g))
     push!(preimg_gens, preimg)
   end
-  inverse_data_base_field = _compute_inverse_data(f, K, LL, base_field(L), M, b)
-  return MapDataFromNfRel{typeof(preimg_gens), typeof(inverse_data_base_field)}(preimg, inverse_data_base_field)
+  inverse_data_base_field = _compute_inverse_data(f, K, LL, base_field(L))
+  return MapDataFromNfRelNS{typeof(preimg_gens), typeof(inverse_data_base_field)}(preimg_gens, inverse_data_base_field)
 end
 
 ################################################################################
@@ -965,3 +806,121 @@ end
 function map_data(K::NumField, L::NumField; check = true)
   return map_data(K, L, true)
 end
+
+################################################################################
+#
+#  Composition
+#
+################################################################################
+
+# f : K -> L, g : L -> M
+function _compose(f::MapDataFromAnticNumberField, g#= map data =#, K, L, M)
+  return map_data_type(K, M)(image(g, M, image(f, L, gen(K))))
+end
+
+function _compose(f::MapDataFromNfRel, g#= map data =#, K, L, M)
+  return map_data_type(K, M)(image(g, M, image(f, L, gen(K))),
+                             _compose(f.base_field_map_data, g, base_field(K), L, M))
+end
+
+function _compose(f::MapDataFromNfAbsNS, g#= map data =#, K, L, M)
+  return map_data_type(K, M)(elem_type(M)[image(g, M, image(f, L, g)) for g in gens(K)])
+end
+
+function _compose(f::MapDataFromNfRelNS, g#= map data =#, K, L, M)
+  return map_data_type(K, M)(elem_type(M)[image(g, M, image(f, L, u)) for u in gens(K)],
+                             _compose(f.base_field_map_data, g, base_field(K), L, M))
+end
+
+function Base.:(*)(f::NumFieldMor, g::NumFieldMor)
+  @req codomain(f) === domain(g) "Composition: Maps are not compatible"
+  z = NumFieldMor(domain(f), codomain(g))
+  z.image_data = _compose(f.image_data, g.image_data, domain(f), codomain(f), codomain(g))
+  if isdefined(f, :inverse_data) && isdefined(g, :inverse_data)
+    z.inverse_data = _compose(g.inverse_data, f.inverse_data, codomain(g), domain(g), domain(f))
+  end
+  return z
+end
+
+################################################################################
+#
+#  Powering
+#
+################################################################################
+
+function ^(f::NumFieldMor, b::Int)
+  K = domain(f)
+  @assert K == codomain(f)
+  d = absolute_degree(K)
+  b = mod(b, d)
+  if b == 0
+    return id_hom(K)
+  elseif b == 1
+    return f
+  else
+    bit = ~((~UInt(0)) >> 1)
+    while (UInt(bit) & b) == 0
+      bit >>= 1
+    end
+    z = f
+    bit >>= 1
+    while bit != 0
+      z = z * z
+      if (UInt(bit) & b) != 0
+        z = z * f
+      end
+      bit >>= 1
+    end
+    return z
+  end
+end
+
+################################################################################
+#
+#  Hashing
+#
+################################################################################
+
+function Base.hash(f::MapDataFromAnticNumberField, K, L, h::UInt)
+  if f.isid
+    return xor(hash(L, h), hash(K, h))
+  else
+    return hash(f.prim_image, h)
+  end
+end
+
+function Base.hash(f::MapDataFromNfRel, K, L, h::UInt)
+  if f.isid
+    h = xor(hash(L, h), hash(K, h))
+  else
+    h = hash(f.prim_image, h)
+  end
+  h = hash(f.base_field_map_data, base_field(K), L, h)
+  return h
+end
+
+function Base.hash(f::MapDataFromNfAbsNS, K, L, h::UInt)
+  if f.isid
+    return xor(hash(L, h), hash(K, h))
+  else
+    G = f.images
+    for g in G
+      h = hash(g, h)
+    end
+    return h
+  end
+end
+
+function Base.hash(f::MapDataFromNfRelNS, K, L, h::UInt)
+  if f.isid
+    h = xor(hash(L, h), hash(K, h))
+  else
+    G = f.images
+    for g in G
+      h = hash(g, h)
+    end
+  end
+  h = hash(f.base_field_map_data, base_field(K), L, h)
+end
+
+Base.hash(f::NumFieldMor, h::UInt) = hash(f.image_data, domain(f), codomain(f), h)
