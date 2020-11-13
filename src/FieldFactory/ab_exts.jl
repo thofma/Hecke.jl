@@ -974,7 +974,7 @@ function _C22_with_max_ord(l)
   for (p1, p2) in l
     Kns, g = number_field(fmpz_poly[p1, p2], check = false, cached = false)
     S, mS = simple_extension(Kns, check = false, cached = false, simplified = true)
-    _compute_preimage(mS)
+    Hecke._assure_has_inverse_data(mS)
     gen1 = mS\(g[1])
     gen2 = mS\(g[2])
     d1 = discriminant(p1)

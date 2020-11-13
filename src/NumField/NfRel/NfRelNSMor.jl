@@ -1,185 +1,5 @@
 ################################################################################
 #
-#  Type declaration
-#
-################################################################################
-
-#mutable struct NfRelToNfRelNSMor{T} <: Map{NfRel{T}, NfRelNS{T}, HeckeMap, NfRelToNfRelNSMor}
-#  header::MapHeader{NfRel{T}, NfRelNS{T}}
-#  prim_img::NfRelNSElem{T}
-#  emb::Array{NfRelElem{T}, 1}
-#  coeff_aut::NfToNfMor
-#
-#  function NfRelToNfRelNSMor{T}(K::NfRel{T}, L::NfRelNS{T}, a::NfRelNSElem{T}, emb::Array{NfRelElem{T}, 1}) where {T}
-#    function image(x::NfRelElem{T})
-#      # x is an element of K
-#      f = data(x)
-#      # First evaluate the coefficients of f at a to get a polynomial over L
-#      # Then evaluate at b
-#      return f(a)
-#    end
-#
-#    function preimage(x::NfRelNSElem{T})
-#      return msubst(x.data, emb)
-#    end
-#
-#    z = new{T}()
-#    z.prim_img = a
-#    z.coeff_aut = id_hom(base_field(K))
-#    z.emb = emb
-#    z.header = MapHeader(K, L, image, preimage)
-#    return z
-#  end  
-#
-#  function NfRelToNfRelNSMor{T}(K::NfRel{T}, L::NfRelNS{T}, a::NfRelNSElem{T}) where T
-#    function image(x::NfRelElem{T})
-#      # x is an element of K
-#      f = data(x)
-#      # First evaluate the coefficients of f at a to get a polynomial over L
-#      # Then evaluate at b
-#      return f(a)
-#    end
-#
-#    z = new{T}()
-#    z.prim_img = a
-#    z.header = MapHeader(K, L, image)
-#    return z
-#  end  
-#
-#  function NfRelToNfRelNSMor{T}(K::NfRel{T}, L::NfRelNS{T}, aut::Map, a::NfRelNSElem{T}) where {T}
-#    aut = NfToNfMor(domain(aut), codomain(aut), aut(gen(domain(aut))))
-#    function image(x::NfRelElem{T})
-#      # x is an element of K
-#      f = deepcopy(data(x))
-#      for i=0:degree(f)
-#        setcoeff!(f, i, aut(coeff(f, i)))
-#      end
-#      # First evaluate the coefficients of f at a to get a polynomial over L
-#      # Then evaluate at b
-#      return f(a)
-#    end
-#
-#    z = new{T}()
-#    z.prim_img = a
-#    z.coeff_aut = aut
-#    z.header = MapHeader(K, L, image)
-#    return z
-#  end  
-#end
-#
-#mutable struct NfToNfRelNSMor <: Map{AnticNumberField, NfRelNS{nf_elem}, HeckeMap, NfToNfRelNSMor}
-#  header::MapHeader{AnticNumberField, NfRelNS{nf_elem}}
-#  img_gen::NfRelNSElem{nf_elem}
-#  preimg_base_field::nf_elem
-#  preimgs::Vector{nf_elem}
-#  
-#  function NfToNfRelNSMor(K::AnticNumberField, L::NfRelNS{nf_elem}, img_gen::NfRelNSElem{nf_elem})
-#    z = new()
-#    z.header = MapHeader(K, L)
-#    z.img_gen = img_gen
-#    return z
-#  end
-#end
-#
-#mutable struct NfRelNSToNfRelNSMor{T} <: Map{NfRelNS{T}, NfRelNS{T}, HeckeMap, NfRelNSToNfRelNSMor}
-#  header::MapHeader{NfRelNS{T}, NfRelNS{T}}
-#  emb::Array{NfRelNSElem{T}, 1}
-#  coeff_aut::NfToNfMor
-#
-#  inv_emb::Array{NfRelNSElem{T}, 1}
-#  inv_coeff_aut::NfToNfMor
-#
-#  function NfRelNSToNfRelNSMor{T}(K::NfRelNS{T}, L::NfRelNS{T}, emb::Array{NfRelNSElem{T}, 1}) where {T}
-#    function image(x::NfRelNSElem{T})
-#      # x is an element of K
-#      # First evaluate the coefficients of f at a to get a polynomial over L
-#      # Then evaluate at b
-#      return msubst(x.data, emb)
-#    end
-#
-#    z = new{T}()
-#    z.emb = emb
-#    z.header = MapHeader(K, L, image)
-#    return z
-#  end  
-#
-#  function NfRelNSToNfRelNSMor{T}(K::NfRelNS{T}, L::NfRelNS{T}, aut::NfToNfMor, emb::Array{NfRelNSElem{T}, 1}) where {T}
-#    function image(x::NfRelNSElem{T})
-#      # x is an element of K
-#      # First evaluate the coefficients of f at a to get a polynomial over L
-#      # Then evaluate at b
-#      f = x.data
-#      Kbxyz = parent(f)
-#      k = nvars(Kbxyz)
-#      Lbxyz = PolynomialRing(base_field(L), k, cached = false)[1]
-#      coeffs = Vector{T}(undef, length(f.coeffs))
-#      for i = 1:length(coeffs)
-#        coeffs[i] = aut(f.coeffs[i])
-#      end
-#      g = Lbxyz(coeffs, f.exps)
-#      return msubst(g, emb)
-#    end
-#
-#    z = new{T}()
-#    z.emb = emb
-#    z.coeff_aut = aut
-#    z.header = MapHeader(K, L, image)
-#    return z
-#  end  
-#end
-#
-#################################################################################
-##
-##  Morphism type
-##
-#################################################################################
-#
-#morphism_type(K::NfRel{T}, L::NfRelNS{T}) where T = NfRelToNfRelNSMor{T}
-#morphism_type(K::NfRelNS{T}, L::NfRelNS{T}) where T = NfRelNSToNfRelNSMor{T}
-
-################################################################################
-#
-#  Constructors
-#
-################################################################################
-
-#function hom(K::NfRel{T}, L::NfRelNS{T}, a::NfRelNSElem{T}) where {T}
-#  return NfRelToNfRelNSMor{T}(K, L, a)
-#end
-#
-#function hom(K::NfRel{T}, L::NfRelNS{T}, a::NfRelNSElem{T}, emb::Array{NfRelElem{T}, 1}) where {T}
-#  return NfRelToNfRelNSMor{T}(K, L, a, emb)
-#end
-#
-#function hom(K::NfRel{nf_elem}, L::NfRelNS{nf_elem}, aut_base::NfToNfMor, a::NfRelNSElem{nf_elem}) 
-#  return NfRelToNfRelNSMor{nf_elem}(K, L, aut_base, a)
-#end
-
-#function hom(K::NfRelNS{T}, L::NfRelNS{T}, emb::Array{NfRelNSElem{T}, 1}; check = true) where {T}
-#  f = NfRelNSToNfRelNSMor{T}(K, L, emb)
-#  if check && T == nf_elem
-#    @assert isconsistent(f)
-#  end
-#  return f
-#end
-
-#function hom(K::NfRelNS{nf_elem}, L::NfRelNS{nf_elem}, emb::Array{NfRelNSElem{nf_elem}, 1}; check = true)
-#  @assert base_field(K) == base_field(L)
-#  return hom(K, L, id_hom(base_field(K)), emb, check = check)
-#end
-
-#function hom(K::NfRelNS{nf_elem}, L::NfRelNS{nf_elem}, coeff_aut::NfToNfMor, emb::Array{NfRelNSElem{nf_elem}, 1}; check = true)
-#  f = NfRelNSToNfRelNSMor{nf_elem}(K, L, coeff_aut, emb)
-#  if check 
-#    @assert isconsistent(f)
-#  end
-#  return f
-#end
-
-id_hom(K::NfRelNS{T}) where T = NfRelNSToNfRelNSMor{T}(K, K, id_hom(base_field(K)), gens(K))
-
-################################################################################
-#
 #  Hash function
 #
 ################################################################################
@@ -204,33 +24,6 @@ id_hom(K::NfRelNS{T}) where T = NfRelNSToNfRelNSMor{T}(K, K, id_hom(base_field(K
 #
 #################################################################################
 ##
-##  Some consistency check
-##
-#################################################################################
-#
-#function isconsistent(f::NfRelToNfRelMor{T}) where T
-#  K = domain(f)
-#  p = K.pol
-#  p1 = map_coeffs(f.coeff_aut, p, cached = false)
-#  if !iszero(p1(f.prim_img))
-#    error("Wrong")
-#  end
-#  return true
-#end
-#
-#function isconsistent(f::NfRelNSToNfRelNSMor{T}) where T  
-#  K = domain(f)
-#  for i = 1:length(K.pol)
-#    p = map_coeffs(f.coeff_aut, K.pol[i])
-#    if !iszero(evaluate(p, f.emb))
-#      error("wrong!")
-#    end
-#  end
-#  return true
-#end
-#
-#################################################################################
-##
 ##  Composition
 ##
 #################################################################################
@@ -242,14 +35,14 @@ id_hom(K::NfRelNS{T}) where T = NfRelNSToNfRelNSMor{T}(K, K, id_hom(base_field(K
 #  @show elem_type(codomain(g))[ g(f(x)) for x in a]
 #  return hom(domain(f), codomain(g),  elem_type(codomain(g))[ g(f(x)) for x in a])
 #end
-
-function Base.:(*)(f::NfRelNSToNfRelNSMor_nf_elem, g::NfRelNSToNfRelNSMor_nf_elem)
-  codomain(f) == domain(g) || throw("Maps not compatible")
-
-  a = gens(domain(f))
-  # I am a bit lazy here
-  return hom(domain(f), codomain(g), hom(base_field(domain(f)), codomain(g), g(f(domain(f)(gen(base_field(domain(f))))))), NfRelNSElem{nf_elem}[ g(f(x)) for x in a], check = false)
-end
+#
+#function Base.:(*)(f::NfRelNSToNfRelNSMor_nf_elem, g::NfRelNSToNfRelNSMor_nf_elem)
+#  codomain(f) == domain(g) || throw("Maps not compatible")
+#
+#  a = gens(domain(f))
+#  # I am a bit lazy here
+#  return hom(domain(f), codomain(g), hom(base_field(domain(f)), codomain(g), g(f(domain(f)(gen(base_field(domain(f))))))), NfRelNSElem{nf_elem}[ g(f(x)) for x in a], check = false)
+#end
 #
 #function Base.:(*)(f::NfRelToNfRelMor{nf_elem}, g::NfRelToNfRelNSMor{nf_elem})
 #  codomain(f) == domain(g) || throw("Maps not compatible")
@@ -285,59 +78,59 @@ end
 #  return true
 #end
 #
-function _compute_preimg(f::NfRelNSToNfRelNSMor_nf_elem)
-  #inv_base_field = inv(f.coeff_aut)
-  L = domain(f)
-  K = codomain(f)
-  k = base_field(K)
-  @assert k == base_field(L)
-  B = basis(L)
-  M = sparse_matrix(k)
-  for i = 1:length(B)
-    push!(M, SRow(f(B[i])))
-  end
-  gK = gens(K)
-  imgs = Vector{NfRelNSElem{nf_elem}}(undef, length(gK))
-  for i = 1:length(imgs)
-    N = SRow(gK[i])
-    S = solve(M, N)
-    imgs[i] = sum(l*B[j] for (j, l) in S)
-  end
-  N = SRow(K(gen(k)))
-  S = solve(M, N)
-  img_gen_k = sum(l*B[j] for (j, l) in S)
-  f.inverse_data = map_data(K, L, map_data(base_field(K), L, img_gen_k), imgs)
-
-  #f.inv_coeff_aut = inv_base_field
-  #f.inv_emb = imgs
-  #local preimg 
-  #let f = f
-  #  function preimg(x::NfRelNSElem{nf_elem})
-  #    b = x.data
-  #    b1 = map_coeffs(f.inv_emb, b)
-  #    return msubst(b1, f.inv_emb)
-  #  end
-  #end
-  #f.header.preimage = preimg
-  return nothing
-end
+#function _compute_preimg(f::NfRelNSToNfRelNSMor_nf_elem)
+#  #inv_base_field = inv(f.coeff_aut)
+#  L = domain(f)
+#  K = codomain(f)
+#  k = base_field(K)
+#  @assert k == base_field(L)
+#  B = basis(L)
+#  M = sparse_matrix(k)
+#  for i = 1:length(B)
+#    push!(M, SRow(f(B[i])))
+#  end
+#  gK = gens(K)
+#  imgs = Vector{NfRelNSElem{nf_elem}}(undef, length(gK))
+#  for i = 1:length(imgs)
+#    N = SRow(gK[i])
+#    S = solve(M, N)
+#    imgs[i] = sum(l*B[j] for (j, l) in S)
+#  end
+#  N = SRow(K(gen(k)))
+#  S = solve(M, N)
+#  img_gen_k = sum(l*B[j] for (j, l) in S)
+#  f.inverse_data = map_data(K, L, map_data(base_field(K), L, img_gen_k), imgs)
 #
-function inv(f::NfRelNSToNfRelNSMor_nf_elem)
-  _compute_preimg(f)
-  g = NumFieldMor(codomain(f), domain(f))
-  g.image_data = f.inverse_data
-  g.inverse_data = f.image_data
-  # Check
-  a = domain(f)(gen(base_field(domain(f))))
-  @assert g(f(a)) == a 
-  @assert all(x -> x == g(f(x)), gens(domain(f)))
-  a = domain(g)(gen(base_field(domain(g))))
-  @assert f(g(a)) == a 
-  @assert all(x -> x == f(g(x)), gens(domain(g)))
-
-  return g
-  #return hom(codomain(f), domain(f), f.inv_coeff_aut, f.inv_emb)
-end
+#  #f.inv_coeff_aut = inv_base_field
+#  #f.inv_emb = imgs
+#  #local preimg 
+#  #let f = f
+#  #  function preimg(x::NfRelNSElem{nf_elem})
+#  #    b = x.data
+#  #    b1 = map_coeffs(f.inv_emb, b)
+#  #    return msubst(b1, f.inv_emb)
+#  #  end
+#  #end
+#  #f.header.preimage = preimg
+#  return nothing
+#end
+#
+#function inv(f::NfRelNSToNfRelNSMor_nf_elem)
+#  _compute_preimg(f)
+#  g = NumFieldMor(codomain(f), domain(f))
+#  g.image_data = f.inverse_data
+#  g.inverse_data = f.image_data
+#  # Check
+#  a = domain(f)(gen(base_field(domain(f))))
+#  @assert g(f(a)) == a 
+#  @assert all(x -> x == g(f(x)), gens(domain(f)))
+#  a = domain(g)(gen(base_field(domain(g))))
+#  @assert f(g(a)) == a 
+#  @assert all(x -> x == f(g(x)), gens(domain(g)))
+#
+#  return g
+#  #return hom(codomain(f), domain(f), f.inv_coeff_aut, f.inv_emb)
+#end
 
 @inline ngens(R::Nemo.Generic.MPolyRing) = R.num_vars
 

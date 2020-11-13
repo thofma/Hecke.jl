@@ -94,7 +94,7 @@ function _to_composite(x::FieldsTower, y::FieldsTower, abs_disc::fmpz)
   K, mK = simplified_simple_extension1(Kns, cached = false)
   OK = maximal_order(K)
 
-  _compute_preimage(mK)
+  Hecke._assure_has_inverse_data(mK)
 
   # Now, I have to translate the automorphisms.
   # Easy thing: first, I write the automorphisms of the non simple extension

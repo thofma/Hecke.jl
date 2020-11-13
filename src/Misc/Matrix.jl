@@ -1554,6 +1554,81 @@ end
 #
 ################################################################################
 
+function _rref_with_trans(M::T) where {T <: MatElem{S} where {S <: FieldElem}}
+  #does row ops
+  n = hcat(M, identity_matrix(base_ring(M), nrows(M)))
+  rref!(n)
+  s = nrows(n)
+  while s > 0 && iszero(sub(n, s:s, 1:ncols(M)))
+    s -= 1
+  end
+  return s, sub(n, 1:nrows(M), 1:ncols(M)), sub(n, 1:nrows(M), ncols(M)+1:ncols(n))
+end
+
+# can_solve_ut over a field
+#
+#Given an upper triangular $m \times m$ matrix $A$ and a matrix $b$ of size $m
+#\times k$, this function computes $x$ such that $Ax = b$. Might fail if
+#the pivots of $A$ are not invertible.
+#"""
+function can_solve_rref_ut(A::MatElem{T}, b::Vector{T}; pivots::Vector{Int} = Int[]) where T <: FieldElem
+  n = nrows(A)
+  m = ncols(A)
+  @assert n == length(b)
+  x = Vector{T}(undef, m)
+  K = base_ring(A)
+  for i in 1:m
+    x[i] = zero(K)
+  end
+  if length(pivots) == 0
+    pivots = _get_pivots_ut(A)
+  end
+  @assert length(pivots) == n
+
+  if any(i -> !iszero(b[i]) && iszero(pivots[i]), 1:n)
+    return false, x
+  else
+    for i in 1:n
+      if !iszero(pivots[i])
+        x[pivots[i]] = b[i]
+      end
+    end
+    return true, x
+  end
+end
+
+function _get_pivots_ut(A::MatElem{<: FieldElem})
+  n = nrows(A)
+  m = ncols(A)
+  pivots = fill(0, n)
+  last_piv = m
+  for i in n:-1:1
+    for j in 1:last_piv
+      if !iszero(A[i, j])
+        last_piv = j
+        pivots[i] = j
+        break
+      end
+    end
+  end
+  return pivots
+end
+
+function can_solve_using_rref(A::MatElem{T}, b::Vector{T}) where {T}
+  s, R, U = _rref_with_trans(A)
+  pivots = _get_pivots_ut(R)
+  fl, x = can_solve_given_rref(R, U, pivots, b)
+  if fl
+    @assert A * matrix(base_ring(A), length(x), 1, x) == matrix(base_ring(A), length(b), 1, b)
+  end
+  return fl, x
+end
+
+function can_solve_given_rref(R::MatElem{T}, U, pivots, b::Vector{T}) where {T}
+  Ub = U * matrix(base_ring(R), length(b), 1, b)
+  fl, x = can_solve_rref_ut(R, [Ub[i, 1] for i in 1:nrows(Ub)])
+  return fl, x
+end
 # Solves A x = b for A upper triangular m\times n matrix and b m\times 1.
 
 @doc Markdown.doc"""
