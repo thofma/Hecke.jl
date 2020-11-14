@@ -319,7 +319,7 @@ end
 function *(f::NfToNfMor, g::NfToNfMor)
   codomain(f) == domain(g) || throw("Maps not compatible")
   y = g(image_primitive_element(f))
-  if isdefined(f, :preimage_data) && isdefined(g, :preimage_data)
+  if isdefined(f, :inverse_data) && isdefined(g, :inverse_data)
     z = f\(preimage_primitive_element(g))
     return hom(domain(f), codomain(g), y, inverse = z, check = false)
   else
