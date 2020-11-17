@@ -1618,3 +1618,25 @@ function _is_conductor_minQQ(C::Hecke.ClassField, n::Int)
   return true
 
 end 
+
+
+#Returns the cyclic extension of prime degree i with minimal discriminant
+function minimal_prime_cyclic_extension(i::Int)
+  k = 2
+  while !isprime(k*i+1)
+    k +=1
+  end
+  K, a = cyclotomic_field(k*i+1)
+  auts = small_generating_set(automorphisms(K))
+  auts[1] = auts[1]^i
+  g = auts[1]
+  el = g(a)
+  for i = 2:k
+    g *= auts[1]
+    el += g(a)
+  end
+  f = minpoly(el)
+  L = number_field(f, check = false, cached = false)[1]
+  set_special(L, :isabelian => true)
+  return simplify(L, cached = false)[1]
+end

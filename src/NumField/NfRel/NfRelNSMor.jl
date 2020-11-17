@@ -672,10 +672,6 @@ function _compute_preimage(f::NumFieldMor{AnticNumberField, <:NfRelNS})
   return nothing
 end
 
-function degrees(L::NfRelNS)
-  return Int[total_degree(x) for x in L.pol]
-end
-
 function automorphisms(L::NfRelNS{T}) where T
   c = get_special(L, :automorphisms)
   if c !== nothing

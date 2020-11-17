@@ -218,10 +218,10 @@ function basis(K::NfAbsNS; copy::Bool = true)
   b = Vector{NfAbsNSElem}(undef, degree(K))
   ind = 1
   d = degrees(K)
-  it = cartesian_product_iterator([1:d[i] for i = 1:length(d)])
+  it = cartesian_product_iterator([0:d[i]-1 for i = 1:length(d)])
   for i in it
     el = Rx()
-    set_coeff!(el, i, fmpq(1))
+    setcoeff!(el, i, fmpq(1))
     b[ind] = K(el, false)
     ind += 1
   end
