@@ -182,9 +182,10 @@ end
 Computes `round(a//b)`.
 """
 function Base.round(::Type{fmpz}, a::fmpz, b::fmpz)
-  s = sign(a)
+  s = sign(a)*sign(b)
+  bs = abs(b)
   as = abs(a)
-  r = s*div(2*as+b, 2*b)
+  r = s*div(2*as+bs, 2*bs)
 #  @assert r == round(fmpz, a//b)
   return r
 end

@@ -6,6 +6,16 @@ function inNotebook()
   return isdefined(Main, :IJulia) && Main.IJulia.inited
 end
 
+function math_html(io::IO, a::Nemo.gfp_elem)
+  print(io, a)
+end
+
+function Base.show(io::IO, ::MIME"text/html", a::Nemo.gfp_elem)
+  print(io, "\$")
+  math_html(io, a)
+  print(io, "\$")
+end
+
 function math_html(io::IO, a::PolyElem)
   f = "$a"
   if parent(a).S in [Symbol("_\$1")]
@@ -235,10 +245,10 @@ function math_html(io::IO, M::MatElem)
   for i=1:nrows(M)
     for j=1:ncols(M)
       math_html(io, M[i,j])
-      if j<nrows(M)
+      if j<ncols(M)
         print(io, "&")
-      else
-        print(io, "\\\\")
+      elseif i<nrows(M)
+        print(io, "\\\\", "\n")
       end
     end
   end
@@ -339,10 +349,21 @@ function math_html(io::IO, a::NfAbsOrdElem)
   math_html(io, elem_in_nf(a))
 end
 
+function Base.show(io::IO, ::MIME"text/html", a::NfAbsOrdElem)
+  print(io, "\$")
+  math_html(io, a)
+  print(io, "\$")
+end
+
 function math_html(io::IO, O::NfAbsOrd{AnticNumberField, nf_elem})
   c = get(io, :compact, false)
+  if ismaximal_known_and_maximal(O)
+    n = "Maximal order of"
+  else
+    n = "Order of"
+  end
   if !c
-    print(io, "\\text{Maximal order of }")
+    print(io, "\\text{$n }")
     math_html(io, nf(O))
     print(io, "\\text{ with basis }")
     math_html(io, basis(O))
@@ -356,7 +377,7 @@ function math_html(io::IO, O::NfAbsOrd{AnticNumberField, nf_elem})
   end
   n = find_name(nf(O))
   if n === nothing 
-    print(io, "\\text{Maximal order of }")
+    print(io, "\\text{$n }")
     math_html(io, nf(O))
   else
     print(io, "\\mathcal O_$(string(n))")
