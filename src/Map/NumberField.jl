@@ -286,35 +286,6 @@ function haspreimage(m::NfToNfMor, a::nf_elem)
   return true,  K(parent(K.pol)([ s[i, 1] for i = 1:degree(K) ]))
 end
 
-function _compute_preimg(m::NfToNfMor)
-  # build the matrix for the basis change
-  K = domain(m)
-  L = codomain(m)
-  M = zero_matrix(FlintQQ, degree(L), degree(L))
-  b = basis(K)
-  for i = 1:degree(L)
-    c = m(b[i])
-    for j = 1:degree(L)
-      M[j, i] = coeff(c, j - 1)
-    end
-  end
-  t = zero_matrix(FlintQQ, degree(L), 1)
-  t[2, 1] = fmpq(1) # coefficient vector of gen(L)
-  s = solve(M, t)
-  prim_preimg = K(parent(K.pol)([ s[i, 1] for i = 1:degree(K) ]))
-  m.preimage_data = map_data(L, K, prim_preimg)
-  #local prmg
-  #let L = L, m = m
-  #  function prmg(x::nf_elem)
-  #    g = parent(L.pol)(x)
-  #    return evaluate(g, m.prim_preimg)
-  #  end
-  #end
-  #m.header.preimage = prmg
-  #return m.prim_preimg
-  return prim_preimg
-end
-
 function Base.:(==)(f::NfToNfMor, g::NfToNfMor)
   if (domain(f) != domain(g)) || (codomain(f) != codomain(g))
     return false
@@ -348,7 +319,7 @@ end
 function *(f::NfToNfMor, g::NfToNfMor)
   codomain(f) == domain(g) || throw("Maps not compatible")
   y = g(image_primitive_element(f))
-  if isdefined(f, :preimage_data) && isdefined(g, :preimage_data)
+  if isdefined(f, :inverse_data) && isdefined(g, :inverse_data)
     z = f\(preimage_primitive_element(g))
     return hom(domain(f), codomain(g), y, inverse = z, check = false)
   else

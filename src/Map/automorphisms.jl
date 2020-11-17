@@ -17,7 +17,7 @@ function _automorphisms(K::NfAbsNS; isabelian::Bool = false)
   ind = 1
   I = cartesian_product_iterator([1:length(x) for x in rt])
   for i in I
-    auts[ind] = hom(K, K, [rt[i[j]] for j = 1:length(pols)])
+    auts[ind] = hom(K, K, elem_type(K)[rt[i[j]] for j = 1:length(pols)])
     ind += 1
   end
   return auts
