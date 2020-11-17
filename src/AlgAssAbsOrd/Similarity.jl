@@ -413,7 +413,7 @@ end
 
 function _basis_of_commutator_algebra(A)
   linind = transpose(LinearIndices(size(A)))
-  cartind = CartesianIndices(size(A))
+  cartind = cartesian_product_iterator([1:x for x in size(A)])
   n = nrows(A)
   z = zero_matrix(base_ring(A), n^2, n^2)
   for i in 1:n
@@ -428,9 +428,8 @@ function _basis_of_commutator_algebra(A)
   res = typeof(A)[]
   for k in 1:ncols(K)
     M = zero_matrix(base_ring(A), nrows(A), ncols(A))
-    for l in 1:n^2
-      i1, j1 = cartind[l].I
-      M[j1, i1] = K[l, k]
+    for (l, v) in enumerate(cartind)
+      M[v[2], v[1]] = K[l, k]
     end
     push!(res, M)
   end
@@ -439,7 +438,7 @@ end
 
 function _basis_of_integral_commutator_algebra(A)
   linind = transpose(LinearIndices(size(A)))
-  cartind = CartesianIndices(size(A))
+  cartind = cartesian_product_iterator([1:x for x in size(A)])
   n = nrows(A)
   z = zero_matrix(FlintZZ, n^2, n^2)
   for i in 1:n
@@ -454,9 +453,8 @@ function _basis_of_integral_commutator_algebra(A)
   res = typeof(A)[]
   for k in 1:ncols(K)
     M = zero_matrix(base_ring(A), nrows(A), ncols(A))
-    for l in 1:n^2
-      i1, j1 = cartind[l].I
-      M[j1, i1] = K[l, k]
+    for (l, v) in enumerate(cartind)
+      M[v[2], v[1]] = K[l, k]
     end
     push!(res, M)
   end
@@ -465,7 +463,7 @@ end
 
 function _basis_of_integral_commutator_algebra(A, B)
   linind = transpose(LinearIndices(size(A)))
-  cartind = CartesianIndices(size(A))
+  cartind = cartesian_product_iterator([1:x for x in size(A)])
   n = nrows(A)
   z = zero_matrix(FlintZZ, n^2, n^2)
   for i in 1:n
@@ -480,9 +478,8 @@ function _basis_of_integral_commutator_algebra(A, B)
   res = typeof(A)[]
   for k in 1:ncols(K)
     M = zero_matrix(base_ring(A), nrows(A), ncols(A))
-    for l in 1:n^2
-      i1, j1 = cartind[l].I
-      M[j1, i1] = K[l, k]
+    for (l, v) in enumerate(cartind)
+      M[v[2], v[1]] = K[l, k]
     end
     @assert M * A == B * M
     push!(res, M)

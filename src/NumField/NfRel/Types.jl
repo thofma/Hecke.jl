@@ -36,6 +36,8 @@ mutable struct NfRelOrd{T, S, U} <: Ring
 
   trace_mat::Generic.MatSpaceElem{T}
 
+  index::NfOrdIdl #Only if the base field is AnticNumberField
+
   inv_coeff_ideals::Vector{S}
   index_div
 

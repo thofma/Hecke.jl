@@ -18,9 +18,9 @@ function _print_to_file(list::Vector{FieldsTower}, f::IOStream; separator = '#')
     p = K.pol
     p1 = fmpz[numerator(coeff(p, i)) for i = 0:degree(p)]
     Qx = parent(p)
-    imgs = fmpq_poly[Qx(x.prim_img) for x in auts]
+    imgs = fmpq_poly[Qx(image_primitive_element(x)) for x in auts]
     imgs_coeff = Vector{fmpq}[fmpq[coeff(x1, i) for i = 0:degree(x1)] for x1 in imgs]
-    embs_imgs = Tuple{fmpq_poly, fmpq_poly}[(codomain(x2).pol, parent(codomain(x2).pol)(x2.prim_img)) for x2 in embs]
+    embs_imgs = Tuple{fmpq_poly, fmpq_poly}[(codomain(x2).pol, parent(codomain(x2).pol)(image_primitive_element(x2))) for x2 in embs]
     embs_imgs_coeff = Vector{Tuple{Vector{fmpq}, Vector{fmpq}}}(undef, length(embs_imgs))
     for i = 1:length(embs_imgs)
       y, z = embs_imgs[i]

@@ -120,7 +120,7 @@ function infinite_places(L::NfRel{T}) where {T}
       end
       rr = length(r_rts)
       for i in 1:length(c_rts)
-        push!(plcs, InfPlcNfRel{S, typeof(L)}(L, P, false, rr + i, rts[r + i], r + c_cnt))
+        push!(plcs, InfPlcNfRel{S, typeof(L)}(L, P, false, rr + i, rts[rr + i], r + c_cnt))
         c_cnt +=1 
       end
     else

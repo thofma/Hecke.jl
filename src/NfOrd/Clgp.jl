@@ -251,6 +251,9 @@ function _class_unit_group(O::NfOrd; saturate_at_2::Bool = true, bound::Int = -1
   r = 0
 
   do_units = true
+  if length(c.M.rel_gens) < unit_rank(O)
+    do_units = false
+  end
   reg_expected = ArbField(32, cached = false)(-1)
   add = 0
   closed = false
@@ -328,6 +331,9 @@ function _class_unit_group(O::NfOrd; saturate_at_2::Bool = true, bound::Int = -1
     class_group_new_relations_via_lll(c, extra = unit_rank(O) - length(U.units) +1)
     if h_old == class_group_current_h(c)
       do_units = true
+      if length(c.M.rel_gens) < unit_rank(O)
+        do_units = false
+      end 
     else
       add += 2
       do_units = false

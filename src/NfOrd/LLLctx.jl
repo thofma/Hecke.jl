@@ -51,7 +51,6 @@ function minkowski_gram_mat_scaled(L::NfLattice, p::Int)
     A = deepcopy(O.minkowski_gram_mat_scaled[1])
     shift!(A, p - O.minkowski_gram_mat_scaled[2])
   else
-    
     c = minkowski_matrix(L, p)
     B = basis(L)
     d = zero_matrix(FlintZZ, length(B), absolute_degree(K))

@@ -83,9 +83,9 @@ end
 #
 ################################################################################
 
-order_type(K::NfRelNS{T}) where {T} = NfRelOrd{T, fractional_ideal_type(order_type(base_field(K)))}
+order_type(K::NfRelNS{T}) where {T} = NfRelOrd{T, fractional_ideal_type(order_type(base_field(K))), NfRelNSElem{T}}
 
-order_type(::Type{NfRelNS{T}}) where {T} = NfRelOrd{T, fractional_ideal_type(order_type(parent_type(T)))}
+order_type(::Type{NfRelNS{T}}) where {T} = NfRelOrd{T, fractional_ideal_type(order_type(parent_type(T))), NfRelNSElem{T}}
 
 Nemo.needs_parentheses(::NfRelNSElem) = true
 
@@ -301,9 +301,12 @@ function Base.:(^)(a::NfRelNSElem{T}, b::Integer) where T
     return deepcopy(a)
   elseif mod(b, 2) == 0
     c = a^(div(b, 2))
-    return c*c
+    mul!(c, c, c)
+    return c
   else 
-    return a^(b - 1)*a
+    c = a^(b - 1)
+    mul!(c, c, a)
+    return c
   end
 end
 
@@ -319,7 +322,9 @@ function Base.:(^)(a::NfRelNSElem{T}, b::fmpz) where T
     mul!(c, c, c)
     return c
   else 
-    return a^(b - 1)*a
+    c = a^(b - 1)
+    mul!(c, c, a)
+    return c
   end
 end
 
@@ -395,28 +400,20 @@ function (R::Generic.PolyRing{nf_elem})(f::Generic.MPoly)
   return g
 end
 
-#non-optimal...
+function degrees(K::NfRelNS)
+  return Int[total_degree(x) for x in K.pol]
+end
+
 function basis(K::NfRelNS)
-  pols = K.pol
-  gL = gens(K)
+  k = base_field(K)
+  kxy = parent(K.pol[1])
   B = Vector{elem_type(K)}(undef, degree(K))
-  B[1] = one(K)
-  ind = total_degree(pols[1])
-  genjj = gL[1]
-  for i = 2:ind
-    B[i] = genjj*B[i-1]
-  end
-  for jj = 2:length(pols)
-    genjj = gL[jj]
-    el = deepcopy(genjj)
-    new_deg = total_degree(pols[jj])
-    for i = 2:new_deg
-      for j = 1:ind
-        B[(i-1)* ind + j] = B[j]* el 
-      end
-      mul!(el, el, genjj)
-    end
-    ind *= new_deg
+  d = degrees(K)
+  I = cartesian_product_iterator([0:d[i]-1 for i = 1:length(d)])
+  for (i, e) in enumerate(I)
+    t = kxy()
+    setcoeff!(t, e, one(k))
+    B[i] = K(t)
   end
   return B
 end
@@ -825,210 +822,4 @@ end
 function Nemo.discriminant(K::NfRelNS, ::FlintRationalField)
   d = norm(discriminant(K)) * discriminant(base_field(K))^degree(K)
   return d
-end
-
-function _sieve_primitive_elements(B::Vector{T}) where T <: NumFieldElem
-  K = parent(B[1])
-  n = absolute_degree(K)
-  B1 = typeof(B)()
-  k = div(n, 2)
-  for x in B
-    c = conjugates_arb(x, 16)
-    @show c[1:k+1]
-    isprimitive = true
-    for i = 2:k+1
-      for j = 1:i-1
-        if overlaps(c[i], c[j])
-          isprimitive = false
-          break
-        end
-      end
-      if !isprimitive
-        break
-      end
-    end
-    if isprimitive
-      push!(B1, x)
-    end
-  end
-  @show [absolute_minpoly(x) for x in B1]
-  return B1
-end
-
-function _find_prime(L::NfRelNS{nf_elem})
-  p = 2^10
-  K = base_field(L)
-  OK = maximal_order(K)
-  OL = maximal_order(L)
-
-  n_attempts = min(degree(L), 10)
-  candidates = Vector{Tuple{NfOrdIdl, Int}}(undef, n_attempts)
-  i = 1
-  pols = L.pol
-  threshold = absolute_degree(L)^2
-  polsR = Vector{fq_poly}(undef, length(pols))
-  while i < n_attempts+1
-    p = next_prime(p)
-    if isindex_divisor(OK, p)
-      continue
-    end
-    lp = prime_decomposition(OK, p)
-    P = lp[1][1]
-    if isindex_divisor(OL, P)
-      continue
-    end
-    F, mF = ResidueField(OK, P)
-    mF1 = extend_easy(mF, K)
-    is_proj = true
-    for j = 1:length(pols)
-      fF = isunivariate(map_coeffs(mF1, pols[j]))[2]
-      if degree(fF) != total_degree(pols[j]) || !issquarefree(fF)
-        is_proj = false
-        break
-      end
-      polsR[j] = fF
-    end
-    if !is_proj
-      continue
-    end
-    d = 1
-    for j = 1:length(polsR)
-      FS = factor_shape(polsR[j])
-      d1 = lcm(Int[x for (x, v) in FS])
-      d = lcm(d, d1)
-    end
-    if d < threshold
-      candidates[i] = (P, d)
-      i += 1
-    end
-  end
-  res = candidates[1]
-  for j = 2:n_attempts
-    if candidates[j][2] < res[2]
-      res = candidates[j]
-    end
-  end
-  return res[1], res[2]
-end
-
-function _sieve_primitive_elements(B::Vector{NfRelNSElem{nf_elem}})
-  Lrel = parent(B[1])
-  #First, we choose the candidates
-  Bnew = NfRelNSElem{nf_elem}[]
-  nrep = min(3, absolute_degree(Lrel))
-  for i = 1:length(B)
-    push!(Bnew, B[i])
-    for j = 1:nrep
-      if i != j
-        push!(Bnew, B[i]+B[j])
-        push!(Bnew, B[i]-B[j])
-      end
-    end
-  end
-  #Now, we test for primitiveness.
-  K = base_field(Lrel)
-  OK = maximal_order(K)
-  Zx = ZZ["x"][1]
-
-  n = absolute_degree(Lrel)
-
-  P, d = _find_prime(Lrel)
-  p = minimum(P, copy = false)
-  abs_deg = degree(P)*d
-  #First, we search for elements that are primitive using block systems
-  Fp = GF(p, cached = false)
-  Fpx = PolynomialRing(Fp, cached = false)[1]
-  F = FlintFiniteField(p, abs_deg, "w", cached = false)[1]
-  Fx = PolynomialRing(F, cached = false)[1]
-  rt_base_field = roots(Zx(K.pol), F)
-  rt = Dict{fq, Vector{Vector{fq}}}()
-  Rxy = PolynomialRing(F, ngens(Lrel), cached = false)[1]
-  tmp = Fpx()
-  for r in rt_base_field
-    vr = Vector{Vector{fq}}()
-    for f in Lrel.pol
-      g = isunivariate(f)[2]
-      coeff_gF = fq[]
-      for i = 0:degree(g)
-        nf_elem_to_gfp_fmpz_poly!(tmp, coeff(g, i))
-        push!(coeff_gF, evaluate(tmp, r))
-      end
-      gF = Fx(coeff_gF)
-      push!(vr, roots(gF))
-    end
-    rt[r] = vr
-  end
-  rt1 = Dict{fq, Vector{Vector{fq}}}()
-  ind = 1
-  nconjs_needed = div(n, 2)+1
-  for (r, v) in rt
-    rtv = Vector{Vector{fq}}()
-    for i in CartesianIndices(Tuple(1:length(v[i]) for i in 1:length(v)))
-      push!(rtv, [v[j][i[j]] for j = 1:length(v)])
-      ind += 1
-      if ind > nconjs_needed
-        break
-      end
-    end
-    rt1[r] = rtv
-    if ind > nconjs_needed
-      break
-    end
-  end
-  indices = Int[]
-  for i = 1:length(Bnew)
-    if length(vars(Bnew[i].data)) < ngens(Lrel)
-      continue
-    end
-    if _is_primitive_via_block(Bnew[i], rt1, Rxy, tmp)
-      push!(indices, i)
-    end
-  end
-  return Bnew[indices]
-end
-
-
-
-
-function _is_primitive_via_block(a::NfRelNSElem{nf_elem}, rt::Dict{fq, Vector{Vector{fq}}}, Rxy, tmp)
-  n = degree(parent(a))
-  pol = data(a)
-  conjs = Set{fq}()
-  for (r, vr) in rt
-    ctx = MPolyBuildCtx(Rxy)
-    for (c, v) in zip(coeffs(pol), exponent_vectors(pol))
-      nf_elem_to_gfp_fmpz_poly!(tmp, c)
-      push_term!(ctx, evaluate(tmp, r), v)
-    end
-    g = finish(ctx)
-    for i = 1:length(vr)
-      ev = evaluate(g, vr[i])
-      if ev in conjs
-        return false
-      end
-      push!(conjs, ev)
-    end
-  end
-  return true
-end
-
-
-function simplified_absolute_field(L::NfRelNS; cached = false)
-  OL = maximal_order(L)
-  B = lll_basis(OL)
-  B1 = _sieve_primitive_elements(B)
-  a = B1[1]
-  I = t2(a)
-  for i = 2:min(50, length(B1))
-    J = t2(B1[i])
-    if J < I
-      a = B1[i]
-      I = J
-    end
-  end
-  f = absolute_minpoly(a)
-  @assert degree(f) == absolute_degree(L)
-  K = number_field(f, check = false, cached = cached)[1]
-  mp = hom(K, L, a)
-  return K, mp
 end

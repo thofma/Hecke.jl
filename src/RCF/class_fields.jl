@@ -328,7 +328,7 @@ function maximal_p_subfield(C::ClassField, p::Int)
   v = valuation(degree(C), p)
   q, mq = quo(codomain(mg), p^v, false)
   s, ms = snf(q)
-  mg1 = GrpAbFinGenMap(mg*mq*ms)
+  mg1 = mg*mq*inv(ms)
   return ray_class_field(C.rayclassgroupmap, mg1)
 end
 

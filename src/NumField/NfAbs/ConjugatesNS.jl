@@ -102,10 +102,7 @@ function conjugate_data_arb_roots(K::NfAbsNS, p::Int; copy = true)
 end
 
 function enumerate_conj_prim(v::Vector{acb_roots})
-  indices = Vector{Int}[]
-  for i in CartesianIndices(Tuple(1:length(v[i].roots) for i in 1:length(v)))
-    push!(indices, collect(Tuple(i)))
-  end
+  indices = collect(cartesian_product_iterator([1:length(v[i].roots) for i in 1:length(v)], inplace = false))
   #I have the indices, now I need to order them.
   complex_indices = Int[]
   for i = 1:length(v)

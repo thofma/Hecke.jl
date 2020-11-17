@@ -40,3 +40,49 @@ function fixed_field(x::FieldsTower, H::GAP.GapObj)
   end
   return fixed_field(number_field(x), auts)[1]
 end
+
+
+function fields_transitive_group(n::Int, i::Int, disc::fmpz)
+  Gt = GAP.Globals.TransitiveGroup(n, i)
+  @assert GAP.Globals.IsSolvable(Gt)
+  id = GAP.Globals.IdGroup(Gt)
+  G1 = GAP.Globals.SmallGroup(id)
+  lC = GAP.Globals.ConjugacyClassesSubgroups(G1)
+  ind = 0
+  for i = 1:length(lC)
+    H = GAP.Globals.Representative(lC[i])
+    if GAP.Globals.Index(G1, H) != n
+      continue
+    end
+    core = GAP.Globals.Core(G1, H)
+    if !isone(GAP.Globals.Size(core))
+      continue
+    end
+    mp = GAP.Globals.FactorCosetAction(G1, H)
+    idT = GAP.Globals.TransitiveIdentification(GAP.Globals.Image(mp))
+    if idT == i
+      ind = i
+      break
+    end
+  end
+  cg = lC[ind]
+  H = GAP.Globals.Representative(cg)
+  conjs = GAP.Globals.Elements(cg)
+  j = 1
+  for i = 2:length(conjs)
+    H = GAP.Globals.Intersection(H, conjs[i])
+    j += 1
+    if GAP.Globals.Size(H) == 1
+      break
+    end
+  end
+  lf = fields(id[1], id[2], disc^(j*divexact(id[1], n)))
+  ln = to_non_normal(lf, G1, n)
+  indices = Int[]
+  for i = 1:length(ln)
+    if abs(discriminant(maximal_order(ln[i]))) <= disc
+      push!(indices, i)
+    end
+  end
+  return ln[indices]
+end

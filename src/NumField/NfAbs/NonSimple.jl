@@ -214,11 +214,15 @@ function basis(K::NfAbsNS; copy::Bool = true)
       return K.basis::Vector{NfAbsNSElem}
     end
   end
-  g = gens(parent(K.pol[1]))
+  Rx = parent(K.pol[1])
   b = Vector{NfAbsNSElem}(undef, degree(K))
   ind = 1
-  for i in CartesianIndices(Tuple(1:degrees(K)[i] for i in 1:ngens(K)))
-    b[ind] = K(prod(g[j]^(i[j] - 1) for j=1:length(i)), false)
+  d = degrees(K)
+  it = cartesian_product_iterator([0:d[i]-1 for i = 1:length(d)])
+  for i in it
+    el = Rx()
+    setcoeff!(el, i, fmpq(1))
+    b[ind] = K(el, false)
     ind += 1
   end
   K.basis = b
@@ -234,8 +238,9 @@ end
 function monomial_to_index(K::NfAbsNS, b::Vector{T}) where {T}
   n = ngens(K)
   idx = b[n]
+  d = degrees(K)
   for j in n-1:-1:1
-    idx *= degrees(K)[j]
+    idx *= d[j]
     idx += b[j]
   end
   return Int(idx + 1)
@@ -841,13 +846,16 @@ end
 #
 ################################################################################
 
-function simple_extension(K::NfAbsNS; cached = true, check = true)
+function simple_extension(K::NfAbsNS; cached::Bool = true, check = true, simplified::Bool = false)
+  if simplified
+    return simplified_simple_extension1(K, cached = cached)
+  end
   n = ngens(K)
   g = gens(K)
   if n == 1
     #The extension is already simple
     f = isunivariate(K.pol[1])[2]
-    Ka, a = NumberField(f, "a", cached = false, check = check)
+    Ka, a = NumberField(f, "a", cached = cached, check = check)
     mp = NfAbsToNfAbsNS(Ka, K, g[1], [a])
     return Ka, mp
   end
@@ -867,7 +875,7 @@ function simple_extension(K::NfAbsNS; cached = true, check = true)
     push!(ind, j)
     pe += j * g[i]
   end
-  Ka, a = number_field(f, check = check, cached = false)
+  Ka, a = number_field(f, check = check, cached = cached)
   k = base_ring(K)
   M = zero_matrix(k, degree(K), degree(K))
   z = one(K)

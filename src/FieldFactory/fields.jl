@@ -301,11 +301,13 @@ function _perm_to_gap_grp(perm::Array{Array{Int, 1},1})
     z = _perm_to_gap_perm(x)
     push!(g, z)
   end
-  return GAP.Globals.Group(GAP.julia_to_gap(g))  
+  g1 = GAP.julia_to_gap(g)
+  return GAP.Globals.Group(g1)  
 end
 
 function _perm_to_gap_perm(x::Array{Int, 1})
-  z = GAP.Globals.PermList(GAP.julia_to_gap(x))
+  x1 = GAP.julia_to_gap(x)
+  z = GAP.Globals.PermList(x1)
   return z
 end
 

@@ -973,51 +973,34 @@ function _C22_with_max_ord(l)
   K = NumberField(x-1, cached = false)[1]
   for (p1, p2) in l
     Kns, g = number_field(fmpz_poly[p1, p2], check = false, cached = false)
-    S, mS = simple_extension(Kns, check = false)
+    S, mS = simple_extension(Kns, check = false, cached = false, simplified = true)
+    _compute_preimage(mS)
+    gen1 = mS\(g[1])
+    gen2 = mS\(g[2])
     d1 = discriminant(p1)
     d2 = discriminant(p2)
     cf = gcd(d1, d2)
-    B = Vector{nf_elem}(undef, 4)
-    B[1] = S(1)
-    B[2] = mS\(g[1])
-    B[3] = mS\(g[2])
-    B[4] = B[2] * B[3]
-    M = basis_matrix(B, FakeFmpqMat)
-    hnf_modular_eldiv!(M.num, M.den, :lowerleft)
-    O = NfAbsOrd(S, FakeFmpqMat(M.num, M.den))
-    O.disc = d1^2*d2^2
-    d3 = numerator(discriminant(S))
-    if d3 < 0 
-      O.disc = -O.disc
-    end
-    O.index = divexact(d3, O.disc)
-    if cf != 1
-      fac = factor(cf)
-      for (p, v) in fac
-        O = pmaximal_overorder(O, p)        
+    if isone(cf)
+      B = Vector{nf_elem}(undef, 4)
+      B[1] = S(1)
+      B[2] = mS\(g[1])
+      B[3] = mS\(g[2])
+      B[4] = B[2] * B[3]
+      M = basis_matrix(B, FakeFmpqMat)
+      hnf_modular_eldiv!(M.num, M.den, :lowerleft)
+      O = NfAbsOrd(S, FakeFmpqMat(M.num, M.den))
+      O.disc = d1^2*d2^2
+      d3 = numerator(discriminant(S))
+      if d3 < 0 
+        O.disc = -O.disc
       end
-    end
-    O.ismaximal = 1
-    Hecke._set_maximal_order_of_nf(S, O) 
-    coord1 = __get_term(image_primitive_element(mS).data, UInt[1, 0])
-    coord2 = __get_term(image_primitive_element(mS).data, UInt[0, 1])
-    auts = Vector{NfToNfMor}(undef, 2)
-    if iszero(coeff(p1, 1))
-      auts[1] = hom(S, S, (-coord1)*B[2]+coord2*B[3], check = false)
+      O.index = divexact(d3, O.disc)
+      O.ismaximal = 1
+      Hecke._set_maximal_order_of_nf(S, O) 
     else
-      auts[1] = hom(S, S, 1+(-coord1)*B[2]+coord2*B[3], check = false)
+      maximal_order(S)
     end
-    if iszero(coeff(p2, 1))
-      auts[2] = hom(S, S, coord1*B[2]+(-coord2)*B[3], check = false)
-    else      
-      auts[2] = hom(S, S, coord1*B[2]+1+(-coord2)*B[3], check = false)
-    end
-    cl_auts = Vector{NfToNfMor}(undef, 4)
-    cl_auts[1] = id_hom(S)
-    cl_auts[2] = auts[1]
-    cl_auts[3] = auts[2]
-    cl_auts[4] = auts[1] * auts[2]
-    Hecke._set_automorphisms_nf(S, cl_auts)
+    auts = small_generating_set(automorphisms(S, isabelian = true, copy = false))
     push!(list, (S, auts, NfToNfMor[hom(K, S, S(1), check = false)]))
   end
   return list
@@ -1635,3 +1618,25 @@ function _is_conductor_minQQ(C::Hecke.ClassField, n::Int)
   return true
 
 end 
+
+
+#Returns the cyclic extension of prime degree i with minimal discriminant
+function minimal_prime_cyclic_extension(i::Int)
+  k = 2
+  while !isprime(k*i+1)
+    k +=1
+  end
+  K, a = cyclotomic_field(k*i+1)
+  auts = small_generating_set(automorphisms(K))
+  auts[1] = auts[1]^i
+  g = auts[1]
+  el = g(a)
+  for i = 2:k
+    g *= auts[1]
+    el += g(a)
+  end
+  f = minpoly(el)
+  L = number_field(f, check = false, cached = false)[1]
+  set_special(L, :isabelian => true)
+  return simplify(L, cached = false)[1]
+end
