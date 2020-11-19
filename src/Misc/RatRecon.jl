@@ -133,6 +133,7 @@ function berlekamp_massey_recon(a::Array{T, 1}; ErrorTolerant::Bool = false, par
 
   fl, n, d = rational_reconstruction(f, xn, ErrorTolerant = ErrorTolerant)
   if fl
+    d = reverse(d)
     return true, d*(inv(lead(d)))
   else
     return false, Rx(0)

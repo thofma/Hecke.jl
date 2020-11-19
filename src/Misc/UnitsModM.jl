@@ -359,6 +359,7 @@ function disc_log_mod(a::fmpz, b::fmpz, M::fmpz)
   return g
 end
 
+#TODO: a version that caches the baby-steps between calls
 @doc Markdown.doc"""
     disc_log_bs_gs{T}(a::T, b::T, o::fmpz)
 
@@ -372,7 +373,7 @@ function disc_log_bs_gs(a::T, b::T, o::fmpz) where {T <: RingElem}
   b==1 && return fmpz(0)
   b==a && return fmpz(1)
   @assert parent(a) === parent(b)
-  if o < 100 
+  if o < 100 #TODO: benchmark
     ai = inv(a)
     for g=1:Int(o)
       b *= ai
@@ -381,15 +382,14 @@ function disc_log_bs_gs(a::T, b::T, o::fmpz) where {T <: RingElem}
     throw("disc_log failed")
   end
   r = Int(root(o, 2))
-#  baby = Array{typeof(a), 1}(undef, r)
   baby = Dict{typeof(a), Int}()
-  baby[parent(a)(1)] = (1)
-  baby[a] = 2
+  baby[parent(a)(1)] = (0)
+  baby[a] = 1
   ba = a
-  for i=3:r
+  for i=2:r-1
     ba *= a
     baby[ba] = i
-    ba == b && return fmpz(i-1)
+    ba == b && return fmpz(i)
   end
   giant = ba*a
   @assert giant == a^r
@@ -400,7 +400,7 @@ function disc_log_bs_gs(a::T, b::T, o::fmpz) where {T <: RingElem}
     b *= giant
     g += r
     if haskey(baby, b)
-      return fmpz(baby[b]+g-1)
+      return fmpz(baby[b]+g)
     end
   end
   throw("disc_log failed")
