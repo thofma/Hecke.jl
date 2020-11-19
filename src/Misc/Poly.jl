@@ -922,7 +922,7 @@ function roots(f::gfp_poly, K::FqNmodFiniteField)
   Kx = PolynomialRing(K, cached = false)[1]
   coeffsff = Vector{elem_type(K)}(undef, degree(f)+1)
   for i=0:degree(f)
-    coeffsff[i] = K(lift(coeff(f, i)))
+    coeffsff[i+1] = K(lift(coeff(f, i)))
   end
   ff = Kx(coeffsff)
   return roots(ff)

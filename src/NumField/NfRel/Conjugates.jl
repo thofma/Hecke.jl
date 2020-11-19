@@ -105,27 +105,26 @@ function infinite_places(L::NfRel{T}) where {T}
   if _res !== nothing
     return _res::Vector{InfPlcNfRel{S}}
   end
-
   K = base_field(L)
   data = _conjugates_data(L, 32)
-  plcs = InfPlcNfRel{S}[]
   r, s = signature(L)
+  plcs = Vector{InfPlcNfRel{S}}(undef, r+s)
   r_cnt = 1
   c_cnt = 1
   for (P, rts, r_rts, c_rts) in data
     if isreal(P) 
       for i in 1:length(r_rts)
-        push!(plcs, InfPlcNfRel{S, typeof(L)}(L, P, true, i, rts[i], r_cnt))
+        plcs[r_cnt] = InfPlcNfRel{S, typeof(L)}(L, P, true, i, rts[i], r_cnt)
         r_cnt += 1
       end
       rr = length(r_rts)
       for i in 1:length(c_rts)
-        push!(plcs, InfPlcNfRel{S, typeof(L)}(L, P, false, rr + i, rts[rr + i], r + c_cnt))
+        plcs[r + c_cnt] = InfPlcNfRel{S, typeof(L)}(L, P, false, rr + i, rts[rr + i], r + c_cnt)
         c_cnt +=1 
       end
     else
       for i in 1:length(rts)
-        push!(plcs, InfPlcNfRel{S, typeof(L)}(L, P, false, i, rts[i], r + c_cnt))
+        plcs[r + c_cnt] = InfPlcNfRel{S, typeof(L)}(L, P, false, i, rts[i], r + c_cnt)
         c_cnt += 1
       end
     end

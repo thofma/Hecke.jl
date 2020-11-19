@@ -400,10 +400,6 @@ function (R::Generic.PolyRing{nf_elem})(f::Generic.MPoly)
   return g
 end
 
-function degrees(K::NfRelNS)
-  return Int[total_degree(x) for x in K.pol]
-end
-
 function basis(K::NfRelNS)
   k = base_field(K)
   kxy = parent(K.pol[1])

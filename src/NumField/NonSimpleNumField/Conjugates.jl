@@ -1,23 +1,26 @@
-mutable struct InfPlcNonSimple{S, T, U}
+mutable struct InfPlcNonSimple{S, U}
   field::S
-  components::Vector{T}
   base_field_place::U
+  data::Vector{acb}
   absolute_index::Int
   isreal::Bool
-  data::Dict{Int, Vector{acb}}
+  
 
-  function InfPlcNonSimple{S, T, U}(field::S, components::Vector{T}, base_field_place::U, absolute_index::Int, isreal::Bool) where {S, T, U}
-    z = new{S, T, U}(field, components, base_field_place, absolute_index, isreal, Dict{Int, Vector{acb}}())
+  function InfPlcNonSimple{S, U}(field::S, base_field_place::U, data::Vector{acb}, absolute_index::Int, isreal::Bool) where {S,  U}
+    z = new{S, U}(field, base_field_place, data, absolute_index, isreal)
   end
 end
 
 function place_type(L::NfRelNS{T}) where {T}
-  return InfPlcNonSimple{typeof(L), place_type(_ext_type(T)), place_type(parent_type(T))}
+  return InfPlcNonSimple{typeof(L), place_type(parent_type(T))}
 end
 
 real_places(L::NfRelNS) = [p for p in infinite_places(L) if isreal(p)]
 
 isreal(P::InfPlcNonSimple) = P.isreal
+
+absolute_index(P::InfPlcNonSimple) = P.absolute_index
+absolute_index(P::InfPlc) = P.i
 
 function signature(L::NfRelNS)
   c = get_special(L, :signature)
@@ -43,6 +46,7 @@ function signature(L::NfRelNS)
   return r, s
 end
 
+
 function infinite_places(L::NfRelNS{T}) where {T}
   c = get_special(L, :infinite_places)
   if c !== nothing
@@ -50,29 +54,13 @@ function infinite_places(L::NfRelNS{T}) where {T}
   end
   r, s = signature(L)
   K = base_field(L)
-  S = place_type(parent_type(T))
-  Kx, x = PolynomialRing(K, cached = false)
-  pls = infinite_places(K)
-  data = Tuple{S, Vector{acb}, Vector{arb}, Vector{acb}}[]
-  comps = _ext_type(T)[component(L, j)[1] for j in 1:ngens(L)]
-  _res = []
-  r_cnt = 0
-  s_cnt = r
-  l = 0
+  S = place_type(L)
+  data = _conjugates_data(L, 32)
+  ind = 1
   res = Vector{place_type(L)}(undef, r + s)
-  for p in pls 
-    v = Tuple{Vector{place_type(_ext_type(T))}, Bool}[(collect(w), all(isreal, w)) for w in Iterators.product([infinite_places(comps[j], p) for j in 1:ngens(L)]...)]
-    for (w, _isreal) in v
-      if _isreal
-        r_cnt += 1
-        @assert !isassigned(res, r_cnt)
-        res[r_cnt] = InfPlcNonSimple{typeof(L), place_type(_ext_type(T)), S}(L, w, p, l += 1, _isreal)
-      else
-        s_cnt += 1
-        @assert !isassigned(res, s_cnt)
-        res[s_cnt] = InfPlcNonSimple{typeof(L), place_type(_ext_type(T)), S}(L, w, p, l += 1, _isreal)
-      end
-    end
+  for (p, rts) in data 
+    res[ind] = S(L, p, rts, ind, ind <= r)
+    ind += 1
   end
   set_special(L, :infinite_places => res)
   return res
@@ -85,47 +73,28 @@ function conjugates_arb(a::NfRelNSElem{T}, prec::Int = 32) where {T}
   wprec = prec
   L = parent(a)
   res = Vector{acb}(undef, absolute_degree(L))
-  comp_gens = [gen(component(L, j)[1]) for j in 1:ngens(L)]
   found = false
-
-  have_tmp_variable = false
-
-  local _pt::Vector{acb}
-
+  K = base_field(L)
+  plcK = infinite_places(K)
+  pols = Vector{Generic.MPoly{acb}}(undef, length(plcK))
   r, s = signature(L)
-
-  r_cnt = 1
-  s_cnt = 1
-
-  IP = infinite_places(parent(a))
-  
   while !found
     found = true
-    r_cnt = 1
-    s_cnt = 1
-
-    for p in IP
-      if haskey(p.data, wprec)
-        pt = p.data[wprec]
-      else
-        if !have_tmp_variable
-          _pt = Vector{acb}(undef, ngens(L))
-          have_tmp_variable = true
-        end
-        for i in 1:ngens(L)
-          _pt[i] = evaluate(comp_gens[i], p.components[i], wprec)
-        end
-        p.data[wprec] = deepcopy(_pt)
-        pt = _pt
+    data = _conjugates_data(L, wprec)
+    prec1 = precision(parent(data[1][2][1]))
+    for i = 1:length(data)
+      for j = 1:length(data[i][2])
+        prec1 = max(prec1, precision(parent(data[i][2][j])))
       end
-      prec1 = maximum(x -> precision(parent(x)), pt)
-      prec2 = maximum(x -> precision(parent(evaluate(x, p.base_field_place, wprec))), coeffs(f))
-      prec3 = max(prec1, prec2)
-      
-      CC = AcbField(prec3, cached = false)
-      CCy, y = PolynomialRing(CC, ngens(L), cached = false)
- 
-      fatp = map_coeffs(x -> evaluate(x, p.base_field_place, wprec), f, parent = CCy)
+    end
+    CC = AcbField(prec1, cached = false)
+    CCy, y = PolynomialRing(CC, ngens(L), cached = false)
+    for i = 1:length(plcK)
+      pols[absolute_index(plcK[i])] = map_coeffs(x -> evaluate(x, plcK[i], wprec), f, parent = CCy)
+    end
+    ind = 1
+    for (p, pt) in data
+      fatp = pols[absolute_index(p)]
 
       for c in fatp.coeffs
         c.parent = CC
@@ -141,15 +110,143 @@ function conjugates_arb(a::NfRelNSElem{T}, prec::Int = 32) where {T}
         found = false
         break
       end
-      if isreal(p)
-        res[r_cnt] = o
-        r_cnt += 1
+      if ind <= r
+        res[ind] = o
       else
-        res[r + s_cnt] = o
-        res[r + s + s_cnt] = conj(o)
-        s_cnt += 1
+        res[ind] = o
+        res[ind + s] = conj(o)
+      end
+      ind += 1
+    end
+  end
+  return res
+end
+
+
+################################################################################
+#
+#  Conjugates data
+#
+################################################################################
+
+function _conjugates_data(L::NfRelNS{T}, p::Int) where T
+  cd = get_special(L, :conjugates_data)
+  if cd === nothing
+    D = Dict{Int, Vector{Tuple{place_type(base_field(L)), Vector{acb}}}}()
+    res = __conjugates_data(L, p)
+    D[p] = res
+    set_special(L, :conjugates_data => D)
+    return res
+  end
+  cd::Dict{Int, Vector{Tuple{place_type(base_field(L)), Vector{acb}}}}
+  if haskey(cd, p)
+    res = cd[p]::Vector{Tuple{place_type(base_field(L)), Vector{acb}}}
+    return res
+  end
+  res = __conjugates_data(L, p)
+  cd[p] = res
+  return res
+end
+
+function __conjugates_data(L::NfRelNS{T}, p::Int) where T
+  data = [_conjugates_data(component(L, j)[1], p) for j = 1:ngens(L)]
+  plcs = infinite_places(base_field(L))
+  r, s = signature(L)
+  res = Vector{Tuple{place_type(base_field(L)), Vector{acb}}}(undef, r+s)
+  r_cnt = 0
+  c_cnt = 0
+  for P in plcs
+    datas = [x for y in data for x in y  if x[1] == P]
+    if isreal(P)
+      ind_real, ind_complex = enumerate_conj_prim_rel(datas)
+      for y in ind_real
+        r_cnt += 1
+        res[r_cnt] = (P, acb[datas[j][2][y[j]] for j = 1:length(y)]) 
+      end
+      for y in ind_complex
+        c_cnt += 1
+        res[r + c_cnt] = (P, acb[datas[j][2][y[j]] for j = 1:length(y)]) 
+      end
+    else
+      it = cartesian_product_iterator([1:length(x[2]) for x in datas])
+      for y in it
+        c_cnt += 1
+        res[r + c_cnt] = (P, acb[datas[j][2][y[j]] for j = 1:length(y)]) 
       end
     end
   end
   return res
+end
+
+function enumerate_conj_prim_rel(v::Vector)
+  indices = collect(cartesian_product_iterator([1:length(v[i][2]) for i in 1:length(v)], inplace = false))
+  #I have the indices, now I need to order them.
+  complex_indices = Int[]
+  for i = 1:length(v)
+    if !isreal(v[i][1])
+      push!(complex_indices, 1)
+      continue
+    end
+    indc = length(v[i][3])+1
+    push!(complex_indices, indc)
+  end
+  real_combinations = Int[]
+  for i = 1:length(indices)
+    isreal_plc = true
+    for j = 1:length(indices[i])
+      if indices[i][j] >= complex_indices[j]
+        isreal_plc = false
+        break
+      end
+    end
+    if isreal_plc
+      push!(real_combinations, i)
+    end
+  end
+  res_real = indices[real_combinations]
+  res_complex = typeof(indices)()
+  for i = 1:length(indices)
+    if i in real_combinations
+      continue
+    end
+    s = indices[i]
+    ind_complex = Int[]
+    for t = 1:length(s)
+      if s[t] >= complex_indices[t]
+        push!(ind_complex, t)
+      end
+    end
+    found = false
+    for t = 1:length(res_complex)
+      found = _is_complex_conj_rel(res_complex[t], s, ind_complex, v)
+      if found
+        break
+      end
+    end
+    if found
+      continue
+    end
+    push!(res_complex, indices[i])
+  end
+  return res_real, res_complex
+end
+
+
+function _is_complex_conj_rel(v::Vector{Int}, w::Vector{Int}, pos::Vector, roots::Vector)
+  i = 1
+  for x in v
+    if i in pos
+      if v[i] <= length(roots[i][3])
+        return false
+      end
+      lc = length(roots[i][4])
+      if v[i] != w[i] + lc && v[i] != w[i] - lc
+        return false
+      end
+    elseif v[i] != w[i]
+      return false
+    end
+    i += 1    
+  end
+  return true
 end
