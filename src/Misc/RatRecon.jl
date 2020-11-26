@@ -191,7 +191,7 @@ function rational_reconstruction_subres(g::PolyElem{T}, f::PolyElem{T}, bnd::Int
     if(degree(q_m)==1)
        g = gcd(l_rt[1], l_rt[2])
        if ErrorTolerant
-          if 2*degree(g) + degree(l_rt[1]) + degree(l_rt[2]) >= degree(f)
+          if 2*degree(g) + degree(l_rt[1]) + degree(l_rt[2]) >= degree(f) -1
             return false, l_rt[1], l_rt[2]
           else
             return true, divexact(l_rt[1], g), divexact(l_rt[2], g)
@@ -204,7 +204,7 @@ function rational_reconstruction_subres(g::PolyElem{T}, f::PolyElem{T}, bnd::Int
     else
         g = gcd(r_m, t_m)
         if ErrorTolerant
-           if 2*degree(g) + degree(r_m) + degree(t_m) >= degree(f)
+           if 2*degree(g) + degree(r_m) + degree(t_m) >= degree(f) -1
               return false, r_m, t_m
            else
               return true, divexact(r_m, g), divexact(t_m, g)
@@ -222,7 +222,17 @@ end
 
 function rational_reconstruction_mod(g::fmpq_poly, f::fmpq_poly, bnd::Int = -1; ErrorTolerant ::Bool = false)
   p = next_prime(fmpz(p_start))
-  n, p = _inner_modp_results(g, f, p, bnd, ErrorTolerant)  # mainly used to find the correct
+  local n, p
+  try
+    n, p = _inner_modp_results(g, f, p, bnd, ErrorTolerant)  # mainly used to find the correct
+  catch e
+    if e == ErrorException("Reconstruction probably not possible. illegal inputs")
+      if ErrorTolerant
+        return false, g, f
+      end
+      rethrow(e)
+    end
+  end
                                        # bound n and a starting p 
   kp = 10  
   L =[]
@@ -387,7 +397,6 @@ end
 ################################################################################
 
 function _modpResults(f, p::fmpz, M::Int)
-
    Rc = f.parent
    l1 = gfp_poly[]; l3 = fmpz[]
    Np = listprimes([f], p, M)
@@ -396,6 +405,9 @@ function _modpResults(f, p::fmpz, M::Int)
      RNp = GF(Int(Np[j]), cached=false)
      Rp, t = PolynomialRing(RNp, "t", cached=false)
      fp = Rp(f)
+     if degree(fp) != degree(f)
+       continue #bad prime...
+     end
      L1 = Nemo.gfp_elem[]
      for i in 0:degree(fp)
         push!(L1, coeff(fp, i))
