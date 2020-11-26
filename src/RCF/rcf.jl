@@ -641,6 +641,7 @@ function _rcf_find_kummer(CF::ClassField_pp{S, T}) where {S, T}
   @vprint :ClassField 2 "g = $g\n"
   #@vprint :ClassField 2 "final $n of order $o and e=$e\n"
   a = FacElem(Dict{nf_elem, fmpz}(one(C.Ka) => fmpz(1)))
+  o2 = div(o, 2)
   for i = 1:ngens(N)
     eeee = div(mod(g[i], fmpz(e1)), c)
     if iszero(eeee)
@@ -648,7 +649,6 @@ function _rcf_find_kummer(CF::ClassField_pp{S, T}) where {S, T}
     end
     mul!(a, a, KK.gen[i]^eeee)
   end
-  #a = prod(FacElem{nf_elem, AnticNumberField}[KK.gen[i]^div(mod(g[i], fmpz(e1)), c) for i=1:ngens(N) if !iszero(g[i])])
   #@vprint :ClassField 2 "generator $a\n"
   CF.a = a
   CF.sup_known = true
@@ -1068,7 +1068,6 @@ end
 ###############################################################################
 
 function _rcf_reduce(CF::ClassField_pp)
-  e = degree(CF)
   e = CF.o
   if CF.sup_known
     CF.a = reduce_mod_powers(CF.a, e, CF.sup)

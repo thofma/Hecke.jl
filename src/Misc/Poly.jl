@@ -116,6 +116,11 @@ function rem(f::PolyElem, g::PolyElem)
   return mod(f, g)
 end
 
+function rem!(z::T, f::T, g::T) where T <: PolyElem
+  z = rem(f, g)
+  return z
+end
+
 function ismonic(a::PolyElem)
   return isone(lead(a))
 end
@@ -183,6 +188,18 @@ function resultant(f::fmpz_poly, g::fmpz_poly, d::fmpz, nb::Int)
   ccall((:fmpz_poly_resultant_modular_div, libflint), Nothing,
      (Ref{fmpz}, Ref{fmpz_poly}, Ref{fmpz_poly}, Ref{fmpz}, Int),
      z, f, g, d, nb)
+  return z
+end
+
+function rem!(z::fq_nmod_poly, x::fq_nmod_poly, y::fq_nmod_poly)
+  ccall((:fq_nmod_poly_rem, libflint), Nothing, (Ref{fq_nmod_poly}, Ref{fq_nmod_poly}, Ref{fq_nmod_poly}, Ref{FqNmodFiniteField}),
+       z, x, y, base_ring(parent(x)))
+  return z
+end
+
+function rem!(z::fq_poly, x::fq_poly, y::fq_poly)
+  ccall((fq_poly_rem, libflint), Nothing, (fq_poly, fq_poly, fq_poly, FqPolyRing),
+       z, x, y, parent(x))
   return z
 end
 

@@ -212,9 +212,8 @@ end
 ################################################################################
 
 function Base.show(io::IO, a::NfRel)
-  print(io, "Relative number field over\n")
-  print(io, a.base_ring, "\n")
-  print(io, " with defining polynomial ", a.pol)
+  print(io, "Relative number field over with defining polynomial ", a.pol)
+  print(io, "over \n", a.base_ring)
 end
 
 function AbstractAlgebra.expressify(a::NfRelElem; context = nothing)

@@ -115,7 +115,7 @@ function minpoly(a::FinFieldElem, mp::Nemo.FinFieldMorphism)
   return map_coeffs(preimage_map(mp), pol)
 end
 
-function Nemo.generator_minimum_polynomial(mp::Nemo.FinFieldMorphism{FqFiniteField, FqFiniteField})
+function Nemo.generator_minimal_polynomial(mp::Nemo.FinFieldMorphism{FqFiniteField, FqFiniteField})
   return minpoly(gen(codomain(mp)), mp)
 end
 

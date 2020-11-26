@@ -526,8 +526,6 @@ If the factorisation of $a$ into prime ideals is known, the ideals
 should be passed in.
 """
 function reduce_mod_powers(a::nf_elem, n::Int, primes::Array{NfOrdIdl, 1})
-  # works quite well if a is not too large. There has to be an error
-  # somewhere in the precision stuff...
   @vprint :ClassField 2 "reducing modulo $(n)-th powers\n"
   @vprint :ClassField 3 "starting with $a\n"
   return reduce_mod_powers(FacElem(a), n, primes)
@@ -539,14 +537,18 @@ end
 
 function reduce_mod_powers(a::FacElem{nf_elem, AnticNumberField}, n::Int, decom::Dict{NfOrdIdl, fmpz})
   a1 = RelSaturate._mod_exponents(a, n)
-  c = conjugates_arb_log(a, 64)
-  c1 = conjugates_arb_log(a1, 64)
-  bn = maximum(fmpz[upper_bound(abs(x), fmpz) for x in c])
-  bn1 = maximum(fmpz[upper_bound(abs(x), fmpz) for x in c1])
-  if bn1 < root(bn, 2)
+  if nbits(maximum(values(a.fac))) > 30000
     b = compact_presentation(a1, n)
   else
-    b = compact_presentation(a, n, decom = decom)
+    c = conjugates_arb_log(a, 64)
+    c1 = conjugates_arb_log(a1, 64)
+    bn = maximum(fmpz[upper_bound(abs(x), fmpz) for x in c])
+    bn1 = maximum(fmpz[upper_bound(abs(x), fmpz) for x in c1])
+    if bn1 < root(bn, 2)
+      b = compact_presentation(a1, n)
+    else
+      b = compact_presentation(a, n, decom = decom)
+    end
   end
   if any(!iszero(v % n) for (k, v) = b.fac)
     b1 = prod(nf_elem[k^(v % n) for (k, v) = b.fac if !iszero(v % n)])

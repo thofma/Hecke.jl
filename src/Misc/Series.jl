@@ -95,7 +95,10 @@ function Nemo.integral(f::RelSeriesElem{T}) where T
   v = valuation(f)
   Nemo.set_valuation!(g, v+1)
   for i=0:Nemo.pol_length(f)
-    setcoeff!(g, i, divexact(Nemo.polcoeff(f, i), i+v+1))
+    c = Nemo.polcoeff(f, i)
+    if !iszero(c)
+      setcoeff!(g, i, divexact(c, i+v+1))
+    end
   end
   Nemo.renormalize!(g) 
   return g
