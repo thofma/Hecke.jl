@@ -370,7 +370,7 @@ function image(f::NfOrdToFqMor, x::NfOrdElem)
     ccall((:fq_reduce, libflint), Nothing, (Ref{fq}, Ref{FqFiniteField}), u, F)
     return u
   else
-    return f.header.image(x)
+    return f.header.image(x)::fq
   end
 end
 
@@ -386,10 +386,10 @@ function preimage(f::NfOrdToFqMor, x::fq)
       zz = zz + coeff(x, i)*a^i
     end
 
-    return O(zz, false)
+    return O(zz, false)::NfOrdElem
   else
     @assert isdefined(f.header, :preimage)
-    return f.header.preimage(x)
+    return f.header.preimage(x)::NfOrdElem
   end
 end
 
