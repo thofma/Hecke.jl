@@ -116,7 +116,8 @@ global const maximal_order = MaximalOrder
 function __init__()
 
   show_banner = isinteractive() &&
-                !any(x->x.name in ["Oscar"], keys(Base.package_locks))
+                !any(x->x.name in ["Oscar"], keys(Base.package_locks)) &&
+                get(ENV, "HECKE_PRINT_BANNER", "true") != "false"
 
   if show_banner
     println("")
