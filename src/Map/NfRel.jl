@@ -44,7 +44,7 @@ end
 
 function _automorphisms(L::NfRel{T}) where T
   if degree(L) == 1
-    return NfRelToNfRelMor{T, T}[hom(K, K, one(K))]
+    return morphism_type(L)[id_hom(L)]
   end
   f = L.pol
   Lt, t = PolynomialRing(L, "t", cached = false)

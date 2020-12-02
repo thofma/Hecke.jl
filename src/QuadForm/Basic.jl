@@ -559,7 +559,9 @@ end
 #
 ################################################################################
 
-function restrict_scalars(V::AbsSpace, K::Field = FlintQQ, alpha = one(base_ring(V)))
+# TODO: Use absolute_coordinates 
+function restrict_scalars(V::AbsSpace, K::FlintRationalField,
+                                       alpha = one(base_ring(V)))
   E = base_ring(V)
   n = rank(V)
   d = absolute_degree(E)
@@ -616,6 +618,31 @@ function restrict_scalars(V::AbsSpace, K::Field = FlintQQ, alpha = one(base_ring
 
   return quadratic_space(FlintQQ, G), VabstoV, VtoVabs
 end
+
+################################################################################
+#
+#  Orthogonal sum
+#
+################################################################################
+
+# TODO: Make this a proper coproduct with injections?
+function orthogonal_sum(V::QuadSpace, W::QuadSpace)
+  @req base_ring(V) === base_ring(W) "Base fields must be equal"
+  G = diagonal_matrix(gram_matrix(V), gram_matrix(W))
+  return quadratic_space(base_ring(V), G)
+end
+
+function orthogonal_sum(V::HermSpace, W::HermSpace)
+  @req base_ring(V) === base_ring(W) "Base fields must be equal"
+  G = diagonal_matrix(gram_matrix(V), gram_matrix(W))
+  return hermitian_space(base_ring(V), G)
+end
+
+################################################################################
+#
+#  Some helper functions
+#
+################################################################################
 
 # Careful, starts at 0!
 function absolute_coeff(z::nf_elem, i)

@@ -248,3 +248,43 @@ function islocally_hyperbolic(V::HermSpace, p)
   end
   return islocal_norm(base_ring(V), det(V) * (-1)^(div(rk, 2)), p)
 end
+
+################################################################################
+#
+#  Embeddings
+#
+################################################################################
+
+# Hermitian forms are uniquely determined by their rank and determinant class
+# Thus there is no restriction to embeddings.
+
+@doc Markdown.doc"""
+    islocally_represented_by(U::HermSpace, V::HermSpace, p)
+
+Return whether $U$ is represented by $V$ locally at $\mathfrak p$.
+"""
+function islocally_represented_by(U::HermSpace, V::HermSpace, p)
+  if rank(U) < rank(V)
+    return false
+  elseif rank(U) == rank(V)
+    return isequivalent(U, V, p)
+  else
+    return true
+  end
+end
+
+@doc Markdown.doc"""
+    isrepresented_by(U::HermSpace, V::HermSpace)
+
+Return whether $U$ is represented by $V$, that is, whether $U$ embeds into $V$.
+"""
+function isrepresented_by(U::HermSpace, V::HermSpace)
+  v = rank(V) - rank(U)
+  if v < 0
+    return false
+  elseif v == 0
+    return isequivalent(U, V)
+  else
+    return true
+  end
+end

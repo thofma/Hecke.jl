@@ -716,17 +716,91 @@ function _can_locally_embed(n::Int, da, ha::Int, m::Int, db, hb::Int, p)
     return ha * hilbert_symbol(da * db, da, p) == hb
   elseif de == 2 && islocal_square(-da * db, p)
     # Test if U \perp H \cong V
-    # U has Hasse invariant 1
-    return islocal_square(-da * db, p) && da * hilbert_symbol(da, -1, p) == db
+    # H has Hasse invariant 1
+    return ha * hilbert_symbol(da, -1, p) == hb
   else
     return true
   end
 end
 
-function can_locally_embed(U::QuadSpace, V::QuadSpace, p)
+@doc Markdown.doc"""
+    islocally_represented_by(U::QuadSpace, V::QuadSpace, p)
+
+Return whether $U$ is represented by $V$ locally at $\mathfrak p$.
+"""
+function islocally_represented_by(U::QuadSpace, V::QuadSpace, p)
   n, da, ha = rank(U), det(U), hasse_invariant(U, p)
   m, db, hb = rank(V), det(V), hasse_invariant(V, p)
   return _can_locally_embed(n, da, ha, m, db, hb, p)
+end
+
+@doc Markdown.doc"""
+    isrepresented_by(U::QuadSpace, V::QuadSpace)
+
+Return whether $U$ is represented by $V$, that is, whether $U$ embeds into $V$.
+"""
+function isrepresented_by(U::QuadSpace, V::QuadSpace)
+  v = rank(V) - rank(U)
+  if v < 0
+    return false
+  end
+
+  if v == 0
+    return isequivalent(U, V)
+  end
+
+  K = base_ring(U)
+
+  rlp = real_places(K)
+
+  dU = diagonal(U)
+  dV = diagonal(V)
+
+  rkU = rank(U)
+  rkV = rank(V)
+
+  negU = Int[ count(x -> isnegative(x, P), dU) for P in rlp ]
+  signU = Tuple{Int, Int}[ (i, rkU - i) for i in negU]
+
+  negV = Int[ count(x -> isnegative(x, P), dV) for P in rlp ]
+  signV = Tuple{Int, Int}[ (i, rkV - i) for i in negV]
+
+  for i in 1:length(rlp)
+    if signU[i][1] > signV[i][1] || signU[i][2] > signV[i][2]
+      return false
+    end
+  end
+
+  OK = maximal_order(K)
+
+  ds = elem_type(OK)[]
+
+  for d in dU
+    push!(ds, OK(numerator(d)))
+    push!(ds, OK(denominator(d)))
+  end
+
+  for d in dV
+    push!(ds, OK(numerator(d)))
+    push!(ds, OK(denominator(d)))
+  end
+
+  push!(ds, OK(2))
+
+  lp = coprime_base(ds)
+
+  # lp is a list of coprime integral ideals, such that elements in ds factor
+  # over lp. But these ideals are not necessarily prime.
+
+  for a in lp
+    for p in support(a)
+      if !islocally_represented_by(U, V, p)
+        return false
+      end
+    end
+  end
+
+  return true
 end
 
 ################################################################################

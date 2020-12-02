@@ -1,8 +1,10 @@
-mutable struct CartesianProductIt{T}
+mutable struct CartesianProductIt{T, U}
   ranges::Vector{T}
   inplace::Bool
-  function CartesianProductIt{T}() where T
-    return new{T}()
+  value::Vector{U}
+
+  function CartesianProductIt{T, U}() where {T, U}
+    return new{T, U}()
   end
 end
 
@@ -12,38 +14,60 @@ function cartesian_product_iterator(x::T, n::Int; inplace::Bool = true) where T
 end
 
 function cartesian_product_iterator(v::Vector{T}; inplace::Bool = true) where T
-  it = CartesianProductIt{T}()
+  it = CartesianProductIt{T, eltype(T)}()
   it.ranges = v
   it.inplace = inplace
+  it.value = Vector{eltype(T)}(undef, length(v))
   return it
 end
 
-function Base.iterate(F::CartesianProductIt{T}) where T
+function Base.iterate(F::CartesianProductIt{T, U}) where {T, U}
   r = length(F.ranges)
-  st = Vector{eltype(T)}(undef, r)
-  for i = 1:r
-    st[i] = first(F.ranges[i])
+  if r == 0
+    return nothing
   end
-  return st, st
+  a, b = iterate(F.ranges[1])
+  st = Vector{typeof(b)}(undef, r)
+  st[1] = b
+  F.value[1] = a
+  for i = 2:r
+    a, b = iterate(F.ranges[i])
+    st[i] = b
+    F.value[i] = a
+  end
+
+  if !F.inplace
+    ret = deepcopy(F.value)
+  else
+    ret = F.value
+  end
+
+  return ret, st
 end
 
-function Base.iterate(F::CartesianProductIt, st1::Vector{Int})
+function Base.iterate(F::CartesianProductIt, st::Vector{S}) where {S}
   i = 1
-  if !F.inplace
-    st = copy(st1)
-  else
-    st = st1
-  end
   r = length(F.ranges) + 1
   while i != r
     it = iterate(F.ranges[i], st[i])
     if it === nothing
-      st[i] = first(F.ranges[i])
+      a, b = iterate(F.ranges[i])
+      F.value[i] = a
+      st[i] = b
+      #st[i] = first(F.ranges[i])
       i += 1
       continue
     end
-    st[i] = it[1]
-    return st, st
+    F.value[i] = it[1]
+    st[i] = it[2]
+
+    if !F.inplace
+      ret = deepcopy(F.value)
+    else
+      ret = F.value
+    end
+
+    return ret, st
   end
   return nothing
 end
@@ -78,11 +102,3 @@ function Base.getindex(F::CartesianProductIt, coordinates::Vector{Int})
   @assert length(coordinates) == length(F.ranges)
   return Int[F.ranges[i][coordinates[i]] for i = 1:length(F.ranges)]
 end
-
-
-
-
-
-
-
-

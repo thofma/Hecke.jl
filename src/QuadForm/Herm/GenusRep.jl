@@ -1,3 +1,46 @@
+function orthogonal_sum(G1::LocalGenusHerm, G2::LocalGenusHerm)
+  @req prime(G1) === prime(G2) "Local genera must have the same prime ideal"
+  if !G1.isdyadic || !G2.isramified
+    return _direct_sum_easy(G1, G2)
+  else
+    L1 = representative(G1)
+    L2 = representative(G2)
+    L3 = orthogonal_sum(L1, L2)
+    return genus(L3, prime(G1))
+  end
+end
+
+function _direct_sum_easy(G1::LocalGenusHerm, G2::LocalGenusHerm)
+  # We do a merge sort
+  i1 = 1
+  i2 = 1
+  z = Tuple{Int, Int, Int}[]
+  while i1 <= length(G1) && i2 <= length(G2)
+    if scale(G1, i1) < scale(G2, i2)
+      push!(z, G1.data[i1])
+      i1 += 1
+    elseif scale(G2, i2) < scale(G1, i1)
+      push!(z, G2.data[i2])
+      i2 += 1
+    else
+      @assert scale(G1, i1) == scale(G2, i2)
+      push!(z, (scale(G1, i1), rank(G1, i1) + rank(G2, i2), det(G1, i1) * det(G2, i2)))
+      i1 += 1
+      i2 += 1
+    end
+  end
+
+  if i1 <= length(G1)
+    append!(z, G1.data[i1:length(G1)])
+  end
+
+  if i2 <= length(G2)
+    append!(z, G2.data[i2:length(G2)])
+  end
+
+  return genus(HermLat, base_field(G1), prime(G1), z)
+end
+
 # Genus representatives for quadratic lattices,
 #
 # With permission ported from Magma package of Markus Kirschmer:
@@ -95,7 +138,7 @@ function _neighbours(L, P, result, max, callback = stdcallback, use_auto = true)
     elseif lp[2][1] == P
       C = lp[1][1]
     else
-      throw(error("This should not happen."))
+      error("This should not happen.")
     end
   end
   k, h = ResidueField(R, C)

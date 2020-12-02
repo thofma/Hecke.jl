@@ -1,6 +1,6 @@
 export genus, representative, rank, det, uniformizer, det_representative,
        gram_matrix, representative, genus, genera_hermitian,
-       local_genera_hermitian, rank
+       local_genera_hermitian, rank, orthogonal_sum
 
 ################################################################################
 #
@@ -26,6 +26,8 @@ mutable struct LocalGenusHerm{S, T}
   end
 end
 
+local_genus_herm_type(E) = LocalGenusHerm{typeof(E), ideal_type(order_type(base_field(E)))}
+
 ################################################################################
 #
 #  I/O
@@ -40,8 +42,12 @@ function Base.show(io::IO, ::MIME"text/plain", G::LocalGenusHerm)
     else
       print(io, "Local genus symbol (scale, rank, det) at ")
     end
-    print(IOContext(io, :compact => true), prime(G), ":")
-    print(io, "\n")
+    if length(G) > 0
+      print(IOContext(io, :compact => true), prime(G), ":")
+      print(io, "\n")
+    else
+      print(IOContext(io, :compact => true), prime(G), " of rank zero")
+    end
   end
   if isdyadic(G) && isramified(G)
     for i in 1:length(G)
@@ -114,7 +120,7 @@ rank(G::LocalGenusHerm, i::Int) = G.data[i][2]
 Given a genus symbol $G$, return the rank of a lattice in $G$.
 """
 function rank(G::LocalGenusHerm)
-  return sum(rank(G, i) for i in 1:length(G))
+  return reduce(+, (rank(G, i) for i in 1:length(G)), init = Int(0))
 end
 
 @doc Markdown.doc"""
@@ -184,7 +190,7 @@ Given a genus symbol $G$, return the determinant of a lattice in $G$. This will 
 `1` or `-1` depending on whether the determinant is a local norm or not.
 """
 function det(G::LocalGenusHerm)
-  return prod(det(G, i) for i in 1:length(G))
+  return reduce(*, (det(G, i) for i in 1:length(G)), init = Int(1))
 end
 
 @doc Markdown.doc"""
@@ -205,13 +211,13 @@ block of $G$.
 """
 norm(G::LocalGenusHerm, i::Int) = begin @assert isdyadic(G); G.norm_val[i] end # this only works if it is dyadic
 
-@doc Markdown.doc"""
-    norms(G::LocalGenusHerm) -> Vector{Int}
-
-Given a dyadic genus symbol for Hermitian lattices over $E/K$ at a prime
-$\mathfrak p$, return the $\mathfrak p$-valuations of the norms of the Jordan
-blocks of $G$.
-"""
+#@doc Markdown.doc"""
+#    norms(G::LocalGenusHerm) -> Vector{Int}
+#
+#Given a dyadic genus symbol for Hermitian lattices over $E/K$ at a prime
+#$\mathfrak p$, return the $\mathfrak p$-valuations of the norms of the Jordan
+#blocks of $G$.
+#"""
 
 @doc Markdown.doc"""
     isramified(G::LocalGenusHerm) -> Bool
@@ -384,28 +390,28 @@ function gram_matrix(G::LocalGenusHerm, l::Int)
   @assert length(lQ) == 1 && lQ[1][2] == 2
   Q = lQ[1][1]
   pi = elem_in_nf(p_uniformizer(Q))
-  H = matrix(E, 2, 2, [0, pi^i, conj(pi)^i, 0])
+  H = matrix(E, 2, 2, elem_type(E)[zero(E), pi^i, conj(pi)^i, zero(E)])
 
   if !isdyadic(G)
     # non-dyadic
     if iseven(i)
       # According to Kir16, there the last exponent should be i/2 * (1 - m)
       if d == 1
-        u = one(E)
+        u = one(K)
       else
         u = _non_norm_rep(G)
       end
       if m == 1
         fl = islocal_norm(E, p^div(i, 2), prime(G))
         if d == -1
-          return diagonal_matrix([(fl ? _non_norm_rep(G) : one(E)) * E(p)^div(i, 2)])
+          return diagonal_matrix([(fl ? _non_norm_rep(G) : one(K)) * E(p)^div(i, 2)])
         else
-          return diagonal_matrix([(!fl ? _non_norm_rep(G) : one(E)) * E(p)^div(i, 2)])
+          return diagonal_matrix([(!fl ? _non_norm_rep(G) : one(K)) * E(p)^div(i, 2)])
         end
       end
-      return diagonal_matrix(push!([E(p)^div(i, 2) for j in 1:(m - 1)], u * E(p)^(div(i, 2) * (m - 1))))
+      return diagonal_matrix(push!(elem_type(E)[E(p)^div(i, 2) for j in 1:(m - 1)], u * E(p)^(div(i, 2) * (m - 1))))
     else
-      return diagonal_matrix([H for j in 1:div(m, 2)])
+      return diagonal_matrix(dense_matrix_type(E)[H for j in 1:div(m, 2)])
     end
   end
 
@@ -499,6 +505,15 @@ If the optional `type` keyword is set to `:disc`, then `d` is interpreted as the
 norm class of the discriminant of the corresponding Jordan block.
 """
 genus(::Type{HermLat}, E, p, data; type)
+
+# rank zero genus
+function genus(::Type{HermLat}, E::S, p::T) where {S, T}
+  if isramified(maximal_order(E), p) && isdyadic(p)
+    return genus(HermLat, E, p, Vector{Tuple{Int, Int, Int, Int}}())
+  else
+    return genus(HermLat, E, p, Vector{Tuple{Int, Int, Int}}())
+  end
+end
 
 function genus(::Type{HermLat}, E::S, p::T, data::Vector{Tuple{Int, Int, Int}}; type = :det) where {S <: NumField, T}
   z = LocalGenusHerm{S, T}()
@@ -792,24 +807,27 @@ end
 #
 ################################################################################
 
-mutable struct GenusHerm
-  E
-  primes::Vector
-  LGS::Vector
+mutable struct GenusHerm{S, T, U, V}
+  E::S
+  primes::Vector{T}
+  LGS::Vector{U}
   rank::Int
-  signatures
+  signatures::V
 
-  function GenusHerm(E, r, LGS::Vector, signatures)
-    primes = Vector(undef, length(LGS))
+  function GenusHerm(E::S, r, LGS::Vector{U}, signatures::V) where {S, U, V}
+    K = base_field(E)
+    primes = Vector{ideal_type(order_type(K))}(undef, length(LGS))
 
     for i in 1:length(LGS)
       primes[i] = prime(LGS[i])
       @assert r == rank(LGS[i])
     end
-    z = new(E, primes, LGS, r, signatures)
+    z = new{S, eltype(primes), U, V}(E, primes, LGS, r, signatures)
     return z
   end
 end
+
+genus_herm_type(E) = GenusHerm{typeof(E), ideal_type(order_type(base_field(E))), local_genus_herm_type(E), Dict{InfPlc, Int}}
 
 @doc Markdown.doc"""
     ==(G1::GenusHerm, G2::GenusHerm)
@@ -880,6 +898,48 @@ end
 
 ################################################################################
 #
+#  Sum of genera
+#
+################################################################################
+
+function orthogonal_sum(G1::GenusHerm, G2::GenusHerm)
+  @req G1.E === G2.E "Genera must have same base field"
+  E = G1.E
+  LGS = local_genus_herm_type(G1.E)[]
+  prim = eltype(primes(G1))[]
+  P1 = Set(primes(G1))
+  P2 = Set(primes(G2))
+  for p in union(P1, P2)
+    if p in P1
+      i = findfirst(g -> prime(g) == p, G1.LGS)
+      g1 = G1.LGS[i]
+    else
+      @assert !isramified(maximal_order(E), p)
+      g1 = genus(HermLat, p, [(0, rank(G1), 1)])
+    end
+
+    if p in P2
+      i = findfirst(g -> prime(g) == p, G2.LGS)
+      g2 = G2.LGS[i]
+    else
+      @assert !isramified(maximal_order(E), p)
+      g2 = genus(HermLat, p, [(0, rank(G2), 1)])
+    end
+
+    g3 = orthogonal_sum(g1, g2)
+    push!(prim, p)
+    push!(LGS, g3)
+  end
+  sig1 = G1.signatures
+  sig2 = G2.signatures
+  g3 = merge(+, sig1, sig2)
+  return genus(LGS, g3)
+end
+
+Base.:(+)(G1::GenusHerm, G2::GenusHerm) = orthogonal_sum(G1, G2)
+
+################################################################################
+#
 #  Test if lattice is contained in genus
 #
 ################################################################################
@@ -928,7 +988,7 @@ end
 Given a set of local genera and signatures, return the corresponding global
 genus.
 """
-function genus(L::Vector, signatures::Dict{InfPlc, Int})
+function genus(L::Vector{<:LocalGenusHerm}, signatures::Dict{InfPlc, Int})
   @assert !isempty(L)
   @assert all(N >= 0 for (_, N) in signatures)
   if !_check_global_genus(L, signatures)
@@ -949,6 +1009,18 @@ end
 Given a Hermitian lattice, return the genus it belongs to.
 """
 function genus(L::HermLat)
+  c = get_special(L, :genus)
+  S = ideal_type(base_ring(base_ring(L)))
+  if c === nothing
+    G = _genus(L)
+    set_special(L, :genus => G)
+    return G
+  else
+    return c::genus_herm_type(base_field(L))
+  end
+end
+
+function _genus(L::HermLat)
   bad = bad_primes(L)
   for p in support(discriminant(base_ring(L)))
     if !(p in bad)
@@ -1011,8 +1083,8 @@ end
 #
 ################################################################################
 
-function _non_norm_primes(LGS::Vector)
-  z = []
+function _non_norm_primes(LGS::Vector{LocalGenusHerm{S, T}}) where {S, T}
+  z = T[]
   for g in LGS
     p = prime(g)
     d = det(g)
@@ -1217,7 +1289,7 @@ function local_genera_hermitian(E, p, rank::Int, det_val::Int, max_scale::Int, i
         end
       end
 
-      for d in Iterators.product(dets...)
+      for d in cartesian_product_iterator(dets)# Iterators.product(dets...)
         g2 = Vector{Tuple{Int, Int, Int, Int}}(undef, length(g))
         for k in 1:n
           # Again the 0 for dummy purposes
@@ -1272,10 +1344,11 @@ function local_genera_hermitian(E, p, rank::Int, det_val::Int, max_scale::Int, i
         #push!(det_norms, dn)
       end
     end
-    for dn in Iterators.product(det_norms...)
+
+    for dn in cartesian_product_iterator(det_norms)
       g2 = Vector{Tuple{Int, Int, Int, Int}}(undef, length(g))
       for k in 1:n
-        g2[k] = (g[k]..., dn[k]...)
+        g2[k] = (g[k][1], g[k][2], dn[k][1], dn[k][2])
       end
       h = genus(HermLat, E, p, g2)
       if !(h in symbols)
@@ -1309,7 +1382,7 @@ function genera_hermitian(E, rank, signatures, determinant; max_scale = nothing)
     end
   end
 
-  local_symbols = Vector{LocalGenusHerm{typeof(E), typeof(primes[1])}}[]
+  local_symbols = Vector{local_genus_herm_type(E)}[]
 
   ms = norm(_max_scale)
   ds = norm(determinant)
@@ -1323,10 +1396,10 @@ function genera_hermitian(E, rank, signatures, determinant; max_scale = nothing)
     push!(local_symbols, local_genera_hermitian(E, p, rank, det_val, mscale_val))
   end
 
-  res = []
-  it = Iterators.product(local_symbols...)
+  res = genus_herm_type(E)[]
+  it = cartesian_product_iterator(local_symbols, inplace = true)
   for gs in it
-    c = collect(gs)
+    c = copy(gs)
     b = _check_global_genus(c, signatures)
     if b
       push!(res, GenusHerm(E, rank, c, signatures))
@@ -1422,7 +1495,7 @@ function genus_generators(L::HermLat)
   end
 
   # First the ideals coming from the C/C0 quotient
-  Eabs, EabstoE, _ = absolute_field(E)
+  Eabs, EabstoE, _ = absolute_field(ambient_space(L))
   Rabs = maximal_order(Eabs)
   C, h = class_group(Rabs)
   RR = base_ring(R)
@@ -1478,7 +1551,7 @@ function genus_generators(L::HermLat)
             push!(z, F(1))
           end
         end
-        push!(S, V(z))
+        push!(S, V(z)::elem_type(V))
       end
       #S = [ V(elem_type(F)[valuation(R(EabstoE(evaluate(f(k(u)))) - 1), PP[i]) >= VD[i] ? F(0) : F(1) for i in 1:length(PP)]) for u in gens(K)]
       _T, _ = sub(V, S)

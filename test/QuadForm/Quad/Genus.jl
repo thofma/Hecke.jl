@@ -32,6 +32,51 @@
   @test length(Hecke.genera_quadratic(K, rank = 2, signatures = sig, det = 5 * 7 * 8 * 9 * OK)) == 36
   @test length(Hecke.genera_quadratic(K, rank = 2, signatures = sig, det = 2^5 * OK)) == 5
   @test length(Hecke.genera_quadratic(K, rank = 2, signatures = sig, det = 11 * 13^2 * OK)) == 6
+
+
+  G = Hecke.local_genera_quadratic(K, p2, rank = 2, det_val = 4)
+  for i in 1:10
+    G1 = rand(G)
+    G2 = rand(G)
+    L1 = representative(G1)
+    L2 = representative(G2)
+    G3 = @inferred orthogonal_sum(G1, G2)
+    L3 = orthogonal_sum(L1, L2)
+    @test G3 == genus(L3, p2)
+  end
+
+  G = Hecke.local_genera_quadratic(K, p3, rank = 5, det_val = 5)
+  for i in 1:10
+    G1 = rand(G)
+    G2 = rand(G)
+    L1 = representative(G1)
+    L2 = representative(G2)
+    G3 = @inferred orthogonal_sum(G1, G2)
+    L3 = orthogonal_sum(L1, L2)
+    @test G3 == genus(L3, p3)
+  end
+
+  G = Hecke.local_genera_quadratic(K, p5, rank = 2, det_val = 1)
+  for i in 1:10
+    G1 = rand(G)
+    G2 = rand(G)
+    L1 = representative(G1)
+    L2 = representative(G2)
+    G3 = @inferred orthogonal_sum(G1, G2)
+    L3 = orthogonal_sum(L1, L2)
+    @test G3 == genus(L3, p5)
+  end
+
+  G = Hecke.genera_quadratic(K, rank = 3, signatures = sig, det = 2 * 9 * OK)
+  for i in 1:10
+    G1 = rand(G)
+    G2 = rand(G)
+    L1 = representative(G1)
+    L2 = representative(G2)
+    G3 = @inferred orthogonal_sum(G1, G2)
+    L3 = orthogonal_sum(L1, L2)
+    @test L3 in G3
+  end
 end
 
 
