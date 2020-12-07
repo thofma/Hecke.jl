@@ -307,6 +307,8 @@ function _cyclotomic_extension_non_simple(k::AnticNumberField, n::Int; cached::B
 
   Zx = PolynomialRing(FlintZZ, "x")[1]
   prim_elems = elem_type(OS)[x for x in basis(OS) if _isprobably_primitive(x)]
+  local poly::fmpz_poly
+  local poly2::fmpz_poly
   if !isempty(prim_elems)
     #Now, I need to compare the elements and understand which is better.
     a = prim_elems[1]
