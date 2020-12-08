@@ -646,6 +646,28 @@ function _parse(::Type{Tuple{Int, Int}}, io, start = Base.read(io, UInt8))
   return b, (x1, x2)
 end
 
+function _parse(::Type{Tuple{S, T}}, io, start = Base.read(io, UInt8)) where {S, T}
+  w = UInt8(' ')
+  b = start
+  while !eof(io) && b == w
+    b = Base.read(io, UInt8)
+  end
+  @assert b == UInt8('(')
+  b, x1 = _parse(S, io)
+  while !eof(io) && b == UInt8(' ')
+    b = Base.read(io, UInt8)
+  end
+  @assert b == UInt8(',')
+  b, x2 = _parse(T, io)
+  @assert b == UInt8(')')
+  if eof(io)
+    return UInt8(255), (x1, x2)
+  else
+    b = Base.read(io, UInt8)
+  end
+  return b, (x1, x2)
+end
+
 function perm_from_string(s)
   c, p = AbstractAlgebra.Generic.parse_cycles(s)
   if length(c) == 0
