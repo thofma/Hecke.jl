@@ -77,3 +77,60 @@ function toMagma(s::String, A::SMat)
   close(f)
 end
 
+################################################################################
+# MPoly -> magma file
+# use as read(...)
+################################################################################
+function toMagma(io::IOStream, R::AbstractAlgebra.MPolyRing; base_name::String = "S", name::String = "R")
+  print(io, "$name<")
+  S = symbols(R)
+  for i = 1:length(S)-1
+    print(io, "$(S[i]),")
+  end
+  print(io, "$(S[end])> := PolynomialRing($base_name, $(length(S)));\n")
+end
+
+function toMagma(p::String, R::AbstractAlgebra.MPolyRing; base_name::String = "S", name::String = "R", make::String = "w")
+  f = open(p, mode)
+  Hecke.toMagma(f, R, base_name = base_name, name = name)
+  close(f)
+end
+
+function toMagma(io::IOStream, f::Generic.MPolyElem)
+  S = symbols(parent(f))
+  for i=1:length(f)
+    if i>1
+      print(io, "+")
+    end
+    s = "$(coeff(f, i))"
+    s = replace(s, "//" => "/")
+    print(io, "($s)")
+    e = exponent_vector(f, i)
+    if iszero(e)
+      continue
+    end
+    print(io, "*")
+    fi = true
+    for j=1:length(S)
+      if e[j] > 0
+        if !fi
+          print(io, "*")
+        else
+          fi = false
+        end
+        print(io, "$(S[j])^$(e[j])")
+      end
+    end
+  end
+end
+
+function toMagma(io::IOStream, k::AnticNumberField; name::String = "S", gen_name::String="_a")
+  print(io, "$name<$gen_name> := NumberField($(k.pol));\n")
+end
+
+function toMagma(io::IOStream, s::Symbol, v::Any)
+  print(io, "$s := ")
+  Hecke.toMagma(io, v)
+  print(io, ";\n")
+end
+
