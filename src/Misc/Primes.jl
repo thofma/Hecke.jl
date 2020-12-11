@@ -117,7 +117,7 @@ struct PrimesSet{T}
       p = next_prime(p, false)
     end
     mod = abs(mod)
-    val = abs(val)
+    val = abs(val % mod)
     if mod == 1 && val == 0
       return new{T}(f, t, false, false, mod, val, sv)
     end
