@@ -9,7 +9,7 @@
 # W. PLESKEN, B. SOUVIGNIER, Computing Isometries of Lattices,
 # Journal of Symbolic Computation, Volume 24, Issues 3-4, September 1997,
 # Pages 327-334, ISSN 0747-7171, 10.1006/jsco.1996.0130.
-# (http://www.sciencedirect.com/science/article/pii/S0747717196901303)
+# (https://www.sciencedirect.com/science/article/pii/S0747717196901303)
 
 mutable struct SCPComb
 	rank::Int

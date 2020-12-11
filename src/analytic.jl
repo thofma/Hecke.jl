@@ -2,7 +2,7 @@ import Base: ceil, log, -, <, <=, vcat, sum, ^, &, +, /
 
 export dickman_rho, bach_rho, bach_G, bach_F, logarithmic_integral, exponential_integral, li, ei
 
-#= source: http://cr.yp.to/bib/1996/bach-semismooth.pdf
+#= source: https://cr.yp.to/bib/1996/bach-semismooth.pdf
 
   idea is that
   n = prod n_i
