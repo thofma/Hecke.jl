@@ -532,18 +532,27 @@ function ^(a::AbsAlgAssElem, b::fmpz)
   if fits(Int, b)
     return a^Int(b)
   end
+
+  if iszero(b)
+    return one(parent(a))
+  end
+
+  if isone(b)
+    return deepcopy(a)
+  end
+
   if b < 0
     a = inv(a)
     b = -b
-  elseif b == 0
-    return one(parent(a))
-  elseif b == 1
-    return deepcopy(a)
-  elseif mod(b, 2) == 0
+  end
+
+  if mod(b, 2) == 0
     c = a^(div(b, 2))
     return c*c
   elseif mod(b, 2) == 1
     return a^(b - 1)*a
+  else
+    error("This should not happen")
   end
 end
 

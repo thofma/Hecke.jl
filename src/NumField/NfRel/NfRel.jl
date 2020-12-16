@@ -725,7 +725,7 @@ end
 
 function _poly_norm_to(f, k::T) where {T}
   if base_ring(f) isa T
-    @assert base_ring(f) == k
+    @assert (base_ring(f) isa FlintRationalField && k isa FlintRationalField) || base_ring(f) == k
     return f
   else
     return _poly_norm_to(norm(f), k)
@@ -770,23 +770,46 @@ function absolute_charpoly(a::NfRelElem)
   return charpoly(a, FlintQQ)
 end
 
-function minpoly(a::NfRelElem, k::Union{NfRel, AnticNumberField, FlintRationalField})
+################################################################################
+#
+#  Absolute minimal polynomials
+#
+################################################################################
 
-  if parent(a) == k
-    R, y  = PolynomialRing(k, cached = false)
-    return y - a
-  end
-
-  f = minpoly(a)
-  while base_ring(f) != k && !(base_ring(f) isa FlintRationalField && k isa FlintRationalField)
-    f = norm(f)
-    g = gcd(f, derivative(f))
-    if !isone(g)
-      f = divexact(f, g)
+function _poly_norm_to_and_squarefree(f, k::T) where {T}
+  if base_ring(f) isa T
+    @assert (base_ring(f) isa FlintRationalField && k isa FlintRationalField) || base_ring(f) == k
+    return f
+  else
+    g = norm(f)
+    h = gcd(g, derivative(g))
+    if !isone(h)
+      g = divexact(g, h)
     end
+    return _poly_norm_to_and_squarefree(g, k)
   end
-  return f
 end
+
+function minpoly(a::NfRelElem, k::Union{NfRel, AnticNumberField, FlintRationalField})
+  f = minpoly(a)
+  return _poly_norm_to_and_squarefree(f, k)
+end
+
+#  if parent(a) == k
+#    R, y  = PolynomialRing(k, cached = false)
+#    return y - a
+#  end
+#
+#  f = minpoly(a)
+#  while base_ring(f) != k && !(base_ring(f) isa FlintRationalField && k isa FlintRationalField)
+#    f = norm(f)
+#    g = gcd(f, derivative(f))
+#    if !isone(g)
+#      f = divexact(f, g)
+#    end
+#  end
+#  return f
+#end
 
 function absolute_minpoly(a::NfRelElem)
   return minpoly(a, FlintQQ)

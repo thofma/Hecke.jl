@@ -1,8 +1,6 @@
 import Nemo.crt, Nemo.zero, Nemo.iszero, Nemo.isone, Nemo.sub!
 export crt_env, crt, crt_inv, modular_init, crt_signed
 
-isone(a::Int) = (a==1)
-
 function zero(a::PolyElem)
   return zero(parent(a))
 end

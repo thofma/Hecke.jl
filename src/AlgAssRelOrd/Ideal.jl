@@ -1370,10 +1370,10 @@ function maximal_integral_ideal_containing(I::AlgAssRelOrdIdl, p::Union{ NfAbsOr
   end
 
   OP, toOP = quo(O, P, p)
-  B, OPtoB, BtoOP = _as_algebra_over_center(OP)
+  B, BtoOP = _as_algebra_over_center(OP)
   C, toC = _as_matrix_algebra(B)
 
-  JinC = ideal_from_gens(C, [ toC(OPtoB(toOP(O(b)))) for b in absolute_basis(J) ])
+  JinC = ideal_from_gens(C, elem_type(C)[ toC(BtoOP\(toOP(O(b)))) for b in absolute_basis(J) ])
   y = left_principal_generator(JinC)
   m = matrix(y)
   r = rref!(m)

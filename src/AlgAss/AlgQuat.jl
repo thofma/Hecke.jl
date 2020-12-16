@@ -71,6 +71,10 @@ dimension_of_center(A::AlgQuat) = 1
 
 (A::AlgQuat{T})(a::fmpq) where {T} = A(map(base_ring(A), [a, 0, 0, 0]))
 
+order_type(::AlgQuat{T}) where { T <: NumFieldElem} = order_type(AlgQuat{T})
+
+order_type(::Type{AlgQuat{T}}) where {T <: NumFieldElem} = AlgAssRelOrd{T, fractional_ideal_type(order_type(parent_type(T))), AlgQuat{T}}
+
 ################################################################################
 #
 #  Conjugation

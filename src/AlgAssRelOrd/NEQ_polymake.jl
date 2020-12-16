@@ -98,7 +98,7 @@ function solve_mixed(A::fmpz_mat, b::fmpz_mat, C::fmpz_mat)  # Ax == b && Cx >= 
   inner = p.INTERIOR_LATTICE_POINTS
   out = p.BOUNDARY_LATTICE_POINTS
 
-  res = zero_matrix(FlintZZ, nrows(inner) + nrows(out), ncols(A))
+  res = zero_matrix(FlintZZ, (nrows(inner) + nrows(out))::Int, ncols(A)::Int)
   for i=1:nrows(out)
     if out[i,1] != 1
       println("unbounded polytope!!")

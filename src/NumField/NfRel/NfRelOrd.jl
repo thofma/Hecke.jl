@@ -386,7 +386,15 @@ end
 function absolute_discriminant(O::NfRelOrd{T, S}) where {T, S}
   d = norm(discriminant(O))
   d1 = absolute_discriminant(base_ring(O))
-  return d1^(degree(O))*d
+  di = abs(d1^(degree(O))*d)
+
+  # Compute the sign using Brill's theorem
+  _, s = signature(nf(O))
+  if mod(s, 2) == 0
+    return di
+  else
+    return -di
+  end
 end
 
 function absolute_discriminant(O::NfAbsOrd)

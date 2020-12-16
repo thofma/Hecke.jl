@@ -60,6 +60,8 @@ function _norm_equation_relative(NC::NormCache, order_num::Int; max_num_fields::
 
     good_primes = __neq_find_good_primes(NC, OL)
 
+    local vals2::Vector{Int}
+
     if !isempty(good_primes)
       if degree(L) != n
         n2 = degree(L)//n
@@ -71,12 +73,12 @@ function _norm_equation_relative(NC::NormCache, order_num::Int; max_num_fields::
       remaining_primes = Set{Int}()
       # First search for solutions for single primes
       for p in good_primes
-        sols = __neq_sunit(ktoK, [ primes[p] ], [ vals2[p] ])
+        sols = __neq_sunit(ktoK, eltype(primes)[ primes[p] ], Int[ vals2[p] ])
         if !isempty(sols)
           # We better evaluate s here: Some factors may not be integral which can
           # become a problem since the multiplication in A is non-commutative.
           # Also, multiplications and computing inverses in K are cheap.
-          add_partial_solutions!(NC, order_num, Set(p), [ NC.fac_elem_mon(LtoA(KtoL(evaluate(s)))) for s in sols ])
+          add_partial_solutions!(NC, order_num, Set(p), [ NC.fac_elem_mon(LtoA(KtoL(evaluate(s::FacElem{nf_elem, AnticNumberField})))) for s in sols ])
         else
           push!(remaining_primes, p)
         end
@@ -84,14 +86,14 @@ function _norm_equation_relative(NC::NormCache, order_num::Int; max_num_fields::
 
       if !isempty(remaining_primes)
         # Now the primes together, for which have not found a solution yet
-        sols = __neq_sunit(ktoK, [ primes[i] for i in remaining_primes ], [ vals2[i] for i in remaining_primes ])
+        sols = __neq_sunit(ktoK, eltype(primes)[ primes[i] for i in remaining_primes ], Int[ vals2[i] for i in remaining_primes ])
         if !isempty(sols)
-          add_partial_solutions!(NC, order_num, remaining_primes, [ NC.fac_elem_mon(LtoA(KtoL(evaluate(s)))) for s in sols ])
+          add_partial_solutions!(NC, order_num, remaining_primes, [ NC.fac_elem_mon(LtoA(KtoL(evaluate(ss::FacElem{nf_elem, AnticNumberField})))) for ss in sols ])
         elseif length(remaining_primes) < length(good_primes)
           # If this also failed, we test all primes together
           sols = __neq_sunit(ktoK, [ primes[i] for i in good_primes ], [ vals2[i] for i in good_primes ])
           if !isempty(sols)
-            add_partial_solutions!(NC, order_num, good_primes, [ NC.fac_elem_mon(LtoA(KtoL(evaluate(s)))) for s in sols ])
+            add_partial_solutions!(NC, order_num, good_primes, [ NC.fac_elem_mon(LtoA(KtoL(evaluate(ss::FacElem{nf_elem, AnticNumberField})))) for ss in sols ])
           end
         end
       end
@@ -121,7 +123,7 @@ function _norm_equation_relative(NC::NormCache, order_num::Int; max_num_fields::
         if !skip
           push!(fields_in_product, (LtoA, KtoL))
 
-          G, pi = direct_product(G, UK, task = :prod)
+          G, pi = direct_product(G, UK, task = :prod)::Tuple{GrpAbFinGen, Tuple{GrpAbFinGenMap, GrpAbFinGenMap}}
           GtoUk = hom(gens(G), [ GtoUk(pi[1](g)) + N(pi[2](g)) for g in gens(G) ])
           if issurjective(GtoUk)
             NC.GtoUk_surjective[order_num] = true
@@ -165,17 +167,19 @@ function _norm_equation_valuations_only(O::AlgAssRelOrd, primes::Vector{<: NfAbs
   @assert !isempty(primes)
   @assert length(primes) == length(valuations)
   A = algebra(O)
+  _K = base_ring(A)
   Ok = order(primes[1])
-  NC = NormCache(A, [ O ], Ok, primes, valuations)
+  NC = NormCache(A, typeof(O)[ O ], Ok, primes, valuations)
   n = NC.n
   full_set = Set(1:length(primes))
   partial_solutions = NC.partial_solutions[1]
 
   while true
     LtoA = get_new_field(NC.field_oracle, 1, no_restriction = true)
-    L = domain(LtoA)
+    L = domain(LtoA)::_ext_type(elem_type(_K))
     OL = maximal_order(L)
 
+    # TODO: Use simplified_absolute_field once Carlo has fixed it
     K, KtoL, ktoK = simplified_absolute_field(L)
     OK = maximal_order_via_relative(K, KtoL)
 
@@ -185,7 +189,7 @@ function _norm_equation_valuations_only(O::AlgAssRelOrd, primes::Vector{<: NfAbs
       cache = Vector{Any}(undef, 3) # Used in __neq_find_sol_in_order
       if degree(L) != n
         n2 = degree(L)//n
-        vals2 = [ Int(n2*valuations[i]) for i = 1:length(valuations) ]
+        vals2 = Int[ Int(n2*valuations[i]) for i = 1:length(valuations) ]
       else
         vals2 = valuations
       end
@@ -196,9 +200,9 @@ function _norm_equation_valuations_only(O::AlgAssRelOrd, primes::Vector{<: NfAbs
         if haskey(partial_solutions, Set(p))
           continue
         end
-        b, s = __neq_find_sol_in_order(O, LtoA, KtoL, ktoK, [ primes[p] ], [ vals2[p] ], cache)
+        b, sss::elem_type(A) = __neq_find_sol_in_order(O, LtoA, KtoL, ktoK, eltype(primes)[ primes[p] ], eltype(vals2)[ vals2[p] ], cache)
         if b
-          add_partial_solutions!(NC, 1, Set(p), [ NC.fac_elem_mon(s) ])
+          add_partial_solutions!(NC, 1, Set(p), [ NC.fac_elem_mon(sss) ])
         else
           push!(remaining_primes, p)
         end
@@ -206,12 +210,12 @@ function _norm_equation_valuations_only(O::AlgAssRelOrd, primes::Vector{<: NfAbs
 
       if !isempty(remaining_primes) && !haskey(partial_solutions, remaining_primes)
         # Now the primes together, for which have not found a solution yet
-        b, s = __neq_find_sol_in_order(O, LtoA, KtoL, ktoK, [ primes[i] for i in remaining_primes ], [ vals2[i] for i in remaining_primes ], cache)
+        b, s = __neq_find_sol_in_order(O, LtoA, KtoL, ktoK, eltype(primes)[ primes[i] for i in remaining_primes ], [ vals2[i] for i in remaining_primes ], cache)
         if b
           add_partial_solutions!(NC, 1, remaining_primes, [ NC.fac_elem_mon(s) ])
         elseif length(remaining_primes) < length(good_primes)
           # If this also failed, we test all primes together
-          b, s = __neq_find_sol_in_order(O, LtoA, KtoL, ktoK, [ primes[i] for i in good_primes ], [ vals2[i] for i in good_primes ], cache)
+          b, s = __neq_find_sol_in_order(O, LtoA, KtoL, ktoK, eltype(primes)[ primes[i] for i in good_primes ], [ vals2[i] for i in good_primes ], cache)
           if b
             add_partial_solutions!(NC, 1, good_primes, [ NC.fac_elem_mon(s) ])
           end
@@ -484,13 +488,13 @@ _issubmodule(FO::FieldOracle, OL::NfAbsOrd, LtoA::NfAbsToAbsAlgAssMor) = _issubm
 function small_elements(O::AlgAssRelOrd)
   A = algebra(O)
   K = base_ring(A)
-  B, AtoB, BtoA = restrict_scalars(A, FlintQQ)
+  B, BtoA = restrict_scalars(A, FlintQQ)
   pbO = pseudo_basis(O, copy = false)
   M = zero_matrix(FlintQQ, dim(B), dim(B))
   for i = 1:degree(O)
     for j = 1:degree(K)
       t = basis(pbO[i][2])[j]*pbO[i][1]
-      elem_to_mat_row!(M, (i - 1)*degree(K) + j, AtoB(t))
+      elem_to_mat_row!(M, (i - 1)*degree(K) + j, BtoA\(t))
     end
   end
   MM = FakeFmpqMat(M)
@@ -520,6 +524,7 @@ function add_field(FO::FieldOracle, i::Int; no_restriction::Bool = false)
   A = FO.algebra
   function _add_field(x::AbsAlgAssElem)
     f = minpoly(x)
+    @show f
     L, LtoA = _as_subfield(A, x, f)
 
     if no_restriction
@@ -574,6 +579,10 @@ function add_field(FO::FieldOracle, i::Int; no_restriction::Bool = false)
       x = sum( coeffs[i]*FO.small_elements[i] for i = 1:length(FO.small_elements) )
     end
     if !isintegral(x)
+      continue
+    end
+    if !isirreducible(minpoly(x))
+      @show minpoly(x)
       continue
     end
     if _add_field(x)

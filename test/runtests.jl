@@ -37,6 +37,17 @@ catch e
   end
 end
 
+try
+  using Polymake
+  @time include("AlgAssRelOrd/Eichler.jl")
+catch e
+  if !(isa(e, ArgumentError))
+    rethrow(e)
+  else
+    println("using Polymake failed. Not running sophisticated norm equation tests")
+  end
+end
+
 @time include("NumField.jl")
 @time include("AlgAss.jl")
 @time include("AlgAssAbsOrd.jl")

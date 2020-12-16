@@ -26,17 +26,17 @@ function principal_generator_eichler(I::AlgAssRelOrdIdl)
   y = integral_coprime_representative(O, I, rd)
   J = I*y
 
-  N = normred(J, O)
-  @assert denominator(N, copy = false) == 1 # J should be integral
-  N = numerator(N, copy = false)
+  _N = normred(J, O)
+  @assert denominator(_N, copy = false) == 1 # J should be integral
+  N = numerator(_N, copy = false)
   OK = order(N)
   R, mR = ray_class_group(OK(1)*OK, ramified_infinite_places(A))
   @assert iszero(mR\N) "Ideal is not principal"
 
   primes = collect(keys(factor(N)))
-  valuations = [ valuation(N, p) for p in primes ]
-  w = _norm_equation_valuations_only(O, primes, valuations)
-  w = evaluate(w)
+  valuations = Int[ valuation(N, p) for p in primes ]
+  _w = _norm_equation_valuations_only(O, primes, valuations)
+  w = evaluate(_w)
 
   Ow = O*O(w)
   ww = _eichler_find_transforming_unit(J, Ow)
