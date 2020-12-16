@@ -1610,7 +1610,7 @@ function ismaximal_integral(L::QuadLat, p)
 
   r, V = left_kernel(Gmodp)
   @assert r > 0
-  local v
+  local v::dense_matrix_type(K)
   if !isdyadic(p)
     T = map(y -> hext\y, V)
     H = inv(elem_in_nf(uniformizer(p))) * T * G * transpose(T)

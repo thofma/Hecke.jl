@@ -381,7 +381,7 @@ function berlekamp_massey_mod(L::Array{fmpq, 1}; parent = Globals.Qx)
        N, pp = induce_crt(N, pp, L[1], L[2])
       j=1
     end
-    fl, nu_rat_f = induce_rational_reconstruction(N, FlintZZ(pp))
+    fl, nu_rat_f = induce_rational_reconstruction(N, FlintZZ(pp), parent = Rc)
     if fl
       return true, nu_rat_f
       #the check for roots is ONLY useful in multivariate interpolation

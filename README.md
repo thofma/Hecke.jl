@@ -2,17 +2,19 @@
 
 **Builds**
 
-[![Build status](https://github.com/thofma/Hecke.jl/workflows/Run%20tests/badge.svg?branch=master)](https://github.com/thofma/Hecke.jl/actions?query=workflow%3A%22Run+tests%22)
+[![Docs](https://img.shields.io/badge/docs-latest-blue.svg)](https://thofma.github.io/Hecke.jl/latest)
+[![Build status](https://github.com/thofma/Hecke.jl/workflows/Run%20tests/badge.svg?branch=master)](https://github.com/thofma/Hecke.jl/actions?query=workflow%3A%22Run+tests%22+branch%3Amaster)
 [![Build status](https://ci.appveyor.com/api/projects/status/3qb0ce2h5melsjeb?svg=true)](https://ci.appveyor.com/project/thofma/hecke-jl)
+[![Codecov](https://codecov.io/github/thofma/Hecke.jl/coverage.svg?branch=master&token=)](https://codecov.io/gh/thofma/Hecke.jl)
 
 ## About
 
 Hecke is a software package for algebraic number theory maintained by Claus Fieker, Tommy Hofmann and Carlo Sircana.
-It is written in [julia](http://www.julialang.org) and is based on the computer algebra packages [Nemo](http://www.nemocas.org) and [AbstractAlgebra](https://github.com/Nemocas/AbstractAlgebra.jl).
+It is written in [julia](https://www.julialang.org) and is based on the computer algebra packages [Nemo](https://www.nemocas.org) and [AbstractAlgebra](https://github.com/Nemocas/AbstractAlgebra.jl).
 Hecke is part of the [OSCAR](https://oscar.computeralgebra.de/) project and the development is supported by the Deutsche Forschungsgemeinschaft DFG within the Collaborative Research Center TRR 195.
 
-- [https://github.com/thofma/Hecke.jl](https://github.com/thofma/Hecke.jl) (Source code)
-- [https://thofma.github.io/Hecke.jl/latest/](https://thofma.github.io/Hecke.jl/latest/) (Online documentation)
+- <https://github.com/thofma/Hecke.jl> (Source code)
+- <https://thofma.github.io/Hecke.jl/latest/> (Online documentation)
 
 So far, Hecke provides the following features:
   
@@ -30,7 +32,7 @@ So far, Hecke provides the following features:
 ## Installation
 
 To use Hecke, a julia version of 1.0 is necessary (the latest stable julia version will do).
-Please see [http://julialang.org/downloads](http://julialang.org/downloads/) for instructions on how to obtain julia for your system.
+Please see <https://julialang.org/downloads/> for instructions on how to obtain julia for your system.
 Once a suitable julia version is installed, use the following steps at the julia prompt to install Hecke:
 
 ```julia
@@ -43,7 +45,7 @@ julia> Pkg.add("Hecke")
 If your research depends on computations done with Hecke, please consider giving us a formal citation:
 
 - Claus Fieker, William Hart, Tommy Hofmann and Fredrik Johansson, [Nemo/Hecke: Computer Algebra and Number Theory Packages
-  for the Julia Programming Language](http://doi.acm.org/10.1145/3087604.3087611). In: Proceedings of ISSAC '17, pages 157–164, New York, NY, USA, 2017. ACM.
+  for the Julia Programming Language](https://doi.acm.org/10.1145/3087604.3087611). In: Proceedings of ISSAC '17, pages 157–164, New York, NY, USA, 2017. ACM.
 
 ```
 @inproceedings{nemo,
@@ -54,7 +56,7 @@ If your research depends on computations done with Hecke, please consider giving
       year = {2017},
      pages = {157--164},
   numpages = {8},
-       url = {http://doi.acm.org/10.1145/3087604.3087611},
+       url = {https://doi.acm.org/10.1145/3087604.3087611},
        doi = {10.1145/3087604.3087611},
  publisher = {ACM},
    address = {New York, NY, USA},
@@ -93,4 +95,4 @@ with basis [1,a,a^2]
 
 ## Documentation
 
-The online documentation can be found here: [http://thofma.github.io/Hecke.jl/latest/](http://thofma.github.io/Hecke.jl/latest/)
+The online documentation can be found here: <https://thofma.github.io/Hecke.jl/latest/>
