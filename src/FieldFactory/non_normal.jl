@@ -41,16 +41,15 @@ function fixed_field(x::FieldsTower, H::GAP.GapObj)
   return fixed_field(number_field(x), auts)[1]
 end
 
-
-function fields_transitive_group(n::Int, i::Int, disc::fmpz)
+function _find_discriminant_bound(n, i, disc)
   Gt = GAP.Globals.TransitiveGroup(n, i)
   @assert GAP.Globals.IsSolvable(Gt)
   id = GAP.Globals.IdGroup(Gt)
   G1 = GAP.Globals.SmallGroup(id)
   lC = GAP.Globals.ConjugacyClassesSubgroups(G1)
   ind = 0
-  for i = 1:length(lC)
-    H = GAP.Globals.Representative(lC[i])
+  for k = 1:length(lC)
+    H = GAP.Globals.Representative(lC[k])
     if GAP.Globals.Index(G1, H) != n
       continue
     end
@@ -68,6 +67,26 @@ function fields_transitive_group(n::Int, i::Int, disc::fmpz)
   cg = lC[ind]
   H = GAP.Globals.Representative(cg)
   conjs = GAP.Globals.Elements(cg)
+  #I check if it is a Frobenius group!
+  isfrobenius = true 
+  for i = 1:length(conjs)
+    for j = i+1:length(conjs)
+      if GAP.Globals.Size(GAP.Globals.Intersection(conjs[i], conjs[j])) != 1
+        isfrobenius = false
+        break
+      end
+    end
+    if !isfrobenius
+      break
+    end
+  end
+  if isfrobenius
+    @show "Frobenius!"
+    #In this case, we can find a better bound for the closure!
+    m = divexact(id[1], n)
+    bdisc = disc^(2*m*n-m)
+    return root(bdisc, n-1)
+  end
   j = 1
   for i = 2:length(conjs)
     H = GAP.Globals.Intersection(H, conjs[i])
@@ -76,7 +95,17 @@ function fields_transitive_group(n::Int, i::Int, disc::fmpz)
       break
     end
   end
-  lf = fields(id[1], id[2], disc^(j*divexact(id[1], n)))
+  return disc^(j*divexact(id[1], n))
+end
+
+
+function fields_transitive_group(n::Int, i::Int, disc::fmpz)
+  Gt = GAP.Globals.TransitiveGroup(n, i)
+  @assert GAP.Globals.IsSolvable(Gt)
+  id = GAP.Globals.IdGroup(Gt)
+  G1 = GAP.Globals.SmallGroup(id)
+  @show disc_NC = _find_discriminant_bound(n, i, disc)
+  lf = fields(id[1], id[2], disc_NC)
   ln = to_non_normal(lf, G1, n)
   indices = Int[]
   for i = 1:length(ln)

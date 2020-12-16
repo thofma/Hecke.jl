@@ -351,7 +351,7 @@ function primitive_element(F::T; n_quo::Int = -1) where T <: Union{FqFiniteField
 end
 
 
-function unit_group(F::T; n_quo::Int = -1) where T <: Union{FqFiniteField, FqNmodFiniteField, GaloisField, Nemo.GaloisFmpzField}
+function unit_group(F::T; n_quo::Int = -1) where T <: FinField
 
   g = primitive_element(F, n_quo = n_quo)
   k = size(F) - 1

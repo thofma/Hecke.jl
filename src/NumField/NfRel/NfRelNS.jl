@@ -166,7 +166,7 @@ end
 
 function Base.show(io::IO, a::NfRelNS)
   print(io, "non-simple Relative number field with defining polynomials ", a.pol)
-  print(io, "over \n", base_field(a))
+  print(io, " \n over", base_field(a))
 end
 
 function AbstractAlgebra.expressify(a::NfRelNSElem; context = nothing)
@@ -606,20 +606,13 @@ function assure_has_traces(L::NfRelNS{T}) where T
   traces = Vector{Vector{T}}(undef, n)
   for i = 1:n
     pol = L.pol[i]
-    v = Vector{T}(undef, total_degree(pol)-1)
-    traces[i] = v
-    if iszero(length(v))
+    d = total_degree(pol)
+    if d == 1
+      v = Vector{T}(undef, d-1)
+      traces[i] = v
       continue
     end
-    exps = Int[0 for i = 1:n]
-    exps[i] = total_degree(pol)-1
-    v[1] = -coeff(pol, exps)
-    el = gL[i]
-    for j = 2:length(v)
-      el *= gL[i]
-      f_el = minpoly(el)
-      v[j] = -divexact(total_degree(pol), degree(f_el))*coeff(f_el, degree(f_el)-1)
-    end
+    traces[i] = polynomial_to_power_sums(isunivariate(pol)[2], d-1)
   end
   L.basis_traces = traces
   return nothing

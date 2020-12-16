@@ -259,7 +259,7 @@ function _find_prime(L::NfRelNS{nf_elem})
     end
     d = 1
     for j = 1:length(polsR)
-      FS = factor_shape(polsR[j])
+	    FS = factor_shape(polsR[j])
       d1 = lcm(Int[x for (x, v) in FS])
       d = lcm(d, d1)
     end
@@ -270,7 +270,7 @@ function _find_prime(L::NfRelNS{nf_elem})
   end
   res = candidates[1]
   for j = 2:n_attempts
-    if candidates[j][2] < res[2]
+    if candidates[j][2]*degree(candidates[j][1]) < res[2]*degree(res[1])
       res = candidates[j]
     end
   end
@@ -300,7 +300,7 @@ function _sieve_primitive_elements(B::Vector{NfRelNSElem{nf_elem}})
 
   P, d = _find_prime(Lrel)
   p = minimum(P, copy = false)
-  abs_deg = degree(P)*d
+  abs_deg = d*degree(P)
   #First, we search for elements that are primitive using block systems
   Fp = GF(p, cached = false)
   Fpx = PolynomialRing(Fp, cached = false)[1]
@@ -379,10 +379,7 @@ function _is_primitive_via_block(a::NfRelNSElem{nf_elem}, rt::Dict{fq, Vector{Ve
   return true
 end
 
-
-global deb_sim = []
 function simplified_absolute_field(L::NfRelNS; cached = false)
-  push!(deb_sim, L)
   OL = maximal_order(L)
   B = lll_basis(OL)
   B1 = _sieve_primitive_elements(B)
@@ -400,4 +397,25 @@ function simplified_absolute_field(L::NfRelNS; cached = false)
   K = number_field(f, check = false, cached = cached)[1]
   mp = hom(K, L, a)
   return K, mp
+end
+
+function simplified_absolute_field(L::NfRel{nf_elem}; cached::Bool = false)
+  OL = maximal_order(L)
+  B = lll_basis(OL)
+  B1 = _sieve_primitive_elements(B)
+  a = B1[1]
+  I = t2(a)
+  for i = 2:min(50, length(B1))
+    J = t2(B1[i])
+    if J < I
+      a = B1[i]
+      I = J
+    end
+  end
+  f = absolute_minpoly(a)
+  @assert degree(f) == absolute_degree(L)
+  K = number_field(f, check = false, cached = cached)[1]
+  mp = hom(K, L, a)
+  imp = inv(mp)
+  return K, mp, hom(base_field(L), K,  imp(L(gen(base_field(L)))))
 end

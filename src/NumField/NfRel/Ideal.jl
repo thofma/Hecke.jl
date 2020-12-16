@@ -1172,6 +1172,20 @@ end
 #  Prime decomposition
 #
 ################################################################################
+#=
+function prime_decomposition(O::NfRelOrd, p::fmpz)
+  lP = prime_decomposition(base_ring(O), p)
+  res = Vector{Tuple{ideal_type(O), Int}}()
+  for (P, e) in lP
+    lPP = prime_decomposition(O, P)
+    for (Q, e1) in lPP
+      push!(res, (Q, e*e1))
+    end
+  end
+  return res
+end
+=#
+
 
 function prime_decomposition(O::NfRelOrd, p::Union{NfOrdIdl, NfRelOrdIdl}; compute_uniformizer::Bool = true, compute_anti_uniformizer::Bool = true)
   if !issimple(nf(O)) || isindex_divisor(O, p)

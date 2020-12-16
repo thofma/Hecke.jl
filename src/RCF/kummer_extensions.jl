@@ -151,7 +151,7 @@ It fails if the prime is an index divisor or if $p$ divides the given generators
 of $K$
 """
 function canonical_frobenius(p::NfOrdIdl, K::KummerExt)
-  @assert norm(p) % K.n == 1
+  @assert norm(p, copy = false) % K.n == 1
   if haskey(K.frob_cache, p)
     return K.frob_cache[p]
   end
@@ -190,7 +190,7 @@ function _compute_frob(K, mF, p)
   aut = Array{fmpz, 1}(undef, length(K.gen))
   for j = 1:length(K.gen)
     ord_genj = Int(order(K.AutG[j]))
-    ex = div(norm(p)-1, ord_genj)
+    ex = div(norm(p, copy = false)-1, ord_genj)
     mu = image(mF, K.gen_mod_nth_power[j])^ex
     i = 0
     z_pj = z_p^divexact(K.n, ord_genj)
@@ -205,7 +205,7 @@ function _compute_frob(K, mF, p)
 end
 
 function canonical_frobenius_fmpz(p::NfOrdIdl, K::KummerExt)
-  @assert norm(p) % K.n == 1
+  @assert norm(p, copy = false) % K.n == 1
   if haskey(K.frob_cache, p)
     return K.frob_cache[p]
   end
@@ -230,7 +230,7 @@ function canonical_frobenius_fmpz(p::NfOrdIdl, K::KummerExt)
   aut = Array{fmpz, 1}(undef, length(K.gen))
   for j = 1:length(K.gen)
     ord_genj = Int(order(K.AutG[j]))
-    ex = div(norm(p)-1, ord_genj)
+    ex = div(norm(p, copy = false)-1, ord_genj)
     mu = image(mF1, K.gen[j], K.n)^ex  # can throw bad prime!
     i = 0
     z_pj = z_p^divexact(K.n, ord_genj)
@@ -257,8 +257,8 @@ function canonical_frobenius(p::NfOrdIdl, K::KummerExt, g::FacElem{nf_elem})
     error("Oops")
   end
 
-  @assert norm(p) % K.n == 1
-  ex = div(norm(p)-1, K.n)
+  @assert norm(p, copy = false) % K.n == 1
+  ex = div(norm(p, copy = false)-1, K.n)
 
   #K = sqrt[n](gen), an automorphism will be
   # K[i] -> zeta^? K[i]
@@ -388,7 +388,7 @@ end
 
 
 function _canonical_frobenius_with_cache(p::NfOrdIdl, K::KummerExt, cached::Bool, D::Vector{Vector{gfp_poly}})
-  @assert norm(p) % K.n == 1
+  @assert norm(p, copy = false) % K.n == 1
   if haskey(K.frob_cache, p)
     return K.frob_cache[p]
   end
@@ -420,7 +420,7 @@ function _compute_frob(K, mF, p, cached, D)
   aut = Array{fmpz, 1}(undef, length(K.gen))
   for j = 1:length(K.gen)
     ord_genj = Int(order(K.AutG[j]))
-    ex = div(norm(p)-1, ord_genj)
+    ex = div(norm(p, copy = false)-1, ord_genj)
     mu = image(mF, K.gen_mod_nth_power[j], D[j], cached, K.n)^ex  # can throw bad prime!
     i = 0
     z_pj = z_p^divexact(K.n, ord_genj)

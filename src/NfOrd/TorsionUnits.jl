@@ -328,7 +328,7 @@ function _torsion_group_order_divisor(K::AnticNumberField)
     disc_1 = discriminant(K.pol)
     disc = numerator(disc_1)*denominator(disc_1)
   end
-  threshold = 50
+  threshold = 5*degree(K)
 
   while true
     p = next_prime(p)
@@ -340,7 +340,7 @@ function _torsion_group_order_divisor(K::AnticNumberField)
       continue
     end
 
-    lp = collect(keys(factor_shape(gp)))
+    lp = collect(keys(factor_distinct_deg(gp)))
 
     minf = minimum(lp)
 

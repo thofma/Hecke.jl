@@ -37,13 +37,10 @@ function simplify!(C::CyclotomicExt)
   if degree(C.Kr) == 1
     return nothing
   end
-  Ka = absolute_field(C)
-  if isautomorphisms_known(Ka)
-    automorphisms(C)
-  end
-  Ka, mKas = simplify(Ka, save_LLL_basis = true, cached = false)
-  abs2rel = mKas*C.mp[1]
-  small2abs = C.mp[2]*inv(mKas)
+  Ka, mKa = simplified_absolute_field(C.Kr, cached = false)
+  abs2rel = mKa
+  imKa = inv(mKa)
+  small2abs = hom(base_field(C.Kr), Ka, imKa(C.Kr(gen(base_field(C.Kr)))))
   C.Ka = Ka
   C.mp = (abs2rel, small2abs)
   return nothing
@@ -56,7 +53,7 @@ Computes $k(\zeta_n)$, in particular, a structure containing $k(\zeta_n)$
 both as an absolute extension, as a relative extension (of $k$) and the maps
 between them.
 """
-function cyclotomic_extension(k::AnticNumberField, n::Int; cached::Bool = true, compute_maximal_order::Bool = true, compute_LLL_basis::Bool = true, simplified = true)
+function cyclotomic_extension(k::AnticNumberField, n::Int; cached::Bool = true, compute_maximal_order::Bool = true, compute_LLL_basis::Bool = true, simplified::Bool = true)
   Ac = CyclotomicExt[]
   if cached
     try
@@ -100,15 +97,6 @@ function cyclotomic_extension(k::AnticNumberField, n::Int; cached::Bool = true, 
     return c
   end
 
-  if compute_LLL_basis && iscoprime(discriminant(maximal_order(k)), n)
-    c = _cyclotomic_extension_non_simple(k, n, cached = cached)
-    if simplified
-      simplify!(c)
-    end
-    return c
-  end
-
-
   ZX, X = PolynomialRing(FlintZZ, cached = false)
   f = cyclotomic(n, X)
   fk = change_base_ring(k, f, parent = kt)
@@ -137,7 +125,7 @@ function cyclotomic_extension(k::AnticNumberField, n::Int; cached::Bool = true, 
     else
       Kr, Kr_gen = number_field(fk, "z_$n", cached = false, check = false)
       Ka, abs2rel, small2abs = Hecke.absolute_field(Kr, cached = false)
-      if compute_maximal_order
+      if compute_maximal_order && !simplified
         Zk = maximal_order(k)
         b_k = basis(Zk, k)
         B_k = Vector{nf_elem}(undef, degree(Ka))
@@ -160,19 +148,10 @@ function cyclotomic_extension(k::AnticNumberField, n::Int; cached::Bool = true, 
         if compute_LLL_basis
           lll(ZKa)
         end
-        c.Kr = Kr
-        c.Ka = Ka
-        c.mp = (abs2rel, small2abs)
       end
-      if istorsion_unit_group_known(k) || istotally_real(k)
-        ok, gTk = _torsion_units_gen(k)
-        expected = Int(_torsion_group_order_divisor(Ka))
-        if expected == lcm(ok, n)
-          #In this case, we know that the generator is the product.
-          genTKa = small2abs(gTk)*(abs2rel\(gen(Kr)))
-          _set_nf_torsion_units(Ka, (expected, genTKa))
-        end
-      end
+      c.Kr = Kr
+      c.Ka = Ka
+      c.mp = (abs2rel, small2abs)
     end
     if cached
       push!(Ac, c)
@@ -180,6 +159,15 @@ function cyclotomic_extension(k::AnticNumberField, n::Int; cached::Bool = true, 
     end
     if simplified
       simplify!(c)
+    end
+    if (istorsion_unit_group_known(k) || istotally_real(k)) && c.Ka != k
+      ok, gTk = _torsion_units_gen(k)
+      expected = Int(_torsion_group_order_divisor(c.Ka))
+      if expected == lcm(ok, n)
+        #In this case, we know that the generator is the product.
+        genTKa = c.mp[2](gTk)*(c.mp[1]\(gen(Kr)))
+        _set_nf_torsion_units(c.Ka, (expected, genTKa))
+      end
     end
     return c
   end
@@ -193,7 +181,7 @@ function cyclotomic_extension(k::AnticNumberField, n::Int; cached::Bool = true, 
   if degree(fk) != 1
     Ka, abs2rel, small2abs = Hecke.absolute_field(Kr, cached = false)
     
-    if compute_maximal_order
+    if compute_maximal_order && !simplified
       # An equation order defined from a factor of a
       # cyclotomic polynomial is always maximal by Dedekind
       # hence the product basis should be maximal at all primes except
@@ -229,17 +217,7 @@ function cyclotomic_extension(k::AnticNumberField, n::Int; cached::Bool = true, 
       if compute_LLL_basis
         lll(ZKa)
       end
-
       Hecke._set_maximal_order_of_nf(Ka, ZKa)
-    end
-    if istorsion_unit_group_known(k) || istotally_real(k)
-      ok, gTk = _torsion_units_gen(k)
-      expected = Int(_torsion_group_order_divisor(Ka))
-      if expected == lcm(ok, n)
-        #In this case, we know that the generator is the product.
-        genTKa = small2abs(gTk)*(abs2rel\(gen(Kr)))
-        _set_nf_torsion_units(Ka, (expected, genTKa))
-      end
     end
   else
     Ka = k
@@ -262,6 +240,15 @@ function cyclotomic_extension(k::AnticNumberField, n::Int; cached::Bool = true, 
   end
   if simplified
     simplify!(c)
+  end
+  if (istorsion_unit_group_known(k) || istotally_real(k)) && c.Ka != k
+    ok, gTk = _torsion_units_gen(k)
+    expected = Int(_torsion_group_order_divisor(c.Ka))
+    if expected == lcm(ok, n)
+      #In this case, we know that the generator is the product.
+      genTKa = c.mp[2](gTk)*(c.mp[1]\(gen(Kr)))
+      _set_nf_torsion_units(c.Ka, (expected, genTKa))
+    end
   end
   return c
 

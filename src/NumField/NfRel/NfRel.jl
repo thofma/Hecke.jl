@@ -213,7 +213,7 @@ end
 
 function Base.show(io::IO, a::NfRel)
   print(io, "Relative number field over with defining polynomial ", a.pol)
-  print(io, "over \n", a.base_ring)
+  print(io, "\n over ", a.base_ring)
 end
 
 function AbstractAlgebra.expressify(a::NfRelElem; context = nothing)
@@ -496,7 +496,7 @@ function absolute_field(K::NfRel{nf_elem}; cached::Bool = false, simplify::Bool 
   if simplify
     return simplified_absolute_field(K, cached = cached)
   end
-  Ka, a, b, c = _absolute_field(K, cached)
+  Ka, a, b, c = _absolute_field(K, cached = cached)
   h1 = hom(Ka, K, c, inverse = (a, b))
   h2 = hom(base_field(K), Ka, a, check = false)
   embed(h1)
@@ -510,7 +510,7 @@ end
 #Given an extension $E/K/k$, find an isomorphic extension of $k$.
 #In a tower, only the top-most steps are collapsed.
 #"""
-function absolute_field(K::NfRel{NfRelElem{T}}, cached::Bool = false) where T
+function absolute_field(K::NfRel{NfRelElem{T}}; cached::Bool = false) where T
   Ka, a, b, c = _absolute_field(K)
   h1 = hom(Ka, K, c, inverse = (a, b))
   h2 = hom(base_field(K), Ka, a, check = false)
@@ -522,7 +522,7 @@ end
 
 
 #Trager: p4, Algebraic Factoring and Rational Function Integration
-function _absolute_field(K::NfRel, cached::Bool = false)
+function _absolute_field(K::NfRel; cached::Bool = false)
   f = K.pol
   kx = parent(f)
   k = base_ring(kx)
@@ -573,40 +573,6 @@ function _absolute_field(K::NfRel, cached::Bool = false)
   #ga -> gen(Ka) in K
   return Ka, al, be, ga
 end
-
-function simplified_absolute_field(K::NfRel{nf_elem}; cached::Bool = false)
-  Kabs, mKabs, mk = absolute_field(K, false)
-  OK = maximal_order(K)
-  new_basis = Vector{nf_elem}(undef, degree(Kabs))
-  B = pseudo_basis(OK)
-  ideals = Dict{NfOrdIdl, Vector{nf_elem}}()
-  for i = 1:length(B)
-    I = B[i][2].num
-    if !haskey(ideals, I)
-      bas = lll_basis(I)
-      ideals[I] = nf_elem[mKabs\(K(x)) for x in bas]
-    end
-  end
-  ind = 1
-  for i = 1:degree(K)
-    I = B[i][2]
-    bI = ideals[I.num]
-    el = mKabs\(B[i][1])
-    for j = 1:length(bI)
-      new_basis[ind] = divexact(el*bI[j], I.den)
-      ind += 1
-    end
-  end
-  O = NfOrd(new_basis)
-  O.disc = absolute_discriminant(OK)
-  O.ismaximal = 1
-  OLLL = lll(O)
-  _set_maximal_order_of_nf(Kabs, OLLL)
-  Ks, mKs = simplify(Kabs)
-  mKsi = inv(mKs)
-  return Ks, mKs*mKabs, mk*mKsi
-end
-
 
 function check_parent(a, b)
   return a==b
@@ -714,20 +680,13 @@ end
 #
 ################################################################################
 
-function assure_trace_basis(K::NfRel)
+function assure_trace_basis(K::NfRel{T}) where T
   if isdefined(K, :trace_basis)
     return nothing
   end
   F = base_field(K)
-  trace_basis = Vector{elem_type(F)}(undef, degree(K))
-  trace_basis[1] = F(degree(K))
-  a = gen(K)
-  for i = 2:degree(K)
-    #We can do better, probably...
-    M = representation_matrix(a)
-    trace_basis[i] = tr(M)
-    a *= gen(K)
-  end
+  trace_basis = T[F(degree(K))]
+  append!(trace_basis, polynomial_to_power_sums(K.pol, degree(K)-1))
   K.trace_basis = trace_basis
   return nothing
 end
