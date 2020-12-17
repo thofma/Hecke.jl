@@ -365,8 +365,14 @@ function Hecke.induce_crt(a::Hecke.Generic.MPoly{nf_elem}, p::fmpz, b::Hecke.Gen
   ta = terms(a)
   tb = terms(b)
   c = MPolyBuildCtx(parent(a))
-  aa, sa = iterate(ta)
-  bb, sb = iterate(tb)
+  aa = iterate(ta)
+  if !(aa === nothing)   # allow a to be zero
+    aa, sa = aa
+  end
+  bb = iterate(tb)
+  if !(bb === nothing)   # also allow b to be zero
+    bb, sb = bb
+  end
 #  @assert length(a) == length(b)
 #  @assert ==(aa, bb, true) # leading terms must agree or else...
   while !(aa === nothing) && !(bb === nothing)
@@ -451,6 +457,27 @@ function Hecke.modular_proj(f::Generic.MPoly{nf_elem}, me::Hecke.modular_env)
   return map(finish, fp)
 end
 
+function Hecke.modular_proj(::Type{fq_nmod}, a::Generic.MPoly{nf_elem}, me::Hecke.modular_env)
+  Kxy = parent(a)
+  if !isdefined(me, :Kxy)
+    me.Kxy = Kxy
+  else
+    @assert me.Kxy === parent(a)
+  end
+  vars = map(string, symbols(Kxy))
+  s = length(me.fld)
+  res = [MPolyBuildCtx(PolynomialRing(me.fld[i], vars)[1]) for i in 1:s]
+  for (c, v) in zip(coeffs(a), exponent_vectors(a))
+    cp = Hecke.modular_proj(c, me)
+    for i in 1:s
+      push_term!(res[i], deepcopy(cp[i]), v)
+    end
+  end
+  map(finish, res)
+end
+
+
+
 function Hecke.modular_lift(g::Array{nmod_mpoly, 1}, me::Hecke.modular_env)
 
   #TODO: no dict, but do s.th. similar to induce_crt
@@ -488,6 +515,33 @@ function Hecke.modular_lift(g::Array{nmod_mpoly, 1}, me::Hecke.modular_env)
   end
   return finish(bt)
 end
+
+function Hecke.modular_lift(g::Vector{T}, me::Hecke.modular_env) where T <: MPolyElem{fq_nmod}
+  d = Dict{Array{Int, 1}, Array{Tuple{Int, fq_nmod}, 1}}()
+  for i in 1:length(g)
+    for (c, e) = Base.Iterators.zip(Generic.MPolyCoeffs(g[i]),
+                                    Generic.MPolyExponentVectors(g[i]))
+      if Base.haskey(d, e)
+        push!(d[e], (i, c))
+      else
+        d[e] = [(i, c)]
+      end
+    end
+  end
+  bt = MPolyBuildCtx(me.Kxy)
+
+  for e = keys(d)
+    for i in 1:length(g)
+      me.res[i] = zero!(me.res[i])
+    end
+    for (i, c) = d[e]
+      me.res[i] = c
+    end
+    push_term!(bt, Hecke.modular_lift(me.res, me), e)
+  end
+  return finish(bt)
+end
+
 
 function Hecke.mod!(f::fmpz_poly, p::fmpz)
   for i=0:degree(f)
