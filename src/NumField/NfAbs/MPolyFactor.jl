@@ -29,9 +29,11 @@ function AbstractAlgebra.MPolyFactor.mfactor_choose_eval_points!(
   size = clamp(size, 2, 100)
 
   for i in 1:n
+    # choose integers for now
+    zero!(alphas[i])
     Hecke.set_den!(alphas[i], one(ZZ))
-    for j in 0:d-1
-      Hecke.set_coeff_num!(alphas[i], j, rand_bits(ZZ, 8 + rand(0:size)))
+    for j in 0:0
+      Hecke.set_coeff_num!(alphas[i], j, rand_bits(ZZ, 2 + rand(0:size)))
     end
   end
 end
@@ -45,8 +47,8 @@ function AbstractAlgebra.MPolyFactor.hlift_have_lcs(
   alphas::Vector
 ) where E <: Generic.MPoly{nf_elem}
 
-#  return hlift_have_lcs_generic(A, Auf, lcs, mainvar, minorvars, alphas)
-  return hlift_have_lcs_crt(A, Auf, lcs, mainvar, minorvars, alphas)
+  return hlift_have_lcs_generic(A, Auf, lcs, mainvar, minorvars, alphas)
+#  return hlift_have_lcs_crt(A, Auf, lcs, mainvar, minorvars, alphas)
 end
 
 ###############################################################################
@@ -74,29 +76,34 @@ function hlift_have_lcs_generic(
   for j in 1:r
     lc_evals[n + 1, j] = lcs[j]
     for i in n:-1:1
-      lc_evals[i, j] = eval_one(lc_evals[i + 1, j], minorvars[i], alphas[i])
+      lc_evals[i, j] = AbstractAlgebra.MPolyFactor.eval_one(lc_evals[i + 1, j],
+                                                       minorvars[i], alphas[i])
     end
   end
 
   A_evals = zeros(R, n + 1)
   A_evals[n + 1] = A
   for i in n:-1:1
-    A_evals[i] = eval_one(A_evals[i + 1], minorvars[i], alphas[i])
+    A_evals[i] = AbstractAlgebra.MPolyFactor.eval_one(A_evals[i + 1],
+                                                       minorvars[i], alphas[i])
   end
 
   fac = zeros(R, r)
   for j in 1:r
     @assert isconstant(lc_evals[1, j])
-    fac[j] = Auf[j]*divexact(lc_evals[1, j], get_lc(Auf[j], mainvar))
+    fac[j] = Auf[j]*divexact(lc_evals[1, j],
+                           AbstractAlgebra.MPolyFactor.get_lc(Auf[j], mainvar))
   end
 
   tdegs = degrees(A_evals[n + 1])
   liftdegs = [tdegs[minorvars[i]] for i in 1:n]
 
   for i in 2:n+1
-    tfac = [set_lc(fac[j], mainvar, lc_evals[i, j]) for j in 1:r]
-    ok, fac = hliftstep(tfac, mainvar, minorvars[1:i-1], liftdegs, alphas,
-                                                              A_evals[i], true)
+    tfac = [AbstractAlgebra.MPolyFactor.set_lc(fac[j],
+                                         mainvar, lc_evals[i, j]) for j in 1:r]
+
+    ok, fac = AbstractAlgebra.MPolyFactor.hliftstep(tfac, mainvar,
+                          minorvars[1:i-1], liftdegs, alphas, A_evals[i], true)
     if !ok
       return false, fac
     end
