@@ -33,7 +33,7 @@ function AbstractAlgebra.MPolyFactor.mfactor_choose_eval_points!(
     zero!(alphas[i])
     Hecke.set_den!(alphas[i], one(ZZ))
     for j in 0:0
-      Hecke.set_coeff_num!(alphas[i], j, rand_bits(ZZ, 2 + rand(0:size)))
+      Hecke.set_num_coeff!(alphas[i], j, rand_bits(ZZ, 2 + rand(0:size)))
     end
   end
 end

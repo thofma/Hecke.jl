@@ -140,7 +140,7 @@ function set_den!(a::nf_elem, d::fmpz)
         a, d, parent(a))
 end
 
-function set_coeff_num!(a::nf_elem, i::Int, b::fmpz)
+function set_num_coeff!(a::nf_elem, i::Int, b::fmpz)
   ccall((:_nf_elem_set_coeff_num_fmpz, libantic), Nothing,
         (Ref{nf_elem}, Int, Ref{fmpz}, Ref{AnticNumberField}),
         a, i, b, parent(a))
