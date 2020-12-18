@@ -118,8 +118,8 @@ function data_assure(R::RecoCtx)
   R.new_data || return
   
   R.L = lll(basis_matrix(R.p1, R.f, R.k))
-  if isdefined(R, :Li) #to keep stucture consistent
-    R.Li, R.d = pseudo_inv(R.L)
+  if isdefined(R, :LI) #to keep stucture consistent
+    R.LI, R.d = pseudo_inv(R.L)
   end
   R.new_data = false
   return R
@@ -183,7 +183,7 @@ function Hecke.rational_reconstruction(a::nf_elem, R::RecoCtx; integral::Bool = 
     end
     s = t*R.LI
     for i=1:degree(R.k)
-      s[1, i] = round(s[1, i]//R.d)
+      s[1, i] = round(fmpz, s[1, i], R.d)
     end
     tt = s*R.L
     b = parent(a)()
@@ -328,7 +328,7 @@ function _gcd(f::Hecke.Generic.MPoly{nf_elem}, g::Hecke.Generic.MPoly{nf_elem}, 
         d *= p
         stable -= 1
       end
-        if true || stable <= 0 
+        if fl && stable <= 0 
           if divides(f, gd)[1] && divides(g, gd)[1]
 #            @show "gcd stop", nbits(d), length(gd), gd
             gd*=inv(gl)
