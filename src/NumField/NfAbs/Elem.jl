@@ -135,9 +135,15 @@ function sub!(a::nf_elem, b::nf_elem, c::nf_elem)
 end
 
 function set_den!(a::nf_elem, d::fmpz)
-  ccall((:nf_elem_set_den, libflint), Nothing,
+  ccall((:nf_elem_set_den, libantic), Nothing,
         (Ref{nf_elem}, Ref{fmpz}, Ref{AnticNumberField}),
         a, d, parent(a))
+end
+
+function set_num_coeff!(a::nf_elem, i::Int, b::fmpz)
+  ccall((:_nf_elem_set_coeff_num_fmpz, libantic), Nothing,
+        (Ref{nf_elem}, Int, Ref{fmpz}, Ref{AnticNumberField}),
+        a, i, b, parent(a))
 end
 
 function divexact!(z::nf_elem, x::nf_elem, y::fmpz)
