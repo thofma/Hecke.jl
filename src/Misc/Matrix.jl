@@ -1893,48 +1893,48 @@ function find_pivot(A::MatElem{<:RingElem})
   return p
 end
 
-@doc Markdown.doc"""
-    can_solve(A::MatElem{T}, B::MatElem{T}; side = :right) where T <: FieldElem -> Bool, MatElem
-
-Tries to solve $Ax = B$ for $x$ if `side = :right` and $xA = B$ if `side =
-:left`.
-"""
-function can_solve(A::MatElem{T}, B::MatElem{T};
-                                  side = :right) where T <: FieldElem
-  @assert base_ring(A) == base_ring(B)
-
-  if side === :right
-    @assert nrows(A) == nrows(B)
-    return _can_solve(A, B)
-  elseif side === :left
-    @assert ncols(A) == ncols(B)
-    b, C = _can_solve(transpose(A), transpose(B))
-    if b
-      return true, transpose(C)
-    else
-      return false, C
-    end
-  else
-    error("Unsupported argument :$side for side: Must be :left or :right")
-  end
-end
-
-function _can_solve(A::MatElem{T}, B::MatElem{T}) where T <: FieldElem
-  R = base_ring(A)
-  mu = [A B]
-  rk, mu = rref(mu)
-  p = find_pivot(mu)
-  if any(i -> i > ncols(A), p)
-    return false, B
-  end
-  sol = zero_matrix(R, ncols(A), ncols(B))
-  for i = 1:length(p)
-    for j = 1:ncols(B)
-      sol[p[i], j] = mu[i, ncols(A) + j]
-    end
-  end
-  return true, sol
-end
+#@doc Markdown.doc"""
+#    can_solve_with_solution(A::MatElem{T}, B::MatElem{T}; side = :right) where T <: FieldElem -> Bool, MatElem
+#
+#Tries to solve $Ax = B$ for $x$ if `side = :right` and $xA = B$ if `side =
+#:left`.
+#"""
+#function can_solve_with_solution(A::MatElem{T}, B::MatElem{T};
+#                                  side = :right) where T <: FieldElem
+#  @assert base_ring(A) == base_ring(B)
+#
+#  if side === :right
+#    @assert nrows(A) == nrows(B)
+#    return _can_solve_with_solution(A, B)
+#  elseif side === :left
+#    @assert ncols(A) == ncols(B)
+#    b, C = _can_solve_with_solution(transpose(A), transpose(B))
+#    if b
+#      return true, transpose(C)
+#    else
+#      return false, C
+#    end
+#  else
+#    error("Unsupported argument :$side for side: Must be :left or :right")
+#  end
+#end
+#
+#function _can_solve_with_solution(A::MatElem{T}, B::MatElem{T}) where T <: FieldElem
+#  R = base_ring(A)
+#  mu = [A B]
+#  rk, mu = rref(mu)
+#  p = find_pivot(mu)
+#  if any(i -> i > ncols(A), p)
+#    return false, B
+#  end
+#  sol = zero_matrix(R, ncols(A), ncols(B))
+#  for i = 1:length(p)
+#    for j = 1:ncols(B)
+#      sol[p[i], j] = mu[i, ncols(A) + j]
+#    end
+#  end
+#  return true, sol
+#end
 
 @doc Markdown.doc"""
     can_solve_with_kernel(A::MatElem{T}, B::MatElem{T}; side = :right) where T <: FieldElem -> Bool, MatElem, MatElem
@@ -1990,61 +1990,61 @@ function _can_solve_with_kernel(A::MatElem{T}, B::MatElem{T}) where T <: FieldEl
   return true, sol, n
 end
 
-@doc Markdown.doc"""
-    can_solve(A::MatElem{T}, B::MatElem{T}, side = :right) where T <: RingElem -> Bool, MatElem
-
-Tries to solve $Ax = B$ for $x$ if `side = :right` or $xA = B$ if `side = :left`
-over a euclidean ring.
-"""
-function can_solve(A::MatElem{T}, B::MatElem{T};
-                                  side = :right) where T <: RingElem
-  @assert base_ring(A) == base_ring(B)
-
-  if side === :right
-    @assert nrows(A) == nrows(B)
-    return _can_solve(A, B)
-  elseif side === :left
-    @assert ncols(A) == ncols(B)
-    b, C = _can_solve(transpose(A), transpose(B))
-    if b
-      return true, transpose(C)
-    else
-      return false, C
-    end
-  else
-    error("Unsupported argument :$side for side: Must be :left or :right")
-  end
-end
-
-function _can_solve(a::MatElem{S}, b::MatElem{S}, side = :left) where S <: RingElem
-  H, T = hnf_with_transform(transpose(a))
-  b = deepcopy(b)
-  z = zero_matrix(base_ring(a), ncols(b), ncols(a))
-  l = min(nrows(a), ncols(a))
-  for i = 1:ncols(b)
-    for j = 1:l
-      k = 1
-      while k <= ncols(H) && iszero(H[j, k])
-        k += 1
-      end
-      if k > ncols(H)
-        continue
-      end
-      q, r = divrem(b[k, i], H[j, k])
-      if !iszero(r)
-        return false, b
-      end
-      for h = k:ncols(H)
-        b[h, i] -= q*H[j, h]
-      end
-      z[i, j] = q
-    end
-  end
-  if !iszero(b)
-    return false, b
-  end
-  return true, transpose(z*T)
-end
+#@doc Markdown.doc"""
+#    can_solve_with_solution(A::MatElem{T}, B::MatElem{T}, side = :right) where T <: RingElem -> Bool, MatElem
+#
+#Tries to solve $Ax = B$ for $x$ if `side = :right` or $xA = B$ if `side = :left`
+#over a euclidean ring.
+#"""
+#function can_solve_with_solution(A::MatElem{T}, B::MatElem{T};
+#                                  side = :right) where T <: RingElem
+#  @assert base_ring(A) == base_ring(B)
+#
+#  if side === :right
+#    @assert nrows(A) == nrows(B)
+#    return _can_solve_with_solution(A, B)
+#  elseif side === :left
+#    @assert ncols(A) == ncols(B)
+#    b, C = _can_solve_with_solution(transpose(A), transpose(B))
+#    if b
+#      return true, transpose(C)
+#    else
+#      return false, C
+#    end
+#  else
+#    error("Unsupported argument :$side for side: Must be :left or :right")
+#  end
+#end
+#
+#function _can_solve_with_solution(a::MatElem{S}, b::MatElem{S}, side = :left) where S <: RingElem
+#  H, T = hnf_with_transform(transpose(a))
+#  b = deepcopy(b)
+#  z = zero_matrix(base_ring(a), ncols(b), ncols(a))
+#  l = min(nrows(a), ncols(a))
+#  for i = 1:ncols(b)
+#    for j = 1:l
+#      k = 1
+#      while k <= ncols(H) && iszero(H[j, k])
+#        k += 1
+#      end
+#      if k > ncols(H)
+#        continue
+#      end
+#      q, r = divrem(b[k, i], H[j, k])
+#      if !iszero(r)
+#        return false, b
+#      end
+#      for h = k:ncols(H)
+#        b[h, i] -= q*H[j, h]
+#      end
+#      z[i, j] = q
+#    end
+#  end
+#  if !iszero(b)
+#    return false, b
+#  end
+#  return true, transpose(z*T)
+#end
 
 @doc Markdown.doc"""
     can_solve_with_kernel(A::MatElem{T}, B::MatElem{T}) where T <: RingElem -> Bool, MatElem, MatElem

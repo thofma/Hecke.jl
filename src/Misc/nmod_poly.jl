@@ -377,7 +377,7 @@ end
 function Nemo.invmod(f::fmpz_mod_poly, M::fmpz_mod_poly)
   if !isunit(f)
     r = parent(f)()
-    i = ccall((:fmpz_mod_poly_invmod, libflint), Int, (Ref{fmpz_mod_poly}, Ref{fmpz_mod_poly}, Ref{fmpz_mod_poly}), r, f, M)
+    i = ccall((:fmpz_mod_poly_invmod, libflint), Int, (Ref{fmpz_mod_poly}, Ref{fmpz_mod_poly}, Ref{fmpz_mod_poly}, Ref{fmpz_mod_ctx_struct}), r, f, M, f.parent.base_ring.ninv)
     if iszero(i)
       error("not yet implemented")
     else
@@ -1440,7 +1440,7 @@ function isprimitive(f::fmpz_mod_poly)
   g = fmpz()
   GC.@preserve f begin
     for i = 0:degree(f)
-      ccall((:fmpz_mod_poly_get_coeff_fmpz, libflint), Nothing, (Ref{fmpz}, Ref{fmpz_mod_poly}, Int), z, f, i)
+      ccall((:fmpz_mod_poly_get_coeff_fmpz, libflint), Nothing, (Ref{fmpz}, Ref{fmpz_mod_poly}, Int, Ref{fmpz_mod_ctx_struct}), z, f, i, f.parent.base_ring.ninv)
       gcd!(g, g, z)
       if isone(g)
         return true, R(g)

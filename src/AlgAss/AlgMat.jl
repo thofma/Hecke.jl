@@ -472,7 +472,7 @@ function _check_matrix_in_algebra(M::S, A::AlgMat{T, S}, short::Type{Val{U}} = V
       end
     end
   end
-  b, N = can_solve(B, t, side = :left)
+  b, N = can_solve_with_solution(B, t, side = :left)
   if short == Val{true}
     return b
   end

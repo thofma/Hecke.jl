@@ -1697,7 +1697,7 @@ function stabil(x1, x2, per, G, V, C)
   XG = matgen(x, dim, per, V)
   X2 = matgen(x2, dim, per, V)
   
-  b, S = can_solve(X2, XG, side = :left)
+  b, S = can_solve_with_solution(X2, XG, side = :left)
   return S
 end
 

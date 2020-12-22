@@ -16,12 +16,12 @@ end
 end
 
 function rem!(a::fmpz_mod_poly, b::fmpz_mod_poly, c::fmpz_mod_poly)
-  ccall((:fmpz_mod_poly_rem, libflint), Nothing, (Ref{fmpz_mod_poly}, Ref{fmpz_mod_poly}, Ref{fmpz_mod_poly}), a, b, c)
+  ccall((:fmpz_mod_poly_rem, libflint), Nothing, (Ref{fmpz_mod_poly}, Ref{fmpz_mod_poly}, Ref{fmpz_mod_poly}, Ref{fmpz_mod_ctx_struct}), a, b, c, a.parent.base_ring.ninv)
   return a
 end
 
 function rem!(a::gfp_fmpz_poly, b::gfp_fmpz_poly, c::gfp_fmpz_poly)
-  ccall((:fmpz_mod_poly_rem, libflint), Nothing, (Ref{gfp_fmpz_poly}, Ref{gfp_fmpz_poly}, Ref{gfp_fmpz_poly}), a, b, c)
+  ccall((:fmpz_mod_poly_rem, libflint), Nothing, (Ref{gfp_fmpz_poly}, Ref{gfp_fmpz_poly}, Ref{gfp_fmpz_poly}, Ref{fmpz_mod_ctx_struct}), a, b, c, a.parent.base_ring.ninv)
   return a
 end
 

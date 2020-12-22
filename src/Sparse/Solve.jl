@@ -392,12 +392,12 @@ function echelon!(S::SMat{T}; complete::Bool = false) where T <: FieldElem
 end
 
 function solve(a::SMat{T}, b::SRow{T}) where T <: FieldElem
-  fl, sol = can_solve(a, b)
+  fl, sol = can_solve_with_solution(a, b)
   @assert fl
   return sol
 end
 
-function can_solve(a::SMat{T}, b::SRow{T}) where T <: FieldElem
+function can_solve_with_solution(a::SMat{T}, b::SRow{T}) where T <: FieldElem
   c = hcat(a, identity_matrix(SMat, base_ring(a), a.r))
   echelon!(c)
   fl, sol = can_solve_ut(sub(c, 1:nrows(c), 1:a.c), b)

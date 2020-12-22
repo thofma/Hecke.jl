@@ -65,7 +65,7 @@ function rand(rng::AbstractRNG, Esp::Random.SamplerTrivial{<:EllCrv})
     x = rand(rng, R)
     square = x^3 + E.coeff[1]*x + E.coeff[2]
 
-    a = issquare(square)
+    a = issquare_with_square_root(square)
     if a[1] == true # square is a square in F_q, so have found point on the curve
       y = a[2]
       P = E([x, y])
@@ -503,7 +503,7 @@ function t_mod_prime(l, E)
       return FlintZZ(0)
     else
       # need square root of q (mod l)
-      w = issquare(k_mod)[2]
+      w = issquare_with_square_root(k_mod)[2]
       if w.data < 0
         w = w + l
       end

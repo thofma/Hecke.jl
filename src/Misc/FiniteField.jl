@@ -121,8 +121,10 @@ function Base.iterate(F::FqFiniteField, st::Vector{fmpz})
   d = F()
   ccall((:fq_init2, libflint), Nothing, 
         (Ref{fq}, Ref{FqFiniteField}), d, F)
+  g = Hecke.Globals.Zx()
   for j in 1:length(st)
-         ccall((:fmpz_mod_poly_set_coeff_fmpz, libflint), Nothing,
+    #ccall((:fmpz_poly_set_coeff_fmpz, libflint), (Ref{fmpz_poly}, Int, Ref{fmpz}), g, j - 1, st[j])
+    ccall((:fmpz_poly_set_coeff_fmpz, libflint), Nothing,
                (Ref{fq}, Int, Ref{fmpz}), d, j - 1, st[j])
   end
 
@@ -157,14 +159,14 @@ end
 
 function (R::FqFiniteField)(x::fmpz_mod_poly)
   z = R()
-  ccall((:fq_set, libflint), Nothing, (Ref{Nemo.fq}, Ref{Nemo.fmpz_mod_poly}, Ref{Nemo.FqFiniteField}), z, x, R)
-  ccall((:fq_reduce, libflint), Nothing, (Ref{Nemo.fq}, Ref{Nemo.FqFiniteField}), z, R)
+  ccall((:fq_set_fmpz_mod_poly, libflint), Nothing, (Ref{Nemo.fq}, Ref{Nemo.fmpz_mod_poly}, Ref{Nemo.FqFiniteField}), z, x, R)
+  #ccall((:fq_reduce, libflint), Nothing, (Ref{Nemo.fq}, Ref{Nemo.FqFiniteField}), z, R)
   return z
 end
 
 function (R::FqFiniteField)(x::gfp_fmpz_poly)
   z = R()
-  ccall((:fq_set, libflint), Nothing, (Ref{Nemo.fq}, Ref{Nemo.gfp_fmpz_poly}, Ref{Nemo.FqFiniteField}), z, x, R)
+  ccall((:fq_set_fmpz_mod_poly, libflint), Nothing, (Ref{Nemo.fq}, Ref{Nemo.gfp_fmpz_poly}, Ref{Nemo.FqFiniteField}), z, x, R)
   ccall((:fq_reduce, libflint), Nothing, (Ref{Nemo.fq}, Ref{Nemo.FqFiniteField}), z, R)
   return z
 end

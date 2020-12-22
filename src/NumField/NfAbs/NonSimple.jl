@@ -724,6 +724,8 @@ function mod(a::NfAbsNSElem, p::fmpz)
   return b
 end
 
+# TODO: Dan says that it is better to use a BuilderCtx if the result has
+# denominator 1
 function mod!(b::NfAbsNSElem, p::fmpz)
   for i=1:length(b.data)
     el = coeff(b.data, i)
@@ -732,6 +734,7 @@ function mod!(b::NfAbsNSElem, p::fmpz)
     n = mod(numerator(el), dnew * p)
     setcoeff!(b.data, i, fmpq(n, dnew))
   end
+  combine_like_terms!(b.data)
   return b
 end
 

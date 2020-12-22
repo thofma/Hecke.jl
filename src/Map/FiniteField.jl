@@ -55,7 +55,7 @@ function Nemo.hom(F::FinField, K::FinField, a::FinFieldElem; check::Bool = true)
     for i = 1:degree(K)
       aux1[1, i] = Kp(coeff(x, i-1))
     end
-    fl, y = can_solve(M, aux1, side = :left)
+    fl, y = can_solve_with_solution(M, aux1, side = :left)
     if !fl
       error("The element is not in the image!")
     end

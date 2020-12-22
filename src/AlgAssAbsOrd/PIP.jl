@@ -1096,7 +1096,7 @@ function _gcdx(a::NfOrdElem, b::NfOrdElem)
   Mb = representation_matrix(b)
   M = vcat(Ma, Mb)
   onee = matrix(FlintZZ, 1, d, coordinates(g))
-  fl, v = can_solve(M, onee, side = :left)
+  fl, v = can_solve_with_solution(M, onee, side = :left)
   @assert fl
   u = OK([v[1, i] for i in 1:d])
   v = OK([v[1, d + i] for i in 1:d])
@@ -1571,7 +1571,7 @@ function _isfree_Q32(K::AnticNumberField)
   for i in 1:length(Lambda_star_in_QGalmost)
     v = matrix(FlintQQ, 1, dim(QG), Lambda_star_in_QGalmost[i].coeffs);
     d = denominator(v) * denominator(Me)
-    fl, w = can_solve(change_base_ring(FlintZZ, d * Me), change_base_ring(FlintZZ, d * v), side = :left)
+    fl, w = can_solve_with_solution(change_base_ring(FlintZZ, d * Me), change_base_ring(FlintZZ, d * v), side = :left)
     @assert fl
     @assert e * QG(fmpq[w[1, j] for j in 1:dim(QG)]) == Lambda_star_in_QGalmost[i]
     push!(Lambda_star_in_QG, QG(fmpq[w[1, j] for j in 1:dim(QG)]))
@@ -1601,7 +1601,7 @@ function _isfree_Q32(K::AnticNumberField)
 
   M1 = basis_matrix(Ref(e) .* basis(OKasideal)); M2 =  matrix(FlintQQ, 1, dim(QG), [xlift.coeffs[i] for i in 1:dim(QG)])
   dd = lcm(denominator(M1), denominator(M2))
-  fl, v = can_solve(map_entries(x -> FlintZZ(x * dd), M1), map_entries(x -> FlintZZ(x * dd), M2), side = :left)
+  fl, v = can_solve_with_solution(map_entries(x -> FlintZZ(x * dd), M1), map_entries(x -> FlintZZ(x * dd), M2), side = :left)
   @assert fl
   xxlift = dot(basis(OKasideal), fmpz[v[1, i] for i in 1:dim(QG)])
   #xxlift = divexact_left(xlift, e)

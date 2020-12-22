@@ -1254,7 +1254,7 @@ function _matrix_basis(A::AlgAss{T}, idempotents::Vector{S}) where { T, S }#<: U
     NN = zero_matrix(base_ring(A), 4*dim(eAe), 1)
     NN = vcat(NN, matrix(base_ring(A), dim(eAe), 1, coeffs(bb)))
     NN = vcat(NN, matrix(base_ring(A), dim(eAe), 1, coeffs(aa)))
-    b, yy = can_solve(transpose(N), NN)
+    b, yy = can_solve_with_solution(transpose(N), NN)
     @assert b
     y = m1(m2(eAe([ yy[i, 1] for i = 1:dim(eAe) ])))
 

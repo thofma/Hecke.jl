@@ -132,7 +132,7 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-     can_solve(f::QuadBin, n::Int64)
+     can_solve_with_solution(f::QuadBin, n::Int64)
 For a binary quadratic form $f$ with negative discriminant and an integer $n$,
 returns tuple (`true`, (`x`,`y`)) if $f$(`x`,`y`) = $n$ for integers `x`,`y`.
 If no such integers exist, return (`false`,(0,0))

@@ -162,7 +162,7 @@ function algebra(M::Vector{T}) where {T <: MatElem}
           v[1, (i - 1)* n  + j] = N[i, j]
         end
       end
-      b, u = can_solve(B, v, side = :left)
+      b, u = can_solve_with_solution(B, v, side = :left)
       error("NOT HERE!")
       @assert b
       @assert N == sum(u[i]*basis[i] for i in 1:dim)
@@ -183,7 +183,7 @@ function algebra(M::Vector{T}) where {T <: MatElem}
         v[1, (i - 1)* n  + j] = N[i, j]
       end
     end
-    b, u = can_solve(B, v, side = :left)
+    b, u = can_solve_with_solution(B, v, side = :left)
     gens[l] =  A([u[1, m] for m in 1:dim])
   end
 

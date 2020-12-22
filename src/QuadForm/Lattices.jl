@@ -1562,7 +1562,7 @@ function isisotropic_finite(M)
     end
 
     if n == 2
-      ok, s = issquare(-divexact(G[1, 1], G[2, 2]))
+      ok, s = issquare_with_square_root(-divexact(G[1, 1], G[2, 2]))
       if ok
         return true, elem_type(k)[T[1, i] + s*T[2, i] for i in 1:ncols(T)]
       end
@@ -1570,7 +1570,7 @@ function isisotropic_finite(M)
       while true
         x = rand(k)
         y = rand(k)
-        ok, z = issquare( -x^2 * G[1, 1] - y^2 * divexact(G[2, 2], G[3, 3]))
+        ok, z = issquare_with_square_root( -x^2 * G[1, 1] - y^2 * divexact(G[2, 2], G[3, 3]))
         if (ok && (!iszero(x) || !iszero(y)))
           return true,  elem_type(k)[x*T[1, i] + y*T[2, i] + z * T[3, i] for i in 1:ncols(T)]
         end
@@ -2989,7 +2989,7 @@ function _find_quaternion_algebra(b, P, I)
     end
     M = vcat(M, v)
     push!(elts, f(L[i])) # cache
-    fl, w = can_solve(M, target, side = :left)
+    fl, w = can_solve_with_solution(M, target, side = :left)
     if fl
       found = true
       break
@@ -3024,7 +3024,7 @@ function _find_quaternion_algebra(b, P, I)
       end
     end
   end
-  fl, v = can_solve(M, target, side = :left)
+  fl, v = can_solve_with_solution(M, target, side = :left)
   @assert fl
   z = evaluate(FacElem(Dict(elts[i] => Int(lift(v[1, i])) for i in 1:ncols(v))))
   @assert sign_vector(z) == target
@@ -3700,8 +3700,8 @@ function assert_has_automorphisms(L::AbsLat; check::Bool = true,
   # Now translate to get the automorphisms with respect to basis_matrix(L)
   BmatL = basis_matrix(L)
 
-  b1, s1 = can_solve(BabsmatL, BmatL, side = :left)
-  b2, s2 = can_solve(BmatL, BabsmatL, side = :left)
+  b1, s1 = can_solve_with_solution(BabsmatL, BmatL, side = :left)
+  b2, s2 = can_solve_with_solution(BmatL, BabsmatL, side = :left)
 
   t_gens = Vector{typeof(BmatL)}(undef, length(gens))
 
@@ -3899,8 +3899,8 @@ function isisometric(L::AbsLat, M::AbsLat; ambient_representation::Bool = true, 
 
   if b
     T = change_base_ring(FlintQQ, inv(TL)*T*TM)
-    fl, s1 = can_solve(BabsmatL, basis_matrix(L), side = :left)
-    fl, s2 = can_solve(basis_matrix(M), BabsmatM, side = :left)
+    fl, s1 = can_solve_with_solution(BabsmatL, basis_matrix(L), side = :left)
+    fl, s2 = can_solve_with_solution(basis_matrix(M), BabsmatM, side = :left)
     T = s1 * change_base_ring(E, T) * s2
     if check
       @assert T * gram_matrix(rational_span(M)) * _map(transpose(T), involution(L)) == gram_matrix(rational_span(L))

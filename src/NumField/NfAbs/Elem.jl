@@ -1038,15 +1038,15 @@ end
 
 function nf_elem_to_fmpz_mod_poly!(r::fmpz_mod_poly, a::nf_elem, useden::Bool = true)
   ccall((:nf_elem_get_fmpz_mod_poly_den, libantic), Nothing,
-        (Ref{fmpz_mod_poly}, Ref{nf_elem}, Ref{AnticNumberField}, Cint),
-        r, a, a.parent, Cint(useden))
+        (Ref{fmpz_mod_poly}, Ref{nf_elem}, Ref{AnticNumberField}, Cint, Ref{fmpz_mod_ctx_struct}),
+        r, a, a.parent, Cint(useden), r.parent.base_ring.ninv)
   return nothing
 end
 
 function nf_elem_to_gfp_fmpz_poly!(r::gfp_fmpz_poly, a::nf_elem, useden::Bool = true)
   ccall((:nf_elem_get_fmpz_mod_poly_den, libantic), Nothing,
-        (Ref{gfp_fmpz_poly}, Ref{nf_elem}, Ref{AnticNumberField}, Cint),
-        r, a, a.parent, Cint(useden))
+        (Ref{gfp_fmpz_poly}, Ref{nf_elem}, Ref{AnticNumberField}, Cint, Ref{fmpz_mod_ctx_struct}),
+        r, a, a.parent, Cint(useden), r.parent.base_ring.ninv)
   return nothing
 end
 

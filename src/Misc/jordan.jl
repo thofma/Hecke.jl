@@ -80,7 +80,7 @@ function closure_with_pol(v::MatElem{T}, M::MatElem{T}) where T <: FieldElem
     w = w*M
     res = Hecke.cleanvect(E, w)
   end
-  fl, c = Hecke.can_solve(v, w, side = :left)
+  fl, c = Hecke.can_solve_with_solution(v, w, side = :left)
   @assert fl
   return v, c
 end
@@ -413,7 +413,7 @@ end
 #The function returns a matrix representing the restriction of the linear map to the subspace
 function restriction(M::MatElem{T}, S::MatElem{T}) where T <: FieldElem
   TR = S*M
-  fl, R = Hecke.can_solve(S, TR, side = :left)
+  fl, R = Hecke.can_solve_with_solution(S, TR, side = :left)
   if !fl
     error("The subspace is not invariant!")
   end

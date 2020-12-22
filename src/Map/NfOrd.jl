@@ -365,7 +365,7 @@ function image(f::NfOrdToFqMor, x::NfOrdElem)
     u = F()
     gg = parent(nf(O).pol)(elem_in_nf(x, copy = false))::fmpq_poly
     fmpq_poly_to_gfp_fmpz_poly_raw!(f.tmp_gfp_fmpz_poly, gg, f.t_fmpz_poly, f.t_fmpz)
-    ccall((:fmpz_mod_poly_rem, libflint), Nothing, (Ref{gfp_fmpz_poly}, Ref{gfp_fmpz_poly}, Ref{gfp_fmpz_poly}), f.tmp_gfp_fmpz_poly, f.tmp_gfp_fmpz_poly, f.poly_of_the_field)
+    ccall((:fmpz_mod_poly_rem, libflint), Nothing, (Ref{gfp_fmpz_poly}, Ref{gfp_fmpz_poly}, Ref{gfp_fmpz_poly}, Ref{Nemo.fmpz_mod_ctx_struct}), f.tmp_gfp_fmpz_poly, f.tmp_gfp_fmpz_poly, f.poly_of_the_field, f.tmp_gfp_fmpz_poly.parent.base_ring.ninv)
     ccall((:fq_set, libflint), Nothing, (Ref{fq}, Ref{gfp_fmpz_poly}, Ref{FqFiniteField}), u, f.tmp_gfp_fmpz_poly, F)
     ccall((:fq_reduce, libflint), Nothing, (Ref{fq}, Ref{FqFiniteField}), u, F)
     return u

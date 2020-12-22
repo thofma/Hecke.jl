@@ -1258,7 +1258,7 @@ function _isisotropic_with_vector(F::MatrixElem)
       end
 
       FF = GF(2, cached = false)
-      fl, expo = can_solve(matrix(FF, length(signs), length(_target), [ s.coeff[1, i] for s in signs, i in 1:length(_target)]), matrix(FF, 1, length(_target), _target), side = :left)
+      fl, expo = can_solve_with_solution(matrix(FF, length(signs), length(_target), [ s.coeff[1, i] for s in signs, i in 1:length(_target)]), matrix(FF, 1, length(_target), _target), side = :left)
       @assert fl
 
       x = evaluate(FacElem(basis, map(fmpz, [lift(expo[1, i]) for i in 1:length(basis)])))

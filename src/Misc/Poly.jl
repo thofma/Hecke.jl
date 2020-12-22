@@ -4,6 +4,8 @@ export rational_reconstruction, farey_lift, div, valence, leading_coefficient,
        factor_mod_pk_init, hensel_lift, rres, rresx,
        coefficients, polynomial
 
+import Nemo: fmpz_mod_ctx_struct
+
 function PolynomialRing(R::Ring; cached::Bool = false)
   return PolynomialRing(R, "x", cached = cached)
 end
@@ -214,21 +216,21 @@ function compose_mod(x::fmpz_mod_poly, y::fmpz_mod_poly, z::fmpz_mod_poly)
   check_parent(x,z)
   r = parent(x)()
   ccall((:fmpz_mod_poly_compose_mod, libflint), Nothing,
-          (Ref{fmpz_mod_poly}, Ref{fmpz_mod_poly}, Ref{fmpz_mod_poly}, Ref{fmpz_mod_poly}), r, x, y, z)
+          (Ref{fmpz_mod_poly}, Ref{fmpz_mod_poly}, Ref{fmpz_mod_poly}, Ref{fmpz_mod_poly}, Ref{fmpz_mod_ctx_struct}), r, x, y, z, x.parent.base_ring.ninv)
   return r
 end
 
 function compose_mod_precomp(x::fmpz_mod_poly, A::fmpz_mat, z::fmpz_mod_poly, zinv::fmpz_mod_poly)
   r = parent(x)()
   ccall((:fmpz_mod_poly_compose_mod_brent_kung_precomp_preinv, libflint), Nothing,
-    (Ref{fmpz_mod_poly}, Ref{fmpz_mod_poly}, Ref{fmpz_mat}, Ref{fmpz_mod_poly}, Ref{fmpz_mod_poly}), r, x, A, z, zinv)
+        (Ref{fmpz_mod_poly}, Ref{fmpz_mod_poly}, Ref{fmpz_mat}, Ref{fmpz_mod_poly}, Ref{fmpz_mod_poly}, Ref{fmpz_mod_ctx_struct}), r, x, A, z, zinv, x.parent.base_ring.ninv)
   return r
 end
 
 function _inv_compose_mod(z::fmpz_mod_poly)
   r = reverse(z)
   ccall((:fmpz_mod_poly_inv_series_newton, libflint), Nothing,
-      (Ref{fmpz_mod_poly}, Ref{fmpz_mod_poly}, Int), r, r, length(r))
+        (Ref{fmpz_mod_poly}, Ref{fmpz_mod_poly}, Int, Ref{fmpz_mod_ctx_struct}), r, r, length(r), z.parent.base_ring.ninv)
   return r
 end
 
@@ -237,7 +239,7 @@ function precomp_compose_mod(y::fmpz_mod_poly, z::fmpz_mod_poly)
   nr = Int(root(degree(z), 2)) + 1
   A = zero_matrix(FlintZZ, nr, degree(z))
   ccall((:fmpz_mod_poly_precompute_matrix, libflint), Nothing,
-          (Ref{fmpz_mat}, Ref{fmpz_mod_poly}, Ref{fmpz_mod_poly}, Ref{fmpz_mod_poly}), A, y, z, zinv)
+        (Ref{fmpz_mat}, Ref{fmpz_mod_poly}, Ref{fmpz_mod_poly}, Ref{fmpz_mod_poly}, Ref{fmpz_mod_ctx_struct}), A, y, z, zinv, y.parent.base_ring.ninv)
   return A, zinv
 end
 
@@ -513,7 +515,7 @@ end
 
 function fmpq_poly_to_fmpz_mod_poly_raw!(r::fmpz_mod_poly, a::fmpq_poly, t1::fmpz_poly = fmpz_poly(), t2::fmpz = fmpz())
   ccall((:fmpq_poly_get_numerator, libflint), Nothing, (Ref{fmpz_poly}, Ref{fmpq_poly}), t1, a)
-  ccall((:fmpz_mod_poly_set_fmpz_poly, libflint), Nothing, (Ref{fmpz_mod_poly}, Ref{fmpz_poly}), r, t1)
+  ccall((:fmpz_mod_poly_set_fmpz_poly, libflint), Nothing, (Ref{fmpz_mod_poly}, Ref{fmpz_poly}, Ref{fmpz_mod_ctx_struct}), r, t1, r.parent.base_ring.ninv)
   ccall((:fmpq_poly_get_denominator, libflint), Nothing, (Ref{fmpz}, Ref{fmpq_poly}), t2, a)
   if !isone(t2)
     res = ccall((:fmpz_invmod, libflint), Cint, (Ref{fmpz}, Ref{fmpz}, Ref{fmpz}), t2, t2, modulus(base_ring(r)))
@@ -524,12 +526,12 @@ end
 
 function fmpq_poly_to_gfp_fmpz_poly_raw!(r::gfp_fmpz_poly, a::fmpq_poly, t1::fmpz_poly = fmpz_poly(), t2::fmpz = fmpz())
   ccall((:fmpq_poly_get_numerator, libflint), Nothing, (Ref{fmpz_poly}, Ref{fmpq_poly}), t1, a)
-  ccall((:fmpz_mod_poly_set_fmpz_poly, libflint), Nothing, (Ref{gfp_fmpz_poly}, Ref{fmpz_poly}), r, t1)
+  ccall((:fmpz_mod_poly_set_fmpz_poly, libflint), Nothing, (Ref{gfp_fmpz_poly}, Ref{fmpz_poly}, Ref{fmpz_mod_ctx_struct}), r, t1, r.parent.base_ring.ninv)
   ccall((:fmpq_poly_get_denominator, libflint), Nothing, (Ref{fmpz}, Ref{fmpq_poly}), t2, a)
   if !isone(t2)
     res = ccall((:fmpz_invmod, libflint), Cint, (Ref{fmpz}, Ref{fmpz}, Ref{fmpz}), t2, t2, modulus(base_ring(r)))
     @assert res != 0
-    ccall((:fmpz_mod_poly_scalar_mul_fmpz, libflint), Nothing, (Ref{gfp_fmpz_poly}, Ref{gfp_fmpz_poly}, Ref{fmpz}), r, r, t2)
+    ccall((:fmpz_mod_poly_scalar_mul_fmpz, libflint), Nothing, (Ref{gfp_fmpz_poly}, Ref{gfp_fmpz_poly}, Ref{fmpz}, Ref{fmpz_mod_ctx_struct}), r, r, t2, r.parent.base_ring.ninv)
   end
 end
 
@@ -577,7 +579,7 @@ end
 
 function fmpz_poly_to_fmpz_mod_poly_raw!(r::fmpz_mod_poly, a::fmpz_poly)
   ccall((:fmpz_poly_get_fmpz_mod_poly, libflint), Nothing,
-                  (Ref{fmpz_mod_poly}, Ref{fmpz_poly}), r, a)
+        (Ref{fmpz_mod_poly}, Ref{fmpz_poly}, Ref{fmpz_mod_ctx_struct}), r, a, r.parent.base_ring.ninv)
 
 end
 
@@ -1222,13 +1224,13 @@ function factor_equal_deg(x::gfp_fmpz_poly, d::Int)
   end
   fac = Nemo.gfp_fmpz_poly_factor(x.mod_n)
   ccall((:fmpz_mod_poly_factor_equal_deg, libflint), UInt,
-          (Ref{Nemo.gfp_fmpz_poly_factor}, Ref{gfp_fmpz_poly}, Int),
-          fac, x, d)
+        (Ref{Nemo.gfp_fmpz_poly_factor}, Ref{gfp_fmpz_poly}, Int, Ref{fmpz_mod_ctx_struct}),
+          fac, x, d, x.parent.base_ring.ninv)
   res = Vector{gfp_fmpz_poly}(undef, fac.num)
   for i in 1:fac.num
     f = parent(x)()
-    ccall((:fmpz_mod_poly_factor_get_nmod_poly, libflint), Nothing,
-            (Ref{gfp_fmpz_poly}, Ref{Nemo.gfp_fmpz_poly_factor}, Int), f, fac, i-1)
+    ccall((:fmpz_mod_poly_factor_get_fmpz_mod_poly, libflint), Nothing,
+          (Ref{gfp_fmpz_poly}, Ref{Nemo.gfp_fmpz_poly_factor}, Int, Ref{fmpz_mod_ctx_struct}), f, fac, i-1, x.parent_base_ring.ninv)
     res[i] = f
   end
   return res

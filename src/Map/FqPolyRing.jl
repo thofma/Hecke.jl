@@ -38,7 +38,7 @@ mutable struct FqPolyRingToFqMor{S, T, PolyType, MatType} <: Map{S, T, HeckeMap,
       ccall((:nmod_poly_set, libflint), Nothing, (Ref{gfp_poly}, Ptr{nmod_poly}), g, pt)
     else
       pt = ccall((:fq_ctx_modulus, libflint), Ptr{fmpz_mod_poly}, (Ref{FqFiniteField}, ), Fq)
-      ccall((:fmpz_mod_poly_set, libflint), Nothing, (Ref{gfp_fmpz_poly}, Ptr{fmpz_mod_poly}), g, pt)
+      ccall((:fmpz_mod_poly_set, libflint), Nothing, (Ref{gfp_fmpz_poly}, Ptr{fmpz_mod_poly}, Ref{fmpz_mod_ctx_struct}), g, pt, g.parent.base_ring.ninv)
     end
     n = degree(Fq)
     @assert n == degree(g)

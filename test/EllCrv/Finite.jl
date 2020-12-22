@@ -1,3 +1,9 @@
+#using Random
+#using RandomExtensions
+#
+#const rng = MersenneTwister()
+#const rand_seed = rand(UInt128)
+
 @testset "Elliptic curves over finite fields" begin
 
   R1 = ResidueRing(FlintZZ, 23)

@@ -72,8 +72,6 @@ end
 
 degree(::FlintRationalField) = 1
 
-degree(::GaloisFmpzField) = 1
-
 domain(f::AlgAssResMor) = f.domain
 
 codomain(f::AlgAssResMor) = f.codomain

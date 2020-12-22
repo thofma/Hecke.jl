@@ -496,7 +496,7 @@ function _induce_action(M, z::CommutatorAlgebra)
     @show MEig, M
     m = MEig * change_base_ring(K, M)
     @show m
-    fl, x = can_solve(MEig, m, side = :left)
+    fl, x = can_solve_with_solution(MEig, m, side = :left)
     @assert fl
     push!(res, x)
   end

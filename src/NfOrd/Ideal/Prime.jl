@@ -144,7 +144,7 @@ function lift(K::AnticNumberField, f::gfp_fmpz_poly)
   r = K()
   for i=0:f.length-1
     u = fmpz()
-    ccall((:fmpz_mod_poly_get_coeff_fmpz, libflint), Nothing, (Ref{fmpz}, Ref{gfp_fmpz_poly}, Int), u, f, i)
+    ccall((:fmpz_mod_poly_get_coeff_fmpz, libflint), Nothing, (Ref{fmpz}, Ref{gfp_fmpz_poly}, Int, Ref{fmpz_mod_ctx_struct}), u, f, i, f.parent.base_ring.ninv)
     _num_setcoeff!(r, i, u)
   end
   return r

@@ -734,7 +734,7 @@ function _relations(M::ModAlgAss{S, T, V}, N::ModAlgAss{S, T, V}) where {S, T, V
         rref!(X)
         push!(matrices, matrices[i]*H[j])
       else
-        fl, x = can_solve(B, v, side = :left)
+        fl, x = can_solve_with_solution(B, v, side = :left)
         @assert fl
         A = sum(T[x[1, q]*matrices[q] for q = 1:k])
         A = sub!(A, A, matrices[i]*H[j])
