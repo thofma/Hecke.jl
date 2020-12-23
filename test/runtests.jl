@@ -56,15 +56,15 @@ end
 @time include("QuadForm.jl")
 @time include("LocalField.jl")
 
-try
-  using Polymake
-  @time include("AlgAssRelOrd/Eichler.jl")
-catch e
-  if !(isa(e, ArgumentError))
-    rethrow(e)
-  else
-    println("using Polymake failed. Not running sophisticated norm equation tests")
-  end
-end
+#try
+#  using Polymake
+#  @time include("AlgAssRelOrd/Eichler.jl")
+#catch e
+#  if !(isa(e, ArgumentError))
+#    rethrow(e)
+#  else
+#    println("using Polymake failed. Not running sophisticated norm equation tests")
+#  end
+#end
 
 
