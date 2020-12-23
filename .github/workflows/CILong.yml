@@ -39,6 +39,7 @@ jobs:
       - name: "Build package"
         uses: julia-actions/julia-buildpkg@latest
       - run: julia --color=yes --project -e 'using Pkg; Pkg.add(PackageSpec(name="GAP")); Pkg.add(PackageSpec(name="Polymake"));'
+        #- run: julia --color=yes --project -e 'using Pkg; Pkg.add(PackageSpec(name="Polymake"));'
       - name: "Run long tests"
         uses: julia-actions/julia-runtest@latest
       - name: "Process code coverage"
