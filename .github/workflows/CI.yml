@@ -46,10 +46,10 @@ jobs:
         uses: julia-actions/julia-buildpkg@latest
       - name: "Run tests"
         uses: julia-actions/julia-runtest@latest
-      - name: "Process code coverage"
-        uses: julia-actions/julia-processcoverage@v1
-      - name: "Upload coverage data to Codecov"
-        uses: codecov/codecov-action@v1
+        #      - name: "Process code coverage"
+        #        uses: julia-actions/julia-processcoverage@v1
+        #      - name: "Upload coverage data to Codecov"
+        #        uses: codecov/codecov-action@v1
 
     # don't run ci twice on own PRs
     if: ${{ !(github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository) }}
