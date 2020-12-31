@@ -68,7 +68,8 @@
   E, b = number_field(t^2 - a * t + 1, "b")
   p = prime_decomposition(maximal_order(K), 2)[1][1]
   P = prime_decomposition(maximal_order(E), p)[1][1]
-  pm = pseudo_matrix(matrix(E, 3, 3, [1, 0, 0, b, 1, 0, 0, 0, 1]), [P^0, inv(P)^2, P^0])
+  ME = maximal_order(E)
+  pm = pseudo_matrix(matrix(E, 3, 3, [1, 0, 0, b, 1, 0, 0, 0, 1]), [one(E)*ME, inv(P)^2, one(E)*ME])
   V = @inferred hermitian_space(E, identity_matrix(E, 3))
   L = @inferred lattice(V, pm)
   o = @inferred Hecke.automorphism_group_order(L)

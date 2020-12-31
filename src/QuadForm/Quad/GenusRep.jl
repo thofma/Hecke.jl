@@ -157,7 +157,7 @@ function spinor_genera_in_genus(L, mod_out)
   C = SpinorGeneraCtx(L)
 
   # We don't need minimal generators, to make them not too large.
-  Gr = gram_matrix_of_generators(L, false)
+  Gr = gram_matrix_of_generators(L, minimal = false)
 
   R = base_ring(L)
   F = nf(R)
@@ -1776,7 +1776,7 @@ function _genus_representatives_binary_quadratic_definite(_L::QuadLat; max = inf
     end
     pm = sub(pm, i:nrows(pm), 1:ncols(pm))
 
-    _pm = pseudo_matrix(basis_matrix(_L) * matrix(pm), coefficient_ideals(pm))
+    _pm = pseudo_matrix(basis_matrix_of_rational_span(_L) * matrix(pm), coefficient_ideals(pm))
 
     _new_cand = lattice(_V, _pm)
 
@@ -2057,7 +2057,7 @@ end
 function _embed_into_ternary_lattice(L)
   @req ispositive_definite(L) "Lattice must be positive definite"
   V = rational_span(L)
-  ML = basis_matrix(L)
+  ML = basis_matrix_of_rational_span(L)
   # To go from V to ambient_space(L), multiply from the right with ML
   # The other direction in general requires solving x * ML = v, if v is an
   # element of rational_span(L)
@@ -2103,7 +2103,7 @@ function _shortest_vectors_restricted(L, m)
   vecs = short_vectors(Lre, m, m)
   res = []
   for v in vecs
-    w = matrix(FlintQQ, 1, rank(Lre), v[1]) * basis_matrix(Lre)
+    w = matrix(FlintQQ, 1, rank(Lre), v[1]) * basis_matrix_of_rational_span(Lre)
     push!(res, f(w))
   end
   return res
@@ -2111,7 +2111,7 @@ end
 
 function _orthogonal_complement(M::AbsLat, L::AbsLat)
   V = ambient_space(L)
-  M = basis_matrix(M)
+  M = basis_matrix_of_rational_span(M)
   Morth = orthogonal_complement(V, M)
   # Now intersect KM with L
   pm = _intersection_modules(pseudo_matrix(Morth), pseudo_matrix(L))

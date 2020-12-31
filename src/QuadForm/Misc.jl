@@ -1,3 +1,141 @@
+################################################################################
+#
+#  Restrict and extend scalars from L^n to Q^(d * n)
+#
+################################################################################
+
+mutable struct VecSpaceRes{S, T}
+  field::S
+  domain_dim::Int
+  codomain_dim::Int
+  absolute_basis::Vector{T}
+  absolute_degree::Int
+end
+
+function VecSpaceRes(K::S, n::Int) where {S}
+  B = absolute_basis(K)
+  d = absolute_degree(K)
+  domain_dim = n * d
+  codomain_dim = n
+
+  return VecSpaceRes{S, elem_type(K)}(K, domain_dim, codomain_dim, B, d)
+end
+
+function Base.show(io::IO, f::VecSpaceRes)
+  n = f.domain_dim
+  m = f.codomain_dim
+  println(io, "Restriction of scalars QQ^", n , " -> K^", m)
+  println(io, "where K is")
+  println(io, f.field)
+end
+
+(f::VecSpaceRes)(a) = image(f, a)
+
+function image(f::VecSpaceRes{S, T}, v::Vector) where {S, T}
+  if v isa Vector{fmpq}
+    vv = v
+  else
+    vv = map(fmpq, v)::Vector{fmpq}
+  end
+  return _image(f, vv)
+end
+
+function _image(f::VecSpaceRes{S, T}, v::Vector{fmpq}) where {S, T}
+  n = f.codomain_dim
+  d = f.absolute_degree
+  m = f.domain_dim
+  B = f.absolute_basis
+  @req length(v) == m "Vector must have length $m ($(length(v)))"
+  z = Vector{T}(undef, n)
+  l = 1
+  for i in 1:n
+    z[i] = zero(f.field)
+    for k in 1:d
+      z[i] = z[i] + v[l] * B[k]
+      l = l + 1
+    end
+  end
+  return z
+end
+
+Base.:(\)(f::VecSpaceRes, a) = preimage(f, a)
+
+function preimage(f::VecSpaceRes{S, T}, v::Vector) where {S, T}
+  if v isa Vector{T}
+    vv = v
+  else
+    vv = map(f.field, v)::Vector{T}
+  end
+  return _preimage(f, vv)
+end
+
+function _preimage(f::VecSpaceRes{S, T}, w::Vector{T}) where {S, T}
+  n = f.codomain_dim
+  d = f.absolute_degree
+  @req length(w) == n "Vector must have length $n ($(length(w)))"
+  z = Vector{fmpq}(undef, f.domain_dim)
+  k = 1
+  for i in 1:n
+    y = w[i]
+    @assert parent(y) === f.field
+    co = absolute_coordinates(y)
+    for j in 1:d
+      z[k] = co[j]
+      k = k + 1
+    end
+  end
+  return z
+end
+
+################################################################################
+#
+#  Generators for ideals
+#
+################################################################################
+
+function gens(I::NfRelOrdFracIdl)
+  res = elem_type(nf(order(I)))[]
+  for (a, c) in pseudo_basis(I, copy = false)
+    b = numerator(c)
+    d = denominator(c)
+    if isdefined(b, :princ_gen)
+      push!(res, elem_in_nf(b.princ_gen) * a//d)
+    elseif isdefined(b, :gen_one) && isdefined(b, :gen_two)
+      push!(res, b.gen_one//d * a)
+      push!(res, elem_in_nf(b.gen_two)//d * a)
+    else
+      for y in basis(b)
+        push!(res, elem_in_nf(y)//d * a)
+      end
+    end
+  end
+  return res
+end
+
+function gens(c::NfAbsOrdFracIdl)
+  res = elem_type(nf(order(c)))[]
+  b = numerator(c)
+  d = denominator(c)
+  if isdefined(b, :princ_gen)
+    push!(res, elem_in_nf(b.princ_gen)//d)
+  elseif isdefined(b, :gen_one) && isdefined(b, :gen_two)
+    push!(res, nf(order(c))(b.gen_one//d))
+    push!(res, elem_in_nf(b.gen_two)//d)
+  else
+    for y in basis(b)
+      push!(res, elem_in_nf(y)//d)
+    end
+  end
+  return res
+end
+
+################################################################################
+#
+#  Kummer generators for local quadratic unramified extensions
+#
+################################################################################
+
+
 # Return an element Delta, such that K_p(\sqrt{Delta}) is the unique quadratic unramified extension.
 
 @doc Markdown.doc"""
@@ -66,6 +204,7 @@ end
 #
 ################################################################################
 
+# This can be done more efficiently
 function image(f::NfToNfRel, I::NfAbsOrdIdl, OK)
   return reduce(+, (OK(f(elem_in_nf(b))) * OK for b in basis(I)), init = 0 * OK)
 end
@@ -87,6 +226,10 @@ end
 function preimage(f::NfToNfRel, I::NfRelOrdIdl)
   OK = maximal_order(domain(f))
   return preimage(f, I, OK)
+end
+
+function image(S::T, A::NfOrdFracIdl) where {T <: Map}
+  return S(numerator(A))//denominator(A)
 end
 
 ################################################################################
@@ -260,3 +403,1047 @@ end
 ################################################################################
 
 real_places(K::FlintRationalField) = PosInf[inf]
+
+################################################################################
+#
+#  Some helper functions
+#
+################################################################################
+
+# Careful, starts at 0!
+function absolute_coeff(z::nf_elem, i)
+  return coeff(z, i)
+end
+
+function absolute_coeff(z::NumFieldElem, i)
+  d = absolute_degree(base_field(parent(z)))
+  rowindex = fld(i, d)
+  colindex = (i % d)
+  return absolute_coeff(coeff(z, rowindex), colindex)
+end
+
+istotally_real(::FlintRationalField) = true
+
+istotally_positive(x::fmpq) = x > 0
+
+# This function is really slow...
+function denominator(M::fmpq_mat)
+  d = one(FlintZZ)
+  for i in 1:nrows(M)
+    for j in 1:ncols(M)
+      d = lcm!(d, d, denominator(M[i, j]))
+    end
+  end
+  return d
+end
+
+function _weak_approximation_coprime(IP, S, M)
+  R = order(M)
+  A, _exp, _log = infinite_primes_map(R, IP, M)
+
+  t = (1 + _exp(A([ S[j] == 1 ? 0 : -1 for j in 1:length(IP)])))
+  @assert all(i -> sign(t, IP[i]) == S[i], 1:length(IP))
+  return t
+end
+
+################################################################################
+#
+#  Helper functions (sort them later)
+#
+################################################################################
+
+function image(f::NumFieldMor, I::NfRelOrdIdl{T, S}) where {T, S}
+  #f has to be an automorphism!!!!
+  O = order(I)
+  @assert ismaximal(O) # Otherwise the order might change
+  K = nf(O)
+
+  B = absolute_basis(I)
+
+  if I.is_prime == 1
+    lp = prime_decomposition(O, minimum(I))
+    for (Q, e) in lp
+      if I.splitting_type[2] == e
+        if all(b -> f(b) in Q, B)
+          return Q
+        end
+      end
+    end
+  end
+
+  pb = pseudo_basis(I)
+  pm = basis_pmatrix(I)
+
+  m = zero(matrix(pm))
+
+  c = coefficient_ideals(pm)
+
+  for i in 1:length(pb)
+    cc = coordinates(O(f(pb[i][1])))
+    for j in 1:length(cc)
+      m[i, j] = cc[j]
+    end
+  end
+
+  J = ideal(O, pseudo_matrix(m, c))
+
+  if isdefined(I, :minimum)
+    J.minimum = I.minimum
+  end
+
+  J.has_norm = I.has_norm
+
+  if isdefined(I, :norm)
+    J.norm = I.norm
+  end
+
+  if isdefined(I, :is_prime)
+    J.is_prime = I.is_prime
+  end
+
+  if isdefined(I, :splitting_type)
+    J.splitting_type = I.splitting_type
+  end
+
+  return J
+end
+
+function image(f::NumFieldMor, I::NfRelOrdFracIdl{T, S}) where {T, S}
+  #S has to be an automorphism!!!!
+  O = order(I)
+  @assert ismaximal(O) # Otherwise the order might change
+  K = nf(O)
+
+  pb = pseudo_basis(I)
+
+  z = sum(b * (f(a) * O) for (a, b) in pb)
+  return z
+end
+
+# An element is locally a square if and only if the quadratic defect is 0, that is
+# the valuation is inf.
+# (see O'Meara, Introduction to quadratic forms, 3rd edition, p. 160)
+function islocal_square(a, p)
+  return quadratic_defect(a, p) isa PosInf
+end
+
+function _map(a::AbstractAlgebra.MatrixElem, f)
+  z = similar(a)
+  for i in 1:nrows(a)
+    for j in 1:ncols(a)
+      z[i, j] = f(a[i, j])
+    end
+  end
+  return z
+end
+
+# I think I need a can_change_base_ring version
+
+function element_with_signs(K, D::Dict{InfPlc, Int})
+  return _element_with_signs(K, D)
+end
+
+function _element_with_signs(K, D)
+  OK = maximal_order(K)
+  G, mG = infinite_primes_map(OK, real_places(K), 1*OK)
+  r = real_places(K)
+  z = id(G)
+  for (v, s) in D
+    for i in 1:length(r)
+      if s == 1
+        ss = 0
+      else
+        ss = 1
+      end
+
+      if v == r[i]
+        z = z + ss * G[i]
+      end
+    end
+  end
+  zz = elem_in_nf(mG(z))::elem_type(K)
+  @assert all(u -> sign(zz, u[1]) == u[2], D)
+  return zz
+end
+
+function element_with_signs(K, P::Vector{InfPlc}, S::Vector{Int})
+  return _element_with_signs(K, zip(P, S))
+end
+
+function element_with_signs(K, A::Vector{Tuple{InfPlc, Int}})
+  return _element_with_signs(K, A)
+end
+
+function prime_ideals_up_to(O::NfRelOrd, n::Union{Int, fmpz})
+  p = 2
+  z = ideal_type(O)[]
+  while p <= n
+    lp = prime_decomposition(base_ring(O), p)
+    for q in lp
+      if norm(q[1]) > n
+        continue
+      else
+        lq = prime_decomposition(O, q[1])
+        for Q in lq
+          if absolute_norm(Q[1]) <= n
+            push!(z, Q[1])
+          end
+        end
+      end
+    end
+    p = next_prime(p)
+  end
+  return sort!(z, by = a -> absolute_norm(a))
+end
+
+################################################################################
+#
+#  Trace of fractional ideals
+#
+################################################################################
+
+function tr(I::NfRelOrdFracIdl)
+  E = nf(order(I))
+  K = base_field(E)
+  return fractional_ideal(maximal_order(K), [trace(b) for b in absolute_basis(I)])
+end
+
+function tr(I::NfOrdFracIdl)
+  E = nf(order(I))
+  K = base_field(E)
+  return reduce(gcd, [trace(b) for b in basis(I)]; init = fmpq(0))
+end
+
+################################################################################
+#
+#  Is integral for fractional ideals
+#
+################################################################################
+
+function isintegral(I::NfOrdFracIdl)
+  @assert ismaximal(order(I))
+  simplify(I)
+  return denominator(I) == 1
+end
+
+################################################################################
+#
+#  Local norms in quadratic extensions
+#
+################################################################################
+
+@doc Markdown.doc"""
+    islocal_norm(L::NumField, a::NumFieldElem, P)
+
+Given a number field $L/K$, an element $a \in K$ and a prime ideal $P$ of $K$,
+returns whether $a$ is a local norm at $P$.
+
+The number field $L/K$ must be a simple extension of degree 2.
+"""
+islocal_norm(::NumField, ::NumFieldElem, ::Any)
+
+function islocal_norm(K::AnticNumberField, a::fmpq, p::fmpz)
+  degree(K) != 2 && error("Degree of number field must be 2")
+  x = gen(K)
+  b = (2 * x - tr(x))^2
+  @assert degree(minpoly(b)) == 1
+  bQ = coeff(b, 0)
+  return hilbert_symbol(a, bQ, p) == 1
+end
+
+function islocal_norm(K::AnticNumberField, a::fmpq, P::NfOrdIdl)
+  p = minimum(P)
+  return islocal_norm(K, a, p)
+end
+
+function islocal_norm(K::AnticNumberField, a::RingElement, P::NfOrdIdl)
+  return islocal_norm(K, FlintQQ(a), P)
+end
+
+function islocal_norm(K::AnticNumberField, a::RingElement, p::fmpz)
+  return islocal_norm(K, FlintQQ(a), p)
+end
+
+function islocal_norm(K::AnticNumberField, a::RingElement, p::Integer)
+  return islocal_norm(K, FlintQQ(a), fmpz(p))
+end
+
+function islocal_norm(K::NfRel{T}, a::T, P) where {T} # ideal of parent(a)
+  nf(order(P)) != parent(a) && error("Prime ideal must have the same base field as the second argument")
+  degree(K) != 2 && error("Degree of number field must be 2")
+  x = gen(K)
+  b = (2 * x - tr(x))^2
+  @assert degree(minpoly(b)) == 1
+  bQ = coeff(b, 0)
+  return hilbert_symbol(a, bQ, P) == 1
+end
+
+################################################################################
+#
+#  Special local units
+#
+################################################################################
+
+# Return a local unit u (that is, valuation(u, P) = 0) with trace one.
+# P must be even and inert (P is lying over p)
+function _special_unit(P, p::fmpz)
+  R = order(P)
+  E = nf(R)
+  @assert degree(E) == 2
+  x = gen(E)
+  x = x - trace(x)//2
+  a = coeff(x^2, 0)
+  K = base_field(E)
+  pi = elem_in_nf(uniformizer(p))
+  v = valuation(a, p)
+  if v != 0
+    @assert iseven(v)
+    a = a//pi^v
+    x = x//pi^(div(v, 2))
+  end
+  k = GF(p, cached = false)
+  hex(x) = k(numerator(x)) * inv(k(denominator(x)))
+  hexinv(x) = FlintQQ(lift(x))
+  t = hexinv(sqrt(hex(a)))
+  a = a//t^2
+  x = x//t
+  w = valuation(a - 1, p)
+  e = valuation(order(p)(2), p)
+  while w < 2*e
+    @assert iseven(w)
+    s = sqrt(hex((a - 1)//pi^w))
+    t = 1 + (hexinv(s)) * pi^(div(w, 2))
+    a = a//t^2
+    x = x//t
+    w = valuation(a - 1, p)
+  end
+  @assert w == 2 * e
+  u = (1 + x)//2
+  @assert trace(u) == 1
+  @assert valuation(u, P) == 0
+  return u
+end
+
+function _special_unit(P, p)
+  @assert ramification_index(P) == 1
+  @assert isdyadic(p)
+  R = order(P)
+  E = nf(R)
+  @assert degree(E) == 2
+  x = gen(E)
+  x = x - trace(x)//2
+  a = coeff(x^2, 0)
+  K = base_field(E)
+  pi = elem_in_nf(uniformizer(p))
+  v = valuation(a, p)
+  if v != 0
+    @assert iseven(v)
+    a = a//pi^v
+    x = x//pi^(div(v, 2))
+  end
+  k, h = ResidueField(order(p), p)
+  hex = extend(h, K)
+  t = hex \ sqrt(hex(a))
+  a = a//t^2
+  x = x//t
+  w = valuation(a - 1, p)
+  e = valuation(order(p)(2), p)
+  while w < 2*e
+    @assert iseven(w)
+    s = sqrt(hex((a - 1)//pi^w))
+    t = 1 + (hex \ s) * pi^(div(w, 2))
+    a = a//t^2
+    x = x//t
+    w = valuation(a - 1, p)
+  end
+  @assert w == 2 * e
+  u = (1 + x)//2
+  @assert trace(u) == 1
+  @assert valuation(u, P) == 0
+  return u
+end
+
+################################################################################
+#
+#  Valuation of trace ideal generated by elements
+#
+################################################################################
+
+# L is a list of (integral) number field elements
+# and p a prime ideal of the maximal.
+# Return v(tr(<L>), P).
+function trace_ideal_valuation(L, p)
+  R = order(p)
+  v = valuation(different(R), p)
+  V = unique!(valuation(l, p) for l in L if !iszero(l))
+  X = Int[ 2 *div(l + v, 2) for l in V]
+  if length(X) == 0
+    return inf
+  else
+    minimum(X)
+  end
+end
+
+function _get_norm_valuation_from_gram_matrix(G, P)
+  n = ncols(G)
+  R = order(P)
+  L = nf(R)
+  K = base_field(L)
+  trrr = R * (tr(fractional_ideal(order(P), [G[i, j] for i in 1:n for j in i+1:n])))
+  if iszero(trrr)
+    T = inf
+  else
+    T = valuation(trrr, P)
+  end
+  #T = trace_ideal_valuation((G[i, j] for i in 1:n for j in i+1:n), P)
+  diag = minimum(iszero(G[i, i]) ? inf : valuation(G[i, i], P) for i in 1:n)
+  if T isa PosInf
+    return diag
+  else
+    return min(T, diag)
+  end
+end
+
+################################################################################
+#
+#  Absolute basis of ideals
+#
+################################################################################
+
+function absolute_basis(I::NfOrdFracIdl)
+  return basis(I)
+end
+
+function absolute_basis(I::NfRelOrdFracIdl)
+  res = elem_type(nf(order(I)))[]
+  pb = pseudo_basis(I)
+  for i in 1:length(pb)
+    (e, I) = pb[i]
+    for b in absolute_basis(I)
+      push!(res, e * b)
+    end
+  end
+  return res
+end
+
+function absolute_basis(I::NfRelOrdIdl)
+  res = elem_type(nf(order(I)))[]
+  pb = pseudo_basis(I)
+  for (e, I) in pb
+    for b in absolute_basis(I)
+      push!(res, e * b)
+    end
+  end
+  return res
+end
+
+################################################################################
+#
+#  Ramification index
+#
+################################################################################
+
+ramification_index(P) = P.splitting_type[1]
+
+################################################################################
+#
+#  Treat FlintQQ as a number field 
+#
+################################################################################
+
+order(::fmpz) = FlintZZ
+
+uniformizer(p::fmpz) = p
+
+isdyadic(p::fmpz) = p == 2
+
+################################################################################
+#
+#  Is ramified
+#
+################################################################################
+
+function isramified(R, p)
+  D = prime_decomposition(R, p)
+  for (_, e) in D
+    if e > 1
+      return true
+    end
+  end
+  return false
+end
+
+################################################################################
+#
+#  Normic defect
+#
+################################################################################
+
+function normic_defect(E, a, p)
+  R = maximal_order(E)
+  if iszero(a) || islocal_norm(E, a, p)
+    inf
+  end
+  return valuation(a, p) + valuation(discriminant(R), p) - 1
+end
+
+################################################################################
+#
+#  Find quaternion algebras
+#
+################################################################################
+
+# Given an element b in a number field K and sets of finite and infinite
+# places P and I of K, return an element a in K such that
+# { v: (a,b)_v = -1 } = P \cup I
+# Note that the function computes the unit and class groups of K!
+# TODO: use factored elements
+function _find_quaternion_algebra(b, P, I)
+  @assert iseven(length(I) + length(P))
+  @assert all(p -> !islocal_square(b, p), P)
+  @assert all(p -> isnegative(evaluate(b, p)), I)
+
+  K = parent(b)
+  if length(P) > 0
+    R = order(P[1])
+  else
+    R = maximal_order(K)
+  end
+
+  n = length(P)
+  m = length(I)
+
+  _J = b * R
+  #_P = Dict{}()
+  __P = copy(P)
+  #for p in P
+  #  _P[p] = true
+  #end
+  for p in support(_J)
+    if !(p in __P)
+      push!(__P, p)
+    end
+      #_P[p] = true
+  end
+  for p in prime_decomposition(R, 2)
+    if !(p[1] in __P)
+      push!(__P, p[1])
+    end
+  end
+  for p in real_places(K)
+    if !(p in I) && isnegative(b, p)
+      push!(I, p)
+    end
+  end
+
+  F = Nemo.GF(2)
+
+  target = matrix(F, 1, length(__P) + length(I), vcat(fill(1, n), fill(0, length(__P) - n), fill(1, m), fill(0, length(I) - m)))
+  if iszero(target)
+    return one(K)
+  end
+
+  #__P = convert(Vector{NfOrdIdl}, collect(keys(_P)))
+
+  found = false
+  U, h = unit_group(R)
+  sign_vector = g -> begin
+    return matrix(F, 1, length(__P) + length(I),
+                 vcat([div(1 - hilbert_symbol(K(g), b, p), 2) for p in __P ], [ div(1 - sign(Int, evaluate(g, p)), 2) for p in I]))
+  end
+
+
+  L, f = sunit_group(identity.(__P))
+  M = zero_matrix(F, 0, length(__P) + length(I))
+  elts = nf_elem[]
+
+  for i in 1:ngens(L)
+    v = sign_vector(f(L[i]))
+    if rank(M) == rank(vcat(M, v))
+      continue
+    end
+    M = vcat(M, v)
+    push!(elts, f(L[i])) # cache
+    fl, w = can_solve_with_solution(M, target, side = :left)
+    if fl
+      found = true
+      break
+    end
+  end
+
+  if !found
+    Cl, mCl = class_group(R)
+    A = abelian_group(fill(0, length(__P)))
+    hh = hom(A, Cl, [mCl\(p) for p in __P])
+    S, mS = image(hh, false)
+    Q, mQ = quo(Cl, [mS(S[i]) for i in 1:ngens(S)])
+
+    p = 2
+    while !found
+      p = next_prime(p)
+      for (q, e) in prime_decomposition(R, p)
+        if q in __P
+          continue
+        end
+        o = order(mQ(mCl\(q)))
+        c = -(hh\(o * (mCl\(q))))
+        fl, x = isprincipal(q * prod(__P[i]^Int(c.coeff[i]) for i in 1:length(__P)))
+        @assert fl
+        v = sign_vector(elem_in_nf(x))
+        if rank(M) == rank(vcat(M, v + target))
+          found = true
+          M = vcat(M, v)
+          push!(elts, elem_in_nf(x))
+          break
+        end
+      end
+    end
+  end
+  fl, v = can_solve_with_solution(M, target, side = :left)
+  @assert fl
+  z = evaluate(FacElem(Dict(elts[i] => Int(lift(v[1, i])) for i in 1:ncols(v))))
+  @assert sign_vector(z) == target
+  return z
+end
+
+function _find_quaternion_algebra(b::fmpq, P, I)
+  K, a = rationals_as_number_field()
+  bK = K(b)
+  OK = maximal_order(K)
+  PK = ideal_type(OK)[]
+  for p in P
+    push!(PK, prime_decomposition(OK, p)[1][1])
+  end
+  if length(I) == 0
+    IK = InfPlc[]
+  else
+    @assert length(I) == 1
+    IK = infinite_places(K)
+  end
+  c = _find_quaternion_algebra(bK, PK, IK)
+  return coeff(c, 0)
+end
+
+################################################################################
+#
+#  Weak approximation
+#
+################################################################################
+
+function _weak_approximation(I::Vector{InfPlc}, val::Vector{Int})
+  K = number_field(first(I))
+  if degree(K) == 2
+    return _weak_approximation_quadratic(I, val)
+  else
+    return _weak_approximation_generic(I, val)
+  end
+end
+
+function _weak_approximation_generic(I::Vector{InfPlc}, val::Vector{Int})
+  K = number_field(first(I))
+  OK = maximal_order(K)
+  local A::GrpAbFinGen
+  A, exp, log = infinite_primes_map(OK, I, 1 * OK)
+  uni = infinite_places_uniformizers(K)
+  target_signs = zeros(Int, ngens(A))
+
+  if all(isequal(1), val)
+    return one(K)
+  elseif all(isequal(-1), val)
+    return -one(K)
+  end
+
+  for P in I
+    v = log(uni[P])::GrpAbFinGenElem
+    for i in 1:ngens(A)
+      if v.coeff[i] == 1
+        target_signs[i] = val[i] == -1 ? 1 : 0
+        break
+      end
+    end
+  end
+  c = K(exp(A(target_signs))::elem_type(OK))
+  for i in 1:length(I)
+    @assert sign(c, I[i]) == val[i]
+  end
+  return c
+end
+
+function _weak_approximation_quadratic(I::Vector{InfPlc}, val::Vector{Int})
+  K = number_field(first(I))
+  if length(I) == 1
+    return K(val)
+  else
+    if val[1] == val[2]
+      return K(val[1])
+    else
+      x = gen(K)
+      s1 = sign(x, I[1])
+      s2 = sign(x, I[2])
+      if s1 == val[1] && s2 == val[2]
+        return x
+      elseif s1 == -val[1] && s2 == -val[2]
+        return -x
+      else
+        return _weak_approximation_generic(I, val)
+      end
+    end
+  end
+end
+
+################################################################################
+#
+#  Decreasing non-negative inter sequences
+#
+################################################################################
+
+# Compute all decreasing non-negative integer sequenes of length len with sum
+# equal to sum.
+# This is not optimized.
+function _integer_lists(sum::Int, len::Int)
+  if sum == 0
+    return Vector{Int}[fill(0, len)]
+  end
+  if len == 1
+    return Vector{Int}[Int[sum]]
+  end
+  res = Vector{Vector{Int}}()
+  for i in 0:sum
+    rec = _integer_lists(sum - i, len - 1)::Vector{Vector{Int}}
+    if isempty(rec)
+      push!(res, append!(Int[i], fill(0, len - 1)))
+    else
+      for v in rec
+        push!(res, append!(Int[i], v))
+      end
+    end
+  end
+  return res
+end
+
+################################################################################
+#
+#  Support
+#
+################################################################################
+
+function support(I::NfAbsOrdIdl)
+  lp = factor(I)
+  return collect(keys(lp))
+end
+
+function support(I::NfOrdFracIdl)
+  lp = factor(I)
+  return collect(keys(lp))
+end
+
+function support(I::NfRelOrdIdl)
+  lp = factor(I)
+  return collect(keys(lp))
+end
+
+function support(I::NfRelOrdFracIdl)
+  lp = factor(I)
+  return collect(keys(lp))
+end
+
+function support(a::NumFieldElem)
+  return support(a * maximal_order(parent(a)))
+end
+
+function support(a::NumFieldElem, R::NfAbsOrd)
+  @assert nf(R) == parent(a)
+  return support(a * R)
+end
+
+function support(d::fmpz)
+  res = fmpz[]
+  for (p, _) in factor(d)
+    push!(res, p)
+  end
+  return res
+end
+
+function support(a::fmpq)
+  d = denominator(a)
+  n = numerator(a)
+  res = fmpz[]
+  for (p, _) in factor(d)
+    push!(res, p)
+  end
+  for (p, _) in factor(n)
+    push!(res, p)
+  end
+  return res
+end
+
+################################################################################
+#
+#  p-uniformizer
+#
+################################################################################
+
+p_uniformizer(P::NfOrdIdl) = uniformizer(P)
+
+isdyadic(p) = isdyadic(minimum(p))
+
+################################################################################
+#
+#  Local non-norms
+#
+################################################################################
+
+# find an element of K, which is not a local norm at p
+# p must be ramified
+# See [Kir16, Corollary 3.3.17]
+function _non_norm_rep(E, K, p)
+  K = base_field(E)
+  if isramified(maximal_order(E), p)
+    if !isdyadic(p)
+      U, mU = unit_group(maximal_order(K))
+      for i in 1:ngens(U)
+        u = mU(U[i])
+        if !islocal_norm(E, elem_in_nf(u), p)
+          return elem_in_nf(u)
+        end
+      end
+      B = elem_in_nf.(basis(p))
+      k = 0
+      while true
+        if k > 10000
+          throw(error("Something wrong in non_norm_rep"))
+        end
+        y = rand(K, -5:5)
+        if iszero(y)
+          continue
+        end
+        if !islocal_norm(E, y, p)
+          return y
+        end
+        k += 1
+      end
+    else
+      lP = prime_decomposition(maximal_order(E), p)
+      @assert length(lP) == 1 && lP[1][2] == 2
+      Q = lP[1][1]
+      e = valuation(different(maximal_order(E)), Q)
+      U, mU = unit_group(maximal_order(K))
+      for i in 1:ngens(U)
+        u = mU(U[i])
+        if !islocal_norm(E, elem_in_nf(u), p) && (valuation(u - 1, p) == e - 1)
+          return elem_in_nf(u)
+        end
+      end
+      # We look for a local unit u such that v_p(u - 1) = e - 1 and
+      # u not a local norm
+      tu = elem_in_nf(mU(U[1]))
+      tuo = order(U[1])
+      B = elem_in_nf.(basis(p^(e - 1)))
+      k = 0
+      while true
+        if k > 10000
+          throw(error("Something wrong in non_norm_rep"))
+        end
+        y = (1 + rand(B, -1:1)) * tu^(rand(1:tuo))
+        @assert valuation(y, p) == 0
+        if !islocal_norm(E, y, p) && valuation(y - 1, p) == e - 1
+          return y
+        end
+        k += 1
+      end
+    end
+    throw(error("This should not happen ..."))
+  else
+    lP = prime_decomposition(maximal_order(E), p)
+    if length(lP) == 2
+      error("This dosses not make any sense!")
+    else
+      return elem_in_nf(p_uniformizer(p))
+     end
+  end
+end
+
+# P must be inert and odd
+# Find an element which is a locally a norm, but not a square
+function _non_square_norm(P)
+  @assert !isdyadic(P)
+  #@assert isinert(P)
+  R = order(P)
+  p = minimum(P)
+  k, h = ResidueField(order(P), P)
+  kp, hp = ResidueField(order(p), p)
+  local u
+  while true
+    r = rand(k)
+    u = h\r
+    if !iszero(r) && !issquare(hp(norm(u)))[1]
+      break
+    end
+  end
+  return u
+end
+
+################################################################################
+#
+#  Signs for arb and acb
+#
+################################################################################
+
+function sign(::Type{Int}, x::arb)
+  if ispositive(x)
+    return 1
+  elseif isnegative(x)
+    return -1
+  else
+    error("Could not determine sign")
+  end
+end
+
+function sign(::Type{Int}, x::acb)
+  if isreal(x)
+    return sign(Int, real(x))
+  else
+    error("Element is not real")
+  end
+end
+
+################################################################################
+#
+#  Exponentiation for fractional ideals
+#
+################################################################################
+
+function ^(A::NfRelOrdFracIdl, a::Int)
+  if a == 0
+    B = one(nf(order(A))) * order(A)
+    return B
+  end
+
+  if a == 1
+    return A # copy?
+  end
+
+  if a < 0
+    return inv(A^(-a))
+  end
+
+  if a == 2
+    return A*A
+  end
+
+  if mod(a, 2) == 0
+    return (A^div(a, 2))^2
+  else
+    return A * A^(a - 1)
+  end
+end
+
+################################################################################
+#
+#  Matrices as Vector
+#
+################################################################################
+
+_eltseq(M::MatElem) = [M[i, j] for i in 1:nrows(M) for j in 1:ncols(M)]
+
+################################################################################
+#
+#  Create a matrix from rows
+#
+################################################################################
+
+function matrix(K::Ring, R::Vector{<:Vector})
+  if length(R) == 0
+    return zero_matrix(K, 0, 0)
+  else
+    n = length(R)
+    m = length(R[1])
+    z = zero_matrix(K, n, m)
+    for i in 1:n
+      @assert length(R[i]) == m
+      for j in 1:m
+        z[i, j] = R[i][j]
+      end
+    end
+    return z
+  end
+end
+
+################################################################################
+#
+#  Absolute primitive element and minpoly
+#
+################################################################################
+
+function absolute_primitive_element(K::AnticNumberField)
+  return gen(K)
+end
+
+function absolute_primitive_element(K::NumField)
+  B = basis(K)
+  for i in 1:length(B)
+    if degree(absolute_minpoly(B[i])) == absolute_degree(K)
+      return B[i]
+    end
+  end
+  for i in 1:10
+    z = rand(basis(base_field(K))) * rand(basis(K)) +
+          rand(basis(base_field(K))) * rand(basis(K))
+    if degree(absolute_minpoly(z)) == absolute_degree(K)
+      return z
+    end
+  end
+  Kabs, m = absolute_field(K)
+  return m(gen(Kabs))
+end
+
+absolute_minpoly(a::nf_elem) = minpoly(a)
+
+################################################################################
+#
+#  Absolute field of AnticNumberField
+#
+################################################################################
+
+function absolute_field(K::AnticNumberField)
+  return K, id_hom(K)
+end
+
+################################################################################
+#
+#  Maximal subspaces
+#
+################################################################################
+
+function maximal_subspaces(k::Field, n::Int)
+  I = identity_matrix(k, n)
+  L = typeof(I)[]
+  for i in 1:n
+    II = remove_row(I, i)
+    if i == 1
+      push!(L, II)
+      continue
+    end
+    #V = Iterators.product([k for j in 1:(i - 1)]...)
+    VV = [collect(k) for j in 1:(i - 1)]
+    V = cartesian_product_iterator(VV, inplace = false)
+    for v in V
+      III = deepcopy(II)
+      for l in 1:(i - 1)
+        III[l, i] = v[l]
+      end
+      push!(L, III)
+    end
+  end
+  return L
+end
+
+################################################################################
+#
+#  Helper
+#
+################################################################################
+
+elem_in_nf(x::fmpz) = FlintQQ(x)
+
+ideal_type(::FlintIntegerRing) = fmpz

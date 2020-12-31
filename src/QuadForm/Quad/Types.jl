@@ -1,3 +1,22 @@
+mutable struct ZLat <: AbsLat{FlintRationalField}
+  space::QuadSpace{FlintRationalField, fmpq_mat}
+  rational_span::QuadSpace{FlintRationalField, fmpq_mat}
+  basis_matrix::fmpq_mat
+  gram_matrix::fmpq_mat
+  aut_grp_gen::fmpq_mat
+  aut_grp_ord::fmpz
+  automorphism_group_generators::Vector{fmpz_mat}
+  automorphism_group_order::fmpz
+  minimum::fmpq
+
+  function ZLat(V::QuadSpace{FlintRationalField, fmpq_mat}, B::fmpq_mat)
+    z = new()
+    z.space = V
+    z.basis_matrix = B
+    return z
+  end
+end
+
 mutable struct QuadLat{S, T, U} <: AbsLat{S}
   space::QuadSpace{S, T}
   pmat::U
@@ -8,6 +27,8 @@ mutable struct QuadLat{S, T, U} <: AbsLat{S}
   automorphism_group_order::fmpz
   generators
   minimal_generators
+  norm
+  scale
   @declare_other
 
   function QuadLat{S, T, U}() where {S, T, U}

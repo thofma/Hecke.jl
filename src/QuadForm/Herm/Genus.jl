@@ -1121,7 +1121,7 @@ function _hermitian_form_with_invariants(E, dim, P, N)
   K = base_field(E)
   R = maximal_order(K)
 #  require forall{n: n in N | n in {0..dim}}: "Number of negative entries is impossible";
-  infinite_pl = [ p for p in real_places(K) if _decomposition_number(E, p) == 1 ]
+  infinite_pl = [ p for p in real_places(K) if length(infinite_places(E, p)) == 1 ]
   length(N) != length(infinite_pl) && error("Wrong number of real places")
   S = maximal_order(E)
   prim = [ p for p in P if length(prime_decomposition(S, p)) == 1 ] # only take non-split primes
@@ -1179,7 +1179,7 @@ function _hermitian_form_invariants(M)
     P[p] = true
   end
   D = diagonal(_gram_schmidt(M, v)[1])
-  I = Dict([ p=>length([coeff(d, 0) for d in D if isnegative(coeff(d, 0), p)]) for p in real_places(K) if _decomposition_number(E, p) == 1])
+  I = Dict([ p=>length([coeff(d, 0) for d in D if isnegative(coeff(d, 0), p)]) for p in real_places(K) if length(infinite_places(E, p)) == 1])
   return ncols(M), collect(keys(P)), I
 end
 
@@ -1202,7 +1202,7 @@ function representative(G::GenusHerm)
     #@show coefficient_ideals(pseudo_matrix(L))
     #@show matrix(pseudo_matrix(L))
     @vprint :Lattice 1 "Finding sublattice\n"
-    M = find_lattice(M, L, p)
+    M = locally_isometric_sublattice(M, L, p)
   end
   return M
 end
@@ -1665,33 +1665,6 @@ end
 
 function representatives(G::GenusHerm)
   return genus_representatives(representative(G))
-end
-
-# This is the "Magma" Genus symbol
-function _genus_symbol_kirschmer(L::HermLat, p; uniformizer = zero(order(p)))
-  @assert order(p) == base_ring(base_ring(L))
-
-  B, G, S = jordan_decomposition(L, p)
-  R = base_ring(L)
-  E = nf(R)
-  K = base_field(E)
-  if !isdyadic(p) || !isramified(R, p)
-    sym = Tuple{Int, Int, Bool}[ (nrows(B[i]), S[i], islocal_norm(E, coeff(det(G[i]), 0), p)) for i in 1:length(B)]
-  else
-    P = prime_decomposition(R, p)[1][1]
-    pi = E(K(Hecke.uniformizer(p)))
-    sym = Tuple{Int, Int, Bool, Int, elem_type(K)}[]
-    for i in 1:length(B)
-      normal = (_get_norm_valuation_from_gram_matrix(G[i], P)::Int == S[i])::Bool
-      GG = diagonal_matrix(dense_matrix_type(E)[pi^(max(0, S[i] - S[j])) * G[j] for j in 1:length(B)])::dense_matrix_type(E)
-      v = _get_norm_valuation_from_gram_matrix(GG, P)::Int
-      #_n = norm(lattice(hermitian_space(E, GG), identity_matrix(E, nrows(GG))))
-      #vv = valuation(R * norm(lattice(hermitian_space(E, GG), identity_matrix(E, nrows(GG)))), P)::Int
-      s = (nrows(B[i]), S[i], normal, v, coeff(det(diagonal_matrix([G[j] for j in 1:i])), 0))
-      push!(sym, s)
-    end
-  end
-  return sym
 end
 
 function _all_row_span(M)
