@@ -31,9 +31,11 @@ end
 Create the quadratic space over `K` with Gram matrix `G`.
 The matrix `G` must be square and symmetric.
 """
-function quadratic_space(K::Field, G::MatElem)
-  @req issquare(G) "Gram matrix must be square ($(nrows(G)) x $(ncols(G))"
-  @req issymmetric(G) "Gram matrix must be square"
+function quadratic_space(K::Field, G::MatElem; check::Bool = true)
+  if check
+    @req issquare(G) "Gram matrix must be square ($(nrows(G)) x $(ncols(G))"
+    @req issymmetric(G) "Gram matrix must be symmetric"
+  end
   return QuadSpace(K, G)
 end
 

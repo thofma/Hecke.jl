@@ -451,7 +451,7 @@ function restrict_scalars(V::AbsSpace, K::FlintRationalField,
     end
   end
 
-  return quadratic_space(FlintQQ, G), VecSpaceRes(E, rank(V))
+  return quadratic_space(FlintQQ, G, check = false), VecSpaceRes(E, rank(V))
 end
 
 ################################################################################
