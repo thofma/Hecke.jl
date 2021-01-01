@@ -20,6 +20,7 @@ Create the quadratic space over `K` with dimension `n` and Gram matrix
 equal to the identity matrix.
 """
 function quadratic_space(K::Field, n::Int)
+  @req n >= 0 "Dimension ($n) must be positive"
   G = identity_matrix(K, n)
   return QuadSpace(K, G)
 end
@@ -31,6 +32,8 @@ Create the quadratic space over `K` with Gram matrix `G`.
 The matrix `G` must be square and symmetric.
 """
 function quadratic_space(K::Field, G::MatElem)
+  @req issquare(G) "Gram matrix must be square ($(nrows(G)) x $(ncols(G))"
+  @req issymmetric(G) "Gram matrix must be square"
   return QuadSpace(K, G)
 end
 
@@ -42,7 +45,7 @@ end
 
 isquadratic(V::QuadSpace) = true
 
-ishermitian(V::QuadSpace) = true
+ishermitian(V::QuadSpace) = false
 
 _base_algebra(V::QuadSpace) = V.K
 

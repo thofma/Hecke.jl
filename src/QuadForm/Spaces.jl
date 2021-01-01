@@ -1,6 +1,12 @@
-export ambient_space, rank, gram_matrix, inner_product, involution,
+export ambient_space, rank, gram_matrix, inner_product, involution, ishermitian, isquadratic, isregular,
        islocal_square, isequivalent, isrationally_equivalent, quadratic_space,
        hermitian_space, diagonal, invariants, hasse_invariant, witt_invariant, orthogonal_basis, fixed_field
+
+################################################################################
+#
+#  Creation
+#
+################################################################################
 
 ################################################################################
 #
@@ -9,32 +15,18 @@ export ambient_space, rank, gram_matrix, inner_product, involution,
 ################################################################################
 
 @doc Markdown.doc"""
-    isquadratic(V::AbsSpace) -> Bool
-
-Returns whether $V$ is quadratic.
-"""
-isquadratic(V::AbsSpace)
-
-@doc Markdown.doc"""
-    ishermitian(V::AbsSpace) -> Bool
-
-Returns whether $V$ is hermitian.
-"""
-ishermitian(V::AbsSpace)
-
-@doc Markdown.doc"""
     rank(V::AbsSpace) -> Int
 
-Return the rank of the space `V`.
+Return the rank of the quadratic space `V`.
 """
-rank(L::AbsSpace) = nrows(L.gram)
+rank(L::AbsSpace) = rank(L.gram)
 
 @doc Markdown.doc"""
     dim(V::AbsSpace) -> Int
 
 Return the dimension of the space `V`.
 """
-dim(V::AbsSpace) = rank(V)
+dim(V::AbsSpace) = nrows(V.gram)
 
 @doc Markdown.doc"""
     gram_matrix(V::AbsSpace) -> MatElem
@@ -66,8 +58,13 @@ Return the involution of `V`.
 """
 involution(V::AbsSpace)
 
-# Maybe cache this
+################################################################################
+#
+#  Predicates
+#
+################################################################################
 
+# TODO: Maybe cache this?
 @doc Markdown.doc"""
     isregular(V::AbsSpace) -> Bool
 
@@ -75,9 +72,22 @@ Return whether `V` is regular, that is, if the Gram matrix
 has full rank.
 """
 function isregular(V::AbsSpace)
-  G = gram_matrix(V)
-  return rank(G) == nrows(G)
+  return rank(V) == dim(V)
 end
+
+@doc Markdown.doc"""
+    isquadratic(V::AbsSpace) -> Bool
+
+Returns whether $V$ is a quadratic space.
+"""
+isquadratic(::AbsSpace)
+
+@doc Markdown.doc"""
+    ishermitian(V::AbsSpace) -> Bool
+
+Returns whether $V$ is a Hermitian space.
+"""
+ishermitian(::AbsSpace)
 
 ################################################################################
 #
