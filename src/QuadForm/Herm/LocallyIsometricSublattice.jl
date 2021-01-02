@@ -51,7 +51,7 @@ function _locally_isometric_sublattice_inert(M, L, p, P, absolute_map)
     m = div(length(BB) - r0, 2)
     k, h = ResidueField(base_ring(base_ring(L)), p)
     hext = extend(h, nf(base_ring(base_ring(L))))
-    Y = dense_matrix_type(EE)[ BB[i] for i in (2*m + 1):length(BB) ]
+    YY = dense_matrix_type(EE)[ BB[i] for i in (2*m + 1):length(BB) ]
     for i in 1:m
       # transform <BB[2i-1], BB[2i]> into H(0). Then go from there.
       el = coeff(-G[1][2*i, 2*i]//G[1][2*i - 1, 2*i - 1], 0)
@@ -66,13 +66,13 @@ function _locally_isometric_sublattice_inert(M, L, p, P, absolute_map)
       end
     end
     if length(B) == 2
-      Y = vcat(reduce(vcat, Y), B[2])
+      Y = vcat(reduce(vcat, YY), B[2])
     else
-      Y = reduce(vcat, Y)
+      Y = reduce(vcat, YY)
     end
     pM = pseudo_matrix(M)
     PpM = _module_scale_ideal(P, pseudo_matrix(M))
-    _new_pmat = _sum_modules(M, pseudo_matrix(Y), PM)
+    _new_pmat = _sum_modules(M, pseudo_matrix(Y), pM)
     _new_pmat = _intersect_modules_with_map(_new_pmat, pM, absolute_map)
     LL = lattice(ambient_space(M), _new_pmat)
   else

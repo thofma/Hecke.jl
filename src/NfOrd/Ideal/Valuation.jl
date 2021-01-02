@@ -341,7 +341,7 @@ function assure_valuation_function(p::NfOrdIdl)
     end
   elseif degree(O) > 80
     f6 = val_func_generic(p)
-    f7 = val_func_generic_small(p)
+    f7 = val_fun_generic_small(p)
     local val_gen
     let f7 = f7, f6 = f6
       function val_gen(x::nf_elem, no::fmpq = fmpq(0))
