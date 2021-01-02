@@ -6,7 +6,7 @@ Hecke is a software package for algebraic number theory maintained by Claus Fiek
 It is written in [julia](https://www.julialang.org) and is based on the computer algebra package [Nemo](http://www.nemocas.org).
 
 - <https://github.com/thofma/Hecke.jl> (Source code)
-- <https://thofma.github.io/Hecke.jl/latest/> (Online documentation)
+- <https://thofma.github.io/Hecke.jl/dev/> (Online documentation)
 
 So far, Hecke provides the following features:
 
@@ -53,7 +53,7 @@ Welcome to
  | |  | |  __/ (__|   <  __/
  |_|  |_|\___|\___|_|\_\___|
   
-Version 0.5.0 ... 
+Version 0.9.0 ... 
  ... which comes with absolutely no warranty whatsoever
 (c) 2015-2018 by Claus Fieker, Tommy Hofmann and Carlo Sircana
 
