@@ -14,7 +14,7 @@ It is written in [julia](https://www.julialang.org) and is based on the computer
 Hecke is part of the [OSCAR](https://oscar.computeralgebra.de/) project and the development is supported by the Deutsche Forschungsgemeinschaft DFG within the Collaborative Research Center TRR 195.
 
 - <https://github.com/thofma/Hecke.jl> (Source code)
-- <https://thofma.github.io/Hecke.jl/latest/> (Online documentation)
+- <https://thofma.github.io/Hecke.jl/dev/> (Online documentation)
 
 So far, Hecke provides the following features:
   
@@ -80,7 +80,7 @@ Welcome to
  | |  | |  __/ (__|   <  __/
  |_|  |_|\___|\___|_|\_\___|
   
-Version 0.7.2... 
+Version 0.9.0... 
  ... which comes with absolutely no warrant whatsoever
 (c) 2015-2019 by Claus Fieker, Tommy Hofmann and Carlo Sircana
 
@@ -95,4 +95,4 @@ with basis [1,a,a^2]
 
 ## Documentation
 
-The online documentation can be found here: <https://thofma.github.io/Hecke.jl/latest/>
+The online documentation can be found here: <https://thofma.github.io/Hecke.jl/dev/>
