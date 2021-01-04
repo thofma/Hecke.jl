@@ -189,12 +189,13 @@ const properties_comp = Dict(:id => (Int, x -> UInt(hash(x))),
                               :regulator => (arb, x -> regulator(maximal_order(x))),
                               :lmfdb_label => (String, x -> ""),
                               :isabelian => (Bool, x -> isabelian(automorphism_group(x)[1])),
-                              :non_simple => (Vector{fmpq_poly}, x -> non_simple_extension(x)))
+                              :non_simple => (Vector{fmpq_poly}, x -> non_simple_extension(x)),
+                              :galois_group => (Tuple{Int, Int}, x -> error()))
+              
 
 for (k, v) in properties_comp
   @eval ($k)(D::NFDBRecord) = D[Symbol($k)]::($(v[1]))
 end
-
 
 Base.getindex(D::NFDBRecord, s) = getindex(D.data, s)
 
@@ -273,7 +274,8 @@ const record_info_v1 = NFDBRecordInfo([:id,
                                        :automorphism_group,
                                        :lmfdb_label,
                                        :isabelian,
-                                       :non_simple])
+                                       :non_simple,
+                                       :galois_group])
 
 
 @assert length(record_info_v1.name_tuples) <= 56
