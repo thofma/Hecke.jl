@@ -82,7 +82,7 @@ const lattices_and_aut_order = [
 #   [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 1, 1, 2, 1, 1, 1, 2, 1, 1, 2, 4, 2, 2],
 #   [0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 1, 1, 2, 1, 1, 1, 2, 1, 2, 2, 4, 2],
 #   [-3, -1, -1, -1, -1, -1, -1, 1, -1, -1, -1, 1, -1, 1, 1, 1, -1, 1, 1, 1, 2,
-#    2, 2, 4]]), 8315553613086720000)]
+#    2, 2, 4]]), 8315553613086720000),
 (([[2, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
    [-1, 2, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
    [0, -1, 2, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -125,6 +125,10 @@ end
   for i in 1:min(l, 200)
     L = lattice(D, i)
     L = Zlattice(gram = gram_matrix(L)) # to avoid caching
+    Ge = automorphism_group_generators(L, ambient_representation = true)
+    test_automorphisms(L, Ge, true)
+    Ge = automorphism_group_generators(L, ambient_representation = false)
+    test_automorphisms(L, Ge, false)
     @test automorphism_group_order(L) == lattice_automorphism_group_order(D, i)
   end
 end

@@ -59,7 +59,7 @@
     @test nf(O6) == K6
 
     O7 = Order(K6, Hecke.FakeFmpqMat(FlintZZ[6 0; 0 1], FlintZZ(6)), check = true, cached = false)
-    O77 = Order(K6, FlintQQ[6//6 0; 0 1//6])
+    O77 = Order(K6, FlintQQ[1 0; 0 1//6])
 
     #@test O7 == O77
     #@test !(O7 === O77)

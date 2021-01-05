@@ -1,6 +1,12 @@
-export ambient_space, rank, gram_matrix, inner_product, involution,
+export ambient_space, rank, gram_matrix, inner_product, involution, ishermitian, isquadratic, isregular,
        islocal_square, isequivalent, isrationally_equivalent, quadratic_space,
        hermitian_space, diagonal, invariants, hasse_invariant, witt_invariant, orthogonal_basis, fixed_field
+
+################################################################################
+#
+#  Creation
+#
+################################################################################
 
 ################################################################################
 #
@@ -9,32 +15,18 @@ export ambient_space, rank, gram_matrix, inner_product, involution,
 ################################################################################
 
 @doc Markdown.doc"""
-    isquadratic(V::AbsSpace) -> Bool
-
-Returns whether $V$ is quadratic.
-"""
-isquadratic(V::AbsSpace)
-
-@doc Markdown.doc"""
-    ishermitian(V::AbsSpace) -> Bool
-
-Returns whether $V$ is hermitian.
-"""
-ishermitian(V::AbsSpace)
-
-@doc Markdown.doc"""
     rank(V::AbsSpace) -> Int
 
-Return the rank of the space `V`.
+Return the rank of the quadratic space `V`.
 """
-rank(L::AbsSpace) = nrows(L.gram)
+rank(L::AbsSpace) = rank(L.gram)
 
 @doc Markdown.doc"""
     dim(V::AbsSpace) -> Int
 
 Return the dimension of the space `V`.
 """
-dim(V::AbsSpace) = rank(V)
+dim(V::AbsSpace) = nrows(V.gram)
 
 @doc Markdown.doc"""
     gram_matrix(V::AbsSpace) -> MatElem
@@ -66,8 +58,13 @@ Return the involution of `V`.
 """
 involution(V::AbsSpace)
 
-# Maybe cache this
+################################################################################
+#
+#  Predicates
+#
+################################################################################
 
+# TODO: Maybe cache this?
 @doc Markdown.doc"""
     isregular(V::AbsSpace) -> Bool
 
@@ -75,9 +72,22 @@ Return whether `V` is regular, that is, if the Gram matrix
 has full rank.
 """
 function isregular(V::AbsSpace)
-  G = gram_matrix(V)
-  return rank(G) == nrows(G)
+  return rank(V) == dim(V)
 end
+
+@doc Markdown.doc"""
+    isquadratic(V::AbsSpace) -> Bool
+
+Returns whether $V$ is a quadratic space.
+"""
+isquadratic(::AbsSpace)
+
+@doc Markdown.doc"""
+    ishermitian(V::AbsSpace) -> Bool
+
+Returns whether $V$ is a Hermitian space.
+"""
+ishermitian(::AbsSpace)
 
 ################################################################################
 #
@@ -353,6 +363,7 @@ end
 
 isisotropic(V::AbsSpace, p::InfPlc) = _isisotropic(V, p)
 
+# this is badly written, no need to compute d
 function _isisotropic(D::Vector{fmpq}, p::PosInf)
   n = length(D)
   if n <= 1
@@ -369,6 +380,7 @@ function _isisotropic(D::Vector{fmpq}, p::PosInf)
   end
 end
 
+# this is badly written, no need to compute d
 function _isisotropic(D::Vector, p::InfPlc)
   n = length(D)
   if n <= 1
@@ -387,6 +399,7 @@ function _isisotropic(D::Vector, p::InfPlc)
   end
 end
 
+# this looks wrong
 function _isisotropic(V::AbsSpace, p::InfPlc)
   n = rank(V)
   d = det(V)
@@ -401,156 +414,6 @@ function _isisotropic(V::AbsSpace, p::InfPlc)
     D = diagonal(V)
     return length(unique!(Int[sign(d, p) for d in D])) == 2
   end
-end
-
-################################################################################
-#
-#  Helper functions (sort them later)
-#
-################################################################################
-
-function image(f::NumFieldMor, I::NfRelOrdIdl{T, S}) where {T, S}
-  #f has to be an automorphism!!!!
-  O = order(I)
-  @assert ismaximal(O) # Otherwise the order might change
-  K = nf(O)
-
-  B = absolute_basis(I)
-
-  if I.is_prime == 1
-    lp = prime_decomposition(O, minimum(I))
-    for (Q, e) in lp
-      if I.splitting_type[2] == e
-        if all(b -> f(b) in Q, B)
-          return Q
-        end
-      end
-    end
-  end
-
-  pb = pseudo_basis(I)
-  pm = basis_pmatrix(I)
-
-  m = zero(matrix(pm))
-
-  c = coefficient_ideals(pm)
-
-  for i in 1:length(pb)
-    cc = coordinates(O(f(pb[i][1])))
-    for j in 1:length(cc)
-      m[i, j] = cc[j]
-    end
-  end
-
-  J = ideal(O, pseudo_matrix(m, c))
-
-  if isdefined(I, :minimum)
-    J.minimum = I.minimum
-  end
-
-  J.has_norm = I.has_norm
-
-  if isdefined(I, :norm)
-    J.norm = I.norm
-  end
-
-  if isdefined(I, :is_prime)
-    J.is_prime = I.is_prime
-  end
-
-  if isdefined(I, :splitting_type)
-    J.splitting_type = I.splitting_type
-  end
-
-  return J
-end
-
-function image(f::NumFieldMor, I::NfRelOrdFracIdl{T, S}) where {T, S}
-  #S has to be an automorphism!!!!
-  O = order(I)
-  @assert ismaximal(O) # Otherwise the order might change
-  K = nf(O)
-
-  pb = pseudo_basis(I)
-
-  z = sum(b * (f(a) * O) for (a, b) in pb)
-  return z
-end
-
-# An element is locally a square if and only if the quadratic defect is 0, that is
-# the valuation is inf.
-# (see O'Meara, Introduction to quadratic forms, 3rd edition, p. 160)
-function islocal_square(a, p)
-  return quadratic_defect(a, p) isa PosInf
-end
-
-function _map(a::AbstractAlgebra.MatrixElem, f)
-  z = similar(a)
-  for i in 1:nrows(a)
-    for j in 1:ncols(a)
-      z[i, j] = f(a[i, j])
-    end
-  end
-  return z
-end
-
-# I think I need a can_change_base_ring version
-
-function element_with_signs(K, D::Dict{InfPlc, Int})
-  return _element_with_signs(K, D)
-end
-
-function _element_with_signs(K, D)
-  OK = maximal_order(K)
-  G, mG = infinite_primes_map(OK, real_places(K), 1*OK)
-  r = real_places(K)
-  z = id(G)
-  for (v, s) in D
-    for i in 1:length(r)
-      if s == 1
-        ss = 0
-      else
-        ss = 1
-      end
-
-      if v == r[i]
-        z = z + ss * G[i]
-      end
-    end
-  end
-  zz = elem_in_nf(mG(z))::elem_type(K)
-  @assert all(u -> sign(zz, u[1]) == u[2], D)
-  return zz
-end
-
-function element_with_signs(K, P::Vector{InfPlc}, S::Vector{Int})
-  return _element_with_signs(K, zip(P, S))
-end
-
-function element_with_signs(K, A::Vector{Tuple{InfPlc, Int}})
-  return _element_with_signs(K, A)
-end
-
-function prime_ideals_up_to(O::NfRelOrd, n::Union{Int, fmpz})
-  p = 2
-  z = ideal_type(O)[]
-  while p <= n
-    lp = prime_decomposition(base_ring(O), p)
-    for q in lp
-      if norm(q[1]) > n
-        continue
-      else
-        lq = prime_decomposition(O, q[1])
-        for Q in lq
-          if absolute_norm(Q[1]) <= n
-            push!(z, Q[1])
-          end
-        end
-      end
-    end
-    p = next_prime(p)
-  end
-  return sort!(z, by = a -> absolute_norm(a))
 end
 
 ################################################################################
@@ -571,7 +434,6 @@ function restrict_scalars(V::AbsSpace, K::FlintRationalField,
   G = zero_matrix(FlintQQ, d * n, d * n)
   r = 1
   c = 1
-  indices = Vector{Tuple{Int, Int}}(undef, n * d)
   for i in 1:n
     for bi in 1:length(B)
       v[i] = B[bi]
@@ -585,38 +447,30 @@ function restrict_scalars(V::AbsSpace, K::FlintRationalField,
         end
       end
       v[i] = zero(E)
-      indices[r] = (i, bi)
       r = r + 1
     end
   end
 
-  VabstoV = function(v)
-    @assert length(v) == d * n
-    z = Vector{elem_type(E)}(undef, n)
-    for i in 1:n
-      z[i] = zero(E)
-    end
-    for k in 1:(d * n)
-      (i, j) = indices[k]
-      z[i] = z[i] + v[k] * B[j]
-    end
-    return z
-  end
+  return quadratic_space(FlintQQ, G, check = false), VecSpaceRes(E, rank(V))
+end
 
-  VtoVabs = function(w)
-    z = Vector{fmpq}(undef, d * n)
-    k = 1
-    for i in 1:n
-      y = w[i]
-      for j in 1:d
-        z[k] = absolute_coeff(y, j - 1)
-        k = k + 1
-      end
-    end
-    return z
-  end
+################################################################################
+#
+#  Orthogonal complement
+#
+################################################################################
 
-  return quadratic_space(FlintQQ, G), VabstoV, VtoVabs
+@doc Markdown.doc"""
+    orthogonal_complement(V::AbsSpace, M::MatElem)
+
+Given a space $V$ and a subspace $W$ with basis matrix $M$, returns a basis
+matrix of the orthogonal complement of $W$.
+"""
+function orthogonal_complement(V::AbsSpace, M::MatElem)
+  N = gram_matrix(V) * _map(transpose(M), involution(V))
+  r, K = left_kernel(N)
+  @assert r == nrows(K)
+  return K
 end
 
 ################################################################################
@@ -637,46 +491,3 @@ function orthogonal_sum(V::HermSpace, W::HermSpace)
   G = diagonal_matrix(gram_matrix(V), gram_matrix(W))
   return hermitian_space(base_ring(V), G)
 end
-
-################################################################################
-#
-#  Some helper functions
-#
-################################################################################
-
-# Careful, starts at 0!
-function absolute_coeff(z::nf_elem, i)
-  return coeff(z, i)
-end
-
-function absolute_coeff(z::NumFieldElem, i)
-  d = absolute_degree(base_field(parent(z)))
-  rowindex = fld(i, d)
-  colindex = (i % d)
-  return absolute_coeff(coeff(z, rowindex), colindex)
-end
-
-istotally_real(::FlintRationalField) = true
-
-istotally_positive(x::fmpq) = x > 0
-
-# This function is really slow...
-function denominator(M::fmpq_mat)
-  d = one(FlintZZ)
-  for i in 1:nrows(M)
-    for j in 1:ncols(M)
-      d = lcm!(d, d, denominator(M[i, j]))
-    end
-  end
-  return d
-end
-
-function _weak_approximation_coprime(IP, S, M)
-  R = order(M)
-  A, _exp, _log = infinite_primes_map(R, IP, M)
-
-  t = (1 + _exp(A([ S[j] == 1 ? 0 : -1 for j in 1:length(IP)])))
-  @assert all(i -> sign(t, IP[i]) == S[i], 1:length(IP))
-  return t
-end
-

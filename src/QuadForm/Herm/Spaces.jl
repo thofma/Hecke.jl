@@ -273,6 +273,9 @@ function islocally_represented_by(U::HermSpace, V::HermSpace, p)
   end
 end
 
+# There are no restrictions, since spaces are uniquely determined by their
+# rank and determinant.
+
 @doc Markdown.doc"""
     isrepresented_by(U::HermSpace, V::HermSpace)
 

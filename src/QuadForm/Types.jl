@@ -29,14 +29,13 @@ mutable struct QuadSpace{S, T} <: AbsSpace{S}
       try
         Gc = change_base_ring(K, G)
         if typeof(Gc) !== dense_matrix_type(elem_type(S))
-          throw(error("Cannot convert entries of the matrix to the number field"))
+          error("Cannot convert entries of the matrix to the number field")
         end
         @assert base_ring(Gc) === K
         z = new{S, dense_matrix_type(elem_type(S))}(K, Gc)
         return z
       catch e
         rethrow(e)
-        throw(error("Cannot convert entries of the matrix to the number field"))
       end
     end
   end
@@ -63,10 +62,10 @@ mutable struct HermSpace{S, T, U, W} <: AbsSpace{S}
       try
         gramc = change_base_ring(E, gram)
         if typeof(gramc) !== dense_matrix_type(elem_type(S))
-          throw(error("Cannot convert entries of the matrix to the number field"))
+          error("Cannot convert entries of the matrix to the number field")
         end
       catch e
-        throw(error("Cannot convert entries of the matrix to the number field"))
+        rethrow(e)
       end
     end
 

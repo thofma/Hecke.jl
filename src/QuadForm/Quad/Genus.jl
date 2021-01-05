@@ -1810,13 +1810,13 @@ function representative(G::GenusQuad)
     p = prime(g)
     @vprint :Lattice 1 "Finding representative for $g at $(prime(g))...\n"
     L = representative(g)
-    M = find_lattice(M, L, p)
+    M = locally_isometric_sublattice(M, L, p)
     @assert islocally_isometric(M, L, p)
   end
   return M
 end
 
-function find_lattice(M::QuadLat, L::QuadLat, p)
+function locally_isometric_sublattice(M::QuadLat, L::QuadLat, p)
   k, h = ResidueField(order(p), p)
   m = rank(M)
   chain = typeof(L)[ L ]

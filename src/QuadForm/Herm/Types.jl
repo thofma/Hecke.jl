@@ -10,6 +10,8 @@ mutable struct HermLat{S, T, U, V, W} <: AbsLat{S}
   automorphism_group_order::fmpz
   generators
   minimal_generators
+  norm
+  scale
   @declare_other
 
   function HermLat{S, T, U, V, W}() where {S, T, U, V, W}

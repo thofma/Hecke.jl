@@ -20,6 +20,7 @@ Create the quadratic space over `K` with dimension `n` and Gram matrix
 equal to the identity matrix.
 """
 function quadratic_space(K::Field, n::Int)
+  @req n >= 0 "Dimension ($n) must be positive"
   G = identity_matrix(K, n)
   return QuadSpace(K, G)
 end
@@ -30,7 +31,11 @@ end
 Create the quadratic space over `K` with Gram matrix `G`.
 The matrix `G` must be square and symmetric.
 """
-function quadratic_space(K::Field, G::MatElem)
+function quadratic_space(K::Field, G::MatElem; check::Bool = true)
+  if check
+    @req issquare(G) "Gram matrix must be square ($(nrows(G)) x $(ncols(G))"
+    @req issymmetric(G) "Gram matrix must be symmetric"
+  end
   return QuadSpace(K, G)
 end
 
@@ -42,7 +47,7 @@ end
 
 isquadratic(V::QuadSpace) = true
 
-ishermitian(V::QuadSpace) = true
+ishermitian(V::QuadSpace) = false
 
 _base_algebra(V::QuadSpace) = V.K
 
@@ -733,6 +738,18 @@ function islocally_represented_by(U::QuadSpace, V::QuadSpace, p)
   m, db, hb = rank(V), det(V), hasse_invariant(V, p)
   return _can_locally_embed(n, da, ha, m, db, hb, p)
 end
+
+# We are using O'Meara p. 160 ff.
+#
+# We need to test if U is represented by V at all places of K.
+#
+# If the place is complex, there is only the trivial restriction (ranks)
+# If the place is real, we have to check if the signatures fit.
+#  
+# If p does not divide 2 * dU * dV and h(U) = 1 = h(V) (Hasse-invariant),
+# then U is represented by V locally at p. This follows from the local
+# characterization. But the Hasse invariant is zero outside the support
+# of the diagonal. Thus we get only finitely many conditions.
 
 @doc Markdown.doc"""
     isrepresented_by(U::QuadSpace, V::QuadSpace)
@@ -1590,4 +1607,56 @@ function _real_weak_approximation(s, I)
   end
   @assert abs(evaluate(a, s)) < 1//2
   return a
+end
+
+################################################################################
+#
+#  Is isotropic
+#
+################################################################################
+
+function _isisotropic_with_vector_finite(M)
+  n = ncols(M)
+  k = base_ring(M)
+  @assert k isa Field && characteristic(k) != 2
+  if n == 0
+    ;
+  elseif n == 1
+    if iszero(M[1, 1])
+      return true, elem_type(k)[one(k)]
+    end
+  else
+    if n <= 3
+      G, T = _gram_schmidt(M, identity, false) # might be non-degenerate
+    else
+      G, T = _gram_schmidt(sub(M, 1:3, 1:3), identity, false) # might be non-degenerate
+      B = zero_matrix(k, 3, n)
+      B[1, 1] = 1
+      B[2, 2] = 1
+      B[3, 3] = 1
+      T = T * B
+    end
+    for i in 1:ncols(G)
+      if iszero(G[i, i])
+        return true, elem_type(k)[T[i, j] for j in 1:ncols(T)]
+      end
+    end
+
+    if n == 2
+      ok, s = issquare_with_square_root(-divexact(G[1, 1], G[2, 2]))
+      if ok
+        return true, elem_type(k)[T[1, i] + s*T[2, i] for i in 1:ncols(T)]
+      end
+    else
+      while true
+        x = rand(k)
+        y = rand(k)
+        ok, z = issquare( -x^2 * G[1, 1] - y^2 * divexact(G[2, 2], G[3, 3]))
+        if (ok && (!iszero(x) || !iszero(y)))
+          return true,  elem_type(k)[x*T[1, i] + y*T[2, i] + z * T[3, i] for i in 1:ncols(T)]
+        end
+      end
+    end
+  end
+  return false, elem_type(k)[]
 end

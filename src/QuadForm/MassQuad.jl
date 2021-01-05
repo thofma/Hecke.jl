@@ -337,7 +337,7 @@ function local_factor(L::QuadLat, p)
         sa = ss * a
         t = (1 + _exp(A(Int[ sign(sa, rlp[j]) == 1 ? 0 : 1 for j in 1:length(rlp)]))::elem_type(R))
         @assert t - 1 in p
-        @assert all(Bool[i -> sign(t, rlp[i]) == sign(sa, rlp[i]), 1:length(rlp)])
+        @assert all(Bool[sign(t, rlp[i]) == sign(sa, rlp[i]) for i in 1:length(rlp)])
         ss = ss * t
       end
       L = rescale(L, ss)
