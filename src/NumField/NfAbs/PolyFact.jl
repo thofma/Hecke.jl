@@ -279,7 +279,7 @@ function factor_new(f::PolyElem{nf_elem})
     end
   end
   @vprint :PolyFactor 1 "possible degrees: $s\n"
-  if br < -5
+  if br < 5
     return zassenhaus(f, bp, degset = s)
   else
     return van_hoeij(f, bp)
@@ -316,7 +316,7 @@ function zassenhaus(f::PolyElem{nf_elem}, P::NfOrdIdl; degset::Set{Int} = Set{In
 
   b = landau_mignotte_bound(f)*upper_bound(sqrt(t2(lead(f))), fmpz)
   c1, c2 = norm_change_const(order(P))
-  N = ceil(Int, degree(K)/2/degree(P)*(log2(c1*c2) + 2*nbits(b)))
+  N = ceil(Int, degree(K)/2/log(norm(P))*(log2(c1*c2) + 2*nbits(b)))
   @vprint :PolyFactor 1 "using a precision of $N\n"
 
   setprecision!(C, N)
@@ -476,6 +476,7 @@ Approach is taken from Hart, Novacin, van Hoeij in ISSAC.
 """
 function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 20)
   @vprint :PolyFactor 1 "Using (relative) van Hoeij\n"
+  @vprint :PolyFactor 2 "with p = $P\n"
   @assert all(x->denominator(x) == 1, coefficients(f))
 
   K = base_ring(parent(f))
@@ -516,7 +517,7 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 20)
   # from Fieker/Friedrichs, still wrong here
   # needs to be larger than anticipated...
   c1, c2 = norm_change_const(order(P))
-  b = Int[ceil(Int, degree(K)/2/degree(P)*(log2(c1*c2) + 2*nbits(x)+ 2*prec_scale)) for x = b]
+  b = Int[ceil(Int, degree(K)/2/log(norm(P))*(log2(c1*c2) + 2*nbits(x)+ 2*prec_scale)) for x = b]
   @vprint :PolyFactor 2 "using CLD precision bounds $b \n"
 
   used = []
@@ -633,7 +634,7 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 20)
 #        error()
         continue
       end
-      sz = floor(Int, degree(K)*av_bits/degree(P) - b[i])
+      sz = floor(Int, degree(K)*av_bits/log(norm(P)) - b[i])
 
       B = sub(C, 1:r, (i-1)*degree(K)+1:i*degree(K))
 #      @show i, maximum(nbits, B)
@@ -658,7 +659,7 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 20)
       M = [M B; zero_matrix(FlintZZ, ncols(B), ncols(M)) d*identity_matrix(FlintZZ, ncols(B))]
   #    @show map(nbits, Array(M))
 #      @show maximum(nbits, Array(M)), size(M)
-      @vtime :PolyFactor 1 l, M = lll_with_removal(M, r*fmpz(2)^(2*prec_scale) + div(r+1, 2)*N*degree(K))
+      @vtime :PolyFactor 1 l, M = lll_with_removal(M, r*fmpz(2)^(2*prec_scale) + div(r+1, 2)*N*degree(K)) 
 #      @show hnf(sub(M, 1:l, 1:r))
       @hassert :PolyFactor 1 !iszero(sub(M, 1:l, 1:r))
       M = sub(M, 1:l, 1:ncols(M))
@@ -746,7 +747,7 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 20)
 
     # from Fieker/Friedrichs, still wrong here
     # needs to be larger than anticipated...
-    b = [ceil(Int, degree(K)/2/degree(P)*(log2(c1*c2) + 2*nbits(x)+ 2*prec_scale)) for x = b]
+    b = [ceil(Int, degree(K)/2/log(norm(P))*(log2(c1*c2) + 2*nbits(x)+ 2*prec_scale)) for x = b]
   end #the big while
 end
 
