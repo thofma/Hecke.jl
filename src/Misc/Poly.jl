@@ -520,7 +520,7 @@ function fmpq_poly_to_fmpz_mod_poly_raw!(r::fmpz_mod_poly, a::fmpq_poly, t1::fmp
   if !isone(t2)
     res = ccall((:fmpz_invmod, libflint), Cint, (Ref{fmpz}, Ref{fmpz}, Ref{fmpz}), t2, t2, modulus(base_ring(r)))
     @assert res != 0
-    ccall((:fmpz_mod_poly_scalar_mul_fmpz, libflint), Nothing, (Ref{fmpz_mod_poly}, Ref{fmpz_mod_poly}, Ref{fmpz}), r, r, t2)
+    ccall((:fmpz_mod_poly_scalar_mul_fmpz, libflint), Nothing, (Ref{fmpz_mod_poly}, Ref{fmpz_mod_poly}, Ref{fmpz}, Ref{fmpz_mod_ctx_struct}), r, r, t2, r.parent.base_ring.ninv)
   end
 end
 
