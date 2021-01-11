@@ -437,15 +437,6 @@ Using the conductor-discriminant formula, compute the (relative) discriminant of
 This does not use the defining equations.
 """
 function discriminant(C::ClassField)
-
-  if isdefined(C, :relative_discriminant)
-    if isempty(C.relative_discriminant)
-      return ideal(O, 1)
-    else
-      return prod([P^v for (P, v) in C.relative_discriminant])
-    end
-  end
-
   if isdefined(C,:conductor)
     m = C.conductor[1]
     inf_plc = C.conductor[2]
@@ -454,6 +445,16 @@ function discriminant(C::ClassField)
     m = C.conductor[1]
     inf_plc = C.conductor[2]
   end
+  O = order(m)
+  if isdefined(C, :relative_discriminant)
+    if isempty(C.relative_discriminant)
+      return ideal(O, 1)
+    else
+      return prod([P^v for (P, v) in C.relative_discriminant])
+    end
+  end
+
+  
   @assert typeof(m) == NfOrdIdl
 
   mR = C.rayclassgroupmap
@@ -471,11 +472,15 @@ function discriminant(C::ClassField)
       continue
     end
     C.relative_discriminant = relative_disc
-    return relative_disc
+    if isempty(C.relative_discriminant)
+      return ideal(O, 1)
+    else
+      return prod([P^v for (P, v) in C.relative_discriminant])
+    end
   end
 
 
-  O = order(m)
+
   expo = Int(exponent(R))
   K = O.nf
   a = minimum(m)
