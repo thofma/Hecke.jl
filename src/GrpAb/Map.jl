@@ -458,68 +458,137 @@ end
 # Dual
 ######################################################################
 
-struct QmodZ <: GrpAb
+mutable struct QmodnZ <: GrpAb
+  trivialmodulus::Bool
+  n::fmpz
+  d::fmpz
+
+  function QmodnZ()
+    z = new()
+    z.n = fmpz(1)
+    z.d = fmpz(1)
+    z.trivialmodulus = true
+    return z
+  end
+
+  function QmodnZ(n::fmpz)
+    z = new()
+    if isone(abs(n))
+      return QmodnZ()
+    else
+      z = new()
+      z.trivialmodulus = false
+      z.n = abs(n)
+      z.d = one(FlintZZ)
+      return z
+    end
+  end
+
+  function QmodnZ(n::fmpq)
+    if isintegral(n)
+      return QmodnZ(numerator(n))
+    else
+      z = new()
+      z.trivialmodulus = false
+      z.n = numerator(n)
+      z.d = denominator(n)
+      return z
+    end
+  end
+
 end
 
-function show(io::IO, G::QmodZ)
-  print(io, "Q mod Z")
-end
-
-struct QmodZElem <: GrpAbElem
-  elt::fmpq
-  function QmodZElem(a::fmpq)
-    return new(fmpq(mod(numerator(a), denominator(a)), denominator(a)))
+function show(io::IO, G::QmodnZ)
+  if G.trivialmodulus
+    print(io, "Q/Z")
+  else
+    if isone(G.d)
+      print(io, "Q/", G.n, "Z")
+    else
+      print(io, "Q/(", G.n, "/", G.d, ")Z")
+    end
   end
 end
 
-function show(io::IO, a::QmodZElem)
+struct QmodnZElem <: GrpAbElem
+  elt::fmpq
+  parent::QmodnZ
+
+  function QmodnZElem(R::QmodnZ, a::fmpq)
+    if R.trivialmodulus
+      q = fmpq(mod(numerator(a), denominator(a)), denominator(a))
+    else
+      q = fmpq(mod(R.d * numerator(a), R.n * denominator(a)), R.d * denominator(a))
+    end
+    @assert isintegral(R.d * (q - a)) && iszero(mod(numerator(R.d * (q - a)), R.n))
+    return new(q, R)
+  end
+end
+
+function show(io::IO, a::QmodnZElem)
   print(io, "$(a.elt) + Z")
 end
 
-function +(a::QmodZElem, b::QmodZElem)
-  return QmodZElem(a.elt + b.elt)
+function +(a::QmodnZElem, b::QmodnZElem)
+  return QmodnZElem(a.parent, a.elt + b.elt)
 end
 
-function *(a::fmpz, b::QmodZElem)
-  return QmodZElem(a*b.elt)
+function *(a::fmpz, b::QmodnZElem)
+  return QmodnZElem(a.parent, a*b.elt)
 end
 
-function *(a::Integer, b::QmodZElem)
-  return QmodZElem(a*b.elt)
+function *(a::Integer, b::QmodnZElem)
+  return QmodnZElem(a.parent, a*b.elt)
 end
 
-function divexact(a::QmodZElem, b::fmpz)
+function divexact(a::QmodnZElem, b::fmpz)
   iszero(b) && throw(DivideError())
-  return QmodZElem(a.elt // b)
+  return QmodnZElem(a.parent, a.elt // b)
 end
 
-function divexact(a::QmodZElem, b::Integer)
+function divexact(a::QmodnZElem, b::Integer)
   iszero(b) && throw(DivideError())
-  return QmodZElem(a.elt // b)
+  return QmodnZElem(a.parent, a.elt // b)
 end
 
-function root_of_one(::Type{QmodZ}, n::fmpz)
-  return QmodZElem(fmpq(1, n))
+function root_of_one(::Type{QmodnZ}, n::fmpz)
+  return QmodnZElem(a.parent, fmpq(1, n))
 end
 
-function inv(a::QmodZElem)
-  return QmodZElem(-(a.elt))
+function inv(a::QmodnZElem)
+  return QmodnZElem(a.parent, -(a.elt))
 end
 
-function parent(::QmodZElem)
-  return QmodZ()
+function parent(x::QmodnZElem)
+  return x.parent
 end
 
-elem_type(::Type{QmodZ}) = QmodZElem
+elem_type(::Type{QmodnZ}) = QmodnZElem
 
-function order(a::QmodZElem)
-  return denominator(a.elt)
+function order(a::QmodnZElem)
+  if parent(a).trivialmodulus
+    return denominator(a.elt)
+  else
+    throw(NotImplemented())
+  end
 end
 
-(::QmodZ)(a::fmpz) = QmodZ(fmpq(a))
-(::QmodZ)(a::Integer) = QmodZ(fmpq(a))
-(::QmodZ)(a::fmpq) = QmodZ(a)
-(::QmodZ)(a::Rational) = QmodZ(fmpq(a))
+(R::QmodnZ)(a::fmpz) = QmodnZElem(R, fmpq(a))
+(R::QmodnZ)(a::Integer) = QmodnZElem(R, fmpq(a))
+(R::QmodnZ)(a::fmpq) = QmodnZElem(R, a)
+(R::QmodnZ)(a::Rational) = QmodnZElem(R, fmpq(a))
+
+function Base.:(==)(a::QmodnZElem, b::QmodnZElem)
+  if parent(a).trivialmodulus
+    return isintegral(a.elt - b.elt)
+  else
+    z = a.elt - b.elt
+    d = denominator(z)
+    return isone(d) && iszero(mod(numerator(z), parent(a).modulus))
+  end
+end
+
+lift(a::QmodnZElem) = a.elt
 
 #TODO: technically, dual Z could be Q/Z ...
 @doc Markdown.doc"""
@@ -530,11 +599,11 @@ abstract group. The map can be used to obtain actual homomorphisms.
 """
 function dual(G::GrpAbFinGen)
   T, mT = torsion_subgroup(G)
-  u = root_of_one(QmodZ, order(T))
+  u = root_of_one(QmodnZ, order(T))
   return dual(G, u)
 end
 
-function dual(G::GrpAbFinGen, u::QmodZElem)
+function dual(G::GrpAbFinGen, u::QmodnZElem)
   o = order(u)
   H = GrpAbFinGen([o])
   R, phi = hom(G, H)
