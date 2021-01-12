@@ -5,12 +5,30 @@
 # L = Zlattice(gram = A)
 # T = Hecke.discriminant_group(T)
 
+# We representation torsion quadratic modules as quotients of Z-lattices
+# by a full rank sublattice.
+#
+# We store them as a Z-lattice M together with a projection p : M -> A
+# onto an abelian group A. The bilinear structure of A is induced via p,
+# that is <a, b> = <p^-1(a), p^-1(a)> with values in Q/nZ, where n
+# is the modulus and depends on the kernel of p.
+#
+# Elements of A are basically just elements of the underlying abelian group.
+# To move between M and A, we use the lift function lift : M -> A
+# and coercion A(m).
+#
+# N.B. Since there are no elements of Z-latties, we think of elements of M as
+# elements of the ambient vector space. Thus if v::Vector is such an element
+# then the coordinates with respec to the basis of M are given by
+# v * inv(basis_matrix(M)).
 mutable struct TorQuadMod
   ab_grp::GrpAbFinGen             # underlying abelian group
   cover::ZLat                     # ZLat -> ab_grp, x -> x * proj
   proj::fmpz_mat                  # is a projection and respects the forms
   gens_lift::Vector{Vector{fmpz}}
+  gens_lift_ambient::Vector{Vector{fmpq}}
   gens_lift_mat::fmpz_mat          # integer matrix
+  gens_lift_mat_ambient::fmpq_mat
   d::fmpz
   rels::fmpz_mat
   modulus::fmpq 
@@ -50,6 +68,7 @@ function torsion_quadratic_module(M::ZLat, N::ZLat)
   T.proj = inv(mS).map
   T.gens_lift = gens_lift
   T.gens_lift_mat = matrix(ZZ, length(gens_lift), ngens(A), reduce(vcat, gens_lift))
+  T.gens_lift_mat_ambient = change_base_ring(FlintQQ, T.gens_lift_mat) * basis_matrix(M)
   T.modulus = modulus
   T.modulus_qf = modulus_qf
   T.value_module = QmodnZ(modulus)
@@ -145,8 +164,8 @@ end
 # TODO: Check the parents ...
 (T::TorQuadMod)(a::GrpAbFinGenElem) = TorQuadModElem(T, a)
 
-function (T::TorQuadMod)(v::Vector{fmpz})
-  vv = matrix(FlintZZ, 1, length(v), v)
+function (T::TorQuadMod)(v::Vector{fmpq})
+  vv = change_base_ring(FlintZZ, matrix(FlintQQ, 1, length(v), v) * inv(basis_matrix(cover(T))))
   return T(abelian_group(T)(vv * T.proj))
 end
 
@@ -189,7 +208,7 @@ end
 # Lift an element to the ambient space of cover(parent(a))
 function lift(a::TorQuadModElem)
   T = parent(a)
-  z = change_base_ring(FlintQQ, a.a.coeff * T.gens_lift_mat) * basis_matrix(cover(T))
+  z = change_base_ring(FlintQQ, a.a.coeff) * T.gens_lift_mat_ambient
   return fmpq[z[1, i] for i in 1:ncols(z)]
 end
 
