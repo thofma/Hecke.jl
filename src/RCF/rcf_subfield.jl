@@ -15,7 +15,7 @@ function number_field_over_subfield(C::ClassField_pp)
     return ray_class_field_cyclic_pp(C)
   end
   number_field_over_subfield(C1)
-  translate_up(subs[i][2], C1)
+  translate_up(subs[i][2], C, C1)
   return C
 end
 
@@ -134,4 +134,48 @@ function translate_extension(mL::NfToNfMor, C::ClassField_pp)
   C1.quotientmap = mqq
   C1.rayclassgroupmap = mr
   return true, C1
+end
+
+
+function translate_up(mL::NfToNfMor, C::ClassField_pp, C1::ClassField_pp)
+  K = base_field(C)
+  Ky = PolynomialRing(K, "y", cached = false)[1]
+  L = domain(mL)
+  d = degree(C1)
+  CEK = cyclotomic_extension(K, d)
+  CEL = cyclotomic_extension(L, d)
+  img = gen(CEK.Kr)
+  if degree(CEK.Kr) != euler_phi(d)
+    pp = map_coeffs(mL, CEL.Kr.pol, cached = false)
+    while !iszero(pp(img))
+      mul!(img, img, gen(CEK.Kr))
+    end
+  end
+  mrel = hom(CEL.Kr, CEK.Kr, mL, img) 
+  #@hassert :Fields 1 isconsistent(mrel)
+  g = mrel(CEL.mp[1](gen(CEL.Ka)))
+  mp = hom(CEL.Ka, CEK.Ka, CEK.mp[1]\(g), check = false)
+  #Then, the fac elem corresponding to the generator of the Kummer Extension
+  C.a = FacElem(Dict{nf_elem, fmpz}(D[d](x) => v for (x, v) in C1.a))
+  #Now, the Kummer extension
+  Lzeta = codomain(mp)
+  Lt = PolynomialRing(Lzeta, "t", cached = false)[1]
+  d1 = degree(C1.K)
+  coeffs = Vector{nf_elem}(undef, d1 + 1)
+  coeffs[1] = mp(coeff(C1.K.pol, 0))
+  for s = 2:length(coeffs)-1
+    coeffs[s] = zero(Lzeta)
+  end
+  coeffs[end] = one(Lzeta)
+  C.K = number_field(Lt(coeffs), cached = false, check = false)[1]
+  #The target extension
+  fdef = map_coeffs(mL, C1.A.pol, parent = Ky, cached = false)
+  C.A = number_field(fdef, cached = false, check = false)[1]
+  #Now, the primitive element of the target extension seen in Cpp.K
+  mrel2 = hom(C1.K, C.K, mp, gen(C.K))
+  C.pe = mrel2(C1.pe) 
+  CEKK = cyclotomic_extension(K, d)
+  @hassert :Fields 1 iszero(map_coeffs(CEKK.mp[2], fdef, cached = false)(Cpp.pe))
+  C.o = d1
+  return nothing
 end

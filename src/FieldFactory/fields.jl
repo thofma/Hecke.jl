@@ -65,7 +65,6 @@ include("./conductors.jl")
 include("./brauer.jl")
 include("./chain.jl")
 include("./maximal_abelian_subextension.jl")
-include("./relative_to_absolute.jl")
 include("./non_normal.jl")
 
 Generic.degree(F::FieldsTower) = degree(F.field)
