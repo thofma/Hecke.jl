@@ -185,6 +185,11 @@ group of the extension.
 function exponent(A::ClassField{S, T}) where {S, T}
   return Int(exponent(codomain(A.quotientmap)))
 end
+
+function exponent(A::ClassField_pp{S, T}) where {S, T}
+  return Int(exponent(codomain(A.quotientmap)))
+end
+
 ###############################################################################
 #
 #  Compositum

@@ -1,9 +1,17 @@
-function number_field_over_subfield(C::ClassField_pp)
+function number_field_over_subfield(C::ClassField_pp; using_norm_relation::Bool = true)
   K = base_field(C)
   if degree(K) == 1
     return ray_class_field_cyclic_pp(C)
   end
   subs = principal_subfields(K)
+  subs = [x for x in subs if degree(x[1]) != degree(K)]
+  if isempty(subs)
+    if using_norm_relation
+      return ray_class_field_cyclic_pp_Brauer(C)
+    else
+      return ray_class_field_cyclic_pp(C)
+    end
+  end
   fl = false
   fl, C1 = translate_extension(subs[1][2], C)
   i = 1
@@ -12,12 +20,18 @@ function number_field_over_subfield(C::ClassField_pp)
     fl, C1 = translate_extension(subs[i][2], C)
   end
   if !fl
-    return ray_class_field_cyclic_pp(C)
+    if using_norm_relation
+      return ray_class_field_cyclic_pp_Brauer(C)
+    else
+      return ray_class_field_cyclic_pp(C)
+    end
   end
   number_field_over_subfield(C1)
   translate_up(subs[i][2], C, C1)
   return C
 end
+
+
 
 function translate_extension(mL::NfToNfMor, C::ClassField_pp)
   L = domain(mL)
@@ -30,7 +44,7 @@ function translate_extension(mL::NfToNfMor, C::ClassField_pp)
   f = factor(ideal(OL, d))
   F = factor(ideal(OK, d))
   mR = C.rayclassgroupmap
-  fM0 = copy(mR.fact_mod)
+  fM0 = copy(factored_modulus(C))
   fm0 = Dict{NfOrdIdl, Int}()
   for (p, v) in fM0
     p1 = Hecke.intersect_prime(mL, p)
@@ -130,7 +144,7 @@ function translate_extension(mL::NfToNfMor, C::ClassField_pp)
   mq1 = cokernel(ms1, false)[2]
   mqq = mck * mq1 
   @hassert :Fields 1 domain(mqq) == r
-  C1 = typeof(C)()
+  C1 = ClassField_pp{MapRayClassGrp, GrpAbFinGenMap}()
   C1.quotientmap = mqq
   C1.rayclassgroupmap = mr
   return true, C1
@@ -156,7 +170,7 @@ function translate_up(mL::NfToNfMor, C::ClassField_pp, C1::ClassField_pp)
   g = mrel(CEL.mp[1](gen(CEL.Ka)))
   mp = hom(CEL.Ka, CEK.Ka, CEK.mp[1]\(g), check = false)
   #Then, the fac elem corresponding to the generator of the Kummer Extension
-  C.a = FacElem(Dict{nf_elem, fmpz}(D[d](x) => v for (x, v) in C1.a))
+  C.a = FacElem(Dict{nf_elem, fmpz}(mp(x) => v for (x, v) in C1.a))
   #Now, the Kummer extension
   Lzeta = codomain(mp)
   Lt = PolynomialRing(Lzeta, "t", cached = false)[1]

@@ -969,6 +969,14 @@ end
 function factored_modulus(A::ClassField{MapClassGrp, T}) where T
   return Dict{NfOrdIdl, Int}()
 end
+
+function factored_modulus(A::ClassField_pp{MapRayClassGrp, T}) where T
+  return A.rayclassgroupmap.fact_mod
+end
+
+function factored_modulus(A::ClassField_pp{MapClassGrp, T}) where T
+  return Dict{NfOrdIdl, Int}()
+end
   
 function maximal_abelian_subfield(A::ClassField, mp::NfToNfMor)
   k = domain(mp)
