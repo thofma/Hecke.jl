@@ -430,6 +430,15 @@ end
 #
 ####################################################################################
 
+function absolute_discriminant(C::ClassField)
+  OK = base_ring(C)
+  return norm(discriminant(C))*discriminant(OK)^degree(C)
+end
+
+function discriminant(C::ClassField, ::FlintRationalField)
+  return absolute_discriminant(C)
+end
+
 @doc Markdown.doc"""
     discriminant(C::ClassField) -> NfOrdIdl
 

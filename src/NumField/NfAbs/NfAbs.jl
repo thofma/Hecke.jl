@@ -288,7 +288,7 @@ function istorsion_unit(x::nf_elem, checkisunit::Bool = false)
     l = 0
     @vprint :UnitGroup 2 "Computing conjugates ... \n"
     cx = conjugates_arb(x, c.prec)
-    A = ArbField(c.prec, false)
+    A = ArbField(c.prec, cached = false)
     for i in 1:r
       k = abs(cx[i])
       if k > A(1)

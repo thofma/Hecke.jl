@@ -483,6 +483,24 @@ function _factor_distinct_deg(x::gfp_poly)
   return res
 end
 
+function _factor_distinct_deg(x::gfp_fmpz_poly)
+  degs = Vector{Int}(undef, degree(x))
+  degss = [ pointer(degs) ]
+  n = x.parent.base_ring.ninv
+  fac = Nemo.gfp_fmpz_poly_factor(n)
+  ccall((:fmpz_mod_poly_factor_distinct_deg, libflint), UInt,
+          (Ref{Nemo.gfp_fmpz_poly_factor}, Ref{gfp_fmpz_poly}, Ptr{Ptr{Int}}, Ref{fmpz_mod_ctx_struct}),
+          fac, x, degss, n)
+  res = Dict{Int, Int}()
+  f = parent(x)()
+  for i in 1:fac.num
+    ccall((:fmpz_mod_poly_factor_get_fmpz_mod_poly, libflint), Nothing,
+            (Ref{gfp_fmpz_poly}, Ref{Nemo.gfp_fmpz_poly_factor}, Int, Ref{fmpz_mod_ctx_struct}), f, fac, i-1, n)
+    res[degs[i]] = divexact(degree(f), degs[i])
+  end
+  return res
+end
+
 function _prime_decomposition_type(fmodp)
   discdeg = _factor_distinct_deg(fmodp)
   nfacts = sum(x for x in values(discdeg))
@@ -503,7 +521,7 @@ end
 Returns an array of tuples whose length is the number of primes lying over $p$ and the $i$-th tuple
 gives the splitting type of the corresponding prime, ordered as inertia degree and ramification index.
 """
-function prime_decomposition_type(O::NfOrd, p::Integer)
+function prime_decomposition_type(O::NfOrd, p::T) where T <: Union{fmpz, Integer}
   if !isdefining_polynomial_nice(nf(O))
     return Tuple{Int, Int}[(degree(x[1]), x[2]) for x = prime_decomposition(O, p)]
   end

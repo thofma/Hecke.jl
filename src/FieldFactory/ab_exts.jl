@@ -3,6 +3,9 @@ add_assert_scope(:AbExt)
 
 add_verbose_scope(:MaxAbExt)
 
+
+export abelian_fields, abelian_normal_extensions, abelian_extensions
+
 ###############################################################################
 #
 #  Abelian extensions
@@ -11,16 +14,16 @@ add_verbose_scope(:MaxAbExt)
 
 function abelian_fields(O::Union{FlintIntegerRing, FlintRationalField},
                             gtype::Vector{Int}, discriminant_bound::fmpz;
-                            real::Bool = false,
+                            only_real::Bool = false,
                             tame::Bool = false)
 
   Qx, x = PolynomialRing(FlintQQ, "x", cached = false)
   K, _ = NumberField(x - 1, "a", cached = false)
   OK = maximal_order(K)
-  l = abelian_extensions(OK, gtype, discriminant_bound,
-                         real = real,
+  l = abelian_fields(OK, gtype, discriminant_bound,
+                         only_real = only_real,
                          tame = tame)
-  return 
+  return l
 end
 
 function abelian_fields(O::NfOrd, gtype::Vector{Int}, absolute_discriminant_bound::fmpz; only_real::Bool = false, only_complex::Bool = false, tame::Bool = false)
@@ -28,6 +31,7 @@ function abelian_fields(O::NfOrd, gtype::Vector{Int}, absolute_discriminant_boun
   @assert degree(K)==1
   gtype = map(Int, snf(abelian_group(gtype))[1].snf)
   n = prod(gtype)
+  real = only_real
     
   expo = lcm(gtype)
     
@@ -152,7 +156,6 @@ function abelian_extensions(K::AnticNumberField, gtype::Vector{Int}, absolute_di
   
   fields = ClassField{MapRayClassGrp, GrpAbFinGenMap}[]
   bound = div(absolute_discriminant_bound, abs(discriminant(OK))^n)
-  @show bound
   if iszero(bound)
     return fields
   end
@@ -188,7 +191,7 @@ function abelian_extensions(K::AnticNumberField, gtype::Vector{Int}, absolute_di
           continue
         end
       end
-      if cC[1] != mr.defining_modulus[1] && norm(discriminant(C)) <= bound
+      if cC[1] == mr.defining_modulus[1] && norm(discriminant(C)) <= bound
         @vprint :AbExt 1 "New Field \n"
         push!(fields, C)
       end

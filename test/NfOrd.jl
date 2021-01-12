@@ -1,9 +1,10 @@
 @testset "Orders in absolute number fields" begin
   println("NfOrd.jl")
   @time include("NfOrd/NfOrd.jl")
-
   println("Elem.jl")
   @time include("NfOrd/Elem.jl")
+  println("Torsion Units")
+  @time include("NfOrd/TorsionUnits.jl")
   println("Ideal.jl")
   @time include("NfOrd/Ideal.jl")
   println("FracIdl.jl")
