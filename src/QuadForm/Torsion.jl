@@ -83,7 +83,7 @@ function discriminant_group(L::ZLat)
 end
 
 @doc Markdown.doc"""
-  order(T::TorQuadMod) -> fmpz
+    order(T::TorQuadMod) -> fmpz
   Return the order of `T`
 """
 function order(T::TorQuadMod)
@@ -265,4 +265,3 @@ end
 #       elif check and max_modulus_qf / modulus_qf not in V.base_ring():
 #           raise ValueError("the modulus_qf must divide (V, W)")
 #       return super(TorsionQuadraticModule, cls).__classcall__(cls, V, W, gens, modulus, modulus_qf)
-
