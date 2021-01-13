@@ -84,7 +84,8 @@ end
 
 @doc Markdown.doc"""
     order(T::TorQuadMod) -> fmpz
-  Return the order of `T`
+
+Return the order of `T`
 """
 function order(T::TorQuadMod)
   return order(abelian_group(T))
