@@ -3,565 +3,8 @@ add_assert_scope(:AbExt)
 
 add_verbose_scope(:MaxAbExt)
 
-##########################################################################################################
-#
-#  Functions for conductors
-#
-##########################################################################################################
 
-function tame_conductors_degree_2(O::NfOrd, bound::fmpz)
- 
-  K = nf(O)
-  d = degree(O)
-  b1 = Int(root(bound,d))
-  ram_primes = ramified_primes(O)
-  sort!(ram_primes)
-  filter!(x -> x!=2, ram_primes)
-  list = squarefree_up_to(b1, coprime_to = vcat(ram_primes,2))
-
-  extra_list = Tuple{Int, fmpz}[(1,fmpz(1))]
-  for q in ram_primes
-    tr = prime_decomposition_type(O, Int(q))
-    e = tr[1][2]
-    nq = fmpz(q)^(divexact(d,e))
-    if nq > bound
-      break
-    end
-    l=length(extra_list)
-    for i = 1:l
-      n = extra_list[i][2]*nq
-      if n > bound
-        continue
-      end
-      push!(extra_list, (extra_list[i][1]*q, n))
-    end
-  end
-  
-  final_list=Tuple{Int,fmpz}[]
-  l = length(list)
-  for (el,norm) in extra_list
-    for i=1:l
-      if fmpz(list[i])^d*norm>bound
-        continue
-      end
-      push!(final_list, (list[i]*el, fmpz(list[i])^d*norm))
-    end
-  end
-  return final_list
-  
-end
-
-function squarefree_for_conductors(O::NfOrd, n::Int, deg::Int; coprime_to::Array{fmpz,1}=fmpz[])
-  
-  sqf = trues(n)
-  primes = trues(n)
-  
-  #remove primes that can be wildly ramified or
-  #that are ramified in the base field
-  for x in coprime_to
-    el = Int(x)
-    t = el
-    while t <= n
-      @inbounds sqf[t]=false
-      @inbounds primes[t]=false
-      t += el
-    end
-  end
-  
-  #sieving procedure
-  
-  if !(2 in coprime_to)
-    dt = prime_decomposition_type(O,2)
-    if isone(gcd(2^dt[1][1]-1, deg))
-      j=2
-      while j<=n
-        @inbounds sqf[j]=false
-        @inbounds primes[j]=false
-        j += 2
-      end
-    else 
-      i=2
-      s=4
-      while s <= n
-        @inbounds primes[s]=false
-        s+=2
-      end
-      s=4
-      while s<=n
-        @inbounds sqf[s]=false
-        s+=4
-      end
-    end
-  end
-  i = 3
-  b = root(n, 2)
-  while i <= b
-    if primes[i]
-      if gcd(i-1, deg) != 1
-        j = i
-        while j <= n
-          @inbounds primes[j]=false
-          j += i
-        end
-        j = i^2
-        t = j
-        while j <= n
-          @inbounds sqf[j]=false
-          j += t
-        end
-      else
-        dt = prime_decomposition_type(O, i)
-        if gcd(deg, i^dt[1][1]-1) == 1
-          @inbounds primes[i] = false
-          @inbounds sqf[i] = false
-          j = i
-          while j <= n
-           @inbounds primes[j] = false
-           @inbounds sqf[j] = false
-           j+=i
-          end
-        else 
-          j=i
-          while j <= n
-            @inbounds primes[j]=false
-            j+=i
-          end
-          j=i^2
-          t=j
-          while j<= n
-            @inbounds sqf[j]=false
-            j+=t
-          end
-        end
-      end
-    end
-    i+=2
-  end
-  while i<=n
-    if primes[i] && gcd(i-1, deg) == 1
-      dt=prime_decomposition_type(O,i)
-      if gcd(deg,i^dt[1][1]-1)==1
-        @inbounds sqf[i]=false
-        j=i
-        while j<= n
-         @inbounds sqf[j]=false
-         j+=i
-        end
-      end
-    end
-    i+=2
-  end
-  
-  if degree(O)==1
-    i=2
-    while i<=length(sqf)
-      @inbounds sqf[i]=false
-      i+=4
-    end
-  end
-  return Int[i for i=1:length(sqf) if sqf[i]]
-  
-end
-
-function conductors_tame(O::NfOrd, n::Int, bound::fmpz)
-
-  if n == 2
-    return tame_conductors_degree_2(O,bound)
-  end
-  #
-  #  First, conductors coprime to the ramified primes and to the 
-  #  degree of the extension we are searching for.
-  # 
-  d = degree(O)
-  K = nf(O)
-  wild_ram = collect(keys(factor(fmpz(n)).fac))
-  ram_primes = ramified_primes(O)
-  filter!(x -> !divisible(fmpz(n),x), ram_primes)
-  coprime_to = vcat(ram_primes, wild_ram)
-  sort!(ram_primes)
-  m = minimum(wild_ram)
-  k = divexact(n, m)
-  e = Int((m-1)*k)
-  b1 = Int(root(bound, degree(O)*e))
-  list = squarefree_for_conductors(O, b1, n, coprime_to = coprime_to)
-  
-  extra_list = Tuple{Int, fmpz}[(1, fmpz(1))]
-  for q in ram_primes
-    tr = prime_decomposition_type(O, Int(q))
-    f = tr[1][1]
-    nq = q^f 
-    if iscoprime(nq - 1, fmpz(n))
-      continue
-    end
-    nq = nq^(length(tr)*e)
-    if nq > bound
-      continue
-    end
-    l = length(extra_list)
-    for i=1:l
-      no = extra_list[i][2]*nq
-      if no > bound
-        continue
-      end
-      push!(extra_list, (extra_list[i][1]*q, no))
-    end
-  end
-  
-  final_list = Tuple{Int, fmpz}[]
-  l = length(list)
-  e = Int((m-1)*k)
-  for (el,norm) in extra_list
-    for i=1:l
-      if (list[i]^(e*d)) * norm > bound
-        continue
-      end
-      push!(final_list, (list[i]*el, (fmpz(list[i])^(e*d))*norm))
-    end
-  end
-  
-  return final_list
-end
-
-
-function conductors(O::NfOrd, a::Array{Int, 1}, bound::fmpz, tame::Bool=false)
-  
-  #Careful: I am assuming that a is in snf!
-  K=nf(O)
-  d=degree(O)
-  n = prod(a)
-  expo = a[end]
-  wild_ram = collect(keys(factor(fmpz(n)).fac))
-
-  #
-  # First, conductors for tamely ramified extensions
-  #
-  bound_tame = root(bound, divexact(n, expo))
-  list = conductors_tame(O, expo, bound_tame)
-
-  if tame
-    reverse!(list)
-    return Tuple{Int, Dict{NfOrdIdl, Int}}[(x[1], Dict{NfOrdIdl, Int}()) for x in list]  
-  end
-  #
-  # now, we have to multiply the obtained conductors by proper powers of wildly ramified ideals. 
-  #
-  wild_list = Tuple{Int, Dict{NfOrdIdl, Int}, fmpz}[(1, Dict{NfOrdIdl, Int}(), fmpz(1))]
-  for q in wild_ram
-    lp = prime_decomposition(O, Int(q))
-    fq = divexact(d, lp[1][2]*length(lp))
-    l = length(wild_list)
-    sq = fmpz(q)^(divexact(d,lp[1][2])) #norm of the squarefree part of the integer q
-    #=
-      we have to use the conductor discriminant formula to understand the maximal possible exponent of q.
-      Let ap be the exponent of p in the relative discriminant, let m be the conductor and h_(m,C) the cardinality of the 
-      quotient of ray class group by its subgroup C.
-      Then 
-          ap= v_p(m)h_(m,C)- sum_{i=1:v_p(m)} h_(m/p^i, C)
-      Since m is the conductor, h_(m/p^i, C)<= h_(m,C)/q.
-      Consequently, we get
-        v_p(m)<= (q*ap)/(h_(m,C)*(q-1))
-    =#
-    v = valuation(expo, q)
-    # First, we compute the bound coming from the bound on the discriminant
-    boundsubext = root(bound, Int(divexact(n, q^v))) #The bound on the norm of the discriminant on the subextension 
-                                                     # of order q^v
-    #Bound coming from the bound on the discriminant
-    obound = flog(boundsubext, sq)                                                
-    
-    #Bound coming from the analysis on the different in a local extension
-    nbound = q^v + lp[1][2] * v * q^v - 1
-
-    bound_max_ap = min(nbound, obound)  #bound on ap
-    bound_max_exp = div(bound_max_ap, (q-1)*q^(v-1)) #bound on the exponent in the conductor
-    
-    #Ramification groups bound
-    max_nontrivial_ramification_group = div(lp[1][2]*(q^v), q-1)
-    if v > 1
-      ram_groups_bound = max_nontrivial_ramification_group - sum(q^i for i = 1:v-1) + v 
-    else
-      ram_groups_bound = max_nontrivial_ramification_group + 1 
-    end
-    bound_max_exp = min(ram_groups_bound, bound_max_exp)
-    
-    #The prime may be also tamely ramified!
-    nisc = gcd(q^(fq)-1, fmpz(expo))
-    if nisc != 1
-      fnisc=minimum(keys(factor(nisc).fac))
-      nq=sq^((fnisc-1)*(divexact(n, fnisc)))
-      for s=1:l
-        nn=nq*wild_list[s][3]
-        if nn>bound
-          continue
-        end
-        push!(wild_list, (q*wild_list[s][1], wild_list[s][2], nn))
-      end
-    end
-    for i=2:bound_max_exp
-      d1=Dict{NfOrdIdl, Int}()
-      for j=1:length(lp)
-        d1[lp[j][1]]=i
-      end
-      exp1 = i*(q-1)*divexact(n,q)
-      nq= sq^(exp1)
-      for s=1:l
-        nn=nq*wild_list[s][3]
-        if nn>bound
-          continue
-        end
-        d2 = merge(max, d1, wild_list[s][2]) 
-        if nisc!=1
-          push!(wild_list, (q*wild_list[s][1], d2, nn))
-        else
-          push!(wild_list, (wild_list[s][1], d2, nn))
-        end
-      end
-    end
-  end
-  
-  #the final list
-  final_list=Tuple{Int, Dict{NfOrdIdl, Int}}[]
-  for (el, nm) in list
-    for (q,d,nm2) in wild_list
-      if nm*nm2 > bound
-        continue
-      end
-      push!(final_list, (el*q,d))
-    end
-  end
-  reverse!(final_list)
-  return final_list
-  
-end
-
-###############################################################################
-#
-#  Conductors over QQ
-#
-###############################################################################
-
-function squarefree_for_conductorsQQ(O::NfOrd, n::Int, a::Array{Int, 1}; coprime_to::Array{fmpz,1}=fmpz[])
-  
-  G = map(Int, snf(abelian_group(a))[1].snf)
-  sqf= trues(n)
-  primes= trues(n)
-  deg = G[end]
-  #remove primes that can be wildly ramified
-  for x in coprime_to
-    el=Int(x)
-    t=el
-    while t<= n
-      @inbounds sqf[t]=false
-      @inbounds primes[t]=false
-      t+=el
-    end
-  end
-  
-  single = Array{Int, 1}()
-  push!(single, 1)
-  multiple = Array{Int, 1}()
-  
-  #sieving procedure
-  #First, I can remove all the multiples of 2
-  if !(2 in coprime_to)
-    i=2
-    while i<=length(sqf)
-      @inbounds sqf[i]=false
-      i+=2
-    end
-  end  
-
-  i=3
-  b=Base.sqrt(n)
-  while i<=b
-    if primes[i]
-      if gcd(deg,i-1)==1
-        @inbounds primes[i]=false
-        @inbounds sqf[i]=false
-        j=i
-        while j<= n
-         @inbounds primes[j]=false
-         @inbounds sqf[j]=false
-         j+=i
-        end
-      else 
-        j=i
-        while j<= n
-          @inbounds primes[j]=false
-          j+=i
-        end
-        j=i^2
-        t=2*j
-        while j<= n
-          @inbounds sqf[j]=false
-          j+=t
-        end
-      end
-    end
-    i+=2
-  end
-  while i<=n
-    if primes[i]
-      if gcd(deg,i-1) == 1
-        @inbounds primes[i] = false
-        @inbounds sqf[i]=false
-        j = i
-        while j <= n
-         @inbounds sqf[j]=false
-         j += i
-        end
-      end
-    end
-    i+=2
-  end
-
-  if length(G) > 1
-    i = 3
-    while i < n
-      if primes[i]
-        push!(single, i)
-      elseif sqf[i]
-        push!(multiple, i)
-      end
-      i += 2
-    end
-  elseif !isprime(deg)
-    i = 3
-    while i < n
-      if primes[i] 
-        if rem(i-1, deg) == 0
-          push!(multiple, i)
-        else
-          push!(single, i)
-        end
-      elseif sqf[i]
-        push!(multiple, i)
-      end
-      i += 2
-    end
-  else
-    multiple = Int[i for i = 2:length(sqf) if sqf[i]]
-  end
-   
-  return single, multiple 
-  
-end
-
-
-
-function conductors_tameQQ(O::NfOrd, a::Array{Int, 1}, bound::fmpz)
-
-  #
-  #  First, conductors coprime to the ramified primes and to the 
-  #  degree of the extension we are searching for.
-  # 
-  n = prod(a)
-  wild_ram = collect(keys(factor(fmpz(n)).fac))
-  m = minimum(wild_ram)
-  k = divexact(n, m)
-  b1 = Int(root(fmpz(bound),Int((m-1)*k))) 
-  
-  return squarefree_for_conductorsQQ(O, b1, a, coprime_to=wild_ram)
-
-end
-
-function conductorsQQ(O::NfOrd, a::Array{Int, 1}, bound::fmpz, tame::Bool=false)
-  
-  K = nf(O)
-  d = degree(O)
-  n = prod(a)
-  expo = a[end]
-  wild_ram = collect(keys(factor(fmpz(n)).fac))
-
-  #
-  # First, conductors for tamely ramified extensions
-  #
-
-  single, multiple = conductors_tameQQ(O,a,bound)
-
-  if tame
-    return multiple  
-  end
-  #
-  # now, we have to multiply the obtained conductors by proper powers of wildly ramified ideals. 
-  #
-  wild_list=Tuple{Int, Int, fmpz}[(1, 1, 1)]
-  for q in wild_ram
-    l = length(wild_list)
-    #=
-      we have to use the conductor discriminant formula to understand the maximal possible exponent of q.
-      Let ap be the exponent of p in the relative discriminant, let m be the conductor and h_(m,C) the cardinality of the 
-      quotient of ray class group by its subgroup C.
-      Then 
-          ap= v_p(m)h_(m,C)- sum_{i=1:v_p(m)} h_(m/p^i, C)
-      Since m is the conductor, h_(m/p^i, C)<= h_(m,C)/q.
-      Consequently, we get
-        v_p(m)<= (q*ap)/(h_(m,C)*(q-1))
-      To find ap, it is enough to compute a logarithm.
-    =#
-    v = valuation(expo, q)
-    
-    #I don't need to give a bound for a_p on the big extension but only on the maximum extension of q-power order
-    #This is the only thing that matters for the exponent of the conductor
-    nisc = gcd(q-1,n)
-    nbound = q^v + v * q^v - 1
-    boundsubext = root(bound, Int(divexact(n, q^v)))
-    obound = flog(boundsubext, q)
-    nnbound = valuation_bound_discriminant(n, q)
-    bound_max_ap = min(nbound, obound, nnbound)  #bound on ap
-    bound_max_exp = div(bound_max_ap, (q^(v-1))*(q-1)) #bound on the exponent in the conductor
-    if q == 2
-      bound_max_exp = min(bound_max_exp, valuation(expo, q)+2)
-    else
-      bound_max_exp = min(bound_max_exp, valuation(expo, q)+1)
-    end
-    if nisc != 1
-      fnisc=minimum(keys(factor(nisc).fac))
-      nq=fmpz(q)^((fnisc-1)*(divexact(n, fnisc)))
-      for s=1:l
-        nn=nq*wild_list[s][3]
-        if nn>bound
-          continue
-        end
-        push!(wild_list, (q*wild_list[s][1], wild_list[s][2], nn))
-      end
-    end
-    t=(q-1)*divexact(n,q)
-    for i=2:bound_max_exp
-      nq= q^(i*t)
-      for s=1:l
-        nn=nq*wild_list[s][3]
-        if nn>bound
-          continue
-        end
-        push!(wild_list, (wild_list[s][1], wild_list[s][2]*q^i, nn))
-      end
-    end
-  end
-  
-  #the final list
-  final_list = Int[]
-  exps = Int((minimum(wild_ram)-1)*divexact(n, minimum(wild_ram)))
-  for el in multiple
-    for (q,d,nm2) in wild_list
-      if (fmpz(el)^exps)*nm2 > bound
-        continue
-      end
-      push!(final_list, (el*q*d))
-    end
-  end
-  
-  for el in single
-    for j = 2:length(wild_list)
-      q,d,nm2 = wild_list[j]
-      if (fmpz(el)^exps)*nm2 > bound
-        continue
-      end
-      push!(final_list, (el*q*d))
-    end
-  end
-  return final_list
-  
-end
+export abelian_fields, abelian_normal_extensions, abelian_extensions
 
 ###############################################################################
 #
@@ -569,117 +12,95 @@ end
 #
 ###############################################################################
 
-function abelian_extensions(O::Union{FlintIntegerRing, FlintRationalField},
+function abelian_fields(O::Union{FlintIntegerRing, FlintRationalField},
                             gtype::Vector{Int}, discriminant_bound::fmpz;
-                            real::Bool = false,
+                            only_real::Bool = false,
                             tame::Bool = false)
 
   Qx, x = PolynomialRing(FlintQQ, "x", cached = false)
   K, _ = NumberField(x - 1, "a", cached = false)
   OK = maximal_order(K)
-  l = abelian_extensions(OK, gtype, discriminant_bound,
-                         real = real,
+  l = abelian_fields(OK, gtype, discriminant_bound,
+                         only_real = only_real,
                          tame = tame)
-
-
-  newlist = Vector{NfAbsNS}(undef, length(l))
-  for j in 1:length(l)
-    newlist[j], _ = number_field([Qx([coeff(coeff(f, i), 0) for i in 0:length(f)]) for f in l[j].abs_pol], cached = false, check = false)
-  end
-  return newlist
+  return l
 end
 
-function abelian_extensions(O::NfOrd, gtype::Array{Int,1}, absolute_discriminant_bound::fmpz; real::Bool=false, tame::Bool=false, with_autos::Type{Val{T}} = Val{false}) where T 
-  
-  K=nf(O) 
+function abelian_fields(O::NfOrd, gtype::Vector{Int}, absolute_discriminant_bound::fmpz; only_real::Bool = false, only_complex::Bool = false, tame::Bool = false)
+  K = nf(O) 
   @assert degree(K)==1
   gtype = map(Int, snf(abelian_group(gtype))[1].snf)
   n = prod(gtype)
+  real = only_real
     
   expo = lcm(gtype)
     
   #Getting conductors
-  l_conductors=conductorsQQ(O, gtype, absolute_discriminant_bound, tame)
+  l_conductors = conductorsQQ(O, gtype, absolute_discriminant_bound, tame)
   @vprint :AbExt 1 "Number of conductors: $(length(l_conductors)) \n"
-  if with_autos==Val{true}
-    fields = Tuple{NfRelNS, Array{NfRelNSToNfRelNSMor_nf_elem,1}}[]
-  else
-    fields = NfRelNS{nf_elem}[]
-  end
+  fields = ClassField{MapRayClassGrp, GrpAbFinGenMap}[]
 
   #Now, the big loop
   for (i, k) in enumerate(l_conductors)
     @vprint :AbExt 1 "Conductor: $k \n"
     @vprint :AbExt 1 "Left: $(length(l_conductors) - i)\n"
-    r,mr=Hecke.ray_class_groupQQ(O, k, !real, expo)
+    r, mr = Hecke.ray_class_groupQQ(O, k, !real, expo)
     if !has_quotient(r, gtype)
       continue
     end
-    ls=subgroups(r,quotype=gtype, fun= (x, y) -> quo(x, y, false)[2])
+    ls = subgroups(r,quotype = gtype, fun = (x, y) -> quo(x, y, false)[2])
     for s in ls
-      C=ray_class_field(mr, s)
+      C = ray_class_field(mr, s)
       if Hecke._is_conductor_minQQ(C,n) && Hecke.discriminant_conductorQQ(O,C,k,absolute_discriminant_bound)
-        @vprint :AbExt 1 "New Field \n"
-        L=number_field(C)
-        if with_autos==Val{true}
-          push!(fields,(L, automorphism_groupQQ(C)))
-        else
-          push!(fields, L)
+        if only_complex
+          rC, sC = signature(C)
+          if !iszero(rC)
+            continue
+          end
         end
+        @vprint :AbExt 1 "New Field \n"
+        push!(fields, C)
       end
     end
   end
-
   return fields
-
 end
 
-#TODO: Allow more groups
-function abelian_normal_extensions(O::NfOrd, gtype::Array{Int,1}, absolute_discriminant_bound::fmpz; ramified_at_infplc::Bool=true, tame::Bool=false, absolute_galois_group::Symbol = :all,  with_autos::Type{Val{T}} = Val{false}, autos::Array{NfToNfMor,1}=NfToNfMor[]) where T 
 
-  d=degree(O)
+function abelian_normal_extensions(K::AnticNumberField, gtype::Vector{Int}, absolute_discriminant_bound::fmpz; only_real::Bool = false, only_complex::Bool = false, tame::Bool = false, absolute_galois_group::Tuple{Int, Int} = (0, 0))
+  
+  @assert !(only_real && only_complex)
+  O = maximal_order(K)
+  d = degree(O)
   if d == 1
-    return abelian_extensions(O, gtype, absolute_discriminant_bound, real=!ramified_at_infplc, tame=tame, with_autos=with_autos) 
+    return abelian_fields(O, gtype, absolute_discriminant_bound, only_real = only_real, tame = tame) 
   end
-
-  K=nf(O) 
-  n=prod(gtype)
-  inf_plc=InfPlc[]
+  gtype = map(Int, snf(abelian_group(gtype))[1].snf)
+  n = prod(gtype)
+  inf_plc = InfPlc[]
   
-  if with_autos == Val{true}
-    fields=Tuple{NfRelNS{nf_elem},Vector{NfRelNSToNfRelNSMor_nf_elem}}[]
-  else
-    fields=NfRelNS{nf_elem}[]
-  end
-  
+  fields = ClassField{MapRayClassGrp, GrpAbFinGenMap}[]
   bound = div(absolute_discriminant_bound, abs(discriminant(O))^n)
+
   if bound == 0
     return fields
   end
 
-  if mod(n,2)==0 && ramified_at_infplc
-    inf_plc=real_places(K)
+  if iseven(n) && !only_real
+    inf_plc = real_places(K)
   end
+  
+  Aut=Hecke.automorphisms(K)
+  @assert length(Aut)==degree(O) #The field is normal over Q
+  gens = Hecke.small_generating_set(Aut)
 
   expo = lcm(gtype)
   C, mC = class_group(O)
   cgrp = !iscoprime(n, order(C))
   allow_cache!(mC)
-  
-  #
-  # Getting a small set of generators
-  # for the automorphisms group
-  #
-  if isempty(autos)
-    Aut=Hecke.automorphisms(K)
-    @assert length(Aut)==degree(O) #The field is normal over Q
-    gens = Hecke.small_generating_set(Aut)
-  else
-    gens = autos
-  end
 
   #Getting conductors
-  l_conductors=conductors(O, gtype, bound, tame)
+  l_conductors = conductors(O, gtype, bound, tame)
   @vprint :AbExt 1 "Number of conductors: $(length(l_conductors)) \n"
   
   ctx = rayclassgrp_ctx(O, expo)
@@ -687,8 +108,8 @@ function abelian_normal_extensions(O::NfOrd, gtype::Array{Int,1}, absolute_discr
   for (i, k) in enumerate(l_conductors)
     @vprint :AbExt 1 "Conductor: $k \n"
     @vprint :AbExt 1 "Left: $(length(l_conductors) - i)\n"
-    r,mr = ray_class_group_quo(O, k[1], k[2], inf_plc, ctx)
-    if !has_quotient(r,gtype)
+    r, mr = ray_class_group_quo(O, k[1], k[2], inf_plc, ctx)
+    if !has_quotient(r, gtype)
       continue
     end
     act = induce_action(mr,gens)
@@ -697,37 +118,86 @@ function abelian_normal_extensions(O::NfOrd, gtype::Array{Int,1}, absolute_discr
       @hassert :AbExt 1 order(codomain(s))==n
       C = ray_class_field(mr, s)
       if Hecke._is_conductor_min_normal(C) && Hecke.discriminant_conductor(C, bound)
+        if only_complex
+          rC, sC = signature(C)
+          if iszero(rC)
+            continue
+          end
+        end
         @vprint :AbExt 1 "New Field \n"
-        L = number_field(C)
-        if absolute_galois_group != :all
+        if absolute_galois_group != (0, 0)
           autabs = absolute_automorphism_group(C, gens)
           G = generic_group(autabs, *)
-          if absolute_galois_group == :_16T7
-            if isisomorphic_to_16T7(G)
-              @vprint :AbExt 1 "I found a field with Galois group 16T7 (C_2 x Q_8)\n"
-              @vtime :AbExt 1 push!(fields, L)
-            end
-          elseif absolute_galois_group == :_8T5
-            if isisomorphic_to_8T5(G)
-              @vprint :AbExt 1 "I found a field with Galois group 8T5 (Q_8)\n"
-              @vtime :AbExt 1 push!(fields, L)
-            end
-          else
-            error("Group not supported (yet)")
+          id_G = find_small_group(G)
+          if id_G == absolute_galois_group
+            push!(fields, C)
           end
         else
-          if with_autos==Val{true}
-            push!(fields, (L, absolute_automorphism_group(C,gens))) 
-          else
-            push!(fields, L)
-          end
+          push!(fields, C)
         end
       end
     end
   end
-
   return fields
+end
 
+################################################################################
+#
+#  Abelian extensions of arbitrary fields
+#
+################################################################################
+
+function abelian_extensions(K::AnticNumberField, gtype::Vector{Int}, absolute_discriminant_bound::fmpz; ramified_at_inf_plc::Tuple{Bool, Vector{InfPlc}} = (false, InfPlc[]), only_tame::Bool = false)
+
+  OK = maximal_order(K)
+  gtype = map(Int, snf(abelian_group(gtype))[1].snf)
+  n = prod(gtype)
+  inf_plc = InfPlc[]
+  
+  fields = ClassField{MapRayClassGrp, GrpAbFinGenMap}[]
+  bound = div(absolute_discriminant_bound, abs(discriminant(OK))^n)
+  if iszero(bound)
+    return fields
+  end
+
+  inf_plc = real_places(K)
+  if ramified_at_inf_plc[1]
+    inf_plc = ramified_at_inf_plc[2]
+  end
+  expo = gtype[end]
+  C, mC = class_group(OK)
+  cgrp = !iscoprime(n, order(C))
+  allow_cache!(mC)
+
+  #Getting conductors
+  l_conductors = conductors_generic(K, gtype, absolute_discriminant_bound, only_tame = only_tame)
+  @vprint :AbExt 1 "Number of conductors: $(length(l_conductors)) \n"
+  
+  ctx = rayclassgrp_ctx(OK, expo)
+  #Now, the big loop
+  for (i, k) in enumerate(l_conductors)
+    @vprint :AbExt 1 "Left: $(length(l_conductors) - i)\n"
+    r, mr = ray_class_group_quo(OK, k, inf_plc, ctx)
+    if !has_quotient(r, gtype)
+      continue
+    end
+    ls = subgroups(r, quotype = gtype, fun = (x, y) -> quo(x, y, false)[2])
+    for s in ls
+      @hassert :AbExt 1 order(codomain(s))==n
+      C = ray_class_field(mr, s)
+      cC = conductor(C)
+      if ramified_at_inf_plc[1]
+        if Set(cC[2]) != Set(ramified_at_inf_plc[2])
+          continue
+        end
+      end
+      if cC[1] == mr.defining_modulus[1] && norm(discriminant(C)) <= bound
+        @vprint :AbExt 1 "New Field \n"
+        push!(fields, C)
+      end
+    end
+  end
+  return fields
 end
 
 

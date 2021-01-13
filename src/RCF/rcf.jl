@@ -18,7 +18,7 @@ polynomials for all prime power cyclic subfields.
 
 Note, the return type is always a non-simple extension.
 """
-function NumberField(CF::ClassField{S, T}; redo::Bool = false, using_norm_relation = false) where {S, T}
+function NumberField(CF::ClassField{S, T}; redo::Bool = false, using_norm_relation = false, over_subfield::Bool = false) where {S, T}
   if isdefined(CF, :A) && !redo
     return CF.A
   end
@@ -37,7 +37,7 @@ function NumberField(CF::ClassField{S, T}; redo::Bool = false, using_norm_relati
       if using_norm_relation && !divides(fmpz(ord), order(S1))[1]
         push!(res, ray_class_field_cyclic_pp_Brauer(CF, mQ))
       else
-        push!(res, ray_class_field_cyclic_pp(CF, mQ))
+        push!(res, ray_class_field_cyclic_pp(CF, mQ, over_subfield = over_subfield))
       end
     end
     q[i] = G[i]
@@ -53,13 +53,20 @@ function NumberField(CF::ClassField{S, T}; redo::Bool = false, using_norm_relati
   return CF.A
 end
 
-function ray_class_field_cyclic_pp(CF::ClassField{S, T}, mQ::GrpAbFinGenMap) where {S, T}
+function ray_class_field_cyclic_pp(CF::ClassField{S, T}, mQ::GrpAbFinGenMap; over_subfield::Bool = false) where {S, T}
   @vprint :ClassField 1 "cyclic prime power class field of degree $(degree(CF))\n"
   CFpp = ClassField_pp{S, T}()
   CFpp.quotientmap = compose(CF.quotientmap, mQ)
   CFpp.rayclassgroupmap = CF.rayclassgroupmap
   @assert domain(CFpp.rayclassgroupmap) == domain(CFpp.quotientmap)
+  if over_subfield
+    return number_field_over_subfield(CFpp, using_norm_relation = true)
+  else
+    return ray_class_field_cyclic_pp(CFpp)
+  end
+end
 
+function ray_class_field_cyclic_pp(CFpp::ClassField_pp)
   @vprint :ClassField 1 "computing the S-units...\n"
   @vtime :ClassField 1 _rcf_S_units(CFpp)
   @vprint :ClassField 1 "finding the Kummer extension...\n"
@@ -83,15 +90,21 @@ function ray_class_field_cyclic_pp_Brauer(CF::ClassField{S, T}, mQ::GrpAbFinGenM
   CFpp.quotientmap = compose(CF.quotientmap, mQ)
   CFpp.rayclassgroupmap = CF.rayclassgroupmap
   @assert domain(CFpp.rayclassgroupmap) == domain(CFpp.quotientmap)
+  return ray_class_field_cyclic_pp_Brauer(CFpp)
+end
 
+function  ray_class_field_cyclic_pp_Brauer(CFpp::ClassField_pp{S, T}) where {S, T}
   e = degree(CFpp)
   v, q = ispower(e)
   k = base_field(CFpp)
   CE = cyclotomic_extension(k, e)
+  @vtime :ClassField 1 "Computing maximal order and lll \n"
+  @vtime :ClassField 1 OCE = maximal_order(absolute_field(CE))
+  @vtime :ClassField 1 OCELLL = lll(OCE)
 
   @vprint :ClassField 1 "computing the S-units...\n"
   @vtime :ClassField 1 _rcf_S_units_using_Brauer(CFpp)
-  mr = CF.rayclassgroupmap
+  mr = CFpp.rayclassgroupmap
   mq = CFpp.quotientmap
   KK = kummer_extension(e, FacElem{nf_elem, AnticNumberField}[CFpp.a])
   ng, mng = norm_group(KK, CE.mp[2], mr)

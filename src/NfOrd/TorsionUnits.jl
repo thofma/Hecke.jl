@@ -90,15 +90,7 @@ end
 
 function torsion_units(K::AnticNumberField)
   ord, gen = _torsion_units_gen(K)
-  res = Vector{nf_elem}(undef, ord)
-    res[1] = one(K)
-    res[2] = gen
-    for i = 1:length(res)
-      res[i] = c[2]*res[2]
-    end
-    return res
-  mp = AbToNfMultGrp(K, ord, gen)
-  return domain(mp), mp
+  return powers(gen, ord-1)
 end
 
 function torsion_units_generator(K::AnticNumberField)
@@ -118,7 +110,7 @@ end
 
 ################################################################################
 #
-# Interface: orders
+#  Interface: orders
 #
 ################################################################################
 

@@ -1,8 +1,12 @@
 @testset "Elements" begin
-   Qx, x = PolynomialRing(FlintQQ, "x")
+  Qx, x = PolynomialRing(FlintQQ, "x")
 
-   K1, a1 = NumberField(x^3 - 2, "a")
+  K1, a1 = NumberField(x^3 - 2, "a")
   O1 = EquationOrder(K1)
+
+  K2, a2 = number_field(4*x^2 + 1, "a")
+  O2 = maximal_order(K2)
+
 
   @testset "Construction" begin
 
@@ -109,6 +113,12 @@
     @test b == O1(2)
 
     b = @inferred O1(a1) + O1(a1^2)
+    c = O1(a1)
+    c = @inferred add!(c, c, O1(a1^2))
+    @test b == c
+    c = O1(a1)
+    c = @inferred addeq!(c, O1(a1^2))
+    @test b == c
     @test b == O1(a1 + a1^2)
 
     c = @inferred O1([1, 0, 0]) + O1([0, 1, 0])
@@ -156,6 +166,11 @@
     b = O1(2 - a1)
     c = @inferred 2 - O1(a1)
     @test b == c
+    b1 = O1(a1)
+    b1 = @inferred sub!(b1, b1, 2)
+    @test b1 == -b
+    b1 = sub!(b1, b1, -fmpz(2))
+    @test b1 == O1(a1)
     c = @inferred -(O1(a1) - 2)
     @test b == c
     c = @inferred fmpz(2) - O1(a1)
@@ -202,6 +217,10 @@
     @test c == O1(1)
     c = @inferred powermod(b, 3, 3)
     @test c == O1(1)
+
+    b1 = O2(4*a2)
+    c1 = @inferred powermod(b1, fmpz(2), fmpz(2))
+    @test iszero(c1)
   end
 
   @testset "Representation matrix" begin
@@ -286,6 +305,7 @@
     @test Hecke.radiuslttwopower(c[1], -1024)
     @test overlaps(c[2], 2*log(RR(2))//3)
     @test Hecke.radiuslttwopower(c[2], -1024)
+    @inferred t2(b)
   end
 
   @testset "Promotion rule" begin

@@ -563,7 +563,6 @@ function sieve_by_norm_group(list1::Vector{FieldsTower}, list2::Vector{FieldsTow
         continue
       end
       if order(intersect(mS, norm_groups[j], false)[1]) == order(domain(mS))
-      #if iseq(S, norm_groups[j])
         done[j] = true
         push!(new_v, v[j])
       end
@@ -580,28 +579,7 @@ function refine_clusters(list1, list2, clusters, red, redfirst, redsecond)
     if length(v1) < red
       continue
     end
-    #if length(v1) == red
-      push!(new_clusters, v1)
-    #  continue
-    #end
-    #=
-    mK = maximal_abelian_subextension(list1[v1[1][1]])
-    mL = maximal_abelian_subextension(list2[v1[1][2]])
-    ram_primes = Int[]
-    for s = 1:length(mK)
-      ram_primes = map(Int, collect(unique(vcat(ram_primes, ramified_primes(maximal_order(mK[s]))))))
-    end
-    for s = 1:length(mL)
-      ram_primes = map(Int, collect(unique(vcat(ram_primes, ramified_primes(maximal_order(mL[s]))))))
-    end
-    lv = sieve_by_norm_group(list1, list2, v1, ram_primes)
-    for s = 1:length(lv)
-      vnew = _some_combinatorics(lv[s], redfirst, redsecond)
-      if length(vnew) >= red
-        push!(new_clusters, vnew)
-      end
-    end
-    =#
+    push!(new_clusters, v1)
   end
   return new_clusters
 end
@@ -679,16 +657,19 @@ function _sieve_by_prime_splitting(list1, list2, clusters, red, redfirst, redsec
   nclu = 0
   for v in clusters
     nclu += 1
+    #=
     if length(v) == red
       push!(fields_to_be_computed, v[1])
       continue
     end
+    =#
     if length(v) < red
       continue
     end
     @vprint :Fields 1 "$(Hecke.set_cursor_col())$(Hecke.clear_to_eol()) Doing cluster $(nclu)/$(total) of length $(length(v))"
     p = next_prime(1000)
     iso_classes = Vector{Int}[Int[i for i = 1:length(v)]]
+    cnt = 0
     while true
       splitting_types = Dict{Tuple{Int, Int}, Vector{Int}}()
       for i = 1:length(v)
@@ -710,7 +691,8 @@ function _sieve_by_prime_splitting(list1, list2, clusters, red, redfirst, redsec
           splitting_types[(r, f)] = Int[i]
         end
       end
-      if all(x -> length(x) <= red, values(splitting_types))
+      cnt += 1
+      if all(x -> length(x) <= red, values(splitting_types)) && cnt >= 10
         #I intersect the data with the one that I already have
         for vals in values(splitting_types)
           to_be = intersect_infos(vals, iso_classes)
@@ -728,7 +710,7 @@ function _sieve_by_prime_splitting(list1, list2, clusters, red, redfirst, redsec
           append!(new_iso_classes, intersect_infos(vals, iso_classes))
         end
         iso_classes = new_iso_classes
-        if all(x -> length(x) <= red, iso_classes)
+        if all(x -> length(x) <= red, iso_classes) && cnt >= 10
           for j in iso_classes
             if length(j) == red
               push!(fields_to_be_computed, v[j[1]])

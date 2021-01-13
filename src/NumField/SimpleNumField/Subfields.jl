@@ -83,6 +83,7 @@ function principal_subfields(K::SimpleNumField)
     baf = FakeFmpqMat(ba[i])
     elts[i] = elem_type(K)[elem_from_mat_row(K, baf.num, j, baf.den) for j in 1:nrows(ba[i])]
   end
+  T = typeof(K)
   return Tuple{T, morphism_type(T)}[ subfield(K, elts[i], isbasis = true) for i in 1:length(elts)]
 end
 

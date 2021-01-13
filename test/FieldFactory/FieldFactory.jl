@@ -157,6 +157,9 @@
   println("Some examples")
   @time begin
     @testset "Some examples" begin
+      lQ = fields(1, 1, fmpz(1))
+      @test length(lQ) == 1
+      @test degree(number_field(lQ[1])) == 1
       l1 = fields(6, 1, fmpz(10)^8)
       @test length(l1) == 107
       for x in l1

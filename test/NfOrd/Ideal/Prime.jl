@@ -62,7 +62,20 @@
   @test_throws ErrorException PrimeIdealsSet(O, fmpz(-1), fmpz(1))
   @test_throws ErrorException PrimeIdealsSet(O, fmpz(1), -2)
   @test_throws ErrorException PrimeIdealsSet(O, fmpz(1), 2, coprimeto = "bla")
-  
-  
-  
+end
+
+
+@testset "PrimeIdealsSet" begin
+  l = Hecke.primes_up_to(20)
+  for i = 2:length(l)
+    d = l[i]
+    K = quadratic_field(d)[1]
+    OK = maximal_order(K)
+    p = next_prime(fmpz(10)^70)
+    while length(prime_decomposition_type(OK, p)) != 2
+      p = next_prime(p)
+    end
+    P = prime_decomposition(OK, p)[1][1]
+    @test valuation(P.gen_two, P) == 1
+  end
 end

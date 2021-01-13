@@ -1,4 +1,4 @@
-function toPari(io::IO, f::Generic.Poly{nf_elem})
+function to_pari(io::IO, f::Generic.Poly{nf_elem})
   Zy, y = PolynomialRing(FlintQQ, "y", cached = false)
   k = base_ring(f)
   kt = parent(f)
@@ -17,13 +17,13 @@ function toPari(io::IO, f::Generic.Poly{nf_elem})
   nothing
 end
 
-function toPari(s::String, a)
+function to_pari(s::String, f::Generic.Poly{nf_elem})
   g = open(s, "w")
-  toPari(g, a)
+  to_pari(g, f)
   close(g)
 end
 
-function toPari(f::IO, m::fmpz_mat)
+function to_pari(f::IO, m::fmpz_mat)
   print(f, "A = [")
   for i=1:nrows(A)
     if i>1
@@ -36,9 +36,10 @@ function toPari(f::IO, m::fmpz_mat)
   print(f, "];")
 end
 
-function toPari(io::IO, f::fmpz_poly)
-  print(io, "f = $f;\n")
-  nothing
+function to_pari(s::String, m::fmpz_mat)
+  g = open(s, "w")
+  to_pari(g, m)
+  close(g)
 end
 
 # gp> #

@@ -65,7 +65,6 @@ include("./conductors.jl")
 include("./brauer.jl")
 include("./chain.jl")
 include("./maximal_abelian_subextension.jl")
-include("./relative_to_absolute.jl")
 include("./non_normal.jl")
 
 Generic.degree(F::FieldsTower) = degree(F.field)
@@ -89,7 +88,7 @@ end
 ################################################################################
 
 function field_context(K::AnticNumberField)
-  auts = small_generating_set(automorphisms(K))
+  layers = Vector{NfToNfMor}[]
   autsK = automorphisms(K, copy = false)
   permGC = _from_autos_to_perm(autsK)
   G = _perm_to_gap_grp(permGC)
@@ -106,14 +105,24 @@ function field_context(K::AnticNumberField)
     H = L[i]
     gensGAP = GAP.Globals.GeneratorsOfGroup(H)
     ggs = NfToNfMor[ x[2] for x in D2 if GAP.Globals.IN(x[1], gensGAP)]
+    push!(layers, closure(ggs))
     F, mF = fixed_field(K, ggs)
     F, mS = simplify(F)
     mF = mS * mF
     embs[i] = mF
   end
+  H = L[1]
+  gensGAP = GAP.Globals.GeneratorsOfGroup(H)
+  ggs = NfToNfMor[ x[2] for x in D2 if GAP.Globals.IN(x[1], gensGAP)]
+  push!(layers, closure(ggs))
+  auts = small_generating_set(layers[1])
+  for i = 2:length(layers)
+    auts_layers = NfToNfMor[x for x in layers[i] if !(x in layers[i-1])]
+    append!(auts, small_generating_set(auts_layers))
+  end
   KQ = rationals_as_number_field()[1]
-  embs[1] = hom(KQ, F, one(K))
-  return FieldsTower(K, auts, embs)
+  embs[1] = hom(KQ, F, one(F))
+  return FieldsTower(K, reverse(auts), embs)
 end
 
 ################################################################################
@@ -448,7 +457,7 @@ function field_extensions(x::FieldsTower, bound::fmpz, IsoE1::GAP.GapObj, l::Arr
   @vprint :FieldsNonFancy 1 "Computing maximal orders\n"
   final_list = Vector{FieldsTower}(undef, length(list))
   for j = 1:length(list)
-    fld, autos, embed = _from_relative_to_abs_with_embedding(list[j][1], list[j][2])
+    fld, autos, embed = _relative_to_absolute(list[j][1], list[j][2])
     previous_fields = Array{NfToNfMor, 1}(undef, length(x.subfields)+1)
     for s = 1:length(x.subfields)
       previous_fields[s] = x.subfields[s]
@@ -540,7 +549,7 @@ function fields(a::Int, b::Int, absolute_bound::fmpz; using_direct_product::Bool
   if a == 1
     @assert b == 1
     K = rationals_as_number_field()[1]
-    g = NfToNfMor(K, K, K(1))
+    g = hom(K, K, K(1))
     return FieldsTower[FieldsTower(K, NfToNfMor[g], Array{NfToNfMor, 1}())]
   end
   G = GAP.Globals.SmallGroup(a, b)
