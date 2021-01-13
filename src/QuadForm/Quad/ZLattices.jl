@@ -305,4 +305,16 @@ function _root_lattice_A(n::Int)
   return z
 end
 
+################################################################################
+#
+#  Dual lattice
+#
+################################################################################
+
+function dual(L::ZLat)
+  G = gram_matrix(ambient_space(L))
+  Gi = inv(G)
+  new_bmat = transpose(inv(basis_matrix(L)) * Gi)
+  return lattice(ambient_space(L), new_bmat)
+end
 
