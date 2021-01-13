@@ -401,6 +401,8 @@ end
 #  power detection
 #
 ################################################################################
+#compare to Oscar/examples/PerfectPowers.jl which is, for large input,
+#far superiour over gmp/ fmpz_is_perfect_power
 
 @doc Markdown.doc"""
     ispower(a::fmpz) -> Int, fmpz
