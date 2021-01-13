@@ -672,6 +672,10 @@ function conductors_generic_tame(K::AnticNumberField, gtype::Vector{Int}, absolu
   end
   #Now, I have to merge them.
   conds = Vector{Tuple{Dict{NfOrdIdl, Int}, fmpz}}()
+  if isempty(lf)
+    push!(conds, (Dict{NfOrdIdl, Int}(), fmpz(1)))
+    return conds
+  end
   min_n = minimum(x -> x[2], lf)
   lf_new = Vector{Tuple{NfOrdIdl, fmpz}}()
   for i = 1:length(lf)
