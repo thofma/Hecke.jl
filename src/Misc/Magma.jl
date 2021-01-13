@@ -2,7 +2,7 @@
 # fmpz_mat -> nemo file
 # use as include(...)
 ################################################################################
-function toNemo(io::IOStream, A::fmpz_mat; name = "A")
+function to_hecke(io::IOStream, A::fmpz_mat; name = "A")
   println(io, name, " = MatrixSpace(FlintZZ, ", nrows(A), ", ", ncols(A), ")([")
   for i = 1:nrows(A)
     for j = 1:ncols(A)
@@ -19,9 +19,9 @@ function toNemo(io::IOStream, A::fmpz_mat; name = "A")
   println(io, "println(\"Loaded ", name, "\")")
 end
 
-function toNemo(s::String, A::fmpz_mat)
+function to_hecke(s::String, A::fmpz_mat)
   f = open(s, "w")
-  toNemo(f, A)
+  to_hecke(f, A)
   close(f)
 end
 
@@ -29,7 +29,7 @@ end
 # fmpz_mat -> magma file
 # use as read(...)
 ################################################################################
-function toMagma(io::IOStream, A::fmpz_mat; name = "A")
+function to_magma(io::IOStream, A::fmpz_mat; name = "A")
   println(io, name, " := Matrix(Integers(), ", nrows(A), ", ", ncols(A), ", [")
   for i = 1:nrows(A)
     for j = 1:ncols(A)
@@ -46,9 +46,9 @@ function toMagma(io::IOStream, A::fmpz_mat; name = "A")
   println(io, "\"Loaded ", name, "\";")
 end
 
-function toMagma(s::String, A::fmpz_mat)
+function to_magma(s::String, A::fmpz_mat)
   f = open(s, "w")
-  toMagma(f, A)
+  to_magma(f, A)
   close(f)
 end
 
@@ -56,7 +56,7 @@ end
 # SMat -> magma file
 # use as read(...)
 ################################################################################
-function toMagma(io::IOStream, A::SMat; name = "A")
+function to_magma(io::IOStream, A::SMat; name = "A")
   println(io, name, " := SparseMatrix(Integers(), ", nrows(A), ", ", ncols(A), ", [")
   for i = 1:nrows(A)
     for xx = 1:length(A.rows[i].pos) 
@@ -71,9 +71,9 @@ function toMagma(io::IOStream, A::SMat; name = "A")
   println(io, "\"Loaded ", name, "\";")
 end
 
-function toMagma(s::String, A::SMat)
+function to_magma(s::String, A::SMat)
   f = open(s, "w")
-  toMagma(f, A)
+  to_magma(f, A)
   close(f)
 end
 
@@ -81,7 +81,7 @@ end
 # MPoly -> magma file
 # use as read(...)
 ################################################################################
-function toMagma(io::IOStream, R::AbstractAlgebra.MPolyRing; base_name::String = "S", name::String = "R")
+function to_magma(io::IOStream, R::AbstractAlgebra.MPolyRing; base_name::String = "S", name::String = "R")
   print(io, "$name<")
   S = symbols(R)
   for i = 1:length(S)-1
@@ -90,13 +90,13 @@ function toMagma(io::IOStream, R::AbstractAlgebra.MPolyRing; base_name::String =
   print(io, "$(S[end])> := PolynomialRing($base_name, $(length(S)));\n")
 end
 
-function toMagma(p::String, R::AbstractAlgebra.MPolyRing; base_name::String = "S", name::String = "R", make::String = "w")
+function to_magma(p::String, R::AbstractAlgebra.MPolyRing; base_name::String = "S", name::String = "R", make::String = "w")
   f = open(p, mode)
-  Hecke.toMagma(f, R, base_name = base_name, name = name)
+  Hecke.to_magma(f, R, base_name = base_name, name = name)
   close(f)
 end
 
-function toMagma(io::IOStream, f::Generic.MPolyElem)
+function to_magma(io::IOStream, f::Generic.MPolyElem)
   S = symbols(parent(f))
   for i=1:length(f)
     if i>1
@@ -124,13 +124,13 @@ function toMagma(io::IOStream, f::Generic.MPolyElem)
   end
 end
 
-function toMagma(io::IOStream, k::AnticNumberField; name::String = "S", gen_name::String="_a")
+function to_magma(io::IOStream, k::AnticNumberField; name::String = "S", gen_name::String="_a")
   print(io, "$name<$gen_name> := NumberField($(k.pol));\n")
 end
 
-function toMagma(io::IOStream, s::Symbol, v::Any)
+function to_magma(io::IOStream, s::Symbol, v::Any)
   print(io, "$s := ")
-  Hecke.toMagma(io, v)
+  Hecke.to_magma(io, v)
   print(io, ";\n")
 end
 

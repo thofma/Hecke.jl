@@ -1277,13 +1277,13 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    toNemo(io::IOStream, A::SMat; name = "A")
+    to_hecke(io::IOStream, A::SMat; name = "A")
 
   Prints the SMat as a julia-program into the file corresponding to `io`.
   The file can be included to get the matrix.
   `name` controls the variable name of the matrix.
 """
-function toNemo(io::IOStream, A::SMat; name = "A")
+function to_hecke(io::IOStream, A::SMat; name = "A")
   T = typeof(A.rows[1].values[1])
   println(io, name, " = SMat{$T}()")
   for i=A.rows
@@ -1296,15 +1296,15 @@ function toNemo(io::IOStream, A::SMat; name = "A")
 end
 
 @doc Markdown.doc"""
-    toNemo(io::String, A::SMat; name = "A")
+    to_hecke(io::String, A::SMat; name = "A")
 
   Prints the SMat as a julia-program into the file named `io`.
   The file can be included to get the matrix.
   `name` controls the variable name of the matrix.
 """
-function toNemo(f::String, A::SMat; name = "A")
+function to_hecke(f::String, A::SMat; name = "A")
   io = open(f, "w")
-  toNemo(io, A, name=name)
+  to_hecke(io, A, name=name)
   close(io)
 end
 

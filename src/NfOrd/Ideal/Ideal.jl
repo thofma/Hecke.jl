@@ -2215,14 +2215,14 @@ end
 #
 ################################################################################
 
-function toMagma(f::IOStream, clg::NfOrdIdl, order::String = "M")
+function to_magma(f::IOStream, clg::NfOrdIdl, order::String = "M")
   print(f, "ideal<$(order)| ", clg.gen_one, ", ",
                     elem_in_nf(clg.gen_two), ">")
 end
 
-function toMagma(s::String, c::NfOrdIdl, order::String = "M")
+function to_magma(s::String, c::NfOrdIdl, order::String = "M")
   f = open(s, "w")
-  toMagma(f, c, order)
+  to_magma(f, c, order)
   close(f)
 end
 
