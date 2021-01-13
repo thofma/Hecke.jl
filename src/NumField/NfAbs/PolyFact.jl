@@ -663,7 +663,11 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 10)
         error()
         continue
       else
-        sz = nbits(vH.pM[2]) - div(r, 2) - prec_scale
+        if r > 20
+          sz = nbits(vH.pM[2]) - div(r, 2) - prec_scale
+        else
+          sz = nbits(vH.pM[2]) - div(r, 1) - prec_scale
+        end
       end
       push!(really_used, n)
       ccall((:fmpz_mat_scalar_tdiv_q_2exp, libflint), Nothing, (Ref{fmpz_mat}, Ref{fmpz_mat}, Cint), B, B, sz+prec_scale)
@@ -694,7 +698,7 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 10)
       end
       @vprint :PolyFactor 1 "partitioning  of local factors: $(values(d))\n"
       if length(keys(d)) <= nrows(M)
-        @vprint :PolyFactor 1  "BINGO: potentially ", length(keys(d)), "factors\n"
+        @vprint :PolyFactor 1  "BINGO: potentially $(length(keys(d))) factors\n"
         res = typeof(f)[]
         fail = []
         if length(keys(d)) == 1
