@@ -33,6 +33,21 @@ function lattice(V::QuadSpace{FlintRationalField, fmpq_mat}, B::MatElem)
   return ZLat(V, Gc)
 end
 
+@doc Markdown.doc"""
+    orthogonal_sum(L1:ZLat, L2::ZLat)
+
+Return the orthogonal direct sum of the lattice L1 and L2.
+"""
+function orthogonal_sum(L1::ZLat, L2::ZLat)
+  V1 = ambient_space(L1)
+  V2 = ambient_space(L2)
+  B1 = basis_matrix(L1)
+  B2 = basis_matrix(L2)
+  B = diagonal_matrix(B1, B2)
+  V = orthogonal_sum(V1, V2)
+  return lattice(V, B)
+end
+
 function gram_matrix(L::ZLat)
   b = basis_matrix(L)
   return b * gram_matrix(ambient_space(L)) * transpose(b)
