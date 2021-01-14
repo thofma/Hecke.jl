@@ -34,7 +34,7 @@ function lattice(V::QuadSpace{FlintRationalField, fmpq_mat}, B::MatElem)
 end
 
 @doc Markdown.doc"""
-    orthogonal_sum(L1:ZLat, L2::ZLat)
+    orthogonal_sum(L1::ZLat, L2::ZLat)
 
 Return the orthogonal direct sum of the lattice L1 and L2.
 """
@@ -333,4 +333,3 @@ function dual(L::ZLat)
   new_bmat = transpose(inv(basis_matrix(L)) * Gi)
   return lattice(ambient_space(L), new_bmat)
 end
-
