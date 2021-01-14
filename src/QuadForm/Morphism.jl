@@ -600,7 +600,7 @@ end
 
 function short_vectors(L::ZLat, ub)
   _G = gram_matrix(L)
-  return _short_vectors(_G, ub)
+  return _short_vectors_gram(_G, ub)
 end
 
 function short_vectors(L::ZLat, lb, ub)
