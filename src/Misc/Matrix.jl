@@ -2383,3 +2383,27 @@ function map_entries(R::Nemo.FmpzModRing, M::fmpz_mat)
   end
   return N
 end
+
+################################################################################
+#
+#  Hashing
+#
+################################################################################
+
+# Would be cool if we could hash the Ptr{fmpz} directly
+function Base.hash(M::fmpz_mat, h::UInt)
+  b = 0x3e4ea81eb31d94f4%UInt
+  t = fmpz()
+  GC.@preserve M begin
+    for i in 1:nrows(M)
+      for j in 1:ncols(M)
+        m = ccall((:fmpz_mat_entry, libflint), Ptr{fmpz},
+                  (Ref{fmpz_mat}, Int, Int), M, i - 1, j - 1)
+        ccall((:fmpz_set, libflint), Cvoid, (Ref{fmpz}, Ref{fmpz}), t, m)
+        b = xor(b, xor(hash(t, h), h))
+        b = (b << 1) | (b >> (sizeof(Int)*8 - 1))
+      end
+    end
+    return b
+  end
+end
