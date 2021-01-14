@@ -605,6 +605,9 @@ end
 
 Returns all tuples `(v, n)` such that `v G v^t = n <= ub`, where `G` is the
 Gram matrix of `L`.
+
+Note that the vectors are computed up to sign (so only one of `v` and `-v`
+appears).
 """
 short_vectors(L::ZLat, ub)
 
