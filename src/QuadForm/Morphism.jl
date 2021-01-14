@@ -1,3 +1,5 @@
+export short_vectors, shortest_vectors
+
 ################################################################################
 #
 #  Auto- and isomorphism computation of lattices
@@ -597,6 +599,14 @@ end
 #			free(sumvecbase);
 #		}
 #	}
+
+@doc Markdown.doc"""
+    short_vectors(L, ub) -> Vector{Tuple{Vector{Int}, fmpq}}
+
+Returns all tuples `(v, n)` such that `v G v^t = n <= ub`, where `G` is the
+Gram matrix of `L`.
+"""
+short_vectors(L::ZLat, ub)
 
 function short_vectors(L::ZLat, ub)
   _G = gram_matrix(L)
