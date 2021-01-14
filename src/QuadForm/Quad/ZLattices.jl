@@ -134,6 +134,7 @@ ambient space of `L`.
 function automorphism_group_generators(L::ZLat; check::Bool = true,
                                                 ambient_representation::Bool = true)
 
+  @req isdefinite(L) "The lattice must be definite"
   assert_has_automorphisms(L)
 
   gens = L.automorphism_group_generators
