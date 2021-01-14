@@ -201,14 +201,16 @@ Base.getindex(D::NFDBRecord, s) = getindex(D.data, s)
 
 properties(D::NFDBRecord) = collect(keys(D.data))
 
-function field(D::NFDBRecord)
+function field(D::NFDBRecord; cached = false)
   if isdefined(D, :K)
     return D.K
   else
     f = D[:poly]
     K, a = NumberField(f, "a", cached = false)
-    D.K = K
-    return D.K
+    if cached
+      D.K = K
+    end
+    return K
   end
 end
 
