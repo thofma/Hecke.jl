@@ -57,7 +57,7 @@ end
 
 length(V::VectorList) = length(V.vectors)
 
-issorted(V::VectorList) = V.issorted
+Base.issorted(V::VectorList) = V.issorted
 
 getindex(V::VectorList, i::Int) = i > 0 ? V.vectors[i] : -V.vectors[-i]
 

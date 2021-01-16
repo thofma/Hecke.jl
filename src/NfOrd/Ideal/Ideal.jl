@@ -2386,3 +2386,52 @@ residue ring has the required size.
 """
 euler_phi_inv(n::fmpz, zk::NfAbsOrd) = [ numerator(evaluate(x)) for x = euler_phi_inv_fac_elem(n, zk)]
 euler_phi_inv(n::Integer, zk::NfAbsOrd) = [ numerator(evaluate(x)) for x = euler_phi_inv_fac_elem(fmpz(n), zk)]
+
+################################################################################
+#
+#  Ideals with bounded norm
+#
+################################################################################
+
+function _squarefree_ideals_with_bounded_norm(O::NfAbsOrd, lp::Vector{NfOrdIdl}, bound::fmpz)
+  #@assert issorted(lp, by = x -> norm(x))
+  lf = Vector{Tuple{NfOrdIdl, fmpz}}()
+  for P in lp
+    push!(lf, (P, norm(P)))
+  end
+  #Now, I have to merge them.
+  conds = Vector{Tuple{Dict{NfOrdIdl, Int}, fmpz}}()
+  push!(conds, (Dict{NfOrdIdl, Int}(), fmpz(1)))
+  if isempty(lf)
+    return conds
+  end
+  for i = 1:length(lf)
+    P = lf[i][1]
+    dP = lf[i][2]
+    indj = length(conds)
+    new_conds = Vector{Tuple{Dict{NfOrdIdl, Int}, fmpz}}()
+    for j = 1:indj
+      Dd = dP*conds[j][2]
+      if Dd > bound
+        break
+      end
+      D = copy(conds[j][1])
+      D[P] = 1
+      push!(new_conds, (D, Dd))
+      #push!(conds, (D, Dd))
+    end
+    for j = 1:length(new_conds)
+      insert!(conds, searchsortedfirst(conds, new_conds[j], by = x -> x[2]), new_conds[j])
+    end
+    #sort!(conds, by = x -> x[2])
+  end
+  return conds
+end
+
+function _squarefree_ideals_with_bounded_norm(O::NfAbsOrd, bound::fmpz; coprime::fmpz = fmpz(0))
+  lp = prime_ideals_up_to(O, Int(bound))
+  if !iszero(coprime)
+    filter!(x -> iscoprime(norm(x), coprime), lp)
+  end
+  return _squarefree_ideals_with_bounded_norm(O, lp, bound)
+end
