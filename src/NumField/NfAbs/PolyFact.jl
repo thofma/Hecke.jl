@@ -315,6 +315,12 @@ function zassenhaus(f::PolyElem{nf_elem}, P::NfOrdIdl; degset::Set{Int} = Set{In
   C, mC = completion(K, P)
 
   b = landau_mignotte_bound(f)*upper_bound(sqrt(t2(lead(f))), fmpz)
+  den = K(1)
+  if !ismaximal_known_and_maximal(order(P))
+    den = derivative(K.pol)(gen(K))
+    b *= upper_bound(sqrt(t2(den)), fmpz)
+  end
+
   c1, c2 = norm_change_const(order(P))
   N = ceil(Int, degree(K)/2/log(norm(P))*(log2(c1*c2) + 2*nbits(b)))
   @vprint :PolyFactor 1 "using a precision of $N\n"
@@ -365,7 +371,7 @@ function zassenhaus(f::PolyElem{nf_elem}, P::NfOrdIdl; degset::Set{Int} = Set{In
       end
       #TODO: test constant term first, possibly also trace + size
       g = prod(s)
-      g = map_coeffs(x -> K(reco(zk(lead(f)*x), M, pM)), g, parent = parent(f))*(1//lead(f))
+      g = map_coeffs(x -> K(reco(zk(lead(f)*x*den), M, pM)), g, parent = parent(f))*(1//lead(f)//den)
       if iszero(rem(f, g))
         push!(res, g)
         used = union(used, s)
@@ -472,6 +478,38 @@ function lll_with_removal_knapsack(x::fmpz_mat, b::fmpz, ctx::lll_ctx = lll_ctx(
    return d, z
 end
 
+function tdivpow2!(B::fmpz_mat, t::Int)
+  ccall((:fmpz_mat_scalar_tdiv_q_2exp, libflint), Nothing, (Ref{fmpz_mat}, Ref{fmpz_mat}, Cint), B, B, t)
+end
+
+function Nemo.tdivpow2(B::fmpz_mat, t::Int)
+  C = similar(B)
+  ccall((:fmpz_mat_scalar_tdiv_q_2exp, libflint), Nothing, (Ref{fmpz_mat}, Ref{fmpz_mat}, Cint), C, B, t)
+  return C
+end
+
+function gradual_feed_lll(M::fmpz_mat, sm::fmpz, B::fmpz_mat, d::fmpz, bnd::fmpz)
+  b = maximum(nbits, B)
+  sc = max(0, b-55)
+
+  while false && sc > 0
+    BB = tdivpow2(B, sc)
+    dd = tdivpow2(d, sc)
+    MM = [M BB; zero_matrix(FlintZZ, ncols(B), ncols(M)) dd*identity_matrix(FlintZZ, ncols(B))]
+    @show maximum(nbits, MM)
+    @time MM, T = lll_with_transform(MM, lll_ctx(0.75, 0.51))
+    @time l, _ = lll_with_removal(MM, bnd, lll_ctx(0.75, 0.51))
+    @show l
+    M = T[1:nrows(M), 1:nrows(M)]*M
+    B = T[1:nrows(M), 1:nrows(M)]*B
+    mod_sym!(B, d)
+    @show maximum(nbits, B)
+    @show sc = max(0, sc-55)
+  end
+  M = [M B; zero_matrix(FlintZZ, ncols(B), ncols(M)) d*identity_matrix(FlintZZ, ncols(B))]
+  return lll_with_removal(M, bnd)
+end
+
 
 @doc Markdown.doc"""
     van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 20) -> Array{PolyElem{nf_elem}, 1}
@@ -482,7 +520,7 @@ to be square-free mod $P$ as well.
 
 Approach is taken from Hart, Novacin, van Hoeij in ISSAC.
 """
-function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 10)
+function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 1)
   @vprint :PolyFactor 1 "Using (relative) van Hoeij\n"
   @vprint :PolyFactor 2 "with p = $P\n"
   @assert all(x->denominator(x) == 1, coefficients(f))
@@ -663,22 +701,19 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 10)
         error()
         continue
       else
-        if r > 20
-          sz = nbits(vH.pM[2]) - div(r, 2) - prec_scale
-        else
-          sz = nbits(vH.pM[2]) - div(r, 1) - prec_scale
-        end
+        sz = nbits(vH.pM[2]) - div(r, 1) - prec_scale
       end
       push!(really_used, n)
-      ccall((:fmpz_mat_scalar_tdiv_q_2exp, libflint), Nothing, (Ref{fmpz_mat}, Ref{fmpz_mat}, Cint), B, B, sz+prec_scale)
+      tdivpow2!(B, sz+prec_scale)
       d = tdivpow2(vH.pM[2], sz)
-      M = [M B; zero_matrix(FlintZZ, ncols(B), ncols(M)) d*identity_matrix(FlintZZ, ncols(B))]
-  #    @show map(nbits, Array(M))
-#      @show M
-#      toNemo("/tmp/mat.m", M)
 
-      bnd = r*fmpz(2)^(2*prec_scale) 
-      @vtime :PolyFactor 1 l, M = lll_with_removal(M, bnd)
+      bnd = r*fmpz(2)^(2*prec_scale) + degree(K)*(ncols(M)-r)*div(r, 2)^2
+
+      rt = time_ns()
+      @vtime :PolyFactor 1 l, Mi = gradual_feed_lll(M, fmpz(2)^prec_scale, B, d, bnd)
+#      @vtime :PolyFactor 1 l, Mi = lll_with_removal(M, bnd)
+
+      M = Mi
 #      @show hnf(sub(M, 1:l, 1:r))
       if iszero(M[1:l, 1:r])
 #        println(f)
