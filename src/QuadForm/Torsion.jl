@@ -89,6 +89,15 @@ end
 function order(T::TorQuadMod)
   return order(abelian_group(T))
 end
+
+@doc Markdown.doc"""
+exponent(T::TorQuadMod) -> fmpz
+Returns the exponent of `T`
+"""
+function exponent(T::TorQuadMod)
+  return exponent(abelian_group(T))
+end
+
 ################################################################################
 #
 #  Basic field access
@@ -148,7 +157,6 @@ end
 ################################################################################
 
 function Base.show(io::IO, T::TorQuadMod)
-  println(io, "I was here")
   print(io, "Finite quadratic module over Integer Ring with invariants ")
   println(io, elementary_divisors(abelian_group(T)))
   print(io, "Gram matrix of the quadratic form with values in ")
