@@ -672,37 +672,29 @@ function conductors_generic_tame(K::AnticNumberField, gtype::Vector{Int}, absolu
   end
   #Now, I have to merge them.
   conds = Vector{Tuple{Dict{NfOrdIdl, Int}, fmpz}}()
+  push!(conds, (Dict{NfOrdIdl, Int}(), fmpz(1)))
   if isempty(lf)
-    push!(conds, (Dict{NfOrdIdl, Int}(), fmpz(1)))
     return conds
   end
-  min_n = minimum(x -> x[2], lf)
-  lf_new = Vector{Tuple{NfOrdIdl, fmpz}}()
   for i = 1:length(lf)
-    if lf[i][2]*min_n > bound
-      push!(conds, (Dict(lf[i][1] => 1), lf[i][2]))
-    else
-      push!(lf_new, lf[i])
-    end
-  end
-  it = cartesian_product_iterator([0:1 for i = 1:length(lf_new)])
-  for I in it
-    D = Dict{NfOrdIdl, Int}()
-    nD = fmpz(1)
-    for j = 1:length(I)
-      if iszero(I[j])
-        continue
-      end
-      nD *= lf_new[j][2]
-      if nD > bound
+    P = lf[i][1]
+    dP = lf[i][2]
+    indj = length(conds)
+    new_conds = Vector{Tuple{Dict{NfOrdIdl, Int}, fmpz}}()
+    for j = 1:indj
+      Dd = dP*conds[j][2]
+      if Dd > bound
         break
       end
-      D[lf_new[j][1]] = 1
+      D = copy(conds[j][1])
+      D[P] = 1
+      push!(new_conds, (D, Dd))
+      #push!(conds, (D, Dd))
     end
-    if nD > bound
-      continue
+    for j = 1:length(new_conds)
+      insert!(conds, searchsortedfirst(conds, new_conds[j], by = x -> x[2]), new_conds[j])
     end
-    push!(conds, (D, nD))
+    #sort!(conds, by = x -> x[2])
   end
   return conds
 end

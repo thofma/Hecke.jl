@@ -105,12 +105,12 @@ end
 #  Conversion to Magma
 #
 ################################################################################
-function toMagma(f::IOStream, clg::ClassGrpCtx)
+function to_magma(f::IOStream, clg::ClassGrpCtx)
   print(f, "K<a> := NumberField(", nf(order(clg.FB.ideals[1])).pol, ");\n");
   print(f, "M := MaximalOrder(K);\n");
   print(f, "fb := [ ")
   for i=1:clg.FB.size
-    toMagma(f, clg.FB.ideals[i], "M")
+    to_magma(f, clg.FB.ideals[i], "M")
     if i < clg.FB.size
       print(f, ",\n")
     end
@@ -127,24 +127,24 @@ function toMagma(f::IOStream, clg::ClassGrpCtx)
   end
   print(f, "];\n")
 
-  toMagma(f, clg.M, name = "MM")
+  to_magma(f, clg.M, name = "MM")
 end
 
-function toMagma(s::String, c::ClassGrpCtx)
+function to_magma(s::String, c::ClassGrpCtx)
   f = open(s, "w")
-  toMagma(f, c)
+  to_magma(f, c)
   close(f)
 end
 
 ################################################################################
 
-function toNemo(f::IOStream, clg::ClassGrpCtx; field_name = "K")
+function to_hecke(f::IOStream, clg::ClassGrpCtx; field_name = "K")
   O = order(clg.FB.ideals[1])
   L = nf(O)
   varr = string(L.S)
   print(f, "$field_name, $vvar = number_field(", nf(order(clg.FB.ideals[1])).pol, ", \"$varr\");\n");
   O = order(clg.FB.ideals[1])
-  toNemo(f, basis(O))
+  to_hecke(f, basis(O))
   print(f, "O = Order($field_name, map($field_name, R))\n")
   print(f, "O.ismaximal = 1\n")
 
@@ -159,9 +159,9 @@ function toNemo(f::IOStream, clg::ClassGrpCtx; field_name = "K")
 
 end
 
-function toNemo(s::String, c::ClassGrpCtx; T...)
+function to_hecke(s::String, c::ClassGrpCtx; T...)
   f = open(s, "w")
-  toNemo(f, c; T...)
+  to_hecke(f, c; T...)
   close(f)
 end
 

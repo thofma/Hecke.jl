@@ -315,6 +315,12 @@ function zassenhaus(f::PolyElem{nf_elem}, P::NfOrdIdl; degset::Set{Int} = Set{In
   C, mC = completion(K, P)
 
   b = landau_mignotte_bound(f)*upper_bound(sqrt(t2(lead(f))), fmpz)
+  den = K(1)
+  if !ismaximal_known_and_maximal(order(P))
+    den = derivative(K.pol)(gen(K))
+    b *= upper_bound(sqrt(t2(den)), fmpz)
+  end
+
   c1, c2 = norm_change_const(order(P))
   N = ceil(Int, degree(K)/2/log(norm(P))*(log2(c1*c2) + 2*nbits(b)))
   @vprint :PolyFactor 1 "using a precision of $N\n"
@@ -365,7 +371,7 @@ function zassenhaus(f::PolyElem{nf_elem}, P::NfOrdIdl; degset::Set{Int} = Set{In
       end
       #TODO: test constant term first, possibly also trace + size
       g = prod(s)
-      g = map_coeffs(x -> K(reco(zk(lead(f)*x), M, pM)), g, parent = parent(f))*(1//lead(f))
+      g = map_coeffs(x -> K(reco(zk(lead(f)*x*den), M, pM)), g, parent = parent(f))*(1//lead(f)//den)
       if iszero(rem(f, g))
         push!(res, g)
         used = union(used, s)
@@ -465,6 +471,46 @@ end
 
 global last_f = Ref{Any}()
 
+function lll_with_removal_knapsack(x::fmpz_mat, b::fmpz, ctx::lll_ctx = lll_ctx(0.99, 0.51))
+   z = deepcopy(x)
+   d = Int(ccall((:fmpz_lll_wrapper_with_removal_knapsack, libflint), Cint,
+    (Ref{fmpz_mat}, Ptr{nothing}, Ref{fmpz}, Ref{lll_ctx}), z, C_NULL, b, ctx))
+   return d, z
+end
+
+function tdivpow2!(B::fmpz_mat, t::Int)
+  ccall((:fmpz_mat_scalar_tdiv_q_2exp, libflint), Nothing, (Ref{fmpz_mat}, Ref{fmpz_mat}, Cint), B, B, t)
+end
+
+function Nemo.tdivpow2(B::fmpz_mat, t::Int)
+  C = similar(B)
+  ccall((:fmpz_mat_scalar_tdiv_q_2exp, libflint), Nothing, (Ref{fmpz_mat}, Ref{fmpz_mat}, Cint), C, B, t)
+  return C
+end
+
+function gradual_feed_lll(M::fmpz_mat, sm::fmpz, B::fmpz_mat, d::fmpz, bnd::fmpz)
+  b = maximum(nbits, B)
+  sc = max(0, b-55)
+
+  while false && sc > 0
+    BB = tdivpow2(B, sc)
+    dd = tdivpow2(d, sc)
+    MM = [M BB; zero_matrix(FlintZZ, ncols(B), ncols(M)) dd*identity_matrix(FlintZZ, ncols(B))]
+    @show maximum(nbits, MM)
+    @time MM, T = lll_with_transform(MM, lll_ctx(0.75, 0.51))
+    @time l, _ = lll_with_removal(MM, bnd, lll_ctx(0.75, 0.51))
+    @show l
+    M = T[1:nrows(M), 1:nrows(M)]*M
+    B = T[1:nrows(M), 1:nrows(M)]*B
+    mod_sym!(B, d)
+    @show maximum(nbits, B)
+    @show sc = max(0, sc-55)
+  end
+  M = [M B; zero_matrix(FlintZZ, ncols(B), ncols(M)) d*identity_matrix(FlintZZ, ncols(B))]
+  return lll_with_removal(M, bnd)
+end
+
+
 @doc Markdown.doc"""
     van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 20) -> Array{PolyElem{nf_elem}, 1}
 
@@ -474,7 +520,7 @@ to be square-free mod $P$ as well.
 
 Approach is taken from Hart, Novacin, van Hoeij in ISSAC.
 """
-function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 20)
+function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 1)
   @vprint :PolyFactor 1 "Using (relative) van Hoeij\n"
   @vprint :PolyFactor 2 "with p = $P\n"
   @assert all(x->denominator(x) == 1, coefficients(f))
@@ -517,12 +563,14 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 20)
   # from Fieker/Friedrichs, still wrong here
   # needs to be larger than anticipated...
   c1, c2 = norm_change_const(order(P))
-  b = Int[ceil(Int, degree(K)/2/log(norm(P))*(log2(c1*c2) + 2*nbits(x)+ 2*prec_scale)) for x = b]
+  b = Int[ceil(Int, degree(K)/2/log(norm(P))*(log2(c1*c2) + 2*nbits(x)+ degree(K)*r+prec_scale)) for x = b]
+  bb = landau_mignotte_bound(f)*upper_bound(sqrt(t2(den*lead(f))), fmpz)
+  kk = ceil(Int, degree(K)/2/log(norm(P))*(log2(c1*c2) + 2*nbits(bb)))
   @vprint :PolyFactor 2 "using CLD precision bounds $b \n"
 
   used = []
   really_used = []
-  M = identity_matrix(FlintZZ, r)*2^prec_scale
+  M = identity_matrix(FlintZZ, r)*fmpz(2)^prec_scale
 
   while true #the main loop
     #find some prec
@@ -532,6 +580,7 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 20)
     else
       i= sort(b)[div(length(b)+1, 2)]
     end
+    i = max(i, kk)
     @vprint :PolyFactor 1 "setting prec to $i, and lifting the info ...\n"
     setprecision!(codomain(mC), i)
     if degree(P) == 1
@@ -539,6 +588,7 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 20)
     else
       vH.H.f = map_coeffs(mC, f)
     end
+    global last_vH = vH
     @vtime :PolyFactor 1 grow_prec!(vH, i)
 
 
@@ -581,6 +631,7 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 20)
     # the left part is to keep track of operations
     # by cld_bound, we know the expected upper size of the rounded legal entries
     # so we scale it by the bound. If all would be exact, the true factors would be zero...
+    # WHY???Zero??? small I see, but not zero..., smaller than 1 I can see.
     # 1st make integral:
     # I | C
     # 0 | p^n
@@ -650,17 +701,25 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 20)
         error()
         continue
       else
-        sz = nbits(vH.pM[2]) - 2 * prec_scale
+        sz = nbits(vH.pM[2]) - div(r, 1) - prec_scale
       end
       push!(really_used, n)
-      ccall((:fmpz_mat_scalar_tdiv_q_2exp, libflint), Nothing, (Ref{fmpz_mat}, Ref{fmpz_mat}, Cint), B, B, sz)
-      s = max(0, sz - prec_scale)
-      d = tdivpow2(vH.pM[2], s)
-      M = [M B; zero_matrix(FlintZZ, ncols(B), ncols(M)) d*identity_matrix(FlintZZ, ncols(B))]
-  #    @show map(nbits, Array(M))
-#      @show maximum(nbits, Array(M)), size(M)
-      @vtime :PolyFactor 1 l, M = lll_with_removal(M, r*fmpz(2)^(2*prec_scale) + div(r+1, 2)*N*degree(K)) 
+      tdivpow2!(B, sz+prec_scale)
+      d = tdivpow2(vH.pM[2], sz)
+
+      bnd = r*fmpz(2)^(2*prec_scale) + degree(K)*(ncols(M)-r)*div(r, 2)^2
+
+      rt = time_ns()
+      @vtime :PolyFactor 1 l, Mi = gradual_feed_lll(M, fmpz(2)^prec_scale, B, d, bnd)
+#      @vtime :PolyFactor 1 l, Mi = lll_with_removal(M, bnd)
+
+      M = Mi
 #      @show hnf(sub(M, 1:l, 1:r))
+      if iszero(M[1:l, 1:r])
+#        println(f)
+#        println(base_ring(f))
+        error("must never be zero")
+      end
       @hassert :PolyFactor 1 !iszero(sub(M, 1:l, 1:r))
       M = sub(M, 1:l, 1:ncols(M))
       d = Dict{fmpz_mat, Array{Int, 1}}()
@@ -674,7 +733,7 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 20)
       end
       @vprint :PolyFactor 1 "partitioning  of local factors: $(values(d))\n"
       if length(keys(d)) <= nrows(M)
-#        @show "BINGO", length(keys(d)), "factors"
+        @vprint :PolyFactor 1  "BINGO: potentially $(length(keys(d))) factors\n"
         res = typeof(f)[]
         fail = []
         if length(keys(d)) == 1
@@ -691,6 +750,7 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 20)
               A = K(reco(order(P)(preimage(mC, a)), vH.Ml, vH.pMr))
             end
             if denominator(divexact(constant_coefficient(f), A), order(P)) != 1
+              @vprint :PolyFactor 2 "Fail: const coeffs do not divide\n"
               push!(fail, v)
               if length(fail) > 1
                 break
@@ -707,6 +767,7 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 20)
           G *= 1//(den*lead(f))
 
           if !iszero(rem(f, G))
+            @vprint :PolyFactor 2 "Fail: poly does not divide\n"
             push!(fail, v)
             if length(fail) > 1
               break
@@ -717,6 +778,7 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 20)
         end
         if length(fail) == 1
           @vprint :PolyFactor 1 "only one reco failed, total success\n"
+          push!(res, divexact(f, prod(res)))
           return res
         end
         if length(res) < length(d)

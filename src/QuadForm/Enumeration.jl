@@ -496,9 +496,9 @@ end
 # If transform === nothing, no transform
 #
 # Return value is Vector{Tuple{Vector{Int}, fmpz}}
-function _short_vectors_gram_nolll_integral(G, lb, ub, transform)
+function _short_vectors_gram_nolll_integral(G, lb, _ub, transform)
   n = nrows(G)
-  max = _round_down(fmpz, ub)
+  ub = _round_down(fmpz, _ub)
   # G is integral, so q(x) <= ub is equivalent to q(x) <= floor(ub)
 
   if ub isa fmpz && fits(Int, ub)
@@ -541,6 +541,11 @@ function _short_vectors_gram_nolll_integral(G, lb, ub, transform)
 end
 
 # No assumption on _G, algorithm applies LLL
+
+function _short_vectors_gram(_G, lb, ub::Rational{<: Integer}; hard::Bool = false)
+  return _short_vectors_gram(_G, lb, fmpq(ub); hard = hard)
+end
+
 function _short_vectors_gram(_G, lb, ub; hard::Bool = false)
   d = denominator(_G)
   G = change_base_ring(FlintZZ, d * _G)

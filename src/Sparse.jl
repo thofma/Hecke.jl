@@ -22,7 +22,7 @@ import Base.push!, Base.max, Nemo.nbits, Base.Array,
        Base.vcat, Base.max, Base.min
 
 export vcat!, show, sub, SMat, SRow,
-       fmpz_mat, copy, push!, mul, mul!, toNemo, sparse,
+       fmpz_mat, copy, push!, mul, mul!, to_hecke, sparse,
        valence_mc, swap_rows!, elementary_divisors,
        rand_row, hcat, hcat!, vcat, vcat!, mod!, mod_sym!
 

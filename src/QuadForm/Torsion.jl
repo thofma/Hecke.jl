@@ -92,7 +92,8 @@ function order(T::TorQuadMod)
 end
 
 @doc Markdown.doc"""
-exponent(T::TorQuadMod) -> fmpz
+
+t(T::TorQuadMod) -> fmpz
 Returns the exponent of `T`
 """
 function exponent(T::TorQuadMod)
