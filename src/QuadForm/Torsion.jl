@@ -90,6 +90,16 @@ Return the order of `T`
 function order(T::TorQuadMod)
   return order(abelian_group(T))
 end
+
+@doc Markdown.doc"""
+    exponent(T::TorQuadMod) -> fmpz
+
+Returns the exponent of `T`
+"""
+function exponent(T::TorQuadMod)
+  return exponent(abelian_group(T))
+end
+
 ################################################################################
 #
 #  Basic field access
