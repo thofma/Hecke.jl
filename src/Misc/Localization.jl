@@ -10,9 +10,9 @@ export Localization, LocElem, Loc
 import AbstractAlgebra: base_ring, parent, check_parent, isunit, +, -, *,
       divexact, zero, Base.promote_rule, elem_type, parent_type, Base.one,
       Base.iszero, Base.isone, Base.==, Base.gcd, Base.deepcopy_internal,
-      needs_parentheses, Base.show, displayed_with_minus_in_front, show_minus_one,
       Base.^, data, Base.numerator, Base.denominator, canonical_unit, Base.gcdx,
       divides, Base.lcm, Base.rand
+
 import Nemo: prime
 
 #prime might be product of several primes if localized at several primes, those primes are in array primes
@@ -173,8 +173,12 @@ deepcopy_internal(a::LocElem, dict::IdDict) = parent(a)(deepcopy(data(a)))
 #
 ###############################################################################
 
+function AbstractAlgebra.expressify(a::LocElem; context = nothing)
+  return AbstractAlgebra.expressify(data(a), context = context)
+end
+
 function show(io::IO, a::LocElem)
-   print(io, data(a))
+   print(io, AbstractAlgebra.obj_to_string(a, context = io))
 end
 
 function show(io::IO, L::Loc)
@@ -184,13 +188,6 @@ function show(io::IO, L::Loc)
      print(io, "Localization of ", base_ring(L), " at ", prime(L))
    end
 end
-
-needs_parentheses(x::LocElem) = needs_parentheses(data(x))
-
-displayed_with_minus_in_front(x::LocElem) = displayed_with_minus_in_front(data(x))
-
-show_minus_one(::Type{LocElem{T}}) where {T <: RingElement} = true
-show_minus_one(::Type{LocElem{NfOrdIdl}}) = true
 
 ###############################################################################
 #

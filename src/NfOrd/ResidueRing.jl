@@ -89,10 +89,6 @@ hash(x::AbsOrdQuoRingElem, h::UInt) = hash(mod(x.elem, parent(x)), h)
 #
 ################################################################################
 
-needs_parentheses(::NfOrdQuoRingElem) = true
-
-isnegative(::NfOrdQuoRingElem) = false
-
 Nemo.promote_rule(::Type{NfOrdQuoRingElem},
                                 ::Type{S}) where {S <: Integer} = NfOrdQuoRingElem
 
@@ -119,8 +115,12 @@ function show(io::IO, Q::AbsOrdQuoRing)
   print(io, "Quotient of $(Q.base_ring)")
 end
 
+function AbstractAlgebra.expressify(x::AbsOrdQuoRingElem; context = nothing)
+  return AbstractAlgebra.expressify(x, context = context)
+end
+
 function show(io::IO, x::AbsOrdQuoRingElem)
-  print(io, "$(x.elem)")
+  print(io, AbstractAlgebra.obj_to_string(x, context = io))
 end
 
 ################################################################################

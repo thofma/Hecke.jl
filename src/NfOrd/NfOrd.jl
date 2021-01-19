@@ -58,13 +58,7 @@ fractional_ideal_type(::NfAbsOrd{S, T}) where {S, T} = NfOrdFracIdl
 
 fractional_ideal_type(::Type{NfAbsOrd{S, T}}) where {S, T} = NfOrdFracIdl
 
-Nemo.show_minus_one(::Type{NfAbsOrdElem{S, T}}) where {S, T} = true
-
 Nemo.base_ring(::NfAbsOrd) = FlintZZ
-
-Nemo.needs_parentheses(::NfAbsOrdElem) = true
-
-Nemo.isnegative(::NfAbsOrdElem) = false
 
 ################################################################################
 #

@@ -165,8 +165,12 @@ deepcopy_internal(a::OrdLocElem{T}, dict::IdDict) where {T <: nf_elem} = parent(
 #
 ###############################################################################
 
-function show(io::IO, a::OrdLocElem{T}) where {T <: nf_elem}
-   print(io, data(a))
+function AbstractAlgebra.expressify(a::OrdLocElem; context = nothing)
+  return AbstractAlgebra.expressify(data(a), context = context)
+end
+
+function show(io::IO, a::OrdLocElem)
+   print(io, AbstractAlgebra.obj_to_string(a, context = io))
 end
 
 function show(io::IO, L::OrdLoc{T}) where {T <: nf_elem}
@@ -176,12 +180,6 @@ function show(io::IO, L::OrdLoc{T}) where {T <: nf_elem}
     print(io, "Localization of ", order(L), " at ", prime(L))
   end
 end
-
-needs_parentheses(x::OrdLocElem{T})  where {T <: nf_elem} = needs_parentheses(data(x))
-
-displayed_with_minus_in_front(x::OrdLocElem{T})  where {T <: nf_elem} = displayed_with_minus_in_front(data(x))
-
-show_minus_one(::Type{OrdLocElem{T}}) where {T <: nf_elem} = true
 
 ##############################################################################
 #
