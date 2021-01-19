@@ -66,6 +66,12 @@ function pseudo_hnf_via_absolute(H::PMat, EabsToE; full_rank::Bool = true, shape
   return _translate_pseudo_hnf(HH, EabsToE, O)
 end
 
+################################################################################
+#
+#  Sum
+#
+################################################################################
+
 function _sum_modules_with_map(a::PMat{<: NfRelElem, <: NfRelOrdFracIdl}, b::PMat, f, full_rank = true)
   H = vcat(a, b)
   return pseudo_hnf_via_absolute(H, f, shape = :lowerleft, nonzero = true)
@@ -95,6 +101,21 @@ function _sum_modules(a::PMat, b::PMat, full_rank = true)
   end
   @assert r != 0
   return sub(H, r:nrows(H), 1:ncols(H))
+end
+
+################################################################################
+#
+#  Intersect
+#
+################################################################################
+
+function _intersect_modules(L::QuadLat, a::PMat, b::PMat, full_rank = true)
+  return _intersect_modules(a, b, full_rank)
+end
+
+function _intersect_modules(L::HermLat, a::PMat{<: NfRelElem, <: NfRelOrdFracIdl}, b::PMat, full_rank = true)
+  _,f,_ = absolute_field(ambient_space(L))
+  return _intersect_modules_with_map(a, b, f, full_rank)
 end
 
 function _intersect_modules(a::PMat{<: NfRelElem, <: NfRelOrdFracIdl}, b::PMat, full_rank = true)
