@@ -41,7 +41,7 @@ end
 
 Return the Z-lattice with basis matrix $B$ inside the quadratic space $V$.
 """
-function lattice(V::QuadSpace{FlintRationalField, fmpq_mat}, B::MatElem)
+function lattice(V::QuadSpace{FlintRationalField, fmpq_mat}, B::MatElem; isbasis::Bool = true)
   local Gc
   try
     Gc = change_base_ring(FlintQQ, B)
@@ -51,7 +51,16 @@ function lattice(V::QuadSpace{FlintRationalField, fmpq_mat}, B::MatElem)
   if typeof(Gc) !== fmpq_mat
     throw(error("Cannot convert entries of the matrix to the rationals"))
   end
-  return ZLat(V, Gc)
+
+  # We need to produce a basis matrix
+  
+  BB = fmpq_mat(hnf(FakeFmpqMat(B), :upper_right))
+  i = nrows(BB)
+  while iszero_row(BB, i)
+    i = i - 1
+  end
+
+  return ZLat(V, BB[1:i, :])
 end
 
 ################################################################################
