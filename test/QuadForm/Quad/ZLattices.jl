@@ -238,4 +238,15 @@ end
     @test b
     @test T * gram_matrix(L2) * T' == gram_matrix(L)
   end
+  
+  G = matrix(ZZ, 2, 2, [2, 1, 1, 2])
+  L = Zlattice(gram=G)
+  @test norm(L)==2
+  G = (1//4)*matrix(QQ, 2, 2, [2, 1, 1, 2])
+  L = Zlattice(gram=G)
+  @test norm(L)==1//2
+  G = matrix(ZZ, 0, 0, [])
+  L = Zlattice(gram=G)
+  @test norm(L) == 0
+  @test scale(L) == 0
 end
