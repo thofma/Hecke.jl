@@ -139,7 +139,7 @@ function _rcf_S_units_enlarge(CE, CF::ClassField_pp)
     push!(lP, prime_decomposition(OK, f)[1][1])
   end
   e = degree(CF)
-  @vtime :ClassField 3 S, mS = NormRel._sunit_group_fac_elem_quo_via_brauer(nf(OK), lP, e)
+  @vtime :ClassField 3 S, mS = NormRel._sunit_group_fac_elem_quo_via_brauer(nf(OK), lP, e, saturate_units = true)
   KK = kummer_extension(e, FacElem{nf_elem, AnticNumberField}[mS(S[i]) for i=1:ngens(S)])
   CF.bigK = KK
   lf = factor(minimum(defining_modulus(CF)[1]))

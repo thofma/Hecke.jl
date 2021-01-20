@@ -518,8 +518,9 @@ function AlgAss(O::Union{ NfRelOrd{T, S}, AlgAssRelOrd{T, S} }, I::Union{ NfRelO
   tmp_matrix = zero_matrix(_base_ring(K), 1, degree(O))
 
   function _coeff(c)
+    cfcs = coeffs(c, copy = false)
     for i = 1:degree(O)
-      tmp_matrix[1, i] = coeffs(c, copy = false)[i]
+      tmp_matrix[1, i] = cfcs[i]
     end
     return tmp_matrix*new_bmatinvO
   end

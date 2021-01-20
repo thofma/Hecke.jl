@@ -1230,7 +1230,7 @@ end
 
 function find_gens_for_action(mR::MapClassGrp)
 
-	lp, sR = find_gens(pseudo_inv(mR), PrimesSet(20, -1))
+	lp, sR = find_gens(pseudo_inv(mR), PrimesSet(2, -1))
   ip = InfPlc[]
   sR1 = GrpAbFinGenElem[]
 	return lp, ip, sR, sR1
@@ -1282,12 +1282,22 @@ function find_gens_for_action(mR::MapRayClassGrp)
   end
   #Now, gens of class group. Those are cached in the class group map
   mC = mR.clgrpmap
-  for P in mC.small_gens
-    push!(lp, P)
-    push!(sR, mR\P)
+  if isdefined(mC, :small_gens)
+    for P in mC.small_gens
+      if iscoprime(minimum(P, copy = false), mm)
+        push!(lp, P)
+        push!(sR, mR\P)
+      end
+    end
   end
   q, mq = quo(R, vcat(sR, sR1), false)
-  @assert order(q) == 1
+  if order(q) != 1
+    lpmC, srmC = find_gens(pseudo_inv(mC), PrimesSet(2, -1), mm)
+    for P in lpmC
+      push!(lp, P)
+      push!(sR, mR\P)
+    end
+  end
   return lp, ip, sR, sR1
 end
 

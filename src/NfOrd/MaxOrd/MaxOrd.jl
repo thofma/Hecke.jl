@@ -3,7 +3,7 @@ export maximal_order, poverorder, MaximalOrder, ring_of_integers
 
 function ismaximal_order_known(K::AnticNumberField)
   res = _get_maximal_order_of_nf(K, false)
-  return res != nothing
+  return res !== nothing
 end
 
 function ismaximal_order_known(K::NfAbsNS)

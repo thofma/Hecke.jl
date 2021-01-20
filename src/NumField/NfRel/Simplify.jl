@@ -244,7 +244,7 @@ function _find_prime(L::NfRelNS{nf_elem})
     P = lp[1][1]
     @assert !isindex_divisor(OL, P)
     F, mF = ResidueField(OK, P)
-    mF1 = extend_easy(mF, K)
+    mF1 = extend(mF, K)
     is_proj = true
     for j = 1:length(pols)
       fF = isunivariate(map_coeffs(mF1, pols[j]))[2]
@@ -259,7 +259,7 @@ function _find_prime(L::NfRelNS{nf_elem})
     end
     d = 1
     for j = 1:length(polsR)
-	    FS = factor_shape(polsR[j])
+      FS = factor_shape(polsR[j])
       d1 = lcm(Int[x for (x, v) in FS])
       d = lcm(d, d1)
     end
@@ -277,11 +277,11 @@ function _find_prime(L::NfRelNS{nf_elem})
   return res[1], res[2]
 end
 
-function _sieve_primitive_elements(B::Vector{NfRelNSElem{nf_elem}})
+function _sieve_primitive_elements(B::Vector{NfRelNSElem{nf_elem}}; parameter::Int = 3)
   Lrel = parent(B[1])
   #First, we choose the candidates
   Bnew = NfRelNSElem{nf_elem}[]
-  nrep = min(3, absolute_degree(Lrel))
+  nrep = min(parameter, absolute_degree(Lrel))
   for i = 1:length(B)
     push!(Bnew, B[i])
     for j = 1:nrep
@@ -383,6 +383,11 @@ function simplified_absolute_field(L::NfRelNS; cached = false)
   OL = maximal_order(L)
   B = lll_basis(OL)
   B1 = _sieve_primitive_elements(B)
+  nrep = 3
+  while isempty(B1)
+    nrep += 1
+    B1 = _sieve_primitive_elements(B, parameter = nrep)
+  end
   a = B1[1]
   I = t2(a)
   for i = 2:min(50, length(B1))
@@ -403,6 +408,11 @@ function simplified_absolute_field(L::NfRel{nf_elem}; cached::Bool = false)
   OL = maximal_order(L)
   B = lll_basis(OL)
   B1 = _sieve_primitive_elements(B)
+  nrep = 4
+  while isempty(B1)
+    nrep += 1
+    B1 = _sieve_primitive_elements(B, parameter = nrep)
+  end
   a = B1[1]
   I = t2(a)
   for i = 2:min(50, length(B1))

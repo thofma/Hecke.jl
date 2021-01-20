@@ -41,6 +41,23 @@ function minkowski_matrix(L::NfLattice, p::Int)
   return minkowski_matrix(basis(L), p)
 end
 
+#apply the change of basis given by M, creating a new lattice.
+function apply(L::NfLattice{T}, t::fmpz_mat) where T <: NumFieldElem
+  K = nf(L)
+  B = basis(L)
+  new_basis = Vector{T}(undef, dim(L))
+  tmp = K()
+  for i = 1:length(new_basis)
+    a = K()
+    for j = 1:ncols(t)
+      tmp = B[j]*t[i, j]
+      a = add!(a, a, tmp)
+    end
+    new_basis[i] = a
+  end
+  return lattice(new_basis, discriminant(L), isexact = L.is_minkowski_exact)
+end
+
 function minkowski_gram_mat_scaled(L::NfLattice, p::Int)
   if L.is_minkowski_exact
     L.minkowski_gram_exact = _exact_minkowski_matrix(basis(L))
@@ -48,8 +65,8 @@ function minkowski_gram_mat_scaled(L::NfLattice, p::Int)
   end
   K = nf(L)
   if isdefined(L, :minkowski_gram_scaled) && L.minkowski_gram_scaled[1] >= p
-    A = deepcopy(O.minkowski_gram_mat_scaled[1])
-    shift!(A, p - O.minkowski_gram_mat_scaled[2])
+    A = deepcopy(L.minkowski_gram_mat_scaled[2])
+    shift!(A, p - L.minkowski_gram_mat_scaled[1])
   else
     c = minkowski_matrix(L, p)
     B = basis(L)
@@ -80,7 +97,7 @@ function weighted_minkowski_gram_scaled(L::NfLattice, v::fmpz_mat, prec::Int)
   return g 
 end
 
-function lll(L::NfLattice, weights::fmpz_mat = zero_matrix(FlintZZ, 1, 1); starting_prec::Int = 100)
+function lll(L::NfLattice, weights::fmpz_mat = zero_matrix(FlintZZ, 1, 1); starting_prec::Int = 100 + 25*div(dim(L), 3) + Int(round(log(abs(discriminant(L))))))
   if L.is_minkowski_exact
     M = _exact_minkowski_matrix(basis(L))
     l, v = lll_gram_with_transform(M)
@@ -89,75 +106,90 @@ function lll(L::NfLattice, weights::fmpz_mat = zero_matrix(FlintZZ, 1, 1); start
   prec = starting_prec
   local l1::FakeFmpqMat
   local v::fmpz_mat
+  n = dim(L)
+  starting_profile = sum(nbits(Hecke.upper_bound(t2(x), fmpz)) for x in basis(L))
+  @vprint :LLL 1 "Starting profile: $(starting_profile) \n"
+  @vprint :LLL 1 "Target profile: $(nbits(discriminant(L)^2)+divexact(n*(n-1), 2)) \n"
+  @vprint :LLL 1 "Starting precision: $(prec) \n"
   while true
-    if prec > 2^18
-      error("Something wrong in short_elem")
+    if prec > 2^13
+      error("Precision too large!")
     end
-    try
-      l1, v = _lll(L, weights, prec)
+    fl, l1, v = _lll(L, weights, prec)
+    if fl
       break
-    catch e
-      if !(e isa LowPrecisionLLL || e isa InexactError)
-        rethrow(e)
-      end
-      prec *= 2
     end
+    Lnew = apply(L, v)
+    new_profile = sum(nbits(Hecke.upper_bound(t2(x), fmpz)) for x in basis(Lnew))
+    @vprint :LLL 1 "New profile: $(new_profile) \n"
+    if new_profile < starting_profile
+      @vprint :LLL 1 "Using transformation!\n"
+      l2, v2 = lll(Lnew, weights, starting_prec = ceil(Int, prec*1.5))
+      return l2, v2*v
+    end
+    prec *= 2
+    @vprint :LLL 1 "Increasing precision to $(prec) \n"
   end
   return l1, v
 end
 
 function _lll(L::NfLattice, weights::fmpz_mat, prec::Int)
-  if iszero(weights)
-    d = minkowski_gram_mat_scaled(L, prec)
-    sv = fmpz(0)
-  else
-    d = weighted_minkowski_gram_scaled(L, weights, prec)
-    sv = max(fmpz(0), sum(weights[1, i] for i=1:ncols(weights)))
+  @vprint :LLL 1 "Computing Minkowski Gram matrix with precision $(prec) \n"
+  local d::fmpz_mat
+  local sv::fmpz
+  while true
+    try
+      if iszero(weights)
+        @vtime :LLL 1 d = minkowski_gram_mat_scaled(L, prec)
+        sv = fmpz(0)
+      else
+        @vtime :LLL 1 d = weighted_minkowski_gram_scaled(L, weights, prec)
+        sv = max(fmpz(0), sum(weights[1, i] for i=1:ncols(weights)))
+      end
+      break
+    catch e
+      prec += 100
+    end
   end
   n = dim(L)
   g = identity_matrix(FlintZZ, n)
-  ctx = Nemo.lll_ctx(0.99, 0.51, :gram)
-  ccall((:fmpz_lll, libflint), Nothing, (Ref{fmpz_mat}, Ref{fmpz_mat}, Ref{Nemo.lll_ctx}), d, g, ctx)
-  l, t = d, g
-  if nbits(maximum(abs, t)) >  div(prec, 2)
-    throw(LowPrecisionLLL())
+  g1 = identity_matrix(FlintZZ, n)
+  ctx1 = Nemo.lll_ctx(0.4, 0.51, :gram)
+  ctx2 = Nemo.lll_ctx(0.99, 0.51, :gram)
+  @vtime :LLL 1 ccall((:fmpz_lll, libflint), Nothing, (Ref{fmpz_mat}, Ref{fmpz_mat}, Ref{Nemo.lll_ctx}), d, g, ctx1)
+  @vtime :LLL 1 ccall((:fmpz_lll, libflint), Nothing, (Ref{fmpz_mat}, Ref{fmpz_mat}, Ref{Nemo.lll_ctx}), d, g1, ctx2)
+  mul!(g, g1, g)
+  fl = true
+  if nbits(maximum(abs, g)) >  div(prec, 2)
+    fl = false
   end
-  n = nrows(l)
-  disc = discriminant(L) * fmpz(2)^(2*sv)
-  di = root(disc, n)+1
-  di *= fmpz(2)^(div(n+1,2)) * fmpz(2)^prec
-  if compare_index(l, 1, 1, di) > 0 
-    throw(LowPrecisionLLL())
+  if fl
+    n = nrows(d)
+    disc = discriminant(L) * fmpz(2)^(2*sv)
+    di = root(disc, n) + 1
+    di *= fmpz(2)^(div(n+1,2)) * fmpz(2)^prec
+    if compare_index(d, 1, 1, di) > 0 
+      fl = false
+    end
+    pr = prod_diagonal(d)
+    if pr > fmpz(2)^(div(n*(n-1), 2)) * disc * fmpz(2)^(n*prec)
+      fl = false
+    end
   end
-  pr = prod_diagonal(l)
-  if pr > fmpz(2)^(div(n*(n-1), 2)) * disc * fmpz(2)^(n*prec)
-    throw(LowPrecisionLLL())
-  end
-  return FakeFmpqMat(l, fmpz(2)^prec), t
+  return fl, FakeFmpqMat(d, fmpz(2)^prec), g
 end
-
 
 function lll_basis(L::NfLattice{T}) where T
   K = nf(L)
   l, t = lll(L)
-  B = basis(L)
-  new_basis = Vector{T}(undef, dim(L))
-  tmp = K()
-  for i = 1:length(new_basis)
-    a = K()
-    for j = 1:ncols(l)
-      tmp = B[j]*t[i, j]
-      a = add!(a, a, tmp)
-    end
-    new_basis[i] = a
-  end
-  return new_basis
+  L1 = apply(L, t)
+  return basis(L)
 end
 
 _abs_disc(O::NfRelOrd) = absolute_discriminant(O)
 _abs_disc(I::NfRelOrdIdl) = absolute_discriminant(order(I))*absolute_norm(I)
 
-function lll_basis(OL::T) where T <: Union{NfRelOrdIdl, NfRelOrd}
+function _get_nice_basis(OL::T) where T <: Union{NfRelOrdIdl, NfRelOrd}
   L = nf(OL)
   B = pseudo_basis(OL, copy = false)
   ideals = Dict{typeof(B[1][2]), Vector{elem_type(base_field(L))}}()
@@ -176,10 +208,16 @@ function lll_basis(OL::T) where T <: Union{NfRelOrdIdl, NfRelOrd}
       ind += 1
     end
   end
+  return abs_bas
+end
+
+function lll_basis(OL::T) where T <: Union{NfRelOrdIdl, NfRelOrd}
+  L = nf(OL)
+  B = _get_nice_basis(OL)
   isexact = false
   if istotally_real(L)
     isexact = true
   end
-  V = lattice(abs_bas, _abs_disc(OL), isexact = isexact)
+  V = lattice(B, _abs_disc(OL), isexact = isexact)
   return lll_basis(V)
 end

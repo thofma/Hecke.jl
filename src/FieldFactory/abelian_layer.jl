@@ -229,7 +229,7 @@ function _abelian_normal_extensions(F::FieldsTower, gtype::Array{Int, 1}, absbou
   @vtime :Fields 3 rcg_ctx = Hecke.rayclassgrp_ctx(O, expo)
   @vprint :Fields 1 "\n"
   j = -1
-  first_group = true
+  #first_group = true
   autos = F.generators_of_automorphisms
   class_fields_with_act = Tuple{ClassField{MapRayClassGrp, GrpAbFinGenMap}, Vector{GrpAbFinGenMap}}[]
   fun_sub = (x, y) -> quo(x, y, false)[2]
@@ -242,6 +242,7 @@ function _abelian_normal_extensions(F::FieldsTower, gtype::Array{Int, 1}, absbou
     if !Hecke.has_quotient(S, gtype)
       continue
     end
+    #=
     if first_group
       B1 = maximum(fmpz[next_prime(max_ramified_prime(O, gtype, bound)), 211])
       rfF = ramified_primes(F)
@@ -250,7 +251,8 @@ function _abelian_normal_extensions(F::FieldsTower, gtype::Array{Int, 1}, absbou
       rcg_ctx.class_group_map.small_gens = lP
       first_group = false
     end
-    mr.clgrpmap.small_gens = rcg_ctx.class_group_map.small_gens
+    =#
+    #mr.clgrpmap.small_gens = rcg_ctx.class_group_map.small_gens
     @vtime :Fields 3 act = Hecke.induce_action(mr, autos)
     act_S = induce_action_on_subgroup(mS, act)
     imS = inv(mS)

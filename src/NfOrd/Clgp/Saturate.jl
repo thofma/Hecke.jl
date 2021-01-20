@@ -354,6 +354,14 @@ function _get_element(e, R, R_mat, zeta, i)
   return a, fac_a
 end
 
+
+function saturate!(U::Hecke.UnitGrpCtx, n::Int, stable::Float64 = 3.5; use_orbit::Bool = false, easy_root::Bool = false, use_LLL::Bool = false)
+  @assert isprime(n)
+  O = order(U)
+  d = Hecke.class_group_init(NfFactorBase(O, 1), SMat{fmpz}, add_rels = false)
+  return saturate!(d, U, n, stable, use_orbit = use_orbit, easy_root = easy_root, use_LLL = use_LLL)
+end
+
 function saturate!(d::Hecke.ClassGrpCtx, U::Hecke.UnitGrpCtx, n::Int, stable::Float64 = 3.5; use_orbit::Bool = false, easy_root::Bool = false, use_LLL::Bool = false)
   @assert isprime(n)
   K = nf(d)

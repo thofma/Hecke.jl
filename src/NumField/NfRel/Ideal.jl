@@ -593,7 +593,7 @@ Returns the ideal $x\cdot a$.
 """
 function *(a::NfRelOrdIdl{T, S}, x::T) where {T, S}
   if iszero(x)
-    return order(a)()*order(a)
+    return ideal(order(a), 0)
   end
 
   return ideal(order(a), x*basis_pmatrix(a), true, true)
@@ -603,7 +603,7 @@ end
 
 function *(a::Union{NfRelOrdIdl, NfRelOrdFracIdl}, x::Union{ Int, fmpz })
   if iszero(x)
-    return order(a)()*order(a)
+    return ideal(order(a), 0)
   end
 
   return typeof(a)(order(a), x*basis_pmatrix(a))
@@ -1172,8 +1172,8 @@ end
 #  Prime decomposition
 #
 ################################################################################
-#=
-function prime_decomposition(O::NfRelOrd, p::fmpz)
+
+function prime_decomposition(O::NfRelOrd, p::T) where T <: Union{Integer, fmpz}
   lP = prime_decomposition(base_ring(O), p)
   res = Vector{Tuple{ideal_type(O), Int}}()
   for (P, e) in lP
@@ -1184,7 +1184,6 @@ function prime_decomposition(O::NfRelOrd, p::fmpz)
   end
   return res
 end
-=#
 
 
 function prime_decomposition(O::NfRelOrd, p::Union{NfOrdIdl, NfRelOrdIdl}; compute_uniformizer::Bool = true, compute_anti_uniformizer::Bool = true)

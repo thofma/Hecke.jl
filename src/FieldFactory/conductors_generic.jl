@@ -689,12 +689,10 @@ function conductors_generic_tame(K::AnticNumberField, gtype::Vector{Int}, absolu
       D = copy(conds[j][1])
       D[P] = 1
       push!(new_conds, (D, Dd))
-      #push!(conds, (D, Dd))
     end
     for j = 1:length(new_conds)
       insert!(conds, searchsortedfirst(conds, new_conds[j], by = x -> x[2]), new_conds[j])
     end
-    #sort!(conds, by = x -> x[2])
   end
   return conds
 end

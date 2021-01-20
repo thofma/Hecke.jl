@@ -413,6 +413,19 @@ function basis(K::NfRelNS)
   return B
 end
 
+function coeffs(a::NfRelNSElem; copy = false)
+  L = parent(a)
+  K = base_field(L)
+  v = Vector{elem_type(K)}(undef, degree(L))
+  for j = 1:degree(L)
+    v[j] = zero(K)
+  end
+  for j = 1:length(a.data)
+    v[monomial_to_index(j, a)] = a.data.coeffs[j]
+  end
+  return v
+end
+
 function basis_matrix(a::Vector{NfRelNSElem{T}}) where {T <: NumFieldElem}
   @assert length(a) > 0
   K = parent(a[1])
@@ -708,7 +721,10 @@ end
 
 @inline ngens(K::NfRelNS) = length(K.pol)
 
-function simple_extension(K::NfRelNS{T}; cached = true) where {T}
+function simple_extension(K::NfRelNS{T}; simplified::Bool = false, cached = true) where {T}
+  if simplified
+    return simplified_simple_extension(K; cached = cached)
+  end
   n = ngens(K)
   g = gens(K)
   if n == 1

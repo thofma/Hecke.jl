@@ -666,7 +666,8 @@ It returns a tuple $(n, M)$ where $M$ is a matrix whose rows generate
 the kernel of $a$ and $n$ is the rank of the kernel.
 """
 function left_kernel(x::fmpz_mat)
-  H, U = hnf_with_transform(x)
+  x1 = hnf(x')'
+  H, U = hnf_with_transform(x1)
   i = 1
   for outer i in 1:nrows(H)
     if iszero_row(H, i)

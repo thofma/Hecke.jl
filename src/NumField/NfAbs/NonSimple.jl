@@ -851,7 +851,7 @@ end
 
 function simple_extension(K::NfAbsNS; cached::Bool = true, check = true, simplified::Bool = false)
   if simplified
-    return simplified_simple_extension1(K, cached = cached)
+    return simplified_simple_extension(K, cached = cached)
   end
   n = ngens(K)
   g = gens(K)
@@ -1017,7 +1017,7 @@ function symbols(E::NfAbsNS)
   return vars(E)
 end
 function Base.names(E::NfAbsNS)
-  return map(string, vars(E))
+  return String[string(x) for x in vars(E)]
 end
 
 function (K::NfAbsNS)(a::fmpq_mpoly, red::Bool = true)

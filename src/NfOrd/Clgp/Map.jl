@@ -379,8 +379,6 @@ function principal_generator(A::NfOrdIdl)
   end
 end
 
-global _debug = []
-
 @doc Markdown.doc"""
     isprincipal_fac_elem(A::NfOrdIdl) -> Bool, FacElem{nf_elem, NumberField}
 
@@ -419,9 +417,7 @@ function isprincipal_fac_elem(A::NfOrdIdl)
   H = c.M.basis::SMat{fmpz}
   T = c.M.trafo::Vector
 
-  push!(_debug, A)
   x, r = class_group_ideal_relation(A, c)
-  pop!(_debug)
   #so(?) x*A is c-smooth and x*A = evaluate(r)
 
   R, d = solve_ut(H, r)

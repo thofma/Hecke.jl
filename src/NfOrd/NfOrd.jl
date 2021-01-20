@@ -560,7 +560,7 @@ function minkowski_gram_mat_scaled(O::NfAbsOrd, prec::Int = 64)
     A = deepcopy(O.minkowski_gram_mat_scaled[1])
     shift!(A, prec - O.minkowski_gram_mat_scaled[2])
   else
-    c = minkowski_matrix(O, prec)
+    c = minkowski_matrix(O, prec+2)
     d = zero_matrix(FlintZZ, degree(O), degree(O))
     A = zero_matrix(FlintZZ, degree(O), degree(O))
     round_scale!(d, c, prec)
@@ -578,7 +578,7 @@ end
 
 function minkowski_gram_mat_scaled(B::Vector{T}, prec::Int = 64) where T <: NumFieldElem
   K = parent(B[1])
-  c = minkowski_matrix(B, prec)
+  c = minkowski_matrix(B, prec+2)
   d = zero_matrix(FlintZZ, length(B), absolute_degree(K))
   A = zero_matrix(FlintZZ, length(B), length(B))
   round_scale!(d, c, prec)
@@ -767,7 +767,14 @@ function norm_change_const(O::NfOrd; cached::Bool = true)
     N = Symmetric([ Float64(M[i, j]) for i in 1:nrows(M), j in 1:ncols(M) ])
     #forcing N to really be Symmetric helps julia - aparently
     r = sort(LinearAlgebra.eigvals(N))
-    if !(r[1] > 0) || any(isnan, r)
+    fl1 = false
+    for ind = 1:length(r)
+      if isnan(r[ind])
+        fl1 = true
+        break
+      end
+    end
+    if !(r[1] > 0) || fl1
       # more complicated methods are called for...
       m = ceil(Int, log(d)/log(2))
       m += m%2

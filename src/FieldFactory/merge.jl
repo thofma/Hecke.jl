@@ -11,7 +11,8 @@ function direct_product_decomposition(G::GAP.GapObj, ab::Tuple{Int, Int})
     return ab, (1, 1), 1, 1
   end
   n = ab[1]
-  subs = GAP.Globals.NormalSubgroups(G)
+  subs = GAP.gap_to_julia(Vector{Main.ForeignGAP.MPtr}, GAP.Globals.NormalSubgroups(G))
+  sort!(subs, by = x -> GAP.Globals.Size(x))
   #First, I collect all the possible decompositions
   decompositions = Tuple{GAP.GapObj, GAP.GapObj}[]
   for i = 1:length(subs)
@@ -22,10 +23,10 @@ function direct_product_decomposition(G::GAP.GapObj, ab::Tuple{Int, Int})
     o1 = GAP.Globals.Size(g1)
     for j = 1:length(subs)
       g2 = subs[j]
-      if isone(GAP.Globals.Size(g2))
+      o2 = GAP.Globals.Size(g2)
+      if o2 < o1
         continue
       end
-      o2 = GAP.Globals.Size(g2)
       if o1*o2 != n
         continue
       end
@@ -43,21 +44,50 @@ function direct_product_decomposition(G::GAP.GapObj, ab::Tuple{Int, Int})
   for i = 1:length(grp_id_list)
     grp_id_list[i] = (GAP.gap_to_julia(Tuple{Int, Int}, GAP.Globals.IdGroup(decompositions[i][1])), GAP.gap_to_julia(Tuple{Int, Int}, GAP.Globals.IdGroup(decompositions[i][2])))  
   end
-  res1 = grp_id_list[1][1]
-  res2 = grp_id_list[1][2]
-  if length(grp_id_list) == 1
-    return res1, res2, 1, 1
+  
+  possible_decompositions = Set(grp_id_list)
+  #First, I want to choose which decomposition to consider.
+  #In general, a balanced one is the best, so that pair maximising the minimum of the two orders.
+  #However, we also want to maximise the order of the abelian factor, if it exists.
+  res = first(possible_decompositions)
+  has_abelian_decomposition = 0
+  if GAP.Globals.IsAbelian(GAP.Globals.SmallGroup(res[1]...)) 
+    has_abelian_decomposition = 1
+  elseif GAP.Globals.IsAbelian(GAP.Globals.SmallGroup(res[2]...)) 
+    has_abelian_decomposition = 2
   end
+  for x in possible_decompositions
+    if x == res
+      continue
+    end
+    if iszero(has_abelian_decomposition)
+      if min(x[1][1], x[2][1]) > min(res[1][1], res[2][1])
+        res = x
+      end
+    else
+      has_abelian_decx = 0
+      if GAP.Globals.IsAbelian(GAP.Globals.SmallGroup(x[1]...)) 
+        has_abelian_decx = 1
+      elseif GAP.Globals.IsAbelian(GAP.Globals.SmallGroup(x[2]...)) 
+        has_abelian_decx = 2
+      end
+      if !iszero(has_abelian_decx)
+        if x[has_abelian_decx][1] > res[has_abelian_decomposition][1]
+          res = x
+        end
+      elseif min(x[1][1], x[2][1]) > min(res[1][1], res[2][1])
+        res = x
+      end
+    end
+  end
+  res1 = res[1]
+  res2 = res[2]
   #I count the redundancy, i.e. the number of possible decompositions of the same type.
-  red = 1
-  for i = 2:length(grp_id_list)
+  red = 0 
+  for i = 1:length(grp_id_list)
     l1 = grp_id_list[i][1]
     l2 = grp_id_list[i][2]
-    if min(l1[1], l2[1]) > min(res1[1], res2[1])
-      red = 1
-      res1 = l1
-      res2 = l2
-    elseif l1 == res1 && l2 == res2
+    if l1 == res1 && l2 == res2
       red += 1 
     end
   end
@@ -76,7 +106,6 @@ function direct_product_decomposition(G::GAP.GapObj, ab::Tuple{Int, Int})
     end
   end
   return res1, res2, red, redfirst
-
 end
 
 ###############################################################################
@@ -91,7 +120,7 @@ function _to_composite(x::FieldsTower, y::FieldsTower, abs_disc::fmpz)
   if abs(discriminant(OKns)) > abs_disc
     return false, x
   end
-  K, mK = simplified_simple_extension1(Kns, cached = false)
+  K, mK = simplified_simple_extension(Kns, cached = false)
   OK = maximal_order(K)
 
   Hecke._assure_has_inverse_data(mK)
@@ -317,13 +346,23 @@ function check_norm_group_and_disc(lfieldsK::Array{AnticNumberField, 1}, lfields
   target_deg = prod(degree(x) for x in lfieldsK) * prod(degree(x) for x in lfieldsL)
   discK = lcm([discriminant(maximal_order(x)) for x in lfieldsK])
   discL = lcm([discriminant(maximal_order(x)) for x in lfieldsL])
-  modulo = Int(lcm(discK, discL))
+  n_quo1 = lcm(Int[degree(x) for x in lfieldsK])
+  n_quo2 = lcm(Int[degree(x) for x in lfieldsL])
+  exp_rcf = lcm(n_quo1, n_quo2)
+  modulo = lcm(discK, discL)
+  lf = factor(modulo)
+  modulo_int = 1
+  for (p, v) in lf
+    if iscoprime(p, exp_rcf)
+      modulo_int *= Int(p)
+    else
+      modulo_int *= Int(p)^v
+    end
+  end
   y = PolynomialRing(QQ, "y", cached = false)[2]
   K = NumberField(y-1, cached = false)[1]
   O = maximal_order(K)
-  n_quo1 = lcm(Int[degree(x) for x in lfieldsK])
-  n_quo2 = lcm(Int[degree(x) for x in lfieldsL])
-  r, mr = Hecke.ray_class_groupQQ(O, modulo, true, lcm(n_quo1, n_quo2))
+  r, mr = Hecke.ray_class_groupQQ(O, modulo_int, true, exp_rcf)
   Kt = PolynomialRing(K, "t", cached = false)[1]
   h = change_base_ring(K, lfieldsK[1].pol, parent = Kt)
   S, mS = norm_group(h, mr, cached = false)
@@ -342,7 +381,7 @@ function check_norm_group_and_disc(lfieldsK::Array{AnticNumberField, 1}, lfields
     return false
   else
     C = ray_class_field(mr, mQ)
-    return Hecke.discriminant_conductorQQ(O, C, modulo, bound)
+    return Hecke.discriminant_conductorQQ(O, C, modulo_int, bound)
   end
 
 end
@@ -632,7 +671,7 @@ function _merge(list1::Vector{FieldsTower}, list2::Vector{FieldsTower}, absolute
   @vprint :Fields 1 "Candidates: $(sum(length(x) for x in clusters1))\n"
   @vprint :Fields 1 "Sieving by prime_splitting\n"
   fields_to_be_computed = _sieve_by_prime_splitting(list1, list2, clusters1, red, redfirst, redsecond)
-
+  
   @vprint :Fields 1 "Computing maximal order of $(length(fields_to_be_computed)) fields\n"
   for i = 1:length(fields_to_be_computed)
     @vprint :Fields 1 "Doing $(i) / $(length(fields_to_be_computed))"

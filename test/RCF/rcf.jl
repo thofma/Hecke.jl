@@ -22,6 +22,11 @@
   @test doit(1:100) == 16
   @test doit(10^18:10^18+100) == 18
   @test doit(10^18:10^18+1000, 11) == 2
+
+  K, a = quadratic_field(-5)
+  H = hilbert_class_field(K)
+  L = number_field(H, over_subfield = true)
+  @test absolute_degree(L) == 4
   
   
   r, mr = Hecke.ray_class_groupQQ(Z,  32, true, 8);

@@ -162,7 +162,7 @@ end
 
 # pure
 
-function _add_sunits_from_brauer_relation!(c, UZK, N; invariant::Bool = false, compact::Int = 0)
+function _add_sunits_from_brauer_relation!(c, UZK, N; invariant::Bool = false, compact::Int = 0, saturate_units::Bool = false)
   # I am assuming that c.FB.ideals is invariant under the action of the Galois group
   cp = sort!(collect(Set(minimum(x) for x = c.FB.ideals)))
   K = N.K
@@ -208,6 +208,9 @@ function _add_sunits_from_brauer_relation!(c, UZK, N; invariant::Bool = false, c
         if compact != 0
           @vprint :NormRelation 3 "  Compact presentation ...\n"
           @vtime :NormRelation 4 u = Hecke.compact_presentation(u, compact, decom = Dict{NfOrdIdl, Int}())
+        elseif saturate_units
+          @vprint :NormRelation 3 "  Compact presentation ...\n"
+          @vtime :NormRelation 4 u = Hecke.compact_presentation(u, ispower(index(N))[2], decom = Dict{NfOrdIdl, Int}())
         end
         @vtime :NormRelation 4 img_u = FacElem(Dict{nf_elem, fmpz}((_embed(N, i, x), v) for (x,v) = u.fac))
         #=
@@ -359,7 +362,7 @@ function norm_relation(K::AnticNumberField, coprime::Int = 0; small_degree = tru
   end
 end
 
-function _sunit_group_fac_elem_quo_via_brauer(K::AnticNumberField, S, n::Int, invariant::Bool = false)
+function _sunit_group_fac_elem_quo_via_brauer(K::AnticNumberField, S, n::Int, invariant::Bool = false; saturate_units::Bool = false)
   @vprint :NormRelation 1 "Setting up the norm relation context ... \n"
   fl, N = norm_relation(K, n)
   if !fl
@@ -373,7 +376,7 @@ function _sunit_group_fac_elem_quo_via_brauer(K::AnticNumberField, S, n::Int, in
   if !isone(g)
     compact = ispower(g)[2]
   end
-  return __sunit_group_fac_elem_quo_via_brauer(N, S, n, invariant, compact)
+  return __sunit_group_fac_elem_quo_via_brauer(N, S, n, invariant, compact, saturate_units = saturate_units)
 end
 
 function _sunit_group_fac_elem_via_brauer(K::AnticNumberField, S::Vector{NfOrdIdl}, invariant::Bool = false, compact::Int = 0)
@@ -413,12 +416,12 @@ function _find_perm(v::Vector{NfOrdIdl}, w::Vector{NfOrdIdl})
   return p
 end
 
-function __sunit_group_fac_elem_quo_via_brauer(N::NormRelation, S::Vector{NfOrdIdl}, n::Int, invariant::Bool = false, compact::Int = 0)
+function __sunit_group_fac_elem_quo_via_brauer(N::NormRelation, S::Vector{NfOrdIdl}, n::Int, invariant::Bool = false, compact::Int = 0; saturate_units::Bool = false)
   O = order(S[1])
   K = N.K
   if invariant
     c, UZK = _setup_for_norm_relation_fun(K, S)
-    _add_sunits_from_brauer_relation!(c, UZK, N, invariant = true, compact = compact)
+    _add_sunits_from_brauer_relation!(c, UZK, N, invariant = true, compact = compact, saturate_units = saturate_units)
   else
     cp = sort!(collect(Set(minimum(x) for x = S)))
     Sclosed = NfOrdIdl[]
@@ -431,7 +434,7 @@ function __sunit_group_fac_elem_quo_via_brauer(N::NormRelation, S::Vector{NfOrdI
     end
     @vprint :NormRelation 1 "I am not Galois invariant. Working with S of size $(length(Sclosed))\n"
     c, UZK = _setup_for_norm_relation_fun(K, Sclosed)
-    _add_sunits_from_brauer_relation!(c, UZK, N, invariant = true, compact = compact)
+    _add_sunits_from_brauer_relation!(c, UZK, N, invariant = true, compact = compact, saturate_units = saturate_units)
   end
 
   if gcd(index(N), n) != 1
@@ -450,7 +453,18 @@ function __sunit_group_fac_elem_quo_via_brauer(N::NormRelation, S::Vector{NfOrdI
     UZK.finished = true
   end
 
-  # This makes c.R.gen be a basis of the S-units (modulo torsion)
+  if saturate_units && !UZK.finished 
+    for (p, e) in factor(index(N))
+      @vprint :NormRelation 1 "Saturating at $p \n"
+      b = Hecke.saturate!(UZK, Int(p), 3.5, easy_root = true, use_LLL = true)
+      while b
+        b = Hecke.saturate!(UZK, Int(p), 3.5, easy_root = true, use_LLL = true)
+      end
+    end
+    UZK.finished = true
+  end
+
+  # This makes c.R.gen a basis of the S-units (modulo torsion)
   c = Hecke.RelSaturate.simplify(c, UZK, use_LLL = true)
   perm_ideals = _find_perm(S, c.FB.ideals)
   if invariant
