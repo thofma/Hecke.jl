@@ -24,14 +24,14 @@
 mutable struct TorQuadMod
   ab_grp::GrpAbFinGen             # underlying abelian group
   cover::ZLat                     # ZLat -> ab_grp, x -> x * proj
+  rels::ZLat
   proj::fmpz_mat                  # is a projection and respects the forms
   gens_lift::Vector{Vector{fmpz}}
   gens_lift_ambient::Vector{Vector{fmpq}}
   gens_lift_mat::fmpz_mat          # integer matrix
   gens_lift_mat_ambient::fmpq_mat
   d::fmpz
-  rels::fmpz_mat
-  modulus::fmpq 
+  modulus::fmpq
   modulus_qf::fmpq
   value_module::QmodnZ
   value_module_qf::QmodnZ
@@ -51,8 +51,8 @@ end
 # compute the torsion quadratic module M/N
 function torsion_quadratic_module(M::ZLat, N::ZLat; modulus = fmpq(0))
   @req ambient_space(M) === ambient_space(N) "Lattices must have same ambient space"
-  _rels = basis_matrix(N) * inv(basis_matrix(M))
-  @req isone(denominator(_rels)) "Second lattice must be a submodule of first lattice"
+  hassol, _rels = can_solve_with_solution(basis_matrix(M), basis_matrix(N), side=:left)
+  @req isone(denominator(_rels)) && hassol "Second lattice must be a submodule of first lattice"
   rels = change_base_ring(FlintZZ, _rels)
   A = abelian_group(rels)
   S, mS = snf(A)
@@ -67,6 +67,7 @@ function torsion_quadratic_module(M::ZLat, N::ZLat; modulus = fmpq(0))
 
   T = TorQuadMod()
   T.cover = M
+  T.rels = N
   T.ab_grp = S
   T.proj = inv(mS).map
   T.gens_lift = gens_lift
@@ -272,6 +273,32 @@ function (f::TorQuadModMor)(a::TorQuadModElem)
   return codomain(f)(f.map_ab(A(a)))
 end
 
+
+
+################################################################################
+#
+#  Submodules
+#
+################################################################################
+
+
+@doc Markdown.doc"""
+    submodule(T::TorQuadMod, generators::Vector{TorQuadModElem})-> TorQuadMod, Map
+
+Return the submodule of `T` defined by `generators` and the inclusion morphism.
+"""
+function submodule(T::TorQuadMod, generators::Vector{TorQuadModElem})
+  V = ambient_space(T.cover)
+  generators = matrix(QQ, [lift(g) for g in generators])
+  gens_new = [basis_matrix(T.rels); generators]
+  cover = lattice(V, gens_new, isbasis=false)
+  S = torsion_quadratic_module(cover, T.rels)
+  imgs = [T(lift(g)) for g in gens(S)]
+  inclusion = hom(S, T, imgs)
+  return S, inclusion
+end
+
+
 function TorQuadMod(q::fmpq_mat)
   @req issquare(q) "Matrix must be a square matrix"
   @req issymmetric(q) "Matrix must be symmetric"
@@ -287,7 +314,6 @@ function TorQuadMod(q::fmpq_mat)
   LL = lattice(ambient_space(L), 1//d * change_base_ring(QQ, rels))
   return torsion_quadratic_module(L, LL, modulus = fmpq(1))
 end
-
 
 #        if modulus is None or check:
 #           # The inner product of two elements `b(v1+W,v2+W)`
