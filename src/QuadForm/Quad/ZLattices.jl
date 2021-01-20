@@ -54,13 +54,16 @@ function lattice(V::QuadSpace{FlintRationalField, fmpq_mat}, B::MatElem; isbasis
 
   # We need to produce a basis matrix
   
-  BB = fmpq_mat(hnf(FakeFmpqMat(B), :upper_right))
-  i = nrows(BB)
-  while iszero_row(BB, i)
-    i = i - 1
+  if !isbasis
+    BB = fmpq_mat(hnf(FakeFmpqMat(B), :upper_right))
+    i = nrows(BB)
+    while iszero_row(BB, i)
+      i = i - 1
+    end
+    return ZLat(V, BB[1:i, :])
+  else
+    return ZLat(V, Gc)
   end
-
-  return ZLat(V, BB[1:i, :])
 end
 
 ################################################################################

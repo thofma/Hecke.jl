@@ -49,7 +49,7 @@ end
 ################################################################################
 
 # compute the torsion quadratic module M/N
-function torsion_quadratic_module(M::ZLat, N::ZLat)
+function torsion_quadratic_module(M::ZLat, N::ZLat; modulus = fmpq(0))
   @req ambient_space(M) === ambient_space(N) "Lattices must have same ambient space"
   _rels = basis_matrix(N) * inv(basis_matrix(M))
   @req isone(denominator(_rels)) "Second lattice must be a submodule of first lattice"
@@ -59,7 +59,9 @@ function torsion_quadratic_module(M::ZLat, N::ZLat)
   gens_lift = [collect(mS(s).coeff) for s in gens(S)]
 
   num = basis_matrix(M) * gram_matrix(ambient_space(M)) * basis_matrix(N)'
-  modulus = reduce(gcd, [a for a in num], init = zero(fmpq))
+  if iszero(modulus)
+    modulus = reduce(gcd, [a for a in num], init = zero(fmpq))
+  end
   norm = reduce(gcd, diagonal(gram_matrix(N)), init = zero(fmpq))
   modulus_qf = gcd(norm, 2 * modulus)
 
@@ -270,26 +272,21 @@ function (f::TorQuadModMor)(a::TorQuadModElem)
   return codomain(f)(f.map_ab(A(a)))
 end
 
-## this is broken
-#function TorQuadMod(q::fmpq_mat)
-#  @req issquare(q) "Matrix must be a square matrix"
-#  @req issymmetric(q) "Matrix must be symmetric"
-#
-#  d = denominator(q)
-#  Q = change_base_ring(FlintZZ, d * q)
-#  S, U, V = snf_with_transform(Q)
-#  D = change_base_ring(FlintQQ, U) * q * change_base_ring(FlintQQ, V)
-#  @show D
-#  L = Zlattice(gram = d^2 * q)
-#  denoms = [denominator(D[i, i]) for i in 1:ncols(D)]
-#  rels = diagonal_matrix(denoms) * U
-#  _A = abelian_group(rels)
-#  S, T = snf(_A)
-#  @show T
-#  @show T(gens(S)[1])
-#  value_module = QmodnZ()
-#  return TorQuadMod(S, L, d, rels, value_module)
-#end
+function TorQuadMod(q::fmpq_mat)
+  @req issquare(q) "Matrix must be a square matrix"
+  @req issymmetric(q) "Matrix must be symmetric"
+
+  d = denominator(q)
+  Q = change_base_ring(FlintZZ, d * q)
+  S, U, V = snf_with_transform(Q)
+  D = change_base_ring(FlintQQ, U) * q * change_base_ring(FlintQQ, V)
+  L = Zlattice(1//d * identity_matrix(QQ, nrows(q)), gram = d^2 * q)
+  @show basis_matrix(L)
+  denoms = [denominator(D[i, i]) for i in 1:ncols(D)]
+  rels = diagonal_matrix(denoms) * U
+  LL = lattice(ambient_space(L), 1//d * change_base_ring(QQ, rels))
+  return torsion_quadratic_module(L, LL, modulus = fmpq(1))
+end
 
 
 #        if modulus is None or check:
