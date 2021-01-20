@@ -37,6 +37,7 @@ mutable struct TorQuadMod
   value_module_qf::QmodnZ
   gram_matrix_bilinear::fmpq_mat
   gram_matrix_quadratic::fmpq_mat
+  gens
 
   TorQuadMod() = new()
 end
@@ -187,8 +188,15 @@ function (T::TorQuadMod)(v::Vector{fmpq})
   return T(abelian_group(T)(vv * T.proj))
 end
 
-# TODO: Cache this
-gens(T::TorQuadMod) = [T(g) for g in gens(abelian_group(T))]
+function gens(T::TorQuadMod)
+  if isdefined(T, :gens)
+    return T.gens
+  else
+    _gens = [T(g) for g in gens(abelian_group(T))]
+    T.gens = _gens
+    return _gens
+  end
+end
 
 parent(a::TorQuadModElem) = a.parent
 
@@ -262,7 +270,7 @@ function (f::TorQuadModMor)(a::TorQuadModElem)
   return codomain(f)(f.map_ab(A(a)))
 end
 
-# this is broken
+## this is broken
 #function TorQuadMod(q::fmpq_mat)
 #  @req issquare(q) "Matrix must be a square matrix"
 #  @req issymmetric(q) "Matrix must be symmetric"
