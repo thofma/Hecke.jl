@@ -238,4 +238,7 @@ end
     @test b
     @test T * gram_matrix(L2) * T' == gram_matrix(L)
   end
+  #discriminant of a lattice
+  L = Zlattice(ZZ[1 0; 0 1], gram = matrix(QQ, 2,2, [2, 1, 1, 2])) 
+  @test discriminant(L) == 3
 end
