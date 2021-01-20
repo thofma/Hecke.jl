@@ -144,6 +144,7 @@ end
 Returns the gram matrix of the rows of `M`.
 """
 function gram_matrix(V::AbsSpace{T}, M::MatElem{S}) where {S, T}
+  @req ncols(M) == dim(V) "Matrix must have $(dim(V)) columns ($(ncols(M)))"
   if S === elem_type(T)
     return M * gram_matrix(V) * transpose(_map(M, involution(V)))
   else
@@ -215,11 +216,15 @@ function _gram_schmidt(M::MatElem, a, nondeg = true)
   K = base_ring(F)
   n = nrows(F)
   S = identity_matrix(K, n)
+  T = identity_matrix(K, n)
   okk = isdiagonal(F)
   if !okk
     for i in 1:n
       if iszero(F[i,i])
-        T = identity_matrix(K, n)
+        zero!(T)
+        for i in 1:nrows(T)
+          T[i, i] = 1
+        end
         ok = 0
         for j in (i + 1):n
           if !iszero(F[j, j])
@@ -227,9 +232,7 @@ function _gram_schmidt(M::MatElem, a, nondeg = true)
             break
           end
         end
-        #ok = findfirst(j -> !iszero(F[j, j]), (i + 1):n)
         if ok != 0 # ok !== nothing
-          #j = ok + i # findfirst gives the index
           j = ok
           T[i,i] = 0
           T[j,j] = 0
@@ -252,15 +255,26 @@ function _gram_schmidt(M::MatElem, a, nondeg = true)
             T[i, j] = 1 // (2 * F[j, i])
           end
         end
-        S = T * S
-        F = T * F * transpose(_map(T, a))
+        #S = T * S
+        S = mul!(S, T, S)
+        #F = T * F * transpose(_map(T, a))
+        F = mul!(F, T, F)
+        F = mul!(F, F, transpose(_map(T, a)))
       end
-      T = identity_matrix(K, n)
+
+      zero!(T)
+      for i in 1:nrows(T)
+        T[i, i] = 1
+      end
+
       for j in (i + 1):n
         T[j, i] = divexact(-F[j, i], F[i, i])
       end
-      F = T * F * transpose(_map(T, a))
-      S = T * S
+      #F = T * F * transpose(_map(T, a))
+      F = mul!(F, T, F)
+      F = mul!(F, F, transpose(_map(T, a)))
+      #S = T * S
+      S = mul!(S, T, S)
     end
     @assert isdiagonal(F)
   end
