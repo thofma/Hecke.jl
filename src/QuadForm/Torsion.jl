@@ -192,6 +192,9 @@ gens(T::TorQuadMod) = [T(g) for g in gens(abelian_group(T))]
 
 parent(a::TorQuadModElem) = a.parent
 
+# Check the parent
+(A::GrpAbFinGen)(a::TorQuadModElem) = a.a
+
 ################################################################################
 #
 #  Inner product
@@ -230,6 +233,34 @@ function lift(a::TorQuadModElem)
   return fmpq[z[1, i] for i in 1:ncols(z)]
 end
 
+mutable struct TorQuadModMor
+  domain::TorQuadMod
+  codomain::TorQuadMod
+  map_ab::GrpAbFinGenMap
+end
+
+function hom(T::TorQuadMod, S::TorQuadMod, M::fmpz_mat)
+  f = hom(abelian_group(T), abelian_group(S), M)
+  return TorQuadModMor(T, S, map_ab)
+end
+
+function hom(T::TorQuadMod, S::TorQuadMod, img::Vector{TorQuadModElem})
+  _img = GrpAbFinGenElem[]
+  for g in img
+    push!(_img, abelian_group(S)(g))
+  end
+  map_ab = hom(abelian_group(T), abelian_group(S), _img)
+  return TorQuadModMor(T, S, map_ab)
+end
+
+domain(f::TorQuadModMor) = f.domain
+
+codomain(f::TorQuadModMor) = f.codomain
+
+function (f::TorQuadModMor)(a::TorQuadModElem)
+  A = abelian_group(domain(f))
+  return codomain(f)(f.map_ab(A(a)))
+end
 
 # this is broken
 #function TorQuadMod(q::fmpq_mat)
