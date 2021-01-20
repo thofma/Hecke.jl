@@ -57,12 +57,12 @@ function _locally_isometric_sublattice_inert(M, L, p, P, absolute_map)
       el = coeff(-G[1][2*i, 2*i]//G[1][2*i - 1, 2*i - 1], 0)
       b, s = issquare(hext(el))
       if b
-        push!(Y, BB[2*i] + nf(base_ring(L))(hext\s)*BB[2*i - 1])
+        push!(YY, BB[2*i] + nf(base_ring(L))(hext\s)*BB[2*i - 1])
       else
         el = coeff(-G[1][2*i, 2*i]//G[1][2*i - 1, 2*i - 1], 0) * norm(nsn)
         b, s = issquare(hext(el))
         @assert b
-        push!(Y, nsn * BB[2*i] + nf(base_ring(L))(hext\s) * BB[2*i - 1])
+        push!(YY, nsn * BB[2*i] + nf(base_ring(L))(hext\s) * BB[2*i - 1])
       end
     end
     if length(B) == 2

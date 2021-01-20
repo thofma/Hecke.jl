@@ -40,16 +40,16 @@ end
 # use as include(...)
 ################################################################################
 function to_hecke(io::IOStream, A::fmpz_mat; name = "A")
-  println(io, name, " = MatrixSpace(FlintZZ, ", nrows(A), ", ", ncols(A), ")([")
+  println(io, name, " = matrix(FlintZZ, ", nrows(A), ", ", ncols(A), "fmpz[")
   for i = 1:nrows(A)
     for j = 1:ncols(A)
       print(io, A[i,j])
       if j < ncols(A)
-        print(io, " ")
+        print(io, ", ")
       end
     end
     if i<nrows(A)
-      println(io, ";")
+      println(io, ", ")
     end
   end
   println(io, "]);")

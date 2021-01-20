@@ -1,3 +1,5 @@
+export ZLat
+
 mutable struct ZLat <: AbsLat{FlintRationalField}
   space::QuadSpace{FlintRationalField, fmpq_mat}
   rational_span::QuadSpace{FlintRationalField, fmpq_mat}
@@ -5,9 +7,13 @@ mutable struct ZLat <: AbsLat{FlintRationalField}
   gram_matrix::fmpq_mat
   aut_grp_gen::fmpq_mat
   aut_grp_ord::fmpz
-  automorphism_group_generators::Vector{fmpz_mat}
+  automorphism_group_generators::Vector{fmpz_mat} # With respect to the
+                                                  # basis of the lattice
   automorphism_group_order::fmpz
   minimum::fmpq
+
+  scale::fmpq
+  norm::fmpq
 
   function ZLat(V::QuadSpace{FlintRationalField, fmpq_mat}, B::fmpq_mat)
     z = new()

@@ -42,8 +42,6 @@ function AbstractAlgebra.expressify(a::RelFinFieldElem; context = nothing)
                                     context = context)
 end
 
-needs_parentheses(a::RelFinFieldElem) = false
-
 ############################################################################
 #
 #  Basic properties

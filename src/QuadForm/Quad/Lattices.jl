@@ -263,7 +263,6 @@ end
 Returns the prime ideals dividing the scale and volume of $L$. If `even == true`
 also the prime ideals dividing $2$ are included.
 """
-
 function bad_primes(L::QuadLat; even::Bool = false)
   f = factor(scale(L))
   ff = factor(volume(L))
@@ -301,7 +300,7 @@ end
 #
 ################################################################################
 
-function jordan_decomposition(L::QuadLat, p)
+function jordan_decomposition(L::Union{ZLat, QuadLat}, p)
   F = gram_matrix(ambient_space(L))
   even = isdyadic(p)
   if even

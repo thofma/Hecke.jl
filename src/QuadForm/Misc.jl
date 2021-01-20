@@ -1447,3 +1447,5 @@ end
 elem_in_nf(x::fmpz) = FlintQQ(x)
 
 ideal_type(::FlintIntegerRing) = fmpz
+
+nf(::FlintIntegerRing) = FlintQQ

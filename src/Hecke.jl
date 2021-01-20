@@ -140,9 +140,9 @@ function __init__()
     println()
   end
 
-  if inNotebook()  # to make toggle work in IJulia
-    display("text/html", "\$\\require{action}\$")
-  end
+  #if inNotebook()  # to make toggle work in IJulia
+  #  display("text/html", "\$\\require{action}\$")
+  #end
 
   t = create_accessors(AnticNumberField, acb_root_ctx, get_handle())
   global _get_nf_conjugate_data_arb = t[1]

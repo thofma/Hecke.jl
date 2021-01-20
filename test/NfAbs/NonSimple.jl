@@ -6,7 +6,6 @@
   @test K isa NfAbsNS
   @test elem_type(NfAbsNS) == NfAbsNSElem
   @test parent_type(NfAbsNSElem) == NfAbsNS
-  @test show_minus_one(NfAbsNSElem) isa Bool
   @test !issimple(K)
   @test !issimple(NfAbsNS)
 

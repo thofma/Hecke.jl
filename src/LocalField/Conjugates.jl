@@ -91,8 +91,13 @@ mutable struct qAdicConj
   cache::Dict{nf_elem, Any}
 
   function qAdicConj(K::AnticNumberField, p::Int; splitting_field::Bool = false)
+    if discriminant(map_coeffs(GF(p), Globals.Zx(K.pol))) == 0
+      error("cannot deal with difficult primes yet")
+    end
+    #=
     isindex_divisor(maximal_order(K), p) && error("cannot deal with index divisors yet")
     isramified(maximal_order(K), p) && error("cannot deal with ramification yet")
+    =#
     if splitting_field
       Zx = PolynomialRing(FlintZZ, cached = false)[1]
       C = qAdicRootCtx(Zx(K.pol), p, splitting_field = true)

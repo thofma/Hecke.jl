@@ -53,13 +53,6 @@ end
 #
 ################################################################################
 
-
-needs_parentheses(::NfRelElem) = true
-
-isnegative(x::NfRelElem) = isnegative(data(x))
-
-show_minus_one(::Type{NfRelElem{T}}) where {T} = true
-
 function iszero(a::NfRelElem)
   reduce!(a)
   return iszero(data(a))
@@ -217,7 +210,7 @@ function Base.show(io::IO, a::NfRel)
 end
 
 function AbstractAlgebra.expressify(a::NfRelElem; context = nothing)
-  return AbstractAlgebra.expressify(data(a), var(a.parent), context = context)
+  return AbstractAlgebra.expressify(data(a), var(parent(a)), context = context)
 end
 
 function Base.show(io::IO, a::NfRelElem)

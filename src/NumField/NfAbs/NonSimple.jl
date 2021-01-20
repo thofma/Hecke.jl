@@ -98,12 +98,6 @@ order_type(::NfAbsNS) = NfAbsOrd{NfAbsNS, NfAbsNSElem}
 
 order_type(::Type{NfAbsNS}) = NfAbsOrd{NfAbsNS, NfAbsNSElem}
 
-needs_parentheses(x::NfAbsNSElem) = needs_parentheses(data(x))
-
-displayed_with_minus_in_front(x::NfAbsNSElem) = displayed_with_minus_in_front(data(x))
-
-show_minus_one(::Type{NfAbsNSElem}) = true
-
 function iszero(a::NfAbsNSElem)
   reduce!(a)
   return iszero(data(a))
@@ -277,21 +271,12 @@ function Base.show(io::IO, a::NfAbsNS)
   print(io, "Non-simple number field with defining polynomials ", a.pol)
 end
 
-#TODO: this is a terrible show func.
 function Base.show(io::IO, a::NfAbsNSElem)
-  x = data(a)
-  if length(x) == 0
-     print(io, "0")
-  else
-     cstr = ccall((:fmpq_mpoly_get_str_pretty, libflint), Ptr{UInt8},
-         (Ref{fmpq_mpoly}, Ptr{Ptr{UInt8}}, Ref{FmpqMPolyRing}),
-         x, [string(s) for s in symbols(parent(a))], x.parent)
-     print(io, unsafe_string(cstr))
+  print(io, AbstractAlgebra.obj_to_string(a, context = io))
+end
 
-     ccall((:flint_free, libflint), Nothing, (Ptr{UInt8},), cstr)
-  end
-
-#  show(io, f)
+function AbstractAlgebra.expressify(x::NfAbsNSElem; context = nothing)
+  return AbstractAlgebra.expressify(data(x), symbols(parent(x)), context = context)
 end
 
 ################################################################################

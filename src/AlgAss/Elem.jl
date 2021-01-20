@@ -644,9 +644,7 @@ function show(io::IO, a::AbsAlgAssElem)
   end
 end
 
-needs_parentheses(::AbsAlgAssElem) = true
-
-isnegative(::AbsAlgAssElem) = false
+# TODO: Expressify?
 
 ################################################################################
 #

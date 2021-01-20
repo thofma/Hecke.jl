@@ -87,12 +87,6 @@ order_type(K::NfRelNS{T}) where {T} = NfRelOrd{T, fractional_ideal_type(order_ty
 
 order_type(::Type{NfRelNS{T}}) where {T} = NfRelOrd{T, fractional_ideal_type(order_type(parent_type(T))), NfRelNSElem{T}}
 
-Nemo.needs_parentheses(::NfRelNSElem) = true
-
-Nemo.isnegative(x::NfRelNSElem) = Nemo.isnegative(data(x))
-
-Nemo.show_minus_one(::Type{NfRelNSElem{T}}) where {T} = true
-
 function Nemo.iszero(a::NfRelNSElem)
   return iszero(data(a))
 end

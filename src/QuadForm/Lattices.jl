@@ -418,7 +418,9 @@ The lattices $L$ and $M$ must have the same ambient space.
 function Base.:(+)(L::T, M::T) where {T <: AbsLat}
   @assert has_ambient_space(L) && has_ambient_space(M)
   @assert ambient_space(L) === ambient_space(M)
-  m = _sum_modules(pseudo_matrix(L), pseudo_matrix(M))
+  V = ambient_space(L)
+  fr = nrows(pseudo_matrix(L)) == dim(V) || nrows(pseudo_matrix(M)) == dim(V)
+  m = _sum_modules(L, pseudo_matrix(L), pseudo_matrix(M), fr)
   return lattice_in_same_ambient_space(L, m)
 end
 
@@ -438,7 +440,12 @@ The lattices $L$ and $M$ must have the same ambient space.
 function intersect(L::T, M::T) where {T <: AbsLat}
   @assert has_ambient_space(L) && has_ambient_space(M)
   @assert ambient_space(L) === ambient_space(M)
-  m = _intersect_modules(pseudo_matrix(L), pseudo_matrix(M))
+  V = ambient_space(L)
+  fr = nrows(pseudo_matrix(L)) == dim(V) || nrows(pseudo_matrix(M)) == dim(V)
+  if !fr
+    error("Only implemented for lattices of full rank")
+  end
+  m = _intersect_modules(L, pseudo_matrix(L), pseudo_matrix(M), fr)
   return lattice_in_same_ambient_space(L, m)
 end
 
@@ -491,8 +498,6 @@ end
 #
 ################################################################################
 
-# TODO: Write this:
-# Call absolute_basis on the ideals
 @doc Markdown.doc"""
     absolute_basis(L::AbsLat) -> Vector
 
@@ -653,7 +658,7 @@ Returns whether $L_{\mathfrak{p}}$ is modular. In this case the second return
 value is an integer $v$ such that $L_{\mathfrak{p}}$ is
 $\mathfrak{p}^v$-modular.
 """
-function ismodular(L::AbsLat, p)
+function ismodular(L::AbsLat{<: NumField}, p)
   a = scale(L)
   if base_ring(L) == order(p)
     v = valuation(a, p)
@@ -800,11 +805,11 @@ end
 # Determine the gram matrices of the bilinear forms
 # V x V -> Q, (x, y) -> Tr_K/Q(a*B(x, y))
 # with respect to an absolute basis of L, for all a in generators.
-function Zforms(L::AbsLat, generators)
+function Zforms(L::AbsLat{<: NumField}, generators)
   return _Zforms(L, generators)
 end
 
-function Zforms(L::AbsLat)
+function Zforms(L::AbsLat{<: NumField})
   E = base_ring(ambient_space(L))
   if degree(E) > 1
     generators = elem_type(E)[E(1), absolute_primitive_element(E)]
@@ -814,7 +819,7 @@ function Zforms(L::AbsLat)
   return _Zforms(L, generators)
 end
 
-function _Zforms(L::AbsLat, generators::Vector)
+function _Zforms(L::AbsLat{<: NumField}, generators::Vector)
   V = ambient_space(L)
   E = base_ring(V)
   Babs = absolute_basis(L)
@@ -838,7 +843,7 @@ end
 # per default, the are given with respect to the basis of the ambient space
 # if ambient_representation = true, they are given with respect to the coordinate
 # space/ambient space
-function assert_has_automorphisms(L::AbsLat; redo::Bool = false)
+function assert_has_automorphisms(L::AbsLat{<: NumField}; redo::Bool = false)
 
   if !redo && isdefined(L, :automorphism_group_generators)
     return nothing
@@ -950,7 +955,7 @@ end
 @doc Markdown.doc"""
     automorphism_group_generators(L::AbsLat; ambient_representation = true)
 
-Given a positive definite lattice $L$ returns generators for the automorphism group of $L$. 
+Given a definite lattice $L$ returns generators for the automorphism group of $L$. 
 If `ambient_representation` is `true` (the default), the transformations are represented
 with respect to the ambient space of $L$. Otherwise, the transformations are represented
 with respect to the (pseudo-)basis of $L$.
@@ -1013,7 +1018,25 @@ end
 #
 ################################################################################
 
-function isisometric(L::AbsLat, M::AbsLat; ambient_representation::Bool = true)
+@doc Markdown.doc"""
+    isisometric(L::ZLat, M::ZLat; ambient_representation::Bool = true)
+                                                              -> (Bool, MatElem)
+
+Tests if $L$ and $M$ are isometric. If this is the case, the second return value
+is an isometry $T$ from $L$ to $M$.
+
+By default, that isometry is represented with respect to the bases of the
+ambient spaces, that is, $T V_M T^t = V_L$ where $V_L$ and $V_M$ are the gram
+matrices of the ambient spaces of $L$ and $M$ respectively. If
+`ambient_representation = false`, then the isometry is represented with respect
+to the (pseudo-)bases of $L$ and $M$, that is, $T G_M T^t = G_L$ where $G_M$
+and $G_L$ are the gram matrices of the (pseudo-)bases of $L$ and $M$
+respectively.
+"""
+isisometric(L::AbsLat, M::AbsLat; ambient_representation::Bool = true)
+
+function isisometric(L::AbsLat{<: NumField}, M::AbsLat{<: NumField};
+                                            ambient_representation::Bool = true)
   V = ambient_space(L)
   W = ambient_space(M)
   E = base_ring(V)

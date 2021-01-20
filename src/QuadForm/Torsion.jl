@@ -24,19 +24,20 @@
 mutable struct TorQuadMod
   ab_grp::GrpAbFinGen             # underlying abelian group
   cover::ZLat                     # ZLat -> ab_grp, x -> x * proj
+  rels::ZLat
   proj::fmpz_mat                  # is a projection and respects the forms
   gens_lift::Vector{Vector{fmpz}}
   gens_lift_ambient::Vector{Vector{fmpq}}
   gens_lift_mat::fmpz_mat          # integer matrix
   gens_lift_mat_ambient::fmpq_mat
   d::fmpz
-  rels::fmpz_mat
-  modulus::fmpq 
+  modulus::fmpq
   modulus_qf::fmpq
   value_module::QmodnZ
   value_module_qf::QmodnZ
   gram_matrix_bilinear::fmpq_mat
   gram_matrix_quadratic::fmpq_mat
+  gens
 
   TorQuadMod() = new()
 end
@@ -48,22 +49,25 @@ end
 ################################################################################
 
 # compute the torsion quadratic module M/N
-function torsion_quadratic_module(M::ZLat, N::ZLat)
+function torsion_quadratic_module(M::ZLat, N::ZLat; modulus = fmpq(0))
   @req ambient_space(M) === ambient_space(N) "Lattices must have same ambient space"
-  _rels = basis_matrix(N) * inv(basis_matrix(M))
-  @req isone(denominator(_rels)) "Second lattice must be a submodule of first lattice"
+  hassol, _rels = can_solve_with_solution(basis_matrix(M), basis_matrix(N), side=:left)
+  @req isone(denominator(_rels)) && hassol "Second lattice must be a submodule of first lattice"
   rels = change_base_ring(FlintZZ, _rels)
   A = abelian_group(rels)
   S, mS = snf(A)
   gens_lift = [collect(mS(s).coeff) for s in gens(S)]
 
   num = basis_matrix(M) * gram_matrix(ambient_space(M)) * basis_matrix(N)'
-  modulus = reduce(gcd, [a for a in num], init = zero(fmpq))
+  if iszero(modulus)
+    modulus = reduce(gcd, [a for a in num], init = zero(fmpq))
+  end
   norm = reduce(gcd, diagonal(gram_matrix(N)), init = zero(fmpq))
   modulus_qf = gcd(norm, 2 * modulus)
 
   T = TorQuadMod()
   T.cover = M
+  T.rels = N
   T.ab_grp = S
   T.proj = inv(mS).map
   T.gens_lift = gens_lift
@@ -90,6 +94,16 @@ Return the order of `T`
 function order(T::TorQuadMod)
   return order(abelian_group(T))
 end
+
+@doc Markdown.doc"""
+    exponent(T::TorQuadMod) -> fmpz
+
+Returns the exponent of `T`
+"""
+function exponent(T::TorQuadMod)
+  return exponent(abelian_group(T))
+end
+
 ################################################################################
 #
 #  Basic field access
@@ -177,10 +191,20 @@ function (T::TorQuadMod)(v::Vector{fmpq})
   return T(abelian_group(T)(vv * T.proj))
 end
 
-# TODO: Cache this
-gens(T::TorQuadMod) = [T(g) for g in gens(abelian_group(T))]
+function gens(T::TorQuadMod)
+  if isdefined(T, :gens)
+    return T.gens
+  else
+    _gens = [T(g) for g in gens(abelian_group(T))]
+    T.gens = _gens
+    return _gens
+  end
+end
 
 parent(a::TorQuadModElem) = a.parent
+
+# Check the parent
+(A::GrpAbFinGen)(a::TorQuadModElem) = a.a
 
 ################################################################################
 #
@@ -220,28 +244,76 @@ function lift(a::TorQuadModElem)
   return fmpq[z[1, i] for i in 1:ncols(z)]
 end
 
+mutable struct TorQuadModMor
+  domain::TorQuadMod
+  codomain::TorQuadMod
+  map_ab::GrpAbFinGenMap
+end
 
-# this is broken
-#function TorQuadMod(q::fmpq_mat)
-#  @req issquare(q) "Matrix must be a square matrix"
-#  @req issymmetric(q) "Matrix must be symmetric"
+function hom(T::TorQuadMod, S::TorQuadMod, M::fmpz_mat)
+  f = hom(abelian_group(T), abelian_group(S), M)
+  return TorQuadModMor(T, S, map_ab)
+end
+
+function hom(T::TorQuadMod, S::TorQuadMod, img::Vector{TorQuadModElem})
+  _img = GrpAbFinGenElem[]
+  for g in img
+    push!(_img, abelian_group(S)(g))
+  end
+  map_ab = hom(abelian_group(T), abelian_group(S), _img)
+  return TorQuadModMor(T, S, map_ab)
+end
+
+domain(f::TorQuadModMor) = f.domain
+
+codomain(f::TorQuadModMor) = f.codomain
+
+function (f::TorQuadModMor)(a::TorQuadModElem)
+  A = abelian_group(domain(f))
+  return codomain(f)(f.map_ab(A(a)))
+end
+
+
+
+################################################################################
 #
-#  d = denominator(q)
-#  Q = change_base_ring(FlintZZ, d * q)
-#  S, U, V = snf_with_transform(Q)
-#  D = change_base_ring(FlintQQ, U) * q * change_base_ring(FlintQQ, V)
-#  @show D
-#  L = Zlattice(gram = d^2 * q)
-#  denoms = [denominator(D[i, i]) for i in 1:ncols(D)]
-#  rels = diagonal_matrix(denoms) * U
-#  _A = abelian_group(rels)
-#  S, T = snf(_A)
-#  @show T
-#  @show T(gens(S)[1])
-#  value_module = QmodnZ()
-#  return TorQuadMod(S, L, d, rels, value_module)
-#end
+#  Submodules
+#
+################################################################################
 
+
+@doc Markdown.doc"""
+    submodule(T::TorQuadMod, generators::Vector{TorQuadModElem})-> TorQuadMod, Map
+
+Return the submodule of `T` defined by `generators` and the inclusion morphism.
+"""
+function submodule(T::TorQuadMod, generators::Vector{TorQuadModElem})
+  V = ambient_space(T.cover)
+  generators = matrix(QQ, [lift(g) for g in generators])
+  gens_new = [basis_matrix(T.rels); generators]
+  cover = lattice(V, gens_new, isbasis=false)
+  S = torsion_quadratic_module(cover, T.rels)
+  imgs = [T(lift(g)) for g in gens(S)]
+  inclusion = hom(S, T, imgs)
+  return S, inclusion
+end
+
+
+function TorQuadMod(q::fmpq_mat)
+  @req issquare(q) "Matrix must be a square matrix"
+  @req issymmetric(q) "Matrix must be symmetric"
+
+  d = denominator(q)
+  Q = change_base_ring(FlintZZ, d * q)
+  S, U, V = snf_with_transform(Q)
+  D = change_base_ring(FlintQQ, U) * q * change_base_ring(FlintQQ, V)
+  L = Zlattice(1//d * identity_matrix(QQ, nrows(q)), gram = d^2 * q)
+  @show basis_matrix(L)
+  denoms = [denominator(D[i, i]) for i in 1:ncols(D)]
+  rels = diagonal_matrix(denoms) * U
+  LL = lattice(ambient_space(L), 1//d * change_base_ring(QQ, rels))
+  return torsion_quadratic_module(L, LL, modulus = fmpq(1))
+end
 
 #        if modulus is None or check:
 #           # The inner product of two elements `b(v1+W,v2+W)`
