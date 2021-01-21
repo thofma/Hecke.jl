@@ -22,8 +22,6 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
-      - name: Setup tmate session
-        uses: mxschmitt/action-tmate@v3
       - name: "Set up Julia"
         uses: julia-actions/setup-julia@v1
         with:
@@ -42,6 +40,8 @@ jobs:
             ${{ runner.os }}-
       - name: "Build package"
         uses: julia-actions/julia-buildpkg@latest
+      - name: Setup tmate session
+        uses: mxschmitt/action-tmate@v3
       - name: "Run tests"
         uses: julia-actions/julia-runtest@latest
         #      - name: "Process code coverage"
