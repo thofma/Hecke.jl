@@ -189,7 +189,7 @@ function translate_up(mL::NfToNfMor, C::ClassField_pp, C1::ClassField_pp)
   mrel2 = hom(C1.K, C.K, mp, gen(C.K))
   C.pe = mrel2(C1.pe) 
   CEKK = cyclotomic_extension(K, d)
-  @hassert :ClassField 1 iszero(map_coeffs(CEKK.mp[2], fdef, cached = false)(Cpp.pe))
+  @hassert :ClassField 1 iszero(map_coeffs(CEKK.mp[2], fdef, cached = false)(C.pe))
   C.o = d1
   return nothing
 end
