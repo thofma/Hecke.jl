@@ -358,26 +358,13 @@ end
 function saturate!(U::Hecke.UnitGrpCtx, n::Int, stable::Float64 = 3.5; use_orbit::Bool = false, easy_root::Bool = false, use_LLL::Bool = false)
   @assert isprime(n)
   O = order(U)
-  clg = Hecke.ClassGrpCtx{SMat{fmpz}}()
-
-  clg.FB = Hecke.NfFactorBase(O, 1)
-
-  clg.bad_rel = 0
-  clg.rel_cnt = 0
-  clg.last = 0
-
-  clg.M = Hecke.ModuleCtx_fmpz(0)
-  clg.R_gen = Array{nf_elem, 1}()
-  clg.R_rel = Array{nf_elem, 1}()
-
-  clg.c = Hecke.conjugates_init(nf(O).pol)
-  
+  clg = Hecke.class_group_init(O, 1, min_size = 1, add_rels = false, use_aut = false)
   return saturate!(clg, U, n, stable, use_orbit = use_orbit, easy_root = easy_root, use_LLL = use_LLL)
 end
 
 function saturate!(d::Hecke.ClassGrpCtx, U::Hecke.UnitGrpCtx, n::Int, stable::Float64 = 3.5; use_orbit::Bool = false, easy_root::Bool = false, use_LLL::Bool = false)
   @assert isprime(n)
-  K = nf(d)
+  K = nf(U)
   @vprint :Saturate 1 "Simplifying the context\n"
   @vtime :Saturate 1 c = simplify(d, U, n, use_LLL = use_LLL)
   success = false

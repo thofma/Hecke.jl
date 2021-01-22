@@ -127,3 +127,51 @@ function _find_suitable_quadratic_extension(C::T) where T <: ClassField_pp
     lc = setdiff(lc, lc1)
   end
 end
+
+function approximate_derivative_Artin_L_function(C::ClassField_pp, mGhat::Map, x::GrpAbFinGenElem, prec::Int)
+
+
+end
+
+function conductor(C, mGhat, x)
+
+end
+
+function approximate_A_function(C::ClassField_pp, mGhat::Map, x::GrpAbFinGenElem, prec::Int)
+  R = AcbField(prec)
+  if iszero(x)
+    #We have the trivial character sending everything to 1.
+    #we return 0
+    return zero(R)
+  end
+  if isprime(order(C))
+    #In this case, the result is one.
+    #The conductor of C and of the character are the same.
+    return one(R)
+  end
+  mp = mGhat(x) #The character
+  k, mk = kernel(mp)
+  q, mq = cokernel(mk)
+  C1 = ray_class_field(C.rayclassgroupmap, C.quotient_map*mq)
+  c = conductor(C1)[1]
+  cC = conductor(C)[1]
+  if c == cC
+    return one(R)
+  end
+  mR = C.rayclassgroupmap
+  mQ = C.quotientmap
+  r, mr = ray_class_group(c, n_quo = degree(C))
+  lp, sR = find_gens(mR)
+  imgs = GrpAbFinGenElem[mr\x for x in lp]
+  mpR = hom(sR, imgs)
+  fcC = factor(cC)
+  res = one(R)
+  for (p, v) in fcC
+    if haskey(fc.fac, p)
+      continue
+    end
+    el = mp(mQ(mpr\(mr\p)))
+    res *= (1- exppii(2/lift(el)))
+  end
+  return res
+end
