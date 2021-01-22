@@ -133,10 +133,6 @@ function approximate_derivative_Artin_L_function(C::ClassField_pp, mGhat::Map, x
 
 end
 
-function conductor(C, mGhat, x)
-
-end
-
 function approximate_A_function(C::ClassField_pp, mGhat::Map, x::GrpAbFinGenElem, prec::Int)
   R = AcbField(prec)
   if iszero(x)
