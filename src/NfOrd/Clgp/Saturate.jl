@@ -358,8 +358,21 @@ end
 function saturate!(U::Hecke.UnitGrpCtx, n::Int, stable::Float64 = 3.5; use_orbit::Bool = false, easy_root::Bool = false, use_LLL::Bool = false)
   @assert isprime(n)
   O = order(U)
-  d = Hecke.class_group_init(NfFactorBase(O, 1), SMat{fmpz}, add_rels = false)
-  return saturate!(d, U, n, stable, use_orbit = use_orbit, easy_root = easy_root, use_LLL = use_LLL)
+  clg = Hecke.ClassGrpCtx{SMat{fmpz}}()
+
+  clg.FB = Hecke.NfFactorBase(O, 1)
+
+  clg.bad_rel = 0
+  clg.rel_cnt = 0
+  clg.last = 0
+
+  clg.M = Hecke.ModuleCtx_fmpz(0)
+  clg.R_gen = Array{nf_elem, 1}()
+  clg.R_rel = Array{nf_elem, 1}()
+
+  clg.c = Hecke.conjugates_init(nf(O).pol)
+  
+  return saturate!(clg, U, n, stable, use_orbit = use_orbit, easy_root = easy_root, use_LLL = use_LLL)
 end
 
 function saturate!(d::Hecke.ClassGrpCtx, U::Hecke.UnitGrpCtx, n::Int, stable::Float64 = 3.5; use_orbit::Bool = false, easy_root::Bool = false, use_LLL::Bool = false)

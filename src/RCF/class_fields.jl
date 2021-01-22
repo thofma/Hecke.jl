@@ -390,7 +390,7 @@ For a prime $p$ in the base ring of $r$, determine the splitting type of $p$
 in $r$. ie. the tuple $(e, f, g)$ giving the ramification degree, the inertia
 and the number of primes above $p$.
 """
-function prime_decomposition_type(C::ClassField, p::NfAbsOrdIdl)
+function prime_decomposition_type(C::T, p::NfAbsOrdIdl) where T <: Union{ClassField, ClassField_pp}
   @hassert :ClassField 1 isprime(p)
   mR = C.rayclassgroupmap
   m0 = defining_modulus(C)[1]
@@ -398,19 +398,17 @@ function prime_decomposition_type(C::ClassField, p::NfAbsOrdIdl)
 
   v = valuation(m0, p)
   if v == 0
-    f = order(C.quotientmap(mR\p))
+    f = Int(order(C.quotientmap(mR\p)))
     return (1, f, divexact(degree(C), f))
   end
   r, mr = ray_class_group(divexact(m0, p^v), defining_modulus(C)[2], n_quo = Int(exponent(R)))
-
-  lp, sR = find_gens(MapFromFunc(x->preimage(mR, x), IdealSet(base_ring(C)), domain(mR)),
-                             PrimesSet(100, -1), minimum(m0))
+  lp, sR = find_gens(mR, coprime_to = minimum(m0))
   h = hom(sR, [preimage(mr, p) for p = lp])
   k, mk = kernel(GrpAbFinGenMap(C.quotientmap))
-  q, mq = quo(r, [h(mk(k[i])) for i=1:ngens(k)])
-  f = order(mq(preimage(mr, p)))
-  e = divexact(degree(C), order(q))
-  return (e, f, divexact(order(q), f))
+  q, mq = cokernel(mk*h)
+  f = Int(order(mq(preimage(mr, p))))
+  e = Int(divexact(degree(C), Int(order(q))))
+  return (e, f, Int(divexact(order(q), f)))
 end
 
 

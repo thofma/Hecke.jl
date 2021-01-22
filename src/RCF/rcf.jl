@@ -217,7 +217,7 @@ function _s_unit_for_kummer_using_Brauer(C::CyclotomicExt, f::fmpz)
     end
   end
   @vprint :ClassField 3 "Computing S-units with $(length(lP)) primes\n"
-  @vtime :ClassField 3 S, mS = NormRel._sunit_group_fac_elem_quo_via_brauer(C.Ka, lP, e)
+  @vtime :ClassField 3 S, mS = NormRel._sunit_group_fac_elem_quo_via_brauer(C.Ka, lP, e, saturate_units = true)
   KK = kummer_extension(e, FacElem{nf_elem, AnticNumberField}[mS(S[i]) for i = 1:ngens(S)])
   C.kummer_exts[lfs] = (lP, KK)
   return lP, KK

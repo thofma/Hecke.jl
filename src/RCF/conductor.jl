@@ -195,7 +195,7 @@ end
 
 Return the conductor of the abelian extension corresponding to $C$.
 """
-function conductor(C::Hecke.ClassField)
+function conductor(C::T) where T <:Union{ClassField, ClassField_pp}
 
   if isdefined(C,:conductor)
     return C.conductor
