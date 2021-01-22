@@ -430,9 +430,19 @@ end
 #
 ####################################################################################
 
+function discriminant_sign(C::ClassField)
+# Compute the sign using Brill's theorem
+  _, s = signature(C)
+  if mod(s, 2) == 0
+    return 1
+  else
+    return -1
+  end
+end
+
 function absolute_discriminant(C::ClassField)
   OK = base_ring(C)
-  return norm(discriminant(C))*discriminant(OK)^degree(C)
+  return discriminant_sign(C) * norm(discriminant(C))*discriminant(OK)^degree(C)
 end
 
 function discriminant(C::ClassField, ::FlintRationalField)
