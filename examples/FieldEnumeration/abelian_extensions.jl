@@ -189,7 +189,7 @@ function main()
         if dbound isa fmpz
           @assert absolute_discriminant(C) <= dbound
         elseif rdbound isa Float64
-          @assert absolute_discriminant(C) <= rdbound^(degree(K) * relative_deg)
+          @assert Float64(absolute_discriminant(C)) <= rdbound^(degree(K) * relative_deg)
         end
         if only_real
           @assert signature(C)[2] == 0
@@ -197,7 +197,7 @@ function main()
           @assert signature(C)[1] == 0
         end
 
-        L = absolute_field(simple_extension(number_field(C), cached = false)[1], cached = false, simplify = true)[1]
+        L = absolute_field(simple_extension(number_field(C), cached = false)[1], cached = false, simplify = simplify)[1]
         r = Hecke._create_record(L)
         r[:discriminant] = absolute_discriminant(C)
         push!(res, r)
