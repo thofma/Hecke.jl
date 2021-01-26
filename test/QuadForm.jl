@@ -8,4 +8,5 @@
   @time include("QuadForm/MassHerm.jl")
   @time include("QuadForm/Quad.jl")
   @time include("QuadForm/QuadBin.jl")
+  @time include("QuadForm/Herm.jl")
 end

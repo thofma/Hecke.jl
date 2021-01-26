@@ -6,6 +6,13 @@
   K2, a2 = NumberField(x^3 - 2, "a2")
 
   K1t, t = PolynomialRing(K1, "t")
+  F = GF(3)
+
+  Hecke.change_base_ring(::FlintRationalField, ::Hecke.gfp_mat) = error("asd")
+  @test_throws ErrorException quadratic_space(FlintQQ, F[1 2; 2 1])
+
+  Hecke.change_base_ring(::FlintRationalField, x::Hecke.gfp_mat) = x
+  @test_throws ErrorException quadratic_space(FlintQQ, F[1 2; 2 1])
 
   L, b = NumberField(t^2 + a1)
 
