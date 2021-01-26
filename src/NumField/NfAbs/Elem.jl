@@ -840,7 +840,7 @@ Tests if $a$ is a square and return the root if possible.
 """
 issquare(a::nf_elem) = ispower(a, 2)
 
-issquare_with_root(a::NumFieldElem) = issquare(a)
+issquare_with_square_root(a::NumFieldElem) = issquare(a)
 
 @doc Markdown.doc"""
     sqrt(a::nf_elem) -> nf_elem
