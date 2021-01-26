@@ -139,6 +139,16 @@ end
 
   @test (@inferred base_ring(Lr0)) isa FlintIntegerRing
 
+  @test !(@inferred issublattice(Lr2, Lr1))
+  M = Zlattice(;gram = FlintQQ[2 2; 2 2])
+  @test !(@inferred issublattice(Lr0, M))
+  @test issublattice(Lr2, Lr0)
+  @test issublattice(Lr1, lattice(V, QQ[2 0;]))
+
+  fl, rels = @inferred issublattice_with_relations(Lr1, lattice(V, QQ[2 0;]))
+  @test fl
+  @test rels == QQ[2;]
+
   # lattices of rank 0
 
   B = matrix(QQ, 0, 2, [])

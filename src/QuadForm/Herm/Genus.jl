@@ -522,6 +522,11 @@ function genus(::Type{HermLat}, E::S, p::T, data::Vector{Tuple{Int, Int, Int}}; 
   z.isdyadic = isdyadic(p)
   z.isramified = isramified(maximal_order(E), p)
   @assert !(isramified(z) && isdyadic(z))
+
+  if type !== :det && type !== :disc
+    throw(error("type :$type must be :disc or :det"))
+  end
+
   if !z.isramified || type === :det
     z.data = copy(data)
   else
