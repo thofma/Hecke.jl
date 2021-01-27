@@ -269,7 +269,6 @@ end
   V = quadratic_space(QQ, QQ[1 0 0; 0 1 0; 0 0 1])
   L = lattice(V, ZZ[1 -1 0; 0 1 -1])
   S = lattice(V, ZZ[1 -1 0;])
-  submod = orthogonal_submodule(L, S)
+  submod = Hecke.orthogonal_submodule(L, S)
   @test  basis_matrix(submod) == matrix(QQ, 1, 3, [1//2 1//2 -1])
 end
-
