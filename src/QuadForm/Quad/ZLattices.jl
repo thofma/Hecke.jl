@@ -133,6 +133,21 @@ function orthogonal_sum(L1::ZLat, L2::ZLat)
   return lattice(V, B)
 end
 
+@doc Markdown.doc"""
+    orthogonal_submodule(L::ZLat, S::ZLat) -> ZLat
+
+Return the orthogonal submodule lattice of the subset S of lattice L.
+"""
+function orthogonal_submodule(L::ZLat, S::ZLat)
+  @assert issublattice(L, S) "S is not a sublattice of L"
+  B = basis_matrix(L)
+  C = basis_matrix(S)
+  V = ambient_space(L)
+  G = gram_matrix(V)
+  M = B * G * transpose(C)
+  K = left_kernel(M)
+  return lattice(V, K[2]*B) #this will be the orthogonal submodule of S
+end
 ################################################################################
 #
 #  String I/O

@@ -263,4 +263,12 @@ end
   L = Zlattice(gram=G)
   @test norm(L) == 0
   @test scale(L) == 0
+
+
+  #orthogonal submodule of a lattice
+  V = quadratic_space(QQ, QQ[1 0 0; 0 1 0; 0 0 1])
+  L = lattice(V, ZZ[1 -1 0; 0 1 -1])
+  S = lattice(V, ZZ[1 -1 0;])
+  submod = Hecke.orthogonal_submodule(L, S)
+  @test  basis_matrix(submod) == matrix(QQ, 1, 3, [1//2 1//2 -1])
 end
