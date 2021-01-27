@@ -534,7 +534,7 @@ end
 function test_module(x, new::Bool = true)
    julia_exe = Base.julia_cmd()
    # On Windows, we also allow bla/blub"
-   x = _adjust_path
+   x = _adjust_path(x)
    if x == "all"
      test_file = joinpath(pkgdir, "test", "runtests.jl")
    else

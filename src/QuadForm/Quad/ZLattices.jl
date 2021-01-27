@@ -357,6 +357,47 @@ end
 
 ################################################################################
 #
+#  Is sublattice?
+#
+################################################################################
+
+function issublattice(M::ZLat, N::ZLat)
+  if ambient_space(M) != ambient_space(N)
+    return false
+  end
+
+  hassol, _rels = can_solve_with_solution(basis_matrix(M), basis_matrix(N), side=:left)
+
+  if !hassol || !isone(denominator(_rels))
+    return false
+  end
+
+  return true
+end
+
+@doc Markdown.doc"""
+    issublattice_with_relations(M::ZLat, N::ZLat) -> Bool, fmpq_mat
+
+Returns whether $N$ is a sublattice of $N$. In this case, the second return
+value is a matrix $B$ such that $B B_M = B_N$, where $B_M$ and $B_N$ are the
+basis matrices of $M$ and $N$ respectively.
+"""
+function issublattice_with_relations(M::ZLat, N::ZLat)
+   if ambient_space(M) != ambient_space(N)
+     return false, basis_matrix(M)
+   end
+
+   hassol, _rels = can_solve_with_solution(basis_matrix(M), basis_matrix(N), side=:left)
+
+   if !hassol || !isone(denominator(_rels))
+     return false, basis_matrix(M)
+   end
+
+   return true, _rels
+ end
+
+################################################################################
+#
 #  Root lattice
 #
 ################################################################################
