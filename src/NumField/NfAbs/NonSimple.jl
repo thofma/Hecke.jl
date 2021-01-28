@@ -1002,7 +1002,12 @@ function symbols(E::NfAbsNS)
   return vars(E)
 end
 function Base.names(E::NfAbsNS)
-  return String[string(x) for x in vars(E)]
+  v = vars(E)
+  res = Vector{String}(undef, length(v))
+  for i = 1:length(res)
+    res[i] = string(v[i])
+  end
+  return res
 end
 
 function (K::NfAbsNS)(a::fmpq_mpoly, red::Bool = true)

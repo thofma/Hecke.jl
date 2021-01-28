@@ -104,7 +104,7 @@ end
 #
 ################################################################################
 
-function Base.:(*)(c::T, f::QuadBin{T}) where {T}
+function Base.:(*)(c::T, f::QuadBin{T}) where T <: RingElem
   return binary_quadratic_form(c * f[1], c * f[2], c * f[3])
 end
 
@@ -112,7 +112,7 @@ function Base.:(*)(c::Union{Integer, fmpz}, f::QuadBin)
   return binary_quadratic_form(c * f[1], c * f[2], c * f[3])
 end
 
-function divexact(f::QuadBin{T}, c::T) where {T}
+function divexact(f::QuadBin{T}, c::T) where T <: RingElem
   return binary_quadratic_form(divexact(f[1], c), divexact(f[2], c),
                                                   divexact(f[3], c))
 end
