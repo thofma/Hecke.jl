@@ -108,7 +108,11 @@ function Base.:(*)(c::T, f::QuadBin{T}) where T <: RingElem
   return binary_quadratic_form(c * f[1], c * f[2], c * f[3])
 end
 
-function Base.:(*)(c::Union{Integer, fmpz}, f::QuadBin)
+function Base.:(*)(c::fmpz, f::QuadBin{T}) where T <: RingElem
+  return binary_quadratic_form(c * f[1], c * f[2], c * f[3])
+end
+
+function Base.:(*)(c::Integer, f::QuadBin)
   return binary_quadratic_form(c * f[1], c * f[2], c * f[3])
 end
 
