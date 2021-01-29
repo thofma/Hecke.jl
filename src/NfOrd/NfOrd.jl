@@ -823,7 +823,7 @@ whether $B$ defines an order. If `isbasis` is set, then elements are assumed to 
 a $\Z$-basis.
 """
 function Order(::S, a::Array{T, 1}; check::Bool = true, isbasis::Bool = false,
-               cached::Bool = false) where {S <: Union{AnticNumberField, NfAbsNS}, T <: Union{nf_elem, NfAbsNSElem}}
+               cached::Bool = false) where {S <: NumField{fmpq}, T <: NumFieldElem{fmpq}}
   K = parent(a[1])
   if isbasis
     if check
@@ -859,7 +859,7 @@ Returns the order which has basis matrix $A$ with respect to the power basis
 of $K$. If `check` is set, it is checked whether $A$ defines an order.
 """
 function Order(K::S, a::FakeFmpqMat; check::Bool = true,
-               cached::Bool = false) where {S <: Union{AnticNumberField, NfAbsNS}}
+               cached::Bool = false) where {S <: NumField{fmpq}}
   if check
     b, ainv, d = defines_order(K, a)
     if !b
@@ -1053,7 +1053,7 @@ The equation order of the number field.
 equation_order(M::NfAbsOrd) = equation_order(nf(M))
 
 
-function _order(K::S, elt::Array{T, 1}; cached::Bool = true, check::Bool = true) where {S <: Union{AnticNumberField, NfAbsNS}, T}
+function _order(K::S, elt::Array{T, 1}; cached::Bool = true, check::Bool = true) where {S <: NumField{fmpq}, T}
   n = degree(K)
 
   bas = elem_type(K)[one(K)]
