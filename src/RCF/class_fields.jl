@@ -22,6 +22,8 @@ mutable struct ClassField_pp{S, T}
   sup::Array{NfOrdIdl, 1} # the support of a - if known
   sup_known::Bool
 
+  factored_conductor::Dict{NfOrdIdl, Int}
+
   K::NfRel{nf_elem} # the target with the roots of unity
   A::NfRel{nf_elem} # the target
   o::Int # the degree of K - note, in general this is a divisor of the degree of A
@@ -60,6 +62,7 @@ mutable struct ClassField{S, T}
   rayclassgroupmap::S#Union{MapRayClassGrp{GrpAbFinGen}, MapClassGrp{GrpAbFinGen}}
   quotientmap::T#GrpAbFinGenMap
 
+  factored_conductor::Dict{NfOrdIdl, Int}
   conductor::Tuple{NfOrdIdl, Array{InfPlc, 1}}
   relative_discriminant::Dict{NfOrdIdl, Int}
   absolute_discriminant::Dict{fmpz,Int}
@@ -390,7 +393,7 @@ For a prime $p$ in the base ring of $r$, determine the splitting type of $p$
 in $r$. ie. the tuple $(e, f, g)$ giving the ramification degree, the inertia
 and the number of primes above $p$.
 """
-function prime_decomposition_type(C::ClassField, p::NfAbsOrdIdl)
+function prime_decomposition_type(C::T, p::NfAbsOrdIdl) where T <: Union{ClassField, ClassField_pp}
   @hassert :ClassField 1 isprime(p)
   mR = C.rayclassgroupmap
   m0 = defining_modulus(C)[1]
@@ -398,19 +401,17 @@ function prime_decomposition_type(C::ClassField, p::NfAbsOrdIdl)
 
   v = valuation(m0, p)
   if v == 0
-    f = order(C.quotientmap(mR\p))
+    f = Int(order(C.quotientmap(mR\p)))
     return (1, f, divexact(degree(C), f))
   end
   r, mr = ray_class_group(divexact(m0, p^v), defining_modulus(C)[2], n_quo = Int(exponent(R)))
-
-  lp, sR = find_gens(MapFromFunc(x->preimage(mR, x), IdealSet(base_ring(C)), domain(mR)),
-                             PrimesSet(100, -1), minimum(m0))
+  lp, sR = find_gens(mR, coprime_to = minimum(m0))
   h = hom(sR, [preimage(mr, p) for p = lp])
   k, mk = kernel(GrpAbFinGenMap(C.quotientmap))
-  q, mq = quo(r, [h(mk(k[i])) for i=1:ngens(k)])
-  f = order(mq(preimage(mr, p)))
-  e = divexact(degree(C), order(q))
-  return (e, f, divexact(order(q), f))
+  q, mq = cokernel(mk*h)
+  f = Int(order(mq(preimage(mr, p))))
+  e = Int(divexact(degree(C), Int(order(q))))
+  return (e, f, Int(divexact(order(q), f)))
 end
 
 

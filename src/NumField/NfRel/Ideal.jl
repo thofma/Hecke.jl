@@ -333,9 +333,9 @@ end
 
 Creates the ideal $a \cdot \mathcal O$ of $\mathcal O$.
 """
-*(O::NfRelOrd{T, S}, a::S) where {T, S} = fractional_ideal(O, a)
+*(O::NfRelOrd{T, S, U}, a::S) where {T, S <: Union{NfOrdFracIdl, NfRelOrdFracIdl}, U} = fractional_ideal(O, a)
 
-*(a::S, O::NfRelOrd{T, S}) where {T, S} = fractional_ideal(O, a)
+*(a::S, O::NfRelOrd{T, S}) where {T, S <: Union{NfOrdFracIdl, NfRelOrdFracIdl}} = fractional_ideal(O, a)
 
 *(O::NfRelOrd, a::Union{NfOrdIdl, NfRelOrdIdl}) = ideal(O, a)
 
@@ -591,7 +591,7 @@ end
 
 Returns the ideal $x\cdot a$.
 """
-function *(a::NfRelOrdIdl{T, S}, x::T) where {T, S}
+function *(a::NfRelOrdIdl{T, S, U}, x::T) where {T <: NumFieldElem, S, U <: NumFieldElem}
   if iszero(x)
     return ideal(order(a), 0)
   end
@@ -599,7 +599,7 @@ function *(a::NfRelOrdIdl{T, S}, x::T) where {T, S}
   return ideal(order(a), x*basis_pmatrix(a), true, true)
 end
 
-*(x::T, a::NfRelOrdIdl{T, S}) where {T, S} = a*x
+*(x::T, a::NfRelOrdIdl{T, S, U}) where {T <: NumFieldElem, S, U <: NumFieldElem} = a*x
 
 function *(a::Union{NfRelOrdIdl, NfRelOrdFracIdl}, x::Union{ Int, fmpz })
   if iszero(x)

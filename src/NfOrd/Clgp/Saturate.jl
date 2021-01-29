@@ -118,41 +118,39 @@ function relations_matrix(c::Hecke.ClassGrpCtx)
   return v
 end
 
-function compute_candidates_for_saturate(c::Hecke.ClassGrpCtx, p::Int, stable::Float64 = 1.5)
-  ZK = order(c.FB.ideals[1])
-  K = nf(ZK)
-  zeta, sT = Hecke.torsion_units_gen_order(K)
 
-  @vprint :Saturate 3 "Reducing exponents\n"
-  R = relations_mod_powers(c, p)
-  if gcd(sT, p) != 1 && !(hash(zeta) in c.RS) # && order is promising...
-    push!(R, FacElem(zeta))
+function compute_candidates_for_saturate(v::Vector{FacElem{nf_elem, AnticNumberField}}, p::Int, stable::Float64 = 1.5)
+  K = base_ring(v[1])
+  OK = maximal_order(K)
+  zeta, sT = Hecke.torsion_units_gen_order(K)
+  v1 = FacElem{nf_elem, AnticNumberField}[_mod_exponents(x, p) for x in v]
+  if gcd(sT, p) != 1
+    push!(v1, FacElem(zeta))
   end
-  @vprint :Saturate 3 "Done\n"
 
   T = GF(p, cached = false)
-  cA = length(R)
+  cA = length(v1)
   A = identity_matrix(T, cA)
   
   S = Hecke.PrimesSet(Hecke.p_start, -1, p, 1)
 
-  D = Vector{Vector{gfp_poly}}(undef, length(R))
-  for i in 1:length(R)
-    D[i] = Vector{gfp_poly}(undef, length(R[i].fac))
+  D = Vector{Vector{gfp_poly}}(undef, length(v1))
+  for i in 1:length(v1)
+    D[i] = Vector{gfp_poly}(undef, length(v1[i].fac))
   end
-  dK = discriminant(ZK) 
+  dK = discriminant(OK) 
   threshold = stable*ncols(A)
 
   i = 1
   for q in S
     @vprint :Saturate 3 "Finding primes for saturation: $i/$(threshold)\n"
-    if isdefining_polynomial_nice(K) && isindex_divisor(ZK, q)
+    if isdefining_polynomial_nice(K) && isindex_divisor(OK, q)
       continue
     end
     if iszero(dK % q)
       continue
     end
-    @vtime :Saturate 3 lq = prime_decomposition(ZK, q, 1)
+    @vtime :Saturate 3 lq = prime_decomposition(OK, q, 1)
     if isempty(lq)
       continue
     end
@@ -161,15 +159,15 @@ function compute_candidates_for_saturate(c::Hecke.ClassGrpCtx, p::Int, stable::F
     for Q in lq
       try
         if first_prime
-          @vtime :Saturate 3 z = mod_p(R, Q[1], Int(p), T, D, false)
+          @vtime :Saturate 3 z = mod_p(v1, Q[1], Int(p), T, D, false)
           first_prime = false
         else
-          @vtime :Saturate 3 z = mod_p(R, Q[1], Int(p), T, D, true)
+          @vtime :Saturate 3 z = mod_p(v1, Q[1], Int(p), T, D, true)
         end
         z = z*A
         rrz, z = nullspace(z)
         if iszero(rrz)
-          return zero_matrix(FlintZZ, 0, length(R))
+          return zero_matrix(FlintZZ, 0, length(v1))
         end
         A = A*sub(z, 1:nrows(z), 1:rrz)
         if cA == ncols(A) 
@@ -192,6 +190,7 @@ function compute_candidates_for_saturate(c::Hecke.ClassGrpCtx, p::Int, stable::F
     end
   end
   return Hecke.lift_nonsymmetric(A)
+
 end
 
 
@@ -358,13 +357,60 @@ end
 function saturate!(U::Hecke.UnitGrpCtx, n::Int, stable::Float64 = 3.5; use_orbit::Bool = false, easy_root::Bool = false, use_LLL::Bool = false)
   @assert isprime(n)
   O = order(U)
-  d = Hecke.class_group_init(NfFactorBase(O, 1), SMat{fmpz}, add_rels = false)
-  return saturate!(d, U, n, stable, use_orbit = use_orbit, easy_root = easy_root, use_LLL = use_LLL)
+  K = nf(O)
+  success = false
+  restart = false
+  decom = Dict{NfOrdIdl, fmpz}()
+  while true
+    @vprint :Saturate 1 "Computing candidates for the saturation\n"
+    R = U.units
+    @vtime :Saturate 1 e = compute_candidates_for_saturate(R, n, stable)
+    if nrows(e) == 0
+      @vprint :Saturate 1 "sat yielded nothing new at $stable, $success \n"
+      return success
+    end
+    zeta = Hecke.torsion_units_generator(K)
+    @vprint :Saturate 1 "(Hopefully) enlarging by $(ncols(e)) elements\n"
+
+    wasted = false
+    for i = ncols(e):-1:1
+      a  = FacElem(one(K))
+      for j = 1:length(R)
+        if !iszero(e[j, i])
+          mul!(a, a, R[j]^e[j, i])
+        end
+      end
+      if nrows(e) > length(R) && !iszero(e[nrows(e), i])
+        @assert length(R) + 1 == nrows(e)
+        Hecke.add_to_key!(a.fac, zeta, e[nrows(e), i])
+      end
+      @vprint :Saturate 1 "Testing if element is an n-th power\n"
+      @vtime :Saturate 1 fl, x = ispower(a, n, decom = decom, easy = easy_root)
+      if fl
+        @vprint :Saturate 1  "The element is an n-th power\n"
+        success = true
+        Hecke._add_dependent_unit!(U, x)
+      else
+        @vprint :Saturate 1  "The element is not an n-th power\n"
+        wasted = true
+        break
+      end
+    end
+    if restart
+      restart = false
+      continue
+    elseif wasted 
+      stable *= 2
+    else
+      @vprint :Saturate  1 "sat success at $(stable)\n"
+      return success
+    end
+  end
 end
 
 function saturate!(d::Hecke.ClassGrpCtx, U::Hecke.UnitGrpCtx, n::Int, stable::Float64 = 3.5; use_orbit::Bool = false, easy_root::Bool = false, use_LLL::Bool = false)
   @assert isprime(n)
-  K = nf(d)
+  K = nf(U)
   @vprint :Saturate 1 "Simplifying the context\n"
   @vtime :Saturate 1 c = simplify(d, U, n, use_LLL = use_LLL)
   success = false
@@ -375,7 +421,8 @@ function saturate!(d::Hecke.ClassGrpCtx, U::Hecke.UnitGrpCtx, n::Int, stable::Fl
       @vtime :Saturate 1 c = simplify(d, U, n, use_LLL = use_LLL)
     end
     @vprint :Saturate 1 "Computing candidates for the saturation\n"
-    @vtime :Saturate 1 e = compute_candidates_for_saturate(c, n, stable)
+    R = relations(c)
+    @vtime :Saturate 1 e = compute_candidates_for_saturate(R, n, stable)
     if nrows(e) == 0
       @vprint :Saturate 1 "sat yielded nothing new at $stable, $success \n"
       return success
@@ -384,7 +431,6 @@ function saturate!(d::Hecke.ClassGrpCtx, U::Hecke.UnitGrpCtx, n::Int, stable::Fl
     @vprint :Saturate 1 "(Hopefully) enlarging by $(ncols(e)) elements\n"
 
     rels_added = sparse_matrix(FlintZZ)
-    R = relations(c)
     R_mat = relations_matrix(c)
     wasted = false
     for i = ncols(e):-1:1

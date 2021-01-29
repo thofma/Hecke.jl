@@ -186,11 +186,11 @@ function fractional_ideal(O::NfRelOrd{T, S, U}, x::U) where {T, S, U}
   return NfRelOrdFracIdl{T, S, U}(O, PM)
 end
 
-*(O::NfRelOrd{T, S, U}, x::U) where {T, S, U} = fractional_ideal(O, x)
+*(O::NfRelOrd{T, S, U}, x::U) where {T, S, U <: NumFieldElem} = fractional_ideal(O, x)
 
-*(x::U, O::NfRelOrd{T, S, U}) where {T, S, U} = fractional_ideal(O, x)
+*(x::U, O::NfRelOrd{T, S, U}) where {T, S, U <: NumFieldElem} = fractional_ideal(O, x)
 
-function fractional_ideal(O::NfRelOrd{T, S, U}, a::NfRelOrdIdl{T, S, U}) where {T, S, U}
+function fractional_ideal(O::NfRelOrd{T, S, U}, a::NfRelOrdIdl{T, S, U}) where {T, S, U <: NumFieldElem}
   return fractional_ideal(O, basis_pmatrix(a), true)
 end
 
@@ -206,7 +206,7 @@ end
 #
 ################################################################################
 
-function Base.deepcopy_internal(a::NfRelOrdFracIdl{T, S, U}, dict::IdDict) where {T, S, U}
+function Base.deepcopy_internal(a::NfRelOrdFracIdl{T, S, U}, dict::IdDict) where {T, S, U <: NumFieldElem}
   z = NfRelOrdFracIdl{T, S, U}(a.order)
   for x in fieldnames(typeof(a))
     if x != :order && x != :parent && isdefined(a, x)

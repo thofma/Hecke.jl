@@ -189,12 +189,12 @@ function *(b::T, a::AlgMatElem) where {T <: RingElem}
   return A(b*matrix(a, copy = false))::elem_type(A)
 end
 
-function *(a::AlgMatElem{S, T, U}, b::U) where { S, T, U }
+function *(a::AlgMatElem{S, T, U}, b::U) where { S, T, U <: MatElem }
   A = parent(a)
   return A(matrix(a, copy = false)*b)
 end
 
-function *(b::U, a::AlgMatElem{S, T, U}) where { S, T, U }
+function *(b::U, a::AlgMatElem{S, T, U}) where { S, T, U <: MatElem }
   A = parent(a)
   return A(b*matrix(a, copy = false))
 end

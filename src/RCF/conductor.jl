@@ -145,7 +145,7 @@ Return the signature of the number field defined by $C$.
 function signature(C::ClassField)
   mR = C.rayclassgroupmap
   mS = C.quotientmap
-  inf_plc = mR.defining_modulus[2]
+  inf_plc = defining_modulus(mR)[2]
   K = base_field(C)
   rK, sK = signature(K)
   if isempty(inf_plc)
@@ -195,7 +195,7 @@ end
 
 Return the conductor of the abelian extension corresponding to $C$.
 """
-function conductor(C::Hecke.ClassField)
+function conductor(C::T) where T <:Union{ClassField, ClassField_pp}
 
   if isdefined(C,:conductor)
     return C.conductor
@@ -208,8 +208,7 @@ function conductor(C::Hecke.ClassField)
   #  First, we need to find the subgroup
   #
 
-  cond = mR.defining_modulus[1]
-  inf_plc = mR.defining_modulus[2]
+  cond, inf_plc = defining_modulus(C)
   O = order(cond)
   if isone(cond) && isempty(inf_plc)
     return ideal(O,1), InfPlc[]
@@ -282,6 +281,7 @@ function conductor(C::Hecke.ClassField)
     end
   end
   cond = ideal(O,1)
+  C.factored_conductor = L
   for (p,vp) in L
     cond *= p^vp
   end
