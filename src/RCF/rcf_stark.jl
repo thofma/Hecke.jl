@@ -129,7 +129,6 @@ function rcf_using_stark_units(C::T; cached::Bool = true) where T <: ClassField_
   while true
     approximations_derivative_Artin_L_functions = approximate_derivative_Artin_L_function(chars, p)
     @show el = approximate_artin_zeta_derivative_at_0(C1, approximations_derivative_Artin_L_functions)
-    error("stop")
     f = find_defining_polynomial(K, el, real_places(K)[1])
     if degree(f) != degree(C)
       p *= 2 
@@ -169,9 +168,7 @@ function find_defining_polynomial(K::AnticNumberField, el::Vector{acb}, v::InfPl
     bound_v = upper_bound(coeffs[i+1], fmpz)
     bound = max((n-1)*bound_other_embs^2+bound_v, bound)
   end
-  if !fits(Int, bound)
-    bound = 20000000000
-  end
+ 
   #Now, I have a polynomial over the reals. I use lattice enumeration to recover the 
   #coefficients as elements of K
   gram_mat = trace_matrix(OK) #The field is totally real :)
@@ -256,9 +253,9 @@ function approximate_artin_zeta_derivative_at_0(C::ClassField, D::Dict{S, T}) wh
   for x in codomain(C.quotientmap)
     v = zero(CC)
     for k in ks
-      v += D[k]*k(x, CC.prec)
+      v += D[k]*_conjugate(k)(x, CC.prec)
     end
-    push!(Dzeta, v)
+    push!(Dzeta, v//(degree(C)))
   end
   return Dzeta
 end
@@ -331,14 +328,15 @@ function artin_root_number(chi::RCFCharacter, prec::Int)
     Gsum += chi(ideal(OK, reps[i]), prec) * exppii(2*R(tr((reps[i]*u).elem_in_nf//lambda.elem_in_nf)))
   end
   Gsum *= chi(h, prec)
-  return (-onei(R))^length(chi.conductor_inf_plc)*Gsum/sqrt(R(norm(c)))
+  res = (-onei(R))^length(chi.conductor_inf_plc)*Gsum/sqrt(R(norm(c)))
+  return res
 end
 
 
 function _lambda(chi::RCFCharacter, prec::Int, nterms::Int)
   K = base_field(chi.C)
   coeffs_chi, coeffs_chi_bar = first_n_coefficients_L_function_and_conj(chi, nterms, prec)
-  Wchibar = artin_root_number(_conjugate(chi), prec)
+  Wchibar = artin_root_number(chi, prec)
   CC = AcbField(prec)
   res1 = zero(CC)
   res2 = zero(CC)
@@ -359,7 +357,7 @@ function _C(chi::RCFCharacter, prec::Int)
   nc = norm(c)
   p = const_pi(RR)
   d = abs(discriminant(OK))
-  return sqrt(RR(d*nc)/p^degree(OK))
+  return sqrt(RR(d*nc)/(p^degree(OK)))
 end
 
 #C is the class field
@@ -412,10 +410,9 @@ function first_n_coefficients_L_function_and_conj(chi::RCFCharacter, n::Int, pre
 end
 
 function _evaluate_f_x_0_1(x::arb, n::Int, prec::Int, nterms::Int)
-  CC = AcbField(prec)
   RR = ArbField(prec)
-  res0 = zero(CC)
-  res1 = zero(CC)
+  res0 = zero(RR)
+  res1 = zero(RR)
   factorials = Vector{fmpz}(undef, n+1)
   factorials[1] = fmpz(1)
   for i = 2:n+1
@@ -430,6 +427,7 @@ function _evaluate_f_x_0_1(x::arb, n::Int, prec::Int, nterms::Int)
   for j = 1:n
     res1 += (aij1[j]*powslogx[j])/factorials[j]
   end
+  res1 += x*gamma(fmpq(1, 2), RR)^n
   
   aij0 = _Aij_at_0(0, n, aijs)
   for j = 1:n+1
@@ -439,20 +437,20 @@ function _evaluate_f_x_0_1(x::arb, n::Int, prec::Int, nterms::Int)
   for i = 1:nterms
     aijs = _compute_A_coeffs(n, i, prec)
     aij1 = _Aij_at_1(i, n, aijs)
-    auxres1 = zero(CC)
+    auxres1 = zero(RR)
     for j = 1:n
       auxres1 += (aij1[j]*powslogx[j])/factorials[j]
     end
     res1 += x^(-i)*auxres1
     
     aij0 = _Aij_at_0(i, n, aijs)
-    auxres0 = zero(CC)
+    auxres0 = zero(RR)
     for j = 1:n
       auxres0 += (aij0[j]*powslogx[j])/factorials[j]
     end
     res0 += x^(-i)*auxres0
   end
-  res1 += x*gamma(CC(1//2))^n
+ 
   
   return res0, res1
 
@@ -460,15 +458,26 @@ end
 
 function _Aij_at_0(i::Int, n::Int, aij::Vector{arb})
   #aij starts with ai0 and finishes with ain
+  CC = parent(aij[1])
   if iszero(i)
+    #=
+    ev = CC(-i)+CC(0.001)
+    @show gamma(ev/2)^n/ev
+    @show sum(aij[j]/((ev+i)^j) for j = 1:n+1)
+    =#
     return aij
   end
-  CC = parent(aij[1])
   D = Vector{arb}(undef, n+1)
   D[n+1] = zero(CC)
   for j = n:-1:1
     D[j] = (D[j+1] - aij[j+1])/i
   end
+
+  #=
+  ev = CC(-i)+CC(0.001)
+  @show gamma(ev/2)^n/ev
+  @show sum(D[j]/((ev+i)^j) for j = 1:n+1)
+  =#
   return D
 end
 
@@ -498,23 +507,27 @@ function _compute_A_coeffs(n::Int, i::Int, prec::Int)
     CCx = PowerSeriesRing(CC, n+1, "x", cached = false)[1]
     pol_g = CCx(vg, length(vg), n+1, 1)
     exp_g = exp(pol_g)
-    pol2 = CCx(div((-1)^(q*n)*fmpz(2)^n, factorial(fmpz(q))^n))
+    pol2 = (-1)^(q*n)*CC(fmpq(fmpz(2), factorial(fmpz(q)))^n)
     polres = pol2*exp_g
     for j = 0:n
       res[j+1] = coeff(polres, j)
     end
     reverse!(res)
   else
-    vg = _compute_g_odd(i, n, prec)
     q = divexact(i-1, 2)
-    res[1] = vg*(-1)^((q+1)*n)
-    res[1] *= const_pi(CC)^(CC(n)/2)*2^(n*i)
-    res[1] = res[1]/divexact(factorial(fmpz(i)), factorial(fmpz(q)))^n
+    res[1] = (-1)^((q+1)*n)*const_pi(CC)^(CC(n)/2)*2^(n*i)
+    res[1] = res[1]/(divexact(factorial(fmpz(i)), factorial(fmpz(q)))^n)
     for j = 2:n+1
       res[j] = zero(CC)
     end
-    reverse!(res)
   end
+  #Small test
+  #=
+    ev = CC(-i+0.001)
+    @show gamma(ev/2)^n
+    @show sum(res[j+1]/((i+ev))^j for j = 0:n)  
+  =#
+
   return res
 end
 
@@ -530,15 +543,11 @@ function _compute_g_even(i::Int, n::Int, prec::Int)
   CC = ArbField(prec)
   q = divexact(i, 2)
   v = Vector{arb}(undef, n)
-  v[1] = -const_euler(CC)*fmpq(n, 2) + fmpq(n, 2)*_H(q, 1)
+  n2 = fmpq(n, 2)
+  v[1] = -const_euler(CC)*n2 + n2*_H(q, 1)
   for k = 2:n
-    v[k] = ((-1)^k*zeta(k, CC)*fmpq(n, 2^k) + fmpq(n, 2^k)*_H(q, k))/k
+    n2 = n2//2
+    v[k] = ((-1)^k*zeta(k, CC)*n2 + n2*_H(q, k))/k
   end
-  return v
-end
-
-function _compute_g_odd(i::Int, n::Int, prec::Int)
-  CC = ArbField(prec)
-  v = -const_euler(CC)*n*fmpq(1, 2) + n*_H(i, 1) + n * _H(div(i-1, 2), 1) -n*log(CC(2))
   return v
 end
