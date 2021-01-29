@@ -1140,7 +1140,7 @@ function _isisotropic_with_vector(F::MatrixElem)
     end
   end
 
-  fl, y = issquare_with_root(-D[1]//D[2])
+  fl, y = issquare_with_square_root(-D[1]//D[2])
   if fl
     return true, elem_type(K)[T[1, k] + y * T[2, k] for k in 1:ncols(T)]
   elseif length(D) == 2

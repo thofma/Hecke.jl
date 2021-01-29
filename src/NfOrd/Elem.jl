@@ -381,8 +381,12 @@ iszero(a::NfAbsOrdElem) = iszero(a.elem_in_nf)
 #
 ################################################################################
 
-function show(io::IO, a::NfAbsOrdElem)
-  print(io, a.elem_in_nf)
+function AbstractAlgebra.expressify(a::NfAbsOrdElem; context = nothing)
+  return AbstractAlgebra.expressify(a.elem_in_nf, context = context)
+end
+
+function show(io::IO, x::NfAbsOrdElem)
+  print(io, AbstractAlgebra.obj_to_string(x, context = io))
 end
 
 ################################################################################

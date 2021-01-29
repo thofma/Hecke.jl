@@ -809,6 +809,8 @@ end
 
 Base.getindex(D::NFDB, i::Int) = D.fields[i]
 
+Base.eltype(::Type{NFDB{T}}) where {T} = NFDBRecord{T}
+
 function Base.read(file::String, ::Type{NFDB})
   metadata = Dict()
   f = open(file)

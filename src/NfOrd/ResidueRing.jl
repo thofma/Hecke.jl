@@ -116,7 +116,7 @@ function show(io::IO, Q::AbsOrdQuoRing)
 end
 
 function AbstractAlgebra.expressify(x::AbsOrdQuoRingElem; context = nothing)
-  return AbstractAlgebra.expressify(x, context = context)
+  return AbstractAlgebra.expressify(x.elem, context = context)
 end
 
 function show(io::IO, x::AbsOrdQuoRingElem)
