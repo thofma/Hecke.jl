@@ -34,7 +34,8 @@
 
 export PrimeIdealsSet, prime_ideals_over, ramification_index,
        prime_ideals_up_to, decomposition_group, inertia_subgroup,
-       ramification_group, isramified, istamely_ramified, isweakly_ramified
+       ramification_group, isramified, istamely_ramified, isweakly_ramified,
+       approximate
 
 @doc Markdown.doc"""
     isramified(O::NfOrd, p::Int) -> Bool

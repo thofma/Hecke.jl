@@ -50,7 +50,7 @@ function MaximalOrder(O::NfAbsOrd{S, T}; index_divisors::Vector{fmpz} = fmpz[], 
 end
 
 @doc Markdown.doc"""
-    MaximalOrder(K::Union{AnticNumberField, NfAbsNS}; discriminant::fmpz, ramified_primes::Vector{fmpz}) -> NfAbsOrd
+    MaximalOrder(K::NumField{fmpq}; discriminant::fmpz, ramified_primes::Vector{fmpz}) -> NfAbsOrd
 
 Returns the maximal order of $K$. Additional information can be supplied if they are already known, as the ramified primes
 or the discriminant of the maximal order.

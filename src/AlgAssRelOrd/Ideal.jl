@@ -635,7 +635,7 @@ end
 
 Returns the ideal $a*x$ respectively $x*a$.
 """
-function *(a::AlgAssRelOrdIdl{S, T, U}, x::Union{ Int, fmpz, NfAbsOrdElem, NfRelOrdElem, S }) where { S, T, U }
+function *(a::AlgAssRelOrdIdl{S, T, U}, x::Union{ Int, fmpz, NfAbsOrdElem, NfRelOrdElem, S }) where { S <: NumFieldElem, T, U }
   if iszero(x)
     return _zero_ideal(algebra(a))
   end
@@ -653,9 +653,9 @@ function *(a::AlgAssRelOrdIdl{S, T, U}, x::Union{ Int, fmpz, NfAbsOrdElem, NfRel
 end
 
 # Let's assume the base ring of algebra(a) is commutative (it should be a field)
-*(x::Union{ Int, fmpz, NfAbsOrdElem, NfRelOrdElem, S }, a::AlgAssRelOrdIdl{S, T, U}) where { S, T, U } = a*x
+*(x::Union{ Int, fmpz, NfAbsOrdElem, NfRelOrdElem, S }, a::AlgAssRelOrdIdl{S, T, U}) where { S <: NumFieldElem, T, U } = a*x
 
-function *(a::AlgAssRelOrdIdl{S, T, U}, x::AbsAlgAssElem{S}) where { S, T, U }
+function *(a::AlgAssRelOrdIdl{S, T, U}, x::AbsAlgAssElem{S}) where { S <: NumFieldElem, T, U }
   if iszero(x)
     return _zero_ideal(algebra(a))
   end

@@ -255,7 +255,7 @@ end
 #
 ################################################################################
 
-Base.enumerate(G::Generic.SymmetricGroup) = enumerate(AllPerms(G.n))
+Base.enumerate(G::Generic.SymmetricGroup{T}) where T <: Integer = enumerate(Generic.AllPerms(G.n))
 
 ################################################################################
 #
