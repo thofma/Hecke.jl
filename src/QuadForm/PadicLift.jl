@@ -87,8 +87,10 @@ function _Hensel_qf(Z::nmod_mat, G::nmod_mat, F::nmod_mat, a, b, p)
   return F
 end
 
-@doc Markdown.doc"""_Hensel_qf_modular_odd(Z::nmod_mat, G::nmod_mat, F::nmod_mat, a, b)
-    Helper function for `_Hensel_qf`.
+@doc Markdown.doc"""
+    _Hensel_qf_modular_odd(Z::nmod_mat, G::nmod_mat, F::nmod_mat, a, b)
+
+Helper function for `_Hensel_qf`.
 
 `Z,G` are assumed to be modular symmetric matrices
 We require that the triple `(Z,G,F)` is `a`-adapted.
@@ -294,5 +296,4 @@ function _Hensel_qf_modular_even(Z::nmod_mat, G::nmod_mat, F::nmod_mat, a, b)
   @assert _min_val(diagonal(Z-F*G*F'),2) >= b + 1
   return F
 end
-
 
