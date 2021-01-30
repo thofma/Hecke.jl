@@ -221,7 +221,9 @@ function Hensel_qf(G::nmod_mat, F::nmod_mat, a, b, p)
   return F
 end
 
-@doc Markdown.doc"""_block_indices_vals(G::nmod_mat, p)
+@doc Markdown.doc"""
+    _block_indices_vals(G::nmod_mat, p)
+
 Return a list of indices and a list of valuation of the homogeneous blocks.
 
 `G` is assumed to be a symmetric `p`-adic block diagonal matrix with modular blocks
