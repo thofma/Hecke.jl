@@ -178,7 +178,9 @@ function _solve_X(Y::gfp_mat, b, g, ker=false)
   return X
 end
 
-@doc Markdown.doc"""Hensel_qf(G::nmod_mat, F::nmod_mat, a, b, p)
+@doc Markdown.doc"""
+    Hensel_qf(G::nmod_mat, F::nmod_mat, a, b, p)
+
 Lift `F` modulo `p^n` satisfying `G == F * G * F'`.
 
 - `G` -- a block diagonal matrix of the form
