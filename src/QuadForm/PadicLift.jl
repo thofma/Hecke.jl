@@ -112,9 +112,10 @@ function _solve_X(Y::nmod_mat, b, g, ker=false)
   return _solve_X(Y, b, g, ker)
 end
 
-@doc Markdown.doc"""_solve_X(Y::gfp_mat, b, g, ker=false) -> gfp_mat
-    Solve a certain linear equation mod `2`.
+@doc Markdown.doc"""
+    _solve_X(Y::gfp_mat, b, g, ker=false) -> gfp_mat
 
+Solve a certain linear equation mod `2`.
 This is a helper function for `_Hensel_qf_modular_even`.
 
 $$Y = X + X^T$$
@@ -296,4 +297,3 @@ function _Hensel_qf_modular_even(Z::nmod_mat, G::nmod_mat, F::nmod_mat, a, b)
   @assert _min_val(diagonal(Z-F*G*F'),2) >= b + 1
   return F
 end
-
