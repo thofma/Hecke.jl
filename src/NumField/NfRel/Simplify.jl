@@ -92,7 +92,7 @@ function _find_prime(L::NfRel{nf_elem})
   threshold = degree(f)^2
   while i < n_attempts+1
     p = next_prime(p)
-    if isindex_divisor(OK, p)
+    if isindex_divisor(OK, p) || divisible(discriminant(OK), p)
       continue
     end
     lp = prime_decomposition(OK, p)
@@ -101,7 +101,7 @@ function _find_prime(L::NfRel{nf_elem})
       continue
     end
     F, mF = ResidueField(OK, P)
-    mF1 = extend_easy(mF, K)
+    mF1 = extend(mF, K)
     fF = map_coeffs(mF1, f)
     if degree(fF) != degree(f) || !issquarefree(fF)
       continue
@@ -146,8 +146,6 @@ function _sieve_primitive_elements(B::Vector{NfRelElem{nf_elem}}; parameter::Int
   OK = maximal_order(K)
   Zx = ZZ["x"][1]
 
-  
-
   P, d = _find_prime(Lrel)
   p = minimum(P, copy = false)
   abs_deg = d*degree(P)
@@ -175,7 +173,6 @@ function _sieve_primitive_elements(B::Vector{NfRelElem{nf_elem}}; parameter::Int
       break
     end
   end
-  
   indices = Int[]
   for i = 1:length(Bnew)
     if _is_primitive_via_block(Bnew[i], rt, Fx, tmp)
