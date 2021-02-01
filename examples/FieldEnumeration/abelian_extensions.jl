@@ -199,7 +199,7 @@ function main()
 
         L = absolute_field(simple_extension(number_field(C), cached = false)[1], cached = false, simplify = simplify)[1]
         if simplify
-          L, = simplify(L)
+          L, = Hecke.simplify(L)
         end
         r = Hecke._create_record(L)
         r[:discriminant] = absolute_discriminant(C)
