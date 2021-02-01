@@ -10,4 +10,5 @@
   @time include("QuadForm/QuadBin.jl")
   @time include("QuadForm/Herm.jl")
   @time include("QuadForm/Torsion.jl")
+  @time include("QuadForm/PadicLift.jl")
 end
