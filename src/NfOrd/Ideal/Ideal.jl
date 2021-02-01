@@ -2310,7 +2310,7 @@ of the residue ring modulo the ideal.
 Hecke.euler_phi(A::NfOrdIdl) = Hecke.euler_phi(factor(A))
 Hecke.euler_phi(A::FacElem{NfOrdIdl}) = Hecke.euler_phi(factor(A))
 function Hecke.euler_phi(A::Dict{NfOrdIdl, Int})
-  return prod((norm(p)-1)*norm(p)^(k-1) for (p,k) = A if k < 0 error("ideal not integral"))
+  return prod((norm(p)-1)*norm(p)^(k-1) for (p,k) = A if k > 0 || error("Ideal not integral"))
 end
 
 #basically from
