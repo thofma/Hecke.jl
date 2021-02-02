@@ -104,4 +104,3 @@ function Nemo.integral(f::RelSeriesElem{T}) where T
   return g
 end
 
-
