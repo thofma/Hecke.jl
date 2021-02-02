@@ -121,7 +121,7 @@ function rcf_using_stark_units(C::T; cached::Bool = true) where T <: ClassField_
   @assert order(imgc) == 2
   y = mimgc(imgc[1])
   Ghat, mGhat = dual(codomain(C1.quotientmap))
-  p = 1000
+  p = 100
   #I don't need the character with value 1 on the generator of the
   #quadratic extension
   chars = [character(C1, x, mGhat) for x in Ghat if !iszero(lift(mGhat(x)(y)))]
@@ -335,19 +335,20 @@ end
 
 function _lambda(chi::RCFCharacter, prec::Int, nterms::Int)
   K = base_field(chi.C)
-  coeffs_chi, coeffs_chi_bar = first_n_coefficients_L_function_and_conj(chi, nterms, prec)
-  Wchibar = artin_root_number(chi, prec)
+  coeffs_chi = first_n_coefficients_L_function(chi, nterms, prec)
+  Wchi = artin_root_number(chi, prec)
   CC = AcbField(prec)
   res1 = zero(CC)
   res2 = zero(CC)
   cchi = _C(chi, prec)
+  Acoeffs = Vector{arb}[_compute_A_coeffs(degree(K), i, prec) for i = 0:nterms]
   for i = 1:nterms
     evpoint = cchi/i
-    ev0, ev1 = _evaluate_f_x_0_1(evpoint, degree(K), prec, nterms)
+    ev0, ev1 = _evaluate_f_x_0_1(evpoint, degree(K), prec, nterms, Acoeffs)
     res1 += coeffs_chi[i]*ev1
-    res2 += coeffs_chi_bar[i]*ev0
+    res2 += conj(coeffs_chi[i])*ev0
   end
-  return res1 + Wchibar*res2
+  return res1 + Wchi*res2
 end
 
 function _C(chi::RCFCharacter, prec::Int)
@@ -363,19 +364,16 @@ end
 #C is the class field
 #x is the character, mGhat interprets it
 #prec is the precision
-function first_n_coefficients_L_function_and_conj(chi::RCFCharacter, n::Int, prec::Int)
+function first_n_coefficients_L_function(chi::RCFCharacter, n::Int, prec::Int)
   C = chi.C
   OK = base_ring(C)
   lp = prime_ideals_up_to(OK, n)
   sort!(lp, by = x -> norm(x, copy = false))
   CC = AcbField(prec)
   coeffs = Dict{Tuple{Int, Int}, acb}()
-  coeffs_conj = Dict{Tuple{Int, Int}, acb}()
   coeffs[(1, 0)] = one(CC)
-  coeffs_conj[(1, 0)] = one(CC)
   for i = 2:n
     coeffs[(i, 0)] = zero(CC)
-    coeffs_conj[(i, 0)] = zero(CC)
   end
   for h = 1:length(lp)
     P = lp[h]
@@ -384,32 +382,25 @@ function first_n_coefficients_L_function_and_conj(chi::RCFCharacter, n::Int, pre
       v = valuation(i, np)
       if iszero(v)
         coeffs[(i, h)] = coeffs[(i, h-1)]
-        coeffs_conj[(i, h)] = coeffs_conj[(i, h-1)]
         continue
       end
       r = chi(P, prec)
-      rbar = conj(r)
       res = zero(CC)
-      res_conj = zero(CC)
       for k = 0:v
         kk = (Int(divexact(i, np^k)), h-1)
         res += coeffs[kk]*r^k
-        res_conj += coeffs_conj[kk]*rbar^k
       end
       coeffs[(i, h)] = res
-      coeffs_conj[(i, h)] = res_conj
     end
   end
   coeffs_res = Vector{acb}(undef, n)
-  coeffs_res_bar = Vector{acb}(undef, n)
   for i = 1:n
     coeffs_res[i] = coeffs[(i, length(lp))]
-    coeffs_res_bar[i] = coeffs_conj[(i, length(lp))]
   end
-  return coeffs_res, coeffs_res_bar
+  return coeffs_res
 end
 
-function _evaluate_f_x_0_1(x::arb, n::Int, prec::Int, nterms::Int)
+function _evaluate_f_x_0_1(x::arb, n::Int, prec::Int, nterms::Int, Acoeffs::Vector{Vector{arb}})
   RR = ArbField(prec)
   res0 = zero(RR)
   res1 = zero(RR)
@@ -419,10 +410,10 @@ function _evaluate_f_x_0_1(x::arb, n::Int, prec::Int, nterms::Int)
     factorials[i] = factorials[i-1]*(i-1)
   end
   lnx = log(x)
-  powslogx = powers(x, n)
+  powslogx = powers(lnx, n)
 
   #Case i = 0 by hand.
-  aijs = _compute_A_coeffs(n, 0, prec)
+  aijs = Acoeffs[1]
   aij1 = _Aij_at_1(0, n, aijs)
   for j = 1:n
     res1 += (aij1[j]*powslogx[j])/factorials[j]
@@ -435,7 +426,7 @@ function _evaluate_f_x_0_1(x::arb, n::Int, prec::Int, nterms::Int)
   end
 
   for i = 1:nterms
-    aijs = _compute_A_coeffs(n, i, prec)
+    aijs = Acoeffs[i+1]
     aij1 = _Aij_at_1(i, n, aijs)
     auxres1 = zero(RR)
     for j = 1:n
@@ -450,8 +441,12 @@ function _evaluate_f_x_0_1(x::arb, n::Int, prec::Int, nterms::Int)
     end
     res0 += x^(-i)*auxres0
   end
- 
-  
+  CC = AcbField(64)
+
+  #res0int = Nemo.integrate(CC, y -> x^y * gamma(y/2)*gamma((y+1)/2)^(n-1)/(y), 1.01 + -10000000000*onei(CC), 1.01 + 100000000000 * onei(CC))
+  #res1int = Nemo.integrate(CC, y -> x^y * gamma(y/2)*gamma((y+1)/2)^(n-1)/(2 * const_pi(RR)*onei(CC)*(y - 1)), 1.01 + -10000000000*onei(CC), 1.01 + 100000000000 * onei(CC))
+
+  #@show res0int, res0
   return res0, res1
 
 end
@@ -462,7 +457,7 @@ function _Aij_at_0(i::Int, n::Int, aij::Vector{arb})
   if iszero(i)
     #=
     ev = CC(-i)+CC(0.001)
-    @show gamma(ev/2)^n/ev
+    @show gamma(ev/2)*gamma((ev+1)/2)^(n-1)/ev
     @show sum(aij[j]/((ev+i)^j) for j = 1:n+1)
     =#
     return aij
@@ -472,10 +467,10 @@ function _Aij_at_0(i::Int, n::Int, aij::Vector{arb})
   for j = n:-1:1
     D[j] = (D[j+1] - aij[j+1])/i
   end
-
   #=
+  @show isodd(i)
   ev = CC(-i)+CC(0.001)
-  @show gamma(ev/2)^n/ev
+  @show gamma(ev/2)*gamma((ev+1)/2)^(n-1)/ev
   @show sum(D[j]/((ev+i)^j) for j = 1:n+1)
   =#
   return D
@@ -496,58 +491,77 @@ function _Aij_at_1(i::Int, n::Int, aij::Vector{arb})
   return D[1:n]
 end
 
-
 function _compute_A_coeffs(n::Int, i::Int, prec::Int)
-  CC = ArbField(prec)
+  RR = ArbField(prec)
   res = Vector{arb}(undef, n+1)
+  #res[j] contains A_{i,(j-1)}
   if iseven(i)
     q = divexact(i, 2)
-    vg = _compute_g_even(i, n, prec)
-    @assert length(vg) == n
-    CCx = PowerSeriesRing(CC, n+1, "x", cached = false)[1]
-    pol_g = CCx(vg, length(vg), n+1, 1)
-    exp_g = exp(pol_g)
-    pol2 = (-1)^(q*n)*CC(fmpq(fmpz(2), factorial(fmpz(q)))^n)
-    polres = pol2*exp_g
-    for j = 0:n
-      res[j+1] = coeff(polres, j)
+    r = _coeff_0_even(n, q, RR)
+    res[2] = r
+    for j = 3:n+1
+      res[j] = zero(RR)
     end
-    reverse!(res)
+    r1 = _coeff_exp_1_even(n, q, RR)
+    res[1] = r*r1
   else
     q = divexact(i-1, 2)
-    res[1] = (-1)^((q+1)*n)*const_pi(CC)^(CC(n)/2)*2^(n*i)
-    res[1] = res[1]/(divexact(factorial(fmpz(i)), factorial(fmpz(q)))^n)
-    for j = 2:n+1
-      res[j] = zero(CC)
+    r0 = _coeff_0_odd(n, q, RR)
+    vg = _coeff_exp_odd(n, q, RR) 
+    res[n+1] = zero(RR)
+    for j = 1:n
+      res[j] = vg[n-j+1]*r0  
     end
   end
-  #Small test
-  #=
-    ev = CC(-i+0.001)
-    @show gamma(ev/2)^n
-    @show sum(res[j+1]/((i+ev))^j for j = 0:n)  
-  =#
-
   return res
 end
 
-function _H(i::Int, k::Int)
+function _coeff_0_odd(n::Int, q::Int, RR::ArbField)
+  exc_num = (-1)^(q*n+1)*fmpz(2)^(n+2*q)
+  exc_den = (2*q+1)*factorial(fmpz(2*q))*factorial(fmpz(q))^(n-2)
+  return sqrt(const_pi(RR))*fmpq(exc_num, exc_den)
+end
+
+function _coeff_exp_odd(n::Int, q::Int, RR::ArbField)
+  res = Vector{arb}(undef, n-1)
+  res[1] = _sum_pow_inv_odd(q, 1) + (n-1)*_sum_pow_inv_even(q, 1) - log(RR(2)) - fmpq(n, 2)*const_euler(RR)
+  for k = 2:n-1
+    res[k] = (-1)^k*zeta(k, RR)*(1+fmpq(n-2, fmpz(2)^k)) + _sum_pow_inv_odd(q, k) + (n-1)*_sum_pow_inv_even(q, k)
+    res[k] = res[k]/k
+  end
+  RRx = PowerSeriesRing(RR, n, "x")[1]
+  g = RRx(res, length(res), n, 1)
+  gexp = exp(g)
+  return arb[coeff(gexp, i) for i = 0:n-1]
+end
+
+
+function _coeff_exp_1_even(n::Int, q::Int, RR::ArbField)
+  exc = (n-1)*_sum_pow_inv_odd(q-1, 1) + _sum_pow_inv_even(q, 1)
+  inexc = fmpq(1, 2)*const_euler(RR)+(n-1)*log(RR(2))
+  return exc - inexc
+end
+
+function _coeff_0_even(n::Int, q::Int, RR::ArbField)
+  num = 2 * fmpz(4)^(q*(n-1))*factorial(fmpz(q))^(n-2)
+  den = factorial(fmpz(2*q))^(n-1)
+  r = fmpq(num, den)
+  return (-1)^(q*n)*r*const_pi(RR)^(n-1)
+end
+
+
+function _sum_pow_inv_odd(n::Int, k::Int)
   res = fmpq(0)
-  for j = 1:i
-    res += fmpq(1, j^k)
+  for i = 0:n
+    res += fmpq(1, 2*i+1)^k
   end
   return res
-end
+end 
 
-function _compute_g_even(i::Int, n::Int, prec::Int)
-  CC = ArbField(prec)
-  q = divexact(i, 2)
-  v = Vector{arb}(undef, n)
-  n2 = fmpq(n, 2)
-  v[1] = -const_euler(CC)*n2 + n2*_H(q, 1)
-  for k = 2:n
-    n2 = n2//2
-    v[k] = ((-1)^k*zeta(k, CC)*n2 + n2*_H(q, k))/k
+function _sum_pow_inv_even(n::Int, k::Int)
+  res = fmpq(0)
+  for i = 1:n
+    res += fmpq(1, 2*i)^k
   end
-  return v
+  return res
 end

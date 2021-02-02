@@ -85,8 +85,8 @@ function _find_prime(L::NfRel{nf_elem})
   OK = maximal_order(K)
   OL = maximal_order(L)
 
-  n_attempts = min(degree(L), 10)
-  candidates = Vector{Tuple{NfOrdIdl, Int}}(undef, n_attempts)
+  n_attempts = max(5, min(degree(L), 10))
+  candidates = Vector{Tuple{Int, Int}}(undef, n_attempts)
   i = 1
   f = L.pol
   threshold = degree(f)^2
@@ -97,9 +97,6 @@ function _find_prime(L::NfRel{nf_elem})
     end
     lp = prime_decomposition(OK, p)
     P = lp[1][1]
-    if isindex_divisor(OL, P)
-      continue
-    end
     F, mF = ResidueField(OK, P)
     mF1 = extend(mF, K)
     fF = map_coeffs(mF1, f)
@@ -107,13 +104,26 @@ function _find_prime(L::NfRel{nf_elem})
       continue
     end
     FS = factor_shape(fF)
-    d = lcm(Int[x for (x, v) in FS])
+    d = lcm(Int[x for (x, v) in FS])*degree(P)
+    for j = 2:length(lp)
+      Q = lp[j][1]
+      F2, mF2 = ResidueField(OK, Q)
+      mF3 = extend(mF2, K)
+      fF2 = map_coeffs(mF3, f)
+      if degree(fF2) != degree(f) || !issquarefree(fF2)
+        continue
+      end
+      FS = factor_shape(fF2)
+      d1 = lcm(Int[x for (x, v) in FS])
+      d = lcm(d, d1*degree(Q))
+    end
     if d < threshold
-      candidates[i] = (P, d)
+      candidates[i] = (p, d)
       i += 1
     end
   end
-  res =  candidates[1]
+  
+  res = candidates[1]
   for j = 2:n_attempts
     if candidates[j][2] < res[2]
       res = candidates[j]
@@ -146,9 +156,9 @@ function _sieve_primitive_elements(B::Vector{NfRelElem{nf_elem}}; parameter::Int
   OK = maximal_order(K)
   Zx = ZZ["x"][1]
 
-  P, d = _find_prime(Lrel)
-  p = minimum(P, copy = false)
-  abs_deg = d*degree(P)
+  pint, d = _find_prime(Lrel)
+  p = fmpz(pint)
+  abs_deg = d
   #First, we search for elements that are primitive using block systems
   Fp = GF(p, cached = false)
   Fpx = PolynomialRing(Fp, cached = false)[1]
