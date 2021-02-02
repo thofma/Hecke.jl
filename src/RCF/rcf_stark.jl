@@ -410,7 +410,7 @@ function _evaluate_f_x_0_1(x::arb, n::Int, prec::Int, nterms::Int, Acoeffs::Vect
     factorials[i] = factorials[i-1]*(i-1)
   end
   lnx = log(x)
-  powslogx = powers(x, n)
+  powslogx = powers(lnx, n)
 
   #Case i = 0 by hand.
   aijs = Acoeffs[1]
@@ -443,10 +443,9 @@ function _evaluate_f_x_0_1(x::arb, n::Int, prec::Int, nterms::Int, Acoeffs::Vect
   end
   CC = AcbField(64)
 
-  #res0int = Nemo.integrate(CC, y -> x^y * gamma(y/2)*gamma((y+1)/2)^(n-1)/(y - 0), 0.01 + -10000000000*onei(CC), 0.01 + 100000000000 * onei(CC))
-  #res1int = Nemo.integrate(CC, y -> x^y * gamma(y/2)*gamma((y+1)/2)^(n-1)/(y - 1), 0.01 + -10000000000*onei(CC), 0.01 + 100000000000 * onei(CC))
-  #res0int = res0/(2 * const_pi(RR)*onei(CC))
-  #res1int = res1/(2 * const_pi(RR)*onei(CC))
+  #res0int = Nemo.integrate(CC, y -> x^y * gamma(y/2)*gamma((y+1)/2)^(n-1)/(y), 1.01 + -10000000000*onei(CC), 1.01 + 100000000000 * onei(CC))
+  #res1int = Nemo.integrate(CC, y -> x^y * gamma(y/2)*gamma((y+1)/2)^(n-1)/(2 * const_pi(RR)*onei(CC)*(y - 1)), 1.01 + -10000000000*onei(CC), 1.01 + 100000000000 * onei(CC))
+
   #@show res0int, res0
   return res0, res1
 
@@ -507,17 +506,13 @@ function _compute_A_coeffs(n::Int, i::Int, prec::Int)
     res[1] = r*r1
   else
     q = divexact(i-1, 2)
-    @show r0 = _coeff_0_odd(n, q, RR)
+    r0 = _coeff_0_odd(n, q, RR)
     vg = _coeff_exp_odd(n, q, RR) 
     res[n+1] = zero(RR)
     for j = 1:n
       res[j] = vg[n-j+1]*r0  
     end
   end
-  ev = RR(i)+ RR(0.1)
-  @show iseven(i)
-  @show gamma(ev/2)*gamma((ev+1)/2)^(n-1)
-  @show sum(res[s+1]/((ev+i)^s) for s = 0:n)
   return res
 end
 
