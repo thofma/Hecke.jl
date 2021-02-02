@@ -129,6 +129,7 @@ function rcf_using_stark_units(C::T; cached::Bool = true) where T <: ClassField_
   while true
     approximations_derivative_Artin_L_functions = approximate_derivative_Artin_L_function(chars, p)
     @show el = approximate_artin_zeta_derivative_at_0(C1, approximations_derivative_Artin_L_functions)
+    error("stop")
     f = find_defining_polynomial(K, el, real_places(K)[1])
     if degree(f) != degree(C)
       p *= 2 
@@ -262,23 +263,24 @@ end
 
 function approximate_derivative_Artin_L_function(chars::Vector, prec::Int) 
   D = Dict{typeof(chars[1]), acb}()
+  RR = ArbField(prec)
+  nterms = 10
+  K = base_field(chars[1].C)
+  n = degree(K)
+  @show Acoeffs = Vector{arb}[_compute_A_coeffs(n, i, prec) for i = 0:nterms]
+  coeffs_0 = Vector{arb}[_Aij_at_0(i, n, Acoeffs[i+1]) for i = 0:nterms]
+  coeffs_1 = Vector{arb}[_Aij_at_1(i, n, Acoeffs[i+1]) for i = 0:nterms]
+  den = 2*const_pi(RR)^(RR(n-1)/2)
   for x in chars
-    D[x] = approximate_derivative_Artin_L_function(x, prec)
+    A = _A_function(x, prec)
+    cx = _conjugate(x)
+    @show lambda = _lambda(cx, prec, nterms, coeffs_0, coeffs_1)
+    W = artin_root_number(cx, prec)
+    num = A*lambda
+    den1 = den*W
+    D[x] = num/den1
   end
   return D
-end
-
-function approximate_derivative_Artin_L_function(x::RCFCharacter, prec::Int)
-  K = base_field(x.C)
-  n = degree(K)
-  RR = ArbField(prec)
-  A = _A_function(x, prec)
-  cx = _conjugate(x)
-  lambda = _lambda(cx, prec, 100)
-  W = artin_root_number(cx, prec)
-  num = A*lambda
-  den = 2*const_pi(RR)^(RR(n-1)/2)*W
-  return num/den
 end
 
 function _A_function(chi::RCFCharacter, prec::Int)
@@ -333,7 +335,7 @@ function artin_root_number(chi::RCFCharacter, prec::Int)
 end
 
 
-function _lambda(chi::RCFCharacter, prec::Int, nterms::Int)
+function _lambda(chi::RCFCharacter, prec::Int, nterms::Int, coeffs_0, coeffs_1)
   K = base_field(chi.C)
   coeffs_chi = first_n_coefficients_L_function(chi, nterms, prec)
   Wchi = artin_root_number(chi, prec)
@@ -341,10 +343,10 @@ function _lambda(chi::RCFCharacter, prec::Int, nterms::Int)
   res1 = zero(CC)
   res2 = zero(CC)
   cchi = _C(chi, prec)
-  Acoeffs = Vector{arb}[_compute_A_coeffs(degree(K), i, prec) for i = 0:nterms]
+  n = degree(K)
   for i = 1:nterms
     evpoint = cchi/i
-    ev0, ev1 = _evaluate_f_x_0_1(evpoint, degree(K), prec, nterms, Acoeffs)
+    ev0, ev1 = _evaluate_f_x_0_1(evpoint, n, prec, nterms, coeffs_0, coeffs_1)
     res1 += coeffs_chi[i]*ev1
     res2 += conj(coeffs_chi[i])*ev0
   end
@@ -400,7 +402,7 @@ function first_n_coefficients_L_function(chi::RCFCharacter, n::Int, prec::Int)
   return coeffs_res
 end
 
-function _evaluate_f_x_0_1(x::arb, n::Int, prec::Int, nterms::Int, Acoeffs::Vector{Vector{arb}})
+function _evaluate_f_x_0_1(x::arb, n::Int, prec::Int, nterms::Int, coeffs_0::Vector{Vector{arb}}, coeffs_1::Vector{Vector{arb}})
   RR = ArbField(prec)
   res0 = zero(RR)
   res1 = zero(RR)
@@ -413,40 +415,34 @@ function _evaluate_f_x_0_1(x::arb, n::Int, prec::Int, nterms::Int, Acoeffs::Vect
   powslogx = powers(lnx, n)
 
   #Case i = 0 by hand.
-  aijs = Acoeffs[1]
-  aij1 = _Aij_at_1(0, n, aijs)
+
+  aij1 = coeffs_1[1]
   for j = 1:n
     res1 += (aij1[j]*powslogx[j])/factorials[j]
   end
-  res1 += x*gamma(fmpq(1, 2), RR)^n
+  res1 += x*gamma(fmpq(1, 2), RR)*gamma(fmpz(1), RR)^(n-1)
   
-  aij0 = _Aij_at_0(0, n, aijs)
+  aij0 = coeffs_0[1]
   for j = 1:n+1
     res0 += (aij0[j]*powslogx[j])/factorials[j]
   end
 
   for i = 1:nterms
-    aijs = Acoeffs[i+1]
-    aij1 = _Aij_at_1(i, n, aijs)
+    aij1 = coeffs_1[i+1]
     auxres1 = zero(RR)
     for j = 1:n
       auxres1 += (aij1[j]*powslogx[j])/factorials[j]
     end
     res1 += x^(-i)*auxres1
     
-    aij0 = _Aij_at_0(i, n, aijs)
+    aij0 = coeffs_0[i+1]
     auxres0 = zero(RR)
     for j = 1:n
       auxres0 += (aij0[j]*powslogx[j])/factorials[j]
     end
     res0 += x^(-i)*auxres0
   end
-  CC = AcbField(64)
 
-  #res0int = Nemo.integrate(CC, y -> x^y * gamma(y/2)*gamma((y+1)/2)^(n-1)/(y), 1.01 + -10000000000*onei(CC), 1.01 + 100000000000 * onei(CC))
-  #res1int = Nemo.integrate(CC, y -> x^y * gamma(y/2)*gamma((y+1)/2)^(n-1)/(2 * const_pi(RR)*onei(CC)*(y - 1)), 1.01 + -10000000000*onei(CC), 1.01 + 100000000000 * onei(CC))
-
-  #@show res0int, res0
   return res0, res1
 
 end
@@ -454,11 +450,13 @@ end
 function _Aij_at_0(i::Int, n::Int, aij::Vector{arb})
   #aij starts with ai0 and finishes with ain
   CC = parent(aij[1])
+  @show aij
   if iszero(i)
     #=
-    ev = CC(-i)+CC(0.001)
-    @show gamma(ev/2)*gamma((ev+1)/2)^(n-1)/ev
-    @show sum(aij[j]/((ev+i)^j) for j = 1:n+1)
+    ev = CC(0.001)
+    val1 = (gamma(ev/2)*gamma((ev+1)/2)^(n-1))/ev
+    val2 = sum(aij[j+1]/(ev^j) for j = 0:1)
+    @show val1, val2
     =#
     return aij
   end
@@ -467,22 +465,19 @@ function _Aij_at_0(i::Int, n::Int, aij::Vector{arb})
   for j = n:-1:1
     D[j] = (D[j+1] - aij[j+1])/i
   end
-  #=
-  @show isodd(i)
-  ev = CC(-i)+CC(0.001)
-  @show gamma(ev/2)*gamma((ev+1)/2)^(n-1)/ev
-  @show sum(D[j]/((ev+i)^j) for j = 1:n+1)
-  =#
+  @show iseven(i)
+  @show D
   return D
 end
 
 function _Aij_at_1(i::Int, n::Int, aij::Vector{arb})
   #aij starts with ai0 and finishes with ain
   @assert length(aij) == n+1
+  CC = parent(aij[1])
   if iszero(i)
     return aij[1:n]
   end
-  CC = parent(aij[1])
+  
   D = Vector{arb}(undef, n+1)
   D[n+1] = zero(CC)
   for j = n:-1:1
@@ -513,6 +508,12 @@ function _compute_A_coeffs(n::Int, i::Int, prec::Int)
       res[j] = vg[n-j+1]*r0  
     end
   end
+  ev = RR(-i)+RR(0.0001)
+  val1 = gamma(ev/2)*gamma((ev+1)/2)^(n-1)
+  val2 = sum(res[j+1]/((ev+i)^j) for j = 0:n)
+  @show i
+  @show val1
+  @show val2
   return res
 end
 
@@ -538,7 +539,7 @@ end
 
 function _coeff_exp_1_even(n::Int, q::Int, RR::ArbField)
   exc = (n-1)*_sum_pow_inv_odd(q-1, 1) + _sum_pow_inv_even(q, 1)
-  inexc = fmpq(1, 2)*const_euler(RR)+(n-1)*log(RR(2))
+  inexc = fmpq(n, 2)*const_euler(RR)+(n-1)*log(RR(2))
   return exc - inexc
 end
 
@@ -553,7 +554,7 @@ end
 function _sum_pow_inv_odd(n::Int, k::Int)
   res = fmpq(0)
   for i = 0:n
-    res += fmpq(1, 2*i+1)^k
+    res += fmpq(1, (2*i+1)^k)
   end
   return res
 end 
@@ -561,7 +562,7 @@ end
 function _sum_pow_inv_even(n::Int, k::Int)
   res = fmpq(0)
   for i = 1:n
-    res += fmpq(1, 2*i)^k
+    res += fmpq(1, (2*i)^k)
   end
   return res
 end
