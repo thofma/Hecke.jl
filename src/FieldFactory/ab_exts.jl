@@ -155,7 +155,7 @@ function abelian_extensions(K::AnticNumberField, gtype::Vector{Int}, absolute_di
   inf_plc = InfPlc[]
   
   fields = ClassField{MapRayClassGrp, GrpAbFinGenMap}[]
-  @show bound = div(absolute_discriminant_bound, abs(discriminant(OK))^n)
+  bound = div(absolute_discriminant_bound, abs(discriminant(OK))^n)
   if iszero(bound)
     return fields
   end
