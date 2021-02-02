@@ -104,6 +104,8 @@ function Nemo.integral(f::RelSeriesElem{T}) where T
   return g
 end
 
+#=
+needs Julia > 1.1
 #TODO: check where this should be done properly
 # not needed for Galois stuff.
 function (f::RelSeriesElem)(a::RingElem)
@@ -122,3 +124,4 @@ function (f::RelSeriesElem)(a::RingElem)
   return z
 end
 
+=#
