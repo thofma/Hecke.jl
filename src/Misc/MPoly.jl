@@ -5,12 +5,12 @@ export isunivariate
 ###############################################################################
 
 function Nemo.PolynomialRing(R::Nemo.Ring, n::Int, s::String="x";
-                             cached::Bool = false, ordering::Symbol = :lex)
+  cached::Bool = false, ordering::Symbol = :lex)
   return Nemo.PolynomialRing(R, ["$s$i" for i=1:n], cached = cached,
-                                                    ordering = ordering)
+                         ordering = ordering)
 end
 
-#TODO: makes only sense if f is univ (uses only one var)
+#TODO: only makes sense if f is univ (uses only one var)
 function (Rx::FmpzPolyRing)(f::fmpq_mpoly)
   fp = Rx()
   R = base_ring(Rx)
@@ -48,24 +48,6 @@ function (Rx::GFPPolyRing)(f::fmpq_mpoly)
     setcoeff!(fp, e, R(numerator(c*d)))
   end
   return fp * inv(R(d))
-end
-
-function derivative(f::Generic.Frac{T}, x::T) where {T <: MPolyElem}
-  return derivative(f, var_index(x))
-end
-
-function derivative(f::Generic.Frac{T}, i::Int) where {T <: MPolyElem}
-  n = numerator(f)
-  d = denominator(f)
-  return (derivative(n, i)*d - n*derivative(d, i))//d^2
-end
-
-function evaluate(f::Generic.Frac{T}, V::Vector{U}) where {T <: RingElem, U <: RingElem}
-  return evaluate(numerator(f), V)//evaluate(denominator(f), V)
-end
-
-function evaluate(f::Generic.Frac{T}, v::U) where {T <: RingElem, U <: RingElem}
-  return evaluate(numerator(f), v)//evaluate(denominator(f), v)
 end
 
 function Hecke.lead(f::AbstractAlgebra.MPolyElem)
