@@ -1,4 +1,4 @@
-export discriminant_group
+export discriminant_group, torsion_quadratic_module
 
 # Torsion QuadraticForm
 #
@@ -28,7 +28,7 @@ mutable struct TorQuadMod
   cover::ZLat                     # ZLat -> ab_grp, x -> x * proj
   rels::ZLat
   proj::fmpz_mat                  # is a projection and respects the forms
-  gens_lift::Vector{Vector{fmpz}}
+  gens_lift::Vector{Vector{fmpq}}
   gens_lift_ambient::Vector{Vector{fmpq}}
   gens_lift_mat::fmpz_mat          # integer matrix
   gens_lift_mat_ambient::fmpq_mat
@@ -53,14 +53,40 @@ ngens(T::TorQuadMod) = length(gens(T))
 ################################################################################
 
 # compute the torsion quadratic module M/N
-function torsion_quadratic_module(M::ZLat, N::ZLat; modulus = fmpq(0))
+function torsion_quadratic_module(M::ZLat, N::ZLat; gens = nothing,
+                                                    snf::Bool = true,
+                                                    modulus = fmpq(0))
   @req ambient_space(M) === ambient_space(N) "Lattices must have same ambient space"
   fl, _rels = issublattice_with_relations(M, N)
   @req fl "Second lattice must be a sublattice of first lattice"
   rels = change_base_ring(FlintZZ, _rels)
   A = abelian_group(rels)
-  S, mS = snf(A)
-  gens_lift = [collect(mS(s).coeff) for s in gens(S)]
+  n = dim(ambient_space(M))
+  if gens != nothing
+    gens_in_A = elem_type(A)[]
+    for g in gens
+      fl, v = can_solve_with_solution(basis_matrix(M),
+                                      matrix(FlintQQ, 1, n, g),
+                                      side = :left)
+      @assert denominator(v) == 1 "Generator not an element of the lattice"
+      ginA = A(change_base_ring(FlintZZ, v))
+      push!(gens_in_A, ginA)
+    end
+    S, mS = sub(A, gens_in_A)
+  else
+    if snf
+      S, mS = Hecke.snf(A)
+    else
+      S, mS = A, id_hom(A)
+    end
+  end
+
+  # mS : S -> A
+
+  BM = basis_matrix(M)
+
+  # generators of S lifted along M -> M/N = A -> S
+  gens_lift = [collect(change_base_ring(FlintQQ, mS(s).coeff) * BM) for s in Hecke.gens(S)]
 
   num = basis_matrix(M) * gram_matrix(ambient_space(M)) * basis_matrix(N)'
   if iszero(modulus)
@@ -166,9 +192,10 @@ end
 #
 ################################################################################
 
+# TODO: Print like abelian group
 function Base.show(io::IO, T::TorQuadMod)
-  print(io, "Finite quadratic module over Integer Ring with invariants ")
-  println(io, elementary_divisors(abelian_group(T)))
+  print(io, "Finite quadratic module over Integer Ring with underlying abelian group\n")
+  println(io, abelian_group(T))
   print(io, "Gram matrix of the quadratic form with values in ")
   println(io, value_module_quadratic_form(T))
   print(io, gram_matrix_quadratic(T))
