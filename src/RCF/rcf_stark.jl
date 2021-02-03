@@ -23,6 +23,10 @@ mutable struct RCFCharacter{S, T}
   end
 end
 
+function Base.show(io::IO, C::RCFCharacter) 
+  println(IOContext(io, :compact => true), "Character of $(C.C)")
+end
+
 function character(C::ClassField, x::GrpAbFinGenElem, mGhat::Map)
   return RCFCharacter(C, x, mGhat)
 end
@@ -110,25 +114,25 @@ end
 
 function rcf_using_stark_units(C::T; cached::Bool = true) where T <: ClassField_pp
   K = base_field(C)
-  @assert istotally_real(K)
+  @hassert :ClassField 1 istotally_real(K)
   c, inf_plc = conductor(C)
-  @assert isempty(inf_plc)
+  @hassert :ClassField 1 isempty(inf_plc)
   C1, mp = _find_suitable_quadratic_extension(C)
   @show conductor(C1)
   kmp, mkmp = kernel(mp)
   comp = mkmp*C1.quotientmap
   imgc, mimgc = image(comp)
-  @assert order(imgc) == 2
+  @hassert :ClassField 1 order(imgc) == 2
   y = mimgc(imgc[1])
   Ghat, mGhat = dual(codomain(C1.quotientmap))
   p = 100
   #I don't need the character with value 1 on the generator of the
   #quadratic extension
   chars = [character(C1, x, mGhat) for x in Ghat if !iszero(lift(mGhat(x)(y)))]
-  @assert length(chars) == degree(C)
+  @hassert :ClassField 1 length(chars) == degree(C)
   while true
     approximations_derivative_Artin_L_functions = approximate_derivative_Artin_L_function(chars, p)
-    @show el = approximate_artin_zeta_derivative_at_0(C1, approximations_derivative_Artin_L_functions)
+    @show el = approximate_artin_zeta_derivative_at_0(C1, mp, approximations_derivative_Artin_L_functions)
     error("stop")
     f = find_defining_polynomial(K, el, real_places(K)[1])
     if degree(f) != degree(C)
@@ -173,7 +177,7 @@ function find_defining_polynomial(K::AnticNumberField, el::Vector{acb}, v::InfPl
   #Now, I have a polynomial over the reals. I use lattice enumeration to recover the 
   #coefficients as elements of K
   gram_mat = trace_matrix(OK) #The field is totally real :)
-  @assert isposdef(gram_mat)
+  @hassert :ClassField 1 isposdef(gram_mat)
   elts = __enumerate_gram(gram_mat, Int(bound))
   for x in elts
     x = OK(x[1])
@@ -200,9 +204,9 @@ function _find_suitable_quadratic_extension(C::T) where T <: ClassField_pp
   R = codomain(mQ)
   OK = maximal_order(K)
   real_plc = real_places(K)
-  @assert length(real_plc) == degree(K)
-  v = real_plc[1]
-  w = real_plc[2:end]
+  @hassert :ClassField 1 length(real_plc) == degree(K)
+  v = real_plc[end]
+  w = real_plc[1:end-1]
   inf_plc_ram = Set(w)
   bound = fmpz(100)
   ctx = rayclassgrp_ctx(OK, Int(exponent(C))*2)
@@ -247,11 +251,15 @@ function _find_suitable_quadratic_extension(C::T) where T <: ClassField_pp
   end
 end
 
-function approximate_artin_zeta_derivative_at_0(C::ClassField, D::Dict{S, T}) where {S, T}
+function approximate_artin_zeta_derivative_at_0(C::ClassField, mp::GrpAbFinGenMap, D::Dict{S, T}) where {S, T}
   Dzeta = Vector{acb}()
   ks = keys(D)
   CC = parent(first(values(D)))
-  for x in codomain(C.quotientmap)
+  mp1 = inv(C.quotientmap)*mp
+  k1, mk1 = kernel(mp1)
+  ck, mck = cokernel(mk1)
+  for x1 in ck
+    x = mck\x1
     v = zero(CC)
     for k in ks
       v += D[k]*_conjugate(k)(x, CC.prec)
@@ -261,24 +269,22 @@ function approximate_artin_zeta_derivative_at_0(C::ClassField, D::Dict{S, T}) wh
   return Dzeta
 end
 
-function approximate_derivative_Artin_L_function(chars::Vector, prec::Int) 
+global deb = []
+function approximate_derivative_Artin_L_function(chars::Vector, prec::Int)
   D = Dict{typeof(chars[1]), acb}()
   RR = ArbField(prec)
-  nterms = 10
+  nterms = 150
   K = base_field(chars[1].C)
   n = degree(K)
-  @show Acoeffs = Vector{arb}[_compute_A_coeffs(n, i, prec) for i = 0:nterms]
+  Acoeffs = Vector{arb}[_compute_A_coeffs(n, i, prec) for i = 0:nterms]
   coeffs_0 = Vector{arb}[_Aij_at_0(i, n, Acoeffs[i+1]) for i = 0:nterms]
   coeffs_1 = Vector{arb}[_Aij_at_1(i, n, Acoeffs[i+1]) for i = 0:nterms]
   den = 2*const_pi(RR)^(RR(n-1)/2)
   for x in chars
     A = _A_function(x, prec)
-    cx = _conjugate(x)
-    @show lambda = _lambda(cx, prec, nterms, coeffs_0, coeffs_1)
-    W = artin_root_number(cx, prec)
+    lambda = _lambda_and_artin(x, prec, nterms, coeffs_0, coeffs_1)
     num = A*lambda
-    den1 = den*W
-    D[x] = num/den1
+    D[x] = num/den
   end
   return D
 end
@@ -300,7 +306,7 @@ function _A_function(chi::RCFCharacter, prec::Int)
   fcchi = factor(cchi)
   res = one(R)
   for (p, v) in fcC
-    if haskey(fcchi.fac, p)
+    if haskey(fcchi, p)
       continue
     end
     res *= (1 - chi(p, prec))
@@ -318,24 +324,37 @@ function artin_root_number(chi::RCFCharacter, prec::Int)
   lfJ = factor(J)
   lambda = OK(approximate(collect(values(lfJ)), collect(keys(lfJ))))
   lambda = make_positive(lambda, minimum(J)^2)
+  @hassert :ClassField 1 istotally_positive(lambda)
+  @hassert :ClassField 1 lambda in J
   g = numerator(simplify(ideal(OK, lambda) * inv(J)))
+  @hassert :ClassField 1 iscoprime(g, c)
   u = idempotents(g, c)[1]
-  u = make_positive(u, minimum(c^2))
-  h = numerator(ideal(OK, u) * inv(g))
+  u = make_positive(u, minimum(g^2))
+  @hassert :ClassField 1 istotally_positive(u)
+  @hassert :ClassField 1 u in g
+  h = numerator(simplify(ideal(OK, u) * inv(g)))
+  @hassert :ClassField 1 iscoprime(h, c)
   Qc, mQc = quo(OK, c)
   G, mG = multiplicative_group(Qc)
   reps = NfOrdElem[make_positive(lift(mG(x)), minimum(c)^2) for x in G]
+  for (j, x) in enumerate(G)
+    @hassert :ClassField 1 x == mG\Qc(reps[j])
+    @hassert :ClassField 1 istotally_positive(reps[j])
+  end
   Gsum = R(0)
   for i = 1:length(reps)
-    Gsum += chi(ideal(OK, reps[i]), prec) * exppii(2*R(tr((reps[i]*u).elem_in_nf//lambda.elem_in_nf)))
+    el = reps[i].elem_in_nf*u.elem_in_nf//lambda.elem_in_nf
+    trel = 2*tr(el)
+    newtrel = fmpq(mod(numerator(trel), 2*denominator(trel)), denominator(trel))
+    expi = exppii(R(newtrel))
+    Gsum += chi(ideal(OK, reps[i]), prec) * expi
   end
   Gsum *= chi(h, prec)
   res = (-onei(R))^length(chi.conductor_inf_plc)*Gsum/sqrt(R(norm(c)))
   return res
 end
 
-
-function _lambda(chi::RCFCharacter, prec::Int, nterms::Int, coeffs_0, coeffs_1)
+function _lambda_and_artin(chi::RCFCharacter, prec::Int, nterms::Int, coeffs_0, coeffs_1)
   K = base_field(chi.C)
   coeffs_chi = first_n_coefficients_L_function(chi, nterms, prec)
   Wchi = artin_root_number(chi, prec)
@@ -347,8 +366,8 @@ function _lambda(chi::RCFCharacter, prec::Int, nterms::Int, coeffs_0, coeffs_1)
   for i = 1:nterms
     evpoint = cchi/i
     ev0, ev1 = _evaluate_f_x_0_1(evpoint, n, prec, nterms, coeffs_0, coeffs_1)
-    res1 += coeffs_chi[i]*ev1
-    res2 += conj(coeffs_chi[i])*ev0
+    res1 += coeffs_chi[i]*ev0
+    res2 += conj(coeffs_chi[i])*ev1
   end
   return res1 + Wchi*res2
 end
@@ -363,9 +382,6 @@ function _C(chi::RCFCharacter, prec::Int)
   return sqrt(RR(d*nc)/(p^degree(OK)))
 end
 
-#C is the class field
-#x is the character, mGhat interprets it
-#prec is the precision
 function first_n_coefficients_L_function(chi::RCFCharacter, n::Int, prec::Int)
   C = chi.C
   OK = base_ring(C)
@@ -404,6 +420,7 @@ end
 
 function _evaluate_f_x_0_1(x::arb, n::Int, prec::Int, nterms::Int, coeffs_0::Vector{Vector{arb}}, coeffs_1::Vector{Vector{arb}})
   RR = ArbField(prec)
+  CC = AcbField(prec)
   res0 = zero(RR)
   res1 = zero(RR)
   factorials = Vector{fmpz}(undef, n+1)
@@ -412,85 +429,111 @@ function _evaluate_f_x_0_1(x::arb, n::Int, prec::Int, nterms::Int, coeffs_0::Vec
     factorials[i] = factorials[i-1]*(i-1)
   end
   lnx = log(x)
-  powslogx = powers(lnx, n)
-
-  #Case i = 0 by hand.
-
-  aij1 = coeffs_1[1]
-  for j = 1:n
-    res1 += (aij1[j]*powslogx[j])/factorials[j]
-  end
-  res1 += x*gamma(fmpq(1, 2), RR)*gamma(fmpz(1), RR)^(n-1)
-  
-  aij0 = coeffs_0[1]
-  for j = 1:n+1
-    res0 += (aij0[j]*powslogx[j])/factorials[j]
-  end
-
-  for i = 1:nterms
+  powslogx = powers(lnx, n-1)
+  ix = inv(x)
+  ixpow = RR(1)
+  for i = 0:nterms
+    if iseven(i)
+      m = 1
+    else
+      m = n-1
+    end
     aij1 = coeffs_1[i+1]
     auxres1 = zero(RR)
-    for j = 1:n
-      auxres1 += (aij1[j]*powslogx[j])/factorials[j]
+    for j = 2:m+1
+      auxres1 += (aij1[j]*powslogx[j-1])/factorials[j-1]
     end
-    res1 += x^(-i)*auxres1
+    res1 += ixpow*auxres1
     
     aij0 = coeffs_0[i+1]
     auxres0 = zero(RR)
-    for j = 1:n
-      auxres0 += (aij0[j]*powslogx[j])/factorials[j]
+    for j = 2:m+1
+      auxres0 += (aij0[j]*powslogx[j-1])/factorials[j-1]
     end
-    res0 += x^(-i)*auxres0
+    res0 += ixpow*auxres0
+    ixpow *= ix
   end
+  res1 += x*gamma(fmpq(1, 2), RR)*gamma(fmpz(1), RR)^(n-1)
 
+  #res0int = (one(CC)/(2*const_pi(CC)*onei(CC)))*Nemo.integrate(CC, y -> y^x * gamma(y/2)*gamma((y+1)/2)^(n-1)/y, 1.1 + (-10*nterms)*onei(CC), 1.1 + (10*nterms) * onei(CC))
+  #res1int = (one(CC)/(2*const_pi(CC)*onei(CC)))*Nemo.integrate(CC, y -> y^x * gamma(y/2)*gamma((y+1)/2)^(n-1)/(y-1), 1.1 + (-10*nterms)*onei(CC), 1.1 + (10*nterms) * onei(CC))
   return res0, res1
-
 end
 
 function _Aij_at_0(i::Int, n::Int, aij::Vector{arb})
   #aij starts with ai0 and finishes with ain
   CC = parent(aij[1])
-  @show aij
+  if iseven(i)
+    m = 1
+  else
+    m = n-1
+  end
   if iszero(i)
-    #=
-    ev = CC(0.001)
-    val1 = (gamma(ev/2)*gamma((ev+1)/2)^(n-1))/ev
-    val2 = sum(aij[j+1]/(ev^j) for j = 0:1)
-    @show val1, val2
-    =#
-    return aij
+    D = aij[1:m+1]
+  else
+    D = Vector{arb}(undef, m+1)
+    D[m+1] = -aij[m+1]/i
+    for j = m:-1:1
+      D[j] = (D[j+1] - aij[j])/i
+    end
   end
-  D = Vector{arb}(undef, n+1)
-  D[n+1] = zero(CC)
-  for j = n:-1:1
-    D[j] = (D[j+1] - aij[j+1])/i
-  end
-  @show iseven(i)
-  @show D
+  ev = CC(-i)+CC(0.001)
+  val1 = (gamma(ev/2)*gamma((ev+1)/2)^(n-1))/ev
+  val2 = sum(D[j+1]/((ev+i)^j) for j = 0:m)
+  @hassert :ClassField 1 radiuslttwopower(abs(val1-val2), 8)
   return D
 end
 
 function _Aij_at_1(i::Int, n::Int, aij::Vector{arb})
   #aij starts with ai0 and finishes with ain
-  @assert length(aij) == n+1
-  CC = parent(aij[1])
+  if iseven(i)
+    m = 1
+  else
+    m = n-1
+  end
   if iszero(i)
-    return aij[1:n]
+    aij = aij[2:end]
   end
-  
-  D = Vector{arb}(undef, n+1)
-  D[n+1] = zero(CC)
-  for j = n:-1:1
-    D[j] = (D[j+1] - aij[j+1])/(i+1)
+  CC = parent(aij[1])
+  D = Vector{arb}(undef, m+1)
+  D[m+1] = -aij[m+1]/(i+1)
+  for j = m:-1:1
+    D[j] = (D[j+1] - aij[j])/(i+1)
   end
-  return D[1:n]
+  ev = CC(-i)+CC(0.001)
+  val1 = (gamma(ev/2)*gamma((ev+1)/2)^(n-1))/(ev-1)
+  val2 = sum(D[j+1]/((ev+i)^j) for j = 0:m)
+  @hassert :ClassField 1 radiuslttwopower(abs(val1-val2), 8)
+  return D
 end
 
 function _compute_A_coeffs(n::Int, i::Int, prec::Int)
   RR = ArbField(prec)
-  res = Vector{arb}(undef, n+1)
   #res[j] contains A_{i,(j-1)}
+  if iszero(i)
+    #In this case, I need the i-1st coefficient
+    res = Vector{arb}(undef, n+2)
+    r = _coeff_0_even(n, 0, RR)
+    r1 = _coeff_exp_0(n, RR)
+    #Careful: in this case the indices are shifted.
+    res[1] = r1[3]*r
+    res[2] = r1[2]*r
+    res[3] = r1[1]*r
+    for j = 4:n+2
+      res[j] = zero(RR)
+    end
+    #=
+    ev = RR(0.00000001)
+    val1 = gamma(ev/2)*gamma((ev+1)/2)^(n-1)/ev
+    val2 = sum(res[j+1]/((ev)^j) for j = 0:n+1)
+    @show i
+    @show val1
+    @show val2
+    =#
+    return res
+  end
   if iseven(i)
+    res = Vector{arb}(undef, n+1)
     q = divexact(i, 2)
     r = _coeff_0_even(n, q, RR)
     res[2] = r
@@ -500,6 +543,7 @@ function _compute_A_coeffs(n::Int, i::Int, prec::Int)
     r1 = _coeff_exp_1_even(n, q, RR)
     res[1] = r*r1
   else
+    res = Vector{arb}(undef, n+1)
     q = divexact(i-1, 2)
     r0 = _coeff_0_odd(n, q, RR)
     vg = _coeff_exp_odd(n, q, RR) 
@@ -508,12 +552,14 @@ function _compute_A_coeffs(n::Int, i::Int, prec::Int)
       res[j] = vg[n-j+1]*r0  
     end
   end
-  ev = RR(-i)+RR(0.0001)
+  #=
+  ev = RR(-i)+RR(0.00000001)
   val1 = gamma(ev/2)*gamma((ev+1)/2)^(n-1)
   val2 = sum(res[j+1]/((ev+i)^j) for j = 0:n)
   @show i
   @show val1
   @show val2
+  =#
   return res
 end
 
@@ -530,7 +576,7 @@ function _coeff_exp_odd(n::Int, q::Int, RR::ArbField)
     res[k] = (-1)^k*zeta(k, RR)*(1+fmpq(n-2, fmpz(2)^k)) + _sum_pow_inv_odd(q, k) + (n-1)*_sum_pow_inv_even(q, k)
     res[k] = res[k]/k
   end
-  RRx = PowerSeriesRing(RR, n, "x")[1]
+  RRx = PowerSeriesRing(RR, n, "x", cached = false)[1]
   g = RRx(res, length(res), n, 1)
   gexp = exp(g)
   return arb[coeff(gexp, i) for i = 0:n-1]
@@ -543,11 +589,20 @@ function _coeff_exp_1_even(n::Int, q::Int, RR::ArbField)
   return exc - inexc
 end
 
+function _coeff_exp_0(n::Int, RR::ArbField)
+  c0 = -fmpq(n, 2)*const_euler(RR)-(n-1)*log(RR(2))
+  c1 = zeta(2, RR)*fmpq(3*n-2, 8)
+  RRx = PowerSeriesRing(RR, 3, "x", cached = false)[1]
+  g = RRx([c0, c1], 2, 3, 1)
+  expg = exp(g)
+  return [coeff(expg, i) for i = 0:2]
+end
+
 function _coeff_0_even(n::Int, q::Int, RR::ArbField)
   num = 2 * fmpz(4)^(q*(n-1))*factorial(fmpz(q))^(n-2)
   den = factorial(fmpz(2*q))^(n-1)
   r = fmpq(num, den)
-  return (-1)^(q*n)*r*const_pi(RR)^(n-1)
+  return (-1)^(q*n)*r*sqrt(const_pi(RR))^(n-1)
 end
 
 
