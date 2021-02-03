@@ -30,7 +30,7 @@ mutable struct TorQuadMod
   proj::fmpz_mat                  # is a projection and respects the forms
   gens_lift::Vector{Vector{fmpq}}
   gens_lift_ambient::Vector{Vector{fmpq}}
-  gens_lift_mat::fmpz_mat          # integer matrix
+  gens_lift_mat::fmpq_mat          # integer matrix
   gens_lift_mat_ambient::fmpq_mat
   d::fmpz
   modulus::fmpq
@@ -101,8 +101,8 @@ function torsion_quadratic_module(M::ZLat, N::ZLat; gens = nothing,
   T.ab_grp = S
   T.proj = inv(mS).map
   T.gens_lift = gens_lift
-  T.gens_lift_mat = matrix(ZZ, length(gens_lift), ngens(A), reduce(vcat, gens_lift))
-  T.gens_lift_mat_ambient = change_base_ring(FlintQQ, T.gens_lift_mat) * basis_matrix(M)
+  T.gens_lift_mat = matrix(QQ, length(gens_lift), ngens(A), reduce(vcat, gens_lift))
+  T.gens_lift_mat_ambient = T.gens_lift_mat * basis_matrix(M)
   T.modulus = modulus
   T.modulus_qf = modulus_qf
   T.value_module = QmodnZ(modulus)
