@@ -29,10 +29,7 @@ mutable struct TorQuadMod
   rels::ZLat
   proj::fmpz_mat                  # is a projection and respects the forms
   gens_lift::Vector{Vector{fmpq}}
-  gens_lift_ambient::Vector{Vector{fmpq}}
-  gens_lift_mat::fmpq_mat          # integer matrix
-  gens_lift_mat_ambient::fmpq_mat
-  d::fmpz
+  gens_lift_mat::fmpq_mat
   modulus::fmpq
   modulus_qf::fmpq
   value_module::QmodnZ
@@ -44,8 +41,6 @@ mutable struct TorQuadMod
   TorQuadMod() = new()
 end
 
-ngens(T::TorQuadMod) = length(gens(T))
-
 ################################################################################
 #
 #  Construction
@@ -53,26 +48,52 @@ ngens(T::TorQuadMod) = length(gens(T))
 ################################################################################
 
 # compute the torsion quadratic module M/N
-function torsion_quadratic_module(M::ZLat, N::ZLat; gens = nothing,
+
+@doc Markdown.doc"""
+    torsion_quadratic_module(M::ZLat, N::ZLat; gens::Union{Nothing, Vector{<:Vector}} = nothing,
                                                     snf::Bool = true,
-                                                    modulus = fmpq(0))
-  @req ambient_space(M) === ambient_space(N) "Lattices must have same ambient space"
+                                                    modulus::fmpq = fmpq(0),
+                                                    check::Bool = true)
+
+Given a Z-lattice $M$ and a sublattice $N$ of $M$, return the torsion quadratic
+module $M/N$.
+
+If `gens` is set, the images of `gens` will be used as the
+generators of the abelian group $M/N$.
+
+If `snf` is `true`, the underlying abelian group will be in Smith normal form.
+Otherwise, the images of the basis of $M$ will be used as the generators.
+"""
+function torsion_quadratic_module(M::ZLat, N::ZLat; gens::Union{Nothing, Vector{<:Vector}} = nothing,
+                                                    snf::Bool = true,
+                                                    modulus::fmpq = fmpq(0),
+                                                    check::Bool = true)
+  @req ambient_space(M) === ambient_space(N) """
+      Lattices must have same ambient space
+      """
   fl, _rels = issublattice_with_relations(M, N)
   @req fl "Second lattice must be a sublattice of first lattice"
   rels = change_base_ring(FlintZZ, _rels)
   A = abelian_group(rels)
   n = dim(ambient_space(M))
+  BM = basis_matrix(M)
   if gens != nothing
     gens_in_A = elem_type(A)[]
     for g in gens
-      fl, v = can_solve_with_solution(basis_matrix(M),
+      @req length(g) == n "Generator not an element of the ambient space"
+      fl, v = can_solve_with_solution(BM,
                                       matrix(FlintQQ, 1, n, g),
                                       side = :left)
-      @assert denominator(v) == 1 "Generator not an element of the lattice"
+      @req denominator(v) == 1 "Generator not an element of the lattice"
       ginA = A(change_base_ring(FlintZZ, v))
       push!(gens_in_A, ginA)
     end
     S, mS = sub(A, gens_in_A)
+    if check
+      if order(S) != order(A)
+        throw(ArgumentError("Generators do not generator the torsion module"))
+      end
+    end
   else
     if snf
       S, mS = Hecke.snf(A)
@@ -80,13 +101,13 @@ function torsion_quadratic_module(M::ZLat, N::ZLat; gens = nothing,
       S, mS = A, id_hom(A)
     end
   end
-
   # mS : S -> A
-
-  BM = basis_matrix(M)
-
   # generators of S lifted along M -> M/N = A -> S
-  gens_lift = [collect(change_base_ring(FlintQQ, mS(s).coeff) * BM) for s in Hecke.gens(S)]
+  if gens != nothing
+    gens_lift = gens
+  else
+    gens_lift = Vector{fmpq}[collect(change_base_ring(FlintQQ, mS(s).coeff) * BM) for s in Hecke.gens(S)]
+  end
 
   num = basis_matrix(M) * gram_matrix(ambient_space(M)) * basis_matrix(N)'
   if iszero(modulus)
@@ -102,7 +123,6 @@ function torsion_quadratic_module(M::ZLat, N::ZLat; gens = nothing,
   T.proj = inv(mS).map
   T.gens_lift = gens_lift
   T.gens_lift_mat = matrix(QQ, length(gens_lift), ngens(A), reduce(vcat, gens_lift))
-  T.gens_lift_mat_ambient = T.gens_lift_mat * basis_matrix(M)
   T.modulus = modulus
   T.modulus_qf = modulus_qf
   T.value_module = QmodnZ(modulus)
@@ -132,6 +152,15 @@ Returns the exponent of `T`
 """
 function exponent(T::TorQuadMod)
   return exponent(abelian_group(T))
+end
+
+@doc Markdown.doc"""
+    elementary_divisors(T::TorQuadMod) -> Vector{fmpz}
+
+Returns the elementary divisors of underlying abelian group of `T`.
+"""
+function elementary_divisors(T::TorQuadMod)
+  return elementary_divisors(abelian_group(T))
 end
 
 ################################################################################
@@ -208,7 +237,7 @@ end
 ################################################################################
 
 mutable struct TorQuadModElem
-  a::GrpAbFinGenElem
+  data::GrpAbFinGenElem
   parent::TorQuadMod
 
   TorQuadModElem(T::TorQuadMod, a::GrpAbFinGenElem) = new(a, T)
@@ -249,7 +278,7 @@ end
 ################################################################################
 
 function Base.show(io::IO, a::TorQuadModElem)
-  v = a.a.coeff
+  v = a.data.coeff
   print(io, "[")
   for i in 1:length(v)
     if i == length(v)
@@ -259,6 +288,20 @@ function Base.show(io::IO, a::TorQuadModElem)
     end
   end
   print(io, "]")
+end
+
+################################################################################
+#
+#  Equality
+#
+################################################################################
+
+function Base.:(==)(a::TorQuadModElem, b::TorQuadModElem)
+  if parent(a) !== parent(b)
+    return false
+  else
+    return data(a) == data(b)
+  end
 end
 
 ################################################################################
@@ -277,12 +320,16 @@ function gens(T::TorQuadMod)
   end
 end
 
+ngens(T::TorQuadMod) = length(T.gens_lift)
+
 parent(a::TorQuadModElem) = a.parent
+
+data(a::TorQuadModElem) = a.data
 
 # Check the parent
 function (A::GrpAbFinGen)(a::TorQuadModElem)
   @req A === abelian_group(parent(a)) "Parents do not match"
-  return a.a
+  return a.data
 end
 
 ################################################################################
@@ -319,7 +366,7 @@ end
 # Lift an element to the ambient space of cover(parent(a))
 function lift(a::TorQuadModElem)
   T = parent(a)
-  z = change_base_ring(FlintQQ, a.a.coeff) * T.gens_lift_mat_ambient
+  z = change_base_ring(FlintQQ, a.data.coeff) * T.gens_lift_mat
   return fmpq[z[1, i] for i in 1:ncols(z)]
 end
 
