@@ -136,7 +136,7 @@ function __init__()
     printstyled(" $VERSION_NUMBER ", color = :green)
     print("... \n ... which comes with absolutely no warranty whatsoever")
     println()
-    println("(c) 2015-2020 by Claus Fieker, Tommy Hofmann and Carlo Sircana")
+    println("(c) 2015-2021 by Claus Fieker, Tommy Hofmann and Carlo Sircana")
     println()
   end
 
