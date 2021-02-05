@@ -1,6 +1,6 @@
 export image, preimage, has_preimage, isinjective,
 issurjective, isbijective, automorphisms, morphisms, find_small_group,
-inv, *, id_hom, domain, codomain, divisors, multiples
+inv, *, id_hom, domain, codomain, multiples
 
 ################################################################################
 #
