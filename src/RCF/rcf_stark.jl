@@ -118,7 +118,6 @@ function rcf_using_stark_units(C::T; cached::Bool = true) where T <: ClassField_
   c, inf_plc = conductor(C)
   @hassert :ClassField 1 isempty(inf_plc)
   C1, mp = _find_suitable_quadratic_extension(C)
-  @show conductor(C1)
   kmp, mkmp = kernel(mp)
   comp = mkmp*C1.quotientmap
   imgc, mimgc = image(comp)
@@ -133,7 +132,7 @@ function rcf_using_stark_units(C::T; cached::Bool = true) where T <: ClassField_
   while true
     approximations_derivative_Artin_L_functions = approximate_derivative_Artin_L_function(chars, p)
     @show el = approximate_artin_zeta_derivative_at_0(C1, mp, approximations_derivative_Artin_L_functions)
-    error("stop")
+    @assert length(el) == degree(C)
     f = find_defining_polynomial(K, el, real_places(K)[1])
     if degree(f) != degree(C)
       p *= 2 
@@ -141,7 +140,7 @@ function rcf_using_stark_units(C::T; cached::Bool = true) where T <: ClassField_
     end
     mR = C.rayclassgroupmap
     mQ = C.quotientmap
-    ng, mng = norm_group(f, mR, cached = false, check = false)
+    ng, mng = norm_group(f, mR, false, cached = false, check = false, of_closure = false)
     if iszero(mng*mQ)
       C.A = number_field(f, cached = false, check = false)[1]
       return nothing
@@ -150,14 +149,62 @@ function rcf_using_stark_units(C::T; cached::Bool = true) where T <: ClassField_
   end
 end
 
+
 function find_defining_polynomial(K::AnticNumberField, el::Vector{acb}, v::InfPlc)
   OK = maximal_order(K)
   Kt, t = PolynomialRing(K, "t", cached = false)
   prec = precision(parent(el[1]))
   R = ArbField(prec, cached = false)
   Rx, x = PolynomialRing(R, "x", cached = false)
-  v = arb_poly[x-(real(exp(2*a)-exp(-2*a))) for a in el]
-  f = my_prod(v)
+  rt = real(exp(2*el[1])+exp(-2*el[1]))
+  return defining_pol_by_root(K, length(el), rt, v)
+end
+
+function defining_pol_by_root(K::AnticNumberField, n::Int, rt::arb, v::InfPlc)
+  OK = maximal_order(K)
+  @show prec = rel_accuracy(rt)
+  prt = powers(rt, n)
+  embs = arb[real(evaluate(y, v, prec)) for y in basis(OK, K)]
+  els = Vector{arb}(undef, degree(K)*n+1)
+  els[1] = prt[end]
+  ind = 2
+  for i = n:-1:1
+    @assert overlaps(prt[i], rt^(i-1))
+    for j = 1:length(embs)
+      els[ind] = embs[j] * prt[i]
+      ind += 1
+    end
+  end
+  @show prec_new = minimum(Int[rel_accuracy(x) for x in els])
+  @show comb = lindep(els, div(prec_new, 2))
+  if !isone(comb[1])
+    return zero(Kt)
+  end
+  @show dot(comb, els)
+  el_minpoly = Vector{nf_elem}(undef, n)
+  ind = length(comb)-degree(K)
+  for j = 1:n
+    @show comb[ind+1:ind+degree(K)]
+    el_minpoly[j] = OK(comb[ind+1:ind+degree(K)]).elem_in_nf
+    ind -= degree(K)
+  end
+  push!(el_minpoly, one(K))
+  #check
+  imgs = [evaluate(y, v, prec) for y in el_minpoly]
+  @show dot(imgs, prt)
+  @show el_minpoly
+  error("stop")
+  return Kt(el_minpoly)
+end
+
+function find_defining_polynomial1(K::AnticNumberField, el::Vector{acb}, v::InfPlc)
+  OK = maximal_order(K)
+  Kt, t = PolynomialRing(K, "t", cached = false)
+  prec = precision(parent(el[1]))
+  R = ArbField(prec, cached = false)
+  Rx, x = PolynomialRing(R, "x", cached = false)
+  v1 = arb_poly[x-(real(exp(2*a)-exp(-2*a))) for a in el]
+  f = my_prod(v1)
   n = degree(f)
   coeffs = arb[coeff(f, i) for i = 0:n-1]
   for x in coeffs 
@@ -178,19 +225,23 @@ function find_defining_polynomial(K::AnticNumberField, el::Vector{acb}, v::InfPl
   #coefficients as elements of K
   gram_mat = trace_matrix(OK) #The field is totally real :)
   @hassert :ClassField 1 isposdef(gram_mat)
-  elts = __enumerate_gram(gram_mat, Int(bound))
-  for x in elts
-    x = OK(x[1])
-    r = real(evaluate(x, v))
+  @show bound
+  elts = __enumerate_gram(gram_mat, Int(bound)^2)
+  @show OK(9*gen(K)^2+17*gen(K)+2) in OK.(first.(elts))
+  @show t2(9*gen(K)^2+17*gen(K)+2)
+  for el in elts
+    x = OK(el[1])
+    r = real(evaluate(x.elem_in_nf, v))
     for j = 1:length(final_coeffs)
-      if overlaps(r, coeffs[i])
-        if isassigned(final_coeffs, i)
+      if overlaps(r, coeffs[j])
+        if isassigned(final_coeffs, j)
           return K(t)
         end
-        final_coeffs[i] = r
+        final_coeffs[j] = r
       end
     end
   end
+  @show final_coeffs
   push!(final_coeffs, K(1))
   return Kt(final_coeffs)
 end
@@ -262,18 +313,17 @@ function approximate_artin_zeta_derivative_at_0(C::ClassField, mp::GrpAbFinGenMa
     x = mck\x1
     v = zero(CC)
     for k in ks
-      v += D[k]*_conjugate(k)(x, CC.prec)
+      v += D[k]*conj(k(x, CC.prec))
     end
     push!(Dzeta, v//(degree(C)))
   end
   return Dzeta
 end
 
-global deb = []
 function approximate_derivative_Artin_L_function(chars::Vector, prec::Int)
   D = Dict{typeof(chars[1]), acb}()
   RR = ArbField(prec)
-  nterms = 150
+  nterms = 200
   K = base_field(chars[1].C)
   n = degree(K)
   Acoeffs = Vector{arb}[_compute_A_coeffs(n, i, prec) for i = 0:nterms]
@@ -378,8 +428,8 @@ function _C(chi::RCFCharacter, prec::Int)
   OK = order(c)
   nc = norm(c)
   p = const_pi(RR)
-  d = abs(discriminant(OK))
-  return sqrt(RR(d*nc)/(p^degree(OK)))
+  d = sqrt(RR(abs(discriminant(OK))))*sqrt(RR(nc)) 
+  return d/sqrt(RR(p^degree(OK)))
 end
 
 function first_n_coefficients_L_function(chi::RCFCharacter, n::Int, prec::Int)
@@ -415,12 +465,65 @@ function first_n_coefficients_L_function(chi::RCFCharacter, n::Int, prec::Int)
   for i = 1:n
     coeffs_res[i] = coeffs[(i, length(lp))]
   end
+  #=
+  c1 = _test_coeffs(chi, n, prec)
+  for i = 1:n
+    @assert radiuslttwopower(abs(c1[i]-coeffs_res[i]), 8)
+  end
+  =#
   return coeffs_res
+end
+
+
+function _test_coeffs(chi::RCFCharacter, n::Int, prec::Int)
+  C = chi.C
+  OK = base_ring(C)
+  lI = ideals_up_to(OK, n)
+  CC = AcbField(prec)
+  coeffs = Vector{acb}(undef, n)
+  for i = 1:n
+    coeffs[i] = zero(CC)
+  end
+  for j = 1:length(lI)
+    n = Int(norm(lI[j], copy = false))
+    coeffs[n] += chi(lI[j], prec)
+  end
+  return coeffs
+end
+
+
+function ideals_up_to(OK::NfOrd, n::Int)
+
+  lp = prime_ideals_up_to(OK, n)
+  lI = NfOrdIdl[ideal(OK, 1)]
+  for i = 1:length(lp)
+    lnew = NfOrdIdl[]
+    P = lp[i]
+    nP = Int(norm(P, copy = false))
+    @assert nP <= n
+    expon = Int(flog(fmpz(n), nP))
+    for j = 1:length(lI)
+      I = lI[j]
+      if norm(I, copy = false)*nP > n
+        break
+      end
+      push!(lnew, I*P)
+      for s = 2:expon
+        if nP^s*norm(I, copy = false) > n
+          break
+        end
+        push!(lnew, I*P^s)
+      end
+    end
+    append!(lI, lnew)
+    sort!(lI, by = x -> norm(x, copy = false))
+  end
+  return lI
 end
 
 function _evaluate_f_x_0_1(x::arb, n::Int, prec::Int, nterms::Int, coeffs_0::Vector{Vector{arb}}, coeffs_1::Vector{Vector{arb}})
   RR = ArbField(prec)
-  CC = AcbField(prec)
+  
   res0 = zero(RR)
   res1 = zero(RR)
   factorials = Vector{fmpz}(undef, n+1)
@@ -447,7 +550,7 @@ function _evaluate_f_x_0_1(x::arb, n::Int, prec::Int, nterms::Int, coeffs_0::Vec
     
     aij0 = coeffs_0[i+1]
     auxres0 = zero(RR)
-    for j = 2:m+1
+    for j = 2:length(aij0)
       auxres0 += (aij0[j]*powslogx[j-1])/factorials[j-1]
     end
     res0 += ixpow*auxres0
@@ -455,8 +558,14 @@ function _evaluate_f_x_0_1(x::arb, n::Int, prec::Int, nterms::Int, coeffs_0::Vec
   end
   res1 += x*gamma(fmpq(1, 2), RR)*gamma(fmpz(1), RR)^(n-1)
 
-  #res0int = (one(CC)/(2*const_pi(CC)*onei(CC)))*Nemo.integrate(CC, y -> y^x * gamma(y/2)*gamma((y+1)/2)^(n-1)/y, 1.1 + (-10*nterms)*onei(CC), 1.1 + (10*nterms) * onei(CC))
-  #res1int = (one(CC)/(2*const_pi(CC)*onei(CC)))*Nemo.integrate(CC, y -> y^x * gamma(y/2)*gamma((y+1)/2)^(n-1)/(y-1), 1.1 + (-10*nterms)*onei(CC), 1.1 + (10*nterms) * onei(CC))
+  #CC = AcbField(prec)
+  #res0int = (one(CC)/(2*const_pi(CC)*onei(CC)))*Nemo.integrate(CC, y -> x^y * gamma(y/2)*gamma((y+1)/2)^(n-1)/y, 1.1 + (-10*nterms)*onei(CC), 1.1 + (10*nterms) * onei(CC))
+  #res1int = (one(CC)/(2*const_pi(CC)*onei(CC)))*Nemo.integrate(CC, y -> x^y * gamma(y/2)*gamma((y+1)/2)^(n-1)/(y-1), 1.1 + (-10*nterms)*onei(CC), 1.1 + (10*nterms) * onei(CC))
+  #@show res0int, res1int
+  #@show res0, res1
+  #@show res0
+  #@show res0int
+
   return res0, res1
 end
 
@@ -469,7 +578,7 @@ function _Aij_at_0(i::Int, n::Int, aij::Vector{arb})
     m = n-1
   end
   if iszero(i)
-    D = aij[1:m+1]
+    D = aij[1:m+2]
   else
     D = Vector{arb}(undef, m+1)
     D[m+1] = -aij[m+1]/i
@@ -477,10 +586,12 @@ function _Aij_at_0(i::Int, n::Int, aij::Vector{arb})
       D[j] = (D[j+1] - aij[j])/i
     end
   end
+  #=
   ev = CC(-i)+CC(0.001)
-  val1 = (gamma(ev/2)*gamma((ev+1)/2)^(n-1))/ev
-  val2 = sum(D[j+1]/((ev+i)^j) for j = 0:m)
-  @hassert :ClassField 1 radiuslttwopower(abs(val1-val2), 8)
+  @show val1 = (gamma(ev/2)*gamma((ev+1)/2)^(n-1))/ev
+  @show val2 = sum(D[j+1]/((ev+i)^j) for j = 0:m)
+  @hassert :ClassField 1 radiuslttwopower(abs(val1-val2), 16)
+  =#
   return D
 end
 
@@ -500,10 +611,12 @@ function _Aij_at_1(i::Int, n::Int, aij::Vector{arb})
   for j = m:-1:1
     D[j] = (D[j+1] - aij[j])/(i+1)
   end
+  #=
   ev = CC(-i)+CC(0.001)
   val1 = (gamma(ev/2)*gamma((ev+1)/2)^(n-1))/(ev-1)
   val2 = sum(D[j+1]/((ev+i)^j) for j = 0:m)
   @hassert :ClassField 1 radiuslttwopower(abs(val1-val2), 8)
+  =#
   return D
 end
 
