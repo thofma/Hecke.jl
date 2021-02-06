@@ -506,3 +506,24 @@ end
 # so that abstract lattice functions also work with Z-lattices
 
 local_basis_matrix(L::ZLat, p) = basis_matrix(L)
+
+################################################################################
+#
+#  Intersection
+#
+################################################################################
+
+function intersect(M::ZLat, N::ZLat)
+  @req ambient_space(M) === ambient_space(N) "Lattices must have same ambient space"
+  BM = basis_matrix(M)
+  BN = basis_matrix(N)
+  dM = denominator(BM)
+  dN = denominator(BN)
+  d = lcm(dM, dN)
+  BMint = change_base_ring(FlintZZ, d * BM)
+  BNint = change_base_ring(FlintZZ, d * BN)
+  H = vcat(BMint, BNint)
+  k, K = left_kernel(H)
+  BI = divexact(change_base_ring(FlintQQ, hnf(view(K, 1:k, 1:nrows(BM)) * BMint)), d)
+  return lattice(ambient_space(M), BI)
+end
