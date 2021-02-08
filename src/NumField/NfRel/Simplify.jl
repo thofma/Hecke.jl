@@ -90,9 +90,13 @@ function _find_prime(L::NfRel{nf_elem})
   i = 1
   f = L.pol
   threshold = degree(f)^2
+  den = lcm(fmpz[denominator(coeff(f, i)) for i = 0:degree(f)])
   while i < n_attempts+1
     p = next_prime(p)
-    if isindex_divisor(OK, p) || divisible(discriminant(OK), p)
+    if isindex_divisor(OK, p) || divisible(absolute_discriminant(OL), p)
+      continue
+    end
+    if divisible(den, p)
       continue
     end
     lp = prime_decomposition(OK, p)
