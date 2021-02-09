@@ -629,11 +629,11 @@ end
 
 Computes the subgroup of the Ray Class Group $R$ given by the norm of the extension.
 """
-function norm_group(K::NfRel{nf_elem}, mR::Hecke.MapRayClassGrp, isabelian::Bool = true; of_closure::Bool = false)
+function norm_group(K::NfRel{nf_elem}, mR::T, isabelian::Bool = true; of_closure::Bool = false) where T <: Union{MapClassGrp, MapRayClassGrp}
   base_field(K) == nf(order(codomain(mR))) || error("field has to be over the same field as the ray class group")
   return norm_group(K.pol, mR, isabelian, of_closure = of_closure)
 end
-function norm_group(K::NfRelNS{nf_elem}, mR::Hecke.MapRayClassGrp, isabelian::Bool = true; of_closure::Bool = false)
+function norm_group(K::NfRelNS{nf_elem}, mR::T, isabelian::Bool = true; of_closure::Bool = false) where T <: Union{MapClassGrp, MapRayClassGrp}
   base_field(K) == nf(order(codomain(mR))) || error("field has to be over the same field as the ray class group")
   return norm_group([isunivariate(x)[2] for x = K.pol], mR, isabelian, of_closure = of_closure)
 end
@@ -651,11 +651,11 @@ is computed.
 It is the callers responsibility to ensure that the ray class group passed in is large enough.
 """
           
-function norm_group(f::Nemo.PolyElem, mR::Hecke.MapRayClassGrp, isabelian::Bool = true; of_closure::Bool = false, cached::Bool = true, check::Bool = false)
+function norm_group(f::Nemo.PolyElem, mR::T, isabelian::Bool = true; of_closure::Bool = false, cached::Bool = true, check::Bool = false)  where T <: Union{MapClassGrp, MapRayClassGrp}
   return norm_group(typeof(f)[f], mR, isabelian, of_closure = of_closure, cached = cached, check = check)
 end
 
-function norm_group(l_pols::Array{T, 1}, mR::Hecke.MapRayClassGrp, isabelian::Bool = true; of_closure::Bool = false, cached::Bool = true, check::Bool = false) where T <: PolyElem{nf_elem}
+function norm_group(l_pols::Array{T, 1}, mR::U, isabelian::Bool = true; of_closure::Bool = false, cached::Bool = true, check::Bool = false) where {T <: PolyElem{nf_elem}, U <: Union{MapClassGrp, MapRayClassGrp}}
   
   R = domain(mR)
   O = order(codomain(mR))

@@ -544,8 +544,8 @@ function make_positive(x::NfOrdElem, a::fmpz)
     mu = div(y, a)
     m = max(m, mu+1)
   end
-  @hassert :RayFacElem 1 iscoprime(ideal(parent(x),x), ideal(parent(x), a))
-  @hassert :RayFacElem 1 iscoprime(ideal(parent(x),x+fmpz(m)*a), ideal(parent(x), a))
+  #@hassert :RayFacElem 1 iscoprime(ideal(parent(x),x), ideal(parent(x), a))
+  #@hassert :RayFacElem 1 iscoprime(ideal(parent(x),x+fmpz(m)*a), ideal(parent(x), a))
   @hassert :RayFacElem 1 istotally_positive(x+m*a)
   el_to_add = m*a
   return x+el_to_add
@@ -1146,7 +1146,6 @@ function find_gens(mR::MapRayClassGrp; coprime_to::fmpz = fmpz(-1))
       end
     end
   end
-  @show length(lp)
 
   #This means that the class group is non trivial. I need primes generating the class group
   mC = mR.clgrpmap
