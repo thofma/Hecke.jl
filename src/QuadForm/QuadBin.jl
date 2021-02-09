@@ -3,6 +3,8 @@ export binary_quadratic_form, can_solve, discriminant,
        isfundamental_discriminant, prime_form, prime_power_form, cycle,
        isindefinite, ispositive_definite, isnegative_definite, isreduced
 
+import Nemo: can_solve
+
 ###############################################################################
 #
 #   Constructor
