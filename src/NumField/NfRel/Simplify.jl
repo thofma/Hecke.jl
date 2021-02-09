@@ -106,7 +106,7 @@ function _find_prime(L::NfRel{nf_elem})
     end
     FS = factor_shape(fF)
     d = lcm(Int[x for (x, v) in FS])*degree(P)
-    accettable = true
+    acceptable = true
     for j = 2:length(lp)
       Q = lp[j][1]
       F2, mF2 = ResidueField(OK, Q)
