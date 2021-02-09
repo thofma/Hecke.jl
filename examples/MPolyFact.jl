@@ -27,9 +27,9 @@ function Hecke.norm(f::MPolyElem{nf_elem})
   return resultant(g, K.pol(y))
 end
 
-function Hecke.lead(f::fmpq_mpoly)
-  return first(coeffs(f))
-end
+#function Hecke.lead(f::fmpq_mpoly)
+#  return first(coeffs(f))
+#end
 
 function Hecke.ismonic(f::fmpq_mpoly)
   return isone(lead(f))
@@ -39,13 +39,16 @@ end
 function (k::Nemo.GaloisField)(a::fmpq)
   return k(numerator(a))//k(denominator(a))
 end
+
 function (k::Nemo.FqNmodFiniteField)(a::fmpq)
   return k(numerator(a))//k(denominator(a))
 end
+
 function (R::FmpzMPolyRing)(f::fmpq_mpoly)
   return map_coeffs(ZZ, f, parent = R)
 end
 
+#move elsewhere? Not used in here
 function Hecke.representation_matrix(a::ResElem{<:PolyElem})
   R = parent(a)
   S = base_ring(base_ring(R))
@@ -136,6 +139,9 @@ mutable struct RootCtx
   end
 end
 
+"""
+Computes `R[i]^j`, cached
+"""
 function root(R::RootCtx, i::Int, j::Int)
   if precision(R.R[1]) != precision(R.RP[1][1])
     o = one(parent(R.R[1]))
@@ -162,6 +168,10 @@ function set_precision(a::SeriesElem, i::Int)
   return b
 end
 
+"""
+Doubles the precision - but not for all roots, only one from each Frobenius
+  orbit is actually lifted. Use `more_precision` to get all roots.
+"""
 function newton_lift!(R::RootCtx)
 
   #TODO: given that f might be sparse, do NOT compute all powers 
@@ -210,7 +220,14 @@ function newton_lift!(R::RootCtx)
   end
 end
 
+"""
+Computes the roots of `f` in a suitable splitting field: a power series
+over a finite field. The characteristic will be chosen, trying to have the
+degree small. The initial precision if `2`.
 
+Returns, not the roots, but the root context `RootCtx`, so the precision
+can be increased (`newton_lift`, `roots`, `more_precision`).
+"""
 function roots(f::fmpq_mpoly; p::Int=2^25, pr::Int = 2)
   @assert nvars(parent(f)) == 2
   #requires f to be irred. over Q - which is not tested
@@ -316,7 +333,9 @@ function more_precision(R::RootCtx)
 end
 
 #check with Nemo/ Dan if there are better solutions
-
+#the block is also not used here I think
+#functionality to view mpoly as upoly in variable `i`, so the
+#coefficients are mpoly's without variable `i`.
 function Hecke.leading_coefficient(f::MPolyElem, i::Int)
   g = MPolyBuildCtx(parent(f))
   d = degree(f, i)
@@ -367,8 +386,6 @@ function Hecke.coefficients(f::MPolyElem, i::Int)
   end
   return map(finish, cf)
 end
-
-
 
 function combination(RC::RootCtx)
   #R is a list of roots, ie. power series over F_q (finite field)
@@ -487,9 +504,38 @@ function combination(RC::RootCtx)
   end
 end
 
+# should be Nemo/AA
+# TODO: symbols vs strings
+function Hecke.map_coeffs(f, a::RelSeriesElem; parent::SeriesRing)
+  c = typeof(f(coeff(a, 0)))[]
+  for i=0:Nemo.pol_length(a)-1
+    push!(c, f(Nemo.polcoeff(a, i)))
+  end
+  b = parent(c, length(c), precision(a), valuation(a))
+  return b
+end
+
+function Hecke.map_coeffs(f, a::RelSeriesElem)
+  d = f(coeff(a, 0))
+  T = parent(a)
+  if parent(d) == base_ring(T)
+    S = T
+  else
+    S = PowerSeriesRing(d, max_precision(T), string(var(T)))[1]
+  end
+  c = typeof(d)[d]
+  for i=1:Nemo.pol_length(a)-1
+    push!(c, f(Nemo.polcoeff(a, i)))
+  end
+  b = parent(c, length(c), precision(a), valuation(a))
+  return b
+end
+
+
 function field(RC::RootCtx, m::MatElem)
   R = RC.all_R
   P = RC.f
+  global last_R = RC
 
   #we have roots, we need to combine roots for each row in m where the entry is pm 1
   #the coeffs then live is a number field, meaning that the elem sym functions or
@@ -536,18 +582,30 @@ function field(RC::RootCtx, m::MatElem)
 
   Qq = QadicField(characteristic(F), k, 10)
   k, mk = ResidueField(Qq)
-  #TODO: debug and fix in Nemo
-  F.overfields = Dict{Int64,Array{Nemo.FinFieldMorphism,1}}()
-  F.subfields = Dict{Int64,Array{Nemo.FinFieldMorphism,1}}()
-  k.overfields = Dict{Int64,Array{Nemo.FinFieldMorphism,1}}()
-  k.subfields = Dict{Int64,Array{Nemo.FinFieldMorphism,1}}()
   
-  phi = embed(k, F)
+  phi = Nemo.find_morphism(k, F) #avoids embed - which stores the info
 
   kt, t = PolynomialRing(k)
   kXY, (X, Y) = PolynomialRing(k, ["X", "Y"])
 
-  el = [Hecke.power_sums_to_polynomial([kt([preimage(phi, coeff(x, i)) for i=0:precision(x)])(Y) for x = y])(X) for y = el]
+  nl = []
+  kS = PowerSeriesRing(k, tf+2, "s")[1]
+  for x = el
+    y = map(t->map_coeffs(inv(phi), t, parent = kS), x)
+    z = Hecke.power_sums_to_polynomial(y)
+    f = MPolyBuildCtx(kXY)
+    for i=0:degree(z)
+      c = coeff(z, i)
+      for j=0:precision(c)
+        if !iszero(coeff(c, j))
+          push_term!(f, coeff(c, j), [i,j])
+        end
+      end
+    end
+    push!(nl, finish(f))
+  end
+  el = nl
+
   #assuming one coeff is primtive...
   #the first coeff has to be primitive as the other could be re-computed by lifting, hence cannot
   #enlarge the field
@@ -567,6 +625,7 @@ function field(RC::RootCtx, m::MatElem)
   QqXY, _ = PolynomialRing(Qq, 2)
 
   el = [map_coeffs(x->preimage(mk, x), y, parent = QqXY) for y = el]
+#  @show map_coeffs(x->1+iszero(x)+valuation(x), map_coeffs(x->Qq(x), P, parent = QqXY) - prod(el))
 
   #at this point, hopefully, prod(el) = P/lead
 
@@ -663,6 +722,7 @@ function absolute_bivariate_factorisation(f::fmpq_mpoly)
   if nrows(z) == 1
     return f, one(parent(f))
   end
+ 
   a = field(r, z)
   S = parent(a)
   X, Y = gens(S)
@@ -841,7 +901,7 @@ end
 
  TODO:
   bounds on the precisions (poly prec)
-  non-monic: use "any_order", the generizlised equation order to produce
+  non-monic: use "any_order", the generalised equation order to produce
     integral power sums -> make_monic
   find good evaluation points
   more variables
