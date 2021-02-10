@@ -1038,7 +1038,6 @@ function maximal_abelian_subfield(A::ClassField, mp::NfToNfMor)
     end
   end
 
-
   R, mR = Hecke.ray_class_group(ZK, f_M0, real_places(K), n_quo = expo * deg)
   r, mr = Hecke.ray_class_group(zk, f_m0, real_places(k), n_quo = expo * deg)
   lP, gS = Hecke.find_gens(mR, coprime_to = minimum(defining_modulus(mR1)[1]))

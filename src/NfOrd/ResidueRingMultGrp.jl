@@ -1035,13 +1035,13 @@ function _mult_grp_mod_n(Q::NfOrdQuoRing, y1::Dict{NfOrdIdl, Int}, y2::Dict{NfOr
       #exp_q = min(y2[q], bound_exp_mult_grp(q, n))
       G2, G2toO = _1_plus_p_mod_1_plus_pv(q, y2[q], qe)
       if haskey(y1, q)
-        e = Int(exponent(G2))
-        com, uncom = ppio(n, e)
+        e = exponent(G2)
+        uncom = Int(ppio(fmpz(n), e)[2])
         e1 = e
         while !isone(mod(e1, uncom))
           e1 *= e
         end
-        tame_part[q].generators[1] = powermod(tame_part[q].generators[1], e1, minimum(idQ))
+        tame_part[q].generators[1] = powermod(tame_part[q].generators[1], e1, minimum(idQ, copy = false))
       end
       
       i += ngens(G2)
