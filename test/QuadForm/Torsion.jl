@@ -34,14 +34,14 @@
   #primary part of a TorQuadMod
   L = Zlattice(matrix(ZZ, [[2,0,0],[0,2,0],[0,0,2]]))
   T = Hecke.discriminant_group(L)
-  @test basis_matrix(cover(primary_part(T,fmpz(2))[1])) == matrix(QQ, 3, 3, [1//2, 0, 0, 0, 1//2, 0, 0, 0, 1//2])
+  @test basis_matrix(Hecke.cover(Hecke.primary_part(T,fmpz(2))[1])) == matrix(QQ, 3, 3, [1//2, 0, 0, 0, 1//2, 0, 0, 0, 1//2])
   
   #orthogonal submodule to a TorQuadMod
   L = Zlattice(matrix(ZZ, [[2,0,0],[0,2,0],[0,0,2]]))
   T = Hecke.discriminant_group(L)
   S = sub(T, gens(T))[1]
-  @test basis_matrix(orthogonal_submodule_to(T,S)[1].cover) == matrix(QQ, 4, 4, [1//2,0,1//2,0,0,1//2,1//2,0,0,0,1,0,0,0,0,1])
+  @test basis_matrix(Hecke.cover(Hecke.orthogonal_submodule_to(T, S)[1])) == matrix(QQ, 3, 3, [1//2,0,0,0,1//2,0,0,0,1//2])
   
   #checks if a TorQuadMod is degenerate
-  @test isdegenerate(T) == false  
+  @test Hecke.isdegenerate(T) == false  
 end
