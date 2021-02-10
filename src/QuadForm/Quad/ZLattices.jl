@@ -527,3 +527,26 @@ function intersect(M::ZLat, N::ZLat)
   BI = divexact(change_base_ring(FlintQQ, hnf(view(K, 1:k, 1:nrows(BM)) * BMint)), d)
   return lattice(ambient_space(M), BI)
 end
+
+################################################################################
+#
+#  Local isometry
+#
+################################################################################
+
+# TODO: This is slow. We need a dedicated implementation
+
+function islocally_isometric(L::ZLat, M::ZLat, p::Int)
+  return islocally_isometric(L, M, fmpz(p))
+end
+
+function islocally_isometric(L::ZLat, M::ZLat, p::fmpz)
+  K, _  = Hecke.rationals_as_number_field()
+  V = quadratic_space(K, gram_matrix(ambient_space(L)))
+  LL = lattice(V, change_base_ring(K, basis_matrix(L)))
+  W = quadratic_space(K, gram_matrix(ambient_space(M)))
+  MM = lattice(W, change_base_ring(K, basis_matrix(M)))
+  OK = maximal_order(K)
+  P = prime_decomposition(OK, p)[1][1]
+  return islocally_isometric(LL, MM, P)
+end

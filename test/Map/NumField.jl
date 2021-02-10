@@ -199,4 +199,37 @@
   Ly, y = L["y"]
   K, c = NumberField(y^2 + y + b - 5, "c")
   f = hom(Ka, K, c, inverse = (-_b^2 - _b + 5, _b))
+
+  # NfAbsNS
+  
+  K, a = NumberField([x^2 - 2])
+  f = @inferred id_hom(K)
+  for i in 1:10
+    b = rand(K, -1:2)
+    @test b == @inferred f(b)
+  end
+  @test f * f == f
+
+  # NfRelNS
+
+  K, a = NumberField(x^2 - 2)
+  Kt, t = K["t"]
+  E, b = NumberField([t^2 - 3])
+  f = @inferred id_hom(K)
+  for i in 1:10
+    b = rand(K, -1:2)
+    @test b == @inferred f(b)
+  end
+  @test f * f == f
+
+  # NfRel{NfAbsNS}
+
+  Kt, t = K["t"]
+  E, b = NumberField(t^2 - 3)
+  f = @inferred id_hom(E)
+  for i in 1:10
+    b = rand(E, -2:2)
+    @test b == @inferred f(b)
+  end
+  @test f * f == f
 end
