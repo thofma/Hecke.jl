@@ -21,11 +21,15 @@ end
 #
 ###############################################################################
 
-function new_maximal_order(O::NfAbsOrd{NfAbsNS, NfAbsNSElem}; index_divisors::Vector{fmpz} = fmpz[], disc::fmpz = fmpz(-1), ramified_primes::Vector{fmpz} = fmpz[]) where {S, T}
+function new_maximal_order(O::NfAbsOrd{<:NumField{fmpq}, <:NumFieldElem{fmpq}}; index_divisors::Vector{fmpz} = fmpz[], disc::fmpz = fmpz(-1), ramified_primes::Vector{fmpz} = fmpz[]) where {S, T}
   return maximal_order_round_four(O, index_divisors = index_divisors, disc = disc, ramified_primes = ramified_primes)
 end
 
-function maximal_order_round_four(O::NfAbsOrd{NfAbsNS, NfAbsNSElem}; index_divisors::Vector{fmpz} = fmpz[], disc::fmpz = fmpz(-1), ramified_primes::Vector{fmpz} = fmpz[])
+function maximal_order_round_four(O::NfAbsOrd{<:NumField{fmpq}, <:NumFieldElem{fmpq}}; index_divisors::Vector{fmpz} = fmpz[], disc::fmpz = fmpz(-1), ramified_primes::Vector{fmpz} = fmpz[])
+  return _maximal_order_round_four(O; index_divisors = index_divisors, disc = disc, ramified_primes = ramified_primes)
+end
+
+function _maximal_order_round_four(O::NfAbsOrd{<:NumField{fmpq}, <:NumFieldElem{fmpq}}; index_divisors::Vector{fmpz} = fmpz[], disc::fmpz = fmpz(-1), ramified_primes::Vector{fmpz} = fmpz[])
   OO = O
   M = trace_matrix(O)
   l = divisors(M, discriminant(O))
@@ -112,7 +116,6 @@ function _product_basis(l::Vector{Vector{NfAbsNSElem}})
   return B
 end
 
-
 function product_basis(l::Vector{Vector{T}}) where T <: Union{NfAbsOrdElem, NfRelOrdElem, NumFieldElem}
   nelems = 1
   for i = 1:length(l)
@@ -179,8 +182,6 @@ end
 function pradical_trace1(O::NfAbsOrd{NfAbsNS, NfAbsNSElem}, p::Union{Int, fmpz})
   return pradical_trace(O, p)
 end
-
-
 
 function new_pradical_frobenius1(O::NfAbsOrd{NfAbsNS, NfAbsNSElem}, p::Int)
   R = GF(p, cached = false)

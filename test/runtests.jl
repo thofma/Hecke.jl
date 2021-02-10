@@ -6,6 +6,12 @@ using LinearAlgebra
 
 Hecke.assertions(true)
 
+## Test the test_module on Windows
+
+x = Hecke._adjust_path("GrpAb/Elem")
+y = joinpath(Hecke.pkgdir, "test", "$x.jl")
+@test isfile(y)
+
 k, a = quadratic_field(5)
 @test fmpz(1) - a == -(a - 1)
 @test 1 - a == -(a - 1)
@@ -37,24 +43,24 @@ catch e
   end
 end
 
-@time include("NumField.jl")
-@time include("AlgAss.jl")
-@time include("AlgAssAbsOrd.jl")
-@time include("AlgAssRelOrd.jl")
-@time include("EllCrv.jl")
-@time include("GrpAb.jl")
-@time include("Grp.jl")
-@time include("LinearAlgebra.jl")
-@time include("Map.jl")
-@time include("Misc.jl")
-@time include("NfAbs.jl")
-@time include("NfOrd.jl")
-@time include("NfRel.jl")
-@time include("RCF.jl")
-@time include("Examples.jl")
-@time include("Sparse.jl")
+#@time include("NumField.jl")
+#@time include("AlgAss.jl")
+#@time include("AlgAssAbsOrd.jl")
+#@time include("AlgAssRelOrd.jl")
+#@time include("EllCrv.jl")
+#@time include("GrpAb.jl")
+#@time include("Grp.jl")
+#@time include("LinearAlgebra.jl")
+#@time include("Map.jl")
+#@time include("Misc.jl")
+#@time include("NfAbs.jl")
+#@time include("NfOrd.jl")
+#@time include("NfRel.jl")
+#@time include("RCF.jl")
+#@time include("Examples.jl")
+#@time include("Sparse.jl")
 @time include("QuadForm.jl")
-@time include("LocalField.jl")
+#@time include("LocalField.jl")
 
 #try
 #  using Polymake

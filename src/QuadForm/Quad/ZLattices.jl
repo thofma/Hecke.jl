@@ -133,6 +133,21 @@ function orthogonal_sum(L1::ZLat, L2::ZLat)
   return lattice(V, B)
 end
 
+@doc Markdown.doc"""
+    orthogonal_submodule(L::ZLat, S::ZLat) -> ZLat
+
+Return the orthogonal submodule lattice of the subset S of lattice L.
+"""
+function orthogonal_submodule(L::ZLat, S::ZLat)
+  @assert issublattice(L, S) "S is not a sublattice of L"
+  B = basis_matrix(L)
+  C = basis_matrix(S)
+  V = ambient_space(L)
+  G = gram_matrix(V)
+  M = B * G * transpose(C)
+  K = left_kernel(M)
+  return lattice(V, K[2]*B) #this will be the orthogonal submodule of S
+end
 ################################################################################
 #
 #  String I/O
@@ -342,6 +357,47 @@ end
 
 ################################################################################
 #
+#  Is sublattice?
+#
+################################################################################
+
+function issublattice(M::ZLat, N::ZLat)
+  if ambient_space(M) != ambient_space(N)
+    return false
+  end
+
+  hassol, _rels = can_solve_with_solution(basis_matrix(M), basis_matrix(N), side=:left)
+
+  if !hassol || !isone(denominator(_rels))
+    return false
+  end
+
+  return true
+end
+
+@doc Markdown.doc"""
+    issublattice_with_relations(M::ZLat, N::ZLat) -> Bool, fmpq_mat
+
+Returns whether $N$ is a sublattice of $N$. In this case, the second return
+value is a matrix $B$ such that $B B_M = B_N$, where $B_M$ and $B_N$ are the
+basis matrices of $M$ and $N$ respectively.
+"""
+function issublattice_with_relations(M::ZLat, N::ZLat)
+   if ambient_space(M) != ambient_space(N)
+     return false, basis_matrix(M)
+   end
+
+   hassol, _rels = can_solve_with_solution(basis_matrix(M), basis_matrix(N), side=:left)
+
+   if !hassol || !isone(denominator(_rels))
+     return false, basis_matrix(M)
+   end
+
+   return true, _rels
+ end
+
+################################################################################
+#
 #  Root lattice
 #
 ################################################################################
@@ -450,3 +506,47 @@ end
 # so that abstract lattice functions also work with Z-lattices
 
 local_basis_matrix(L::ZLat, p) = basis_matrix(L)
+
+################################################################################
+#
+#  Intersection
+#
+################################################################################
+
+function intersect(M::ZLat, N::ZLat)
+  @req ambient_space(M) === ambient_space(N) "Lattices must have same ambient space"
+  BM = basis_matrix(M)
+  BN = basis_matrix(N)
+  dM = denominator(BM)
+  dN = denominator(BN)
+  d = lcm(dM, dN)
+  BMint = change_base_ring(FlintZZ, d * BM)
+  BNint = change_base_ring(FlintZZ, d * BN)
+  H = vcat(BMint, BNint)
+  k, K = left_kernel(H)
+  BI = divexact(change_base_ring(FlintQQ, hnf(view(K, 1:k, 1:nrows(BM)) * BMint)), d)
+  return lattice(ambient_space(M), BI)
+end
+
+################################################################################
+#
+#  Local isometry
+#
+################################################################################
+
+# TODO: This is slow. We need a dedicated implementation
+
+function islocally_isometric(L::ZLat, M::ZLat, p::Int)
+  return islocally_isometric(L, M, fmpz(p))
+end
+
+function islocally_isometric(L::ZLat, M::ZLat, p::fmpz)
+  K, _  = Hecke.rationals_as_number_field()
+  V = quadratic_space(K, gram_matrix(ambient_space(L)))
+  LL = lattice(V, change_base_ring(K, basis_matrix(L)))
+  W = quadratic_space(K, gram_matrix(ambient_space(M)))
+  MM = lattice(W, change_base_ring(K, basis_matrix(M)))
+  OK = maximal_order(K)
+  P = prime_decomposition(OK, p)[1][1]
+  return islocally_isometric(LL, MM, P)
+end

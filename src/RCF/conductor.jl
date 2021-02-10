@@ -145,7 +145,7 @@ Return the signature of the number field defined by $C$.
 function signature(C::ClassField)
   mR = C.rayclassgroupmap
   mS = C.quotientmap
-  inf_plc = mR.defining_modulus[2]
+  inf_plc = defining_modulus(mR)[2]
   K = base_field(C)
   rK, sK = signature(K)
   if isempty(inf_plc)
@@ -208,8 +208,7 @@ function conductor(C::T) where T <:Union{ClassField, ClassField_pp}
   #  First, we need to find the subgroup
   #
 
-  cond = mR.defining_modulus[1]
-  inf_plc = mR.defining_modulus[2]
+  cond, inf_plc = defining_modulus(C)
   O = order(cond)
   if isone(cond) && isempty(inf_plc)
     return ideal(O,1), InfPlc[]
@@ -282,6 +281,7 @@ function conductor(C::T) where T <:Union{ClassField, ClassField_pp}
     end
   end
   cond = ideal(O,1)
+  C.factored_conductor = L
   for (p,vp) in L
     cond *= p^vp
   end
@@ -430,9 +430,19 @@ end
 #
 ####################################################################################
 
+function discriminant_sign(C::ClassField)
+# Compute the sign using Brill's theorem
+  _, s = signature(C)
+  if mod(s, 2) == 0
+    return 1
+  else
+    return -1
+  end
+end
+
 function absolute_discriminant(C::ClassField)
   OK = base_ring(C)
-  return norm(discriminant(C))*discriminant(OK)^degree(C)
+  return discriminant_sign(C) * norm(discriminant(C))*discriminant(OK)^degree(C)
 end
 
 function discriminant(C::ClassField, ::FlintRationalField)

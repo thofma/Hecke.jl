@@ -7,7 +7,7 @@ export *, +, absolute_basis, absolute_basis_matrix, ambient_space, bad_primes,
        local_basis_matrix, norm, pseudo_matrix, quadratic_lattice, rank,
        rational_span, rescale, scale, volume, witt_invariant, lattice,
        Zlattice, automorphism_group_generators, automorphism_group_order,
-       isisometric, islocal_norm, normic_defect
+       isisometric, islocal_norm, normic_defect, issublattice, issublattice_with_relations
 
 export HermLat, QuadLat
 
@@ -161,6 +161,13 @@ Returns the dimension of the ambient space of $L$.
 function degree(L::AbsLat)
   return dim(ambient_space(L))
 end
+
+@doc Markdown.doc"""
+    issublattice(L::AbsLat, M::AbsLat) -> Bool
+
+Returns whether $M$ is a sublattice of $L$.
+"""
+issublattice(L::AbsLat, M::AbsLat)
 
 ################################################################################
 #

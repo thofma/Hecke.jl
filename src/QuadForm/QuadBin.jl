@@ -3,6 +3,8 @@ export binary_quadratic_form, can_solve, discriminant,
        isfundamental_discriminant, prime_form, prime_power_form, cycle,
        isindefinite, ispositive_definite, isnegative_definite, isreduced
 
+import Nemo: can_solve
+
 ###############################################################################
 #
 #   Constructor
@@ -104,15 +106,19 @@ end
 #
 ################################################################################
 
-function Base.:(*)(c::T, f::QuadBin{T}) where {T}
+function Base.:(*)(c::T, f::QuadBin{T}) where T <: RingElem
   return binary_quadratic_form(c * f[1], c * f[2], c * f[3])
 end
 
-function Base.:(*)(c::Union{Integer, fmpz}, f::QuadBin)
+function Base.:(*)(c::fmpz, f::QuadBin{T}) where T <: RingElem
   return binary_quadratic_form(c * f[1], c * f[2], c * f[3])
 end
 
-function divexact(f::QuadBin{T}, c::T) where {T}
+function Base.:(*)(c::Integer, f::QuadBin)
+  return binary_quadratic_form(c * f[1], c * f[2], c * f[3])
+end
+
+function divexact(f::QuadBin{T}, c::T) where T <: RingElem
   return binary_quadratic_form(divexact(f[1], c), divexact(f[2], c),
                                                   divexact(f[3], c))
 end

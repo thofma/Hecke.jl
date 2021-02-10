@@ -22,6 +22,8 @@ mutable struct ClassField_pp{S, T}
   sup::Array{NfOrdIdl, 1} # the support of a - if known
   sup_known::Bool
 
+  factored_conductor::Dict{NfOrdIdl, Int}
+
   K::NfRel{nf_elem} # the target with the roots of unity
   A::NfRel{nf_elem} # the target
   o::Int # the degree of K - note, in general this is a divisor of the degree of A
@@ -60,6 +62,7 @@ mutable struct ClassField{S, T}
   rayclassgroupmap::S#Union{MapRayClassGrp{GrpAbFinGen}, MapClassGrp{GrpAbFinGen}}
   quotientmap::T#GrpAbFinGenMap
 
+  factored_conductor::Dict{NfOrdIdl, Int}
   conductor::Tuple{NfOrdIdl, Array{InfPlc, 1}}
   relative_discriminant::Dict{NfOrdIdl, Int}
   absolute_discriminant::Dict{fmpz,Int}

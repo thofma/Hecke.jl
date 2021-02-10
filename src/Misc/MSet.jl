@@ -279,6 +279,11 @@ Base.IteratorSize(M::SubSetSizeItr) = Base.HasLength()
 Base.IteratorEltype(M::SubSetSizeItr) = Base.HasEltype()
 Base.eltype(M::SubSetSizeItr{T}) where {T} = Set{T}
 
+function Base.getindex(S::SubSetSizeItr, i::Int)
+  return Hecke.int_to_elt(S, i)
+end
+
+
 function Base.show(io::IO, M::SubSetSizeItr)
   println(io, "subset iterator of length $(M.length) for $(M.b) and subsets of size $(M.k)")
 end

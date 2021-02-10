@@ -136,7 +136,7 @@ function __init__()
     printstyled(" $VERSION_NUMBER ", color = :green)
     print("... \n ... which comes with absolutely no warranty whatsoever")
     println()
-    println("(c) 2015-2020 by Claus Fieker, Tommy Hofmann and Carlo Sircana")
+    println("(c) 2015-2021 by Claus Fieker, Tommy Hofmann and Carlo Sircana")
     println()
   end
 
@@ -523,12 +523,22 @@ import Nemo: libflint, libantic, libarb  #to be able to reference libraries by f
 #
 ################################################################################
 
+function _adjust_path(x::String)
+  if Sys.iswindows()
+    return replace(x, "/" => "\\")
+  else
+    return x
+  end
+end
+
 function test_module(x, new::Bool = true)
    julia_exe = Base.julia_cmd()
+   # On Windows, we also allow bla/blub"
+   x = _adjust_path(x)
    if x == "all"
-     test_file = joinpath(pkgdir, "test/runtests.jl")
+     test_file = joinpath(pkgdir, "test", "runtests.jl")
    else
-     test_file = joinpath(pkgdir, "test/$x.jl")
+     test_file = joinpath(pkgdir, "test", "$x.jl")
    end
 
    if new
