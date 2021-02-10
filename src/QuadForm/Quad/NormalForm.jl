@@ -24,13 +24,60 @@ function _unit_part(x, p)
   return y
 end
 
+function _ispadic_normal_form_dyadic(G)
+  _D = map_entries(Hecke._lift, G)
+  B = collect_small_blocks(_D)
+  curv = valuation(reduce(gcd, _eltseq(B[1])), 2)
+  blocks = [[B[1]]]
+  for i in 2:length(B)
+    v = valuation(reduce(gcd, _eltseq(B[i])), 2)
+    if v == curv
+      push!(blocks[end], divexact(B[i], 2^curv))
+    else
+      curv = v
+      push!(blocks, [divexact(B[i], 2^curv)])
+    end
+  end
+
+  U = matrix(FlintQQ,2,2,[0,1,1,0])
+  V = matrix(FlintQQ,2,2,[2,1,1,2])
+  W1 = matrix(FlintQQ,1,1,[1])
+  W3 = matrix(FlintQQ,1,1,[3])
+  W5 = matrix(FlintQQ,1,1,[5])
+  W7 = matrix(FlintQQ,1,1,[7])
+
+  for B in blocks
+    i = 1
+    while i <= length(B) && B[i] == U
+      i += 1
+    end
+
+    if i <= length(B) && B[i] == V
+      i += 1
+    end
+    
+    if i <= length(B) && (B[i] == W1 || B[i] == W3 || B[i] == W5 || B[i] == W7)
+      i += 1
+    end
+
+    if i <= length(B) && (B[i] == W1 || B[i] == W3 || B[i] == W5 || B[i] == W7)
+      i += 1
+    end
+
+    if i != length(B) + 1
+      return false
+    end
+  end
+  return true
+end
 
 @doc Markdown.doc"""
-    padic_normal_form(G::MatElem, p::fmpz; partial::Bool = false)
-                                              -> MatElem{padic}, MatElem{padic}
+    padic_normal_form(G::MatElem, p::fmpz; prec::Int = -1, partial::Bool = false)
+                                              -> MatElem{fmpq}, MatElem{fmpq}
 
 Return the normal `D` and the transformation `T` to the `p`-adic normal form of
-the symmetric matrix `G`, such that `D = B * G * B'`.
+the symmetric matrix `G`, such that `d * D = d * B * G * B'` holds modulo `p^prec`.
+If `prec == -1`, 
 
 Let `p` be odd and `u` be the smallest non-square modulo `p`.  The normal form
 is a block diagonal matrix with blocks `p^k G_k` such that `G_k` is either the
@@ -104,7 +151,7 @@ function _padic_normal_form(G::fmpq_mat, p::fmpz; prec::Int = -1, partial::Bool 
   Qp = PadicField(p, prec, cached = false)
 
   if n == 0
-    return (zero_matrix(Qp, n, n), zero_matrix(Qp, n, n))::Tuple{AbstractAlgebra.Generic.MatSpaceElem{padic}, AbstractAlgebra.Generic.MatSpaceElem{padic}}
+    return (zero_matrix(FlintQQ, n, n), zero_matrix(FlintQQ, n, n))::Tuple{fmpq_mat, fmpq_mat}
   end
 
   # the transformation matrix is called B
@@ -141,10 +188,10 @@ function _padic_normal_form(G::fmpq_mat, p::fmpz; prec::Int = -1, partial::Bool 
   #    if debug:
   @assert _val(det(B), p) == 0     # B is invertible!
 
-  DD = map_entries(x -> Qp(FlintQQ(lift(x))//p^d), D)
-  BB = map_entries(x -> Qp(lift(x)), B)
+  DD = map_entries(x -> FlintQQ(lift(x))//p^d, D)
+  BB = map_entries(x -> FlintQQ(lift(x)), B)
 
-  return (DD, BB)::Tuple{AbstractAlgebra.Generic.MatSpaceElem{padic}, AbstractAlgebra.Generic.MatSpaceElem{padic}}
+  return (DD, BB)::Tuple{fmpq_mat, fmpq_mat}
 end
 
 #def _find_min_p(G, cnt, lower_bound=0):
@@ -1336,10 +1383,9 @@ function _two_adic_normal_forms(G, p; partial = false)
     UV = UVlist[k]
     UVm = UVlist[k - 1]
     UVlistk = UVlist[k]
+    # UVlistk is either empty or contains at least two elements
     if length(UVlistk) == 0
       V = Int[]
-    elseif length(UVlistk) == 1
-      V = UVlistk
     else
       V = UVlist[k][end-1:end]
     end
@@ -1367,17 +1413,24 @@ function _two_adic_normal_forms(G, p; partial = false)
     # We want type a or W = []
     # modify D[w,w] to go from type b to type a
     x = append!([length(V)], [(mod(lift(_unit_part(w, p)),8)) for w in diagonal(D[W,W])])
-    sort!(x)
-    # a = [[0,1], [2,3], [2,5], [0,7], [0,1,1], [1,2,3], [0,7,7], [0,1,7]]
-    b = [[0,5], [2,7], [1,2], [0,3], [0,1,5], [1,2,7], [0,3,7], [0,1,3]]
+
+    if length(x) == 3 && x[2] > x[3]
+      x[2], x[3] = x[3], x[2]
+    end
+    # the first entry of x is either
+    # 0 if there is no type V component or
+    # 2 if there is a single type V component
+    # a = [[0,1], [2,3], [2,5], [0,7], [0,1,1], [2,1,3], [0,7,7], [0,1,7]]
+    b = [[0,5], [2,7], [2,1], [0,3], [0,1,5], [2,1,7], [0,3,7], [0,1,3]]
     if x in b
       w = W[end]
-      if x == [3,7]
+      if x == [0,3,7]
+        # relation 10 should be applied to 3 to stay in homogeneous normal form
         w = W[0]
       end
       if length(UVm) > 0
         R = push!(UVm[end-1:end], w)
-        B[R,:] = _relations(D[R,R],8,p) * B[R,:]
+        B[R,:] = _relations(D[R,R], 8, p) * B[R,:]
       elseif length(Wmm) > 0
         R = push!([Wmm[1]], w)
         B[R,:] = _relations(D[R,R],10,p) * B[R,:]
@@ -1386,7 +1439,7 @@ function _two_adic_normal_forms(G, p; partial = false)
         e1 = _unit_part(D[Wm,Wm][2,2], p)
         if mod(lift(e1-e0),4) == 0
           R = push!(copy(Wm), w)
-          B[R,:] = _relations(D[R,R],9) * B[R,:]
+          B[R,:] = _relations(D[R,R], 9, p) * B[R,:]
         end
       end
     end
