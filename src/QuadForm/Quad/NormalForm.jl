@@ -24,18 +24,79 @@ function _unit_part(x, p)
   return y
 end
 
-function _ispadic_normal_form_dyadic(G)
-  _D = map_entries(Hecke._lift, G)
+function _ispadic_normal_form(G, p)
+  if isodd(p)
+    return _ispadic_normal_form_odd(G, p)
+  else
+    return _ispadic_normal_form_dyadic(G, p)
+  end
+end
+
+function _ispadic_normal_form_odd(G, p)
+  _D = G
   B = collect_small_blocks(_D)
+  if G != diagonal_matrix(B)
+    return false
+  end
+  curv = valuation(reduce(gcd, _eltseq(B[1])), p)
+  blocks = [[divexact(B[1], fmpq(p)^curv)]]
+  for i in 2:length(B)
+    v = valuation(reduce(gcd, _eltseq(B[i])), p)
+    if v == curv
+      push!(blocks[end], divexact(B[i], fmpq(p)^curv))
+    else
+      curv = v
+      push!(blocks, [divexact(B[i], fmpq(p)^curv)])
+    end
+  end
+
+  for b in blocks
+    if !(all(x -> nrows(x) == 1, b))
+      return false
+    end
+  end
+
+  o = identity_matrix(QQ, 1)
+
+  F,  = FiniteField(p, 1, cached = false)
+
+  for i in 1:length(blocks)
+    if all(==(o), blocks[i])
+      continue
+    else
+      if !(all(==(o), blocks[i][1:end-1]))
+        return false
+      end
+      u = blocks[i][end][1, 1]
+      m = FlintZZ(u)
+      if issquare(F(m))
+        return false
+      end
+      for i in 1:(m-1)
+        if !issquare(F(i))
+          return false
+        end
+      end
+    end
+  end
+  return true
+end
+
+function _ispadic_normal_form_dyadic(G, p)
+  _D = G
+  B = collect_small_blocks(_D)
+  if G != diagonal_matrix(B)
+    return false
+  end
   curv = valuation(reduce(gcd, _eltseq(B[1])), 2)
-  blocks = [[B[1]]]
+  blocks = [[divexact(B[1], fmpq(2)^curv)]]
   for i in 2:length(B)
     v = valuation(reduce(gcd, _eltseq(B[i])), 2)
     if v == curv
-      push!(blocks[end], divexact(B[i], 2^curv))
+      push!(blocks[end], divexact(B[i], fmpq(2)^curv))
     else
       curv = v
-      push!(blocks, [divexact(B[i], 2^curv)])
+      push!(blocks, [divexact(B[i], fmpq(2)^curv)])
     end
   end
 
@@ -55,7 +116,7 @@ function _ispadic_normal_form_dyadic(G)
     if i <= length(B) && B[i] == V
       i += 1
     end
-    
+
     if i <= length(B) && (B[i] == W1 || B[i] == W3 || B[i] == W5 || B[i] == W7)
       i += 1
     end
@@ -1426,7 +1487,7 @@ function _two_adic_normal_forms(G, p; partial = false)
       w = W[end]
       if x == [0,3,7]
         # relation 10 should be applied to 3 to stay in homogeneous normal form
-        w = W[0]
+        w = W[1]
       end
       if length(UVm) > 0
         R = push!(UVm[end-1:end], w)
