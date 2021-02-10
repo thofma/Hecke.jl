@@ -367,7 +367,7 @@ function map_data(K::NfRel, L, x...; check = true)
 
   if check
     y = evaluate(map_coeffs(w -> image(z, L, w), defining_polynomial(K), cached = false), yy)
-    !iszero(y) && error("")
+    !iszero(y) && error("Data does not define a morphism")
   end
 
   @assert typeof(yy) == elem_type(L)
@@ -437,7 +437,7 @@ function map_data(K::NfAbsNS, L, x::Vector; check = true)
   if check
     for i in 1:ngens(K)
       if !iszero(evaluate(K.pol[i], xx))
-        error("")
+        error("Data does not define a morphism")
       end
     end
   end 
