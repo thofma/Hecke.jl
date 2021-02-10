@@ -507,12 +507,11 @@ function orthogonal_submodule_to(T::TorQuadMod, S::TorQuadMod)
   m = T.modulus
   Y = B * G * transpose(C)
   # Elements of the ambient module which pair integrally with cover(T)
-  intgrl = inv(Y) * B
+  integral = inv(Y) * B
   # Element of the ambient module which pair in mZZ with cover(T)
-  orthogonal =  m * intgrl
+  orthogonal =  m * integral
   # We have to make sure we get a submodule
-  Ortho = intersect(Zlattice(B), Zlattice(orthogonal))
-  #not sure about the following step
+  Ortho = intersect(lattice(V, B), lattice(V, orthogonal))
   ortho = Hecke.discriminant_group(Ortho)
   return sub(T, gens(ortho))
 end
@@ -525,5 +524,7 @@ Return true if the underlying bilinear form is degenerate.
 function isdegenerate(T::TorQuadMod)
   if order(orthogonal_submodule_to(T,T)[1]) == 1
     return true
+  else 
+    return false
   end
 end
