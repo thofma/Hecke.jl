@@ -90,9 +90,10 @@ function _find_prime(L::NfRel{nf_elem})
   i = 1
   f = L.pol
   threshold = degree(f)^2
+  den = lcm(fmpz[denominator(coeff(f, i)) for i = 0:degree(f)])
   while i < n_attempts+1
     p = next_prime(p)
-    if isindex_divisor(OK, p) || divisible(discriminant(OK), p)
+    if isindex_divisor(OK, p) || divisible(absolute_discriminant(OL), p) || divisible(den, p)
       continue
     end
     lp = prime_decomposition(OK, p)
@@ -105,19 +106,21 @@ function _find_prime(L::NfRel{nf_elem})
     end
     FS = factor_shape(fF)
     d = lcm(Int[x for (x, v) in FS])*degree(P)
+    acceptable = true
     for j = 2:length(lp)
       Q = lp[j][1]
       F2, mF2 = ResidueField(OK, Q)
       mF3 = extend(mF2, K)
       fF2 = map_coeffs(mF3, f)
       if degree(fF2) != degree(f) || !issquarefree(fF2)
-        continue
+        acceptable = false
+        break
       end
       FS = factor_shape(fF2)
       d1 = lcm(Int[x for (x, v) in FS])
       d = lcm(d, d1*degree(Q))
     end
-    if d < threshold
+    if acceptable && d < threshold
       candidates[i] = (p, d)
       i += 1
     end
