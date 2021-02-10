@@ -10,4 +10,12 @@
   Kt, t = K["t"]
   L, = number_field(t^2 + 3, cached = false)
   k, = @inferred  Hecke.simplified_absolute_field(L)
+
+  K, a = number_field(x^6 - 2*x^5 + x^4 - 398*x^3 - 15961*x^2 + 41496*x + 829621)
+  Kx, x = K["x"]
+  g = x^2 + 715563140//10487238697*a^5 - 6095690353//10487238697*a^4 +
+  48931518460//10487238697*a^3 - 538842733308//10487238697*a^2 -
+  6596745411420//10487238697*a + 4782497108432//806710669
+  L, b = number_field(g, "b");
+  k, = @inferred Hecke.simplified_absolute_field(L)
 end
