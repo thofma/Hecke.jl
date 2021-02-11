@@ -226,7 +226,7 @@ degree small. The initial precision if `2`.
 Returns, not the roots, but the root context `RootCtx`, so the precision
 can be increased (`newton_lift`, `roots`, `more_precision`).
 """
-function roots(f::fmpq_mpoly; p::Int=2^25, pr::Int = 2)
+function roots(f::fmpq_mpoly, p_max::Int=2^25; pr::Int = 2)
   @assert nvars(parent(f)) == 2
   #requires f to be irred. over Q - which is not tested
   #requires f(x, 0) to be same degree and irred. - should be arranged by the absolute_bivariate_factorisation
@@ -241,19 +241,20 @@ function roots(f::fmpq_mpoly; p::Int=2^25, pr::Int = 2)
   @assert degree(g) == degree(f, 1)
   
   d = degree(g)
-  best_p = p
+  best_p = p_max
   pc = 0
+  local p
   while true
-    p = next_prime(p)
-    gp = factor(g, GF(p))
+    p_max = next_prime(p_max)
+    gp = factor(g, GF(p_max))
     if any(x->x>1, values(gp.fac))
-      @vprint :AbsFact 1 "not squarefree mod $p\n"
+      @vprint :AbsFact 1 "not squarefree mod $p_max\n"
       continue
     end
     e = lcm([degree(x) for x = keys(gp.fac)])
     if e < d
       d = e
-      best_p = p
+      best_p = p_max
       pc = 0
     else
       pc += 1
@@ -307,7 +308,7 @@ function roots(f::fmpq_mpoly; p::Int=2^25, pr::Int = 2)
   end
   @vprint :AbsFact 2 "orbits: $all_o\n"
   R.all_R = S
-  return R
+  return R, p_max
 end
 
 function more_precision(R::RootCtx)
@@ -714,13 +715,17 @@ function field(RC::RootCtx, m::MatElem)
     end
 
     # lift mod p^1 -> p^pr
-    @vtime :AbsFact 1 (ok, el) = Main.MFactor.lift_prime_power(P*inv(coeff(P, 1)), el, [0], 1, pr)
+    @vtime :AbsFact 1 ok, el = Main.MFactor.lift_prime_power(P*inv(coeff(P, 1)), el, [0], 1, pr)
+    ok || @vprint :AbsFact 1 "bad prime found, q-adic lifting failed\n"
+    ok || return nothing
     @assert ok  # can fail but should fail for only finitely many p
 
 
     pk = prime(Qq)^pr
 
-    p = [coeff(sum(coeff(x, pe_j)^l for x = el), 0) for l=1:length(el)]
+    #to make things integral...
+    fl = Qq(llc) .* el
+    p = [coeff(sum(coeff(x, pe_j)^l for x = fl), 0) for l=1:length(el)]
     p = map(rational_reconstruction, p)
 
     if !all(x->x[1], p)
@@ -729,20 +734,26 @@ function field(RC::RootCtx, m::MatElem)
     end
 
     p = [x[2]//x[3] for x = p]
+    p = Hecke.power_sums_to_polynomial(p)
+    if any(x->denominator(x)>1, coefficients(p))
+      @vprint :AbsFact 2 "poly wrong, increasing p-adic precision\n"
+      continue
+    end
 
-    k, a = number_field(Hecke.power_sums_to_polynomial(p))
+
+    k, a = number_field(p)
 
     @vprint :AbsFact 1  "using as number field: $k\n"
 
-    m = matrix([[(coeff(x, pe_j)^l) for x = el] for l=0:degree(k)-1])
+    m = matrix([[(coeff(x, pe_j)^l) for x = fl] for l=0:degree(k)-1])
     kx, x = k["x"]
     kX, (X, Y) = PolynomialRing(k, ["X", "Y"])
     B = MPolyBuildCtx(kX)
     for j=1:length(el[1])
-      n = matrix([[coeff(x, j)] for x = el])
+      n = matrix([[coeff(x, j)] for x = fl])
       s = solve(m, n')
       @assert all(x->iszero(coeff(s[x, 1], 1)), 1:degree(k))
-      s = [rational_reconstruction(lift(coeff(s[i, 1], 0)) % pk, pk) for i=1:degree(k)]
+      s = [rational_reconstruction(coeff(s[i, 1], 0)) for i=1:degree(k)]
       if !all(x->x[1], s)
         break
       end
@@ -752,7 +763,11 @@ function field(RC::RootCtx, m::MatElem)
     if length(q) < length(el[1])
       continue
     end
-    return q
+    b, r = divrem(map_coeffs(k, P, parent = kX), [q])
+    if iszero(r)
+      return q, b[1]
+    end
+    @vprint :AbsFact 2 "division failed, increasing precision\n"
   end
 end
 
@@ -810,21 +825,34 @@ function absolute_bivariate_factorisation(f::fmpq_mpoly)
   d = lcm([denominator(x) for x = coefficients(ff)])
   ff *= d
   @assert all(x->isone(denominator(x)), coefficients(ff))
-  llc = coeff(ff, 1)
-  ff = evaluate(ff, [x, y*inv(llc)]) * llc^(degree(ff, 2)-1)
   gg = ff
-  r = roots(gg)
-  z = combination(r)
-  if nrows(z) == 1
-    return f, one(parent(f))
+  p = 2^25
+  local aa
+  while true
+    r, p = roots(gg, p)
+    z = combination(r)
+    if nrows(z) == 1
+      return f, one(parent(f))
+    end
+   
+    aa = field(r, z)
+    aa !== nothing && break
   end
- 
-  a = field(r, z)
+  a, b = aa
   S = parent(a)
   X, Y = gens(S)
-  a = evaluate(a, [X, llc*Y])*inv(llc)^(degree(a, 2)-1)
   a = evaluate(a, [X, Y-s])
-  return a, divexact(map_coeffs(base_ring(a), f, parent =parent(a)), a)
+  b = evaluate(b, [X, Y-s])
+  return a, b
+end
+
+function example(k::AnticNumberField, d::Int, nt::Int, c::AbstractRange=-10:10)
+  kx, (x, y) = PolynomialRing(k, 2, cached = false)
+  f = kx()
+  for i=1:nt
+    f += rand(k, c)*x^rand(0:d)*y^rand(0:d)
+  end
+  return norm(f)
 end
   
 end
