@@ -33,23 +33,6 @@
 #
 ################################################################################
 
-###############################################################################
-#
-#  Computing all divisors
-#
-################################################################################
-
-@doc Markdown.doc"""
-    divisors(n::fmpz) -> Iterator
-
-Computes the divisors of a given number $n$. It is assumed that $n$ is not
-zero.
-"""
-function divisors(n)
-  n == 0 && error("The number must be nonzero")
-  return Divisors(n, units = true)
-end
-
 @doc Markdown.doc"""
     squaredivisors(n::fmpz) -> Iterator
 
