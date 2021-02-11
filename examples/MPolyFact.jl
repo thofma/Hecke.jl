@@ -657,10 +657,16 @@ function field(RC::RootCtx, m::MatElem)
  
   _lc = evaluate(leading_coefficient(P, 1), [zero(Hecke.Globals.Qx), gen(Hecke.Globals.Qx)])
   _lc = Hecke.squarefree_part(_lc)
-  ld = coprime_base(vcat(lc, [map_coeffs(k, _lc, parent = kt)]))
-  fa = [[valuation(x, y) for y = ld] for x = lc]
-  lc = _lc
-  H = Hecke.HenselCtxQadic(map_coeffs(Qq, lc, parent = Qqt), ld)
+  local H, fa
+  if !isone(_lc)
+    ld = coprime_base(vcat(lc, [map_coeffs(k, _lc, parent = kt)]))
+    fa = [[valuation(x, y) for y = ld] for x = lc]
+    lc = _lc
+    H = Hecke.HenselCtxQadic(map_coeffs(Qq, lc, parent = Qqt), ld)
+  else
+    lc = _lc
+    fa = []
+  end
 
   el = nl
 
@@ -692,15 +698,17 @@ function field(RC::RootCtx, m::MatElem)
     setprecision!(Qq, pr+1)
     el = [map_coeffs(x->setprecision(x, pr), y, parent = QqXY) for y = el]
 
-    H.f = map_coeffs(Qq, _lc, parent = Qqt)
-    lift(H, pr+1)
-    fH = factor(H)
-    lc = [prod(fH[i]^t[i] for i=1:length(t)) for t = fa]
+    if length(fa) > 0
+      H.f = map_coeffs(Qq, _lc, parent = Qqt)
+      lift(H, pr+1)
+      fH = factor(H)
+      lc = [prod(fH[i]^t[i] for i=1:length(t)) for t = fa]
 
-    for i=1:length(lc)
-      for j=1:length(el[i])
-        if exponent_vector(el[i], j)[1] == degree(el[i], 1)
-          setcoeff!(el[i], j, coeff(lc[i], exponent_vector(el[i], j)[2]))
+      for i=1:length(lc)
+        for j=1:length(el[i])
+          if exponent_vector(el[i], j)[1] == degree(el[i], 1)
+            setcoeff!(el[i], j, coeff(lc[i], exponent_vector(el[i], j)[2]))
+          end
         end
       end
     end
