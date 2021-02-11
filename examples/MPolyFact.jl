@@ -1,7 +1,9 @@
 module MPolyFact
 
 using Hecke
-import Hecke: Nemo, @vprint, @hassert, @vtime
+import Hecke: Nemo, @vprint, @hassert, @vtime, rational_reconstruction
+
+export absolute_bivariate_factorisation
 
 add_verbose_scope(:AbsFact)
 add_assert_scope(:AbsFact)
@@ -26,10 +28,6 @@ function Hecke.norm(f::MPolyElem{nf_elem})
   g = Qxy(map(finish, gg))
   return resultant(g, K.pol(y))
 end
-
-#function Hecke.lead(f::fmpq_mpoly)
-#  return first(coeffs(f))
-#end
 
 function Hecke.ismonic(f::fmpq_mpoly)
   return isone(lead(f))
@@ -235,6 +233,7 @@ function roots(f::fmpq_mpoly; p::Int=2^25, pr::Int = 2)
 
   #f in Qxy
   Zx = Hecke.Globals.Zx
+  f *= lcm([denominator(x) for x = coefficients(f)])
   ff = map_coeffs(ZZ, f)
   #TODO: 0 might not be a good evaluation point...
   #f needs to be irreducible over Q and g square-free
@@ -348,34 +347,19 @@ function Hecke.leading_coefficient(f::MPolyElem, i::Int)
   return finish(g)
 end
 
-function make_monic(f::MPolyElem, i::Int)
-  d = degree(f, i)
-  cf = [MPolyBuildCtx(parent(f)) for j=0:d]
-  for (c, e) = zip(coeffs(f), exponent_vectors(f))
-    a = e[i]
-    e[i] = 0
-    push_term!(cf[a+1], c, e)
-  end
-  df = map(finish, cf)
-  for j=0:d-1
-    df[j+1] *= df[d+1]^(d-1-j)
-  end
-  df[d+1] = one(parent(f))
-  return sum(gen(parent(f), i)^j*df[j+1] for j=0:d)
-end
-
+#not used here
+"""
+`content` as a polynomial in the variable `i`, i.e. the gcd of all the 
+coefficients when viewed as univariate polynomial in `i`.
+"""
 function Hecke.content(f::MPolyElem, i::Int)
-  d = degree(f, i)
-  cf = [MPolyBuildCtx(parent(f)) for j=0:d]
-  for (c, e) = zip(coeffs(f), exponent_vectors(f))
-    a = e[i]
-    e[i] = 0
-    push_term!(cf[a+1], c, e)
-  end
-  df = map(finish, cf)
-  return reduce(gcd, df)
+  return reduce(gcd, coefficients(f, i))
 end
 
+"""
+The coefficients of `f` when viewed as a univariate polynomial in the `i`-th
+variable.
+"""
 function Hecke.coefficients(f::MPolyElem, i::Int)
   d = degree(f, i)
   cf = [MPolyBuildCtx(parent(f)) for j=0:d]
@@ -387,6 +371,9 @@ function Hecke.coefficients(f::MPolyElem, i::Int)
   return map(finish, cf)
 end
 
+"""
+Internal use.
+"""
 function combination(RC::RootCtx)
   #R is a list of roots, ie. power series over F_q (finite field)
   f = RC.f
@@ -432,6 +419,7 @@ function combination(RC::RootCtx)
   #
   j = 0
   nn = matrix(Fp, 0, length(R), [])
+
   d = degree(f, 2)+degree(f, 1)
   lc = leading_coefficient(f, 1)
   d += degree(lc, 2)
@@ -453,7 +441,7 @@ function combination(RC::RootCtx)
       if false && n > 570 #too small - but a safety valve
         error("too much n")
       end
-      set_precision!(ld, n)
+      ld = evaluate(map_coeffs(x->F(ZZ(x)), lc), [set_precision(Ft(0), n), set_precision(gen(Ft), n)])
       R = R .* ld
       @assert precision(R[1]) >= n
     end
@@ -465,6 +453,7 @@ function combination(RC::RootCtx)
       bad += 1
       if bad > max(2, div(length(R), 2))
         pow += 1
+        d += degree(lc, 2)
         @vprint :AbsFact 1 "increasing power to $pow\n"
         j = 0
         bad = 0
@@ -506,6 +495,10 @@ end
 
 # should be Nemo/AA
 # TODO: symbols vs strings
+#       lift(PolyRing, Series)
+#       lift(FracField, Series)
+#       (to be in line with lift(ZZ, padic) and lift(QQ, padic)
+#
 function Hecke.map_coeffs(f, a::RelSeriesElem; parent::SeriesRing)
   c = typeof(f(coeff(a, 0)))[]
   for i=0:Nemo.pol_length(a)-1
@@ -531,11 +524,37 @@ function Hecke.map_coeffs(f, a::RelSeriesElem)
   return b
 end
 
+function rational_reconstruction(a::SeriesElem; parent::PolyRing = PolynomialRing(base_ring(a), cached = false)[1])
+  C = base_ring(a)
+  Ct = parent
+  t = gen(Ct)
+  b = Ct()
+  v = valuation(a)
+  for i=0:Nemo.pol_length(a)
+    setcoeff!(b, i+v, Nemo.polcoeff(a, i))
+  end
+  return rational_reconstruction(b, t^precision(a))
+end
 
+function rational_reconstruction(a::padic)
+  return rational_reconstruction(lift(a), prime(parent(a), precision(a)))
+end
+
+Hecke.gcd_into!(a, b, c) = gcd(b, c)
+Base.copy(a) = deepcopy(a)
+
+Base.inv(f::MapFromFunc) = MapFromFunc(x->preimage(f, x), codomain(f), domain(f))
+
+function Hecke.squarefree_part(a::PolyElem)
+  return divexact(a, gcd(a, derivative(a)))
+end
+
+"""
+Internal use.
+"""
 function field(RC::RootCtx, m::MatElem)
   R = RC.all_R
   P = RC.f
-  global last_R = RC
 
   #we have roots, we need to combine roots for each row in m where the entry is pm 1
   #the coeffs then live is a number field, meaning that the elem sym functions or
@@ -547,6 +566,8 @@ function field(RC::RootCtx, m::MatElem)
   #we will ONLY find one factor, the others are galois conjugate
   #the field here is not necc. normal
 
+  #the leading_coeff of P needs to be monic.
+
   d_f = div(ncols(m), nrows(m))
   @assert ncols(m) == length(R)
 
@@ -555,9 +576,8 @@ function field(RC::RootCtx, m::MatElem)
   t = gen(Ft)
   d = precision(R[1])
 
-  tf = divexact(total_degree(P), nrows(m))
+  tf = divexact(total_degree(P), nrows(m)) + degree(leading_coefficient(P, 1), 2)
 
-  #TODO given that all powers are used, build them up properly
   #TODO use Frobenius (again) to save on multiplications
   #TODO invest work in one factor only - need only powers of the roots involved there
   #     the other factor is then just a division away
@@ -581,9 +601,14 @@ function field(RC::RootCtx, m::MatElem)
   @vprint :AbsFact 1 "target field has (local) degree $k\n"
 
   Qq = QadicField(characteristic(F), k, 10)
+  Qqt = PolynomialRing(Qq, cached = false)[1]
   k, mk = ResidueField(Qq)
-  
-  phi = Nemo.find_morphism(k, F) #avoids embed - which stores the info
+ 
+  if degree(k) > 1
+    phi = Nemo.find_morphism(k, F) #avoids embed - which stores the info
+  else
+    phi = MapFromFunc(x->F((coeff(x, 0))), y->k((coeff(y, 0))), k, F)
+  end
 
   kt, t = PolynomialRing(k)
   kXY, (X, Y) = PolynomialRing(k, ["X", "Y"])
@@ -594,9 +619,23 @@ function field(RC::RootCtx, m::MatElem)
     y = map(t->map_coeffs(inv(phi), t, parent = kS), x)
     z = Hecke.power_sums_to_polynomial(y)
     f = MPolyBuildCtx(kXY)
+    lc = one(kt)
+    cz = []
     for i=0:degree(z)
       c = coeff(z, i)
-      for j=0:precision(c)
+      local fl, n, d = rational_reconstruction(c, parent = kt)
+      @assert fl
+      b = lcm(lc, d)
+      n *= divexact(b, d)
+      if b != lc
+        cz = divexact(b, lc) .* cz
+        lc = b
+      end
+      push!(cz, n)
+    end
+    for i=0:degree(z)
+      c = cz[i+1]
+      for j=0:degree(c)
         if !iszero(coeff(c, j))
           push_term!(f, coeff(c, j), [i,j])
         end
@@ -604,62 +643,88 @@ function field(RC::RootCtx, m::MatElem)
     end
     push!(nl, finish(f))
   end
+  @vprint :AbsFact 2 "now building the leading coeff..."
+  lc = map(x->evaluate(leading_coefficient(x, 1), [0*t, t]), nl)
+
+  for i = 1:length(lc)
+    l = lead(lc[i])
+    lc[i] *= inv(l)
+    nl[i] *= inv(l)
+  end
+
+  llc = coeff(P, 1)
+  P *= inv(llc)
+ 
+  _lc = evaluate(leading_coefficient(P, 1), [zero(Hecke.Globals.Qx), gen(Hecke.Globals.Qx)])
+  _lc = Hecke.squarefree_part(_lc)
+  ld = coprime_base(vcat(lc, [map_coeffs(k, _lc, parent = kt)]))
+  fa = [[valuation(x, y) for y = ld] for x = lc]
+  lc = _lc
+  H = Hecke.HenselCtxQadic(map_coeffs(Qq, lc, parent = Qqt), ld)
+
   el = nl
 
   #assuming one coeff is primtive...
   #the first coeff has to be primitive as the other could be re-computed by lifting, hence cannot
   #enlarge the field
-  j = 1
+  pe_j = 1
   local s
   while true
-    s = Set([(coeff(x, j)) for x = el])
+    s = Set([(coeff(x, pe_j)) for x = el])
     if length(s) == length(el)
       break
     end
-    j += 1
+    pe_j += 1
   end
 
-  @vprint :AbsFact 2 "$j-th coeff is primitive\n"
+  @vprint :AbsFact 2 "$(pe_j)-th coeff is primitive\n"
   @vprint :AbsFact 1 "hopefully $(length(el)) degree field\n"
 
   QqXY, _ = PolynomialRing(Qq, 2)
 
   el = [map_coeffs(x->preimage(mk, x), y, parent = QqXY) for y = el]
-#  @show map_coeffs(x->1+iszero(x)+valuation(x), map_coeffs(x->Qq(x), P, parent = QqXY) - prod(el))
-
-  #at this point, hopefully, prod(el) = P/lead
 
   pr = 10 
   while true
     pr *= 2
     @vprint :AbsFact 1  "using p-adic precision of $pr\n"
+
     setprecision!(Qq, pr+1)
     el = [map_coeffs(x->setprecision(x, pr), y, parent = QqXY) for y = el]
 
+    H.f = map_coeffs(Qq, _lc, parent = Qqt)
+    lift(H, pr+1)
+    fH = factor(H)
+    lc = [prod(fH[i]^t[i] for i=1:length(t)) for t = fa]
+
+    for i=1:length(lc)
+      for j=1:length(el[i])
+        if exponent_vector(el[i], j)[1] == degree(el[i], 1)
+          setcoeff!(el[i], j, coeff(lc[i], exponent_vector(el[i], j)[2]))
+        end
+      end
+    end
+
     #TODO: allow continue to lift
-    @vtime :AbsFact 1 el = Main.MFactor.lift_prime_power(P, el, [0], [degree(P, 2)], pr)
+    @vtime :AbsFact 1 el = Main.MFactor.lift_prime_power(P*inv(coeff(P, 1)), el, [0], [degree(P, 2)], pr)
 
     pk = prime(Qq)^pr
-    p = [coeff(sum(coeff(x, j)^l for x = el), 0) for l=1:length(el)]
-    p = map(lift, p)
-    p = map(x->QQ(Hecke.mod_sym(x, pk)), p)
-#    @show p = map(x->rational_reconstruction(x, pk), p) #all arranged to be integral, so farey not used here
-#    if !all(x->x[1], p)
-#      @show "reco failed"
-#      continue
-#    end
-#    p = [x[2]//x[3] for x = p]
 
-    pp = Hecke.power_sums_to_polynomial(p)
-    if any(x->!isone(denominator(x)), coefficients(pp))
-      @vprint :AbsFact 2 "poly not integral, increasing p-adic precision\n"
+    p = [coeff(sum(coeff(x, pe_j)^l for x = el), 0) for l=1:length(el)]
+    p = map(rational_reconstruction, p)
+
+    if !all(x->x[1], p)
+      @vprint :AbsFact 2 "reco failed, increasing p-adic precision\n"
       continue
     end
+
+    p = [x[2]//x[3] for x = p]
+
     k, a = number_field(Hecke.power_sums_to_polynomial(p))
 
     @vprint :AbsFact 1  "using as number field: $k\n"
 
-    m = matrix([[(coeff(x, j)^l) for x = el] for l=0:degree(k)-1])
+    m = matrix([[(coeff(x, pe_j)^l) for x = el] for l=0:degree(k)-1])
     kx, x = k["x"]
     kX, (X, Y) = PolynomialRing(k, ["X", "Y"])
     B = MPolyBuildCtx(kX)
@@ -667,7 +732,7 @@ function field(RC::RootCtx, m::MatElem)
       n = matrix([[coeff(x, j)] for x = el])
       s = solve(m, n')
       @assert all(x->iszero(coeff(s[x, 1], 1)), 1:degree(k))
-      s = [rational_reconstruction(lift(coeff(s[i, 1], 0))% pk, pk) for i=1:degree(k)]
+      s = [rational_reconstruction(lift(coeff(s[i, 1], 0)) % pk, pk) for i=1:degree(k)]
       if !all(x->x[1], s)
         break
       end
@@ -681,10 +746,26 @@ function field(RC::RootCtx, m::MatElem)
   end
 end
 
+"""
+Given an irreducible bivariate polynomial over `Q` compute the
+absolute factorisation.
+
+Returns two polynomials: 
+ - the (absolutely) irreducible factor over the smallest number field
+ - the co-factor
+
+All the other factors would be conjugates of the first, hence representing
+them exactly requires the splitting field to be computed.
+"""
 function absolute_bivariate_factorisation(f::fmpq_mpoly)
   d = degree(f, 1)
   R = parent(f)
   x, y = gens(R)
+
+  lf = factor(f)
+  if length(lf.fac) > 1 || any(x->x>1, values(lf.fac)) 
+    error("poly must be irreducible over Q")
+  end
 
   if degree(f, 2) < d
     @vprint :AbsFact 1 "swapping variables to have smaller degree\n"
@@ -716,7 +797,12 @@ function absolute_bivariate_factorisation(f::fmpq_mpoly)
     end
   end
   ff = evaluate(f, [x, y+s])
-  gg = make_monic(ff, 1)
+  d = lcm([denominator(x) for x = coefficients(ff)])
+  ff *= d
+  @assert all(x->isone(denominator(x)), coefficients(ff))
+  llc = coeff(ff, 1)
+  ff = evaluate(ff, [x, y*inv(llc)]) * llc^(degree(ff, 2)-1)
+  gg = ff
   r = roots(gg)
   z = combination(r)
   if nrows(z) == 1
@@ -726,18 +812,15 @@ function absolute_bivariate_factorisation(f::fmpq_mpoly)
   a = field(r, z)
   S = parent(a)
   X, Y = gens(S)
-  l = leading_coefficient(ff, 1)
-  if !isone(l)
-    ll = evaluate(l, [S(0), Y])
-    a = evaluate(a, [X*ll, Y])
-    a = divexact(a, ll^(degree(a, 1)-1))
-    a = divexact(a, content(a, 1))
-  end
+  a = evaluate(a, [X, llc*Y])*inv(llc)^(degree(a, 2)-1)
   a = evaluate(a, [X, Y-s])
   return a, divexact(map_coeffs(base_ring(a), f, parent =parent(a)), a)
 end
   
 end
+
+using .MPolyFact
+export absolute_bivariate_factorisation
 
 module MPolyLift
 using Hecke
@@ -892,8 +975,12 @@ end
 
 #= revised strategy until I actually understand s.th. better
  - assumming f is monic in y, irreducible over Q and f(0) is squarefree
+   (currently: leading_coef(f, 1) needs to be monic, ie. coeff(f, 1)==1)
+   (we first make f integral (clearing denominators), then make it "monic"
  - find a prime s.th. f(0, y) is square-free with a small degree splitting field
  - compute roots in F_q[[x]] (finite field!)
+   TODO: first factor f in F_p[[x]], then compute roots of the factors
+         should be faster
  - use combine to find the combinations giving the proper factor
  - find the (small) field the factor lives over
  - lift the factor in the q-adic field
@@ -906,6 +993,7 @@ end
   find good evaluation points
   more variables
   more rings
+  compare and use the second module, the LiftCtx.
 
 example:
 

@@ -14,100 +14,6 @@ mutable struct disolveinfo{E}
     delta_coeffs        ::Vector{Vector{Vector{E}}} # taylor coeffs of answer
 end
 
-############### subsets of 1, ..., n of size m ################################
-
-mutable struct msubsets
-    n::Int
-    m::Int
-end
-
-function Base.iterate(a::msubsets)
-    state = [i <= a.m ? true : false for i in 1:a.n]
-    return (copy(state), state)
-end
-
-function Base.iterate(a::msubsets, state)
-    i = 0
-    while i < a.n && !state[1+i]
-        i += 1
-    end
-    t1 = i
-    while i < a.n && state[1+i]
-        i += 1
-    end
-    t2 = i
-    if t2 >= a.n
-        return nothing
-    end
-    newstate = [t2 <= i < a.n ? state[1+i] : false for i in 0:a.n-1]
-    newstate[1+t2] = true
-    for i in 0:t2-t1-2
-        newstate[1+i] = true
-    end
-    (copy(newstate), newstate)
-end
-
-# interface for enumerating evaluation points
-# probably over-engineered and a simple random will do
-
-function tuple_init(n::Int)
-    return zeros(fmpz, n)
-end
-
-function tuple_saturate!(alpha::Vector{fmpz}, m::Int)
-    n = length(alpha)
-    @assert n > 0
-    for i in m+1:n-1
-        alpha[1 + m] += alpha[1 + i]
-        alpha[1 + i] = 0
-    end
-    if m < n && alpha[1 + m] == 0
-        for i in 1:m
-            if alpha[i] != 0
-                return
-            end
-        end
-        alpha[1 + m] = 1
-    end
-end
-
-function tuple_next!(alpha::Vector{fmpz})
-    n = length(alpha)
-    @assert n > 0
-    sum = fmpz(0)
-    for i in 1:n
-        sum += alpha[i]
-    end
-    i = n - 1
-    while i >= 0 && alpha[1 + i] == 0
-        i -= 1
-    end
-    t1 = i
-    while i >= 0 && alpha[1 + i] != sum
-        i -= 1
-    end
-    t2 = i
-    while i >= 0 && alpha[1 + i] == sum
-        i -= 1
-    end
-    t3 = i
-    if t1 > 0 && t1 != t2
-        (alpha[1 + t1], alpha[1 + n - 1]) = (alpha[1 + n - 1], alpha[1 + t1])        
-        alpha[1 + n - 1] -= 1
-        alpha[1 + t1 - 1] += 1
-    elseif t1 > 0 && t1 == t2 && t3 >= 0
-        alpha[1 + t3] += 1
-        alpha[1 + t3 + 1] = 0
-        alpha[1 + n - 1] = sum - 1
-    else
-        alpha[1 + n - 1] = alpha[1] + 1
-        if n > 1
-            alpha[1] = 0
-        end
-    end
-end
-
-
 ########### various helpers for expansions in terms of (x - alpha) ############
 
 # the evaluation of p at x = alpha. Don't use evaluate for this!!!
@@ -154,106 +60,6 @@ function taylor_set_coeff!(t::Vector{E}, i::Int, c::E, zero::E) where E
         popback!(t)
     end
 end
-
-#################### basic manipulation of Fac ################################
-
-# a *= b^e
-function mulpow!(a::Fac{T}, b::T, e::Int) where T
-    @assert e >= 0
-    if e < 1
-        return
-    end
-    if isconstant(b)
-        a.unit *= b^e
-    elseif haskey(a.fac, b)
-        a.fac[b] += e
-    else
-        a.fac[b] = e
-    end
-end
-
-function mulpow!(a::Fac{T}, b::Fac{T}, e::Int) where T
-    @assert !(a === b)
-    @assert e >= 0
-    if e < 1
-        return
-    end
-    a.unit *= b.unit^e
-    if isempty(a.fac)
-        a.fac = b.fac
-    elseif !isempty(b.fac)
-        a.fac = merge((A, B) -> A + B*e, a.fac, b.fac)
-    end
-end
-
-################ basic manipulation of polys #################################
-
-function gcdcofactors(a, b)
-    g = gcd(a, b)
-    if iszero(g)
-        @assert iszero(a)
-        @assert iszero(b)
-        return (g, a, b)
-    else
-        return (g, divexact(a, g), divexact(b, g))
-    end
-end
-
-# remove the content with repect to variable v
-function primitive_part(a::E, v::Int)::E where E
-    R = parent(a)
-    d = degree(a, v)
-    g = R(0)
-    for i in 0:d
-        ci = coeff(a, Int[v], Int[i])
-        if !iszero(ci)
-            g = gcd(g, ci)::E
-        end
-    end
-    if iszero(g)
-        return a
-    elseif isone(g)
-        return a
-    else
-        return divexact(a, g)
-    end
-end
-
-function get_lc(a::E, v::Int)::E where E
-    d = degree(a, v)
-    @assert d >= 0
-    return coeff(a, Int[v], Int[d])
-end
-
-function set_lc(a::E, v::Int, b::E) where E
-    R = parent(a)
-    d = degree(a, v)
-    @assert d >= 0
-    diff = (b - coeff(a, Int[v], Int[d]))
-    if iszero(diff)
-        return a
-    else
-        return a + diff*gen(R, v)^d
-    end
-end
-
-function make_monic(a::E)::E where E
-    if length(a) < 1
-        return a
-    end
-    lc = coeff(a, 1)
-    if isone(a)
-        return a
-    else
-        return inv(lc) * a
-    end
-end
-
-function eval_one(a::E, v, alpha)::E where E
-    R = parent(a)
-    return divrem(a, gen(R, v) - alpha)[2]
-end
-
 
 ################ generic diophantine solver ###################################
 
@@ -465,7 +271,7 @@ function lift_prime_power(a::fmpq_mpoly, fac::Vector{Generic.MPoly{qadic}},
     n = nvars(R)
     ZZ = base_ring(R)
     Kp, mKp = ResidueField(ZZ)
-    Rp, x = PolynomialRing(Kp, n)
+    Rp, x = PolynomialRing(Kp, n, cached = false)
 
     pr = 0
 
@@ -480,7 +286,6 @@ function lift_prime_power(a::fmpq_mpoly, fac::Vector{Generic.MPoly{qadic}},
         error = a - pro  
 #println("error: ", error)
         if iszero(error)
-          @show "exact"
             break
         end
         t = map_down(Rp, error, mKp, pr)
@@ -496,62 +301,3 @@ end
 
 end
 
-#=
-println("------------- lifing to 5^10  --------------------")
-Kxyz, (x, y, z) = PolynomialRing(ZZ, ["x", "y", "z"])
-lift_prime_power(
-    (111111*x+y+z+555555)*(x-222222*y+z)*(x+y+333333*z),
-    [(111111*x+y+z), (x-2*y+z), (x+y+3*z)], # all the lc_x must be correct :-(
-    [1, 2], # evaluation points for y, z
-    [3, 3], # degree bounds for y, z
-    5, 10)
-
-
-println("----------- bad leading coefficient --------------")
-Kxyz, (x, y, z) = PolynomialRing(QQ, ["x", "y", "z"])
-@time F = mfactor_char_zero(x^24-y^24*z^12)
-println("yay! ", F)
-
-
-println("-------------- extraneous factors ----------------")
-Kxyz, (x, y, z) = PolynomialRing(QQ, ["x", "y", "z"])
-@time F = mfactor_char_zero(((x^2+y^2+z^2+2)*(x+1)*(y+2)*(z+3) + x*y*z)*(x^2+y^2+z^2+3))
-println("yay! ", F)
-
-
-println("--------------- number field ---------------------")
-QA, A = PolynomialRing(QQ, "A")
-K, a = number_field(A^3 - 2, "a")
-Kxyz, (x, y, z) = PolynomialRing(K, ["x", "y", "z"])
-println("yay! ", mfactor_char_zero(Kxyz(0)))
-println("yay! ", mfactor_char_zero(Kxyz(1)))
-println("yay! ", mfactor_char_zero(Kxyz(2)))
-println("yay! ", mfactor_char_zero(2*x^2*y*(1+y)*(x^3-2)))
-println("yay! ", mfactor_char_zero(2*x^2*y*(1+y)*(2*x^3-1)*(a*x+a^2*y+1)*(a^2*x+a*y+1)^2))
-println("yay! ", mfactor_char_zero(x^6-2*y^3))
-println("yay! ", mfactor_char_zero((x^2+z-1)*(x+a*z^3)))
-println("yay! ", mfactor_char_zero((x+y+a)*(x+a*y+1)*(x+y+2*a)))
-println("yay! ", mfactor_char_zero((x^2+y^2+a)*(x^3+a*y^3+1)*(x^2+y+2*a)))
-println("yay! ", mfactor_char_zero((1+x+a*y)^3*(1+x+a^2*y)^5))
-println("yay! ", mfactor_char_zero((x+y+z)*(a*x+y+z)*(x+a*y+z)*(x+y+a*z)))
-
-
-println("------------ rational benchmarketing -------------")
-function number_of_odd_divisors(n::Int)
-    count = 0
-    for i in 1:2:n
-        if n%i == 0
-            count += 1
-        end
-    end
-    return count
-end
-Kxyzt, (x, y, z, t) = PolynomialRing(QQ, ["x", "y", "z", "t"])
-for i in 1:15
-    @time P = ((1+x+y+z+t)^i+1)*((1+x+y+z+t)^i+2)
-    @time F = mfactor_char_zero(P)
-    println("power: ", i, ", number of factors: ", length(F.fac), ", expected: ", 1 + number_of_odd_divisors(i))
-end
-
-
-=#
