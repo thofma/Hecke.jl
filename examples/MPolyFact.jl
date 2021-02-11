@@ -713,8 +713,10 @@ function field(RC::RootCtx, m::MatElem)
       end
     end
 
-    #TODO: allow continue to lift
-    @vtime :AbsFact 1 el = Main.MFactor.lift_prime_power(P*inv(coeff(P, 1)), el, [0], [degree(P, 2)], pr)
+    # lift mod p^1 -> p^pr
+    @vtime :AbsFact 1 (ok, el) = Main.MFactor.lift_prime_power(P*inv(coeff(P, 1)), el, [0], 1, pr)
+    @assert ok  # can fail but should fail for only finitely many p
+
 
     pk = prime(Qq)^pr
 
