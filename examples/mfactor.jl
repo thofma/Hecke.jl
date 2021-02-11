@@ -263,8 +263,24 @@ function map_up(R, a, mKp :: Map, pr::Int)
     return finish(M)
 end
 
-function lift_prime_power(a::fmpq_mpoly, fac::Vector{Generic.MPoly{qadic}},
-                           alphas::Vector, degs::Vector{Int}, k::Int)
+#=
+    supposed to have a = prod(fac) mod p^kstart
+    furthermore, the fac's are supposed to be pairwise coprime univariate in
+        Fq[gen(1)] when evaluated at gen(2) = alphas[1], ... gen(n) = alphas[n-1]
+
+    try to lift to a factorization mod p^kstop  (or maybe its mod p^(kstop+1))
+=#
+function lift_prime_power(
+    a::fmpq_mpoly,
+    fac::Vector{Generic.MPoly{qadic}},
+    alphas::Vector,
+    kstart::Int,
+    kstop::Int)
+
+    if kstop <= kstart
+        return
+    end
+
 
     r = length(fac)
     R = parent(fac[1])
@@ -273,30 +289,30 @@ function lift_prime_power(a::fmpq_mpoly, fac::Vector{Generic.MPoly{qadic}},
     Kp, mKp = ResidueField(ZZ)
     Rp, x = PolynomialRing(Kp, n, cached = false)
 
-    pr = 0
+    minorvars = [i for i in 2:n]
+    degs = [degree(a, i) for i in 2:n]
 
-    ok, I = disolveinit([map_down(Rp, f, mKp, pr) for f in fac], alphas, Rp)
-    @assert ok
+    md = [map_down(Rp, f, mKp, 0) for f in fac]
+    ok, I = Hecke.AbstractAlgebra.MPolyFactor.pfracinit(md, 1, minorvars, alphas)
+    @assert ok  # evaluation of fac's should be pairwise coprime
 
     a = map_coeffs(ZZ, a, parent = parent(fac[1]))
 
-    for l in 1:k
-        pr += 1
-        pro = prod(fac)
-        error = a - pro  
-#println("error: ", error)
+    for l in kstart:kstop
+        error = a - prod(fac)
         if iszero(error)
             break
         end
-        t = map_down(Rp, error, mKp, pr)
-        ok, deltas = disolve(I, t, degs)
-        @assert ok
-        for i in 1:r
-            fac[i] += map_up(R, deltas[i], mKp, pr)
+        t = map_down(Rp, error, mKp, l)
+        ok, deltas = Hecke.AbstractAlgebra.MPolyFactor.pfrac(I, t, degs, true)
+        if !ok
+            return false, fac
         end
-#println("newfac: ", fac)
+        for i in 1:r
+            fac[i] += map_up(R, deltas[i], mKp, l)
+        end
     end
-    return fac
+    return true, fac
 end
 
 end
