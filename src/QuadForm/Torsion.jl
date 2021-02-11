@@ -481,3 +481,50 @@ end
 #       elif check and max_modulus_qf / modulus_qf not in V.base_ring():
 #           raise ValueError("the modulus_qf must divide (V, W)")
 #       return super(TorsionQuadraticModule, cls).__classcall__(cls, V, W, gens, modulus, modulus_qf)
+@doc Markdown.doc"""
+    primary_part(T::TorQuadMod, m::fmpz)-> Tuple{TorQuadMod, TorQuadModMor}
+
+Return the primary part of `T` as a submodule.
+"""
+function primary_part(T::TorQuadMod, m::fmpz)
+  S, i = psylow_subgroup(T.ab_grp, m)
+  genprimary = [i(s) for s in gens(S)]
+  submod = sub(T, [T(a) for a in genprimary])
+  return submod
+end
+
+@doc Markdown.doc"""
+    orthogonal_submodule_to(T::TorQuadMod, S::TorQuadMod)-> TorQuadMod
+
+Return the orthogonal submodule to the submodule `S` of `T`.
+"""
+function orthogonal_submodule_to(T::TorQuadMod, S::TorQuadMod)
+  @assert issublattice(cover(T), cover(S)) "The second argument is not a submodule of the first argument"
+  V = ambient_space(cover(T))
+  G = gram_matrix(V)
+  B = basis_matrix(cover(T))
+  C = basis_matrix(cover(S))
+  m = T.modulus
+  Y = B * G * transpose(C)
+  # Elements of the ambient module which pair integrally with cover(T)
+  integral = inv(Y) * B
+  # Element of the ambient module which pair in mZZ with cover(T)
+  orthogonal =  m * integral
+  # We have to make sure we get a submodule
+  Ortho = intersect(lattice(V, B), lattice(V, orthogonal))
+  ortho = Hecke.discriminant_group(Ortho)
+  return sub(T, gens(ortho))
+end
+
+@doc Markdown.doc"""
+    isdegenerate(T::TorQuadMod)-> Bool 
+
+Return true if the underlying bilinear form is degenerate.
+"""
+function isdegenerate(T::TorQuadMod)
+  if order(orthogonal_submodule_to(T,T)[1]) == 1
+    return true
+  else 
+    return false
+  end
+end
