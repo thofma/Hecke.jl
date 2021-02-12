@@ -8,14 +8,12 @@ export absolute_bivariate_factorisation
 add_verbose_scope(:AbsFact)
 add_assert_scope(:AbsFact)
 
-Hecke.example("mfactor.jl")
-
 function Hecke.norm(f::MPolyElem{nf_elem})
   Kx = parent(f)
   K = base_ring(Kx)
   n = nvars(Kx)
-  Qx, x = PolynomialRing(QQ, [String(x) for x= symbols(Kx)])
-  Qxy, y = PolynomialRing(Qx, "y")
+  Qx, x = PolynomialRing(QQ, [String(x) for x= symbols(Kx)], cached = false)
+  Qxy, y = PolynomialRing(Qx, "y", cached = false)
   gg = [MPolyBuildCtx(Qx) for i=1:degree(K)]
   for (c, e) = zip(coeffs(f), exponent_vectors(f))
     for i=0:degree(K)-1
@@ -104,6 +102,17 @@ Hecke.inv(phi :: Nemo.FinFieldMorphism) = preimage_map(phi)
  compute the roots up to a bound B over the F_q splitting field
    as power series
  compute the coeffs. of f (as elements in Q[x]) as power series
+
+ TODO: factor f over F_p[[t]], then compute the roots of the
+       factors in F_q[[t]]. Each factor over F_p[[t]] should
+       correspong to a Frobenius orbit of roots.
+       This way the degrees are smaller....
+
+ TODO: refactor: a HenselCtx for fmpq_mpoly (or fmpz_mpoly) factored
+       in F_p[[t]][x]
+       a RootCtx for poly in F_p[[t]][x] to find roots in F_q[[t]]
+       
+       See what Dan did in this case.
 =#
 mutable struct RootCtx
   f::fmpq_mpoly
@@ -119,7 +128,7 @@ mutable struct RootCtx
 
     s = parent(r[1])
 
-    S = PowerSeriesRing(s, 2, "s")[1]
+    S = PowerSeriesRing(s, 2, "s", cached = false)[1]
     l = new()
     l.f = f
     l.R = [S(x) for x = r]
@@ -246,7 +255,7 @@ function roots(f::fmpq_mpoly, p_max::Int=2^25; pr::Int = 2)
   local p
   while true
     p_max = next_prime(p_max)
-    gp = factor(g, GF(p_max))
+    gp = factor(g, GF(p_max, cached = false))
     if any(x->x>1, values(gp.fac))
       @vprint :AbsFact 1 "not squarefree mod $p_max\n"
       continue
@@ -266,7 +275,7 @@ function roots(f::fmpq_mpoly, p_max::Int=2^25; pr::Int = 2)
       break
     end
   end
-  F = FiniteField(p, d)[1]
+  F = FiniteField(p, d, cached = false)[1]
   @hassert :AbsFact 1 !iszero(discriminant(map_coeffs(F, g)))
   @vtime :AbsFact 2 r = Set(Hecke.roots(g, F))
   @assert length(r) == degree(g)
@@ -390,7 +399,7 @@ function combination(RC::RootCtx)
   k = degree(F)
 
   p = characteristic(F)
-  Fp = GF(p)
+  Fp = GF(p, cached = false)
 
   #the paper
   # https://www.math.univ-toulouse.fr/~cheze/facto_abs.m
@@ -515,7 +524,7 @@ function Hecke.map_coeffs(f, a::RelSeriesElem)
   if parent(d) == base_ring(T)
     S = T
   else
-    S = PowerSeriesRing(d, max_precision(T), string(var(T)))[1]
+    S = PowerSeriesRing(d, max_precision(T), string(var(T)), cached = false)[1]
   end
   c = typeof(d)[d]
   for i=1:Nemo.pol_length(a)-1
@@ -548,6 +557,24 @@ Base.inv(f::MapFromFunc) = MapFromFunc(x->preimage(f, x), codomain(f), domain(f)
 
 function Hecke.squarefree_part(a::PolyElem)
   return divexact(a, gcd(a, derivative(a)))
+end
+
+#TODO: possibly rename and export. This is used elsewhere
+# Combine with the Hecke._meet into a POSet structure?
+"""
+Compute an array of arrays of indices (Int) indicating a partitioning of
+the indices according to the values in `a`
+"""
+function block_system(a::Vector{T}) where {T}
+  d = Dict{T, Array{Int, 1}}()
+  for i=1:length(a)
+    if haskey(d, a[i])
+      push!(d[a[i]], i)
+    else
+      d[a[i]] = [i]
+    end
+  end
+  return sort(collect(values(d)), lt = (a,b) -> isless(a[1], b[1])) 
 end
 
 """
@@ -611,8 +638,8 @@ function field(RC::RootCtx, m::MatElem)
     phi = MapFromFunc(x->F((coeff(x, 0))), y->k((coeff(y, 0))), k, F)
   end
 
-  kt, t = PolynomialRing(k)
-  kXY, (X, Y) = PolynomialRing(k, ["X", "Y"])
+  kt, t = PolynomialRing(k, cached = false)
+  kXY, (X, Y) = PolynomialRing(k, ["X", "Y"], cached = false)
 
   nl = []
   kS = PowerSeriesRing(k, tf+2, "s")[1]
@@ -644,7 +671,7 @@ function field(RC::RootCtx, m::MatElem)
     end
     push!(nl, finish(f))
   end
-  @vprint :AbsFact 2 "now building the leading coeff..."
+  @vprint :AbsFact 2 "now building the leading coeff...\n"
   lc = map(x->evaluate(leading_coefficient(x, 1), [0*t, t]), nl)
 
   for i = 1:length(lc)
@@ -671,23 +698,64 @@ function field(RC::RootCtx, m::MatElem)
 
   el = nl
 
-  #assuming one coeff is primtive...
-  #the first coeff has to be primitive as the other could be re-computed by lifting, hence cannot
-  #enlarge the field
-  pe_j = 1
-  local s
-  while true
-    s = Set([(coeff(x, pe_j)) for x = el])
-    if length(s) == length(el)
+  @vprint :AbsFact 1 "locating primitive element...\n"
+  #currently, we're in F_q[[t]], not Q_q[[t]], however, the primitivity
+  #can already be decided over F_q as lifting can not enlarge the field
+
+  #if no single coefficient is primtive, use block systems and sums of coeffs
+  #to find a primitive one.
+  all_bs = []
+  pe_j = 0
+  for i = 1:length(el[1])
+    bs = block_system([coeff(x, i) for x = el])
+    @vprint :AbsFact 3 "block system of coeff $i is $bs\n"
+    @assert all(x->length(x) == length(bs[1]), bs)
+    if length(bs[1]) == 1
+      pe_j = i
       break
     end
-    pe_j += 1
+    push!(all_bs, bs)
   end
 
-  @vprint :AbsFact 2 "$(pe_j)-th coeff is primitive\n"
+  local pe
+  if pe_j == 0
+    @vprint :AbsFact 2 "no single coefficient is primitive, having to to combinations\n"
+    bs = [collect(1:length(el))]
+    used = Int[]
+    for i=1:length(el[1])
+      cs = Hecke._meet(bs, all_bs[i])
+      if length(cs) > length(bs)
+        bs = cs
+        push!(used, i)
+      end
+      if length(bs[1]) == 1
+        break
+      end
+    end
+    @vprint :AbsFact 2 "using coeffs $used to form primtive element\n"
+    pow = 1
+    while true
+      pe = x -> (sum(coeff(x, t) for t = used)^pow)
+      bs = block_system([pe(x) for x = el])
+      if length(bs[1]) == 1
+        @vprint :AbsFact 2 "using sum to the power $pow\n"
+        break
+      end
+      pow += 1
+    end
+  else
+    @vprint :AbsFact 2 "$(pe_j)-th coeff is primitive\n"
+    pe = x -> coeff(x, pe_j)
+  end
+
   @vprint :AbsFact 1 "hopefully $(length(el)) degree field\n"
 
-  QqXY, _ = PolynomialRing(Qq, 2)
+  #TODO: Think: Do we need to lift all n factors? In the end we're going
+  #      to return el[1] and prod(el[2:n]) only.
+  #      Problem: currently I need all conjugates of the coeffs, hence all
+  #      the el's individually.
+
+  QqXY, _ = PolynomialRing(Qq, 2, cached = false)
 
   el = [map_coeffs(x->preimage(mk, x), y, parent = QqXY) for y = el]
 
@@ -715,7 +783,7 @@ function field(RC::RootCtx, m::MatElem)
     end
 
     # lift mod p^1 -> p^pr
-    @vtime :AbsFact 1 ok, el = Main.MFactor.lift_prime_power(P*inv(coeff(P, 1)), el, [0], 1, pr)
+    @vtime :AbsFact 1 ok, el = lift_prime_power(P*inv(coeff(P, 1)), el, [0], 1, pr)
     ok || @vprint :AbsFact 1 "bad prime found, q-adic lifting failed\n"
     ok || return nothing
     @assert ok  # can fail but should fail for only finitely many p
@@ -725,7 +793,7 @@ function field(RC::RootCtx, m::MatElem)
 
     #to make things integral...
     fl = Qq(llc) .* el
-    p = [coeff(sum(coeff(x, pe_j)^l for x = fl), 0) for l=1:length(el)]
+    p = [coeff(sum(pe(x)^l for x = fl), 0) for l=1:length(el)]
     p = map(rational_reconstruction, p)
 
     if !all(x->x[1], p)
@@ -745,9 +813,9 @@ function field(RC::RootCtx, m::MatElem)
 
     @vprint :AbsFact 1  "using as number field: $k\n"
 
-    m = matrix([[(coeff(x, pe_j)^l) for x = fl] for l=0:degree(k)-1])
-    kx, x = k["x"]
-    kX, (X, Y) = PolynomialRing(k, ["X", "Y"])
+    m = matrix([[pe(x)^l for x = fl] for l=0:degree(k)-1])
+    kx, x = PolynomialRing(k, "x", cached = false)
+    kX, (X, Y) = PolynomialRing(k, ["X", "Y"], cached = false)
     B = MPolyBuildCtx(kX)
     for j=1:length(el[1])
       n = matrix([[coeff(x, j)] for x = fl])
@@ -846,6 +914,85 @@ function absolute_bivariate_factorisation(f::fmpq_mpoly)
   return a, b
 end
 
+# From Dan, the lifting in Qq[x,y]
+
+function map_down(Rp, a, mKp :: Map, pr::Int)
+    M = MPolyBuildCtx(Rp)
+    pk = prime(base_ring(a))^pr
+    for (c, v) in zip(coeffs(a), exponent_vectors(a))
+        @assert valuation(c) >= pr
+        q = divexact(c, pk)  #should be a shift
+        push_term!(M, mKp(q), v)
+    end
+    return finish(M)
+end
+
+function map_up(R, a, mKp :: Map, pr::Int)
+    Rp = parent(a)
+    Kp = base_ring(Rp)
+    M = MPolyBuildCtx(R)
+    pk = prime(base_ring(R))^pr
+
+    for (c, v) in zip(coeffs(a), exponent_vectors(a))
+        d = preimage(mKp, c)
+        push_term!(M, d*pk, v)
+    end
+    return finish(M)
+end
+
+#=
+    supposed to have a = prod(fac) mod p^kstart
+    furthermore, the fac's are supposed to be pairwise coprime univariate in
+        Fq[gen(1)] when evaluated at gen(2) = alphas[1], ... gen(n) = alphas[n-1]
+
+    try to lift to a factorization mod p^kstop  (or maybe its mod p^(kstop+1))
+=#
+function lift_prime_power(
+    a::fmpq_mpoly,
+    fac::Vector{Generic.MPoly{qadic}},
+    alphas::Vector,
+    kstart::Int,
+    kstop::Int)
+
+    if kstop <= kstart
+        return
+    end
+
+
+    r = length(fac)
+    R = parent(fac[1])
+    n = nvars(R)
+    ZZ = base_ring(R)
+    Kp, mKp = ResidueField(ZZ)
+    Rp, x = PolynomialRing(Kp, n, cached = false)
+
+    minorvars = [i for i in 2:n]
+    degs = [degree(a, i) for i in 2:n]
+
+    md = [map_down(Rp, f, mKp, 0) for f in fac]
+    ok, I = Hecke.AbstractAlgebra.MPolyFactor.pfracinit(md, 1, minorvars, alphas)
+    @assert ok  # evaluation of fac's should be pairwise coprime
+
+    a = map_coeffs(ZZ, a, parent = parent(fac[1]))
+
+    for l in kstart:kstop
+        error = a - prod(fac)
+        if iszero(error)
+            break
+        end
+        t = map_down(Rp, error, mKp, l)
+        ok, deltas = Hecke.AbstractAlgebra.MPolyFactor.pfrac(I, t, degs, true)
+        if !ok
+            return false, fac
+        end
+        for i in 1:r
+            fac[i] += map_up(R, deltas[i], mKp, l)
+        end
+    end
+    return true, fac
+end
+
+
 function example(k::AnticNumberField, d::Int, nt::Int, c::AbstractRange=-10:10)
   kx, (x, y) = PolynomialRing(k, 2, cached = false)
   f = kx()
@@ -860,165 +1007,12 @@ end
 using .MPolyFact
 export absolute_bivariate_factorisation
 
-module MPolyLift
-using Hecke
-
-mutable struct LiftPairCtx
-  f::MPolyElem{qadic}
-  g::MPolyElem{qadic}
-  h::MPolyElem{qadic}
-  a::MPolyElem{qadic}
-  b::MPolyElem{qadic}
-  pr_p ::Int
-  pr_y ::Int
-
-  function LiftPairCtx(g::MPolyElem{qadic}, h::MPolyElem{qadic})
-    return LiftPairCtx(g*h, g, h)
-  end
-  function LiftPairCtx(f::MPolyElem{qadic}, g::MPolyElem{qadic}, h::MPolyElem{qadic})
-    r = new()
-    r.f = f
-    R = base_ring(g)
-    Rx = parent(g)
-    k, mk = ResidueField(R)
-
-    gp = map_coeffs(mk, g)
-    hp = map_coeffs(mk, h, parent = parent(gp))
-
-    kx, x = PolynomialRing(k, cached = false)
-    _, ap, bp = gcdx(evaluate(gp, [x, 0*x]), evaluate(hp, [x, 0*x]))
-    r.a = setprecision(map_coeffs(x->preimage(mk, x), ap)(gen(Rx, 1)), 1)
-    r.b = setprecision(map_coeffs(x->preimage(mk, x), bp)(gen(Rx, 1)), 1)
-
-    r.g = divrem(setprecision(g, 1), [gen(Rx, 2)])[2]
-    r.h = divrem(setprecision(h, 1), [gen(Rx, 2)])[2]
-
-    r.pr_p = r.pr_y = 1
-
-    return r
-  end
-end
-
-function lift_y(r::LiftPairCtx)
-  y = gen(parent(r.f), 2)
-  yk = y^r.pr_y
-  fgh = divexact(r.f - r.g*r.h, yk)
-  G = divrem(fgh*r.b, [r.g])[2]*yk+r.g
-  H = divrem(fgh*r.a, [r.h])[2]*yk+r.h
-  ogh = divexact(1-r.a*G - r.b*H, yk)
-  B = divrem(ogh*r.b, [r.g])[2]*yk+r.b
-  A = divrem(ogh*r.a, [r.h])[2]*yk+r.a
-  yk *= yk
-  r.g = divrem(G, yk)[2]
-  r.h = divrem(H, yk)[2]
-  r.a = divrem(A, yk)[2]
-  r.b = divrem(B, yk)[2]
-  r.pr_y *= 2
-end
-
-function lift_p(r::LiftPairCtx)
-  p = Hecke.uniformizer(base_ring(r.f))
-  pk = p^r.pr_p
-  r.pr_p *= 2
-  y = gen(parent(r.f), 2)
-  yk = y^r.pr_y
-  r.g = setprecision(r.g, r.pr_p)
-  r.h = setprecision(r.h, r.pr_p)
-  r.a = setprecision(r.a, r.pr_p)
-  r.b = setprecision(r.b, r.pr_p)
-
-  fgh = divexact(r.f - r.g*r.h, pk)
-  G = divrem(divrem(divrem(fgh*r.b, [yk])[2], r.g)[2]*pk+r.g, [yk])[2]
-  H = divrem(divrem(divrem(fgh*r.a, [yk])[2], r.h)[2]*pk+r.h, [yk])[2]
-  ogh = divexact(divrem(1-r.a*G - r.b*H, [yk])[2], pk)
-  B = divrem(divrem(ogh*r.b, [yk])[2], r.g)[2]*pk+r.b
-  A = divrem(divrem(ogh*r.a, [yk])[2], r.h)[2]*pk+r.a
-  r.g = G
-  r.h = H
-  r.a = A
-  r.b = B
-end
-
-mutable struct LiftCtx
-  f::MPolyElem{qadic}
-  C::Array{LiftPairCtx, 1}
-  pr_p::Int
-  pr_y::Int
-  function LiftCtx(f::MPolyElem{qadic}, g::Array{<:MPolyElem{qadic}, 1})
-    C = Array{LiftPairCtx, 1}()
-    for i=1:div(length(g), 2)
-      push!(C, LiftPairCtx(g[2*i-1], g[2*i]))
-    end
-    i = 1
-    if isodd(length(g))
-      push!(C, LiftPairCtx(g[end], C[1].f))
-      i += 1
-    end
-    while 2*i <= length(C)
-      push!(C, LiftPairCtx(C[2*i-1].f, C[2*i].f))
-      i += 1
-    end
-
-    r = new()
-    r.f = f
-    @show C[end].f
-    @show f
-    @assert degree(C[end].f, 1) == degree(f, 1)
-    C[end].f = f
-    r.C = C
-    r.pr_p = r.pr_y = 1
-    return r
-  end
-end
-
-function lift_y(R::LiftCtx)
-  C = R.C
-  i = length(C)
-  j = i-1
-
-  while i >= 1
-    lift_y(C[i])
-    if j>= 2
-      C[j].f = C[i].h
-      C[j-1].f = C[i].g
-    elseif j >= 1
-      C[j].f = C[i].h
-    end
-    j -= 2
-    i -= 1
-  end
-  R.pr_y *= 2
-end
-
-function lift_p(R::LiftCtx)
-  C = R.C
-  i = length(C)
-  j = i-1
-
-  while i >= 1
-    lift_p(C[i])
-    if j>= 2
-      C[j].f = C[i].h
-      C[j-1].f = C[i].g
-    elseif j >= 1
-      C[j].f = C[i].h
-    end
-    j -= 2
-    i -= 1
-  end
-  R.pr_p *= 2
-end
-
-end
-
 #= revised strategy until I actually understand s.th. better
- - assumming f is monic in y, irreducible over Q and f(0) is squarefree
-   (currently: leading_coef(f, 1) needs to be monic, ie. coeff(f, 1)==1)
-   (we first make f integral (clearing denominators), then make it "monic"
+ - "shift" to make f(o, y) square-free
  - find a prime s.th. f(0, y) is square-free with a small degree splitting field
  - compute roots in F_q[[x]] (finite field!)
    TODO: first factor f in F_p[[x]], then compute roots of the factors
-         should be faster
+         should be faster (see above, more comments)
  - use combine to find the combinations giving the proper factor
  - find the (small) field the factor lives over
  - lift the factor in the q-adic field
@@ -1026,12 +1020,6 @@ end
 
  TODO:
   bounds on the precisions (poly prec)
-  non-monic: use "any_order", the generalised equation order to produce
-    integral power sums -> make_monic
-  find good evaluation points
-  more variables
-  more rings
-  compare and use the second module, the LiftCtx.
 
 example:
 
@@ -1039,9 +1027,7 @@ Qxy, (y, x) = PolynomialRing(QQ, ["y", "x"])
 include("/home/fieker/Downloads/n60s3.m"); 
   #from  https://www.math.univ-toulouse.fr/~cheze/n60s3.m
 
-  r = MPolyFact.roots(P)
-  c = MPolyFact.combination(r)
-  q = MPolyFact.field(r, c)
+  r = absolute_bivariate_factorisation(P)
 
   from the Rupprecht paper, but the 3rd is boring (probably wrong)
 
