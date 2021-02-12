@@ -852,7 +852,7 @@ function norm_mod(f::PolyElem{nf_elem}, p::Int, Zx::FmpzPolyRing = Globals.Zx)
     end
     first = false
   end
-  pol = power_sums_to_polynomial(v)
+  pol = _power_sums_to_polynomial(v)
   return lift(Zx, pol)
 end
 

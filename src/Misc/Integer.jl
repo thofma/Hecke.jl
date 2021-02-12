@@ -772,7 +772,8 @@ end
 # random and factor
 ################################################################################
 
-factor(a::RingElem) = Nemo.factor(a)
+factor(a...; b...) = Nemo.factor(a...; b...)
+
 factor(a::Integer) = factor(fmpz(a))
 
 mutable struct flint_rand_ctx_t
