@@ -972,7 +972,6 @@ function lift_prime_power(
         return
     end
 
-
     r = length(fac)
     R = parent(fac[1])
     n = nvars(R)
@@ -991,6 +990,13 @@ function lift_prime_power(
 
     for l in kstart:kstop
         error = a - prod(fac)
+
+        for c in coeffs(error)
+          if valuation(c) < l
+            throw(AssertionError("factorization is not correct mod p^$l"))
+          end
+        end
+
         if iszero(error)
             break
         end
@@ -1015,7 +1021,179 @@ function example(k::AnticNumberField, d::Int, nt::Int, c::AbstractRange=-10:10)
   end
   return norm(f)
 end
-  
+
+
+function isirreducible(a::fmpq_mpoly)
+  af = factor(a)
+  return !(length(af.fac) > 1 || any(x->x>1, values(af.fac)))
+end
+
+function _change_base_ring(R, a)
+  z = MPolyBuildCtx(R)
+  for (c, exps) in zip(coeffs(a), exponent_vectors(a))
+    push_term!(z, base_ring(R)(c), exps)
+  end
+  return finish(z)
+end
+
+# f is bivariate. return f(xvar, 0) where xvar is in the multivar ring R
+function _yzero_image(R, f, xvar::Int)
+  z = MPolyBuildCtx(R)
+  zexps = zeros(Int, nvars(R))
+  for (c, exps) in zip(coeffs(f), exponent_vectors(f))
+    @assert length(exps) == 2
+    if exps[2] == 0
+      zexps[xvar] = exps[1]
+      push_term!(z, base_ring(R)(c), zexps)
+    end
+  end
+  return finish(z)
+end
+
+function absolute_multivariate_factorisation(a::fmpq_mpoly)
+  result = Any[]
+
+  Qxy, (x, y) = PolynomialRing(QQ, ["x", "y"])
+
+  R = parent(a)
+  K = base_ring(R)
+
+  alphas = zeros(ZZ, nvars(R))
+  uni_sub = zeros(Qxy, nvars(R))
+  bi_sub = zeros(Qxy, nvars(R))
+
+  @assert length(a) > 0
+
+  lc = coeff(a, 1)
+  if !isone(lc)
+    push!(result, lc)
+    a *= inv(lc)
+  end
+
+  degs = degrees(a)
+  vars = Int[]    # variables that actually appear
+  for v in 1:nvars(R)
+    if degs[v] > 0
+      push!(vars, v)
+    end
+  end
+
+  if isempty(vars)
+    @assert isone(a)
+    return result
+  end
+
+  sort!(vars, by = (v -> degs[v]), alg=InsertionSort)
+
+  if degs[1] == 1
+    # linear is irreducible by assumption
+    push!(result, a)
+    return result
+  elseif length(vars) == 1
+    throw(AssertionError("not implemented"))
+    return result
+  elseif length(vars) == 2
+    bi_sub[vars[1]] = x
+    bi_sub[vars[2]] = y
+    f, fbar = absolute_bivariate_factorisation(evaluate(a, bi_sub))
+    K1 = base_ring(f)
+    R1 = PolynomialRing(K1, map(string, symbols(R)), ordering = ordering(R))[1]
+    revsub = [gen(R1, vars[1]), gen(R1, vars[2])]
+    push!(result, evaluate(f, revsub))
+    push!(result, evaluate(fbar, revsub))
+    return result
+  end
+
+  maindeg = degree(a, vars[1])
+  mainvar = vars[1]
+  minorvars = vars[2:end]
+
+  lcaf = factor_squarefree(Hecke.AbstractAlgebra.MPolyFactor.get_lc(a, mainvar))
+
+  lcc_fails_remaining = 3
+  bits = 1
+
+@label next_alpha
+
+  if bits > 1000
+    error("too many iterations")
+  end
+
+  uni_sub[mainvar] = x
+  for i in 1:length(minorvars)
+    alphas[i] = rand_bits(ZZ, rand(1:bits))
+    uni_sub[minorvars[i]] = Qxy(alphas[i])
+  end
+
+  uni_a = evaluate(a, uni_sub)
+
+  if degree(uni_a, mainvar) != maindeg || !isirreducible(uni_a)
+    bits += 1
+    @goto next_alpha
+  end
+
+  bi_sub_degree = 1
+
+  if bi_sub_degree > 1 + bits/8
+    bits += 2
+    @goto next_alpha
+  end
+
+  # The substitution down to univariate is good and produces an irreducible.
+  # Therefore, whatever bivariate is generated will be irreducible if the y = 0
+  # image agrees with the univariate substitution.
+  bi_sub[mainvar] = x
+  for i in 1:length(minorvars)
+    bi_sub[minorvars[i]] = Qxy(alphas[i])
+    for j in 1:bi_sub_degree
+      bi_sub[minorvars[i]] += Qxy(rand_bits(ZZ, rand(1:bits)))*y^j
+    end
+  end
+
+  bi_a = evaluate(a, bi_sub)
+  f, fbar = absolute_bivariate_factorisation(bi_a)
+
+  K1 = base_ring(f)
+  R1 = PolynomialRing(K1, map(string, symbols(R)), ordering = ordering(R))[1]
+  f = _yzero_image(R1, f, mainvar)
+  fbar = _yzero_image(R1, fbar, mainvar)
+
+  if degree(f, mainvar) < 1 || degree(fbar, mainvar) < 1
+    # a is abs irreducible
+    push!(result, a)
+    return
+  end
+
+  # map the stuff in Q to the number field
+  A = _change_base_ring(R1, a)
+  lcAf = Fac{elem_type(R1)}()
+  lcAf.unit = _change_base_ring(R1, lcaf.unit)
+  for i in lcaf.fac
+    lcAf[_change_base_ring(R1, i[1])] = i[2]
+  end
+
+  ok, divs = Hecke.AbstractAlgebra.MPolyFactor.lcc_kaltofen(
+                       lcAf, A, mainvar, maindeg, minorvars, alphas, [f, fbar])
+  if !ok
+    lcc_fails_remaining -= 1
+    if lcc_fails_remaining >= 0
+      @goto next_alpha
+    end
+  end
+
+  ok, fac = Hecke.AbstractAlgebra.MPolyFactor.hlift_with_lcc(
+                                A, [f, fbar], divs, mainvar, minorvars, alphas)
+  if !ok
+    @goto next_alpha
+  end
+
+  @assert length(fac) == 2
+
+  push!(result, Hecke.AbstractAlgebra.MPolyFactor.make_monic(fac[1]))
+  push!(result, Hecke.AbstractAlgebra.MPolyFactor.make_monic(fac[2]))
+  return result
+end
+
 end
 
 using .MPolyFact
