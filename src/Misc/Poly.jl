@@ -1,5 +1,5 @@
 
-export rational_reconstruction, farey_lift, div, valence, leading_coefficient,
+export rational_reconstruction, farey_lift, div, leading_coefficient,
        trailing_coefficient, constant_coefficient, factor_mod_pk,
        factor_mod_pk_init, hensel_lift, rres, rresx,
        coefficients, polynomial
