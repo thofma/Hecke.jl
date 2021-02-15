@@ -514,30 +514,31 @@ function discriminant(C::ClassField)
     mG = g_and_maps[i][2]
     if isone(v)
       tmg = mG.tame[p]
-      el = mS(tmg.disc_log[1])
+      el = mS(tmg.disc_log)
       Q, mQ = quo(R, GrpAbFinGenElem[el], false)
       relative_disc[p] = n - order(Q)
-    else
-      s = v
-      @hassert :AbExt 1 s>=2
-      els = GrpAbFinGenElem[]
-      for k = 2:v
-        s = s-1
-        pk = p^s
-        pv = pk*p
-        gens = _1pluspk_1pluspk1(K, p, pk, pv, powers, a)
-        for i=1:length(gens)
-          push!(els, mp\ideal(O, gens[i]))
-        end
-        ap -= order(quo(R,els, false)[1])
-        @hassert :AbExt 1 ap>0
+      continue
+    end
+    s = v
+    ap = v*degree(C)
+    @hassert :AbExt 1 s>=2
+    els = GrpAbFinGenElem[]
+    for k = 2:v
+      s = s-1
+      pk = p^s
+      pv = pk*p
+      gens = _1pluspk_1pluspk1(K, p, pk, pv, powers, a, expo)
+      for i=1:length(gens)
+        push!(els, mp\ideal(O, gens[i]))
       end
-      if haskey(mG.tame, p)
-        push!(els, mS(mG.tame[p].disc_log[1]))
-      end
-      ap -= order(quo(R, els, false)[1])
+      ap -= Int(order(quo(R, els, false)[1]))
       @hassert :AbExt 1 ap>0
     end
+    if haskey(mG.tame, p)
+      push!(els, mS(mG.tame[p].disc_log[1]))
+    end
+    ap -= Int(order(quo(R, els, false)[1]))
+    @hassert :AbExt 1 ap>0
     relative_disc[p] = ap
   end
   C.relative_discriminant = relative_disc
