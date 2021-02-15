@@ -1051,7 +1051,6 @@ function _yzero_image(R, f, xvar::Int)
 end
 
 function absolute_multivariate_factorisation(a::fmpq_mpoly)
-  result = Any[]
 
   Qxy, (x, y) = PolynomialRing(QQ, ["x", "y"])
 
@@ -1059,15 +1058,13 @@ function absolute_multivariate_factorisation(a::fmpq_mpoly)
   K = base_ring(R)
 
   alphas = zeros(ZZ, nvars(R))
-  uni_sub = zeros(Qxy, nvars(R))
   bi_sub = zeros(Qxy, nvars(R))
 
   @assert length(a) > 0
 
-  lc = coeff(a, 1)
-  if !isone(lc)
-    push!(result, lc)
-    a *= inv(lc)
+  unit = coeff(a, 1)
+  if !isone(unit)
+    a *= inv(unit)
   end
 
   degs = degrees(a)
@@ -1080,18 +1077,22 @@ function absolute_multivariate_factorisation(a::fmpq_mpoly)
 
   if isempty(vars)
     @assert isone(a)
-    return result
+    return (unit, [])
   end
 
   sort!(vars, by = (v -> degs[v]), alg=InsertionSort)
 
   if degs[1] == 1
     # linear is irreducible by assumption
-    push!(result, a)
-    return result
+    return (unit, [a])
   elseif length(vars) == 1
-    throw(AssertionError("not implemented"))
-    return result
+    uni_sub = zeros(Hecke.Globals.Qx, nvars(R))
+    uni_sub[vars[1]] = gen(Hecke.Globals.Qx)
+    K1, alpha = number_field(evaluate(a, uni_sub))
+    R1 = PolynomialRing(K1, map(string, symbols(R)), ordering = ordering(R))[1]
+    A = _change_base_ring(R1, a)
+    x = gen(R1, vars[1])
+    return (unit, [x - alpha, divexact(A, x - alpha)])
   elseif length(vars) == 2
     bi_sub[vars[1]] = x
     bi_sub[vars[2]] = y
@@ -1099,9 +1100,8 @@ function absolute_multivariate_factorisation(a::fmpq_mpoly)
     K1 = base_ring(f)
     R1 = PolynomialRing(K1, map(string, symbols(R)), ordering = ordering(R))[1]
     revsub = [gen(R1, vars[1]), gen(R1, vars[2])]
-    push!(result, evaluate(f, revsub))
-    push!(result, evaluate(fbar, revsub))
-    return result
+    return (unit, [evaluate(f, revsub), evaluate(fbar, revsub)])
+
   end
 
   maindeg = degree(a, vars[1])
@@ -1119,13 +1119,13 @@ function absolute_multivariate_factorisation(a::fmpq_mpoly)
     error("too many iterations")
   end
 
-  uni_sub[mainvar] = x
+  bi_sub[mainvar] = x
   for i in 1:length(minorvars)
     alphas[i] = rand_bits(ZZ, rand(1:bits))
-    uni_sub[minorvars[i]] = Qxy(alphas[i])
+    bi_sub[minorvars[i]] = Qxy(alphas[i])
   end
 
-  uni_a = evaluate(a, uni_sub)
+  uni_a = evaluate(a, bi_sub)
 
   if degree(uni_a, mainvar) != maindeg || !isirreducible(uni_a)
     bits += 1
@@ -1140,8 +1140,8 @@ function absolute_multivariate_factorisation(a::fmpq_mpoly)
   end
 
   # The substitution down to univariate is good and produces an irreducible.
-  # Therefore, whatever bivariate is generated will be irreducible if the y = 0
-  # image agrees with the univariate substitution.
+  # Therefore, whatever bivariate is generated, the primitive part will be
+  # irreducible if the y = 0 image agrees with the univariate substitution.
   bi_sub[mainvar] = x
   for i in 1:length(minorvars)
     bi_sub[minorvars[i]] = Qxy(alphas[i])
@@ -1151,6 +1151,11 @@ function absolute_multivariate_factorisation(a::fmpq_mpoly)
   end
 
   bi_a = evaluate(a, bi_sub)
+  bi_a = Hecke.AbstractAlgebra.MPolyFactor.primitive_part(bi_a, 1)
+  if degree(bi_a, 2) < 1
+    @goto next_alpha
+  end
+
   f, fbar = absolute_bivariate_factorisation(bi_a)
 
   K1 = base_ring(f)
@@ -1160,8 +1165,7 @@ function absolute_multivariate_factorisation(a::fmpq_mpoly)
 
   if degree(f, mainvar) < 1 || degree(fbar, mainvar) < 1
     # a is abs irreducible
-    push!(result, a)
-    return
+    return (unit, [a])
   end
 
   # map the stuff in Q to the number field
@@ -1188,9 +1192,18 @@ function absolute_multivariate_factorisation(a::fmpq_mpoly)
   end
 
   @assert length(fac) == 2
+  return (unit, map(Hecke.AbstractAlgebra.MPolyFactor.make_monic, fac))
+end
 
-  push!(result, Hecke.AbstractAlgebra.MPolyFactor.make_monic(fac[1]))
-  push!(result, Hecke.AbstractAlgebra.MPolyFactor.make_monic(fac[2]))
+function factor_absolute(a::fmpq_mpoly)
+  result = Any[]
+  fa = factor(a)
+  push!(result, fa.unit)
+  for (p, e) in fa
+    unit, fp = absolute_multivariate_factorisation(p)
+    result[1] *= unit
+    push!(result, fp => e)
+  end
   return result
 end
 
