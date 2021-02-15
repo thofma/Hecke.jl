@@ -473,7 +473,7 @@ function norm(f::PolyElem{<: NumFieldElem})
   K = base_ring(f)
   P = polynomial_to_power_sums(f, degree(f)*degree(K))
   PQ = elem_type(base_field(K))[tr(x) for x in P]
-  return power_sums_to_polynomial(PQ)
+  return _power_sums_to_polynomial(PQ)
 end
 
 function isirreducible(f::PolyElem{<: NumFieldElem})

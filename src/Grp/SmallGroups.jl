@@ -157,11 +157,11 @@ function small_group(i, j; DB = DefaultSmallGroupDB())
   #i < 1 || i > 63 && error("Group order ($i) must be between 1 and $small_groups_limit")
   #j < 1 || j > number_of_small_groups(i) && error("Index ($j) must be between 1 and $(number_of_small_groups(i))")
   P = SymmetricGroup(i)
-  Gens = [P()]
+  Gens = [one(P)]
   for p in data.gens
     push!(Gens, P(p))
   end
-  G, PtoG, GtoP = generic_group(closure(Gens, *, P()), *)
+  G, PtoG, GtoP = generic_group(closure(Gens, *, one(P)), *)
 
   # The small groups have generators, for which we know
   # generators for the relations.

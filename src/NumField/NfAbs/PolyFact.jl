@@ -47,11 +47,15 @@ function lift(C::HenselCtxQadic, mx::Int = minimum(precision, coefficients(C.f))
   N = valuation(p)
 #  @show map(precision, coefficients(C.f)), N, precision(parent(p))
   #have: N need mx
+  if length(C.lf) == 1
+    C.lf[1] = C.f
+    return
+  end
   ch = [mx]
   while ch[end] > N
     push!(ch, div(ch[end]+1, 2))
   end
-  @vprint :PolyFactor 1 "using lifting chain ", ch
+  @vprint :PolyFactor 1 "using lifting chain $ch\n"
   for k=length(ch)-1:-1:1
     N2 = ch[k]
     i = length(C.lf)
@@ -848,7 +852,7 @@ function norm_mod(f::PolyElem{nf_elem}, p::Int, Zx::FmpzPolyRing = Globals.Zx)
     end
     first = false
   end
-  pol = power_sums_to_polynomial(v)
+  pol = _power_sums_to_polynomial(v)
   return lift(Zx, pol)
 end
 

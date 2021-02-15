@@ -1,6 +1,6 @@
 export image, preimage, has_preimage, isinjective,
 issurjective, isbijective, automorphisms, morphisms, find_small_group,
-inv, *, id_hom, domain, codomain, divisors, multiples
+inv, *, id_hom, domain, codomain, multiples
 
 ################################################################################
 #
@@ -390,8 +390,6 @@ end
   end
   return homs
 end
-
-divisors(n::Int64) =  findall(x -> mod(n,x) == 0, 1:n)
 
 multiples(n::Int64, b::Int64) =  [i * n for i in 1:Int64(floor(b/n))]
 

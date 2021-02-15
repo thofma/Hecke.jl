@@ -11,6 +11,16 @@ function lift(a::padic)
   return b
 end
 
+function _lift(a::padic)
+  R = parent(a)
+  v = valuation(a)
+  if v >= 0
+    return fmpq(lift(a))
+  else
+    m = prime(R)^-v
+    return fmpq(lift(m * a))//m
+  end
+end
 
 function Base.setprecision(f::Generic.Poly{padic}, N::Int)
   f = deepcopy(f)

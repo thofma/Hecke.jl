@@ -47,6 +47,9 @@ function parse_commandline()
       help = "Discriminant bound"
       arg_type = fmpz
       required = true
+    "--rootdisc-bound"
+      help = "Discriminant bound"
+      arg_type = Float64
     "--only-cm"
       help = "Only CM fields"
       action = :store_true
@@ -55,10 +58,13 @@ function parse_commandline()
     "--simplify"
       help = "Simplify the field"
       action = :store_true
-    "--out"
+    "--output"
       help = "Output file"
       arg_type = String
       default = ""
+    "--output-type"
+      help = "Type of output file. Options are default (uses _write_fields), polys, nfdb"
+      default = "default"
   end
 
   return parse_args(s)

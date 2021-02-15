@@ -885,6 +885,7 @@ function Base.:(==)(G1::LocalGenusQuad, G2::LocalGenusQuad)
       return false
     end
 
+
     if G1.f[i] > 2 * e + uL1[i + 1] - G2.weights[i + 1]
       # We have to test if L1^(i) embeds into L2^(i) \perp aL2[i + 1]
       # So let's compute the Hasse invariant of those fields.
@@ -895,7 +896,7 @@ function Base.:(==)(G1::LocalGenusQuad, G2::LocalGenusQuad)
       ra = G1.ranks[1]
 
       for j in 2:i
-        haG1 = haG1 * _witt_hasse(G2.witt[j], G1.ranks[j], G1.dets[j], p) * hilbert_symbol(_d1, G1.dets[j], p)
+        haG1 = haG1 * _witt_hasse(G1.witt[j], G1.ranks[j], G1.dets[j], p) * hilbert_symbol(_d1, G1.dets[j], p)
         _d1 = _d1 * G1.dets[j]
         haG2 = haG2 * _witt_hasse(G2.witt[j], G2.ranks[j], G2.dets[j], p) * hilbert_symbol(_d2, G2.dets[j], p)
         _d2 = _d2 * G2.dets[j]
@@ -920,7 +921,7 @@ function Base.:(==)(G1::LocalGenusQuad, G2::LocalGenusQuad)
       ra = G1.ranks[1]
 
       for j in 2:i
-        haG1 = haG1 * _witt_hasse(G2.witt[j], G1.ranks[j], G1.dets[j], p) * hilbert_symbol(_d1, G1.dets[j], p)
+        haG1 = haG1 * _witt_hasse(G1.witt[j], G1.ranks[j], G1.dets[j], p) * hilbert_symbol(_d1, G1.dets[j], p)
         _d1 = _d1 * G1.dets[j]
         haG2 = haG2 * _witt_hasse(G2.witt[j], G2.ranks[j], G2.dets[j], p) * hilbert_symbol(_d2, G2.dets[j], p)
         _d2 = _d2 * G2.dets[j]

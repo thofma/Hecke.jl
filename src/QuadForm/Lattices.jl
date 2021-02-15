@@ -791,7 +791,7 @@ isisotropic(L::AbsLat, p) = isisotropic(rational_span(L), p)
 
 function restrict_scalars(L::AbsLat)
   V = ambient_space(L)
-  Vabs, f = restrict_scalars(V)
+  Vabs, f = restrict_scalars(V, FlintQQ)
   Babs = absolute_basis(L)
   Mabs = zero_matrix(FlintQQ, length(Babs), rank(Vabs))
   for i in 1:length(Babs)
