@@ -1101,7 +1101,6 @@ function absolute_multivariate_factorisation(a::fmpq_mpoly)
     R1 = PolynomialRing(K1, map(string, symbols(R)), ordering = ordering(R))[1]
     revsub = [gen(R1, vars[1]), gen(R1, vars[2])]
     return (unit, [evaluate(f, revsub), evaluate(fbar, revsub)])
-
   end
 
   maindeg = degree(a, vars[1])
@@ -1152,7 +1151,11 @@ function absolute_multivariate_factorisation(a::fmpq_mpoly)
 
   bi_a = evaluate(a, bi_sub)
   bi_a = Hecke.AbstractAlgebra.MPolyFactor.primitive_part(bi_a, 1)
-  if degree(bi_a, 2) < 1
+  if degree(bi_a, 2) < 2
+    if degree(bi_a, 2) == 1
+      # a is abs irreducible
+      return (unit, [a])
+    end
     @goto next_alpha
   end
 
