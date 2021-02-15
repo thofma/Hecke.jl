@@ -440,6 +440,7 @@ function combination(RC::RootCtx)
 
   pow = 1
   bad = 0
+  stable = 0
   last_rank = length(R)
   while true
     j += 1
@@ -488,6 +489,7 @@ function combination(RC::RootCtx)
       end
     else
       bad = 0
+      stable = 0
       last_rank = ke[1]
     end
     if ke[1] == 0 || mod(length(R), ke[1]) != 0
@@ -497,6 +499,11 @@ function combination(RC::RootCtx)
     z = m'*m
     if z != div(length(R), ke[1])
       @vprint :AbsFact 1 "not a equal size partition\n"
+      continue
+    end
+    stable += 1
+    if stable < max(5, degree(f, 1)/3)
+      @vprint :AbsFact 2 "need confirmation...\n"
       continue
     end
     return m'
@@ -877,9 +884,16 @@ function absolute_bivariate_factorisation(f::fmpq_mpoly)
     X, Y = gens(S)
     return evaluate(a, [Y, X]), evaluate(ca, [Y, X])
   end
-    
 
   Qt, t = PolynomialRing(QQ, cached = false)
+
+  if degree(f, 1) == 0 #constant in
+    k, a = number_field(evaluate(f, [Qt(0), t]), cached = false)
+    kXY, (X, Y) = PolynomialRing(k, ["X", "Y"], cached = false)
+    b = Y-a
+    return b, divexact(map_coeffs(k, f, parent = kXY), b)
+  end
+
   s =-1 
   while true
     s += 1
