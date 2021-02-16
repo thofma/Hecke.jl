@@ -72,7 +72,7 @@ function class_group_proof(clg::ClassGrpCtx, lb::fmpz, ub::fmpz; extra :: fmpz=f
     p = fmpz(next_prime(do_it.start))
   end
   r = fmpz()
-  _no_of_primes = logarithmic_integral(Float64(ub) - logarithmic_integral(Float64(lb)))
+  _no_of_primes = logarithmic_integral(Float64(ub)) - logarithmic_integral(Float64(lb))
   #gc_enable(false)
   rate = 0.0
   length_eta = 0
