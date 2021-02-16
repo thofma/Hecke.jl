@@ -1,7 +1,8 @@
 module MPolyFact
 
 using Hecke
-import Hecke: Nemo, @vprint, @hassert, @vtime, rational_reconstruction
+import Hecke: Nemo, @vprint, @hassert, @vtime, rational_reconstruction, set_precision!
+import Nemo: shift_left, shift_right
 
 export absolute_bivariate_factorisation
 
@@ -107,65 +108,171 @@ Hecke.inv(phi :: Nemo.FinFieldMorphism) = preimage_map(phi)
        factors in F_q[[t]]. Each factor over F_p[[t]] should
        correspong to a Frobenius orbit of roots.
        This way the degrees are smaller....
+       Done.
 
  TODO: refactor: a HenselCtx for fmpq_mpoly (or fmpz_mpoly) factored
        in F_p[[t]][x]
        a RootCtx for poly in F_p[[t]][x] to find roots in F_q[[t]]
+       Done.
        
        See what Dan did in this case.
 =#
-mutable struct RootCtx
-  f::fmpq_mpoly
-  R::Array{<:SeriesElem, 1}
-  o::Array{<:SeriesElem, 1} #1/f'(r)
-  RP::Array{Array{<:SeriesElem , 1}, 1}  #root powers
-  t::Int
+Hecke.ngens(R::FmpzMPolyRing) = length(gens(R))
 
-  all_R::Array{<:SeriesElem, 1} #all roots - if different from R
+function set_precision(f::PolyElem{T}, n::Int) where {T <: SeriesElem}
+  g = parent(f)()
+  for i=0:length(f)
+    setcoeff!(g, i, set_precision(coeff(f, i), n))
+  end
+  return g
+end
 
-  function RootCtx(f::fmpq_mpoly, r::Array{<:RingElem, 1}, t::Int = 0)
-    @assert nvars(parent(f)) == 2
+function set_precision!(f::PolyElem{T}, n::Int) where {T <: SeriesElem}
+  for i=0:length(f)
+    setcoeff!(f, i, set_precision!(coeff(f, i), n))
+  end
+  return f
+end
 
-    s = parent(r[1])
+Nemo.data(a::Nemo.gfp_elem) = a.data
+Nemo.modulus(R::Nemo.NmodRing) = R.n
 
-    S = PowerSeriesRing(s, 2, "s", cached = false)[1]
-    l = new()
-    l.f = f
-    l.R = [S(x) for x = r]
-    for i=1:length(r)
-      set_precision!(l.R[i], 1)
+function (R::Nemo.NmodRing)(a::Nemo.gfp_elem)
+  @assert modulus(R) == characteristic(parent(a))
+  return R(data(a))
+end
+
+mutable struct HenselCtxFqRelSeries{T}
+  f :: fmpz_mpoly # bivariate
+  n :: Int # number of factors
+  lf :: Array{PolyElem{T}, 1} # T should be nmod_rel_series or fq_nmod_rel_series
+  cf :: Array{PolyElem{T}, 1} # the cofactors for lifting
+  t :: Int # shift, not used, so might be wrong.
+
+  function HenselCtxFqRelSeries(f::fmpz_mpoly, lf::Array{<:PolyElem{S}, 1}, lg::Array{<:PolyElem{S}, 1}, n::Int, s::Int = 0) where {S}
+    @assert ngens(parent(f)) == 2
+    k = base_ring(lf[1])
+    R, t = PowerSeriesRing(k, 10, "t", cached = false) #, model = :capped_absolute)
+    Rx, x = PolynomialRing(R, cached = false)
+    r = new{typeof(t)}()
+    r.f = f
+    r.n = n
+    r.t = s
+    r.lf = [set_precision(s(x), 1) for s = lf]
+    r.cf = [set_precision(s(x), 1) for s = lg]
+    return r
+  end
+
+  function HenselCtxFqRelSeries(f::fmpz_mpoly, p::Int, s::Int = 0)
+    k = GF(p)
+    kt, t = PolynomialRing(k, cached = false)
+    g = evaluate(f, [t, kt(-s)])
+    @assert issquarefree(g)
+
+    lf = collect(keys(factor(g).fac))
+    n = length(lf)
+    lg = typeof(lf[1])[]
+    i = 1
+    while i < length(lf)
+      g, a, b = gcdx(lf[i], lf[i+1])
+      @assert isone(g)
+      push!(lg, a)
+      push!(lg, b)
+      push!(lf, lf[i] * lf[i+1])
+      i += 2
     end
-    g = map_coeffs(parent(r[1]), f)
-    tt = gen(S) - t
-    set_precision!(tt, 1)
-    l.o = [inv(evaluate(derivative(g, 1), [x, tt])) for x = l.R]
-    l.t = t
+    k = quo(ZZ, p)[1]
+    kt, t = PolynomialRing(k, cached = false)
+    lf = [map_coeffs(k, x, parent = kt) for x = lf]
+    lg = [map_coeffs(k, x, parent = kt) for x = lg]
 
-    l.RP = [[one(S) for x = r], l.R]
-    return l
+    return HenselCtxFqRelSeries(f, lf, lg, n, s)
   end
 end
 
-"""
-Computes `R[i]^j`, cached
-"""
-function root(R::RootCtx, i::Int, j::Int)
-  if precision(R.R[1]) != precision(R.RP[1][1])
-    o = one(parent(R.R[1]))
-    R.RP = [[set_precision(o, precision(R.R[1])) for x = R.R], copy(R.R)]
+function shift_coeff_left!(f::PolyElem{<:SeriesElem}, n::Int)
+  for i=0:length(f)
+    setcoeff!(f, i, shift_left(coeff(f, i), n))
   end
-  if length(R.RP) > j 
-#    @assert R.RP[j+1][i] == R.R[i]^j
-    return (R.RP[j+1][i])
-  end
-  while length(R.RP) <= j+1
-    push!(R.RP, R.RP[2] .* R.RP[end])
-  end
-
-  s = R.RP[j+1][i]
-#  @assert s == R.R[i]^j
-  return (s)
 end
+
+function shift_coeff_right!(f::PolyElem{<:SeriesElem}, n::Int)
+  for i=0:length(f)
+    setcoeff!(f, i, shift_right(coeff(f, i), n))
+  end
+end
+
+function shift_coeff_left(f::PolyElem{<:SeriesElem}, n::Int)
+  g = parent(f)()
+  for i=0:length(f)
+    setcoeff!(g, i, shift_left(coeff(f, i), n))
+  end
+  return g
+end
+
+function shift_coeff_right(f::PolyElem{<:SeriesElem}, n::Int)
+  g = parent(f)()
+  for i=0:length(f)
+    setcoeff!(g, i, shift_right(coeff(f, i), n))
+  end
+  return g
+end
+
+function lift(C::HenselCtxFqRelSeries)
+  St = parent(C.lf[1])
+  S = base_ring(C.lf[1])
+ 
+  pr = precision(coeff(C.lf[1], 0))
+  N2 = 2*pr
+  
+  S.prec_max = N2+1
+
+  i = length(C.lf)
+  j = i-1
+  while j > 0
+    if i==length(C.lf)
+      f = evaluate(C.f, [gen(St), St(gen(S)-C.t)])*inv(S(lead(C.f)))
+    else
+      f = set_precision(C.lf[i], N2)
+    end
+    @assert ismonic(f)
+    #formulae and names from the Flint doc
+    h = C.lf[j]
+    g = C.lf[j-1]
+    b = C.cf[j]
+    a = C.cf[j-1]
+    set_precision!(h, N2)
+    set_precision!(g, N2)
+    set_precision!(a, N2)
+    set_precision!(b, N2)
+
+    fgh = shift_coeff_right(f-g*h, pr)
+    
+    G = shift_coeff_left(rem(fgh*b, g), pr)+g
+    H = shift_coeff_left(rem(fgh*a, h), pr)+h
+   
+    t = shift_coeff_right(1-a*G-b*H, pr)
+  
+    B = shift_coeff_left(rem(t*b, g), pr)+b
+    A = shift_coeff_left(rem(t*a, h), pr)+a
+    if i < length(C.lf)
+      C.lf[i] = G*H
+    end
+    C.lf[j-1] = G
+    C.lf[j] = H
+    C.cf[j-1] = A
+    C.cf[j] = B
+    i -= 1
+    j -= 2
+  end
+end
+
+function Hecke.ResidueField(S::SeriesRing{T}) where {T <: Nemo.RingElem} #darn nmod/gfp
+  k = base_ring(S)
+  return k, MapFromFunc(x -> coeff(x, 0), y -> set_precision(S(y), 1), S, k)
+end
+
+(F::Nemo.FqNmodFiniteField)(a::Nemo.nmod) = F(a.data)
 
 #TODO: in Nemo, rename to setprecision
 #      fix/report series add for different length
@@ -175,55 +282,138 @@ function set_precision(a::SeriesElem, i::Int)
   return b
 end
 
-"""
-Doubles the precision - but not for all roots, only one from each Frobenius
-  orbit is actually lifted. Use `more_precision` to get all roots.
-"""
-function newton_lift!(R::RootCtx)
+mutable struct RootCtxSingle{T}
+  f::PolyElem{T}
+  R::T  # the root
+  o::T  # inv(f'(R)) for the double lifting.
 
-  #TODO: given that f might be sparse, do NOT compute all powers 
-  #      of the roots, only those needed - and this in an "optimized"
-  #      way
-  S = parent(R.R[1])
-  T = base_ring(S)
-#  set_precision!(S, 2*precision(S))
-  S.prec_max = 2*precision(R.R[1])+1
-
-  t = gen(S) - R.t
-
-  for i = 1:length(R.R)
-    a = R.R[i]
-    o = R.o[i]
-    set_precision!(a, 2*precision(a))
-    set_precision!(o, precision(a))
+  function RootCtxSingle(f::PolyElem{S}, K::FqNmodFiniteField) where {S <: SeriesElem}
+    #not used I think
+    RR,  = PowerSeriesRing(K, max_precision(R), string(var(R)), cached = false) #can't get the modell
+    return RootCtxSingle(f, RR)
   end
-  set_precision!(t, precision(R.R[1])+1)
 
-  for i=1:length(R.R)
-    a = R.R[i]
-    o = R.o[i]
-    ev_f = zero(S)
-    ev_fs = zero(S)
+  function RootCtxSingle(f::PolyElem{S}, RR::FqNmodRelSeriesRing) where {S <: SeriesElem}
+    K = base_ring(RR)
+    R = base_ring(f) # should be a series ring
+    r = new{elem_type(RR)}()
+    r.f = map_coeffs(x->map_coeffs(K, x, parent = RR), f)
+    k, mk = ResidueField(R)
+    _, mK = ResidueField(RR)
+    g = map_coeffs(mk, f)
+    @vtime :AbsFact 2 rt = roots(g, K)[1]
+    r.R = preimage(mK, rt)
+    g = map_coeffs(K, g)
+    @vtime :AbsFact 2 r.o = preimage(mK, inv(derivative(g)(r.R)))
+    return r
+  end
+end
 
-    if precision(R.R[1]) > 2
-      for j=1:length(R.f)
-        e = exponent_vector(R.f, j)
-        c = coeff(R.f, j)
-        if e[1] > 0
-          ev_fs += S(T(c*e[1]))*root(R, i, e[1] - 1) * t^e[2]
-        end
+"""
+A single lifting step for the easy Newton iteratio for a isolated simple root.
+"""
+function lift(R::RootCtxSingle)
+  pr = precision(R.R)
+  set_precision!(R.o, 2*pr)
+  set_precision!(R.R, 2*pr)
+  parent(R.R).prec_max = 2*pr+1
+  R.o = R.o*(2-R.o*derivative(R.f)(R.R))
+  R.R = R.R - R.f(R.R)*R.o
+end
+
+mutable struct RootCtx
+  f :: fmpq_mpoly
+  H :: HenselCtxFqRelSeries{nmod_rel_series}
+  R :: Array{RootCtxSingle{fq_nmod_rel_series}, 1}
+  RP :: Array{Array{fq_nmod_rel_series, 1}, 1}
+  all_R :: Array{fq_nmod_rel_series, 1}
+
+  function RootCtx(f::fmpq_mpoly, p::Int, d::Int, t::Int = 0)
+    r = new()
+    r.f = f
+    den = lcm(map(denominator, coefficients(f)))
+    g = map_coeffs(numerator, den*f)
+    @vtime :AbsFact 2 r.H = HenselCtxFqRelSeries(g, p, t)
+    r.R = RootCtxSingle{fq_nmod_rel_series}[]
+    K = GF(p, d)[1]
+    S, _ = PowerSeriesRing(K, 10, "s", cached = false)
+    for i=1:r.H.n
+      @vtime :AbsFact 2 push!(r.R, RootCtxSingle(r.H.lf[i], S))
+    end
+    return r
+  end
+end
+
+"""
+Computes `R[i]^j`, cached
+"""
+function root(R::RootCtx, i::Int, j::Int)
+  if length(R.all_R) == 0 || precision(R.R[1].R) > precision(R.all_R[1])
+    empty!(R.all_R)
+    for i=1:R.H.n
+      push!(R.all_R, R.R[i].R)
+      @hassert :AbsFact 2 iszero(R.R[i].f(R.all_R[end]))
+      S = parent(R.all_R[end])
+      for j=1:degree(R.R[i].f)-1
+        push!(R.all_R, map_coeffs(frobenius, R.all_R[end], parent = S))
+        @hassert :AbsFact 3 iszero(R.R[i].f(R.all_R[end]))
       end
-
-      o = R.o[i] = o*(2-o*ev_fs)
     end
+  end
 
-    for j=1:length(R.f)
-      e = exponent_vector(R.f, j)
-      c = coeff(R.f, j)
-      ev_f += S(T(c))*t^e[2] * root(R, i, e[1])
+  if length(R.RP) == 0 || precision(R.all_R[1]) != precision(R.RP[1][1])
+    o = one(parent(R.all_R[1]))
+    R.RP = [[set_precision(o, precision(R.all_R[1])) for x = R.all_R], copy(R.all_R)]
+  end
+  if length(R.RP) > j 
+    return (R.RP[j+1][i])
+  end
+  while length(R.RP) <= j+1
+    push!(R.RP, R.RP[2] .* R.RP[end])
+  end
+
+  s = R.RP[j+1][i]
+  return (s)
+end
+
+#to avoid using embed - which is (more me) still broken..
+# it accumulates fields until the machine dies
+function find_morphism(k::Nemo.NmodRing, K::FqNmodFiniteField)
+  return x->K(x.data)
+end
+
+function find_morphism(k::FqNmodFiniteField, K::FqNmodFiniteField)
+   if degree(k) > 1
+    phi = Nemo.find_morphism(k, K) #avoids embed - which stores the info
+  else
+    phi = MapFromFunc(x->K((coeff(x, 0))), y->k((coeff(y, 0))), k, K)
+  end
+  return phi
+end
+
+"""
+Roots of `f` in `R` using subfields of `R`.
+Returns a (random) subset of the roots.
+
+Much faster than generic `roots(f, R)` in Nemo/flint
+(for large examples: deg 36: down from 4 sec to 1)
+"""
+function roots(f::nmod_poly, R::FqNmodFiniteField)
+  d = degree(R)
+  fd = factor(d)
+  k = base_ring(f)
+  t = 1
+  q = Int(characteristic(k))
+  for (p, e) = fd.fac
+    t *= Int(p)^e
+    if t == d
+      phi = find_morphism(k, R)
+      return Nemo.roots(map_coeffs(phi, f))
     end
-    R.R[i] = a - ev_f*o
-#    @assert evaluate(R.f, [a, t]) == ev_f
+    l = GF(q, t, cached = false)[1]
+    phi = find_morphism(k, l)
+    f = first(keys(factor(map_coeffs(phi, f)).fac))
+    k = l
   end
 end
 
@@ -235,7 +425,7 @@ degree small. The initial precision if `2`.
 Returns, not the roots, but the root context `RootCtx`, so the precision
 can be increased (`newton_lift`, `roots`, `more_precision`).
 """
-function roots(f::fmpq_mpoly, p_max::Int=2^25; pr::Int = 2)
+function roots(f::fmpq_mpoly, p_max::Int=2^15; pr::Int = 2)
   @assert nvars(parent(f)) == 2
   #requires f to be irred. over Q - which is not tested
   #requires f(x, 0) to be same degree and irred. - should be arranged by the absolute_bivariate_factorisation
@@ -275,70 +465,28 @@ function roots(f::fmpq_mpoly, p_max::Int=2^25; pr::Int = 2)
       break
     end
   end
-  F = FiniteField(p, d, cached = false)[1]
-  @hassert :AbsFact 1 !iszero(discriminant(map_coeffs(F, g)))
-  @vtime :AbsFact 2 r = Set(Hecke.roots(g, F))
-  @assert length(r) == degree(g)
-  #use action of Frobenius to lift less roots!!!
-  rr = Tuple{eltype(r), Int}[]
-  while length(r) > 0
-    s = pop!(r)
-    d = degree(minpoly(s))
-    push!(rr, (s, d))
-    for i=1:d-1
-      s = frobenius(s)
-      pop!(r, s)
-    end
-  end
-  @vprint :AbsFact 1 "need to seriously lift $(length(rr)) elements\n"
 
-  R = RootCtx(f, [x[1] for x = rr])
+  R = RootCtx(f, p, d)
+  @vprint :AbsFact 1 "need to seriously lift $(R.H.n) elements\n"
+  R.all_R = typeof(R.R[1].R)[]
+  R.RP = typeof(R.R[1].R)[]
+
   for i=1:pr
-    newton_lift!(R)
+    more_precision(R)
   end
 
-  @vprint :AbsFact 1 "now Frobenius action...\n"
-
-  S = typeof(R.R[1])[]
-  all_o = []
-  for i=1:length(rr)
-    push!(S, R.R[i])
-    o = [length(S)]
-    T = S[end]
-    for i=1:rr[i][2]-1
-      T = deepcopy(T)
-      for j=0:T.length-1
-        setcoeff!(T, j, frobenius(coeff(T, j)))
-      end
-      push!(S, T)
-      push!(o, length(S))
-    end
-    push!(all_o, o)
-  end
-  @vprint :AbsFact 2 "orbits: $all_o\n"
-  R.all_R = S
   return R, p_max
 end
 
 function more_precision(R::RootCtx)
-  @vtime :AbsFact 2 newton_lift!(R)
-  S = typeof(R.R[1])[]
-  for r = R.R
-    push!(S, r)
-    s = coeff(r, 0)
-    @assert !iszero(s)
-    @assert valuation(r) == 0
-    d = degree(minpoly(s))
-    T = r
-    for i=1:d-1
-      T = deepcopy(T)
-      for j=0:T.length-1
-        setcoeff!(T, j, frobenius(coeff(T, j)))
-      end
-      push!(S, T)
-    end
+  lift(R.H)
+  S = base_ring(R.R[1].f)
+  K = base_ring(S)
+  for i=1:R.H.n
+    T = parent(R.R[i].f)
+    R.R[i].f = map_coeffs(x->map_coeffs(K, x, parent = S), R.H.lf[i], parent = T)
+    lift(R.R[i])
   end
-  R.all_R = S
 end
 
 #check with Nemo/ Dan if there are better solutions
@@ -386,6 +534,7 @@ Internal use.
 """
 function combination(RC::RootCtx)
   #R is a list of roots, ie. power series over F_q (finite field)
+  root(RC, 1, 1)
   f = RC.f
   R = RC.all_R
   Ft = parent(R[1])
@@ -447,9 +596,10 @@ function combination(RC::RootCtx)
     while pow*d+j >= n
       @vprint :AbsFact 1 "need more precicsion: $n ($d, $pow, $j)\n"
       more_precision(RC)
+      root(RC, 1, 1)
       R = RC.all_R
       n = precision(R[1])
-      if false && n > 570 #too small - but a safety valve
+      if false && n > 170 #too small - but a safety valve
         error("too much n")
       end
       ld = evaluate(map_coeffs(x->F(ZZ(x)), lc), [set_precision(Ft(0), n), set_precision(gen(Ft), n)])
@@ -531,13 +681,13 @@ function Hecke.map_coeffs(f, a::RelSeriesElem)
   if parent(d) == base_ring(T)
     S = T
   else
-    S = PowerSeriesRing(d, max_precision(T), string(var(T)), cached = false)[1]
+    S = PowerSeriesRing(parent(d), max_precision(T), string(var(T)), cached = false)[1]
   end
   c = typeof(d)[d]
   for i=1:Nemo.pol_length(a)-1
     push!(c, f(Nemo.polcoeff(a, i)))
   end
-  b = parent(c, length(c), precision(a), valuation(a))
+  b = S(c, length(c), precision(a), valuation(a))
   return b
 end
 
@@ -554,7 +704,7 @@ function rational_reconstruction(a::SeriesElem; parent::PolyRing = PolynomialRin
 end
 
 function rational_reconstruction(a::padic)
-  return rational_reconstruction(lift(a), prime(parent(a), precision(a)))
+  return rational_reconstruction(Hecke.lift(a), prime(parent(a), precision(a)))
 end
 
 Hecke.gcd_into!(a, b, c) = gcd(b, c)
@@ -639,11 +789,7 @@ function field(RC::RootCtx, m::MatElem)
   Qqt = PolynomialRing(Qq, cached = false)[1]
   k, mk = ResidueField(Qq)
  
-  if degree(k) > 1
-    phi = Nemo.find_morphism(k, F) #avoids embed - which stores the info
-  else
-    phi = MapFromFunc(x->F((coeff(x, 0))), y->k((coeff(y, 0))), k, F)
-  end
+  phi = find_morphism(k, F) #avoids embed - which stores the info
 
   kt, t = PolynomialRing(k, cached = false)
   kXY, (X, Y) = PolynomialRing(k, ["X", "Y"], cached = false)
