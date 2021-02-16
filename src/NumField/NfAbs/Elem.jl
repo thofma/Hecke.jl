@@ -381,7 +381,7 @@ function norm(f::PolyElem{nf_elem})
                          # do this using CRT modular?
     P = polynomial_to_power_sums(f, degree(f)*degree(K))
     PQ = fmpq[tr(x) for x in P]
-    N = _power_sums_to_polynomial(PQ)
+    N = power_sums_to_polynomial(PQ)
   else
     Qx = PolynomialRing(FlintQQ, "x", cached = false)[1]
     Qxy = PolynomialRing(Qx, "y", cached = false)[1]

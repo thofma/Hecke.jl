@@ -1094,18 +1094,6 @@ function tr(a::NfAbsNSElem)
   return t
 end
 
-function _power_sums_to_polynomial(P::Array{T, 1}) where T <: FieldElem
-    d = length(P)
-    R = parent(P[1])
-    S = PowerSeriesRing(R, d, "gen(S)")[1] # capped_absolute
-    s = S(P, length(P), d, 0)
-    r = -integral(s)
-    r1 = exp(r)
-    @assert iszero(valuation(r1))
-    Rx, x = AbstractAlgebra.PolynomialRing(R, "x", cached = false)
-    return Rx([polcoeff(r1, d - i) for i = 0:d])
-end
-
 #TODO:
 #  test f mod p first
 #  if all polys are monic, the test if traces have non-trivial gcd
@@ -1122,7 +1110,7 @@ function minpoly_via_trace(a::NfAbsNSElem)
       i += 1
     end
     q = fmpq(1, div(d, i))
-    f = _power_sums_to_polynomial([x*q for x = l])
+    f = power_sums_to_polynomial([x*q for x = l])
     if iszero(subst(f, a))  #TODO: to checks first...
       return f::fmpq_poly
     end

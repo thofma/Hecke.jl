@@ -1033,7 +1033,7 @@ function _rcf_descent(CF::ClassField_pp)
         mul!(el, el, a)
         tr_in_K[i-1] = divexact(tr(inc_map(tr(el))), tr_err)
       end
-      res = _power_sums_to_polynomial(tr_in_K)
+      res = power_sums_to_polynomial(tr_in_K)
       return res
     end 
   end

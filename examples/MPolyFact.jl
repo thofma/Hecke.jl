@@ -809,7 +809,7 @@ function field(RC::RootCtx, m::MatElem)
     end
 
     p = [x[2]//x[3] for x = p]
-    p = Hecke._power_sums_to_polynomial(p)
+    p = Hecke.power_sums_to_polynomial(p)
     if any(x->denominator(x)>1, coefficients(p))
       @vprint :AbsFact 2 "poly wrong, increasing p-adic precision\n"
       continue
