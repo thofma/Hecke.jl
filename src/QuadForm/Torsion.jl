@@ -532,8 +532,88 @@ function isdegenerate(T::TorQuadMod)
   else 
     return false
   end
-<<<<<<< HEAD
 end
-=======
+
+@doc Markdown.doc"""
+    rescale(T::TorQuadMod, k::RingElement) -> TorQuadMod
+
+Returns the torsion quadratic module with quadratic form scaled by ``k``, 
+where k is a non-zero rational number.
+If the old form was defined modulo `n`, then the new form is defined
+modulo `n k`. 
+"""
+function rescale(T::TorQuadMod, k::RingElement)
+  @req !iszero(k) "Parameter ($k) must be non-zero" 
+  C = cover(T)
+  inner_product_mat = k * gram_matrix(ambient_space(C))
+  V = quadratic_space(QQ, inner_product_mat) 
+  M = lattice(V, basis_matrix(C))
+  N = lattice(V, basis_matrix(T.rels))
+  return torsion_quadratic_module(M, N)
 end
->>>>>>> 595ca1d078b15d90aa0bf9cbe425909ac6a1752f
+
+@doc Markdown.doc"""
+    normal_form(T::TorQuadMod; partial=false) -> TorQuadMod
+
+Return the normal form of given torsion quadratic module.
+"""
+function normal_form(T::TorQuadMod; partial=false)
+  normal_gens = []
+  prime_div = prime_divisors(exponent(T))
+  for p in prime_div
+    D_p, I_p = primary_part(T, p)
+    q_p = gram_matrix_quadratic(D_p)
+    q_p = q_p * D_p.modulus_qf^-1
+    
+    # continue with the non-degenerate part
+    r = rank(q_p)
+    dd = denominator(q_p)
+    G0 = change_base_ring(FlintZZ, dd * q_p)
+    n = nrows(q_p)
+    if r != n
+      _, U = hnf_with_transform(G0)
+      _ker = U[(r + 1):n, :]
+      _nondeg = U[1:r, :]
+      ker = change_base_ring(FlintQQ, _ker)
+      nondeg = change_base_ring(FlintQQ, _nondeg)
+    else
+      ker = zero_matrix(FlintQQ, 0, n)
+      nondeg = identity_matrix(FlintQQ, n)
+    end
+    q_p = nondeg * q_p * transpose(nondeg)
+
+    # the normal form is implemented for p-adic lattices
+    # so we should work with the lattice q_p --> q_p^-1
+    q_p1 = inv(q_p)
+    prec = valuation(exponent(T), p) + 5
+    D, U = padic_normal_form(q_p1, p, prec=2*prec+5, partial=partial)
+    # if we compute the inverse in the p-adics everything explodes --> go to ZZ
+    U = transpose(inv(U))
+    # the inverse is in normal form - so to get a normal form for the original one
+    # it is enough to massage each 1x1 resp. 2x2 block.
+    D = U * q_p * U' * p^valuation(denominator(q_p), p) 
+    R = ResidueRing(ZZ, ZZ(p^prec))
+    D = change_base_ring(ZZ, D)
+    D = change_base_ring(R, D)
+    _, U = _normalize(D, ZZ(p), false)
+
+    # reattach the degenerate part
+    U = change_base_ring(ZZ, U)
+    nondeg = change_base_ring(ZZ, nondeg)
+    nondeg = U * nondeg
+    U = vcat(nondeg, ker)
+
+    #apply U to the generators
+    n1 = ncols(U)
+    gens_p = []
+    Gp =  gens(D_p); 
+    for i in 1:nrows(U) 
+      g = sum(U[i,j] * Gp[j] for j in 1:ncols(U))
+      append!(gens_p, g)
+    end
+    push!(normal_gens, gens_p) 
+  end
+  return sub(T, normal_gens)
+end
+
+
