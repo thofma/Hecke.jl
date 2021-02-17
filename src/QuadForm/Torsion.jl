@@ -117,9 +117,9 @@ function torsion_quadratic_module(M::ZLat, N::ZLat; gens::Union{Nothing, Vector{
   norm = reduce(gcd, diagonal(gram_matrix(N)), init = zero(fmpq))
 
   if iszero(modulus_qf)
-    modulus_qf = modulus_qf
-  else
     modulus_qf = gcd(norm, 2 * modulus)
+  else
+    modulus_qf = modulus_qf
   end
 
   T = TorQuadMod()
@@ -458,7 +458,6 @@ function TorQuadMod(q::fmpq_mat)
   S, U, V = snf_with_transform(Q)
   D = change_base_ring(FlintQQ, U) * q * change_base_ring(FlintQQ, V)
   L = Zlattice(1//d * identity_matrix(QQ, nrows(q)), gram = d^2 * q)
-  @show basis_matrix(L)
   denoms = [denominator(D[i, i]) for i in 1:ncols(D)]
   rels = diagonal_matrix(denoms) * U
   LL = lattice(ambient_space(L), 1//d * change_base_ring(QQ, rels))
