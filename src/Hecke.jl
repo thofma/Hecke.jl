@@ -92,7 +92,7 @@ import Nemo: acb_struct, Ring, Group, Field, NmodRing, nmod, arf_struct,
              elem_to_mat_row!, elem_from_mat_row, gfp_elem, gfp_mat,
              gfp_fmpz_elem, Zmodn_poly, Zmodn_mat, GaloisField,
              GaloisFmpzField, acb_vec, array, acb_vec_clear, force_coerce,
-             force_op, fmpz_mod_ctx_struct
+             force_op, fmpz_mod_ctx_struct, divisors
 
 export show, StepRange, domain, codomain, image, preimage, modord, resultant,
        next_prime, ispower, number_field, factor
