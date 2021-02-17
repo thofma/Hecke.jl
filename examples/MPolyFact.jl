@@ -4,7 +4,7 @@ using Hecke
 import Hecke: Nemo, @vprint, @hassert, @vtime, rational_reconstruction, set_precision!
 import Nemo: shift_left, shift_right
 
-export absolute_bivariate_factorisation
+export factor_absolute
 
 add_verbose_scope(:AbsFact)
 add_assert_scope(:AbsFact)
@@ -231,9 +231,11 @@ function lift(C::HenselCtxFqRelSeries)
   j = i-1
   while j > 0
     if i==length(C.lf)
-      f = evaluate(C.f, [gen(St), St(gen(S)-C.t)])*inv(S(lead(C.f)))
+      f = evaluate(C.f, [gen(St), St(gen(S)-C.t)])
+      f *= inv(lead(f))
     else
       f = set_precision(C.lf[i], N2)
+      @assert ismonic(C.lf[i])
     end
     @assert ismonic(f)
     #formulae and names from the Flint doc
@@ -351,7 +353,7 @@ function root(R::RootCtx, i::Int, j::Int)
   if length(R.all_R) == 0 || precision(R.R[1].R) > precision(R.all_R[1])
     empty!(R.all_R)
     for i=1:R.H.n
-      push!(R.all_R, R.R[i].R)
+      push!(R.all_R, copy(R.R[i].R))
       @hassert :AbsFact 2 iszero(R.R[i].f(R.all_R[end]))
       S = parent(R.all_R[end])
       for j=1:degree(R.R[i].f)-1
@@ -415,6 +417,7 @@ function roots(f::nmod_poly, R::FqNmodFiniteField)
     f = first(keys(factor(map_coeffs(phi, f)).fac))
     k = l
   end
+  return Nemo.roots(f, R)
 end
 
 """
@@ -481,9 +484,10 @@ end
 function more_precision(R::RootCtx)
   lift(R.H)
   S = base_ring(R.R[1].f)
+  S.prec_max = 2*S.prec_max + 1
+  T = parent(R.R[1].f)
   K = base_ring(S)
   for i=1:R.H.n
-    T = parent(R.R[i].f)
     R.R[i].f = map_coeffs(x->map_coeffs(K, x, parent = S), R.H.lf[i], parent = T)
     lift(R.R[i])
   end
@@ -922,7 +926,7 @@ function field(RC::RootCtx, m::MatElem)
 
     if length(fa) > 0
       H.f = map_coeffs(Qq, _lc, parent = Qqt)
-      lift(H, pr+1)
+      Hecke.lift(H, pr+1)
       fH = factor(H)
       lc = [prod(fH[i]^t[i] for i=1:length(t)) for t = fa]
 
@@ -1168,18 +1172,9 @@ function example(k::AnticNumberField, d::Int, nt::Int, c::AbstractRange=-10:10)
   return norm(f)
 end
 
-
-function isirreducible(a::fmpq_mpoly)
+function Hecke.isirreducible(a::fmpq_mpoly)
   af = factor(a)
   return !(length(af.fac) > 1 || any(x->x>1, values(af.fac)))
-end
-
-function _change_base_ring(R, a)
-  z = MPolyBuildCtx(R)
-  for (c, exps) in zip(coeffs(a), exponent_vectors(a))
-    push_term!(z, base_ring(R)(c), exps)
-  end
-  return finish(z)
 end
 
 # f is bivariate. return f(xvar, 0) where xvar is in the multivar ring R
@@ -1198,7 +1193,7 @@ end
 
 function absolute_multivariate_factorisation(a::fmpq_mpoly)
 
-  Qxy, (x, y) = PolynomialRing(QQ, ["x", "y"])
+  Qxy, (x, y) = PolynomialRing(QQ, ["x", "y"], cached = false)
 
   R = parent(a)
   K = base_ring(R)
@@ -1234,9 +1229,9 @@ function absolute_multivariate_factorisation(a::fmpq_mpoly)
   elseif length(vars) == 1
     uni_sub = zeros(Hecke.Globals.Qx, nvars(R))
     uni_sub[vars[1]] = gen(Hecke.Globals.Qx)
-    K1, alpha = number_field(evaluate(a, uni_sub))
-    R1 = PolynomialRing(K1, map(string, symbols(R)), ordering = ordering(R))[1]
-    A = _change_base_ring(R1, a)
+    K1, alpha = number_field(evaluate(a, uni_sub), cached = false)
+    R1 = PolynomialRing(K1, map(string, symbols(R)), ordering = ordering(R), cached = false)[1]
+    A = map_coeffs(K1, a, parent = R1)
     x = gen(R1, vars[1])
     return (unit, [x - alpha, divexact(A, x - alpha)])
   elseif length(vars) == 2
@@ -1244,7 +1239,7 @@ function absolute_multivariate_factorisation(a::fmpq_mpoly)
     bi_sub[vars[2]] = y
     f, fbar = absolute_bivariate_factorisation(evaluate(a, bi_sub))
     K1 = base_ring(f)
-    R1 = PolynomialRing(K1, map(string, symbols(R)), ordering = ordering(R))[1]
+    R1 = PolynomialRing(K1, map(string, symbols(R)), ordering = ordering(R), cached = false)[1]
     revsub = [gen(R1, vars[1]), gen(R1, vars[2])]
     return (unit, [evaluate(f, revsub), evaluate(fbar, revsub)])
   end
@@ -1308,7 +1303,7 @@ function absolute_multivariate_factorisation(a::fmpq_mpoly)
   f, fbar = absolute_bivariate_factorisation(bi_a)
 
   K1 = base_ring(f)
-  R1 = PolynomialRing(K1, map(string, symbols(R)), ordering = ordering(R))[1]
+  R1 = PolynomialRing(K1, map(string, symbols(R)), ordering = ordering(R), cached = false)[1]
   f = _yzero_image(R1, f, mainvar)
   fbar = _yzero_image(R1, fbar, mainvar)
 
@@ -1318,11 +1313,11 @@ function absolute_multivariate_factorisation(a::fmpq_mpoly)
   end
 
   # map the stuff in Q to the number field
-  A = _change_base_ring(R1, a)
+  A = map_coeffs(K1, a, parent = R1)
   lcAf = Fac{elem_type(R1)}()
-  lcAf.unit = _change_base_ring(R1, lcaf.unit)
+  lcAf.unit = map_coeffs(K1, lcaf.unit, parent = R1)
   for i in lcaf.fac
-    lcAf[_change_base_ring(R1, i[1])] = i[2]
+    lcAf[map_coeffs(K1, i[1], parent = R1)] = i[2]
   end
 
   ok, divs = Hecke.AbstractAlgebra.MPolyFactor.lcc_kaltofen(
@@ -1346,10 +1341,11 @@ end
 
 function factor_absolute(a::fmpq_mpoly)
   result = Any[]
-  fa = factor(a)
+  @vprint :AbsFact 1 "factoring over QQ first...\n"
+  @vtime :AbsFact 2 fa = factor(a)
   push!(result, fa.unit)
   for (p, e) in fa
-    unit, fp = absolute_multivariate_factorisation(p)
+    @vtime :AbsFact 2 unit, fp = absolute_multivariate_factorisation(p)
     result[1] *= unit
     push!(result, fp => e)
   end
@@ -1359,7 +1355,7 @@ end
 end
 
 using .MPolyFact
-export absolute_bivariate_factorisation
+export factor_absolute
 
 #= revised strategy until I actually understand s.th. better
  - "shift" to make f(o, y) square-free
