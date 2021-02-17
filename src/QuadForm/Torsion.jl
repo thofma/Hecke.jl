@@ -67,6 +67,7 @@ Otherwise, the images of the basis of $M$ will be used as the generators.
 function torsion_quadratic_module(M::ZLat, N::ZLat; gens::Union{Nothing, Vector{<:Vector}} = nothing,
                                                     snf::Bool = true,
                                                     modulus::fmpq = fmpq(0),
+                                                    modulus_qf::fmpq = fmpq(0),
                                                     check::Bool = true)
   @req ambient_space(M) === ambient_space(N) """
       Lattices must have same ambient space
@@ -114,7 +115,12 @@ function torsion_quadratic_module(M::ZLat, N::ZLat; gens::Union{Nothing, Vector{
     modulus = reduce(gcd, [a for a in num], init = zero(fmpq))
   end
   norm = reduce(gcd, diagonal(gram_matrix(N)), init = zero(fmpq))
-  modulus_qf = gcd(norm, 2 * modulus)
+
+  if iszero(modulus_qf)
+    modulus_qf = modulus_qf
+  else
+    modulus_qf = gcd(norm, 2 * modulus)
+  end
 
   T = TorQuadMod()
   T.cover = M
