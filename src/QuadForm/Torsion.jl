@@ -340,6 +340,29 @@ end
 
 ################################################################################
 #
+#  Addition
+#
+################################################################################
+
+function Base.:(+)(a::TorQuadModElem, b::TorQuadModElem)
+  @req parent(a) === parent(b) "Parents do not match"
+  T = parent(a)
+  return T(a.data + b.data)
+end
+
+function Base.:(*)(a::TorQuadModElem, b::fmpz)
+  T = parent(a)
+  return T(a.data * b)
+end
+
+Base.:(*)(a::fmpz, b::TorQuadModElem) = b * a
+
+Base.:(*)(a::Integer, b::TorQuadModElem) = fmpz(a) * b
+
+Base.:(*)(a::TorQuadModElem, b::Integer) = b * a
+
+################################################################################
+#
 #  Inner product
 #
 ################################################################################
