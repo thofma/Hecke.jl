@@ -98,7 +98,21 @@ function compact_presentation(a::FacElem{nf_elem, AnticNumberField}, nn::Int = 2
     m = maximum(abs, values(de))
   end
   m = max(m, 1)
-  mm = abs_upper_bound(log(1+maximum(abs, v))//log(n), fmpz)
+  local mm
+  while true
+    try
+      mm = abs_upper_bound(log(1+maximum(abs, v))//log(n), fmpz)
+      break
+    catch e
+      if !isa(e, InexactError)
+        rethrow(e)
+      end
+      arb_prec *= 2
+      @vprint :CompactPresentation 2 "increasing precision to $arb_prec\n"
+      v = conjugates_arb_log_normalise(a, arb_prec) +
+          conjugates_arb_log_normalise(be, arb_prec)
+    end
+  end
   k = max(ceil(Int, log(m)/log(n)), Int(mm))
 
   de = Dict(A => fmpz(1))
