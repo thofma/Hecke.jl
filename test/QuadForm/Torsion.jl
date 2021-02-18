@@ -53,6 +53,6 @@
   #test for normal form
   L1 = Zlattice(matrix(ZZ, [[-2,0,0],[0,1,0],[0,0,4]]))
   T1 = Hecke.discriminant_group(L1)
-  @test Hecke.gram_matrix_quadratic(Hecke.normal_form(T1)) == matrix(QQ, 2, 2, [1//2,0,0,1//4])
+  @test Hecke.gram_matrix_quadratic(Hecke.normal_form(T1)[1]) == matrix(QQ, 2, 2, [1//4,0,0,1//16])
 end
 
