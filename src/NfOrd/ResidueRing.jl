@@ -184,7 +184,6 @@ end
 The quotient ring $O/I$ as a ring together with the section $M: O/I \to O$.
 The pointwise inverse of $M$ is the canonical projection $O\to O/I$.
 """
-
 function quo(O::Union{NfAbsOrd, AlgAssAbsOrd}, I::Union{NfAbsOrdIdl, AlgAssAbsOrdIdl})
   @assert order(I) === O
   # We should check that I is not zero

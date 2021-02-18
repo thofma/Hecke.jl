@@ -407,15 +407,21 @@ function roots(f::nmod_poly, R::FqNmodFiniteField)
   t = 1
   q = Int(characteristic(k))
   for (p, e) = fd.fac
-    t *= Int(p)^e
-    if t == d
-      phi = find_morphism(k, R)
-      return Nemo.roots(map_coeffs(phi, f))
+    for i=1:e
+      t *= Int(p)
+      if t == d
+        phi = find_morphism(k, R)
+        return Nemo.roots(map_coeffs(phi, f))
+      end
+      l = GF(q, t, cached = false)[1]
+      phi = find_morphism(k, l)
+      f = first(keys(factor(map_coeffs(phi, f)).fac))
+      if degree(f) == 1
+        phi = find_morphism(l, R)
+        return Nemo.roots(map_coeffs(phi, f))
+      end
+      k = l
     end
-    l = GF(q, t, cached = false)[1]
-    phi = find_morphism(k, l)
-    f = first(keys(factor(map_coeffs(phi, f)).fac))
-    k = l
   end
   return Nemo.roots(f, R)
 end
@@ -462,7 +468,7 @@ function roots(f::fmpq_mpoly, p_max::Int=2^15; pr::Int = 2)
       pc += 1
     end
     
-    if e == 1 || pc > div(degree(g), 2)
+    if e == 1 || pc > 1.5 * degree(g)
       @vprint :AbsFact 1 "using $best_p of degree $d\n"
       p = best_p
       break
@@ -599,17 +605,18 @@ function combination(RC::RootCtx)
     j += 1
     while pow*d+j >= n
       @vprint :AbsFact 1 "need more precicsion: $n ($d, $pow, $j)\n"
-      more_precision(RC)
-      root(RC, 1, 1)
-      R = RC.all_R
-      n = precision(R[1])
+      @vtime :AbsFact 2 more_precision(RC)
+      n = precision(RC.R[1].R)
       if false && n > 170 #too small - but a safety valve
         error("too much n")
       end
-      ld = evaluate(map_coeffs(x->F(ZZ(x)), lc), [set_precision(Ft(0), n), set_precision(gen(Ft), n)])
-      R = R .* ld
-      @assert precision(R[1]) >= n
     end
+    root(RC, 1, 1)
+    R = RC.all_R
+    n = precision(R[1])
+    ld = evaluate(map_coeffs(x->F(ZZ(x)), lc), [set_precision(Ft(0), n), set_precision(gen(Ft), n)])
+    R = R .* ld
+    @assert precision(R[1]) >= n
     
     mn = matrix([[Fp(coeff(coeff(x^pow, pow*d+j), lk)) for lk = 0:k-1] for x = R])
     
@@ -631,12 +638,12 @@ function combination(RC::RootCtx)
     nn = vcat(nn, mn)
 
     ke = kernel(nn)
-    @vprint :AbsFact 1 "current kernel dimension: $(ke[1])\n"
+    @vprint :AbsFact 2 "current kernel dimension: $(ke[1])\n"
     if last_rank == ke[1]
       bad += 1
       if bad > max(2, div(length(R), 2))
         pow += 1
-        @vprint :AbsFact 1 "increasing power to $pow\n"
+        @vprint :AbsFact 2 "increasing power to $pow\n"
         j = 0
         bad = 0
         continue
@@ -652,7 +659,7 @@ function combination(RC::RootCtx)
     m = ke[2]
     z = m'*m
     if z != div(length(R), ke[1])
-      @vprint :AbsFact 1 "not a equal size partition\n"
+      @vprint :AbsFact 2 "not a equal size partition\n"
       continue
     end
     stable += 1
@@ -916,7 +923,7 @@ function field(RC::RootCtx, m::MatElem)
 
   el = [map_coeffs(x->preimage(mk, x), y, parent = QqXY) for y = el]
 
-  pr = 10 
+  pr = 5 
   while true
     pr *= 2
     @vprint :AbsFact 1  "using p-adic precision of $pr\n"
@@ -1061,13 +1068,13 @@ function absolute_bivariate_factorisation(f::fmpq_mpoly)
   p = 2^25
   local aa
   while true
-    r, p = roots(gg, p)
-    z = combination(r)
+    @vtime :AbsFact 1 r, p = roots(gg, p)
+    @vtime :AbsFact 1 z = combination(r)
     if nrows(z) == 1
       return f, one(parent(f))
     end
    
-    aa = field(r, z)
+    @vtime :AbsFact 1 aa = field(r, z)
     aa !== nothing && break
   end
   a, b = aa

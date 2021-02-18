@@ -1134,12 +1134,12 @@ end
 @doc Markdown.doc"""
     conjugates_arb(x::NfAbsOrdElem, abs_tol::Int) -> Array{acb, 1}
 
-Compute the conjugates of `x` as elements of type `acb`.
+Compute the conjugates of $x$ as elements of type `acb`.
 Recall that we order the complex conjugates
 $\sigma_{r+1}(x),...,\sigma_{r+2s}(x)$ such that
 $\sigma_{i}(x) = \overline{\sigma_{i + s}(x)}$ for $r + 2 \leq i \leq r + s$.
 
-Every entry `y` of the array returned satisfies `radius(real(y)) < 2^-abs_tol`,
+Every entry $y$ of the array returned satisfies `radius(real(y)) < 2^-abs_tol`,
 `radius(imag(y)) < 2^-abs_tol` respectively.
 """
 function conjugates_arb(x::NfAbsOrdElem, abs_tol::Int = 32)
@@ -1200,13 +1200,13 @@ Nemo.promote_rule(::Type{T}, ::Type{NfAbsOrdElem{S, T}}) where {S, T} = T
 @doc Markdown.doc"""
     factor(a::NfOrdElem) -> Fac{NfOrdElem}
 
-Computes a factorization of `a` into irreducible elements. The return value
+Computes a factorization of $a$ into irreducible elements. The return value
 is a factorization `fac`, which satisfies `a = unit(fac) * prod(p^e for (p, e)
 in fac)`.
 
-The function requires that `a` is non-zero and that all prime ideals containing
-`a` are principal, which is for example satisfied if class group of the order
-of `a` is trivial.
+The function requires that $a$ is non-zero and that all prime ideals containing
+$a$ are principal, which is for example satisfied if class group of the order
+of $a$ is trivial.
 """
 function factor(a::NfOrdElem)
   iszero(a) && throw(error("Element must be non-zero"))

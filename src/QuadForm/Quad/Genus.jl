@@ -364,7 +364,7 @@ function orthogonal_sum(J1::JorDec{S, T, U}, J2::JorDec{S, T, U}) where {S, T, U
     return JorDec(J1.p, _sca, _rk, _dets)
   else
     # Lazy
-    return JorDec(orthogonal_sum(lattice(J1), lattice(J2)), J1.p)
+    return JorDec(orthogonal_sum(lattice(J1), lattice(J2))[1], J1.p)
   end
 end
 
@@ -1064,7 +1064,7 @@ function orthogonal_sum(G1::LocalGenusQuad, G2::LocalGenusQuad)
   else
     L1 = representative(G1)
     L2 = representative(G2)
-    L3 = orthogonal_sum(L1, L2)
+    L3, = orthogonal_sum(L1, L2)
     G3 = genus(L3, prime(G1))
   end
 

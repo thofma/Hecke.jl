@@ -70,8 +70,11 @@ function abs_upper_bound(x::arb, ::Type{fmpz})
   ccall((:arb_get_abs_ubound_arf, libarb), Nothing,
         (Ref{arf_struct}, Ref{arb}, Int), tarf, x, 64)
 
-  bound = fmpz()
+  if ccall((:arf_is_nan, Nemo.libarb), Bool, (Ref{arf_struct}, ), tarf)
+    throw(Base.InexactError(:abs_upper_bound, x, fmpz))
+  end
 
+  bound = fmpz()
   # round towards +oo
   ccall((:arf_get_fmpz, libarb), Nothing,
         (Ref{fmpz}, Ref{arf_struct}, Cint), bound, tarf, 3)
