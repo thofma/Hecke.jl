@@ -150,7 +150,7 @@ function _get_sunits(N, i, lp)
   if N.isnormal[i] && degree(k) > 10
     Gk, mGk = automorphism_group(k)
     if has_useful_brauer_relation(Gk)
-      Szk, mS = _sunit_group_fac_elem_via_brauer(k, lp, true, index(N))
+      Szk, mS = _sunit_group_fac_elem_via_brauer(k, lp, true, index(N) == 1 ? 0 : index(N))
     else
       Szk, mS = Hecke.sunit_group_fac_elem(lp)
     end
