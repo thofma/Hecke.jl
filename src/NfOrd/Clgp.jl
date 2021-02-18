@@ -411,8 +411,8 @@ end
 Returns a group $A$ and a map $f$ from $A$ to the set of ideals of $O$.
 The inverse of the map is the projection onto the group of ideals modulo the
 group of principal ideals.
-\texttt{redo} allows to trigger a re-computation, thus avoiding the cache.
-\texttt{bound}, when given, is the bound for the factor base.
+`redo` allows to trigger a re-computation, thus avoiding the cache.
+`bound`, when given, is the bound for the factor base.
 """
 function class_group(O::NfOrd; bound::Int = -1, method::Int = 3,
                      redo::Bool = false, unit_method::Int = 1,
