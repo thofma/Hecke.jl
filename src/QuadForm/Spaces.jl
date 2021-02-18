@@ -4,6 +4,52 @@ export ambient_space, rank, gram_matrix, inner_product, involution, ishermitian,
 
 ################################################################################
 #
+#  Maps
+#
+################################################################################
+
+mutable struct AbsSpaceMor{D, T} <: Map{D, D, HeckeMap, AbsSpaceMor}
+  header::MapHeader{D, D}
+  matrix::T
+
+  function AbsSpaceMor(V::D, W::D, B::T) where {D, T}
+    z = new{D, T}()
+    z.header = MapHeader{D, D}(V, W)
+    z.matrix = B
+    return z
+  end
+end
+
+function hom(V, W, B; check::Bool = false)
+  @req base_ring(V) == base_ring(W) "Spaces must have the same base field"
+  @req nrows(B) == dim(V) && ncols(B) == dim(W) """
+  Dimension mismatch. Matrix ($(nrows(B))x$(ncols(B))) must be of
+  dimensions $(dim(V))x$(dim(W)).
+  """
+  if check
+    GV = gram_matrix(V)
+    GW = gram_matrix(W)
+    fl = T * GV * transpose(_map(T, involution(V))) == GW
+    if !fl
+      error("Matrix does not define a morphism of spaces")
+    end
+  end
+  return AbsSpaceMor(V, W, B)
+end
+
+function image(f::AbsSpaceMor, v::Vector)
+  V = domain(f)
+  w = matrix(base_ring(V), 1, length(v), v) * f.matrix
+  return collect(w)
+end
+
+function compose(f::AbsSpaceMor, g::AbsSpaceMor)
+  # TODO: check compability
+  return hom(domain(f), codomain(g), f.matrix * g.matrix)
+end
+
+################################################################################
+#
 #  Creation
 #
 ################################################################################
@@ -493,15 +539,35 @@ end
 #
 ################################################################################
 
-# TODO: Make this a proper coproduct with injections?
+function _orthogonal_sum(V::AbsSpace, W::AbsSpace)
+  K = base_ring(V)
+  G = diagonal_matrix(gram_matrix(V), gram_matrix(W))
+  n = dim(V) + dim(W)
+  i1 = zero_matrix(K, dim(V), n)
+  for i in 1:dim(V)
+    i1[i, i] = 1
+  end
+  i2 = zero_matrix(K, dim(W), n)
+  for i in 1:dim(W)
+    i2[i, i + dim(V)] = 1
+  end
+  return G, i1, i2
+end
+
 function orthogonal_sum(V::QuadSpace, W::QuadSpace)
   @req base_ring(V) === base_ring(W) "Base fields must be equal"
-  G = diagonal_matrix(gram_matrix(V), gram_matrix(W))
-  return quadratic_space(base_ring(V), G)
+  G, i1, i2 = _orthogonal_sum(V, W)
+  VplusW = quadratic_space(base_ring(V), G)
+  f1 = hom(V, VplusW, i1)
+  f2 = hom(W, VplusW, i2)
+  return VplusW, f1, f2
 end
 
 function orthogonal_sum(V::HermSpace, W::HermSpace)
   @req base_ring(V) === base_ring(W) "Base fields must be equal"
-  G = diagonal_matrix(gram_matrix(V), gram_matrix(W))
-  return hermitian_space(base_ring(V), G)
+  G, i1, i2 = _orthogonal_sum(V, W)
+  VplusW = hermitian_space(base_ring(V), G)
+  f1 = hom(V, VplusW, i1)
+  f2 = hom(W, VplusW, i2)
+  return VplusW, f1, f2
 end
