@@ -170,7 +170,7 @@ valuation(::NfOrdFracIdl, ::NfOrdIdl)
 ## Quotient Rings
 
 ```@docs
-quo(::NfOrd, ::NfOrdIdl)
+quo(::Union{NfAbsOrd, AlgAssAbsOrd}, ::Union{NfAbsOrdIdl, AlgAssAbsOrdIdl})
 ResidueRing(::NfOrd, ::NfOrdIdl)
 ResidueField(::NfOrd, ::NfOrdIdl, ::Bool)
 mod(::NfOrdElem, ::NfAbsOrdIdl)

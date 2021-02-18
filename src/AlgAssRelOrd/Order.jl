@@ -18,9 +18,9 @@ algebra(O::AlgAssRelOrd) = O.algebra
 _algebra(O::AlgAssRelOrd) = algebra(O)
 
 @doc Markdown.doc"""
-    base_ring(O::AlgAssRelOrd) -> Union{ NfAbsOrd, NfRelOrd }
+    base_ring(O::AlgAssRelOrd) -> Union{NfAbsOrd, NfRelOrd}
 
-Returns an order $R$ in the base ring of `algebra(O)`, such that $O$ is an $R$-order.
+Returns an order $R$ in the base ring of the algebra of $O$, such that $O$ is an $R$-order.
 """
 base_ring(O::AlgAssRelOrd) = order(basis_pmatrix(O, copy = false).coeffs[1])
 
@@ -438,7 +438,7 @@ end
 @doc Markdown.doc"""
     maximal_order(A::AbsAlgAss{ <: NumFieldElem }) -> AlgAssRelOrd
 
-Returns a maximal $R$-order of $A$ where $R$ is the maximal order of `base_ring(A)`.
+Returns a maximal $R$-order of $A$ where $R$ is the maximal order of the base ring of $A$.
 """
 function maximal_order(A::AbsAlgAss{T}) where { T <: NumFieldElem }
   if isdefined(A, :maximal_order)
@@ -479,7 +479,7 @@ end
 @doc Markdown.doc"""
     maximal_order(O::AlgAssRelOrd) -> AlgAssRelOrd
 
-Returns a maximal order of `algera(O)` containing $O$.
+Returns a maximal order of the algebra of $O$ containing itself.
 """
 function maximal_order(O::AlgAssRelOrd{S, T, U}) where {S, T, U}
   A = algebra(O)
@@ -513,7 +513,7 @@ end
 @doc Markdown.doc"""
     any_order(A::AbsAlgAss{ <: NumFieldElem }) -> AlgAssRelOrd
 
-Returns any $R$-order of $A$ where $R$ is the maximal order of `base_ring(A)`.
+Returns any $R$-order of $A$ where $R$ is the maximal order of the base ring of $A$.
 """
 function any_order(A::AbsAlgAss{T}) where { T <: NumFieldElem }
   K = base_ring(A)
@@ -625,8 +625,8 @@ end
 @doc Markdown.doc"""
     nice_order(O::AlgAssRelOrd) -> AlgAssRelOrd, AlgElem
 
-Given a maximal order `O` in a full matrix algebra over a number field, return a
-nice maximal order `R` and element `a` such that `a O a^-1 = R`.
+Given a maximal order $O$ in a full matrix algebra over a number field, return a
+nice maximal order $R$ and element $a$ such that $a O a^-1 = R$.
 """
 function nice_order(O::AlgAssRelOrd{S, T, U}) where {S, T, U}
   if isdefined(O, :nice_order)
@@ -699,7 +699,7 @@ ismaximal_known(O::AlgAssRelOrd) = O.ismaximal != 0
       -> AlgAssRelOrd
 
 Returns an order $O'$ containing $O$ such that the localization $O'_p$ is
-hereditary where $p$ is a prime ideal of `base_ring(O)`.
+hereditary where $p$ is a prime ideal of the base ring of $O$.
 """
 function phereditary_overorder(O::AlgAssRelOrd, p::Union{ NfAbsOrdIdl, NfRelOrdIdl }; return_pradical::Type{Val{T}} = Val{false}) where T
   d = discriminant(O)
@@ -749,7 +749,7 @@ end
 
 Returns an order $O'$ containing $O$ such that the index $(O'':O')$ of any maximal
 order $O''$ containing $O$ is not divisible by $p$ where $p$ is a prime ideal
-of `base_ring(O)`.
+of the base ring of $O$.
 """
 function pmaximal_overorder(O::AlgAssRelOrd, p::Union{ NfAbsOrdIdl, NfRelOrdIdl })
   O, prad = phereditary_overorder(O, p, return_pradical = Val{true})

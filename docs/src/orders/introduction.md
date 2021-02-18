@@ -34,7 +34,10 @@ Let $(r,s)$ be the signature of $K$, that is, $K$ has $r$ real embeddings $\sigm
 In Hecke the complex embeddings are always ordered such that $\sigma_i = \overline{\sigma_{i+s}}$ for $r + 1 \leq i \leq r + s$.
 The $\mathbf{Q}$-linear function
 ```math
-K \longrightarrow \mathbf R^{d}, \ \alpha \longmapsto (\sigma_1(\alpha),\dotsc,\sigma_r(\alpha),\sqrt{2}\operatorname{Re}(\sigma_{r+1}(\alpha)),\sqrt{2}\operatorname{Im}(\sigma_{r+1}(\alpha)),\dotsc,\sqrt{2}\operatorname{Re}(\sigma_{r+s}(\alpha)),\sqrt{2}\operatorname{Im}(\sigma_{r+s}(\alpha))
+\begin{gather*}
+  K \longrightarrow \mathbf R^{d} \\
+  \alpha \longmapsto \Bigl( \sigma_1(\alpha), \dotsc, \sigma_r(\alpha), \sqrt{2}\operatorname{Re}\bigl(\sigma_{r+1}(\alpha)\bigr), \sqrt{2}\operatorname{Im}\bigl(\sigma_{r+1}(\alpha)\bigr), \dotsc, \sqrt{2}\operatorname{Re}\bigl(\sigma_{r+s}(\alpha)\bigr), \sqrt{2}\operatorname{Im}\bigl(\sigma_{r+s}(\alpha)\bigr) \Bigr)
+\end{gather*}
 ```
 is called the *Minkowski map* (or *Minkowski embedding*).
 
@@ -50,7 +53,7 @@ $(\omega_1,\dotsc,\omega_d)$ is the basis of $\mathcal O$, then the matrix $B
 \in \operatorname{Mat}_{d \times d}(\mathbf Q)$ with
 
 ```math
-\begin{pmatrix} \omega_1 \\\\ \vdots \\\\ \omega_d \end{pmatrix} = B \begin{pmatrix} 1 \\\\ \vdots \\\\ \alpha^{d - 1} \end{pmatrix}
+\begin{pmatrix} \omega_1 \\ \vdots \\ \omega_d \end{pmatrix} = B \begin{pmatrix} 1 \\ \vdots \\ \alpha^{d - 1} \end{pmatrix}
 ```
 
 is called the *basis matrix* of $\mathcal O$. We call $\det(B)$ the *generalized
@@ -62,7 +65,7 @@ The matrix
 \begin{pmatrix} 
 \sigma_1(\omega_1) & \dotsc & \sigma_r(\omega_1) & \sqrt{2}\operatorname{Re}(\sigma_{r+1}(\omega_1)) & \sqrt{2}\operatorname{Im}(\sigma_{r+1}(\omega_1)) & \dotsc & \sqrt{2}\operatorname{Im}(\sigma_{r+s}(\omega_1)) \\\\
 \sigma_1(\omega_2) & \dotsc & \sigma_r(\omega_2) & \sqrt{2}\operatorname{Re}(\sigma_{r+1}(\omega_2)) & \sqrt{2}\operatorname{Im}(\sigma_{r+1}(\omega_2)) & \dotsc  & \sqrt{2}\operatorname{Im}(\sigma_{r+s}(\omega_2)) \\\\
-\vdots & \dotsc & \vdots & \vdots & \dotsc & \vdots & \vdots\\\\
+\vdots & \ddots & \vdots & \vdots & \vdots & \ddots & \vdots\\\\
 \sigma_1(\omega_d) & \dotsc & \sigma_r(\omega_d) & \sqrt{2}\operatorname{Re}(\sigma_{r+1}(\omega_d)) & \sqrt{2}\operatorname{Im}(\sigma_{r+2}(\omega_d)) & \dotsc & \sqrt{2}\operatorname{Im}(\sigma_{r+s}(\omega_d))
 \end{pmatrix}
 \in \operatorname{Mat}_{d\times d}(\mathbf R).
