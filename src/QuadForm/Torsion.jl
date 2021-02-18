@@ -581,7 +581,7 @@ end
 Return the normal form of given torsion quadratic module.
 """
 function normal_form(T::TorQuadMod; partial=false)
-  normal_gens = []
+  normal_gens = TorQuadModElem[]
   prime_div = prime_divisors(exponent(T))
   for p in prime_div
     D_p, I_p = primary_part(T, p)
@@ -628,13 +628,11 @@ function normal_form(T::TorQuadMod; partial=false)
 
     #apply U to the generators
     n1 = ncols(U)
-    gens_p = []
     Gp =  gens(D_p); 
     for i in 1:nrows(U) 
       g = sum(U[i,j] * Gp[j] for j in 1:ncols(U))
-      append!(gens_p, g)
+      push!(normal_gens, g)
     end
-    push!(normal_gens, gens_p) 
   end
   return sub(T, normal_gens)
 end
