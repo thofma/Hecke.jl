@@ -44,4 +44,15 @@
   
   #checks if a TorQuadMod is degenerate
   @test Hecke.isdegenerate(T) == false  
+  
+  #test for rescaled torsion quadratic module
+  @test Hecke.gram_matrix_quadratic(Hecke.rescale(T, -1)) == matrix(QQ, 3, 3, [7//4,0,0,0,7//4,0,0,0,7//4])
+  t = Hecke.TorQuadMod(QQ[1//3 0; 0 1//9])
+  @test Hecke.gram_matrix_quadratic(Hecke.rescale(t, 2)) == matrix(QQ, 2, 2, [2//3,0,0,2//9])
+
+  #test for normal form
+  L1 = Zlattice(matrix(ZZ, [[-2,0,0],[0,1,0],[0,0,4]]))
+  T1 = Hecke.discriminant_group(L1)
+  @test Hecke.gram_matrix_quadratic(Hecke.normal_form(T1)[1]) == matrix(QQ, 2, 2, [1//4,0,0,1//16])
 end
+
