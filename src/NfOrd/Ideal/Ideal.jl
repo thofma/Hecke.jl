@@ -2251,9 +2251,14 @@ function iscoprime(I::NfAbsOrdIdl, J::NfAbsOrdIdl)
   end
   if gcd(minimum(I, copy = false), minimum(J, copy = false)) == 1
     return true
-  else
-    return isone(I+J)
   end
+  if isprime_known(I)
+    return iszero(valuation(J, I))
+  end
+  if isprime_known(J)
+    return iszero(valuation(I, J))
+  end
+  return isone(I+J)
 end 
 
 function iscoprime(I::NfAbsOrdIdl, a::fmpz)

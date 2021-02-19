@@ -1,3 +1,10 @@
+function mul!(z::acb, x::acb, y::arb)
+  ccall((:acb_mul_arb, libarb), Nothing, (Ref{acb}, Ref{acb}, Ref{arb}, Int),
+        z, x, y, parent(z).prec)
+  return z
+end
+
+
 ################################################################################
 #
 #  Small interface to characters
@@ -13,6 +20,7 @@ mutable struct RCFCharacter{S, T}
   conductor_inf_plc::Vector{InfPlc}
   mrcond::Union{MapClassGrp, MapRayClassGrp}
   mp_cond::GrpAbFinGenMap
+  charcond::Map #Character directly on the rcf given by the conductor
   
   function RCFCharacter(C::ClassField{S, T}, x::GrpAbFinGenElem, mGhat::Map) where {S, T}
     z = new{S, T}()
@@ -64,16 +72,65 @@ end
 (chi::RCFCharacter)(I::NfOrdIdl, prec::Int) = image(chi, I, prec)
 (chi::RCFCharacter)(I::GrpAbFinGenElem, prec::Int) = image(chi, I, prec)
 
-function image(chi::RCFCharacter, I::NfOrdIdl, prec::Int)
+function image(chi::RCFCharacter{MapClassGrp, T}, I::NfOrdIdl, prec::Int) where T
   CC = AcbField(prec)
   x = chi.x
   mGhat = chi.mGhat
   mpc = mGhat(x)
-  if iscoprime(I, defining_modulus(chi.C)[1])
+  c = conductor(chi)
+  df = defining_modulus(chi.C)[1]
+  if c == df
+    if iscoprime(I, c)
+      C = chi.C
+      mR = C.rayclassgroupmap
+      mQ = C.quotientmap
+      img = lift(mpc(mQ(mR\I)))
+      if iszero(img)
+        return one(CC)
+      end
+      return exppii(2*CC(img))
+    else
+      return zero(CC)
+    end
+  end
+  assure_with_conductor(chi)
+  if !iscoprime(I, c)
+    return zero(CC)
+  end
+  mR = chi.mrcond
+  mp = chi.mp_cond
+  mQ = chi.C.quotientmap
+  el = mR\I
+  el = mp\el
+  el = mQ(el)
+  el = mpc(el)
+  img = lift(el)
+  if iszero(img)
+    return one(CC)
+  end
+  return exppii(2*CC(img))
+end
+
+function image(chi::RCFCharacter{MapRayClassGrp, T}, I::NfOrdIdl, prec::Int) where T
+  CC = AcbField(prec)
+  x = chi.x
+  mGhat = chi.mGhat
+  mpc = mGhat(x)
+
+  if iscoprime(minimum(I, copy = false), minimum(defining_modulus(chi.C)[1], copy = false))
     C = chi.C
     mR = C.rayclassgroupmap
+    if !isdefined(mR, :prime_ideal_preimage_cache)
+      mR.prime_ideal_preimage_cache = Dict{NfOrdIdl, GrpAbFinGenElem}()
+    end
+    if haskey(mR.prime_ideal_preimage_cache, I)
+      pim = mR.prime_ideal_preimage_cache[I]
+    else
+      pim = mR\I
+      mR.prime_ideal_preimage_cache[I] = pim
+    end
     mQ = C.quotientmap
-    img = lift(mpc(mQ(mR\I)))
+    img = lift(mpc(mQ(pim)))
     if iszero(img)
       return one(CC)
     end
@@ -86,7 +143,15 @@ function image(chi::RCFCharacter, I::NfOrdIdl, prec::Int)
   mR = chi.mrcond
   mp = chi.mp_cond
   mQ = chi.C.quotientmap
-  el = mR\I
+  if !isdefined(mR, :prime_ideal_preimage_cache)
+    mR.prime_ideal_preimage_cache = Dict{NfOrdIdl, GrpAbFinGenElem}()
+  end
+  if haskey(mR.prime_ideal_preimage_cache, I)
+    el = mR.prime_ideal_preimage_cache[I]
+  else
+    el = mR\I
+    mR.prime_ideal_preimage_cache[I] = el
+  end
   el = mp\el
   el = mQ(el)
   el = mpc(el)
@@ -137,7 +202,6 @@ function rcf_using_stark_units(C::T; cached::Bool = true) where T <: ClassField_
   c, inf_plc = conductor(C)
   @hassert :ClassField 1 isempty(inf_plc)
   C1, mp, v = _find_suitable_quadratic_extension(C)
-  @show conductor(C1)
   kmp, mkmp = kernel(mp)
   comp = mkmp*C1.quotientmap
   imgc, mimgc = image(comp)
@@ -162,14 +226,14 @@ function rcf_using_stark_units(C::T; cached::Bool = true) where T <: ClassField_
       @vprint :ClassField 1 "Guess not useful. Increasing precision to $(2*p) \n"
     end
   end
-  p = 3*nb
+  p = max(64+p, nb)
   @vprint :ClassField 1 "Guess: we need precision $(p) \n"
   while true
     approximations_derivative_Artin_L_functions = approximate_derivative_Artin_L_function(chars, p)
     el = approximate_artin_zeta_derivative_at_0(C1, mp, approximations_derivative_Artin_L_functions)
     f = find_defining_polynomial(K, el, v)
     if degree(f) != degree(C)
-      p *= 2
+      p = 2*p
       @vprint :ClassField 1 "Wrong guess, setting precision to $(p) \n"
       continue
     end
@@ -198,31 +262,39 @@ function power_sums(v::Vector{T}) where T <: FieldElem
 end
 
 function approximate_defpoly(K::AnticNumberField, el::Vector{acb})
-  rts = arb[real(exp(2*x)+exp(-2*x)) for x in el]
+  rts = arb[2*real(cosh(x)) for x in el]
   ps = power_sums(rts)
   pol = power_sums_to_polynomial(ps)
   @vprint :ClassField 1 "Approximation: $pol \n"
   l2norm = fmpz(0)
   for i = 0:degree(pol)
     c = coeff(pol, i)
-    if radiuslttwopower(c, 0)
-      l2norm += upper_bound(abs(c)^2, fmpz)
-    else
-      return false, 0
-    end
+    l2norm += upper_bound(abs(c)^2, fmpz)
   end
   return true, nbits(l2norm)
 end
 
 function find_defining_polynomial(K::AnticNumberField, el::Vector{acb}, v::InfPlc)
   OK = maximal_order(K)
-  Kt = PolynomialRing(K, "t", cached = false)[1]
-  rts = arb[real(exp(2*x)+exp(-2*x)) for x in el]
+  rts = arb[2*real(cosh(x)) for x in el]
   ps = power_sums(rts)
   pol = power_sums_to_polynomial(ps)
+  attempt = _find_coeffs(K, pol, v)
+  if degree(attempt) == length(el)
+    return attempt
+  end
+  rt1 = arb[x^2-2 for x in rts]
+  ps = power_sums(rt1)
+  pol = power_sums_to_polynomial(ps)
+  return _find_coeffs(K, pol, v)
+end
+
+function _find_coeffs(K, pol, v)
+  Kt = PolynomialRing(K, "t", cached = false)[1]
+  OK = maximal_order(K)
   B = basis(OK, K)
   bconjs = [real(evaluate(x, v, 2*precision(parent(pol)))) for x in B]
-  coeffs = Vector{nf_elem}(undef, length(el)+1)
+  coeffs = Vector{nf_elem}(undef, degree(pol)+1)
   for i = 1:degree(pol)
     c = coeff(pol, i-1)
     vs = arb[c]
@@ -248,14 +320,15 @@ function _lindep(A::Array{arb, 1}, bits::Int)
   for i = 1:n
     M[i, i] = 1
     flag, M[i, n + 1] = unique_integer(V[i])
+    if !flag
+      @show V[i]
+    end
     !flag && return false, fmpz[M[1, 1]]
   end
   lll!(M, lll_ctx(0.99999, 0.5001))
   res = fmpz[M[1, i] for i = 1:n]
   return true, res
 end
-
-
 
 
 function _find_suitable_quadratic_extension(C::T) where T <: ClassField_pp
@@ -270,10 +343,10 @@ function _find_suitable_quadratic_extension(C::T) where T <: ClassField_pp
   v = real_plc[end]
   w = real_plc[1:end-1]
   inf_plc_ram = Set(w)
-  bound = fmpz(100)
+  bound = 20
   ctx = rayclassgrp_ctx(OK, Int(exponent(C))*2)
   allow_cache!(ctx.class_group_map)
-  lc = _squarefree_ideals_with_bounded_norm(OK, bound, coprime = minimum(defining_modulus(C)[1], copy = false))
+  lc = ideals_up_to(OK, bound, conductor(C)[1])
   cnt = 0 
   while true
     @vprint :ClassField 1 "Batch of ideals with $(length(lc)) elements \n"
@@ -281,7 +354,8 @@ function _find_suitable_quadratic_extension(C::T) where T <: ClassField_pp
       for i = 1:length(real_plc)
         v = real_plc[i]
         w = [real_plc[j] for j = 1:length(real_plc) if j != i]
-        newc = merge(max, c, I[1])
+        lf = factor(I)
+        newc = merge(max, c, lf)
         r, mr = ray_class_group_quo(OK, newc, w, ctx)
         gens, group_gens = find_gens(mr)
         images = GrpAbFinGenElem[mQ(mR\J) for J in gens]
@@ -313,7 +387,7 @@ function _find_suitable_quadratic_extension(C::T) where T <: ClassField_pp
     end
     #Need to consider more moduli.
     bound *= 2
-    lc1 = _squarefree_ideals_with_bounded_norm(OK, bound, coprime = minimum(defining_modulus(C)[1], copy = false))
+    lc1 = ideals_up_to(OK, bound, conductor(C)[1])
     lc = setdiff(lc, lc1)
   end
 end
@@ -372,7 +446,7 @@ function approximate_derivative_Artin_L_function(chars::Vector{RCFCharacter{MapR
 end
 
 function _find_N0(K::AnticNumberField, target_prec::Int, C::arb)
-  R = ArbField(20+target_prec)
+  R = ArbField(3*target_prec)
   r1, r2 = signature(K)
   n = degree(K)
   r = r1 + r2
@@ -388,10 +462,13 @@ function _find_N0(K::AnticNumberField, target_prec::Int, C::arb)
 end
 
 function _approximate_derivative_Artin_L_function(chars::Vector, target_prec::Int)
-  prec = 20+target_prec
-  RR = ArbField(prec)
   K = base_field(chars[1].C)
   n = degree(K)
+  if n == 2
+   return  _approximate_derivative_Artin_L_function_quadratic(chars, target_prec)
+  end
+  prec = min(10, div(degree(chars[1].C), 2))*target_prec
+  RR = ArbField(prec)
   maxC = (root(norm(conductor(chars[1].C)[1])*abs(discriminant(maximal_order(K))), 2)+1)//(sqrt(const_pi(RR))^degree(K))
   nterms = Int(Hecke.upper_bound(target_prec*sqrt(maxC)//2, fmpz))
   Acoeffs = Vector{arb}[_compute_A_coeffs(n, i, prec) for i = 0:nterms]
@@ -410,81 +487,101 @@ function _approximate_derivative_Artin_L_function(chars::Vector, target_prec::In
   return res
 end
 
+function _approximate_derivative_Artin_L_function_quadratic(chars::Vector, target_prec::Int)
+  prec = min(10, div(degree(chars[1].C), 2))*target_prec
+  RR = ArbField(prec)
+  res = Vector{acb}()
+  den = 2*sqrt(const_pi(RR))
+  vf = compute_values_f_quadratic(chars, target_prec)
+  for i = 1:length(chars)
+    x = chars[i]
+    A = _A_function(x, prec)
+    lambda = _lambda_and_artin_quadratic(x, target_prec, vf)
+    num = A*lambda
+    push!(res, num/den)
+  end
+  return res
+end
+
+function compute_values_f_quadratic(chars::Vector, target_prec::Int)
+  prec = min(10, div(degree(chars[1].C), 2))*target_prec
+  res = Dict{NfOrdIdl, Vector{Tuple{arb, arb}}}()
+  for x in chars
+    c = conductor(x)
+    if haskey(res, c)
+      continue
+    end
+    cx = _C(x, prec)
+    nterms = Int(Hecke.upper_bound((target_prec*cx)//2, fmpz))
+    v = Vector{Tuple{arb, arb}}(undef, nterms)
+    #v0 = _evaluate_f_x_0(cx, prec, nterms)
+    for i = 1:length(v)
+      val = cx//i
+      v[i] = (_evaluate_f_x_0(val, prec), _evaluate_f_x_1(val, prec))
+    end
+    res[c] = v
+  end
+  return res
+end
+
+
 ################################################################################
 #
 #  Coefficients L-function
 #
 ################################################################################
 
-function compute_coeffs_L_function(chars::Vector{T}, n::Int, prec::Int) where T <: RCFCharacter
-  C = chars[1].C
+function compute_coeffs_L_function(chi::T, n::Int, prec::Int) where T <: RCFCharacter
+  C = chi.C
   OK = base_ring(C)
   lp = prime_ideals_up_to(OK, n)
   sort!(lp, by = x -> norm(x, copy = false))
   CC = AcbField(prec)
-  coeffs = Dict{Tuple{Int, Int, Int}, acb}()
-  for j = 1:length(chars)
-    coeffs[(j, 1, 0)] = one(CC)
-    for i = 2:n
-      coeffs[(j, i, 0)] = zero(CC)
-    end
+  coeffs_old = Vector{acb}(undef, n)
+  coeffs_old[1] = one(CC)
+  for j = 2:n
+    coeffs_old[j] =  zero(CC)
   end
+  coeffs_new = Vector{acb}(undef, n)
   for h = 1:length(lp)
     P = lp[h]
-    np = norm(P, copy = false)
+    r = chi(P, prec)
+    np = Int(norm(P, copy = false))
     for i = 1:n
       v = valuation(i, np)
       if iszero(v)
-        for j = 1:length(chars)
-          coeffs[(j, i, h)] = coeffs[(j, i, h-1)]
-        end
+        coeffs_new[i] = coeffs_old[i]
         continue
       end
-      for j = 1:length(chars)
-        chi = chars[j]
-        r = chi(P, prec)
-        res = zero(CC)
-        for k = 0:v
-          kk = (j, Int(divexact(i, np^k)), h-1)
-          ckk = coeffs[kk]
-          res += ckk*r^k
-        end
-        coeffs[(j, i, h)] = res
+      res = zero(CC)
+      if iszero(r)
+        coeffs_new[i] = res
+        continue
       end
+      r1 = one(CC)
+      aux = CC()
+      for k = 0:v
+        kk = Int(divexact(i, np^k))
+        ckk = coeffs_old[kk]
+        mul!(aux, ckk, r1)
+        add!(res, res, aux)
+        #res += ckk*r1
+        mul!(r1, r1, r)
+      end
+      coeffs_new[i] = res
     end
-  end
-  coeffs_res = Vector{Vector{acb}}(undef, length(chars))
-  s = length(lp)
-  for j = 1:length(chars)
-    v = Vector{acb}(undef, n)
+    #Now, I need to shift the column...
     for i = 1:n
-      v[i] = coeffs[(j, i, s)]
+      coeffs_old[i] = coeffs_new[i]
     end
-    coeffs_res[j] = v
   end
-  return coeffs_res
+  return coeffs_old
 end
 
-function _test_coeffs(chi::RCFCharacter, n::Int, prec::Int)
-  C = chi.C
-  OK = base_ring(C)
-  lI = ideals_up_to(OK, n)
-  CC = AcbField(prec)
-  coeffs = Vector{acb}(undef, n)
-  for i = 1:n
-    coeffs[i] = zero(CC)
-  end
-  for j = 1:length(lI)
-    n = Int(norm(lI[j], copy = false))
-    coeffs[n] += chi(lI[j], prec)
-  end
-  return coeffs
-end
-
-
-function ideals_up_to(OK::NfOrd, n::Int)
+function ideals_up_to(OK::NfOrd, n::Int, coprime_to::NfOrdIdl = ideal(OK, 1))
 
   lp = prime_ideals_up_to(OK, n)
+  filter!(x -> iscoprime(x, coprime_to), lp)
   lI = NfOrdIdl[ideal(OK, 1)]
   for i = 1:length(lp)
     lnew = NfOrdIdl[]
@@ -590,13 +687,93 @@ end
 
 ################################################################################
 #
-#  Lambda evaluation
+#  Lambda evaluation for quadratic fields
+#
+################################################################################
+
+function _lambda_and_artin_quadratic(chi::RCFCharacter, target_prec::Int, vf::Dict{NfOrdIdl, Vector{Tuple{arb, arb}}})
+  prec = min(10, div(degree(chi.C), 2))*target_prec
+  Wchi = artin_root_number(chi, prec)
+  CC = AcbField(prec)
+  c = conductor(chi)
+  vals = vf[c]
+  nterms_chi = length(vals)
+  val_chi = compute_coeffs_L_function(chi, nterms_chi, prec)
+  res1 = zero(CC)
+  res2 = zero(CC)
+  aux = CC()
+  for i = 1:nterms_chi
+    if iszero(val_chi[i])
+      continue
+    end
+    mul!(aux, val_chi[i], vals[i][1])
+    add!(res1, res1, aux)
+    #res1 += val_chi[i]*vals[i][1]
+    mul!(aux, conj(val_chi[i]), vals[i][2])
+    add!(res2, res2, aux)
+    #res2 += conj(val_chi[i])*vals[i][2]
+  end
+  return res1 + Wchi*res2
+end
+
+function _evaluate_f_x_1(x::arb, prec::Int)
+  RR = parent(x)
+  return x*sqrt(const_pi(RR))*exp(-2//x)
+end
+
+function _evaluate_f_x_0(x::arb, prec::Int)
+  RR = parent(x)
+  CC = AcbField(precision(RR))
+  return 2*sqrt(const_pi(RR))*real(expint(one(CC), CC(2//x)))
+end
+
+function _evaluate_f_x_0(x::arb, prec::Int, N::Int)
+  CC = AcbField(prec)
+  RR = ArbField(prec)
+  res = Vector{arb}(undef, N)
+  res[N] = real(expint(one(CC), CC(2//x)))
+  @show nstop1 = ceil(4//x)
+  @show nstop = Int(upper_bound(nstop1, fmpz))
+  n = N
+  e0 = exp(x)
+  e1 = exp(-N*x)
+  while n > nstop
+    res[n-1] = zero(RR)
+    f0 = e1
+    f1 = -f0//n
+    m = 1
+    d = fmpq(-1)
+    s = res[n]
+    while abs(s) > fmpq(1, 2)^prec
+      res[n-1] = res[n-1]+s
+      s = d*f1
+      f0 = -x*f0
+      f1 = -(m*f1+f0)//n
+      m += 1
+      d = -d//m
+    end
+    n = n-1
+    e1 = e0*e1
+  end
+  for i = 1:nstop
+    res[i] = real(expint(one(CC), CC(2*i//x)))
+  end
+  for i = 1:N
+    res[i] = 2*sqrt(const_pi(RR))*res[i]
+  end
+  return res
+end
+
+
+################################################################################
+#
+#  Lambda evaluation - general case
 #
 ################################################################################
 
 global deb = []
 function _lambda_and_artin(chi::RCFCharacter, target_prec::Int, coeffs_0, coeffs_1, coeffs_chi)
-  prec = 20+target_prec
+  prec = min(10, div(degree(chi.C), 2))*target_prec
   K = base_field(chi.C)
   Wchi = artin_root_number(chi, prec)
   CC = AcbField(prec)
@@ -633,7 +810,7 @@ end
 
 
 function _evaluate_f_x_0_1(x::arb, n::Int, target_prec::Int, coeffs_0::Vector{Vector{arb}}, coeffs_1::Vector{Vector{arb}})
-  RR = ArbField(20+target_prec)
+  RR = ArbField(3*target_prec)
   #nterms1 = min(nterms, 100)
   res0 = zero(RR)
   res1 = zero(RR)

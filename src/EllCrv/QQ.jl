@@ -102,7 +102,7 @@ function torsion_points_lutz_nagell(F::EllCrv{fmpq})
   (E, trafo_int, trafo_rat) = integral_model(G)
 
   res = [infinity(E)]
-  d = disc(E)
+  d = discriminant(E)
 
   # Lutz-Nagell: necessary: y = 0 or y^2 divides d
 
@@ -539,7 +539,7 @@ function tates_algorithm_local(E::EllCrv{fmpq}, p)
 
   b2, b4, b6, b8, c4, c6 = get_b_c_integral(E)
 
-  delta = disc(E)
+  delta = discriminant(E)
   delta = numerator(delta)
 
   n = valuation(delta, p)
@@ -852,7 +852,7 @@ end
 Returns a global reduced minimal model for $E$ using Tate's algorithm.
 """
 function tates_algorithm_global(E)
-  delta = abs(numerator(disc(E)))
+  delta = abs(numerator(discriminant(E)))
   fac = factor(delta)
 
   p_list = [i[1] for i in fac]
