@@ -871,7 +871,7 @@ end
 @doc Markdown.doc"""
     crt(r1::NfOrdElem, i1::NfOrdIdl, r2::NfOrdElem, i2::NfOrdIdl) -> NfOrdElem
 
-Find $x$ s.th. $x \equiv r1 \bmod i1$ and $x \equiv r2 \bmod i2$
+Find $x$ such that $x \equiv r_1 \bmod i_1$ and $x \equiv r_2 \bmod i_2$
 using `idempotents`.
 """
 function crt(r1::S, i1::T, r2::S, i2::T) where { S <: Union{NfOrdElem, NfRelOrdElem, AlgAssAbsOrdElem}, T <: Union{NfOrdIdl, NfRelOrdIdl, AlgAssAbsOrdIdl} }

@@ -335,7 +335,7 @@ function _get_hermitian_lattice(data)
   gens_split = collect(Iterators.partition(data[4], n))
   gens = []
   for v in gens_split
-    push!(gens, map(E, [map(K, collect(Iterators.partition(w, k))) for w in v]))
+    push!(gens, map(E, [map(K, collect(Vector.(Iterators.partition(w, k)))) for w in v]))
   end
   return hermitian_lattice(E, generators = gens, gram_ambient_space = D)
 end

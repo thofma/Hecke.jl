@@ -57,7 +57,8 @@
   for i in 1:10
     g1 = rand(G)
     g2 = rand(G)
-    @test (@inferred orthogonal_sum(representative(g1), representative(g2))) in (g1 + g2)
+    M, = @inferred orthogonal_sum(representative(g1), representative(g2))
+    @test M in (g1 + g2)
   end
 
   # Representatives
@@ -118,7 +119,7 @@
     g1 = rand(G)
     g2 = rand(G)
     g3 = @inferred orthogonal_sum(g1, g2)
-    @test genus(representative(g3), p) == genus(orthogonal_sum(representative(g1), representative(g2)), p)
+    @test genus(representative(g3), p) == genus(orthogonal_sum(representative(g1), representative(g2))[1], p)
   end
 
   p = prime_decomposition(maximal_order(K), 3)[1][1]
@@ -127,7 +128,7 @@
     g1 = rand(G)
     g2 = rand(G)
     g3 = @inferred orthogonal_sum(g1, g2)
-    @test genus(representative(g3), p) == genus(orthogonal_sum(representative(g1), representative(g2)), p)
+    @test genus(representative(g3), p) == genus(orthogonal_sum(representative(g1), representative(g2))[1], p)
   end
 
   Qx, x = PolynomialRing(FlintQQ, "x", cached = false)

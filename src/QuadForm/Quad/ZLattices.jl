@@ -129,8 +129,8 @@ function orthogonal_sum(L1::ZLat, L2::ZLat)
   B1 = basis_matrix(L1)
   B2 = basis_matrix(L2)
   B = diagonal_matrix(B1, B2)
-  V = orthogonal_sum(V1, V2)
-  return lattice(V, B)
+  V, f1, f2 = orthogonal_sum(V1, V2)
+  return lattice(V, B), f1, f2
 end
 
 @doc Markdown.doc"""
