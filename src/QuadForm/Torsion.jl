@@ -409,7 +409,7 @@ mutable struct TorQuadModMor <: Map{TorQuadMod, TorQuadMod, HeckeMap, TorQuadMod
   header::MapHeader{TorQuadMod, TorQuadMod}
   map_ab::GrpAbFinGenMap
 
-  function e(T::TorQuadMod, S::TorQuadMod, m::GrpAbFinGenMap)
+  function TorQuadModMor(T::TorQuadMod, S::TorQuadMod, m::GrpAbFinGenMap)
     z = new()
     z.header = MapHeader(T, S)
     z.map_ab = m
