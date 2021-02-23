@@ -648,7 +648,7 @@ function p_adic_log(Q::NfOrdQuoRing, p::NfOrdIdl, v::Int, y::NfOrdElem, powers::
       if haskey(powers, val_p_i)
         el = powers[val_p_i]
       else
-        el = _powmod(anti_uni, val_p_i, pnum^(val_p_i+1))
+        el = _powermod(anti_uni, val_p_i, pnum^(val_p_i+1))
         powers[val_p_i] = el
       end
       numer = O(xi.elem_in_nf*el, false)
@@ -674,7 +674,7 @@ function p_adic_log(Q::NfOrdQuoRing, p::NfOrdIdl, v::Int, y::NfOrdElem, powers::
       if haskey(powers, val_p_i)
         el = powers[val_p_i]
       else
-        el = _powmod(anti_uni, val_p_i, pnum^(val_p_i+1))
+        el = _powermod(anti_uni, val_p_i, pnum^(val_p_i+1))
         powers[val_p_i] = el
       end
       numer = O(xi.elem_in_nf*el, false)

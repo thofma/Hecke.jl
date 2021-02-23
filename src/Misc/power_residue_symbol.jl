@@ -26,12 +26,12 @@ function power_residue(a::PolyElem{T}, b::PolyElem{T}, d::fmpz, q::fmpz) where T
 
     #top part constant -> formula
     if degree(a)==0
-        return powmod( powmod(fmpz(coeff(a,0)), e, q),  degree(b), q)
+        return powermod( powermod(fmpz(coeff(a,0)), e, q),  degree(b), q)
     end
 
     #switch top and bottom part -> recursion (general reciprocity law)
-    symbol = mod(  mod( powmod(powmod(fmpz(leading_coefficient(a)), e, q), degree(b), q) *
-    powmod(powmod(fmpz(leading_coefficient(b)), e, q), -degree(a), q),  q) *
+    symbol = mod(  mod( powermod(powermod(fmpz(leading_coefficient(a)), e, q), degree(b), q) *
+    powermod(powermod(fmpz(leading_coefficient(b)), e, q), -degree(a), q),  q) *
     power_residue(b,a,d,q),   q)
 
     if isodd(e) && isodd(degree(a)) && isodd(degree(b))

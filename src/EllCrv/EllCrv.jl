@@ -764,7 +764,7 @@ function replace_all_squares_modulo(f, g, F)
     z = zero(parent(g)) # this is the zero in Z[x]
     d = div(degree(f), 2) # degree of f in y^2 should be even
     for i in 0:d
-        z = z + coeff(f, 2*i)*powmod(g, i, F)
+        z = z + coeff(f, 2*i)*powermod(g, i, F)
     end
     return z
 end

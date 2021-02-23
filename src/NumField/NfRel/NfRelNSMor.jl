@@ -341,7 +341,7 @@ function compose_mod(a::S, vars::Vector{Int}, vals::Vector{S}, mod::Vector{S}) w
   return _compose_mod(a, vars, vals, powers, mod)::S
 end
 
-function powmod(a::S, i::Union{Int, fmpz}, modu::Vector{S}) where S <:MPolyElem{T} where T <: RingElem
+function powermod(a::S, i::Union{Int, fmpz}, modu::Vector{S}) where S <:MPolyElem{T} where T <: RingElem
   if i == 0
     return one(parent(a))
   end
@@ -351,12 +351,12 @@ function powmod(a::S, i::Union{Int, fmpz}, modu::Vector{S}) where S <:MPolyElem{
   end
   if mod(i, 2) == 0
     j = div(i, 2)
-    b = powmod(a, j, modu)
+    b = powermod(a, j, modu)
     b = b*b
     b = divrem(b, modu)[2]
     return b
   end
-  b = divrem(a * powmod(a, i - 1, modu), modu)[2]
+  b = divrem(a * powermod(a, i - 1, modu), modu)[2]
   return b
 end
 
@@ -375,7 +375,7 @@ function _compose_mod(a, vars, vals, powers, modu)
       varnum = vars[j]
       exp = v[varnum]
       if !haskey(powers[j], exp)
-        powers[j][exp] = powmod(vals[j], exp, modu)
+        powers[j][exp] = powermod(vals[j], exp, modu)
       end
       t = mulmod(t, powers[j][exp], modu)
       v[varnum] = 0

@@ -156,7 +156,7 @@ function UnitGroup(R::Nemo.FmpzModRing, mod::fmpz=fmpz(0))
       push!(r, s)
       push!(mi, pk)
       gg = gen_mod_pk(p, mod)
-      gg = powmod(gg, divexact(p-1, gcd(p-1, mod)), m)
+      gg = powermod(gg, divexact(p-1, gcd(p-1, mod)), m)
       if mpk == 1
         push!(g, gg)
       else
@@ -224,7 +224,7 @@ function UnitGroup(R::Nemo.NmodRing, mod::fmpz=fmpz(0))
       push!(r, s)
       push!(mi, pk)
       gg = gen_mod_pk(p, mod)
-      gg = powmod(gg, divexact(p-1, gcd(p-1, mod)), fmpz(m))
+      gg = powermod(gg, divexact(p-1, gcd(p-1, mod)), fmpz(m))
       if mpk == 1
         push!(g, gg)
       else
@@ -322,8 +322,8 @@ function disc_log_mod(a::fmpz, b::fmpz, M::fmpz)
     yx_l = b_l mod p^l
   =#
 
-  A = powmod(a, p-1, M)
-  B = b*powmod(a, -g, M) %M
+  A = powermod(a, p-1, M)
+  B = b*powermod(a, -g, M) %M
   @assert B%p == 1
   @assert A%p == 1
   lp = [fM[p]]
@@ -352,9 +352,9 @@ function disc_log_mod(a::fmpz, b::fmpz, M::fmpz)
 #    println("Ai=$Ai, Bi=$Bi, yi=$yi, pim1 = $pim1")
     g += yi*(p-1)*p^(lp[i+1]-1)
 #    println("for pim1=$pim1 yi=$yi g=$g")
-#    println(valuation(b*powmod(a, -g, M)-1, p))
-    B = B*powmod(A, -yi, M) % M
-    A = powmod(a, (p-1)*divexact(pim, p), M)
+#    println(valuation(b*powermod(a, -g, M)-1, p))
+    B = B*powermod(A, -yi, M) % M
+    A = powermod(a, (p-1)*divexact(pim, p), M)
   end
   return g
 end

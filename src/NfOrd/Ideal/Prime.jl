@@ -312,7 +312,7 @@ function _fac_and_lift(f::fmpz_poly, p, degree_limit, lower_limit)
   Zmodpx, x = PolynomialRing(GF(p, cached = false), "y", cached = false)
   fmodp = Zmodpx(f)
   if isone(degree_limit)
-    fmodp = ppio(fmodp, powmod(x, p, fmodp)-x)[1]
+    fmodp = ppio(fmodp, powermod(x, p, fmodp)-x)[1]
   end
   fac = factor(fmodp)
   lifted_fac = Array{Tuple{fmpz_poly, Int}, 1}()
@@ -330,7 +330,7 @@ function _fac_and_lift_deg1(f::fmpz_poly, p)
   Zmodpx, x = PolynomialRing(GF(p, cached = false), "y", cached = false)
   fmodp = Zmodpx(f)
   fsq = factor_squarefree(fmodp)
-  pw = powmod(x, div(p-1, 2), fmodp)
+  pw = powermod(x, div(p-1, 2), fmodp)
   for (g, v) in fsq
     gcd1 = gcd(g, pw-1)
     gcd2 = gcd(g, pw+1)

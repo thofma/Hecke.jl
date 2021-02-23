@@ -391,7 +391,7 @@ function normal_basis(K::Nemo.AnticNumberField)
     R = GF(q, cached = false)
     Rt, t = PolynomialRing(R, "t", cached = false)
     ft = Rt(K.pol)
-    pt = powmod(t, q, ft)
+    pt = powermod(t, q, ft)
     if degree(gcd(ft, pt-t)) == degree(ft)
       p = q
       break

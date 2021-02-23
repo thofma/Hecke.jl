@@ -51,7 +51,8 @@ import Base: show, minimum, rand, prod, copy, rand, ceil, round, size, in,
              setindex!, transpose, getindex, //, floor, max, BigFloat,
              precision, first, StepRange, show, inv, div, divrem, one, zero, iseven, isodd,
              convert, angle, abs2, isless, exponent, isfinite, zeros, rem, min,
-             numerator, denominator, exp, maximum, intersect, reduce, sqrt, haskey, merge
+             numerator, denominator, exp, maximum, intersect, reduce, sqrt, haskey, merge,
+	     powermod
 
 # To make all exported Nemo functions visible to someone using "using Hecke"
 # we have to export everything again

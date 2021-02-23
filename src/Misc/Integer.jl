@@ -1488,10 +1488,10 @@ export bits, Limbs
 
 
 #square-and-multiply algorithm to compute f^e mod g
-function powmod(f::T, e::fmpz, g::T) where {T}
-    #small exponent -> use powmod
+function powermod(f::T, e::fmpz, g::T) where {T}
+    #small exponent -> use powermod
     if nbits(e) <= 63
-        return powmod(f, Int(e), g)
+        return powermod(f, Int(e), g)
     else
         #go through binary representation of exponent and multiply with res
         #or (res and f)
