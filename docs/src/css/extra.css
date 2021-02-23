@@ -8,7 +8,7 @@ blockquote {
 }
 
 .md-typeset code {
-font-size: 0.8em;
+font-size: 13.6px;
 }
 
 .md-typeset pre {
@@ -40,13 +40,13 @@ color: rgba(0,0,0,.87);
 }
 
 .md-typeset p {
-  font-size: 0.8em;
-  line-height: 1.4;
+  font-size: 16px;
+  line-height: 1.5;
   text-align: justify;
 }
 
 .md-typeset li {
-  font-size: 0.8em;
+  font-size: 16px;
   line-height: 1.4;
 }
 
