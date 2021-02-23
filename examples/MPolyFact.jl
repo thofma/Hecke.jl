@@ -28,7 +28,10 @@ function Hecke.norm(f::MPolyElem{nf_elem})
   return resultant(g, K.pol(y))
 end
 
-function Hecke.ismonic(f::fmpq_mpoly)
+function Hecke.ismonic(f::MPolyElem)
+  return isone(lead(f))
+end
+function Hecke.ismonic(f::PolyElem)
   return isone(lead(f))
 end
 
@@ -149,7 +152,7 @@ mutable struct HenselCtxFqRelSeries{T}
   cf :: Array{PolyElem{T}, 1} # the cofactors for lifting
   t :: Int # shift, not used, so might be wrong.
 
-  function HenselCtxFqRelSeries(f::fmpz_mpoly, lf::Array{<:PolyElem{S}, 1}, lg::Array{<:PolyElem{S}, 1}, n::Int, s::Int = 0) where {S}
+  function HenselCtxFqRelSeries(f::fmpz_mpoly, lf::Array{<:PolyElem{S}, 1}, lg::Array{<:PolyElem{S}, 1}, n::Int, s::Int = 0) where {S <: Union{Nemo.FinFieldElem, Nemo.nmod}}
     @assert ngens(parent(f)) == 2
     k = base_ring(lf[1])
     R, t = PowerSeriesRing(k, 10, "t", cached = false) #, model = :capped_absolute)
@@ -163,13 +166,38 @@ mutable struct HenselCtxFqRelSeries{T}
     return r
   end
 
+  function HenselCtxFqRelSeries(f::fmpz_mpoly, lf::Array{<:PolyElem{<:SeriesElem{qadic}}, 1}, lc::Array{<:PolyElem{<:SeriesElem{qadic}}, 1}, n::Int, s::Int = 0)
+    @assert ngens(parent(f)) == 2
+    r = new{elem_type(base_ring(lf[1]))}()
+    r.f = f
+    r.n = n
+    r.t = s
+    r.lf = lf
+    r.cf = lc
+    return r
+  end
+
   function HenselCtxFqRelSeries(f::fmpz_mpoly, p::Int, s::Int = 0)
-    k = GF(p)
+    k = GF(p, cached = false)
+    return HenselCtxFqRelSeries(f, k, s)
+  end
+
+  function HenselCtxFqRelSeries(f::fmpz_mpoly, k::FinField, s::Int = 0)
     kt, t = PolynomialRing(k, cached = false)
     g = evaluate(f, [t, kt(-s)])
     @assert issquarefree(g)
 
     lf = collect(keys(factor(g).fac))
+    return HenselCtxFqRelSeries(f, lf, s)
+  end
+
+  function HenselCtxFqRelSeries(f::fmpz_mpoly, lf::Array{<:PolyElem{<:SeriesElem{<:FinFieldElem}}}, s::Int = 0)
+    k, mk = ResidueField(base_ring(lf[1]))
+    kt, t = PolynomialRing(k, cached = false)
+    return HenselCtxFqRelSeries(f, [map_coeffs(mk, x, parent = kt) for x = lf], s)
+  end
+
+  function HenselCtxFqRelSeries(f::fmpz_mpoly, lf::Array{<:PolyElem{<:FinFieldElem}}, s::Int = 0)
     n = length(lf)
     lg = typeof(lf[1])[]
     i = 1
@@ -181,10 +209,14 @@ mutable struct HenselCtxFqRelSeries{T}
       push!(lf, lf[i] * lf[i+1])
       i += 2
     end
-    k = quo(ZZ, p)[1]
-    kt, t = PolynomialRing(k, cached = false)
-    lf = [map_coeffs(k, x, parent = kt) for x = lf]
-    lg = [map_coeffs(k, x, parent = kt) for x = lg]
+    k = base_ring(lf[1])
+    if isa(k, Nemo.GaloisField)
+      p = Int(characteristic(k))
+      k = quo(ZZ, p)[1]
+      kt, t = PolynomialRing(k, cached = false)
+      lf = [map_coeffs(k, x, parent = kt) for x = lf]
+      lg = [map_coeffs(k, x, parent = kt) for x = lg]
+    end
 
     return HenselCtxFqRelSeries(f, lf, lg, n, s)
   end
@@ -218,7 +250,7 @@ function shift_coeff_right(f::PolyElem{<:SeriesElem}, n::Int)
   return g
 end
 
-function lift(C::HenselCtxFqRelSeries)
+function lift(C::HenselCtxFqRelSeries{<:SeriesElem})
   St = parent(C.lf[1])
   S = base_ring(C.lf[1])
  
@@ -260,6 +292,92 @@ function lift(C::HenselCtxFqRelSeries)
     if i < length(C.lf)
       C.lf[i] = G*H
     end
+    C.lf[j-1] = G
+    C.lf[j] = H
+    C.cf[j-1] = A
+    C.cf[j] = B
+    i -= 1
+    j -= 2
+  end
+end
+
+function _set_precision(f::PolyElem{<:SeriesElem{qadic}}, n::Int)
+  g = deepcopy(f)
+  return _set_precision!(g, n)
+end
+
+function _set_precision!(f::PolyElem{<:SeriesElem{qadic}}, n::Int)
+  for i=0:length(f)
+    c = coeff(f, i)
+    for j=0:pol_length(c)
+      setprecision!(polcoeff(c, j), n)
+    end
+  end
+  return f
+end
+# TODO: bad names... 
+function _shift_coeff_left(f::PolyElem{<:SeriesElem{qadic}}, n::Int)
+  g = parent(f)()
+  p = prime(base_ring(base_ring(g)))^n
+  for i = 0:length(f)
+    setcoeff!(g, i, map_coeffs(x -> p*x, coeff(f, i), parent = base_ring(f)))
+  end
+  return g
+end
+function _shift_coeff_right(f::PolyElem{<:SeriesElem{qadic}}, n::Int)
+  g = parent(f)()
+  p = prime(base_ring(base_ring(g)))^n
+  for i = 0:length(f)
+    setcoeff!(g, i, map_coeffs(x -> divexact(x, p), coeff(f, i), parent = base_ring(f)))
+  end
+  return g
+end
+
+function lift_q(C::HenselCtxFqRelSeries{<:SeriesElem{qadic}})
+  St = parent(C.lf[1])
+  S = base_ring(C.lf[1])
+  Q = base_ring(S)
+ 
+  pr = precision(coeff(coeff(C.lf[1], 0), 0))
+  N2 = 2*pr
+  
+  setprecision!(Q, N2+1)
+
+  i = length(C.lf)
+  j = i-1
+  while j > 0
+    if i==length(C.lf)
+      f = evaluate(map_coeffs(Q, C.f), [gen(St), St(gen(S))])
+      f *= inv(lead(f))
+    else
+#      f = _set_precision(C.lf[i], N2)
+      f = C.lf[i]
+      @assert precision(coeff(coeff(f, 0), 0)) >= N2
+      @assert ismonic(C.lf[i])
+    end
+    @assert ismonic(f)
+    #formulae and names from the Flint doc
+    h = C.lf[j]
+    g = C.lf[j-1]
+    b = C.cf[j]
+    a = C.cf[j-1]
+    h = _set_precision(h, N2)
+    g = _set_precision(g, N2)
+    a = _set_precision(a, N2)
+    b = _set_precision(b, N2)
+
+    fgh = _shift_coeff_right(f-g*h, pr)
+    
+    @assert ismonic(g)
+    G = _shift_coeff_left(rem(fgh*b, g), pr)+g
+    G = _shift_coeff_left(rem(fgh*b, g), pr)+g
+    H = _shift_coeff_left(rem(fgh*a, h), pr)+h
+
+    t = _shift_coeff_right(1-a*G-b*H, pr)
+  
+    B = _shift_coeff_left(rem(t*b, g), pr)+b
+    A = _shift_coeff_left(rem(t*a, h), pr)+a
+
     C.lf[j-1] = G
     C.lf[j] = H
     C.cf[j-1] = A
@@ -393,6 +511,62 @@ function find_morphism(k::FqNmodFiniteField, K::FqNmodFiniteField)
   return phi
 end
 
+#= working, but does not see, to be better.
+function _powmod(a::fq_nmod_poly, b::fq_nmod_poly, e::fmpz, f::fq_nmod_poly, f_inv::fq_nmod_poly)
+  ccall((:fq_nmod_poly_powmod_fmpz_sliding_preinv, Nemo.libflint), Nothing, (Ref{fq_nmod_poly}, Ref{fq_nmod_poly}, Ref{fmpz}, UInt, Ref{fq_nmod_poly}, Ref{fq_nmod_poly}, Ref{FqNmodFiniteField}), a, b, e, 0, f, f_inv, base_ring(f))
+  return a
+end
+
+function _powmod(a::fq_nmod_poly, b::fq_nmod_poly, e::fmpz, f::fq_nmod_poly)
+  f_inv = reverse(f)
+  ccall((:fq_nmod_poly_inv_series_newton, Nemo.libflint), Nothing, (Ref{fq_nmod_poly}, Ref{fq_nmod_poly}, Cint, Ref{FqNmodFiniteField}), f_inv, f_inv, length(f_inv), base_ring(f))
+  ccall((:fq_nmod_poly_powmod_fmpz_sliding_preinv, Nemo.libflint), Nothing, (Ref{fq_nmod_poly}, Ref{fq_nmod_poly}, Ref{fmpz}, UInt, Ref{fq_nmod_poly}, Ref{fq_nmod_poly}, Ref{FqNmodFiniteField}), a, b, e, 0, f, f_inv, base_ring(f))
+  return a
+end
+
+
+function roots2(f::nmod_poly, R::FqNmodFiniteField)
+  Kt = parent(f)
+  K = base_ring(Kt)
+  m = defining_polynomial(R, K)
+  Rt, t = PolynomialRing(R, cached = false)
+  #=
+  M = map_coeffs(R, m, parent = Rt)
+  Minv = reverse(M)
+  ccall((:fq_nmod_poly_inv_series_newton, Nemo.libflint), Nothing, (Ref{fq_nmod_poly}, Ref{fq_nmod_poly}, Cint, Ref{FqNmodFiniteField}), Minv, Minv, length(Minv), R)
+  @show M, Minv
+ =#
+  F = map_coeffs(R, f, parent = Rt)
+  e = div(order(R)-1, 2)
+  tt = 0
+  while true
+    b = t+rand(R)
+    c = Rt()
+    c = _powmod(c, b, e, F)-1
+#    @assert c == powmod(b, e, F)-1
+    g = gcd(c, F)
+    if isone(g) || degree(g) == degree(F)
+      tt += 1
+      if tt > 40
+        error("bad")
+      end
+      continue
+    end
+    if degree(g) < degree(F)/2
+      F = g
+    else
+      F = divexact(F, g)
+    end
+    if degree(F) == 1
+      return Nemo.roots(F)
+    end
+    if degree(F) < 1
+      error("bad thinkgs")
+    end
+  end
+end
+
+=#
 """
 Roots of `f` in `R` using subfields of `R`.
 Returns a (random) subset of the roots.
@@ -401,6 +575,7 @@ Much faster than generic `roots(f, R)` in Nemo/flint
 (for large examples: deg 36: down from 4 sec to 1)
 """
 function roots(f::nmod_poly, R::FqNmodFiniteField)
+  return [Nemo.any_root(map_coeffs(R, f))]
   d = degree(R)
   fd = factor(d)
   k = base_ring(f)
@@ -676,7 +851,7 @@ end
 #       lift(PolyRing, Series)
 #       lift(FracField, Series)
 #       (to be in line with lift(ZZ, padic) and lift(QQ, padic)
-#
+#TODO: some of this would only work for Abs, not Rel, however, this should be fine here
 function Hecke.map_coeffs(f, a::RelSeriesElem; parent::SeriesRing)
   c = typeof(f(coeff(a, 0)))[]
   for i=0:Nemo.pol_length(a)-1
@@ -700,6 +875,14 @@ function Hecke.map_coeffs(f, a::RelSeriesElem)
   end
   b = S(c, length(c), precision(a), valuation(a))
   return b
+end
+
+function lift(R::PolyRing{S}, s::SeriesElem{S}) where {S}
+  t = R()
+  for x = 0:pol_length(s)
+    setcoeff!(t, x, polcoeff(s, x))
+  end
+  return shift_left(t, valuation(s))
 end
 
 function rational_reconstruction(a::SeriesElem; parent::PolyRing = PolynomialRing(base_ring(a), cached = false)[1])
@@ -779,9 +962,12 @@ function field(RC::RootCtx, m::MatElem)
   #     the other factor is then just a division away
   #     if complete orbits are combined, use the trace (pointwise) rather than powers
   @vprint :AbsFact 2 "combining: $([findall(x->!iszero(x), collect(m[i, :])) for i=1:nrows(m)])\n"
-  RP = [[set_precision(x, tf+2) for x = R]]
-  @vtime :AbsFact 2 for j=2:d_f
-    push!(RP, RP[1] .* RP[end])
+  k, mk = ResidueField(parent(R[1]))
+  kt, t = PolynomialRing(k, cached = false)
+  RR = map(mk, R)
+  RP = [copy(RR)]
+  for j=2:d_f
+    push!(RP, RR .* RP[end])
   end
   @vtime :AbsFact 2 el = [[sum(RP[j][i] for i=1:ncols(m) if m[lj, i] != 0) for j=1:d_f] for lj=1:nrows(m)]
 
@@ -789,31 +975,38 @@ function field(RC::RootCtx, m::MatElem)
   k = 1
   for x = el
     for y = x
-      d = degree(minpoly(coeff(y, valuation(y))))
-      k = max(d, k)
+      d = degree(minpoly(y))
+      k = lcm(d, k)
     end
   end
 
   @vprint :AbsFact 1 "target field has (local) degree $k\n"
 
-  Qq = QadicField(characteristic(F), k, 10)
+  Qq = QadicField(characteristic(F), k, 1, cached = false)
   Qqt = PolynomialRing(Qq, cached = false)[1]
   k, mk = ResidueField(Qq)
  
   phi = find_morphism(k, F) #avoids embed - which stores the info
 
   kt, t = PolynomialRing(k, cached = false)
+
+  fl = [power_sums_to_polynomial(map(t->preimage(phi, t), x)) for x = el]
+  fl = [map_coeffs(x->x, y, parent = kt) for y = fl]
+  HH = HenselCtxFqRelSeries(RC.H.f, fl)
+  while precision(coeff(HH.lf[1], 0)) < tf+2
+    lift(HH)
+  end
+
   kXY, (X, Y) = PolynomialRing(k, ["X", "Y"], cached = false)
 
   nl = []
   kS = PowerSeriesRing(k, tf+2, "s")[1]
-  for x = el
-    y = map(t->map_coeffs(inv(phi), t, parent = kS), x)
-    z = Hecke.power_sums_to_polynomial(y)
+  for x = HH.lf[1:HH.n]
     f = MPolyBuildCtx(kXY)
     lc = one(kt)
     cz = []
-    for i=0:degree(z)
+    z = x
+    for i=0:degree(x)
       c = coeff(z, i)
       local fl, n, d = rational_reconstruction(c, parent = kt)
       @assert fl
@@ -856,6 +1049,7 @@ function field(RC::RootCtx, m::MatElem)
     lc = _lc
     H = Hecke.HenselCtxQadic(map_coeffs(Qq, lc, parent = Qqt), ld)
   else
+    @vprint :AbsFact 2 "is monic, no leading coefficient...\n"
     lc = _lc
     fa = []
   end
@@ -919,44 +1113,59 @@ function field(RC::RootCtx, m::MatElem)
   #      Problem: currently I need all conjugates of the coeffs, hence all
   #      the el's individually.
 
-  QqXY, _ = PolynomialRing(Qq, 2, cached = false)
+  SQq, _ = PowerSeriesRing(Qq, tf+2, "s", cached = false)
+  SQqt, _ = PolynomialRing(SQq, cached = false)
 
-  el = [map_coeffs(x->preimage(mk, x), y, parent = QqXY) for y = el]
+  mc(f) = # PolyElem{SeriesElem{Fq}} -> PolyElem{SeriesElem{Qq}}
+    map_coeffs(x->map_coeffs(y->setprecision(preimage(mk, y), 1), x, parent = SQq), f, parent = SQqt)
+  
 
-  pr = 5 
+  HQ = HenselCtxFqRelSeries(HH.f, map(mc, HH.lf), map(mc, HH.cf), HH.n)
+
+  QqXY, (X, Y) = PolynomialRing(Qq, 2, cached = false)
+
+  pr = 1 
   while true
     pr *= 2
+    if pr > 400 
+      error("too bas")
+    end
     @vprint :AbsFact 1  "using p-adic precision of $pr\n"
 
     setprecision!(Qq, pr+1)
-    el = [map_coeffs(x->setprecision(x, pr), y, parent = QqXY) for y = el]
-
     if length(fa) > 0
       H.f = map_coeffs(Qq, _lc, parent = Qqt)
-      Hecke.lift(H, pr+1)
+      @vprint :AbsFact 2 "lifting leading coeff factorisation\n"
+      @vtime :AbsFact 2 Hecke.lift(H, pr+1)
       fH = factor(H)
       lc = [prod(fH[i]^t[i] for i=1:length(t)) for t = fa]
-
-      for i=1:length(lc)
-        for j=1:length(el[i])
-          if exponent_vector(el[i], j)[1] == degree(el[i], 1)
-            setcoeff!(el[i], j, coeff(lc[i], exponent_vector(el[i], j)[2]))
-          end
-        end
-      end
     end
 
-    # lift mod p^1 -> p^pr
-    @vtime :AbsFact 1 ok, el = lift_prime_power(P*inv(coeff(P, 1)), el, [0], 1, pr)
-    ok || @vprint :AbsFact 1 "bad prime found, q-adic lifting failed\n"
-    ok || return nothing
-    @assert ok  # can fail but should fail for only finitely many p
+    @vprint :AbsFact 1 "lifting factors\n"
+    @vtime :AbsFact 2 while precision(coeff(coeff(HQ.lf[1], 0), 0)) < pr+1
+      lift_q(HQ)
+    end
 
+    if length(fa) > 0
+      z = [lc[i](gen(SQq)) * HQ.lf[i] for i=1:HQ.n]
+    else
+      z = HQ.lf[1:HQ.n]
+    end
 
-    pk = prime(Qq)^pr
+    setprecision!(coeff(X, 1), pr+2)
+    setprecision!(coeff(Y, 1), pr+2)
+    el = [map_coeffs(q -> lift(Qqt, q)(Y), f)(X) for f = z]
+
+#    # lift mod p^1 -> p^pr x^2+y^2+px+1 was bad I think
+#    @vtime :AbsFact 1 ok, el = lift_prime_power(P*inv(coeff(P, 1)), el, [0], 1, pr)
+#    ok || @vprint :AbsFact 1 "bad prime found, q-adic lifting failed\n"
+#    ok || return nothing
+#    @assert ok  # can fail but should fail for only finitely many p
+
 
     #to make things integral...
     fl = Qq(llc) .* el
+
     p = [coeff(sum(pe(x)^l for x = fl), 0) for l=1:length(el)]
     p = map(rational_reconstruction, p)
 
