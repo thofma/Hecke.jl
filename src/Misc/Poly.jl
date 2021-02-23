@@ -1180,7 +1180,7 @@ function mod(f::AbstractAlgebra.PolyElem{T}, g::AbstractAlgebra.PolyElem{T}) whe
     c = base_ring(f)()
     while length(f) >= length(g)
       l = -lead(f)
-      for i = 1:length(g) - 1
+      for i = 1:length(g) 
         c = mul!(c, coeff(g, i - 1), l)
         u = coeff(f, i + length(f) - length(g) - 1)
         u = addeq!(u, c)
@@ -1204,14 +1204,14 @@ function Base.divrem(f::AbstractAlgebra.PolyElem{T}, g::AbstractAlgebra.PolyElem
   binv = inv(lead(g))
   g = divexact(g, lead(g))
   qlen = length(f) - length(g) + 1
-  q = parent(f)()
+  q = zero(parent(f))
   fit!(q, qlen)
-  c = base_ring(f)()
+  c = zero(base_ring(f))
   while length(f) >= length(g)
      q1 = lead(f)
      l = -q1
      q = setcoeff!(q, length(f) - length(g), q1*binv)
-     for i = 1:length(g) - 1
+     for i = 1:length(g) 
         c = mul!(c, coeff(g, i - 1), l)
         u = coeff(f, i + length(f) - length(g) - 1)
         u = addeq!(u, c)
