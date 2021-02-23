@@ -482,7 +482,7 @@ function isirreducible(f::PolyElem{<: NumFieldElem})
   return sum(values(lf.fac)) == 1
 end
 
-function factor(f::PolyElem{<: NumFieldElem})
+function AbstractAlgebra.factor(f::PolyElem{<: NumFieldElem})
   K = base_ring(f)
   Ka, rel_abs, _ = absolute_field(K)
 
