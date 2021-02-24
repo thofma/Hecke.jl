@@ -26,7 +26,11 @@ function Base.iterate(F::CartesianProductIt{T, U}) where {T, U}
   if r == 0
     return nothing
   end
-  a, b = iterate(F.ranges[1])
+  x = iterate(F.ranges[1])
+  if x isa Nothing
+    return nothing
+  end
+  a, b = x
   st = Vector{typeof(b)}(undef, r)
   st[1] = b
   F.value[1] = a

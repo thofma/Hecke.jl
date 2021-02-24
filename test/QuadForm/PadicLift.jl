@@ -27,7 +27,7 @@
   G = diagonal_matrix([R(i) for i in [3^2,1,1]])
   Z = G + matrix(R, 3, 3, [0,3^2,0, 3^2,0,0, 0,0,3])
   F = matrix(R, 3, 3, [1,0,0, 0,0,1, 0,1,0])
-  Fn = Hecke._Hensel_qf(Z, G, F, 1, 4, 3)
+  Fn = @inferred Hecke._Hensel_qf(Z, G, F, 1, 4, 3)
   @test(4<=Hecke._min_val(Z - F*G*F',3))
 
   p = 3
@@ -48,7 +48,7 @@
                       1, 0, 0, 1, 0, 0,
                       1, 0, 0, 0, 1, 1,
                       0, 0, 0, 1, 0, 1])
-  Fl = Hecke.Hensel_qf(G, F, 1, 6, p )
+  Fl = @inferred Hecke.Hensel_qf(G, F, 1, 6, p )
   @test 10<=Hecke._min_val(Fl*G*Fl'-G, p)
 
 
@@ -62,7 +62,7 @@
                       1, 1, 1, 1,
                       1, 0, 0, 1,
                       1, 0, 1, 0])
-  Fl = Hecke. _Hensel_qf_modular_even(G, G, F, 1, 4)
+  Fl = @inferred Hecke. _Hensel_qf_modular_even(G, G, F, 1, 4)
   Er = Fl*G*Fl' - G
   @test 4<=Hecke._min_val(Er,2)
   @test 5<=Hecke._min_val(diagonal(Er),p)
@@ -70,7 +70,7 @@
                        1, 1, 1, 1,
                        0, 1, 1, 0,
                        0, 1, 0, 1])
-  Fl = Hecke. _Hensel_qf_modular_even(G, G, F, 1, 4)
+  Fl = @inferred Hecke. _Hensel_qf_modular_even(G, G, F, 1, 4)
   Er = Fl*G*Fl' - G
   @test 4<=Hecke._min_val(Er,2)
   @test 5<=Hecke._min_val(diagonal(Er),p)
@@ -83,13 +83,13 @@
                        1, 1, 0, 0,
                        0, 0, 0, 1,
                        0, 0, 1, 0])
-  Fl = Hecke._Hensel_qf_modular_even(G, G, F, 1, 5)
+  Fl = @inferred Hecke._Hensel_qf_modular_even(G, G, F, 1, 5)
   Er = Fl*G*Fl' - G
   @test 5<=Hecke._min_val(Er, 2)
   @test 6<=Hecke._min_val(diagonal(Er), p)
 
   Z = G + identity_matrix(R, 4)*2^2
-  Fl = Hecke. _Hensel_qf_modular_even(Z, G, F, 1, 5)
+  Fl = @inferred Hecke. _Hensel_qf_modular_even(Z, G, F, 1, 5)
   Er = Fl*G*Fl' - Z
   @test 5<=Hecke._min_val(Er,2)
   @test 6<=Hecke._min_val(diagonal(Er),p)
@@ -101,7 +101,7 @@
   F = matrix(R, 3, 3, [0, 1, 0,
                        1, 1, 0,
                        0, 0, 1])
-  Fl = Hecke. _Hensel_qf_modular_even(G, G, F, 1, 8)
+  Fl = @inferred Hecke. _Hensel_qf_modular_even(G, G, F, 1, 8)
   Er = Fl*G*Fl' - G
   @test 8<=Hecke._min_val(Er, p)
   @test 9<=Hecke._min_val(diagonal(Er), p)
@@ -109,5 +109,5 @@
   G = matrix(R, 3, 3, [4,0,0,
                        0,2,1,
                        0,1,2])
-  @test ([1, 2], [2, 0]) == Hecke._block_indices_vals(G, 2)
+  @test ([1, 2], [2, 0]) == @inferred Hecke._block_indices_vals(G, 2)
   end
