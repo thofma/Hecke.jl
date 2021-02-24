@@ -185,6 +185,7 @@ mutable struct HenselCtxFqRelSeries{T}
   function HenselCtxFqRelSeries(f::fmpz_mpoly, k::FinField, s::Int = 0)
     kt, t = PolynomialRing(k, cached = false)
     g = evaluate(f, [t, kt(-s)])
+    issquarefree(g) || return nothing
     @assert issquarefree(g)
 
     lf = collect(keys(factor(g).fac))
@@ -453,7 +454,9 @@ mutable struct RootCtx
     r.f = f
     den = lcm(map(denominator, coefficients(f)))
     g = map_coeffs(numerator, den*f)
-    @vtime :AbsFact 2 r.H = HenselCtxFqRelSeries(g, p, t)
+    @vtime :AbsFact 2 mu = HenselCtxFqRelSeries(g, p, t)
+    mu === nothing && return mu
+    r.H = mu
     r.R = RootCtxSingle{fq_nmod_rel_series}[]
     K = GF(p, d)[1]
     S, _ = PowerSeriesRing(K, 10, "s", cached = false)
@@ -644,13 +647,15 @@ function roots(f::fmpq_mpoly, p_max::Int=2^15; pr::Int = 2)
     end
     
     if e == 1 || pc > 1.5 * degree(g)
-      @vprint :AbsFact 1 "using $best_p of degree $d\n"
       p = best_p
+      @vprint :AbsFact 1 "using $best_p of degree $d\n"
       break
     end
   end
 
   R = RootCtx(f, p, d)
+  R === nothing && return R, p_max
+
   @vprint :AbsFact 1 "need to seriously lift $(R.H.n) elements\n"
   R.all_R = typeof(R.R[1].R)[]
   R.RP = typeof(R.R[1].R)[]
@@ -928,12 +933,23 @@ function block_system(a::Vector{T}) where {T}
   return sort(collect(values(d)), lt = (a,b) -> isless(a[1], b[1])) 
 end
 
+#= bounds:
+  f in Z[x,y], g, h in C[x,y]
+  H(f) = max abs value coeff of f
+  gh = f
+  then 
+  H(g) H(h) <= 2^(deg_x(f) + deg_y(g) - 2) ((deg_x(f)+1)(deg_y(f)+1))^(1/2) H(f)
+=#
 """
 Internal use.
 """
 function field(RC::RootCtx, m::MatElem)
   R = RC.all_R
   P = RC.f
+
+
+  bnd = numerator(maximum(abs(x) for x = coefficients(RC.f))) * fmpz(2)^(degree(RC.f, 1) + degree(RC.f, 2)-2) * Hecke.root(fmpz((degree(RC.f, 1)+1)*(degree(RC.f, 2)+1)), 2)
+  #all coeffs should be bounded by bnd...  
 
   #we have roots, we need to combine roots for each row in m where the entry is pm 1
   #the coeffs then live is a number field, meaning that the elem sym functions or
@@ -942,7 +958,7 @@ function field(RC::RootCtx, m::MatElem)
 
   #need primitive element, can use power sums up to #factors
 
-  #we will ONLY find one factor, the others are galois conjugate
+  #we will ONLY find one factor, the others are Galois conjugate
   #the field here is not necc. normal
 
   #the leading_coeff of P needs to be monic.
@@ -1075,7 +1091,7 @@ function field(RC::RootCtx, m::MatElem)
     push!(all_bs, bs)
   end
 
-  local pe
+  local pe, pow, used
   if pe_j == 0
     @vprint :AbsFact 2 "no single coefficient is primitive, having to to combinations\n"
     bs = [collect(1:length(el))]
@@ -1104,9 +1120,14 @@ function field(RC::RootCtx, m::MatElem)
   else
     @vprint :AbsFact 2 "$(pe_j)-th coeff is primitive\n"
     pe = x -> coeff(x, pe_j)
+    pow = 1
+    used = [1]
   end
 
   @vprint :AbsFact 1 "hopefully $(length(el)) degree field\n"
+
+  bnd = (length(el)*(length(used)*bnd))^(pow*length(el))
+  @vprint :AbsFact 1 "power sums (coeffs of minpoly of field) should be bounded by $bnd\n"
 
   #TODO: Think: Do we need to lift all n factors? In the end we're going
   #      to return el[1] and prod(el[2:n]) only.
@@ -1170,7 +1191,11 @@ function field(RC::RootCtx, m::MatElem)
     p = map(rational_reconstruction, p)
 
     if !all(x->x[1], p)
-      @vprint :AbsFact 2 "reco failed, increasing p-adic precision\n"
+      @vprint :AbsFact 2 "reco failed (for poly), increasing p-adic precision\n"
+      if 2*clog(bnd, prime(Qq)) < pr
+        @vprint :AbsFact 2 "bad prime? too much precision and still no poly, so changing prime\n"
+        return nothing
+      end
       continue
     end
 
@@ -1274,10 +1299,14 @@ function absolute_bivariate_factorisation(f::fmpq_mpoly)
   ff *= d
   @assert all(x->isone(denominator(x)), coefficients(ff))
   gg = ff
+  
   p = 2^25
   local aa
   while true
     @vtime :AbsFact 1 r, p = roots(gg, p)
+    if r === nothing
+      continue
+    end
     @vtime :AbsFact 1 z = combination(r)
     if nrows(z) == 1
       return f, one(parent(f))
