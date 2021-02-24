@@ -477,7 +477,7 @@ function _approximate_derivative_Artin_L_function_quadratic(chars::Vector, targe
   RR = ArbField(prec)
   res = Vector{acb}()
   den = 2*sqrt(const_pi(RR))
-  vf = compute_values_f_quadratic(chars, target_prec)
+  @vtime :ClassField 1 vf = compute_values_f_quadratic(chars, target_prec)
   for i = 1:length(chars)
     x = chars[i]
     A = _A_function(x, prec)

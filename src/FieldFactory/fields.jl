@@ -570,11 +570,50 @@ function fields(a::Int, b::Int, absolute_bound::fmpz; using_direct_product::Bool
     @vprint :FieldsNonFancy 1 "Doing Group ($a, $b) with bound $absolute_bound\n"
     return abelian_extensionsQQ(invariants, absolute_bound, only_real, unramified_outside = unramified_outside)
   end
-
+  must_be_ram_surely, must_be_ram_maybe = must_be_ramified(L, length(L)-1)
   lvl = _real_level(L)
   IdGroupGAP = GAP.Globals.IdGroup(G1)
   IdGroup = GAP.gap_to_julia(Vector{Int}, IdGroupGAP)
-  bound = root(absolute_bound, prod(invariants))
+  pinvariants = prod(invariants)
+  if must_be_ram_surely
+    #The extension must be ramified. Find a constant...
+    cd = 1
+    if iszero(mod(invariants[end], 2))
+      #2 must be wildly ramified
+      #The conductor must have at least valuation 2 at every prime over 2...
+      cd = 2^pinvariants
+    else
+      #2 is not wildly ramified. Then we only have the boring bound...
+      d = minimum(keys(factor(invariants[end]).fac))
+      cd = 2^((d-1)*div(pinvariants, d))
+    end 
+    #But I want the minimum. So I have to look at the other primes..
+    SP = PrimesSet(3, -1)
+    for p in SP
+      if p >= cd
+        break
+      end
+      if iszero(mod(invariants[end], p))
+        #p must be wildly ramified
+        #The conductor must have at least valuation 2 at every prime over p...
+        s = valuation(invariants[end], p)
+        cd1 = p^(2*(p^s-p^(s-1))*divexact(pinvariants, p^s))
+        if cd > cd1
+          cd = cd1
+        end
+      else
+        #p is not wildly ramified. Then we only have the boring bound...
+        d = minimum(keys(factor(invariants[end]).fac))
+        cd1 = p^((d-1)*div(pinvariants, d))
+        if cd > cd1
+          cd = cd1
+        end
+      end 
+    end
+    bound = root(div(absolute_bound, cd), prod(invariants))
+  else
+    bound = root(absolute_bound, prod(invariants))
+  end
   list = fields(IdGroup[1], IdGroup[2], bound; using_direct_product = using_direct_product, only_real = (only_real || lvl == length(L)-1), unramified_outside = unramified_outside)
   if isempty(list)
     return list
