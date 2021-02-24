@@ -445,7 +445,7 @@ function _automorphisms(L::NfRelNS{T}) where T
   roots = Vector{elem_type(L)}[roots(isunivariate(x)[2], L) for x in L.pol]
   auts = Vector{NfRelNSToNfRelNSMor{T}}(undef, prod(length(x) for x in roots))
   ind = 1
-  it = cartesian_product_iterator([1:length(roots[i]) for i in 1:length(roots)])
+  it = cartesian_product_iterator([1:length(roots[i]) for i in 1:length(roots)], inplace = true)
   for i in it
     embs = NfRelNSElem{T}[roots[j][i[j]] for j = 1:length(roots)]
     auts[ind] = hom(L, L, embs)

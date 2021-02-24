@@ -1421,8 +1421,8 @@ function prime_dec_nonindex(O::NfAbsOrd{NfAbsNS,NfAbsNSElem}, p::Union{Integer, 
         end
         push!(RT, [_lift_p2(Fq2, Zx(all_f[ti]), i) for i = rt[end]])
       end
-      append!(re, [minpoly(Fpx, sum([rrt[i] * all_c[i] for i=1:length(all_c)])) for rrt in cartesian_product_iterator(rt)])
-      append!(RE, [sum([rrt[i] * all_c[i] for i=1:length(all_c)]) for rrt in cartesian_product_iterator(RT)])
+      append!(re, [minpoly(Fpx, sum([rrt[i] * all_c[i] for i=1:length(all_c)])) for rrt in cartesian_product_iterator(rt, inplace = true)])
+      append!(RE, [sum([rrt[i] * all_c[i] for i=1:length(all_c)]) for rrt in cartesian_product_iterator(RT), inplace = true])
     end
     if length(Set(re)) < length(re)
       all_c = [rand(1:p-1) for f = all_c]

@@ -609,7 +609,7 @@ function conductors_generic(K::AnticNumberField, gtype::Vector{Int}, absolute_bo
   #create now a sublist with just the wild ramified primes.
   conds_wild = Vector{Tuple{Dict{NfOrdIdl, Int}, fmpz}}()
   push!(conds_wild, (Dict{NfOrdIdl, Int}(), fmpz(1)))
-  it = cartesian_product_iterator(UnitRange{Int}[x[2] for x in wild_primes])
+  it = cartesian_product_iterator(UnitRange{Int}[x[2] for x in wild_primes], inplace = true)
   for I in it
     D = Dict{NfOrdIdl, Int}()
     nD = fmpz(1)
