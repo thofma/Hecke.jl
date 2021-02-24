@@ -27,9 +27,23 @@
   H = hilbert_class_field(K)
   L = number_field(H, over_subfield = true)
   @test absolute_degree(L) == 4
+
+  f = x^3 - 36*x -1
+  K, a = number_field(f, cached = false, check = false)
+  H = hilbert_class_field(K)
+  L1 = number_field(H)
+  L2 = number_field(H, using_stark_units = true, redo = true)
+  @test isisomorphic(Hecke.simplified_absolute_field(L1)[1], Hecke.simplified_absolute_field(L2)[1])[1]
+
+  f = x^2 - x - 100
+  K, a = number_field(f, cached = false, check = false)
+  H = hilbert_class_field(K)
+  L1 = number_field(H)
+  L2 = number_field(H, using_stark_units = true, redo = true)
+  @test isisomorphic(Hecke.simplified_absolute_field(L1)[1], Hecke.simplified_absolute_field(L2)[1])[1]
+  @test length(closure(Hecke.absolute_automorphism_group(H), *)) == 10
   
-  
-  r, mr = Hecke.ray_class_groupQQ(Z,  32, true, 8);
+  r, mr = Hecke.ray_class_groupQQ(Z, 32, true, 8);
   q, mq = quo(r, [r[1]])
   C = ray_class_field(mr, mq)
   KC = number_field(C)

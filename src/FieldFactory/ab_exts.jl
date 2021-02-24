@@ -296,11 +296,11 @@ function quadratic_fields(bound::Int; tame::Bool=false, real::Bool=false, comple
 
 end
 
-function _quad_ext(bound::Int, only_real::Bool = false)
+function _quad_ext(bound::Int, only_real::Bool = false; unramified_outside::Vector{fmpz} = fmpz[])
   
   Qx, x = PolynomialRing(FlintQQ, "x", cached = false)
   K = NumberField(x-1, cached = false, check = false)[1]
-  sqf = squarefree_up_to(bound)
+  sqf = squarefree_up_to(bound, prime_base = unramified_outside)
   final_list = Int[]
   for i=2:length(sqf)
     if abs(sqf[i]*4)< bound
@@ -388,9 +388,9 @@ function _ext(Ox,x,i,j)
 end
 
 
-function _C22_exts_abexts(bound::Int, only_real::Bool = false)
+function _C22_exts_abexts(bound::Int, only_real::Bool = false; unramified_outside::Vector{fmpz} = fmpz[])
   Qx, x = PolynomialRing(FlintZZ, "x")
-  pairs = _find_pairs(bound, only_real)
+  pairs = _find_pairs(bound, only_real, unramified_outside = unramified_outside)
   return (_ext_with_autos(Qx, x, i, j) for (i, j) in pairs)
 end
 
@@ -543,11 +543,11 @@ function _pairs_totally_real(pairs, ls, bound)
 end
 
 
-function _find_pairs(bound::Int, only_real::Bool = false)
+function _find_pairs(bound::Int, only_real::Bool = false; unramified_outside::Vector{fmpz} = fmpz[] )
 
   #first, we need the squarefree numbers
   b1=ceil(Int, Base.sqrt(bound))
-  ls = squarefree_up_to(b1)
+  ls = squarefree_up_to(b1, prime_base = unramified_outside)
   #The first step is to enumerate all the totally real extensions.
   pairs = trues(length(ls), length(ls))
   real_exts = _pairs_totally_real(pairs, ls, bound)

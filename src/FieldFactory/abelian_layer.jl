@@ -35,12 +35,12 @@ end
 #
 ###############################################################################
 
-function abelian_extensionsQQ(gtype::Array{Int, 1}, bound::fmpz, only_real::Bool = false)
+function abelian_extensionsQQ(gtype::Array{Int, 1}, bound::fmpz, only_real::Bool = false; unramified_outside::Vector{fmpz} = fmpz[])
   
   gtype = map(Int, snf(abelian_group(gtype))[1].snf)
   #Easy case: quadratic and biquadratic extensions
   if gtype == [2]
-    lq = Hecke._quad_ext(Int(bound), only_real)
+    lq = Hecke._quad_ext(Int(bound), only_real, unramified_outside = unramified_outside)
     res = Vector{FieldsTower}(undef, length(lq))
     for i = 1:length(lq)
       x = lq[i]
@@ -60,7 +60,7 @@ function abelian_extensionsQQ(gtype::Array{Int, 1}, bound::fmpz, only_real::Bool
     return res
   end
   if gtype == Int[2,2]
-    l = Hecke._C22_exts_abexts(Int(bound), only_real)
+    l = Hecke._C22_exts_abexts(Int(bound), only_real, unramified_outside = unramified_outside)
     @vprint :Fields 1 "Computing maximal orders\n"
     @vprint :FieldsNonFancy 1 "Computing maximal orders\n"
     lf = Hecke._C22_with_max_ord(l)
@@ -71,7 +71,7 @@ function abelian_extensionsQQ(gtype::Array{Int, 1}, bound::fmpz, only_real::Bool
     end
     return res1
   end
-  l1 = _abelian_extensionsQQ(gtype, bound, only_real)
+  l1 = _abelian_extensionsQQ(gtype, bound, only_real, unramified_outside = unramified_outside)
   list1 = Vector{FieldsTower}(undef, length(l1))
   @vprint :Fields 1 "Computing maximal orders\n\n"
   @vprint :FieldsNonFancy 1 "Computing maximal orders\n"
@@ -97,7 +97,7 @@ function abelian_extensionsQQ(gtype::Array{Int, 1}, bound::fmpz, only_real::Bool
   
 end
 
-function _abelian_extensionsQQ(gtype::Array{Int,1}, absolute_discriminant_bound::fmpz, only_real::Bool = false)
+function _abelian_extensionsQQ(gtype::Array{Int,1}, absolute_discriminant_bound::fmpz, only_real::Bool = false; unramified_outside::Vector{fmpz} = fmpz[])
     
   Qx, x = PolynomialRing(FlintQQ, "x", cached = false)
   K, _ = NumberField(x-1, "a", cached = false)
@@ -106,7 +106,7 @@ function _abelian_extensionsQQ(gtype::Array{Int,1}, absolute_discriminant_bound:
   expo = lcm(gtype)
     
   #Getting conductors
-  l_conductors = Hecke.conductorsQQ(O, gtype, absolute_discriminant_bound)
+  l_conductors = Hecke.conductorsQQ(O, gtype, absolute_discriminant_bound; unramified_outside = unramified_outside)
   sort!(l_conductors, rev = true)
   len = length(l_conductors)
   @vprint :Fields 1 "Number of conductors: $(len) \n\n"
@@ -195,7 +195,7 @@ function max_ramified_prime(O::NfOrd, gtype::Vector{Int}, bound::fmpz)
 end
 
 
-function _abelian_normal_extensions(F::FieldsTower, gtype::Array{Int, 1}, absbound::fmpz, IdCheck::GAP.GapObj, only_real::Bool, IdG::GAP.GapObj)
+function _abelian_normal_extensions(F::FieldsTower, gtype::Array{Int, 1}, absbound::fmpz, IdCheck::GAP.GapObj, only_real::Bool, IdG::GAP.GapObj; unramified_outside::Vector{fmpz} = fmpz[])
   K = F.field
   O = maximal_order(K) 
   n = prod(gtype)
@@ -205,7 +205,7 @@ function _abelian_normal_extensions(F::FieldsTower, gtype::Array{Int, 1}, absbou
   end
   bound = div(absbound, abs(discriminant(O))^n)
   @vprint :Fields 2 "\n"
-  @vtime :Fields 2 l_conductors = conductors_with_restrictions(F, gtype, IdG, bound)
+  @vtime :Fields 2 l_conductors = conductors_with_restrictions(F, gtype, IdG, bound, unramified_outside = unramified_outside)
   @vprint :Fields 1 "   Number of conductors: $(length(l_conductors))\n"
   @vprint :FieldsNonFancy 1 "Number of conductors: $(length(l_conductors))\n"
   if length(l_conductors) == 0

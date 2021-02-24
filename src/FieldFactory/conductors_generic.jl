@@ -4,14 +4,14 @@
 #
 ##########################################################################################################
 
-function tame_conductors_degree_2(O::NfOrd, bound::fmpz)
+function tame_conductors_degree_2(O::NfOrd, bound::fmpz; unramified_outside::Vector{fmpz} = fmpz[])
   K = nf(O)
   d = degree(O)
   b1 = Int(root(bound,d))
   ram_primes = ramified_primes(O)
   sort!(ram_primes)
   filter!(x -> x!=2, ram_primes)
-  list = squarefree_up_to(b1, coprime_to = vcat(ram_primes,2))
+  list = squarefree_up_to(b1, coprime_to = vcat(ram_primes,2), prime_base = unramified_outside)
 
   extra_list = Tuple{Int, fmpz}[(1,fmpz(1))]
   for q in ram_primes
@@ -45,14 +45,18 @@ function tame_conductors_degree_2(O::NfOrd, bound::fmpz)
   
 end
 
-function squarefree_for_conductors(O::NfOrd, n::Int, deg::Int; coprime_to::Array{fmpz,1}=fmpz[])
+function squarefree_for_conductors(O::NfOrd, n::Int, deg::Int; coprime_to::Array{fmpz,1}=fmpz[], prime_base::Vector{fmpz} = fmpz[])
   
   sqf = trues(n)
   primes = trues(n)
+
   
   #remove primes that can be wildly ramified or
   #that are ramified in the base field
   for x in coprime_to
+    if x > n
+      continue
+    end
     el = Int(x)
     t = el
     while t <= n
@@ -67,22 +71,22 @@ function squarefree_for_conductors(O::NfOrd, n::Int, deg::Int; coprime_to::Array
   if !(2 in coprime_to)
     dt = prime_decomposition_type(O,2)
     if isone(gcd(2^dt[1][1]-1, deg))
-      j=2
-      while j<=n
-        @inbounds sqf[j]=false
-        @inbounds primes[j]=false
+      j = 2
+      while j <= n
+        @inbounds sqf[j] = false
+        @inbounds primes[j] = false
         j += 2
       end
     else 
       i=2
       s=4
       while s <= n
-        @inbounds primes[s]=false
+        @inbounds primes[s] = false
         s+=2
       end
       s=4
-      while s<=n
-        @inbounds sqf[s]=false
+      while s <= n
+        @inbounds sqf[s] = false
         s+=4
       end
     end
@@ -90,24 +94,22 @@ function squarefree_for_conductors(O::NfOrd, n::Int, deg::Int; coprime_to::Array
   i = 3
   b = root(n, 2)
   while i <= b
-    if primes[i]
-      if gcd(i-1, deg) != 1
+    if primes[i] 
+      if gcd(i-1, deg) != 1 && (!isempty(prime_base) && (i in prime_base))
         j = i
         while j <= n
-          @inbounds primes[j]=false
+          @inbounds primes[j] = false
           j += i
         end
         j = i^2
         t = j
         while j <= n
-          @inbounds sqf[j]=false
+          @inbounds sqf[j] = false
           j += t
         end
       else
         dt = prime_decomposition_type(O, i)
-        if gcd(deg, i^dt[1][1]-1) == 1
-          @inbounds primes[i] = false
-          @inbounds sqf[i] = false
+        if gcd(deg, i^dt[1][1]-1) == 1 || (!isempty(prime_base) && !(i in prime_base))
           j = i
           while j <= n
            @inbounds primes[j] = false
@@ -134,10 +136,10 @@ function squarefree_for_conductors(O::NfOrd, n::Int, deg::Int; coprime_to::Array
   while i<=n
     if primes[i] && gcd(i-1, deg) == 1
       dt=prime_decomposition_type(O,i)
-      if gcd(deg,i^dt[1][1]-1)==1
+      if gcd(deg, i^dt[1][1]-1) == 1 || (!isempty(prime_base) && !(i in prime_base))
         @inbounds sqf[i]=false
         j=i
-        while j<= n
+        while j <= n
          @inbounds sqf[j]=false
          j+=i
         end
@@ -157,10 +159,10 @@ function squarefree_for_conductors(O::NfOrd, n::Int, deg::Int; coprime_to::Array
 end
 
 
-function conductors_tame(O::NfOrd, n::Int, bound::fmpz)
+function conductors_tame(O::NfOrd, n::Int, bound::fmpz; unramified_outside::Vector{fmpz} = fmpz[])
 
   if n == 2
-    return tame_conductors_degree_2(O,bound)
+    return tame_conductors_degree_2(O, bound, unramified_outside = unramified_outside)
   end
   #
   #  First, conductors coprime to the ramified primes and to the 
@@ -171,16 +173,19 @@ function conductors_tame(O::NfOrd, n::Int, bound::fmpz)
   wild_ram = collect(keys(factor(fmpz(n)).fac))
   ram_primes = ramified_primes(O)
   filter!(x -> !divisible(fmpz(n),x), ram_primes)
-  coprime_to = vcat(ram_primes, wild_ram)
   sort!(ram_primes)
+  coprime_to = vcat(ram_primes, wild_ram)
   m = minimum(wild_ram)
   k = divexact(n, m)
   e = Int((m-1)*k)
   b1 = Int(root(bound, degree(O)*e))
-  list = squarefree_for_conductors(O, b1, n, coprime_to = coprime_to)
+  list = squarefree_for_conductors(O, b1, n, coprime_to = coprime_to, prime_base = unramified_outside)
   
   extra_list = Tuple{Int, fmpz}[(1, fmpz(1))]
   for q in ram_primes
+    if !isempty(unramified_outside) && !(q in unramified_outside)
+      continue
+    end
     tr = prime_decomposition_type(O, Int(q))
     f = tr[1][1]
     nq = q^f 
@@ -216,7 +221,7 @@ function conductors_tame(O::NfOrd, n::Int, bound::fmpz)
   return final_list
 end
 
-function conductors(O::NfOrd, a::Array{Int, 1}, bound::fmpz, tame::Bool=false)
+function conductors(O::NfOrd, a::Array{Int, 1}, bound::fmpz, tame::Bool=false; unramified_outside::Vector{fmpz} = fmpz[])
   
   #Careful: I am assuming that a is in snf!
   K = nf(O)
@@ -229,7 +234,7 @@ function conductors(O::NfOrd, a::Array{Int, 1}, bound::fmpz, tame::Bool=false)
   # First, conductors for tamely ramified extensions
   #
   bound_tame = root(bound, divexact(n, expo))
-  list = conductors_tame(O, expo, bound_tame)
+  list = conductors_tame(O, expo, bound_tame, unramified_outside = unramified_outside)
 
   if tame
     reverse!(list)
@@ -240,6 +245,9 @@ function conductors(O::NfOrd, a::Array{Int, 1}, bound::fmpz, tame::Bool=false)
   #
   wild_list = Tuple{Int, Dict{NfOrdIdl, Int}, fmpz}[(1, Dict{NfOrdIdl, Int}(), fmpz(1))]
   for q in wild_ram
+    if !isempty(unramified_outside) && !(q in unramified_outside)
+      continue
+    end
     lp = prime_decomposition(O, Int(q))
     fq = divexact(d, lp[1][2]*length(lp))
     l = length(wild_list)
@@ -332,7 +340,7 @@ end
 #
 ###############################################################################
 
-function squarefree_for_conductorsQQ(O::NfOrd, n::Int, a::Array{Int, 1}; coprime_to::Array{fmpz,1}=fmpz[])
+function squarefree_for_conductorsQQ(O::NfOrd, n::Int, a::Array{Int, 1}; coprime_to::Array{fmpz,1}=fmpz[], unramified_outside::Vector{fmpz} = fmpz[])
   
   G = map(Int, snf(abelian_group(a))[1].snf)
   sqf= trues(n)
@@ -340,12 +348,15 @@ function squarefree_for_conductorsQQ(O::NfOrd, n::Int, a::Array{Int, 1}; coprime
   deg = G[end]
   #remove primes that can be wildly ramified
   for x in coprime_to
-    el=Int(x)
+    if x > n
+      continue
+    end
+    el = Int(x)
     t=el
-    while t<= n
-      @inbounds sqf[t]=false
-      @inbounds primes[t]=false
-      t+=el
+    while t <= n
+      @inbounds sqf[t] = false
+      @inbounds primes[t] = false
+      t += el
     end
   end
   
@@ -358,16 +369,16 @@ function squarefree_for_conductorsQQ(O::NfOrd, n::Int, a::Array{Int, 1}; coprime
   if !(2 in coprime_to)
     i=2
     while i<=length(sqf)
-      @inbounds sqf[i]=false
+      @inbounds sqf[i] = false
       i+=2
     end
   end  
 
   i=3
-  b=Base.sqrt(n)
-  while i<=b
+  b = root(n, 2)
+  while i <= b
     if primes[i]
-      if gcd(deg,i-1)==1
+      if gcd(deg, i-1) == 1 || (!isempty(unramified_outside) && !(i in unramified_outside))
         @inbounds primes[i]=false
         @inbounds sqf[i]=false
         j=i
@@ -394,7 +405,7 @@ function squarefree_for_conductorsQQ(O::NfOrd, n::Int, a::Array{Int, 1}; coprime
   end
   while i<=n
     if primes[i]
-      if gcd(deg,i-1) == 1
+      if gcd(deg,i-1) == 1 || (!isempty(unramified_outside) && !(i in unramified_outside))
         @inbounds primes[i] = false
         @inbounds sqf[i]=false
         j = i
@@ -404,7 +415,7 @@ function squarefree_for_conductorsQQ(O::NfOrd, n::Int, a::Array{Int, 1}; coprime
         end
       end
     end
-    i+=2
+    i += 2
   end
 
   if length(G) > 1
@@ -441,7 +452,7 @@ end
 
 
 
-function conductors_tameQQ(O::NfOrd, a::Array{Int, 1}, bound::fmpz)
+function conductors_tameQQ(O::NfOrd, a::Array{Int, 1}, bound::fmpz; unramified_outside::Vector{fmpz} = fmpz[])
 
   #
   #  First, conductors coprime to the ramified primes and to the 
@@ -453,11 +464,11 @@ function conductors_tameQQ(O::NfOrd, a::Array{Int, 1}, bound::fmpz)
   k = divexact(n, m)
   b1 = Int(root(fmpz(bound),Int((m-1)*k))) 
   
-  return squarefree_for_conductorsQQ(O, b1, a, coprime_to=wild_ram)
+  return squarefree_for_conductorsQQ(O, b1, a, coprime_to = wild_ram, unramified_outside = unramified_outside)
 
 end
 
-function conductorsQQ(O::NfOrd, a::Array{Int, 1}, bound::fmpz, tame::Bool=false)
+function conductorsQQ(O::NfOrd, a::Array{Int, 1}, bound::fmpz, tame::Bool=false; unramified_outside::Vector{fmpz} = fmpz[])
   
   K = nf(O)
   d = degree(O)
@@ -469,7 +480,7 @@ function conductorsQQ(O::NfOrd, a::Array{Int, 1}, bound::fmpz, tame::Bool=false)
   # First, conductors for tamely ramified extensions
   #
 
-  single, multiple = conductors_tameQQ(O,a,bound)
+  single, multiple = conductors_tameQQ(O, a, bound, unramified_outside = unramified_outside)
 
   if tame
     return multiple  
@@ -479,6 +490,9 @@ function conductorsQQ(O::NfOrd, a::Array{Int, 1}, bound::fmpz, tame::Bool=false)
   #
   wild_list=Tuple{Int, Int, fmpz}[(1, 1, 1)]
   for q in wild_ram
+    if !isempty(unramified_outside) && !(q in unramified_outside)
+      continue
+    end
     l = length(wild_list)
     #=
       we have to use the conductor discriminant formula to understand the maximal possible exponent of q.

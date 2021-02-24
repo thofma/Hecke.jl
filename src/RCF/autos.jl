@@ -127,9 +127,20 @@ function rel_auto_intersect(A::ClassField_pp)
 
 end
 
+function rel_auto_generic(A::ClassField_pp)
+  K = A.A
+  imgs = roots(K.pol, K)
+  homs = [hom(K, K, x, check = false) for x in imgs]
+  return small_generating_set(homs, *)[1]
+end
+
+
 function rel_auto(A::ClassField_pp)
 
   @assert isdefined(A, :A)
+  if !isdefined(A, :K)
+    return rel_auto_generic(A)
+  end
   if degree(A) == degree(A.K)
     #If the cyclotomic extension and the target field are linearly disjoint, it is easy.
     return rel_auto_easy(A)
@@ -417,9 +428,26 @@ function extend_aut2(A::ClassField, autos::Array{NfToNfMor, 1})
 
 end
 
-function extend_aut_pp(A::ClassField, autos::Array{NfToNfMor, 1}, p::fmpz)
-
+function extend_generic(A::ClassField, autos::Vector{NfToNfMor}, p::fmpz)
   Cp = [x1 for x1 in A.cyc if degree(x1) % Int(p) == 0]
+  A, gA = number_field([c.A.pol for c in Cp], check = false)
+  rts = Vector{Vector{NfRelNSElem{nf_elem}}}(undef, length(autos))
+  for i = 1:length(autos)
+    imgs = Vector{NfRelNSElem{nf_elem}}(undef, length(Cp))
+    for j = 1:length(gA)
+      pol = map_coeffs(autos[i], Cp[j].A.pol)
+      imgs[j] = roots(pol, A)[1]
+    end
+    rts[i] = imgs
+  end
+  return rts
+end
+
+function extend_aut_pp(A::ClassField, autos::Array{NfToNfMor, 1}, p::fmpz)
+  Cp = [x1 for x1 in A.cyc if degree(x1) % Int(p) == 0]
+  if !all(x -> isdefined(x, :a), Cp)
+    return extend_generic(A, autos, p)
+  end
   d = maximum(degree(x) for x in Cp)
   if d == 2
     return extend_aut2(A, autos)

@@ -419,7 +419,7 @@ end
 #
 ###############################################################################
 
-function field_extensions(list::Vector{FieldsTower}, bound::fmpz, IsoE1::GAP.GapObj, l::Array{Int, 1}, only_real::Bool)
+function field_extensions(list::Vector{FieldsTower}, bound::fmpz, IsoE1::GAP.GapObj, l::Array{Int, 1}, only_real::Bool; unramified_outside::Vector{fmpz} = fmpz[])
 
   grp_to_be_checked = Dict{Int, GAP.GapObj}()
   d = degree(list[1])
@@ -438,15 +438,15 @@ function field_extensions(list::Vector{FieldsTower}, bound::fmpz, IsoE1::GAP.Gap
   for (j, x) in enumerate(list)   
     @vprint :Fields 1 "Field $(j)/$(length(list)): $(x.field.pol)"
     @vprint :FieldsNonFancy 1 "Field $(j)/$(length(list)): $(x.field.pol)\n"
-    append!(final_list, field_extensions(x, bound, IsoCheck, l, only_real, grp_to_be_checked, IsoE1))
+    append!(final_list, field_extensions(x, bound, IsoCheck, l, only_real, grp_to_be_checked, IsoE1, unramified_outside = unramified_outside))
   end 
   return final_list
 
 end
 
-function field_extensions(x::FieldsTower, bound::fmpz, IsoE1::GAP.GapObj, l::Array{Int, 1}, only_real::Bool, grp_to_be_checked::Dict{Int, GAP.GapObj}, IsoG::GAP.GapObj)
+function field_extensions(x::FieldsTower, bound::fmpz, IsoE1::GAP.GapObj, l::Array{Int, 1}, only_real::Bool, grp_to_be_checked::Dict{Int, GAP.GapObj}, IsoG::GAP.GapObj; unramified_outside::Vector{fmpz} = fmpz[])
   
-  list_cfields = _abelian_normal_extensions(x, l, bound, IsoE1, only_real, IsoG)
+  list_cfields = _abelian_normal_extensions(x, l, bound, IsoE1, only_real, IsoG, unramified_outside = unramified_outside)
   if isempty(list_cfields)
     @vprint :Fields 1 "\e[1F$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())Number of new fields found: 0\n\n"
     @vprint :FieldsNonFancy 1 "Number of new fields found: 0\n\n"
@@ -479,7 +479,7 @@ end
 #
 ###############################################################################
 
-function fields(a::Int, b::Int, list::Vector{FieldsTower}, absolute_bound::fmpz; only_real::Bool = false)
+function fields(a::Int, b::Int, list::Vector{FieldsTower}, absolute_bound::fmpz; only_real::Bool = false, unramified_outside::Vector{fmpz} = fmpz[])
   G = GAP.Globals.SmallGroup(a, b)
   L = GAP.Globals.DerivedSeries(G)
   lvl = _real_level(L)
@@ -513,7 +513,7 @@ function fields(a::Int, b::Int, list::Vector{FieldsTower}, absolute_bound::fmpz;
     if isempty(list)
       return FieldsTower[]
     end
-    list = field_extensions(list, bound, IsoE1, invariants, onlyreal)
+    list = field_extensions(list, bound, IsoE1, invariants, onlyreal, unramified_outside = unramified_outside)
     @vprint :Fields 1 "Step $i completed\n"
     @vprint :FieldsNonFancy 1 "Step $i completed\n"
     if isempty(list)
@@ -526,18 +526,18 @@ function fields(a::Int, b::Int, list::Vector{FieldsTower}, absolute_bound::fmpz;
   return list
 end
 
-function fields_direct_product(g1, g2, red, redfirst, absolute_bound; only_real = false)
+function fields_direct_product(g1, g2, red::Int, redfirst::Int, absolute_bound::fmpz; only_real::Bool = false, unramified_outside::Vector{fmpz} = fmpz[])
   b1 = root(absolute_bound, g2[1])
   b2 = root(absolute_bound, g1[1])
   @vprint :Fields 1 "The group is the product of $(g1) and $(g2)\n"
-  l2 = fields(g2[1], g2[2], b2, only_real = only_real)
+  l2 = fields(g2[1], g2[2], b2, only_real = only_real, unramified_outside = unramified_outside)
   if isempty(l2)
     return FieldsTower[]
   end
   if g1 == g2
     return _merge(l2, l2, absolute_bound, red, redfirst, g1, g2)
   end
-  l1 = fields(g1[1], g1[2], b1, only_real = only_real)
+  l1 = fields(g1[1], g1[2], b1, only_real = only_real, unramified_outside = unramified_outside)
   if isempty(l1)
     return FieldsTower[]
   end
@@ -545,7 +545,7 @@ function fields_direct_product(g1, g2, red, redfirst, absolute_bound; only_real 
 end
 
 
-function fields(a::Int, b::Int, absolute_bound::fmpz; using_direct_product::Bool = true, only_real::Bool = false)
+function fields(a::Int, b::Int, absolute_bound::fmpz; using_direct_product::Bool = true, only_real::Bool = false, unramified_outside::Vector{fmpz} = fmpz[])
   if a == 1
     @assert b == 1
     K = rationals_as_number_field()[1]
@@ -557,7 +557,7 @@ function fields(a::Int, b::Int, absolute_bound::fmpz; using_direct_product::Bool
     g1, g2, red, redfirst = direct_product_decomposition(G, (a, b))
     if g2 != (1, 1)   
       @vprint :Fields 1 "computing extensions with Galois group ($a, $b) and bound ~10^$(clog(absolute_bound, 10))\n" 
-      return fields_direct_product(g1, g2, red, redfirst, absolute_bound; only_real = only_real)
+      return fields_direct_product(g1, g2, red, redfirst, absolute_bound; only_real = only_real, unramified_outside = unramified_outside)
     end
   end
   L = GAP.Globals.DerivedSeries(G)
@@ -568,14 +568,14 @@ function fields(a::Int, b::Int, absolute_bound::fmpz; using_direct_product::Bool
   if GAP.Globals.IsAbelian(G)
     @vprint :Fields 1 "computing abelian extension of Q with invariants $(invariants) and bound ~10^$(clog(absolute_bound, 10))\n"
     @vprint :FieldsNonFancy 1 "Doing Group ($a, $b) with bound $absolute_bound\n"
-    return abelian_extensionsQQ(invariants, absolute_bound, only_real)
+    return abelian_extensionsQQ(invariants, absolute_bound, only_real, unramified_outside = unramified_outside)
   end
 
   lvl = _real_level(L)
   IdGroupGAP = GAP.Globals.IdGroup(G1)
   IdGroup = GAP.gap_to_julia(Vector{Int}, IdGroupGAP)
   bound = root(absolute_bound, prod(invariants))
-  list = fields(IdGroup[1], IdGroup[2], bound; using_direct_product = using_direct_product, only_real = (only_real || lvl == length(L)-1))
+  list = fields(IdGroup[1], IdGroup[2], bound; using_direct_product = using_direct_product, only_real = (only_real || lvl == length(L)-1), unramified_outside = unramified_outside)
   if isempty(list)
     return list
   end
@@ -594,5 +594,5 @@ function fields(a::Int, b::Int, absolute_bound::fmpz; using_direct_product::Bool
     return FieldsTower[]
   end
   Id = GAP.Globals.IdGroup(G)
-  return field_extensions(list, absolute_bound, Id, invariants, only_real)
+  return field_extensions(list, absolute_bound, Id, invariants, only_real, unramified_outside = unramified_outside)
 end

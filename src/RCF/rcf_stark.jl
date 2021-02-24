@@ -11,26 +11,6 @@ end
 #
 ################################################################################
 
-mutable struct RCFCharacter{S, T}
-  C::ClassField{S, T}
-  x::GrpAbFinGenElem
-  mGhat::Map
-  factored_conductor::Dict{NfOrdIdl, Int}
-  conductor::NfOrdIdl
-  conductor_inf_plc::Vector{InfPlc}
-  mrcond::Union{MapClassGrp, MapRayClassGrp}
-  mp_cond::GrpAbFinGenMap
-  charcond::Map #Character directly on the rcf given by the conductor
-  
-  function RCFCharacter(C::ClassField{S, T}, x::GrpAbFinGenElem, mGhat::Map) where {S, T}
-    z = new{S, T}()
-    z.C = C
-    z.x = x
-    z.mGhat = mGhat
-    return z
-  end
-end
-
 function Base.show(io::IO, C::RCFCharacter) 
   println(IOContext(io, :compact => true), "Character of $(C.C)")
 end
@@ -77,34 +57,10 @@ function image(chi::RCFCharacter{MapClassGrp, T}, I::NfOrdIdl, prec::Int) where 
   x = chi.x
   mGhat = chi.mGhat
   mpc = mGhat(x)
-  c = conductor(chi)
-  df = defining_modulus(chi.C)[1]
-  if c == df
-    if iscoprime(I, c)
-      C = chi.C
-      mR = C.rayclassgroupmap
-      mQ = C.quotientmap
-      img = lift(mpc(mQ(mR\I)))
-      if iszero(img)
-        return one(CC)
-      end
-      return exppii(2*CC(img))
-    else
-      return zero(CC)
-    end
-  end
-  assure_with_conductor(chi)
-  if !iscoprime(I, c)
-    return zero(CC)
-  end
-  mR = chi.mrcond
-  mp = chi.mp_cond
-  mQ = chi.C.quotientmap
-  el = mR\I
-  el = mp\el
-  el = mQ(el)
-  el = mpc(el)
-  img = lift(el)
+  C = chi.C
+  mR = C.rayclassgroupmap
+  mQ = C.quotientmap
+  img = lift(mpc(mQ(mR\I)))
   if iszero(img)
     return one(CC)
   end
@@ -116,8 +72,12 @@ function image(chi::RCFCharacter{MapRayClassGrp, T}, I::NfOrdIdl, prec::Int) whe
   x = chi.x
   mGhat = chi.mGhat
   mpc = mGhat(x)
-
-  if iscoprime(minimum(I, copy = false), minimum(defining_modulus(chi.C)[1], copy = false))
+  c = conductor(chi)
+  dc = defining_modulus(chi.C)[1]
+  if c == dc
+    if !iscoprime(I, c)
+      return zero(CC)
+    end
     C = chi.C
     mR = C.rayclassgroupmap
     if !isdefined(mR, :prime_ideal_preimage_cache)
@@ -224,6 +184,18 @@ function rcf_using_stark_units(C::T; cached::Bool = true) where T <: ClassField_
     if !fl
       p *= 2
       @vprint :ClassField 1 "Guess not useful. Increasing precision to $(2*p) \n"
+    elseif nb < p
+      f = find_defining_polynomial(K, el, v)
+      if degree(f) != degree(C)
+        continue
+      end
+      mR = C.rayclassgroupmap
+      mQ = C.quotientmap
+      ng, mng = norm_group(f, mR, false, cached = false, check = false, of_closure = false)
+      if iszero(mng*mQ)
+        C.A = number_field(f, cached = false, check = false)[1]
+        return nothing
+      end
     end
   end
   p = max(64+p, nb)
@@ -245,6 +217,7 @@ function rcf_using_stark_units(C::T; cached::Bool = true) where T <: ClassField_
       return nothing
     end
     p *= 2
+    @vprint :ClassField 1 "The reconstructed polynomial is wrong, setting precision to $(p) \n"
   end
 end
 
@@ -297,36 +270,44 @@ function _find_coeffs(K, pol, v)
   coeffs = Vector{nf_elem}(undef, degree(pol)+1)
   for i = 1:degree(pol)
     c = coeff(pol, i-1)
-    vs = arb[c]
-    append!(vs, bconjs)
     bn = 3*nbits(Hecke.upper_bound(c, fmpz))
-    fl, comb = _lindep(vs, bn)
-    if !fl || abs(comb[1]) != 1
+    fl, comb = _approximate(c, bconjs, bn)
+    if !fl 
+      add = 10
+      while !fl && add < 100
+        fl, comb = _approximate(c, bconjs, bn)
+        add += 10
+      end
       return Kt()
     end
-    if !isone(comb[1])
-      comb = map(x -> -x, comb)
-    end
-    coeffs[i] = -dot(comb[2:degree(K)+1], B)
+    coeffs[i] = dot(comb, B)
   end
   coeffs[end] = one(K)
   return Kt(coeffs)
 end
 
-function _lindep(A::Array{arb, 1}, bits::Int)
+function _approximate(el::arb, A::Array{arb, 1}, bits::Int)
   n = length(A)
+  V0 = floor(ldexp(el, bits) + 0.5)
   V = [floor(ldexp(s, bits) + 0.5) for s in A]
-  M = zero_matrix(ZZ, n, n + 1)
+  M = zero_matrix(ZZ, n + 1, n + 2)
   for i = 1:n
     M[i, i] = 1
-    flag, M[i, n + 1] = unique_integer(V[i])
-    if !flag
-      @show V[i]
-    end
+    flag, M[i, n + 2] = unique_integer(V[i])
     !flag && return false, fmpz[M[1, 1]]
   end
+  M[n + 1, n + 1] = 1
+  flag, M[n + 1, n + 2] = unique_integer(-V0)
+  !flag && return false, fmpz[M[1, 1]]
   lll!(M, lll_ctx(0.99999, 0.5001))
-  res = fmpz[M[1, i] for i = 1:n]
+  if !isone(abs(M[1, n + 1]))
+    return false, fmpz[M[1, 1]]
+  end
+  if isone(M[1, n + 1])
+    res = fmpz[M[1, i] for i = 1:n]
+  else
+    res = fmpz[-M[1, i] for i = 1:n]
+  end
   return true, res
 end
 
@@ -343,7 +324,7 @@ function _find_suitable_quadratic_extension(C::T) where T <: ClassField_pp
   v = real_plc[end]
   w = real_plc[1:end-1]
   inf_plc_ram = Set(w)
-  bound = 20
+  bound = 10
   ctx = rayclassgrp_ctx(OK, Int(exponent(C))*2)
   allow_cache!(ctx.class_group_map)
   lc = ideals_up_to(OK, bound, conductor(C)[1])
@@ -470,17 +451,21 @@ function _approximate_derivative_Artin_L_function(chars::Vector, target_prec::In
   prec = min(10, div(degree(chars[1].C), 2))*target_prec
   RR = ArbField(prec)
   maxC = (root(norm(conductor(chars[1].C)[1])*abs(discriminant(maximal_order(K))), 2)+1)//(sqrt(const_pi(RR))^degree(K))
-  nterms = Int(Hecke.upper_bound(target_prec*sqrt(maxC)//2, fmpz))
-  Acoeffs = Vector{arb}[_compute_A_coeffs(n, i, prec) for i = 0:nterms]
-  coeffs_0 = Vector{arb}[_Aij_at_0(i, n, Acoeffs[i+1]) for i = 0:nterms]
-  coeffs_1 = Vector{arb}[_Aij_at_1(i, n, Acoeffs[i+1]) for i = 0:nterms]
+  nterms = Int(Hecke.upper_bound(target_prec*maxC//2, fmpz))
+  Acoeffs = _compute_A_coeffs(n, nterms, prec)
+  factorials = Vector{fmpz}(undef, n)
+  factorials[1] = fmpz(1)
+  for i = 2:length(factorials)
+    factorials[i] = factorials[i-1]*(i-1)
+  end
+  coeffs_0 = Vector{arb}[_Aij_at_0(i, n, Acoeffs[i+1], factorials) for i = 0:nterms]
+  coeffs_1 = Vector{arb}[_Aij_at_1(i, n, Acoeffs[i+1], factorials) for i = 0:nterms]
   den = 2*sqrt(const_pi(RR)^(n-1))
-  coeffs_chi = compute_coeffs_L_function(chars, nterms, prec)
   res = Vector{acb}()
   for i = 1:length(chars)
     x = chars[i]
     A = _A_function(x, prec)
-    lambda = _lambda_and_artin(x, target_prec, coeffs_0, coeffs_1, coeffs_chi[i])
+    lambda = _lambda_and_artin(x, target_prec, coeffs_0, coeffs_1, compute_coeffs_L_function(x, nterms, prec))
     num = A*lambda
     push!(res, num/den)
   end
@@ -514,10 +499,11 @@ function compute_values_f_quadratic(chars::Vector, target_prec::Int)
     cx = _C(x, prec)
     nterms = Int(Hecke.upper_bound((target_prec*cx)//2, fmpz))
     v = Vector{Tuple{arb, arb}}(undef, nterms)
-    #v0 = _evaluate_f_x_0(cx, prec, nterms)
+    v0 = _evaluate_f_x_0(cx, prec, 2*target_prec, nterms)
     for i = 1:length(v)
       val = cx//i
-      v[i] = (_evaluate_f_x_0(val, prec), _evaluate_f_x_1(val, prec))
+      v1 = _evaluate_f_x_1(val, prec)
+      v[i] = (v0[i], v1)
     end
     res[c] = v
   end
@@ -547,32 +533,33 @@ function compute_coeffs_L_function(chi::T, n::Int, prec::Int) where T <: RCFChar
     P = lp[h]
     r = chi(P, prec)
     np = Int(norm(P, copy = false))
-    for i = 1:n
-      v = valuation(i, np)
-      if iszero(v)
-        coeffs_new[i] = coeffs_old[i]
-        continue
-      end
+    j = np
+    while j <= n
+      v = valuation(j, np)
       res = zero(CC)
       if iszero(r)
-        coeffs_new[i] = res
+        coeffs_new[j] = res
+        j += np
         continue
       end
       r1 = one(CC)
       aux = CC()
       for k = 0:v
-        kk = Int(divexact(i, np^k))
+        kk = divexact(j, np^k)
         ckk = coeffs_old[kk]
         mul!(aux, ckk, r1)
         add!(res, res, aux)
         #res += ckk*r1
         mul!(r1, r1, r)
       end
-      coeffs_new[i] = res
+      coeffs_new[j] = res
+      j += np
     end
     #Now, I need to shift the column...
-    for i = 1:n
-      coeffs_old[i] = coeffs_new[i]
+    j = np
+    while j <= n
+      coeffs_old[j] = coeffs_new[j]
+      j += np
     end
   end
   return coeffs_old
@@ -698,7 +685,8 @@ function _lambda_and_artin_quadratic(chi::RCFCharacter, target_prec::Int, vf::Di
   c = conductor(chi)
   vals = vf[c]
   nterms_chi = length(vals)
-  val_chi = compute_coeffs_L_function(chi, nterms_chi, prec)
+  @vprint :ClassField 1 "Computing $(nterms_chi) coefficients Artin L function \n"
+  @vtime :ClassField 1 val_chi = compute_coeffs_L_function(chi, nterms_chi, prec)
   res1 = zero(CC)
   res2 = zero(CC)
   aux = CC()
@@ -727,27 +715,30 @@ function _evaluate_f_x_0(x::arb, prec::Int)
   return 2*sqrt(const_pi(RR))*real(expint(one(CC), CC(2//x)))
 end
 
-function _evaluate_f_x_0(x::arb, prec::Int, N::Int)
+function _evaluate_f_x_0(x::arb, prec::Int, tolerance::Int, N::Int)
   CC = AcbField(prec)
   RR = ArbField(prec)
   res = Vector{arb}(undef, N)
-  res[N] = real(expint(one(CC), CC(2//x)))
-  @show nstop1 = ceil(4//x)
-  @show nstop = Int(upper_bound(nstop1, fmpz))
+  A = 2//x
+  res[N] = real(expint(one(CC), CC(N*A)))
+  nstop = Int(upper_bound(ceil(4//A), fmpz))
   n = N
-  e0 = exp(x)
-  e1 = exp(-N*x)
+  e0 = exp(A)
+  e1 = exp(-N*A)
+  th = fmpq(1, 2)^tolerance
   while n > nstop
+    first = true
     res[n-1] = zero(RR)
     f0 = e1
     f1 = -f0//n
     m = 1
     d = fmpq(-1)
     s = res[n]
-    while abs(s) > fmpq(1, 2)^prec
-      res[n-1] = res[n-1]+s
+    while abs(s) > th
+      add!(res[n-1], res[n-1], s)
+      #res[n-1] += s
       s = d*f1
-      f0 = -x*f0
+      f0 = -A*f0
       f1 = -(m*f1+f0)//n
       m += 1
       d = -d//m
@@ -758,8 +749,10 @@ function _evaluate_f_x_0(x::arb, prec::Int, N::Int)
   for i = 1:nstop
     res[i] = real(expint(one(CC), CC(2*i//x)))
   end
+  cc = 2*sqrt(const_pi(RR))
   for i = 1:N
-    res[i] = 2*sqrt(const_pi(RR))*res[i]
+    mul!(res[i], res[i], cc)
+    #res[i] = cc*res[i]
   end
   return res
 end
@@ -771,7 +764,6 @@ end
 #
 ################################################################################
 
-global deb = []
 function _lambda_and_artin(chi::RCFCharacter, target_prec::Int, coeffs_0, coeffs_1, coeffs_chi)
   prec = min(10, div(degree(chi.C), 2))*target_prec
   K = base_field(chi.C)
@@ -780,21 +772,23 @@ function _lambda_and_artin(chi::RCFCharacter, target_prec::Int, coeffs_0, coeffs
   res1 = zero(CC)
   res2 = zero(CC)
   cchi = _C(chi, prec)
-  
   n = degree(K)
-  terms = Vector{acb}()
-  @show nterms_chi = Int(Hecke.upper_bound((target_prec*sqrt(cchi))//2, fmpz))
-  @show _find_N0(K, target_prec, cchi)
-  res = zero(CC)
+  nterms_chi = Int(Hecke.upper_bound(target_prec*cchi//2, fmpz))
+  res1 = zero(CC)
+  res2 = zero(CC)
+  aux = CC()
   for i = 1:nterms_chi
     if iszero(coeffs_chi[i])
       continue
     end
     evpoint = cchi//i
     ev0, ev1 = _evaluate_f_x_0_1(evpoint, n, target_prec, coeffs_0, coeffs_1)
-    res += coeffs_chi[i]*ev0 + Wchi*conj(coeffs_chi[i])*ev1
+    mul!(aux, coeffs_chi[i], ev0)
+    add!(res1, res1, aux)
+    mul!(aux, conj(coeffs_chi[i]), ev1)
+    add!(res2, res2, aux)
   end
-  return res
+  return res1 + Wchi*res2
 end
 
 function _C(chi::RCFCharacter, prec::Int)
@@ -811,20 +805,14 @@ end
 
 function _evaluate_f_x_0_1(x::arb, n::Int, target_prec::Int, coeffs_0::Vector{Vector{arb}}, coeffs_1::Vector{Vector{arb}})
   RR = ArbField(3*target_prec)
-  #nterms1 = min(nterms, 100)
   res0 = zero(RR)
   res1 = zero(RR)
-  factorials = Vector{fmpz}(undef, n)
-  factorials[1] = fmpz(1)
-  for i = 2:n
-    factorials[i] = factorials[i-1]*(i-1)
-  end
   lnx = log(x)
   powslogx = powers(lnx, n-1)
-  logsdivfact = arb[powslogx[i]//factorials[i] for i = 1:n]
   ix = inv(x)
-  th = fmpq(1, 2)^(3+target_prec)
+  th = RR(fmpq(1, 2)^(3+target_prec))
   ixpow = RR(1)
+  aux = RR()
   for i = 0:length(coeffs_0)-1
     if iseven(i)
       m = 1
@@ -834,7 +822,9 @@ function _evaluate_f_x_0_1(x::arb, n::Int, target_prec::Int, coeffs_0::Vector{Ve
     aij1 = coeffs_1[i+1]
     auxres1 = zero(RR)
     for j = 2:m+1
-      auxres1 += aij1[j]*logsdivfact[j-1]
+      mul!(aux, aij1[j], powslogx[j-1])
+      add!(auxres1, auxres1, aux)
+      #auxres1 += aij1[j]*powslogx[j-1]
     end
     auxres1 = mul!(auxres1, auxres1, ixpow)
     res1 = add!(res1, res1, auxres1)
@@ -842,11 +832,13 @@ function _evaluate_f_x_0_1(x::arb, n::Int, target_prec::Int, coeffs_0::Vector{Ve
     aij0 = coeffs_0[i+1]
     auxres0 = zero(RR)
     for j = 2:length(aij0)
-      auxres0 += aij0[j]*logsdivfact[j-1]
+      mul!(aux, aij0[j], powslogx[j-1])
+      add!(auxres0, auxres0, aux)
+      #auxres0 += aij0[j]*powslogx[j-1]
     end
     auxres0 = mul!(auxres0, auxres0, ixpow)
     res0 = add!(res0, res0, auxres0)
-    if abs(auxres0) < th && abs(auxres1) < th
+    if iszero(mod(i, 15)) && abs(auxres0) < th && abs(auxres1) < th
       break
     end
     #res0 += ixpow*auxres0
@@ -865,7 +857,7 @@ function _evaluate_f_x_0_1(x::arb, n::Int, target_prec::Int, coeffs_0::Vector{Ve
   return res0, res1
 end
 
-function _Aij_at_0(i::Int, n::Int, aij::Vector{arb})
+function _Aij_at_0(i::Int, n::Int, aij::Vector{arb}, factorials::Vector{fmpz})
   #aij starts with ai0 and finishes with ain
   CC = parent(aij[1])
   if iseven(i)
@@ -882,6 +874,9 @@ function _Aij_at_0(i::Int, n::Int, aij::Vector{arb})
       D[j] = (D[j+1] - aij[j])/i
     end
   end
+  for i = 2:length(D)
+    D[i] = D[i]//factorials[i-1]
+  end
   #=
   ev = CC(-i)+CC(0.001)
   @show val1 = (gamma(ev/2)*gamma((ev+1)/2)^(n-1))/ev
@@ -891,7 +886,7 @@ function _Aij_at_0(i::Int, n::Int, aij::Vector{arb})
   return D
 end
 
-function _Aij_at_1(i::Int, n::Int, aij::Vector{arb})
+function _Aij_at_1(i::Int, n::Int, aij::Vector{arb}, factorials::Vector{fmpz})
   #aij starts with ai0 and finishes with ain
   if iseven(i)
     m = 1
@@ -907,6 +902,9 @@ function _Aij_at_1(i::Int, n::Int, aij::Vector{arb})
   for j = m:-1:1
     D[j] = (D[j+1] - aij[j])/(i+1)
   end
+  for i = 2:length(D)
+    D[i] = D[i]//factorials[i-1]
+  end
   #=
   ev = CC(-i)+CC(0.001)
   val1 = (gamma(ev/2)*gamma((ev+1)/2)^(n-1))/(ev-1)
@@ -916,66 +914,59 @@ function _Aij_at_1(i::Int, n::Int, aij::Vector{arb})
   return D
 end
 
-function _compute_A_coeffs(n::Int, i::Int, prec::Int)
+function _compute_A_coeffs(n::Int, nterms::Int, prec::Int)
   RR = ArbField(prec)
   #res[j] contains A_{i,(j-1)}
-  if iszero(i)
-    #In this case, I need the i-1st coefficient
-    res = Vector{arb}(undef, n+2)
-    r = _coeff_0_even(n, 0, RR)
-    r1 = _coeff_exp_0(n, RR)
-    #Careful: in this case the indices are shifted.
-    res[1] = r1[3]*r
-    res[2] = r1[2]*r
-    res[3] = r1[1]*r
-    for j = 4:n+2
-      res[j] = zero(RR)
+  res_final = Vector{Vector{arb}}(undef, nterms+1)
+  spi = sqrt(const_pi(RR))
+  coeffs_exp_even = _coeffs_exp_even(n, nterms, RR)
+  coeffs_exp_odd = _coeffs_exp_odd(n, nterms, RR)
+  spipow = spi^(n-1)
+  for i = 0:nterms
+    if iszero(i)
+      #In this case, I need the i-1st coefficient
+      res = Vector{arb}(undef, 3)
+      r = spipow*_coeff_0_even(n, 0)
+      r1 = _coeff_exp_0(n, RR)
+      #Careful: in this case the indices are shifted.
+      mul!(r1[3], r1[3], r)
+      res[1] = r1[3]
+      mul!(r1[2], r1[2], r)
+      res[2] = r1[2]
+      mul!(r1[1], r1[1], r)
+      res[3] = r1[1]
+    elseif iseven(i)
+      res = Vector{arb}(undef, 2)
+      q = divexact(i, 2)
+      r = spipow*_coeff_0_even(n, q)
+      res[2] = r
+      r1 = coeffs_exp_even[q]
+      res[1] = r*r1
+    else
+      res = Vector{arb}(undef, n+1)
+      q = divexact(i-1, 2)
+      r0 = spi*_coeff_0_odd(n, q)
+      vg = coeffs_exp_odd[q+1] 
+      res[n+1] = zero(RR)
+      for j = 1:n
+        mul!(vg[n-j+1], vg[n-j+1], r0)
+        res[j] = vg[n-j+1] 
+      end
     end
-    #=
-    ev = RR(0.00000001)
-    val1 = gamma(ev/2)*gamma((ev+1)/2)^(n-1)/ev
-    val2 = sum(res[j+1]/((ev)^j) for j = 0:n+1)
-    @show i
-    @show val1
-    @show val2
-    =#
-    return res
+    res_final[i+1] = res
   end
-  if iseven(i)
-    res = Vector{arb}(undef, n+1)
-    q = divexact(i, 2)
-    r = _coeff_0_even(n, q, RR)
-    res[2] = r
-    for j = 3:n+1
-      res[j] = zero(RR)
-    end
-    r1 = _coeff_exp_1_even(n, q, RR)
-    res[1] = r*r1
-  else
-    res = Vector{arb}(undef, n+1)
-    q = divexact(i-1, 2)
-    r0 = _coeff_0_odd(n, q, RR)
-    vg = _coeff_exp_odd(n, q, RR) 
-    res[n+1] = zero(RR)
-    for j = 1:n
-      res[j] = vg[n-j+1]*r0  
-    end
-  end
-  #=
-  ev = RR(-i)+RR(0.00000001)
-  val1 = gamma(ev/2)*gamma((ev+1)/2)^(n-1)
-  val2 = sum(res[j+1]/((ev+i)^j) for j = 0:n)
-  @show i
-  @show val1
-  @show val2
-  =#
-  return res
+  return res_final
 end
 
-function _coeff_0_odd(n::Int, q::Int, RR::ArbField)
-  exc_num = (-1)^(q*n+1)*fmpz(2)^(n+2*q)
+function _coeff_0_odd(n::Int, q::Int)
+  exc_num = fmpz(2)^(n+2*q)
   exc_den = (2*q+1)*factorial(fmpz(2*q))*factorial(fmpz(q))^(n-2)
-  return sqrt(const_pi(RR))*fmpq(exc_num, exc_den)
+  r = fmpq(exc_num, exc_den)
+  if iseven(q) || iseven(n)
+    return -r
+  else
+    return r
+  end
 end
 
 function _coeff_exp_odd(n::Int, q::Int, RR::ArbField)
@@ -991,11 +982,60 @@ function _coeff_exp_odd(n::Int, q::Int, RR::ArbField)
   return arb[coeff(gexp, i) for i = 0:n-1]
 end
 
+function _coeffs_exp_odd(n::Int, nterms::Int, RR::ArbField)
+  nt = div(nterms, 2)
+  if isodd(nterms)
+    nt += 1
+  end
+  RRx = PowerSeriesRing(RR, n, "x", cached = false)[1]
+  res = Vector{Vector{arb}}(undef, nt)
+  sum_pow_inv_odd = Vector{fmpq}(undef, n-1)
+  sum_pow_inv_even = Vector{fmpq}(undef, n-1)
+  for i = 1:n-1
+    sum_pow_inv_odd[i] = fmpq(0)
+    sum_pow_inv_even[i] = fmpq(0)
+  end
+  inexc =  log(RR(2)) + fmpq(n, 2)*const_euler(RR)
+  zeta_k = Vector{arb}(undef, n-2)
+  for i = 1:n-2
+    if iseven(i)
+      zeta_k[i] = -zeta(i+1, RR)
+    else
+      zeta_k[i] = zeta(i, RR)
+    end
+  end
+  for q = 0:nt-1
+    for j = 1:n-1
+      sum_pow_inv_odd[j] += fmpq(1, (2*q+1)^j)
+      if !iszero(q)
+        sum_pow_inv_even[j] += (n-1)*fmpq(1, (2*q)^j)
+      end
+    end
+    res_q = Vector{arb}(undef, n-1)
+    res_q[1] = sum_pow_inv_odd[1] + sum_pow_inv_even[1] - inexc
+    for k = 2:n-1
+      res_q[k] = zeta_k[k-1]*(1+fmpq(n-2, fmpz(2)^k)) + sum_pow_inv_odd[k] + sum_pow_inv_even[k]
+      res_q[k] = res_q[k]/k
+    end
+    g = RRx(res_q, length(res_q), n, 1)
+    gexp = exp(g)
+    res[q+1] = arb[coeff(gexp, i) for i = 0:n-1]
+  end
+  return res
+end
 
-function _coeff_exp_1_even(n::Int, q::Int, RR::ArbField)
-  exc = (n-1)*_sum_pow_inv_odd(q-1, 1) + _sum_pow_inv_even(q, 1)
+function _coeffs_exp_even(n::Int, nterms::Int, RR::ArbField)
   inexc = fmpq(n, 2)*const_euler(RR)+(n-1)*log(RR(2))
-  return exc - inexc
+  res = Vector{arb}(undef, div(nterms, 2))
+  sum_inv_odd = fmpq(0)
+  sum_inv_even = fmpq(1, 2)
+  res[1] = sum_inv_even - inexc
+  for q = 2:length(res)
+    sum_inv_odd += (n-1)*fmpq(1, (2*q-1))
+    sum_inv_even += fmpq(1, 2*q)
+    res[q] = sum_inv_odd + sum_inv_even - inexc
+  end
+  return res
 end
 
 function _coeff_exp_0(n::Int, RR::ArbField)
@@ -1007,224 +1047,13 @@ function _coeff_exp_0(n::Int, RR::ArbField)
   return arb[coeff(expg, i) for i = 0:2]
 end
 
-function _coeff_0_even(n::Int, q::Int, RR::ArbField)
+function _coeff_0_even(n::Int, q::Int)
   num = 2 * fmpz(4)^(q*(n-1))*factorial(fmpz(q))^(n-2)
   den = factorial(fmpz(2*q))^(n-1)
   r = fmpq(num, den)
-  return (-1)^(q*n)*r*sqrt(const_pi(RR))^(n-1)
-end
-
-
-function _sum_pow_inv_odd(n::Int, k::Int)
-  res = fmpq(0)
-  for i = 0:n
-    res += fmpq(1, (2*i+1)^k)
-  end
-  return res
-end 
-
-function _sum_pow_inv_even(n::Int, k::Int)
-  res = fmpq(0)
-  for i = 1:n
-    res += fmpq(1, (2*i)^k)
-  end
-  return res
-end
-
-
-################################################################################
-#
-#  BigFloat version of the integral.
-#
-################################################################################
-#=
-
-function _evaluate_f_x_0_1BF(x::BigFloat, n::Int, prec::Int, nterms::Int, coeffs_0::Vector{Vector{BigFloat}}, coeffs_1::Vector{Vector{BigFloat}})
-  nterms1 = nterms
-  #nterms1 = min(nterms, 100)
-  res0 = BigFloat(0)
-  res1 = BigFloat(0)
-  factorials = Vector{fmpz}(undef, n+1)
-  factorials[1] = fmpz(1)
-  for i = 2:n+1
-    factorials[i] = factorials[i-1]*(i-1)
-  end
-  lnx = log(x)
-  powslogx = powers(lnx, n-1)
-  ix = inv(x)
-  ixpow = RR(1)
-  for i = 0:nterms1
-    if iseven(i)
-      m = 1
-    else
-      m = n-1
-    end
-    aij1 = coeffs_1[i+1]
-    auxres1 = BigFloat(0)
-    for j = 2:m+1
-      auxres1 += (aij1[j]*powslogx[j-1])//factorials[j-1]
-    end
-    auxres1 *= ixpow
-    res1 += auxres1
-
-    aij0 = coeffs_0[i+1]
-    auxres0 = BigFloat(0)
-    for j = 2:length(aij0)
-      auxres0 += (aij0[j]*powslogx[j-1])//factorials[j-1]
-    end
-    auxres0 *= ixpow
-    res0 += auxres0
-
-    ixpow *= ix
-  end
-  res1 += x*BigFloat(gamma(fmpq(1, 2), RR))*BigFloat(gamma(fmpz(1), RR))^(n-1)
-
-  #CC = AcbField(prec)
-  #res0int = (one(CC)/(2*const_pi(CC)*onei(CC)))*Nemo.integrate(CC, y -> x^y * gamma(y/2)*gamma((y+1)/2)^(n-1)/y, 1.1 - (nterms+0.1)*onei(CC), 1.1 + (nterms+0.1) * onei(CC))
-  #res1int = (one(CC)/(2*const_pi(CC)*onei(CC)))*Nemo.integrate(CC, y -> x^y * gamma(y/2)*gamma((y+1)/2)^(n-1)/(y-1), 1.1 - (nterms+0.1)*onei(CC), 1.1 + (nterms+0.1) * onei(CC))
-  #@assert overlaps(real(res0int), res0)
-  #@assert overlaps(real(res1int), res1)
-  #@show res0
-  #@show res0int
-  #return real(res0int), real(res1int)
-  return res0, res1
-end
-
-function _Aij_at_0(i::Int, n::Int, aij::Vector{BigFloat})
-  #aij starts with ai0 and finishes with ain
-  if iseven(i)
-    m = 1
+  if iseven(q) || iseven(n)
+    return r
   else
-    m = n-1
+    return -r
   end
-  if iszero(i)
-    D = aij[1:m+2]
-  else
-    D = Vector{BigFloat}(undef, m+1)
-    D[m+1] = -aij[m+1]/i
-    for j = m:-1:1
-      D[j] = (D[j+1] - aij[j])/i
-    end
-  end
-  return D
 end
-
-function _Aij_at_1(i::Int, n::Int, aij::Vector{BigFloat})
-  #aij starts with ai0 and finishes with ain
-  if iseven(i)
-    m = 1
-  else
-    m = n-1
-  end
-  if iszero(i)
-    aij = aij[2:end]
-  end
-  D = Vector{BigFloat}(undef, m+1)
-  D[m+1] = -aij[m+1]/(i+1)
-  for j = m:-1:1
-    D[j] = (D[j+1] - aij[j])/(i+1)
-  end
-  return D
-end
-
-function _compute_A_coeffs(n::Int, i::Int, prec::Int)
-  #res[j] contains A_{i,(j-1)}
-  if iszero(i)
-    #In this case, I need the i-1st coefficient
-    res = Vector{BigFloat}(undef, n+2)
-    r = _coeff_0_even(n, 0, RR)
-    r1 = _coeff_exp_0(n, RR)
-    #Careful: in this case the indices are shifted.
-    res[1] = r1[3]*r
-    res[2] = r1[2]*r
-    res[3] = r1[1]*r
-    for j = 4:n+2
-      res[j] = zero(BigFloat)
-    end
-    return res
-  end
-  if iseven(i)
-    res = Vector{BigFloat}(undef, n+1)
-    q = divexact(i, 2)
-    r = _coeff_0_even(n, q)
-    res[2] = r
-    for j = 3:n+1
-      res[j] = zero(BigFloat)
-    end
-    r1 = _coeff_exp_1_even(n, q)
-    res[1] = r*r1
-  else
-    res = Vector{BigFloat}(undef, n+1)
-    q = divexact(i-1, 2)
-    r0 = _coeff_0_odd(n, q)
-    vg = _coeff_exp_odd(n, q) 
-    res[n+1] = zero(BigFloat)
-    for j = 1:n
-      res[j] = vg[n-j+1]*r0  
-    end
-  end
-
-  return res
-end
-
-function _coeff_0_odd(n::Int, q::Int)
-  exc_num = (-1)^(q*n+1)*fmpz(2)^(n+2*q)
-  exc_den = (2*q+1)*factorial(fmpz(2*q))*factorial(fmpz(q))^(n-2)
-  return sqrt(BigFloat(pi))*BigFloat(fmpq(exc_num, exc_den))
-end
-
-function _coeff_exp_odd(n::Int, q::Int)
-  RR = ArbField(1000)
-  res = Vector{BigFloat}(undef, n-1)
-  res[1] = _sum_pow_inv_odd(q, 1) + (n-1)*_sum_pow_inv_even(q, 1) - log(BigFloat(2)) - fmpq(n, 2)*BigFloat(const_euler(RR))
-  for k = 2:n-1
-    res[k] = (-1)^k*BigFloat(zeta(k, RR))*(1+fmpq(n-2, fmpz(2)^k)) + _sum_pow_inv_odd(q, k) + (n-1)*_sum_pow_inv_even(q, k)
-    res[k] = res[k]/k
-  end
-  RRx = PowerSeriesRing(parent(RR[1]), n, "x", cached = false)[1]
-  g = RRx(res, length(res), n, 1)
-  gexp = exp(g)
-  return BigFloats[coeff(gexp, i) for i = 0:n-1]
-end
-
-function _coeff_exp_1_even(n::Int, q::Int)
-  exc = (n-1)*_sum_pow_inv_odd(q-1, 1) + _sum_pow_inv_even(q, 1)
-  inexc = fmpq(n, 2)*const_euler(RR)+(n-1)*log(RR(2))
-  return exc - inexc
-end
-
-function _coeff_exp_0(n::Int, RR::ArbField)
-  c0 = -fmpq(n, 2)*const_euler(RR)-(n-1)*log(RR(2))
-  c1 = zeta(2, RR)*fmpq(3*n-2, 8)
-  RRx = PowerSeriesRing(RR, 3, "x", cached = false)[1]
-  g = RRx([c0, c1], 2, 3, 1)
-  expg = exp(g)
-  return [coeff(expg, i) for i = 0:2]
-end
-
-function _coeff_0_even(n::Int, q::Int, RR::ArbField)
-  num = 2 * fmpz(4)^(q*(n-1))*factorial(fmpz(q))^(n-2)
-  den = factorial(fmpz(2*q))^(n-1)
-  r = fmpq(num, den)
-  return (-1)^(q*n)*r*sqrt(const_pi(RR))^(n-1)
-end
-
-
-function _sum_pow_inv_odd(n::Int, k::Int)
-  res = fmpq(0)
-  for i = 0:n
-    res += fmpq(1, (2*i+1)^k)
-  end
-  return res
-end 
-
-function _sum_pow_inv_even(n::Int, k::Int)
-  res = fmpq(0)
-  for i = 1:n
-    res += fmpq(1, (2*i)^k)
-  end
-  return res
-end
-
-
-=#
