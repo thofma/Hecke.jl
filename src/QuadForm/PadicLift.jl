@@ -296,7 +296,7 @@ function _hensel_qf_modular_even(Z::nmod_mat, G::nmod_mat, F::nmod_mat, a, b)
     Z = divexact(Z, 2^v)
     Y = Z - F*G*F'
     X = _solve_X(divexact(Y, 2), [divexact(y, 4) for y in diagonal(Y)], diagonal(inv(G)))
-    X = 2 * change_base_ring(R, lift(X))
+    X = 2 * change_base_ring(R, lift(X))::nmod_mat
     F = F + X*inv(G*F')
     a = 2
   end
