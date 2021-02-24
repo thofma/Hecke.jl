@@ -22,12 +22,12 @@ extra:
 extra_css:
   - 'assets/Documenter.css'
   - 'css/extra.css'
-  - https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/default.min.css
+  - https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/styles/default.min.css
 
 extra_javascript:
   - https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS_HTML
   - assets/mathjaxhelper.js
-  - https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/highlight.min.js
+  - https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/highlight.min.js
   - javascripts/config.js
 
 markdown_extensions:
@@ -40,7 +40,9 @@ markdown_extensions:
       enable_dollar_delimiter: true
   - admonition
   - pymdownx.highlight:
-      css_class: codehilite
+      use_pygments: true
+      css_class: highlight
+      #guess_lang: true
       #linenums: true
   - pymdownx.tasklist:
       custom_checkbox: true
@@ -56,8 +58,6 @@ markdown_extensions:
         - name: math
           class: arithmatex
           format: !!python/name:pymdownx.arithmatex.fence_mathjax_format
-  - pymdownx.highlight:
-      use_pygments: false
   - pymdownx.details:
 
 docs_dir: 'build'
