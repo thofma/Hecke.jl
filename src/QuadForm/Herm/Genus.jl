@@ -1294,7 +1294,7 @@ function local_genera_hermitian(E, p, rank::Int, det_val::Int, max_scale::Int, i
         end
       end
 
-      for d in cartesian_product_iterator(dets)# Iterators.product(dets...)
+      for d in cartesian_product_iterator(dets, inplace = true)# Iterators.product(dets...)
         g2 = Vector{Tuple{Int, Int, Int, Int}}(undef, length(g))
         for k in 1:n
           # Again the 0 for dummy purposes
@@ -1350,7 +1350,7 @@ function local_genera_hermitian(E, p, rank::Int, det_val::Int, max_scale::Int, i
       end
     end
 
-    for dn in cartesian_product_iterator(det_norms)
+    for dn in cartesian_product_iterator(det_norms, inplace = true)
       g2 = Vector{Tuple{Int, Int, Int, Int}}(undef, length(g))
       for k in 1:n
         g2[k] = (g[k][1], g[k][2], dn[k][1], dn[k][2])

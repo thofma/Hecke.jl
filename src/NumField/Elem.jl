@@ -241,32 +241,32 @@ basis_matrix(v::Vector{<: NumFieldElem})
 @doc Markdown.doc"""
     charpoly(a::NumFieldElem) -> PolyElem
 
-Given a number field element `a` of a number field `K`, this function returns
-the characteristic polynomial of `a` over the base field of `K`.
+Given a number field element $a$ of a number field $K$, this function returns
+the characteristic polynomial of $a$ over the base field of $K$.
 """
 charpoly(::NumFieldElem)
 
 @doc Markdown.doc"""
     absolute_charpoly(a::NumFieldElem) -> PolyElem
 
-Given a number field element `a` of a number field `K`, this function returns
-the characteristic polynomial of `a` over the rationals $\mathbf{Q}$.
+Given a number field element $a$ of a number field $K$, this function returns
+the characteristic polynomial of $a$ over the rationals $\mathbf{Q}$.
 """
 absolute_charpoly(::NumFieldElem)
 
 @doc Markdown.doc"""
     minpoly(a::NumFieldElem) -> PolyElem
 
-Given a number field element `a` of a number field `K`, this function returns
-the minimal polynomial of `a` over the base field of `K`.
+Given a number field element $a$ of a number field $K$, this function returns
+the minimal polynomial of $a$ over the base field of $K$.
 """
 minpoly(::NumFieldElem)
 
 @doc Markdown.doc"""
     absolute_minpoly(a::NumFieldElem) -> PolyElem
 
-Given a number field element `a` of a number field `K`, this function returns
-the minimal polynomial of `a` over the rationals $\mathbf{Q}$.
+Given a number field element $a$ of a number field $K$, this function returns
+the minimal polynomial of $a$ over the rationals $\mathbf{Q}$.
 """
 absolute_minpoly(::NumFieldElem)
 
@@ -482,7 +482,7 @@ function isirreducible(f::PolyElem{<: NumFieldElem})
   return sum(values(lf.fac)) == 1
 end
 
-function factor(f::PolyElem{<: NumFieldElem})
+function AbstractAlgebra.factor(f::PolyElem{<: NumFieldElem})
   K = base_ring(f)
   Ka, rel_abs, _ = absolute_field(K)
 

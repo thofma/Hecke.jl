@@ -772,7 +772,8 @@ end
 # random and factor
 ################################################################################
 
-factor(a::RingElem) = Nemo.factor(a)
+factor(a...; b...) = Nemo.factor(a...; b...)
+
 factor(a::Integer) = factor(fmpz(a))
 
 mutable struct flint_rand_ctx_t
@@ -1553,15 +1554,38 @@ end
 
 Returns a vector containing all the squarefree numbers up to $n$.
 """
-function squarefree_up_to(n::Int; coprime_to::Array{fmpz,1}=fmpz[])
+function squarefree_up_to(n::Int; coprime_to::Array{fmpz,1} = fmpz[], prime_base::Vector{fmpz} = fmpz[])
+  
+  @assert isempty(coprime_to) || isempty(prime_base)
+  if !isempty(prime_base)
+    listi = Int[1]
+    for x in prime_base
+      if x > n
+        continue
+      end
+      el = Int(x)
+      to_add = Int[]
+      for i = 1:length(listi)
+        eln = el * listi[i]
+        if eln <= n
+          push!(to_add, eln)
+        else
+          break
+        end
+      end
+      append!(listi, to_add)
+      sort!(listi)
+    end
+    return listi
+  end
   list = trues(n)
   for x in coprime_to
-    if !fits(Int, x)
+    if x > n
       continue
     end
     t = Int(x)
     while t <= n
-      list[t]=false
+      list[t] = false
       t += Int(x)
     end
   end

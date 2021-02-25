@@ -544,8 +544,8 @@ function make_positive(x::NfOrdElem, a::fmpz)
     mu = div(y, a)
     m = max(m, mu+1)
   end
-  @hassert :RayFacElem 1 iscoprime(ideal(parent(x),x), ideal(parent(x), a))
-  @hassert :RayFacElem 1 iscoprime(ideal(parent(x),x+fmpz(m)*a), ideal(parent(x), a))
+  #@hassert :RayFacElem 1 iscoprime(ideal(parent(x),x), ideal(parent(x), a))
+  #@hassert :RayFacElem 1 iscoprime(ideal(parent(x),x+fmpz(m)*a), ideal(parent(x), a))
   @hassert :RayFacElem 1 istotally_positive(x+m*a)
   el_to_add = m*a
   return x+el_to_add
@@ -1074,7 +1074,8 @@ function find_gens(mR::MapRayClassGrp; coprime_to::fmpz = fmpz(-1))
       el_q = mq(gens_m[i][2])
       if iszero(el_q)
         continue
-      else
+      end
+      if isprime_power(order(s))
         el_in_s = ms\el_q
         found = false
         for j = 1:ngens(s)
@@ -1094,6 +1095,17 @@ function find_gens(mR::MapRayClassGrp; coprime_to::fmpz = fmpz(-1))
             end
             return lp, sR
           end
+        end
+      else
+        push!(sR, gens_m[i][2])
+        push!(lp, ideal(O, gens_m[i][1]))
+        q, mq = quo(R, sR, false)
+        s, ms = snf(q)
+        if order(s) == 1 
+          if !isdefined(mR, :gens)
+            mR.gens = (lp, sR)
+          end
+          return lp, sR
         end
       end
     end
@@ -1125,7 +1137,7 @@ function find_gens(mR::MapRayClassGrp; coprime_to::fmpz = fmpz(-1))
           q, mq = quo(R, sR, false)
           s, ms = snf(q)
           if order(s)==1
-	    if !isdefined(mR, :gens)
+	          if !isdefined(mR, :gens)
               mR.gens = (lp, sR)
             end
             return lp, sR
@@ -1133,7 +1145,6 @@ function find_gens(mR::MapRayClassGrp; coprime_to::fmpz = fmpz(-1))
         end
       end
     end
-
   end
 
   #This means that the class group is non trivial. I need primes generating the class group

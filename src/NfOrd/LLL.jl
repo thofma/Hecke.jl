@@ -798,7 +798,7 @@ function reduce_ideal(I::FacElem{NfOrdIdl, NfOrdIdlSet})
       B, b = power_reduce(k, v)
       mul!(a, a, b)
       @hassert :PID_Test (v>0 ? fractional_ideal(O, k)^Int(v) : inv(k)^Int(-v)) == B*evaluate(b)
-      if norm(A)*norm(B) > abs(discriminant(O))
+      if norm(A, copy = false)*norm(B, copy = false) > abs(discriminant(O))
         A, c = reduce_product(A, B)
         add_to_key!(a.fac, c, -1)
       else
@@ -821,7 +821,7 @@ $B$ has small norm.
 function power_reduce(A::NfOrdIdl, e::fmpz)
   O = order(A)
   K= nf(O)
-  if norm(A) > abs(discriminant(O))
+  if norm(A, copy = false) > abs(discriminant(O))
     A1, a = reduce_ideal(A)
     @hassert :PID_Test 1 a*A == A1
     A = A1
@@ -847,7 +847,7 @@ function power_reduce(A::NfOrdIdl, e::fmpz)
   C, cl = power_reduce(A, div(e, 2))
   @hassert :PID_Test 1 C*evaluate(cl) == A^Int(div(e, 2))
   mul!(al, al, cl^2)
-  if norm(C)^2 > abs(discriminant(O))
+  if norm(C, copy = false)^2 > abs(discriminant(O))
     @vtime :CompactPresentation :4 C2, a = reduce_product(C, C)
     add_to_key!(al.fac, a, -1)
   else
@@ -855,7 +855,7 @@ function power_reduce(A::NfOrdIdl, e::fmpz)
   end
 
   if isodd(e)
-    if norm(A)*norm(C2) > abs(discriminant(O))
+    if norm(A, copy = false)*norm(C2, copy = false) > abs(discriminant(O))
       @vtime :CompactPresentation :4 A1, a = reduce_product(C2, A)
       A = A1
       add_to_key!(al.fac, a, -1)

@@ -44,16 +44,23 @@ end
 
 function lift(C::HenselCtxQadic, mx::Int = minimum(precision, coefficients(C.f)))
   p = C.p
+  Q = parent(p)
   N = valuation(p)
 #  @show map(precision, coefficients(C.f)), N, precision(parent(p))
   #have: N need mx
+  if length(C.lf) == 1
+    C.lf[1] = C.f
+    return
+  end
   ch = [mx]
   while ch[end] > N
     push!(ch, div(ch[end]+1, 2))
   end
-  @vprint :PolyFactor 1 "using lifting chain ", ch
+  @vprint :PolyFactor 1 "using lifting chain $ch\n"
   for k=length(ch)-1:-1:1
     N2 = ch[k]
+    setprecision!(Q, N2+1)
+    p = Q(prime(Q))^ch[k+1]
     i = length(C.lf)
     j = i-1
     p = setprecision(p, N2)
@@ -90,6 +97,7 @@ function lift(C::HenselCtxQadic, mx::Int = minimum(precision, coefficients(C.f))
       j -= 2
     end
   end
+  C.p = Q(prime(Q))^ch[1]
 end
 
 function factor(C::HenselCtxQadic)

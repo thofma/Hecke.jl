@@ -126,8 +126,8 @@
   end
 
   @testset "Discriminant" begin
-    @test (2*a + 10)*OK == @inferred (disc(E116_1_a1)*OK)
-    @test -43 == @inferred disc(E43_a1)
+    @test (2*a + 10)*OK == @inferred (discriminant(E116_1_a1)*OK)
+    @test -43 == @inferred discriminant(E43_a1)
   end
 
   @testset "j-invariant" begin

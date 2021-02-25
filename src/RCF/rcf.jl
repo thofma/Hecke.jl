@@ -18,7 +18,7 @@ polynomials for all prime power cyclic subfields.
 
 Note, the return type is always a non-simple extension.
 """
-function NumberField(CF::ClassField{S, T}; redo::Bool = false, using_norm_relation = false, over_subfield::Bool = false) where {S, T}
+function NumberField(CF::ClassField{S, T}; redo::Bool = false, using_norm_relation = false, over_subfield::Bool = false, using_stark_units::Bool = false) where {S, T}
   if isdefined(CF, :A) && !redo
     return CF.A
   end
@@ -37,7 +37,7 @@ function NumberField(CF::ClassField{S, T}; redo::Bool = false, using_norm_relati
       if using_norm_relation && !divides(fmpz(ord), order(S1))[1]
         push!(res, ray_class_field_cyclic_pp_Brauer(CF, mQ))
       else
-        push!(res, ray_class_field_cyclic_pp(CF, mQ, over_subfield = over_subfield))
+        push!(res, ray_class_field_cyclic_pp(CF, mQ, over_subfield = over_subfield, using_stark_units = using_stark_units))
       end
     end
     q[i] = G[i]
@@ -53,20 +53,28 @@ function NumberField(CF::ClassField{S, T}; redo::Bool = false, using_norm_relati
   return CF.A
 end
 
-function ray_class_field_cyclic_pp(CF::ClassField{S, T}, mQ::GrpAbFinGenMap; over_subfield::Bool = false) where {S, T}
+function ray_class_field_cyclic_pp(CF::ClassField{S, T}, mQ::GrpAbFinGenMap; over_subfield::Bool = false, using_stark_units::Bool = false) where {S, T}
   @vprint :ClassField 1 "cyclic prime power class field of degree $(degree(CF))\n"
   CFpp = ClassField_pp{S, T}()
   CFpp.quotientmap = compose(CF.quotientmap, mQ)
   CFpp.rayclassgroupmap = CF.rayclassgroupmap
   @assert domain(CFpp.rayclassgroupmap) == domain(CFpp.quotientmap)
   if over_subfield
-    return number_field_over_subfield(CFpp, using_norm_relation = true)
+    return number_field_over_subfield(CFpp, using_norm_relation = true, using_stark_units = using_stark_units)
   else
-    return ray_class_field_cyclic_pp(CFpp)
+    return ray_class_field_cyclic_pp(CFpp, using_stark_units = using_stark_units)
   end
 end
 
-function ray_class_field_cyclic_pp(CFpp::ClassField_pp)
+function ray_class_field_cyclic_pp(CFpp::ClassField_pp; using_stark_units::Bool = false)
+  if using_stark_units
+    #Check whether the extension is totally real
+    K = base_field(CFpp)
+    if istotally_real(K) && isempty(conductor(CFpp)[2])
+      rcf_using_stark_units(CFpp)
+      return CFpp
+    end
+  end
   @vprint :ClassField 1 "computing the S-units...\n"
   @vtime :ClassField 1 _rcf_S_units(CFpp)
   @vprint :ClassField 1 "finding the Kummer extension...\n"
@@ -80,7 +88,7 @@ end
 
 ################################################################################
 #
-#  Using norm relations to get the s-units
+#  Using norm relations to get the S-units
 #
 ################################################################################
 
@@ -839,8 +847,6 @@ function auts_in_snf!(CF::ClassField_pp)
   CF.AutG = gens
   return nothing
 end
-
-struct ExtendAutoError <: Exception end
 
 function _extend_auto(K::Hecke.NfRel{nf_elem}, h::Hecke.NfToNfMor, r::Int = -1)
   @hassert :ClassField 1 iskummer_extension(K)

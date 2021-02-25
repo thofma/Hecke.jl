@@ -67,6 +67,7 @@ Otherwise, the images of the basis of $M$ will be used as the generators.
 function torsion_quadratic_module(M::ZLat, N::ZLat; gens::Union{Nothing, Vector{<:Vector}} = nothing,
                                                     snf::Bool = true,
                                                     modulus::fmpq = fmpq(0),
+                                                    modulus_qf::fmpq = fmpq(0),
                                                     check::Bool = true)
   @req ambient_space(M) === ambient_space(N) """
       Lattices must have same ambient space
@@ -114,7 +115,12 @@ function torsion_quadratic_module(M::ZLat, N::ZLat; gens::Union{Nothing, Vector{
     modulus = reduce(gcd, [a for a in num], init = zero(fmpq))
   end
   norm = reduce(gcd, diagonal(gram_matrix(N)), init = zero(fmpq))
-  modulus_qf = gcd(norm, 2 * modulus)
+
+  if iszero(modulus_qf)
+    modulus_qf = gcd(norm, 2 * modulus)
+  else
+    modulus_qf = modulus_qf
+  end
 
   T = TorQuadMod()
   T.cover = M
@@ -334,6 +340,29 @@ end
 
 ################################################################################
 #
+#  Addition
+#
+################################################################################
+
+function Base.:(+)(a::TorQuadModElem, b::TorQuadModElem)
+  @req parent(a) === parent(b) "Parents do not match"
+  T = parent(a)
+  return T(a.data + b.data)
+end
+
+function Base.:(*)(a::TorQuadModElem, b::fmpz)
+  T = parent(a)
+  return T(a.data * b)
+end
+
+Base.:(*)(a::fmpz, b::TorQuadModElem) = b * a
+
+Base.:(*)(a::Integer, b::TorQuadModElem) = fmpz(a) * b
+
+Base.:(*)(a::TorQuadModElem, b::Integer) = b * a
+
+################################################################################
+#
 #  Inner product
 #
 ################################################################################
@@ -452,7 +481,6 @@ function TorQuadMod(q::fmpq_mat)
   S, U, V = snf_with_transform(Q)
   D = change_base_ring(FlintQQ, U) * q * change_base_ring(FlintQQ, V)
   L = Zlattice(1//d * identity_matrix(QQ, nrows(q)), gram = d^2 * q)
-  @show basis_matrix(L)
   denoms = [denominator(D[i, i]) for i in 1:ncols(D)]
   rels = diagonal_matrix(denoms) * U
   LL = lattice(ambient_space(L), 1//d * change_base_ring(QQ, rels))
@@ -481,3 +509,130 @@ end
 #       elif check and max_modulus_qf / modulus_qf not in V.base_ring():
 #           raise ValueError("the modulus_qf must divide (V, W)")
 #       return super(TorsionQuadraticModule, cls).__classcall__(cls, V, W, gens, modulus, modulus_qf)
+@doc Markdown.doc"""
+    primary_part(T::TorQuadMod, m::fmpz)-> Tuple{TorQuadMod, TorQuadModMor}
+
+Return the primary part of `T` as a submodule.
+"""
+function primary_part(T::TorQuadMod, m::fmpz)
+  S, i = psylow_subgroup(T.ab_grp, m)
+  genprimary = [i(s) for s in gens(S)]
+  submod = sub(T, [T(a) for a in genprimary])
+  return submod
+end
+
+@doc Markdown.doc"""
+    orthogonal_submodule_to(T::TorQuadMod, S::TorQuadMod)-> TorQuadMod
+
+Return the orthogonal submodule to the submodule `S` of `T`.
+"""
+function orthogonal_submodule_to(T::TorQuadMod, S::TorQuadMod)
+  @assert issublattice(cover(T), cover(S)) "The second argument is not a submodule of the first argument"
+  V = ambient_space(cover(T))
+  G = gram_matrix(V)
+  B = basis_matrix(cover(T))
+  C = basis_matrix(cover(S))
+  m = T.modulus
+  Y = B * G * transpose(C)
+  # Elements of the ambient module which pair integrally with cover(T)
+  integral = inv(Y) * B
+  # Element of the ambient module which pair in mZZ with cover(T)
+  orthogonal =  m * integral
+  # We have to make sure we get a submodule
+  Ortho = intersect(lattice(V, B), lattice(V, orthogonal))
+  ortho = Hecke.discriminant_group(Ortho)
+  return sub(T, gens(ortho))
+end
+
+@doc Markdown.doc"""
+    isdegenerate(T::TorQuadMod)-> Bool 
+
+Return true if the underlying bilinear form is degenerate.
+"""
+function isdegenerate(T::TorQuadMod)
+  if order(orthogonal_submodule_to(T,T)[1]) == 1
+    return true
+  else 
+    return false
+  end
+end
+
+@doc Markdown.doc"""
+    rescale(T::TorQuadMod, k::RingElement) -> TorQuadMod
+
+Returns the torsion quadratic module with quadratic form scaled by ``k``, 
+where k is a non-zero rational number.
+If the old form was defined modulo `n`, then the new form is defined
+modulo `n k`. 
+"""
+function rescale(T::TorQuadMod, k::RingElement)
+  @req !iszero(k) "Parameter ($k) must be non-zero" 
+  C = cover(T)
+  inner_product_mat = k * gram_matrix(ambient_space(C))
+  V = quadratic_space(QQ, inner_product_mat) 
+  M = lattice(V, basis_matrix(C))
+  N = lattice(V, basis_matrix(T.rels))
+  return torsion_quadratic_module(M, N)
+end
+
+@doc Markdown.doc"""
+    normal_form(T::TorQuadMod; partial=false) -> TorQuadMod
+
+Return the normal form of given torsion quadratic module.
+"""
+function normal_form(T::TorQuadMod; partial=false)
+  normal_gens = TorQuadModElem[]
+  prime_div = prime_divisors(exponent(T))
+  for p in prime_div
+    D_p, I_p = primary_part(T, p)
+    q_p = gram_matrix_quadratic(D_p)
+    q_p = q_p * D_p.modulus_qf^-1
+    
+    # continue with the non-degenerate part
+    r = rank(q_p)
+    dd = denominator(q_p)
+    G0 = change_base_ring(FlintZZ, dd * q_p)
+    n = nrows(q_p)
+    if r != n
+      _, U = hnf_with_transform(G0)
+      _ker = U[(r + 1):n, :]
+      _nondeg = U[1:r, :]
+      ker = change_base_ring(FlintQQ, _ker)
+      nondeg = change_base_ring(FlintQQ, _nondeg)
+    else
+      ker = zero_matrix(FlintQQ, 0, n)
+      nondeg = identity_matrix(FlintQQ, n)
+    end
+    q_p = nondeg * q_p * transpose(nondeg)
+
+    # the normal form is implemented for p-adic lattices
+    # so we should work with the lattice q_p --> q_p^-1
+    q_p1 = inv(q_p)
+    prec = valuation(exponent(T), p) + 5
+    D, U = padic_normal_form(q_p1, p, prec=2*prec+5, partial=partial)
+    # if we compute the inverse in the p-adics everything explodes --> go to ZZ
+    U = transpose(inv(U))
+    # the inverse is in normal form - so to get a normal form for the original one
+    # it is enough to massage each 1x1 resp. 2x2 block.
+    D = U * q_p * U' * p^valuation(denominator(q_p), p) 
+    R = ResidueRing(ZZ, ZZ(p^prec))
+    D = change_base_ring(ZZ, D)
+    D = change_base_ring(R, D)
+    _, U = _normalize(D, ZZ(p), false)
+
+    # reattach the degenerate part
+    U = change_base_ring(ZZ, U)
+    nondeg = change_base_ring(ZZ, nondeg)
+    nondeg = U * nondeg
+    U = vcat(nondeg, ker)
+
+    #apply U to the generators
+    n1 = ncols(U)
+    Gp =  gens(D_p); 
+    for i in 1:nrows(U) 
+      g = sum(U[i,j] * Gp[j] for j in 1:ncols(U))
+      push!(normal_gens, g)
+    end
+  end
+  return sub(T, normal_gens)
+end

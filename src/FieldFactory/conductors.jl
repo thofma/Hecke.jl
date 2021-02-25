@@ -18,11 +18,57 @@ function is_discriminant_square(IdG::GAP.GapObj)
   return true
 end
 
-###############################################################################
+################################################################################
+#
+#  Check if an extension must be ramified
+#
+################################################################################
+
+function must_be_ramified(L::GAP.GapObj, i::Int)
+  GG = L[1]
+  HH = L[i+1]
+  KK = L[i]
+  proj = GAP.Globals.NaturalHomomorphismByNormalSubgroup(GG, HH)
+  target_grp = GAP.Globals.ImagesSource(proj)
+  mH1 = GAP.Globals.NaturalHomomorphismByNormalSubgroup(target_grp, GAP.Globals.Image(proj, KK))
+  H = GAP.Globals.ImagesSource(mH1)
+  #I need to consider the conjgacy classes of cyclic subgroups
+  #As far as I know, there is no way of getting only the cyclic ones...
+  lS = GAP.Globals.ConjugacyClassesSubgroups(H)
+  found_one = false
+  found_all = true
+  for i = 1:length(lS)
+    S = GAP.Globals.Representative(lS[i])
+    if !GAP.Globals.IsCyclic(S) || isone(GAP.Globals.Size(S))
+      continue
+    end 
+    g = GAP.Globals.MinimalGeneratingSet(S)[1]
+    n = GAP.Globals.Order(g)
+    preimgs = GAP.Globals.List(GAP.Globals.PreImages(mH1, g))
+    fl = true
+    for x in preimgs
+      m = GAP.Globals.Order(x)
+      if m == n
+        fl = false
+        found_all = false
+        break
+      end
+    end
+    if fl
+      found_one = true
+    end
+    if !found_all && found_one
+      break
+    end
+  end
+  return found_all, found_one  
+end
+
+################################################################################
 #
 #  Conductors
 #
-###############################################################################
+################################################################################
 
 function _conductors_using_cocycles(F::FieldsTower, st::Vector{Int}, l_cond::Vector, E)
   lp = ramified_primes(F)
@@ -118,10 +164,10 @@ function _conductors_using_cocycles(F::FieldsTower, st::Vector{Int}, l_cond::Vec
 
 end
 
-function conductors_with_restrictions(F::FieldsTower, st::Vector{Int}, IdG::GAP.GapObj, bound::fmpz)
+function conductors_with_restrictions(F::FieldsTower, st::Vector{Int}, IdG::GAP.GapObj, bound::fmpz; unramified_outside::Vector{fmpz} = fmpz[])
 
   O = maximal_order(F)
-  l_cond = Hecke.conductors(O, st, bound)
+  l_cond = Hecke.conductors(O, st, bound, unramified_outside = unramified_outside)
   G = GAP.Globals.SmallGroup(IdG)
   new_conds = _conductors_using_cocycles(F, st, l_cond, G)
   if length(st) != 1 || !isprime(st[1]) || isempty(new_conds)

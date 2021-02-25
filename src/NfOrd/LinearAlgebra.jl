@@ -556,7 +556,7 @@ function find_pseudo_hnf_modulus(P::PMat{T, S}) where {T, S}
       if nextIdeal
         continue
       end
-      rowPerm = permGroup()
+      rowPerm = one(permGroup)
       rank = lu!(rowPerm, Pt)
       if rank == ncols(P) && !(rowPerm in rowPerms)
         j = 1

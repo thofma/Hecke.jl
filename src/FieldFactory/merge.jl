@@ -11,7 +11,7 @@ function direct_product_decomposition(G::GAP.GapObj, ab::Tuple{Int, Int})
     return ab, (1, 1), 1, 1
   end
   n = ab[1]
-  subs = GAP.gap_to_julia(Vector{Main.ForeignGAP.MPtr}, GAP.Globals.NormalSubgroups(G))
+  subs = GAP.gap_to_julia(Vector{GAP.GapObj}, GAP.Globals.NormalSubgroups(G))
   sort!(subs, by = x -> GAP.Globals.Size(x))
   #First, I collect all the possible decompositions
   decompositions = Tuple{GAP.GapObj, GAP.GapObj}[]

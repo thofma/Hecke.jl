@@ -30,4 +30,29 @@
   @test_throws ArgumentError torsion_quadratic_module(L, M, gens = [[1//2, 0]])
   @test_throws ArgumentError torsion_quadratic_module(L, M, gens = [[1, 1, 2]])
   @test_throws ArgumentError torsion_quadratic_module(L, lattice(ambient_space(L), QQ[1//2 0; 0 0]))
+
+  #primary part of a TorQuadMod
+  L = Zlattice(matrix(ZZ, [[2,0,0],[0,2,0],[0,0,2]]))
+  T = Hecke.discriminant_group(L)
+  @test basis_matrix(Hecke.cover(Hecke.primary_part(T,fmpz(2))[1])) == matrix(QQ, 3, 3, [1//2, 0, 0, 0, 1//2, 0, 0, 0, 1//2])
+  
+  #orthogonal submodule to a TorQuadMod
+  L = Zlattice(matrix(ZZ, [[2,0,0],[0,2,0],[0,0,2]]))
+  T = Hecke.discriminant_group(L)
+  S = sub(T, gens(T))[1]
+  @test basis_matrix(Hecke.cover(Hecke.orthogonal_submodule_to(T, S)[1])) == matrix(QQ, 3, 3, [1//2,0,0,0,1//2,0,0,0,1//2])
+  
+  #checks if a TorQuadMod is degenerate
+  @test Hecke.isdegenerate(T) == false  
+  
+  #test for rescaled torsion quadratic module
+  @test Hecke.gram_matrix_quadratic(Hecke.rescale(T, -1)) == matrix(QQ, 3, 3, [7//4,0,0,0,7//4,0,0,0,7//4])
+  t = Hecke.TorQuadMod(QQ[1//3 0; 0 1//9])
+  @test Hecke.gram_matrix_quadratic(Hecke.rescale(t, 2)) == matrix(QQ, 2, 2, [2//3,0,0,2//9])
+
+  #test for normal form
+  L1 = Zlattice(matrix(ZZ, [[-2,0,0],[0,1,0],[0,0,4]]))
+  T1 = Hecke.discriminant_group(L1)
+  @test Hecke.gram_matrix_quadratic(Hecke.normal_form(T1)[1]) == matrix(QQ, 2, 2, [1//4,0,0,1//16])
 end
+

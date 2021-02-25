@@ -1,48 +1,3 @@
-export ClassField
-
-#TODO: create an interface using characters
-
-mutable struct BadPrime <: Exception
-  p
-end
-
-function Base.show(io::IO, E::BadPrime)
-  if isdefined(E, :p)
-    println("Bad prime $(E.p) encountered")
-  else
-    println("Unknown bad prime encountered")
-  end
-end
-
-mutable struct ClassField_pp{S, T}
-  rayclassgroupmap::S
-  quotientmap::T
-  a::FacElem{nf_elem, AnticNumberField}#Generator of the Kummer Extension
-
-  sup::Array{NfOrdIdl, 1} # the support of a - if known
-  sup_known::Bool
-
-  factored_conductor::Dict{NfOrdIdl, Int}
-
-  K::NfRel{nf_elem} # the target with the roots of unity
-  A::NfRel{nf_elem} # the target
-  o::Int # the degree of K - note, in general this is a divisor of the degree of A
-  defect::Int # div(degree(A), degree(K)) = div(degree(A), o)
-  pe::NfRelElem{nf_elem} #The image of the generator of A in K
-  AutG::Vector{NfRelToNfRelMor_nf_elem_nf_elem}
-  AutR::fmpz_mat
-  bigK::KummerExt
-  h::GrpAbFinGenMap #The Artin Map provided by the function build_map
-  degree::Int # The degree of the relative extension we are searching for.
-              # In other words, the order of the codomain of quotientmap
-
-  function ClassField_pp{S, T}() where {S, T}
-    z = new{S, T}()
-    z.degree = -1
-    return z
-  end
-end
-
 function Base.show(io::IO, C::ClassField_pp{S, T}) where {S, T}
   println(IOContext(io, :compact => true), "Cyclic class field of degree $(degree(C)) defined modulo $(defining_modulus(C))")
   if isdefined(C, :a)
@@ -53,30 +8,6 @@ function Base.show(io::IO, C::ClassField_pp{S, T}) where {S, T}
   end
   if isdefined(C, :A)
     println(io, "Defining  polynomial ", C.A.pol)
-  end
-end
-
-
-mutable struct ClassField{S, T}
-  @declare_other
-  rayclassgroupmap::S#Union{MapRayClassGrp{GrpAbFinGen}, MapClassGrp{GrpAbFinGen}}
-  quotientmap::T#GrpAbFinGenMap
-
-  factored_conductor::Dict{NfOrdIdl, Int}
-  conductor::Tuple{NfOrdIdl, Array{InfPlc, 1}}
-  relative_discriminant::Dict{NfOrdIdl, Int}
-  absolute_discriminant::Dict{fmpz,Int}
-  cyc::Array{ClassField_pp{S, T}, 1}
-  A::NfRelNS{nf_elem}
-  AbsAutGrpA::Vector{NfRelNSToNfRelNSMor_nf_elem} #The generators for the absolute automorphism
-                                                     #group of A
-  degree::Int # The degree of the relative extension we are searching for.
-              # In other words, the order of the codomain of quotientmap
-
-  function ClassField{S, T}() where {S, T}
-    z = new{S, T}()
-    z.degree = -1
-    return z
   end
 end
 
@@ -407,8 +338,8 @@ function prime_decomposition_type(C::T, p::NfAbsOrdIdl) where T <: Union{ClassFi
   r, mr = ray_class_group(divexact(m0, p^v), defining_modulus(C)[2], n_quo = Int(exponent(R)))
   lp, sR = find_gens(mR, coprime_to = minimum(m0))
   h = hom(sR, [preimage(mr, p) for p = lp])
-  k, mk = kernel(GrpAbFinGenMap(C.quotientmap))
-  q, mq = cokernel(mk*h)
+  k, mk = kernel(GrpAbFinGenMap(C.quotientmap), false)
+  q, mq = cokernel(mk*h, false)
   f = Int(order(mq(preimage(mr, p))))
   e = Int(divexact(degree(C), Int(order(q))))
   return (e, f, Int(divexact(order(q), f)))

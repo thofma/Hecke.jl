@@ -660,7 +660,7 @@ end
 
 function *(x::T, y::NfAbsOrd{S, T}) where {S <: NumField, T <: NumFieldElem}
   d = denominator(x, y)
-  return NfAbsOrdFracIdl(ideal(y, y(d*x)), d)
+  return NfAbsOrdFracIdl(ideal(y, y(d*x, false)), d)
 end
 
 ################################################################################

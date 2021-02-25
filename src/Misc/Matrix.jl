@@ -1780,53 +1780,19 @@ Base.IteratorSize(M::MatElem) = Base.HasLength()
 Base.IteratorEltype(M::MatElem) = Base.HasEltype()
 Base.eltype(M::MatElem) = elem_type(base_ring(M))
 
-if Nemo.version() <= v"0.15.1"
-  function setindex!(A::MatElem{T}, b::MatElem{T}, ::Colon, i::Int) where T
-    @assert ncols(b) == 1 && nrows(b) == nrows(A)
-    for j=1:nrows(A)
-      A[j,i] = b[j]
-    end
-    b
-  end
-
-  function setindex!(A::MatElem{T}, b::MatElem{T}, i::Int, ::Colon) where T
-    @assert nrows(b) == 1 && ncols(b) == ncols(A)
-    for j=1:ncols(A)
-      A[i,j] = b[j]
-    end
-    b
-  end
-end
-
-function setindex!(A::MatElem, b::Array{<: Any, 1}, ::Colon, i::Int)
-  @assert length(b) == nrows(A)
-  for j=1:nrows(A)
-    A[j,i] = b[j]
-  end
-  b
-end
-
-function setindex!(A::MatElem, b::Array{ <: Any, 1}, i::Int, ::Colon)
-  @assert length(b) == ncols(A)
-  for j=1:ncols(A)
-    A[i,j] = b[j]
-  end
-  b
-end
-
-function setindex!(A::MatElem, b, ::Colon, i::Int)
-  for j=1:nrows(A)
-    A[j,i] = b
-  end
-  b
-end
-
-function setindex!(A::MatElem, b, i::Int, ::Colon)
-  for j=1:ncols(A)
-    A[i,j] = b
-  end
-  b
-end
+#function setindex!(A::MatElem, b, ::Colon, i::Int)
+#  for j=1:nrows(A)
+#    A[j,i] = b
+#  end
+#  b
+#end
+#
+#function setindex!(A::MatElem, b, i::Int, ::Colon)
+#  for j=1:ncols(A)
+#    A[i,j] = b
+#  end
+#  b
+#end
 
 @doc Markdown.doc"""
     reduce_mod!(A::MatElem{T}, B::MatElem{T}) where T <: FieldElem

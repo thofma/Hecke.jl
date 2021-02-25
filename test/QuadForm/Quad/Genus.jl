@@ -41,7 +41,7 @@
     L1 = representative(G1)
     L2 = representative(G2)
     G3 = @inferred orthogonal_sum(G1, G2)
-    L3 = orthogonal_sum(L1, L2)
+    L3, = orthogonal_sum(L1, L2)
     @test G3 == genus(L3, p2)
   end
 
@@ -52,7 +52,7 @@
     L1 = representative(G1)
     L2 = representative(G2)
     G3 = @inferred orthogonal_sum(G1, G2)
-    L3 = orthogonal_sum(L1, L2)
+    L3, = orthogonal_sum(L1, L2)
     @test G3 == genus(L3, p3)
   end
 
@@ -63,7 +63,7 @@
     L1 = representative(G1)
     L2 = representative(G2)
     G3 = @inferred orthogonal_sum(G1, G2)
-    L3 = orthogonal_sum(L1, L2)
+    L3, = orthogonal_sum(L1, L2)
     @test G3 == genus(L3, p5)
   end
 
@@ -74,7 +74,7 @@
     L1 = representative(G1)
     L2 = representative(G2)
     G3 = @inferred orthogonal_sum(G1, G2)
-    L3 = orthogonal_sum(L1, L2)
+    L3, = orthogonal_sum(L1, L2)
     @test L3 in G3
   end
 end

@@ -791,7 +791,7 @@ isisotropic(L::AbsLat, p) = isisotropic(rational_span(L), p)
 
 function restrict_scalars(L::AbsLat)
   V = ambient_space(L)
-  Vabs, f = restrict_scalars(V)
+  Vabs, f = restrict_scalars(V, FlintQQ)
   Babs = absolute_basis(L)
   Mabs = zero_matrix(FlintQQ, length(Babs), rank(Vabs))
   for i in 1:length(Babs)
@@ -1220,7 +1220,7 @@ function orthogonal_sum(M::T, N::T) where {T <: AbsLat}
   @req base_ring(M) === base_ring(N) "Base rings must be equal"
   U = ambient_space(M)
   V = ambient_space(N)
-  W = orthogonal_sum(U, V)
+  W, f1, f2 = orthogonal_sum(U, V)
   rU = rank(U)
   rV = rank(V)
   rW = rank(W)
@@ -1230,7 +1230,7 @@ function orthogonal_sum(M::T, N::T) where {T <: AbsLat}
   MpN = matrix(pN)
   H = pseudo_matrix(diagonal_matrix(MpM, MpN),
                     vcat(coefficient_ideals(pM), coefficient_ideals(pN)))
-  return lattice(W, H)
+  return lattice(W, H), f1, f2
 end
 
 

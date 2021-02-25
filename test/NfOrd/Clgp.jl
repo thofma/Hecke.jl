@@ -259,4 +259,11 @@ end
     c, mc = class_group(OK, redo = true)
     c, mc = class_group(OK, redo = true)
   end
+
+  @testset "Class group proof" begin
+    K, a = number_field(x^2 - 2)
+    OK = maximal_order(K)
+    c, mc = class_group(OK, GRH = false)
+    @test isone(order(c))
+  end
 end

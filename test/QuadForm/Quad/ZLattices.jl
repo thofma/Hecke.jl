@@ -178,7 +178,7 @@ end
 
   for L in [Lr0, Lr1, Lr2]
     for LL in [Lr0, Lr1, Lr2]
-      LLL = @inferred orthogonal_sum(L, LL)
+      LLL, = @inferred orthogonal_sum(L, LL)
       @test gram_matrix(LLL) == diagonal_matrix(gram_matrix(L), gram_matrix(LL))
     end
   end
