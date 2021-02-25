@@ -6,6 +6,8 @@ ambient_space(L::ZLat) = L.space
 
 base_ring(L::ZLat) = FlintZZ
 
+base_field(L::ZLat) = base_ring(gram_matrix(ambient_space(L)))
+
 ################################################################################
 #
 #  Creation
@@ -22,16 +24,19 @@ If `gram` is not specified, the Gram matrix is the identity matrix. If $B$
 is not specified, the basis matrix is the identity matrix.
 """
 function Zlattice(B::fmpq_mat; gram = identity_matrix(FlintQQ, ncols(B)))
+  @req issymmetric(gram) "Gram matrix must be symmetric"
   V = quadratic_space(FlintQQ, gram)
   return lattice(V, B)
 end
 
 function Zlattice(B::fmpz_mat; gram = identity_matrix(FlintQQ, ncols(B)))
+  @req issymmetric(gram) "Gram matrix must be symmetric"
   V = quadratic_space(FlintQQ, gram)
   return lattice(V, B)
 end
 
 function Zlattice(;gram)
+  @req issymmetric(gram) "Gram matrix must be symmetric"
   n = nrows(gram)
   return lattice(quadratic_space(FlintQQ, gram), identity_matrix(FlintQQ, n))
 end
@@ -541,12 +546,85 @@ function islocally_isometric(L::ZLat, M::ZLat, p::Int)
 end
 
 function islocally_isometric(L::ZLat, M::ZLat, p::fmpz)
-  K, _  = Hecke.rationals_as_number_field()
-  V = quadratic_space(K, gram_matrix(ambient_space(L)))
-  LL = lattice(V, change_base_ring(K, basis_matrix(L)))
-  W = quadratic_space(K, gram_matrix(ambient_space(M)))
-  MM = lattice(W, change_base_ring(K, basis_matrix(M)))
+  LL = _to_number_field_lattice(L)
+  K = base_field(LL)
+  MM = _to_number_field_lattice(L, K = K)
   OK = maximal_order(K)
   P = prime_decomposition(OK, p)[1][1]
   return islocally_isometric(LL, MM, P)
+end
+
+################################################################################
+#
+#  Conversion between ZLat and QuadLat
+#
+################################################################################
+
+function _to_number_field_lattice(L::ZLat, K, V)
+  LL = lattice(V, change_base_ring(K, basis_matrix(L)))
+  return LL
+end
+
+function _to_number_field_lattice(L::ZLat;
+                                  K::AnticNumberField = rationals_as_number_field()[1],
+                                  V::QuadSpace = quadratic_space(K, gram_matrix(ambient_space(L))))
+  return _to_number_field_lattice(L, K, V)
+end
+
+
+function _to_ZLat(L::QuadLat, K, V)
+  pm = pseudo_matrix(L)
+  cm = coefficient_ideals(pm)
+  pmm = matrix(pm)
+  bm = zero_matrix(FlintQQ, rank(L), dim(V))
+  for i in 1:nrows(pm)
+    a = norm(cm[i])
+    for j in 1:ncols(pm)
+      bm[i, j] = a * FlintQQ(pmm[i, j])
+    end
+  end
+  return lattice(V, bm)
+end
+
+function _to_ZLat(L::QuadLat;
+                  K::FlintRationalField = FlintQQ,
+                  V::QuadSpace = quadratic_space(K, map_entries(FlintQQ, gram_matrix(ambient_space(L)))))
+  return _to_ZLat(L, K, V)
+end
+
+################################################################################
+#
+#  Mass
+#
+################################################################################
+
+mass(L::ZLat) = mass(_to_number_field_lattice(L))
+
+################################################################################
+#
+#  Genus representatives
+#
+################################################################################
+
+function genus_representatives(L::ZLat)
+  LL = _to_number_field_lattice(L)
+  K = base_field(L)
+  G = genus_representatives(LL)
+  res = ZLat[]
+  for N in G
+    push!(res, _to_ZLat(N, K = K))
+  end
+  return res
+end
+
+################################################################################
+#
+#  Maximal integral lattice
+#
+################################################################################
+
+function maximal_integral_lattice(L::ZLat)
+  LL = _to_number_field_lattice(LL)
+  M = maximal_integral_lattice(LL)
+  return _to_ZLat(M, V = ambient_space(L))
 end
