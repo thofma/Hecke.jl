@@ -49,7 +49,7 @@ function SpinorGeneraCtx(L::QuadLat)
   # 2) Find good generators (that is: generators which are not dyadic, and not
   #    in BadPrimes(L) -- so that neighbour generation is always possible),
   #    of this factor group.
- 
+
   #   Only pick ideles of the form (1,...,1,p,1,...,1) so that:
   #   a) nothing has to be corrected before they can be mapped down into the factor group
   #   b) we can simply store the prime ideal and know that it corresponds to
@@ -61,7 +61,7 @@ function SpinorGeneraCtx(L::QuadLat)
   #   if L is definite, we only need a generating set of primes for the factor group.
 
   inf_plc = defining_modulus(mRCG)[2]
- 
+
   critical_primes = _get_critical_primes(L, mRCG, inf_plc, mQ, true) # fulllist = not isdefinite?
   @vprint :GenRep 1 "good primes over $([minimum(q) for q in critical_primes])
   (together with the squares) generate the subgroup.\n"
@@ -152,7 +152,7 @@ function spinor_genera_in_genus(L, mod_out)
   # Otherwise the isomorphism to the class group fails, cf. §102 in O'Meara.
 
   # We have to find out whether ProperSpinorGenus == SpinorGenus.
- 
+
   # 1) Find a nonzero element in the norm group of L.
   C = SpinorGeneraCtx(L)
 
@@ -184,7 +184,7 @@ function spinor_genera_in_genus(L, mod_out)
 
   # 2) At a place p where spinornorm does not generate norm(L_p)
   #    we add <p, spinornorm * normgenerator > to the idele
- 
+
   nor = norm(L)
 
   differ = ideal_type(R)[]
@@ -216,7 +216,7 @@ function spinor_genera_in_genus(L, mod_out)
 
   # 3) Map the idele into the idele class group.
   #    Then h == 0 iff SpinorGenus == ProperSpinorGenus
- 
+
   g = _map_idele_into_class_group(C.mR, idele)
   h = C.mQ(g)
 
@@ -242,7 +242,7 @@ function spinor_genera_in_genus(L, mod_out)
 
   return res
 end
- 
+
 function _smallest_norm_good_prime(L)
   OK = base_ring(L)
   lp = ideal_type(OK)[p for p in bad_primes(L, even = true) if isdyadic(p) || !ismodular(L, p)[1]]
@@ -304,9 +304,9 @@ function spinor_norm(L, p)
          push!(twonormgens, normgens[i] * normgens[j])
        end
      end
-    
+
      twonormvectors = [g\(x) for x in twonormgens]
-   
+
      @vprint :GenRep "Spinor norm odd p, norm generators of the $(length(G)) Jordan components are: $(normgens), $(twonormgens) $(twonormvectors)"
     # cf. Kneser 1956, Satz 3:
     _SN, mS = sub(V, twonormvectors)
@@ -540,7 +540,7 @@ function has_propertyA(L, p)
     @vprint(:GenRep,1,"""Property A is violated over dyadic prime:
   There is a $(r)-dimensional Jordan component\n""")
   end
- 
+
   # genus: rL, sL, wL, aL note that aL only contains valuations
   for i in 1:length(sL)
     for j in (i + 1):length(sL)
@@ -661,7 +661,7 @@ function N_function(a, g, p)
   end
 
   B = gens(V)
- 
+
   # cf. paragraph before 1.2 in Beli 2003:
   # N(a) := N(F(\sqrt(a))/F), i.e. the values of the norm mapping of the quadratic extension
   # and N(a) is the orthogonal complement of (<a>(F^*)^2).
@@ -706,7 +706,7 @@ function _map_idele_into_class_group(mRCG, idele, atinfinity::Vector{Tuple{InfPl
     end
   end
   M = defining_modulus(mRCG)[1]
- 
+
   # The finite places we need to make congruent to 1 in order to be able to map into the class group:
   rayprimes = collect(keys(mRCG.fact_mod))
   exponents = Int[mRCG.fact_mod[p] for p in rayprimes]
@@ -833,7 +833,7 @@ function _compute_ray_class_group(L)
     end
   end
   @assert issetequal(support(M), rayprimes)
- 
+
   # Now M contains a ray M and MM is the support of this ray.
   # We now compute the indefinite real places of L
   inf_plc = [v for v in real_places(F) if !isisotropic(L, v)]
@@ -1013,7 +1013,7 @@ function neighbours(L::QuadLat, p; call = stdcallback, use_auto = true, max = in
       @assert valuation(_dotF(x, x), p) >= e + 2
     end
     found = true
-   
+
     # normalize x
 
     kk = 0
@@ -1342,13 +1342,13 @@ function beli_correction!(L, G, JJ, steps, i, j, p)
   y = sub(JJ, steps[i][2]:steps[i][2], 1:ncols(JJ))
 
   # Ansatz: v = JJ[Steps[j][1]] + lambda*x + mu*y
-  # 
+
   # re-orthogonalize the first basis vector of G[j]:
   v = matrix(K, 1, 2, [-G[j][1, 1], 0]) * GI
   # G[j][1,1] is always non-zero (the lattice is definite)
   # assert integrality at p:
   @assert all(k -> valuation(v[k], p) >= 0, 1:ncols(v))
- 
+
   # JJ[steps[j][1]] +:= v[1]*JJ[steps[i][1]] + v[2]*JJ[steps[i][2]];
   for u in 1:ncols(JJ)
     JJ[steps[j][1], u] = JJ[steps[j][1], u] + v[1] * JJ[steps[i][1],u] + v[2] * JJ[steps[i][2], u]
@@ -1537,7 +1537,7 @@ function _genus_representatives_binary_quadratic_definite(_L::QuadLat; max = inf
   @assert isdefinite(_L)
   @assert rank(_L) == 2
 
-  V = rational_span(_L)
+  V = ambient_space(_L)
   # 0. Scale to have 1 in Q(V)
 
   D = diagonal(V)
@@ -1545,11 +1545,11 @@ function _genus_representatives_binary_quadratic_definite(_L::QuadLat; max = inf
   d = D[i]
 
   # so G -> G/d
- 
+
   L = lattice(quadratic_space(base_ring(V), 1//d * gram_matrix(ambient_space(_L))), pseudo_matrix(_L))
 
   V = rational_span(L)
- 
+
   # 1. Find the isometry with (F, Tr/2)
   @vprint :GenRep 1 "Determining isometry with CM field ... \n"
   K = base_ring(V)
@@ -1576,13 +1576,13 @@ function _genus_representatives_binary_quadratic_definite(_L::QuadLat; max = inf
   Tinv = inv(T)
 
   # Compute the absolute field, since this is where we do most of the work.
- 
+
   Fabs, FabstoF, KtoFabs = absolute_field(F)
 
   sigmaabs = hom(Fabs, Fabs, FabstoF\(sigma(FabstoF(gen(Fabs)))))
- 
+
   # 2. Transpose L to lattice of F.
- 
+
   pb = pseudo_basis(L)
   # KL has basis a[1] for a in pb
   # So we only need to map the Z-basis of the coefficient ideals
@@ -1641,7 +1641,7 @@ function _genus_representatives_binary_quadratic_definite(_L::QuadLat; max = inf
   LinFabs = fractional_ideal(O, II, d)
 
   # O is the ring of multipliers/right oder of M
- 
+
   # Now we compute CL_F/{ambiguous ideals of O_F with respect to F/K}
 
   @vprint :GenRep 1 "Compute representatives modulo ambiguous ideal classes ... \n"
@@ -1739,7 +1739,7 @@ function _genus_representatives_binary_quadratic_definite(_L::QuadLat; max = inf
   res = typeof(L)[]
 
   G = genus(L)
-  
+
   _V = ambient_space(_L)
 
   _G = genus(_L)
@@ -1789,7 +1789,7 @@ function _genus_representatives_binary_quadratic_definite(_L::QuadLat; max = inf
     else
       push!(_res, _new_cand)
       if length(_res) >= max
-        return _res
+        break
       end
       if use_mass
         cur_mass += fmpq(1, automorphism_group_order(_new_cand))
@@ -1797,10 +1797,14 @@ function _genus_representatives_binary_quadratic_definite(_L::QuadLat; max = inf
           error("Something very wrong in genus_representatives (mass mismatch")
         end
         if cur_mass == _mass
-          return _res
+          break
         end
       end
     end
+  end
+
+  if max < inf && use_mass
+    @assert _mass == cur_mass
   end
 
   return _res
@@ -1941,7 +1945,7 @@ function _intersect_lattice_down(xps, _ps, Lambda)
   end
 
   JJ = reduce(+, (b * Lambda for b in new_bas), init = F(0) * Lambda) ##fractional_ideal(Lambda, new_bas)
- 
+
   L1 = reduce(+, (b * Lambda for b in current_global_basis), init = F(0) * Lambda) #fractional_ideal(Lambda, current_global_basis)
   L = L1 + JJ
   for i in 1:length(xps)
@@ -2061,7 +2065,7 @@ function _embed_into_ternary_lattice(L)
   # To go from V to ambient_space(L), multiply from the right with ML
   # The other direction in general requires solving x * ML = v, if v is an
   # element of rational_span(L)
-  
+
   G = gram_matrix(V)
   K = base_ring(V)
   Gext = diagonal_matrix(G, matrix(K, 1, 1, [one(K)]))
@@ -2133,7 +2137,7 @@ function _orthogonal_complement(v, L)
   while iszero_row(pm.matrix, i)
     i += 1
   end
-   
+
   pm = sub(pm, i:nrows(pm), 1:ncols(pm))
 
   return lattice(V, pm)
@@ -2181,11 +2185,11 @@ function _genus_representatives_binary_quadratic_indefinite(_L, max = max, use_a
   d = D[i]
 
   # so G -> G/d
- 
+
   L = lattice(quadratic_space(base_ring(V), 1//d * gram_matrix(ambient_space(_L))), pseudo_matrix(_L))
 
   V = rational_span(L)
- 
+
   # 1. Find the isometry with (K + K, Tr/2)
   @vprint :GenRep 1 "Determining isometry with CM field ... \n"
   K = base_ring(V)
@@ -2216,7 +2220,7 @@ function _genus_representatives_binary_quadratic_indefinite(_L, max = max, use_a
   Tinv = inv(T)
 
   # 2. Transport L to lattice of A.
- 
+
   pb = pseudo_basis(L)
   # KL has basis a[1] for a in pb
   # So we only need to map the Z-basis of the coefficient ideals
@@ -2285,7 +2289,7 @@ function _genus_representatives_binary_quadratic_indefinite(L::QuadLat)
   K, = rationals_as_number_field()
   G = genus(_binary_quadratic_form_to_lattice(f, K, e))
   lat = typeof(L)[]
-  
+
   for g in cls
     LL = _binary_quadratic_form_to_lattice(g, K, e)
     GG = genus(LL)

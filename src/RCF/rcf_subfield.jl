@@ -1,4 +1,4 @@
-function number_field_over_subfield(C::ClassField_pp; using_norm_relation::Bool = true)
+function number_field_over_subfield(C::ClassField_pp; using_norm_relation::Bool = true, using_stark_units::Bool = false)
   K = base_field(C)
   if degree(K) == 1
     return ray_class_field_cyclic_pp(C)

@@ -447,13 +447,13 @@ end
 
 *(b::NumFieldElem{T}, a::NfRelOrdFracIdl{T, S}) where {T, S} = a*b
 
-function *(a::NfRelOrdFracIdl{T, S}, b::S) where {T, S}
+function *(a::NfRelOrdFracIdl{T, S}, b::S) where {T, S <: Union{NfRelOrdFracIdl, NfAbsOrdFracIdl}}
   pm = basis_pmatrix(a)
   pmnew = pseudo_matrix(matrix(pm), map(z -> b * z, coefficient_ideals(pm)))
   return fractional_ideal(order(a), pmnew)
 end
 
-*(a::S, b::NfRelOrdFracIdl{T, S}) where {T, S} = b * a
+*(a::S, b::NfRelOrdFracIdl{T, S}) where {T, S <: Union{NfRelOrdFracIdl, NfAbsOrdFracIdl}} = b * a
 
 ################################################################################
 #

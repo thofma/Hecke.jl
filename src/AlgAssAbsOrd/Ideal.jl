@@ -555,7 +555,7 @@ end
 
 *(x::Union{ Int, fmpz, fmpq }, a::AlgAssAbsOrdIdl) = a*x
 
-function *(a::AlgAssAbsOrdIdl{S, T}, x::T) where { S, T <: AlgAssElem }
+function *(a::AlgAssAbsOrdIdl{S, T}, x::T) where { S, T <: Union{AlgAssElem, AlgGrpElem} }
   if iszero(x)
     return _zero_ideal(algebra(a))
   end
@@ -567,7 +567,7 @@ function *(a::AlgAssAbsOrdIdl{S, T}, x::T) where { S, T <: AlgAssElem }
   return b
 end
 
-function *(x::T, a::AlgAssAbsOrdIdl{S, T}) where { S, T }
+function *(x::T, a::AlgAssAbsOrdIdl{S, T}) where { S, T <: Union{AlgAssElem, AlgGrpElem}}
   if iszero(x)
     return _zero_ideal(algebra(a))
   end

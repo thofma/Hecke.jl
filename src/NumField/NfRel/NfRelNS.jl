@@ -160,7 +160,7 @@ end
 
 function Base.show(io::IO, a::NfRelNS)
   print(io, "non-simple Relative number field with defining polynomials ", a.pol)
-  print(io, " \n over", base_field(a))
+  print(io, " \n over ", base_field(a))
 end
 
 function AbstractAlgebra.expressify(a::NfRelNSElem; context = nothing)

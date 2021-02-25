@@ -217,9 +217,9 @@ end
 
 Returns the ideal $a \cdot O$ where $a$ is a (fractional) ideal of `base_ring(O)`.
 """
-*(O::AlgAssRelOrd{S, T, U}, a::T) where {S, T, U} = ideal(O, a)
+*(O::AlgAssRelOrd{S, T, U}, a::T) where {S, T <: Union{NfAbsOrdIdl, NfRelOrdIdl, NfAbsOrdFracIdl, NfRelOrdFracIdl}, U} = ideal(O, a)
 
-*(a::T, O::AlgAssRelOrd{S, T, U}) where {S, T, U} = ideal(O, a)
+*(a::T, O::AlgAssRelOrd{S, T, U}) where {S, T <: Union{NfAbsOrdIdl, NfRelOrdIdl, NfAbsOrdFracIdl, NfRelOrdFracIdl}, U} = ideal(O, a)
 
 *(O::AlgAssRelOrd, a::Union{NfAbsOrdIdl, NfRelOrdIdl}) = ideal(O, a)
 
