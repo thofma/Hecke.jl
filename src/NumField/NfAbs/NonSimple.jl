@@ -1001,6 +1001,7 @@ end
 function symbols(E::NfAbsNS)
   return vars(E)
 end
+
 function Base.names(E::NfAbsNS)
   v = vars(E)
   res = Vector{String}(undef, length(v))
