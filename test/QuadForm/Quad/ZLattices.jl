@@ -20,7 +20,7 @@ function _random_invertible_matrix(n, B)
 end
 
 const lattices_and_aut_order = [
-(([[2]]), 2), 
+(([[2]]), 2),
 # 2
 (([[1, 0], [0, 2]]), 4),
 (([[2, -1], [-1, 2]]), 12),
@@ -111,7 +111,7 @@ end
 @testset "Zlattices" begin
 
   # Creation
-  
+
   G = matrix(QQ, 2, 2, [2, 1, 1, 2])
   B = matrix(ZZ, 1, 2, [1, 0])
   @test (@inferred Zlattice(B ;gram = G)) isa ZLat
@@ -155,10 +155,10 @@ end
   @test (@inferred lattice(V, B)) isa ZLat
 
   # Gram matrix
-  
+
   @test zero_matrix(QQ, 0, 0) == @inferred gram_matrix(Lr0)
   @test zero_matrix(QQ, 0, 0) == @inferred gram_matrix_of_rational_span(Lr0)
- 
+
   @test matrix(QQ, 1, 1, [2]) == @inferred gram_matrix(Lr1)
   @test matrix(QQ, 1, 1, [2]) == @inferred gram_matrix_of_rational_span(Lr1)
 
@@ -189,7 +189,7 @@ end
   @test occursin("lattice", s)
 
   # automorphisms
-  
+
   for (m, o) in lattices_and_aut_order
     n = length(m[1])
     G = matrix(FlintZZ, n, n, reduce(vcat, m))
@@ -214,8 +214,8 @@ end
   end
 
   # isometry
- 
-  for (m, o) in lattices_and_aut_order 
+
+  for (m, o) in lattices_and_aut_order
     n = length(m[1])
     G = matrix(FlintZZ, n, n, reduce(vcat, m))
     L = Zlattice(gram = G)
@@ -250,9 +250,9 @@ end
   end
 
   #discriminant of a lattice
-  L = Zlattice(ZZ[1 0; 0 1], gram = matrix(QQ, 2,2, [2, 1, 1, 2])) 
+  L = Zlattice(ZZ[1 0; 0 1], gram = matrix(QQ, 2,2, [2, 1, 1, 2]))
   @test discriminant(L) == 3
-  
+
   G = matrix(ZZ, 2, 2, [2, 1, 1, 2])
   L = Zlattice(gram=G)
   @test norm(L)==2
@@ -271,4 +271,13 @@ end
   S = lattice(V, ZZ[1 -1 0;])
   submod = Hecke.orthogonal_submodule(L, S)
   @test  basis_matrix(submod) == matrix(QQ, 1, 3, [1//2 1//2 -1])
+
+  @test isdefinite(L)
+  @test ispositive_definite(L)
+  @test !isnegative_definite(L)
+  @test L+L == L
+  @test intersect(L,L) == L
+  @test 2*L == L*2
+  @test 0*L == L*0
+  @test (1//2)L*2 == L
 end
