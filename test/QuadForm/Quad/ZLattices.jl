@@ -280,4 +280,5 @@ end
   @test 2*L == L*2
   @test 0*L == L*0
   @test (1//2)L*2 == L
+  @test !(L == 2*L)
 end

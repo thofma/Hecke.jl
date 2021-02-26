@@ -744,6 +744,6 @@ function Base.:(==)(L1::ZLat, L2::ZLat)
     return False
   end
   B1 = basis_matrix(L1)
-  B2 = basis_matrix(L1)
+  B2 = basis_matrix(L2)
   return hnf(FakeFmpqMat(B1)) == hnf(FakeFmpqMat(B2))
 end
