@@ -1208,7 +1208,11 @@ function _modulus_of_kronecker_as_dirichlet(D)
   return abs(fundamental_discriminant(D))
 end
 
-function _bernoulli_kronecker(z, D)
+function _bernoulli_kronecker(z::Union{fmpz, Integer}, D)
+  return _bernoulli_kronecker(Int(z), D)
+end
+
+function _bernoulli_kronecker(z::Int, D)
   @assert z >= 0
   N = _modulus_of_kronecker_as_dirichlet(D)
   K = FlintQQ

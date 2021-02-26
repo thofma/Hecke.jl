@@ -128,7 +128,7 @@ function torsion_quadratic_module(M::ZLat, N::ZLat; gens::Union{Nothing, Vector{
   T.ab_grp = S
   T.proj = inv(mS).map
   T.gens_lift = gens_lift
-  T.gens_lift_mat = matrix(QQ, length(gens_lift), ngens(A), reduce(vcat, gens_lift))
+  T.gens_lift_mat = matrix(FlintQQ, length(gens_lift), ngens(A), reduce(vcat, gens_lift, init = fmpq[]))
   T.modulus = modulus
   T.modulus_qf = modulus_qf
   T.value_module = QmodnZ(modulus)

@@ -1,4 +1,10 @@
 @testset "Torsion" begin
+  # Trivial torsion module
+  
+  A = diagonal_matrix(fmpq[1, 1])
+  T = Hecke.TorQuadMod(A)
+  @test order(T) == 1
+
   D4_gram = matrix(ZZ, [[2, 0, 0, -1],
                         [0, 2, 0, -1],
                         [0, 0, 2, -1],
