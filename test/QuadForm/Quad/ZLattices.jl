@@ -272,6 +272,7 @@ end
   submod = Hecke.orthogonal_submodule(L, S)
   @test  basis_matrix(submod) == matrix(QQ, 1, 3, [1//2 1//2 -1])
 
+<<<<<<< Updated upstream
   @test isdefinite(L)
   @test ispositive_definite(L)
   @test !isnegative_definite(L)
@@ -281,4 +282,25 @@ end
   @test 0*L == L*0
   @test (1//2)L*2 == L
   @test !(L == 2*L)
+=======
+  # local modification
+  L = rescale(Hecke.root_lattice(:A,3),15)
+  M = Hecke.maximal_integral_lattice(L)
+  for p in prime_divisors(ZZ(discriminant(L)))
+    M = Hecke.local_modification(M, gram_matrix(L), p)
+  end
+  @test genus(M) == genus(M)
+  DB = lattice_database()
+  for i in 1:100
+    L = lattice(DB,i)
+    G = genus(L)
+    @test mass(L) == mass(G)
+    discriminant_form(G)
+  end
+
+  L = Zlat(gram=matrix(ZZ,2,2,[0,1,1,0]))
+  G = genus(L)
+  q = discriminant_form(G) # corner case
+  @test order(q) == 1
+>>>>>>> Stashed changes
 end
