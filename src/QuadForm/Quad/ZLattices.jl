@@ -624,7 +624,7 @@ end
 ################################################################################
 
 function maximal_integral_lattice(L::ZLat)
-  LL = _to_number_field_lattice(LL)
+  LL = _to_number_field_lattice(L)
   M = maximal_integral_lattice(LL)
   return _to_ZLat(M, V = ambient_space(L))
 end

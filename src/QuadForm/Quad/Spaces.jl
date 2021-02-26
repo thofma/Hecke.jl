@@ -1618,6 +1618,7 @@ end
 function _isisotropic_with_vector_finite(M)
   n = ncols(M)
   k = base_ring(M)
+  _test(v) = iszero(matrix(k, 1, n, v) * M * matrix(k, n, 1, v))
   @assert k isa Field && characteristic(k) != 2
   if n == 0
     ;
@@ -1638,22 +1639,28 @@ function _isisotropic_with_vector_finite(M)
     end
     for i in 1:ncols(G)
       if iszero(G[i, i])
-        return true, elem_type(k)[T[i, j] for j in 1:ncols(T)]
+        el = elem_type(k)[T[i, j] for j in 1:ncols(T)]
+        @hassert :Lattice _test(el)
+        return true, el
       end
     end
 
     if n == 2
       ok, s = issquare_with_square_root(-divexact(G[1, 1], G[2, 2]))
       if ok
-        return true, elem_type(k)[T[1, i] + s*T[2, i] for i in 1:ncols(T)]
+        el = elem_type(k)[T[1, i] + s*T[2, i] for i in 1:ncols(T)]
+        @hassert :Lattice _test(el)
+        return true, el
       end
     else
       while true
         x = rand(k)
         y = rand(k)
-        ok, z = issquare( -x^2 * G[1, 1] - y^2 * divexact(G[2, 2], G[3, 3]))
+        ok, z = issquare_with_square_root(divexact(-x^2 * G[1, 1] - y^2 * G[2, 2], G[3, 3]))
         if (ok && (!iszero(x) || !iszero(y)))
-          return true,  elem_type(k)[x*T[1, i] + y*T[2, i] + z * T[3, i] for i in 1:ncols(T)]
+          el = elem_type(k)[x*T[1, i] + y*T[2, i] + z * T[3, i] for i in 1:ncols(T)]
+          @hassert :Lattice _test(el)
+          return true, el
         end
       end
     end
