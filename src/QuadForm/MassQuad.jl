@@ -1233,6 +1233,15 @@ function _kronecker_as_dirichlet(n, D)
 end
 
 function _kronecker_symbol(n, m)
+  if m == -1
+    if n < 0
+      return -1
+    elseif n == 0
+      return 0
+    else
+      return 1
+    end
+  end
   e, mm = remove(m, 2)
   mm = abs(mm)
   res = _jacobi_symbol(n, mm)
