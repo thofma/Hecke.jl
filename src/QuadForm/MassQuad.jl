@@ -1234,6 +1234,7 @@ end
 
 function _kronecker_symbol(n, m)
   e, mm = remove(m, 2)
+  mm = abs(mm)
   res = _jacobi_symbol(n, mm)
   if e > 0 && iseven(n)
     return 0
@@ -1247,7 +1248,11 @@ function _kronecker_symbol(n, m)
       res = res * -1
     end
   end
-  return res
+  if m < 0
+    return -res
+  else
+    return res
+  end
 end
 
 # don't use this, this is slow
