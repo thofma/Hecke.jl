@@ -400,6 +400,8 @@
          -59004405195106649104901804193340520, -174611//330 ]
 
   @test res == [ Hecke._bernoulli_kronecker(2*i, j) for i in 1:10 for j in 1:100]
+
+  @test res == [ Hecke._bernoulli_kronecker(fmpz(2*i), fmpz(j)) for i in 1:10 for j in 1:100]
 end
 
 @testset "Exact totally real Dedekind zeta functions" begin
