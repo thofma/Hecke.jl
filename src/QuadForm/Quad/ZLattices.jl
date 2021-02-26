@@ -535,6 +535,24 @@ end
 
 ################################################################################
 #
+#  Sum
+#
+################################################################################
+
+function +(M::ZLat, N::ZLat)
+  @req ambient_space(M) === ambient_space(N) "Lattices must have same ambient space"
+  BM = basis_matrix(M)
+  BN = basis_matrix(N)
+  B = fmpq_mat(hnf(FakeFmpqMat(vcat(BM, BN))))
+  i = 1
+  while iszero_row(B, i)
+    i += 1
+  end
+  return lattice(ambient_space(M), B[i:end, 1:ncols(B)])
+end
+
+################################################################################
+#
 #  Local isometry
 #
 ################################################################################
