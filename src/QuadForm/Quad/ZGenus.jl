@@ -61,8 +61,8 @@ and a signature pair. Together they represent the genus of a
 non-degenerate Zlattice.
 """
 mutable struct ZGenus
-  _signature_pair::Array{Int}
-  _symbols::Array{ZpGenus} # assumed to be sorted by their primes
+  _signature_pair::Vector{Int}
+  _symbols::Vector{ZpGenus} # assumed to be sorted by their primes
   _representative::ZLat
 
   function ZGenus(signature_pair, symbols)
@@ -373,15 +373,15 @@ OUTPUT:
 
 A list of all (non-empty) global genera with the given conditions.
 """
-function genera(sig_pair::Vector{Int}, determinant::fmpz; max_scale=Nothing, even=false)
+function genera(sig_pair::Vector{Int}, determinant::fmpz; max_scale=nothing, even=false)
   @show "hi"
   if !all(s >= 0 for s in sig_pair)
-    raise(error("the signature vector must be a pair of non negative integers."))
+    error("the signature vector must be a pair of non negative integers.")
   end
-  if max_scale == Nothing
-    max_scale = determinant
+  if max_scale == nothing
+    _max_scale = determinant
   else
-    max_scale = ZZ(max_scale)
+    _max_scale = FlintZZ(max_scale)
   end
   rank = sig_pair[1] + sig_pair[2]
   genera = ZGenus[]
@@ -393,7 +393,7 @@ function genera(sig_pair::Vector{Int}, determinant::fmpz; max_scale=Nothing, eve
   # collect the p-adic symbols
   for p in prime_divisors(determinant)
     det_val = valuation(determinant, p)
-    mscale_p = valuation(max_scale, p)
+    mscale_p = valuation(_max_scale, p)
     local_symbol_p = _local_genera(p, rank, det_val, mscale_p, even)
     push!(local_symbols,local_symbol_p)
   end
@@ -413,7 +413,7 @@ function genera(sig_pair::Vector{Int}, determinant::fmpz; max_scale=Nothing, eve
   end
   # render the output deterministic for testing
   sort!(genera,by=x -> [s._symbol for s in x._symbols])
-    return genera
+  return genera
 end
 
 @doc Markdown.doc"""
@@ -1331,17 +1331,17 @@ function signature(S::ZpGenus)
 end
 
 @doc Markdown.doc"""
-    oddity(S::ZpGenus) -> Nemo.fmpz_mod
+    oddity(S::ZpGenus) -> Int
 
 Return the oddity of this even form.
 
 The oddity is also called the 2-signature
 """
 function oddity(S::ZpGenus)
-  R = ResidueRing(ZZ, 8)
+  R = ResidueRing(FlintZZ, 8)
   p = S._prime
   if p != 2
-    raise(error("the oddity is only defined for p=2"))
+    error("the oddity is only defined for p=2")
   end
   k = 0
   for s in S._symbol
@@ -1349,7 +1349,7 @@ function oddity(S::ZpGenus)
       k += 1
     end
   end
-  return R(sum([s[5] for s in S._symbol]) + 4*k)
+  return Int(lift(R(sum(Int[s[5] for s in S._symbol]) + 4*k)))
 end
 
 @doc Markdown.doc"""
@@ -1659,7 +1659,7 @@ Return the determinant of this genus.
 """
 function determinant(G::ZGenus)
   p, n = G._signature_pair
-  return (-1)^n*prod( prime(g)^sum(s[1]*s[2] for s in g._symbol) for g in G._symbols)
+  return (-1)^n*prod( prime(g)^sum(Int[s[1]*s[2] for s in g._symbol]) for g in G._symbols)
 end
 
 function det(G::ZGenus)
