@@ -1,3 +1,4 @@
+export *,+, basis_matrix, ambient_space, base_ring, base_field
 # scope & verbose scope: :Lattice
 
 basis_matrix(L::ZLat) = L.basis_matrix
@@ -58,7 +59,7 @@ function lattice(V::QuadSpace{FlintRationalField, fmpq_mat}, B::MatElem; isbasis
   end
 
   # We need to produce a basis matrix
-  
+
   if !isbasis
     BB = fmpq_mat(hnf(FakeFmpqMat(B), :upper_right))
     i = nrows(BB)
@@ -69,6 +70,11 @@ function lattice(V::QuadSpace{FlintRationalField, fmpq_mat}, B::MatElem; isbasis
   else
     return ZLat(V, Gc)
   end
+end
+
+function lattice_in_same_ambient_space(L::ZLat, B::MatElem)
+  V = L.space
+  return lattice(V,B)
 end
 
 ################################################################################
@@ -645,4 +651,47 @@ function maximal_integral_lattice(L::ZLat)
   LL = _to_number_field_lattice(L)
   M = maximal_integral_lattice(LL)
   return _to_ZLat(M, V = ambient_space(L))
+end
+
+################################################################################
+#
+#  Scalar multiplication
+#
+################################################################################
+
+@doc Markdown.doc"""
+    *(a, L::ZLat) -> ZLat
+
+Returns the lattice $aM$ inside the ambient space of $M$.
+"""
+function Base.:(*)(a, L::ZLat)
+  @assert has_ambient_space(L)
+  B = a*L.basis_matrix
+  return lattice_in_same_ambient_space(L, B)
+end
+
+function Base.:(*)(L::ZLat, a)
+  return a * L
+end
+
+
+################################################################################
+#
+#  Equality
+#
+################################################################################
+
+@doc Markdown.doc"""
+Return ``true`` if both lattices have the same ambient quadratic space
+and the same underlying module.
+"""
+function Base.:(==)(L1::ZLat, L2::ZLat)
+  V1 = ambient_space(L1)
+  V2 = ambient_space(L2)
+  if V1 != V2
+    return False
+  end
+  B1 = basis_matrix(L1)
+  B2 = basis_matrix(L2)
+  return hnf(FakeFmpqMat(B1)) == hnf(FakeFmpqMat(B2))
 end
