@@ -281,4 +281,21 @@ end
   @test 0*L == L*0
   @test (1//2)L*2 == L
   @test !(L == 2*L)
+
+  # maximal integral lattice
+  G = ZZ[3 0 0 0 0 0 0 0 0 0 0 0;
+         0 18 0 0 0 0 0 0 0 0 0 0;
+         0 0 9 0 0 0 0 0 0 0 0 0;
+         0 0 0 9 0 0 0 0 0 0 0 0;
+         0 0 0 0 9 0 0 0 0 0 0 0;
+         0 0 0 0 0 9 0 0 0 0 0 0;
+         0 0 0 0 0 0 9 0 0 0 0 0;
+         0 0 0 0 0 0 0 9 0 0 0 0;
+         0 0 0 0 0 0 0 0 9 0 0 0;
+         0 0 0 0 0 0 0 0 0 9 0 0;
+         0 0 0 0 0 0 0 0 0 0 9 0;
+         0 0 0 0 0 0 0 0 0 0 0 54]
+  L = Zlattice(gram = G)
+  LL = @inferred Hecke.maximal_integral_lattice(L)
+  @test isone(norm(LL))
 end
