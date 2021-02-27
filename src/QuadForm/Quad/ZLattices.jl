@@ -77,7 +77,6 @@ function lattice_in_same_ambient_space(L::ZLat, B::MatElem)
   return lattice(V,B)
 end
 
-
 function rescale(G::ZLat, r)
   B = basis_matrix(G)
   gram_space = gram_matrix(G.space)
@@ -659,58 +658,6 @@ function maximal_integral_lattice(L::ZLat)
   M = maximal_integral_lattice(LL)
   return _to_ZLat(M, V = ambient_space(L))
 end
-
-################################################################################
-#
-#  Rational equivalent
-#
-################################################################################
-
-@doc Markdown.doc"""
-    isrationally_equivalent(L::ZLat, M::ZLat, p) -> Bool
-
-Returns whether the rational spans of $L$ and $M$ are equivalent over the
-completion at $p$.
-"""
-function isrationally_equivalent(L::ZLat, M::ZLat, p)
-  return isequivalent(rational_span(L), rational_span(M), p)
-end
-
-@doc Markdown.doc"""
-    isrationally_equivalent(L::ZLat, M::ZLat)-> Bool
-
-Returns whether the rational spans of $L$ and $M$ are equivalent.
-"""
-function isrationally_equivalent(L::ZLat, M::ZLat)
-  return isequivalent(rational_span(L), rational_span(M))
-end
-
-################################################################################
-#
-#  Definiteness
-#
-################################################################################
-
-@doc Markdown.doc"""
-    ispositive_definite(L::ZLat) -> Bool
-
-Returns whether the rational span of $L$ is positive definite.
-"""
-ispositive_definite(L::ZLat) = ispositive_definite(rational_span(L))
-
-@doc Markdown.doc"""
-    isnegative_definite(L::ZLat) -> Bool
-
-Returns whether the rational span of $L$ is negative definite.
-"""
-isnegative_definite(L::ZLat) = isnegative_definite(rational_span(L))
-
-@doc Markdown.doc"""
-    isdefinite(L::ZLat) -> Bool
-
-Returns whether the rational span of $L$ is definite.
-"""
-isdefinite(L::ZLat) = isdefinite(rational_span(L))
 
 ################################################################################
 #

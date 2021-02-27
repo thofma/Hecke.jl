@@ -301,22 +301,4 @@ end
   G = genus(L)
   q = discriminant_form(G) # corner case
   @test order(q) == 1
-
-  for i in 1:200
-    L = lattice(DB,i);println(i)
-    G = genus(L)
-    q1 = quadratic_space(G)
-    q2 = ambient_space(L)
-    @test Hecke.isequivalent(q1, q2)
-    L2 = representative(G)
-    G2 = genus(G2)
-    @test G1==G2
-  end
-
-
-for d in 1:800
-  for G in genera([4,0],d)
-    m = mass(G)
-    L = representative(G)
-    @test mass(L)==mass(G)
 end
