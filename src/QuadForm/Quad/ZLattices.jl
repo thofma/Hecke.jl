@@ -775,9 +775,10 @@ completions except at `p` where `M'` is locally equivalent to the lattice with g
 function local_modification(M::ZLat, G::MatElem, p)
   # notation
   d = denominator(inv(G))
-  scale = valuation(p, d)
+  scale = valuation(d,p)
   d = p^scale
 
+  @show G
   L = Zlattice(gram=G)
   L_max = maximal_integral_lattice(L)
 
