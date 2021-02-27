@@ -1,4 +1,4 @@
-export genus, rank, det, determinant, dimension, dim, prime, symbol, representative, is_even, signature, oddity, excess, level, genera, scale, norm, discriminant_form, mass, direct_sum,quadratic_space,hasse_invariant
+export genus, rank, det, determinant, dimension, dim, prime, symbol, representative, is_even, signature, oddity, excess, level, genera, scale, norm, discriminant_form, mass, direct_sum,quadratic_space,hasse_invariant, genera
 
 @doc Markdown.doc"""
     ZpGenus
@@ -373,8 +373,8 @@ OUTPUT:
 
 A list of all (non-empty) global genera with the given conditions.
 """
-function genera(sig_pair, determinant; max_scale=Nothing, even=false)
-  determinant = ZZ(determinant)
+function genera(sig_pair::Vector{Int}, determinant::fmpz; max_scale=Nothing, even=false)
+  @show "hi"
   if !all(s >= 0 for s in sig_pair)
     raise(error("the signature vector must be a pair of non negative integers."))
   end
@@ -431,9 +431,8 @@ INPUT:
 - ``max_scale`` -- an integer the maximal scale of a jordan block
 - ``even`` -- ``bool``; is ignored if `p` is not `2`
     """
-function _local_genera(p, rank, det_val, max_scale, even)
-  scales_rks = [] # contains possibilities for scales && ranks
-  rank = Int64(rank)
+function _local_genera(p::fmpz, rank::Int, det_val::Int, max_scale::Int, even::Bool)
+  scales_rks = Vector{Vector{Int}}[] # contains possibilities for scales && ranks
   for rkseq in _integer_lists(rank, max_scale+1)
     # rank sequences
     # sum(rkseq) = rank
@@ -601,6 +600,7 @@ end
 function genus(L::ZLat)
   A = gram_matrix(L)
   denom = denominator(A)
+  @req denom==1 "for now only genera of integral lattices are supported"
   A = change_base_ring(ZZ, denom^2 * A)
   symbols = ZpGenus[]
   el = lcm(diagonal(hnf(A)))

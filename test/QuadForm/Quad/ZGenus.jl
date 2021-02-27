@@ -216,4 +216,30 @@
   G._symbols[1]._symbol=[[0,2,3,0,0], [1,2,5,1,0]]
   @test !Hecke._is_global_genus(G)
 
+  # representatives, mass and genus enumeration
+
+  for i in 1:200
+    L = lattice(DB,i);println(i)
+    G = genus(L)
+    q1 = quadratic_space(G)
+    q2 = ambient_space(L)
+    @test Hecke.isequivalent(q1, q2)
+    L2 = representative(G)
+    G2 = genus(G2)
+    @test G1==G2
   end
+
+
+  for d in 1:200
+    for sig in [[2,0],[0,3],[4,0]]
+      for G in genera([4,0],d)
+        m = mass(G)
+        L = representative(G)
+        @test genus(L)==G
+        @test mass(L)==m
+        rep = genus_representatives(L)
+        @test sum(1/number_of_automorphisms(M) for M in rep)==m
+      end
+  end
+
+end
