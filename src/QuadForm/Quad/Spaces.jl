@@ -1010,6 +1010,7 @@ end
 
 # Return true, T such that T * [A 0; 0 B] T^t = [a 0; 0 b] or false, 0 if no such T exists.
 function _isisometric_with_isometry_dan(A, B, a, b)
+  @assert A * B == a * b
   K = parent(A)
   
   Kkt, (k, t) = PolynomialRing(K, ["k", "t"], cached = false)
@@ -1092,8 +1093,19 @@ function isequivalent_with_isometry(V::QuadSpace, W::QuadSpace)
   @assert MV * GV * transpose(MV) == diagonal_matrix([A, B])
   @assert MW * GW * transpose(MW) == diagonal_matrix([a, b])
 
-  fl, T = _isisometric_with_isometry_dan(A, B, a, b)
-  @assert fl
+  if a * b != A * B
+    c = (A * B)//(a * b)
+    bp = b * c
+    @assert a * bp == A * B
+    fl, T = _isisometric_with_isometry_dan(A, B, a, bp)
+    @assert fl
+    cc = inv(sqrt(c))
+    M = matrix(K, 2, 2, [1, 0, 0, inv(cc)])
+    T = inv(M) * T
+  else
+    fl, T = _isisometric_with_isometry_dan(A, B, a, b)
+    @assert fl
+  end
 
   @assert T * DV * transpose(T) == DW
 
