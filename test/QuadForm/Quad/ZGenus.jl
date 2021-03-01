@@ -238,8 +238,9 @@
         @test genus(L)==G
         @test mass(L)==m
         rep = genus_representatives(L)
-        @test sum(1/number_of_automorphisms(M) for M in rep)==m
+        @test sum(1//number_of_automorphisms(M) for M in rep)==m
       end
+    end
   end
 
   for d in 51:400
@@ -250,6 +251,7 @@
         @test genus(L)==G
         @test mass(L)==m
       end
+    end
   end
 
 end
