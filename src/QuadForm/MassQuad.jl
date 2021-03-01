@@ -1238,8 +1238,6 @@ function _kronecker_symbol(n, m)
   if m == -1
     if n < 0
       return -1
-    elseif n == 0
-      return 0
     else
       return 1
     end
@@ -1268,6 +1266,7 @@ end
 
 # don't use this, this is slow
 function _jacobi_symbol(n, m)
+  @req m >= 3 "Second argument $(m) must be >= 3"
   @assert isodd(m)
   if !isone(gcd(n, m))
     return 0

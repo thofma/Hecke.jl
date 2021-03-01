@@ -409,7 +409,11 @@
 
   @test Hecke._kronecker_symbol(-1, -1) == -1
 
-  @test Hecke._kronecker_symbol(0, -1) == 0
+  @test Hecke._kronecker_symbol(0, -1) == 1
+
+  @test Hecke._kronecker_symbol(1, -1) == 1
+
+  @test Hecke._kronecker_symbol(-1, -1) == -1
 
   @test Hecke._bernoulli_kronecker(1, -1) == -1//2
 end
