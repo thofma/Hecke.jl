@@ -1,11 +1,11 @@
 @testset "ZGenus" begin
   A = matrix(ZZ, 2, 2, [1, 1, 1, 1])
-  @test (false, 1) == Hecke._is_even(A)
+  @test (false, 1) == Hecke._iseven(A)
   A = matrix(ZZ, 2, 2, [2, 1, 1, 2])
-  @test (true, -1) == Hecke._is_even(A)
+  @test (true, -1) == Hecke._iseven(A)
 
   A = matrix(ZZ, 2, 2, [1, 2, 2, 3])
-  @test (false, 1) == Hecke._is_even(A)
+  @test (false, 1) == Hecke._iseven(A)
   @test (1, ZZ[-1;]) == Hecke._split_odd(A)
 
 
@@ -15,7 +15,7 @@
 
   A = matrix(ZZ, 2, 2, [1, 2, 2, 5])
   @test (1, ZZ[1;]) ==  Hecke._split_odd(A)
-  @test (false, 1) == Hecke._is_even(A)
+  @test (false, 1) == Hecke._iseven(A)
   @test 2== Hecke._trace_diag_mod_8(A)
 
   A = 2*diagonal_matrix(map(ZZ,[1, 2, 3, 4]))
@@ -26,10 +26,10 @@
   @test Hecke._two_adic_symbol(A, 2) == [[0, 2, 3, 1, 4], [1, 1, 1, 1, 1], [2, 1, 1, 1, 1]]
 
   g1 = genus(A, 3)
-  B = gram_matrix(g1)
+  B = representative(g1)
   g2 = genus(A, 3)
   @test g1 == g2
-  @test is_even(g1)
+  @test iseven(g1)
   @test 4==dimension(g1)
   @test 4 == rank(g1)
   @test 4 == dim(g1)
@@ -77,12 +77,12 @@
 
   A = matrix(ZZ, 2, 2, [1,1,1,2])
   G2 = genus(A, 2)
-  @test Hecke._is_2_adic_genus(G2._symbol)
+  @test Hecke._is2adic_genus(G2._symbol)
   A = matrix(ZZ, 2, 2, [1,0,0,2])
-  @test Hecke._is_2_adic_genus(G2._symbol)
+  @test Hecke._is2adic_genus(G2._symbol)
   G = genus(A)
   @test 2 == determinant(G)
-  @test !is_even(G)
+  @test !iseven(G)
 
 
   output =[[15, 2, 3, 0, 0],
@@ -111,11 +111,11 @@
   G = genus(matrix(ZZ, 2, 2, [0, 1, 1, 0]))
   @test norm(G) == 2
 
-  @test all(hasse_invariant(g) == hasse_invariant(quadratic_space(QQ,gram_matrix(g)),prime(g)) for g in Hecke._local_genera(2,3,1,2,false))
-  @test all(hasse_invariant(g) == hasse_invariant(quadratic_space(QQ,gram_matrix(g)),prime(g)) for g in Hecke._local_genera(2,5,4,4,true))
-  @test all(hasse_invariant(g) == hasse_invariant(quadratic_space(QQ,gram_matrix(g)),prime(g)) for g in Hecke._local_genera(3,2,2,2,true))
-  @test all(hasse_invariant(g) == hasse_invariant(quadratic_space(QQ,gram_matrix(g)),prime(g)) for g in Hecke._local_genera(3,3,4,4,true))
-  @test all(hasse_invariant(g) == hasse_invariant(quadratic_space(QQ,gram_matrix(g)),prime(g)) for g in Hecke._local_genera(5,2,2,2,true))
+  @test all(hasse_invariant(g) == hasse_invariant(quadratic_space(QQ,representative(g)),prime(g)) for g in Hecke._local_genera(2,3,1,2,false))
+  @test all(hasse_invariant(g) == hasse_invariant(quadratic_space(QQ,representative(g)),prime(g)) for g in Hecke._local_genera(2,5,4,4,true))
+  @test all(hasse_invariant(g) == hasse_invariant(quadratic_space(QQ,representative(g)),prime(g)) for g in Hecke._local_genera(3,2,2,2,true))
+  @test all(hasse_invariant(g) == hasse_invariant(quadratic_space(QQ,representative(g)),prime(g)) for g in Hecke._local_genera(3,3,4,4,true))
+  @test all(hasse_invariant(g) == hasse_invariant(quadratic_space(QQ,representative(g)),prime(g)) for g in Hecke._local_genera(5,2,2,2,true))
 
   A = diagonal_matrix(fmpz[2, -4, 6, 8])
   G = genus(A)
@@ -155,7 +155,7 @@
 
   # These examples are taken from Table 2 of [CS1988]_::
 
-  M_p = Hecke.M_p
+  M_p = Hecke._M_p
   @test M_p(0, 2) == 1
   @test M_p(1, 2) == 1//2
   @test M_p(-2, 2) == 1//3
@@ -182,11 +182,11 @@
 
   A = diagonal_matrix(fmpz[1, 1, 1, 1])
   G = genus(A)
-  @test Hecke._standard_mass(G) == 1//48
+  @test Hecke._standard_mass_squared(G) == (1//48)^2
 
-  @test Hecke._quadratic_L_function_exact(1, -4) == (1//4)^2
-  @test Hecke._quadratic_L_function_exact(-4, -4) == (5//2)^2
-  @test Hecke._quadratic_L_function_exact(2, 1) == (1//6)^2
+  @test Hecke._quadratic_L_function_squared(1, -4) == (1//4)^2
+  @test Hecke._quadratic_L_function_squared(-4, -4) == (5//2)^2
+  @test Hecke._quadratic_L_function_squared(2, 1) == (1//6)^2
 
   @test Hecke._zeta_exact(4)==1//90
   @test Hecke._zeta_exact(-3)==1//120
@@ -211,22 +211,23 @@
 
   A = matrix(ZZ, 2, 2, [1, 1, 1, 2])
   G = genus(A)
-  @test Hecke._is_global_genus(G)
+  @test Hecke._isglobal_genus(G)
   G = genus(diagonal_matrix(fmpz[2, 2, 2, 2]))
   G._symbols[1]._symbol=[[0,2,3,0,0], [1,2,5,1,0]]
-  @test !Hecke._is_global_genus(G)
+  @test !Hecke._isglobal_genus(G)
 
   # representatives, mass and genus enumeration
 
+  DB = lattice_database()
   for i in 1:200
-    L = lattice(DB,i);println(i)
+    L = lattice(DB,i)
     G = genus(L)
     q1 = quadratic_space(G)
     q2 = ambient_space(L)
     @test Hecke.isequivalent(q1, q2)
     L2 = representative(G)
-    G2 = genus(G2)
-    @test G1==G2
+    G2 = genus(L2)
+    @test G==G2
   end
 
 
@@ -238,7 +239,7 @@
         @test genus(L)==G
         @test mass(L)==m
         rep = genus_representatives(L)
-        @test sum(1//number_of_automorphisms(M) for M in rep)==m
+        @test sum(1//automorphism_group_order(M) for M in rep)==m
       end
     end
   end

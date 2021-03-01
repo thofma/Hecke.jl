@@ -289,15 +289,9 @@ end
     M = Hecke.local_modification(M, gram_matrix(L), p)
   end
   @test genus(M) == genus(M)
-  DB = lattice_database()
-  for i in 1:100
-    L = lattice(DB,i)
-    G = genus(L)
-    @test mass(L) == mass(G)
-    discriminant_form(G)
-  end
 
-  L = Zlat(gram=matrix(ZZ,2,2,[0,1,1,0]))
+
+  L = Zlattice(gram=matrix(ZZ,2,2,[0,1,1,0]))
   G = genus(L)
   q = discriminant_form(G) # corner case
   @test order(q) == 1

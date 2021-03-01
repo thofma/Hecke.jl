@@ -359,7 +359,9 @@ function _basis_complement(B::MatElem)
 end
 
 @doc Markdown.doc"""
-    Return a list of all global genera with the given conditions.
+    genera(sig_pair::Vector{Int}, determinant::Union{Int,fmpz}; max_scale=nothing, even=false)
+
+Return a list of all global genera with the given conditions.
 
 Here a genus is called global if it is non-empty.
 
@@ -599,6 +601,7 @@ function _blocks(b::Array{Int}, even_only=false)
 end
 
 function genus(A::MatElem)
+  @req ncols(A) == nrows(A) "must be a square matrix"
   return genus(Zlattice(gram=A))
 end
 
@@ -608,8 +611,13 @@ function genus(L::ZLat)
   @req denom==1 "for now only genera of integral lattices are supported"
   A = change_base_ring(ZZ, denom^2 * A)
   symbols = ZpGenus[]
-  el = lcm(diagonal(hnf(A)))
-  primes = prime_divisors(el)
+  if ncols(A)>0
+    el = lcm(diagonal(hnf(A)))
+    primes = prime_divisors(el)
+  else
+    primes = [ZZ(2)]
+    el = ZZ(1)
+  end
   if !(2 in primes)
     prepend!(primes, 2)
   end
@@ -826,173 +834,6 @@ function Base.:(==)(G1::ZpGenus, G2::ZpGenus)
   return true
 end
 
-#=
-    function automorphous_numbers(self)
-        r"""
-        Return generators of the automorphous square classes at this prime.
-
-        A `p`-adic square class `r` is called automorphous if it is
-        the spinor norm of a proper `p`-adic integral automorphism of this form.
-        These classes form a group. See [Co1999]_ Chapter 15, 9.6 for details.
-
-        OUTPUT:
-
-        - a list of integers representing the square classes of generators of
-          the automorphous numbers
-
-        EXAMPLES:
-
-        The following examples are given in
-        [Co1999]_ 3rd edition, Chapter 15, 9.6 pp. 392::
-
-            sage: A = matrix.diagonal([3, 16])
-            sage: G = Genus(A)
-            sage: sym2 = G.local_symbols()[0]
-            sage: sym2
-            Genus symbol at 2:    [1^-1]_3:[16^1]_1
-            sage: sym2.automorphous_numbers()
-            [3, 5]
-
-            sage: A = matrix(ZZ,3,[2,1,0, 1,2,0, 0,0,18])
-            sage: G = Genus(A)
-            sage: sym = G.local_symbols()
-            sage: sym[0]
-            Genus symbol at 2:    1^-2 [2^1]_1
-            sage: sym[0].automorphous_numbers()
-            [1, 3, 5, 7]
-            sage: sym[1]
-            Genus symbol at 3:     1^-1 3^-1 9^-1
-            sage: sym[1].automorphous_numbers()
-            [1, 3]
-
-        Note that the generating set given is not minimal.
-        The first supplementation rule is used here::
-
-            sage: A = matrix.diagonal([2, 2, 4])
-            sage: G = Genus(A)
-            sage: sym = G.local_symbols()
-            sage: sym[0]
-            Genus symbol at 2:    [2^2 4^1]_3
-            sage: sym[0].automorphous_numbers()
-            [1, 2, 3, 5, 7]
-
-        but not there::
-
-            sage: A = matrix.diagonal([2, 2, 32])
-            sage: G = Genus(A)
-            sage: sym = G.local_symbols()
-            sage: sym[0]
-            Genus symbol at 2:    [2^2]_2:[32^1]_1
-            sage: sym[0].automorphous_numbers()
-            [1, 2, 5]
-
-        Here the second supplementation rule is used::
-
-            sage: A = matrix.diagonal([2, 2, 64])
-            sage: G = Genus(A)
-            sage: sym = G.local_symbols()
-            sage: sym[0]
-            Genus symbol at 2:    [2^2]_2:[64^1]_1
-            sage: sym[0].automorphous_numbers()
-            [1, 2, 5]
-        """
-        from .normal_form import collect_small_blocks
-        automorphs = []
-        sym = self.symbol_tuple_list()
-        G = self.gram_matrix().change_ring(ZZ)
-        p = self.prime()
-        if p != 2:
-            up = ZZ(_min_nonsquare(p))
-            I = G.diagonal()
-            for r in I:
-                # We need to consider all pairs in I
-                # since at most 2 elements are part of a pair
-                # we need need at most 2 of each type
-                if I.count(r) > 2:
-                    I.remove(r)
-            # products of all pairs
-            for r1 in I:
-                for r2 in I:
-                    automorphs.append(r1*r2)
-            # supplement (i)
-            for block in sym:
-                if block[1] >= 2:
-                    automorphs.append(up)
-                    break
-            # normalize the square classes && remove duplicates
-            automorphs1 = set()
-            for s in automorphs:
-                u = 1
-                if s.prime_to_m_part(p).kronecker(p) == -1:
-                    u = up
-                v = (s.valuation(p) % 2)
-                sq = u * p^v
-                automorphs1.add(sq)
-            return list(automorphs1)
-
-        # p = 2
-        I = []
-        II = []
-        for block in collect_small_blocks(G)
-            if block.ncols() == 1:
-                u = block[0,0]
-                if I.count(u) < 2:
-                    I.append(block[0,0])
-            else # rank2
-                q = block[0,1]
-                II += [2*q, 3*2*q, 5*2*q, 7*2*q]
-
-        L = I + II
-        # We need to consider all pairs in L
-        # since at most 2 elements are part of a pair
-        # we need need at most 2 of each type
-        for r in L:     # remove triplicates
-            if L.count(r) > 2:
-                L.remove(r)
-        n = length(L)
-        for i in range(n)
-            for j in range(i)
-                r = L[i] * L[j]
-                automorphs.append(r)
-
-        # supplement (i)
-        for k in range(length(sym))
-            s = sym[k:k+3]
-            if sum([b[1] for b in s if b[0] - s[0][0] < 4]) >= 3:
-                automorphs += [ZZ(1), ZZ(3), ZZ(5), ZZ(7)]
-            break
-
-        # supplement (ii)
-        I.sort(key=lambda x: x.valuation(2))
-        n = length(I)
-        for i in range(n)
-            for j in range(i)
-                r = I[i] / I[j]
-                v, u = r.val_unit(ZZ(2))
-                u = u % 8
-                assert v >= 0
-                if v==0 && u==1:
-                    automorphs.append(ZZ(2))
-                if v==0 && u==5:
-                    automorphs.append(ZZ(6))
-                if v in [0, 2, 4]:  # this overlaps with the first two cases!
-                    automorphs.append(ZZ(5))
-                if v in [1, 3] && u in [1, 5]:
-                    automorphs.append(ZZ(3))
-                if v in [1, 3] && u in [3, 7]:
-                    automorphs.append(ZZ(7))
-
-        # normalize the square classes && remove duplicates
-        automorphs1 = set()
-        for s in automorphs:
-            v, u = s.val_unit(ZZ(2))
-            v = v % 2
-            u = u % 8
-            sq = u * 2^v
-            automorphs1.add(sq)
-        return list(automorphs1)
-
-=#
 @doc Markdown.doc"""
     representative(S::ZpGenus) -> MatElem
 
@@ -1025,7 +866,7 @@ function iseven(S::ZpGenus)
 end
 
 @doc Markdown.doc"""
-    symbol(S::ZpGenus, scale) -> Array{Array{Int64,1},1}
+    symbol(S::ZpGenus, scale::Int) -> Array{Array{Int64,1},1}
 
 Return a copy of the underlying lists of integers
 for the Jordan block of the given scale
@@ -1414,33 +1255,6 @@ function Base.show(io::IO, G::ZGenus)
   end
   print(io, rep)
 end
-#=
-    function _latex_(self)
-        r"""
-        The Latex representation of this lattice.
-
-        EXAMPLES::
-
-            sage: D4 = QuadraticForm(Matrix(ZZ, 4, 4, [2,0,0,-1, 0,2,0,-1, 0,0,2,-1, -1,-1,-1,2]))
-            sage: G = D4.global_genus_symbol()
-            sage: latex(G)
-            \mbox{Genus of}\\ \left(\begin{array}{rrrr}
-            2 & 0 & 0 & -1 \\
-            0 & 2 & 0 & -1 \\
-            0 & 0 & 2 & -1 \\
-            -1 & -1 & -1 & 2
-            \end{array}\right)\\ \mbox{Signature: } (4, 0)\\ \mbox{Genus symbol at } 2\mbox{: }1^{-2}  :2^{-2}
-        """
-        rep = r"\mbox{Genus"
-        if self.dimension() <= 20:
-            rep += r" of}\\ %s" %self._representative._latex_()
-        else
-            rep +=r"}"
-        rep += r"\\ \mbox{Signature: } %s"%(self._signature,)
-        for s in self._symbols:
-            rep += r"\\ " + s._latex_()
-        return rep
-=#
 
 function Base.:(==)(G1::ZGenus, G2::ZGenus)
   t = length(G1._symbols)
@@ -1455,8 +1269,10 @@ function Base.:(==)(G1::ZGenus, G2::ZGenus)
   return true
 end
 
-@doc Markdown.doc"""iseven(G::ZGenus)
-    Return if this genus is even.
+@doc Markdown.doc"""
+    iseven(G::ZGenus)
+
+Return if this genus is even.
 """
 function iseven(G::ZGenus)
   if rank(G) == 0
@@ -1464,175 +1280,8 @@ function iseven(G::ZGenus)
   end
   return iseven(G._symbols[1])
 end
-#=
-    function _proper_spinor_kernel(self)
-        r"""
-        Return the proper spinor kernel.
-
-        OUTPUT:
-
-        A pair ``(A, K)`` where
-
-        .. MATH::
-
-            A = \prod_{p \mid 2d} ZZ_p^\times / ZZ_p^{\times2},
-
-        `d` is the determinant of this genus && `K` is a subgroup of `A`.
-
-        EXAMPLES::
-
-            sage: gram = matrix(ZZ, 4, [2,0,1,0, 0,2,1,0, 1,1,5,0, 0,0,0,16])
-            sage: genus = Genus(gram)
-            sage: genus._proper_spinor_kernel()
-            (Group of SpinorOperators at primes (2,),
-            Subgroup of Group of SpinorOperators at primes (2,) generated by (1, 1, f2))
-            sage: gram = matrix(ZZ, 4, [3,0,1,-1, 0,3,-1,-1, 1,-1,6,0, -1,-1,0,6])
-            sage: genus = Genus(gram)
-            sage: genus._proper_spinor_kernel()
-            (Group of SpinorOperators at primes (2,),
-            Subgroup of Group of SpinorOperators at primes (2,) generated by (1, 1, f2))
-        """
-        from sage.quadratic_forms.genera.spinor_genus import SpinorOperators
-        syms = self.local_symbols()
-        primes = tuple([sym.prime() for sym in syms])
-        A = SpinorOperators(primes)
-        kernel_gens = []
-        # -1 adic contribution
-        sig = self.signature_pair_of_matrix()
-        if sig[0] * sig[1] > 1:
-            kernel_gens.append(A.delta(-1, prime=-1))
-        for sym in syms:
-            for r in sym.automorphous_numbers()
-                kernel_gens.append(A.delta(r, prime=sym.prime()))
-        K = A.subgroup(kernel_gens)
-        return A, K
-
-    function _improper_spinor_kernel(self)
-        r"""
-        Return the improper spinor kernel.
-
-        OUTPUT:
-
-        A pair ``(A, K)`` where
-
-        .. MATH::
-
-            A = \prod_{p \mid 2d} ZZ_p^\times / ZZ_p^{\times2},
-
-        `d` is the determinant of this genus && `K` is a subgroup of `A`.
-
-        EXAMPLES::
-
-            sage: gram = matrix(ZZ, 4, [2,0,1,0, 0,2,1,0, 1,1,5,0, 0,0,0,16])
-            sage: genus = Genus(gram)
-            sage: genus._proper_spinor_kernel()
-            (Group of SpinorOperators at primes (2,),
-            Subgroup of Group of SpinorOperators at primes (2,) generated by (1, 1, f2))
-            sage: gram = matrix(ZZ, 4, [3,0,1,-1, 0,3,-1,-1, 1,-1,6,0, -1,-1,0,6])
-            sage: genus = Genus(gram)
-            sage: genus._improper_spinor_kernel()
-            (Group of SpinorOperators at primes (2,),
-            Subgroup of Group of SpinorOperators at primes (2,) generated by (1, 1, f2, f1))
-        """
-        A, K = self._proper_spinor_kernel()
-        if A.order() == K.order()
-            return A, K
-        b, j = self._proper_is_improper()
-        if b:
-            return A, K
-        else
-            K = A.subgroup(K.gens() + (j,))
-            return A, K
 
 
-    function spinor_generators(self, proper)
-        r"""
-        Return the spinor generators.
-
-        INPUT:
-
-        - ``proper`` -- boolean
-
-        OUTPUT:
-
-        a list of primes not dividing the determinant
-
-        EXAMPLES::
-
-            sage: g = matrix(ZZ, 3, [2,1,0, 1,2,0, 0,0,18])
-            sage: gen = Genus(g)
-            sage: gen.spinor_generators(false)
-            [5]
-        """
-        from sage.sets.primes import Primes
-        if proper:
-            A, K = self._proper_spinor_kernel()
-        else
-            A, K = self._improper_spinor_kernel()
-        Q = A.quotient(K)
-        q = Q.order()
-        U = Q.subgroup([])
-
-        spinor_gens = []
-        P = Primes()
-        p = ZZ(2)
-        while not U.order() == q:
-            p = P.next(p)
-            if p.divides(self.determinant())
-                continue
-            g = Q(A.delta(p))
-            if g.gap() in U.gap() # containment in sage is broken
-                continue
-            else
-                spinor_gens.append(p)
-                U = Q.subgroup((g,) + Q.gens())
-        return spinor_gens
-
-    function _proper_is_improper(self)
-        r"""
-        Return if proper && improper spinor genus coincide.
-
-        EXAMPLES::
-
-            sage: gram = matrix(ZZ, 4, [2,0,1,0, 0,2,1,0, 1,1,5,0, 0,0,0,16])
-            sage: genus = Genus(gram)
-            sage: genus._proper_is_improper()
-            (true, [2:1])
-
-        This genus consists of only on (improper) class, hence spinor genus and
-        improper spinor genus differ::
-
-            sage: gram = matrix(ZZ, 4, [3,0,1,-1, 0,3,-1,-1, 1,-1,6,0, -1,-1,0,6])
-            sage: genus = Genus(gram)
-            sage: genus._proper_is_improper()
-            (false, [2:7])
-        """
-        G = self.representative()
-        d = self.dimension()
-        V = ZZ^d
-        # TODO:
-        # this is a potential bottleneck
-        # find a more clever way
-        # with just the condition q != 0
-        # even better would be a
-        # version which does not require a representative
-        norm = self.norm()
-        P = [s.prime() for s in self._symbols]
-        while true:
-            x = V.random_element()
-            q = x * G* x
-            if q != 0 && all(q.valuation(p) == norm.valuation(p) for p in P)
-                break
-        Q = [p for p in q.prime_factors() if (norm.valuation(p) + q.valuation(p)) % 2 != 0]
-        r = ZZ.prod(Q)
-        # M = \tau_x(L)
-        # q = [L: L & M]
-        A, K = self._proper_spinor_kernel()
-        j = A.delta(r) # diagonal embedding of r
-        return j in K, j
-
-
-=#
 @doc Markdown.doc"""
     signature(G::ZGenus)
 
@@ -1761,21 +1410,9 @@ end
 
 
 @doc Markdown.doc"""
+    representative(G::ZGenus)
+
 Compute a representative of this genus && cache it.
-
-
-TESTS::
-
-    sage: from sage.quadratic_forms.genera.genus import genera
-    sage: for det in range(1, 5)
-    ....:     G = genera((4,0), det, even=false)
-    ....:     assert all(g==Genus(g.representative()) for g in G)
-    sage: for det in range(1, 5)
-    ....:     G = genera((1,2), det, even=false)
-    ....:     assert all(g==Genus(g.representative()) for g in G)
-    sage: for det in range(1, 9) # long time (8s, 2020)
-    ....:     G = genera((2,2), det, even=false) # long time
-    ....:     assert all(g==Genus(g.representative()) for g in G) # long time
 """
 function representative(G::ZGenus)
   V = quadratic_space(G)
@@ -1792,140 +1429,13 @@ function representative(G::ZGenus)
 end
 
 
-#=
+function representatives(G::ZGenus)
+  L = representative(G)
+  rep = representatives(L)
+  @hassert 2 mass(G) == sum(fmpq[1//automorphism_group_order(S) for S in rep])
+  return rep
+end
 
-    function representatives(self, backend=Nothing, algorithm=Nothing)
-        r"""
-        Return a list of representatives for the classes in this genus
-
-        INPUT:
-
-        - ``backend`` -- (default:``Nothing``)
-        - ``algorithm`` -- (default:``Nothing``)
-
-        OUTPUT:
-
-        - a list of gram matrices
-
-        EXAMPLES::
-
-            sage: from sage.quadratic_forms.genera.genus import genera
-            sage: G = Genus(matrix.diagonal([1, 1, 7]))
-            sage: G.representatives()
-            (
-            [1 0 0]  [1 0 0]
-            [0 2 1]  [0 1 0]
-            [0 1 4], [0 0 7]
-            )
-
-        Indefinite genera work as well::
-
-            sage: G = Genus(matrix(ZZ, 3, [6,3,0, 3,6,0, 0,0,2]))
-            sage: G.representatives()
-            (
-            [2 0 0]  [ 2 -1  0]
-            [0 6 3]  [-1  2  0]
-            [0 3 6], [ 0  0 18]
-            )
-
-        For positive definite forms the magma backend is available::
-
-            sage: G = Genus(matrix.diagonal([1, 1, 7]))
-            sage: G.representatives(backend="magma")  # optional - magma
-            (
-            [1 0 0]  [ 1  0  0]
-            [0 1 0]  [ 0  2 -1]
-            [0 0 7], [ 0 -1  4]
-            )
-        """
-        try:
-            return self._representatives
-        except AttributeError:
-            pass
-        n = self.dimension()
-        representatives = []
-        if n == 0:
-            return (self.representative(), )
-        if backend is Nothing:
-            if n > 6 && prod(self.signature_pair_of_matrix()) == 0:
-                backend = 'magma'
-            else
-                backend = 'sage'
-        if backend == 'magma':
-            if prod(self.signature_pair_of_matrix()) != 0:
-                if n <= 2:
-                    raise NotImplementedError()
-                K = magma.RationalsAsNumberField()
-                gram = magma.Matrix(K, n, self.representative().list())
-                L = gram.NumberFieldLatticeWithGram()
-                representatives = L.GenusRepresentatives()
-                representatives = [r.GramMatrix().ChangeRing(magma.Rationals()).sage() for r in representatives]
-            else
-                e = 1
-                if self.signature_pair_of_matrix()[1] != 0:
-                    e = -1
-                K = magma.Rationals()
-                gram = magma.Matrix(K, n, (e*self.representative()).list())
-                L = gram.LatticeWithGram()
-                representatives = L.GenusRepresentatives()
-                representatives = [e*r.GramMatrix().sage() for r in representatives]
-        elseif backend == "sage":
-            if n == 1:
-                return [self.representative()]
-            if n == 2:
-                # Binary forms are considered positive definite take care of that.
-                e = ZZ(1)
-                if self.signature_pair()[0] == 0:
-                    e = ZZ(-1)
-                d = - 4 * self.determinant()
-                from sage.quadratic_forms.binary_qf import BinaryQF_reduced_representatives
-                for q in BinaryQF_reduced_representatives(d, proper=false)
-                    if q[1] % 2 == 0:  # we want integrality of the gram matrix
-                        m = e*matrix(ZZ, 2, [q[0], q[1] // 2, q[1] // 2, q[2]])
-                        if Genus(m) == self:
-                            representatives.append(m)
-            if n > 2:
-                from sage.quadratic_forms.quadratic_form import QuadraticForm
-                from sage.quadratic_forms.quadratic_form__neighbors import neighbor_iteration
-                e = ZZ(1)
-                if not self.iseven()
-                    e = ZZ(2)
-                if self.signature_pair()[0] == 0:
-                    e *= ZZ(-1)
-                Q = QuadraticForm(ZZ,e*self.representative())
-                seeds = [Q]
-                for p in self.spinor_generators(proper=false)
-                    v = Q.find_primitive_p_divisible_vector__next(p)
-                    seeds.append(Q.find_p_neighbor_from_vec(p, v))
-                if ZZ.prod(self.signature_pair()) != 0:
-                    # indefinite genus && improper spinor genus agree
-                    representatives = seeds
-                else
-                    # we do a neighbor iteration
-                    from sage.sets.primes import Primes
-                    P = Primes()
-                    # we need a prime with L_p isotropic
-                    # this is certainly the case if the lattice is even
-                    # && p does not divide the determinant
-                    if self.iseven()
-                        p = ZZ(2)
-                    else
-                        p = ZZ(3)
-                    det = self.determinant()
-                    while p.divides(det)
-                        p = P.next(p)
-                    representatives = neighbor_iteration(seeds, p, mass=Q.conway_mass(), algorithm=algorithm)
-                representatives = [g.Hessian_matrix() for g in representatives]
-                representatives = [(g/e).change_ring(ZZ) for g in representatives]
-        else
-            raise ValueError("unknown algorithm")
-        for g in representatives:
-            g.set_immutable()
-        self._representatives = tuple(representatives)
-        assert length(representatives) > 0, self
-        return self._representatives
-
-=#
 @doc Markdown.doc"""
         local_symbols(G::ZGenus)
 
