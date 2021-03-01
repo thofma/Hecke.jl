@@ -374,7 +374,6 @@ OUTPUT:
 A list of all (non-empty) global genera with the given conditions.
 """
 function genera(sig_pair::Vector{Int}, determinant::fmpz; max_scale=nothing, even=false)
-  @show "hi"
   if !all(s >= 0 for s in sig_pair)
     error("the signature vector must be a pair of non negative integers.")
   end
