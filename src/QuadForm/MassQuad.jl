@@ -102,7 +102,7 @@ function _local_factor_unimodular(L::QuadLat, p)
         else
           cc = c isa PosInf ? 2 *e : inf
         end
-        
+
         if e == b && cc isa PosInf
           ee = _get_eps(c)
           lf = fmpq(q^(Int((e - a - 1) * (r - 1//2))) * (q^r - ee) * (q^(r - 1) + ee), 2)
@@ -167,7 +167,7 @@ function _local_factor_cho(L, p)
       for j in 1:ncols(Q)
         if i > j
           Q[i, j] = 0
-        elseif i < j 
+        elseif i < j
           Q[i, j] *= 2
         end
       end
@@ -220,7 +220,7 @@ function _local_factor_cho(L, p)
 
   PT = Bool[ valuation(norm(quadratic_lattice(K, identity_matrix(K, nrows(G[i])), gram_ambient_space = G[i])), p) == S[i] for i in 1:length(S) ] # parity type I
   # could try with get_norm_valuation_from_gram_matrix(G[i], p)
-  
+
   alpha = Int[]
 
   for i in 1:length(G)
@@ -653,7 +653,7 @@ function _L_function_negative(E, s, prec)
 
   n = degree(K)
 
-  wprec = 8 * prec 
+  wprec = 8 * prec
   R = ArbField(wprec, cached = false)
 
   local pref::arb
@@ -777,7 +777,7 @@ end
 ################################################################################
 
 # This works :)
-# 
+#
 # But it is really slow for s = -1 (s = 2), since the Euler product
 # converges only "linear", that is doubling the number of primes only doubles
 # the precision.
@@ -813,7 +813,7 @@ function _dedekind_zeta_attwell_duval_positive(K::AnticNumberField, s, prec::Int
   RR = ArbField(512)
   d = degree(K)
   #@show prec
-  
+
   local_cor = prod(arb[_local_correction(K, p, RR) for p in primes_up_to(100)])
   #@show local_cor
 
@@ -1139,7 +1139,7 @@ end
 #
 ################################################################################
 
-# See Andreatta, Goren: "Hilbert Modular Forms: mod p and p-Adic Aspects" 
+# See Andreatta, Goren: "Hilbert Modular Forms: mod p and p-Adic Aspects"
 # K must be totally real
 function _denominator_valuation_bound(K, ss, p)
   s = 1 - ss
@@ -1235,33 +1235,38 @@ function _kronecker_as_dirichlet(n, D)
 end
 
 function _kronecker_symbol(n, m)
-  if m == -1
-    if n < 0
-      return -1
-    else
+  res = 1
+  # deal with zero denominator
+  if m == 0
+    if abs(n) == 1
       return 1
+    else
+      return 0
     end
   end
-  e, mm = remove(m, 2)
-  mm = abs(mm)
-  res = _jacobi_symbol(n, mm)
+  # deal with negative denom
+  if m < 0
+    if n < 0
+      res*= -1
+    end
+    m = -m
+  end
+  # deal with even denominator
+  e, m = remove(m, 2)
   if e > 0 && iseven(n)
     return 0
   end
   if isodd(e)
-    nmod8 = n % 8
-    if nmod8 < 0
-      nmod8 += 8
-    end
+    nmod8 = mod(n, 8)
     if nmod8 == 3 || nmod8 == 5
-      res = res * -1
+      res *= -1
     end
   end
-  if m < 0
-    return -res
-  else
+  if m == 1
     return res
   end
+  res *= _jacobi_symbol(n, m)
+  return res
 end
 
 # don't use this, this is slow
