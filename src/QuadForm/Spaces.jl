@@ -301,6 +301,10 @@ function _gram_schmidt(M::MatElem, a, nondeg = true)
             T[i, j] = 1 // (2 * F[j, i])
           end
         end
+        if ok == 0
+          continue
+        end
+
         #S = T * S
         S = mul!(S, T, S)
         #F = T * F * transpose(_map(T, a))
@@ -324,6 +328,7 @@ function _gram_schmidt(M::MatElem, a, nondeg = true)
     end
     @assert isdiagonal(F)
   end
+  @hassert :Lattice 1 S * M * transpose(_map(S, a)) == F
   return F, S
 end
 

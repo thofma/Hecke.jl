@@ -301,4 +301,21 @@ end
   G = genus(L)
   q = discriminant_form(G) # corner case
   @test order(q) == 1
+
+  # maximal integral lattice
+  G = ZZ[3 0 0 0 0 0 0 0 0 0 0 0;
+         0 18 0 0 0 0 0 0 0 0 0 0;
+         0 0 9 0 0 0 0 0 0 0 0 0;
+         0 0 0 9 0 0 0 0 0 0 0 0;
+         0 0 0 0 9 0 0 0 0 0 0 0;
+         0 0 0 0 0 9 0 0 0 0 0 0;
+         0 0 0 0 0 0 9 0 0 0 0 0;
+         0 0 0 0 0 0 0 9 0 0 0 0;
+         0 0 0 0 0 0 0 0 9 0 0 0;
+         0 0 0 0 0 0 0 0 0 9 0 0;
+         0 0 0 0 0 0 0 0 0 0 9 0;
+         0 0 0 0 0 0 0 0 0 0 0 54]
+  L = Zlattice(gram = G)
+  LL = @inferred Hecke.maximal_integral_lattice(L)
+  @test isone(norm(LL))
 end
