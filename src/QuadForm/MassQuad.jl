@@ -1214,11 +1214,13 @@ end
 
 function _bernoulli_kronecker(z::Int, D)
   @assert z >= 0
-  N = _modulus_of_kronecker_as_dirichlet(D)
+  D1 = fundamental_discriminant(D)
+  f = abs(D1)
   K = FlintQQ
   Rt, t = PowerSeriesRing(K, z + 3, "t", cached = false, model = :capped_absolute)
-  denom = exp(N*t) - 1
-  num = sum(elem_type(Rt)[_kronecker_as_dirichlet(a, N) * t * exp(a * t) for a in 1:Int(N)])
+  denom = exp(f*t) - 1
+  #@show [_kronecker_as_dirichlet(a, N) for a in 1:Int(f)]
+  num = sum(elem_type(Rt)[_kronecker_symbol(D1, a) * t * exp(a * t) for a in 1:Int(f)])
   F = divexact(num, denom)
   p = precision(F)
   @assert p >= z + 1
