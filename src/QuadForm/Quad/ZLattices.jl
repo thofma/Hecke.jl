@@ -723,23 +723,24 @@ function local_modification(M::ZLat, G::MatElem, p)
   # notation
   d = denominator(inv(G))
   scale = valuation(d,p)
-  d = p^scale
+  d = p^(scale+1)
 
-  @show G
   L = Zlattice(gram=G)
+  @req isequivalent(L.space, M.space,p) "quadratic spaces must be locally isometric at m"
   L_max = maximal_integral_lattice(L)
 
   # invert the gerstein operations
-  _, U = padic_normal_form(gram_matrix(L_max), p, prec=scale+3)
-  B = inv(U*basis_matrix(L_max))
+  GLm, U = padic_normal_form(gram_matrix(L_max), p, prec=scale+3)
+  B1 = inv(U*basis_matrix(L_max))
 
-  _, UM = padic_normal_form(gram_matrix(M), p, prec=scale+3)
-  B = B * UM * basis_matrix(M)
-  B = lattice_in_same_ambient_space(M,B)
+  GM, UM = padic_normal_form(gram_matrix(M), p, prec=scale+3)
+  # assert GLm == GM at least modulo p^prec
+  B2 = B1 * UM * basis_matrix(M)
+  Lp = lattice(M.space, B2)
 
   # the local modification
-  S = intersect(B, M) + d * M
+  S = intersect(Lp, M) + d * M
   # confirm result
-  @hassert genus(s1,p)==genus(s2,p)
+  @hassert genus(S, p)==genus(G, p)
   return S
 end

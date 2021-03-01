@@ -1,4 +1,4 @@
-export genus, rank, det, determinant, dimension, dim, prime, symbol, representative, is_even, signature, oddity, excess, level, genera, scale, norm, discriminant_form, mass, direct_sum,quadratic_space,hasse_invariant, genera
+export genus, rank, det, determinant, dimension, dim, prime, symbol, representative, is_even, signature, oddity, excess, level, genera, scale, norm, discriminant_form, mass, direct_sum,quadratic_space,hasse_invariant, genera,local_symbol, local_symbols
 
 @doc Markdown.doc"""
     ZpGenus
@@ -39,12 +39,14 @@ mutable struct ZpGenus
   _prime::fmpz
   _symbol::Array{Array{Int,1},1}
 
-  function ZpGenus(prime, symbol)
-    @assert isprime(prime)
-    if prime == 2
-      @assert all(length(g)==5 for g in symbol)
-    else
-      @assert all(length(g)==3 for g in symbol)
+  function ZpGenus(prime, symbol, check=true)
+    if check
+      if prime == 2
+        @assert all(length(g)==5 for g in symbol)
+        @assert all(s[3] in [1,3,5,7] for s in symbol)
+      else
+        @assert all(length(g)==3 for g in symbol)
+      end
     end
     g = new()
     g._prime = prime
@@ -82,14 +84,14 @@ mutable struct ZGenus
 end
 
 @doc Markdown.doc"""
-    _is_even(A::MatElem) -> (Bool, Int)
+    _iseven(A::MatElem) -> (Bool, Int)
 
 Determines if the integral matrix `A` has even diagonal
 (i.e. represents only even numbers).  If not, then it returns the
 index of an odd diagonal entry.  If it is even, then return the
 index -1.
 """
-function _is_even(A::MatElem)
+function _iseven(A::MatElem)
   for i in 1:nrows(A)
     if isodd(ZZ(A[i,i]))
       return false, i
@@ -110,7 +112,7 @@ function _split_odd(A::MatElem)
   if n0 == 1
     return A[1, 1], zero_matrix(ZZ, 0, ncols(A))
   end
-  even, i = _is_even(A)
+  even, i = _iseven(A)
   R = base_ring(A)
   C = zero_matrix(R, n0 - 1, n0)
   u = A[i,i]
@@ -124,7 +126,7 @@ function _split_odd(A::MatElem)
     end
   end
   B = C*A*C'
-  even, j = _is_even(B)
+  even, j = _iseven(B)
   if even
     I = parent(A)(1)
     # TODO: we could manually (re)construct the kernel here...
@@ -149,7 +151,7 @@ function _split_odd(A::MatElem)
   end
   B = C * A * C'
   end
-  even, j = _is_even(B)
+  even, j = _iseven(B)
   @assert !even
   return u, B
 end
@@ -281,7 +283,7 @@ function _two_adic_symbol(A::MatElem, val)
     n0 = nrows(A)
     d0 = mod(det(A),8)
     @assert d0 != 0    ## SANITY CHECK: The mod 8 determinant shouldn't be zero.
-    even, i = _is_even(A)    ## Determine whether the matrix is even || odd.
+    even, i = _iseven(A)    ## Determine whether the matrix is even || odd.
     if even
       return [[m0, n0, d0, 0, 0]]
     else
@@ -297,7 +299,7 @@ function _two_adic_symbol(A::MatElem, val)
     # compute oddity modulo 8:
     d0 = mod(det(A_new), 8)
     @assert d0 != 0
-    even, i = _is_even(A_new)
+    even, i = _iseven(A_new)
     if even
       sym = [[0, n0, d0, 0, 0]]
     else
@@ -383,11 +385,11 @@ function genera(sig_pair::Vector{Int}, determinant::fmpz; max_scale=nothing, eve
     _max_scale = FlintZZ(max_scale)
   end
   rank = sig_pair[1] + sig_pair[2]
-  genera = ZGenus[]
+  out = ZGenus[]
   local_symbols = Vector{ZpGenus}[]
   # every global genus has a 2-adic symbol
   if mod(determinant, 2) == 1
-    push!(local_symbols, _local_genera(2, rank, 0, 0, even))
+    push!(local_symbols, _local_genera(ZZ(2), rank, 0, 0, even))
   end
   # collect the p-adic symbols
   for p in prime_divisors(determinant)
@@ -402,17 +404,17 @@ function genera(sig_pair::Vector{Int}, determinant::fmpz; max_scale=nothing, eve
   # TODO:
   # we are overcounting. Find a more
   # clever way to directly match the symbols for different primes.
-  for g in cartesian_product_iterator(local_symbols)
+  for g in cartesian_product_iterator(local_symbols,inplace=false)
     # create a Genus from a list of local symbols
     G = ZGenus(sig_pair, g)
     # discard the empty genera
-    if _is_global_genus(G)
-      push!(genera, G)
+    if _isglobal_genus(G)
+      push!(out, G)
     end
   end
   # render the output deterministic for testing
-  sort!(genera,by=x -> [s._symbol for s in x._symbols])
-  return genera
+  sort!(out, by=x -> [s._symbol for s in x._symbols])
+  return out
 end
 
 @doc Markdown.doc"""
@@ -479,7 +481,7 @@ function _local_genera(p::fmpz, rank::Int, det_val::Int, max_scale::Int, even::B
         push!(poss_blocks,_blocks(b, (even && b[1] == 0)))
       end
       for g1 in cartesian_product_iterator(poss_blocks,inplace=false)
-        if _is_2_adic_genus(g1)
+        if _is2adic_genus(g1)
           g1 = ZpGenus(p, g1)
           # some of our symbols have the same canonical symbol
           # thus they are equivalent - we want only one in
@@ -562,14 +564,14 @@ function _blocks(b::Array{Int}, even_only=false)
     if !even_only
       for s in [(1,2), (5,6), (1,6), (5,2), (7,0), (3,4)]
         b1 = copy(b)
-        b1[3] = s[1]*mod((-1)^(rk//2 -1) , 8)
+        b1[3] = mod(s[1]*(-1)^(rk//2 -1) , 8)
         b1[4] = 1
         b1[5] = s[2]
         push!(blocks, b1)
       end
       for s in [(1,4), (5,0)]
         b1 = copy(b)
-        b1[3] = s[1]*mod((-1)^(rk//2 - 2) , 8)
+        b1[3] = mod(s[1]*(-1)^(rk//2 - 2) , 8)
         b1[4] = 1
         b1[5] = s[2]
         push!(blocks, b1)
@@ -624,11 +626,11 @@ function genus(L::ZLat)
 end
 
 @doc Markdown.doc"""
-    _is_global_genus(G::ZGenus) -> Bool
+    _isglobal_genus(G::ZGenus) -> Bool
 
 Return if `S` is the symbol of of a global quadratic form || lattice.
 """
-function _is_global_genus(G::ZGenus)
+function _isglobal_genus(G::ZGenus)
   D = determinant(G)
   r, s = signature_pair(G)
   oddi = r - s
@@ -639,7 +641,7 @@ function _is_global_genus(G::ZGenus)
     a = divexact(D, p^v)
     b = prod([ss[3] for ss in sym])
     if p == 2
-      if !_is_2_adic_genus(sym)
+      if !_is2adic_genus(sym)
         return false
       end
       if _kronecker_symbol(a*b, p) != 1
@@ -661,7 +663,7 @@ end
 
 
 @doc Markdown.doc"""
-    _is_2_adic_genus(symbol::Array{Array{Int,1},1})
+    _is2adic_genus(symbol::Array{Array{Int,1},1})
 
 Given a `2`-adic local symbol (as the underlying list of quintuples)
 check whether it is the `2`-adic symbol of a `2`-adic form.
@@ -671,7 +673,7 @@ INPUT:
 - ``genus_symbol_quintuple_list`` -- a quintuple of integers (with certain
   restrictions).
   """
-function _is_2_adic_genus(symbol::Array{Array{Int,1},1})
+function _is2adic_genus(symbol::Array{Array{Int,1},1})
   for s in symbol
     ## Check that we have a quintuple (i.e. that p=2 && not p >2)
     if size(s)[1] != 5
@@ -999,17 +1001,18 @@ function representative(S::ZpGenus)
     push!(G, _gram_from_jordan_block(p, block))
   end
   G = diagonal_matrix(G)
+  @assert S==genus(G, p)
   return change_base_ring(QQ, G)
 end
 
 @doc Markdown.doc"""
-    is_even(S::ZpGenus) -> Bool
+    iseven(S::ZpGenus) -> Bool
 
 Return if the underlying `p`-adic lattice is even.
 
 If `p` is odd, every lattice is even.
 """
-function is_even(S::ZpGenus)
+function iseven(S::ZpGenus)
   if prime(S) != 2 || rank(S) == 0
     return true
   end
@@ -1448,14 +1451,14 @@ function Base.:(==)(G1::ZGenus, G2::ZGenus)
   return true
 end
 
-@doc Markdown.doc"""is_even(G::ZGenus)
+@doc Markdown.doc"""iseven(G::ZGenus)
     Return if this genus is even.
 """
-function is_even(G::ZGenus)
+function iseven(G::ZGenus)
   if rank(G) == 0
     return true
   end
-  return is_even(G._symbols[1])
+  return iseven(G._symbols[1])
 end
 #=
     function _proper_spinor_kernel(self)
@@ -1881,7 +1884,7 @@ end
                 from sage.quadratic_forms.quadratic_form import QuadraticForm
                 from sage.quadratic_forms.quadratic_form__neighbors import neighbor_iteration
                 e = ZZ(1)
-                if not self.is_even()
+                if not self.iseven()
                     e = ZZ(2)
                 if self.signature_pair()[0] == 0:
                     e *= ZZ(-1)
@@ -1900,7 +1903,7 @@ end
                     # we need a prime with L_p isotropic
                     # this is certainly the case if the lattice is even
                     # && p does not divide the determinant
-                    if self.is_even()
+                    if self.iseven()
                         p = ZZ(2)
                     else
                         p = ZZ(3)
