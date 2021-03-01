@@ -87,3 +87,15 @@ end
   @test @inferred !islocal_norm(E, u, p)
   @test valuation(u - 1, p) == @inferred normic_defect(E, u, p)
 end
+
+@testset "Jordan decomposition" begin
+  Qx, x = PolynomialRing(FlintQQ, "x", cached = false)
+  f = x - 1;
+  K, a = number_field(f)
+  D = matrix(K, 3, 3, [3, 2, 1, 2, 3, 1, 1, 1, 1]);
+  gens = [[1, -1, 0], [1, -1, 0], [0, 1, -1], [0, 1, -1]]
+  L = quadratic_lattice(K, generators = gens, gram_ambient_space = D)
+  p = prime_decomposition(maximal_order(K), 2)[1][1]
+  B, B, S = jordan_decomposition(L, p)
+  @test length(S) == 1
+end
