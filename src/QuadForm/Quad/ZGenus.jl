@@ -375,7 +375,7 @@ OUTPUT:
 
 A list of all (non-empty) global genera with the given conditions.
 """
-function genera(sig_pair::Vector{Int}, determinant::fmpz; max_scale=nothing, even=false)
+function genera(sig_pair::Vector{Int}, determinant::Union{Int,fmpz}; max_scale=nothing, even=false)
   if !all(s >= 0 for s in sig_pair)
     error("the signature vector must be a pair of non negative integers.")
   end
@@ -494,6 +494,10 @@ function _local_genera(p::fmpz, rank::Int, det_val::Int, max_scale::Int, even::B
     end
   end
   return symbols
+end
+
+function _local_genera(p::Int, rank::Int, det_val::Int, max_scale::Int, even::Bool)
+  return _local_genera(ZZ(p), rank, det_val, max_scale, even)
 end
 
 @doc Markdown.doc"""
@@ -1001,7 +1005,7 @@ function representative(S::ZpGenus)
     push!(G, _gram_from_jordan_block(p, block))
   end
   G = diagonal_matrix(G)
-  @assert S==genus(G, p)
+  @hassert :Lattice 1  S==genus(G, p)
   return change_base_ring(QQ, G)
 end
 
@@ -1782,7 +1786,7 @@ function representative(G::ZGenus)
     L = local_modification(L, representative(sym), p)
   end
   # confirm the computation
-  @hassert genus(L) == G
+    @hassert :Lattice 1 genus(L) == G
   G._representative = L
   return L
 end

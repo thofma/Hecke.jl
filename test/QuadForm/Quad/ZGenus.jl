@@ -230,7 +230,7 @@
   end
 
 
-  for d in 1:200
+  for d in 1:50
     for sig in [[2,0],[0,3],[4,0]]
       for G in genera([4,0],d)
         m = mass(G)
@@ -239,6 +239,16 @@
         @test mass(L)==m
         rep = genus_representatives(L)
         @test sum(1/number_of_automorphisms(M) for M in rep)==m
+      end
+  end
+
+  for d in 51:400
+    for sig in [[2,0],[0,3],[4,0]]
+      for G in genera([4,0],d)
+        m = mass(G)
+        L = representative(G)
+        @test genus(L)==G
+        @test mass(L)==m
       end
   end
 
