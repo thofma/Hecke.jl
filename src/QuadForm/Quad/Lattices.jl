@@ -313,7 +313,7 @@ function jordan_decomposition(L::Union{ZLat, QuadLat}, p)
   blocks = Int[]
   exponents = Int[]
   S = local_basis_matrix(L, p)
-  n = ncols(S)
+  n = nrows(S)
   k = 1
   while k <= n
     G = S * F * transpose(S)
