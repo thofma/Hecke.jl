@@ -286,15 +286,9 @@ end
   L = rescale(Hecke.root_lattice(:A,3),15)
   M = Hecke.maximal_integral_lattice(L)
   for p in prime_divisors(ZZ(discriminant(L)))
-    M = Hecke.local_modification(M, gram_matrix(L), p)
+    M = Hecke.local_modification(M, L, p)
   end
-  @test genus(M) == genus(M)
-
-
-  L = Zlattice(gram=matrix(ZZ,2,2,[0,1,1,0]))
-  G = genus(L)
-  q = discriminant_form(G) # corner case
-  @test order(q) == 1
+  @test genus(M) == genus(L)
 
   # maximal integral lattice
   G = ZZ[3 0 0 0 0 0 0 0 0 0 0 0;

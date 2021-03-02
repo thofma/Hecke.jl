@@ -703,37 +703,36 @@ function Base.:(==)(L1::ZLat, L2::ZLat)
 end
 
 @doc Markdown.doc"""
-    local_modification(M::ZLat, G::MatElem, p)
+    local_modification(M::ZLat, L::ZLat, p)
 
-Return a local modification of `M` that matches `G` at `p`.
+Return a local modification of `M` that matches `L` at `p`.
 
 INPUT:
 
 - ``M`` -- a `\ZZ_p`-maximal lattice
-- ``G`` -- the gram matrix of a lattice
+- ``L`` -- the a lattice
             isomorphic to `M` over `\QQ_p`
 - ``p`` -- a prime number
 
 OUTPUT:
 
 an integral lattice `M'` in the ambient space of `M` such that `M` and `M'` are locally equal at all
-completions except at `p` where `M'` is locally equivalent to the lattice with gram matrix `G`
+completions except at `p` where `M'` is locally equivalent to the lattice `L`.
 """
-function local_modification(M::ZLat, G::MatElem, p)
+function local_modification(M::ZLat, L::ZLat, p)
   # notation
-  d = denominator(inv(G))
-  scale = valuation(d,p)
-  d = p^(scale+1)
+  d = denominator(inv(gram_matrix(L)))
+  level = valuation(d,p)
+  d = p^(level+1) # +1 since scale(M) <= 1/2 ZZ
 
-  L = Zlattice(gram=G)
   @req isequivalent(L.space, M.space,p) "quadratic spaces must be locally isometric at m"
   L_max = maximal_integral_lattice(L)
 
   # invert the gerstein operations
-  GLm, U = padic_normal_form(gram_matrix(L_max), p, prec=scale+3)
+  GLm, U = padic_normal_form(gram_matrix(L_max), p, prec=level+3)
   B1 = inv(U*basis_matrix(L_max))
 
-  GM, UM = padic_normal_form(gram_matrix(M), p, prec=scale+3)
+  GM, UM = padic_normal_form(gram_matrix(M), p, prec=level+3)
   # assert GLm == GM at least modulo p^prec
   B2 = B1 * UM * basis_matrix(M)
   Lp = lattice(M.space, B2)
@@ -741,6 +740,6 @@ function local_modification(M::ZLat, G::MatElem, p)
   # the local modification
   S = intersect(Lp, M) + d * M
   # confirm result
-  @hassert genus(S, p)==genus(G, p)
+  @hassert genus(S, p)==genus(L, p)
   return S
 end
