@@ -1953,7 +1953,7 @@ function _zeta_exact(n)
       raise(error("n must be a critical value (i.e. even > 0 or odd < 0)"))
     end
   elseif n == 1
-    raise(error("Here is a pole"))
+    error("Here is a pole")
   elseif n == 0
     return QQ(-1// 2)
   end
