@@ -1053,7 +1053,7 @@ rational_representative(G::ZGenus) = quadratic_space(G)
     determinant(S::ZpGenus) -> fmpz
 
 Return an integer representing the determinant of this genus.
-    """
+"""
 function determinant(S::ZpGenus)
   p = S._prime
   e = prod(s[3] for s in S._symbol)
