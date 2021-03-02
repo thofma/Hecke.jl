@@ -922,7 +922,7 @@ function quadratic_space(G::ZGenus)
   return quadratic_space(QQ, qf)
 end
 
-rational_representative(G::ZGenus) = quadratic_space(G::ZGenus)
+rational_representative(G::ZGenus) = quadratic_space(G)
 
 #=
     function represents(self,other)
