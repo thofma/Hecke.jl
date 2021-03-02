@@ -63,7 +63,7 @@ and a signature pair. Together they represent the genus of a
 non-degenerate Zlattice.
 """
 mutable struct ZGenus
-  _signature_pair::Vector{Int}
+  _signature_pair::Tuple{Int, Int}
   _symbols::Vector{ZpGenus} # assumed to be sorted by their primes
   _representative::ZLat
 
