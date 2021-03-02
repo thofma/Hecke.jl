@@ -838,7 +838,7 @@ end
     representative(S::ZpGenus) -> MatElem
 
 Return a gram matrix of some representative of this local genus.
-    """
+"""
 function representative(S::ZpGenus)
   G = fmpq_mat[]
   p = prime(S)
