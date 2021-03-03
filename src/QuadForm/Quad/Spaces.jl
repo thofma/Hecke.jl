@@ -386,7 +386,7 @@ function _quadratic_form_with_invariants(dim::Int, det::fmpz,
     !isempty(finite) && throw(error("Impossible Hasse invariants"))
     return matrix(FlintQQ, 1, 1, fmpz[det])
   end
- 
+
   finite = unique(finite)
   @assert all(isprime(p) for p in finite)
 
@@ -399,7 +399,7 @@ function _quadratic_form_with_invariants(dim::Int, det::fmpz,
   end
 
   # product formula check
-  
+
   !iseven((negative % 4 >= 2 ? 1 : 0) + length(finite)) && throw(error("The number of places (finite or infinite) with Hasse invariant -1 must be even"))
 
   # reduce the number of bad primes
@@ -459,7 +459,7 @@ function _quadratic_form_with_invariants(dim::Int, det::fmpz,
   Drat = append!(Drat, fmpq[a, squarefree_part(FlintZZ(det * a))])
 
   M = diagonal_matrix(Drat)
-  
+
   d, f, n = _quadratic_form_invariants(M)
 
   @assert dim0 == length(Drat)
@@ -711,7 +711,7 @@ end
 # This is O'Meara, 63:21
 #
 # n, a, ha = dimension, determinant (class) and Hasse symbol of first space
-# Similar for m, a, hb 
+# Similar for m, a, hb
 # p is the prime idela
 function _can_locally_embed(n::Int, da, ha::Int, m::Int, db, hb::Int, p)
   de = m - n
@@ -745,7 +745,7 @@ end
 #
 # If the place is complex, there is only the trivial restriction (ranks)
 # If the place is real, we have to check if the signatures fit.
-#  
+#
 # If p does not divide 2 * dU * dV and h(U) = 1 = h(V) (Hasse-invariant),
 # then U is represented by V locally at p. This follows from the local
 # characterization. But the Hasse invariant is zero outside the support
@@ -832,7 +832,7 @@ end
 
 function _solve_conic(a, b, c, u, v)
 
-  K = parent(a) 
+  K = parent(a)
 	@assert !iszero(a)
 	@assert !iszero(b)
 	@assert !iszero(c)
@@ -892,14 +892,14 @@ function _isisometric_with_isometry(a1, a2, b1, b2)
   # Let us call the matrix (a b; c d)
   # Then a^2 a_1 + b^2 a_2 = z1^2 * b1 and
   #
-  
+
   K = parent(a1)
   Kuv, (u, v) = PolynomialRing(K, ["u", "v"], cached = false)
-  
+
   fl, _aa, _bb, _z1, a, b, z1 = _solve_conic(a1, a2, -b1, u, v)
   @show _aa, _bb, _z1
   @assert fl
-  
+
   # a^2 a_1 + b^2 a_2 = z2^2 b2 and
   fl, _cc, _dd, _z2, c, d, z2 = _solve_conic(a1, a2, -b2, u, v)
   @show _cc, _dd, _z2
@@ -911,9 +911,9 @@ function _isisometric_with_isometry(a1, a2, b1, b2)
   @show b
   @show c
   @show d
-  
+
   # a * c * a1 + b * d * a2 = 0
-  
+
   @show z1, z2
 
   s =  a * c * a1 + b * d * a2
@@ -1010,9 +1010,8 @@ end
 
 # Return true, T such that T * [A 0; 0 B] T^t = [a 0; 0 b] or false, 0 if no such T exists.
 function _isisometric_with_isometry_dan(A, B, a, b)
-  @assert A * B == a * b
   K = parent(A)
-  
+
   Kkt, (k, t) = PolynomialRing(K, ["k", "t"], cached = false)
 
   fl, u1, w1, u, w = _solve_conic_affine(A, B, a, t)
@@ -1030,34 +1029,59 @@ function _isisometric_with_isometry_dan(A, B, a, b)
 
   junk = 4 * (-2 * A^2 * B * s3 * t * u1 + A^3 * u1 * v3 - A^2 * B * t^2 * u1 * v3 + A^2 * B * s3 * w1 -  A * B^2 * s3 * t^2 * w1 + 2 * A^2 * B * t * v3 * w1) * (B + A * k^2) * (A + B * t^2)
 
-  t0 = K(1)
-  @assert !iszero(A + B * t0^2)
+  local uu
+  local ww
+  local ss
+  local vv
 
-  middle = A * u * v + B * s * w
+  i = -1
 
-  @assert lin^2 - sq == junk * middle
+  denu = denominator(u)
+  denw = denominator(w)
+  dens = denominator(s)
+  denv = denominator(v)
 
-  _sq = sq(0, t0)
+  while true
+    i += 1
+    t0 = K(i)
+    @assert !iszero(A + B * t0^2)
 
-  fl, rt = ispower(_sq, 2)
+    middle = A * u * v + B * s * w
 
-  if !fl
-    return false, zero_matrix(K, 0, 0)
+    @assert lin^2 - sq == junk * middle
+
+    _sq = sq(0, t0)
+
+    fl, rt = ispower(_sq, 2)
+
+    if !fl
+      return false, zero_matrix(K, 0, 0)
+    end
+
+    k0 = (rt + (-2 * A^2 * B * s3 * u1 +  2 * A * B^2 * s3 * t^2 * u1 - 4 * A^2 * B * t * u1 * v3 - 4 * A * B^2 * s3 * t * w1 + 2 * A^2 * B * v3 * w1 - 2 * A * B^2 * t^2 * v3 * w1))//((2 * (-2 * A^2 * B * s3 * t * u1 + A^3 * u1 * v3 - A^2 * B * t^2 * u1 * v3 + A^2 * B * s3 * w1 - A * B^2 * s3 * t^2 * w1 + 2 * A^2 * B * t * v3 * w1)))
+
+    if iszero(denominator(k0)(0, t0))
+      continue
+    end
+
+    kk = numerator(k0)(0, t0)//denominator(k0)(0, t0)
+
+    #@assert !iszero(junk(kk, t0))
+    #@assert !iszero(B + A * kk^2)
+
+    if iszero(denu(kk, t0)) || iszero(denw(kk, t0)) || iszero(dens(kk, t0)) ||
+                                                            iszero(denv(kk, t0))
+      continue
+    else
+      uu = numerator(u)(kk, t0)//denominator(u)(kk, t0)
+      ww = numerator(w)(kk, t0)//denominator(w)(kk, t0)
+      ss = numerator(s)(kk, t0)//denominator(s)(kk, t0)
+      vv = numerator(v)(kk, t0)//denominator(v)(kk, t0)
+      break
+    end
   end
 
-  k0 = (rt + (-2 * A^2 * B * s3 * u1 +  2 * A * B^2 * s3 * t^2 * u1 - 4 * A^2 * B * t * u1 * v3 - 4 * A * B^2 * s3 * t * w1 + 2 * A^2 * B * v3 * w1 - 2 * A * B^2 * t^2 * v3 * w1))//((2 * (-2 * A^2 * B * s3 * t * u1 + A^3 * u1 * v3 - A^2 * B * t^2 * u1 * v3 + A^2 * B * s3 * w1 - A * B^2 * s3 * t^2 * w1 + 2 * A^2 * B * t * v3 * w1)))
-
-  kk = numerator(k0)(0, t0)//denominator(k0)(0, t0)
-
-  @assert !iszero(junk(kk, t0))
-  @assert !iszero(B + A * kk^2)
-
-  uu = numerator(u)(kk, t0)//denominator(u)(kk, t0)
-  ww = numerator(w)(kk, t0)//denominator(w)(kk, t0)
-  ss = numerator(s)(kk, t0)//denominator(s)(kk, t0)
-  vv = numerator(v)(kk, t0)//denominator(v)(kk, t0)
-
-  T = matrix(K, 2, 2, [uu, ww, vv, ss])
+  T = matrix(K, 2, 2, elem_type(K)[uu, ww, vv, ss])
   D1 = diagonal_matrix([A, B])
   D2 = diagonal_matrix([a, b])
   @assert T * D1 * transpose(T) == D2
@@ -1202,8 +1226,7 @@ function _isisotropic_with_vector(F::MatrixElem)
     # Find x != 0 such that <D[1], D[2]> and <-D[3], -D[4]> both represent x.
 
     rlp = real_places(K)
-    
-    
+
     _target = append!(Int[_to_gf2(hilbert_symbol(D[1], D[2], p)) for p in P], Int[_to_gf2(hilbert_symbol(-D[3], -D[4], p)) for p in P])
 
     I = eltype(rlp)[]
@@ -1242,7 +1265,7 @@ function _isisotropic_with_vector(F::MatrixElem)
         _v = append!(Int[_to_gf2(hilbert_symbol(-D[1] * D[2], x, p)) for p in P], Int[_to_gf2(hilbert_symbol(-D[3] * D[4], x, p)) for p in P])
         _v = append!(_v, Int[_to_gf2(sign(x, p)) for p in I])
         s = V(_v)
-        fl, _ = haspreimage(mS, s) 
+        fl, _ = haspreimage(mS, s)
         if !fl
           push!(signs, s)
           push!(basis, x)
@@ -1382,7 +1405,7 @@ function _isisotropic_with_vector(F::MatrixElem)
       if _isisotropic(D[3:5], p)
         continue
       end
-      
+
       if _isisotropic([D[3], D[4], D[5], D[1]], p)
         x = one(K)
         y = zero(K)
@@ -1487,7 +1510,7 @@ function _find_hyperbolic_subspace(F)
   GG = H * F * H'
 
   if !iszero(GG[2, 2])
-    al = -GG[2, 2]//2 
+    al = -GG[2, 2]//2
     for i in 1:ncols(H)
       H[2, i] = al * H[1, i] + H[2, i]
     end
@@ -1594,7 +1617,7 @@ function _isisometric_with_isometry(F, G)
   @assert X * F * X' == Y * G * Y'
   @assert H1 * F * H1' == H2  *  G * H2'
 
-  M = inv(vcat(X, H1, R1)) * vcat(Y, H2, R2) 
+  M = inv(vcat(X, H1, R1)) * vcat(Y, H2, R2)
 
   @assert M * G * M' == F
 
