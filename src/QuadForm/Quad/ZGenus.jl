@@ -443,12 +443,12 @@ function direct_sum(S1::ZpGenus, S2::ZpGenus)
   if prime(S1) != prime(S2)
     throw(ValueError("the local genus symbols must be over the same prime"))
   end
-  sym1 = S1._symbol
-  sym2 = S2._symbol
-  m = max(sym1[end][1], sym2[end][1])
-  sym1 = Dict([[s[1], s] for s in sym1])
-  sym2 = Dict([[s[1], s] for s in sym2])
-  symbol = []
+  _sym1 = S1._symbol
+  _sym2 = S2._symbol
+  m = max(_sym1[end][1], _sym2[end][1])
+  sym1 = Dict([[s[1], s] for s in _sym1])
+  sym2 = Dict([[s[1], s] for s in _sym2])
+  symbol = Vector{Int}[]
   for k in 0:m
     if prime(S1) == 2
       b = [k, 0, 1, 0, 0]
