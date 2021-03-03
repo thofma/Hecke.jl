@@ -448,7 +448,7 @@ function direct_sum(S1::ZpGenus, S2::ZpGenus)
   m = max(sym1[end][1], sym2[end][1])
   sym1 = Dict([[s[1], s] for s in sym1])
   sym2 = Dict([[s[1], s] for s in sym2])
-  symbol = []
+  symbol = Vector{Int}[]
   for k in 0:m
     if prime(S1) == 2
       b = [k, 0, 1, 0, 0]
