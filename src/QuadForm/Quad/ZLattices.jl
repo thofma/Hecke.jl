@@ -451,9 +451,8 @@ end
 # documented in ../Lattices.jl
 
 function dual(L::ZLat)
-  G = gram_matrix(ambient_space(L))
-  Gi = inv(G)
-  new_bmat = transpose(inv(basis_matrix(L)) * Gi)
+  G = gram_matrix(L)
+  new_bmat = inv(G)*basis_matrix(L)
   return lattice(ambient_space(L), new_bmat)
 end
 

@@ -298,4 +298,12 @@ end
   L = Zlattice(gram = G)
   LL = @inferred Hecke.maximal_integral_lattice(L)
   @test isone(norm(LL))
+
+  G = QQ[1 0 0 0; 0 2 0 0; 0 0 17 0; 0 0 0 6]
+  V = quadratic_space(QQ, G)
+  B = QQ[2 0 0 0; 1 1 0 0; 1 0 1 0; 1//2 1//4 1//2 1//4]
+  L = lattice(V, B)
+  Ld = dual(L)
+  @test issublattice(Ld,L)
+  discriminant_group(L)
 end
