@@ -1083,10 +1083,8 @@ function iterated_neighbours(L::QuadLat, p; use_auto = true, max = inf, mass = -
 
   local found::fmpq
 
-  if mass < 0
+  if mass >= 0
     found = 1//automorphism_group_order(L)
-  else
-    found = zero(fmpq)
   end
 
   while (i <= length(result)) && (length(result) < max) && (!use_mass || found < mass)
