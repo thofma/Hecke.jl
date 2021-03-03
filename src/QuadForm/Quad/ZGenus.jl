@@ -456,7 +456,7 @@ function direct_sum(S1::ZpGenus, S2::ZpGenus)
       b = [k, 0, 1]
     end
     for sym in [sym1, sym2]
-      try
+      if haskey(sym,k)
         s = sym[k]
         b[2] += s[2]
         b[3] *= s[3]
@@ -467,7 +467,6 @@ function direct_sum(S1::ZpGenus, S2::ZpGenus)
           end
           b[5] = mod(b[5] + s[5], 8)
         end
-      catch KeyError
       end
     end
     if b[2] != 0
