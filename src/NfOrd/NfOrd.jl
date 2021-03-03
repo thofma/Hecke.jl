@@ -945,7 +945,7 @@ function any_order(K::NfAbsNS)
 
   b = Vector{NfAbsNSElem}(undef, degree(K))
   ind = 1
-  it = cartesian_product_iterator([1:degrees(K)[i] for i in 1:ngens(K)])
+  it = cartesian_product_iterator([1:degrees(K)[i] for i in 1:ngens(K)], inplace = true)
   for i in it
     b[ind] = prod(normalized_gens[j]^(i[j] - 1) for j=1:length(i))
     ind += 1

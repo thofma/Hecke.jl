@@ -179,3 +179,19 @@ end
 function var(E::NfRel)
   return E.S
 end
+
+################################################################################
+#
+#  Zlattices
+#
+################################################################################
+
+function to_hecke(io::IO, L::ZLat; target = "L")
+  B = basis_matrix(L)
+  G = gram_matrix(ambient_space(L))
+  Bst = "[" * split(string([B[i, j] for i in 1:nrows(B) for j in 1:ncols(B)]), '[')[2]
+  Gst = "[" * split(string([G[i, j] for i in 1:nrows(G) for j in 1:ncols(G)]), '[')[2]
+  println(io, "B = matrix(FlintQQ, ", nrows(B), ", ", ncols(B), " ,", Bst, ");")
+  println(io, "G = matrix(FlintQQ, ", nrows(G), ", ", ncols(G), " ,", Gst, ");")
+  println(io, target, " = ", "Zlattice(B, gram = G);")
+end

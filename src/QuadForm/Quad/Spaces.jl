@@ -1010,6 +1010,7 @@ end
 
 # Return true, T such that T * [A 0; 0 B] T^t = [a 0; 0 b] or false, 0 if no such T exists.
 function _isisometric_with_isometry_dan(A, B, a, b)
+  @assert A * B == a * b
   K = parent(A)
   
   Kkt, (k, t) = PolynomialRing(K, ["k", "t"], cached = false)
@@ -1092,8 +1093,19 @@ function isequivalent_with_isometry(V::QuadSpace, W::QuadSpace)
   @assert MV * GV * transpose(MV) == diagonal_matrix([A, B])
   @assert MW * GW * transpose(MW) == diagonal_matrix([a, b])
 
-  fl, T = _isisometric_with_isometry_dan(A, B, a, b)
-  @assert fl
+  if a * b != A * B
+    c = (A * B)//(a * b)
+    bp = b * c
+    @assert a * bp == A * B
+    fl, T = _isisometric_with_isometry_dan(A, B, a, bp)
+    @assert fl
+    cc = inv(sqrt(c))
+    M = matrix(K, 2, 2, [1, 0, 0, inv(cc)])
+    T = inv(M) * T
+  else
+    fl, T = _isisometric_with_isometry_dan(A, B, a, b)
+    @assert fl
+  end
 
   @assert T * DV * transpose(T) == DW
 
@@ -1618,6 +1630,7 @@ end
 function _isisotropic_with_vector_finite(M)
   n = ncols(M)
   k = base_ring(M)
+  _test(v) = iszero(matrix(k, 1, n, v) * M * matrix(k, n, 1, v))
   @assert k isa Field && characteristic(k) != 2
   if n == 0
     ;
@@ -1638,22 +1651,28 @@ function _isisotropic_with_vector_finite(M)
     end
     for i in 1:ncols(G)
       if iszero(G[i, i])
-        return true, elem_type(k)[T[i, j] for j in 1:ncols(T)]
+        el = elem_type(k)[T[i, j] for j in 1:ncols(T)]
+        @hassert :Lattice _test(el)
+        return true, el
       end
     end
 
     if n == 2
       ok, s = issquare_with_square_root(-divexact(G[1, 1], G[2, 2]))
       if ok
-        return true, elem_type(k)[T[1, i] + s*T[2, i] for i in 1:ncols(T)]
+        el = elem_type(k)[T[1, i] + s*T[2, i] for i in 1:ncols(T)]
+        @hassert :Lattice _test(el)
+        return true, el
       end
     else
       while true
         x = rand(k)
         y = rand(k)
-        ok, z = issquare( -x^2 * G[1, 1] - y^2 * divexact(G[2, 2], G[3, 3]))
+        ok, z = issquare_with_square_root(divexact(-x^2 * G[1, 1] - y^2 * G[2, 2], G[3, 3]))
         if (ok && (!iszero(x) || !iszero(y)))
-          return true,  elem_type(k)[x*T[1, i] + y*T[2, i] + z * T[3, i] for i in 1:ncols(T)]
+          el = elem_type(k)[x*T[1, i] + y*T[2, i] + z * T[3, i] for i in 1:ncols(T)]
+          @hassert :Lattice _test(el)
+          return true, el
         end
       end
     end

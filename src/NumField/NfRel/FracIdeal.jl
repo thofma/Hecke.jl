@@ -337,7 +337,7 @@ function +(a::NfRelOrdFracIdl{T, S}, b::NfRelOrdFracIdl{T, S}) where {T, S}
   end
   m = simplify(den^d*(norm(a) + norm(b)))
   @assert isone(denominator(m))
-  H = sub(pseudo_hnf_full_rank_with_modulus(H, numerator(m), :lowerleft), (d + 1):2*d, 1:d)
+  H = sub(pseudo_hnf_full_rank_with_modulus(H, numerator(m) * _modulus(order(a)), :lowerleft), (d + 1):2*d, 1:d)
   for i = 1:d
     H.coeffs[i].den = H.coeffs[i].den*den
     H.coeffs[i] = simplify(H.coeffs[i])
@@ -391,7 +391,7 @@ function *(a::NfRelOrdFracIdl{T, S, U}, b::NfRelOrdFracIdl{T, S, U}) where {T, S
   end
   m = simplify(den^(2*d)*norm(a)*norm(b))
   @assert isone(denominator(m))
-  H = sub(pseudo_hnf_full_rank_with_modulus(PM, numerator(m), :lowerleft), (d*(d - 1) + 1):d^2, 1:d)
+  H = sub(pseudo_hnf_full_rank_with_modulus(PM, numerator(m) * _modulus(order(a)), :lowerleft), (d*(d - 1) + 1):d^2, 1:d)
   for i = 1:d
     H.coeffs[i].den = H.coeffs[i].den*den
     H.coeffs[i] = simplify(H.coeffs[i])
@@ -447,13 +447,13 @@ end
 
 *(b::NumFieldElem{T}, a::NfRelOrdFracIdl{T, S}) where {T, S} = a*b
 
-function *(a::NfRelOrdFracIdl{T, S}, b::S) where {T, S}
+function *(a::NfRelOrdFracIdl{T, S}, b::S) where {T, S <: Union{NfRelOrdFracIdl, NfAbsOrdFracIdl}}
   pm = basis_pmatrix(a)
   pmnew = pseudo_matrix(matrix(pm), map(z -> b * z, coefficient_ideals(pm)))
   return fractional_ideal(order(a), pmnew)
 end
 
-*(a::S, b::NfRelOrdFracIdl{T, S}) where {T, S} = b * a
+*(a::S, b::NfRelOrdFracIdl{T, S}) where {T, S <: Union{NfRelOrdFracIdl, NfAbsOrdFracIdl}} = b * a
 
 ################################################################################
 #

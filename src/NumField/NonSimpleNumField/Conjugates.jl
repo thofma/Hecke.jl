@@ -168,7 +168,7 @@ function __conjugates_data(L::NfRelNS{T}, p::Int) where T
         res[r + c_cnt] = (P, acb[datas[j][2][y[j]] for j = 1:length(y)]) 
       end
     else
-      it = cartesian_product_iterator([1:length(x[2]) for x in datas])
+      it = cartesian_product_iterator([1:length(x[2]) for x in datas], inplace = true)
       for y in it
         c_cnt += 1
         res[r + c_cnt] = (P, acb[datas[j][2][y[j]] for j = 1:length(y)]) 

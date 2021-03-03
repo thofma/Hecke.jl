@@ -1450,3 +1450,147 @@ function isprimitive(f::fmpz_mod_poly)
   gcd!(g, g, modulus(R))
   return isone(g), R(g)
 end
+
+function _coprimality_test(f::T, g::T, h::T) where T <: Union{nmod_poly, fmpz_mod_poly}
+  Rx = parent(f)
+  m = modulus(Rx)
+  #First, I order the polynomials by degree
+  if degree(f) > degree(g)
+    if degree(g) > degree(h)
+      return _coprimality_test(h, g, f)
+    else
+      return _coprimality_test(g, h, f)
+    end
+  elseif degree(g) > degree(h)
+    return _coprimality_test(f, h, g)
+  end
+  #Now, we start.
+  Zx = PolynomialRing(FlintZZ, "x", cached = false)[1]
+  while true
+    if isconstant(f)
+      if isunit(coeff(f, 0))
+        return true
+      else
+        return isunit(gcd(coeff(f, 0), rres(f, h)))
+      end
+    end
+    if isunit(lead(f))
+      g = mod(g, f)
+      h = mod(h, f)
+      if isconstant(g)
+        if isunit(g)
+          return true
+        else
+          return isunit(gcd(coeff(g, 0), rres(f, h)))
+        end
+      elseif isconstant(h)
+        if isunit(h)
+          return true
+        else
+          return isunit(gcd(coeff(h, 0), rres(f, g)))
+        end
+      end
+      if degree(g) > degree(h)
+        f, g, h = h, g, f
+      else
+        f, g, h = g, h, f
+      end
+      continue
+    end
+
+    c, f = primsplit(f)
+    must_split = false
+    if isunit(c)
+      for i = degree(f):-1:0
+        cfi = coeff(f, i)
+        if isnilpotent(cfi) 
+          continue
+        end
+        if isunit(cfi)
+          break
+        else
+          must_split = true
+        end
+      end
+      if !must_split
+        f = fun_factor(f)[2]
+        continue
+      end
+    end
+    if !must_split && isunit(lead(g))
+      h = mod(h, g)
+      if degree(h) < degree(f)
+        f, g, h = h, f, g
+      else
+        f, g, h = f, h, g
+      end
+      continue
+    end
+    c1, g = primsplit(g)
+    if !must_split && isunit(c1)
+      for i = degree(g):-1:0
+        cgi = coeff(g, i)
+        if isnilpotent(cgi) 
+          continue
+        end
+        if isunit(cgi)
+          break
+        else
+          must_split = true
+        end
+      end
+      if !must_split
+        g = fun_factor(g)[2]
+        if degree(g) < degree(f)
+          f, g, h  = g, h, f
+          continue
+        end
+        h = mod(h, g)
+        if degree(h) <= degree(f)
+          f, g, h = h, f, g
+        else
+          f, g, h = f, h, g
+        end
+        continue
+      end
+    end
+    if must_split || isunit(gcd(c, c1))
+      #split the ring
+      _to_base = fmpz[m, lift(c), lift(c1)]
+      for i = 0:degree(f)
+        cfi = coeff(f, i)
+        if !iszero(cfi) && !isunit(cfi)
+          push!(_to_base, lift(cfi))
+        end
+      end
+      for i = 0:degree(g)
+        cgi = coeff(g, i)
+        if !iszero(cgi) && !isunit(cgi)
+          push!(_to_base, lift(cgi))
+        end
+      end
+      for i = 0:degree(h)
+        chi = coeff(h, i)
+        if !iszero(chi) && !isunit(chi)
+          push!(_to_base, lift(chi))
+        end
+      end
+      cp = coprime_base(_to_base)
+      for p in cp
+        if isone(p) || !divisible(fmpz(m), p)
+          continue
+        end
+        R = ResidueRing(FlintZZ, Int(p), cached = false)
+        Rx = PolynomialRing(R, "x", cached = false)[1]
+        f1 = Rx(lift(Zx, c*f))
+        g1 = Rx(lift(Zx, c1*g))
+        h1 = Rx(lift(Zx, h))
+        if !_coprimality_test(f1, g1, h1)
+          return false
+        end 
+      end
+      return true
+    end
+    return false
+  end
+end

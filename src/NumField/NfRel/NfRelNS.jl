@@ -160,7 +160,7 @@ end
 
 function Base.show(io::IO, a::NfRelNS)
   print(io, "non-simple Relative number field with defining polynomials ", a.pol)
-  print(io, " \n over", base_field(a))
+  print(io, " \n over ", base_field(a))
 end
 
 function AbstractAlgebra.expressify(a::NfRelNSElem; context = nothing)
@@ -398,7 +398,7 @@ function basis(K::NfRelNS)
   kxy = parent(K.pol[1])
   B = Vector{elem_type(K)}(undef, degree(K))
   d = degrees(K)
-  I = cartesian_product_iterator([0:d[i]-1 for i = 1:length(d)])
+  I = cartesian_product_iterator([0:d[i]-1 for i = 1:length(d)], inplace = true)
   for (i, e) in enumerate(I)
     t = kxy()
     setcoeff!(t, e, one(k))

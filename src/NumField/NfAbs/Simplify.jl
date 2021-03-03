@@ -136,7 +136,7 @@ function _sieve_primitive_elements(B::Vector{NfAbsNSElem})
   end
   rt_all = Vector{Vector{fq_nmod}}(undef, degree(K))
   ind = 1
-  it = cartesian_product_iterator([1:degrees(K)[i] for i in 1:ngens(K)])
+  it = cartesian_product_iterator([1:degrees(K)[i] for i in 1:ngens(K)], inplace = true)
   for i in it
     rt_all[ind] = fq_nmod[rt[j][i[j]] for j = 1:length(rt)]
     ind += 1

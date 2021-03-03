@@ -814,7 +814,7 @@ function _all_combinations(M::MatElem{T}) where T
   res = Vector{typeof(M)}(undef, length(els)^nrows(M))
   ind = 1
   m = zero_matrix(K, 1, nrows(M))
-  it = cartesian_product_iterator([1:length(els) for i in 1:nrows(M)])
+  it = cartesian_product_iterator([1:length(els) for i in 1:nrows(M)], inplace = true)
   for i in it
     for j = 1:nrows(M)
       m[1, j] = els[i[j]]
@@ -861,7 +861,7 @@ function _submodules_direct_sum_dim_1(gens::Vector{T}, N::ModAlgAss{S, T, V}) wh
   res = Vector{T}()
   for i = 1:length(gens)-1
     #I have to list all the elements that have 1 in the first component and all the possible elements in the other.
-    it = cartesian_product_iterator([1:length(all_combinations[j]) for j = i+1:length(gens)])
+    it = cartesian_product_iterator([1:length(all_combinations[j]) for j = i+1:length(gens)], inplace = true)
     non_zero_el = all_combinations[i][1]
     ind = 2
     while iszero(non_zero_el)
@@ -896,7 +896,7 @@ function _submodules_direct_sum(gens::Vector{T}, N::ModAlgAss{S, T, V}) where {S
   res = Vector{T}()
   for i = 1:length(gens)-1
     #I have to list all the elements that have 1 in the first component and all the possible elements in the other.
-    it = cartesian_product_iterator([1:length(all_combinations[j]) for j = i+1:length(gens)])
+    it = cartesian_product_iterator([1:length(all_combinations[j]) for j = i+1:length(gens)], inplace = true)
     non_zero_el = all_combinations[i][1]
     ind = 2
     while iszero(non_zero_el)

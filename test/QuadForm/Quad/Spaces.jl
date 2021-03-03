@@ -115,4 +115,7 @@
     @test gram_matrix(V, S) == F
   end
 
+  fl, T =  Hecke.isequivalent_with_isometry(quadratic_space(QQ, matrix(QQ, 2, 2, [4, 0, 0, 1])),
+                                            quadratic_space(QQ, matrix(QQ, 2, 2, [1, 0, 0, 1])))
+  @test fl
 end

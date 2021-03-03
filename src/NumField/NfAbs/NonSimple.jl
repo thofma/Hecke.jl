@@ -212,7 +212,7 @@ function basis(K::NfAbsNS; copy::Bool = true)
   b = Vector{NfAbsNSElem}(undef, degree(K))
   ind = 1
   d = degrees(K)
-  it = cartesian_product_iterator([0:d[i]-1 for i = 1:length(d)])
+  it = cartesian_product_iterator([0:d[i]-1 for i = 1:length(d)], inplace = true)
   for i in it
     el = Rx()
     setcoeff!(el, i, fmpq(1))
@@ -1001,6 +1001,7 @@ end
 function symbols(E::NfAbsNS)
   return vars(E)
 end
+
 function Base.names(E::NfAbsNS)
   v = vars(E)
   res = Vector{String}(undef, length(v))

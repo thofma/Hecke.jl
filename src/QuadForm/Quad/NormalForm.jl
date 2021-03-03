@@ -1551,5 +1551,5 @@ end
 #
 ################################################################################
 
-_val(x::Nemo.fmpz_mod, y::fmpz) = iszero(x) ? inf : valuation(lift(x), y)
+_val(x::Nemo.fmpz_mod, y::Union{Integer, fmpz}) = iszero(x) ? inf : valuation(lift(x), y)
 

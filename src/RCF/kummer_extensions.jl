@@ -1,21 +1,3 @@
-abstract type AbelianExt end
-
-mutable struct KummerExt <: AbelianExt
-  zeta::nf_elem
-  n::Int
-  gen::Vector{FacElem{nf_elem, AnticNumberField}}
-
-  AutG::GrpAbFinGen
-  frob_cache::Dict{NfOrdIdl, GrpAbFinGenElem}
-  frob_gens::Tuple{Vector{NfOrdIdl}, Vector{GrpAbFinGenElem}}
-  gen_mod_nth_power::Vector{FacElem{nf_elem, AnticNumberField}}
-  eval_mod_nth::Vector{nf_elem}
-
-  function KummerExt()
-    return new()
-  end
-end
-
 function Base.show(io::IO, K::KummerExt)
   if isdefined(K.AutG, :snf)
     print(io, "KummerExt with structure $(K.AutG.snf)")

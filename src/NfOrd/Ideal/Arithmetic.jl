@@ -523,12 +523,12 @@ The gcd or sum (A + pO).
 """
 function gcd(A::NfAbsOrdIdl, p::fmpz)
   if isdefined(A, :minimum)
-    if gcd(A.minimum, p) == 1
+    if gcd(minimum(A, copy = false), p) == 1
       return ideal(order(A), fmpz(1))
     end
   end
   if isdefined(A, :norm)
-    if gcd(A.norm, p) == 1
+    if gcd(norm(A, copy = false), p) == 1
       return ideal(order(A), fmpz(1))
     end
   end

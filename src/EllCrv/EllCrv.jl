@@ -461,11 +461,11 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    disc(E::EllCrv{T}) -> T
+    discriminant(E::EllCrv{T}) -> T
 
 Computes the discriminant of $E$.
 """
-function disc(E::EllCrv{T}) where T
+function discriminant(E::EllCrv{T}) where T
   if isdefined(E, :disc)
     return E.disc
   end
@@ -475,7 +475,7 @@ function disc(E::EllCrv{T}) where T
     # this should be done in a more clever way
     R = base_field(E)
     F = EllipticCurve([R(0), R(0), R(0), E.coeff[1], E.coeff[2]])
-    d = disc(F)
+    d = discriminant(F)
     E.disc = d
     return d::T
   else
@@ -532,7 +532,7 @@ function j_invariant(E::EllCrv{T}) where T
 
     c4 = b2^2 - 24*b4
 
-    j = divexact(c4^3, disc(E))
+    j = divexact(c4^3, discriminant(E))
     E.j = j
     return j::T
   end
