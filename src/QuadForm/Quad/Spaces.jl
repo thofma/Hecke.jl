@@ -1010,7 +1010,6 @@ end
 
 # Return true, T such that T * [A 0; 0 B] T^t = [a 0; 0 b] or false, 0 if no such T exists.
 function _isisometric_with_isometry_dan(A, B, a, b)
-  @assert A * B == a * b
   K = parent(A)
 
   Kkt, (k, t) = PolynomialRing(K, ["k", "t"], cached = false)
@@ -1030,34 +1029,59 @@ function _isisometric_with_isometry_dan(A, B, a, b)
 
   junk = 4 * (-2 * A^2 * B * s3 * t * u1 + A^3 * u1 * v3 - A^2 * B * t^2 * u1 * v3 + A^2 * B * s3 * w1 -  A * B^2 * s3 * t^2 * w1 + 2 * A^2 * B * t * v3 * w1) * (B + A * k^2) * (A + B * t^2)
 
-  t0 = K(1)
-  @assert !iszero(A + B * t0^2)
+  local uu
+  local ww
+  local ss
+  local vv
 
-  middle = A * u * v + B * s * w
+  i = -1
 
-  @assert lin^2 - sq == junk * middle
+  denu = denominator(u)
+  denw = denominator(w)
+  dens = denominator(s)
+  denv = denominator(v)
 
-  _sq = sq(0, t0)
+  while true
+    i += 1
+    t0 = K(i)
+    @assert !iszero(A + B * t0^2)
 
-  fl, rt = ispower(_sq, 2)
+    middle = A * u * v + B * s * w
 
-  if !fl
-    return false, zero_matrix(K, 0, 0)
+    @assert lin^2 - sq == junk * middle
+
+    _sq = sq(0, t0)
+
+    fl, rt = ispower(_sq, 2)
+
+    if !fl
+      return false, zero_matrix(K, 0, 0)
+    end
+
+    k0 = (rt + (-2 * A^2 * B * s3 * u1 +  2 * A * B^2 * s3 * t^2 * u1 - 4 * A^2 * B * t * u1 * v3 - 4 * A * B^2 * s3 * t * w1 + 2 * A^2 * B * v3 * w1 - 2 * A * B^2 * t^2 * v3 * w1))//((2 * (-2 * A^2 * B * s3 * t * u1 + A^3 * u1 * v3 - A^2 * B * t^2 * u1 * v3 + A^2 * B * s3 * w1 - A * B^2 * s3 * t^2 * w1 + 2 * A^2 * B * t * v3 * w1)))
+
+    if iszero(denominator(k0)(0, t0))
+      continue
+    end
+
+    kk = numerator(k0)(0, t0)//denominator(k0)(0, t0)
+
+    #@assert !iszero(junk(kk, t0))
+    #@assert !iszero(B + A * kk^2)
+
+    if iszero(denu(kk, t0)) || iszero(denw(kk, t0)) || iszero(dens(kk, t0)) ||
+                                                            iszero(denv(kk, t0))
+      continue
+    else
+      uu = numerator(u)(kk, t0)//denominator(u)(kk, t0)
+      ww = numerator(w)(kk, t0)//denominator(w)(kk, t0)
+      ss = numerator(s)(kk, t0)//denominator(s)(kk, t0)
+      vv = numerator(v)(kk, t0)//denominator(v)(kk, t0)
+      break
+    end
   end
 
-  k0 = (rt + (-2 * A^2 * B * s3 * u1 +  2 * A * B^2 * s3 * t^2 * u1 - 4 * A^2 * B * t * u1 * v3 - 4 * A * B^2 * s3 * t * w1 + 2 * A^2 * B * v3 * w1 - 2 * A * B^2 * t^2 * v3 * w1))//((2 * (-2 * A^2 * B * s3 * t * u1 + A^3 * u1 * v3 - A^2 * B * t^2 * u1 * v3 + A^2 * B * s3 * w1 - A * B^2 * s3 * t^2 * w1 + 2 * A^2 * B * t * v3 * w1)))
-
-  kk = numerator(k0)(0, t0)//denominator(k0)(0, t0)
-
-  @assert !iszero(junk(kk, t0))
-  @assert !iszero(B + A * kk^2)
-
-  uu = numerator(u)(kk, t0)//denominator(u)(kk, t0)
-  ww = numerator(w)(kk, t0)//denominator(w)(kk, t0)
-  ss = numerator(s)(kk, t0)//denominator(s)(kk, t0)
-  vv = numerator(v)(kk, t0)//denominator(v)(kk, t0)
-
-  T = matrix(K, 2, 2, [uu, ww, vv, ss])
+  T = matrix(K, 2, 2, elem_type(K)[uu, ww, vv, ss])
   D1 = diagonal_matrix([A, B])
   D2 = diagonal_matrix([a, b])
   @assert T * D1 * transpose(T) == D2
@@ -1202,7 +1226,6 @@ function _isisotropic_with_vector(F::MatrixElem)
     # Find x != 0 such that <D[1], D[2]> and <-D[3], -D[4]> both represent x.
 
     rlp = real_places(K)
-
 
     _target = append!(Int[_to_gf2(hilbert_symbol(D[1], D[2], p)) for p in P], Int[_to_gf2(hilbert_symbol(-D[3], -D[4], p)) for p in P])
 
