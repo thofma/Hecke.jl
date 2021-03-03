@@ -1553,7 +1553,7 @@ function _genus_representatives_binary_quadratic_definite(_L::QuadLat; max = inf
   @assert isdefinite(_L)
   @assert rank(_L) == 2
 
-  V = ambient_space(_L)
+  V = rational_span(_L)
   # 0. Scale to have 1 in Q(V)
 
   D = diagonal(V)
@@ -1573,7 +1573,7 @@ function _genus_representatives_binary_quadratic_definite(_L::QuadLat; max = inf
   de = denominator(d)
   @assert !issquare(de * d)[1]
   Kt, t = PolynomialRing(K, "t", cached = false)
-  F, z = number_field(t^2 - de * d, "z", cached = false)
+  F, z = number_field(t^2 - de^2 * d, "z", cached = false)
   # TODO: Use automorphism_group (once implemented for relative extensions)
   a1, a2 = automorphisms(F)
   if a1(z) == z
@@ -1586,8 +1586,6 @@ function _genus_representatives_binary_quadratic_definite(_L::QuadLat; max = inf
   phi(x, y) = K((x * sigma(y) + y * sigma(x))//2)
   G = matrix(K, 2, 2, [phi(B[1], B[1]), phi(B[1], B[2]), phi(B[2], B[1]), phi(B[2], B[2])])
   W = quadratic_space(K, G)
-  #@show W
-  #@show isequivalent(V, W)
   fl, T = isequivalent_with_isometry(V, W)
   # Note that this is an isometry of KL with W
   @assert fl
@@ -2164,7 +2162,7 @@ function _genus_representatives_binary_quadratic_indefinite(_L, max = max, use_a
   @assert !isdefinite(_L)
   @assert rank(_L) == 2
 
-  V = rational_span(_L)
+  V = ambient_space(_L)
   # 0. Scale to have 1 in Q(V)
 
   D = diagonal(V)

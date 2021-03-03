@@ -87,4 +87,12 @@
   gens = [[1, 0, 0], [1, 0, 0], [0, 1, 0], [0, 1, 0], [0, 0, 1], [0, 0, 1]]
   L = quadratic_lattice(K, generators = gens, gram_ambient_space = D)
   @test length(genus_representatives(L)) == 1
+
+  Qx, x = PolynomialRing(FlintQQ, "x", cached = false)
+  f = x - 1;
+  K, a = number_field(f)
+  D = matrix(K, 2, 2, [2, 0, 0, 3]);
+  gens = [[1, 0], [1, 0], [0, 1], [0, 1]]
+  L = quadratic_lattice(K, generators = gens, gram_ambient_space = D)
+  @test length(genus_representatives(L)) == 1
 end
