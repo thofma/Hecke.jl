@@ -1038,9 +1038,6 @@ function det(S::ZpGenus)
   return e*prod(fmpz[ p^(s[1]*s[2]) for s in S._symbol ])
 end
 
-function det(S::ZpGenus)
- return det(S)
-end
 
 @doc Markdown.doc"""
     dim(S::ZpGenus) -> fmpz
