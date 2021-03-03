@@ -462,12 +462,18 @@ end
 Return the submodule of `T` defined by `generators` and the inclusion morphism.
 """
 function sub(T::TorQuadMod, gens::Vector{TorQuadModElem})
-  V = ambient_space(T.cover)
-  _gens = [lift(g) for g in gens]
-  _gens_mat = matrix(QQ, _gens)
-  gens_new = [basis_matrix(T.rels); _gens_mat]
-  cover = lattice(V, gens_new, isbasis = false)
-  S = torsion_quadratic_module(cover, T.rels, gens=_gens)
+  if length(gens) > 0
+    _gens = [lift(g) for g in gens]
+    V = ambient_space(T.cover)
+    _gens_mat = matrix(QQ, _gens)
+    gens_new = [basis_matrix(T.rels); _gens_mat]
+    cover = lattice(V, gens_new, isbasis = false)
+  else
+    cover = T.cover
+    _gens = nothing
+  end
+  S = torsion_quadratic_module(cover, T.rels, gens=_gens, modulus=T.modulus,
+                               modulus_qf=T.modulus_qf)
   imgs = [T(lift(g)) for g in Hecke.gens(S)]
   inclusion = hom(S, T, imgs)
   return S, inclusion
@@ -620,15 +626,16 @@ function normal_form(T::TorQuadMod; partial=false)
     # the original one
     # it is enough to massage each 1x1 resp. 2x2 block.
     D = U * q_p * U' * p^valuation(denominator(q_p), p)
-    D = change_base_ring(ZZ, D)
-    D = change_base_ring(R, D)
+    d = denominator(D)
+    D = change_base_ring(ZZ, d*D)
+    D = change_base_ring(R, D)*R(d)^-1
     D, U1 = _normalize(D, ZZ(p), false)
 
     # reattach the degenerate part
     U1 = change_base_ring(ZZ, U1)
     U = change_base_ring(ZZ, U)
     U = U1 * U
-    Uq = change_base_ring(QQ, U)
+
     nondeg = change_base_ring(ZZ, nondeg)
     nondeg = U * nondeg
     U = vcat(nondeg, ker)
