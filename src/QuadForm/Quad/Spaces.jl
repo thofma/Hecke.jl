@@ -238,7 +238,7 @@ witt_invariant(V::QuadSpace, p)
 #
 ################################################################################
 
-function isequivalent(L::QuadSpace, M::QuadSpace, p::NfOrdIdl)
+function isequivalent(L::QuadSpace, M::QuadSpace, p)
   GL = gram_matrix(L)
   GM = gram_matrix(M)
   if GL == GM

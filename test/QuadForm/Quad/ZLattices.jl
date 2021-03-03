@@ -282,6 +282,14 @@ end
   @test (1//2)L*2 == L
   @test !(L == 2*L)
 
+  # local modification
+  L = rescale(Hecke.root_lattice(:A,3),15)
+  M = Hecke.maximal_integral_lattice(L)
+  for p in prime_divisors(ZZ(discriminant(L)))
+    M = Hecke.local_modification(M, L, p)
+  end
+  @test genus(M) == genus(L)
+
   # maximal integral lattice
   G = ZZ[3 0 0 0 0 0 0 0 0 0 0 0;
          0 18 0 0 0 0 0 0 0 0 0 0;
