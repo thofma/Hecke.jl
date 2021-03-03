@@ -1,4 +1,4 @@
-export discriminant_group, torsion_quadratic_module
+export discriminant_group, torsion_quadratic_module, normal_form
 
 # Torsion QuadraticForm
 #
@@ -463,10 +463,11 @@ Return the submodule of `T` defined by `generators` and the inclusion morphism.
 """
 function sub(T::TorQuadMod, gens::Vector{TorQuadModElem})
   V = ambient_space(T.cover)
-  _gens = matrix(QQ, [lift(g) for g in gens])
-  gens_new = [basis_matrix(T.rels); _gens]
+  _gens = [lift(g) for g in gens]
+  _gens_mat = matrix(QQ, _gens)
+  gens_new = [basis_matrix(T.rels); _gens_mat]
   cover = lattice(V, gens_new, isbasis = false)
-  S = torsion_quadratic_module(cover, T.rels)
+  S = torsion_quadratic_module(cover, T.rels, gens=_gens)
   imgs = [T(lift(g)) for g in Hecke.gens(S)]
   inclusion = hom(S, T, imgs)
   return S, inclusion
@@ -545,14 +546,14 @@ function orthogonal_submodule_to(T::TorQuadMod, S::TorQuadMod)
 end
 
 @doc Markdown.doc"""
-    isdegenerate(T::TorQuadMod)-> Bool 
+    isdegenerate(T::TorQuadMod)-> Bool
 
 Return true if the underlying bilinear form is degenerate.
 """
 function isdegenerate(T::TorQuadMod)
   if order(orthogonal_submodule_to(T,T)[1]) == 1
     return true
-  else 
+  else
     return false
   end
 end
@@ -560,16 +561,16 @@ end
 @doc Markdown.doc"""
     rescale(T::TorQuadMod, k::RingElement) -> TorQuadMod
 
-Returns the torsion quadratic module with quadratic form scaled by ``k``, 
+Returns the torsion quadratic module with quadratic form scaled by ``k``,
 where k is a non-zero rational number.
 If the old form was defined modulo `n`, then the new form is defined
-modulo `n k`. 
+modulo `n k`.
 """
 function rescale(T::TorQuadMod, k::RingElement)
-  @req !iszero(k) "Parameter ($k) must be non-zero" 
+  @req !iszero(k) "Parameter ($k) must be non-zero"
   C = cover(T)
   inner_product_mat = k * gram_matrix(ambient_space(C))
-  V = quadratic_space(QQ, inner_product_mat) 
+  V = quadratic_space(QQ, inner_product_mat)
   M = lattice(V, basis_matrix(C))
   N = lattice(V, basis_matrix(T.rels))
   return torsion_quadratic_module(M, N)
@@ -587,7 +588,7 @@ function normal_form(T::TorQuadMod; partial=false)
     D_p, I_p = primary_part(T, p)
     q_p = gram_matrix_quadratic(D_p)
     q_p = q_p * D_p.modulus_qf^-1
-    
+
     # continue with the non-degenerate part
     r = rank(q_p)
     dd = denominator(q_p)
@@ -610,28 +611,34 @@ function normal_form(T::TorQuadMod; partial=false)
     q_p1 = inv(q_p)
     prec = valuation(exponent(T), p) + 5
     D, U = padic_normal_form(q_p1, p, prec=2*prec+5, partial=partial)
-    # if we compute the inverse in the p-adics everything explodes --> go to ZZ
+    # if we compute the inverse in the p-adics everything explodes -> go to ZZ
     U = transpose(inv(U))
-    # the inverse is in normal form - so to get a normal form for the original one
+    d = denominator(U)
+    R = ResidueRing(ZZ, ZZ(p)^prec)
+    U = d*U * lift(R(d)^-1)
+    # the inverse is in normal form - so to get a normal form for
+    # the original one
     # it is enough to massage each 1x1 resp. 2x2 block.
-    D = U * q_p * U' * p^valuation(denominator(q_p), p) 
-    R = ResidueRing(ZZ, ZZ(p^prec))
+    D = U * q_p * U' * p^valuation(denominator(q_p), p)
     D = change_base_ring(ZZ, D)
     D = change_base_ring(R, D)
-    _, U = _normalize(D, ZZ(p), false)
+    D, U1 = _normalize(D, ZZ(p), false)
 
     # reattach the degenerate part
+    U1 = change_base_ring(ZZ, U1)
     U = change_base_ring(ZZ, U)
+    U = U1 * U
+    Uq = change_base_ring(QQ, U)
     nondeg = change_base_ring(ZZ, nondeg)
     nondeg = U * nondeg
     U = vcat(nondeg, ker)
 
     #apply U to the generators
     n1 = ncols(U)
-    Gp =  gens(D_p); 
-    for i in 1:nrows(U) 
+    Gp =  gens(D_p);
+    for i in 1:nrows(U)
       g = sum(U[i,j] * Gp[j] for j in 1:ncols(U))
-      push!(normal_gens, g)
+      push!(normal_gens, I_p(g))
     end
   end
   return sub(T, normal_gens)
