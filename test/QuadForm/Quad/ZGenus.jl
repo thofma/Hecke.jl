@@ -256,14 +256,13 @@
         L = representative(G)
         @test genus(L)==G
         @test mass(L)==m
-        #to be fixed later
-        #q1 = discriminant_group(L)
-        #q1 = normal_form(q1)
-        #q1 = gram_matrix_quadratic(q1)
-        #q2 = discriminant_group(G)
-        #q2 = normal_form(q2)
-        #q2 = gram_matrix_quadratic(q2)
-        #@test q1 == q2
+        q1 = discriminant_group(L)
+        q1 = normal_form(q1)
+        q1 = gram_matrix_quadratic(q1)
+        q2 = discriminant_group(G)
+        q2 = normal_form(q2)
+        q2 = gram_matrix_quadratic(q2)
+        @test q1 == q2
       end
     end
   end
