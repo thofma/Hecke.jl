@@ -1308,6 +1308,16 @@ function snf_with_transform(A::fmpz_mat, l::Bool = true, r::Bool = true)
     end
   end
 
+  # It might be the case that S was diagonal with negative diagonal entries.
+  for i in 1:min(nrows(S), ncols(S))
+    if S[i, i] < 0
+      if l
+        multiply_column!(L, fmpz(-1), i)
+      end
+      S[i, i] = -S[i, i]
+    end
+  end
+
   if l
     if r
       return S, L, R'

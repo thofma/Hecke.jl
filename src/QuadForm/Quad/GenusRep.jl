@@ -1083,10 +1083,8 @@ function iterated_neighbours(L::QuadLat, p; use_auto = true, max = inf, mass = -
 
   local found::fmpq
 
-  if mass < 0
+  if mass >= 0
     found = 1//automorphism_group_order(L)
-  else
-    found = zero(fmpq)
   end
 
   while (i <= length(result)) && (length(result) < max) && (!use_mass || found < mass)
@@ -1529,6 +1527,24 @@ end
 #
 ################################################################################
 
+function __colon_raw(K, a, b)
+  d = degree(K)
+  bb = b
+  B = inv(basis_matrix(a)) #fmpq_mat(basis_mat_inv(a, copy = false))
+  M = zero_matrix(FlintQQ, d^2, d)
+  for i = 1:d
+    N = representation_matrix(bb[i])*B
+    for s = 1:d
+      for t = 1:d
+        M[t + (i - 1)*d, s] = N[s, t]
+      end
+    end
+  end
+  M = sub(hnf(FakeFmpqMat(M), :upperright), 1:d, 1:d)
+  N = inv(transpose(M))
+  return N
+end
+
 function _genus_representatives_binary_quadratic_definite(_L::QuadLat; max = inf, use_auto = true, use_mass = true)
   # The strategy is to pass to the discriminant field F (which is a CM field)
   # and use that KL \cong (F, Tr/2)
@@ -1537,7 +1553,7 @@ function _genus_representatives_binary_quadratic_definite(_L::QuadLat; max = inf
   @assert isdefinite(_L)
   @assert rank(_L) == 2
 
-  V = ambient_space(_L)
+  V = rational_span(_L)
   # 0. Scale to have 1 in Q(V)
 
   D = diagonal(V)
@@ -1557,7 +1573,7 @@ function _genus_representatives_binary_quadratic_definite(_L::QuadLat; max = inf
   de = denominator(d)
   @assert !issquare(de * d)[1]
   Kt, t = PolynomialRing(K, "t", cached = false)
-  F, z = number_field(t^2 - de * d, "z", cached = false)
+  F, z = number_field(t^2 - de^2 * d, "z", cached = false)
   # TODO: Use automorphism_group (once implemented for relative extensions)
   a1, a2 = automorphisms(F)
   if a1(z) == z
@@ -1589,6 +1605,8 @@ function _genus_representatives_binary_quadratic_definite(_L::QuadLat; max = inf
   image_of_first = FabstoF\(T[1, 1] * B[1] + T[1, 2] * B[2])
   image_of_second = FabstoF\(T[2, 1] * B[1] + T[2, 2] * B[2])
 
+  #@show [phi(FabstoF(a), FabstoF(b)) for a in [image_of_first, image_of_second] for b in [image_of_first, image_of_second]]
+
   basisofLinFabs = elem_type(Fabs)[]
 
   B = absolute_basis(pb[1][2])
@@ -1602,28 +1620,14 @@ function _genus_representatives_binary_quadratic_definite(_L::QuadLat; max = inf
   end
 
   # Let M = <basisofLinFabs>_Z, this is a lattice in Fabs and we need to compute
-  # its (left/right) order. Now we don't lattices in number fields, but we can
-  # use that O(M) = O(r * M). Now we choose r = "denominator" of M, then r * M
-  # is an ideal of the equation order. Thus we can call ring_of_multipliers!
-
+  # its (left/right) order. We use __colon_raw on the basis matrix for this.
 
   EFabs = equation_order(Fabs)
 
   scaled_basisofLinFabs = elem_type(EFabs)[]
 
-  d = one(FlintZZ)
+  O = Order(Fabs, __colon_raw(Fabs, basisofLinFabs, basisofLinFabs))
 
-  for b in basisofLinFabs
-    d = lcm(d, denominator(b, EFabs))
-  end
-
-  for b in basisofLinFabs
-    push!(scaled_basisofLinFabs, EFabs(d * b))
-  end
-
-  I = ideal(EFabs, scaled_basisofLinFabs)
-  O = ring_of_multipliers(I)
-  # What a mess
   z = zero_matrix(K, degree(O), degree(F))
   for i in 1:degree(O)
     elem_to_mat_row!(z, i, FabstoF(elem_in_nf(basis(O)[i])))
@@ -1637,11 +1641,9 @@ function _genus_representatives_binary_quadratic_definite(_L::QuadLat; max = inf
 
   OinF = Order(F, pm)
 
-  II = ideal(O, O.(elem_in_nf.(basis(I))))
-  LinFabs = fractional_ideal(O, II, d)
+  LinFabs = fractional_ideal(O, basisofLinFabs)
 
   # O is the ring of multipliers/right oder of M
-
   # Now we compute CL_F/{ambiguous ideals of O_F with respect to F/K}
 
   @vprint :GenRep 1 "Compute representatives modulo ambiguous ideal classes ... \n"
@@ -1658,10 +1660,10 @@ function _genus_representatives_binary_quadratic_definite(_L::QuadLat; max = inf
   # There is a formula for the number of ambiguous ideal classes, this checks this:
   # UK, mUK = unit_group(OK)
   # UFabs, mUFabs = unit_group(OFabs)
-  # order(quo(UFabs, append!([ mUFabs\OFabs(KtoFabs(elem_in_nf(mUK(u)))) for u in gens(UK) ], [mUFabs\OFabs(torsion_units_generator(Fabs))]))[1])
-  # order(CF)
-  # order(CK)
-  # length(support(discriminant(maximal_order(F))))
+  #@show order(quo(UFabs, append!([ mUFabs\OFabs(KtoFabs(elem_in_nf(mUK(u)))) for u in gens(UK) ], [mUFabs\OFabs(torsion_units_generator(Fabs))]))[1])
+  #@show order(CF)
+  #@show order(CK)
+  #@show length(support(discriminant(maximal_order(F))))
 
   # repr are representatives for CL_F/{ambiguous ideals of O_F with respect to F/K}
   # This is isomorphic to gen(OFabs)/cls+(OFabs) via a -> b = a/\sigma(a).
@@ -1672,7 +1674,7 @@ function _genus_representatives_binary_quadratic_definite(_L::QuadLat; max = inf
   #
   # _intersect_lattice_down computes a preimage under gen(O) -> gen(CL_F)
   #
-  # The map gen(O) -> gen(CL_F) is not injecture, but we can compute a set containing
+  # The map gen(O) -> gen(CL_F) is not injective, but we can compute a set containing
   # representatives of the kernel elements.
 
   OF = maximal_order(F)
@@ -1715,10 +1717,10 @@ function _genus_representatives_binary_quadratic_definite(_L::QuadLat; max = inf
   for i in 1:length(repr_in_OF)
     I = repr_in_OF[i]
     Iabs = repr[i]
-
     N, xps, ps = _translate_ideal(I, Iabs, FabstoF, sigma, sigmaabs)
     @assert norm(N) == 1 * OK
     M = _intersect_lattice_down(xps, ps, OinF)
+
     Minabs = fractional_ideal(O, [FabstoF\(b) for b in absolute_basis(M)])
     if length(kernel_rep) > 0
       for K in kernel_rep
@@ -1763,6 +1765,7 @@ function _genus_representatives_binary_quadratic_definite(_L::QuadLat; max = inf
       push!(generators, [Tinv[1, 1] * coeff(binF, 0) + Tinv[2, 1] * coeff(binF, 1),
                          Tinv[1, 2] * coeff(binF, 0) + Tinv[2, 2] * coeff(binF, 1)])
     end
+
     z = zero_matrix(K, length(generators), dim(V))
     for i in 1:length(generators)
       for j in 1:ncols(gram_ambient_space)
@@ -1834,138 +1837,120 @@ function _translate_ideal(I, Iabs, FtoFabs, sigma, sigmaabs)
   return M, xps, crit_primes
 end
 
-function _intersect_lattice_down(xps, _ps, Lambda)
-  F = _algebra(Lambda)
-  d = degree(Lambda)
-  K = _base_ring(F)
-  ps = copy(_ps)
-  Lambdapb = pseudo_basis(Lambda)
-  OK = base_ring(Lambda)
-  Lambdaid = fractional_ideal_type(OK)[ a for (v, a) in Lambdapb ]
+function _fractional_ideal_from_base_ring_generators(OE, v)
+  # v are elements of the field
+  return fractional_ideal(OE, basis_matrix(v) * basis_mat_inv(OE))
+end
 
-  local current_global_basis::Vector{elem_type(F)}
+function _intersect(I::NfRelOrdFracIdl, J::NfRelOrdFracIdl)
+  pm = _intersect_modules(basis_pmatrix(I), basis_pmatrix(J))
+  return fractional_ideal(order(I), pm)
+end
 
-  # Let's collect the local bases that we want to have
-  # At ps[i] I want xps[i] * O
-
-  local_bases = Vector{elem_type(F)}[]
-
-  current_global_basis = elem_type(F)[ v for (v, _) in Lambdapb]
-
-  for i in 1:length(ps)
-    p = ps[i]
-    push!(local_bases, elem_type(F)[ K(uniformizer(p)^valuation(a, p)) * xps[i] * v for (v, a) in Lambdapb])
+function _intersect_lattice_down_contained(xps, _ps, Lambda)
+  _ps_orig = deepcopy(_ps)
+  xps_orig = deepcopy(xps)
+  if length(_ps) == 0
+    return one(nf(Lambda)) * Lambda
+  end
+  for x in xps
+    @assert x in Lambda
   end
 
-  for (v, a) in Lambdapb
-    for (p, ) in factor(a)
-      if !(p in ps)
-        push!(ps, p)
-        push!(local_bases, elem_type(F)[K(uniformizer(p)^valuation(a, p)) * v for (v, a) in Lambdapb])
-      end
-    end
-  end
+  LL = nf(Lambda)(1) * Lambda
 
-  # I want to make sure that M_p \subseteq M^(p)?
-
-  #for (v, a) in zip(current_global_basis, Lambdaid)
-  #  @show v
-  #  @show typeof(v * Lambda)
-  #  @show typeof(a)
-  #  @show a * (v * Lambda)
-  #end
-
-  J = reduce(+, (a * (v * Lambda) for (v, a) in zip(current_global_basis, Lambdaid)), init = F(0) * Lambda)
-
-  local pi::elem_type(K)
-
-  for i in 1:length(ps)
-    _J = reduce(+, (b * Lambda for b in local_bases[i]), init = F(0) * Lambda)
-    m, _ = _padic_index(J, _J, ps[i])
-    #@show m
-    pi = elem_in_nf(uniformizer(ps[i]))
-    for q in support(pi)
-      if q != ps[i] && !(q in ps)
-        push!(ps, q)
-        push!(local_bases, copy(current_global_basis))
-      end
-    end
-    current_global_basis = pi^-m .* current_global_basis
-    J = reduce(+, (a * (v * Lambda) for (v, a) in zip(current_global_basis, Lambdaid)), init = F(0) * Lambda)
-  end
-
-  # Thus I want I with I_p = sum_p v_p R_p for all p in ps, and I_p = O_p at
-  # the other primes
-
-  Mbmatinv = basis_mat_inv(Lambda)
-  Mbmatinv = zero_matrix(K, d, d)
-  for j in 1:d
-    elem_to_mat_row!(Mbmatinv, j, current_global_basis[j])
-  end
-  Mbmatinv = inv(Mbmatinv)
-
-  basis_part = current_global_basis
-  mats = typeof(Mbmatinv)[]
-  for i in 1:length(ps)
-    Mb = zero_matrix(K, d, d)
-    for j in 1:d
-      elem_to_mat_row!(Mb, j, local_bases[i][j])
-    end
-    # This assertion is throwing, but I think it is wrong (check!)
-    #@assert all(valuation(a, ps[i]) == 0 for a in Lambdaid)
-    MM = Mb * Mbmatinv
-    for j in 1:d
-      @assert reduce(+, (basis_part[k] * MM[j, k] for k in 1:d), init = zero(F)) == local_bases[i][j]
-    end
-    push!(mats, Mb * Mbmatinv)
-  end
-
-  # Now let's do the approximation
-  T = zero_matrix(K, d, d)
-  if length(ps) == 0
-    T = identity_matrix(K, d)
-  else
-    for l in 1:d
-      for m in 1:d
-        T[l, m] = _strong_approximation(ps, Int[0 for i in 1:length(ps)], elem_type(K)[mats[i][l, m] for i in 1:length(ps)])
-      end
-    end
-  end
-
-  # new basis
-
-  new_bas = elem_type(F)[]
-
-  for j in 1:d
-    push!(new_bas, sum(elem_type(F)[basis_part[k] * T[j, k] for k in 1:d]))
-  end
-
-  for i in 1:length(ps)
-    @assert all([valuation(e, ps[i]) >= 0 for e in (mats[i] - T)])
-  end
-
-  JJ = reduce(+, (b * Lambda for b in new_bas), init = F(0) * Lambda) ##fractional_ideal(Lambda, new_bas)
-
-  L1 = reduce(+, (b * Lambda for b in current_global_basis), init = F(0) * Lambda) #fractional_ideal(Lambda, current_global_basis)
-  L = L1 + JJ
   for i in 1:length(xps)
-    @assert _padic_index(xps[i] * Lambda, L, ps[i]) == (0, 0)
-    @assert _padic_index(L, xps[i] * Lambda, ps[i]) == (0, 0)
+    I = xps[i] * Lambda
+    n = norm(I)
+    for (p, e) in factor(n)
+      if p == _ps[i]
+        continue
+      end
+      if e > 0
+        I = inv(p)^(e) * I
+      end
+    end
+    LL = _intersect(LL, I)
   end
 
-  for q in support(norm(numerator(L)))
-    if !(q in ps)
-      @assert _padic_index(L, Lambda, q) == (0, 0)
+  for i in 1:length(xps)
+    @assert _padic_index(xps[i] * Lambda, LL, _ps[i]) == (0, 0)
+    @assert _padic_index(LL, xps[i] * Lambda, _ps[i]) == (0, 0)
+  end
+
+  for q in support(norm(LL))
+    if !(q in _ps)
+      @assert _padic_index(LL, d * Lambda, q) == (0, 0)
     end
   end
 
-  for q in support(denominator(L) * base_ring(Lambda))
-    if !(q in ps)
-      @assert _padic_index(L, Lambda, q) == (0, 0)
+  return LL
+end
+
+# Given (x_p)_p, find a fractional ideal I such that I_p = x_p Lambda_p
+# for all p and I_q = Lambda_q for all other prime ideals.
+#
+# The idea is to change Jp = x_p such that (Jp)_p \subseteq Lambda_p
+# and Lambda_q \subseteq (Jp)_q for q != p. Then we can just intersect
+# the Jp with Lambda.
+#
+# We first reduce to the case x_p in Lambda for all p by multiplying
+# with a common denominator.
+function _intersect_lattice_down(xps, _ps, Lambda)
+  _ps_orig = copy(_ps)
+  xps_orig = copy(xps)
+
+  if length(_ps) == 0
+    return one(nf(Lambda)) * Lambda
+  end
+  d = lcm([denominator(x, Lambda) for x in xps])
+
+  for x in xps
+    @assert d*x in Lambda
+  end
+
+  _xps = [d * x for x in xps]
+  _ps = copy(_ps)
+
+  for p in support(norm(Lambda(d)) * base_ring(Lambda))
+    if !(p in _ps)
+      push!(_ps, p)
+      push!(_xps, nf(Lambda)(d))
+    end
+  end
+  LL = _intersect_lattice_down_contained(_xps, _ps, Lambda)
+  pm = deepcopy(basis_pmatrix(LL))
+  pm.matrix = divexact(pm.matrix, base_field(nf(Lambda))(d))
+  LLL = fractional_ideal(Lambda, pm)
+
+  for q in support(norm(LLL))
+    if !(q in _ps)
+    end
+  end
+ 
+  for i in 1:length(xps)
+    @assert _padic_index(xps_orig[i] * Lambda, LLL, _ps_orig[i]) == (0, 0)
+    @assert _padic_index(LLL, xps_orig[i] * Lambda, _ps_orig[i]) == (0, 0)
+  end
+
+  for q in support(norm(numerator(LLL)))
+    if !(q in _ps_orig)
+      @assert _padic_index(LLL, Lambda, q) == (0, 0)
     end
   end
 
-  return L
+  for q in support(denominator(LLL) * base_ring(Lambda))
+    if !(q in _ps_orig)
+      @assert _padic_index(LLL, Lambda, q) == (0, 0)
+    end
+  end
+
+  return LLL
+end
+
+function _fractional_ideal_from_base_ring_generators(OE, v, id)
+  # v are elements of the field
+  return fractional_ideal(OE, pseudo_matrix(basis_matrix(v) * basis_mat_inv(OE), id))
 end
 
 function absolute_norm(A::Hecke.AlgAssRelOrdIdl)
@@ -2177,7 +2162,7 @@ function _genus_representatives_binary_quadratic_indefinite(_L, max = max, use_a
   @assert !isdefinite(_L)
   @assert rank(_L) == 2
 
-  V = rational_span(_L)
+  V = ambient_space(_L)
   # 0. Scale to have 1 in Q(V)
 
   D = diagonal(V)

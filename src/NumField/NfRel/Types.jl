@@ -40,6 +40,7 @@ mutable struct NfRelOrd{T, S, U} <: Ring
 
   inv_coeff_ideals::Vector{S}
   index_div
+  @declare_other
 
   function NfRelOrd{T, S, U}(K::NumField{T}) where {T, S, U}
     z = new{T, S, U}()
@@ -62,7 +63,7 @@ mutable struct NfRelOrd{T, S, U} <: Ring
   end
 
   function NfRelOrd{T, S, U}(K::NumField{T}, M::Generic.MatSpaceElem{T}) where {T, S, U}
-    z = NfRelOrd{T, S}(K)
+    z = NfRelOrd{T, S, U}(K)
     z.nf = K
     z.parent = NfRelOrdSet{T}(K)
     z.basis_matrix = M

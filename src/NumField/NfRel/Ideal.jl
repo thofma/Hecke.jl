@@ -526,7 +526,7 @@ function +(a::NfRelOrdIdl{T, S}, b::NfRelOrdIdl{T, S}) where {T, S}
   d = degree(order(a))
   H = vcat(basis_pmatrix(a, copy = false), basis_pmatrix(b, copy = false))
   if T === nf_elem
-    m = norm(a) + norm(b)
+    m = (norm(a) + norm(b)) * _modulus(order(a))
     H = sub(pseudo_hnf_full_rank_with_modulus!(H, m, :lowerleft), (d + 1):2*d, 1:d)
   else
     H = sub(pseudo_hnf(H, :lowerleft), (d + 1):2*d, 1:d)
@@ -572,7 +572,7 @@ function *(a::NfRelOrdIdl{T, S}, b::NfRelOrdIdl{T, S}) where {T, S}
   PM = PseudoMatrix(M, C)
   PM.matrix = PM.matrix*basis_mat_inv(order(a), copy = false)
   if T == nf_elem
-    m = norm(a)*norm(b)
+    m = norm(a)*norm(b) * _modulus(order(a))
     H = sub(pseudo_hnf_full_rank_with_modulus!(PM, m, :lowerleft), (d*(d - 1) + 1):d^2, 1:d)
   else
     H = sub(pseudo_hnf(PM, :lowerleft), (d*(d - 1) + 1):d^2, 1:d)
@@ -632,7 +632,7 @@ function intersect(a::NfRelOrdIdl{T, S}, b::NfRelOrdIdl{T, S}) where {T, S}
   M2 = hcat(PseudoMatrix(z, Mb.coeffs), Mb)
   M = vcat(M1, M2)
   if T === nf_elem
-    m = intersect(norm(a), norm(b))
+    m = intersect(norm(a), norm(b)) * _modulus(order(a))
     H = sub(pseudo_hnf_full_rank_with_modulus!(M, m, :lowerleft), 1:d, 1:d)
   else
     H = sub(pseudo_hnf(M, :lowerleft), 1:d, 1:d)
@@ -1002,7 +1002,7 @@ function pradical(O::NfRelOrd{S, T, U}, P::NfOrdIdl) where {S, T, U <: Union{NfR
   else
     PM = sub(pseudo_hnf_full_rank(PM, :lowerleft), (d + 1):2*d, 1:d)
   end
-  
+
   return ideal(O, PM, false, true)
 
 end
@@ -1049,7 +1049,7 @@ function ring_of_multipliers(a::NfRelOrdIdl{T1, T2, T3}) where {T1, T2, T3}
   else
     PM = sub(pseudo_hnf(PM, :upperright, true), 1:d, 1:d)
   end
-  
+
   N = inv(transpose(PM.matrix))
   PN = PseudoMatrix(N, [ simplify(inv(I)) for I in PM.coeffs ])
   res = typeof(O)(nf(O), PN)
@@ -1192,7 +1192,7 @@ function prime_decomposition(O::NfRelOrd, p::Union{NfOrdIdl, NfRelOrdIdl}; compu
   else
     ls = prime_dec_nonindex(O, p, compute_uniformizer = compute_uniformizer)
   end
-  
+
   #if compute_anti_uniformizer
   #  for (P,_) in ls
   #    anti_uniformizer(P)
@@ -1829,7 +1829,7 @@ function absolute_anti_uniformizer(P)
   end
 
   N = OLmat * umat * OLmatinv
-  
+
   p = absolute_minimum(P)
 
   z = zero_matrix(GF(p, cached = false), d, d)

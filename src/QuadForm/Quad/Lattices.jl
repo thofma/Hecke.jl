@@ -31,7 +31,7 @@ quadratic_lattice(::NumField, ::PMat; gram_ambient_space = nothing)
 # TODO: At the moment I assume that B is a pseudo-hnf (probably)
 function quadratic_lattice(K::NumField, B::PMat; gram_ambient_space = nothing, gram = nothing)
   if gram_ambient_space === nothing && gram === nothing
-    return QuadLat(K, identity_matrix(K, nrows(B)), pseudo_matrix(B))
+    return QuadLat(K, identity_matrix(K, nrows(B)), B)
   end
   if gram_ambient_space !== nothing && gram === nothing
     return QuadLat(K, gram_ambient_space, B)
@@ -313,7 +313,7 @@ function jordan_decomposition(L::Union{ZLat, QuadLat}, p)
   blocks = Int[]
   exponents = Int[]
   S = local_basis_matrix(L, p)
-  n = ncols(S)
+  n = nrows(S)
   k = 1
   while k <= n
     G = S * F * transpose(S)

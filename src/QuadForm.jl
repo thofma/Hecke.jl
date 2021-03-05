@@ -29,6 +29,7 @@ include("QuadForm/Quad/NormalForm.jl")
 include("QuadForm/Quad/Genus.jl")
 include("QuadForm/Quad/GenusRep.jl")
 include("QuadForm/Quad/Legacy.jl")
+include("QuadForm/Quad/ZGenus.jl")
 include("QuadForm/PadicLift.jl")
 
 # Hermitian
