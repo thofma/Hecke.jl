@@ -1,8 +1,12 @@
 name: Run long tests
 
 on:
-  - push
-  - pull_request
+  push:
+    branches:
+      - 'master'
+      - 'release-'
+    tags: '*'
+  pull_request:
 
 
 jobs:

@@ -12,12 +12,14 @@ function _min_val(M, p)
 end
 
 @doc Markdown.doc"""
-    _last_block_index(G::nmod_mat, p) -> Integer
+    _last_block_index(G::Union{nmod_mat, fmpz_mod_mat}, p) -> Int, Int, Int
 
-Return the starting index of the last modular block.
+Return the starting index of the last modular block, as well as its valuation
+and the valuation of the second to last modular block.
+
 Assumes that $G$ is a block diagonal matrix.
 """
-function _last_block_index(G::nmod_mat, p)
+function _last_block_index(G::Union{nmod_mat, fmpz_mod_mat}, p)
   n = nrows(G)
   val = _min_val(G[n,:], p)
   val_current = val
@@ -31,20 +33,17 @@ function _last_block_index(G::nmod_mat, p)
 end
 
 @doc Markdown.doc"""
-    _hensel_qf(Z::nmod_mat, G::nmod_mat, F::nmod_mat, a, b, p)
+    _hensel_qf(Z::T, G::T, F::T, a, b, p) where T <: Union{nmod_mat, fmpz_mod_mat}
 
-The real worker for `hensel_qf`.
-
-  - $Z,G,F$ -- symmetric `n \times n` matrices
-  - $a,b$ -- integers with $a<b$
+The real worker for `hensel_qf`. Input is
+  - $Z, G, F$, symmetric `n \times n` matrices.
+  - $a, b$, integers with $a<b$.
 We require that the triple $(Z, G, F)$ is $a$-adapted.
 
-OUTPUT:
-
-a matrix `Fl` such that `(Z, G, Fl)` is $b$-adapted
-in particular $F \equiv Flift \mod p^b$.
+Return a matrix `F_l` such that $(Z, G, F_l)$ is $b$-adapted in particular $F
+\equiv F_l \mod p^b$.
 """
-function _hensel_qf(Z::nmod_mat, G::nmod_mat, F::nmod_mat, a, b, p)
+function _hensel_qf(Z::T, G::T, F::T, a, b, p) where {T <: Union{nmod_mat, fmpz_mod_mat}}
   #@req _min_val(Z-F*G*F',p)>=a,"input must be adapted"
   i, s1, s2 = _last_block_index(G, p)
   Z = divexact(Z, p^s1)
@@ -80,14 +79,14 @@ function _hensel_qf(Z::nmod_mat, G::nmod_mat, F::nmod_mat, a, b, p)
 end
 
 @doc Markdown.doc"""
-    _hensel_qf_modular_odd(Z::nmod_mat, G::nmod_mat, F::nmod_mat, a, b)
+    _hensel_qf_modular_odd(Z::T, G::T, F::T, a, b)
+                                        where T <: Union{nmod_mat, fmpz_mod_mat}
 
-Helper function for `_hensel_qf`.
-
-`Z,G` are assumed to be modular symmetric matrices
-We require that the triple `(Z,G,F)` is `a`-adapted.
+Helper function for `_hensel_qf`. Matrices $Z$ and $G$ are assumed to be
+modular symmetric matrices. We require that the triple $(Z,G,F)$ is
+`a`-adapted.
 """
-function _hensel_qf_modular_odd(Z::nmod_mat, G::nmod_mat, F::nmod_mat, a, b)
+function _hensel_qf_modular_odd(Z::T, G::T, F::T, a, b) where {T <: Union{nmod_mat, fmpz_mod_mat}}
   while a < b
     Y = divexact(Z - F*G*F', 2)
     F = F + Y*inv(G*F')
@@ -96,7 +95,7 @@ function _hensel_qf_modular_odd(Z::nmod_mat, G::nmod_mat, F::nmod_mat, a, b)
   return F
 end
 
-function _solve_X(Y::nmod_mat, b, g)
+function _solve_X(Y::Union{nmod_mat, fmpz_mod_mat}, b, g)
   F = FiniteField(2)
   Y = change_base_ring(F, lift(Y))
   b = [F(lift(i)) for i in b]
@@ -104,7 +103,7 @@ function _solve_X(Y::nmod_mat, b, g)
   return _solve_X(Y, b, g)
 end
 
-function _solve_X_ker(Y::nmod_mat, b, g)
+function _solve_X_ker(Y::Union{nmod_mat, fmpz_mod_mat}, b, g)
   F = FiniteField(2)
   Y = change_base_ring(F, lift(Y))
   b = [F(lift(i)) for i in b]
@@ -118,8 +117,6 @@ function _solve_X_get_A_and_c(Y::gfp_mat, b, g)
 
   @req issymmetric(Y) "Y must be symmetric"
   @req ncols(Y) == nrows(Y) "Y must be a square matrix"
-  #@req base_ring(b)==k,
-  #@req base_ring(g)==k,
   n = ncols(Y)
 
   equations = Vector{elem_type(k)}[]
@@ -154,12 +151,14 @@ end
 @doc Markdown.doc"""
     _solve_X(Y::gfp_mat, b, g, ker=false) -> gfp_mat
 
-Solve a certain linear equation mod `2`.
-This is a helper function for `_hensel_qf_modular_even`.
+Solve a certain linear equation modulo $2$. This is a helper function for
+`_hensel_qf_modular_even`. We find the solution $X$ such that
 
-$$Y = X + X^T$$
+$$Y = X + X^t$$
 
-$$b_i = X_{ii} + \sum_{j=1}^n X_{ij}g_j \quad i \in \{1, \dots, n\}$$
+and
+
+$$b_i = X_{ii} + \sum_{j=1}^n X_{ij}g_j \quad i \in \{1, \dots, n\}.$$
 """
 function _solve_X(Y::gfp_mat, b, g)
   k = base_ring(Y)
@@ -195,25 +194,22 @@ function _solve_X_ker(Y::gfp_mat, b, g)
 end
 
 @doc Markdown.doc"""
-    hensel_qf(G::nmod_mat, F::nmod_mat, a, b, p)
+    hensel_qf(G::T, F::T, a, b, p) where T <: Union{nmod_mat, fmpz_mod_mat}
 
 Lift `F` modulo `p^n` satisfying `G == F * G * F'`.
 
-- `G` -- a block diagonal matrix of the form
-`[G0*p^n0, G1*p^n1, ... , Gk*p^nk]`
-with integers `nk < .... < n1 < n0`
-and `Gi` unimodular and symmetric.
+- `G` -- a block diagonal matrix of the form `[G0*p^n0, G1*p^n1,...,Gk*p^nk]`
+  with integers `nk < .... < n1 < n0` and `Gi` unimodular and symmetric.
 - `F` -- invertible `p`-adic matrix
   such that `(G, G, F)` is `a`-adapted
 - `a` -- integer the starting precision
 - `b`-- integer the target precision
 
-OUTPUT:
-
-- `Fk` -- the lift of `F` such that
+Return `Fk` such that
+- `Fk`- the lift of `F` such that
   `Z == F * G * F'` modulo `p^n` with `n = prec`
 """
-function hensel_qf(G::nmod_mat, F::nmod_mat, a, b, p)
+function hensel_qf(G::T, F::T, a, b, p) where {T <: Union{nmod_mat, fmpz_mod_mat}}
   # Input checks
   @req isunit(det(F)) "F must be invertible"
   @req ncols(G)== ncols(F) && nrows(G) == nrows(F) "G, F must have the same size"
@@ -240,14 +236,15 @@ function hensel_qf(G::nmod_mat, F::nmod_mat, a, b, p)
 end
 
 @doc Markdown.doc"""
-    _block_indices_vals(G::nmod_mat, p)
+    _block_indices_vals(G:::Union{nmod_mat, fmpz_mod_mat}, p)
+                                                     -> Vector{Int}, Vector{Int}
 
 Return a list of indices and a list of valuation of the homogeneous blocks.
 
-`G` is assumed to be a symmetric `p`-adic block diagonal matrix with modular blocks
-which have descending valuations.
+The matrix `G` is assumed to be a symmetric `p`-adic block diagonal matrix with
+modular blocks which have descending valuations.
 """
-function _block_indices_vals(G::nmod_mat, p)
+function _block_indices_vals(G::Union{nmod_mat, fmpz_mod_mat}, p)
   indices = []
   valuations = []
   while ncols(G) != 0
@@ -261,11 +258,7 @@ function _block_indices_vals(G::nmod_mat, p)
   return indices, valuations
 end
 
-
-
-
 #=
-r"""
     Helper function for `_hensel_qf`.
 
     Deals with the case that `G` is modular and `p=2`.
@@ -284,11 +277,10 @@ r"""
 
     - `Fl` such that `(Z, G, Fl)` is `b`-adapted
     - raises a `ValueError` if `F` cannot be lifted
-"""
 =#
-function _hensel_qf_modular_even(Z::nmod_mat, G::nmod_mat, F::nmod_mat, a, b)
+function _hensel_qf_modular_even(Z::T, G::T, F::T, a, b) where {T <: Union{nmod_mat, fmpz_mod_mat}}
   n = ncols(Z)
-  @req(a != 0, "a must be a non-zero integer")
+  @req a != 0 "a must be a non-zero integer"
   if a == 1
     R = base_ring(Z)
     v = _min_val(G, 2)::Int
@@ -296,7 +288,7 @@ function _hensel_qf_modular_even(Z::nmod_mat, G::nmod_mat, F::nmod_mat, a, b)
     Z = divexact(Z, 2^v)
     Y = Z - F*G*F'
     X = _solve_X(divexact(Y, 2), [divexact(y, 4) for y in diagonal(Y)], diagonal(inv(G)))
-    X = 2 * change_base_ring(R, lift(X))::nmod_mat
+    X = 2 * change_base_ring(R, lift(X))::T
     F = F + X*inv(G*F')
     a = 2
   end

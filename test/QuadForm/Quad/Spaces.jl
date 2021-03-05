@@ -115,4 +115,15 @@
     @test gram_matrix(V, S) == F
   end
 
+  fl, T =  Hecke.isequivalent_with_isometry(quadratic_space(QQ, matrix(QQ, 2, 2, [4, 0, 0, 1])),
+                                            quadratic_space(QQ, matrix(QQ, 2, 2, [1, 0, 0, 1])))
+  @test fl
+
+  Qx, x = PolynomialRing(FlintQQ, "x", cached = false)
+  f = x - 1;
+  K, a = number_field(f)
+  D = matrix(K, 2, 2, [1, 0, 0, 3]);
+  V = quadratic_space(K, D)
+  fl, T = Hecke.isequivalent_with_isometry(V, V)
+  @test fl
 end

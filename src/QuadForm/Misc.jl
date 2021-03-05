@@ -508,11 +508,12 @@ function image(f::NumFieldMor, I::NfRelOrdIdl{T, S}) where {T, S}
   return J
 end
 
-function image(f::NumFieldMor, I::NfRelOrdFracIdl{T, S}) where {T, S}
+function image(f::NumFieldMor, I::NfRelOrdFracIdl{T, S}; order = order(I)) where {T, S}
   #S has to be an automorphism!!!!
-  O = order(I)
+  O = order
   @assert ismaximal(O) # Otherwise the order might change
   K = nf(O)
+  @assert K === codomain(f)
 
   pb = pseudo_basis(I)
 
@@ -817,6 +818,7 @@ end
 function absolute_basis(I::NfRelOrdFracIdl)
   res = elem_type(nf(order(I)))[]
   pb = pseudo_basis(I)
+  pbb = pseudo_basis(order(I))
   for i in 1:length(pb)
     (e, I) = pb[i]
     for b in absolute_basis(I)
@@ -829,7 +831,9 @@ end
 function absolute_basis(I::NfRelOrdIdl)
   res = elem_type(nf(order(I)))[]
   pb = pseudo_basis(I)
-  for (e, I) in pb
+  pbb = pseudo_basis(order(I))
+  for i in 1:length(pb)
+    (e, I) = pb[i]
     for b in absolute_basis(I)
       push!(res, e * b)
     end
@@ -1380,19 +1384,6 @@ function absolute_primitive_element(K::AnticNumberField)
 end
 
 function absolute_primitive_element(K::NumField)
-  B = basis(K)
-  for i in 1:length(B)
-    if degree(absolute_minpoly(B[i])) == absolute_degree(K)
-      return B[i]
-    end
-  end
-  for i in 1:10
-    z = rand(basis(base_field(K))) * rand(basis(K)) +
-          rand(basis(base_field(K))) * rand(basis(K))
-    if degree(absolute_minpoly(z)) == absolute_degree(K)
-      return z
-    end
-  end
   Kabs, m = absolute_field(K)
   return m(gen(Kabs))
 end

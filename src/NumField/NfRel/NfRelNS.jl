@@ -268,6 +268,12 @@ function Base.:(*)(a::NfRelNSElem{T}, b::NfRelNSElem{T}) where {T}
   return parent(a)(data(a) * data(b))
 end
 
+function Base.:(*)(a::NfRelNSElem{T}, b::Union{Int, fmpz}) where {T}
+  z = NfRelNSElem{T}(data(a)*b)
+  z.parent = parent(a)
+  return z
+end
+
 function Base.:(//)(a::NfRelNSElem{T}, b::NfRelNSElem{T}) where {T}
   return div(a, b)
 end
@@ -344,7 +350,7 @@ function Nemo.mul!(c::NfRelNSElem{T}, a::NfRelNSElem{T}, b::NfRelNSElem{T}) wher
   return c
 end
 
-function Nemo.mul!(c::NfRelNSElem{T}, a::NfRelNSElem{T}, b::Int) where {T}
+function Nemo.mul!(c::NfRelNSElem{T}, a::NfRelNSElem{T}, b::Union{Int, fmpz}) where {T}
   return a*b
 end
 
@@ -365,6 +371,17 @@ end
 ###############################################################################
 # other stuff, trivia and non-trivia
 ###############################################################################
+
+function dot(v::Vector{T}, v1::Vector{fmpz}) where T <: NfRelNSElem
+  @assert length(v) == length(v1)
+  el = data(v[1])*v1[1]
+  for j = 2:length(v)
+    el += data(v[j])*v1[j]
+  end
+  z = T(el)
+  z.parent = parent(v[1])
+  return z
+end
 
 function Nemo.degree(K::NfRelNS)
   return prod(Int[total_degree(x) for x=K.pol])

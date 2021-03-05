@@ -2252,13 +2252,39 @@ function iscoprime(I::NfAbsOrdIdl, J::NfAbsOrdIdl)
   if gcd(minimum(I, copy = false), minimum(J, copy = false)) == 1
     return true
   end
-  if isprime_known(I)
+  if isprime_known(I) && isprime(I)
     return iszero(valuation(J, I))
   end
-  if isprime_known(J)
+  if isprime_known(J) && isprime(J)
     return iszero(valuation(I, J))
   end
-  return isone(I+J)
+  #Lemma: Let R be a (commutative) artinian ring, let I be an ideal of R and 
+  #let x be a nilpotent element. Then I = 1 if and only if I + x = 1 
+  m = gcd(minimum(I, copy = false), minimum(J, copy = false))
+  m = ispower(m)[2]
+  if has_2_elem(I) && has_2_elem(J)
+    K = nf(order(I))
+    if gcd(m, index(order(I))) == 1
+      if fits(Int, m)
+        RI = ResidueRing(FlintZZ, Int(m), cached = false)
+        RIx = PolynomialRing(RI, "x", cached = false)[1]
+        fI1 = RIx(I.gen_two.elem_in_nf)
+        fI2 = RIx(J.gen_two.elem_in_nf)
+        fI3 = RIx(K.pol)
+        fl = _coprimality_test(fI1, fI2, fI3)
+      else
+        R = ResidueRing(FlintZZ, m, cached = false)
+        Rx = PolynomialRing(R, "x", cached = false)[1]
+        f1 = Rx(I.gen_two.elem_in_nf)
+        f2 = Rx(J.gen_two.elem_in_nf)
+        f3 = Rx(K.pol)
+        fl = _coprimality_test(f1, f2, f3)
+      end
+      @hassert :NfOrd 1 fl == isone(I+J)
+      return fl
+    end
+  end
+  return isone(gcd(I, m)+J)
 end 
 
 function iscoprime(I::NfAbsOrdIdl, a::fmpz)

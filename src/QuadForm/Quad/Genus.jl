@@ -1745,7 +1745,7 @@ function _possible_determinants(K, local_symbols, signatures)
   # I need totally positive units / OK^*2
   Q, mQ = quo(U, 2, false)
   f = hom(Q, R, elem_type(R)[_log(mU(mQ\u)) for u in gens(Q)])
-  Ker, mKer = kernel(f)
+  Ker, mKer = kernel(f, false)
   transver = elem_type(K)[ evaluate(mU(mQ\(mKer(k)))) for k in Ker]
 
   dets = elem_type(K)[]

@@ -69,6 +69,7 @@ function cyclotomic_extension(k::AnticNumberField, n::Int; cached::Bool = true, 
       end
     end
   end
+  @assert n > 1
 
   kt, t = PolynomialRing(k, "t", cached = false)
   c = CyclotomicExt()

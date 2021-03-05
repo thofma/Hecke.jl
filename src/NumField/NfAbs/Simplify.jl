@@ -378,8 +378,8 @@ function polredabs(K::AnticNumberField)
 #  println("need to use at least the first $i basis elements...")
   pr = 100
   old = precision(BigFloat)
-  E = enum_ctx_from_ideal(ideal(ZK, 1), zero_matrix(FlintZZ, 1, 1), prec = pr, TU = BigFloat, TC = BigFloat)
   setprecision(BigFloat, pr)
+  E = enum_ctx_from_ideal(ideal(ZK, 1), zero_matrix(FlintZZ, 1, 1), prec = pr, TU = BigFloat, TC = BigFloat)
   while true
     try
       if E.C[end] + 0.0001 == E.C[end]  # very very crude...

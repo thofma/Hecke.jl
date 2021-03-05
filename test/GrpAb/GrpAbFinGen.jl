@@ -79,6 +79,11 @@
     @test S.snf == fmpz[45, 0]
     @test codomain(mS) == G
     @test domain(mS) == S
+
+    M = FlintZZ[-4 0; 0 4]
+    G = abelian_group(M)
+    S, mS = @inferred snf(G)
+    @test S.snf == fmpz[4, 4]
   end
 
   @testset "Finiteness" begin
