@@ -1380,19 +1380,6 @@ function absolute_primitive_element(K::AnticNumberField)
 end
 
 function absolute_primitive_element(K::NumField)
-  B = basis(K)
-  for i in 1:length(B)
-    if degree(absolute_minpoly(B[i])) == absolute_degree(K)
-      return B[i]
-    end
-  end
-  for i in 1:10
-    z = rand(basis(base_field(K))) * rand(basis(K)) +
-          rand(basis(base_field(K))) * rand(basis(K))
-    if degree(absolute_minpoly(z)) == absolute_degree(K)
-      return z
-    end
-  end
   Kabs, m = absolute_field(K)
   return m(gen(Kabs))
 end

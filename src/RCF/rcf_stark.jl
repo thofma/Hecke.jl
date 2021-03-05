@@ -369,7 +369,7 @@ function _find_suitable_quadratic_extension(C::T) where T <: ClassField_pp
     #Need to consider more moduli.
     bound *= 2
     lc1 = ideals_up_to(OK, bound, conductor(C)[1])
-    lc = setdiff(lc, lc1)
+    lc = setdiff(lc1, lc)
   end
 end
 
@@ -377,7 +377,8 @@ function approximate_artin_zeta_derivative_at_0(C::ClassField, mp::GrpAbFinGenMa
   Dzeta = Vector{acb}()
   ks = keys(D)
   CC = parent(first(values(D)))
-  mp1 = inv(C.quotientmap)*mp
+  R = codomain(C.quotientmap)
+  mp1 = hom(R, codomain(mp), GrpAbFinGenElem[mp(C.quotientmap\x) for x in gens(R)])
   k1, mk1 = kernel(mp1)
   ck, mck = cokernel(mk1)
   for x1 in ck
@@ -426,7 +427,7 @@ function approximate_derivative_Artin_L_function(chars::Vector{RCFCharacter{MapR
   return coeffs
 end
 
-function _find_N0(K::AnticNumberField, target_prec::Int, C::arb)
+function _limx(K::AnticNumberField, target_prec::Int)
   R = ArbField(3*target_prec)
   r1, r2 = signature(K)
   n = degree(K)
@@ -438,8 +439,37 @@ function _find_N0(K::AnticNumberField, target_prec::Int, C::arb)
   A0 = log(c_0*(fmpz(2)^target_prec))
   p2 = A0//c_1
   p1 = n*(r+1)*log(p2)//(2*(r+1)+4*A0)
-  N0 = C*p2^(fmpq(n, 2))//(p1+1)
+  return p2^(fmpq(n, 2))//(p1+1)
+end
+
+function _find_N0(K::AnticNumberField, target_prec::Int, C::arb)
+  N0 = C*_limx(K, target_prec)
   return N0
+end
+
+function _B(K::AnticNumberField, target_prec::Int)
+  R = ArbField(3*target_prec)
+  return degree(K)*R(2)^(target_prec)//sqrt(const_pi(R)^3*_limx(K, target_prec))
+end
+
+function _find_i0(K::AnticNumberField, target_prec::Int)
+  B = _B(K, target_prec)
+  limx = _limx(K, target_prec)
+  i0 = 300
+  while limx^i0*(factorial(fmpz(div(i0, 2)))) < B
+    i0 *= 2
+  end
+  imax = i0
+  imin = div(i0, 2)
+  while imax - imin > 2
+    attempt = div(imax + imin, 2)
+    if limx^attempt*(factorial(fmpz(div(attempt, 2)))) < B
+      imin = attempt
+    else
+      imax = attempt
+    end
+  end
+  return imax
 end
 
 function _approximate_derivative_Artin_L_function(chars::Vector, target_prec::Int)
@@ -452,14 +482,15 @@ function _approximate_derivative_Artin_L_function(chars::Vector, target_prec::In
   RR = ArbField(prec)
   maxC = (root(norm(conductor(chars[1].C)[1])*abs(discriminant(maximal_order(K))), 2)+1)//(sqrt(const_pi(RR))^degree(K))
   nterms = Int(Hecke.upper_bound(target_prec*maxC//2, fmpz))
-  Acoeffs = _compute_A_coeffs(n, nterms, prec)
+  i0 = _find_i0(K, target_prec)
+  Acoeffs = _compute_A_coeffs(n, i0, prec)
   factorials = Vector{fmpz}(undef, n)
   factorials[1] = fmpz(1)
   for i = 2:length(factorials)
     factorials[i] = factorials[i-1]*(i-1)
   end
-  coeffs_0 = Vector{arb}[_Aij_at_0(i, n, Acoeffs[i+1], factorials) for i = 0:nterms]
-  coeffs_1 = Vector{arb}[_Aij_at_1(i, n, Acoeffs[i+1], factorials) for i = 0:nterms]
+  coeffs_0 = Vector{arb}[_Aij_at_0(i, n, Acoeffs[i+1], factorials) for i = 0:i0]
+  coeffs_1 = Vector{arb}[_Aij_at_1(i, n, Acoeffs[i+1], factorials) for i = 0:i0]
   den = 2*sqrt(const_pi(RR)^(n-1))
   res = Vector{acb}()
   for i = 1:length(chars)
