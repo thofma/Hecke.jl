@@ -27,7 +27,7 @@ jobs:
         os:
           - ubuntu-latest
           - macOS-latest
-          - windows-latest
+            #- windows-latest
         exclude:
           # Reduce the number of macOS jobs, as fewer can be run in parallel
           - os: macos-latest
