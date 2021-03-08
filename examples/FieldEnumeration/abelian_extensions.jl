@@ -197,10 +197,7 @@ function main()
           @assert signature(C)[1] == 0
         end
 
-        L = absolute_field(simple_extension(number_field(C), cached = false)[1], cached = false, simplify = simplify)[1]
-        if simplify
-          L, = Hecke.simplify(L)
-        end
+        L = absolute_simple_field(number_field(C), cached = false, simplify = simplify)[1]
         r = Hecke._create_record(L)
         r[:discriminant] = absolute_discriminant(C)
         push!(res, r)

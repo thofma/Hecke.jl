@@ -620,9 +620,9 @@ function MaximalOrder(L::NumField)
 end
 
 function maximal_order_via_absolute(L::NfRel)
-  Labs, lToLabs, kToLabs = absolute_field(L)
+  Labs, LabsToL = absolute_simple_field(L)
   Oabs = maximal_order(Labs)
-  return relative_order(Oabs, lToLabs)
+  return relative_order(Oabs, LabsToL)
 end
 
 function maximal_order_via_absolute(m::NfToNfRel)

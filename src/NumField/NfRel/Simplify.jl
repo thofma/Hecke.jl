@@ -5,7 +5,6 @@
 ################################################################################
 
 function simplify(K::NfRel; cached::Bool = true, prec::Int = 100)
-  Kabs, mK, mk = absolute_field(K, cached = false)
   OK = maximal_order(K)
   B = lll_basis(OK)
   B1 = _sieve_primitive_elements(B)
@@ -58,6 +57,9 @@ end
 
 
 function _is_primitive_via_block(a::NfRelElem{nf_elem}, rt::Dict{fq, Vector{fq}}, Fx, tmp::gfp_fmpz_poly)
+  if iszero(a)
+    return false
+  end
   n = degree(parent(a))
   pol = data(a)
   conjs = Set{fq}()
@@ -135,28 +137,11 @@ function _find_prime(L::NfRel{nf_elem})
 end
 
 
-function _sieve_primitive_elements(B::Vector{NfRelElem{nf_elem}}; parameter::Int = 3)
-  Lrel = parent(B[1])
-  n = absolute_degree(Lrel)
-  #First, we choose the candidates
-  Bnew = NfRelElem{nf_elem}[]
-  nrep = parameter
-  if n < parameter
-    nrep = n
-  end
-  for i = 1:length(B)
-    push!(Bnew, B[i])
-    for j = 1:nrep
-      if i != j
-        push!(Bnew, B[i]+B[j])
-        push!(Bnew, B[i]-B[j])
-      end
-    end
-  end
-  #Now, we test for primitiveness.
+function _setup_block_system(Lrel::NfRel{nf_elem})
   K = base_field(Lrel)
   OK = maximal_order(K)
   Zx = ZZ["x"][1]
+  n = absolute_degree(Lrel)
 
   pint, d = _find_prime(Lrel)
   p = fmpz(pint)
@@ -185,15 +170,9 @@ function _sieve_primitive_elements(B::Vector{NfRelElem{nf_elem}}; parameter::Int
       break
     end
   end
-  indices = Int[]
-  for i = 1:length(Bnew)
-    if _is_primitive_via_block(Bnew[i], rt, Fx, tmp)
-      push!(indices, i)
-    end
-  end
-  return Bnew[indices]
-
+  return rt, Fx, tmp
 end
+
 
 function _find_prime(L::NfRelNS{nf_elem})
   p = 2^10
@@ -250,21 +229,8 @@ function _find_prime(L::NfRelNS{nf_elem})
   return res[1], res[2]
 end
 
-function _sieve_primitive_elements(B::Vector{NfRelNSElem{nf_elem}}; parameter::Int = 3)
-  Lrel = parent(B[1])
-  #First, we choose the candidates
-  Bnew = NfRelNSElem{nf_elem}[]
-  nrep = min(parameter, absolute_degree(Lrel))
-  for i = 1:length(B)
-    push!(Bnew, B[i])
-    for j = 1:nrep
-      if i != j
-        push!(Bnew, B[i]+B[j])
-        push!(Bnew, B[i]-B[j])
-      end
-    end
-  end
-  #Now, we test for primitiveness.
+
+function _setup_block_system(Lrel::NfRelNS{nf_elem})
   K = base_field(Lrel)
   OK = maximal_order(K)
   Zx = ZZ["x"][1]
@@ -315,12 +281,28 @@ function _sieve_primitive_elements(B::Vector{NfRelNSElem{nf_elem}}; parameter::I
       break
     end
   end
-  
+  return rt1, Rxy, tmp
+end
+
+function _sieve_primitive_elements(B::Vector{T}; parameter::Int = div(absolute_degree(parent(B[1])), 2)) where T <: Union{NfRelNSElem{nf_elem}, NfRelElem{nf_elem}}
+  Lrel = parent(B[1])
+  #First, we choose the candidates
+  B_test = vcat(B, T[absolute_primitive_element(Lrel)])
+  Bnew = typeof(B)()
+  nrep = min(parameter, absolute_degree(Lrel))
+  for i = 1:length(B_test)
+    push!(Bnew, B_test[i])
+    for j = 1:nrep
+      if i != j
+        push!(Bnew, B_test[i]+B_test[j])
+        push!(Bnew, B_test[i]-B_test[j])
+      end
+    end
+  end
+  #Now, we test for primitiveness.
+  rt1, Rxy, tmp = _setup_block_system(Lrel)
   indices = Int[]
   for i = 1:length(Bnew)
-    if length(vars(Bnew[i].data)) < ngens(Lrel)
-      continue
-    end
     if _is_primitive_via_block(Bnew[i], rt1, Rxy, tmp)
       push!(indices, i)
     end
@@ -329,6 +311,9 @@ function _sieve_primitive_elements(B::Vector{NfRelNSElem{nf_elem}}; parameter::I
 end
 
 function _is_primitive_via_block(a::NfRelNSElem{nf_elem}, rt::Dict{fq, Vector{Vector{fq}}}, Rxy, tmp)
+  if length(vars(a.data)) < ngens(parent(a))
+    return false
+  end
   n = degree(parent(a))
   pol = data(a)
   conjs = Set{fq}()
@@ -350,201 +335,32 @@ function _is_primitive_via_block(a::NfRelNSElem{nf_elem}, rt::Dict{fq, Vector{Ve
   return true
 end
 
-function _find_short_primitive_element(OL::NfRelOrd)
-  L = nf(OL)
-  K = base_field(L)
-  OK = maximal_order(K)
-  Zx = ZZ["x"][1]
-
-  n = absolute_degree(L)
-
-  #First, I set up the "block system" machine to detect primitiveness
-  P, d = _find_prime(L)
-  p = minimum(P, copy = false)
-  abs_deg = d*degree(P)
-  Fp = GF(p, cached = false)
-  Fpx = PolynomialRing(Fp, cached = false)[1]
-  F = FlintFiniteField(p, abs_deg, "w", cached = false)[1]
-  Fx = PolynomialRing(F, cached = false)[1]
-  rt_base_field = roots(Zx(K.pol), F)
-  rt = Dict{fq, Vector{Vector{fq}}}()
-  Rxy = PolynomialRing(F, ngens(L), cached = false)[1]
-  tmp = Fpx()
-  for r in rt_base_field
-    vr = Vector{Vector{fq}}()
-    for f in L.pol
-      g = isunivariate(f)[2]
-      coeff_gF = fq[]
-      for i = 0:degree(g)
-        nf_elem_to_gfp_fmpz_poly!(tmp, coeff(g, i))
-        push!(coeff_gF, evaluate(tmp, r))
-      end
-      gF = Fx(coeff_gF)
-      push!(vr, roots(gF))
-    end
-    rt[r] = vr
+function _find_short_primitive_element(L::NfRelNS)
+  B = lll_basis(maximal_order(L))
+  parameter = div(absolute_degree(L), 2)
+  B1 = _sieve_primitive_elements(B, parameter = parameter)
+  while isempty(B1)
+    parameter += 1
+    B1 = _sieve_primitive_elements(B, parameter = parameter)
   end
-  rt1 = Dict{fq, Vector{Vector{fq}}}()
-  ind = 1
-  nconjs_needed = div(n, 2)+1
-  for (r, v) in rt
-    rtv = Vector{Vector{fq}}()
-    it = cartesian_product_iterator([1:length(v[i]) for i in 1:length(v)], inplace = true)
-    for i in it
-      push!(rtv, [v[j][i[j]] for j = 1:length(v)])
-      ind += 1
-      if ind > nconjs_needed
-        break
-      end
-    end
-    rt1[r] = rtv
-    if ind > nconjs_needed
-      break
-    end
-  end
-  
-  #Now, lattice enumeration
-  B = lll_basis(OL)
-  ind = 0
-  I = arb()
-  for j = 1:length(B)
-    if _is_primitive_via_block(B[j], rt1, Rxy, tmp)
-      if iszero(ind)
-        ind = j
-        I = t2(B[j])
-      else
-        J = t2(B[j])
-        if J < I
-          I = J
-          ind = j
-        end
-      end
-    end
-  end
-  all_a = NfRelNSElem{nf_elem}[absolute_primitive_element(L), B[ind]]
-  prec = 100 + 25*div(absolute_degree(L), 3)
-  old = precision(BigFloat)
-  setprecision(BigFloat, prec)
-  
-  M = minkowski_gram_mat_scaled(B, prec)
-  G = FakeFmpqMat(minkowski_gram_mat_scaled(B, prec), fmpz(2)^prec)
-  E = enum_ctx_from_gram_canonical_simplify(G)
-  while true
-    try
-      if E.C[end] + 0.0001 == E.C[end]  # very very crude...
-        prec *= 2
-        continue
-      end
-      break
-    catch e
-      if isa(e, InexactError) || isa(e, LowPrecisionLLL) || isa(e, LowPrecisionCholesky)
-        prec *= 2
-        continue
-      end
-      rethrow(e)
-    end
-    setprecision(BigFloat, prec)
-    G = FakeFmpqMat(minkowski_gram_mat_scaled(B, prec), fmpz(2)^prec)
-    E = enum_ctx_from_gram_canonical_simplify(G)
-  end
-  l = zeros(FlintZZ, n)
-  l[ind] = 1
-  
-  scale = 1.0
-  enum_ctx_start(E, matrix(FlintZZ, 1, n, l), eps = 1.01)
-  
-    
-  la = absolute_degree(L)*BigFloat(E.t_den^2)
-  Ec = BigFloat(E.c//E.d)
-  eps = BigFloat(E.d)^(1//2)
-  found_pe = false
-    
-  while !found_pe
-    count = 0
-    while enum_ctx_next(E)
-      count += 1
-      if count > 100
-        if found_pe
-          break
-        else
-          count = 0
-        end
-      end
-      M = E.x
-      q = dot(B, fmpz[M[1, j] for j = 1:n])
-      if !_is_primitive_via_block(q, rt1, Rxy, tmp)
-        continue
-      end
-      found_pe = true
-      lq = Ec - (E.l[1] - E.C[1, 1]*(BigFloat(E.x[1,1]) + E.tail[1])^2) 
-      if lq < la + eps
-        if lq > la - eps
-          push!(all_a, q)
-        else
-          a = q
-          all_a = nf_elem[a]
-          if lq/la < 0.8
-            enum_ctx_start(E, E.x, eps = 1.01) 
-            Ec = BigFloat(E.c//E.d)
-          end
-          la = lq
-        end
-      end
-    end
-    scale *= 2
-    enum_ctx_start(E, matrix(FlintZZ, 1, n, l), eps = scale)
-    Ec = BigFloat(E.c//E.d)
-  end
-  setprecision(BigFloat, old)
-
-  a = all_a[1]
+  a = B1[1]
   I = t2(a)
-  for i = 2:length(all_a)
-    J = t2(all_a[i])
+  for i = 2:length(B1)
+    J = t2(B1[i])
     if J < I
-      a = all_a[i]
+      a = B1[i]
       I = J
     end
   end
-  need_to_simplify = (a == all_a[1])
-  return a, need_to_simplify
-end
-
-function enum_ctx_from_gram_canonical_simplify(G::FakeFmpqMat)
-  E = enum_ctx{Int, BigFloat, BigFloat}()
-  E.G = numerator(G)
-  n = nrows(G)
-  E.n = n 
-  E.limit = nrows(G)
-  E.d = denominator(G)
-  E.C = pseudo_cholesky(E.G, denominator(G), TC = BigFloat, limit = E.limit)
-  E.x = zero_matrix(FlintZZ, 1, n) #coeffs limit+1:n are going to be zero, always
-  E.L = Vector{BigFloat}(undef, E.limit) #lower and
-  E.U = Vector{BigFloat}(undef, E.limit) #upper bounds for the coordinates
-  E.t_den = fmpz(1)
-  E.t = identity_matrix(FlintZZ, n)
-
-  E.l = Vector{BigFloat}(undef, E.limit) #current length
-  E.tail = Vector{BigFloat}(undef, E.limit)
-  d = fmpz(ceil(abs(prod(BigFloat[BigFloat(E.C[i,i]) for i=1:E.limit]))))
-  ## but we don't want to overshoot too much the length of the last
-  ## basis element.
-  b = min((root(d, E.limit)+1)*E.limit * E.d, E.G[E.limit, E.limit]*E.limit)
-  enum_ctx_start(E, b)
-  return E
+  return a
 end
 
 function simplified_absolute_field(L::NfRelNS; cached = false)
-  OL = maximal_order(L)
-  a, need_to_simplify = _find_short_primitive_element(OL)
+  a = _find_short_primitive_element(L)
   f = absolute_minpoly(a)
   @assert degree(f) == absolute_degree(L)
   K = number_field(f, check = false, cached = cached)[1]
   mp = hom(K, L, a)
-  if need_to_simplify
-    K, mK = simplify(K, cached = false, save_LLL_basis = false)
-    mp = mK*mp
-  end
   return K, mp
 end
 

@@ -22,8 +22,8 @@
     Ky, y = K["y"]
 
     L, b = NumberField(y^2 + y + 1, "b")
-    Labs = absolute_field(L)[1]
-    Lrel, mLrel = Hecke.relative_extension(Labs, K)
+    Labs = absolute_simple_field(L)[1]
+    Lrel, mLrel = relative_simple_extension(Labs, K)
     @test isisomorphic(L, Lrel)[1]
 
   end

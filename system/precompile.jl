@@ -8,6 +8,6 @@ k, a = wildanger_field(3, 13)
 h = hilbert_class_field(k)
 K = number_field(h)
 L = simple_extension(K)[1]
-absolute_field(L)
+absolute_simple_field(L)
 discriminant(maximal_order(K))
 norm_equation(k, 27)

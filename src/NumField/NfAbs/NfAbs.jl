@@ -580,11 +580,12 @@ function compositum(K::AnticNumberField, L::AnticNumberField)
     error("2nd field cannot be normal")
   end
   KK = NumberField(first(lf.fac)[1])[1]
-  Ka, m1, m2 = absolute_field(KK)
-  m3 = hom(K, Ka, preimage(m1, gen(KK)))
-  embed(m2)
-  embed(m3)
-  return Ka, m3, m2
+  Ka, mKa = absolute_simple_field(KK)
+  mK = hom(K, Ka, mKa\gen(KK))
+  mL = hom(L, Ka, mKa\(KK(gen(L))))
+  embed(mK)
+  embed(mL)
+  return Ka, mK, mL
 end
 
 ################################################################################
@@ -814,7 +815,7 @@ function splitting_field(fl::Array{<:PolyElem{nf_elem}, 1}; do_roots::Bool = fal
   end
 
   K, a = number_field(lg[1])#, check = false)
-  Ks, nk, mk = absolute_field(K)
+  Ks, nk, mk = collapse_top_layer(K)
 
   ggl = [map_coeffs(mk, lg[1])]
   ggl[1] = divexact(ggl[1], gen(parent(ggl[1])) - preimage(nk, a))

@@ -55,7 +55,8 @@ function _norm_equation_relative(NC::NormCache, order_num::Int; max_num_fields::
     L = domain(LtoA)
     OL = maximal_order(L)
 
-    K, KtoL, ktoK = simplified_absolute_field(L)
+    K, KtoL = simplified_absolute_field(L)
+    ktoK = restrict(inv(KtoL), base_field(L))
     OK = maximal_order_via_relative(K, KtoL)
 
     good_primes = __neq_find_good_primes(NC, OL)
@@ -179,8 +180,8 @@ function _norm_equation_valuations_only(O::AlgAssRelOrd, primes::Vector{<: NfAbs
     L = domain(LtoA)::_ext_type(elem_type(_K))
     OL = maximal_order(L)
 
-    # TODO: Use simplified_absolute_field once Carlo has fixed it
-    K, KtoL, ktoK = simplified_absolute_field(L)
+    K, KtoL = simplified_absolute_field(L)
+    ktoK = restrict(inv(KtoL), base_field(L))
     OK = maximal_order_via_relative(K, KtoL)
 
     good_primes = __neq_find_good_primes(NC, OL)

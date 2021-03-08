@@ -1,4 +1,5 @@
-export coordinates, absolute_coordinates, absolute_norm, absolute_tr
+export coordinates, absolute_coordinates, absolute_norm, absolute_tr,
+       absolute_minpoly
 
 ################################################################################
 #
@@ -476,6 +477,14 @@ function norm(f::PolyElem{<: NumFieldElem})
   return power_sums_to_polynomial(PQ)
 end
 
+function absolute_norm(f::PolyElem{nf_elem})
+  return norm(f)
+end
+
+function absolute_norm(f::PolyElem{<: NumFieldElem})
+  return absolute_norm(norm(f))
+end
+
 function isirreducible(f::PolyElem{<: NumFieldElem})
   # TODO (easy): We can do better then this. First do a squarefree factorization
   lf = factor(f)
@@ -484,15 +493,11 @@ end
 
 function AbstractAlgebra.factor(f::PolyElem{<: NumFieldElem})
   K = base_ring(f)
-  Ka, rel_abs, _ = absolute_field(K)
+  Ka, mKa = absolute_simple_field(K)
 
-  function map_poly(P::Ring, mp::Map, f::Generic.Poly)
-    return P([mp(coeff(f, i)) for i=0:degree(f)])
-  end
-
-  fa = map_poly(PolynomialRing(Ka, "T", cached=false)[1], pseudo_inv(rel_abs), f)
-  lf = factor(fa)
-  res = Fac(map_poly(parent(f), rel_abs, lf.unit), Dict(map_poly(parent(f), rel_abs, k)=>v for (k,v) = lf.fac))
+  fKa = map_coeffs(inv(mKa), f)
+  lf = factor(fKa)
+  res = Fac(map_coeffs(mKa, lf.unit, parent = parent(f)), Dict(map_coeffs(mKa, k, parent = parent(f)) => v for (k,v) = lf.fac))
 
   return res
 end
@@ -545,6 +550,7 @@ gens(::NonSimpleNumField)
 #  Coordinates
 #
 ################################################################################
+
 @doc Markdown.doc"""
     coordinates(x::NumFieldElem{T}) -> Vector{T}
 
@@ -607,7 +613,7 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    coordinates(x::NumFieldElem{T}) -> Vector{T}
+    absolute_coordinates(x::NumFieldElem{T}) -> Vector{T}
 
 Given an element $x$ in a number field $K$, this function returns the coordinates of $x$
 with respect to the basis of $K$ over the rationals (the output of the 'absolute_basis' function).

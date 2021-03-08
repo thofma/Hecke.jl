@@ -97,6 +97,8 @@
 #  where x is such that hom(L, K, x) works. 
 #
 
+export restrict
+
 ################################################################################
 #
 # The NumFieldMor type
@@ -711,6 +713,7 @@ function preimage(f::NumFieldMor, g::NumFieldElem)
   @assert fl
   return y
 end
+
 ################################################################################
 #
 #  Computation of the inverse (data)
@@ -918,3 +921,19 @@ function Base.hash(f::MapDataFromNfRelNS, K, L, h::UInt)
 end
 
 Base.hash(f::NumFieldMor, h::UInt) = hash(f.image_data, domain(f), codomain(f), h)
+
+################################################################################
+#
+#  Restriction
+#
+################################################################################
+
+function restrict(f::NumFieldMor, K::NonSimpleNumField)
+  k = domain(f)
+  return hom(K, k, [k(x) for x in gens(K)])*f
+end
+
+function restrict(f::NumFieldMor, K::SimpleNumField)
+  k = domain(f)
+  return hom(K, k, k(gen(K)))*f
+end

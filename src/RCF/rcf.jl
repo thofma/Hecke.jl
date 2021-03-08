@@ -107,7 +107,7 @@ function  ray_class_field_cyclic_pp_Brauer(CFpp::ClassField_pp{S, T}) where {S, 
   k = base_field(CFpp)
   CE = cyclotomic_extension(k, e)
   @vtime :ClassField 1 "Computing maximal order and lll \n"
-  @vtime :ClassField 1 OCE = maximal_order(absolute_field(CE))
+  @vtime :ClassField 1 OCE = maximal_order(absolute_simple_field(CE))
   @vtime :ClassField 1 OCELLL = lll(OCE)
 
   @vprint :ClassField 1 "computing the S-units...\n"
@@ -194,7 +194,7 @@ function _s_unit_for_kummer_using_Brauer(C::CyclotomicExt, f::fmpz)
       return v
     end
   end
-  K = absolute_field(C)
+  K = absolute_simple_field(C)
   @vprint :ClassField 2 "Maximal order of cyclotomic extension\n"
   ZK = maximal_order(K)
   if isdefined(ZK, :lllO)
@@ -480,7 +480,7 @@ function _s_unit_for_kummer(C::CyclotomicExt, f::fmpz)
       return v
     end
   end
-  K = absolute_field(C)
+  K = absolute_simple_field(C)
   @vprint :ClassField 2 "Maximal order of cyclotomic extension\n"
   ZK = maximal_order(K)
   @vprint :ClassField 2 "Class group of cyclotomic extension: $K\n"
@@ -906,7 +906,7 @@ function _rcf_descent(CF::ClassField_pp)
   k = base_field(CF)
   CE = cyclotomic_extension(k, e)
   A = CF.K
-  CK = absolute_field(CE)
+  CK = absolute_simple_field(CE)
   if degree(CK) == degree(k)
     #Relies on the fact that, if the cyclotomic extension has degree 1,
     #the absolute field is equal to the base field
@@ -917,7 +917,7 @@ function _rcf_descent(CF::ClassField_pp)
   end
 
   Zk = order(codomain(CF.rayclassgroupmap))
-  ZK = maximal_order(absolute_field(CE))
+  ZK = maximal_order(CK)
 
   n = degree(A)
   #@vprint :ClassField 2 "Automorphism group (over ground field) $AutA\n"
