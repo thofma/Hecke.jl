@@ -237,7 +237,7 @@
 
 
   for d in 1:50
-    for sig in [(4,0)] #include (2,0), (3,0) but buggy at the moment
+    for sig in [(2,0),(3,0),(4,0)]
       for G in genera(sig,d)
         m = mass(G)
         L = representative(G)
@@ -249,7 +249,7 @@
     end
   end
 
-  for d in 51:400
+  for d in 1:400
     for sig in [(2,0), (0,3), (4,0)]
       for G in genera(sig, d)
         m = mass(G)
@@ -258,10 +258,10 @@
         @test mass(L)==m
         q1 = discriminant_group(L)
         q1 = normal_form(q1)
-        q1 = gram_matrix_quadratic(q1)
+        q1 = Hecke.gram_matrix_quadratic(q1)
         q2 = discriminant_group(G)
         q2 = normal_form(q2)
-        q2 = gram_matrix_quadratic(q2)
+        q2 = Hecke.gram_matrix_quadratic(q2)
         @test q1 == q2
       end
     end
