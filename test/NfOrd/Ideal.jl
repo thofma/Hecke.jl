@@ -221,5 +221,16 @@
     @test norm(mP) == 7
   end
 
+  @testset "Is principal" begin
+    Qx, x = QQ["x"]
+    f = x^2 - 5
+    K, a = NumberField(f, "a")
+    OK = maximal_order(K)
+    P = first(keys(factor(3 * OK)))
+    fl, x = Hecke.isprincipal_fac_elem(P)
+    @test fl
+    @test OK(evaluate(x)) * OK == P
+  end
+
   include("Ideal/Prime.jl")
 end

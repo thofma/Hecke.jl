@@ -114,7 +114,8 @@ function _find_prime(L::NfRel{nf_elem})
       F2, mF2 = ResidueField(OK, Q)
       mF3 = extend(mF2, K)
       fF2 = map_coeffs(mF3, f)
-      if degree(fF2) != degree(f) || !issquarefree(fF2)0
+      if degree(fF2) != degree(f) || !issquarefree(fF2)
+        acceptable = false
         break
       end
       FS = factor_shape(fF2)
@@ -363,10 +364,6 @@ function simplified_absolute_field(L::NfRelNS; cached = false)
   mp = hom(K, L, a)
   return K, mp
 end
-
-  
-
-
 
 function simplified_absolute_field(L::NfRel; cached::Bool = false)
   OL = maximal_order(L)

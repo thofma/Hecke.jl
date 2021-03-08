@@ -58,7 +58,38 @@ function relative_simple_extension(m::NfToNfMor)
 end
 
 
-function _issubfield_easy(k::NumField, K::NumField)
+
+################################################################################
+#
+#  Relative minpoly
+#
+################################################################################
+
+function minpoly(a::NumFieldElem, K::NumField)
+  if !_issubfield_in_tower(K, parent(a))
+    error("Not yet implemented!")
+  end
+  f = minpoly(a)
+  g = norm(f, K)
+  if issquarefree(g)
+    return g
+  else
+    h = gcd(g, derivative(g))
+    return divexact(g, h)
+  end
+end
+
+
+################################################################################
+#
+#  IsSubfieldTower
+#
+################################################################################
+
+function _issubfield_in_tower(k::NumField, K::NumField)
+  if absolute_degree(k) == 1
+    return true
+  end
   found = true
   while k != base_field(K)
     K = base_field(K)
@@ -67,14 +98,5 @@ function _issubfield_easy(k::NumField, K::NumField)
       break
     end
   end
-  if !found
-    return false, morphism_type(k, K)()
-  end
-  return true, hom(k, K, )
+  return found
 end
-
-################################################################################
-#
-#
-#
-################################################################################
