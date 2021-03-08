@@ -95,4 +95,14 @@
   gens = [[1, 0], [1, 0], [0, 1], [0, 1]]
   L = quadratic_lattice(K, generators = gens, gram_ambient_space = D)
   @test length(genus_representatives(L)) == 1
+
+  B = QQ[2 0; 3//2 1//2]
+  G = QQ[1 0; 0 23]
+  V = quadratic_space(QQ, G)
+  L = lattice(V, B)
+  @test length(genus_representatives(L)) == 2
+  @test length(genus_representatives(Zlattice(gram = gram_matrix(L)))) == 2
+
+  L = Zlattice(ZZ[4 3; 3 8])
+  @test length(genus_representatives(L)) == 4
 end
