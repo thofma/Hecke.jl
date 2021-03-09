@@ -158,7 +158,7 @@ function _local_factor_cho(L, p)
 
   for s in S
     AG = diagonal_matrix([2^(S[j] < s ? 2*(s - S[j]) : 0) * G[j] for j in 1:length(G)])
-    _,B = left_kernel(matrix(k, nrows(AG), 1, [hext(d//2^s) for d in diagonal(AG)]))
+    _,B = left_kernel(matrix(k, nrows(AG), 1, [hext(d//K(2)^s) for d in diagonal(AG)]))
     @assert all(issquare(x)[1] for x in B)
     B = map_entries(x -> sqrt(x), B)
     BK = map_entries(x -> hext\x, B)
@@ -269,7 +269,7 @@ function _local_factor_cho(L, p)
     res *= fmpq(group_order(QFT, mi, q))//2
   end
 
-  beta = fmpq(1, 2) * q^N * res
+  beta = fmpq(1, 2) * fmpq(q)^N * res
 
   exp = fmpq(m + 1, 2) * sum(S[i] * M[i] for i in 1:length(S)) # from det
 
@@ -296,7 +296,7 @@ function _local_factor_cho(L, p)
 
   @assert isintegral(exp)
 
-  return q^Int(FlintZZ(exp)) * H//2 * fmpq(1)//beta
+  return fmpq(q)^Int(FlintZZ(exp)) * H//2 * fmpq(1)//beta
 end
 
 ################################################################################
