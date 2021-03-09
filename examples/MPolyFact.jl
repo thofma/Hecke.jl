@@ -3,11 +3,127 @@ module MPolyFact
 using Hecke
 import Hecke: Nemo, @vprint, @hassert, @vtime, rational_reconstruction, set_precision!
 import Nemo: shift_left, shift_right
+import Base: *
 
 export factor_absolute
 
 add_verbose_scope(:AbsFact)
 add_assert_scope(:AbsFact)
+
+function *(f::PolyElem{<:SeriesElem{qadic}}, g::PolyElem{<:SeriesElem{qadic}}) 
+  if degree(f) > 2 &&  degree(g) > 2
+    fg = mymul_ks(f, g)
+    @hassert :AbsFact 2 fg = Nemo.mul_classical(f, g)
+    return fg
+  else
+    return Nemo.mul_classical(f, g)
+  end
+end
+
+function Base.minimum(::typeof(precision), a::Vector{<:SeriesElem})
+  return minimum(map(precision, a))
+end
+function Base.maximum(::typeof(precision), a::Vector{<:SeriesElem})
+  return maximum(map(precision, a))
+end
+Base.length(a::qadic) = a.length
+
+density(f::PolyElem) = length(findall(x->!iszero(x), coefficients(f)))/length(f)
+
+@inline function coeffraw(q::qadic, i::Int)
+  return reinterpret(Ptr{fmpz}, q.coeffs)+i*sizeof(Ptr{Int})
+end
+
+@inline function coeffraw(q::fmpz_poly, i::Int)
+  return reinterpret(Ptr{fmpz}, q.coeffs)+i*sizeof(Ptr{Int})
+end
+
+@inline function Hecke.setcoeff!(z::fmpz_poly, n::Int, x::Ptr{fmpz})
+   ccall((:fmpz_poly_set_coeff_fmpz, Hecke.libflint), Nothing,
+                    (Ref{fmpz_poly}, Int, Ptr{fmpz}), z, n, x)
+   return z
+end
+
+@inline function Hecke.mul!(a::Ref{fmpz}, b::Ref{fmpz}, c::fmpz)
+  ccall((:fmpz_mul, Hecke.libflint), Cvoid, (Ref{fmpz}, Ref{fmpz}, Ref{fmpz}),a, b, c)
+end
+
+
+function mymul_ks(f::PolyElem{<:SeriesElem{qadic}}, g::PolyElem{<:SeriesElem{qadic}})
+  nf = degree(f)
+  ng = degree(g)
+  rf = minimum(precision, coefficients(f))
+  rg = minimum(precision, coefficients(g))
+  S = base_ring(f)
+  Qq = base_ring(S)
+  h = degree(Qq)
+  mp = typemax(Int)
+
+  #assume no denominator!!!
+  nfg = nf+ng+1
+
+  F = Hecke.Globals.Zx()
+  fit!(F, 1+(rf*nfg+nf)*(2*h-1))
+  for i=0:degree(f)
+    c = coeff(f, i)
+    for j=0:rf-1
+      d = coeff(c, j)
+      mp = min(mp, precision(d))
+      v = valuation(d)
+      if v > 0
+        sc = prime(Qq)^v
+      end
+      for k=0:length(d)-1
+        setcoeff!(F, (j*nfg+i)*(2*h-1)+k, coeffraw(d, k))
+        if v > 0
+          Hecke.mul!(coeffraw(F, (j*nfg+i)*(2*h-1)+k), coeffraw(F, (j*nfg+i)*(2*h-1)+k), sc)
+        end
+      end
+    end
+  end
+  G = Hecke.Globals.Zx()
+  fit!(G, 1+(rg*nfg+ng)*(2*h-1))
+  for i=0:degree(g)
+    c = coeff(g, i)
+    for j=0:rg-1
+      d = coeff(c, j)
+      mp = min(mp, precision(d))
+      v = valuation(d)
+      if v > 0
+        sc = prime(Qq)^v
+      end
+      for k=0:length(d)-1
+        setcoeff!(G, (j*nfg+i)*(2*h-1)+k, coeffraw(d, k))
+        if v > 0
+          Hecke.mul!(coeffraw(G, (j*nfg+i)*(2*h-1)+k), coeffraw(F, (j*nfg+i)*(2*h-1)+k), sc)
+        end
+      end
+    end
+  end
+
+#  @show density(F), density(G), mp
+  FG = mullow(F, G, min(rf, rg)*nfg*(2*h-1))
+
+  fg = parent(f)()
+  ge = gen(Qq)
+  for i=0:degree(f)+degree(g)
+    c = qadic[]
+    for j=0:min(rf,rg)-1
+      H = Hecke.Globals.Zx()
+      for x = 0:2*h-2
+        setcoeff!(H, x, coeffraw(FG, x + (j*nfg+i)*(2*h-1)))
+      end
+      push!(c, Qq(H, mp))
+      @assert valuation(c[end]) >= 0
+    end
+    s = S(c, length(c), min(rf, rg), 0)
+    Hecke.renormalize!(s)
+    if !iszero(s)
+      setcoeff!(fg, i, s)
+    end
+  end
+  return fg
+end
 
 function Hecke.norm(f::MPolyElem{nf_elem})
   Kx = parent(f)
@@ -329,9 +445,52 @@ function _shift_coeff_right(f::PolyElem{<:SeriesElem{qadic}}, n::Int)
   g = parent(f)()
   p = prime(base_ring(base_ring(g)))^n
   for i = 0:length(f)
+    @assert all(y -> valuation(polcoeff(coeff(f, i), y)) >= n, 0:pol_length(coeff(f, i))) 
     setcoeff!(g, i, map_coeffs(x -> divexact(x, p), coeff(f, i), parent = base_ring(f)))
   end
   return g
+end
+
+mutable struct Preinv{T, S <: PolyElem{T}}
+  f::S
+  n::Int
+  fi::S
+  function Preinv(f::PolyElem)
+    r = new{elem_type(base_ring(f)), typeof(f)}()
+    r.f = reverse(f)
+    @assert degree(f) == degree(r.f)
+    r.fi = one(parent(f))
+    r.n = 1
+    return r
+  end
+end
+
+preinv(f::PolyElem) = Preinv(f)
+
+function lift(P::Preinv)
+  f = truncate(P.f, 2*P.n)
+  P.fi = truncate(P.fi*truncate((parent(f)(2)-f*P.fi), 2*P.n), 2*P.n)
+  P.n *= 2
+end
+
+function Base.rem(g::PolyElem, P::Preinv)
+  if degree(g) < degree(P.f)
+    return g
+  end
+  if degree(g) == degree(P.f)
+    return g - lead(g)*reverse(P.f)
+  end
+
+  gr = reverse(g)
+  while P.n < degree(g) - degree(P.f) + 1
+    lift(P)
+  end
+  q = truncate(gr*P.fi, degree(g) - degree(P.f) + 1)
+  q = reverse(q)
+  r = g-q*reverse(P.f)
+#  global last_bad = (g, reverse(P.f))
+  @hassert :AbsFact 2 r == rem(g, reverse(P.f))
+  return r
 end
 
 function lift_q(C::HenselCtxFqRelSeries{<:SeriesElem{qadic}})
@@ -370,14 +529,17 @@ function lift_q(C::HenselCtxFqRelSeries{<:SeriesElem{qadic}})
     fgh = _shift_coeff_right(f-g*h, pr)
     
     @assert ismonic(g)
-    G = _shift_coeff_left(rem(fgh*b, g), pr)+g
-    G = _shift_coeff_left(rem(fgh*b, g), pr)+g
-    H = _shift_coeff_left(rem(fgh*a, h), pr)+h
+    @assert ismonic(h)
+    gi = preinv(g)
+    hi = preinv(h)
+
+    G = _shift_coeff_left(rem(fgh*b, gi), pr)+g
+    H = _shift_coeff_left(rem(fgh*a, hi), pr)+h
 
     t = _shift_coeff_right(1-a*G-b*H, pr)
   
-    B = _shift_coeff_left(rem(t*b, g), pr)+b
-    A = _shift_coeff_left(rem(t*a, h), pr)+a
+    B = _shift_coeff_left(rem(t*b, gi), pr)+b
+    A = _shift_coeff_left(rem(t*a, hi), pr)+a
 
     C.lf[j-1] = G
     C.lf[j] = H
@@ -1127,7 +1289,7 @@ function field(RC::RootCtx, m::MatElem)
   @vprint :AbsFact 1 "hopefully $(length(el)) degree field\n"
 
   bnd = (length(el)*(length(used)*bnd))^(pow*length(el))
-  @vprint :AbsFact 1 "power sums (coeffs of minpoly of field) should be bounded by $bnd\n"
+  @vprint :AbsFact 1 "power sums (coeffs of minpoly of field) should have at most $(clog(bnd, characteristic(F))) p-adic digits\n"
 
   #TODO: Think: Do we need to lift all n factors? In the end we're going
   #      to return el[1] and prod(el[2:n]) only.
@@ -1163,6 +1325,7 @@ function field(RC::RootCtx, m::MatElem)
     end
 
     @vprint :AbsFact 1 "lifting factors\n"
+    global last_HQ = HQ
     @vtime :AbsFact 2 while precision(coeff(coeff(HQ.lf[1], 0), 0)) < pr+1
       lift_q(HQ)
     end

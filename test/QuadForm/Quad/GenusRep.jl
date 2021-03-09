@@ -79,4 +79,30 @@
   gens = [[1, 2], [1, 2], [3, 4], [3, 4]]
   L = quadratic_lattice(K, generators = gens, gram_ambient_space = D)
   @test length(genus_representatives(L)) == 1
+
+  Qx, x = PolynomialRing(FlintQQ, "x", cached = false)
+  f = x - 1
+  K, a = number_field(f)
+  D = matrix(K, 3, 3, [-18, -6, -9, -6, -3, -3, -9, -3, -6])
+  gens = [[1, 0, 0], [1, 0, 0], [0, 1, 0], [0, 1, 0], [0, 0, 1], [0, 0, 1]]
+  L = quadratic_lattice(K, generators = gens, gram_ambient_space = D)
+  @test length(genus_representatives(L)) == 1
+
+  Qx, x = PolynomialRing(FlintQQ, "x", cached = false)
+  f = x - 1;
+  K, a = number_field(f)
+  D = matrix(K, 2, 2, [2, 0, 0, 3]);
+  gens = [[1, 0], [1, 0], [0, 1], [0, 1]]
+  L = quadratic_lattice(K, generators = gens, gram_ambient_space = D)
+  @test length(genus_representatives(L)) == 1
+
+  B = QQ[2 0; 3//2 1//2]
+  G = QQ[1 0; 0 23]
+  V = quadratic_space(QQ, G)
+  L = lattice(V, B)
+  @test length(genus_representatives(L)) == 2
+  @test length(genus_representatives(Zlattice(gram = gram_matrix(L)))) == 2
+
+  L = Zlattice(ZZ[4 3; 3 8])
+  @test length(genus_representatives(L)) == 4
 end

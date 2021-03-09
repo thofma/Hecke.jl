@@ -261,7 +261,13 @@ function _exact_minkowski_matrix(B::Vector{T}) where T <: NumFieldElem
   K = parent(B[1])
   if istotally_real(K)
     return trace_matrix(B)
+  else
+    return _minkowski_via_approximation(B)
   end
+end
+
+function _minkowski_via_approximation(B::Vector{T}) where T <: NumFieldElem
+  K = parent(B[1])
   n = length(B)
   g = zero_matrix(FlintZZ, n, n)
   prec = 16

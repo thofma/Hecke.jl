@@ -77,6 +77,12 @@ function lattice_in_same_ambient_space(L::ZLat, B::MatElem)
   return lattice(V,B)
 end
 
+function rescale(G::ZLat, r)
+  B = basis_matrix(G)
+  gram_space = gram_matrix(G.space)
+  Vr = quadratic_space(QQ, r*gram_space)
+  return lattice(Vr, B)
+end
 ################################################################################
 #
 #  Gram matrix
@@ -451,9 +457,8 @@ end
 # documented in ../Lattices.jl
 
 function dual(L::ZLat)
-  G = gram_matrix(ambient_space(L))
-  Gi = inv(G)
-  new_bmat = transpose(inv(basis_matrix(L)) * Gi)
+  G = gram_matrix(L)
+  new_bmat = inv(G)*basis_matrix(L)
   return lattice(ambient_space(L), new_bmat)
 end
 
@@ -694,4 +699,46 @@ function Base.:(==)(L1::ZLat, L2::ZLat)
   B1 = basis_matrix(L1)
   B2 = basis_matrix(L2)
   return hnf(FakeFmpqMat(B1)) == hnf(FakeFmpqMat(B2))
+end
+
+@doc Markdown.doc"""
+    local_modification(M::ZLat, L::ZLat, p)
+
+Return a local modification of `M` that matches `L` at `p`.
+
+INPUT:
+
+- ``M`` -- a `\ZZ_p`-maximal lattice
+- ``L`` -- the a lattice
+            isomorphic to `M` over `\QQ_p`
+- ``p`` -- a prime number
+
+OUTPUT:
+
+an integral lattice `M'` in the ambient space of `M` such that `M` and `M'` are locally equal at all
+completions except at `p` where `M'` is locally equivalent to the lattice `L`.
+"""
+function local_modification(M::ZLat, L::ZLat, p)
+  # notation
+  d = denominator(inv(gram_matrix(L)))
+  level = valuation(d,p)
+  d = p^(level+1) # +1 since scale(M) <= 1/2 ZZ
+
+  @req isequivalent(L.space, M.space,p) "quadratic spaces must be locally isometric at m"
+  L_max = maximal_integral_lattice(L)
+
+  # invert the gerstein operations
+  GLm, U = padic_normal_form(gram_matrix(L_max), p, prec=level+3)
+  B1 = inv(U*basis_matrix(L_max))
+
+  GM, UM = padic_normal_form(gram_matrix(M), p, prec=level+3)
+  # assert GLm == GM at least modulo p^prec
+  B2 = B1 * UM * basis_matrix(M)
+  Lp = lattice(M.space, B2)
+
+  # the local modification
+  S = intersect(Lp, M) + d * M
+  # confirm result
+  @hassert genus(S, p)==genus(L, p)
+  return S
 end
