@@ -76,5 +76,10 @@
             0 1//4   0;
             0   0 5//4]
   @test Hecke.gram_matrix_quadratic(n2) == g2
+
+  #test for brown invariant
+  L = Zlattice(gram=matrix(ZZ, [[2,-1,0,0],[-1,2,-1,-1],[0,-1,2,0],[0,-1,0,2]]))
+  T = Hecke.discriminant_group(L)  
+  @test Hecke.brown_invariant(T) == 4
 end
 
