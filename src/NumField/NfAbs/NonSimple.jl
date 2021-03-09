@@ -176,18 +176,6 @@ end
 
 ################################################################################
 #
-#  Promotion
-#
-################################################################################
-
-Nemo.promote_rule(::Type{NfAbsNSElem}, ::Type{T}) where {T <: Integer} = NfAbsNSElem
-
-Nemo.promote_rule(::Type{NfAbsNSElem}, ::Type{fmpz}) = NfAbsNSElem
-
-Nemo.promote_rule(::Type{NfAbsNSElem}, ::Type{fmpq}) = NfAbsNSElem
-
-################################################################################
-#
 #  Field access
 #
 ################################################################################

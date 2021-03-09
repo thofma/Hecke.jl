@@ -108,27 +108,6 @@ end
 
 ################################################################################
 #
-#  Promotion
-#
-################################################################################
-
-Nemo.promote_rule(::Type{NfRelNSElem{S}}, ::Type{T}) where {T <: Integer, S} = NfRelNSElem{S}
-
-Nemo.promote_rule(::Type{NfRelNSElem{T}}, ::Type{fmpz}) where {T <: Nemo.RingElement} = NfRelNSElem{T}
-
-Nemo.promote_rule(::Type{NfRelNSElem{T}}, ::Type{fmpq}) where {T <: Nemo.RingElement} = NfRelNSElem{T}
-
-Nemo.promote_rule(::Type{NfRelNSElem{T}}, ::Type{T}) where {T} = NfRelNSElem{T}
-
-Nemo.promote_rule(::Type{NfRelNSElem{T}}, ::Type{NfRelNSElem{T}}) where T <: Nemo.RingElement = NfRelNSElem{T}
-
-
-function Nemo.promote_rule(::Type{NfRelNSElem{T}}, ::Type{U}) where {T <: Nemo.RingElement, U <: Nemo.RingElement}
-  Nemo.promote_rule(T, U) == T ? NfRelNSElem{T} : Union{}
-end
-
-################################################################################
-#
 #  Field access
 #
 ################################################################################
@@ -204,18 +183,6 @@ function (K::NfRelNS{T})(a::Generic.MPoly{T}) where T
   z = NfRelNSElem{T}(w)
   z.parent = K
   return z
-end
-
-function (K::NfRelNS{T})(a::T) where T
-  parent(a) != base_ring(parent(K.pol[1])) == error("Cannot coerce")
-  z = NfRelNSElem{T}(parent(K.pol[1])(a))
-  z.parent = K
-  return z
-end
-
-function (K::NfRelNS{T})(a::NfRelNSElem{T}) where T
-  parent(a) != K == error("Cannot coerce")
-  return a
 end
 
 (K::NfRelNS)(a::Integer) = K(parent(K.pol[1])(a))
@@ -584,7 +551,7 @@ function minpoly(a::NfRelNSElem)
   return minpoly_sparse(a)
 end
 
-function minpoly(a::NfRelNSElem, ::FlintRationalField)
+function minpoly(a::T, ::FlintRationalField) where T <: Union{NfRelNSElem, NfRelElem}
   f = minpoly(a)
   n = absolute_norm(f)
   g = gcd(n, derivative(n))
@@ -595,7 +562,7 @@ function minpoly(a::NfRelNSElem, ::FlintRationalField)
   return n
 end
 
-absolute_minpoly(a::NfRelNSElem) = minpoly(a, FlintQQ)
+absolute_minpoly(a::T) where T <: Union{NfRelNSElem, NfRelElem} = minpoly(a, FlintQQ)
 
 function inv(a::NfRelNSElem)
   if iszero(a)

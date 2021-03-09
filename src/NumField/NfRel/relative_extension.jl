@@ -1,4 +1,4 @@
-export relative_simple_extension
+export relative_simple_extension, isprimitive, isprimitive_over
 
 ################################################################################
 #
@@ -12,31 +12,27 @@ export relative_simple_extension
 Given two fields $K\supset k$, it returns $K$ as a simple relative 
 extension $L$ of $k$ and an isomorphism $L \to K$.
 """
-relative_simple_extension(K::NumField, k::NumField)
+function relative_simple_extension(K::NumField, k::NumField)
+  if _issubfield_in_tower(k, K)
+    return relative_ext_in_tower(K, k)
+  end
+  error("Not yet implemented")
+end
 
 
+function relative_ext_in_tower(K::NumField, k::NumField)
+  el = primitive_element(K, k)
+  f = minpoly(el, k)
+  L = number_field(f, cached = false, check = false)[1]
+  mL = hom(L, K, el)
+  return L, mL
+end
 
 function relative_simple_extension(K::AnticNumberField, k::AnticNumberField)
   fl, mp = issubfield(k, K)
-
+  @assert fl
   return relative_extension(mp)
 end
-
-
-function relative_simple_extension(K::NumField, k::NumField)
-  Kabs, mKabs = absolute_simple_field(K)
-  kabs, mkabs = absolute_simple_field(k)
-  fl, mp = issubfield(kabs, Kabs)
-  if !fl
-    error("k is not a subfield of K")
-  end
-  L, mL = relative_extension(mp)
-  ktoL = inv(mkabs)*mp*inv(mL)
-  p = map_coeffs(pseudo_inv(ktoL), L.pol)
-  Lres, gLres = number_field(p, cached = false, check = false)
-  mp1 = hom(Lres, K, inv(mkabs)*mp*mKabs, )
-end
-
 
 function relative_simple_extension(m::NfToNfMor)
   k = domain(m)
@@ -79,6 +75,9 @@ function minpoly(a::NumFieldElem, K::NumField)
   end
 end
 
+function minpoly(a::NumFieldElem, ::FlintRationalField)
+  return absolute_minpoly(a)
+end
 
 ################################################################################
 #
@@ -99,4 +98,46 @@ function _issubfield_in_tower(k::NumField, K::NumField)
     end
   end
   return found
+end
+
+################################################################################
+#
+#  Relative primitive element 
+#
+################################################################################
+
+function primitive_element(K::NumField, k::NumField; check::Bool = true)
+  if _issubfield_in_tower(k, K)
+    return primitive_element_tower(K, k)
+  else
+    if check
+      @assert issubfield(k, K)[1]
+    end
+    return primitive_element_generic(K, k)
+  end
+end
+
+function primitive_element_generic(K::NumField, k::NumField)
+  return absolute_primitive_element(K)
+end
+
+function primitive_element_tower(K::NumField, k::NumField)
+  pK = primitive_element(K)
+  if base_field(K) == k
+    return pK
+  end
+  if isprimitive_over(pK, k)
+    return pK
+  end
+  L = base_field(K)
+  gL = primitive_element(L, k)
+  pK += gL
+  while !isprimitive_over(pK, k)
+    pK += gL
+  end
+  return pK
+end
+
+function isprimitive_over(a::NumFieldElem, k::NumField)
+  return divexact(absolute_degree(parent(a)), absolute_degree(k)) == degree(minpoly(a, k))
 end

@@ -413,7 +413,7 @@ Returns the trace of an element $a$ of a number field $L$ with respect to
 a subfield $k$ of $L$. This will be an element of $k$.
 """
 function tr(a::NumFieldElem, k::NumField)
-  _elem_tr_to(a, k)
+  return _elem_tr_to(a, k)
 end
 
 tr(a::NumFieldElem, ::FlintRationalField) = _elem_tr_to(a, FlintQQ)
@@ -450,8 +450,8 @@ absolute_tr(x::fmpq) = x
 
 Given a number field element $a$, returns the absolute norm of $a$.
 """
-function absolute_norm(a::T) where T <: Union{NfRelElem, NfRelNSElem}
-  return norm(a, FlintQQ)
+function absolute_norm(a::T) where T <: NumFieldElem
+  return absolute_norm(norm(a))
 end
 
 absolute_norm(a::T) where T <: Union{nf_elem, NfAbsNSElem} = norm(a)
@@ -476,6 +476,15 @@ function norm(f::PolyElem{<: NumFieldElem})
   PQ = elem_type(base_field(K))[tr(x) for x in P]
   return power_sums_to_polynomial(PQ)
 end
+
+function norm(f::PolyElem{<:NumFieldElem}, k::NumField)
+  K = base_ring(f)
+  P = polynomial_to_power_sums(f, degree(f)*degree(K))
+  PQ = elem_type(base_field(K))[tr(x, k) for x in P]
+  return power_sums_to_polynomial(PQ)
+end
+
+norm(a::fmpq_poly) = a
 
 function absolute_norm(f::PolyElem{nf_elem})
   return norm(f)

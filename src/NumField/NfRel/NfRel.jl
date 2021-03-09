@@ -32,8 +32,6 @@
 #
 ################################################################################
 
-export absolute_field
-
 add_assert_scope(:NfRel)
 
 ################################################################################
@@ -71,30 +69,6 @@ one(K::NfRel) = K(one(parent(K.pol)))
 function zero!(a::NfRelElem)
   zero!(a.data)
   return a
-end
-
-################################################################################
-#
-#  Promotion
-#
-################################################################################
-
-AbstractAlgebra.promote_rule(::Type{NfRelElem{T}}, ::Type{fmpz}) where {T <: NumFieldElem} = NfRelElem{T}
-
-AbstractAlgebra.promote_rule(::Type{NfRelElem{T}}, ::Type{fmpq}) where {T <: NumFieldElem} = NfRelElem{T}
-
-AbstractAlgebra.promote_rule(::Type{NfRelElem{T}}, ::Type{T}) where {T} = NfRelElem{T}
-
-AbstractAlgebra.promote_rule(::Type{T}, ::Type{NfRelElem{T}}) where {T} = NfRelElem{T}
-
-AbstractAlgebra.promote_rule(::Type{NfRelElem{T}}, ::Type{NfRelElem{T}}) where T <: NumFieldElem = NfRelElem{T}
-
-function AbstractAlgebra.promote_rule(::Type{NfRelElem{T}}, ::Type{U}) where {T <: NumFieldElem, U <: NumFieldElem}
-  AbstractAlgebra.promote_rule(T, U) == T ? NfRelElem{T} : Union{}
-end
-
-function AbstractAlgebra.promote_rule(::Type{U}, ::Type{NfRelElem{T}}) where {T <: NumFieldElem, U <: NumFieldElem}
-  AbstractAlgebra.promote_rule(T, U) == T ? NfRelElem{T} : Union{}
 end
 
 ################################################################################
@@ -138,33 +112,6 @@ end
 
 ################################################################################
 #
-#  Constructors
-#
-################################################################################
-#TODO: I don't understand those
-(K::NfRel)(x::NfRelElem) = K(base_field(K)(x))
-
-(K::NfRel)(x::nf_elem) = K(base_field(K)(x))
-
-(K::NfRel{T})(x::NfRelElem{T}) where {T} = K(x.data)
-
-function (K::NfRel{NfRelElem{T}})(x::NfRelElem{T}) where {T}
-  if parent(x) == base_field(K)
-    return K(parent(K.pol)(x))
-  end
-  return force_coerce_throwing(K, x)
-end
-
-function (K::NfRel{nf_elem})(x::nf_elem)
-  if parent(x) == base_field(K)
-    return K(parent(K.pol)(x))
-  end
-  return force_coerce_throwing(K, x)
-end
-
-
-################################################################################
-#
 #  Degree
 #
 ################################################################################
@@ -188,7 +135,7 @@ end
 #
 ################################################################################
 
-function mod(a::NfRelElem{T}, p::fmpz) where T
+function mod(a::NfRelElem{T}, p::fmpz) where T <: NumFieldElem
   K = parent(a)
   b = data(a)
   coeffs = Vector{T}(undef, degree(K)+1)
@@ -243,13 +190,13 @@ function number_field(::Type{AnticNumberField}, L::NfRel{nf_elem})
   return number_field(pol, check = false)
 end
 
-function (K::NfRel{T})(a::Generic.Poly{T}) where T
+function (K::NfRel{T})(a::Generic.Poly{T}) where T <: NumFieldElem
   z = NfRelElem{T}(mod(a, K.pol))
   z.parent = K
   return z
 end
 
-function (K::NfRel{T})(a::T) where T
+function (K::NfRel{T})(a::T) where T <: NumFieldElem
   parent(a) != base_ring(parent(K.pol)) == error("Cannot coerce")
   z = NfRelElem{T}(parent(K.pol)(a))
   z.parent = K
@@ -677,57 +624,6 @@ end
 function absolute_charpoly(a::NfRelElem)
   return charpoly(a, FlintQQ)
 end
-
-################################################################################
-#
-#  Absolute minimal polynomials
-#
-################################################################################
-
-function _poly_norm_to_and_squarefree(f, k::T) where {T}
-  if base_ring(f) isa T
-    @assert (base_ring(f) isa FlintRationalField && k isa FlintRationalField) || base_ring(f) == k
-    return f
-  else
-    g = norm(f)
-    h = gcd(g, derivative(g))
-    if !isone(h)
-      g = divexact(g, h)
-    end
-    return _poly_norm_to_and_squarefree(g, k)
-  end
-end
-
-function minpoly(a::NfRelElem, k::Union{NfRel, AnticNumberField, FlintRationalField})
-  f = minpoly(a)
-  return _poly_norm_to_and_squarefree(f, k)
-end
-
-#  if parent(a) == k
-#    R, y  = PolynomialRing(k, cached = false)
-#    return y - a
-#  end
-#
-#  f = minpoly(a)
-#  while base_ring(f) != k && !(base_ring(f) isa FlintRationalField && k isa FlintRationalField)
-#    f = norm(f)
-#    g = gcd(f, derivative(f))
-#    if !isone(g)
-#      f = divexact(f, g)
-#    end
-#  end
-#  return f
-#end
-
-function absolute_minpoly(a::NfRelElem)
-  return minpoly(a, FlintQQ)
-end
-
-norm(a::fmpq_poly) = a
-
-#
-
-#
 
 function (R::Generic.PolyRing{nf_elem})(a::NfRelElem{nf_elem})
   if base_ring(R)==base_field(parent(a))
