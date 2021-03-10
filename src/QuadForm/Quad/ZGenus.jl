@@ -1428,14 +1428,14 @@ function _gram_from_jordan_block(p::fmpz, block, discr_form=false)
     W = QQ[1;]
     if o == 0
       if det in [1, 7]
-        qL = [U for i in 1:div(rk, 2)]
+        qL = fmpq_mat[U for i in 1:div(rk, 2)]
       else
-        qL = [U for i in 1:(div(rk, 2) - 1)]
+        qL = fmpq_mat[U for i in 1:(div(rk, 2) - 1)]
         push!(qL, V)
       end
     elseif o == 1
       if rk % 2 == 1
-        qL = [U for i in 1:max(0, div(rk - 3, 2))]
+        qL = fmpq_mat[U for i in 1:max(0, div(rk - 3, 2))]
         if t*det % 8 in [3, 5]
           push!(qL,V)
         elseif rk >= 3
@@ -1448,23 +1448,23 @@ function _gram_from_jordan_block(p::fmpz, block, discr_form=false)
         else
           det = 1
         end
-        qL = [U for i in 1:max(0, div(rk - 4, 2))]
+        qL = fmpq_mat[U for i in 1:max(0, div(rk - 4, 2))]
         if (det , t) == (1, 0)
-          append!(qL, [U, 1 * W, 7 * W])
+          append!(qL, fmpq_mat[U, 1 * W, 7 * W])
         elseif (det , t) == (1, 2)
-          append!(qL, [U, 1 * W, 1 * W])
+          append!(qL, fmpq_mat[U, 1 * W, 1 * W])
         elseif (det , t) == (1, 4)
-          append!(qL , [V, 1 * W, 3 * W])
+          append!(qL , fmpq_mat[V, 1 * W, 3 * W])
         elseif (det , t) == (1, 6)
-          append!(qL, [U, 7 * W, 7 * W])
+          append!(qL, fmpq_mat[U, 7 * W, 7 * W])
         elseif (det , t) == (-1, 0)
-          append!(qL, [V, 1 * W, 7 * W])
+          append!(qL, fmpq_mat[V, 1 * W, 7 * W])
         elseif (det , t) == (-1, 2)
-          append!(qL, [U, 3 * W, 7 * W])
+          append!(qL, fmpq_mat[U, 3 * W, 7 * W])
         elseif (det , t) == (-1, 4)
-          append!(qL, [U, 1 * W, 3 * W])
+          append!(qL, fmpq_mat[U, 1 * W, 3 * W])
         elseif (det , t) == (-1, 6)
-          append!(qL, [U, 1 * W, 5 * W])
+          append!(qL, fmpq_mat[U, 1 * W, 5 * W])
         else
           error("invalid symbol $block")
         end
