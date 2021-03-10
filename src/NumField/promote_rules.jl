@@ -96,29 +96,37 @@ function AbstractAlgebra.promote_rule(::Type{nf_elem}, ::Type{NfRelElem{T}}) whe
   end
 end
 
-function AbstractAlgebra.promote_rule(S::Type{NfRelElem{<: NumFieldElem}}, T::Type{NfRelElem{<: NumFieldElem}})
+function AbstractAlgebra.promote_rule(::Type{NfRelElem{S}}, ::Type{NfRelElem{S}}) where S <: NumFieldElem
+  return NfRelElem{S}
+end
+
+function AbstractAlgebra.promote_rule(::Type{NfRelNSElem{S}}, ::Type{NfRelNSElem{S}}) where S <: NumFieldElem
+  return NfRelNSElem{S}
+end
+
+function AbstractAlgebra.promote_rule(::Type{NfRelElem{S}}, ::Type{NfRelElem{T}}) where {S <: NumFieldElem, T <: NumFieldElem}
   if S === T
-    return S
+    return NfRelElem{S}
   end
-  U = AbstractAlgebra.promote_rule(elem_type(S), elem_type(T))
-  if U === elem_type(T)
-    return T
-  elseif U === elem_type(S)
-    return S
+  U = AbstractAlgebra.promote_rule(S, T)
+  if U === T
+    return NfRelElem{T}
+  elseif U === S
+    return NfRelElem{S}
   else
     return Union{}
   end
 end
 
-function AbstractAlgebra.promote_rule(S::Type{NfRelNSElem{<: NumFieldElem}}, T::Type{NfRelNSElem{<: NumFieldElem}})
+function AbstractAlgebra.promote_rule(::Type{NfRelNSElem{S}}, ::Type{NfRelNSElem{T}}) where {S <: NumFieldElem, T <:NumFieldElem}
   if S === T
-    return S
+    return NfRelNSElem{S}
   end
-  U = AbstractAlgebra.promote_rule(elem_type(S), elem_type(T))
-  if U === elem_type(T)
-    return T
-  elseif U === elem_type(S)
-    return S
+  U = AbstractAlgebra.promote_rule(S, T)
+  if U === T
+    return NfRelNSElem{T}
+  elseif U === S
+    return NfRelNSElem{S}
   else
     return Union{}
   end
