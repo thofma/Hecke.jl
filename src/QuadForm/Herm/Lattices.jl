@@ -171,7 +171,7 @@ lattice(V::HermSpace) = lattice(V, identity_matrix(base_ring(V), rank(V)))
 function absolute_pseudo_matrix(E::HermLat{S, T, U, V, W}) where {S, T, U, V, W}
   c = get_special(E, :absolute_pseudo_matrix)
   if c === nothing
-    _, f, _ = absolute_field(ambient_space(E))
+    f = absolute_simple_field(ambient_space(E))[2]
     pm = _translate_pseudo_hnf(pseudo_matrix(E), pseudo_inv(f))
     set_special(E, :absolute_pseudo_matrix => pm)
     return pm::PMat{elem_type(T), fractional_ideal_type(order_type(T))}
@@ -496,7 +496,7 @@ function _ismaximal_integral(L::HermLat, p)
   end
   @assert valuation(s, D[1][1]) == valuation(discriminant(R), p)
 
-  _,absolute_map,_ = absolute_field(ambient_space(L))
+  absolute_map = absolute_simple_field(ambient_space(L))[2]
 
   M = local_basis_matrix(L, p, type = :submodule)
   G = gram_matrix(ambient_space(L), M)
@@ -549,7 +549,7 @@ function _maximal_integral_lattice(L::HermLat, p, minimal = true)
     return true, L
   end
 
-  _,absolute_map,_ = absolute_field(ambient_space(L))
+  absolute_map = absolute_simple_field(ambient_space(L))[2]
 
   B, G, S = jordan_decomposition(L, p)
   D = prime_decomposition(R, p)

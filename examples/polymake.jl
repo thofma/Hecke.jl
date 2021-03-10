@@ -210,7 +210,7 @@ norm_equation(R::NfAbsOrd, k::Integer; abs::Bool = false) = norm_equation(R, fmp
 function norm_equation_fac_elem(R::Hecke.NfRelOrd{nf_elem,Hecke.NfOrdFracIdl}, a::NfAbsOrdElem{AnticNumberField,nf_elem})
 
   @assert Hecke.ismaximal(R)
-  Ka, mKa, mkK = absolute_field(nf(R))
+  Ka, mKa, mkK = collapse_top_layer(nf(R))
   Ra = maximal_order(Ka)
   class_group(Ra)
   k = nf(parent(a))

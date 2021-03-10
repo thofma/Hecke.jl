@@ -132,8 +132,9 @@ function s3_with_discriminant(I::NfOrdIdl)
       conj = Hecke.rel_auto(a.cyc[1])
       Kr = a.cyc[1].A
       k = base_ring(Kr)
-      Ka, m1, m2 = absolute_field(Kr)
-      sigma = Hecke.NfToNfMor(Ka, Ka, m1(conj(preimage(m1, gen(Ka))))) 
+      Ka, m1 = absolute_simple_field(Kr)
+      m2 = restrict(inv(m1), k)
+      sigma = hom(Ka, Ka, m1\(conj(m1(gen(Ka))))) 
       #m1: Kr -> Ka, m2: base_ring(Kr) -> Ka
       M = lll(maximal_order(Ka))
       FF = ideal(M, F.gen_one, M(m2(k(F.gen_two))))

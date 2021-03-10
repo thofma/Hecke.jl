@@ -1500,7 +1500,7 @@ function genus_generators(L::HermLat)
   end
 
   # First the ideals coming from the C/C0 quotient
-  Eabs, EabstoE, _ = absolute_field(ambient_space(L))
+  Eabs, EabstoE = absolute_simple_field(ambient_space(L))
   Rabs = maximal_order(Eabs)
   C, h = class_group(Rabs)
   RR = base_ring(R)

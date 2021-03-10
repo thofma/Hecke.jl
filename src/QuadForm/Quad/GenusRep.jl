@@ -1619,7 +1619,9 @@ function _genus_representatives_binary_quadratic_definite_helper(L::QuadLat; max
 
   # Compute the absolute field, since this is where we do most of the work.
 
-  Fabs, FabstoF, KtoFabs = absolute_field(F)
+  Fabs, FabstoF = absolute_simple_field(F)
+
+  KtoFabs = restrict(inv(FabstoF), base_field(F))
 
   sigmaabs = hom(Fabs, Fabs, FabstoF\(sigma(FabstoF(gen(Fabs)))))
 
