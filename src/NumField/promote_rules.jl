@@ -20,9 +20,17 @@ AbstractAlgebra.promote_rule(::Type{NfRelElem{nf_elem}}, ::Type{nf_elem}) = NfRe
 
 AbstractAlgebra.promote_rule(::Type{NfRelNSElem{nf_elem}}, ::Type{nf_elem}) = NfRelNSElem{nf_elem}
 
-AbstractAlgebra.promote_rule(::Type{NfRelElem{NfAbsNSElem}}, ::Type{NfAbsNSElem}) = NfRelElem{NfRelElem{NfAbsNSElem}}
+AbstractAlgebra.promote_rule(::Type{NfRelElem{NfAbsNSElem}}, ::Type{NfAbsNSElem}) = NfRelElem{NfAbsNSElem}
 
 AbstractAlgebra.promote_rule(::Type{NfRelNSElem{NfAbsNSElem}}, ::Type{NfAbsNSElem}) = NfRelNSElem{NfAbsNSElem}
+
+AbstractAlgebra.promote_rule(::Type{nf_elem}, ::Type{NfRelElem{nf_elem}}) = NfRelElem{nf_elem}
+
+AbstractAlgebra.promote_rule(::Type{nf_elem}, ::Type{NfRelNSElem{nf_elem}}) = NfRelNSElem{nf_elem}
+
+AbstractAlgebra.promote_rule(::Type{NfAbsNSElem}, ::Type{NfRelElem{NfAbsNSElem}}) = NfRelElem{NfAbsNSElem}
+
+AbstractAlgebra.promote_rule(::Type{NfAbsNSElem}, ::Type{NfRelNSElem{NfAbsNSElem}}) = NfRelNSElem{NfAbsNSElem}
 
 function AbstractAlgebra.promote_rule(::Type{NfRelNSElem{T}}, ::Type{NfAbsNSElem}) where T 
   if T === AbstractAlgebra.promote_rule(T, NfAbsNSElem)
@@ -145,7 +153,7 @@ end
 (K::NfRel{T})(x::NfRelElem{T}) where {T <: NumFieldElem} = K(x.data)
 (K::NfRelNS{T})(x::NfRelNSElem{T}) where {T <: NumFieldElem} = K(x.data)
 
-function (K::SimpleNumField{S})(a::T) where {S <: NumFieldElem, T <: NumFieldElem}
+function (K::NfRel{S})(a::T) where {S <: NumFieldElem, T <: NumFieldElem}
   if S === T && parent(a) == base_field(K)
     return K(parent(K.pol)(a))
   end
@@ -157,7 +165,7 @@ function (K::SimpleNumField{S})(a::T) where {S <: NumFieldElem, T <: NumFieldEle
   return K(el)
 end
 
-function (K::NonSimpleNumField{S})(a::T) where {S <: NumFieldElem, T <: NumFieldElem}
+function (K::NfRelNS{S})(a::T) where {S <: NumFieldElem, T <: NumFieldElem}
   if S === T
     return K(parent(K.pol[1])(a))
   end
