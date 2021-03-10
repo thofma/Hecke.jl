@@ -197,7 +197,7 @@ function (K::NfRel{T})(a::Generic.Poly{T}) where T <: NumFieldElem
 end
 
 function (K::NfRel{T})(a::T) where T <: NumFieldElem
-  parent(a) != base_ring(parent(K.pol)) == error("Cannot coerce")
+  parent(a) != base_ring(parent(K.pol)) && error("Cannot coerce")
   z = NfRelElem{T}(parent(K.pol)(a))
   z.parent = K
   return z
