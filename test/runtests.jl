@@ -14,6 +14,8 @@ if "short" in ARGS
   short_test = true
 end
 
+short_test = true
+
 if short_test
   @info "Running short tests"
   include(joinpath("..", "system", "precompile.jl"))
