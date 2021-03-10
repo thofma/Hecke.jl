@@ -221,6 +221,12 @@
   q = discriminant_group(G) # corner case
   @test order(q) == 1
 
+  G = genera((8,0), 1, even=true)[1]
+  @test mass(G) == 1//696729600
+
+  G = genus(diagonal_matrix(fmpz[1, 3, 9]),3)
+  @test Hecke._mass_squared(G) == (9//8)^2
+
   # representatives, mass and genus enumeration
 
   DB = lattice_database()
