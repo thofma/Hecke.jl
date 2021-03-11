@@ -1545,24 +1545,50 @@ function __colon_raw(K, a, b)
   return N
 end
 
-function _genus_representatives_binary_quadratic_definite(_L::QuadLat; max = inf, use_auto = true, use_mass = true)
+function _genus_representatives_binary_quadratic_definite(L::QuadLat; max = inf, use_auto = true, use_mass = true)
+  # The internal functions wants 1 in Q(K \otimes L)
+  # So we rescale a bit
+
+  V = rational_span(L)
+  D = diagonal(V)
+  _, i = findmin(abs.(norm.(D)))
+  d = D[i]
+  # Do G -> d * G
+  _L = rescale(L, d)
+  lat = _genus_representatives_binary_quadratic_definite_helper(_L; max = max, use_auto = use_auto, use_mass = use_mass)
+  G = genus(L)
+  res = typeof(L)[]
+  for M in lat
+    Mre = rescale(M, inv(d))
+    @test genus(Mre) == G
+    push!(res, Mre)
+  end
+  return res
+end
+
+function _genus_representatives_binary_quadratic_definite_helper(L::QuadLat; max = inf, use_auto = true, use_mass = true)
   # The strategy is to pass to the discriminant field F (which is a CM field)
   # and use that KL \cong (F, Tr/2)
   # Then in (F, Tr/2) we use Kirschmer, Pfeuffer and Körrner.
 
-  @assert isdefinite(_L)
-  @assert rank(_L) == 2
+  K = base_field(L)
+  L = lattice(quadratic_space(base_field(L), gram_matrix_of_rational_span(L)),
+                              pseudo_matrix(identity_matrix(K, 2), coefficient_ideals(L)))
 
-  V = rational_span(_L)
-  # 0. Scale to have 1 in Q(V)
+  @assert isdefinite(L)
+  @assert rank(L) == 2
 
-  D = diagonal(V)
-  _, i = findmin(abs.(norm.(D)))
-  d = D[i]
+  #V = rational_span(_L)
+  ## 0. Scale to have 1 in Q(V)
+  #@show V
 
-  # so G -> G/d
+  #D = diagonal(V)
+  #_, i = findmin(abs.(norm.(D)))
+  #d = D[i]
 
-  L = lattice(quadratic_space(base_ring(V), 1//d * gram_matrix(ambient_space(_L))), pseudo_matrix(_L))
+  ## so G -> G/d
+
+  #L = lattice(quadratic_space(base_ring(V), 1//d * gram_matrix(ambient_space(_L))), pseudo_matrix(_L))
 
   V = rational_span(L)
 
@@ -1593,7 +1619,9 @@ function _genus_representatives_binary_quadratic_definite(_L::QuadLat; max = inf
 
   # Compute the absolute field, since this is where we do most of the work.
 
-  Fabs, FabstoF, KtoFabs = absolute_field(F)
+  Fabs, FabstoF = absolute_simple_field(F)
+
+  KtoFabs = restrict(inv(FabstoF), base_field(F))
 
   sigmaabs = hom(Fabs, Fabs, FabstoF\(sigma(FabstoF(gen(Fabs)))))
 
@@ -1690,7 +1718,7 @@ function _genus_representatives_binary_quadratic_definite(_L::QuadLat; max = inf
     cppart = reduce(*, (Q^valuation(c, Q) for (Q, _) in lQ), init = 1 * OFabs)
     Rq, mq = quo(OFabs, cppart)
     Mu, f = multiplicative_group(Rq)
-    elts = elem_type(F)[ F(elem_in_nf(mq\(f(m)))) for m in Mu]
+    elts = elem_type(F)[ FabstoF(elem_in_nf(mq\(f(m)))) for m in Mu]
     if length(elts) > 1
       push!(_ps, p)
       push!(_xps, elts)
@@ -1738,20 +1766,16 @@ function _genus_representatives_binary_quadratic_definite(_L::QuadLat; max = inf
 
   gram_ambient_space = gram_matrix(V)
 
-  res = typeof(L)[]
+  V = ambient_space(L)
 
   G = genus(L)
 
-  _V = ambient_space(_L)
-
-  _G = genus(_L)
-
-  _res = typeof(_L)[]
+  res = typeof(L)[]
 
   cur_mass = zero(fmpq)
 
   if use_mass
-    _mass = mass(_L)
+    _mass = mass(L)
     @vprint :GenRep 1 "Using mass, which is $(_mass)\n"
   else
     _mass = one(fmpq)
@@ -1779,19 +1803,19 @@ function _genus_representatives_binary_quadratic_definite(_L::QuadLat; max = inf
     end
     pm = sub(pm, i:nrows(pm), 1:ncols(pm))
 
-    _pm = pseudo_matrix(basis_matrix_of_rational_span(_L) * matrix(pm), coefficient_ideals(pm))
+    _pm = pseudo_matrix(matrix(pm), coefficient_ideals(pm))
 
-    _new_cand = lattice(_V, _pm)
+    _new_cand = lattice(V, pm)
 
-    if genus(_new_cand) != _G
+    if genus(_new_cand) != G
       continue
     end
 
-    if any(T -> isisometric(T, _new_cand)[1], _res)
+    if any(T -> isisometric(T, _new_cand)[1], res)
       continue
     else
-      push!(_res, _new_cand)
-      if length(_res) >= max
+      push!(res, _new_cand)
+      if length(res) >= max
         break
       end
       if use_mass
@@ -1810,7 +1834,7 @@ function _genus_representatives_binary_quadratic_definite(_L::QuadLat; max = inf
     @assert _mass == cur_mass
   end
 
-  return _res
+  return res
 end
 
 function _translate_ideal(I, Iabs, FtoFabs, sigma, sigmaabs)
@@ -1818,7 +1842,7 @@ function _translate_ideal(I, Iabs, FtoFabs, sigma, sigmaabs)
   crit_primes = support(minimum(I))
   F = nf(O)
   xps = elem_type(F)[]
-  sigmaI = sum(ideal(order(I), x) for x in basis(sigmaabs(Iabs)))
+  sigmaI = sum(ideal(order(I), order(I)(FtoFabs(elem_in_nf(x)))) for x in basis(sigmaabs(Iabs)))
   M = I * inv(sigmaI)
   for p in crit_primes
     lQ = prime_decomposition(O, p)

@@ -10,7 +10,7 @@
   @test count(isreal, plc) == 2
   @test count(!isreal, plc) == 2
 
-  Labs, LabstoL, = absolute_field(L)
+  Labs, LabstoL = @inferred absolute_simple_field(L)
   c = conjugates(b, 64)
   cc = conjugates(LabstoL\b, 64)
 
@@ -27,13 +27,12 @@
   @test count(isreal, plc) == 4
   @test count(!isreal, plc) == 4
 
-  Mabs, MabstoM, = absolute_field(M)
-  Mabsabs, MabsabstoMabs = absolute_field(Mabs)
+  Mabs, MabstoM = absolute_simple_field(M)
 
   o = rand(M, -1:1)
 
   c = conjugates(o, 64)
-  cc = conjugates(MabsabstoMabs\(MabstoM\o), 64)
+  cc = conjugates(MabstoM\o, 64)
 
   for _c in c
     @test count(_cc -> overlaps(_cc, _c), cc) == count(_cc -> overlaps(_cc, _c), c)

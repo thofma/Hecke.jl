@@ -59,7 +59,7 @@ minpoly(g[1] + g[2])
 ### Conversion
 
 ```@docs
-absolute_field(K::NumField)
+absolute_simple_field(K::NumField)
 simple_extension(::NonSimpleNumField)
 ```
 

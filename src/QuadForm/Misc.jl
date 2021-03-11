@@ -1131,31 +1131,12 @@ end
 #
 ################################################################################
 
-function support(I::NfAbsOrdIdl)
+function support(I::T) where T <: Union{NfAbsOrdIdl, NfRelOrdIdl, NfAbsOrdFracIdl, NfRelOrdFracIdl}
   lp = factor(I)
   return collect(keys(lp))
 end
 
-function support(I::NfOrdFracIdl)
-  lp = factor(I)
-  return collect(keys(lp))
-end
-
-function support(I::NfRelOrdIdl)
-  lp = factor(I)
-  return collect(keys(lp))
-end
-
-function support(I::NfRelOrdFracIdl)
-  lp = factor(I)
-  return collect(keys(lp))
-end
-
-function support(a::NumFieldElem)
-  return support(a * maximal_order(parent(a)))
-end
-
-function support(a::NumFieldElem, R::NfAbsOrd)
+function support(a::NumFieldElem{fmpq}, R::NfAbsOrd = maximal_order(parent(a)))
   @assert nf(R) == parent(a)
   return support(a * R)
 end
@@ -1379,26 +1360,7 @@ end
 #
 ################################################################################
 
-function absolute_primitive_element(K::AnticNumberField)
-  return gen(K)
-end
-
-function absolute_primitive_element(K::NumField)
-  Kabs, m = absolute_field(K)
-  return m(gen(Kabs))
-end
-
 absolute_minpoly(a::nf_elem) = minpoly(a)
-
-################################################################################
-#
-#  Absolute field of AnticNumberField
-#
-################################################################################
-
-function absolute_field(K::AnticNumberField)
-  return K, id_hom(K)
-end
 
 ################################################################################
 #

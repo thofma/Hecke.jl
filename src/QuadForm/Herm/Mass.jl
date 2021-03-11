@@ -308,7 +308,7 @@ function mass(L::HermLat)
   lm = local_mass(L)
 
   prec = 10
-  mu = _minkowski_multiple(absolute_field(nf(base_ring(L)))[1], rank(L))
+  mu = _minkowski_multiple(absolute_simple_field(nf(base_ring(L)))[1], rank(L))
 
   d = mu * numerator(lm)
 

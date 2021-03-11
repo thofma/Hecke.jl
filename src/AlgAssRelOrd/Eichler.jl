@@ -132,7 +132,7 @@ function _find_some_units(F::FieldOracle{S, T, U, M}, order_num::Int, n::Int) wh
     LtoA = get_new_field(F, order_num)
     L = domain(LtoA)
     OL = maximal_order(L)
-    K, KtoL, ktoK = simplified_absolute_field(L)
+    K, KtoL = simplified_absolute_field(L)
     OK = maximal_order_via_relative(K, KtoL)
     UK, mUK = unit_group(OK)
     for j = 1:ngens(UK)

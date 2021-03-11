@@ -108,27 +108,6 @@ end
 
 ################################################################################
 #
-#  Promotion
-#
-################################################################################
-
-Nemo.promote_rule(::Type{NfRelNSElem{S}}, ::Type{T}) where {T <: Integer, S} = NfRelNSElem{S}
-
-Nemo.promote_rule(::Type{NfRelNSElem{T}}, ::Type{fmpz}) where {T <: Nemo.RingElement} = NfRelNSElem{T}
-
-Nemo.promote_rule(::Type{NfRelNSElem{T}}, ::Type{fmpq}) where {T <: Nemo.RingElement} = NfRelNSElem{T}
-
-Nemo.promote_rule(::Type{NfRelNSElem{T}}, ::Type{T}) where {T} = NfRelNSElem{T}
-
-Nemo.promote_rule(::Type{NfRelNSElem{T}}, ::Type{NfRelNSElem{T}}) where T <: Nemo.RingElement = NfRelNSElem{T}
-
-
-function Nemo.promote_rule(::Type{NfRelNSElem{T}}, ::Type{U}) where {T <: Nemo.RingElement, U <: Nemo.RingElement}
-  Nemo.promote_rule(T, U) == T ? NfRelNSElem{T} : Union{}
-end
-
-################################################################################
-#
 #  Field access
 #
 ################################################################################
@@ -204,18 +183,6 @@ function (K::NfRelNS{T})(a::Generic.MPoly{T}) where T
   z = NfRelNSElem{T}(w)
   z.parent = K
   return z
-end
-
-function (K::NfRelNS{T})(a::T) where T
-  parent(a) != base_ring(parent(K.pol[1])) == error("Cannot coerce")
-  z = NfRelNSElem{T}(parent(K.pol[1])(a))
-  z.parent = K
-  return z
-end
-
-function (K::NfRelNS{T})(a::NfRelNSElem{T}) where T
-  parent(a) != K == error("Cannot coerce")
-  return a
 end
 
 (K::NfRelNS)(a::Integer) = K(parent(K.pol[1])(a))
@@ -584,9 +551,9 @@ function minpoly(a::NfRelNSElem)
   return minpoly_sparse(a)
 end
 
-function minpoly(a::NfRelNSElem{nf_elem}, ::FlintRationalField)
+function minpoly(a::T, ::FlintRationalField) where T <: Union{NfRelNSElem, NfRelElem}
   f = minpoly(a)
-  n = norm(f)
+  n = absolute_norm(f)
   g = gcd(n, derivative(n))
   if isone(g)
     return n
@@ -595,7 +562,7 @@ function minpoly(a::NfRelNSElem{nf_elem}, ::FlintRationalField)
   return n
 end
 
-absolute_minpoly(a::NfRelNSElem{nf_elem}) = minpoly(a, FlintQQ)
+absolute_minpoly(a::T) where T <: Union{NfRelNSElem, NfRelElem} = minpoly(a, FlintQQ)
 
 function inv(a::NfRelNSElem)
   if iszero(a)
@@ -732,6 +699,28 @@ end
 
 @inline ngens(K::NfRelNS) = length(K.pol)
 
+function primitive_element(K::NfRelNS)
+  g = gens(K)
+  n = length(g)
+  if n == 1
+    return g[1]
+  elseif lcm([total_degree(K.pol[i]) for i = 1:n]) == degree(K)
+    return sum(g[i] for i = 1:n)
+  end
+  #TODO: Write a modular test for primitiveness
+  pe = g[1]
+  f = minpoly(pe)
+  for i = 2:n
+    pe += g[i]
+    f = minpoly(pe)
+    while degree(f) < prod(total_degree(K.pol[k]) for k=1:i)
+      pe += g[i]
+      f = minpoly(pe)
+    end
+  end
+  return pe
+end
+
 function simple_extension(K::NfRelNS{T}; simplified::Bool = false, cached = true) where {T}
   if simplified
     return simplified_simple_extension(K; cached = cached)
@@ -788,21 +777,6 @@ function simple_extension(K::NfRelNS{T}; simplified::Bool = false, cached = true
   return Ka, hom(Ka, K, pe, inverse = emb)
 end
 
-@doc Markdown.doc"""
-    simple_extension(K::NfRelNS{nf_elem}, FlintQQ) -> AnticNumberField, Map, Map
-
-    absolute_field(K::NfRelNS{nf_elem}) -> AnticNumberField, Map, Map
-
-Compute an isomorphic field as an extension of $Q$ together with the isomorphism 
-(1st map) and the embedding of the base field (2nd map).
-"""
-function simple_extension(K::NfRelNS{nf_elem}, ::FlintRationalField)
-  Ks, mp = simple_extension(K)
-  Ka, m1, m2 = absolute_field(Ks)
-  return Ka, m1*mp, m2
-end
-
-absolute_field(K::NfRelNS{nf_elem}) = simple_extension(K, FlintQQ)
 
 #trivia, missing in NfRel
 function basis(K::NfRel)
