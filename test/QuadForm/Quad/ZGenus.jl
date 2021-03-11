@@ -248,13 +248,18 @@
         L = representative(G)
         @test genus(L)==G
         @test mass(L)==m
-        q1 = discriminant_group(L)
-        q1, _ = normal_form(q1)
+        D = discriminant_group(L)
+        q1, _ = normal_form(D)
         q1 = Hecke.gram_matrix_quadratic(q1)
         q2 = discriminant_group(G)
         q2, _ = normal_form(q2)
         q2 = Hecke.gram_matrix_quadratic(q2)
         @test q1 == q2
+	G2 = genus(D,sig)
+	if iseven(G)
+	  @test isgenus(D, sig)
+	end
+ 	@test G == G2
       end
     end
   end

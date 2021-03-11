@@ -1,4 +1,4 @@
-export discriminant_group, torsion_quadratic_module, normal_form
+export discriminant_group, torsion_quadratic_module, normal_form, genus, isgenus
 
 # Torsion QuadraticForm
 #

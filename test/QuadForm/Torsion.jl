@@ -79,20 +79,24 @@
 
   #test for brown invariant
   L = Zlattice(gram=matrix(ZZ, [[2,-1,0,0],[-1,2,-1,-1],[0,-1,2,0],[0,-1,0,2]]))
-  T = Hecke.discriminant_group(L)  
+  T = discriminant_group(L)  
   @test Hecke.brown_invariant(T) == 4
 
   #test for genus
   L = Zlattice(gram=diagonal_matrix(fmpz[1,2,3,4]))
-  D = Hecke.discriminant_group(L)
-  @test Hecke.genus(D, (4,0)) == Hecke.genus(L)
+  D = discriminant_group(L)
+  @test genus(D, (4,0)) == genus(L)
   
   #test for isgenus
   L = Zlattice(gram=diagonal_matrix(fmpz[1,2,3,4]))
-  D = Hecke.discriminant_group(L)
-  @test_throws ErrorException Hecke.isgenus(D, (4,0))
+  D = discriminant_group(L)
+  @test_throws ErrorException isgenus(D, (4,0))
   L1 = Zlattice(gram=matrix(ZZ, [[2, -1, 0, 0, 0, 0],[-1, 2, -1, -1, 0, 0],[0, -1, 2, 0, 0, 0],[0, -1, 0, 2, 0, 0],[0, 0, 0, 0, 6, 3],[0, 0, 0, 0, 3, 6]]))
-  T1 = Hecke.discriminant_group(L1)  
-  @test Hecke.isgenus(T1, (6,0)) == true
+  T1 = discriminant_group(L1)  
+  @test isgenus(T1, (6,0))
+  G = genus(diagonal_matrix(fmpz[2, 6, 6]))
+  D = discriminant_group(G)
+  @test isgenus(D, (3,0))
+
 end
 
