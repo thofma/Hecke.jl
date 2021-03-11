@@ -221,6 +221,12 @@
   q = discriminant_group(G) # corner case
   @test order(q) == 1
 
+  G = genera((8,0), 1, even=true)[1]
+  @test mass(G) == 1//696729600
+
+  G = genus(diagonal_matrix(fmpz[1, 3, 9]),3)
+  @test Hecke._mass_squared(G) == (9//8)^2
+
   # representatives, mass and genus enumeration
 
   DB = lattice_database()
@@ -235,6 +241,23 @@
     @test G==G2
   end
 
+  for d in 1:400
+    for sig in [(2,0), (0,3), (4,0)]
+      for G in genera(sig, d)
+        m = mass(G)
+        L = representative(G)
+        @test genus(L)==G
+        @test mass(L)==m
+        q1 = discriminant_group(L)
+        q1, _ = normal_form(q1)
+        q1 = Hecke.gram_matrix_quadratic(q1)
+        q2 = discriminant_group(G)
+        q2, _ = normal_form(q2)
+        q2 = Hecke.gram_matrix_quadratic(q2)
+        @test q1 == q2
+      end
+    end
+  end
 
   for d in 1:50
     for sig in [(2,0),(3,0),(4,0)]
@@ -245,24 +268,6 @@
         @test mass(L)==m
         rep = genus_representatives(L)
         @test sum(1//automorphism_group_order(M) for M in rep)==m
-      end
-    end
-  end
-
-  for d in 1:400
-    for sig in [(2,0), (0,3), (4,0)]
-      for G in genera(sig, d)
-        m = mass(G)
-        L = representative(G)
-        @test genus(L)==G
-        @test mass(L)==m
-        q1 = discriminant_group(L)
-        q1 = normal_form(q1)
-        q1 = Hecke.gram_matrix_quadratic(q1)
-        q2 = discriminant_group(G)
-        q2 = normal_form(q2)
-        q2 = Hecke.gram_matrix_quadratic(q2)
-        @test q1 == q2
       end
     end
   end

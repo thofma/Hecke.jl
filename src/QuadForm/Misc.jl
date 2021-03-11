@@ -1024,7 +1024,7 @@ function _find_quaternion_algebra(b::fmpq, P, I)
     @assert length(I) == 1
     IK = infinite_places(K)
   end
-  c = _find_quaternion_algebra(bK, PK, IK)
+  c = _find_quaternion_algebra(bK, PK, IK)::nf_elem
   return coeff(c, 0)
 end
 
