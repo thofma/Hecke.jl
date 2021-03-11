@@ -143,4 +143,18 @@
       @test el == dot(vabs, BNabs)
     end
   end
+
+  @testset "relative extension" begin
+    Qx, x = FlintQQ["x"]
+    f = x^2 + 12x - 92
+    K, a = NumberField(f, "a")
+    Ky, y = K["y"]
+    L, b = NumberField(y^2 + y + 1, "b")  
+    Lt, t = PolynomialRing(L)
+    L1, gL1 = number_field([t^3-2])
+    L1rel, mL1rel = relative_simple_extension(L1, K)
+    el = mL1rel(gen(L1rel))
+    @test isprimitive_over(el, K)
+
+  end
 end

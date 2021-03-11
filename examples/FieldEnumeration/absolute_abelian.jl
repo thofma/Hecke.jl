@@ -23,8 +23,7 @@ function _get_simple_extension_and_maximal_order(K)
     push!(basesofmaximalorders, [ sum(coeff(b, j) * gensK[i]^j for j in 0:degree(L)) for b in BOL ])
   end
   bbb = vec([ prod(c) for c in Iterators.product(basesofmaximalorders...) ])
-  Ksimple, f = Hecke.simple_extension(K)
-  Ksimpleabs, g = Hecke.absolute_field(Ksimple)
+  Ksimpleabs, g = Hecke.absolute_simple_field(Ksimple)
   prime_divisors = Set{fmpz}()
   for i in 1:length(discs)
     for j in 1:(i - 1)
@@ -32,7 +31,7 @@ function _get_simple_extension_and_maximal_order(K)
       prime_divisors = union(prime_divisors, Set{fmpz}([ p for (p, e) in ff ]))
     end
   end
-  OO = Order(Ksimpleabs, [ g(f\(b)) for b in bbb ])
+  OO = Order(Ksimpleabs, [ g\b for b in bbb ])
   for p in prime_divisors
     OO = pmaximal_overorder(OO, p)
   end

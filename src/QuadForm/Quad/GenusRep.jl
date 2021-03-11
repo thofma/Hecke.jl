@@ -1619,7 +1619,9 @@ function _genus_representatives_binary_quadratic_definite_helper(L::QuadLat; max
 
   # Compute the absolute field, since this is where we do most of the work.
 
-  Fabs, FabstoF, KtoFabs = absolute_field(F)
+  Fabs, FabstoF = absolute_simple_field(F)
+
+  KtoFabs = restrict(inv(FabstoF), base_field(F))
 
   sigmaabs = hom(Fabs, Fabs, FabstoF\(sigma(FabstoF(gen(Fabs)))))
 
@@ -1716,7 +1718,7 @@ function _genus_representatives_binary_quadratic_definite_helper(L::QuadLat; max
     cppart = reduce(*, (Q^valuation(c, Q) for (Q, _) in lQ), init = 1 * OFabs)
     Rq, mq = quo(OFabs, cppart)
     Mu, f = multiplicative_group(Rq)
-    elts = elem_type(F)[ F(elem_in_nf(mq\(f(m)))) for m in Mu]
+    elts = elem_type(F)[ FabstoF(elem_in_nf(mq\(f(m)))) for m in Mu]
     if length(elts) > 1
       push!(_ps, p)
       push!(_xps, elts)
@@ -1840,7 +1842,7 @@ function _translate_ideal(I, Iabs, FtoFabs, sigma, sigmaabs)
   crit_primes = support(minimum(I))
   F = nf(O)
   xps = elem_type(F)[]
-  sigmaI = sum(ideal(order(I), x) for x in basis(sigmaabs(Iabs)))
+  sigmaI = sum(ideal(order(I), order(I)(FtoFabs(elem_in_nf(x)))) for x in basis(sigmaabs(Iabs)))
   M = I * inv(sigmaI)
   for p in crit_primes
     lQ = prime_decomposition(O, p)

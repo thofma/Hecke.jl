@@ -5,7 +5,6 @@
 ################################################################################
 
 function simplify(K::NfRel; cached::Bool = true, prec::Int = 100)
-  Kabs, mK, mk = absolute_field(K, cached = false)
   OK = maximal_order(K)
   B = lll_basis(OK)
   B1 = _sieve_primitive_elements(B)
@@ -58,6 +57,9 @@ end
 
 
 function _is_primitive_via_block(a::NfRelElem{nf_elem}, rt::Dict{fq, Vector{fq}}, Fx, tmp::gfp_fmpz_poly)
+  if iszero(a)
+    return false
+  end
   n = degree(parent(a))
   pol = data(a)
   conjs = Set{fq}()
@@ -136,28 +138,11 @@ function _find_prime(L::NfRel{nf_elem})
 end
 
 
-function _sieve_primitive_elements(B::Vector{NfRelElem{nf_elem}}; parameter::Int = 3)
-  Lrel = parent(B[1])
-  n = absolute_degree(Lrel)
-  #First, we choose the candidates
-  Bnew = NfRelElem{nf_elem}[]
-  nrep = parameter
-  if n < parameter
-    nrep = n
-  end
-  for i = 1:length(B)
-    push!(Bnew, B[i])
-    for j = 1:nrep
-      if i != j
-        push!(Bnew, B[i]+B[j])
-        push!(Bnew, B[i]-B[j])
-      end
-    end
-  end
-  #Now, we test for primitiveness.
+function _setup_block_system(Lrel::NfRel{nf_elem})
   K = base_field(Lrel)
   OK = maximal_order(K)
   Zx = ZZ["x"][1]
+  n = absolute_degree(Lrel)
 
   pint, d = _find_prime(Lrel)
   p = fmpz(pint)
@@ -186,15 +171,9 @@ function _sieve_primitive_elements(B::Vector{NfRelElem{nf_elem}}; parameter::Int
       break
     end
   end
-  indices = Int[]
-  for i = 1:length(Bnew)
-    if _is_primitive_via_block(Bnew[i], rt, Fx, tmp)
-      push!(indices, i)
-    end
-  end
-  return Bnew[indices]
-
+  return rt, Fx, tmp
 end
+
 
 function _find_prime(L::NfRelNS{nf_elem})
   p = 2^10
@@ -251,21 +230,8 @@ function _find_prime(L::NfRelNS{nf_elem})
   return res[1], res[2]
 end
 
-function _sieve_primitive_elements(B::Vector{NfRelNSElem{nf_elem}}; parameter::Int = 3)
-  Lrel = parent(B[1])
-  #First, we choose the candidates
-  Bnew = NfRelNSElem{nf_elem}[]
-  nrep = min(parameter, absolute_degree(Lrel))
-  for i = 1:length(B)
-    push!(Bnew, B[i])
-    for j = 1:nrep
-      if i != j
-        push!(Bnew, B[i]+B[j])
-        push!(Bnew, B[i]-B[j])
-      end
-    end
-  end
-  #Now, we test for primitiveness.
+
+function _setup_block_system(Lrel::NfRelNS{nf_elem})
   K = base_field(Lrel)
   OK = maximal_order(K)
   Zx = ZZ["x"][1]
@@ -316,11 +282,28 @@ function _sieve_primitive_elements(B::Vector{NfRelNSElem{nf_elem}}; parameter::I
       break
     end
   end
+  return rt1, Rxy, tmp
+end
+
+function _sieve_primitive_elements(B::Vector{T}; parameter::Int = div(absolute_degree(parent(B[1])), 2)) where T <: Union{NfRelNSElem{nf_elem}, NfRelElem{nf_elem}}
+  Lrel = parent(B[1])
+  #First, we choose the candidates
+  B_test = vcat(B, T[absolute_primitive_element(Lrel)])
+  Bnew = typeof(B)()
+  nrep = min(parameter, absolute_degree(Lrel))
+  for i = 1:length(B_test)
+    push!(Bnew, B_test[i])
+    for j = 1:nrep
+      if i != j
+        push!(Bnew, B_test[i]+B_test[j])
+        push!(Bnew, B_test[i]-B_test[j])
+      end
+    end
+  end
+  #Now, we test for primitiveness.
+  rt1, Rxy, tmp = _setup_block_system(Lrel)
   indices = Int[]
   for i = 1:length(Bnew)
-    if length(vars(Bnew[i].data)) < ngens(Lrel)
-      continue
-    end
     if _is_primitive_via_block(Bnew[i], rt1, Rxy, tmp)
       push!(indices, i)
     end
@@ -329,6 +312,9 @@ function _sieve_primitive_elements(B::Vector{NfRelNSElem{nf_elem}}; parameter::I
 end
 
 function _is_primitive_via_block(a::NfRelNSElem{nf_elem}, rt::Dict{fq, Vector{Vector{fq}}}, Rxy, tmp)
+  if length(vars(a.data)) < ngens(parent(a))
+    return false
+  end
   n = degree(parent(a))
   pol = data(a)
   conjs = Set{fq}()
@@ -350,24 +336,28 @@ function _is_primitive_via_block(a::NfRelNSElem{nf_elem}, rt::Dict{fq, Vector{Ve
   return true
 end
 
-function simplified_absolute_field(L::NfRelNS; cached = false)
-  OL = maximal_order(L)
-  B = lll_basis(OL)
-  B1 = _sieve_primitive_elements(B)
-  nrep = 3
+function _find_short_primitive_element(L::NfRelNS)
+  B = lll_basis(maximal_order(L))
+  parameter = div(absolute_degree(L), 2)
+  B1 = _sieve_primitive_elements(B, parameter = parameter)
   while isempty(B1)
-    nrep += 1
-    B1 = _sieve_primitive_elements(B, parameter = nrep)
+    parameter += 1
+    B1 = _sieve_primitive_elements(B, parameter = parameter)
   end
   a = B1[1]
   I = t2(a)
-  for i = 2:min(50, length(B1))
+  for i = 2:length(B1)
     J = t2(B1[i])
     if J < I
       a = B1[i]
       I = J
     end
   end
+  return a
+end
+
+function simplified_absolute_field(L::NfRelNS; cached = false)
+  a = _find_short_primitive_element(L)
   f = absolute_minpoly(a)
   @assert degree(f) == absolute_degree(L)
   K = number_field(f, check = false, cached = cached)[1]

@@ -481,7 +481,7 @@ function extend_aut_pp(A::ClassField, autos::Array{NfToNfMor, 1}, p::fmpz)
   #Main Idea: I extend tau to the big kummer extension KK and then I restrict it to AA.
   k = base_field(A)
   C = cyclotomic_extension(k, d)
-  KC = absolute_field(C)
+  KC = absolute_simple_field(C)
   # C is the base field of the kummer extension generated
   # by all the cyclic components.
   # I extend the automorphisms to C
@@ -957,7 +957,7 @@ function extend_autos_hard_case(A::ClassField, autos::Vector{NfToNfMor}, p::fmpz
   Cp = [x1 for x1 in A.cyc if degree(x1) % Int(p) == 0]
   k = base_field(A)
   C = cyclotomic_extension(k, d)
-  KC = absolute_field(C)
+  KC = absolute_simple_field(C)
   # C is the base field of the kummer extension generated
   # by all the cyclic components.
   # I extend the automorphisms to C

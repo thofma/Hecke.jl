@@ -126,20 +126,6 @@ iscommutative(::FlintRationalField) = true
 
 ################################################################################
 #
-#  Absolute field
-#
-################################################################################
-
-@doc Markdown.doc"""
-    absolute_field(L::NumField) -> NumField, Map
-
-Given a number field $L$, this function returns an absolute simple number field
-$M/\mathbf{Q}$ together with a $\mathbf{Q}$-linear isomorphism $M \to K$.
-"""
-absolute_field(::NumField)
-
-################################################################################
-#
 #  Normal basis
 #
 ################################################################################

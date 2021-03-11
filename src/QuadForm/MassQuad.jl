@@ -643,7 +643,7 @@ end
 
 function _L_function_negative(E, s, prec)
   K = base_field(E)
-  Eabs, = absolute_field(E)
+  Eabs = absolute_simple_field(E)[1]
   @assert istotally_complex(Eabs)
 
   # I want to reflect to 1 - s
@@ -686,7 +686,7 @@ function _L_function_positive(E, s, prec)
   if s == 1
     return _L_function_at_1(E, prec)
   end
-  Eabs, = absolute_field(E)
+  Eabs = absolute_simple_field(E)[1]
   Eabs, = simplify(Eabs)
   @assert istotally_complex(E)
   @assert s > 1
@@ -706,7 +706,7 @@ end
 
 function _L_function_at_1(E, prec)
   K = base_field(E)
-  Eabs, EabsToE = absolute_field(E)
+  Eabs, EabsToE = absolute_simple_field(E)
   @assert istotally_complex(E)
   Eabs, simp = simplify(Eabs)
   d = divexact(discriminant(maximal_order(Eabs)),
@@ -753,14 +753,14 @@ end
 function _exact_L_function(E, s)
   if absolute_degree(E) == 2
     k = 1 - s
-    Eabs, = absolute_field(E)
+    Eabs = absolute_simple_field(E)[1]
     if istotally_real(Eabs)
       d = discriminant(maximal_order(Eabs))
       return _bernoulli_kronecker(k, d)//-k
     end
   end
 
-  Eabs, = absolute_field(E)
+  Eabs = absolute_simple_field(E)[1]
   K = base_field(E)
   return dedekind_zeta_exact(Eabs, s)//dedekind_zeta_exact(K, s)
 end
@@ -1306,7 +1306,7 @@ function dedekind_zeta_exact(K::AnticNumberField, s::Int)
     if absolute_degree(K) == 1
       return bernoulli(k)//-k
     elseif absolute_degree(K) == 2
-      Kabs, = absolute_field(K)
+      Kabs = absolute_simple_field(K)[1]
       if istotally_real(K)
         d = discriminant(maximal_order(Kabs))
         return bernoulli(k) * _bernoulli_kronecker(k, d)//k^2
