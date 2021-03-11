@@ -392,7 +392,7 @@ function isprincipal_fac_elem(A::NfOrdIdl)
       return true, A.princ_gen_fac_elem
     else
       if isdefined(A, :princ_gen)
-        A.princ_gen_fac_elem = A.princ_gen.elem_in_nf
+        A.princ_gen_fac_elem = FacElem(A.princ_gen.elem_in_nf)
       end
       return true, FacElem(A.princ_gen_fac_elem)
     end

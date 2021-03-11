@@ -639,6 +639,10 @@ _round_down(::Type{fmpz}, x::fmpz) = x
 
 _round_down(::Type{fmpz}, x::fmpq) = FlintZZ(floor(x))
 
+_round_down(::Type{fmpz}, x::Float64) = FlintZZ(floor(x))
+
+_round_down(::Type{fmpz}, x::BigFloat) = FlintZZ(floor(x))
+
 ################################################################################
 #
 #  Additional inplace operations

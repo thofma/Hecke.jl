@@ -10,8 +10,9 @@ struct RelNeq
   m_Kk_K::Map
   function RelNeq(k::AnticNumberField, Kk::Hecke.NfRel{nf_elem})
     k = base_ring(Kk)
-    K, m_Kk_K, m_k_K = absolute_field(Kk)
-    return new(k, K, Kk, m_k_K, m_Kk_K)
+    K, m_K_Kk = absolute_simple_field(Kk)
+    m1 = inv(m_K_Kk)
+    return new(k, K, Kk, m1, restrict(m1, k))
   end
 
   function RelNeq(k::AnticNumberField, K::AnticNumberField)

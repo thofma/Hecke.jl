@@ -415,7 +415,9 @@ end
     F,_ = Hecke.subfield(K,[gen(K)])
     @test degree(F) == 2
 
-    Labs,psi,phi = absolute_field(L)
+    Labs, psi = absolute_simple_field(L)
+    phi = restrict(inv(psi), base_field(L))
+
 
     F,_ = Hecke.subfield(Labs,[phi(a3)])
     @test degree(F) == 2

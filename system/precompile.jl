@@ -13,6 +13,6 @@ K = number_field(h)
 @test degree(h) == 9
 L = simple_extension(K)[1]
 @test degree(L) == 9
-absolute_field(L)
+absolute_simple_field(L)
 discriminant(maximal_order(K))
 norm_equation(k, 27)

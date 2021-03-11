@@ -284,7 +284,7 @@ function locally_isometric_sublattice(M::HermLat, L::HermLat, p)
   @assert ismaximal_integral(M, p)[1]
   D = prime_decomposition(base_ring(L), p)
 
-  _,absolute_map,_ = absolute_field(ambient_space(M))
+  absolute_map = absolute_simple_field(ambient_space(M))[2]
 
   P = D[1][1]
   

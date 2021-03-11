@@ -521,4 +521,13 @@ end
   gens = [[5*a-4, a, 0, 0], [-a-1, 0, -1, 0], [a-15//2, 39//28*a+17//7, 3//2*a+5//2, -5//28*a-2//7], [-4*a+6, 0, 0, 0]]
   L23565 = quadratic_lattice(K, generators = gens, gram_ambient_space = D)
   @test mass(L23565) == fmpq(1, 64)
+
+  f = x - 1;
+  K, a = number_field(f)
+  D = matrix(K, 2, 2, [3, 3//2, 3//2, 3]);
+  gens = [[1, 0], [1, 0], [0, 1], [0, 1]]
+  L = quadratic_lattice(K, generators = gens, gram_ambient_space = D)
+  p = prime_decomposition(base_ring(L), 2)[1][1]
+  @test Hecke.local_factor(L, p) == fmpq(1)
+  @test mass(L) == fmpq(1, 12)
 end

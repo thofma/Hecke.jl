@@ -1101,7 +1101,7 @@ function fun_factor(f::T) where T <: Union{fmpz_mod_poly, nmod_poly}
   Zy, y = PolynomialRing(FlintZZ, "y", cached = false)
   f2 = lift(Zy, f)
   mod = fmpz(gcd(smod, fmpz(modulus(Rx)))) #We have the equality modulo mod
-  mod = mod*mod
+  mod = gcd(mod*mod, fmpz(modulus(Rx)))
   R1 = ResidueRing(FlintZZ, mod, cached = false)
   R1x, x = PolynomialRing(R1, "x", cached = false)
   s = R1x(lift(inv(coeff(u0, 0))))
@@ -1144,7 +1144,6 @@ function fun_factor(f::T) where T <: Union{fmpz_mod_poly, nmod_poly}
       error("too long")
     end
   end
-
   u0 = Rx(lift(Zy, u))
   g0 = Rx(lift(Zy, g))
   @hassert :NfOrd 1 g0*u0 == f

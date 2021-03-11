@@ -391,10 +391,13 @@ function _quadratic_form_with_invariants(dim::Int, det::fmpz,
   @assert all(isprime(p) for p in finite)
 
   if dim == 2
-    ok = all(!islocal_square(-det, p) for p in finite)
+    ok = all(Bool[!islocal_square(-det, p) for p in finite])
+
     if !ok
-      q = [p for p in finite if islocal_square(-det, p)][1]
-      throw(error("A binary form with determinant $det must have Hasse invariant +1 at the prime $q"))
+      #q = fmpz[p for p in finite if islocal_square(-det, p)][1]
+      if islocal_square(-det, q)
+        throw(error("A binary form with determinant $det must have Hasse invariant +1 at the prime $q"))
+      end
     end
   end
 
@@ -405,17 +408,22 @@ function _quadratic_form_with_invariants(dim::Int, det::fmpz,
   # reduce the number of bad primes
   det = squarefree_part(det)
 
+  local det0::fmpz
+  local finite0::Vector{fmpz}
+
   dim0 = dim
   det0 = det
   finite0 = copy(finite)
   negative0 = negative
 
-#  // Pad with ones
+  #// Pad with ones
   k = max(0, dim - max(3, negative))
   D = ones(Int, k)
   dim = dim - k
 
-#  // Pad with minus ones
+  local PP::Vector{fmpz}
+
+  #// Pad with minus ones
   if dim >= 4
     @assert dim == negative
     k = dim - 3
@@ -433,13 +441,13 @@ function _quadratic_form_with_invariants(dim::Int, det::fmpz,
 
   # ternary case
   if dim == 3
-#    // The primes at which the form is anisotropic
+    #// The primes at which the form is anisotropic
     PP = append!(fmpz[p for (p, e) in factor(2 * det)], finite)
     PP = unique!(PP)
     PP = filter!(p -> hilbert_symbol(-1, -det, p) != (p in finite ? -1 : 1), PP)
-#    // Find some a such that for all p in PP: -a*Det is not a local square
-#    // TODO: Find some smaller a?! The approach below is very lame.
-    a = prod(det % p == 0 ? one(FlintZZ) : p for p in PP)
+    #// Find some a such that for all p in PP: -a*Det is not a local square
+    #// TODO: Find some smaller a?! The approach below is very lame.
+    a = prod(fmpz[det % p == 0 ? one(FlintZZ) : p for p in PP])
     if negative == 3
       a = -a
       negative = 2
@@ -453,8 +461,8 @@ function _quadratic_form_with_invariants(dim::Int, det::fmpz,
     push!(D, a)
   end
 
-#  // The binary case
-  a = _find_quaternion_algebra(fmpq(-det), finite, negative == 2 ? PosInf[inf] : PosInf[])
+  #// The binary case
+  a = _find_quaternion_algebra(fmpq(-det)::fmpq, finite::Vector{fmpz}, negative == 2 ? PosInf[inf] : PosInf[])
   Drat = map(FlintQQ, D)
   Drat = append!(Drat, fmpq[a, squarefree_part(FlintZZ(det * a))])
 

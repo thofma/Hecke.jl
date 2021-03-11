@@ -2288,7 +2288,7 @@ function iscoprime(I::NfAbsOrdIdl, J::NfAbsOrdIdl)
 end 
 
 function iscoprime(I::NfAbsOrdIdl, a::fmpz)
-  return iscoprime(I, ideal(order(I), a))
+  return iscoprime(minimum(I, copy = false), a)
 end
 
 one(I::NfAbsOrdIdlSet) = ideal(order(I), 1)
