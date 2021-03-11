@@ -865,6 +865,18 @@ Given a group $R$, an array of endomorphisms of the group and the type of the qu
 subgroups of $R$ such that the corresponding quotient has the required type.
 """
 function stable_subgroups(R::GrpAbFinGen, act::Array{T, 1}; op = sub, quotype::Array{Int, 1} = Int[-1], minimal::Bool = false) where T <: Map{GrpAbFinGen, GrpAbFinGen}
+  subs = _stable_subgroups(R, act; quotype = quotype, minimal = minimal)
+  #Finally, translate back to R.
+  return (op(R, x) for x in subs)
+end
+
+function stable_subgroups_for_abexts(R::GrpAbFinGen, act::Vector{GrpAbFinGenMap}, quotype::Vector{Int})
+  subs = _stable_subgroups(R, act; quotype = quotype)
+  #Finally, translate back to R.
+  return (quo(R, x)[2] for x in subs)
+end
+
+function _stable_subgroups(R::GrpAbFinGen, act::Array{T, 1}; quotype::Array{Int, 1} = Int[-1], minimal::Bool = false) where T <: Map{GrpAbFinGen, GrpAbFinGen}
   if quotype[1] != -1 && minimal
     error("Cannot compute minimal submodules with prescribed quotient type")
   end
@@ -886,10 +898,7 @@ function stable_subgroups(R::GrpAbFinGen, act::Array{T, 1}; op = sub, quotype::A
     actS[i] = hom(S, S, imgs, check = false)
   end
   subs_snf = _stable_subgroup_snf(S, actS; quotype = quotype, minimal = minimal)
-  #Finally, translate back to R.
-  subs = (GrpAbFinGenElem[mQ\mS(x) for x in y] for y in subs_snf)
-  return (op(R, x) for x in subs)
-
+  return (GrpAbFinGenElem[mQ\mS(x) for x in y] for y in subs_snf)
 end
 
 function _stable_subgroup_snf(R::GrpAbFinGen, act::Array{GrpAbFinGenMap, 1}; quotype::Array{Int,1} = Int[-1], minimal::Bool = false)

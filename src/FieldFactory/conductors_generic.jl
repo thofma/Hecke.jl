@@ -228,7 +228,7 @@ function conductors(O::NfOrd, a::Array{Int, 1}, bound::fmpz, tame::Bool=false; u
   d = degree(O)
   n = prod(a)
   expo = a[end]
-  wild_ram = collect(keys(factor(fmpz(n)).fac))
+  wild_ram = collect(keys(factor(n).fac))
 
   #
   # First, conductors for tamely ramified extensions
@@ -251,7 +251,7 @@ function conductors(O::NfOrd, a::Array{Int, 1}, bound::fmpz, tame::Bool=false; u
     lp = prime_decomposition(O, Int(q))
     fq = divexact(d, lp[1][2]*length(lp))
     l = length(wild_list)
-    sq = fmpz(q)^(divexact(d,lp[1][2])) #norm of the squarefree part of the integer q
+    sq = q^(divexact(d,lp[1][2])) #norm of the squarefree part of the integer q
     #=
       we have to use the conductor discriminant formula to understand the maximal possible exponent of q.
       Let ap be the exponent of p in the relative discriminant, let m be the conductor and h_(m,C) the cardinality of the 
@@ -267,7 +267,7 @@ function conductors(O::NfOrd, a::Array{Int, 1}, bound::fmpz, tame::Bool=false; u
     boundsubext = root(bound, Int(divexact(n, q^v))) #The bound on the norm of the discriminant on the subextension 
                                                      # of order q^v
     #Bound coming from the bound on the discriminant
-    obound = flog(boundsubext, sq)                                                
+    obound = fmpz(flog(boundsubext, sq))                                                
     
     #Bound coming from the analysis on the different in a local extension
     nbound = q^v + lp[1][2] * v * q^v - 1

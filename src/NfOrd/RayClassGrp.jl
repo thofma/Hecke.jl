@@ -187,7 +187,7 @@ function class_as_ray_class(C::GrpAbFinGen, mC::MapClassGrp, exp_class::Function
   if expo != -1
     Q, mQ = quo(C, expo, false)
     local disclog1
-    let Q = Q, mC = mC, mQ = mQ
+    let Q = Q, mC = mC, mQ = mQ, X = X
       function disclog1(J::NfOrdIdl)
         return mQ(mC\(J))
       end
