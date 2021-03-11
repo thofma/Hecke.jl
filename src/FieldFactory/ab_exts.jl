@@ -95,15 +95,16 @@ function abelian_normal_extensions(K::AnticNumberField, gtype::Vector{Int}, abso
   gens = Hecke.small_generating_set(Aut)
 
   expo = lcm(gtype)
-  C, mC = class_group(O)
-  cgrp = !iscoprime(n, order(C))
-  allow_cache!(mC)
+  Cl, mCl = class_group(O)
+  cgrp = !iscoprime(n, order(Cl))
+  allow_cache!(mCl)
 
   #Getting conductors
   l_conductors = conductors(O, gtype, bound, tame)
   @vprint :AbExt 1 "Number of conductors: $(length(l_conductors)) \n"
   
   ctx = rayclassgrp_ctx(O, expo)
+  fun = (x, y) -> quo(x, y, false)[2]
   #Now, the big loop
   for (i, k) in enumerate(l_conductors)
     @vprint :AbExt 1 "Conductor: $k \n"
@@ -113,10 +114,11 @@ function abelian_normal_extensions(K::AnticNumberField, gtype::Vector{Int}, abso
       continue
     end
     act = induce_action(mr,gens)
-    ls = stable_subgroups(r, act, op=(x, y) -> quo(x, y, false)[2], quotype = gtype)
+    ls = stable_subgroups(r, act, op = fun, quotype = gtype)
     for s in ls
-      @hassert :AbExt 1 order(codomain(s))==n
-      C = ray_class_field(mr, s)
+      s::GrpAbFinGenMap
+      @hassert :AbExt 1 order(codomain(s)) == n
+      C = ray_class_field(mr, s)::ClassField{MapRayClassGrp, GrpAbFinGenMap}
       if Hecke._is_conductor_min_normal(C) && Hecke.discriminant_conductor(C, bound)
         if only_complex
           rC, sC = signature(C)
@@ -127,7 +129,7 @@ function abelian_normal_extensions(K::AnticNumberField, gtype::Vector{Int}, abso
         @vprint :AbExt 1 "New Field \n"
         if absolute_galois_group != (0, 0)
           autabs = absolute_automorphism_group(C, gens)
-          G = generic_group(autabs, *)
+          G, mG, imG = generic_group(autabs, *)
           id_G = find_small_group(G)
           if id_G == absolute_galois_group
             push!(fields, C)
@@ -165,15 +167,16 @@ function abelian_extensions(K::AnticNumberField, gtype::Vector{Int}, absolute_di
     inf_plc = ramified_at_inf_plc[2]
   end
   expo = gtype[end]
-  C, mC = class_group(OK)
-  cgrp = !iscoprime(n, order(C))
-  allow_cache!(mC)
+  Cl, mCl = class_group(OK)
+  cgrp = !iscoprime(n, order(Cl))
+  allow_cache!(mCl)
 
   #Getting conductors
   l_conductors = conductors_generic(K, gtype, absolute_discriminant_bound, only_tame = only_tame)
   @vprint :AbExt 1 "Number of conductors: $(length(l_conductors)) \n"
   
   ctx = rayclassgrp_ctx(OK, expo)
+  fsub = (x, y) -> quo(x, y, false)[2]
   #Now, the big loop
   for (i, k) in enumerate(l_conductors)
     @vprint :AbExt 1 "Left: $(length(l_conductors) - i)\n"
@@ -181,10 +184,11 @@ function abelian_extensions(K::AnticNumberField, gtype::Vector{Int}, absolute_di
     if !has_quotient(r, gtype)
       continue
     end
-    ls = subgroups(r, quotype = gtype, fun = (x, y) -> quo(x, y, false)[2])
+    ls = subgroups(r, quotype = gtype, fun = fsub)
     for s in ls
+      s::GrpAbFinGenMap
       @hassert :AbExt 1 order(codomain(s))==n
-      C = ray_class_field(mr, s)
+      C = ray_class_field(mr, s)::ClassField{MapRayClassGrp, GrpAbFinGenMap}
       cC = conductor(C)
       if ramified_at_inf_plc[1]
         if Set(cC[2]) != Set(ramified_at_inf_plc[2])
