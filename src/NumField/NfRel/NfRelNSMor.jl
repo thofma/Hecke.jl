@@ -1,137 +1,3 @@
-################################################################################
-#
-#  Hash function
-#
-################################################################################
-
-#function Base.hash(f::NfRelNSToNfRelNSMor{T}, u::UInt64) where T
-#  #I combine the hash functions for the automorphism of the base field and the hash function for the images of the generators.
-#  a = hash(f.coeff_aut, u)
-#  for i = 1:length(f.emb)
-#    a = hash(f.emb[i], a)
-#  end
-#  return a
-#end
-#
-#function Base.hash(f::NfRelToNfRelMor{T}, u::UInt64) where T
-#  #I combine the hash functions for the automorphism of the base field and the hash function for the images of the generators.
-#  a = hash(f.prim_img, u)
-#  if isdefined(f, :coeff_aut)
-#    a = hash(f.coeff_aut, a)
-#  end
-#  return a
-#end
-#
-#################################################################################
-##
-##  Composition
-##
-#################################################################################
-#
-#function Base.:(*)(f::NumFieldMor{<:NfRelNS, <:NfRelNS}, g::NumFieldMor{<:NfRelNS, <:NfRelNS})
-#  codomain(f) == domain(g) || throw("Maps not compatible")
-#
-#  a = gens(domain(f))
-#  @show elem_type(codomain(g))[ g(f(x)) for x in a]
-#  return hom(domain(f), codomain(g),  elem_type(codomain(g))[ g(f(x)) for x in a])
-#end
-#
-#function Base.:(*)(f::NfRelNSToNfRelNSMor_nf_elem, g::NfRelNSToNfRelNSMor_nf_elem)
-#  codomain(f) == domain(g) || throw("Maps not compatible")
-#
-#  a = gens(domain(f))
-#  # I am a bit lazy here
-#  return hom(domain(f), codomain(g), hom(base_field(domain(f)), codomain(g), g(f(domain(f)(gen(base_field(domain(f))))))), NfRelNSElem{nf_elem}[ g(f(x)) for x in a], check = false)
-#end
-#
-#function Base.:(*)(f::NfRelToNfRelMor{nf_elem}, g::NfRelToNfRelNSMor{nf_elem})
-#  codomain(f) == domain(g) || throw("Maps not compatible")
-#
-#  a = gen(domain(f))
-#  return hom(domain(f), codomain(g), f.coeff_aut * g.coeff_aut, g(f(a)))
-#end
-#
-#################################################################################
-##
-##  IsEqual
-##
-#################################################################################
-#
-#function Base.:(==)(f::NfRelNSToNfRelNSMor{T}, g::NfRelNSToNfRelNSMor{T}) where {T}
-#  if domain(f) != domain(g) || codomain(f) != codomain(g)
-#    return false
-#  end
-#
-#  L = domain(f)
-#  K = base_field(L)
-#
-#  if f.coeff_aut.prim_img != g.coeff_aut.prim_img
-#    return false
-#  end
-#
-#  for i = 1:ngens(L)
-#    if f.emb[i] != g.emb[i]
-#      return false
-#    end
-#  end
-#
-#  return true
-#end
-#
-#function _compute_preimg(f::NfRelNSToNfRelNSMor_nf_elem)
-#  #inv_base_field = inv(f.coeff_aut)
-#  L = domain(f)
-#  K = codomain(f)
-#  k = base_field(K)
-#  @assert k == base_field(L)
-#  B = basis(L)
-#  M = sparse_matrix(k)
-#  for i = 1:length(B)
-#    push!(M, SRow(f(B[i])))
-#  end
-#  gK = gens(K)
-#  imgs = Vector{NfRelNSElem{nf_elem}}(undef, length(gK))
-#  for i = 1:length(imgs)
-#    N = SRow(gK[i])
-#    S = solve(M, N)
-#    imgs[i] = sum(l*B[j] for (j, l) in S)
-#  end
-#  N = SRow(K(gen(k)))
-#  S = solve(M, N)
-#  img_gen_k = sum(l*B[j] for (j, l) in S)
-#  f.inverse_data = map_data(K, L, map_data(base_field(K), L, img_gen_k), imgs)
-#
-#  #f.inv_coeff_aut = inv_base_field
-#  #f.inv_emb = imgs
-#  #local preimg 
-#  #let f = f
-#  #  function preimg(x::NfRelNSElem{nf_elem})
-#  #    b = x.data
-#  #    b1 = map_coeffs(f.inv_emb, b)
-#  #    return msubst(b1, f.inv_emb)
-#  #  end
-#  #end
-#  #f.header.preimage = preimg
-#  return nothing
-#end
-#
-#function inv(f::NfRelNSToNfRelNSMor_nf_elem)
-#  _compute_preimg(f)
-#  g = NumFieldMor(codomain(f), domain(f))
-#  g.image_data = f.inverse_data
-#  g.inverse_data = f.image_data
-#  # Check
-#  a = domain(f)(gen(base_field(domain(f))))
-#  @assert g(f(a)) == a 
-#  @assert all(x -> x == g(f(x)), gens(domain(f)))
-#  a = domain(g)(gen(base_field(domain(g))))
-#  @assert f(g(a)) == a 
-#  @assert all(x -> x == f(g(x)), gens(domain(g)))
-#
-#  return g
-#  #return hom(codomain(f), domain(f), f.inv_coeff_aut, f.inv_emb)
-#end
-
 @inline ngens(R::Nemo.Generic.MPolyRing) = R.num_vars
 
 function _prod(A, b)
@@ -442,12 +308,12 @@ function automorphisms(L::NfRelNS{T}) where T
 end
 
 function _automorphisms(L::NfRelNS{T}) where T
-  roots = Vector{elem_type(L)}[roots(isunivariate(x)[2], L) for x in L.pol]
-  auts = Vector{NfRelNSToNfRelNSMor{T}}(undef, prod(length(x) for x in roots))
+  rts = Vector{elem_type(L)}[roots(isunivariate(x)[2], L) for x in L.pol]
+  auts = Vector{morphism_type(L)}(undef, prod(length(x) for x in rts))
   ind = 1
-  it = cartesian_product_iterator([1:length(roots[i]) for i in 1:length(roots)], inplace = true)
+  it = cartesian_product_iterator([1:length(rts[i]) for i in 1:length(rts)], inplace = true)
   for i in it
-    embs = NfRelNSElem{T}[roots[j][i[j]] for j = 1:length(roots)]
+    embs = NfRelNSElem{T}[rts[j][i[j]] for j = 1:length(rts)]
     auts[ind] = hom(L, L, embs)
     ind += 1
   end
