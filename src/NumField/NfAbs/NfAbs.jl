@@ -532,8 +532,12 @@ Otherwise the function returns "false" and a morphism mapping everything to 0.
 function isisomorphic(K::AnticNumberField, L::AnticNumberField)
   f = K.pol
   g = L.pol
+  
   if degree(f) != degree(g)
     return false, hom(K, L, zero(L), check = false)
+  end
+  if fmpq[coeff(f, i) for i = 0:degree(f)] == fmpq[coeff(g, i) for i = 0:degree(g)]
+    return true, hom(K, L, gen(L))
   end
   if signature(K) != signature(L)
     return false, hom(K, L, zero(L), check = false)

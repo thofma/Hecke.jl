@@ -181,27 +181,41 @@ function _new_conductors_using_cocycles(F::FieldsTower, st::Vector{Int}, l_cond:
     inertia_subgroups[p] = gHp
   end
   must_ramify = Vector{Vector{fmpz}}(undef, length(projections))
-  for proj in projections
+  cant_ramify = Vector{Vector{fmpz}}(undef, length(projections))
+  for s = 1:length(projections)
+    proj = projections[s]
     ramify_here = Vector{fmpz}()
+    not_ramify_here = Vector{fmpz}()
     for p in lp
       gHp = inertia_subgroups[p]
       els = [D[g] for g in gHp]
       sub = GAP.Globals.Subgroup(G, GAP.julia_to_gap(els))
       ord = GAP.Globals.Size(sub)
-      sizes_preimages = Int[]
       subgs = Vector{GAP.GapObj}()
+      preimages = Vector{Vector{GAP.GapObj}}(undef, length(els))
       for j = 1:length(els)
-        pels = GAP.Globals.List(GAP.Globals.PreImages(proj, els[j]))
-        for i = 1:length(pels)
-          subgs[i][j] = pels[i]
+        preimages[j] = GAP.gap_to_julia(Vector, GAP.Globals.List(GAP.Globals.PreImages(proj, els[j])))
+      end
+      #Now, I need to check all the possible subgroups.
+      it = cartesian_product_iterator(UnitRange{Int}[1:n for i = 1:length(els)], inplace = true)
+      sizes_preimages = Int[]
+      for I in it
+        sub = GAP.Globals.Subgroup(E, GAP.julia_to_gap([preimages[i][I[i]] for i = 1:length(els)]))
+        push!(sizes_preimages, GAP.Globals.Size(sub))
+        if maximum(sizes_preimages) != ord && minimum(sizes_preimages) == ord
+          break
         end
       end
-      for lelem in subgs
-        sub = GAP.Globals.Subgroup(E, GAP.julia_to_gap(lelem))
-        onew = GAP.Globals.Size(sub)
-        push!(sizes_preimages, onew)
-      end
+      if minimum(sizes_preimages) != ord
+        push!(ramify_here, p)
+      elseif maximum(sizes_preimages) == ord
+        push!(not_ramify_here, p)
+      end 
     end
+    must_ramify[s] = ramify_here
+    not_ramify_here[s] = not_ramify_here
+  end
+  
     if minimum(sizes_preimages) != ord
       #The prime must ramify!
       l1 = Vector{Tuple{Int, Dict{NfOrdIdl, Int}}}()
@@ -257,7 +271,6 @@ function _new_conductors_using_cocycles(F::FieldsTower, st::Vector{Int}, l_cond:
       end
       l_cond = l1
     end
-  end
   return l_cond
 
 end
