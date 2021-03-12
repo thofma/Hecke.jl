@@ -30,6 +30,9 @@ else
   end
 end
 
+@info "long_test: $long_test"
+@info "short_test: $short_test"
+
 if short_test
   @info "Running short tests"
   include(joinpath("..", "system", "precompile.jl"))
