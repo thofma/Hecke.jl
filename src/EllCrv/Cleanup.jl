@@ -63,7 +63,7 @@ function local_height_finite(P, p)
 
   b2, b4, b6, b8, c4, c6 = get_b_c_integral(E)
 
-  delta = disc(E)
+  delta = discriminant(E)
 
   A = 3*x^2 + 2*a2*x + a4 - a1*y
   B = 2*y + a1*x + a3 # = psi2(P)
@@ -180,7 +180,7 @@ function canonical_height(P)
 
   E = P.parent
   x = P.coordx
-  delta = disc(E)
+  delta = discriminant(E)
   d = denominator(x)
 
   h = local_height_infinite(P) + log(Float64(d))
@@ -273,7 +273,7 @@ function real_period(E)
 
   b2, b4, b6, b8 = get_b_integral(E)
 
-  delta = disc(E)
+  delta = discriminant(E)
   f(x) = x^3 + (Float64(b2)/4)*x^2 + (Float64(b4)/2)*x + (Float64(b6)/4)
   root = fzeros(f)
 
@@ -385,7 +385,7 @@ function torsion_points_via_height(E::EllCrv{fmpq})
   hj = log_height(jay) # height of the j-invariant
   jfloat = Float64(numerator(jay))/Float64(denominator(jay))
 
-  delta = numerator(disc(E))
+  delta = numerator(discriminant(E))
   b2, b4, b6, b8 = get_b_integral(E)
   twostar = 2
   if b2 == 0
@@ -497,7 +497,7 @@ function mod_red(E, B)
         R = GF(p, cached = false)
         Ep = EllipticCurve([R(numerator(minmodel.coeff[1])), R(numerator(minmodel.coeff[2])), R(numerator(minmodel.coeff[3])), R(numerator(minmodel.coeff[4])), R(numerator(minmodel.coeff[5]))],  false) # reduction of E mod p
 
-        if  disc(Ep) != 0 # can only determine group order if curve is non-singular
+        if  discriminant(Ep) != 0 # can only determine group order if curve is non-singular
             ord = order_best(Ep)
             push!(N, ord)
         else

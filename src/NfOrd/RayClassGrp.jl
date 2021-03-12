@@ -544,8 +544,8 @@ function make_positive(x::NfOrdElem, a::fmpz)
     mu = div(y, a)
     m = max(m, mu+1)
   end
-  @hassert :RayFacElem 1 iscoprime(ideal(parent(x),x), ideal(parent(x), a))
-  @hassert :RayFacElem 1 iscoprime(ideal(parent(x),x+fmpz(m)*a), ideal(parent(x), a))
+  #@hassert :RayFacElem 1 iscoprime(ideal(parent(x),x), ideal(parent(x), a))
+  #@hassert :RayFacElem 1 iscoprime(ideal(parent(x),x+fmpz(m)*a), ideal(parent(x), a))
   @hassert :RayFacElem 1 istotally_positive(x+m*a)
   el_to_add = m*a
   return x+el_to_add
@@ -1074,7 +1074,8 @@ function find_gens(mR::MapRayClassGrp; coprime_to::fmpz = fmpz(-1))
       el_q = mq(gens_m[i][2])
       if iszero(el_q)
         continue
-      else
+      end
+      if isprime_power(order(s))
         el_in_s = ms\el_q
         found = false
         for j = 1:ngens(s)
@@ -1094,6 +1095,17 @@ function find_gens(mR::MapRayClassGrp; coprime_to::fmpz = fmpz(-1))
             end
             return lp, sR
           end
+        end
+      else
+        push!(sR, gens_m[i][2])
+        push!(lp, ideal(O, gens_m[i][1]))
+        q, mq = quo(R, sR, false)
+        s, ms = snf(q)
+        if order(s) == 1 
+          if !isdefined(mR, :gens)
+            mR.gens = (lp, sR)
+          end
+          return lp, sR
         end
       end
     end
@@ -1125,7 +1137,7 @@ function find_gens(mR::MapRayClassGrp; coprime_to::fmpz = fmpz(-1))
           q, mq = quo(R, sR, false)
           s, ms = snf(q)
           if order(s)==1
-	    if !isdefined(mR, :gens)
+	          if !isdefined(mR, :gens)
               mR.gens = (lp, sR)
             end
             return lp, sR
@@ -1133,7 +1145,6 @@ function find_gens(mR::MapRayClassGrp; coprime_to::fmpz = fmpz(-1))
         end
       end
     end
-
   end
 
   #This means that the class group is non trivial. I need primes generating the class group
@@ -1230,7 +1241,7 @@ end
 
 function find_gens_for_action(mR::MapClassGrp)
 
-	lp, sR = find_gens(pseudo_inv(mR), PrimesSet(20, -1))
+	lp, sR = find_gens(pseudo_inv(mR), PrimesSet(2, -1))
   ip = InfPlc[]
   sR1 = GrpAbFinGenElem[]
 	return lp, ip, sR, sR1
@@ -1282,12 +1293,22 @@ function find_gens_for_action(mR::MapRayClassGrp)
   end
   #Now, gens of class group. Those are cached in the class group map
   mC = mR.clgrpmap
-  for P in mC.small_gens
-    push!(lp, P)
-    push!(sR, mR\P)
+  if isdefined(mC, :small_gens)
+    for P in mC.small_gens
+      if iscoprime(minimum(P, copy = false), mm)
+        push!(lp, P)
+        push!(sR, mR\P)
+      end
+    end
   end
   q, mq = quo(R, vcat(sR, sR1), false)
-  @assert order(q) == 1
+  if order(q) != 1
+    lpmC, srmC = find_gens(pseudo_inv(mC), PrimesSet(2, -1), mm)
+    for P in lpmC
+      push!(lp, P)
+      push!(sR, mR\P)
+    end
+  end
   return lp, ip, sR, sR1
 end
 

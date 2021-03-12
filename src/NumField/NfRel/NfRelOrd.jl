@@ -72,6 +72,31 @@ fractional_ideal_type(::Type{NfRelOrd{T, S, U}}) where {T, S, U} = NfRelOrdFracI
 
 ################################################################################
 #
+#  Modulus
+#
+################################################################################
+
+# Return a small OK-ideal I such that I * OK^n \subseteq OL (with respect to
+# the basis of OK)
+# This is required for the modular computations with ideals.
+function _modulus(O::NfRelOrd)
+  D = get_special(O, :modulus)
+  if D isa Nothing
+    D = reduce(lcm, coefficient_ideals(basis_pmatrix(O)))
+    # Let D = N/d
+    # In particular (N/d) * OK^n \subseteq OL
+    # N*OK \subseteq N/d * OK \subseteq OL
+    # So we take N
+    M = numerator(simplify(D))
+    set_special(O, :modulus => M)
+    return M
+  else
+    return D::ideal_type(base_ring(O))
+  end
+end
+
+################################################################################
+#
 #  "Assure" functions for fields
 #
 ################################################################################
@@ -595,9 +620,9 @@ function MaximalOrder(L::NumField)
 end
 
 function maximal_order_via_absolute(L::NfRel)
-  Labs, lToLabs, kToLabs = absolute_field(L)
+  Labs, LabsToL = absolute_simple_field(L)
   Oabs = maximal_order(Labs)
-  return relative_order(Oabs, lToLabs)
+  return relative_order(Oabs, LabsToL)
 end
 
 function maximal_order_via_absolute(m::NfToNfRel)
@@ -1404,6 +1429,6 @@ function overorder_polygons(O::NfRelOrd{S, T, NfRelElem{nf_elem}}, p::NfOrdIdl) 
   M = sub(pseudo_hnf_full_rank_with_modulus(M, index, :lowerleft), length(l)-degree(K)+1:length(l), 1:degree(K))
   O1 = typeof(O)(K, M)
   O1.index = index
-  O1.disc_abs = divexact(O.disc_abs, p^(2*vdisc)) 
+  O1.disc_abs = divexact(O.disc_abs, p^(2*vdisc))
   return O1
 end

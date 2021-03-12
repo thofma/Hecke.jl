@@ -261,7 +261,13 @@ function _exact_minkowski_matrix(B::Vector{T}) where T <: NumFieldElem
   K = parent(B[1])
   if istotally_real(K)
     return trace_matrix(B)
+  else
+    return _minkowski_via_approximation(B)
   end
+end
+
+function _minkowski_via_approximation(B::Vector{T}) where T <: NumFieldElem
+  K = parent(B[1])
   n = length(B)
   g = zero_matrix(FlintZZ, n, n)
   prec = 16
@@ -520,13 +526,15 @@ function _lll_sublattice(M::NfAbsOrd, u::Vector{Int}; prec = 100)
   @vprint :LLL 3 "Block of dimension $(l)\n"
   prec = max(prec, 10*n)
   local g::fmpz_mat
-  ctx = Nemo.lll_ctx(0.99, 0.51, :gram)
+  
   bas = basis(M, K)[u]
   profile_sub = nbits(prod(Hecke.upper_bound(t2(x), fmpz) for x in bas))
   @vprint :LLL 3 "Starting with profile $(profile_sub)\n"
   while true
     local d::fmpz_mat
+    @vprint :LLL 3 "Computing Minkowski matrix\n"
     while true
+      @vprint :LLL 3 "Precision: $(prec)\n"
       try
         d = minkowski_gram_mat_scaled(M, prec)
         break
@@ -542,6 +550,7 @@ function _lll_sublattice(M::NfAbsOrd, u::Vector{Int}; prec = 100)
     for i=1:l
       fmpz_mat_entry_add_ui!(d1, i, i, UInt(l))
     end
+    ctx = Nemo.lll_ctx(0.99, 0.51, :gram)
     @vtime :LLL 3 ccall((:fmpz_lll, libflint), Nothing, (Ref{fmpz_mat}, Ref{fmpz_mat}, Ref{Nemo.lll_ctx}), d1, g, ctx)
 
     if nbits(maximum(abs, g)) <= div(prec, 2)
@@ -575,7 +584,7 @@ function _lll_with_parameters(M::NfAbsOrd, parameters::Tuple{Float64, Float64}, 
   local g::fmpz_mat
   local d::fmpz_mat
   ctx = Nemo.lll_ctx(parameters[1], parameters[2], :gram)
-  dM = nbits(prod(Hecke.upper_bound(t2(x), fmpz) for x in basis(M, K)))
+  dM = sum(nbits(Hecke.upper_bound(t2(x), fmpz)) for x in basis(M, K))
   @vprint :LLL 1 "Input profile: $(dM)\n"
   @vprint :LLL 1 "Target profile: $(nbits(disc^2)+divexact(n*(n-1), 2)) \n"
   att = 0 
@@ -795,7 +804,7 @@ function reduce_ideal(I::FacElem{NfOrdIdl, NfOrdIdlSet})
       B, b = power_reduce(k, v)
       mul!(a, a, b)
       @hassert :PID_Test (v>0 ? fractional_ideal(O, k)^Int(v) : inv(k)^Int(-v)) == B*evaluate(b)
-      if norm(A)*norm(B) > abs(discriminant(O))
+      if norm(A, copy = false)*norm(B, copy = false) > abs(discriminant(O))
         A, c = reduce_product(A, B)
         add_to_key!(a.fac, c, -1)
       else
@@ -818,7 +827,7 @@ $B$ has small norm.
 function power_reduce(A::NfOrdIdl, e::fmpz)
   O = order(A)
   K= nf(O)
-  if norm(A) > abs(discriminant(O))
+  if norm(A, copy = false) > abs(discriminant(O))
     A1, a = reduce_ideal(A)
     @hassert :PID_Test 1 a*A == A1
     A = A1
@@ -844,7 +853,7 @@ function power_reduce(A::NfOrdIdl, e::fmpz)
   C, cl = power_reduce(A, div(e, 2))
   @hassert :PID_Test 1 C*evaluate(cl) == A^Int(div(e, 2))
   mul!(al, al, cl^2)
-  if norm(C)^2 > abs(discriminant(O))
+  if norm(C, copy = false)^2 > abs(discriminant(O))
     @vtime :CompactPresentation :4 C2, a = reduce_product(C, C)
     add_to_key!(al.fac, a, -1)
   else
@@ -852,7 +861,7 @@ function power_reduce(A::NfOrdIdl, e::fmpz)
   end
 
   if isodd(e)
-    if norm(A)*norm(C2) > abs(discriminant(O))
+    if norm(A, copy = false)*norm(C2, copy = false) > abs(discriminant(O))
       @vtime :CompactPresentation :4 A1, a = reduce_product(C2, A)
       A = A1
       add_to_key!(al.fac, a, -1)

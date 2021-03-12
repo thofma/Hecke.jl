@@ -18,7 +18,7 @@ polynomials for all prime power cyclic subfields.
 
 Note, the return type is always a non-simple extension.
 """
-function NumberField(CF::ClassField{S, T}; redo::Bool = false, using_norm_relation = false, over_subfield::Bool = false) where {S, T}
+function NumberField(CF::ClassField{S, T}; redo::Bool = false, using_norm_relation = false, over_subfield::Bool = false, using_stark_units::Bool = false) where {S, T}
   if isdefined(CF, :A) && !redo
     return CF.A
   end
@@ -37,7 +37,7 @@ function NumberField(CF::ClassField{S, T}; redo::Bool = false, using_norm_relati
       if using_norm_relation && !divides(fmpz(ord), order(S1))[1]
         push!(res, ray_class_field_cyclic_pp_Brauer(CF, mQ))
       else
-        push!(res, ray_class_field_cyclic_pp(CF, mQ, over_subfield = over_subfield))
+        push!(res, ray_class_field_cyclic_pp(CF, mQ, over_subfield = over_subfield, using_stark_units = using_stark_units))
       end
     end
     q[i] = G[i]
@@ -53,20 +53,28 @@ function NumberField(CF::ClassField{S, T}; redo::Bool = false, using_norm_relati
   return CF.A
 end
 
-function ray_class_field_cyclic_pp(CF::ClassField{S, T}, mQ::GrpAbFinGenMap; over_subfield::Bool = false) where {S, T}
+function ray_class_field_cyclic_pp(CF::ClassField{S, T}, mQ::GrpAbFinGenMap; over_subfield::Bool = false, using_stark_units::Bool = false) where {S, T}
   @vprint :ClassField 1 "cyclic prime power class field of degree $(degree(CF))\n"
   CFpp = ClassField_pp{S, T}()
   CFpp.quotientmap = compose(CF.quotientmap, mQ)
   CFpp.rayclassgroupmap = CF.rayclassgroupmap
   @assert domain(CFpp.rayclassgroupmap) == domain(CFpp.quotientmap)
   if over_subfield
-    return number_field_over_subfield(CFpp, using_norm_relation = true)
+    return number_field_over_subfield(CFpp, using_norm_relation = true, using_stark_units = using_stark_units)
   else
-    return ray_class_field_cyclic_pp(CFpp)
+    return ray_class_field_cyclic_pp(CFpp, using_stark_units = using_stark_units)
   end
 end
 
-function ray_class_field_cyclic_pp(CFpp::ClassField_pp)
+function ray_class_field_cyclic_pp(CFpp::ClassField_pp; using_stark_units::Bool = false)
+  if using_stark_units
+    #Check whether the extension is totally real
+    K = base_field(CFpp)
+    if istotally_real(K) && isempty(conductor(CFpp)[2])
+      rcf_using_stark_units(CFpp)
+      return CFpp
+    end
+  end
   @vprint :ClassField 1 "computing the S-units...\n"
   @vtime :ClassField 1 _rcf_S_units(CFpp)
   @vprint :ClassField 1 "finding the Kummer extension...\n"
@@ -80,7 +88,7 @@ end
 
 ################################################################################
 #
-#  Using norm relations to get the s-units
+#  Using norm relations to get the S-units
 #
 ################################################################################
 
@@ -99,7 +107,7 @@ function  ray_class_field_cyclic_pp_Brauer(CFpp::ClassField_pp{S, T}) where {S, 
   k = base_field(CFpp)
   CE = cyclotomic_extension(k, e)
   @vtime :ClassField 1 "Computing maximal order and lll \n"
-  @vtime :ClassField 1 OCE = maximal_order(absolute_field(CE))
+  @vtime :ClassField 1 OCE = maximal_order(absolute_simple_field(CE))
   @vtime :ClassField 1 OCELLL = lll(OCE)
 
   @vprint :ClassField 1 "computing the S-units...\n"
@@ -139,7 +147,7 @@ function _rcf_S_units_enlarge(CE, CF::ClassField_pp)
     push!(lP, prime_decomposition(OK, f)[1][1])
   end
   e = degree(CF)
-  @vtime :ClassField 3 S, mS = NormRel._sunit_group_fac_elem_quo_via_brauer(nf(OK), lP, e)
+  @vtime :ClassField 3 S, mS = NormRel._sunit_group_fac_elem_quo_via_brauer(nf(OK), lP, e, saturate_units = true)
   KK = kummer_extension(e, FacElem{nf_elem, AnticNumberField}[mS(S[i]) for i=1:ngens(S)])
   CF.bigK = KK
   lf = factor(minimum(defining_modulus(CF)[1]))
@@ -186,7 +194,7 @@ function _s_unit_for_kummer_using_Brauer(C::CyclotomicExt, f::fmpz)
       return v
     end
   end
-  K = absolute_field(C)
+  K = absolute_simple_field(C)
   @vprint :ClassField 2 "Maximal order of cyclotomic extension\n"
   ZK = maximal_order(K)
   if isdefined(ZK, :lllO)
@@ -217,7 +225,7 @@ function _s_unit_for_kummer_using_Brauer(C::CyclotomicExt, f::fmpz)
     end
   end
   @vprint :ClassField 3 "Computing S-units with $(length(lP)) primes\n"
-  @vtime :ClassField 3 S, mS = NormRel._sunit_group_fac_elem_quo_via_brauer(C.Ka, lP, e)
+  @vtime :ClassField 3 S, mS = NormRel._sunit_group_fac_elem_quo_via_brauer(C.Ka, lP, e, saturate_units = true)
   KK = kummer_extension(e, FacElem{nf_elem, AnticNumberField}[mS(S[i]) for i = 1:ngens(S)])
   C.kummer_exts[lfs] = (lP, KK)
   return lP, KK
@@ -472,7 +480,7 @@ function _s_unit_for_kummer(C::CyclotomicExt, f::fmpz)
       return v
     end
   end
-  K = absolute_field(C)
+  K = absolute_simple_field(C)
   @vprint :ClassField 2 "Maximal order of cyclotomic extension\n"
   ZK = maximal_order(K)
   @vprint :ClassField 2 "Class group of cyclotomic extension: $K\n"
@@ -840,8 +848,6 @@ function auts_in_snf!(CF::ClassField_pp)
   return nothing
 end
 
-struct ExtendAutoError <: Exception end
-
 function _extend_auto(K::Hecke.NfRel{nf_elem}, h::Hecke.NfToNfMor, r::Int = -1)
   @hassert :ClassField 1 iskummer_extension(K)
   #@assert iskummer_extension(K)
@@ -900,7 +906,7 @@ function _rcf_descent(CF::ClassField_pp)
   k = base_field(CF)
   CE = cyclotomic_extension(k, e)
   A = CF.K
-  CK = absolute_field(CE)
+  CK = absolute_simple_field(CE)
   if degree(CK) == degree(k)
     #Relies on the fact that, if the cyclotomic extension has degree 1,
     #the absolute field is equal to the base field
@@ -911,7 +917,7 @@ function _rcf_descent(CF::ClassField_pp)
   end
 
   Zk = order(codomain(CF.rayclassgroupmap))
-  ZK = maximal_order(absolute_field(CE))
+  ZK = maximal_order(CK)
 
   n = degree(A)
   #@vprint :ClassField 2 "Automorphism group (over ground field) $AutA\n"

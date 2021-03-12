@@ -126,20 +126,6 @@ iscommutative(::FlintRationalField) = true
 
 ################################################################################
 #
-#  Absolute field
-#
-################################################################################
-
-@doc Markdown.doc"""
-    absolute_field(L::NumField) -> NumField, Map
-
-Given a number field $L$, this function returns an absolute simple number field
-$M/\mathbf{Q}$ together with a $\mathbf{Q}$-linear isomorphism $M \to K$.
-"""
-absolute_field(::NumField)
-
-################################################################################
-#
 #  Normal basis
 #
 ################################################################################
@@ -351,4 +337,25 @@ end
 
 function absolute_basis(K::NumField{fmpq})
   return basis(K)
+end
+
+################################################################################
+#
+#  Discriminant sign
+#
+################################################################################
+
+@doc Markdown.doc"""
+    discriminant_sign(K::NumField) -> Int
+
+Returns the sign of the discriminant of the maximal order of $K$.
+"""
+function discriminant_sign(K::NumField)
+# Compute the sign using Brill's theorem
+  _, s = signature(K)
+  if mod(s, 2) == 0
+    return 1
+  else
+    return -1
+  end
 end

@@ -522,6 +522,11 @@ function genus(::Type{HermLat}, E::S, p::T, data::Vector{Tuple{Int, Int, Int}}; 
   z.isdyadic = isdyadic(p)
   z.isramified = isramified(maximal_order(E), p)
   @assert !(isramified(z) && isdyadic(z))
+
+  if type !== :det && type !== :disc
+    throw(error("type :$type must be :disc or :det"))
+  end
+
   if !z.isramified || type === :det
     z.data = copy(data)
   else
@@ -1289,7 +1294,7 @@ function local_genera_hermitian(E, p, rank::Int, det_val::Int, max_scale::Int, i
         end
       end
 
-      for d in cartesian_product_iterator(dets)# Iterators.product(dets...)
+      for d in cartesian_product_iterator(dets, inplace = true)# Iterators.product(dets...)
         g2 = Vector{Tuple{Int, Int, Int, Int}}(undef, length(g))
         for k in 1:n
           # Again the 0 for dummy purposes
@@ -1345,7 +1350,7 @@ function local_genera_hermitian(E, p, rank::Int, det_val::Int, max_scale::Int, i
       end
     end
 
-    for dn in cartesian_product_iterator(det_norms)
+    for dn in cartesian_product_iterator(det_norms, inplace = true)
       g2 = Vector{Tuple{Int, Int, Int, Int}}(undef, length(g))
       for k in 1:n
         g2[k] = (g[k][1], g[k][2], dn[k][1], dn[k][2])
@@ -1495,7 +1500,7 @@ function genus_generators(L::HermLat)
   end
 
   # First the ideals coming from the C/C0 quotient
-  Eabs, EabstoE, _ = absolute_field(ambient_space(L))
+  Eabs, EabstoE = absolute_simple_field(ambient_space(L))
   Rabs = maximal_order(Eabs)
   C, h = class_group(Rabs)
   RR = base_ring(R)

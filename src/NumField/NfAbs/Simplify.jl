@@ -136,7 +136,7 @@ function _sieve_primitive_elements(B::Vector{NfAbsNSElem})
   end
   rt_all = Vector{Vector{fq_nmod}}(undef, degree(K))
   ind = 1
-  it = cartesian_product_iterator([1:degrees(K)[i] for i in 1:ngens(K)])
+  it = cartesian_product_iterator([1:degrees(K)[i] for i in 1:ngens(K)], inplace = true)
   for i in it
     rt_all[ind] = fq_nmod[rt[j][i[j]] for j = 1:length(rt)]
     ind += 1
@@ -378,8 +378,8 @@ function polredabs(K::AnticNumberField)
 #  println("need to use at least the first $i basis elements...")
   pr = 100
   old = precision(BigFloat)
-  E = enum_ctx_from_ideal(ideal(ZK, 1), zero_matrix(FlintZZ, 1, 1), prec = pr, TU = BigFloat, TC = BigFloat)
   setprecision(BigFloat, pr)
+  E = enum_ctx_from_ideal(ideal(ZK, 1), zero_matrix(FlintZZ, 1, 1), prec = pr, TU = BigFloat, TC = BigFloat)
   while true
     try
       if E.C[end] + 0.0001 == E.C[end]  # very very crude...

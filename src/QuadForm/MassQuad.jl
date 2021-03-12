@@ -102,7 +102,7 @@ function _local_factor_unimodular(L::QuadLat, p)
         else
           cc = c isa PosInf ? 2 *e : inf
         end
-        
+
         if e == b && cc isa PosInf
           ee = _get_eps(c)
           lf = fmpq(q^(Int((e - a - 1) * (r - 1//2))) * (q^r - ee) * (q^(r - 1) + ee), 2)
@@ -158,7 +158,7 @@ function _local_factor_cho(L, p)
 
   for s in S
     AG = diagonal_matrix([2^(S[j] < s ? 2*(s - S[j]) : 0) * G[j] for j in 1:length(G)])
-    _,B = left_kernel(matrix(k, nrows(AG), 1, [hext(d//2^s) for d in diagonal(AG)]))
+    _,B = left_kernel(matrix(k, nrows(AG), 1, [hext(d//K(2)^s) for d in diagonal(AG)]))
     @assert all(issquare(x)[1] for x in B)
     B = map_entries(x -> sqrt(x), B)
     BK = map_entries(x -> hext\x, B)
@@ -167,7 +167,7 @@ function _local_factor_cho(L, p)
       for j in 1:ncols(Q)
         if i > j
           Q[i, j] = 0
-        elseif i < j 
+        elseif i < j
           Q[i, j] *= 2
         end
       end
@@ -220,7 +220,7 @@ function _local_factor_cho(L, p)
 
   PT = Bool[ valuation(norm(quadratic_lattice(K, identity_matrix(K, nrows(G[i])), gram_ambient_space = G[i])), p) == S[i] for i in 1:length(S) ] # parity type I
   # could try with get_norm_valuation_from_gram_matrix(G[i], p)
-  
+
   alpha = Int[]
 
   for i in 1:length(G)
@@ -269,7 +269,7 @@ function _local_factor_cho(L, p)
     res *= fmpq(group_order(QFT, mi, q))//2
   end
 
-  beta = fmpq(1, 2) * q^N * res
+  beta = fmpq(1, 2) * fmpq(q)^N * res
 
   exp = fmpq(m + 1, 2) * sum(S[i] * M[i] for i in 1:length(S)) # from det
 
@@ -296,7 +296,7 @@ function _local_factor_cho(L, p)
 
   @assert isintegral(exp)
 
-  return q^Int(FlintZZ(exp)) * H//2 * fmpq(1)//beta
+  return fmpq(q)^Int(FlintZZ(exp)) * H//2 * fmpq(1)//beta
 end
 
 ################################################################################
@@ -643,7 +643,7 @@ end
 
 function _L_function_negative(E, s, prec)
   K = base_field(E)
-  Eabs, = absolute_field(E)
+  Eabs = absolute_simple_field(E)[1]
   @assert istotally_complex(Eabs)
 
   # I want to reflect to 1 - s
@@ -653,7 +653,7 @@ function _L_function_negative(E, s, prec)
 
   n = degree(K)
 
-  wprec = 8 * prec 
+  wprec = 8 * prec
   R = ArbField(wprec, cached = false)
 
   local pref::arb
@@ -686,7 +686,7 @@ function _L_function_positive(E, s, prec)
   if s == 1
     return _L_function_at_1(E, prec)
   end
-  Eabs, = absolute_field(E)
+  Eabs = absolute_simple_field(E)[1]
   Eabs, = simplify(Eabs)
   @assert istotally_complex(E)
   @assert s > 1
@@ -706,7 +706,7 @@ end
 
 function _L_function_at_1(E, prec)
   K = base_field(E)
-  Eabs, EabsToE = absolute_field(E)
+  Eabs, EabsToE = absolute_simple_field(E)
   @assert istotally_complex(E)
   Eabs, simp = simplify(Eabs)
   d = divexact(discriminant(maximal_order(Eabs)),
@@ -753,14 +753,14 @@ end
 function _exact_L_function(E, s)
   if absolute_degree(E) == 2
     k = 1 - s
-    Eabs, = absolute_field(E)
+    Eabs = absolute_simple_field(E)[1]
     if istotally_real(Eabs)
       d = discriminant(maximal_order(Eabs))
       return _bernoulli_kronecker(k, d)//-k
     end
   end
 
-  Eabs, = absolute_field(E)
+  Eabs = absolute_simple_field(E)[1]
   K = base_field(E)
   return dedekind_zeta_exact(Eabs, s)//dedekind_zeta_exact(K, s)
 end
@@ -777,7 +777,7 @@ end
 ################################################################################
 
 # This works :)
-# 
+#
 # But it is really slow for s = -1 (s = 2), since the Euler product
 # converges only "linear", that is doubling the number of primes only doubles
 # the precision.
@@ -813,7 +813,7 @@ function _dedekind_zeta_attwell_duval_positive(K::AnticNumberField, s, prec::Int
   RR = ArbField(512)
   d = degree(K)
   #@show prec
-  
+
   local_cor = prod(arb[_local_correction(K, p, RR) for p in primes_up_to(100)])
   #@show local_cor
 
@@ -1139,7 +1139,7 @@ end
 #
 ################################################################################
 
-# See Andreatta, Goren: "Hilbert Modular Forms: mod p and p-Adic Aspects" 
+# See Andreatta, Goren: "Hilbert Modular Forms: mod p and p-Adic Aspects"
 # K must be totally real
 function _denominator_valuation_bound(K, ss, p)
   s = 1 - ss
@@ -1208,13 +1208,19 @@ function _modulus_of_kronecker_as_dirichlet(D)
   return abs(fundamental_discriminant(D))
 end
 
-function _bernoulli_kronecker(z, D)
+function _bernoulli_kronecker(z::Union{fmpz, Integer}, D)
+  return _bernoulli_kronecker(Int(z), D)
+end
+
+function _bernoulli_kronecker(z::Int, D)
   @assert z >= 0
-  N = _modulus_of_kronecker_as_dirichlet(D)
+  D1 = fundamental_discriminant(D)
+  f = abs(D1)
   K = FlintQQ
   Rt, t = PowerSeriesRing(K, z + 3, "t", cached = false, model = :capped_absolute)
-  denom = exp(N*t) - 1
-  num = sum(elem_type(Rt)[_kronecker_as_dirichlet(a, N) * t * exp(a * t) for a in 1:Int(N)])
+  denom = exp(f*t) - 1
+  #@show [_kronecker_as_dirichlet(a, N) for a in 1:Int(f)]
+  num = sum(elem_type(Rt)[_kronecker_symbol(D1, a) * t * exp(a * t) for a in 1:Int(f)])
   F = divexact(num, denom)
   p = precision(F)
   @assert p >= z + 1
@@ -1229,25 +1235,43 @@ function _kronecker_as_dirichlet(n, D)
 end
 
 function _kronecker_symbol(n, m)
-  e, mm = remove(m, 2)
-  res = _jacobi_symbol(n, mm)
+  res = 1
+  # deal with zero denominator
+  if m == 0
+    if abs(n) == 1
+      return 1
+    else
+      return 0
+    end
+  end
+  # deal with negative denom
+  if m < 0
+    if n < 0
+      res*= -1
+    end
+    m = -m
+  end
+  # deal with even denominator
+  e, m = remove(m, 2)
   if e > 0 && iseven(n)
     return 0
   end
   if isodd(e)
-    nmod8 = n % 8
-    if nmod8 < 0
-      nmod8 += 8
-    end
+    nmod8 = mod(n, 8)
     if nmod8 == 3 || nmod8 == 5
-      res = res * -1
+      res *= -1
     end
   end
+  if m == 1
+    return res
+  end
+  res *= _jacobi_symbol(n, m)
   return res
 end
 
 # don't use this, this is slow
 function _jacobi_symbol(n, m)
+  @req m >= 3 "Second argument $(m) must be >= 3"
   @assert isodd(m)
   if !isone(gcd(n, m))
     return 0
@@ -1282,7 +1306,7 @@ function dedekind_zeta_exact(K::AnticNumberField, s::Int)
     if absolute_degree(K) == 1
       return bernoulli(k)//-k
     elseif absolute_degree(K) == 2
-      Kabs, = absolute_field(K)
+      Kabs = absolute_simple_field(K)[1]
       if istotally_real(K)
         d = discriminant(maximal_order(Kabs))
         return bernoulli(k) * _bernoulli_kronecker(k, d)//k^2

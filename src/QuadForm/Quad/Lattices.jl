@@ -31,7 +31,7 @@ quadratic_lattice(::NumField, ::PMat; gram_ambient_space = nothing)
 # TODO: At the moment I assume that B is a pseudo-hnf (probably)
 function quadratic_lattice(K::NumField, B::PMat; gram_ambient_space = nothing, gram = nothing)
   if gram_ambient_space === nothing && gram === nothing
-    return QuadLat(K, identity_matrix(K, nrows(B)), pseudo_matrix(B))
+    return QuadLat(K, identity_matrix(K, nrows(B)), B)
   end
   if gram_ambient_space !== nothing && gram === nothing
     return QuadLat(K, gram_ambient_space, B)
@@ -263,7 +263,6 @@ end
 Returns the prime ideals dividing the scale and volume of $L$. If `even == true`
 also the prime ideals dividing $2$ are included.
 """
-
 function bad_primes(L::QuadLat; even::Bool = false)
   f = factor(scale(L))
   ff = factor(volume(L))
@@ -301,7 +300,7 @@ end
 #
 ################################################################################
 
-function jordan_decomposition(L::QuadLat, p)
+function jordan_decomposition(L::Union{ZLat, QuadLat}, p)
   F = gram_matrix(ambient_space(L))
   even = isdyadic(p)
   if even
@@ -314,7 +313,7 @@ function jordan_decomposition(L::QuadLat, p)
   blocks = Int[]
   exponents = Int[]
   S = local_basis_matrix(L, p)
-  n = ncols(S)
+  n = nrows(S)
   k = 1
   while k <= n
     G = S * F * transpose(S)

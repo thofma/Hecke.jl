@@ -379,8 +379,6 @@ function principal_generator(A::NfOrdIdl)
   end
 end
 
-global _debug = []
-
 @doc Markdown.doc"""
     isprincipal_fac_elem(A::NfOrdIdl) -> Bool, FacElem{nf_elem, NumberField}
 
@@ -394,7 +392,7 @@ function isprincipal_fac_elem(A::NfOrdIdl)
       return true, A.princ_gen_fac_elem
     else
       if isdefined(A, :princ_gen)
-        A.princ_gen_fac_elem = A.princ_gen.elem_in_nf
+        A.princ_gen_fac_elem = FacElem(A.princ_gen.elem_in_nf)
       end
       return true, FacElem(A.princ_gen_fac_elem)
     end
@@ -419,9 +417,7 @@ function isprincipal_fac_elem(A::NfOrdIdl)
   H = c.M.basis::SMat{fmpz}
   T = c.M.trafo::Vector
 
-  push!(_debug, A)
   x, r = class_group_ideal_relation(A, c)
-  pop!(_debug)
   #so(?) x*A is c-smooth and x*A = evaluate(r)
 
   R, d = solve_ut(H, r)
@@ -648,28 +644,8 @@ function find_coprime_representatives(mC::MapClassGrp, m::NfOrdIdl, lp::Dict{NfO
   O = order(m)
   K = nf(O)
 
-  L = Array{NfOrdIdl,1}(undef, ngens(C))
-  el = Array{nf_elem,1}(undef, ngens(C))
-  ppp = 1.0
-  for (p, v) in lp
-    ppp *= (1 - 1/Float64(norm(p)))
-  end
-
-  prob = ppp > 0.1 && degree(K) < 10
-  for i = 1:ngens(C)
-    @assert length(mC.princ_gens[i][1].fac) == 1
-    a = first(keys(mC.princ_gens[i][1].fac))
-    if iscoprime(a, m)
-      L[i] = a
-      el[i] = K(1)
-    elseif prob
-      L[i], el[i] = probabilistic_coprime(a, m)
-    else
-      L[i], el[i] = coprime_deterministic(a, m, lp)
-    end
-    @hassert :RayFacElem 1 iscoprime(L[i], m)
-    @hassert :RayFacElem 1 a*el[i] == L[i]
-  end
+  ideals = NfOrdIdl[first(keys(mC.princ_gens[i][1].fac)) for i = 1:ngens(C)]
+  L, el = find_coprime_representatives(ideals, m, lp)
 
   local exp
   let L = L, C = C
@@ -688,6 +664,40 @@ function find_coprime_representatives(mC::MapClassGrp, m::NfOrdIdl, lp::Dict{NfO
   end
 
   return exp, el
+
+end
+@doc Markdown.doc"""
+    find_coprime_representatives(ideals::Vector{nfOrdIdl}, m::NfOrdIdl) -> Vector{NfOrdIdl}, Vector{nf_elem}
+
+Returns a vector v of ideals and elements el coprime to m such that ideals[i] = el[i]*v[i].
+"""
+function find_coprime_representatives(ideals::Vector{NfOrdIdl}, m::NfOrdIdl, lp::Dict{NfOrdIdl, Int} = factor(m))
+
+  OK = order(m)
+  K = nf(OK)
+
+  L = Array{NfOrdIdl,1}(undef, length(ideals))
+  el = Array{nf_elem,1}(undef, length(ideals))
+  ppp = 1.0
+  for (p, v) in lp
+    ppp *= (1 - 1/Float64(norm(p)))
+  end
+
+  prob = ppp > 0.1 && degree(K) < 10
+  for i = 1:length(ideals)
+    a = ideals[i]
+    if iscoprime(a, m)
+      L[i] = a
+      el[i] = K(1)
+    elseif prob
+      L[i], el[i] = probabilistic_coprime(a, m)
+    else
+      L[i], el[i] = coprime_deterministic(a, m, lp)
+    end
+    @hassert :RayFacElem 1 iscoprime(L[i], m)
+    @hassert :RayFacElem 1 a*el[i] == L[i]
+  end
+  return L, el
 
 end
 

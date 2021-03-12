@@ -666,7 +666,8 @@ It returns a tuple $(n, M)$ where $M$ is a matrix whose rows generate
 the kernel of $a$ and $n$ is the rank of the kernel.
 """
 function left_kernel(x::fmpz_mat)
-  H, U = hnf_with_transform(x)
+  x1 = hnf(x')'
+  H, U = hnf_with_transform(x1)
   i = 1
   for outer i in 1:nrows(H)
     if iszero_row(H, i)
@@ -1307,6 +1308,16 @@ function snf_with_transform(A::fmpz_mat, l::Bool = true, r::Bool = true)
     end
   end
 
+  # It might be the case that S was diagonal with negative diagonal entries.
+  for i in 1:min(nrows(S), ncols(S))
+    if S[i, i] < 0
+      if l
+        multiply_column!(L, fmpz(-1), i)
+      end
+      S[i, i] = -S[i, i]
+    end
+  end
+
   if l
     if r
       return S, L, R'
@@ -1779,53 +1790,19 @@ Base.IteratorSize(M::MatElem) = Base.HasLength()
 Base.IteratorEltype(M::MatElem) = Base.HasEltype()
 Base.eltype(M::MatElem) = elem_type(base_ring(M))
 
-if Nemo.version() <= v"0.15.1"
-  function setindex!(A::MatElem{T}, b::MatElem{T}, ::Colon, i::Int) where T
-    @assert ncols(b) == 1 && nrows(b) == nrows(A)
-    for j=1:nrows(A)
-      A[j,i] = b[j]
-    end
-    b
-  end
-
-  function setindex!(A::MatElem{T}, b::MatElem{T}, i::Int, ::Colon) where T
-    @assert nrows(b) == 1 && ncols(b) == ncols(A)
-    for j=1:ncols(A)
-      A[i,j] = b[j]
-    end
-    b
-  end
-end
-
-function setindex!(A::MatElem, b::Array{<: Any, 1}, ::Colon, i::Int)
-  @assert length(b) == nrows(A)
-  for j=1:nrows(A)
-    A[j,i] = b[j]
-  end
-  b
-end
-
-function setindex!(A::MatElem, b::Array{ <: Any, 1}, i::Int, ::Colon)
-  @assert length(b) == ncols(A)
-  for j=1:ncols(A)
-    A[i,j] = b[j]
-  end
-  b
-end
-
-function setindex!(A::MatElem, b, ::Colon, i::Int)
-  for j=1:nrows(A)
-    A[j,i] = b
-  end
-  b
-end
-
-function setindex!(A::MatElem, b, i::Int, ::Colon)
-  for j=1:ncols(A)
-    A[i,j] = b
-  end
-  b
-end
+#function setindex!(A::MatElem, b, ::Colon, i::Int)
+#  for j=1:nrows(A)
+#    A[j,i] = b
+#  end
+#  b
+#end
+#
+#function setindex!(A::MatElem, b, i::Int, ::Colon)
+#  for j=1:ncols(A)
+#    A[i,j] = b
+#  end
+#  b
+#end
 
 @doc Markdown.doc"""
     reduce_mod!(A::MatElem{T}, B::MatElem{T}) where T <: FieldElem

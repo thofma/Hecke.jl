@@ -520,7 +520,7 @@ end
 #
 ################################################################################
 
-function prod(a::NfAbsOrdFracIdl, b::NfAbsOrdFracIdl)
+function prod(a::T, b::T) where T <: NfAbsOrdFracIdl
   A = numerator(a, copy = false)*numerator(b, copy = false)
   return NfAbsOrdFracIdl(A, denominator(a, copy = false)*denominator(b, copy = false))
 end
@@ -530,7 +530,7 @@ end
 
 Returns $IJ$.
 """
-*(A::NfAbsOrdFracIdl, B::NfAbsOrdFracIdl) = prod(A, B)
+*(A::T, B::T) where T <: NfAbsOrdFracIdl = prod(A, B)
 
 ################################################################################
 #
@@ -588,34 +588,34 @@ end
 
 *(A::NfAbsOrdFracIdl, B::NfAbsOrdIdl) = NfAbsOrdFracIdl(numerator(A, copy = false)*B, denominator(A))
 
-function *(A::NfAbsOrdFracIdl{S, T}, a::T) where {S, T}
+function *(A::NfAbsOrdFracIdl{S, T}, a::T) where {S <: NumField, T <: NumFieldElem}
   C = *(A, a*order(A))
   return C
 end
 
-*(a::T, A::NfAbsOrdFracIdl{S, T}) where {S, T} = A*a
+*(a::T, A::NfAbsOrdFracIdl{S, T}) where {S <: NumField, T <: NumFieldElem} = A*a
 
-function *(A::NfAbsOrdIdl{S, T}, a::T) where {S, T}
+function *(A::NfAbsOrdIdl{S, T}, a::T) where {S <: NumField, T <: NumFieldElem}
   C = *(A, a*order(A))
   return C
 end
 
-*(a::T, A::NfAbsOrdIdl{S, T}) where {S, T} = A*a
+*(a::T, A::NfAbsOrdIdl{S, T}) where {S <: NumField, T <: NumFieldElem} = A*a
 
-function //(A::NfAbsOrdFracIdl{S, T}, B::NfAbsOrdIdl{S, T}) where {S, T}
+function //(A::NfAbsOrdFracIdl{S, T}, B::NfAbsOrdIdl{S, T}) where {S <: NumField, T <: NumFieldElem}
   C = prod(A, inv(B))
   return C
 end
 
-function //(A::NfAbsOrdIdl, B::NfAbsOrdIdl)
+function //(A::NfAbsOrdIdl{S, T}, B::NfAbsOrdIdl{S, T}) where {S <: NumField, T <: NumFieldElem}
   return A*inv(B)
 end
 
-function //(A::NfAbsOrdIdl, B::NfAbsOrdFracIdl)
+function //(A::NfAbsOrdIdl{S, T}, B::NfAbsOrdFracIdl{S, T}) where {S <: NumField, T <: NumFieldElem}
   return A*inv(B)
 end
 
-function //(A::NfAbsOrdFracIdl{S, T}, a::T) where {S, T}
+function //(A::NfAbsOrdFracIdl{S, T}, a::T) where {S <: NumField, T <: NumFieldElem}
   C = prod(A, Idl((order(A), inv(a))))
   return C
 end
@@ -628,7 +628,7 @@ function //(A::NfAbsOrdIdl, d::Integer)
   return A//fmpz(d)
 end
 
-function +(A::NfAbsOrdIdl, B::NfAbsOrdFracIdl)
+function +(A::NfAbsOrdIdl{S, T}, B::NfAbsOrdFracIdl{S, T}) where {S <: NumField, T <: NumFieldElem}
   if iszero(A)
     return B
   end
@@ -641,9 +641,9 @@ function +(A::NfAbsOrdIdl, B::NfAbsOrdFracIdl)
   return n//denominator(B)
 end
 
-+(A::NfAbsOrdFracIdl, B::NfAbsOrdIdl) = B+A
++(A::NfAbsOrdFracIdl{S, T}, B::NfAbsOrdIdl{S, T}) where {S <: NumField, T <: NumFieldElem} = B+A
 
-function +(A::NfAbsOrdFracIdl, B::Hecke.NfAbsOrdFracIdl)
+function +(A::NfAbsOrdFracIdl{S, T}, B::Hecke.NfAbsOrdFracIdl{S, T}) where {S <: NumField, T <: NumFieldElem}
   if iszero(A)
     return B
   end
@@ -658,9 +658,9 @@ function +(A::NfAbsOrdFracIdl, B::Hecke.NfAbsOrdFracIdl)
   return (numerator(A)*ma + numerator(B)*mb)//d
 end
 
-function *(x::T, y::NfAbsOrd{S, T}) where {S, T}
+function *(x::T, y::NfAbsOrd{S, T}) where {S <: NumField, T <: NumFieldElem}
   d = denominator(x, y)
-  return NfAbsOrdFracIdl(ideal(y, y(d*x)), d)
+  return NfAbsOrdFracIdl(ideal(y, y(d*x, false)), d)
 end
 
 ################################################################################
@@ -669,7 +669,7 @@ end
 #
 ################################################################################
 
-function ==(A::NfAbsOrdIdl, B::NfAbsOrdFracIdl)
+function ==(A::NfAbsOrdIdl{S, T}, B::NfAbsOrdFracIdl{S, T}) where {S <: NumField, T <: NumFieldElem}
   if order(A) !== order(B)
     return false
   end
@@ -683,7 +683,7 @@ function ==(A::NfAbsOrdIdl, B::NfAbsOrdFracIdl)
   end
 end
 
-==(A::NfAbsOrdFracIdl, B::NfAbsOrdIdl) = B == A
+==(A::NfAbsOrdFracIdl{S, T}, B::NfAbsOrdIdl{S, T}) where {S <: NumField, T <: NumFieldElem} = B == A
 
 ################################################################################
 #
@@ -696,7 +696,7 @@ function (ord::NfAbsOrdIdlSet)(b::NfAbsOrdFracIdl)
   return numerator(b, copy = false)
 end
 
-function ideal(O::NfAbsOrd{S, T}, a::T) where {S, T}
+function ideal(O::NfAbsOrd{S, T}, a::T) where {S <: NumField, T <: NumFieldElem}
   return a*O
 end
 

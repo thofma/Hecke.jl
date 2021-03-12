@@ -3,7 +3,7 @@
 **Builds**
 
 [![Docs](https://img.shields.io/badge/docs-latest-blue.svg)](https://thofma.github.io/Hecke.jl/latest)
-[![Build status](https://github.com/thofma/Hecke.jl/workflows/Run%20tests/badge.svg?branch=master)](https://github.com/thofma/Hecke.jl/actions?query=workflow%3A%22Run+tests%22+branch%3Amaster)
+[![Build status](https://github.com/thofma/Hecke.jl/workflows/Run%20long%20tests/badge.svg?branch=master)](https://github.com/thofma/Hecke.jl/actions?query=workflow%3A%22Run-tests%22+branch%3Amaster)
 [![Build status](https://ci.appveyor.com/api/projects/status/3qb0ce2h5melsjeb?svg=true)](https://ci.appveyor.com/project/thofma/hecke-jl)
 [![Codecov](https://codecov.io/github/thofma/Hecke.jl/coverage.svg?branch=master&token=)](https://codecov.io/gh/thofma/Hecke.jl)
 
@@ -80,7 +80,7 @@ Welcome to
  | |  | |  __/ (__|   <  __/
  |_|  |_|\___|\___|_|\_\___|
   
-Version 0.9.0... 
+Version 0.9.3... 
  ... which comes with absolutely no warrant whatsoever
 (c) 2015-2019 by Claus Fieker, Tommy Hofmann and Carlo Sircana
 

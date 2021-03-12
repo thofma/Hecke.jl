@@ -333,9 +333,9 @@ end
 
 Creates the ideal $a \cdot \mathcal O$ of $\mathcal O$.
 """
-*(O::NfRelOrd{T, S}, a::S) where {T, S} = fractional_ideal(O, a)
+*(O::NfRelOrd{T, S, U}, a::S) where {T, S <: Union{NfOrdFracIdl, NfRelOrdFracIdl}, U} = fractional_ideal(O, a)
 
-*(a::S, O::NfRelOrd{T, S}) where {T, S} = fractional_ideal(O, a)
+*(a::S, O::NfRelOrd{T, S}) where {T, S <: Union{NfOrdFracIdl, NfRelOrdFracIdl}} = fractional_ideal(O, a)
 
 *(O::NfRelOrd, a::Union{NfOrdIdl, NfRelOrdIdl}) = ideal(O, a)
 
@@ -526,7 +526,7 @@ function +(a::NfRelOrdIdl{T, S}, b::NfRelOrdIdl{T, S}) where {T, S}
   d = degree(order(a))
   H = vcat(basis_pmatrix(a, copy = false), basis_pmatrix(b, copy = false))
   if T === nf_elem
-    m = norm(a) + norm(b)
+    m = (norm(a) + norm(b)) * _modulus(order(a))
     H = sub(pseudo_hnf_full_rank_with_modulus!(H, m, :lowerleft), (d + 1):2*d, 1:d)
   else
     H = sub(pseudo_hnf(H, :lowerleft), (d + 1):2*d, 1:d)
@@ -572,7 +572,7 @@ function *(a::NfRelOrdIdl{T, S}, b::NfRelOrdIdl{T, S}) where {T, S}
   PM = PseudoMatrix(M, C)
   PM.matrix = PM.matrix*basis_mat_inv(order(a), copy = false)
   if T == nf_elem
-    m = norm(a)*norm(b)
+    m = norm(a)*norm(b) * _modulus(order(a))
     H = sub(pseudo_hnf_full_rank_with_modulus!(PM, m, :lowerleft), (d*(d - 1) + 1):d^2, 1:d)
   else
     H = sub(pseudo_hnf(PM, :lowerleft), (d*(d - 1) + 1):d^2, 1:d)
@@ -591,19 +591,19 @@ end
 
 Returns the ideal $x\cdot a$.
 """
-function *(a::NfRelOrdIdl{T, S}, x::T) where {T, S}
+function *(a::NfRelOrdIdl{T, S, U}, x::T) where {T <: NumFieldElem, S, U <: NumFieldElem}
   if iszero(x)
-    return order(a)()*order(a)
+    return ideal(order(a), 0)
   end
 
   return ideal(order(a), x*basis_pmatrix(a), true, true)
 end
 
-*(x::T, a::NfRelOrdIdl{T, S}) where {T, S} = a*x
+*(x::T, a::NfRelOrdIdl{T, S, U}) where {T <: NumFieldElem, S, U <: NumFieldElem} = a*x
 
 function *(a::Union{NfRelOrdIdl, NfRelOrdFracIdl}, x::Union{ Int, fmpz })
   if iszero(x)
-    return order(a)()*order(a)
+    return ideal(order(a), 0)
   end
 
   return typeof(a)(order(a), x*basis_pmatrix(a))
@@ -632,7 +632,7 @@ function intersect(a::NfRelOrdIdl{T, S}, b::NfRelOrdIdl{T, S}) where {T, S}
   M2 = hcat(PseudoMatrix(z, Mb.coeffs), Mb)
   M = vcat(M1, M2)
   if T === nf_elem
-    m = intersect(norm(a), norm(b))
+    m = intersect(norm(a), norm(b)) * _modulus(order(a))
     H = sub(pseudo_hnf_full_rank_with_modulus!(M, m, :lowerleft), 1:d, 1:d)
   else
     H = sub(pseudo_hnf(M, :lowerleft), 1:d, 1:d)
@@ -1002,7 +1002,7 @@ function pradical(O::NfRelOrd{S, T, U}, P::NfOrdIdl) where {S, T, U <: Union{NfR
   else
     PM = sub(pseudo_hnf_full_rank(PM, :lowerleft), (d + 1):2*d, 1:d)
   end
-  
+
   return ideal(O, PM, false, true)
 
 end
@@ -1049,7 +1049,7 @@ function ring_of_multipliers(a::NfRelOrdIdl{T1, T2, T3}) where {T1, T2, T3}
   else
     PM = sub(pseudo_hnf(PM, :upperright, true), 1:d, 1:d)
   end
-  
+
   N = inv(transpose(PM.matrix))
   PN = PseudoMatrix(N, [ simplify(inv(I)) for I in PM.coeffs ])
   res = typeof(O)(nf(O), PN)
@@ -1172,8 +1172,8 @@ end
 #  Prime decomposition
 #
 ################################################################################
-#=
-function prime_decomposition(O::NfRelOrd, p::fmpz)
+
+function prime_decomposition(O::NfRelOrd, p::T) where T <: Union{Integer, fmpz}
   lP = prime_decomposition(base_ring(O), p)
   res = Vector{Tuple{ideal_type(O), Int}}()
   for (P, e) in lP
@@ -1184,7 +1184,6 @@ function prime_decomposition(O::NfRelOrd, p::fmpz)
   end
   return res
 end
-=#
 
 
 function prime_decomposition(O::NfRelOrd, p::Union{NfOrdIdl, NfRelOrdIdl}; compute_uniformizer::Bool = true, compute_anti_uniformizer::Bool = true)
@@ -1193,7 +1192,7 @@ function prime_decomposition(O::NfRelOrd, p::Union{NfOrdIdl, NfRelOrdIdl}; compu
   else
     ls = prime_dec_nonindex(O, p, compute_uniformizer = compute_uniformizer)
   end
-  
+
   #if compute_anti_uniformizer
   #  for (P,_) in ls
   #    anti_uniformizer(P)
@@ -1830,7 +1829,7 @@ function absolute_anti_uniformizer(P)
   end
 
   N = OLmat * umat * OLmatinv
-  
+
   p = absolute_minimum(P)
 
   z = zero_matrix(GF(p, cached = false), d, d)

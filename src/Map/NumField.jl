@@ -97,6 +97,8 @@
 #  where x is such that hom(L, K, x) works. 
 #
 
+export restrict
+
 ################################################################################
 #
 # The NumFieldMor type
@@ -322,20 +324,16 @@ function _isequal(K, L, u::MapDataFromNfRel{T, S}, v::MapDataFromNfRel{T, S}) wh
     return true
   end
 
-  return image(u, L, gen(K)) == imgage(v, L, gen(K)) &&
+  return image(u, L, gen(K)) == image(v, L, gen(K)) &&
          _isequal(base_field(K), L, u.base_field_map_data, v.base_field_map_data)
 end
 
 # Image function
 function image(f::MapDataFromNfRel, L, y)
   f.isid && return L(y)
-  if parent(f.prim_image) === parent(y) # so from L -> L
-    # So we don't have to create the parent
-    z = map_coeffs(t -> image(f.base_field_map_data, L, t), y.data, parent = parent(y.data))
-  else
-    Ly, = PolynomialRing(L, "y", cached = false)
-    z = map_coeffs(t -> image(f.base_field_map_data, L, t), y.data, parent = Ly)
-  end
+  # TODO: Cache the polynomial ring
+  Ly, = PolynomialRing(L, "y", cached = false)
+  z = map_coeffs(t -> image(f.base_field_map_data, L, t), y.data, parent = Ly)
   return evaluate(z, f.prim_image)
 end
 
@@ -371,7 +369,7 @@ function map_data(K::NfRel, L, x...; check = true)
 
   if check
     y = evaluate(map_coeffs(w -> image(z, L, w), defining_polynomial(K), cached = false), yy)
-    !iszero(y) && error("")
+    !iszero(y) && error("Data does not define a morphism")
   end
 
   @assert typeof(yy) == elem_type(L)
@@ -401,13 +399,9 @@ end
 function _isequal(K, L, u::MapDataFromNfAbsNS{T}, v::MapDataFromNfAbsNS{T}) where {T}
   # If one is the identity, this means that K === L
   if (u.isid && !v.isid)
-    if (v.images == gens(parent(v[1])))
-      return true
-    end
+    return v.images == gens(K)
   elseif (v.isid && !u.isid)
-    if (u.images == gens(parent(u[1])))
-      return true
-    end
+    return u.images == gens(K)
   elseif u.isid && v.isid
     return true
   end
@@ -423,6 +417,8 @@ end
 map_data_type(K::NfAbsNS, L) = MapDataFromNfAbsNS{Vector{elem_type(L)}}
 
 map_data_type(T::Type{NfAbsNS}, L::Type{<:Any}) = MapDataFromNfAbsNS{Vector{elem_type(L)}}
+
+map_data(K::NfAbsNS, L, ::Bool) = MapDataFromNfAbsNS{Vector{elem_type(L)}}(true)
 
 function map_data(K::NfAbsNS, L, x::Vector; check = true)
   if length(x) != ngens(K)
@@ -443,7 +439,7 @@ function map_data(K::NfAbsNS, L, x::Vector; check = true)
   if check
     for i in 1:ngens(K)
       if !iszero(evaluate(K.pol[i], xx))
-        error("")
+        error("Data does not define a morphism")
       end
     end
   end 
@@ -492,8 +488,8 @@ end
 
 map_data_type(K::NfRelNS, L) = MapDataFromNfRelNS{Vector{elem_type(L)}, map_data_type(base_field(K), L)}
 
-function map_data(::NfRelNS, L, ::Bool)
-  z = MapDataFromNfRelNS{Vector{elem_type(L)}, map_data_type(base_ring(K), L)}(true)
+function map_data(K::NfRelNS, L, ::Bool)
+  z = MapDataFromNfRelNS{Vector{elem_type(L)}, map_data_type(base_field(K), L)}(true)
   z.base_field_map_data = map_data(base_field(K), L, true)
   return z
 end
@@ -556,7 +552,7 @@ end
 ################################################################################
 
 function id_hom(K::NumField)
-  return NumFieldMor{typeof(K), typeof(K), map_data_type(K, K), map_data_type(K, K)}(MapHeader(K, K), map_data(K, K, true), map_data(K, K, true))
+  z = NumFieldMor{typeof(K), typeof(K), map_data_type(K, K), map_data_type(K, K)}(MapHeader(K, K), map_data(K, K, true), map_data(K, K, true))
 end
 
 ################################################################################
@@ -717,6 +713,7 @@ function preimage(f::NumFieldMor, g::NumFieldElem)
   @assert fl
   return y
 end
+
 ################################################################################
 #
 #  Computation of the inverse (data)
@@ -824,7 +821,7 @@ function _compose(f::MapDataFromNfRel, g#= map data =#, K, L, M)
 end
 
 function _compose(f::MapDataFromNfAbsNS, g#= map data =#, K, L, M)
-  return map_data_type(K, M)(elem_type(M)[image(g, M, image(f, L, g)) for g in gens(K)])
+  return map_data_type(K, M)(elem_type(M)[image(g, M, image(f, L, u)) for u in gens(K)])
 end
 
 function _compose(f::MapDataFromNfRelNS, g#= map data =#, K, L, M)
@@ -924,3 +921,19 @@ function Base.hash(f::MapDataFromNfRelNS, K, L, h::UInt)
 end
 
 Base.hash(f::NumFieldMor, h::UInt) = hash(f.image_data, domain(f), codomain(f), h)
+
+################################################################################
+#
+#  Restriction
+#
+################################################################################
+
+function restrict(f::NumFieldMor, K::NonSimpleNumField)
+  k = domain(f)
+  return hom(K, k, [k(x) for x in gens(K)])*f
+end
+
+function restrict(f::NumFieldMor, K::SimpleNumField)
+  k = domain(f)
+  return hom(K, k, k(gen(K)))*f
+end

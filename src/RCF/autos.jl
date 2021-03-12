@@ -19,8 +19,7 @@ function absolute_automorphism_group(C::ClassField, check::Bool = false)
   if check
     @assert isnormal(C)
   end
-  id = find_identity(autK, *)
-  autK_gen = small_generating_set(autK, *, id)
+  autK_gen = small_generating_set(autK)
   return absolute_automorphism_group(C, autK_gen)
 end
 
@@ -127,9 +126,20 @@ function rel_auto_intersect(A::ClassField_pp)
 
 end
 
+function rel_auto_generic(A::ClassField_pp)
+  K = A.A
+  imgs = roots(K.pol, K)
+  homs = [hom(K, K, x, check = false) for x in imgs]
+  return small_generating_set(homs, *)[1]
+end
+
+
 function rel_auto(A::ClassField_pp)
 
   @assert isdefined(A, :A)
+  if !isdefined(A, :K)
+    return rel_auto_generic(A)
+  end
   if degree(A) == degree(A.K)
     #If the cyclotomic extension and the target field are linearly disjoint, it is easy.
     return rel_auto_easy(A)
@@ -252,7 +262,7 @@ function find_frob(A::ClassField_pp, K::KummerExt, emb::NfToNfMor)
   k = base_field(K)
   O = maximal_order(k)
   Sp = Hecke.PrimesSet(200, -1)
-  cp = lcm([discriminant(O), minimum(m), index(O), index(O1)])
+  cp = lcm([discriminant(O), minimum(m, copy = false), index(O), index(O1)])
   P = ideal(O, 1)
   for p in Sp
     if cp % p == 0
@@ -313,7 +323,7 @@ function find_frob(A::ClassField_pp)
 end
 
 #Finds prime such that the Frobenius automorphisms generate the automorphism group of the kummer extension
-function find_gens(KK::KummerExt, gens_imgs::Array{Array{FacElem{nf_elem, AnticNumberField}, 1}, 1}, coprime_to::fmpz)
+function find_gens(KK::KummerExt, gens_imgs::Array{Array{FacElem{nf_elem, AnticNumberField}, 1}, 1}, coprime_to::fmpz, idx::Int = 1)
   K = base_field(KK)
   O = maximal_order(K)
   els = GrpAbFinGenElem[]
@@ -359,11 +369,11 @@ function find_gens(KK::KummerExt, gens_imgs::Array{Array{FacElem{nf_elem, AnticN
       end
       Q, mQ = quo(KK.AutG, els, false)
       s, ms = snf(Q)
-      if order(s) == 1
+      if order(s) == idx
         break
       end
     end
-    if order(s) == 1
+    if order(s) == idx
       break
     end
   end
@@ -417,26 +427,71 @@ function extend_aut2(A::ClassField, autos::Array{NfToNfMor, 1})
 
 end
 
-function extend_aut_pp(A::ClassField, autos::Array{NfToNfMor, 1}, p::fmpz)
-
+function extend_generic(A::ClassField, autos::Vector{NfToNfMor}, p::fmpz)
   Cp = [x1 for x1 in A.cyc if degree(x1) % Int(p) == 0]
+  A, gA = number_field([c.A.pol for c in Cp], check = false)
+  rts = Vector{Vector{NfRelNSElem{nf_elem}}}(undef, length(autos))
+  for i = 1:length(autos)
+    imgs = Vector{NfRelNSElem{nf_elem}}(undef, length(Cp))
+    for j = 1:length(gA)
+      pol = map_coeffs(autos[i], Cp[j].A.pol)
+      imgs[j] = roots(pol, A)[1]
+    end
+    rts[i] = imgs
+  end
+  return rts
+end
+
+function check_disjoint_cyclotomic(A::ClassField, p::fmpz)
+  e = ppio(exponent(A), p)[1]
+  K = base_field(A)
+  mr = A.rayclassgroupmap
+  mq = A.quotientmap
+  x = PolynomialRing(FlintZZ, "x")[2]
+  f = cyclotomic_polynomial(Int(e), x)
+  fK = map_coeffs(K, f)
+  s, ms = norm_group(fK, mr, false, cached = false)
+  mp = ms*mq
+  i, mi = image(mp)
+  return Int(divexact(order(codomain(q)), order(i)))
+end
+
+function extend_aut_pp(A::ClassField, autos::Array{NfToNfMor, 1}, p::fmpz)
+  Cp = [x1 for x1 in A.cyc if degree(x1) % Int(p) == 0]
+  if !all(x -> isdefined(x, :a), Cp)
+    return extend_generic(A, autos, p)
+  end
   d = maximum(degree(x) for x in Cp)
   if d == 2
     return extend_aut2(A, autos)
   end
+  
+  m = minimum(defining_modulus(A)[1])
+  ind_image = 1
+  if !isone(gcd(d, m)) && d != minimum(degree(x) for x in Cp)
+    #Difficult case. First, we check that the extension and 
+    #the cyclotomic extension are disjoint
+    ind_image = check_disjoint_cyclotomic(A, p)
+    if !isone(ind_image)
+      return extend_autos_hard_case(A, autos, p, ind_image)
+    end
+  end
+
   AA, gAA = number_field([c.A.pol for c in Cp], check = false)
   #Main Idea: I extend tau to the big kummer extension KK and then I restrict it to AA.
   k = base_field(A)
   C = cyclotomic_extension(k, d)
-  KC = absolute_field(C)
+  KC = absolute_simple_field(C)
   # C is the base field of the kummer extension generated
   # by all the cyclic components.
   # I extend the automorphisms to C
+
   Autos_abs = Array{NfToNfMor, 1}(undef, length(autos))
   for i = 1:length(autos)
     aut = extend_to_cyclotomic(C, autos[i])
     Autos_abs[i] = hom(KC, KC, C.mp[1]\(aut(C.mp[1](gen(KC)))), check = false)
   end
+
   #I compute the embeddings of the small cyclotomic extensions into the others
   abs_emb = Array{NfToNfMor, 1}(undef, length(Cp))
   for i = 1:length(Cp)
@@ -452,15 +507,6 @@ function extend_aut_pp(A::ClassField, autos::Array{NfToNfMor, 1}, p::fmpz)
   end
 
   #Now, I can compute the corresponding Kummer extension over the big cyclotomic field.
-  m = minimum(defining_modulus(A)[1])
-
-
-  if !isone(gcd(d, m)) && d != minimum(degree(x) for x in Cp)
-    #Difficult case. Think about it...
-    @warn "May loop forever, careful"
-  end
-
-  #the extension and the cyclotomic extensions are linearly disjoint!
   exps = Array{Int, 1}(undef, length(Cp))
   gens = Array{FacElem{nf_elem, AnticNumberField}, 1}(undef, length(Cp))
   for i = 1:length(Cp)
@@ -899,4 +945,104 @@ function _expand(M::SMat{nf_elem}, mp::Map)
     push!(N, sr)
   end
   return N
+end
+
+################################################################################
+#
+#  Extend auto - intersection with cyclotomic extension not trivial
+#
+################################################################################
+
+function extend_autos_hard_case(A::ClassField, autos::Vector{NfToNfMor}, p::fmpz, deg_intersection::Int)
+  Cp = [x1 for x1 in A.cyc if degree(x1) % Int(p) == 0]
+  k = base_field(A)
+  C = cyclotomic_extension(k, d)
+  KC = absolute_simple_field(C)
+  # C is the base field of the kummer extension generated
+  # by all the cyclic components.
+  # I extend the automorphisms to C
+  Autos_abs = Array{NfToNfMor, 1}(undef, length(autos))
+  for i = 1:length(autos)
+    aut = extend_to_cyclotomic(C, autos[i])
+    Autos_abs[i] = hom(KC, KC, C.mp[1]\(aut(C.mp[1](gen(KC)))), check = false)
+  end
+
+  #I compute the embeddings of the small cyclotomic extensions into the others
+  abs_emb = Array{NfToNfMor, 1}(undef, length(Cp))
+  for i = 1:length(Cp)
+    dCp = degree(Cp[i])
+    if dCp == d
+      abs_emb[i] = id_hom(KC)
+    else
+      Cs = cyclotomic_extension(k, dCp)
+      emb = hom(Cs.Kr, C.Kr, gen(C.Kr)^div(d, dCp), check = false)
+      img = C.mp[1]\(emb(Cs.mp[1](gen(Cs.Ka))))
+      abs_emb[i] = hom(Cs.Ka, KC, img, check = false)
+    end
+  end
+
+  #Now, I can compute the corresponding Kummer extension over the big cyclotomic field.
+  exps = Array{Int, 1}(undef, length(Cp))
+  gens = Array{FacElem{nf_elem, AnticNumberField}, 1}(undef, length(Cp))
+  for i = 1:length(Cp)
+    if degree(Cp[i]) == d
+      gens[i] = Cp[i].a
+      exps[i] = Cp[i].o
+    else
+      D = Dict{nf_elem, fmpz}()
+      for (ke,v) in Cp[i].a
+        D[abs_emb[i](ke)] = v
+      end
+      a = FacElem(D)
+      exps[i] = Cp[i].o
+      gens[i] = a
+    end
+  end
+  KK = kummer_extension(exps, gens)
+  #Now, KK is not a real kummer extension. There are relations. We need to find them.
+  #We know that the right degree of the translation of Cp to C is degree(Cp)/idx
+  #So we compute Frobenius automorphisms until we generate a subgroup with the right subgroup.
+
+  act_on_gens = Array{Array{FacElem{nf_elem, AnticNumberField}, 1}, 1}(undef, length(KK.gen))
+  for i = 1:length(KK.gen)
+    act_on_gen_i = Array{FacElem{nf_elem, AnticNumberField}, 1}(undef, length(autos))
+    for j = 1:length(autos)
+      D1 = Dict{nf_elem, fmpz}()
+      for (ke, v) in KK.gen[i]
+        D1[Autos_abs[j](ke)] = v
+      end
+      act_on_gen_i[j] = FacElem(D1)
+    end
+    act_on_gens[i] = act_on_gen_i
+  end
+  frob_gens = find_gens(KK, act_on_gens, minimum(defining_modulus(A)[1]), deg_intersection)
+  #Now, I can create a proper kummer extension.
+  s, ms = sub(KK.AutG, GrpAbFinGenElem[canonical_frobenius(x, KK) for x in frob_gens])
+  @assert order(s) == divexact(order(KK.AutG), deg_intersection)
+  S, mS = snf(s)
+  gens_real_KK = Vector{FacElem{nf_elem, AnticNumberField}}(undef, ngens(S))
+  for i = 1:ngens(S)
+    imgSi = mS(S[i])
+    gens_real_KK[i] = prod(KK.gens[j]^imgSi[j] for j = 1:ngens(KK)) 
+  end
+  KK_real = kummer_extension(gens_real_KK, S.snf)
+  new_act_on_gens = Array{Array{FacElem{nf_elem, AnticNumberField}, 1}, 1}(undef, length(KK.gen))
+  for i = 1:length(KK.gen)
+    act_on_gen_i = Array{FacElem{nf_elem, AnticNumberField}, 1}(undef, length(autos))
+    for j = 1:length(autos)
+      D1 = Dict{nf_elem, fmpz}()
+      for (ke, v) in KK.gen[i]
+        D1[Autos_abs[j](ke)] = v
+      end
+      act_on_gen_i[j] = FacElem(D1)
+    end
+    new_act_on_gens[i] = act_on_gen_i
+  end 
+  @show find_frob = find_gens(KK_real, new_act_on_gens, minimum(defining_modulus(A)[1]))
+  error("stop")
+  AA, gAA = number_field(KK_real)
+  #I now need the embedding of Cp into KK_real
+
+
+
 end

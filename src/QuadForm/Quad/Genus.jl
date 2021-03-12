@@ -364,7 +364,7 @@ function orthogonal_sum(J1::JorDec{S, T, U}, J2::JorDec{S, T, U}) where {S, T, U
     return JorDec(J1.p, _sca, _rk, _dets)
   else
     # Lazy
-    return JorDec(orthogonal_sum(lattice(J1), lattice(J2)), J1.p)
+    return JorDec(orthogonal_sum(lattice(J1), lattice(J2))[1], J1.p)
   end
 end
 
@@ -885,6 +885,7 @@ function Base.:(==)(G1::LocalGenusQuad, G2::LocalGenusQuad)
       return false
     end
 
+
     if G1.f[i] > 2 * e + uL1[i + 1] - G2.weights[i + 1]
       # We have to test if L1^(i) embeds into L2^(i) \perp aL2[i + 1]
       # So let's compute the Hasse invariant of those fields.
@@ -895,7 +896,7 @@ function Base.:(==)(G1::LocalGenusQuad, G2::LocalGenusQuad)
       ra = G1.ranks[1]
 
       for j in 2:i
-        haG1 = haG1 * _witt_hasse(G2.witt[j], G1.ranks[j], G1.dets[j], p) * hilbert_symbol(_d1, G1.dets[j], p)
+        haG1 = haG1 * _witt_hasse(G1.witt[j], G1.ranks[j], G1.dets[j], p) * hilbert_symbol(_d1, G1.dets[j], p)
         _d1 = _d1 * G1.dets[j]
         haG2 = haG2 * _witt_hasse(G2.witt[j], G2.ranks[j], G2.dets[j], p) * hilbert_symbol(_d2, G2.dets[j], p)
         _d2 = _d2 * G2.dets[j]
@@ -920,7 +921,7 @@ function Base.:(==)(G1::LocalGenusQuad, G2::LocalGenusQuad)
       ra = G1.ranks[1]
 
       for j in 2:i
-        haG1 = haG1 * _witt_hasse(G2.witt[j], G1.ranks[j], G1.dets[j], p) * hilbert_symbol(_d1, G1.dets[j], p)
+        haG1 = haG1 * _witt_hasse(G1.witt[j], G1.ranks[j], G1.dets[j], p) * hilbert_symbol(_d1, G1.dets[j], p)
         _d1 = _d1 * G1.dets[j]
         haG2 = haG2 * _witt_hasse(G2.witt[j], G2.ranks[j], G2.dets[j], p) * hilbert_symbol(_d2, G2.dets[j], p)
         _d2 = _d2 * G2.dets[j]
@@ -1063,7 +1064,7 @@ function orthogonal_sum(G1::LocalGenusQuad, G2::LocalGenusQuad)
   else
     L1 = representative(G1)
     L2 = representative(G2)
-    L3 = orthogonal_sum(L1, L2)
+    L3, = orthogonal_sum(L1, L2)
     G3 = genus(L3, prime(G1))
   end
 
@@ -1744,7 +1745,7 @@ function _possible_determinants(K, local_symbols, signatures)
   # I need totally positive units / OK^*2
   Q, mQ = quo(U, 2, false)
   f = hom(Q, R, elem_type(R)[_log(mU(mQ\u)) for u in gens(Q)])
-  Ker, mKer = kernel(f)
+  Ker, mKer = kernel(f, false)
   transver = elem_type(K)[ evaluate(mU(mQ\(mKer(k)))) for k in Ker]
 
   dets = elem_type(K)[]

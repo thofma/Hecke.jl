@@ -9,7 +9,7 @@ function induce(FB::Hecke.NfFactorBase, A::Map)
 
   G = SymmetricGroup(length(FB.ideals))
   if f == gen(K)
-    return G()
+    return one(G)
   end
 
   for p in FB.fb_int.base
@@ -201,13 +201,13 @@ function class_group_add_auto(ctx::ClassGrpCtx, auts::Vector{NfToNfMor})
   Gperm = SymmetricGroup(length(ctx.FB.ideals))
 
   elements = Vector{Tuple{NfToNfMor, Generic.Perm{Int}}}(undef, length(auts))
-  elements[1] = (id_hom(K), Gperm())
+  elements[1] = (id_hom(K), one(Gperm))
   if length(auts) == 1
     return elements
   end
   ind_elem = 3
   pols = gfp_poly[x, Rx(image_primitive_element(S[1]))]
-  perms = Generic.Perm{Int}[Gperm(), induce(ctx.FB, S[1])]
+  perms = Generic.Perm{Int}[one(Gperm), induce(ctx.FB, S[1])]
   elements[2] = (S[1], perms[2])
   gperm = perms[2]*perms[2]
   gpol = compose_mod(pols[2], pols[end], fmod)

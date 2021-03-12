@@ -3,7 +3,7 @@ export maximal_order, poverorder, MaximalOrder, ring_of_integers
 
 function ismaximal_order_known(K::AnticNumberField)
   res = _get_maximal_order_of_nf(K, false)
-  return res != nothing
+  return res !== nothing
 end
 
 function ismaximal_order_known(K::NfAbsNS)
@@ -50,7 +50,7 @@ function MaximalOrder(O::NfAbsOrd{S, T}; index_divisors::Vector{fmpz} = fmpz[], 
 end
 
 @doc Markdown.doc"""
-    MaximalOrder(K::Union{AnticNumberField, NfAbsNS}; discriminant::fmpz, ramified_primes::Vector{fmpz}) -> NfAbsOrd
+    MaximalOrder(K::NumField{fmpq}; discriminant::fmpz, ramified_primes::Vector{fmpz}) -> NfAbsOrd
 
 Returns the maximal order of $K$. Additional information can be supplied if they are already known, as the ramified primes
 or the discriminant of the maximal order.

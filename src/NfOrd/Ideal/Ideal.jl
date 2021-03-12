@@ -1624,7 +1624,7 @@ iszero(I::NfAbsOrdIdl) = (I.iszero == 1)
 
 Returns the unique element $y$ of the ambient order of $x$ with
 $x \equiv y \bmod I$ and the following property: If
-$a_1,\dotsc,a_d \in \Z_{\geq 1}$ are the diagonal entries of the unique HNF
+$a_1,\dotsc,a_d \in \mathbf{Z}_{\geq 1}$ are the diagonal entries of the unique HNF
 basis matrix of $I$ and $(b_1,\dotsc,b_d)$ is the coefficient vector of $y$,
 then $0 \leq b_i < a_i$ for $1 \leq i \leq d$.
 """
@@ -2215,14 +2215,14 @@ end
 #
 ################################################################################
 
-function toMagma(f::IOStream, clg::NfOrdIdl, order::String = "M")
+function to_magma(f::IOStream, clg::NfOrdIdl, order::String = "M")
   print(f, "ideal<$(order)| ", clg.gen_one, ", ",
                     elem_in_nf(clg.gen_two), ">")
 end
 
-function toMagma(s::String, c::NfOrdIdl, order::String = "M")
+function to_magma(s::String, c::NfOrdIdl, order::String = "M")
   f = open(s, "w")
-  toMagma(f, c, order)
+  to_magma(f, c, order)
   close(f)
 end
 
@@ -2251,13 +2251,44 @@ function iscoprime(I::NfAbsOrdIdl, J::NfAbsOrdIdl)
   end
   if gcd(minimum(I, copy = false), minimum(J, copy = false)) == 1
     return true
-  else
-    return isone(I+J)
   end
+  if isprime_known(I) && isprime(I)
+    return iszero(valuation(J, I))
+  end
+  if isprime_known(J) && isprime(J)
+    return iszero(valuation(I, J))
+  end
+  #Lemma: Let R be a (commutative) artinian ring, let I be an ideal of R and 
+  #let x be a nilpotent element. Then I = 1 if and only if I + x = 1 
+  m = gcd(minimum(I, copy = false), minimum(J, copy = false))
+  m = ispower(m)[2]
+  if has_2_elem(I) && has_2_elem(J)
+    K = nf(order(I))
+    if gcd(m, index(order(I))) == 1
+      if fits(Int, m)
+        RI = ResidueRing(FlintZZ, Int(m), cached = false)
+        RIx = PolynomialRing(RI, "x", cached = false)[1]
+        fI1 = RIx(I.gen_two.elem_in_nf)
+        fI2 = RIx(J.gen_two.elem_in_nf)
+        fI3 = RIx(K.pol)
+        fl = _coprimality_test(fI1, fI2, fI3)
+      else
+        R = ResidueRing(FlintZZ, m, cached = false)
+        Rx = PolynomialRing(R, "x", cached = false)[1]
+        f1 = Rx(I.gen_two.elem_in_nf)
+        f2 = Rx(J.gen_two.elem_in_nf)
+        f3 = Rx(K.pol)
+        fl = _coprimality_test(f1, f2, f3)
+      end
+      @hassert :NfOrd 1 fl == isone(I+J)
+      return fl
+    end
+  end
+  return isone(gcd(I, m)+J)
 end 
 
 function iscoprime(I::NfAbsOrdIdl, a::fmpz)
-  return iscoprime(I, ideal(order(I), a))
+  return iscoprime(minimum(I, copy = false), a)
 end
 
 one(I::NfAbsOrdIdlSet) = ideal(order(I), 1)
@@ -2310,7 +2341,7 @@ of the residue ring modulo the ideal.
 Hecke.euler_phi(A::NfOrdIdl) = Hecke.euler_phi(factor(A))
 Hecke.euler_phi(A::FacElem{NfOrdIdl}) = Hecke.euler_phi(factor(A))
 function Hecke.euler_phi(A::Dict{NfOrdIdl, Int})
-  return prod((norm(p)-1)*norm(p)^(k-1) for (p,k) = A if k < 0 error("ideal not integral"))
+  return prod((norm(p)-1)*norm(p)^(k-1) for (p,k) = A if k > 0 || error("Ideal not integral"))
 end
 
 #basically from
@@ -2386,3 +2417,52 @@ residue ring has the required size.
 """
 euler_phi_inv(n::fmpz, zk::NfAbsOrd) = [ numerator(evaluate(x)) for x = euler_phi_inv_fac_elem(n, zk)]
 euler_phi_inv(n::Integer, zk::NfAbsOrd) = [ numerator(evaluate(x)) for x = euler_phi_inv_fac_elem(fmpz(n), zk)]
+
+################################################################################
+#
+#  Ideals with bounded norm
+#
+################################################################################
+
+function _squarefree_ideals_with_bounded_norm(O::NfAbsOrd, lp::Vector{NfOrdIdl}, bound::fmpz)
+  #@assert issorted(lp, by = x -> norm(x))
+  lf = Vector{Tuple{NfOrdIdl, fmpz}}()
+  for P in lp
+    push!(lf, (P, norm(P)))
+  end
+  #Now, I have to merge them.
+  conds = Vector{Tuple{Dict{NfOrdIdl, Int}, fmpz}}()
+  push!(conds, (Dict{NfOrdIdl, Int}(), fmpz(1)))
+  if isempty(lf)
+    return conds
+  end
+  for i = 1:length(lf)
+    P = lf[i][1]
+    dP = lf[i][2]
+    indj = length(conds)
+    new_conds = Vector{Tuple{Dict{NfOrdIdl, Int}, fmpz}}()
+    for j = 1:indj
+      Dd = dP*conds[j][2]
+      if Dd > bound
+        break
+      end
+      D = copy(conds[j][1])
+      D[P] = 1
+      push!(new_conds, (D, Dd))
+      #push!(conds, (D, Dd))
+    end
+    for j = 1:length(new_conds)
+      insert!(conds, searchsortedfirst(conds, new_conds[j], by = x -> x[2]), new_conds[j])
+    end
+    #sort!(conds, by = x -> x[2])
+  end
+  return conds
+end
+
+function _squarefree_ideals_with_bounded_norm(O::NfAbsOrd, bound::fmpz; coprime::fmpz = fmpz(0))
+  lp = prime_ideals_up_to(O, Int(bound))
+  if !iszero(coprime)
+    filter!(x -> iscoprime(norm(x), coprime), lp)
+  end
+  return _squarefree_ideals_with_bounded_norm(O, lp, bound)
+end

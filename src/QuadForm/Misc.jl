@@ -508,11 +508,12 @@ function image(f::NumFieldMor, I::NfRelOrdIdl{T, S}) where {T, S}
   return J
 end
 
-function image(f::NumFieldMor, I::NfRelOrdFracIdl{T, S}) where {T, S}
+function image(f::NumFieldMor, I::NfRelOrdFracIdl{T, S}; order = order(I)) where {T, S}
   #S has to be an automorphism!!!!
-  O = order(I)
+  O = order
   @assert ismaximal(O) # Otherwise the order might change
   K = nf(O)
+  @assert K === codomain(f)
 
   pb = pseudo_basis(I)
 
@@ -817,6 +818,7 @@ end
 function absolute_basis(I::NfRelOrdFracIdl)
   res = elem_type(nf(order(I)))[]
   pb = pseudo_basis(I)
+  pbb = pseudo_basis(order(I))
   for i in 1:length(pb)
     (e, I) = pb[i]
     for b in absolute_basis(I)
@@ -829,7 +831,9 @@ end
 function absolute_basis(I::NfRelOrdIdl)
   res = elem_type(nf(order(I)))[]
   pb = pseudo_basis(I)
-  for (e, I) in pb
+  pbb = pseudo_basis(order(I))
+  for i in 1:length(pb)
+    (e, I) = pb[i]
     for b in absolute_basis(I)
       push!(res, e * b)
     end
@@ -1020,7 +1024,7 @@ function _find_quaternion_algebra(b::fmpq, P, I)
     @assert length(I) == 1
     IK = infinite_places(K)
   end
-  c = _find_quaternion_algebra(bK, PK, IK)
+  c = _find_quaternion_algebra(bK, PK, IK)::nf_elem
   return coeff(c, 0)
 end
 
@@ -1127,31 +1131,12 @@ end
 #
 ################################################################################
 
-function support(I::NfAbsOrdIdl)
+function support(I::T) where T <: Union{NfAbsOrdIdl, NfRelOrdIdl, NfAbsOrdFracIdl, NfRelOrdFracIdl}
   lp = factor(I)
   return collect(keys(lp))
 end
 
-function support(I::NfOrdFracIdl)
-  lp = factor(I)
-  return collect(keys(lp))
-end
-
-function support(I::NfRelOrdIdl)
-  lp = factor(I)
-  return collect(keys(lp))
-end
-
-function support(I::NfRelOrdFracIdl)
-  lp = factor(I)
-  return collect(keys(lp))
-end
-
-function support(a::NumFieldElem)
-  return support(a * maximal_order(parent(a)))
-end
-
-function support(a::NumFieldElem, R::NfAbsOrd)
+function support(a::NumFieldElem{fmpq}, R::NfAbsOrd = maximal_order(parent(a)))
   @assert nf(R) == parent(a)
   return support(a * R)
 end
@@ -1375,39 +1360,7 @@ end
 #
 ################################################################################
 
-function absolute_primitive_element(K::AnticNumberField)
-  return gen(K)
-end
-
-function absolute_primitive_element(K::NumField)
-  B = basis(K)
-  for i in 1:length(B)
-    if degree(absolute_minpoly(B[i])) == absolute_degree(K)
-      return B[i]
-    end
-  end
-  for i in 1:10
-    z = rand(basis(base_field(K))) * rand(basis(K)) +
-          rand(basis(base_field(K))) * rand(basis(K))
-    if degree(absolute_minpoly(z)) == absolute_degree(K)
-      return z
-    end
-  end
-  Kabs, m = absolute_field(K)
-  return m(gen(Kabs))
-end
-
 absolute_minpoly(a::nf_elem) = minpoly(a)
-
-################################################################################
-#
-#  Absolute field of AnticNumberField
-#
-################################################################################
-
-function absolute_field(K::AnticNumberField)
-  return K, id_hom(K)
-end
 
 ################################################################################
 #
@@ -1447,3 +1400,5 @@ end
 elem_in_nf(x::fmpz) = FlintQQ(x)
 
 ideal_type(::FlintIntegerRing) = fmpz
+
+nf(::FlintIntegerRing) = FlintQQ

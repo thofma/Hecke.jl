@@ -24,7 +24,7 @@ function Base.show(io::IO, c::CyclotomicExt)
   print(io, "Cyclotomic extension by zeta_$(c.n) of degree $(degree(c.Ka))")
 end
 
-absolute_field(C::CyclotomicExt) = C.Ka
+absolute_simple_field(C::CyclotomicExt) = C.Ka
 base_field(C::CyclotomicExt) = C.k
 
 ################################################################################
@@ -69,6 +69,7 @@ function cyclotomic_extension(k::AnticNumberField, n::Int; cached::Bool = true, 
       end
     end
   end
+  @assert n > 1
 
   kt, t = PolynomialRing(k, "t", cached = false)
   c = CyclotomicExt()
@@ -124,7 +125,7 @@ function cyclotomic_extension(k::AnticNumberField, n::Int; cached::Bool = true, 
       c.mp = (abs2rel, small2abs)
     else
       Kr, Kr_gen = number_field(fk, "z_$n", cached = false, check = false)
-      Ka, abs2rel, small2abs = Hecke.absolute_field(Kr, cached = false)
+      Ka, abs2rel, small2abs = collapse_top_layer(Kr, cached = false)
       if compute_maximal_order && !simplified
         Zk = maximal_order(k)
         b_k = basis(Zk, k)
@@ -179,7 +180,7 @@ function cyclotomic_extension(k::AnticNumberField, n::Int; cached::Bool = true, 
 
   Kr, Kr_gen = number_field(fk, "z_$n", cached = false, check = false)
   if degree(fk) != 1
-    Ka, abs2rel, small2abs = Hecke.absolute_field(Kr, cached = false)
+    Ka, abs2rel, small2abs = collapse_top_layer(Kr, cached = false)
     
     if compute_maximal_order && !simplified
       # An equation order defined from a factor of a
@@ -410,12 +411,12 @@ end
 @doc Markdown.doc"""
     automorphisms(C::CyclotomicExt; gens::Vector{NfToNfMor}) -> Vector{NfToNfMor}
 
-Computes the automorphisms of the absolute field defined by the cyclotomic extension, i.e. of `absolute_field(C).
+Computes the automorphisms of the absolute field defined by the cyclotomic extension, i.e. of `absolute_simple_field(C).
 It assumes that the base field is normal. `gens` must be a set of generators for the automorphism group of the base field of $C$.
 """
 function automorphisms(C::CyclotomicExt; gens::Vector{NfToNfMor} = small_generating_set(automorphisms(base_field(C))), copy::Bool = true)
 
-  if degree(absolute_field(C)) == degree(base_field(C)) || isautomorphisms_known(C.Ka)
+  if degree(absolute_simple_field(C)) == degree(base_field(C)) || isautomorphisms_known(C.Ka)
     return automorphisms(C.Ka, copy = copy)
   end
   genK = C.mp[1](gen(C.Ka))

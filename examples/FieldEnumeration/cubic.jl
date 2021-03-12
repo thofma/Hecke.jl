@@ -4,7 +4,7 @@ function ideals_with_pp_norm(lp::Array{NfOrdIdl, 1}, k::Int)
   l = [degree(x) for x= lp]
 #  println("pp with $l and $k")
   #need sum([e[i]*l[i] == k, e[i] >= 0])
-  C = cartesian_product_iterator([0:div(k, l[j]) for j = 1:length(l)])
+  C = cartesian_product_iterator([0:div(k, l[j]) for j = 1:length(l)], inplace = true)
   r = [prod(lp[i]^c[i] for i=1:length(l)) for c = C if sum(c[i]*l[i] for i=1:length(l)) == k]
 #  println("r: $r")
   return r
@@ -18,7 +18,7 @@ function ideals_with_norm(i::fmpz, M::NfOrd)
   lf = factor(i)
   lp = [ideals_with_pp_norm([x[1] for x = prime_decomposition(M, k)], v) for (k, v) = lf.fac]
 #  println(lp)
-  return [prod(lp[i][x[i]] for i=1:length(lf.fac)) for x = cartesian_product_iterator([1:length(lp[i]) for i=1:length(lp)])]
+  return [prod(lp[i][x[i]] for i=1:length(lf.fac)) for x = cartesian_product_iterator([1:length(lp[i]) for i=1:length(lp)], inplace = true)]
 end
 
 function orbit_reps(I::Array{NfOrdIdl, 1}, s::Hecke.NfToNfMor)
@@ -103,7 +103,7 @@ function s3_with_discriminant(I::NfOrdIdl)
 
   res = []
   println("23: $l23")
-  C = cartesian_product_iterator([1:length(i) for i in l23])
+  C = cartesian_product_iterator([1:length(i) for i in l23], inplace = true)
   #Tommy: use Base.product(l23,...) or similar....
   for c = C
     if length(c) == 0
@@ -132,8 +132,9 @@ function s3_with_discriminant(I::NfOrdIdl)
       conj = Hecke.rel_auto(a.cyc[1])
       Kr = a.cyc[1].A
       k = base_ring(Kr)
-      Ka, m1, m2 = absolute_field(Kr)
-      sigma = Hecke.NfToNfMor(Ka, Ka, m1(conj(preimage(m1, gen(Ka))))) 
+      Ka, m1 = absolute_simple_field(Kr)
+      m2 = restrict(inv(m1), k)
+      sigma = hom(Ka, Ka, m1\(conj(m1(gen(Ka))))) 
       #m1: Kr -> Ka, m2: base_ring(Kr) -> Ka
       M = lll(maximal_order(Ka))
       FF = ideal(M, F.gen_one, M(m2(k(F.gen_two))))

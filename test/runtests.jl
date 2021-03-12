@@ -6,6 +6,12 @@ using LinearAlgebra
 
 Hecke.assertions(true)
 
+## Test the test_module on Windows
+
+x = Hecke._adjust_path("GrpAb/Elem")
+y = joinpath(Hecke.pkgdir, "test", "$x.jl")
+@test isfile(y)
+
 k, a = quadratic_field(5)
 @test fmpz(1) - a == -(a - 1)
 @test 1 - a == -(a - 1)

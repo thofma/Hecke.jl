@@ -529,14 +529,23 @@ function factor_trager(f::PolyElem{nf_elem})
 end
 
 function isirreducible(f::PolyElem{nf_elem})
-  if degree(f) == 1
-    return true
+  isresult_right, result = isirreducible_easy(f)
+  if isresult_right
+    return result
   end
-  if !issquarefree(f)
-    return false
+  fac = _factor(f)
+  return length(fac) == 1
+end
+
+function isirreducible_easy(f::PolyElem{nf_elem})
+  if degree(f) == 1
+    return true, true
   end
   if iszero(coeff(f, 0))
-    return false
+    return true, false
+  end
+  if !issquarefree(f)
+    return true, false
   end
 
   s = Set{Int}()
@@ -550,7 +559,7 @@ function isirreducible(f::PolyElem{nf_elem})
         s = Base.intersect(s, d)
       end
       if length(s) == 1
-        return true
+        return true, true
       end
       i += 1
       if i > 2*degree(f)
@@ -562,8 +571,7 @@ function isirreducible(f::PolyElem{nf_elem})
       end
     end
   end
-  fac = _factor(f)
-  return length(fac) == 1
+  return false, false
 end
 
 function _ds(fa)
@@ -832,7 +840,7 @@ Tests if $a$ is a square and return the root if possible.
 """
 issquare(a::nf_elem) = ispower(a, 2)
 
-issquare_with_root(a::NumFieldElem) = issquare(a)
+issquare_with_square_root(a::NumFieldElem) = issquare(a)
 
 @doc Markdown.doc"""
     sqrt(a::nf_elem) -> nf_elem

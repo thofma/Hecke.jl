@@ -201,14 +201,16 @@ Base.getindex(D::NFDBRecord, s) = getindex(D.data, s)
 
 properties(D::NFDBRecord) = collect(keys(D.data))
 
-function field(D::NFDBRecord)
+function field(D::NFDBRecord; cached = false)
   if isdefined(D, :K)
     return D.K
   else
     f = D[:poly]
     K, a = NumberField(f, "a", cached = false)
-    D.K = K
-    return D.K
+    if cached
+      D.K = K
+    end
+    return K
   end
 end
 
@@ -806,6 +808,8 @@ function Base.write(io::IO, D::NFDB)
 end
 
 Base.getindex(D::NFDB, i::Int) = D.fields[i]
+
+Base.eltype(::Type{NFDB{T}}) where {T} = NFDBRecord{T}
 
 function Base.read(file::String, ::Type{NFDB})
   metadata = Dict()

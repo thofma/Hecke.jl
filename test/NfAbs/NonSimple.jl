@@ -6,7 +6,6 @@
   @test K isa NfAbsNS
   @test elem_type(NfAbsNS) == NfAbsNSElem
   @test parent_type(NfAbsNSElem) == NfAbsNS
-  @test show_minus_one(NfAbsNSElem) isa Bool
   @test !issimple(K)
   @test !issimple(NfAbsNS)
 
@@ -147,6 +146,9 @@
     O = EquationOrder(K2)
     Omax = @inferred MaximalOrder(O)
     @test discriminant(Omax) == FlintZZ(30233088)
+
+    lp = prime_decomposition(Omax, 101)
+    @test length(lp) == 3
   end
 
   @testset "rand" begin
@@ -158,4 +160,14 @@
     @test reproducible(m)
     @test reproducible(K, 1:3)
   end
+
+  @testset "To Non Simple" begin
+    f = x^6 - 3*x^5 - 2*x^4 + 9*x^3 - 5*x + 1
+    K, a = number_field(f)
+    lp = Hecke.non_simple_extension(K)
+    Kns, gKns = number_field(lp)
+    L, mL = simple_extension(Kns)
+    @test isisomorphic(L, K)[1]
+  end
+
 end

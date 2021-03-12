@@ -5,7 +5,7 @@ function orthogonal_sum(G1::LocalGenusHerm, G2::LocalGenusHerm)
   else
     L1 = representative(G1)
     L2 = representative(G2)
-    L3 = orthogonal_sum(L1, L2)
+    L3, = orthogonal_sum(L1, L2)
     return genus(L3, prime(G1))
   end
 end

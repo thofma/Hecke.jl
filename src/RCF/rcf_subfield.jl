@@ -1,4 +1,4 @@
-function number_field_over_subfield(C::ClassField_pp; using_norm_relation::Bool = true)
+function number_field_over_subfield(C::ClassField_pp; using_norm_relation::Bool = true, using_stark_units::Bool = false)
   K = base_field(C)
   if degree(K) == 1
     return ray_class_field_cyclic_pp(C)
@@ -143,7 +143,7 @@ function translate_extension(mL::NfToNfMor, C::ClassField_pp)
   @assert fl
   mq1 = cokernel(ms1, false)[2]
   mqq = mck * mq1 
-  @hassert :Fields 1 domain(mqq) == r
+  @hassert :ClassField 1 domain(mqq) == r
   C1 = ClassField_pp{MapRayClassGrp, GrpAbFinGenMap}()
   C1.quotientmap = mqq
   C1.rayclassgroupmap = mr
@@ -189,7 +189,7 @@ function translate_up(mL::NfToNfMor, C::ClassField_pp, C1::ClassField_pp)
   mrel2 = hom(C1.K, C.K, mp, gen(C.K))
   C.pe = mrel2(C1.pe) 
   CEKK = cyclotomic_extension(K, d)
-  @hassert :Fields 1 iszero(map_coeffs(CEKK.mp[2], fdef, cached = false)(Cpp.pe))
+  @hassert :ClassField 1 iszero(map_coeffs(CEKK.mp[2], fdef, cached = false)(C.pe))
   C.o = d1
   return nothing
 end

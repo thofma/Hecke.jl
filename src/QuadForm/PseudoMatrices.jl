@@ -26,7 +26,7 @@ end
 function pseudo_hnf_via_absolute(H::PMat; full_rank::Bool = true, shape::Symbol = :lowerleft, nonzero::Bool = false)
   O = base_ring(H)
   E = nf(O)
-  Eabs, EabsToE, KtoE = absolute_field(E)
+  EabsToE = absolute_simple_field(E)[2]
   return pseudo_hnf_via_absolute(H, EabsToE, full_rank = full_rank,
                                              shape = shape,
                                              nonzero = nonzero)
@@ -66,6 +66,12 @@ function pseudo_hnf_via_absolute(H::PMat, EabsToE; full_rank::Bool = true, shape
   return _translate_pseudo_hnf(HH, EabsToE, O)
 end
 
+################################################################################
+#
+#  Sum
+#
+################################################################################
+
 function _sum_modules_with_map(a::PMat{<: NfRelElem, <: NfRelOrdFracIdl}, b::PMat, f, full_rank = true)
   H = vcat(a, b)
   return pseudo_hnf_via_absolute(H, f, shape = :lowerleft, nonzero = true)
@@ -74,7 +80,7 @@ end
 _sum_modules(L::QuadLat, a::PMat, b::PMat, full_rank = true) = _sum_modules(a, b, full_rank)
 
 function _sum_modules(L::HermLat, a::PMat, b::PMat, full_rank = true)
-  _,f,_ = absolute_field(ambient_space(L))
+  f = absolute_simple_field(ambient_space(L))[2]
   return _sum_modules_with_map(a, b, f, full_rank)
 end
 
@@ -97,8 +103,23 @@ function _sum_modules(a::PMat, b::PMat, full_rank = true)
   return sub(H, r:nrows(H), 1:ncols(H))
 end
 
+################################################################################
+#
+#  Intersect
+#
+################################################################################
+
+function _intersect_modules(L::QuadLat, a::PMat, b::PMat, full_rank = true)
+  return _intersect_modules(a, b, full_rank)
+end
+
+function _intersect_modules(L::HermLat, a::PMat{<: NfRelElem, <: NfRelOrdFracIdl}, b::PMat, full_rank = true)
+  f = absolute_simple_field(ambient_space(L))[2]
+  return _intersect_modules_with_map(a, b, f, full_rank)
+end
+
 function _intersect_modules(a::PMat{<: NfRelElem, <: NfRelOrdFracIdl}, b::PMat, full_rank = true)
-  _, f, _ = absolute_field(nf(base_ring(a)))
+  f = absolute_simple_field(nf(base_ring(a)))[2]
   return _intersect_modules_with_map(a, b, f, full_rank)
 end
 

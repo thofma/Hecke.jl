@@ -366,6 +366,7 @@ function _minimal_poverorders_in_ring_of_multipliers(O, P, excess = Int[0], use_
 
   offset = mA.offset
   
+  #The degree of the extension divides the degree of a prime of M lying over P
   lQ = prime_ideals_over(M, P)
   rel_fs = fmpz[divexact(valuation(norm(Q), p), f) for Q in lQ]
   fac = factor(lcm(rel_fs))

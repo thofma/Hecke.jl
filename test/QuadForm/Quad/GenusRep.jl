@@ -52,4 +52,57 @@
   gens = [[1, 0], [1, 0], [0, 1], [0, 1]]
   L = quadratic_lattice(K, generators = gens, gram_ambient_space = D)
   @test length(genus_representatives(L)) == 6
+
+  # Local isometry test
+
+  Qx, x = PolynomialRing(FlintQQ, "x", cached = false)
+  f = x - 1;
+  K, a = number_field(f)
+  D = matrix(K, 7, 7, [8, -4, 3, 4, 0, 1, 1, -4, 8, 1, 0, 4, 1, 1, 3, 1, 8, 4, 0, 1, 1, 4, 0, 4, 8, 3, 0, 4, 0, 4, 0, 3, 8, 4, 0, 1, 1, 1, 0, 4, 8, -4, 1, 1, 1, 4, 0, -4, 8]);
+  gens = [[1, 0, 0, 0, 0, 0, 0], [1, 0, 0, 0, 0, 0, 0], [0, 1, 0, 0, 0, 0, 0], [0, 1, 0, 0, 0, 0, 0], [0, 0, 1, 0, 0, 0, 0], [0, 0, 1, 0, 0, 0, 0], [0, 0, 0, 1, 0, 0, 0], [0, 0, 0, 1, 0, 0, 0], [0, 0, 0, 0, 1, 0, 0], [0, 0, 0, 0, 1, 0, 0], [0, 0, 0, 0, 0, 1, 0], [0, 0, 0, 0, 0, 1, 0], [0, 0, 0, 0, 0, 0, 1], [0, 0, 0, 0, 0, 0, 1]]
+  L = quadratic_lattice(K, generators = gens, gram_ambient_space = D)
+
+  D = matrix(K, 7, 7, [0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 14, 0, 0, 0, 0, 0, 0, 0, 56]);
+  gens = [[1, 0, 0, 0, 0, 0, 0], [1, 0, 0, 0, 0, 0, 0], [0, 1, 0, 0, 0, 0, 0], [0, 1, 0, 0, 0, 0, 0], [0, 0, 1, 0, 0, 0, 0], [0, 0, 1, 0, 0, 0, 0], [0, 0, 0, 1, 0, 0, 0], [0, 0, 0, 1, 0, 0, 0], [0, 0, 0, 0, 1, 0, 0], [0, 0, 0, 0, 1, 0, 0], [0, 0, 0, 0, 0, 1, 0], [0, 0, 0, 0, 0, 1, 0], [0, 0, 0, 0, 0, 0, 1], [0, 0, 0, 0, 0, 0, 1]]
+  LL = quadratic_lattice(K, generators = gens, gram_ambient_space = D)
+
+  p = prime_decomposition(maximal_order(K), 2)[1][1]
+  @test islocally_isometric(L, LL, p)
+
+  # Rank 2 case
+  # This is the Zlattice with basis [1 2; 3 4]
+  
+  Qx, x = PolynomialRing(FlintQQ, "x", cached = false)
+  f = x - 1;
+  K, a = number_field(f)
+  D = matrix(K, 2, 2, [1, 0, 0, 1]);
+  gens = [[1, 2], [1, 2], [3, 4], [3, 4]]
+  L = quadratic_lattice(K, generators = gens, gram_ambient_space = D)
+  @test length(genus_representatives(L)) == 1
+
+  Qx, x = PolynomialRing(FlintQQ, "x", cached = false)
+  f = x - 1
+  K, a = number_field(f)
+  D = matrix(K, 3, 3, [-18, -6, -9, -6, -3, -3, -9, -3, -6])
+  gens = [[1, 0, 0], [1, 0, 0], [0, 1, 0], [0, 1, 0], [0, 0, 1], [0, 0, 1]]
+  L = quadratic_lattice(K, generators = gens, gram_ambient_space = D)
+  @test length(genus_representatives(L)) == 1
+
+  Qx, x = PolynomialRing(FlintQQ, "x", cached = false)
+  f = x - 1;
+  K, a = number_field(f)
+  D = matrix(K, 2, 2, [2, 0, 0, 3]);
+  gens = [[1, 0], [1, 0], [0, 1], [0, 1]]
+  L = quadratic_lattice(K, generators = gens, gram_ambient_space = D)
+  @test length(genus_representatives(L)) == 1
+
+  B = QQ[2 0; 3//2 1//2]
+  G = QQ[1 0; 0 23]
+  V = quadratic_space(QQ, G)
+  L = lattice(V, B)
+  @test length(genus_representatives(L)) == 2
+  @test length(genus_representatives(Zlattice(gram = gram_matrix(L)))) == 2
+
+  L = Zlattice(ZZ[4 3; 3 8])
+  @test length(genus_representatives(L)) == 4
 end

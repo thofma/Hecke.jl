@@ -49,14 +49,14 @@ end
 
 # this is used internally to accelerate computations by passing to an absolute
 # field
-function absolute_field(V::HermSpace)
-  c = get_special(V, :absolute_field)
+function absolute_simple_field(V::HermSpace)
+  c = get_special(V, :absolute_simple_field)
   if c === nothing
-    Eabs, EabsToE, KtoE = absolute_field(base_ring(V))
-    set_special(V, :absolute_field => (Eabs, EabsToE, KtoE))
-    return Eabs, EabsToE, KtoE
+    Eabs, EabsToE = absolute_simple_field(base_ring(V))
+    set_special(V, :absolute_field => (Eabs, EabsToE))
+    return Eabs, EabsToE
   else
-    return c::Tuple{AnticNumberField,Hecke.NfToNfRel,NfToNfMor}
+    return c::Tuple{AnticNumberField, NfToNfRel}
   end
 end
 

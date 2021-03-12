@@ -34,7 +34,8 @@
 
 export PrimeIdealsSet, prime_ideals_over, ramification_index,
        prime_ideals_up_to, decomposition_group, inertia_subgroup,
-       ramification_group, isramified, istamely_ramified, isweakly_ramified
+       ramification_group, isramified, istamely_ramified, isweakly_ramified,
+       approximate
 
 @doc Markdown.doc"""
     isramified(O::NfOrd, p::Int) -> Bool
@@ -1420,10 +1421,8 @@ function prime_dec_nonindex(O::NfAbsOrd{NfAbsNS,NfAbsNSElem}, p::Union{Integer, 
         end
         push!(RT, [_lift_p2(Fq2, Zx(all_f[ti]), i) for i = rt[end]])
       end
-      append!(re, [minpoly(Fpx, sum([rrt[i] * all_c[i] for i=1:length(all_c)]))
-        for rrt = Base.Iterators.product(rt...)])
-      append!(RE, [sum([rrt[i] * all_c[i] for i=1:length(all_c)])
-        for rrt = Base.Iterators.product(RT...)])
+      append!(re, [minpoly(Fpx, sum([rrt[i] * all_c[i] for i=1:length(all_c)])) for rrt in cartesian_product_iterator(rt, inplace = true)])
+      append!(RE, [sum([rrt[i] * all_c[i] for i=1:length(all_c)]) for rrt in cartesian_product_iterator(RT), inplace = true])
     end
     if length(Set(re)) < length(re)
       all_c = [rand(1:p-1) for f = all_c]
@@ -1479,7 +1478,6 @@ function prime_dec_nonindex(O::NfAbsOrd{NfAbsNS,NfAbsNSElem}, p::Union{Integer, 
       ideal.princ_gen = O(p)
     end
     result[k] =  (ideal, ei)
-    k += 1
   end
   return result
 

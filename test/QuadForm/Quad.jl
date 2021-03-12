@@ -1,3 +1,6 @@
 include("Quad/Spaces.jl")
 include("Quad/Genus.jl")
 include("Quad/GenusRep.jl")
+include("Quad/ZLattices.jl")
+include("Quad/NormalForm.jl")
+include("Quad/ZGenus.jl")

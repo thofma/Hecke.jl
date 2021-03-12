@@ -49,7 +49,7 @@ function SpinorGeneraCtx(L::QuadLat)
   # 2) Find good generators (that is: generators which are not dyadic, and not
   #    in BadPrimes(L) -- so that neighbour generation is always possible),
   #    of this factor group.
- 
+
   #   Only pick ideles of the form (1,...,1,p,1,...,1) so that:
   #   a) nothing has to be corrected before they can be mapped down into the factor group
   #   b) we can simply store the prime ideal and know that it corresponds to
@@ -61,7 +61,7 @@ function SpinorGeneraCtx(L::QuadLat)
   #   if L is definite, we only need a generating set of primes for the factor group.
 
   inf_plc = defining_modulus(mRCG)[2]
- 
+
   critical_primes = _get_critical_primes(L, mRCG, inf_plc, mQ, true) # fulllist = not isdefinite?
   @vprint :GenRep 1 "good primes over $([minimum(q) for q in critical_primes])
   (together with the squares) generate the subgroup.\n"
@@ -152,7 +152,7 @@ function spinor_genera_in_genus(L, mod_out)
   # Otherwise the isomorphism to the class group fails, cf. §102 in O'Meara.
 
   # We have to find out whether ProperSpinorGenus == SpinorGenus.
- 
+
   # 1) Find a nonzero element in the norm group of L.
   C = SpinorGeneraCtx(L)
 
@@ -184,7 +184,7 @@ function spinor_genera_in_genus(L, mod_out)
 
   # 2) At a place p where spinornorm does not generate norm(L_p)
   #    we add <p, spinornorm * normgenerator > to the idele
- 
+
   nor = norm(L)
 
   differ = ideal_type(R)[]
@@ -216,7 +216,7 @@ function spinor_genera_in_genus(L, mod_out)
 
   # 3) Map the idele into the idele class group.
   #    Then h == 0 iff SpinorGenus == ProperSpinorGenus
- 
+
   g = _map_idele_into_class_group(C.mR, idele)
   h = C.mQ(g)
 
@@ -242,7 +242,7 @@ function spinor_genera_in_genus(L, mod_out)
 
   return res
 end
- 
+
 function _smallest_norm_good_prime(L)
   OK = base_ring(L)
   lp = ideal_type(OK)[p for p in bad_primes(L, even = true) if isdyadic(p) || !ismodular(L, p)[1]]
@@ -304,9 +304,9 @@ function spinor_norm(L, p)
          push!(twonormgens, normgens[i] * normgens[j])
        end
      end
-    
+
      twonormvectors = [g\(x) for x in twonormgens]
-   
+
      @vprint :GenRep "Spinor norm odd p, norm generators of the $(length(G)) Jordan components are: $(normgens), $(twonormgens) $(twonormvectors)"
     # cf. Kneser 1956, Satz 3:
     _SN, mS = sub(V, twonormvectors)
@@ -540,7 +540,7 @@ function has_propertyA(L, p)
     @vprint(:GenRep,1,"""Property A is violated over dyadic prime:
   There is a $(r)-dimensional Jordan component\n""")
   end
- 
+
   # genus: rL, sL, wL, aL note that aL only contains valuations
   for i in 1:length(sL)
     for j in (i + 1):length(sL)
@@ -661,7 +661,7 @@ function N_function(a, g, p)
   end
 
   B = gens(V)
- 
+
   # cf. paragraph before 1.2 in Beli 2003:
   # N(a) := N(F(\sqrt(a))/F), i.e. the values of the norm mapping of the quadratic extension
   # and N(a) is the orthogonal complement of (<a>(F^*)^2).
@@ -706,7 +706,7 @@ function _map_idele_into_class_group(mRCG, idele, atinfinity::Vector{Tuple{InfPl
     end
   end
   M = defining_modulus(mRCG)[1]
- 
+
   # The finite places we need to make congruent to 1 in order to be able to map into the class group:
   rayprimes = collect(keys(mRCG.fact_mod))
   exponents = Int[mRCG.fact_mod[p] for p in rayprimes]
@@ -833,7 +833,7 @@ function _compute_ray_class_group(L)
     end
   end
   @assert issetequal(support(M), rayprimes)
- 
+
   # Now M contains a ray M and MM is the support of this ray.
   # We now compute the indefinite real places of L
   inf_plc = [v for v in real_places(F) if !isisotropic(L, v)]
@@ -1013,7 +1013,7 @@ function neighbours(L::QuadLat, p; call = stdcallback, use_auto = true, max = in
       @assert valuation(_dotF(x, x), p) >= e + 2
     end
     found = true
-   
+
     # normalize x
 
     kk = 0
@@ -1083,10 +1083,8 @@ function iterated_neighbours(L::QuadLat, p; use_auto = true, max = inf, mass = -
 
   local found::fmpq
 
-  if mass < 0
+  if mass >= 0
     found = 1//automorphism_group_order(L)
-  else
-    found = zero(fmpq)
   end
 
   while (i <= length(result)) && (length(result) < max) && (!use_mass || found < mass)
@@ -1342,13 +1340,13 @@ function beli_correction!(L, G, JJ, steps, i, j, p)
   y = sub(JJ, steps[i][2]:steps[i][2], 1:ncols(JJ))
 
   # Ansatz: v = JJ[Steps[j][1]] + lambda*x + mu*y
-  # 
+
   # re-orthogonalize the first basis vector of G[j]:
   v = matrix(K, 1, 2, [-G[j][1, 1], 0]) * GI
   # G[j][1,1] is always non-zero (the lattice is definite)
   # assert integrality at p:
   @assert all(k -> valuation(v[k], p) >= 0, 1:ncols(v))
- 
+
   # JJ[steps[j][1]] +:= v[1]*JJ[steps[i][1]] + v[2]*JJ[steps[i][2]];
   for u in 1:ncols(JJ)
     JJ[steps[j][1], u] = JJ[steps[j][1], u] + v[1] * JJ[steps[i][1],u] + v[2] * JJ[steps[i][2], u]
@@ -1529,27 +1527,71 @@ end
 #
 ################################################################################
 
-function _genus_representatives_binary_quadratic_definite(_L::QuadLat; max = inf, use_auto = true, use_mass = true)
+function __colon_raw(K, a, b)
+  d = degree(K)
+  bb = b
+  B = inv(basis_matrix(a)) #fmpq_mat(basis_mat_inv(a, copy = false))
+  M = zero_matrix(FlintQQ, d^2, d)
+  for i = 1:d
+    N = representation_matrix(bb[i])*B
+    for s = 1:d
+      for t = 1:d
+        M[t + (i - 1)*d, s] = N[s, t]
+      end
+    end
+  end
+  M = sub(hnf(FakeFmpqMat(M), :upperright), 1:d, 1:d)
+  N = inv(transpose(M))
+  return N
+end
+
+function _genus_representatives_binary_quadratic_definite(L::QuadLat; max = inf, use_auto = true, use_mass = true)
+  # The internal functions wants 1 in Q(K \otimes L)
+  # So we rescale a bit
+
+  V = rational_span(L)
+  D = diagonal(V)
+  _, i = findmin(abs.(norm.(D)))
+  d = D[i]
+  # Do G -> d * G
+  _L = rescale(L, d)
+  lat = _genus_representatives_binary_quadratic_definite_helper(_L; max = max, use_auto = use_auto, use_mass = use_mass)
+  G = genus(L)
+  res = typeof(L)[]
+  for M in lat
+    Mre = rescale(M, inv(d))
+    @test genus(Mre) == G
+    push!(res, Mre)
+  end
+  return res
+end
+
+function _genus_representatives_binary_quadratic_definite_helper(L::QuadLat; max = inf, use_auto = true, use_mass = true)
   # The strategy is to pass to the discriminant field F (which is a CM field)
   # and use that KL \cong (F, Tr/2)
   # Then in (F, Tr/2) we use Kirschmer, Pfeuffer and Körrner.
 
-  @assert isdefinite(_L)
-  @assert rank(_L) == 2
+  K = base_field(L)
+  L = lattice(quadratic_space(base_field(L), gram_matrix_of_rational_span(L)),
+                              pseudo_matrix(identity_matrix(K, 2), coefficient_ideals(L)))
 
-  V = rational_span(_L)
-  # 0. Scale to have 1 in Q(V)
+  @assert isdefinite(L)
+  @assert rank(L) == 2
 
-  D = diagonal(V)
-  _, i = findmin(abs.(norm.(D)))
-  d = D[i]
+  #V = rational_span(_L)
+  ## 0. Scale to have 1 in Q(V)
+  #@show V
 
-  # so G -> G/d
- 
-  L = lattice(quadratic_space(base_ring(V), 1//d * gram_matrix(ambient_space(_L))), pseudo_matrix(_L))
+  #D = diagonal(V)
+  #_, i = findmin(abs.(norm.(D)))
+  #d = D[i]
+
+  ## so G -> G/d
+
+  #L = lattice(quadratic_space(base_ring(V), 1//d * gram_matrix(ambient_space(_L))), pseudo_matrix(_L))
 
   V = rational_span(L)
- 
+
   # 1. Find the isometry with (F, Tr/2)
   @vprint :GenRep 1 "Determining isometry with CM field ... \n"
   K = base_ring(V)
@@ -1557,7 +1599,7 @@ function _genus_representatives_binary_quadratic_definite(_L::QuadLat; max = inf
   de = denominator(d)
   @assert !issquare(de * d)[1]
   Kt, t = PolynomialRing(K, "t", cached = false)
-  F, z = number_field(t^2 - de * d, "z", cached = false)
+  F, z = number_field(t^2 - de^2 * d, "z", cached = false)
   # TODO: Use automorphism_group (once implemented for relative extensions)
   a1, a2 = automorphisms(F)
   if a1(z) == z
@@ -1576,18 +1618,22 @@ function _genus_representatives_binary_quadratic_definite(_L::QuadLat; max = inf
   Tinv = inv(T)
 
   # Compute the absolute field, since this is where we do most of the work.
- 
-  Fabs, FabstoF, KtoFabs = absolute_field(F)
+
+  Fabs, FabstoF = absolute_simple_field(F)
+
+  KtoFabs = restrict(inv(FabstoF), base_field(F))
 
   sigmaabs = hom(Fabs, Fabs, FabstoF\(sigma(FabstoF(gen(Fabs)))))
- 
+
   # 2. Transpose L to lattice of F.
- 
+
   pb = pseudo_basis(L)
   # KL has basis a[1] for a in pb
   # So we only need to map the Z-basis of the coefficient ideals
   image_of_first = FabstoF\(T[1, 1] * B[1] + T[1, 2] * B[2])
   image_of_second = FabstoF\(T[2, 1] * B[1] + T[2, 2] * B[2])
+
+  #@show [phi(FabstoF(a), FabstoF(b)) for a in [image_of_first, image_of_second] for b in [image_of_first, image_of_second]]
 
   basisofLinFabs = elem_type(Fabs)[]
 
@@ -1602,28 +1648,14 @@ function _genus_representatives_binary_quadratic_definite(_L::QuadLat; max = inf
   end
 
   # Let M = <basisofLinFabs>_Z, this is a lattice in Fabs and we need to compute
-  # its (left/right) order. Now we don't lattices in number fields, but we can
-  # use that O(M) = O(r * M). Now we choose r = "denominator" of M, then r * M
-  # is an ideal of the equation order. Thus we can call ring_of_multipliers!
-
+  # its (left/right) order. We use __colon_raw on the basis matrix for this.
 
   EFabs = equation_order(Fabs)
 
   scaled_basisofLinFabs = elem_type(EFabs)[]
 
-  d = one(FlintZZ)
+  O = Order(Fabs, __colon_raw(Fabs, basisofLinFabs, basisofLinFabs))
 
-  for b in basisofLinFabs
-    d = lcm(d, denominator(b, EFabs))
-  end
-
-  for b in basisofLinFabs
-    push!(scaled_basisofLinFabs, EFabs(d * b))
-  end
-
-  I = ideal(EFabs, scaled_basisofLinFabs)
-  O = ring_of_multipliers(I)
-  # What a mess
   z = zero_matrix(K, degree(O), degree(F))
   for i in 1:degree(O)
     elem_to_mat_row!(z, i, FabstoF(elem_in_nf(basis(O)[i])))
@@ -1637,11 +1669,9 @@ function _genus_representatives_binary_quadratic_definite(_L::QuadLat; max = inf
 
   OinF = Order(F, pm)
 
-  II = ideal(O, O.(elem_in_nf.(basis(I))))
-  LinFabs = fractional_ideal(O, II, d)
+  LinFabs = fractional_ideal(O, basisofLinFabs)
 
   # O is the ring of multipliers/right oder of M
- 
   # Now we compute CL_F/{ambiguous ideals of O_F with respect to F/K}
 
   @vprint :GenRep 1 "Compute representatives modulo ambiguous ideal classes ... \n"
@@ -1658,10 +1688,10 @@ function _genus_representatives_binary_quadratic_definite(_L::QuadLat; max = inf
   # There is a formula for the number of ambiguous ideal classes, this checks this:
   # UK, mUK = unit_group(OK)
   # UFabs, mUFabs = unit_group(OFabs)
-  # order(quo(UFabs, append!([ mUFabs\OFabs(KtoFabs(elem_in_nf(mUK(u)))) for u in gens(UK) ], [mUFabs\OFabs(torsion_units_generator(Fabs))]))[1])
-  # order(CF)
-  # order(CK)
-  # length(support(discriminant(maximal_order(F))))
+  #@show order(quo(UFabs, append!([ mUFabs\OFabs(KtoFabs(elem_in_nf(mUK(u)))) for u in gens(UK) ], [mUFabs\OFabs(torsion_units_generator(Fabs))]))[1])
+  #@show order(CF)
+  #@show order(CK)
+  #@show length(support(discriminant(maximal_order(F))))
 
   # repr are representatives for CL_F/{ambiguous ideals of O_F with respect to F/K}
   # This is isomorphic to gen(OFabs)/cls+(OFabs) via a -> b = a/\sigma(a).
@@ -1672,7 +1702,7 @@ function _genus_representatives_binary_quadratic_definite(_L::QuadLat; max = inf
   #
   # _intersect_lattice_down computes a preimage under gen(O) -> gen(CL_F)
   #
-  # The map gen(O) -> gen(CL_F) is not injecture, but we can compute a set containing
+  # The map gen(O) -> gen(CL_F) is not injective, but we can compute a set containing
   # representatives of the kernel elements.
 
   OF = maximal_order(F)
@@ -1688,7 +1718,7 @@ function _genus_representatives_binary_quadratic_definite(_L::QuadLat; max = inf
     cppart = reduce(*, (Q^valuation(c, Q) for (Q, _) in lQ), init = 1 * OFabs)
     Rq, mq = quo(OFabs, cppart)
     Mu, f = multiplicative_group(Rq)
-    elts = elem_type(F)[ F(elem_in_nf(mq\(f(m)))) for m in Mu]
+    elts = elem_type(F)[ FabstoF(elem_in_nf(mq\(f(m)))) for m in Mu]
     if length(elts) > 1
       push!(_ps, p)
       push!(_xps, elts)
@@ -1715,10 +1745,10 @@ function _genus_representatives_binary_quadratic_definite(_L::QuadLat; max = inf
   for i in 1:length(repr_in_OF)
     I = repr_in_OF[i]
     Iabs = repr[i]
-
     N, xps, ps = _translate_ideal(I, Iabs, FabstoF, sigma, sigmaabs)
     @assert norm(N) == 1 * OK
     M = _intersect_lattice_down(xps, ps, OinF)
+
     Minabs = fractional_ideal(O, [FabstoF\(b) for b in absolute_basis(M)])
     if length(kernel_rep) > 0
       for K in kernel_rep
@@ -1736,20 +1766,16 @@ function _genus_representatives_binary_quadratic_definite(_L::QuadLat; max = inf
 
   gram_ambient_space = gram_matrix(V)
 
-  res = typeof(L)[]
+  V = ambient_space(L)
 
   G = genus(L)
-  
-  _V = ambient_space(_L)
 
-  _G = genus(_L)
-
-  _res = typeof(_L)[]
+  res = typeof(L)[]
 
   cur_mass = zero(fmpq)
 
   if use_mass
-    _mass = mass(_L)
+    _mass = mass(L)
     @vprint :GenRep 1 "Using mass, which is $(_mass)\n"
   else
     _mass = one(fmpq)
@@ -1763,6 +1789,7 @@ function _genus_representatives_binary_quadratic_definite(_L::QuadLat; max = inf
       push!(generators, [Tinv[1, 1] * coeff(binF, 0) + Tinv[2, 1] * coeff(binF, 1),
                          Tinv[1, 2] * coeff(binF, 0) + Tinv[2, 2] * coeff(binF, 1)])
     end
+
     z = zero_matrix(K, length(generators), dim(V))
     for i in 1:length(generators)
       for j in 1:ncols(gram_ambient_space)
@@ -1776,20 +1803,20 @@ function _genus_representatives_binary_quadratic_definite(_L::QuadLat; max = inf
     end
     pm = sub(pm, i:nrows(pm), 1:ncols(pm))
 
-    _pm = pseudo_matrix(basis_matrix_of_rational_span(_L) * matrix(pm), coefficient_ideals(pm))
+    _pm = pseudo_matrix(matrix(pm), coefficient_ideals(pm))
 
-    _new_cand = lattice(_V, _pm)
+    _new_cand = lattice(V, pm)
 
-    if genus(_new_cand) != _G
+    if genus(_new_cand) != G
       continue
     end
 
-    if any(T -> isisometric(T, _new_cand)[1], _res)
+    if any(T -> isisometric(T, _new_cand)[1], res)
       continue
     else
-      push!(_res, _new_cand)
-      if length(_res) >= max
-        return _res
+      push!(res, _new_cand)
+      if length(res) >= max
+        break
       end
       if use_mass
         cur_mass += fmpq(1, automorphism_group_order(_new_cand))
@@ -1797,13 +1824,17 @@ function _genus_representatives_binary_quadratic_definite(_L::QuadLat; max = inf
           error("Something very wrong in genus_representatives (mass mismatch")
         end
         if cur_mass == _mass
-          return _res
+          break
         end
       end
     end
   end
 
-  return _res
+  if max < inf && use_mass
+    @assert _mass == cur_mass
+  end
+
+  return res
 end
 
 function _translate_ideal(I, Iabs, FtoFabs, sigma, sigmaabs)
@@ -1811,7 +1842,7 @@ function _translate_ideal(I, Iabs, FtoFabs, sigma, sigmaabs)
   crit_primes = support(minimum(I))
   F = nf(O)
   xps = elem_type(F)[]
-  sigmaI = sum(ideal(order(I), x) for x in basis(sigmaabs(Iabs)))
+  sigmaI = sum(ideal(order(I), order(I)(FtoFabs(elem_in_nf(x)))) for x in basis(sigmaabs(Iabs)))
   M = I * inv(sigmaI)
   for p in crit_primes
     lQ = prime_decomposition(O, p)
@@ -1830,138 +1861,120 @@ function _translate_ideal(I, Iabs, FtoFabs, sigma, sigmaabs)
   return M, xps, crit_primes
 end
 
-function _intersect_lattice_down(xps, _ps, Lambda)
-  F = _algebra(Lambda)
-  d = degree(Lambda)
-  K = _base_ring(F)
-  ps = copy(_ps)
-  Lambdapb = pseudo_basis(Lambda)
-  OK = base_ring(Lambda)
-  Lambdaid = fractional_ideal_type(OK)[ a for (v, a) in Lambdapb ]
+function _fractional_ideal_from_base_ring_generators(OE, v)
+  # v are elements of the field
+  return fractional_ideal(OE, basis_matrix(v) * basis_mat_inv(OE))
+end
 
-  local current_global_basis::Vector{elem_type(F)}
+function _intersect(I::NfRelOrdFracIdl, J::NfRelOrdFracIdl)
+  pm = _intersect_modules(basis_pmatrix(I), basis_pmatrix(J))
+  return fractional_ideal(order(I), pm)
+end
 
-  # Let's collect the local bases that we want to have
-  # At ps[i] I want xps[i] * O
-
-  local_bases = Vector{elem_type(F)}[]
-
-  current_global_basis = elem_type(F)[ v for (v, _) in Lambdapb]
-
-  for i in 1:length(ps)
-    p = ps[i]
-    push!(local_bases, elem_type(F)[ K(uniformizer(p)^valuation(a, p)) * xps[i] * v for (v, a) in Lambdapb])
+function _intersect_lattice_down_contained(xps, _ps, Lambda)
+  _ps_orig = deepcopy(_ps)
+  xps_orig = deepcopy(xps)
+  if length(_ps) == 0
+    return one(nf(Lambda)) * Lambda
+  end
+  for x in xps
+    @assert x in Lambda
   end
 
-  for (v, a) in Lambdapb
-    for (p, ) in factor(a)
-      if !(p in ps)
-        push!(ps, p)
-        push!(local_bases, elem_type(F)[K(uniformizer(p)^valuation(a, p)) * v for (v, a) in Lambdapb])
-      end
-    end
-  end
+  LL = nf(Lambda)(1) * Lambda
 
-  # I want to make sure that M_p \subseteq M^(p)?
-
-  #for (v, a) in zip(current_global_basis, Lambdaid)
-  #  @show v
-  #  @show typeof(v * Lambda)
-  #  @show typeof(a)
-  #  @show a * (v * Lambda)
-  #end
-
-  J = reduce(+, (a * (v * Lambda) for (v, a) in zip(current_global_basis, Lambdaid)), init = F(0) * Lambda)
-
-  local pi::elem_type(K)
-
-  for i in 1:length(ps)
-    _J = reduce(+, (b * Lambda for b in local_bases[i]), init = F(0) * Lambda)
-    m, _ = _padic_index(J, _J, ps[i])
-    #@show m
-    pi = elem_in_nf(uniformizer(ps[i]))
-    for q in support(pi)
-      if q != ps[i] && !(q in ps)
-        push!(ps, q)
-        push!(local_bases, copy(current_global_basis))
-      end
-    end
-    current_global_basis = pi^-m .* current_global_basis
-    J = reduce(+, (a * (v * Lambda) for (v, a) in zip(current_global_basis, Lambdaid)), init = F(0) * Lambda)
-  end
-
-  # Thus I want I with I_p = sum_p v_p R_p for all p in ps, and I_p = O_p at
-  # the other primes
-
-  Mbmatinv = basis_mat_inv(Lambda)
-  Mbmatinv = zero_matrix(K, d, d)
-  for j in 1:d
-    elem_to_mat_row!(Mbmatinv, j, current_global_basis[j])
-  end
-  Mbmatinv = inv(Mbmatinv)
-
-  basis_part = current_global_basis
-  mats = typeof(Mbmatinv)[]
-  for i in 1:length(ps)
-    Mb = zero_matrix(K, d, d)
-    for j in 1:d
-      elem_to_mat_row!(Mb, j, local_bases[i][j])
-    end
-    # This assertion is throwing, but I think it is wrong (check!)
-    #@assert all(valuation(a, ps[i]) == 0 for a in Lambdaid)
-    MM = Mb * Mbmatinv
-    for j in 1:d
-      @assert reduce(+, (basis_part[k] * MM[j, k] for k in 1:d), init = zero(F)) == local_bases[i][j]
-    end
-    push!(mats, Mb * Mbmatinv)
-  end
-
-  # Now let's do the approximation
-  T = zero_matrix(K, d, d)
-  if length(ps) == 0
-    T = identity_matrix(K, d)
-  else
-    for l in 1:d
-      for m in 1:d
-        T[l, m] = _strong_approximation(ps, Int[0 for i in 1:length(ps)], elem_type(K)[mats[i][l, m] for i in 1:length(ps)])
-      end
-    end
-  end
-
-  # new basis
-
-  new_bas = elem_type(F)[]
-
-  for j in 1:d
-    push!(new_bas, sum(elem_type(F)[basis_part[k] * T[j, k] for k in 1:d]))
-  end
-
-  for i in 1:length(ps)
-    @assert all([valuation(e, ps[i]) >= 0 for e in (mats[i] - T)])
-  end
-
-  JJ = reduce(+, (b * Lambda for b in new_bas), init = F(0) * Lambda) ##fractional_ideal(Lambda, new_bas)
- 
-  L1 = reduce(+, (b * Lambda for b in current_global_basis), init = F(0) * Lambda) #fractional_ideal(Lambda, current_global_basis)
-  L = L1 + JJ
   for i in 1:length(xps)
-    @assert _padic_index(xps[i] * Lambda, L, ps[i]) == (0, 0)
-    @assert _padic_index(L, xps[i] * Lambda, ps[i]) == (0, 0)
+    I = xps[i] * Lambda
+    n = norm(I)
+    for (p, e) in factor(n)
+      if p == _ps[i]
+        continue
+      end
+      if e > 0
+        I = inv(p)^(e) * I
+      end
+    end
+    LL = _intersect(LL, I)
   end
 
-  for q in support(norm(numerator(L)))
-    if !(q in ps)
-      @assert _padic_index(L, Lambda, q) == (0, 0)
+  for i in 1:length(xps)
+    @assert _padic_index(xps[i] * Lambda, LL, _ps[i]) == (0, 0)
+    @assert _padic_index(LL, xps[i] * Lambda, _ps[i]) == (0, 0)
+  end
+
+  for q in support(norm(LL))
+    if !(q in _ps)
+      @assert _padic_index(LL, d * Lambda, q) == (0, 0)
     end
   end
 
-  for q in support(denominator(L) * base_ring(Lambda))
-    if !(q in ps)
-      @assert _padic_index(L, Lambda, q) == (0, 0)
+  return LL
+end
+
+# Given (x_p)_p, find a fractional ideal I such that I_p = x_p Lambda_p
+# for all p and I_q = Lambda_q for all other prime ideals.
+#
+# The idea is to change Jp = x_p such that (Jp)_p \subseteq Lambda_p
+# and Lambda_q \subseteq (Jp)_q for q != p. Then we can just intersect
+# the Jp with Lambda.
+#
+# We first reduce to the case x_p in Lambda for all p by multiplying
+# with a common denominator.
+function _intersect_lattice_down(xps, _ps, Lambda)
+  _ps_orig = copy(_ps)
+  xps_orig = copy(xps)
+
+  if length(_ps) == 0
+    return one(nf(Lambda)) * Lambda
+  end
+  d = lcm([denominator(x, Lambda) for x in xps])
+
+  for x in xps
+    @assert d*x in Lambda
+  end
+
+  _xps = [d * x for x in xps]
+  _ps = copy(_ps)
+
+  for p in support(norm(Lambda(d)) * base_ring(Lambda))
+    if !(p in _ps)
+      push!(_ps, p)
+      push!(_xps, nf(Lambda)(d))
+    end
+  end
+  LL = _intersect_lattice_down_contained(_xps, _ps, Lambda)
+  pm = deepcopy(basis_pmatrix(LL))
+  pm.matrix = divexact(pm.matrix, base_field(nf(Lambda))(d))
+  LLL = fractional_ideal(Lambda, pm)
+
+  for q in support(norm(LLL))
+    if !(q in _ps)
+    end
+  end
+ 
+  for i in 1:length(xps)
+    @assert _padic_index(xps_orig[i] * Lambda, LLL, _ps_orig[i]) == (0, 0)
+    @assert _padic_index(LLL, xps_orig[i] * Lambda, _ps_orig[i]) == (0, 0)
+  end
+
+  for q in support(norm(numerator(LLL)))
+    if !(q in _ps_orig)
+      @assert _padic_index(LLL, Lambda, q) == (0, 0)
     end
   end
 
-  return L
+  for q in support(denominator(LLL) * base_ring(Lambda))
+    if !(q in _ps_orig)
+      @assert _padic_index(LLL, Lambda, q) == (0, 0)
+    end
+  end
+
+  return LLL
+end
+
+function _fractional_ideal_from_base_ring_generators(OE, v, id)
+  # v are elements of the field
+  return fractional_ideal(OE, pseudo_matrix(basis_matrix(v) * basis_mat_inv(OE), id))
 end
 
 function absolute_norm(A::Hecke.AlgAssRelOrdIdl)
@@ -2061,7 +2074,7 @@ function _embed_into_ternary_lattice(L)
   # To go from V to ambient_space(L), multiply from the right with ML
   # The other direction in general requires solving x * ML = v, if v is an
   # element of rational_span(L)
-  
+
   G = gram_matrix(V)
   K = base_ring(V)
   Gext = diagonal_matrix(G, matrix(K, 1, 1, [one(K)]))
@@ -2133,7 +2146,7 @@ function _orthogonal_complement(v, L)
   while iszero_row(pm.matrix, i)
     i += 1
   end
-   
+
   pm = sub(pm, i:nrows(pm), 1:ncols(pm))
 
   return lattice(V, pm)
@@ -2173,7 +2186,7 @@ function _genus_representatives_binary_quadratic_indefinite(_L, max = max, use_a
   @assert !isdefinite(_L)
   @assert rank(_L) == 2
 
-  V = rational_span(_L)
+  V = ambient_space(_L)
   # 0. Scale to have 1 in Q(V)
 
   D = diagonal(V)
@@ -2181,11 +2194,11 @@ function _genus_representatives_binary_quadratic_indefinite(_L, max = max, use_a
   d = D[i]
 
   # so G -> G/d
- 
+
   L = lattice(quadratic_space(base_ring(V), 1//d * gram_matrix(ambient_space(_L))), pseudo_matrix(_L))
 
   V = rational_span(L)
- 
+
   # 1. Find the isometry with (K + K, Tr/2)
   @vprint :GenRep 1 "Determining isometry with CM field ... \n"
   K = base_ring(V)
@@ -2216,7 +2229,7 @@ function _genus_representatives_binary_quadratic_indefinite(_L, max = max, use_a
   Tinv = inv(T)
 
   # 2. Transport L to lattice of A.
- 
+
   pb = pseudo_basis(L)
   # KL has basis a[1] for a in pb
   # So we only need to map the Z-basis of the coefficient ideals
@@ -2285,7 +2298,7 @@ function _genus_representatives_binary_quadratic_indefinite(L::QuadLat)
   K, = rationals_as_number_field()
   G = genus(_binary_quadratic_form_to_lattice(f, K, e))
   lat = typeof(L)[]
-  
+
   for g in cls
     LL = _binary_quadratic_form_to_lattice(g, K, e)
     GG = genus(LL)

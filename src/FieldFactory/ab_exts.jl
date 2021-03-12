@@ -296,11 +296,11 @@ function quadratic_fields(bound::Int; tame::Bool=false, real::Bool=false, comple
 
 end
 
-function _quad_ext(bound::Int, only_real::Bool = false)
+function _quad_ext(bound::Int, only_real::Bool = false; unramified_outside::Vector{fmpz} = fmpz[])
   
   Qx, x = PolynomialRing(FlintQQ, "x", cached = false)
   K = NumberField(x-1, cached = false, check = false)[1]
-  sqf = squarefree_up_to(bound)
+  sqf = squarefree_up_to(bound, prime_base = unramified_outside)
   final_list = Int[]
   for i=2:length(sqf)
     if abs(sqf[i]*4)< bound
@@ -388,9 +388,9 @@ function _ext(Ox,x,i,j)
 end
 
 
-function _C22_exts_abexts(bound::Int, only_real::Bool = false)
+function _C22_exts_abexts(bound::Int, only_real::Bool = false; unramified_outside::Vector{fmpz} = fmpz[])
   Qx, x = PolynomialRing(FlintZZ, "x")
-  pairs = _find_pairs(bound, only_real)
+  pairs = _find_pairs(bound, only_real, unramified_outside = unramified_outside)
   return (_ext_with_autos(Qx, x, i, j) for (i, j) in pairs)
 end
 
@@ -543,11 +543,11 @@ function _pairs_totally_real(pairs, ls, bound)
 end
 
 
-function _find_pairs(bound::Int, only_real::Bool = false)
+function _find_pairs(bound::Int, only_real::Bool = false; unramified_outside::Vector{fmpz} = fmpz[] )
 
   #first, we need the squarefree numbers
   b1=ceil(Int, Base.sqrt(bound))
-  ls = squarefree_up_to(b1)
+  ls = squarefree_up_to(b1, prime_base = unramified_outside)
   #The first step is to enumerate all the totally real extensions.
   pairs = trues(length(ls), length(ls))
   real_exts = _pairs_totally_real(pairs, ls, bound)
@@ -594,66 +594,18 @@ end
 
 
 function _from_relative_to_abs(L::NfRelNS{T}, auts::Vector{<: NumFieldMor{NfRelNS{T}, NfRelNS{T}}}) where T
-
-  S, mS = simple_extension(L)
-  K, mK, mK2 = absolute_field(S, cached = false)
-  #First, we compute the maximal order of the absolute field.
-  #Since the computation of the relative maximal order is slow, I bring to the absolute field the elements
-  # generating the equation order.
-  @vprint :AbExt 2 "Computing the maximal order\n"
-  #First, I construct the product basis of the relative extension
-  pols = L.pol
-  gL = gens(L)
-  B = Array{nf_elem, 1}(undef, degree(K))
-  B[1] = K(1)
-  ind = total_degree(pols[1])
-  genjj = mK\(mS\gL[1])
-  for i = 2:ind
-    B[i] = genjj*B[i-1]
-  end
-  for jj = 2:length(pols)
-    genjj = mK\(mS\gL[jj])
-    el = genjj
-    new_deg = total_degree(pols[jj])
-    for i = 2:new_deg
-      for j = 1:ind
-        B[(i-1)* ind + j] = B[j]* el 
-      end
-      mul!(el, el, genjj)
-    end
-    ind *= new_deg
-  end
-
-  #Now, I add the elements of the maximal order
-  if degree(base_field(L)) > 1
-    O = maximal_order(S.base_ring)
-    for i = 1:degree(O)
-      el = mK\(S(O.basis_nf[i]))
-      for j = 1:ind
-        B[(i-1)* ind + j] = B[j] * el 
-      end
-    end
-  end
-  #Now, we compute the maximal order. Then we simplify.
-  PO = Order(K, B, check = false, cached = false, isbasis = true)
-  @vtime :AbExt 2 O1 = MaximalOrder(PO)
-  O1.ismaximal = 1
-  _set_maximal_order_of_nf(K, O1)
-  @vprint :AbExt 2 "Done. Now simplify and translate information\n"
-  @vtime :AbExt 2 Ks, mKs = simplify(K, cached = false)
+  
+  @vtime :AbExt 2 Ks, mKs = simplified_absolute_field(L, cached = false)
   #Now, we have to construct the maximal order of this field.
   #I am computing the preimages of mKs by hand, by inverting the matrix.
-
-
   #Now, the automorphisms.
   autos=Array{NfToNfMor, 1}(undef, length(auts))
-  el=mS(mK((mKs(gen(Ks)))))
-  for i=1:length(auts)
-    y = mKs\(mK\(mS\(auts[i](el))))
+  el = mKs(gen(Ks))
+  for i = 1:length(auts)
+    y = mKs\(auts[i](el))
     autos[i] = hom(Ks, Ks, y, check = false)
   end
   _set_automorphisms_nf(Ks, closure(autos, degree(Ks)))
-  
   @vprint :AbExt 2 "Finished\n"
   return Ks, autos
 end 

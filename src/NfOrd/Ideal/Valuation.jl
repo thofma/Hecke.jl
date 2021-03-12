@@ -264,7 +264,7 @@ function assure_valuation_function(p::NfOrdIdl)
     return nothing
   end
   P = minimum(p)
-  if p.splitting_type[1]*p.splitting_type[2] == degree(O)
+  if degree(O) < 40 && p.splitting_type[1]*p.splitting_type[2] == degree(O) 
     local val3
     let P = P, p = p
       function val3(s::nf_elem, no::fmpq = fmpq(0))

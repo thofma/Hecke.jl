@@ -87,12 +87,6 @@ order_type(K::NfRelNS{T}) where {T} = NfRelOrd{T, fractional_ideal_type(order_ty
 
 order_type(::Type{NfRelNS{T}}) where {T} = NfRelOrd{T, fractional_ideal_type(order_type(parent_type(T))), NfRelNSElem{T}}
 
-Nemo.needs_parentheses(::NfRelNSElem) = true
-
-Nemo.isnegative(x::NfRelNSElem) = Nemo.isnegative(data(x))
-
-Nemo.show_minus_one(::Type{NfRelNSElem{T}}) where {T} = true
-
 function Nemo.iszero(a::NfRelNSElem)
   return iszero(data(a))
 end
@@ -110,27 +104,6 @@ Nemo.one(a::NfRelNSElem) = one(a.parent)
 function zero!(a::NfRelNSElem)
   zero!(a.data)
   return a
-end
-
-################################################################################
-#
-#  Promotion
-#
-################################################################################
-
-Nemo.promote_rule(::Type{NfRelNSElem{S}}, ::Type{T}) where {T <: Integer, S} = NfRelNSElem{S}
-
-Nemo.promote_rule(::Type{NfRelNSElem{T}}, ::Type{fmpz}) where {T <: Nemo.RingElement} = NfRelNSElem{T}
-
-Nemo.promote_rule(::Type{NfRelNSElem{T}}, ::Type{fmpq}) where {T <: Nemo.RingElement} = NfRelNSElem{T}
-
-Nemo.promote_rule(::Type{NfRelNSElem{T}}, ::Type{T}) where {T} = NfRelNSElem{T}
-
-Nemo.promote_rule(::Type{NfRelNSElem{T}}, ::Type{NfRelNSElem{T}}) where T <: Nemo.RingElement = NfRelNSElem{T}
-
-
-function Nemo.promote_rule(::Type{NfRelNSElem{T}}, ::Type{U}) where {T <: Nemo.RingElement, U <: Nemo.RingElement}
-  Nemo.promote_rule(T, U) == T ? NfRelNSElem{T} : Union{}
 end
 
 ################################################################################
@@ -166,7 +139,7 @@ end
 
 function Base.show(io::IO, a::NfRelNS)
   print(io, "non-simple Relative number field with defining polynomials ", a.pol)
-  print(io, " \n over", base_field(a))
+  print(io, " \n over ", base_field(a))
 end
 
 function AbstractAlgebra.expressify(a::NfRelNSElem; context = nothing)
@@ -210,18 +183,6 @@ function (K::NfRelNS{T})(a::Generic.MPoly{T}) where T
   z = NfRelNSElem{T}(w)
   z.parent = K
   return z
-end
-
-function (K::NfRelNS{T})(a::T) where T
-  parent(a) != base_ring(parent(K.pol[1])) == error("Cannot coerce")
-  z = NfRelNSElem{T}(parent(K.pol[1])(a))
-  z.parent = K
-  return z
-end
-
-function (K::NfRelNS{T})(a::NfRelNSElem{T}) where T
-  parent(a) != K == error("Cannot coerce")
-  return a
 end
 
 (K::NfRelNS)(a::Integer) = K(parent(K.pol[1])(a))
@@ -272,6 +233,12 @@ end
 function Base.:(*)(a::NfRelNSElem{T}, b::NfRelNSElem{T}) where {T}
   parent(a) == parent(b) || force_op(+, a, b)::NfRelNSElem{T}
   return parent(a)(data(a) * data(b))
+end
+
+function Base.:(*)(a::NfRelNSElem{T}, b::Union{Int, fmpz}) where {T}
+  z = NfRelNSElem{T}(data(a)*b)
+  z.parent = parent(a)
+  return z
 end
 
 function Base.:(//)(a::NfRelNSElem{T}, b::NfRelNSElem{T}) where {T}
@@ -350,7 +317,7 @@ function Nemo.mul!(c::NfRelNSElem{T}, a::NfRelNSElem{T}, b::NfRelNSElem{T}) wher
   return c
 end
 
-function Nemo.mul!(c::NfRelNSElem{T}, a::NfRelNSElem{T}, b::Int) where {T}
+function Nemo.mul!(c::NfRelNSElem{T}, a::NfRelNSElem{T}, b::Union{Int, fmpz}) where {T}
   return a*b
 end
 
@@ -371,6 +338,17 @@ end
 ###############################################################################
 # other stuff, trivia and non-trivia
 ###############################################################################
+
+function dot(v::Vector{T}, v1::Vector{fmpz}) where T <: NfRelNSElem
+  @assert length(v) == length(v1)
+  el = data(v[1])*v1[1]
+  for j = 2:length(v)
+    el += data(v[j])*v1[j]
+  end
+  z = T(el)
+  z.parent = parent(v[1])
+  return z
+end
 
 function Nemo.degree(K::NfRelNS)
   return prod(Int[total_degree(x) for x=K.pol])
@@ -404,13 +382,26 @@ function basis(K::NfRelNS)
   kxy = parent(K.pol[1])
   B = Vector{elem_type(K)}(undef, degree(K))
   d = degrees(K)
-  I = cartesian_product_iterator([0:d[i]-1 for i = 1:length(d)])
+  I = cartesian_product_iterator([0:d[i]-1 for i = 1:length(d)], inplace = true)
   for (i, e) in enumerate(I)
     t = kxy()
     setcoeff!(t, e, one(k))
     B[i] = K(t)
   end
   return B
+end
+
+function coeffs(a::NfRelNSElem; copy = false)
+  L = parent(a)
+  K = base_field(L)
+  v = Vector{elem_type(K)}(undef, degree(L))
+  for j = 1:degree(L)
+    v[j] = zero(K)
+  end
+  for j = 1:length(a.data)
+    v[monomial_to_index(j, a)] = a.data.coeffs[j]
+  end
+  return v
 end
 
 function basis_matrix(a::Vector{NfRelNSElem{T}}) where {T <: NumFieldElem}
@@ -560,9 +551,9 @@ function minpoly(a::NfRelNSElem)
   return minpoly_sparse(a)
 end
 
-function minpoly(a::NfRelNSElem{nf_elem}, ::FlintRationalField)
+function minpoly(a::T, ::FlintRationalField) where T <: Union{NfRelNSElem, NfRelElem}
   f = minpoly(a)
-  n = norm(f)
+  n = absolute_norm(f)
   g = gcd(n, derivative(n))
   if isone(g)
     return n
@@ -571,7 +562,7 @@ function minpoly(a::NfRelNSElem{nf_elem}, ::FlintRationalField)
   return n
 end
 
-absolute_minpoly(a::NfRelNSElem{nf_elem}) = minpoly(a, FlintQQ)
+absolute_minpoly(a::T) where T <: Union{NfRelNSElem, NfRelElem} = minpoly(a, FlintQQ)
 
 function inv(a::NfRelNSElem)
   if iszero(a)
@@ -708,7 +699,32 @@ end
 
 @inline ngens(K::NfRelNS) = length(K.pol)
 
-function simple_extension(K::NfRelNS{T}; cached = true) where {T}
+function primitive_element(K::NfRelNS)
+  g = gens(K)
+  n = length(g)
+  if n == 1
+    return g[1]
+  elseif lcm([total_degree(K.pol[i]) for i = 1:n]) == degree(K)
+    return sum(g[i] for i = 1:n)
+  end
+  #TODO: Write a modular test for primitiveness
+  pe = g[1]
+  f = minpoly(pe)
+  for i = 2:n
+    pe += g[i]
+    f = minpoly(pe)
+    while degree(f) < prod(total_degree(K.pol[k]) for k=1:i)
+      pe += g[i]
+      f = minpoly(pe)
+    end
+  end
+  return pe
+end
+
+function simple_extension(K::NfRelNS{T}; simplified::Bool = false, cached = true) where {T}
+  if simplified
+    return simplified_simple_extension(K; cached = cached)
+  end
   n = ngens(K)
   g = gens(K)
   if n == 1
@@ -761,21 +777,6 @@ function simple_extension(K::NfRelNS{T}; cached = true) where {T}
   return Ka, hom(Ka, K, pe, inverse = emb)
 end
 
-@doc Markdown.doc"""
-    simple_extension(K::NfRelNS{nf_elem}, FlintQQ) -> AnticNumberField, Map, Map
-
-    absolute_field(K::NfRelNS{nf_elem}) -> AnticNumberField, Map, Map
-
-Compute an isomorphic field as an extension of $Q$ together with the isomorphism 
-(1st map) and the embedding of the base field (2nd map).
-"""
-function simple_extension(K::NfRelNS{nf_elem}, ::FlintRationalField)
-  Ks, mp = simple_extension(K)
-  Ka, m1, m2 = absolute_field(Ks)
-  return Ka, m1*mp, m2
-end
-
-absolute_field(K::NfRelNS{nf_elem}) = simple_extension(K, FlintQQ)
 
 #trivia, missing in NfRel
 function basis(K::NfRel)

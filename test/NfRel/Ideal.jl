@@ -36,9 +36,9 @@
   end
 
   @testset "Prime decomposition" begin
-     Qx, x = FlintQQ["x"]
+    Qx, x = FlintQQ["x"]
     f = x^2 + 12*x - 92
-     K, a = NumberField(f, "a")
+    K, a = NumberField(f, "a")
     OK = maximal_order(K)
     Ky, y = K["y"]
     g = y^2 - 54*y - 73
@@ -54,6 +54,13 @@
     (p1, e1), (p2, e2) = prime_decomposition(OL, p)
     @test e1 == 1 && e2 == 1
     @test p1*p2 == p*OL
+
+    L1, gL1 = number_field([y^2+2, y^2+3])
+    OL1 = maximal_order(L1)
+    lp = prime_decomposition(OL1, 2)
+    @test length(lp) == 1
+    @test lp[1][2] == 4
+    @test lp[1][1].splitting_type[2] == 2
 
     Q, q = number_field(x, "q")
     Z = maximal_order(Q)
@@ -225,5 +232,17 @@
         end
       end
     end
+  end
+
+  @testset "Weird modulus" begin
+    K, a = Hecke.rationals_as_number_field()
+    Kt, t = K["t"]
+    E, z = NumberField(t^2 + 1, "z")
+    OE = Order(E, pseudo_matrix(matrix(K, 2, 2, [1, 0, 0, 1]), [1 * maximal_order(K), 2 * maximal_order(K)]))
+    I = OE(1) * OE
+    @test I * I == I
+    @test I + I == I
+    @test intersect(I, I) == I
+    @test isone(I//I)
   end
 end

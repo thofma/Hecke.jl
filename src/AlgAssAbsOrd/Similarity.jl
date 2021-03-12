@@ -413,7 +413,7 @@ end
 
 function _basis_of_commutator_algebra(A)
   linind = transpose(LinearIndices(size(A)))
-  cartind = cartesian_product_iterator([1:x for x in size(A)])
+  cartind = cartesian_product_iterator([1:x for x in size(A)], inplace = true)
   n = nrows(A)
   z = zero_matrix(base_ring(A), n^2, n^2)
   for i in 1:n
@@ -438,7 +438,7 @@ end
 
 function _basis_of_integral_commutator_algebra(A)
   linind = transpose(LinearIndices(size(A)))
-  cartind = cartesian_product_iterator([1:x for x in size(A)])
+  cartind = cartesian_product_iterator([1:x for x in size(A)], inplace = true)
   n = nrows(A)
   z = zero_matrix(FlintZZ, n^2, n^2)
   for i in 1:n
@@ -463,7 +463,7 @@ end
 
 function _basis_of_integral_commutator_algebra(A, B)
   linind = transpose(LinearIndices(size(A)))
-  cartind = cartesian_product_iterator([1:x for x in size(A)])
+  cartind = cartesian_product_iterator([1:x for x in size(A)], inplace = true)
   n = nrows(A)
   z = zero_matrix(FlintZZ, n^2, n^2)
   for i in 1:n

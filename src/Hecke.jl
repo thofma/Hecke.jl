@@ -92,7 +92,7 @@ import Nemo: acb_struct, Ring, Group, Field, NmodRing, nmod, arf_struct,
              elem_to_mat_row!, elem_from_mat_row, gfp_elem, gfp_mat,
              gfp_fmpz_elem, Zmodn_poly, Zmodn_mat, GaloisField,
              GaloisFmpzField, acb_vec, array, acb_vec_clear, force_coerce,
-             force_op, fmpz_mod_ctx_struct
+             force_op, fmpz_mod_ctx_struct, divisors
 
 export show, StepRange, domain, codomain, image, preimage, modord, resultant,
        next_prime, ispower, number_field, factor
@@ -136,13 +136,13 @@ function __init__()
     printstyled(" $VERSION_NUMBER ", color = :green)
     print("... \n ... which comes with absolutely no warranty whatsoever")
     println()
-    println("(c) 2015-2020 by Claus Fieker, Tommy Hofmann and Carlo Sircana")
+    println("(c) 2015-2021 by Claus Fieker, Tommy Hofmann and Carlo Sircana")
     println()
   end
 
-  if inNotebook()  # to make toggle work in IJulia
-    display("text/html", "\$\\require{action}\$")
-  end
+  #if inNotebook()  # to make toggle work in IJulia
+  #  display("text/html", "\$\\require{action}\$")
+  #end
 
   t = create_accessors(AnticNumberField, acb_root_ctx, get_handle())
   global _get_nf_conjugate_data_arb = t[1]
@@ -523,12 +523,22 @@ import Nemo: libflint, libantic, libarb  #to be able to reference libraries by f
 #
 ################################################################################
 
+function _adjust_path(x::String)
+  if Sys.iswindows()
+    return replace(x, "/" => "\\")
+  else
+    return x
+  end
+end
+
 function test_module(x, new::Bool = true)
    julia_exe = Base.julia_cmd()
+   # On Windows, we also allow bla/blub"
+   x = _adjust_path(x)
    if x == "all"
-     test_file = joinpath(pkgdir, "test/runtests.jl")
+     test_file = joinpath(pkgdir, "test", "runtests.jl")
    else
-     test_file = joinpath(pkgdir, "test/$x.jl")
+     test_file = joinpath(pkgdir, "test", "$x.jl")
    end
 
    if new
@@ -682,6 +692,14 @@ const _RealRings = _RealRing[_RealRing()]
 ################################################################################
 
 include("Get.jl")
+
+################################################################################
+#
+#  Precompilation
+#
+################################################################################
+
+#precompile(maximal_order, (AnticNumberField, ))
 
 ################################################################################
 #

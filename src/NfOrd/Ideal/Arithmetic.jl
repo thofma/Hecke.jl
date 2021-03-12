@@ -229,7 +229,7 @@ lcm(x::NfOrdIdl, y::NfOrdIdl) = intersect(x, y)
 
 Returns $x \cdot y$.
 """
-function *(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
+function *(x::S, y::S) where S <: NfAbsOrdIdl
   check_parent(x, y)
   @hassert :NfOrd 1 isconsistent(x)
   @hassert :NfOrd 1 isconsistent(y)
@@ -243,7 +243,7 @@ function *(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
   return z
 end
 
-function mul_gen(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
+function mul_gen(x::S, y::S) where S <: NfAbsOrdIdl
   check_parent(x, y)
   if iszero(x) || iszero(y)
     I1 = ideal(order(x), 0)
@@ -298,7 +298,7 @@ function mul_gen(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
 end
 
 # using the 2-normal representation
-function prod_via_2_elem_normal(a::NfAbsOrdIdl, b::NfAbsOrdIdl)
+function prod_via_2_elem_normal(a::S, b::S) where S <: NfAbsOrdIdl
   check_parent(a, b)
   @hassert :NfOrd 1 has_2_elem_normal(a)
   @hassert :NfOrd 1 has_2_elem_normal(b)
@@ -359,7 +359,7 @@ function prod_via_2_elem_normal(a::NfAbsOrdIdl, b::NfAbsOrdIdl)
 end
 
 # using the 2-weak-normal representation
-function prod_via_2_elem_weakly(a::NfAbsOrdIdl, b::NfAbsOrdIdl)
+function prod_via_2_elem_weakly(a::S, b::S) where S <: NfAbsOrdIdl
   check_parent(a, b)
   @hassert :NfOrd 1 has_2_elem(a)
   @hassert :NfOrd 1 has_2_elem(b)
@@ -463,7 +463,7 @@ end
 
 Returns the ideal x*y.
 """
-function mul_maximal(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
+function mul_maximal(x::S, y::S) where S <: NfAbsOrdIdl
   check_parent(x, y)
   if iszero(x) || iszero(y)
     z = ideal(order(x), 0)
@@ -506,7 +506,7 @@ end
 
 The gcd or sum (A+B).
 """
-function gcd(A::NfAbsOrdIdl, B::NfAbsOrdIdl)
+function gcd(A::S, B::S) where S <: NfAbsOrdIdl
   check_parent(A, B)
   return A+B
 end
@@ -523,12 +523,12 @@ The gcd or sum (A + pO).
 """
 function gcd(A::NfAbsOrdIdl, p::fmpz)
   if isdefined(A, :minimum)
-    if gcd(A.minimum, p) == 1
+    if gcd(minimum(A, copy = false), p) == 1
       return ideal(order(A), fmpz(1))
     end
   end
   if isdefined(A, :norm)
-    if gcd(A.norm, p) == 1
+    if gcd(norm(A, copy = false), p) == 1
       return ideal(order(A), fmpz(1))
     end
   end
@@ -871,7 +871,7 @@ end
 @doc Markdown.doc"""
     crt(r1::NfOrdElem, i1::NfOrdIdl, r2::NfOrdElem, i2::NfOrdIdl) -> NfOrdElem
 
-Find $x$ s.th. $x \equiv r1 \bmod i1$ and $x \equiv r2 \bmod i2$
+Find $x$ such that $x \equiv r_1 \bmod i_1$ and $x \equiv r_2 \bmod i_2$
 using `idempotents`.
 """
 function crt(r1::S, i1::T, r2::S, i2::T) where { S <: Union{NfOrdElem, NfRelOrdElem, AlgAssAbsOrdElem}, T <: Union{NfOrdIdl, NfRelOrdIdl, AlgAssAbsOrdIdl} }

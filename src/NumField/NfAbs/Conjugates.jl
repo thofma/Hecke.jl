@@ -36,12 +36,12 @@ end
 @doc Markdown.doc"""
     conjugates(x::nf_elem, abs_tol::Int) -> Vector{acb}
 
-Compute the conjugates of `x` as elements of type `acb`.
+Compute the conjugates of $x$ as elements of type `acb`.
 Recall that we order the complex conjugates
 $\sigma_{r+1}(x),...,\sigma_{r+2s}(x)$ such that
 $\sigma_{i}(x) = \overline{sigma_{i + s}(x)}$ for $r + 1 \leq i \leq r + s$.
 
-Every entry `y` of the vector returned satisfies
+Every entry $y$ of the vector returned satisfies
 `radius(real(y)) < 2^-abs_tol` and `radius(imag(y)) < 2^-abs_tol` respectively.
 """
 function conjugates(x::NumFieldElem, abs_tol::Int = 32, T = arb)
@@ -164,9 +164,9 @@ end
 @doc Markdown.doc"""
     conjugates_arb_real(x::nf_elem, abs_tol::Int) -> Vector{arb}
 
-Compute the real conjugates of `x` as elements of type `arb`.
+Compute the real conjugates of $x$ as elements of type `arb`.
 
-Every entry `y` of the array returned satisfies
+Every entry $y$ of the array returned satisfies
 `radius(y) < 2^-abs_tol`.
 """
 function conjugates_real(x::nf_elem, abs_tol::Int = 32, T = arb)
@@ -192,12 +192,12 @@ end
 @doc Markdown.doc"""
     conjugates_complex(x::nf_elem, abs_tol::Int) -> Vector{acb}
 
-Compute the complex conjugates of `x` as elements of type `acb`.
+Compute the complex conjugates of $x$ as elements of type `acb`.
 Recall that we order the complex conjugates
 $\sigma_{r+1}(x),...,\sigma_{r+2s}(x)$ such that
 $\sigma_{i}(x) = \overline{sigma_{i + s}(x)}$ for $r + 1 \leq i \leq r + s$.
 
-Every entry `y` of the array returned satisfies
+Every entry $y$ of the array returned satisfies
 `radius(real(y)) < 2^-abs_tol` and `radius(imag(y)) < 2^-abs_tol`.
 """
 function conjugates_complex(x::nf_elem, abs_tol::Int = 32, T = arb)

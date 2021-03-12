@@ -196,26 +196,9 @@ function Base.show(io::IO, ::MIME"text/html", a::MapParent)
   print(io, "\$")
 end
 
+# Requires 0.12.1
 function math_html(io::IO, A::Fac{T}) where {T}
-  empty = true
-  if !isone(A.unit)
-    math_html(io, A.unit)
-    empty = false
-  end
-  for k = (collect(keys(A.fac)))
-    if !empty
-      print(io, "\\cdot")
-    end
-    empty = false
-    AbstractAlgebra.needs_parentheses(k) && print(io, "(")
-    math_html(io, k)
-    AbstractAlgebra.needs_parentheses(k) && print(io, ")")
-    if A.fac[k] != 1
-      print(io, "^{")
-      math_html(io, A.fac[k])
-      print(io, "}")
-    end
-  end
+  print(io, AbstractAlgebra.obj_to_latex_string(A))
 end
 
 Base.show(io::IO, ::MIME"text/html", a::Integer) = show(io, "text/html", fmpz(a))

@@ -1,6 +1,6 @@
 
 function isnorm_fac_elem(K::NfRel{nf_elem}, a::nf_elem)
-  Ka, mKa, mkK = absolute_field(K)
+  Ka, mKa, mkK = collapse_top_layer(K)
   Kas, KasToKa = simplify(Ka)
   Ka = Kas
   #mKa = KasToKa * mKa

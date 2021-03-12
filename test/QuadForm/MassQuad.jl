@@ -45,6 +45,16 @@
 
   @test res == Int[ Hecke._kronecker_symbol(i, j) for i in 1:30 for j in 1:30]
 
+  res = [0, -1, -1, 1, -1, 0, 1, -1, 1, 1, 0, -1, 0, 1, 0, -1, 0, 1, 0, -1, 0,
+  1, 1, -1, 0, 1, -1, 0, 1, -1, 0, 1, -1, 1, 0, -1, 0, -1, 0, 1, 0, 1, 0, -1,
+  -1, -1, 1, -1, -1, 1, 1, 1, -1, 1, 1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 1, 1,
+  1, 1, 1, 1, 1, 1, 1, 1, 1, -1, 0, -1, 0, 1, 0, 1, 0, -1, 0, -1, -1, 1, 0, -1,
+  1, 0, 1, -1, 0, 1, -1, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, -1, -1, 1, 0, 1,
+  -1, -1, 1, 0]
+
+  # test some more negative values taken from sage
+  @test res == Int[Hecke._kronecker_symbol(n,d) for n in -5:5 for d in -5:5]
+
   res = [ 1//6, 2, 4, 1//6, 4//5, 12, 16, 2, 1//6, 28, 28, 4, 4, 40, 48, 1//6,
          8, 2, 76, 4//5, 8, 92, 80, 12, 1//6, 100, 4, 16, 12, 136, 160, 2, 24,
          184, 152, 1//6, 20, 164, 208, 28, 32, 216, 252, 28, 4//5, 296, 224, 4,
@@ -400,6 +410,22 @@
          -59004405195106649104901804193340520, -174611//330 ]
 
   @test res == [ Hecke._bernoulli_kronecker(2*i, j) for i in 1:10 for j in 1:100]
+
+  @test res == [ Hecke._bernoulli_kronecker(fmpz(2*i), fmpz(j)) for i in 1:10 for j in 1:100]
+
+  @test Hecke._kronecker_symbol(-3, -1) == -1
+
+  @test Hecke._kronecker_symbol(1, -1) == 1
+
+  @test Hecke._kronecker_symbol(-1, -1) == -1
+
+  @test Hecke._kronecker_symbol(0, -1) == 1
+
+  @test Hecke._kronecker_symbol(1, -1) == 1
+
+  @test Hecke._kronecker_symbol(-1, -1) == -1
+
+  @test Hecke._bernoulli_kronecker(1, -1) == -1//2
 end
 
 @testset "Exact totally real Dedekind zeta functions" begin
@@ -426,7 +452,7 @@ end
   f = x^8 - 2*x^7 - 9*x^6 + 10*x^5 + 22*x^4 - 14*x^3 - 15*x^2 + 2*x + 1
   K, a = number_field(f, "a")
   @test Hecke.dedekind_zeta_exact(K, -3) == fmpq(2963345547437985248, 15)
-  # for k = -5 Magma gives the wrong answer 29719562334858680246403479228678144 
+  # for k = -5 Magma gives the wrong answer 29719562334858680246403479228678144
   # Correct answer is 1872332427096096855523419191403844928//63
   # One can check this using LSetPrecision(L, 300) and computing LSeries(, -5);
 end
@@ -495,4 +521,13 @@ end
   gens = [[5*a-4, a, 0, 0], [-a-1, 0, -1, 0], [a-15//2, 39//28*a+17//7, 3//2*a+5//2, -5//28*a-2//7], [-4*a+6, 0, 0, 0]]
   L23565 = quadratic_lattice(K, generators = gens, gram_ambient_space = D)
   @test mass(L23565) == fmpq(1, 64)
+
+  f = x - 1;
+  K, a = number_field(f)
+  D = matrix(K, 2, 2, [3, 3//2, 3//2, 3]);
+  gens = [[1, 0], [1, 0], [0, 1], [0, 1]]
+  L = quadratic_lattice(K, generators = gens, gram_ambient_space = D)
+  p = prime_decomposition(base_ring(L), 2)[1][1]
+  @test Hecke.local_factor(L, p) == fmpq(1)
+  @test mass(L) == fmpq(1, 12)
 end

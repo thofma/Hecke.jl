@@ -41,7 +41,7 @@
     L1 = representative(G1)
     L2 = representative(G2)
     G3 = @inferred orthogonal_sum(G1, G2)
-    L3 = orthogonal_sum(L1, L2)
+    L3, = orthogonal_sum(L1, L2)
     @test G3 == genus(L3, p2)
   end
 
@@ -52,7 +52,7 @@
     L1 = representative(G1)
     L2 = representative(G2)
     G3 = @inferred orthogonal_sum(G1, G2)
-    L3 = orthogonal_sum(L1, L2)
+    L3, = orthogonal_sum(L1, L2)
     @test G3 == genus(L3, p3)
   end
 
@@ -63,7 +63,7 @@
     L1 = representative(G1)
     L2 = representative(G2)
     G3 = @inferred orthogonal_sum(G1, G2)
-    L3 = orthogonal_sum(L1, L2)
+    L3, = orthogonal_sum(L1, L2)
     @test G3 == genus(L3, p5)
   end
 
@@ -74,9 +74,19 @@
     L1 = representative(G1)
     L2 = representative(G2)
     G3 = @inferred orthogonal_sum(G1, G2)
-    L3 = orthogonal_sum(L1, L2)
+    L3, = orthogonal_sum(L1, L2)
     @test L3 in G3
   end
+
+  Qx, x = PolynomialRing(FlintQQ, "x", cached = false)
+  f = x - 1;
+  K, a = number_field(f)
+  D = matrix(K, 3, 3, [30, -15, 0, -15, 30, -15, 0, -15, 30]);
+  gens = [[1, 0, 0], [1, 0, 0], [0, 1, 0], [0, 1, 0], [5//6, 2//3, 1//6], [5//6, 2//3, 1//6]]
+  L = quadratic_lattice(K, generators = gens, gram_ambient_space = D)
+  p = prime_decomposition(maximal_order(K), 5)[1][1]
+  fl, LL = Hecke.ismaximal_integral(L, p)
+  @test !fl
 end
 
 
