@@ -238,7 +238,7 @@ function compute_candidates_for_saturate1(c::Hecke.ClassGrpCtx, p::Int, stable::
     F = GF(q, cached = false)
     Fx, x = PolynomialRing(F, "x", cached = false)
     fF = Fx(f)
-    g = gcd(fF, powmod(x, q, fF)-x)
+    g = gcd(fF, powermod(x, q, fF)-x)
     if isone(g)
       continue
     end

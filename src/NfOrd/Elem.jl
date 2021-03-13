@@ -668,7 +668,7 @@ function powermod_fast(a::NfAbsOrdElem, i::fmpz, p::fmpz)
   f, e = ppio(d, p) # f = p^k, and e is a unit mod p
   b *= e
   e = invmod(e, p)
-  e = powmod(e, i, p)
+  e = powermod(e, i, p)
 
   y = one(parent(b))
   while i > 1
@@ -702,7 +702,7 @@ function powermod_fast(a::NfAbsOrdElem{NfAbsNS, NfAbsNSElem}, i::fmpz, p::fmpz)
   f, e = ppio(d, p) # f = p^k, and e is a unit mod p
   b *= e
   e = invmod(e, p)
-  e = powmod(e, i, p)
+  e = powermod(e, i, p)
 
   y = one(parent(b))
   while i > 1

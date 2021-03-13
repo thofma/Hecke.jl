@@ -289,7 +289,7 @@ function Base.:(^)(a::NfRelElem, n::Int)
     error("Element is not invertible")
   end
 
-  return K(powmod(data(a), n, K.pol))
+  return K(powermod(data(a), n, K.pol))
 end
 
 function Base.:(^)(a::NfRelElem, b::fmpz)
@@ -702,7 +702,7 @@ function normal_basis(L::NfRel{nf_elem}, check::Bool = false)
     mmF = extend(mF, K)
     Ft, t = PolynomialRing(F, "t", cached = false)
     ft = map_coeffs(mmF, L.pol, parent = Ft)
-    pt = powmod(t, order(F), ft)
+    pt = powermod(t, order(F), ft)
 
     if degree(gcd(ft, pt - t)) == degree(ft)
       # Lift an idempotent of O/pO

@@ -288,7 +288,7 @@ parent(a::RRSelem) = a.R
 *(a::Integer, b::RRSelem) = RRSelem(b.R, [mod(a*b.x[i], b.R.p[i]) for i=1:length(b.x)], mod(a*b.r, b.R.r))
 divexact(a::RRSelem, b::RRSelem) = RRSelem(a.R, [mod(a.x[i]*invmod(b.x[i], a.R.p[i]), a.R.p[i]) for i=1:length(a.x)], mod(a.r*invmod(b.r, a.R.r), a.R.r))
 -(a::RRSelem) = RRSelem(a.R, [mod(-a.x[i], a.R.p[i]) for i=1:length(a.x)], -a.r)
-^(a::RRSelem, e::Integer) = RRSelem(a.R, [powmod(a.x[i], e, a.R.p[i]) for i=1:length(a.x)], powmod(a.r, e, a.R.r))
+^(a::RRSelem, e::Integer) = RRSelem(a.R, [powermod(a.x[i], e, a.R.p[i]) for i=1:length(a.x)], powermod(a.r, e, a.R.r))
 (R::RRS)() = RRSelem(R, fmpz[0 for i=1:length(R.p)], fmpz(0))
 (R::RRS)(a::Integer) = RRSelem(R, a)
 (R::RRS)(a::RRSelem) = a

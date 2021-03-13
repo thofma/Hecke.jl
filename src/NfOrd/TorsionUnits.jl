@@ -344,7 +344,7 @@ function _torsion_group_order_divisor(K::AnticNumberField)
       end
       first = false
     else
-      m_new =  gcd(m, powmod(fmpz(p), minf, m) - 1)
+      m_new =  gcd(m, powermod(fmpz(p), minf, m) - 1)
     end
 
     if m_new == 2

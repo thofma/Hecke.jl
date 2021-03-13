@@ -204,7 +204,7 @@ function _roots_hensel(f::Generic.Poly{nf_elem};
       if !issquarefree(fp)
         continue
       end
-      num_rmodp = degree(gcd(fp, powmod(T, fmpz(p)^deg_p, fp) - T))
+      num_rmodp = degree(gcd(fp, powermod(T, fmpz(p)^deg_p, fp) - T))
 
       if num_rmodp == 0
         return nf_elem[]
@@ -579,7 +579,7 @@ function _hensel(f::Generic.Poly{nf_elem},
 
     if ispure
       ap = Qt((-coeff(f, 0)))
-      bp = powmod(ap, degree(f)-1, pgg)
+      bp = powermod(ap, degree(f)-1, pgg)
       minv = invmod(fmpz(degree(f)), pp)
     end
 
@@ -622,7 +622,7 @@ function _hensel(f::Generic.Poly{nf_elem},
         cf = lift(ZX, Qt(RT[j]*den) % pgg)
       else
         RTjp = Qt(RT[j])
-        RT[j] = lift(ZX, (RTjp*(1+minv) - bp*minv* powmod(RTjp, degree(f)+1, pgg)) % pgg)
+        RT[j] = lift(ZX, (RTjp*(1+minv) - bp*minv* powermod(RTjp, degree(f)+1, pgg)) % pgg)
 
         #before the reconstruction, we need to scale by den and by a
         cf = lift(ZX, (Qt(RT[j]*den) % pgg)*ap % pgg)
