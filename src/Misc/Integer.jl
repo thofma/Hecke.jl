@@ -116,6 +116,27 @@ function (a::FlintIntegerRing)(b::fmpq)
   return deepcopy(numerator(b))
 end
 
+function ^(a::fmpz, k::fmpz)
+  if a == 0
+    if k == 0
+      return fmpz(1)
+    end
+    return fmpz(0)
+  end
+ 
+  if a == 1
+    return fmpz(1)
+  end
+  if a == -1
+    if isodd(k)
+      return fmpz(-1)
+    else
+      return fmpz(1)
+    end
+  end
+  return a^Int(k)
+end
+
 function ^(a::fmpq, k::fmpz)
   if a == 0
     if k == 0
