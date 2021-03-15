@@ -8,69 +8,100 @@ Hecke.assertions(true)
 
 ## Test the test_module on Windows
 
-x = Hecke._adjust_path("GrpAb/Elem")
-y = joinpath(Hecke.pkgdir, "test", "$x.jl")
-@test isfile(y)
+short_test = false
 
-k, a = quadratic_field(5)
-@test fmpz(1) - a == -(a - 1)
-@test 1 - a == -(a - 1)
-
-push!(Base.LOAD_PATH, "@v#.#")
-
-using Random
-using RandomExtensions
-
-const rng = MersenneTwister()
-const rand_seed = rand(UInt128)
-
-# tests if rand(rng, args...) gives reproducible results
-function reproducible(args...)
-  Random.seed!(rng)
-  x = rand(rng, args...)
-  Random.seed!(rng, rng.seed)
-  x == rand(rng, args...)
+if "short" in ARGS || get(ENV, "HECKE_TESTSHORT", "false") in ["1", "true"]
+  short_test = true
 end
 
-try
-  using GAP
-  @time include("FieldFactory.jl")
-catch e
-  if !(isa(e, ArgumentError))
-    rethrow(e)
-  else
-    println("using GAP failed. Not running FieldFactory tests")
+long_test = false
+
+if "long" in ARGS || get(ENV, "HECKE_TESTLONG", "false") in ["1", "true"]
+  long_test = true
+end
+
+if long_test
+  macro long(ex)
+    ex
+  end
+else
+  macro long(ex)
+    return :nothing
   end
 end
 
-@time include("NumField.jl")
-@time include("AlgAss.jl")
-@time include("AlgAssAbsOrd.jl")
-@time include("AlgAssRelOrd.jl")
-@time include("EllCrv.jl")
-@time include("GrpAb.jl")
-@time include("Grp.jl")
-@time include("LinearAlgebra.jl")
-@time include("Map.jl")
-@time include("Misc.jl")
-@time include("NfAbs.jl")
-@time include("NfOrd.jl")
-@time include("NfRel.jl")
-@time include("RCF.jl")
-@time include("Examples.jl")
-@time include("Sparse.jl")
-@time include("QuadForm.jl")
-@time include("LocalField.jl")
+@info "long_test: $long_test"
+@info "short_test: $short_test"
 
-#try
-#  using Polymake
-#  @time include("AlgAssRelOrd/Eichler.jl")
-#catch e
-#  if !(isa(e, ArgumentError))
-#    rethrow(e)
-#  else
-#    println("using Polymake failed. Not running sophisticated norm equation tests")
-#  end
-#end
+if short_test
+  @info "Running short tests"
+  include(joinpath("..", "system", "precompile.jl"))
+else
+  x = Hecke._adjust_path("GrpAb/Elem")
+  y = joinpath(Hecke.pkgdir, "test", "$x.jl")
+  @test isfile(y)
 
+  k, a = quadratic_field(5)
+  @test fmpz(1) - a == -(a - 1)
+  @test 1 - a == -(a - 1)
 
+  push!(Base.LOAD_PATH, "@v#.#")
+
+  using Random
+  using RandomExtensions
+
+  const rng = MersenneTwister()
+  const rand_seed = rand(UInt128)
+
+  # tests if rand(rng, args...) gives reproducible results
+  function reproducible(args...)
+    Random.seed!(rng)
+    x = rand(rng, args...)
+    Random.seed!(rng, rng.seed)
+    x == rand(rng, args...)
+  end
+
+  if long_test
+    @info "Running long tests"
+    try
+      using GAP
+      @time include("FieldFactory.jl")
+    catch e
+      if !(isa(e, ArgumentError))
+        rethrow(e)
+      else
+        println("using GAP failed. Not running FieldFactory tests")
+      end
+    end
+  end
+
+  @time include("NumField.jl")
+  @time include("AlgAss.jl")
+  @time include("AlgAssAbsOrd.jl")
+  @time include("AlgAssRelOrd.jl")
+  @time include("EllCrv.jl")
+  @time include("GrpAb.jl")
+  @time include("Grp.jl")
+  @time include("LinearAlgebra.jl")
+  @time include("Map.jl")
+  @time include("Misc.jl")
+  @time include("NfAbs.jl")
+  @time include("NfOrd.jl")
+  @time include("NfRel.jl")
+  @time include("RCF.jl")
+  @time include("Examples.jl")
+  @time include("Sparse.jl")
+  @time include("QuadForm.jl")
+  @time include("LocalField.jl")
+
+  #try
+  #  using Polymake
+  #  @time include("AlgAssRelOrd/Eichler.jl")
+  #catch e
+  #  if !(isa(e, ArgumentError))
+  #    rethrow(e)
+  #  else
+  #    println("using Polymake failed. Not running sophisticated norm equation tests")
+  #  end
+  #end
+end

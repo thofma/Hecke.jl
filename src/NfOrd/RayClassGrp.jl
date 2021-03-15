@@ -187,7 +187,7 @@ function class_as_ray_class(C::GrpAbFinGen, mC::MapClassGrp, exp_class::Function
   if expo != -1
     Q, mQ = quo(C, expo, false)
     local disclog1
-    let Q = Q, mC = mC, mQ = mQ
+    let Q = Q, mC = mC, mQ = mQ, X = X
       function disclog1(J::NfOrdIdl)
         return mQ(mC\(J))
       end
@@ -335,7 +335,7 @@ function _preproc(p::NfOrdIdl, elems::Array{FacElem{nf_elem, AnticNumberField},1
 end
 
 
-function _powmod(a::nf_elem, i::Int, p::fmpz)
+function _powermod(a::nf_elem, i::Int, p::fmpz)
   if iszero(i)
     return one(parent(a))
   elseif isone(i)
@@ -397,7 +397,7 @@ function _ev_quo(Q, mQ, elems, p, exponent, multiplicity::Int)
         act_el = O(powers[val]*f, false)
       else
         exp_av = div(multiplicity*val, ramification_index(p))
-        anti_val = _powmod(anti_uni, val, minimum(p)^(exp_av+1))
+        anti_val = _powermod(anti_uni, val, minimum(p)^(exp_av+1))
         powers[val] = anti_val
         act_el = O(anti_val*f, false)
       end
@@ -412,7 +412,7 @@ function _ev_quo(Q, mQ, elems, p, exponent, multiplicity::Int)
       if haskey(powers, ramification_index(p))
         eli = minimum(p, copy = false)*powers[ramification_index(p)]
       else
-        powers[ramification_index(p)] = _powmod(anti_uni, ramification_index(p), minimum(p)^(multiplicity+1))
+        powers[ramification_index(p)] = _powermod(anti_uni, ramification_index(p), minimum(p)^(multiplicity+1))
         eli = minimum(p, copy = false)*powers[ramification_index(p)]
       end
       if isone(vp)

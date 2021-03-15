@@ -189,18 +189,25 @@ end
 
 function dual(G::GrpAbFinGen, u::QmodnZElem)
   o = order(u)
-  H = GrpAbFinGen(fmpz[o])
+  H = abelian_group(fmpz[o])
   QZ = parent(u)
   R, phi = hom(G, H)
-  ex = MapFromFunc(x -> x[1]*u, y -> H([numerator(y.elt) * div(o, denominator(y.elt))]), H, parent(u))
-  function mu(r::GrpAbFinGenElem)
-    f = phi(r)
-    return GrpAbFinGenToQmodnZ(G, QZ, x -> f(x)[1]*u)
+  R::GrpAbFinGen
+  ex = MapFromFunc(x -> x[1]*u, y -> H(fmpz[numerator(y.elt) * div(o, denominator(y.elt))]), H, parent(u))
+  local mu
+  let phi = phi, G = G, QZ = QZ, u = u 
+    function mu(r::GrpAbFinGenElem)
+      f = phi(r)
+      return GrpAbFinGenToQmodnZ(G, QZ, x -> f(x)[1]*u)
+    end
   end
 
-  function nu(f::Map)
-    g = GrpAbFinGenMap(f*inv(ex))
-    return preimage(phi, g)
+  local nu
+  let ex = ex, phi = phi
+    function nu(f::Map)
+      g = GrpAbFinGenMap(f*inv(ex))
+      return preimage(phi, g)
+    end
   end
   return R, MapFromFunc(mu, nu, R, MapParent(R, parent(u), "homomorphisms"))
 end

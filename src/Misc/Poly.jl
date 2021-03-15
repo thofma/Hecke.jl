@@ -224,7 +224,7 @@ function my_compose_mod(x::fmpz_mod_poly, y::fmpz_mod_poly, z::fmpz_mod_poly)
     return compose_mod(x, y, z)
   end
   x1 = shift_right(x, degree(z))
-  r1 = mulmod(my_compose_mod(x1, y, z), powmod(y, degree(z), z), z)
+  r1 = mulmod(my_compose_mod(x1, y, z), powermod(y, degree(z), z), z)
   x2 = truncate(x, degree(z))
   return r1 + compose_mod(x2, y, z)
 end
@@ -242,7 +242,7 @@ function my_compose_mod_precomp(x::fmpz_mod_poly, A::fmpz_mat, z::fmpz_mod_poly,
   ind = nrows(A)
   q, r = divrem(degree(z), ind-1)
   yind = Rx(Nemo.fmpz_mod[base_ring(Rx)(A[ind, j]) for j = 1:ncols(A)])
-  yind = powmod(yind, q, z)
+  yind = powermod(yind, q, z)
   if !iszero(r)
     ydiff = Rx(Nemo.fmpz_mod[base_ring(Rx)(A[r+1, j]) for j = 1:ncols(A)])
     yind = mulmod(yind, ydiff, z)
@@ -700,7 +700,7 @@ function roots(f::T) where T <: Union{fq_nmod_poly, fq_poly} # should be in Nemo
   q = size(base_ring(f))
   x = gen(parent(f))
   if degree(f) < q
-    x = powmod(x, q, f)-x
+    x = powermod(x, q, f)-x
   else
     x = x^Int(q)-x
   end

@@ -18,7 +18,7 @@ polynomials for all prime power cyclic subfields.
 
 Note, the return type is always a non-simple extension.
 """
-function NumberField(CF::ClassField{S, T}; redo::Bool = false, using_norm_relation = false, over_subfield::Bool = false, using_stark_units::Bool = false) where {S, T}
+function NumberField(CF::ClassField{S, T}; redo::Bool = false, using_norm_relation::Bool = false, over_subfield::Bool = false, using_stark_units::Bool = false) where {S, T}
   if isdefined(CF, :A) && !redo
     return CF.A
   end
@@ -46,9 +46,9 @@ function NumberField(CF::ClassField{S, T}; redo::Bool = false, using_norm_relati
   if isempty(res)
     @assert isone(degree(CF))
     Ky = PolynomialRing(base_field(CF), "y", cached = false)[1]
-    CF.A = number_field([gen(Ky)-1], check = false, cached = false)[1]
+    CF.A = number_field(Generic.Poly{nf_elem}[gen(Ky)-1], check = false, cached = false)[1]
   else
-    CF.A = number_field([x.A.pol for x = CF.cyc], check = false, cached = false)[1]
+    CF.A = number_field(Generic.Poly{nf_elem}[x.A.pol for x = CF.cyc], check = false, cached = false)[1]
   end
   return CF.A
 end
@@ -59,7 +59,7 @@ function ray_class_field_cyclic_pp(CF::ClassField{S, T}, mQ::GrpAbFinGenMap; ove
   CFpp.quotientmap = compose(CF.quotientmap, mQ)
   CFpp.rayclassgroupmap = CF.rayclassgroupmap
   @assert domain(CFpp.rayclassgroupmap) == domain(CFpp.quotientmap)
-  if over_subfield
+  if degree(base_field(CF)) != 1 && over_subfield
     return number_field_over_subfield(CFpp, using_norm_relation = true, using_stark_units = using_stark_units)
   else
     return ray_class_field_cyclic_pp(CFpp, using_stark_units = using_stark_units)
@@ -198,7 +198,7 @@ function _s_unit_for_kummer_using_Brauer(C::CyclotomicExt, f::fmpz)
   @vprint :ClassField 2 "Maximal order of cyclotomic extension\n"
   ZK = maximal_order(K)
   if isdefined(ZK, :lllO)
-    ZK = ZK.lllO
+    ZK = ZK.lllO::NfOrd
   end
   
   lP = Hecke.NfOrdIdl[]
@@ -207,7 +207,7 @@ function _s_unit_for_kummer_using_Brauer(C::CyclotomicExt, f::fmpz)
     #I remove the primes that can't be in the conductor
     lp = prime_decomposition(ZK, p)
     for (P, s) in lp
-      if gcd(norm(P), e) != 1 || gcd(norm(P)-1, e) != 1
+      if gcd(norm(P, copy = false), e) != 1 || gcd(norm(P, copy = false)-1, e) != 1
         push!(lP, P)
       end
     end
@@ -225,7 +225,7 @@ function _s_unit_for_kummer_using_Brauer(C::CyclotomicExt, f::fmpz)
     end
   end
   @vprint :ClassField 3 "Computing S-units with $(length(lP)) primes\n"
-  @vtime :ClassField 3 S, mS = NormRel._sunit_group_fac_elem_quo_via_brauer(C.Ka, lP, e, saturate_units = true)
+  @vtime :ClassField 3 S, mS = NormRel._sunit_group_fac_elem_quo_via_brauer(C.Ka, lP, e, saturate_units = true)::Tuple{GrpAbFinGen, MapSUnitGrpFacElem}
   KK = kummer_extension(e, FacElem{nf_elem, AnticNumberField}[mS(S[i]) for i = 1:ngens(S)])
   C.kummer_exts[lfs] = (lP, KK)
   return lP, KK

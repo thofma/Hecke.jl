@@ -164,6 +164,117 @@ function _conductors_using_cocycles(F::FieldsTower, st::Vector{Int}, l_cond::Vec
 
 end
 
+function _new_conductors_using_cocycles(F::FieldsTower, st::Vector{Int}, l_cond::Vector, E)
+  lp = ramified_primes(F)
+  auts = automorphisms(F.field, copy = false)
+  projections = F.projections_for_conductors
+  G = GAP.Globals.ImagesSource(projections[1])
+  E = GAP.Globals.Source(projections[1])
+  D = F.isomorphism
+  n = prod(st)
+  O = maximal_order(F)
+  inertia_subgroups = Dict{fmpz, Vector{NfToNfMor}}()
+  for p in lp
+    lp = prime_decomposition(O, p)
+    Hp = inertia_subgroup(lP[1][1])
+    gHp = small_generating_set(Hp)
+    inertia_subgroups[p] = gHp
+  end
+  must_ramify = Vector{Vector{fmpz}}(undef, length(projections))
+  cant_ramify = Vector{Vector{fmpz}}(undef, length(projections))
+  for s = 1:length(projections)
+    proj = projections[s]
+    ramify_here = Vector{fmpz}()
+    not_ramify_here = Vector{fmpz}()
+    for p in lp
+      gHp = inertia_subgroups[p]
+      els = [D[g] for g in gHp]
+      sub = GAP.Globals.Subgroup(G, GAP.julia_to_gap(els))
+      ord = GAP.Globals.Size(sub)
+      subgs = Vector{GAP.GapObj}()
+      preimages = Vector{Vector{GAP.GapObj}}(undef, length(els))
+      for j = 1:length(els)
+        preimages[j] = GAP.gap_to_julia(Vector, GAP.Globals.List(GAP.Globals.PreImages(proj, els[j])))
+      end
+      #Now, I need to check all the possible subgroups.
+      it = cartesian_product_iterator(UnitRange{Int}[1:n for i = 1:length(els)], inplace = true)
+      sizes_preimages = Int[]
+      for I in it
+        sub = GAP.Globals.Subgroup(E, GAP.julia_to_gap([preimages[i][I[i]] for i = 1:length(els)]))
+        push!(sizes_preimages, GAP.Globals.Size(sub))
+        if maximum(sizes_preimages) != ord && minimum(sizes_preimages) == ord
+          break
+        end
+      end
+      if minimum(sizes_preimages) != ord
+        push!(ramify_here, p)
+      elseif maximum(sizes_preimages) == ord
+        push!(not_ramify_here, p)
+      end 
+    end
+    must_ramify[s] = ramify_here
+    not_ramify_here[s] = not_ramify_here
+  end
+  
+    if minimum(sizes_preimages) != ord
+      #The prime must ramify!
+      l1 = Vector{Tuple{Int, Dict{NfOrdIdl, Int}}}()
+      if !divisible(fmpz(n), p)
+        for x in l_cond
+          if divisible(fmpz(x[1]), p) 
+            push!(l1, x)
+          end
+        end
+      else
+        for x in l_cond
+          if !isempty(x[2])
+            lI = keys(x[2])
+            found = false
+            for k in lI
+              if minimum(k) == p
+                found = true
+                break
+              end
+            end
+            if found
+              push!(l1, x)
+            end
+          end
+        end
+      end
+      l_cond = l1
+    elseif maximum(sizes_preimages) == ord && !divisible(fmpz(n), p)
+      #The prime must be unramified!
+      l1 = Vector{Tuple{Int, Dict{NfOrdIdl, Int}}}()
+      if !divisible(fmpz(n), p)
+        for x in l_cond
+          if !divisible(fmpz(x[1]), p) 
+            push!(l1, x)
+          end
+        end
+      else
+        for x in l_cond
+          if !isempty(x[2])
+            lI = keys(x[2])
+            found = false
+            for k in lI
+              if minimum(k) == p
+                found = true
+                break
+              end
+            end
+            if !found
+              push!(l1, x)
+            end
+          end
+        end
+      end
+      l_cond = l1
+    end
+  return l_cond
+
+end
+
 function conductors_with_restrictions(F::FieldsTower, st::Vector{Int}, IdG::GAP.GapObj, bound::fmpz; unramified_outside::Vector{fmpz} = fmpz[])
 
   O = maximal_order(F)

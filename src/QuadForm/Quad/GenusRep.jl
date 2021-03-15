@@ -1602,6 +1602,7 @@ function _genus_representatives_binary_quadratic_definite_helper(L::QuadLat; max
   F, z = number_field(t^2 - de^2 * d, "z", cached = false)
   # TODO: Use automorphism_group (once implemented for relative extensions)
   a1, a2 = automorphisms(F)
+  local sigma::morphism_type(F)
   if a1(z) == z
     sigma = a2
   else
@@ -1609,7 +1610,9 @@ function _genus_representatives_binary_quadratic_definite_helper(L::QuadLat; max
   end
 
   B = basis(F)
-  phi(x, y) = K((x * sigma(y) + y * sigma(x))//2)
+  phi = let K = K;
+    (x, y) -> K((x * sigma(y) + y * sigma(x))//2)
+  end
   G = matrix(K, 2, 2, [phi(B[1], B[1]), phi(B[1], B[2]), phi(B[2], B[1]), phi(B[2], B[2])])
   W = quadratic_space(K, G)
   fl, T = isequivalent_with_isometry(V, W)

@@ -11,7 +11,6 @@
    If "check" is true, the function checks if the extension is normal.
 """
 function absolute_automorphism_group(C::ClassField, check::Bool = false)
-
   L = number_field(C)
   K = base_field(C)
   autK = automorphisms(K)
@@ -129,18 +128,16 @@ end
 function rel_auto_generic(A::ClassField_pp)
   K = A.A
   imgs = roots(K.pol, K)
-  homs = [hom(K, K, x, check = false) for x in imgs]
+  homs = morphism_type(K)[hom(K, K, x, check = false) for x in imgs]
   return small_generating_set(homs, *)[1]
 end
 
 
 function rel_auto(A::ClassField_pp)
-
   @assert isdefined(A, :A)
   if !isdefined(A, :K)
     return rel_auto_generic(A)
-  end
-  if degree(A) == degree(A.K)
+  elseif degree(A) == degree(A.K)
     #If the cyclotomic extension and the target field are linearly disjoint, it is easy.
     return rel_auto_easy(A)
   else
@@ -150,12 +147,23 @@ function rel_auto(A::ClassField_pp)
 end
 
 function rel_auto(A::ClassField)
-  aut = NfRelToNfRelMor_nf_elem_nf_elem[rel_auto(x) for x = A.cyc]
+  aut = Vector{morphism_type(NfRel{nf_elem})}(undef, length(A.cyc))
+  for i = 1:length(aut)
+    aut[i] = rel_auto(A.cyc[i])
+  end
   K = number_field(A)
   g = gens(K)
-  Aut = Vector{morphism_type(K, K)}(undef, length(aut))
+  Aut = Vector{morphism_type(K)}(undef, length(aut))
   for i = 1:length(aut)
-    Aut[i] = hom(K, K, NfRelNSElem{nf_elem}[j==i ? image_primitive_element(aut[i]).data(g[j]) : g[j] for j=1:length(aut)])
+    imgs = Vector{NfRelNSElem{nf_elem}}(undef, length(aut))
+    for j = 1:length(imgs)
+      if j == i
+        imgs[j] = image_primitive_element(aut[i]).data(g[j])
+      else
+        imgs[j] = g[j]
+      end
+    end
+    Aut[i] = hom(K, K, imgs)
   end
   return Aut
 end

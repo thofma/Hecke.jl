@@ -230,7 +230,7 @@
   # representatives, mass and genus enumeration
 
   DB = lattice_database()
-  for i in 1:200
+  for i in 1:(long_test ? 200 : 10)
     L = lattice(DB,i)
     G = genus(L)
     q1 = quadratic_space(G)
@@ -241,7 +241,7 @@
     @test G==G2
   end
 
-  for d in 1:400
+  for d in 1:(long_test ? 400 : 10)
     for sig in [(2,0), (0,3), (4,0)]
       for G in genera(sig, d)
         m = mass(G)
@@ -264,7 +264,7 @@
     end
   end
 
-  for d in 1:50
+  for d in 1:(long_test ? 50 : 10)
     for sig in [(2,0),(3,0),(4,0)]
       for G in genera(sig,d)
         m = mass(G)
@@ -276,5 +276,4 @@
       end
     end
   end
-
 end
