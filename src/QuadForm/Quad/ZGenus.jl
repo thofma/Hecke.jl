@@ -1648,11 +1648,11 @@ See Table 1 in [CS1988]_.
 """
 function _species_list(G::ZpGenus)
   p = prime(G)
-  species_list = []
+  species_list = Int[]
   sym = G._symbol
   if p != 2
     for k in 1:length(sym)
-      n = ZZ(sym[k][2])
+      n = sym[k][2]
       d = sym[k][3]
       if n % 2 == 0 && d != _kronecker_symbol(-1, p)^(div(n, 2))
         species = -n

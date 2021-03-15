@@ -116,26 +116,26 @@ function (a::FlintIntegerRing)(b::fmpq)
   return deepcopy(numerator(b))
 end
 
-function ^(a::fmpz, k::fmpz)
-  if a == 0
-    if k == 0
-      return fmpz(1)
-    end
-    return fmpz(0)
-  end
- 
-  if a == 1
-    return fmpz(1)
-  end
-  if a == -1
-    if isodd(k)
-      return fmpz(-1)
-    else
-      return fmpz(1)
-    end
-  end
-  return a^Int(k)
-end
+#function ^(a::fmpz, k::fmpz)
+#  if a == 0
+#    if k == 0
+#      return fmpz(1)
+#    end
+#    return fmpz(0)
+#  end
+# 
+#  if a == 1
+#    return fmpz(1)
+#  end
+#  if a == -1
+#    if isodd(k)
+#      return fmpz(-1)
+#    else
+#      return fmpz(1)
+#    end
+#  end
+#  return a^Int(k)
+#end
 
 function ^(a::fmpq, k::fmpz)
   if a == 0
@@ -1465,7 +1465,18 @@ function getindex(B::BitsFmpz, i::Int)
 end
 =#
 
-function ^(a::T, n::fmpz) where {T}
+end
+
+using .BitsMod
+export bits, Limbs
+
+^(a::T, n::Union{Integer, fmpz}) where {T <: RingElem} = _generic_power(a, n)
+
+^(a::NfAbsOrdIdl, n::Union{Integer, fmpz})  = _generic_power(a, n)
+
+#^(a::NfRelOrdIdl, n::Union{Integer, fmpz})  = _generic_power(a, n)
+
+function _generic_power(a, n::Union{Integer, fmpz})
   fits(Int, n) && return a^Int(n)
   if isnegative(n)
     a = inv(a)
@@ -1480,12 +1491,6 @@ function ^(a::T, n::fmpz) where {T}
   end
   return r
 end
-
-end
-
-using .BitsMod
-export bits, Limbs
-
 
 #square-and-multiply algorithm to compute f^e mod g
 function powermod(f::T, e::fmpz, g::T) where {T}
