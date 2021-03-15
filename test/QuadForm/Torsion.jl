@@ -41,11 +41,12 @@
   L = Zlattice(matrix(ZZ, [[2,0,0],[0,2,0],[0,0,2]]))
   T = Hecke.discriminant_group(L)
   @test basis_matrix(Hecke.cover(Hecke.primary_part(T,fmpz(2))[1])) == matrix(QQ, 3, 3, [1//2, 0, 0, 0, 1//2, 0, 0, 0, 1//2])
-
+  @test_throws ErrorException Hecke.primary_part(T, fmpz(-2))
+  
   #orthogonal submodule to a TorQuadMod
   L = Zlattice(matrix(ZZ, [[2,0,0],[0,2,0],[0,0,2]]))
   T = Hecke.discriminant_group(L)
-  S = sub(T, gens(T))[1]
+  S, _ = sub(T, gens(T))
   @test basis_matrix(Hecke.cover(Hecke.orthogonal_submodule_to(T, S)[1])) == matrix(QQ, 3, 3, [1//2,0,0,0,1//2,0,0,0,1//2])
 
   #checks if a TorQuadMod is degenerate
@@ -78,9 +79,12 @@
   @test Hecke.gram_matrix_quadratic(n2) == g2
 
   #test for brown invariant
-  L = Zlattice(gram=matrix(ZZ, [[2,-1,0,0],[-1,2,-1,-1],[0,-1,2,0],[0,-1,0,2]]))
-  T = discriminant_group(L)  
-  @test Hecke.brown_invariant(T) == 4
+  L1 = Zlattice(gram=matrix(ZZ, [[2,-1,0,0],[-1,2,-1,-1],[0,-1,2,0],[0,-1,0,2]]))
+  T1 = discriminant_group(L1)  
+  @test Hecke.brown_invariant(T1) == 4
+  L2 = Zlattice(matrix(ZZ, 2,2,[4,2,2,4]))
+  T2 = Hecke.discriminant_group(L2)
+  @test_throws ArgumentError Hecke.brown_invariant(T2)
 
   #test for genus
   L = Zlattice(gram=diagonal_matrix(fmpz[1,2,3,4]))
@@ -93,10 +97,11 @@
   @test_throws ErrorException isgenus(D, (4,0))
   L1 = Zlattice(gram=matrix(ZZ, [[2, -1, 0, 0, 0, 0],[-1, 2, -1, -1, 0, 0],[0, -1, 2, 0, 0, 0],[0, -1, 0, 2, 0, 0],[0, 0, 0, 0, 6, 3],[0, 0, 0, 0, 3, 6]]))
   T1 = discriminant_group(L1)  
-  @test isgenus(T1, (6,0))
+  @test isgenus(T1, (6,0)) == true
+  @test isgenus(T1, (5,1)) == false
   G = genus(diagonal_matrix(fmpz[2, 6, 6]))
   D = discriminant_group(G)
-  @test isgenus(D, (3,0))
-
+  @test isgenus(D, (2,0)) == false
+  @test_throws ErrorException isgenus(D, (3,0))
 end
 
