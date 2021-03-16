@@ -603,7 +603,7 @@ function fields(a::Int, b::Int, absolute_bound::fmpz; using_direct_product::Bool
         end
       else
         #p is not wildly ramified. Then we only have the boring bound...
-        d = minimum(keys(factor(invariants[end]).fac))
+        d = Int(minimum(keys(factor(invariants[end]).fac)))
         cd1 = p^((d-1)*div(pinvariants, d))
         if cd > cd1
           cd = cd1

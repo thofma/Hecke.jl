@@ -462,7 +462,7 @@ function meataxe(M::ModAlgAss{S, T, V}) where {S, T, V}
       sq = el
       i = 1
       while !isone(sq)
-        f = gcd(powmod(x, order(K)^i, sq)-x,sq)
+        f = gcd(powermod(x, order(K)^i, sq)-x,sq)
         sq = divexact(sq, f)
         lf = factor(f)
         for t in keys(lf.fac)
@@ -1175,9 +1175,9 @@ function _submodules_primary(M::ModAlgAss{S, T, V}, dimension::Int, composition_
 end
 
 
-function powmod(f::Zmodn_poly, e::fmpz, g::Zmodn_poly)
+function powermod(f::Zmodn_poly, e::fmpz, g::Zmodn_poly)
   if fits(Int, e)
-    return powmod(f, Int(e), g)
+    return powermod(f, Int(e), g)
   else
     _e = BigInt()
     z = parent(f)()

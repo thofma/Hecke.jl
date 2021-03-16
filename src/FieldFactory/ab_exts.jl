@@ -71,7 +71,7 @@ function abelian_normal_extensions(K::AnticNumberField, gtype::Vector{Int}, abso
   
   @assert !(only_real && only_complex)
   O = maximal_order(K)
-  d = degree(O)
+  d = degree(K)
   if d == 1
     return abelian_fields(O, gtype, absolute_discriminant_bound, only_real = only_real, tame = tame) 
   end
@@ -82,7 +82,7 @@ function abelian_normal_extensions(K::AnticNumberField, gtype::Vector{Int}, abso
   fields = ClassField{MapRayClassGrp, GrpAbFinGenMap}[]
   bound = div(absolute_discriminant_bound, abs(discriminant(O))^n)
 
-  if bound == 0
+  if iszero(bound)
     return fields
   end
 
@@ -90,14 +90,14 @@ function abelian_normal_extensions(K::AnticNumberField, gtype::Vector{Int}, abso
     inf_plc = real_places(K)
   end
   
-  Aut=Hecke.automorphisms(K)
-  @assert length(Aut)==degree(O) #The field is normal over Q
-  gens = Hecke.small_generating_set(Aut)
+  Aut = automorphisms(K)
+  @assert length(Aut) == d #The field is normal over Q
+  gs = Hecke.small_generating_set(Aut)
 
   expo = lcm(gtype)
-  C, mC = class_group(O)
-  cgrp = !iscoprime(n, order(C))
-  allow_cache!(mC)
+  Cl, mCl = class_group(O)
+  cgrp = !iscoprime(n, order(Cl))
+  allow_cache!(mCl)
 
   #Getting conductors
   l_conductors = conductors(O, gtype, bound, tame)
@@ -112,27 +112,29 @@ function abelian_normal_extensions(K::AnticNumberField, gtype::Vector{Int}, abso
     if !has_quotient(r, gtype)
       continue
     end
-    act = induce_action(mr,gens)
-    ls = stable_subgroups(r, act, op=(x, y) -> quo(x, y, false)[2], quotype = gtype)
+    act = induce_action(mr, gs)
+    ls = stable_subgroups_for_abexts(r, act, gtype)
     for s in ls
-      @hassert :AbExt 1 order(codomain(s))==n
-      C = ray_class_field(mr, s)
-      if Hecke._is_conductor_min_normal(C) && Hecke.discriminant_conductor(C, bound)
+      s::GrpAbFinGenMap
+      @hassert :AbExt 1 order(codomain(s)) == n
+      C = ray_class_field(mr, s)::ClassField{MapRayClassGrp, GrpAbFinGenMap}
+      if _is_conductor_min_normal(C) && discriminant_conductor(C, bound)
         if only_complex
           rC, sC = signature(C)
           if iszero(rC)
             continue
           end
         end
-        @vprint :AbExt 1 "New Field \n"
         if absolute_galois_group != (0, 0)
-          autabs = absolute_automorphism_group(C, gens)
-          G = generic_group(autabs, *)
+          autabs = absolute_automorphism_group(C, gs)
+          G = generic_group(autabs, *)[1]
           id_G = find_small_group(G)
           if id_G == absolute_galois_group
+            @vprint :AbExt 1 "New Field \n"
             push!(fields, C)
           end
         else
+          @vprint :AbExt 1 "New Field \n"
           push!(fields, C)
         end
       end
@@ -165,15 +167,16 @@ function abelian_extensions(K::AnticNumberField, gtype::Vector{Int}, absolute_di
     inf_plc = ramified_at_inf_plc[2]
   end
   expo = gtype[end]
-  C, mC = class_group(OK)
-  cgrp = !iscoprime(n, order(C))
-  allow_cache!(mC)
+  Cl, mCl = class_group(OK)
+  cgrp = !iscoprime(n, order(Cl))
+  allow_cache!(mCl)
 
   #Getting conductors
   l_conductors = conductors_generic(K, gtype, absolute_discriminant_bound, only_tame = only_tame)
   @vprint :AbExt 1 "Number of conductors: $(length(l_conductors)) \n"
   
   ctx = rayclassgrp_ctx(OK, expo)
+  fsub = (x, y) -> quo(x, y, false)[2]
   #Now, the big loop
   for (i, k) in enumerate(l_conductors)
     @vprint :AbExt 1 "Left: $(length(l_conductors) - i)\n"
@@ -181,10 +184,11 @@ function abelian_extensions(K::AnticNumberField, gtype::Vector{Int}, absolute_di
     if !has_quotient(r, gtype)
       continue
     end
-    ls = subgroups(r, quotype = gtype, fun = (x, y) -> quo(x, y, false)[2])
+    ls = subgroups(r, quotype = gtype, fun = fsub)
     for s in ls
+      s::GrpAbFinGenMap
       @hassert :AbExt 1 order(codomain(s))==n
-      C = ray_class_field(mr, s)
+      C = ray_class_field(mr, s)::ClassField{MapRayClassGrp, GrpAbFinGenMap}
       cC = conductor(C)
       if ramified_at_inf_plc[1]
         if Set(cC[2]) != Set(ramified_at_inf_plc[2])
@@ -617,6 +621,10 @@ end
 #
 #######################################################################################
 
+function discriminant_conductor(C::ClassField{MapClassGrp, GrpAbFinGenMap}, bound::fmpz; lwp::Dict{Tuple{Int, Int}, Array{GrpAbFinGenElem, 1}} = Dict{Tuple{Int, Int}, Array{GrpAbFinGenElem, 1}}())
+  return true
+end
+
 function discriminant_conductor(C::ClassField, bound::fmpz; lwp::Dict{Tuple{Int, Int}, Array{GrpAbFinGenElem, 1}} = Dict{Tuple{Int, Int}, Array{GrpAbFinGenElem, 1}}())
   
   mr = C.rayclassgroupmap 
@@ -921,6 +929,10 @@ end
 
 #  For this function, we assume the base field to be normal over Q and the conductor of the extension we are considering to be invariant
 #  Checks if the defining modulus is the conductor of C
+
+function _is_conductor_min_normal(C::ClassField{MapClassGrp, GrpAbFinGenMap}; lwp::Dict{Int, Vector{GrpAbFinGenElem}} = Dict{Int, Vector{GrpAbFinGenElem}}())
+  return true
+end
 
 function _is_conductor_min_normal(C::Hecke.ClassField; lwp::Dict{Int, Array{GrpAbFinGenElem, 1}} = Dict{Int, Array{GrpAbFinGenElem, 1}}())
   mr = C.rayclassgroupmap

@@ -469,7 +469,7 @@ function t_mod_prime(l, E)
 
   # case where l == 2. value of t mod l determined by some gcd, see p. 124
   if l == 2
-    x_q = powmod(x, q_int, f)
+    x_q = powermod(x, q_int, f)
     ggt = gcd(f, x_q - x)
     if ggt == 1
       t = FlintZZ(1)
@@ -491,10 +491,10 @@ function t_mod_prime(l, E)
 
   # is there a nonzero P = (x,y) in E[l] with phi^2(P) == +-kP ?
   if mod(k,2) == 0
-    g = U( (powmod(x, q_int^2, fl) - x) * fk^2 * f + fkme * fkpe).data
+    g = U( (powermod(x, q_int^2, fl) - x) * fk^2 * f + fkme * fkpe).data
     ggT = gcd(g, fl)
   else
-    g = U( (powmod(x, q_int^2, fl) - x) * fk^2 + fkme * fkpe * f).data
+    g = U( (powermod(x, q_int^2, fl) - x) * fk^2 + fkme * fkpe * f).data
     ggT = gcd(g, fl)
   end
 
@@ -514,10 +514,10 @@ function t_mod_prime(l, E)
       fwpe = Fnschoof[w_int+3]
 
       if mod(w_int, 2) == 0
-        g = U((powmod(x,q_int,fl) - x) * fw^2*f + fwme*fwpe).data # reduce mod fl
+        g = U((powermod(x,q_int,fl) - x) * fw^2*f + fwme*fwpe).data # reduce mod fl
         ggT = gcd(g, fl)
       else
-        g = U((powmod(x,q_int,fl) - x) * fw^2 + fwme*fwpe*f).data
+        g = U((powermod(x,q_int,fl) - x) * fw^2 + fwme*fwpe*f).data
         ggT = gcd(g, fl)
       end
 
@@ -528,10 +528,10 @@ function t_mod_prime(l, E)
         fwpz = Fnschoof[w_int+4]
 
         if mod(w_int, 2) == 0
-          g = U(4 * powmod(f,div(q_int + 3, 2),fl)*fw^3 - (fwpz * fwme^2) + (fwmz*fwpe^2)).data
+          g = U(4 * powermod(f,div(q_int + 3, 2),fl)*fw^3 - (fwpz * fwme^2) + (fwmz*fwpe^2)).data
           ggT2 = gcd(g, fl)
         else
-          g = U(4 * powmod(f,div(q_int - 1, 2),fl)*fw^3 - (fwpz * fwme^2) + (fwmz*fwpe^2)).data
+          g = U(4 * powermod(f,div(q_int - 1, 2),fl)*fw^3 - (fwpz * fwme^2) + (fwmz*fwpe^2)).data
           ggT2 = gcd(g, fl)
         end
 
@@ -549,8 +549,8 @@ function t_mod_prime(l, E)
     Fkpe = PsiPoly[k+3]
     Fkpz = PsiPoly[k+4]
 
-    alpha = Fkpz*psi_power_mod_poly(k-1,E,x,y,2,fl) - Fkmz*psi_power_mod_poly(k+1,E,x,y,2,fl) - 4*powmod(f,div(q_int^2+1,2),fl)*psi_power_mod_poly(k,E,x,y,3,fl)
-    beta = ((x - powmod(x, (q_int^2), fl))*psi_power_mod_poly(k,E,x,y,2,fl)- Fkme*Fkpe)*4*y*Fk
+    alpha = Fkpz*psi_power_mod_poly(k-1,E,x,y,2,fl) - Fkmz*psi_power_mod_poly(k+1,E,x,y,2,fl) - 4*powermod(f,div(q_int^2+1,2),fl)*psi_power_mod_poly(k,E,x,y,3,fl)
+    beta = ((x - powermod(x, (q_int^2), fl))*psi_power_mod_poly(k,E,x,y,2,fl)- Fkme*Fkpe)*4*y*Fk
 
     tau = 1
     while tau < l
@@ -566,15 +566,15 @@ function t_mod_prime(l, E)
       fntaupe = Fnschoof[tau+3]
       fntaupz = Fnschoof[tau+4]
 
-      gammahelp = powmod(fntaupz*fntaume^2- fntaumz * fntaupe^2,q_int,fl)
+      gammahelp = powermod(fntaupz*fntaume^2- fntaumz * fntaupe^2,q_int,fl)
 
       if mod(tau, 2) == 0
-        gamma = y * powmod(f,div(q_int-1,2),fl) * gammahelp
+        gamma = y * powermod(f,div(q_int-1,2),fl) * gammahelp
       else
-        gamma = powmod(f,q_int,fl) * gammahelp
+        gamma = powermod(f,q_int,fl) * gammahelp
       end
 
-      monster1 = ((Fkme*Fkpe - psi_power_mod_poly(k,E,x,y,2,fl)*(powmod(x, q_int^2, fl) + powmod(x, q_int, fl) + x)) * beta^2 + psi_power_mod_poly(k,E,x,y,2,fl)*alpha^2) * psi_power_mod_poly(tau,E,x,y,2*q_int,fl) + psi_power_mod_poly(tau-1, E, x,y,q_int,fl)*psi_power_mod_poly(tau+1, E, x,y,q_int, fl)*beta^2*psi_power_mod_poly(k,E,x,y,2,fl)
+      monster1 = ((Fkme*Fkpe - psi_power_mod_poly(k,E,x,y,2,fl)*(powermod(x, q_int^2, fl) + powermod(x, q_int, fl) + x)) * beta^2 + psi_power_mod_poly(k,E,x,y,2,fl)*alpha^2) * psi_power_mod_poly(tau,E,x,y,2*q_int,fl) + psi_power_mod_poly(tau-1, E, x,y,q_int,fl)*psi_power_mod_poly(tau+1, E, x,y,q_int, fl)*beta^2*psi_power_mod_poly(k,E,x,y,2,fl)
 
       if divrem(degree(monster1), 2)[2] == 1
         monster1 = divexact(monster1, y)
@@ -586,7 +586,7 @@ function t_mod_prime(l, E)
       if monster1_2 != 0
         tau = tau + 1
       else
-        monster2 = 4*y*powmod(f,div(q_int-1,2),fl)*psi_power_mod_poly(tau,E,x,y,3*q_int,fl) * (alpha * (((2*powmod(x, q_int^2, fl) + x) * psi_power_mod_poly(k,E,x,y,2,fl) - Fkme*Fkpe )*beta^2 - alpha^2*psi_power_mod_poly(k,E,x,y,2,fl)) - y*powmod(f,div(q_int^2-1,2),fl)*beta^3 * Fk^2) - beta^3*psi_power_mod_poly(k,E,x,y,2,fl)*gamma
+        monster2 = 4*y*powermod(f,div(q_int-1,2),fl)*psi_power_mod_poly(tau,E,x,y,3*q_int,fl) * (alpha * (((2*powermod(x, q_int^2, fl) + x) * psi_power_mod_poly(k,E,x,y,2,fl) - Fkme*Fkpe )*beta^2 - alpha^2*psi_power_mod_poly(k,E,x,y,2,fl)) - y*powermod(f,div(q_int^2-1,2),fl)*beta^3 * Fk^2) - beta^3*psi_power_mod_poly(k,E,x,y,2,fl)*gamma
 
         if divrem(degree(monster2), 2)[2] == 1
           monster2 = divexact(monster2, y)
@@ -610,13 +610,13 @@ function psi_power_mod_poly(n, E, x, y, power, g)
 
     fn = fn_from_schoof(E, n, x)
     f = x^3 + E.coeff[1]*x + E.coeff[2]
-    p = powmod(fn,power,g)
+    p = powermod(fn,power,g)
 
     if mod(n, 2) == 0
         if mod(power, 2) == 0
-            p1 = powmod(f, div(power, 2), g)
+            p1 = powermod(f, div(power, 2), g)
         else
-            p1 = powmod(f, div(power - 1, 2), g) * y
+            p1 = powermod(f, div(power - 1, 2), g) * y
         end
     else p1 = 1
     end

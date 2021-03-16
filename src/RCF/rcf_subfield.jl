@@ -1,8 +1,5 @@
 function number_field_over_subfield(C::ClassField_pp; using_norm_relation::Bool = true, using_stark_units::Bool = false)
   K = base_field(C)
-  if degree(K) == 1
-    return ray_class_field_cyclic_pp(C)
-  end
   subs = principal_subfields(K)
   subs = [x for x in subs if degree(x[1]) != degree(K)]
   if isempty(subs)
@@ -30,7 +27,6 @@ function number_field_over_subfield(C::ClassField_pp; using_norm_relation::Bool 
   translate_up(subs[i][2], C, C1)
   return C
 end
-
 
 
 function translate_extension(mL::NfToNfMor, C::ClassField_pp)

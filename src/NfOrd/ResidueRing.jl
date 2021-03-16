@@ -322,7 +322,7 @@ function ^(a::NfOrdQuoRingElem, b::Int)
     return pow1(a, b)
   end
   m = minimum(Q.ideal, copy = false)
-  x = _powmod(a.elem.elem_in_nf, b, m)
+  x = _powermod(a.elem.elem_in_nf, b, m)
   return Q(O(x))
 end
 

@@ -466,7 +466,7 @@ function _frobenius_at(K::AnticNumberField, p::Int, auts::Vector{NfToNfMor} = Nf
   F = ResidueRing(FlintZZ, p, cached = false)
   Fx, gFx = PolynomialRing(F, "x", cached = false)
   fF = map_coeffs(F, Zx(K.pol), parent = Fx)
-  b = powmod(gFx, p, fF)
+  b = powermod(gFx, p, fF)
   if b in nmod_poly[Fx(image_primitive_element(x)) for x in auts]
     return false, id_hom(K)
   end
@@ -599,7 +599,7 @@ function isabelian2(K::AnticNumberField)
     end
     it_bound = clog(fmpz(clog(coeffs_bound, p)), 2)
     @vprint :Automorphisms 1 "Trying $p \n"
-    b = powmod(gFx, p, fF)
+    b = powermod(gFx, p, fF)
     if b in nmod_poly[Fx(x(gen(K))) for x in auts]
       continue
     end

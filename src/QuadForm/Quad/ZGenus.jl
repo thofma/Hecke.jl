@@ -765,7 +765,8 @@ Return if `S` is the symbol of of a global quadratic form || lattice.
 function _isglobal_genus(G::ZGenus)
   D = det(G)
   r, s = signature_pair(G)
-  oddi = r - s
+  R = ResidueRing(ZZ, 8)
+  oddi = R(r - s)
   for loc in G._symbols
     p = loc._prime
     sym = loc._symbol
@@ -791,6 +792,16 @@ function _isglobal_genus(G::ZGenus)
     return false
   end
   return true
+end
+
+@doc Markdown.doc"""
+    _is2adic_genus(symbol::Array{Array{Int,1},1})
+
+Given a `2`-adic local symbol check whether it is symbol of a `2`-adic form.
+"""
+function _is2adic_genus(S::ZpGenus)
+  @req prime(S)==2 "the symbol must be 2-adic"
+  return _is2adic_genus(symbol(S))
 end
 
 @doc Markdown.doc"""
@@ -1116,7 +1127,7 @@ function oddity(S::ZpGenus)
       k += 1
     end
   end
-  return Int(lift(R(sum(Int[s[5] for s in S._symbol]) + 4*k)))
+  return R(sum(Int[s[5] for s in S._symbol]) + 4*k)
 end
 
 @doc Markdown.doc"""
@@ -1417,14 +1428,14 @@ function _gram_from_jordan_block(p::fmpz, block, discr_form=false)
     W = QQ[1;]
     if o == 0
       if det in [1, 7]
-        qL = [U for i in 1:div(rk, 2)]
+        qL = fmpq_mat[U for i in 1:div(rk, 2)]
       else
-        qL = [U for i in 1:(div(rk, 2) - 1)]
+        qL = fmpq_mat[U for i in 1:(div(rk, 2) - 1)]
         push!(qL, V)
       end
     elseif o == 1
       if rk % 2 == 1
-        qL = [U for i in 1:max(0, div(rk - 3, 2))]
+        qL = fmpq_mat[U for i in 1:max(0, div(rk - 3, 2))]
         if t*det % 8 in [3, 5]
           push!(qL,V)
         elseif rk >= 3
@@ -1437,23 +1448,23 @@ function _gram_from_jordan_block(p::fmpz, block, discr_form=false)
         else
           det = 1
         end
-        qL = [U for i in 1:max(0, div(rk - 4, 2))]
+        qL = fmpq_mat[U for i in 1:max(0, div(rk - 4, 2))]
         if (det , t) == (1, 0)
-          append!(qL, [U, 1 * W, 7 * W])
+          append!(qL, fmpq_mat[U, 1 * W, 7 * W])
         elseif (det , t) == (1, 2)
-          append!(qL, [U, 1 * W, 1 * W])
+          append!(qL, fmpq_mat[U, 1 * W, 1 * W])
         elseif (det , t) == (1, 4)
-          append!(qL , [V, 1 * W, 3 * W])
+          append!(qL , fmpq_mat[V, 1 * W, 3 * W])
         elseif (det , t) == (1, 6)
-          append!(qL, [U, 7 * W, 7 * W])
+          append!(qL, fmpq_mat[U, 7 * W, 7 * W])
         elseif (det , t) == (-1, 0)
-          append!(qL, [V, 1 * W, 7 * W])
+          append!(qL, fmpq_mat[V, 1 * W, 7 * W])
         elseif (det , t) == (-1, 2)
-          append!(qL, [U, 3 * W, 7 * W])
+          append!(qL, fmpq_mat[U, 3 * W, 7 * W])
         elseif (det , t) == (-1, 4)
-          append!(qL, [U, 1 * W, 3 * W])
+          append!(qL, fmpq_mat[U, 1 * W, 3 * W])
         elseif (det , t) == (-1, 6)
-          append!(qL, [U, 1 * W, 5 * W])
+          append!(qL, fmpq_mat[U, 1 * W, 5 * W])
         else
           error("invalid symbol $block")
         end
@@ -1555,46 +1566,7 @@ Return the mass of this genus.
 The genus must be definite.
 Let `L_1, ... L_n` be a complete list of representatives
 of the isometry classes in this genus.
-Its mass is defined as
-
-.. MATH::
-
-    \sum_{i=1}^n \frac{1}{|O(L_i)|}.
-
-INPUT:
-
-- ``backend`` -- default: ``'sage'``, || ``'magma'``
-
-OUTPUT:
-
-a rational number
-
-EXAMPLES::
-
-    sage: from sage.quadratic_forms.genera.genus import genera
-    sage: G = genera((8,0), 1, even=true)[0]
-    sage: G.mass()
-    1/696729600
-    sage: G.mass(backend='magma')  # optional - magma
-    1/696729600
-
-The `E_8` lattice is unique in its genus::
-
-    sage: E8 = QuadraticForm(G.representative())
-    sage: E8.number_of_automorphisms()
-    696729600
-
-TESTS:
-
-Check a random genus with magma::
-
-    sage: d = ZZ.random_element(1, 1000)
-    sage: n = ZZ.random_element(2, 10)
-    sage: L = genera((n,0), d, d, even=false)
-    sage: k = ZZ.random_element(0, length(L))
-    sage: G = L[k]
-    sage: G.mass()==G.mass(backend='magma')  # optional - magma
-    true
+Its mass is defined as $\sum_{i=1}^n \frac{1}{|O(L_i)|}$.
 """
 function mass(G::ZGenus)
   pos, neg = G._signature_pair
@@ -1614,21 +1586,7 @@ end
 
 Return the local mass `m_p` of this genus as defined by Conway.
 
-See Equation (3) in [CS1988]_.
-
-EXAMPLES::
-
-  sage: G = Genus(matrix.diagonal([1, 3, 9]))
-  sage: G.local_symbol(3).mass()
-  9/8
-
-  TESTS::
-
-  sage: G = Genus(matrix([1]))
-  sage: G.local_symbol(2).mass()
-  Traceback (most recent call last)
-  ....
-  ValueError: the dimension must be at least 2
+See Equation (3) in [CS1988]_
 """
 function _mass_squared(G::ZpGenus)
   @req dim(G) > 1 "the dimension must be at least 2"
@@ -1690,11 +1648,11 @@ See Table 1 in [CS1988]_.
 """
 function _species_list(G::ZpGenus)
   p = prime(G)
-  species_list = []
+  species_list = Int[]
   sym = G._symbol
   if p != 2
     for k in 1:length(sym)
-      n = ZZ(sym[k][2])
+      n = sym[k][2]
       d = sym[k][3]
       if n % 2 == 0 && d != _kronecker_symbol(-1, p)^(div(n, 2))
         species = -n
