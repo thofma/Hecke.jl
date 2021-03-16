@@ -310,6 +310,23 @@ function subfields(K::SimpleNumField; degree::Int = -1)
   if degree == n
     return Tuple{T, morphism_type(T)}[(K, id_hom(K))]
   end
+
+  if isprime(n)
+    res = Tuple{T, morphism_type(T)}[]
+    if degree == n 
+      push!(res, (K, id_hom(K)))
+    elseif degree == 1
+      kt, t = PolynomialRing(k, "t", cached = false)
+      k_as_field = number_field(t-1, check = false, cached = false)[1]
+      push!(res, (k_as_field, hom(k_as_field, K, one(K))))
+    elseif degree == -1
+      kt, t = PolynomialRing(k, "t", cached = false)
+      k_as_field = number_field(t-1, check = false, cached = false)[1]
+      push!(res, (K, id_hom(K)))
+      push!(res, (k_as_field, hom(k_as_field, K, one(K))))
+    end
+    return res
+  end
   princ_subfields = _principal_subfields_basis(K)
   gg = _generating_subfields(princ_subfields)
   sf_asmat_ar = _all_subfields(K, gg, degree)

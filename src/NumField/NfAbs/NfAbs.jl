@@ -532,7 +532,6 @@ Otherwise the function returns "false" and a morphism mapping everything to 0.
 function isisomorphic(K::AnticNumberField, L::AnticNumberField)
   f = K.pol
   g = L.pol
-  
   if degree(f) != degree(g)
     return false, hom(K, L, zero(L), check = false)
   end
@@ -554,6 +553,32 @@ function isisomorphic(K::AnticNumberField, L::AnticNumberField)
     end
     t = discriminant(f)//discriminant(g)
     if !issquare(numerator(t)) || !issquare(denominator(t))
+      return false, hom(K, L, zero(L), check = false)
+    end
+  end
+  p = 10^5
+  cnt = 0
+  df = denominator(f)
+  dg = denominator(g)
+  while cnt < 20
+    p = next_prime(p)
+    if divisible(df, p) || divisible(dg, p)
+      continue
+    end
+    F = GF(p, cached = false)
+    Fx = PolynomialRing(F, "x", cached = false)[1]
+    fp = Fx(f)
+    if degree(fp) != degree(f) || !issquarefree(fp)
+      continue
+    end
+    gp = Fx(g)
+    if degree(gp) != degree(g) || !issquarefree(gp)
+      continue
+    end
+    cnt += 1
+    lf = factor_shape(fp)
+    lg = factor_shape(gp)
+    if lf != lg
       return false, hom(K, L, zero(L), check = false)
     end
   end
