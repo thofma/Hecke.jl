@@ -126,7 +126,6 @@ end
 
 number_field(::PosInf) = QQ
 
-uniformizer(::PosInf) = QQ(1)
+uniformizer(::PosInf) = QQ(-1)
 
 infinite_places_uniformizers(::FlintRationalField) = [QQ(1)]
-
