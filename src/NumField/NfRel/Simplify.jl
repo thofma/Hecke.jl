@@ -235,7 +235,6 @@ function _find_prime(L::NfRelNS{nf_elem})
         acceptable = false
         break
       end
-      d = 1
       for j = 1:length(polsR)
         FS = factor_shape(polsR[j])
         d1 = lcm(Int[x for (x, v) in FS])*degree(Q)
