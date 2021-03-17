@@ -85,6 +85,8 @@ maximal_order(::FlintRationalField) = ZZ
 
 ideal_type(::FlintIntegerRing) = ZZIdl
 order_type(::FlintRationalField) = FlintIntegerRing
+ideal_type(FlintIntegerRing) = ZZIdl
+order_type(FlintRationalField) = FlintIntegerRing
 
 fractional_ideal_type(::FlintRationalField) = ZZFracIdl
 
