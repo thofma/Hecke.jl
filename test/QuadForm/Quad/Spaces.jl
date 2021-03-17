@@ -126,4 +126,31 @@
   V = quadratic_space(K, D)
   fl, T = Hecke.isequivalent_with_isometry(V, V)
   @test fl
+
+  q = quadratic_space(QQ,QQ[-1 0; 0 1])
+  g = Hecke.isometry_class(q)
+  g2 = Hecke.isometry_class(q,2)
+  @test Hecke.signature_tuple(q) == Hecke.signature_tuple(g)
+  @test hasse_invariant(q,2) == hasse_invariant(g2)
+  @test dim(q) == dim(g)
+  @test issquare(det(q)*det(g))
+  @test witt_invariant(q, 2) == witt_invariant(g2)
+  q0 = quadratic_space(QQ,matrix(QQ,0,0,fmpq[]))
+  g0 = isometry_class(q0)
+  g0p = isometry_class(q0, 2)
+
+  F, a = number_field(x^2 +3)
+  q = quadratic_space(F, QQ[1 0 0; 0 a 0])
+  g = isometry_class(q)
+  p = prime_ideals_over(F,2)[1]
+  gp = isometry_class(q, p)
+  @test Hecke.signature_tuples(q) == Hecke.signature_tuples(g)
+  @test hasse_invariant(q,p) == hasse_invariant(gp)
+  @test dim(q) == dim(g)
+  @test issquare(det(q)*det(g))
+
+
+
+
+
 end

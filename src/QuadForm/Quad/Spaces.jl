@@ -276,7 +276,8 @@ end
 
 function _quadratic_form_invariants(M::fmpq_mat; minimal = true)
   G, _ = _gram_schmidt(M, identity)
-  D = diagonal(G)
+  ker = count(d==0 for d in diagonal(G))
+  D = [d for d in diagonal(G) if d!=0]
   sup = fmpz[]
   for i in 1:length(D)
     for (p, e) in factor(numerator(D[i]))
@@ -302,7 +303,7 @@ function _quadratic_form_invariants(M::fmpq_mat; minimal = true)
   I = [ (inf, count(x -> x < 0, D)) ]
   nu = numerator(prod(D))
   de = denominator(prod(D))
-  return squarefree_part(de * nu), F, I
+  return ncols(M), ker, squarefree_part(de * nu), F, I
 end
 
 function _quadratic_form_invariants(M; minimal = true)
@@ -311,7 +312,9 @@ end
 
 function _quadratic_form_invariants(M, O; minimal = true)
   G, _ = _gram_schmidt(M, identity)
-  D = diagonal(G)
+  ker = count(d==0 for d in diagonal(G))
+  D = [d for d in diagonal(G) if d!=0]
+
   K = base_ring(M)
   sup = Dict{ideal_type(O), Bool}()
   for i in 1:length(D)
@@ -333,16 +336,17 @@ function _quadratic_form_invariants(M, O; minimal = true)
     end
   end
   I = [ (P, count(x -> isnegative(x, P), D)) for P in real_places(K) ];
-  return ncols(M), reduce(*, D, init = one(K)), F, I
+  return ncols(M), ker, reduce(*, D, init = one(K)), F, I
 end
 
 @doc Markdown.doc"""
     invariants(M::QuadSpace)
           -> FieldElem, Dict{NfOrdIdl, Int}, Vector{Tuple{InfPlc, Int}}
 
-Returns a triple `(n, d, H, I)` of invariants of `M`, which determine the
-equivalence class completely. Here `n` is the dimension. The element `d` is
-the determinant of a Gram matrix, `H` contains the non-trivial Hasse invariants
+Returns a tuple `(n, k, d, H, I)` of invariants of `M`, which determine the
+equivalence class completely. Here `n` is the dimension. The dimension of the kernel
+is `k`. The element `d` is the determinant of a Gram matrix of the non-degenerate part,
+`H` contains the non-trivial Hasse invariants
 and `I` contains for each real place the negative index of inertia.
 
 Note that `d` is determined only modulo squares.
@@ -364,9 +368,9 @@ function isequivalent(M::QuadSpace, L::QuadSpace)
   if gram_matrix(M) == gram_matrix(L)
     return true
   end
-  n1, d1, H1, I1 = invariants(M)
-  n2, d2, H2, I2 = invariants(L)
-  return n1==n2 && I1 == I2 && H1 == H2 && issquare(d1 * d2)[1]
+  n1, k1, d1, H1, I1 = invariants(M)
+  n2, k2, d2, H2, I2 = invariants(L)
+  return n1==n2 && k1==k2 && I1 == I2 && H1 == H2 && issquare(d1 * d2)[1]
 end
 
 ################################################################################
@@ -1737,7 +1741,7 @@ of `q` at the infinite place `p`.
 """
 function signature_tuple(q::QuadSpace, p::InfPlc)
   D = diagonal(q)
-  pos = count(ispositive(d,p) for d in D)
+  pos = count(ispositive(d,p) for d in D if d!=0)
   zero = count(d==0 for d in D)
   neg = count(isnegative(d,p) for d in D)
   return pos, zero, neg
@@ -1748,87 +1752,57 @@ function signature_tuples(q::QuadSpace)
   return Dict((p,signature_tuple(q, p)) for p in P)
 end
 
+################################################################################
 # Abstract Isometry Classes of Quadratic spaces
 ################################################################################
 
-abstract type LocalQuadSpaceCls end
-
-
-mutable struct LocalQuadSpaceClsNf{S, T, U} <: LocalQuadSpaceCls
+################################################################################
+mutable struct LocalQuadSpaceCls{S, T, U}
   K::S    # the base field
   p::T    # a finite place
   hass_inv::Int
   det::U
   dim::Int
+  kerdim::Int
   witt_inv
 
-  function LocalQuadSpaceClsNf{S, T, U}(K) where {S, T, U}
-    new{typeof(K), ideal_type(order_type(K)), elem_type(K)}()
+  function LocalQuadSpaceCls{S, T, U}(K) where {S, T, U}
+    z = new{typeof(K), ideal_type(order_type(K)), elem_type(K)}()
     z.dim = -1
     z.K = K
     return z
   end
 end
-
-mutable struct LocalQuadSpaceClsQ <: LocalQuadSpaceCls
-  p::fmpz
-  dim::Int
-  det::fmpq
-  hass_inv::Int
-  witt_Inv
-
-  function LocalQuadSpaceClsQ(p::fmpz, dim::Int, det::fmpq, hasse_invariant::Int)
-    z = new()
-    z.p = p
-    z.dim = dim
-    z.det = det
-    z.hass_inv = hasse_invariant
-    return z
-  end
-end
-
-base_ring(G::LocalQuadSpaceClsQ) = QQ
+################################################################################
 
 function localclass_quad_type(K)
-  if K == QQ
-    return LocalQuadSpaceClsQ
-  end
   return LocalQuadSpaceCls{typeof(K), ideal_type(order_type(K)), elem_type(K)}
 end
 
-
-function local_quad_space_class(K::FlintRationalField, prime::fmpz, n::Int,
-                                d, hasse_inv::Int)
-  return LocalQuadSpaceClsQ(prime, n, d, hasse_inv)
-end
-
-function local_quad_space_class(K, prime, n, d, hasse_inv)
-  if K == QQ
-    return LocalQuadSpaceClsQ(prime,n,d,hasse_inv)
-  end
+function local_quad_space_class(K, prime, n, d, hasse_inv, k=0)
   g = localclass_quad_type(K)(K)
   g.K = K
   g.p = prime
   g.dim = n
-  g.det = d
-  g.has_inv = hasse_invi
+  g.kerdim = k
+  g.det = d  # determinant of the non-degenerate part
+  g.hass_inv = hasse_inv
   return g
 end
 
-base_ring(G::LocalQuadSpaceClsNf) = G.K
+base_ring(G::LocalQuadSpaceCls) = G.K
 prime(G::LocalQuadSpaceCls) = G.p
 det(G::LocalQuadSpaceCls) = G.det
 dim(G::LocalQuadSpaceCls) = G.dim
+kernel_dim(G::LocalQuadSpaceCls) = G.kerdim
 hasse_invariant(G::LocalQuadSpaceCls) = G.hass_inv
 
 function isometry_class(V::QuadSpace, p)
-  p = ZZ(p)
-  return isometry_class(V, p)
+  return local_quad_space_class(base_ring(V), p, dim(V), det(V), hasse_invariant(V, p))
 end
 
-function isometry_class(V::QuadSpace, p::fmpz)
-  K = base_ring(V)
-  return local_quad_space_class(K, p, dim(V), det(V), hasse_invariant(V, p))
+function isometry_class(V::QuadSpace, p::Union{fmpz,Integer})
+  isometry_class(V, ideal(ZZ, p))
 end
 
 function witt_invariant(G::LocalQuadSpaceCls)
@@ -1874,7 +1848,13 @@ function Base.:(==)(G1::LocalQuadSpaceCls, G2::LocalQuadSpaceCls)
     error("abstract local quadratic spaces over different primes "
           *"do not compare")
   end
+  if kernel_dim(G1) != kernel_dim(G2)
+    return false
+  end
   if dim(G1) != dim(G2)
+    return false
+  end
+  if det(G1) != det(G2)
     return false
   end
   if hass_invariant(G1) != hass_invariant(G2)
@@ -1940,25 +1920,19 @@ function represents(G1::LocalQuadSpaceCls, G2::LocalQuadSpaceCls)
   return _can_locally_embed(n1, d1, h1, n2, d2, h2, p)
 end
 
-
-abstract type QuadSpaceCls end
-
 ################################################################################
-mutable struct QuadSpaceClsNf{S, T, U} <: QuadSpaceCls
+mutable struct QuadSpaceCls{S, T, U}
   K::S  # the underlying field
   dim::Int
+  kerdim::Int
   det::U
-  LGS::Dict{T, LocalQuadSpaceClsNf{S, T, U}}
-  signatures::Dict{InfPlc, Int}
+  LGS::Dict{T, LocalQuadSpaceCls{S, T, U}}
+  signature_tuples::Dict{Union{InfPlc,PosInf}, Tuple{Int,Int,Int}}
 
   representative::QuadSpace
 
-  function QuadSpaceClsNf{S, T, U}(K) where {S, T, U}
-    if K == QQ
-      z = new{typeof(QQ), fmpz, fmpq}()
-    else
-      z = new{typeof(K), ideal_type(order_type(K)), elem_type(K)}()
-    end
+  function QuadSpaceCls{S, T, U}(K) where {S, T, U}
+    z = new{typeof(K), ideal_type(order_type(K)), elem_type(K)}()
     z.K = K
     z.dim = -1
     return z
@@ -1966,115 +1940,142 @@ mutable struct QuadSpaceClsNf{S, T, U} <: QuadSpaceCls
 end
 ################################################################################
 
-
-function class_quad_type(K::FlintRationalField)
-  return QuadSpaceClsQ
-end
-
 function class_quad_type(K)
   return QuadSpaceCls{typeof(K), ideal_type(order_type(K)), elem_type(K)}
 end
-
-
-################################################################################
-mutable struct QuadSpaceClsQ <: QuadSpaceCls
-  dim::Int
-  det::fmpq
-  LGS::Dict{fmpz, LocalQuadSpaceClsQ}
-  signature_tuple::Tuple{Int,Int,Int}
-
-  representative::QuadSpace
-
-  function QuadSpaceClsQ(dim, det, LGS, signature_tuple)
-    z = new()
-    z.dim = dim
-    z.det = fmpq
-    z.LGS = LGS
-    z.signature_tuple = signature_tuple
-    return z
-  end
-end
-################################################################################
-
 
 function Base.show(io::IO, G::QuadSpaceCls)
   K = base_ring(G)
   n = dim(G)
   d = det(G)
-  S = signatures(G)
-  P = [p for P in keys(G.LGS) if hasse_invariant(P[p])==-1]
-  print(io, "Abstract quadratic space over $K ")
-  print(io, "of dimenson $n, determinant $d ")
-  print(io, "invariants $P, ")
-  print(io, "negative inertia $S")
+  S = signature_tuples(G)
+  P = [p for p in keys(G.LGS) if hasse_invariant(G.LGS[p])==-1]
+  print(IOContext(io, :compact => true), "Abstract quadratic space over ",
+        K, " of dimension $n, determinant $d, negative Hasse invariants at ",P,
+        " signature tuples ", values(S))
 end
 
-function isometry_class(q::QuadSpace{FlintRationalField,fmpq_mat})
-  n = dim(q)
-  d = det(q)
+function Base.:(==)(G1::QuadSpaceCls, G2::QuadSpaceCls)
+  @req base_ring(G1) == base_ring(G2) "isometry classes over differnt fields do not compare"
+  if G1 === G2
+    return true
+  end
+  if dim(G1) != dim(G2)
+    return false
+  end
+  S1 = G1.signature_tuples
+  S2 = G2.signature_tuples
+  if S1 != S2
+    return false
+  end
+  if !issquare(dim(G1)*dim(G2))
+    return false
+  P = union(Set(keys(G1.LGS)),Set(keys(G2.LGS)))
+  return all(local_symbol(G1, p) == local_symbol(G2,p) for p in P)
+  end
+
 end
 
+function represents(g1::QuadSpaceCls, g2::QuadSpaceCls)
+  @req base_ring(g1) == base_ring(g2) "different base fields"
+
+  # conditions at infinite places
+  if kernel_dim(g1) < kernel_dim(g2)
+    return false
+  end
+  S1 = signature_tuples(g1)
+  S2 = signature_tuples(g2)
+  for s in keys(S1)
+    p1,z1,n1 = S1[s]
+    p2,z2,n2 = S1[s]
+    if p2 > p1 && z2 > z1 && n2 > n1
+      return false
+    end
+  end
+  # conditions at finite places
+  P = union(Set(keys(g1.LGS)),Set(keys(g2.LGS)))
+  return all(represents(local_symbol(g1, p), local_symbol(g2,p)) for p in P)
+end
+
+function represents(g1::QuadSpaceCls, x)
+  K = base_ring(g1)
+  x = K(x)
+  q = quadratic_space(K, matrix(K, 1, 1, [x]))
+  g2 = isometry_class(q)
+  return represents(g1, g2)
+end
 
 function isometry_class(q::QuadSpace)
   K = base_ring(q)
-  n, d, P, sig = invariants(q)
-  LGS = Dict{ideal_type(maximal_order(K)),localclass_quad_type(K) }()
+  n, k, d, P, sig = invariants(q)
+  LGS = Dict{ideal_type(order_type(K)),localclass_quad_type(K) }()
   for p in keys(P)
     if P[p] == -1
-      gp = local_quad_space_class(K, p, n, d, -1)
+      gp = local_quad_space_class(K, p, n, d, -1, k)
       LGS[p] = gp
     end
   end
   G = class_quad_type(K)(K)
   G.LGS = LGS
   G.dim = n
-  G.det = d
-  G.signatures = Dict(sig)
+  G.det = det(q)
+  sig_tuples = Dict((s[1], (n-k-s[2], k, s[2])) for s in sig)
+  G.signature_tuples = sig_tuples
+  G.representative = q
   return G
 end
 
 dim(g::QuadSpaceCls) = g.dim
 det(g::QuadSpaceCls) = g.det
 base_ring(g::QuadSpaceCls) = g.K
+kernel_dim(g::QuadSpaceCls) = g.kerdim
+
 
 function local_symbols(g::QuadSpaceCls)
-  return deepcopy(G.LGS)
+  return copy(g.LGS) #unsafe but deepcopy creates new parents
 end
 
 function local_symbol(g::QuadSpaceCls, p)
-  return deepcopy(g.LGS[p])
+  if p in keys(g.LGS)
+    return g.LGS[p]
+  else
+    K = base_ring(g)
+    return local_quad_space_class(K, p, dim(g), K(1), 1, kernel_dim(g))
+  end
 end
 
-function signatures(g::QuadSpaceCls)
-  return deepcopy(G.signatures)
+function signature_tuples(g::QuadSpaceCls)
+  return copy(g.signature_tuples)
 end
 
-function signatures(g::QuadSpaceClsQ)
-  return Dict((inf, g.signature_tuple))
+function signature_tuple(g::QuadSpaceCls{FlintRationalField,ZZIdl,fmpq})
+  return g.signature_tuples[inf]
 end
 
+function Base.:(+)(g1::QuadSpaceCls{S,T,U},g2::QuadSpaceCls{S,T,U}) where {S,T,U}
+  @req base_ring(g1) == base_ring(g2) "must be defined over the same base ring"
+  K = base_ring(g1)
+  g = class_quad_type(K)(K)
+  g.dim = dim(g1) + dim(g2)
+  g.kerdim = kernel_dim(g1) + kernel_dim(g2)
+  g.det = det(g1)*det(g2)
+  g.LGS = Dict{T, LocalQuadSpaceCls{S, T, U}}()
+  P = union(Set(keys(g1.LGS)),Set(keys(g2.LGS)))
+  for p in P
+    s = local_symbol(g1, p) + local_symbol(g2, p)
+    if hasse_invariant(s)==-1
+      LGS[p] = s
+    end
+  end
+  g.signature_tuples = Dict{Union{InfPlc,PosInf}, Tuple{Int,Int,Int}}()
+  for p in real_places(K)
+    s1 = g1.signature_tuples[p]
+    s2 = g2.signature_tuples[p]
+    g.signature_tuples[p] = (s1[1]+s2[1], s1[2]+s2[2], s1[3]+s2[3])
+  end
+  return g
+end
 
-
-
-
-#=
-    def hasse_invariant(self):
-        r"""
-        Return Cassel's hasse invariant.
-        """
-        if self.rank() > 0:
-            g = matrix.diagonal([self.det()]+(self.rank()-1)*[1])
-        else:
-            g = matrix([])
-        p = self._place
-        from sage.quadratic_forms.all import QuadraticForm
-        qf = QuadraticForm(QQ,2*g)
-        hasse1 = qf.hasse_invariant(p)
-        std = LocalGenusSymbol(g,self.prime())
-        if std.excess() == self.excess():
-            return hasse1
-        else:
-            return -hasse1
-
-
-=#
+function representative(g::QuadSpaceCls)
+  _quadratic_form_with_invariants
+end

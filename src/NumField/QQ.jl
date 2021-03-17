@@ -138,4 +138,6 @@ uniformizer(::PosInf) = QQ(-1)
 
 infinite_places_uniformizers(::FlintRationalField) = fmpq[QQ(1)]
 
-
+function hilbert_symbol(a,b, p::ZZIdl)
+  return hilbert_symbol(a,b, gen(p))
+end
