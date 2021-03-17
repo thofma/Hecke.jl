@@ -135,7 +135,7 @@ function quadratic_field(d::fmpz; cached::Bool = true, check::Bool = true)
 end
 
 function show_quad(io::IO, q::AnticNumberField)
-  d = trail(q.pol)
+  d = trailing_coefficient(q.pol)
   if d < 0
     print(io, "Real quadratic field by ", q.pol)
   else
