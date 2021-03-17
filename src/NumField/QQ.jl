@@ -88,6 +88,11 @@ order_type(::FlintRationalField) = FlintIntegerRing
 
 fractional_ideal_type(::FlintRationalField) = ZZFracIdl
 
+elem_in_nf(x::fmpz) = FlintQQ(x)
+
+nf(::FlintIntegerRing) = FlintQQ
+number_field(::FlintIntegerRing) = FlintQQ
+
 # Infinite places
 
 isreal(::PosInf) = true
@@ -130,3 +135,5 @@ number_field(::PosInf) = QQ
 uniformizer(::PosInf) = QQ(-1)
 
 infinite_places_uniformizers(::FlintRationalField) = fmpq[QQ(1)]
+
+
