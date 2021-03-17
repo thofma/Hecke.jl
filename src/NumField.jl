@@ -1,3 +1,4 @@
+include("NumField/QQ.jl")
 include("NumField/Elem.jl")
 include("NumField/Field.jl")
 include("NumField/Subfields.jl")
