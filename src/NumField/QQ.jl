@@ -56,11 +56,11 @@ end
 # access
 gen(I::ZZIdl) = I.gen
 
-gens(I::ZZIdl) = [I.gen]
+gens(I::ZZIdl) = fmpz[I.gen]
 
 
 gen(I::ZZFracIdl) = I.gen
-gens(I::ZZFracIdl) = [I.gen]
+gens(I::ZZFracIdl) = fmpq[I.gen]
 
 #TODO
 
@@ -100,9 +100,9 @@ function infinite_place(::FlintRationalField, i::Int)
   return inf
 end
 
-real_places(::FlintRationalField) = [inf]
+real_places(::FlintRationalField) = PosInf[inf]
 
-complex_places(::FlintRationalField) = []
+complex_places(::FlintRationalField) = PosInf[]
 
 function sign(x::Union{fmpq,fmpz},p::PosInf)
   return sign(x)
@@ -128,4 +128,4 @@ number_field(::PosInf) = QQ
 
 uniformizer(::PosInf) = QQ(-1)
 
-infinite_places_uniformizers(::FlintRationalField) = [QQ(1)]
+infinite_places_uniformizers(::FlintRationalField) = fmpq[QQ(1)]
