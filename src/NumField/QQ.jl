@@ -96,7 +96,7 @@ infinite_places(::FlintRationalField) = [inf]
 infinite_place(::FlintRationalField) = inf
 
 function infinite_place(::FlintRationalField, i::Int)
-  i!=1 && error("Index must be between 1 and $(degree(K))")
+  i !=1 && error("Index must be 1")
   return inf
 end
 
@@ -129,5 +129,4 @@ number_field(::PosInf) = QQ
 uniformizer(::PosInf) = QQ(1)
 
 infinite_places_uniformizers(::FlintRationalField) = [QQ(1)]
-
 
