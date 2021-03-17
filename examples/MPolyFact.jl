@@ -145,10 +145,10 @@ function Hecke.norm(f::MPolyElem{nf_elem})
 end
 
 function Hecke.ismonic(f::MPolyElem)
-  return isone(lead(f))
+  return isone(leading_coefficient(f))
 end
 function Hecke.ismonic(f::PolyElem)
-  return isone(lead(f))
+  return isone(leading_coefficient(f))
 end
 
 #dodgy
@@ -381,7 +381,7 @@ function lift(C::HenselCtxFqRelSeries{<:SeriesElem})
   while j > 0
     if i==length(C.lf)
       f = evaluate(C.f, [gen(St), St(gen(S)-C.t)])
-      f *= inv(lead(f))
+      f *= inv(leading_coefficient(f))
     else
       f = set_precision(C.lf[i], N2)
       @assert ismonic(C.lf[i])
@@ -478,7 +478,7 @@ function Base.rem(g::PolyElem, P::Preinv)
     return g
   end
   if degree(g) == degree(P.f)
-    return g - lead(g)*reverse(P.f)
+    return g - leading_coefficient(g)*reverse(P.f)
   end
 
   gr = reverse(g)
@@ -508,7 +508,7 @@ function lift_q(C::HenselCtxFqRelSeries{<:SeriesElem{qadic}})
   while j > 0
     if i==length(C.lf)
       f = evaluate(map_coeffs(Q, C.f), [gen(St), St(gen(S))])
-      f *= inv(lead(f))
+      f *= inv(leading_coefficient(f))
     else
 #      f = _set_precision(C.lf[i], N2)
       f = C.lf[i]
@@ -1210,7 +1210,7 @@ function field(RC::RootCtx, m::MatElem)
   lc = map(x->evaluate(leading_coefficient(x, 1), [0*t, t]), nl)
 
   for i = 1:length(lc)
-    l = lead(lc[i])
+    l = leading_coefficient(lc[i])
     lc[i] *= inv(l)
     nl[i] *= inv(l)
   end

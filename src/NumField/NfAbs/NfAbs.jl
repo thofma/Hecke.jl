@@ -174,7 +174,7 @@ function isdefining_polynomial_nice(K::NfAbsNS)
     if !isone(d)
       return false
     end
-    if !isone(lead(pols[i]))
+    if !isone(leading_coefficient(pols[i]))
       return false
     end
   end

@@ -485,7 +485,7 @@ function minQ(A::Tuple{nf_elem, fmpq_poly})
   a = A[1]
   f = A[2]
   q1, q2 = Q1Q2(f)
-  if lead(q1)>0 && lead(q2) > 0
+  if leading_coefficient(q1)>0 && leading_coefficient(q2) > 0
     return (-A[1], f(-gen(parent(f)))*(-1)^degree(f))
   else
     return (A[1], f)

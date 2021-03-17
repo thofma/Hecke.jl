@@ -12,7 +12,7 @@ import Nemo
 function basis_matrix(d::fmpz, f::fmpz_poly, k::AnticNumberField)
   #assumes f is idl as above!!!
   #1st need to deconstruct f into the different degrees:
-  #CRT of degree a>b and implies lead(b) = 0 mod q, hence gcd's are my friend
+  #CRT of degree a>b and implies leading_coefficient(b) = 0 mod q, hence gcd's are my friend
   #claim: in this situation, the "obvious" method will produce a Howell form
   #tries to compute the basis matrix for the ideal <d, f(a)> where a = gen(k)
   #assumes deg f < deg k, d coprime to the conductor/ index/ everything
@@ -31,7 +31,7 @@ function basis_matrix(d::fmpz, f::fmpz_poly, k::AnticNumberField)
     #so I have <d/r, f> of degree i and
     #          <f, f mod r> of smaller degree
     n = div(g, r)
-    c = invmod(lead(f), n)
+    c = invmod(leading_coefficient(f), n)
     fn = mod(c*f, n)
     @assert ismonic(fn)
     @assert degree(fn) == i
@@ -48,7 +48,7 @@ function basis_matrix(d::fmpz, f::fmpz_poly, k::AnticNumberField)
       t = gen(parent(fn))^i-fn
       for j=i+2:degree(k)
         t = t*gen(parent(fn))
-        t -= lead(t)*fn
+        t -= leading_coefficient(t)*fn
         mod!(t, n)
         M[j,j] = 1
         for k=1:j-1
@@ -270,7 +270,7 @@ function _gcd(f::Hecke.Generic.MPoly{nf_elem}, g::Hecke.Generic.MPoly{nf_elem}, 
   f*=de
   g*=de
   E = equation_order(K)
-  lI = E*E(lead(f)) + E*E(lead(g))
+  lI = E*E(leading_coefficient(f)) + E*E(leading_coefficient(g))
   gl = Hecke.short_elem(lI)
   gl *= evaluate(derivative(K.pol), gen(K))  # use Kronnecker basis
 
@@ -308,7 +308,7 @@ function _gcd(f::Hecke.Generic.MPoly{nf_elem}, g::Hecke.Generic.MPoly{nf_elem}, 
 #          @time q = div(f, gd)
 #          @time q*gd == f
           gd*=inv(gl)
-          @assert isone(lead(gd))
+          @assert isone(leading_coefficient(gd))
           return inflate(gd, shiftr, deflr)
       end
       stable = max_stable
@@ -332,7 +332,7 @@ function _gcd(f::Hecke.Generic.MPoly{nf_elem}, g::Hecke.Generic.MPoly{nf_elem}, 
           if divides(f, gd)[1] && divides(g, gd)[1]
 #            @show "gcd stop", nbits(d), length(gd), gd
             gd*=inv(gl)
-            @assert isone(lead(gd))
+            @assert isone(leading_coefficient(gd))
             return inflate(gd, shiftr, deflr)
           else
             stable = max_stable
