@@ -1953,7 +1953,7 @@ mutable struct QuadSpaceClsNf{S, T, U} <: QuadSpaceCls
 
   representative::QuadSpace
 
-  function QuadSpaceCls{S, T, U}(K) where {S, T, U}
+  function QuadSpaceClsNf{S, T, U}(K) where {S, T, U}
     if K == QQ
       z = new{typeof(QQ), fmpz, fmpq}()
     else
@@ -1980,19 +1980,17 @@ end
 mutable struct QuadSpaceClsQ <: QuadSpaceCls
   dim::Int
   det::fmpq
-  LGS::Dict{T, LocalQuadSpaceClsQ}
-  signatures::Dict{InfPlc, Int}
+  LGS::Dict{fmpz, LocalQuadSpaceClsQ}
+  signature_tuple::Tuple{Int,Int,Int}
 
   representative::QuadSpace
 
-  function QuadSpaceCls{S, T, U}(K) where {S, T, U}
-    if K == QQ
-      z = new{typeof(QQ), fmpz, fmpq}()
-    else
-      z = new{typeof(K), ideal_type(order_type(K)), elem_type(K)}()
-    end
-    z.K = K
-    z.dim = -1
+  function QuadSpaceClsQ(dim, det, LGS, signature_tuple)
+    z = new()
+    z.dim = dim
+    z.det = fmpq
+    z.LGS = LGS
+    z.signature_tuple = signature_tuple
     return z
   end
 end
@@ -2020,7 +2018,6 @@ end
 function isometry_class(q::QuadSpace)
   K = base_ring(q)
   n, d, P, sig = invariants(q)
-
   LGS = Dict{ideal_type(maximal_order(K)),localclass_quad_type(K) }()
   for p in keys(P)
     if P[p] == -1
@@ -2041,10 +2038,7 @@ det(g::QuadSpaceCls) = g.det
 base_ring(g::QuadSpaceCls) = g.K
 
 function local_symbols(g::QuadSpaceCls)
-  if p in keys(G.LGS)
-    return deepcopy(G.LGS)
-  end
-  return LocalQuadSpaceCls(K, p, n, d, h)
+  return deepcopy(G.LGS)
 end
 
 function local_symbol(g::QuadSpaceCls, p)
@@ -2053,6 +2047,10 @@ end
 
 function signatures(g::QuadSpaceCls)
   return deepcopy(G.signatures)
+end
+
+function signatures(g::QuadSpaceClsQ)
+  return Dict((inf, g.signature_tuple))
 end
 
 
