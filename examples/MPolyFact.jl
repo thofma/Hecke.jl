@@ -132,7 +132,7 @@ function Hecke.norm(f::MPolyElem{nf_elem})
   Qx, x = PolynomialRing(QQ, [String(x) for x= symbols(Kx)], cached = false)
   Qxy, y = PolynomialRing(Qx, "y", cached = false)
   gg = [MPolyBuildCtx(Qx) for i=1:degree(K)]
-  for (c, e) = zip(coeffs(f), exponent_vectors(f))
+  for (c, e) = zip(coefficients(f), exponent_vectors(f))
     for i=0:degree(K)-1
       d = coeff(c, i)
       if !iszero(d)
@@ -848,7 +848,7 @@ end
 function Hecke.leading_coefficient(f::MPolyElem, i::Int)
   g = MPolyBuildCtx(parent(f))
   d = degree(f, i)
-  for (c, e) = zip(coeffs(f), exponent_vectors(f))
+  for (c, e) = zip(coefficients(f), exponent_vectors(f))
     if e[i] == d
       e[i] = 0
       push_term!(g, c, e)
@@ -873,7 +873,7 @@ variable.
 function Hecke.coefficients(f::MPolyElem, i::Int)
   d = degree(f, i)
   cf = [MPolyBuildCtx(parent(f)) for j=0:d]
-  for (c, e) = zip(coeffs(f), exponent_vectors(f))
+  for (c, e) = zip(coefficients(f), exponent_vectors(f))
     a = e[i]
     e[i] = 0
     push_term!(cf[a+1], c, e)
@@ -1491,7 +1491,7 @@ end
 function map_down(Rp, a, mKp :: Map, pr::Int)
     M = MPolyBuildCtx(Rp)
     pk = prime(base_ring(a))^pr
-    for (c, v) in zip(coeffs(a), exponent_vectors(a))
+    for (c, v) in zip(coefficients(a), exponent_vectors(a))
         @assert valuation(c) >= pr
         q = divexact(c, pk)  #should be a shift
         push_term!(M, mKp(q), v)
@@ -1505,7 +1505,7 @@ function map_up(R, a, mKp :: Map, pr::Int)
     M = MPolyBuildCtx(R)
     pk = prime(base_ring(R))^pr
 
-    for (c, v) in zip(coeffs(a), exponent_vectors(a))
+    for (c, v) in zip(coefficients(a), exponent_vectors(a))
         d = preimage(mKp, c)
         push_term!(M, d*pk, v)
     end
@@ -1549,7 +1549,7 @@ function lift_prime_power(
     for l in kstart:kstop
         error = a - prod(fac)
 
-        for c in coeffs(error)
+        for c in coefficients(error)
           if valuation(c) < l
             throw(AssertionError("factorization is not correct mod p^$l"))
           end
@@ -1589,7 +1589,7 @@ end
 function _yzero_image(R, f, xvar::Int)
   z = MPolyBuildCtx(R)
   zexps = zeros(Int, nvars(R))
-  for (c, exps) in zip(coeffs(f), exponent_vectors(f))
+  for (c, exps) in zip(coefficients(f), exponent_vectors(f))
     @assert length(exps) == 2
     if exps[2] == 0
       zexps[xvar] = exps[1]

@@ -415,13 +415,13 @@ function basis_matrix(A::Array{S, 1}, ::Type{FakeFmpqMat}) where {S <: AbsAlgAss
 
   M = zero_matrix(FlintZZ, n, d)
 
-  dens = [lcm([denominator(coeffs(A[i], copy = false)[j]) for j=1:d]) for i=1:n]
+  dens = [lcm([denominator(coefficients(A[i], copy = false)[j]) for j=1:d]) for i=1:n]
   deno = lcm(dens)
 
   for i in 1:n
     for j in 1:d
-      temp_den = divexact(deno, denominator(coeffs(A[i], copy = false)[j]))
-      M[i, j] = numerator(coeffs(A[i], copy = false)[j]) * temp_den
+      temp_den = divexact(deno, denominator(coefficients(A[i], copy = false)[j]))
+      M[i, j] = numerator(coefficients(A[i], copy = false)[j]) * temp_den
     end
   end
   return FakeFmpqMat(M, deno)
@@ -438,7 +438,7 @@ function basis_matrix(A::Vector{ <: AbsAlgAssElem{T} }) where T
   for i = 1:n
     elem_to_mat_row!(M, i, A[i])
     #for j = 1:d
-    #  M[i, j] = deepcopy(coeffs(A[i], copy = false)[j])
+    #  M[i, j] = deepcopy(coefficients(A[i], copy = false)[j])
     #end
   end
   return M
@@ -840,7 +840,7 @@ function any_order(A::AbsAlgAss{fmpq})
   M = vcat(zero_matrix(FlintQQ, 1, dim(A)), d*identity_matrix(FlintQQ, dim(A)))
   oneA = one(A)
   for i = 1:dim(A)
-    M[1, i] = deepcopy(coeffs(oneA, copy = false)[i])
+    M[1, i] = deepcopy(coefficients(oneA, copy = false)[i])
   end
   M = FakeFmpqMat(M)
   M = hnf!(M, :lowerleft)

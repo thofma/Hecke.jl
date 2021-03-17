@@ -391,7 +391,7 @@ function basis(K::NfRelNS)
   return B
 end
 
-function coeffs(a::NfRelNSElem; copy = false)
+function coefficients(a::NfRelNSElem; copy = false)
   L = parent(a)
   K = base_field(L)
   v = Vector{elem_type(K)}(undef, degree(L))

@@ -202,7 +202,7 @@ function AbstractAlgebra.map_coeffs(F::GaloisField, f::fmpq_mpoly; parent = Poly
   end
   m = inv(d)
   ctx = MPolyBuildCtx(parent)
-  for x in zip(coeffs(f), exponent_vectors(f))
+  for x in zip(coefficients(f), exponent_vectors(f))
     el = numerator(x[1]*dF)
     push_term!(ctx, F(el)*m, x[2])
   end

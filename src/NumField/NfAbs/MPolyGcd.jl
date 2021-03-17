@@ -467,7 +467,7 @@ function Hecke.modular_proj(::Type{fq_nmod}, a::Generic.MPoly{nf_elem}, me::Heck
   vars = map(string, symbols(Kxy))
   s = length(me.fld)
   res = [MPolyBuildCtx(PolynomialRing(me.fld[i], vars)[1]) for i in 1:s]
-  for (c, v) in zip(coeffs(a), exponent_vectors(a))
+  for (c, v) in zip(coefficients(a), exponent_vectors(a))
     cp = Hecke.modular_proj(c, me)
     for i in 1:s
       push_term!(res[i], deepcopy(cp[i]), v)

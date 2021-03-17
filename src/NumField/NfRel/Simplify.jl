@@ -350,7 +350,7 @@ function _is_primitive_via_block(a::NfRelNSElem{nf_elem}, rt::Dict{fq, Vector{Ve
   conjs = Set{fq}()
   for (r, vr) in rt
     ctx = MPolyBuildCtx(Rxy)
-    for (c, v) in zip(coeffs(pol), exponent_vectors(pol))
+    for (c, v) in zip(coefficients(pol), exponent_vectors(pol))
       nf_elem_to_gfp_fmpz_poly!(tmp, c)
       push_term!(ctx, evaluate(tmp, r), v)
     end
