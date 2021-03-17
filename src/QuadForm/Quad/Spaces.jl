@@ -132,18 +132,23 @@ end
 # This can be refactored to operate on the diagonal of a gram schmidt basis and
 # the gram matrix.
 # (Probably only on the diagonal of a gram schmidt basis)
-function witt_invariant(L::QuadSpace, p::NfOrdIdl)
-  h = hasse_invariant(L, p)
-  F = gram_matrix(L)
-  dett = det(F)
+function witt_invariant(L::QuadSpace, p)
   K = base_ring(L)
-  ncolsFmod8 = mod(ncols(F), 8)
-  if ncolsFmod8 == 3 || ncolsFmod8 == 4
-    c = -dett
-  elseif ncolsFmod8 == 5 || ncolsFmod8 == 6
+  h = hasse_invariant(L, p)
+  n = dim(L)
+  d = det(L)
+  return _hasse_witt(K, h, n, d, p)
+end
+
+
+function _hasse_witt(K, h, n, d, p)
+  n = mod(n, 8)
+  if n == 3 || n == 4
+    c = -d
+  elseif n == 5 || n == 6
     c = K(-1)
-  elseif ncolsFmod8 == 7 || ncolsFmod8 == 0
-    c = dett
+  elseif n == 7 || n == 0
+    c = d
   else
     c = K(1)
   end
@@ -202,15 +207,14 @@ function witt_invariant(L::QuadSpace, p::InfPlc)
   end
 
   h = hasse_invariant(L, p)
-  F = gram_matrix(L)
-  dett = det(F)
+  dett = det(L)
   K = base_ring(L)
-  ncolsFmod8 = mod(ncols(F), 8)
-  if ncolsFmod8 == 3 || ncolsFmod8 == 4
+  n = mod(dim(F), 8)
+  if n == 3 || n == 4
     c = -dett
-  elseif ncolsFmod8 == 5 || ncolsFmod8 == 6
+  elseif n == 5 || n == 6
     c = K(-1)
-  elseif ncolsFmod8 == 7 || ncolsFmod8 == 0
+  elseif n == 7 || n == 0
     c = dett
   else
     c = K(1)
@@ -329,17 +333,17 @@ function _quadratic_form_invariants(M, O; minimal = true)
     end
   end
   I = [ (P, count(x -> isnegative(x, P), D)) for P in real_places(K) ];
-  return reduce(*, D, init = one(K)), F, I
+  return ncols(M), reduce(*, D, init = one(K)), F, I
 end
 
 @doc Markdown.doc"""
     invariants(M::QuadSpace)
           -> FieldElem, Dict{NfOrdIdl, Int}, Vector{Tuple{InfPlc, Int}}
 
-Returns a triple `(d, H, I)` of invariants of `M`, which determine the
-equivalence class completely. The element `d` is the determinant of a Gram
-matrix, `H` contains the non-trivial Hasse invariants and `I` contains for
-each real place the negative index of inertia.
+Returns a triple `(n, d, H, I)` of invariants of `M`, which determine the
+equivalence class completely. Here `n` is the dimension. The element `d` is
+the determinant of a Gram matrix, `H` contains the non-trivial Hasse invariants
+and `I` contains for each real place the negative index of inertia.
 
 Note that `d` is determined only modulo squares.
 """
@@ -360,9 +364,9 @@ function isequivalent(M::QuadSpace, L::QuadSpace)
   if gram_matrix(M) == gram_matrix(L)
     return true
   end
-  d1, H1, I1 = invariants(M)
-  d2, H2, I2 = invariants(L)
-  return I1 == I2 && H1 == H2 && issquare(d1 * d2)[1]
+  n1, d1, H1, I1 = invariants(M)
+  n2, d2, H2, I2 = invariants(L)
+  return n1==n2 && I1 == I2 && H1 == H2 && issquare(d1 * d2)[1]
 end
 
 ################################################################################
@@ -1710,3 +1714,369 @@ function _isisotropic_with_vector_finite(M)
   end
   return false, elem_type(k)[]
 end
+
+@doc Markdown.doc"""
+    signature_tuple(q::QuadraticSpace{FlintRationalField,fmpq_mat) ->Tuple{Int,Int,Int}
+
+Return the number of (positive, zero, negative) inertia of this rational quadratic space.
+"""
+function signature_tuple(q::QuadSpace{FlintRationalField,fmpq_mat})
+  D = diagonal(q)
+  pos = count(d>0 for d in D)
+  zero = count(d==0 for d in D)
+  neg = count(d<0 for d in D)
+  return (pos, zero, neg)
+end
+
+@doc Markdown.doc"""
+    signature_tuple(q::QuadraticSpace{FlintRationalField,fmpq_mat}, p::InfPlc)
+    -> Tuple{Int,Int,Int}
+
+Return the number of (positive, zero, negative) inertia over the completion
+of `q` at the infinite place `p`.
+"""
+function signature_tuple(q::QuadSpace, p::InfPlc)
+  D = diagonal(q)
+  pos = count(ispositive(d,p) for d in D)
+  zero = count(d==0 for d in D)
+  neg = count(isnegative(d,p) for d in D)
+  return pos, zero, neg
+end
+
+function signature_tuples(q::QuadSpace)
+  P = real_places(base_ring(q))
+  return Dict((p,signature_tuple(q, p)) for p in P)
+end
+
+# Abstract Isometry Classes of Quadratic spaces
+################################################################################
+
+abstract type LocalQuadSpaceCls end
+
+
+mutable struct LocalQuadSpaceClsNf{S, T, U} <: LocalQuadSpaceCls
+  K::S    # the base field
+  p::T    # a finite place
+  hass_inv::Int
+  det::U
+  dim::Int
+  witt_inv
+
+  function LocalQuadSpaceClsNf{S, T, U}(K) where {S, T, U}
+    new{typeof(K), ideal_type(order_type(K)), elem_type(K)}()
+    z.dim = -1
+    z.K = K
+    return z
+  end
+end
+
+mutable struct LocalQuadSpaceClsQ <: LocalQuadSpaceCls
+  p::fmpz
+  dim::Int
+  det::fmpq
+  hass_inv::Int
+  witt_Inv
+
+  function LocalQuadSpaceClsQ(p::fmpz, dim::Int, det::fmpq, hasse_invariant::Int)
+    z = new()
+    z.p = p
+    z.dim = dim
+    z.det = det
+    z.hass_inv = hasse_invariant
+    return z
+  end
+end
+
+base_ring(G::LocalQuadSpaceClsQ) = QQ
+
+function localclass_quad_type(K)
+  if K == QQ
+    return LocalQuadSpaceClsQ
+  end
+  return LocalQuadSpaceCls{typeof(K), ideal_type(order_type(K)), elem_type(K)}
+end
+
+
+function local_quad_space_class(K::FlintRationalField, prime::fmpz, n::Int,
+                                d, hasse_inv::Int)
+  return LocalQuadSpaceClsQ(prime, n, d, hasse_inv)
+end
+
+function local_quad_space_class(K, prime, n, d, hasse_inv)
+  if K == QQ
+    return LocalQuadSpaceClsQ(prime,n,d,hasse_inv)
+  end
+  g = localclass_quad_type(K)(K)
+  g.K = K
+  g.p = prime
+  g.dim = n
+  g.det = d
+  g.has_inv = hasse_invi
+  return g
+end
+
+base_ring(G::LocalQuadSpaceClsNf) = G.K
+prime(G::LocalQuadSpaceCls) = G.p
+det(G::LocalQuadSpaceCls) = G.det
+dim(G::LocalQuadSpaceCls) = G.dim
+hasse_invariant(G::LocalQuadSpaceCls) = G.hass_inv
+
+function isometry_class(V::QuadSpace, p)
+  p = ZZ(p)
+  return isometry_class(V, p)
+end
+
+function isometry_class(V::QuadSpace, p::fmpz)
+  K = base_ring(V)
+  return local_quad_space_class(K, p, dim(V), det(V), hasse_invariant(V, p))
+end
+
+function witt_invariant(G::LocalQuadSpaceCls)
+  if isdefined(G, :witt_inv)
+    return G.witt_inv
+  end
+  K = base_ring(G)
+  h = hasse_invariant(G)
+  n = dim(G)
+  d = det(G)
+  p = prime(G)
+  w = _hasse_witt(K, h, n, d, p)
+  G.witt_inv = w
+  return G.witt_inv
+end
+
+function Base.show(io::IO, G::LocalQuadSpaceCls)
+  n = dim(G)
+  d = det(G)
+  h = hasse_invariant(G)
+  p = prime(G)
+  compact = get(io, :compact, false)
+  if compact
+    print(io,"$G.P $n $d $h")
+  else
+    print(io, "Abstract local quadratic space over ")
+    print(IOContext(io, :compact => true), base_ring(G))
+    print(io, " at ")
+    print(IOContext(io, :compact => true), p)
+    println(io, " of ")
+    print(io, "Dimension $n, determinant $d, Hasse invariant $h")
+  end
+end
+
+function Base.:(==)(G1::LocalQuadSpaceCls, G2::LocalQuadSpaceCls)
+  if G1 === G2
+    return true
+  end
+  if base_ring(G1) != base_ring(G2)
+    error("abstract quadratic spaces over different fields do not compare")
+  end
+  if prime(p) != prime(p)
+    error("abstract local quadratic spaces over different primes "
+          *"do not compare")
+  end
+  if dim(G1) != dim(G2)
+    return false
+  end
+  if hass_invariant(G1) != hass_invariant(G2)
+    return false
+  end
+  return islocal_square(det(G1)*det(G2), prime(G1))
+end
+
+function Base.:(+)(G1::LocalQuadSpaceCls, G2::LocalQuadSpaceCls)
+  @req base_ring(G1) == base_ring(G2) "base fields must be equal"
+  @req prime(G1) == prime(G2) "base primes must be equal"
+  K = base_ring(G1)
+  p = prime(G1)
+  n = dim(G1) + dim(G2)
+  d = det(G1)*det(G2)
+  _,w,_ = _witt_of_orthgonal_sum(det(G1), witt_invariant(G1), dim(G1),
+                             det(G2), witt_invariant(G2), dim(G2), p)
+  h = _witt_hasse(w, n, d, p)
+  return local_quad_space_class(K, p, n, d, h)
+end
+
+function Base.:(-)(G1::LocalQuadSpaceCls, G2::LocalQuadSpaceCls)
+  @req base_ring(G1) == base_ring(G2) "base fields must be equal"
+  @req prime(G1) == prime(G2) "base primes must be equal"
+  @req represents(G1, G2) "not represented"
+  K = base_ring(G1)
+  p = prime(G1)
+  n = dim(G1) - dim(G2)
+  d = det(G1)*det(G2)
+  H = local_quad_space_class(K, p, n, d, 1)
+  if H + G2 != G1
+    H = local_quad_space_class(K, p, n, d, -1)
+    # confirm
+    @assert H + G2 == G1
+  end
+  return H
+end
+
+function represents(G1::LocalQuadSpaceCls, x)
+  if x == 0
+    return true
+  end
+  q = quadratic_space(base_ring(G1)[x;])
+  G2 = isometry_class(q, prime(G1))
+  return represents(G1, G2)
+end
+
+@doc Markdown.doc"""
+    represents(G1::LocalQuadSpaceCls, G2::LocalQuadSpaceCls)
+
+Return if G1 represents G2.
+"""
+function represents(G1::LocalQuadSpaceCls, G2::LocalQuadSpaceCls)
+  @req base_ring(G1) == base_ring(G2) "base fields must be equal"
+  @req prime(G1) == prime(G2) "base primes must be equal"
+  p = prime(G1)
+  n1 = dim(G1)
+  n2 = dim(G2)
+  d1 = det(G1)
+  d2 = det(G2)
+  h1 = hasse_invariant(G1)
+  h2 = hasse_invariant(G2)
+  return _can_locally_embed(n1, d1, h1, n2, d2, h2, p)
+end
+
+
+abstract type QuadSpaceCls end
+
+################################################################################
+mutable struct QuadSpaceClsNf{S, T, U} <: QuadSpaceCls
+  K::S  # the underlying field
+  dim::Int
+  det::U
+  LGS::Dict{T, LocalQuadSpaceClsNf{S, T, U}}
+  signatures::Dict{InfPlc, Int}
+
+  representative::QuadSpace
+
+  function QuadSpaceCls{S, T, U}(K) where {S, T, U}
+    if K == QQ
+      z = new{typeof(QQ), fmpz, fmpq}()
+    else
+      z = new{typeof(K), ideal_type(order_type(K)), elem_type(K)}()
+    end
+    z.K = K
+    z.dim = -1
+    return z
+  end
+end
+################################################################################
+
+
+function class_quad_type(K::FlintRationalField)
+  return QuadSpaceClsQ
+end
+
+function class_quad_type(K)
+  return QuadSpaceCls{typeof(K), ideal_type(order_type(K)), elem_type(K)}
+end
+
+
+################################################################################
+mutable struct QuadSpaceClsQ <: QuadSpaceCls
+  dim::Int
+  det::fmpq
+  LGS::Dict{T, LocalQuadSpaceClsQ}
+  signatures::Dict{InfPlc, Int}
+
+  representative::QuadSpace
+
+  function QuadSpaceCls{S, T, U}(K) where {S, T, U}
+    if K == QQ
+      z = new{typeof(QQ), fmpz, fmpq}()
+    else
+      z = new{typeof(K), ideal_type(order_type(K)), elem_type(K)}()
+    end
+    z.K = K
+    z.dim = -1
+    return z
+  end
+end
+################################################################################
+
+
+function Base.show(io::IO, G::QuadSpaceCls)
+  K = base_ring(G)
+  n = dim(G)
+  d = det(G)
+  S = signatures(G)
+  P = [p for P in keys(G.LGS) if hasse_invariant(P[p])==-1]
+  print(io, "Abstract quadratic space over $K ")
+  print(io, "of dimenson $n, determinant $d ")
+  print(io, "invariants $P, ")
+  print(io, "negative inertia $S")
+end
+
+function isometry_class(q::QuadSpace{FlintRationalField,fmpq_mat})
+  n = dim(q)
+  d = det(q)
+end
+
+
+function isometry_class(q::QuadSpace)
+  K = base_ring(q)
+  n, d, P, sig = invariants(q)
+
+  LGS = Dict{ideal_type(maximal_order(K)),localclass_quad_type(K) }()
+  for p in keys(P)
+    if P[p] == -1
+      gp = local_quad_space_class(K, p, n, d, -1)
+      LGS[p] = gp
+    end
+  end
+  G = class_quad_type(K)(K)
+  G.LGS = LGS
+  G.dim = n
+  G.det = d
+  G.signatures = Dict(sig)
+  return G
+end
+
+dim(g::QuadSpaceCls) = g.dim
+det(g::QuadSpaceCls) = g.det
+base_ring(g::QuadSpaceCls) = g.K
+
+function local_symbols(g::QuadSpaceCls)
+  if p in keys(G.LGS)
+    return deepcopy(G.LGS)
+  end
+  return LocalQuadSpaceCls(K, p, n, d, h)
+end
+
+function local_symbol(g::QuadSpaceCls, p)
+  return deepcopy(g.LGS[p])
+end
+
+function signatures(g::QuadSpaceCls)
+  return deepcopy(G.signatures)
+end
+
+
+
+
+
+#=
+    def hasse_invariant(self):
+        r"""
+        Return Cassel's hasse invariant.
+        """
+        if self.rank() > 0:
+            g = matrix.diagonal([self.det()]+(self.rank()-1)*[1])
+        else:
+            g = matrix([])
+        p = self._place
+        from sage.quadratic_forms.all import QuadraticForm
+        qf = QuadraticForm(QQ,2*g)
+        hasse1 = qf.hasse_invariant(p)
+        std = LocalGenusSymbol(g,self.prime())
+        if std.excess() == self.excess():
+            return hasse1
+        else:
+            return -hasse1
+
+
+=#
