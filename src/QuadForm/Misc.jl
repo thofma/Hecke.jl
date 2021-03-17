@@ -1388,15 +1388,3 @@ function maximal_subspaces(k::Field, n::Int)
   end
   return L
 end
-
-################################################################################
-#
-#  Helper
-#
-################################################################################
-
-elem_in_nf(x::fmpz) = FlintQQ(x)
-
-ideal_type(::FlintIntegerRing) = fmpz
-
-nf(::FlintIntegerRing) = FlintQQ
