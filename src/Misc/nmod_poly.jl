@@ -1457,8 +1457,10 @@ function _coprimality_test(f::T, g::T, h::T) where T <: Union{nmod_poly, fmpz_mo
   if degree(f) > degree(g)
     if degree(g) > degree(h)
       return _coprimality_test(h, g, f)
-    else
+    elseif degree(f) > degree(h)
       return _coprimality_test(g, h, f)
+    else
+      return _coprimality_test(g, f, h)
     end
   elseif degree(g) > degree(h)
     return _coprimality_test(f, h, g)
@@ -1519,9 +1521,9 @@ function _coprimality_test(f::T, g::T, h::T) where T <: Union{nmod_poly, fmpz_mo
     if !must_split && isunit(lead(g))
       h = mod(h, g)
       if degree(h) < degree(f)
-        f, g, h = h, f, g
+        f, g, h = h, c*f, g
       else
-        f, g, h = f, h, g
+        f, g, h = c*f, h, g
       end
       continue
     end

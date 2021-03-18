@@ -1256,6 +1256,7 @@ function _radical(A::AbsAlgAss{T}) where { T <: Union{ fmpq, NumFieldElem } }
   n, N = nullspace(M)
   b = Vector{elem_type(A)}(undef, n)
   t = zeros(base_ring(A), dim(A))
+  # the construct A(t) will make a copy (hopefully :))
   for i = 1:n
     for j = 1:dim(A)
       t[j] = N[j, i]

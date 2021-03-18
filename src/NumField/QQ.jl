@@ -22,6 +22,10 @@ struct ZZFracIdl
   end
 end
 
+order(::ZZIdl) = FlintZZ
+
+order(::ZZFracIdl) = FlintZZ
+
 # constructors
 *(::FlintIntegerRing, x::Union{Integer,fmpz}) = ideal(ZZ, x)
 
@@ -38,6 +42,20 @@ fractional_ideal(::FlintIntegerRing, x::RingElement) = ZZFracIdl(fmpq(x))
 *(x::fmpq, ::FlintIntegerRing) = ZZFracIdl(x)
 
 *(::FlintIntegerRing, x::fmpq) = ZZFracIdl(x)
+
+#
+
+norm(x::ZZIdl) = gen(x)
+
+norm(x::ZZFracIdl) = gen(x)
+
+minimum(x::ZZIdl) = gen(x)
+
+minimum(x::ZZFracIdl) = gen(x)
+
+prime_decomposition(O::NfOrd, p::ZZIdl) = prime_decomposition(O, gen(p))
+
+uniformizer(x::ZZIdl) = gen(x)
 
 # printing
 function Base.show(io::IO, x::ZZIdl)
@@ -141,3 +159,5 @@ infinite_places_uniformizers(::FlintRationalField) = fmpq[QQ(1)]
 function hilbert_symbol(a,b, p::ZZIdl)
   return hilbert_symbol(a,b, gen(p))
 end
+
+islocal_norm(K, x, p::ZZIdl) = islocal_norm(K, x, gen(p))

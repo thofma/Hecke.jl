@@ -1355,7 +1355,7 @@ Given a $\mathbb Q$-algebra $A$, this function returns `true` if $A$ splits
 over $\mathbb Q$ and `false` otherwise.
 """
 function issplit(A::AlgAss{fmpq})
-  O = Order(A, basis(A))
+  O = any_order(A)
   i = schur_index_at_real_plc(O)
   if i==2
     @vprint :AlgAssOrd 1 "Not split at the infinite prime\n"

@@ -436,23 +436,27 @@ function _basis_of_commutator_algebra(A)
   return res
 end
 
-function _basis_of_integral_commutator_algebra(A)
-  linind = transpose(LinearIndices(size(A)))
-  cartind = cartesian_product_iterator([1:x for x in size(A)], inplace = true)
-  n = nrows(A)
-  z = zero_matrix(FlintZZ, n^2, n^2)
-  for i in 1:n
-    for j in 1:n
-      for k in 1:n
-        z[linind[i, j], linind[i, k]] = FlintZZ(z[linind[i, j], linind[i, k]] + A[k, j])
-        z[linind[i, j], linind[k, j]] = FlintZZ(z[linind[i, j], linind[k, j]] - A[i, k])
+function _basis_of_commutator_algebra(As::Vector)
+  linind = transpose(LinearIndices(size(As[1])))
+  cartind = cartesian_product_iterator([1:x for x in size(As[1])], inplace = true)
+  n = nrows(As[1])
+  zz = zero_matrix(base_ring(As[1]), 0, n^2)
+  for A in As
+    z = zero_matrix(base_ring(A), n^2, n^2)
+    for i in 1:n
+      for j in 1:n
+        for k in 1:n
+          z[linind[i, j], linind[i, k]] = z[linind[i, j], linind[i, k]] + A[k, j]
+          z[linind[i, j], linind[k, j]] = z[linind[i, j], linind[k, j]] - A[i, k]
+        end
       end
     end
+    zz = vcat(zz, z)
   end
-  r, K = right_kernel(z)
-  res = typeof(A)[]
+  r, K = right_kernel(zz)
+  res = eltype(As)[]
   for k in 1:ncols(K)
-    M = zero_matrix(base_ring(A), nrows(A), ncols(A))
+    M = zero_matrix(base_ring(As[1]), nrows(As[1]), ncols(As[1]))
     for (l, v) in enumerate(cartind)
       M[v[2], v[1]] = K[l, k]
     end
