@@ -1,6 +1,7 @@
 export genus, rank, det, dim, prime, symbol, representative, signature,
        oddity, excess, level, genera, scale, norm, mass, orthogonal_sum,
-       quadratic_space,hasse_invariant, genera, local_symbol, local_symbols
+       quadratic_space,hasse_invariant, genera, local_symbol, local_symbols,
+       ZGenus, ZpGenus
 
 @doc Markdown.doc"""
     ZpGenus
@@ -1809,6 +1810,26 @@ function _quadratic_L_function_squared(n, d)
 end
 
 
+function rational_isometry_class(g::ZGenus)
+  K = QQ
+  G = class_quad_type(K)(K)
+  n = dim(g)
+  LGS = Dict{ideal_type(order_type(K)),localclass_quad_type(K) }()
+  for s in local_symbols(g)
+    h = hasse_invariant(s)
+    p = prime(s)
+    d = det(s)
+    gp = local_quad_space_class(K, ZZIdl(p), n, d, h, 0)
+  end
+  G.LGS = LGS
+  G.dim = dim(g)
+  G.det = det(g)
+  G.kerdim = 0
+  pos, neg = signature_pair(g)
+  sig = Dict([(inf,(pos,0, neg))])
+  G.signature_tuples = sig
+  return G
+end
 
 
 #=

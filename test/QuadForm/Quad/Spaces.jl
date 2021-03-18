@@ -127,8 +127,11 @@
   fl, T = Hecke.isequivalent_with_isometry(V, V)
   @test fl
 
+  # isometry classes over the rationals
   q = quadratic_space(QQ,QQ[-1 0; 0 1])
+  q2 = quadratic_space(QQ,QQ[-1 0; 0 1])
   g = Hecke.isometry_class(q)
+  @test Hecke.isisometric_with_isometry(q, representative(g))[1]
   g2 = Hecke.isometry_class(q,2)
   @test Hecke.signature_tuple(q) == Hecke.signature_tuple(g)
   @test hasse_invariant(q,2) == hasse_invariant(g2)
@@ -136,21 +139,25 @@
   @test issquare(det(q)*det(g))
   @test witt_invariant(q, 2) == witt_invariant(g2)
   q0 = quadratic_space(QQ,matrix(QQ,0,0,fmpq[]))
-  g0 = isometry_class(q0)
-  g0p = isometry_class(q0, 2)
+  g0 = Hecke.isometry_class(q0)
+  g0p = Hecke.isometry_class(q0, 2)
+  @test g == g+g0
+  @test Hecke.represents(g, g0)
 
+  # isometry classes over number fields
   F, a = number_field(x^2 +3)
   q = quadratic_space(F, F[1 0; 0 a])
   g = Hecke.isometry_class(q)
-  p = prime_ideals_over(F,2)[1]
+  p = prime_ideals_over(maximal_order(F),2)[1]
   gp = Hecke.isometry_class(q, p)
   @test Hecke.signature_tuples(q) == Hecke.signature_tuples(g)
   @test hasse_invariant(q,p) == hasse_invariant(gp)
   @test dim(q) == dim(g)
-  @test issquare(det(q)*det(g))
-
-
-
-
-
+  @test issquare(det(q)*det(g))[1]
+  @test Hecke.isisometric_with_isometry(q, representative(g))[1]
+  L = Zlattice(gram=ZZ[1 1; 1 2])
+  g = genus(L)
+  c1 = Hecke.isometry_class(ambient_space(L))
+  c2 = Hecke.rational_isometry_class(g)
+  @test c1 == c2
 end
