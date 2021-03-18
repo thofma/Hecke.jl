@@ -360,7 +360,7 @@ function Nemo.inv(f::T) where T <: Union{fmpz_mod_poly,nmod_poly}
     error("impossible inverse")
   end
   Rx = parent(f)
-  g = Rx(inv(trailing_coefficient(f)))
+  g = Rx(inv(constant_coefficient(f)))
   #lifting: to invert a, start with an inverse b mod m, then
   # then b -> b*(2-ab) is an inverse mod m^2
   # starting with this g, and using the fact that all coeffs are nilpotent
@@ -387,7 +387,7 @@ function Nemo.invmod(f::fmpz_mod_poly, M::fmpz_mod_poly)
   if !isunit(lead(M))
     error("not yet implemented")
   end
-  g = parent(f)(inv(trailing_coefficient(f)))
+  g = parent(f)(inv(constant_coefficient(f)))
   #lifting: to invert a, start with an inverse b mod m, then
   # then b -> b*(2-ab) is an inverse mod m^2
   # starting with this g, and using the fact that all coeffs are nilpotent

@@ -210,7 +210,7 @@ function invmod(f::Generic.Poly{qadic}, M::Generic.Poly{qadic})
   K = base_ring(f)
   Kt = parent(f)
   v = min(precision(f), precision(M))
-  g = parent(f)(inv(trailing_coefficient(f)))
+  g = parent(f)(inv(constant_coefficient(f)))
   c = f*g
   c = rem!(c, c, M)
   while !isone(c)

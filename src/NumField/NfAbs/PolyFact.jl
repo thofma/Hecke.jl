@@ -255,7 +255,7 @@ function factor_new(f::PolyElem{nf_elem})
     F, mF1 = ResidueFieldSmallDegree1(zk::NfOrd, P[1][1])
     mF = extend(mF1, k)
     fp = map_coeffs(mF, f, cached = false)
-    if degree(fp) < degree(f) || iszero(trailing_coefficient(fp)) || iszero(trailing_coefficient(fp))
+    if degree(fp) < degree(f) || iszero(constant_coefficient(fp)) || iszero(constant_coefficient(fp))
       continue
     end
     if !issquarefree(fp)
