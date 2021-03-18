@@ -120,13 +120,6 @@ function rem!(z::T, f::T, g::T) where T <: PolyElem
 end
 
 @doc Markdown.doc"""
-    leading_coefficient(f::PolyElem) -> RingElem
-
- The last leading coefficient of $f$.
-"""
-leading_coefficient(f::PolyElem) = leading_coefficient(f)
-
-@doc Markdown.doc"""
     trailing_coefficient(f::PolyElem) -> RingElem
     constant_coefficient(f::PolyElem) -> RingElem
 
