@@ -402,8 +402,6 @@ end
 #
 ################################################################################
 
-real_places(K::FlintRationalField) = PosInf[inf]
-
 ################################################################################
 #
 #  Some helper functions
@@ -1390,15 +1388,3 @@ function maximal_subspaces(k::Field, n::Int)
   end
   return L
 end
-
-################################################################################
-#
-#  Helper
-#
-################################################################################
-
-elem_in_nf(x::fmpz) = FlintQQ(x)
-
-ideal_type(::FlintIntegerRing) = fmpz
-
-nf(::FlintIntegerRing) = FlintQQ
