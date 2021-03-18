@@ -140,10 +140,10 @@
   g0p = isometry_class(q0, 2)
 
   F, a = number_field(x^2 +3)
-  q = quadratic_space(F, QQ[1 0 0; 0 a 0])
-  g = isometry_class(q)
+  q = quadratic_space(F, F[1 0; 0 a])
+  g = Hecke.isometry_class(q)
   p = prime_ideals_over(F,2)[1]
-  gp = isometry_class(q, p)
+  gp = Hecke.isometry_class(q, p)
   @test Hecke.signature_tuples(q) == Hecke.signature_tuples(g)
   @test hasse_invariant(q,p) == hasse_invariant(gp)
   @test dim(q) == dim(g)
