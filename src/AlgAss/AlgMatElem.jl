@@ -261,12 +261,13 @@ function (A::AlgMat{T, S})(v::Vector{T}) where { T, S }
   @assert length(v) == dim(A)
   R = coefficient_ring(A)
   M = zero_matrix(R, degree(A), degree(A))
+  B = basis(A)
   for i = 1:dim(A)
     #M = add!(M, M, matrix(basis(A)[i], copy = false)*v[i])
-    M += matrix(basis(A)[i], copy = false)*R(v[i])
+    M += matrix(B[i], copy = false)*R(v[i])
   end
   a = A(M)
-  a.coeffs = v
+  a.coeffs = copy(v)
   a.has_coeffs = true
   return a
 end

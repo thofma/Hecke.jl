@@ -2232,6 +2232,7 @@ end
 #
 ###################################################################################
 
+
 @doc Markdown.doc"""
     iscoprime(I::NfAbsOrdIdl, J::NfAbsOrdIdl) -> Bool
 
