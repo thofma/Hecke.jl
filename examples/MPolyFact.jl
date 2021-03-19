@@ -576,6 +576,16 @@ mutable struct RootCtxSingle{T}
     return RootCtxSingle(f, RR)
   end
 
+  function RootCtxSingle(f::PolyElem{<:SeriesElem{T}}, r::T) where {T}
+    R = base_ring(parent(f))
+    k, mk = ResidueField(R)
+    g = map_coeffs(mk, f)
+    # should be zero-ish, but if T is acb, this is difficult.
+    isexact_type(T) && @assert iszero(g(r))
+    o = inv(derivative(g)(r))
+    return new{elem_type(R)}(f, R([r], 1, 1, 0), R([o], 1, 1, 0))
+  end
+
   function RootCtxSingle(f::PolyElem{S}, RR::FqNmodRelSeriesRing) where {S <: SeriesElem}
     K = base_ring(RR)
     R = base_ring(f) # should be a series ring
@@ -593,7 +603,75 @@ mutable struct RootCtxSingle{T}
 end
 
 """
-A single lifting step for the easy Newton iteratio for a isolated simple root.
+Computes the roots of `f` as power series over the complex numbers up to
+power series precision `pr` and complex precision `prec`. The roots
+are given as power series around `r`, the 2nd argument.
+
+Not very bright algorithm, `f` has to be square-free and `r` cannot be a singularity.
+"""
+function analytic_roots(f::fmpz_mpoly, r::Integer, pr::Int = 10; prec::Int = 100, max_roots = degree(f, 2))
+  return analytic_roots(f, fmpz(r), pr; prec...)
+end
+
+function analytic_roots(f::fmpz_mpoly, r::fmpz, pr::Int = 10; prec::Int = 100, max_roots = degree(f, 2))
+  @assert ngens(parent(f)) == 2
+  g = evaluate(f, [Hecke.Globals.Zx(r), gen(Hecke.Globals.Zx)])
+  @assert issquarefree(g)
+  C = ComplexField(prec)
+  rt = Hecke.roots(g, C)[1:max_roots]
+  @assert all(x->parent(x) == C, rt)
+  Cs, s = PowerSeriesRing(C, pr+2, "s", cached = false)
+  Cst, t = PolynomialRing(Cs, cached = false)
+  ff = evaluate(f, [Cst(s+C(r)), t])
+  RT = []
+  for x = rt
+    R = RootCtxSingle(ff, x)
+    for i=1:clog(pr, 2)
+      lift(R)
+    end
+    push!(RT, R.R)
+  end
+  return RT
+end
+
+"""
+Computes the roots of `f` as power series over some number field up to
+power series precision `pr`. The roots
+are given as power series around `r`, the 2nd argument.
+
+Not very bright algorithm, `f` has to be square-free and `r` cannot be a singularity.
+"""
+function symbolic_roots(f::fmpz_mpoly, r::Integer, pr::Int = 10; max_roots::Int = degree(f, 2))
+  return symbolic_roots(f, fmpz(r), pr; max_roots...)
+end
+
+function symbolic_roots(f::fmpz_mpoly, r::fmpz, pr::Int = 10; max_roots::Int = degree(f, 2))
+  @assert ngens(parent(f)) == 2
+  g = evaluate(f, [Hecke.Globals.Zx(r), gen(Hecke.Globals.Zx)])
+  @assert issquarefree(g)
+  @show lg = factor(g)
+  rt = vcat([Hecke.roots(x, number_field(x)[1]) for x = keys(lg.fac)]...)
+  rt = rt[1:min(length(rt), max_roots)]
+  RT = []
+  for x = rt
+    C = parent(x)
+    Cs, s = PowerSeriesRing(C, pr+2, "s", cached = false)
+    Cst, t = PolynomialRing(Cs, cached = false)
+    ff = evaluate(f, [Cst(s+C(r)), t])
+    R = RootCtxSingle(ff, x)
+    for i=1:clog(pr, 2)
+      lift(R)
+    end
+    push!(RT, R.R)
+  end
+  return RT
+end
+
+#missing in Nemo...
+Hecke.clog(a::Int, b::Int) = clog(fmpz(a), b)
+
+"""
+A single lifting step for the easy Newton iteration for a isolated simple root.
 """
 function lift(R::RootCtxSingle)
   pr = precision(R.R)

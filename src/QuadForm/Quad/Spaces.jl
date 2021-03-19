@@ -1902,7 +1902,7 @@ function Base.:(+)(G1::LocalQuadSpaceCls, G2::LocalQuadSpaceCls)
   return local_quad_space_class(K, p, n, d, h)
 end
 
-direct_sum(G1::LocalQuadSpaceCls, G2::LocalQuadSpaceCls) = G1 + G2
+orthogonal_sum(G1::LocalQuadSpaceCls, G2::LocalQuadSpaceCls) = G1 + G2
 
 @doc Markdown.doc"""
     Base.:(-)(G1::LocalQuadSpaceCls, G2::LocalQuadSpaceCls)
@@ -2133,11 +2133,11 @@ end
 
 # Direct sum
 @doc Markdown.doc"""
-    direct_sum(g1::QuadSpaceCls, g2::QuadSpaceCls) -> QuadSpaceCls
+    orthogonal_sum(g1::QuadSpaceCls, g2::QuadSpaceCls) -> QuadSpaceCls
 
 Return the isometry class of the direct sum of two representatives.
 """
-function direct_sum(g1::QuadSpaceCls{S,T,U},g2::QuadSpaceCls{S,T,U}) where {S,T,U}
+function orthogonal_sum(g1::QuadSpaceCls{S,T,U},g2::QuadSpaceCls{S,T,U}) where {S,T,U}
   @req base_ring(g1) == base_ring(g2) "must be defined over the same base ring"
   K = base_ring(g1)
   g = class_quad_type(K)(K)
@@ -2167,7 +2167,7 @@ end
 Return the isometry class of the direct sum of two representatives.
 """
 function Base.:(+)(g1::QuadSpaceCls{S,T,U},g2::QuadSpaceCls{S,T,U}) where {S,T,U}
-  return direct_sum(g1, g2)
+  return orthogonal_sum(g1, g2)
 end
 
 function Base.:(-)(g1::QuadSpaceCls{S,T,U},g2::QuadSpaceCls{S,T,U}) where {S,T,U}
