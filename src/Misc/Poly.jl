@@ -120,19 +120,6 @@ function rem!(z::T, f::T, g::T) where T <: PolyElem
 end
 
 @doc Markdown.doc"""
-    trailing_coefficient(f::PolyElem) -> RingElem
-    constant_coefficient(f::PolyElem) -> RingElem
-
- The constant coefficient of $f$.
-"""
-function trailing_coefficient(f::PolyElem)
-  if iszero(f)
-    return base_ring(f)(0)
-  end
-  return coeff(f, 0)
-end
-
-@doc Markdown.doc"""
     induce_rational_reconstruction(a::fmpz_poly, M::fmpz) -> fmpq_poly
 
 Apply `rational_reconstruction` to each coefficient of $a$, resulting
@@ -151,8 +138,6 @@ function induce_rational_reconstruction(a::fmpz_poly, M::fmpz; parent=Polynomial
   end
   return true, b
 end
-
-const constant_coefficient = trailing_coefficient
 
 function resultant(f::fmpz_poly, g::fmpz_poly, d::fmpz, nb::Int)
   z = fmpz()
@@ -699,7 +684,7 @@ function roots(f::T) where T <: Union{fq_nmod_poly, fq_poly} # should be in Nemo
   end
   f = gcd(f, x)
   l = factor(f).fac
-  return elem_type(base_ring(f))[-divexact(trailing_coefficient(x), leading_coefficient(x)) for x = keys(l) if degree(x)==1]
+  return elem_type(base_ring(f))[-divexact(constant_coefficient(x), leading_coefficient(x)) for x = keys(l) if degree(x)==1]
 end
 
 
@@ -1063,7 +1048,7 @@ function roots(f::fmpz_poly, ::FlintRationalField; max_roots::Int = degree(f))
     return fmpq[]
   end
   if degree(f) == 1
-    return fmpq[-trailing_coefficient(f)//leading_coefficient(f)]
+    return fmpq[-constant_coefficient(f)//leading_coefficient(f)]
   end
 
   g = gcd(f, derivative(f))
@@ -1073,7 +1058,7 @@ function roots(f::fmpz_poly, ::FlintRationalField; max_roots::Int = degree(f))
     h = divexact(f, g)
   end
   if degree(h) == 1
-    return fmpq[-trailing_coefficient(h)//leading_coefficient(h)]
+    return fmpq[-constant_coefficient(h)//leading_coefficient(h)]
   end
   h = primpart(h)
 
@@ -1090,7 +1075,7 @@ function roots(f::fmpz_poly, ::FlintRationalField; max_roots::Int = degree(f))
     k = ceil(Int, log(bd)/log(p))
     Hp = factor_mod_pk(h, p, k)
     pk = fmpz(p)^k
-    r = fmpq[mod_sym(-trailing_coefficient(x)*leading_coefficient(h), pk)//leading_coefficient(h) for x = keys(Hp) if degree(x) == 1]
+    r = fmpq[mod_sym(-constant_coefficient(x)*leading_coefficient(h), pk)//leading_coefficient(h) for x = keys(Hp) if degree(x) == 1]
     return [x for x = r if iszero(f(x)) ]
   end
 end
