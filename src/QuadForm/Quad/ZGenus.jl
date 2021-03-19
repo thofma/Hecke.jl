@@ -1,6 +1,6 @@
 export genus, rank, det, dim, prime, symbol, representative, signature,
        oddity, excess, level, genera, scale, norm, mass, direct_sum,
-       quadratic_space,hasse_invariant, genera, local_symbol, local_symbols
+       quadratic_space, hasse_invariant, genera, local_symbol, local_symbols
 
 @doc Markdown.doc"""
     ZpGenus
