@@ -145,11 +145,11 @@
 
   g3 = genus(diagonal_matrix(map(ZZ,[1,3,27])), 3)
   n3 = genus(matrix(ZZ,0,0,[]),3)
-  @test g3 == direct_sum(n3, g3)
+  @test g3 == orthogonal_sum(n3, g3)
   @test Hecke._species_list(g3) == [1, 1, 1]
   h3 = genus(diagonal_matrix(map(ZZ,[1,3,9])), 3)
   @test Hecke._standard_mass(h3) ==  9//16
-  @test direct_sum(g3,h3)==direct_sum(h3,g3)
+  @test orthogonal_sum(g3,h3)==direct_sum(h3,g3)
 
 
   # These examples are taken from Table 2 of [CS1988]_::
@@ -227,7 +227,7 @@
   G = genus(diagonal_matrix(fmpz[1, 3, 9]),3)
   @test Hecke._mass_squared(G) == (9//8)^2
 
-  #=
+
   # representatives, mass and genus enumeration
   DB = lattice_database()
   for i in 1:(long_test ? 200 : 10)
@@ -255,11 +255,11 @@
         q2, _ = normal_form(q2)
         q2 = Hecke.gram_matrix_quadratic(q2)
         @test q1 == q2
-	G2 = genus(D,sig)
-	if iseven(G)
-	  @test isgenus(D, sig)==true
-	end
- 	@test G == G2
+        # G2 = genus(D, sig)
+        # if iseven(G)
+        #   @test isgenus(D, sig)
+        # end
+        # @test G == G2
       end
     end
   end
@@ -276,5 +276,5 @@
       end
     end
   end
-  =#
+
 end

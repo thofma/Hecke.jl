@@ -482,6 +482,8 @@ function orthogonal_sum(S1::ZpGenus, S2::ZpGenus)
   return ZpGenus(prime(S1), symbol)
 end
 
+direct_sum(S1::ZpGenus, S2::ZpGenus) = orthogonal_sum(S1, S2)
+
 @doc Markdown.doc"""
     orthogonal_sum(G1::ZGenus, G2::ZGenus)
 
@@ -503,6 +505,9 @@ function orthogonal_sum(G1::ZGenus, G2::ZGenus)
   end
   return ZGenus(signature_pair, local_symbols)
 end
+
+direct_sum(S1::ZGenus, S2::ZGenus) = orthogonal_sum(S1, S2)
+
 
 ##########################################################
 # Enumeration of genus symbols
