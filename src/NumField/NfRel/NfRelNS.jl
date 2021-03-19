@@ -391,7 +391,7 @@ function basis(K::NfRelNS)
   return B
 end
 
-function coeffs(a::NfRelNSElem; copy = false)
+function coefficients(a::NfRelNSElem; copy = false)
   L = parent(a)
   K = base_field(L)
   v = Vector{elem_type(K)}(undef, degree(L))
@@ -485,7 +485,7 @@ function minpoly_dense(a::NfRelNSElem)
       N = nullspace(sub(M, 1:i, 1:ncols(M))')
       @assert N[1] == 1
       f = PolynomialRing(k,"t", cached=false)[1]([N[2][j, 1] for j=1:i])
-      return f*inv(lead(f))
+      return f*inv(leading_coefficient(f))
     end
     z *= a
     elem_to_mat_row!(M, i+1, z)

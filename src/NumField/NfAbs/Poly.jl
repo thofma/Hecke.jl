@@ -65,15 +65,15 @@ function gcd(a::Generic.Poly{nf_elem}, b::Generic.Poly{nf_elem}, test_sqfr::Bool
     if iszero(b)
       return b
     else
-      return  inv(lead(b))*b
+      return  inv(leading_coefficient(b))*b
     end
   elseif iszero(b)
-    return inv(lead(a))*a
+    return inv(leading_coefficient(a))*a
   end
   if min(degree(a), degree(b)) >= 6 || degree(base_ring(a)) > 5 || test_sqfr
     g = gcd_modular_kronnecker(a, b, test_sqfr)
     test_sqfr && return g
-    return inv(lead(g))*g  # we want it monic...
+    return inv(leading_coefficient(g))*g  # we want it monic...
   else
     return gcd_euclid(a, b)
   end
@@ -164,7 +164,7 @@ function gcd_euclid(a::AbstractAlgebra.PolyElem{nf_elem}, b::AbstractAlgebra.Pol
    while !iszero(a)
       (a, b) = (mod(b, a), a)
    end
-   d = lead(b)
+   d = leading_coefficient(b)
    return divexact(b, d)
 end
 
@@ -232,7 +232,7 @@ function gcd_modular_kronnecker(a::Generic.Poly{nf_elem}, b::Generic.Poly{nf_ele
       end
     end
     if g == last_g && iszero(mod(a, g)) && iszero(mod(b, g))
-      return divexact(g, lead(g))
+      return divexact(g, leading_coefficient(g))
     else
       last_g = g
     end

@@ -93,7 +93,7 @@ function fun_factor(f::Generic.Poly{qadic})
   Kt = parent(f)
   v = precision(f)
   @assert isone(_content(f))
-  if iszero(valuation(lead(f)))
+  if iszero(valuation(leading_coefficient(f)))
     return one(Kt), g
   end
   ind = degree(f) -1
@@ -150,9 +150,9 @@ function Base.gcd(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{padic
     if !isone(cg)
       g = divexact(g, cg)
     end
-    if !iszero(valuation(lead(g)))
+    if !iszero(valuation(leading_coefficient(g)))
       u, g1 = fun_factor(g)
-      if iszero(valuation(lead(f)))
+      if iszero(valuation(leading_coefficient(f)))
         g = g1#*reverse(gcd(reverse(f), reverse(u)))
       else
         v, f1 = fun_factor(f)
@@ -164,7 +164,7 @@ function Base.gcd(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{padic
       if iszero(f)
         return g
       else
-        return divexact(f, lead(f))
+        return divexact(f, leading_coefficient(f))
       end
     else
       f, g = g, f
@@ -179,7 +179,7 @@ end
 ################################################################################
 
 function invmod(u::Generic.Poly{padic}, f::Generic.Poly{padic})
-  if !iszero(valuation(lead(f)))
+  if !iszero(valuation(leading_coefficient(f)))
     error("Not yet implemented")
   end
   if !iszero(valuation(coeff(u, 0))) || !all(x -> x > 0, [valuation(coeff(u, i)) for i = 1:degree(u)])
@@ -199,7 +199,7 @@ function invmod(u::Generic.Poly{padic}, f::Generic.Poly{padic})
 end
 
 function invmod(f::Generic.Poly{qadic}, M::Generic.Poly{qadic})
-  if !iszero(valuation(lead(M)))
+  if !iszero(valuation(leading_coefficient(M)))
     error("Not yet implemented")
   end
   f = rem(f, M)
@@ -259,14 +259,14 @@ function gcdx(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{padic, qa
     @hassert :padic_poly 1  f*u+divexact(v, cg)*g == d
     return d, u, divexact(v, cg)
   end
-  if iszero(valuation(lead(g)))
+  if iszero(valuation(leading_coefficient(g)))
     q, f1 = divrem(f, g)
     d, u, v = gcdx(g, f1)
     @hassert :padic_poly 1  d == f*v+(u-v*q)*g
     return d, v, u-v*q
   end
   ug, gg = fun_factor(g)
-  if iszero(valuation(lead(f)))
+  if iszero(valuation(leading_coefficient(f)))
     s = invmod(ug, f)
     t = divexact(1-s*ug, f)
     @hassert :padic_poly 1  t*f == 1-s*ug
@@ -388,12 +388,12 @@ function resultant(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{padi
     end
 
     if degree(f) < 1
-      res *= lead(f)^degree(g)
+      res *= leading_coefficient(f)^degree(g)
       return res
     end
 
     if degree(g) < 1
-      res *= lead(g)^degree(f)
+      res *= leading_coefficient(g)^degree(f)
       return res
     end
 
@@ -416,9 +416,9 @@ function resultant(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{padi
       f, g = g, f
     end
 
-    if isunit(lead(g))
+    if isunit(leading_coefficient(g))
       r = rem(f, g)
-      res *= lead(g)^(degree(f) - degree(r))
+      res *= leading_coefficient(g)^(degree(f) - degree(r))
       if !iszero(mod(degree(g)*(degree(f) - degree(r)), 2))
         res = -res
       end
@@ -666,7 +666,7 @@ function slope_factorization(f::Generic.Poly{T}) where T <: Union{padic, qadic}
   fact = Dict{Generic.Poly{T}, Int}()
   cf = _content(f)
   f = divexact(f, cf)
-  if !iszero(valuation(lead(f)))
+  if !iszero(valuation(leading_coefficient(f)))
     u, f = fun_factor(f)
     u1 = reverse(u)
     sf = slope_factorization(u1)

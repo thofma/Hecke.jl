@@ -68,7 +68,7 @@ function zeros(f::fmpz_poly)
 
     # check if there are monic linear factors <-> zeros
   for i in fac
-    if degree(i[1]) == 1 && lead(i[1]) == 1
+    if degree(i[1]) == 1 && leading_coefficient(i[1]) == 1
       push!(zeros, -coeff(i[1],0))
     end
   end

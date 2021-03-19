@@ -120,13 +120,6 @@ function rem!(z::T, f::T, g::T) where T <: PolyElem
 end
 
 @doc Markdown.doc"""
-    leading_coefficient(f::PolyElem) -> RingElem
-
- The last leading coefficient of $f$.
-"""
-leading_coefficient(f::PolyElem) = lead(f)
-
-@doc Markdown.doc"""
     trailing_coefficient(f::PolyElem) -> RingElem
     constant_coefficient(f::PolyElem) -> RingElem
 
@@ -581,7 +574,7 @@ function rres_bez(f::fmpz_poly, g::fmpz_poly)
         return gcd(coeff(f, 0), coeff(g, 0))
       end
       if isconstant(f)
-        if !isone(gcd(lead(g), coeff(f, 0)))
+        if !isone(gcd(leading_coefficient(g), coeff(f, 0)))
           cg = content(g - coeff(g, 0))
           ann = divexact(coeff(f, 0), gcd(coeff(f, 0), cg))
           return gcd(coeff(f, 0), ann*coeff(g, 0))
@@ -589,7 +582,7 @@ function rres_bez(f::fmpz_poly, g::fmpz_poly)
           return coeff(f, 0)
         end
       end
-      if !isone(gcd(lead(f), coeff(g, 0)))
+      if !isone(gcd(leading_coefficient(f), coeff(g, 0)))
         cf = content(f - coeff(f, 0))
         ann = divexact(coeff(g, 0), gcd(coeff(g, 0), cf))
         return gcd(coeff(g, 0), ann*coeff(f, 0))
@@ -727,7 +720,7 @@ end
 function _divide_by_content(f::fmpz_poly)
 
   p = primpart(f)
-  if sign(lead(f))== sign(lead(p))
+  if sign(leading_coefficient(f))== sign(leading_coefficient(p))
     return p
   else
     return -p
@@ -832,7 +825,7 @@ end
 # This is Musser's algorithm
 function factor_squarefree(f::PolyElem)
   @assert iszero(characteristic(base_ring(f)))
-  c = lead(f)
+  c = leading_coefficient(f)
   f = divexact(f, c)
   res = Dict{typeof(f), Int}()
   di = gcd(f, derivative(f))
@@ -1070,7 +1063,7 @@ function roots(f::fmpz_poly, ::FlintRationalField; max_roots::Int = degree(f))
     return fmpq[]
   end
   if degree(f) == 1
-    return fmpq[-trailing_coefficient(f)//lead(f)]
+    return fmpq[-trailing_coefficient(f)//leading_coefficient(f)]
   end
 
   g = gcd(f, derivative(f))
@@ -1080,13 +1073,13 @@ function roots(f::fmpz_poly, ::FlintRationalField; max_roots::Int = degree(f))
     h = divexact(f, g)
   end
   if degree(h) == 1
-    return fmpq[-trailing_coefficient(h)//lead(h)]
+    return fmpq[-trailing_coefficient(h)//leading_coefficient(h)]
   end
   h = primpart(h)
 
   global p_start
   p = p_start
-  bd = lead(h)+maximum(abs, coefficients(h))
+  bd = leading_coefficient(h)+maximum(abs, coefficients(h))
   while true
     p = next_prime(p)
     k = GF(p)
@@ -1097,7 +1090,7 @@ function roots(f::fmpz_poly, ::FlintRationalField; max_roots::Int = degree(f))
     k = ceil(Int, log(bd)/log(p))
     Hp = factor_mod_pk(h, p, k)
     pk = fmpz(p)^k
-    r = fmpq[mod_sym(-trailing_coefficient(x)*lead(h), pk)//lead(h) for x = keys(Hp) if degree(x) == 1]
+    r = fmpq[mod_sym(-trailing_coefficient(x)*leading_coefficient(h), pk)//leading_coefficient(h) for x = keys(Hp) if degree(x) == 1]
     return [x for x = r if iszero(f(x)) ]
   end
 end
@@ -1152,19 +1145,19 @@ function gcd_with_failure(a::Generic.Poly{T}, b::Generic.Poly{T}) where T
   if length(a) > length(b)
     (a, b) = (b, a)
   end
-  if !isinvertible(lead(a))[1]
-    return lead(a), a
+  if !isinvertible(leading_coefficient(a))[1]
+    return leading_coefficient(a), a
   end
-  if !isinvertible(lead(b))[1]
-    return lead(b), a
+  if !isinvertible(leading_coefficient(b))[1]
+    return leading_coefficient(b), a
   end
   while !iszero(a)
     (a, b) = (mod(b, a), a)
-    if !iszero(a) && !isinvertible(lead(a))[1]
-      return lead(a), a
+    if !iszero(a) && !isinvertible(leading_coefficient(a))[1]
+      return leading_coefficient(a), a
     end
   end
-  d = lead(b)
+  d = leading_coefficient(b)
   return one(parent(d)), divexact(b, d)
 end
 
@@ -1175,11 +1168,11 @@ function mod(f::AbstractAlgebra.PolyElem{T}, g::AbstractAlgebra.PolyElem{T}) whe
   end
   if length(f) >= length(g)
     f = deepcopy(f)
-    b = lead(g)
+    b = leading_coefficient(g)
     g = inv(b)*g
     c = base_ring(f)()
     while length(f) >= length(g)
-      l = -lead(f)
+      l = -leading_coefficient(f)
       for i = 1:length(g) 
         c = mul!(c, coeff(g, i - 1), l)
         u = coeff(f, i + length(f) - length(g) - 1)
@@ -1201,14 +1194,14 @@ function Base.divrem(f::AbstractAlgebra.PolyElem{T}, g::AbstractAlgebra.PolyElem
      return zero(parent(f)), f
   end
   f = deepcopy(f)
-  binv = inv(lead(g))
-  g = divexact(g, lead(g))
+  binv = inv(leading_coefficient(g))
+  g = divexact(g, leading_coefficient(g))
   qlen = length(f) - length(g) + 1
   q = zero(parent(f))
   fit!(q, qlen)
   c = zero(base_ring(f))
   while length(f) >= length(g)
-     q1 = lead(f)
+     q1 = leading_coefficient(f)
      l = -q1
      q = setcoeff!(q, length(f) - length(g), q1*binv)
      for i = 1:length(g) 

@@ -1374,7 +1374,7 @@ mutable struct FactorBaseSingleP{T}
     O = order(lp[1][2])
     K = O.nf
 
-    if isone(lead(K.pol)) && isone(denominator(K.pol)) && (length(lp) >= 3 && !isindex_divisor(O, p)) # ie. index divisor or so
+    if isone(leading_coefficient(K.pol)) && isone(denominator(K.pol)) && (length(lp) >= 3 && !isindex_divisor(O, p)) # ie. index divisor or so
       Qx = parent(K.pol)
       Fpx = parent(fp)
       lf = [ gcd(fp, Fpx(Globals.Zx(Qx(K(P[2].gen_two)))))::S for P = lp]

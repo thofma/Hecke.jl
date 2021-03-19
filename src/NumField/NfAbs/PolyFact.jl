@@ -322,7 +322,7 @@ function zassenhaus(f::PolyElem{nf_elem}, P::NfOrdIdl; degset::Set{Int} = Set{In
   K = base_ring(parent(f))
   C, mC = completion(K, P)
 
-  b = landau_mignotte_bound(f)*upper_bound(sqrt(t2(lead(f))), fmpz)
+  b = landau_mignotte_bound(f)*upper_bound(sqrt(t2(leading_coefficient(f))), fmpz)
   den = K(1)
   if !ismaximal_known_and_maximal(order(P))
     den = derivative(K.pol)(gen(K))
@@ -379,7 +379,7 @@ function zassenhaus(f::PolyElem{nf_elem}, P::NfOrdIdl; degset::Set{Int} = Set{In
       end
       #TODO: test constant term first, possibly also trace + size
       g = prod(s)
-      g = map_coeffs(x -> K(reco(zk(lead(f)*x*den), M, pM)), g, parent = parent(f))*(1//lead(f)//den)
+      g = map_coeffs(x -> K(reco(zk(leading_coefficient(f)*x*den), M, pM)), g, parent = parent(f))*(1//leading_coefficient(f)//den)
       if iszero(rem(f, g))
         push!(res, g)
         used = union(used, s)
@@ -566,13 +566,13 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 1)
   up_to = min(up_to, N)
   from = min(from, N)
   from = max(up_to, from)
-  b = cld_bound(f, vcat(0:up_to-1, from:N-1)) .* upper_bound(sqrt(t2(den*lead(f))), fmpz)
+  b = cld_bound(f, vcat(0:up_to-1, from:N-1)) .* upper_bound(sqrt(t2(den*leading_coefficient(f))), fmpz)
 
   # from Fieker/Friedrichs, still wrong here
   # needs to be larger than anticipated...
   c1, c2 = norm_change_const(order(P))
   b = Int[ceil(Int, degree(K)/2/log(norm(P))*(log2(c1*c2) + 2*nbits(x)+ degree(K)*r+prec_scale)) for x = b]
-  bb = landau_mignotte_bound(f)*upper_bound(sqrt(t2(den*lead(f))), fmpz)
+  bb = landau_mignotte_bound(f)*upper_bound(sqrt(t2(den*leading_coefficient(f))), fmpz)
   kk = ceil(Int, degree(K)/2/log(norm(P))*(log2(c1*c2) + 2*nbits(bb)))
   @vprint :PolyFactor 2 "using CLD precision bounds $b \n"
 
@@ -615,9 +615,9 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 1)
 
     if degree(P) == 1
       mD = MapFromFunc(x->coeff(mC(x),0), y->K(lift(y)), K, base_ring(vH.H.f))
-      @vtime :PolyFactor 1 C = cld_data(vH.H, up_to, from, mD, vH.pM[1], den*lead(f)) 
+      @vtime :PolyFactor 1 C = cld_data(vH.H, up_to, from, mD, vH.pM[1], den*leading_coefficient(f)) 
     else
-      @vtime :PolyFactor 1 C = cld_data(vH.H, up_to, from, mC, vH.pM[1], den*lead(f)) 
+      @vtime :PolyFactor 1 C = cld_data(vH.H, up_to, from, mC, vH.pM[1], den*leading_coefficient(f)) 
     end
 
     # In the end, p-adic precision needs to be large enough to
@@ -768,11 +768,11 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 1)
           end
           @vtime :PolyFactor 2 g = prod(factor(vH.H)[v])
           if degree(P) == 1
-            @vtime :PolyFactor 2 G = parent(f)([K(reco(lift(coeff(mC(den*lead(f)), 0)*coeff(g, l)), vH.Ml, vH.pMr, order(P))) for l=0:degree(g)])
+            @vtime :PolyFactor 2 G = parent(f)([K(reco(lift(coeff(mC(den*leading_coefficient(f)), 0)*coeff(g, l)), vH.Ml, vH.pMr, order(P))) for l=0:degree(g)])
           else
-            @vtime :PolyFactor 2 G = parent(f)([K(reco(order(P)(preimage(mC, mC(den*lead(f))*coeff(g, l))), vH.Ml, vH.pMr)) for l=0:degree(g)])
+            @vtime :PolyFactor 2 G = parent(f)([K(reco(order(P)(preimage(mC, mC(den*leading_coefficient(f))*coeff(g, l))), vH.Ml, vH.pMr)) for l=0:degree(g)])
           end
-          G *= 1//(den*lead(f))
+          G *= 1//(den*leading_coefficient(f))
 
           if !iszero(rem(f, G))
             @vprint :PolyFactor 2 "Fail: poly does not divide\n"
@@ -813,7 +813,7 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 1)
     end
     used = deepcopy(really_used)
 
-    b = cld_bound(f, vcat(0:up_to-1, from:N-1)) .* upper_bound(sqrt(t2(den*lead(f))), fmpz)
+    b = cld_bound(f, vcat(0:up_to-1, from:N-1)) .* upper_bound(sqrt(t2(den*leading_coefficient(f))), fmpz)
 
     # from Fieker/Friedrichs, still wrong here
     # needs to be larger than anticipated...
