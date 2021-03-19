@@ -209,7 +209,7 @@ function witt_invariant(L::QuadSpace, p::InfPlc)
   h = hasse_invariant(L, p)
   dett = det(L)
   K = base_ring(L)
-  n = mod(dim(F), 8)
+  n = mod(dim(L), 8)
   if n == 3 || n == 4
     c = -dett
   elseif n == 5 || n == 6
