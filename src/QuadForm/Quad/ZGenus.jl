@@ -440,7 +440,7 @@ end
 @doc Markdown.doc"""
     orthogonal_sum(S1::ZpGenus, S2::ZpGenus)
 
-Return the local genus of the direct sum of two representatives.
+Return the local genus of the orthogonal direct sum of two representatives.
 """
 function orthogonal_sum(S1::ZpGenus, S2::ZpGenus)
   if prime(S1) != prime(S2)
@@ -485,9 +485,9 @@ end
 @doc Markdown.doc"""
     orthogonal_sum(G1::ZGenus, G2::ZGenus)
 
-Return the genus of the direct sum of ``G1`` and ``G2``.
+Return the genus of the orthogonal direct sum of ``G1`` and ``G2``.
 
-The direct sum is defined via representatives.
+The orthogonal direct sum is defined via representatives.
 """
 function orthogonal_sum(G1::ZGenus, G2::ZGenus)
   p1, n1 = G1._signature_pair
