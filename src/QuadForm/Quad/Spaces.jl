@@ -2211,8 +2211,7 @@ function representative(g::QuadSpaceCls)
   lgs = local_symbols(g)
   finite = [p for p in keys(lgs) if hasse_invariant(lgs[p])==-1]
   sig = signature_tuples(g)
-  negative = Dict{InfPlc,Int}([(a,sig[a][3]) for a in keys(sig)])
-  @show n-k,d,finite,negative
+  negative = Dict{InfPlc,Int}([(a, b[3]) for (a, b) in sig])
   q = _quadratic_form_with_invariants(n-k,d,finite,negative)
   ker = zero_matrix(K, k, k)
   q = diagonal_matrix([q,ker])

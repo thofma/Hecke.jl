@@ -234,7 +234,7 @@
     L = lattice(DB,i)
     G = genus(L)
     q1 = quadratic_space(G)
-    q2 = ambient_space(L)
+    q2 = rational_span(L)
     @test Hecke.isequivalent(q1, q2)
     L2 = representative(G)
     G2 = genus(L2)
