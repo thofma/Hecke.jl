@@ -18,7 +18,7 @@
 # - norm generators of L_i
 # - (valuation of ) weights
 # - determinant (classes)
-# - Witt invariants 
+# - Witt invariants
 
 mutable struct JorDec{S, T, U}
   K::S
@@ -92,7 +92,7 @@ end
 
 length(J::JorDec) = length(J.ranks)
 
-function JorDec(p, sc::Vector{Int}, rks::Vector{Int}, normgens::Vector{nf_elem}, weights::Vector{Int}, dets::Vector{nf_elem}, witts::Vector{Int}) 
+function JorDec(p, sc::Vector{Int}, rks::Vector{Int}, normgens::Vector{nf_elem}, weights::Vector{Int}, dets::Vector{nf_elem}, witts::Vector{Int})
   K = nf(order(p))
   z = JorDec{typeof(K), typeof(p), elem_type(K)}()
   z.isdyadic = isdyadic(p)
@@ -302,7 +302,7 @@ function genus(J::JorDec)
     end
 
     # Lemma 3.3.9
-    
+
     #@show new_normgen
     #@show new_norm
     #@show D
@@ -390,11 +390,11 @@ function _quadratic_unimodular_lattice_dyadic(p, r, w, d, alpha, wi)
   if m == 1
     return matrix(K, 1, 1, elem_type(K)[d])
   end
-  
+
   D = kummer_generator_of_local_unramified_quadratic_extension(p)
   rho = divexact(1 - D, 4)
   @assert valuation(rho, p) == 0
-  @assert quadratic_defect(D, p) == valuation(4, p) 
+  @assert quadratic_defect(D, p) == valuation(4, p)
 
   if isodd(m)
     r = div(m - 1, 2)
@@ -498,7 +498,7 @@ mutable struct LocalGenusQuad{S, T, U}
   hass_inv::Int
   det::U
   rank::Int
-  
+
   uniformizer::U
 
   ranks::Vector{Int}
@@ -532,7 +532,7 @@ function in(L::QuadLat, G::LocalGenusQuad)
 end
 
 function local_quadratic_genus_type(K)
-  return LocalGenusQuad{typeof(K), 
+  return LocalGenusQuad{typeof(K),
                         ideal_type(order_type(K)),
                         elem_type(K)}
 end
@@ -628,7 +628,7 @@ function hasse_invariant(G::LocalGenusQuad)
     @assert hasse_invariant(representative(G), p) == h
     return h
   end
-end 
+end
 
 function uniformizer(G::LocalGenusQuad)
   @req !isdyadic(G) "Genus symbol must not be dyadic"
@@ -652,7 +652,7 @@ function norms(G::LocalGenusQuad)
     return G.norms
   end
 end
-    
+
 function Base.show(io::IO, G::LocalGenusQuad{S, T, U}) where {S, T, U}
   if !isdyadic(G)
     for i in 1:length(G)
@@ -670,7 +670,7 @@ function Base.show(io::IO, ::MIME"text/plain", G::LocalGenusQuad{S, T, U}) where
   if !get(io, :compact, false)
     print(io, "Local quadratic genus for prime ")
     print(IOContext(io, :compact => true), p)
-    
+
     if length(G) == 0
       print(io, " of rank zero ")
       return
@@ -1324,7 +1324,7 @@ function _unimodular_jordan_block(p, m)
   @assert isdyadic(p)
   # weight, normgen, det, witt
   res = Vector{Tuple{Int, nf_elem, nf_elem, Int}}()
-  
+
   G, mG = local_multiplicative_group_modulo_squares(p)
   pi = elem_in_nf(uniformizer(p))
   k = ngens(G)
@@ -1402,16 +1402,16 @@ function _unimodular_jordan_block(p, m)
           if !(iszero(gamma) || valuation(gamma, p) >= w + n)
             continue
           end
-          
+
           if iseven(n + w)
             @assert w == e
           end
 
           # This is a good candidate for the determinant
-          # It is not sufficient to look for 
+          # It is not sufficient to look for
           _normgens = _representatives_for_equivalence_and_witt(p, n, w, -dis)
           for ng in _normgens
-            
+
             if r == 1 && isodd(w + n)
               if !(w == e || (e > w && !iszero(gamma) && w == valuation(gamma, p) - valuation(ng, p)))
                 continue
@@ -1474,7 +1474,7 @@ function local_jordan_decompositions(E, p; rank::Int, det_val::Int, max_scale = 
   res = JorDec{typeof(E), typeof(p), elem_type(E)}[]
 
   if !isdyadic(p)
-    ns = _non_square(E, p)  
+    ns = _non_square(E, p)
     u = elem_in_nf(uniformizer(p))
     for scalerank in scales_rks
       class1 = elem_type(E)[u^(s[1] * s[2]) for s in scalerank]
@@ -1526,7 +1526,7 @@ function local_jordan_decompositions(E, p; rank::Int, det_val::Int, max_scale = 
         #           normgens::Vector{nf_elem},
         #           weights::Vector{Int},
         #           dets::Vector{nf_elem},
-        #           witts::Vector{Int}) 
+        #           witts::Vector{Int})
 
         l = length(sr)
         J = JorDec(p, Int[s[1] for s in sr],
@@ -1831,7 +1831,7 @@ function locally_isometric_sublattice(M::QuadLat, L::QuadLat, p)
   pop!(chain)
   LL = M
   reverse!(chain)
-  for X in chain 
+  for X in chain
     BM = local_basis_matrix(LL, p, type = :submodule)
     pM = _module_scale_ideal(pseudo_matrix(LL), fractional_ideal(order(p), p))
     while true
@@ -1913,4 +1913,5 @@ Base.:(+)(G1::GenusQuad, G2::GenusQuad) = orthogonal_sum(G1, G2)
 Test if the lattice $L$ is contained in the genus $G$.
 """
 Base.in(L::QuadLat, G::GenusQuad) = genus(L) == G
+
 

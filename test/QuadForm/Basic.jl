@@ -20,7 +20,7 @@
   @test witt_invariant(V, real_places(K)[2]) == -1
 
   plc = real_places(K)
-  d, H, I = @inferred invariants(V)
+  _, _, d, H, I = @inferred invariants(V)
   @test d == 147//2*a+245//2
   @test H == Dict(2 * OK => -1, 7 * OK => -1)
   @test length(I) == 2 && (I[1][2], I[2][2]) in [(1, 0), (0, 1)]
