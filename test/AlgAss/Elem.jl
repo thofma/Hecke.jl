@@ -20,7 +20,7 @@
     K, a = number_field(f, "a")
 
     b = rand(K, -10:10)
-    c = A(coeffs(b))
+    c = A(coefficients(b))
 
     cpb = charpoly(b)
     cpc = charpoly(c)

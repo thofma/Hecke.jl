@@ -318,16 +318,16 @@ power basis of `L`. The result is an element of `K`.
 """
 coeff(::SimpleNumFieldElem, ::Int)
 
-# copy does not do anything (so far), this is only for compatibility with coeffs(::AbsAlgAssElem)
+# copy does not do anything (so far), this is only for compatibility with coefficients(::AbsAlgAssElem)
 
 @doc Markdown.doc"""
-    coeffs(a::SimpleNumFieldElem, i::Int) -> Vector{FieldElem}
+    coefficients(a::SimpleNumFieldElem, i::Int) -> Vector{FieldElem}
 
 Given a number field element `a` of a simple number field extension `L/K`, this
 function returns the coefficients of `a`, when expanded in the canonical
 power basis of `L`.
 """
-function coeffs(a::SimpleNumFieldElem; copy::Bool = false)
+function coefficients(a::SimpleNumFieldElem; copy::Bool = false)
   return [ coeff(a, i) for i = 0:degree(parent(a)) - 1 ]
 end
 

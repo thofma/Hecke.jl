@@ -445,7 +445,7 @@ function _find_isomorphism(K::Union{ AnticNumberField, NfRel{nf_elem} }, A::AlgG
   local AtoK
   let K = K, M = M
     function AtoK(x::AlgGrpElem)
-      t = matrix(base_field(K), 1, degree(K), coeffs(x))
+      t = matrix(base_field(K), 1, degree(K), coefficients(x))
       y = t*M
       return K(parent(K.pol)([ y[1, i] for i = 1:degree(K) ]))
     end
@@ -552,7 +552,7 @@ end
 
 function preimage(f::NfToAlgGrpMor, x::AlgGrpElem)
   K = domain(f)
-  t = matrix(base_field(K), 1, degree(K), coeffs(x))
+  t = matrix(base_field(K), 1, degree(K), coefficients(x))
   y = t*f.M
   v = fmpq[ y[1, i] for i = 1:degree(K) ]
   return K(v)
@@ -591,7 +591,7 @@ function _galois_module(K::AnticNumberField, to_automorphisms::Map = automorphis
   end
 
   function AtoK(x::AlgGrpElem)
-    t = matrix(base_field(K), 1, degree(K), coeffs(x))
+    t = matrix(base_field(K), 1, degree(K), coefficients(x))
     y = t*M
     return K(parent(K.pol)([ y[1, i] for i = 1:degree(K) ]))
   end
@@ -636,7 +636,7 @@ end
 
 function image(f::AbsAlgAssMorGen, z)
   @assert parent(z) == domain(f)
-  v = matrix(base_ring(codomain(f)), 1, dim(domain(f)), coeffs(z))
+  v = matrix(base_ring(codomain(f)), 1, dim(domain(f)), coefficients(z))
   return codomain(f)(collect(v * f.M))
 end
 
@@ -704,7 +704,7 @@ function _compute_matrix_algebras_from_reps2(A, res)
 
     k0 = 0
     for k in 1:length(idempotents)
-      c = coeffs(idempotents[k])
+      c = coefficients(idempotents[k])
       z = zero_matrix(field, d, d)
       for (h, M) in cl
         i = A.group_to_base[HtoG(h)]
@@ -748,12 +748,12 @@ function _compute_matrix_algebras_from_reps2(A, res)
     #
     #@show back_matrix
 
-    #v = matrix(FlintQQ, 1, dim(B), coeffs(rand(B, -10:10)))
+    #v = matrix(FlintQQ, 1, dim(B), coefficients(rand(B, -10:10)))
     #@show v
     #@show matrix(FlintQQ, 1, dim(B), _coefficients_of_restricted_scalars(MB(collect(change_base_ring(field, v) * forward_matrix)))) * back_matrix
 
     #BtoMB = function(z)
-    #  v = matrix(base_ring(MB), 1, dim(B), coeffs(z))
+    #  v = matrix(base_ring(MB), 1, dim(B), coefficients(z))
     #  return MB(collect(v * forward_matrix))
     #end
 
@@ -783,7 +783,7 @@ function _compute_matrix_algebras_from_reps(A, res, reps)
     k0 = 0
     for k in 1:length(idempotents)
       e = idempotents[k]
-      c = coeffs(e)
+      c = coefficients(e)
       z = _evaluate_rep(e, d, cl)
       if isone(z)
         k0 = k
@@ -818,7 +818,7 @@ function _coefficients_of_restricted_scalars(x)
   n = degree(K)
   nm = n * m
   y = Vector{fmpq}(undef, nm)
-  yy = coeffs(x, copy = false)
+  yy = coefficients(x, copy = false)
   k = 1
   for i = 1:m
     for j = 1:n
@@ -849,7 +849,7 @@ function _absolute_basis(A)
 end
 
 function _evaluate_rep(el, d, rep)
-  c = coeffs(el)
+  c = coefficients(el)
   A = parent(el)
   z = zero_matrix(FlintQQ, d, d)
   for (g, M) in rep
@@ -860,7 +860,7 @@ function _evaluate_rep(el, d, rep)
 end
 
 function _evaluate_rep(el, d, rep, f)
-  c = coeffs(el)
+  c = coefficients(el)
   A = parent(el)
   z = zero_matrix(base_ring(rep[1][2]), d, d)
   for (g, M) in rep

@@ -116,7 +116,7 @@ function _roots_hensel(f::Generic.Poly{nf_elem};
   # I should check that
   K::AnticNumberField = base_ring(f)
 
-  if iszero(trailing_coefficient(f))
+  if iszero(constant_coefficient(f))
     rs = nf_elem[zero(K)]
     f = div(f, gen(parent(f)))
   else

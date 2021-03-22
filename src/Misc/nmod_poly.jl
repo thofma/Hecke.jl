@@ -36,7 +36,7 @@ function resultant_ideal(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} w
   end
 
   if degree(f) < 1
-    res = mul!(res, res, lead(f)^degree(g))
+    res = mul!(res, res, leading_coefficient(f)^degree(g))
     return res
   end
 
@@ -63,7 +63,7 @@ function resultant_ideal(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} w
   while true
 
     if degree(g) < 1
-      res = mul!(res, res, lead(g)^degree(f))
+      res = mul!(res, res, leading_coefficient(g)^degree(f))
       return res
     end
 
@@ -75,9 +75,9 @@ function resultant_ideal(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} w
     if iszero(res)
       return res
     end
-    #want f % g which works iff lead(g) | lead(f)
+    #want f % g which works iff leading_coefficient(g) | leading_coefficient(f)
 
-    if isunit(lead(g)) #accelerate a bit...possibly.
+    if isunit(leading_coefficient(g)) #accelerate a bit...possibly.
       rem!(f, f, g)
       f, g = g, f
       continue
@@ -111,12 +111,12 @@ function resultant_ideal(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} w
     if degree(fR1) < degree(f) && degree(gR1) < degree(g)
       res1 = R1(0)
     elseif degree(fR1) < degree(f)
-      res1 = lead(gR1)^(degree(f) - degree(fR1))
+      res1 = leading_coefficient(gR1)^(degree(f) - degree(fR1))
     else
       res1 = R1(1)
     end
 
-    if !isunit(lead(gR1))
+    if !isunit(leading_coefficient(gR1))
       g1, g2 = fun_factor(gR1)
       res1 = mul!(res1, res1, resultant_ideal(fR1, g2))
       push!(resp, lift(res1))
@@ -157,12 +157,12 @@ function resultant_ideal_pp(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S
   res = R(1)
 
   if degree(f) < 1
-    res = mul!(res, res, lead(f)^degree(g))
+    res = mul!(res, res, leading_coefficient(f)^degree(g))
     return res
   end
 
   if degree(g) < 1
-    res = mul!(res, res, lead(g)^degree(f))
+    res = mul!(res, res, leading_coefficient(g)^degree(f))
     return res
   end
 
@@ -185,12 +185,12 @@ function resultant_ideal_pp(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S
   end
 
   while true
-    #want f % g which works iff lead(g) | lead(f)
+    #want f % g which works iff leading_coefficient(g) | leading_coefficient(f)
 
-    if isunit(lead(g)) #accelerate a bit...possibly.
+    if isunit(leading_coefficient(g)) #accelerate a bit...possibly.
       rem!(f, f, g)
       if degree(f) < 1
-        res = mul!(res, res, lead(f)^degree(g))
+        res = mul!(res, res, leading_coefficient(f)^degree(g))
         return res
       end
       c, f = primsplit!(f)
@@ -212,7 +212,7 @@ function resultant_ideal_pp(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S
       end
       g = fun_factor(g)[2]
       if degree(g) < 1
-        res = mul!(res, res, lead(g)^degree(f))
+        res = mul!(res, res, leading_coefficient(g)^degree(f))
         return res
       end
     end
@@ -283,7 +283,7 @@ function prs_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where
   rs = []
 
   while degree(g) >0
-    g *= inv(canonical_unit(lead(g)))
+    g *= inv(canonical_unit(leading_coefficient(g)))
     c, gg = primsplit(g)
     @show f, (g, mu) = gg, my_divrem(f, gg)
     push!(rs, (c, gg, mu))
@@ -360,7 +360,7 @@ function Nemo.inv(f::T) where T <: Union{fmpz_mod_poly,nmod_poly}
     error("impossible inverse")
   end
   Rx = parent(f)
-  g = Rx(inv(trailing_coefficient(f)))
+  g = Rx(inv(constant_coefficient(f)))
   #lifting: to invert a, start with an inverse b mod m, then
   # then b -> b*(2-ab) is an inverse mod m^2
   # starting with this g, and using the fact that all coeffs are nilpotent
@@ -384,10 +384,10 @@ function Nemo.invmod(f::fmpz_mod_poly, M::fmpz_mod_poly)
       return r
     end
   end
-  if !isunit(lead(M))
+  if !isunit(leading_coefficient(M))
     error("not yet implemented")
   end
-  g = parent(f)(inv(trailing_coefficient(f)))
+  g = parent(f)(inv(constant_coefficient(f)))
   #lifting: to invert a, start with an inverse b mod m, then
   # then b -> b*(2-ab) is an inverse mod m^2
   # starting with this g, and using the fact that all coeffs are nilpotent
@@ -422,7 +422,7 @@ function rres_sircana_pp(f1::PolyElem{T}, g1::PolyElem{T}) where T <: ResElem{S}
       if iszero(f) && iszero(g)
         res = zero(R)
       else
-        res = mul!(res, res, R(gcd(lift(lead(f)), lift(lead(g)))))
+        res = mul!(res, res, R(gcd(lift(leading_coefficient(f)), lift(leading_coefficient(g)))))
       end
       return res
     end
@@ -495,7 +495,7 @@ function rres_sircana(f1::PolyElem{T}, g1::PolyElem{T}) where T <: ResElem{S} wh
       if iszero(f) && iszero(g)
         res = zero(R)
       else
-        res *= R(gcd(lift(lead(f)), lift(lead(g))))
+        res *= R(gcd(lift(leading_coefficient(f)), lift(leading_coefficient(g))))
       end
       return res
     end
@@ -505,7 +505,7 @@ function rres_sircana(f1::PolyElem{T}, g1::PolyElem{T}) where T <: ResElem{S} wh
     end
 
     if degree(g) < 1
-      if !isunit(lead(f))
+      if !isunit(leading_coefficient(f))
         #need the constant coeff * the annihilator of the others...
         a = coeff(f, 1)
         for i = 2:degree(f)
@@ -516,9 +516,9 @@ function rres_sircana(f1::PolyElem{T}, g1::PolyElem{T}) where T <: ResElem{S} wh
         end
         a = annihilator(a)
         if iszero(a)
-          return lead(g)
+          return leading_coefficient(g)
         else
-          res *= gcd(lead(g), a*constant_coefficient(f))
+          res *= gcd(leading_coefficient(g), a*constant_coefficient(f))
           return res
         end
       else
@@ -533,7 +533,7 @@ function rres_sircana(f1::PolyElem{T}, g1::PolyElem{T}) where T <: ResElem{S} wh
       return res
     end
 
-    if !isunit(lead(g))
+    if !isunit(leading_coefficient(g))
       #one of the coefficient will now be invertible (at least after the splitting)
       s = gcd(m, lift(res))
       if !isone(s)
@@ -559,7 +559,7 @@ function rres_sircana(f1::PolyElem{T}, g1::PolyElem{T}) where T <: ResElem{S} wh
         gR1 = R1t(lift(Zx, g))
         fR1 = R1t(lift(Zx, f))
         res1 = one(R1)
-        if isunit(lead(gR1))
+        if isunit(leading_coefficient(gR1))
           g2 = gR1
         else
           if iszero(gR1)
@@ -598,7 +598,7 @@ end
 function rresx_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where S <: Union{fmpz, Integer}
   Nemo.check_parent(f, g)
   @assert typeof(f) == typeof(g)
-  @assert isunit(lead(f)) || isunit(lead(g))
+  @assert isunit(leading_coefficient(f)) || isunit(leading_coefficient(g))
   res, u, v = _rresx_sircana(f, g)
   if !iszero(res)
     cu = canonical_unit(res)
@@ -607,7 +607,7 @@ function rresx_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} whe
     u *= cu
     v *= cu
   end
-  if isunit(lead(g))
+  if isunit(leading_coefficient(g))
     q, r = divrem(u, g)
     @hassert :NfOrd 1 res == r*f + (v+q*f)*g
     mul!(q, q, f)
@@ -625,7 +625,7 @@ end
 function rresx_sircana_pp(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where S <: Union{fmpz, Integer}
   Nemo.check_parent(f, g)
   @assert typeof(f) == typeof(g)
-  @assert isunit(lead(f)) || isunit(lead(g)) #can be weakened to invertable lead
+  @assert isunit(leading_coefficient(f)) || isunit(leading_coefficient(g)) #can be weakened to invertable lead
   res, u, v = _rresx_sircana_pp(f, g)
   if !iszero(res)
     cu = canonical_unit(res)
@@ -634,7 +634,7 @@ function rresx_sircana_pp(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} 
     u *= cu
     v *= cu
   end
-  if isunit(lead(g))
+  if isunit(leading_coefficient(g))
     q, r = divrem(u, g)
     @hassert :NfOrd 1 res == r*f + (v+q*f)*g
     return res, r, v+q*f
@@ -668,7 +668,7 @@ function _rresx_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} wh
         u = Rt(0)
         v = Rt(0)
       else
-        res, uu, vv = gcdx(lead(f), lead(g))
+        res, uu, vv = gcdx(leading_coefficient(f), leading_coefficient(g))
         #res = uu*f + vv*g = uu*(U f_in + V g_in) + vv*(u f_in + v g_in)
         #    = uu*U + vv*u  uu*V + vv*v
         u, v = (uu*U + vv*u), (uu*V + vv*v)
@@ -683,7 +683,7 @@ function _rresx_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} wh
     end
 
     if degree(g) < 1
-      if !isunit(lead(f))
+      if !isunit(leading_coefficient(f))
         #need the constant coeff * the annihilator of the others...
         a = coeff(f, 1)
         for i = 2:degree(f)
@@ -694,9 +694,9 @@ function _rresx_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} wh
         end
         a = annihilator(a)
         if iszero(a)
-          return lead(g), u, v
+          return leading_coefficient(g), u, v
         else
-          res, uu, vv = gcdx(a*constant_coefficient(f), lead(g))
+          res, uu, vv = gcdx(a*constant_coefficient(f), leading_coefficient(g))
           return res, uu*a*U + vv*u, uu*a*V + vv*v
         end
       else
@@ -705,7 +705,7 @@ function _rresx_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} wh
     end
 
 
-    if !isunit(lead(g))
+    if !isunit(leading_coefficient(g))
       c, g = primsplit(g)
       cp = fmpz[gcd(lift(coeff(g, i)), m) for i=0:degree(g)]
       push!(cp, m)
@@ -727,7 +727,7 @@ function _rresx_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} wh
           push!(resp, fmpz(0))
           push!(resB, (R1t(0), R1t(1))) #relation need to be primitive
         else
-          if isunit(lead(gR1))
+          if isunit(leading_coefficient(gR1))
             g2 = gR1
             g1 = R1t(1)
           else
@@ -781,7 +781,7 @@ function _rresx_sircana_pp(f1::PolyElem{T}, g1::PolyElem{T}) where T <: ResElem{
         u = Rt(0)
         v = Rt(0)
       else
-        res, uu, vv = gcdx(lead(f), lead(g))
+        res, uu, vv = gcdx(leading_coefficient(f), leading_coefficient(g))
         #res = uu*f + vv*g = uu*(U f_in + V g_in) + vv*(u f_in + v g_in)
         #    = uu*U + vv*u  uu*V + vv*v
         u, v = (uu*U + vv*u), (uu*V + vv*v)
@@ -796,7 +796,7 @@ function _rresx_sircana_pp(f1::PolyElem{T}, g1::PolyElem{T}) where T <: ResElem{
     end
 
     if degree(g) < 1
-      if !isunit(lead(f))
+      if !isunit(leading_coefficient(f))
         #need the constant coeff * the annihilator of the others...
         a = coeff(f, 1)
         for i = 2:degree(f)
@@ -807,9 +807,9 @@ function _rresx_sircana_pp(f1::PolyElem{T}, g1::PolyElem{T}) where T <: ResElem{
         end
         a = annihilator(a)
         if iszero(a)
-          return lead(g), u, v
+          return leading_coefficient(g), u, v
         else
-          res, uu, vv = gcdx(a*constant_coefficient(f), lead(g))
+          res, uu, vv = gcdx(a*constant_coefficient(f), leading_coefficient(g))
           u, v = (uu*a*U + vv*u), (uu*a*V + vv*v)
 
           return res, u, v
@@ -819,7 +819,7 @@ function _rresx_sircana_pp(f1::PolyElem{T}, g1::PolyElem{T}) where T <: ResElem{
       end
     end
 
-    if !isunit(lead(g))
+    if !isunit(leading_coefficient(g))
       c, g = primsplit(g)
       g1, g2 = fun_factor(g)
       rr, uu, vv = _rresx_sircana_pp(f, g2)
@@ -890,12 +890,12 @@ function gcd_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where
         setcoeff!(g, i, divexact(coeff(g, i), cg))
       end
     end
-    if !isunit(lead(g))
+    if !isunit(leading_coefficient(g))
       u, g = fun_factor(g)
     end
     @show f, g = g, (f%g)
   end
-  c = canonical_unit(lead(f))
+  c = canonical_unit(leading_coefficient(f))
   f = divexact(f, c)
   return f
 end
@@ -935,12 +935,12 @@ function resultant_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S}
     end
 
     if degree(f) < 1
-      res *= lead(f)^degree(g)
+      res *= leading_coefficient(f)^degree(g)
       return res
     end
 
     if degree(g) < 1
-      res *= lead(g)^degree(f)
+      res *= leading_coefficient(g)^degree(f)
       return res
     end
 
@@ -959,21 +959,21 @@ function resultant_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S}
       f, g = g, f
     end
 
-    #want f % g which works iff lead(g) | lead(f)
+    #want f % g which works iff leading_coefficient(g) | leading_coefficient(f)
 
-    if isunit(lead(g)) #accelerate a bit...possibly.
+    if isunit(leading_coefficient(g)) #accelerate a bit...possibly.
       q, r = divrem(f, g)
-      res *= lead(g)^(degree(f) - degree(r))
+      res *= leading_coefficient(g)^(degree(f) - degree(r))
       res *= R(-1)^(degree(g)*(degree(f) - degree(r)))
       f = r
       continue
     end
 
-    if gcd(lift(lead(f)), m)  % gcd(lift(lead(g)), m) == 0
-      q = divexact(lead(f), lead(g))
+    if gcd(lift(leading_coefficient(f)), m)  % gcd(lift(leading_coefficient(g)), m) == 0
+      q = divexact(leading_coefficient(f), leading_coefficient(g))
       ff = f - q*g*gen(Rt)^(degree(f) - degree(g))
       @assert degree(f) > degree(ff)
-      res *= lead(g)^(degree(f) - degree(ff))
+      res *= leading_coefficient(g)^(degree(f) - degree(ff))
       res *= R(-1)^(degree(g)*(degree(f) - degree(ff)))
       f = ff
       continue
@@ -1017,17 +1017,17 @@ function resultant_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S}
        res1 = R1(0)
     elseif degree(fR1) < degree(f)
         res1 = R1(-1)^(degree(g) * (degree(f) - degree(fR1))) *
-               lead(gR1)^(degree(f) - degree(fR1))
+               leading_coefficient(gR1)^(degree(f) - degree(fR1))
     elseif degree(gR1) < degree(g)
-        res1 = lead(fR1)^(degree(g) - degree(gR1))
+        res1 = leading_coefficient(fR1)^(degree(g) - degree(gR1))
     else
         res1 = R1(1)
     end
 
-    if !isunit(lead(gR1))
+    if !isunit(leading_coefficient(gR1))
       g1, g2 = fun_factor(gR1)
 
-      #careful: lead(g) = 0 mod lg is possible, so the degree drops!
+      #careful: leading_coefficient(g) = 0 mod lg is possible, so the degree drops!
       #from Wiki:
       # phi: R -> S
       # phi(res(f, g)) = res(phi(f), phi(g)) if the degrees are the same
@@ -1072,8 +1072,8 @@ end
 
 function fun_factor(f::T) where T <: Union{fmpz_mod_poly, nmod_poly}
   Rx = parent(f)
-  if isunit(lead(f))
-    l = lead(f)
+  if isunit(leading_coefficient(f))
+    l = leading_coefficient(f)
     return Rx(l), f*inv(l)
   end
   R = base_ring(Rx)
@@ -1475,7 +1475,7 @@ function _coprimality_test(f::T, g::T, h::T) where T <: Union{nmod_poly, fmpz_mo
         return isunit(gcd(coeff(f, 0), rres(f, h)))
       end
     end
-    if isunit(lead(f))
+    if isunit(leading_coefficient(f))
       g = mod(g, f)
       h = mod(h, f)
       if isconstant(g)
@@ -1518,7 +1518,7 @@ function _coprimality_test(f::T, g::T, h::T) where T <: Union{nmod_poly, fmpz_mo
         continue
       end
     end
-    if !must_split && isunit(lead(g))
+    if !must_split && isunit(leading_coefficient(g))
       h = mod(h, g)
       if degree(h) < degree(f)
         f, g, h = h, c*f, g

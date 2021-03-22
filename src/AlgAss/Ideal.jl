@@ -100,7 +100,7 @@ Returns `true` if $x$ is an element of $a$ and `false` otherwise.
 """
 function in(x::T, a::AbsAlgAssIdl{S, T, U}) where {S, T, U}
   A = algebra(a)
-  M = matrix(base_ring(A), 1, dim(A), coeffs(x, copy = false))
+  M = matrix(base_ring(A), 1, dim(A), coefficients(x, copy = false))
   return rank(vcat(basis_matrix(a, copy = false), M)) == nrows(basis_matrix(a, copy = false)) # so far we assume nrows(basis_matrix) == rank(basis_matrix)
 end
 
@@ -538,7 +538,7 @@ function quo(a::AbsAlgAssIdl{S, T, U}, b::AbsAlgAssIdl{S, T, U}) where { S, T, U
 
   N = transpose(vcat(MM, Mb)) # Another basis matrix for a
   function _image(x::AbsAlgAssElem)
-    t, y = can_solve_with_solution(N, matrix(K, dim(A), 1, coeffs(x, copy = false)))
+    t, y = can_solve_with_solution(N, matrix(K, dim(A), 1, coefficients(x, copy = false)))
     if t
       return B([ y[i, 1] for i = 1:dim(B) ])
     else
@@ -599,7 +599,7 @@ function mod(x::AbsAlgAssElem, a::AbsAlgAssIdl)
     return deepcopy(x)
   end
 
-  c = coeffs(x)
+  c = coefficients(x)
   M = basis_matrix(a, copy = false) # Assumed to be in upper right rref
   k = 1
   for i = 1:nrows(M)
