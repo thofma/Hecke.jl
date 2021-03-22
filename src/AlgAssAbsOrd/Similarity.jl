@@ -320,17 +320,18 @@ function _issimilar_new(A::fmpz_mat, B::fmpz_mat)
 end
 
 function _issimilar_new(A, B)
+  if A == B
+    return true, identity_matrix(FlintQQ, nrows(A))
+  end
   Z = Hecke.CommutatorAlgebra3(A)
   _compute_decomposition!(Z)
   Ks, ns = _decomposition_type(Z)
-  @show defining_polynomial.(Ks)
-  @show ns
   AA = _create_algebra_husert(Ks, ns)
-  @show dim(AA)
+  AA = _create_algebra_husert(Ks, ns)
   O = _basis_of_integral_commutator_algebra_saturate(A, A)
-  #@show O
   I = _basis_of_integral_commutator_algebra_saturate(A, B)
-  #@show I
+  #@info "Algebra has dimension $(length(O))"
+  #@info "Semisimple quotient has dimension $(dim(AA))"
   ordergens = elem_type(AA)[]
   idealgens = elem_type(AA)[]
   dec = decompose(AA)
@@ -338,16 +339,11 @@ function _issimilar_new(A, B)
   CA, TA = rational_canonical_form(A)
   CB, TB = rational_canonical_form(B)
 
-  #@show "HEREREHRE"
   if CA != CB
     return false, zero_matrix(FlintQQ, 0, 0)
   end
 
   _C = inv(TB) * TA
-
-#  @show denominator(_C)
-#
-#  @show _C
 
   @assert _C * A == B * _C
 
@@ -374,12 +370,7 @@ function _issimilar_new(A, B)
 #  end
 
   for bb in O
-    #@show bb
     b = _induce_action_mod(Z, bb)
-    #@show _induce_action(Z, bb^2)
-    #@show map(x -> x^2, _induce_action(Z, bb))
-    #@assert _induce_action_mod(Z, bb^2) == map(x -> x^2, _induce_action_mod(Z, bb))
-    #println(sprint(show, "text/plain", b))
     z = zero(AA)
     @assert length(dec) == length(b)
     for i in 1:length(dec)
@@ -390,8 +381,6 @@ function _issimilar_new(A, B)
     end
     push!(ordergens, z)
   end
-
-  #println(sprint(show, "text/plain", basis_matrix(ordergens)))
 
   for bb in I
     b = _induce_action_mod(Z, invC * bb)
@@ -406,11 +395,6 @@ function _issimilar_new(A, B)
     push!(idealgens, z)
   end
 
-  #@show dim(AA)
-
-  #@show ordergens
-
-  #@show "HEREREHRE2"
   OO = Order(AA, ordergens)
   OI = ideal_from_lattice_gens(AA, idealgens)
   #println(sprint(show, "text/plain", numerator(basis_matrix(right_order(OI)))))
@@ -430,13 +414,13 @@ function _issimilar_new(A, B)
  
   # I have to transport this back to an element of M_n(Q)
 
-  z = Generic.MatSpaceElem{nf_elem}[]
-  for i in 1:length(dec)
-    BB, mB = dec[i]::Tuple{AlgAss{fmpq},Hecke.AbsAlgAssMor{AlgAss{fmpq},AlgAss{fmpq},fmpq_mat}}
-    local C::AlgMat{nf_elem, Generic.MatSpaceElem{nf_elem}}
-    C, BtoC = BB.isomorphic_full_matrix_algebra
-    push!(z, matrix(BtoC(mB\y)))
-  end
+#  z = Generic.MatSpaceElem{nf_elem}[]
+#  for i in 1:length(dec)
+#    BB, mB = dec[i]::Tuple{AlgAss{fmpq},Hecke.AbsAlgAssMor{AlgAss{fmpq},AlgAss{fmpq},fmpq_mat}}
+#    local C::AlgMat{nf_elem, Generic.MatSpaceElem{nf_elem}}
+#    C, BtoC = BB.isomorphic_full_matrix_algebra
+#    push!(z, matrix(BtoC(mB\y)))
+#  end
 
   # I know invC * I maps surjectively onto OI
   # Let's let the generator y
@@ -454,7 +438,7 @@ function _issimilar_new(A, B)
 
   YY = matrix(FlintZZ, 1, dim(AA), coordinates(OO(d * y)))
 
-  fl, vv = can_solve(Y, YY, side = :left)
+  fl, vv = can_solve_with_solution(Y, YY, side = :left)
   @assert fl
   yy = zero_matrix(FlintQQ, nrows(A), nrows(A))
   for i in 1:length(vv)
@@ -462,9 +446,6 @@ function _issimilar_new(A, B)
   end
 
   T = _C * yy
-
-#  @show T
-#  @show det(T)
 
   @assert abs(denominator(T)) == 1
   @assert T * A == B * T
@@ -938,9 +919,9 @@ function _lift2(MM)
     @assert matrix(left2[i]) == left[i]
   end
 
-  return prod(matrix.(inv.(left2)))
-
   @assert map(R, prod(reverse(left))) * MM == 1
+
+  return prod(matrix.(inv.(left2)))
 
   return M, left
 end
@@ -960,12 +941,16 @@ function Base.divrem(n::T, m::T) where T <: Union{nmod,Nemo.fmpz_mod}
     v = valuation(modulus(R), cp[i])::Int
     if v != 0
       pk = cp[i]^v
-      nv = valuation(n.data % pk, cp[i])::Int
-      mv = valuation(m.data % pk, cp[i])::Int
+      nv = iszero(n.data % pk) ? inf : valuation(n.data % pk, cp[i])
+      mv = iszero(m.data % pk) ? inf : valuation(m.data % pk, cp[i])
       if nv < mv
         push!(q, (pk, 0))
       else
-        push!(q, (pk, divexact(n.data % pk, cp[i]^nv)))
+        if nv === inf
+          push!(q, (pk, 1))
+        else
+          push!(q, (pk, divexact(n.data % pk, cp[i]^nv)))
+        end
       end
     end
   end
@@ -1547,27 +1532,6 @@ function _second_map_backward(v::Vector{Vector{fmpq_poly}}, C::CommutatorAlgebra
   return w
 end
 
-#function _third_map_forward(v::Vector{Vector{fmpq_poly}}, C::CommutatorAlgebra3)
-#  w = Vector{Vector{fmpq_poly}}(undef, length(v))
-#  for i in 1:length(v)
-#    w[i] = fmpq_poly[]
-#  end
-#
-#  for i in 1:length(v)
-#    w[i] = Vector{fmpq_poly}(undef, length(v[i]))
-#    @assert length(v[i]) == length(C.invariant_factors_squarefree[i])
-#    for j in 1:length(v[i])
-#      w[i][j] = v[i][j] % C.invariant_factors_squarefree[i][j]
-#    end
-#  end
-#
-#  return w
-#end
-#
-#function _third_map_backward(v::Vector{Vector{fmpq_poly}}, C::CommutatorAlgebra3)
-#  return deepcopy(v)
-#end
-#
 function _third_map_forward(v::Vector{Vector{fmpq_poly}}, C::CommutatorAlgebra3)
   z = Vector{Vector{fmpq_poly}}(undef, length(C.invariant_factors_grouped))
   for l in 1:length(C.invariant_factors_grouped)

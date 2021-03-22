@@ -555,6 +555,7 @@ end
 
 _denominator_of_mult_table(A::AlgGrp{T}, R::Union{ NfAbsOrd, NfRelOrd }) where { T <: NumFieldElem } = fmpz(1)
 
+# TODO: This is type unstable
 # Requires that O is maximal and A = K^(n\times n) for a number field K.
 # Computes a maximal order of type
 #  (  O    ...   O  a^-1 )
@@ -641,7 +642,7 @@ function nice_order(O::AlgAssRelOrd{S, T, U}; cached::Bool = true) where {S, T, 
     if cached
       O.nice_order = sO, A
     end
-    return sO, A
+    return sO::typeof(O), A::elem_type(U)
   end
 end
 

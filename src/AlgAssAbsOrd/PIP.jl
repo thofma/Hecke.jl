@@ -413,7 +413,7 @@ function _isprincipal(a::AlgAssAbsOrdIdl, O, side = :right)
   aa = denominator(a, O) * a
   aa.order = O
   for (p, ) in factor(discriminant(O))
-    println("Testing local freeness at ", p)
+    #@info "Testing local freeness at $p"
     if !islocally_free(O, aa, p, side = :right)[1]::Bool
       return false, zero(algebra(O))
     end
@@ -470,14 +470,14 @@ function _isprincipal(a::AlgAssAbsOrdIdl, O, side = :right)
   end
   @assert beta * OA == aOA
 
-  println("Computing K1...")
+  #@info "Computing K1..."
   #@show F, FinZ
   k1 = K1_order_mod_conductor(O, OA, F, FinZ)
   OZ = maximal_order(Z)
   Q, mQ = quo(OZ, FinZ)
   Quni, mQuni = unit_group(Q)
-  U::GrpAbFinGen, mU = unit_group(OZ)
-  println("Solving principal ideal problem over maximal order...")
+  U::GrpAbFinGen, mU::MapUnitGrp{Hecke.AlgAssAbsOrd{AlgAss{fmpq},AlgAssElem{fmpq,AlgAss{fmpq}}}} = unit_group(OZ)
+  #@info "Solving principal ideal problem over maximal order..."
 
   #@show Q
   normbeta = OZ(normred_over_center(beta, ZtoA))
@@ -493,7 +493,9 @@ function _isprincipal(a::AlgAssAbsOrdIdl, O, side = :right)
 
   fl, u = haspreimage(mS, mQbyK1(ttt))
 
-  println("Solving norm requation over center")
+  #@info "Solving norm requation over center"
+  #@show typeof(OA)
+  #@show typeof(ZtoA(elem_in_algebra(mU(u)::elem_type(OZ))))
   UU = _solve_norm_equation_over_center(OA, ZtoA(elem_in_algebra(mU(u)::elem_type(OZ))))
 
   fll, uu = haspreimage(mSS,  mQuni\(mQ(OZ(normred_over_center(elem_in_algebra(UU), ZtoA)))) - ttt)
@@ -509,7 +511,7 @@ function _isprincipal(a::AlgAssAbsOrdIdl, O, side = :right)
 
   ##@show mQuni\(mQ(OZ(normred_over_center(elem_in_algebra(UU), ZtoA)))) ==  mQuni\(mQ(OZ(normred_over_center(beta * elemA, ZtoA))))
 
-  println("Lifting to norm one unit")
+  #@info "Lifting to norm one unit"
   V = lift_norm_one_unit( UU^(-1) * OA(elemA)  * OA(beta), F)
 
   gamma =  beta * inv(elem_in_algebra(UU) * V)
@@ -543,7 +545,7 @@ function _solve_norm_equation_over_center_simple(M, x)
     @assert isdefined(A, :isomorphic_full_matrix_algebra)
     B, AtoB = A.isomorphic_full_matrix_algebra
     Mbas = absolute_basis(M)
-    MinB = _get_order_from_gens(B, elem_type(B)[ AtoB(elem_in_algebra(b)) for b in Mbas])
+    MinB = _get_order_from_gens(B, elem_type(B)[ AtoB(elem_in_algebra(b))::elem_type(B) for b in Mbas])
     y = Hecke._solve_norm_equation_over_center_full_matrix_algebra(MinB, AtoB(x)::elem_type(B))
     sol = M(AtoB\elem_in_algebra(y))
     ZA, ZAtoA = center(A)
@@ -551,6 +553,8 @@ function _solve_norm_equation_over_center_simple(M, x)
     return sol
   elseif degree(A) == 4 && !issplit(A)
     return _solve_norm_equation_over_center_quaternion(M, x)
+  else
+    throw(NotImplemented())
   end
 end
 
@@ -593,10 +597,10 @@ function _solve_norm_equation_over_center_full_matrix_algebra(M, x)
     return M(x)
   elseif degree(base_ring(A)) == 1
     B, BtoA = _as_full_matrix_algebra_over_Q(A)
-    MB = Order(B, [BtoA\elem_in_algebra(b) for b in absolute_basis(M)])
+    MB = Order(B, [(BtoA\elem_in_algebra(b))::elem_type(B) for b in absolute_basis(M)])
     xinB = BtoA\x
     solB = _solve_norm_equation_over_center_full_rational_matrix_algebra(MB, xinB)
-    sol = M(BtoA(elem_in_algebra(solB)))
+    sol = M(BtoA(elem_in_algebra(solB))::elem_type(A))
     @assert ZAtoA(normred_over_center(elem_in_algebra(sol), ZAtoA)) == x
     return sol
   else
@@ -833,7 +837,9 @@ function _lift_norm_one_unit_full_rational_matrix_algebra(x, F)
   
   @assert mod(FlintZZ(det(matrix((xwrtR)))), nn) == 1
 
-  li = _lift_unimodular_matrix(change_base_ring(FlintZZ, matrix(xwrtR)), nn, ResidueRing(FlintZZ, nn))
+  R = ResidueRing(FlintZZ, nn, cached = false)
+  li = _lift2(map_entries(u -> R(FlintZZ(u)), matrix(xwrtR)))
+  #li = _lift_unimodular_matrix(change_base_ring(FlintZZ, matrix(xwrtR)), nn, ResidueRing(FlintZZ, nn))
 
   return (inv(c) * B(change_base_ring(FlintQQ, li)) * c)
 end
@@ -1253,6 +1259,8 @@ end
 _lift(x::AbsOrdQuoRingElem) = lift(x)
 
 _lift(x::RelOrdQuoRingElem) = lift(x)
+
+_lift(x::Nemo.fmpz_mod) = lift(x)
 
 function lift_triangular_matrix(E)
   #@show E
