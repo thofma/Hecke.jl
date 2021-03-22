@@ -21,18 +21,18 @@ mutable struct HenselCtxQadic <: Hensel
       f2 = lfp[i+1]
       g, a, b = gcdx(f1, f2)
       @assert isone(g)
-      push!(la, setprecision(map_coeffs(x->preimage(mK, x), a, cached = false, parent = Qx), 1))
-      push!(la, setprecision(map_coeffs(x->preimage(mK, x), b, cached = false, parent = Qx), 1))
+      push!(la, setprecision(map_coefficients(x->preimage(mK, x), a, cached = false, parent = Qx), 1))
+      push!(la, setprecision(map_coefficients(x->preimage(mK, x), b, cached = false, parent = Qx), 1))
       push!(lfp, f1*f2)
       i += 2
     end
-    return new(f, map(x->setprecision(map_coeffs(y->preimage(mK, y), x, cached = false, parent = Qx), 1), lfp), la, uniformizer(Q), n)
+    return new(f, map(x->setprecision(map_coefficients(y->preimage(mK, y), x, cached = false, parent = Qx), 1), lfp), la, uniformizer(Q), n)
   end
 
   function HenselCtxQadic(f::PolyElem{qadic})
     Q = base_ring(f)
     K, mK = ResidueField(Q)
-    fp = map_coeffs(mK, f, cached = false)
+    fp = map_coefficients(mK, f, cached = false)
     lfp = collect(keys(factor(fp).fac))
     return HenselCtxQadic(f, lfp)
   end
@@ -278,7 +278,7 @@ function factor_new(f::PolyElem{nf_elem})
     end
     F, mF1 = ResidueFieldSmallDegree1(zk::NfOrd, P[1][1])
     mF = extend(mF1, k)
-    fp = map_coeffs(mF, f, cached = false)
+    fp = map_coefficients(mF, f, cached = false)
     if degree(fp) < degree(f) || iszero(constant_coefficient(fp)) || iszero(constant_coefficient(fp))
       continue
     end
@@ -365,9 +365,9 @@ function zassenhaus(f::PolyElem{nf_elem}, P::NfOrdIdl; degset::Set{Int} = Set{In
 
   vH = vanHoeijCtx()
   if degree(P) == 1
-    vH.H = HenselCtxPadic(map_coeffs(x->coeff(mC(x), 0), f, cached = false))
+    vH.H = HenselCtxPadic(map_coefficients(x->coeff(mC(x), 0), f, cached = false))
   else
-    vH.H = HenselCtxQadic(map_coeffs(mC, f, cached = false))
+    vH.H = HenselCtxQadic(map_coefficients(mC, f, cached = false))
   end
   vH.C = C
   vH.P = P
@@ -384,9 +384,9 @@ function zassenhaus(f::PolyElem{nf_elem}, P::NfOrdIdl; degset::Set{Int} = Set{In
   zk = order(P)
 
   if degree(P) == 1
-    S = Set(map(x -> map_coeffs(y -> lift(y), x, parent = parent(f)), lf))
+    S = Set(map(x -> map_coefficients(y -> lift(y), x, parent = parent(f)), lf))
   else
-    S = Set(map(x -> map_coeffs(y -> preimage(mC, y), x, parent = parent(f)), lf))
+    S = Set(map(x -> map_coefficients(y -> preimage(mC, y), x, parent = parent(f)), lf))
   end
   #TODO: test reco result for being small, do early abort
   #TODO: test selected coefficients first without computing the product
@@ -407,7 +407,7 @@ function zassenhaus(f::PolyElem{nf_elem}, P::NfOrdIdl; degset::Set{Int} = Set{In
       end
       #TODO: test constant term first, possibly also trace + size
       g = prod(s)
-      g = map_coeffs(x -> K(reco(zk(leading_coefficient(f)*x*den), M, pM)), g, parent = parent(f))*(1//leading_coefficient(f)//den)
+      g = map_coefficients(x -> K(reco(zk(leading_coefficient(f)*x*den), M, pM)), g, parent = parent(f))*(1//leading_coefficient(f)//den)
       if iszero(rem(f, g))
         push!(res, g)
         used = union(used, s)
@@ -576,7 +576,7 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 1)
 
   _, mK = ResidueField(order(P), P)
   mK = extend(mK, K)
-  r = length(factor(map_coeffs(mK, f, cached = false)))
+  r = length(factor(map_coefficients(mK, f, cached = false)))
   N = degree(f)
   @vprint :PolyFactor 1  "Having $r local factors for degree $N \n"
 
@@ -584,9 +584,9 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 1)
 
   vH = vanHoeijCtx()
   if degree(P) == 1
-    vH.H = HenselCtxPadic(map_coeffs(x->coeff(mC(x), 0), f))
+    vH.H = HenselCtxPadic(map_coefficients(x->coeff(mC(x), 0), f))
   else
-    vH.H = HenselCtxQadic(map_coeffs(mC, f))
+    vH.H = HenselCtxQadic(map_coefficients(mC, f))
   end
   vH.C = C
   vH.P = P
@@ -623,9 +623,9 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 1)
     @vprint :PolyFactor 1 "setting prec to $i, and lifting the info ...\n"
     setprecision!(codomain(mC), i)
     if degree(P) == 1
-      vH.H.f = map_coeffs(x->coeff(mC(x), 0), f)
+      vH.H.f = map_coefficients(x->coeff(mC(x), 0), f)
     else
-      vH.H.f = map_coeffs(mC, f)
+      vH.H.f = map_coefficients(mC, f)
     end
     global last_vH = vH
     @vtime :PolyFactor 1 grow_prec!(vH, i)

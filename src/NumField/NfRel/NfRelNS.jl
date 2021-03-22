@@ -172,7 +172,7 @@ end
 function number_field(::Type{NfAbsNS}, L::NfRelNS{nf_elem})
   @assert degree(base_field(L)) == 1
   Qx = PolynomialRing(FlintQQ, "x", cached = false)[1]
-  pols = fmpq_poly[map_coeffs(FlintQQ, isunivariate(x)[2], parent = Qx) for x in L.pol]
+  pols = fmpq_poly[map_coefficients(FlintQQ, isunivariate(x)[2], parent = Qx) for x in L.pol]
   return number_field(pols, cached = false, check = false)
 end
 
@@ -679,7 +679,7 @@ function mod(a::NfRelNSElem{T}, p::fmpz) where T
   K = parent(a)
   b = data(a)
   Kx = parent(b)
-  bnew = map_coeffs(x -> mod(x, p), b, parent = Kx)
+  bnew = map_coefficients(x -> mod(x, p), b, parent = Kx)
   return K(bnew)
 end
 

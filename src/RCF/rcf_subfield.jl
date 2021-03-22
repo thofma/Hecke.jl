@@ -156,7 +156,7 @@ function translate_up(mL::NfToNfMor, C::ClassField_pp, C1::ClassField_pp)
   CEL = cyclotomic_extension(L, d)
   img = gen(CEK.Kr)
   if degree(CEK.Kr) != euler_phi(d)
-    pp = map_coeffs(mL, CEL.Kr.pol, cached = false)
+    pp = map_coefficients(mL, CEL.Kr.pol, cached = false)
     while !iszero(pp(img))
       mul!(img, img, gen(CEK.Kr))
     end
@@ -179,13 +179,13 @@ function translate_up(mL::NfToNfMor, C::ClassField_pp, C1::ClassField_pp)
   coeffs[end] = one(Lzeta)
   C.K = number_field(Lt(coeffs), cached = false, check = false)[1]
   #The target extension
-  fdef = map_coeffs(mL, C1.A.pol, parent = Ky, cached = false)
+  fdef = map_coefficients(mL, C1.A.pol, parent = Ky, cached = false)
   C.A = number_field(fdef, cached = false, check = false)[1]
   #Now, the primitive element of the target extension seen in Cpp.K
   mrel2 = hom(C1.K, C.K, mp, gen(C.K))
   C.pe = mrel2(C1.pe) 
   CEKK = cyclotomic_extension(K, d)
-  @hassert :ClassField 1 iszero(map_coeffs(CEKK.mp[2], fdef, cached = false)(C.pe))
+  @hassert :ClassField 1 iszero(map_coefficients(CEKK.mp[2], fdef, cached = false)(C.pe))
   C.o = d1
   return nothing
 end

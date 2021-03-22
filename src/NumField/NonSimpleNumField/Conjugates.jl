@@ -90,7 +90,7 @@ function conjugates_arb(a::NfRelNSElem{T}, prec::Int = 32) where {T}
     CC = AcbField(prec1, cached = false)
     CCy, y = PolynomialRing(CC, ngens(L), cached = false)
     for i = 1:length(plcK)
-      pols[absolute_index(plcK[i])] = map_coeffs(x -> evaluate(x, plcK[i], wprec), f, parent = CCy)
+      pols[absolute_index(plcK[i])] = map_coefficients(x -> evaluate(x, plcK[i], wprec), f, parent = CCy)
     end
     ind = 1
     for (p, pt) in data

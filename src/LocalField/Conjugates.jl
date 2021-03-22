@@ -91,7 +91,7 @@ mutable struct qAdicConj
   cache::Dict{nf_elem, Any}
 
   function qAdicConj(K::AnticNumberField, p::Int; splitting_field::Bool = false)
-    if discriminant(map_coeffs(GF(p), K.pol)) == 0
+    if discriminant(map_coefficients(GF(p), K.pol)) == 0
       error("cannot deal with difficult primes yet")
     end
     #=

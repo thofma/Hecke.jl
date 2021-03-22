@@ -494,7 +494,7 @@ function factor_trager(f::PolyElem{nf_elem})
 
   Zx = Hecke.Globals.Zx
   @vtime :PolyFactor Np = norm_mod(g, p, Zx)
-  while isconstant(Np) || !issquarefree(map_coeffs(F, Np))
+  while isconstant(Np) || !issquarefree(map_coefficients(F, Np))
     k = k + 1
     g = compose(f, gen(Kx) - k*gen(K))
     @vtime :PolyFactor 2 Np = norm_mod(g, p, Zx)

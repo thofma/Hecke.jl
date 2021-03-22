@@ -296,7 +296,7 @@ function line_orbits(G::Vector{fq_mat})
     GFpx, x = PolynomialRing(GFp, "x", cached = false)
     local fp
     let GFp = GFp
-      fp = map_coeffs(a -> GFp(a.data), f, parent = GFpx)
+      fp = map_coefficients(a -> GFp(a.data), f, parent = GFpx)
     end
     FF, aa = FlintFiniteField(fp, "aa", cached = false)
     GG = Vector{dense_matrix_type(FF)}(undef, length(G))

@@ -664,10 +664,10 @@ function absolute_field(F::RelFinField{T}; cached::Bool = true) where T <: FinFi
   d = absolute_degree(F)
   K, gK = FiniteField(p, d, "a", cached = cached)
   k, mk = absolute_field(base_field(F))
-  def_pol_new = map_coeffs(pseudo_inv(mk), defining_polynomial(F))
+  def_pol_new = map_coefficients(pseudo_inv(mk), defining_polynomial(F))
   img_gen_k = roots(defining_polynomial(k), K)[1]
   mp = hom(k, K, img_gen_k)
-  g = map_coeffs(mp, def_pol_new)
+  g = map_coefficients(mp, def_pol_new)
   img_gen_F = roots(g)[1]
   img_basis_k = powers(img_gen_k, degree(k)-1)
   img_absolute_basis = Vector{elem_type(K)}(undef, degree(K))
@@ -734,13 +734,13 @@ function factor(f::PolyElem{T}) where T <: RelFinFieldElem
   F, mF = absolute_field(K)
   imF = inv(mF)
   @assert domain(imF) == K
-  fF = map_coeffs(imF, f)
+  fF = map_coefficients(imF, f)
   lfF = factor(fF)
   facs = Dict{typeof(f), Int}()
   for (p, k) in lfF
-    facs[map_coeffs(mF, p, parent = Kx)] = k
+    facs[map_coefficients(mF, p, parent = Kx)] = k
   end
-  return Fac(map_coeffs(mF, lfF.unit, parent = Kx), facs)
+  return Fac(map_coefficients(mF, lfF.unit, parent = Kx), facs)
 end
 
 function isirreducible(f::PolyElem{T}) where T <: RelFinFieldElem
