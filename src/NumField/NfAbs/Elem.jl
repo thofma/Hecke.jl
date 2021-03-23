@@ -422,7 +422,7 @@ function nice(f::PolyElem{nf_elem})
   if ismonic(f)
     return "$(gen(parent(f))^degree(f)) + ... "
   else
-    return "$(lead(f))$(gen(parent(f))^degree(f)) + ... "
+    return "$(leading_coefficient(f))$(gen(parent(f))^degree(f)) + ... "
   end
 end
 
@@ -440,7 +440,7 @@ function factor(f::PolyElem{nf_elem})
   if degree(f) == 0
     r = Fac{typeof(f)}()
     r.fac = Dict{typeof(f), Int}()
-    r.unit = Kx(lead(f))
+    r.unit = Kx(leading_coefficient(f))
     return r
   end
   sqf = factor_squarefree(f)
@@ -464,7 +464,7 @@ function factor(f::PolyElem{nf_elem})
   r = Fac{typeof(f)}()
   r.fac = fac
   #The unit is just the leading coefficient of f
-  r.unit = Kx(lead(f))
+  r.unit = Kx(leading_coefficient(f))
   return r
 end
 
@@ -472,7 +472,7 @@ end
 function _factor(f::PolyElem{nf_elem})
 
   K = base_ring(f)
-  f = f*(1//lead(f))
+  f = f*(1//leading_coefficient(f))
 
   if degree(f) < degree(K)
     lf = factor_trager(f)::Vector{typeof(f)}

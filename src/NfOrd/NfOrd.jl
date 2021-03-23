@@ -991,7 +991,7 @@ end
 # This is due to H. Lenstra.
 function __equation_order(K::AnticNumberField)
   f = K.pol
-  if isone(denominator(f) * lead(f))
+  if isone(denominator(f) * leading_coefficient(f))
     M = FakeFmpqMat(identity_matrix(FlintZZ, degree(K)))
     Minv = FakeFmpqMat(identity_matrix(FlintZZ, degree(K)))
     z = NfAbsOrd{AnticNumberField, nf_elem}(K, M, Minv, basis(K), false)

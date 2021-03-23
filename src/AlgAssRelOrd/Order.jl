@@ -533,7 +533,7 @@ function any_order(A::AbsAlgAss{T}, R::Union{ NfAbsOrd, NfRelOrd }) where { T <:
   M = vcat(zero_matrix(K, 1, dim(A)), d*identity_matrix(K, dim(A)))
   oneA = one(A)
   for i = 1:dim(A)
-    M[1, i] = deepcopy(coeffs(oneA, copy = false)[i])
+    M[1, i] = deepcopy(coefficients(oneA, copy = false)[i])
   end
   PM = PseudoMatrix(M)
   PM = pseudo_hnf(PM, :lowerleft, true)

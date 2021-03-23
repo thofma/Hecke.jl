@@ -89,8 +89,14 @@ end
 This function returns all infinite places of $K$.
 """
 function infinite_places(K::AnticNumberField)
+  _res = get_special(K, :infinite_places)
+  if _res !== nothing
+    return _res::Vector{InfPlc}
+  end
   r1, r2 = signature(K)
-  return [ InfPlc(K, i) for i in 1:(r1 + r2)]
+  plcs = InfPlc[ InfPlc(K, i) for i in 1:(r1 + r2)]
+  set_special(K, :infinite_places => plcs)
+  return plcs
 end
 
 @doc Markdown.doc"""
@@ -150,6 +156,9 @@ the sign is positive and $-1$ if the sign is negative.
 """
 function sign(a::Union{nf_elem, FacElem{nf_elem, AnticNumberField}}, P::InfPlc)
   !isreal(P) && error("Place must be real")
+  if a isa nf_elem && iszero(a)
+    return 0
+  end
   return signs(a, [P])[P]
 end
 

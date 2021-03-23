@@ -34,7 +34,7 @@
  * [ ] `is_locally_power` (at given primes or up to given bound)
  * [x] Frobenius automorphism of a field at a prime ideal
  * [ ] Redo the `automorphism_group` properly.
- * [ ] `coeff(z, i)` and `coeffs(z)` "inconsistensies"
+ * [ ] `coeff(z, i)` and `coefficients(z)` "inconsistencies"
 
  ## Renaming
  

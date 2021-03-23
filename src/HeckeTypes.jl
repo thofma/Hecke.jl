@@ -1374,7 +1374,7 @@ mutable struct FactorBaseSingleP{T}
     O = order(lp[1][2])
     K = O.nf
 
-    if isone(lead(K.pol)) && isone(denominator(K.pol)) && (length(lp) >= 3 && !isindex_divisor(O, p)) # ie. index divisor or so
+    if isone(leading_coefficient(K.pol)) && isone(denominator(K.pol)) && (length(lp) >= 3 && !isindex_divisor(O, p)) # ie. index divisor or so
       Qx = parent(K.pol)
       Fpx = parent(fp)
       lf = [ gcd(fp, Fpx(Globals.Zx(Qx(K(P[2].gen_two)))))::S for P = lp]
@@ -1390,7 +1390,7 @@ function fb_doit(a::nf_elem, v::Int, sP::FactorBaseSingleP, no::fmpq = fmpq(0))
     return fb_naive_doit(a, v, sP, no)
   end
   d = denominator(a)
-  if isone(gcd(d, sP.P)) 
+  if isone(gcd(d, sP.P))
     return fb_int_doit(a, v, sP)
   end
   return fb_naive_doit(a, v, sP, no)
@@ -2064,7 +2064,7 @@ mutable struct NfAbsNSElem <: NonSimpleNumFieldElem{fmpq}
   function NfAbsNSElem(K::NfAbsNS, g::fmpq_mpoly)
     return new(g, K)
   end
-    
+
 end
 
 ################################################################################

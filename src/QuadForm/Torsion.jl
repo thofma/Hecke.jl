@@ -1,4 +1,4 @@
-export discriminant_group, torsion_quadratic_module, normal_form
+export discriminant_group, torsion_quadratic_module, normal_form, genus, isgenus
 
 # Torsion QuadraticForm
 #
@@ -635,7 +635,6 @@ function normal_form(T::TorQuadMod; partial=false)
     U1 = change_base_ring(ZZ, U1)
     U = change_base_ring(ZZ, U)
     U = U1 * U
-
     nondeg = change_base_ring(ZZ, nondeg)
     nondeg = U * nondeg
     U = vcat(nondeg, ker)
@@ -649,4 +648,313 @@ function normal_form(T::TorQuadMod; partial=false)
     end
   end
   return sub(T, normal_gens)
+end
+
+@doc Markdown.doc"""
+_brown_indecomposable(q::MatElem, p::fmpz) ->  fmpz
+Return the Brown invariant of the indecomposable form ``q``.
+
+The values are taken from Table 2.1 in [Shim2016]_.
+INPUT:
+- ``q`` - an indecomposable quadratic form represented by a
+  rational `1 \times 1` or `2 \times 2` matrix
+- ``p`` - a prime number
+EXAMPLES::
+
+  julia> q = matrix(QQ, 1, 1, [1//3])
+  julia> _brown_indecomposable(q,fmpz(3))
+  6
+  julia> q = matrix(QQ, 1, 1, [2//3])
+  julia> _brown_indecomposable(q,fmpz(3))
+  2
+"""
+function _brown_indecomposable(q::MatElem, p::fmpz)
+  v = valuation(denominator(q), p)
+  if p == 2
+    # brown(U) = 0
+    if ncols(q) == 2
+      if valuation(q[1,1],2) > v + 1 && valuation(q[2, 2],2) > v + 1
+        # type U
+        return mod(0, 8)
+      else
+        # type V
+        return mod(4*v, 8)
+      end
+    end
+    u = numerator(q[1, 1])
+    return mod(divexact(u + v*(u^2 - 1), 2), 8)
+  end
+  if p % 4 == 1
+    e = -1
+  end
+  if p % 4 == 3
+    e = 1
+  end
+  if v % 2 == 1
+    u = div(numerator(q[1, 1]), 2)
+    if jacobi_symbol(u, p) == 1
+      return mod(1 + e, 8)
+    else
+      return mod(-3 + e, 8)
+    end
+  end
+  return mod(0, 8)
+end
+
+@doc Markdown.doc"""
+    brown_invariant(self::TorQuadMod) -> Nemo.nmod
+Return the Brown invariant of this torsion quadratic form.
+
+Let `(D,q)` be a torsion quadratic module with values in `\QQ / 2 \ZZ`.
+The Brown invariant `Br(D,q) \in \Zmod{8}` is defined by the equation
+
+.. MATH::
+
+  \exp \left( \frac{2 \pi i }{8} Br(q)\right) =
+  \frac{1}{\sqrt{D}} \sum_{x \in D} \exp(i \pi q(x)).
+
+The Brown invariant is additive with respect to direct sums of
+torsion quadratic modules.
+
+OUTPUT:
+
+  - an element of `\Zmod{8}`
+EXAMPLES::
+
+  julia> L = Zlattice(gram=matrix(ZZ, [[2,-1,0,0],[-1,2,-1,-1],[0,-1,2,0],[0,-1,0,2]]))
+  julia> T = Hecke.discriminant_group(L)
+  julia> brown_invariant(T)
+  4
+"""
+function brown_invariant(T::TorQuadMod)        
+  @req T.modulus_qf == 2 "the torsion quadratic form must have values in Q/2Z" 
+  brown = ResidueRing(ZZ, 8)(0)
+  for p in prime_divisors(exponent(T))
+    q = normal_form(primary_part(T, p)[1])[1]
+    q = gram_matrix_quadratic(q)
+    L = collect_small_blocks(q)
+    for qi in L
+      brown += _brown_indecomposable(qi, p)
+    end
+  end
+  return brown
+end
+
+@doc Markdown.doc"""
+    genus(T::TorQuadMod, signature_pair::Tuple{Int, Int}) -> ZGenus
+    
+Return the genus defined by a TorQuadMod T and the ``signature_pair``.
+If no such genus exists, raise a ``ErrorException``.
+
+REFERENCES:
+
+  [Nik1977]_ Corollary 1.9.4 and 1.16.3.
+
+"""
+function genus(T::TorQuadMod, signature_pair::Tuple{Int, Int})
+  s_plus = signature_pair[1]
+  s_minus = signature_pair[2]
+  rank = s_plus + s_minus
+  if s_plus < 0 || s_minus < 0
+    error("signatures must be non-negative")
+  end
+  if length(elementary_divisors(T)) > rank
+    error("this discriminant form and signature do not define a genus")
+  end
+  disc = order(T)
+  determinant = ZZ(-1)^s_minus * disc
+  local_symbols = ZpGenus[]
+  for p in prime_divisors(2 * disc)
+    D, _ = primary_part(T, p)
+    if length(elementary_divisors(D)) != 0
+      G_p = inv(gram_matrix_quadratic(D))
+      # get rid of denominators without changing the local equivalence class
+      G_p *= denominator(G_p)^2
+      G_p = change_base_ring(ZZ, G_p)
+      genus_p = genus(G_p, p, valuation(elementary_divisors(D)[end], p))
+    else
+      genus_p = ZpGenus(p, Vector{Int}[])
+    end
+    rk = rank - length(elementary_divisors(D))
+    if rk > 0
+      if p == 2
+        det = remove(determinant, 2)[2]
+        det *= prod([di[3] for di in genus_p._symbol])
+        det = mod(det, 8)
+        push!(genus_p._symbol, [0, rk, det, 0, 0])
+      else
+        det = jacobi_symbol(remove(determinant, p)[2], p)
+        det = det * prod([di[3] for di in genus_p._symbol])
+        push!(genus_p._symbol, [0, rk, det])
+      end
+    end
+    sort!(genus_p._symbol)
+    push!(local_symbols, genus_p)
+  end
+  # This genus has the right discriminant group
+  # but it may be empty
+  sym2 = local_symbols[1]._symbol
+
+  if sym2[1][1] != 0
+    sym2 = pushfirst!(sym2, [0, 0, 1, 0, 0])
+  end
+  if length(sym2) <= 1 || sym2[2][1] != 1
+    sym2 = insert!(sym2, 2, [1, 0, 1, 0, 0])
+  end
+  if length(sym2) <= 2 || sym2[3][1] != 2
+    sym2 = insert!(sym2, 3, [2, 0, 1, 0, 0])
+  end
+
+  if T.modulus_qf == 1
+    # in this case the blocks of scales 1, 2, 4 are under determined
+    # make sure the first 3 symbols are of scales 1, 2, 4
+    # i.e. their valuations are 0, 1, 2
+
+    # the form is odd
+    block0 = [b for b in _blocks(sym2[1]) if b[4] == 1]
+
+    o = sym2[2][4]
+    # no restrictions on determinant and
+    # oddity beyond existence
+    # but we know if even or odd
+    block1 = [b for b in _blocks(sym2[2]) if b[4] == o]
+
+    d = sym2[3][3]
+    o = sym2[3][4]
+    t = sym2[3][5]
+    # if the jordan block of scale 2 is even we know it
+    if o == 0
+      block2 = [sym2[3]]
+      # if it is odd we know det and oddity mod 4 at least
+    else
+      block2 = [b for b in _blocks(sym2[3]) if b[4] == o
+        && mod(b[3] - d, 4) == 0
+        && mod(b[5] - t, 4) == 0
+        && mod(b[3] - d, 8) == mod(b[5] - t, 8)  # if the oddity is altered by 4 then so is the determinant
+        ]
+    end
+  else
+    if T.modulus_qf == 2
+      # the form is even
+      block0 = [b for b in _blocks(sym2[1]) if b[4] == 0]
+
+      # if the jordan block of scale 2 is even we know it
+      d = sym2[2][3]
+      o = sym2[2][4]
+      t = sym2[2][5]
+      if o == 0
+        block1 = [sym2[2]]
+      else
+        # the block is odd and we know det and oddity mod 4
+        block1 = [b for b in _blocks(sym2[2])
+                if b[4] == o
+                && mod(b[3] - d, 4) == 0
+                && mod(b[5] - t, 4) == 0
+                && mod(b[3] - d, 8) == mod(b[5] - t, 8) # if the oddity is altered by 4 then so is the determinant
+                ]
+      end
+      # this is completely determined
+      block2 = [sym2[3]]
+    else
+      error("this is not a discriminant form of a ZLattice")
+    end
+  end
+
+  # figure out which symbol defines a genus and return that
+  for b0 in block0
+    for b1 in block1
+      for b2 in block2
+        sym2[1:3] = [b0, b1, b2]
+        local_symbols[1] = ZpGenus(2, sym2)
+        genus = ZGenus(signature_pair, local_symbols)
+        if _isglobal_genus(genus)
+          # make the symbol sparse again.
+          i = 0
+          k = 1
+          while i < 3
+            if sym2[k][2] == 0
+              deleteat!(sym2, k)
+            else
+              k = k + 1
+            end
+            i = i + 1
+          end
+          local_symbols[1] = ZpGenus(2, sym2)
+          genus = ZGenus(signature_pair, local_symbols)
+          return genus
+        end
+      end
+    end
+  end
+  error("this discriminant form and signature do not define a genus")
+end
+
+
+@doc Markdown.doc"""
+    isgenus(T::TorQuadMod, signature_pair::Tuple{Int, Int}; even=true) -> Bool
+Return ``true`` if there is a lattice with this signature and discriminant form.
+
+INPUT:
+
+- signature_pair -- a tuple of non negative integers ``(s_plus, s_minus)``
+- even -- bool (default: ``True``)
+"""
+function isgenus(T::TorQuadMod, signature_pair::Tuple{Int, Int}; even=true)
+  s_plus = signature_pair[1]
+  s_minus = signature_pair[2]
+  if s_plus < 0 || s_minus < 0
+    error("signature invariants must be non negative")
+  end
+  rank = s_plus + s_minus
+  signature = s_plus - s_minus
+  D = order(T)
+  det = (-1)^s_minus * D
+  if rank < length(elementary_divisors(T))
+    return false
+  end
+  if even==true && T.modulus_qf != 2
+    error("the discriminant form of an even lattice has values modulo 2.")
+  end
+  if even!=true && T.modulus != T.modulus_qf != 1
+    error("the discriminant form of an odd lattice has values modulo 1.")
+  end
+  if even == false
+    error("at the moment sage knows how to do this only for even genera. Help us to implement this for odd genera.")
+  end
+  for p in prime_divisors(D)
+    # check the determinant conditions
+    Q_p = primary_part(T, p)[1]
+    gram_p = gram_matrix_quadratic(Q_p)
+    length_p = length(elementary_divisors(Q_p))
+    u = remove(det, p)[2]
+    up = remove(numerator(Hecke.det(gram_p)), p)[2]
+    if p != 2 && length_p == rank
+      if jacobi_symbol(u, p) != jacobi_symbol(up, p)
+        return false
+      end
+    end
+    if p == 2
+      if mod(rank, 2) != mod(length_p, 2)
+        return false
+      end
+      n = (rank - length_p) // 2
+      if mod(u, 4) != mod((-1)^(mod(n, 2)) * up, 4)
+        return false
+      end
+      if rank == length_p
+        a = QQ(1, 2)
+        b = QQ(3, 2)
+        diag = diagonal(gram_p)
+        if  !((a in diag) || (b in diag))
+          if mod(u, 8) != mod(up, 8)
+            return false
+          end
+        end
+      end
+    end
+  end
+  if brown_invariant(T) != signature
+    return false
+  end
+  return true
 end

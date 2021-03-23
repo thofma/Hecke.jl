@@ -708,7 +708,7 @@ function gens(A::AbsAlgAss, return_full_basis::Type{Val{T}} = Val{false}; thorou
         end
         new_gen = A[i]
         cur_basis_elt += 1
-        new_elt = _add_row_to_rref!(B, coeffs(new_gen, copy = false), pivot_rows, cur_dim + 1)
+        new_elt = _add_row_to_rref!(B, coefficients(new_gen, copy = false), pivot_rows, cur_dim + 1)
         if new_elt
           break
         end
@@ -728,7 +728,7 @@ function gens(A::AbsAlgAss, return_full_basis::Type{Val{T}} = Val{false}; thorou
         cur_dim == d ? break : nothing
         b *= new_gen
         power += 1
-        new_elt = _add_row_to_rref!(B, coeffs(b, copy = false), pivot_rows, cur_dim + 1)
+        new_elt = _add_row_to_rref!(B, coefficients(b, copy = false), pivot_rows, cur_dim + 1)
       end
       continue
     else
@@ -746,7 +746,7 @@ function gens(A::AbsAlgAss, return_full_basis::Type{Val{T}} = Val{false}; thorou
         else
           t = s
         end
-        new_elt = _add_row_to_rref!(B, coeffs(t, copy = false), pivot_rows, cur_dim + 1)
+        new_elt = _add_row_to_rref!(B, coefficients(t, copy = false), pivot_rows, cur_dim + 1)
         if !new_elt
           continue
         end
@@ -1256,6 +1256,7 @@ function _radical(A::AbsAlgAss{T}) where { T <: Union{ fmpq, NumFieldElem } }
   n, N = nullspace(M)
   b = Vector{elem_type(A)}(undef, n)
   t = zeros(base_ring(A), dim(A))
+  # the construct A(t) will make a copy (hopefully :))
   for i = 1:n
     for j = 1:dim(A)
       t[j] = N[j, i]

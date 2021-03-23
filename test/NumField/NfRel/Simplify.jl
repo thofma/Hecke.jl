@@ -18,4 +18,17 @@
   6596745411420//10487238697*a + 4782497108432//806710669
   L, b = number_field(g, "b");
   k, = @inferred Hecke.simplified_absolute_field(L)
+
+  Qx, x = QQ["x"]
+  K, a = number_field(x^3 + 42*x - 192, "a")
+  Kt, t = K["t"]
+  L, = number_field([t^2 + 3], cached = false);
+  k, = @inferred absolute_simple_field(L, cached = false, simplify = true)
+
+  Qx, x = QQ["x"]
+  f = x^2 - x + 743
+  K, a = number_field(f, "a")
+  Kt, t = K["t"]
+  L, = number_field([t^2 - a + 27])
+  k, = @inferred absolute_simple_field(L, cached = false, simplify = true)
 end

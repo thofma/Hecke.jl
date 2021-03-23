@@ -1,6 +1,7 @@
 export genus, rank, det, dim, prime, symbol, representative, signature,
-       oddity, excess, level, genera, scale, norm, mass, direct_sum,
-       quadratic_space,hasse_invariant, genera, local_symbol, local_symbols
+       oddity, excess, level, genera, scale, norm, mass, orthogonal_sum,
+       quadratic_space,hasse_invariant, genera, local_symbol, local_symbols,
+       ZGenus, ZpGenus
 
 @doc Markdown.doc"""
     ZpGenus
@@ -437,11 +438,11 @@ function genus(A::MatElem, p)
 end
 
 @doc Markdown.doc"""
-    direct_sum(S1::ZpGenus, S2::ZpGenus)
+    orthogonal_sum(S1::ZpGenus, S2::ZpGenus)
 
-Return the local genus of the direct sum of two representatives.
+Return the local genus of the orthogonal direct sum of two representatives.
 """
-function direct_sum(S1::ZpGenus, S2::ZpGenus)
+function orthogonal_sum(S1::ZpGenus, S2::ZpGenus)
   if prime(S1) != prime(S2)
     throw(ValueError("the local genus symbols must be over the same prime"))
   end
@@ -481,14 +482,16 @@ function direct_sum(S1::ZpGenus, S2::ZpGenus)
   return ZpGenus(prime(S1), symbol)
 end
 
+direct_sum(S1::ZpGenus, S2::ZpGenus) = orthogonal_sum(S1, S2)
+
 @doc Markdown.doc"""
-    direct_sum(G1::ZGenus, G2::ZGenus)
+    orthogonal_sum(G1::ZGenus, G2::ZGenus)
 
-Return the genus of the direct sum of ``G1`` and ``G2``.
+Return the genus of the orthogonal direct sum of ``G1`` and ``G2``.
 
-The direct sum is defined via representatives.
+The orthogonal direct sum is defined via representatives.
 """
-function direct_sum(G1::ZGenus, G2::ZGenus)
+function orthogonal_sum(G1::ZGenus, G2::ZGenus)
   p1, n1 = G1._signature_pair
   p2, n2 = G2._signature_pair
   signature_pair = [p1 + p2, n1 + n2]
@@ -497,11 +500,14 @@ function direct_sum(G1::ZGenus, G2::ZGenus)
   sort(primes)
   local_symbols = []
   for p in primes
-    sym_p = direct_sum(local_symbol(G1, p), local_symbol(G2, p))
+    sym_p = orthogonal_sum(local_symbol(G1, p), local_symbol(G2, p))
     push!(local_symbols, sym_p)
   end
   return ZGenus(signature_pair, local_symbols)
 end
+
+direct_sum(S1::ZGenus, S2::ZGenus) = orthogonal_sum(S1, S2)
+
 
 ##########################################################
 # Enumeration of genus symbols
@@ -1809,6 +1815,26 @@ function _quadratic_L_function_squared(n, d)
 end
 
 
+function rational_isometry_class(g::ZGenus)
+  K = QQ
+  G = class_quad_type(K)(K)
+  n = dim(g)
+  LGS = Dict{ideal_type(order_type(K)),localclass_quad_type(K) }()
+  for s in local_symbols(g)
+    h = hasse_invariant(s)
+    p = prime(s)
+    d = det(s)
+    gp = local_quad_space_class(K, ZZIdl(p), n, d, h, 0)
+  end
+  G.LGS = LGS
+  G.dim = dim(g)
+  G.det = det(g)
+  G.kerdim = 0
+  pos, neg = signature_pair(g)
+  sig = Dict([(inf,(pos,0, neg))])
+  G.signature_tuples = sig
+  return G
+end
 
 
 #=

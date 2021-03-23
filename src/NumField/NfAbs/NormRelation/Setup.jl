@@ -675,7 +675,7 @@ function _has_norm_relation_abstract(G::GrpGen, H::Vector{Tuple{GrpGen, GrpGenTo
         end
       end
 
-      onee = matrix(FlintQQ, 1, n, coeffs(one(QG)))
+      onee = matrix(FlintQQ, 1, n, coefficients(one(QG)))
 
       b, v, K = can_solve_with_kernel(m, onee, side = :left)
     else
@@ -686,7 +686,7 @@ function _has_norm_relation_abstract(G::GrpGen, H::Vector{Tuple{GrpGen, GrpGenTo
         end
       end
 
-      onee = matrix(FlintZZ, 1, n, coeffs(one(QG)))
+      onee = matrix(FlintZZ, 1, n, coefficients(one(QG)))
 
       b, w, K = can_solve_with_kernel(m, target_den * onee, side = :left)
       v = 1//target_den * change_base_ring(FlintQQ, w)
@@ -812,7 +812,7 @@ function _has_norm_relation_abstract(G::GrpGen, H::Vector{Tuple{GrpGen, GrpGenTo
   end
 
   if iszero(target_den)
-    onee = matrix(FlintQQ, 1, n, coeffs(one(QG)))
+    onee = matrix(FlintQQ, 1, n, coefficients(one(QG)))
 
     m = zero_matrix(FlintQQ, dot(length.(left_cosets_for_sub), length.(right_cosets_for_normalizer)), n)
 
@@ -837,7 +837,7 @@ function _has_norm_relation_abstract(G::GrpGen, H::Vector{Tuple{GrpGen, GrpGenTo
     b, w, K = can_solve_with_kernel(m, onee, side = :left)
     v = w
   elseif true
-    onee = matrix(FlintZZ, 1, n, coeffs(target_den * one(QG)))
+    onee = matrix(FlintZZ, 1, n, coefficients(target_den * one(QG)))
 
     m = zero_matrix(FlintZZ, dot(length.(left_cosets_for_sub), length.(right_cosets_for_normalizer)), n)
 
@@ -1015,7 +1015,7 @@ function _smallest_scalar_norm_relation_coprime(G::GrpGen, m::fmpz)
     end
   end
 
-  onee = matrix(S, 1, n, coeffs(one(QG)))
+  onee = matrix(S, 1, n, coefficients(one(QG)))
 
   fl, v = can_solve_with_solution(M, onee, side = :left)
 

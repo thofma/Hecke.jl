@@ -102,7 +102,7 @@ function assure_has_basis_matrix(A::AlgMat)
       for j = 1:d2
         jj = (j - 1)*dcr
         for k = 1:dcr
-          M[i, jj + k] = coeffs(N[j], copy = false)[k]
+          M[i, jj + k] = coefficients(N[j], copy = false)[k]
         end
       end
     end
@@ -136,7 +136,7 @@ function assure_has_multiplication_table(A::AlgMat{T, S}) where { T, S }
   mt = Array{T, 3}(undef, d, d, d)
   for i in 1:d
     for j in 1:d
-      mt[i, j, :] = coeffs(B[i]*B[j], copy = false)
+      mt[i, j, :] = coefficients(B[i]*B[j], copy = false)
     end
   end
   A.mult_table = mt
@@ -350,7 +350,7 @@ function matrix_algebra(R::Ring, S::Ring, gens::Vector{<:MatElem}; isbasis::Bool
     for j = 1:d2
       jj = (j - 1)*dcr
       for k = 1:dcr
-        v[jj + k] = coeffs(span[i][j], copy = false)[k]
+        v[jj + k] = coefficients(span[i][j], copy = false)[k]
       end
     end
     new_elt = _add_row_to_rref!(M, v, pivot_rows, cur_rank + 1)
@@ -374,7 +374,7 @@ function matrix_algebra(R::Ring, S::Ring, gens::Vector{<:MatElem}; isbasis::Bool
         for j = 1:d2
           jj = (j - 1)*dcr
           for k = 1:dcr
-            v[jj + k] = coeffs(t[j], copy = false)[k]
+            v[jj + k] = coefficients(t[j], copy = false)[k]
           end
         end
         new_elt = _add_row_to_rref!(M, v, pivot_rows, cur_rank + 1)
@@ -468,7 +468,7 @@ function _check_matrix_in_algebra(M::S, A::AlgMat{T, S}, short::Type{Val{U}} = V
     for i = 1:d2
       ii = (i - 1)*dcr
       for j = 1:dcr
-        t[1, ii + j] = coeffs(M[i], copy = false)[j]
+        t[1, ii + j] = coefficients(M[i], copy = false)[j]
       end
     end
   end

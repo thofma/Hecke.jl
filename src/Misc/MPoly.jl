@@ -50,7 +50,7 @@ function (Rx::GFPPolyRing)(f::fmpq_mpoly)
   return fp * inv(R(d))
 end
 
-function Hecke.lead(f::AbstractAlgebra.MPolyElem)
+function Hecke.leading_coefficient(f::AbstractAlgebra.MPolyElem)
   iszero(f) && error("zero poly")
   return coeff(f, 1)
 end
