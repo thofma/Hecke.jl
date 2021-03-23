@@ -1728,3 +1728,7 @@ function factor(a::fmpq, ::FlintIntegerRing)
   end
   return fn
 end
+
+#missing in Nemo...
+Hecke.clog(a::Int, b::Int) = clog(fmpz(a), b)
+
