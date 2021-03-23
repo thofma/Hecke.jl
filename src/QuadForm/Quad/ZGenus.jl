@@ -370,11 +370,21 @@ end
 # Constructors
 #########################################################
 
+@doc Markdown.doc"""
+    genus(A::MatElem)
+
+Return the genus of the integer lattice with gram matrix `A`.
+"""
 function genus(A::MatElem)
   @req ncols(A) == nrows(A) "must be a square matrix"
   return genus(Zlattice(gram=A))
 end
 
+@doc Markdown.doc"""
+    genus(L::ZLat) -> ZGenus
+
+Return the genus of this lattice.
+"""
 function genus(L::ZLat)
   A = gram_matrix(L)
   denom = denominator(A)
@@ -438,7 +448,7 @@ function genus(A::MatElem, p)
 end
 
 @doc Markdown.doc"""
-    orthogonal_sum(S1::ZpGenus, S2::ZpGenus)
+    orthogonal_sum(S1::ZpGenus, S2::ZpGenus) -> ZpGenus
 
 Return the local genus of the orthogonal direct sum of two representatives.
 """
@@ -485,7 +495,7 @@ end
 direct_sum(S1::ZpGenus, S2::ZpGenus) = orthogonal_sum(S1, S2)
 
 @doc Markdown.doc"""
-    orthogonal_sum(G1::ZGenus, G2::ZGenus)
+    orthogonal_sum(G1::ZGenus, G2::ZGenus) -> ZGenus
 
 Return the genus of the orthogonal direct sum of ``G1`` and ``G2``.
 
@@ -577,7 +587,7 @@ function genera(sig_pair::Tuple{Int,Int}, determinant::Union{Int,fmpz};
 end
 
 @doc Markdown.doc"""
-    _local_genera(p, rank, det_val, max_scale, even)
+    _local_genera(p, rank, det_val, max_scale, even) -> Vector{ZpGenus}
 
 Return all `p`-adic genera with the given conditions.
 
@@ -801,7 +811,7 @@ function _isglobal_genus(G::ZGenus)
 end
 
 @doc Markdown.doc"""
-    _is2adic_genus(symbol::Array{Array{Int,1},1})
+    _is2adic_genus(symbol::Array{Array{Int,1},1})-> Bool
 
 Given a `2`-adic local symbol check whether it is symbol of a `2`-adic form.
 """
@@ -811,7 +821,7 @@ function _is2adic_genus(S::ZpGenus)
 end
 
 @doc Markdown.doc"""
-    _is2adic_genus(symbol::Array{Array{Int,1},1})
+    _is2adic_genus(symbol::Array{Array{Int,1},1}) -> Bool
 
 Given a `2`-adic local symbol (as the underlying list of quintuples)
 check whether it is the `2`-adic symbol of a `2`-adic form.
@@ -1118,7 +1128,6 @@ end
     oddity(S::ZpGenus) -> Int
 
 Return the oddity of this even form.
-
 The oddity is also called the 2-signature
 """
 function oddity(S::ZpGenus)
@@ -1186,7 +1195,7 @@ function level(S::ZpGenus)
 end
 
 @doc Markdown.doc"""
-    iseven(G::ZGenus)
+    iseven(G::ZGenus) -> Bool
 
 Return if this genus is even.
 """
@@ -1199,7 +1208,7 @@ end
 
 
 @doc Markdown.doc"""
-    signature(G::ZGenus)
+    signature(G::ZGenus) -> Int
 
 Return the signature of this genus.
 
@@ -1212,7 +1221,7 @@ function signature(G::ZGenus)
 end
 
 @doc Markdown.doc"""
-    signature_pair(G::ZGenus)
+    signature_pair(G::ZGenus) -> Tuple{Int,Int}
 
 Return the signature_pair of this genus.
 
@@ -1246,7 +1255,7 @@ end
 rank(G::ZGenus) = dim(G)
 
 @doc Markdown.doc"""
-    local_symbols(G::ZGenus)
+    local_symbols(G::ZGenus) -> Vecotr{ZpGens}
 
 Return a copy of the local symbols.
 """
@@ -1255,7 +1264,7 @@ function local_symbols(G::ZGenus)
 end
 
 @doc Markdown.doc"""
-    local_symbol(G::ZGenus, p)
+    local_symbol(G::ZGenus, p) -> ZpGenus
 
 Return the local symbol at `p`.
 """
@@ -1272,7 +1281,7 @@ function local_symbol(G::ZGenus, p)
 end
 
 @doc Markdown.doc"""
-    level(G::ZGenus)
+    level(G::ZGenus) -> fmpz
 
 Return the level of this genus.
 
@@ -1284,7 +1293,7 @@ function level(G::ZGenus)
 end
 
 @doc Markdown.doc"""
-    scale(G::ZGenus)
+    scale(G::ZGenus) -> fmpz
 
 Return the scale of this genus.
 
@@ -1297,7 +1306,7 @@ function scale(G::ZGenus)
 end
 
 @doc Markdown.doc"""
-    norm(G::ZGenus)
+    norm(G::ZGenus) -> fmpz
 
 Return the norm of this genus.
 
@@ -1314,7 +1323,7 @@ end
 ##########################################################
 
 @doc Markdown.doc"""
-    quadratic_space(G::ZGenus)
+    quadratic_space(G::ZGenus) -> QuadSpace{FlintRationalField, fmpq_mat}
 
 Return the quadratic space defined by this genus.
 """
@@ -1331,7 +1340,7 @@ end
 rational_representative(G::ZGenus) = quadratic_space(G)
 
 @doc Markdown.doc"""
-    discriminant_group(G::ZGenus)
+    discriminant_group(G::ZGenus) -> TorQuadMod
 
 Return the discriminant form associated to this genus.
 """
@@ -1514,7 +1523,7 @@ end
 # The mass formula
 ##################################################
 @doc Markdown.doc"""
-    _M_p(species, p)
+    _M_p(species, p) -> fmpq
 
 Return the diagonal factor `M_p` as a function of the species.
 """
@@ -1627,7 +1636,7 @@ function _mass_squared(G::ZpGenus)
 end
 
 @doc Markdown.doc"""
-    _standard_mass(G::ZpGenus)
+    _standard_mass(G::ZpGenus) -> fmpq
 
 Return the standard p-mass of this local genus.
 
@@ -1647,7 +1656,7 @@ function _standard_mass(G::ZpGenus)
 end
 
 @doc Markdown.doc"""
-    _species_list(G::ZpGenus)
+    _species_list(G::ZpGenus) -> Vector{Int}
 
 Return the species list.
 See Table 1 in [CS1988]_.
@@ -1717,9 +1726,9 @@ end
 
 
 @doc Markdown.doc"""
-    _gamma_exact(n)
+    _gamma_exact(n) -> fmpq
 
-Evaluates the exact value of the `\Gamma^2` function at an integer or
+Evaluate the exact value of the `\Gamma^2` function at an integer or
 half-integer argument. Ignoring factors of pi
 """
 function _gamma_exact(n)
@@ -1743,9 +1752,9 @@ function _gamma_exact(n)
 end
 
 @doc Markdown.doc"""
-    _zeta_exact(n)
+    _zeta_exact(n) -> fmpq
 
-Returns the exact value of the Riemann Zeta function
+Return the exact value of the Riemann Zeta function
 ignoring factors of pi.
 
 The argument must be a critical value, namely either positive even
@@ -1775,9 +1784,9 @@ function _zeta_exact(n)
 end
 
 @doc Markdown.doc"""
-    _quadratic_L_function_squared(n, d)
+    _quadratic_L_function_squared(n, d) -> fmpq
 
-Returns the square of the exact value of a quadratic twist of the Riemann Zeta
+Return the square of the exact value of a quadratic twist of the Riemann Zeta
 function by $\chi_d(x) = \left(\frac{d}{x}\right)$.
 We take the square and ignore multiples of $\pi$ so that the output is rational.
 
@@ -1815,7 +1824,12 @@ function _quadratic_L_function_squared(n, d)
 end
 
 
+@doc Markdown.doc"""
+    rational_isometry_class(g::ZpGenus) -> LocalQuadSpaceCls
 
+Return the abstract isometry class of the quadratic space 
+$g \otimes \mathbb{Q}$. 
+"""
 function rational_isometry_class(g::ZpGenus)
   K = QQ
   n = dim(g)
@@ -1825,7 +1839,12 @@ function rational_isometry_class(g::ZpGenus)
   return local_quad_space_class(K, ZZIdl(p), n, d, h, 0)
 end
 
+@doc Markdown.doc"""
+    rational_isometry_class(g::ZGenus) -> QuadSpaceCls
 
+Return the abstract isometry class of the quadratic space 
+$g \otimes \mathbb{Q}$.
+"""
 function rational_isometry_class(g::ZGenus)
   K = QQ
   G = class_quad_type(K)(K)
@@ -1857,7 +1876,9 @@ end
 Return if `g1` represents `g2`.
 
 Based on O'Meara Integral Representations of Quadratic Forms Over Local Fields
-Note that for p == 2 there is a typo in O'Meara.
+Note that for `p == 2` there is a typo in O'Meara Theorem 3 (V).
+The correct statement is 
+(V) $2^i(1+4\omega) \to \mathfrak{L}_{i+1}/\mathfrak{l}_{[i]}$.
 """
 function represents(G1::ZpGenus, G2::ZpGenus)
   G1, G2 = G2, G1
@@ -2013,7 +2034,7 @@ function represents(G1::ZpGenus, G2::ZpGenus)
 end
 
 @doc Markdown.doc"""
-    represents(G1::ZGenus, G2::ZGenus)
+    represents(G1::ZGenus, G2::ZGenus) -> Bool
 
 Return if `G1` represents `G2`. That is if some element in the genus of `G1`
 represents some element in the genus of `G2`.
