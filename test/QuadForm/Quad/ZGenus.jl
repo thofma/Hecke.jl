@@ -260,9 +260,16 @@
         #   @test isgenus(D, sig)
         # end
         # @test G == G2
+        diag = diagonal_matrix(fmpq[1, 2])*basis_matrix(L)[1:2,1:end]
+        sub = lattice(ambient_space(L), diag)
+        g = genus(sub)
+        global H
+        H = G
+        @test Hecke.represents(G, genus(sub))
       end
     end
   end
+
 
   for d in 1:(long_test ? 50 : 10)
     for sig in [(2,0),(3,0),(4,0)]
