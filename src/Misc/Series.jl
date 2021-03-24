@@ -43,10 +43,12 @@ Base.length(a::qadic) = a.length
 
 
 @inline function coeffraw(q::qadic, i::Int)
+  @assert i < length(q)
   return reinterpret(Ptr{fmpz}, q.coeffs)+i*sizeof(Ptr{Int})
 end
 
 @inline function coeffraw(q::fmpz_poly, i::Int)
+  @assert i < length(q)
   return reinterpret(Ptr{fmpz}, q.coeffs)+i*sizeof(Ptr{Int})
 end
 
@@ -58,6 +60,9 @@ end
 
 @inline function Hecke.mul!(a::Ref{fmpz}, b::Ref{fmpz}, c::fmpz)
   ccall((:fmpz_mul, Hecke.libflint), Cvoid, (Ref{fmpz}, Ref{fmpz}, Ref{fmpz}),a, b, c)
+end
+@inline function Hecke.iszero(a::Ref{fmpz})
+  return unsafe_load(reinterpret(Ptr{Int}, a))==0
 end
 
 
@@ -86,9 +91,9 @@ function mymul_ks(f::PolyElem{<:SeriesElem{qadic}}, g::PolyElem{<:SeriesElem{qad
         sc = prime(Qq)^v
       end
       for k=0:length(d)-1
-        setcoeff!(F, (j*nfg+i)*(2*h-1)+k, coeffraw(d, k))
+        Base.GC.@preserve d setcoeff!(F, (j*nfg+i)*(2*h-1)+k, coeffraw(d, k))
         if v > 0
-          Hecke.mul!(coeffraw(F, (j*nfg+i)*(2*h-1)+k), coeffraw(F, (j*nfg+i)*(2*h-1)+k), sc)
+          Base.GC.@preserve F Hecke.mul!(coeffraw(F, (j*nfg+i)*(2*h-1)+k), coeffraw(F, (j*nfg+i)*(2*h-1)+k), sc)
         end
       end
     end
@@ -105,9 +110,9 @@ function mymul_ks(f::PolyElem{<:SeriesElem{qadic}}, g::PolyElem{<:SeriesElem{qad
         sc = prime(Qq)^v
       end
       for k=0:length(d)-1
-        setcoeff!(G, (j*nfg+i)*(2*h-1)+k, coeffraw(d, k))
-        if v > 0
-          Hecke.mul!(coeffraw(G, (j*nfg+i)*(2*h-1)+k), coeffraw(F, (j*nfg+i)*(2*h-1)+k), sc)
+        Base.GC.@preserve d setcoeff!(G, (j*nfg+i)*(2*h-1)+k, coeffraw(d, k))
+        if v > 0 
+          Base.GC.@preserve F Hecke.mul!(coeffraw(G, (j*nfg+i)*(2*h-1)+k), coeffraw(G, (j*nfg+i)*(2*h-1)+k), sc)
         end
       end
     end
@@ -123,7 +128,9 @@ function mymul_ks(f::PolyElem{<:SeriesElem{qadic}}, g::PolyElem{<:SeriesElem{qad
     for j=0:min(rf,rg)-1
       H = Hecke.Globals.Zx()
       for x = 0:2*h-2
-        setcoeff!(H, x, coeffraw(FG, x + (j*nfg+i)*(2*h-1)))
+        if x + (j*nfg+i)*(2*h-1) < length(FG)
+          Base.GC.@preserve FG, setcoeff!(H, x, coeffraw(FG, x + (j*nfg+i)*(2*h-1)))
+        end
       end
       push!(c, Qq(H, mp))
       @assert valuation(c[end]) >= 0

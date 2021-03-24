@@ -291,12 +291,19 @@ function Base.rem(g::PolyElem, P::Preinv)
     return g - leading_coefficient(g)*reverse(P.f)
   end
 
+  v = 0
+  while iszero(coeff(g, v))
+    v += 1
+  end
   gr = reverse(g)
   while P.n < degree(g) - degree(P.f) + 1
     lift(P)
   end
   q = truncate(gr*P.fi, degree(g) - degree(P.f) + 1)
   q = reverse(q)
+  if v > 0
+    q = shift_left(q, v)
+  end
   r = g-q*reverse(P.f)
 #  global last_bad = (g, reverse(P.f))
   @hassert :AbsFact 2 r == rem(g, reverse(P.f))
@@ -339,7 +346,9 @@ function lift_q(C::HenselCtxFqRelSeries{<:SeriesElem{qadic}})
     fgh = _shift_coeff_right(f-g*h, pr)
     
     @assert ismonic(g)
+    @assert !iszero(constant_coefficient(g))
     @assert ismonic(h)
+    @assert !iszero(constant_coefficient(h))
     gi = preinv(g)
     hi = preinv(h)
 
@@ -444,7 +453,7 @@ function symbolic_roots(f::fmpz_mpoly, r::fmpz, pr::Int = 10; max_roots::Int = d
   @assert ngens(parent(f)) == 2
   g = evaluate(f, [Hecke.Globals.Zx(r), gen(Hecke.Globals.Zx)])
   @assert issquarefree(g)
-  @show lg = factor(g)
+  lg = factor(g)
   rt = vcat([Hecke.roots(x, number_field(x)[1]) for x = keys(lg.fac)]...)
   rt = rt[1:min(length(rt), max_roots)]
   RT = []
@@ -706,7 +715,7 @@ function combination(RC::RootCtx)
 
     ke = kernel(nn)
     @vprint :AbsFact 2 "current kernel dimension: $(ke[1])\n"
-    if last_rank == ke[1]
+    if last_rank == ke[1] 
       bad += 1
       if bad > max(2, div(length(R), 2))
         pow += 1
@@ -720,7 +729,7 @@ function combination(RC::RootCtx)
       stable = 0
       last_rank = ke[1]
     end
-    if ke[1] == 0 || mod(length(R), ke[1]) != 0
+    if ke[1] == 0 || mod(length(R), ke[1]) != 0 || mod(total_degree(f), ke[1]) != 0
       continue
     end
     m = ke[2]
@@ -802,7 +811,8 @@ function field(RC::RootCtx, m::MatElem)
   t = gen(Ft)
   d = precision(R[1])
 
-  tf = divexact(total_degree(P), nrows(m)) + degree(leading_coefficient(P, 1), 2)
+  #TODO think, the bound might be too large...
+  tf = divexact(total_degree(P), nrows(m)) + degree(P, 2)
 
   #TODO use Frobenius (again) to save on multiplications
   #TODO invest work in one factor only - need only powers of the roots involved there
@@ -892,6 +902,11 @@ function field(RC::RootCtx, m::MatElem)
   local H, fa
   if !isone(_lc)
     ld = coprime_base(vcat(lc, [map_coeffs(k, _lc, parent = kt)]))
+    if sum(map(degree, ld)) != degree(_lc) #TODO: this should(?) be caught earlier
+      @vprint :AbsFact 1 "leading coeff not square-free mod p, bad prime\n"
+      return nothing
+    end
+
     fa = [[valuation(x, y) for y = ld] for x = lc]
     lc = _lc
     H = Hecke.HenselCtxQadic(map_coeffs(Qq, lc, parent = Qqt), ld)
@@ -1045,7 +1060,7 @@ function field(RC::RootCtx, m::MatElem)
 
     m = matrix([[pe(x)^l for x = fl] for l=0:degree(k)-1])
     kx, x = PolynomialRing(k, "x", cached = false)
-    kX, (X, Y) = PolynomialRing(k, ["X", "Y"], cached = false)
+    kX, _ = PolynomialRing(k, ["X", "Y"], cached = false)
     B = MPolyBuildCtx(kX)
     for j=1:length(el[1])
       n = matrix([[coeff(x, j)] for x = fl])
@@ -1131,8 +1146,8 @@ function absolute_bivariate_factorisation(f::fmpq_mpoly)
   ff *= d
   @assert all(x->isone(denominator(x)), coefficients(ff))
   gg = ff
-  
-  p = 2^25
+
+  p = 2^24
   local aa
   while true
     @vtime :AbsFact 1 r, p = roots(gg, p)
