@@ -233,7 +233,7 @@ function _roots_hensel(f::Generic.Poly{nf_elem};
 
   # compute the lifting exponent a la Friedrich-Fieker
 
-  E = EquationOrder(K)
+  E = any_order(K)
   r1, r2 = signature(E) 
 
   gsa = derivative(K.pol)(gen(K))
