@@ -1390,7 +1390,7 @@ function fb_doit(a::nf_elem, v::Int, sP::FactorBaseSingleP, no::fmpq = fmpq(0))
     return fb_naive_doit(a, v, sP, no)
   end
   d = denominator(a)
-  if isone(gcd(d, sP.P)) 
+  if isone(gcd(d, sP.P))
     return fb_int_doit(a, v, sP)
   end
   return fb_naive_doit(a, v, sP, no)
@@ -2064,7 +2064,7 @@ mutable struct NfAbsNSElem <: NonSimpleNumFieldElem{fmpq}
   function NfAbsNSElem(K::NfAbsNS, g::fmpq_mpoly)
     return new(g, K)
   end
-    
+
 end
 
 ################################################################################

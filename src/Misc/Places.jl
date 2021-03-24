@@ -150,6 +150,9 @@ the sign is positive and $-1$ if the sign is negative.
 """
 function sign(a::Union{nf_elem, FacElem{nf_elem, AnticNumberField}}, P::InfPlc)
   !isreal(P) && error("Place must be real")
+  if a isa nf_elem && iszero(a)
+    return 0
+  end
   return signs(a, [P])[P]
 end
 

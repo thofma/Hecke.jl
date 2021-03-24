@@ -623,6 +623,11 @@ function genus(L::HermLat, q)
       if haskey(symbols, minimum(q))
         return symbols[minimum(q)]
       end
+    elseif q isa fmpz
+      qq = ideal(base_ring(base_ring(L)), q)
+      if haskey(symbols, qq)
+        return symbols[qq]
+      end
     else
       if haskey(symbols, q)
         return symbols[q]
@@ -633,6 +638,11 @@ function genus(L::HermLat, q)
   if order(q) !== base_ring(base_ring(L))
     g = _genus(L, minimum(q))
     symbols[minimum(q)] = g
+  elseif q isa fmpz
+    qq = ideal(base_ring(base_ring(L)), q)
+    g = _genus(L, qq)
+    symbols[qq] = g
+    return g
   else
     g = _genus(L, q)
     symbols[q] = g

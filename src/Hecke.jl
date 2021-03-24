@@ -542,8 +542,10 @@ function test_module(x, new::Bool = true)
      test_file = joinpath(pkgdir, "test", "$x.jl")
    end
 
+   setup_file = joinpath(pkgdir, "test", "setup.jl")
+
    if new
-     cmd = "using Test; using Hecke; Hecke.assertions(true); include(\"$test_file\");"
+     cmd = "using Test; using Hecke; Hecke.assertions(true); include(\"$(setup_file)\"); include(\"$test_file\");"
      @info("spawning ", `$julia_exe -e \"$cmd\"`)
      run(`$julia_exe -e $cmd`)
    else

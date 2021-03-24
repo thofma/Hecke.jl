@@ -336,7 +336,7 @@ function _issimilar_new(A, B)
   CB, TB = rational_canonical_form(B)
 
   if CA != CB
-    return false
+    return false, zero_matrix(base_ring(A), 0, 0)
   end
 
   @show Z.K
