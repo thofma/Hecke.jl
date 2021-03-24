@@ -84,7 +84,7 @@
   @test Hecke.brown_invariant(T1) == 4
   L2 = Zlattice(matrix(ZZ, 2,2,[4,2,2,4]))
   T2 = Hecke.discriminant_group(L2)
-  @test_throws ArgumentError Hecke.brown_invariant(T2)
+  @test Hecke.brown_invariant(T2) == 2
 
   #test for genus
   L = Zlattice(gram=diagonal_matrix(fmpz[1,2,3,4]))
@@ -102,6 +102,6 @@
   G = genus(diagonal_matrix(fmpz[2, 6, 6]))
   D = discriminant_group(G)
   @test isgenus(D, (2,0)) == false
-  @test_throws ErrorException isgenus(D, (3,0))
+  @test isgenus(D, (3,0)) == true
 end
 

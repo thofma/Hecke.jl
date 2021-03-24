@@ -227,7 +227,6 @@
   G = genus(diagonal_matrix(fmpz[1, 3, 9]),3)
   @test Hecke._mass_squared(G) == (9//8)^2
 
-
   # representatives, mass and genus enumeration
   DB = lattice_database()
   for i in 1:(long_test ? 200 : 10)
@@ -240,7 +239,7 @@
     G2 = genus(L2)
     @test G==G2
   end
-
+  
   for d in 1:(long_test ? 400 : 10)
     for sig in [(2,0), (0,3), (4,0)]
       for G in genera(sig, d)
@@ -255,22 +254,15 @@
         q2, _ = normal_form(q2)
         q2 = Hecke.gram_matrix_quadratic(q2)
         @test q1 == q2
-        # G2 = genus(D, sig)
-        # if iseven(G)
-        #   @test isgenus(D, sig)
-        # end
-        # @test G == G2
-        diag = diagonal_matrix(fmpq[1, 2])*basis_matrix(L)[1:2,1:end]
-        sub = lattice(ambient_space(L), diag)
-        g = genus(sub)
-        global H
-        H = G
-        @test Hecke.represents(G, genus(sub))
+         G2 = genus(D, sig)
+         if iseven(G) == true
+            @test isgenus(D, sig) == true
+         end
+         @test G == G2
       end
     end
   end
-
-
+  
   for d in 1:(long_test ? 50 : 10)
     for sig in [(2,0),(3,0),(4,0)]
       for G in genera(sig,d)

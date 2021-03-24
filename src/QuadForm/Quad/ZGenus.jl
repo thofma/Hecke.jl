@@ -73,14 +73,14 @@ mutable struct ZGenus
   function ZGenus(signature_pair, symbols)
     G = new()
     G._signature_pair = signature_pair
-    G._symbols = symbols
+    G._symbols = sort!(symbols, by = x->prime(x)) 
     return G
   end
 
   function ZGenus(signature_pair, symbols, representative::ZLat)
     G = new()
     G._signature_pair = signature_pair
-    G._symbols = symbols
+    G._symbols = sort!(symbols, by = x->prime(x))
     G._representative = representative
     return G
   end
@@ -687,6 +687,7 @@ and all possibilities for the remaining `3` are enumerated
 - ``even_only`` -- bool (default: ``true``) if set, the blocks are even
 """
 function _blocks(b::Array{Int}, even_only=false)
+  @req length(b) == 5 "must be a 2-adic block"
   blocks = Array{Array{Int,1},1}()
   rk = b[2]
   # recall: 2-genus_symbol is [scale, rank, det, even/odd, oddity]
@@ -1003,6 +1004,7 @@ function iseven(S::ZpGenus)
   if prime(S) != 2 || rank(S) == 0
     return true
   end
+
   sym = S._symbol[1]
   return sym[1] > 0 || sym[3] == 0
 end
@@ -1203,7 +1205,7 @@ function iseven(G::ZGenus)
   if rank(G) == 0
     return true
   end
-  return iseven(G._symbols[1])
+  return iseven(local_symbol(G, 2))
 end
 
 
