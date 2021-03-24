@@ -238,8 +238,9 @@ function rational_reconstruction(a::padic)
   return rational_reconstruction(Hecke.lift(a), prime(parent(a), precision(a)))
 end
 
-Hecke.gcd_into!(a, b, c) = gcd(b, c)
-Base.copy(a) = deepcopy(a)
+Hecke.gcd_into!(a::PolyElem, b::PolyElem, c::PolyElem) = gcd(b, c)
+Base.copy(a::PolyElem) = deepcopy(a)
+Base.copy(a::SeriesElem) = deepcopy(a)
 
 Base.inv(f::MapFromFunc) = MapFromFunc(x->preimage(f, x), codomain(f), domain(f))
 
