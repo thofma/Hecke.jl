@@ -50,26 +50,6 @@ function (Rx::GFPPolyRing)(f::fmpq_mpoly)
   return fp * inv(R(d))
 end
 
-function Hecke.lead(f::AbstractAlgebra.MPolyElem)
-  iszero(f) && error("zero poly")
-  return coeff(f, 1)
-end
-
-function Hecke.coefficients(f::AbstractAlgebra.MPolyElem)
-  return Hecke.PolyCoeffs(f)
-end
-
-function Base.iterate(PC::Hecke.PolyCoeffs{<:AbstractAlgebra.MPolyElem}, st::Int = 0)
-  st += 1
-  if st > length(PC.f)
-    return nothing
-  else
-    return coeff(PC.f, st), st
-  end
-end
-
-Base.length(M::Hecke.PolyCoeffs{<:AbstractAlgebra.MPolyElem}) = length(M.f)
-
 function mul!(res::fmpq_mpoly, a::fmpq_mpoly, c::fmpz)
   ccall((:fmpq_mpoly_scalar_mul_fmpz, libflint), Nothing,
     (Ref{fmpq_mpoly}, Ref{fmpq_mpoly}, Ref{fmpz}, Ref{FmpqMPolyRing}), res, a, c, parent(a))
@@ -112,5 +92,3 @@ function isunivariate(f::Generic.MPoly{T}) where T
   end
   return true, f1
 end
-
-

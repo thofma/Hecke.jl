@@ -137,7 +137,7 @@ function mfactor_martin_bounds(A::Generic.MPoly{nf_elem})
   mu = Hecke.Globals.Zx(denominator(mu) * mu)
 
   # define f to be scale*A so that f in Z[alpha][X,x1,...,xn]
-  # f will not be computed explicitly - we only need height(f) and lead(f)
+  # f will not be computed explicitly - we only need height(f) and leading_coefficient(f)
   leadf, scale1 = nf_elem_split(coeff(A, 1))
   heightf = height(leadf)
   scale = scale1
@@ -160,7 +160,7 @@ function mfactor_martin_bounds(A::Generic.MPoly{nf_elem})
   s = sum(i > 0 ? 1 : 0 for i in degs)  # count of present variables
   k = fmpz(degree(mu))
   bits = sum_degs + k + nbits(prod_degs)
-  bits += cdiv(k*nbits(cdiv((k + 1)^7*heightf^2*height(mu)^8, lead(mu)^2)) - s, 2)
+  bits += cdiv(k*nbits(cdiv((k + 1)^7*heightf^2*height(mu)^8, leading_coefficient(mu)^2)) - s, 2)
 
   return (df*D, Int(bits))
 end
@@ -251,7 +251,7 @@ function hlift_have_lcs_crt(
       end
 
       for j in 1:r
-        push!(pAf[j], (nf_lcc*inv(lead(t[j]))*t[j]))
+        push!(pAf[j], (nf_lcc*inv(leading_coefficient(t[j]))*t[j]))
       end
     end
 

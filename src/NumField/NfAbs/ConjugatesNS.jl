@@ -202,7 +202,7 @@ function _evaluate(f::fmpq_mpoly, vals::Vector{acb})
   powers = [Dict{Int, acb}() for i in 1:length(vals)]
   r = acb[zero(S)]
   i = UInt(1)
-  cvzip = zip(coeffs(f), exponent_vectors(f))
+  cvzip = zip(coefficients(f), exponent_vectors(f))
   for (c, v) in cvzip
     t = one(S)
     for j = 1:length(vals)

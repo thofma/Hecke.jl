@@ -23,6 +23,11 @@ function simplify(K::AnticNumberField; canonical::Bool = false, cached::Bool = t
     return L, hom(L, K, gen(K), check = false)
   end
   if canonical
+    if !isdefining_polynomial_nice(K)
+      K1, mK1 = simplify(K)
+      K2, mK2 = simplify(K1, canonical = true)
+      return K2, mK2*mK1
+    end
     a, f1 = polredabs(K)
     f = Qx(f1)
     L = NumberField(f, cached = cached, check = false)[1]
@@ -106,6 +111,10 @@ function _simplify(O::NfAbsOrd)
     
   #Now, we select the one of smallest T2 norm
   a = primitive_element(K)
+  d = denominator(a, O)
+  if !isone(d)
+    a *= d
+  end
   I = t2(a)
   for i = 1:length(B1)
     t2n = t2(B1[i])
@@ -202,7 +211,7 @@ function AbstractAlgebra.map_coeffs(F::GaloisField, f::fmpq_mpoly; parent = Poly
   end
   m = inv(d)
   ctx = MPolyBuildCtx(parent)
-  for x in zip(coeffs(f), exponent_vectors(f))
+  for x in zip(coefficients(f), exponent_vectors(f))
     el = numerator(x[1]*dF)
     push_term!(ctx, F(el)*m, x[2])
   end
@@ -485,7 +494,7 @@ function minQ(A::Tuple{nf_elem, fmpq_poly})
   a = A[1]
   f = A[2]
   q1, q2 = Q1Q2(f)
-  if lead(q1)>0 && lead(q2) > 0
+  if leading_coefficient(q1)>0 && leading_coefficient(q2) > 0
     return (-A[1], f(-gen(parent(f)))*(-1)^degree(f))
   else
     return (A[1], f)

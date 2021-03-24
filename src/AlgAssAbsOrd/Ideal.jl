@@ -614,7 +614,7 @@ Returns `true` if $x$ is in $a$ and `false` otherwise.
 function in(x::T, a::AlgAssAbsOrdIdl{S, T}) where { S, T }
   parent(x) !== algebra(a) && error("Algebra of element and ideal must be equal")
   A = algebra(a)
-  t = FakeFmpqMat(matrix(FlintQQ, 1, dim(A), coeffs(x, copy = false)))
+  t = FakeFmpqMat(matrix(FlintQQ, 1, dim(A), coefficients(x, copy = false)))
   t = t*basis_mat_inv(a, copy = false)
   return denominator(t, copy = false) == 1
 end

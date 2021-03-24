@@ -8,7 +8,7 @@
 
   ff = factor(f)
   g = first(keys(ff.fac))
-  g = divexact(g, lead(g))
+  g = divexact(g, leading_coefficient(g))
   J = Hecke.jordan_block(g, 2)
   @test minpoly(Qx, J) == g^2
   @test charpoly(Qx, J) == g^2
