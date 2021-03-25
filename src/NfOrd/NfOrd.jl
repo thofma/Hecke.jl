@@ -525,8 +525,6 @@ function minkowski_matrix(O::NfAbsOrd, abs_tol::Int = 64)
   return A
 end
 
-
-
 function minkowski_matrix(B::Vector{S}, abs_tol::Int = 64) where S <: NumFieldElem
   K = parent(B[1])
   T = Vector{Vector{arb}}(undef, length(B))
@@ -796,11 +794,11 @@ function _norm_change_const(v::Vector{nf_elem})
           O.norm_change_const = z
           return z::Tuple{BigFloat, BigFloat}
         end
-        M = minkowski_matrix(O, pr)
+        M = minkowski_matrix(v, pr)
         M = M*M'
         pr *= 2
       catch e  # should verify the correct error
-        M = minkowski_matrix(O, pr)
+        M = minkowski_matrix(v, pr)
         M = M*M'
         pr *= 2
       end
