@@ -243,7 +243,6 @@ function _roots_hensel(f::Generic.Poly{nf_elem};
   #TODO: we need norm_change_const wrt. any basis to apply it to an
   #      equation order even if it is no order.
   #      probably needs an entire trail of other stuff
-  E = any_order(K)
   r1, r2 = signature(K) 
 
   gsa = derivative(K.pol)(gen(K))
@@ -277,7 +276,7 @@ function _roots_hensel(f::Generic.Poly{nf_elem};
       bound_root[i] = roots_upper_bound(g) * abs(gsa_con[i])
     end
   end
-  ss = _lifting_expo(good_p, good_deg_p, E, bound_root)
+  ss = _lifting_expo(good_p, good_deg_p, K, bound_root)
   @vprint :Saturate 1 "using a lifting bound of $ss\n"
   rts = _hensel(f, factor_of_g, good_fp, Int(ss), max_roots = max_roots - length(rs), ispure = ispure)
   return vcat(rs, rts)
@@ -318,7 +317,6 @@ end
 function _get_LLL_basis(Mold, Miold, dold, p, pr, i, gg)
   n = nrows(Mold)
   ctx = lll_ctx(0.5, 0.51)
-  @show pr[i-1], pr[i]
   modu = fmpz(p)^25
   for j = (pr[i-1]+25):25:pr[i]
     pp = fmpz(p)^j
@@ -597,9 +595,9 @@ function _hensel(f::Generic.Poly{nf_elem},
         _cache_lll[pr[i]] = (M, Mi, d)
       end
     else
-      @show M = _get_basis(pp, n, pgg, Qt)
+      M = _get_basis(pp, n, pgg, Qt)
       @vtime :Saturate 1  lll!(M)
-      @show Mi, d = pseudo_inv(M)
+      Mi, d = pseudo_inv(M)
       if caching
         _cache_lll[pr[i]] = (M, Mi, d)
       end
@@ -660,7 +658,7 @@ function _hensel(f::Generic.Poly{nf_elem},
       ve = matrix(FlintZZ, 1, n, [coeff(cf, k) for k=0:n-1])
       _ve = ve*Mi
       mu = matrix(FlintZZ, 1, n,  [ round(fmpz, _ve[1, k]//d) for k=1:n])
-      @show ve = ve - mu*M
+      ve = ve - mu*M
       z = ZX()
       for kk=1:n
         setcoeff!(z, kk-1, ve[1, kk])
@@ -722,6 +720,41 @@ end
 #  Computation of the lifting exponent
 #
 ################################################################################
+
+function _lifting_expo(p::Int, deg_p::Int, K::AnticNumberField, bnd::Array{arb, 1})
+  # return _lifting_expo_using_logbound(p, deg_p, O, arb[log(a) for a in bnd])
+  # compute the lifting exponent a la Friedrich-Fieker
+  # bnd has upper bounds on |x^{(i)}| 1<= i <= r1+r2 as arbs
+  # we're using a prime ideal above p of intertia degree deg_p
+  # O is the order where the result will be reconstructed in
+
+  (c1, c2) = _norm_change_const(basis(K))
+  r1, r2 = signature(K)
+  R = parent(bnd[1])
+  bd = zero(R)
+  n = degree(K)
+  #so   |x|_mink  <= c_1 |x|_coeff
+  #and  |x|_coeff <= c_2 |x|_mink
+
+  for i in 1:r1
+    bd += bnd[i]^2
+  end
+
+  for i=1:r2
+    bd += 2*bnd[i+r1]^2
+  end
+
+  boundt2 = max(bd, one(R))
+
+  # Tommy: log(...) could contain a ball, which contains zero
+  tmp = R(abs_upper_bound(R(c1)*R(c2)*boundt2*exp((R(n*(n-1))//2 + 2)*log(R(2)))//n, fmpz))
+
+  # CF: there is a prob, in the paper wrt LLL bounds on |x| or |x|^2....
+  boundk = R(n)*log(tmp)//(2*deg_p*log(R(p)))
+
+  ss = abs_upper_bound(boundk, fmpz)
+  return ss
+end
 
 function _lifting_expo(p::Int, deg_p::Int, O::NfOrd, bnd::Array{arb, 1})
   # return _lifting_expo_using_logbound(p, deg_p, O, arb[log(a) for a in bnd])
