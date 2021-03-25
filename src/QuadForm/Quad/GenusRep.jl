@@ -1954,7 +1954,7 @@ function _intersect_lattice_down(xps, _ps, Lambda)
     if !(q in _ps)
     end
   end
- 
+
   for i in 1:length(xps)
     @assert _padic_index(xps_orig[i] * Lambda, LLL, _ps_orig[i]) == (0, 0)
     @assert _padic_index(LLL, xps_orig[i] * Lambda, _ps_orig[i]) == (0, 0)
