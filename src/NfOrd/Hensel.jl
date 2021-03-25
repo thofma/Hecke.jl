@@ -429,14 +429,14 @@ function _hensel(f::Generic.Poly{nf_elem},
   #fun fact: if g = prod g_i mod p^k, then P_i^k = <p^k, g_i>
   #so instead of powering, and simplify and such, lets write it down
   d_pol = lcm(map(denominator, coefficients(K.pol)))
-  k *= 2
+
   if degree(fac_pol_mod_p) != degree(K)
     g1 = lift(ZX, fac_pol_mod_p)
     ff = ZX(d_pol*K.pol)
     gg = hensel_lift(ff, g1, fmpz(p), k)
   else
     gg = ZX(d_pol * K.pol) 
-    pk = p^k
+    pk = fmpz(p)^k
     gg *= invmod(leading_coefficient(gg), pk)
     mod_sym!(gg, pk)
   end
