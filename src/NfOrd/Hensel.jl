@@ -166,6 +166,10 @@ function _roots_hensel(f::Generic.Poly{nf_elem};
 
   while !found
     p = next_prime(p)
+
+    if any(x->iszero(denominator(x) % p), coefficients(K.pol))
+      continue
+    end
     
     Rp = Nemo.GF(p, cached=false)
     Rpt, t = PolynomialRing(Rp, "t", cached=false)
@@ -173,6 +177,7 @@ function _roots_hensel(f::Generic.Poly{nf_elem};
     if iszero(discriminant(gp))
       continue
     end
+
 
     lp = factor(gp).fac
 
@@ -231,10 +236,15 @@ function _roots_hensel(f::Generic.Poly{nf_elem};
     end
   end
 
+  @vprint :Saturate 1 "using prime $good_p of degree $deg_p\n"
+
   # compute the lifting exponent a la Friedrich-Fieker
 
-  E = EquationOrder(K)
-  r1, r2 = signature(E) 
+  #TODO: we need norm_change_const wrt. any basis to apply it to an
+  #      equation order even if it is no order.
+  #      probably needs an entire trail of other stuff
+  E = any_order(K)
+  r1, r2 = signature(K) 
 
   gsa = derivative(K.pol)(gen(K))
   gsa_con = conjugates_arb(gsa, 32)
@@ -268,6 +278,7 @@ function _roots_hensel(f::Generic.Poly{nf_elem};
     end
   end
   ss = _lifting_expo(good_p, good_deg_p, E, bound_root)
+  @vprint :Saturate 1 "using a lifting bound of $ss\n"
   rts = _hensel(f, factor_of_g, good_fp, Int(ss), max_roots = max_roots - length(rs), ispure = ispure)
   return vcat(rs, rts)
 end
@@ -419,11 +430,17 @@ function _hensel(f::Generic.Poly{nf_elem},
   #fun (computing a max order just for this is wasteful)
   #fun fact: if g = prod g_i mod p^k, then P_i^k = <p^k, g_i>
   #so instead of powering, and simplify and such, lets write it down
+  d_pol = lcm(map(denominator, coefficients(K.pol)))
+  k *= 2
   if degree(fac_pol_mod_p) != degree(K)
     g1 = lift(ZX, fac_pol_mod_p)
-    gg = hensel_lift(ZX(K.pol), g1, fmpz(p), k)
+    ff = ZX(d_pol*K.pol)
+    gg = hensel_lift(ff, g1, fmpz(p), k)
   else
-    gg = ZX(K.pol)
+    gg = ZX(d_pol * K.pol) 
+    pk = p^k
+    gg *= invmod(leading_coefficient(gg), pk)
+    mod_sym!(gg, pk)
   end
   # now for all i<= k, <p^i, K(gg)+p^i> is a normal presentation for
   #                                     the prime ideal power.
@@ -456,8 +473,19 @@ function _hensel(f::Generic.Poly{nf_elem},
   IRT = fmpz_poly[lift(ZX, lift(Rpt, x)) for x = irt]
 
   #the den: ala Kronnecker:
-  den = ZX(derivative(K.pol)(gen(K)))
-  iden = inv(derivative(K.pol)(gen(K)))
+  if isone(d_pol)
+    den = ZX(derivative(K.pol)(gen(K)))
+    iden = inv(derivative(K.pol)(gen(K)))
+    sc = fmpz(1)
+  else
+    #TODO: is this correct???
+    E = any_order(K)
+    den = ZX(discriminant(E))
+    iden = fmpq(1, discriminant(E))
+    sc = abs(det(numerator(basis_matrix(E))))
+  end
+
+  @vprint :Saturate 1 "using a denominator estimate of $den\n"
 
   ##for the result, to check for stabilising
 
@@ -489,6 +517,7 @@ function _hensel(f::Generic.Poly{nf_elem},
   M = zero_matrix(FlintZZ, n, n)
   local Mi::fmpz_mat
   local d::fmpz
+  
   @vprint :Saturate 1 "Maximum number of steps: $(length(pr))\n"
   for i=2:length(pr)
     @vprint :Saturate 1 "Step number $i\n"
@@ -510,7 +539,7 @@ function _hensel(f::Generic.Poly{nf_elem},
     ctx_lll = lll_ctx(0.3, 0.51)
     if caching && haskey(_cache_lll, pr[i])
       M, Mi, d = _cache_lll[pr[i]]::Tuple{fmpz_mat, fmpz_mat, fmpz}
-    elseif i > 10
+    elseif false && i > 10
       #This is getting bad. We try to apply the trick twice.
       Mold = M
       Miold = Mi
@@ -546,7 +575,7 @@ function _hensel(f::Generic.Poly{nf_elem},
       if caching
         _cache_lll[pr[i]] = (M, Mi, d)
       end
-    elseif i > 3
+    elseif false && i > 3
       Mold = M
       Miold = Mi
       dold = d
@@ -568,9 +597,9 @@ function _hensel(f::Generic.Poly{nf_elem},
         _cache_lll[pr[i]] = (M, Mi, d)
       end
     else
-      M = _get_basis(pp, n, pgg, Qt)
+      @show M = _get_basis(pp, n, pgg, Qt)
       @vtime :Saturate 1  lll!(M)
-      Mi, d = pseudo_inv(M)
+      @show Mi, d = pseudo_inv(M)
       if caching
         _cache_lll[pr[i]] = (M, Mi, d)
       end
@@ -631,7 +660,7 @@ function _hensel(f::Generic.Poly{nf_elem},
       ve = matrix(FlintZZ, 1, n, [coeff(cf, k) for k=0:n-1])
       _ve = ve*Mi
       mu = matrix(FlintZZ, 1, n,  [ round(fmpz, _ve[1, k]//d) for k=1:n])
-      ve = ve - mu*M
+      @show ve = ve - mu*M
       z = ZX()
       for kk=1:n
         setcoeff!(z, kk-1, ve[1, kk])

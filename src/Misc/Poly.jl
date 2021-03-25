@@ -430,8 +430,17 @@ end
  Given $f$ and $g$ such that $g$ is a divisor of $f mod p$ and $g$ and $f/g$ are coprime, compute a hensel lift of $g modulo p^k$.
 """
 function hensel_lift(f::fmpz_poly, g::fmpz_poly, p::fmpz, k::Int)
+  @assert ismonic(g) #experimentally: otherwise, the result is bad...
   Rx, x = PolynomialRing(GF(p, cached=false), cached=false)
-  h = lift(parent(f), div(Rx(f), Rx(g)))
+  if !ismonic(f)
+    pk = p^k
+    f *= invmod(leading_coefficient(f), pk)
+    mod_sym!(f, pk)
+  end
+  @assert ismonic(f)
+  q, r = divrem(Rx(f), Rx(g))
+  @assert iszero(r)
+  h = lift(parent(f), q)
   return hensel_lift(f, g, h, p, k)[1]
 end
 
