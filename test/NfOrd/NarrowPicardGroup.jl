@@ -24,4 +24,8 @@
     @test _dlog(_exp(c)) == c
   end
 
+  f = x^2 - 136*x + 4590
+  E = equation_order(f)
+  C, _dlog, _exp = Hecke.narrow_picard_group(E)
+  @test length(unique(_exp.(C))) == 4
 end
