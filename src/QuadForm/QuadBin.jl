@@ -867,3 +867,23 @@ function _tau(f::QuadBin{fmpz})
   @assert _buchmann_vollmer_action(f, T) == g
   return g, T
 end
+
+################################################################################
+#
+#  Representatives
+#
+################################################################################
+
+function binary_quadratic_form_representatives(d::fmpz; proper = true, primitive = false)
+  d4 = mod(d, 4)
+  if d4 == 2 || d4 == 3
+    error("Not a discriminant")
+  end
+  if d > 0
+    # indefinite
+    return _equivalence_classes_binary_quadratic_indefinite(d, proper = proper,
+                                                            primitive = primitive)
+  else
+    throw(NotImplemented())
+  end
+end
