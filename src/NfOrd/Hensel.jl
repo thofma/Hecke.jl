@@ -174,7 +174,7 @@ function _roots_hensel(f::Generic.Poly{nf_elem};
     Rp = Nemo.GF(p, cached=false)
     Rpt, t = PolynomialRing(Rp, "t", cached=false)
     gp = Rpt(K.pol)
-    if iszero(discriminant(gp))
+    if degree(gp) < degree(K) || iszero(discriminant(gp))
       continue
     end
 
