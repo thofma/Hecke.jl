@@ -1,7 +1,7 @@
 export genus, rank, det, dim, prime, symbol, representative, signature,
        oddity, excess, level, genera, scale, norm, mass, orthogonal_sum,
        quadratic_space,hasse_invariant, genera, local_symbol, local_symbols,
-       ZGenus, ZpGenus
+       ZGenus, ZpGenus, representatives
 
 @doc Markdown.doc"""
     ZpGenus
@@ -1377,7 +1377,7 @@ Return a list of representatives of the isometry classes in this genus.
 function representatives(G::ZGenus)
   L = representative(G)
   rep = genus_representatives(L)
-  @hassert 2 mass(G) == sum(fmpq[1//automorphism_group_order(S) for S in rep])
+  @hassert :Lattice 2 mass(G) == sum(fmpq[1//automorphism_group_order(S) for S in rep])
   return rep
 end
 
