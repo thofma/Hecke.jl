@@ -92,3 +92,49 @@ function isunivariate(f::Generic.MPoly{T}) where T
   end
   return true, f1
 end
+
+function (R::FmpzMPolyRing)(f::fmpq_mpoly)
+  return map_coeffs(ZZ, f, parent = R)
+end
+Hecke.ngens(R::FmpzMPolyRing) = length(gens(R))
+
+#check with Nemo/ Dan if there are better solutions
+#the block is also not used here I think
+#functionality to view mpoly as upoly in variable `i`, so the
+#coefficients are mpoly's without variable `i`.
+function Hecke.leading_coefficient(f::MPolyElem, i::Int)
+  g = MPolyBuildCtx(parent(f))
+  d = degree(f, i)
+  for (c, e) = zip(coefficients(f), exponent_vectors(f))
+    if e[i] == d
+      e[i] = 0
+      push_term!(g, c, e)
+    end
+  end
+  return finish(g)
+end
+
+#not used here
+"""
+`content` as a polynomial in the variable `i`, i.e. the gcd of all the 
+coefficients when viewed as univariate polynomial in `i`.
+"""
+function Hecke.content(f::MPolyElem, i::Int)
+  return reduce(gcd, coefficients(f, i))
+end
+
+"""
+The coefficients of `f` when viewed as a univariate polynomial in the `i`-th
+variable.
+"""
+function Hecke.coefficients(f::MPolyElem, i::Int)
+  d = degree(f, i)
+  cf = [MPolyBuildCtx(parent(f)) for j=0:d]
+  for (c, e) = zip(coefficients(f), exponent_vectors(f))
+    a = e[i]
+    e[i] = 0
+    push_term!(cf[a+1], c, e)
+  end
+  return map(finish, cf)
+end
+
