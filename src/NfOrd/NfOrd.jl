@@ -787,11 +787,12 @@ function _norm_change_const(v::Vector{nf_elem})
     if isodd(d) d+=1; end
     while true
       try
+        M = minkowski_matrix(v, pr)
+        M = M*M'
         M = inv(M)
         l_min = root(tr(M^d), d) #as above...
         if isfinite(l_min)
           z = (BigFloat(l_max), BigFloat(l_min))
-          O.norm_change_const = z
           return z::Tuple{BigFloat, BigFloat}
         end
         M = minkowski_matrix(v, pr)
