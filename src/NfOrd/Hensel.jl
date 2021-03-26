@@ -246,6 +246,10 @@ function _roots_hensel(f::Generic.Poly{nf_elem};
   r1, r2 = signature(K) 
 
   gsa = derivative(K.pol)(gen(K))
+  if !isdefining_polynomial_nice(K)
+    E = any_order(K)
+    gsa *= discriminant(E) * det(numerator(basis_matrix(E, copy= false)))
+  end
   gsa_con = conjugates_arb(gsa, 32)
 
   if length(root_bound) > 0
@@ -313,7 +317,7 @@ function _get_basis(pp::fmpz, n::Int, pgg::fmpz_mod_poly, Qt::FmpzModPolyRing)
   end
   return M
 end
-
+#= not used
 function _get_LLL_basis(Mold, Miold, dold, p, pr, i, gg)
   n = nrows(Mold)
   ctx = lll_ctx(0.5, 0.51)
@@ -359,7 +363,7 @@ function _get_LLL_basis(Mold, Miold, dold, p, pr, i, gg)
   end
   return Mold, Miold, dold
 end
-
+=#
 
 function _hensel(f::Generic.Poly{nf_elem},
                  fac_pol_mod_p::gfp_poly,
@@ -376,7 +380,9 @@ function _hensel(f::Generic.Poly{nf_elem},
   # f is pure if and only if f = x^deg(f) + coeff(f, 0)
   @assert max_roots > 0
 
-  caching = degree(base_ring(f)) > 20
+  K = base_ring(f)
+
+  caching = isdefining_polynomial_nice(K) && degree(K) > 20
   if caching
     # Setup the caching
     _cache = _get_prime_data_lifting(base_ring(f))
@@ -420,7 +426,6 @@ function _hensel(f::Generic.Poly{nf_elem},
   #assumes constant_coefficient(f) != 0
   
   ZX, X = PolynomialRing(FlintZZ, "X", cached = false)
-  K = base_ring(f)
 
   #to avoid embarrasment...
 
@@ -537,7 +542,7 @@ function _hensel(f::Generic.Poly{nf_elem},
     ctx_lll = lll_ctx(0.3, 0.51)
     if caching && haskey(_cache_lll, pr[i])
       M, Mi, d = _cache_lll[pr[i]]::Tuple{fmpz_mat, fmpz_mat, fmpz}
-    elseif false && i > 10
+    elseif isdefining_polynomial_nice(K) && i > 10
       #This is getting bad. We try to apply the trick twice.
       Mold = M
       Miold = Mi
@@ -573,7 +578,7 @@ function _hensel(f::Generic.Poly{nf_elem},
       if caching
         _cache_lll[pr[i]] = (M, Mi, d)
       end
-    elseif false && i > 3
+    elseif isdefining_polynomial_nice(K) && i > 3
       Mold = M
       Miold = Mi
       dold = d
@@ -657,7 +662,7 @@ function _hensel(f::Generic.Poly{nf_elem},
 
       ve = matrix(FlintZZ, 1, n, [coeff(cf, k) for k=0:n-1])
       _ve = ve*Mi
-      mu = matrix(FlintZZ, 1, n,  [ round(fmpz, _ve[1, k]//d) for k=1:n])
+      mu = matrix(FlintZZ, 1, n,  [ round(fmpz, _ve[1, k], d) for k=1:n])
       ve = ve - mu*M
       z = ZX()
       for kk=1:n
@@ -728,7 +733,7 @@ function _lifting_expo(p::Int, deg_p::Int, K::AnticNumberField, bnd::Array{arb, 
   # we're using a prime ideal above p of intertia degree deg_p
   # O is the order where the result will be reconstructed in
 
-  (c1, c2) = _norm_change_const(basis(K))
+  (c1, c2) = norm_change_const(any_order(K))
   r1, r2 = signature(K)
   R = parent(bnd[1])
   bd = zero(R)
@@ -746,8 +751,17 @@ function _lifting_expo(p::Int, deg_p::Int, K::AnticNumberField, bnd::Array{arb, 
 
   boundt2 = max(bd, one(R))
 
+  t = basis_matrix(any_order(K))
+  @assert denominator(t) == 1
+  tt = numerator(t)
+  tt *= tt'
+  m = nbits(degree(K))
+  m += m%2
+  tt = tt^m
+  c3 = BigFloat(root(tr(tt), m)+1)
+
   # Tommy: log(...) could contain a ball, which contains zero
-  tmp = R(abs_upper_bound(R(c1)*R(c2)*boundt2*exp((R(n*(n-1))//2 + 2)*log(R(2)))//n, fmpz))
+  tmp = R(abs_upper_bound(R(c1)*R(c2)*R(c3)*boundt2*exp((R(n*(n-1))//2 + 2)*log(R(2)))//n, fmpz))
 
   # CF: there is a prob, in the paper wrt LLL bounds on |x| or |x|^2....
   boundk = R(n)*log(tmp)//(2*deg_p*log(R(p)))
