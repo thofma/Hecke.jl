@@ -755,10 +755,15 @@ function _lifting_expo(p::Int, deg_p::Int, K::AnticNumberField, bnd::Array{arb, 
   @assert denominator(t) == 1
   tt = numerator(t)
   tt *= tt'
-  m = nbits(degree(K))
-  m += m%2
-  tt = tt^m
-  c3 = BigFloat(root(tr(tt), m)+1)
+  if degree(K) == 1 
+    c3 = BigFloat(m[1,1])
+  else
+    #see norm_change_const for an explanation
+    m = nbits(degree(K))
+    m += m%2
+    tt = tt^m
+    c3 = BigFloat(root(tr(tt), m)+1)
+  end
 
   # Tommy: log(...) could contain a ball, which contains zero
   tmp = R(abs_upper_bound(R(c1)*R(c2)*R(c3)*boundt2*exp((R(n*(n-1))//2 + 2)*log(R(2)))//n, fmpz))
