@@ -756,7 +756,7 @@ function _lifting_expo(p::Int, deg_p::Int, K::AnticNumberField, bnd::Array{arb, 
   tt = numerator(t)
   tt *= tt'
   if degree(K) == 1 
-    c3 = BigFloat(m[1,1])
+    c3 = BigFloat(tt[1,1])
   else
     #see norm_change_const for an explanation
     m = nbits(degree(K))
