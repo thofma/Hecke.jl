@@ -795,10 +795,12 @@ function _norm_change_const(v::Vector{nf_elem})
           z = (BigFloat(l_max), BigFloat(l_min))
           return z::Tuple{BigFloat, BigFloat}
         end
-        M = minkowski_matrix(v, pr)
-        M = M*M'
-        pr *= 2
-      catch e  # should verify the correct error
+      catch e
+        # should verify the correct error
+        if !(e isa ErrorException)
+          rethrow(e)
+        end
+      finally
         M = minkowski_matrix(v, pr)
         M = M*M'
         pr *= 2
